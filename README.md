@@ -30,3 +30,7 @@ Currently only Windows 7 and Windows 10 supported. Porting to Linux is planned (
 Contributions are welcome. 
 
 The most straightforward type of contribution is in the form of new computational modules. A simple procedure can be followed to add self-contained modules. Similar procedures are in place for adding new types of computational meshes and material parameters. Documentation on these will be uploaded soon.
+
+# Compiling
+
+Instructions to follow.
