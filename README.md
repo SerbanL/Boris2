@@ -2,7 +2,8 @@
 
 Boris Computational Spintronics.
 
-C++14 used.
+C++14 used. 
+As a rough idea of codebase size, v2.3 has 119818 lines of code in 408 files. A full compilation without precompiled headers takes around 30 mins.
 
 # Download
 
