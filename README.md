@@ -24,7 +24,7 @@ With GRAPHICS 1 flag currently using DirectX 11, but plan to switching to SFML e
 
 # OS
 
-Currently only Windows 7 and Windows 10 supported. Porting to Linux is planned (there are a number of Windows-specific functions which need to be replaced; graphics code will need to be rewritten in SFML, but for now GRAPHICS 0 compilation flag can be set, enabling only a basic text console but otherwise with full functionality)
+Currently only Windows 7 and Windows 10 supported. Porting to Linux is planned (there are a number of Windows-specific functions which need to be replaced but not too difficult; graphics code will need to be rewritten in SFML, but for now GRAPHICS 0 compilation flag can be set, enabling only a basic text console but otherwise with full functionality; other than this the rest of the code should port without problems - in theory!).
 
 # Contributions
 
