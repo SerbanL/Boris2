@@ -35,3 +35,7 @@ The most straightforward type of contribution is in the form of new computationa
 # Building From Source
 
 Instructions will be provided soon.
+
+# Publication
+
+A technical peer-reviewed publication on Boris to follow soon.
