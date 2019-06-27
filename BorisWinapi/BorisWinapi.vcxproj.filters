@@ -1,0 +1,1028 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="Shaders">
+      <UniqueIdentifier>{a3b40781-eab9-4598-b738-83c968d4aba7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="INTERFACE">
+      <UniqueIdentifier>{57dbe11c-6842-40e3-a013-01cf62769742}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="INTERACTIVE OBJ">
+      <UniqueIdentifier>{d7c3a65b-96a9-46d5-b64f-fd87a2a0426c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="MESHES">
+      <UniqueIdentifier>{4ccf9e52-7cd9-42a2-ae43-72ad7c83f74e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="MESHES - CUDA">
+      <UniqueIdentifier>{4d189181-7e2e-4da6-b816-3f04e369b1d8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="MODULES">
+      <UniqueIdentifier>{302406a6-9404-429d-b6a9-cbbe1a205b7d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="MODULES - CUDA">
+      <UniqueIdentifier>{5a532d8f-2fcd-4409-86f0-060659e28228}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="MAT PARAMS">
+      <UniqueIdentifier>{9d4cd84e-68e2-492d-84f4-fcc9b9450f4a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="DATA PROC">
+      <UniqueIdentifier>{6f5dd0b6-ffc1-494c-9d8d-e2c68336a8d0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="MAIN">
+      <UniqueIdentifier>{9106dcb4-2f4b-45f5-a9e2-77dc7ccbbbb4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="COMMANDS">
+      <UniqueIdentifier>{a85f3c82-83d5-45a0-8c03-09663855462e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="AUXILIARY">
+      <UniqueIdentifier>{c3b28997-ade9-48a5-97a1-eddab94966a5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="SIMULATION">
+      <UniqueIdentifier>{8168bf67-9e8a-4c8b-97cc-7f030cc7ce88}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="DIFF EQUATIONS - CUDA">
+      <UniqueIdentifier>{71d9802d-cc16-4e0b-ab33-b186772c35cc}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="DIFF EQUATIONS">
+      <UniqueIdentifier>{21acb381-2343-4d11-ac9d-4dbe490bba1b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="MAT PARAMS - CUDA">
+      <UniqueIdentifier>{ba5ff47b-df1d-4045-b288-f3e2ae365ff3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ERROR HANDLER">
+      <UniqueIdentifier>{d4132933-59f9-435a-bd85-57d5a4f3e86f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="MODULES INTERFACE - CUDA">
+      <UniqueIdentifier>{3aae4196-c4ac-42e6-bb4b-73b0734f3db6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="MODULES - SUPERMESH">
+      <UniqueIdentifier>{0eea9f70-561c-4a9d-9414-56f0369d0a34}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="MODULES - SUPERMESH - CUDA">
+      <UniqueIdentifier>{4585c276-e6ac-4470-bd77-5501b83b97f0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="SUPERMESH">
+      <UniqueIdentifier>{e2b76851-3f31-441f-974b-e3ab61defbf9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="MESHES INTERFACE">
+      <UniqueIdentifier>{72ab5aa5-258e-47bf-a1cc-ce4c7cc576a6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="CONVOLUTION">
+      <UniqueIdentifier>{e6db390f-5960-4a65-be4e-eec792e9d179}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="FUNCS">
+      <UniqueIdentifier>{7b22956b-af24-4fc0-a133-b3405ef9b4a5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="CONVOLUTION - CUDA">
+      <UniqueIdentifier>{2baf5cef-382f-45a0-a40e-d9fb58928a95}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="MODULES INTERFACE">
+      <UniqueIdentifier>{30504806-4a06-4194-8a9c-ade8d40fe01b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="SUPERMESH - CUDA">
+      <UniqueIdentifier>{10aeb9f0-e79c-4d94-b624-3a2646a59410}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="MESHES INTERFACE - CUDA">
+      <UniqueIdentifier>{9ffcbf4a-c53b-4160-8ba1-65b13e5cdb47}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="FUNCS - CUDA">
+      <UniqueIdentifier>{6b5f9432-fdc3-4d13-be73-e28d706f40e5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="TRANSPORT SOLVER">
+      <UniqueIdentifier>{08808d1b-837e-4661-ab59-3c7faefd14bf}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="TRANSPORT SOLVER - CUDA">
+      <UniqueIdentifier>{290cb31c-6d3d-4421-a200-d10dd39b5e9d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="DEMAG - SUPERMESH">
+      <UniqueIdentifier>{79f543a1-b42b-476f-b372-32e620d3715e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="DEMAG - SUPERMESH - CUDA">
+      <UniqueIdentifier>{f7eda04a-1b48-4731-9b8a-1d07d3d38ce2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="GRAPHICS_D3D">
+      <UniqueIdentifier>{fb91c83f-fdcb-45dc-90c6-770f221986d3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="GRAPHICS_SFML">
+      <UniqueIdentifier>{8c2bebca-0d01-4cde-bb02-e881c26dbcc6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="INTERFACE_CONSOLEONLY">
+      <UniqueIdentifier>{1c907210-696e-4f5b-8616-20aabec84860}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="MATERIALS DB">
+      <UniqueIdentifier>{15c6ac17-c957-40e5-836a-a253dc2733b8}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="ReadMe.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="BorisGraphics.h">
+      <Filter>GRAPHICS_D3D</Filter>
+    </ClInclude>
+    <ClInclude Include="D3D.h">
+      <Filter>GRAPHICS_D3D</Filter>
+    </ClInclude>
+    <ClInclude Include="BorisDisplay.h">
+      <Filter>INTERFACE</Filter>
+    </ClInclude>
+    <ClInclude Include="BorisInteractiveObjects.h">
+      <Filter>INTERACTIVE OBJ</Filter>
+    </ClInclude>
+    <ClInclude Include="BorisIO_Make.h">
+      <Filter>INTERACTIVE OBJ</Filter>
+    </ClInclude>
+    <ClInclude Include="WinSpaces.h">
+      <Filter>INTERFACE</Filter>
+    </ClInclude>
+    <ClInclude Include="TextObject.h">
+      <Filter>INTERFACE</Filter>
+    </ClInclude>
+    <ClInclude Include="Mesh_Dipole.h">
+      <Filter>MESHES</Filter>
+    </ClInclude>
+    <ClInclude Include="Mesh_Ferromagnetic.h">
+      <Filter>MESHES</Filter>
+    </ClInclude>
+    <ClInclude Include="Mesh_Insulator.h">
+      <Filter>MESHES</Filter>
+    </ClInclude>
+    <ClInclude Include="Mesh_Metal.h">
+      <Filter>MESHES</Filter>
+    </ClInclude>
+    <ClInclude Include="Mesh_FerromagneticCUDA.h">
+      <Filter>MESHES - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="Anisotropy.h">
+      <Filter>MODULES</Filter>
+    </ClInclude>
+    <ClInclude Include="Demag.h">
+      <Filter>MODULES</Filter>
+    </ClInclude>
+    <ClInclude Include="Exchange.h">
+      <Filter>MODULES</Filter>
+    </ClInclude>
+    <ClInclude Include="Heat.h">
+      <Filter>MODULES</Filter>
+    </ClInclude>
+    <ClInclude Include="SurfExchange.h">
+      <Filter>MODULES</Filter>
+    </ClInclude>
+    <ClInclude Include="Zeeman.h">
+      <Filter>MODULES</Filter>
+    </ClInclude>
+    <ClInclude Include="PhysQRep.h">
+      <Filter>GRAPHICS_D3D</Filter>
+    </ClInclude>
+    <ClInclude Include="ZeemanCUDA.h">
+      <Filter>MODULES - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="DiffEq.h">
+      <Filter>DIFF EQUATIONS</Filter>
+    </ClInclude>
+    <ClInclude Include="MaterialParameter.h">
+      <Filter>MAT PARAMS</Filter>
+    </ClInclude>
+    <ClInclude Include="MaterialParameterFormulas.h">
+      <Filter>MAT PARAMS</Filter>
+    </ClInclude>
+    <ClInclude Include="MeshParams.h">
+      <Filter>MAT PARAMS</Filter>
+    </ClInclude>
+    <ClInclude Include="DemagTFunc.h">
+      <Filter>FUNCS</Filter>
+    </ClInclude>
+    <ClInclude Include="OerstedTFunc.h">
+      <Filter>FUNCS</Filter>
+    </ClInclude>
+    <ClInclude Include="DataProcessing.h">
+      <Filter>DATA PROC</Filter>
+    </ClInclude>
+    <ClInclude Include="ErrorHandler.h">
+      <Filter>ERROR HANDLER</Filter>
+    </ClInclude>
+    <ClInclude Include="BorisWinapi.h">
+      <Filter>MAIN</Filter>
+    </ClInclude>
+    <ClInclude Include="Commands.h">
+      <Filter>COMMANDS</Filter>
+    </ClInclude>
+    <ClInclude Include="ScreenGrab.h">
+      <Filter>AUXILIARY</Filter>
+    </ClInclude>
+    <ClInclude Include="Boris_Enums_Defs.h">
+      <Filter>AUXILIARY</Filter>
+    </ClInclude>
+    <ClInclude Include="stdafx.h">
+      <Filter>AUXILIARY</Filter>
+    </ClInclude>
+    <ClInclude Include="targetver.h">
+      <Filter>AUXILIARY</Filter>
+    </ClInclude>
+    <ClInclude Include="SimSchedule.h">
+      <Filter>SIMULATION</Filter>
+    </ClInclude>
+    <ClInclude Include="SimSharedData.h">
+      <Filter>SIMULATION</Filter>
+    </ClInclude>
+    <ClInclude Include="Simulation.h">
+      <Filter>SIMULATION</Filter>
+    </ClInclude>
+    <ClInclude Include="SimulationData.h">
+      <Filter>SIMULATION</Filter>
+    </ClInclude>
+    <ClInclude Include="DiffEqCUDA.h">
+      <Filter>DIFF EQUATIONS - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="DiffEq_Defs.h">
+      <Filter>DIFF EQUATIONS</Filter>
+    </ClInclude>
+    <ClInclude Include="MeshParamsCUDA.h">
+      <Filter>MAT PARAMS - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="MaterialParameterCUDA.h">
+      <Filter>MAT PARAMS - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="MaterialParameterFormulasCUDA.h">
+      <Filter>MAT PARAMS - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="ParametersDefs.h">
+      <Filter>MAT PARAMS</Filter>
+    </ClInclude>
+    <ClInclude Include="PhysQ.h">
+      <Filter>GRAPHICS_D3D</Filter>
+    </ClInclude>
+    <ClInclude Include="Modules.h">
+      <Filter>MODULES INTERFACE</Filter>
+    </ClInclude>
+    <ClInclude Include="ModulesCUDA.h">
+      <Filter>MODULES INTERFACE - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="PhysQDefs.h">
+      <Filter>GRAPHICS_D3D</Filter>
+    </ClInclude>
+    <ClInclude Include="ExchangeCUDA.h">
+      <Filter>MODULES - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="AnisotropyCUDA.h">
+      <Filter>MODULES - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="Demag_N.h">
+      <Filter>MODULES</Filter>
+    </ClInclude>
+    <ClInclude Include="Oersted.h">
+      <Filter>MODULES - SUPERMESH</Filter>
+    </ClInclude>
+    <ClInclude Include="SHeat.h">
+      <Filter>MODULES - SUPERMESH</Filter>
+    </ClInclude>
+    <ClInclude Include="StrayField.h">
+      <Filter>MODULES - SUPERMESH</Filter>
+    </ClInclude>
+    <ClInclude Include="SuperMesh.h">
+      <Filter>SUPERMESH</Filter>
+    </ClInclude>
+    <ClInclude Include="Mesh.h">
+      <Filter>MESHES INTERFACE</Filter>
+    </ClInclude>
+    <ClInclude Include="Demag_NCUDA.h">
+      <Filter>MODULES - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="DemagCUDA.h">
+      <Filter>MODULES - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="Convolution.h">
+      <Filter>CONVOLUTION</Filter>
+    </ClInclude>
+    <ClInclude Include="ConvolutionData.h">
+      <Filter>CONVOLUTION</Filter>
+    </ClInclude>
+    <ClInclude Include="DemagKernel.h">
+      <Filter>CONVOLUTION</Filter>
+    </ClInclude>
+    <ClInclude Include="OerstedKernel.h">
+      <Filter>CONVOLUTION</Filter>
+    </ClInclude>
+    <ClInclude Include="DemagKernelCUDA.h">
+      <Filter>CONVOLUTION - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="ConvolutionCUDA.h">
+      <Filter>CONVOLUTION - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="ConvolutionDataCUDA.h">
+      <Filter>CONVOLUTION - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="SuperMeshCUDA.h">
+      <Filter>SUPERMESH - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="StrayFieldCUDA.h">
+      <Filter>MODULES - SUPERMESH - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="Mesh_DipoleCUDA.h">
+      <Filter>MESHES - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="MeshCUDA.h">
+      <Filter>MESHES INTERFACE - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="DipoleTFuncCUDA.h">
+      <Filter>FUNCS - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="MeshDisplayCUDA.h">
+      <Filter>MESHES INTERFACE - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="DiffEq_EquationsCUDA.h">
+      <Filter>DIFF EQUATIONS - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="ManagedDiffEqCUDA.h">
+      <Filter>DIFF EQUATIONS - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="ManagedMeshCUDA.h">
+      <Filter>MESHES INTERFACE - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="DiffEq_SEquationsCUDA.h">
+      <Filter>DIFF EQUATIONS - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="Mesh_InsulatorCUDA.h">
+      <Filter>MESHES - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="Mesh_MetalCUDA.h">
+      <Filter>MESHES - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="OerstedCUDA.h">
+      <Filter>MODULES - SUPERMESH - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="OerstedKernelCUDA.h">
+      <Filter>CONVOLUTION - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="HeatCUDA.h">
+      <Filter>MODULES - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="SHeatCUDA.h">
+      <Filter>MODULES - SUPERMESH - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="SurfExchangeCUDA.h">
+      <Filter>MODULES - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="DMExchange.h">
+      <Filter>MODULES</Filter>
+    </ClInclude>
+    <ClInclude Include="DMExchangeCUDA.h">
+      <Filter>MODULES - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="HeatCUDA_CMBND.h">
+      <Filter>MODULES - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="Transport.h">
+      <Filter>TRANSPORT SOLVER</Filter>
+    </ClInclude>
+    <ClInclude Include="STransport.h">
+      <Filter>TRANSPORT SOLVER</Filter>
+    </ClInclude>
+    <ClInclude Include="TransportCUDA.h">
+      <Filter>TRANSPORT SOLVER - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="TransportCUDA_Poisson.h">
+      <Filter>TRANSPORT SOLVER - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="STransportCUDA.h">
+      <Filter>TRANSPORT SOLVER - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="TransportCUDA_Poisson_Spin_V.h">
+      <Filter>TRANSPORT SOLVER - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="TransportCUDA_Poisson_Spin_S.h">
+      <Filter>TRANSPORT SOLVER - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="STransportCUDA_GInterf_V.h">
+      <Filter>TRANSPORT SOLVER - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="STransportCUDA_GInterf_S.h">
+      <Filter>TRANSPORT SOLVER - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="InteractiveObject.h">
+      <Filter>INTERACTIVE OBJ</Filter>
+    </ClInclude>
+    <ClInclude Include="SkyrmionTrack.h">
+      <Filter>MESHES</Filter>
+    </ClInclude>
+    <ClInclude Include="iDMExchange.h">
+      <Filter>MODULES</Filter>
+    </ClInclude>
+    <ClInclude Include="iDMExchangeCUDA.h">
+      <Filter>MODULES - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="SOTField.h">
+      <Filter>MODULES</Filter>
+    </ClInclude>
+    <ClInclude Include="SOTFieldCUDA.h">
+      <Filter>MODULES - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="DipoleTFunc.h">
+      <Filter>FUNCS</Filter>
+    </ClInclude>
+    <ClInclude Include="MeshParamsControl.h">
+      <Filter>MESHES INTERFACE</Filter>
+    </ClInclude>
+    <ClInclude Include="MeshParamsControlCUDA.h">
+      <Filter>MESHES INTERFACE - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="Roughness.h">
+      <Filter>MODULES</Filter>
+    </ClInclude>
+    <ClInclude Include="RoughnessKernel.h">
+      <Filter>CONVOLUTION</Filter>
+    </ClInclude>
+    <ClInclude Include="RoughnessCUDA.h">
+      <Filter>MODULES - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="SDemag.h">
+      <Filter>DEMAG - SUPERMESH</Filter>
+    </ClInclude>
+    <ClInclude Include="SDemag_Demag.h">
+      <Filter>DEMAG - SUPERMESH</Filter>
+    </ClInclude>
+    <ClInclude Include="SDemagCUDA.h">
+      <Filter>DEMAG - SUPERMESH - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="SDemagCUDA_Demag.h">
+      <Filter>DEMAG - SUPERMESH - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="CompileFlags.h">
+      <Filter>AUXILIARY</Filter>
+    </ClInclude>
+    <ClInclude Include="DemagKernelCollection.h">
+      <Filter>CONVOLUTION</Filter>
+    </ClInclude>
+    <ClInclude Include="AnisotropyCubi.h">
+      <Filter>MODULES</Filter>
+    </ClInclude>
+    <ClInclude Include="AnisotropyCubiCUDA.h">
+      <Filter>MODULES - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="DemagKernelCollectionCUDA.h">
+      <Filter>CONVOLUTION - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="DemagKernelCollectionCUDA_KerType.h">
+      <Filter>CONVOLUTION - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="SDemag_KernelCollection.h">
+      <Filter>DEMAG - SUPERMESH</Filter>
+    </ClInclude>
+    <ClInclude Include="SDemagCUDA_KernelCollection.h">
+      <Filter>DEMAG - SUPERMESH - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="ColorDefs.h">
+      <Filter>INTERFACE</Filter>
+    </ClInclude>
+    <ClInclude Include="TextFormatting.h">
+      <Filter>INTERFACE</Filter>
+    </ClInclude>
+    <ClInclude Include="BorisGraphicsSFML.h">
+      <Filter>GRAPHICS_SFML</Filter>
+    </ClInclude>
+    <ClInclude Include="BorisDisplayNonGraphical.h">
+      <Filter>INTERFACE_CONSOLEONLY</Filter>
+    </ClInclude>
+    <ClInclude Include="MaterialsDataBase.h">
+      <Filter>MATERIALS DB</Filter>
+    </ClInclude>
+    <ClInclude Include="MeshDefs.h">
+      <Filter>MESHES INTERFACE</Filter>
+    </ClInclude>
+    <ClInclude Include="DemagTFunc_Asympt.h">
+      <Filter>FUNCS</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="BorisGraphics.cpp">
+      <Filter>GRAPHICS_D3D</Filter>
+    </ClCompile>
+    <ClCompile Include="D3D.cpp">
+      <Filter>GRAPHICS_D3D</Filter>
+    </ClCompile>
+    <ClCompile Include="BorisDisplay.cpp">
+      <Filter>INTERFACE</Filter>
+    </ClCompile>
+    <ClCompile Include="BorisInteractiveObjects.cpp">
+      <Filter>INTERACTIVE OBJ</Filter>
+    </ClCompile>
+    <ClCompile Include="BorisIOGenerators.cpp">
+      <Filter>INTERACTIVE OBJ</Filter>
+    </ClCompile>
+    <ClCompile Include="WinSpaces.cpp">
+      <Filter>INTERFACE</Filter>
+    </ClCompile>
+    <ClCompile Include="TextObject.cpp">
+      <Filter>INTERFACE</Filter>
+    </ClCompile>
+    <ClCompile Include="Mesh_Dipole.cpp">
+      <Filter>MESHES</Filter>
+    </ClCompile>
+    <ClCompile Include="Mesh_Ferromagnetic.cpp">
+      <Filter>MESHES</Filter>
+    </ClCompile>
+    <ClCompile Include="Mesh_Insulator.cpp">
+      <Filter>MESHES</Filter>
+    </ClCompile>
+    <ClCompile Include="Mesh_Metal.cpp">
+      <Filter>MESHES</Filter>
+    </ClCompile>
+    <ClCompile Include="Mesh_FerromagneticCUDA.cpp">
+      <Filter>MESHES - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="Anisotropy.cpp">
+      <Filter>MODULES</Filter>
+    </ClCompile>
+    <ClCompile Include="Demag.cpp">
+      <Filter>MODULES</Filter>
+    </ClCompile>
+    <ClCompile Include="Exchange.cpp">
+      <Filter>MODULES</Filter>
+    </ClCompile>
+    <ClCompile Include="Zeeman.cpp">
+      <Filter>MODULES</Filter>
+    </ClCompile>
+    <ClCompile Include="Heat.cpp">
+      <Filter>MODULES</Filter>
+    </ClCompile>
+    <ClCompile Include="PhysQRep.cpp">
+      <Filter>GRAPHICS_D3D</Filter>
+    </ClCompile>
+    <ClCompile Include="ZeemanCUDA.cpp">
+      <Filter>MODULES - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="SurfExchange.cpp">
+      <Filter>MODULES</Filter>
+    </ClCompile>
+    <ClCompile Include="DiffEq.cpp">
+      <Filter>DIFF EQUATIONS</Filter>
+    </ClCompile>
+    <ClCompile Include="DiffEq_Equations.cpp">
+      <Filter>DIFF EQUATIONS</Filter>
+    </ClCompile>
+    <ClCompile Include="DiffEq_Evals.cpp">
+      <Filter>DIFF EQUATIONS</Filter>
+    </ClCompile>
+    <ClCompile Include="DiffEq_SEquations.cpp">
+      <Filter>DIFF EQUATIONS</Filter>
+    </ClCompile>
+    <ClCompile Include="MaterialParameterFormulas.cpp">
+      <Filter>MAT PARAMS</Filter>
+    </ClCompile>
+    <ClCompile Include="MeshParams.cpp">
+      <Filter>MAT PARAMS</Filter>
+    </ClCompile>
+    <ClCompile Include="OerstedTFunc.cpp">
+      <Filter>FUNCS</Filter>
+    </ClCompile>
+    <ClCompile Include="DemagTFunc.cpp">
+      <Filter>FUNCS</Filter>
+    </ClCompile>
+    <ClCompile Include="DataProcessing.cpp">
+      <Filter>DATA PROC</Filter>
+    </ClCompile>
+    <ClCompile Include="ErrorHandler.cpp">
+      <Filter>ERROR HANDLER</Filter>
+    </ClCompile>
+    <ClCompile Include="BorisWinapi.cpp">
+      <Filter>MAIN</Filter>
+    </ClCompile>
+    <ClCompile Include="Commands.cpp">
+      <Filter>COMMANDS</Filter>
+    </ClCompile>
+    <ClCompile Include="stdafx.cpp">
+      <Filter>AUXILIARY</Filter>
+    </ClCompile>
+    <ClCompile Include="SimFiles.cpp">
+      <Filter>SIMULATION</Filter>
+    </ClCompile>
+    <ClCompile Include="SimSchedule.cpp">
+      <Filter>SIMULATION</Filter>
+    </ClCompile>
+    <ClCompile Include="SimSharedData.cpp">
+      <Filter>SIMULATION</Filter>
+    </ClCompile>
+    <ClCompile Include="Simulation.cpp">
+      <Filter>SIMULATION</Filter>
+    </ClCompile>
+    <ClCompile Include="SimulationData.cpp">
+      <Filter>SIMULATION</Filter>
+    </ClCompile>
+    <ClCompile Include="DiffEqCUDA.cpp">
+      <Filter>DIFF EQUATIONS - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="MeshParamsCUDA.cpp">
+      <Filter>MAT PARAMS - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="MaterialParameter.cpp">
+      <Filter>MAT PARAMS</Filter>
+    </ClCompile>
+    <ClCompile Include="Modules.cpp">
+      <Filter>MODULES INTERFACE</Filter>
+    </ClCompile>
+    <ClCompile Include="ExchangeCUDA.cpp">
+      <Filter>MODULES - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="AnisotropyCUDA.cpp">
+      <Filter>MODULES - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="Demag_N.cpp">
+      <Filter>MODULES</Filter>
+    </ClCompile>
+    <ClCompile Include="Oersted.cpp">
+      <Filter>MODULES - SUPERMESH</Filter>
+    </ClCompile>
+    <ClCompile Include="SHeat.cpp">
+      <Filter>MODULES - SUPERMESH</Filter>
+    </ClCompile>
+    <ClCompile Include="StrayField.cpp">
+      <Filter>MODULES - SUPERMESH</Filter>
+    </ClCompile>
+    <ClCompile Include="SuperMesh.cpp">
+      <Filter>SUPERMESH</Filter>
+    </ClCompile>
+    <ClCompile Include="Mesh.cpp">
+      <Filter>MESHES INTERFACE</Filter>
+    </ClCompile>
+    <ClCompile Include="Demag_NCUDA.cpp">
+      <Filter>MODULES - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="DemagCUDA.cpp">
+      <Filter>MODULES - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="PhysQ.cpp">
+      <Filter>GRAPHICS_D3D</Filter>
+    </ClCompile>
+    <ClCompile Include="ConvolutionData.cpp">
+      <Filter>CONVOLUTION</Filter>
+    </ClCompile>
+    <ClCompile Include="DemagKernel.cpp">
+      <Filter>CONVOLUTION</Filter>
+    </ClCompile>
+    <ClCompile Include="OerstedKernel.cpp">
+      <Filter>CONVOLUTION</Filter>
+    </ClCompile>
+    <ClCompile Include="ConvolutionDataCUDA.cpp">
+      <Filter>CONVOLUTION - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="DemagKernelCUDA.cpp">
+      <Filter>CONVOLUTION - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="SuperMeshCUDA.cpp">
+      <Filter>SUPERMESH - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="Mesh_DipoleCUDA.cpp">
+      <Filter>MESHES - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="StrayFieldCUDA.cpp">
+      <Filter>MODULES - SUPERMESH - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="MeshCUDA.cpp">
+      <Filter>MESHES INTERFACE - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="MeshDisplayCUDA.cpp">
+      <Filter>MESHES INTERFACE - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="MeshControl.cpp">
+      <Filter>MESHES INTERFACE</Filter>
+    </ClCompile>
+    <ClCompile Include="MeshDisplay.cpp">
+      <Filter>MESHES INTERFACE</Filter>
+    </ClCompile>
+    <ClCompile Include="MeshModules.cpp">
+      <Filter>MESHES INTERFACE</Filter>
+    </ClCompile>
+    <ClCompile Include="DiffEq_Iterate.cpp">
+      <Filter>DIFF EQUATIONS</Filter>
+    </ClCompile>
+    <ClCompile Include="DiffEq_Common.cpp">
+      <Filter>DIFF EQUATIONS</Filter>
+    </ClCompile>
+    <ClCompile Include="DiffEq_IterateCUDA.cpp">
+      <Filter>DIFF EQUATIONS - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="ManagedMeshCUDA.cpp">
+      <Filter>MESHES INTERFACE - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="ManagedDiffEqCUDA.cpp">
+      <Filter>DIFF EQUATIONS - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="Mesh_InsulatorCUDA.cpp">
+      <Filter>MESHES - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="Mesh_MetalCUDA.cpp">
+      <Filter>MESHES - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="SuperMeshControl.cpp">
+      <Filter>SUPERMESH</Filter>
+    </ClCompile>
+    <ClCompile Include="SuperMeshDisplay.cpp">
+      <Filter>SUPERMESH</Filter>
+    </ClCompile>
+    <ClCompile Include="SuperMeshMeshes.cpp">
+      <Filter>SUPERMESH</Filter>
+    </ClCompile>
+    <ClCompile Include="SuperMeshModules.cpp">
+      <Filter>SUPERMESH</Filter>
+    </ClCompile>
+    <ClCompile Include="SuperMeshParams.cpp">
+      <Filter>SUPERMESH</Filter>
+    </ClCompile>
+    <ClCompile Include="SuperMeshSimulation.cpp">
+      <Filter>SUPERMESH</Filter>
+    </ClCompile>
+    <ClCompile Include="OerstedCUDA.cpp">
+      <Filter>MODULES - SUPERMESH - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="OerstedKernelCUDA.cpp">
+      <Filter>CONVOLUTION - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="SHeatCUDA.cpp">
+      <Filter>MODULES - SUPERMESH - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="HeatCUDA.cpp">
+      <Filter>MODULES - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="DMExchange.cpp">
+      <Filter>MODULES</Filter>
+    </ClCompile>
+    <ClCompile Include="SurfExchangeCUDA.cpp">
+      <Filter>MODULES - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="DMExchangeCUDA.cpp">
+      <Filter>MODULES - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="HeatCUDA_CMBND.cpp">
+      <Filter>MODULES - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="Transport.cpp">
+      <Filter>TRANSPORT SOLVER</Filter>
+    </ClCompile>
+    <ClCompile Include="STransport.cpp">
+      <Filter>TRANSPORT SOLVER</Filter>
+    </ClCompile>
+    <ClCompile Include="STransport_Charge.cpp">
+      <Filter>TRANSPORT SOLVER</Filter>
+    </ClCompile>
+    <ClCompile Include="STransport_Spin.cpp">
+      <Filter>TRANSPORT SOLVER</Filter>
+    </ClCompile>
+    <ClCompile Include="TransportCUDA.cpp">
+      <Filter>TRANSPORT SOLVER - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="TransportCUDA_Poisson.cpp">
+      <Filter>TRANSPORT SOLVER - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="STransportCUDA.cpp">
+      <Filter>TRANSPORT SOLVER - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="STransportCUDA_Charge.cpp">
+      <Filter>TRANSPORT SOLVER - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="STransportCUDA_Spin.cpp">
+      <Filter>TRANSPORT SOLVER - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="Transport_Charge.cpp">
+      <Filter>TRANSPORT SOLVER</Filter>
+    </ClCompile>
+    <ClCompile Include="Transport_Spin.cpp">
+      <Filter>TRANSPORT SOLVER</Filter>
+    </ClCompile>
+    <ClCompile Include="TransportCUDA_Poisson_Spin_V.cpp">
+      <Filter>TRANSPORT SOLVER - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="TransportCUDA_Poisson_Spin_S.cpp">
+      <Filter>TRANSPORT SOLVER - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="STransport_Spin_GInterf.cpp">
+      <Filter>TRANSPORT SOLVER</Filter>
+    </ClCompile>
+    <ClCompile Include="SkyrmionTrack.cpp">
+      <Filter>MESHES</Filter>
+    </ClCompile>
+    <ClCompile Include="iDMExchange.cpp">
+      <Filter>MODULES</Filter>
+    </ClCompile>
+    <ClCompile Include="iDMExchangeCUDA.cpp">
+      <Filter>MODULES - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="SOTField.cpp">
+      <Filter>MODULES</Filter>
+    </ClCompile>
+    <ClCompile Include="SOTFieldCUDA.cpp">
+      <Filter>MODULES - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="DipoleTFunc.cpp">
+      <Filter>FUNCS</Filter>
+    </ClCompile>
+    <ClCompile Include="MeshParamsControl.cpp">
+      <Filter>MESHES INTERFACE</Filter>
+    </ClCompile>
+    <ClCompile Include="Roughness.cpp">
+      <Filter>MODULES</Filter>
+    </ClCompile>
+    <ClCompile Include="RoughnessKernel.cpp">
+      <Filter>CONVOLUTION</Filter>
+    </ClCompile>
+    <ClCompile Include="RoughnessCUDA.cpp">
+      <Filter>MODULES - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="Mesh_Ferromagnetic_Control.cpp">
+      <Filter>MESHES</Filter>
+    </ClCompile>
+    <ClCompile Include="SDemag.cpp">
+      <Filter>DEMAG - SUPERMESH</Filter>
+    </ClCompile>
+    <ClCompile Include="SDemag_Demag.cpp">
+      <Filter>DEMAG - SUPERMESH</Filter>
+    </ClCompile>
+    <ClCompile Include="SDemagCUDA.cpp">
+      <Filter>DEMAG - SUPERMESH - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="SDemagCUDA_Demag.cpp">
+      <Filter>DEMAG - SUPERMESH - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="DemagKernelCollection.cpp">
+      <Filter>CONVOLUTION</Filter>
+    </ClCompile>
+    <ClCompile Include="DemagTFunc_fg.cpp">
+      <Filter>FUNCS</Filter>
+    </ClCompile>
+    <ClCompile Include="DemagTFunc_Asympt.cpp">
+      <Filter>FUNCS</Filter>
+    </ClCompile>
+    <ClCompile Include="DemagTFunc_Test.cpp">
+      <Filter>FUNCS</Filter>
+    </ClCompile>
+    <ClCompile Include="DemagTFunc_Shifted.cpp">
+      <Filter>FUNCS</Filter>
+    </ClCompile>
+    <ClCompile Include="DemagTFunc_Irregular.cpp">
+      <Filter>FUNCS</Filter>
+    </ClCompile>
+    <ClCompile Include="DemagTFunc_L.cpp">
+      <Filter>FUNCS</Filter>
+    </ClCompile>
+    <ClCompile Include="DemagKernelCollection_Calc.cpp">
+      <Filter>CONVOLUTION</Filter>
+    </ClCompile>
+    <ClCompile Include="DemagKernelCollection_Mult.cpp">
+      <Filter>CONVOLUTION</Filter>
+    </ClCompile>
+    <ClCompile Include="AnisotropyCubi.cpp">
+      <Filter>MODULES</Filter>
+    </ClCompile>
+    <ClCompile Include="AnisotropyCubiCUDA.cpp">
+      <Filter>MODULES - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="DemagKernelCollectionCUDA.cpp">
+      <Filter>CONVOLUTION - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="DemagKernelCollectionCUDA_Calc.cpp">
+      <Filter>CONVOLUTION - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="SDemag_KernelCollection.cpp">
+      <Filter>DEMAG - SUPERMESH</Filter>
+    </ClCompile>
+    <ClCompile Include="BorisConsole.cpp">
+      <Filter>MAIN</Filter>
+    </ClCompile>
+    <ClCompile Include="BorisDisplayNonGraphical.cpp">
+      <Filter>INTERFACE_CONSOLEONLY</Filter>
+    </ClCompile>
+    <ClCompile Include="MaterialsDataBase.cpp">
+      <Filter>MATERIALS DB</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="BorisWinapi.rc">
+      <Filter>Resource Files</Filter>
+    </ResourceCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="small.ico">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="BorisWinapi.ico">
+      <Filter>Resource Files</Filter>
+    </Image>
+  </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="ShaderFile.fx">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="ShaderFile_PS.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="ShaderFile_VS.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <CudaCompile Include="ZeemanCUDA.cu">
+      <Filter>MODULES - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="DiffEq_EvalsCUDA.cu">
+      <Filter>DIFF EQUATIONS - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="ModulesCUDA.cu">
+      <Filter>MODULES INTERFACE - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="ExchangeCUDA.cu">
+      <Filter>MODULES - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="AnisotropyCubiCUDA.cu">
+      <Filter>MODULES - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="AnisotropyUniCUDA.cu">
+      <Filter>MODULES - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="Demag_NCUDA.cu">
+      <Filter>MODULES - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="DemagKernelCUDA.cu">
+      <Filter>CONVOLUTION - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="ConvolutionDataCUDA.cu">
+      <Filter>CONVOLUTION - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="StrayFieldCUDA.cu">
+      <Filter>MODULES - SUPERMESH - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="DiffEq_SEquationsCUDA.cu">
+      <Filter>DIFF EQUATIONS - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="OerstedKernelCUDA.cu">
+      <Filter>CONVOLUTION - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="SHeatCUDA.cu">
+      <Filter>MODULES - SUPERMESH - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="HeatCUDA.cu">
+      <Filter>MODULES - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="DiffEqCUDA.cu">
+      <Filter>DIFF EQUATIONS - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="SurfExchangeCUDA.cu">
+      <Filter>MODULES - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="DMExchangeCUDA.cu">
+      <Filter>MODULES - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="TransportCUDA.cu">
+      <Filter>TRANSPORT SOLVER - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="STransportCUDA_Charge.cu">
+      <Filter>TRANSPORT SOLVER - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="STransportCUDA_Spin.cu">
+      <Filter>TRANSPORT SOLVER - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="TransportCUDA_Charge.cu">
+      <Filter>TRANSPORT SOLVER - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="TransportCUDA_Spin.cu">
+      <Filter>TRANSPORT SOLVER - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="iDMExchangeCUDA.cu">
+      <Filter>MODULES - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="SOTFieldCUDA.cu">
+      <Filter>MODULES - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="RoughnessCUDA.cu">
+      <Filter>MODULES - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="SDemagCUDA_Demag.cu">
+      <Filter>DEMAG - SUPERMESH - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="STransportCUDA.cu">
+      <Filter>TRANSPORT SOLVER - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="DiffEq_EvalsLLGCUDA.cu">
+      <Filter>DIFF EQUATIONS - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="DemagKernelCollectionCUDA_Mult.cu">
+      <Filter>CONVOLUTION - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="DemagKernelCollectionCUDA_KerType.cu">
+      <Filter>CONVOLUTION - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="SDemagCUDA_KernelCollection.cu">
+      <Filter>DEMAG - SUPERMESH - CUDA</Filter>
+    </CudaCompile>
+  </ItemGroup>
+</Project>

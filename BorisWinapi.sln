@@ -1,0 +1,157 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.27130.2010
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "BorisWinapi", "BorisWinapi\BorisWinapi.vcxproj", "{06C58E6B-9051-4D2D-BB44-FF942864B5F1}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "BorisLib", "BorisLib", "{7A135218-DE5E-478A-A63D-F97D7A306B01}"
+	ProjectSection(SolutionItems) = preProject
+		BorisLib\BorisLib.h = BorisLib\BorisLib.h
+		BorisLib\FFT.h = BorisLib\FFT.h
+		BorisLib\FFT_mng.h = BorisLib\FFT_mng.h
+		BorisLib\FFT_R2.h = BorisLib\FFT_R2.h
+		BorisLib\FFT_R4.h = BorisLib\FFT_R4.h
+		BorisLib\FFT_shuf.h = BorisLib\FFT_shuf.h
+		BorisLib\FFT_SR.h = BorisLib\FFT_SR.h
+		BorisLib\Funcs_Algorithms.h = BorisLib\Funcs_Algorithms.h
+		BorisLib\Funcs_Aux.h = BorisLib\Funcs_Aux.h
+		BorisLib\Funcs_Aux_base.h = BorisLib\Funcs_Aux_base.h
+		BorisLib\Funcs_Conv.h = BorisLib\Funcs_Conv.h
+		BorisLib\Funcs_Files.h = BorisLib\Funcs_Files.h
+		BorisLib\Funcs_Math.h = BorisLib\Funcs_Math.h
+		BorisLib\Funcs_Math_base.h = BorisLib\Funcs_Math_base.h
+		BorisLib\Funcs_Net.h = BorisLib\Funcs_Net.h
+		BorisLib\Funcs_Strings.h = BorisLib\Funcs_Strings.h
+		BorisLib\Funcs_VEC_Algorithms.h = BorisLib\Funcs_VEC_Algorithms.h
+		BorisLib\Funcs_Vectors.h = BorisLib\Funcs_Vectors.h
+		BorisLib\Funcs_Windows.h = BorisLib\Funcs_Windows.h
+		BorisLib\Introspection.h = BorisLib\Introspection.h
+		BorisLib\Introspection_base.h = BorisLib\Introspection_base.h
+		BorisLib\OmpReduction.h = BorisLib\OmpReduction.h
+		BorisLib\prng.h = BorisLib\prng.h
+		BorisLib\ProgramState.h = BorisLib\ProgramState.h
+		BorisLib\Threads.h = BorisLib\Threads.h
+		BorisLib\Tuples.h = BorisLib\Tuples.h
+		BorisLib\Types.h = BorisLib\Types.h
+		BorisLib\Types_Any.h = BorisLib\Types_Any.h
+		BorisLib\Types_Conversion.h = BorisLib\Types_Conversion.h
+		BorisLib\Types_Rect.h = BorisLib\Types_Rect.h
+		BorisLib\Types_ReIm.h = BorisLib\Types_ReIm.h
+		BorisLib\Types_Sequences.h = BorisLib\Types_Sequences.h
+		BorisLib\Types_VAL.h = BorisLib\Types_VAL.h
+		BorisLib\VEC.h = BorisLib\VEC.h
+		BorisLib\VEC_aux.h = BorisLib\VEC_aux.h
+		BorisLib\VEC_generate.h = BorisLib\VEC_generate.h
+		BorisLib\VEC_matops.h = BorisLib\VEC_matops.h
+		BorisLib\VEC_MeshTransfer.h = BorisLib\VEC_MeshTransfer.h
+		BorisLib\VEC_mng.h = BorisLib\VEC_mng.h
+		BorisLib\VEC_oper.h = BorisLib\VEC_oper.h
+		BorisLib\VEC_trans.h = BorisLib\VEC_trans.h
+		BorisLib\VEC_VC.h = BorisLib\VEC_VC.h
+		BorisLib\VEC_VC_CGSolve.h = BorisLib\VEC_VC_CGSolve.h
+		BorisLib\VEC_VC_cmbnd.h = BorisLib\VEC_VC_cmbnd.h
+		BorisLib\VEC_VC_Curl.h = BorisLib\VEC_VC_Curl.h
+		BorisLib\VEC_VC_Del.h = BorisLib\VEC_VC_Del.h
+		BorisLib\VEC_VC_Div.h = BorisLib\VEC_VC_Div.h
+		BorisLib\VEC_VC_flags.h = BorisLib\VEC_VC_flags.h
+		BorisLib\VEC_VC_genshape.h = BorisLib\VEC_VC_genshape.h
+		BorisLib\VEC_VC_Grad.h = BorisLib\VEC_VC_Grad.h
+		BorisLib\VEC_VC_mng.h = BorisLib\VEC_VC_mng.h
+		BorisLib\VEC_VC_oper.h = BorisLib\VEC_VC_oper.h
+		BorisLib\VEC_VC_shape.h = BorisLib\VEC_VC_shape.h
+		BorisLib\VEC_VC_Solve.h = BorisLib\VEC_VC_Solve.h
+		BorisLib\VEC_VC_Voronoi.h = BorisLib\VEC_VC_Voronoi.h
+		BorisLib\VEC_Voronoi.h = BorisLib\VEC_Voronoi.h
+		BorisLib\vector_lut.h = BorisLib\vector_lut.h
+		BorisLib\WinSocks.h = BorisLib\WinSocks.h
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "BorisCUDALib", "BorisCUDALib", "{EEFB0645-DACE-49BF-9894-BC978E1B030A}"
+	ProjectSection(SolutionItems) = preProject
+		BorisCUDALib\alloc_cpy.cuh = BorisCUDALib\alloc_cpy.cuh
+		BorisCUDALib\alloc_cpy.h = BorisCUDALib\alloc_cpy.h
+		BorisCUDALib\atomics.cuh = BorisCUDALib\atomics.cuh
+		BorisCUDALib\BorisCUDALIB.cuh = BorisCUDALib\BorisCUDALIB.cuh
+		BorisCUDALib\BorisCUDALib.h = BorisCUDALib\BorisCUDALib.h
+		BorisCUDALib\cu_prng.cuh = BorisCUDALib\cu_prng.cuh
+		BorisCUDALib\cu_prng.h = BorisCUDALib\cu_prng.h
+		BorisCUDALib\cuArray.h = BorisCUDALib\cuArray.h
+		BorisCUDALib\cuArray_aux.h = BorisCUDALib\cuArray_aux.h
+		BorisCUDALib\cuArray_mng_cpu.h = BorisCUDALib\cuArray_mng_cpu.h
+		BorisCUDALib\cuArray_mng_gpu.h = BorisCUDALib\cuArray_mng_gpu.h
+		BorisCUDALib\cuArray_sizing.h = BorisCUDALib\cuArray_sizing.h
+		BorisCUDALib\cuArray_transfer.h = BorisCUDALib\cuArray_transfer.h
+		BorisCUDALib\cuBLib_Flags.h = BorisCUDALib\cuBLib_Flags.h
+		BorisCUDALib\cuBRealComplex.h = BorisCUDALib\cuBRealComplex.h
+		BorisCUDALib\CUDAError.h = BorisCUDALib\CUDAError.h
+		BorisCUDALib\cuFuncs_Aux.h = BorisCUDALib\cuFuncs_Aux.h
+		BorisCUDALib\cuFuncs_Math.cuh = BorisCUDALib\cuFuncs_Math.cuh
+		BorisCUDALib\cuFuncs_Math.h = BorisCUDALib\cuFuncs_Math.h
+		BorisCUDALib\cuObject.h = BorisCUDALib\cuObject.h
+		BorisCUDALib\cuTypes.h = BorisCUDALib\cuTypes.h
+		BorisCUDALib\cuTypes_pair.h = BorisCUDALib\cuTypes_pair.h
+		BorisCUDALib\cuTypes_Rect.h = BorisCUDALib\cuTypes_Rect.h
+		BorisCUDALib\cuTypes_ReIm.h = BorisCUDALib\cuTypes_ReIm.h
+		BorisCUDALib\cuTypes_VAL.h = BorisCUDALib\cuTypes_VAL.h
+		BorisCUDALib\cuVEC.h = BorisCUDALib\cuVEC.h
+		BorisCUDALib\cuVEC_aux.cuh = BorisCUDALib\cuVEC_aux.cuh
+		BorisCUDALib\cuVEC_aux.h = BorisCUDALib\cuVEC_aux.h
+		BorisCUDALib\cuVEC_generate.cuh = BorisCUDALib\cuVEC_generate.cuh
+		BorisCUDALib\cuVEC_MeshTransfer.cuh = BorisCUDALib\cuVEC_MeshTransfer.cuh
+		BorisCUDALib\cuVEC_MeshTransfer.h = BorisCUDALib\cuVEC_MeshTransfer.h
+		BorisCUDALib\cuVEC_mng.cuh = BorisCUDALib\cuVEC_mng.cuh
+		BorisCUDALib\cuVEC_mng.h = BorisCUDALib\cuVEC_mng.h
+		BorisCUDALib\cuVEC_oper.cuh = BorisCUDALib\cuVEC_oper.cuh
+		BorisCUDALib\cuVEC_oper.h = BorisCUDALib\cuVEC_oper.h
+		BorisCUDALib\cuVEC_VC.h = BorisCUDALib\cuVEC_VC.h
+		BorisCUDALib\cuVEC_VC_aux.h = BorisCUDALib\cuVEC_VC_aux.h
+		BorisCUDALib\cuVEC_VC_cmbnd.cuh = BorisCUDALib\cuVEC_VC_cmbnd.cuh
+		BorisCUDALib\cuVEC_VC_cmbnd.h = BorisCUDALib\cuVEC_VC_cmbnd.h
+		BorisCUDALib\cuVEC_VC_curl.h = BorisCUDALib\cuVEC_VC_curl.h
+		BorisCUDALib\cuVEC_VC_del.h = BorisCUDALib\cuVEC_VC_del.h
+		BorisCUDALib\cuVEC_VC_div.h = BorisCUDALib\cuVEC_VC_div.h
+		BorisCUDALib\cuVEC_VC_flags.cuh = BorisCUDALib\cuVEC_VC_flags.cuh
+		BorisCUDALib\cuVEC_VC_flags.h = BorisCUDALib\cuVEC_VC_flags.h
+		BorisCUDALib\cuVEC_VC_grad.h = BorisCUDALib\cuVEC_VC_grad.h
+		BorisCUDALib\cuVEC_VC_mng.cuh = BorisCUDALib\cuVEC_VC_mng.cuh
+		BorisCUDALib\cuVEC_VC_mng.h = BorisCUDALib\cuVEC_VC_mng.h
+		BorisCUDALib\cuVEC_VC_oper.cuh = BorisCUDALib\cuVEC_VC_oper.cuh
+		BorisCUDALib\cuVEC_VC_oper.h = BorisCUDALib\cuVEC_VC_oper.h
+		BorisCUDALib\cuVEC_VC_shape.cuh = BorisCUDALib\cuVEC_VC_shape.cuh
+		BorisCUDALib\cuVEC_VC_shape.h = BorisCUDALib\cuVEC_VC_shape.h
+		BorisCUDALib\cuVEC_VC_solve.cuh = BorisCUDALib\cuVEC_VC_solve.cuh
+		BorisCUDALib\launchers.h = BorisCUDALib\launchers.h
+		BorisCUDALib\Reduction.cuh = BorisCUDALib\Reduction.cuh
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Win32 = Debug|Win32
+		Debug|x64 = Debug|x64
+		Release|Win32 = Release|Win32
+		Release|x64 = Release|x64
+		test|Win32 = test|Win32
+		test|x64 = test|x64
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{06C58E6B-9051-4D2D-BB44-FF942864B5F1}.Debug|Win32.ActiveCfg = Release|Win32
+		{06C58E6B-9051-4D2D-BB44-FF942864B5F1}.Debug|Win32.Build.0 = Release|Win32
+		{06C58E6B-9051-4D2D-BB44-FF942864B5F1}.Debug|x64.ActiveCfg = Debug|x64
+		{06C58E6B-9051-4D2D-BB44-FF942864B5F1}.Debug|x64.Build.0 = Debug|x64
+		{06C58E6B-9051-4D2D-BB44-FF942864B5F1}.Release|Win32.ActiveCfg = Release|Win32
+		{06C58E6B-9051-4D2D-BB44-FF942864B5F1}.Release|Win32.Build.0 = Release|Win32
+		{06C58E6B-9051-4D2D-BB44-FF942864B5F1}.Release|x64.ActiveCfg = Release|x64
+		{06C58E6B-9051-4D2D-BB44-FF942864B5F1}.Release|x64.Build.0 = Release|x64
+		{06C58E6B-9051-4D2D-BB44-FF942864B5F1}.test|Win32.ActiveCfg = test|Win32
+		{06C58E6B-9051-4D2D-BB44-FF942864B5F1}.test|Win32.Build.0 = test|Win32
+		{06C58E6B-9051-4D2D-BB44-FF942864B5F1}.test|x64.ActiveCfg = test|x64
+		{06C58E6B-9051-4D2D-BB44-FF942864B5F1}.test|x64.Build.0 = test|x64
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {98C71219-87E5-48C0-A840-E71B0C2762CF}
+	EndGlobalSection
+EndGlobal
