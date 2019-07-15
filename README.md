@@ -11,7 +11,7 @@ Latest compiled version with installer found here : https://boris-spintronics.uk
 
 # Manual
 
-Latest manual rolled in with installer, also found here together with examples: https://github.com/SerbanL/Boris2/blob/master/Manual/BorisManual-v230.pdf
+Latest manual rolled in with installer, also found here in the Manual directory together with examples. 
 
 # External Dependencies
 
