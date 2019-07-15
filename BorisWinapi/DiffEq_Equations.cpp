@@ -20,6 +20,15 @@ DBL3 DifferentialEquation::LLG(int idx)
 	return (-GAMMA * grel / (1 + alpha*alpha)) * ((pMesh->M[idx] ^ pMesh->Heff[idx]) + alpha * ((pMesh->M[idx] / Ms) ^ (pMesh->M[idx] ^ pMesh->Heff[idx])));
 }
 
+//Landau-Lifshitz-Gilbert equation but with no precession term and damping set to 1 : faster relaxation for static problems
+DBL3 DifferentialEquation::LLGStatic(int idx)
+{
+	double Ms = pMesh->Ms;
+	pMesh->update_parameters_mcoarse(idx, pMesh->Ms, Ms);
+
+	return (-GAMMA / 2) * ((pMesh->M[idx] / Ms) ^ (pMesh->M[idx] ^ pMesh->Heff[idx]));
+}
+
 //------------------------------------------------------------------------------------------------------
 
 DBL3 DifferentialEquation::LLGSTT(int idx)

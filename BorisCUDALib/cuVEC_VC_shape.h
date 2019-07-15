@@ -155,6 +155,9 @@ __host__ void cuVEC_VC<VType>::clear(void)
 	clear_dirichlet_flags();
 
 	set_gpu_value(aSOR_damping, (cuReal)1.0);
+
+	set_gpu_value(pbc_x, (int)0);
+	set_gpu_value(pbc_y, (int)0);
 }
 
 //--------------------------------------------MULTIPLE ENTRIES SETTERS - SHAPE CHANGERS

@@ -16,8 +16,8 @@ void Simulation::AddGenericStage(SS_ stageType, string meshName) {
 
 	case SS_HFIELDXYZ:
 	{
-		//zero field in active mesh with STOP_MXH
-		StageConfig stageConfig = StageConfig(stageDescriptors(stageType), stageStopDescriptors(STOP_MXH), SMesh.GetMeshFocus());
+		//zero field with STOP_MXH
+		StageConfig stageConfig = StageConfig(stageDescriptors(stageType), stageStopDescriptors(STOP_MXH), meshName);
 		stageConfig.set_value( DBL3(0, 0, 0) );
 		stageConfig.set_stopvalue(1e-4);
 
@@ -27,8 +27,8 @@ void Simulation::AddGenericStage(SS_ stageType, string meshName) {
 
 	case SS_HFIELDXYZSEQ:
 	{
-		//zero field in active mesh with STOP_MXH
-		StageConfig stageConfig = StageConfig(stageDescriptors(stageType), stageStopDescriptors(STOP_MXH), SMesh.GetMeshFocus());
+		//zero field with STOP_MXH
+		StageConfig stageConfig = StageConfig(stageDescriptors(stageType), stageStopDescriptors(STOP_MXH), meshName);
 		stageConfig.set_value( SEQ3(DBL3(-1e5, 0, 0), DBL3(1e5, 0, 0), 100) );
 		stageConfig.set_stopvalue(1e-4);
 
@@ -38,8 +38,8 @@ void Simulation::AddGenericStage(SS_ stageType, string meshName) {
 
 	case SS_HPOLARSEQ:
 	{
-		//zero field in active mesh with STOP_MXH
-		StageConfig stageConfig = StageConfig(stageDescriptors(stageType), stageStopDescriptors(STOP_MXH), SMesh.GetMeshFocus());
+		//zero field with STOP_MXH
+		StageConfig stageConfig = StageConfig(stageDescriptors(stageType), stageStopDescriptors(STOP_MXH), meshName);
 		stageConfig.set_value(SEQP(DBL3(-1e5, 90, 0), DBL3(1e5, 90, 0), 100));
 		stageConfig.set_stopvalue(1e-4);
 
@@ -50,7 +50,7 @@ void Simulation::AddGenericStage(SS_ stageType, string meshName) {
 	case SS_HFMR:
 	{
 		//Bias field along y with Hrf along x. 1 GHz.
-		StageConfig stageConfig = StageConfig(stageDescriptors(stageType), stageStopDescriptors(STOP_TIME), SMesh.GetMeshFocus());
+		StageConfig stageConfig = StageConfig(stageDescriptors(stageType), stageStopDescriptors(STOP_TIME), meshName);
 		stageConfig.set_value(COSSEQ3(DBL3(0, 1e6, 0), DBL3(1e3, 0, 0), 20, 100));
 		stageConfig.set_stopvalue(50e-12);
 
@@ -148,8 +148,8 @@ void Simulation::AddGenericStage(SS_ stageType, string meshName) {
 
 	case SS_T:
 	{
-		//zero temperature in all meshes with STOP_MXH
-		StageConfig stageConfig = StageConfig(stageDescriptors(stageType), stageStopDescriptors(STOP_MXH), SMesh.superMeshHandle);
+		//zero temperature with STOP_MXH
+		StageConfig stageConfig = StageConfig(stageDescriptors(stageType), stageStopDescriptors(STOP_MXH), meshName);
 		stageConfig.set_value(0.0);
 		stageConfig.set_stopvalue(1e-4);
 
@@ -159,8 +159,8 @@ void Simulation::AddGenericStage(SS_ stageType, string meshName) {
 
 	case SS_TSEQ:
 	{
-		//T 0.0 to 300K in 10 steps in all meshes with STOP_MXH
-		StageConfig stageConfig = StageConfig(stageDescriptors(stageType), stageStopDescriptors(STOP_MXH), SMesh.superMeshHandle);
+		//T 0.0 to 300K in 10 steps with STOP_MXH
+		StageConfig stageConfig = StageConfig(stageDescriptors(stageType), stageStopDescriptors(STOP_MXH), meshName);
 		stageConfig.set_value(SEQ(0.0, 300.0, 10));
 		stageConfig.set_stopvalue(1e-4);
 

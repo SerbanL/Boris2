@@ -153,6 +153,12 @@ BError ODECommon::SetODE(ODE_ setODE_, EVAL_ evalMethod_, bool set_eval_method)
 		solve_spin_current = false;
 		break;
 
+	case ODE_LLGSTATIC:
+		equation = &DifferentialEquation::LLGStatic;
+		renormalize = true;
+		solve_spin_current = false;
+		break;
+
 	case ODE_LLGSTT:
 		equation = &DifferentialEquation::LLGSTT;
 		renormalize = true;

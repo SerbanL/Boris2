@@ -33,6 +33,9 @@ private:
 	//ferromagnetic meshes in surface exchange coupling with the mesh holding this module, top and bottom
 	vector<FMesh*> pMesh_Bot, pMesh_Top;
 
+	//number of coupled cells (either top or bottom) in this mesh
+	int coupled_cells = 0;
+
 public:
 
 	SurfExchange(Mesh *pMesh_);

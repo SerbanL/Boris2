@@ -15,6 +15,7 @@ VType VEC_VC<VType>::delsq_neu(int idx) const
 
 	//x axis
 	if (ngbrFlags[idx] & NF_BOTHX) {
+
 		//both neighbors available so must be an inner point along this direction
 		diff_x = (quantity[idx + 1] + quantity[idx - 1] - 2 * quantity[idx]);
 	}
@@ -24,8 +25,30 @@ VType VEC_VC<VType>::delsq_neu(int idx) const
 	}
 	else if (ngbrFlags[idx] & NF_NGBRX) {
 
-		if (ngbrFlags[idx] & NF_NPX) diff_x = (quantity[idx + 1] - quantity[idx]);
-		else						 diff_x = (quantity[idx - 1] - quantity[idx]);
+		if (ngbrFlags[idx] & NF_NPX) {
+
+			//is it a pbc along x? If yes, then we are guaranteed to have a "neighbor" on the other side, so use it; otherwise apply boundary condition.
+			if (ngbrFlags[idx] & NF_PBCX) {
+
+				diff_x = (quantity[idx + 1] + quantity[idx + n.x - 1] - 2 * quantity[idx]);
+			}
+			else {
+
+				diff_x = (quantity[idx + 1] - quantity[idx]);
+			}
+		}
+		else {
+
+			//is it a pbc along x? If yes, then we are guaranteed to have a "neighbor" on the other side, so use it; otherwise apply boundary condition.
+			if (ngbrFlags[idx] & NF_PBCX) {
+
+				diff_x = (quantity[idx - (n.x - 1)] + quantity[idx - 1] - 2 * quantity[idx]);
+			}
+			else {
+
+				diff_x = (quantity[idx - 1] - quantity[idx]);
+			}
+		}
 	}
 
 	diff_x /= (h.x*h.x);
@@ -41,8 +64,30 @@ VType VEC_VC<VType>::delsq_neu(int idx) const
 	}
 	else if (ngbrFlags[idx] & NF_NGBRY) {
 
-		if (ngbrFlags[idx] & NF_NPY) diff_y = (quantity[idx + n.x] - quantity[idx]);
-		else						 diff_y = (quantity[idx - n.x] - quantity[idx]);
+		if (ngbrFlags[idx] & NF_NPY) {
+
+			//is it a pbc along y? If yes, then we are guaranteed to have a "neighbor" on the other side, so use it; otherwise apply boundary condition.
+			if (ngbrFlags[idx] & NF_PBCY) {
+
+				diff_y = (quantity[idx + n.x] + quantity[idx + (n.y - 1)*n.x] - 2 * quantity[idx]);
+			}
+			else {
+
+				diff_y = (quantity[idx + n.x] - quantity[idx]);
+			}
+		}
+		else {
+
+			//is it a pbc along y? If yes, then we are guaranteed to have a "neighbor" on the other side, so use it; otherwise apply boundary condition.
+			if (ngbrFlags[idx] & NF_PBCY) {
+
+				diff_y = (quantity[idx - (n.y - 1)*n.x] + quantity[idx - n.x] - 2 * quantity[idx]);
+			}
+			else {
+
+				diff_y = (quantity[idx - n.x] - quantity[idx]);
+			}
+		}
 	}
 
 	diff_y /= (h.y*h.y);
@@ -71,7 +116,7 @@ VType VEC_VC<VType>::delsq_neu(int idx) const
 //NOTE : the boundary differential is specified with 3 components, one for each of +x, +y, +z surface normal directions
 //Returns zero at composite media boundary cells.
 template <typename VType>
-VType VEC_VC<VType>::delsq_nneu(int idx, VAL3<VType> bdiff) const
+VType VEC_VC<VType>::delsq_nneu(int idx, VAL3<VType>& bdiff) const
 {
 	VType diff_x = VType(), diff_y = VType(), diff_z = VType();
 
@@ -79,6 +124,7 @@ VType VEC_VC<VType>::delsq_nneu(int idx, VAL3<VType> bdiff) const
 
 	//x axis
 	if (ngbrFlags[idx] & NF_BOTHX) {
+
 		//both neighbors available so must be an inner point along this direction
 		diff_x = (quantity[idx + 1] + quantity[idx - 1] - 2 * quantity[idx]);
 	}
@@ -88,8 +134,30 @@ VType VEC_VC<VType>::delsq_nneu(int idx, VAL3<VType> bdiff) const
 	}
 	else if (ngbrFlags[idx] & NF_NGBRX) {
 
-		if (ngbrFlags[idx] & NF_NPX) diff_x = (quantity[idx + 1] - quantity[idx]) - bdiff.x * h.x;
-		else						 diff_x = (quantity[idx - 1] - quantity[idx]) + bdiff.x * h.x;
+		if (ngbrFlags[idx] & NF_NPX) {
+
+			//is it a pbc along x? If yes, then we are guaranteed to have a "neighbor" on the other side, so use it; otherwise apply boundary condition.
+			if (ngbrFlags[idx] & NF_PBCX) {
+
+				diff_x = (quantity[idx + 1] + quantity[idx + n.x - 1] - 2 * quantity[idx]);
+			}
+			else {
+
+				diff_x = (quantity[idx + 1] - quantity[idx]) - bdiff.x * h.x;
+			}
+		}
+		else {
+
+			//is it a pbc along x? If yes, then we are guaranteed to have a "neighbor" on the other side, so use it; otherwise apply boundary condition.
+			if (ngbrFlags[idx] & NF_PBCX) {
+
+				diff_x = (quantity[idx - (n.x - 1)] + quantity[idx - 1] - 2 * quantity[idx]);
+			}
+			else {
+
+				diff_x = (quantity[idx - 1] - quantity[idx]) + bdiff.x * h.x;
+			}
+		}
 	}
 
 	diff_x /= (h.x*h.x);
@@ -105,8 +173,30 @@ VType VEC_VC<VType>::delsq_nneu(int idx, VAL3<VType> bdiff) const
 	}
 	else if (ngbrFlags[idx] & NF_NGBRY) {
 
-		if (ngbrFlags[idx] & NF_NPY) diff_y = (quantity[idx + n.x] - quantity[idx]) - bdiff.y * h.y;
-		else						 diff_y = (quantity[idx - n.x] - quantity[idx]) + bdiff.y * h.y;
+		if (ngbrFlags[idx] & NF_NPY) {
+
+			//is it a pbc along y? If yes, then we are guaranteed to have a "neighbor" on the other side, so use it; otherwise apply boundary condition.
+			if (ngbrFlags[idx] & NF_PBCY) {
+
+				diff_y = (quantity[idx + n.x] + quantity[idx + (n.y - 1)*n.x] - 2 * quantity[idx]);
+			}
+			else {
+
+				diff_y = (quantity[idx + n.x] - quantity[idx]) - bdiff.y * h.y;
+			}
+		}
+		else {
+
+			//is it a pbc along y? If yes, then we are guaranteed to have a "neighbor" on the other side, so use it; otherwise apply boundary condition.
+			if (ngbrFlags[idx] & NF_PBCY) {
+
+				diff_y = (quantity[idx - (n.y - 1)*n.x] + quantity[idx - n.x] - 2 * quantity[idx]);
+			}
+			else {
+
+				diff_y = (quantity[idx - n.x] - quantity[idx]) + bdiff.y * h.y;
+			}
+		}
 	}
 
 	diff_y /= (h.y*h.y);
@@ -142,6 +232,7 @@ VType VEC_VC<VType>::delsq_diri(int idx) const
 
 	//x axis
 	if (ngbrFlags[idx] & NF_BOTHX) {
+
 		//both neighbors available so must be an inner point along this direction
 		diff_x = (quantity[idx + 1] + quantity[idx - 1] - 2 * quantity[idx]);
 	}
@@ -159,8 +250,30 @@ VType VEC_VC<VType>::delsq_diri(int idx) const
 		}
 		//stencil at surface for homogeneous Neumann boundary condition - correct, do not multiply by 2! 
 		//See conservation law approach derivation for heat equation (integrate then use mid-point rule approximations) for cell-centered grids.
-		else if (ngbrFlags[idx] & NF_NPX) diff_x = (quantity[idx + 1] - quantity[idx]);
-		else							  diff_x = (quantity[idx - 1] - quantity[idx]);
+		else if (ngbrFlags[idx] & NF_NPX) {
+
+			//is it a pbc along x? If yes, then we are guaranteed to have a "neighbor" on the other side, so use it; otherwise apply boundary condition.
+			if (ngbrFlags[idx] & NF_PBCX) {
+
+				diff_x = (quantity[idx + 1] + quantity[idx + n.x - 1] - 2 * quantity[idx]);
+			}
+			else {
+
+				diff_x = (quantity[idx + 1] - quantity[idx]);
+			}
+		}
+		else {
+
+			//is it a pbc along x? If yes, then we are guaranteed to have a "neighbor" on the other side, so use it; otherwise apply boundary condition.
+			if (ngbrFlags[idx] & NF_PBCX) {
+
+				diff_x = (quantity[idx - (n.x - 1)] + quantity[idx - 1] - 2 * quantity[idx]);
+			}
+			else {
+
+				diff_x = (quantity[idx - 1] - quantity[idx]);
+			}
+		}
 	}
 
 	diff_x /= (h.x*h.x);
@@ -181,8 +294,30 @@ VType VEC_VC<VType>::delsq_diri(int idx) const
 			if (ngbrFlags[idx] & NF_DIRICHLETPY) diff_y = (2 * quantity[idx + n.x] + 4 * get_dirichlet_value(NF_DIRICHLETPY, idx) - 6 * quantity[idx]);
 			else								 diff_y = (2 * quantity[idx - n.x] + 4 * get_dirichlet_value(NF_DIRICHLETNY, idx) - 6 * quantity[idx]);
 		}
-		else if (ngbrFlags[idx] & NF_NPY) diff_y = (quantity[idx + n.x] - quantity[idx]);
-		else							  diff_y = (quantity[idx - n.x] - quantity[idx]);
+		else if (ngbrFlags[idx] & NF_NPY) {
+
+			//is it a pbc along y? If yes, then we are guaranteed to have a "neighbor" on the other side, so use it; otherwise apply boundary condition.
+			if (ngbrFlags[idx] & NF_PBCY) {
+
+				diff_y = (quantity[idx + n.x] + quantity[idx + (n.y - 1)*n.x] - 2 * quantity[idx]);
+			}
+			else {
+
+				diff_y = (quantity[idx + n.x] - quantity[idx]);
+			}
+		}
+		else {
+
+			//is it a pbc along y? If yes, then we are guaranteed to have a "neighbor" on the other side, so use it; otherwise apply boundary condition.
+			if (ngbrFlags[idx] & NF_PBCY) {
+
+				diff_y = (quantity[idx - (n.y - 1)*n.x] + quantity[idx - n.x] - 2 * quantity[idx]);
+			}
+			else {
+
+				diff_y = (quantity[idx - n.x] - quantity[idx]);
+			}
+		}
 	}
 
 	diff_y /= (h.y*h.y);
@@ -216,7 +351,7 @@ VType VEC_VC<VType>::delsq_diri(int idx) const
 //NOTE : the boundary differential is specified with 3 components, one for each of +x, +y, +z surface normal directions
 //Returns zero at composite media boundary cells.
 template <typename VType>
-VType VEC_VC<VType>::delsq_diri_nneu(int idx, VAL3<VType> bdiff) const
+VType VEC_VC<VType>::delsq_diri_nneu(int idx, VAL3<VType>& bdiff) const
 {
 	VType diff_x = VType(), diff_y = VType(), diff_z = VType();
 
@@ -224,6 +359,7 @@ VType VEC_VC<VType>::delsq_diri_nneu(int idx, VAL3<VType> bdiff) const
 
 	//x axis
 	if (ngbrFlags[idx] & NF_BOTHX) {
+
 		//both neighbors available so must be an inner point along this direction
 		diff_x = (quantity[idx + 1] + quantity[idx - 1] - 2 * quantity[idx]);
 	}
@@ -239,8 +375,30 @@ VType VEC_VC<VType>::delsq_diri_nneu(int idx, VAL3<VType> bdiff) const
 			if (ngbrFlags[idx] & NF_DIRICHLETPX) diff_x = (2 * quantity[idx + 1] + 4 * get_dirichlet_value(NF_DIRICHLETPX, idx) - 6 * quantity[idx]);
 			else								 diff_x = (2 * quantity[idx - 1] + 4 * get_dirichlet_value(NF_DIRICHLETNX, idx) - 6 * quantity[idx]);
 		}
-		else if (ngbrFlags[idx] & NF_NPX) diff_x = (quantity[idx + 1] - quantity[idx]) - bdiff.x * h.x;
-		else							  diff_x = (quantity[idx - 1] - quantity[idx]) + bdiff.x * h.x;
+		else if (ngbrFlags[idx] & NF_NPX) {
+
+			//is it a pbc along x? If yes, then we are guaranteed to have a "neighbor" on the other side, so use it; otherwise apply boundary condition.
+			if (ngbrFlags[idx] & NF_PBCX) {
+
+				diff_x = (quantity[idx + 1] + quantity[idx + n.x - 1] - 2 * quantity[idx]);
+			}
+			else {
+
+				diff_x = (quantity[idx + 1] - quantity[idx]) - bdiff.x * h.x;
+			}
+		}
+		else {
+
+			//is it a pbc along x? If yes, then we are guaranteed to have a "neighbor" on the other side, so use it; otherwise apply boundary condition.
+			if (ngbrFlags[idx] & NF_PBCX) {
+
+				diff_x = (quantity[idx - (n.x - 1)] + quantity[idx - 1] - 2 * quantity[idx]);
+			}
+			else {
+
+				diff_x = (quantity[idx - 1] - quantity[idx]) + bdiff.x * h.x;
+			}
+		}
 	}
 
 
@@ -262,8 +420,30 @@ VType VEC_VC<VType>::delsq_diri_nneu(int idx, VAL3<VType> bdiff) const
 			if (ngbrFlags[idx] & NF_DIRICHLETPY) diff_y = (2 * quantity[idx + n.x] + 4 * get_dirichlet_value(NF_DIRICHLETPY, idx) - 6 * quantity[idx]);
 			else								 diff_y = (2 * quantity[idx - n.x] + 4 * get_dirichlet_value(NF_DIRICHLETNY, idx) - 6 * quantity[idx]);
 		}
-		else if (ngbrFlags[idx] & NF_NPY) diff_y = (quantity[idx + n.x] - quantity[idx]) - bdiff.y * h.y;
-		else							  diff_y = (quantity[idx - n.x] - quantity[idx]) + bdiff.y * h.y;
+		else if (ngbrFlags[idx] & NF_NPY) {
+
+			//is it a pbc along y? If yes, then we are guaranteed to have a "neighbor" on the other side, so use it; otherwise apply boundary condition.
+			if (ngbrFlags[idx] & NF_PBCY) {
+
+				diff_y = (quantity[idx + n.x] + quantity[idx + (n.y - 1)*n.x] - 2 * quantity[idx]);
+			}
+			else {
+
+				diff_y = (quantity[idx + n.x] - quantity[idx]) - bdiff.y * h.y;
+			}
+		}
+		else {
+
+			//is it a pbc along y? If yes, then we are guaranteed to have a "neighbor" on the other side, so use it; otherwise apply boundary condition.
+			if (ngbrFlags[idx] & NF_PBCY) {
+
+				diff_y = (quantity[idx - (n.y - 1)*n.x] + quantity[idx - n.x] - 2 * quantity[idx]);
+			}
+			else {
+
+				diff_y = (quantity[idx - n.x] - quantity[idx]) + bdiff.y * h.y;
+			}
+		}
 	}
 
 	diff_y /= (h.y*h.y);
@@ -345,8 +525,30 @@ VType VEC_VC<VType>::delsq_robin(int idx, double K) const
 		}
 		//stencil at surface for homogeneous Neumann boundary condition - correct, do not multiply by 2! 
 		//See conservation law approach derivation for heat equation (integrate then use mid-point rule approximations) for cell-centered grids.
-		else if (ngbrFlags[idx] & NF_NPX) diff_x = (quantity[idx + 1] - quantity[idx]);
-		else							  diff_x = (quantity[idx - 1] - quantity[idx]);
+		else if (ngbrFlags[idx] & NF_NPX) {
+
+			//is it a pbc along x? If yes, then we are guaranteed to have a "neighbor" on the other side, so use it; otherwise apply boundary condition.
+			if (ngbrFlags[idx] & NF_PBCX) {
+
+				diff_x = (quantity[idx + 1] + quantity[idx + n.x - 1] - 2 * quantity[idx]);
+			}
+			else {
+
+				diff_x = (quantity[idx + 1] - quantity[idx]);
+			}
+		}
+		else {
+
+			//is it a pbc along x? If yes, then we are guaranteed to have a "neighbor" on the other side, so use it; otherwise apply boundary condition.
+			if (ngbrFlags[idx] & NF_PBCX) {
+
+				diff_x = (quantity[idx - (n.x - 1)] + quantity[idx - 1] - 2 * quantity[idx]);
+			}
+			else {
+
+				diff_x = (quantity[idx - 1] - quantity[idx]);
+			}
+		}
 	}
 
 
@@ -393,8 +595,30 @@ VType VEC_VC<VType>::delsq_robin(int idx, double K) const
 				}
 			}
 		}
-		else if (ngbrFlags[idx] & NF_NPY) diff_y = (quantity[idx + n.x] - quantity[idx]);
-		else							  diff_y = (quantity[idx - n.x] - quantity[idx]);
+		else if (ngbrFlags[idx] & NF_NPY) {
+
+			//is it a pbc along y? If yes, then we are guaranteed to have a "neighbor" on the other side, so use it; otherwise apply boundary condition.
+			if (ngbrFlags[idx] & NF_PBCY) {
+
+				diff_y = (quantity[idx + n.x] + quantity[idx + (n.y - 1)*n.x] - 2 * quantity[idx]);
+			}
+			else {
+
+				diff_y = (quantity[idx + n.x] - quantity[idx]);
+			}
+		}
+		else {
+
+			//is it a pbc along y? If yes, then we are guaranteed to have a "neighbor" on the other side, so use it; otherwise apply boundary condition.
+			if (ngbrFlags[idx] & NF_PBCY) {
+
+				diff_y = (quantity[idx - (n.y - 1)*n.x] + quantity[idx - n.x] - 2 * quantity[idx]);
+			}
+			else {
+
+				diff_y = (quantity[idx - n.x] - quantity[idx]);
+			}
+		}
 	}
 
 	diff_y /= (h.y*h.y);

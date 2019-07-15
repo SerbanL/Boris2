@@ -39,8 +39,8 @@
 //minimum time step the method can reach
 #define RKF_MINDT	1e-15
 
-//Available equations to solve enum
-enum ODE_ { ODE_ERROR = -1, ODE_LLG, ODE_LLGSTT, ODE_LLB, ODE_LLBSTT, ODE_SLLG, ODE_SLLGSTT, ODE_SLLB, ODE_SLLBSTT, ODE_LLGSA, ODE_SLLGSA, ODE_LLBSA, ODE_SLLBSA };
+//Available equations to solve enum - to keep bsm files backward compatible add new entries at the end
+enum ODE_ { ODE_ERROR = -1, ODE_LLG, ODE_LLGSTT, ODE_LLB, ODE_LLBSTT, ODE_SLLG, ODE_SLLGSTT, ODE_SLLB, ODE_SLLBSTT, ODE_LLGSA, ODE_SLLGSA, ODE_LLBSA, ODE_SLLBSA, ODE_LLGSTATIC };
 
-//ODE evaluation methods enum
+//ODE evaluation methods enum - to keep bsm files backward compatible add new entries at the end
 enum EVAL_ { EVAL_ERROR = -1, EVAL_EULER, EVAL_TEULER, EVAL_RK4, EVAL_ABM, EVAL_RKF };

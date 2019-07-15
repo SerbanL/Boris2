@@ -133,6 +133,9 @@ public:
 	//obtain average value in the given relative rect from the displayed quantity in the named mesh
 	string get_meshaverage(SuperMesh *pSMesh, string meshName, Rect rect);
 
+	//calculate topological charge in M and given rect, using formula Q = Integral(m.(dm/dx x dm/dy) dxdy) / 4PI
+	BError get_topological_charge(VEC_VC<DBL3>& M, double x, double y, double radius, double* pQ);
+
 	//--------------------- dp array manipulation
 
 	//append data in dp_new at the end of dp_original
@@ -194,10 +197,16 @@ public:
 	//get remanence for up and down sweeps
 	BError get_remanence(int dp_x, int dp_y, double *pMr_up, double *pMr_dn);
 
+	//For a hysteresis loop with only one branch continue it by constructing the other direction branch (invert both x and y data and add it in continuation)
+	BError complete_hysteresis(int dp_x, int dp_y);
+
 	//--------------------- curve fitting
 
 	//fit f(x) = y0 + S dH / (4(x-H0)^2 + dH^2). Return fitting parameters with their standard deviations.
 	BError fit_lorentz(int dp_x, int dp_y, DBL2 *pS, DBL2 *pH0, DBL2 *pdH, DBL2 *py0);
+
+	//fit Mz(r) = Ms * cos(2*arctan(sinh(R/w)/sinh(r/w))). Return fitting parameters with their standard deviations.
+	BError fit_skyrmion(int dp_x, int dp_y, DBL2 *pR, DBL2 *pMs, DBL2 *pw);
 
 	//--------------------- data processing
 	

@@ -19,7 +19,7 @@ class VEC_VC :
 	public ProgramState<VEC_VC<VType>, 
 	std::tuple<SZ3, DBL3, Rect, std::vector<VType>, std::vector<int>, int,
 	std::vector<VType>, std::vector<VType>, std::vector<VType>, std::vector<VType>, std::vector<VType>, std::vector<VType>,
-	DBL2, DBL2, DBL2, DBL2, DBL2, DBL2, DBL2, DBL3, double>,
+	DBL2, DBL2, DBL2, DBL2, DBL2, DBL2, DBL2, DBL3, double, int, int>,
 	std::tuple<>>
 {
 
@@ -115,6 +115,15 @@ class VEC_VC :
 #define NF_ROBINY	(NF_ROBINPY + NF_ROBINNY)
 #define NF_ROBINZ	(NF_ROBINPZ + NF_ROBINNZ)
 
+//periodic boundary condition along x. Set at x sides only if there is a neighbor present at the other side - this is how we know which side to use, +x or -x : bit 30
+#define NF_PBCX	1073741824
+
+//periodic boundary condition along y. Set at y sides only if there is a neighbor present at the other side - this is how we know which side to use, +y or -y : bit 31 (last bit)
+#define NF_PBCY	2147483648
+
+//mask for pbc flags, either x or y
+#define NF_PBC (NF_PBCX + NF_PBCY)
+
 private:
 	
 	//used for reductions by magnitude : i.e. for a value of VType reduce (e.g. maximum) for GetMagnitude(value)
@@ -150,6 +159,11 @@ private:
 	//save last aSOR ln(error) gradient
 	double aSOR_lastgrad = 0.0;
 
+	//Periodic boundary conditions for evaluating differential operators. If these are set then neighbor flags are calculated accordingly, and applied when evaluating operators.
+	//Only implemented x and/or y pbc, not along z.
+	int pbc_x = 0;
+	int pbc_y = 0;
+
 private:
 
 	//--------------------------------------------IMPORTANT FLAG MANIPULATION METHODS : VEC_VC_flags.h
@@ -170,6 +184,9 @@ private:
 
 	//set robin flags from robin values and shape. Doesn't affect any other flags. Call from set_ngbrFlags after counting neighbors, and after setting robin values
 	void set_robin_flags(void);
+
+	//set pbc flags depending on set conditions and currently calculated flags - ngbrFlags must already be calculated before using this
+	void set_pbc_flags(void);
 
 	//mark cell as not empty / empty : internal use only; routines that use these must finish with recalculating ngbrflags as neighbours will have changed
 	void mark_not_empty(int index) { ngbrFlags[index] |= NF_NOTEMPTY; }
@@ -225,6 +242,9 @@ public:
 	DBL3& shift_debt_ref(void) { return shift_debt; }
 
 	double& aSOR_damping_ref(void) { return aSOR_damping; }
+
+	int& pbc_x_ref(void) { return pbc_x; }
+	int& pbc_y_ref(void) { return pbc_y; }
 
 	//--------------------------------------------SIZING : VEC_VC_mng.h
 
@@ -291,6 +311,24 @@ public:
 
 	//clear all dirichlet flags and vectors
 	void clear_dirichlet_flags(void);
+
+	//clear all pbc flags
+	void clear_pbc_flags(void);
+
+	//clear only pbc flags for x direction
+	void clear_pbc_x(void);
+
+	//clear only pbc flags for y direction
+	void clear_pbc_y(void);
+
+	//set pbc for both x and y
+	void set_pbc(void);
+
+	//set pbc for x direction only
+	void set_pbc_x(void);
+
+	//set pbc for y direction only
+	void set_pbc_y(void);
 
 	//clear all composite media boundary flags
 	void clear_cmbnd_flags(void);
@@ -442,7 +480,7 @@ public:
 	//calculate Laplace operator at cell with given index. Use non-homogeneous Neumann boundary conditions with the specified boundary differential.
 	//NOTE : the boundary differential is specified with 3 components, one for each of +x, +y, +z surface normal directions
 	//Returns zero at composite media boundary cells.
-	VType delsq_nneu(int idx, VAL3<VType> bdiff) const;
+	VType delsq_nneu(int idx, VAL3<VType>& bdiff) const;
 
 	//calculate Laplace operator at cell with given index. Use Dirichlet conditions if set, else Neumann boundary conditions (homogeneous).
 	//Returns zero at composite media boundary cells.
@@ -451,7 +489,7 @@ public:
 	//calculate Laplace operator at cell with given index. Use Dirichlet conditions if set, else non-homogeneous Neumann boundary conditions.
 	//NOTE : the boundary differential is specified with 3 components, one for each of +x, +y, +z surface normal directions
 	//Returns zero at composite media boundary cells.
-	VType delsq_diri_nneu(int idx, VAL3<VType> bdiff) const;
+	VType delsq_diri_nneu(int idx, VAL3<VType>& bdiff) const;
 
 	//calculate Laplace operator at cell with given index. Use Robin boundary conditions (defaulting to Neumann if not set).
 	//Returns zero at composite media boundary cells.
@@ -467,7 +505,7 @@ public:
 	//gradient operator. Use non-homogeneous Neumann boundary conditions.
 	//Can be used at composite media boundaries where sided differentials will be used instead.
 	//NOTE : the boundary differential is specified with 3 components, one for each of +x, +y, +z surface normal directions
-	VAL3<VType> grad_nneu(int idx, VAL3<VType> bdiff) const;
+	VAL3<VType> grad_nneu(int idx, VAL3<VType>& bdiff) const;
 
 	//gradient operator. Use Dirichlet conditions if set, else Neumann boundary conditions (homogeneous).
 	//Can be used at composite media boundaries where sided differentials will be used instead.
@@ -476,7 +514,7 @@ public:
 	//gradient operator. Use Dirichlet conditions if set, else non-homogeneous Neumann boundary conditions.
 	//NOTE : the boundary differential is specified with 3 components, one for each of +x, +y, +z surface normal directions
 	//Can be used at composite media boundaries where sided differentials will be used instead.
-	VAL3<VType> grad_diri_nneu(int idx, VAL3<VType> bdiff) const;
+	VAL3<VType> grad_diri_nneu(int idx, VAL3<VType>& bdiff) const;
 
 	//gradient operator. Use sided differentials at boundaries (including at composite media boundaries)
 	VAL3<VType> grad_sided(int idx) const;
@@ -492,7 +530,7 @@ public:
 	//NOTE : the boundary differential is specified with 3 components, one for each of +x, +y, +z surface normal directions
 	//Can be used at composite media boundaries where sided differentials will be used instead.
 	//div operator can be applied if VType is a VAL3<Type>, returning Type
-	double div_nneu(int idx, VAL3<VType> bdiff) const;
+	double div_nneu(int idx, VAL3<VType>& bdiff) const;
 
 	//divergence operator. Use Dirichlet conditions if set, else Neumann boundary conditions (homogeneous).
 	//Can be used at composite media boundaries where sided differentials will be used instead.
@@ -503,7 +541,7 @@ public:
 	//NOTE : the boundary differential is specified with 3 components, one for each of +x, +y, +z surface normal directions
 	//Can be used at composite media boundaries where sided differentials will be used instead.
 	//div operator can be applied if VType is a VAL3<Type>, returning Type
-	double div_diri_nneu(int idx, VAL3<VType> bdiff) const;
+	double div_diri_nneu(int idx, VAL3<VType>& bdiff) const;
 
 	//divergence operator. Use sided differentials (also at composite media boundaries)
 	//div operator can be applied if VType is a VAL3<Type>, returning Type
@@ -534,7 +572,7 @@ public:
 	//Can be used at composite media boundaries where sided differentials will be used instead.
 	//NOTE : the boundary differential is specified with 3 components, one for each of +x, +y, +z surface normal directions
 	//can only be applied if VType is a VAL3
-	VType curl_nneu(int idx, VAL3<VType> bdiff) const;
+	VType curl_nneu(int idx, VAL3<VType>& bdiff) const;
 
 	//curl operator. Use Dirichlet conditions if set, else Neumann boundary conditions (homogeneous).
 	//Can be used at composite media boundaries where sided differentials will be used instead.
@@ -545,7 +583,7 @@ public:
 	//NOTE : the boundary differential is specified with 3 components, one for each of +x, +y, +z surface normal directions
 	//Can be used at composite media boundaries where sided differentials will be used instead.
 	//can only be applied if VType is a VAL3
-	VType curl_diri_nneu(int idx, VAL3<VType> bdiff) const;
+	VType curl_diri_nneu(int idx, VAL3<VType>& bdiff) const;
 
 	//curl operator. Use sided differentials at boundaries (including at composite media boundaries)
 	//can only be applied if VType is a VAL3

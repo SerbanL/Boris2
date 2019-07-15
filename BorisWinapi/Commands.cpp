@@ -1223,7 +1223,7 @@ void Simulation::HandleCommand(string command_string) {
 			error = commandSpec.GetParameters(command_fields, stageTypeName, meshName);
 			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, stageTypeName); meshName = SMesh.GetMeshFocus(); }
 
-			if (!error && stageDescriptors.has_key(stageTypeName) && SMesh.contains(meshName)) {
+			if (!error && stageDescriptors.has_key(stageTypeName) && (SMesh.contains(meshName) || meshName == SMesh.superMeshHandle)) {
 
 				//add new simulation stage to the schedule with default settings for this stage type (can be edited separately)
 				AddGenericStage((SS_)stageDescriptors.get_ID_from_key(stageTypeName), meshName);
@@ -1360,11 +1360,13 @@ void Simulation::HandleCommand(string command_string) {
 		case CMD_SETPARAM:
 		{
 			string paramName, paramValue, meshName;
+			bool set_value = true;
 
 			error = commandSpec.GetParameters(command_fields, meshName, paramName, paramValue);
 			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, paramName, paramValue); meshName = SMesh.GetMeshFocus(); }
+			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, paramName); meshName = SMesh.GetMeshFocus(); set_value = false; }
 
-			if (!error) {
+			if (!error && set_value) {
 
 				StopSimulation();
 
@@ -1374,6 +1376,12 @@ void Simulation::HandleCommand(string command_string) {
 				}
 			}
 			else if (verbose) PrintCommandUsage(command_name);
+
+			if (script_client_connected) {
+
+				SMesh.get_meshparam_value(meshName, paramName, paramValue);
+				commSocket.SetSendData(commandSpec.PrepareReturnParameters(paramValue));
+			}
 		}
 		break;
 
@@ -2779,6 +2787,43 @@ void Simulation::HandleCommand(string command_string) {
 		}
 		break;
 
+		case CMD_SHOWLENGHTS:
+		{
+			if (verbose) {
+
+				if (SMesh.active_mesh()->Magnetisation_Enabled()) {
+					
+					double A = SMesh.active_mesh()->A;
+					double Ms = SMesh.active_mesh()->Ms;
+					double Ku = SMesh.active_mesh()->K1;
+					double D = SMesh.active_mesh()->D;
+
+					string l_ex, l_Bloch("N/A"), l_sky("N/A");
+
+					l_ex = ToString(sqrt(2 * A / (MU0 * Ms*Ms)), "m");
+
+					if (IsNZ(Ku)) l_Bloch = ToString(sqrt(A / Ku), "m");
+					if (IsNZ(Ku) && IsNZ(D)) l_sky = ToString(sqrt(PI * D / (4 * Ku)), "m");
+
+					BD.DisplayConsoleMessage("l_ex = " + l_ex + ", l_Bloch = " + l_Bloch + ", l_sky = " + l_sky);
+				}
+				else BD.DisplayConsoleError("Focused mesh is not a ferromagnetic mesh.");
+			}
+		}
+		break;
+
+		case CMD_SHOWMCELLS:
+		{
+			if (SMesh.active_mesh()->Magnetisation_Enabled()) {
+
+				if (verbose) BD.DisplayConsoleMessage("M discretisation cells : " + ToString(SMesh.active_mesh()->n));
+
+				if (script_client_connected) commSocket.SetSendData(commandSpec.PrepareReturnParameters(SMesh.active_mesh()->n));
+			}
+			else if (verbose) BD.DisplayConsoleError("Focused mesh is not a ferromagnetic mesh.");
+		}
+		break;
+
 		//---------------- CMD_DP_ commands here
 
 		case CMD_DP_CLEARALL:
@@ -3009,6 +3054,44 @@ void Simulation::HandleCommand(string command_string) {
 			if (!error) {
 				
 				if (verbose) BD.DisplayConsoleMessage("Average value = " + dpArr.get_meshaverage(&SMesh, SMesh.GetMeshFocus(), rect));
+			}
+			else if (verbose) PrintCommandUsage(command_name);
+		}
+		break;
+
+		case CMD_DP_TOPOCHARGE:
+		{
+			double x, y, radius;
+
+			error = commandSpec.GetParameters(command_fields, x, y, radius);
+			if (error == BERROR_PARAMMISMATCH) { 
+				
+				error.reset(); 
+				x = 0.0; y = 0.0;
+				DBL3 meshDims = SMesh.active_mesh()->GetMeshDimensions();
+				radius = sqrt(meshDims.x * meshDims.x + meshDims.y * meshDims.y);
+			}
+
+			if (!error) {
+
+				if (SMesh.active_mesh()->Magnetisation_Enabled()) {
+
+					double Q = 0.0;
+
+					error = dpArr.get_topological_charge(SMesh.active_mesh()->Get_M(), x, y, radius, &Q);
+
+					if (!error) {
+
+						if (verbose) BD.DisplayConsoleMessage("Q = " + ToString(Q));
+
+						if (script_client_connected)
+							commSocket.SetSendData(commandSpec.PrepareReturnParameters(Q));
+					}
+				}
+				else {
+
+					if (verbose) BD.DisplayConsoleError("Focused mesh is not a ferromagnetic mesh.");
+				}
 			}
 			else if (verbose) PrintCommandUsage(command_name);
 		}
@@ -3291,6 +3374,20 @@ void Simulation::HandleCommand(string command_string) {
 		}
 		break;
 
+		case CMD_DP_COMPLETEHYSTERLOOP:
+		{
+			int dp_x, dp_y;
+
+			error = commandSpec.GetParameters(command_fields, dp_x, dp_y);
+
+			if (!error) {
+
+				error = dpArr.complete_hysteresis(dp_x, dp_y);
+			}
+			else if (verbose) PrintCommandUsage(command_name);
+		}
+		break;
+
 		case CMD_DP_DUMPTDEP:
 		{
 			string meshName, paramName;
@@ -3325,11 +3422,42 @@ void Simulation::HandleCommand(string command_string) {
 						"S = " + ToString(S.major) + " +/- " + ToString(S.minor) + ", " +
 						"H0 = " + ToString(H0.major) + " +/- " + ToString(H0.minor) + ", " +
 						"dH = " + ToString(dH.major) + " +/- " + ToString(dH.minor) + ", " +
-						"y0 = " + ToString(y0.major) + " +/- " + ToString(y0.minor) + ", "
+						"y0 = " + ToString(y0.major) + " +/- " + ToString(y0.minor)
 						);
 				}
 
 				if (script_client_connected) commSocket.SetSendData(commandSpec.PrepareReturnParameters(S.major, H0.major, dH.major, y0.major, S.minor, H0.minor, dH.minor, y0.minor));
+			}
+			else if (verbose) PrintCommandUsage(command_name);
+		}
+		break;
+
+		case CMD_DP_FITSKYRMION:
+		{
+			int dp_x, dp_y;
+			double w_val = 0.0;
+
+			error = commandSpec.GetParameters(command_fields, dp_x, dp_y, w_val);
+			if (error) { error.reset() = commandSpec.GetParameters(command_fields, dp_x, dp_y); w_val = 0.0; }
+
+			if (!error) {
+
+				DBL2 R, Ms, w;
+
+				if (IsNZ(w_val)) w.major = w_val;
+
+				error = dpArr.fit_skyrmion(dp_x, dp_y, &R, &Ms, &w);
+
+				if (verbose && !error) {
+
+					BD.DisplayConsoleMessage(
+						"R = " + ToString(R.major) + " +/- " + ToString(R.minor) + ", " +
+						"Ms = " + ToString(Ms.major) + " +/- " + ToString(Ms.minor) + ", " +
+						"w = " + ToString(w.major) + " +/- " + ToString(w.minor)
+					);
+				}
+
+				if (script_client_connected) commSocket.SetSendData(commandSpec.PrepareReturnParameters(R.major, Ms.major, w.major, R.minor, Ms.minor, w.minor));
 			}
 			else if (verbose) PrintCommandUsage(command_name);
 		}

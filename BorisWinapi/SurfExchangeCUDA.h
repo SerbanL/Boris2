@@ -28,6 +28,9 @@ private:
 	cu_arr<ManagedMeshCUDA> pMesh_Bot;
 	cu_arr<ManagedMeshCUDA> pMesh_Top;
 
+	//coupled cells in gpu memory
+	cu_obj<int> coupled_cells;
+
 public:
 
 	SurfExchangeCUDA(FMeshCUDA* pMeshCUDA_, SurfExchange* pSurfExch_);

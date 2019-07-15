@@ -19,6 +19,20 @@ BError SuperMesh::set_meshparam_value(string meshName, string paramHandle, strin
 	return error;
 }
 
+//get named parameter value from given mesh. Set value as a string in value_text, without units
+BError SuperMesh::get_meshparam_value(string meshName, string paramHandle, string& value_text)
+{
+	BError error(__FUNCTION__);
+
+	if (!contains(meshName) || !pMesh[meshName]->contains_param(paramHandle)) return error(BERROR_INCORRECTNAME);
+
+	PARAM_ paramID = (PARAM_)pMesh[meshName]->get_meshparam_id(paramHandle);
+
+	value_text = pMesh[meshName]->get_meshparam_value_sci(paramID);
+
+	return error;
+}
+
 //--------------------------------------------------------- temperature dependence
 
 BError SuperMesh::set_meshparam_formula(string meshName, string paramHandle, string formulaName, vector<double> coefficients)

@@ -127,6 +127,9 @@ void VEC_VC<VType>::set_ngbrFlags(void)
 	//2. set Robin flags depending on set conditions
 	set_robin_flags();
 
+	//3. set pbc flags depending on set conditions and currently calculated flags
+	set_pbc_flags();
+
 	nonempty_cells = cellsCount;
 }
 
@@ -209,6 +212,9 @@ void VEC_VC<VType>::set_ngbrFlags(VEC_VC<LVType>& linked_vec)
 
 	//2. set Robin flags depending on set conditions
 	set_robin_flags();
+
+	//3. set pbc flags depending on set conditions and currently calculated flags
+	set_pbc_flags();
 
 	nonempty_cells = cellsCount;
 }
@@ -511,6 +517,110 @@ void VEC_VC<VType>::clear_dirichlet_flags(void)
 	dirichlet_ny.shrink_to_fit();
 	dirichlet_pz.shrink_to_fit();
 	dirichlet_nz.shrink_to_fit();
+}
+
+//clear all pbc flags
+template <typename VType>
+void VEC_VC<VType>::clear_pbc_flags(void)
+{
+	pbc_x = 0;
+	pbc_y = 0;
+
+#pragma omp parallel for
+	for (int idx = 0; idx < (int)ngbrFlags.size(); idx++) {
+
+		ngbrFlags[idx] &= ~NF_PBC;
+	}
+}
+
+//clear only pbc flags for x direction
+template <typename VType>
+void VEC_VC<VType>::clear_pbc_x(void)
+{
+	pbc_x = 0;
+
+#pragma omp parallel for
+	for (int idx = 0; idx < (int)ngbrFlags.size(); idx++) {
+
+		ngbrFlags[idx] &= ~NF_PBCX;
+	}
+}
+
+//clear only pbc flags for y direction
+template <typename VType>
+void VEC_VC<VType>::clear_pbc_y(void)
+{
+	pbc_y = 0;
+
+#pragma omp parallel for
+	for (int idx = 0; idx < (int)ngbrFlags.size(); idx++) {
+
+		ngbrFlags[idx] &= ~NF_PBCY;
+	}
+}
+
+//set pbc flags depending on set conditions and currently calculated flags - ngbrFlags must already be calculated before using this
+template <typename VType>
+void VEC_VC<VType>::set_pbc_flags(void)
+{
+#pragma omp parallel for
+	for (int i = 0; i < n.x; i++) {
+		for (int j = 0; j < n.y; j++) {
+			for (int k = 0; k < n.z; k++) {
+
+				int idx = i + j * n.x + k * n.x*n.y;
+
+				//skip empty cells
+				if (!(ngbrFlags[idx] & NF_NOTEMPTY)) continue;
+
+				//-x side, and on the +x side there is a non-empty cell : set pbc
+				if (pbc_x) {
+
+					if (i == 0 && (ngbrFlags[n.x - 1 + j * n.x + k * n.x*n.y] & NF_NOTEMPTY)) ngbrFlags[idx] |= NF_PBCX;
+
+					//+x side, and on the -x side there is a non-empty cell : set pbc
+					if (i == n.x - 1 && (ngbrFlags[j * n.x + k * n.x*n.y] & NF_NOTEMPTY)) ngbrFlags[idx] |= NF_PBCX;
+				}
+
+				if (pbc_y) {
+
+					//-y side, and on the +y side there is a non-empty cell : set pbc
+					if (j == 0 && (ngbrFlags[i + (n.y - 1) * n.x + k * n.x*n.y] & NF_NOTEMPTY)) ngbrFlags[idx] |= NF_PBCY;
+
+					//+y side, and on the -y side there is a non-empty cell : set pbc
+					if (j == n.y - 1 && (ngbrFlags[i + k * n.x*n.y] & NF_NOTEMPTY)) ngbrFlags[idx] |= NF_PBCY;
+				}
+			}
+		}
+	}
+}
+
+//set pbc for both x and y
+template <typename VType>
+void VEC_VC<VType>::set_pbc(void)
+{
+	pbc_x = 1;
+	pbc_y = 1;
+
+	set_pbc_flags();
+}
+
+//set pbc for x direction only
+template <typename VType>
+void VEC_VC<VType>::set_pbc_x(void)
+{
+	pbc_x = 1;
+
+	set_pbc_flags();
+}
+
+//set pbc for y direction only
+template <typename VType>
+void VEC_VC<VType>::set_pbc_y(void)
+{
+	pbc_y = 1;
+
+	set_pbc_flags();
 }
 
 template <typename VType>

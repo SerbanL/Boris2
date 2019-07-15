@@ -138,6 +138,66 @@ __device__ cuReal cuVEC_VC<VType>::div_nneu(int idx, Class_BDiff& bdiff_class) c
 	return div;
 }
 
+//Same as above but boundary conditions specified using a constant
+template <typename VType>
+__device__ cuReal cuVEC_VC<VType>::div_nneu(int idx, cuVAL3<VType>& bdiff) const
+{
+	cuReal div = 0.0;
+
+	if (!(ngbrFlags[idx] & NF_NOTEMPTY)) return div;
+
+	//x direction
+	if (ngbrFlags[idx] & NF_BOTHX) {
+		//inner point along this direction
+		div += (quantity[idx + 1].x - quantity[idx - 1].x) / (2 * h.x);
+	}
+	//Is it a CMBND boundary? - if not then use homogeneous Neumann condition (differential zero at the boundary)
+	else if (ngbrFlags[idx] & NF_CMBNDX) {
+
+		if (ngbrFlags[idx] & NF_NPX) div += (quantity[idx + 1].x - quantity[idx].x) / h.x;
+		if (ngbrFlags[idx] & NF_NNX) div += (quantity[idx].x - quantity[idx - 1].x) / h.x;
+	}
+	else if (ngbrFlags[idx] & NF_NGBRX) {
+
+		if (ngbrFlags[idx] & NF_NPX) div += 0.5 * ((quantity[idx + 1].x - quantity[idx].x) / h.x + bdiff.x.x);
+		if (ngbrFlags[idx] & NF_NNX) div += 0.5 * ((quantity[idx].x - quantity[idx - 1].x) / h.x + bdiff.x.x);
+	}
+
+	//y direction
+	if (ngbrFlags[idx] & NF_BOTHY) {
+
+		div += (quantity[idx + n.x].y - quantity[idx - n.x].y) / (2 * h.y);
+	}
+	else if (ngbrFlags[idx] & NF_CMBNDY) {
+
+		if (ngbrFlags[idx] & NF_NPY) div += (quantity[idx + n.x].y - quantity[idx].y) / h.y;
+		if (ngbrFlags[idx] & NF_NNY) div += (quantity[idx].y - quantity[idx - n.x].y) / h.y;
+	}
+	else if (ngbrFlags[idx] & NF_NGBRY) {
+
+		if (ngbrFlags[idx] & NF_NPY) div += 0.5 * ((quantity[idx + n.x].y - quantity[idx].y) / h.y + bdiff.y.y);
+		if (ngbrFlags[idx] & NF_NNY) div += 0.5 * ((quantity[idx].y - quantity[idx - n.x].y) / h.y + bdiff.y.y);
+	}
+
+	//z direction
+	if (ngbrFlags[idx] & NF_BOTHZ) {
+
+		div += (quantity[idx + n.x*n.y].z - quantity[idx - n.x*n.y].z) / (2 * h.z);
+	}
+	else if (ngbrFlags[idx] & NF_CMBNDZ) {
+
+		if (ngbrFlags[idx] & NF_NPZ) div += (quantity[idx + n.x*n.y].z - quantity[idx].z) / h.z;
+		if (ngbrFlags[idx] & NF_NNZ) div += (quantity[idx].z - quantity[idx - n.x*n.y].z) / h.z;
+	}
+	else if (ngbrFlags[idx] & NF_NGBRZ) {
+
+		if (ngbrFlags[idx] & NF_NPZ) div += 0.5 * ((quantity[idx + n.x*n.y].z - quantity[idx].z) / h.z + bdiff.z.z);
+		if (ngbrFlags[idx] & NF_NNZ) div += 0.5 * ((quantity[idx].z - quantity[idx - n.x*n.y].z) / h.z + bdiff.z.z);
+	}
+
+	return div;
+}
+
 //divergence operator. Use Dirichlet conditions if set, else Neumann boundary conditions (homogeneous).
 //Can be used at composite media boundaries where sided differentials will be used instead.
 //div operator can be applied if VType is a VAL3<Type>, returning Type
@@ -299,6 +359,82 @@ __device__ cuReal cuVEC_VC<VType>::div_diri_nneu(int idx, Class_BDiff& bdiff_cla
 
 		if (ngbrFlags[idx] & NF_NPZ) div += 0.5 * ((quantity[idx + n.x*n.y].z - quantity[idx].z) / h.z + bdiff_val.z.z);
 		if (ngbrFlags[idx] & NF_NNZ) div += 0.5 * ((quantity[idx].z - quantity[idx - n.x*n.y].z) / h.z + bdiff_val.z.z);
+	}
+
+	return div;
+}
+
+//Same as above but boundary conditions specified using a constant
+template <typename VType>
+__device__ cuReal cuVEC_VC<VType>::div_diri_nneu(int idx, cuVAL3<VType>& bdiff) const
+{
+	cuReal div = 0.0;
+
+	if (!(ngbrFlags[idx] & NF_NOTEMPTY)) return div;
+
+	//x direction
+	if (ngbrFlags[idx] & NF_BOTHX) {
+		//inner point along this direction
+		div += (quantity[idx + 1].x - quantity[idx - 1].x) / (2 * h.x);
+	}
+	//not an inner point along this direction - Use Dirichlet?
+	else if (ngbrFlags[idx] & NF_DIRICHLETX) {
+
+		if (ngbrFlags[idx] & NF_DIRICHLETPX) div += (quantity[idx + 1].x + quantity[idx].x - 2 * get_dirichlet_value(NF_DIRICHLETPX, idx).x) / (2 * h.x);
+		else								 div += (2 * get_dirichlet_value(NF_DIRICHLETNX, idx).x - quantity[idx].x - quantity[idx - 1].x) / (2 * h.x);
+	}
+	//Not Dirichlet, is it a CMBND boundary? - if not this either then use homogeneous Neumann condition
+	else if (ngbrFlags[idx] & NF_CMBNDX) {
+
+		if (ngbrFlags[idx] & NF_NPX) div += (quantity[idx + 1].x - quantity[idx].x) / h.x;
+		if (ngbrFlags[idx] & NF_NNX) div += (quantity[idx].x - quantity[idx - 1].x) / h.x;
+	}
+	else if (ngbrFlags[idx] & NF_NGBRX) {
+
+		if (ngbrFlags[idx] & NF_NPX) div += 0.5 * ((quantity[idx + 1].x - quantity[idx].x) / h.x + bdiff.x.x);
+		if (ngbrFlags[idx] & NF_NNX) div += 0.5 * ((quantity[idx].x - quantity[idx - 1].x) / h.x + bdiff.x.x);
+	}
+
+	//y direction
+	if (ngbrFlags[idx] & NF_BOTHY) {
+
+		div += (quantity[idx + n.x].y - quantity[idx - n.x].y) / (2 * h.y);
+	}
+	else if (ngbrFlags[idx] & NF_DIRICHLETY) {
+
+		if (ngbrFlags[idx] & NF_DIRICHLETPY) div += (quantity[idx + n.x].y + quantity[idx].y - 2 * get_dirichlet_value(NF_DIRICHLETPY, idx).y) / (2 * h.y);
+		else								 div += (2 * get_dirichlet_value(NF_DIRICHLETNY, idx).y - quantity[idx].y - quantity[idx - n.x].y) / (2 * h.y);
+	}
+	else if (ngbrFlags[idx] & NF_CMBNDY) {
+
+		if (ngbrFlags[idx] & NF_NPY) div += (quantity[idx + n.x].y - quantity[idx].y) / h.y;
+		if (ngbrFlags[idx] & NF_NNY) div += (quantity[idx].y - quantity[idx - n.x].y) / h.y;
+	}
+	else if (ngbrFlags[idx] & NF_NGBRY) {
+
+		if (ngbrFlags[idx] & NF_NPY) div += 0.5 * ((quantity[idx + n.x].y - quantity[idx].y) / h.y + bdiff.y.y);
+		if (ngbrFlags[idx] & NF_NNY) div += 0.5 * ((quantity[idx].y - quantity[idx - n.x].y) / h.y + bdiff.y.y);
+	}
+
+	//z direction
+	if (ngbrFlags[idx] & NF_BOTHZ) {
+
+		div += (quantity[idx + n.x*n.y].z - quantity[idx - n.x*n.y].z) / (2 * h.z);
+	}
+	else if (ngbrFlags[idx] & NF_DIRICHLETZ) {
+
+		if (ngbrFlags[idx] & NF_DIRICHLETPZ) div += (quantity[idx + n.x*n.y].z + quantity[idx].z - 2 * get_dirichlet_value(NF_DIRICHLETPZ, idx).z) / (2 * h.z);
+		else								 div += (2 * get_dirichlet_value(NF_DIRICHLETNZ, idx).z - quantity[idx].z - quantity[idx - n.x*n.y].z) / (2 * h.z);
+	}
+	else if (ngbrFlags[idx] & NF_CMBNDZ) {
+
+		if (ngbrFlags[idx] & NF_NPZ) div += (quantity[idx + n.x*n.y].z - quantity[idx].z) / h.z;
+		if (ngbrFlags[idx] & NF_NNZ) div += (quantity[idx].z - quantity[idx - n.x*n.y].z) / h.z;
+	}
+	else if (ngbrFlags[idx] & NF_NGBRZ) {
+
+		if (ngbrFlags[idx] & NF_NPZ) div += 0.5 * ((quantity[idx + n.x*n.y].z - quantity[idx].z) / h.z + bdiff.z.z);
+		if (ngbrFlags[idx] & NF_NNZ) div += 0.5 * ((quantity[idx].z - quantity[idx - n.x*n.y].z) / h.z + bdiff.z.z);
 	}
 
 	return div;

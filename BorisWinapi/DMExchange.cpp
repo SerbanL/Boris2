@@ -106,13 +106,19 @@ void DMExchange::UpdateField(void)
 			double Aconst = 2 * A / (MU0 * Ms * Ms);
 			double Dconst = -2 * D / (MU0 * Ms * Ms);
 
+			//Non-homogeneous Neumann boundary conditions apply when using DMI. Required to ensure Brown's condition is fulfilled, i.e. m x h -> 0 when relaxing.
+			DBL3 bnd_dm_dx = (D / (2 * A * Ms)) * DBL3(0, -pMesh->M[idx].z, pMesh->M[idx].y);
+			DBL3 bnd_dm_dy = (D / (2 * A * Ms)) * DBL3(pMesh->M[idx].z, 0, -pMesh->M[idx].x);
+			DBL3 bnd_dm_dz = (D / (2 * A * Ms)) * DBL3(-pMesh->M[idx].y, pMesh->M[idx].x, 0);
+			DBL33 bnd_nneu = DBL33(bnd_dm_dx, bnd_dm_dy, bnd_dm_dz);
+
 			//direct exchange contribution
-			DBL3 Hexch = Aconst * pMesh->M.delsq_neu(idx);
+			DBL3 Hexch = Aconst * pMesh->M.delsq_nneu(idx, bnd_nneu);
 
 			//Dzyaloshinskii-Moriya exchange contribution
 				
 			//Hdm, ex = -2D / (mu0*Ms) * curl m
-			Hexch += Dconst * pMesh->M.curl_neu(idx);
+			Hexch += Dconst * pMesh->M.curl_nneu(idx, bnd_nneu);
 				
 			pMesh->Heff[idx] += Hexch;
 

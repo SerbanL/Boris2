@@ -76,6 +76,9 @@ public:
 	//Landau-Lifshitz-Gilbert equation
 	__device__ cuReal3 LLG(int idx);
 
+	//Landau-Lifshitz-Gilbert equation but with no precession term and damping set to 1 : faster relaxation for static problems
+	__device__ cuReal3 LLGStatic(int idx);
+
 	//Landau-Lifshitz-Gilbert equation with Zhang-Li STT
 	__device__ cuReal3 LLGSTT(int idx);
 

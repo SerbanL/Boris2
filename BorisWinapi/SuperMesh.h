@@ -314,6 +314,9 @@ public:
 	//these set parameter values and temperature dependence in the indicated mesh - call through these since it's important to call UpdateConfiguration also
 	BError set_meshparam_value(string meshName, string paramHandle, string value_text);
 	
+	//get named parameter value from given mesh. Set value as a string in value_text, without units
+	BError get_meshparam_value(string meshName, string paramHandle, string& value_text);
+
 	//temperature dependence
 
 	BError set_meshparam_formula(string meshName, string paramHandle, string formulaName, vector<double> coefficients);

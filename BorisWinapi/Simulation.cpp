@@ -236,13 +236,13 @@ Simulation::Simulation(int Program_Version) :
 	commands[CMD_SKYRMION].usage = "[tc0,0.5,0,1/tc]USAGE : <b>skyrmion</b> <i>core chirality diameter position (meshname)</i>";
 	commands[CMD_SKYRMION].limits = { { int(-1), int(1) } , { int(-1), int(1) }, { double(10e-9), Any() },{ Any(), Any() }, { Any(), Any() } };
 	commands[CMD_SKYRMION].unit = "m";
-	commands[CMD_SKYRMION].descr = "[tc0,0.5,0.5,1/tc]. Create an idealised Neel-type skyrmion with given diameter and centre position in the x-y plane (2 relative coordinates needed only) of the given mesh (active mesh if name not specified). Core specifies the skyrmion core direction: -1 for down, 1 for up. Chirality specifies the radial direction rotation: 1 for towards core, -1 away from core. For diameter and position use metric units.";
+	commands[CMD_SKYRMION].descr = "[tc0,0.5,0.5,1/tc]Create an idealised Neel-type skyrmion with given diameter and centre position in the x-y plane (2 relative coordinates needed only) of the given mesh (active mesh if name not specified). Core specifies the skyrmion core direction: -1 for down, 1 for up. Chirality specifies the radial direction rotation: 1 for towards core, -1 away from core. For diameter and position use metric units.";
 
 	commands.insert(CMD_SKYRMIONBLOCH, CommandSpecifier(CMD_SKYRMIONBLOCH), "skyrmionbloch");
 	commands[CMD_SKYRMIONBLOCH].usage = "[tc0,0.5,0,1/tc]USAGE : <b>skyrmionbloch</b> <i>core chirality diameter position (meshname)</i>";
 	commands[CMD_SKYRMIONBLOCH].limits = { { int(-1), int(1) } ,{ int(-1), int(1) },{ double(10e-9), Any() },{ Any(), Any() },{ Any(), Any() } };
 	commands[CMD_SKYRMIONBLOCH].unit = "m";
-	commands[CMD_SKYRMIONBLOCH].descr = "[tc0,0.5,0.5,1/tc]. Create an idealised Bloch-type skyrmion with given diameter and centre position in the x-y plane (2 relative coordinates needed only) of the given mesh (active mesh if name not specified). Core specifies the skyrmion core direction: -1 for down, 1 for up. Chirality specifies the radial direction rotation: 1 for clockwise, -1 for anti-clockwise. For diameter and position use metric units.";
+	commands[CMD_SKYRMIONBLOCH].descr = "[tc0,0.5,0.5,1/tc]Create an idealised Bloch-type skyrmion with given diameter and centre position in the x-y plane (2 relative coordinates needed only) of the given mesh (active mesh if name not specified). Core specifies the skyrmion core direction: -1 for down, 1 for up. Chirality specifies the radial direction rotation: 1 for clockwise, -1 for anti-clockwise. For diameter and position use metric units.";
 
 	commands.insert(CMD_SETFIELD, CommandSpecifier(CMD_SETFIELD), "setfield");
 	commands[CMD_SETFIELD].usage = "[tc0,0.5,0,1/tc]USAGE : <b>setfield</b> <i>magnitude polar azimuthal (meshname)</i>";
@@ -401,6 +401,7 @@ Simulation::Simulation(int Program_Version) :
 	commands.insert(CMD_SETPARAM, CommandSpecifier(CMD_SETPARAM), "setparam");
 	commands[CMD_SETPARAM].usage = "[tc0,0.5,0,1/tc]USAGE : <b>setparam</b> <i>(meshname) paramname value</i>";
 	commands[CMD_SETPARAM].descr = "[tc0,0.5,0.5,1/tc]Set the named parameter to given value. If meshname not given use the active mesh.";
+	commands[CMD_SETPARAM].return_descr = "[tc0,0.5,0,1/tc]Script return values: <i>value</i> - return value of named parameter for the mesh in focus only.";
 
 	commands.insert(CMD_PARAMSTEMP, CommandSpecifier(CMD_PARAMSTEMP), "paramstemp");
 	commands[CMD_PARAMSTEMP].usage = "[tc0,0.5,0,1/tc]USAGE : <b>paramstemp</b> <i>(meshname)</i>";
@@ -725,6 +726,15 @@ Simulation::Simulation(int Program_Version) :
 	commands[CMD_UPDATEMDB].usage = "[tc0,0.5,0,1/tc]USAGE : <b>updatemdb</b>";
 	commands[CMD_UPDATEMDB].descr = "[tc0,0.5,0.5,1/tc]Switch to, and update the local materials database from the online shared materials database.";
 
+	commands.insert(CMD_SHOWLENGHTS, CommandSpecifier(CMD_SHOWLENGHTS), "showlengths");
+	commands[CMD_SHOWLENGHTS].usage = "[tc0,0.5,0,1/tc]USAGE : <b>showlengths</b>";
+	commands[CMD_SHOWLENGHTS].descr = "[tc0,0.5,0.5,1/tc]Calculate a number of critical lengths for the focused mesh (must be ferromagentic) to inform magnetisation cellsize selection. lex = sqrt(2 A / mu0 Ms^2) : exchange length, l_Bloch = sqrt(A / K1) : Bloch wall width, l_sky = PI D / 4 K1 : Neel skyrmion wall width.";
+
+	commands.insert(CMD_SHOWMCELLS, CommandSpecifier(CMD_SHOWMCELLS), "showmcells");
+	commands[CMD_SHOWMCELLS].usage = "[tc0,0.5,0,1/tc]USAGE : <b>showmcells</b>";
+	commands[CMD_SHOWMCELLS].descr = "[tc0,0.5,0.5,1/tc]Show number of discretisation cells for magnetisation for focused mesh (must be ferromagentic).";
+	commands[CMD_SHOWMCELLS].return_descr = "[tc0,0.5,0,1/tc]Script return values: <i>n</i>";
+
 	commands.insert(CMD_DP_CLEARALL, CommandSpecifier(CMD_DP_CLEARALL), "dp_clearall");
 	commands[CMD_DP_CLEARALL].usage = "[tc0,0.5,0,1/tc]USAGE : <b>dp_clearall</b>";
 	commands[CMD_DP_CLEARALL].descr = "[tc0,0.5,0.5,1/tc]Clear all dp arrays.";
@@ -770,7 +780,15 @@ Simulation::Simulation(int Program_Version) :
 	commands.insert(CMD_DP_AVERAGEMESHRECT, CommandSpecifier(CMD_DP_AVERAGEMESHRECT), "dp_averagemeshrect");
 	commands[CMD_DP_AVERAGEMESHRECT].usage = "[tc0,0.5,0,1/tc]USAGE : <b>dp_averagemeshrect</b> <i>(rectangle)</i>";
 	commands[CMD_DP_AVERAGEMESHRECT].descr = "[tc0,0.5,0.5,1/tc]Calculate the average value for the quantity displayed in the focused mesh. If specified the rectangle is relative to the focused mesh, otherwise average the entire focused mesh.";
+	commands[CMD_DP_AVERAGEMESHRECT].limits = { { Rect(DBL3(-MAXSIMSPACE / 2), DBL3(-MAXSIMSPACE / 2) + DBL3(MINMESHSPACE)), Rect(DBL3(-MAXSIMSPACE / 2), DBL3(MAXSIMSPACE / 2)) } };
 	commands[CMD_DP_AVERAGEMESHRECT].unit = "m";
+
+	commands.insert(CMD_DP_TOPOCHARGE, CommandSpecifier(CMD_DP_TOPOCHARGE), "dp_topocharge");
+	commands[CMD_DP_TOPOCHARGE].usage = "[tc0,0.5,0,1/tc]USAGE : <b>dp_topocharge</b> <i>(x y radius)</i>";
+	commands[CMD_DP_TOPOCHARGE].descr = "[tc0,0.5,0.5,1/tc]Calculate the topological charge for focused mesh (must be ferromagnetic), optionally in the given circle with radius and centered at x y (relative values). Q = Integral(m.(dm/dx x dm/dy) dxdy) / 4PI.";
+	commands[CMD_DP_TOPOCHARGE].return_descr = "[tc0,0.5,0,1/tc]Script return values: <i>Q</i> - the calculated topological charge.";
+	commands[CMD_DP_TOPOCHARGE].limits = { {double(0), Any()}, {double(0), Any()}, {double(0), Any()} };
+	commands[CMD_DP_TOPOCHARGE].unit = "m";
 
 	commands.insert(CMD_DP_APPEND, CommandSpecifier(CMD_DP_APPEND), "dp_append");
 	commands[CMD_DP_APPEND].usage = "[tc0,0.5,0,1/tc]USAGE : <b>dp_append</b> <i>dp_original dp_new</i>";
@@ -883,6 +901,11 @@ Simulation::Simulation(int Program_Version) :
 	commands[CMD_DP_REMANENCE].descr = "[tc0,0.5,0.5,1/tc]Obtain remanence from x-y data: find values at zero field in the two possible directions.";
 	commands[CMD_DP_REMANENCE].return_descr = "[tc0,0.5,0,1/tc]Script return values: <i>Mr_up Mr_dn</i>.";
 	
+	commands.insert(CMD_DP_COMPLETEHYSTERLOOP, CommandSpecifier(CMD_DP_COMPLETEHYSTERLOOP), "dp_completehysteresis");
+	commands[CMD_DP_COMPLETEHYSTERLOOP].usage = "[tc0,0.5,0,1/tc]USAGE : <b>dp_completehysteresis</b> <i>dp_index_x dp_index_y</i>";
+	commands[CMD_DP_COMPLETEHYSTERLOOP].limits = { { int(0), int(MAX_ARRAYS - 1) },{ int(0), int(MAX_ARRAYS - 1) } };
+	commands[CMD_DP_COMPLETEHYSTERLOOP].descr = "[tc0,0.5,0.5,1/tc]For a hysteresis loop with only one branch continue it by constructing the other direction branch (invert both x and y data and add it in continuation) - use only with hysteresis loops which are expected to be symmetric.";
+
 	commands.insert(CMD_DP_DUMPTDEP, CommandSpecifier(CMD_DP_DUMPTDEP), "dp_dumptdep");
 	commands[CMD_DP_DUMPTDEP].usage = "[tc0,0.5,0,1/tc]USAGE : <b>dp_dumptdep</b> <i>meshname paramname max_temperature dp_index</i>";
 	commands[CMD_DP_DUMPTDEP].limits = { { Any(), Any() }, { Any(), Any() }, { double(1.0), double(MAX_TEMPERATURE) }, { int(0), int(MAX_ARRAYS - 1) } };
@@ -893,6 +916,12 @@ Simulation::Simulation(int Program_Version) :
 	commands[CMD_DP_FITLORENTZ].limits = { { int(0), int(MAX_ARRAYS - 1) }, { int(0), int(MAX_ARRAYS - 1) } };
 	commands[CMD_DP_FITLORENTZ].descr = "[tc0,0.5,0.5,1/tc]Fit Lorentz peak function to x y data : f(x) = y0 + S dH / (4(x-H0)^2 + dH^2).";
 	commands[CMD_DP_FITLORENTZ].return_descr = "[tc0,0.5,0,1/tc]Script return values: <i>S, H0, dH, y0, std_S, std_H0, std_dH, std_y0</i>.";
+
+	commands.insert(CMD_DP_FITSKYRMION, CommandSpecifier(CMD_DP_FITSKYRMION), "dp_fitskyrmion");
+	commands[CMD_DP_FITSKYRMION].usage = "[tc0,0.5,0,1/tc]USAGE : <b>dp_fitskyrmion</b> <i>dp_x dp_y (w)</i>";
+	commands[CMD_DP_FITSKYRMION].limits = { { int(0), int(MAX_ARRAYS - 1) }, { int(0), int(MAX_ARRAYS - 1) }, {Any(), Any()}, {Any(), Any()} };
+	commands[CMD_DP_FITSKYRMION].descr = "[tc0,0.5,0.5,1/tc]Fit skyrmion z component to obtain radius : Mz(r) = Ms * cos(2*arctan(sinh(R/w)/sinh(r/w))). If w is specified then it's not used as a fitting parameter, but kept fixed.";
+	commands[CMD_DP_FITSKYRMION].return_descr = "[tc0,0.5,0,1/tc]Script return values: <i>R, Ms, w, std_R, std_Ms, std_w</i>.";
 
 	commands.insert(CMD_DP_REPLACEREPEATS, CommandSpecifier(CMD_DP_REPLACEREPEATS), "dp_replacerepeats");
 	commands[CMD_DP_REPLACEREPEATS].usage = "[tc0,0.5,0,1/tc]USAGE : <b>dp_replacerepeats</b> <i>dp_index (dp_index_out)</i>";
@@ -983,6 +1012,7 @@ Simulation::Simulation(int Program_Version) :
 
 	//ODEs
 	odeHandles.push_back("LLG", ODE_LLG);
+	odeHandles.push_back("LLGStatic", ODE_LLGSTATIC);
 	odeHandles.push_back("LLG-STT", ODE_LLGSTT);
 	odeHandles.push_back("LLB", ODE_LLB);
 	odeHandles.push_back("LLB-STT", ODE_LLBSTT);
@@ -1004,6 +1034,7 @@ Simulation::Simulation(int Program_Version) :
 
 	//Allowed evaluation methods for given ODE
 	odeAllowedEvals.push_back(make_vector(EVAL_EULER, EVAL_TEULER, EVAL_RK4, EVAL_ABM, EVAL_RKF), ODE_LLG);
+	odeAllowedEvals.push_back(make_vector(EVAL_EULER, EVAL_TEULER, EVAL_RK4, EVAL_ABM, EVAL_RKF), ODE_LLGSTATIC);
 	odeAllowedEvals.push_back(make_vector(EVAL_EULER, EVAL_TEULER, EVAL_RK4, EVAL_ABM, EVAL_RKF), ODE_LLGSTT);
 	odeAllowedEvals.push_back(make_vector(EVAL_EULER, EVAL_TEULER, EVAL_RK4, EVAL_ABM, EVAL_RKF), ODE_LLB);
 	odeAllowedEvals.push_back(make_vector(EVAL_EULER, EVAL_TEULER, EVAL_RK4, EVAL_ABM, EVAL_RKF), ODE_LLBSTT);

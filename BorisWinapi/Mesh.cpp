@@ -130,6 +130,21 @@ double Mesh::GetAverageTemperature(Rect rectangle)
 	else return base_temperature; 
 }
 
+//----------------------------------- QUANTITY GETTERS
+
+//returns M on the cpu, thus transfers M from gpu to cpu before returning if cuda enabled
+VEC_VC<DBL3>& Mesh::Get_M(void)
+{
+#if COMPILECUDA == 1
+	if (pMeshCUDA) {
+
+		pMeshCUDA->M()->copy_to_cpuvec(M);
+	}
+#endif
+
+	return M;
+}
+
 //----------------------------------- MESH INFO AND SIZE GET/SET METHODS
 
 BError Mesh::SetMeshRect(Rect meshRect_)

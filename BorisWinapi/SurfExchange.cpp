@@ -157,6 +157,66 @@ BError SurfExchange::Initialize(void)
 		}
 	}
 
+	//count number of coupled cells (either top or bottom) in this mesh
+
+	coupled_cells = 0;
+
+	INT3 n = pMesh->n;
+
+	if (pMesh_Top.size()) {
+
+		//surface exchange coupling at the top
+		for (int j = 0; j < n.y; j++) {
+			for (int i = 0; i < n.x; i++) {
+
+				int cell_idx = i + j * n.x + (n.z - 1) * n.x*n.y;
+
+				//empty cell here ... next
+				if (pMesh->M.is_empty(cell_idx)) continue;
+
+				//check all meshes for coupling
+				for (int mesh_idx = 0; mesh_idx < (int)pMesh_Top.size(); mesh_idx++) {
+
+					//relative coordinates to read value from top mesh (the one we're coupling to here)
+					DBL3 cell_rel_pos = DBL3((i + 0.5) * pMesh->h.x, (j + 0.5) * pMesh->h.y, pMesh_Top[mesh_idx]->h.z / 2);
+
+					//can't couple to an empty cell
+					if (IsZ(pMesh_Top[mesh_idx]->M[cell_rel_pos].norm())) continue;
+
+					//if we are here then the cell in this mesh at cell_idx has something to couple to so count it : it will contribute to the surface exchange energy density
+					coupled_cells++;
+				}
+			}
+		}
+	}
+
+	if (pMesh_Bot.size()) {
+
+		//surface exchange coupling at the bottom
+		for (int j = 0; j < n.y; j++) {
+			for (int i = 0; i < n.x; i++) {
+
+				int cell_idx = i + j * n.x;
+
+				//empty cell here ... next
+				if (pMesh->M.is_empty(cell_idx)) continue;
+
+				//check all meshes for coupling
+				for (int mesh_idx = 0; mesh_idx < (int)pMesh_Bot.size(); mesh_idx++) {
+
+					//relative coordinates to read value from bottom mesh (the one we're coupling to here)
+					DBL3 cell_rel_pos = DBL3((i + 0.5) * pMesh->h.x, (j + 0.5) * pMesh->h.y, pMesh_Bot[mesh_idx]->meshRect.e.z - (pMesh_Bot[mesh_idx]->h.z / 2));
+
+					//can't couple to an empty cell
+					if (IsZ(pMesh_Bot[mesh_idx]->M[cell_rel_pos].norm())) continue;
+
+					//if we are here then the cell in this mesh at cell_idx has something to couple to so count it : it will contribute to the surface exchange energy density
+					coupled_cells++;
+				}
+			}
+		}
+	}
+
 	initialized = true;
 
 	return error;
@@ -205,6 +265,9 @@ void SurfExchange::UpdateField(void)
 
 	INT3 n = pMesh->n;
 
+	//thickness of layer - SurfExchange applies for layers in the xy plane
+	double thickness = pMesh->meshRect.e.z - pMesh->meshRect.s.z;
+
 	if (pMesh_Top.size()) {
 
 		//surface exchange coupling at the top
@@ -229,6 +292,12 @@ void SurfExchange::UpdateField(void)
 					//can't couple to an empty cell
 					if (IsZ(pMesh_Top[mesh_idx]->M[cell_rel_pos].norm())) continue;
 
+					//coupling layer thickness
+					double thickness_top = pMesh_Top[mesh_idx]->meshRect.e.z - pMesh_Top[mesh_idx]->meshRect.s.z;
+
+					//effective thickness for the coupling formula
+					double thickness_eff = 2 * thickness * thickness_top / (thickness + thickness_top);
+
 					double J1 = pMesh_Top[mesh_idx]->J1;
 					double J2 = pMesh_Top[mesh_idx]->J2;
 					pMesh_Top[mesh_idx]->update_parameters_atposition(cell_rel_pos, pMesh_Top[mesh_idx]->J1, J1, pMesh_Top[mesh_idx]->J2, J2);
@@ -240,22 +309,15 @@ void SurfExchange::UpdateField(void)
 					double dot_prod = m_i * m_j;
 
 					//total surface exchange field in coupling cells, including bilinear and biquadratic terms
-					DBL3 Hsurfexh = (m_j / (MU0 * Ms * pMesh->h.z)) * (J1 + 2 * J2 * dot_prod);
+					DBL3 Hsurfexh = (m_j / (MU0 * Ms * thickness_eff)) * (J1 + 2 * J2 * dot_prod);
 
 					pMesh->Heff[cell_idx] += Hsurfexh;
 
-					energy += (-1 * J1 - 2 * J2 * dot_prod) * dot_prod / pMesh->h.z;
+					energy += (-1 * J1 - 2 * J2 * dot_prod) * dot_prod / thickness_eff;
 				}
 			}
 		}
 	}
-
-	//set average energy from top coupling
-	if (pMesh->M.get_nonempty_cells())
-		this->energy = energy / pMesh->M.get_nonempty_cells();
-	else this->energy = 0;
-
-	energy = 0;
 
 	if (pMesh_Bot.size()) {
 
@@ -283,6 +345,12 @@ void SurfExchange::UpdateField(void)
 					//can't couple to an empty cell
 					if (IsZ(pMesh_Bot[mesh_idx]->M[cell_rel_pos].norm())) continue;
 
+					//coupling layer thickness
+					double thickness_bot = pMesh_Bot[mesh_idx]->meshRect.e.z - pMesh_Bot[mesh_idx]->meshRect.s.z;
+
+					//effective thickness for the coupling formula
+					double thickness_eff = 2 * thickness * thickness_bot / (thickness + thickness_bot);
+
 					//yes, then get value of magnetization used in coupling with current cell at cell_idx
 					DBL3 m_j = pMesh_Bot[mesh_idx]->M[cell_rel_pos].normalized();
 					DBL3 m_i = pMesh->M[cell_idx] / Ms;
@@ -290,19 +358,20 @@ void SurfExchange::UpdateField(void)
 					double dot_prod = m_i * m_j;
 
 					//total surface exchange field in coupling cells, including bilinear and biquadratic terms
-					DBL3 Hsurfexh = (m_j / (MU0 * Ms * pMesh->h.z)) * (J1 + 2 * J2 * dot_prod);
+					DBL3 Hsurfexh = (m_j / (MU0 * Ms * thickness_eff)) * (J1 + 2 * J2 * dot_prod);
 
 					pMesh->Heff[cell_idx] += Hsurfexh;
 
-					energy += (-1 * J1 - 2 * J2 * dot_prod) * dot_prod / pMesh->h.z;
+					energy += (-1 * J1 - 2 * J2 * dot_prod) * dot_prod / thickness_eff;
 				}
 			}
 		}
 	}
 
-	//add to average energy from bottom coupling (this->energy already has a correct value set, now need to add in the bottom coupling)
-	if (pMesh->M.get_nonempty_cells())
-		this->energy += energy / pMesh->M.get_nonempty_cells();
+	if (coupled_cells)
+		this->energy = energy / coupled_cells;
+	else
+		this->energy = 0.0;
 }
 
 #endif

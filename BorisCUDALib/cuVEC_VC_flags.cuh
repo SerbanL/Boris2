@@ -188,6 +188,9 @@ __host__ void cuVEC_VC<VType>::set_ngbrFlags(void)
 
 	//2. set Robin flags depending on set conditions
 	set_robin_flags();
+
+	//3. set pbc flags depending on set conditions and currently calculated flags
+	set_pbc_flags();
 }
 
 //------------------------------------------------------------------- SET NGBRFLAGS linked cuVEC
@@ -353,6 +356,9 @@ __host__ void cuVEC_VC<VType>::set_ngbrFlags(const cuSZ3& linked_n, const cuReal
 
 	//2. set Robin flags depending on set conditions
 	set_robin_flags();
+
+	//3. set pbc flags depending on set conditions and currently calculated flags
+	set_pbc_flags();
 }
 
 //------------------------------------------------------------------- SET DIRICHLET CONDITIONS
@@ -603,6 +609,57 @@ template <typename VType>
 __host__ void cuVEC_VC<VType>::set_robin_flags(void)
 {
 	set_robin_flags_kernel <<< (get_gpu_value(n).dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (n, ngbrFlags, robin_px, robin_nx, robin_py, robin_ny, robin_pz, robin_nz, robin_v);
+}
+
+//------------------------------------------------------------------- SET PBC FLAGS
+
+__global__ static void set_pbc_flags_kernel(
+	const cuSZ3& n, int*& ngbrFlags,
+	const int& pbc_x, const int& pbc_y)
+{
+	int idx = blockIdx.x * blockDim.x + threadIdx.x;
+
+	cuINT3 ijk = cuINT3(idx % n.x, (idx / n.x) % n.y, idx / (n.x*n.y));
+
+	if (idx < n.dim()) {
+
+		if (ngbrFlags[idx] & NF_NOTEMPTY) {
+
+			//-x side, and on the +x side there is a non-empty cell : set pbc
+			if (pbc_x) {
+
+				if (ijk.i == 0 && (ngbrFlags[n.x - 1 + ijk.j * n.x + ijk.k * n.x*n.y] & NF_NOTEMPTY)) ngbrFlags[idx] |= NF_PBCX;
+
+				//+x side, and on the -x side there is a non-empty cell : set pbc
+				if (ijk.i == n.x - 1 && (ngbrFlags[ijk.j * n.x + ijk.k * n.x*n.y] & NF_NOTEMPTY)) ngbrFlags[idx] |= NF_PBCX;
+			}
+
+			if (pbc_y) {
+
+				//-y side, and on the +y side there is a non-empty cell : set pbc
+				if (ijk.j == 0 && (ngbrFlags[ijk.i + (n.y - 1) * n.x + ijk.k * n.x*n.y] & NF_NOTEMPTY)) ngbrFlags[idx] |= NF_PBCY;
+
+				//+y side, and on the -y side there is a non-empty cell : set pbc
+				if (ijk.j == n.y - 1 && (ngbrFlags[ijk.i + ijk.k * n.x*n.y] & NF_NOTEMPTY)) ngbrFlags[idx] |= NF_PBCY;
+			}
+		}
+	}
+}
+
+template void cuVEC_VC<float>::set_pbc_flags(void);
+template void cuVEC_VC<double>::set_pbc_flags(void);
+
+template void cuVEC_VC<cuFLT3>::set_pbc_flags(void);
+template void cuVEC_VC<cuDBL3>::set_pbc_flags(void);
+
+template void cuVEC_VC<cuFLT33>::set_pbc_flags(void);
+template void cuVEC_VC<cuDBL33>::set_pbc_flags(void);
+
+//set pbc flags depending on set conditions and currently calculated flags - ngbrFlags must already be calculated before using this
+template <typename VType>
+__host__ void cuVEC_VC<VType>::set_pbc_flags(void)
+{
+	set_pbc_flags_kernel <<< (get_gpu_value(n).dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (n, ngbrFlags, pbc_x, pbc_y);
 }
 
 //------------------------------------------------------------------- SET SKIP CELLS FLAGS

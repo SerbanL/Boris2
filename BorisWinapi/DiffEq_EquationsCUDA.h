@@ -36,6 +36,18 @@ __device__ cuReal3 ManagedDiffEqCUDA::LLG(int idx)
 	return (-(cuReal)GAMMA * grel / (1 + alpha * alpha)) * ((M[idx] ^ Heff[idx]) + alpha * ((M[idx] / Ms) ^ (M[idx] ^ Heff[idx])));
 }
 
+//Landau-Lifshitz-Gilbert equation but with no precession term and damping set to 1 : faster relaxation for static problems
+__device__ cuReal3 ManagedDiffEqCUDA::LLGStatic(int idx)
+{
+	cuVEC_VC<cuReal3>& M = *pcuMesh->pM;
+	cuVEC<cuReal3>& Heff = *pcuMesh->pHeff;
+
+	cuReal Ms = *pcuMesh->pMs;
+	pcuMesh->update_parameters_mcoarse(idx, *pcuMesh->pMs, Ms);
+
+	return (-(cuReal)GAMMA / 2) * ((M[idx] / Ms) ^ (M[idx] ^ Heff[idx]));
+}
+
 //------------------------------------------------------------------------------------------------------
 
 __device__ cuReal3 ManagedDiffEqCUDA::LLGSTT(int idx)

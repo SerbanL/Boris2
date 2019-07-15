@@ -34,8 +34,6 @@ private:
 
 public:
 
-	using mtype = typename MType;
-
 	//------------------------------------------- CONSTRUCTOR
 
 	//void constructor

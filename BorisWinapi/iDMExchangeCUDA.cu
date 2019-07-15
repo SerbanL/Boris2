@@ -29,13 +29,18 @@ __global__ void iDMExchangeCUDA_UpdateField(ManagedMeshCUDA& cuMesh, cuReal& ene
 			cuReal D = *cuMesh.pD;
 			cuMesh.update_parameters_mcoarse(idx, *cuMesh.pMs, Ms, *cuMesh.pA, A, *cuMesh.pD, D);
 
+			//Non-homogeneous Neumann boundary conditions apply when using DMI. Required to ensure Brown's condition is fulfilled, i.e. m x h -> 0 when relaxing.
+			cuReal3 bnd_dm_dx = (D / (2 * A * Ms)) * cuReal3(M[idx].z, 0, -M[idx].x);
+			cuReal3 bnd_dm_dy = (D / (2 * A * Ms)) * cuReal3(0, M[idx].z, -M[idx].y);
+			cuReal33 bnd_nneu = cuReal33(bnd_dm_dx, bnd_dm_dy, cuReal3());
+
 			//direct exchange contribution
-			Hexch = 2 * A * M.delsq_neu(idx) / ((cuReal)MU0 * Ms * Ms);
+			Hexch = 2 * A * M.delsq_nneu(idx, bnd_nneu) / ((cuReal)MU0 * Ms * Ms);
 
 			//Dzyaloshinskii-Moriya interfacial exchange contribution
 
 			//Differentials of M components (we only need 4, not all 9 so this could be optimised). First index is the differential direction, second index is the M component
-			cuReal33 Mdiff = M.grad_neu(idx);
+			cuReal33 Mdiff = M.grad_nneu(idx, bnd_nneu);
 
 			//Hdm, ex = -2D / (mu0*Ms) * (dmz / dx, dmz / dy, -dmx / dx - dmy / dy)
 			Hexch += -2 * D * cuReal3(Mdiff.x.z, Mdiff.y.z, -Mdiff.x.x - Mdiff.y.y) / ((cuReal)MU0 * Ms * Ms);

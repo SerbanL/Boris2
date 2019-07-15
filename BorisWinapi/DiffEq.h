@@ -275,6 +275,9 @@ private: //private methods
 	//Landau-Lifshitz-Gilbert equation
 	DBL3 LLG(int idx);
 
+	//Landau-Lifshitz-Gilbert equation but with no precession term and damping set to 1 : faster relaxation for static problems
+	DBL3 LLGStatic(int idx);
+
 	//Landau-Lifshitz-Gilbert equation with Zhang-Li STT
 	DBL3 LLGSTT(int idx);
 

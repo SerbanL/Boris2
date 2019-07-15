@@ -42,6 +42,9 @@ BError SurfExchangeCUDA::Initialize(void)
 			pMesh_Top.push_back(pSurfExch->pMesh_Top[idx]->pMeshCUDA->cuMesh.get_managed_object());
 		}
 
+		//copy number of coupled cells to gpu memory : SurfExchange has been initialized so the count is correct
+		coupled_cells.from_cpu(pSurfExch->coupled_cells);
+
 		initialized = true;
 	}
 

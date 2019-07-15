@@ -445,6 +445,11 @@ public:
 	//get Curie temperature for the material (the indicative value)
 	double GetCurieTemperatureMaterial(void) { return T_Curie_material; }
 
+	//----------------------------------- QUANTITY GETTERS
+
+	//returns M on the cpu, thus transfers M from gpu to cpu before returning if cuda enabled
+	VEC_VC<DBL3>& Get_M(void);
+
 	//----------------------------------- OTHER MESH SHAPE CONTROL
 
 	BError copy_mesh_data(Mesh& copy_this);

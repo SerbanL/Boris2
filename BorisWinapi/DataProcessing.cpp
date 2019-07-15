@@ -249,6 +249,39 @@ string DPArrays::get_meshaverage(SuperMesh *pSMesh, string meshName, Rect rect)
 	return result_string;
 }
 
+//calculate topological charge in M and given rect, using formula Q = Integral(m.(dm/dx x dm/dy) dxdy) / 4PI
+BError DPArrays::get_topological_charge(VEC_VC<DBL3>& M, double x, double y, double radius, double* pQ)
+{
+	BError error(__FUNCTION__);
+
+	double Q = 0.0;
+
+#pragma omp parallel for reduction(+:Q)
+	for (int idx = 0; idx < M.linear_size(); idx++) {
+
+		if (M.is_not_empty(idx)) {
+
+			DBL3 pos = M.cellidx_to_position(idx);
+
+			if (get_distance(DBL2(pos.x, pos.y), DBL2(x, y)) < radius) {
+
+				double M_mag = M[idx].norm();
+
+				DBL33 M_grad = M.grad_neu(idx);
+
+				DBL3 dm_dx = M_grad.x / M_mag;
+				DBL3 dm_dy = M_grad.y / M_mag;
+
+				Q += (M[idx] / M_mag) * (dm_dx ^ dm_dy) * M.h.x * M.h.y;
+			}
+		}
+	}
+
+	*pQ = Q / (4 * PI);
+
+	return error;
+}
+
 //--------------------- dp array manipulation
 
 //append data in dp_new at the end of dp_original
@@ -783,6 +816,28 @@ BError DPArrays::get_remanence(int dp_x, int dp_y, double *pMr_up, double *pMr_d
 	return error;
 }
 
+//For a hysteresis loop with only one branch continue it by constructing the other direction branch (invert both x and y data and add it in continuation)
+BError DPArrays::complete_hysteresis(int dp_x, int dp_y)
+{
+	BError error(__FUNCTION__);
+
+	if (!GoodArrays_Unique(dp_x, dp_y) || !dpA[dp_y].size() || dpA[dp_x].size() != dpA[dp_y].size()) return error(BERROR_INCORRECTARRAYS);
+
+	vector<double> dp_x_new(dpA[dp_x].size()), dp_y_new(dpA[dp_y].size());
+
+#pragma omp parallel for
+	for (int idx = 0; idx < dpA[dp_x].size(); idx++) {
+
+		dp_x_new[idx] = dpA[dp_x][idx] * -1.0;
+		dp_y_new[idx] = dpA[dp_y][idx] * -1.0;
+	}
+
+	JoinToVector(dpA[dp_x], dp_x_new);
+	JoinToVector(dpA[dp_y], dp_y_new);
+
+	return error;
+}
+
 //--------------------- curve fitting
 
 //fit f(x) = y0 + S dH / (4(x-H0)^2 + dH^2). Return fitting parameters with their standard deviations.
@@ -814,6 +869,42 @@ BError DPArrays::fit_lorentz(int dp_x, int dp_y, DBL2 *pS, DBL2 *pH0, DBL2 *pdH,
 		*pH0 = DBL2(params[1], params_std[1]);
 		*pdH = DBL2(params[2], params_std[2]);
 		*py0 = DBL2(params[3], params_std[3]);
+	}
+	else return error(BERROR_INCORRECTARRAYS);
+
+	return error;
+}
+
+//fit Mz(r) = Ms * cos(2*arctan(sinh(R/w)/sinh(r/w))). Return fitting parameters with their standard deviations.
+BError DPArrays::fit_skyrmion(int dp_x, int dp_y, DBL2 *pR, DBL2 *pMs, DBL2 *pw)
+{
+	BError error(__FUNCTION__);
+
+	if (!GoodArrays_Unique(dp_x, dp_y) || dpA[dp_x].size() != dpA[dp_y].size()) return error(BERROR_INCORRECTARRAYS);
+
+	CurveFitting curve_fit;
+
+	vector<double> params, params_std;
+
+	vector<DBL2> xy_data;
+
+	xy_data.resize(dpA[dp_x].size());
+
+#pragma omp parallel for
+	for (int idx = 0; idx < xy_data.size(); idx++) {
+
+		xy_data[idx] = DBL2(dpA[dp_x][idx], dpA[dp_y][idx]);
+	}
+
+	curve_fit.FitSkyrmion_LMA(xy_data, params, params_std);
+
+	if (params.size() >= 3 && params_std.size() >= 2) {
+
+		*pR = DBL2(params[0], params_std[0]);
+		*pMs = DBL2(params[1], params_std[1]);
+
+		if (params_std.size() >= 2) *pw = DBL2(params[2], params_std[2]);
+		else *pw = DBL2(params[2], 0.0);
 	}
 	else return error(BERROR_INCORRECTARRAYS);
 

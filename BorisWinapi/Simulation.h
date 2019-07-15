@@ -20,6 +20,8 @@
 
 //BUGS
 
+//Changing cellsize in SDemag in CUDA causes memory errors sometimes. Quite frequent. !!!MUST SOLVE!!!
+
 //Drag and drop simulation file sometimes crashes program - extremely rare now; in fact it has been some months since last seen, I believe I may have fixed it inadvertently.
 //Saving simulation file sometimes sets dT to zero (to a floating point error). I've only seen it happen with CUDA enabled - rare
 //Double clicking on interactive object to bring up text or command sometimes hangs program - extremely rare, last seen a few months ago.

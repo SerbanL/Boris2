@@ -138,6 +138,68 @@ __device__ VType cuVEC_VC<VType>::delsq_nneu(int idx, Class_BDiff& bdiff_class) 
 	return (diff_x + diff_y + diff_z);
 }
 
+//Same as above but boundary conditions specified using a constant
+template <typename VType>
+__device__ VType cuVEC_VC<VType>::delsq_nneu(int idx, cuVAL3<VType>& bdiff) const
+{
+	VType diff_x = VType(), diff_y = VType(), diff_z = VType();
+
+	if (!(ngbrFlags[idx] & NF_NOTEMPTY)) return VType();
+
+	//x axis
+	if (ngbrFlags[idx] & NF_BOTHX) {
+		//both neighbors available so must be an inner point along this direction
+		diff_x = (quantity[idx + 1] + quantity[idx - 1] - 2 * quantity[idx]);
+	}
+	else if (ngbrFlags[idx] & NF_CMBNDX) {
+
+		diff_x = 0;
+	}
+	else if (ngbrFlags[idx] & NF_NGBRX) {
+
+		if (ngbrFlags[idx] & NF_NPX) diff_x = (quantity[idx + 1] - quantity[idx]) - bdiff.x * h.x;
+		else						 diff_x = (quantity[idx - 1] - quantity[idx]) + bdiff.x * h.x;
+	}
+
+	diff_x /= (h.x*h.x);
+
+	//y axis
+	if (ngbrFlags[idx] & NF_BOTHY) {
+
+		diff_y = (quantity[idx + n.x] + quantity[idx - n.x] - 2 * quantity[idx]);
+	}
+	else if (ngbrFlags[idx] & NF_CMBNDY) {
+
+		diff_y = 0;
+	}
+	else if (ngbrFlags[idx] & NF_NGBRY) {
+
+		if (ngbrFlags[idx] & NF_NPY) diff_y = (quantity[idx + n.x] - quantity[idx]) - bdiff.y * h.y;
+		else						 diff_y = (quantity[idx - n.x] - quantity[idx]) + bdiff.y * h.y;
+	}
+
+	diff_y /= (h.y*h.y);
+
+	//z axis
+	if (ngbrFlags[idx] & NF_BOTHZ) {
+
+		diff_z = (quantity[idx + n.x*n.y] + quantity[idx - n.x*n.y] - 2 * quantity[idx]);
+	}
+	else if (ngbrFlags[idx] & NF_CMBNDZ) {
+
+		diff_z = 0;
+	}
+	else if (ngbrFlags[idx] & NF_NGBRZ) {
+
+		if (ngbrFlags[idx] & NF_NPZ) diff_z = (quantity[idx + n.x*n.y] - quantity[idx]) - bdiff.z * h.z;
+		else						 diff_z = (quantity[idx - n.x*n.y] - quantity[idx]) + bdiff.z * h.z;
+	}
+
+	diff_z /= (h.z*h.z);
+
+	return (diff_x + diff_y + diff_z);
+}
+
 //calculate Laplace operator at cell with given index. Use Dirichlet conditions if set, else Neumann boundary conditions (homogeneous).
 //Returns zero at composite media boundary cells.
 template <typename VType>
@@ -309,6 +371,94 @@ __device__ VType cuVEC_VC<VType>::delsq_diri_nneu(int idx, Class_BDiff& bdiff_cl
 
 			if (ngbrFlags[idx] & NF_NPZ) diff_z = (quantity[idx + n.x*n.y] - quantity[idx]) - bdiff_val.z * h.z;
 			else						 diff_z = (quantity[idx - n.x*n.y] - quantity[idx]) + bdiff_val.z * h.z;
+		}
+	}
+
+	diff_z /= (h.z*h.z);
+
+	return (diff_x + diff_y + diff_z);
+}
+
+//Same as above but boundary conditions specified using a constant
+template <typename VType>
+__device__ VType cuVEC_VC<VType>::delsq_diri_nneu(int idx, cuVAL3<VType>& bdiff) const
+{
+	VType diff_x = VType(), diff_y = VType(), diff_z = VType();
+
+	if (!(ngbrFlags[idx] & NF_NOTEMPTY)) return VType();
+
+	//x axis
+	if (ngbrFlags[idx] & NF_BOTHX) {
+		//both neighbors available so must be an inner point along this direction
+		diff_x = (quantity[idx + 1] + quantity[idx - 1] - 2 * quantity[idx]);
+	}
+	else if (ngbrFlags[idx] & NF_CMBNDX) {
+
+		diff_x = 0;
+	}
+	else if (ngbrFlags[idx] & NF_NGBRX) {
+
+		//only one neighbor available. Does it use a fixed boundary value (Dirichlet)?
+		if (ngbrFlags[idx] & NF_DIRICHLETX) {
+
+			if (ngbrFlags[idx] & NF_DIRICHLETPX) diff_x = (2 * quantity[idx + 1] + 4 * get_dirichlet_value(NF_DIRICHLETPX, idx) - 6 * quantity[idx]);
+			else								 diff_x = (2 * quantity[idx - 1] + 4 * get_dirichlet_value(NF_DIRICHLETNX, idx) - 6 * quantity[idx]);
+		}
+		else {
+
+			if (ngbrFlags[idx] & NF_NPX) diff_x = (quantity[idx + 1] - quantity[idx]) - bdiff.x * h.x;
+			else						 diff_x = (quantity[idx - 1] - quantity[idx]) + bdiff.x * h.x;
+		}
+	}
+
+
+	diff_x /= (h.x*h.x);
+
+	//y axis
+	if (ngbrFlags[idx] & NF_BOTHY) {
+
+		diff_y = (quantity[idx + n.x] + quantity[idx - n.x] - 2 * quantity[idx]);
+	}
+	else if (ngbrFlags[idx] & NF_CMBNDY) {
+
+		diff_y = 0;
+	}
+	else if (ngbrFlags[idx] & NF_NGBRY) {
+
+		if (ngbrFlags[idx] & NF_DIRICHLETY) {
+
+			if (ngbrFlags[idx] & NF_DIRICHLETPY) diff_y = (2 * quantity[idx + n.x] + 4 * get_dirichlet_value(NF_DIRICHLETPY, idx) - 6 * quantity[idx]);
+			else								 diff_y = (2 * quantity[idx - n.x] + 4 * get_dirichlet_value(NF_DIRICHLETNY, idx) - 6 * quantity[idx]);
+		}
+		else {
+
+			if (ngbrFlags[idx] & NF_NPY) diff_y = (quantity[idx + n.x] - quantity[idx]) - bdiff.y * h.y;
+			else						 diff_y = (quantity[idx - n.x] - quantity[idx]) + bdiff.y * h.y;
+		}
+	}
+
+	diff_y /= (h.y*h.y);
+
+	//z axis
+	if (ngbrFlags[idx] & NF_BOTHZ) {
+
+		diff_z = (quantity[idx + n.x*n.y] + quantity[idx - n.x*n.y] - 2 * quantity[idx]);
+	}
+	else if (ngbrFlags[idx] & NF_CMBNDZ) {
+
+		diff_z = 0;
+	}
+	else if (ngbrFlags[idx] & NF_NGBRZ) {
+
+		if (ngbrFlags[idx] & NF_DIRICHLETZ) {
+
+			if (ngbrFlags[idx] & NF_DIRICHLETPZ) diff_z = (2 * quantity[idx + n.x*n.y] + 4 * get_dirichlet_value(NF_DIRICHLETPZ, idx) - 6 * quantity[idx]);
+			else								 diff_z = (2 * quantity[idx - n.x*n.y] + 4 * get_dirichlet_value(NF_DIRICHLETNZ, idx) - 6 * quantity[idx]);
+		}
+		else {
+
+			if (ngbrFlags[idx] & NF_NPZ) diff_z = (quantity[idx + n.x*n.y] - quantity[idx]) - bdiff.z * h.z;
+			else						 diff_z = (quantity[idx - n.x*n.y] - quantity[idx]) + bdiff.z * h.z;
 		}
 	}
 

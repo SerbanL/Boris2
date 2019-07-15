@@ -13,6 +13,11 @@
 //CMBNDInfo describes a composite media boundary contact between 2 meshes of same type, used to calculate values at CMBND cells using boundary conditions
 struct CMBNDInfoCUDA;
 
+template <typename VType>
+class cuVEC_VC :
+	public cuVEC<VType>
+{
+
 //the following are used as masks for ngbrFlags. 32 bits in total (4 bytes for an int)
 
 //magnetic neighbor existence masks (+x, -x, +y, -y, +z, -z). Bits 0, 1, 2, 3, 4, 5
@@ -103,10 +108,14 @@ struct CMBNDInfoCUDA;
 #define NF_ROBINY	(NF_ROBINPY + NF_ROBINNY)
 #define NF_ROBINZ	(NF_ROBINPZ + NF_ROBINNZ)
 
-template <typename VType>
-class cuVEC_VC :
-	public cuVEC<VType>
-{
+//periodic boundary condition along x. Set at x sides only if there is a neighbor present at the other side - this is how we know which side to use, +x or -x : bit 30
+#define NF_PBCX	1073741824
+
+//periodic boundary condition along y. Set at y sides only if there is a neighbor present at the other side - this is how we know which side to use, +y or -y : bit 31 (last bit)
+#define NF_PBCY	2147483648
+
+//mask for pbc flags, either x or y
+#define NF_PBC (NF_PBCX + NF_PBCY)
 
 private:
 
@@ -152,14 +161,19 @@ private:
 public:
 
 	//adaptive SOR algorithm damping value
-	cuReal aSOR_damping = 1.0;
+	cuReal aSOR_damping;
 	
 private:
 
 	//save last aSOR error
-	cuReal aSOR_lasterror = 0.0;
+	cuReal aSOR_lasterror;
 	//save last aSOR ln(error) gradient
-	cuReal aSOR_lastgrad = 0.0;
+	cuReal aSOR_lastgrad;
+
+	//Periodic boundary conditions for evaluating differential operators. If these are set then neighbor flags are calculated accordingly, and applied when evaluating operators.
+	//Only implemented x and/or y pbc, not along z.
+	int pbc_x;
+	int pbc_y;
 
 private:
 
@@ -201,6 +215,9 @@ private:
 	
 	//set robin flags from robin values and shape. Doesn't affect any other flags. Call from set_ngbrFlags after counting neighbors, and after setting robin values
 	__host__ void set_robin_flags(void);
+
+	//set pbc flags depending on set conditions and currently calculated flags - ngbrFlags must already be calculated before using this
+	__host__ void set_pbc_flags(void);
 
 	//mark cell as not empty / empty : internal use only; routines that use these must finish with recalculating ngbrflags as neighbours will have changed
 	__device__ void mark_not_empty(int index) { ngbrFlags[index] |= NF_NOTEMPTY; }
@@ -324,6 +341,24 @@ public:
 	//clear all dirichlet flags and vectors
 	__host__ void clear_dirichlet_flags(void);
 
+	//clear all pbc flags
+	__host__ void clear_pbc_flags(void);
+
+	//clear only pbc flags for x direction
+	__host__ void clear_pbc_x(void);
+
+	//clear only pbc flags for y direction
+	__host__ void clear_pbc_y(void);
+
+	//set pbc for both x and y
+	__host__ void set_pbc(void);
+
+	//set pbc for x direction only
+	__host__ void set_pbc_x(void);
+
+	//set pbc for y direction only
+	__host__ void set_pbc_y(void);
+
 	//clear all composite media boundary flags
 	__host__ void clear_cmbnd_flags(void);
 
@@ -426,6 +461,9 @@ public:
 	template <typename Class_BDiff>
 	__device__ VType delsq_nneu(int idx, Class_BDiff& bdiff_class) const;
 
+	//Same as above but boundary conditions specified using a constant
+	__device__ VType delsq_nneu(int idx, cuVAL3<VType>& bdiff) const;
+
 	//calculate Laplace operator at cell with given index. Use Dirichlet conditions if set, else Neumann boundary conditions (homogeneous).
 	//Returns zero at composite media boundary cells.
 	__device__ VType delsq_diri(int idx) const;
@@ -435,6 +473,9 @@ public:
 	//Returns zero at composite media boundary cells.
 	template <typename Class_BDiff>
 	__device__ VType delsq_diri_nneu(int idx, Class_BDiff& bdiff_class) const;
+
+	//Same as above but boundary conditions specified using a constant
+	__device__ VType delsq_diri_nneu(int idx, cuVAL3<VType>& bdiff) const;
 
 	//calculate Laplace operator at cell with given index. Use Robin boundary conditions (defaulting to Neumann if not set).
 	//Returns zero at composite media boundary cells.
@@ -453,6 +494,9 @@ public:
 	template <typename Class_BDiff>
 	__device__ cuVAL3<VType> grad_nneu(int idx, Class_BDiff& bdiff_class) const;
 
+	//Same as above but boundary conditions specified using a constant
+	__device__ cuVAL3<VType> grad_nneu(int idx, cuVAL3<VType>& bdiff) const;
+
 	//gradient operator. Use Dirichlet conditions if set, else Neumann boundary conditions (homogeneous).
 	//Can be used at composite media boundaries where sided differentials will be used instead.
 	__device__ cuVAL3<VType> grad_diri(int idx) const;
@@ -462,6 +506,9 @@ public:
 	//Can be used at composite media boundaries where sided differentials will be used instead.
 	template <typename Class_BDiff>
 	__device__ cuVAL3<VType> grad_diri_nneu(int idx, Class_BDiff& bdiff_class) const;
+
+	//Same as above but boundary conditions specified using a constant
+	__device__ cuVAL3<VType> grad_diri_nneu(int idx, cuVAL3<VType>& bdiff) const;
 
 	//gradient operator. Use sided differentials at boundaries (including at composite media boundaries)
 	__device__ cuVAL3<VType> grad_sided(int idx) const;
@@ -480,6 +527,9 @@ public:
 	template <typename Class_BDiff>
 	__device__ cuReal div_nneu(int idx, Class_BDiff& bdiff_class) const;
 
+	//Same as above but boundary conditions specified using a constant
+	__device__ cuReal div_nneu(int idx, cuVAL3<VType>& bdiff) const;
+
 	//divergence operator. Use Dirichlet conditions if set, else Neumann boundary conditions (homogeneous).
 	//Can be used at composite media boundaries where sided differentials will be used instead.
 	//div operator can be applied if VType is a VAL3<Type>, returning Type
@@ -491,6 +541,9 @@ public:
 	//div operator can be applied if VType is a VAL3<Type>, returning Type
 	template <typename Class_BDiff>
 	__device__ cuReal div_diri_nneu(int idx, Class_BDiff& bdiff_class) const;
+
+	//Same as above but boundary conditions specified using a constant
+	__device__ cuReal div_diri_nneu(int idx, cuVAL3<VType>& bdiff) const;
 
 	//divergence operator. Use sided differentials (also at composite media boundaries)
 	//div operator can be applied if VType is a VAL3<Type>, returning Type
@@ -524,6 +577,9 @@ public:
 	template <typename Class_BDiff>
 	__device__ VType curl_nneu(int idx, Class_BDiff& bdiff_class) const;
 
+	//Same as above but boundary conditions specified using a constant
+	__device__ VType curl_nneu(int idx, cuVAL3<VType>& bdiff) const;
+
 	//curl operator. Use Dirichlet conditions if set, else Neumann boundary conditions (homogeneous).
 	//Can be used at composite media boundaries where sided differentials will be used instead.
 	//can only be applied if VType is a VAL3
@@ -535,6 +591,9 @@ public:
 	//can only be applied if VType is a VAL3
 	template <typename Class_BDiff>
 	__device__ VType curl_diri_nneu(int idx, Class_BDiff& bdiff_class) const;
+
+	//Same as above but boundary conditions specified using a constant
+	__device__ VType curl_diri_nneu(int idx, cuVAL3<VType>& bdiff) const;
 
 	//curl operator. Use sided differentials at boundaries (including at composite media boundaries)
 	//can only be applied if VType is a VAL3
