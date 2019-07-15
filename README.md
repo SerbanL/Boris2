@@ -11,7 +11,7 @@ Latest compiled version with installer found here : https://boris-spintronics.uk
 
 # Manual
 
-Latest manual rolled in with installer. The older v2.2 manual is found here: https://www.researchgate.net/publication/331715880_Boris_Computational_Spintronics_User_manual_version_220
+Latest manual rolled in with installer, also found here together with examples: https://github.com/SerbanL/Boris2/blob/master/Manual/BorisManual-v230.pdf
 
 # External Dependencies
 
