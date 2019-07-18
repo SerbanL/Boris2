@@ -1,0 +1,32 @@
+Nx := 128
+Ny := 128
+Nz := 1
+
+B_start := 0.001256637
+B_end := 0.025132741
+B_step := 0.001256637
+
+SetGridSize(Nx, Ny, Nz)
+SetCellSize(4e-9, 4e-9, 1e-9)
+Msat = 600000
+Aex = 10e-12
+alpha = 1
+Dind = 1.5e-3
+Ku1 = 380e3
+anisU = vector(0, 0, 1)
+B_ext = vector(0, 0, B_start )
+
+SetGeom(Circle(5.12e-07))
+
+m = NeelSkyrmion(1, -1)
+
+MinimizerStop = 1e-6
+
+for B:=B_start; B<=B_end ; B+=B_step {
+
+    B_ext = vector(0, 0, B)
+
+    minimize()   // small changes best minimized by minimize()
+
+    save(m)
+}

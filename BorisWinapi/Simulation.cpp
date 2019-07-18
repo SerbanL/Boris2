@@ -693,25 +693,26 @@ Simulation::Simulation(int Program_Version) :
 	commands[CMD_BENCHTIME].return_descr = "[tc0,0.5,0,1/tc]Script return values: <i>value</i>";
 
 	commands.insert(CMD_MATERIALSDATABASE, CommandSpecifier(CMD_MATERIALSDATABASE), "materialsdatabase");
-	commands[CMD_MATERIALSDATABASE].usage = "[tc0,0.5,0,1/tc]USAGE : <b>materialsdatabase (mdbname)</b>";
+	commands[CMD_MATERIALSDATABASE].usage = "[tc0,0.5,0,1/tc]USAGE : <b>materialsdatabase</b> <i>(mdbname)</i>";
 	commands[CMD_MATERIALSDATABASE].descr = "[tc0,0.5,0.5,1/tc]Switch materials database in use. This setting is not saved by savesim, so using loadsim doesn't affect this setting; default mdb set on program start.";
 
 	commands.insert(CMD_ADDMATERIAL, CommandSpecifier(CMD_ADDMATERIAL), "addmaterial");
-	commands[CMD_ADDMATERIAL].usage = "[tc0,0.5,0,1/tc]USAGE : <b>addmaterial name rectangle</b>";
+	commands[CMD_ADDMATERIAL].usage = "[tc0,0.5,0,1/tc]USAGE : <b>addmaterial<b> <i>name rectangle</i>";
 	commands[CMD_ADDMATERIAL].limits = { { Any(), Any() },{ Rect(DBL3(-MAXSIMSPACE / 2), DBL3(-MAXSIMSPACE / 2) + DBL3(MINMESHSPACE)), Rect(DBL3(-MAXSIMSPACE / 2), DBL3(MAXSIMSPACE / 2)) } };
 	commands[CMD_ADDMATERIAL].unit = "m";
 	commands[CMD_ADDMATERIAL].descr = "[tc0,0.5,0.5,1/tc]Add a new mesh with material parameters loaded from the materials database. The name is the material name as found in the mdb file (see materialsdatabase command); this also determines the type of mesh to create, as well as the created mesh name. The rectangle (m) can be specified as: <i>sx sy sz ex ey ez</i> for the start and end points in Cartesian coordinates, or as: <i>ex ey ez</i> with the start point as the origin.";
+	commands[CMD_ADDMATERIAL].return_descr = "[tc0,0.5,0,1/tc]Script return values: <i>meshname</i> - return name of mesh just added (can differ from the material name).";
 
 	commands.insert(CMD_SETMATERIAL, CommandSpecifier(CMD_SETMATERIAL), "setmaterial");
-	commands[CMD_SETMATERIAL].usage = "[tc0,0.5,0,1/tc]USAGE : <b>setmaterial name</b>";
+	commands[CMD_SETMATERIAL].usage = "[tc0,0.5,0,1/tc]USAGE : <b>setmaterial<b> <i>name</i>";
 	commands[CMD_SETMATERIAL].descr = "[tc0,0.5,0.5,1/tc]Copy material parameter values to the focused mesh, from the materials database entry with given name (see materialsdatabase command). This works even if there is a mismatch between the material types.";
 
 	commands.insert(CMD_ADDMDBENTRY, CommandSpecifier(CMD_ADDMDBENTRY), "addmdbentry");
-	commands[CMD_ADDMDBENTRY].usage = "[tc0,0.5,0,1/tc]USAGE : <b>addmdbentry meshname (materialname)</b>";
+	commands[CMD_ADDMDBENTRY].usage = "[tc0,0.5,0,1/tc]USAGE : <b>addmdbentry</b> <i>meshname (materialname)</i>";
 	commands[CMD_ADDMDBENTRY].descr = "[tc0,0.5,0.5,1/tc]Add new entry in the local materials database from parameters in the given mesh. The name of the new entry is set to materialname if specified, else set to meshname. For a complete entry you should then edit the mdb file manually with all the appropriate fields shown there.";
 
 	commands.insert(CMD_DELMDBENTRY, CommandSpecifier(CMD_DELMDBENTRY), "delmdbentry");
-	commands[CMD_DELMDBENTRY].usage = "[tc0,0.5,0,1/tc]USAGE : <b>delmdbentry materialname</b>";
+	commands[CMD_DELMDBENTRY].usage = "[tc0,0.5,0,1/tc]USAGE : <b>delmdbentry</b> <i>materialname</i>";
 	commands[CMD_DELMDBENTRY].descr = "[tc0,0.5,0.5,1/tc]Delete entry in the local materials database (see materialsdatabase for current selection).";
 
 	commands.insert(CMD_REFRESHMDB, CommandSpecifier(CMD_REFRESHMDB), "refreshmdb");
@@ -719,7 +720,7 @@ Simulation::Simulation(int Program_Version) :
 	commands[CMD_REFRESHMDB].descr = "[tc0,0.5,0.5,1/tc]Reload the local materials database (see materialsdatabase for current selection). This is useful if you modify the values in the materials database file externally.";
 
 	commands.insert(CMD_REQMDBSYNC, CommandSpecifier(CMD_REQMDBSYNC), "requestmdbsync");
-	commands[CMD_REQMDBSYNC].usage = "[tc0,0.5,0,1/tc]USAGE : <b>requestmdbsync materialname (email)</b>";
+	commands[CMD_REQMDBSYNC].usage = "[tc0,0.5,0,1/tc]USAGE : <b>requestmdbsync</b> <i>materialname (email)</i>";
 	commands[CMD_REQMDBSYNC].descr = "[tc0,0.5,0.5,1/tc]Request the given entry in the local materials database is added to the online shared materials database. This must be a completed entry - see manual for instructions. The entry will be checked before being made available to all users through the online materials database. If you want to receive an update about the status of this request include an email address.";
 
 	commands.insert(CMD_UPDATEMDB, CommandSpecifier(CMD_UPDATEMDB), "updatemdb");
@@ -728,12 +729,21 @@ Simulation::Simulation(int Program_Version) :
 
 	commands.insert(CMD_SHOWLENGHTS, CommandSpecifier(CMD_SHOWLENGHTS), "showlengths");
 	commands[CMD_SHOWLENGHTS].usage = "[tc0,0.5,0,1/tc]USAGE : <b>showlengths</b>";
-	commands[CMD_SHOWLENGHTS].descr = "[tc0,0.5,0.5,1/tc]Calculate a number of critical lengths for the focused mesh (must be ferromagentic) to inform magnetisation cellsize selection. lex = sqrt(2 A / mu0 Ms^2) : exchange length, l_Bloch = sqrt(A / K1) : Bloch wall width, l_sky = PI D / 4 K1 : Neel skyrmion wall width.";
+	commands[CMD_SHOWLENGHTS].descr = "[tc0,0.5,0.5,1/tc]Calculate a number of critical lengths for the focused mesh (must be ferromagnetic) to inform magnetisation cellsize selection. lex = sqrt(2 A / mu0 Ms^2) : exchange length, l_Bloch = sqrt(A / K1) : Bloch wall width, l_sky = PI D / 4 K1 : Neel skyrmion wall width.";
 
 	commands.insert(CMD_SHOWMCELLS, CommandSpecifier(CMD_SHOWMCELLS), "showmcells");
 	commands[CMD_SHOWMCELLS].usage = "[tc0,0.5,0,1/tc]USAGE : <b>showmcells</b>";
-	commands[CMD_SHOWMCELLS].descr = "[tc0,0.5,0.5,1/tc]Show number of discretisation cells for magnetisation for focused mesh (must be ferromagentic).";
+	commands[CMD_SHOWMCELLS].descr = "[tc0,0.5,0.5,1/tc]Show number of discretisation cells for magnetisation for focused mesh (must be ferromagnetic).";
 	commands[CMD_SHOWMCELLS].return_descr = "[tc0,0.5,0,1/tc]Script return values: <i>n</i>";
+
+	commands.insert(CMD_LOADOVF2MESH, CommandSpecifier(CMD_LOADOVF2MESH), "loadovf2mesh");
+	commands[CMD_LOADOVF2MESH].usage = "[tc0,0.5,0,1/tc]USAGE : <b>loadovf2mesh</b> <i>(renormalize_value) (directory\\)filename</i>";
+	commands[CMD_LOADOVF2MESH].descr = "[tc0,0.5,0.5,1/tc]Load an OOMMF-style OVF 2.0 file containing 3-component vector data. This will create a new permalloy ferromagnetic mesh with dimensions and magnetization data obtained from the OVF 2.0 file. By default the loaded data will not be renormalized: renormalize_value = 0. If a value is specified for renormalize_value, the loaded data will be renormalized to it (e.g. this would be an Ms value).";
+
+	commands.insert(CMD_LOADOVF2MAG, CommandSpecifier(CMD_LOADOVF2MAG), "loadovf2mag");
+	commands[CMD_LOADOVF2MAG].usage = "[tc0,0.5,0,1/tc]USAGE : <b>loadovf2mag</b> <i>(renormalize_value) (directory\\)filename</i>";
+	commands[CMD_LOADOVF2MAG].descr = "[tc0,0.5,0.5,1/tc]Load an OOMMF-style OVF 2.0 file containing magnetisation data, into the currently focused mesh (which must be ferromagnetic). The mesh dimensions will be changed using the settings in the OVF file. By default the loaded data will not be renormalized: renormalize_value = 0. If a value is specified for renormalize_value, the loaded data will be renormalized to it (e.g. this would be an Ms value).";
+	commands[CMD_LOADOVF2MAG].unit = "A/m";
 
 	commands.insert(CMD_DP_CLEARALL, CommandSpecifier(CMD_DP_CLEARALL), "dp_clearall");
 	commands[CMD_DP_CLEARALL].usage = "[tc0,0.5,0,1/tc]USAGE : <b>dp_clearall</b>";

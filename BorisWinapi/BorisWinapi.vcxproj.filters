@@ -504,6 +504,9 @@
     <ClInclude Include="DemagTFunc_Asympt.h">
       <Filter>FUNCS</Filter>
     </ClInclude>
+    <ClInclude Include="OVF2_Handlers.h">
+      <Filter>SIMULATION</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="BorisGraphics.cpp">
@@ -904,6 +907,9 @@
     </ClCompile>
     <ClCompile Include="MaterialsDataBase.cpp">
       <Filter>MATERIALS DB</Filter>
+    </ClCompile>
+    <ClCompile Include="OVF2_Handlers.cpp">
+      <Filter>SIMULATION</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

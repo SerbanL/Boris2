@@ -116,6 +116,9 @@ public:
 	//set Bloch skyrmion with given chirality (outside is up: 1, outside is down: -1) in given rectangle (relative to mesh), calculated in the x-y plane
 	void SetSkyrmionBloch(int orientation, int chirality, Rect skyrmion_rect);
 
+	//set M from given data VEC (0 values mean empty points) -> stretch data to M dimensions if needed.
+	void SetMagnetisationFromData(VEC<DBL3>& data);
+
 	//----------------------------------- OVERLOAD MESH VIRTUAL METHODS
 
 	//Curie temperature for ferromagnetic meshes. Calling this forces recalculation of affected material parameters temperature dependence - any custom dependence set will be overwritten.

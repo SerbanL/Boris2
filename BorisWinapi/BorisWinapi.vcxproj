@@ -297,6 +297,7 @@
     <ClInclude Include="OerstedKernel.h" />
     <ClInclude Include="OerstedKernelCUDA.h" />
     <ClInclude Include="OerstedTFunc.h" />
+    <ClInclude Include="OVF2_Handlers.h" />
     <ClInclude Include="ParametersDefs.h" />
     <ClInclude Include="PhysQ.h" />
     <ClInclude Include="PhysQDefs.h" />
@@ -427,6 +428,7 @@
     <ClCompile Include="OerstedKernel.cpp" />
     <ClCompile Include="OerstedKernelCUDA.cpp" />
     <ClCompile Include="OerstedTFunc.cpp" />
+    <ClCompile Include="OVF2_Handlers.cpp" />
     <ClCompile Include="PhysQ.cpp" />
     <ClCompile Include="PhysQRep.cpp" />
     <ClCompile Include="Roughness.cpp" />

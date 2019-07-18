@@ -1,0 +1,40 @@
+//mumax 3.10 windows_amd64 go1.11 (gc)
+//CUDA 10010 GeForce GTX 980 Ti(6144MB) cc5.2 , using CC 52  PTX
+//(c) Arne Vansteenkiste, Dynamat LAB, Ghent University, Belgium
+//This is free software without any warranty. See license.txt
+//********************************************************************//
+//  If you use mumax in any work or publication,                      //
+//  we kindly ask you to cite the references in references.bib        //
+//********************************************************************//
+//output directory: skyrmion_x1.out/
+Nx := 128
+Ny := 128
+Nz := 1
+B_start := 0.001256637
+B_end := 0.025132741
+B_step := 0.001256637
+SetGridSize(Nx, Ny, Nz)
+SetCellSize(4e-9, 4e-9, 1e-9)
+Msat = 600000
+Aex = 10e-12
+alpha = 1
+Dind = 1.5e-3
+Ku1 = 380e3
+anisU = vector(0, 0, 1)
+B_ext = vector(0, 0, B_start)
+defRegion(0, layers(0, 1))
+SetGeom(Circle(5.12e-07))
+m = NeelSkyrmion(1, -1)
+MinimizerStop = 1e-6
+for B := B_start; B <= B_end; B += B_step {
+	B_ext = vector(0, 0, B)
+	minimize()
+	save(m)
+}
+//********************************************************************//
+//Please cite the following references, relevant for your simulation: //
+//See bibtex file in output folder for justification.                 //
+//********************************************************************//
+//   * Vansteenkiste et al., AIP Adv. 4, 107133 (2014).
+//   * Exl et al., J. Appl. Phys. 115, 17D118 (2014).
+//   * Mulkers et al., Phys. Rev. B 95, 144401 (2017).

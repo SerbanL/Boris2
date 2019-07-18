@@ -87,6 +87,24 @@ void VEC_VC<VType>::copy_values(const VEC_VC<VType>& copy_this)
 	set_ngbrFlags();
 }
 
+//copy values from copy_this but keep current dimensions - if necessary map values from copy_this to local dimensions. Points with zero values are set as empty.
+template <typename VType>
+void VEC_VC<VType>::copy_values(const VEC<VType>& copy_this)
+{
+	VEC<VType>::copy_values(copy_this);
+
+	//mark zero points as empty before setting flags; otherwise they are not empty -> sets shape
+#pragma omp parallel for
+	for (int idx = 0; idx < n.dim(); idx++) {
+
+		if (VEC<VType>::is_empty(idx)) mark_empty(idx);
+		else mark_not_empty(idx);
+	}
+
+	//recalculate neighbor flags
+	set_ngbrFlags();
+}
+
 //scale all stored values by the given constant
 template <typename VType>
 void VEC_VC<VType>::scale_values(double constant)

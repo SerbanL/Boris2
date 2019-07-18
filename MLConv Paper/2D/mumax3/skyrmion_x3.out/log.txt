@@ -1,0 +1,128 @@
+//mumax 3.10 windows_amd64 go1.11 (gc)
+//CUDA 10010 GeForce GTX 980 Ti(6144MB) cc5.2 , using CC 52  PTX
+//(c) Arne Vansteenkiste, Dynamat LAB, Ghent University, Belgium
+//This is free software without any warranty. See license.txt
+//********************************************************************//
+//  If you use mumax in any work or publication,                      //
+//  we kindly ask you to cite the references in references.bib        //
+//********************************************************************//
+//output directory: skyrmion_x3.out/
+Nx := 128
+Ny := 128
+Nz := 9
+SetGridSize(Nx, Ny, Nz)
+SetCellSize(4e-9, 4e-9, 1e-9)
+Msat = 600000
+Aex = 10e-12
+alpha = 1
+Dind = 1.5e-3
+Ku1 = 380e3
+anisU = vector(0, 0, 1)
+a := Circle(5.12e-07)
+b := Layers(1, 4)
+g1 := a.Sub(b)
+c := Layers(5, 8)
+g2 := g1.Sub(c)
+SetGeom(g2)
+m = NeelSkyrmion(1, -1)
+MinimizerStop = 1e-6
+m0 := CropLayer(m, 0)
+m4 := CropLayer(m, 4)
+m8 := CropLayer(m, 8)
+Bfield3 := 0.007539822
+Bfield4 := 0.008796459
+Bfield5 := 0.010053096
+Bfield6 := 0.011309734
+Bfield7 := 0.012566371
+Bfield8 := 0.013823008
+Bfield9 := 0.015079645
+Bfield10 := 0.016336282
+Bfield11 := 0.017592919
+Bfield12 := 0.018849556
+Bfield13 := 0.020106193
+Bfield14 := 0.021362830
+Bfield15 := 0.022619467
+Bfield16 := 0.023876104
+Bfield17 := 0.025132741
+B_ext = vector(0, 0, Bfield3)
+minimize()
+save(m0)
+save(m4)
+save(m8)
+B_ext = vector(0, 0, Bfield4)
+minimize()
+save(m0)
+save(m4)
+save(m8)
+B_ext = vector(0, 0, Bfield5)
+minimize()
+save(m0)
+save(m4)
+save(m8)
+B_ext = vector(0, 0, Bfield6)
+minimize()
+save(m0)
+save(m4)
+save(m8)
+B_ext = vector(0, 0, Bfield7)
+minimize()
+save(m0)
+save(m4)
+save(m8)
+B_ext = vector(0, 0, Bfield8)
+minimize()
+save(m0)
+save(m4)
+save(m8)
+B_ext = vector(0, 0, Bfield9)
+minimize()
+save(m0)
+save(m4)
+save(m8)
+B_ext = vector(0, 0, Bfield10)
+minimize()
+save(m0)
+save(m4)
+save(m8)
+B_ext = vector(0, 0, Bfield11)
+minimize()
+save(m0)
+save(m4)
+save(m8)
+B_ext = vector(0, 0, Bfield12)
+minimize()
+save(m0)
+save(m4)
+save(m8)
+B_ext = vector(0, 0, Bfield13)
+minimize()
+save(m0)
+save(m4)
+save(m8)
+B_ext = vector(0, 0, Bfield14)
+minimize()
+save(m0)
+save(m4)
+save(m8)
+B_ext = vector(0, 0, Bfield15)
+minimize()
+save(m0)
+save(m4)
+save(m8)
+B_ext = vector(0, 0, Bfield16)
+minimize()
+save(m0)
+save(m4)
+save(m8)
+B_ext = vector(0, 0, Bfield17)
+minimize()
+save(m0)
+save(m4)
+save(m8)
+//********************************************************************//
+//Please cite the following references, relevant for your simulation: //
+//See bibtex file in output folder for justification.                 //
+//********************************************************************//
+//   * Vansteenkiste et al., AIP Adv. 4, 107133 (2014).
+//   * Exl et al., J. Appl. Phys. 115, 17D118 (2014).
+//   * Mulkers et al., Phys. Rev. B 95, 144401 (2017).

@@ -439,6 +439,9 @@ public:
 	template <typename PType = decltype(GetMagnitude(std::declval<VType>()))>
 	void renormalize(PType new_norm);
 
+	//copy values from copy_this but keep current dimensions - if necessary map values from copy_this to local dimensions. Points with zero values are set as empty.
+	void copy_values(const VEC<VType>& copy_this);
+
 	//copy values from copy_this but keep current dimensions - if necessary map values from copy_this to local dimensions; from flags only copy the shape but not the boundary condition values or anything else - these are reset
 	void copy_values(const VEC_VC<VType>& copy_this);
 

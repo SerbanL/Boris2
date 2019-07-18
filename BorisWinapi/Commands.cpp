@@ -2719,6 +2719,9 @@ void Simulation::HandleCommand(string command_string) {
 						//mesh created, now copy parameter values
 						mdb.copy_parameters(*SMesh[meshName]);
 					}
+
+					if (script_client_connected)
+						commSocket.SetSendData({ meshName });
 				}
 
 				UpdateScreen();
@@ -2821,6 +2824,112 @@ void Simulation::HandleCommand(string command_string) {
 				if (script_client_connected) commSocket.SetSendData(commandSpec.PrepareReturnParameters(SMesh.active_mesh()->n));
 			}
 			else if (verbose) BD.DisplayConsoleError("Focused mesh is not a ferromagnetic mesh.");
+		}
+		break;
+
+		case CMD_LOADOVF2MESH:
+		{
+			double renormalize_value;
+			string fileName;
+
+			error = commandSpec.GetParameters(command_fields, renormalize_value, fileName);
+			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, fileName); renormalize_value = 0; }
+
+			if (!error) {
+
+				StopSimulation();
+
+				if (GetFileTermination(fileName) != ".ovf")
+					fileName += ".ovf";
+
+				if (!GetFilenameDirectory(fileName).length()) fileName = directory + fileName;
+
+				VEC<DBL3> data;
+
+				OVF2 ovf2;
+				error = ovf2.Read_OVF2_VEC(fileName, data);
+
+				if (!error) {
+
+					//data loaded correctly, so make a ferromagnetic mesh and set M values from data
+
+					if (IsNZ(renormalize_value)) data.renormalize(renormalize_value);
+
+					string new_mesh_name = "permalloy";
+
+					int meshnum = 0;
+
+					while (SMesh.contains(new_mesh_name)) {
+
+						meshnum++;
+						new_mesh_name = string("permalloy_") + ToString(meshnum);
+					}
+
+					if (!err_hndl.call(&SuperMesh::AddMesh, &SMesh, new_mesh_name, MESH_FERROMAGNETIC, data.rect)) {
+
+						if (!err_hndl.call(&Mesh::SetMeshCellsize, SMesh[new_mesh_name], data.h)) {
+
+							SMesh[new_mesh_name]->SetMagnetisationFromData(data);
+						}
+					}
+				}
+
+				UpdateScreen();
+			}
+			else if (verbose) PrintCommandUsage(command_name);
+		}
+		break;
+
+		case CMD_LOADOVF2MAG:
+		{
+			double renormalize_value;
+			string fileName;
+
+			error = commandSpec.GetParameters(command_fields, renormalize_value, fileName);
+			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, fileName); renormalize_value = 0; }
+
+			if (!error) {
+
+				StopSimulation();
+
+				if (GetFileTermination(fileName) != ".ovf")
+					fileName += ".ovf";
+
+				if (!GetFilenameDirectory(fileName).length()) fileName = directory + fileName;
+
+				VEC<DBL3> data;
+
+				OVF2 ovf2;
+				error = ovf2.Read_OVF2_VEC(fileName, data);
+
+				if (!error) {
+
+					//data loaded correctly, so resize currently focused mesh (if ferromagnetic) then copy magnetisation data to it.
+
+					if (IsNZ(renormalize_value)) data.renormalize(renormalize_value);
+
+					if (SMesh.active_mesh()->Magnetisation_Enabled()) {
+						
+						std::function<void(string, Rect)> save_data_updater = [&](string meshName, Rect meshRect_old) -> void {
+
+							//update rectangles in saveDataList for the named mesh
+							UpdateSaveDataEntries(meshRect_old, SMesh[meshName]->GetMeshRect(), meshName);
+						};
+
+						if (!err_hndl.call(&SuperMesh::SetMeshRect, &SMesh, SMesh.GetMeshFocus(), data.rect, save_data_updater)) {
+							
+							if (!err_hndl.call(&Mesh::SetMeshCellsize, SMesh.active_mesh(), data.h)) {
+
+								SMesh.active_mesh()->SetMagnetisationFromData(data);
+
+								UpdateScreen_AutoSet();
+							}
+						}
+					}
+					else if (verbose) BD.DisplayConsoleError("Focused mesh must be ferromagnetic.");
+				}
+			}
+			else if (verbose) PrintCommandUsage(command_name);
 		}
 		break;
 

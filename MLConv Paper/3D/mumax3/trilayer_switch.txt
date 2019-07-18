@@ -1,0 +1,44 @@
+Nx := 128
+Ny := 64
+Nz := 52
+
+SetGridSize(Nx, Ny, Nz)
+SetCellSize(5e-9, 5e-9, 1e-9)
+Msat = 800000
+Aex = 13e-12
+alpha = 0.02
+
+defRegion(0, layers(0, 20))
+defRegion(1, layers(20, 21))
+defRegion(2, layers(21, 31))
+defRegion(3, layers(31, 32))
+defRegion(4, layers(32, 52))
+
+m.setRegion(0, uniform(-1, 0, 0))
+m.setRegion(1, uniform(0, 0, 0))
+m.setRegion(2, uniform(1, 0, 0))
+m.setRegion(3, uniform(0, 0, 0))
+m.setRegion(4, uniform(-1, 0, 0))
+
+B_ext = vector(0.0, 0.0, 0.0)
+
+//switching field for top and bottom layers
+B_ext.setRegion(0, vector(0.025037111148343075, 0.0021904566281595616, 0.0))
+B_ext.setRegion(4, vector(0.025037111148343075, 0.0021904566281595616, 0.0))
+
+//the middle layer switches due to stray fields from top and bottom layers
+//we do need a small field to break the symmetry : must ensure the solutions calculated by Boris and Mumax3 resp. do not
+//diverge at metastable points in the energy landscape purely due to differences in floating point errors
+B_ext.setRegion(2, vector(0.006259271503900462, 0.0005476160419954826, 0.0))
+
+SetSolver(4)
+//ode stiffness due to 1 nm z cellsize means we need a much smaller dT
+FixDt = 100e-15
+
+TableAdd(Crop(m, 0, Nx, 0, Ny, 0, 20))
+TableAdd(Crop(m, 0, Nx, 0, Ny, 21, 31))
+TableAdd(Crop(m, 0, Nx, 0, Ny, 32, 52))
+
+TableAutosave(10e-12)
+
+Run(3e-9)
