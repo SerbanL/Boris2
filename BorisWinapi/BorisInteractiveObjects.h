@@ -18,8 +18,11 @@ enum IOI_
 	//super-mesh module : minor type is an entry from MOD_ enum
 	IOI_SMODULE,
 
-	//Available/set ode and evaluation method for magnetization : minorId is an entry from ODE_ (the equation), auxId is the EVAL_ entry (the evaluation method), textId is the name of the evaluation method
+	//Available/set ode : minorId is an entry from ODE_ (the equation)
 	IOI_ODE,
+
+	//Available/set evaluation method for ode : minorId is an entry from ODE_ (the equation), auxId is the EVAL_ entry (the evaluation method), textId is the name of the evaluation method
+	IOI_ODE_EVAL,
 
 	//Shows a mesh name : minorId is the unique mesh id number, textId is the mesh name (below are similar objects but used in different lists, so these lists need updating differently).
 	//auxId is also used : value 1 means update list, value 0 means do not update list (but delete line if mesh is deleted).
@@ -215,5 +218,23 @@ enum IOI_
 	IOI_NCOMMON,
 
 	//Shows materials database in use. textId is the name of the database, including the path.
-	IOI_LOCALMDB
+	IOI_LOCALMDB,
+
+	//Shows relative error fail threshold for ode eval. textId is the value.
+	IOI_ODERELERRFAIL,
+
+	//Shows relative error high threshold for decreasing dT. textId is the value.
+	IOI_ODERELERRHIGH,
+
+	//Shows relative error low threshold for increasing dT. textId is the value.
+	IOI_ODERELERRLOW,
+
+	//Shows dT increase factor. textId is the value.
+	IOI_ODEDTINCR,
+
+	//Shows minimum dT value. textId is the value.
+	IOI_ODEDTMIN,
+
+	//Shows maximum dT value. textId is the value.
+	IOI_ODEDTMAX
 };

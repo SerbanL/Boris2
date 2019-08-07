@@ -106,3 +106,33 @@ BError SuperMesh::SetESMeshCellsize(DBL3 h_e_)
 
 	return error;
 }
+
+//--------------------------------------------------------- GET PROPERTIES / VALUES
+
+//get total volume energy density
+double SuperMesh::GetTotalEnergy(void)
+{
+#if COMPILECUDA == 1
+
+	//If CUDA enabled then obtain total energy density from all modules -> this involves potentially many individual cuReal transfers from gpu to cpu so not ideal
+	//This is fine since we don't need to get the total energy often (but will not optimizing if we need to use the total energy density every iteration in some solvers in the future).
+	if (pSMeshCUDA) {
+
+		total_energy_density = 0.0;
+
+		//collect energy density values from modules in individual meshes
+		for (int idx = 0; idx < (int)pMesh.size(); idx++) {
+
+			total_energy_density += (pMesh[idx]->GetEnergy(MOD_ALL) * energy_density_weights[idx]);
+		}
+
+		//collect energy density values from supermesh modules
+		for (int idx = 0; idx < (int)pSMod.size(); idx++) {
+
+			total_energy_density += pSMod[idx]->GetEnergy();
+		}
+	}
+#endif
+
+	return total_energy_density;
+}

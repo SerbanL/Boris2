@@ -145,7 +145,10 @@ __global__ void cuvec_vc_average_nonempty_kernel(cuSZ3& n, int*& ngbrFlags, VTyp
 {
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
 
-	reduction_avg(idx, n.dim(), quantity, average_value, points_count, ngbrFlags[idx] & NF_NOTEMPTY);
+	if (idx < n.dim()) {
+
+		reduction_avg(idx, n.dim(), quantity, average_value, points_count, ngbrFlags[idx] & NF_NOTEMPTY);
+	}
 }
 
 template <typename VType>
@@ -155,7 +158,10 @@ __global__ void cuvec_vc_average_nonempty_kernel(cuSZ3& n, cuBox box, int*& ngbr
 
 	cuINT3 ijk = cuINT3(idx % n.x, (idx / n.x) % n.y, idx / (n.x*n.y));
 
-	reduction_avg(idx, n.dim(), quantity, average_value, points_count, box.Contains(ijk) && (ngbrFlags[idx] & NF_NOTEMPTY));
+	if (idx < n.dim()) {
+
+		reduction_avg(idx, n.dim(), quantity, average_value, points_count, box.Contains(ijk) && (ngbrFlags[idx] & NF_NOTEMPTY));
+	}
 }
 
 template float cuVEC_VC<float>::average_nonempty(size_t arr_size, cuBox box);
@@ -191,7 +197,10 @@ __global__ void average_nonempty_kernel(cuSZ3& n, cuRect rectangle, cuVEC_VC<VTy
 
 	cuINT3 ijk = cuINT3(idx % n.x, (idx / n.x) % n.y, idx / (n.x*n.y));
 
-	reduction_avg(idx, n.dim(), cuvec.data(), average_value, points_count, cuvec.box_from_rect_max(rectangle + cuvec.rect.s).Contains(ijk) && cuvec.is_not_empty(ijk));
+	if (idx < n.dim()) {
+
+		reduction_avg(idx, n.dim(), cuvec.data(), average_value, points_count, cuvec.box_from_rect_max(rectangle + cuvec.rect.s).Contains(ijk) && cuvec.is_not_empty(ijk));
+	}
 }
 
 template float cuVEC_VC<float>::average_nonempty(size_t arr_size, cuRect rectangle);

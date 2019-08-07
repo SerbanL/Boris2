@@ -184,25 +184,28 @@ string Simulation::Build_Modules_ListLine(int meshIndex)
 
 void Simulation::Print_ODEs(void) 
 {
-	string odes_list = "[tc1,1,1,1/tc]Available ODEs and associated evaluation methods ([tc0,0.5,0,1/tc]green [tc1,1,1,1/tc]set, [tc1,0,0,1/tc]red [tc1,1,1,1/tc]not set) : \n";
+	string odes_eval_list = "[tc1,1,1,1/tc]Available ODEs and associated evaluation methods ([tc0,0.5,0,1/tc]green [tc1,1,1,1/tc]set, [tc1,0,0,1/tc]red [tc1,1,1,1/tc]not set, [tc0.5,0.5,0.5,1/tc]gray [tc1,1,1,1/tc]not available) : \n";
+
+	odes_eval_list += "[tc1,1,1,1/tc]Set Equation: ";
 
 	for (int odeIdx = 0; odeIdx < (int)odeHandles.size(); odeIdx++) {
 
-		odes_list += "[tc1,1,1,1/tc]<b>" + odeHandles[odeIdx] + "</b></c> ";
-
 		ODE_ odeId = (ODE_)odeHandles.get_ID_from_index(odeIdx);
 
-		for (int evalIdx = 0; evalIdx < (int)odeAllowedEvals(odeId).size(); evalIdx++) {
-
-			EVAL_ evalId = odeAllowedEvals(odeId)[evalIdx];
-
-			odes_list += "[sa" + ToString(evalIdx) + "/sa]" + MakeIO(IOI_ODE, odeId, evalId) + "</c> ";
-		}
-
-		odes_list += "</c>\n";
+		odes_eval_list += "[tc1,1,1,1/tc]" + MakeIO(IOI_ODE, odeId) + "</c> ";
 	}
 
-	BD.DisplayFormattedConsoleMessage(odes_list);
+	odes_eval_list += "\n";
+	odes_eval_list += "[tc1,1,1,1/tc]Evaluation:   ";
+
+	for (int evalIdx = 0; evalIdx < (int)odeEvalHandles.size(); evalIdx++) {
+
+		EVAL_ evalId = (EVAL_)odeEvalHandles.get_ID_from_index(evalIdx);
+
+		odes_eval_list += "[tc1,1,1,1/tc]" + MakeIO(IOI_ODE_EVAL, evalId) + "</c> ";
+	}
+
+	BD.DisplayFormattedConsoleMessage(odes_eval_list);
 }
 
 //---------------------------------------------------- SHOW DATA LIST (for console display)
@@ -802,4 +805,18 @@ void Simulation::Print_MaterialsDatabase(void)
 	string mdb_info = "[tc1,1,1,1/tc]Local materials database in use : " + MakeIO(IOI_LOCALMDB, mdb.GetDataBaseName());
 
 	BD.DisplayFormattedConsoleMessage(mdb_info);
+}
+
+//---------------------------------------------------- ADAPTIVE TIME STEP CONTROL
+
+void Simulation::Print_AStepCtrl(void)
+{
+	string astep_ctrl_info = "[tc1,1,1,1/tc]Adaptive time step control. err_fail : " + MakeIO(IOI_ODERELERRFAIL, SMesh.Get_AStepRelErrCtrl().i);
+	astep_ctrl_info += "</c> [tc1,1,1,1/tc]err_high : " + MakeIO(IOI_ODERELERRHIGH, SMesh.Get_AStepRelErrCtrl().j);
+	astep_ctrl_info += "</c> [tc1,1,1,1/tc]err_low : " + MakeIO(IOI_ODERELERRLOW, SMesh.Get_AStepRelErrCtrl().k);
+	astep_ctrl_info += "</c> [tc1,1,1,1/tc]dT_incr : " + MakeIO(IOI_ODEDTINCR, SMesh.Get_AStepdTCtrl().i);
+	astep_ctrl_info += "</c> [tc1,1,1,1/tc]dT_min : " + MakeIO(IOI_ODEDTMIN, SMesh.Get_AStepdTCtrl().j);
+	astep_ctrl_info += "</c> [tc1,1,1,1/tc]dT_max : " + MakeIO(IOI_ODEDTMAX, SMesh.Get_AStepdTCtrl().k);
+
+	BD.DisplayFormattedConsoleMessage(astep_ctrl_info);
 }

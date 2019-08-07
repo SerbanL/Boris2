@@ -124,8 +124,17 @@ protected:
 	template <typename cuVECIn, typename cuVECOut>
 	void FinishConvolution_Set(cu_obj<cuVECIn>& In, cu_obj<cuVECOut>& Out, cu_obj<cuReal>& energy, bool get_energy);
 	
+	//Add convolution result (in cuS arrays) to output and obtain energy value : product of In with Out times -MU0 / (2 * non_empty_points), where non_empty_points = In.get_nonempty_points();
 	template <typename cuVECIn, typename cuVECOut>
 	void FinishConvolution_Add(cu_obj<cuVECIn>& In, cu_obj<cuVECOut>& Out, cu_obj<cuReal>& energy, bool get_energy);
+
+	//Copy convolution result (in cuS arrays) to output and obtain energy value : weighted product of In with Out times -MU0 / (2 * non_empty_points), where non_empty_points = In.get_nonempty_points();
+	template <typename cuVECIn, typename cuVECOut>
+	void FinishConvolution_Set(cu_obj<cuVECIn>& In, cu_obj<cuVECOut>& Out, cu_obj<cuReal>& energy, cu_obj<cuReal>& energy_weight);
+
+	//Add convolution result (in cuS arrays) to output and obtain energy value : weighted product of In with Out times -MU0 / (2 * non_empty_points), where non_empty_points = In.get_nonempty_points();
+	template <typename cuVECIn, typename cuVECOut>
+	void FinishConvolution_Add(cu_obj<cuVECIn>& In, cu_obj<cuVECOut>& Out, cu_obj<cuReal>& energy, cu_obj<cuReal>& energy_weight);
 
 	//-------------------------- GETTERS
 

@@ -319,7 +319,7 @@ BError Roughness::MakeCUDAModule(void)
 	return error;
 }
 
-void Roughness::UpdateField(void)
+double Roughness::UpdateField(void)
 {
 	double energy = 0;
 
@@ -344,6 +344,8 @@ void Roughness::UpdateField(void)
 	else energy = 0;
 
 	this->energy = energy;
+
+	return energy;
 }
 
 #endif

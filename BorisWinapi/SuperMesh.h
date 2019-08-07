@@ -107,6 +107,12 @@ private:
 	//Moreover the interface cells are set with magnetisation direction along the dipole magnetisation direction. This is an easy way of simulating exchange coupling to the dipoles.
 	bool coupled_dipoles = false;
 
+	//the total calculated energy density -> return by UpdateModules() or UpdateField() methods.
+	double total_energy_density = 0.0;
+	//different meshes have different weights when contributing to the total energy density -> ratio of their non-empty volume to total non-empty volume
+	//this vector is calculated at initialization and has same size as pMesh vector
+	vector<double> energy_density_weights;
+
 public:
 
 	//name of super-mesh for use in console (e.g. addmodule supermesh sdemag). It is also a reserved name : no other module can be named with this handle
@@ -199,6 +205,9 @@ public:
 	//set the time step for the magnetisation solver
 	void SetTimeStep(double dT) { odeSolver.SetdT(dT); }
 
+	//set parameters for adaptive time step control
+	void SetAdaptiveTimeStepCtrl(double err_fail, double err_high, double err_low, double dT_incr, double dT_min, double dT_max) { odeSolver.SetAdaptiveTimeStepCtrl(err_fail, err_high, err_low, dT_incr, dT_min, dT_max); }
+
 	//is the current time step fully finished? - most evaluation schemes need multiple sub-steps
 	bool CurrentTimeStepSolved(void) { return odeSolver.TimeStepSolved(); }
 
@@ -214,6 +223,7 @@ public:
 
 	//get set ODE and evaluation method
 	void QueryODE(ODE_ &setODE, EVAL_ &evalMethod) { odeSolver.QueryODE(setODE, evalMethod); }
+	void QueryODE(ODE_ &setODE) { odeSolver.QueryODE(setODE); }
 
 	int GetIteration(void) { return odeSolver.GetIteration(); }
 	int GetStageIteration(void) { return odeSolver.GetStageIteration(); }
@@ -222,6 +232,10 @@ public:
 	double GetStageTime(void) { return odeSolver.GetStageTime(); }
 	double GetTimeStep(void) { return odeSolver.GetTimeStep(); }
 	double Get_mxh(void) { return odeSolver.Get_mxh(); }
+	double Get_dmdt(void) { return odeSolver.Get_dmdt(); }
+
+	DBL3 Get_AStepRelErrCtrl(void) { return odeSolver.Get_AStepRelErrCtrl(); }
+	DBL3 Get_AStepdTCtrl(void) { return odeSolver.Get_AStepdTCtrl(); }
 
 	bool IsMovingMeshSet(void) { return odeSolver.IsMovingMeshSet(); }
 	int GetId_of_MoveMeshTrigger(void) { return odeSolver.GetId_of_MoveMeshTrigger(); }
@@ -370,7 +384,7 @@ public:
 
 	bool IsSuperMeshModuleSet(MOD_ moduleId) { return pSMod.is_ID_set(moduleId); }
 
-	//--------------------------------------------------------- GET PROPERTIES
+	//--------------------------------------------------------- GET PROPERTIES / VALUES
 
 	Rect GetSMeshRect(void) { return sMeshRect; }
 
@@ -385,6 +399,9 @@ public:
 	bool Get_Scale_Rects(void) { return scale_rects; }
 
 	bool Get_Coupled_To_Dipoles(void) { return coupled_dipoles; }
+
+	//get total volume energy density
+	double GetTotalEnergy(void);
 
 	//--------------------------------------------------------- GET MODULE SPECIFIC PROPERTIES
 

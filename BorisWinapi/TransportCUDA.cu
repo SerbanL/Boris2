@@ -348,8 +348,11 @@ cuReal TransportCUDA::CalculateElectrodeCurrent(cuBox electrode_box)
 		CalculateElectrodeCurrent_pZ_Side_Kernel <<< (ker_size + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (pMeshCUDA->elC, pMeshCUDA->V, energy, electrode_box);
 	}
 	
-	//energy has the current value
-	return energy.to_cpu();
+	//energy has the current value; reset it after as we don't want to count it to the total energy density
+	double current = energy.to_cpu();
+	ZeroEnergy();
+
+	return current;
 }
 
 #endif

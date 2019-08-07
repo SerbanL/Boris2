@@ -107,7 +107,7 @@ BError Anisotropy_Uniaxial::MakeCUDAModule(void)
 	return error;
 }
 
-void Anisotropy_Uniaxial::UpdateField(void) 
+double Anisotropy_Uniaxial::UpdateField(void)
 {
 	double energy = 0;
 
@@ -140,6 +140,8 @@ void Anisotropy_Uniaxial::UpdateField(void)
 	else energy = 0;
 
 	this->energy = energy;
+
+	return energy;
 }
 
 #endif

@@ -176,11 +176,14 @@ BError Transport::MakeCUDAModule(void)
 	return error;
 }
 
-void Transport::UpdateField(void)
+double Transport::UpdateField(void)
 {	
 	//update elC (AMR and temperature)
 	if(pSMesh->CurrentTimeStepSolved())
 		CalculateElectricalConductivity();
+
+	//no contribution to total energy density
+	return 0.0;
 }
 
 //-------------------Calculation Methods

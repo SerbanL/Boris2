@@ -6,17 +6,32 @@
 BError SuperMesh::InitializeAllModules(void)
 {
 	BError error(CLASS_STR(SuperMesh));
+	
+	energy_density_weights.assign(pMesh.size(), 0.0);
+
+	double total_nonempty_volume = 0.0;
 
 	//1. initialize individual mesh modules
 	for (int idx = 0; idx < (int)pMesh.size(); idx++) {
 
 		if (!error) error = pMesh[idx]->InitializeAllModules();
+
+		total_nonempty_volume += (double)pMesh[idx]->M.get_nonempty_cells() * pMesh[idx]->M.h.dim();
 	}
 
 	//2. initialize super-mesh modules
 	for (int idx = 0; idx < (int)pSMod.size(); idx++) {
 
 		if (!error) error = pSMod[idx]->Initialize();
+	}
+
+	//3. set weights for total energy density calculation
+	if (total_nonempty_volume) {
+
+		for (int idx = 0; idx < (int)pMesh.size(); idx++) {
+
+			energy_density_weights[idx] = (double)pMesh[idx]->M.get_nonempty_cells() * pMesh[idx]->M.h.dim() / total_nonempty_volume;
+		}
 	}
 
 	return error;
@@ -27,16 +42,31 @@ BError SuperMesh::InitializeAllModulesCUDA(void)
 {
 	BError error(CLASS_STR(SuperMesh));
 
+	energy_density_weights.assign(pMesh.size(), 0.0);
+
+	double total_nonempty_volume = 0.0;
+
 	//1. initialize individual mesh modules
 	for (int idx = 0; idx < (int)pMesh.size(); idx++) {
 
 		if (!error) error = pMesh[idx]->InitializeAllModulesCUDA();
+
+		total_nonempty_volume += (double)pMesh[idx]->M.get_nonempty_cells() * pMesh[idx]->M.h.dim();
 	}
 
 	//2. initialize super-mesh modules
 	for (int idx = 0; idx < (int)pSMod.size(); idx++) {
 
 		if (!error) error = pSMod[idx]->InitializeCUDA();
+	}
+
+	//3. set weights for total energy density calculation
+	if (total_nonempty_volume) {
+
+		for (int idx = 0; idx < (int)pMesh.size(); idx++) {
+
+			energy_density_weights[idx] = (double)pMesh[idx]->M.get_nonempty_cells() * pMesh[idx]->M.h.dim() / total_nonempty_volume;
+		}
 	}
 
 	return error;
@@ -56,16 +86,19 @@ void SuperMesh::AdvanceTime(void)
 			pMesh[idx]->PrepareNewIteration();
 		}
 
+		total_energy_density = 0.0;
+
 		//first update the effective fields in all the meshes (skipping any that have been calculated on the super-mesh
 		for (int idx = 0; idx < (int)pMesh.size(); idx++) {
 
-			pMesh[idx]->UpdateModules();
+			total_energy_density += (pMesh[idx]->UpdateModules() * energy_density_weights[idx]);
 		}
 
 		//update effective field for super-mesh modules
 		for (int idx = 0; idx < (int)pSMod.size(); idx++) {
 
-			pSMod[idx]->UpdateField();
+			//super-mesh modules contribute with equal weights as sum total of individual mesh energy densities -> i.e. we don't need to apply a weight here
+			total_energy_density += pSMod[idx]->UpdateField();
 		}
 
 		//advance time using the ODE evaluation method - ODE solvers are called separately in the ferromagnetic meshes. This is why the same evaluation method must be used in all the ferromagnetic meshes, with the same time step.
@@ -115,16 +148,18 @@ void SuperMesh::ComputeFields(void)
 		pMesh[idx]->PrepareNewIteration();
 	}
 
+	total_energy_density = 0.0;
+
 	//first update the effective fields in all the meshes (skipping any that have been calculated on the super-mesh
 	for (int idx = 0; idx < (int)pMesh.size(); idx++) {
 
-		pMesh[idx]->UpdateModules();
+		total_energy_density += pMesh[idx]->UpdateModules();
 	}
 
 	//update effective field for super-mesh modules
 	for (int idx = 0; idx < (int)pSMod.size(); idx++) {
 
-		pSMod[idx]->UpdateField();
+		total_energy_density += pSMod[idx]->UpdateField();
 	}
 }
 

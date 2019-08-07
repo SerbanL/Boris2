@@ -357,7 +357,8 @@
     <ClCompile Include="BorisConsole.cpp" />
     <ClCompile Include="BorisDisplay.cpp" />
     <ClCompile Include="BorisDisplayNonGraphical.cpp" />
-    <ClCompile Include="BorisInteractiveObjects.cpp" />
+    <ClCompile Include="BorisInteractiveObjects_Ctrl.cpp" />
+    <ClCompile Include="BorisInteractiveObjects_State.cpp" />
     <ClCompile Include="BorisIOGenerators.cpp" />
     <ClCompile Include="Commands.cpp" />
     <ClCompile Include="ConvolutionData.cpp" />
@@ -383,9 +384,17 @@
     <ClCompile Include="DiffEq.cpp" />
     <ClCompile Include="DiffEq_Common.cpp" />
     <ClCompile Include="DiffEqCUDA.cpp" />
+    <ClCompile Include="DiffEq_Evals.cpp" />
+    <ClCompile Include="DiffEq_Evals_ABM.cpp" />
+    <ClCompile Include="DiffEq_Evals_AHeun.cpp" />
+    <ClCompile Include="DiffEq_Evals_SD.cpp" />
+    <ClCompile Include="DiffEq_Evals_RK23.cpp" />
+    <ClCompile Include="DiffEq_Evals_RK4.cpp" />
+    <ClCompile Include="DiffEq_Evals_RKF.cpp" />
+    <ClCompile Include="DiffEq_Evals_TEuler.cpp" />
     <ClCompile Include="DiffEq_Iterate.cpp" />
     <ClCompile Include="DiffEq_Equations.cpp" />
-    <ClCompile Include="DiffEq_Evals.cpp" />
+    <ClCompile Include="DiffEq_Evals_Euler.cpp" />
     <ClCompile Include="DiffEq_IterateCUDA.cpp" />
     <ClCompile Include="DiffEq_SEquations.cpp" />
     <ClCompile Include="DipoleTFunc.cpp" />
@@ -540,6 +549,14 @@
     <CudaCompile Include="DiffEq_EvalsCUDA.cu">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
     </CudaCompile>
+    <CudaCompile Include="DiffEq_EvalsCUDA_ABM.cu" />
+    <CudaCompile Include="DiffEq_EvalsCUDA_AHeun.cu" />
+    <CudaCompile Include="DiffEq_EvalsCUDA_Euler.cu" />
+    <CudaCompile Include="DiffEq_EvalsCUDA_RK23.cu" />
+    <CudaCompile Include="DiffEq_EvalsCUDA_RK4.cu" />
+    <CudaCompile Include="DiffEq_EvalsCUDA_RKF.cu" />
+    <CudaCompile Include="DiffEq_EvalsCUDA_SD.cu" />
+    <CudaCompile Include="DiffEq_EvalsCUDA_TEuler.cu" />
     <CudaCompile Include="DiffEq_EvalsLLGCUDA.cu" />
     <CudaCompile Include="DiffEq_SEquationsCUDA.cu" />
     <CudaCompile Include="DMExchangeCUDA.cu" />

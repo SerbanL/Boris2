@@ -20,12 +20,20 @@
 
 //BUGS
 
-//Changing cellsize in SDemag in CUDA causes memory errors sometimes. Quite frequent. !!!MUST SOLVE!!!
+//UNSOLVED:
+//Drag and drop simulation file sometimes crashes program - happens on Windows 10; rare.
 
-//Drag and drop simulation file sometimes crashes program - extremely rare now; in fact it has been some months since last seen, I believe I may have fixed it inadvertently.
-//Saving simulation file sometimes sets dT to zero (to a floating point error). I've only seen it happen with CUDA enabled - rare
-//Double clicking on interactive object to bring up text or command sometimes hangs program - extremely rare, last seen a few months ago.
-//Using a python script may result in program hanging if issuing a flood of commands - rare
+//LIKELY SOLVED:
+//Saving simulation file sometimes sets dT to zero (to a floating point error). I've only seen it happen with CUDA enabled.
+//Using a python script may result in program hanging if issuing a flood of commands.
+
+//immediate:
+
+//dormand-prince, cash-karp
+
+//setrandom
+//OVF2 text data
+//pbc for demag
 
 #pragma once
 
@@ -130,6 +138,8 @@ private:
 
 	//For each ODE_ entry specify allowed EVAL_ entries (i.e. for each differential equation specify allowed evaluation methods)
 	vector_lut< vector<EVAL_> > odeAllowedEvals;
+	//The default evaluation method for each ODE : this is the evaluation method set when changing ODEs
+	vector_lut<EVAL_> odeDefaultEval;
 	//Link ODE_ entries with text handles (ODE_ is the major id)
 	vector_lut<string> odeHandles;
 	//Link EVAL_ entries with text handles (EVAL_ is the major id)
@@ -400,6 +410,10 @@ private:
 	//---------------------------------------------------- MATERIALS DATABASE
 
 	void Print_MaterialsDatabase(void);
+
+	//---------------------------------------------------- ADAPTIVE TIME STEP CONTROL
+
+	void Print_AStepCtrl(void);
 
 	//---------------------------------------------------- MAKE INTERACTIVE OBJECT : Auxiliary method
 

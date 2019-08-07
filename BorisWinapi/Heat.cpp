@@ -142,8 +142,10 @@ BError Heat::MakeCUDAModule(void)
 	return error;
 }
 
-void Heat::UpdateField(void)
+double Heat::UpdateField(void)
 {
+	//no contribution to total energy density
+	return 0.0;
 }
 
 //-------------------Calculation Methods

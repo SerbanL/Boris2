@@ -259,7 +259,7 @@ BError SurfExchange::MakeCUDAModule(void)
 	return error;
 }
 
-void SurfExchange::UpdateField(void)
+double SurfExchange::UpdateField(void)
 {
 	double energy = 0;
 
@@ -372,6 +372,8 @@ void SurfExchange::UpdateField(void)
 		this->energy = energy / coupled_cells;
 	else
 		this->energy = 0.0;
+
+	return this->energy;
 }
 
 #endif

@@ -6,7 +6,7 @@
 
 using namespace std;
 
-//Simulation data available as outputs
+//Simulation data available as outputs - add new entries at the end to keep older simulation files compatible
 enum DATA_ 
 { 
 	DATA_NONE = 0,		 
@@ -17,6 +17,8 @@ enum DATA_
 	DATA_DWSHIFT, DATA_SKYSHIFT,
 	DATA_TRANSPORT_ITERSTOCONV, DATA_TRANSPORT_SITERSTOCONV, DATA_TRANSPORT_CONVERROR, DATA_TRANSPORT_ASOR,
 	DATA_TEMP, DATA_HEATDT,
+	DATA_E_TOTAL,
+	DATA_DMDT
 };
 
 //Specifier for available output data : this is stored in a vector with lut indexing, where DATA_ values are used for the major id - the DatumSpecifier corresponds to it

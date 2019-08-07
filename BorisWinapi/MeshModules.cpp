@@ -139,13 +139,19 @@ BError Mesh::InitializeAllModulesCUDA(void)
 }
 #endif
 
-void Mesh::UpdateModules(void)
+double Mesh::UpdateModules(void)
 {
+	//volume energy density
+	double energy = 0;
+
 	//Update effective field by adding in contributions from each set module
 	for (int idx = 0; idx < (int)pMod.size(); idx++) {
 
-		pMod[idx]->UpdateField();
+		//if for a module it doesn't make sense to contribute to the total volume energy density, then it should return zero.
+		energy += pMod[idx]->UpdateField();
 	}
+
+	return energy;
 }
 
 #if COMPILECUDA == 1

@@ -7,6 +7,94 @@
 
 //---------------------------------------- ITERATE METHODS : CUDA
 
+
+bool ODECommon::SetAdaptiveTimeStepCUDA(void)
+{
+	double lte = pODECUDA->Get_lte();
+
+	//adaptive time step based on lte - is lte over acceptable relative error?
+	if (lte > err_high) {
+
+		//failed - try again. Restore state to start of evaluation and try again with smaller time step - output not available yet.
+		//do not redo if time step is at or below the minimum value allowed - this is used as a "timeout" to stop the solver from getting stuck on the same iteration; in this case the method is not good enough for the problem.
+		if (lte > err_high_fail && dT > dT_min) {
+
+			time -= dT;
+			stagetime -= dT;
+
+			for (int idx = 0; idx < (int)pODE.size(); idx++)
+				pODE[idx]->pmeshODECUDA->RestoreMagnetisation();
+
+			//reduce time step based on error ratio; use a 0.99 back-off factor so the solver doesn't get stuck
+			dT *= 0.99 * pow(err_high_fail / lte, 0.25);
+
+			pODECUDA->Sync_dT();
+
+			//failed - must repeat
+			return false;
+		}
+
+		//not failed but still need to reduce time step
+		dT *= 0.99 * pow(err_high / lte, 0.25);
+
+		//must not go below minimum time step
+		if (dT < dT_min) dT = dT_min;
+	}
+
+	//is lte below minimum relative error ? If yes we can go quicker
+	if (lte < err_low) {
+
+		//increase by a small constant factor
+		dT *= dT_increase;
+
+		//must not go above maximum time step
+		if (dT > dT_max) dT = dT_max;
+	}
+
+	pODECUDA->Sync_dT();
+
+	//good, next step
+	return true;
+}
+
+bool ODECommon::SetAdaptiveTimeStepCUDA_SingleThreshold(void)
+{
+	double lte = pODECUDA->Get_lte();
+
+	//failed - try again. Restore state to start of evaluation and try again with smaller time step - output not available yet.
+	//do not redo if time step is at or below the minimum value allowed - this is used as a "timeout" to stop the solver from getting stuck on the same iteration; in this case the method is not good enough for the problem.
+	if (lte > err_high_fail && dT > dT_min) {
+
+		time -= dT;
+		stagetime -= dT;
+
+		for (int idx = 0; idx < (int)pODE.size(); idx++)
+			pODE[idx]->pmeshODECUDA->RestoreMagnetisation();
+
+		//reduce time step based on error ratio; use a 0.99 back-off factor so the solver doesn't get stuck
+		dT *= 0.99 * pow(err_high_fail / lte, 1.0/3.0);
+
+		pODECUDA->Sync_dT();
+
+		//failed - must repeat
+		return false;
+	}
+
+	//not failed but still need to reduce time step
+	dT *= sqrt(err_high_fail / lte);
+
+	//must not go below minimum time step
+	if (dT < dT_min) dT = dT_min;
+
+	//must not go above maximum time step
+	if (dT > dT_max) dT = dT_max;
+
+	pODECUDA->Sync_dT();
+
+	//good, next step
+	return true;
+}
+
 void ODECommon::IterateCUDA(void)
 {
 	//save current dT value in case it changes (adaptive time step methods)
@@ -17,30 +105,42 @@ void ODECommon::IterateCUDA(void)
 
 	case EVAL_EULER:
 	{
-		pODECUDA->Zero_reduction_values();
-		
+#ifdef ODE_EVAL_EULER
+		if (calculate_mxh && calculate_dmdt) pODECUDA->Zero_reduction_values();
+		else if (calculate_mxh) pODECUDA->Zero_mxh_lte_values();
+		else if (calculate_dmdt) pODECUDA->Zero_dmdt_lte_values();
+
 		for (int idx = 0; idx < (int)pODE.size(); idx++) {
 
 			//Euler can be used for stochastic equations
 			if (pODE[idx]->H_Thermal.linear_size() && pODE[idx]->Torque_Thermal.linear_size()) pODE[idx]->pmeshODECUDA->GenerateThermalField_and_Torque();
 			else if (pODE[idx]->H_Thermal.linear_size()) pODE[idx]->pmeshODECUDA->GenerateThermalField();
 
-			if (setODE == ODE_LLG) pODE[idx]->pmeshODECUDA->RunEuler_LLG();
-			else pODE[idx]->pmeshODECUDA->RunEuler();
+			if (setODE == ODE_LLG) pODE[idx]->pmeshODECUDA->RunEuler_LLG(calculate_mxh, calculate_dmdt);
+			else pODE[idx]->pmeshODECUDA->RunEuler(calculate_mxh, calculate_dmdt);
 		}
 
-		pODECUDA->mxhav_to_mxh();
+		if (calculate_mxh) pODECUDA->mxhav_to_mxh();
+		if (calculate_dmdt) pODECUDA->dmdtav_to_dmdt();
+
+		calculate_mxh = false;
+		calculate_dmdt = false;
 
 		time += dT;
 		stagetime += dT;
 		iteration++;
 		stageiteration++;
+		available = true;
+#endif
 	}
 	break;
 
 	case EVAL_TEULER:
 	{
+#ifdef ODE_EVAL_TEULER
 		if (evalStep == 0) {
+
+			if (calculate_mxh) pODECUDA->Zero_mxh_lte_values();
 
 			for (int idx = 0; idx < (int)pODE.size(); idx++) {
 
@@ -48,24 +148,30 @@ void ODECommon::IterateCUDA(void)
 				if (pODE[idx]->H_Thermal.linear_size() && pODE[idx]->Torque_Thermal.linear_size()) pODE[idx]->pmeshODECUDA->GenerateThermalField_and_Torque();
 				else if (pODE[idx]->H_Thermal.linear_size()) pODE[idx]->pmeshODECUDA->GenerateThermalField();
 
-				if (setODE == ODE_LLG) pODE[idx]->pmeshODECUDA->RunTEuler_LLG(0);
-				else pODE[idx]->pmeshODECUDA->RunTEuler(0);
+				if (setODE == ODE_LLG) pODE[idx]->pmeshODECUDA->RunTEuler_LLG(0, calculate_mxh, calculate_dmdt);
+				else pODE[idx]->pmeshODECUDA->RunTEuler(0, calculate_mxh, calculate_dmdt);
 			}
+
+			if (calculate_mxh) pODECUDA->mxhav_to_mxh();
+
+			calculate_mxh = false;
 
 			evalStep = 1;
 			available = false;
 		}
 		else {
 
-			pODECUDA->Zero_reduction_values();
+			if (calculate_dmdt) pODECUDA->Zero_dmdt_lte_values();
 
 			for (int idx = 0; idx < (int)pODE.size(); idx++) {
 
-				if (setODE == ODE_LLG) pODE[idx]->pmeshODECUDA->RunTEuler_LLG(1);
-				else pODE[idx]->pmeshODECUDA->RunTEuler(1);
+				if (setODE == ODE_LLG) pODE[idx]->pmeshODECUDA->RunTEuler_LLG(1, calculate_mxh, calculate_dmdt);
+				else pODE[idx]->pmeshODECUDA->RunTEuler(1, calculate_mxh, calculate_dmdt);
 			}
 
-			pODECUDA->mxhav_to_mxh();
+			if (calculate_dmdt) pODECUDA->dmdtav_to_dmdt();
+
+			calculate_dmdt = false;
 
 			evalStep = 0;
 			available = true;
@@ -75,20 +181,82 @@ void ODECommon::IterateCUDA(void)
 			iteration++;
 			stageiteration++;
 		}
+#endif
+	}
+	break;
+
+	case EVAL_AHEUN:
+	{
+#ifdef ODE_EVAL_AHEUN
+		if (evalStep == 0) {
+
+			if (calculate_mxh) pODECUDA->Zero_mxh_lte_values();
+
+			for (int idx = 0; idx < (int)pODE.size(); idx++) {
+
+				//Adaptive Heun can be used for stochastic equations
+				if (pODE[idx]->H_Thermal.linear_size() && pODE[idx]->Torque_Thermal.linear_size()) pODE[idx]->pmeshODECUDA->GenerateThermalField_and_Torque();
+				else if (pODE[idx]->H_Thermal.linear_size()) pODE[idx]->pmeshODECUDA->GenerateThermalField();
+
+				if (setODE == ODE_LLG) pODE[idx]->pmeshODECUDA->RunAHeun_LLG(0, calculate_mxh, calculate_dmdt);
+				else pODE[idx]->pmeshODECUDA->RunAHeun(0, calculate_mxh, calculate_dmdt);
+			}
+
+			if (calculate_mxh) pODECUDA->mxhav_to_mxh();
+
+			calculate_mxh = false;
+
+			evalStep = 1;
+			available = false;
+		}
+		else {
+
+			if (calculate_dmdt) pODECUDA->Zero_dmdt_lte_values();
+			//need this for lte reduction
+			else pODECUDA->Zero_lte_value();
+
+			for (int idx = 0; idx < (int)pODE.size(); idx++) {
+
+				if (setODE == ODE_LLG) pODE[idx]->pmeshODECUDA->RunAHeun_LLG(1, calculate_mxh, calculate_dmdt);
+				else pODE[idx]->pmeshODECUDA->RunAHeun(1, calculate_mxh, calculate_dmdt);
+			}
+
+			if (calculate_dmdt) pODECUDA->dmdtav_to_dmdt();
+
+			calculate_dmdt = false;
+
+			evalStep = 0;
+			time += dT;
+			stagetime += dT;
+			iteration++;
+			stageiteration++;
+
+			//if you use the SingleThreshold Method with a stochastic equation you can end up backtracking very often -> slow
+			//if (!SetAdaptiveTimeStepCUDA_SingleThreshold()) break;
+			if (!SetAdaptiveTimeStepCUDA()) break;
+
+			available = true;
+		}
+#endif
 	}
 	break;
 
 	case EVAL_RK4:
 	{
+#ifdef ODE_EVAL_RK4
 		switch (evalStep) {
 
 		case 0:
 		{
+			if (calculate_mxh) pODECUDA->Zero_mxh_lte_values();
+
 			for (int idx = 0; idx < (int)pODE.size(); idx++) {
 
-				if (setODE == ODE_LLG) pODE[idx]->pmeshODECUDA->RunRK4_LLG(0);
-				else pODE[idx]->pmeshODECUDA->RunRK4(0);
+				if (setODE == ODE_LLG) pODE[idx]->pmeshODECUDA->RunRK4_LLG(0, calculate_mxh, calculate_dmdt);
+				else pODE[idx]->pmeshODECUDA->RunRK4(0, calculate_mxh, calculate_dmdt);
 			}
+
+			calculate_mxh = false;
 
 			evalStep++;
 			available = false;
@@ -121,106 +289,79 @@ void ODECommon::IterateCUDA(void)
 
 		case 3:
 		{
-			pODECUDA->Zero_reduction_values();
+			if (calculate_dmdt) pODECUDA->Zero_dmdt_lte_values();
 
 			for (int idx = 0; idx < (int)pODE.size(); idx++) {
 
-				if (setODE == ODE_LLG) pODE[idx]->pmeshODECUDA->RunRK4_LLG(3);
-				else pODE[idx]->pmeshODECUDA->RunRK4(3);
+				if (setODE == ODE_LLG) pODE[idx]->pmeshODECUDA->RunRK4_LLG(3, calculate_mxh, calculate_dmdt);
+				else pODE[idx]->pmeshODECUDA->RunRK4(3, calculate_mxh, calculate_dmdt);
 			}
 
-			evalStep = 0;
-			available = true;
+			calculate_dmdt = false;
 
 			time += dT;
 			stagetime += dT;
 			iteration++;
 			stageiteration++;
 
-			Set_mxh();
+			evalStep = 0;
+			available = true;
 		}
 		break;
 		}
+#endif
 	}
 	break;
 
 	case EVAL_ABM:
 	{
+#ifdef ODE_EVAL_ABM
 		if (primed) {
 
 			if (evalStep == 0) {
 
+				if (calculate_mxh) pODECUDA->Zero_mxh_lte_values();
+
 				for (int idx = 0; idx < (int)pODE.size(); idx++) {
 
-					if (setODE == ODE_LLG) pODE[idx]->pmeshODECUDA->RunABM_LLG(0);
-					else pODE[idx]->pmeshODECUDA->RunABM(0);
+					if (setODE == ODE_LLG) pODE[idx]->pmeshODECUDA->RunABM_LLG(0, calculate_mxh, calculate_dmdt);
+					else pODE[idx]->pmeshODECUDA->RunABM(0, calculate_mxh, calculate_dmdt);
 				}
+
+				calculate_mxh = false;
 
 				evalStep = 1;
 				available = false;
 			}
 			else {
 
-				pODECUDA->Zero_reduction_values();
+				if (calculate_dmdt) pODECUDA->Zero_dmdt_lte_values();
+				//need this for lte reduction
+				else pODECUDA->Zero_lte_value();
 
 				for (int idx = 0; idx < (int)pODE.size(); idx++) {
 
-					if (setODE == ODE_LLG) pODE[idx]->pmeshODECUDA->RunABM_LLG(1);
-					else pODE[idx]->pmeshODECUDA->RunABM(1);
+					if (setODE == ODE_LLG) pODE[idx]->pmeshODECUDA->RunABM_LLG(1, calculate_mxh, calculate_dmdt);
+					else pODE[idx]->pmeshODECUDA->RunABM(1, calculate_mxh, calculate_dmdt);
 				}
+
+				calculate_dmdt = false;
 
 				evalStep = 0;
 				time += dT;
 				stagetime += dT;
-				
-				double lte = pODECUDA->Get_lte();
+				iteration++;
+				stageiteration++;
 
-				//adaptive time step based on lte - is lte over acceptable relative error?
-				if (lte > ABM_RELERRMAX) {
-
-					//failed - try again. Restore state to start of evaluation and try again with smaller time step - output not available yet.
-					//do not redo if time step is at or below the minimum value allowed - this is used as a "timeout" to stop the solver from getting stuck on the same iteration; in this case the method is not good enough for the problem.
-					if (lte > ABM_RELERRFAIL && dT > ABM_MINDT) {
-
-						time -= dT;
-						stagetime -= dT;
-
-						for (int idx = 0; idx < (int)pODE.size(); idx++)
-							pODE[idx]->pmeshODECUDA->RestoreMagnetisation();
-
-						dT *= ABM_DTREDUCE;
-
-						pODECUDA->Sync_dT();
-						break;
-					}
-
-					//not failed but still need to reduce time step
-					dT *= ABM_DTREDUCE;
-
-					//must not go below minimum time step
-					if (dT < ABM_MINDT) dT = ABM_MINDT;
-				}
-
-				//is lte below minimum relative error ? If yes we can go quicker
-				if (lte < ABM_RELERRMIN) {
-
-					dT *= ABM_DTINCREASE;
-
-					//must not go above maximum time step
-					if (dT > ABM_MAXDT) dT = ABM_MAXDT;
-				}
+				if (!SetAdaptiveTimeStepCUDA()) break;
 				
 				//done for this step. Make it available.
 				available = true;
-
-				iteration++;
-				stageiteration++;
 
 				//switch between saved equation evaluations (use latest)
 				if (alternator) alternator = false;
 				else alternator = true;
 				
-				pODECUDA->Sync_dT();
 				pODECUDA->Sync_alternator();
 			}
 		}
@@ -259,20 +400,87 @@ void ODECommon::IterateCUDA(void)
 				pODECUDA->Sync_alternator();
 			}
 		}
+#endif
+	}
+	break;
+
+	case EVAL_RK23:
+	{
+#ifdef ODE_EVAL_RK23
+		switch (evalStep) {
+
+		case 0:
+		{
+			if (calculate_mxh) pODECUDA->Zero_mxh_lte_values();
+			//need this for lte reduction
+			else pODECUDA->Zero_lte_value();
+
+			for (int idx = 0; idx < (int)pODE.size(); idx++)
+				pODE[idx]->pmeshODECUDA->RunRK23(0, calculate_mxh, calculate_dmdt);
+
+			calculate_mxh = false;
+
+			evalStep++;
+			available = false;
+		}
+		break;
+
+		case 1:
+		{
+			for (int idx = 0; idx < (int)pODE.size(); idx++)
+				pODE[idx]->pmeshODECUDA->RunRK23(1);
+
+			evalStep++;
+		}
+		break;
+
+		case 2:
+		{
+			if (calculate_dmdt) pODECUDA->Zero_dmdt_lte_values();
+
+			for (int idx = 0; idx < (int)pODE.size(); idx++)
+				pODE[idx]->pmeshODECUDA->RunRK23(2, calculate_mxh, calculate_dmdt);
+
+			calculate_dmdt = false;
+
+			evalStep = 0;
+			time += dT;
+			stagetime += dT;
+			iteration++;
+			stageiteration++;
+
+			if (primed) {
+
+				if (!SetAdaptiveTimeStepCUDA()) break;
+			}
+			//need one pass of rk23 before we can use it for adaptive time step (FSAL)
+			else primed = true;
+
+			//done for this step. Make it available.
+			available = true;
+		}
+		break;
+		}
+#endif
 	}
 	break;
 
 	case EVAL_RKF:
 	{
+#ifdef ODE_EVAL_RKF
 		switch (evalStep) {
 
 		case 0:
 		{
+			if (calculate_mxh) pODECUDA->Zero_mxh_lte_values();
+
 			for (int idx = 0; idx < (int)pODE.size(); idx++) {
 
-				if (setODE == ODE_LLG) pODE[idx]->pmeshODECUDA->RunRKF45_LLG(0);
-				else pODE[idx]->pmeshODECUDA->RunRKF45(0);
+				if (setODE == ODE_LLG) pODE[idx]->pmeshODECUDA->RunRKF45(0, calculate_mxh, calculate_dmdt);
+				else pODE[idx]->pmeshODECUDA->RunRKF45(0, calculate_mxh, calculate_dmdt);
 			}
+
+			calculate_mxh = false;
 
 			evalStep++;
 			available = false;
@@ -329,67 +537,110 @@ void ODECommon::IterateCUDA(void)
 
 		case 5:
 		{
-			pODECUDA->Zero_reduction_values();
+			if (calculate_dmdt) pODECUDA->Zero_dmdt_lte_values();
+			//need this for lte reduction
+			else pODECUDA->Zero_lte_value();
 
 			for (int idx = 0; idx < (int)pODE.size(); idx++) {
 
-				if (setODE == ODE_LLG) pODE[idx]->pmeshODECUDA->RunRKF45_LLG(5);
-				else pODE[idx]->pmeshODECUDA->RunRKF45(5);
+				if (setODE == ODE_LLG) pODE[idx]->pmeshODECUDA->RunRKF45_LLG(5, calculate_mxh, calculate_dmdt);
+				else pODE[idx]->pmeshODECUDA->RunRKF45(5, calculate_mxh, calculate_dmdt);
 			}
+
+			calculate_dmdt = false;
 
 			evalStep = 0;
 			time += dT;
 			stagetime += dT;
+			iteration++;
+			stageiteration++;
 
-			double lte = pODECUDA->Get_lte();
-
-			//adaptive time step based on lte - is lte over acceptable relative error?
-			if (lte > RKF_RELERRMAX) {
-
-				//failed - try again. Restore state to start of evaluation and try again with smaller time step - output not available yet.
-				//do not redo if time step is at or below the minimum value allowed - this is used as a "timeout" to stop the solver from getting stuck on the same iteration; in this case the method is not good enough for the problem.
-				if (lte > RKF_RELERRFAIL && dT > RKF_MINDT) {
-
-					time -= dT;
-					stagetime -= dT;
-
-					for (int idx = 0; idx < (int)pODE.size(); idx++)
-						pODE[idx]->pmeshODECUDA->RestoreMagnetisation();
-
-					dT *= RKF_DTREDUCE;
-					
-					pODECUDA->Sync_dT();
-					break;
-				}
-
-				//not failed but still need to reduce time step
-				dT *= RKF_DTREDUCE;
-
-				//must not go below minimum time step
-				if (dT < RKF_MINDT) dT = RKF_MINDT;
-
-				pODECUDA->Sync_dT();
-			}
-
-			//is lte below minimum relative error ? If yes we can go quicker
-			if (lte < RKF_RELERRMIN) {
-
-				dT *= RKF_DTINCREASE;
-
-				//must not go above maximum time step
-				if (dT > RKF_MAXDT) dT = RKF_MAXDT;
-
-				pODECUDA->Sync_dT();
-			}
+			if (!SetAdaptiveTimeStepCUDA()) break;
 
 			//done for this step. Make it available.
 			available = true;
-
-			iteration++;
-			stageiteration++;
 		}
 		break;
 		}
+#endif
+	}
+	break;
+
+	case EVAL_SD:
+	{
+#ifdef ODE_EVAL_SD
+		if (primed) {
+
+			//1. calculate parameters for Barzilai-Borwein stepsizes -> solver must be primed with step 0 (after it is primed next loop starts from step 1)
+			//must reset the static delta_... quantities before running these across all meshes
+			
+			//zero all quantities used for Barzilai-Borwein stepsize calculations
+			pODECUDA->Zero_SD_Solver_BB_Values();
+
+			for (int idx = 0; idx < (int)pODE.size(); idx++)
+				pODE[idx]->pmeshODECUDA->RunSD_BB();
+
+			//2. Set stepsize - alternate between BB values
+			//first transfer BB values to cpu memory
+			pODECUDA->Get_SD_Solver_BB_Values(&delta_M_sq, &delta_G_sq, &delta_M_dot_delta_G);
+
+			if (iteration % 2) {
+
+				if (delta_M_dot_delta_G) {
+
+					dT = delta_M_sq / delta_M_dot_delta_G;
+				}
+				else dT = SD_DEFAULT_DT;
+			}
+			else {
+
+				if (delta_G_sq) {
+
+					dT = delta_M_dot_delta_G / delta_G_sq;
+				}
+				else dT = SD_DEFAULT_DT;
+			}
+			//don't enforce dT limits, even if dT becomes negative.
+
+			//make sure to transfer dT value to GPU
+			pODECUDA->Sync_dT();
+
+			//3. set new magnetization vectors
+			if (calculate_mxh && calculate_dmdt) pODECUDA->Zero_reduction_values();
+			else if (calculate_mxh) pODECUDA->Zero_mxh_lte_values();
+			else if (calculate_dmdt) pODECUDA->Zero_dmdt_lte_values();
+
+			for (int idx = 0; idx < (int)pODE.size(); idx++)
+				pODE[idx]->pmeshODECUDA->RunSD_Advance(calculate_mxh, calculate_dmdt);
+
+			calculate_mxh = false;
+			calculate_dmdt = false;
+
+			iteration++;
+			stageiteration++;
+			time += dT;
+			stagetime += dT;
+		}
+		else {
+
+			dT = SD_DEFAULT_DT;
+
+			//make sure to transfer dT value to GPU
+			pODECUDA->Sync_dT();
+
+			//0. prime the SD solver
+			for (int idx = 0; idx < (int)pODE.size(); idx++)
+				pODE[idx]->pmeshODECUDA->RunSD_Start();
+
+			evalStep = 0;
+			iteration++;
+			stageiteration++;
+			time += dT;
+			stagetime += dT;
+
+			primed = true;
+		}
+#endif
 	}
 	break;
 	}

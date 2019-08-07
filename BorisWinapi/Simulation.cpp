@@ -296,6 +296,18 @@ Simulation::Simulation(int Program_Version) :
 	commands[CMD_SETDT].unit = "s";
 	commands[CMD_SETDT].return_descr = "[tc0,0.5,0,1/tc]Script return values: <i>dT</i>";
 
+	commands.insert(CMD_ASTEPCTRL, CommandSpecifier(CMD_ASTEPCTRL), "astepctrl");
+	commands[CMD_ASTEPCTRL].usage = "[tc0,0.5,0,1/tc]USAGE : <b>astepctrl</b> <i>err_fail err_high err_low dT_incr dT_min dT_max</i>";
+	commands[CMD_ASTEPCTRL].limits = { 
+		{double(MINODERELERROR), double(MAXODERELERROR)},
+		{double(MINODERELERROR), double(MAXODERELERROR)}, 
+		{double(MINODERELERROR), double(MAXODERELERROR)},
+		{double(1.0), double(2.0)},
+		{double(MINTIMESTEP), double(MAXTIMESTEP)},
+		{double(MINTIMESTEP), double(MAXTIMESTEP)} };
+	commands[CMD_ASTEPCTRL].descr = "[tc0,0.5,0.5,1/tc]Set parameters for adaptive time step control: err_fail - repeat step above this, err_high - decrease dT abnove this, err_low - increase dT below this, dT_incr - increase dT using fixed multiplier, dT_min, dT_max - dT bounds.";
+	commands[CMD_ASTEPCTRL].unit = "s";
+
 	commands.insert(CMD_SHOWDATA, CommandSpecifier(CMD_SHOWDATA), "showdata");
 	commands[CMD_SHOWDATA].usage = "[tc0,0.5,0,1/tc]USAGE : <b>showdata</b> <i>dataname (meshname, (rectangle))</i>";
 	commands[CMD_SHOWDATA].descr = "[tc0,0.5,0.5,1/tc]Show value(s) for dataname. If applicable specify meshname and rectangle (m) in mesh. If not specified and required, active mesh is used with entire mesh rectangle.";
@@ -967,6 +979,7 @@ Simulation::Simulation(int Program_Version) :
 	dataDescriptor.push_back("siter", DatumSpecifier("Stage Iterations : ", 1), DATA_SITERATIONS);
 	dataDescriptor.push_back("dt", DatumSpecifier("ODE dT : ", 1, "s"), DATA_DT);
 	dataDescriptor.push_back("mxh", DatumSpecifier("|mxh| : ", 1), DATA_MXH);
+	dataDescriptor.push_back("dmdt", DatumSpecifier("|dm/dt| : ", 1), DATA_DMDT);
 	dataDescriptor.push_back("Ha", DatumSpecifier("Applied Field : ", 3, "A/m", false), DATA_HA);
 	dataDescriptor.push_back("<M>", DatumSpecifier("<M> : ", 3, "A/m", false, false), DATA_AVM);
 	dataDescriptor.push_back("<Jc>", DatumSpecifier("<Jc> : ", 3, "A/m^2", false, false), DATA_JC);
@@ -985,6 +998,7 @@ Simulation::Simulation(int Program_Version) :
 	dataDescriptor.push_back("e_zee", DatumSpecifier("Zeeman e : ", 1, "J/m3", false), DATA_E_ZEE);
 	dataDescriptor.push_back("e_anis", DatumSpecifier("Anisotropy e : ", 1, "J/m3", false), DATA_E_ANIS);
 	dataDescriptor.push_back("e_rough", DatumSpecifier("Roughness e : ", 1, "J/m3", false), DATA_E_ROUGH);
+	dataDescriptor.push_back("e_total", DatumSpecifier("Total e : ", 1, "J/m3", true), DATA_E_TOTAL);
 	dataDescriptor.push_back("dwshift", DatumSpecifier("DW shift : ", 1, "m"), DATA_DWSHIFT);
 	dataDescriptor.push_back("skyshift", DatumSpecifier("Skyrmion shift : ", 2, "m", false, false), DATA_SKYSHIFT);
 	dataDescriptor.push_back("v_iter", DatumSpecifier("V Solver Iterations : ", 1), DATA_TRANSPORT_ITERSTOCONV);
@@ -1038,24 +1052,41 @@ Simulation::Simulation(int Program_Version) :
 	//Evaluation methods
 	odeEvalHandles.push_back("Euler", EVAL_EULER);
 	odeEvalHandles.push_back("TEuler", EVAL_TEULER);
+	odeEvalHandles.push_back("AHeun", EVAL_AHEUN);
 	odeEvalHandles.push_back("RK4", EVAL_RK4);
 	odeEvalHandles.push_back("ABM", EVAL_ABM);
+	odeEvalHandles.push_back("RK23", EVAL_RK23);
 	odeEvalHandles.push_back("RKF45", EVAL_RKF);
+	odeEvalHandles.push_back("SDesc", EVAL_SD);
 
 	//Allowed evaluation methods for given ODE
-	odeAllowedEvals.push_back(make_vector(EVAL_EULER, EVAL_TEULER, EVAL_RK4, EVAL_ABM, EVAL_RKF), ODE_LLG);
-	odeAllowedEvals.push_back(make_vector(EVAL_EULER, EVAL_TEULER, EVAL_RK4, EVAL_ABM, EVAL_RKF), ODE_LLGSTATIC);
-	odeAllowedEvals.push_back(make_vector(EVAL_EULER, EVAL_TEULER, EVAL_RK4, EVAL_ABM, EVAL_RKF), ODE_LLGSTT);
-	odeAllowedEvals.push_back(make_vector(EVAL_EULER, EVAL_TEULER, EVAL_RK4, EVAL_ABM, EVAL_RKF), ODE_LLB);
-	odeAllowedEvals.push_back(make_vector(EVAL_EULER, EVAL_TEULER, EVAL_RK4, EVAL_ABM, EVAL_RKF), ODE_LLBSTT);
-	odeAllowedEvals.push_back(make_vector(EVAL_EULER, EVAL_TEULER, EVAL_RK4, EVAL_ABM, EVAL_RKF), ODE_LLGSA);
-	odeAllowedEvals.push_back(make_vector(EVAL_EULER, EVAL_TEULER, EVAL_RK4, EVAL_ABM, EVAL_RKF), ODE_LLBSA);
-	odeAllowedEvals.push_back(make_vector(EVAL_EULER, EVAL_TEULER), ODE_SLLG);
-	odeAllowedEvals.push_back(make_vector(EVAL_EULER, EVAL_TEULER), ODE_SLLGSTT);
-	odeAllowedEvals.push_back(make_vector(EVAL_EULER, EVAL_TEULER), ODE_SLLB);
-	odeAllowedEvals.push_back(make_vector(EVAL_EULER, EVAL_TEULER), ODE_SLLBSTT);
-	odeAllowedEvals.push_back(make_vector(EVAL_EULER, EVAL_TEULER), ODE_SLLGSA);
-	odeAllowedEvals.push_back(make_vector(EVAL_EULER, EVAL_TEULER), ODE_SLLBSA);
+	odeAllowedEvals.push_back(make_vector(EVAL_EULER, EVAL_TEULER, EVAL_AHEUN, EVAL_RK4, EVAL_ABM, EVAL_RK23, EVAL_RKF), ODE_LLG);
+	odeAllowedEvals.push_back(make_vector(EVAL_EULER, EVAL_TEULER, EVAL_AHEUN, EVAL_RK4, EVAL_ABM, EVAL_RK23, EVAL_RKF, EVAL_SD), ODE_LLGSTATIC);
+	odeAllowedEvals.push_back(make_vector(EVAL_EULER, EVAL_TEULER, EVAL_AHEUN, EVAL_RK4, EVAL_ABM, EVAL_RK23, EVAL_RKF), ODE_LLGSTT);
+	odeAllowedEvals.push_back(make_vector(EVAL_EULER, EVAL_TEULER, EVAL_AHEUN, EVAL_RK4, EVAL_ABM, EVAL_RK23, EVAL_RKF), ODE_LLB);
+	odeAllowedEvals.push_back(make_vector(EVAL_EULER, EVAL_TEULER, EVAL_AHEUN, EVAL_RK4, EVAL_ABM, EVAL_RK23, EVAL_RKF), ODE_LLBSTT);
+	odeAllowedEvals.push_back(make_vector(EVAL_EULER, EVAL_TEULER, EVAL_AHEUN, EVAL_RK4, EVAL_ABM, EVAL_RK23, EVAL_RKF), ODE_LLGSA);
+	odeAllowedEvals.push_back(make_vector(EVAL_EULER, EVAL_TEULER, EVAL_AHEUN, EVAL_RK4, EVAL_ABM, EVAL_RK23, EVAL_RKF), ODE_LLBSA);
+	odeAllowedEvals.push_back(make_vector(EVAL_EULER, EVAL_TEULER, EVAL_AHEUN), ODE_SLLG);
+	odeAllowedEvals.push_back(make_vector(EVAL_EULER, EVAL_TEULER, EVAL_AHEUN), ODE_SLLGSTT);
+	odeAllowedEvals.push_back(make_vector(EVAL_EULER, EVAL_TEULER, EVAL_AHEUN), ODE_SLLB);
+	odeAllowedEvals.push_back(make_vector(EVAL_EULER, EVAL_TEULER, EVAL_AHEUN), ODE_SLLBSTT);
+	odeAllowedEvals.push_back(make_vector(EVAL_EULER, EVAL_TEULER, EVAL_AHEUN), ODE_SLLGSA);
+	odeAllowedEvals.push_back(make_vector(EVAL_EULER, EVAL_TEULER, EVAL_AHEUN), ODE_SLLBSA);
+
+	odeDefaultEval.push_back(EVAL_RK4, ODE_LLG);
+	odeDefaultEval.push_back(EVAL_SD, ODE_LLGSTATIC);
+	odeDefaultEval.push_back(EVAL_RK4, ODE_LLGSTT);
+	odeDefaultEval.push_back(EVAL_RK4, ODE_LLB);
+	odeDefaultEval.push_back(EVAL_RK4, ODE_LLBSTT);
+	odeDefaultEval.push_back(EVAL_RK4, ODE_LLGSA);
+	odeDefaultEval.push_back(EVAL_RK4, ODE_LLBSA);
+	odeDefaultEval.push_back(EVAL_TEULER, ODE_SLLG);
+	odeDefaultEval.push_back(EVAL_TEULER, ODE_SLLGSTT);
+	odeDefaultEval.push_back(EVAL_TEULER, ODE_SLLB);
+	odeDefaultEval.push_back(EVAL_TEULER, ODE_SLLBSTT);
+	odeDefaultEval.push_back(EVAL_TEULER, ODE_SLLGSA);
+	odeDefaultEval.push_back(EVAL_TEULER, ODE_SLLBSA);
 
 	//---------------------------------------------------------------- SIMULATION SCHEDULE
 
@@ -1078,6 +1109,7 @@ Simulation::Simulation(int Program_Version) :
 	stageStopDescriptors.push_back("nostop", StageStopDescriptor(STOP_NOSTOP), STOP_NOSTOP);
 	stageStopDescriptors.push_back("iter", StageStopDescriptor(STOP_ITERATIONS), STOP_ITERATIONS);
 	stageStopDescriptors.push_back("mxh", StageStopDescriptor(STOP_MXH), STOP_MXH);
+	stageStopDescriptors.push_back("dmdt", StageStopDescriptor(STOP_DMDT), STOP_DMDT);
 	stageStopDescriptors.push_back("time", StageStopDescriptor(STOP_TIME, "s"), STOP_TIME);
 
 	dataSaveDescriptors.push_back("none", DataSaveDescriptor(DSAVE_NONE), DSAVE_NONE);
@@ -1277,6 +1309,8 @@ void Simulation::StopSimulation(void)
 		//if client connected, signal simulation has finished
 		commSocket.SetSendData({ "stopped" });
 		commSocket.SendDataParams();
+
+		UpdateScreen();
 	}
 }
 

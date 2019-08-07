@@ -101,7 +101,7 @@ public:
 	//get the managed std::vector by reference
 	std::vector<VType>& get_vector(void) { return quantity; }
 
-	//--------------------------------------------PROPERTY CHECKING
+	//--------------------------------------------PROPERTY CHECKING : VEC_aux.h
 
 	bool is_not_empty(int index) const { return (quantity[index] != VType()) ; }
 	bool is_not_empty(const INT3& ijk) const { return (quantity[ijk.i + ijk.j*n.x + ijk.k*n.x*n.y] != VType()); }
@@ -110,6 +110,11 @@ public:
 	bool is_empty(int index) const { return (quantity[index] == VType()); }
 	bool is_empty(const INT3& ijk) const { return (quantity[ijk.i + ijk.j*n.x + ijk.k*n.x*n.y] == VType()); }
 	bool is_empty(const DBL3& rel_pos) const { return (quantity[int(rel_pos.x / h.x) + int(rel_pos.y / h.y) * n.x + int(rel_pos.z / h.z) * n.x * n.y] == VType()); }
+
+	//check if all cells intersecting the rectangle (absolute coordinates) are empty
+	bool is_empty(const Rect& rectangle) const;
+	//check if all cells intersecting the rectangle (absolute coordinates) are not empty
+	bool is_not_empty(const Rect& rectangle) const;
 
 	//--------------------------------------------ITERATORS
 

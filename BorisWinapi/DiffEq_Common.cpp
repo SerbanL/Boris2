@@ -12,11 +12,26 @@ int ODECommon::evalMethod = EVAL_EULER;
 int ODECommon::iteration = 0;
 int ODECommon::stageiteration = 0;
 
-double ODECommon::dT = 0;
-double ODECommon::dT_last = 0;
-double ODECommon::time = 0;
-double ODECommon::stagetime = 0;
-double ODECommon::mxh = 1;
+double ODECommon::dT = 0.0;
+double ODECommon::dT_last = 0.0;
+double ODECommon::time = 0.0;
+double ODECommon::stagetime = 0.0;
+double ODECommon::mxh = 1.0;
+double ODECommon::dmdt = 1.0;
+
+bool ODECommon::calculate_mxh = true;
+bool ODECommon::calculate_dmdt = true;
+
+double ODECommon::err_high_fail = RKF_RELERRFAIL;
+double ODECommon::err_high = RKF_RELERRMAX;
+double ODECommon::err_low = RKF_RELERRMIN;
+double ODECommon::dT_increase = RKF_DTINCREASE;
+double ODECommon::dT_max = RKF_MAXDT;
+double ODECommon::dT_min = RKF_MINDT;
+
+double ODECommon::delta_M_sq = 0.0;
+double ODECommon::delta_G_sq = 0.0;
+double ODECommon::delta_M_dot_delta_G = 0.0;
 
 int ODECommon::evalStep = 0;
 
@@ -50,8 +65,9 @@ ODECommon::ODECommon(bool called_from_derived) :
 		{
 			VINFO(iteration), VINFO(stageiteration),
 			VINFO(time), VINFO(stagetime),
-			VINFO(mxh),
+			VINFO(mxh), VINFO(dmdt),
 			VINFO(setODE), VINFO(evalMethod), VINFO(dT),
+			VINFO(err_high_fail), VINFO(err_high), VINFO(err_low), VINFO(dT_increase), VINFO(dT_min), VINFO(dT_max),
 			VINFO(moving_mesh), VINFO(moving_mesh_antisymmetric), VINFO(moving_mesh_threshold), VINFO(moving_mesh_dwshift)
 		}, {})
 {
@@ -128,6 +144,8 @@ BError ODECommon::SwitchCUDAState(bool cudaState)
 		if (pODECUDA) delete pODECUDA;
 		pODECUDA = nullptr;
 	}
+
+	
 
 #endif
 
@@ -266,32 +284,79 @@ BError ODECommon::SetEvaluationMethod(EVAL_ evalMethod_)
 
 	case EVAL_EULER:
 	{
-		dT = 0.3e-14;
+		dT = EULER_DEFAULT_DT;
 	}
 	break;
 
 	case EVAL_TEULER:
 	{
-		dT = 0.5e-13;
+		dT = TEULER_DEFAULT_DT;
+	}
+	break;
+
+	case EVAL_AHEUN:
+	{
+		dT = AHEUN_DEFAULT_DT;
+
+		err_high_fail = AHEUN_RELERRFAIL;
+		err_high = AHEUN_RELERRMAX;
+		err_low = AHEUN_RELERRMIN;
+		dT_increase = AHEUN_DTINCREASE;
+		dT_max = AHEUN_MAXDT;
+		dT_min = AHEUN_MINDT;
 	}
 	break;
 
 	case EVAL_RK4:
 	{
-		dT = 0.5e-12;
+		dT = RK4_DEFAULT_DT;
 	}
 	break;
 
 	case EVAL_ABM:
 	{
-		dT = 0.05e-12;
+		dT = ABM_DEFAULT_DT;
+
+		err_high_fail = ABM_RELERRFAIL;
+		err_high = ABM_RELERRMAX;
+		err_low = ABM_RELERRMIN;
+		dT_increase = ABM_DTINCREASE;
+		dT_max = ABM_MAXDT;
+		dT_min = ABM_MINDT;
+	}
+	break;
+
+	case EVAL_RK23:
+	{
+		dT = RK23_DEFAULT_DT;
+
+		err_high_fail = RK23_RELERRFAIL;
+		err_high = RK23_RELERRMAX;
+		err_low = RK23_RELERRMIN;
+		dT_increase = RK23_DTINCREASE;
+		dT_max = RK23_MAXDT;
+		dT_min = RK23_MINDT;
+	}
+	break;
+
+	case EVAL_SD:
+	{
+		//set starting dT - set a very conservative initial stepsize otherwise solver priming can be bad.
+		dT = SD_DEFAULT_DT;
 	}
 	break;
 
 	default:
 	case EVAL_RKF:
 	{
-		dT = 0.25e-12;
+		dT = RKF_DEFAULT_DT;
+
+		err_high_fail = RKF_RELERRFAIL;
+		err_high = RKF_RELERRMAX;
+		err_low = RKF_RELERRMIN;
+		dT_increase = RKF_DTINCREASE;
+		dT_max = RKF_MAXDT;
+		dT_min = RKF_MINDT;
 	}
 	break;
 	}
@@ -300,12 +365,16 @@ BError ODECommon::SetEvaluationMethod(EVAL_ evalMethod_)
 	dT_last = dT;
 
 	mxh = 1;
+	dmdt = 1;
 
 	available = true;
 	evalStep = 0;
 
 	alternator = false;
 	primed = false;
+
+	calculate_mxh = true;
+	calculate_dmdt = true;
 
 #if COMPILECUDA == 1
 	if (pODECUDA) pODECUDA->SyncODEValues();
@@ -322,12 +391,16 @@ void ODECommon::Reset(void)
 	stagetime = 0;
 
 	mxh = 1;
+	dmdt = 1;
 
 	available = true;
 	evalStep = 0;
 
 	alternator = false;
 	primed = false;
+
+	calculate_mxh = true;
+	calculate_dmdt = true;
 
 	moving_mesh_dwshift = 0.0;
 
@@ -345,9 +418,13 @@ void ODECommon::NewStage(void)
 	evalStep = 0;
 
 	mxh = 1;
+	dmdt = 1;
 
 	alternator = false;
 	primed = false;
+
+	calculate_mxh = true;
+	calculate_dmdt = true;
 
 #if COMPILECUDA == 1
 	if (pODECUDA) pODECUDA->SyncODEValues();
@@ -361,6 +438,20 @@ void ODECommon::SetdT(double dT)
 #if COMPILECUDA == 1
 	if (pODECUDA) pODECUDA->SyncODEValues();
 #endif
+}
+
+void ODECommon::SetAdaptiveTimeStepCtrl(double err_high_fail, double err_high, double err_low, double dT_increase, double dT_min, double dT_max)
+{
+	this->err_high_fail = err_high_fail;
+	//decrease time step above this relative error - decrease factor depends on error ratio.
+	this->err_high = err_high;
+	//increase time step above this relative error
+	this->err_low = err_low;
+	//when increasing dT multiply by this (> 1.0)
+	this->dT_increase = dT_increase;
+	//maximum and minimum dT values allowed
+	this->dT_min = dT_min;
+	this->dT_max = dT_max;
 }
 
 void ODECommon::SetMoveMeshTrigger(bool status, int meshId)
@@ -410,6 +501,17 @@ void ODECommon::Set_mxh(void)
 	}
 }
 
+void ODECommon::Set_dmdt(void)
+{
+	//set dmdt as the maximum values from all the set meshes
+	if (pODE.size()) dmdt = pODE[0]->dmdt_reduction.max;
+
+	for (int idx = 1; idx < pODE.size(); idx++) {
+
+		if (pODE[idx]->dmdt_reduction.max > dmdt) dmdt = pODE[idx]->dmdt_reduction.max;
+	}
+}
+
 double ODECommon::Get_lte(void)
 {
 	double lte = 0.0;
@@ -440,9 +542,22 @@ int ODECommon::GetId_of_MoveMeshTrigger(void)
 
 double ODECommon::Get_mxh(void)
 {
+	calculate_mxh = true;
+
 #if COMPILECUDA == 1
 	if (pODECUDA) return pODECUDA->Get_mxh();
 #endif
 
 	return mxh;
+}
+
+double ODECommon::Get_dmdt(void)
+{
+	calculate_dmdt = true;
+
+#if COMPILECUDA == 1
+	if (pODECUDA) return pODECUDA->Get_dmdt();
+#endif
+
+	return dmdt;
 }

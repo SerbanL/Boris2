@@ -63,6 +63,9 @@ private:
 	//number of non-empty cells in transfer
 	int non_empty_cells;
 
+	//different meshes have different weights when contributing to the total energy density -> ratio of their non-empty volume to total non-empty volume
+	double energy_density_weight = 0.0;
+
 private:
 
 	//initialize transfer object
@@ -87,7 +90,7 @@ public:
 
 	BError MakeCUDAModule(void);
 
-	void UpdateField(void) {}
+	double UpdateField(void) { return 0.0; }
 
 	//-------------------Setters
 
@@ -117,7 +120,7 @@ public:
 
 	BError MakeCUDAModule(void) { return BError(); }
 
-	void UpdateField(void) {}
+	double UpdateField(void) { return 0.0; }
 
 	//-------------------Setters
 

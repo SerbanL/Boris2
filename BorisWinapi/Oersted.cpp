@@ -56,6 +56,14 @@ BError Oersted::Initialize(void)
 		//Initialize the mesh transfer object.
 		if (!sm_Vals.Initialize_MeshTransfer(pVal_from, pVal_to, MESHTRANSFERTYPE_WEIGHTED)) return error(BERROR_OUTOFMEMORY_CRIT);
 
+		//transfer values from invidual M meshes to sm_Vals - we need this to get number of non-empty cells
+		sm_Vals.transfer_in();
+
+		non_empty_cells = sm_Vals.get_nonempty_cells();
+
+		//avoid division by zero
+		if (!non_empty_cells) non_empty_cells = 1;
+
 		error = Calculate_Oersted_Kernels();
 
 		if (!error) initialized = true;
@@ -124,7 +132,7 @@ BError Oersted::MakeCUDAModule(void)
 	return error;
 }
 
-void Oersted::UpdateField(void)
+double Oersted::UpdateField(void)
 {
 	//only recalculate Oersted field if there was a significant change in current density (judged based on transport solver iterations)
 	if (pSMesh->CallModuleMethod(&STransport::Transport_Recalculated) || !oefield_computed) {
@@ -144,6 +152,9 @@ void Oersted::UpdateField(void)
 		//transfer to individual Heff meshes
 		sm_Vals.transfer_out();
 	}
+
+	//not counting this to the total energy density for now
+	return 0.0;
 }
 
 #endif

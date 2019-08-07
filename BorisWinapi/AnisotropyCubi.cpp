@@ -85,7 +85,7 @@ BError Anisotropy_Cubic::MakeCUDAModule(void)
 	return error;
 }
 
-void Anisotropy_Cubic::UpdateField(void)
+double Anisotropy_Cubic::UpdateField(void)
 {
 	double energy = 0;
 
@@ -145,6 +145,8 @@ void Anisotropy_Cubic::UpdateField(void)
 	else energy = 0;
 
 	this->energy = energy;
+
+	return energy;
 }
 
 #endif

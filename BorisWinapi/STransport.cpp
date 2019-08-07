@@ -126,7 +126,7 @@ BError STransport::MakeCUDAModule(void)
 
 //-------------------
 
-void STransport::UpdateField(void)
+double STransport::UpdateField(void)
 {
 	//only need to update this after an entire magnetisation equation time step is solved (but always update spin accumulation field if spin current solver enabled)
 	if (pSMesh->CurrentTimeStepSolved()) {
@@ -159,6 +159,9 @@ void STransport::UpdateField(void)
 		//Calculate effective field from interface spin accumulation torque (in magnetic meshes for NF interfaces with G interface conductance set)
 		CalculateSAInterfaceField();
 	}
+
+	//no contribution to total energy density
+	return 0.0;
 }
 
 //-------------------

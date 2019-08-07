@@ -17,6 +17,7 @@ using namespace std;
 //Add new entries at the end to keep older simulation files compatible
 //If you need to take something out you'll need to figure a way to keep older simulation files compatible
 enum MOD_ {
+	MOD_ALL = -1,
 	MOD_ERROR = 0,
 	MOD_DEMAG_N, MOD_DEMAG, MODS_SDEMAG,
 	MOD_EXCHANGE6NGBR, MOD_DMEXCHANGE, MOD_IDMEXCHANGE, MOD_SURFEXCHANGE,
@@ -120,7 +121,8 @@ public:
 	//-------------------------- UpdateField
 
 	//Simulation run-time method used to do calculations.
-	virtual void UpdateField(void) = 0;
+	//return total volume energy density -> each module will have a contribution, so sum it
+	virtual double UpdateField(void) = 0;
 
 #if COMPILECUDA == 1
 	//Only call this if cuda is switched on : if cuda on call UpdateFieldCUDA chain, if cuda off call UpdateField chain.

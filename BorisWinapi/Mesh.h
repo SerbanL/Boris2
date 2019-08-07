@@ -256,8 +256,8 @@ public:
 
 	//---- UPDATE MODULES -> Call Modules::UpdateField
 
-	//update computational state of all modules in this mesh
-	void UpdateModules(void);
+	//update computational state of all modules in this mesh; return total volume energy density -> each module will have a contribution, so sum it
+	double UpdateModules(void);
 
 #if COMPILECUDA == 1
 	void UpdateModulesCUDA(void);
@@ -419,7 +419,7 @@ public:
 
 	//----------------------------------- VALUE GETTERS
 
-	//get energy value for given module or one of its exclusive modules (if none active return 0)
+	//get energy value for given module or one of its exclusive modules (if none active return 0); call it with MOD_ALL to return total energy density in this mesh.
 	double GetEnergy(MOD_ moduleType);
 
 	//get average magnetisation in given rectangle (entire mesh if none specified)

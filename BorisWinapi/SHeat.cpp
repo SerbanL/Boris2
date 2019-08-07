@@ -92,10 +92,10 @@ BError SHeat::MakeCUDAModule(void)
 	return error;
 }
 
-void SHeat::UpdateField(void)
+double SHeat::UpdateField(void)
 {
 	//only need to update this after an entire magnetisation equation time step is solved
-	if (!pSMesh->CurrentTimeStepSolved()) return;
+	if (!pSMesh->CurrentTimeStepSolved()) return 0.0;
 
 	double dT = heat_dT;
 
@@ -126,6 +126,9 @@ void SHeat::UpdateField(void)
 
 	//3. update the magnetic dT that will be used next time around to increment the heat solver by
 	magnetic_dT = pSMesh->GetTimeStep();
+
+	//no contribution to total energy density
+	return 0.0;
 }
 
 //calculate and set values at composite media boundaries after all other cells have been computed and set

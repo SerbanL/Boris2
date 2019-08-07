@@ -41,7 +41,7 @@ public:
 
 	BError MakeCUDAModule(void);
 
-	void UpdateField(void);
+	double UpdateField(void);
 };
 
 #else
@@ -67,7 +67,7 @@ public:
 
 	BError MakeCUDAModule(void) { return BError(); }
 
-	void UpdateField(void) {}
+	double UpdateField(void) { return 0.0; }
 };
 
 #endif

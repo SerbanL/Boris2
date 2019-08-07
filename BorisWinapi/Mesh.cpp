@@ -43,15 +43,31 @@ BError Mesh::Error_On_Create(void)
 
 //----------------------------------- VALUE GETTERS
 
+//get energy value for given module or one of its exclusive modules (if none active return 0); call it with MOD_ALL to return total energy density in this mesh.
 double Mesh::GetEnergy(MOD_ moduleType)
 {
-	for (int idx = 0; idx < (int)exclusiveModules[moduleType].size(); idx++) {
+	if (moduleType == MOD_ALL) {
 
-		MOD_ module = exclusiveModules[moduleType][idx];
-		if (IsModuleSet(module)) { return pMod(module)->GetEnergy(); }
+		double energy = 0.0;
+
+		//get total energy density in currently set modules
+		for (int idx = 0; idx < pMod.size(); idx++) {
+
+			energy += pMod[idx]->GetEnergy();
+		}
+
+		return energy;
 	}
+	else {
 
-	return 0.0;
+		for (int idx = 0; idx < (int)exclusiveModules[moduleType].size(); idx++) {
+
+			MOD_ module = exclusiveModules[moduleType][idx];
+			if (IsModuleSet(module)) { return pMod(module)->GetEnergy(); }
+		}
+
+		return 0.0;
+	}
 }
 
 //get average magnetisation in given rectangle (entire mesh if none specified)

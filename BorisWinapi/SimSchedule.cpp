@@ -196,6 +196,11 @@ void Simulation::SetGenericStopCondition(int index, STOP_ stopType) {
 		simStages[index].set_stopvalue(1e-4);
 		break;
 
+	case STOP_DMDT:
+		simStages[index].set_stoptype(stageStopDescriptors(stopType));
+		simStages[index].set_stopvalue(1e-5);
+		break;
+
 	case STOP_TIME:
 		simStages[index].set_stoptype( stageStopDescriptors(stopType) );
 		simStages[index].set_stopvalue(10e-9);
@@ -326,6 +331,11 @@ void Simulation::CheckSimulationSchedule(void) {
 		if( SMesh.Get_mxh() <= (double)simStages[ stage_step.major ].get_stopvalue() ) AdvanceSimulationSchedule();
 		break;
 
+	case STOP_DMDT:
+
+		if (SMesh.Get_dmdt() <= (double)simStages[stage_step.major].get_stopvalue()) AdvanceSimulationSchedule();
+		break;
+
 	case STOP_TIME:
 
 		if( SMesh.GetStageTime() >= (double)simStages[ stage_step.major ].get_stopvalue() ) AdvanceSimulationSchedule();
@@ -352,8 +362,13 @@ void Simulation::CheckSaveDataCondtions() {
 		double tsave = (double)simStages[stage_step.major].get_dsavevalue();
 		double dT = SMesh.GetTimeStep();
 
-		//if( IsS(fmod_epsilon(SMesh.GetTime(), (double)simStages[stage_step.major].get_dsavevalue()), SMesh.GetTimeStep()) ) SaveData();
-		if (time - tsave * int(time / tsave) < dT) SaveData();
+		//the floor_epsilon is important - don't use floor!
+		//the reason for this, if time / tsave ends up being very close, but slightly less, than an integer, e.g. 1.999 due to a floating point error, then floor will round it down, whereas really it should be rounded up.
+		//thus with floor only you can end up not saving data points where you should be.
+		//Also the *0.99 below is important : if using just delta < dT check, delta can be slightly smaller than dT but within a floating point error close to it - thus we end up double-saving some data points!
+		//this happens especially if tsave / dT is an integer -> thus most of the time.
+		double delta = time - floor_epsilon(time / tsave) * tsave;
+		if (delta < dT * 0.99) SaveData();
 	}
 		break;
 	}

@@ -296,18 +296,35 @@ DBL2 PhysQRep::CalculateRepresentation_VEC(VECType* pQ, PhysQRepComponent& physQ
 		for (int j = 0; j < ndisp.y; j++) {
 			for (int i = 0; i < ndisp.x; i++) {
 
+				DBL3 value;
+
 				DBL3 rel_pos = hdisp & (DBL3(i, j, k) + DBL3(0.5));
-				
+
 				if (pQ->is_empty(rel_pos)) {
 
-					//set this to empty
-					physQRepComponent.transformBatch[i + j * ndisp.x + k * ndisp.x*ndisp.y] = CBObjectTransform();
-					physQRepComponent.emptyCell[i + j * ndisp.x + k * ndisp.x*ndisp.y] = true;
-					continue;
+					//most cells are not empty, so the check above should be kept since it's fast
+					//there is the possibility that for a coarse display cell the check above returns empty but actually the coarse cell is not empty
+					//thus use the complete check here with the coarse cell rectangle
+					Rect cellRect = Rect(DBL3(i, j, k) & hdisp, DBL3(i + 1, j + 1, k + 1) & hdisp);
+					if (pQ->is_empty(cellRect)) {
+
+						//set this to empty
+						physQRepComponent.transformBatch[i + j * ndisp.x + k * ndisp.x*ndisp.y] = CBObjectTransform();
+						physQRepComponent.emptyCell[i + j * ndisp.x + k * ndisp.x*ndisp.y] = true;
+						continue;
+					}
+					else {
+
+						value = (DBL3)(*pQ).average(cellRect);
+						physQRepComponent.emptyCell[i + j * ndisp.x + k * ndisp.x*ndisp.y] = false;
+					}
 				}
-				else physQRepComponent.emptyCell[i + j * ndisp.x + k * ndisp.x*ndisp.y] = false;
-				
-				DBL3 value = (DBL3)(*pQ)[hdisp & (DBL3(i, j, k) + DBL3(0.5))];
+				else {
+
+					value = (DBL3)(*pQ)[rel_pos];
+					physQRepComponent.emptyCell[i + j * ndisp.x + k * ndisp.x*ndisp.y] = false;
+				}
+							
 				double value_mag = (double)GetMagnitude(value);
 
 				//reduce values
@@ -452,18 +469,34 @@ DBL2 PhysQRep::CalculateRepresentation_SCA(VECType* pQ, PhysQRepComponent& physQ
 		for (int k = 0; k < ndisp.z; k++) {
 			for (int i = 0; i < ndisp.x; i++) {
 
+				double value;
+
 				DBL3 rel_pos = hdisp & (DBL3(i, j, k) + DBL3(0.5));
 
 				if (pQ->is_empty(rel_pos)) {
 
-					//set this to empty
-					physQRepComponent.transformBatch[i + j * ndisp.x + k * ndisp.x*ndisp.y] = CBObjectTransform();
-					physQRepComponent.emptyCell[i + j * ndisp.x + k * ndisp.x*ndisp.y] = true;
-					continue;
-				}
-				else physQRepComponent.emptyCell[i + j * ndisp.x + k * ndisp.x*ndisp.y] = false;
+					//most cells are not empty, so the check above should be kept since it's fast
+					//there is the possibility that for a coarse display cell the check above returns empty but actually the coarse cell is not empty
+					//thus use the complete check here with the coarse cell rectangle
+					Rect cellRect = Rect(DBL3(i, j, k) & hdisp, DBL3(i + 1, j + 1, k + 1) & hdisp);
+					if (pQ->is_empty(cellRect)) {
 
-				double value = (double)(*pQ)[hdisp & (DBL3(i, j, k) + DBL3(0.5))];
+						//set this to empty
+						physQRepComponent.transformBatch[i + j * ndisp.x + k * ndisp.x*ndisp.y] = CBObjectTransform();
+						physQRepComponent.emptyCell[i + j * ndisp.x + k * ndisp.x*ndisp.y] = true;
+						continue;
+					}
+					else {
+
+						value = (double)(*pQ).average(cellRect);
+						physQRepComponent.emptyCell[i + j * ndisp.x + k * ndisp.x*ndisp.y] = false;
+					}
+				}
+				else {
+
+					value = (double)(*pQ)[rel_pos];
+					physQRepComponent.emptyCell[i + j * ndisp.x + k * ndisp.x*ndisp.y] = false;
+				}
 
 				//reduce values
 				omp_reduction.reduce_minmax(value);

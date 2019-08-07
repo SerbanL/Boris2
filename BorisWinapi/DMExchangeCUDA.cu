@@ -29,19 +29,34 @@ __global__ void DMExchangeCUDA_UpdateField(ManagedMeshCUDA& cuMesh, cuReal& ener
 			cuReal D = *cuMesh.pD;
 			cuMesh.update_parameters_mcoarse(idx, *cuMesh.pMs, Ms, *cuMesh.pA, A, *cuMesh.pD, D);
 
-			//Non-homogeneous Neumann boundary conditions apply when using DMI. Required to ensure Brown's condition is fulfilled, i.e. m x h -> 0 when relaxing.
-			cuReal3 bnd_dm_dx = (D / (2 * A * Ms)) * cuReal3(0, -M[idx].z, M[idx].y);
-			cuReal3 bnd_dm_dy = (D / (2 * A * Ms)) * cuReal3(M[idx].z, 0, -M[idx].x);
-			cuReal3 bnd_dm_dz = (D / (2 * A * Ms)) * cuReal3(-M[idx].y, M[idx].x, 0);
-			cuReal33 bnd_nneu = cuReal33(bnd_dm_dx, bnd_dm_dy, bnd_dm_dz);
+			if (M.is_interior(idx)) {
 
-			//direct exchange contribution
-			Hexch = 2 * A * M.delsq_nneu(idx, bnd_nneu) / ((cuReal)MU0 * Ms * Ms);
+				//interior point : can use cheaper neu versions
 
-			//Dzyaloshinskii-Moriya exchange contribution
+				//direct exchange contribution
+				Hexch = 2 * A * M.delsq_neu(idx) / ((cuReal)MU0 * Ms * Ms);
 
-			//Hdm, ex = -2D / (mu0*Ms) * curl m
-			Hexch += -2 * D * M.curl_nneu(idx, bnd_nneu) / ((cuReal)MU0 * Ms * Ms);
+				//Dzyaloshinskii-Moriya exchange contribution
+
+				//Hdm, ex = -2D / (mu0*Ms) * curl m
+				Hexch += -2 * D * M.curl_neu(idx) / ((cuReal)MU0 * Ms * Ms);
+			}
+			else {
+
+				//Non-homogeneous Neumann boundary conditions apply when using DMI. Required to ensure Brown's condition is fulfilled, i.e. m x h -> 0 when relaxing.
+				cuReal3 bnd_dm_dx = (D / (2 * A * Ms)) * cuReal3(0, -M[idx].z, M[idx].y);
+				cuReal3 bnd_dm_dy = (D / (2 * A * Ms)) * cuReal3(M[idx].z, 0, -M[idx].x);
+				cuReal3 bnd_dm_dz = (D / (2 * A * Ms)) * cuReal3(-M[idx].y, M[idx].x, 0);
+				cuReal33 bnd_nneu = cuReal33(bnd_dm_dx, bnd_dm_dy, bnd_dm_dz);
+
+				//direct exchange contribution
+				Hexch = 2 * A * M.delsq_nneu(idx, bnd_nneu) / ((cuReal)MU0 * Ms * Ms);
+
+				//Dzyaloshinskii-Moriya exchange contribution
+
+				//Hdm, ex = -2D / (mu0*Ms) * curl m
+				Hexch += -2 * D * M.curl_nneu(idx, bnd_nneu) / ((cuReal)MU0 * Ms * Ms);
+			}
 
 			if (do_reduction) {
 

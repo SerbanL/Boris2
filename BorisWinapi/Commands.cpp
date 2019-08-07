@@ -899,6 +899,21 @@ void Simulation::HandleCommand(string command_string) {
 		}
 		break;
 
+		case CMD_ASTEPCTRL:
+		{
+			double err_fail, err_high, err_low, dT_incr, dT_min, dT_max;
+
+			error = commandSpec.GetParameters(command_fields, err_fail, err_high, err_low, dT_incr, dT_min, dT_max);
+
+			if (!error) {
+
+				SMesh.SetAdaptiveTimeStepCtrl(err_fail, err_high, err_low, dT_incr, dT_min, dT_max);
+				UpdateScreen();
+			}
+			else if (verbose) Print_AStepCtrl();
+		}
+		break;
+
 		case CMD_SHOWDATA:
 		{
 			string dataName;

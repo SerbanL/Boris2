@@ -36,6 +36,9 @@ BError OerstedCUDA::Initialize(void)
 {
 	BError error(CLASS_STR(OerstedCUDA));
 
+	//not counting this to the total energy density for now
+	ZeroEnergy();
+
 	//FFT Kernels are not so quick to calculate - if already initialized then we are guaranteed they are correct
 	if (!initialized) {
 
@@ -100,10 +103,10 @@ void OerstedCUDA::UpdateField(void)
 		//transfer values from invidual Jc meshes to sm_Vals
 		sm_Vals()->transfer_in(pOersted->sm_Vals.linear_size(), pOersted->sm_Vals.size_transfer_in());
 
-		Convolute(sm_Vals, sm_Vals, energy, false, true);
+		//only need energy after ode solver step finished
+		if (pSMesh->CurrentTimeStepSolved()) ZeroEnergy();
 
-		//no energy term needed here
-		ZeroEnergy();
+		Convolute(sm_Vals, sm_Vals, energy, false, true);
 
 		//transfer to individual Heff meshes
 		sm_Vals()->transfer_out(pOersted->sm_Vals.size_transfer_out());

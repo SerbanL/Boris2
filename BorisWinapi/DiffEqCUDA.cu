@@ -1,4 +1,6 @@
 #include "DiffEqCUDA.h"
+#include "DiffEq_EquationsCUDA.h"
+#include "DiffEq_SEquationsCUDA.h"
 #include "DiffEq_Defs.h"
 
 #if COMPILECUDA == 1

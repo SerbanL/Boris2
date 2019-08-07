@@ -28,6 +28,9 @@ BError SHeatCUDA::Initialize(void)
 {
 	BError error(CLASS_STR(SHeatCUDA));
 
+	//no energy density contribution here
+	ZeroEnergy();
+
 	return error;
 }
 

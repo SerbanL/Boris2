@@ -21,6 +21,45 @@
 //compile with cuda single precision (float types) or double precision (double types). Set SINGLEPRECISION to 1 for single, otherwise (0) for double.
 #define SINGLEPRECISION 1
 
+//----------------------------------------------------------------- ODE EVALS
+
+//1 : compile all ode eval methods
+//2 : compile only the rk4 method (testing only, faster compilation)
+//3 : custom
+
+#define ODE_EVAL_ALL	1
+#define ODE_EVAL_TEST	2
+#define ODE_EVAL_CUST	3
+
+//Set this
+#define ODE_EVAL_COMPILATION	ODE_EVAL_ALL
+
+//full
+#if ODE_EVAL_COMPILATION == ODE_EVAL_ALL
+
+#define ODE_EVAL_EULER
+#define ODE_EVAL_TEULER
+#define ODE_EVAL_AHEUN
+#define ODE_EVAL_ABM
+#define ODE_EVAL_RK23
+#define ODE_EVAL_RK4
+#define ODE_EVAL_RKF
+#define ODE_EVAL_SD
+
+#elif ODE_EVAL_COMPILATION == ODE_EVAL_TEST
+
+#define ODE_EVAL_RK4
+
+#elif ODE_EVAL_COMPILATION == ODE_EVAL_CUST
+
+#define ODE_EVAL_RK4
+#define ODE_EVAL_RK23
+#define ODE_EVAL_RKF
+#define ODE_EVAL_ABM
+#define ODE_EVAL_SD
+
+#endif
+
 //----------------------------------------------------------------- MODULES
 
 //1 : compile all modules
@@ -33,7 +72,8 @@
 #define COMPILE_NONE	3
 #define COMPILE_CUST	4
 
-#define MODULE_COMPILATION	COMPILE_ALL
+//Set this
+#define MODULE_COMPILATION	COMPILE_CUST
 
 //full
 #if MODULE_COMPILATION == COMPILE_ALL
@@ -77,6 +117,7 @@
 #define MODULE_ZEEMAN
 #define MODULE_ANIUNI
 #define MODULE_IDMEXCHANGE
+#define MODULE_SURFEXCHANGE
 
 #define MODULE_SDEMAG
 

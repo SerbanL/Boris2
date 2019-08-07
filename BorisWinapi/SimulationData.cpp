@@ -131,6 +131,12 @@ Any Simulation::GetDataValue(DatumConfig dConfig)
 	}
 	break;
 
+	case DATA_DMDT:
+	{
+		return Any(SMesh.Get_dmdt());
+	}
+	break;
+
 	case DATA_DT:
 	{
 		return Any(SMesh.GetTimeStep());
@@ -253,6 +259,12 @@ Any Simulation::GetDataValue(DatumConfig dConfig)
 	case DATA_E_ROUGH:
 	{
 		return Any(SMesh[dConfig.meshName]->GetEnergy(MOD_ROUGHNESS));
+	}
+	break;
+
+	case DATA_E_TOTAL:
+	{
+		return Any(SMesh.GetTotalEnergy());
 	}
 	break;
 

@@ -220,6 +220,27 @@ BError SDemagCUDA::Initialize(void)
 		initialized = true;
 	}
 
+	//make sure the energy density weights are correct
+	if (pSDemag->use_multilayered_convolution) {
+
+		double total_nonempty_volume = 0.0;
+
+		for (int idx = 0; idx < (int)pSDemagCUDA_Demag.size(); idx++) {
+
+			total_nonempty_volume += (double)pSDemag->pSDemag_Demag[idx]->pMesh->M.get_nonempty_cells() * pSDemag->pSDemag_Demag[idx]->pMesh->M.h.dim();
+			pSDemagCUDA_Demag[idx]->energy_density_weight.from_cpu((cuReal)0.0);
+		}
+
+		if (total_nonempty_volume) {
+
+			for (int idx = 0; idx < (int)pSDemagCUDA_Demag.size(); idx++) {
+
+				double energy_density_weight = (double)pSDemag->pSDemag_Demag[idx]->pMesh->M.get_nonempty_cells() * pSDemag->pSDemag_Demag[idx]->pMesh->M.h.dim() / total_nonempty_volume;
+				pSDemagCUDA_Demag[idx]->energy_density_weight.from_cpu((cuReal)energy_density_weight);
+			}
+		}
+	}
+
 	return error;
 }
 
@@ -350,24 +371,49 @@ void SDemagCUDA::UpdateField(void)
 		}
 		*/
 
-		//Inverse FFT
-		for (int idx = 0; idx < pSDemagCUDA_Demag.size(); idx++) {
+		if (pSMesh->CurrentTimeStepSolved()) {
 
-			if (pSDemagCUDA_Demag[idx]->do_transfer) {
+			//only need energy after ode solver step finished
+			ZeroEnergy();
 
-				//only need energy after ode solver step finished
-				if (pSMesh->CurrentTimeStepSolved()) ZeroEnergy();
+			//Inverse FFT
+			for (int idx = 0; idx < pSDemagCUDA_Demag.size(); idx++) {
 
-				//do inverse FFT and accumulate energy
-				pSDemagCUDA_Demag[idx]->InverseFFT(pSDemagCUDA_Demag[idx]->transfer, pSDemagCUDA_Demag[idx]->transfer, energy, pSMesh->CurrentTimeStepSolved(), true);
+				if (pSDemagCUDA_Demag[idx]->do_transfer) {
+					
+					//do inverse FFT and accumulate energy
+					pSDemagCUDA_Demag[idx]->InverseFFT(pSDemagCUDA_Demag[idx]->transfer, pSDemagCUDA_Demag[idx]->transfer, energy, pSDemagCUDA_Demag[idx]->energy_density_weight, true);
 
-				//transfer to Heff in each mesh
-				pSDemagCUDA_Demag[idx]->transfer()->transfer_out(pSDemag->pSDemag_Demag[idx]->transfer.size_transfer_out());
+					//transfer to Heff in each mesh
+					pSDemagCUDA_Demag[idx]->transfer()->transfer_out(pSDemag->pSDemag_Demag[idx]->transfer.size_transfer_out());
+				}
+				else {
+
+					//do inverse FFT and accumulate energy. Add to Heff in each mesh
+					pSDemagCUDA_Demag[idx]->InverseFFT(pSDemagCUDA_Demag[idx]->pMeshCUDA->M, pSDemagCUDA_Demag[idx]->pMeshCUDA->Heff, energy, pSDemagCUDA_Demag[idx]->energy_density_weight, false);
+				}
 			}
-			else {
+		}
+		else {
 
-				//do inverse FFT and accumulate energy. Add to Heff in each mesh
-				pSDemagCUDA_Demag[idx]->InverseFFT(pSDemagCUDA_Demag[idx]->pMeshCUDA->M, pSDemagCUDA_Demag[idx]->pMeshCUDA->Heff, energy, pSMesh->CurrentTimeStepSolved(), false);
+			//no energy contribution needed
+
+			//Inverse FFT
+			for (int idx = 0; idx < pSDemagCUDA_Demag.size(); idx++) {
+
+				if (pSDemagCUDA_Demag[idx]->do_transfer) {
+
+					//do inverse FFT
+					pSDemagCUDA_Demag[idx]->InverseFFT(pSDemagCUDA_Demag[idx]->transfer, pSDemagCUDA_Demag[idx]->transfer, energy, false, true);
+
+					//transfer to Heff in each mesh
+					pSDemagCUDA_Demag[idx]->transfer()->transfer_out(pSDemag->pSDemag_Demag[idx]->transfer.size_transfer_out());
+				}
+				else {
+
+					//do inverse FFT. Add to Heff in each mesh
+					pSDemagCUDA_Demag[idx]->InverseFFT(pSDemagCUDA_Demag[idx]->pMeshCUDA->M, pSDemagCUDA_Demag[idx]->pMeshCUDA->Heff, energy, false, false);
+				}
 			}
 		}
 	}

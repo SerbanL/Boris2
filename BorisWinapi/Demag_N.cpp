@@ -78,7 +78,7 @@ BError Demag_N::MakeCUDAModule(void)
 	return error;
 }
 
-void Demag_N::UpdateField(void)
+double Demag_N::UpdateField(void)
 {
 	double energy = 0;
 
@@ -100,6 +100,8 @@ void Demag_N::UpdateField(void)
 
 	if (pMesh->M.get_nonempty_cells()) this->energy = -energy * MU0 / (2 * pMesh->M.get_nonempty_cells());
 	else this->energy = 0;
+
+	return energy;
 }
 
 #endif

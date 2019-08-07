@@ -45,15 +45,25 @@ void Simulation::MakeIOInfo(void)
 	ioInfo.set(modulegeneric_info + string("<i><b>Oersted field in electric supermesh"), INT2(IOI_SMODULE, MODS_OERSTED));
 	ioInfo.set(modulegeneric_info + string("<i><b>Stray field from dipole meshes"), INT2(IOI_SMODULE, MODS_STRAYFIELD));
 
-	//Available/set ode and evaluation method for magnetization : minorId is an entry from ODE_ (the equation), auxId is the EVAL_ entry (the evaluation method), textId is the name of the evaluation method
+	//Available/set ode : minorId is an entry from ODE_ (the equation)
 	//IOI_ODE
 
 	string ode_info =
-		string("[tc1,1,0,1/tc]<b>Evaluation method for</b>\n[tc1,1,0,1/tc]<b>dM/dt equation</b>") +
+		string("[tc1,1,0,1/tc]<b>dM/dt equation</b>") +
 		string("\n[tc1,1,0,1/tc]<i>green: on, red: off</i>") +
 		string("\n[tc1,1,0,1/tc]click: change state\n");
 
 	ioInfo.push_back(ode_info, IOI_ODE);
+
+	//Available/set ode evaluation method for ode : minorId is an entry from ODE_ (the equation), auxId is the EVAL_ entry (the evaluation method), textId is the name of the evaluation method
+	//IOI_ODE_EVAL
+
+	string ode_eval_info =
+		string("[tc1,1,0,1/tc]<b>Evaluation method for dM/dt equation</b>") +
+		string("\n[tc1,1,0,1/tc]<i>green: on, red: off, gray: unavailable</i>") +
+		string("\n[tc1,1,0,1/tc]click: change state\n");
+
+	ioInfo.push_back(ode_eval_info, IOI_ODE_EVAL);
 
 	//Shows a mesh name : minorId is the unique mesh id number, textId is the mesh name (below are similar objects but used in different lists, so these lists need updating differently).
 	//auxId is also used : value 1 means update list, value 0 means do not update list (but delete line if mesh is deleted).
@@ -178,7 +188,8 @@ void Simulation::MakeIOInfo(void)
 	ioInfo.set(showdata_info_generic + string("<i><b>Simulation iterations</i>"), INT2(IOI_SHOWDATA, DATA_ITERATIONS));
 	ioInfo.set(showdata_info_generic + string("<i><b>Simulation stage iterations</i>"), INT2(IOI_SHOWDATA, DATA_SITERATIONS));
 	ioInfo.set(showdata_info_generic + string("<i><b>Magnetisation solver time step</i>"), INT2(IOI_SHOWDATA, DATA_DT));
-	ioInfo.set(showdata_info_generic + string("<i><b>Magnetisation relaxation</i>"), INT2(IOI_SHOWDATA, DATA_MXH));
+	ioInfo.set(showdata_info_generic + string("<i><b>Magnetisation relaxation |mxh|</i>"), INT2(IOI_SHOWDATA, DATA_MXH));
+	ioInfo.set(showdata_info_generic + string("<i><b>Magnetisation relaxation |dm/dt|</i>"), INT2(IOI_SHOWDATA, DATA_DMDT));
 	ioInfo.set(showdata_info_generic + string("<i><b>Average magnetisation</i>"), INT2(IOI_SHOWDATA, DATA_AVM));
 	ioInfo.set(showdata_info_generic + string("<i><b>Applied magnetic field</i>"), INT2(IOI_SHOWDATA, DATA_HA));
 	ioInfo.set(showdata_info_generic + string("<i><b>Average charge current density</i>"), INT2(IOI_SHOWDATA, DATA_JC));
@@ -197,6 +208,7 @@ void Simulation::MakeIOInfo(void)
 	ioInfo.set(showdata_info_generic + string("<i><b>Energy density: applied H field</i>"), INT2(IOI_SHOWDATA, DATA_E_ZEE));
 	ioInfo.set(showdata_info_generic + string("<i><b>Energy density: anisotropy</i>"), INT2(IOI_SHOWDATA, DATA_E_ANIS));
 	ioInfo.set(showdata_info_generic + string("<i><b>Energy density: roughness</i>"), INT2(IOI_SHOWDATA, DATA_E_ROUGH));
+	ioInfo.set(showdata_info_generic + string("<i><b>Energy density: Total</i>"), INT2(IOI_SHOWDATA, DATA_E_TOTAL));
 	ioInfo.set(showdata_info_generic + string("<i><b>Domain wall shift\n<i><b>for moving mesh</i>"), INT2(IOI_SHOWDATA, DATA_DWSHIFT));
 	ioInfo.set(showdata_info_generic + string("<i><b>Skyrmion shift in the xy plan\n<i><b>Only use with output save data</i>"), INT2(IOI_SHOWDATA, DATA_SKYSHIFT));
 	ioInfo.set(showdata_info_generic + string("<i><b>Transport solver:\n<i><b>V iterations to convergence</i>"), INT2(IOI_SHOWDATA, DATA_TRANSPORT_ITERSTOCONV));
@@ -218,7 +230,8 @@ void Simulation::MakeIOInfo(void)
 	ioInfo.set(data_info_generic + string("<i><b>Simulation iterations</i>"), INT2(IOI_DATA, DATA_ITERATIONS));
 	ioInfo.set(data_info_generic + string("<i><b>Simulation stage iterations</i>"), INT2(IOI_DATA, DATA_SITERATIONS));
 	ioInfo.set(data_info_generic + string("<i><b>Magnetisation solver time step</i>"), INT2(IOI_DATA, DATA_DT));
-	ioInfo.set(data_info_generic + string("<i><b>Magnetisation relaxation</i>"), INT2(IOI_DATA, DATA_MXH));
+	ioInfo.set(data_info_generic + string("<i><b>Magnetisation relaxation |mxh|</i>"), INT2(IOI_DATA, DATA_MXH));
+	ioInfo.set(data_info_generic + string("<i><b>Magnetisation relaxation |dm/dt|</i>"), INT2(IOI_DATA, DATA_DMDT));
 	ioInfo.set(data_info_generic + string("<i><b>Average magnetisation</i>"), INT2(IOI_DATA, DATA_AVM));
 	ioInfo.set(data_info_generic + string("<i><b>Applied magnetic field</i>"), INT2(IOI_DATA, DATA_HA));
 	ioInfo.set(data_info_generic + string("<i><b>Average charge current density</i>"), INT2(IOI_DATA, DATA_JC));
@@ -237,6 +250,7 @@ void Simulation::MakeIOInfo(void)
 	ioInfo.set(data_info_generic + string("<i><b>Energy density: applied H field</i>"), INT2(IOI_DATA, DATA_E_ZEE));
 	ioInfo.set(data_info_generic + string("<i><b>Energy density: anisotropy</i>"), INT2(IOI_DATA, DATA_E_ANIS));
 	ioInfo.set(data_info_generic + string("<i><b>Energy density: roughness</i>"), INT2(IOI_DATA, DATA_E_ROUGH));
+	ioInfo.set(data_info_generic + string("<i><b>Energy density: Total</i>"), INT2(IOI_DATA, DATA_E_TOTAL));
 	ioInfo.set(data_info_generic + string("<i><b>Domain wall shift\n<i><b>for moving mesh</i>"), INT2(IOI_DATA, DATA_DWSHIFT));
 	ioInfo.set(data_info_generic + string("<i><b>Skyrmion shift in the xy plane\n<i><b>Rectangle must circumscribe skyrmion</i>"), INT2(IOI_DATA, DATA_SKYSHIFT));
 	ioInfo.set(data_info_generic + string("<i><b>Transport solver:\n<i><b>V iterations to convergence</i>"), INT2(IOI_DATA, DATA_TRANSPORT_ITERSTOCONV));
@@ -372,6 +386,7 @@ void Simulation::MakeIOInfo(void)
 	ioInfo.set(stagestop_generic_info + string("<i><b>No stopping condition set"), INT2(IOI_STAGESTOPCONDITION, STOP_NOSTOP));
 	ioInfo.set(stagestop_generic_info + string("<i><b>Stop when stage iterations value reached"), INT2(IOI_STAGESTOPCONDITION, STOP_ITERATIONS));
 	ioInfo.set(stagestop_generic_info + string("<i><b>Stop when |mxh| falls below value"), INT2(IOI_STAGESTOPCONDITION, STOP_MXH));
+	ioInfo.set(stagestop_generic_info + string("<i><b>Stop when |dm/dt| falls below value"), INT2(IOI_STAGESTOPCONDITION, STOP_DMDT));
 	ioInfo.set(stagestop_generic_info + string("<i><b>Stop when stage time value reached"), INT2(IOI_STAGESTOPCONDITION, STOP_TIME));
 
 	//Shows the saving condition for the simulation schedule stage : minorId is the minor id of elements in Simulation::simStages (major id there is always 0), auxId is the DSAVE_ value for this data save type, textId is the save type and value as a string
@@ -398,6 +413,7 @@ void Simulation::MakeIOInfo(void)
 	ioInfo.set(stagestopall_generic_info + string("<i><b>No stopping condition set"), INT2(IOI_STAGESTOPCONDITIONALL, STOP_NOSTOP));
 	ioInfo.set(stagestopall_generic_info + string("<i><b>Stop when stage iterations value reached"), INT2(IOI_STAGESTOPCONDITIONALL, STOP_ITERATIONS));
 	ioInfo.set(stagestopall_generic_info + string("<i><b>Stop when |mxh| falls below value"), INT2(IOI_STAGESTOPCONDITIONALL, STOP_MXH));
+	ioInfo.set(stagestopall_generic_info + string("<i><b>Stop when |dm/dt| falls below value"), INT2(IOI_STAGESTOPCONDITIONALL, STOP_DMDT));
 	ioInfo.set(stagestopall_generic_info + string("<i><b>Stop when stage time value reached"), INT2(IOI_STAGESTOPCONDITIONALL, STOP_TIME));
 
 	//Shows a data save condition, used to apply the same condition to all simulation stages : minorId is the DSAVE_ value, textId is the save type handle
@@ -888,6 +904,51 @@ void Simulation::MakeIOInfo(void)
 		string("\n[tc1,1,0,1/tc]dbl-click: edit");
 
 	ioInfo.push_back(mdbfile_info, IOI_LOCALMDB);
+
+	//Adaptive time step control
+	//IOI_ODERELERRFAIL, IOI_ODERELERRHIGH, IOI_ODERELERRLOW, IOI_ODEDTINCR, IOI_ODEDTMIN, IOI_ODEDTMAX
+
+	string astep_ctrl_info =
+		string("[tc1,1,0,1/tc]<b>Adaptive time step control</b>") +
+		string("\n[tc1,1,0,1/tc]Fail above this error.") + 
+		string("\n[tc1,1,0,1/tc]dbl-click: edit");
+
+	ioInfo.push_back(astep_ctrl_info, IOI_ODERELERRFAIL);
+
+	astep_ctrl_info =
+		string("[tc1,1,0,1/tc]<b>Adaptive time step control</b>") +
+		string("\n[tc1,1,0,1/tc]Decrease dT above this error.") +
+		string("\n[tc1,1,0,1/tc]dbl-click: edit");
+
+	ioInfo.push_back(astep_ctrl_info, IOI_ODERELERRHIGH);
+
+	astep_ctrl_info =
+		string("[tc1,1,0,1/tc]<b>Adaptive time step control</b>") +
+		string("\n[tc1,1,0,1/tc]Increase dT below this error.") +
+		string("\n[tc1,1,0,1/tc]dbl-click: edit");
+
+	ioInfo.push_back(astep_ctrl_info, IOI_ODERELERRLOW);
+
+	astep_ctrl_info =
+		string("[tc1,1,0,1/tc]<b>Adaptive time step control</b>") +
+		string("\n[tc1,1,0,1/tc]dT increase factor.") +
+		string("\n[tc1,1,0,1/tc]dbl-click: edit");
+
+	ioInfo.push_back(astep_ctrl_info, IOI_ODEDTINCR);
+
+	astep_ctrl_info =
+		string("[tc1,1,0,1/tc]<b>Adaptive time step control</b>") +
+		string("\n[tc1,1,0,1/tc]Minimum dT.") +
+		string("\n[tc1,1,0,1/tc]dbl-click: edit");
+
+	ioInfo.push_back(astep_ctrl_info, IOI_ODEDTMIN);
+
+	astep_ctrl_info =
+		string("[tc1,1,0,1/tc]<b>Adaptive time step control</b>") +
+		string("\n[tc1,1,0,1/tc]Maximum dT.") +
+		string("\n[tc1,1,0,1/tc]dbl-click: edit");
+
+	ioInfo.push_back(astep_ctrl_info, IOI_ODEDTMAX);
 }
 
 //---------------------------------------------------- MAKE INTERACTIVE OBJECT : Auxiliary method
@@ -1059,14 +1120,25 @@ string Simulation::MakeIO(IOI_ identifier, PType ... params)
 		break;
 
 	case IOI_ODE:
-		if (params_str.size() == 2) {
+		if (params_str.size() == 1) {
 
 			int odeId = ToNum(params_str[0]);
-			int evalId = ToNum(params_str[1]);
+
+			string odeHandle = odeHandles(odeId);
+
+			return MakeInteractiveObject(odeHandle, IOI_ODE, odeId);
+		}
+		break;
+
+	case IOI_ODE_EVAL:
+		if (params_str.size() == 1) {
+
+			int evalId = ToNum(params_str[0]);
 
 			string evalHandle = odeEvalHandles(evalId);
 
-			return MakeInteractiveObject(evalHandle, IOI_ODE, odeId, evalId, evalHandle);
+			//mark the set ode with ODE_ERROR, so the state handler will be forced to update the console object with correct state and color
+			return MakeInteractiveObject(evalHandle, IOI_ODE_EVAL, ODE_ERROR, evalId, evalHandle);
 		}
 		break;
 
@@ -1648,6 +1720,60 @@ string Simulation::MakeIO(IOI_ identifier, PType ... params)
 			string mdbFile = params_str[0];
 
 			return MakeInteractiveObject(mdbFile, IOI_LOCALMDB, 0, 0, mdbFile);
+		}
+		break;
+
+	case IOI_ODERELERRFAIL:
+		if (params_str.size() == 1) {
+
+			string value = params_str[0];
+
+			return MakeInteractiveObject(value, IOI_ODERELERRFAIL, 0, 0, value);
+		}
+		break;
+
+	case IOI_ODERELERRHIGH:
+		if (params_str.size() == 1) {
+
+			string value = params_str[0];
+
+			return MakeInteractiveObject(value, IOI_ODERELERRHIGH, 0, 0, value);
+		}
+		break;
+
+	case IOI_ODERELERRLOW:
+		if (params_str.size() == 1) {
+
+			string value = params_str[0];
+
+			return MakeInteractiveObject(value, IOI_ODERELERRLOW, 0, 0, value);
+		}
+		break;
+
+	case IOI_ODEDTINCR:
+		if (params_str.size() == 1) {
+
+			string value = params_str[0];
+
+			return MakeInteractiveObject(value, IOI_ODEDTINCR, 0, 0, value);
+		}
+		break;
+
+	case IOI_ODEDTMIN:
+		if (params_str.size() == 1) {
+
+			string value = params_str[0];
+
+			return MakeInteractiveObject(value, IOI_ODEDTMIN, 0, 0, value);
+		}
+		break;
+
+	case IOI_ODEDTMAX:
+		if (params_str.size() == 1) {
+
+			string value = params_str[0];
+
+			return MakeInteractiveObject(value, IOI_ODEDTMAX, 0, 0, value);
 		}
 		break;
 	}

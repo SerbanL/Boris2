@@ -518,9 +518,6 @@
     <ClCompile Include="BorisDisplay.cpp">
       <Filter>INTERFACE</Filter>
     </ClCompile>
-    <ClCompile Include="BorisInteractiveObjects.cpp">
-      <Filter>INTERACTIVE OBJ</Filter>
-    </ClCompile>
     <ClCompile Include="BorisIOGenerators.cpp">
       <Filter>INTERACTIVE OBJ</Filter>
     </ClCompile>
@@ -573,9 +570,6 @@
       <Filter>DIFF EQUATIONS</Filter>
     </ClCompile>
     <ClCompile Include="DiffEq_Equations.cpp">
-      <Filter>DIFF EQUATIONS</Filter>
-    </ClCompile>
-    <ClCompile Include="DiffEq_Evals.cpp">
       <Filter>DIFF EQUATIONS</Filter>
     </ClCompile>
     <ClCompile Include="DiffEq_SEquations.cpp">
@@ -911,6 +905,39 @@
     <ClCompile Include="OVF2_Handlers.cpp">
       <Filter>SIMULATION</Filter>
     </ClCompile>
+    <ClCompile Include="DiffEq_Evals_Euler.cpp">
+      <Filter>DIFF EQUATIONS</Filter>
+    </ClCompile>
+    <ClCompile Include="DiffEq_Evals_TEuler.cpp">
+      <Filter>DIFF EQUATIONS</Filter>
+    </ClCompile>
+    <ClCompile Include="DiffEq_Evals_ABM.cpp">
+      <Filter>DIFF EQUATIONS</Filter>
+    </ClCompile>
+    <ClCompile Include="DiffEq_Evals_RK4.cpp">
+      <Filter>DIFF EQUATIONS</Filter>
+    </ClCompile>
+    <ClCompile Include="DiffEq_Evals_RKF.cpp">
+      <Filter>DIFF EQUATIONS</Filter>
+    </ClCompile>
+    <ClCompile Include="DiffEq_Evals.cpp">
+      <Filter>DIFF EQUATIONS</Filter>
+    </ClCompile>
+    <ClCompile Include="DiffEq_Evals_RK23.cpp">
+      <Filter>DIFF EQUATIONS</Filter>
+    </ClCompile>
+    <ClCompile Include="BorisInteractiveObjects_Ctrl.cpp">
+      <Filter>INTERACTIVE OBJ</Filter>
+    </ClCompile>
+    <ClCompile Include="BorisInteractiveObjects_State.cpp">
+      <Filter>INTERACTIVE OBJ</Filter>
+    </ClCompile>
+    <ClCompile Include="DiffEq_Evals_SD.cpp">
+      <Filter>DIFF EQUATIONS</Filter>
+    </ClCompile>
+    <ClCompile Include="DiffEq_Evals_AHeun.cpp">
+      <Filter>DIFF EQUATIONS</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="BorisWinapi.rc">
@@ -1029,6 +1056,30 @@
     </CudaCompile>
     <CudaCompile Include="SDemagCUDA_KernelCollection.cu">
       <Filter>DEMAG - SUPERMESH - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="DiffEq_EvalsCUDA_Euler.cu">
+      <Filter>DIFF EQUATIONS - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="DiffEq_EvalsCUDA_TEuler.cu">
+      <Filter>DIFF EQUATIONS - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="DiffEq_EvalsCUDA_ABM.cu">
+      <Filter>DIFF EQUATIONS - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="DiffEq_EvalsCUDA_RK4.cu">
+      <Filter>DIFF EQUATIONS - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="DiffEq_EvalsCUDA_RKF.cu">
+      <Filter>DIFF EQUATIONS - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="DiffEq_EvalsCUDA_RK23.cu">
+      <Filter>DIFF EQUATIONS - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="DiffEq_EvalsCUDA_SD.cu">
+      <Filter>DIFF EQUATIONS - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="DiffEq_EvalsCUDA_AHeun.cu">
+      <Filter>DIFF EQUATIONS - CUDA</Filter>
     </CudaCompile>
   </ItemGroup>
 </Project>

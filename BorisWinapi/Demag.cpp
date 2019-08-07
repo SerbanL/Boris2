@@ -87,7 +87,7 @@ BError Demag::MakeCUDAModule(void)
 	return error;
 }
 
-void Demag::UpdateField(void) 
+double Demag::UpdateField(void) 
 {
 	//convolute and get "energy" value
 	energy = Convolute(pMesh->M, pMesh->Heff, false);
@@ -95,6 +95,8 @@ void Demag::UpdateField(void)
 	//finish off energy value
 	if (pMesh->M.get_nonempty_cells()) energy *= -MU0 / (2 * pMesh->M.get_nonempty_cells());
 	else energy = 0;
+
+	return energy;
 }
 
 #endif

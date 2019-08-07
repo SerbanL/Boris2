@@ -10,7 +10,8 @@
 #include "SDemag_Demag.h"
 
 SDemagCUDA_Demag::SDemagCUDA_Demag(FMeshCUDA* pMeshCUDA_, SDemag_Demag *pSDemag_Demag_) :
-	ModulesCUDA()
+	ModulesCUDA(),
+	ConvolutionCUDA<DemagKernelCollectionCUDA>()
 {
 	Uninitialize();
 
@@ -26,6 +27,9 @@ SDemagCUDA_Demag::~SDemagCUDA_Demag()
 BError SDemagCUDA_Demag::Initialize(void)
 {
 	BError error(CLASS_STR(SDemagCUDA_Demag));
+
+	//no energy density contribution here
+	ZeroEnergy();
 
 	//pointer to cpu SDemag object
 	SDemag* pSDemag = pSDemag_Demag->pSDemag;

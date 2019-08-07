@@ -87,7 +87,7 @@ BError iDMExchange::MakeCUDAModule(void)
 	return error;
 }
 
-void iDMExchange::UpdateField(void)
+double iDMExchange::UpdateField(void)
 {
 	double energy = 0;
 
@@ -106,21 +106,41 @@ void iDMExchange::UpdateField(void)
 			double Aconst = 2 * A / (MU0 * Ms * Ms);
 			double Dconst = -2 * D / (MU0 * Ms * Ms);
 
-			//Non-homogeneous Neumann boundary conditions apply when using DMI. Required to ensure Brown's condition is fulfilled, i.e. m x h -> 0 when relaxing.
-			DBL3 bnd_dm_dx = (D / (2 * A * Ms)) * DBL3(pMesh->M[idx].z, 0, -pMesh->M[idx].x);
-			DBL3 bnd_dm_dy = (D / (2 * A * Ms)) * DBL3(0, pMesh->M[idx].z, -pMesh->M[idx].y);
-			DBL33 bnd_nneu = DBL33(bnd_dm_dx, bnd_dm_dy, DBL3());
+			DBL3 Hexch;
 
-			//direct exchange contribution
-			DBL3 Hexch = Aconst * pMesh->M.delsq_nneu(idx, bnd_nneu);
+			if (pMesh->M.is_plane_interior(idx)) {
 
-			//Dzyaloshinskii-Moriya interfacial exchange contribution
+				//interior point : can use cheaper neu versions
 
-			//Differentials of M components (we only need 4, not all 9 so this could be optimised). First index is the differential direction, second index is the M component
-			DBL33 Mdiff = pMesh->M.grad_nneu(idx, bnd_nneu);
+				//direct exchange contribution
+				Hexch = Aconst * pMesh->M.delsq_neu(idx);
 
-			//Hdm, ex = -2D / (mu0*Ms) * (dmz / dx, dmz / dy, -dmx / dx - dmy / dy)
-			Hexch += Dconst * DBL3(Mdiff.x.z, Mdiff.y.z, -Mdiff.x.x - Mdiff.y.y);
+				//Dzyaloshinskii-Moriya interfacial exchange contribution
+
+				//Differentials of M components (we only need 4, not all 9 so this could be optimised). First index is the differential direction, second index is the M component
+				DBL33 Mdiff = pMesh->M.grad_neu(idx);
+
+				//Hdm, ex = -2D / (mu0*Ms) * (dmz / dx, dmz / dy, -dmx / dx - dmy / dy)
+				Hexch += Dconst * DBL3(Mdiff.x.z, Mdiff.y.z, -Mdiff.x.x - Mdiff.y.y);
+			}
+			else {
+
+				//Non-homogeneous Neumann boundary conditions apply when using DMI. Required to ensure Brown's condition is fulfilled, i.e. m x h -> 0 when relaxing.
+				DBL3 bnd_dm_dx = (D / (2 * A * Ms)) * DBL3(pMesh->M[idx].z, 0, -pMesh->M[idx].x);
+				DBL3 bnd_dm_dy = (D / (2 * A * Ms)) * DBL3(0, pMesh->M[idx].z, -pMesh->M[idx].y);
+				DBL33 bnd_nneu = DBL33(bnd_dm_dx, bnd_dm_dy, DBL3());
+
+				//direct exchange contribution
+				Hexch = Aconst * pMesh->M.delsq_nneu(idx, bnd_nneu);
+
+				//Dzyaloshinskii-Moriya interfacial exchange contribution
+
+				//Differentials of M components (we only need 4, not all 9 so this could be optimised). First index is the differential direction, second index is the M component
+				DBL33 Mdiff = pMesh->M.grad_nneu(idx, bnd_nneu);
+
+				//Hdm, ex = -2D / (mu0*Ms) * (dmz / dx, dmz / dy, -dmx / dx - dmy / dy)
+				Hexch += Dconst * DBL3(Mdiff.x.z, Mdiff.y.z, -Mdiff.x.x - Mdiff.y.y);
+			}
 
 			pMesh->Heff[idx] += Hexch;
 
@@ -133,6 +153,8 @@ void iDMExchange::UpdateField(void)
 	else energy = 0;
 
 	this->energy = energy;
+
+	return energy;
 }
 
 #endif

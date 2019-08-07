@@ -44,6 +44,9 @@ BError HeatCUDA::Initialize(void)
 
 	initialized = true;
 
+	//no energy density contribution here
+	ZeroEnergy();
+
 	return error;
 }
 

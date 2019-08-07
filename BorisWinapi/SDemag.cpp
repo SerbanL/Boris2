@@ -130,21 +130,38 @@ void SDemag::set_default_n_common(void)
 
 	n_common = SZ3(1);
 
+	bool layers_2d = true;
+
+	//are all the layers 2d?
 	for (int idx = 0; idx < (int)pSMesh->pMesh.size(); idx++) {
 
 		if ((*pSMesh)[idx]->MComputation_Enabled()) {
 
-			//don't want the largest in each dimension, just a sensible default value
-			if (n_common.z == (*pSMesh)[idx]->n.z == 1 || force_2d_convolution) {
+			if ((*pSMesh)[idx]->n.z != 1) {
+
+				layers_2d = false;
+				break;
+			}
+		}
+	}
+
+	for (int idx = 0; idx < (int)pSMesh->pMesh.size(); idx++) {
+
+		if ((*pSMesh)[idx]->MComputation_Enabled()) {
+
+			if (layers_2d || force_2d_convolution) {
 
 				//2D layers
-				if (n_common.x < (*pSMesh)[idx]->n.x && n_common.y < (*pSMesh)[idx]->n.y) {
-
-					n_common = (*pSMesh)[idx]->n;
-					n_common.z = 1;
-				}
+				if (n_common.x < (*pSMesh)[idx]->n.x) n_common.x = (*pSMesh)[idx]->n.x;
+				if (n_common.y < (*pSMesh)[idx]->n.y) n_common.y = (*pSMesh)[idx]->n.y;
+				n_common.z = 1;
 			}
-			else if (n_common < (*pSMesh)[idx]->n) n_common = (*pSMesh)[idx]->n;
+			else {
+
+				if (n_common.x < (*pSMesh)[idx]->n.x) n_common.x = (*pSMesh)[idx]->n.x;
+				if (n_common.y < (*pSMesh)[idx]->n.y) n_common.y = (*pSMesh)[idx]->n.y;
+				if (n_common.z < (*pSMesh)[idx]->n.z) n_common.z = (*pSMesh)[idx]->n.z;
+			}
 		}
 	}
 
@@ -441,6 +458,25 @@ BError SDemag::Initialize(void)
 		initialized = true;
 	}
 
+	//make sure the energy density weights are correct
+	if (use_multilayered_convolution) {
+
+		double total_nonempty_volume = 0.0;
+
+		for (int idx = 0; idx < (int)pSDemag_Demag.size(); idx++) {
+
+			total_nonempty_volume += (double)pSDemag_Demag[idx]->pMesh->M.get_nonempty_cells() * pSDemag_Demag[idx]->pMesh->M.h.dim();
+		}
+
+		if (total_nonempty_volume) {
+
+			for (int idx = 0; idx < (int)pSDemag_Demag.size(); idx++) {
+
+				pSDemag_Demag[idx]->energy_density_weight = (double)pSDemag_Demag[idx]->pMesh->M.get_nonempty_cells() * pSDemag_Demag[idx]->pMesh->M.h.dim() / total_nonempty_volume;
+			}
+		}
+	}
+
 	return error;
 }
 
@@ -576,7 +612,7 @@ BError SDemag::MakeCUDAModule(void)
 	return error;
 }
 
-void SDemag::UpdateField(void)
+double SDemag::UpdateField(void)
 {
 	if (!use_multilayered_convolution) {
 
@@ -644,7 +680,7 @@ void SDemag::UpdateField(void)
 			if (pSDemag_Demag[idx]->do_transfer) {
 
 				//do inverse FFT and accumulate energy
-				energy += (pSDemag_Demag[idx]->InverseFFT(pSDemag_Demag[idx]->transfer, pSDemag_Demag[idx]->transfer, true) / pSDemag_Demag[idx]->non_empty_cells);
+				energy += (pSDemag_Demag[idx]->InverseFFT(pSDemag_Demag[idx]->transfer, pSDemag_Demag[idx]->transfer, true) / pSDemag_Demag[idx]->non_empty_cells) * pSDemag_Demag[idx]->energy_density_weight;
 
 				//transfer to Heff in each mesh
 				pSDemag_Demag[idx]->transfer.transfer_out();
@@ -652,13 +688,15 @@ void SDemag::UpdateField(void)
 			else {
 
 				//do inverse FFT and accumulate energy
-				energy += (pSDemag_Demag[idx]->InverseFFT(pSDemag_Demag[idx]->pMesh->M, pSDemag_Demag[idx]->pMesh->Heff, false) / pSDemag_Demag[idx]->non_empty_cells);
+				energy += (pSDemag_Demag[idx]->InverseFFT(pSDemag_Demag[idx]->pMesh->M, pSDemag_Demag[idx]->pMesh->Heff, false) / pSDemag_Demag[idx]->non_empty_cells) * pSDemag_Demag[idx]->energy_density_weight;
 			}
 		}
 
 		//finish off energy value
 		energy *= -MU0 / 2;
 	}
+
+	return energy;
 }
 
 #endif

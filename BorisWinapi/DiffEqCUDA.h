@@ -10,14 +10,6 @@
 #include "MeshParamsCUDA.h"
 #include "ManagedDiffEqCUDA.h"
 
-//DiffEq_IterateCUDA.cpp : coordinates call sequences and time steps for all evaluation methods (DONE)
-
-//DiffEq_EvalsCUDA.cu : launchers and evaluation kernels for all evaluation types and equations (DONE) - also contains some auxiliary functions
-
-//DiffEq_EquationsCUDA.h : All __device__ non-stochastic equation (DONE)
-//DiffEq_SEquationsCUDA.h : All __device__ stochastic equation (DONE)
-//DiffEq_SEquationsCUDA.cu : random field generation (DONE)
-
 //NOTES : renormalize at last step for all equations except all LLB versions
 
 class ODECommon;
@@ -35,32 +27,64 @@ private:
 
 protected:
 
+	//-----------------------------------Time step
+
 	//these need to be pointers, not cu_obj directly : we only want to make the cuda objects when ODECommonCUDA is made (cuda switched on), not at the start of the program - what if cuda not available on the system?
 	static cu_obj<cuReal>* pdT;
 	static cu_obj<cuReal>* pdT_last;
+
+	//-----------------------------------Primary data
 
 	static cu_obj<cuReal>* pmxh;
 	static cu_obj<cuReal3>* pmxh_av;
 	static cu_obj<size_t>* pavpoints;
 
+	static cu_obj<cuReal>* pdmdt;
+	static cu_obj<cuReal3>* pdmdt_av;
+	static cu_obj<size_t>* pavpoints2;
+
 	static cu_obj<cuReal>* plte;
+
+	//-----------------------------------Evaluation method modifiers
 
 	static cu_obj<bool>* prenormalize;
 
+	//-----------------------------------Properties flags
+
 	static cu_obj<bool>* psolve_spin_current;
+
+	//-----------------------------------Equation and Evaluation method values
 
 	static cu_obj<int>* psetODE;
 
+	//-----------------------------------Special values
+
 	static cu_obj<bool>* palternator;
+
+	//-----------------------------------Steepest Descent Solver
+
+	//quantities used to calculate Barzilai-Borwein stepsizes across multiple meshes
+	//Accumulate values in these quantities, then obtain stepsizes as:
+	//step1 = delta_M_sq / delta_M_dot_delta_G
+	//step2 = delta_M_dot_delta_G / delta_G_sq
+	static cu_obj<cuReal>* pdelta_M_sq;
+	static cu_obj<cuReal>* pdelta_G_sq;
+	static cu_obj<cuReal>* pdelta_M_dot_delta_G;
 
 private:
 
-	//---------------------------------------- SET-UP METHODS : DiffEqCUDA.cpp
+	//---------------------------------------- SET-UP METHODS : DiffEqCUDA.cpp, DiffEq_EvalsCUDA.cu
 
 	BError UpdateConfiguration(UPDATECONFIG_ cfgMessage = UPDATECONFIG_GENERIC);
 
+	//zero all main reduction values : mxh, dmdt, lte
 	void Zero_reduction_values(void);
+	void Zero_mxh_lte_values(void);
+	void Zero_dmdt_lte_values(void);
+	void Zero_lte_value(void);
+	
 	void mxhav_to_mxh(void);
+	void dmdtav_to_dmdt(void);
 
 	//set all cuda values here from their cpu values held in ODECommon
 	void SyncODEValues(void);
@@ -69,6 +93,15 @@ private:
 	void Sync_dT(void);
 	void Sync_dT_last(void);
 	void Sync_alternator(void);
+
+	//specific to SD solver
+	void Zero_SD_Solver_BB_Values(void);
+	void Get_SD_Solver_BB_Values(double* pdelta_M_sq_cpu, double* pdelta_G_sq_cpu, double* pdelta_M_dot_delta_G_cpu)
+	{
+		*pdelta_M_sq_cpu = pdelta_M_sq->to_cpu();
+		*pdelta_G_sq_cpu = pdelta_G_sq->to_cpu();
+		*pdelta_M_dot_delta_G_cpu = pdelta_M_dot_delta_G->to_cpu();
+	}
 
 public:
 
@@ -80,6 +113,7 @@ public:
 	//---------------------------------------- GET METHODS
 
 	cuReal Get_mxh(void) { return pmxh->to_cpu(); }
+	cuReal Get_dmdt(void) { return pdmdt->to_cpu(); }
 	cuReal Get_lte(void) { return plte->to_cpu(); }
 
 };
@@ -105,7 +139,7 @@ private:
 	//Used to save starting magnetization - all evaluation methods do this, even when not needed by the method itself, so we can calculate dM/dt when needed.
 	cu_obj<cuVEC<cuReal3>> sM1;
 
-	//Used for RK4 (0, 1, 2); ABM (0, 1)
+	//Used for RK4 (0, 1, 2); ABM (0, 1); RK23 (0, 1, 2); SD (0)
 	cu_obj<cuVEC<cuReal3>> sEval0, sEval1, sEval2;
 
 	//Additional for use with RKF45
@@ -142,39 +176,73 @@ private:
 
 	//---------------------------------------- SOLVER KERNEL LAUNCHERS generic : DiffEq_EvalsCUDA.cu
 
+#ifdef ODE_EVAL_EULER
 	//Euler evaluation of ODE
-	void RunEuler(void);
+	void RunEuler(bool calculate_mxh, bool calculate_dmdt);
+#endif
 
+#ifdef ODE_EVAL_TEULER
 	//Trapezoidal Euler evaluation of ODE
-	void RunTEuler(int step);
+	void RunTEuler(int step, bool calculate_mxh, bool calculate_dmdt);
+#endif
 
-	//RK4 evaluation of ODE
-	void RunRK4(int step);
+#ifdef ODE_EVAL_AHEUN
+	//Adaptive Huen evaluation of ODE
+	void RunAHeun(int step, bool calculate_mxh, bool calculate_dmdt);
+#endif
 
+#ifdef ODE_EVAL_ABM
 	//ABM
-	void RunABM(int stepr);
+	void RunABM(int step, bool calculate_mxh, bool calculate_dmdt);
 	void RunABMTEuler(int step);
+#endif
 
+#ifdef ODE_EVAL_RK23
+	//RK23 (Bogacki-Shampine)
+	void RunRK23(int step, bool calculate_mxh = false, bool calculate_dmdt = false);
+#endif
+
+#ifdef ODE_EVAL_RK4
+	//RK4 evaluation of ODE
+	void RunRK4(int step, bool calculate_mxh = false, bool calculate_dmdt = false);
+#endif
+
+#ifdef ODE_EVAL_RKF
 	//RKF45
-	void RunRKF45(int step);
+	void RunRKF45(int step, bool calculate_mxh = false, bool calculate_dmdt = false);
+#endif
+
+#ifdef ODE_EVAL_SD
+	//0. prime the SD solver
+	void RunSD_Start(void);
+	//1. calculate parameters for Barzilai-Borwein stepsizes -> solver must be primed with step 0 (after it is primed next loop starts from step 1)
+	//must reset the static delta_... quantities before running these across all meshes
+	void RunSD_BB(void);
+	//2. Set stepsize -> done in the Iterate method
+	//3. set new magnetization vectors
+	void RunSD_Advance(bool calculate_mxh, bool calculate_dmdt);
+#endif
 
 	//---------------------------------------- SOLVER KERNEL LAUNCHERS with in-lined LLG (faster) : DiffEq_EvalsLLGCUDA.cu
 
 	//Euler evaluation of ODE
-	void RunEuler_LLG(void);
+	void RunEuler_LLG(bool calculate_mxh, bool calculate_dmdt);
 
 	//Trapezoidal Euler evaluation of ODE
-	void RunTEuler_LLG(int step);
+	void RunTEuler_LLG(int step, bool calculate_mxh, bool calculate_dmdt);
+
+	//Adaptive Huen evaluation of ODE
+	void RunAHeun_LLG(int step, bool calculate_mxh, bool calculate_dmdt);
 
 	//RK4 evaluation of ODE
-	void RunRK4_LLG(int step);
+	void RunRK4_LLG(int step, bool calculate_mxh = false, bool calculate_dmdt = false);
 
 	//ABM
-	void RunABM_LLG(int stepr);
+	void RunABM_LLG(int step, bool calculate_mxh, bool calculate_dmdt);
 	void RunABMTEuler_LLG(int step);
 
 	//RKF45
-	void RunRKF45_LLG(int step);
+	void RunRKF45_LLG(int step, bool calculate_mxh = false, bool calculate_dmdt = false);
 
 	//---------------------------------------- OTHERS : DiffEq_EvalsCUDA.cu
 

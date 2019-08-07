@@ -47,6 +47,12 @@ BError DifferentialEquation::AllocateMemory(void)
 		break;
 
 	case EVAL_TEULER:
+	case EVAL_AHEUN:
+		break;
+
+	case EVAL_ABM:
+		if (!sEval0.resize(pMesh->n)) return error(BERROR_OUTOFMEMORY_CRIT);
+		if (!sEval1.resize(pMesh->n)) return error(BERROR_OUTOFMEMORY_CRIT);
 		break;
 
 	case EVAL_RK4:
@@ -55,9 +61,10 @@ BError DifferentialEquation::AllocateMemory(void)
 		if (!sEval2.resize(pMesh->n)) return error(BERROR_OUTOFMEMORY_CRIT);
 		break;
 
-	case EVAL_ABM:
+	case EVAL_RK23:
 		if (!sEval0.resize(pMesh->n)) return error(BERROR_OUTOFMEMORY_CRIT);
 		if (!sEval1.resize(pMesh->n)) return error(BERROR_OUTOFMEMORY_CRIT);
+		if (!sEval2.resize(pMesh->n)) return error(BERROR_OUTOFMEMORY_CRIT);
 		break;
 
 	case EVAL_RKF:
@@ -66,6 +73,10 @@ BError DifferentialEquation::AllocateMemory(void)
 		if (!sEval2.resize(pMesh->n)) return error(BERROR_OUTOFMEMORY_CRIT);
 		if (!sEval3.resize(pMesh->n)) return error(BERROR_OUTOFMEMORY_CRIT);
 		if (!sEval4.resize(pMesh->n)) return error(BERROR_OUTOFMEMORY_CRIT);
+		break;
+
+	case EVAL_SD:
+		if (!sEval0.resize(pMesh->n)) return error(BERROR_OUTOFMEMORY_CRIT);
 		break;
 	}
 
@@ -104,19 +115,23 @@ void DifferentialEquation::CleanupMemory(void)
 	//Only clear vectors not used for current evaluation method
 	sM1.clear();
 	
-	if (evalMethod != EVAL_RK4 && evalMethod != EVAL_ABM && evalMethod != EVAL_RKF) {
+	if (evalMethod != EVAL_RK4 && evalMethod != EVAL_ABM && evalMethod != EVAL_RK23 && evalMethod != EVAL_RKF && evalMethod != EVAL_SD) {
 
 		sEval0.clear();
 	}
 
-	if (evalMethod != EVAL_RK4 && evalMethod != EVAL_ABM && evalMethod != EVAL_RKF) {
+	if (evalMethod != EVAL_RK4 && evalMethod != EVAL_ABM && evalMethod != EVAL_RK23 && evalMethod != EVAL_RKF) {
 
 		sEval1.clear();
 	}
 
-	if (evalMethod != EVAL_RK4 && evalMethod != EVAL_RKF) {
+	if (evalMethod != EVAL_RK4 && evalMethod != EVAL_RK23 && evalMethod != EVAL_RKF) {
 
 		sEval2.clear();
+	}
+
+	if (evalMethod != EVAL_RK4 && evalMethod != EVAL_RKF) {
+
 		sEval3.clear();
 		sEval4.clear();
 	}

@@ -71,6 +71,9 @@ BError TransportCUDA::Initialize(void)
 {
 	BError error(CLASS_STR(TransportCUDA));
 
+	//no energy density contribution here
+	ZeroEnergy();
+
 	if (!initialized) {
 
 		initialized = true;

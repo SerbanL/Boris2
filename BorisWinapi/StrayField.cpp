@@ -164,13 +164,16 @@ bool StrayField::CheckRecalculateStrayField(void)
 	return recalculateStrayField;
 }
 
-void StrayField::UpdateField(void)
+double StrayField::UpdateField(void)
 {
 	//recalculate stray field if needed (required when a dipole mesh changes, as indicated by its status flag)
 	if(CheckRecalculateStrayField()) CalculateStrayField();
 
 	//transfer stray field values to effective fields in the ferromagnetic meshes
 	strayField.transfer_out();
+
+	//not counting this to the total energy density for now
+	return 0.0;
 }
 
 #endif

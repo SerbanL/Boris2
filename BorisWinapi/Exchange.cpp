@@ -98,7 +98,7 @@ BError Exch_6ngbr_Neu::MakeCUDAModule(void)
 	return error;
 }
 
-void Exch_6ngbr_Neu::UpdateField(void) 
+double Exch_6ngbr_Neu::UpdateField(void) 
 {
 	double energy = 0;
 
@@ -124,6 +124,8 @@ void Exch_6ngbr_Neu::UpdateField(void)
 	else energy = 0;
 
 	this->energy = energy;
+
+	return energy;
 }
 
 #endif

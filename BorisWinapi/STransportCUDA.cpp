@@ -28,6 +28,9 @@ BError STransportCUDA::Initialize(void)
 {
 	BError error(CLASS_STR(STransportCUDA));
 
+	//no energy density contribution here
+	ZeroEnergy();
+
 	if (!initialized) {
 
 		//Calculate V and Jc before starting

@@ -38,6 +38,9 @@ private:
 	//this flag will be set false only if the convolution rect matches that of M and n_common matches the discretisation of M (i.e. in this case a mesh transfer would be pointless).
 	bool do_transfer = true;
 
+	//different meshes have different weights when contributing to the total energy density -> ratio of their non-empty volume to total non-empty volume
+	cu_obj<cuReal> energy_density_weight;
+
 public:
 
 	SDemagCUDA_Demag(FMeshCUDA* pMeshCUDA_, SDemag_Demag *pSDemag_Demag_);

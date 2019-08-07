@@ -36,6 +36,9 @@ BError StrayFieldCUDA::Initialize(void)
 {
 	BError error(CLASS_STR(StrayFieldCUDA));
 
+	//no energy density contribution here
+	ZeroEnergy();
+
 	if (!initialized) {
 
 		Mdipoles.clear();

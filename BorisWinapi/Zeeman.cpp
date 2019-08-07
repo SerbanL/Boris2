@@ -80,12 +80,12 @@ BError Zeeman::MakeCUDAModule(void)
 	return error;
 }
 
-void Zeeman::UpdateField(void) 
+double Zeeman::UpdateField(void) 
 {
 	if (IsZ(Ha.norm())) {
 
 		this->energy = 0;
-		return;
+		return 0.0;
 	}
 
 	double energy = 0;
@@ -105,6 +105,8 @@ void Zeeman::UpdateField(void)
 	else energy = 0;
 
 	this->energy = energy;
+
+	return energy;
 }
 
 //----------------------------------------------- Others

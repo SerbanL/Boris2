@@ -90,3 +90,39 @@ int VEC<VType>::get_nonempty_cells(void) const
 
 	return non_empty;
 }
+
+//check if all cells intersecting the rectangle (absolute coordinates) are empty
+template <typename VType>
+bool VEC<VType>::is_empty(const Rect& rectangle) const
+{
+	Box cells = box_from_rect_max(rectangle);
+
+	for (int i = cells.s.x; i < cells.e.x; i++) {
+		for (int j = cells.s.y; j < cells.e.y; j++) {
+			for (int k = cells.s.z; k < cells.e.z; k++) {
+
+				if (is_not_empty(INT3(i, j, k))) return false;
+			}
+		}
+	}
+
+	return true;
+}
+
+//check if all cells intersecting the rectangle (absolute coordinates) are not empty
+template <typename VType>
+bool VEC<VType>::is_not_empty(const Rect& rectangle) const
+{
+	Box cells = box_from_rect_max(rectangle);
+
+	for (int i = cells.s.x; i < cells.e.x; i++) {
+		for (int j = cells.s.y; j < cells.e.y; j++) {
+			for (int k = cells.s.z; k < cells.e.z; k++) {
+
+				if (is_empty(INT3(i, j, k))) return false;
+			}
+		}
+	}
+
+	return true;
+}

@@ -332,6 +332,11 @@ public:
 
 	__device__ bool is_skipcell(int index) const { return (ngbrFlags[index] & NF_SKIPCELL); }
 
+	//are all neighbors available? (for 2D don't check the z neighbors)
+	__device__ bool is_interior(int index) const { return ((ngbrFlags[index] & NF_BOTHX) && (ngbrFlags[index] & NF_BOTHY) && (n.z == 1 || (ngbrFlags[index] & NF_BOTHZ))); }
+	//are all neighbors in the xy plane available?
+	__device__ bool is_plane_interior(int index) const { return ((ngbrFlags[index] & NF_BOTHX) && (ngbrFlags[index] & NF_BOTHY)); }
+
 	//--------------------------------------------SET CELL FLAGS - EXTERNAL USE : cuVEC_VC_flags.h and cuVEC_VC_flags.cuh
 	
 	//set dirichlet boundary conditions from surface_rect (must be a rectangle intersecting with one of the surfaces of this mesh) and value

@@ -79,9 +79,9 @@ BError SOTField::MakeCUDAModule(void)
 	return error;
 }
 
-void SOTField::UpdateField(void)
+double SOTField::UpdateField(void)
 {
-	if (!pMesh->Jc.linear_size()) return;
+	if (!pMesh->Jc.linear_size()) return 0.0;
 
 #pragma omp parallel for
 	for (int idx = 0; idx < pMesh->n.dim(); idx++) {
@@ -98,6 +98,9 @@ void SOTField::UpdateField(void)
 
 		pMesh->Heff[idx] += a_const * ((pMesh->M[idx] ^ p_vec) + flSOT * Ms * p_vec);
 	}
+
+	//don't count this as a contribution to the total energy density
+	return 0.0;
 }
 
 #endif

@@ -45,11 +45,23 @@ private:
 
 	//Inverse FFT. cuS2 -> Out
 
+	//inverse FFT with the option of calculating an energy contribution ((-MU0/2)(In * Out) / input_non_empty_cells
 	template <typename cuVECIn, typename cuVECOut>
 	void InverseFFT_2D(cu_obj<cuVECIn>& In, cu_obj<cuVECOut>& Out, cu_obj<cuReal>& energy, bool get_energy, bool clearOut);
 
+	//inverse FFT with the option of calculating an energy contribution ((-MU0/2)(In * Out) / input_non_empty_cells
 	template <typename cuVECIn, typename cuVECOut>
 	void InverseFFT_3D(cu_obj<cuVECIn>& In, cu_obj<cuVECOut>& Out, cu_obj<cuReal>& energy, bool get_energy, bool clearOut);
+
+	//inverse FFT with calculation of a weighted energy contribution: weight*((-MU0/2)(In * Out) / input_non_empty_cells.
+	//This is useful when calculating an energy total from multiple meshes which might need different weights.
+	template <typename cuVECIn, typename cuVECOut>
+	void InverseFFT_2D(cu_obj<cuVECIn>& In, cu_obj<cuVECOut>& Out, cu_obj<cuReal>& energy, cu_obj<cuReal>& energy_weight, bool clearOut);
+
+	//inverse FFT with calculation of a weighted energy contribution: weight*((-MU0/2)(In * Out) / input_non_empty_cells.
+	//This is useful when calculating an energy total from multiple meshes which might need different weights.
+	template <typename cuVECIn, typename cuVECOut>
+	void InverseFFT_3D(cu_obj<cuVECIn>& In, cu_obj<cuVECOut>& Out, cu_obj<cuReal>& energy, cu_obj<cuReal>& energy_weight, bool clearOut);
 
 protected:
 
@@ -118,11 +130,21 @@ protected:
 		else KernelMultiplication_3D_Add(cuS_x, cuS_y, cuS_z, S2col_x, S2col_y, S2col_z);
 	}
 
+	//inverse FFT with the option of calculating an energy contribution ((-MU0/2)(In * Out) / input_non_empty_cells
 	template <typename cuVECIn, typename cuVECOut>
 	void InverseFFT(cu_obj<cuVECIn>& In, cu_obj<cuVECOut>& Out, cu_obj<cuReal>& energy, bool get_energy, bool clearOut = true)
 	{
 		if (n.z == 1) InverseFFT_2D(In, Out, energy, get_energy, clearOut);
 		else InverseFFT_3D(In, Out, energy, get_energy, clearOut);
+	}
+
+	//inverse FFT with calculation of a weighted energy contribution: weight*((-MU0/2)(In * Out) / input_non_empty_cells.
+	//This is useful when calculating an energy total from multiple meshes which might need different weights.
+	template <typename cuVECIn, typename cuVECOut>
+	void InverseFFT(cu_obj<cuVECIn>& In, cu_obj<cuVECOut>& Out, cu_obj<cuReal>& energy, cu_obj<cuReal>& energy_weight, bool clearOut = true)
+	{
+		if (n.z == 1) InverseFFT_2D(In, Out, energy, energy_weight, clearOut);
+		else InverseFFT_3D(In, Out, energy, energy_weight, clearOut);
 	}
 };
 
@@ -234,6 +256,7 @@ void ConvolutionCUDA<Kernel>::ForwardFFT_2D(cu_obj<cuVECIn>& In)
 	forward_fft_2D();
 }
 
+//inverse FFT with the option of calculating an energy contribution ((-MU0/2)(In * Out) / input_non_empty_cells
 template <typename Kernel>
 template <typename cuVECIn, typename cuVECOut>
 void ConvolutionCUDA<Kernel>::InverseFFT_2D(cu_obj<cuVECIn>& In, cu_obj<cuVECOut>& Out, cu_obj<cuReal>& energy, bool get_energy, bool clearOut)
@@ -252,6 +275,26 @@ void ConvolutionCUDA<Kernel>::InverseFFT_2D(cu_obj<cuVECIn>& In, cu_obj<cuVECOut
 	}
 }
 
+//inverse FFT with calculation of a weighted energy contribution: weight*((-MU0/2)(In * Out) / input_non_empty_cells.
+	//This is useful when calculating an energy total from multiple meshes which might need different weights.
+template <typename Kernel>
+template <typename cuVECIn, typename cuVECOut>
+void ConvolutionCUDA<Kernel>::InverseFFT_2D(cu_obj<cuVECIn>& In, cu_obj<cuVECOut>& Out, cu_obj<cuReal>& energy, cu_obj<cuReal>& energy_weight, bool clearOut)
+{
+	//Inverse 2D FFT
+	inverse_fft_2D_2();
+
+	//Copy cufft arrays to Heff
+	if (clearOut) {
+
+		FinishConvolution_Set(In, Out, energy, energy_weight);
+	}
+	else {
+
+		FinishConvolution_Add(In, Out, energy, energy_weight);
+	}
+}
+
 //-------------------------- RUN-TIME CONVOLUTION : 3D (not embedded)
 
 template <typename Kernel>
@@ -265,6 +308,7 @@ void ConvolutionCUDA<Kernel>::ForwardFFT_3D(cu_obj<cuVECIn>& In)
 	forward_fft_3D();
 }
 
+//inverse FFT with the option of calculating an energy contribution ((-MU0/2)(In * Out) / input_non_empty_cells
 template <typename Kernel>
 template <typename cuVECIn, typename cuVECOut>
 void ConvolutionCUDA<Kernel>::InverseFFT_3D(cu_obj<cuVECIn>& In, cu_obj<cuVECOut>& Out, cu_obj<cuReal>& energy, bool get_energy, bool clearOut)
@@ -280,6 +324,27 @@ void ConvolutionCUDA<Kernel>::InverseFFT_3D(cu_obj<cuVECIn>& In, cu_obj<cuVECOut
 	else {
 
 		FinishConvolution_Add(In, Out, energy, get_energy);
+	}
+}
+
+
+//inverse FFT with calculation of a weighted energy contribution: weight*((-MU0/2)(In * Out) / input_non_empty_cells.
+//This is useful when calculating an energy total from multiple meshes which might need different weights.
+template <typename Kernel>
+template <typename cuVECIn, typename cuVECOut>
+void ConvolutionCUDA<Kernel>::InverseFFT_3D(cu_obj<cuVECIn>& In, cu_obj<cuVECOut>& Out, cu_obj<cuReal>& energy, cu_obj<cuReal>& energy_weight, bool clearOut)
+{
+	//Inverse 3D FFT
+	inverse_fft_3D_2();
+
+	//Copy cufft arrays to Heff
+	if (clearOut) {
+
+		FinishConvolution_Set(In, Out, energy, energy_weight);
+	}
+	else {
+
+		FinishConvolution_Add(In, Out, energy, energy_weight);
 	}
 }
 
