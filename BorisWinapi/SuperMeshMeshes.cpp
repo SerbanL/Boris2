@@ -321,6 +321,18 @@ BError SuperMesh::SetInvertedMagnetisation(string meshName)
 	return error;
 }
 
+//Set random magentisation distribution in given mesh (must be ferromagnetic)
+BError SuperMesh::SetRandomMagnetisation(string meshName)
+{
+	BError error(__FUNCTION__);
+
+	if (!contains(meshName)) return error(BERROR_INCORRECTNAME);
+
+	pMesh[meshName]->SetRandomMagnetisation();
+
+	return error;
+}
+
 BError SuperMesh::SetMagnetisationDomainWall(string meshName, string longitudinal, string transverse, double width, double position)
 {
 	BError error(__FUNCTION__);
@@ -689,6 +701,22 @@ BError SuperMesh::SetMeshRoughnessRefinement(string meshName, INT3 refine)
 	if (!pMesh[meshName]->IsModuleSet(MOD_ROUGHNESS)) return error(BERROR_INCORRECTMODCONFIG);
 
 	pMesh[meshName]->CallModuleMethod(&Roughness::set_refine, refine);
+
+	return error;
+}
+
+//Set periodic boundary conditions for magnetization
+//possible flags: x, y, z
+BError SuperMesh::Set_PBC(string meshName, string flag, int images)
+{
+	BError error(__FUNCTION__);
+
+	if (!contains(meshName) || !pMesh[meshName]->MComputation_Enabled()) return error(BERROR_INCORRECTNAME);
+
+	if (flag == "x") pMesh[meshName]->Set_PBC_X(images);
+	else if (flag == "y") pMesh[meshName]->Set_PBC_Y(images);
+	else if (flag == "z") pMesh[meshName]->Set_PBC_Z(images);
+	else return error(BERROR_INCORRECTVALUE);
 
 	return error;
 }

@@ -8,21 +8,21 @@
 
 //get magnitude for fundamental types - need this to make VEC work for both fundamental and composite types
 template <typename Type, std::enable_if_t<std::is_integral<Type>::value>* = nullptr>
-Type GetMagnitude(Type V)
+Type GetMagnitude(const Type& V)
 {
 	return V * (2 * (V >= 0) - 1);
 }
 
 //get magnitude for fundamental types - need this to make VEC work for both fundamental and composite types
 template <typename Type, std::enable_if_t<std::is_floating_point<Type>::value>* = nullptr>
-Type GetMagnitude(Type V)
+Type GetMagnitude(const Type& V)
 {
 	return fabs(V);
 }
 
 //get magnitude for fundamental types using 2 components
 template <typename Type, std::enable_if_t<std::is_fundamental<Type>::value>* = nullptr>
-Type GetMagnitude(Type Vx, Type Vy)
+Type GetMagnitude(const Type& Vx, const Type& Vy)
 {
 	return sqrt(Vx*Vx + Vy * Vy);
 }
@@ -36,7 +36,7 @@ auto GetMagnitude(const VAL2Type& V) -> decltype(std::declval<VAL2Type>().y)
 
 //get magnitude for fundamental types using 3 components
 template <typename Type, std::enable_if_t<std::is_fundamental<Type>::value>* = nullptr>
-Type GetMagnitude(Type Vx, Type Vy, Type Vz) 
+Type GetMagnitude(const Type& Vx, const Type& Vy, const Type& Vz)
 { 
 	return sqrt(Vx*Vx + Vy*Vy + Vz*Vz); 
 }
@@ -96,19 +96,19 @@ double get_distance(std::vector<VType>& coord1, std::vector<VType>& coord2)
 
 //get sign of value, returning -1, 0 or 1.
 template <typename Type>
-int get_sign(Type value, std::true_type)
+int get_sign(const Type& value, std::true_type)
 {
-	return (Type(0) < value) - (value < Type(0));
+	return (Type(0) <= value) - (value <= Type(0));
 }
 
 template <typename Type> 
-int get_sign(Type value, std::false_type) 
+int get_sign(const Type& value, std::false_type)
 {
 	return Type(0) < value;
 }
 
 template <typename Type> 
-int get_sign(Type value)
+int get_sign(const Type& value)
 {
 	return get_sign(value, std::is_signed<Type>());
 }
@@ -142,11 +142,11 @@ VAL3Type round(const VAL3Type& val3) { return VAL3Type( round(val3.x), round(val
 //Note, using just the standard floor is not good enough : if the floating point value is very close to the upper integer value (closer than the defined floating point accuracy) then its value should be equal to it.
 //The standard floor function will result in "wrong" behaviour by returning the lower integer
 template <typename Type, std::enable_if_t<std::is_floating_point<Type>::value>* = nullptr>
-Type floor_epsilon(Type fval) { return floor(fval + fabs(fval) * FLOOR_CEIL_RATIO); }
+Type floor_epsilon(const Type& fval) { return floor(fval + fabs(fval) * FLOOR_CEIL_RATIO); }
 
 //as above but with ceil
 template <typename Type, std::enable_if_t<std::is_floating_point<Type>::value>* = nullptr>
-Type ceil_epsilon(Type fval) { return ceil(fval - fabs(fval) * FLOOR_CEIL_RATIO); }
+Type ceil_epsilon(const Type& fval) { return ceil(fval - fabs(fval) * FLOOR_CEIL_RATIO); }
 
 //return "fixed" floor of each VAL3 component
 template <typename VAL3Type, std::enable_if_t<std::is_convertible<INT3, VAL3Type>::value>* = nullptr>
@@ -158,11 +158,11 @@ VAL3Type ceil(const VAL3Type& fval) { return VAL3Type( ceil_epsilon(fval.x), cei
 
 //absolute value for a floating point number
 template <typename Type, std::enable_if_t<std::is_floating_point<Type>::value>* = nullptr>
-Type mod(Type fval) { return fabs(fval); }
+Type mod(const Type& fval) { return fabs(fval); }
 
 //absolute value for an integer
 template <typename Type, std::enable_if_t<std::is_integral<Type>::value>* = nullptr>
-Type mod(Type ival) { return ival * (2*(ival >= 0) - 1); }
+Type mod(const Type& ival) { return ival * (2*(ival >= 0) - 1); }
 
 //absolute value for a VAL3
 template <typename VAL3Type, std::enable_if_t<std::is_convertible<INT3, VAL3Type>::value>* = nullptr>
@@ -170,7 +170,7 @@ VAL3Type mod(const VAL3Type& fval) { return VAL3Type(mod(fval.x), mod(fval.y), m
 
 //remainder after division (using floating point numbers) - fixed version of fmod from <cmath>
 template <typename Type, std::enable_if_t<std::is_floating_point<Type>::value>* = nullptr>
-Type fmod_epsilon(Type fval, Type denom) { return fval - floor_epsilon(fval / denom) * denom; }
+Type fmod_epsilon(const Type& fval, Type denom) { return fval - floor_epsilon(fval / denom) * denom; }
 
 //fixed fmod for a VAL3
 template <typename VAL3Type, std::enable_if_t<std::is_convertible<INT3, VAL3Type>::value>* = nullptr>
@@ -444,13 +444,13 @@ bool solve_line_equation_fixed_z(const VAL3Type& point1, const VAL3Type& point2,
 
 //check if point p is on the right-hand-side of a given line, determined by the points s and e, in the oriented plane containing the three points with normal n
 //the meaning of right-hand-side is: If looking towards the plane against the plane normal direction, if the points s, p, e (in this order!) are clockwise then we have LHS, else RHS
-inline bool point_on_rhs_of_line(DBL3 s, DBL3 e, DBL3 p, DBL3 n)
+inline bool point_on_rhs_of_line(const DBL3& s, const DBL3& e, const DBL3& p, const DBL3& n)
 {
 	return ((e - s) ^ (p - s)) * n < 0;
 }
 
 //special case of the above where the plane is the x-y plane with normal z.
-inline bool point_on_rhs_of_line(DBL2 s, DBL2 e, DBL2 p)
+inline bool point_on_rhs_of_line(const DBL2& s, const DBL2& e, const DBL2& p)
 {
 	return ((DBL3(e.x, e.y, 0) - DBL3(s.x, s.y, 0)) ^ (DBL3(p.x, p.y, 0) - DBL3(s.x, s.y, 0))) * DBL3(0, 0, 1) < 0;
 }
@@ -458,7 +458,7 @@ inline bool point_on_rhs_of_line(DBL2 s, DBL2 e, DBL2 p)
 ///////////////////////////////////////////////////////////////////////////////
 
 template <typename VType, std::enable_if_t<std::is_floating_point<VType>::value>* = nullptr>
-std::pair<DBL2, DBL2> linear_regression(std::vector<VType> x_vals, std::vector<VType> y_vals, int startIdx = 0, int lastIdx = 0)
+std::pair<DBL2, DBL2> linear_regression(std::vector<VType>& x_vals, std::vector<VType>& y_vals, int startIdx = 0, int lastIdx = 0)
 {
 	DBL2 gradient, intercept;
 
@@ -511,7 +511,7 @@ std::pair<DBL2, DBL2> linear_regression(std::vector<VType> x_vals, std::vector<V
 
 //return matrix multiplication of rank-3 unit antisymmetric tensor with a VAL3 - return type is a VAL33
 template <typename VAL3Type, std::enable_if_t<std::is_convertible<INT3, VAL3Type>::value>* = nullptr>
-VAL3<VAL3Type> epsilon3(VAL3Type val3)
+VAL3<VAL3Type> epsilon3(const VAL3Type& val3)
 {
 	return VAL3<VAL3Type>(
 		VAL3Type(0, val3.z, -val3.y),
@@ -575,7 +575,7 @@ DBL33 ident(void)
 
 //This function returns the solution of s = a * m^s + b * m^m^s + f
 //i.e. solve for s, where m, s, f are DBL3, ^ is the cross product, a and b are constants; moreover m is a unit vector.
-inline DBL3 solve_crossprod(double a, double b, DBL3 m, DBL3 f)
+inline DBL3 solve_crossprod(double a, double b, const DBL3& m, const DBL3& f)
 {
 	double ab = a * a + b + b * b;
 
@@ -584,7 +584,7 @@ inline DBL3 solve_crossprod(double a, double b, DBL3 m, DBL3 f)
 
 //This function returns the solution of s = a * m^s + b * m^m^s + f
 //i.e. solve for s, where m, s, f are DBL3, ^ is the cross product, a and b are constants; moreover m is a unit vector perpendicular to f, so that m ^ m ^ f = -f
-inline DBL3 solve_crossprod_perp(double a, double b, DBL3 m, DBL3 f)
+inline DBL3 solve_crossprod_perp(double a, double b, const DBL3& m, const DBL3& f)
 {
 	double ab = a * a + b + b * b;
 
@@ -602,7 +602,7 @@ inline DBL3 solve_crossprod_perp(double a, double b, DBL3 m, DBL3 f)
 // x' = [ sin(theta)cos(phi), sin(theta)sin(phi), cos(theta) ] = n
 // y' = [ -sin(phi), cos(phi), 0 ]
 // z' = x' x y' = [ -cos(theta)cos(phi), -cos(theta)sin(phi), sin(theta) ]
-inline DBL3 rotate_polar(DBL3 r, double theta, double phi)
+inline DBL3 rotate_polar(const DBL3& r, double theta, double phi)
 {
 	return DBL3(
 		sin(theta)*cos(phi) * r.x - sin(phi) * r.y - cos(theta)*cos(phi) * r.z,
@@ -612,7 +612,7 @@ inline DBL3 rotate_polar(DBL3 r, double theta, double phi)
 }
 
 //same as above but the rotation is specified using the unit vector n
-inline DBL3 rotate_polar(DBL3 r, DBL3 n)
+inline DBL3 rotate_polar(const DBL3& r, const DBL3& n)
 {
 	//if n = [sin(theta)cos(phi), sin(theta)sin(phi), cos(theta)]
 	//where theta ranges in [0, PI], and phi ranges in [0, 2*PI] then:

@@ -95,7 +95,7 @@ __device__ void cuVEC_VC<VType>::IterateLaplace_SOR_red(cuReal damping)
 		cuReal total_weight = 0;
 
 		//x direction
-		if (ngbrFlags[idx] & NF_BOTHX) {
+		if ((ngbrFlags[idx] & NF_BOTHX) == NF_BOTHX) {
 
 			total_weight += 2 * w_x;
 			weighted_sum += w_x * (quantity[idx - 1] + quantity[idx + 1]);
@@ -116,7 +116,7 @@ __device__ void cuVEC_VC<VType>::IterateLaplace_SOR_red(cuReal damping)
 		}
 
 		//y direction
-		if (ngbrFlags[idx] & NF_BOTHY) {
+		if ((ngbrFlags[idx] & NF_BOTHY) == NF_BOTHY) {
 
 			total_weight += 2 * w_y;
 			weighted_sum += w_y * (quantity[idx - n.x] + quantity[idx + n.x]);
@@ -137,7 +137,7 @@ __device__ void cuVEC_VC<VType>::IterateLaplace_SOR_red(cuReal damping)
 		}
 
 		//z direction
-		if (ngbrFlags[idx] & NF_BOTHZ) {
+		if ((ngbrFlags[idx] & NF_BOTHZ) == NF_BOTHZ) {
 
 			total_weight += 2 * w_z;
 			weighted_sum += w_z * (quantity[idx - n.x*n.y] + quantity[idx + n.x*n.y]);
@@ -229,7 +229,7 @@ __device__ void cuVEC_VC<VType>::IterateLaplace_SOR_black(cuReal damping, cuReal
 		cuReal total_weight = 0;
 
 		//x direction
-		if (ngbrFlags[idx] & NF_BOTHX) {
+		if ((ngbrFlags[idx] & NF_BOTHX) == NF_BOTHX) {
 
 			total_weight += 2 * w_x;
 			weighted_sum += w_x * (quantity[idx - 1] + quantity[idx + 1]);
@@ -250,7 +250,7 @@ __device__ void cuVEC_VC<VType>::IterateLaplace_SOR_black(cuReal damping, cuReal
 		}
 
 		//y direction
-		if (ngbrFlags[idx] & NF_BOTHY) {
+		if ((ngbrFlags[idx] & NF_BOTHY) == NF_BOTHY) {
 
 			total_weight += 2 * w_y;
 			weighted_sum += w_y * (quantity[idx - n.x] + quantity[idx + n.x]);
@@ -271,7 +271,7 @@ __device__ void cuVEC_VC<VType>::IterateLaplace_SOR_black(cuReal damping, cuReal
 		}
 
 		//z direction
-		if (ngbrFlags[idx] & NF_BOTHZ) {
+		if ((ngbrFlags[idx] & NF_BOTHZ) == NF_BOTHZ) {
 
 			total_weight += 2 * w_z;
 			weighted_sum += w_z * (quantity[idx - n.x*n.y] + quantity[idx + n.x*n.y]);
@@ -391,7 +391,7 @@ __device__ void cuVEC_VC<VType>::IteratePoisson_SOR_red(Class_Poisson_RHS& obj, 
 		cuReal total_weight = 0;
 
 		//x direction
-		if (ngbrFlags[idx] & NF_BOTHX) {
+		if ((ngbrFlags[idx] & NF_BOTHX) == NF_BOTHX) {
 
 			total_weight += 2 * w_x;
 			weighted_sum += w_x * (quantity[idx - 1] + quantity[idx + 1]);
@@ -412,7 +412,7 @@ __device__ void cuVEC_VC<VType>::IteratePoisson_SOR_red(Class_Poisson_RHS& obj, 
 		}
 
 		//y direction
-		if (ngbrFlags[idx] & NF_BOTHY) {
+		if ((ngbrFlags[idx] & NF_BOTHY) == NF_BOTHY) {
 
 			total_weight += 2 * w_y;
 			weighted_sum += w_y * (quantity[idx - n.x] + quantity[idx + n.x]);
@@ -433,7 +433,7 @@ __device__ void cuVEC_VC<VType>::IteratePoisson_SOR_red(Class_Poisson_RHS& obj, 
 		}
 
 		//z direction
-		if (ngbrFlags[idx] & NF_BOTHZ) {
+		if ((ngbrFlags[idx] & NF_BOTHZ) == NF_BOTHZ) {
 
 			total_weight += 2 * w_z;
 			weighted_sum += w_z * (quantity[idx - n.x*n.y] + quantity[idx + n.x*n.y]);
@@ -525,7 +525,7 @@ __device__ void cuVEC_VC<VType>::IteratePoisson_SOR_black(Class_Poisson_RHS& obj
 		cuReal total_weight = 0;
 
 		//x direction
-		if (ngbrFlags[idx] & NF_BOTHX) {
+		if ((ngbrFlags[idx] & NF_BOTHX) == NF_BOTHX) {
 
 			total_weight += 2 * w_x;
 			weighted_sum += w_x * (quantity[idx - 1] + quantity[idx + 1]);
@@ -546,7 +546,7 @@ __device__ void cuVEC_VC<VType>::IteratePoisson_SOR_black(Class_Poisson_RHS& obj
 		}
 
 		//y direction
-		if (ngbrFlags[idx] & NF_BOTHY) {
+		if ((ngbrFlags[idx] & NF_BOTHY) == NF_BOTHY) {
 
 			total_weight += 2 * w_y;
 			weighted_sum += w_y * (quantity[idx - n.x] + quantity[idx + n.x]);
@@ -567,7 +567,7 @@ __device__ void cuVEC_VC<VType>::IteratePoisson_SOR_black(Class_Poisson_RHS& obj
 		}
 
 		//z direction
-		if (ngbrFlags[idx] & NF_BOTHZ) {
+		if ((ngbrFlags[idx] & NF_BOTHZ) == NF_BOTHZ) {
 
 			total_weight += 2 * w_z;
 			weighted_sum += w_z * (quantity[idx - n.x*n.y] + quantity[idx + n.x*n.y]);
@@ -793,7 +793,7 @@ __device__ void cuVEC_VC<VType>::IteratePoisson_NNeu_SOR_red(Class_Poisson_NNeu&
 		cuReal total_weight = 0;
 
 		//x direction
-		if (ngbrFlags[idx] & NF_BOTHX) {
+		if ((ngbrFlags[idx] & NF_BOTHX) == NF_BOTHX) {
 
 			total_weight += 2 * w_x;
 			weighted_sum += w_x * (quantity[idx - 1] + quantity[idx + 1]);
@@ -814,7 +814,7 @@ __device__ void cuVEC_VC<VType>::IteratePoisson_NNeu_SOR_red(Class_Poisson_NNeu&
 		}
 
 		//y direction
-		if (ngbrFlags[idx] & NF_BOTHY) {
+		if ((ngbrFlags[idx] & NF_BOTHY) == NF_BOTHY) {
 
 			total_weight += 2 * w_y;
 			weighted_sum += w_y * (quantity[idx - n.x] + quantity[idx + n.x]);
@@ -835,7 +835,7 @@ __device__ void cuVEC_VC<VType>::IteratePoisson_NNeu_SOR_red(Class_Poisson_NNeu&
 		}
 
 		//z direction
-		if (ngbrFlags[idx] & NF_BOTHZ) {
+		if ((ngbrFlags[idx] & NF_BOTHZ) == NF_BOTHZ) {
 
 			total_weight += 2 * w_z;
 			weighted_sum += w_z * (quantity[idx - n.x*n.y] + quantity[idx + n.x*n.y]);
@@ -927,7 +927,7 @@ __device__ void cuVEC_VC<VType>::IteratePoisson_NNeu_SOR_black(Class_Poisson_NNe
 		cuReal total_weight = 0;
 
 		//x direction
-		if (ngbrFlags[idx] & NF_BOTHX) {
+		if ((ngbrFlags[idx] & NF_BOTHX) == NF_BOTHX) {
 
 			total_weight += 2 * w_x;
 			weighted_sum += w_x * (quantity[idx - 1] + quantity[idx + 1]);
@@ -948,7 +948,7 @@ __device__ void cuVEC_VC<VType>::IteratePoisson_NNeu_SOR_black(Class_Poisson_NNe
 		}
 
 		//y direction
-		if (ngbrFlags[idx] & NF_BOTHY) {
+		if ((ngbrFlags[idx] & NF_BOTHY) == NF_BOTHY) {
 
 			total_weight += 2 * w_y;
 			weighted_sum += w_y * (quantity[idx - n.x] + quantity[idx + n.x]);
@@ -969,7 +969,7 @@ __device__ void cuVEC_VC<VType>::IteratePoisson_NNeu_SOR_black(Class_Poisson_NNe
 		}
 
 		//z direction
-		if (ngbrFlags[idx] & NF_BOTHZ) {
+		if ((ngbrFlags[idx] & NF_BOTHZ) == NF_BOTHZ) {
 
 			total_weight += 2 * w_z;
 			weighted_sum += w_z * (quantity[idx - n.x*n.y] + quantity[idx + n.x*n.y]);

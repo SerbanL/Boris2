@@ -68,14 +68,13 @@ public:
 	//Used for Trapezoidal Euler, RK4, ABM
 	cuVEC<cuReal3>* psM1;
 
-	//Used for RK4 (0, 1, 2); ABM (0, 1); RK23 (0, 1, 2)
+	//scratch spaces for evaluations
 	cuVEC<cuReal3>* psEval0;
 	cuVEC<cuReal3>* psEval1;
 	cuVEC<cuReal3>* psEval2;
-
-	//Additional for use with RKF45
 	cuVEC<cuReal3>* psEval3;
 	cuVEC<cuReal3>* psEval4;
+	cuVEC<cuReal3>* psEval5;
 
 	//Thermal field and torques, enabled only for the stochastic equations
 	cuVEC<cuReal3>* pH_Thermal;

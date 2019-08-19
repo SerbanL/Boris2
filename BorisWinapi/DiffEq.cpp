@@ -75,6 +75,23 @@ BError DifferentialEquation::AllocateMemory(void)
 		if (!sEval4.resize(pMesh->n)) return error(BERROR_OUTOFMEMORY_CRIT);
 		break;
 
+	case EVAL_RKCK:
+		if (!sEval0.resize(pMesh->n)) return error(BERROR_OUTOFMEMORY_CRIT);
+		if (!sEval1.resize(pMesh->n)) return error(BERROR_OUTOFMEMORY_CRIT);
+		if (!sEval2.resize(pMesh->n)) return error(BERROR_OUTOFMEMORY_CRIT);
+		if (!sEval3.resize(pMesh->n)) return error(BERROR_OUTOFMEMORY_CRIT);
+		if (!sEval4.resize(pMesh->n)) return error(BERROR_OUTOFMEMORY_CRIT);
+		break;
+
+	case EVAL_RKDP:
+		if (!sEval0.resize(pMesh->n)) return error(BERROR_OUTOFMEMORY_CRIT);
+		if (!sEval1.resize(pMesh->n)) return error(BERROR_OUTOFMEMORY_CRIT);
+		if (!sEval2.resize(pMesh->n)) return error(BERROR_OUTOFMEMORY_CRIT);
+		if (!sEval3.resize(pMesh->n)) return error(BERROR_OUTOFMEMORY_CRIT);
+		if (!sEval4.resize(pMesh->n)) return error(BERROR_OUTOFMEMORY_CRIT);
+		if (!sEval5.resize(pMesh->n)) return error(BERROR_OUTOFMEMORY_CRIT);
+		break;
+
 	case EVAL_SD:
 		if (!sEval0.resize(pMesh->n)) return error(BERROR_OUTOFMEMORY_CRIT);
 		break;
@@ -115,34 +132,64 @@ void DifferentialEquation::CleanupMemory(void)
 	//Only clear vectors not used for current evaluation method
 	sM1.clear();
 	
-	if (evalMethod != EVAL_RK4 && evalMethod != EVAL_ABM && evalMethod != EVAL_RK23 && evalMethod != EVAL_RKF && evalMethod != EVAL_SD) {
+	if (evalMethod != EVAL_RK4 && 
+		evalMethod != EVAL_ABM && 
+		evalMethod != EVAL_RK23 && 
+		evalMethod != EVAL_RKF && 
+		evalMethod != EVAL_RKCK && 
+		evalMethod != EVAL_RKDP && 
+		evalMethod != EVAL_SD) {
 
 		sEval0.clear();
 	}
 
-	if (evalMethod != EVAL_RK4 && evalMethod != EVAL_ABM && evalMethod != EVAL_RK23 && evalMethod != EVAL_RKF) {
+	if (evalMethod != EVAL_RK4 && 
+		evalMethod != EVAL_ABM && 
+		evalMethod != EVAL_RK23 && 
+		evalMethod != EVAL_RKF && 
+		evalMethod != EVAL_RKCK && 
+		evalMethod != EVAL_RKDP) {
 
 		sEval1.clear();
 	}
 
-	if (evalMethod != EVAL_RK4 && evalMethod != EVAL_RK23 && evalMethod != EVAL_RKF) {
+	if (evalMethod != EVAL_RK4 && 
+		evalMethod != EVAL_RK23 && 
+		evalMethod != EVAL_RKF && 
+		evalMethod != EVAL_RKCK && 
+		evalMethod != EVAL_RKDP) {
 
 		sEval2.clear();
 	}
 
-	if (evalMethod != EVAL_RK4 && evalMethod != EVAL_RKF) {
+	if (evalMethod != EVAL_RK4 && 
+		evalMethod != EVAL_RKF && 
+		evalMethod != EVAL_RKCK && 
+		evalMethod != EVAL_RKDP) {
 
 		sEval3.clear();
 		sEval4.clear();
 	}
 
+	if (evalMethod != EVAL_RKDP) {
+
+		sEval5.clear();
+	}
+
 	//For thermal vecs only clear if not used for current set ODE
-	if (setODE != ODE_SLLG && setODE != ODE_SLLGSTT && setODE != ODE_SLLB && setODE != ODE_SLLBSTT && setODE != ODE_SLLGSA && setODE != ODE_SLLBSA) {
+	if (setODE != ODE_SLLG && 
+		setODE != ODE_SLLGSTT && 
+		setODE != ODE_SLLB && 
+		setODE != ODE_SLLBSTT && 
+		setODE != ODE_SLLGSA && 
+		setODE != ODE_SLLBSA) {
 
 		H_Thermal.clear();
 	}
 
-	if (setODE != ODE_SLLB && setODE != ODE_SLLBSTT && setODE != ODE_SLLBSA) {
+	if (setODE != ODE_SLLB && 
+		setODE != ODE_SLLBSTT && 
+		setODE != ODE_SLLBSA) {
 
 		Torque_Thermal.clear();
 	}

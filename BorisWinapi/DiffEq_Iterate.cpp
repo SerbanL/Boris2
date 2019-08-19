@@ -23,15 +23,15 @@ bool ODECommon::SetAdaptiveTimeStep(void)
 			for (int idx = 0; idx < (int)pODE.size(); idx++)
 				pODE[idx]->RestoreMagnetisation();
 
-			//reduce time step based on error ratio; use a 0.99 back-off factor so the solver doesn't get stuck
-			dT *= 0.99 * pow(err_high_fail / lte, 0.25);
+			//reduce time step based on error ratio
+			dT *= sqrt(err_high_fail / (2 * lte));
 
 			//failed - must repeat
 			return false;
 		}
 
 		//not failed but still need to reduce time step
-		dT *= 0.99 * pow(err_high / lte, 0.25);
+		dT *= pow(err_high / (2 * lte), 0.25);
 
 		//must not go below minimum time step
 		if (dT < dT_min) dT = dT_min;
@@ -40,7 +40,6 @@ bool ODECommon::SetAdaptiveTimeStep(void)
 	//is lte below minimum relative error ? If yes we can go quicker
 	if (lte < err_low) {
 
-		//increase by a small constant factor
 		dT *= dT_increase;
 
 		//must not go above maximum time step
@@ -74,6 +73,40 @@ bool ODECommon::SetAdaptiveTimeStep_SingleThreshold(void)
 
 	//not failed, adjust time step
 	dT *= sqrt(err_high_fail / lte);
+
+	//must not go below minimum time step
+	if (dT < dT_min) dT = dT_min;
+
+	//must not go above maximum time step
+	if (dT > dT_max) dT = dT_max;
+
+	//good, next step
+	return true;
+}
+
+bool ODECommon::SetAdaptiveTimeStep_SingleThreshold2(void)
+{
+	double lte = Get_lte();
+
+	//failed - try again. Restore state to start of evaluation and try again with smaller time step - output not available yet.
+	//do not redo if time step is at or below the minimum value allowed - this is used as a "timeout" to stop the solver from getting stuck on the same iteration; in this case the method is not good enough for the problem.
+	if (lte > err_high_fail && dT > dT_min) {
+
+		time -= dT;
+		stagetime -= dT;
+
+		for (int idx = 0; idx < (int)pODE.size(); idx++)
+			pODE[idx]->RestoreMagnetisation();
+
+		//reduce time step based on error ratio;
+		dT *= pow(err_high_fail / (2*lte), 0.25);
+
+		//failed - must repeat
+		return false;
+	}
+
+	//not failed, adjust time step
+	dT *= pow(err_high_fail / (2*lte), 0.25);
 
 	//must not go below minimum time step
 	if (dT < dT_min) dT = dT_min;
@@ -341,8 +374,27 @@ void ODECommon::Iterate(void)
 					pODE[idx]->RunRK23_Step0();
 			}
 
-			evalStep++;
 			available = false;
+
+			//RK23 has the FSAL property, thus the error is calculated on this first stage -> must be primed by a full pass first
+			//It also means the above methods do not advance the magnetization yet as we need to calculate the new stepsize first
+			//Magnetization is advanced below if the step has not failed
+			//If the step has failed then restore magnetization, and also set primed to false -> we must now take a full pass again before we can calculate a new stepsize.
+			if (primed) {
+
+				if (!SetAdaptiveTimeStep()) {
+
+					primed = false;
+					break;
+				}
+			}
+			else primed = true;
+
+			//Advance magnetization with new stepsize
+			for (int idx = 0; idx < (int)pODE.size(); idx++)
+				pODE[idx]->RunRK23_Step0_Advance();
+
+			evalStep++;
 		}
 		break;
 
@@ -377,13 +429,6 @@ void ODECommon::Iterate(void)
 			stagetime += dT;
 			iteration++;
 			stageiteration++;
-
-			if (primed) {
-
-				if (!SetAdaptiveTimeStep()) break;
-			}
-			//need one pass of rk23 before we can use it for adaptive time step (FSAL)
-			else primed = true;
 
 			//done for this step. Make it available.
 			available = true;
@@ -557,6 +602,218 @@ void ODECommon::Iterate(void)
 			stageiteration++;
 
 			if (!SetAdaptiveTimeStep()) break;
+
+			//done for this step. Make it available.
+			available = true;
+		}
+		break;
+		}
+#endif
+	}
+	break;
+
+	case EVAL_RKCK:
+	{
+#ifdef ODE_EVAL_RKCK
+		switch (evalStep) {
+
+		case 0:
+		{
+			if (calculate_mxh) {
+
+				for (int idx = 0; idx < (int)pODE.size(); idx++)
+					pODE[idx]->RunRKCK45_Step0_withReductions();
+
+				calculate_mxh = false;
+
+				Set_mxh();
+			}
+			else {
+
+				for (int idx = 0; idx < (int)pODE.size(); idx++)
+					pODE[idx]->RunRKCK45_Step0();
+			}
+
+			evalStep++;
+			available = false;
+		}
+		break;
+
+		case 1:
+		{
+			for (int idx = 0; idx < (int)pODE.size(); idx++)
+				pODE[idx]->RunRKCK45_Step1();
+
+			evalStep++;
+		}
+		break;
+
+		case 2:
+		{
+			for (int idx = 0; idx < (int)pODE.size(); idx++)
+				pODE[idx]->RunRKCK45_Step2();
+
+			evalStep++;
+		}
+		break;
+
+		case 3:
+		{
+			for (int idx = 0; idx < (int)pODE.size(); idx++)
+				pODE[idx]->RunRKCK45_Step3();
+
+			evalStep++;
+		}
+		break;
+
+		case 4:
+		{
+			for (int idx = 0; idx < (int)pODE.size(); idx++)
+				pODE[idx]->RunRKCK45_Step4();
+
+			evalStep++;
+		}
+		break;
+
+		case 5:
+		{
+			if (calculate_dmdt) {
+
+				for (int idx = 0; idx < (int)pODE.size(); idx++)
+					pODE[idx]->RunRKCK45_Step5_withReductions();
+
+				calculate_dmdt = false;
+
+				Set_dmdt();
+			}
+			else {
+
+				for (int idx = 0; idx < (int)pODE.size(); idx++)
+					pODE[idx]->RunRKCK45_Step5();
+			}
+
+			evalStep = 0;
+			time += dT;
+			stagetime += dT;
+			iteration++;
+			stageiteration++;
+
+			//if (!SetAdaptiveTimeStep_SingleThreshold2()) break;
+			if (!SetAdaptiveTimeStep()) break;
+
+			//done for this step. Make it available.
+			available = true;
+		}
+		break;
+		}
+#endif
+	}
+	break;
+
+	case EVAL_RKDP:
+	{
+#ifdef ODE_EVAL_RKDP
+		switch (evalStep) {
+
+		case 0:
+		{
+			if (calculate_mxh) {
+
+				for (int idx = 0; idx < (int)pODE.size(); idx++)
+					pODE[idx]->RunRKDP54_Step0_withReductions();
+
+				calculate_mxh = false;
+
+				Set_mxh();
+			}
+			else {
+
+				for (int idx = 0; idx < (int)pODE.size(); idx++)
+					pODE[idx]->RunRKDP54_Step0();
+			}
+
+			available = false;
+
+			//RKDP has the FSAL property, thus the error is calculated on this first stage -> must be primed by a full pass first
+			//It also means the above methods do not advance the magnetization yet as we need to calculate the new stepsize first
+			//Magnetization is advanced below if the step has not failed
+			//If the step has failed then restore magnetization, and also set primed to false -> we must now take a full pass again before we can calculate a new stepsize.
+			if (primed) {
+
+				if (!SetAdaptiveTimeStep()) {
+
+					primed = false;
+					break;
+				}
+			}
+			else primed = true;
+
+			//Advance magnetization with new stepsize
+			for (int idx = 0; idx < (int)pODE.size(); idx++)
+				pODE[idx]->RunRKDP54_Step0_Advance();
+
+			evalStep++;
+		}
+		break;
+
+		case 1:
+		{
+			for (int idx = 0; idx < (int)pODE.size(); idx++)
+				pODE[idx]->RunRKDP54_Step1();
+
+			evalStep++;
+		}
+		break;
+
+		case 2:
+		{
+			for (int idx = 0; idx < (int)pODE.size(); idx++)
+				pODE[idx]->RunRKDP54_Step2();
+
+			evalStep++;
+		}
+		break;
+
+		case 3:
+		{
+			for (int idx = 0; idx < (int)pODE.size(); idx++)
+				pODE[idx]->RunRKDP54_Step3();
+
+			evalStep++;
+		}
+		break;
+
+		case 4:
+		{
+			for (int idx = 0; idx < (int)pODE.size(); idx++)
+				pODE[idx]->RunRKDP54_Step4();
+
+			evalStep++;
+		}
+		break;
+
+		case 5:
+		{
+			if (calculate_dmdt) {
+
+				for (int idx = 0; idx < (int)pODE.size(); idx++)
+					pODE[idx]->RunRKDP54_Step5_withReductions();
+
+				calculate_dmdt = false;
+
+				Set_dmdt();
+			}
+			else {
+
+				for (int idx = 0; idx < (int)pODE.size(); idx++)
+					pODE[idx]->RunRKDP54_Step5();
+			}
+
+			evalStep = 0;
+			time += dT;
+			stagetime += dT;
+			iteration++;
+			stageiteration++;
 
 			//done for this step. Make it available.
 			available = true;

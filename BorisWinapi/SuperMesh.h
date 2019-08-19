@@ -297,6 +297,9 @@ public:
 	//Invert magnetisation direction in given mesh (must be ferromagnetic)
 	BError SetInvertedMagnetisation(string meshName);
 
+	//Set random magentisation distribution in given mesh (must be ferromagnetic)
+	BError SetRandomMagnetisation(string meshName);
+
 	//longitudinal and transverse are the components specified as string literals : "-z", "-y", "-x", "x", "y", "z"
 	BError SetMagnetisationDomainWall(string meshName, string longitudinal, string transverse, double width, double position);
 
@@ -322,6 +325,10 @@ public:
 
 	//set ferromagnetic mesh roughness refinement if Roughness module enabled in given mesh
 	BError SetMeshRoughnessRefinement(string meshName, INT3 refine);
+
+	//Set periodic boundary conditions for magnetization
+	//possible flags: x, y, z
+	BError Set_PBC(string meshName, string flag, int images);
 
 	//--------------------------------------------------------- MESH PARAMETERS : SuperMeshParams.cpp
 

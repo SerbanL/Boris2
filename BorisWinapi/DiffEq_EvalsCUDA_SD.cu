@@ -157,6 +157,9 @@ __global__ void RunSD_Advance_withReductions_Kernel(ManagedDiffEqCUDA& cuDiffEq,
 
 	cuReal dT = *cuDiffEq.pdT;
 
+	cuReal mxh = 0.0;
+	cuReal dmdt = 0.0;
+
 	if (idx < cuMesh.pM->linear_size()) {
 
 		if (cuMesh.pM->is_not_empty(idx)) {
@@ -173,7 +176,7 @@ __global__ void RunSD_Advance_withReductions_Kernel(ManagedDiffEqCUDA& cuDiffEq,
 
 				//obtained maximum normalized torque term
 				cuReal Mnorm = (*cuMesh.pM)[idx].norm();
-				cuReal mxh = cu_GetMagnitude(m ^ H) / Mnorm;
+				mxh = cu_GetMagnitude(m ^ H) / Mnorm;
 
 				//The updating formula is (see https://doi.org/10.1063/1.4862839):
 
@@ -200,14 +203,7 @@ __global__ void RunSD_Advance_withReductions_Kernel(ManagedDiffEqCUDA& cuDiffEq,
 				(*cuMesh.pM)[idx].renormalize(Ms);
 
 				//obtain maximum normalized dmdt term
-				cuReal dmdt = cu_GetMagnitude((*cuMesh.pM)[idx] - (*cuDiffEq.psM1)[idx]) / (dT * (cuReal)GAMMA * Mnorm * Mnorm);
-
-				//only reduce for mxh and dmdt if grel is not zero (if it's zero this means magnetisation dynamics is disabled in this mesh)
-				if (cuMesh.pgrel->get0()) {
-
-					reduction_max(0, 1, &mxh, *cuDiffEq.pmxh);
-					reduction_max(0, 1, &dmdt, *cuDiffEq.pdmdt);
-				}
+				dmdt = cu_GetMagnitude((*cuMesh.pM)[idx] - (*cuDiffEq.psM1)[idx]) / (dT * (cuReal)GAMMA * Mnorm * Mnorm);
 			}
 			else {
 
@@ -216,6 +212,13 @@ __global__ void RunSD_Advance_withReductions_Kernel(ManagedDiffEqCUDA& cuDiffEq,
 				(*cuMesh.pM)[idx].renormalize(Ms);		//re-normalize the skipped cells no matter what - temperature can change
 			}
 		}
+	}
+
+	//only reduce for mxh and dmdt if grel is not zero (if it's zero this means magnetisation dynamics is disabled in this mesh)
+	if (cuMesh.pgrel->get0()) {
+
+		reduction_max(0, 1, &mxh, *cuDiffEq.pmxh);
+		reduction_max(0, 1, &dmdt, *cuDiffEq.pdmdt);
 	}
 }
 
@@ -225,6 +228,8 @@ __global__ void RunSD_Advance_withReduction_mxh_Kernel(ManagedDiffEqCUDA& cuDiff
 
 	cuReal dT = *cuDiffEq.pdT;
 
+	cuReal mxh = 0.0;
+
 	if (idx < cuMesh.pM->linear_size()) {
 
 		if (cuMesh.pM->is_not_empty(idx)) {
@@ -240,12 +245,7 @@ __global__ void RunSD_Advance_withReduction_mxh_Kernel(ManagedDiffEqCUDA& cuDiff
 				cuReal3 H = (*cuMesh.pHeff)[idx];
 
 				//obtained maximum normalized torque term
-				cuReal mxh = cu_GetMagnitude(m ^ H) / (*cuMesh.pM)[idx].norm();
-
-				if (cuMesh.pgrel->get0()) {
-
-					reduction_max(0, 1, &mxh, *cuDiffEq.pmxh);
-				}
+				mxh = cu_GetMagnitude(m ^ H) / (*cuMesh.pM)[idx].norm();
 
 				//The updating formula is (see https://doi.org/10.1063/1.4862839):
 
@@ -279,6 +279,11 @@ __global__ void RunSD_Advance_withReduction_mxh_Kernel(ManagedDiffEqCUDA& cuDiff
 			}
 		}
 	}
+
+	if (cuMesh.pgrel->get0()) {
+
+		reduction_max(0, 1, &mxh, *cuDiffEq.pmxh);
+	}
 }
 
 __global__ void RunSD_Advance_withReduction_dmdt_Kernel(ManagedDiffEqCUDA& cuDiffEq, ManagedMeshCUDA& cuMesh)
@@ -286,6 +291,8 @@ __global__ void RunSD_Advance_withReduction_dmdt_Kernel(ManagedDiffEqCUDA& cuDif
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
 
 	cuReal dT = *cuDiffEq.pdT;
+
+	cuReal dmdt = 0.0;
 
 	if (idx < cuMesh.pM->linear_size()) {
 
@@ -327,13 +334,7 @@ __global__ void RunSD_Advance_withReduction_dmdt_Kernel(ManagedDiffEqCUDA& cuDif
 
 				//obtain maximum normalized dmdt term
 				cuReal Mnorm = (*cuMesh.pM)[idx].norm();
-				cuReal dmdt = cu_GetMagnitude((*cuMesh.pM)[idx] - (*cuDiffEq.psM1)[idx]) / (dT * (cuReal)GAMMA * Mnorm * Mnorm);
-
-				//only reduce for dmdt if grel is not zero (if it's zero this means magnetisation dynamics is disabled in this mesh)
-				if (cuMesh.pgrel->get0()) {
-
-					reduction_max(0, 1, &dmdt, *cuDiffEq.pdmdt);
-				}
+				dmdt = cu_GetMagnitude((*cuMesh.pM)[idx] - (*cuDiffEq.psM1)[idx]) / (dT * (cuReal)GAMMA * Mnorm * Mnorm);
 			}
 			else {
 
@@ -342,6 +343,12 @@ __global__ void RunSD_Advance_withReduction_dmdt_Kernel(ManagedDiffEqCUDA& cuDif
 				(*cuMesh.pM)[idx].renormalize(Ms);		//re-normalize the skipped cells no matter what - temperature can change
 			}
 		}
+	}
+
+	//only reduce for dmdt if grel is not zero (if it's zero this means magnetisation dynamics is disabled in this mesh)
+	if (cuMesh.pgrel->get0()) {
+
+		reduction_max(0, 1, &dmdt, *cuDiffEq.pdmdt);
 	}
 }
 

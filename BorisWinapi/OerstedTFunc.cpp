@@ -91,6 +91,9 @@ void OeFunc::CalcOerstedTensors(VEC<DBL3>& DOe, INT3 n, INT3 N, DBL3 h)
 	}
 	*/
 
+	//zero the tensor first
+	DOe.set(DBL3());
+
 	//use symmetries to reduce computation time:
 
 	//Kxy : even in x, y, odd in z

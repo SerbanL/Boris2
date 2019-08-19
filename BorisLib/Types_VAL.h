@@ -214,6 +214,8 @@ struct VAL2 {
 	bool operator>(const VAL2 &rhs) const { return ((x > rhs.x) && (y > rhs.y)); }
 	bool operator<(const VAL2 &rhs) const { return ((x < rhs.x) && (y < rhs.y)); }
 
+	bool IsNull(void) const { return (*this == VAL2()); }
+
 	//----------------------------- PERMUTATIONS
 
 	//return new VAL2 with swapped x and y values
@@ -454,6 +456,8 @@ struct VAL3 {
 	bool operator<=(const VAL3 &rhs) const { return (IsZoN(x - rhs.x) && IsZoN(y - rhs.y) && IsZoN(z - rhs.z)); }
 	bool operator>(const VAL3 &rhs) const { return ((x > rhs.x) && (y > rhs.y) && (z > rhs.z)); }
 	bool operator<(const VAL3 &rhs) const { return ((x < rhs.x) && (y < rhs.y) && (z < rhs.z)); }
+
+	bool IsNull(void) const { return (*this == VAL3()); }
 
 	//----------------------------- OTHER
 

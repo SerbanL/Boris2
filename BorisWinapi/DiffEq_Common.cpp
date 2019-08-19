@@ -145,7 +145,7 @@ BError ODECommon::SwitchCUDAState(bool cudaState)
 		pODECUDA = nullptr;
 	}
 
-	
+	primed = false;
 
 #endif
 
@@ -357,6 +357,32 @@ BError ODECommon::SetEvaluationMethod(EVAL_ evalMethod_)
 		dT_increase = RKF_DTINCREASE;
 		dT_max = RKF_MAXDT;
 		dT_min = RKF_MINDT;
+	}
+	break;
+
+	case EVAL_RKCK:
+	{
+		dT = RKCK_DEFAULT_DT;
+
+		err_high_fail = RKCK_RELERRFAIL;
+		err_high = RKCK_RELERRMAX;
+		err_low = RKCK_RELERRMIN;
+		dT_increase = RKCK_DTINCREASE;
+		dT_max = RKCK_MAXDT;
+		dT_min = RKCK_MINDT;
+	}
+	break;
+
+	case EVAL_RKDP:
+	{
+		dT = RKDP_DEFAULT_DT;
+
+		err_high_fail = RKDP_RELERRFAIL;
+		err_high = RKDP_RELERRMAX;
+		err_low = RKDP_RELERRMIN;
+		dT_increase = RKDP_DTINCREASE;
+		dT_max = RKDP_MAXDT;
+		dT_min = RKDP_MINDT;
 	}
 	break;
 	}

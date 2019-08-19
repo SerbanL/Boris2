@@ -185,7 +185,7 @@
       <AdditionalDependencies>cudart_static.lib;cufft.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <CudaCompile>
-      <CodeGeneration>compute_60,sm_60</CodeGeneration>
+      <CodeGeneration>compute_50,sm_50</CodeGeneration>
       <GenerateRelocatableDeviceCode>true</GenerateRelocatableDeviceCode>
       <TargetMachinePlatform>64</TargetMachinePlatform>
     </CudaCompile>
@@ -377,6 +377,7 @@
     <ClCompile Include="DemagTFunc_Asympt.cpp" />
     <ClCompile Include="DemagTFunc_Irregular.cpp" />
     <ClCompile Include="DemagTFunc_L.cpp" />
+    <ClCompile Include="DemagTFunc_PBC.cpp" />
     <ClCompile Include="DemagTFunc_Shifted.cpp" />
     <ClCompile Include="DemagTFunc_Test.cpp" />
     <ClCompile Include="Demag_N.cpp" />
@@ -387,6 +388,8 @@
     <ClCompile Include="DiffEq_Evals.cpp" />
     <ClCompile Include="DiffEq_Evals_ABM.cpp" />
     <ClCompile Include="DiffEq_Evals_AHeun.cpp" />
+    <ClCompile Include="DiffEq_Evals_RKCK45.cpp" />
+    <ClCompile Include="DiffEq_Evals_RKDP54.cpp" />
     <ClCompile Include="DiffEq_Evals_SD.cpp" />
     <ClCompile Include="DiffEq_Evals_RK23.cpp" />
     <ClCompile Include="DiffEq_Evals_RK4.cpp" />
@@ -554,6 +557,8 @@
     <CudaCompile Include="DiffEq_EvalsCUDA_Euler.cu" />
     <CudaCompile Include="DiffEq_EvalsCUDA_RK23.cu" />
     <CudaCompile Include="DiffEq_EvalsCUDA_RK4.cu" />
+    <CudaCompile Include="DiffEq_EvalsCUDA_RKCK45.cu" />
+    <CudaCompile Include="DiffEq_EvalsCUDA_RKDP54.cu" />
     <CudaCompile Include="DiffEq_EvalsCUDA_RKF.cu" />
     <CudaCompile Include="DiffEq_EvalsCUDA_SD.cu" />
     <CudaCompile Include="DiffEq_EvalsCUDA_TEuler.cu" />

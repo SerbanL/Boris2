@@ -19,7 +19,7 @@ class VEC_VC :
 	public ProgramState<VEC_VC<VType>, 
 	std::tuple<SZ3, DBL3, Rect, std::vector<VType>, std::vector<int>, int,
 	std::vector<VType>, std::vector<VType>, std::vector<VType>, std::vector<VType>, std::vector<VType>, std::vector<VType>,
-	DBL2, DBL2, DBL2, DBL2, DBL2, DBL2, DBL2, DBL3, double, int, int>,
+	DBL2, DBL2, DBL2, DBL2, DBL2, DBL2, DBL2, DBL3, double, int, int, int>,
 	std::tuple<>>
 {
 
@@ -36,14 +36,27 @@ class VEC_VC :
 #define NF_NNZ	32
 
 //Existance of at least one neighbor along a given axis : use as masks (test using &).
-#define NF_NGBRX	3	//test bits 0 and 1
-#define NF_NGBRY	12	//test bits 2 and 3
-#define NF_NGBRZ	48  //test bits 4 and 5
+#define NF_NGBRX	(NF_NPX + NF_NNX)	//test bits 0 and 1
+#define NF_NGBRY	(NF_NPY + NF_NNY)	//test bits 2 and 3
+#define NF_NGBRZ	(NF_NPZ + NF_NNZ)   //test bits 4 and 5
 
-//existence of both neighbors along axes x, y, z. Bits 6, 7, 8
-#define NF_BOTHX	64
-#define NF_BOTHY	128
-#define NF_BOTHZ	256
+//existence of both neighbors along axes x, y, z
+//the use this check mask with value and see if the result is the same as the mask, e.g. if ((ngbrFlags[idx] & NF_BOTHX) == NF_BOTHX) { both neighbors are present }
+#define NF_BOTHX	(NF_NPX + NF_NNX)
+#define NF_BOTHY	(NF_NPY + NF_NNY)
+#define NF_BOTHZ	(NF_NPZ + NF_NNZ)
+
+//periodic boundary condition along x. Set at x sides only if there is a neighbor present at the other side - this is how we know which side to use, +x or -x : bit 6
+#define NF_PBCX	64
+
+//periodic boundary condition along y. Set at y sides only if there is a neighbor present at the other side - this is how we know which side to use, +y or -y : bit 7
+#define NF_PBCY	128
+
+//periodic boundary condition along z. Set at z sides only if there is a neighbor present at the other side - this is how we know which side to use, +z or -z : bit 8
+#define NF_PBCZ	256
+
+//mask for all pbc flags
+#define NF_PBC (NF_PBCX + NF_PBCY + NF_PBCZ)
 
 //mask to check for cell with zero value set : bit 9
 #define NF_NOTEMPTY	512
@@ -115,15 +128,6 @@ class VEC_VC :
 #define NF_ROBINY	(NF_ROBINPY + NF_ROBINNY)
 #define NF_ROBINZ	(NF_ROBINPZ + NF_ROBINNZ)
 
-//periodic boundary condition along x. Set at x sides only if there is a neighbor present at the other side - this is how we know which side to use, +x or -x : bit 30
-#define NF_PBCX	1073741824
-
-//periodic boundary condition along y. Set at y sides only if there is a neighbor present at the other side - this is how we know which side to use, +y or -y : bit 31 (last bit)
-#define NF_PBCY	2147483648
-
-//mask for pbc flags, either x or y
-#define NF_PBC (NF_PBCX + NF_PBCY)
-
 private:
 	
 	//used for reductions by magnitude : i.e. for a value of VType reduce (e.g. maximum) for GetMagnitude(value)
@@ -160,9 +164,9 @@ private:
 	double aSOR_lastgrad = 0.0;
 
 	//Periodic boundary conditions for evaluating differential operators. If these are set then neighbor flags are calculated accordingly, and applied when evaluating operators.
-	//Only implemented x and/or y pbc, not along z.
 	int pbc_x = 0;
 	int pbc_y = 0;
+	int pbc_z = 0;
 
 private:
 
@@ -245,6 +249,7 @@ public:
 
 	int& pbc_x_ref(void) { return pbc_x; }
 	int& pbc_y_ref(void) { return pbc_y; }
+	int& pbc_z_ref(void) { return pbc_z; }
 
 	//--------------------------------------------SIZING : VEC_VC_mng.h
 
@@ -278,6 +283,12 @@ public:
 
 	void shrink_to_fit(void);
 
+	//--------------------------------------------PROPERTY CHECHING
+
+	bool is_pbc_x(void) { return pbc_x; }
+	bool is_pbc_y(void) { return pbc_y; }
+	bool is_pbc_z(void) { return pbc_z; }
+
 	//--------------------------------------------FLAG CHECKING : VEC_VC_flags.h
 
 	int get_nonempty_cells(void) const { return nonempty_cells; }
@@ -304,9 +315,9 @@ public:
 	bool is_skipcell(int index) const { return (ngbrFlags[index] & NF_SKIPCELL); }
 
 	//are all neighbors available? (for 2D don't check the z neighbors)
-	bool is_interior(int index) const { return ((ngbrFlags[index] & NF_BOTHX) && (ngbrFlags[index] & NF_BOTHY) && (n.z == 1 || (ngbrFlags[index] & NF_BOTHZ))); }
+	bool is_interior(int index) const { return (((ngbrFlags[index] & NF_BOTHX) == NF_BOTHX) && ((ngbrFlags[index] & NF_BOTHY) == NF_BOTHY) && (n.z == 1 || ((ngbrFlags[index] & NF_BOTHZ) == NF_BOTHZ))); }
 	//are all neighbors in the xy plane available?
-	bool is_plane_interior(int index) const { return ((ngbrFlags[index] & NF_BOTHX) && (ngbrFlags[index] & NF_BOTHY)); }
+	bool is_plane_interior(int index) const { return (((ngbrFlags[index] & NF_BOTHX) == NF_BOTHX) && ((ngbrFlags[index] & NF_BOTHY) == NF_BOTHY)); }
 
 	//--------------------------------------------SET CELL FLAGS - EXTERNAL USE : VEC_VC_flags.h
 
@@ -317,23 +328,11 @@ public:
 	//clear all dirichlet flags and vectors
 	void clear_dirichlet_flags(void);
 
-	//clear all pbc flags
-	void clear_pbc_flags(void);
+	//set pbc conditions : setting any to false clears flags
+	void set_pbc(bool pbc_x_, bool pbc_y_, bool pbc_z_);
 
-	//clear only pbc flags for x direction
-	void clear_pbc_x(void);
-
-	//clear only pbc flags for y direction
-	void clear_pbc_y(void);
-
-	//set pbc for both x and y
-	void set_pbc(void);
-
-	//set pbc for x direction only
-	void set_pbc_x(void);
-
-	//set pbc for y direction only
-	void set_pbc_y(void);
+	//clear all pbc flags : can also be achieved setting all flags to false in set_pbc but this one is more readable
+	void clear_pbc(void);
 
 	//clear all composite media boundary flags
 	void clear_cmbnd_flags(void);

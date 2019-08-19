@@ -31,8 +31,11 @@ public:
 
 private:
 
+	void FreeAllKernelMemory(void);
+
 	//-------------------------- KERNEL CALCULATION
 
+	//versions without pbc
 	BError Calculate_Demag_Kernels_2D(bool include_self_demag);
 	BError Calculate_Demag_Kernels_3D(bool include_self_demag);
 

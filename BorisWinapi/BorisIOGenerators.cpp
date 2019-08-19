@@ -820,3 +820,27 @@ void Simulation::Print_AStepCtrl(void)
 
 	BD.DisplayFormattedConsoleMessage(astep_ctrl_info);
 }
+
+//---------------------------------------------------- PERIODIC BOUNDARY CONDITIONS
+
+void Simulation::Print_PBC(void)
+{
+	string pbc_info = "[tc1,1,1,1/tc]Periodic boundary conditions for magnetization.\n";
+
+	for (int idxMesh = 0; idxMesh < (int)SMesh().size(); idxMesh++) {
+
+		pbc_info += Build_PBC_ListLine(idxMesh) + "\n";
+	}
+
+	BD.DisplayFormattedConsoleMessage(pbc_info);
+}
+
+string Simulation::Build_PBC_ListLine(int meshIndex)
+{
+	string pbc_line = MakeIO(IOI_MESH_FORPBC, meshIndex) +
+		"</c>[tc1,1,1,1/tc] [sa0/sa] x: " + MakeIO(IOI_PBC_X, meshIndex) +
+		"</c>[tc1,1,1,1/tc] [sa1/sa] y: " + MakeIO(IOI_PBC_Y, meshIndex) +
+		"</c>[tc1,1,1,1/tc] [sa2/sa] z: " + MakeIO(IOI_PBC_Z, meshIndex);
+
+	return pbc_line;
+}

@@ -139,11 +139,8 @@ private:
 	//Used to save starting magnetization - all evaluation methods do this, even when not needed by the method itself, so we can calculate dM/dt when needed.
 	cu_obj<cuVEC<cuReal3>> sM1;
 
-	//Used for RK4 (0, 1, 2); ABM (0, 1); RK23 (0, 1, 2); SD (0)
-	cu_obj<cuVEC<cuReal3>> sEval0, sEval1, sEval2;
-
-	//Additional for use with RKF45
-	cu_obj<cuVEC<cuReal3>> sEval3, sEval4;
+	//evalution scratch spaces
+	cu_obj<cuVEC<cuReal3>> sEval0, sEval1, sEval2, sEval3, sEval4, sEval5;
 
 	//Thermal field and torques, enabled only for the stochastic equations
 	cu_obj<cuVEC<cuReal3>> H_Thermal, Torque_Thermal;
@@ -199,6 +196,7 @@ private:
 
 #ifdef ODE_EVAL_RK23
 	//RK23 (Bogacki-Shampine)
+	void RunRK23_Step0_NoAdvance(bool calculate_mxh = false);
 	void RunRK23(int step, bool calculate_mxh = false, bool calculate_dmdt = false);
 #endif
 
@@ -210,6 +208,17 @@ private:
 #ifdef ODE_EVAL_RKF
 	//RKF45
 	void RunRKF45(int step, bool calculate_mxh = false, bool calculate_dmdt = false);
+#endif
+
+#ifdef ODE_EVAL_RKCK
+	//RKCK45
+	void RunRKCK45(int step, bool calculate_mxh = false, bool calculate_dmdt = false);
+#endif
+
+#ifdef ODE_EVAL_RKDP
+	//RKDP54
+	void RunRKDP54_Step0_NoAdvance(bool calculate_mxh = false);
+	void RunRKDP54(int step, bool calculate_mxh = false, bool calculate_dmdt = false);
 #endif
 
 #ifdef ODE_EVAL_SD

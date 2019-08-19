@@ -18,9 +18,9 @@ class cuVEC_VC :
 	public cuVEC<VType>
 {
 
-//the following are used as masks for ngbrFlags. 32 bits in total (4 bytes for an int)
+	//the following are used as masks for ngbrFlags. 32 bits in total (4 bytes for an int)
 
-//magnetic neighbor existence masks (+x, -x, +y, -y, +z, -z). Bits 0, 1, 2, 3, 4, 5
+	//magnetic neighbor existence masks (+x, -x, +y, -y, +z, -z). Bits 0, 1, 2, 3, 4, 5
 #define NF_NPX	1
 #define NF_NNX	2
 #define NF_NPY	4
@@ -29,14 +29,27 @@ class cuVEC_VC :
 #define NF_NNZ	32
 
 //Existance of at least one neighbor along a given axis : use as masks (test using &).
-#define NF_NGBRX	3	//test bits 0 and 1
-#define NF_NGBRY	12	//test bits 2 and 3
-#define NF_NGBRZ	48  //test bits 4 and 5
+#define NF_NGBRX	(NF_NPX + NF_NNX)	//test bits 0 and 1
+#define NF_NGBRY	(NF_NPY + NF_NNY)	//test bits 2 and 3
+#define NF_NGBRZ	(NF_NPZ + NF_NNZ)   //test bits 4 and 5
 
-//existence of both neighbors along axes x, y, z. Bits 6, 7, 8
-#define NF_BOTHX	64
-#define NF_BOTHY	128
-#define NF_BOTHZ	256
+//existence of both neighbors along axes x, y, z
+//the use this check mask with value and see if the result is the same as the mask, e.g. if ((ngbrFlags[idx] & NF_BOTHX) == NF_BOTHX) { both neighbors are present }
+#define NF_BOTHX	(NF_NPX + NF_NNX)
+#define NF_BOTHY	(NF_NPY + NF_NNY)
+#define NF_BOTHZ	(NF_NPZ + NF_NNZ)
+
+//periodic boundary condition along x. Set at x sides only if there is a neighbor present at the other side - this is how we know which side to use, +x or -x : bit 6
+#define NF_PBCX	64
+
+//periodic boundary condition along y. Set at y sides only if there is a neighbor present at the other side - this is how we know which side to use, +y or -y : bit 7
+#define NF_PBCY	128
+
+//periodic boundary condition along z. Set at z sides only if there is a neighbor present at the other side - this is how we know which side to use, +z or -z : bit 8
+#define NF_PBCZ	256
+
+//mask for pbc flags, either x or y
+#define NF_PBC (NF_PBCX + NF_PBCY + NF_PBCZ)
 
 //mask to check for cell with zero value set : bit 9
 #define NF_NOTEMPTY	512
@@ -108,15 +121,6 @@ class cuVEC_VC :
 #define NF_ROBINY	(NF_ROBINPY + NF_ROBINNY)
 #define NF_ROBINZ	(NF_ROBINPZ + NF_ROBINNZ)
 
-//periodic boundary condition along x. Set at x sides only if there is a neighbor present at the other side - this is how we know which side to use, +x or -x : bit 30
-#define NF_PBCX	1073741824
-
-//periodic boundary condition along y. Set at y sides only if there is a neighbor present at the other side - this is how we know which side to use, +y or -y : bit 31 (last bit)
-#define NF_PBCY	2147483648
-
-//mask for pbc flags, either x or y
-#define NF_PBC (NF_PBCX + NF_PBCY)
-
 private:
 
 	//mark cells with various flags to indicate properties of neighboring cells
@@ -174,6 +178,7 @@ private:
 	//Only implemented x and/or y pbc, not along z.
 	int pbc_x;
 	int pbc_y;
+	int pbc_z;
 
 private:
 
@@ -333,9 +338,9 @@ public:
 	__device__ bool is_skipcell(int index) const { return (ngbrFlags[index] & NF_SKIPCELL); }
 
 	//are all neighbors available? (for 2D don't check the z neighbors)
-	__device__ bool is_interior(int index) const { return ((ngbrFlags[index] & NF_BOTHX) && (ngbrFlags[index] & NF_BOTHY) && (n.z == 1 || (ngbrFlags[index] & NF_BOTHZ))); }
+	__device__ bool is_interior(int index) const { return (((ngbrFlags[index] & NF_BOTHX) == NF_BOTHX) && ((ngbrFlags[index] & NF_BOTHY) == NF_BOTHY) && (n.z == 1 || ((ngbrFlags[index] & NF_BOTHZ) == NF_BOTHZ))); }
 	//are all neighbors in the xy plane available?
-	__device__ bool is_plane_interior(int index) const { return ((ngbrFlags[index] & NF_BOTHX) && (ngbrFlags[index] & NF_BOTHY)); }
+	__device__ bool is_plane_interior(int index) const { return (((ngbrFlags[index] & NF_BOTHX) == NF_BOTHX) && ((ngbrFlags[index] & NF_BOTHY) == NF_BOTHY)); }
 
 	//--------------------------------------------SET CELL FLAGS - EXTERNAL USE : cuVEC_VC_flags.h and cuVEC_VC_flags.cuh
 	
@@ -346,23 +351,11 @@ public:
 	//clear all dirichlet flags and vectors
 	__host__ void clear_dirichlet_flags(void);
 
-	//clear all pbc flags
-	__host__ void clear_pbc_flags(void);
+	//set pbc conditions : setting any to false clears flags
+	__host__ void set_pbc(bool pbc_x_, bool pbc_y_, bool pbc_z_);
 
-	//clear only pbc flags for x direction
-	__host__ void clear_pbc_x(void);
-
-	//clear only pbc flags for y direction
-	__host__ void clear_pbc_y(void);
-
-	//set pbc for both x and y
-	__host__ void set_pbc(void);
-
-	//set pbc for x direction only
-	__host__ void set_pbc_x(void);
-
-	//set pbc for y direction only
-	__host__ void set_pbc_y(void);
+	//clear all pbc flags : can also be achieved setting all flags to false in set_pbc but this one is more readable
+	__host__ void clear_pbc(void);
 
 	//clear all composite media boundary flags
 	__host__ void clear_cmbnd_flags(void);

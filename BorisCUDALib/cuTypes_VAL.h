@@ -216,6 +216,8 @@ struct cuVAL2 {
 	__host__ __device__ bool operator>(const cuVAL2 &rhs) const { return ((x > rhs.x) && (y > rhs.y)); }
 	__host__ __device__ bool operator<(const cuVAL2 &rhs) const { return ((x < rhs.x) && (y < rhs.y)); }
 
+	__host__ __device__ bool IsNull(void) const { return (*this == cuVAL2()); }
+
 	//----------------------------- OTHER
 
 	__host__ __device__ VType dim(void) const { return x * y; }
@@ -462,6 +464,8 @@ struct cuVAL3 {
 	__host__ __device__ bool operator<=(const cuVAL3 &rhs) const { return (cuIsZoN(x - rhs.x) && cuIsZoN(y - rhs.y) && cuIsZoN(z - rhs.z)); }
 	__host__ __device__ bool operator>(const cuVAL3 &rhs) const { return ((x > rhs.x) && (y > rhs.y) && (z > rhs.z)); }
 	__host__ __device__ bool operator<(const cuVAL3 &rhs) const { return ((x < rhs.x) && (y < rhs.y) && (z < rhs.z)); }
+
+	__host__ __device__ bool IsNull(void) const { return (*this == cuVAL3()); }
 
 	//----------------------------- OTHER
 

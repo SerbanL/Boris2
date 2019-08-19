@@ -106,6 +106,9 @@ public:
 	//Invert magnetisation direction in given mesh (must be ferromagnetic)
 	void SetInvertedMagnetisation(void);
 
+	//Set random magentisation distribution in given mesh (must be ferromagnetic)
+	void SetRandomMagnetisation(void);
+
 	//set a domain wall with given width (metric units) at position within mesh (metric units). 
 	//Longitudinal and transverse are magnetisation componets as: 1: x, 2: y, 3: z, 1: -x, 2: -y, 3: -z
 	void SetMagnetisationDomainWall(int longitudinal, int transverse, double width, double position);
@@ -118,6 +121,11 @@ public:
 
 	//set M from given data VEC (0 values mean empty points) -> stretch data to M dimensions if needed.
 	void SetMagnetisationFromData(VEC<DBL3>& data);
+
+	//set periodic boundary conditions for magnetization
+	void Set_PBC_X(int pbc_x);
+	void Set_PBC_Y(int pbc_y);
+	void Set_PBC_Z(int pbc_z);
 
 	//----------------------------------- OVERLOAD MESH VIRTUAL METHODS
 

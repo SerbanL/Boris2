@@ -938,6 +938,18 @@
     <ClCompile Include="DiffEq_Evals_AHeun.cpp">
       <Filter>DIFF EQUATIONS</Filter>
     </ClCompile>
+    <ClCompile Include="DiffEq_Evals_RKCK45.cpp">
+      <Filter>DIFF EQUATIONS</Filter>
+    </ClCompile>
+    <ClCompile Include="DiffEq_Evals_RKDP54.cpp">
+      <Filter>DIFF EQUATIONS</Filter>
+    </ClCompile>
+    <ClCompile Include="DemagTFunc_PBC.cpp">
+      <Filter>FUNCS</Filter>
+    </ClCompile>
+    <ClCompile Include="DemagKernel_PBC.cpp">
+      <Filter>CONVOLUTION</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="BorisWinapi.rc">
@@ -1079,6 +1091,12 @@
       <Filter>DIFF EQUATIONS - CUDA</Filter>
     </CudaCompile>
     <CudaCompile Include="DiffEq_EvalsCUDA_AHeun.cu">
+      <Filter>DIFF EQUATIONS - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="DiffEq_EvalsCUDA_RKCK45.cu">
+      <Filter>DIFF EQUATIONS - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="DiffEq_EvalsCUDA_RKDP54.cu">
       <Filter>DIFF EQUATIONS - CUDA</Filter>
     </CudaCompile>
   </ItemGroup>

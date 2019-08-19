@@ -36,8 +36,8 @@ enum UPDATECONFIG_ {
 #define MAXSIMSPACE		2.0							//Maximum side length of simulation space (m)
 #define MINMESHSPACE	1e-11						//Minimum mesh side length (m)
 #define MAXFIELD		1e8							//Maximum field strength (A/m)
-#define MINODERELERROR		1e-8					//Minimum relative error for ode solver that can be entered
-#define MAXODERELERROR		1e-3					//Maximum relative error for ode solver that can be entered
+#define MINODERELERROR		1e-12					//Minimum relative error for ode solver that can be entered
+#define MAXODERELERROR		1e-2					//Maximum relative error for ode solver that can be entered
 #define MINTIMESTEP		1e-18						//Mnimum time step that can be entered (s)
 #define MAXTIMESTEP		1e-6						//Maximum time step that can be entered (s)
 

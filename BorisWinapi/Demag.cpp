@@ -14,7 +14,7 @@
 Demag::Demag(Mesh *pMesh_) : 
 	Modules(),
 	Convolution<DemagKernel>(pMesh_->GetMeshSize(), pMesh_->GetMeshCellsize()),
-	ProgramStateNames(this, {}, {})
+	ProgramStateNames(this, {VINFO(demag_pbc_images)}, {})
 {
 	pMesh = dynamic_cast<FMesh*>(pMesh_);
 
@@ -50,10 +50,12 @@ BError Demag::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 	BError error(CLASS_STR(Demag));
 
 	//only need to uninitialize if n or h have changed
-	if (!CheckDimensions(pMesh->n, pMesh->h)) {
+	if (!CheckDimensions(pMesh->n, pMesh->h, demag_pbc_images)) {
 		
 		Uninitialize();
-		error = SetDimensions(pMesh->n, pMesh->h);
+
+		//Set convolution dimensions for embedded multiplication and required PBC conditions
+		error = SetDimensions(pMesh->n, pMesh->h, true, demag_pbc_images);
 	}
 
 	//------------------------ CUDA UpdateConfiguration if set
@@ -66,6 +68,15 @@ BError Demag::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 #endif
 
 	return error;
+}
+
+//Set PBC
+void Demag::Set_PBC(INT3 demag_pbc_images_)
+{
+	demag_pbc_images = demag_pbc_images_;
+
+	//update will be needed if pbc settings have changed
+	UpdateConfiguration();
 }
 
 BError Demag::MakeCUDAModule(void)

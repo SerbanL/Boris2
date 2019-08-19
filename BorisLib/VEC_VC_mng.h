@@ -11,7 +11,7 @@ VEC_VC<VType>::VEC_VC(void) :
 	ProgramStateNames(this, { VINFO(n), VINFO(h), VINFO(rect), VINFO(quantity), VINFO(ngbrFlags), VINFO(nonempty_cells),
 		VINFO(dirichlet_nx), VINFO(dirichlet_px), VINFO(dirichlet_ny), VINFO(dirichlet_py), VINFO(dirichlet_nz), VINFO(dirichlet_pz),
 		VINFO(robin_px), VINFO(robin_nx), VINFO(robin_py), VINFO(robin_ny), VINFO(robin_pz), VINFO(robin_nz), VINFO(robin_v), VINFO(shift_debt), VINFO(aSOR_damping),
-		VINFO(pbc_x), VINFO(pbc_y) }, {})
+		VINFO(pbc_x), VINFO(pbc_y), VINFO(pbc_z) }, {})
 {
 }
 
@@ -21,7 +21,7 @@ VEC_VC<VType>::VEC_VC(const SZ3& n_) :
 	ProgramStateNames(this, { VINFO(n), VINFO(h), VINFO(rect), VINFO(quantity), VINFO(ngbrFlags), VINFO(nonempty_cells),
 		VINFO(dirichlet_nx), VINFO(dirichlet_px), VINFO(dirichlet_ny), VINFO(dirichlet_py), VINFO(dirichlet_nz), VINFO(dirichlet_pz),
 		VINFO(robin_px), VINFO(robin_nx), VINFO(robin_py), VINFO(robin_ny), VINFO(robin_pz), VINFO(robin_nz), VINFO(robin_v), VINFO(shift_debt), VINFO(aSOR_damping),
-		VINFO(pbc_x), VINFO(pbc_y) }, {})
+		VINFO(pbc_x), VINFO(pbc_y), VINFO(pbc_z) }, {})
 {
 	if (!mreserve_vector(ngbrFlags, n_.dim()) || quantity.size() != n_.dim()) {
 
@@ -39,7 +39,7 @@ VEC_VC<VType>::VEC_VC(const DBL3& h_, const Rect& rect_) :
 	ProgramStateNames(this, { VINFO(n), VINFO(h), VINFO(rect), VINFO(quantity), VINFO(ngbrFlags), VINFO(nonempty_cells),
 		VINFO(dirichlet_nx), VINFO(dirichlet_px), VINFO(dirichlet_ny), VINFO(dirichlet_py), VINFO(dirichlet_nz), VINFO(dirichlet_pz),
 		VINFO(robin_px), VINFO(robin_nx), VINFO(robin_py), VINFO(robin_ny), VINFO(robin_pz), VINFO(robin_nz), VINFO(robin_v), VINFO(shift_debt), VINFO(aSOR_damping),
-		VINFO(pbc_x), VINFO(pbc_y) }, {})
+		VINFO(pbc_x), VINFO(pbc_y), VINFO(pbc_z) }, {})
 {
 	//new_n : the size we should have if everything succeeds - n will take on this value if so
 	SZ3 new_n = get_n_from_h_and_rect(h_, rect_);
@@ -61,7 +61,7 @@ VEC_VC<VType>::VEC_VC(const DBL3& h_, const Rect& rect_, VType value) :
 	ProgramStateNames(this, { VINFO(n), VINFO(h), VINFO(rect), VINFO(quantity), VINFO(ngbrFlags), VINFO(nonempty_cells),
 		VINFO(dirichlet_nx), VINFO(dirichlet_px), VINFO(dirichlet_ny), VINFO(dirichlet_py), VINFO(dirichlet_nz), VINFO(dirichlet_pz),
 		VINFO(robin_px), VINFO(robin_nx), VINFO(robin_py), VINFO(robin_ny), VINFO(robin_pz), VINFO(robin_nz), VINFO(robin_v), VINFO(shift_debt), VINFO(aSOR_damping),
-		VINFO(pbc_x), VINFO(pbc_y) }, {})
+		VINFO(pbc_x), VINFO(pbc_y), VINFO(pbc_z) }, {})
 {
 	//new_n : the size we should have if everything succeeds - n will take on this value if so
 	SZ3 new_n = get_n_from_h_and_rect(h_, rect_);
@@ -244,7 +244,7 @@ void VEC_VC<VType>::clear(void)
 
 	clear_dirichlet_flags();
 
-	clear_pbc_flags();
+	clear_pbc();
 
 	shift_debt = DBL3();
 

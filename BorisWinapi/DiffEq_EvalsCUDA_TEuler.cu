@@ -16,24 +16,20 @@ __global__ void RunTEuler_Step0_withReductions_Kernel(ManagedDiffEqCUDA& cuDiffE
 
 	cuReal dT = *cuDiffEq.pdT;
 
+	cuReal3 mxh = cuReal3();
+
 	if (idx < cuMesh.pM->linear_size()) {
 
 		if (cuMesh.pM->is_not_empty(idx)) {
 
 			//obtain average normalized torque term
 			cuReal Mnorm = (*cuMesh.pM)[idx].norm();
-			cuReal3 mxh;
+
 			if (cuDiffEq.pH_Thermal->linear_size()) {
 
 				mxh = ((*cuMesh.pM)[idx] ^ ((*cuMesh.pHeff)[idx] + (*cuDiffEq.pH_Thermal)[idx])) / (Mnorm * Mnorm);
 			}
 			else mxh = ((*cuMesh.pM)[idx] ^ (*cuMesh.pHeff)[idx]) / (Mnorm * Mnorm);
-
-			//only reduce for mxh if grel is not zero (if it's zero this means magnetisation dynamics is disabled in this mesh)
-			if (cuMesh.pgrel->get0()) {
-
-				reduction_avg(0, 1, &mxh, *cuDiffEq.pmxh_av, *cuDiffEq.pavpoints);
-			}
 
 			//Save current magnetization for the next step
 			(*cuDiffEq.psM1)[idx] = (*cuMesh.pM)[idx];
@@ -47,6 +43,12 @@ __global__ void RunTEuler_Step0_withReductions_Kernel(ManagedDiffEqCUDA& cuDiffE
 				(*cuMesh.pM)[idx] += rhs * dT;
 			}
 		}
+	}
+
+	//only reduce for mxh if grel is not zero (if it's zero this means magnetisation dynamics is disabled in this mesh)
+	if (cuMesh.pgrel->get0()) {
+
+		reduction_avg(0, 1, &mxh, *cuDiffEq.pmxh_av, *cuDiffEq.pavpoints);
 	}
 }
 
@@ -81,6 +83,8 @@ __global__ void RunTEuler_Step1_withReductions_Kernel(ManagedDiffEqCUDA& cuDiffE
 
 	cuReal dT = *cuDiffEq.pdT;
 
+	cuReal3 dmdt = cuReal3();
+
 	if (idx < cuMesh.pM->linear_size()) {
 
 		if (cuMesh.pM->is_not_empty(idx)) {
@@ -102,13 +106,7 @@ __global__ void RunTEuler_Step1_withReductions_Kernel(ManagedDiffEqCUDA& cuDiffE
 
 				//obtain maximum normalized dmdt term
 				cuReal Mnorm = (*cuMesh.pM)[idx].norm();
-				cuReal3 dmdt = ((*cuMesh.pM)[idx] - (*cuDiffEq.psM1)[idx]) / (dT * (cuReal)GAMMA * Mnorm * Mnorm);
-
-				//only reduce for dmdt (and mxh) if grel is not zero (if it's zero this means magnetisation dynamics is disabled in this mesh)
-				if (cuMesh.pgrel->get0()) {
-
-					reduction_avg(0, 1, &dmdt, *cuDiffEq.pdmdt_av, *cuDiffEq.pavpoints2);
-				}
+				dmdt = ((*cuMesh.pM)[idx] - (*cuDiffEq.psM1)[idx]) / (dT * (cuReal)GAMMA * Mnorm * Mnorm);
 			}
 			else {
 
@@ -117,6 +115,12 @@ __global__ void RunTEuler_Step1_withReductions_Kernel(ManagedDiffEqCUDA& cuDiffE
 				(*cuMesh.pM)[idx].renormalize(Ms);		//re-normalize the skipped cells no matter what - temperature can change
 			}
 		}
+	}
+
+	//only reduce for dmdt (and mxh) if grel is not zero (if it's zero this means magnetisation dynamics is disabled in this mesh)
+	if (cuMesh.pgrel->get0()) {
+
+		reduction_avg(0, 1, &dmdt, *cuDiffEq.pdmdt_av, *cuDiffEq.pavpoints2);
 	}
 }
 

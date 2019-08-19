@@ -16,13 +16,18 @@ class FMesh;
 class Demag : 
 	public Modules, 
 	public Convolution<DemagKernel>,
-	public ProgramState<Demag, tuple<>, tuple<>>
+	public ProgramState<Demag, tuple<INT3>, tuple<>>
 {
 
 private:
 
 	//pointer to mesh object holding this effective field module
 	FMesh *pMesh;
+
+	//number of pbc images in each dimension (set to zero to disable).
+	//There is also a copy of this in ConvolutionData inherited from Convolution - we need another copy here to detect changes
+	//these pbc images are applicable in individual demag modules only
+	INT3 demag_pbc_images = INT3();
 
 public:
 
@@ -44,6 +49,16 @@ public:
 	BError MakeCUDAModule(void);
 
 	double UpdateField(void);
+
+	//-------------------Setters
+
+	//Set PBC
+	void Set_PBC(INT3 demag_pbc_images_);
+
+	//-------------------Getters
+
+	//Get PBC images
+	INT3 Get_PBC(void) { return demag_pbc_images; }
 };
 
 #else

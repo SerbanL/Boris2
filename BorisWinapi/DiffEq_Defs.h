@@ -49,11 +49,11 @@
 
 //fixed parameters for RK23 adaptive time step
 //above this relative error the evaluation has failed and will be redone with a lower time step
-#define RK23_RELERRFAIL	1.5e-4
+#define RK23_RELERRFAIL	1e-4
 //above this relative error the time step will be reduced
-#define RK23_RELERRMAX	9e-5
+#define RK23_RELERRMAX	5e-5
 //below this relative error the time step will be increased
-#define RK23_RELERRMIN	4e-5
+#define RK23_RELERRMIN	1e-5
 //When increasing the time step multiply it with this
 #define RK23_DTINCREASE	1.001
 //maximum time step the method can reach
@@ -65,11 +65,11 @@
 
 //fixed parameters for RKF45 adaptive time step
 //above this relative error the evaluation has failed and will be redone with a lower time step
-#define RKF_RELERRFAIL	2e-4
+#define RKF_RELERRFAIL	1e-4
 //above this relative error the time step will be reduced
-#define RKF_RELERRMAX	1e-4
+#define RKF_RELERRMAX	5e-5
 //below this relative error the time step will be increased
-#define RKF_RELERRMIN	4e-5
+#define RKF_RELERRMIN	1e-5
 //When increasing the time step multiply it with this
 #define RKF_DTINCREASE	1.001
 //maximum time step the method can reach
@@ -79,6 +79,38 @@
 //default dT
 #define RKF_DEFAULT_DT	0.5e-12
 
+//fixed parameters for RKCK45 adaptive time step
+//above this relative error the evaluation has failed and will be redone with a lower time step
+#define RKCK_RELERRFAIL	1e-4
+//above this relative error the time step will be reduced
+#define RKCK_RELERRMAX	5e-5
+//below this relative error the time step will be increased
+#define RKCK_RELERRMIN	1e-5
+//When increasing the time step multiply it with this
+#define RKCK_DTINCREASE	1.001
+//maximum time step the method can reach
+#define RKCK_MAXDT	3e-12
+//minimum time step the method can reach
+#define RKCK_MINDT	1e-15
+//default dT
+#define RKCK_DEFAULT_DT	0.5e-12
+
+//fixed parameters for RKDP54 adaptive time step
+//above this relative error the evaluation has failed and will be redone with a lower time step
+#define RKDP_RELERRFAIL	1e-4
+//above this relative error the time step will be reduced
+#define RKDP_RELERRMAX	5e-5
+//below this relative error the time step will be increased
+#define RKDP_RELERRMIN	1e-5
+//When increasing the time step multiply it with this
+#define RKDP_DTINCREASE	1.001
+//maximum time step the method can reach
+#define RKDP_MAXDT	3e-12
+//minimum time step the method can reach
+#define RKDP_MINDT	1e-15
+//default dT
+#define RKDP_DEFAULT_DT	0.5e-12
+
 //default dT -> for the SD solver this acts as the starting timestep and the value it resets to when needed
 #define SD_DEFAULT_DT	1e-15
 
@@ -86,4 +118,4 @@
 enum ODE_ { ODE_ERROR = -1, ODE_LLG, ODE_LLGSTT, ODE_LLB, ODE_LLBSTT, ODE_SLLG, ODE_SLLGSTT, ODE_SLLB, ODE_SLLBSTT, ODE_LLGSA, ODE_SLLGSA, ODE_LLBSA, ODE_SLLBSA, ODE_LLGSTATIC };
 
 //ODE evaluation methods enum - to keep bsm files backward compatible add new entries at the end
-enum EVAL_ { EVAL_ERROR = -1, EVAL_EULER, EVAL_TEULER, EVAL_RK4, EVAL_ABM, EVAL_RKF, EVAL_RK23, EVAL_SD, EVAL_AHEUN };
+enum EVAL_ { EVAL_ERROR = -1, EVAL_EULER, EVAL_TEULER, EVAL_RK4, EVAL_ABM, EVAL_RKF, EVAL_RK23, EVAL_SD, EVAL_AHEUN, EVAL_RKCK, EVAL_RKDP };

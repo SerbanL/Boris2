@@ -111,7 +111,7 @@ VType CGSolve<VType>::A_p_Laplace_diri(int idx)
 	if (!(pV->ngbrFlags[idx] & NF_NOTEMPTY)) return VType();
 
 	//x axis
-	if (pV->ngbrFlags[idx] & NF_BOTHX) {
+	if ((pV->ngbrFlags[idx] & NF_BOTHX) == NF_BOTHX) {
 
 		//both neighbors available so must be an inner point along this direction
 		diff_x = (p[idx + 1] + p[idx - 1] - 2 * p[idx]) / (h.x*h.x);
@@ -135,7 +135,7 @@ VType CGSolve<VType>::A_p_Laplace_diri(int idx)
 	}
 
 	//y axis
-	if (pV->ngbrFlags[idx] & NF_BOTHY) {
+	if ((pV->ngbrFlags[idx] & NF_BOTHY) == NF_BOTHY) {
 
 		diff_y = (p[idx + n.x] + p[idx - n.x] - 2 * p[idx]) / (h.y*h.y);
 	}
@@ -155,7 +155,7 @@ VType CGSolve<VType>::A_p_Laplace_diri(int idx)
 	}
 
 	//z axis
-	if (pV->ngbrFlags[idx] & NF_BOTHZ) {
+	if ((pV->ngbrFlags[idx] & NF_BOTHZ) == NF_BOTHZ) {
 
 		diff_z = (p[idx + n.x*n.y] + p[idx - n.x*n.y] - 2 * p[idx]) / (h.z*h.z);
 	}
@@ -188,7 +188,7 @@ VType CGSolve<VType>::b_minus_A(int idx)
 	if (!(pV->ngbrFlags[idx] & NF_NOTEMPTY)) return VType();
 
 	//x axis
-	if (pV->ngbrFlags[idx] & NF_BOTHX) {
+	if ((pV->ngbrFlags[idx] & NF_BOTHX) == NF_BOTHX) {
 		//both neighbors available so must be an inner point along this direction
 		diff_x = (pV->quantity[idx + 1] + pV->quantity[idx - 1] - 2 * pV->quantity[idx]);
 	}
@@ -213,7 +213,7 @@ VType CGSolve<VType>::b_minus_A(int idx)
 	diff_x /= (h.x*h.x);
 
 	//y axis
-	if (pV->ngbrFlags[idx] & NF_BOTHY) {
+	if ((pV->ngbrFlags[idx] & NF_BOTHY) == NF_BOTHY) {
 
 		diff_y = (pV->quantity[idx + n.x] + pV->quantity[idx - n.x] - 2 * pV->quantity[idx]);
 	}
@@ -235,7 +235,7 @@ VType CGSolve<VType>::b_minus_A(int idx)
 	diff_y /= (h.y*h.y);
 
 	//z axis
-	if (pV->ngbrFlags[idx] & NF_BOTHZ) {
+	if ((pV->ngbrFlags[idx] & NF_BOTHZ) == NF_BOTHZ) {
 
 		diff_z = (pV->quantity[idx + n.x*n.y] + pV->quantity[idx - n.x*n.y] - 2 * pV->quantity[idx]);
 	}

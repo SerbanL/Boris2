@@ -43,7 +43,7 @@ DBL2 VEC_VC<VType>::IterateLaplace_SOR(double relaxation_param)
 				double total_weight = 0;
 
 				//x direction
-				if (ngbrFlags[idx] & NF_BOTHX) {
+				if ((ngbrFlags[idx] & NF_BOTHX) == NF_BOTHX) {
 
 					total_weight += 2 * w_x;
 					weighted_sum += w_x * (quantity[idx - 1] + quantity[idx + 1]);
@@ -64,7 +64,7 @@ DBL2 VEC_VC<VType>::IterateLaplace_SOR(double relaxation_param)
 				}
 
 				//y direction
-				if (ngbrFlags[idx] & NF_BOTHY) {
+				if ((ngbrFlags[idx] & NF_BOTHY) == NF_BOTHY) {
 
 					total_weight += 2 * w_y;
 					weighted_sum += w_y * (quantity[idx - n.x] + quantity[idx + n.x]);
@@ -85,7 +85,7 @@ DBL2 VEC_VC<VType>::IterateLaplace_SOR(double relaxation_param)
 				}
 
 				//z direction
-				if (ngbrFlags[idx] & NF_BOTHZ) {
+				if ((ngbrFlags[idx] & NF_BOTHZ) == NF_BOTHZ) {
 
 					total_weight += 2 * w_z;
 					weighted_sum += w_z * (quantity[idx - n.x*n.y] + quantity[idx + n.x*n.y]);
@@ -163,7 +163,7 @@ DBL2 VEC_VC<VType>::IteratePoisson_SOR(std::function<VType(const Owner&, int)> P
 				double total_weight = 0;
 
 				//x direction
-				if (ngbrFlags[idx] & NF_BOTHX) {
+				if ((ngbrFlags[idx] & NF_BOTHX) == NF_BOTHX) {
 
 					total_weight += 2 * w_x;
 					weighted_sum += w_x * (quantity[idx - 1] + quantity[idx + 1]);
@@ -184,7 +184,7 @@ DBL2 VEC_VC<VType>::IteratePoisson_SOR(std::function<VType(const Owner&, int)> P
 				}
 
 				//y direction
-				if (ngbrFlags[idx] & NF_BOTHY) {
+				if ((ngbrFlags[idx] & NF_BOTHY) == NF_BOTHY) {
 
 					total_weight += 2 * w_y;
 					weighted_sum += w_y * (quantity[idx - n.x] + quantity[idx + n.x]);
@@ -205,7 +205,7 @@ DBL2 VEC_VC<VType>::IteratePoisson_SOR(std::function<VType(const Owner&, int)> P
 				}
 
 				//z direction
-				if (ngbrFlags[idx] & NF_BOTHZ) {
+				if ((ngbrFlags[idx] & NF_BOTHZ) == NF_BOTHZ) {
 
 					total_weight += 2 * w_z;
 					weighted_sum += w_z * (quantity[idx - n.x*n.y] + quantity[idx + n.x*n.y]);
@@ -286,7 +286,7 @@ DBL2 VEC_VC<VType>::IteratePoisson_SOR(std::function<VType(const Owner&, int)> P
 				double total_weight = 0;
 
 				//x direction
-				if (ngbrFlags[idx] & NF_BOTHX) {
+				if ((ngbrFlags[idx] & NF_BOTHX) == NF_BOTHX) {
 
 					total_weight += 2 * w_x;
 					weighted_sum += w_x * (quantity[idx - 1] + quantity[idx + 1]);
@@ -307,7 +307,7 @@ DBL2 VEC_VC<VType>::IteratePoisson_SOR(std::function<VType(const Owner&, int)> P
 				}
 
 				//y direction
-				if (ngbrFlags[idx] & NF_BOTHY) {
+				if ((ngbrFlags[idx] & NF_BOTHY) == NF_BOTHY) {
 
 					total_weight += 2 * w_y;
 					weighted_sum += w_y * (quantity[idx - n.x] + quantity[idx + n.x]);
@@ -328,7 +328,7 @@ DBL2 VEC_VC<VType>::IteratePoisson_SOR(std::function<VType(const Owner&, int)> P
 				}
 
 				//z direction
-				if (ngbrFlags[idx] & NF_BOTHZ) {
+				if ((ngbrFlags[idx] & NF_BOTHZ) == NF_BOTHZ) {
 
 					total_weight += 2 * w_z;
 					weighted_sum += w_z * (quantity[idx - n.x*n.y] + quantity[idx + n.x*n.y]);
@@ -436,7 +436,7 @@ DBL2 VEC_VC<VType>::IteratePoisson_SOR(std::function<VType(const Owner&, int)> P
 				double total_weight = 0;
 
 				//x direction
-				if (ngbrFlags[idx] & NF_BOTHX) {
+				if ((ngbrFlags[idx] & NF_BOTHX) == NF_BOTHX) {
 
 					total_weight += 2 * w_x;
 					weighted_sum += w_x * (quantity[idx - 1] + quantity[idx + 1]);
@@ -457,7 +457,7 @@ DBL2 VEC_VC<VType>::IteratePoisson_SOR(std::function<VType(const Owner&, int)> P
 				}
 
 				//y direction
-				if (ngbrFlags[idx] & NF_BOTHY) {
+				if ((ngbrFlags[idx] & NF_BOTHY) == NF_BOTHY) {
 
 					total_weight += 2 * w_y;
 					weighted_sum += w_y * (quantity[idx - n.x] + quantity[idx + n.x]);
@@ -478,7 +478,7 @@ DBL2 VEC_VC<VType>::IteratePoisson_SOR(std::function<VType(const Owner&, int)> P
 				}
 				
 				//z direction
-				if (ngbrFlags[idx] & NF_BOTHZ) {
+				if ((ngbrFlags[idx] & NF_BOTHZ) == NF_BOTHZ) {
 
 					total_weight += 2 * w_z;
 					weighted_sum += w_z * (quantity[idx - n.x*n.y] + quantity[idx + n.x*n.y]);
@@ -558,7 +558,7 @@ DBL2 VEC_VC<VType>::IteratePoisson_SOR(std::function<VType(const Owner&, int)> P
 				double total_weight = 0;
 
 				//x direction
-				if (ngbrFlags[idx] & NF_BOTHX) {
+				if ((ngbrFlags[idx] & NF_BOTHX) == NF_BOTHX) {
 
 					total_weight += 2 * w_x;
 					weighted_sum += w_x * (quantity[idx - 1] + quantity[idx + 1]);
@@ -579,7 +579,7 @@ DBL2 VEC_VC<VType>::IteratePoisson_SOR(std::function<VType(const Owner&, int)> P
 				}
 
 				//y direction
-				if (ngbrFlags[idx] & NF_BOTHY) {
+				if ((ngbrFlags[idx] & NF_BOTHY) == NF_BOTHY) {
 
 					total_weight += 2 * w_y;
 					weighted_sum += w_y * (quantity[idx - n.x] + quantity[idx + n.x]);
@@ -600,7 +600,7 @@ DBL2 VEC_VC<VType>::IteratePoisson_SOR(std::function<VType(const Owner&, int)> P
 				}
 
 				//z direction
-				if (ngbrFlags[idx] & NF_BOTHZ) {
+				if ((ngbrFlags[idx] & NF_BOTHZ) == NF_BOTHZ) {
 
 					total_weight += 2 * w_z;
 					weighted_sum += w_z * (quantity[idx - n.x*n.y] + quantity[idx + n.x*n.y]);

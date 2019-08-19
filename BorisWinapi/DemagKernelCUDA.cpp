@@ -338,9 +338,6 @@ BError DemagKernelCUDA::Calculate_Demag_Kernels_3D(bool include_self_demag)
 
 	//-------------- CALCULATE OFF-DIAGONAL TENSOR ELEMENTS THEN TRANSFORM INTO KERNEL
 
-	//important to zero D before calculating new tensor elements
-	D.set(DBL3());
-
 	if (!dtf.CalcOffDiagTens3D(D, n, N, h / maximum(h.x, h.y, h.z))) return error(BERROR_OUTOFMEMORY_NCRIT);
 
 	tensor_to_kernel(D, K_cpu, true);

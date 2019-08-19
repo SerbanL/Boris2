@@ -93,6 +93,7 @@ void Simulation::MakeIOInfo(void)
 	ioInfo.push_back(mesh_info, IOI_MESH_FORTEMPERATURE);
 	ioInfo.push_back(mesh_info, IOI_MESH_FORHEATBOUNDARIES);
 	ioInfo.push_back(mesh_info, IOI_MESH_FORCURIEANDMOMENT);
+	ioInfo.push_back(mesh_info, IOI_MESH_FORPBC);
 
 	//Shows ferromagnetic super-mesh rectangle (unit m) : textId is the mesh rectangle for the ferromagnetic super-mesh
 	//IOI_FMSMESHRECTANGLE
@@ -949,6 +950,22 @@ void Simulation::MakeIOInfo(void)
 		string("\n[tc1,1,0,1/tc]dbl-click: edit");
 
 	ioInfo.push_back(astep_ctrl_info, IOI_ODEDTMAX);
+
+	//Shows PBC setting for individual demag modules. minorId is the unique mesh id number, auxId is the pbc images number (0 disables pbc; -1 means setting is not available) (must be ferromagnetic mesh);
+	//IOI_PBC_X,
+	//IOI_PBC_Y,
+	//IOI_PBC_Z
+
+	string pbc_info =
+		string("[tc1,1,0,1/tc]<b>Periodic Boundary Conditions") +
+		string("\n[tc1,1,0,1/tc]<i>Applicable for magnetization</i>") +
+		string("\n[tc1,1,0,1/tc]left-click: set") +
+		string("\n[tc1,1,0,1/tc]right-click: clear") + 
+		string("\n[tc1,1,0,1/tc]double-click: edit\n");
+
+	ioInfo.push_back(pbc_info, IOI_PBC_X);
+	ioInfo.push_back(pbc_info, IOI_PBC_Y);
+	ioInfo.push_back(pbc_info, IOI_PBC_Z);
 }
 
 //---------------------------------------------------- MAKE INTERACTIVE OBJECT : Auxiliary method
@@ -1380,6 +1397,36 @@ string Simulation::MakeIO(IOI_ identifier, PType ... params)
 		}
 		break;
 
+	case IOI_MESH_FORTEMPERATURE:
+		if (params_str.size() == 1) {
+
+			int meshIndex = ToNum(params_str[0]);
+			string meshName = SMesh().get_key_from_index(meshIndex);
+
+			return MakeInteractiveObject(meshName, IOI_MESH_FORTEMPERATURE, SMesh[meshIndex]->get_id(), 1, meshName);
+		}
+		break;
+
+	case IOI_MESH_FORCURIEANDMOMENT:
+		if (params_str.size() == 1) {
+
+			int meshIndex = ToNum(params_str[0]);
+			string meshName = SMesh().get_key_from_index(meshIndex);
+
+			return MakeInteractiveObject(meshName, IOI_MESH_FORCURIEANDMOMENT, SMesh[meshName]->get_id(), 1, meshName);
+		}
+		break;
+
+	case IOI_MESH_FORPBC:
+		if (params_str.size() == 1) {
+
+			int meshIndex = ToNum(params_str[0]);
+			string meshName = SMesh().get_key_from_index(meshIndex);
+
+			return MakeInteractiveObject(meshName, IOI_MESH_FORPBC, SMesh[meshName]->get_id(), 1, meshName);
+		}
+		break;
+
 	case IOI_MOVINGMESH:
 		if (SMesh.IsMovingMeshSet()) {
 
@@ -1503,16 +1550,6 @@ string Simulation::MakeIO(IOI_ identifier, PType ... params)
 		}
 		break;
 
-	case IOI_MESH_FORTEMPERATURE:
-		if (params_str.size() == 1) {
-
-			int meshIndex = ToNum(params_str[0]);
-			string meshName = SMesh().get_key_from_index(meshIndex);
-
-			return MakeInteractiveObject(meshName, IOI_MESH_FORTEMPERATURE, SMesh[meshIndex]->get_id(), 1, meshName);
-		}
-		break;
-
 	case IOI_AMBIENT_TEMPERATURE:
 		if (params_str.size() == 1) {
 
@@ -1579,16 +1616,6 @@ string Simulation::MakeIO(IOI_ identifier, PType ... params)
 			int meshIndex = ToNum(params_str[0]);
 
 			return MakeInteractiveObject(ToString(SMesh[meshIndex]->GetAtomicMoment(), "uB"), IOI_ATOMICMOMENT, SMesh[meshIndex]->get_id(), 1, ToString(SMesh[meshIndex]->GetAtomicMoment(), "uB"));
-		}
-		break;
-
-	case IOI_MESH_FORCURIEANDMOMENT:
-		if (params_str.size() == 1) {
-
-			int meshIndex = ToNum(params_str[0]);
-			string meshName = SMesh().get_key_from_index(meshIndex);
-
-			return MakeInteractiveObject(meshName, IOI_MESH_FORCURIEANDMOMENT, SMesh[meshName]->get_id(), 1, meshName);
 		}
 		break;
 
@@ -1774,6 +1801,33 @@ string Simulation::MakeIO(IOI_ identifier, PType ... params)
 			string value = params_str[0];
 
 			return MakeInteractiveObject(value, IOI_ODEDTMAX, 0, 0, value);
+		}
+		break;
+
+	case IOI_PBC_X:
+		if (params_str.size() == 1) {
+
+			int meshIndex = ToNum(params_str[0]);
+
+			return MakeInteractiveObject(" N/A ", IOI_PBC_X, SMesh[meshIndex]->get_id(), -1, "", UNAVAILABLECOLOR);
+		}
+		break;
+
+	case IOI_PBC_Y:
+		if (params_str.size() == 1) {
+
+			int meshIndex = ToNum(params_str[0]);
+
+			return MakeInteractiveObject(" N/A ", IOI_PBC_Y, SMesh[meshIndex]->get_id(), -1, "", UNAVAILABLECOLOR);
+		}
+		break;
+
+	case IOI_PBC_Z:
+		if (params_str.size() == 1) {
+
+			int meshIndex = ToNum(params_str[0]);
+
+			return MakeInteractiveObject(" N/A ", IOI_PBC_Z, SMesh[meshIndex]->get_id(), -1, "", UNAVAILABLECOLOR);
 		}
 		break;
 	}

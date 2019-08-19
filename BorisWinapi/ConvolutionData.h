@@ -31,6 +31,10 @@ protected:
 	//in this case the kernel multiplcation results will be stored in the F2 scratch space, and used for ifft
 	bool embed_multiplication = true;
 
+	//periodic boundary conditions -> setting these changes convolution dimensions and workflow.
+	//Set to zero to remove pbc conditions. This gives the number of images to use when computing tensors with pbc conditions.
+	INT3 pbc_images;
+
 	//additional scratch space used when kernel multiplication is not embedded (embed_multiplication = false)
 	VEC<ReIm3> F2;
 
@@ -79,7 +83,7 @@ protected:
 
 	//-------------------------- CONFIGURATION
 
-	BError SetConvolutionDimensions(SZ3 n_, DBL3 h_, bool embed_multiplication_ = true);
+	BError SetConvolutionDimensions(SZ3 n_, DBL3 h_, bool embed_multiplication_ = true, INT3 pbc_images = INT3());
 
 	//zero fftw memory
 	void zero_fft_lines(void);

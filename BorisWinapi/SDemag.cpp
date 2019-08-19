@@ -10,7 +10,7 @@
 SDemag::SDemag(SuperMesh *pSMesh_) :
 	Modules(),
 	Convolution<DemagKernel>(),
-	ProgramStateNames(this, { VINFO(use_multilayered_convolution), VINFO(n_common), VINFO(use_default_n), VINFO(force_2d_convolution) }, {})
+	ProgramStateNames(this, { VINFO(use_multilayered_convolution), VINFO(n_common), VINFO(use_default_n), VINFO(force_2d_convolution), VINFO(demag_pbc_images) }, {})
 {
 	pSMesh = pSMesh_;
 
@@ -335,6 +335,15 @@ BError SDemag::Set_Default_n_status(bool status)
 	return error;
 }
 
+//Set PBC images for supermesh demag
+void SDemag::Set_PBC(INT3 demag_pbc_images_)
+{
+	demag_pbc_images = demag_pbc_images_;
+
+	//update will be needed if pbc settings have changed
+	UpdateConfiguration();
+}
+
 //-------------------Abstract base class method implementations
 
 BError SDemag::Initialize(void)
@@ -438,11 +447,11 @@ BError SDemag::Initialize(void)
 				//h_convolution may differ from h_common in 2D mode
 				DBL3 h_convolution = Rect_collection[idx] / n_common;
 
-				if (!pSDemag_Demag[idx]->CheckDimensions(n_common, h_convolution)) {
+				if (!pSDemag_Demag[idx]->CheckDimensions(n_common, h_convolution, demag_pbc_images)) {
 
 					//set convolution dimensions using the common discretisation
 					//kernel collection must be used without multiplcation embedding. Calling this also sets full sizes for S and S2 scratch spaces.
-					error = pSDemag_Demag[idx]->SetDimensions(n_common, h_convolution, false);
+					error = pSDemag_Demag[idx]->SetDimensions(n_common, h_convolution, false, demag_pbc_images);
 					if (error) return error;
 				}
 
@@ -550,10 +559,10 @@ BError SDemag::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 		//for super-mesh convolution just need a single convolution and sm_Vals to be sized correctly
 
 		//only need to uninitialize if n_fm or h_fm have changed
-		if (!CheckDimensions(pSMesh->n_fm, pSMesh->h_fm) || cfgMessage == UPDATECONFIG_FORCEUPDATE) {
+		if (!CheckDimensions(pSMesh->n_fm, pSMesh->h_fm, demag_pbc_images) || cfgMessage == UPDATECONFIG_FORCEUPDATE) {
 
 			Uninitialize();
-			error = SetDimensions(pSMesh->n_fm, pSMesh->h_fm);
+			error = SetDimensions(pSMesh->n_fm, pSMesh->h_fm, true, demag_pbc_images);
 
 			if (!sm_Vals.resize(pSMesh->h_fm, pSMesh->sMeshRect_fm)) return error(BERROR_OUTOFMEMORY_CRIT);
 		}

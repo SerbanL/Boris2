@@ -16,6 +16,8 @@ __global__ void RunABM_Predictor_withReductions_Kernel(ManagedDiffEqCUDA& cuDiff
 
 	cuReal dT = *cuDiffEq.pdT;
 
+	cuReal mxh = 0.0;
+
 	if (idx < cuMesh.pM->linear_size()) {
 
 		if (cuMesh.pM->is_not_empty(idx)) {
@@ -27,13 +29,7 @@ __global__ void RunABM_Predictor_withReductions_Kernel(ManagedDiffEqCUDA& cuDiff
 
 				//obtain maximum normalized torque term
 				cuReal Mnorm = (*cuMesh.pM)[idx].norm();
-				cuReal mxh = cu_GetMagnitude((*cuMesh.pM)[idx] ^ (*cuMesh.pHeff)[idx]) / (Mnorm * Mnorm);
-
-				//only reduce for mxh if grel is not zero (if it's zero this means magnetisation dynamics is disabled in this mesh)
-				if (cuMesh.pgrel->get0()) {
-
-					reduction_max(0, 1, &mxh, *cuDiffEq.pmxh);
-				}
+				mxh = cu_GetMagnitude((*cuMesh.pM)[idx] ^ (*cuMesh.pHeff)[idx]) / (Mnorm * Mnorm);
 
 				//First evaluate RHS of set equation at the current time step
 				cuReal3 rhs = (cuDiffEq.*(cuDiffEq.pODEFunc))(idx);
@@ -51,6 +47,12 @@ __global__ void RunABM_Predictor_withReductions_Kernel(ManagedDiffEqCUDA& cuDiff
 				}
 			}
 		}
+	}
+
+	//only reduce for mxh if grel is not zero (if it's zero this means magnetisation dynamics is disabled in this mesh)
+	if (cuMesh.pgrel->get0()) {
+
+		reduction_max(0, 1, &mxh, *cuDiffEq.pmxh);
 	}
 }
 
@@ -94,6 +96,9 @@ __global__ void RunABM_Corrector_withReductions_Kernel(ManagedDiffEqCUDA& cuDiff
 
 	cuReal dT = *cuDiffEq.pdT;
 
+	cuReal dmdt = 0.0;
+	cuReal lte = 0.0;
+
 	if (idx < cuMesh.pM->linear_size()) {
 
 		if (cuMesh.pM->is_not_empty(idx)) {
@@ -125,17 +130,10 @@ __global__ void RunABM_Corrector_withReductions_Kernel(ManagedDiffEqCUDA& cuDiff
 
 				//obtain maximum normalized dmdt term
 				cuReal Mnorm = (*cuMesh.pM)[idx].norm();
-				cuReal dmdt = cu_GetMagnitude((*cuMesh.pM)[idx] - (*cuDiffEq.psM1)[idx]) / (dT * (cuReal)GAMMA * Mnorm * Mnorm);
-
-				//only reduce for dmdt if grel is not zero (if it's zero this means magnetisation dynamics is disabled in this mesh)
-				if (cuMesh.pgrel->get0()) {
-
-					reduction_max(0, 1, &dmdt, *cuDiffEq.pdmdt);
-				}
+				dmdt = cu_GetMagnitude((*cuMesh.pM)[idx] - (*cuDiffEq.psM1)[idx]) / (dT * (cuReal)GAMMA * Mnorm * Mnorm);
 
 				//local truncation error (between predicted and corrected)
-				cuReal lte = cu_GetMagnitude((*cuMesh.pM)[idx] - saveM) / (*cuMesh.pM)[idx].norm();
-				reduction_max(0, 1, &lte, *cuDiffEq.plte);
+				lte = cu_GetMagnitude((*cuMesh.pM)[idx] - saveM) / (*cuMesh.pM)[idx].norm();
 			}
 			else {
 
@@ -145,6 +143,14 @@ __global__ void RunABM_Corrector_withReductions_Kernel(ManagedDiffEqCUDA& cuDiff
 			}
 		}
 	}
+
+	//only reduce for dmdt if grel is not zero (if it's zero this means magnetisation dynamics is disabled in this mesh)
+	if (cuMesh.pgrel->get0()) {
+
+		reduction_max(0, 1, &dmdt, *cuDiffEq.pdmdt);
+	}
+
+	reduction_max(0, 1, &lte, *cuDiffEq.plte);
 }
 
 __global__ void RunABM_Corrector_Kernel(ManagedDiffEqCUDA& cuDiffEq, ManagedMeshCUDA& cuMesh)
@@ -152,6 +158,8 @@ __global__ void RunABM_Corrector_Kernel(ManagedDiffEqCUDA& cuDiffEq, ManagedMesh
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
 
 	cuReal dT = *cuDiffEq.pdT;
+
+	cuReal lte = 0.0;
 
 	if (idx < cuMesh.pM->linear_size()) {
 
@@ -183,8 +191,7 @@ __global__ void RunABM_Corrector_Kernel(ManagedDiffEqCUDA& cuDiffEq, ManagedMesh
 				}
 
 				//local truncation error (between predicted and corrected)
-				cuReal lte = cu_GetMagnitude((*cuMesh.pM)[idx] - saveM) / (*cuMesh.pM)[idx].norm();
-				reduction_max(0, 1, &lte, *cuDiffEq.plte);
+				lte = cu_GetMagnitude((*cuMesh.pM)[idx] - saveM) / (*cuMesh.pM)[idx].norm();
 			}
 			else {
 
@@ -194,6 +201,8 @@ __global__ void RunABM_Corrector_Kernel(ManagedDiffEqCUDA& cuDiffEq, ManagedMesh
 			}
 		}
 	}
+
+	reduction_max(0, 1, &lte, *cuDiffEq.plte);
 }
 
 __global__ void RunABMTEuler_Step0_Kernel(ManagedDiffEqCUDA& cuDiffEq, ManagedMeshCUDA& cuMesh)

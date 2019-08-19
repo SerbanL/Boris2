@@ -417,6 +417,11 @@ public:
 	//check if interface conductance is enabled (for spin transport solver)
 	bool GInterface_Enabled(void) { return (DBL2(Gi).norm() > 0); }
 
+	//are periodic boundary conditions set for magnetization?
+	bool Is_PBC_x(void) { return M.is_pbc_x(); }
+	bool Is_PBC_y(void) { return M.is_pbc_y(); }
+	bool Is_PBC_z(void) { return M.is_pbc_z(); }
+
 	//----------------------------------- VALUE GETTERS
 
 	//get energy value for given module or one of its exclusive modules (if none active return 0); call it with MOD_ALL to return total energy density in this mesh.
@@ -506,6 +511,9 @@ public:
 	//Invert magnetisation direction in given mesh (must be ferromagnetic)
 	virtual void SetInvertedMagnetisation(void) {}
 
+	//Set random magentisation distribution in given mesh (must be ferromagnetic)
+	virtual void SetRandomMagnetisation(void) {}
+
 	//set a domain wall with given width (metric units) at position within mesh (metric units). 
 	//Longitudinal and transverse are magnetisation componets as: 1: x, 2: y, 3: z, 1: -x, 2: -y, 3: -z
 	virtual void SetMagnetisationDomainWall(int longitudinal, int transverse, double width, double position) {}
@@ -518,6 +526,11 @@ public:
 
 	//set M from given data VEC (0 values mean empty points) -> stretch data to M dimensions if needed.
 	virtual void SetMagnetisationFromData(VEC<DBL3>& data) {}
+
+	//set periodic boundary conditions for magnetization
+	virtual void Set_PBC_X(int pbc_x) {}
+	virtual void Set_PBC_Y(int pbc_y) {}
+	virtual void Set_PBC_Z(int pbc_z) {}
 
 	//----------------------------------- MODULE METHODS TEMPLATED CALLERS
 

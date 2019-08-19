@@ -328,6 +328,12 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 	}
 	break;
 
+	case IOI_MESH_FORPBC:
+	{
+		display_meshIO(&Simulation::Build_PBC_ListLine);
+	}
+	break;
+
 	//Shows mesh rectangle (units m) : minorId is the unique mesh id number, textId is the mesh rectangle
 	case IOI_MESHRECTANGLE:
 	{
@@ -1962,6 +1968,117 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 			iop.auxId = cpuMemTotal_MB;
 			pTO->set(" " + ToString(iop.auxId) + " ");
 			stateChanged = true;
+		}
+	}
+	break;
+
+	//Shows PBC setting. minorId is the unique mesh id number, auxId is the pbc images number (0 disables pbc; -1 means setting is not available) (must be ferromagnetic mesh)
+	case IOI_PBC_X:
+	{
+		int meshId = iop.minorId;
+		int images = iop.auxId;
+
+		int meshIdx = SMesh.contains_id(meshId);
+
+		if (meshIdx >= 0) {
+
+			if (images >= 0 && (!SMesh[meshIdx]->Magnetisation_Enabled() || !SMesh[meshIdx]->IsModuleSet(MOD_DEMAG))) {
+
+				pTO->SetBackgroundColor(UNAVAILABLECOLOR);
+				pTO->set(" N/A ");
+				stateChanged = true;
+				iop.auxId = -1;
+			}
+			else if (SMesh[meshIdx]->IsModuleSet(MOD_DEMAG) && reinterpret_cast<Demag*>(SMesh[meshIdx]->GetModule(MOD_DEMAG))->Get_PBC().x != images) {
+
+				iop.auxId = SMesh[meshIdx]->CallModuleMethod(&Demag::Get_PBC).x;
+
+				if (iop.auxId > 0) {
+
+					pTO->SetBackgroundColor(ONCOLOR);
+				}
+				else {
+
+					pTO->SetBackgroundColor(OFFCOLOR);
+				}
+
+				pTO->set(" " + ToString(iop.auxId) + " ");
+				stateChanged = true;
+			}
+		}
+	}
+	break;
+
+	//Shows PBC setting. minorId is the unique mesh id number, auxId is the pbc images number (0 disables pbc; -1 means setting is not available) (must be ferromagnetic mesh)
+	case IOI_PBC_Y:
+	{
+		int meshId = iop.minorId;
+		int images = iop.auxId;
+
+		int meshIdx = SMesh.contains_id(meshId);
+
+		if (meshIdx >= 0) {
+
+			if (images >= 0 && (!SMesh[meshIdx]->Magnetisation_Enabled() || !SMesh[meshIdx]->IsModuleSet(MOD_DEMAG))) {
+
+				pTO->SetBackgroundColor(UNAVAILABLECOLOR);
+				pTO->set(" N/A ");
+				stateChanged = true;
+				iop.auxId = -1;
+			}
+			else if (SMesh[meshIdx]->IsModuleSet(MOD_DEMAG) && reinterpret_cast<Demag*>(SMesh[meshIdx]->GetModule(MOD_DEMAG))->Get_PBC().y != images) {
+
+				iop.auxId = SMesh[meshIdx]->CallModuleMethod(&Demag::Get_PBC).y;
+
+				if (iop.auxId > 0) {
+
+					pTO->SetBackgroundColor(ONCOLOR);
+				}
+				else {
+
+					pTO->SetBackgroundColor(OFFCOLOR);
+				}
+
+				pTO->set(" " + ToString(iop.auxId) + " ");
+				stateChanged = true;
+			}
+		}
+	}
+	break;
+
+	//Shows PBC setting. minorId is the unique mesh id number, auxId is the pbc images number (0 disables pbc; -1 means setting is not available) (must be ferromagnetic mesh)
+	case IOI_PBC_Z:
+	{
+		int meshId = iop.minorId;
+		int images = iop.auxId;
+
+		int meshIdx = SMesh.contains_id(meshId);
+
+		if (meshIdx >= 0) {
+
+			if (images >= 0 && (!SMesh[meshIdx]->Magnetisation_Enabled() || !SMesh[meshIdx]->IsModuleSet(MOD_DEMAG))) {
+
+				pTO->SetBackgroundColor(UNAVAILABLECOLOR);
+				pTO->set(" N/A ");
+				stateChanged = true;
+				iop.auxId = -1;
+			}
+			else if (SMesh[meshIdx]->IsModuleSet(MOD_DEMAG) && reinterpret_cast<Demag*>(SMesh[meshIdx]->GetModule(MOD_DEMAG))->Get_PBC().z != images) {
+
+				iop.auxId = SMesh[meshIdx]->CallModuleMethod(&Demag::Get_PBC).z;
+
+				if (iop.auxId > 0) {
+
+					pTO->SetBackgroundColor(ONCOLOR);
+				}
+				else {
+
+					pTO->SetBackgroundColor(OFFCOLOR);
+				}
+
+				pTO->set(" " + ToString(iop.auxId) + " ");
+				stateChanged = true;
+			}
 		}
 	}
 	break;

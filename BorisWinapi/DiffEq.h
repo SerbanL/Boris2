@@ -184,10 +184,12 @@ private:
 	bool SetAdaptiveTimeStep(void);
 	//Adaptive time step using a single error threshold -> above it fail; adjust step based on max_error / error ratio.
 	bool SetAdaptiveTimeStep_SingleThreshold(void);
+	bool SetAdaptiveTimeStep_SingleThreshold2(void);
 
 #if COMPILECUDA == 1
 	bool SetAdaptiveTimeStepCUDA(void);
 	bool SetAdaptiveTimeStepCUDA_SingleThreshold(void);
+	bool SetAdaptiveTimeStepCUDA_SingleThreshold2(void);
 #endif
 
 public:
@@ -288,11 +290,8 @@ private: //private data
 	//Used to save starting magnetization - all evaluation methods do this, even when not needed by the method itself, so we can calculate dM/dt when needed.
 	VEC<DBL3> sM1;
 
-	//Used for RK4 (0, 1, 2); ABM (0, 1); RK23 (0, 1, 2); SD (0)
-	VEC<DBL3> sEval0, sEval1, sEval2;
-
-	//Additional for use with RKF45
-	VEC<DBL3> sEval3, sEval4;
+	//evalution scratch spaces
+	VEC<DBL3> sEval0, sEval1, sEval2, sEval3, sEval4, sEval5;
 
 	//Thermal field and torques, enabled only for the stochastic equations
 	VEC<DBL3> H_Thermal, Torque_Thermal;
@@ -349,6 +348,7 @@ private: //private methods
 	//RK23
 	void RunRK23_Step0_withReductions(void);
 	void RunRK23_Step0(void);
+	void RunRK23_Step0_Advance(void);
 	void RunRK23_Step1(void);
 	void RunRK23_Step2_withReductions(void);
 	void RunRK23_Step2(void);
@@ -374,6 +374,31 @@ private: //private methods
 	void RunRKF45_Step4(void);
 	void RunRKF45_Step5_withReductions(void);
 	void RunRKF45_Step5(void);
+#endif
+
+#ifdef ODE_EVAL_RKCK
+	//RKCK45
+	void RunRKCK45_Step0_withReductions(void);
+	void RunRKCK45_Step0(void);
+	void RunRKCK45_Step1(void);
+	void RunRKCK45_Step2(void);
+	void RunRKCK45_Step3(void);
+	void RunRKCK45_Step4(void);
+	void RunRKCK45_Step5_withReductions(void);
+	void RunRKCK45_Step5(void);
+#endif
+
+#ifdef ODE_EVAL_RKDP
+	//RKDP54
+	void RunRKDP54_Step0_withReductions(void);
+	void RunRKDP54_Step0(void);
+	void RunRKDP54_Step0_Advance(void);
+	void RunRKDP54_Step1(void);
+	void RunRKDP54_Step2(void);
+	void RunRKDP54_Step3(void);
+	void RunRKDP54_Step4(void);
+	void RunRKDP54_Step5_withReductions(void);
+	void RunRKDP54_Step5(void);
 #endif
 
 #ifdef ODE_EVAL_SD

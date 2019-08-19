@@ -4,6 +4,9 @@
 //Compute in Ddiag the diagonal tensor elements (Dxx, Dyy, Dzz) which has sizes given by N. This applies for irregular cells, specifically for 2D with s.z and d.z allowed to differ; s.x, d.x resp s.y, d.y must be the same.
 bool DemagTFunc::CalcDiagTens2D_Shifted_Irregular(VEC<DBL3> &Ddiag, INT3 n, INT3 N, DBL3 s, DBL3 d, DBL3 shift, bool minus)
 {
+	//zero the tensor first
+	Ddiag.set(DBL3());
+
 	//only use irregular version if you have to
 	if (s == d) return CalcDiagTens2D_Shifted(Ddiag, n, N, s, shift, minus);
 
@@ -76,6 +79,9 @@ bool DemagTFunc::CalcDiagTens2D_Shifted_Irregular(VEC<DBL3> &Ddiag, INT3 n, INT3
 //Compute in Dodiag the off-diagonal tensor elements (Dxy, Dxz, Dyz) which has sizes given by N. This applies for irregular cells, specifically for 2D with s.z and d.z allowed to differ; s.x, d.x resp s.y, d.y must be the same.
 bool DemagTFunc::CalcOffDiagTens2D_Shifted_Irregular(VEC<DBL3> &Dodiag, INT3 n, INT3 N, DBL3 s, DBL3 d, DBL3 shift, bool minus)
 {
+	//zero the tensor first
+	Dodiag.set(DBL3());
+
 	//only use irregular version if you have to
 	if (s == d) return CalcOffDiagTens2D_Shifted(Dodiag, n, N, s, shift, minus);
 

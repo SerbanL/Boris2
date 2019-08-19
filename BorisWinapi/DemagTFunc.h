@@ -8,6 +8,11 @@
 
 /////////////////////////////////////////// EXACT NEWELL FORMULAS FOR SHORT DISTANCES
 
+//default number of images to use for pbc calculations
+#define PBC_X_IMAGES	10
+#define PBC_Y_IMAGES	10
+#define PBC_Z_IMAGES	10
+
 class DemagTFunc {
 
 private:
@@ -142,6 +147,29 @@ public:
 
 	//Compute in Dodiag the off-diagonal tensor elements (Dxy only) which has sizes given by N. 
 	bool CalcOffDiagTens2D(std::vector<double> &Dodiag, INT3 n, INT3 N, DBL3 hRatios, bool minus = true, int asymptotic_distance = ASYMPTOTIC_DISTANCE);
+
+	//---------------------ZERO SHIFT VERSION (FOR INTERNAL FIELD) WITH PBC
+
+	//3D
+
+	//Logical mesh dimensions N (this must be a power of 2).
+	//Need cellsize hRatios -> these can be normalized (e.g. to have largest value 1)
+	//pbc conditions are applied for directions with non-zero number of images below; if number of images are zero in a dimension, the tensor coefficients are calculated without pbc
+	//These versions reduce to the non-pbc versions (almost) if all images are set to zero, but less readable so prefer to keep separate versions.
+
+	//Compute in Ddiag the diagonal tensor elements (Dxx, Dyy, Dzz) which has sizes given by N.
+	bool CalcDiagTens3D_PBC(VEC<DBL3> &Ddiag, INT3 N, DBL3 hRatios, bool minus = true, int asymptotic_distance = ASYMPTOTIC_DISTANCE, int x_images = PBC_X_IMAGES, int y_images = PBC_Y_IMAGES, int z_images = PBC_Z_IMAGES);
+
+	//Compute in Dodiag the off-diagonal tensor elements (Dxy, Dxz, Dyz) which has sizes given by N. 
+	bool CalcOffDiagTens3D_PBC(VEC<DBL3> &Dodiag, INT3 N, DBL3 hRatios, bool minus = true, int asymptotic_distance = ASYMPTOTIC_DISTANCE, int x_images = PBC_X_IMAGES, int y_images = PBC_Y_IMAGES, int z_images = PBC_Z_IMAGES);
+
+	//2D
+
+	//Compute in Ddiag the diagonal tensor elements (Dxx, Dyy, Dzz) which has sizes given by N.
+	bool CalcDiagTens2D_PBC(VEC<DBL3> &Ddiag, INT3 N, DBL3 hRatios, bool minus = true, int asymptotic_distance = ASYMPTOTIC_DISTANCE, int x_images = PBC_X_IMAGES, int y_images = PBC_Y_IMAGES, int z_images = PBC_Z_IMAGES);
+
+	//Compute in Dodiag the off-diagonal tensor elements (Dxy, Dxz, Dyz) which has sizes given by N. 
+	bool CalcOffDiagTens2D_PBC(std::vector<double> &Dodiag, INT3 N, DBL3 hRatios, bool minus = true, int asymptotic_distance = ASYMPTOTIC_DISTANCE, int x_images = PBC_X_IMAGES, int y_images = PBC_Y_IMAGES, int z_images = PBC_Z_IMAGES);
 
 	//---------------------SHIFTED VERSIONS
 

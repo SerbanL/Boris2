@@ -93,12 +93,12 @@ protected:
 	//-------------------------- CONFIGURATION
 
 	//This methods sets all values from and h, including allocating memory - call this before initializing kernels or doing any convolutions
-	BError SetDimensions(SZ3 n_, DBL3 h_, bool multiplication_embedding_ = true);
+	BError SetDimensions(SZ3 n_, DBL3 h_, bool multiplication_embedding_ = true, INT3 pbc_images_ = INT3());
 
 	//-------------------------- CHECK
 
-	//return true only if both n_ and h_ match the current FFT dimensions (n and h)
-	bool CheckDimensions(SZ3 n_, DBL3 h_) { return (n == n_ && h == h_); }
+	//return true only if both n_ and h_ match the current FFT dimensions (n and h); also number of pbc images must match
+	bool CheckDimensions(SZ3 n_, DBL3 h_, INT3 pbc_images_) { return (n == n_ && h == h_ && pbc_images == pbc_images_); }
 
 	//-------------------------- RUN-TIME CONVOLUTION
 
@@ -167,11 +167,11 @@ protected:
 //-------------------------- CONFIGURATION
 
 template <typename Kernel>
-BError Convolution<Kernel>::SetDimensions(SZ3 n_, DBL3 h_, bool multiplication_embedding_)
+BError Convolution<Kernel>::SetDimensions(SZ3 n_, DBL3 h_, bool multiplication_embedding_, INT3 pbc_images_)
 {
 	BError error(__FUNCTION__);
 
-	error = SetConvolutionDimensions(n_, h_, multiplication_embedding_);
+	error = SetConvolutionDimensions(n_, h_, multiplication_embedding_, pbc_images_);
 	if (!error) error = AllocateKernelMemory();
 
 	return error;

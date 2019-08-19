@@ -187,14 +187,8 @@ protected:
 	void KernelMultiplication_2D(std::vector<VEC<ReIm3>*>& Incol, VEC<ReIm3>& Out);
 	void KernelMultiplication_3D(std::vector<VEC<ReIm3>*>& Incol, VEC<ReIm3>& Out);
 
-	//kernel multiplications for a single line : used for embedding
-
-	//multiply kernels in line along y direction (so use stride of (N.x/2 + 1) to read from kernels), starting at given i index (this must be an index in the first x row)
-	//not used for demag kernel collection
+	//kernel multiplications for a single line : used for embedding. Not used by DemagKernelCollection.
 	void KernelMultiplication_2D_line(ReIm3* pline, int i) {}
-
-	//multiply kernels in line along z direction (so use stride of (N.x/2 + 1) * N.y to read from kernels), starting at given i and j indexes (these must be an indexes in the first xy plane)
-	//not used for demag kernel collection
 	void KernelMultiplication_3D_line(ReIm3* pline, int i, int j) {}
 };
 

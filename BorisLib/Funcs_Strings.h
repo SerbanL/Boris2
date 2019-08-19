@@ -2,11 +2,35 @@
 
 #include <string>
 #include <vector>
+#include <cctype>
+#include <algorithm>
 
 #include "Funcs_Vectors.h"
 
 ///////////////////////////////////////////////////////////////////////////////
 //STRINGS
+
+//from text return a new string with lowercase only
+inline std::string lowercase(const std::string& text)
+{
+	std::string text_lowercase = text;
+
+	std::transform(text_lowercase.begin(), text_lowercase.end(), text_lowercase.begin(),
+		[](unsigned char c) { return std::tolower(c); });
+
+	return text_lowercase;
+}
+
+//from text return a new string with uppercase only
+inline std::string uppercase(const std::string& text)
+{
+	std::string text_uppercase = text;
+
+	std::transform(text_uppercase.begin(), text_uppercase.end(), text_uppercase.begin(),
+		[](unsigned char c) { return std::toupper(c); });
+
+	return text_uppercase;
+}
 
 //remove all match substring - variants for a single match std::string (and in particular a dedicated function for spaces)
 inline std::string trim(std::string text, const std::string& match)

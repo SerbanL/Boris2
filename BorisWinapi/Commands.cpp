@@ -608,6 +608,25 @@ void Simulation::HandleCommand(string command_string) {
 		}
 		break;
 
+		case CMD_RANDOM:
+		{
+			string meshName;
+
+			error = commandSpec.GetParameters(command_fields, meshName);
+			if (error == BERROR_PARAMMISMATCH) { error.reset(); meshName = SMesh.GetMeshFocus(); }
+
+			if (!error) {
+
+				if (!err_hndl.qcall(&SuperMesh::SetRandomMagnetisation, &SMesh, meshName)) {
+
+					UpdateScreen();
+				}
+
+			}
+			else if (verbose) PrintCommandUsage(command_name);
+		}
+		break;
+
 		case CMD_INVERTMAG:
 		{
 			string meshName;
@@ -706,6 +725,27 @@ void Simulation::HandleCommand(string command_string) {
 				}
 			}
 			else if (verbose) PrintCommandUsage(command_name);
+		}
+		break;
+
+		case CMD_PBC:
+		{
+			string meshName;
+			string flag;
+			int images;
+
+			error = commandSpec.GetParameters(command_fields, meshName, flag, images);
+
+			if (!error) {
+
+				StopSimulation();
+
+				if (!err_hndl.qcall(&SuperMesh::Set_PBC, &SMesh, meshName, flag, images)) {
+
+					UpdateScreen();
+				}
+			}
+			else if (verbose) Print_PBC();
 		}
 		break;
 
@@ -2943,6 +2983,57 @@ void Simulation::HandleCommand(string command_string) {
 					}
 					else if (verbose) BD.DisplayConsoleError("Focused mesh must be ferromagnetic.");
 				}
+			}
+			else if (verbose) PrintCommandUsage(command_name);
+		}
+		break;
+
+		case CMD_SAVEOVF2MAG:
+		{
+			string parameters;
+
+			error = commandSpec.GetParameters(command_fields, parameters);
+
+			if (!error) {
+
+				if (SMesh.active_mesh()->Magnetisation_Enabled()) {
+
+					bool normalize = false;
+					string data_type = "bin8";
+					string fileName;
+
+					vector<string> fields = split(parameters, " ");
+
+					int oparams = 0;
+
+					if (fields[0] == "n" || fields[0] == "bin4" || fields[0] == "bin8" || fields[0] == "text") {
+
+						oparams++;
+
+						if (fields[0] == "n") normalize = true;
+						else data_type = fields[0];
+					}
+
+					if (fields.size() > 1 && (fields[1] == "bin4" || fields[1] == "bin8" || fields[1] == "text")) {
+
+						oparams++;
+						data_type = fields[1];
+					}
+
+					fileName = combine(subvec(fields, oparams), " ");
+
+					if (GetFileTermination(fileName) != ".ovf")
+						fileName += ".ovf";
+
+					if (!GetFilenameDirectory(fileName).length()) fileName = directory + fileName;
+
+					double Ms0 = SMesh.active_mesh()->Ms.get0();
+					if (!normalize) Ms0 = 1.0;
+
+					OVF2 ovf2;
+					error = ovf2.Write_OVF2_VEC(fileName, SMesh.active_mesh()->M, Ms0, data_type);
+				}
+				else if (verbose) BD.DisplayConsoleError("Focused mesh must be ferromagnetic.");
 			}
 			else if (verbose) PrintCommandUsage(command_name);
 		}

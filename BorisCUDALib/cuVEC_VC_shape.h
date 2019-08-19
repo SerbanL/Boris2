@@ -158,6 +158,7 @@ __host__ void cuVEC_VC<VType>::clear(void)
 
 	set_gpu_value(pbc_x, (int)0);
 	set_gpu_value(pbc_y, (int)0);
+	set_gpu_value(pbc_z, (int)0);
 }
 
 //--------------------------------------------MULTIPLE ENTRIES SETTERS - SHAPE CHANGERS

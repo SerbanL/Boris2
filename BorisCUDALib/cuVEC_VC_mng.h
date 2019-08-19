@@ -46,6 +46,7 @@ __host__ void cuVEC_VC<VType>::alloc_initialize_data(void)
 
 	set_gpu_value(pbc_x, (int)0);
 	set_gpu_value(pbc_y, (int)0);
+	set_gpu_value(pbc_z, (int)0);
 
 }
 
@@ -422,6 +423,7 @@ __host__ void cuVEC_VC<VType>::assign_cu_obj(const cuVEC_VC<VType>& copyThis)
 	//copy pbc settings
 	gpu_go_gpu(pbc_x, copyThis.pbc_x);
 	gpu_go_gpu(pbc_y, copyThis.pbc_y);
+	gpu_go_gpu(pbc_z, copyThis.pbc_z);
 }
 
 //destructor
@@ -613,6 +615,7 @@ __host__ bool cuVEC_VC<VType>::set_from_cpuvec(cpuVEC_VC& vec_vc)
 	//copy pbc parameters
 	set_gpu_value(pbc_x, (int)vec_vc.pbc_x_ref());
 	set_gpu_value(pbc_y, (int)vec_vc.pbc_y_ref());
+	set_gpu_value(pbc_z, (int)vec_vc.pbc_z_ref());
 
 	return true;
 }
@@ -735,6 +738,7 @@ __host__ bool cuVEC_VC<VType>::set_cpuvec(cpuVEC_VC& vec_vc)
 	//copy pbc parameters
 	vec_vc.pbc_x_ref() = get_gpu_value(pbc_x);
 	vec_vc.pbc_y_ref() = get_gpu_value(pbc_y);
+	vec_vc.pbc_z_ref() = get_gpu_value(pbc_z);
 
 	return true;
 }
@@ -756,6 +760,7 @@ __host__ bool cuVEC_VC<VType>::copy_from_cpuvec(cpuVEC_VC& vec_vc)
 	//copy pbc parameters
 	set_gpu_value(pbc_x, (int)vec_vc.pbc_x_ref());
 	set_gpu_value(pbc_y, (int)vec_vc.pbc_y_ref());
+	set_gpu_value(pbc_z, (int)vec_vc.pbc_z_ref());
 
 	//now copy ngbrFlags
 	cudaError_t error = cpu_to_gpu_managed(ngbrFlags, vec_vc.ngbrFlags_ref().data(), vec_vc.linear_size());
@@ -780,6 +785,7 @@ __host__ bool cuVEC_VC<VType>::copy_to_cpuvec(cpuVEC_VC& vec_vc)
 	//copy pbc parameters
 	vec_vc.pbc_x_ref() = get_gpu_value(pbc_x);
 	vec_vc.pbc_y_ref() = get_gpu_value(pbc_y);
+	vec_vc.pbc_z_ref() = get_gpu_value(pbc_z);
 
 	//now copy ngbrFlags
 	cudaError_t error = gpu_to_cpu_managed(vec_vc.ngbrFlags_ref().data(), ngbrFlags, vec_vc.linear_size());

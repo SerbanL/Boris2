@@ -29,7 +29,7 @@ class SuperMesh;
 class SDemag :
 	public Modules,
 	public Convolution<DemagKernel>,
-	public ProgramState<SDemag, tuple<bool, SZ3, bool, bool>, tuple<>>
+	public ProgramState<SDemag, tuple<bool, SZ3, bool, bool, INT3>, tuple<>>
 {
 #if COMPILECUDA == 1
 	friend SDemagCUDA;
@@ -91,6 +91,11 @@ private:
 
 	//if set to true then always use 2D multi-layered convolution irrespective of how the individual meshes are discretised
 	bool force_2d_convolution = false;
+
+	//number of pbc images in each dimension (set to zero to disable).
+	//There is also a copy of this in ConvolutionData inherited from Convolution - we need another copy here to detect changes
+	//these pbc images are applicable for supermesh or multilayered convolution only - in the case of multilayered convolution all meshes have the same pbc conditions applied.
+	INT3 demag_pbc_images = INT3();
 
 private:
 
@@ -166,9 +171,15 @@ public:
 	//set status for use_default_n
 	BError Set_Default_n_status(bool status);
 
+	//Set PBC images for supermesh demag
+	void Set_PBC(INT3 demag_pbc_images_);
+
 	//-------------------Getters
 
 	VEC<DBL3>& GetDemagField(void) { return sm_Vals; }
+
+	//Get PBC images for supermesh demag
+	INT3 Get_PBC(void) { return demag_pbc_images; }
 
 #if COMPILECUDA == 1
 	cu_obj<cuVEC<cuReal3>>& GetDemagFieldCUDA(void) { return reinterpret_cast<SDemagCUDA*>(pModuleCUDA)->GetDemagField(); }

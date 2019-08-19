@@ -5,24 +5,30 @@
 
 //-------------------------- MEMORY ALLOCATION
 
+void DemagKernel::FreeAllKernelMemory(void)
+{
+	K2D_odiag.clear();
+	K2D_odiag.shrink_to_fit();
+
+	Kdiag.clear();
+	Kodiag.clear();
+}
+
 BError DemagKernel::AllocateKernelMemory(void)
 {
 	BError error(__FUNCTION__);
 
+	FreeAllKernelMemory();
+
 	if (n.z == 1) {
 
 		//2D
-		Kodiag.clear();
-
 		if (!Kdiag.resize(SZ3(N.x / 2 + 1, N.y / 2 + 1, 1))) return error(BERROR_OUTOFMEMORY_CRIT);
 		if (!malloc_vector(K2D_odiag, (N.x / 2 + 1) * (N.y / 2 + 1))) return error(BERROR_OUTOFMEMORY_CRIT);
 	}
 	else {
 
 		//3D
-		K2D_odiag.clear();
-		K2D_odiag.shrink_to_fit();
-
 		if (!Kdiag.resize(SZ3(N.x / 2 + 1, N.y / 2 + 1, N.z / 2 + 1))) return error(BERROR_OUTOFMEMORY_CRIT);
 		if (!Kodiag.resize(SZ3(N.x / 2 + 1, N.y / 2 + 1, N.z / 2 + 1))) return error(BERROR_OUTOFMEMORY_CRIT);
 	}
@@ -184,10 +190,20 @@ BError DemagKernel::Calculate_Demag_Kernels_2D(bool include_self_demag)
 
 	//use ratios instead of cellsizes directly - same result but better in terms of floating point errors
 	DemagTFunc dtf;
-
-	if (!dtf.CalcDiagTens2D(Ddiag, n, N, h / maximum(h.x, h.y, h.z), include_self_demag)) return error(BERROR_OUTOFMEMORY_NCRIT);
-	if (!dtf.CalcOffDiagTens2D(Dodiag, n, N, h / maximum(h.x, h.y, h.z))) return error(BERROR_OUTOFMEMORY_NCRIT);
 	
+	if (pbc_images.IsNull()) {
+
+		//no pbcs in any dimension -> use these
+		if (!dtf.CalcDiagTens2D(Ddiag, n, N, h / maximum(h.x, h.y, h.z), include_self_demag)) return error(BERROR_OUTOFMEMORY_NCRIT);
+		if (!dtf.CalcOffDiagTens2D(Dodiag, n, N, h / maximum(h.x, h.y, h.z))) return error(BERROR_OUTOFMEMORY_NCRIT);
+	}
+	else {
+
+		//pbcs used in at least one dimension
+		if (!dtf.CalcDiagTens2D_PBC(Ddiag, N, h / maximum(h.x, h.y, h.z), true, ASYMPTOTIC_DISTANCE, pbc_images.x, pbc_images.y, pbc_images.z)) return error(BERROR_OUTOFMEMORY_NCRIT);
+		if (!dtf.CalcOffDiagTens2D_PBC(Dodiag, N, h / maximum(h.x, h.y, h.z), true, ASYMPTOTIC_DISTANCE, pbc_images.x, pbc_images.y, pbc_images.z)) return error(BERROR_OUTOFMEMORY_NCRIT);
+	}
+
 	//-------------- SETUP FFT
 
 	//setup fft object with fft computation lines
@@ -374,16 +390,32 @@ BError DemagKernel::Calculate_Demag_Kernels_3D(bool include_self_demag)
 	//-------------- CALCULATE DIAGONAL TENSOR ELEMENTS THEN TRANSFORM INTO KERNEL
 
 	//no need to pass the actual cellsize values, just normalized values will do
-	if (!dtf.CalcDiagTens3D(D, n, N, h / maximum(h.x, h.y, h.z), include_self_demag)) return error(BERROR_OUTOFMEMORY_NCRIT);
+
+	if (pbc_images.IsNull()) {
+
+		//no pbcs in any dimension -> use these
+		if (!dtf.CalcDiagTens3D(D, n, N, h / maximum(h.x, h.y, h.z), include_self_demag)) return error(BERROR_OUTOFMEMORY_NCRIT);
+	}
+	else {
+
+		//pbcs used in at least one dimension
+		if (!dtf.CalcDiagTens3D_PBC(D, N, h / maximum(h.x, h.y, h.z), true, ASYMPTOTIC_DISTANCE, pbc_images.x, pbc_images.y, pbc_images.z)) return error(BERROR_OUTOFMEMORY_NCRIT);
+	}
 	
 	tensor_to_kernel(D, Kdiag, false);
 
 	//-------------- CALCULATE OFF-DIAGONAL TENSOR ELEMENTS THEN TRANSFORM INTO KERNEL
 
-	//important to zero D before calculating new tensor elements
-	D.set(DBL3());
+	if (pbc_images.IsNull()) {
 
-	if (!dtf.CalcOffDiagTens3D(D, n, N, h / maximum(h.x, h.y, h.z))) return error(BERROR_OUTOFMEMORY_NCRIT);
+		//no pbcs in any dimension -> use these
+		if (!dtf.CalcOffDiagTens3D(D, n, N, h / maximum(h.x, h.y, h.z), include_self_demag)) return error(BERROR_OUTOFMEMORY_NCRIT);
+	}
+	else {
+
+		//pbcs used in at least one dimension
+		if (!dtf.CalcOffDiagTens3D_PBC(D, N, h / maximum(h.x, h.y, h.z), true, ASYMPTOTIC_DISTANCE, pbc_images.x, pbc_images.y, pbc_images.z)) return error(BERROR_OUTOFMEMORY_NCRIT);
+	}
 
 	tensor_to_kernel(D, Kodiag, true);
 

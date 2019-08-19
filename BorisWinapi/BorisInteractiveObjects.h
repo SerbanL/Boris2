@@ -35,6 +35,7 @@ enum IOI_
 	IOI_MESH_FORTEMPERATURE,
 	IOI_MESH_FORHEATBOUNDARIES,
 	IOI_MESH_FORCURIEANDMOMENT,
+	IOI_MESH_FORPBC,
 
 	//Shows ferromagnetic super-mesh rectangle (unit m) : textId is the mesh rectangle for the ferromagnetic super-mesh
 	IOI_FMSMESHRECTANGLE,
@@ -236,5 +237,10 @@ enum IOI_
 	IOI_ODEDTMIN,
 
 	//Shows maximum dT value. textId is the value.
-	IOI_ODEDTMAX
+	IOI_ODEDTMAX,
+
+	//Shows PBC setting for individual demag modules. minorId is the unique mesh id number, auxId is the pbc images number (0 disables pbc; -1 means setting is not available) (must be ferromagnetic mesh);
+	IOI_PBC_X,
+	IOI_PBC_Y,
+	IOI_PBC_Z
 };

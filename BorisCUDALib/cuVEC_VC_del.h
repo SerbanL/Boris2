@@ -14,7 +14,7 @@ __device__ VType cuVEC_VC<VType>::delsq_neu(int idx) const
 	if (!(ngbrFlags[idx] & NF_NOTEMPTY)) return VType();
 
 	//x axis
-	if (ngbrFlags[idx] & NF_BOTHX) {
+	if ((ngbrFlags[idx] & NF_BOTHX) == NF_BOTHX) {
 
 		//both neighbors available so must be an inner point along this direction
 		diff_x = (quantity[idx + 1] + quantity[idx - 1] - 2 * quantity[idx]);
@@ -54,7 +54,7 @@ __device__ VType cuVEC_VC<VType>::delsq_neu(int idx) const
 	diff_x /= (h.x*h.x);
 
 	//y axis
-	if (ngbrFlags[idx] & NF_BOTHY) {
+	if ((ngbrFlags[idx] & NF_BOTHY) == NF_BOTHY) {
 
 		diff_y = (quantity[idx + n.x] + quantity[idx - n.x] - 2 * quantity[idx]);
 	}
@@ -93,7 +93,7 @@ __device__ VType cuVEC_VC<VType>::delsq_neu(int idx) const
 	diff_y /= (h.y*h.y);
 
 	//z axis
-	if (ngbrFlags[idx] & NF_BOTHZ) {
+	if ((ngbrFlags[idx] & NF_BOTHZ) == NF_BOTHZ) {
 
 		diff_z = (quantity[idx + n.x*n.y] + quantity[idx - n.x*n.y] - 2 * quantity[idx]);
 	}
@@ -105,11 +105,27 @@ __device__ VType cuVEC_VC<VType>::delsq_neu(int idx) const
 
 		if (ngbrFlags[idx] & NF_NPZ) {
 
-			diff_z = (quantity[idx + n.x*n.y] - quantity[idx]);
+			//is it a pbc along z? If yes, then we are guaranteed to have a "neighbor" on the other side, so use it; otherwise apply boundary condition.
+			if (ngbrFlags[idx] & NF_PBCZ) {
+
+				diff_z = (quantity[idx + n.x*n.y] + quantity[idx + (n.z - 1) * n.x*n.y] - 2 * quantity[idx]);
+			}
+			else {
+
+				diff_z = (quantity[idx + n.x*n.y] - quantity[idx]);
+			}
 		}
 		else {
 
-			diff_z = (quantity[idx - n.x*n.y] - quantity[idx]);
+			//is it a pbc along z? If yes, then we are guaranteed to have a "neighbor" on the other side, so use it; otherwise apply boundary condition.
+			if (ngbrFlags[idx] & NF_PBCZ) {
+
+				diff_z = (quantity[idx - (n.z - 1) * n.x*n.y] + quantity[idx - n.x*n.y] - 2 * quantity[idx]);
+			}
+			else {
+
+				diff_z = (quantity[idx - n.x*n.y] - quantity[idx]);
+			}
 		}
 	}
 
@@ -130,7 +146,7 @@ __device__ VType cuVEC_VC<VType>::delsq_nneu(int idx, Class_BDiff& bdiff_class) 
 	if (!(ngbrFlags[idx] & NF_NOTEMPTY)) return VType();
 
 	//x axis
-	if (ngbrFlags[idx] & NF_BOTHX) {
+	if ((ngbrFlags[idx] & NF_BOTHX) == NF_BOTHX) {
 
 		//both neighbors available so must be an inner point along this direction
 		diff_x = (quantity[idx + 1] + quantity[idx - 1] - 2 * quantity[idx]);
@@ -172,7 +188,7 @@ __device__ VType cuVEC_VC<VType>::delsq_nneu(int idx, Class_BDiff& bdiff_class) 
 	diff_x /= (h.x*h.x);
 
 	//y axis
-	if (ngbrFlags[idx] & NF_BOTHY) {
+	if ((ngbrFlags[idx] & NF_BOTHY) == NF_BOTHY) {
 
 		diff_y = (quantity[idx + n.x] + quantity[idx - n.x] - 2 * quantity[idx]);
 	}
@@ -213,7 +229,7 @@ __device__ VType cuVEC_VC<VType>::delsq_nneu(int idx, Class_BDiff& bdiff_class) 
 	diff_y /= (h.y*h.y);
 
 	//z axis
-	if (ngbrFlags[idx] & NF_BOTHZ) {
+	if ((ngbrFlags[idx] & NF_BOTHZ) == NF_BOTHZ) {
 
 		diff_z = (quantity[idx + n.x*n.y] + quantity[idx - n.x*n.y] - 2 * quantity[idx]);
 	}
@@ -227,11 +243,27 @@ __device__ VType cuVEC_VC<VType>::delsq_nneu(int idx, Class_BDiff& bdiff_class) 
 
 		if (ngbrFlags[idx] & NF_NPZ) {
 
-			diff_z = (quantity[idx + n.x*n.y] - quantity[idx]) - bdiff_val.z * h.z;
+			//is it a pbc along z? If yes, then we are guaranteed to have a "neighbor" on the other side, so use it; otherwise apply boundary condition.
+			if (ngbrFlags[idx] & NF_PBCZ) {
+
+				diff_z = (quantity[idx + n.x*n.y] + quantity[idx + (n.z - 1) * n.x*n.y] - 2 * quantity[idx]);
+			}
+			else {
+
+				diff_z = (quantity[idx + n.x*n.y] - quantity[idx]) - bdiff_val.z * h.z;
+			}
 		}
 		else {
 
-			diff_z = (quantity[idx - n.x*n.y] - quantity[idx]) + bdiff_val.z * h.z;
+			//is it a pbc along z? If yes, then we are guaranteed to have a "neighbor" on the other side, so use it; otherwise apply boundary condition.
+			if (ngbrFlags[idx] & NF_PBCZ) {
+
+				diff_z = (quantity[idx - (n.z - 1) * n.x*n.y] + quantity[idx - n.x*n.y] - 2 * quantity[idx]);
+			}
+			else {
+
+				diff_z = (quantity[idx - n.x*n.y] - quantity[idx]) + bdiff_val.z * h.z;
+			}
 		}
 	}
 
@@ -249,7 +281,7 @@ __device__ VType cuVEC_VC<VType>::delsq_nneu(int idx, cuVAL3<VType>& bdiff) cons
 	if (!(ngbrFlags[idx] & NF_NOTEMPTY)) return VType();
 
 	//x axis
-	if (ngbrFlags[idx] & NF_BOTHX) {
+	if ((ngbrFlags[idx] & NF_BOTHX) == NF_BOTHX) {
 
 		//both neighbors available so must be an inner point along this direction
 		diff_x = (quantity[idx + 1] + quantity[idx - 1] - 2 * quantity[idx]);
@@ -289,7 +321,7 @@ __device__ VType cuVEC_VC<VType>::delsq_nneu(int idx, cuVAL3<VType>& bdiff) cons
 	diff_x /= (h.x*h.x);
 
 	//y axis
-	if (ngbrFlags[idx] & NF_BOTHY) {
+	if ((ngbrFlags[idx] & NF_BOTHY) == NF_BOTHY) {
 
 		diff_y = (quantity[idx + n.x] + quantity[idx - n.x] - 2 * quantity[idx]);
 	}
@@ -328,7 +360,7 @@ __device__ VType cuVEC_VC<VType>::delsq_nneu(int idx, cuVAL3<VType>& bdiff) cons
 	diff_y /= (h.y*h.y);
 
 	//z axis
-	if (ngbrFlags[idx] & NF_BOTHZ) {
+	if ((ngbrFlags[idx] & NF_BOTHZ) == NF_BOTHZ) {
 
 		diff_z = (quantity[idx + n.x*n.y] + quantity[idx - n.x*n.y] - 2 * quantity[idx]);
 	}
@@ -340,11 +372,27 @@ __device__ VType cuVEC_VC<VType>::delsq_nneu(int idx, cuVAL3<VType>& bdiff) cons
 
 		if (ngbrFlags[idx] & NF_NPZ) {
 
-			diff_z = (quantity[idx + n.x*n.y] - quantity[idx]) - bdiff.z * h.z;
+			//is it a pbc along z? If yes, then we are guaranteed to have a "neighbor" on the other side, so use it; otherwise apply boundary condition.
+			if (ngbrFlags[idx] & NF_PBCZ) {
+
+				diff_z = (quantity[idx + n.x*n.y] + quantity[idx + (n.z - 1) * n.x*n.y] - 2 * quantity[idx]);
+			}
+			else {
+
+				diff_z = (quantity[idx + n.x*n.y] - quantity[idx]) - bdiff.z * h.z;
+			}
 		}
 		else {
 
-			diff_z = (quantity[idx - n.x*n.y] - quantity[idx]) + bdiff.z * h.z;
+			//is it a pbc along z? If yes, then we are guaranteed to have a "neighbor" on the other side, so use it; otherwise apply boundary condition.
+			if (ngbrFlags[idx] & NF_PBCZ) {
+
+				diff_z = (quantity[idx - (n.z - 1) * n.x*n.y] + quantity[idx - n.x*n.y] - 2 * quantity[idx]);
+			}
+			else {
+
+				diff_z = (quantity[idx - n.x*n.y] - quantity[idx]) + bdiff.z * h.z;
+			}
 		}
 	}
 
@@ -363,7 +411,7 @@ __device__ VType cuVEC_VC<VType>::delsq_diri(int idx) const
 	if (!(ngbrFlags[idx] & NF_NOTEMPTY)) return VType();
 
 	//x axis
-	if (ngbrFlags[idx] & NF_BOTHX) {
+	if ((ngbrFlags[idx] & NF_BOTHX) == NF_BOTHX) {
 		//both neighbors available so must be an inner point along this direction
 		diff_x = (quantity[idx + 1] + quantity[idx - 1] - 2 * quantity[idx]);
 	}
@@ -411,7 +459,7 @@ __device__ VType cuVEC_VC<VType>::delsq_diri(int idx) const
 	diff_x /= (h.x*h.x);
 
 	//y axis
-	if (ngbrFlags[idx] & NF_BOTHY) {
+	if ((ngbrFlags[idx] & NF_BOTHY) == NF_BOTHY) {
 
 		diff_y = (quantity[idx + n.x] + quantity[idx - n.x] - 2 * quantity[idx]);
 	}
@@ -455,7 +503,7 @@ __device__ VType cuVEC_VC<VType>::delsq_diri(int idx) const
 	diff_y /= (h.y*h.y);
 
 	//z axis
-	if (ngbrFlags[idx] & NF_BOTHZ) {
+	if ((ngbrFlags[idx] & NF_BOTHZ) == NF_BOTHZ) {
 
 		diff_z = (quantity[idx + n.x*n.y] + quantity[idx - n.x*n.y] - 2 * quantity[idx]);
 	}
@@ -472,11 +520,27 @@ __device__ VType cuVEC_VC<VType>::delsq_diri(int idx) const
 		}
 		else if (ngbrFlags[idx] & NF_NPZ) {
 
-			diff_z = (quantity[idx + n.x*n.y] - quantity[idx]);
+			//is it a pbc along z? If yes, then we are guaranteed to have a "neighbor" on the other side, so use it; otherwise apply boundary condition.
+			if (ngbrFlags[idx] & NF_PBCZ) {
+
+				diff_z = (quantity[idx + n.x*n.y] + quantity[idx + (n.z - 1) * n.x*n.y] - 2 * quantity[idx]);
+			}
+			else {
+
+				diff_z = (quantity[idx + n.x*n.y] - quantity[idx]);
+			}
 		}
 		else {
 
-			diff_z = (quantity[idx - n.x*n.y] - quantity[idx]);
+			//is it a pbc along z? If yes, then we are guaranteed to have a "neighbor" on the other side, so use it; otherwise apply boundary condition.
+			if (ngbrFlags[idx] & NF_PBCZ) {
+
+				diff_z = (quantity[idx - (n.z - 1) * n.x*n.y] + quantity[idx - n.x*n.y] - 2 * quantity[idx]);
+			}
+			else {
+
+				diff_z = (quantity[idx - n.x*n.y] - quantity[idx]);
+			}
 		}
 	}
 
@@ -497,7 +561,7 @@ __device__ VType cuVEC_VC<VType>::delsq_diri_nneu(int idx, Class_BDiff& bdiff_cl
 	if (!(ngbrFlags[idx] & NF_NOTEMPTY)) return VType();
 
 	//x axis
-	if (ngbrFlags[idx] & NF_BOTHX) {
+	if ((ngbrFlags[idx] & NF_BOTHX) == NF_BOTHX) {
 
 		//both neighbors available so must be an inner point along this direction
 		diff_x = (quantity[idx + 1] + quantity[idx - 1] - 2 * quantity[idx]);
@@ -549,7 +613,7 @@ __device__ VType cuVEC_VC<VType>::delsq_diri_nneu(int idx, Class_BDiff& bdiff_cl
 	diff_x /= (h.x*h.x);
 
 	//y axis
-	if (ngbrFlags[idx] & NF_BOTHY) {
+	if ((ngbrFlags[idx] & NF_BOTHY) == NF_BOTHY) {
 
 		diff_y = (quantity[idx + n.x] + quantity[idx - n.x] - 2 * quantity[idx]);
 	}
@@ -598,7 +662,7 @@ __device__ VType cuVEC_VC<VType>::delsq_diri_nneu(int idx, Class_BDiff& bdiff_cl
 	diff_y /= (h.y*h.y);
 
 	//z axis
-	if (ngbrFlags[idx] & NF_BOTHZ) {
+	if ((ngbrFlags[idx] & NF_BOTHZ) == NF_BOTHZ) {
 
 		diff_z = (quantity[idx + n.x*n.y] + quantity[idx - n.x*n.y] - 2 * quantity[idx]);
 	}
@@ -619,11 +683,27 @@ __device__ VType cuVEC_VC<VType>::delsq_diri_nneu(int idx, Class_BDiff& bdiff_cl
 
 			if (ngbrFlags[idx] & NF_NPZ) {
 
-				diff_z = (quantity[idx + n.x*n.y] - quantity[idx]) - bdiff_val.z * h.z;
+				//is it a pbc along z? If yes, then we are guaranteed to have a "neighbor" on the other side, so use it; otherwise apply boundary condition.
+				if (ngbrFlags[idx] & NF_PBCZ) {
+
+					diff_z = (quantity[idx + n.x*n.y] + quantity[idx + (n.z - 1) * n.x*n.y] - 2 * quantity[idx]);
+				}
+				else {
+
+					diff_z = (quantity[idx + n.x*n.y] - quantity[idx]) - bdiff_val.z * h.z;
+				}
 			}
 			else {
 
-				diff_z = (quantity[idx - n.x*n.y] - quantity[idx]) + bdiff_val.z * h.z;
+				//is it a pbc along z? If yes, then we are guaranteed to have a "neighbor" on the other side, so use it; otherwise apply boundary condition.
+				if (ngbrFlags[idx] & NF_PBCZ) {
+
+					diff_z = (quantity[idx - (n.z - 1) * n.x*n.y] + quantity[idx - n.x*n.y] - 2 * quantity[idx]);
+				}
+				else {
+
+					diff_z = (quantity[idx - n.x*n.y] - quantity[idx]) + bdiff_val.z * h.z;
+				}
 			}
 		}
 	}
@@ -642,7 +722,7 @@ __device__ VType cuVEC_VC<VType>::delsq_diri_nneu(int idx, cuVAL3<VType>& bdiff)
 	if (!(ngbrFlags[idx] & NF_NOTEMPTY)) return VType();
 
 	//x axis
-	if (ngbrFlags[idx] & NF_BOTHX) {
+	if ((ngbrFlags[idx] & NF_BOTHX) == NF_BOTHX) {
 
 		//both neighbors available so must be an inner point along this direction
 		diff_x = (quantity[idx + 1] + quantity[idx - 1] - 2 * quantity[idx]);
@@ -692,7 +772,7 @@ __device__ VType cuVEC_VC<VType>::delsq_diri_nneu(int idx, cuVAL3<VType>& bdiff)
 	diff_x /= (h.x*h.x);
 
 	//y axis
-	if (ngbrFlags[idx] & NF_BOTHY) {
+	if ((ngbrFlags[idx] & NF_BOTHY) == NF_BOTHY) {
 
 		diff_y = (quantity[idx + n.x] + quantity[idx - n.x] - 2 * quantity[idx]);
 	}
@@ -739,7 +819,7 @@ __device__ VType cuVEC_VC<VType>::delsq_diri_nneu(int idx, cuVAL3<VType>& bdiff)
 	diff_y /= (h.y*h.y);
 
 	//z axis
-	if (ngbrFlags[idx] & NF_BOTHZ) {
+	if ((ngbrFlags[idx] & NF_BOTHZ) == NF_BOTHZ) {
 
 		diff_z = (quantity[idx + n.x*n.y] + quantity[idx - n.x*n.y] - 2 * quantity[idx]);
 	}
@@ -758,11 +838,27 @@ __device__ VType cuVEC_VC<VType>::delsq_diri_nneu(int idx, cuVAL3<VType>& bdiff)
 
 			if (ngbrFlags[idx] & NF_NPZ) {
 
-				diff_z = (quantity[idx + n.x*n.y] - quantity[idx]) - bdiff.z * h.z;
+				//is it a pbc along z? If yes, then we are guaranteed to have a "neighbor" on the other side, so use it; otherwise apply boundary condition.
+				if (ngbrFlags[idx] & NF_PBCZ) {
+
+					diff_z = (quantity[idx + n.x*n.y] + quantity[idx + (n.z - 1) * n.x*n.y] - 2 * quantity[idx]);
+				}
+				else {
+
+					diff_z = (quantity[idx + n.x*n.y] - quantity[idx]) - bdiff.z * h.z;
+				}
 			}
 			else {
 
-				diff_z = (quantity[idx - n.x*n.y] - quantity[idx]) + bdiff.z * h.z;
+				//is it a pbc along z? If yes, then we are guaranteed to have a "neighbor" on the other side, so use it; otherwise apply boundary condition.
+				if (ngbrFlags[idx] & NF_PBCZ) {
+
+					diff_z = (quantity[idx - (n.z - 1) * n.x*n.y] + quantity[idx - n.x*n.y] - 2 * quantity[idx]);
+				}
+				else {
+
+					diff_z = (quantity[idx - n.x*n.y] - quantity[idx]) + bdiff.z * h.z;
+				}
 			}
 		}
 	}
@@ -782,7 +878,7 @@ __device__ VType cuVEC_VC<VType>::delsq_robin(int idx, cuReal K) const
 	if (!(ngbrFlags[idx] & NF_NOTEMPTY)) return VType();
 
 	//x axis
-	if (ngbrFlags[idx] & NF_BOTHX) {
+	if ((ngbrFlags[idx] & NF_BOTHX) == NF_BOTHX) {
 
 		//both neighbors available so must be an inner point along this direction
 		diff_x = (quantity[idx + 1] + quantity[idx - 1] - 2 * quantity[idx]);
@@ -855,7 +951,7 @@ __device__ VType cuVEC_VC<VType>::delsq_robin(int idx, cuReal K) const
 	diff_x /= (h.x*h.x);
 
 	//y axis
-	if (ngbrFlags[idx] & NF_BOTHY) {
+	if ((ngbrFlags[idx] & NF_BOTHY) == NF_BOTHY) {
 
 		diff_y = (quantity[idx + n.x] + quantity[idx - n.x] - 2 * quantity[idx]);
 	}
@@ -924,7 +1020,7 @@ __device__ VType cuVEC_VC<VType>::delsq_robin(int idx, cuReal K) const
 	diff_y /= (h.y*h.y);
 
 	//z axis
-	if (ngbrFlags[idx] & NF_BOTHZ) {
+	if ((ngbrFlags[idx] & NF_BOTHZ) == NF_BOTHZ) {
 
 		diff_z = (quantity[idx + n.x*n.y] + quantity[idx - n.x*n.y] - 2 * quantity[idx]);
 	}
@@ -966,11 +1062,27 @@ __device__ VType cuVEC_VC<VType>::delsq_robin(int idx, cuReal K) const
 		}
 		else if (ngbrFlags[idx] & NF_NPZ) {
 
-			diff_z = (quantity[idx + n.x*n.y] - quantity[idx]);
+			//is it a pbc along z? If yes, then we are guaranteed to have a "neighbor" on the other side, so use it; otherwise apply boundary condition.
+			if (ngbrFlags[idx] & NF_PBCZ) {
+
+				diff_z = (quantity[idx + n.x*n.y] + quantity[idx + (n.z - 1) * n.x*n.y] - 2 * quantity[idx]);
+			}
+			else {
+
+				diff_z = (quantity[idx + n.x*n.y] - quantity[idx]);
+			}
 		}
 		else {
 
-			diff_z = (quantity[idx - n.x*n.y] - quantity[idx]);
+			//is it a pbc along z? If yes, then we are guaranteed to have a "neighbor" on the other side, so use it; otherwise apply boundary condition.
+			if (ngbrFlags[idx] & NF_PBCZ) {
+
+				diff_z = (quantity[idx - (n.z - 1) * n.x*n.y] + quantity[idx - n.x*n.y] - 2 * quantity[idx]);
+			}
+			else {
+
+				diff_z = (quantity[idx - n.x*n.y] - quantity[idx]);
+			}
 		}
 	}
 

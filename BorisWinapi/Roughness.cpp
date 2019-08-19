@@ -265,7 +265,7 @@ BError Roughness::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 	if (refine.x == 0 || refine.y == 0 || refine.z == 0) return error(BERROR_INCORRECTCONFIG);
 
 	//only need to uninitialize if n or h have changed
-	if (!CheckDimensions(pMesh->n & refine, pMesh->h / refine)) {
+	if (!CheckDimensions(pMesh->n & refine, pMesh->h / refine, INT3())) {
 
 		Uninitialize();
 		error = SetDimensions(pMesh->n & refine, pMesh->h / refine);

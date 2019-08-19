@@ -97,9 +97,11 @@ BError ConvolutionData::AllocateScratchSpaces(void)
 
 //-------------------------- CONFIGURATION
 
-BError ConvolutionData::SetConvolutionDimensions(SZ3 n_, DBL3 h_, bool embed_multiplication_)
+BError ConvolutionData::SetConvolutionDimensions(SZ3 n_, DBL3 h_, bool embed_multiplication_, INT3 pbc_images)
 {
 	BError error(__FUNCTION__);
+
+	this->pbc_images = pbc_images;
 
 	//Turn off multiplication embedding by setting this to false - this will allocate full space memory for F and F2 scratch spaces. embed_multiplication = true by default.
 	embed_multiplication = embed_multiplication_;
@@ -110,9 +112,37 @@ BError ConvolutionData::SetConvolutionDimensions(SZ3 n_, DBL3 h_, bool embed_mul
 	N = SZ3(1, 1, 1);
 
 	//set N, M, K as smallest powers of 2 which will hold the demag kernel
-	while (N.x < 2 * n.x - 1) { N.x = N.x * 2; };
-	while (N.y < 2 * n.y - 1) { N.y = N.y * 2; };
-	if (n.z > 1) while (N.z < 2 * n.z - 1) { N.z = N.z * 2; };
+	if (pbc_images.x) {
+
+		//pbc : can use wrap-around thus half the size required
+		while (N.x < n.x) { N.x *= 2; };
+	}
+	else {
+
+		//no wrap-around thus double the size, with input to be zero-padded
+		while (N.x < 2 * n.x) { N.x *= 2; };
+	}
+
+	if (pbc_images.y) {
+
+		while (N.y < n.y) { N.y *= 2; };
+	}
+	else {
+
+		while (N.y < 2 * n.y) { N.y *= 2; };
+	}
+
+	if (n.z > 1) {
+
+		if (pbc_images.z) {
+
+			while (N.z < n.z) { N.z *= 2; };
+		}
+		else {
+
+			while (N.z < 2 * n.z) { N.z *= 2; };
+		}
+	}
 
 	//now allocate memory
 

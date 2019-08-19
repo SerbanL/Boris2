@@ -44,6 +44,8 @@
 #define ODE_EVAL_RK23
 #define ODE_EVAL_RK4
 #define ODE_EVAL_RKF
+#define ODE_EVAL_RKCK
+#define ODE_EVAL_RKDP
 #define ODE_EVAL_SD
 
 #elif ODE_EVAL_COMPILATION == ODE_EVAL_TEST
@@ -67,16 +69,16 @@
 //3 : all disabled
 //4 : custom
 
-#define COMPILE_ALL		1
-#define COMPILE_MIN		2
-#define COMPILE_NONE	3
-#define COMPILE_CUST	4
+#define COMPILE_MODULES_ALL		1
+#define COMPILE_MODULES_MIN		2
+#define COMPILE_MODULES_NONE	3
+#define COMPILE_MODULES_CUST	4
 
 //Set this
-#define MODULE_COMPILATION	COMPILE_CUST
+#define MODULE_COMPILATION	COMPILE_MODULES_ALL
 
 //full
-#if MODULE_COMPILATION == COMPILE_ALL
+#if MODULE_COMPILATION == COMPILE_MODULES_ALL
 
 //modules enable / disable flags.
 //By disabling modules you can make compilation faster, leaving only the ones you need for development / testing.
@@ -100,17 +102,17 @@
 #define MODULE_SDEMAG
 
 //minimal
-#elif MODULE_COMPILATION == COMPILE_MIN
+#elif MODULE_COMPILATION == COMPILE_MODULES_MIN
 
 #define MODULE_DEMAG
 #define MODULE_EXCHANGE
 #define MODULE_ZEEMAN
 
 //all disabled
-#elif MODULE_COMPILATION == COMPILE_NONE
+#elif MODULE_COMPILATION == COMPILE_MODULES_NONE
 
 //custom
-#elif MODULE_COMPILATION == COMPILE_CUST
+#elif MODULE_COMPILATION == COMPILE_MODULES_CUST
 
 #define MODULE_DEMAG
 #define MODULE_EXCHANGE
@@ -118,6 +120,8 @@
 #define MODULE_ANIUNI
 #define MODULE_IDMEXCHANGE
 #define MODULE_SURFEXCHANGE
+#define MODULE_ROUGHNESS
+#define MODULE_OERSTED
 
 #define MODULE_SDEMAG
 

@@ -20,8 +20,10 @@ DemagTFunc::DemagTFunc(void)
 
 bool DemagTFunc::CalcDiagTens3D(VEC<DBL3> &Ddiag, INT3 n, INT3 N, DBL3 hRatios, bool include_self_demag, bool minus, int asymptotic_distance)
 {
-	// Set-up and calculate f values
+	//zero the tensor first
+	Ddiag.set(DBL3());
 
+	// Set-up and calculate f values
 	if (!fill_f_vals(n, hRatios, asymptotic_distance)) return false;
 
 	//Setup asymptotic approximation settings
@@ -93,8 +95,10 @@ bool DemagTFunc::CalcDiagTens3D(VEC<DBL3> &Ddiag, INT3 n, INT3 N, DBL3 hRatios, 
 
 bool DemagTFunc::CalcOffDiagTens3D(VEC<DBL3> &Dodiag, INT3 n, INT3 N, DBL3 hRatios, bool minus, int asymptotic_distance)
 {
-	// Set-up and calculate g values
+	//zero the tensor first
+	Dodiag.set(DBL3());
 
+	// Set-up and calculate g values
 	if (!fill_g_vals(n, hRatios, asymptotic_distance)) return false;
 
 	//Setup asymptotic approximation settings
@@ -169,8 +173,10 @@ bool DemagTFunc::CalcOffDiagTens3D(VEC<DBL3> &Dodiag, INT3 n, INT3 N, DBL3 hRati
 
 bool DemagTFunc::CalcDiagTens2D(VEC<DBL3> &Ddiag, INT3 n, INT3 N, DBL3 hRatios, bool include_self_demag, bool minus, int asymptotic_distance)
 {
-	// Set-up and calculate f values
+	//zero the tensor first
+	Ddiag.set(DBL3());
 
+	// Set-up and calculate f values
 	if (!fill_f_vals(n, hRatios, asymptotic_distance)) return false;
 
 	//Setup asymptotic approximation settings
@@ -233,8 +239,10 @@ bool DemagTFunc::CalcDiagTens2D(VEC<DBL3> &Ddiag, INT3 n, INT3 N, DBL3 hRatios, 
 
 bool DemagTFunc::CalcOffDiagTens2D(std::vector<double> &Dodiag, INT3 n, INT3 N, DBL3 hRatios, bool minus, int asymptotic_distance)
 {
-	// Set-up and calculate g values
+	//zero the tensor first
+	std::fill(Dodiag.begin(), Dodiag.end(), 0.0);
 
+	// Set-up and calculate g values
 	if (!fill_g2D_vals(n, hRatios, asymptotic_distance)) return false;
 
 	//Setup asymptotic approximation settings
@@ -285,12 +293,3 @@ bool DemagTFunc::CalcOffDiagTens2D(std::vector<double> &Dodiag, INT3 n, INT3 N, 
 
 	return true;
 }
-
-
-
-
-
-
-
-
-

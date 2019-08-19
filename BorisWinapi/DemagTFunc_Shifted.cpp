@@ -6,6 +6,9 @@
 //Compute in Ddiag the diagonal tensor elements (Dxx, Dyy, Dzz) which has sizes given by N. 
 bool DemagTFunc::CalcDiagTens3D_Shifted(VEC<DBL3> &Ddiag, INT3 n, INT3 N, DBL3 hRatios, DBL3 shift, bool minus)
 {
+	//zero the tensor first
+	Ddiag.set(DBL3());
+
 	if (IsZ(shift.x) && IsZ(shift.y)) {
 
 		//z shift
@@ -77,6 +80,9 @@ bool DemagTFunc::CalcDiagTens3D_Shifted(VEC<DBL3> &Ddiag, INT3 n, INT3 N, DBL3 h
 //Compute in Dodiag the off-diagonal tensor elements (Dxy, Dxz, Dyz) which has sizes given by N. 
 bool DemagTFunc::CalcOffDiagTens3D_Shifted(VEC<DBL3> &Dodiag, INT3 n, INT3 N, DBL3 hRatios, DBL3 shift, bool minus)
 {
+	//zero the tensor first
+	Dodiag.set(DBL3());
+
 	if (IsZ(shift.x) && IsZ(shift.y)) {
 
 		//z shift
@@ -148,6 +154,9 @@ bool DemagTFunc::CalcOffDiagTens3D_Shifted(VEC<DBL3> &Dodiag, INT3 n, INT3 N, DB
 //Compute in Ddiag the diagonal tensor elements (Dxx, Dyy, Dzz) which has sizes given by N.
 bool DemagTFunc::CalcDiagTens2D_Shifted(VEC<DBL3> &Ddiag, INT3 n, INT3 N, DBL3 hRatios, DBL3 shift, bool minus)
 {
+	//zero the tensor first
+	Ddiag.set(DBL3());
+
 	if (IsZ(shift.x) && IsZ(shift.y)) {
 
 		//z shift
@@ -215,6 +224,9 @@ bool DemagTFunc::CalcDiagTens2D_Shifted(VEC<DBL3> &Ddiag, INT3 n, INT3 N, DBL3 h
 //Compute in Dodiag the off-diagonal tensor elements (Dxy only) which has sizes given by N. 
 bool DemagTFunc::CalcOffDiagTens2D_Shifted(VEC<DBL3> &Dodiag, INT3 n, INT3 N, DBL3 hRatios, DBL3 shift, bool minus)
 {
+	//zero the tensor first
+	Dodiag.set(DBL3());
+
 	if (IsZ(shift.x) && IsZ(shift.y)) {
 
 		//z shift

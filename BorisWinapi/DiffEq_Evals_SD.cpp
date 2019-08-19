@@ -11,7 +11,7 @@
 //Also tested variable threshold stepsize selection rules as in doi:10.1016/j.acha.2009.02.003, but decided against it as less reliable (although can be faster) and requiring parameters to tweak.
 //SD solver for micromagnetics described in https://doi.org/10.1063/1.4862839 - the implementation here is similar but not identical.
 
-//--------------------------------------------- Conjugate Gradient, Fletcher-Reeves version
+//--------------------------------------------- Steepest Descent Solver
 
 void DifferentialEquation::RunSD_Start(void)
 {

@@ -95,7 +95,7 @@ BError Oersted::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 	}
 
 	//only need to uninitialize if n_e or h_e have changed
-	if(!CheckDimensions(pSMesh->n_e, pSMesh->h_e)) {
+	if(!CheckDimensions(pSMesh->n_e, pSMesh->h_e, INT3())) {
 
 		Uninitialize();
 		error = SetDimensions(pSMesh->n_e, pSMesh->h_e);

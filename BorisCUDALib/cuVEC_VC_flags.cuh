@@ -149,10 +149,6 @@ __global__ void set_ngbrFlags_kernel(const cuSZ3& n, int*& ngbrFlags, VType*& qu
 
 				if (ngbrFlags[idx - n.x*n.y] & NF_NOTEMPTY) { ngbrFlags[idx] |= NF_NNZ; }
 			}
-
-			if ((ngbrFlags[idx] & NF_NPX) && (ngbrFlags[idx] & NF_NNX)) ngbrFlags[idx] |= NF_BOTHX;
-			if ((ngbrFlags[idx] & NF_NPY) && (ngbrFlags[idx] & NF_NNY)) ngbrFlags[idx] |= NF_BOTHY;
-			if ((ngbrFlags[idx] & NF_NPZ) && (ngbrFlags[idx] & NF_NNZ)) ngbrFlags[idx] |= NF_BOTHZ;
 		}
 		else {
 
@@ -315,10 +311,6 @@ __global__ void set_ngbrFlags_kernel(const cuSZ3& n, const cuReal3& h, const cuR
 				cellRect = get_cellrect(h, rect, ijk - cuINT3(0, 0, 1));
 				if (!is_empty(linked_n, linked_h, linked_rect, linked_ngbrFlags, cellRect)) { ngbrFlags[idx] |= NF_NNZ; }
 			}
-
-			if ((ngbrFlags[idx] & NF_NPX) && (ngbrFlags[idx] & NF_NNX)) ngbrFlags[idx] |= NF_BOTHX;
-			if ((ngbrFlags[idx] & NF_NPY) && (ngbrFlags[idx] & NF_NNY)) ngbrFlags[idx] |= NF_BOTHY;
-			if ((ngbrFlags[idx] & NF_NPZ) && (ngbrFlags[idx] & NF_NNZ)) ngbrFlags[idx] |= NF_BOTHZ;
 		}
 		else {
 
@@ -615,7 +607,7 @@ __host__ void cuVEC_VC<VType>::set_robin_flags(void)
 
 __global__ static void set_pbc_flags_kernel(
 	const cuSZ3& n, int*& ngbrFlags,
-	const int& pbc_x, const int& pbc_y)
+	const int& pbc_x, const int& pbc_y, const int& pbc_z)
 {
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
 
@@ -642,6 +634,15 @@ __global__ static void set_pbc_flags_kernel(
 				//+y side, and on the -y side there is a non-empty cell : set pbc
 				if (ijk.j == n.y - 1 && (ngbrFlags[ijk.i + ijk.k * n.x*n.y] & NF_NOTEMPTY)) ngbrFlags[idx] |= NF_PBCY;
 			}
+
+			if (pbc_z) {
+			
+				//-z side, and on the +z side there is a non-empty cell : set pbc
+				if (ijk.k == 0 && (ngbrFlags[ijk.i + ijk.j * n.x + (n.z - 1) * n.x*n.y] & NF_NOTEMPTY)) ngbrFlags[idx] |= NF_PBCZ;
+
+				//+z side, and on the -z side there is a non-empty cell : set pbc
+				if (ijk.k == n.z - 1 && (ngbrFlags[ijk.i + ijk.j * n.x] & NF_NOTEMPTY)) ngbrFlags[idx] |= NF_PBCZ;
+			}
 		}
 	}
 }
@@ -659,7 +660,7 @@ template void cuVEC_VC<cuDBL33>::set_pbc_flags(void);
 template <typename VType>
 __host__ void cuVEC_VC<VType>::set_pbc_flags(void)
 {
-	set_pbc_flags_kernel <<< (get_gpu_value(n).dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (n, ngbrFlags, pbc_x, pbc_y);
+	set_pbc_flags_kernel <<< (get_gpu_value(n).dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (n, ngbrFlags, pbc_x, pbc_y, pbc_z);
 }
 
 //------------------------------------------------------------------- SET SKIP CELLS FLAGS

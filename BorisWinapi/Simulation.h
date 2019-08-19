@@ -27,14 +27,6 @@
 //Saving simulation file sometimes sets dT to zero (to a floating point error). I've only seen it happen with CUDA enabled.
 //Using a python script may result in program hanging if issuing a flood of commands.
 
-//immediate:
-
-//dormand-prince, cash-karp
-
-//setrandom
-//OVF2 text data
-//pbc for demag
-
 #pragma once
 
 #include "BorisLib.h"
@@ -414,6 +406,11 @@ private:
 	//---------------------------------------------------- ADAPTIVE TIME STEP CONTROL
 
 	void Print_AStepCtrl(void);
+
+	//---------------------------------------------------- PERIODIC BOUNDARY CONDITIONS
+
+	void Print_PBC(void);
+	string Build_PBC_ListLine(int meshIndex);
 
 	//---------------------------------------------------- MAKE INTERACTIVE OBJECT : Auxiliary method
 

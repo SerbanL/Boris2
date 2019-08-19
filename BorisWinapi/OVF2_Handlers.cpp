@@ -4,6 +4,7 @@
 
 OVF2::OVF2(void)
 {
+	headers.push_back("# OOMMF OVF 2.0", OVF2_HEADER);
 	headers.push_back("# meshtype: ", MESHTYPE);
 	headers.push_back("# meshunit: ", MESHUNIT);
 	headers.push_back("# valuedim: ", VALUEDIM);
@@ -19,8 +20,16 @@ OVF2::OVF2(void)
 	headers.push_back("# xstepsize: ", XSTEP);
 	headers.push_back("# ystepsize: ", YSTEP);
 	headers.push_back("# zstepsize: ", ZSTEP);
-	headers.push_back("# Begin: Data ", BEGIN_DATA_UC);
-	headers.push_back("# Begin: data ", BEGIN_DATA_LC);
+	headers.push_back("# Begin: data ", BEGIN_DATA);
+	headers.push_back("# End: data ", END_DATA);
+	headers.push_back("# Begin: Segment", BEGIN_SEGMENT);
+	headers.push_back("# End: Segment", END_SEGMENT);
+	headers.push_back("# Begin: Header", BEGIN_HEADER);
+	headers.push_back("# End: Header", END_HEADER);
+
+	data_headers.push_back("binary 4", DATA_BINARY4);
+	data_headers.push_back("binary 8", DATA_BINARY8);
+	data_headers.push_back("text", DATA_TEXT);
 }
 
 //read an OOMMF OVF2 file containing uniform vector data, and set the data VEC from it
@@ -50,7 +59,7 @@ BError OVF2::Read_OVF2_VEC(std::string fileName, VEC<DBL3>& data)
 	//"# ystepsize: " -> value to follow
 	//"# zstepsize : " -> value to follow
 
-	//"# Begin: Data " or "# Begin: data " -> type of data to follow; currently accepting "Binary 4" / "binary 4", "Binary 8" / "binary 8". When this is found then stop searching for any other lines, and if conditions met start getting data.
+	//"# Begin: Data " or "# Begin: data " -> type of data to follow; Accepting "binary 4", "binary 8", "text". When this is found then stop searching for any other lines, and if conditions met start getting data.
 
 	bool meshtype_rectangular = false;
 	double meshunit = 1.0;
@@ -172,34 +181,26 @@ BError OVF2::Read_OVF2_VEC(std::string fileName, VEC<DBL3>& data)
 			h.z = (double)ToNum(value) * meshunit;
 		}
 
-		else if (line.find(headers(BEGIN_DATA_UC)) != std::string::npos) {
+		else if (lowercase(line).find(lowercase(headers(BEGIN_DATA))) != std::string::npos) {
 
-			string value = line.substr(headers(BEGIN_DATA_UC).length());
+			//convert to lowercase for comparison as some implementations may choose to have "Data" instead of "data"
+			string value = lowercase(line.substr(headers(BEGIN_DATA).length()));
 
-			if (value == "Binary 4" || value == "binary 4") {
-
-				data_bytes = 4;
-				return 2;
-			}
-			else if (value == "Binary 8" || value == "binary 8") {
-
-				data_bytes = 8;
-				return 2;
-			}
-		}
-
-		else if (line.find(headers(BEGIN_DATA_LC)) != std::string::npos) {
-
-			string value = line.substr(headers(BEGIN_DATA_LC).length());
-
-			if (value == "Binary 4" || value == "binary 4") {
+			//data headers already in lowercase but better use the lowercase conversion anyway to reduce possibility of bugs in the future
+			if (value == lowercase(data_headers(DATA_BINARY4))) {
 
 				data_bytes = 4;
 				return 2;
 			}
-			else if (value == "Binary 8" || value == "binary 8") {
+			else if (value == lowercase(data_headers(DATA_BINARY8))) {
 
 				data_bytes = 8;
+				return 2;
+			}
+			else if (value == lowercase(data_headers(DATA_TEXT))) {
+
+				//value of 1 means it's a text input
+				data_bytes = 1;
 				return 2;
 			}
 		}
@@ -212,7 +213,7 @@ BError OVF2::Read_OVF2_VEC(std::string fileName, VEC<DBL3>& data)
 		char line[FILEROWCHARS];
 
 		//must be an OVF 2.0 file
-		if (!bdin.getline(line, FILEROWCHARS) || std::string(line) != "# OOMMF OVF 2.0") {
+		if (!bdin.getline(line, FILEROWCHARS) || std::string(line) != headers(OVF2_HEADER)) {
 
 			bdin.close();
 			return error(BERROR_COULDNOTLOADFILE_VERSIONMISMATCH);
@@ -264,6 +265,10 @@ BError OVF2::Read_OVF2_VEC(std::string fileName, VEC<DBL3>& data)
 						return error(BERROR_COULDNOTLOADFILE);
 					}
 				}
+				else if (data_bytes == 1) {
+
+					//text input
+				}
 				else {
 
 					//incorrect number of bytes
@@ -301,7 +306,7 @@ BError OVF2::Read_OVF2_VEC(std::string fileName, VEC<DBL3>& data)
 
 								data[INT3(i, j, k)] = DBL3(Vx, Vy, Vz);
 							}
-							else if (data_bytes == 4) {
+							else if (data_bytes == 8) {
 
 								double Vx, Vy, Vz;
 
@@ -310,6 +315,18 @@ BError OVF2::Read_OVF2_VEC(std::string fileName, VEC<DBL3>& data)
 								bdin.read(reinterpret_cast<char*>(&Vz), sizeof(double));
 
 								data[INT3(i, j, k)] = DBL3(Vx, Vy, Vz);
+							}
+							else if (data_bytes == 1) {
+
+								bdin.getline(line, FILEROWCHARS);
+
+								//typically data is space-seaprated, but allow tab-separated text data too
+								vector<string> fields = split(string(line), { " ", "\t" });
+
+								if (fields.size() >= 3) {
+
+									data[INT3(i, j, k)] = DBL3(ToNum(fields[0]), ToNum(fields[1]), ToNum(fields[2]));
+								}
 							}
 						}
 					}
@@ -322,6 +339,108 @@ BError OVF2::Read_OVF2_VEC(std::string fileName, VEC<DBL3>& data)
 		bdin.close();
 	}
 	else error(BERROR_COULDNOTOPENFILE);
+
+	return error;
+}
+
+//write an OOMMF OVF2 file containing uniform vector data
+//you can write normalized data to norm (divide by it, no normalization by default)
+//you can also choose the type of data output : data_type = bin4 for single precision binary, data_type = bin8 for double precision binary, or data_type = text
+BError OVF2::Write_OVF2_VEC(std::string fileName, VEC<DBL3>& data, double norm, std::string data_type)
+{
+	BError error(__FUNCTION__);
+
+	if (data_type == "bin4") data_type = data_headers(DATA_BINARY4);
+	else if (data_type == "bin8") data_type = data_headers(DATA_BINARY8);
+	else if (data_type == "text") data_type = data_headers(DATA_TEXT);
+	else return error(BERROR_INCORRECTNAME);
+
+	std::ofstream bdout;
+	bdout.open(fileName.c_str(), ios::out | ios::binary);
+
+	ExtractFilenameDirectory(fileName);
+
+	bdout << headers(OVF2_HEADER) << std::endl;
+	bdout << "#" << std::endl;
+	bdout << "# Segment count: 1" << std::endl;
+	bdout << "#" << std::endl;
+	bdout << headers(BEGIN_SEGMENT) << std::endl;
+	bdout << headers(BEGIN_HEADER) << std::endl;
+	bdout << "#" << std::endl;
+	bdout << "# Title: " << fileName << std::endl;
+	bdout << "#" << std::endl;
+	bdout << headers(MESHUNIT) + "m" << std::endl;
+	bdout << "#" << std::endl;
+	bdout << headers(MESHTYPE) + "rectangular" << std::endl;
+	bdout << "#" << std::endl;
+	bdout << headers(XMIN) + ToString(data.rect.s.x) << std::endl;
+	bdout << headers(YMIN) + ToString(data.rect.s.y) << std::endl;
+	bdout << headers(ZMIN) + ToString(data.rect.s.z) << std::endl;
+	bdout << headers(XMAX) + ToString(data.rect.e.x) << std::endl;
+	bdout << headers(YMAX) + ToString(data.rect.e.y) << std::endl;
+	bdout << headers(ZMAX) + ToString(data.rect.e.z) << std::endl;
+	bdout << "#" << std::endl;
+	bdout << headers(XNODES) + ToString(data.n.x) << std::endl;
+	bdout << headers(YNODES) + ToString(data.n.y) << std::endl;
+	bdout << headers(ZNODES) + ToString(data.n.z) << std::endl;
+	bdout << "#" << std::endl;
+	bdout << headers(XSTEP) + ToString(data.h.x) << std::endl;
+	bdout << headers(YSTEP) + ToString(data.h.y) << std::endl;
+	bdout << headers(ZSTEP) + ToString(data.h.z) << std::endl;
+	bdout << "#" << std::endl;
+	bdout << headers(VALUEDIM) + "3" << std::endl;
+	bdout << "#" << std::endl;
+	bdout << headers(END_HEADER) << std::endl;
+	bdout << "#" << std::endl;
+	bdout << headers(BEGIN_DATA) + data_type << std::endl;
+
+	if (data_type == data_headers(DATA_BINARY4)) {
+
+		float value = 1234567.0;
+
+		char* binary_data = reinterpret_cast<char*>(&value);
+		bdout.write(binary_data, sizeof(float));
+	}
+	else if (data_type == data_headers(DATA_BINARY8)) {
+
+		double value = 123456789012345.0;
+
+		char* binary_data = reinterpret_cast<char*>(&value);
+		bdout.write(binary_data, sizeof(double));
+	}
+
+	for (int k = 0; k < data.n.z; k++) {
+		for (int j = 0; j < data.n.y; j++) {
+			for (int i = 0; i < data.n.x; i++) {
+
+				if (data_type == data_headers(DATA_BINARY4)) {
+
+					FLT3 value = data[INT3(i, j, k)];
+
+					char* binary_data = reinterpret_cast<char*>(&value);
+					bdout.write(binary_data, sizeof(FLT3));
+				}
+				else if (data_type == data_headers(DATA_BINARY8)) {
+
+					DBL3 value = data[INT3(i, j, k)];
+						
+					char* binary_data = reinterpret_cast<char*>(&value);
+					bdout.write(binary_data, sizeof(DBL3));
+				}
+				else {
+
+					DBL3 value = data[INT3(i, j, k)];
+
+					bdout << value.x << " " << value.y << " " << value.z << std::endl;
+				}
+			}
+		}
+	}
+
+	bdout << headers(END_DATA) + data_type << std::endl;
+	bdout << headers(END_SEGMENT) << std::endl;
+
+	bdout.close();
 
 	return error;
 }

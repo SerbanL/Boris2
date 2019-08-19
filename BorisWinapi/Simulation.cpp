@@ -215,6 +215,10 @@ Simulation::Simulation(int Program_Version) :
 	commands[CMD_SETANGLE].limits = { { double(-360.0), double(360.0) },{ double(-360.0), double(360.0) }, { Any(), Any() } };
 	commands[CMD_SETANGLE].descr = "[tc0,0.5,0.5,1/tc]Set magnetisation angle in mesh uniformly using polar coordinates. If mesh name not specified, this is set for all ferromagnetic meshes.";
 
+	commands.insert(CMD_RANDOM, CommandSpecifier(CMD_RANDOM), "random");
+	commands[CMD_RANDOM].usage = "[tc0,0.5,0,1/tc]USAGE : <b>random</b> <i>(meshname)</i>";
+	commands[CMD_RANDOM].descr = "[tc0,0.5,0.5,1/tc]Set random magnetisation distribution in mesh. If mesh name not specified, set for focused mesh.";
+
 	commands.insert(CMD_SETRECT, CommandSpecifier(CMD_SETRECT), "setrect");
 	commands[CMD_SETRECT].usage = "[tc0,0.5,0,1/tc]USAGE : <b>setrect</b> <i>polar azimuthal rectangle (meshname)</i>";
 	commands[CMD_SETRECT].limits = { { double(-360.0), double(360.0) },{ double(-360.0), double(360.0) }, { Rect(), Any() }, { Any(), Any() } };
@@ -234,15 +238,20 @@ Simulation::Simulation(int Program_Version) :
 
 	commands.insert(CMD_SKYRMION, CommandSpecifier(CMD_SKYRMION), "skyrmion");
 	commands[CMD_SKYRMION].usage = "[tc0,0.5,0,1/tc]USAGE : <b>skyrmion</b> <i>core chirality diameter position (meshname)</i>";
-	commands[CMD_SKYRMION].limits = { { int(-1), int(1) } , { int(-1), int(1) }, { double(10e-9), Any() },{ Any(), Any() }, { Any(), Any() } };
+	commands[CMD_SKYRMION].limits = { { int(-1), int(1) } , { int(-1), int(1) }, { double(1e-9), Any() },{ Any(), Any() }, { Any(), Any() } };
 	commands[CMD_SKYRMION].unit = "m";
 	commands[CMD_SKYRMION].descr = "[tc0,0.5,0.5,1/tc]Create an idealised Neel-type skyrmion with given diameter and centre position in the x-y plane (2 relative coordinates needed only) of the given mesh (active mesh if name not specified). Core specifies the skyrmion core direction: -1 for down, 1 for up. Chirality specifies the radial direction rotation: 1 for towards core, -1 away from core. For diameter and position use metric units.";
 
 	commands.insert(CMD_SKYRMIONBLOCH, CommandSpecifier(CMD_SKYRMIONBLOCH), "skyrmionbloch");
 	commands[CMD_SKYRMIONBLOCH].usage = "[tc0,0.5,0,1/tc]USAGE : <b>skyrmionbloch</b> <i>core chirality diameter position (meshname)</i>";
-	commands[CMD_SKYRMIONBLOCH].limits = { { int(-1), int(1) } ,{ int(-1), int(1) },{ double(10e-9), Any() },{ Any(), Any() },{ Any(), Any() } };
+	commands[CMD_SKYRMIONBLOCH].limits = { { int(-1), int(1) } ,{ int(-1), int(1) },{ double(1e-9), Any() },{ Any(), Any() },{ Any(), Any() } };
 	commands[CMD_SKYRMIONBLOCH].unit = "m";
 	commands[CMD_SKYRMIONBLOCH].descr = "[tc0,0.5,0.5,1/tc]Create an idealised Bloch-type skyrmion with given diameter and centre position in the x-y plane (2 relative coordinates needed only) of the given mesh (active mesh if name not specified). Core specifies the skyrmion core direction: -1 for down, 1 for up. Chirality specifies the radial direction rotation: 1 for clockwise, -1 for anti-clockwise. For diameter and position use metric units.";
+
+	commands.insert(CMD_PBC, CommandSpecifier(CMD_PBC), "pbc");
+	commands[CMD_PBC].usage = "[tc0,0.5,0,1/tc]USAGE : <b>pbc</b> <i>meshname flag images</i>";
+	commands[CMD_PBC].descr = "[tc0,0.5,0.5,1/tc]Set periodic boundary conditions for magnetization in given mesh (must be ferromagnetic). Flags specify types of perodic boundary conditions: x, y, or z; images specify the number of mesh images to use either side for the given direction when calculating the demagnetising kernel - a value of zero disables pbc. e.g. ""pbc x 10"" sets x periodic boundary conditions with 10 images either side for the focused mesh; ""pbc x 0"" clears pbc for the x axis.";
+	commands[CMD_PBC].limits = { { Any(), Any() },{ Any(), Any() }, {int(0), int(1000)} };
 
 	commands.insert(CMD_SETFIELD, CommandSpecifier(CMD_SETFIELD), "setfield");
 	commands[CMD_SETFIELD].usage = "[tc0,0.5,0,1/tc]USAGE : <b>setfield</b> <i>magnitude polar azimuthal (meshname)</i>";
@@ -757,6 +766,10 @@ Simulation::Simulation(int Program_Version) :
 	commands[CMD_LOADOVF2MAG].descr = "[tc0,0.5,0.5,1/tc]Load an OOMMF-style OVF 2.0 file containing magnetisation data, into the currently focused mesh (which must be ferromagnetic). The mesh dimensions will be changed using the settings in the OVF file. By default the loaded data will not be renormalized: renormalize_value = 0. If a value is specified for renormalize_value, the loaded data will be renormalized to it (e.g. this would be an Ms value).";
 	commands[CMD_LOADOVF2MAG].unit = "A/m";
 
+	commands.insert(CMD_SAVEOVF2MAG, CommandSpecifier(CMD_SAVEOVF2MAG), "saveovf2mag");
+	commands[CMD_SAVEOVF2MAG].usage = "[tc0,0.5,0,1/tc]USAGE : <b>saveovf2mag</b> <i>(n) (data_type) (directory\\)filename</i>";
+	commands[CMD_SAVEOVF2MAG].descr = "[tc0,0.5,0.5,1/tc]Save an OOMMF-style OVF 2.0 file containing magnetisation data from the currently focused mesh (which must be ferromagnetic). You can normalize the data to Ms0 value by specifying the n flag (e.g. saveovf2mag n filename) - by default the data is not normalized. You can specify the data type as data_type = bin4 (single precision 4 bytes per float), data_type = bin8 (double precision 8 bytes per float), or data_type = text. By default bin8 is used.";
+
 	commands.insert(CMD_DP_CLEARALL, CommandSpecifier(CMD_DP_CLEARALL), "dp_clearall");
 	commands[CMD_DP_CLEARALL].usage = "[tc0,0.5,0,1/tc]USAGE : <b>dp_clearall</b>";
 	commands[CMD_DP_CLEARALL].descr = "[tc0,0.5,0.5,1/tc]Clear all dp arrays.";
@@ -1057,16 +1070,18 @@ Simulation::Simulation(int Program_Version) :
 	odeEvalHandles.push_back("ABM", EVAL_ABM);
 	odeEvalHandles.push_back("RK23", EVAL_RK23);
 	odeEvalHandles.push_back("RKF45", EVAL_RKF);
+	odeEvalHandles.push_back("RKCK45", EVAL_RKCK);
+	odeEvalHandles.push_back("RKDP54", EVAL_RKDP);
 	odeEvalHandles.push_back("SDesc", EVAL_SD);
 
 	//Allowed evaluation methods for given ODE
-	odeAllowedEvals.push_back(make_vector(EVAL_EULER, EVAL_TEULER, EVAL_AHEUN, EVAL_RK4, EVAL_ABM, EVAL_RK23, EVAL_RKF), ODE_LLG);
-	odeAllowedEvals.push_back(make_vector(EVAL_EULER, EVAL_TEULER, EVAL_AHEUN, EVAL_RK4, EVAL_ABM, EVAL_RK23, EVAL_RKF, EVAL_SD), ODE_LLGSTATIC);
-	odeAllowedEvals.push_back(make_vector(EVAL_EULER, EVAL_TEULER, EVAL_AHEUN, EVAL_RK4, EVAL_ABM, EVAL_RK23, EVAL_RKF), ODE_LLGSTT);
-	odeAllowedEvals.push_back(make_vector(EVAL_EULER, EVAL_TEULER, EVAL_AHEUN, EVAL_RK4, EVAL_ABM, EVAL_RK23, EVAL_RKF), ODE_LLB);
-	odeAllowedEvals.push_back(make_vector(EVAL_EULER, EVAL_TEULER, EVAL_AHEUN, EVAL_RK4, EVAL_ABM, EVAL_RK23, EVAL_RKF), ODE_LLBSTT);
-	odeAllowedEvals.push_back(make_vector(EVAL_EULER, EVAL_TEULER, EVAL_AHEUN, EVAL_RK4, EVAL_ABM, EVAL_RK23, EVAL_RKF), ODE_LLGSA);
-	odeAllowedEvals.push_back(make_vector(EVAL_EULER, EVAL_TEULER, EVAL_AHEUN, EVAL_RK4, EVAL_ABM, EVAL_RK23, EVAL_RKF), ODE_LLBSA);
+	odeAllowedEvals.push_back(make_vector(EVAL_EULER, EVAL_TEULER, EVAL_AHEUN, EVAL_RK4, EVAL_ABM, EVAL_RK23, EVAL_RKF, EVAL_RKCK, EVAL_RKDP), ODE_LLG);
+	odeAllowedEvals.push_back(make_vector(EVAL_EULER, EVAL_TEULER, EVAL_AHEUN, EVAL_RK4, EVAL_ABM, EVAL_RK23, EVAL_RKF, EVAL_RKCK, EVAL_RKDP, EVAL_SD), ODE_LLGSTATIC);
+	odeAllowedEvals.push_back(make_vector(EVAL_EULER, EVAL_TEULER, EVAL_AHEUN, EVAL_RK4, EVAL_ABM, EVAL_RK23, EVAL_RKF, EVAL_RKCK, EVAL_RKDP), ODE_LLGSTT);
+	odeAllowedEvals.push_back(make_vector(EVAL_EULER, EVAL_TEULER, EVAL_AHEUN, EVAL_RK4, EVAL_ABM, EVAL_RK23, EVAL_RKF, EVAL_RKCK, EVAL_RKDP), ODE_LLB);
+	odeAllowedEvals.push_back(make_vector(EVAL_EULER, EVAL_TEULER, EVAL_AHEUN, EVAL_RK4, EVAL_ABM, EVAL_RK23, EVAL_RKF, EVAL_RKCK, EVAL_RKDP), ODE_LLBSTT);
+	odeAllowedEvals.push_back(make_vector(EVAL_EULER, EVAL_TEULER, EVAL_AHEUN, EVAL_RK4, EVAL_ABM, EVAL_RK23, EVAL_RKF, EVAL_RKCK, EVAL_RKDP), ODE_LLGSA);
+	odeAllowedEvals.push_back(make_vector(EVAL_EULER, EVAL_TEULER, EVAL_AHEUN, EVAL_RK4, EVAL_ABM, EVAL_RK23, EVAL_RKF, EVAL_RKCK, EVAL_RKDP), ODE_LLBSA);
 	odeAllowedEvals.push_back(make_vector(EVAL_EULER, EVAL_TEULER, EVAL_AHEUN), ODE_SLLG);
 	odeAllowedEvals.push_back(make_vector(EVAL_EULER, EVAL_TEULER, EVAL_AHEUN), ODE_SLLGSTT);
 	odeAllowedEvals.push_back(make_vector(EVAL_EULER, EVAL_TEULER, EVAL_AHEUN), ODE_SLLB);

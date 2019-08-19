@@ -2,15 +2,15 @@
 #include "MeshParamsControlCUDA.h"
 
 #if COMPILECUDA == 1
-#ifdef ODE_EVAL_RKF
+#ifdef ODE_EVAL_RKCK
 
 //defines evaluation methods kernel launchers
 
 #include "BorisCUDALib.cuh"
 
-//----------------------------------------- EVALUATIONS : RKF45
+//----------------------------------------- EVALUATIONS : RKCK45
 
-__global__ void RunRKF45_Step0_withReductions_Kernel(ManagedDiffEqCUDA& cuDiffEq, ManagedMeshCUDA& cuMesh)
+__global__ void RunRKCK45_Step0_withReductions_Kernel(ManagedDiffEqCUDA& cuDiffEq, ManagedMeshCUDA& cuMesh)
 {
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
 
@@ -34,8 +34,8 @@ __global__ void RunRKF45_Step0_withReductions_Kernel(ManagedDiffEqCUDA& cuDiffEq
 				//First evaluate RHS of set equation at the current time step
 				(*cuDiffEq.psEval0)[idx] = (cuDiffEq.*(cuDiffEq.pODEFunc))(idx);
 
-				//Now estimate magnetization using RKF first step
-				(*cuMesh.pM)[idx] += (*cuDiffEq.psEval0)[idx] * (dT / 4);
+				//Now estimate magnetization using RKCK first step
+				(*cuMesh.pM)[idx] += (*cuDiffEq.psEval0)[idx] * (dT / 5);
 			}
 		}
 	}
@@ -47,7 +47,7 @@ __global__ void RunRKF45_Step0_withReductions_Kernel(ManagedDiffEqCUDA& cuDiffEq
 	}
 }
 
-__global__ void RunRKF45_Step0_Kernel(ManagedDiffEqCUDA& cuDiffEq, ManagedMeshCUDA& cuMesh)
+__global__ void RunRKCK45_Step0_Kernel(ManagedDiffEqCUDA& cuDiffEq, ManagedMeshCUDA& cuMesh)
 {
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
 
@@ -65,14 +65,14 @@ __global__ void RunRKF45_Step0_Kernel(ManagedDiffEqCUDA& cuDiffEq, ManagedMeshCU
 				//First evaluate RHS of set equation at the current time step
 				(*cuDiffEq.psEval0)[idx] = (cuDiffEq.*(cuDiffEq.pODEFunc))(idx);
 
-				//Now estimate magnetization using RKF first step
-				(*cuMesh.pM)[idx] += (*cuDiffEq.psEval0)[idx] * (dT / 4);
+				//Now estimate magnetization using RKCK first step
+				(*cuMesh.pM)[idx] += (*cuDiffEq.psEval0)[idx] * (dT / 5);
 			}
 		}
 	}
 }
 
-__global__ void RunRKF45_Step1_Kernel(ManagedDiffEqCUDA& cuDiffEq, ManagedMeshCUDA& cuMesh)
+__global__ void RunRKCK45_Step1_Kernel(ManagedDiffEqCUDA& cuDiffEq, ManagedMeshCUDA& cuMesh)
 {
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
 
@@ -85,13 +85,13 @@ __global__ void RunRKF45_Step1_Kernel(ManagedDiffEqCUDA& cuDiffEq, ManagedMeshCU
 			//First evaluate RHS of set equation at the current time step
 			(*cuDiffEq.psEval1)[idx] = (cuDiffEq.*(cuDiffEq.pODEFunc))(idx);
 
-			//Now estimate magnetization using RKF midle step 1
-			(*cuMesh.pM)[idx] = (*cuDiffEq.psM1)[idx] + (3 * (*cuDiffEq.psEval0)[idx] + 9 * (*cuDiffEq.psEval1)[idx]) * dT / 32;
+			//Now estimate magnetization using RKCK midle step 1
+			(*cuMesh.pM)[idx] = (*cuDiffEq.psM1)[idx] + (3 * (*cuDiffEq.psEval0)[idx] / 40 + 9 * (*cuDiffEq.psEval1)[idx] / 40) * dT;
 		}
 	}
 }
 
-__global__ void RunRKF45_Step2_Kernel(ManagedDiffEqCUDA& cuDiffEq, ManagedMeshCUDA& cuMesh)
+__global__ void RunRKCK45_Step2_Kernel(ManagedDiffEqCUDA& cuDiffEq, ManagedMeshCUDA& cuMesh)
 {
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
 
@@ -104,13 +104,13 @@ __global__ void RunRKF45_Step2_Kernel(ManagedDiffEqCUDA& cuDiffEq, ManagedMeshCU
 			//First evaluate RHS of set equation at the current time step
 			(*cuDiffEq.psEval2)[idx] = (cuDiffEq.*(cuDiffEq.pODEFunc))(idx);
 
-			//Now estimate magnetization using RKF midle step 2
-			(*cuMesh.pM)[idx] = (*cuDiffEq.psM1)[idx] + (1932 * (*cuDiffEq.psEval0)[idx] - 7200 * (*cuDiffEq.psEval1)[idx] + 7296 * (*cuDiffEq.psEval2)[idx]) * dT / 2197;
+			//Now estimate magnetization using RKCK midle step 2
+			(*cuMesh.pM)[idx] = (*cuDiffEq.psM1)[idx] + (3 * (*cuDiffEq.psEval0)[idx] / 10 - 9 * (*cuDiffEq.psEval1)[idx] / 10 + 6 * (*cuDiffEq.psEval2)[idx] / 5) * dT;
 		}
 	}
 }
 
-__global__ void RunRKF45_Step3_Kernel(ManagedDiffEqCUDA& cuDiffEq, ManagedMeshCUDA& cuMesh)
+__global__ void RunRKCK45_Step3_Kernel(ManagedDiffEqCUDA& cuDiffEq, ManagedMeshCUDA& cuMesh)
 {
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
 
@@ -123,13 +123,13 @@ __global__ void RunRKF45_Step3_Kernel(ManagedDiffEqCUDA& cuDiffEq, ManagedMeshCU
 			//First evaluate RHS of set equation at the current time step
 			(*cuDiffEq.psEval3)[idx] = (cuDiffEq.*(cuDiffEq.pODEFunc))(idx);
 
-			//Now estimate magnetization using RKF midle step 3
-			(*cuMesh.pM)[idx] = (*cuDiffEq.psM1)[idx] + (439 * (*cuDiffEq.psEval0)[idx] / 216 - 8 * (*cuDiffEq.psEval1)[idx] + 3680 * (*cuDiffEq.psEval2)[idx] / 513 - 845 * (*cuDiffEq.psEval3)[idx] / 4104) * dT;
+			//Now estimate magnetization using RKCK midle step 3
+			(*cuMesh.pM)[idx] = (*cuDiffEq.psM1)[idx] + (-11 * (*cuDiffEq.psEval0)[idx] / 54 + 5 * (*cuDiffEq.psEval1)[idx] / 2 - 70 * (*cuDiffEq.psEval2)[idx] / 27 + 35 * (*cuDiffEq.psEval3)[idx] / 27) * dT;
 		}
 	}
 }
 
-__global__ void RunRKF45_Step4_Kernel(ManagedDiffEqCUDA& cuDiffEq, ManagedMeshCUDA& cuMesh)
+__global__ void RunRKCK45_Step4_Kernel(ManagedDiffEqCUDA& cuDiffEq, ManagedMeshCUDA& cuMesh)
 {
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
 
@@ -143,12 +143,12 @@ __global__ void RunRKF45_Step4_Kernel(ManagedDiffEqCUDA& cuDiffEq, ManagedMeshCU
 			(*cuDiffEq.psEval4)[idx] = (cuDiffEq.*(cuDiffEq.pODEFunc))(idx);
 
 			//Now estimate magnetization using RKF midle step 4
-			(*cuMesh.pM)[idx] = (*cuDiffEq.psM1)[idx] + (-8 * (*cuDiffEq.psEval0)[idx] / 27 + 2 * (*cuDiffEq.psEval1)[idx] - 3544 * (*cuDiffEq.psEval2)[idx] / 2565 + 1859 * (*cuDiffEq.psEval3)[idx] / 4104 - 11 * (*cuDiffEq.psEval4)[idx] / 40) * dT;
+			(*cuMesh.pM)[idx] = (*cuDiffEq.psM1)[idx] + (1631 * (*cuDiffEq.psEval0)[idx] / 55296 + 175 * (*cuDiffEq.psEval1)[idx] / 512 + 575 * (*cuDiffEq.psEval2)[idx] / 13824 + 44275 * (*cuDiffEq.psEval3)[idx] / 110592 + 253 * (*cuDiffEq.psEval4)[idx] / 4096) * dT;
 		}
 	}
 }
 
-__global__ void RunRKF45_Step5_withReductions_Kernel(ManagedDiffEqCUDA& cuDiffEq, ManagedMeshCUDA& cuMesh)
+__global__ void RunRKCK45_Step5_withReductions_Kernel(ManagedDiffEqCUDA& cuDiffEq, ManagedMeshCUDA& cuMesh)
 {
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
 
@@ -166,11 +166,11 @@ __global__ void RunRKF45_Step5_withReductions_Kernel(ManagedDiffEqCUDA& cuDiffEq
 				//First evaluate RHS of set equation at the current time step
 				cuReal3 rhs = (cuDiffEq.*(cuDiffEq.pODEFunc))(idx);
 
-				//4th order evaluation
-				cuReal3 prediction = (*cuDiffEq.psM1)[idx] + (25 * (*cuDiffEq.psEval0)[idx] / 216 + 1408 * (*cuDiffEq.psEval2)[idx] / 2565 + 2197 * (*cuDiffEq.psEval3)[idx] / 4101 - (*cuDiffEq.psEval4)[idx] / 5) * dT;
+				//RKCK45 : 4th order evaluation
+				(*cuMesh.pM)[idx] = (*cuDiffEq.psM1)[idx] + (2825 * (*cuDiffEq.psEval0)[idx] / 27648 + 18575 * (*cuDiffEq.psEval2)[idx] / 48384 + 13525 * (*cuDiffEq.psEval3)[idx] / 55296 + 277 * (*cuDiffEq.psEval4)[idx] / 14336 + rhs / 4) * dT;
 
-				//5th order evaluation -> keep this as the new value, not the 4th order; relaxation doesn't work well the other way around.
-				(*cuMesh.pM)[idx] = (*cuDiffEq.psM1)[idx] + (16 * (*cuDiffEq.psEval0)[idx] / 135 + 6656 * (*cuDiffEq.psEval2)[idx] / 12825 + 28561 * (*cuDiffEq.psEval3)[idx] / 56430 - 9 * (*cuDiffEq.psEval4)[idx] / 50 + 2 * rhs / 55) * dT;
+				//Now calculate 5th order evaluation for adaptive time step
+				cuReal3 prediction = (*cuDiffEq.psM1)[idx] + (37 * (*cuDiffEq.psEval0)[idx] / 378 + 250 * (*cuDiffEq.psEval2)[idx] / 621 + 125 * (*cuDiffEq.psEval3)[idx] / 594 + 512 * rhs / 1771) * dT;
 
 				if (*cuDiffEq.prenormalize) {
 
@@ -204,7 +204,7 @@ __global__ void RunRKF45_Step5_withReductions_Kernel(ManagedDiffEqCUDA& cuDiffEq
 	reduction_max(0, 1, &lte, *cuDiffEq.plte);
 }
 
-__global__ void RunRKF45_Step5_Kernel(ManagedDiffEqCUDA& cuDiffEq, ManagedMeshCUDA& cuMesh)
+__global__ void RunRKCK45_Step5_Kernel(ManagedDiffEqCUDA& cuDiffEq, ManagedMeshCUDA& cuMesh)
 {
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
 
@@ -221,11 +221,11 @@ __global__ void RunRKF45_Step5_Kernel(ManagedDiffEqCUDA& cuDiffEq, ManagedMeshCU
 				//First evaluate RHS of set equation at the current time step
 				cuReal3 rhs = (cuDiffEq.*(cuDiffEq.pODEFunc))(idx);
 
-				//4th order evaluation
-				cuReal3 prediction = (*cuDiffEq.psM1)[idx] + (25 * (*cuDiffEq.psEval0)[idx] / 216 + 1408 * (*cuDiffEq.psEval2)[idx] / 2565 + 2197 * (*cuDiffEq.psEval3)[idx] / 4101 - (*cuDiffEq.psEval4)[idx] / 5) * dT;
+				//RKCK45 : 4th order evaluation
+				(*cuMesh.pM)[idx] = (*cuDiffEq.psM1)[idx] + (2825 * (*cuDiffEq.psEval0)[idx] / 27648 + 18575 * (*cuDiffEq.psEval2)[idx] / 48384 + 13525 * (*cuDiffEq.psEval3)[idx] / 55296 + 277 * (*cuDiffEq.psEval4)[idx] / 14336 + rhs / 4) * dT;
 
-				//5th order evaluation -> keep this as the new value, not the 4th order; relaxation doesn't work well the other way around.
-				(*cuMesh.pM)[idx] = (*cuDiffEq.psM1)[idx] + (16 * (*cuDiffEq.psEval0)[idx] / 135 + 6656 * (*cuDiffEq.psEval2)[idx] / 12825 + 28561 * (*cuDiffEq.psEval3)[idx] / 56430 - 9 * (*cuDiffEq.psEval4)[idx] / 50 + 2 * rhs / 55) * dT;
+				//Now calculate 5th order evaluation for adaptive time step
+				cuReal3 prediction = (*cuDiffEq.psM1)[idx] + (37 * (*cuDiffEq.psEval0)[idx] / 378 + 250 * (*cuDiffEq.psEval2)[idx] / 621 + 125 * (*cuDiffEq.psEval3)[idx] / 594 + 512 * rhs / 1771) * dT;
 
 				if (*cuDiffEq.prenormalize) {
 
@@ -251,9 +251,9 @@ __global__ void RunRKF45_Step5_Kernel(ManagedDiffEqCUDA& cuDiffEq, ManagedMeshCU
 
 //----------------------------------------- DifferentialEquationCUDA Launchers
 
-//RUNGE KUTTA FEHLBERG
+//RUNGE KUTTA CASH-KARP
 
-void DifferentialEquationCUDA::RunRKF45(int step, bool calculate_mxh, bool calculate_dmdt)
+void DifferentialEquationCUDA::RunRKCK45(int step, bool calculate_mxh, bool calculate_dmdt)
 {
 	switch (step) {
 
@@ -261,36 +261,36 @@ void DifferentialEquationCUDA::RunRKF45(int step, bool calculate_mxh, bool calcu
 
 		if (calculate_mxh) {
 
-			RunRKF45_Step0_withReductions_Kernel << < (pMeshCUDA->n.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >> > (cuDiffEq, pMeshCUDA->cuMesh);
+			RunRKCK45_Step0_withReductions_Kernel << < (pMeshCUDA->n.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >> > (cuDiffEq, pMeshCUDA->cuMesh);
 		}
 		else {
 
-			RunRKF45_Step0_Kernel << < (pMeshCUDA->n.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >> > (cuDiffEq, pMeshCUDA->cuMesh);
+			RunRKCK45_Step0_Kernel << < (pMeshCUDA->n.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >> > (cuDiffEq, pMeshCUDA->cuMesh);
 		}
 
 		break;
 
 	case 1:
 
-		RunRKF45_Step1_Kernel << < (pMeshCUDA->n.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >> > (cuDiffEq, pMeshCUDA->cuMesh);
+		RunRKCK45_Step1_Kernel << < (pMeshCUDA->n.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >> > (cuDiffEq, pMeshCUDA->cuMesh);
 
 		break;
 
 	case 2:
 
-		RunRKF45_Step2_Kernel << < (pMeshCUDA->n.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >> > (cuDiffEq, pMeshCUDA->cuMesh);
+		RunRKCK45_Step2_Kernel << < (pMeshCUDA->n.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >> > (cuDiffEq, pMeshCUDA->cuMesh);
 
 		break;
 
 	case 3:
 
-		RunRKF45_Step3_Kernel << < (pMeshCUDA->n.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >> > (cuDiffEq, pMeshCUDA->cuMesh);
+		RunRKCK45_Step3_Kernel << < (pMeshCUDA->n.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >> > (cuDiffEq, pMeshCUDA->cuMesh);
 
 		break;
 
 	case 4:
 
-		RunRKF45_Step4_Kernel << < (pMeshCUDA->n.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >> > (cuDiffEq, pMeshCUDA->cuMesh);
+		RunRKCK45_Step4_Kernel << < (pMeshCUDA->n.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >> > (cuDiffEq, pMeshCUDA->cuMesh);
 
 		break;
 
@@ -298,11 +298,11 @@ void DifferentialEquationCUDA::RunRKF45(int step, bool calculate_mxh, bool calcu
 
 		if (calculate_dmdt) {
 
-			RunRKF45_Step5_withReductions_Kernel << < (pMeshCUDA->n.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >> > (cuDiffEq, pMeshCUDA->cuMesh);
+			RunRKCK45_Step5_withReductions_Kernel << < (pMeshCUDA->n.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >> > (cuDiffEq, pMeshCUDA->cuMesh);
 		}
 		else {
 
-			RunRKF45_Step5_Kernel << < (pMeshCUDA->n.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >> > (cuDiffEq, pMeshCUDA->cuMesh);
+			RunRKCK45_Step5_Kernel << < (pMeshCUDA->n.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >> > (cuDiffEq, pMeshCUDA->cuMesh);
 		}
 
 		break;

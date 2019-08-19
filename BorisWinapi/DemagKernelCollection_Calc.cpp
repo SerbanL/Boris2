@@ -341,9 +341,6 @@ BError DemagKernelCollection::Calculate_Demag_Kernels_2D_zShifted(int index)
 
 	//-------------- CALCULATE OFF-DIAGONAL TENSOR ELEMENTS THEN TRANSFORM INTO KERNEL
 
-	//important to zero D before calculating new tensor elements
-	D.set(DBL3());
-
 	if (!dtf.CalcOffDiagTens2D_Shifted_Irregular(D, n, N, kernels[index]->h_src / h_max, kernels[index]->h_dst / h_max, kernels[index]->shift / h_max)) return error(BERROR_OUTOFMEMORY_NCRIT);
 
 	tensor_to_kernel(D, kernels[index]->Kodiag_real, true);
@@ -429,9 +426,6 @@ BError DemagKernelCollection::Calculate_Demag_Kernels_2D_Complex_Full(int index)
 	tensor_to_kernel(D, kernels[index]->Kdiag_cmpl);
 
 	//-------------- CALCULATE OFF-DIAGONAL TENSOR ELEMENTS THEN TRANSFORM INTO KERNEL
-
-	//important to zero D before calculating new tensor elements
-	D.set(DBL3());
 
 	if (!dtf.CalcOffDiagTens2D_Shifted_Irregular(D, n, N, kernels[index]->h_src / h_max, kernels[index]->h_dst / h_max, kernels[index]->shift / h_max)) return error(BERROR_OUTOFMEMORY_NCRIT);
 
@@ -568,9 +562,6 @@ BError DemagKernelCollection::Calculate_Demag_Kernels_3D_Self(int index)
 
 	//-------------- CALCULATE OFF-DIAGONAL TENSOR ELEMENTS THEN TRANSFORM INTO KERNEL
 
-	//important to zero D before calculating new tensor elements
-	D.set(DBL3());
-
 	if (!dtf.CalcOffDiagTens3D(D, n, N, h / h_max)) return error(BERROR_OUTOFMEMORY_NCRIT);
 
 	tensor_to_kernel(D, kernels[index]->Kodiag_real, true);
@@ -674,9 +665,6 @@ BError DemagKernelCollection::Calculate_Demag_Kernels_3D_zShifted(int index)
 
 	//-------------- CALCULATE OFF-DIAGONAL TENSOR ELEMENTS THEN TRANSFORM INTO KERNEL
 
-	//important to zero D before calculating new tensor elements
-	D.set(DBL3());
-
 	if (!dtf.CalcOffDiagTens3D_Shifted(D, n, N, h / h_max, kernels[index]->shift / h_max)) return error(BERROR_OUTOFMEMORY_NCRIT);
 
 	tensor_to_kernel(D, kernels[index]->Kodiag_cmpl);
@@ -779,9 +767,6 @@ BError DemagKernelCollection::Calculate_Demag_Kernels_3D_Complex_Full(int index)
 	tensor_to_kernel(D, kernels[index]->Kdiag_cmpl);
 
 	//-------------- CALCULATE OFF-DIAGONAL TENSOR ELEMENTS THEN TRANSFORM INTO KERNEL
-
-	//important to zero D before calculating new tensor elements
-	D.set(DBL3());
 
 	if (!dtf.CalcOffDiagTens3D_Shifted(D, n, N, h / h_max, kernels[index]->shift / h_max)) return error(BERROR_OUTOFMEMORY_NCRIT);
 

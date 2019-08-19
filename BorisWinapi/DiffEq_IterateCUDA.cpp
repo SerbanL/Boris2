@@ -25,8 +25,8 @@ bool ODECommon::SetAdaptiveTimeStepCUDA(void)
 			for (int idx = 0; idx < (int)pODE.size(); idx++)
 				pODE[idx]->pmeshODECUDA->RestoreMagnetisation();
 
-			//reduce time step based on error ratio; use a 0.99 back-off factor so the solver doesn't get stuck
-			dT *= 0.99 * pow(err_high_fail / lte, 0.25);
+			//reduce time step based on error ratio
+			dT *= sqrt(err_high_fail / (2 * lte));
 
 			pODECUDA->Sync_dT();
 
@@ -35,7 +35,7 @@ bool ODECommon::SetAdaptiveTimeStepCUDA(void)
 		}
 
 		//not failed but still need to reduce time step
-		dT *= 0.99 * pow(err_high / lte, 0.25);
+		dT *= pow(err_high / (2 * lte), 0.25);
 
 		//must not go below minimum time step
 		if (dT < dT_min) dT = dT_min;
@@ -82,6 +82,44 @@ bool ODECommon::SetAdaptiveTimeStepCUDA_SingleThreshold(void)
 
 	//not failed but still need to reduce time step
 	dT *= sqrt(err_high_fail / lte);
+
+	//must not go below minimum time step
+	if (dT < dT_min) dT = dT_min;
+
+	//must not go above maximum time step
+	if (dT > dT_max) dT = dT_max;
+
+	pODECUDA->Sync_dT();
+
+	//good, next step
+	return true;
+}
+
+bool ODECommon::SetAdaptiveTimeStepCUDA_SingleThreshold2(void)
+{
+	double lte = pODECUDA->Get_lte();
+
+	//failed - try again. Restore state to start of evaluation and try again with smaller time step - output not available yet.
+	//do not redo if time step is at or below the minimum value allowed - this is used as a "timeout" to stop the solver from getting stuck on the same iteration; in this case the method is not good enough for the problem.
+	if (lte > err_high_fail && dT > dT_min) {
+
+		time -= dT;
+		stagetime -= dT;
+
+		for (int idx = 0; idx < (int)pODE.size(); idx++)
+			pODE[idx]->pmeshODECUDA->RestoreMagnetisation();
+
+		//reduce time step based on error ratio
+		dT *= pow(err_high_fail / (2 * lte), 0.25);
+
+		pODECUDA->Sync_dT();
+
+		//failed - must repeat
+		return false;
+	}
+
+	//not failed but still need to reduce time step
+	dT *= pow(err_high_fail / (2 * lte), 0.25);
 
 	//must not go below minimum time step
 	if (dT < dT_min) dT = dT_min;
@@ -416,12 +454,31 @@ void ODECommon::IterateCUDA(void)
 			else pODECUDA->Zero_lte_value();
 
 			for (int idx = 0; idx < (int)pODE.size(); idx++)
-				pODE[idx]->pmeshODECUDA->RunRK23(0, calculate_mxh, calculate_dmdt);
+				pODE[idx]->pmeshODECUDA->RunRK23_Step0_NoAdvance(calculate_mxh);
 
 			calculate_mxh = false;
 
-			evalStep++;
 			available = false;
+
+			//RK23 has the FSAL property, thus the error is calculated on this first stage -> must be primed by a full pass first
+			//It also means the above methods do not advance the magnetization yet as we need to calculate the new stepsize first
+			//Magnetization is advanced below if the step has not failed
+			//If the step has failed then restore magnetization, and also set primed to false -> we must now take a full pass again before we can calculate a new stepsize.
+			if (primed) {
+
+				if (!SetAdaptiveTimeStepCUDA()) {
+
+					primed = false;
+					break;
+				}
+			}
+			else primed = true;
+
+			//Advance magnetization with new stepsize
+			for (int idx = 0; idx < (int)pODE.size(); idx++)
+				pODE[idx]->pmeshODECUDA->RunRK23(0);
+
+			evalStep++;
 		}
 		break;
 
@@ -448,13 +505,6 @@ void ODECommon::IterateCUDA(void)
 			stagetime += dT;
 			iteration++;
 			stageiteration++;
-
-			if (primed) {
-
-				if (!SetAdaptiveTimeStepCUDA()) break;
-			}
-			//need one pass of rk23 before we can use it for adaptive time step (FSAL)
-			else primed = true;
 
 			//done for this step. Make it available.
 			available = true;
@@ -556,6 +606,213 @@ void ODECommon::IterateCUDA(void)
 			stageiteration++;
 
 			if (!SetAdaptiveTimeStepCUDA()) break;
+
+			//done for this step. Make it available.
+			available = true;
+		}
+		break;
+		}
+#endif
+	}
+	break;
+
+	case EVAL_RKCK:
+	{
+#ifdef ODE_EVAL_RKCK
+		switch (evalStep) {
+
+		case 0:
+		{
+			if (calculate_mxh) pODECUDA->Zero_mxh_lte_values();
+
+			for (int idx = 0; idx < (int)pODE.size(); idx++) {
+
+				pODE[idx]->pmeshODECUDA->RunRKCK45(0, calculate_mxh, calculate_dmdt);
+			}
+
+			calculate_mxh = false;
+
+			evalStep++;
+			available = false;
+		}
+		break;
+
+		case 1:
+		{
+			for (int idx = 0; idx < (int)pODE.size(); idx++) {
+
+				pODE[idx]->pmeshODECUDA->RunRKCK45(1);
+			}
+
+			evalStep++;
+		}
+		break;
+
+		case 2:
+		{
+			for (int idx = 0; idx < (int)pODE.size(); idx++) {
+
+				pODE[idx]->pmeshODECUDA->RunRKCK45(2);
+			}
+
+			evalStep++;
+		}
+		break;
+
+		case 3:
+		{
+			for (int idx = 0; idx < (int)pODE.size(); idx++) {
+
+				pODE[idx]->pmeshODECUDA->RunRKCK45(3);
+			}
+
+			evalStep++;
+		}
+		break;
+
+		case 4:
+		{
+			for (int idx = 0; idx < (int)pODE.size(); idx++) {
+
+				pODE[idx]->pmeshODECUDA->RunRKCK45(4);
+			}
+
+			evalStep++;
+		}
+		break;
+
+		case 5:
+		{
+			if (calculate_dmdt) pODECUDA->Zero_dmdt_lte_values();
+			//need this for lte reduction
+			else pODECUDA->Zero_lte_value();
+
+			for (int idx = 0; idx < (int)pODE.size(); idx++) {
+
+				pODE[idx]->pmeshODECUDA->RunRKCK45(5, calculate_mxh, calculate_dmdt);
+			}
+
+			calculate_dmdt = false;
+
+			evalStep = 0;
+			time += dT;
+			stagetime += dT;
+			iteration++;
+			stageiteration++;
+
+			if (!SetAdaptiveTimeStepCUDA()) break;
+
+			//done for this step. Make it available.
+			available = true;
+		}
+		break;
+		}
+#endif
+	}
+	break;
+
+	case EVAL_RKDP:
+	{
+#ifdef ODE_EVAL_RKDP
+		switch (evalStep) {
+
+		case 0:
+		{
+			if (calculate_mxh) pODECUDA->Zero_mxh_lte_values();
+			//need this for lte reduction
+			else pODECUDA->Zero_lte_value();
+
+			for (int idx = 0; idx < (int)pODE.size(); idx++) {
+
+				pODE[idx]->pmeshODECUDA->RunRKDP54_Step0_NoAdvance(calculate_mxh);
+			}
+
+			calculate_mxh = false;
+
+			available = false;
+
+			//RKDP has the FSAL property, thus the error is calculated on this first stage -> must be primed by a full pass first
+			//It also means the above methods do not advance the magnetization yet as we need to calculate the new stepsize first
+			//Magnetization is advanced below if the step has not failed
+			//If the step has failed then restore magnetization, and also set primed to false -> we must now take a full pass again before we can calculate a new stepsize.
+			if (primed) {
+
+				if (!SetAdaptiveTimeStepCUDA()) {
+
+					primed = false;
+					break;
+				}
+			}
+			else primed = true;
+
+			//Advance magnetization with new stepsize
+			for (int idx = 0; idx < (int)pODE.size(); idx++)
+				pODE[idx]->pmeshODECUDA->RunRKDP54(0);
+
+			evalStep++;
+		}
+		break;
+
+		case 1:
+		{
+			for (int idx = 0; idx < (int)pODE.size(); idx++) {
+
+				pODE[idx]->pmeshODECUDA->RunRKDP54(1);
+			}
+
+			evalStep++;
+		}
+		break;
+
+		case 2:
+		{
+			for (int idx = 0; idx < (int)pODE.size(); idx++) {
+
+				pODE[idx]->pmeshODECUDA->RunRKDP54(2);
+			}
+
+			evalStep++;
+		}
+		break;
+
+		case 3:
+		{
+			for (int idx = 0; idx < (int)pODE.size(); idx++) {
+
+				pODE[idx]->pmeshODECUDA->RunRKDP54(3);
+			}
+
+			evalStep++;
+		}
+		break;
+
+		case 4:
+		{
+			for (int idx = 0; idx < (int)pODE.size(); idx++) {
+
+				pODE[idx]->pmeshODECUDA->RunRKDP54(4);
+			}
+
+			evalStep++;
+		}
+		break;
+
+		case 5:
+		{
+			if (calculate_dmdt) pODECUDA->Zero_dmdt_lte_values();
+
+			for (int idx = 0; idx < (int)pODE.size(); idx++) {
+
+				pODE[idx]->pmeshODECUDA->RunRKDP54(5, calculate_mxh, calculate_dmdt);
+			}
+
+			calculate_dmdt = false;
+
+			evalStep = 0;
+			time += dT;
+			stagetime += dT;
+			iteration++;
+			stageiteration++;
 
 			//done for this step. Make it available.
 			available = true;

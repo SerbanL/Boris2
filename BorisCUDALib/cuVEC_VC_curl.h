@@ -15,7 +15,7 @@ __device__ VType cuVEC_VC<VType>::curl_neu(int idx) const
 	if (!(ngbrFlags[idx] & NF_NOTEMPTY)) return curl;
 
 	//x direction differentials
-	if (ngbrFlags[idx] & NF_BOTHX) {
+	if ((ngbrFlags[idx] & NF_BOTHX) == NF_BOTHX) {
 
 		curl.y -= (quantity[idx + 1].z - quantity[idx - 1].z) / (2 * h.x);
 		curl.z += (quantity[idx + 1].y - quantity[idx - 1].y) / (2 * h.x);
@@ -69,7 +69,7 @@ __device__ VType cuVEC_VC<VType>::curl_neu(int idx) const
 	}
 
 	//y direction differentials
-	if (ngbrFlags[idx] & NF_BOTHY) {
+	if ((ngbrFlags[idx] & NF_BOTHY) == NF_BOTHY) {
 
 		curl.x += (quantity[idx + n.x].z - quantity[idx - n.x].z) / (2 * h.y);
 		curl.z -= (quantity[idx + n.x].x - quantity[idx - n.x].x) / (2 * h.y);
@@ -123,7 +123,7 @@ __device__ VType cuVEC_VC<VType>::curl_neu(int idx) const
 	}
 
 	//z direction differentials
-	if (ngbrFlags[idx] & NF_BOTHZ) {
+	if ((ngbrFlags[idx] & NF_BOTHZ) == NF_BOTHZ) {
 
 		curl.x -= (quantity[idx + n.x*n.y].y - quantity[idx - n.x*n.y].y) / (2 * h.z);
 		curl.y += (quantity[idx + n.x*n.y].x - quantity[idx - n.x*n.y].x) / (2 * h.z);
@@ -147,14 +147,32 @@ __device__ VType cuVEC_VC<VType>::curl_neu(int idx) const
 
 		if (ngbrFlags[idx] & NF_NPZ) {
 
-			curl.x -= 0.5 * (quantity[idx + n.x*n.y].y - quantity[idx].y) / h.z;
-			curl.y += 0.5 * (quantity[idx + n.x*n.y].x - quantity[idx].x) / h.z;
+			//is it a pbc along z? If yes, then we are guaranteed to have a "neighbor" on the other side, so use it; otherwise apply boundary condition.
+			if (ngbrFlags[idx] & NF_PBCZ) {
+
+				curl.x -= (quantity[idx + n.x*n.y].y - quantity[idx + (n.z - 1) * n.x*n.y].y) / (2 * h.z);
+				curl.y += (quantity[idx + n.x*n.y].x - quantity[idx + (n.z - 1) * n.x*n.y].x) / (2 * h.z);
+			}
+			else {
+
+				curl.x -= 0.5 * (quantity[idx + n.x*n.y].y - quantity[idx].y) / h.z;
+				curl.y += 0.5 * (quantity[idx + n.x*n.y].x - quantity[idx].x) / h.z;
+			}
 		}
 
 		else {
 
-			curl.x -= 0.5 * (quantity[idx].y - quantity[idx - n.x*n.y].y) / h.z;
-			curl.y += 0.5 * (quantity[idx].x - quantity[idx - n.x*n.y].x) / h.z;
+			//is it a pbc along z? If yes, then we are guaranteed to have a "neighbor" on the other side, so use it; otherwise apply boundary condition.
+			if (ngbrFlags[idx] & NF_PBCZ) {
+
+				curl.x -= (quantity[idx - (n.z - 1) * n.x*n.y].y - quantity[idx - n.x*n.y].y) / (2 * h.z);
+				curl.y += (quantity[idx - (n.z - 1) * n.x*n.y].x - quantity[idx - n.x*n.y].x) / (2 * h.z);
+			}
+			else {
+
+				curl.x -= 0.5 * (quantity[idx].y - quantity[idx - n.x*n.y].y) / h.z;
+				curl.y += 0.5 * (quantity[idx].x - quantity[idx - n.x*n.y].x) / h.z;
+			}
 		}
 	}
 
@@ -175,7 +193,7 @@ __device__ VType cuVEC_VC<VType>::curl_nneu(int idx, Class_BDiff& bdiff_class) c
 	if (!(ngbrFlags[idx] & NF_NOTEMPTY)) return curl;
 
 	//x direction differentials
-	if (ngbrFlags[idx] & NF_BOTHX) {
+	if ((ngbrFlags[idx] & NF_BOTHX) == NF_BOTHX) {
 
 		curl.y -= (quantity[idx + 1].z - quantity[idx - 1].z) / (2 * h.x);
 		curl.z += (quantity[idx + 1].y - quantity[idx - 1].y) / (2 * h.x);
@@ -231,7 +249,7 @@ __device__ VType cuVEC_VC<VType>::curl_nneu(int idx, Class_BDiff& bdiff_class) c
 	}
 
 	//y direction differentials
-	if (ngbrFlags[idx] & NF_BOTHY) {
+	if ((ngbrFlags[idx] & NF_BOTHY) == NF_BOTHY) {
 
 		curl.x += (quantity[idx + n.x].z - quantity[idx - n.x].z) / (2 * h.y);
 		curl.z -= (quantity[idx + n.x].x - quantity[idx - n.x].x) / (2 * h.y);
@@ -287,7 +305,7 @@ __device__ VType cuVEC_VC<VType>::curl_nneu(int idx, Class_BDiff& bdiff_class) c
 	}
 
 	//z direction differentials
-	if (ngbrFlags[idx] & NF_BOTHZ) {
+	if ((ngbrFlags[idx] & NF_BOTHZ) == NF_BOTHZ) {
 
 		curl.x -= (quantity[idx + n.x*n.y].y - quantity[idx - n.x*n.y].y) / (2 * h.z);
 		curl.y += (quantity[idx + n.x*n.y].x - quantity[idx - n.x*n.y].x) / (2 * h.z);
@@ -313,14 +331,31 @@ __device__ VType cuVEC_VC<VType>::curl_nneu(int idx, Class_BDiff& bdiff_class) c
 
 		if (ngbrFlags[idx] & NF_NPZ) {
 
-			curl.x -= 0.5 * ((quantity[idx + n.x*n.y].y - quantity[idx].y) / h.z + bdiff_val.z.y);
-			curl.y += 0.5 * ((quantity[idx + n.x*n.y].x - quantity[idx].x) / h.z + bdiff_val.z.x);
-		}
+			//is it a pbc along z? If yes, then we are guaranteed to have a "neighbor" on the other side, so use it; otherwise apply boundary condition.
+			if (ngbrFlags[idx] & NF_PBCZ) {
 
+				curl.x -= (quantity[idx + n.x*n.y].y - quantity[idx + (n.z - 1) * n.x*n.y].y) / (2 * h.z);
+				curl.y += (quantity[idx + n.x*n.y].x - quantity[idx + (n.z - 1) * n.x*n.y].x) / (2 * h.z);
+			}
+			else {
+
+				curl.x -= 0.5 * ((quantity[idx + n.x*n.y].y - quantity[idx].y) / h.z + bdiff_val.z.y);
+				curl.y += 0.5 * ((quantity[idx + n.x*n.y].x - quantity[idx].x) / h.z + bdiff_val.z.x);
+			}
+		}
 		else {
 
-			curl.x -= 0.5 * ((quantity[idx].y - quantity[idx - n.x*n.y].y) / h.z + bdiff_val.z.y);
-			curl.y += 0.5 * ((quantity[idx].x - quantity[idx - n.x*n.y].x) / h.z + bdiff_val.z.x);
+			//is it a pbc along z? If yes, then we are guaranteed to have a "neighbor" on the other side, so use it; otherwise apply boundary condition.
+			if (ngbrFlags[idx] & NF_PBCZ) {
+
+				curl.x -= (quantity[idx - (n.z - 1) * n.x*n.y].y - quantity[idx - n.x*n.y].y) / (2 * h.z);
+				curl.y += (quantity[idx - (n.z - 1) * n.x*n.y].x - quantity[idx - n.x*n.y].x) / (2 * h.z);
+			}
+			else {
+
+				curl.x -= 0.5 * ((quantity[idx].y - quantity[idx - n.x*n.y].y) / h.z + bdiff_val.z.y);
+				curl.y += 0.5 * ((quantity[idx].x - quantity[idx - n.x*n.y].x) / h.z + bdiff_val.z.x);
+			}
 		}
 	}
 
@@ -336,7 +371,7 @@ __device__ VType cuVEC_VC<VType>::curl_nneu(int idx, cuVAL3<VType>& bdiff) const
 	if (!(ngbrFlags[idx] & NF_NOTEMPTY)) return curl;
 
 	//x direction differentials
-	if (ngbrFlags[idx] & NF_BOTHX) {
+	if ((ngbrFlags[idx] & NF_BOTHX) == NF_BOTHX) {
 
 		curl.y -= (quantity[idx + 1].z - quantity[idx - 1].z) / (2 * h.x);
 		curl.z += (quantity[idx + 1].y - quantity[idx - 1].y) / (2 * h.x);
@@ -390,7 +425,7 @@ __device__ VType cuVEC_VC<VType>::curl_nneu(int idx, cuVAL3<VType>& bdiff) const
 	}
 
 	//y direction differentials
-	if (ngbrFlags[idx] & NF_BOTHY) {
+	if ((ngbrFlags[idx] & NF_BOTHY) == NF_BOTHY) {
 
 		curl.x += (quantity[idx + n.x].z - quantity[idx - n.x].z) / (2 * h.y);
 		curl.z -= (quantity[idx + n.x].x - quantity[idx - n.x].x) / (2 * h.y);
@@ -444,7 +479,7 @@ __device__ VType cuVEC_VC<VType>::curl_nneu(int idx, cuVAL3<VType>& bdiff) const
 	}
 
 	//z direction differentials
-	if (ngbrFlags[idx] & NF_BOTHZ) {
+	if ((ngbrFlags[idx] & NF_BOTHZ) == NF_BOTHZ) {
 
 		curl.x -= (quantity[idx + n.x*n.y].y - quantity[idx - n.x*n.y].y) / (2 * h.z);
 		curl.y += (quantity[idx + n.x*n.y].x - quantity[idx - n.x*n.y].x) / (2 * h.z);
@@ -468,14 +503,31 @@ __device__ VType cuVEC_VC<VType>::curl_nneu(int idx, cuVAL3<VType>& bdiff) const
 
 		if (ngbrFlags[idx] & NF_NPZ) {
 
-			curl.x -= 0.5 * ((quantity[idx + n.x*n.y].y - quantity[idx].y) / h.z + bdiff.z.y);
-			curl.y += 0.5 * ((quantity[idx + n.x*n.y].x - quantity[idx].x) / h.z + bdiff.z.x);
-		}
+			//is it a pbc along z? If yes, then we are guaranteed to have a "neighbor" on the other side, so use it; otherwise apply boundary condition.
+			if (ngbrFlags[idx] & NF_PBCZ) {
 
+				curl.x -= (quantity[idx + n.x*n.y].y - quantity[idx + (n.z - 1) * n.x*n.y].y) / (2 * h.z);
+				curl.y += (quantity[idx + n.x*n.y].x - quantity[idx + (n.z - 1) * n.x*n.y].x) / (2 * h.z);
+			}
+			else {
+
+				curl.x -= 0.5 * ((quantity[idx + n.x*n.y].y - quantity[idx].y) / h.z + bdiff.z.y);
+				curl.y += 0.5 * ((quantity[idx + n.x*n.y].x - quantity[idx].x) / h.z + bdiff.z.x);
+			}
+		}
 		else {
 
-			curl.x -= 0.5 * ((quantity[idx].y - quantity[idx - n.x*n.y].y) / h.z + bdiff.z.y);
-			curl.y += 0.5 * ((quantity[idx].x - quantity[idx - n.x*n.y].x) / h.z + bdiff.z.x);
+			//is it a pbc along z? If yes, then we are guaranteed to have a "neighbor" on the other side, so use it; otherwise apply boundary condition.
+			if (ngbrFlags[idx] & NF_PBCZ) {
+
+				curl.x -= (quantity[idx - (n.z - 1) * n.x*n.y].y - quantity[idx - n.x*n.y].y) / (2 * h.z);
+				curl.y += (quantity[idx - (n.z - 1) * n.x*n.y].x - quantity[idx - n.x*n.y].x) / (2 * h.z);
+			}
+			else {
+
+				curl.x -= 0.5 * ((quantity[idx].y - quantity[idx - n.x*n.y].y) / h.z + bdiff.z.y);
+				curl.y += 0.5 * ((quantity[idx].x - quantity[idx - n.x*n.y].x) / h.z + bdiff.z.x);
+			}
 		}
 	}
 
@@ -493,7 +545,7 @@ __device__ VType cuVEC_VC<VType>::curl_diri(int idx) const
 	if (!(ngbrFlags[idx] & NF_NOTEMPTY)) return curl;
 
 	//x direction differentials
-	if (ngbrFlags[idx] & NF_BOTHX) {
+	if ((ngbrFlags[idx] & NF_BOTHX) == NF_BOTHX) {
 
 		curl.y -= (quantity[idx + 1].z - quantity[idx - 1].z) / (2 * h.x);
 		curl.z += (quantity[idx + 1].y - quantity[idx - 1].y) / (2 * h.x);
@@ -561,7 +613,7 @@ __device__ VType cuVEC_VC<VType>::curl_diri(int idx) const
 	}
 
 	//y direction differentials
-	if (ngbrFlags[idx] & NF_BOTHY) {
+	if ((ngbrFlags[idx] & NF_BOTHY) == NF_BOTHY) {
 
 		curl.x += (quantity[idx + n.x].z - quantity[idx - n.x].z) / (2 * h.y);
 		curl.z -= (quantity[idx + n.x].x - quantity[idx - n.x].x) / (2 * h.y);
@@ -628,7 +680,7 @@ __device__ VType cuVEC_VC<VType>::curl_diri(int idx) const
 	}
 
 	//z direction differentials
-	if (ngbrFlags[idx] & NF_BOTHZ) {
+	if ((ngbrFlags[idx] & NF_BOTHZ) == NF_BOTHZ) {
 
 		curl.x -= (quantity[idx + n.x*n.y].y - quantity[idx - n.x*n.y].y) / (2 * h.z);
 		curl.y += (quantity[idx + n.x*n.y].x - quantity[idx - n.x*n.y].x) / (2 * h.z);
@@ -665,14 +717,31 @@ __device__ VType cuVEC_VC<VType>::curl_diri(int idx) const
 
 		if (ngbrFlags[idx] & NF_NPZ) {
 
-			curl.x -= 0.5 * (quantity[idx + n.x*n.y].y - quantity[idx].y) / h.z;
-			curl.y += 0.5 * (quantity[idx + n.x*n.y].x - quantity[idx].x) / h.z;
-		}
+			//is it a pbc along z? If yes, then we are guaranteed to have a "neighbor" on the other side, so use it; otherwise apply boundary condition.
+			if (ngbrFlags[idx] & NF_PBCZ) {
 
+				curl.x -= (quantity[idx + n.x*n.y].y - quantity[idx + (n.z - 1) * n.x*n.y].y) / (2 * h.z);
+				curl.y += (quantity[idx + n.x*n.y].x - quantity[idx + (n.z - 1) * n.x*n.y].x) / (2 * h.z);
+			}
+			else {
+
+				curl.x -= 0.5 * (quantity[idx + n.x*n.y].y - quantity[idx].y) / h.z;
+				curl.y += 0.5 * (quantity[idx + n.x*n.y].x - quantity[idx].x) / h.z;
+			}
+		}
 		else {
 
-			curl.x -= 0.5 * (quantity[idx].y - quantity[idx - n.x*n.y].y) / h.z;
-			curl.y += 0.5 * (quantity[idx].x - quantity[idx - n.x*n.y].x) / h.z;
+			//is it a pbc along z? If yes, then we are guaranteed to have a "neighbor" on the other side, so use it; otherwise apply boundary condition.
+			if (ngbrFlags[idx] & NF_PBCZ) {
+
+				curl.x -= (quantity[idx - (n.z - 1) * n.x*n.y].y - quantity[idx - n.x*n.y].y) / (2 * h.z);
+				curl.y += (quantity[idx - (n.z - 1) * n.x*n.y].x - quantity[idx - n.x*n.y].x) / (2 * h.z);
+			}
+			else {
+
+				curl.x -= 0.5 * (quantity[idx].y - quantity[idx - n.x*n.y].y) / h.z;
+				curl.y += 0.5 * (quantity[idx].x - quantity[idx - n.x*n.y].x) / h.z;
+			}
 		}
 	}
 
@@ -692,7 +761,7 @@ __device__ VType cuVEC_VC<VType>::curl_diri_nneu(int idx, Class_BDiff& bdiff_cla
 	if (!(ngbrFlags[idx] & NF_NOTEMPTY)) return curl;
 
 	//x direction differentials
-	if (ngbrFlags[idx] & NF_BOTHX) {
+	if ((ngbrFlags[idx] & NF_BOTHX) == NF_BOTHX) {
 
 		curl.y -= (quantity[idx + 1].z - quantity[idx - 1].z) / (2 * h.x);
 		curl.z += (quantity[idx + 1].y - quantity[idx - 1].y) / (2 * h.x);
@@ -762,7 +831,7 @@ __device__ VType cuVEC_VC<VType>::curl_diri_nneu(int idx, Class_BDiff& bdiff_cla
 	}
 
 	//y direction differentials
-	if (ngbrFlags[idx] & NF_BOTHY) {
+	if ((ngbrFlags[idx] & NF_BOTHY) == NF_BOTHY) {
 
 		curl.x += (quantity[idx + n.x].z - quantity[idx - n.x].z) / (2 * h.y);
 		curl.z -= (quantity[idx + n.x].x - quantity[idx - n.x].x) / (2 * h.y);
@@ -831,7 +900,7 @@ __device__ VType cuVEC_VC<VType>::curl_diri_nneu(int idx, Class_BDiff& bdiff_cla
 	}
 
 	//z direction differentials
-	if (ngbrFlags[idx] & NF_BOTHZ) {
+	if ((ngbrFlags[idx] & NF_BOTHZ) == NF_BOTHZ) {
 
 		curl.x -= (quantity[idx + n.x*n.y].y - quantity[idx - n.x*n.y].y) / (2 * h.z);
 		curl.y += (quantity[idx + n.x*n.y].x - quantity[idx - n.x*n.y].x) / (2 * h.z);
@@ -870,14 +939,31 @@ __device__ VType cuVEC_VC<VType>::curl_diri_nneu(int idx, Class_BDiff& bdiff_cla
 
 		if (ngbrFlags[idx] & NF_NPZ) {
 
-			curl.x -= 0.5 * ((quantity[idx + n.x*n.y].y - quantity[idx].y) / h.z + bdiff_val.z.y);
-			curl.y += 0.5 * ((quantity[idx + n.x*n.y].x - quantity[idx].x) / h.z + bdiff_val.z.x);
-		}
+			//is it a pbc along z? If yes, then we are guaranteed to have a "neighbor" on the other side, so use it; otherwise apply boundary condition.
+			if (ngbrFlags[idx] & NF_PBCZ) {
 
+				curl.x -= (quantity[idx + n.x*n.y].y - quantity[idx + (n.z - 1) * n.x*n.y].y) / (2 * h.z);
+				curl.y += (quantity[idx + n.x*n.y].x - quantity[idx + (n.z - 1) * n.x*n.y].x) / (2 * h.z);
+			}
+			else {
+
+				curl.x -= 0.5 * ((quantity[idx + n.x*n.y].y - quantity[idx].y) / h.z + bdiff_val.z.y);
+				curl.y += 0.5 * ((quantity[idx + n.x*n.y].x - quantity[idx].x) / h.z + bdiff_val.z.x);
+			}
+		}
 		else {
 
-			curl.x -= 0.5 * ((quantity[idx].y - quantity[idx - n.x*n.y].y) / h.z + bdiff_val.z.y);
-			curl.y += 0.5 * ((quantity[idx].x - quantity[idx - n.x*n.y].x) / h.z + bdiff_val.z.x);
+			//is it a pbc along z? If yes, then we are guaranteed to have a "neighbor" on the other side, so use it; otherwise apply boundary condition.
+			if (ngbrFlags[idx] & NF_PBCZ) {
+
+				curl.x -= (quantity[idx - (n.z - 1) * n.x*n.y].y - quantity[idx - n.x*n.y].y) / (2 * h.z);
+				curl.y += (quantity[idx - (n.z - 1) * n.x*n.y].x - quantity[idx - n.x*n.y].x) / (2 * h.z);
+			}
+			else {
+
+				curl.x -= 0.5 * ((quantity[idx].y - quantity[idx - n.x*n.y].y) / h.z + bdiff_val.z.y);
+				curl.y += 0.5 * ((quantity[idx].x - quantity[idx - n.x*n.y].x) / h.z + bdiff_val.z.x);
+			}
 		}
 	}
 
@@ -893,7 +979,7 @@ __device__ VType cuVEC_VC<VType>::curl_diri_nneu(int idx, cuVAL3<VType>& bdiff) 
 	if (!(ngbrFlags[idx] & NF_NOTEMPTY)) return curl;
 
 	//x direction differentials
-	if (ngbrFlags[idx] & NF_BOTHX) {
+	if ((ngbrFlags[idx] & NF_BOTHX) == NF_BOTHX) {
 
 		curl.y -= (quantity[idx + 1].z - quantity[idx - 1].z) / (2 * h.x);
 		curl.z += (quantity[idx + 1].y - quantity[idx - 1].y) / (2 * h.x);
@@ -961,7 +1047,7 @@ __device__ VType cuVEC_VC<VType>::curl_diri_nneu(int idx, cuVAL3<VType>& bdiff) 
 	}
 
 	//y direction differentials
-	if (ngbrFlags[idx] & NF_BOTHY) {
+	if ((ngbrFlags[idx] & NF_BOTHY) == NF_BOTHY) {
 
 		curl.x += (quantity[idx + n.x].z - quantity[idx - n.x].z) / (2 * h.y);
 		curl.z -= (quantity[idx + n.x].x - quantity[idx - n.x].x) / (2 * h.y);
@@ -1028,7 +1114,7 @@ __device__ VType cuVEC_VC<VType>::curl_diri_nneu(int idx, cuVAL3<VType>& bdiff) 
 	}
 
 	//z direction differentials
-	if (ngbrFlags[idx] & NF_BOTHZ) {
+	if ((ngbrFlags[idx] & NF_BOTHZ) == NF_BOTHZ) {
 
 		curl.x -= (quantity[idx + n.x*n.y].y - quantity[idx - n.x*n.y].y) / (2 * h.z);
 		curl.y += (quantity[idx + n.x*n.y].x - quantity[idx - n.x*n.y].x) / (2 * h.z);
@@ -1065,14 +1151,31 @@ __device__ VType cuVEC_VC<VType>::curl_diri_nneu(int idx, cuVAL3<VType>& bdiff) 
 
 		if (ngbrFlags[idx] & NF_NPZ) {
 
-			curl.x -= 0.5 * ((quantity[idx + n.x*n.y].y - quantity[idx].y) / h.z + bdiff.z.y);
-			curl.y += 0.5 * ((quantity[idx + n.x*n.y].x - quantity[idx].x) / h.z + bdiff.z.x);
-		}
+			//is it a pbc along z? If yes, then we are guaranteed to have a "neighbor" on the other side, so use it; otherwise apply boundary condition.
+			if (ngbrFlags[idx] & NF_PBCZ) {
 
+				curl.x -= (quantity[idx + n.x*n.y].y - quantity[idx + (n.z - 1) * n.x*n.y].y) / (2 * h.z);
+				curl.y += (quantity[idx + n.x*n.y].x - quantity[idx + (n.z - 1) * n.x*n.y].x) / (2 * h.z);
+			}
+			else {
+
+				curl.x -= 0.5 * ((quantity[idx + n.x*n.y].y - quantity[idx].y) / h.z + bdiff.z.y);
+				curl.y += 0.5 * ((quantity[idx + n.x*n.y].x - quantity[idx].x) / h.z + bdiff.z.x);
+			}
+		}
 		else {
 
-			curl.x -= 0.5 * ((quantity[idx].y - quantity[idx - n.x*n.y].y) / h.z + bdiff.z.y);
-			curl.y += 0.5 * ((quantity[idx].x - quantity[idx - n.x*n.y].x) / h.z + bdiff.z.x);
+			//is it a pbc along z? If yes, then we are guaranteed to have a "neighbor" on the other side, so use it; otherwise apply boundary condition.
+			if (ngbrFlags[idx] & NF_PBCZ) {
+
+				curl.x -= (quantity[idx - (n.z - 1) * n.x*n.y].y - quantity[idx - n.x*n.y].y) / (2 * h.z);
+				curl.y += (quantity[idx - (n.z - 1) * n.x*n.y].x - quantity[idx - n.x*n.y].x) / (2 * h.z);
+			}
+			else {
+
+				curl.x -= 0.5 * ((quantity[idx].y - quantity[idx - n.x*n.y].y) / h.z + bdiff.z.y);
+				curl.y += 0.5 * ((quantity[idx].x - quantity[idx - n.x*n.y].x) / h.z + bdiff.z.x);
+			}
 		}
 	}
 
@@ -1089,7 +1192,7 @@ __device__ VType cuVEC_VC<VType>::curl_sided(int idx) const
 	if (!(ngbrFlags[idx] & NF_NOTEMPTY)) return curl;
 
 	//x direction differentials
-	if (ngbrFlags[idx] & NF_BOTHX) {
+	if ((ngbrFlags[idx] & NF_BOTHX) == NF_BOTHX) {
 
 		curl.y -= (quantity[idx + 1].z - quantity[idx - 1].z) / (2 * h.x);
 		curl.z += (quantity[idx + 1].y - quantity[idx - 1].y) / (2 * h.x);
@@ -1129,7 +1232,7 @@ __device__ VType cuVEC_VC<VType>::curl_sided(int idx) const
 	}
 
 	//y direction differentials
-	if (ngbrFlags[idx] & NF_BOTHY) {
+	if ((ngbrFlags[idx] & NF_BOTHY) == NF_BOTHY) {
 
 		curl.x += (quantity[idx + n.x].z - quantity[idx - n.x].z) / (2 * h.y);
 		curl.z -= (quantity[idx + n.x].x - quantity[idx - n.x].x) / (2 * h.y);
@@ -1169,7 +1272,7 @@ __device__ VType cuVEC_VC<VType>::curl_sided(int idx) const
 	}
 
 	//z direction differentials
-	if (ngbrFlags[idx] & NF_BOTHZ) {
+	if ((ngbrFlags[idx] & NF_BOTHZ) == NF_BOTHZ) {
 
 		curl.x -= (quantity[idx + n.x*n.y].y - quantity[idx - n.x*n.y].y) / (2 * h.z);
 		curl.y += (quantity[idx + n.x*n.y].x - quantity[idx - n.x*n.y].x) / (2 * h.z);
@@ -1179,14 +1282,31 @@ __device__ VType cuVEC_VC<VType>::curl_sided(int idx) const
 
 		if (ngbrFlags[idx] & NF_NPZ) {
 
-			curl.x -= (quantity[idx + n.x*n.y].y - quantity[idx].y) / h.z;
-			curl.y += (quantity[idx + n.x*n.y].x - quantity[idx].x) / h.z;
-		}
+			//is it a pbc along z? If yes, then we are guaranteed to have a "neighbor" on the other side, so use it; otherwise apply boundary condition.
+			if (ngbrFlags[idx] & NF_PBCZ) {
 
+				curl.x -= (quantity[idx + n.x*n.y].y - quantity[idx + (n.z - 1) * n.x*n.y].y) / (2 * h.z);
+				curl.y += (quantity[idx + n.x*n.y].x - quantity[idx + (n.z - 1) * n.x*n.y].x) / (2 * h.z);
+			}
+			else {
+
+				curl.x -= (quantity[idx + n.x*n.y].y - quantity[idx].y) / h.z;
+				curl.y += (quantity[idx + n.x*n.y].x - quantity[idx].x) / h.z;
+			}
+		}
 		else {
 
-			curl.x -= (quantity[idx].y - quantity[idx - n.x*n.y].y) / h.z;
-			curl.y += (quantity[idx].x - quantity[idx - n.x*n.y].x) / h.z;
+			//is it a pbc along z? If yes, then we are guaranteed to have a "neighbor" on the other side, so use it; otherwise apply boundary condition.
+			if (ngbrFlags[idx] & NF_PBCZ) {
+
+				curl.x -= (quantity[idx - (n.z - 1) * n.x*n.y].y - quantity[idx - n.x*n.y].y) / (2 * h.z);
+				curl.y += (quantity[idx - (n.z - 1) * n.x*n.y].x - quantity[idx - n.x*n.y].x) / (2 * h.z);
+			}
+			else {
+
+				curl.x -= (quantity[idx].y - quantity[idx - n.x*n.y].y) / h.z;
+				curl.y += (quantity[idx].x - quantity[idx - n.x*n.y].x) / h.z;
+			}
 		}
 	}
 

@@ -235,6 +235,7 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 	case IOI_MESH_FORTEMPERATURE:
 	case IOI_MESH_FORHEATBOUNDARIES:
 	case IOI_MESH_FORCURIEANDMOMENT:
+	case IOI_MESH_FORPBC:
 	{
 		//parameters from iop
 		string meshName = iop.textId;
@@ -1059,6 +1060,45 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 
 			setConsoleEntry(CMD_ASTEPCTRL, trim(ToString(SMesh.Get_AStepRelErrCtrl()), ","), trim(ToString(SMesh.Get_AStepdTCtrl(), "s"), ","));
 		}
+	}
+	break;
+
+	//Shows PBC setting for individual demag modules. minorId is the unique mesh id number, auxId is the pbc images number (0 disables pbc; -1 means setting is not available) (must be ferromagnetic mesh)
+	case IOI_PBC_X:
+	{
+		int meshId = iop.minorId;
+		int images = iop.auxId;
+
+		if (actionCode == AC_MOUSELEFTDOWN && images == 0) sendCommand(CMD_PBC, SMesh.key_from_meshId(meshId), "x 10");
+		else if (actionCode == AC_DOUBLECLICK && images > 0) setConsoleEntry(CMD_PBC, SMesh.key_from_meshId(meshId), "x", images);
+
+		if (actionCode == AC_MOUSERIGHTDOWN) sendCommand(CMD_PBC, SMesh.key_from_meshId(meshId), "x 0");
+	}
+	break;
+
+	//Shows PBC setting for individual demag modules. minorId is the unique mesh id number, auxId is the pbc images number (0 disables pbc; -1 means setting is not available) (must be ferromagnetic mesh)
+	case IOI_PBC_Y:
+	{
+		int meshId = iop.minorId;
+		int images = iop.auxId;
+
+		if (actionCode == AC_MOUSELEFTDOWN && images == 0) sendCommand(CMD_PBC, SMesh.key_from_meshId(meshId), "y 10");
+		else if (actionCode == AC_DOUBLECLICK && images > 0) setConsoleEntry(CMD_PBC, SMesh.key_from_meshId(meshId), "y", images);
+
+		if (actionCode == AC_MOUSERIGHTDOWN) sendCommand(CMD_PBC, SMesh.key_from_meshId(meshId), "y 0");
+	}
+	break;
+
+	//Shows PBC setting for individual demag modules. minorId is the unique mesh id number, auxId is the pbc images number (0 disables pbc; -1 means setting is not available) (must be ferromagnetic mesh)
+	case IOI_PBC_Z:
+	{
+		int meshId = iop.minorId;
+		int images = iop.auxId;
+
+		if (actionCode == AC_MOUSELEFTDOWN && images == 0) sendCommand(CMD_PBC, SMesh.key_from_meshId(meshId), "z 10");
+		else if (actionCode == AC_DOUBLECLICK && images > 0) setConsoleEntry(CMD_PBC, SMesh.key_from_meshId(meshId), "z", images);
+
+		if (actionCode == AC_MOUSERIGHTDOWN) sendCommand(CMD_PBC, SMesh.key_from_meshId(meshId), "z 0");
 	}
 	break;
 

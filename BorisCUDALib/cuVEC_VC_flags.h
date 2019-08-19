@@ -103,56 +103,24 @@ __host__ void cuVEC_VC<VType>::clear_dirichlet_flags(void)
 	set_dirichlet_size(0, NF_DIRICHLETNZ);
 }
 
-//clear all pbc flags
+//clear all pbc flags : can also be achieved setting all flags to false in set_pbc but this one is more readable
 template <typename VType>
-__host__ void cuVEC_VC<VType>::clear_pbc_flags(void)
-{
-	clear_pbc_x();
-	clear_pbc_y();
-}
-
-//clear only pbc flags for x direction
-template <typename VType>
-__host__ void cuVEC_VC<VType>::clear_pbc_x(void)
+__host__ void cuVEC_VC<VType>::clear_pbc(void)
 {
 	set_gpu_value(pbc_x, (int)0);
-
-	gpu_and_managed(ngbrFlags, ~NF_PBCX, get_ngbrFlags_size());
-}
-
-//clear only pbc flags for y direction
-template <typename VType>
-__host__ void cuVEC_VC<VType>::clear_pbc_y(void)
-{
 	set_gpu_value(pbc_y, (int)0);
+	set_gpu_value(pbc_z, (int)0);
 
-	gpu_and_managed(ngbrFlags, ~NF_PBCY, get_ngbrFlags_size());
+	gpu_and_managed(ngbrFlags, ~NF_PBC, get_ngbrFlags_size());
 }
 
-//set pbc for both x and y
+//set pbc conditions : setting any to false clears flags
 template <typename VType>
-__host__ void cuVEC_VC<VType>::set_pbc(void)
+__host__ void cuVEC_VC<VType>::set_pbc(bool pbc_x_, bool pbc_y_, bool pbc_z_)
 {
-	set_gpu_value(pbc_x, (int)1);
-	set_gpu_value(pbc_y, (int)1);
-
-	set_pbc_flags();
-}
-
-//set pbc for x direction only
-template <typename VType>
-__host__ void cuVEC_VC<VType>::set_pbc_x(void)
-{
-	set_gpu_value(pbc_x, (int)1);
-
-	set_pbc_flags();
-}
-
-//set pbc for y direction only
-template <typename VType>
-__host__ void cuVEC_VC<VType>::set_pbc_y(void)
-{
-	set_gpu_value(pbc_y, (int)1);
+	set_gpu_value(pbc_x, (int)pbc_x_);
+	set_gpu_value(pbc_y, (int)pbc_y_);
+	set_gpu_value(pbc_z, (int)pbc_z_);
 
 	set_pbc_flags();
 }

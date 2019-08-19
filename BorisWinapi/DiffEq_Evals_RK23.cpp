@@ -20,7 +20,7 @@ void DifferentialEquation::RunRK23_Step0_withReductions(void)
 
 			if (!pMesh->M.is_skipcell(idx)) {
 
-				//obtained maximum normalized torque term
+				//obtain maximum normalized torque term
 				double Mnorm = pMesh->M[idx].norm();
 				double _mxh = GetMagnitude(pMesh->M[idx] ^ pMesh->Heff[idx]) / (Mnorm * Mnorm);
 				mxh_reduction.reduce_max(_mxh);
@@ -31,18 +31,12 @@ void DifferentialEquation::RunRK23_Step0_withReductions(void)
 				//2nd order evaluation for adaptive step
 				DBL3 prediction = sM1[idx] + (7 * sEval0[idx] / 24 + 1 * sEval1[idx] / 4 + 1 * sEval2[idx] / 3 + 1 * rhs / 8) * dT;
 
-				//Save current magnetization for later use
-				sM1[idx] = pMesh->M[idx];
-
 				//local truncation error (between predicted and corrected)
 				double _lte = GetMagnitude(pMesh->M[idx] - prediction) / Mnorm;
 				lte_reduction.reduce_max(_lte);
 
 				//save evaluation for later use
 				sEval0[idx] = rhs;
-
-				//Now estimate magnetization using RK23 first step
-				pMesh->M[idx] += rhs * (dT / 2);
 			}
 		}
 	}
@@ -78,23 +72,36 @@ void DifferentialEquation::RunRK23_Step0(void)
 				//2nd order evaluation for adaptive step
 				DBL3 prediction = sM1[idx] + (7 * sEval0[idx] / 24 + 1 * sEval1[idx] / 4 + 1 * sEval2[idx] / 3 + 1 * rhs / 8) * dT;
 
-				//Save current magnetization for later use
-				sM1[idx] = pMesh->M[idx];
-
 				//local truncation error (between predicted and corrected)
 				double _lte = GetMagnitude(pMesh->M[idx] - prediction) / pMesh->M[idx].norm();
 				lte_reduction.reduce_max(_lte);
 
 				//save evaluation for later use
 				sEval0[idx] = rhs;
-
-				//Now estimate magnetization using RK23 first step
-				pMesh->M[idx] += rhs * (dT / 2);
 			}
 		}
 	}
 
 	lte_reduction.maximum();
+}
+
+void DifferentialEquation::RunRK23_Step0_Advance(void)
+{
+#pragma omp parallel for
+	for (int idx = 0; idx < pMesh->n.dim(); idx++) {
+
+		if (pMesh->M.is_not_empty(idx)) {
+
+			if (!pMesh->M.is_skipcell(idx)) {
+
+				//Save current magnetization for later use
+				sM1[idx] = pMesh->M[idx];
+
+				//Now estimate magnetization using RK23 first step
+				pMesh->M[idx] += sEval0[idx] * (dT / 2);
+			}
+		}
+	}
 }
 
 void DifferentialEquation::RunRK23_Step1(void)

@@ -10,21 +10,21 @@
 
 //get magnitude for fundamental types - need this to make cuVEC work for both fundamental and composite types
 template <typename Type, std::enable_if_t<std::is_integral<Type>::value>* = nullptr>
-__host__ __device__ Type cu_GetMagnitude(Type V)
+__host__ __device__ Type cu_GetMagnitude(const Type& V)
 {
 	return V * (2 * (V >= 0) - 1);
 }
 
 //get magnitude for fundamental types - need this to make cuVEC work for both fundamental and composite types
 template <typename Type, std::enable_if_t<std::is_floating_point<Type>::value>* = nullptr>
-__host__ __device__ Type cu_GetMagnitude(Type V)
+__host__ __device__ Type cu_GetMagnitude(const Type& V)
 {
 	return fabs(V);
 }
 
 //get magnitude for fundamental types using 3 components
 template <typename Type, std::enable_if_t<std::is_fundamental<Type>::value>* = nullptr>
-__host__ __device__ Type cu_GetMagnitude(Type Vx, Type Vy, Type Vz) 
+__host__ __device__ Type cu_GetMagnitude(const Type& Vx, const Type& Vy, const Type& Vz)
 { 
 	return sqrt(Vx*Vx + Vy * Vy + Vz * Vz); 
 }
@@ -41,25 +41,6 @@ template <typename cuVAL3Type, std::enable_if_t<std::is_convertible<cuINT3, cuVA
 __host__ __device__ auto cu_get_distance(const cuVAL3Type& coord1, const cuVAL3Type& coord2) -> decltype(std::declval<cuVAL3Type>().z)
 {
 	return (coord2 - coord1).norm();
-}
-
-//get sign of value, returning -1, 0 or 1.
-template <typename Type>
-__host__ __device__ int cu_get_sign(Type value, std::true_type)
-{
-	return (Type(0) < value) - (value < Type(0));
-}
-
-template <typename Type>
-__host__ __device__ int cu_get_sign(Type value, std::false_type)
-{
-	return Type(0) < value;
-}
-
-template <typename Type>
-__host__ __device__ int cu_get_sign(Type value)
-{
-	return cu_get_sign(value, std::is_signed<Type>());
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -121,11 +102,11 @@ __host__ __device__ cuVAL3Type cu_round(const cuVAL3Type& val3) { return cuVAL3T
 //This problem typically arises when using floor and ceil on result of arithmetic operations as floating point errors are introduced, and is much worse in single precision.
 //For this reason do not use a fixed epsilon as with comparison operations, but a ratio of the value modulus.
 template <typename Type, std::enable_if_t<std::is_floating_point<Type>::value>* = nullptr>
-__host__ __device__ Type cu_floor_epsilon(Type fval) { return floor(fval + fabs(fval) * CUFLOOR_CEIL_RATIO); }
+__host__ __device__ Type cu_floor_epsilon(const Type& fval) { return floor(fval + fabs(fval) * CUFLOOR_CEIL_RATIO); }
 
 //as above but with ceil
 template <typename Type, std::enable_if_t<std::is_floating_point<Type>::value>* = nullptr>
-__host__ __device__ Type cu_ceil_epsilon(Type fval) { return ceil(fval - fabs(fval) * CUFLOOR_CEIL_RATIO); }
+__host__ __device__ Type cu_ceil_epsilon(const Type& fval) { return ceil(fval - fabs(fval) * CUFLOOR_CEIL_RATIO); }
 
 //return "fixed" floor of each VAL3 component
 template <typename cuVAL3Type, std::enable_if_t<std::is_convertible<cuINT3, cuVAL3Type>::value>* = nullptr>
@@ -137,19 +118,27 @@ __host__ __device__ cuVAL3Type cu_ceil(const cuVAL3Type& fval) { return cuVAL3Ty
 
 //absolute value for a floating point number
 template <typename Type, std::enable_if_t<std::is_floating_point<Type>::value>* = nullptr>
-__host__ __device__ Type cu_mod(Type fval) { return fabs(fval); }
+__host__ __device__ Type cu_mod(const Type& fval) { return fabs(fval); }
 
 //absolute value for an integer
 template <typename Type, std::enable_if_t<std::is_integral<Type>::value>* = nullptr>
-__host__ __device__ Type cu_mod(Type ival) { return ival * (2 * (ival >= 0) - 1); }
+__host__ __device__ Type cu_mod(const Type& ival) { return ival * (2 * (ival >= 0) - 1); }
 
 //absolute value for a VAL3
 template <typename cuVAL3Type, std::enable_if_t<std::is_convertible<cuINT3, cuVAL3Type>::value>* = nullptr>
 __host__ __device__ cuVAL3Type cu_mod(const cuVAL3Type& fval) { return cuVAL3Type(cu_mod(fval.x), cu_mod(fval.y), cu_mod(fval.z)); }
 
+//get sign of integer value or zero : -1, 0, +1
+template <typename Type, std::enable_if_t<std::is_integral<Type>::value>* = nullptr>
+__host__ __device__ int cu_get_sign(const Type& ival) { return (ival != 0) * (2 * (ival > 0) - 1); }
+
+//get sign of floating point value : -1 or +1
+template <typename Type, std::enable_if_t<std::is_floating_point<Type>::value>* = nullptr>
+__host__ __device__ int cu_get_sign(const Type& fval) { return (2 * (fval > 0) - 1); }
+
 //remainder after division (using floating point numbers) - fixed version of fmod from <cmath>
 template <typename Type, std::enable_if_t<std::is_floating_point<Type>::value>* = nullptr>
-Type cu_fmod_epsilon(Type fval, Type denom) { return fval - cu_floor_epsilon(fval / denom) * denom; }
+Type cu_fmod_epsilon(const Type& fval, const Type& denom) { return fval - cu_floor_epsilon(fval / denom) * denom; }
 
 //fixed fmod for a VAL3
 template <typename cuVAL3Type, std::enable_if_t<std::is_convertible<cuINT3, cuVAL3Type>::value>* = nullptr>
@@ -168,7 +157,7 @@ __host__ __device__ auto cu_interpolate(const cuVAL2Type& p0, const cuVAL2Type& 
 
 //parametric interpolation where parameter = 0 gives start, parameter = 1 gives end.
 template <typename VType>
-__host__ __device__ VType cu_parametric_interpolation(VType start, VType end, double parameter)
+__host__ __device__ VType cu_parametric_interpolation(const VType& start, const VType& end, double parameter)
 {
 	return (start * (1 - parameter) + end * parameter);
 }
@@ -233,7 +222,7 @@ __host__ __device__ bool cu_solve_line_equation_fixed_z(const cuVAL3Type& point1
 
 //return matrix multiplication of rank-3 unit antisymmetric tensor with a VAL3 - return type is a VAL33
 template <typename cuVAL3Type, std::enable_if_t<std::is_convertible<cuINT3, cuVAL3Type>::value>* = nullptr>
-__host__ __device__ cuVAL3<cuVAL3Type> cu_epsilon3(cuVAL3Type val3)
+__host__ __device__ cuVAL3<cuVAL3Type> cu_epsilon3(const cuVAL3Type& val3)
 {
 	return cuVAL3<cuVAL3Type>(
 		cuVAL3Type(0, val3.z, -val3.y),
@@ -297,7 +286,7 @@ __device__ cuReal33 cu_ident(void)
 
 //This function returns the solution of s = a * m^s + b * m^m^s + f
 //i.e. solve for s, where m, s, f are cuReal3, ^ is the cross product, a and b are constants; moreover m is a unit vector.
-__device__ inline cuReal3 solve_crossprod(cuReal a, cuReal b, cuReal3 m, cuReal3 f)
+__device__ inline cuReal3 solve_crossprod(cuReal a, cuReal b, const cuReal3& m, const cuReal3& f)
 {
 	cuReal ab = a * a + b + b * b;
 
@@ -306,7 +295,7 @@ __device__ inline cuReal3 solve_crossprod(cuReal a, cuReal b, cuReal3 m, cuReal3
 
 //This function returns the solution of s = a * m^s + b * m^m^s + f
 //i.e. solve for s, where m, s, f are cuReal3, ^ is the cross product, a and b are constants; moreover m is a unit vector perpendicular to f, so that m ^ m ^ f = -f
-__device__ inline cuReal3 solve_crossprod_perp(cuReal a, cuReal b, cuReal3 m, cuReal3 f)
+__device__ inline cuReal3 solve_crossprod_perp(cuReal a, cuReal b, const cuReal3& m, const cuReal3& f)
 {
 	cuReal ab = a * a + b + b * b;
 
@@ -324,7 +313,7 @@ __device__ inline cuReal3 solve_crossprod_perp(cuReal a, cuReal b, cuReal3 m, cu
 // x' = [ sin(theta)cos(phi), sin(theta)sin(phi), cos(theta) ] = n
 // y' = [ -sin(phi), cos(phi), 0 ]
 // z' = x' x y' = [ -cos(theta)cos(phi), -cos(theta)sin(phi), sin(theta) ]
-__device__ inline cuReal3 rotate_polar(cuReal3 r, cuReal theta, cuReal phi)
+__device__ inline cuReal3 rotate_polar(const cuReal3& r, cuReal theta, cuReal phi)
 {
 	return cuReal3(
 		sin(theta)*cos(phi) * r.x - sin(phi) * r.y - cos(theta)*cos(phi) * r.z,
@@ -334,7 +323,7 @@ __device__ inline cuReal3 rotate_polar(cuReal3 r, cuReal theta, cuReal phi)
 }
 
 //same as above but the rotation is specified using the unit vector n
-__device__ inline cuReal3 rotate_polar(cuReal3 r, cuReal3 n)
+__device__ inline cuReal3 rotate_polar(const cuReal3& r, const cuReal3& n)
 {
 	//if n = [sin(theta)cos(phi), sin(theta)sin(phi), cos(theta)]
 	//where theta ranges in [0, PI], and phi ranges in [0, 2*PI] then:

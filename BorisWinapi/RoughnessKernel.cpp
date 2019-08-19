@@ -593,9 +593,6 @@ BError RoughnessKernel<Owner>::Calculate_Roughness_Kernels_3D(void)
 
 	//-------------- CALCULATE OFF-DIAGONAL TENSOR ELEMENTS THEN TRANSFORM INTO KERNEL
 
-	//important to zero D before calculating new tensor elements
-	D.set(DBL3());
-
 	if (!dtf.CalcOffDiagTens3D(D, n, N, h / maximum(h.x, h.y, h.z))) return error(BERROR_OUTOFMEMORY_NCRIT);
 
 	tensor_to_kernel(D, Kodiag, true);

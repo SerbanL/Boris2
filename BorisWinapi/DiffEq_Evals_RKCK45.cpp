@@ -4,11 +4,11 @@
 #include "SuperMesh.h"
 #include "MeshParamsControl.h"
 
-#ifdef ODE_EVAL_RKF
+#ifdef ODE_EVAL_RKCK
 
-//--------------------------------------------- RUNGE KUTTA FEHLBERG (4th order solution, 5th order error)
+//--------------------------------------------- RUNGE KUTTA CASH-KARP (4th order solution, 5th order error)
 
-void DifferentialEquation::RunRKF45_Step0_withReductions(void)
+void DifferentialEquation::RunRKCK45_Step0_withReductions(void)
 {
 	mxh_reduction.new_minmax_reduction();
 
@@ -30,8 +30,8 @@ void DifferentialEquation::RunRKF45_Step0_withReductions(void)
 				//First evaluate RHS of set equation at the current time step
 				sEval0[idx] = CALLFP(this, equation)(idx);
 
-				//Now estimate magnetization using RKF first step
-				pMesh->M[idx] += sEval0[idx] * (dT / 4);
+				//Now estimate magnetization using RKCK first step
+				pMesh->M[idx] += sEval0[idx] * (dT / 5);
 			}
 		}
 	}
@@ -47,7 +47,7 @@ void DifferentialEquation::RunRKF45_Step0_withReductions(void)
 	}
 }
 
-void DifferentialEquation::RunRKF45_Step0(void)
+void DifferentialEquation::RunRKCK45_Step0(void)
 {
 #pragma omp parallel for
 	for (int idx = 0; idx < pMesh->n.dim(); idx++) {
@@ -62,14 +62,14 @@ void DifferentialEquation::RunRKF45_Step0(void)
 				//First evaluate RHS of set equation at the current time step
 				sEval0[idx] = CALLFP(this, equation)(idx);
 
-				//Now estimate magnetization using RKF first step
-				pMesh->M[idx] += sEval0[idx] * (dT / 4);
+				//Now estimate magnetization using RKCK first step
+				pMesh->M[idx] += sEval0[idx] * (dT / 5);
 			}
 		}
 	}
 }
 
-void DifferentialEquation::RunRKF45_Step1(void)
+void DifferentialEquation::RunRKCK45_Step1(void)
 {
 #pragma omp parallel for
 	for (int idx = 0; idx < pMesh->n.dim(); idx++) {
@@ -79,13 +79,13 @@ void DifferentialEquation::RunRKF45_Step1(void)
 			//First evaluate RHS of set equation at the current time step
 			sEval1[idx] = CALLFP(this, equation)(idx);
 
-			//Now estimate magnetization using RKF midle step 1
-			pMesh->M[idx] = sM1[idx] + (3 * sEval0[idx] + 9 * sEval1[idx]) * dT / 32;
+			//Now estimate magnetization using RKCK midle step 1
+			pMesh->M[idx] = sM1[idx] + (3 * sEval0[idx] + 9 * sEval1[idx]) * dT / 40;
 		}
 	}
 }
 
-void DifferentialEquation::RunRKF45_Step2(void)
+void DifferentialEquation::RunRKCK45_Step2(void)
 {
 #pragma omp parallel for
 	for (int idx = 0; idx < pMesh->n.dim(); idx++) {
@@ -95,13 +95,13 @@ void DifferentialEquation::RunRKF45_Step2(void)
 			//First evaluate RHS of set equation at the current time step
 			sEval2[idx] = CALLFP(this, equation)(idx);
 
-			//Now estimate magnetization using RKF midle step 2
-			pMesh->M[idx] = sM1[idx] + (1932 * sEval0[idx] - 7200 * sEval1[idx] + 7296 * sEval2[idx]) * dT / 2197;
+			//Now estimate magnetization using RKCK midle step 2
+			pMesh->M[idx] = sM1[idx] + (3 * sEval0[idx] / 10 - 9 * sEval1[idx] / 10 + 6 * sEval2[idx] / 5) * dT;
 		}
 	}
 }
 
-void DifferentialEquation::RunRKF45_Step3(void)
+void DifferentialEquation::RunRKCK45_Step3(void)
 {
 #pragma omp parallel for
 	for (int idx = 0; idx < pMesh->n.dim(); idx++) {
@@ -111,13 +111,13 @@ void DifferentialEquation::RunRKF45_Step3(void)
 			//First evaluate RHS of set equation at the current time step
 			sEval3[idx] = CALLFP(this, equation)(idx);
 
-			//Now estimate magnetization using RKF midle step 3
-			pMesh->M[idx] = sM1[idx] + (439 * sEval0[idx] / 216 - 8 * sEval1[idx] + 3680 * sEval2[idx] / 513 - 845 * sEval3[idx] / 4104) * dT;
+			//Now estimate magnetization using RKCK midle step 3
+			pMesh->M[idx] = sM1[idx] + (-11 * sEval0[idx] / 54 + 5 * sEval1[idx] / 2 - 70 * sEval2[idx] / 27 + 35 * sEval3[idx] / 27) * dT;
 		}
 	}
 }
 
-void DifferentialEquation::RunRKF45_Step4(void)
+void DifferentialEquation::RunRKCK45_Step4(void)
 {
 #pragma omp parallel for
 	for (int idx = 0; idx < pMesh->n.dim(); idx++) {
@@ -127,13 +127,13 @@ void DifferentialEquation::RunRKF45_Step4(void)
 			//First evaluate RHS of set equation at the current time step
 			sEval4[idx] = CALLFP(this, equation)(idx);
 
-			//Now estimate magnetization using RKF midle step 4
-			pMesh->M[idx] = sM1[idx] + (-8 * sEval0[idx] / 27 + 2 * sEval1[idx] - 3544 * sEval2[idx] / 2565 + 1859 * sEval3[idx] / 4104 - 11 * sEval4[idx] / 40) * dT;
+			//Now estimate magnetization using RKCK midle step 4
+			pMesh->M[idx] = sM1[idx] + (1631 * sEval0[idx] / 55296 + 175 * sEval1[idx] / 512 + 575 * sEval2[idx] / 13824 + 44275 * sEval3[idx] / 110592 + 253 * sEval4[idx] / 4096) * dT;
 		}
 	}
 }
 
-void DifferentialEquation::RunRKF45_Step5_withReductions(void)
+void DifferentialEquation::RunRKCK45_Step5_withReductions(void)
 {
 	dmdt_reduction.new_minmax_reduction();
 	lte_reduction.new_minmax_reduction();
@@ -148,11 +148,11 @@ void DifferentialEquation::RunRKF45_Step5_withReductions(void)
 				//First evaluate RHS of set equation at the current time step
 				DBL3 rhs = CALLFP(this, equation)(idx);
 
-				//4th order evaluation
-				DBL3 prediction = sM1[idx] + (25 * sEval0[idx] / 216 + 1408 * sEval2[idx] / 2565 + 2197 * sEval3[idx] / 4101 - sEval4[idx] / 5) * dT;
+				//RKCK45 : 4th order evaluation
+				pMesh->M[idx] = sM1[idx] + (2825 * sEval0[idx] / 27648 + 18575 * sEval2[idx] / 48384 + 13525 * sEval3[idx] / 55296 + 277 * sEval4[idx] / 14336 + rhs / 4) * dT;
 
-				//5th order evaluation -> keep this as the new value, not the 4th order; relaxation doesn't work well the other way around.
-				pMesh->M[idx] = sM1[idx] + (16 * sEval0[idx] / 135 + 6656 * sEval2[idx] / 12825 + 28561 * sEval3[idx] / 56430 - 9 * sEval4[idx] / 50 + 2 * rhs / 55) * dT;
+				//Now calculate 5th order evaluation for adaptive time step
+				DBL3 prediction = sM1[idx] + (37 * sEval0[idx] / 378 + 250 * sEval2[idx] / 621 + 125 * sEval3[idx] / 594 + 512 * rhs / 1771) * dT;
 
 				if (renormalize) {
 
@@ -192,7 +192,7 @@ void DifferentialEquation::RunRKF45_Step5_withReductions(void)
 	lte_reduction.maximum();
 }
 
-void DifferentialEquation::RunRKF45_Step5(void)
+void DifferentialEquation::RunRKCK45_Step5(void)
 {
 	lte_reduction.new_minmax_reduction();
 
@@ -206,11 +206,11 @@ void DifferentialEquation::RunRKF45_Step5(void)
 				//First evaluate RHS of set equation at the current time step
 				DBL3 rhs = CALLFP(this, equation)(idx);
 
-				//4th order evaluation
-				DBL3 prediction = sM1[idx] + (25 * sEval0[idx] / 216 + 1408 * sEval2[idx] / 2565 + 2197 * sEval3[idx] / 4101 - sEval4[idx] / 5) * dT;
+				//RKCK45 : 4th order evaluation
+				pMesh->M[idx] = sM1[idx] + (2825 * sEval0[idx] / 27648 + 18575 * sEval2[idx] / 48384 + 13525 * sEval3[idx] / 55296 + 277 * sEval4[idx] / 14336 + rhs / 4) * dT;
 
-				//5th order evaluation -> keep this as the new value, not the 4th order; relaxation doesn't work well the other way around.
-				pMesh->M[idx] = sM1[idx] + (16 * sEval0[idx] / 135 + 6656 * sEval2[idx] / 12825 + 28561 * sEval3[idx] / 56430 - 9 * sEval4[idx] / 50 + 2 * rhs / 55) * dT;
+				//Now calculate 5th order evaluation for adaptive time step
+				DBL3 prediction = sM1[idx] + (37 * sEval0[idx] / 378 + 250 * sEval2[idx] / 621 + 125 * sEval3[idx] / 594 + 512 * rhs / 1771) * dT;
 
 				if (renormalize) {
 
