@@ -15,7 +15,9 @@ Simulation::Simulation(HWND hWnd, int Program_Version) :
 			VINFO(stage_step),
 			VINFO(simStages), VINFO(iterUpdate), VINFO(autocomplete),
 			VINFO(SMesh),
-			VINFO(cudaEnabled)
+			VINFO(cudaEnabled),
+			VINFO(shape_change_individual),
+			VINFO(static_transport_solver)
 		}, {})
 #else
 Simulation::Simulation(int Program_Version) :
@@ -31,7 +33,9 @@ Simulation::Simulation(int Program_Version) :
 			VINFO(stage_step),
 			VINFO(simStages), VINFO(iterUpdate), VINFO(autocomplete),
 			VINFO(SMesh),
-			VINFO(cudaEnabled)
+			VINFO(cudaEnabled),
+			VINFO(shape_change_individual),
+			VINFO(static_transport_solver)
 		}, {})
 #endif
 {
@@ -209,6 +213,12 @@ Simulation::Simulation(int Program_Version) :
 	commands[CMD_LOADMASKFILE].usage = "[tc0,0.5,0,1/tc]USAGE : <b>loadmaskfile</b> <i>(z-depth) (directory\\)filename</i>";
 	commands[CMD_LOADMASKFILE].descr = "[tc0,0.5,0.5,1/tc]Apply .png mask file to magnetization in active mesh (i.e. transfer shape from .png file to mesh - white means empty cells). If image is in grayscale then void cells up to given depth top down (z-depth > 0) or down up (z-depth < 0). If z-depth = 0 then void top down up to all z cells.";
 	commands[CMD_LOADMASKFILE].unit = "m";
+
+	commands.insert(CMD_INDIVIDUALMASKSHAPE, CommandSpecifier(CMD_INDIVIDUALMASKSHAPE), "individualshape");
+	commands[CMD_INDIVIDUALMASKSHAPE].usage = "[tc0,0.5,0,1/tc]USAGE : <b>individualmaskshape</b> <i>status</i>";
+	commands[CMD_ADDRECT].limits = { { int(0), int(1) } };
+	commands[CMD_INDIVIDUALMASKSHAPE].descr = "[tc0,0.5,0.5,1/tc]When changing the shape inside a mesh, e.g. through a mask file, set this flag to true so the shape is applied only to the primary displayed physical quantity. If set to false then all relevant physical quantities are shaped.";
+	commands[CMD_INDIVIDUALMASKSHAPE].return_descr = "[tc0,0.5,0,1/tc]Script return values: <i>status</i>";
 
 	commands.insert(CMD_SETANGLE, CommandSpecifier(CMD_SETANGLE), "setangle");
 	commands[CMD_SETANGLE].usage = "[tc0,0.5,0,1/tc]USAGE : <b>setangle</b> <i>polar azimuthal (meshname)</i>";
@@ -533,6 +543,11 @@ Simulation::Simulation(int Program_Version) :
 	commands[CMD_COUPLETODIPOLES].usage = "[tc0,0.5,0,1/tc]USAGE : <b>coupletodipoles</b> <i>status</i>";
 	commands[CMD_COUPLETODIPOLES].descr = "[tc0,0.5,0.5,1/tc]Set/unset coupling to dipoles : if ferromagnetic meshes touch a dipole mesh then interface magnetic cells are exchange coupled to the dipole magnetisation direction.";
 
+	commands.insert(CMD_EXCHANGECOUPLEDMESHES, CommandSpecifier(CMD_EXCHANGECOUPLEDMESHES), "exchangecoupledmeshes");
+	commands[CMD_EXCHANGECOUPLEDMESHES].usage = "[tc0,0.5,0,1/tc]USAGE : <b>exchangecoupledmeshes</b> <i>status (meshname)</i>";
+	commands[CMD_EXCHANGECOUPLEDMESHES].descr = "[tc0,0.5,0.5,1/tc]Set/unset direct exchange coupling to neighboring meshes : if neighboring ferromagnetic meshes touch the named mesh (set for focused mesh if meshname not given) then interface magnetic cells are direct exchange coupled to them.";
+	commands[CMD_EXCHANGECOUPLEDMESHES].return_descr = "[tc0,0.5,0,1/tc]Script return values: <i>status</i>";
+
 	commands.insert(CMD_ADDELECTRODE, CommandSpecifier(CMD_ADDELECTRODE), "addelectrode");
 	commands[CMD_ADDELECTRODE].usage = "[tc0,0.5,0,1/tc]USAGE : <b>addelectrode</b> <i>electrode_rect</i>";
 	commands[CMD_ADDELECTRODE].unit = "m";
@@ -584,7 +599,7 @@ Simulation::Simulation(int Program_Version) :
 
 	commands.insert(CMD_TSOLVERCONFIG, CommandSpecifier(CMD_TSOLVERCONFIG), "tsolverconfig");
 	commands[CMD_TSOLVERCONFIG].usage = "[tc0,0.5,0,1/tc]USAGE : <b>tsolverconfig</b> <i>convergence_error (iters_timeout)</i>";
-	commands[CMD_TSOLVERCONFIG].limits = { { double(1e-10), double(1e-1) }, { int(1), int(50000) } };
+	commands[CMD_TSOLVERCONFIG].limits = { { double(1e-10), double(1e-1) }, { int(1), int(500000) } };
 	commands[CMD_TSOLVERCONFIG].descr = "[tc0,0.5,0.5,1/tc]Set transport solver convergence error and iterations for timeout (if given, else use default).";
 	commands[CMD_TSOLVERCONFIG].return_descr = "[tc0,0.5,0,1/tc]Script return values: <i>convergence_error iters_timeout</i>";
 
@@ -604,6 +619,12 @@ Simulation::Simulation(int Program_Version) :
 	commands[CMD_SETSORDAMPING].limits = { { DBL2(MINSORDAMPING), DBL2(MAXSORDAMPING) } };
 	commands[CMD_SETSORDAMPING].descr = "[tc0,0.5,0.5,1/tc]Set fixed damping values for SOR algorithm used to solve the Poisson equation for V (electrical potential) and S (spin accumulation) respectively.";
 	commands[CMD_SETSORDAMPING].return_descr = "[tc0,0.5,0,1/tc]Script return values: <i>damping_v damping_s</i>";
+
+	commands.insert(CMD_STATICTRANSPORTSOLVER, CommandSpecifier(CMD_STATICTRANSPORTSOLVER), "statictransportsolver");
+	commands[CMD_STATICTRANSPORTSOLVER].usage = "[tc0,0.5,0,1/tc]USAGE : <b>statictransportsolver</b> <i>status</i>";
+	commands[CMD_STATICTRANSPORTSOLVER].limits = { { int(0), int(1) } };
+	commands[CMD_STATICTRANSPORTSOLVER].descr = "[tc0,0.5,0.5,1/tc]If static transport solver is set, the transport solver is only iterated at the end of a stage or step. You should set a high iterations timeout if using this mode.";
+	commands[CMD_STATICTRANSPORTSOLVER].return_descr = "[tc0,0.5,0,1/tc]Script return values: <i>status</i>";
 
 	commands.insert(CMD_TEMPERATURE, CommandSpecifier(CMD_TEMPERATURE), "temperature");
 	commands[CMD_TEMPERATURE].usage = "[tc0,0.5,0,1/tc]USAGE : <b>temperature</b> <i>value (meshname)</i>";

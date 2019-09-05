@@ -49,7 +49,7 @@ BError Demag::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 {
 	BError error(CLASS_STR(Demag));
 
-	//only need to uninitialize if n or h have changed
+	//only need to uninitialize if n or h have changed, or pbc settings have changed
 	if (!CheckDimensions(pMesh->n, pMesh->h, demag_pbc_images)) {
 		
 		Uninitialize();
@@ -89,7 +89,7 @@ BError Demag::MakeCUDAModule(void)
 
 		//Note : it is posible pMeshCUDA has not been allocated yet, but this module has been created whilst cuda is switched on. This will happen when a new mesh is being made which adds this module by default.
 		//In this case, after the mesh has been fully made, it will call SwitchCUDAState on the mesh, which in turn will call this SwitchCUDAState method; then pMeshCUDA will not be nullptr and we can make the cuda module version
-		pModuleCUDA = new DemagCUDA(dynamic_cast<FMeshCUDA*>(pMesh->pMeshCUDA));
+		pModuleCUDA = new DemagCUDA(dynamic_cast<FMeshCUDA*>(pMesh->pMeshCUDA), this);
 		error = pModuleCUDA->Error_On_Create();
 	}
 

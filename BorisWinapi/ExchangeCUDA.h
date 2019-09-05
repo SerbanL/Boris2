@@ -7,11 +7,14 @@
 
 #include "BorisCUDALib.h"
 #include "ModulesCUDA.h"
+#include "ExchangeBaseCUDA.h"
 
 class FMeshCUDA;
+class Exch_6ngbr_Neu;
 
 class Exch_6ngbr_NeuCUDA :
-	public ModulesCUDA
+	public ModulesCUDA,
+	public ExchangeBaseCUDA
 {
 
 	//pointer to CUDA version of mesh object holding the effective field module holding this CUDA module
@@ -19,7 +22,7 @@ class Exch_6ngbr_NeuCUDA :
 
 public:
 
-	Exch_6ngbr_NeuCUDA(FMeshCUDA* pMeshCUDA_);
+	Exch_6ngbr_NeuCUDA(FMeshCUDA* pMeshCUDA_, Exch_6ngbr_Neu* pExch_6ngbr_Neu);
 	~Exch_6ngbr_NeuCUDA();
 
 	//-------------------Abstract base class method implementations

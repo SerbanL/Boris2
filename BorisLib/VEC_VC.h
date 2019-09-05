@@ -351,7 +351,8 @@ public:
 	//--------------------------------------------CALCULATE COMPOSITE MEDIA BOUNDARY VALUES : VEC_VC_cmbnd.h
 
 	//set cmbnd flags by identifying contacts with other vecs (listed in pVECs); this primary mesh index in that vector is given here as it needs to be stored in CMBNDInfo
-	std::vector<CMBNDInfo> set_cmbnd_flags(int primary_mesh_idx, std::vector<VEC_VC<VType>*> &pVECs);
+	//if you set check_neighbors to false, neighbors on primary and secondary sides are not checked (i.e. cells 2 and -2)
+	std::vector<CMBNDInfo> set_cmbnd_flags(int primary_mesh_idx, std::vector<VEC_VC<VType>*> &pVECs, bool check_neighbors = true);
 
 	//calculate and set values at composite media boundary cells in this mesh for a given contacting mesh (the "secondary" V_sec) and given contact description (previously calculated using set_cmbnd_flags)
 	//The values are calculated based on the continuity of a potential and flux normal to the interface. The potential is this VEC_VC, call it V, and the flux is the function f(V) = a_func + b_func * V', where the V' differential direction is perpendicular to the interface.

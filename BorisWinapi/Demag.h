@@ -29,6 +29,10 @@ private:
 	//these pbc images are applicable in individual demag modules only
 	INT3 demag_pbc_images = INT3();
 
+	//The demag field computed separately : at certain steps in the ODE evaluation method we don't need to recalculate the demag field but can use a previous evaluation with an acceptable impact on the numerical error.
+	//This mode needs to be enabled by the user, and can be much faster than the default mode. The default mode is to re-evaluate the demag field at every step.
+	VEC<DBL3> Hdemag;
+
 public:
 
 	Demag(Mesh *pMesh_);

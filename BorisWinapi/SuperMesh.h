@@ -186,9 +186,13 @@ public:
 	//Similar to AdvanceTime but only computes effective fields and does not run the ODE solver
 	void ComputeFields(void);
 
+	//iterate transport solver only, if available
+	void UpdateTransportSolver(void);
+
 #if COMPILECUDA == 1
 	void AdvanceTimeCUDA(void);
 	void ComputeFieldsCUDA(void);
+	void UpdateTransportSolverCUDA(void);
 #endif
 
 	//----------------------------------- ODE SOLVER CONTROL  : SuperMesh.cpp
@@ -330,6 +334,9 @@ public:
 	//possible flags: x, y, z
 	BError Set_PBC(string meshName, string flag, int images);
 
+	//set exchange coupling to neighboring meshes - an exchange-type module (i.e. inherit from ExchangeBase) must be enabled in the named mesh
+	BError Set_ExchangeCoupledMeshes(bool status, string meshName);
+
 	//--------------------------------------------------------- MESH PARAMETERS : SuperMeshParams.cpp
 
 	//these set parameter values and temperature dependence in the indicated mesh - call through these since it's important to call UpdateConfiguration also
@@ -390,6 +397,7 @@ public:
 	BError DelModule(string meshName, MOD_ moduleId);
 
 	bool IsSuperMeshModuleSet(MOD_ moduleId) { return pSMod.is_ID_set(moduleId); }
+	Modules* GetSuperMeshModule(MOD_ moduleId) { if (IsSuperMeshModuleSet(moduleId)) return pSMod(moduleId); else return nullptr; }
 
 	//--------------------------------------------------------- GET PROPERTIES / VALUES
 

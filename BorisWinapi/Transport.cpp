@@ -178,9 +178,13 @@ BError Transport::MakeCUDAModule(void)
 
 double Transport::UpdateField(void)
 {	
-	//update elC (AMR and temperature)
-	if(pSMesh->CurrentTimeStepSolved())
-		CalculateElectricalConductivity();
+	//skip any transport solver computations if static_transport_solver is enabled : transport solver will be interated only at the end of a step or stage
+	if (!pMesh->static_transport_solver) {
+
+		//update elC (AMR and temperature)
+		if (pSMesh->CurrentTimeStepSolved())
+			CalculateElectricalConductivity();
+	}
 
 	//no contribution to total energy density
 	return 0.0;

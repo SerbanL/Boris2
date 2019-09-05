@@ -30,7 +30,7 @@ using namespace std;
 //4. Prioritise kernel cache use. This means kernel multiplications are done so as to minimise kernel reading operations.
 //Thus identify kernels which are used multiple times, making a list of sources and destinations for them, then perform multiplications in this order.
 //First instinct this should be the best method since it minimises the read operations from kernels; it's also fairly elegant to implement.
-//I've done this in SDemag_KernelCollection.h, but it comes out a fair bit slower than method 1. so not in current use.
+//I've done this in SDemag_KernelCollection.h (deleted now - dead code policing!), but it comes out a fair bit slower than method 1. so not in current use.
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 //

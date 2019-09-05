@@ -126,9 +126,9 @@ bool DemagTFunc::CalcOffDiagTens2D_PBC(std::vector<double> &Dodiag, INT3 N, DBL3
 				for (int j_img = -y_images; j_img < y_images + 1; j_img++) {
 					for (int k_img = -z_images; k_img < z_images + 1; k_img++) {
 
-						int i = mod(i_img * N.x + i0);
-						int j = mod(j_img * N.y + j0);
-						int k = mod(k_img * N.z);
+						int i = i_img * N.x + i0;
+						int j = j_img * N.y + j0;
+						int k = k_img * N.z;
 
 						//use modulus of indexes and adjust for tensor element signs based on symmetries
 						int sign_i = get_sign(i);
@@ -312,7 +312,7 @@ bool DemagTFunc::CalcOffDiagTens3D_PBC(VEC<DBL3> &Dodiag, INT3 N, DBL3 hRatios, 
 
 	int sign = 1;
 	if (minus) sign = -1;
-
+	
 #pragma omp parallel for
 	for (int j0 = 0; j0 < (y_images ? N.y : N.y / 2); j0++) {
 		for (int k0 = 0; k0 < (z_images ? N.z : N.z / 2); k0++) {
@@ -324,9 +324,9 @@ bool DemagTFunc::CalcOffDiagTens3D_PBC(VEC<DBL3> &Dodiag, INT3 N, DBL3 hRatios, 
 					for (int j_img = -y_images; j_img < y_images + 1; j_img++) {
 						for (int k_img = -z_images; k_img < z_images + 1; k_img++) {
 
-							int i = mod(i_img * N.x + i0);
-							int j = mod(j_img * N.y + j0);
-							int k = mod(k_img * N.z + k0);
+							int i = i_img * N.x + i0;
+							int j = j_img * N.y + j0;
+							int k = k_img * N.z + k0;
 
 							//use modulus of indexes and adjust for tensor element signs based on symmetries
 							int sign_i = get_sign(i);

@@ -204,7 +204,7 @@ double DemagTFunc::Lodia_shifted(int i, int j, int k, int nx, int ny, int nz, do
 }
 
 //special versions for z shift only
-double DemagTFunc::Ldia_xx_yy_zshifted(int i, int j, int k, int nx, int ny, int nz, double hx, double hy, double hz, VEC<double>& f_vals)
+double DemagTFunc::Ldia_zshifted_xx_yy(int i, int j, int k, int nx, int ny, int nz, double hx, double hy, double hz, VEC<double>& f_vals)
 {
 	i++; j++; k += nz;
 
@@ -246,7 +246,7 @@ double DemagTFunc::Ldia_xx_yy_zshifted(int i, int j, int k, int nx, int ny, int 
 	return sum_KahanNeumaier(main_sum[tn]) / (4 * PI * hx * hy * hz);
 }
 
-double DemagTFunc::Ldia_zz_zshifted(int i, int j, int k, int nx, int ny, int nz, double hx, double hy, double hz, VEC<double>& f_vals)
+double DemagTFunc::Ldia_zshifted_zz(int i, int j, int k, int nx, int ny, int nz, double hx, double hy, double hz, VEC<double>& f_vals)
 {
 	i += nx; j++; k++;
 

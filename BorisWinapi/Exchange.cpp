@@ -31,6 +31,7 @@
 
 Exch_6ngbr_Neu::Exch_6ngbr_Neu(Mesh *pMesh_) : 
 	Modules(),
+	ExchangeBase(pMesh_),
 	ProgramStateNames(this, {}, {})
 {
 	pMesh = dynamic_cast<FMesh*>(pMesh_);
@@ -54,7 +55,9 @@ BError Exch_6ngbr_Neu::Initialize(void)
 {
 	BError error(CLASS_STR(Exch_6ngbr_Neu));
 
-	initialized = true;
+	error = ExchangeBase::Initialize();
+
+	if (!error) initialized = true;
 
 	return error;
 }
@@ -64,8 +67,6 @@ BError Exch_6ngbr_Neu::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 	BError error(CLASS_STR(Exch_6ngbr_Neu));
 
 	Uninitialize();
-
-	Initialize();
 
 	//------------------------ CUDA UpdateConfiguration if set
 
@@ -89,7 +90,7 @@ BError Exch_6ngbr_Neu::MakeCUDAModule(void)
 
 		//Note : it is posible pMeshCUDA has not been allocated yet, but this module has been created whilst cuda is switched on. This will happen when a new mesh is being made which adds this module by default.
 		//In this case, after the mesh has been fully made, it will call SwitchCUDAState on the mesh, which in turn will call this SwitchCUDAState method; then pMeshCUDA will not be nullptr and we can make the cuda module version
-		pModuleCUDA = new Exch_6ngbr_NeuCUDA(dynamic_cast<FMeshCUDA*>(pMesh->pMeshCUDA));
+		pModuleCUDA = new Exch_6ngbr_NeuCUDA(dynamic_cast<FMeshCUDA*>(pMesh->pMeshCUDA), this);
 		error = pModuleCUDA->Error_On_Create();
 	}
 
@@ -111,6 +112,7 @@ double Exch_6ngbr_Neu::UpdateField(void)
 			double A = pMesh->A;
 			pMesh->update_parameters_mcoarse(idx, pMesh->A, A, pMesh->Ms, Ms);
 
+			//cells marked with cmbnd are calculated using exchange coupling to other ferromagnetic meshes - see below; the delsq_neu evaluates to zero in the CMBND coupling direction.
 			DBL3 Hexch = (2*A / (MU0*Ms*Ms)) * pMesh->M.delsq_neu(idx);
 
 			pMesh->Heff[idx] += Hexch;
@@ -118,6 +120,9 @@ double Exch_6ngbr_Neu::UpdateField(void)
 			energy += pMesh->M[idx] * Hexch;
 		}
 	}
+
+	//if exchange coupled to other meshes calculate the exchange field at marked cmbnd cells and accumulate energy density contribution
+	if (pMesh->GetMeshExchangeCoupling()) CalculateExchangeCoupling(energy);
 
 	//average energy density, this is correct, see notes - e_ex ~= -(mu0/2) M.H as can be derived from the full expression for e_ex. It is not -mu0 M.H, which is the energy density for a dipole in a field !
 	if (pMesh->M.get_nonempty_cells()) energy *= -MU0 / (2 * (pMesh->M.get_nonempty_cells()));

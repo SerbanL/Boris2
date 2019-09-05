@@ -90,6 +90,8 @@ void iDMExchangeCUDA::UpdateField(void)
 
 		iDMExchangeCUDA_UpdateField << < (pMeshCUDA->n.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >> > (pMeshCUDA->cuMesh, energy, false);
 	}
+
+	if (pMeshCUDA->GetMeshExchangeCoupling()) CalculateExchangeCoupling(energy);
 }
 
 #endif

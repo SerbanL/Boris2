@@ -10,10 +10,13 @@ class FMesh;
 
 #ifdef MODULE_DMEXCHANGE
 
+#include "ExchangeBase.h"
+
 //Exchange modules can only be used in a ferromagnetic mesh
 
 class DMExchange :
 	public Modules,
+	public ExchangeBase,
 	public ProgramState<DMExchange, tuple<>, tuple<>>
 {
 

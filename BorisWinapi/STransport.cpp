@@ -128,6 +128,9 @@ BError STransport::MakeCUDAModule(void)
 
 double STransport::UpdateField(void)
 {
+	//skip any transport solver computations if static_transport_solver is enabled : transport solver will be interated only at the end of a step or stage
+	if (pSMesh->static_transport_solver) return 0.0;
+
 	//only need to update this after an entire magnetisation equation time step is solved (but always update spin accumulation field if spin current solver enabled)
 	if (pSMesh->CurrentTimeStepSolved()) {
 
@@ -143,7 +146,27 @@ double STransport::UpdateField(void)
 			else solve_spin_transport_sor();
 
 			//if constant current source is set then need to update potential to keep a constant current
-			if (constant_current_source) GetCurrent();
+			if (constant_current_source) {
+
+				GetCurrent();
+
+				//the electrode voltage values will have changed so should iterate to convergence threshold again
+				//even though we've adjusted potential values these won't be quite correct
+				//moreover the charge current density hasn't been recalculated
+				//reiterating the transport solver to convergence will fix all this
+				//Note : the electrode current will change again slightly so really you should be iterating to some electrode current convergence threshold
+				//In normal running mode this won't be an issue as this is done every iteration; in static transport solver mode this could be a problem so must be tested
+
+				double iters_to_conv_previous = iters_to_conv;
+
+				//solve only for charge current (V and Jc with continuous boundaries)
+				if (!pSMesh->SolveSpinCurrent()) solve_charge_transport_sor();
+				//solve both spin and charge currents (V, Jc, S with appropriate boundaries : continuous, except between N and F layers where interface conductivities are specified)
+				else solve_spin_transport_sor();
+
+				//in constant current mode we spend more iterations so the user should be aware of this
+				iters_to_conv += iters_to_conv_previous;
+			}
 		}
 		else iters_to_conv = 0;
 	}
@@ -205,7 +228,7 @@ DBL2 STransport::GetCurrent(void)
 
 	//adjust the ground current for net current error (net current should really be zero)
 	if (electrode_rects.size()) current = current - net_current / electrode_rects.size();
-
+	
 	if (constant_current_source) {
 
 		//adjust potential in order to keep the current constant
@@ -216,7 +239,7 @@ DBL2 STransport::GetCurrent(void)
 
 		current = save_current;
 	}
-
+	
 	return DBL2(current, net_current);
 }
 
@@ -259,26 +282,26 @@ void STransport::adjust_potential(double potential_)
 			electrode_voltage = +potential_ / 2;
 		}
 	}
-
+	
 	//this is now the old potential value
 	potential_ = potential;
 
 	//the new potential value
 	potential = electrode_voltage - ground_voltage;
-
+	
 #if COMPILECUDA == 1
 	if (pModuleCUDA) {
 
 		if (IsNZ(potential_) && initialized) {
 
 			reinterpret_cast<STransportCUDA*>(pModuleCUDA)->scale_potential_values(potential / potential_);
-
-			return;
 		}
 		else reinterpret_cast<STransportCUDA*>(pModuleCUDA)->initialize_potential_values();
+
+		return;
 	}
 #endif
-
+	
 	//if previous potential value was not zero then scale all V values - saves on transport solver computations
 	if (IsNZ(potential_) && initialized) {
 
@@ -329,6 +352,9 @@ void STransport::initialize_potential_values(void)
 
 void STransport::SetCurrent(double current_)
 {
+	//before setting a constant current, make sure the currently set potential is not zero otherwise we won't be able to set a constant current source
+	if (IsZ(potential)) SetPotential(1.0);
+
 	constant_current_source = true;
 
 	current = current_;

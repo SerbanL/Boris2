@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "ExchangeCUDA.h"
+#include "Exchange.h"
 
 #ifdef MODULE_EXCHANGE
 
@@ -7,8 +8,10 @@
 
 #if COMPILECUDA == 1
 
-Exch_6ngbr_NeuCUDA::Exch_6ngbr_NeuCUDA(FMeshCUDA* pMeshCUDA_)
-	: ModulesCUDA()
+Exch_6ngbr_NeuCUDA::Exch_6ngbr_NeuCUDA(FMeshCUDA* pMeshCUDA_, Exch_6ngbr_Neu* pExch_6ngbr_Neu)
+	: 
+	ModulesCUDA(),
+	ExchangeBaseCUDA(pMeshCUDA_, pExch_6ngbr_Neu)
 {
 	pMeshCUDA = pMeshCUDA_;
 }
@@ -20,7 +23,9 @@ BError Exch_6ngbr_NeuCUDA::Initialize(void)
 {
 	BError error(CLASS_STR(Exch_6ngbr_NeuCUDA));
 
-	initialized = true;
+	error = ExchangeBaseCUDA::Initialize();
+
+	if (!error) initialized = true;
 
 	return error;
 }
@@ -30,8 +35,6 @@ BError Exch_6ngbr_NeuCUDA::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 	BError error(CLASS_STR(Exch_6ngbr_NeuCUDA));
 
 	Uninitialize();
-
-	Initialize();
 
 	return error;
 }

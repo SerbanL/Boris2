@@ -62,7 +62,7 @@ class Simulation :
 	public SimulationSharedData, 
 	public Threads<Simulation>,
 	public ProgramState<Simulation, 
-	tuple<BorisDisplay, string, string, string, string, bool, bool, bool, vector_lut<DatumConfig>, vector_lut<DatumConfig>, INT2, vector_lut<StageConfig>, int, bool, SuperMesh, bool>,
+	tuple<BorisDisplay, string, string, string, string, bool, bool, bool, vector_lut<DatumConfig>, vector_lut<DatumConfig>, INT2, vector_lut<StageConfig>, int, bool, SuperMesh, bool, bool, bool>,
 	tuple<> >
 {
 private:
@@ -391,6 +391,11 @@ private:
 
 	void Print_CoupledToDipoles_Settings(void);
 
+	//---------------------------------------------------- NEIGHBORING MESHES EXCHANGE COUPLING
+
+	void Print_ExchangeCoupledMeshes_List(void);
+	string Build_ExchangeCoupledMeshes_ListLine(int meshIndex);
+
 	//---------------------------------------------------- MESH ROUGHNESS REFINEMENT
 
 	void Print_MeshRoughnessRefinement(string meshName);
@@ -411,6 +416,10 @@ private:
 
 	void Print_PBC(void);
 	string Build_PBC_ListLine(int meshIndex);
+
+	//---------------------------------------------------- INDIVIDUAL SHAPE CONTROL
+
+	void Print_IndividualShapeStatus(void);
 
 	//---------------------------------------------------- MAKE INTERACTIVE OBJECT : Auxiliary method
 

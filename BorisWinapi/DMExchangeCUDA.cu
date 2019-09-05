@@ -85,6 +85,8 @@ void DMExchangeCUDA::UpdateField(void)
 
 		DMExchangeCUDA_UpdateField << < (pMeshCUDA->n.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >> > (pMeshCUDA->cuMesh, energy, false);
 	}
+
+	if (pMeshCUDA->GetMeshExchangeCoupling()) CalculateExchangeCoupling(energy);
 }
 
 #endif

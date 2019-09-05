@@ -36,6 +36,7 @@ enum IOI_
 	IOI_MESH_FORHEATBOUNDARIES,
 	IOI_MESH_FORCURIEANDMOMENT,
 	IOI_MESH_FORPBC,
+	IOI_MESH_FOREXCHCOUPLING,
 
 	//Shows ferromagnetic super-mesh rectangle (unit m) : textId is the mesh rectangle for the ferromagnetic super-mesh
 	IOI_FMSMESHRECTANGLE,
@@ -203,6 +204,9 @@ enum IOI_
 	//Shows coupled_to_dipoles enabled/disabled state. auxId is enabled (1)/disabled(0) status.
 	IOI_COUPLEDTODIPOLESSTATUS,
 
+	//Shows neighboring meshes exchange coupling setting for this mesh. minorId is the unique mesh id number, auxId is the status (1/0 : on/off, -1 : not available: must be ferromagnetic mesh)
+	IOI_MESHEXCHCOUPLING,
+
 	//Shows mesh roughness refinement value. minorId is the unique mesh id number, auxId is enabled (1)/disabled(0) status. textId is the value
 	IOI_REFINEROUGHNESS,
 
@@ -242,5 +246,16 @@ enum IOI_
 	//Shows PBC setting for individual demag modules. minorId is the unique mesh id number, auxId is the pbc images number (0 disables pbc; -1 means setting is not available) (must be ferromagnetic mesh);
 	IOI_PBC_X,
 	IOI_PBC_Y,
-	IOI_PBC_Z
+	IOI_PBC_Z,
+
+	//Shows PBC setting for supermesh/multilayered demag. auxId is the pbc images number (0 disables pbc; -1 means setting is not available)
+	IOI_SPBC_X,
+	IOI_SPBC_Y,
+	IOI_SPBC_Z,
+
+	//Shows individual shape control flag. auxId is the value (0/1)
+	IOI_INDIVIDUALSHAPE,
+
+	//Static transport solver state. auxId is the value (0/1)
+	IOI_STATICTRANSPORT
 };

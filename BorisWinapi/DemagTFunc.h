@@ -44,16 +44,16 @@ private:
 	bool fill_g_vals_shifted(INT3 n, DBL3 hRatios, DBL3 shift);
 
 	//shifted versions for stray field -> in particular for z shift only
-	bool fill_f_vals_zshifted(INT3 n, DBL3 hRatios, DBL3 shift);
-	bool fill_g_vals_zshifted(INT3 n, DBL3 hRatios, DBL3 shift);
+	bool fill_f_vals_zshifted(INT3 n, DBL3 hRatios, DBL3 shift, int asymptotic_distance);
+	bool fill_g_vals_zshifted(INT3 n, DBL3 hRatios, DBL3 shift, int asymptotic_distance);
 
 	//shifted and irregular versions for stray field (h_src and h_dst only allowed to differ in z values, giving del = sz - dz)
 	bool fill_f_vals_shifted_irregular(INT3 n, DBL3 h_src, DBL3 h_dst, DBL3 shift);
 	bool fill_g_vals_shifted_irregular(INT3 n, DBL3 h_src, DBL3 h_dst, DBL3 shift);
 
 	//shifted and irregular versions for stray field (h_src and h_dst only allowed to differ in z values, giving del = sz - dz) -> in particular for z shift only
-	bool fill_f_vals_zshifted_irregular(INT3 n, DBL3 h_src, DBL3 h_dst, DBL3 shift);
-	bool fill_g_vals_zshifted_irregular(INT3 n, DBL3 h_src, DBL3 h_dst, DBL3 shift);
+	bool fill_f_vals_zshifted_irregular(INT3 n, DBL3 h_src, DBL3 h_dst, DBL3 shift, int asymptotic_distance);
+	bool fill_g_vals_zshifted_irregular(INT3 n, DBL3 h_src, DBL3 h_dst, DBL3 shift, int asymptotic_distance);
 
 	//f and g calculation functions -> basis functions
 	double f(double x, double y, double z);
@@ -73,8 +73,8 @@ private:
 	double Lodia_shifted(int i, int j, int k, int nx, int ny, int nz, double hx, double hy, double hz, VEC<double>& g_vals);
 
 	//special versions for z shift only
-	double Ldia_xx_yy_zshifted(int i, int j, int k, int nx, int ny, int nz, double hx, double hy, double hz, VEC<double>& f_vals);
-	double Ldia_zz_zshifted(int i, int j, int k, int nx, int ny, int nz, double hx, double hy, double hz, VEC<double>& f_vals);
+	double Ldia_zshifted_xx_yy(int i, int j, int k, int nx, int ny, int nz, double hx, double hy, double hz, VEC<double>& f_vals);
+	double Ldia_zshifted_zz(int i, int j, int k, int nx, int ny, int nz, double hx, double hy, double hz, VEC<double>& f_vals);
 	double Lodia_xy_zshifted(int i, int j, int k, int nx, int ny, int nz, double hx, double hy, double hz, VEC<double>& g_vals);
 	double Lodia_xz_yz_zshifted(int i, int j, int k, int nx, int ny, int nz, double hx, double hy, double hz, VEC<double>& g_vals);
 
@@ -102,7 +102,7 @@ private:
 	//off-diagonal component for irregular tensor, where source and destination cells can differ in z cellsize : xz and yz components only
 	double Lodia_zshifted_irregular_xz_yz(int i, int j, int k, int nx, int ny, int nz, double tau, VEC<double>& g_vals, VEC<double>& g_vals_del);
 
-	//---------------------SINGLE VALUE COMPUTE (TESTING ONLY)
+	//---------------------SINGLE VALUE COMPUTE
 
 	//get diagonal component at given position for given cellsizes
 	double Ldia_single(double x, double y, double z, double hx, double hy, double hz);
@@ -158,46 +158,98 @@ public:
 	//These versions reduce to the non-pbc versions (almost) if all images are set to zero, but less readable so prefer to keep separate versions.
 
 	//Compute in Ddiag the diagonal tensor elements (Dxx, Dyy, Dzz) which has sizes given by N.
-	bool CalcDiagTens3D_PBC(VEC<DBL3> &Ddiag, INT3 N, DBL3 hRatios, bool minus = true, int asymptotic_distance = ASYMPTOTIC_DISTANCE, int x_images = PBC_X_IMAGES, int y_images = PBC_Y_IMAGES, int z_images = PBC_Z_IMAGES);
+	bool CalcDiagTens3D_PBC(VEC<DBL3> &Ddiag, INT3 N, DBL3 hRatios, 
+		bool minus = true, int asymptotic_distance = ASYMPTOTIC_DISTANCE, 
+		int x_images = PBC_X_IMAGES, int y_images = PBC_Y_IMAGES, int z_images = PBC_Z_IMAGES);
 
 	//Compute in Dodiag the off-diagonal tensor elements (Dxy, Dxz, Dyz) which has sizes given by N. 
-	bool CalcOffDiagTens3D_PBC(VEC<DBL3> &Dodiag, INT3 N, DBL3 hRatios, bool minus = true, int asymptotic_distance = ASYMPTOTIC_DISTANCE, int x_images = PBC_X_IMAGES, int y_images = PBC_Y_IMAGES, int z_images = PBC_Z_IMAGES);
+	bool CalcOffDiagTens3D_PBC(VEC<DBL3> &Dodiag, INT3 N, DBL3 hRatios, 
+		bool minus = true, int asymptotic_distance = ASYMPTOTIC_DISTANCE, 
+		int x_images = PBC_X_IMAGES, int y_images = PBC_Y_IMAGES, int z_images = PBC_Z_IMAGES);
 
 	//2D
 
 	//Compute in Ddiag the diagonal tensor elements (Dxx, Dyy, Dzz) which has sizes given by N.
-	bool CalcDiagTens2D_PBC(VEC<DBL3> &Ddiag, INT3 N, DBL3 hRatios, bool minus = true, int asymptotic_distance = ASYMPTOTIC_DISTANCE, int x_images = PBC_X_IMAGES, int y_images = PBC_Y_IMAGES, int z_images = PBC_Z_IMAGES);
+	bool CalcDiagTens2D_PBC(VEC<DBL3> &Ddiag, INT3 N, DBL3 hRatios, 
+		bool minus = true, int asymptotic_distance = ASYMPTOTIC_DISTANCE, 
+		int x_images = PBC_X_IMAGES, int y_images = PBC_Y_IMAGES, int z_images = PBC_Z_IMAGES);
 
 	//Compute in Dodiag the off-diagonal tensor elements (Dxy, Dxz, Dyz) which has sizes given by N. 
-	bool CalcOffDiagTens2D_PBC(std::vector<double> &Dodiag, INT3 N, DBL3 hRatios, bool minus = true, int asymptotic_distance = ASYMPTOTIC_DISTANCE, int x_images = PBC_X_IMAGES, int y_images = PBC_Y_IMAGES, int z_images = PBC_Z_IMAGES);
+	bool CalcOffDiagTens2D_PBC(std::vector<double> &Dodiag, INT3 N, DBL3 hRatios, 
+		bool minus = true, int asymptotic_distance = ASYMPTOTIC_DISTANCE, 
+		int x_images = PBC_X_IMAGES, int y_images = PBC_Y_IMAGES, int z_images = PBC_Z_IMAGES);
 
 	//---------------------SHIFTED VERSIONS
 
 	//3D
 
 	//Compute in Ddiag the diagonal tensor elements (Dxx, Dyy, Dzz) which has sizes given by N. 
-	bool CalcDiagTens3D_Shifted(VEC<DBL3> &Ddiag, INT3 n, INT3 N, DBL3 hRatios, DBL3 shift, bool minus = true);
+	bool CalcDiagTens3D_Shifted(VEC<DBL3> &Ddiag, INT3 n, INT3 N, DBL3 hRatios, DBL3 shift, bool minus = true, int asymptotic_distance = ASYMPTOTIC_DISTANCE);
 
 	//Compute in Dodiag the off-diagonal tensor elements (Dxy, Dxz, Dyz) which has sizes given by N. 
-	bool CalcOffDiagTens3D_Shifted(VEC<DBL3> &Dodiag, INT3 n, INT3 N, DBL3 hRatios, DBL3 shift, bool minus = true);
+	bool CalcOffDiagTens3D_Shifted(VEC<DBL3> &Dodiag, INT3 n, INT3 N, DBL3 hRatios, DBL3 shift, bool minus = true, int asymptotic_distance = ASYMPTOTIC_DISTANCE);
 
 	//2D
 
 	//Compute in Ddiag the diagonal tensor elements (Dxx, Dyy, Dzz) which has sizes given by N.
-	bool CalcDiagTens2D_Shifted(VEC<DBL3> &Ddiag, INT3 n, INT3 N, DBL3 hRatios, DBL3 shift, bool minus = true);
+	bool CalcDiagTens2D_Shifted(VEC<DBL3> &Ddiag, INT3 n, INT3 N, DBL3 hRatios, DBL3 shift, bool minus = true, int asymptotic_distance = ASYMPTOTIC_DISTANCE);
 
 	//Compute in Dodiag the off-diagonal tensor elements (Dxy, Dxz, Dyz) which has sizes given by N. 
-	bool CalcOffDiagTens2D_Shifted(VEC<DBL3> &Dodiag, INT3 n, INT3 N, DBL3 hRatios, DBL3 shift, bool minus = true);
+	bool CalcOffDiagTens2D_Shifted(VEC<DBL3> &Dodiag, INT3 n, INT3 N, DBL3 hRatios, DBL3 shift, bool minus = true, int asymptotic_distance = ASYMPTOTIC_DISTANCE);
 
+	//---------------------SHIFTED VERSIONS with PBC
+
+	//pbc conditions are applied for directions with non-zero number of images below; if number of images are zero in a dimension, the tensor coefficients are calculated without pbc
+	//These versions reduce to the non-pbc versions (almost) if all images are set to zero, but less readable so prefer to keep separate versions.
+
+	//3D
+	
+	//Compute in Ddiag the diagonal tensor elements (Dxx, Dyy, Dzz) which has sizes given by N. 
+	bool CalcDiagTens3D_Shifted_PBC(VEC<DBL3> &Ddiag, INT3 N, DBL3 hRatios, DBL3 shift, 
+		bool minus = true, int asymptotic_distance = ASYMPTOTIC_DISTANCE, 
+		int x_images = PBC_X_IMAGES, int y_images = PBC_Y_IMAGES, int z_images = PBC_Z_IMAGES);
+
+	//Compute in Dodiag the off-diagonal tensor elements (Dxy, Dxz, Dyz) which has sizes given by N. 
+	bool CalcOffDiagTens3D_Shifted_PBC(VEC<DBL3> &Dodiag, INT3 N, DBL3 hRatios, DBL3 shift, 
+		bool minus = true, int asymptotic_distance = ASYMPTOTIC_DISTANCE, 
+		int x_images = PBC_X_IMAGES, int y_images = PBC_Y_IMAGES, int z_images = PBC_Z_IMAGES);
+
+	//2D
+
+	//Compute in Ddiag the diagonal tensor elements (Dxx, Dyy, Dzz) which has sizes given by N.
+	bool CalcDiagTens2D_Shifted_PBC(VEC<DBL3> &Ddiag, INT3 N, DBL3 hRatios, DBL3 shift, 
+		bool minus = true, int asymptotic_distance = ASYMPTOTIC_DISTANCE,
+		int x_images = PBC_X_IMAGES, int y_images = PBC_Y_IMAGES, int z_images = PBC_Z_IMAGES);
+
+	//Compute in Dodiag the off-diagonal tensor elements (Dxy, Dxz, Dyz) which has sizes given by N. 
+	bool CalcOffDiagTens2D_Shifted_PBC(VEC<DBL3> &Dodiag, INT3 N, DBL3 hRatios, DBL3 shift, 
+		bool minus = true, int asymptotic_distance = ASYMPTOTIC_DISTANCE,
+		int x_images = PBC_X_IMAGES, int y_images = PBC_Y_IMAGES, int z_images = PBC_Z_IMAGES);
+		
 	//---------------------SHIFTED AND IRREGULAR VERSIONS
 
 	//2D
 
 	//Compute in Ddiag the diagonal tensor elements (Dxx, Dyy, Dzz) which has sizes given by N. This applies for irregular cells, specifically for 2D with s.z and d.z allowed to differ; s.x, d.x resp s.y, d.y must be the same.
-	bool CalcDiagTens2D_Shifted_Irregular(VEC<DBL3> &Ddiag, INT3 n, INT3 N, DBL3 s, DBL3 d, DBL3 shift, bool minus = true);
+	bool CalcDiagTens2D_Shifted_Irregular(VEC<DBL3> &Ddiag, INT3 n, INT3 N, DBL3 s, DBL3 d, DBL3 shift, bool minus = true, int asymptotic_distance = ASYMPTOTIC_DISTANCE);
 
 	//Compute in Dodiag the off-diagonal tensor elements (Dxy, Dxz, Dyz) which has sizes given by N. This applies for irregular cells, specifically for 2D with s.z and d.z allowed to differ; s.x, d.x resp s.y, d.y must be the same.
-	bool CalcOffDiagTens2D_Shifted_Irregular(VEC<DBL3> &Dodiag, INT3 n, INT3 N, DBL3 s, DBL3 d, DBL3 shift, bool minus = true);
+	bool CalcOffDiagTens2D_Shifted_Irregular(VEC<DBL3> &Dodiag, INT3 n, INT3 N, DBL3 s, DBL3 d, DBL3 shift, bool minus = true, int asymptotic_distance = ASYMPTOTIC_DISTANCE);
+
+	//---------------------SHIFTED AND IRREGULAR VERSIONS with PBC
+
+	//pbc conditions are applied for directions with non-zero number of images below; if number of images are zero in a dimension, the tensor coefficients are calculated without pbc
+	//These versions reduce to the non-pbc versions (almost) if all images are set to zero, but less readable so prefer to keep separate versions.
+
+	//Compute in Ddiag the diagonal tensor elements (Dxx, Dyy, Dzz) which has sizes given by N. This applies for irregular cells, specifically for 2D with s.z and d.z allowed to differ; s.x, d.x resp s.y, d.y must be the same.
+	bool CalcDiagTens2D_Shifted_Irregular_PBC(VEC<DBL3> &Ddiag, INT3 N, DBL3 s, DBL3 d, DBL3 shift,
+		bool minus = true, int asymptotic_distance = ASYMPTOTIC_DISTANCE,
+		int x_images = PBC_X_IMAGES, int y_images = PBC_Y_IMAGES, int z_images = PBC_Z_IMAGES);
+
+	//Compute in Dodiag the off-diagonal tensor elements (Dxy, Dxz, Dyz) which has sizes given by N. This applies for irregular cells, specifically for 2D with s.z and d.z allowed to differ; s.x, d.x resp s.y, d.y must be the same.
+	bool CalcOffDiagTens2D_Shifted_Irregular_PBC(VEC<DBL3> &Dodiag, INT3 N, DBL3 s, DBL3 d, DBL3 shift,
+		bool minus = true, int asymptotic_distance = ASYMPTOTIC_DISTANCE,
+		int x_images = PBC_X_IMAGES, int y_images = PBC_Y_IMAGES, int z_images = PBC_Z_IMAGES);
 
 	//---------------------SINGLE VALUE COMPUTE (TESTING ONLY)
 

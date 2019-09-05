@@ -13,6 +13,7 @@
 
 #include "DiffEq.h"
 
+#include "ExchangeBase.h"
 #include "Exchange.h"
 #include "DMExchange.h"
 #include "iDMExchange.h"
@@ -47,6 +48,9 @@ class Mesh :
 	//List modules which can be used by more than one type of mesh - these modules will hold a pointer to this base class directly
 	friend Transport;
 	friend Heat;
+
+	//special cases here
+	friend ExchangeBase;
 
 #if COMPILECUDA == 1
 	friend MeshCUDA;
@@ -259,8 +263,12 @@ public:
 	//update computational state of all modules in this mesh; return total volume energy density -> each module will have a contribution, so sum it
 	double UpdateModules(void);
 
+	//update MOD_TRANSPORT module only if set
+	void UpdateTransportSolver(void);
+
 #if COMPILECUDA == 1
 	void UpdateModulesCUDA(void);
+	void UpdateTransportSolverCUDA(void);
 #endif
 
 	//----------------------------------- PARAMETERS CONTROL/INFO : MeshParamsControl.cpp
@@ -532,6 +540,9 @@ public:
 	virtual void Set_PBC_Y(int pbc_y) {}
 	virtual void Set_PBC_Z(int pbc_z) {}
 
+	virtual void SetMeshExchangeCoupling(bool status) {}
+	virtual bool GetMeshExchangeCoupling(void) { return false; }
+
 	//----------------------------------- MODULE METHODS TEMPLATED CALLERS
 
 	//IMPORTANT NOTE: read note for CallModuleMethod in SuperMesh, repeated here:
@@ -582,22 +593,31 @@ BError Mesh::change_mesh_shape(Lambda& run_this, PType& ... params)
 
 	BError error(__FUNCTION__);
 
-	//1. shape magnetization
-	if (M.linear_size()) {
+	if (!shape_change_individual || (shape_change_individual && displayedPhysicalQuantity == MESHDISPLAY_MAGNETIZATION)) {
 
-		//if Roughness module is enabled then apply shape via the Roughness module instead
-		if (IsModuleSet(MOD_ROUGHNESS)) {
+		//1. shape magnetization
+		if (M.linear_size()) {
 
-			error = reinterpret_cast<Roughness*>(pMod(MOD_ROUGHNESS))->change_mesh_shape(run_this, params...);
+			//if Roughness module is enabled then apply shape via the Roughness module instead
+			if (IsModuleSet(MOD_ROUGHNESS)) {
+
+				error = reinterpret_cast<Roughness*>(pMod(MOD_ROUGHNESS))->change_mesh_shape(run_this, params...);
+			}
+			else error = run_this(M, DBL3(-Ms, 0, 0), params...);
 		}
-		else error = run_this(M, DBL3(-Ms, 0, 0), params...);
 	}
 	
-	//2. shape electrical conductivity
-	if (elC.linear_size()) error = run_this(elC, elecCond, params...);
+	if (!shape_change_individual || (shape_change_individual && displayedPhysicalQuantity == MESHDISPLAY_ELCOND)) {
+
+		//2. shape electrical conductivity
+		if (elC.linear_size()) error = run_this(elC, elecCond, params...);
+	}
 	
-	//3. shape temperature
-	if (Temp.linear_size()) error = run_this(Temp, base_temperature, params...);
+	if (!shape_change_individual || (shape_change_individual && displayedPhysicalQuantity == MESHDISPLAY_TEMPERATURE)) {
+
+		//3. shape temperature
+		if (Temp.linear_size()) error = run_this(Temp, base_temperature, params...);
+	}
 
 #if COMPILECUDA == 1
 	if (!error && pMeshCUDA) {

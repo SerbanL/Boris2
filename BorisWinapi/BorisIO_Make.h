@@ -94,6 +94,7 @@ void Simulation::MakeIOInfo(void)
 	ioInfo.push_back(mesh_info, IOI_MESH_FORHEATBOUNDARIES);
 	ioInfo.push_back(mesh_info, IOI_MESH_FORCURIEANDMOMENT);
 	ioInfo.push_back(mesh_info, IOI_MESH_FORPBC);
+	ioInfo.push_back(mesh_info, IOI_MESH_FOREXCHCOUPLING);
 
 	//Shows ferromagnetic super-mesh rectangle (unit m) : textId is the mesh rectangle for the ferromagnetic super-mesh
 	//IOI_FMSMESHRECTANGLE
@@ -703,6 +704,18 @@ void Simulation::MakeIOInfo(void)
 
 	ioInfo.push_back(sordampingvalues_info, IOI_SORDAMPING);
 
+	//Static transport solver state. auxId is the value (0/1)
+	//IOI_STATICTRANSPORT:
+
+	string statictransport_info =
+		string("[tc1,1,0,1/tc]<b>Static transport solver") +
+		string("\n[tc1,1,0,1/tc]<i>If set, transport solver iterated only</i>") +
+		string("\n[tc1,1,0,1/tc]<i>at end of a step or stage.</i>") +
+		string("\n[tc1,1,0,1/tc]<i>You should also set a high timeout.</i>") +
+		string("\n[tc1,1,0,1/tc]click: switch mode\n");
+
+	ioInfo.push_back(statictransport_info, IOI_STATICTRANSPORT);
+
 	//Shows mesh temperature. minorId is the unique mesh id number, textId is the temperature value
 	//IOI_BASETEMPERATURE
 
@@ -844,10 +857,21 @@ void Simulation::MakeIOInfo(void)
 		string("[tc1,1,0,1/tc]<b>Dipole exchange coupling status") +
 		string("\n[tc1,1,0,1/tc]<i>green: set, red: not set</i>") +
 		string("\n[tc1,1,0,1/tc]<i>When set, for dipole-ferromagnetic mesh contacts</i>") +
-		string("\n[tc1,1,0,1/tc]<i>mmoments at interface cells will be frozen</i>") +
+		string("\n[tc1,1,0,1/tc]<i>moments at interface cells will be frozen</i>") +
 		string("\n[tc1,1,0,1/tc]click: change status\n");
 
 	ioInfo.push_back(dipolecouple_info, IOI_COUPLEDTODIPOLESSTATUS);
+
+	//IOI_MESHEXCHCOUPLING
+
+	string ec_info =
+		string("[tc1,1,0,1/tc]<b>Neighboring mesh exchange coupling status") +
+		string("\n[tc1,1,0,1/tc]<i>green: set, red: not set</i>") +
+		string("\n[tc1,1,0,1/tc]<i>When set, neighboring ferromagnetic meshes</i>") +
+		string("\n[tc1,1,0,1/tc]<i>in contact with this one will be exchange coupled.</i>") +
+		string("\n[tc1,1,0,1/tc]click: change status\n");
+
+	ioInfo.push_back(ec_info, IOI_MESHEXCHCOUPLING);
 
 	//Shows mesh roughness refinement value. minorId is the unique mesh id number, textId is the value
 	//IOI_REFINEROUGHNESS
@@ -966,6 +990,28 @@ void Simulation::MakeIOInfo(void)
 	ioInfo.push_back(pbc_info, IOI_PBC_X);
 	ioInfo.push_back(pbc_info, IOI_PBC_Y);
 	ioInfo.push_back(pbc_info, IOI_PBC_Z);
+
+	//Shows PBC setting for supermesh/multilayered demag. auxId is the pbc images number (0 disables pbc; -1 means setting is not available)
+	//IOI_SPBC_X
+	//IOI_SPBC_Y
+	//IOI_SPBC_Z
+
+	ioInfo.push_back(pbc_info, IOI_SPBC_X);
+	ioInfo.push_back(pbc_info, IOI_SPBC_Y);
+	ioInfo.push_back(pbc_info, IOI_SPBC_Z);
+
+	//Shows individual shape control flag. auxId is the value (0/1)
+	//IOI_INDIVIDUALSHAPE
+
+	string IOI_INDIVIDUALSHAPE_info =
+		string("[tc1,1,0,1/tc]<b>Individual shape control status flag") +
+		string("\n[tc1,1,0,1/tc]<i>When On, shapes are applied only</i>") +
+		string("\n[tc1,1,0,1/tc]<i>to primary displayed quantities.</i>") +
+		string("\n[tc1,1,0,1/tc]<i>When Off, all primary quantities</i>") +
+		string("\n[tc1,1,0,1/tc]<i>are modified.</i>") +
+		string("\n[tc1,1,0,1/tc]click: change status\n");
+
+	ioInfo.push_back(IOI_INDIVIDUALSHAPE_info, IOI_INDIVIDUALSHAPE);
 }
 
 //---------------------------------------------------- MAKE INTERACTIVE OBJECT : Auxiliary method
@@ -1427,6 +1473,16 @@ string Simulation::MakeIO(IOI_ identifier, PType ... params)
 		}
 		break;
 
+	case IOI_MESH_FOREXCHCOUPLING:
+		if (params_str.size() == 1) {
+
+			int meshIndex = ToNum(params_str[0]);
+			string meshName = SMesh().get_key_from_index(meshIndex);
+
+			return MakeInteractiveObject(meshName, IOI_MESH_FOREXCHCOUPLING, SMesh[meshName]->get_id(), 1, meshName);
+		}
+		break;
+
 	case IOI_MOVINGMESH:
 		if (SMesh.IsMovingMeshSet()) {
 
@@ -1538,6 +1594,13 @@ string Simulation::MakeIO(IOI_ identifier, PType ... params)
 		DBL2 fixed_SOR_damping = SMesh.CallModuleMethod(&STransport::GetSORDamping);
 
 		return MakeInteractiveObject(ToString(fixed_SOR_damping), IOI_SORDAMPING, -1, -1, ToString(fixed_SOR_damping));
+	}
+	break;
+
+	case IOI_STATICTRANSPORT:
+	{
+		if (static_transport_solver) return MakeInteractiveObject("On", IOI_STATICTRANSPORT, 0, 1, "", ONCOLOR);
+		else return MakeInteractiveObject("Off", IOI_STATICTRANSPORT, 0, 0, "", OFFCOLOR);
 	}
 	break;
 
@@ -1696,6 +1759,22 @@ string Simulation::MakeIO(IOI_ identifier, PType ... params)
 		}
 		break;
 
+	case IOI_MESHEXCHCOUPLING:
+		if (params_str.size() == 1) {
+
+			int meshIndex = ToNum(params_str[0]);
+
+			if (SMesh[meshIndex]->MComputation_Enabled()) {
+
+				return MakeInteractiveObject("Off", IOI_MESHEXCHCOUPLING, SMesh[meshIndex]->get_id(), 0, "", OFFCOLOR);
+			}
+			else {
+
+				return MakeInteractiveObject("N/A", IOI_MESHEXCHCOUPLING, SMesh[meshIndex]->get_id(), -1, "", UNAVAILABLECOLOR);
+			}
+		}
+		break;
+
 	//Shows mesh roughness refinement value. minorId is the unique mesh id number, auxId is enabled (1)/disabled(0) status. textId is the value
 	case IOI_REFINEROUGHNESS:
 		if (params_str.size() == 1) {
@@ -1809,7 +1888,7 @@ string Simulation::MakeIO(IOI_ identifier, PType ... params)
 
 			int meshIndex = ToNum(params_str[0]);
 
-			return MakeInteractiveObject(" N/A ", IOI_PBC_X, SMesh[meshIndex]->get_id(), -1, "", UNAVAILABLECOLOR);
+			return MakeInteractiveObject("N/A", IOI_PBC_X, SMesh[meshIndex]->get_id(), -1, "", UNAVAILABLECOLOR);
 		}
 		break;
 
@@ -1818,7 +1897,7 @@ string Simulation::MakeIO(IOI_ identifier, PType ... params)
 
 			int meshIndex = ToNum(params_str[0]);
 
-			return MakeInteractiveObject(" N/A ", IOI_PBC_Y, SMesh[meshIndex]->get_id(), -1, "", UNAVAILABLECOLOR);
+			return MakeInteractiveObject("N/A", IOI_PBC_Y, SMesh[meshIndex]->get_id(), -1, "", UNAVAILABLECOLOR);
 		}
 		break;
 
@@ -1827,7 +1906,35 @@ string Simulation::MakeIO(IOI_ identifier, PType ... params)
 
 			int meshIndex = ToNum(params_str[0]);
 
-			return MakeInteractiveObject(" N/A ", IOI_PBC_Z, SMesh[meshIndex]->get_id(), -1, "", UNAVAILABLECOLOR);
+			return MakeInteractiveObject("N/A", IOI_PBC_Z, SMesh[meshIndex]->get_id(), -1, "", UNAVAILABLECOLOR);
+		}
+		break;
+
+	case IOI_SPBC_X:
+		return MakeInteractiveObject("N/A", IOI_SPBC_X, 0, -1, "", UNAVAILABLECOLOR);
+		break;
+
+	case IOI_SPBC_Y:
+		return MakeInteractiveObject("N/A", IOI_SPBC_Y, 0, -1, "", UNAVAILABLECOLOR);
+		break;
+
+	case IOI_SPBC_Z:
+		return MakeInteractiveObject("N/A", IOI_SPBC_Z, 0, -1, "", UNAVAILABLECOLOR);
+		break;
+
+	case IOI_INDIVIDUALSHAPE:
+		if (params_str.size() == 1) {
+
+			int status = ToNum(params_str[0]);
+
+			if (status) {
+
+				return MakeInteractiveObject("On", IOI_INDIVIDUALSHAPE, 0, 1, "", ONCOLOR);
+			}
+			else {
+
+				return MakeInteractiveObject("Off", IOI_INDIVIDUALSHAPE, 0, 0, "", OFFCOLOR);
+			}
 		}
 		break;
 	}

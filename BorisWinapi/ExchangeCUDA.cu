@@ -58,6 +58,8 @@ void Exch_6ngbr_NeuCUDA::UpdateField(void)
 
 		ExchangeCUDA_UpdateField << < (pMeshCUDA->n.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >> > (pMeshCUDA->cuMesh, energy, false);
 	}
+	
+	if (pMeshCUDA->GetMeshExchangeCoupling()) CalculateExchangeCoupling(energy);
 }
 
 #endif

@@ -54,6 +54,18 @@ protected:
 	//list of data to output during a simulation (e.g. to output file and/or to processing arrays)
 	static vector_lut<DatumConfig> saveDataList;
 
+	//modifier for mesh shaping functions
+	//all general shaping functions go through Mesh::change_mesh_shape to apply the shape
+	//Note, there are specific exceptions e.g. grain generators which only work on M)
+	//by default this flag is false, meaning the shape is carried over to all relevant primary quantities in the mesh, e.g. M, elC, Temp (if enabled).
+	//if this flag is set to true, then Mesh::change_mesh_shape only applies the shape to the quantity currently focused in the display, e.g. only M, only elC, or only Temp
+	//this allows setting different shapes for these quantities in the same mesh
+	static bool shape_change_individual;
+
+	//if set to true, the transport solver is iterated only at the end of a step or stage
+	//this is useful for static problems, e.g. MR loops, where it's more efficient to have the magnetization state solved separately.
+	static bool static_transport_solver;
+
 	//enable all cuda computations?
 	static bool cudaEnabled;
 

@@ -35,8 +35,6 @@ SDemagCUDA::~SDemagCUDA()
 		//must force SDemag module to re-initialize as it's not properly initialized when CUDA module active even though its initialized flag is true.
 		pSDemag->Uninitialize();
 	}
-
-	clear_vector(Kernels);
 }
 
 void SDemagCUDA::UninitializeAll(void)
@@ -56,78 +54,6 @@ void SDemagCUDA::UninitializeAll(void)
 BError SDemagCUDA::Initialize(void)
 {
 	BError error(CLASS_STR(SDemagCUDA));
-
-	/*
-	//TESTING ONLY - SLOWER THAN MULTIPLE INPUTS VERSION SO NOT IN CURRENT USE
-	if (pSDemag->use_multilayered_convolution && initialized && !Kernels.size()) {
-
-		//for multi-layered convolution, after all SDemag_Demag modules have initialized gather kernel collection sorted by kernel here. SDemag will already have been initialized.
-		//Note it is important that Kernels vector was cleared on first initialization
-
-		for (int idx = 0; idx < pSDemagCUDA_Demag.size(); idx++) {
-
-			//not yet
-			if (!pSDemagCUDA_Demag[idx]->IsInitialized()) return error;
-		}
-
-		//at this point everything is initialized so we have everything we need to start sorting kernels
-
-		//multiple inputs version : the space itself is the output
-
-		auto add_kernel_entry = [&](int idx_in, int idx_out) -> void
-		{
-			//go through all existing entries in Kernels
-			for (int idx_ker = 0; idx_ker < Kernels.size(); idx_ker++) {
-
-				//if matching kernel found add new In, Out pair, then return
-				if (Kernels[idx_ker]->add_entry_if_kernel_matches(
-					pSDemagCUDA_Demag[idx_out]->Get_Kernel(idx_in),
-					pSDemagCUDA_Demag[idx_in]->Get_Input_Scratch_Space_x(),
-					pSDemagCUDA_Demag[idx_in]->Get_Input_Scratch_Space_y(),
-					pSDemagCUDA_Demag[idx_in]->Get_Input_Scratch_Space_z(),
-					pSDemagCUDA_Demag[idx_out]->Get_Output_Scratch_Space_x(),
-					pSDemagCUDA_Demag[idx_out]->Get_Output_Scratch_Space_y(),
-					pSDemagCUDA_Demag[idx_out]->Get_Output_Scratch_Space_z(),
-					pSDemagCUDA_Demag[idx_out]->is_inverse_shifted(idx_in))) {
-
-					return;
-				}
-			}
-			
-			//no match found so add new kernel entry
-			Kernels.push_back(
-				new KerTypeCollectionCUDA(
-					pSDemagCUDA_Demag[idx_out]->Get_Kernel(idx_in),
-					pSDemagCUDA_Demag[idx_in]->Get_Input_Scratch_Space_x(),
-					pSDemagCUDA_Demag[idx_in]->Get_Input_Scratch_Space_y(),
-					pSDemagCUDA_Demag[idx_in]->Get_Input_Scratch_Space_z(),
-					pSDemagCUDA_Demag[idx_out]->Get_Output_Scratch_Space_x(),
-					pSDemagCUDA_Demag[idx_out]->Get_Output_Scratch_Space_y(),
-					pSDemagCUDA_Demag[idx_out]->Get_Output_Scratch_Space_z(),
-					pSDemagCUDA_Demag[idx_out]->is_inverse_shifted(idx_in)));
-		};
-
-		//make sure the first entries are the self demag kernels - these set the outputs, everything else add to outputs, so must be first
-		for (int idx = 0; idx < pSDemagCUDA_Demag.size(); idx++) {
-
-			add_kernel_entry(idx, idx);
-		}
-
-		//now go through each kernel and add new entry in Kernels if no match found, else add new entry in KerTypeCollection if match found
-		//not an efficient way to do this but it's simple; an efficient method is not needed since we don't have to deal with that many layers
-		for (int idx_out = 0; idx_out < pSDemagCUDA_Demag.size(); idx_out++) {
-			for (int idx_in = 0; idx_in < pSDemagCUDA_Demag.size(); idx_in++) {
-
-				//skip diagonal elements (the self demag elements) as we've already done them
-				if (idx_in == idx_out) continue;
-
-				add_kernel_entry(idx_in, idx_out);
-			}
-		}
-
-		return error;
-	}
-	*/
 
 	//FFT Kernels are not so quick to calculate - if already initialized then we are guaranteed they are correct
 	if (!initialized) {
@@ -164,9 +90,6 @@ BError SDemagCUDA::Initialize(void)
 			//SDemag_Demag modules are initialized before SDemag, so they must check if SDemag is not initialized, in which case must call this
 			//This will happen in the first SDemag_Demag module to initialize, so after that everything is set correctly to calculate kernels
 
-			//will collect Kernels at the end
-			clear_vector(Kernels);
-
 			//update common discretisation if needed
 			if (pSDemag->use_default_n) pSDemag->set_default_n_common();
 
@@ -183,34 +106,22 @@ BError SDemagCUDA::Initialize(void)
 
 			cuReal h_max = (cuReal)pSDemag->get_maximum_cellsize();
 
-			FFT_Spaces_x_Output.clear();
-			FFT_Spaces_y_Output.clear();
-			FFT_Spaces_z_Output.clear();
-
 			for (int idx = 0; idx < pSDemagCUDA_Demag.size(); idx++) {
 
 				//h_convolution may differ from h_common in 2D mode
 				cuReal3 h_convolution = Rect_collection[idx] / (cuSZ3)pSDemag->n_common;
 
-				if (!pSDemagCUDA_Demag[idx]->CheckDimensions((cuSZ3)pSDemag->n_common, h_convolution)) {
+				if (!pSDemagCUDA_Demag[idx]->CheckDimensions((cuSZ3)pSDemag->n_common, h_convolution, pSDemag->Get_PBC())) {
 
 					//set convolution dimensions using the common discretisation
 					//kernel collection must be used without multiplcation embedding. Calling this also sets full sizes for S and S2 scratch spaces.
-					error = pSDemagCUDA_Demag[idx]->SetDimensions((cuSZ3)pSDemag->n_common, h_convolution, false);
+					error = pSDemagCUDA_Demag[idx]->SetDimensions((cuSZ3)pSDemag->n_common, h_convolution, false, pSDemag->Get_PBC());
 					if (error) return error;
 				}
 
 				//set all rect collections
 				error = pSDemagCUDA_Demag[idx]->Set_Rect_Collection(Rect_collection, Rect_collection[idx], h_max);
 				if (error) return error;
-
-				//now that output spaces have been allocated we can collect them in a cu_arr, ready to pass them to a __global__
-				//This is important! FFT_Spaces_x_Output (etc.) is a cu_arr that stores the gpu memory locations of the FFT output arrays (cuS2)
-				//These gpu memory locations can change when cuS2 is allocated, cleared, resized etc.
-				//Thus only collect these after all memory has been allocated - above SetDimensions is the last call to change the cuS2 arrays memory locations
-				FFT_Spaces_x_Output.push_back(pSDemagCUDA_Demag[idx]->Get_Output_Scratch_Space_x()->get_managed_array());
-				FFT_Spaces_y_Output.push_back(pSDemagCUDA_Demag[idx]->Get_Output_Scratch_Space_y()->get_managed_array());
-				FFT_Spaces_z_Output.push_back(pSDemagCUDA_Demag[idx]->Get_Output_Scratch_Space_z()->get_managed_array());
 			}
 
 			//now everything is set correctly, ready to calculate demag kernel collections
@@ -251,10 +162,10 @@ BError SDemagCUDA::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 	if (!pSDemag->use_multilayered_convolution) {
 
 		//only need to uninitialize if n or h have changed
-		if (!CheckDimensions(pSMesh->n_fm, pSMesh->h_fm)) {
+		if (!CheckDimensions(pSMesh->n_fm, pSMesh->h_fm, pSDemag->Get_PBC()) || cfgMessage == UPDATECONFIG_FORCEUPDATE) {
 
 			Uninitialize();
-			error = SetDimensions(pSMesh->n_fm, pSMesh->h_fm);
+			error = SetDimensions(pSMesh->n_fm, pSMesh->h_fm, true, pSDemag->Get_PBC());
 
 			if (!sm_Vals()->resize(pSMesh->h_fm, pSMesh->sMeshRect_fm)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
 		}
@@ -337,39 +248,6 @@ void SDemagCUDA::UpdateField(void)
 
 			pSDemagCUDA_Demag[idx]->KernelMultiplication_MultipleInputs(FFT_Spaces_x_Input, FFT_Spaces_y_Input, FFT_Spaces_z_Input);
 		}
-		
-		/*
-		Testing only : multiple inputs version is always quicker (up to twice quicker in tests).
-		//Kernel multiplications for multiple outputs
-
-		//first one sets the outputs
-		pSDemagCUDA_Demag[0]->KernelMultiplication_MultipleOutputs_Set(FFT_Spaces_x_Output, FFT_Spaces_y_Output, FFT_Spaces_z_Output);
-
-		//the others add into outputs
-		for (int idx = 1; idx < pSDemagCUDA_Demag.size(); idx++) {
-
-			pSDemagCUDA_Demag[idx]->KernelMultiplication_MultipleOutputs_Add(FFT_Spaces_x_Output, FFT_Spaces_y_Output, FFT_Spaces_z_Output);
-		}
-		*/
-
-		/*
-		//TESTING ONLY - SLOWER THAN MULTIPLE INPUTS VERSION SO NOT IN CURRENT USE
-		//Multiplication done by kernel type
-		if (pSDemag->n_common.z == 1) {
-
-			for (int idx = 0; idx < Kernels.size(); idx++) {
-
-				Kernels[idx]->Kernel_Multiplication_2D(false);
-			}
-		}
-		else {
-
-			for (int idx = 0; idx < Kernels.size(); idx++) {
-
-				Kernels[idx]->Kernel_Multiplication_3D();
-			}
-		}
-		*/
 
 		if (pSMesh->CurrentTimeStepSolved()) {
 

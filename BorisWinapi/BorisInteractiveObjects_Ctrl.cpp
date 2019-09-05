@@ -236,6 +236,7 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 	case IOI_MESH_FORHEATBOUNDARIES:
 	case IOI_MESH_FORCURIEANDMOMENT:
 	case IOI_MESH_FORPBC:
+	case IOI_MESH_FOREXCHCOUPLING:
 	{
 		//parameters from iop
 		string meshName = iop.textId;
@@ -821,6 +822,16 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 	}
 	break;
 
+	//Static transport solver state. auxId is the value (0/1)
+	case IOI_STATICTRANSPORT:
+	{
+		//parameters from iop
+		bool status = iop.auxId;
+
+		if (actionCode == AC_MOUSERIGHTDOWN || actionCode == AC_MOUSELEFTDOWN) sendCommand(CMD_STATICTRANSPORTSOLVER, !status);
+	}
+	break;
+
 	//Shows mesh temperature. minorId is the unique mesh id number, textId is the temperature value
 	case IOI_BASETEMPERATURE:
 	{
@@ -936,6 +947,16 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 		bool status = iop.auxId;
 
 		if (actionCode == AC_MOUSERIGHTDOWN || actionCode == AC_MOUSELEFTDOWN) sendCommand(CMD_COUPLETODIPOLES, !status);
+	}
+	break;
+
+	//Shows neighboring meshes exchange coupling setting for this mesh. minorId is the unique mesh id number, auxId is the status (1/0 : on/off, -1 : not available: must be ferromagnetic mesh)
+	case IOI_MESHEXCHCOUPLING:
+	{
+		bool status = iop.auxId;
+		int meshId = iop.minorId;
+
+		if (actionCode == AC_MOUSERIGHTDOWN || actionCode == AC_MOUSELEFTDOWN) sendCommand(CMD_EXCHANGECOUPLEDMESHES, !status, SMesh.key_from_meshId(meshId));
 	}
 	break;
 
@@ -1101,6 +1122,52 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 		if (actionCode == AC_MOUSERIGHTDOWN) sendCommand(CMD_PBC, SMesh.key_from_meshId(meshId), "z 0");
 	}
 	break;
+
+	//Shows PBC setting for supermesh/multilayered demag. auxId is the pbc images number (0 disables pbc; -1 means setting is not available)
+	case IOI_SPBC_X:
+	{
+		int images = iop.auxId;
+
+		if (actionCode == AC_MOUSELEFTDOWN && images == 0) sendCommand(CMD_PBC, SMesh.superMeshHandle, "x 10");
+		else if (actionCode == AC_DOUBLECLICK && images > 0) setConsoleEntry(CMD_PBC, SMesh.superMeshHandle, "x", images);
+
+		if (actionCode == AC_MOUSERIGHTDOWN) sendCommand(CMD_PBC, SMesh.superMeshHandle, "x 0");
+	}
+	break;
+
+	//Shows PBC setting for supermesh/multilayered demag. auxId is the pbc images number (0 disables pbc; -1 means setting is not available)
+	case IOI_SPBC_Y:
+	{
+		int images = iop.auxId;
+
+		if (actionCode == AC_MOUSELEFTDOWN && images == 0) sendCommand(CMD_PBC, SMesh.superMeshHandle, "y 10");
+		else if (actionCode == AC_DOUBLECLICK && images > 0) setConsoleEntry(CMD_PBC, SMesh.superMeshHandle, "y", images);
+
+		if (actionCode == AC_MOUSERIGHTDOWN) sendCommand(CMD_PBC, SMesh.superMeshHandle, "y 0");
+	}
+	break;
+
+	//Shows PBC setting for supermesh/multilayered demag. auxId is the pbc images number (0 disables pbc; -1 means setting is not available)
+	case IOI_SPBC_Z:
+	{
+		int images = iop.auxId;
+
+		if (actionCode == AC_MOUSELEFTDOWN && images == 0) sendCommand(CMD_PBC, SMesh.superMeshHandle, "z 10");
+		else if (actionCode == AC_DOUBLECLICK && images > 0) setConsoleEntry(CMD_PBC, SMesh.superMeshHandle, "z", images);
+
+		if (actionCode == AC_MOUSERIGHTDOWN) sendCommand(CMD_PBC, SMesh.superMeshHandle, "z 0");
+	}
+	break;
+
+	//Shows individual shape control flag. auxId is the value (0/1)
+	case IOI_INDIVIDUALSHAPE:
+	{
+		bool status = (bool)iop.auxId;
+
+		if (actionCode == AC_MOUSERIGHTDOWN || actionCode == AC_MOUSELEFTDOWN) sendCommand(CMD_INDIVIDUALMASKSHAPE, !status);
+	}
+	break;
+
 
 	default:
 		break;

@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "DMExchangeCUDA.h"
+#include "DMExchange.h"
 
 #if COMPILECUDA == 1
 
@@ -7,8 +8,10 @@
 
 #include "Mesh_FerromagneticCUDA.h"
 
-DMExchangeCUDA::DMExchangeCUDA(FMeshCUDA* pMeshCUDA_)
-	: ModulesCUDA()
+DMExchangeCUDA::DMExchangeCUDA(FMeshCUDA* pMeshCUDA_, DMExchange* pDMExchange)
+	: 
+	ModulesCUDA(),
+	ExchangeBaseCUDA(pMeshCUDA_, pDMExchange)
 {
 	pMeshCUDA = pMeshCUDA_;
 }
@@ -20,7 +23,9 @@ BError DMExchangeCUDA::Initialize(void)
 {
 	BError error(CLASS_STR(DMExchangeCUDA));
 
-	initialized = true;
+	error = ExchangeBaseCUDA::Initialize();
+
+	if (!error) initialized = true;
 
 	return error;
 }
@@ -30,8 +35,6 @@ BError DMExchangeCUDA::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 	BError error(CLASS_STR(DMExchangeCUDA));
 
 	Uninitialize();
-
-	Initialize();
 
 	return error;
 }

@@ -31,7 +31,7 @@ struct CMBNDInfo {
 
 //set cmbnd flags by identifying contacts with other vecs
 template <typename VType>
-std::vector<CMBNDInfo> VEC_VC<VType>::set_cmbnd_flags(int primary_mesh_idx, std::vector<VEC_VC<VType>*> &pVECs)
+std::vector<CMBNDInfo> VEC_VC<VType>::set_cmbnd_flags(int primary_mesh_idx, std::vector<VEC_VC<VType>*> &pVECs, bool check_neighbors)
 {
 	std::vector<CMBNDInfo> contacts;
 
@@ -130,10 +130,10 @@ std::vector<CMBNDInfo> VEC_VC<VType>::set_cmbnd_flags(int primary_mesh_idx, std:
 
 			//box of cells in this primary mesh completely included in the intersection - not all will be marked as CMBND cells, only marked if:
 			// 1. not empty
-			// 2. cell next to it in primary mesh along boundary normal is also not empty
+			// 2. cell next to it in primary mesh along boundary normal is also not empty (unless check_neighbors = false)
 			// 3. space for cell on secondary mesh is completely contained in non-empty cells; 
 			// "space for cell" is the rectangle with same footprint on the boundary as h, but thickness (i.e. along boundary normal) given by cell thickness from secondary mesh
-			// 4. same as in 3. for space for cell one further cell thickness along the boundary normal
+			// 4. same as in 3. for space for cell one further cell thickness along the boundary normal (unless check_neighbors = false)
 
 			contact.cells_box = box_from_rect_min(mesh_intersection);
 
@@ -154,8 +154,11 @@ std::vector<CMBNDInfo> VEC_VC<VType>::set_cmbnd_flags(int primary_mesh_idx, std:
 						if (!(ngbrFlags[idx] & NF_NOTEMPTY)) continue;
 
 						//check cell 2 on primary (just next to cell 1 along interface perpendicular)
-						int idx2 = idx + contact.cell_shift.x + contact.cell_shift.y*n.x + contact.cell_shift.z*n.x*n.y;
-						if (idx2 >= n.dim() || !(ngbrFlags[idx2] & NF_NOTEMPTY)) continue;
+						if (check_neighbors) {
+
+							int idx2 = idx + contact.cell_shift.x + contact.cell_shift.y*n.x + contact.cell_shift.z*n.x*n.y;
+							if (idx2 >= n.dim() || !(ngbrFlags[idx2] & NF_NOTEMPTY)) continue;
+						}
 
 						//check cell 1 space on secondary
 						DBL3 abspos = cellidx_to_position(idx) + rect.s + (contact.hshift_primary + contact.hshift_secondary) / 2;
@@ -165,9 +168,12 @@ std::vector<CMBNDInfo> VEC_VC<VType>::set_cmbnd_flags(int primary_mesh_idx, std:
 						Rect abscellRect = Rect(abspos - imageStencil / 2, abspos + imageStencil / 2);
 						if (!pVECs[check_mesh]->rect.contains(abscellRect) || !(pVECs[check_mesh]->is_not_empty(abscellRect))) continue;
 
-						//check cell 2 space on secondary
-						abscellRect = abscellRect + contact.hshift_secondary;
-						if (!pVECs[check_mesh]->rect.contains(abscellRect) || !(pVECs[check_mesh]->is_not_empty(abscellRect))) continue;
+						if (check_neighbors) {
+
+							//check cell 2 space on secondary
+							abscellRect = abscellRect + contact.hshift_secondary;
+							if (!pVECs[check_mesh]->rect.contains(abscellRect) || !(pVECs[check_mesh]->is_not_empty(abscellRect))) continue;
+						}
 
 						ngbrFlags[idx] |= flag_value;
 					}

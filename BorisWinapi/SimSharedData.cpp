@@ -25,6 +25,10 @@ exclusions<MOD_> SimulationSharedData::superMeshCompanionModules;
 
 vector_lut<DatumConfig> SimulationSharedData::saveDataList;
 
+bool SimulationSharedData::shape_change_individual = false;
+
+bool SimulationSharedData::static_transport_solver = false;
+
 bool SimulationSharedData::cudaEnabled = false;
 
 size_t SimulationSharedData::gpuMemFree_MB = 0;

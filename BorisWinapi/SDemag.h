@@ -12,7 +12,6 @@ class SuperMesh;
 #include "Convolution.h"
 #include "DemagKernel.h"
 #include "DemagKernelCollection.h"
-#include "SDemag_KernelCollection.h"
 
 #include "SDemag_Demag.h"
 
@@ -62,14 +61,6 @@ private:
 	//collect FFT input spaces : after Forward FFT the ffts of M from the individual meshes will be found here
 	//These are used as inputs to kernel multiplications. Same order as pSDemag_Demag.
 	vector<VEC<ReIm3>*> FFT_Spaces_Input;
-
-	//collect FFT output spaces : place result of multiple kernel multiplication in these spaces ready for Inverse FFT
-	//NOTE : you can use one or the other method - multiple input spaces method, or multiple output spaces
-	vector<VEC<ReIm3>*> FFT_Spaces_Output;
-
-	//Kernels used in multi-layered convolution sorted by kernel, i.e. each kernel held in KerTypeCollection is unique, and may have a number of input and output spaces for which it is used.
-	//TESTING ONLY - SLOWER THAN MULTIPLE INPUTS VERSION SO NOT IN CURRENT USE
-	vector<KerTypeCollection> Kernels;
 
 	//collection of rectangles of meshes, same ordering as for pSDemag_Demag and FFT_Spaces, used in multi-layered convolution
 	//these are not necessarily the rectangles of the input M meshes, but are the rectangles of the transfer meshes (M -> transfer -> convolution)

@@ -658,6 +658,7 @@ void Simulation::PrintTransportSolverConfig(void)
 	tsolver_text += " with iterations timeout : " + MakeIO(IOI_SSOLVERTIMEOUT) + "</c>\n";
 	tsolver_text += "SOR damping type : " + MakeIO(IOI_SORFIXEDDAMPING) + "</c>";
 	tsolver_text += " fixed SOR damping values (V, S) : " + MakeIO(IOI_SORDAMPING) + "</c>\n";
+	tsolver_text += "Static transport solver : " + MakeIO(IOI_STATICTRANSPORT) + "</c>\n";
 
 	BD.DisplayFormattedConsoleMessage(tsolver_text);
 }
@@ -777,6 +778,28 @@ void Simulation::Print_CoupledToDipoles_Settings(void)
 	BD.DisplayFormattedConsoleMessage(coupled_to_dipoles_info);
 }
 
+//---------------------------------------------------- NEIGHBORING MESHES EXCHANGE COUPLING
+
+void Simulation::Print_ExchangeCoupledMeshes_List(void)
+{
+	string ec_info = "[tc1,1,1,1/tc]Neighboring meshes exchange coupling.\n";
+
+	for (int idxMesh = 0; idxMesh < (int)SMesh().size(); idxMesh++) {
+
+		ec_info += Build_ExchangeCoupledMeshes_ListLine(idxMesh);
+	}
+
+	BD.DisplayFormattedConsoleMessage(ec_info);
+}
+
+string Simulation::Build_ExchangeCoupledMeshes_ListLine(int meshIndex)
+{
+	string ec_line = MakeIO(IOI_MESH_FOREXCHCOUPLING, meshIndex) +
+		"</c>[tc1,1,1,1/tc] [sa0/sa]: " + MakeIO(IOI_MESHEXCHCOUPLING, meshIndex) + "\n";
+
+	return ec_line;
+}
+
 //---------------------------------------------------- MESH ROUGHNESS REFINEMENT
 
 void Simulation::Print_MeshRoughnessRefinement(string meshName)
@@ -827,6 +850,11 @@ void Simulation::Print_PBC(void)
 {
 	string pbc_info = "[tc1,1,1,1/tc]Periodic boundary conditions for magnetization.\n";
 
+	pbc_info += string("[tc1,1,1,1/tc]Supermesh PBC: ") +
+		"</c>[tc1,1,1,1/tc] [sa0/sa] x: " + MakeIO(IOI_SPBC_X) +
+		"</c>[tc1,1,1,1/tc] [sa1/sa] y: " + MakeIO(IOI_SPBC_Y) +
+		"</c>[tc1,1,1,1/tc] [sa2/sa] z: " + MakeIO(IOI_SPBC_Z) + "\n";
+
 	for (int idxMesh = 0; idxMesh < (int)SMesh().size(); idxMesh++) {
 
 		pbc_info += Build_PBC_ListLine(idxMesh) + "\n";
@@ -843,4 +871,13 @@ string Simulation::Build_PBC_ListLine(int meshIndex)
 		"</c>[tc1,1,1,1/tc] [sa2/sa] z: " + MakeIO(IOI_PBC_Z, meshIndex);
 
 	return pbc_line;
+}
+
+//---------------------------------------------------- INDIVIDUAL SHAPE CONTROL
+
+void Simulation::Print_IndividualShapeStatus(void)
+{
+	string individualshape_info = "[tc1,1,1,1/tc]Individual shape status flag : " + MakeIO(IOI_INDIVIDUALSHAPE, shape_change_individual);
+
+	BD.DisplayFormattedConsoleMessage(individualshape_info);
 }

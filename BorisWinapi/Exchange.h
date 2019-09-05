@@ -10,10 +10,13 @@ class FMesh;
 
 #ifdef MODULE_EXCHANGE
 
+#include "ExchangeBase.h"
+
 //Exchange modules can only be used in a ferromagnetic mesh
 
-class Exch_6ngbr_Neu : 
+class Exch_6ngbr_Neu :
 	public Modules,
+	public ExchangeBase,
 	public ProgramState<Exch_6ngbr_Neu, tuple<>, tuple<>>
 {
 

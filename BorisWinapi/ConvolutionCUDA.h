@@ -83,12 +83,12 @@ protected:
 	//-------------------------- CONFIGURATION
 
 	//This method sets all values from n and h, including allocating memory - call this before initializing kernels or doing any convolutions
-	BError SetDimensions(cuSZ3 n_, cuReal3 h_, bool multiplication_embedding_ = true);
+	BError SetDimensions(cuSZ3 n_, cuReal3 h_, bool multiplication_embedding_ = true, cuINT3 pbc_images_ = INT3());
 
 	//-------------------------- CHECK
 
-	//return true only if both n_ and h_ match the current dimensions (n and h)
-	bool CheckDimensions(cuSZ3 n_, cuReal3 h_) { return (n == n_ && h == h_); }
+	//return true only if both n_ and h_ match the current dimensions (n and h); also number of pbc images must match
+	bool CheckDimensions(cuSZ3 n_, cuReal3 h_, cuINT3 pbc_images_) { return (n == n_ && h == h_ && pbc_images == pbc_images_); }
 
 	//-------------------------- RUN-TIME CONVOLUTION
 
@@ -114,20 +114,6 @@ protected:
 	{
 		if (n.z == 1) KernelMultiplication_2D(Scol_x, Scol_y, Scol_z, cuS2_x, cuS2_y, cuS2_z);
 		else KernelMultiplication_3D(Scol_x, Scol_y, Scol_z, cuS2_x, cuS2_y, cuS2_z);
-	}
-
-	//2. (S -> S2) -> multiple output spaces version using a collection of FFT spaces (Kernel must be configured for this)
-	void KernelMultiplication_MultipleOutputs_Set(cu_arr<cuComplex*>& S2col_x, cu_arr<cuComplex*>& S2col_y, cu_arr<cuComplex*>& S2col_z)
-	{
-		if (n.z == 1) KernelMultiplication_2D_Set(cuS_x, cuS_y, cuS_z, S2col_x, S2col_y, S2col_z);
-		else KernelMultiplication_3D_Set(cuS_x, cuS_y, cuS_z, S2col_x, S2col_y, S2col_z);
-	}
-
-	//2. (S -> S2) -> multiple output spaces version using a collection of FFT spaces (Kernel must be configured for this)
-	void KernelMultiplication_MultipleOutputs_Add(cu_arr<cuComplex*>& S2col_x, cu_arr<cuComplex*>& S2col_y, cu_arr<cuComplex*>& S2col_z)
-	{
-		if (n.z == 1) KernelMultiplication_2D_Add(cuS_x, cuS_y, cuS_z, S2col_x, S2col_y, S2col_z);
-		else KernelMultiplication_3D_Add(cuS_x, cuS_y, cuS_z, S2col_x, S2col_y, S2col_z);
 	}
 
 	//inverse FFT with the option of calculating an energy contribution ((-MU0/2)(In * Out) / input_non_empty_cells
@@ -161,11 +147,11 @@ ConvolutionCUDA<Kernel>::ConvolutionCUDA(cuSZ3 n_, cuReal3 h_) :
 //-------------------------- CONFIGURATION
 
 template <typename Kernel>
-BError ConvolutionCUDA<Kernel>::SetDimensions(cuSZ3 n_, cuReal3 h_, bool multiplication_embedding_)
+BError ConvolutionCUDA<Kernel>::SetDimensions(cuSZ3 n_, cuReal3 h_, bool multiplication_embedding_, cuINT3 pbc_images_)
 {
 	BError error(__FUNCTION__);
 
-	error = SetConvolutionDimensions(n_, h_, multiplication_embedding_);
+	error = SetConvolutionDimensions(n_, h_, multiplication_embedding_, pbc_images_);
 	if (!error) error = AllocateKernelMemory();
 
 	return error;

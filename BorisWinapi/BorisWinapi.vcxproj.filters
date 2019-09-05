@@ -124,6 +124,12 @@
     <Filter Include="MATERIALS DB">
       <UniqueIdentifier>{15c6ac17-c957-40e5-836a-a253dc2733b8}</UniqueIdentifier>
     </Filter>
+    <Filter Include="EXCHANGE">
+      <UniqueIdentifier>{444dfac6-8679-4ca8-b57e-055d6bf467c4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="EXCHANGE - CUDA">
+      <UniqueIdentifier>{8bed687c-fe34-444d-9fd5-70d936b4dce2}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <Text Include="ReadMe.txt" />
@@ -169,9 +175,6 @@
       <Filter>MODULES</Filter>
     </ClInclude>
     <ClInclude Include="Demag.h">
-      <Filter>MODULES</Filter>
-    </ClInclude>
-    <ClInclude Include="Exchange.h">
       <Filter>MODULES</Filter>
     </ClInclude>
     <ClInclude Include="Heat.h">
@@ -273,9 +276,6 @@
     <ClInclude Include="PhysQDefs.h">
       <Filter>GRAPHICS_D3D</Filter>
     </ClInclude>
-    <ClInclude Include="ExchangeCUDA.h">
-      <Filter>MODULES - CUDA</Filter>
-    </ClInclude>
     <ClInclude Include="AnisotropyCUDA.h">
       <Filter>MODULES - CUDA</Filter>
     </ClInclude>
@@ -375,12 +375,6 @@
     <ClInclude Include="SurfExchangeCUDA.h">
       <Filter>MODULES - CUDA</Filter>
     </ClInclude>
-    <ClInclude Include="DMExchange.h">
-      <Filter>MODULES</Filter>
-    </ClInclude>
-    <ClInclude Include="DMExchangeCUDA.h">
-      <Filter>MODULES - CUDA</Filter>
-    </ClInclude>
     <ClInclude Include="HeatCUDA_CMBND.h">
       <Filter>MODULES - CUDA</Filter>
     </ClInclude>
@@ -416,12 +410,6 @@
     </ClInclude>
     <ClInclude Include="SkyrmionTrack.h">
       <Filter>MESHES</Filter>
-    </ClInclude>
-    <ClInclude Include="iDMExchange.h">
-      <Filter>MODULES</Filter>
-    </ClInclude>
-    <ClInclude Include="iDMExchangeCUDA.h">
-      <Filter>MODULES - CUDA</Filter>
     </ClInclude>
     <ClInclude Include="SOTField.h">
       <Filter>MODULES</Filter>
@@ -477,12 +465,6 @@
     <ClInclude Include="DemagKernelCollectionCUDA_KerType.h">
       <Filter>CONVOLUTION - CUDA</Filter>
     </ClInclude>
-    <ClInclude Include="SDemag_KernelCollection.h">
-      <Filter>DEMAG - SUPERMESH</Filter>
-    </ClInclude>
-    <ClInclude Include="SDemagCUDA_KernelCollection.h">
-      <Filter>DEMAG - SUPERMESH - CUDA</Filter>
-    </ClInclude>
     <ClInclude Include="ColorDefs.h">
       <Filter>INTERFACE</Filter>
     </ClInclude>
@@ -506,6 +488,30 @@
     </ClInclude>
     <ClInclude Include="OVF2_Handlers.h">
       <Filter>SIMULATION</Filter>
+    </ClInclude>
+    <ClInclude Include="DMExchange.h">
+      <Filter>EXCHANGE</Filter>
+    </ClInclude>
+    <ClInclude Include="Exchange.h">
+      <Filter>EXCHANGE</Filter>
+    </ClInclude>
+    <ClInclude Include="iDMExchange.h">
+      <Filter>EXCHANGE</Filter>
+    </ClInclude>
+    <ClInclude Include="DMExchangeCUDA.h">
+      <Filter>EXCHANGE - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="ExchangeCUDA.h">
+      <Filter>EXCHANGE - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="iDMExchangeCUDA.h">
+      <Filter>EXCHANGE - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="ExchangeBase.h">
+      <Filter>EXCHANGE</Filter>
+    </ClInclude>
+    <ClInclude Include="ExchangeBaseCUDA.h">
+      <Filter>EXCHANGE - CUDA</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -546,9 +552,6 @@
       <Filter>MODULES</Filter>
     </ClCompile>
     <ClCompile Include="Demag.cpp">
-      <Filter>MODULES</Filter>
-    </ClCompile>
-    <ClCompile Include="Exchange.cpp">
       <Filter>MODULES</Filter>
     </ClCompile>
     <ClCompile Include="Zeeman.cpp">
@@ -628,9 +631,6 @@
     </ClCompile>
     <ClCompile Include="Modules.cpp">
       <Filter>MODULES INTERFACE</Filter>
-    </ClCompile>
-    <ClCompile Include="ExchangeCUDA.cpp">
-      <Filter>MODULES - CUDA</Filter>
     </ClCompile>
     <ClCompile Include="AnisotropyCUDA.cpp">
       <Filter>MODULES - CUDA</Filter>
@@ -752,13 +752,7 @@
     <ClCompile Include="HeatCUDA.cpp">
       <Filter>MODULES - CUDA</Filter>
     </ClCompile>
-    <ClCompile Include="DMExchange.cpp">
-      <Filter>MODULES</Filter>
-    </ClCompile>
     <ClCompile Include="SurfExchangeCUDA.cpp">
-      <Filter>MODULES - CUDA</Filter>
-    </ClCompile>
-    <ClCompile Include="DMExchangeCUDA.cpp">
       <Filter>MODULES - CUDA</Filter>
     </ClCompile>
     <ClCompile Include="HeatCUDA_CMBND.cpp">
@@ -808,12 +802,6 @@
     </ClCompile>
     <ClCompile Include="SkyrmionTrack.cpp">
       <Filter>MESHES</Filter>
-    </ClCompile>
-    <ClCompile Include="iDMExchange.cpp">
-      <Filter>MODULES</Filter>
-    </ClCompile>
-    <ClCompile Include="iDMExchangeCUDA.cpp">
-      <Filter>MODULES - CUDA</Filter>
     </ClCompile>
     <ClCompile Include="SOTField.cpp">
       <Filter>MODULES</Filter>
@@ -890,9 +878,6 @@
     <ClCompile Include="DemagKernelCollectionCUDA_Calc.cpp">
       <Filter>CONVOLUTION - CUDA</Filter>
     </ClCompile>
-    <ClCompile Include="SDemag_KernelCollection.cpp">
-      <Filter>DEMAG - SUPERMESH</Filter>
-    </ClCompile>
     <ClCompile Include="BorisConsole.cpp">
       <Filter>MAIN</Filter>
     </ClCompile>
@@ -947,8 +932,35 @@
     <ClCompile Include="DemagTFunc_PBC.cpp">
       <Filter>FUNCS</Filter>
     </ClCompile>
-    <ClCompile Include="DemagKernel_PBC.cpp">
-      <Filter>CONVOLUTION</Filter>
+    <ClCompile Include="DMExchange.cpp">
+      <Filter>EXCHANGE</Filter>
+    </ClCompile>
+    <ClCompile Include="Exchange.cpp">
+      <Filter>EXCHANGE</Filter>
+    </ClCompile>
+    <ClCompile Include="iDMExchange.cpp">
+      <Filter>EXCHANGE</Filter>
+    </ClCompile>
+    <ClCompile Include="DMExchangeCUDA.cpp">
+      <Filter>EXCHANGE - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="ExchangeCUDA.cpp">
+      <Filter>EXCHANGE - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="iDMExchangeCUDA.cpp">
+      <Filter>EXCHANGE - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="ExchangeBase.cpp">
+      <Filter>EXCHANGE</Filter>
+    </ClCompile>
+    <ClCompile Include="ExchangeBaseCUDA.cpp">
+      <Filter>EXCHANGE - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="DemagTFunc_Shifted_PBC.cpp">
+      <Filter>FUNCS</Filter>
+    </ClCompile>
+    <ClCompile Include="DemagTFunc_Irregular_PBC.cpp">
+      <Filter>FUNCS</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -984,9 +996,6 @@
     </CudaCompile>
     <CudaCompile Include="ModulesCUDA.cu">
       <Filter>MODULES INTERFACE - CUDA</Filter>
-    </CudaCompile>
-    <CudaCompile Include="ExchangeCUDA.cu">
-      <Filter>MODULES - CUDA</Filter>
     </CudaCompile>
     <CudaCompile Include="AnisotropyCubiCUDA.cu">
       <Filter>MODULES - CUDA</Filter>
@@ -1024,9 +1033,6 @@
     <CudaCompile Include="SurfExchangeCUDA.cu">
       <Filter>MODULES - CUDA</Filter>
     </CudaCompile>
-    <CudaCompile Include="DMExchangeCUDA.cu">
-      <Filter>MODULES - CUDA</Filter>
-    </CudaCompile>
     <CudaCompile Include="TransportCUDA.cu">
       <Filter>TRANSPORT SOLVER - CUDA</Filter>
     </CudaCompile>
@@ -1041,9 +1047,6 @@
     </CudaCompile>
     <CudaCompile Include="TransportCUDA_Spin.cu">
       <Filter>TRANSPORT SOLVER - CUDA</Filter>
-    </CudaCompile>
-    <CudaCompile Include="iDMExchangeCUDA.cu">
-      <Filter>MODULES - CUDA</Filter>
     </CudaCompile>
     <CudaCompile Include="SOTFieldCUDA.cu">
       <Filter>MODULES - CUDA</Filter>
@@ -1062,12 +1065,6 @@
     </CudaCompile>
     <CudaCompile Include="DemagKernelCollectionCUDA_Mult.cu">
       <Filter>CONVOLUTION - CUDA</Filter>
-    </CudaCompile>
-    <CudaCompile Include="DemagKernelCollectionCUDA_KerType.cu">
-      <Filter>CONVOLUTION - CUDA</Filter>
-    </CudaCompile>
-    <CudaCompile Include="SDemagCUDA_KernelCollection.cu">
-      <Filter>DEMAG - SUPERMESH - CUDA</Filter>
     </CudaCompile>
     <CudaCompile Include="DiffEq_EvalsCUDA_Euler.cu">
       <Filter>DIFF EQUATIONS - CUDA</Filter>
@@ -1098,6 +1095,18 @@
     </CudaCompile>
     <CudaCompile Include="DiffEq_EvalsCUDA_RKDP54.cu">
       <Filter>DIFF EQUATIONS - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="DMExchangeCUDA.cu">
+      <Filter>EXCHANGE - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="ExchangeCUDA.cu">
+      <Filter>EXCHANGE - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="iDMExchangeCUDA.cu">
+      <Filter>EXCHANGE - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="ExchangeBaseCUDA.cu">
+      <Filter>EXCHANGE - CUDA</Filter>
     </CudaCompile>
   </ItemGroup>
 </Project>

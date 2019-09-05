@@ -11,7 +11,7 @@
 
 ////////////////////////////////////////////////////////////////////////////////////////////////// VEC<VType>
 //
-// 3-component quantity with 3 dimensions
+// n-component quantity with 3 dimensions
 
 template <typename VType> class Transfer;
 

@@ -334,6 +334,12 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 	}
 	break;
 
+	case IOI_MESH_FOREXCHCOUPLING:
+	{
+		display_meshIO(&Simulation::Build_ExchangeCoupledMeshes_ListLine);
+	}
+	break;
+
 	//Shows mesh rectangle (units m) : minorId is the unique mesh id number, textId is the mesh rectangle
 	case IOI_MESHRECTANGLE:
 	{
@@ -1279,6 +1285,32 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 	}
 	break;
 
+	//Static transport solver state. auxId is the value (0/1)
+	case IOI_STATICTRANSPORT:
+	{
+		//parameters from iop
+		bool status = iop.auxId;
+
+		if (status != static_transport_solver) {
+
+			iop.auxId = static_transport_solver;
+
+			if (iop.auxId == 1) {
+
+				pTO->SetBackgroundColor(ONCOLOR);
+				pTO->set(" On ");
+			}
+			else {
+
+				pTO->SetBackgroundColor(OFFCOLOR);
+				pTO->set(" Off ");
+			}
+
+			stateChanged = true;
+		}
+	}
+	break;
+
 	//Shows mesh base temperature. minorId is the unique mesh id number, textId is the temperature value
 	case IOI_BASETEMPERATURE:
 	{
@@ -1632,6 +1664,37 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 			}
 
 			stateChanged = true;
+		}
+	}
+	break;
+
+	//Shows neighboring meshes exchange coupling setting for this mesh. minorId is the unique mesh id number, auxId is the status (1/0 : on/off, -1 : not available: must be ferromagnetic mesh)
+	case IOI_MESHEXCHCOUPLING:
+	{
+		int meshId = iop.minorId;
+		int status = iop.auxId;
+
+		int meshIdx = SMesh.contains_id(meshId);
+
+		if (meshIdx >= 0) {
+
+			if (status >= 0 && status != (int)SMesh[meshIdx]->GetMeshExchangeCoupling()) {
+
+				iop.auxId = SMesh[meshIdx]->GetMeshExchangeCoupling();
+
+				if (iop.auxId > 0) {
+
+					pTO->SetBackgroundColor(ONCOLOR);
+					pTO->set(" On ");
+				}
+				else {
+
+					pTO->SetBackgroundColor(OFFCOLOR);
+					pTO->set(" Off ");
+				}
+
+				stateChanged = true;
+			}
 		}
 	}
 	break;
@@ -2079,6 +2142,124 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 				pTO->set(" " + ToString(iop.auxId) + " ");
 				stateChanged = true;
 			}
+		}
+	}
+	break;
+
+	//Shows PBC setting for supermesh/multilayered demag. auxId is the pbc images number (0 disables pbc; -1 means setting is not available)
+	case IOI_SPBC_X:
+	{
+		int images = iop.auxId;
+
+		if (images >= 0 && !SMesh.IsSuperMeshModuleSet(MODS_SDEMAG)) {
+
+			pTO->SetBackgroundColor(UNAVAILABLECOLOR);
+			pTO->set(" N/A ");
+			stateChanged = true;
+			iop.auxId = -1;
+		}
+		else if (SMesh.IsSuperMeshModuleSet(MODS_SDEMAG) && reinterpret_cast<SDemag*>(SMesh.GetSuperMeshModule(MODS_SDEMAG))->Get_PBC().x != images) {
+
+			iop.auxId = SMesh.CallModuleMethod(&SDemag::Get_PBC).x;
+
+			if (iop.auxId > 0) {
+
+				pTO->SetBackgroundColor(ONCOLOR);
+			}
+			else {
+
+				pTO->SetBackgroundColor(OFFCOLOR);
+			}
+
+			pTO->set(" " + ToString(iop.auxId) + " ");
+			stateChanged = true;
+		}
+	}
+	break;
+
+	//Shows PBC setting for supermesh/multilayered demag. auxId is the pbc images number (0 disables pbc; -1 means setting is not available)
+	case IOI_SPBC_Y:
+	{
+		int images = iop.auxId;
+
+		if (images >= 0 && !SMesh.IsSuperMeshModuleSet(MODS_SDEMAG)) {
+
+			pTO->SetBackgroundColor(UNAVAILABLECOLOR);
+			pTO->set(" N/A ");
+			stateChanged = true;
+			iop.auxId = -1;
+		}
+		else if (SMesh.IsSuperMeshModuleSet(MODS_SDEMAG) && reinterpret_cast<SDemag*>(SMesh.GetSuperMeshModule(MODS_SDEMAG))->Get_PBC().y != images) {
+
+			iop.auxId = SMesh.CallModuleMethod(&SDemag::Get_PBC).y;
+
+			if (iop.auxId > 0) {
+
+				pTO->SetBackgroundColor(ONCOLOR);
+			}
+			else {
+
+				pTO->SetBackgroundColor(OFFCOLOR);
+			}
+
+			pTO->set(" " + ToString(iop.auxId) + " ");
+			stateChanged = true;
+		}
+	}
+	break;
+
+	//Shows PBC setting for supermesh/multilayered demag. auxId is the pbc images number (0 disables pbc; -1 means setting is not available)
+	case IOI_SPBC_Z:
+	{
+		int images = iop.auxId;
+
+		if (images >= 0 && !SMesh.IsSuperMeshModuleSet(MODS_SDEMAG)) {
+
+			pTO->SetBackgroundColor(UNAVAILABLECOLOR);
+			pTO->set(" N/A ");
+			stateChanged = true;
+			iop.auxId = -1;
+		}
+		else if (SMesh.IsSuperMeshModuleSet(MODS_SDEMAG) && reinterpret_cast<SDemag*>(SMesh.GetSuperMeshModule(MODS_SDEMAG))->Get_PBC().z != images) {
+
+			iop.auxId = SMesh.CallModuleMethod(&SDemag::Get_PBC).z;
+
+			if (iop.auxId > 0) {
+
+				pTO->SetBackgroundColor(ONCOLOR);
+			}
+			else {
+
+				pTO->SetBackgroundColor(OFFCOLOR);
+			}
+
+			pTO->set(" " + ToString(iop.auxId) + " ");
+			stateChanged = true;
+		}
+	}
+	break;
+
+	//Shows individual shape control flag. auxId is the value (0/1)
+	case IOI_INDIVIDUALSHAPE:
+	{
+		bool status = (bool)iop.auxId;
+
+		if (status != shape_change_individual) {
+
+			iop.auxId = shape_change_individual;
+
+			if (iop.auxId == 1) {
+
+				pTO->SetBackgroundColor(ONCOLOR);
+				pTO->set(" On ");
+			}
+			else {
+
+				pTO->SetBackgroundColor(OFFCOLOR);
+				pTO->set(" Off ");
+			}
+
+			stateChanged = true;
 		}
 	}
 	break;

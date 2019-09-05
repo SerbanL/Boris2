@@ -65,4 +65,12 @@ cuReal FMeshCUDA::CheckMoveMesh(bool antisymmetric, double threshold)
 	return 0;
 }
 
+//----------------------------------- ENABLED MESH PROPERTIES CHECKERS
+
+	//get exchange_couple_to_meshes status flag from the cpu version
+bool FMeshCUDA::GetMeshExchangeCoupling(void)
+{
+	return pFMesh->GetMeshExchangeCoupling();
+}
+
 #endif

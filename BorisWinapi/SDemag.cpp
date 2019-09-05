@@ -70,7 +70,6 @@ void SDemag::Destroy_SDemag_Demag_Modules(void)
 	}
 
 	FFT_Spaces_Input.clear();
-	FFT_Spaces_Output.clear();
 	Rect_collection.clear();
 	kernel_collection.clear();
 	pSDemag_Demag.clear();
@@ -83,7 +82,6 @@ bool SDemag::Update_SDemag_Demag_List(void)
 
 	//also make sure the FFT spaces and rectangles list is correct -> rebuild it
 	FFT_Spaces_Input.clear();
-	FFT_Spaces_Output.clear();
 	kernel_collection.clear();
 
 	for (int idx = 0; idx < (int)pSMesh->pMesh.size(); idx++) {
@@ -96,7 +94,6 @@ bool SDemag::Update_SDemag_Demag_List(void)
 
 			//build the fft spaces, rectangles list, and demag kernels
 			FFT_Spaces_Input.push_back(pSDemag_Demag_.back()->Get_Input_Scratch_Space());
-			FFT_Spaces_Output.push_back(pSDemag_Demag_.back()->Get_Output_Scratch_Space());
 			Rect_collection.push_back((*pSMesh)[idx]->GetMeshRect());
 			kernel_collection.push_back(dynamic_cast<DemagKernelCollection*>(pSDemag_Demag_.back()));
 		}
@@ -350,70 +347,6 @@ BError SDemag::Initialize(void)
 {
 	BError error(CLASS_STR(SDemag));
 
-	/*
-	//TESTING ONLY - SLOWER THAN MULTIPLE INPUTS VERSION SO NOT IN CURRENT USE
-	if (use_multilayered_convolution && initialized && !Kernels.size()) {
-
-		//for multi-layered convolution, after all SDemag_Demag modules have initialized gather kernel collection sorted by kernel here. SDemag will already have been initialized.
-		//Note it is important that Kernels vector was cleared on first initialization
-
-		for (int idx = 0; idx < pSDemag_Demag.size(); idx++) {
-
-			//not yet
-			if (!pSDemag_Demag[idx]->IsInitialized()) return error;
-		}
-
-		//at this point everything is initialized so we have everything we need to start sorting kernels
-
-		//multiple inputs version : the space itself is the output
-
-		auto add_kernel_entry = [&](int idx_in, int idx_out) -> void
-		{
-			//go through all existing entries in Kernels
-			for (int idx_ker = 0; idx_ker < Kernels.size(); idx_ker++) {
-
-				//if matching kernel found add new In, Out pair, then return
-				if (Kernels[idx_ker].add_entry_if_kernel_matches(
-					pSDemag_Demag[idx_out]->Get_Kernel(idx_in),
-					pSDemag_Demag[idx_in]->Get_Input_Scratch_Space(),
-					pSDemag_Demag[idx_out]->Get_Output_Scratch_Space(),
-					pSDemag_Demag[idx_out]->is_inverse_shifted(idx_in))) {
-
-					return;
-				}
-			}
-
-			//no match found so add new kernel entry
-			Kernels.push_back(
-				KerTypeCollection(
-					pSDemag_Demag[idx_out]->Get_Kernel(idx_in),
-					pSDemag_Demag[idx_in]->Get_Input_Scratch_Space(),
-					pSDemag_Demag[idx_out]->Get_Output_Scratch_Space(),
-					pSDemag_Demag[idx_out]->is_inverse_shifted(idx_in)));
-		};
-
-		//make sure the first entries are the self demag kernels - these set the outputs, everything else add to outputs, so must be first
-		for (int idx = 0; idx < pSDemag_Demag.size(); idx++) {
-
-			add_kernel_entry(idx, idx);
-		}
-
-		//now go through each kernel and add new entry in Kernels if no match found, else add new entry in KerTypeCollection if match found
-		//not an efficient way to do this but it's simple; an efficient method is not needed since we don't have to deal with that many layers
-		for (int idx_out = 0; idx_out < pSDemag_Demag.size(); idx_out++) {
-			for (int idx_in = 0; idx_in < pSDemag_Demag.size(); idx_in++) {
-
-				//skip diagonal elements (the self demag elements) as we've already done them
-				if (idx_in == idx_out) continue;
-
-				add_kernel_entry(idx_in, idx_out);
-			}
-		}
-
-		return error;
-	}
-	*/
-
 	//FFT Kernels are not so quick to calculate - if already initialized then we are guaranteed they are correct
 	if (!initialized) {
 
@@ -430,9 +363,6 @@ BError SDemag::Initialize(void)
 			//in multi-layered convolution mode must make sure all convolution sizes are set correctly, and rect collections also set
 			//SDemag_Demag modules are initialized before SDemag, so they must check if SDemag is not initialized, in which case must call this
 			//This will happen in the first SDemag_Demag module to initialize, so after that everything is set correctly to calculate kernels
-
-			//will collect Kernels at the end
-			Kernels.clear();
 
 			//update common discretisation if needed
 			if (use_default_n) set_default_n_common();
@@ -661,25 +591,6 @@ double SDemag::UpdateField(void)
 
 			pSDemag_Demag[idx]->KernelMultiplication_MultipleInputs(FFT_Spaces_Input);
 		}
-		
-		/*
-		//Multiplication done by kernel type
-		//TESTING ONLY - SLOWER THAN MULTIPLE INPUTS VERSION SO NOT IN CURRENT USE
-		if (n_common.z == 1) {
-
-			for (int idx = 0; idx < Kernels.size(); idx++) {
-
-				Kernels[idx].Kernel_Multiplication_2D();
-			}
-		}
-		else {
-
-			for (int idx = 0; idx < Kernels.size(); idx++) {
-
-				Kernels[idx].Kernel_Multiplication_3D();
-			}
-		}
-		*/
 
 		energy = 0;
 

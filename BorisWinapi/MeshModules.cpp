@@ -164,3 +164,16 @@ void Mesh::UpdateModulesCUDA(void)
 	}
 }
 #endif
+
+//update MOD_TRANSPORT module only if set
+void Mesh::UpdateTransportSolver(void)
+{
+	if (IsModuleSet(MOD_TRANSPORT)) pMod(MOD_TRANSPORT)->UpdateField();
+}
+
+#if COMPILECUDA == 1
+void Mesh::UpdateTransportSolverCUDA(void)
+{
+	if (IsModuleSet(MOD_TRANSPORT)) pMod(MOD_TRANSPORT)->UpdateFieldCUDA();
+}
+#endif

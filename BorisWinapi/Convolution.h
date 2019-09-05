@@ -140,20 +140,6 @@ protected:
 		else KernelMultiplication_3D(Fcol, F2);
 	}
 
-	//2. (F -> F2) -> multiple output spaces version using a collection of FFT spaces (Kernel must be configured for this). Set outputs.
-	void KernelMultiplication_MultipleOutputs_Set(std::vector<VEC<ReIm3>*>& F2col)
-	{
-		if (n.z == 1) KernelMultiplication_2D_Set(F, F2col);
-		else KernelMultiplication_3D_Set(F, F2col);
-	}
-
-	//2. (F -> F2) -> multiple output spaces version using a collection of FFT spaces (Kernel must be configured for this). Add to outputs.
-	void KernelMultiplication_MultipleOutputs_Add(std::vector<VEC<ReIm3>*>& F2col)
-	{
-		if (n.z == 1) KernelMultiplication_2D_Add(F, F2col);
-		else KernelMultiplication_3D_Add(F, F2col);
-	}
-
 	//3. Inverse. Return dot product of In with Out. (F2 -> Out)
 	double InverseFFT(VEC<DBL3> &In, VEC<DBL3> &Out, bool clearOut)
 	{
@@ -229,7 +215,7 @@ double Convolution<Kernel>::Convolute_2D(VEC<DBL3> &In, VEC<DBL3> &Out, bool cle
 		//4. ifft on line
 		fftw_execute(plan_inv_y[tn]);
 
-		//write line to fft array, truncating upper half
+		//write line to fft array, truncating upper part (from n.y to N.y if different)
 		for (int j = 0; j < n.y; j++) {
 
 			F[i + j * (N.x / 2 + 1)] = *reinterpret_cast<ReIm3*>(pline[tn] + j * 3);

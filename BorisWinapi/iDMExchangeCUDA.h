@@ -7,11 +7,14 @@
 
 #include "BorisCUDALib.h"
 #include "ModulesCUDA.h"
+#include "ExchangeBaseCUDA.h"
 
 class FMeshCUDA;
+class iDMExchange;
 
 class iDMExchangeCUDA :
-	public ModulesCUDA
+	public ModulesCUDA,
+	public ExchangeBaseCUDA
 {
 
 	//pointer to CUDA version of mesh object holding the effective field module holding this CUDA module
@@ -19,7 +22,7 @@ class iDMExchangeCUDA :
 
 public:
 
-	iDMExchangeCUDA(FMeshCUDA* pMeshCUDA_);
+	iDMExchangeCUDA(FMeshCUDA* pMeshCUDA_, iDMExchange* piDMExchange);
 	~iDMExchangeCUDA();
 
 	//-------------------Abstract base class method implementations

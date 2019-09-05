@@ -21,9 +21,11 @@ ConvolutionDataCUDA::~ConvolutionDataCUDA()
 	}
 }
 
-BError ConvolutionDataCUDA::SetConvolutionDimensions(cuSZ3 n_, cuReal3 h_, bool embed_multiplication_)
+BError ConvolutionDataCUDA::SetConvolutionDimensions(cuSZ3 n_, cuReal3 h_, bool embed_multiplication_, cuINT3 pbc_images)
 {
 	BError error(__FUNCTION__);
+
+	this->pbc_images = pbc_images;
 
 	//Turn off multiplication embedding by setting this to false - this will allocate full space memory for F and F2 scratch spaces. embed_multiplication = true by default.
 	embed_multiplication = embed_multiplication_;
@@ -49,11 +51,43 @@ BError ConvolutionDataCUDA::SetConvolutionDimensions(cuSZ3 n_, cuReal3 h_, bool 
 	h = h_;
 
 	N = cuSZ3(1, 1, 1);
+	
+	//set N values for FFT dimensions
+	if (pbc_images.x) {
 
-	//set N, M, K as smallest powers of 2 which will hold the demag kernel
-	while (N.x < 2 * n.x - 1) { N.x = N.x * 2; };
-	while (N.y < 2 * n.y - 1) { N.y = N.y * 2; };
-	if (n.z > 1) while (N.z < 2 * n.z - 1) { N.z = N.z * 2; };
+		//pbc : can use wrap-around, but currently only even values of N are allowed. Thus if n is odd, N has an extra cell (user should be warned in this case to use only even values for n in pbc directions).
+		N.x = n.x + (n.x % 2);
+	}
+	else {
+
+		//no wrap-around thus double the size, with input to be zero-padded
+		N.x = 2 * n.x;
+	}
+
+	if (pbc_images.y) {
+
+		N.y = n.y + (n.y % 2);
+	}
+	else {
+
+		N.y = 2 * n.y;
+	}
+
+	if (n.z > 1) {
+
+		if (pbc_images.z) {
+
+			N.z = n.z + (n.z % 2);
+
+			//in z pbc mode we'll want to disable q2d mode as that only works for powers of 2 with N.z at least 2 times larger than n.z
+			//if N.z is a power of 2 could adapt a q2D type mode for n.z = N.z but not worth the effort currently - is z pbc mode really that useful?
+		}
+		else {
+			
+			//if not in pbc mode we want to stick to powers of 2 here to take advantage of q2D mode
+			while (N.z < 2 * n.z) { N.z = N.z * 2; };
+		}
+	}
 
 	//N in gpu memory
 	cuN.from_cpu(N);
@@ -160,34 +194,42 @@ BError ConvolutionDataCUDA::SetConvolutionDimensions(cuSZ3 n_, cuReal3 h_, bool 
 
 		//3D problem
 		
-		//quasi 2D mode? (not applicable if convolution not embedded)
-		if (embed_multiplication && n.z == 2) {
+		if (pbc_images.z) {
 
-			//N.z = 4
-			q2D_level = 4;
+			//disable q2D mode if using z pbc
+			q2D_level = 0;
 		}
-		else if (embed_multiplication && n.z <= 4) {
-
-			//N.z = 8
-			q2D_level = 8;
-		}
-		
-		else if (embed_multiplication && n.z <= 8) {
-
-			//N.z = 16
-			q2D_level = 16;
-		}
-		
-		else if (embed_multiplication && n.z <= 16) {
-
-			//N.z = 32
-			q2D_level = 32;
-		}
-		//above this level q2D mode is slower than full 3D mode due to inefficient use of gpu bandwidth
 		else {
 
-			//disable q2D mode
-			q2D_level = 0;
+			//quasi 2D mode? (not applicable if convolution not embedded
+			if (embed_multiplication && n.z == 2) {
+
+				//N.z = 4
+				q2D_level = 4;
+			}
+			else if (embed_multiplication && n.z <= 4) {
+
+				//N.z = 8
+				q2D_level = 8;
+			}
+
+			else if (embed_multiplication && n.z <= 8) {
+
+				//N.z = 16
+				q2D_level = 16;
+			}
+
+			else if (embed_multiplication && n.z <= 16) {
+
+				//N.z = 32
+				q2D_level = 32;
+			}
+			//above this level q2D mode is slower than full 3D mode due to inefficient use of gpu bandwidth
+			else {
+
+				//disable q2D mode
+				q2D_level = 0;
+			}
 		}
 
 		//always use transpose_xy in 3D

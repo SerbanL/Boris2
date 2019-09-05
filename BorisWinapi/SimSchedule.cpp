@@ -1,8 +1,8 @@
 #include "stdafx.h"
 #include "Simulation.h"
 
-void Simulation::AddGenericStage(SS_ stageType, string meshName) {
-
+void Simulation::AddGenericStage(SS_ stageType, string meshName) 
+{
 	switch(stageType) {
 
 	case SS_RELAX:
@@ -170,13 +170,13 @@ void Simulation::AddGenericStage(SS_ stageType, string meshName) {
 	}
 }
 
-void Simulation::DeleteStage(int stageIndex) {
-
+void Simulation::DeleteStage(int stageIndex) 
+{
 	simStages.erase(stageIndex);
 }
 
-void Simulation::SetGenericStopCondition(int index, STOP_ stopType) {
-
+void Simulation::SetGenericStopCondition(int index, STOP_ stopType) 
+{
 	if(!GoodIdx(simStages.last(), index)) return;
 
 	switch(stopType) {
@@ -208,8 +208,8 @@ void Simulation::SetGenericStopCondition(int index, STOP_ stopType) {
 	}
 }
 
-void Simulation::SetGenericDataSaveCondition(int index, DSAVE_ dsaveType) {
-
+void Simulation::SetGenericDataSaveCondition(int index, DSAVE_ dsaveType)
+{
 	switch(dsaveType) {
 
 	case DSAVE_NONE:
@@ -239,8 +239,8 @@ void Simulation::SetGenericDataSaveCondition(int index, DSAVE_ dsaveType) {
 	}
 }
 
-void Simulation::EditStageType(int index, SS_ stageType, string meshName) {
-
+void Simulation::EditStageType(int index, SS_ stageType, string meshName) 
+{
 	//if same stage type as before just change the mesh name
 	if(GoodIdx(simStages.last(), index) && simStages[index].stage_type() == stageType) {
 		
@@ -256,13 +256,13 @@ void Simulation::EditStageType(int index, SS_ stageType, string meshName) {
 	}
 }
 
-void Simulation::EditStageValue(int stageIndex, string value_string) {
-
+void Simulation::EditStageValue(int stageIndex, string value_string) 
+{
 	simStages[stageIndex].set_stagevalue_fromstring(value_string);
 }
 
-void Simulation::EditStageStopCondition(int index, STOP_ stopType, string stopValueString) {
-
+void Simulation::EditStageStopCondition(int index, STOP_ stopType, string stopValueString) 
+{
 	//if same stop condition as before just change the stop value
 	if(GoodIdx(simStages.last(), index) && simStages[index].stop_condition() == stopType) {
 
@@ -275,8 +275,8 @@ void Simulation::EditStageStopCondition(int index, STOP_ stopType, string stopVa
 	}
 }
 
-void Simulation::EditDataSaveCondition(int index, DSAVE_ dsaveType, string dsaveValueString) {
-
+void Simulation::EditDataSaveCondition(int index, DSAVE_ dsaveType, string dsaveValueString)
+{
 	//if same saving condition as before just change the value
 	if(GoodIdx(simStages.last(), index) && simStages[index].dsave_type() == dsaveType) {
 
@@ -289,8 +289,8 @@ void Simulation::EditDataSaveCondition(int index, DSAVE_ dsaveType, string dsave
 	}
 }
 
-void Simulation::UpdateStageMeshNames(string oldMeshName, string newMeshName) {
-
+void Simulation::UpdateStageMeshNames(string oldMeshName, string newMeshName) 
+{
 	for(int idx = 0; idx < simStages.size(); idx++) {
 
 		if (simStages[idx].meshname() == oldMeshName) {
@@ -300,8 +300,8 @@ void Simulation::UpdateStageMeshNames(string oldMeshName, string newMeshName) {
 	}
 }
 
-INT2 Simulation::Check_and_GetStageStep() {
-	
+INT2 Simulation::Check_and_GetStageStep()
+{
 	//first make sure stage value is correct - this could only happen if stages have been deleted. If incorrect just reset back to 0.
 	if(stage_step.major >= simStages.size()) stage_step = INT2();
 
@@ -311,8 +311,8 @@ INT2 Simulation::Check_and_GetStageStep() {
 	return stage_step;
 }
 
-void Simulation::CheckSimulationSchedule(void) {
-
+void Simulation::CheckSimulationSchedule(void) 
+{
 	//if stage index exceeds number of stages then just set it to the end : stages must have been deleted whilst simulation running.
 	if(stage_step.major >= simStages.size()) stage_step.major = simStages.last();
 
@@ -343,13 +343,14 @@ void Simulation::CheckSimulationSchedule(void) {
 	}
 }
 
-void Simulation::CheckSaveDataCondtions() {
-
+void Simulation::CheckSaveDataCondtions() 
+{
 	switch (simStages[stage_step.major].dsave_type()) {
 
 	case DSAVE_NONE:
 	case DSAVE_STAGE:
 	case DSAVE_STEP:
+		//step and stage save data is done in AdvanceSimulationSchedule when step or stage ending is detected
 		break;
 
 	case DSAVE_ITER:
@@ -374,9 +375,33 @@ void Simulation::CheckSaveDataCondtions() {
 	}
 }
 
-void Simulation::AdvanceSimulationSchedule(void) {
-
+void Simulation::AdvanceSimulationSchedule(void) 
+{
 	//assume stage_step.major is correct
+
+	//do we need to iterate the transport solver? 
+	//if static_transport_solver is true then the transport solver was stopped from iterating before reaching the end of a stage or step
+	if (static_transport_solver) {
+
+		//turn off flag for now to enable iterating the transport solver
+		static_transport_solver = false;
+
+#if COMPILECUDA == 1
+		if (cudaEnabled) {
+
+			SMesh.UpdateTransportSolverCUDA();
+		}
+		else {
+
+			SMesh.UpdateTransportSolver();
+		}
+#else
+		SMesh.UpdateTransportSolver();
+#endif
+
+		//turn flag back on
+		static_transport_solver = true;
+	}
 
 	//first try to increment the step number
 	if(stage_step.minor < simStages[stage_step.major].number_of_steps()) {

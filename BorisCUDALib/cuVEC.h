@@ -11,7 +11,7 @@
 
 ////////////////////////////////////////////////////////////////////////////////////////////////// cuVEC<VType>
 //
-// 3-component quantity with 3 dimensions for CUDA gpu computations.
+// n-component quantity with 3 dimensions for CUDA gpu computations.
 // Important : This is meant to handle only gpu-addressable memory and you should manage it using a cu_obj. 
 // Cannot have any data stored in cpu memory held here since cu_obj managed objects exist only in gpu memory.
 // Also cu_obj managed objects are never actually created or destroyed with convential ctors and dtor : use construct_cu_obj and destruct_cu_obj instead.

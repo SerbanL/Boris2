@@ -7,6 +7,10 @@
 
 #include "ErrorHandler.h"
 
+#include "fftw3.h"
+
+#pragma comment(lib, "libfftw3-3.lib")
+
 //size of N.y required to switch to transpose_xy mode
 //This is also the threshold of N.x/2 required to switch to interleaving transposing operations for the 3 vector components, rather than launching a single kernel call
 #define TRANSPOSE_XY_YTHRESHOLD	2048
@@ -28,6 +32,10 @@ protected:
 	//dimensions of FFT space in GPU memory
 	cu_obj<cuSZ3> cuN;
 	
+	//periodic boundary conditions -> setting these changes convolution dimensions and workflow for kernel calculation.
+	//Set to zero to remove pbc conditions. This gives the number of images to use when computing tensors with pbc conditions.
+	cuINT3 pbc_images;
+
 	//dimensions of complex fft spaces in GPU memory (N.x/2 + 1)*N.y*N.z, and N.y*(N.x/2 + 1)*N.z respectively
 	cu_obj<cuSZ3> cuNc_xy, cuNc_yx;
 	//dimensions of complex fft spaces in GPU memory for q2d mode (N.x/2 + 1)*N.y*N.z/2, and N.y*(N.x/2 + 1)*N.z/2 respectively
@@ -60,7 +68,7 @@ protected:
 	//This disables q2D mode and allocates additional scratch space cuS2
 	bool embed_multiplication = true;
 
-	//additiona scratch space used if not using embedded convolution
+	//additional scratch space used if not using embedded convolution
 	cu_arr<cuComplex> cuS2_x, cuS2_y, cuS2_z;
 
 	//Quarter-size scratch space used for x fft/ifft when the transpose_xy mode is used.
@@ -95,7 +103,7 @@ protected:
 
 	//-------------------------- CONFIGURATION
 
-	BError SetConvolutionDimensions(cuSZ3 n_, cuReal3 h_, bool embed_multiplication_ = true);
+	BError SetConvolutionDimensions(cuSZ3 n_, cuReal3 h_, bool embed_multiplication_ = true, cuINT3 pbc_images = INT3());
 
 	//-------------------------- RUN-TIME METHODS
 

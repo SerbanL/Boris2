@@ -185,7 +185,7 @@
       <AdditionalDependencies>cudart_static.lib;cufft.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <CudaCompile>
-      <CodeGeneration>compute_50,sm_50</CodeGeneration>
+      <CodeGeneration>compute_60,sm_60</CodeGeneration>
       <GenerateRelocatableDeviceCode>true</GenerateRelocatableDeviceCode>
       <TargetMachinePlatform>64</TargetMachinePlatform>
     </CudaCompile>
@@ -259,6 +259,8 @@
     <ClInclude Include="DMExchange.h" />
     <ClInclude Include="DMExchangeCUDA.h" />
     <ClInclude Include="ErrorHandler.h" />
+    <ClInclude Include="ExchangeBase.h" />
+    <ClInclude Include="ExchangeBaseCUDA.h" />
     <ClInclude Include="ExchangeCUDA.h" />
     <ClInclude Include="Heat.h" />
     <ClInclude Include="HeatCUDA.h" />
@@ -309,9 +311,7 @@
     <ClInclude Include="SDemag.h" />
     <ClInclude Include="SDemagCUDA.h" />
     <ClInclude Include="SDemagCUDA_Demag.h" />
-    <ClInclude Include="SDemagCUDA_KernelCollection.h" />
     <ClInclude Include="SDemag_Demag.h" />
-    <ClInclude Include="SDemag_KernelCollection.h" />
     <ClInclude Include="SHeat.h" />
     <ClInclude Include="SHeatCUDA.h" />
     <ClInclude Include="SimSchedule.h" />
@@ -376,9 +376,11 @@
     <ClCompile Include="DemagTFunc.cpp" />
     <ClCompile Include="DemagTFunc_Asympt.cpp" />
     <ClCompile Include="DemagTFunc_Irregular.cpp" />
+    <ClCompile Include="DemagTFunc_Irregular_PBC.cpp" />
     <ClCompile Include="DemagTFunc_L.cpp" />
     <ClCompile Include="DemagTFunc_PBC.cpp" />
     <ClCompile Include="DemagTFunc_Shifted.cpp" />
+    <ClCompile Include="DemagTFunc_Shifted_PBC.cpp" />
     <ClCompile Include="DemagTFunc_Test.cpp" />
     <ClCompile Include="Demag_N.cpp" />
     <ClCompile Include="Demag_NCUDA.cpp" />
@@ -405,6 +407,8 @@
     <ClCompile Include="DMExchangeCUDA.cpp" />
     <ClCompile Include="ErrorHandler.cpp" />
     <ClCompile Include="Exchange.cpp" />
+    <ClCompile Include="ExchangeBase.cpp" />
+    <ClCompile Include="ExchangeBaseCUDA.cpp" />
     <ClCompile Include="ExchangeCUDA.cpp" />
     <ClCompile Include="Heat.cpp" />
     <ClCompile Include="HeatCUDA.cpp" />
@@ -450,7 +454,6 @@
     <ClCompile Include="SDemagCUDA.cpp" />
     <ClCompile Include="SDemagCUDA_Demag.cpp" />
     <ClCompile Include="SDemag_Demag.cpp" />
-    <ClCompile Include="SDemag_KernelCollection.cpp" />
     <ClCompile Include="SHeat.cpp" />
     <ClCompile Include="SHeatCUDA.cpp" />
     <ClCompile Include="SimFiles.cpp" />
@@ -544,7 +547,6 @@
     <CudaCompile Include="AnisotropyCubiCUDA.cu" />
     <CudaCompile Include="AnisotropyUniCUDA.cu" />
     <CudaCompile Include="ConvolutionDataCUDA.cu" />
-    <CudaCompile Include="DemagKernelCollectionCUDA_KerType.cu" />
     <CudaCompile Include="DemagKernelCollectionCUDA_Mult.cu" />
     <CudaCompile Include="DemagKernelCUDA.cu" />
     <CudaCompile Include="Demag_NCUDA.cu" />
@@ -565,6 +567,7 @@
     <CudaCompile Include="DiffEq_EvalsLLGCUDA.cu" />
     <CudaCompile Include="DiffEq_SEquationsCUDA.cu" />
     <CudaCompile Include="DMExchangeCUDA.cu" />
+    <CudaCompile Include="ExchangeBaseCUDA.cu" />
     <CudaCompile Include="ExchangeCUDA.cu" />
     <CudaCompile Include="HeatCUDA.cu" />
     <CudaCompile Include="iDMExchangeCUDA.cu" />
@@ -572,7 +575,6 @@
     <CudaCompile Include="OerstedKernelCUDA.cu" />
     <CudaCompile Include="RoughnessCUDA.cu" />
     <CudaCompile Include="SDemagCUDA_Demag.cu" />
-    <CudaCompile Include="SDemagCUDA_KernelCollection.cu" />
     <CudaCompile Include="SHeatCUDA.cu" />
     <CudaCompile Include="SOTFieldCUDA.cu" />
     <CudaCompile Include="STransportCUDA.cu" />

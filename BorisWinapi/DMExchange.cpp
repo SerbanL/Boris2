@@ -20,6 +20,7 @@
 
 DMExchange::DMExchange(Mesh *pMesh_) :
 	Modules(),
+	ExchangeBase(pMesh_),
 	ProgramStateNames(this, {}, {})
 {
 	pMesh = dynamic_cast<FMesh*>(pMesh_);
@@ -43,7 +44,9 @@ BError DMExchange::Initialize(void)
 {
 	BError error(CLASS_STR(DMExchange));
 
-	initialized = true;
+	error = ExchangeBase::Initialize();
+
+	if (!error) initialized = true;
 
 	return error;
 }
@@ -53,8 +56,6 @@ BError DMExchange::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 	BError error(CLASS_STR(DMExchange));
 
 	Uninitialize();
-
-	Initialize();
 
 	//------------------------ CUDA UpdateConfiguration if set
 
@@ -78,7 +79,7 @@ BError DMExchange::MakeCUDAModule(void)
 
 		//Note : it is posible pMeshCUDA has not been allocated yet, but this module has been created whilst cuda is switched on. This will happen when a new mesh is being made which adds this module by default.
 		//In this case, after the mesh has been fully made, it will call SwitchCUDAState on the mesh, which in turn will call this SwitchCUDAState method; then pMeshCUDA will not be nullptr and we can make the cuda module version
-		pModuleCUDA = new DMExchangeCUDA(dynamic_cast<FMeshCUDA*>(pMesh->pMeshCUDA));
+		pModuleCUDA = new DMExchangeCUDA(dynamic_cast<FMeshCUDA*>(pMesh->pMeshCUDA), this);
 		error = pModuleCUDA->Error_On_Create();
 	}
 
@@ -129,11 +130,13 @@ double DMExchange::UpdateField(void)
 				DBL33 bnd_nneu = DBL33(bnd_dm_dx, bnd_dm_dy, bnd_dm_dz);
 
 				//direct exchange contribution
+				//cells marked with cmbnd are calculated using exchange coupling to other ferromagnetic meshes - see below; the delsq_nneu evaluates to zero in the CMBND coupling direction.
 				Hexch = Aconst * pMesh->M.delsq_nneu(idx, bnd_nneu);
 
 				//Dzyaloshinskii-Moriya exchange contribution
 
 				//Hdm, ex = -2D / (mu0*Ms) * curl m
+				//For cmbnd cells curl_nneu does not evaluate to zero in the CMBND coupling direction, but sided differentials are used (something to consider improving in a future version)
 				Hexch += Dconst * pMesh->M.curl_nneu(idx, bnd_nneu);
 			}
 				
@@ -142,6 +145,9 @@ double DMExchange::UpdateField(void)
 			energy += pMesh->M[idx] * Hexch;
 		}
 	}
+
+	//if exchange coupled to other meshes calculate the exchange field at marked cmbnd cells and accumulate energy density contribution
+	if (pMesh->GetMeshExchangeCoupling()) CalculateExchangeCoupling(energy);
 
 	//average energy density, this is correct, see notes - e_ex ~= -(mu0/2) M.H as can be derived from the full expression for e_ex. It is not -mu0 M.H, which is the energy density for a dipole in a field !
 	if (pMesh->M.get_nonempty_cells()) energy *= -MU0 / (2 * (pMesh->M.get_nonempty_cells()));

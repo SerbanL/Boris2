@@ -185,3 +185,30 @@ void SuperMesh::ComputeFieldsCUDA(void)
 	}
 }
 #endif
+
+//iterate transport solver only, if available
+void SuperMesh::UpdateTransportSolver(void)
+{
+	//first update MOD_TRANSPORT module in all the meshes
+	for (int idx = 0; idx < (int)pMesh.size(); idx++) {
+
+		pMesh[idx]->UpdateTransportSolver();
+	}
+
+	//update MODS_STRANSPORT super-mesh module
+	if (IsSuperMeshModuleSet(MODS_STRANSPORT)) pSMod(MODS_STRANSPORT)->UpdateField();
+}
+
+#if COMPILECUDA == 1
+void SuperMesh::UpdateTransportSolverCUDA(void)
+{
+	//first update MOD_TRANSPORT module in all the meshes
+	for (int idx = 0; idx < (int)pMesh.size(); idx++) {
+
+		pMesh[idx]->UpdateTransportSolverCUDA();
+	}
+
+	//update MODS_STRANSPORT super-mesh module
+	if (IsSuperMeshModuleSet(MODS_STRANSPORT)) pSMod(MODS_STRANSPORT)->UpdateFieldCUDA();
+}
+#endif

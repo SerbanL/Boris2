@@ -172,6 +172,9 @@ void STransportCUDA::initialize_potential_values(void)
 
 void STransportCUDA::UpdateField(void)
 {
+	//skip any transport solver computations if static_transport_solver is enabled : transport solver will be interated only at the end of a step or stage
+	if (pSMesh->static_transport_solver) return;
+
 	//only need to update this after an entire magnetisation equation time step is solved (but always update spin accumulation field if spin current solver enabled)
 	if (pSMesh->CurrentTimeStepSolved()) {
 
@@ -187,7 +190,27 @@ void STransportCUDA::UpdateField(void)
 			else solve_spin_transport_sor();
 
 			//if constant current source is set then need to update potential to keep a constant current
-			if (pSTrans->constant_current_source) pSTrans->GetCurrent();
+			if (pSTrans->constant_current_source) {
+
+				pSTrans->GetCurrent();
+
+				//the electrode voltage values will have changed so should iterate to convergence threshold again
+				//even though we've adjusted potential values these won't be quite correct
+				//moreover the charge current density hasn't been recalculated
+				//reiterating the transport solver to convergence will fix all this
+				//Note : the electrode current will change again slightly so really you should be iterating to some electrode current convergence threshold
+				//In normal running mode this won't be an issue as this is done every iteration; in static transport solver mode this could be a problem so must be tested
+
+				double iters_to_conv_previous = pSTrans->iters_to_conv;
+
+				//solve only for charge current (V and Jc with continuous boundaries)
+				if (!pSMesh->SolveSpinCurrent()) solve_charge_transport_sor();
+				//solve both spin and charge currents (V, Jc, S with appropriate boundaries : continuous, except between N and F layers where interface conductivities are specified)
+				else solve_spin_transport_sor();
+
+				//in constant current mode we spend more iterations so the user should be aware of this
+				pSTrans->iters_to_conv += iters_to_conv_previous;
+			}
 		}
 		else pSTrans->iters_to_conv = 0;
 	}

@@ -93,9 +93,14 @@ double DemagTFunc::g(double x, double y, double z)
 
 bool DemagTFunc::fill_f_vals(INT3 n, DBL3 hRatios, int asymptotic_distance)
 {
-	int nx_dist = minimum(n.x, asymptotic_distance);
-	int ny_dist = minimum(n.y, asymptotic_distance);
-	int nz_dist = minimum(n.z, asymptotic_distance);
+	int nx_dist = n.x, ny_dist = n.y, nz_dist = n.z;
+
+	if (asymptotic_distance > 0) {
+
+		nx_dist = minimum(n.x, asymptotic_distance);
+		ny_dist = minimum(n.y, asymptotic_distance);
+		nz_dist = minimum(n.z, asymptotic_distance);
+	}
 
 	if (!f_vals_xx.assign(SZ3(nx_dist + 2, ny_dist + 2, nz_dist + 2), 0.0)) return false;
 	if (!f_vals_yy.assign(SZ3(ny_dist + 2, nx_dist + 2, nz_dist + 2), 0.0)) return false;
@@ -195,9 +200,14 @@ bool DemagTFunc::fill_f_vals(INT3 n, DBL3 hRatios, int asymptotic_distance)
 
 bool DemagTFunc::fill_g_vals(INT3 n, DBL3 hRatios, int asymptotic_distance)
 {
-	int nx_dist = minimum(n.x, asymptotic_distance);
-	int ny_dist = minimum(n.y, asymptotic_distance);
-	int nz_dist = minimum(n.z, asymptotic_distance);
+	int nx_dist = n.x, ny_dist = n.y, nz_dist = n.z;
+
+	if (asymptotic_distance > 0) {
+
+		nx_dist = minimum(n.x, asymptotic_distance);
+		ny_dist = minimum(n.y, asymptotic_distance);
+		nz_dist = minimum(n.z, asymptotic_distance);
+	}
 
 	if (!g_vals_xy.assign(SZ3(nx_dist + 2, ny_dist + 2, nz_dist + 2), 0.0)) return false;
 	if (!g_vals_xz.assign(SZ3(nx_dist + 2, nz_dist + 2, ny_dist + 2), 0.0)) return false;
@@ -332,9 +342,16 @@ bool DemagTFunc::fill_g_vals_shifted(INT3 n, DBL3 hRatios, DBL3 shift)
 }
 
 //shifted versions for stray field -> in particular for z shift only
-bool DemagTFunc::fill_f_vals_zshifted(INT3 n, DBL3 hRatios, DBL3 shift)
+bool DemagTFunc::fill_f_vals_zshifted(INT3 n, DBL3 hRatios, DBL3 shift, int asymptotic_distance)
 {
 	//for z shift only can use xy plane symmetries
+
+	if (asymptotic_distance > 0) {
+
+		n.x = minimum(n.x, asymptotic_distance);
+		n.y = minimum(n.y, asymptotic_distance);
+		//limiting n.z to asymptotic distance is not straightforward
+	}
 
 	if (!f_vals_xx.assign(SZ3(n.x + 2, n.y + 2, 2 * n.z + 1), 0.0)) return false;
 	if (!f_vals_yy.assign(SZ3(n.y + 2, n.x + 2, 2 * n.z + 1), 0.0)) return false;
@@ -355,9 +372,16 @@ bool DemagTFunc::fill_f_vals_zshifted(INT3 n, DBL3 hRatios, DBL3 shift)
 	return true;
 }
 
-bool DemagTFunc::fill_g_vals_zshifted(INT3 n, DBL3 hRatios, DBL3 shift)
+bool DemagTFunc::fill_g_vals_zshifted(INT3 n, DBL3 hRatios, DBL3 shift, int asymptotic_distance)
 {
 	//for z shift only can use xy plane symmetries
+
+	if (asymptotic_distance > 0) {
+
+		n.x = minimum(n.x, asymptotic_distance);
+		n.y = minimum(n.y, asymptotic_distance);
+		//limiting n.z to asymptotic distance is not straightforward
+	}
 
 	if (!g_vals_xy.assign(SZ3(n.x + 2, n.y + 2, 2 * n.z + 1), 0.0)) return false;
 	if (!g_vals_xz.assign(SZ3(n.x + 2, 2 * n.z + 1, n.y + 2), 0.0)) return false;
@@ -475,8 +499,15 @@ bool DemagTFunc::fill_g_vals_shifted_irregular(INT3 n, DBL3 h_src, DBL3 h_dst, D
 }
 
 //shifted and irregular versions for stray field (h_src and h_dst only allowed to differ in z values, giving del = sz - dz) -> in particular for z shift only
-bool DemagTFunc::fill_f_vals_zshifted_irregular(INT3 n, DBL3 h_src, DBL3 h_dst, DBL3 shift)
+bool DemagTFunc::fill_f_vals_zshifted_irregular(INT3 n, DBL3 h_src, DBL3 h_dst, DBL3 shift, int asymptotic_distance)
 {
+	if (asymptotic_distance > 0) {
+
+		n.x = minimum(n.x, asymptotic_distance);
+		n.y = minimum(n.y, asymptotic_distance);
+		//limiting n.z to asymptotic distance is not straightforward
+	}
+
 	if (!f_vals_xx.assign(SZ3(n.x + 2, n.y + 2, 2 * n.z + 1), 0.0)) return false;
 	if (!f_vals_yy.assign(SZ3(n.y + 2, n.x + 2, 2 * n.z + 1), 0.0)) return false;
 	if (!f_vals_zz.assign(SZ3(2 * n.z + 1, n.y + 2, n.x + 2), 0.0)) return false;
@@ -521,8 +552,15 @@ bool DemagTFunc::fill_f_vals_zshifted_irregular(INT3 n, DBL3 h_src, DBL3 h_dst, 
 	return true;
 }
 
-bool DemagTFunc::fill_g_vals_zshifted_irregular(INT3 n, DBL3 h_src, DBL3 h_dst, DBL3 shift)
+bool DemagTFunc::fill_g_vals_zshifted_irregular(INT3 n, DBL3 h_src, DBL3 h_dst, DBL3 shift, int asymptotic_distance)
 {
+	if (asymptotic_distance > 0) {
+
+		n.x = minimum(n.x, asymptotic_distance);
+		n.y = minimum(n.y, asymptotic_distance);
+		//limiting n.z to asymptotic distance is not straightforward
+	}
+
 	if (!g_vals_xy.assign(SZ3(n.x + 2, n.y + 2, 2 * n.z + 1), 0.0)) return false;
 	if (!g_vals_xz.assign(SZ3(n.x + 2, 2 * n.z + 1, n.y + 2), 0.0)) return false;
 	if (!g_vals_yz.assign(SZ3(n.y + 2, 2 * n.z + 1, n.x + 2), 0.0)) return false;

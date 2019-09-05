@@ -203,8 +203,23 @@ BError DemagKernelCollectionCUDA::Calculate_Demag_Kernels_2D_Self(int index)
 	//use ratios instead of cellsizes directly - same result but better in terms of floating point errors
 	DemagTFunc dtf;
 
-	if (!dtf.CalcDiagTens2D(Ddiag, n, N, h / h_max)) return error(BERROR_OUTOFMEMORY_NCRIT);
-	if (!dtf.CalcOffDiagTens2D(Dodiag, n, N, h / h_max)) return error(BERROR_OUTOFMEMORY_NCRIT);
+	if (pbc_images.IsNull()) {
+
+		//no pbcs in any dimension -> use these
+		if (!dtf.CalcDiagTens2D(Ddiag, n, N, h / h_max)) return error(BERROR_OUTOFMEMORY_NCRIT);
+		if (!dtf.CalcOffDiagTens2D(Dodiag, n, N, h / h_max)) return error(BERROR_OUTOFMEMORY_NCRIT);
+	}
+	else {
+
+		//pbcs used in at least one dimension
+		if (!dtf.CalcDiagTens2D_PBC(
+			Ddiag, N, h / h_max,
+			true, ASYMPTOTIC_DISTANCE, pbc_images.x, pbc_images.y, pbc_images.z)) return error(BERROR_OUTOFMEMORY_NCRIT);
+
+		if (!dtf.CalcOffDiagTens2D_PBC(
+			Dodiag, N, h / h_max,
+			true, ASYMPTOTIC_DISTANCE, pbc_images.x, pbc_images.y, pbc_images.z)) return error(BERROR_OUTOFMEMORY_NCRIT);
+	}
 
 	//-------------- DEMAG KERNELS ON CPU-ADDRESSABLE MEMORY
 
@@ -224,75 +239,101 @@ BError DemagKernelCollectionCUDA::Calculate_Demag_Kernels_2D_Self(int index)
 
 	//-------------- SETUP FFT
 
-	//setup fft object with fft computation lines
-	FFTMethods_Cpp<double> fft;
+	double* pline_real = fftw_alloc_real(maximum(N.x, N.y, N.z) * 3);
+	double* pline_real_odiag = fftw_alloc_real(maximum(N.x, N.y, N.z));
+	fftw_complex* pline_odiag = fftw_alloc_complex(maximum(N.x / 2 + 1, N.y, N.z));
+	fftw_complex* pline = fftw_alloc_complex(maximum(N.x / 2 + 1, N.y, N.z) * 3);
 
-	size_t maxN = maximum(N.x / 2 + 1, N.y / 2 + 1);
+	//make fft plans
+	int dims_x[1] = { (int)N.x };
+	int dims_y[1] = { (int)N.y };
 
-	vector<ReIm3> fft_line(maxN);
-	vector<ReIm3> fft_line2(maxN);
-	vector<ReIm> fft_line2d(maxN);
-	vector<ReIm> fft_line2d2(maxN);
+	fftw_plan plan_fwd_x = fftw_plan_many_dft_r2c(1, dims_x, 3,
+		pline_real, nullptr, 3, 1,
+		pline, nullptr, 3, 1,
+		FFTW_PATIENT);
+
+	fftw_plan plan_fwd_x_odiag = fftw_plan_many_dft_r2c(1, dims_x, 1,
+		pline_real_odiag, nullptr, 1, 1,
+		pline_odiag, nullptr, 1, 1,
+		FFTW_PATIENT);
+
+	fftw_plan plan_fwd_y = fftw_plan_many_dft_r2c(1, dims_y, 3,
+		pline_real, nullptr, 3, 1,
+		pline, nullptr, 3, 1,
+		FFTW_PATIENT);
+
+	fftw_plan plan_fwd_y_odiag = fftw_plan_many_dft_r2c(1, dims_y, 1,
+		pline_real_odiag, nullptr, 1, 1,
+		pline_odiag, nullptr, 1, 1,
+		FFTW_PATIENT);
 
 	//-------------- FFT REAL TENSOR INTO REAL KERNELS
 
-	//NOTE : don't use parallel for loops as it will mess up the packing in the D tensor
-	//If you want parallel loops you'll need to allocate additional temporary spaces, so not worth it for initialization
-	//rather have slightly slower initialization than fail due to running out of memory for large problem sizes
-
-	//FFT into Kernel forms ready for convolution multiplication
+	//1. FFTs along x
 	for (int j = 0; j < N.y; j++) {
 
-		fft.CopyRealShuffle(Ddiag.data() + j * N.x, fft_line.data(), N.x / 2);
-		fft.FFT_Radix4_DIT(fft_line.data(), log2(N.x) - 1, N.x / 2);
-		fft.RealfromComplexFFT(fft_line.data(), fft_line2.data(), N.x / 2);
+		//write input into fft line
+		for (int i = 0; i < N.x; i++) {
 
-		fft.CopyRealShuffle(Dodiag.data() + j * N.x, fft_line2d.data(), N.x / 2);
-		fft.FFT_Radix4_DIT(fft_line2d.data(), log2(N.x) - 1, N.x / 2);
-		fft.RealfromComplexFFT(fft_line2d.data(), fft_line2d2.data(), N.x / 2);
+			int idx_in = i + j * N.x;
 
-		//pack into Ddiag and Dodiag for next step
+			*reinterpret_cast<DBL3*>(pline_real + i * 3) = Ddiag[idx_in];
+			*reinterpret_cast<double*>(pline_real_odiag + i) = Dodiag[idx_in];
+		}
+
+		//fft on line
+		fftw_execute(plan_fwd_x);
+		fftw_execute(plan_fwd_x_odiag);
+
+		//pack into tensor for next step
 		for (int i = 0; i < N.x / 2 + 1; i++) {
 
-			//even w.r.t. to x so output is purely real
-			Ddiag[i + j * (N.x / 2 + 1)] = DBL3(fft_line2[i].x.Re, fft_line2[i].y.Re, fft_line2[i].z.Re);
+			ReIm3 value = *reinterpret_cast<ReIm3*>(pline + i * 3);
+			ReIm value_odiag = *reinterpret_cast<ReIm*>(pline_odiag + i);
 
-			//odd w.r.t. to x so output is purely imaginary
-			Dodiag[i + j * (N.x / 2 + 1)] = fft_line2d2[i].Im;
+			Ddiag[i + j * (N.x / 2 + 1)] = DBL3(value.x.Re, value.y.Re, value.z.Re);
+			Dodiag[i + j * (N.x / 2 + 1)] = value_odiag.Im;
 		}
 	}
 
-	for (int i = 0; i < N.x / 2 + 1; i++) {
+	//2. FFTs along y
+	for (int i = 0; i < (N.x / 2 + 1); i++) {
 
-		fft.CopyRealShuffle(Ddiag.data() + i, fft_line.data(), N.x / 2 + 1, N.y / 2);
-		fft.FFT_Radix4_DIT(fft_line.data(), log2(N.y) - 1, N.y / 2);
-		fft.RealfromComplexFFT(fft_line.data(), fft_line2.data(), N.y / 2);
+		//fetch line from array
+		for (int j = 0; j < N.y; j++) {
 
-		//the input sequence should actually be purely imaginary not purely real (but see below)
-		fft.CopyRealShuffle(Dodiag.data() + i, fft_line2d.data(), N.x / 2 + 1, N.y / 2);
-		fft.FFT_Radix4_DIT(fft_line2d.data(), log2(N.y) - 1, N.y / 2);
-		fft.RealfromComplexFFT(fft_line2d.data(), fft_line2d2.data(), N.y / 2);
+			*reinterpret_cast<DBL3*>(pline_real + j * 3) = Ddiag[i + j * (N.x / 2 + 1)];
+			*reinterpret_cast<double*>(pline_real_odiag + j) = Dodiag[i + j * (N.x / 2 + 1)];
+		}
+
+		//fft on line
+		fftw_execute(plan_fwd_y);
+		fftw_execute(plan_fwd_y_odiag);
 
 		//pack into output real kernels with reduced strides
 		for (int j = 0; j < N.y / 2 + 1; j++) {
 
+			ReIm3 value = *reinterpret_cast<ReIm3*>(pline + j * 3);
+			ReIm value_odiag = *reinterpret_cast<ReIm*>(pline_odiag + j);
+
 			if (!transpose_xy) {
 
 				//even w.r.t. y so output is purely real
-				Kdiag_cpu[i + j * (N.x / 2 + 1)] = DBL3(fft_line2[j].x.Re, fft_line2[j].y.Re, fft_line2[j].z.Re);
+				Kdiag_cpu[i + j * (N.x / 2 + 1)] = DBL3(value.x.Re, value.y.Re, value.z.Re);
 
 				//odd w.r.t. y so the purely imaginary input becomes purely real
 				//however since we used CopyRealShuffle and RealfromComplexFFT, i.e. treating the input as purely real rather than purely imaginary we need to account for the i * i = -1 term, hence the - sign below
-				K2D_odiag_cpu[i + j * (N.x / 2 + 1)] = -fft_line2d2[j].Im;
+				K2D_odiag_cpu[i + j * (N.x / 2 + 1)] = -value_odiag.Im;
 			}
 			else {
 
 				//even w.r.t. y so output is purely real
-				Kdiag_cpu[j + i * (N.y / 2 + 1)] = DBL3(fft_line2[j].x.Re, fft_line2[j].y.Re, fft_line2[j].z.Re);
+				Kdiag_cpu[j + i * (N.y / 2 + 1)] = DBL3(value.x.Re, value.y.Re, value.z.Re);
 
 				//odd w.r.t. y so the purely imaginary input becomes purely real
 				//however since we used CopyRealShuffle and RealfromComplexFFT, i.e. treating the input as purely real rather than purely imaginary we need to account for the i * i = -1 term, hence the - sign below
-				K2D_odiag_cpu[j + i * (N.y / 2 + 1)] = -fft_line2d2[j].Im;
+				K2D_odiag_cpu[j + i * (N.y / 2 + 1)] = -value_odiag.Im;
 			}
 		}
 	}
@@ -301,6 +342,17 @@ BError DemagKernelCollectionCUDA::Calculate_Demag_Kernels_2D_Self(int index)
 
 	(*kernels[index])()->Set_Kdiag_real(Kdiag_cpu);
 	(*kernels[index])()->Set_K2D_odiag(K2D_odiag_cpu);
+
+	//-------------- CLEANUP
+
+	fftw_destroy_plan(plan_fwd_x);
+	fftw_destroy_plan(plan_fwd_x_odiag);
+	fftw_destroy_plan(plan_fwd_y);
+	fftw_destroy_plan(plan_fwd_y_odiag);
+
+	fftw_free((double*)pline_real);
+	fftw_free((double*)pline_real_odiag);
+	fftw_free((fftw_complex*)pline);
 
 	//Done
 	return error;
@@ -341,99 +393,105 @@ BError DemagKernelCollectionCUDA::Calculate_Demag_Kernels_2D_zShifted(int index)
 		if (!K_cpu.resize(SZ3(N.y / 2 + 1, N.x / 2 + 1, N.z))) return error(BERROR_OUTOFMEMORY_CRIT);
 	}
 
-	//-------------- FFT SETUP
+	//-------------- SETUP FFT
 
-	//setup fft object with fft computation lines
-	FFTMethods_Cpp<double> fft;
+	double* pline_real = fftw_alloc_real(maximum(N.x, N.y, N.z) * 3);
+	fftw_complex* pline = fftw_alloc_complex(maximum(N.x / 2 + 1, N.y, N.z) * 3);
 
-	size_t maxN = maximum(N.x / 2 + 1, N.y / 2 + 1);
+	//make fft plans
+	int dims_x[1] = { (int)N.x };
+	int dims_y[1] = { (int)N.y };
 
-	vector<ReIm3> fft_line(maxN);
-	vector<ReIm3> fft_line2(maxN);
+	fftw_plan plan_fwd_x = fftw_plan_many_dft_r2c(1, dims_x, 3,
+		pline_real, nullptr, 3, 1,
+		pline, nullptr, 3, 1,
+		FFTW_PATIENT);
+
+	fftw_plan plan_fwd_y = fftw_plan_many_dft_r2c(1, dims_y, 3,
+		pline_real, nullptr, 3, 1,
+		pline, nullptr, 3, 1,
+		FFTW_PATIENT);
+
+	//-------------- FFT REAL TENSOR INTO REAL KERNELS
 
 	//lambda used to transform an input tensor into an output kernel
 	auto tensor_to_kernel = [&](VEC<DBL3>& tensor, VEC<DBL3>& kernel, bool off_diagonal) -> void {
 
-		//-------------- FFT REAL TENSOR
-
-		//NOTE : don't use parallel for loops as it will mess up the packing in the D tensor
-		//If you want parallel loops you'll need to allocate additional temporary spaces, so not worth it for initialization
-		//rather have slightly slower initialization than fail due to running out of memory for large problem sizes
-
-		//FFT into Kernel forms ready for convolution multiplication - diagonal components
+		//1. FFTs along x
 		for (int j = 0; j < N.y; j++) {
 
-			fft.CopyRealShuffle(tensor.data() + j * N.x, fft_line.data(), N.x / 2);
-			fft.FFT_Radix4_DIT(fft_line.data(), log2(N.x) - 1, N.x / 2);
-			fft.RealfromComplexFFT(fft_line.data(), fft_line2.data(), N.x / 2);
+			//write input into fft line (zero padding kept)
+			for (int i = 0; i < N.x; i++) {
 
-			if (!off_diagonal) {
+				int idx_in = i + j * N.x;
 
-				//diagonal elements even in x
-
-				//pack into tensor
-				for (int i = 0; i < N.x / 2 + 1; i++) {
-
-					tensor[i + j * (N.x / 2 + 1)] = DBL3(fft_line2[i].x.Re, fft_line2[i].y.Re, fft_line2[i].z.Re);
-				}
+				*reinterpret_cast<DBL3*>(pline_real + i * 3) = tensor[idx_in];
 			}
-			else {
 
-				//Nxy, Nxz odd in x, Nyz even in x
+			//fft on line
+			fftw_execute(plan_fwd_x);
 
-				//pack into tensor
-				for (int i = 0; i < N.x / 2 + 1; i++) {
+			//pack into tensor for next step
+			for (int i = 0; i < N.x / 2 + 1; i++) {
 
-					tensor[i + j * (N.x / 2 + 1)] = DBL3(fft_line2[i].x.Im, fft_line2[i].y.Im, fft_line2[i].z.Re);
+				ReIm3 value = *reinterpret_cast<ReIm3*>(pline + i * 3);
+
+				if (!off_diagonal) {
+
+					//even w.r.t. to x so output is purely real
+					tensor[i + j * (N.x / 2 + 1)] = DBL3(value.x.Re, value.y.Re, value.z.Re);
+				}
+				else {
+
+					//Dxy : odd x, Dxz : odd x, Dyz : even x
+					tensor[i + j * (N.x / 2 + 1)] = DBL3(value.x.Im, value.y.Im, value.z.Re);
 				}
 			}
 		}
 
-		for (int i = 0; i < N.x / 2 + 1; i++) {
+		//2. FFTs along y
+		for (int i = 0; i < (N.x / 2 + 1); i++) {
 
-			fft.CopyRealShuffle(tensor.data() + i, fft_line.data(), N.x / 2 + 1, N.y / 2);
-			fft.FFT_Radix4_DIT(fft_line.data(), log2(N.y) - 1, N.y / 2);
-			fft.RealfromComplexFFT(fft_line.data(), fft_line2.data(), N.y / 2);
+			//fetch line from fft array (zero padding kept)
+			for (int j = 0; j < N.y; j++) {
 
-			if (!off_diagonal) {
+				int idx_in = i + j * (N.x / 2 + 1);
 
-				if (!transpose_xy) {
-
-					//pack into output real kernels
-					for (int j = 0; j < N.y / 2 + 1; j++) {
-
-						kernel[i + j * (N.x / 2 + 1)] = DBL3(fft_line2[j].x.Re, fft_line2[j].y.Re, fft_line2[j].z.Re);
-					}
-				}
-				else {
-
-					//pack into output real kernels
-					for (int j = 0; j < N.y / 2 + 1; j++) {
-
-						kernel[j + i * (N.y / 2 + 1)] = DBL3(fft_line2[j].x.Re, fft_line2[j].y.Re, fft_line2[j].z.Re);
-					}
-				}
+				*reinterpret_cast<DBL3*>(pline_real + j * 3) = tensor[idx_in];
 			}
-			else {
 
-				//Nxy odd in y, Nxz even in y, Nyz odd in y
+			//fft on line
+			fftw_execute(plan_fwd_y);
+
+			//pack into kernel
+			for (int j = 0; j < N.y / 2 + 1; j++) {
+
+				ReIm3 value = *reinterpret_cast<ReIm3*>(pline + j * 3);
 
 				if (!transpose_xy) {
 
-					//pack into output real kernels
-					for (int j = 0; j < N.y / 2 + 1; j++) {
+					if (!off_diagonal) {
+
+						//even w.r.t. to y so output is purely real
+						kernel[i + j * (N.x / 2 + 1)] = DBL3(value.x.Re, value.y.Re, value.z.Re);
+					}
+					else {
 
 						//adjust for i * i = -1 in Nxy element
-						kernel[i + j * (N.x / 2 + 1)] = DBL3(-fft_line2[j].x.Im, fft_line2[j].y.Re, fft_line2[j].z.Im);
+						kernel[i + j * (N.x / 2 + 1)] = DBL3(-value.x.Im, value.y.Re, value.z.Im);
 					}
 				}
 				else {
 
-					//pack into output real kernels
-					for (int j = 0; j < N.y / 2 + 1; j++) {
+					if (!off_diagonal) {
+
+						//even w.r.t. to y so output is purely real
+						kernel[j + i * (N.y / 2 + 1)] = DBL3(value.x.Re, value.y.Re, value.z.Re);
+					}
+					else {
 
 						//adjust for i * i = -1 in Nxy element
-						kernel[j + i * (N.y / 2 + 1)] = DBL3(-fft_line2[j].x.Im, fft_line2[j].y.Re, fft_line2[j].z.Im);
+						kernel[j + i * (N.y / 2 + 1)] = DBL3(-value.x.Im, value.y.Re, value.z.Im);
 					}
 				}
 			}
@@ -442,9 +500,16 @@ BError DemagKernelCollectionCUDA::Calculate_Demag_Kernels_2D_zShifted(int index)
 
 	//-------------- CALCULATE DIAGONAL TENSOR ELEMENTS THEN TRANSFORM INTO KERNEL
 
-	//no need to pass the actual cellsize values, just normalized values will do
+	if (pbc_images.IsNull()) {
 
-	if (!dtf.CalcDiagTens2D_Shifted_Irregular(D, n, N, (*kernels[index])()->Get_h_src() / h_max, (*kernels[index])()->Get_h_dst() / h_max, (*kernels[index])()->Get_shift() / h_max)) return error(BERROR_OUTOFMEMORY_NCRIT);
+		if (!dtf.CalcDiagTens2D_Shifted_Irregular(D, n, N, (*kernels[index])()->Get_h_src() / h_max, (*kernels[index])()->Get_h_dst() / h_max, (*kernels[index])()->Get_shift() / h_max)) return error(BERROR_OUTOFMEMORY_NCRIT);
+	}
+	else {
+
+		if (!dtf.CalcDiagTens2D_Shifted_Irregular_PBC(
+			D, N, (*kernels[index])()->Get_h_src() / h_max, (*kernels[index])()->Get_h_dst() / h_max, (*kernels[index])()->Get_shift() / h_max,
+			true, ASYMPTOTIC_DISTANCE, pbc_images.x, pbc_images.y, pbc_images.z)) return error(BERROR_OUTOFMEMORY_NCRIT);
+	}
 
 	tensor_to_kernel(D, K_cpu, false);
 
@@ -453,12 +518,29 @@ BError DemagKernelCollectionCUDA::Calculate_Demag_Kernels_2D_zShifted(int index)
 
 	//-------------- CALCULATE OFF-DIAGONAL TENSOR ELEMENTS THEN TRANSFORM INTO KERNEL
 
-	if (!dtf.CalcOffDiagTens2D_Shifted_Irregular(D, n, N, (*kernels[index])()->Get_h_src() / h_max, (*kernels[index])()->Get_h_dst() / h_max, (*kernels[index])()->Get_shift() / h_max)) return error(BERROR_OUTOFMEMORY_NCRIT);
+	if (pbc_images.IsNull()) {
+
+		if (!dtf.CalcOffDiagTens2D_Shifted_Irregular(D, n, N, (*kernels[index])()->Get_h_src() / h_max, (*kernels[index])()->Get_h_dst() / h_max, (*kernels[index])()->Get_shift() / h_max)) return error(BERROR_OUTOFMEMORY_NCRIT);
+	}
+	else {
+
+		if (!dtf.CalcOffDiagTens2D_Shifted_Irregular_PBC(
+			D, N, (*kernels[index])()->Get_h_src() / h_max, (*kernels[index])()->Get_h_dst() / h_max, (*kernels[index])()->Get_shift() / h_max,
+			true, ASYMPTOTIC_DISTANCE, pbc_images.x, pbc_images.y, pbc_images.z)) return error(BERROR_OUTOFMEMORY_NCRIT);
+	}
 
 	tensor_to_kernel(D, K_cpu, true);
 
 	//transfer to GPU
 	(*kernels[index])()->Set_Kodiag_real(K_cpu);
+
+	//-------------- CLEANUP
+
+	fftw_destroy_plan(plan_fwd_x);
+	fftw_destroy_plan(plan_fwd_y);
+
+	fftw_free((double*)pline_real);
+	fftw_free((fftw_complex*)pline);
 
 	//Done
 	return error;
@@ -488,9 +570,7 @@ BError DemagKernelCollectionCUDA::Calculate_Demag_Kernels_2D_Complex_Full(int in
 
 	//-------------- DEMAG KERNEL ON CPU-ADDRESSABLE MEMORY
 
-	VEC<ReIm3> K_cpu, Scratch;
-
-	if (!Scratch.resize(SZ3(N.x / 2 + 1, N.y, N.z))) return error(BERROR_OUTOFMEMORY_CRIT);
+	VEC<ReIm3> K_cpu;
 
 	if (!transpose_xy) {
 
@@ -501,58 +581,78 @@ BError DemagKernelCollectionCUDA::Calculate_Demag_Kernels_2D_Complex_Full(int in
 		if (!K_cpu.resize(SZ3(N.y, N.x / 2 + 1, N.z))) return error(BERROR_OUTOFMEMORY_CRIT);
 	}
 
-	//-------------- FFT SETUP
+	//-------------- SETUP FFT
 
-	//setup fft object with fft computation lines
-	FFTMethods_Cpp<double> fft;
+	double* pline_real = fftw_alloc_real(maximum(N.x, N.y, N.z) * 3);
+	fftw_complex* pline = fftw_alloc_complex(maximum(N.x / 2 + 1, N.y, N.z) * 3);
 
-	size_t maxN = maximum(N.x / 2 + 1, N.y);
+	//make fft plans
+	int dims_x[1] = { (int)N.x };
+	int dims_y[1] = { (int)N.y };
 
-	vector<ReIm3> fft_line(maxN);
-	vector<ReIm3> fft_line2(maxN);
+	fftw_plan plan_fwd_x = fftw_plan_many_dft_r2c(1, dims_x, 3,
+		pline_real, nullptr, 3, 1,
+		pline, nullptr, 3, 1,
+		FFTW_PATIENT);
+
+	fftw_plan plan_fwd_y = fftw_plan_many_dft(1, dims_y, 3,
+		pline, nullptr, 3, 1,
+		pline, nullptr, 3, 1,
+		FFTW_FORWARD, FFTW_PATIENT);
+
+	//-------------- FFT REAL TENSOR INTO REAL KERNELS
 
 	//lambda used to transform an input tensor into an output kernel
-	auto tensor_to_kernel = [&](VEC<DBL3>& tensor, VEC<ReIm3>& kernel, VEC<ReIm3>& Scratch) -> void {
+	auto tensor_to_kernel = [&](VEC<DBL3>& tensor, VEC<ReIm3>& kernel) -> void {
 
-		//-------------- FFT REAL TENSOR
-
-		//NOTE : don't use parallel for loops as it will mess up the packing in the D tensor
-		//If you want parallel loops you'll need to allocate additional temporary spaces, so not worth it for initialization
-		//rather have slightly slower initialization than fail due to running out of memory for large problem sizes
-
-		//FFT into Kernel forms ready for convolution multiplication - diagonal components
+		//1. FFTs along x
 		for (int j = 0; j < N.y; j++) {
 
-			fft.CopyRealShuffle(tensor.data() + j * N.x, fft_line.data(), N.x / 2);
-			fft.FFT_Radix4_DIT(fft_line.data(), log2(N.x) - 1, N.x / 2);
-			fft.RealfromComplexFFT(fft_line.data(), fft_line2.data(), N.x / 2);
+			//write input into fft line (zero padding kept)
+			for (int i = 0; i < N.x; i++) {
 
-			//pack into scratch space
+				int idx_in = i + j * N.x;
+
+				*reinterpret_cast<DBL3*>(pline_real + i * 3) = tensor[idx_in];
+			}
+
+			//fft on line
+			fftw_execute(plan_fwd_x);
+
+			//pack into kernel for next step
 			for (int i = 0; i < N.x / 2 + 1; i++) {
 
-				Scratch[i + j * (N.x / 2 + 1)] = fft_line2[i];
+				ReIm3 value = *reinterpret_cast<ReIm3*>(pline + i * 3);
+
+				kernel[i + j * (N.x / 2 + 1)] = value;
 			}
 		}
 
-		for (int i = 0; i < N.x / 2 + 1; i++) {
+		//2. FFTs along y
+		for (int i = 0; i < (N.x / 2 + 1); i++) {
 
-			fft.CopyShuffle(Scratch.data() + i, fft_line.data(), N.x / 2 + 1, N.y);
-			fft.FFT_Radix4_DIT(fft_line.data(), log2(N.y), N.y);
+			//fetch line from fft array (zero padding kept)
+			for (int j = 0; j < N.y; j++) {
 
-			if (!transpose_xy) {
+				int idx_in = i + j * (N.x / 2 + 1);
 
-				//pack into output kernel
-				for (int j = 0; j < N.y; j++) {
-
-					kernel[i + j * (N.x / 2 + 1)] = fft_line[j];
-				}
+				*reinterpret_cast<ReIm3*>(pline + j * 3) = kernel[idx_in];
 			}
-			else {
 
-				//pack into output kernel
-				for (int j = 0; j < N.y; j++) {
+			//fft on line
+			fftw_execute(plan_fwd_y);
 
-					kernel[j + i * N.y] = fft_line[j];
+			for (int j = 0; j < N.y; j++) {
+
+				ReIm3 value = *reinterpret_cast<ReIm3*>(pline + j * 3);
+
+				if (!transpose_xy) {
+
+					kernel[i + j * (N.x / 2 + 1)] = value;
+				}
+				else {
+
+					kernel[j + i * N.y] = value;
 				}
 			}
 		}
@@ -561,22 +661,47 @@ BError DemagKernelCollectionCUDA::Calculate_Demag_Kernels_2D_Complex_Full(int in
 	//-------------- CALCULATE DIAGONAL TENSOR ELEMENTS THEN TRANSFORM INTO KERNEL
 
 	//no need to pass the actual cellsize values, just normalized values will do
+	if (pbc_images.IsNull()) {
 
-	if (!dtf.CalcDiagTens2D_Shifted_Irregular(D, n, N, (*kernels[index])()->Get_h_src() / h_max, (*kernels[index])()->Get_h_dst() / h_max, (*kernels[index])()->Get_shift() / h_max)) return error(BERROR_OUTOFMEMORY_NCRIT);
+		if (!dtf.CalcDiagTens2D_Shifted_Irregular(D, n, N, (*kernels[index])()->Get_h_src() / h_max, (*kernels[index])()->Get_h_dst() / h_max, (*kernels[index])()->Get_shift() / h_max)) return error(BERROR_OUTOFMEMORY_NCRIT);
+	}
+	else {
 
-	tensor_to_kernel(D, K_cpu, Scratch);
+		if (!dtf.CalcDiagTens2D_Shifted_Irregular_PBC(
+			D, N, (*kernels[index])()->Get_h_src() / h_max, (*kernels[index])()->Get_h_dst() / h_max, (*kernels[index])()->Get_shift() / h_max,
+			true, ASYMPTOTIC_DISTANCE, pbc_images.x, pbc_images.y, pbc_images.z)) return error(BERROR_OUTOFMEMORY_NCRIT);
+	}
+
+	tensor_to_kernel(D, K_cpu);
 
 	//transfer to GPU
 	(*kernels[index])()->Set_Kdiag_cmpl(K_cpu);
 
 	//-------------- CALCULATE OFF-DIAGONAL TENSOR ELEMENTS THEN TRANSFORM INTO KERNEL
 
-	if (!dtf.CalcOffDiagTens2D_Shifted_Irregular(D, n, N, (*kernels[index])()->Get_h_src() / h_max, (*kernels[index])()->Get_h_dst() / h_max, (*kernels[index])()->Get_shift() / h_max)) return error(BERROR_OUTOFMEMORY_NCRIT);
+	if (pbc_images.IsNull()) {
 
-	tensor_to_kernel(D, K_cpu, Scratch);
+		if (!dtf.CalcOffDiagTens2D_Shifted_Irregular(D, n, N, (*kernels[index])()->Get_h_src() / h_max, (*kernels[index])()->Get_h_dst() / h_max, (*kernels[index])()->Get_shift() / h_max)) return error(BERROR_OUTOFMEMORY_NCRIT);
+	}
+	else {
+
+		if (!dtf.CalcOffDiagTens2D_Shifted_Irregular_PBC(
+			D, N, (*kernels[index])()->Get_h_src() / h_max, (*kernels[index])()->Get_h_dst() / h_max, (*kernels[index])()->Get_shift() / h_max,
+			true, ASYMPTOTIC_DISTANCE, pbc_images.x, pbc_images.y, pbc_images.z)) return error(BERROR_OUTOFMEMORY_NCRIT);
+	}
+
+	tensor_to_kernel(D, K_cpu);
 
 	//transfer to GPU
 	(*kernels[index])()->Set_Kodiag_cmpl(K_cpu);
+
+	//-------------- CLEANUP
+
+	fftw_destroy_plan(plan_fwd_x);
+	fftw_destroy_plan(plan_fwd_y);
+
+	fftw_free((double*)pline_real);
+	fftw_free((fftw_complex*)pline);
 
 	//Done
 	return error;
@@ -617,95 +742,135 @@ BError DemagKernelCollectionCUDA::Calculate_Demag_Kernels_3D_Self(int index)
 		if (!K_cpu.resize(SZ3(N.y / 2 + 1, N.x / 2 + 1, N.z / 2 + 1))) return error(BERROR_OUTOFMEMORY_CRIT);
 	}
 
-	//-------------- FFT SETUP
+	//-------------- SETUP FFT
 
-	//setup fft object with fft computation lines
-	FFTMethods_Cpp<double> fft;
+	double* pline_real = fftw_alloc_real(maximum(N.x, N.y, N.z) * 3);
+	fftw_complex* pline = fftw_alloc_complex(maximum(N.x / 2 + 1, N.y, N.z) * 3);
 
-	size_t maxN = maximum(N.x / 2 + 1, N.y / 2 + 1, N.z / 2 + 1);
+	//make fft plans
+	int dims_x[1] = { (int)N.x };
+	int dims_y[1] = { (int)N.y };
+	int dims_z[1] = { (int)N.z };
 
-	vector<ReIm3> fft_line(maxN);
-	vector<ReIm3> fft_line2(maxN);
+	fftw_plan plan_fwd_x = fftw_plan_many_dft_r2c(1, dims_x, 3,
+		pline_real, nullptr, 3, 1,
+		pline, nullptr, 3, 1,
+		FFTW_PATIENT);
+
+	fftw_plan plan_fwd_y = fftw_plan_many_dft_r2c(1, dims_y, 3,
+		pline_real, nullptr, 3, 1,
+		pline, nullptr, 3, 1,
+		FFTW_PATIENT);
+
+	fftw_plan plan_fwd_z = fftw_plan_many_dft_r2c(1, dims_z, 3,
+		pline_real, nullptr, 3, 1,
+		pline, nullptr, 3, 1,
+		FFTW_PATIENT);
+
+	//-------------- FFT REAL TENSOR INTO REAL KERNELS
 
 	//lambda used to transform an input tensor into an output kernel
 	auto tensor_to_kernel = [&](VEC<DBL3>& tensor, VEC<DBL3>& kernel, bool off_diagonal) -> void {
 
-		//-------------- FFT REAL TENSOR
-
-		//NOTE : don't use parallel for loops as it will mess up the packing in the D tensor
-		//If you want parallel loops you'll need to allocate additional temporary spaces, so not worth it for initialization
-		//rather have slightly slower initialization than fail due to running out of memory for large problem sizes
-
-		//FFT into Kernel forms ready for convolution multiplication - diagonal components
+		//1. FFTs along x
 		for (int k = 0; k < N.z; k++) {
 			for (int j = 0; j < N.y; j++) {
 
-				fft.CopyRealShuffle(tensor.data() + j * N.x + k * N.x*N.y, fft_line.data(), N.x / 2);
-				fft.FFT_Radix4_DIT(fft_line.data(), log2(N.x) - 1, N.x / 2);
-				fft.RealfromComplexFFT(fft_line.data(), fft_line2.data(), N.x / 2);
+				//write input into fft line (zero padding kept)
+				for (int i = 0; i < N.x; i++) {
 
-				//pack into lower half of tensor row for next step (keep same row and plane strides)
+					int idx_in = i + j * N.x + k * N.x * N.y;
+
+					*reinterpret_cast<DBL3*>(pline_real + i * 3) = tensor[idx_in];
+				}
+
+				//fft on line
+				fftw_execute(plan_fwd_x);
+
+				//pack into tensor for next step
 				for (int i = 0; i < N.x / 2 + 1; i++) {
+
+					ReIm3 value = *reinterpret_cast<ReIm3*>(pline + i * 3);
 
 					if (!off_diagonal) {
 
 						//even w.r.t. to x so output is purely real
-						tensor[i + j * (N.x / 2 + 1) + k * (N.x / 2 + 1) * N.y] = DBL3(fft_line2[i].x.Re, fft_line2[i].y.Re, fft_line2[i].z.Re);
+						tensor[i + j * (N.x / 2 + 1) + k * (N.x / 2 + 1) * N.y] = DBL3(value.x.Re, value.y.Re, value.z.Re);
 					}
 					else {
 
 						//Dxy : odd x, Dxz : odd x, Dyz : even x
-						tensor[i + j * (N.x / 2 + 1) + k * (N.x / 2 + 1) * N.y] = DBL3(fft_line2[i].x.Im, fft_line2[i].y.Im, fft_line2[i].z.Re);
+						tensor[i + j * (N.x / 2 + 1) + k * (N.x / 2 + 1) * N.y] = DBL3(value.x.Im, value.y.Im, value.z.Re);
 					}
 				}
 			}
 		}
 
+		//2. FFTs along y
 		for (int k = 0; k < N.z; k++) {
-			for (int i = 0; i < N.x / 2 + 1; i++) {
+			for (int i = 0; i < (N.x / 2 + 1); i++) {
 
-				fft.CopyRealShuffle(tensor.data() + i + k * (N.x / 2 + 1)*N.y, fft_line.data(), N.x / 2 + 1, N.y / 2);
-				fft.FFT_Radix4_DIT(fft_line.data(), log2(N.y) - 1, N.y / 2);
-				fft.RealfromComplexFFT(fft_line.data(), fft_line2.data(), N.y / 2);
+				//fetch line from fft array (zero padding kept)
+				for (int j = 0; j < N.y; j++) {
+
+					int idx_in = i + j * (N.x / 2 + 1) + k * (N.x / 2 + 1) * N.y;
+
+					*reinterpret_cast<DBL3*>(pline_real + j * 3) = tensor[idx_in];
+				}
+
+				//fft on line
+				fftw_execute(plan_fwd_y);
 
 				//pack into lower half of tensor column for next step (keep same row and plane strides)
 				for (int j = 0; j < N.y / 2 + 1; j++) {
 
+					ReIm3 value = *reinterpret_cast<ReIm3*>(pline + j * 3);
+
 					if (!off_diagonal) {
 
 						//even w.r.t. to y so output is purely real
-						tensor[i + j * (N.x / 2 + 1) + k * (N.x / 2 + 1) * N.y] = DBL3(fft_line2[j].x.Re, fft_line2[j].y.Re, fft_line2[j].z.Re);
+						tensor[i + j * (N.x / 2 + 1) + k * (N.x / 2 + 1) * (N.y / 2 + 1)] = DBL3(value.x.Re, value.y.Re, value.z.Re);
 					}
 					else {
 
 						//Dxy : odd y, Dxz : even y, Dyz : odd y
-						tensor[i + j * (N.x / 2 + 1) + k * (N.x / 2 + 1) * N.y] = DBL3(fft_line2[j].x.Im, fft_line2[j].y.Re, fft_line2[j].z.Im);
+						tensor[i + j * (N.x / 2 + 1) + k * (N.x / 2 + 1) * (N.y / 2 + 1)] = DBL3(value.x.Im, value.y.Re, value.z.Im);
 					}
 				}
 			}
 		}
 
+		//3. FFTs along z
 		for (int j = 0; j < N.y / 2 + 1; j++) {
 			for (int i = 0; i < N.x / 2 + 1; i++) {
 
-				fft.CopyRealShuffle(tensor.data() + i + j * (N.x / 2 + 1), fft_line.data(), (N.x / 2 + 1)*N.y, N.z / 2);
-				fft.FFT_Radix4_DIT(fft_line.data(), log2(N.z) - 1, N.z / 2);
-				fft.RealfromComplexFFT(fft_line.data(), fft_line2.data(), N.z / 2);
+				//fetch line from fft array (zero padding kept)
+				for (int k = 0; k < N.z; k++) {
+
+					int idx_in = i + j * (N.x / 2 + 1) + k * (N.x / 2 + 1) * (N.y / 2 + 1);
+
+					*reinterpret_cast<DBL3*>(pline_real + k * 3) = tensor[idx_in];
+				}
+
+				//fft on line
+				fftw_execute(plan_fwd_z);
 
 				//pack into output kernels with reduced strides
 				for (int k = 0; k < N.z / 2 + 1; k++) {
+
+					ReIm3 value = *reinterpret_cast<ReIm3*>(pline + k * 3);
 
 					if (!off_diagonal) {
 
 						//even w.r.t. to z so output is purely real
 
 						if (!transpose_xy) {
-
-							kernel[i + j * (N.x / 2 + 1) + k * (N.x / 2 + 1) * (N.y / 2 + 1)] = DBL3(fft_line2[k].x.Re, fft_line2[k].y.Re, fft_line2[k].z.Re);
+							
+							kernel[i + j * (N.x / 2 + 1) + k * (N.x / 2 + 1) * (N.y / 2 + 1)] = DBL3(value.x.Re, value.y.Re, value.z.Re);
 						}
 						else {
 
-							kernel[j + i * (N.y / 2 + 1) + k * (N.x / 2 + 1) * (N.y / 2 + 1)] = DBL3(fft_line2[k].x.Re, fft_line2[k].y.Re, fft_line2[k].z.Re);
+							kernel[j + i * (N.y / 2 + 1) + k * (N.x / 2 + 1) * (N.y / 2 + 1)] = DBL3(value.x.Re, value.y.Re, value.z.Re);
 						}
 					}
 					else {
@@ -714,14 +879,14 @@ BError DemagKernelCollectionCUDA::Calculate_Demag_Kernels_3D_Self(int index)
 						//Also multiply by -1 since all off-diagonal tensor elements have been odd twice
 						//The final output is thus purely real but we always treated the input as purely real even when it should have been purely imaginary
 						//This means we need to account for i * i = -1 at the end
-
+						
 						if (!transpose_xy) {
 
-							kernel[i + j * (N.x / 2 + 1) + k * (N.x / 2 + 1) * (N.y / 2 + 1)] = DBL3(-fft_line2[k].x.Re, -fft_line2[k].y.Im, -fft_line2[k].z.Im);
+							kernel[i + j * (N.x / 2 + 1) + k * (N.x / 2 + 1) * (N.y / 2 + 1)] = DBL3(-value.x.Re, -value.y.Im, -value.z.Im);
 						}
 						else {
 
-							kernel[j + i * (N.y / 2 + 1) + k * (N.x / 2 + 1) * (N.y / 2 + 1)] = DBL3(-fft_line2[k].x.Re, -fft_line2[k].y.Im, -fft_line2[k].z.Im);
+							kernel[j + i * (N.y / 2 + 1) + k * (N.x / 2 + 1) * (N.y / 2 + 1)] = DBL3(-value.x.Re, -value.y.Im, -value.z.Im);
 						}
 					}
 				}
@@ -732,7 +897,18 @@ BError DemagKernelCollectionCUDA::Calculate_Demag_Kernels_3D_Self(int index)
 	//-------------- CALCULATE DIAGONAL TENSOR ELEMENTS THEN TRANSFORM INTO KERNEL
 
 	//no need to pass the actual cellsize values, just normalized values will do
-	if (!dtf.CalcDiagTens3D(D, n, N, h / h_max)) return error(BERROR_OUTOFMEMORY_NCRIT);
+	if (pbc_images.IsNull()) {
+
+		//no pbcs in any dimension -> use these
+		if (!dtf.CalcDiagTens3D(D, n, N, h / h_max)) return error(BERROR_OUTOFMEMORY_NCRIT);
+	}
+	else {
+
+		//pbcs used in at least one dimension
+		if (!dtf.CalcDiagTens3D_PBC(
+			D, N, h / h_max,
+			true, ASYMPTOTIC_DISTANCE, pbc_images.x, pbc_images.y, pbc_images.z)) return error(BERROR_OUTOFMEMORY_NCRIT);
+	}
 
 	tensor_to_kernel(D, K_cpu, false);
 
@@ -741,12 +917,32 @@ BError DemagKernelCollectionCUDA::Calculate_Demag_Kernels_3D_Self(int index)
 
 	//-------------- CALCULATE OFF-DIAGONAL TENSOR ELEMENTS THEN TRANSFORM INTO KERNEL
 
-	if (!dtf.CalcOffDiagTens3D(D, n, N, h / h_max)) return error(BERROR_OUTOFMEMORY_NCRIT);
+	if (pbc_images.IsNull()) {
+
+		//no pbcs in any dimension -> use these
+		if (!dtf.CalcOffDiagTens3D(D, n, N, h / h_max)) return error(BERROR_OUTOFMEMORY_NCRIT);
+	}
+	else {
+
+		//pbcs used in at least one dimension
+		if (!dtf.CalcOffDiagTens3D_PBC(
+			D, N, h / h_max,
+			true, ASYMPTOTIC_DISTANCE, pbc_images.x, pbc_images.y, pbc_images.z)) return error(BERROR_OUTOFMEMORY_NCRIT);
+	}
 
 	tensor_to_kernel(D, K_cpu, true);
 
 	//transfer to GPU
 	(*kernels[index])()->Set_Kodiag_real(K_cpu);
+
+	//-------------- CLEANUP
+
+	fftw_destroy_plan(plan_fwd_x);
+	fftw_destroy_plan(plan_fwd_y);
+	fftw_destroy_plan(plan_fwd_z);
+
+	fftw_free((double*)pline_real);
+	fftw_free((fftw_complex*)pline);
 
 	//Done
 	return error;
@@ -789,75 +985,113 @@ BError DemagKernelCollectionCUDA::Calculate_Demag_Kernels_3D_zShifted(int index)
 		if (!K_cpu.resize(SZ3(N.y / 2 + 1, N.x / 2 + 1, N.z / 2 + 1))) return error(BERROR_OUTOFMEMORY_CRIT);
 	}
 
-	//-------------- FFT SETUP
+	//-------------- SETUP FFT
 
-	//setup fft object with fft computation lines
-	FFTMethods_Cpp<double> fft;
+	double* pline_real = fftw_alloc_real(maximum(N.x, N.y, N.z) * 3);
+	fftw_complex* pline = fftw_alloc_complex(maximum(N.x / 2 + 1, N.y, N.z) * 3);
 
-	size_t maxN = maximum(N.x / 2 + 1, N.y, N.z);
+	//make fft plans
+	int dims_x[1] = { (int)N.x };
+	int dims_y[1] = { (int)N.y };
+	int dims_z[1] = { (int)N.z };
 
-	vector<ReIm3> fft_line(maxN);
-	vector<ReIm3> fft_line2(maxN);
+	fftw_plan plan_fwd_x = fftw_plan_many_dft_r2c(1, dims_x, 3,
+		pline_real, nullptr, 3, 1,
+		pline, nullptr, 3, 1,
+		FFTW_PATIENT);
+
+	fftw_plan plan_fwd_y = fftw_plan_many_dft(1, dims_y, 3,
+		pline, nullptr, 3, 1,
+		pline, nullptr, 3, 1,
+		FFTW_FORWARD, FFTW_PATIENT);
+
+	fftw_plan plan_fwd_z = fftw_plan_many_dft(1, dims_z, 3,
+		pline, nullptr, 3, 1,
+		pline, nullptr, 3, 1,
+		FFTW_FORWARD, FFTW_PATIENT);
+
+	//-------------- FFT REAL TENSOR INTO REAL KERNELS
 
 	//lambda used to transform an input tensor into an output kernel
 	auto tensor_to_kernel = [&](VEC<DBL3>& tensor, VEC<ReIm3>& kernel, VEC<ReIm3>& Scratch) -> void {
 
-		//-------------- FFT REAL TENSOR
-
-		//NOTE : don't use parallel for loops as it will mess up the packing in the D tensor
-		//If you want parallel loops you'll need to allocate additional temporary spaces, so not worth it for initialization
-		//rather have slightly slower initialization than fail due to running out of memory for large problem sizes
-
-		//FFT into Kernel forms ready for convolution multiplication - diagonal components
+		//1. FFTs along x
 		for (int k = 0; k < N.z; k++) {
 			for (int j = 0; j < N.y; j++) {
 
-				fft.CopyRealShuffle(tensor.data() + j * N.x + k * N.x*N.y, fft_line.data(), N.x / 2);
-				fft.FFT_Radix4_DIT(fft_line.data(), log2(N.x) - 1, N.x / 2);
-				fft.RealfromComplexFFT(fft_line.data(), fft_line2.data(), N.x / 2);
+				//write input into fft line (zero padding kept)
+				for (int i = 0; i < N.x; i++) {
+
+					int idx_in = i + j * N.x + k * N.x * N.y;
+
+					*reinterpret_cast<DBL3*>(pline_real + i * 3) = tensor[idx_in];
+				}
+
+				//fft on line
+				fftw_execute(plan_fwd_x);
 
 				//pack into scratch space
 				for (int i = 0; i < N.x / 2 + 1; i++) {
 
-					Scratch[i + j * (N.x / 2 + 1) + k * (N.x / 2 + 1) * N.y] = fft_line2[i];
+					ReIm3 value = *reinterpret_cast<ReIm3*>(pline + i * 3);
+
+					Scratch[i + j * (N.x / 2 + 1) + k * (N.x / 2 + 1) * N.y] = value;
 				}
 			}
 		}
 
+		//2. FFTs along y
 		for (int k = 0; k < N.z; k++) {
-			for (int i = 0; i < N.x / 2 + 1; i++) {
+			for (int i = 0; i < (N.x / 2 + 1); i++) {
 
-				fft.CopyShuffle(Scratch.data() + i + k * (N.x / 2 + 1)*N.y, fft_line.data(), N.x / 2 + 1, N.y);
-				fft.FFT_Radix4_DIT(fft_line.data(), log2(N.y), N.y);
-
-				//pack into scratch space
+				//fetch line from fft array (zero padding kept)
 				for (int j = 0; j < N.y; j++) {
 
-					Scratch[i + j * (N.x / 2 + 1) + k * (N.x / 2 + 1) * N.y] = fft_line[j];
+					int idx_in = i + j * (N.x / 2 + 1) + k * (N.x / 2 + 1) * N.y;
+
+					*reinterpret_cast<ReIm3*>(pline + j * 3) = Scratch[idx_in];
+				}
+
+				//fft on line
+				fftw_execute(plan_fwd_y);
+
+				//pack into scratch space
+				for (int j = 0; j < N.y / 2 + 1; j++) {
+
+					ReIm3 value = *reinterpret_cast<ReIm3*>(pline + j * 3);
+
+					Scratch[i + j * (N.x / 2 + 1) + k * (N.x / 2 + 1) * (N.y / 2 + 1)] = value;
 				}
 			}
 		}
 
+		//3. FFTs along z
 		for (int j = 0; j < N.y / 2 + 1; j++) {
 			for (int i = 0; i < N.x / 2 + 1; i++) {
 
-				fft.CopyShuffle(Scratch.data() + i + j * (N.x / 2 + 1), fft_line.data(), (N.x / 2 + 1)*N.y, N.z);
-				fft.FFT_Radix4_DIT(fft_line.data(), log2(N.z), N.z);
+				//fetch line from fft array (zero padding kept)
+				for (int k = 0; k < N.z; k++) {
 
-				if (!transpose_xy) {
+					int idx_in = i + j * (N.x / 2 + 1) + k * (N.x / 2 + 1) * (N.y / 2 + 1);
 
-					//pack into output kernel with reduced strides
-					for (int k = 0; k < N.z / 2 + 1; k++) {
-
-						kernel[i + j * (N.x / 2 + 1) + k * (N.x / 2 + 1) * (N.y / 2 + 1)] = fft_line[k];
-					}
+					*reinterpret_cast<ReIm3*>(pline + k * 3) = Scratch[idx_in];
 				}
-				else {
 
-					//pack into output kernel with reduced strides
-					for (int k = 0; k < N.z / 2 + 1; k++) {
+				//fft on line
+				fftw_execute(plan_fwd_z);
 
-						kernel[j + i * (N.y / 2 + 1) + k * (N.x / 2 + 1) * (N.y / 2 + 1)] = fft_line[k];
+				//pack into output kernels with reduced strides
+				for (int k = 0; k < N.z / 2 + 1; k++) {
+
+					ReIm3 value = *reinterpret_cast<ReIm3*>(pline + k * 3);
+
+					if (!transpose_xy) {
+
+						kernel[i + j * (N.x / 2 + 1) + k * (N.x / 2 + 1) * (N.y / 2 + 1)] = value;
+					}
+					else {
+
+						kernel[j + i * (N.y / 2 + 1) + k * (N.x / 2 + 1) * (N.y / 2 + 1)] = value;
 					}
 				}
 			}
@@ -867,7 +1101,18 @@ BError DemagKernelCollectionCUDA::Calculate_Demag_Kernels_3D_zShifted(int index)
 	//-------------- CALCULATE DIAGONAL TENSOR ELEMENTS THEN TRANSFORM INTO KERNEL
 
 	//no need to pass the actual cellsize values, just normalized values will do
-	if (!dtf.CalcDiagTens3D_Shifted(D, n, N, h / h_max, (*kernels[index])()->Get_shift() / h_max)) return error(BERROR_OUTOFMEMORY_NCRIT);
+	if (pbc_images.IsNull()) {
+
+		//no pbcs in any dimension -> use these
+		if (!dtf.CalcDiagTens3D_Shifted(D, n, N, h / h_max, (*kernels[index])()->Get_shift() / h_max)) return error(BERROR_OUTOFMEMORY_NCRIT);
+	}
+	else {
+
+		//pbcs used in at least one dimension
+		if (!dtf.CalcDiagTens3D_Shifted_PBC(
+			D, N, h / h_max, (*kernels[index])()->Get_shift() / h_max,
+			true, ASYMPTOTIC_DISTANCE, pbc_images.x, pbc_images.y, pbc_images.z)) return error(BERROR_OUTOFMEMORY_NCRIT);
+	}
 
 	tensor_to_kernel(D, K_cpu, Scratch);
 
@@ -876,12 +1121,32 @@ BError DemagKernelCollectionCUDA::Calculate_Demag_Kernels_3D_zShifted(int index)
 
 	//-------------- CALCULATE OFF-DIAGONAL TENSOR ELEMENTS THEN TRANSFORM INTO KERNEL
 
-	if (!dtf.CalcOffDiagTens3D_Shifted(D, n, N, h / h_max, (*kernels[index])()->Get_shift() / h_max)) return error(BERROR_OUTOFMEMORY_NCRIT);
+	if (pbc_images.IsNull()) {
+
+		//no pbcs in any dimension -> use these
+		if (!dtf.CalcOffDiagTens3D_Shifted(D, n, N, h / h_max, (*kernels[index])()->Get_shift() / h_max)) return error(BERROR_OUTOFMEMORY_NCRIT);
+	}
+	else {
+
+		//pbcs used in at least one dimension
+		if (!dtf.CalcOffDiagTens3D_Shifted_PBC(
+			D, N, h / h_max, (*kernels[index])()->Get_shift() / h_max,
+			true, ASYMPTOTIC_DISTANCE, pbc_images.x, pbc_images.y, pbc_images.z)) return error(BERROR_OUTOFMEMORY_NCRIT);
+	}
 
 	tensor_to_kernel(D, K_cpu, Scratch);
 
 	//transfer to GPU
 	(*kernels[index])()->Set_Kodiag_cmpl(K_cpu);
+
+	//-------------- CLEANUP
+
+	fftw_destroy_plan(plan_fwd_x);
+	fftw_destroy_plan(plan_fwd_y);
+	fftw_destroy_plan(plan_fwd_z);
+
+	fftw_free((double*)pline_real);
+	fftw_free((fftw_complex*)pline);
 
 	//Done
 	return error;
@@ -924,75 +1189,113 @@ BError DemagKernelCollectionCUDA::Calculate_Demag_Kernels_3D_Complex_Full(int in
 		if (!K_cpu.resize(SZ3(N.y, N.x / 2 + 1, N.z))) return error(BERROR_OUTOFMEMORY_CRIT);
 	}
 
-	//-------------- FFT SETUP
+	//-------------- SETUP FFT
 
-	//setup fft object with fft computation lines
-	FFTMethods_Cpp<double> fft;
+	double* pline_real = fftw_alloc_real(maximum(N.x, N.y, N.z) * 3);
+	fftw_complex* pline = fftw_alloc_complex(maximum(N.x / 2 + 1, N.y, N.z) * 3);
 
-	size_t maxN = maximum(N.x / 2 + 1, N.y, N.z);
+	//make fft plans
+	int dims_x[1] = { (int)N.x };
+	int dims_y[1] = { (int)N.y };
+	int dims_z[1] = { (int)N.z };
 
-	vector<ReIm3> fft_line(maxN);
-	vector<ReIm3> fft_line2(maxN);
+	fftw_plan plan_fwd_x = fftw_plan_many_dft_r2c(1, dims_x, 3,
+		pline_real, nullptr, 3, 1,
+		pline, nullptr, 3, 1,
+		FFTW_PATIENT);
+
+	fftw_plan plan_fwd_y = fftw_plan_many_dft(1, dims_y, 3,
+		pline, nullptr, 3, 1,
+		pline, nullptr, 3, 1,
+		FFTW_FORWARD, FFTW_PATIENT);
+
+	fftw_plan plan_fwd_z = fftw_plan_many_dft(1, dims_z, 3,
+		pline, nullptr, 3, 1,
+		pline, nullptr, 3, 1,
+		FFTW_FORWARD, FFTW_PATIENT);
+
+	//-------------- FFT REAL TENSOR INTO REAL KERNELS
 
 	//lambda used to transform an input tensor into an output kernel
 	auto tensor_to_kernel = [&](VEC<DBL3>& tensor, VEC<ReIm3>& kernel, VEC<ReIm3>& Scratch) -> void {
 
-		//-------------- FFT REAL TENSOR
-
-		//NOTE : don't use parallel for loops as it will mess up the packing in the D tensor
-		//If you want parallel loops you'll need to allocate additional temporary spaces, so not worth it for initialization
-		//rather have slightly slower initialization than fail due to running out of memory for large problem sizes
-
-		//FFT into Kernel forms ready for convolution multiplication - diagonal components
+		//1. FFTs along x
 		for (int k = 0; k < N.z; k++) {
 			for (int j = 0; j < N.y; j++) {
 
-				fft.CopyRealShuffle(tensor.data() + j * N.x + k * N.x*N.y, fft_line.data(), N.x / 2);
-				fft.FFT_Radix4_DIT(fft_line.data(), log2(N.x) - 1, N.x / 2);
-				fft.RealfromComplexFFT(fft_line.data(), fft_line2.data(), N.x / 2);
+				//write input into fft line (zero padding kept)
+				for (int i = 0; i < N.x; i++) {
 
-				//pack into Scratch space
+					int idx_in = i + j * N.x + k * N.x * N.y;
+
+					*reinterpret_cast<DBL3*>(pline_real + i * 3) = tensor[idx_in];
+				}
+
+				//fft on line
+				fftw_execute(plan_fwd_x);
+
+				//pack into scratch space
 				for (int i = 0; i < N.x / 2 + 1; i++) {
 
-					Scratch[i + j * (N.x / 2 + 1) + k * (N.x / 2 + 1) * N.y] = fft_line2[i];
+					ReIm3 value = *reinterpret_cast<ReIm3*>(pline + i * 3);
+
+					Scratch[i + j * (N.x / 2 + 1) + k * (N.x / 2 + 1) * N.y] = value;
 				}
 			}
 		}
 
+		//2. FFTs along y
 		for (int k = 0; k < N.z; k++) {
-			for (int i = 0; i < N.x / 2 + 1; i++) {
+			for (int i = 0; i < (N.x / 2 + 1); i++) {
 
-				fft.CopyShuffle(Scratch.data() + i + k * (N.x / 2 + 1)*N.y, fft_line.data(), N.x / 2 + 1, N.y);
-				fft.FFT_Radix4_DIT(fft_line.data(), log2(N.y), N.y);
-
-				//pack into Scratch space
+				//fetch line from fft array (zero padding kept)
 				for (int j = 0; j < N.y; j++) {
 
-					Scratch[i + j * (N.x / 2 + 1) + k * (N.x / 2 + 1) * N.y] = fft_line[j];
+					int idx_in = i + j * (N.x / 2 + 1) + k * (N.x / 2 + 1) * N.y;
+
+					*reinterpret_cast<ReIm3*>(pline + j * 3) = Scratch[idx_in];
+				}
+
+				//fft on line
+				fftw_execute(plan_fwd_y);
+
+				//pack into scratch space
+				for (int j = 0; j < N.y; j++) {
+
+					ReIm3 value = *reinterpret_cast<ReIm3*>(pline + j * 3);
+
+					Scratch[i + j * (N.x / 2 + 1) + k * (N.x / 2 + 1) * N.y] = value;
 				}
 			}
 		}
 
+		//3. FFTs along z
 		for (int j = 0; j < N.y; j++) {
 			for (int i = 0; i < N.x / 2 + 1; i++) {
 
-				fft.CopyShuffle(Scratch.data() + i + j * (N.x / 2 + 1), fft_line.data(), (N.x / 2 + 1)*N.y, N.z);
-				fft.FFT_Radix4_DIT(fft_line.data(), log2(N.z), N.z);
+				//fetch line from fft array (zero padding kept)
+				for (int k = 0; k < N.z; k++) {
 
-				if (!transpose_xy) {
+					int idx_in = i + j * (N.x / 2 + 1) + k * (N.x / 2 + 1) * N.y;
 
-					//pack into output kernel
-					for (int k = 0; k < N.z; k++) {
-
-						kernel[i + j * (N.x / 2 + 1) + k * (N.x / 2 + 1) * N.y] = fft_line[k];
-					}
+					*reinterpret_cast<ReIm3*>(pline + k * 3) = Scratch[idx_in];
 				}
-				else {
 
-					//pack into output kernel
-					for (int k = 0; k < N.z; k++) {
+				//fft on line
+				fftw_execute(plan_fwd_z);
 
-						kernel[j + i * N.y + k * (N.x / 2 + 1) * N.y] = fft_line[k];
+				//pack into output kernels with reduced strides
+				for (int k = 0; k < N.z; k++) {
+
+					ReIm3 value = *reinterpret_cast<ReIm3*>(pline + k * 3);
+
+					if (!transpose_xy) {
+
+						kernel[i + j * (N.x / 2 + 1) + k * (N.x / 2 + 1) * N.y] = value;
+					}
+					else {
+
+						kernel[j + i * N.y + k * (N.x / 2 + 1) * N.y] = value;
 					}
 				}
 			}
@@ -1001,10 +1304,18 @@ BError DemagKernelCollectionCUDA::Calculate_Demag_Kernels_3D_Complex_Full(int in
 
 	//-------------- CALCULATE DIAGONAL TENSOR ELEMENTS THEN TRANSFORM INTO KERNEL
 
-	
-
 	//no need to pass the actual cellsize values, just normalized values will do
-	if (!dtf.CalcDiagTens3D_Shifted(D, n, N, h / h_max, (*kernels[index])()->Get_shift() / h_max)) return error(BERROR_OUTOFMEMORY_NCRIT);
+	if (pbc_images.IsNull()) {
+
+		//no need to pass the actual cellsize values, just normalized values will do
+		if (!dtf.CalcDiagTens3D_Shifted(D, n, N, h / h_max, (*kernels[index])()->Get_shift() / h_max)) return error(BERROR_OUTOFMEMORY_NCRIT);
+	}
+	else {
+
+		if (!dtf.CalcDiagTens3D_Shifted_PBC(
+			D, N, h / h_max, (*kernels[index])()->Get_shift() / h_max,
+			true, ASYMPTOTIC_DISTANCE, pbc_images.x, pbc_images.y, pbc_images.z)) return error(BERROR_OUTOFMEMORY_NCRIT);
+	}
 
 	tensor_to_kernel(D, K_cpu, Scratch);
 
@@ -1013,12 +1324,30 @@ BError DemagKernelCollectionCUDA::Calculate_Demag_Kernels_3D_Complex_Full(int in
 
 	//-------------- CALCULATE OFF-DIAGONAL TENSOR ELEMENTS THEN TRANSFORM INTO KERNEL
 
-	if (!dtf.CalcOffDiagTens3D_Shifted(D, n, N, h / h_max, (*kernels[index])()->Get_shift() / h_max)) return error(BERROR_OUTOFMEMORY_NCRIT);
+	if (pbc_images.IsNull()) {
+
+		if (!dtf.CalcOffDiagTens3D_Shifted(D, n, N, h / h_max, (*kernels[index])()->Get_shift() / h_max)) return error(BERROR_OUTOFMEMORY_NCRIT);
+	}
+	else {
+
+		if (!dtf.CalcOffDiagTens3D_Shifted_PBC(
+			D, N, h / h_max, (*kernels[index])()->Get_shift() / h_max,
+			true, ASYMPTOTIC_DISTANCE, pbc_images.x, pbc_images.y, pbc_images.z)) return error(BERROR_OUTOFMEMORY_NCRIT);
+	}
 
 	tensor_to_kernel(D, K_cpu, Scratch);
 
 	//transfer to GPU
 	(*kernels[index])()->Set_Kodiag_cmpl(K_cpu);
+
+	//-------------- CLEANUP
+
+	fftw_destroy_plan(plan_fwd_x);
+	fftw_destroy_plan(plan_fwd_y);
+	fftw_destroy_plan(plan_fwd_z);
+
+	fftw_free((double*)pline_real);
+	fftw_free((fftw_complex*)pline);
 
 	//Done
 	return error;

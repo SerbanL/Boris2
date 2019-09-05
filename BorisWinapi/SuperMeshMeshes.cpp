@@ -711,12 +711,57 @@ BError SuperMesh::Set_PBC(string meshName, string flag, int images)
 {
 	BError error(__FUNCTION__);
 
+	if (!contains(meshName) && meshName != superMeshHandle) return error(BERROR_INCORRECTNAME);
+
+	if (meshName != superMeshHandle) {
+
+		if (!pMesh[meshName]->MComputation_Enabled()) return error(BERROR_INCORRECTNAME);
+
+		//pbc setting for individual mesh demag module
+
+		if (flag == "x") pMesh[meshName]->Set_PBC_X(images);
+		else if (flag == "y") pMesh[meshName]->Set_PBC_Y(images);
+		else if (flag == "z") pMesh[meshName]->Set_PBC_Z(images);
+		else return error(BERROR_INCORRECTVALUE);
+	}
+	else {
+
+		//pbc setting for supermesh demag module
+		if (IsSuperMeshModuleSet(MODS_SDEMAG)) {
+
+			INT3 pbc_images = reinterpret_cast<SDemag*>(pSMod(MODS_SDEMAG))->Get_PBC();
+			
+			if (flag == "x") pbc_images.x = images;
+			else if (flag == "y") pbc_images.y = images;
+			else if (flag == "z") pbc_images.z = images;
+			else return error(BERROR_INCORRECTVALUE);
+
+			reinterpret_cast<SDemag*>(pSMod(MODS_SDEMAG))->Set_PBC(pbc_images);
+		}
+
+		//also need to set flags in M VECs in all meshes with magnetisation computation enabled
+		for (int idx = 0; idx < pMesh.size(); idx++) {
+
+			if (pMesh[idx]->MComputation_Enabled()) {
+
+				if (flag == "x") pMesh[idx]->Set_PBC_X(images);
+				else if (flag == "y") pMesh[idx]->Set_PBC_Y(images);
+				else if (flag == "z") pMesh[idx]->Set_PBC_Z(images);
+			}
+		}
+	}
+
+	return error;
+}
+
+//set exchange coupling to neighboring meshes - an exchange-type module (i.e. inherit from ExchangeBase) must be enabled in the named mesh
+BError SuperMesh::Set_ExchangeCoupledMeshes(bool status, string meshName)
+{
+	BError error(__FUNCTION__);
+
 	if (!contains(meshName) || !pMesh[meshName]->MComputation_Enabled()) return error(BERROR_INCORRECTNAME);
 
-	if (flag == "x") pMesh[meshName]->Set_PBC_X(images);
-	else if (flag == "y") pMesh[meshName]->Set_PBC_Y(images);
-	else if (flag == "z") pMesh[meshName]->Set_PBC_Z(images);
-	else return error(BERROR_INCORRECTVALUE);
+	pMesh[meshName]->SetMeshExchangeCoupling(status);
 
 	return error;
 }

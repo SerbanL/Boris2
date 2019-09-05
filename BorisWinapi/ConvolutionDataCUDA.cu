@@ -326,7 +326,7 @@ __global__ void cuFFTArrays_to_Out_Add_forOutOfPlace(cuVEC<cuReal3>& In, cuVECOu
 }
 
 template <typename cuVECOut>
-__global__ void cuFFTArrays_to_Out_Set_eweighted_forOutOfPlace(cuVEC<cuReal3>& In, cuVECOut& Out, cuReal* cuSx, cuReal* cuSy, cuReal* cuSz, cuSZ3& N, cuReal& energy, cuReal& energy_weight)
+__global__ void cuFFTArrays_to_Out_Set_weighted_forOutOfPlace(cuVEC<cuReal3>& In, cuVECOut& Out, cuReal* cuSx, cuReal* cuSy, cuReal* cuSz, cuSZ3& N, cuReal& energy, cuReal& energy_weight)
 {
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
 
@@ -353,7 +353,7 @@ __global__ void cuFFTArrays_to_Out_Set_eweighted_forOutOfPlace(cuVEC<cuReal3>& I
 }
 
 template <typename cuVECOut>
-__global__ void cuFFTArrays_to_Out_Add_eweighted_forOutOfPlace(cuVEC<cuReal3>& In, cuVECOut& Out, cuReal* cuSx, cuReal* cuSy, cuReal* cuSz, cuSZ3& N, cuReal& energy, cuReal& energy_weight)
+__global__ void cuFFTArrays_to_Out_Add_weighted_forOutOfPlace(cuVEC<cuReal3>& In, cuVECOut& Out, cuReal* cuSx, cuReal* cuSy, cuReal* cuSz, cuSZ3& N, cuReal& energy, cuReal& energy_weight)
 {
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
 
@@ -396,7 +396,11 @@ void ConvolutionDataCUDA::CopyInputData(cu_obj<cuVECIn>& In)
 	if (!transpose_xy) {
 		
 		//zero pad upper y region (from n.y up to N.y) but only up to n.z
-		cu_zeropad((N.x / 2 + 1)*(N.y - n.y)*n.z, cuS_x, cuS_y, cuS_z, cuNc_xy, cuUpper_y_region);
+		//with pbc enabled n.y will be equal to N.y so no need to launch zero padding kernel
+		if (N.y - n.y) {
+
+			cu_zeropad((N.x / 2 + 1)*(N.y - n.y)*n.z, cuS_x, cuS_y, cuS_z, cuNc_xy, cuUpper_y_region);
+		}
 	}
 	//else {
 
@@ -406,7 +410,11 @@ void ConvolutionDataCUDA::CopyInputData(cu_obj<cuVECIn>& In)
 	//for 3D problems we also need to zero pad the upper z region (from n.z up to N.z)
 	if (n.z > 1 && !q2D_level) {
 
-		cu_zeropad((N.x / 2 + 1)*N.y*(N.z - n.z), cuS_x, cuS_y, cuS_z, cuNc_xy, cuUpper_z_region);
+		//with pbc enabled n.z will be equal to N.z so no need to launch zero padding kernel
+		if (N.z - n.z) {
+
+			cu_zeropad((N.x / 2 + 1)*N.y*(N.z - n.z), cuS_x, cuS_y, cuS_z, cuNc_xy, cuUpper_z_region);
+		}
 	}
 	else if (n.z > 1 && q2D_level && n.z != N.z / 2) {
 
@@ -446,7 +454,11 @@ void ConvolutionDataCUDA::forward_fft_2D(void)
 			cufftExecR2C(plan2D_fwd_x, cuIn_z, cuSquart_z);
 			cu_transpose_xy((N.x / 2 + 1)*n.y, cuSquart_z, cuS_z, cuNcquart_xy, cuNc_xy, cuNc_xy);
 
-			cu_zeropad((N.x / 2 + 1)*(N.y - n.y), cuS_x, cuS_y, cuS_z, cuNc_yx, cuUpper_y_transposed_region);
+			//with pbc enabled n.y will be equal to N.y so no need to launch zero padding kernel
+			if (N.y - n.y) {
+
+				cu_zeropad((N.x / 2 + 1)*(N.y - n.y), cuS_x, cuS_y, cuS_z, cuNc_yx, cuUpper_y_transposed_region);
+			}
 
 			cufftExecC2C(plan2D_y, cuS_x, cuS_x, CUFFT_FORWARD);
 			cufftExecC2C(plan2D_y, cuS_y, cuS_y, CUFFT_FORWARD);
@@ -461,7 +473,12 @@ void ConvolutionDataCUDA::forward_fft_2D(void)
 			cufftExecR2C(plan2D_fwd_x, cuIn_z, cuSquart_z);
 
 			cu_transpose_xy((N.x / 2 + 1)*n.y*n.z, cuSquart_x, cuSquart_y, cuSquart_z, cuS_x, cuS_y, cuS_z, cuNcquart_xy, cuNc_xy, cuNc_xy);
-			cu_zeropad((N.x / 2 + 1)*(N.y - n.y)*n.z, cuS_x, cuS_y, cuS_z, cuNc_yx, cuUpper_y_transposed_region);
+			
+			//with pbc enabled n.y will be equal to N.y so no need to launch zero padding kernel
+			if (N.y - n.y) {
+
+				cu_zeropad((N.x / 2 + 1)*(N.y - n.y)*n.z, cuS_x, cuS_y, cuS_z, cuNc_yx, cuUpper_y_transposed_region);
+			}
 
 			cufftExecC2C(plan2D_y, cuS_x, cuS_x, CUFFT_FORWARD);
 			cufftExecC2C(plan2D_y, cuS_y, cuS_y, CUFFT_FORWARD);
@@ -497,7 +514,11 @@ void ConvolutionDataCUDA::forward_fft_2D(void)
 			cufftExecD2Z(plan2D_fwd_x, cuIn_z, cuSquart_z);
 			cu_transpose_xy((N.x / 2 + 1)*n.y, cuSquart_z, cuS_z, cuNcquart_xy, cuNc_xy, cuNc_xy);
 
-			cu_zeropad((N.x / 2 + 1)*(N.y - n.y), cuS_x, cuS_y, cuS_z, cuNc_yx, cuUpper_y_transposed_region);
+			//with pbc enabled n.y will be equal to N.y so no need to launch zero padding kernel
+			if (N.y - n.y) {
+
+				cu_zeropad((N.x / 2 + 1)*(N.y - n.y), cuS_x, cuS_y, cuS_z, cuNc_yx, cuUpper_y_transposed_region);
+			}
 
 			cufftExecZ2Z(plan2D_y, cuS_x, cuS_x, CUFFT_FORWARD);
 			cufftExecZ2Z(plan2D_y, cuS_y, cuS_y, CUFFT_FORWARD);
@@ -512,7 +533,12 @@ void ConvolutionDataCUDA::forward_fft_2D(void)
 			cufftExecD2Z(plan2D_fwd_x, cuIn_z, cuSquart_z);
 
 			cu_transpose_xy((N.x / 2 + 1)*n.y*n.z, cuSquart_x, cuSquart_y, cuSquart_z, cuS_x, cuS_y, cuS_z, cuNcquart_xy, cuNc_xy, cuNc_xy);
-			cu_zeropad((N.x / 2 + 1)*(N.y - n.y)*n.z, cuS_x, cuS_y, cuS_z, cuNc_yx, cuUpper_y_transposed_region);
+			
+			//with pbc enabled n.y will be equal to N.y so no need to launch zero padding kernel
+			if (N.y - n.y) {
+
+				cu_zeropad((N.x / 2 + 1)*(N.y - n.y)*n.z, cuS_x, cuS_y, cuS_z, cuNc_yx, cuUpper_y_transposed_region);
+			}
 
 			cufftExecZ2Z(plan2D_y, cuS_x, cuS_x, CUFFT_FORWARD);
 			cufftExecZ2Z(plan2D_y, cuS_y, cuS_y, CUFFT_FORWARD);
@@ -741,7 +767,11 @@ void ConvolutionDataCUDA::forward_fft_3D(void)
 		cufftExecR2C(plan3D_fwd_x, cuIn_z, cuSquart_z);
 		cu_transpose_xy((N.x / 2 + 1)*n.y*n.z, cuSquart_z, cuS_z, cuNcquart_xy, cuNcquart_xy, cuNc_xy);
 
-		cu_zeropad((N.x / 2 + 1)*(N.y - n.y)*n.z, cuS_x, cuS_y, cuS_z, cuNc_yx, cuUpper_y_transposed_region);
+		//with pbc enabled n.y will be equal to N.y so no need to launch zero padding kernel
+		if (N.y - n.y) {
+
+			cu_zeropad((N.x / 2 + 1)*(N.y - n.y)*n.z, cuS_x, cuS_y, cuS_z, cuNc_yx, cuUpper_y_transposed_region);
+		}
 
 		cufftExecC2C(plan3D_y, cuS_x, cuS_x, CUFFT_FORWARD);
 		cufftExecC2C(plan3D_z, cuS_x, cuS_x, CUFFT_FORWARD);
@@ -761,7 +791,12 @@ void ConvolutionDataCUDA::forward_fft_3D(void)
 		cufftExecR2C(plan3D_fwd_x, cuIn_z, cuSquart_z);
 
 		cu_transpose_xy((N.x / 2 + 1)*n.y*n.z, cuSquart_x, cuSquart_y, cuSquart_z, cuS_x, cuS_y, cuS_z, cuNcquart_xy, cuNcquart_xy, cuNc_xy);
-		cu_zeropad((N.x / 2 + 1)*(N.y - n.y)*n.z, cuS_x, cuS_y, cuS_z, cuNc_yx, cuUpper_y_transposed_region);
+		
+		//with pbc enabled n.y will be equal to N.y so no need to launch zero padding kernel
+		if (N.y - n.y) {
+
+			cu_zeropad((N.x / 2 + 1)*(N.y - n.y)*n.z, cuS_x, cuS_y, cuS_z, cuNc_yx, cuUpper_y_transposed_region);
+		}
 
 		cufftExecC2C(plan3D_y, cuS_x, cuS_x, CUFFT_FORWARD);
 		cufftExecC2C(plan3D_z, cuS_x, cuS_x, CUFFT_FORWARD);
@@ -788,7 +823,11 @@ void ConvolutionDataCUDA::forward_fft_3D(void)
 		cufftExecD2Z(plan3D_fwd_x, cuIn_z, cuSquart_z);
 		cu_transpose_xy((N.x / 2 + 1)*n.y*n.z, cuSquart_z, cuS_z, cuNcquart_xy, cuNcquart_xy, cuNc_xy);
 
-		cu_zeropad((N.x / 2 + 1)*(N.y - n.y)*n.z, cuS_x, cuS_y, cuS_z, cuNc_yx, cuUpper_y_transposed_region);
+		//with pbc enabled n.y will be equal to N.y so no need to launch zero padding kernel
+		if (N.y - n.y) {
+
+			cu_zeropad((N.x / 2 + 1)*(N.y - n.y)*n.z, cuS_x, cuS_y, cuS_z, cuNc_yx, cuUpper_y_transposed_region);
+		}
 
 		cufftExecZ2Z(plan3D_y, cuS_x, cuS_x, CUFFT_FORWARD);
 		cufftExecZ2Z(plan3D_z, cuS_x, cuS_x, CUFFT_FORWARD);
@@ -808,7 +847,12 @@ void ConvolutionDataCUDA::forward_fft_3D(void)
 		cufftExecD2Z(plan3D_fwd_x, cuIn_z, cuSquart_z);
 
 		cu_transpose_xy((N.x / 2 + 1)*n.y*n.z, cuSquart_x, cuSquart_y, cuSquart_z, cuS_x, cuS_y, cuS_z, cuNcquart_xy, cuNcquart_xy, cuNc_xy);
-		cu_zeropad((N.x / 2 + 1)*(N.y - n.y)*n.z, cuS_x, cuS_y, cuS_z, cuNc_yx, cuUpper_y_transposed_region);
+		
+		//with pbc enabled n.y will be equal to N.y so no need to launch zero padding kernel
+		if (N.y - n.y) {
+
+			cu_zeropad((N.x / 2 + 1)*(N.y - n.y)*n.z, cuS_x, cuS_y, cuS_z, cuNc_yx, cuUpper_y_transposed_region);
+		}
 
 		cufftExecZ2Z(plan3D_y, cuS_x, cuS_x, CUFFT_FORWARD);
 		cufftExecZ2Z(plan3D_z, cuS_x, cuS_x, CUFFT_FORWARD);
@@ -841,7 +885,11 @@ void ConvolutionDataCUDA::forward_fft_q2D(void)
 		cufftExecR2C(plan3D_fwd_x, cuIn_z, cuSquart_z);
 		cu_transpose_xy((N.x / 2 + 1)*n.y*n.z, cuSquart_z, cuS_z, cuNcquart_xy, cuNcquart_xy, cuNc_xy);
 
-		cu_zeropad((N.x / 2 + 1)*(N.y - n.y)*n.z, cuS_x, cuS_y, cuS_z, cuNc_yx, cuUpper_y_transposed_region);
+		//with pbc enabled n.y will be equal to N.y so no need to launch zero padding kernel
+		if (N.y - n.y) {
+
+			cu_zeropad((N.x / 2 + 1)*(N.y - n.y)*n.z, cuS_x, cuS_y, cuS_z, cuNc_yx, cuUpper_y_transposed_region);
+		}
 
 		cufftExecC2C(plan3D_y, cuS_x, cuS_x, CUFFT_FORWARD);
 		cufftExecC2C(plan3D_y, cuS_y, cuS_y, CUFFT_FORWARD);
@@ -857,7 +905,12 @@ void ConvolutionDataCUDA::forward_fft_q2D(void)
 
 		//it's fine to use cuNc_xy even though its z-dimension is N.z and cuS has n.z dimension for q2D mode
 		cu_transpose_xy((N.x / 2 + 1)*n.y*n.z, cuSquart_x, cuSquart_y, cuSquart_z, cuS_x, cuS_y, cuS_z, cuNcquart_xy, cuNcquart_xy, cuNc_xy);
-		cu_zeropad((N.x / 2 + 1)*(N.y - n.y)*n.z, cuS_x, cuS_y, cuS_z, cuNc_yx, cuUpper_y_transposed_region);
+		
+		//with pbc enabled n.y will be equal to N.y so no need to launch zero padding kernel
+		if (N.y - n.y) {
+
+			cu_zeropad((N.x / 2 + 1)*(N.y - n.y)*n.z, cuS_x, cuS_y, cuS_z, cuNc_yx, cuUpper_y_transposed_region);
+		}
 
 		cufftExecC2C(plan3D_y, cuS_x, cuS_x, CUFFT_FORWARD);
 		cufftExecC2C(plan3D_y, cuS_y, cuS_y, CUFFT_FORWARD);
@@ -879,7 +932,11 @@ void ConvolutionDataCUDA::forward_fft_q2D(void)
 		cufftExecD2Z(plan3D_fwd_x, cuIn_z, cuSquart_z);
 		cu_transpose_xy((N.x / 2 + 1)*n.y*n.z, cuSquart_z, cuS_z, cuNcquart_xy, cuNcquart_xy, cuNc_xy);
 
-		cu_zeropad((N.x / 2 + 1)*(N.y - n.y)*n.z, cuS_x, cuS_y, cuS_z, cuNc_yx, cuUpper_y_transposed_region);
+		//with pbc enabled n.y will be equal to N.y so no need to launch zero padding kernel
+		if (N.y - n.y) {
+
+			cu_zeropad((N.x / 2 + 1)*(N.y - n.y)*n.z, cuS_x, cuS_y, cuS_z, cuNc_yx, cuUpper_y_transposed_region);
+		}
 
 		cufftExecZ2Z(plan3D_y, cuS_x, cuS_x, CUFFT_FORWARD);
 		cufftExecZ2Z(plan3D_y, cuS_y, cuS_y, CUFFT_FORWARD);
@@ -895,7 +952,12 @@ void ConvolutionDataCUDA::forward_fft_q2D(void)
 
 		//it's fine to use cuNc_xy even though its z-dimension is N.z and cuS has n.z dimension for q2D mode
 		cu_transpose_xy((N.x / 2 + 1)*n.y*n.z, cuSquart_x, cuSquart_y, cuSquart_z, cuS_x, cuS_y, cuS_z, cuNcquart_xy, cuNcquart_xy, cuNc_xy);
-		cu_zeropad((N.x / 2 + 1)*(N.y - n.y)*n.z, cuS_x, cuS_y, cuS_z, cuNc_yx, cuUpper_y_transposed_region);
+		
+		//with pbc enabled n.y will be equal to N.y so no need to launch zero padding kernel
+		if (N.y - n.y) {
+
+			cu_zeropad((N.x / 2 + 1)*(N.y - n.y)*n.z, cuS_x, cuS_y, cuS_z, cuNc_yx, cuUpper_y_transposed_region);
+		}
 
 		cufftExecZ2Z(plan3D_y, cuS_x, cuS_x, CUFFT_FORWARD);
 		cufftExecZ2Z(plan3D_y, cuS_y, cuS_y, CUFFT_FORWARD);
@@ -1202,7 +1264,7 @@ void ConvolutionDataCUDA::FinishConvolution_Set(cu_obj<cuVECIn>& In, cu_obj<cuVE
 	//set aux_integer in In
 	In()->count_nonempty_cells(n.dim());
 
-	cuFFTArrays_to_Out_Set_eweighted_forOutOfPlace << < (n.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >> > (*In(), *Out(), cuOut_x, cuOut_y, cuOut_z, cuN, energy, energy_weight);
+	cuFFTArrays_to_Out_Set_weighted_forOutOfPlace << < (n.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >> > (*In(), *Out(), cuOut_x, cuOut_y, cuOut_z, cuN, energy, energy_weight);
 }
 
 template void ConvolutionDataCUDA::FinishConvolution_Add(cu_obj<cuVEC<cuReal3>>& In, cu_obj<cuVEC<cuReal3>>& Out, cu_obj<cuReal>& energy, cu_obj<cuReal>& energy_weight);
@@ -1217,7 +1279,7 @@ void ConvolutionDataCUDA::FinishConvolution_Add(cu_obj<cuVECIn>& In, cu_obj<cuVE
 	//set aux_integer in In
 	In()->count_nonempty_cells(n.dim());
 
-	cuFFTArrays_to_Out_Add_eweighted_forOutOfPlace << < (n.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >> > (*In(), *Out(), cuOut_x, cuOut_y, cuOut_z, cuN, energy, energy_weight);
+	cuFFTArrays_to_Out_Add_weighted_forOutOfPlace << < (n.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >> > (*In(), *Out(), cuOut_x, cuOut_y, cuOut_z, cuN, energy, energy_weight);
 }
 
 #endif

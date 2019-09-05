@@ -101,46 +101,6 @@ public:
 	__host__ bool GetFlag_zShifted(void) { return get_gpu_value(zshifted); }
 
 	__host__ bool GetFlag_Calculated(void) { return get_gpu_value(kernel_calculated); }
-
-	//------------------------------ RUN-TIME KERNEL MULTIPLICATION
-
-	//Kernel multiplication device methods
-	//They take an input, output (dimensions N when not transposed)
-	//Also take an idx : this is the idx in In and Out
-
-	///////////////////////////////////////// 2D
-
-	__device__ void cu_KernelMultiplication_2D_Self_Set(int idx, cuComplex* Inx, cuComplex* Iny, cuComplex* Inz, cuComplex* Outx, cuComplex* Outy, cuComplex* Outz);
-	__device__ void cu_KernelMultiplication_2D_Self_Add(int idx, cuComplex* Inx, cuComplex* Iny, cuComplex* Inz, cuComplex* Outx, cuComplex* Outy, cuComplex* Outz);
-
-	__device__ void cu_KernelMultiplication_2D_Self_transpose_xy_Set(int idx, cuComplex* Inx, cuComplex* Iny, cuComplex* Inz, cuComplex* Outx, cuComplex* Outy, cuComplex* Outz);
-	__device__ void cu_KernelMultiplication_2D_Self_transpose_xy_Add(int idx, cuComplex* Inx, cuComplex* Iny, cuComplex* Inz, cuComplex* Outx, cuComplex* Outy, cuComplex* Outz);
-
-	__device__ void cu_KernelMultiplication_2D_zShifted_Set(int idx, cuComplex* Inx, cuComplex* Iny, cuComplex* Inz, cuComplex* Outx, cuComplex* Outy, cuComplex* Outz);
-	__device__ void cu_KernelMultiplication_2D_zShifted_Add(int idx, cuComplex* Inx, cuComplex* Iny, cuComplex* Inz, cuComplex* Outx, cuComplex* Outy, cuComplex* Outz);
-
-	__device__ void cu_KernelMultiplication_2D_zShifted_transpose_xy_Set(int idx, cuComplex* Inx, cuComplex* Iny, cuComplex* Inz, cuComplex* Outx, cuComplex* Outy, cuComplex* Outz);
-	__device__ void cu_KernelMultiplication_2D_zShifted_transpose_xy_Add(int idx, cuComplex* Inx, cuComplex* Iny, cuComplex* Inz, cuComplex* Outx, cuComplex* Outy, cuComplex* Outz);
-
-	__device__ void cu_KernelMultiplication_2D_inversezShifted_Set(int idx, cuComplex* Inx, cuComplex* Iny, cuComplex* Inz, cuComplex* Outx, cuComplex* Outy, cuComplex* Outz);
-	__device__ void cu_KernelMultiplication_2D_inversezShifted_Add(int idx, cuComplex* Inx, cuComplex* Iny, cuComplex* Inz, cuComplex* Outx, cuComplex* Outy, cuComplex* Outz);
-
-	__device__ void cu_KernelMultiplication_2D_inversezShifted_transpose_xy_Set(int idx, cuComplex* Inx, cuComplex* Iny, cuComplex* Inz, cuComplex* Outx, cuComplex* Outy, cuComplex* Outz);
-	__device__ void cu_KernelMultiplication_2D_inversezShifted_transpose_xy_Add(int idx, cuComplex* Inx, cuComplex* Iny, cuComplex* Inz, cuComplex* Outx, cuComplex* Outy, cuComplex* Outz);
-
-	__device__ void cu_KernelMultiplication_2D_Regular_Set(int idx, cuComplex* Inx, cuComplex* Iny, cuComplex* Inz, cuComplex* Outx, cuComplex* Outy, cuComplex* Outz);
-	__device__ void cu_KernelMultiplication_2D_Regular_Add(int idx, cuComplex* Inx, cuComplex* Iny, cuComplex* Inz, cuComplex* Outx, cuComplex* Outy, cuComplex* Outz);
-
-	///////////////////////////////////////// 3D
-
-	__device__ void cu_KernelMultiplication_3D_Self_transpose_xy_Set(int idx, cuComplex* Inx, cuComplex* Iny, cuComplex* Inz, cuComplex* Outx, cuComplex* Outy, cuComplex* Outz);
-	__device__ void cu_KernelMultiplication_3D_Self_transpose_xy_Add(int idx, cuComplex* Inx, cuComplex* Iny, cuComplex* Inz, cuComplex* Outx, cuComplex* Outy, cuComplex* Outz);
-
-	__device__ void cu_KernelMultiplication_3D_zShifted_transpose_xy_Set(int idx, cuComplex* Inx, cuComplex* Iny, cuComplex* Inz, cuComplex* Outx, cuComplex* Outy, cuComplex* Outz);
-	__device__ void cu_KernelMultiplication_3D_zShifted_transpose_xy_Add(int idx, cuComplex* Inx, cuComplex* Iny, cuComplex* Inz, cuComplex* Outx, cuComplex* Outy, cuComplex* Outz);
-
-	__device__ void cu_KernelMultiplication_3D_Regular_Set(int idx, cuComplex* Inx, cuComplex* Iny, cuComplex* Inz, cuComplex* Outx, cuComplex* Outy, cuComplex* Outz);
-	__device__ void cu_KernelMultiplication_3D_Regular_Add(int idx, cuComplex* Inx, cuComplex* Iny, cuComplex* Inz, cuComplex* Outx, cuComplex* Outy, cuComplex* Outz);
 };
 
 //------------------------------ AUXILIARY

@@ -143,25 +143,6 @@ protected:
 	void KernelMultiplication_3D(
 		std::vector<cu_arr<cuComplex>*>& Incol_x, std::vector<cu_arr<cuComplex>*>& Incol_y, std::vector<cu_arr<cuComplex>*>& Incol_z,
 		cu_arr<cuComplex>& Out_x, cu_arr<cuComplex>& Out_y, cu_arr<cuComplex>& Out_z);
-
-	//Multiple outputs from single input - use device methods in cuKerType for multiplication
-	//multiple output versions involve n kernel launches (but each n times larger and with poor load balancing compared to the single output from multiple inputs versions above)
-
-	void KernelMultiplication_2D_Set(
-		cu_arr<cuComplex>& In_x, cu_arr<cuComplex>& In_y, cu_arr<cuComplex>& In_z,
-		cu_arr<cuComplex*>& Outcol_x, cu_arr<cuComplex*>& Outcol_y, cu_arr<cuComplex*>& Outcol_z);
-
-	void KernelMultiplication_2D_Add(
-		cu_arr<cuComplex>& In_x, cu_arr<cuComplex>& In_y, cu_arr<cuComplex>& In_z,
-		cu_arr<cuComplex*>& Outcol_x, cu_arr<cuComplex*>& Outcol_y, cu_arr<cuComplex*>& Outcol_z);
-
-	void KernelMultiplication_3D_Set(
-		cu_arr<cuComplex>& In_x, cu_arr<cuComplex>& In_y, cu_arr<cuComplex>& In_z,
-		cu_arr<cuComplex*>& Outcol_x, cu_arr<cuComplex*>& Outcol_y, cu_arr<cuComplex*>& Outcol_z);
-
-	void KernelMultiplication_3D_Add(
-		cu_arr<cuComplex>& In_x, cu_arr<cuComplex>& In_y, cu_arr<cuComplex>& In_z,
-		cu_arr<cuComplex*>& Outcol_x, cu_arr<cuComplex*>& Outcol_y, cu_arr<cuComplex*>& Outcol_z);
 };
 
 #endif

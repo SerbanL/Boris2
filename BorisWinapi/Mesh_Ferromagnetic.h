@@ -20,7 +20,7 @@ class FMesh :
 	//Mesh members
 	tuple<int, int, int, int, int, Rect, SZ3, DBL3, SZ3, DBL3, SZ3, DBL3, VEC_VC<DBL3>, VEC_VC<double>, VEC_VC<DBL3>, VEC_VC<double>, VEC_VC<double>, vector_lut<Modules*>,
 	//Members in this derived class
-	bool, SkyrmionTrack,
+	bool, SkyrmionTrack, bool,
 	//Material Parameters
 	MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<DBL2, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<DBL3, DBL3>, MatP<DBL3, DBL3>, MatP<double, double>, MatP<double, double>, MatP<double, double>,
 	MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<DBL2, double>, MatP<DBL2, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>,
@@ -58,6 +58,12 @@ private:
 
 	//object used to track one or more skyrmions in this mesh
 	SkyrmionTrack skyShift;
+
+	//direct exchange coupling to neighboring meshes?
+	//If true this is applicable for this mesh only for cells at contacts with other ferromagnetic meshes 
+	//i.e. if two distinct meshes with the same materials are in contact, setting this flag to true will make the simulation behave as if the two materials are in the same computational mesh (provided the demag field is computed on the supermesh).
+	//this is precisely what it is intended for; if two dissimilar materials are in contact then you probably shouldn't be using this mechanism.
+	bool exchange_couple_to_meshes = false;
 
 public:
 
@@ -149,6 +155,10 @@ public:
 #endif
 		return skyShift.Get_skyshift(M, skyRect); 
 	}
+
+	//set/get exchange_couple_to_meshes status flag
+	void SetMeshExchangeCoupling(bool status) { exchange_couple_to_meshes = status; }
+	bool GetMeshExchangeCoupling(void) { return exchange_couple_to_meshes; }
 
 	//----------------------------------- GETTERS
 

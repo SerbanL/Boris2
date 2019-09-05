@@ -11,6 +11,7 @@
 #include "DemagKernelCUDA.h"
 
 class FMeshCUDA;
+class Demag;
 
 class DemagCUDA :
 	public ModulesCUDA,	
@@ -22,9 +23,12 @@ private:
 	//pointer to CUDA version of mesh object holding the effective field module holding this CUDA module
 	FMeshCUDA* pMeshCUDA;
 
+	//point to cpu version of this module
+	Demag *pDemag;
+
 public:
 
-	DemagCUDA(FMeshCUDA* pMeshCUDA_);
+	DemagCUDA(FMeshCUDA* pMeshCUDA_, Demag *pDemag_);
 	~DemagCUDA();
 
 	//-------------------Abstract base class method implementations

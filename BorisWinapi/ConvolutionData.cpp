@@ -111,36 +111,36 @@ BError ConvolutionData::SetConvolutionDimensions(SZ3 n_, DBL3 h_, bool embed_mul
 
 	N = SZ3(1, 1, 1);
 
-	//set N, M, K as smallest powers of 2 which will hold the demag kernel
+	//set N values for FFT dimensions
 	if (pbc_images.x) {
 
-		//pbc : can use wrap-around thus half the size required
-		while (N.x < n.x) { N.x *= 2; };
+		//pbc : can use wrap-around, but currently only even values of N are allowed. Thus if n is odd, N has an extra cell (user should be warned in this case to use only even values for n in pbc directions).
+		N.x = n.x + (n.x % 2);
 	}
 	else {
 
 		//no wrap-around thus double the size, with input to be zero-padded
-		while (N.x < 2 * n.x) { N.x *= 2; };
+		N.x = 2 * n.x;
 	}
 
 	if (pbc_images.y) {
 
-		while (N.y < n.y) { N.y *= 2; };
+		N.y = n.y + (n.y % 2);
 	}
 	else {
 
-		while (N.y < 2 * n.y) { N.y *= 2; };
+		N.y = 2 * n.y;
 	}
 
 	if (n.z > 1) {
 
 		if (pbc_images.z) {
 
-			while (N.z < n.z) { N.z *= 2; };
+			N.z = n.z + (n.z % 2);
 		}
 		else {
 
-			while (N.z < 2 * n.z) { N.z *= 2; };
+			N.z = 2 * n.z;
 		}
 	}
 
@@ -155,8 +155,6 @@ BError ConvolutionData::SetConvolutionDimensions(SZ3 n_, DBL3 h_, bool embed_mul
 	//first clean any previously allocated memory
 	free_memory();
 
-	size_t maxN = maximum(N.x / 2 + 1, N.y, N.z);
-
 	//allocate new fft lines
 	for (int idx = 0; idx < OmpThreads; idx++) {
 
@@ -166,7 +164,7 @@ BError ConvolutionData::SetConvolutionDimensions(SZ3 n_, DBL3 h_, bool embed_mul
 		pline_zp_y[idx] = fftw_alloc_complex(N.y * 3);
 		pline_zp_z[idx] = fftw_alloc_complex(N.z * 3);
 
-		pline[idx] = fftw_alloc_complex(maxN * 3);
+		pline[idx] = fftw_alloc_complex(maximum(N.x / 2 + 1, N.y, N.z) * 3);
 	}
 
 	//zero fft lines
@@ -218,8 +216,6 @@ BError ConvolutionData::SetConvolutionDimensions(SZ3 n_, DBL3 h_, bool embed_mul
 //zero fftw memory
 void ConvolutionData::zero_fft_lines(void)
 {
-	size_t maxN = maximum(N.x / 2 + 1, N.y, N.z);
-
 	for (int idx = 0; idx < OmpThreads; idx++) {
 
 		for (int i = 0; i < N.x; i++) {
@@ -238,7 +234,7 @@ void ConvolutionData::zero_fft_lines(void)
 			*reinterpret_cast<ReIm3*>(pline_zp_z[idx] + k * 3) = ReIm3();
 		}
 
-		for (int i = 0; i < maxN; i++) {
+		for (int i = 0; i < maximum(N.x / 2 + 1, N.y, N.z); i++) {
 
 			*reinterpret_cast<ReIm3*>(pline[idx] + i * 3) = ReIm3();
 		}

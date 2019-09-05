@@ -10,7 +10,6 @@
 #include "ConvolutionCUDA.h"
 #include "DemagKernelCUDA.h"
 #include "DemagKernelCollectionCUDA.h"
-#include "SDemagCUDA_KernelCollection.h"
 
 #include "SDemagCUDA_Demag.h"
 
@@ -47,13 +46,6 @@ private:
 	//collect FFT input spaces : after Forward FFT the ffts of M from the individual meshes will be found here
 	//These are used as inputs to kernel multiplications. Same order as pSDemag_Demag.
 	std::vector<cu_arr<cuComplex>*> FFT_Spaces_x_Input, FFT_Spaces_y_Input, FFT_Spaces_z_Input;
-
-	//Output FFT spaces, but collected not in a std::vector but in a cu_arr so we can pass them to a __global__
-	cu_arr<cuComplex*> FFT_Spaces_x_Output, FFT_Spaces_y_Output, FFT_Spaces_z_Output;
-
-	//Kernels used in multi-layered convolution sorted by kernel, i.e. each kernel held in KerTypeCollectionCUDA is unique, and may have a number of input and output spaces for which it is used.
-	//TESTING ONLY - SLOWER THAN MULTIPLE INPUTS VERSION SO NOT IN CURRENT USE
-	vector<KerTypeCollectionCUDA*> Kernels;
 
 	//collection of rectangles of meshes, same ordering as for pSDemag_Demag and FFT_Spaces, used in multi-layered convolution
 	//these are not necessarily the rectangles of the input M meshes, but are the rectangles of the transfer meshes (M -> transfer -> convolution)

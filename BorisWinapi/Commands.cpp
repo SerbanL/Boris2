@@ -588,6 +588,24 @@ void Simulation::HandleCommand(string command_string) {
 		}
 		break;
 
+		case CMD_INDIVIDUALMASKSHAPE:
+		{
+			int status;
+
+			error = commandSpec.GetParameters(command_fields, status);
+
+			if (!error) {
+
+				shape_change_individual = (bool)status;
+
+				UpdateScreen();
+			}
+			else if (verbose) Print_IndividualShapeStatus();
+
+			if (script_client_connected) commSocket.SetSendData(commandSpec.PrepareReturnParameters(shape_change_individual));
+		}
+		break;
+
 		case CMD_SETANGLE:
 		{
 			double polar, azim;
@@ -1968,6 +1986,28 @@ void Simulation::HandleCommand(string command_string) {
 		}
 		break;
 
+		case CMD_EXCHANGECOUPLEDMESHES:
+		{
+			bool status;
+			string meshName;
+
+			error = commandSpec.GetParameters(command_fields, status, meshName);
+			if (error) { error.reset() = commandSpec.GetParameters(command_fields, status); meshName = SMesh.GetMeshFocus(); }
+
+			if (!error) {
+
+				StopSimulation();
+
+				SMesh.Set_ExchangeCoupledMeshes(status, meshName);
+
+				UpdateScreen();
+			}
+			else if (verbose) Print_ExchangeCoupledMeshes_List();
+
+			if (script_client_connected) commSocket.SetSendData(commandSpec.PrepareReturnParameters(SMesh.active_mesh()->GetMeshExchangeCoupling()));
+		}
+		break;
+
 		case CMD_ADDELECTRODE:
 		{
 			if (SMesh.IsSuperMeshModuleSet(MODS_STRANSPORT)) {
@@ -2266,6 +2306,29 @@ void Simulation::HandleCommand(string command_string) {
 
 				if (script_client_connected)
 					commSocket.SetSendData(commandSpec.PrepareReturnParameters(SMesh.CallModuleMethod(&STransport::GetSORDamping)));
+			}
+			else error(BERROR_INCORRECTACTION);
+		}
+		break;
+
+		case CMD_STATICTRANSPORTSOLVER:
+		{
+			if (SMesh.IsSuperMeshModuleSet(MODS_STRANSPORT)) {
+
+				bool status;
+
+				error = commandSpec.GetParameters(command_fields, status);
+
+				if (!error) {
+
+					static_transport_solver = status;
+
+					UpdateScreen();
+				}
+				else if (verbose) PrintTransportSolverConfig();
+
+				if (script_client_connected)
+					commSocket.SetSendData(commandSpec.PrepareReturnParameters(static_transport_solver));
 			}
 			else error(BERROR_INCORRECTACTION);
 		}

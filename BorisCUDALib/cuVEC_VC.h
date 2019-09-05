@@ -175,7 +175,6 @@ private:
 	cuReal aSOR_lastgrad;
 
 	//Periodic boundary conditions for evaluating differential operators. If these are set then neighbor flags are calculated accordingly, and applied when evaluating operators.
-	//Only implemented x and/or y pbc, not along z.
 	int pbc_x;
 	int pbc_y;
 	int pbc_z;

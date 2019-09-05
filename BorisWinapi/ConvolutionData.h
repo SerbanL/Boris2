@@ -12,6 +12,8 @@ class ConvolutionData
 {
 
 protected:
+	
+	int OmpThreads;
 
 	//input mesh dimensions
 	SZ3 n;
@@ -19,8 +21,18 @@ protected:
 	//intput mesh cellsize
 	DBL3 h;
 
-	//dimensions of FFT spaces (these are powers of 2)
+	//dimensions of FFT spaces, even so can always divide by 2 :
+	//In directions without PBC these are double the n values, but not necessarily a power of 2.
+	//In directions with PBC these are the same as the n values, except must be even, i.e. if n odd then N is n + 1.
+	//This is not very restrictive, but will change it to allow odd values in pbc directions in a future version.
+	//With N always even we can use the same code for pbc and non-pbc. 
+	//For pbc all we have to do is calculate the kernel differently and set N value to n rather than double that of n.
+	//Thus for pbc if n is odd the result will not be correct and user should be warned about it.
 	SZ3 N;
+
+	//periodic boundary conditions -> setting these changes convolution dimensions and workflow for kernel calculation.
+	//Set to zero to remove pbc conditions. This gives the number of images to use when computing tensors with pbc conditions.
+	INT3 pbc_images;
 
 	//FFT calculation spaces : dimensions (N.x/2 + 1) * N.y * n.z. for 3D and (N.x/2 + 1) * n.y * 1 for 2D
 	VEC<ReIm3> F;
@@ -31,15 +43,9 @@ protected:
 	//in this case the kernel multiplcation results will be stored in the F2 scratch space, and used for ifft
 	bool embed_multiplication = true;
 
-	//periodic boundary conditions -> setting these changes convolution dimensions and workflow.
-	//Set to zero to remove pbc conditions. This gives the number of images to use when computing tensors with pbc conditions.
-	INT3 pbc_images;
-
 	//additional scratch space used when kernel multiplication is not embedded (embed_multiplication = false)
 	VEC<ReIm3> F2;
 
-	int OmpThreads;
-	
 	vector<fftw_plan> plan_fwd_x, plan_fwd_y, plan_fwd_z;
 	vector<fftw_plan> plan_inv_x, plan_inv_y, plan_inv_z;
 
