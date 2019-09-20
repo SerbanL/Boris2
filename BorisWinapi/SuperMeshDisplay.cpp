@@ -26,7 +26,7 @@ vector<PhysQ> SuperMesh::FetchOnScreenPhysicalQuantity(double detail_level)
 
 		if (IsSuperMeshModuleSet(MODS_SDEMAG)) {
 
-			physQ.push_back(PhysQ(&(reinterpret_cast<SDemag*>(pSMod(MODS_SDEMAG))->GetDemagField()), displayedPhysicalQuantity).set_focus(true, superMeshHandle));
+			physQ.push_back(PhysQ(&(reinterpret_cast<SDemag*>(pSMod(MODS_SDEMAG))->GetDemagField()), displayedPhysicalQuantity, (VEC3REP_)vec3rep).set_focus(true, superMeshHandle));
 			return physQ;
 		}
 		break;
@@ -35,7 +35,7 @@ vector<PhysQ> SuperMesh::FetchOnScreenPhysicalQuantity(double detail_level)
 
 		if (IsSuperMeshModuleSet(MODS_OERSTED)) {
 
-			physQ.push_back(PhysQ(&(reinterpret_cast<Oersted*>(pSMod(MODS_OERSTED))->GetOerstedField()), displayedPhysicalQuantity).set_focus(true, superMeshHandle));
+			physQ.push_back(PhysQ(&(reinterpret_cast<Oersted*>(pSMod(MODS_OERSTED))->GetOerstedField()), displayedPhysicalQuantity, (VEC3REP_)vec3rep).set_focus(true, superMeshHandle));
 			return physQ;
 		}
 		break;
@@ -44,7 +44,7 @@ vector<PhysQ> SuperMesh::FetchOnScreenPhysicalQuantity(double detail_level)
 
 		if (IsSuperMeshModuleSet(MODS_STRAYFIELD)) {
 
-			physQ.push_back(PhysQ(&(reinterpret_cast<StrayField*>(pSMod(MODS_STRAYFIELD))->GetStrayField()), displayedPhysicalQuantity).set_focus(true, superMeshHandle));
+			physQ.push_back(PhysQ(&(reinterpret_cast<StrayField*>(pSMod(MODS_STRAYFIELD))->GetStrayField()), displayedPhysicalQuantity, (VEC3REP_)vec3rep).set_focus(true, superMeshHandle));
 			return physQ;
 		}
 		break;
@@ -83,4 +83,37 @@ BError SuperMesh::SetDisplayedPhysicalQuantity(string meshName, int displayedPhy
 	}
 
 	return error;
+}
+
+//Get/Set vectorial quantity representation options in named mesh (which could be the supermesh)
+BError SuperMesh::SetVEC3Rep(string meshName, int vec3rep_)
+{
+	BError error(__FUNCTION__);
+
+	if (!contains(meshName) && meshName != superMeshHandle) return error(BERROR_INCORRECTNAME);
+
+	if (meshName != superMeshHandle) {
+
+		 pMesh[meshName]->SetVEC3Rep(vec3rep_);
+	}
+	else {
+
+		vec3rep = vec3rep_;
+	}
+
+	return error;
+}
+
+int SuperMesh::GetVEC3Rep(string meshName)
+{
+	if (!contains(meshName) && meshName != superMeshHandle) return vec3rep;
+
+	if (meshName != superMeshHandle) {
+
+		return pMesh[meshName]->GetVEC3Rep();
+	}
+	else {
+
+		return vec3rep;
+	}
 }

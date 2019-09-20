@@ -8,22 +8,51 @@
 
 //----------------------------------------- Maximum
 
+//single precision
 __device__ inline void atomicMax(float* result, float value)
 {
 	//atomicMax is not available for floating point, so this is implemented using atomicCAS.
 	//This method is recommended by nvidia, see : http://docs.nvidia.com/cuda/cuda-c-programming-guide/#axzz44PKOq6jJ
 
 #if __CUDA_ARCH__ >= 200 
-	float old = *result, assumed;
+
+	unsigned* result_as_u = (unsigned*)result;
+	unsigned old = *result_as_u, assumed;
 
 	do {
 
 		assumed = old;
 
-		old = atomicCAS((unsigned*)result, __float_as_int(assumed), __float_as_int(fmaxf(value, assumed)));
+		old = atomicCAS(result_as_u, assumed, __float_as_int(fmaxf(value, __int_as_float(assumed))));
 
 	} while (old != assumed);
+
 #endif
+
+	return;
+}
+
+//double precision
+__device__ inline void atomicMax(double* result, double value)
+{
+	//atomicMax is not available for floating point, so this is implemented using atomicCAS.
+	//This method is recommended by nvidia, see : http://docs.nvidia.com/cuda/cuda-c-programming-guide/#axzz44PKOq6jJ
+
+#if __CUDA_ARCH__ >= 200 
+	
+	unsigned long long int* result_as_ull = (unsigned long long int*)result;
+	unsigned long long int old = *result_as_ull, assumed;
+
+	do {
+
+		assumed = old;
+
+		old = atomicCAS(result_as_ull, assumed, __double_as_longlong(fmaxf(value, __longlong_as_double(assumed))));
+
+	} while (old != assumed);
+
+#endif
+
 	return;
 }
 
@@ -44,19 +73,49 @@ __device__ void atomicMax(cuVAL3<Type>* result, const cuVAL3<Type>& value)
 
 //----------------------------------------- Minimum
 
-__device__ inline void atomicMin(float *result, float value)
+__device__ inline void atomicMin(float* result, float value)
 {
+	//atomicMax is not available for floating point, so this is implemented using atomicCAS.
+	//This method is recommended by nvidia, see : http://docs.nvidia.com/cuda/cuda-c-programming-guide/#axzz44PKOq6jJ
+
 #if __CUDA_ARCH__ >= 200 
-	float old = *result, assumed;
+
+	unsigned* result_as_u = (unsigned*)result;
+	unsigned old = *result_as_u, assumed;
 
 	do {
 
 		assumed = old;
 
-		old = atomicCAS((unsigned*)result, __float_as_int(assumed), __float_as_int(fminf(value, assumed)));
+		old = atomicCAS(result_as_u, assumed, __float_as_int(fminf(value, __int_as_float(assumed))));
 
 	} while (old != assumed);
+
 #endif
+
+	return;
+}
+
+__device__ inline void atomicMin(double* result, double value)
+{
+	//atomicMax is not available for floating point, so this is implemented using atomicCAS.
+	//This method is recommended by nvidia, see : http://docs.nvidia.com/cuda/cuda-c-programming-guide/#axzz44PKOq6jJ
+
+#if __CUDA_ARCH__ >= 200 
+
+	unsigned long long int* result_as_ull = (unsigned long long int*)result;
+	unsigned long long int old = *result_as_ull, assumed;
+
+	do {
+
+		assumed = old;
+
+		old = atomicCAS(result_as_ull, assumed, __double_as_longlong(fminf(value, __longlong_as_double(assumed))));
+
+	} while (old != assumed);
+
+#endif
+
 	return;
 }
 
@@ -97,20 +156,21 @@ template <typename Type_ = double>
 __device__ void atomicAdd(Type_* address, Type_ val)
 {
 #if __CUDA_ARCH__ >= 200
-	unsigned long long int* address_as_ull =
-		(unsigned long long int*)address;
+
+	unsigned long long int* address_as_ull = (unsigned long long int*)address;
 	unsigned long long int old = *address_as_ull, assumed;
 
 	do {
-		assumed = old;
-		old = atomicCAS(address_as_ull, assumed,
-			__double_as_longlong(val +
-				__longlong_as_double(assumed)));
 
-		// Note: uses integer comparison to avoid hang in case of NaN (since NaN != NaN)
+		assumed = old;
+		
+		old = atomicCAS(address_as_ull, assumed, __double_as_longlong(val + __longlong_as_double(assumed)));
+
+	// Note: uses integer comparison to avoid hang in case of NaN (since NaN != NaN)
 	} while (assumed != old);
 
 	return;
+
 #endif
 }
 #endif

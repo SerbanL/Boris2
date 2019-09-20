@@ -12,7 +12,7 @@
 SDemag_Demag::SDemag_Demag(Mesh *pMesh_) :
 	Modules(),
 	Convolution<DemagKernelCollection>(),
-	ProgramStateNames(this, {VINFO(n), VINFO(h), VINFO(meshRect)}, {})
+	ProgramStateNames(this, {VINFO(n), VINFO(h), VINFO(meshRect), VINFO(layer_number_2d)}, {})
 {
 	pMesh = dynamic_cast<FMesh*>(pMesh_);
 
@@ -39,6 +39,22 @@ void SDemag_Demag::Set_SDemag_Pointer(SDemag *pSDemag_)
 	UpdateConfiguration(UPDATECONFIG_FORCEUPDATE);
 }
 
+//Force the SDemag_Demag modules to calculate the layer_number_2d value, used for 2D layered convolution
+	//this value is obtained from the minor id of this module held in *pMesh : the minor ids are guaranteed to be sequential and start from zero
+	//thus if we've added enough of these SDemag_Demag modules, all layers will be covered
+void SDemag_Demag::Set_2D_Layering(void)
+{
+	for (int idx = 0; idx < pMesh->pMod.size(); idx++) {
+
+		if (pMesh->pMod[idx] == this) {
+
+			INT2 moduleid = pMesh->pMod.get_id_from_index(idx);
+
+			layer_number_2d = moduleid.minor;
+		}
+	}
+}
+
 //initialize transfer object
 BError SDemag_Demag::Initialize_Mesh_Transfer(void)
 {
@@ -56,6 +72,14 @@ BError SDemag_Demag::Initialize_Mesh_Transfer(void)
 	//initialize transfer object
 	if (!transfer.Initialize_MeshTransfer({ &pMesh->M }, { &pMesh->Heff }, MESHTRANSFERTYPE_WEIGHTED)) return error(BERROR_OUTOFMEMORY_CRIT);
 
+	//the Hdemag.size() check is needed : if in CUDA mode, this method will be called to initialize mesh transfer in transfer so the transfer info can be copied over to the gpu
+	//In this case it's possible Hdemag does not have the correct memory allocated; if not in CUDA mode we first pass through Initialization method before calling this, in which case Hdemag will be sized correctly.
+	if (pMesh->meshODE.EvaluationSpeedup() && Hdemag.size() == transfer.size()) {
+
+		//initialize mesh transfer for Hdemag as well if we are using evaluation speedup
+		if (!Hdemag.Initialize_MeshTransfer({ &pMesh->M }, { &pMesh->Heff }, MESHTRANSFERTYPE_WEIGHTED)) return error(BERROR_OUTOFMEMORY_CRIT);
+	}
+
 	//transfer values from M - we need this to get number of non-empty cells
 	transfer.transfer_in();
 
@@ -70,6 +94,12 @@ BError SDemag_Demag::Initialize(void)
 
 	if (!pSDemag->IsInitialized()) error = pSDemag->Initialize();
 	if (error) return error;
+	
+	//make sure to allocate memory for Hdemag if we need it
+	if (pMesh->meshODE.EvaluationSpeedup()) Hdemag.resize(pSDemag->get_convolution_rect(this) / pSDemag->n_common, pSDemag->get_convolution_rect(this));
+	else Hdemag.clear();
+
+	pSDemag->Hdemag_calculated = false;
 
 	if (!initialized) {
 
@@ -100,6 +130,11 @@ BError SDemag_Demag::Initialize(void)
 			Initialize_Mesh_Transfer();
 		}
 
+		if (pSDemag->total_nonempty_volume) {
+
+			energy_density_weight = non_empty_cells * h_common.dim() / pSDemag->total_nonempty_volume;
+		}
+
 		//avoid division by zero
 		if (!non_empty_cells) non_empty_cells = 1;
 
@@ -122,6 +157,23 @@ BError SDemag_Demag::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 		n = pMesh->n;
 		h = pMesh->h;
 		meshRect = pMesh->meshRect;
+	}
+
+	//if memory needs to be allocated for Hdemag, it will be done through Initialize 
+	Hdemag.clear();
+	pSDemag->Hdemag_calculated = false;
+
+	if (layer_number_2d >= 0) {
+
+		//if we are in 2d layering mode, then must make sure we don't have extra SDemag_Demag we don't need : i.e. if layer_number_2d >= n.z, we must delete this module
+		if (layer_number_2d >= n.z) {
+
+			//call for this module to be deleted.
+			pMesh->DelModule(this);
+
+			//this module is no longer held in memory - must return immediately as there's nothing else we are allowed to do here.
+			return BError();
+		}
 	}
 
 	//------------------------ CUDA UpdateConfiguration if set

@@ -5,7 +5,7 @@
 using namespace std;
 
 //simulation stage/step settings -> add new values at the end to keep older simulation files compatible
-enum SS_ { SS_RELAX = 0, SS_HFIELDXYZ, SS_HFIELDXYZSEQ, SS_HPOLARSEQ, SS_HFMR, SS_V, SS_VSEQ, SS_VSIN, SS_VCOS, SS_I, SS_ISEQ, SS_ISIN, SS_ICOS, SS_T, SS_TSEQ };
+enum SS_ { SS_RELAX = 0, SS_HFIELDXYZ, SS_HFIELDXYZSEQ, SS_HPOLARSEQ, SS_HFMR, SS_V, SS_VSEQ, SS_VSIN, SS_VCOS, SS_I, SS_ISEQ, SS_ISIN, SS_ICOS, SS_T, SS_TSEQ, SS_Q, SS_QSEQ };
 
 //simulation stage stop conditions -> add new values at the end to keep older simulation files compatible
 enum STOP_ { STOP_NOSTOP = 0, STOP_ITERATIONS, STOP_MXH, STOP_TIME, STOP_DMDT };

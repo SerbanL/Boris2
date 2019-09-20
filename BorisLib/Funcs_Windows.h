@@ -3,9 +3,38 @@
 // Windows Header Files:
 #include <Windows.h>
 
+#include <shlobj.h>
+#include <atlstr.h>
+#include <strsafe.h>
+#include <shellapi.h>
+
 #include <string>
 
+#include "Funcs_Files.h"
+
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+inline std::string GetUserDocumentsPath(void)
+{
+	wchar_t my_documents[MAX_PATH];
+
+	HRESULT result = SHGetFolderPath(NULL, CSIDL_PERSONAL, NULL, SHGFP_TYPE_CURRENT, my_documents);
+
+	if (result != S_OK) {
+
+		return GetDirectory();
+	}
+	else {
+		
+		return WideStringtoString(std::wstring(my_documents)) + "\\";
+	}
+}
+
+inline bool MakeDirectory(std::string directory)
+{
+	if (SHCreateDirectoryEx(NULL, StringtoWCHARPointer(directory), NULL) == ERROR_SUCCESS || ERROR_ALREADY_EXISTS == GetLastError()) return true;
+	else return false;
+}
 
 inline std::string GetClipboardText(void) 
 {	

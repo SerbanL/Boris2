@@ -6,7 +6,7 @@
 //------------------------------------------------------------------- MESH TRANSFER IN
 
 template <typename VType>
-__global__ void transfer_in_kernel(size_t transfer_info_size, VType*& sMesh_quantity, cuVEC<VType>*& mesh_in, cuPair<cuINT3, cuReal>*& transfer_info)
+__global__ void transfer_in_kernel(size_t transfer_info_size, VType*& sMesh_quantity, cuVEC<VType>*& mesh_in, cuPair<cuINT3, cuBReal>*& transfer_info)
 {
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
 
@@ -15,7 +15,7 @@ __global__ void transfer_in_kernel(size_t transfer_info_size, VType*& sMesh_quan
 		cuINT3 full_index = transfer_info[idx].first;
 		
 		//weight to apply to external mesh values
-		cuReal weight = transfer_info[idx].second;
+		cuBReal weight = transfer_info[idx].second;
 		
 		//obtain weighted value from external mesh
 		//first get the external mesh
@@ -65,7 +65,7 @@ __global__ void zero_mesh_out_kernel(int mesh_out_num, cuVEC<VType>*& mesh_out)
 }
 
 template <typename VType>
-__global__ void transfer_out_kernel(size_t transfer_info_size, VType*& sMesh_quantity, cuVEC<VType>*& mesh_out, cuPair<cuINT3, cuReal>*& transfer_info)
+__global__ void transfer_out_kernel(size_t transfer_info_size, VType*& sMesh_quantity, cuVEC<VType>*& mesh_out, cuPair<cuINT3, cuBReal>*& transfer_info)
 {
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
 
@@ -74,7 +74,7 @@ __global__ void transfer_out_kernel(size_t transfer_info_size, VType*& sMesh_qua
 		cuINT3 full_index = transfer_info[idx].first;
 
 		//weight to apply to supermesh values
-		cuReal weight = transfer_info[idx].second;
+		cuBReal weight = transfer_info[idx].second;
 
 		//obtained weighted value from supermesh
 		VType weighted_value = sMesh_quantity[full_index.k] * weight;

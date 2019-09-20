@@ -14,10 +14,10 @@ __global__ void RunRKDP54_Step0_withReductions_Kernel(ManagedDiffEqCUDA& cuDiffE
 {
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
 
-	cuReal dT = *cuDiffEq.pdT;
+	cuBReal dT = *cuDiffEq.pdT;
 
-	cuReal mxh = 0.0;
-	cuReal lte = 0.0;
+	cuBReal mxh = 0.0;
+	cuBReal lte = 0.0;
 
 	if (idx < cuMesh.pM->linear_size()) {
 
@@ -26,7 +26,7 @@ __global__ void RunRKDP54_Step0_withReductions_Kernel(ManagedDiffEqCUDA& cuDiffE
 			if (!cuMesh.pM->is_skipcell(idx)) {
 
 				//obtain maximum normalized torque term
-				cuReal Mnorm = (*cuMesh.pM)[idx].norm();
+				cuBReal Mnorm = (*cuMesh.pM)[idx].norm();
 				mxh = cu_GetMagnitude((*cuMesh.pM)[idx] ^ (*cuMesh.pHeff)[idx]) / (Mnorm * Mnorm);
 
 				//First evaluate RHS of set equation at the current time step
@@ -57,9 +57,9 @@ __global__ void RunRKDP54_Step0_Kernel(ManagedDiffEqCUDA& cuDiffEq, ManagedMeshC
 {
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
 
-	cuReal dT = *cuDiffEq.pdT;
+	cuBReal dT = *cuDiffEq.pdT;
 
-	cuReal lte = 0.0;
+	cuBReal lte = 0.0;
 
 	if (idx < cuMesh.pM->linear_size()) {
 
@@ -89,7 +89,7 @@ __global__ void RunRKDP54_Step0_Advance_Kernel(ManagedDiffEqCUDA& cuDiffEq, Mana
 {
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
 
-	cuReal dT = *cuDiffEq.pdT;
+	cuBReal dT = *cuDiffEq.pdT;
 
 	if (idx < cuMesh.pM->linear_size()) {
 
@@ -111,7 +111,7 @@ __global__ void RunRKDP54_Step1_Kernel(ManagedDiffEqCUDA& cuDiffEq, ManagedMeshC
 {
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
 
-	cuReal dT = *cuDiffEq.pdT;
+	cuBReal dT = *cuDiffEq.pdT;
 
 	if (idx < cuMesh.pM->linear_size()) {
 
@@ -130,7 +130,7 @@ __global__ void RunRKDP54_Step2_Kernel(ManagedDiffEqCUDA& cuDiffEq, ManagedMeshC
 {
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
 
-	cuReal dT = *cuDiffEq.pdT;
+	cuBReal dT = *cuDiffEq.pdT;
 
 	if (idx < cuMesh.pM->linear_size()) {
 
@@ -149,7 +149,7 @@ __global__ void RunRKDP54_Step3_Kernel(ManagedDiffEqCUDA& cuDiffEq, ManagedMeshC
 {
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
 
-	cuReal dT = *cuDiffEq.pdT;
+	cuBReal dT = *cuDiffEq.pdT;
 
 	if (idx < cuMesh.pM->linear_size()) {
 
@@ -168,7 +168,7 @@ __global__ void RunRKDP54_Step4_Kernel(ManagedDiffEqCUDA& cuDiffEq, ManagedMeshC
 {
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
 
-	cuReal dT = *cuDiffEq.pdT;
+	cuBReal dT = *cuDiffEq.pdT;
 
 	if (idx < cuMesh.pM->linear_size()) {
 
@@ -187,9 +187,9 @@ __global__ void RunRKDP54_Step5_withReductions_Kernel(ManagedDiffEqCUDA& cuDiffE
 {
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
 
-	cuReal dT = *cuDiffEq.pdT;
+	cuBReal dT = *cuDiffEq.pdT;
 
-	cuReal dmdt = 0.0;
+	cuBReal dmdt = 0.0;
 
 	if (idx < cuMesh.pM->linear_size()) {
 
@@ -205,18 +205,18 @@ __global__ void RunRKDP54_Step5_withReductions_Kernel(ManagedDiffEqCUDA& cuDiffE
 
 				if (*cuDiffEq.prenormalize) {
 
-					cuReal Ms = *cuMesh.pMs;
+					cuBReal Ms = *cuMesh.pMs;
 					cuMesh.update_parameters_mcoarse(idx, *cuMesh.pMs, Ms);
 					(*cuMesh.pM)[idx].renormalize(Ms);
 				}
 
 				//obtain maximum normalized dmdt term
-				cuReal Mnorm = (*cuMesh.pM)[idx].norm();
-				dmdt = cu_GetMagnitude((*cuMesh.pM)[idx] - (*cuDiffEq.psM1)[idx]) / (dT * (cuReal)GAMMA * Mnorm * Mnorm);
+				cuBReal Mnorm = (*cuMesh.pM)[idx].norm();
+				dmdt = cu_GetMagnitude((*cuMesh.pM)[idx] - (*cuDiffEq.psM1)[idx]) / (dT * (cuBReal)GAMMA * Mnorm * Mnorm);
 			}
 			else {
 
-				cuReal Ms = *cuMesh.pMs;
+				cuBReal Ms = *cuMesh.pMs;
 				cuMesh.update_parameters_mcoarse(idx, *cuMesh.pMs, Ms);
 				(*cuMesh.pM)[idx].renormalize(Ms);		//re-normalize the skipped cells no matter what - temperature can change
 			}
@@ -234,7 +234,7 @@ __global__ void RunRKDP54_Step5_Kernel(ManagedDiffEqCUDA& cuDiffEq, ManagedMeshC
 {
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
 
-	cuReal dT = *cuDiffEq.pdT;
+	cuBReal dT = *cuDiffEq.pdT;
 
 	if (idx < cuMesh.pM->linear_size()) {
 
@@ -250,14 +250,14 @@ __global__ void RunRKDP54_Step5_Kernel(ManagedDiffEqCUDA& cuDiffEq, ManagedMeshC
 
 				if (*cuDiffEq.prenormalize) {
 
-					cuReal Ms = *cuMesh.pMs;
+					cuBReal Ms = *cuMesh.pMs;
 					cuMesh.update_parameters_mcoarse(idx, *cuMesh.pMs, Ms);
 					(*cuMesh.pM)[idx].renormalize(Ms);
 				}
 			}
 			else {
 
-				cuReal Ms = *cuMesh.pMs;
+				cuBReal Ms = *cuMesh.pMs;
 				cuMesh.update_parameters_mcoarse(idx, *cuMesh.pMs, Ms);
 				(*cuMesh.pM)[idx].renormalize(Ms);		//re-normalize the skipped cells no matter what - temperature can change
 			}

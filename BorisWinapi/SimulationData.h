@@ -18,7 +18,7 @@ enum DATA_
 	DATA_TRANSPORT_ITERSTOCONV, DATA_TRANSPORT_SITERSTOCONV, DATA_TRANSPORT_CONVERROR, DATA_TRANSPORT_ASOR,
 	DATA_TEMP, DATA_HEATDT,
 	DATA_E_TOTAL,
-	DATA_DMDT
+	DATA_DMDT, DATA_SKYPOS
 };
 
 //Specifier for available output data : this is stored in a vector with lut indexing, where DATA_ values are used for the major id - the DatumSpecifier corresponds to it

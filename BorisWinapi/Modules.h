@@ -59,6 +59,7 @@ public:
 	//-------------------------- Constructor and Destructor
 
 	Modules(void) {}
+
 	virtual ~Modules()
 	{
 #if COMPILECUDA == 1

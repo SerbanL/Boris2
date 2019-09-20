@@ -38,7 +38,7 @@ private:
 #if COMPILECUDA == 1
 	//when CUDA enabled this will point to the cu_obj managed MatPCUDA object which mirrors this cpu memory parameter in gpu memory.
 	//Pointer assigned and nulled in MeshParamsCUDA ctor and dtor. Use it to update the MatPCUDA parameter accordingly when this parameter changes (if not nullptr).
-	//To use it, cast it to MatPCUDA<conversion(PType)>. The conversion is done to a cuReal variant, e.g. double/float to cuReal, DBL3/FLT3 to cuReal3 etc.
+	//To use it, cast it to MatPCUDA<conversion(PType)>. The conversion is done to a cuBReal variant, e.g. double/float to cuBReal, DBL3/FLT3 to cuReal3 etc.
 	void *p_cu_obj_mpcuda = nullptr;
 #endif
 

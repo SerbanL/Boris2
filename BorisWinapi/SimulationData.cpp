@@ -280,6 +280,12 @@ Any Simulation::GetDataValue(DatumConfig dConfig)
 	}
 	break;
 
+	case DATA_SKYPOS:
+	{
+		return Any(SMesh[dConfig.meshName]->Get_skypos_diameters(dConfig.rectangle));
+	}
+	break;
+
 	case DATA_TRANSPORT_ITERSTOCONV:
 	{
 		return Any(SMesh.CallModuleMethod(&STransport::GetItersToConv));

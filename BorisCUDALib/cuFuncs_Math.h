@@ -102,11 +102,19 @@ __host__ __device__ cuVAL3Type cu_round(const cuVAL3Type& val3) { return cuVAL3T
 //This problem typically arises when using floor and ceil on result of arithmetic operations as floating point errors are introduced, and is much worse in single precision.
 //For this reason do not use a fixed epsilon as with comparison operations, but a ratio of the value modulus.
 template <typename Type, std::enable_if_t<std::is_floating_point<Type>::value>* = nullptr>
-__host__ __device__ Type cu_floor_epsilon(const Type& fval) { return floor(fval + fabs(fval) * CUFLOOR_CEIL_RATIO); }
+__host__ __device__ Type cu_floor_epsilon(const Type& fval) { return floor(fval + (fabs(fval) * CUFLOOR_CEIL_RATIO < CUEPSILON_ROUNDING ? fabs(fval) * CUFLOOR_CEIL_RATIO : CUEPSILON_ROUNDING)); }
+
+//in some cases you may want to use a fixed epsilon value
+template <typename Type, std::enable_if_t<std::is_floating_point<Type>::value>* = nullptr>
+__host__ __device__ Type cu_floor_fixedepsilon(const Type& fval) { return floor(fval + 1e-5); }
 
 //as above but with ceil
 template <typename Type, std::enable_if_t<std::is_floating_point<Type>::value>* = nullptr>
-__host__ __device__ Type cu_ceil_epsilon(const Type& fval) { return ceil(fval - fabs(fval) * CUFLOOR_CEIL_RATIO); }
+__host__ __device__ Type cu_ceil_epsilon(const Type& fval) { return ceil(fval - (fabs(fval) * CUFLOOR_CEIL_RATIO < CUEPSILON_ROUNDING ? fabs(fval) * CUFLOOR_CEIL_RATIO : CUEPSILON_ROUNDING)); }
+
+//in some cases you may want to use a fixed epsilon value
+template <typename Type, std::enable_if_t<std::is_floating_point<Type>::value>* = nullptr>
+__host__ __device__ Type cu_ceil_fixedepsilon(const Type& fval) { return ceil(fval - 1e-5); }
 
 //return "fixed" floor of each VAL3 component
 template <typename cuVAL3Type, std::enable_if_t<std::is_convertible<cuINT3, cuVAL3Type>::value>* = nullptr>
@@ -142,7 +150,7 @@ Type cu_fmod_epsilon(const Type& fval, const Type& denom) { return fval - cu_flo
 
 //fixed fmod for a VAL3
 template <typename cuVAL3Type, std::enable_if_t<std::is_convertible<cuINT3, cuVAL3Type>::value>* = nullptr>
-cuVAL3Type cu_fmod_epsilon(const cuVAL3Type& fval, cuReal denom) { return cuVAL3Type(cu_fmod_epsilon(fval.x, denom), cu_fmod_epsilon(fval.y, denom), cu_fmod_epsilon(fval.z, denom)); }
+cuVAL3Type cu_fmod_epsilon(const cuVAL3Type& fval, cuBReal denom) { return cuVAL3Type(cu_fmod_epsilon(fval.x, denom), cu_fmod_epsilon(fval.y, denom), cu_fmod_epsilon(fval.z, denom)); }
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -234,8 +242,8 @@ __host__ __device__ cuVAL3<cuVAL3Type> cu_epsilon3(const cuVAL3Type& val3)
 ///////////////////////////////////////////////////////////////////////////////
 
 //overloaded inverse method so can be used in templated methods
-template <typename Type, std::enable_if_t<std::is_same<Type, cuReal>::value>* = nullptr>
-__device__ cuReal cu_inverse(const cuReal& m)
+template <typename Type, std::enable_if_t<std::is_same<Type, cuBReal>::value>* = nullptr>
+__device__ cuBReal cu_inverse(const cuBReal& m)
 {
 	if (m) return 1 / m;
 	else return 0.0;
@@ -247,20 +255,20 @@ __device__ cuReal33 cu_inverse(const cuReal33& m)
 {
 	//in cuReal33 we use row-major notation: first index is the row, the second is the column
 
-	cuReal d_11 = m.j.j * m.k.k - m.j.k * m.k.j;
-	cuReal d_21 = m.j.k * m.k.i - m.j.i * m.k.k;
-	cuReal d_31 = m.j.i * m.k.j - m.j.j * m.k.i;
+	cuBReal d_11 = m.j.j * m.k.k - m.j.k * m.k.j;
+	cuBReal d_21 = m.j.k * m.k.i - m.j.i * m.k.k;
+	cuBReal d_31 = m.j.i * m.k.j - m.j.j * m.k.i;
 
-	cuReal det = m.i.i * d_11 + m.i.j * d_21 + m.i.k * d_31;
+	cuBReal det = m.i.i * d_11 + m.i.j * d_21 + m.i.k * d_31;
 	if (cuIsZ(det)) return cuReal33();
 
-	cuReal d_12 = m.i.k * m.k.j - m.i.j * m.k.k;
-	cuReal d_22 = m.i.i * m.k.k - m.i.k * m.k.i;
-	cuReal d_32 = m.i.j * m.k.i - m.i.i * m.k.j;
+	cuBReal d_12 = m.i.k * m.k.j - m.i.j * m.k.k;
+	cuBReal d_22 = m.i.i * m.k.k - m.i.k * m.k.i;
+	cuBReal d_32 = m.i.j * m.k.i - m.i.i * m.k.j;
 
-	cuReal d_13 = m.i.j * m.j.k - m.i.k * m.j.j;
-	cuReal d_23 = m.i.k * m.j.i - m.i.i * m.j.k;
-	cuReal d_33 = m.i.i * m.j.j - m.i.j * m.j.i;
+	cuBReal d_13 = m.i.j * m.j.k - m.i.k * m.j.j;
+	cuBReal d_23 = m.i.k * m.j.i - m.i.i * m.j.k;
+	cuBReal d_33 = m.i.i * m.j.j - m.i.j * m.j.i;
 
 	return cuReal33(
 		cuReal3(d_11, d_12, d_13) / det,
@@ -269,8 +277,8 @@ __device__ cuReal33 cu_inverse(const cuReal33& m)
 }
 
 //overloaded so can be used in templated methods : simple identity
-template <typename Type, std::enable_if_t<std::is_same<Type, cuReal>::value>* = nullptr>
-__device__ cuReal cu_ident(void) { return 1.0; }
+template <typename Type, std::enable_if_t<std::is_same<Type, cuBReal>::value>* = nullptr>
+__device__ cuBReal cu_ident(void) { return 1.0; }
 
 //3x3 matrix identity
 template <typename Type, std::enable_if_t<std::is_same<Type, cuReal33>::value>* = nullptr>
@@ -286,18 +294,18 @@ __device__ cuReal33 cu_ident(void)
 
 //This function returns the solution of s = a * m^s + b * m^m^s + f
 //i.e. solve for s, where m, s, f are cuReal3, ^ is the cross product, a and b are constants; moreover m is a unit vector.
-__device__ inline cuReal3 solve_crossprod(cuReal a, cuReal b, const cuReal3& m, const cuReal3& f)
+__device__ inline cuReal3 solve_crossprod(cuBReal a, cuBReal b, const cuReal3& m, const cuReal3& f)
 {
-	cuReal ab = a * a + b + b * b;
+	cuBReal ab = a * a + b + b * b;
 
 	return f + ((a*a + b * b) / (a*a + ab * ab)) * (a * (m ^ f) + ab * (m ^ (m ^ f)));
 }
 
 //This function returns the solution of s = a * m^s + b * m^m^s + f
 //i.e. solve for s, where m, s, f are cuReal3, ^ is the cross product, a and b are constants; moreover m is a unit vector perpendicular to f, so that m ^ m ^ f = -f
-__device__ inline cuReal3 solve_crossprod_perp(cuReal a, cuReal b, const cuReal3& m, const cuReal3& f)
+__device__ inline cuReal3 solve_crossprod_perp(cuBReal a, cuBReal b, const cuReal3& m, const cuReal3& f)
 {
-	cuReal ab = a * a + b + b * b;
+	cuBReal ab = a * a + b + b * b;
 
 	return (1.0 / (a*a + ab * ab)) * ((a*a + b * ab) * m + a * (a*a + b * b) * (m ^ f));
 }
@@ -313,7 +321,7 @@ __device__ inline cuReal3 solve_crossprod_perp(cuReal a, cuReal b, const cuReal3
 // x' = [ sin(theta)cos(phi), sin(theta)sin(phi), cos(theta) ] = n
 // y' = [ -sin(phi), cos(phi), 0 ]
 // z' = x' x y' = [ -cos(theta)cos(phi), -cos(theta)sin(phi), sin(theta) ]
-__device__ inline cuReal3 rotate_polar(const cuReal3& r, cuReal theta, cuReal phi)
+__device__ inline cuReal3 rotate_polar(const cuReal3& r, cuBReal theta, cuBReal phi)
 {
 	return cuReal3(
 		sin(theta)*cos(phi) * r.x - sin(phi) * r.y - cos(theta)*cos(phi) * r.z,
@@ -329,7 +337,7 @@ __device__ inline cuReal3 rotate_polar(const cuReal3& r, const cuReal3& n)
 	//where theta ranges in [0, PI], and phi ranges in [0, 2*PI] then:
 
 	//nxy is sin(theta)
-	cuReal nxy = sqrt(n.x*n.x + n.y*n.y);
+	cuBReal nxy = sqrt(n.x*n.x + n.y*n.y);
 
 	//then sin(phi) = ny / nxy, and cos(phi) = nx / nxy
 

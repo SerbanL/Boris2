@@ -51,6 +51,7 @@ class Mesh :
 
 	//special cases here
 	friend ExchangeBase;
+	friend SDemag_Demag;
 
 #if COMPILECUDA == 1
 	friend MeshCUDA;
@@ -77,6 +78,9 @@ protected:
 	   
 	//current quantity displayed on screen
 	int displayedPhysicalQuantity;
+
+	//type of representation to use for vectorial quantities (see VEC3REP_ enum in PhysQDefs.h)
+	int vec3rep = (int)VEC3REP_FULL;
 
 	//if displaying a parameter spatial variation, this value will say which parameter (a value from PARAM_ enum)
 	int displayedParamVar = PARAM_GREL;
@@ -238,12 +242,23 @@ public:
 
 	//Add module to list of set modules, also deleting any exclusive modules to this one
 	//If you set force_add = true then duplicate modules are allowed : in this case you must keep track of them
-	BError AddModule(MOD_ moduleId, bool force_add = false);
-	//delete module
-	void DelModule(MOD_ moduleId);
+	BError AddModule(MOD_ moduleID, bool force_add = false);
+	
+	//delete all modules with given id
+	void DelModule(MOD_ moduleID);
 
-	bool IsModuleSet(MOD_ moduleId) { return pMod.is_ID_set(moduleId); }
-	Modules* GetModule(MOD_ moduleId) { if (IsModuleSet(moduleId)) return pMod(moduleId); else return nullptr; }
+	//Delete this particular module, if found.
+	//This method is intended to be called from within the module itself, asking for it to be deleted - a call to its dtor will be issued.
+	//When using this method in this way, the calling module should immediately return as any further data access there will result in bad memory access.
+	//The return addess is still valid as it will be stored on the stack.
+	void DelModule(Modules* pModule);
+
+	bool IsModuleSet(MOD_ moduleID) { return pMod.is_ID_set(moduleID); }
+	
+	//get number of active modules with given ID
+	int GetNumModules(MOD_ moduleID) { return pMod.get_num_IDs(moduleID); }
+
+	Modules* GetModule(MOD_ moduleID, int module_number = 0) { if (pMod.is_id_set(INT2(moduleID, module_number))) return pMod[INT2(moduleID, module_number)]; else return nullptr; }
 
 #if COMPILECUDA == 1
 	ModulesCUDA* GetCUDAModule(MOD_ moduleId) { if (IsModuleSet(moduleId)) return pMod(moduleId)->GetCUDAModule(); else return nullptr; }
@@ -376,6 +391,9 @@ public:
 	void SetDisplayedPhysicalQuantity(int displayedPhysicalQuantity_) { displayedPhysicalQuantity = displayedPhysicalQuantity_; }
 
 	void SetDisplayedParamVar(int displayedParamVar_) { displayedParamVar = displayedParamVar_; }
+
+	void SetVEC3Rep(int vec3rep_) { vec3rep = vec3rep_; }
+	int GetVEC3Rep(void) { return vec3rep; }
 
 	//----------------------------------- MESH INFO AND SIZE GET/SET METHODS : Mesh.cpp
 
@@ -511,6 +529,9 @@ public:
 	//get skyrmion shift for a skyrmion initially in the given rectangle (works only with data in output data, not with ShowData or with data box)
 	virtual DBL2 Get_skyshift(Rect skyRect) { return DBL2(); }
 
+	//get skyrmion shift for a skyrmion initially in the given rectangle (works only with data in output data, not with ShowData or with data box), as well as diameters along x and y directions.
+	virtual DBL4 Get_skypos_diameters(Rect skyRect) { return DBL4(); }
+
 	//----------------------------------- FERROMAGNETIC MESH QUANTITIES CONTROL : Mesh_Ferromagnetic_Control.cpp
 
 	//this method is also used by the dipole mesh where it does something else - sets the dipole direction
@@ -536,9 +557,9 @@ public:
 	virtual void SetMagnetisationFromData(VEC<DBL3>& data) {}
 
 	//set periodic boundary conditions for magnetization
-	virtual void Set_PBC_X(int pbc_x) {}
-	virtual void Set_PBC_Y(int pbc_y) {}
-	virtual void Set_PBC_Z(int pbc_z) {}
+	virtual BError Set_PBC_X(int pbc_x) { return BError(); }
+	virtual BError Set_PBC_Y(int pbc_y) { return BError(); }
+	virtual BError Set_PBC_Z(int pbc_z) { return BError(); }
 
 	virtual void SetMeshExchangeCoupling(bool status) {}
 	virtual bool GetMeshExchangeCoupling(void) { return false; }
@@ -574,6 +595,27 @@ public:
 		}
 
 		return RType();
+	}
+
+	//similar to CallModuleMethod, but instead of calling just the first module found, call all matching modules in this mesh. No return value possible.
+	template <typename Owner>
+	void CallAllModulesMethod(void(Owner::*runThisMethod)())
+	{
+		for (int idx = 0; idx < pMod.size(); idx++) {
+
+			Owner* pOwner = dynamic_cast<Owner*>(pMod[idx]);
+			if (pOwner) CALLFP(pOwner, runThisMethod)();
+		}
+	}
+
+	template <typename Owner, typename ... PType>
+	void CallAllModulesMethod(void(Owner::*runThisMethod)(PType ...), PType ... params)
+	{
+		for (int idx = 0; idx < pMod.size(); idx++) {
+
+			Owner* pOwner = dynamic_cast<Owner*>(pMod[idx]);
+			if (pOwner) CALLFP(pOwner, runThisMethod)(params...);
+		}
 	}
 };
 

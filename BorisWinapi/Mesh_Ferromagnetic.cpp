@@ -9,13 +9,13 @@ FMesh::FMesh(SuperMesh *pSMesh_) :
 	ProgramStateNames(this,
 		{
 			//Mesh members
-			VINFO(meshType), VINFO(meshIdCounter), VINFO(meshId), VINFO(displayedPhysicalQuantity), VINFO(displayedParamVar), VINFO(meshRect), VINFO(n), VINFO(h), VINFO(n_e), VINFO(h_e), VINFO(n_t), VINFO(h_t), VINFO(M), VINFO(V), VINFO(S), VINFO(elC), VINFO(Temp), VINFO(pMod),
+			VINFO(meshType), VINFO(meshIdCounter), VINFO(meshId), VINFO(displayedPhysicalQuantity), VINFO(vec3rep), VINFO(displayedParamVar), VINFO(meshRect), VINFO(n), VINFO(h), VINFO(n_e), VINFO(h_e), VINFO(n_t), VINFO(h_t), VINFO(M), VINFO(V), VINFO(S), VINFO(elC), VINFO(Temp), VINFO(pMod),
 			//Members in this derived class
 			VINFO(move_mesh_trigger), VINFO(skyShift), VINFO(exchange_couple_to_meshes),
 			//Material Parameters
 			VINFO(grel), VINFO(alpha), VINFO(Ms), VINFO(Nxy), VINFO(A), VINFO(D), VINFO(J1), VINFO(J2), VINFO(K1), VINFO(K2), VINFO(mcanis_ea1), VINFO(mcanis_ea2), VINFO(susrel), VINFO(susprel), VINFO(cHA),
 			VINFO(elecCond), VINFO(amrPercentage), VINFO(P), VINFO(beta), VINFO(De), VINFO(SHA), VINFO(flSOT), VINFO(betaD), VINFO(l_sf), VINFO(l_ex), VINFO(l_ph), VINFO(Gi), VINFO(Gmix), VINFO(ts_eff), VINFO(tsi_eff), VINFO(pump_eff),
-			VINFO(base_temperature), VINFO(T_Curie), VINFO(T_Curie_material), VINFO(atomic_moment), VINFO(thermCond), VINFO(density), VINFO(shc)
+			VINFO(base_temperature), VINFO(T_Curie), VINFO(T_Curie_material), VINFO(atomic_moment), VINFO(thermCond), VINFO(density), VINFO(shc), VINFO(cT), VINFO(Q)
 		},
 		{
 			//Modules Implementations
@@ -35,13 +35,13 @@ FMesh::FMesh(Rect meshRect_, DBL3 h_, SuperMesh *pSMesh_) :
 	ProgramStateNames(this,
 		{
 			//Mesh members
-			VINFO(meshType), VINFO(meshIdCounter), VINFO(meshId), VINFO(displayedPhysicalQuantity), VINFO(displayedParamVar), VINFO(meshRect), VINFO(n), VINFO(h), VINFO(n_e), VINFO(h_e), VINFO(n_t), VINFO(h_t), VINFO(M), VINFO(V), VINFO(S), VINFO(elC), VINFO(Temp), VINFO(pMod),
+			VINFO(meshType), VINFO(meshIdCounter), VINFO(meshId), VINFO(displayedPhysicalQuantity), VINFO(vec3rep), VINFO(displayedParamVar), VINFO(meshRect), VINFO(n), VINFO(h), VINFO(n_e), VINFO(h_e), VINFO(n_t), VINFO(h_t), VINFO(M), VINFO(V), VINFO(S), VINFO(elC), VINFO(Temp), VINFO(pMod),
 			//Members in this derived class
 			VINFO(move_mesh_trigger), VINFO(skyShift), VINFO(exchange_couple_to_meshes),
 			//Material Parameters
 			VINFO(grel), VINFO(alpha), VINFO(Ms), VINFO(Nxy), VINFO(A), VINFO(D), VINFO(J1), VINFO(J2), VINFO(K1), VINFO(K2), VINFO(mcanis_ea1), VINFO(mcanis_ea2), VINFO(susrel), VINFO(susprel), VINFO(cHA),
 			VINFO(elecCond), VINFO(amrPercentage), VINFO(P), VINFO(beta), VINFO(De), VINFO(SHA), VINFO(flSOT), VINFO(betaD), VINFO(l_sf), VINFO(l_ex), VINFO(l_ph), VINFO(Gi), VINFO(Gmix), VINFO(ts_eff), VINFO(tsi_eff), VINFO(pump_eff),
-			VINFO(base_temperature), VINFO(T_Curie), VINFO(T_Curie_material), VINFO(atomic_moment), VINFO(thermCond), VINFO(density), VINFO(shc)
+			VINFO(base_temperature), VINFO(T_Curie), VINFO(T_Curie_material), VINFO(atomic_moment), VINFO(thermCond), VINFO(density), VINFO(shc), VINFO(cT), VINFO(Q)
 		},
 		{
 			//Modules Implementations
@@ -326,7 +326,7 @@ void FMesh::SetCurieTemperature(double Tc)
 
 		//1. damping
 		//2. Ms -> me
-		//3. A -> me^2
+		//3. A -> me^2, D -> me^2
 		//4. susrel
 		//5. K1 and K2 anisotropy constants -> me^3
 		//6. P -> me^2
@@ -427,6 +427,7 @@ void FMesh::SetCurieTemperature(double Tc)
 		Ms.set_precalculated_scaling_array(t_scaling_me);
 		P.set_precalculated_scaling_array(t_scaling_me);
 		A.set_precalculated_scaling_array(t_scaling_me2);
+		D.set_precalculated_scaling_array(t_scaling_me2);
 		K1.set_precalculated_scaling_array(t_scaling_me3);
 		K2.set_precalculated_scaling_array(t_scaling_me3);
 		susrel.set_precalculated_scaling_array(t_scaling_sus);
@@ -436,6 +437,7 @@ void FMesh::SetCurieTemperature(double Tc)
 		Ms.update(base_temperature);
 		P.update(base_temperature);
 		A.update(base_temperature);
+		D.update(base_temperature);
 		K1.update(base_temperature);
 		K2.update(base_temperature);
 		susrel.update(base_temperature);
@@ -451,6 +453,7 @@ void FMesh::SetCurieTemperature(double Tc)
 		Ms.clear_t_scaling();
 		P.clear_t_scaling();
 		A.clear_t_scaling();
+		D.clear_t_scaling();
 		K1.clear_t_scaling();
 		K2.clear_t_scaling();
 		susrel.clear_t_scaling();
@@ -461,7 +464,7 @@ void FMesh::SetCurieTemperature(double Tc)
 	if (pMeshCUDA) {
 
 		//T_Curie changed : sync with cuda version
-		pMeshCUDA->T_Curie.from_cpu((cuReal)T_Curie);
+		pMeshCUDA->T_Curie.from_cpu((cuBReal)T_Curie);
 	}
 #endif
 }

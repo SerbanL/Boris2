@@ -40,6 +40,10 @@ BError SDemagCUDA_Demag::Initialize(void)
 	if (!pSDemagCUDA->IsInitialized()) error = pSDemagCUDA->Initialize();
 	if (error) return error;
 
+	//make sure to allocate memory for Hdemag if we need it
+	if (pMeshCUDA->EvaluationSpeedup()) Hdemag()->resize((cuRect)pSDemag->get_convolution_rect(pSDemag_Demag) / (cuSZ3)pSDemag->n_common, (cuRect)pSDemag->get_convolution_rect(pSDemag_Demag));
+	else Hdemag()->clear();
+
 	if (!initialized) {
 
 		//calculate kernels for super-mesh convolution.
@@ -54,11 +58,15 @@ BError SDemagCUDA_Demag::Initialize(void)
 		//common discretisation cellsize (may differ in thickness in 2D mode)
 		cuReal3 h_common = convolution_rect / (cuSZ3)pSDemag->n_common;
 
+		int non_empty_cells = 0;
+
 		if (convolution_rect == (cuRect)pSDemag_Demag->meshRect && h_common == (cuReal3)pSDemag_Demag->h) {
 
 			//no transfer required
 			do_transfer = false;
 			transfer()->clear();
+
+			non_empty_cells = pMeshCUDA->M()->get_nonempty_cells_cpu();
 		}
 		else {
 
@@ -80,6 +88,19 @@ BError SDemagCUDA_Demag::Initialize(void)
 			pVal_to.push_back((cuVEC<cuReal3>*&)pMeshCUDA->Heff.get_managed_object());
 
 			if (!transfer()->copy_transfer_info(pVal_from, pVal_to, pSDemag_Demag->transfer)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
+
+			if (pMeshCUDA->EvaluationSpeedup()) {
+
+				//initialize mesh transfer for Hdemag as well if we are using evaluation speedup
+				if (!Hdemag()->copy_transfer_info(pVal_from, pVal_to, pSDemag_Demag->transfer)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
+			}
+
+			non_empty_cells = pSDemag_Demag->transfer.get_nonempty_cells();
+		}
+
+		if (pSDemag->total_nonempty_volume) {
+
+			energy_density_weight.from_cpu((cuBReal)(non_empty_cells * h_common.dim() / pSDemag->total_nonempty_volume));
 		}
 
 		initialized = true;
@@ -94,6 +115,9 @@ BError SDemagCUDA_Demag::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 
 	//just mirror the initialization flag in the cpu version module
 	if (!pSDemag_Demag->IsInitialized()) Uninitialize();
+
+	//if memory needs to be allocated for Hdemag, it will be done through Initialize 
+	Hdemag()->clear();
 
 	return error;
 }

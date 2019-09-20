@@ -169,6 +169,12 @@ public:
 	//specific heat capacity (J/kgK) - default for permalloy
 	MatP<double, double> shc = 430;
 
+	//set temperature spatial variation coefficient (unitless) - used with temperature settings in a simulation schedule only, not with console command directly
+	MatP<double, double> cT = 1.0;
+
+	//Heat source stimulus in heat equation. Ideally used with a spatial variation. (W//m3)
+	MatP<double, double> Q = 0.0;
+
 private:
 
 	//-------------------------Parameter control
@@ -341,11 +347,11 @@ RType MeshParams::run_on_param(PARAM_ paramID, Lambda& run_this, PType& ... run_
 		return run_this(mcanis_ea2, run_this_args...);
 		break;
 
-	case SPARAM_TC:
+	case PARAM_TC:
 		return run_this(T_Curie_material, run_this_args...);
 		break;
 
-	case SPARAM_MUB:
+	case PARAM_MUB:
 		return run_this(atomic_moment, run_this_args...);
 		break;
 
@@ -439,6 +445,14 @@ RType MeshParams::run_on_param(PARAM_ paramID, Lambda& run_this, PType& ... run_
 
 	case PARAM_SHC:
 		return run_this(shc, run_this_args...);
+		break;
+
+	case PARAM_T:
+		return run_this(cT, run_this_args...);
+		break;
+
+	case PARAM_Q:
+		return run_this(Q, run_this_args...);
 		break;
 
 	default:

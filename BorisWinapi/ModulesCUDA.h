@@ -19,7 +19,7 @@ protected:
 	bool initialized = false;
 
 	//energy value for this effective field term
-	cu_obj<cuReal> energy;
+	cu_obj<cuBReal> energy;
 
 private:
 
@@ -78,7 +78,7 @@ public:
 
 	bool IsInitialized(void) { return initialized; }
 
-	cuReal GetEnergy(void) { return energy.to_cpu(); }
+	cuBReal GetEnergy(void) { return energy.to_cpu(); }
 };
 
 #endif

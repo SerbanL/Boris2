@@ -20,7 +20,7 @@ void Simulation::restore_state(void)
 	if (error) {
 
 		//restore.bsm failed : go back to default
-		error.reset() = LoadSimulation(GetDirectory() + "default");
+		error.reset() = LoadSimulation(GetUserDocumentsPath() + "Boris Data\\Simulations\\" + "default");
 
 		if (!error) {
 

@@ -57,11 +57,11 @@ protected:
 	//FFT arrays in GPU memory
 
 	//Input / output space of size N.x * n.y * n.z; zero padding for input from n.x to N.x must be kept by computations
-	cu_arr<cuReal> cuIn_x, cuIn_y, cuIn_z;
-	cu_arr<cuReal> cuOut_x, cuOut_y, cuOut_z;
+	cu_arr<cuBReal> cuIn_x, cuIn_y, cuIn_z;
+	cu_arr<cuBReal> cuOut_x, cuOut_y, cuOut_z;
 
 	//Scratch space (N.x / 2 + 1) * N.y * N.z (except in q2D mode where last dimension is n.z, same as in 2D mode -> q2D mode is disabled if not using the embedded convolution pipeline)
-	cu_arr<cuComplex> cuS_x, cuS_y, cuS_z;
+	cu_arr<cuBComplex> cuS_x, cuS_y, cuS_z;
 
 	//by default the embedded convolution pipeline is used (i.e. FFT -> Mult -> iFFT are done one after another)
 	//if you want to break down the convolution into separate calls then set embed_multiplication = false.
@@ -69,12 +69,12 @@ protected:
 	bool embed_multiplication = true;
 
 	//additional scratch space used if not using embedded convolution
-	cu_arr<cuComplex> cuS2_x, cuS2_y, cuS2_z;
+	cu_arr<cuBComplex> cuS2_x, cuS2_y, cuS2_z;
 
 	//Quarter-size scratch space used for x fft/ifft when the transpose_xy mode is used.
 	//After the x ffts this space is transposed into the main scratch space.
 	//Similarly before the x iffts, the required part from the main scratch space is transposed into the quarter scratch space.
-	cu_arr<cuComplex> cuSquart_x, cuSquart_y, cuSquart_z;
+	cu_arr<cuBComplex> cuSquart_x, cuSquart_y, cuSquart_z;
 
 	//transpose xy planes before doing the y direction fft/ifft?
 	//for 2D mode we have a choice : transpose_xy mode triggered if N.y is above a set threshold
@@ -130,31 +130,31 @@ protected:
 
 	//Copy convolution result (in cuS arrays) to output and obtain energy value : product of In with Out times -MU0 / (2 * non_empty_points), where non_empty_points = In.get_nonempty_points();
 	template <typename cuVECIn, typename cuVECOut>
-	void FinishConvolution_Set(cu_obj<cuVECIn>& In, cu_obj<cuVECOut>& Out, cu_obj<cuReal>& energy, bool get_energy);
+	void FinishConvolution_Set(cu_obj<cuVECIn>& In, cu_obj<cuVECOut>& Out, cu_obj<cuBReal>& energy, bool get_energy);
 	
 	//Add convolution result (in cuS arrays) to output and obtain energy value : product of In with Out times -MU0 / (2 * non_empty_points), where non_empty_points = In.get_nonempty_points();
 	template <typename cuVECIn, typename cuVECOut>
-	void FinishConvolution_Add(cu_obj<cuVECIn>& In, cu_obj<cuVECOut>& Out, cu_obj<cuReal>& energy, bool get_energy);
+	void FinishConvolution_Add(cu_obj<cuVECIn>& In, cu_obj<cuVECOut>& Out, cu_obj<cuBReal>& energy, bool get_energy);
 
 	//Copy convolution result (in cuS arrays) to output and obtain energy value : weighted product of In with Out times -MU0 / (2 * non_empty_points), where non_empty_points = In.get_nonempty_points();
 	template <typename cuVECIn, typename cuVECOut>
-	void FinishConvolution_Set(cu_obj<cuVECIn>& In, cu_obj<cuVECOut>& Out, cu_obj<cuReal>& energy, cu_obj<cuReal>& energy_weight);
+	void FinishConvolution_Set(cu_obj<cuVECIn>& In, cu_obj<cuVECOut>& Out, cu_obj<cuBReal>& energy, cu_obj<cuBReal>& energy_weight);
 
 	//Add convolution result (in cuS arrays) to output and obtain energy value : weighted product of In with Out times -MU0 / (2 * non_empty_points), where non_empty_points = In.get_nonempty_points();
 	template <typename cuVECIn, typename cuVECOut>
-	void FinishConvolution_Add(cu_obj<cuVECIn>& In, cu_obj<cuVECOut>& Out, cu_obj<cuReal>& energy, cu_obj<cuReal>& energy_weight);
+	void FinishConvolution_Add(cu_obj<cuVECIn>& In, cu_obj<cuVECOut>& Out, cu_obj<cuBReal>& energy, cu_obj<cuBReal>& energy_weight);
 
 	//-------------------------- GETTERS
 
 	//Get pointer to the S scratch space
-	cu_arr<cuComplex>* Get_Input_Scratch_Space_x(void) { return &cuS_x; }
-	cu_arr<cuComplex>* Get_Input_Scratch_Space_y(void) { return &cuS_y; }
-	cu_arr<cuComplex>* Get_Input_Scratch_Space_z(void) { return &cuS_z; }
+	cu_arr<cuBComplex>* Get_Input_Scratch_Space_x(void) { return &cuS_x; }
+	cu_arr<cuBComplex>* Get_Input_Scratch_Space_y(void) { return &cuS_y; }
+	cu_arr<cuBComplex>* Get_Input_Scratch_Space_z(void) { return &cuS_z; }
 
 	//Get pointer to the S2 scratch space
-	cu_arr<cuComplex>* Get_Output_Scratch_Space_x(void) { return &cuS2_x; }
-	cu_arr<cuComplex>* Get_Output_Scratch_Space_y(void) { return &cuS2_y; }
-	cu_arr<cuComplex>* Get_Output_Scratch_Space_z(void) { return &cuS2_z; }
+	cu_arr<cuBComplex>* Get_Output_Scratch_Space_x(void) { return &cuS2_x; }
+	cu_arr<cuBComplex>* Get_Output_Scratch_Space_y(void) { return &cuS2_y; }
+	cu_arr<cuBComplex>* Get_Output_Scratch_Space_z(void) { return &cuS2_z; }
 };
 
 #endif

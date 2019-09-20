@@ -99,7 +99,7 @@ PhysQ MeshCUDA::FetchOnScreenPhysicalQuantity(double detail_level)
 		if (prepare_display(n, meshRect, detail_level, M)) {
 
 			//return PhysQ made from the cpu version of coarse mesh display.
-			return PhysQ(pdisplay_vec_vc_vec, pMesh->displayedPhysicalQuantity);
+			return PhysQ(pdisplay_vec_vc_vec, pMesh->displayedPhysicalQuantity, (VEC3REP_)pMesh->vec3rep);
 		}
 		break;
 		
@@ -108,7 +108,7 @@ PhysQ MeshCUDA::FetchOnScreenPhysicalQuantity(double detail_level)
 		if (prepare_display(n, meshRect, detail_level, Heff)) {
 
 			//return PhysQ made from the cpu version of coarse mesh display.
-			return PhysQ(pdisplay_vec_vec, pMesh->displayedPhysicalQuantity);
+			return PhysQ(pdisplay_vec_vec, pMesh->displayedPhysicalQuantity, (VEC3REP_)pMesh->vec3rep);
 		}
 		break;
 		
@@ -117,7 +117,7 @@ PhysQ MeshCUDA::FetchOnScreenPhysicalQuantity(double detail_level)
 		if (prepare_display(n_e, meshRect, detail_level, Jc)) {
 
 			//return PhysQ made from the cpu version of coarse mesh display.
-			return PhysQ(pdisplay_vec_vc_vec, pMesh->displayedPhysicalQuantity);
+			return PhysQ(pdisplay_vec_vc_vec, pMesh->displayedPhysicalQuantity, (VEC3REP_)pMesh->vec3rep);
 		}
 		break;
 
@@ -144,7 +144,7 @@ PhysQ MeshCUDA::FetchOnScreenPhysicalQuantity(double detail_level)
 		if (prepare_display(n_e, meshRect, detail_level, S)) {
 
 			//return PhysQ made from the cpu version of coarse mesh display.
-			return PhysQ(pdisplay_vec_vc_vec, pMesh->displayedPhysicalQuantity);
+			return PhysQ(pdisplay_vec_vc_vec, pMesh->displayedPhysicalQuantity, (VEC3REP_)pMesh->vec3rep);
 		}
 		break;
 
@@ -155,7 +155,7 @@ PhysQ MeshCUDA::FetchOnScreenPhysicalQuantity(double detail_level)
 			if (prepare_display(n_e, meshRect, detail_level, reinterpret_cast<Transport*>(pMesh->pMod(MOD_TRANSPORT))->GetSpinCurrentCUDA(0))) {
 
 				//return PhysQ made from the cpu version of coarse mesh display.
-				return PhysQ(pdisplay_vec_vec, pMesh->displayedPhysicalQuantity);
+				return PhysQ(pdisplay_vec_vec, pMesh->displayedPhysicalQuantity, (VEC3REP_)pMesh->vec3rep);
 			}
 		}
 		break;
@@ -167,7 +167,7 @@ PhysQ MeshCUDA::FetchOnScreenPhysicalQuantity(double detail_level)
 			if (prepare_display(n_e, meshRect, detail_level, reinterpret_cast<Transport*>(pMesh->pMod(MOD_TRANSPORT))->GetSpinCurrentCUDA(1))) {
 
 				//return PhysQ made from the cpu version of coarse mesh display.
-				return PhysQ(pdisplay_vec_vec, pMesh->displayedPhysicalQuantity);
+				return PhysQ(pdisplay_vec_vec, pMesh->displayedPhysicalQuantity, (VEC3REP_)pMesh->vec3rep);
 			}
 		}
 		break;
@@ -179,7 +179,7 @@ PhysQ MeshCUDA::FetchOnScreenPhysicalQuantity(double detail_level)
 			if (prepare_display(n_e, meshRect, detail_level, reinterpret_cast<Transport*>(pMesh->pMod(MOD_TRANSPORT))->GetSpinCurrentCUDA(2))) {
 
 				//return PhysQ made from the cpu version of coarse mesh display.
-				return PhysQ(pdisplay_vec_vec, pMesh->displayedPhysicalQuantity);
+				return PhysQ(pdisplay_vec_vec, pMesh->displayedPhysicalQuantity, (VEC3REP_)pMesh->vec3rep);
 			}
 		}
 		break;
@@ -191,7 +191,7 @@ PhysQ MeshCUDA::FetchOnScreenPhysicalQuantity(double detail_level)
 			if (prepare_display(n, meshRect, detail_level, reinterpret_cast<Transport*>(pMesh->pMod(MOD_TRANSPORT))->GetSpinTorqueCUDA())) {
 
 				//return PhysQ made from the cpu version of coarse mesh display.
-				return PhysQ(pdisplay_vec_vec, pMesh->displayedPhysicalQuantity);
+				return PhysQ(pdisplay_vec_vec, pMesh->displayedPhysicalQuantity, (VEC3REP_)pMesh->vec3rep);
 			}
 		}
 		break;
@@ -204,7 +204,7 @@ PhysQ MeshCUDA::FetchOnScreenPhysicalQuantity(double detail_level)
 				reinterpret_cast<STransport*>(pMesh->pSMesh->pSMod(MODS_STRANSPORT))->GetInterfacialSpinTorqueCUDA(reinterpret_cast<Transport*>(pMesh->pMod(MOD_TRANSPORT))))) {
 
 				//return PhysQ made from the cpu version of coarse mesh display.
-				return PhysQ(pdisplay_vec_vec, pMesh->displayedPhysicalQuantity);
+				return PhysQ(pdisplay_vec_vec, pMesh->displayedPhysicalQuantity, (VEC3REP_)pMesh->vec3rep);
 			}
 		}
 		break;
@@ -225,7 +225,7 @@ PhysQ MeshCUDA::FetchOnScreenPhysicalQuantity(double detail_level)
 		if (pMesh->is_s_scaling_scalar((PARAM_)pMesh->displayedParamVar))
 			return PhysQ(reinterpret_cast<VEC<double>*>(s_scaling), pMesh->displayedPhysicalQuantity);
 		else
-			return PhysQ(reinterpret_cast<VEC<DBL3>*>(s_scaling), pMesh->displayedPhysicalQuantity);
+			return PhysQ(reinterpret_cast<VEC<DBL3>*>(s_scaling), pMesh->displayedPhysicalQuantity, (VEC3REP_)pMesh->vec3rep);
 	}
 		break;
 
@@ -276,6 +276,18 @@ bool MeshCUDA::CurrentTimeStepSolved(void)
 	return pMesh->pSMesh->CurrentTimeStepSolved();
 }
 
+//check evaluation speedup flag in ODECommon
+int MeshCUDA::EvaluationSpeedup(void)
+{
+	return pMesh->pSMesh->EvaluationSpeedup();
+}
+
+//check in ODECommon the type of field update we need to do depending on the ODE evaluation step
+int MeshCUDA::Check_Step_Update(void)
+{
+	return pMesh->pSMesh->Check_Step_Update();
+}
+
 bool MeshCUDA::are_all_params_const(int numParams, ...)
 {
 	va_list params;
@@ -309,7 +321,7 @@ cuReal3 MeshCUDA::GetAverageChargeCurrentDensity(cuRect rectangle)
 	else return cuReal3(0.0);
 }
 
-cuReal MeshCUDA::GetAverageElectricalPotential(cuRect rectangle)
+cuBReal MeshCUDA::GetAverageElectricalPotential(cuRect rectangle)
 {
 	if (pMesh->V.linear_size()) return V()->average_nonempty(n_e.dim(), rectangle);
 	else return 0.0;
@@ -321,13 +333,13 @@ cuReal3 MeshCUDA::GetAverageSpinAccumulation(cuRect rectangle)
 	else return cuReal3(0.0);
 }
 
-cuReal MeshCUDA::GetAverageElectricalConductivity(cuRect rectangle)
+cuBReal MeshCUDA::GetAverageElectricalConductivity(cuRect rectangle)
 {
 	if (pMesh->elC.linear_size()) return elC()->average_nonempty(n_e.dim(), rectangle);
 	else return 0.0;
 }
 
-cuReal MeshCUDA::GetAverageTemperature(cuRect rectangle)
+cuBReal MeshCUDA::GetAverageTemperature(cuRect rectangle)
 {
 	if (pMesh->Temp.linear_size()) return Temp()->average_nonempty(n_t.dim(), rectangle);
 	else return pMesh->base_temperature;
@@ -336,11 +348,11 @@ cuReal MeshCUDA::GetAverageTemperature(cuRect rectangle)
 //----------------------------------- OTHER MESH SHAPE CONTROL
 
 //mask cells using bitmap image : white -> empty cells. black -> keep values. Apply mask up to given z depth number of cells depending on grayscale value (zDepth, all if 0).
-BError MeshCUDA::applymask(cuReal zDepth_m, string fileName, function<vector<BYTE>(string, INT2)>& bitmap_loader)
+BError MeshCUDA::applymask(cuBReal zDepth_m, string fileName, function<vector<BYTE>(string, INT2)>& bitmap_loader)
 {
 	BError error;
 
-	auto run_this = [](auto& VEC_quantity, auto default_value, cuReal zDepth_m, string fileName, function<vector<BYTE>(string, INT2)>& bitmap_loader) -> BError {
+	auto run_this = [](auto& VEC_quantity, auto default_value, cuBReal zDepth_m, string fileName, function<vector<BYTE>(string, INT2)>& bitmap_loader) -> BError {
 
 		BError error;
 

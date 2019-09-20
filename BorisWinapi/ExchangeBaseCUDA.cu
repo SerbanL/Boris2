@@ -10,11 +10,11 @@
 __global__ void CalculateExchangeCoupling_kernel(
 	ManagedMeshCUDA& mesh_sec, ManagedMeshCUDA& mesh_pri,
 	CMBNDInfoCUDA& contact,
-	cuReal& energy, bool do_reduction)
+	cuBReal& energy, bool do_reduction)
 {
 	int box_idx = blockIdx.x * blockDim.x + threadIdx.x;
 
-	cuReal energy_ = 0.0;
+	cuBReal energy_ = 0.0;
 
 	cuINT3 box_sizes = contact.cells_box.size();
 
@@ -28,7 +28,7 @@ __global__ void CalculateExchangeCoupling_kernel(
 		int j = ((box_idx / box_sizes.x) % box_sizes.y) + contact.cells_box.s.j;
 		int k = (box_idx / (box_sizes.x * box_sizes.y)) + contact.cells_box.s.k;
 
-		cuReal hRsq = contact.hshift_primary.norm();
+		cuBReal hRsq = contact.hshift_primary.norm();
 		hRsq *= hRsq;
 
 		int cell1_idx = i + j * M_pri.n.x + k * M_pri.n.x*M_pri.n.y;
@@ -44,8 +44,8 @@ __global__ void CalculateExchangeCoupling_kernel(
 			//stencil is used for weighted_average to obtain values in the secondary mesh : has size equal to primary cellsize area on interface with thickness set by secondary cellsize thickness
 			cuReal3 stencil = M_pri.h - cu_mod(contact.hshift_primary) + cu_mod(contact.hshift_secondary);
 
-			cuReal Ms = *mesh_pri.pMs;
-			cuReal A = *mesh_pri.pA;
+			cuBReal Ms = *mesh_pri.pMs;
+			cuBReal A = *mesh_pri.pA;
 			mesh_pri.update_parameters_mcoarse(cell1_idx, *mesh_pri.pA, A, *mesh_pri.pMs, Ms);
 
 			cuReal3 Hexch;
@@ -73,7 +73,7 @@ __global__ void CalculateExchangeCoupling_kernel(
 			if (do_reduction) {
 
 				int non_empty_cells = M_pri.get_nonempty_cells();
-				if (non_empty_cells) energy_ = -(cuReal)MU0 * M_1 * Hexch / (2 * non_empty_cells);
+				if (non_empty_cells) energy_ = -(cuBReal)MU0 * M_1 * Hexch / (2 * non_empty_cells);
 			}
 		}
 	}
@@ -84,7 +84,7 @@ __global__ void CalculateExchangeCoupling_kernel(
 //----------------------- CalculateExchangeCoupling LAUNCHER
 
 //calculate exchange field at coupled cells in this mesh; accumulate energy density contribution in energy
-void ExchangeBaseCUDA::CalculateExchangeCoupling(cu_obj<cuReal>& energy)
+void ExchangeBaseCUDA::CalculateExchangeCoupling(cu_obj<cuBReal>& energy)
 {
 	for (int contact_idx = 0; contact_idx < CMBNDcontacts.size(); contact_idx++) {
 

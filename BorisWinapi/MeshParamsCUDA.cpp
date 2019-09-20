@@ -99,6 +99,11 @@ MeshParamsCUDA::MeshParamsCUDA(MeshParams *pmeshParams)
 	pmeshParams->density.set_p_cu_obj_mpcuda(&density);
 	shc()->set_from_cpu(pmeshParams->shc);
 	pmeshParams->shc.set_p_cu_obj_mpcuda(&shc);
+
+	cT()->set_from_cpu(pmeshParams->cT);
+	pmeshParams->cT.set_p_cu_obj_mpcuda(&cT);
+	Q()->set_from_cpu(pmeshParams->Q);
+	pmeshParams->Q.set_p_cu_obj_mpcuda(&Q);
 }
 
 MeshParamsCUDA::~MeshParamsCUDA()
@@ -157,6 +162,9 @@ MeshParamsCUDA::~MeshParamsCUDA()
 	pmeshParams->thermCond.null_p_cu_obj_mpcuda();
 	pmeshParams->density.null_p_cu_obj_mpcuda();
 	pmeshParams->shc.null_p_cu_obj_mpcuda();
+
+	pmeshParams->cT.null_p_cu_obj_mpcuda();
+	pmeshParams->Q.null_p_cu_obj_mpcuda();
 }
 
 #endif

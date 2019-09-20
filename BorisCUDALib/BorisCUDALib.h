@@ -10,10 +10,22 @@
 #include "cuFuncs_Aux.h"
 #include "cuFuncs_Math.h"
 #include "CUDAError.h"
+#include "alloc_cpy.h"
 
 //first order - include at least one base header
+#include "cuObject.h"
 #include "cu_prng.h"
 #include "cuTypes.h"
+
+#include "cuArray.h"
+#include "cuArray_mng_gpu.h"
+#include "cuArray_mng_cpu.h"
+#include "cuArray_aux.h"
+#include "cuArray_sizing.h"
+#include "cuArray_transfer.h"
+
+//second order
+
 #include "cuVEC.h"
 #include "cuVEC_mng.h"
 #include "cuVEC_aux.h"
@@ -30,15 +42,4 @@
 #include "cuVEC_VC_grad.h"
 #include "cuVEC_VC_div.h"
 #include "cuVEC_VC_curl.h"
-
-//second order
-#include "alloc_cpy.h"
-
-#include "cuObject.h"
-#include "cuArray.h"
-#include "cuArray_mng_gpu.h"
-#include "cuArray_mng_cpu.h"
-#include "cuArray_aux.h"
-#include "cuArray_sizing.h"
-#include "cuArray_transfer.h"
 

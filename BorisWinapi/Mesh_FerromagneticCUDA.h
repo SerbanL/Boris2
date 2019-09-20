@@ -47,7 +47,7 @@ public:
 	//----------------------------------- OTHER IMPORTANT CONTROL METHODS
 
 	//Check if mesh needs to be moved (using the MoveMesh method) - return amount of movement required (i.e. parameter to use when calling MoveMesh).
-	cuReal CheckMoveMesh(bool antisymmetric, double threshold);
+	cuBReal CheckMoveMesh(bool antisymmetric, double threshold);
 
 	//----------------------------------- ENABLED MESH PROPERTIES CHECKERS
 

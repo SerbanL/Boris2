@@ -5,7 +5,7 @@
 //------------------------------------------------------------------- ZERO AUX VALUES
 
 template <typename VType>
-__global__ void zero_aux_values(VType& aux_value, VType& aux_value2, VType& aux_value3, cuReal& aux_real, size_t& aux_integer)
+__global__ void zero_aux_values(VType& aux_value, VType& aux_value2, VType& aux_value3, cuBReal& aux_real, size_t& aux_integer)
 {
 	if (threadIdx.x == 0) aux_value = VType();
 	if (threadIdx.x == 1) aux_value2 = VType();

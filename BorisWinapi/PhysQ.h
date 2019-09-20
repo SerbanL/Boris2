@@ -40,6 +40,9 @@ private:
 	//number of cells
 	SZ3 n;
 
+	//the type of representation to use for vectorial quantities
+	VEC3REP_ vec3rep = VEC3REP_FULL;
+
 	//there should be one mesh which is in focus - this sets conversion factors for display and centers view on the focused mesh
 	bool meshInFocus = false;
 
@@ -54,12 +57,12 @@ public:
 	PhysQ(Rect rect_, DBL3 h_, unsigned displayedType_);
 
 	//constructors for various displayed types
-	PhysQ(VEC<DBL3> *pVEC_, unsigned displayedType_);
-	PhysQ(VEC<FLT3> *pVEC_, unsigned displayedType_);
+	PhysQ(VEC<DBL3> *pVEC_, unsigned displayedType_, VEC3REP_ vec3rep_);
+	PhysQ(VEC<FLT3> *pVEC_, unsigned displayedType_, VEC3REP_ vec3rep_);
 	PhysQ(VEC<double> *pVEC_, unsigned displayedType_);
 	PhysQ(VEC<float> *pVEC_, unsigned displayedType_);
-	PhysQ(VEC_VC<DBL3> *pVEC_, unsigned displayedType_);
-	PhysQ(VEC_VC<FLT3> *pVEC_, unsigned displayedType_);
+	PhysQ(VEC_VC<DBL3> *pVEC_, unsigned displayedType_, VEC3REP_ vec3rep_);
+	PhysQ(VEC_VC<FLT3> *pVEC_, unsigned displayedType_, VEC3REP_ vec3rep_);
 	PhysQ(VEC_VC<double> *pVEC_, unsigned displayedType_);
 	PhysQ(VEC_VC<float> *pVEC_, unsigned displayedType_);
 
@@ -97,6 +100,8 @@ public:
 	string get_unit(void) { return meshDisplay_unit(displayedType); }
 	string get_type_name(void) { return displayHandles(displayedType); }
 	int get_type(void) { return displayedType; }
+
+	VEC3REP_ get_vec3rep(void) { return vec3rep; }
 
 	SZ3 size(void);
 

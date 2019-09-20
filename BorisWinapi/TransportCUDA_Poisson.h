@@ -22,8 +22,8 @@ class TransportCUDA_V_Funcs {
 public:
 
 	//these point the V and elC quantities held in *pMeshCUDA
-	cuVEC_VC<cuReal>* pV;
-	cuVEC_VC <cuReal>* pelC;
+	cuVEC_VC<cuBReal>* pV;
+	cuVEC_VC <cuBReal>* pelC;
 
 public:
 
@@ -33,10 +33,10 @@ public:
 	BError set_pointers(MeshCUDA* pMeshCUDA);
 
 	//this evaluates the Poisson RHS when solving the Poisson equation on V
-	__device__ cuReal Poisson_RHS(int idx)
+	__device__ cuBReal Poisson_RHS(int idx)
 	{
-		cuVEC_VC<cuReal>& V = *pV;
-		cuVEC_VC<cuReal>& elC = *pelC;
+		cuVEC_VC<cuBReal>& V = *pV;
+		cuVEC_VC<cuBReal>& elC = *pelC;
 
 		return -(V.grad_diri(idx) * elC.grad_sided(idx)) / elC[idx];
 	}
@@ -44,44 +44,44 @@ public:
 	//Charge transport only : V
 
 	//For V only : V and Jc are continuous; Jc = -sigma * grad V = a + b * grad V -> a = 0 and b = -sigma taken at the interface	
-	__device__ cuReal a_func_pri(int cell1_idx, int cell2_idx, cuReal3 shift)
+	__device__ cuBReal a_func_pri(int cell1_idx, int cell2_idx, cuReal3 shift)
 	{
 		return 0.0;
 	}
 
-	__device__ cuReal a_func_sec(cuReal3 relpos_m1, cuReal3 shift, cuReal3 stencil)
+	__device__ cuBReal a_func_sec(cuReal3 relpos_m1, cuReal3 shift, cuReal3 stencil)
 	{
 		return 0.0;
 	}
 
 	//For V only : V and Jc are continuous; Jc = -sigma * grad V = a + b * grad V -> a = 0 and b = -sigma taken at the interface	
-	__device__ cuReal b_func_pri(int cell1_idx, int cell2_idx)
+	__device__ cuBReal b_func_pri(int cell1_idx, int cell2_idx)
 	{
-		cuVEC_VC<cuReal>& elC = *pelC;
+		cuVEC_VC<cuBReal>& elC = *pelC;
 
 		return -(1.5 * elC[cell1_idx] - 0.5 * elC[cell2_idx]);
 	}
 
-	__device__ cuReal b_func_sec(cuReal3 relpos_m1, cuReal3 shift, cuReal3 stencil)
+	__device__ cuBReal b_func_sec(cuReal3 relpos_m1, cuReal3 shift, cuReal3 stencil)
 	{
-		cuVEC_VC<cuReal>& elC = *pelC;
+		cuVEC_VC<cuBReal>& elC = *pelC;
 
 		return -(1.5 * elC.weighted_average(relpos_m1, stencil) - 0.5 * elC.weighted_average(relpos_m1 + shift, stencil));
 	}
 
 	//second order differential of V at cells either side of the boundary; delsq V = -grad V * grad elC / elC
-	__device__ cuReal diff2_pri(int cell1_idx)
+	__device__ cuBReal diff2_pri(int cell1_idx)
 	{
-		cuVEC_VC<cuReal>& V = *pV;
-		cuVEC_VC<cuReal>& elC = *pelC;
+		cuVEC_VC<cuBReal>& V = *pV;
+		cuVEC_VC<cuBReal>& elC = *pelC;
 
 		return -(V.grad_diri(cell1_idx) * elC.grad_sided(cell1_idx)) / elC[cell1_idx];
 	}
 
-	__device__ cuReal diff2_sec(cuReal3 relpos_m1, cuReal3 stencil)
+	__device__ cuBReal diff2_sec(cuReal3 relpos_m1, cuReal3 stencil)
 	{
-		cuVEC_VC<cuReal>& V = *pV;
-		cuVEC_VC<cuReal>& elC = *pelC;
+		cuVEC_VC<cuBReal>& V = *pV;
+		cuVEC_VC<cuBReal>& elC = *pelC;
 
 		int cellm1_idx = V.position_to_cellidx(relpos_m1);
 

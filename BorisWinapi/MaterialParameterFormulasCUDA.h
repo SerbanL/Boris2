@@ -15,28 +15,28 @@ protected:
 	int formula_selector;
 
 	//coefficients
-	cuReal *pcoeff;
+	cuBReal *pcoeff;
 
 private:
 
 	//--------- MATPFORM_NONE
 
-	__device__ cuReal __MATPFORM_NONE(cuReal T) const { return 1.0; }
+	__device__ cuBReal __MATPFORM_NONE(cuBReal T) const { return 1.0; }
 
 	//--------- MATPFORM_LINEAR
 
 	// y = x0 * T + 1
-	__device__ cuReal __MATPFORM_LINEAR(cuReal T) const { return (pcoeff[0] * T + 1); }
+	__device__ cuBReal __MATPFORM_LINEAR(cuBReal T) const { return (pcoeff[0] * T + 1); }
 
 	//--------- MATPFORM_PARABOLIC
 
 	// y = x0 * T^2 + x1 * T + 1
-	__device__ cuReal __MATPFORM_PARABOLIC(cuReal T) const { return (pcoeff[0] * T*T + pcoeff[1] * T + 1); }
+	__device__ cuBReal __MATPFORM_PARABOLIC(cuBReal T) const { return (pcoeff[0] * T*T + pcoeff[1] * T + 1); }
 
 	//--------- MATPFORM_INVERSELINEAR
 
 	// y = 1 / (x0 * T + 1). coeff[0] not allowed to be negative.
-	__device__ cuReal __MATPFORM_INVERSELINEAR(cuReal T) const { return 1 / (pcoeff[0] * T + 1); }
+	__device__ cuBReal __MATPFORM_INVERSELINEAR(cuBReal T) const { return 1 / (pcoeff[0] * T + 1); }
 
 protected:
 
@@ -49,7 +49,7 @@ protected:
 
 		nullgpuptr(pcoeff);
 		gpu_alloc_managed(pcoeff, MAXFORMULACOEFFICIENTS);
-		gpu_set_managed(pcoeff, (cuReal)0.0, MAXFORMULACOEFFICIENTS);
+		gpu_set_managed(pcoeff, (cuBReal)0.0, MAXFORMULACOEFFICIENTS);
 	}
 
 	//destructor
@@ -68,7 +68,7 @@ protected:
 	//---------Get scaling value
 
 	//get value at given temperature for set formula
-	__device__ cuReal t_scaling_formula(cuReal T)
+	__device__ cuBReal t_scaling_formula(cuBReal T)
 	{
 		switch (formula_selector) {
 

@@ -14,7 +14,7 @@ __global__ void RunTEuler_Step0_withReductions_Kernel(ManagedDiffEqCUDA& cuDiffE
 {
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
 
-	cuReal dT = *cuDiffEq.pdT;
+	cuBReal dT = *cuDiffEq.pdT;
 
 	cuReal3 mxh = cuReal3();
 
@@ -23,7 +23,7 @@ __global__ void RunTEuler_Step0_withReductions_Kernel(ManagedDiffEqCUDA& cuDiffE
 		if (cuMesh.pM->is_not_empty(idx)) {
 
 			//obtain average normalized torque term
-			cuReal Mnorm = (*cuMesh.pM)[idx].norm();
+			cuBReal Mnorm = (*cuMesh.pM)[idx].norm();
 
 			if (cuDiffEq.pH_Thermal->linear_size()) {
 
@@ -56,7 +56,7 @@ __global__ void RunTEuler_Step0_Kernel(ManagedDiffEqCUDA& cuDiffEq, ManagedMeshC
 {
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
 
-	cuReal dT = *cuDiffEq.pdT;
+	cuBReal dT = *cuDiffEq.pdT;
 
 	if (idx < cuMesh.pM->linear_size()) {
 
@@ -81,7 +81,7 @@ __global__ void RunTEuler_Step1_withReductions_Kernel(ManagedDiffEqCUDA& cuDiffE
 {
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
 
-	cuReal dT = *cuDiffEq.pdT;
+	cuBReal dT = *cuDiffEq.pdT;
 
 	cuReal3 dmdt = cuReal3();
 
@@ -99,18 +99,18 @@ __global__ void RunTEuler_Step1_withReductions_Kernel(ManagedDiffEqCUDA& cuDiffE
 
 				if (*cuDiffEq.prenormalize) {
 
-					cuReal Ms = *cuMesh.pMs;
+					cuBReal Ms = *cuMesh.pMs;
 					cuMesh.update_parameters_mcoarse(idx, *cuMesh.pMs, Ms);
 					(*cuMesh.pM)[idx].renormalize(Ms);
 				}
 
 				//obtain maximum normalized dmdt term
-				cuReal Mnorm = (*cuMesh.pM)[idx].norm();
-				dmdt = ((*cuMesh.pM)[idx] - (*cuDiffEq.psM1)[idx]) / (dT * (cuReal)GAMMA * Mnorm * Mnorm);
+				cuBReal Mnorm = (*cuMesh.pM)[idx].norm();
+				dmdt = ((*cuMesh.pM)[idx] - (*cuDiffEq.psM1)[idx]) / (dT * (cuBReal)GAMMA * Mnorm * Mnorm);
 			}
 			else {
 
-				cuReal Ms = *cuMesh.pMs;
+				cuBReal Ms = *cuMesh.pMs;
 				cuMesh.update_parameters_mcoarse(idx, *cuMesh.pMs, Ms);
 				(*cuMesh.pM)[idx].renormalize(Ms);		//re-normalize the skipped cells no matter what - temperature can change
 			}
@@ -128,7 +128,7 @@ __global__ void RunTEuler_Step1_Kernel(ManagedDiffEqCUDA& cuDiffEq, ManagedMeshC
 {
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
 
-	cuReal dT = *cuDiffEq.pdT;
+	cuBReal dT = *cuDiffEq.pdT;
 
 	if (idx < cuMesh.pM->linear_size()) {
 
@@ -144,14 +144,14 @@ __global__ void RunTEuler_Step1_Kernel(ManagedDiffEqCUDA& cuDiffEq, ManagedMeshC
 
 				if (*cuDiffEq.prenormalize) {
 
-					cuReal Ms = *cuMesh.pMs;
+					cuBReal Ms = *cuMesh.pMs;
 					cuMesh.update_parameters_mcoarse(idx, *cuMesh.pMs, Ms);
 					(*cuMesh.pM)[idx].renormalize(Ms);
 				}
 			}
 			else {
 
-				cuReal Ms = *cuMesh.pMs;
+				cuBReal Ms = *cuMesh.pMs;
 				cuMesh.update_parameters_mcoarse(idx, *cuMesh.pMs, Ms);
 				(*cuMesh.pM)[idx].renormalize(Ms);		//re-normalize the skipped cells no matter what - temperature can change
 			}

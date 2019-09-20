@@ -40,9 +40,9 @@ __host__ void cuVEC_VC<VType>::alloc_initialize_data(void)
 
 	set_gpu_value(shift_debt, cuReal3());
 
-	set_gpu_value(aSOR_damping, (cuReal)1.0);
-	set_gpu_value(aSOR_lasterror, (cuReal)0.0);
-	set_gpu_value(aSOR_lastgrad, (cuReal)0.0);
+	set_gpu_value(aSOR_damping, (cuBReal)1.0);
+	set_gpu_value(aSOR_lasterror, (cuBReal)0.0);
+	set_gpu_value(aSOR_lastgrad, (cuBReal)0.0);
 
 	set_gpu_value(pbc_x, (int)0);
 	set_gpu_value(pbc_y, (int)0);
@@ -610,7 +610,7 @@ __host__ bool cuVEC_VC<VType>::set_from_cpuvec(cpuVEC_VC& vec_vc)
 	set_gpu_value(shift_debt, (cuReal3)vec_vc.shift_debt_ref());
 
 	//copy aSOR parameters
-	set_gpu_value(aSOR_damping, (cuReal)vec_vc.aSOR_damping_ref());
+	set_gpu_value(aSOR_damping, (cuBReal)vec_vc.aSOR_damping_ref());
 
 	//copy pbc parameters
 	set_gpu_value(pbc_x, (int)vec_vc.pbc_x_ref());
@@ -755,7 +755,7 @@ __host__ bool cuVEC_VC<VType>::copy_from_cpuvec(cpuVEC_VC& vec_vc)
 	set_gpu_value(shift_debt, (cuReal3)vec_vc.shift_debt_ref());
 
 	//copy aSOR parameters
-	set_gpu_value(aSOR_damping, (cuReal)vec_vc.aSOR_damping_ref());
+	set_gpu_value(aSOR_damping, (cuBReal)vec_vc.aSOR_damping_ref());
 
 	//copy pbc parameters
 	set_gpu_value(pbc_x, (int)vec_vc.pbc_x_ref());
@@ -798,6 +798,11 @@ template <typename VType>
 template <typename cpuVEC_VC>
 __host__ bool cuVEC_VC<VType>::copyflags_from_cpuvec(cpuVEC_VC& vec_vc)
 {
+	//copy pbc parameters : need to copy these since they are associated with setting flags
+	set_gpu_value(pbc_x, (int)vec_vc.pbc_x_ref());
+	set_gpu_value(pbc_y, (int)vec_vc.pbc_y_ref());
+	set_gpu_value(pbc_z, (int)vec_vc.pbc_z_ref());
+
 	std::vector<int>& ngbrFlags_cpu = vec_vc.ngbrFlags_ref();
 
 	cudaError_t error = cpu_to_gpu_managed(ngbrFlags, ngbrFlags_cpu.data(), ngbrFlags_cpu.size());

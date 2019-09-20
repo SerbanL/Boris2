@@ -26,7 +26,7 @@ class DemagKernelCUDA :
 private:
 
 	//off-diagonal Kernel used for 2D only (real parts only, imaginary parts are zero)
-	cu_obj<cuVEC<cuReal>> K2D_odiag;
+	cu_obj<cuVEC<cuBReal>> K2D_odiag;
 
 	//Kernels for 3D : GPU memory
 	//Kdiag : Kx, Ky, Kz; Kodiag : Kxy, Kxz, Kyz; (real parts only, imaginary parts are zero)

@@ -20,12 +20,16 @@
 
 //BUGS
 
-//UNSOLVED:
-//Drag and drop simulation file sometimes crashes program - happens on Windows 10; rare.
+//NOT SOLVED:
+//Saving simulation file sometimes sets dT to zero (to a floating point error). I've only seen it happen with CUDA enabled. Very rare, no apparent cause found yet.
 
 //LIKELY SOLVED:
-//Saving simulation file sometimes sets dT to zero (to a floating point error). I've only seen it happen with CUDA enabled.
-//Using a python script may result in program hanging if issuing a flood of commands.
+//1. Using a python script may result in program hanging if issuing a flood of commands.
+//2. If heat solver diverges (e.g. due to too high a time step), and at least 1 material parameter has a temperature dependence, when in CUDA mode out of gpu memory errors can result requiring a program restart. 
+//I seem to have fixed it using extra checks on Temperature when getting updated parameter values, but I don't understand why this happens without the checks so the solution seems like a hack. Not happy with this!
+
+//SOLVED:
+//1. Drag and drop simulation file sometimes crashes program. Found bad conversion function - I'm certain that was the problem, so consider this solved but keep an eye on this for a while.
 
 #pragma once
 
@@ -62,7 +66,7 @@ class Simulation :
 	public SimulationSharedData, 
 	public Threads<Simulation>,
 	public ProgramState<Simulation, 
-	tuple<BorisDisplay, string, string, string, string, bool, bool, bool, vector_lut<DatumConfig>, vector_lut<DatumConfig>, INT2, vector_lut<StageConfig>, int, bool, SuperMesh, bool, bool, bool>,
+	tuple<BorisDisplay, string, string, string, string, bool, bool, bool, vector_lut<DatumConfig>, vector_lut<DatumConfig>, INT2, vector_lut<StageConfig>, int, bool, SuperMesh, bool, bool, bool, DBL4>,
 	tuple<> >
 {
 private:
@@ -108,7 +112,7 @@ private:
 	vector_key_lut<DatumSpecifier> dataDescriptor;
 
 	//working directory and file for saving output data
-	string directory = GetDirectory() + std::string("User\\");
+	string directory;
 	string savedataFile = "out_data.txt";
 	//image save file base (during a simulation this is complemented by _iteration.png termination)
 	string imageSaveFileBase = "mesh_image";
@@ -156,6 +160,10 @@ private:
 
 	//autocomplete commands in console
 	bool autocomplete = true;
+
+	//default no cropping of saved mesh images : left, bottom, right, top : 0, 0 point is left, bottom of screen as far as user is concerned.
+	//use a small back-off (0.001) for default settings to avoid capturing lines at the edges
+	DBL4 image_cropping = DBL4(0.001, 0.001, 0.999, 0.999);
 
 	//Simulation super-mesh
 	SuperMesh SMesh;
@@ -582,4 +590,13 @@ public:
 #else
 	void NewMessage(string message);
 #endif
+
+	//Various property checkers required for menu ticks
+
+	//-1 : N/A, 0 : Off, 1 : On
+	int GetCUDAStatus(void) { if (!cudaAvailable) return -1; else return cudaEnabled; }
+	bool GetIndividualShapeStatus(void) { return shape_change_individual; }
+	bool GetScaleRectsStatus(void) { return SMesh.Get_Scale_Rects(); }
+	bool GetCoupleToDipolesStatus(void) { return SMesh.Get_Coupled_To_Dipoles(); }
+	bool GetMovingMeshStatus(void) { return SMesh.IsMovingMeshSet(); }
 };

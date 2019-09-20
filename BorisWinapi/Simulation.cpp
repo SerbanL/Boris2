@@ -17,7 +17,8 @@ Simulation::Simulation(HWND hWnd, int Program_Version) :
 			VINFO(SMesh),
 			VINFO(cudaEnabled),
 			VINFO(shape_change_individual),
-			VINFO(static_transport_solver)
+			VINFO(static_transport_solver),
+			VINFO(image_cropping)
 		}, {})
 #else
 Simulation::Simulation(int Program_Version) :
@@ -35,7 +36,8 @@ Simulation::Simulation(int Program_Version) :
 			VINFO(SMesh),
 			VINFO(cudaEnabled),
 			VINFO(shape_change_individual),
-			VINFO(static_transport_solver)
+			VINFO(static_transport_solver),
+			VINFO(image_cropping)
 		}, {})
 #endif
 {
@@ -288,7 +290,8 @@ Simulation::Simulation(int Program_Version) :
 
 	commands.insert(CMD_2DMULTICONV, CommandSpecifier(CMD_2DMULTICONV), "2dmulticonvolution");
 	commands[CMD_2DMULTICONV].usage = "[tc0,0.5,0,1/tc]USAGE : <b>2dmulticonvolution</b> <i>status</i>";
-	commands[CMD_2DMULTICONV].descr = "[tc0,0.5,0.5,1/tc]Switch to multi-layered convolution and force it to 2D (true) or allow 3D (false).";
+	commands[CMD_2DMULTICONV].descr = "[tc0,0.5,0.5,1/tc]Switch to multi-layered convolution and force it to 2D layering in each mesh (2), or 2D convolution for each mesh (1), or allow 3D (0).";
+	commands[CMD_2DMULTICONV].limits = { { int(0), int(2) } };
 
 	commands.insert(CMD_NCOMMONSTATUS, CommandSpecifier(CMD_NCOMMONSTATUS), "ncommonstatus");
 	commands[CMD_NCOMMONSTATUS].usage = "[tc0,0.5,0,1/tc]USAGE : <b>ncommonstatus</b> <i>status</i>";
@@ -303,6 +306,11 @@ Simulation::Simulation(int Program_Version) :
 	commands.insert(CMD_ODE, CommandSpecifier(CMD_ODE), "ode");
 	commands[CMD_ODE].usage = "[tc0,0.5,0,1/tc]USAGE : <b>ode</b>";
 	commands[CMD_ODE].descr = "[tc0,0.5,0.5,1/tc]Show interactive list of available and currently set ODEs and evaluation methods.";
+
+	commands.insert(CMD_EVALSPEEDUP, CommandSpecifier(CMD_EVALSPEEDUP), "evalspeedup");
+	commands[CMD_EVALSPEEDUP].usage = "[tc0,0.5,0,1/tc]USAGE : <b>evalspeedup</b> <i>status</i>";
+	commands[CMD_EVALSPEEDUP].limits = { { int(EVALSPEEDUP_NONE), int(EVALSPEEDUP_NUMENTRIES) - 1 } };
+	commands[CMD_EVALSPEEDUP].descr = "[tc0,0.5,0.5,1/tc]<b>!!!Experimental!!!</b> Do not use until fully tested and documented (publication pending), unless you know what you're doing. Status levels: 0 (no speedup), 1 (accurate), 2 (aggressive), 3 (extreme). Note: use RK4 with status = 2; RKF with status = 2.";
 
 	commands.insert(CMD_SETODE, CommandSpecifier(CMD_SETODE), "setode");
 	commands[CMD_SETODE].usage = "[tc0,0.5,0,1/tc]USAGE : <b>setode</b> <i>equation evaluation</i>";
@@ -499,6 +507,11 @@ Simulation::Simulation(int Program_Version) :
 	commands[CMD_DISPLAY].usage = "[tc0,0.5,0,1/tc]USAGE : <b>display</b> <i>name (meshname)</i>";
 	commands[CMD_DISPLAY].descr = "[tc0,0.5,0.5,1/tc]Change quantity to display for given mesh (active mesh if name not given).";
 
+	commands.insert(CMD_VECREP, CommandSpecifier(CMD_VECREP), "vecrep");
+	commands[CMD_VECREP].usage = "[tc0,0.5,0,1/tc]USAGE : <b>vecrep</b> <i>meshname vecreptype</i>";
+	commands[CMD_VECREP].limits = { { Any(), Any() }, { int(0), int(VEC3REP_NUMOPTIONS) } };
+	commands[CMD_VECREP].descr = "[tc0,0.5,0.5,1/tc]Set representation type for vectorial quantities in named mesh (or supermesh). vecreptype = 0 (full), vecreptype = 1 (x component), vecreptype = 2 (y component), vecreptype = 3 (z component), vecreptype = 4 (direction only).";
+
 	commands.insert(CMD_SAVEMESHIMAGE, CommandSpecifier(CMD_SAVEMESHIMAGE), "savemeshimage");
 	commands[CMD_SAVEMESHIMAGE].usage = "[tc0,0.5,0,1/tc]USAGE : <b>savemeshimage</b> <i>((directory\\)filename)</i>";
 	commands[CMD_SAVEMESHIMAGE].descr = "[tc0,0.5,0.5,1/tc]Save currently displayed mesh image to given file (as .png). If directory not specified then default directory is used. If filename not specified then default image save file name is used.";
@@ -508,9 +521,18 @@ Simulation::Simulation(int Program_Version) :
 	commands[CMD_MAKEVIDEO].limits = { { Any(), Any() }, { double(1), double(120) }, { int(0), int(5) } };
 	commands[CMD_MAKEVIDEO].descr = "[tc0,0.5,0.5,1/tc]Make a video from .png files sharing the common filebase name. Make video at given fps and quality (0 to 5 worst to best).";
 	
+	commands.insert(CMD_IMAGECROPPING, CommandSpecifier(CMD_IMAGECROPPING), "imagecropping");
+	commands[CMD_IMAGECROPPING].usage = "[tc0,0.5,0,1/tc]USAGE : <b>imagecropping</b> <i>left bottom right top</i>";
+	commands[CMD_IMAGECROPPING].limits = { { double(0), double(1) }, { double(0), double(1) }, { double(0), double(1) }, { double(0), double(1) } };
+	commands[CMD_IMAGECROPPING].descr = "[tc0,0.5,0.5,1/tc]Set cropping of saved mesh images using normalized left, bottom, right, top values: 0, 0 point is left, bottom of mesh window and 1, 1 is right, top of mesh window.";
+
 	commands.insert(CMD_MOVINGMESH, CommandSpecifier(CMD_MOVINGMESH), "movingmesh");
 	commands[CMD_MOVINGMESH].usage = "[tc0,0.5,0,1/tc]USAGE : <b>movingmesh</b> <i>status_or_meshname</i>";
 	commands[CMD_MOVINGMESH].descr = "[tc0,0.5,0.5,1/tc]Set/unset trigger for movingmesh algorithm. If status_or_meshname = 0 then turn off, if status_or_meshname = 1 then turn on with trigger set on first ferromagnetic mesh, else status_or_meshname should specify the mesh name to use as trigger.";
+
+	commands.insert(CMD_CLEARMOVINGMESH, CommandSpecifier(CMD_CLEARMOVINGMESH), "clearmovingmesh");
+	commands[CMD_CLEARMOVINGMESH].usage = "[tc0,0.5,0,1/tc]USAGE : <b>clearmovingmesh</b>";
+	commands[CMD_CLEARMOVINGMESH].descr = "[tc0,0.5,0.5,1/tc]Clear moving mesh settings made by a prepare command.";
 
 	commands.insert(CMD_MOVINGMESHASYM, CommandSpecifier(CMD_MOVINGMESHASYM), "movingmeshasym");
 	commands[CMD_MOVINGMESHASYM].usage = "[tc0,0.5,0,1/tc]USAGE : <b>movingmeshasym</b> <i>status</i>";
@@ -629,13 +651,13 @@ Simulation::Simulation(int Program_Version) :
 	commands.insert(CMD_TEMPERATURE, CommandSpecifier(CMD_TEMPERATURE), "temperature");
 	commands[CMD_TEMPERATURE].usage = "[tc0,0.5,0,1/tc]USAGE : <b>temperature</b> <i>value (meshname)</i>";
 	commands[CMD_TEMPERATURE].limits = { { double(0.0), double(MAX_TEMPERATURE) }, { Any(), Any() } };
-	commands[CMD_TEMPERATURE].descr = "[tc0,0.5,0.5,1/tc]Set mesh base temperature (all meshes if meshname not given) and reset temperature. Also set ambient temperature if Heat module added.";
+	commands[CMD_TEMPERATURE].descr = "[tc0,0.5,0.5,1/tc]Set mesh base temperature (all meshes if meshname not given) and reset temperature. Also set ambient temperature if Heat module added. If the base temperature setting has a spatial dependence specified through cT, this command will take it into account but only if the Heat module is added. If you want the temperature to remain fixed you can still have the Heat module enabled but disable the heat equation by setting the heat dT to zero (setheatdt 0).";
 	commands[CMD_TEMPERATURE].unit = "K";
 	commands[CMD_TEMPERATURE].return_descr = "[tc0,0.5,0,1/tc]Script return values: <i>value</i> - temperature value for mesh in focus.";
 
 	commands.insert(CMD_SETHEATDT, CommandSpecifier(CMD_SETHEATDT), "setheatdt");
 	commands[CMD_SETHEATDT].usage = "[tc0,0.5,0,1/tc]USAGE : <b>setheatdt</b> <i>value</i>";
-	commands[CMD_SETHEATDT].limits = { { double(MINTIMESTEP), double(MAXTIMESTEP) } };
+	commands[CMD_SETHEATDT].limits = { { double(0), double(MAXTIMESTEP) } };
 	commands[CMD_SETHEATDT].descr = "[tc0,0.5,0.5,1/tc]Set heat equation solver time step.";
 	commands[CMD_SETHEATDT].unit = "s";
 	commands[CMD_SETHEATDT].return_descr = "[tc0,0.5,0,1/tc]Script return values: <i>value</i> - heat equation time step.";
@@ -663,7 +685,7 @@ Simulation::Simulation(int Program_Version) :
 	commands.insert(CMD_CURIETEMPERATURE, CommandSpecifier(CMD_CURIETEMPERATURE), "curietemperature");
 	commands[CMD_CURIETEMPERATURE].usage = "[tc0,0.5,0,1/tc]USAGE : <b>curietemperature</b> <i>curie_temperature (meshname)</i>";
 	commands[CMD_CURIETEMPERATURE].limits = { { double(0.0), double(MAX_TEMPERATURE) }, { Any(), Any() } };
-	commands[CMD_CURIETEMPERATURE].descr = "[tc0,0.5,0.5,1/tc]Set Curie temperature (all ferromagnetic meshes if meshname not given) for ferromagnetic mesh. This will set default temperature dependencies as: Ms = Ms0*me, A = A0*me^2, K = K0*me^3 (K1 and K2), damping = damping0*(1-T/3Tc) T < Tc, damping = damping0*2T/3Tc T >= Tc, susrel = dme/d(mu0Hext). Setting the Curie temperature to zero will disable temperature dependence for these parameters.";
+	commands[CMD_CURIETEMPERATURE].descr = "[tc0,0.5,0.5,1/tc]Set Curie temperature (all ferromagnetic meshes if meshname not given) for ferromagnetic mesh. This will set default temperature dependencies as: Ms = Ms0*me, A = A0*me^2, D = D0*me^2, K = K0*me^3 (K1 and K2), damping = damping0*(1-T/3Tc) T < Tc, damping = damping0*2T/3Tc T >= Tc, susrel = dme/d(mu0Hext). Setting the Curie temperature to zero will disable temperature dependence for these parameters.";
 	commands[CMD_CURIETEMPERATURE].unit = "K";
 	commands[CMD_CURIETEMPERATURE].return_descr = "[tc0,0.5,0,1/tc]Script return values: <i>curie_temperature</i> - Curie temperature for mesh in focus.";
 
@@ -974,10 +996,10 @@ Simulation::Simulation(int Program_Version) :
 	commands[CMD_DP_FITLORENTZ].return_descr = "[tc0,0.5,0,1/tc]Script return values: <i>S, H0, dH, y0, std_S, std_H0, std_dH, std_y0</i>.";
 
 	commands.insert(CMD_DP_FITSKYRMION, CommandSpecifier(CMD_DP_FITSKYRMION), "dp_fitskyrmion");
-	commands[CMD_DP_FITSKYRMION].usage = "[tc0,0.5,0,1/tc]USAGE : <b>dp_fitskyrmion</b> <i>dp_x dp_y (w)</i>";
-	commands[CMD_DP_FITSKYRMION].limits = { { int(0), int(MAX_ARRAYS - 1) }, { int(0), int(MAX_ARRAYS - 1) }, {Any(), Any()}, {Any(), Any()} };
-	commands[CMD_DP_FITSKYRMION].descr = "[tc0,0.5,0.5,1/tc]Fit skyrmion z component to obtain radius : Mz(r) = Ms * cos(2*arctan(sinh(R/w)/sinh(r/w))). If w is specified then it's not used as a fitting parameter, but kept fixed.";
-	commands[CMD_DP_FITSKYRMION].return_descr = "[tc0,0.5,0,1/tc]Script return values: <i>R, Ms, w, std_R, std_Ms, std_w</i>.";
+	commands[CMD_DP_FITSKYRMION].usage = "[tc0,0.5,0,1/tc]USAGE : <b>dp_fitskyrmion</b> <i>dp_x dp_y</i>";
+	commands[CMD_DP_FITSKYRMION].limits = { { int(0), int(MAX_ARRAYS - 1) }, { int(0), int(MAX_ARRAYS - 1) } };
+	commands[CMD_DP_FITSKYRMION].descr = "[tc0,0.5,0.5,1/tc]Fit skyrmion z component to obtain radius and center position : Mz(x) = Ms * cos(2*arctan(sinh(R/w)/sinh((x-x0)/w))).";
+	commands[CMD_DP_FITSKYRMION].return_descr = "[tc0,0.5,0,1/tc]Script return values: <i>R, x0, Ms, w, std_R, std_x0, std_Ms, std_w</i>.";
 
 	commands.insert(CMD_DP_REPLACEREPEATS, CommandSpecifier(CMD_DP_REPLACEREPEATS), "dp_replacerepeats");
 	commands[CMD_DP_REPLACEREPEATS].usage = "[tc0,0.5,0,1/tc]USAGE : <b>dp_replacerepeats</b> <i>dp_index (dp_index_out)</i>";
@@ -1035,6 +1057,7 @@ Simulation::Simulation(int Program_Version) :
 	dataDescriptor.push_back("e_total", DatumSpecifier("Total e : ", 1, "J/m3", true), DATA_E_TOTAL);
 	dataDescriptor.push_back("dwshift", DatumSpecifier("DW shift : ", 1, "m"), DATA_DWSHIFT);
 	dataDescriptor.push_back("skyshift", DatumSpecifier("Skyrmion shift : ", 2, "m", false, false), DATA_SKYSHIFT);
+	dataDescriptor.push_back("skypos", DatumSpecifier("Skyrmion (pos, dia) : ", 4, "m", false, false), DATA_SKYPOS);
 	dataDescriptor.push_back("v_iter", DatumSpecifier("V Solver Iterations : ", 1), DATA_TRANSPORT_ITERSTOCONV);
 	dataDescriptor.push_back("s_iter", DatumSpecifier("S Solver Iterations : ", 1), DATA_TRANSPORT_SITERSTOCONV);
 	dataDescriptor.push_back("ts_err", DatumSpecifier("Transport Solver Error : ", 1), DATA_TRANSPORT_CONVERROR);
@@ -1141,6 +1164,8 @@ Simulation::Simulation(int Program_Version) :
 	stageDescriptors.push_back("Icos", StageDescriptor(SS_ICOS, "A"), SS_ICOS);
 	stageDescriptors.push_back("T", StageDescriptor(SS_T, "K", false), SS_T);
 	stageDescriptors.push_back("T_seq", StageDescriptor(SS_TSEQ, "K", false), SS_TSEQ);
+	stageDescriptors.push_back("Q", StageDescriptor(SS_Q, "W/m3", false), SS_Q);
+	stageDescriptors.push_back("Q_seq", StageDescriptor(SS_QSEQ, "W/m3", false), SS_QSEQ);
 
 	stageStopDescriptors.push_back("nostop", StageStopDescriptor(STOP_NOSTOP), STOP_NOSTOP);
 	stageStopDescriptors.push_back("iter", StageStopDescriptor(STOP_ITERATIONS), STOP_ITERATIONS);
@@ -1174,19 +1199,25 @@ Simulation::Simulation(int Program_Version) :
 
 	//---------------------------------------------------------------- START
 
+	BD.DisplayConsoleMessage("Console activated...");
+
 	//start window sockets thread to listen for incoming messages
 	infinite_loop_launch(&Simulation::Listen_Incoming_Message, THREAD_NETWORK);
 
 	//Update display - do not animate starting view
 	UpdateScreen_AutoSet_Sudden();
 
+	//default directory
+	directory = GetUserDocumentsPath() + "Boris Data\\Simulations\\";
+
+	//if this directory doesn't exist create it
+	if (!MakeDirectory(directory)) BD.DisplayConsoleError("ERROR : Couldn't create user directory.");
+
 	//save the default state in program directory for loading with "default" command (update this automatically in case the program version has changed)
-	SaveSimulation(GetDirectory() + std::string("User\\") + "default");
+	SaveSimulation(directory + "default");
 
 	//Check with "www.boris-spintronics.uk" if program version is up to date
 	single_call_launch(&Simulation::CheckUpdate, THREAD_HANDLEMESSAGE);
-
-	BD.DisplayConsoleMessage("Console activated...");
 
 	BD.DisplayFormattedConsoleMessage("[tc0,0.5,0,1/tc]To open manual use the <b>manual</b> command.");
 }
@@ -1363,6 +1394,77 @@ void Simulation::ResetSimulation(void)
 #if GRAPHICS == 1
 void Simulation::NewMessage(AC_ aCode, INT2 mouse, string data)
 {
+	//console command received - process it and return
+
+	if (aCode == AC_CONSOLECOMMAND || aCode == AC_CONSOLEENTRY || aCode == AC_CONSOLECOMMAND_ENTRY || aCode == AC_CONSOLECOMMAND_NOPARAMS_ENTRY) {
+
+		//data has the command with any parameters
+		//if there are no parameters then there are no spaces in data, since commands do not include spaces
+		//if there are spaces then there must be parameters
+		//first entry before any space is the command id number (entry in CMD_ enum) but as a string - convert it
+		//all other fields after first space are command parameters, so pass them in as a string
+
+		auto convert_data = [&](string& data) -> string {
+
+			string command_with_parameters;
+
+			vector<string> fields = split(data, " ");
+
+			if (fields.size() > 1) {
+
+				int command_index = ToNum(fields[0]);
+				command_with_parameters = commands.get_key_from_index(command_index) + " " + combine(subvec(fields, 1), " ");
+			}
+			else {
+
+				int command_index = ToNum(data);
+				command_with_parameters = commands.get_key_from_index(command_index);
+			}
+
+			return command_with_parameters;
+		};
+
+		switch (aCode) {
+
+		case AC_CONSOLEENTRY:
+		{
+			single_call_launch<string>(&Simulation::SetConsoleEntryLineText, data, THREAD_HANDLEMESSAGE2);
+		}
+		break;
+
+		case AC_CONSOLECOMMAND_ENTRY:
+		case AC_CONSOLECOMMAND:
+		{
+			string command_with_parameters = convert_data(data);
+
+			set_blocking_thread(THREAD_HANDLEMESSAGE);
+			single_call_launch<string>(&Simulation::HandleCommand, command_with_parameters, THREAD_HANDLEMESSAGE);
+		}
+		break;
+
+		case AC_CONSOLECOMMAND_NOPARAMS_ENTRY:
+		{
+			string command_with_parameters = convert_data(data);
+
+			vector<string> fields = split(command_with_parameters, " ");
+
+			set_blocking_thread(THREAD_HANDLEMESSAGE);
+			single_call_launch<string>(&Simulation::HandleCommand, fields[0], THREAD_HANDLEMESSAGE);
+		}
+		break;
+
+		}
+		
+		if (aCode == AC_CONSOLECOMMAND_ENTRY || aCode == AC_CONSOLECOMMAND_NOPARAMS_ENTRY) {
+
+			single_call_launch<string>(&Simulation::SetConsoleEntryLineText, convert_data(data) + " ", THREAD_HANDLEMESSAGE2);
+		}
+
+		return;
+	}
+
+	//not a console command
+
 	//Dispatch message and check if anything needs to be done here as a result (e.g. a console command entered)
 	ActionOutcome result = BD.NewMessage_ThreadSafe(aCode, mouse, data);
 

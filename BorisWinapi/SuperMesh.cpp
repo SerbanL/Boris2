@@ -4,7 +4,7 @@
 SuperMesh::SuperMesh(void) :
 	ProgramStateNames(this,
 		{
-			VINFO(displayedPhysicalQuantity), VINFO(n_fm), VINFO(h_fm), VINFO(sMeshRect_fm),
+			VINFO(displayedPhysicalQuantity), VINFO(vec3rep), VINFO(n_fm), VINFO(h_fm), VINFO(sMeshRect_fm),
 			VINFO(n_e), VINFO(h_e), VINFO(sMeshRect_e),
 			VINFO(odeSolver),
 			VINFO(pMesh),
@@ -114,7 +114,7 @@ double SuperMesh::GetTotalEnergy(void)
 {
 #if COMPILECUDA == 1
 
-	//If CUDA enabled then obtain total energy density from all modules -> this involves potentially many individual cuReal transfers from gpu to cpu so not ideal
+	//If CUDA enabled then obtain total energy density from all modules -> this involves potentially many individual cuBReal transfers from gpu to cpu so not ideal
 	//This is fine since we don't need to get the total energy often (but will not optimizing if we need to use the total energy density every iteration in some solvers in the future).
 	if (pSMeshCUDA) {
 

@@ -31,7 +31,7 @@ typedef DBL3 (DifferentialEquation::*Equation)(int idx);
 
 class ODECommon :
 	public ProgramState<ODECommon,
-	tuple<int, int, double, double, double, double, int, int, double, double, double, double, double, double, double, bool, bool, double, double>,
+	tuple<int, int, double, double, double, double, int, int, double, double, double, double, double, double, double, int, bool, bool, double, double>,
 	tuple<>>
 {
 #if COMPILECUDA == 1
@@ -73,7 +73,7 @@ private:
 	//flag to indicate mesh magnetization is available for use in output saves - e.g. at the last step of an evaluation method
 	static bool available;
 
-	//some evaluation methods need to be primed (e.g. ABM)
+	//some evaluation methods need to be primed (e.g. ABM); 
 	static bool primed;
 
 	//-----------------------------------Adaptive time step control
@@ -95,6 +95,10 @@ private:
 
 	//does the ODE require full spin current solver? (set by SA ODE versions, which require spin accumulation to evaluate spin torques)
 	static bool solve_spin_current;
+
+	//use evaluation speedup by skipping certain effective field contributions at specific steps in the evaluation?
+	//this takes on a value from EVALSPEEDUP_ enum
+	static int use_evaluation_speedup;
 
 protected:
 	
@@ -223,6 +227,8 @@ public:
 	void SetMoveMeshAntisymmetric(bool antisymmetric) { moving_mesh_antisymmetric = antisymmetric; }
 	void SetMoveMeshThreshold(double threshold) { moving_mesh_threshold = threshold; }
 
+	void SetEvaluationSpeedup(int status) { if (status >= EVALSPEEDUP_NONE && status < EVALSPEEDUP_NUMENTRIES) use_evaluation_speedup = status; }
+
 	//---------------------------------------- ITERATE METHODS : DiffEq_Iterate.cpp (and DiffEq_IterateCUDA.cpp)
 
 	//advance time using the set ODE solver
@@ -234,6 +240,15 @@ public:
 
 	//moving mesh algorithm : shift all meshes using their MoveMesh method
 	void MovingMeshAlgorithm(SuperMesh* pSMesh);
+
+	//depending on the set evaluation method, some effective fields (demag field in particular) might not need to be updated at certain steps in the evaluation - keep the previous calculated field contribution
+	//Modules can call this method to check if they should be updating the field or not.
+	//Return values:
+	//EVALSPEEDUPSTEP_SKIP : do not update field, use previous calculation if available
+	//EVALSPEEDUPSTEP_COMPUTE_NO_SAVE : update field and do not save calculation for next step (since at the next step we'll have to calculate field again so no point saving it)
+	//EVALSPEEDUPSTEP_COMPUTE_AND_SAVE : update field and save calculation for next time (since at the next step we'll need to re-use calculation)
+	//To enable this mode you need to set use_evaluation_speedup != EVALSPEEDUP_NONE
+	int Check_Step_Update(void);
 
 	//---------------------------------------- GET METHODS : DiffEqCommon.cpp
 
@@ -260,6 +275,8 @@ public:
 	bool TimeStepSolved(void) { return available; }
 
 	bool SolveSpinCurrent(void) { return solve_spin_current; }
+
+	int EvaluationSpeedup(void) { return use_evaluation_speedup; }
 
 	void QueryODE(ODE_ &setODE_, EVAL_ &evalMethod_) { setODE_ = (ODE_)setODE; evalMethod_ = (EVAL_)evalMethod; }
 	void QueryODE(ODE_ &setODE_) { setODE_ = (ODE_)setODE; }

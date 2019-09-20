@@ -9,18 +9,18 @@
 #include "Mesh_FerromagneticCUDA.h"
 #include "MeshParamsControlCUDA.h"
 
-__global__ void ZeemanCUDA_UpdateField(ManagedMeshCUDA& cuMesh, cuReal3& Ha, cuReal& energy, bool do_reduction)
+__global__ void ZeemanCUDA_UpdateField(ManagedMeshCUDA& cuMesh, cuReal3& Ha, cuBReal& energy, bool do_reduction)
 {
 	cuVEC_VC<cuReal3>& M = *cuMesh.pM;
 	cuVEC<cuReal3>& Heff = *cuMesh.pHeff;
 
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
 
-	cuReal energy_ = 0.0;
+	cuBReal energy_ = 0.0;
 
 	if (idx < Heff.linear_size()) {
 
-		cuReal cHA = *cuMesh.pcHA;
+		cuBReal cHA = *cuMesh.pcHA;
 		cuMesh.update_parameters_mcoarse(idx, *cuMesh.pcHA, cHA);
 
 		Heff[idx] += (cHA * Ha);
@@ -28,7 +28,7 @@ __global__ void ZeemanCUDA_UpdateField(ManagedMeshCUDA& cuMesh, cuReal3& Ha, cuR
 		if (do_reduction) {
 
 			int non_empty_cells = M.get_nonempty_cells();
-			if (non_empty_cells) energy_ = -(cuReal)MU0 * M[idx] * (cHA * Ha) / non_empty_cells;
+			if (non_empty_cells) energy_ = -(cuBReal)MU0 * M[idx] * (cHA * Ha) / non_empty_cells;
 		}
 	}
 

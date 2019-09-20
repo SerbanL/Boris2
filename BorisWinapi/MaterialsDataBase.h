@@ -42,8 +42,8 @@ class MaterialsDB {
 	string default_databaseName = "BorisMDB.txt";
 
 	//name of the currently selected database : this is a file path together with file name
-	//the default setting uses the executable path + "BorisMDB.txt"
-	string databaseName;
+	//the default setting uses the user documents path + "Boris Data" + "BorisMDB.txt"
+	string databaseName_withpath;
 
 	//all entries in the currently selected database
 	//first row has column labels
@@ -93,7 +93,7 @@ public:
 	BError SwitchDataBase(string newdatabaseName);
 
 	//get the currently set data base name
-	string GetDataBaseName(void) { return databaseName; }
+	string GetDataBaseName(void) { return databaseName_withpath; }
 
 	//attempt to load entry from current database for material with given name
 	//set in *pmeshType the type of material loaded, e.g. ferromagnetic, metal, insulator, etc. - see enum MESH_ in MeshDefs.h for possible values

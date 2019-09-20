@@ -165,14 +165,14 @@ private:
 public:
 
 	//adaptive SOR algorithm damping value
-	cuReal aSOR_damping;
+	cuBReal aSOR_damping;
 	
 private:
 
 	//save last aSOR error
-	cuReal aSOR_lasterror;
+	cuBReal aSOR_lasterror;
 	//save last aSOR ln(error) gradient
-	cuReal aSOR_lastgrad;
+	cuBReal aSOR_lastgrad;
 
 	//Periodic boundary conditions for evaluating differential operators. If these are set then neighbor flags are calculated accordingly, and applied when evaluating operators.
 	int pbc_x;
@@ -398,11 +398,11 @@ public:
 	__host__ void renormalize(size_t arr_size, PType new_norm);
 
 	//scale all stored values by the given constant
-	__host__ void scale_values(size_t size, cuReal constant);
-	__host__ void scale_values(cuReal constant) { scale_values(get_gpu_value(n).dim(), constant); }
+	__host__ void scale_values(size_t size, cuBReal constant);
+	__host__ void scale_values(cuBReal constant) { scale_values(get_gpu_value(n).dim(), constant); }
 
 	//shift all the values in this cuVEC by the given delta (units same as h). Shift values in given shift_rect (absolute coordinates).
-	__host__ void shift_x(size_t size, cuReal delta, cuRect shift_rect);
+	__host__ void shift_x(size_t size, cuBReal delta, cuRect shift_rect);
 
 	//--------------------------------------------OPERATIONS : cuVEC_VC_oper.h and cuVEC_VC_oper.cuh
 
@@ -477,7 +477,7 @@ public:
 	//calculate Laplace operator at cell with given index. Use Robin boundary conditions (defaulting to Neumann if not set).
 	//Returns zero at composite media boundary cells.
 	//The K constant is used in Robin boundary condition calculations, where -K*diff_norm(T) = alpha*(Tboundary - Tambient) is the flux normal to the boundary - K is the thermal conductivity in the heat equation
-	__device__ VType delsq_robin(int idx, cuReal K) const;
+	__device__ VType delsq_robin(int idx, cuBReal K) const;
 
 	//----GRADIENT OPERATOR : cuVEC_VC_grad.h
 
@@ -515,36 +515,36 @@ public:
 	//divergence operator. Use Neumann boundary conditions (homogeneous).
 	//Can be used at composite media boundaries where sided differentials will be used instead.
 	//div operator can be applied if VType is a VAL3<Type>, returning Type
-	__device__ cuReal div_neu(int idx) const;
+	__device__ cuBReal div_neu(int idx) const;
 
 	//divergence operator. Use non-homogeneous Neumann boundary conditions.
 	//NOTE : the boundary differential is specified with 3 components, one for each of +x, +y, +z surface normal directions - the class Class_BDiff must define a method bdiff returning a cuVAL3<VType> and taking an int (the cell index)
 	//Can be used at composite media boundaries where sided differentials will be used instead.
 	//div operator can be applied if VType is a VAL3<Type>, returning Type
 	template <typename Class_BDiff>
-	__device__ cuReal div_nneu(int idx, Class_BDiff& bdiff_class) const;
+	__device__ cuBReal div_nneu(int idx, Class_BDiff& bdiff_class) const;
 
 	//Same as above but boundary conditions specified using a constant
-	__device__ cuReal div_nneu(int idx, cuVAL3<VType>& bdiff) const;
+	__device__ cuBReal div_nneu(int idx, cuVAL3<VType>& bdiff) const;
 
 	//divergence operator. Use Dirichlet conditions if set, else Neumann boundary conditions (homogeneous).
 	//Can be used at composite media boundaries where sided differentials will be used instead.
 	//div operator can be applied if VType is a VAL3<Type>, returning Type
-	__device__ cuReal div_diri(int idx) const;
+	__device__ cuBReal div_diri(int idx) const;
 
 	//divergence operator. Use Dirichlet conditions if set, else non-homogeneous Neumann boundary conditions.
 	//NOTE : the boundary differential is specified with 3 components, one for each of +x, +y, +z surface normal directions - the class Class_BDiff must define a method bdiff returning a cuVAL3<VType> and taking an int (the cell index)
 	//Can be used at composite media boundaries where sided differentials will be used instead.
 	//div operator can be applied if VType is a VAL3<Type>, returning Type
 	template <typename Class_BDiff>
-	__device__ cuReal div_diri_nneu(int idx, Class_BDiff& bdiff_class) const;
+	__device__ cuBReal div_diri_nneu(int idx, Class_BDiff& bdiff_class) const;
 
 	//Same as above but boundary conditions specified using a constant
-	__device__ cuReal div_diri_nneu(int idx, cuVAL3<VType>& bdiff) const;
+	__device__ cuBReal div_diri_nneu(int idx, cuVAL3<VType>& bdiff) const;
 
 	//divergence operator. Use sided differentials (also at composite media boundaries)
 	//div operator can be applied if VType is a VAL3<Type>, returning Type
-	__device__ cuReal div_sided(int idx) const;
+	__device__ cuBReal div_sided(int idx) const;
 
 	//divergence operator of epsilon3(quantity[idx]), i.e. multiply this VEC_VC by the unit antisymmetric tensor of rank3 before taking divergence. 
 	//Use Neumann boundary conditions (homogeneous).
@@ -600,34 +600,34 @@ public:
 	
 	//LAPLACE
 
-	//Take one SOR iteration for Laplace equation on this VEC. Return error (maximum change in quantity from one iteration to the next) by reference, where max_error is already allocated on the gpu - pass in a cu_obj managed cuReal.
+	//Take one SOR iteration for Laplace equation on this VEC. Return error (maximum change in quantity from one iteration to the next) by reference, where max_error is already allocated on the gpu - pass in a cu_obj managed cuBReal.
 	//Dirichlet boundary conditions used, defaulting to Neumann boundary conditions where not set, and composite media boundary cells skipped (use boundary conditions to set cmbnd cells after calling this)
 	//Launch it with arr_size = n.dim() : quicker to pass in this value rather than get it internally using get_gpu_value(n).dim()
-	__host__ void IterateLaplace_SOR(size_t arr_size, cuReal& damping, cuReal& max_error, cuReal& max_val);
+	__host__ void IterateLaplace_SOR(size_t arr_size, cuBReal& damping, cuBReal& max_error, cuBReal& max_val);
 
 	//red and black SOR passes launched from kernels : the flow is : 
 	//IterateLaplace_SOR -> 1. global red pass kernel with *this as parameter -> call IterateLaplace_SOR_red, 
 	//2. global black pass kernel with *this as parameter -> call IterateLaplace_SOR_black
-	__device__ void IterateLaplace_SOR_red(cuReal damping);
-	__device__ void IterateLaplace_SOR_black(cuReal damping, cuReal& max_error, cuReal& max_val);
+	__device__ void IterateLaplace_SOR_red(cuBReal damping);
+	__device__ void IterateLaplace_SOR_black(cuBReal damping, cuBReal& max_error, cuBReal& max_val);
 
 	//POISSON with homogeneous Neumann boundaries
 
 	//For Poisson equation we need a function to specify the RHS of the equation delsq V = Poisson_RHS
-	//Poisson_RHS must be a member const method of Class_Poisson_RHS taking an index value (the index ranges over this VEC) and returning a cuReal value : Poisson_RHS(index) evaluated at the index-th cell.
+	//Poisson_RHS must be a member const method of Class_Poisson_RHS taking an index value (the index ranges over this VEC) and returning a cuBReal value : Poisson_RHS(index) evaluated at the index-th cell.
 	//obj of type Class_Poisson_RHS must be cu_obj managed so it is entirely in gpu memory.
-	//Return error(maximum change in quantity from one iteration to the next) by reference, where max_error is already allocated on the gpu - pass in a cu_obj managed cuReal.
+	//Return error(maximum change in quantity from one iteration to the next) by reference, where max_error is already allocated on the gpu - pass in a cu_obj managed cuBReal.
 	//Dirichlet boundary conditions used, defaulting to Neumann boundary conditions where not set, and composite media boundary cells skipped (use boundary conditions to set cmbnd cells after calling this)
 	template <typename Class_Poisson_RHS>
-	__host__ void IteratePoisson_SOR(size_t arr_size, Class_Poisson_RHS& obj, cuReal& damping, cuReal& max_error, cuReal& max_val);
+	__host__ void IteratePoisson_SOR(size_t arr_size, Class_Poisson_RHS& obj, cuBReal& damping, cuBReal& max_error, cuBReal& max_val);
 
 	//red and black SOR passes launched from kernels : the flow is : 
 	//IteratePoisson_SOR -> 1. global red pass kernel with *this as parameter -> call IteratePoisson_SOR_red, 
 	//2. global black pass kernel with *this as parameter -> call IteratePoisson_SOR_black
 	template <typename Class_Poisson_RHS>
-	__device__ void IteratePoisson_SOR_red(Class_Poisson_RHS& obj, cuReal damping);
+	__device__ void IteratePoisson_SOR_red(Class_Poisson_RHS& obj, cuBReal damping);
 	template <typename Class_Poisson_RHS>
-	__device__ void IteratePoisson_SOR_black(Class_Poisson_RHS& obj, cuReal damping, cuReal& max_error, cuReal& max_val);
+	__device__ void IteratePoisson_SOR_black(Class_Poisson_RHS& obj, cuBReal damping, cuBReal& max_error, cuBReal& max_val);
 
 	//POISSON with homogeneous Neumann boundaries and adaptive SOR algorithm
 
@@ -636,29 +636,29 @@ public:
 	//These errors must be specified un-normalized, noting the return error is also un-normalized. 
 	//Launch it with arr_size = n.dim() : quicker to pass in this value rather than get it internally using get_gpu_value(n).dim()
 	template <typename Class_Poisson_RHS>
-	__host__ void IteratePoisson_aSOR(size_t arr_size, Class_Poisson_RHS& obj, bool start_iters, cuReal err_limit, cuReal& max_error, cuReal& max_val);
+	__host__ void IteratePoisson_aSOR(size_t arr_size, Class_Poisson_RHS& obj, bool start_iters, cuBReal err_limit, cuBReal& max_error, cuBReal& max_val);
 
 	//adjust aSOR parameters depending on passed error value (and also set the error value to the current aSOR error as required by the algorithm)
-	__device__ void adjust_aSOR_damping(bool start_iters, cuReal err_limit, cuReal& error, cuReal& max_val);
+	__device__ void adjust_aSOR_damping(bool start_iters, cuBReal err_limit, cuBReal& error, cuBReal& max_val);
 
 	//POISSON with non-homogeneous Neumann boundaries
 
 	//For Poisson equation we need a function to specify the RHS of the equation delsq V = Poisson_RHS
-	//Poisson_RHS must be a member const method of Class_Poisson_NNeu taking an index value (the index ranges over this VEC) and returning a cuReal value : Poisson_RHS(index) evaluated at the index-th cell.
+	//Poisson_RHS must be a member const method of Class_Poisson_NNeu taking an index value (the index ranges over this VEC) and returning a cuBReal value : Poisson_RHS(index) evaluated at the index-th cell.
 	//Class_Poisson_NNeu must also define a method bdiff returning a cuVAL3<VType> and taking an int (the cell index) - this is the non-homogeneous Neumann boundary condition at that cell
 	//obj of type Class_Poisson_NNeu must be cu_obj managed so it is entirely in gpu memory.
-	//Return error(maximum change in quantity from one iteration to the next) by reference, where max_error is already allocated on the gpu - pass in a cu_obj managed cuReal.
+	//Return error(maximum change in quantity from one iteration to the next) by reference, where max_error is already allocated on the gpu - pass in a cu_obj managed cuBReal.
 	//Dirichlet boundary conditions used, defaulting to non-homogeneous Neumann boundary conditions where not set, and composite media boundary cells skipped (use boundary conditions to set cmbnd cells after calling this)
 	template <typename Class_Poisson_NNeu>
-	__host__ void IteratePoisson_NNeu_SOR(size_t arr_size, Class_Poisson_NNeu& obj, cuReal& damping, cuReal& max_error, cuReal& max_val);
+	__host__ void IteratePoisson_NNeu_SOR(size_t arr_size, Class_Poisson_NNeu& obj, cuBReal& damping, cuBReal& max_error, cuBReal& max_val);
 
 	//red and black SOR passes launched from kernels : the flow is : 
 	//IteratePoisson_NNeu_SOR -> 1. global red pass kernel with *this as parameter -> call IteratePoisson_NNeu_SOR_red, 
 	//2. global black pass kernel with *this as parameter -> call IteratePoisson_NNeu_SOR_black
 	template <typename Class_Poisson_NNeu>
-	__device__ void IteratePoisson_NNeu_SOR_red(Class_Poisson_NNeu& obj, cuReal damping);
+	__device__ void IteratePoisson_NNeu_SOR_red(Class_Poisson_NNeu& obj, cuBReal damping);
 	template <typename Class_Poisson_NNeu>
-	__device__ void IteratePoisson_NNeu_SOR_black(Class_Poisson_NNeu& obj, cuReal damping, cuReal& max_error, cuReal& max_val);
+	__device__ void IteratePoisson_NNeu_SOR_black(Class_Poisson_NNeu& obj, cuBReal damping, cuBReal& max_error, cuBReal& max_val);
 
 	//POISSON with non-homogeneous Neumann boundaries and adaptive SOR algorithm
 
@@ -666,11 +666,11 @@ public:
 	//The algorithm also requires error limits : min error below which the solution is assumed to have converged, max error above which damping must be immediately set to smallest value to avoid solution divergence.
 	//These errors must be specified un-normalized, noting the return error is also un-normalized. 
 	//Launch it with arr_size = n.dim() : quicker to pass in this value rather than get it internally using get_gpu_value(n).dim()
-	//Poisson_RHS must be a member const method of Class_Poisson_NNeu taking an index value (the index ranges over this VEC) and returning a cuReal value : Poisson_RHS(index) evaluated at the index-th cell.
+	//Poisson_RHS must be a member const method of Class_Poisson_NNeu taking an index value (the index ranges over this VEC) and returning a cuBReal value : Poisson_RHS(index) evaluated at the index-th cell.
 	//Class_Poisson_NNeu must also define a method bdiff returning a cuVAL3<VType> and taking an int (the cell index) - this is the non-homogeneous Neumann boundary condition at that cell
 	template <typename Class_Poisson_NNeu>
-	__host__ void IteratePoisson_NNeu_aSOR(size_t arr_size, Class_Poisson_NNeu& obj, bool start_iters, cuReal err_limit, cuReal& max_error, cuReal& max_val);
+	__host__ void IteratePoisson_NNeu_aSOR(size_t arr_size, Class_Poisson_NNeu& obj, bool start_iters, cuBReal err_limit, cuBReal& max_error, cuBReal& max_val);
 
 	//return current aSOR damping value
-	cuReal aSOR_get_damping_cpu(void) { return get_gpu_value(aSOR_damping); }
+	cuBReal aSOR_get_damping_cpu(void) { return get_gpu_value(aSOR_damping); }
 };

@@ -63,6 +63,9 @@ BError ManagedMeshCUDA::set_pointers(MeshCUDA* pMeshCUDA)
 	if (set_gpu_value(pdensity, pMeshCUDA->density.get_managed_object()) != cudaSuccess) error(BERROR_GPUERROR_CRIT);
 	if (set_gpu_value(pshc, pMeshCUDA->shc.get_managed_object()) != cudaSuccess) error(BERROR_GPUERROR_CRIT);
 
+	if (set_gpu_value(pcT, pMeshCUDA->cT.get_managed_object()) != cudaSuccess) error(BERROR_GPUERROR_CRIT);
+	if (set_gpu_value(pQ, pMeshCUDA->Q.get_managed_object()) != cudaSuccess) error(BERROR_GPUERROR_CRIT);
+
 	//Mesh quantities
 	
 	if (set_gpu_value(pM, pMeshCUDA->M.get_managed_object()) != cudaSuccess) error(BERROR_GPUERROR_CRIT);

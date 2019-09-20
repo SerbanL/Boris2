@@ -6,7 +6,7 @@
 
 #include "BorisCUDALib.cuh"
 
-__global__ void Zero_Errors_kernel(cuReal& max_error, cuReal& max_value)
+__global__ void Zero_Errors_kernel(cuBReal& max_error, cuBReal& max_value)
 {
 	if (threadIdx.x == 0) max_error = 0.0;
 	else if (threadIdx.x == 1) max_value = 0.0;

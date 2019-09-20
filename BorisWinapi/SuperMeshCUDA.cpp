@@ -35,7 +35,7 @@ vector<PhysQ> SuperMeshCUDA::FetchOnScreenPhysicalQuantity(double detail_level)
 			if (prepare_display(n_fm, sMeshRect_fm, detail_level, reinterpret_cast<SDemag*>(pSMesh->pSMod(MODS_SDEMAG))->GetDemagFieldCUDA())) {
 
 				//return PhysQ made from the cpu version of coarse mesh display.
-				physQ.push_back(PhysQ(pdisplay_vec_vec, pSMesh->displayedPhysicalQuantity).set_focus(true, pSMesh->superMeshHandle));
+				physQ.push_back(PhysQ(pdisplay_vec_vec, pSMesh->displayedPhysicalQuantity, (VEC3REP_)pSMesh->vec3rep).set_focus(true, pSMesh->superMeshHandle));
 			}
 		}
 		break;
@@ -47,7 +47,7 @@ vector<PhysQ> SuperMeshCUDA::FetchOnScreenPhysicalQuantity(double detail_level)
 			if (prepare_display(n_e, sMeshRect_e, detail_level, reinterpret_cast<Oersted*>(pSMesh->pSMod(MODS_OERSTED))->GetOerstedFieldCUDA())) {
 
 				//return PhysQ made from the cpu version of coarse mesh display.
-				physQ.push_back(PhysQ(pdisplay_vec_vec, pSMesh->displayedPhysicalQuantity).set_focus(true, pSMesh->superMeshHandle));
+				physQ.push_back(PhysQ(pdisplay_vec_vec, pSMesh->displayedPhysicalQuantity, (VEC3REP_)pSMesh->vec3rep).set_focus(true, pSMesh->superMeshHandle));
 			}
 		}
 		break;
@@ -59,7 +59,7 @@ vector<PhysQ> SuperMeshCUDA::FetchOnScreenPhysicalQuantity(double detail_level)
 			if (prepare_display(n_fm, sMeshRect_fm, detail_level, reinterpret_cast<StrayField*>(pSMesh->pSMod(MODS_STRAYFIELD))->GetStrayFieldCUDA())) {
 
 				//return PhysQ made from the cpu version of coarse mesh display.
-				physQ.push_back(PhysQ(pdisplay_vec_vec, pSMesh->displayedPhysicalQuantity).set_focus(true, pSMesh->superMeshHandle));
+				physQ.push_back(PhysQ(pdisplay_vec_vec, pSMesh->displayedPhysicalQuantity, (VEC3REP_)pSMesh->vec3rep).set_focus(true, pSMesh->superMeshHandle));
 			}
 		}
 		break;

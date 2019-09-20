@@ -167,6 +167,28 @@ void Simulation::AddGenericStage(SS_ stageType, string meshName)
 		simStages.push_back(stageConfig);
 	}
 	break;
+
+	case SS_Q:
+	{
+		//1e19 W/m3 heat source with STOP_TIME of 10ns
+		StageConfig stageConfig = StageConfig(stageDescriptors(stageType), stageStopDescriptors(STOP_TIME), meshName);
+		stageConfig.set_value(1e19);
+		stageConfig.set_stopvalue(10e-9);
+
+		simStages.push_back(stageConfig);
+	}
+	break;
+
+	case SS_QSEQ:
+	{
+		//Q 0.0 to 1e19 W/m3 in 10 steps with STOP_TIME of 1ns
+		StageConfig stageConfig = StageConfig(stageDescriptors(stageType), stageStopDescriptors(STOP_TIME), meshName);
+		stageConfig.set_value(SEQ(0.0, 1e19, 10));
+		stageConfig.set_stopvalue(1e-9);
+
+		simStages.push_back(stageConfig);
+	}
+	break;
 	}
 }
 
@@ -359,16 +381,23 @@ void Simulation::CheckSaveDataCondtions()
 
 	case DSAVE_TIME:
 	{
+		
 		double time = SMesh.GetTime();
 		double tsave = (double)simStages[stage_step.major].get_dsavevalue();
 		double dT = SMesh.GetTimeStep();
 
-		//the floor_epsilon is important - don't use floor!
+		//the floor_fixedepsilon is important - don't use floor!
 		//the reason for this, if time / tsave ends up being very close, but slightly less, than an integer, e.g. 1.999 due to a floating point error, then floor will round it down, whereas really it should be rounded up.
 		//thus with floor only you can end up not saving data points where you should be.
-		//Also the *0.99 below is important : if using just delta < dT check, delta can be slightly smaller than dT but within a floating point error close to it - thus we end up double-saving some data points!
+		//Also delta < dT * 0.99 check below is important : if using just delta < dT check, delta can be slightly smaller than dT but within a floating point error close to it - thus we end up double-saving some data points!
 		//this happens especially if tsave / dT is an integer -> thus most of the time.
-		double delta = time - floor_epsilon(time / tsave) * tsave;
+
+		//Also use floor_epsilon instead of floor_fixedepsilon:
+		//the epsilon value used in floor_epsilon for small time/tsave values is too small, meaning the time/tsave will again round down when it should be rounding up -> SaveData() will never be called
+		//for large time/tsave value the floor_epsilon value is too coarse, meaning you can save data when you don't want to
+		//The epsilon in floor_fixedepsilon is coarse, but not too coarse, which results in correct behaviour over a wide range of time/tsave values -> covers the relevant range.
+
+		double delta = time - floor_fixedepsilon(time / tsave) * tsave;
 		if (delta < dT * 0.99) SaveData();
 	}
 		break;
@@ -506,6 +535,25 @@ void Simulation::SetSimulationStageValue(void) {
 			for (int idx = 0; idx < SMesh.size(); idx++) {
 
 				SMesh[idx]->SetBaseTemperature(temperature);
+			}
+		}
+	}
+	break;
+
+	case SS_Q:
+	case SS_QSEQ:
+	{
+		string meshName = simStages[stage_step.major].meshname();
+
+		double Qvalue = simStages[stage_step.major].get_value<double>(stage_step.minor);
+
+		if (SMesh.contains(meshName)) SMesh[meshName]->Q = Qvalue;
+		else if (meshName == SMesh.superMeshHandle) {
+
+			//all meshes
+			for (int idx = 0; idx < SMesh.size(); idx++) {
+
+				SMesh[idx]->Q = Qvalue;
 			}
 		}
 	}

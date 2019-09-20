@@ -34,6 +34,12 @@ BError DemagCUDA::Initialize(void)
 		if (!error) initialized = true;
 	}
 
+	//make sure to allocate memory for Hdemag if we need it
+	if (pMeshCUDA->EvaluationSpeedup()) Hdemag()->resize(pMeshCUDA->h, pMeshCUDA->meshRect);
+	else Hdemag()->clear();
+
+	Hdemag_calculated = false;
+
 	return error;
 }
 
@@ -50,14 +56,60 @@ BError DemagCUDA::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 		error = SetDimensions(pMeshCUDA->n, pMeshCUDA->h, true, pDemag->Get_PBC());
 	}
 
+	//if memory needs to be allocated for Hdemag, it will be done through Initialize 
+	Hdemag()->clear();
+	Hdemag_calculated = false;
+
 	return error;
 }
 
 void DemagCUDA::UpdateField(void)
 {
-	if (pMeshCUDA->CurrentTimeStepSolved()) ZeroEnergy();
+	if (pMeshCUDA->EvaluationSpeedup()) {
 
-	Convolute(pMeshCUDA->M, pMeshCUDA->Heff, energy, pMeshCUDA->CurrentTimeStepSolved(), false);
+		//use evaluation speedup method (Hdemag will have memory allocated - this was done in the Initialize method)
+
+		int update_type = pMeshCUDA->Check_Step_Update();
+
+		if (update_type != EVALSPEEDUPSTEP_SKIP || !Hdemag_calculated) {
+
+			//calculate field required
+
+			if (update_type == EVALSPEEDUPSTEP_COMPUTE_AND_SAVE) {
+
+				//calculate field and save it for next time : we'll need to use it (expecting update_type = EVALSPEEDUPSTEP_SKIP next time)
+
+				//convolute and get energy value
+				ZeroEnergy();
+				Convolute(pMeshCUDA->M, Hdemag, energy, true, true);
+
+				Hdemag_calculated = true;
+			}
+			else {
+
+				//calculate field but do not save it for next time : we'll need to recalculate it again (expecting update_type != EVALSPEEDUPSTEP_SKIP again next time : EVALSPEEDUPSTEP_COMPUTE_NO_SAVE or EVALSPEEDUPSTEP_COMPUTE_AND_SAVE)
+
+				//convolute and get energy value
+				ZeroEnergy();
+				Convolute(pMeshCUDA->M, pMeshCUDA->Heff, energy, true, false);
+
+				//good practice to set this to false
+				Hdemag_calculated = false;
+
+				//return here to avoid adding Hdemag to Heff : we've already added demag field contribution
+				return;
+			}
+		}
+
+		//add contribution to Heff
+		pMeshCUDA->Heff()->add(pMeshCUDA->n.dim(), Hdemag);
+	}
+	else {
+
+		if (pMeshCUDA->CurrentTimeStepSolved()) ZeroEnergy();
+
+		Convolute(pMeshCUDA->M, pMeshCUDA->Heff, energy, pMeshCUDA->CurrentTimeStepSolved(), false);
+	}
 }
 
 #endif

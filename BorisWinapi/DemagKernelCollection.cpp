@@ -56,13 +56,13 @@ BError KerType::AllocateKernels(Rect from_rect, Rect this_rect, SZ3 N_)
 
 				//z shifted for 3D : can use kernels of reduced dimensions but must be complex
 				//
-				//Kxx : y - symmetrical (+), z - Re part symmetrical (+), Im part asymmetrical (-)
-				//Kyy : y - symmetrical (+), z - Re part symmetrical (+), Im part asymmetrical (-)
-				//Kzz : y - symmetrical (+), z - Re part symmetrical (+), Im part asymmetrical (-)
+				//Kxx : y - symmetrical (+), z - Re part symmetrical (+), Im part inv. symmetric (-)
+				//Kyy : y - symmetrical (+), z - Re part symmetrical (+), Im part inv. symmetric (-)
+				//Kzz : y - symmetrical (+), z - Re part symmetrical (+), Im part inv. symmetric (-)
 				//
-				//Kxy : y - asymmetrical (-), z - Re part symmetrical  (+), Im part asymmetrical (-)
-				//Kxz : y - symmetrical  (+), z - Re part asymmetrical (-), Im part symmetrical  (+)
-				//Kyz : y - asymmetrical (-), z - Re part asymmetrical (-), Im part symmetrical  (+)
+				//Kxy : y - inv. symmetric (-), z - Re part symmetrical  (+), Im part inv. symmetric (-)
+				//Kxz : y - symmetrical  (+), z - Re part inv. symmetric (-), Im part symmetrical  (+)
+				//Kyz : y - inv. symmetric (-), z - Re part inv. symmetric (-), Im part symmetrical  (+)
 
 				if (!Kdiag_cmpl.resize(SZ3(N.x / 2 + 1, N.y / 2 + 1, N.z / 2 + 1))) return error(BERROR_OUTOFMEMORY_CRIT);
 				if (!Kodiag_cmpl.resize(SZ3(N.x / 2 + 1, N.y / 2 + 1, N.z / 2 + 1))) return error(BERROR_OUTOFMEMORY_CRIT);

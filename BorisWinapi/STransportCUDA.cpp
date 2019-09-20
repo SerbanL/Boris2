@@ -123,7 +123,7 @@ BError STransportCUDA::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 }
 
 //scale all potential values in all V cuVECs by given scaling value
-void STransportCUDA::scale_potential_values(cuReal scaling)
+void STransportCUDA::scale_potential_values(cuBReal scaling)
 {
 	if (initialized) {
 

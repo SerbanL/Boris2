@@ -6,7 +6,7 @@
 
 //-------------------------- CONVOLUTION PRODUCT CUDA KERNELS
 
-__global__ void cu_Oersted_ConvProd_3D_transpose_xy(cuVEC<cuReal3>& KOe, cuComplex* cuSx, cuComplex* cuSy, cuComplex* cuSz, cuSZ3& N)
+__global__ void cu_Oersted_ConvProd_3D_transpose_xy(cuVEC<cuReal3>& KOe, cuBComplex* cuSx, cuBComplex* cuSy, cuBComplex* cuSz, cuSZ3& N)
 {
 	//above N.z/2 and N.y/2 use kernel symmetries to recover kernel values
 	//Kxy is odd about N.z/2 and even about N.y/2
@@ -80,7 +80,7 @@ __global__ void cu_Oersted_ConvProd_3D_transpose_xy(cuVEC<cuReal3>& KOe, cuCompl
 
 //N = (N.x/2 + 1, N.y, 4)
 //xy is transposed
-__global__ void cu_Oersted_ConvProd_q2D_4_transpose_xy(cuVEC<cuReal3>& KOe, cuComplex* cuSx, cuComplex* cuSy, cuComplex* cuSz, cuSZ3& N)
+__global__ void cu_Oersted_ConvProd_q2D_4_transpose_xy(cuVEC<cuReal3>& KOe, cuBComplex* cuSx, cuBComplex* cuSy, cuBComplex* cuSz, cuSZ3& N)
 {
 	//above N.z/2 and N.y/2 use kernel symmetries to recover kernel values
 	//Kxy is odd about N.z/2 and even about N.y/2
@@ -173,7 +173,7 @@ __global__ void cu_Oersted_ConvProd_q2D_4_transpose_xy(cuVEC<cuReal3>& KOe, cuCo
 
 //N = (N.x/2 + 1, N.y, 8)
 //xy is transposed
-__global__ void cu_Oersted_ConvProd_q2D_8_transpose_xy(cuVEC<cuReal3>& KOe, cuComplex* cuSx, cuComplex* cuSy, cuComplex* cuSz, cuSZ3& N)
+__global__ void cu_Oersted_ConvProd_q2D_8_transpose_xy(cuVEC<cuReal3>& KOe, cuBComplex* cuSx, cuBComplex* cuSy, cuBComplex* cuSz, cuSZ3& N)
 {
 	//above N.z/2 and N.y/2 use kernel symmetries to recover kernel values
 	//Kxy is odd about N.z/2 and even about N.y/2
@@ -190,7 +190,7 @@ __global__ void cu_Oersted_ConvProd_q2D_8_transpose_xy(cuVEC<cuReal3>& KOe, cuCo
 
 	if (idx < planecount) {
 
-#define a (cuReal)0.7071067811865
+#define a (cuBReal)0.7071067811865
 
 		//the z-axis points (the others are zero)
 		cuReIm3 x0 = cuReIm3(cuSx[idx], cuSy[idx], cuSz[idx]);
@@ -361,7 +361,7 @@ __global__ void cu_Oersted_ConvProd_q2D_8_transpose_xy(cuVEC<cuReal3>& KOe, cuCo
 
 //N = (N.x/2 + 1, N.y, 16)
 //xy is transposed
-__global__ void cu_Oersted_ConvProd_q2D_16_transpose_xy(cuVEC<cuReal3>& KOe, cuComplex* cuSx, cuComplex* cuSy, cuComplex* cuSz, cuSZ3& N)
+__global__ void cu_Oersted_ConvProd_q2D_16_transpose_xy(cuVEC<cuReal3>& KOe, cuBComplex* cuSx, cuBComplex* cuSy, cuBComplex* cuSz, cuSZ3& N)
 {
 	int idx = blockDim.x * blockIdx.x + threadIdx.x;
 
@@ -383,9 +383,9 @@ __global__ void cu_Oersted_ConvProd_q2D_16_transpose_xy(cuVEC<cuReal3>& KOe, cuC
 		cuReIm3 x6 = cuReIm3(cuSx[idx + 6 * planecount], cuSy[idx + 6 * planecount], cuSz[idx + 6 * planecount]);
 		cuReIm3 x7 = cuReIm3(cuSx[idx + 7 * planecount], cuSy[idx + 7 * planecount], cuSz[idx + 7 * planecount]);
 
-#define a	(cuReal)9.238795325113E-01
-#define b	(cuReal)3.826834323651E-01
-#define c	(cuReal)7.071067811865E-01
+#define a	(cuBReal)9.238795325113E-01
+#define b	(cuBReal)3.826834323651E-01
+#define c	(cuBReal)7.071067811865E-01
 
 		//First stage
 		cuReIm3 X0 = x0 + x4;
@@ -707,7 +707,7 @@ __global__ void cu_Oersted_ConvProd_q2D_16_transpose_xy(cuVEC<cuReal3>& KOe, cuC
 
 //N = (N.x/2 + 1, N.y, 32)
 //xy is transposed
-__global__ void cu_Oersted_ConvProd_q2D_32_transpose_xy(cuVEC<cuReal3>& KOe, cuComplex* cuSx, cuComplex* cuSy, cuComplex* cuSz, cuSZ3& N)
+__global__ void cu_Oersted_ConvProd_q2D_32_transpose_xy(cuVEC<cuReal3>& KOe, cuBComplex* cuSx, cuBComplex* cuSy, cuBComplex* cuSz, cuSZ3& N)
 {
 	int idx = blockDim.x * blockIdx.x + threadIdx.x;
 
@@ -730,13 +730,13 @@ __global__ void cu_Oersted_ConvProd_q2D_32_transpose_xy(cuVEC<cuReal3>& KOe, cuC
 
 		//input stage
 
-#define a	(cuReal)0.980785280403230
-#define b	(cuReal)0.195090322016128
-#define c	(cuReal)0.923879532511287
-#define d	(cuReal)0.382683432365090
-#define e	(cuReal)0.831469612302545
-#define f	(cuReal)0.555570233019602
-#define g	(cuReal)0.707106781186548
+#define a	(cuBReal)0.980785280403230
+#define b	(cuBReal)0.195090322016128
+#define c	(cuBReal)0.923879532511287
+#define d	(cuBReal)0.382683432365090
+#define e	(cuBReal)0.831469612302545
+#define f	(cuBReal)0.555570233019602
+#define g	(cuBReal)0.707106781186548
 
 		//j = 0
 		X[0] = (x(0) + x(8));

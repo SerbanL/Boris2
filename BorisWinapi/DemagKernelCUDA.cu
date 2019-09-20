@@ -10,7 +10,7 @@
 //-------------------------- CONVOLUTION PRODUCT CUDA KERNELS
 
 //N = (N.x/2 + 1, N.y, 1)
-__global__ void cu_Demag_ConvProd_2D(cuVEC<cuReal3>& Kdiag, cuVEC<cuReal>& K2D_odiag, cuComplex* cuSx, cuComplex* cuSy, cuComplex* cuSz, cuSZ3& N)
+__global__ void cu_Demag_ConvProd_2D(cuVEC<cuReal3>& Kdiag, cuVEC<cuBReal>& K2D_odiag, cuBComplex* cuSx, cuBComplex* cuSy, cuBComplex* cuSz, cuSZ3& N)
 {
 	//above N.y/2 use kernel symmetries to recover kernel values
 	//diagonal components are even about the N.y/2 point
@@ -49,7 +49,7 @@ __global__ void cu_Demag_ConvProd_2D(cuVEC<cuReal3>& Kdiag, cuVEC<cuReal>& K2D_o
 	}
 }
 
-__global__ void cu_Demag_ConvProd_2D_transpose_xy(cuVEC<cuReal3>& Kdiag, cuVEC<cuReal>& K2D_odiag, cuComplex* cuSx, cuComplex* cuSy, cuComplex* cuSz, cuSZ3& N)
+__global__ void cu_Demag_ConvProd_2D_transpose_xy(cuVEC<cuReal3>& Kdiag, cuVEC<cuBReal>& K2D_odiag, cuBComplex* cuSx, cuBComplex* cuSy, cuBComplex* cuSz, cuSZ3& N)
 {
 	//above N.y/2 use kernel symmetries to recover kernel values
 	//diagonal components are even about the N.y/2 point
@@ -90,7 +90,7 @@ __global__ void cu_Demag_ConvProd_2D_transpose_xy(cuVEC<cuReal3>& Kdiag, cuVEC<c
 }
 
 //N = (N.x/2 + 1, N.y, N.z)
-__global__ void cu_Demag_ConvProd_3D_transpose_xy(cuVEC<cuReal3>& Kdiag, cuVEC<cuReal3>& Kodiag, cuComplex* cuSx, cuComplex* cuSy, cuComplex* cuSz, cuSZ3& N)
+__global__ void cu_Demag_ConvProd_3D_transpose_xy(cuVEC<cuReal3>& Kdiag, cuVEC<cuReal3>& Kodiag, cuBComplex* cuSx, cuBComplex* cuSy, cuBComplex* cuSz, cuSZ3& N)
 {
 	//above N.z/2 and N.y/2 use kernel symmetries to recover kernel values
 	//diagonal components are even about the N.z/2 and N.y/2 points
@@ -165,7 +165,7 @@ __global__ void cu_Demag_ConvProd_3D_transpose_xy(cuVEC<cuReal3>& Kdiag, cuVEC<c
 
 //N = (N.x/2 + 1, N.y, 4)
 //xy is transposed
-__global__ void cu_Demag_ConvProd_q2D_4_transpose_xy(cuVEC<cuReal3>& Kdiag, cuVEC<cuReal3>& Kodiag, cuComplex* cuSx, cuComplex* cuSy, cuComplex* cuSz, cuSZ3& N)
+__global__ void cu_Demag_ConvProd_q2D_4_transpose_xy(cuVEC<cuReal3>& Kdiag, cuVEC<cuReal3>& Kodiag, cuBComplex* cuSx, cuBComplex* cuSy, cuBComplex* cuSz, cuSZ3& N)
 {
 	//above N.z/2 and N.y/2 use kernel symmetries to recover kernel values
 	//diagonal components are even about the N.z/2 and N.y/2 points
@@ -259,7 +259,7 @@ __global__ void cu_Demag_ConvProd_q2D_4_transpose_xy(cuVEC<cuReal3>& Kdiag, cuVE
 
 //N = (N.x/2 + 1, N.y, 8)
 //xy is transposed
-__global__ void cu_Demag_ConvProd_q2D_8_transpose_xy(cuVEC<cuReal3>& Kdiag, cuVEC<cuReal3>& Kodiag, cuComplex* cuSx, cuComplex* cuSy, cuComplex* cuSz, cuSZ3& N)
+__global__ void cu_Demag_ConvProd_q2D_8_transpose_xy(cuVEC<cuReal3>& Kdiag, cuVEC<cuReal3>& Kodiag, cuBComplex* cuSx, cuBComplex* cuSy, cuBComplex* cuSz, cuSZ3& N)
 {
 	//above N.z/2 and N.y/2 use kernel symmetries to recover kernel values
 	//diagonal components are even about the N.z/2 and N.y/2 points
@@ -277,7 +277,7 @@ __global__ void cu_Demag_ConvProd_q2D_8_transpose_xy(cuVEC<cuReal3>& Kdiag, cuVE
 
 	if (idx < planecount) {
 
-#define a (cuReal)0.7071067811865
+#define a (cuBReal)0.7071067811865
 
 		//the z-axis points (the others are zero)
 		cuReIm3 x0 = cuReIm3(cuSx[idx], cuSy[idx], cuSz[idx]);
@@ -448,7 +448,7 @@ __global__ void cu_Demag_ConvProd_q2D_8_transpose_xy(cuVEC<cuReal3>& Kdiag, cuVE
 
 //N = (N.x/2 + 1, N.y, 16)
 //xy is transposed
-__global__ void cu_Demag_ConvProd_q2D_16_transpose_xy(cuVEC<cuReal3>& Kdiag, cuVEC<cuReal3>& Kodiag, cuComplex* cuSx, cuComplex* cuSy, cuComplex* cuSz, cuSZ3& N)
+__global__ void cu_Demag_ConvProd_q2D_16_transpose_xy(cuVEC<cuReal3>& Kdiag, cuVEC<cuReal3>& Kodiag, cuBComplex* cuSx, cuBComplex* cuSy, cuBComplex* cuSz, cuSZ3& N)
 {
 	//above N.z/2 and N.y/2 use kernel symmetries to recover kernel values
 	//diagonal components are even about the N.z/2 and N.y/2 points
@@ -476,9 +476,9 @@ __global__ void cu_Demag_ConvProd_q2D_16_transpose_xy(cuVEC<cuReal3>& Kdiag, cuV
 		cuReIm3 x6 = cuReIm3(cuSx[idx + 6 * planecount], cuSy[idx + 6 * planecount], cuSz[idx + 6 * planecount]);
 		cuReIm3 x7 = cuReIm3(cuSx[idx + 7 * planecount], cuSy[idx + 7 * planecount], cuSz[idx + 7 * planecount]);
 
-#define a	(cuReal)9.238795325113E-01
-#define b	(cuReal)3.826834323651E-01
-#define c	(cuReal)7.071067811865E-01
+#define a	(cuBReal)9.238795325113E-01
+#define b	(cuBReal)3.826834323651E-01
+#define c	(cuBReal)7.071067811865E-01
 
 		//First stage
 		cuReIm3 X0 = x0 + x4;
@@ -800,7 +800,7 @@ __global__ void cu_Demag_ConvProd_q2D_16_transpose_xy(cuVEC<cuReal3>& Kdiag, cuV
 
 //N = (N.x/2 + 1, N.y, 32)
 //xy is transposed
-__global__ void cu_Demag_ConvProd_q2D_32_transpose_xy(cuVEC<cuReal3>& Kdiag, cuVEC<cuReal3>& Kodiag, cuComplex* cuSx, cuComplex* cuSy, cuComplex* cuSz, cuSZ3& N)
+__global__ void cu_Demag_ConvProd_q2D_32_transpose_xy(cuVEC<cuReal3>& Kdiag, cuVEC<cuReal3>& Kodiag, cuBComplex* cuSx, cuBComplex* cuSy, cuBComplex* cuSz, cuSZ3& N)
 {
 	//above N.z/2 and N.y/2 use kernel symmetries to recover kernel values
 	//diagonal components are even about the N.z/2 and N.y/2 points
@@ -829,13 +829,13 @@ __global__ void cu_Demag_ConvProd_q2D_32_transpose_xy(cuVEC<cuReal3>& Kdiag, cuV
 
 		//input stage
 
-#define a	(cuReal)0.980785280403230
-#define b	(cuReal)0.195090322016128
-#define c	(cuReal)0.923879532511287
-#define d	(cuReal)0.382683432365090
-#define e	(cuReal)0.831469612302545
-#define f	(cuReal)0.555570233019602
-#define g	(cuReal)0.707106781186548
+#define a	(cuBReal)0.980785280403230
+#define b	(cuBReal)0.195090322016128
+#define c	(cuBReal)0.923879532511287
+#define d	(cuBReal)0.382683432365090
+#define e	(cuBReal)0.831469612302545
+#define f	(cuBReal)0.555570233019602
+#define g	(cuBReal)0.707106781186548
 
 		//j = 0
 		X[0] = (x(0) + x(8));
@@ -1656,7 +1656,7 @@ void DemagKernelCUDA::KernelMultiplication_q2D(int q2D_level)
 
 //N = (N.x/2 + 1, N.y, N.z), where N.z > 32
 //xy is transposed
-__global__ void cu_Demag_ConvProd_q2D_32_transpose_xy(cuVEC<cuReal3>& Kdiag, cuVEC<cuReal3>& Kodiag, cuComplex* cuSx, cuComplex* cuSy, cuComplex* cuSz, cuSZ3& N, cuReIm* econj, cuReIm* cossin, int* shufind)
+__global__ void cu_Demag_ConvProd_q2D_32_transpose_xy(cuVEC<cuReal3>& Kdiag, cuVEC<cuReal3>& Kodiag, cuBComplex* cuSx, cuBComplex* cuSy, cuBComplex* cuSz, cuSZ3& N, cuReIm* econj, cuReIm* cossin, int* shufind)
 {
 	//above N.z/2 and N.y/2 use kernel symmetries to recover kernel values
 	//diagonal components are even about the N.z/2 and N.y/2 points
@@ -2005,7 +2005,7 @@ __global__ void cu_Demag_ConvProd_q2D_32_transpose_xy(cuVEC<cuReal3>& Kdiag, cuV
 
 //N = (N.x/2 + 1, N.y, N.z), where N.z > 32
 //xy is transposed
-__global__ void cu_Demag_ConvProd_q2D_N_transpose_xy(cuVEC<cuReal3>& Kdiag, cuVEC<cuReal3>& Kodiag, cuComplex* cuSx, cuComplex* cuSy, cuComplex* cuSz, cuSZ3& N, cuReIm* econj, cuReIm* cossin, int* shufind)
+__global__ void cu_Demag_ConvProd_q2D_N_transpose_xy(cuVEC<cuReal3>& Kdiag, cuVEC<cuReal3>& Kodiag, cuBComplex* cuSx, cuBComplex* cuSy, cuBComplex* cuSz, cuSZ3& N, cuReIm* econj, cuReIm* cossin, int* shufind)
 {
 	//above N.z/2 and N.y/2 use kernel symmetries to recover kernel values
 	//diagonal components are even about the N.z/2 and N.y/2 points
@@ -2028,7 +2028,7 @@ __global__ void cu_Demag_ConvProd_q2D_N_transpose_xy(cuVEC<cuReal3>& Kdiag, cuVE
 
 		cuReIm3 t0, t1, t2, t3;
 
-		int ldn = log2((cuReal)N.z);
+		int ldn = log2((cuBReal)N.z);
 
 		//input data
 #define x(n)	(cuReIm3(cuSx[idx + (n) * planecount], cuSy[idx + (n) * planecount], cuSz[idx + (n) * planecount]))

@@ -49,6 +49,8 @@ bool ODECommon::renormalize = true;
 
 bool ODECommon::solve_spin_current = false;
 
+int ODECommon::use_evaluation_speedup = (int)EVALSPEEDUP_NONE;
+
 bool ODECommon::moving_mesh = false;
 bool ODECommon::moving_mesh_antisymmetric = true;
 double ODECommon::moving_mesh_threshold = MOVEMESH_ANTISYMMETRIC_THRESHOLD;
@@ -68,6 +70,7 @@ ODECommon::ODECommon(bool called_from_derived) :
 			VINFO(mxh), VINFO(dmdt),
 			VINFO(setODE), VINFO(evalMethod), VINFO(dT),
 			VINFO(err_high_fail), VINFO(err_high), VINFO(err_low), VINFO(dT_increase), VINFO(dT_min), VINFO(dT_max),
+			VINFO(use_evaluation_speedup),
 			VINFO(moving_mesh), VINFO(moving_mesh_antisymmetric), VINFO(moving_mesh_threshold), VINFO(moving_mesh_dwshift)
 		}, {})
 {

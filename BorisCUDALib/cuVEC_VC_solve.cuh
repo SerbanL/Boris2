@@ -5,8 +5,8 @@
 #include "launchers.h"
 #include "cuVEC_aux.cuh"
 
-template <typename VType = cuReal>
-__global__ void normalize_error_kernel(cuReal& max_error, cuReal& max_val)
+template <typename VType = cuBReal>
+__global__ void normalize_error_kernel(cuBReal& max_error, cuBReal& max_val)
 {
 	if (threadIdx.x == 0) {
 
@@ -19,7 +19,7 @@ __global__ void normalize_error_kernel(cuReal& max_error, cuReal& max_val)
 //-------------------- GLOBAL RED
 
 template <typename VType>
-__global__ void IterateLaplace_SOR_red_kernel(cuVEC_VC<VType>& vec, cuReal& damping)
+__global__ void IterateLaplace_SOR_red_kernel(cuVEC_VC<VType>& vec, cuBReal& damping)
 {
 	vec.IterateLaplace_SOR_red(damping);
 }
@@ -27,7 +27,7 @@ __global__ void IterateLaplace_SOR_red_kernel(cuVEC_VC<VType>& vec, cuReal& damp
 //-------------------- GLOBAL BLACK
 
 template <typename VType>
-__global__ void IterateLaplace_SOR_black_kernel(cuVEC_VC<VType>& vec, cuReal& damping, cuReal& max_error, cuReal& max_val)
+__global__ void IterateLaplace_SOR_black_kernel(cuVEC_VC<VType>& vec, cuBReal& damping, cuBReal& max_error, cuBReal& max_val)
 {
 	vec.IterateLaplace_SOR_black(damping, max_error, max_val);
 }
@@ -35,7 +35,7 @@ __global__ void IterateLaplace_SOR_black_kernel(cuVEC_VC<VType>& vec, cuReal& da
 //-------------------- DEVICE RED
 
 template <typename VType>
-__device__ void cuVEC_VC<VType>::IterateLaplace_SOR_red(cuReal damping)
+__device__ void cuVEC_VC<VType>::IterateLaplace_SOR_red(cuBReal damping)
 {
 	//this method must be called with half-size : arr_size / 2 = n.dim() / 2, i.e. <<< (arr_size / 2 + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>>
 	//double idx : idx values will now take on even values
@@ -84,15 +84,15 @@ __device__ void cuVEC_VC<VType>::IterateLaplace_SOR_red(cuReal damping)
 	if (calculate_idx) {
 
 		//get maximum cell side
-		cuReal h_max = cu_maximum(h.x, h.y, h.z);
+		cuBReal h_max = cu_maximum(h.x, h.y, h.z);
 
 		//get weights
-		cuReal w_x = (h_max / h.x) * (h_max / h.x);
-		cuReal w_y = (h_max / h.y) * (h_max / h.y);
-		cuReal w_z = (h_max / h.z) * (h_max / h.z);
+		cuBReal w_x = (h_max / h.x) * (h_max / h.x);
+		cuBReal w_y = (h_max / h.y) * (h_max / h.y);
+		cuBReal w_z = (h_max / h.z) * (h_max / h.z);
 
 		VType weighted_sum = VType();
-		cuReal total_weight = 0;
+		cuBReal total_weight = 0;
 
 		//x direction
 		if ((ngbrFlags[idx] & NF_BOTHX) == NF_BOTHX) {
@@ -165,7 +165,7 @@ __device__ void cuVEC_VC<VType>::IterateLaplace_SOR_red(cuReal damping)
 //-------------------- DEVICE BLACK
 
 template <typename VType>
-__device__ void cuVEC_VC<VType>::IterateLaplace_SOR_black(cuReal damping, cuReal& max_error, cuReal& max_val)
+__device__ void cuVEC_VC<VType>::IterateLaplace_SOR_black(cuBReal damping, cuBReal& max_error, cuBReal& max_val)
 {
 	//this method must be called with half-size : arr_size / 2 = n.dim() / 2, i.e. <<< (arr_size / 2 + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>>
 	//double idx : idx values will now take on even values
@@ -218,15 +218,15 @@ __device__ void cuVEC_VC<VType>::IterateLaplace_SOR_black(cuReal damping, cuReal
 	if (calculate_idx) {
 
 		//get maximum cell side
-		cuReal h_max = cu_maximum(h.x, h.y, h.z);
+		cuBReal h_max = cu_maximum(h.x, h.y, h.z);
 
 		//get weights
-		cuReal w_x = (h_max / h.x) * (h_max / h.x);
-		cuReal w_y = (h_max / h.y) * (h_max / h.y);
-		cuReal w_z = (h_max / h.z) * (h_max / h.z);
+		cuBReal w_x = (h_max / h.x) * (h_max / h.x);
+		cuBReal w_y = (h_max / h.y) * (h_max / h.y);
+		cuBReal w_z = (h_max / h.z) * (h_max / h.z);
 
 		VType weighted_sum = VType();
-		cuReal total_weight = 0;
+		cuBReal total_weight = 0;
 
 		//x direction
 		if ((ngbrFlags[idx] & NF_BOTHX) == NF_BOTHX) {
@@ -302,7 +302,7 @@ __device__ void cuVEC_VC<VType>::IterateLaplace_SOR_black(cuReal damping, cuReal
 //-------------------- LAUNCHER
 
 template <typename VType>
-__host__ void cuVEC_VC<VType>::IterateLaplace_SOR(size_t arr_size, cuReal& damping, cuReal& max_error, cuReal& max_val)
+__host__ void cuVEC_VC<VType>::IterateLaplace_SOR(size_t arr_size, cuBReal& damping, cuBReal& max_error, cuBReal& max_val)
 {
 	IterateLaplace_SOR_red_kernel <<< (arr_size / 2 + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (*this, damping);
 
@@ -314,7 +314,7 @@ __host__ void cuVEC_VC<VType>::IterateLaplace_SOR(size_t arr_size, cuReal& dampi
 //-------------------- GLOBAL RED
 
 template <typename VType, typename Class_Poisson_RHS>
-__global__ void IteratePoisson_SOR_red_kernel(cuVEC_VC<VType>& vec, Class_Poisson_RHS& obj, cuReal& damping)
+__global__ void IteratePoisson_SOR_red_kernel(cuVEC_VC<VType>& vec, Class_Poisson_RHS& obj, cuBReal& damping)
 {
 	vec.IteratePoisson_SOR_red(obj, damping);
 }
@@ -322,7 +322,7 @@ __global__ void IteratePoisson_SOR_red_kernel(cuVEC_VC<VType>& vec, Class_Poisso
 //-------------------- GLOBAL BLACK
 
 template <typename VType, typename Class_Poisson_RHS>
-__global__ void IteratePoisson_SOR_black_kernel(cuVEC_VC<VType>& vec, Class_Poisson_RHS& obj, cuReal& damping, cuReal& max_error, cuReal& max_val)
+__global__ void IteratePoisson_SOR_black_kernel(cuVEC_VC<VType>& vec, Class_Poisson_RHS& obj, cuBReal& damping, cuBReal& max_error, cuBReal& max_val)
 {
 	vec.IteratePoisson_SOR_black(obj, damping, max_error, max_val);
 }
@@ -331,7 +331,7 @@ __global__ void IteratePoisson_SOR_black_kernel(cuVEC_VC<VType>& vec, Class_Pois
 
 template <typename VType>
 template <typename Class_Poisson_RHS>
-__device__ void cuVEC_VC<VType>::IteratePoisson_SOR_red(Class_Poisson_RHS& obj, cuReal damping)
+__device__ void cuVEC_VC<VType>::IteratePoisson_SOR_red(Class_Poisson_RHS& obj, cuBReal damping)
 {
 	//this method must be called with half-size : arr_size / 2 = n.dim() / 2, i.e. <<< (arr_size / 2 + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>>
 	//double idx : idx values will now take on even values
@@ -380,15 +380,15 @@ __device__ void cuVEC_VC<VType>::IteratePoisson_SOR_red(Class_Poisson_RHS& obj, 
 	if (calculate_idx) {
 
 		//get maximum cell side
-		cuReal h_max = cu_maximum(h.x, h.y, h.z);
+		cuBReal h_max = cu_maximum(h.x, h.y, h.z);
 
 		//get weights
-		cuReal w_x = (h_max / h.x) * (h_max / h.x);
-		cuReal w_y = (h_max / h.y) * (h_max / h.y);
-		cuReal w_z = (h_max / h.z) * (h_max / h.z);
+		cuBReal w_x = (h_max / h.x) * (h_max / h.x);
+		cuBReal w_y = (h_max / h.y) * (h_max / h.y);
+		cuBReal w_z = (h_max / h.z) * (h_max / h.z);
 
 		VType weighted_sum = VType();
-		cuReal total_weight = 0;
+		cuBReal total_weight = 0;
 
 		//x direction
 		if ((ngbrFlags[idx] & NF_BOTHX) == NF_BOTHX) {
@@ -461,7 +461,7 @@ __device__ void cuVEC_VC<VType>::IteratePoisson_SOR_red(Class_Poisson_RHS& obj, 
 
 template <typename VType>
 template <typename Class_Poisson_RHS>
-__device__ void cuVEC_VC<VType>::IteratePoisson_SOR_black(Class_Poisson_RHS& obj, cuReal damping, cuReal& max_error, cuReal& max_val)
+__device__ void cuVEC_VC<VType>::IteratePoisson_SOR_black(Class_Poisson_RHS& obj, cuBReal damping, cuBReal& max_error, cuBReal& max_val)
 {
 	//this method must be called with half-size : arr_size / 2 = n.dim() / 2, i.e. <<< (arr_size / 2 + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>>
 	//double idx : idx values will now take on even values
@@ -514,15 +514,15 @@ __device__ void cuVEC_VC<VType>::IteratePoisson_SOR_black(Class_Poisson_RHS& obj
 	if (calculate_idx) {
 
 		//get maximum cell side
-		cuReal h_max = cu_maximum(h.x, h.y, h.z);
+		cuBReal h_max = cu_maximum(h.x, h.y, h.z);
 
 		//get weights
-		cuReal w_x = (h_max / h.x) * (h_max / h.x);
-		cuReal w_y = (h_max / h.y) * (h_max / h.y);
-		cuReal w_z = (h_max / h.z) * (h_max / h.z);
+		cuBReal w_x = (h_max / h.x) * (h_max / h.x);
+		cuBReal w_y = (h_max / h.y) * (h_max / h.y);
+		cuBReal w_z = (h_max / h.z) * (h_max / h.z);
 
 		VType weighted_sum = VType();
-		cuReal total_weight = 0;
+		cuBReal total_weight = 0;
 
 		//x direction
 		if ((ngbrFlags[idx] & NF_BOTHX) == NF_BOTHX) {
@@ -599,7 +599,7 @@ __device__ void cuVEC_VC<VType>::IteratePoisson_SOR_black(Class_Poisson_RHS& obj
 
 template <typename VType>
 template <typename Class_Poisson_RHS>
-__host__ void cuVEC_VC<VType>::IteratePoisson_SOR(size_t arr_size, Class_Poisson_RHS& obj, cuReal& damping, cuReal& max_error, cuReal& max_val)
+__host__ void cuVEC_VC<VType>::IteratePoisson_SOR(size_t arr_size, Class_Poisson_RHS& obj, cuBReal& damping, cuBReal& max_error, cuBReal& max_val)
 {
 	IteratePoisson_SOR_red_kernel <<< (arr_size / 2 + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (*this, obj, damping);
 
@@ -611,7 +611,7 @@ __host__ void cuVEC_VC<VType>::IteratePoisson_SOR(size_t arr_size, Class_Poisson
 //-------------------- GLOBAL
 
 template <typename VType>
-__global__ void adjust_aSOR_damping_kernel(cuVEC_VC<VType>& vec, bool start_iters, cuReal err_limit, cuReal& error, cuReal& max_val)
+__global__ void adjust_aSOR_damping_kernel(cuVEC_VC<VType>& vec, bool start_iters, cuBReal err_limit, cuBReal& error, cuBReal& max_val)
 {
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
 
@@ -629,7 +629,7 @@ __global__ void IteratePoisson_aSOR_red_kernel(cuVEC_VC<VType>& vec, Class_Poiss
 //-------------------- GLOBAL BLACK
 
 template <typename VType, typename Class_Poisson_RHS>
-__global__ void IteratePoisson_aSOR_black_kernel(cuVEC_VC<VType>& vec, Class_Poisson_RHS& obj, cuReal& max_error, cuReal& max_val)
+__global__ void IteratePoisson_aSOR_black_kernel(cuVEC_VC<VType>& vec, Class_Poisson_RHS& obj, cuBReal& max_error, cuBReal& max_val)
 {
 	vec.IteratePoisson_SOR_black(obj, vec.aSOR_damping, max_error, max_val);
 }
@@ -637,7 +637,7 @@ __global__ void IteratePoisson_aSOR_black_kernel(cuVEC_VC<VType>& vec, Class_Poi
 //-------------------- DEVICE
 
 template <typename VType>
-__device__ void cuVEC_VC<VType>::adjust_aSOR_damping(bool start_iters, cuReal err_limit, cuReal& error, cuReal& max_val)
+__device__ void cuVEC_VC<VType>::adjust_aSOR_damping(bool start_iters, cuBReal err_limit, cuBReal& error, cuBReal& max_val)
 {
 #define ASOR_SPIKEVAL	0.4F
 #define ASOR_EXPONENT	2.1F
@@ -646,7 +646,7 @@ __device__ void cuVEC_VC<VType>::adjust_aSOR_damping(bool start_iters, cuReal er
 #define	ASOR_MINDAMPING	0.2F
 #define	ASOR_MAXDAMPING	2.0F
 
-	cuReal norm_error = (max_val > 0 ? error / max_val : error);
+	cuBReal norm_error = (max_val > 0 ? error / max_val : error);
 
 	//prepare start of a sequence of iterations but don't adjust damping at the start
 	if (start_iters) {
@@ -657,7 +657,7 @@ __device__ void cuVEC_VC<VType>::adjust_aSOR_damping(bool start_iters, cuReal er
 	}
 
 	//adjust damping
-	cuReal grad_lnerror = (log(norm_error) - log(aSOR_lasterror)) / aSOR_damping;
+	cuBReal grad_lnerror = (log(norm_error) - log(aSOR_lasterror)) / aSOR_damping;
 
 	//apply full adjustment mechanism only if error is above threshold : below this cannot apply the normal mechanism due to "numerical noise"
 	if (norm_error > err_limit) {
@@ -702,7 +702,7 @@ __device__ void cuVEC_VC<VType>::adjust_aSOR_damping(bool start_iters, cuReal er
 
 template <typename VType>
 template <typename Class_Poisson_RHS>
-__host__ void cuVEC_VC<VType>::IteratePoisson_aSOR(size_t arr_size, Class_Poisson_RHS& obj, bool start_iters, cuReal err_limit, cuReal& max_error, cuReal& max_val)
+__host__ void cuVEC_VC<VType>::IteratePoisson_aSOR(size_t arr_size, Class_Poisson_RHS& obj, bool start_iters, cuBReal err_limit, cuBReal& max_error, cuBReal& max_val)
 {
 	IteratePoisson_aSOR_red_kernel <<< (arr_size / 2 + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (*this, obj);
 
@@ -716,7 +716,7 @@ __host__ void cuVEC_VC<VType>::IteratePoisson_aSOR(size_t arr_size, Class_Poisso
 //-------------------- GLOBAL RED
 
 template <typename VType, typename Class_Poisson_NNeu>
-__global__ void IteratePoisson_NNeu_SOR_red_kernel(cuVEC_VC<VType>& vec, Class_Poisson_NNeu& obj, cuReal& damping)
+__global__ void IteratePoisson_NNeu_SOR_red_kernel(cuVEC_VC<VType>& vec, Class_Poisson_NNeu& obj, cuBReal& damping)
 {
 	vec.IteratePoisson_NNeu_SOR_red(obj, damping);
 }
@@ -724,7 +724,7 @@ __global__ void IteratePoisson_NNeu_SOR_red_kernel(cuVEC_VC<VType>& vec, Class_P
 //-------------------- GLOBAL BLACK
 
 template <typename VType, typename Class_Poisson_NNeu>
-__global__ void IteratePoisson_NNeu_SOR_black_kernel(cuVEC_VC<VType>& vec, Class_Poisson_NNeu& obj, cuReal& damping, cuReal& max_error, cuReal& max_val)
+__global__ void IteratePoisson_NNeu_SOR_black_kernel(cuVEC_VC<VType>& vec, Class_Poisson_NNeu& obj, cuBReal& damping, cuBReal& max_error, cuBReal& max_val)
 {
 	vec.IteratePoisson_NNeu_SOR_black(obj, damping, max_error, max_val);
 }
@@ -733,7 +733,7 @@ __global__ void IteratePoisson_NNeu_SOR_black_kernel(cuVEC_VC<VType>& vec, Class
 
 template <typename VType>
 template <typename Class_Poisson_NNeu>
-__device__ void cuVEC_VC<VType>::IteratePoisson_NNeu_SOR_red(Class_Poisson_NNeu& obj, cuReal damping)
+__device__ void cuVEC_VC<VType>::IteratePoisson_NNeu_SOR_red(Class_Poisson_NNeu& obj, cuBReal damping)
 {
 	//this method must be called with half-size : arr_size / 2 = n.dim() / 2, i.e. <<< (arr_size / 2 + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>>
 	//double idx : idx values will now take on even values
@@ -782,15 +782,15 @@ __device__ void cuVEC_VC<VType>::IteratePoisson_NNeu_SOR_red(Class_Poisson_NNeu&
 	if (calculate_idx) {
 
 		//get maximum cell side
-		cuReal h_max = cu_maximum(h.x, h.y, h.z);
+		cuBReal h_max = cu_maximum(h.x, h.y, h.z);
 
 		//get weights
-		cuReal w_x = (h_max / h.x) * (h_max / h.x);
-		cuReal w_y = (h_max / h.y) * (h_max / h.y);
-		cuReal w_z = (h_max / h.z) * (h_max / h.z);
+		cuBReal w_x = (h_max / h.x) * (h_max / h.x);
+		cuBReal w_y = (h_max / h.y) * (h_max / h.y);
+		cuBReal w_z = (h_max / h.z) * (h_max / h.z);
 
 		VType weighted_sum = VType();
-		cuReal total_weight = 0;
+		cuBReal total_weight = 0;
 
 		//x direction
 		if ((ngbrFlags[idx] & NF_BOTHX) == NF_BOTHX) {
@@ -863,7 +863,7 @@ __device__ void cuVEC_VC<VType>::IteratePoisson_NNeu_SOR_red(Class_Poisson_NNeu&
 
 template <typename VType>
 template <typename Class_Poisson_NNeu>
-__device__ void cuVEC_VC<VType>::IteratePoisson_NNeu_SOR_black(Class_Poisson_NNeu& obj, cuReal damping, cuReal& max_error, cuReal& max_val)
+__device__ void cuVEC_VC<VType>::IteratePoisson_NNeu_SOR_black(Class_Poisson_NNeu& obj, cuBReal damping, cuBReal& max_error, cuBReal& max_val)
 {
 	//this method must be called with half-size : arr_size / 2 = n.dim() / 2, i.e. <<< (arr_size / 2 + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>>
 	//double idx : idx values will now take on even values
@@ -916,15 +916,15 @@ __device__ void cuVEC_VC<VType>::IteratePoisson_NNeu_SOR_black(Class_Poisson_NNe
 	if (calculate_idx) {
 
 		//get maximum cell side
-		cuReal h_max = cu_maximum(h.x, h.y, h.z);
+		cuBReal h_max = cu_maximum(h.x, h.y, h.z);
 
 		//get weights
-		cuReal w_x = (h_max / h.x) * (h_max / h.x);
-		cuReal w_y = (h_max / h.y) * (h_max / h.y);
-		cuReal w_z = (h_max / h.z) * (h_max / h.z);
+		cuBReal w_x = (h_max / h.x) * (h_max / h.x);
+		cuBReal w_y = (h_max / h.y) * (h_max / h.y);
+		cuBReal w_z = (h_max / h.z) * (h_max / h.z);
 
 		VType weighted_sum = VType();
-		cuReal total_weight = 0;
+		cuBReal total_weight = 0;
 
 		//x direction
 		if ((ngbrFlags[idx] & NF_BOTHX) == NF_BOTHX) {
@@ -1001,7 +1001,7 @@ __device__ void cuVEC_VC<VType>::IteratePoisson_NNeu_SOR_black(Class_Poisson_NNe
 
 template <typename VType>
 template <typename Class_Poisson_NNeu>
-__host__ void cuVEC_VC<VType>::IteratePoisson_NNeu_SOR(size_t arr_size, Class_Poisson_NNeu& obj, cuReal& damping, cuReal& max_error, cuReal& max_val)
+__host__ void cuVEC_VC<VType>::IteratePoisson_NNeu_SOR(size_t arr_size, Class_Poisson_NNeu& obj, cuBReal& damping, cuBReal& max_error, cuBReal& max_val)
 {
 	IteratePoisson_NNeu_SOR_red_kernel <<< (arr_size / 2 + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (*this, obj, damping);
 
@@ -1021,7 +1021,7 @@ __global__ void IteratePoisson_NNeu_aSOR_red_kernel(cuVEC_VC<VType>& vec, Class_
 //-------------------- GLOBAL BLACK
 
 template <typename VType, typename Class_Poisson_NNeu>
-__global__ void IteratePoisson_NNeu_aSOR_black_kernel(cuVEC_VC<VType>& vec, Class_Poisson_NNeu& obj, cuReal& max_error, cuReal& max_val)
+__global__ void IteratePoisson_NNeu_aSOR_black_kernel(cuVEC_VC<VType>& vec, Class_Poisson_NNeu& obj, cuBReal& max_error, cuBReal& max_val)
 {
 	vec.IteratePoisson_NNeu_SOR_black(obj, vec.aSOR_damping, max_error, max_val);
 }
@@ -1030,7 +1030,7 @@ __global__ void IteratePoisson_NNeu_aSOR_black_kernel(cuVEC_VC<VType>& vec, Clas
 
 template <typename VType>
 template <typename Class_Poisson_NNeu>
-__host__ void cuVEC_VC<VType>::IteratePoisson_NNeu_aSOR(size_t arr_size, Class_Poisson_NNeu& obj, bool start_iters, cuReal err_limit, cuReal& max_error, cuReal& max_val)
+__host__ void cuVEC_VC<VType>::IteratePoisson_NNeu_aSOR(size_t arr_size, Class_Poisson_NNeu& obj, bool start_iters, cuBReal err_limit, cuBReal& max_error, cuBReal& max_val)
 {
 	IteratePoisson_NNeu_aSOR_red_kernel <<< (arr_size / 2 + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (*this, obj);
 

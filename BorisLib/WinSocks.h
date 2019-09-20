@@ -24,6 +24,8 @@
 
 class WinSocks {
 
+private:
+
     SOCKET ListenSocket;
     SOCKET ClientSocket;
 
@@ -37,6 +39,9 @@ class WinSocks {
 
 	//commands processed by Simulation may return parameters. These are placed in this std::vector to be sent to Client in winsocks thread
 	std::vector<std::string> dataParams;
+
+	//the last received message
+	std::string last_message;
 
 private:
 
@@ -229,9 +234,9 @@ inline std::string WinSocks::Listen(void) {
 	if (iResult > 0) {
 
 		//received message, return it to be processed
-		std::string receivedString = std::string(recvbuf).substr(0, iResult);
+		last_message = std::string(recvbuf).substr(0, iResult);
 
-		return receivedString;
+		return last_message;
 	}
 
 	//sleep before calling the non-blocking recv function (client socket is not blocking)

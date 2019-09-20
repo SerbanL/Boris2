@@ -17,11 +17,11 @@ class MetalMesh :
 	public ProgramState<MetalMesh,
 	tuple<
 	//Mesh members
-	int, int, int, int, int, Rect, SZ3, DBL3, SZ3, DBL3, VEC_VC<double>, VEC_VC<DBL3>, VEC_VC<double>, VEC_VC<double>, vector_lut<Modules*>,
+	int, int, int, int, int, int, Rect, SZ3, DBL3, SZ3, DBL3, VEC_VC<double>, VEC_VC<DBL3>, VEC_VC<double>, VEC_VC<double>, vector_lut<Modules*>,
 	//Members in this derived class
 	
 	//Material Parameters
-	MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<DBL2, double>, MatP<DBL2, double>, double, MatP<double, double>, MatP<double, double>, MatP<double, double>
+	MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<DBL2, double>, MatP<DBL2, double>, double, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>
 	>,
 	//Module Implementations
 	tuple<Transport, Heat> >

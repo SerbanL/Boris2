@@ -55,7 +55,7 @@ TransportCUDA::~TransportCUDA()
 //------------------Others
 
 //set fixed potential cells in this mesh for given rectangle
-bool TransportCUDA::SetFixedPotentialCells(cuRect rectangle, cuReal potential)
+bool TransportCUDA::SetFixedPotentialCells(cuRect rectangle, cuBReal potential)
 {
 	return pMeshCUDA->V()->set_dirichlet_conditions(rectangle, potential);
 }
@@ -101,23 +101,23 @@ BError TransportCUDA::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 
 	//electrical potential - set empty cells using information in elC (empty cells have zero electrical conductivity)
 	if (pMeshCUDA->V()->size_cpu().dim())
-		success = pMeshCUDA->V()->resize(pMeshCUDA->h_e, pMeshCUDA->meshRect, (cuVEC_VC<cuReal>&)pMeshCUDA->elC);
+		success = pMeshCUDA->V()->resize(pMeshCUDA->h_e, pMeshCUDA->meshRect, (cuVEC_VC<cuBReal>&)pMeshCUDA->elC);
 	else
-		success = pMeshCUDA->V()->assign(pMeshCUDA->h_e, pMeshCUDA->meshRect, (cuReal)0.0, (cuVEC_VC<cuReal>&)pMeshCUDA->elC);
+		success = pMeshCUDA->V()->assign(pMeshCUDA->h_e, pMeshCUDA->meshRect, (cuBReal)0.0, (cuVEC_VC<cuBReal>&)pMeshCUDA->elC);
 
 	//electrical current density - set empty cells using information in elC (empty cells have zero electrical conductivity)
 	if (pMeshCUDA->Jc()->size_cpu().dim())
-		success = pMeshCUDA->Jc()->resize(pMeshCUDA->h_e, pMeshCUDA->meshRect, (cuVEC_VC<cuReal>&)pMeshCUDA->elC);
+		success = pMeshCUDA->Jc()->resize(pMeshCUDA->h_e, pMeshCUDA->meshRect, (cuVEC_VC<cuBReal>&)pMeshCUDA->elC);
 	else
-		success = pMeshCUDA->Jc()->assign(pMeshCUDA->h_e, pMeshCUDA->meshRect, cuReal3(0.0), (cuVEC_VC<cuReal>&)pMeshCUDA->elC);
+		success = pMeshCUDA->Jc()->assign(pMeshCUDA->h_e, pMeshCUDA->meshRect, cuReal3(0.0), (cuVEC_VC<cuBReal>&)pMeshCUDA->elC);
 
 	//spin accumulation if needed - set empty cells using information in elC (empty cells have zero electrical conductivity)
 	if (success && pSMesh->SolveSpinCurrent()) {
 
 		if (pMeshCUDA->S()->size_cpu().dim())
-			success = pMeshCUDA->S()->resize(pMeshCUDA->h_e, pMeshCUDA->meshRect, (cuVEC_VC<cuReal>&)pMeshCUDA->elC);
+			success = pMeshCUDA->S()->resize(pMeshCUDA->h_e, pMeshCUDA->meshRect, (cuVEC_VC<cuBReal>&)pMeshCUDA->elC);
 		else
-			success = pMeshCUDA->S()->assign(pMeshCUDA->h_e, pMeshCUDA->meshRect, cuReal3(0.0), (cuVEC_VC<cuReal>&)pMeshCUDA->elC);
+			success = pMeshCUDA->S()->assign(pMeshCUDA->h_e, pMeshCUDA->meshRect, cuReal3(0.0), (cuVEC_VC<cuBReal>&)pMeshCUDA->elC);
 	}
 	else {
 

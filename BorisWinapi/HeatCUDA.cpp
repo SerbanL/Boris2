@@ -81,7 +81,7 @@ BError HeatCUDA::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 		if (success) {
 
 			if (pMeshCUDA->Temp()->size_cpu().dim())
-				success = pMeshCUDA->Temp()->resize(pMesh->h_t, pMesh->meshRect, (cuVEC_VC<cuReal>&)pMeshCUDA->elC);
+				success = pMeshCUDA->Temp()->resize(pMesh->h_t, pMesh->meshRect, (cuVEC_VC<cuBReal>&)pMeshCUDA->elC);
 			else
 				success = pMeshCUDA->Temp()->set_from_cpuvec(pMesh->Temp);
 		}
@@ -114,14 +114,6 @@ BError HeatCUDA::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 
 void HeatCUDA::UpdateField(void)
 {
-}
-
-//-------------------Setters
-
-//set Temp uniformly to base temperature
-void HeatCUDA::SetBaseTemperature(cuReal Temperature)
-{
-	pMeshCUDA->Temp()->setnonempty(Temperature);
 }
 
 #endif

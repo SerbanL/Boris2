@@ -160,8 +160,7 @@
       <FloatingPointModel>Fast</FloatingPointModel>
       <OpenMPSupport>true</OpenMPSupport>
       <ExceptionHandling>Sync</ExceptionHandling>
-      <EnableParallelCodeGeneration>
-      </EnableParallelCodeGeneration>
+      <EnableParallelCodeGeneration>true</EnableParallelCodeGeneration>
       <StructMemberAlignment>16Bytes</StructMemberAlignment>
       <WholeProgramOptimization>false</WholeProgramOptimization>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
@@ -304,6 +303,7 @@
     <ClInclude Include="PhysQ.h" />
     <ClInclude Include="PhysQDefs.h" />
     <ClInclude Include="PhysQRep.h" />
+    <ClInclude Include="resource.h" />
     <ClInclude Include="Roughness.h" />
     <ClInclude Include="RoughnessCUDA.h" />
     <ClInclude Include="RoughnessKernel.h" />
@@ -461,6 +461,7 @@
     <ClCompile Include="SimSharedData.cpp" />
     <ClCompile Include="SimulationData.cpp" />
     <ClCompile Include="SkyrmionTrack.cpp" />
+    <ClCompile Include="SkyrmionTrackCUDA.cpp" />
     <ClCompile Include="SOTField.cpp" />
     <ClCompile Include="SOTFieldCUDA.cpp" />
     <ClCompile Include="DemagTFunc_fg.cpp" />

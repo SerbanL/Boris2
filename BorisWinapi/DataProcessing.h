@@ -205,8 +205,8 @@ public:
 	//fit f(x) = y0 + S dH / (4(x-H0)^2 + dH^2). Return fitting parameters with their standard deviations.
 	BError fit_lorentz(int dp_x, int dp_y, DBL2 *pS, DBL2 *pH0, DBL2 *pdH, DBL2 *py0);
 
-	//fit Mz(r) = Ms * cos(2*arctan(sinh(R/w)/sinh(r/w))). Return fitting parameters with their standard deviations.
-	BError fit_skyrmion(int dp_x, int dp_y, DBL2 *pR, DBL2 *pMs, DBL2 *pw);
+	//fit Mz(x) = Ms * cos(2*arctan(sinh(R/w)/sinh((x-x0)/w))). Return fitting parameters with their standard deviations.
+	BError fit_skyrmion(int dp_x, int dp_y, DBL2 *pR, DBL2 *px0, DBL2 *pMs, DBL2 *pw);
 
 	//--------------------- data processing
 	

@@ -34,7 +34,7 @@ BError FMeshCUDA::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 	return error;
 }
 
-cuReal FMeshCUDA::CheckMoveMesh(bool antisymmetric, double threshold)
+cuBReal FMeshCUDA::CheckMoveMesh(bool antisymmetric, double threshold)
 {
 	//move mesh algorithm applied to systems containing domain walls in order to simulate domain wall movement.
 	//In this case the magnetisation at the ends of the mesh must be fixed (magnetisation evolver not applied to the ends).
@@ -50,7 +50,7 @@ cuReal FMeshCUDA::CheckMoveMesh(bool antisymmetric, double threshold)
 	cuReal3 M_av_left = M()->average(n.dim(), cuBox(cells_fixed, 0, 0, n.x / 2, n.y, n.z));
 	cuReal3 M_av_right = M()->average(n.dim(), cuBox(n.x / 2, 0, 0, n.x - cells_fixed, n.y, n.z));
 
-	cuReal direction = (2 * cuReal(antisymmetric) - 1);
+	cuBReal direction = (2 * cuBReal(antisymmetric) - 1);
 
 	cuReal3 M_av = M_av_right + direction * M_av_left;
 

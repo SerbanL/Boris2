@@ -38,8 +38,12 @@ private:
 	//this flag will be set false only if the convolution rect matches that of M and n_common matches the discretisation of M (i.e. in this case a mesh transfer would be pointless).
 	bool do_transfer = true;
 
+	//The demag field computed separately : at certain steps in the ODE evaluation method we don't need to recalculate the demag field but can use a previous evaluation with an acceptable impact on the numerical error.
+	//This mode needs to be enabled by the user, and can be much faster than the default mode. The default mode is to re-evaluate the demag field at every step.
+	cu_obj<cuVEC<cuReal3>> Hdemag;
+
 	//different meshes have different weights when contributing to the total energy density -> ratio of their non-empty volume to total non-empty volume
-	cu_obj<cuReal> energy_density_weight;
+	cu_obj<cuBReal> energy_density_weight;
 
 public:
 
@@ -59,7 +63,7 @@ public:
 	//-------------------Getters
 
 	//add energy in this module to a running total
-	void Add_Energy(cu_obj<cuReal>& total_energy);
+	void Add_Energy(cu_obj<cuBReal>& total_energy);
 
 	//-------------------Setters
 };

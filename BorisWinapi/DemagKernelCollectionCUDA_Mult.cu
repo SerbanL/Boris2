@@ -20,8 +20,8 @@
 //N = (N.x/2 + 1, N.y, 1)
 __global__ void cu_KernelMultiplication_2D_Self(
 	cuKerType& kernel,
-	cuComplex* cuSx, cuComplex* cuSy, cuComplex* cuSz, 
-	cuComplex* cuS2x, cuComplex* cuS2y, cuComplex* cuS2z,
+	cuBComplex* cuSx, cuBComplex* cuSy, cuBComplex* cuSz, 
+	cuBComplex* cuS2x, cuBComplex* cuS2y, cuBComplex* cuS2z,
 	cuSZ3& N)
 {
 	//above N.y/2 use kernel symmetries to recover kernel values
@@ -60,8 +60,8 @@ __global__ void cu_KernelMultiplication_2D_Self(
 //Self demag kernel multiplication - real and use symmetries
 __global__ void cu_KernelMultiplication_2D_Self_transpose_xy(
 	cuKerType& kernel,
-	cuComplex* cuSx, cuComplex* cuSy, cuComplex* cuSz,
-	cuComplex* cuS2x, cuComplex* cuS2y, cuComplex* cuS2z,
+	cuBComplex* cuSx, cuBComplex* cuSy, cuBComplex* cuSz,
+	cuBComplex* cuS2x, cuBComplex* cuS2y, cuBComplex* cuS2z,
 	cuSZ3& N)
 {
 	//above N.y/2 use kernel symmetries to recover kernel values
@@ -102,8 +102,8 @@ __global__ void cu_KernelMultiplication_2D_Self_transpose_xy(
 //N = (N.x/2 + 1, N.y, 1)
 __global__ void cu_KernelMultiplication_2D_zShifted(
 	cuKerType& kernel,
-	cuComplex* cuSx, cuComplex* cuSy, cuComplex* cuSz,
-	cuComplex* cuS2x, cuComplex* cuS2y, cuComplex* cuS2z,
+	cuBComplex* cuSx, cuBComplex* cuSy, cuBComplex* cuSz,
+	cuBComplex* cuS2x, cuBComplex* cuS2y, cuBComplex* cuS2z,
 	cuSZ3& N)
 {
 	int idx = blockDim.x * blockIdx.x + threadIdx.x;
@@ -140,8 +140,8 @@ __global__ void cu_KernelMultiplication_2D_zShifted(
 
 __global__ void cu_KernelMultiplication_2D_zShifted_transpose_xy(
 	cuKerType& kernel,
-	cuComplex* cuSx, cuComplex* cuSy, cuComplex* cuSz,
-	cuComplex* cuS2x, cuComplex* cuS2y, cuComplex* cuS2z,
+	cuBComplex* cuSx, cuBComplex* cuSy, cuBComplex* cuSz,
+	cuBComplex* cuS2x, cuBComplex* cuS2y, cuBComplex* cuS2z,
 	cuSZ3& N)
 {
 	int idx = blockDim.x * blockIdx.x + threadIdx.x;
@@ -181,8 +181,8 @@ __global__ void cu_KernelMultiplication_2D_zShifted_transpose_xy(
 //N = (N.x/2 + 1, N.y, 1)
 __global__ void cu_KernelMultiplication_2D_inversezShifted(
 	cuKerType& kernel,
-	cuComplex* cuSx, cuComplex* cuSy, cuComplex* cuSz,
-	cuComplex* cuS2x, cuComplex* cuS2y, cuComplex* cuS2z,
+	cuBComplex* cuSx, cuBComplex* cuSy, cuBComplex* cuSz,
+	cuBComplex* cuS2x, cuBComplex* cuS2y, cuBComplex* cuS2z,
 	cuSZ3& N)
 {
 	int idx = blockDim.x * blockIdx.x + threadIdx.x;
@@ -219,8 +219,8 @@ __global__ void cu_KernelMultiplication_2D_inversezShifted(
 
 __global__ void cu_KernelMultiplication_2D_inversezShifted_transpose_xy(
 	cuKerType& kernel,
-	cuComplex* cuSx, cuComplex* cuSy, cuComplex* cuSz,
-	cuComplex* cuS2x, cuComplex* cuS2y, cuComplex* cuS2z,
+	cuBComplex* cuSx, cuBComplex* cuSy, cuBComplex* cuSz,
+	cuBComplex* cuS2x, cuBComplex* cuS2y, cuBComplex* cuS2z,
 	cuSZ3& N)
 {
 	int idx = blockDim.x * blockIdx.x + threadIdx.x;
@@ -260,8 +260,8 @@ __global__ void cu_KernelMultiplication_2D_inversezShifted_transpose_xy(
 //N = (N.x/2 + 1, N.y, 1)
 __global__ void cu_KernelMultiplication_2D_Regular(
 	cuKerType& kernel,
-	cuComplex* cuSx, cuComplex* cuSy, cuComplex* cuSz,
-	cuComplex* cuS2x, cuComplex* cuS2y, cuComplex* cuS2z,
+	cuBComplex* cuSx, cuBComplex* cuSy, cuBComplex* cuSz,
+	cuBComplex* cuS2x, cuBComplex* cuS2y, cuBComplex* cuS2z,
 	cuSZ3& N)
 {
 	int idx = blockDim.x * blockIdx.x + threadIdx.x;
@@ -286,8 +286,8 @@ __global__ void cu_KernelMultiplication_2D_Regular(
 //N = (N.x/2 + 1, N.y, N.z)
 __global__ void cu_KernelMultiplication_3D_Self_transpose_xy(
 	cuKerType& kernel,
-	cuComplex* cuSx, cuComplex* cuSy, cuComplex* cuSz, 
-	cuComplex* cuS2x, cuComplex* cuS2y, cuComplex* cuS2z,
+	cuBComplex* cuSx, cuBComplex* cuSy, cuBComplex* cuSz, 
+	cuBComplex* cuS2x, cuBComplex* cuS2y, cuBComplex* cuS2z,
 	cuSZ3& N)
 {
 	//above N.z/2 and N.y/2 use kernel symmetries to recover kernel values
@@ -356,19 +356,19 @@ __global__ void cu_KernelMultiplication_3D_Self_transpose_xy(
 //N = (N.x/2 + 1, N.y, N.z)
 __global__ void cu_KernelMultiplication_3D_zShifted_transpose_xy(
 	cuKerType& kernel,
-	cuComplex* cuSx, cuComplex* cuSy, cuComplex* cuSz,
-	cuComplex* cuS2x, cuComplex* cuS2y, cuComplex* cuS2z,
+	cuBComplex* cuSx, cuBComplex* cuSy, cuBComplex* cuSz,
+	cuBComplex* cuS2x, cuBComplex* cuS2y, cuBComplex* cuS2z,
 	cuSZ3& N)
 {
 	//z shifted for 3D : can use kernels of reduced dimensions but must be complex
 	//
-	//Kxx : y - symmetrical (+), z - Re part symmetrical (+), Im part asymmetrical (-)
-	//Kyy : y - symmetrical (+), z - Re part symmetrical (+), Im part asymmetrical (-)
-	//Kzz : y - symmetrical (+), z - Re part symmetrical (+), Im part asymmetrical (-)
+	//Kxx : y - symmetrical (+), z - Re part symmetrical (+), Im part inv. symmetric (-)
+	//Kyy : y - symmetrical (+), z - Re part symmetrical (+), Im part inv. symmetric (-)
+	//Kzz : y - symmetrical (+), z - Re part symmetrical (+), Im part inv. symmetric (-)
 	//
-	//Kxy : y - asymmetrical (-), z - Re part symmetrical  (+), Im part asymmetrical (-)
-	//Kxz : y - symmetrical  (+), z - Re part asymmetrical (-), Im part symmetrical  (+)
-	//Kyz : y - asymmetrical (-), z - Re part asymmetrical (-), Im part symmetrical  (+)
+	//Kxy : y - inv. symmetric (-), z - Re part symmetrical  (+), Im part inv. symmetric (-)
+	//Kxz : y - symmetrical  (+), z - Re part inv. symmetric (-), Im part symmetrical  (+)
+	//Kyz : y - inv. symmetric (-), z - Re part inv. symmetric (-), Im part symmetrical  (+)
 
 	int idx = blockDim.x * blockIdx.x + threadIdx.x;
 
@@ -434,8 +434,8 @@ __global__ void cu_KernelMultiplication_3D_zShifted_transpose_xy(
 //N = (N.x/2 + 1, N.y, N.z)
 __global__ void cu_KernelMultiplication_3D_Regular(
 	cuKerType& kernel,
-	cuComplex* cuSx, cuComplex* cuSy, cuComplex* cuSz,
-	cuComplex* cuS2x, cuComplex* cuS2y, cuComplex* cuS2z,
+	cuBComplex* cuSx, cuBComplex* cuSy, cuBComplex* cuSz,
+	cuBComplex* cuS2x, cuBComplex* cuS2y, cuBComplex* cuS2z,
 	cuSZ3& N)
 {
 	int idx = blockDim.x * blockIdx.x + threadIdx.x;
@@ -458,8 +458,8 @@ __global__ void cu_KernelMultiplication_3D_Regular(
 //-------------------------- RUN-TIME KERNEL MULTIPLICATION - MULTIPLE INPUTS TO SINGLE OUTPUT (TESTING ONLY)
 
 void DemagKernelCollectionCUDA::KernelMultiplication_2D(
-	std::vector<cu_arr<cuComplex>*>& Incol_x, std::vector<cu_arr<cuComplex>*>& Incol_y, std::vector<cu_arr<cuComplex>*>& Incol_z,
-	cu_arr<cuComplex>& Out_x, cu_arr<cuComplex>& Out_y, cu_arr<cuComplex>& Out_z)
+	std::vector<cu_arr<cuBComplex>*>& Incol_x, std::vector<cu_arr<cuBComplex>*>& Incol_y, std::vector<cu_arr<cuBComplex>*>& Incol_z,
+	cu_arr<cuBComplex>& Out_x, cu_arr<cuBComplex>& Out_y, cu_arr<cuBComplex>& Out_z)
 {
 	//first compute the self contribution -> this sets Out
 	if (transpose_xy) {
@@ -535,8 +535,8 @@ void DemagKernelCollectionCUDA::KernelMultiplication_2D(
 }
 
 void DemagKernelCollectionCUDA::KernelMultiplication_3D(
-	std::vector<cu_arr<cuComplex>*>& Incol_x, std::vector<cu_arr<cuComplex>*>& Incol_y, std::vector<cu_arr<cuComplex>*>& Incol_z,
-	cu_arr<cuComplex>& Out_x, cu_arr<cuComplex>& Out_y, cu_arr<cuComplex>& Out_z)
+	std::vector<cu_arr<cuBComplex>*>& Incol_x, std::vector<cu_arr<cuBComplex>*>& Incol_y, std::vector<cu_arr<cuBComplex>*>& Incol_z,
+	cu_arr<cuBComplex>& Out_x, cu_arr<cuBComplex>& Out_y, cu_arr<cuBComplex>& Out_z)
 {
 	//transpose_xy always true in 3D
 	

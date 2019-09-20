@@ -31,7 +31,7 @@ __global__ void set_linear_kernel(cuVEC<VType>& vec, cuReal3 position1, VType va
 	if (idx < vec.n.dim()) {
 
 		cuReal3 del_p = position2 - position1;
-		cuReal del_p_sq = del_p * del_p;
+		cuBReal del_p_sq = del_p * del_p;
 
 		//the absolute position of this cell center for which we are setting the value
 		cuReal3 P = vec.cellidx_to_position(idx) + vec.rect.s;

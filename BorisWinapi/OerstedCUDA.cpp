@@ -84,7 +84,7 @@ BError OerstedCUDA::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 	BError error(CLASS_STR(OerstedCUDA));
 
 	//only need to uninitialize if n or h have changed
-	if (!CheckDimensions(pSMesh->n_e, pSMesh->h_e)) {
+	if (!CheckDimensions(pSMesh->n_e, pSMesh->h_e, INT3())) {
 
 		Uninitialize();
 		error = SetDimensions(pSMesh->n_e, pSMesh->h_e);

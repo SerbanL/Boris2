@@ -33,65 +33,101 @@ public:
 	BError set_pointers(MeshCUDA* pMeshCUDA);
 
 	//For V only : V and Jc are continuous; Jc = -sigma * grad V = a + b * grad V -> a = 0 and b = -sigma taken at the interface	
-	__device__ cuReal a_func_pri(int cell1_idx, int cell2_idx, cuReal3 shift)
+	__device__ cuBReal a_func_pri(int cell1_idx, int cell2_idx, cuReal3 shift)
 	{
 		return 0.0;
 	}
 
-	__device__ cuReal a_func_sec(cuReal3 relpos_m1, cuReal3 shift, cuReal3 stencil)
+	__device__ cuBReal a_func_sec(cuReal3 relpos_m1, cuReal3 shift, cuReal3 stencil)
 	{
 		return 0.0;
 	}
 
 	//For V only : V and Jc are continuous; Jc = -sigma * grad V = a + b * grad V -> a = 0 and b = -sigma taken at the interface	
-	__device__ cuReal b_func_pri(int cell1_idx, int cell2_idx)
+	__device__ cuBReal b_func_pri(int cell1_idx, int cell2_idx)
 	{
-		cuReal thermCond = *pcuMesh->pthermCond;
+		cuBReal thermCond = *pcuMesh->pthermCond;
 		pcuMesh->update_parameters_tcoarse(cell1_idx, *pcuMesh->pthermCond, thermCond);
 
 		return -1.0 * thermCond;
 	}
 
-	__device__ cuReal b_func_sec(cuReal3 relpos_m1, cuReal3 shift, cuReal3 stencil)
+	__device__ cuBReal b_func_sec(cuReal3 relpos_m1, cuReal3 shift, cuReal3 stencil)
 	{
-		cuReal thermCond = *pcuMesh->pthermCond;
+		cuBReal thermCond = *pcuMesh->pthermCond;
 		pcuMesh->update_parameters_atposition(relpos_m1, *pcuMesh->pthermCond, thermCond);
 
 		return -1.0 * thermCond;
 	}
 
 	//second order differential of V at cells either side of the boundary; delsq V = -grad V * grad elC / elC
-	__device__ cuReal diff2_pri(int cell1_idx)
+	__device__ cuBReal diff2_pri(int cell1_idx)
 	{
-		cuVEC_VC<cuReal>& Temp = *pcuMesh->pTemp;
+		cuVEC_VC<cuBReal>& Temp = *pcuMesh->pTemp;
 		cuVEC_VC<cuReal3>& Jc = *pcuMesh->pJc;
-		cuVEC_VC<cuReal>& elC = *pcuMesh->pelC;
+		cuVEC_VC<cuBReal>& elC = *pcuMesh->pelC;
 
-		if (Jc.linear_size()) {
+		cuBReal thermCond = *pcuMesh->pthermCond;
 
-			cuReal thermCond = *pcuMesh->pthermCond;
+		if (Jc.linear_size() || cuIsNZ(pcuMesh->pQ->get0())) {
+
 			pcuMesh->update_parameters_tcoarse(cell1_idx, *pcuMesh->pthermCond, thermCond);
+		}
+		else return 0.0;
+
+		cuBReal value = 0.0;
+		
+		//Joule heating
+		if (Jc.linear_size()) {
 
 			int idx1_Jc = Jc.position_to_cellidx(Temp.cellidx_to_position(cell1_idx));
-			return -(Jc[idx1_Jc] * Jc[idx1_Jc]) / (elC[idx1_Jc] * thermCond);
+			value = -(Jc[idx1_Jc] * Jc[idx1_Jc]) / (elC[idx1_Jc] * thermCond);
 		}
-		else return 0.0;
+
+		//heat source contribution if set
+		if (cuIsNZ(pcuMesh->pQ->get0())) {
+
+			cuBReal Q = *pcuMesh->pQ;
+			pcuMesh->update_parameters_tcoarse(cell1_idx, *pcuMesh->pQ, Q);
+
+			value -= Q / thermCond;
+		}
+
+		return value;
 	}
 
-	__device__ cuReal diff2_sec(cuReal3 relpos_m1, cuReal3 stencil)
+	__device__ cuBReal diff2_sec(cuReal3 relpos_m1, cuReal3 stencil)
 	{
 		cuVEC_VC<cuReal3>& Jc = *pcuMesh->pJc;
-		cuVEC_VC<cuReal>& elC = *pcuMesh->pelC;
+		cuVEC_VC<cuBReal>& elC = *pcuMesh->pelC;
 
-		if (Jc.linear_size()) {
+		cuBReal thermCond = *pcuMesh->pthermCond;
 
-			cuReal thermCond = *pcuMesh->pthermCond;
+		if (Jc.linear_size() || cuIsNZ(pcuMesh->pQ->get0())) {
+
 			pcuMesh->update_parameters_atposition(relpos_m1, *pcuMesh->pthermCond, thermCond);
-
-			int idx1_Jc = Jc.position_to_cellidx(relpos_m1);
-			return -(Jc[idx1_Jc] * Jc[idx1_Jc]) / (elC[idx1_Jc] * thermCond);
 		}
 		else return 0.0;
+
+		cuBReal value = 0.0;
+
+		//Joule heating
+		if (Jc.linear_size()) {
+
+			int idx1_Jc = Jc.position_to_cellidx(relpos_m1);
+			value = -(Jc[idx1_Jc] * Jc[idx1_Jc]) / (elC[idx1_Jc] * thermCond);
+		}
+		
+		//heat source contribution if set
+		if (cuIsNZ(pcuMesh->pQ->get0())) {
+
+			cuBReal Q = *pcuMesh->pQ;
+			pcuMesh->update_parameters_atposition(relpos_m1, *pcuMesh->pQ, Q);
+
+			value -= Q / thermCond;
+		}
+
+		return value;
 	}
 };
 

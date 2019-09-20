@@ -223,10 +223,10 @@ struct __cuRect {
 	__host__ __device__ __cuRect(void) { s = cuReal3(); e = cuReal3(); }
 
 	__host__ __device__ __cuRect(const cuReal3& e) { s = cuReal3(); this->e = e; }
-	__host__ __device__ __cuRect(cuReal ex, cuReal ey, cuReal ez) { s = cuReal3(); e = cuReal3(ex, ey, ez); }
+	__host__ __device__ __cuRect(cuBReal ex, cuBReal ey, cuBReal ez) { s = cuReal3(); e = cuReal3(ex, ey, ez); }
 
 	__host__ __device__ __cuRect(const cuReal3& s, const cuReal3& e) { this->s = s; this->e = e; }
-	__host__ __device__ __cuRect(cuReal sx, cuReal sy, cuReal sz, cuReal ex, cuReal ey, cuReal ez) { s = cuReal3(sx, sy, sz); e = cuReal3(ex, ey, ez); }
+	__host__ __device__ __cuRect(cuBReal sx, cuBReal sy, cuBReal sz, cuBReal ex, cuBReal ey, cuBReal ez) { s = cuReal3(sx, sy, sz); e = cuReal3(ex, ey, ez); }
 
 	//----------------------------- CONVERTING CONSTRUCTORS
 
@@ -367,7 +367,7 @@ struct __cuRect {
 	}
 
 	//return the intersection volume
-	__host__ __device__ cuReal intersection_volume(const __cuRect &rect) const { return get_intersection(rect).volume(); }
+	__host__ __device__ cuBReal intersection_volume(const __cuRect &rect) const { return get_intersection(rect).volume(); }
 
 	//get bottom-left quadrant as seen in xy-plane
 	__host__ __device__ __cuRect get_quadrant_bl(void) const
@@ -402,37 +402,37 @@ struct __cuRect {
 	}
 
 	//get rect face: -x face; This is a plane rectangle, but it can be thickened inside the rect using the thickness value.
-	__host__ __device__ __cuRect get_face_mx(cuReal thickness = 0.0)
+	__host__ __device__ __cuRect get_face_mx(cuBReal thickness = 0.0)
 	{
 		return __cuRect(s, cuReal3(s.x + thickness, e.y, e.z));
 	}
 
 	//get rect face: +x face; This is a plane rectangle, but it can be thickened inside the rect using the thickness value.
-	__host__ __device__ __cuRect get_face_px(cuReal thickness = 0.0)
+	__host__ __device__ __cuRect get_face_px(cuBReal thickness = 0.0)
 	{
 		return __cuRect(cuReal3(e.x - thickness, s.y, s.z), e);
 	}
 
 	//get rect face: -y face; This is a plane rectangle, but it can be thickened inside the rect using the thickness value.
-	__host__ __device__ __cuRect get_face_my(cuReal thickness = 0.0)
+	__host__ __device__ __cuRect get_face_my(cuBReal thickness = 0.0)
 	{
 		return __cuRect(s, cuReal3(e.x, s.y + thickness, e.z));
 	}
 
 	//get rect face: +y face; This is a plane rectangle, but it can be thickened inside the rect using the thickness value.
-	__host__ __device__ __cuRect get_face_py(cuReal thickness = 0.0)
+	__host__ __device__ __cuRect get_face_py(cuBReal thickness = 0.0)
 	{
 		return __cuRect(cuReal3(s.x, e.y - thickness, s.z), e);
 	}
 
 	//get rect face: -z face; This is a plane rectangle, but it can be thickened inside the rect using the thickness value.
-	__host__ __device__ __cuRect get_face_mz(cuReal thickness = 0.0)
+	__host__ __device__ __cuRect get_face_mz(cuBReal thickness = 0.0)
 	{
 		return __cuRect(s, cuReal3(e.x, e.y, s.z + thickness));
 	}
 
 	//get rect face: +z face; This is a plane rectangle, but it can be thickened inside the rect using the thickness value.
-	__host__ __device__ __cuRect get_face_pz(cuReal thickness = 0.0)
+	__host__ __device__ __cuRect get_face_pz(cuBReal thickness = 0.0)
 	{
 		return __cuRect(cuReal3(s.x, s.y, e.z - thickness), e);
 	}
@@ -441,9 +441,9 @@ struct __cuRect {
 	__host__ __device__ bool divisible(const cuReal3& rhs) const
 	{
 		return cuIsNZ(rhs.x) && cuIsNZ(rhs.y) && cuIsNZ(rhs.z) &&
-			cuIsZ((e.x - s.x) / rhs.x - (cuReal)round((e.x - s.x) / rhs.x)) &&
-			cuIsZ((e.y - s.y) / rhs.y - (cuReal)round((e.y - s.y) / rhs.y)) &&
-			cuIsZ((e.z - s.z) / rhs.z - (cuReal)round((e.z - s.z) / rhs.z));
+			cuIsZ((e.x - s.x) / rhs.x - (cuBReal)round((e.x - s.x) / rhs.x)) &&
+			cuIsZ((e.y - s.y) / rhs.y - (cuBReal)round((e.y - s.y) / rhs.y)) &&
+			cuIsZ((e.z - s.z) / rhs.z - (cuBReal)round((e.z - s.z) / rhs.z));
 	}
 
 	//test intersection with a line from start to end and get intersection point closest to start
@@ -507,14 +507,14 @@ struct __cuRect {
 	//get the center point of the rect
 	__host__ __device__ cuReal3 get_c(void) const { return (s + e) / 2; }
 
-	__host__ __device__ cuReal length(void) const { return (e.x - s.x); }
-	__host__ __device__ cuReal width(void) const { return (e.y - s.y); }
-	__host__ __device__ cuReal height(void) const { return (e.z - s.z); }
-	__host__ __device__ cuReal volume(void) const { return length()*width()*height(); }
+	__host__ __device__ cuBReal length(void) const { return (e.x - s.x); }
+	__host__ __device__ cuBReal width(void) const { return (e.y - s.y); }
+	__host__ __device__ cuBReal height(void) const { return (e.z - s.z); }
+	__host__ __device__ cuBReal volume(void) const { return length()*width()*height(); }
 
-	__host__ __device__ cuReal maxDimension(void) const
+	__host__ __device__ cuBReal maxDimension(void) const
 	{
-		cuReal maxDim = length();
+		cuBReal maxDim = length();
 
 		maxDim = (width() > maxDim ? width() : maxDim);
 		maxDim = (height() > maxDim ? height() : maxDim);
@@ -531,7 +531,7 @@ struct __cuRect {
 	}
 
 	//snap coordinates to closest multiple of snap_unit
-	__device__ void snap(cuReal snap_unit)
+	__device__ void snap(cuBReal snap_unit)
 	{
 		s = cu_round(s / snap_unit) * snap_unit;
 		e = cu_round(e / snap_unit) * snap_unit;

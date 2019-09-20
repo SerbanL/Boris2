@@ -7,15 +7,15 @@
 
 #include "BorisCUDALib.cuh"
 
-__global__ void Demag_NCUDA_UpdateField(ManagedMeshCUDA& cuMesh, cuReal& energy, bool do_reduction)
+__global__ void Demag_NCUDA_UpdateField(ManagedMeshCUDA& cuMesh, cuBReal& energy, bool do_reduction)
 {
 	cuVEC_VC<cuReal3>& M = *cuMesh.pM;
 	cuVEC<cuReal3>& Heff = *cuMesh.pHeff;
-	MatPCUDA<cuReal2, cuReal>& Nxy = *cuMesh.pNxy;
+	MatPCUDA<cuReal2, cuBReal>& Nxy = *cuMesh.pNxy;
 
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
 
-	cuReal energy_ = 0.0;
+	cuBReal energy_ = 0.0;
 
 	if (idx < Heff.linear_size()) {
 
@@ -28,7 +28,7 @@ __global__ void Demag_NCUDA_UpdateField(ManagedMeshCUDA& cuMesh, cuReal& energy,
 			if (do_reduction) {
 
 				int non_empty_cells = M.get_nonempty_cells();
-				if (non_empty_cells) energy_ = -(cuReal)MU0 * M[idx] * Heff_value / (2 * non_empty_cells);
+				if (non_empty_cells) energy_ = -(cuBReal)MU0 * M[idx] * Heff_value / (2 * non_empty_cells);
 			}
 		}
 

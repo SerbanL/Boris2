@@ -50,19 +50,19 @@ public:
 		cuVEC_VC<cuReal3>& S = *pcuMesh->pS;
 		cuVEC_VC<cuReal3>& Jc = *pcuMesh->pJc;
 
-		cuReal De = *pcuMesh->pDe;
-		cuReal SHA = *pcuMesh->pSHA;
-		cuReal l_sf = *pcuMesh->pl_sf;
+		cuBReal De = *pcuMesh->pDe;
+		cuBReal SHA = *pcuMesh->pSHA;
+		cuBReal l_sf = *pcuMesh->pl_sf;
 		pcuMesh->update_parameters_ecoarse(idx, *pcuMesh->pDe, De, *pcuMesh->pSHA, SHA, *pcuMesh->pl_sf, l_sf);
 
 		//Terms occuring only in ferromagnetic meshes (where SHA = 0)
 		if (M.linear_size()) {
 			
-			cuReal Ms = *pcuMesh->pMs;
-			cuReal P = *pcuMesh->pP;
-			cuReal betaD = *pcuMesh->pbetaD;
-			cuReal l_ex = *pcuMesh->pl_ex;
-			cuReal l_ph = *pcuMesh->pl_ph;
+			cuBReal Ms = *pcuMesh->pMs;
+			cuBReal P = *pcuMesh->pP;
+			cuBReal betaD = *pcuMesh->pbetaD;
+			cuBReal l_ex = *pcuMesh->pl_ex;
+			cuBReal l_ph = *pcuMesh->pl_ph;
 			pcuMesh->update_parameters_ecoarse(idx, *pcuMesh->pMs, Ms, *pcuMesh->pP, P, *pcuMesh->pbetaD, betaD, *pcuMesh->pl_ex, l_ex, *pcuMesh->pl_ph, l_ph);
 
 			//1. term due to non-uniformity of M
@@ -74,14 +74,14 @@ public:
 			cuReal33 grad_M = M.grad_neu(idx_M);
 			cuReal3 Jc_dot_del_M = grad_M | Jc[idx];
 
-			delsq_S_RHS -= P * (cuReal)MUB_E * Jc_dot_del_M / (Ms * De);
+			delsq_S_RHS -= P * (cuBReal)MUB_E * Jc_dot_del_M / (Ms * De);
 
 			//2. transverse S decay terms
 
 			delsq_S_RHS += ((S[idx] ^ Mval) / (Ms * l_ex * l_ex) + (Mval ^ (S[idx] ^ Mval)) / (Ms * Ms * l_ph * l_ph));
 
 			//3. CPP-GMR term
-			if (cuIsNZ((cuReal)betaD)) {
+			if (cuIsNZ((cuBReal)betaD)) {
 
 				cuReal33 grad_S = S.grad_neu(idx);
 				cuReal3 delsq_S = S.delsq_neu(idx);
@@ -97,7 +97,7 @@ public:
 			//1. SHA term. 
 
 			//Check boundary conditions for this term : should be Dirichlet with 0 Jc value normal to the boundary except for electrodes.
-			delsq_S_RHS += (SHA * (cuReal)MUB_E / De) * Jc.diveps3_sided(idx);
+			delsq_S_RHS += (SHA * (cuBReal)MUB_E / De) * Jc.diveps3_sided(idx);
 		}
 
 		//Contributions which apply equally in ferromagnetic and non-ferromagnetic meshes
@@ -117,11 +117,11 @@ public:
 
 		if (M.linear_size()) return cuReal33();
 
-		cuReal De = *pcuMesh->pDe;
-		cuReal SHA = *pcuMesh->pSHA;
+		cuBReal De = *pcuMesh->pDe;
+		cuBReal SHA = *pcuMesh->pSHA;
 		pcuMesh->update_parameters_ecoarse(idx, *pcuMesh->pSHA, SHA, *pcuMesh->pDe, De);
 
-		return cu_epsilon3(Jc[idx]) * (SHA * (cuReal)MUB_E / De);
+		return cu_epsilon3(Jc[idx]) * (SHA * (cuBReal)MUB_E / De);
 	}
 
 	//Functions used for calculating CMBND values
@@ -138,10 +138,10 @@ public:
 		//values on primary side
 		if (M.linear_size()) {
 
-			cuReal Ms = *pcuMesh->pMs;
-			cuReal P = *pcuMesh->pP;
-			cuReal betaD = *pcuMesh->pbetaD;
-			cuReal De = *pcuMesh->pDe;
+			cuBReal Ms = *pcuMesh->pMs;
+			cuBReal P = *pcuMesh->pP;
+			cuBReal betaD = *pcuMesh->pbetaD;
+			cuBReal De = *pcuMesh->pDe;
 			pcuMesh->update_parameters_ecoarse(cell1_idx, *pcuMesh->pMs, Ms, *pcuMesh->pDe, De, *pcuMesh->pP, P, *pcuMesh->pbetaD, betaD);
 
 			//magnetic mesh
@@ -149,7 +149,7 @@ public:
 			cuReal3 M1 = M[idx_M1];
 			cuReal3 Jc1 = Jc[cell1_idx];
 
-			cuReal3 a1 = ((Jc1 | M1) | u) * (P / Ms) * (-(cuReal)MUB_E);
+			cuReal3 a1 = ((Jc1 | M1) | u) * (P / Ms) * (-(cuBReal)MUB_E);
 
 			cuReal33 grad_S1 = S.grad_neu(cell1_idx);
 
@@ -160,7 +160,7 @@ public:
 			cuReal3 M2 = M[idx_M2];
 			cuReal3 Jc2 = Jc[cell2_idx];
 
-			cuReal3 a2 = ((Jc2 | M2) | u) * (P / Ms) * (-(cuReal)MUB_E);
+			cuReal3 a2 = ((Jc2 | M2) | u) * (P / Ms) * (-(cuBReal)MUB_E);
 
 			cuReal33 grad_S2 = S.grad_neu(cell2_idx);
 
@@ -170,12 +170,12 @@ public:
 		}
 		else {
 
-			cuReal SHA = *pcuMesh->pSHA;
+			cuBReal SHA = *pcuMesh->pSHA;
 			pcuMesh->update_parameters_ecoarse(cell1_idx, *pcuMesh->pSHA, SHA);
 
 			//non-magnetic mesh
-			cuReal3 a1 = (cu_epsilon3(Jc[cell1_idx]) | u) * SHA * (cuReal)MUB_E;
-			cuReal3 a2 = (cu_epsilon3(Jc[cell2_idx]) | u) * SHA * (cuReal)MUB_E;
+			cuReal3 a1 = (cu_epsilon3(Jc[cell1_idx]) | u) * SHA * (cuBReal)MUB_E;
+			cuReal3 a2 = (cu_epsilon3(Jc[cell2_idx]) | u) * SHA * (cuBReal)MUB_E;
 
 			return (1.5 * a1 - 0.5 * a2);
 		}
@@ -193,10 +193,10 @@ public:
 		//values on secondary side
 		if (M.linear_size()) {
 
-			cuReal Ms = *pcuMesh->pMs;
-			cuReal P = *pcuMesh->pP;
-			cuReal betaD = *pcuMesh->pbetaD;
-			cuReal De = *pcuMesh->pDe;
+			cuBReal Ms = *pcuMesh->pMs;
+			cuBReal P = *pcuMesh->pP;
+			cuBReal betaD = *pcuMesh->pbetaD;
+			cuBReal De = *pcuMesh->pDe;
 			pcuMesh->update_parameters_atposition(relpos_m1, *pcuMesh->pMs, Ms, *pcuMesh->pDe, De, *pcuMesh->pP, P, *pcuMesh->pbetaD, betaD);
 
 			//a1 value
@@ -206,7 +206,7 @@ public:
 			cuReal33 grad_S1 = S.grad_neu(idx_S1);
 
 			cuReal3 a1 =
-				-(cuReal)MUB_E * ((Jc1 | M1) | u) * (P / Ms)
+				-(cuBReal)MUB_E * ((Jc1 | M1) | u) * (P / Ms)
 				+ ((((grad_S1 * M1) | M1) * betaD * P * De / (Ms * Ms)) | u);
 
 			//a2 value
@@ -216,36 +216,36 @@ public:
 			cuReal33 grad_S2 = S.grad_neu(idx_S2);
 
 			cuReal3 a2 =
-				-(cuReal)MUB_E * ((Jc2 | M2) | u) * (P / Ms)
+				-(cuBReal)MUB_E * ((Jc2 | M2) | u) * (P / Ms)
 				+ ((((grad_S2 * M2) | M2) * betaD * P * De / (Ms * Ms)) | u);
 
 			return (1.5 * a1 - 0.5 * a2);
 		}
 		else {
 
-			cuReal SHA = *pcuMesh->pSHA;
+			cuBReal SHA = *pcuMesh->pSHA;
 			pcuMesh->update_parameters_atposition(relpos_m1, *pcuMesh->pSHA, SHA);
 
 			//non-magnetic mesh
-			cuReal3 a1 = (cu_epsilon3(Jc.weighted_average(relpos_m1, stencil)) | u) * SHA * (cuReal)MUB_E;
-			cuReal3 a2 = (cu_epsilon3(Jc.weighted_average(relpos_m1 + shift, stencil)) | u) * SHA * (cuReal)MUB_E;
+			cuReal3 a1 = (cu_epsilon3(Jc.weighted_average(relpos_m1, stencil)) | u) * SHA * (cuBReal)MUB_E;
+			cuReal3 a2 = (cu_epsilon3(Jc.weighted_average(relpos_m1 + shift, stencil)) | u) * SHA * (cuBReal)MUB_E;
 
 			return (1.5 * a1 - 0.5 * a2);
 		}
 	}
 
 	//For V only : V and Jc are continuous; Jc = -sigma * grad V = a + b * grad V -> a = 0 and b = -sigma taken at the interface	
-	__device__ cuReal b_func_pri(int cell1_idx, int cell2_idx)
+	__device__ cuBReal b_func_pri(int cell1_idx, int cell2_idx)
 	{
-		cuReal De = *pcuMesh->pDe;
+		cuBReal De = *pcuMesh->pDe;
 		pcuMesh->update_parameters_ecoarse(cell1_idx, *pcuMesh->pDe, De);
 
 		return -1.0 * De;
 	}
 
-	__device__ cuReal b_func_sec(cuReal3 relpos_m1, cuReal3 shift, cuReal3 stencil)
+	__device__ cuBReal b_func_sec(cuReal3 relpos_m1, cuReal3 shift, cuReal3 stencil)
 	{
-		cuReal De = *pcuMesh->pDe;
+		cuBReal De = *pcuMesh->pDe;
 		pcuMesh->update_parameters_atposition(relpos_m1, *pcuMesh->pDe, De);
 
 		return -1.0 * De;
@@ -260,13 +260,13 @@ public:
 
 		if (M.linear_size()) {
 
-			cuReal Ms = *pcuMesh->pMs;
-			cuReal De = *pcuMesh->pDe;
-			cuReal P = *pcuMesh->pP;
-			cuReal betaD = *pcuMesh->pbetaD;
-			cuReal l_sf = *pcuMesh->pl_sf;
-			cuReal l_ex = *pcuMesh->pl_ex;
-			cuReal l_ph = *pcuMesh->pl_ph;
+			cuBReal Ms = *pcuMesh->pMs;
+			cuBReal De = *pcuMesh->pDe;
+			cuBReal P = *pcuMesh->pP;
+			cuBReal betaD = *pcuMesh->pbetaD;
+			cuBReal l_sf = *pcuMesh->pl_sf;
+			cuBReal l_ex = *pcuMesh->pl_ex;
+			cuBReal l_ph = *pcuMesh->pl_ph;
 			pcuMesh->update_parameters_ecoarse(cell1_idx, *pcuMesh->pMs, Ms, *pcuMesh->pDe, De, *pcuMesh->pP, P, *pcuMesh->pbetaD, betaD, *pcuMesh->pl_ex, l_ex, *pcuMesh->pl_ph, l_ph, *pcuMesh->pl_sf, l_sf);
 
 			cuReal3 value = S[cell1_idx] / (l_sf * l_sf);
@@ -284,9 +284,9 @@ public:
 			cuReal33 grad_M = M.grad_neu(idx_M);
 			cuReal3 Jc_dot_del_M = grad_M | Jc[cell1_idx];
 
-			value -= P * (cuReal)MUB_E * Jc_dot_del_M / (Ms * De);
+			value -= P * (cuBReal)MUB_E * Jc_dot_del_M / (Ms * De);
 
-			if (cuIsNZ((cuReal)betaD)) {
+			if (cuIsNZ((cuBReal)betaD)) {
 
 				cuReal33 grad_S = S.grad_neu(cell1_idx);
 				cuReal3 delsq_S = S.delsq_neu(cell1_idx);
@@ -300,15 +300,15 @@ public:
 		}
 		else {
 
-			cuReal SHA = *pcuMesh->pSHA;
-			cuReal De = *pcuMesh->pDe;
-			cuReal l_sf = *pcuMesh->pl_sf;
+			cuBReal SHA = *pcuMesh->pSHA;
+			cuBReal De = *pcuMesh->pDe;
+			cuBReal l_sf = *pcuMesh->pl_sf;
 			pcuMesh->update_parameters_ecoarse(cell1_idx, *pcuMesh->pSHA, SHA, *pcuMesh->pDe, De, *pcuMesh->pl_sf, l_sf);
 
 			cuReal3 value = S[cell1_idx] / (l_sf * l_sf);
 
 			//add to value for non-magnetic mesh
-			value += (SHA * (cuReal)MUB_E / De) * Jc.diveps3_sided(cell1_idx);
+			value += (SHA * (cuBReal)MUB_E / De) * Jc.diveps3_sided(cell1_idx);
 
 			return value;
 		}
@@ -322,13 +322,13 @@ public:
 
 		if (M.linear_size()) {
 
-			cuReal Ms = *pcuMesh->pMs;
-			cuReal De = *pcuMesh->pDe;
-			cuReal P = *pcuMesh->pP;
-			cuReal betaD = *pcuMesh->pbetaD;
-			cuReal l_sf = *pcuMesh->pl_sf;
-			cuReal l_ex = *pcuMesh->pl_ex;
-			cuReal l_ph = *pcuMesh->pl_ph;
+			cuBReal Ms = *pcuMesh->pMs;
+			cuBReal De = *pcuMesh->pDe;
+			cuBReal P = *pcuMesh->pP;
+			cuBReal betaD = *pcuMesh->pbetaD;
+			cuBReal l_sf = *pcuMesh->pl_sf;
+			cuBReal l_ex = *pcuMesh->pl_ex;
+			cuBReal l_ph = *pcuMesh->pl_ph;
 			pcuMesh->update_parameters_atposition(relpos_m1, *pcuMesh->pMs, Ms, *pcuMesh->pDe, De, *pcuMesh->pP, P, *pcuMesh->pbetaD, betaD, *pcuMesh->pl_ex, l_ex, *pcuMesh->pl_ph, l_ph, *pcuMesh->pl_sf, l_sf);
 
 			cuReal3 value = S.weighted_average(relpos_m1, stencil) / (l_sf * l_sf);
@@ -345,9 +345,9 @@ public:
 			cuReal33 grad_M = M.grad_neu(idx_M);
 			cuReal3 Jc_dot_del_M = grad_M | Jc.weighted_average(relpos_m1, stencil);
 
-			value -= P * (cuReal)MUB_E * Jc_dot_del_M / (Ms * De);
+			value -= P * (cuBReal)MUB_E * Jc_dot_del_M / (Ms * De);
 
-			if (cuIsNZ((cuReal)betaD)) {
+			if (cuIsNZ((cuBReal)betaD)) {
 
 				int idx_S = S.position_to_cellidx(relpos_m1);
 				cuReal33 grad_S = S.grad_neu(idx_S);
@@ -362,9 +362,9 @@ public:
 		}
 		else {
 
-			cuReal SHA = *pcuMesh->pSHA;
-			cuReal De = *pcuMesh->pDe;
-			cuReal l_sf = *pcuMesh->pl_sf;
+			cuBReal SHA = *pcuMesh->pSHA;
+			cuBReal De = *pcuMesh->pDe;
+			cuBReal l_sf = *pcuMesh->pl_sf;
 			pcuMesh->update_parameters_atposition(relpos_m1, *pcuMesh->pSHA, SHA, *pcuMesh->pDe, De, *pcuMesh->pl_sf, l_sf);
 
 			cuReal3 value = S.weighted_average(relpos_m1, stencil) / (l_sf * l_sf);
@@ -372,31 +372,31 @@ public:
 			//add to value for non-magnetic mesh
 			int idx_Jc = Jc.position_to_cellidx(relpos_m1);
 
-			value += (SHA * (cuReal)MUB_E / De) * Jc.diveps3_sided(idx_Jc);
+			value += (SHA * (cuBReal)MUB_E / De) * Jc.diveps3_sided(idx_Jc);
 
 			return value;
 		}
 	}
 
 	//multiply spin accumulation by these to obtain spin potential, i.e. Vs = (De / elC) * (e/muB) * S, evaluated at the boundary
-	__device__ cuReal c_func_pri(int cell_idx)
+	__device__ cuBReal c_func_pri(int cell_idx)
 	{
-		cuVEC_VC<cuReal>& elC = *pcuMesh->pelC;
+		cuVEC_VC<cuBReal>& elC = *pcuMesh->pelC;
 		
-		cuReal De = *pcuMesh->pDe;
+		cuBReal De = *pcuMesh->pDe;
 		pcuMesh->update_parameters_ecoarse(cell_idx, *pcuMesh->pDe, De);
 
-		return De / (elC[cell_idx] * (cuReal)MUB_E);
+		return De / (elC[cell_idx] * (cuBReal)MUB_E);
 	}
 
-	__device__ cuReal c_func_sec(cuReal3 relpos, cuReal3 stencil)
+	__device__ cuBReal c_func_sec(cuReal3 relpos, cuReal3 stencil)
 	{
-		cuVEC_VC<cuReal>& elC = *pcuMesh->pelC;
+		cuVEC_VC<cuBReal>& elC = *pcuMesh->pelC;
 		
-		cuReal De = *pcuMesh->pDe;
+		cuBReal De = *pcuMesh->pDe;
 		pcuMesh->update_parameters_atposition(relpos, *pcuMesh->pDe, De);
 
-		return De / (elC.weighted_average(relpos, stencil) * (cuReal)MUB_E);
+		return De / (elC.weighted_average(relpos, stencil) * (cuBReal)MUB_E);
 	}
 };
 

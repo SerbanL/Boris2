@@ -77,7 +77,7 @@ __host__ void cuVEC_VC<VType>::setrectnonempty(const cuRect& rectangle, VType va
 //------------------------------------------------------------------- SCALE VALUES
 
 template <typename VType>
-__global__ void scale_values_kernel(cuSZ3& n, int*& ngbrFlags, VType*& quantity, cuReal constant)
+__global__ void scale_values_kernel(cuSZ3& n, int*& ngbrFlags, VType*& quantity, cuBReal constant)
 {
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
 
@@ -90,18 +90,18 @@ __global__ void scale_values_kernel(cuSZ3& n, int*& ngbrFlags, VType*& quantity,
 	}
 }
 
-template void cuVEC_VC<float>::scale_values(size_t size, cuReal constant);
-template void cuVEC_VC<double>::scale_values(size_t size, cuReal constant);
+template void cuVEC_VC<float>::scale_values(size_t size, cuBReal constant);
+template void cuVEC_VC<double>::scale_values(size_t size, cuBReal constant);
 
-template void cuVEC_VC<cuFLT3>::scale_values(size_t size, cuReal constant);
-template void cuVEC_VC<cuDBL3>::scale_values(size_t size, cuReal constant);
+template void cuVEC_VC<cuFLT3>::scale_values(size_t size, cuBReal constant);
+template void cuVEC_VC<cuDBL3>::scale_values(size_t size, cuBReal constant);
 
-template void cuVEC_VC<cuFLT33>::scale_values(size_t size, cuReal constant);
-template void cuVEC_VC<cuDBL33>::scale_values(size_t size, cuReal constant);
+template void cuVEC_VC<cuFLT33>::scale_values(size_t size, cuBReal constant);
+template void cuVEC_VC<cuDBL33>::scale_values(size_t size, cuBReal constant);
 
 //scale all stored values by the given constant
 template <typename VType>
-void cuVEC_VC<VType>::scale_values(size_t size, cuReal constant)
+void cuVEC_VC<VType>::scale_values(size_t size, cuBReal constant)
 {
 	scale_values_kernel <<< (size + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (n, ngbrFlags, quantity, constant);
 }
@@ -337,16 +337,16 @@ __global__ void shift_x_right1_stitch_kernel(cuRect shift_rect, cuVEC_VC<VType>&
 	}
 }
 
-template void cuVEC_VC<float>::shift_x(size_t size, cuReal delta, cuRect shift_rect);
-template void cuVEC_VC<double>::shift_x(size_t size, cuReal delta, cuRect shift_rect);
+template void cuVEC_VC<float>::shift_x(size_t size, cuBReal delta, cuRect shift_rect);
+template void cuVEC_VC<double>::shift_x(size_t size, cuBReal delta, cuRect shift_rect);
 
-template void cuVEC_VC<cuFLT3>::shift_x(size_t size, cuReal delta, cuRect shift_rect);
-template void cuVEC_VC<cuDBL3>::shift_x(size_t size, cuReal delta, cuRect shift_rect);
+template void cuVEC_VC<cuFLT3>::shift_x(size_t size, cuBReal delta, cuRect shift_rect);
+template void cuVEC_VC<cuDBL3>::shift_x(size_t size, cuBReal delta, cuRect shift_rect);
 
 //shift all the values in this VEC by the given delta (units same as h). Shift values in given shift_rect (absolute coordinates).
 //Also keep magnitude in each cell (e.g. use for vectorial quantities, such as magnetization, to shift only the direction).
 template <typename VType>
-__host__ void cuVEC_VC<VType>::shift_x(size_t size, cuReal delta, cuRect shift_rect)
+__host__ void cuVEC_VC<VType>::shift_x(size_t size, cuBReal delta, cuRect shift_rect)
 {
 	cuReal3 shift_debt_cpu = get_gpu_value(shift_debt);
 	cuReal3 h_cpu = get_gpu_value(h);

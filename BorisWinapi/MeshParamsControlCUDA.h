@@ -31,7 +31,7 @@ __device__ void ManagedMeshCUDA::update_parameters_spatial(const cuReal3& positi
 
 //update parameters in the list for spatial dependence only
 template <typename PType, typename SType, typename ... MeshParam_List>
-__device__ void ManagedMeshCUDA::update_parameters_full(const cuReal3& position, const cuReal& Temperature, MatPCUDA<PType, SType>& matp, PType& matp_value, MeshParam_List& ... params)
+__device__ void ManagedMeshCUDA::update_parameters_full(const cuReal3& position, const cuBReal& Temperature, MatPCUDA<PType, SType>& matp, PType& matp_value, MeshParam_List& ... params)
 {
 	if (matp.is_sdep()) matp_value = matp.get(position, Temperature);
 	else if (matp.is_tdep()) matp_value = matp.get(Temperature);
@@ -41,7 +41,7 @@ __device__ void ManagedMeshCUDA::update_parameters_full(const cuReal3& position,
 
 //update parameters in the list for spatial dependence only - single parameter version
 template <typename PType, typename SType>
-__device__ void ManagedMeshCUDA::update_parameters_full(const cuReal3& position, const cuReal& Temperature, MatPCUDA<PType, SType>& matp, PType& matp_value)
+__device__ void ManagedMeshCUDA::update_parameters_full(const cuReal3& position, const cuBReal& Temperature, MatPCUDA<PType, SType>& matp, PType& matp_value)
 {
 	if (matp.is_sdep()) matp_value = matp.get(position, Temperature);
 	else if (matp.is_tdep()) matp_value = matp.get(Temperature);
@@ -85,7 +85,7 @@ __device__ void ManagedMeshCUDA::update_parameters_mcoarse_full(int mcell_idx, M
 	if (matp.is_sdep()) {
 
 		cuReal3 position = pM->cellidx_to_position(mcell_idx);
-		cuReal Temperature = (*pTemp)[position];
+		cuBReal Temperature = (*pTemp)[position];
 
 		matp_value = matp.get(position, Temperature);
 		update_parameters_full(position, Temperature, params...);
@@ -93,7 +93,7 @@ __device__ void ManagedMeshCUDA::update_parameters_mcoarse_full(int mcell_idx, M
 	else if (matp.is_tdep()) {
 
 		cuReal3 position = pM->cellidx_to_position(mcell_idx);
-		cuReal Temperature = (*pTemp)[position];
+		cuBReal Temperature = (*pTemp)[position];
 
 		matp_value = matp.get(Temperature);
 		update_parameters_full(position, Temperature, params...);
@@ -178,7 +178,7 @@ __device__ void ManagedMeshCUDA::update_parameters_ecoarse_full(int ecell_idx, M
 	if (matp.is_sdep()) {
 
 		cuReal3 position = pV->cellidx_to_position(ecell_idx);
-		cuReal Temperature = (*pTemp)[position];
+		cuBReal Temperature = (*pTemp)[position];
 
 		matp_value = matp.get(position, Temperature);
 		update_parameters_full(position, Temperature, params...);
@@ -186,7 +186,7 @@ __device__ void ManagedMeshCUDA::update_parameters_ecoarse_full(int ecell_idx, M
 	else if (matp.is_tdep()) {
 
 		cuReal3 position = pV->cellidx_to_position(ecell_idx);
-		cuReal Temperature = (*pTemp)[position];
+		cuBReal Temperature = (*pTemp)[position];
 
 		matp_value = matp.get(Temperature);
 		update_parameters_full(position, Temperature, params...);
@@ -271,7 +271,7 @@ __device__ void ManagedMeshCUDA::update_parameters_tcoarse_full(int tcell_idx, M
 	if (matp.is_sdep()) {
 
 		cuReal3 position = pTemp->cellidx_to_position(tcell_idx);
-		cuReal Temperature = (*pTemp)[tcell_idx];
+		cuBReal Temperature = (*pTemp)[tcell_idx];
 
 		matp_value = matp.get(position, Temperature);
 		update_parameters_full(position, Temperature, params...);
@@ -279,7 +279,7 @@ __device__ void ManagedMeshCUDA::update_parameters_tcoarse_full(int tcell_idx, M
 	else if (matp.is_tdep()) {
 
 		cuReal3 position = pTemp->cellidx_to_position(tcell_idx);
-		cuReal Temperature = (*pTemp)[tcell_idx];
+		cuBReal Temperature = (*pTemp)[tcell_idx];
 
 		matp_value = matp.get(Temperature);
 		update_parameters_full(position, Temperature, params...);

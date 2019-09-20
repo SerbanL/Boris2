@@ -4,6 +4,7 @@
 #ifdef MODULE_ROUGHNESS
 
 #include "Mesh_Ferromagnetic.h"
+#include "SuperMesh.h"
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -264,11 +265,27 @@ BError Roughness::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 
 	if (refine.x == 0 || refine.y == 0 || refine.z == 0) return error(BERROR_INCORRECTCONFIG);
 
+	//Do we need to take into account PBC when calculating the fine roughness kernel?
+	//If PBCs are being used we have to set same settings here for the roughness formulas to apply.
+	//If PBCs are set, these will be found either in the individual mesh Demag module, or else in the SDemag module.
+	//Must be careful though if using many PBC images and fine roughness discretisation : this will result in long kernel computation times.
+	INT3 pbc_images;
+
+	if (pMesh->IsModuleSet(MOD_DEMAG)) {
+
+		pbc_images = pMesh->CallModuleMethod(&Demag::Get_PBC);
+	}
+	else if (pMesh->pSMesh->IsSuperMeshModuleSet(MODS_SDEMAG)) {
+
+		pbc_images = pMesh->pSMesh->CallModuleMethod(&SDemag::Get_PBC);
+	}
+	else pbc_images = INT3();
+
 	//only need to uninitialize if n or h have changed
-	if (!CheckDimensions(pMesh->n & refine, pMesh->h / refine, INT3())) {
+	if (!CheckDimensions(pMesh->n & refine, pMesh->h / refine, pbc_images)) {
 
 		Uninitialize();
-		error = SetDimensions(pMesh->n & refine, pMesh->h / refine);
+		error = SetDimensions(pMesh->n & refine, pMesh->h / refine, true, pbc_images);
 	}
 
 	//resize Fmul_rough and Fomul_rough (output multiplicative functions) for the coarse F mesh

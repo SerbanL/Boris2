@@ -170,7 +170,7 @@ bool DemagTFunc::CalcOffDiagTens2D_Shifted_Irregular(VEC<DBL3> &Dodiag, INT3 n, 
 					val = DBL3(
 						demagAsymptoticOffDiag_xy.AsymptoticLodia(i * d.x, j * d.y, shift.z) * sign,
 						demagAsymptoticOffDiag_xz.AsymptoticLodia(i * d.x, shift.z, j * d.y) * sign,
-						demagAsymptoticOffDiag_yz.AsymptoticLodia(j * d.y, shift.z, i * d.x) * sign);
+						demagAsymptoticOffDiag_yz.AsymptoticLodia(j * d.y, shift.z, i * d.x) * sign) * s.z;
 				}
 				else {
 
@@ -211,7 +211,7 @@ bool DemagTFunc::CalcOffDiagTens2D_Shifted_Irregular(VEC<DBL3> &Dodiag, INT3 n, 
 					val = DBL3(
 						demagAsymptoticOffDiag_xy.AsymptoticLodia(i * d.x + shift.x, j * d.y + shift.y, shift.z) * sign,
 						demagAsymptoticOffDiag_xz.AsymptoticLodia(i * d.x + shift.x, shift.z, j * d.y + shift.y) * sign,
-						demagAsymptoticOffDiag_yz.AsymptoticLodia(j * d.y + shift.y, shift.z, i * d.x + shift.x) * sign);
+						demagAsymptoticOffDiag_yz.AsymptoticLodia(j * d.y + shift.y, shift.z, i * d.x + shift.x) * sign) * s.z;
 				}
 				else {
 

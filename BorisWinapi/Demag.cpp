@@ -31,6 +31,22 @@ Demag::Demag(Mesh *pMesh_) :
 	}
 }
 
+Demag::~Demag()
+{
+	//when deleting the Demag module any pbc settings should no longer take effect in this mesh
+	//thus must clear pbc flags in M
+
+	pMesh->M.set_pbc(false, false, false);
+
+	//same for the CUDA version if we are in cuda mode
+#if COMPILECUDA == 1
+	if (pModuleCUDA) {
+
+		pMesh->pMeshCUDA->M()->copyflags_from_cpuvec(pMesh->M);
+	}
+#endif
+}
+
 BError Demag::Initialize(void) 
 {	
 	BError error(CLASS_STR(Demag));
@@ -42,6 +58,12 @@ BError Demag::Initialize(void)
 		if (!error) initialized = true;
 	}
 
+	//make sure to allocate memory for Hdemag if we need it
+	if (pMesh->meshODE.EvaluationSpeedup()) Hdemag.resize(pMesh->h, pMesh->meshRect);
+	else Hdemag.clear();
+
+	Hdemag_calculated = false;
+	
 	return error;
 }
 
@@ -58,6 +80,10 @@ BError Demag::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 		error = SetDimensions(pMesh->n, pMesh->h, true, demag_pbc_images);
 	}
 
+	//if memory needs to be allocated for Hdemag, it will be done through Initialize 
+	Hdemag.clear();
+	Hdemag_calculated = false;
+
 	//------------------------ CUDA UpdateConfiguration if set
 
 #if COMPILECUDA == 1
@@ -71,12 +97,27 @@ BError Demag::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 }
 
 //Set PBC
-void Demag::Set_PBC(INT3 demag_pbc_images_)
+BError Demag::Set_PBC(INT3 demag_pbc_images_)
 {
+	BError error(__FUNCTION__);
+
 	demag_pbc_images = demag_pbc_images_;
 
+	//set pbc conditions in M : if any are zero then pbc is disabled in that dimension
+	pMesh->M.set_pbc(demag_pbc_images.x, demag_pbc_images.y, demag_pbc_images.z);
+
+	//same for the CUDA version if we are in cuda mode
+#if COMPILECUDA == 1
+	if (pModuleCUDA) {
+
+		if (!pMesh->pMeshCUDA->M()->copyflags_from_cpuvec(pMesh->M)) return error(BERROR_GPUERROR_CRIT);
+	}
+#endif
+
 	//update will be needed if pbc settings have changed
-	UpdateConfiguration();
+	error = UpdateConfiguration();
+
+	return error;
 }
 
 BError Demag::MakeCUDAModule(void)
@@ -100,12 +141,66 @@ BError Demag::MakeCUDAModule(void)
 
 double Demag::UpdateField(void) 
 {
-	//convolute and get "energy" value
-	energy = Convolute(pMesh->M, pMesh->Heff, false);
+	if (pMesh->meshODE.EvaluationSpeedup()) {
 
-	//finish off energy value
-	if (pMesh->M.get_nonempty_cells()) energy *= -MU0 / (2 * pMesh->M.get_nonempty_cells());
-	else energy = 0;
+		//use evaluation speedup method (Hdemag will have memory allocated - this was done in the Initialize method)
+
+		int update_type = pMesh->meshODE.Check_Step_Update();
+
+		if (update_type != EVALSPEEDUPSTEP_SKIP || !Hdemag_calculated) {
+
+			//calculate field required
+
+			if (update_type == EVALSPEEDUPSTEP_COMPUTE_AND_SAVE) {
+
+				//calculate field and save it for next time : we'll need to use it (expecting update_type = EVALSPEEDUPSTEP_SKIP next time)
+
+				//convolute and get "energy" value
+				energy = Convolute(pMesh->M, Hdemag, true);
+
+				Hdemag_calculated = true;
+
+				//finish off energy value
+				if (pMesh->M.get_nonempty_cells()) energy *= -MU0 / (2 * pMesh->M.get_nonempty_cells());
+				else energy = 0;
+			}
+			else {
+
+				//calculate field but do not save it for next time : we'll need to recalculate it again (expecting update_type != EVALSPEEDUPSTEP_SKIP again next time : EVALSPEEDUPSTEP_COMPUTE_NO_SAVE or EVALSPEEDUPSTEP_COMPUTE_AND_SAVE)
+
+				//convolute and get "energy" value
+				energy = Convolute(pMesh->M, pMesh->Heff, false);
+
+				//good practice to set this to false
+				Hdemag_calculated = false;
+
+				//finish off energy value
+				if (pMesh->M.get_nonempty_cells()) energy *= -MU0 / (2 * pMesh->M.get_nonempty_cells());
+				else energy = 0;
+
+				//return here to avoid adding Hdemag to Heff : we've already added demag field contribution
+				return energy;
+			}
+		}
+
+		//add contribution to Heff
+		#pragma omp parallel for
+		for (int idx = 0; idx < Hdemag.linear_size(); idx++) {
+
+			pMesh->Heff[idx] += Hdemag[idx];
+		}
+	}
+	else {
+
+		//don't use evaluation speedup, so no need to use Hdemag (this won't have memory allocated anyway)
+
+		//convolute and get "energy" value
+		energy = Convolute(pMesh->M, pMesh->Heff, false);
+
+		//finish off energy value
+		if (pMesh->M.get_nonempty_cells()) energy *= -MU0 / (2 * pMesh->M.get_nonempty_cells());
+		else energy = 0;
+	}
 
 	return energy;
 }

@@ -34,7 +34,7 @@ protected:
 	BError Initialize(void);
 
 	//calculate exchange field at coupled cells in this mesh; accumulate energy density contribution in energy
-	void CalculateExchangeCoupling(cu_obj<cuReal>& energy);
+	void CalculateExchangeCoupling(cu_obj<cuBReal>& energy);
 
 	//protected constructor - this class should not be instantiated by itself, but only used as a base for an exchange-type module for purposes of code reuse
 	ExchangeBaseCUDA(FMeshCUDA* pMeshCUDA_, ExchangeBase* pExchBase_);

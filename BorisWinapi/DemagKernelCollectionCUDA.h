@@ -60,7 +60,7 @@ private:
 	int self_contribution_index;
 
 	//maximum common cellsize dimension used to normalize dimensions
-	cuReal h_max;
+	cuBReal h_max;
 
 	//configure shifts and source and destination cellsizes so kernels apply for input to multiple outputs - true - (rather than multiple inputs to single output)
 	//Always use  false here - it's faster! Included for testing only.
@@ -107,7 +107,7 @@ protected:
 	//-------------------------- SETTERS
 
 	//Set all the rectangles participating in convolution. This determines the number of kernels needed : one for each mesh.
-	BError Set_Rect_Collection(vector<cuRect>& Rect_collection_, cuRect this_rect_, cuReal h_max_);
+	BError Set_Rect_Collection(vector<cuRect>& Rect_collection_, cuRect this_rect_, cuBReal h_max_);
 
 	//-------------------------- GETTERS
 
@@ -137,12 +137,12 @@ protected:
 	//These versions involve n^2 kernel launches, whilst the multiple output versions involve n kernel launches (but each n times larger and with poor load balancing)
 
 	void KernelMultiplication_2D(
-		std::vector<cu_arr<cuComplex>*>& Incol_x, std::vector<cu_arr<cuComplex>*>& Incol_y, std::vector<cu_arr<cuComplex>*>& Incol_z,
-		cu_arr<cuComplex>& Out_x, cu_arr<cuComplex>& Out_y, cu_arr<cuComplex>& Out_z);
+		std::vector<cu_arr<cuBComplex>*>& Incol_x, std::vector<cu_arr<cuBComplex>*>& Incol_y, std::vector<cu_arr<cuBComplex>*>& Incol_z,
+		cu_arr<cuBComplex>& Out_x, cu_arr<cuBComplex>& Out_y, cu_arr<cuBComplex>& Out_z);
 
 	void KernelMultiplication_3D(
-		std::vector<cu_arr<cuComplex>*>& Incol_x, std::vector<cu_arr<cuComplex>*>& Incol_y, std::vector<cu_arr<cuComplex>*>& Incol_z,
-		cu_arr<cuComplex>& Out_x, cu_arr<cuComplex>& Out_y, cu_arr<cuComplex>& Out_z);
+		std::vector<cu_arr<cuBComplex>*>& Incol_x, std::vector<cu_arr<cuBComplex>*>& Incol_y, std::vector<cu_arr<cuBComplex>*>& Incol_z,
+		cu_arr<cuBComplex>& Out_x, cu_arr<cuBComplex>& Out_y, cu_arr<cuBComplex>& Out_z);
 };
 
 #endif

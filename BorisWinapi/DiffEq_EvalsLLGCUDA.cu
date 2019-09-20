@@ -13,14 +13,14 @@ __global__ void RunEuler_LLG_withReductions_Kernel(ManagedDiffEqCUDA& cuDiffEq, 
 {
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
 
-	cuReal dT = *cuDiffEq.pdT;
+	cuBReal dT = *cuDiffEq.pdT;
 
 	cuVEC_VC<cuReal3>& M = *cuMesh.pM;
 	cuVEC<cuReal3>& Heff = *cuMesh.pHeff;
 
-	cuReal Ms = *cuMesh.pMs;
-	cuReal alpha = *cuMesh.palpha;
-	cuReal grel = *cuMesh.pgrel;
+	cuBReal Ms = *cuMesh.pMs;
+	cuBReal alpha = *cuMesh.palpha;
+	cuBReal grel = *cuMesh.pgrel;
 
 	cuReal3 mxh = cuReal3();
 	cuReal3 dmdt = cuReal3();
@@ -36,10 +36,10 @@ __global__ void RunEuler_LLG_withReductions_Kernel(ManagedDiffEqCUDA& cuDiffEq, 
 
 				//First evaluate RHS of set equation at the current time step
 				cuMesh.update_parameters_mcoarse(idx, *cuMesh.pMs, Ms, *cuMesh.palpha, alpha, *cuMesh.pgrel, grel);
-				cuReal3 rhs = (-(cuReal)GAMMA * grel / (1 + alpha * alpha)) * ((M[idx] ^ Heff[idx]) + alpha * ((M[idx] / Ms) ^ (M[idx] ^ Heff[idx])));
+				cuReal3 rhs = (-(cuBReal)GAMMA * grel / (1 + alpha * alpha)) * ((M[idx] ^ Heff[idx]) + alpha * ((M[idx] / Ms) ^ (M[idx] ^ Heff[idx])));
 
 				//obtain average normalized torque term
-				cuReal Mnorm = M[idx].norm();
+				cuBReal Mnorm = M[idx].norm();
 				mxh = (M[idx] ^ Heff[idx]) / (Mnorm * Mnorm);
 
 				//Now estimate magnetization for the next time step
@@ -49,9 +49,9 @@ __global__ void RunEuler_LLG_withReductions_Kernel(ManagedDiffEqCUDA& cuDiffEq, 
 
 					M[idx].renormalize(Ms);
 				}
-
+				
 				//obtain maximum normalized dmdt term
-				dmdt = ((*cuMesh.pM)[idx] - (*cuDiffEq.psM1)[idx]) / (dT * (cuReal)GAMMA * Mnorm * Mnorm);
+				dmdt = ((*cuMesh.pM)[idx] - (*cuDiffEq.psM1)[idx]) / (dT * (cuBReal)GAMMA * Mnorm * Mnorm);
 			}
 			else {
 
@@ -73,14 +73,14 @@ __global__ void RunEuler_LLG_Kernel(ManagedDiffEqCUDA& cuDiffEq, ManagedMeshCUDA
 {
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
 
-	cuReal dT = *cuDiffEq.pdT;
+	cuBReal dT = *cuDiffEq.pdT;
 
 	cuVEC_VC<cuReal3>& M = *cuMesh.pM;
 	cuVEC<cuReal3>& Heff = *cuMesh.pHeff;
 
-	cuReal Ms = *cuMesh.pMs;
-	cuReal alpha = *cuMesh.palpha;
-	cuReal grel = *cuMesh.pgrel;
+	cuBReal Ms = *cuMesh.pMs;
+	cuBReal alpha = *cuMesh.palpha;
+	cuBReal grel = *cuMesh.pgrel;
 
 	if (idx < M.linear_size()) {
 
@@ -93,11 +93,11 @@ __global__ void RunEuler_LLG_Kernel(ManagedDiffEqCUDA& cuDiffEq, ManagedMeshCUDA
 
 				//First evaluate RHS of set equation at the current time step
 				cuMesh.update_parameters_mcoarse(idx, *cuMesh.pMs, Ms, *cuMesh.palpha, alpha, *cuMesh.pgrel, grel);
-				cuReal3 rhs = (-(cuReal)GAMMA * grel / (1 + alpha * alpha)) * ((M[idx] ^ Heff[idx]) + alpha * ((M[idx] / Ms) ^ (M[idx] ^ Heff[idx])));
+				cuReal3 rhs = (-(cuBReal)GAMMA * grel / (1 + alpha * alpha)) * ((M[idx] ^ Heff[idx]) + alpha * ((M[idx] / Ms) ^ (M[idx] ^ Heff[idx])));
 
 				//Now estimate magnetization for the next time step
 				M[idx] += rhs * dT;
-
+				
 				if (*cuDiffEq.prenormalize) {
 
 					M[idx].renormalize(Ms);
@@ -118,14 +118,14 @@ __global__ void RunTEuler_Step0_LLG_withReductions_Kernel(ManagedDiffEqCUDA& cuD
 {
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
 
-	cuReal dT = *cuDiffEq.pdT;
+	cuBReal dT = *cuDiffEq.pdT;
 
 	cuVEC_VC<cuReal3>& M = *cuMesh.pM;
 	cuVEC<cuReal3>& Heff = *cuMesh.pHeff;
 
-	cuReal Ms = *cuMesh.pMs;
-	cuReal alpha = *cuMesh.palpha;
-	cuReal grel = *cuMesh.pgrel;
+	cuBReal Ms = *cuMesh.pMs;
+	cuBReal alpha = *cuMesh.palpha;
+	cuBReal grel = *cuMesh.pgrel;
 
 	cuReal3 mxh = cuReal3();
 
@@ -140,10 +140,10 @@ __global__ void RunTEuler_Step0_LLG_withReductions_Kernel(ManagedDiffEqCUDA& cuD
 
 				//First evaluate RHS of set equation at the current time step
 				cuMesh.update_parameters_mcoarse(idx, *cuMesh.pMs, Ms, *cuMesh.palpha, alpha, *cuMesh.pgrel, grel);
-				cuReal3 rhs = (-(cuReal)GAMMA * grel / (1 + alpha * alpha)) * ((M[idx] ^ Heff[idx]) + alpha * ((M[idx] / Ms) ^ (M[idx] ^ Heff[idx])));
+				cuReal3 rhs = (-(cuBReal)GAMMA * grel / (1 + alpha * alpha)) * ((M[idx] ^ Heff[idx]) + alpha * ((M[idx] / Ms) ^ (M[idx] ^ Heff[idx])));
 
 				//obtain average normalized torque term
-				cuReal Mnorm = M[idx].norm();
+				cuBReal Mnorm = M[idx].norm();
 				mxh = (M[idx] ^ Heff[idx]) / (Mnorm * Mnorm);
 
 				//Now estimate magnetization for the next time step
@@ -163,14 +163,14 @@ __global__ void RunTEuler_Step0_LLG_Kernel(ManagedDiffEqCUDA& cuDiffEq, ManagedM
 {
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
 
-	cuReal dT = *cuDiffEq.pdT;
+	cuBReal dT = *cuDiffEq.pdT;
 
 	cuVEC_VC<cuReal3>& M = *cuMesh.pM;
 	cuVEC<cuReal3>& Heff = *cuMesh.pHeff;
 
-	cuReal Ms = *cuMesh.pMs;
-	cuReal alpha = *cuMesh.palpha;
-	cuReal grel = *cuMesh.pgrel;
+	cuBReal Ms = *cuMesh.pMs;
+	cuBReal alpha = *cuMesh.palpha;
+	cuBReal grel = *cuMesh.pgrel;
 
 	if (idx < M.linear_size()) {
 
@@ -183,7 +183,7 @@ __global__ void RunTEuler_Step0_LLG_Kernel(ManagedDiffEqCUDA& cuDiffEq, ManagedM
 
 				//First evaluate RHS of set equation at the current time step
 				cuMesh.update_parameters_mcoarse(idx, *cuMesh.pMs, Ms, *cuMesh.palpha, alpha, *cuMesh.pgrel, grel);
-				cuReal3 rhs = (-(cuReal)GAMMA * grel / (1 + alpha * alpha)) * ((M[idx] ^ Heff[idx]) + alpha * ((M[idx] / Ms) ^ (M[idx] ^ Heff[idx])));
+				cuReal3 rhs = (-(cuBReal)GAMMA * grel / (1 + alpha * alpha)) * ((M[idx] ^ Heff[idx]) + alpha * ((M[idx] / Ms) ^ (M[idx] ^ Heff[idx])));
 
 				//Now estimate magnetization for the next time step
 				M[idx] += rhs * dT;
@@ -196,14 +196,14 @@ __global__ void RunTEuler_Step1_LLG_withReductions_Kernel(ManagedDiffEqCUDA& cuD
 {
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
 
-	cuReal dT = *cuDiffEq.pdT;
+	cuBReal dT = *cuDiffEq.pdT;
 
 	cuVEC_VC<cuReal3>& M = *cuMesh.pM;
 	cuVEC<cuReal3>& Heff = *cuMesh.pHeff;
 
-	cuReal Ms = *cuMesh.pMs;
-	cuReal alpha = *cuMesh.palpha;
-	cuReal grel = *cuMesh.pgrel;
+	cuBReal Ms = *cuMesh.pMs;
+	cuBReal alpha = *cuMesh.palpha;
+	cuBReal grel = *cuMesh.pgrel;
 
 	cuReal3 dmdt = cuReal3();
 
@@ -215,7 +215,7 @@ __global__ void RunTEuler_Step1_LLG_withReductions_Kernel(ManagedDiffEqCUDA& cuD
 
 				//First evaluate RHS of set equation at the current time step
 				cuMesh.update_parameters_mcoarse(idx, *cuMesh.pMs, Ms, *cuMesh.palpha, alpha, *cuMesh.pgrel, grel);
-				cuReal3 rhs = (-(cuReal)GAMMA * grel / (1 + alpha * alpha)) * ((M[idx] ^ Heff[idx]) + alpha * ((M[idx] / Ms) ^ (M[idx] ^ Heff[idx])));
+				cuReal3 rhs = (-(cuBReal)GAMMA * grel / (1 + alpha * alpha)) * ((M[idx] ^ Heff[idx]) + alpha * ((M[idx] / Ms) ^ (M[idx] ^ Heff[idx])));
 
 				//Now estimate magnetization using the second trapezoidal Euler step formula
 				M[idx] = ((*cuDiffEq.psM1)[idx] + M[idx] + rhs * dT) / 2;
@@ -226,8 +226,8 @@ __global__ void RunTEuler_Step1_LLG_withReductions_Kernel(ManagedDiffEqCUDA& cuD
 				}
 
 				//obtain maximum normalized dmdt term
-				cuReal Mnorm = (*cuMesh.pM)[idx].norm();
-				dmdt = ((*cuMesh.pM)[idx] - (*cuDiffEq.psM1)[idx]) / (dT * (cuReal)GAMMA * Mnorm * Mnorm);
+				cuBReal Mnorm = (*cuMesh.pM)[idx].norm();
+				dmdt = ((*cuMesh.pM)[idx] - (*cuDiffEq.psM1)[idx]) / (dT * (cuBReal)GAMMA * Mnorm * Mnorm);
 			}
 			else {
 
@@ -248,14 +248,14 @@ __global__ void RunTEuler_Step1_LLG_Kernel(ManagedDiffEqCUDA& cuDiffEq, ManagedM
 {
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
 
-	cuReal dT = *cuDiffEq.pdT;
+	cuBReal dT = *cuDiffEq.pdT;
 
 	cuVEC_VC<cuReal3>& M = *cuMesh.pM;
 	cuVEC<cuReal3>& Heff = *cuMesh.pHeff;
 
-	cuReal Ms = *cuMesh.pMs;
-	cuReal alpha = *cuMesh.palpha;
-	cuReal grel = *cuMesh.pgrel;
+	cuBReal Ms = *cuMesh.pMs;
+	cuBReal alpha = *cuMesh.palpha;
+	cuBReal grel = *cuMesh.pgrel;
 
 	if (idx < M.linear_size()) {
 
@@ -265,7 +265,7 @@ __global__ void RunTEuler_Step1_LLG_Kernel(ManagedDiffEqCUDA& cuDiffEq, ManagedM
 
 				//First evaluate RHS of set equation at the current time step
 				cuMesh.update_parameters_mcoarse(idx, *cuMesh.pMs, Ms, *cuMesh.palpha, alpha, *cuMesh.pgrel, grel);
-				cuReal3 rhs = (-(cuReal)GAMMA * grel / (1 + alpha * alpha)) * ((M[idx] ^ Heff[idx]) + alpha * ((M[idx] / Ms) ^ (M[idx] ^ Heff[idx])));
+				cuReal3 rhs = (-(cuBReal)GAMMA * grel / (1 + alpha * alpha)) * ((M[idx] ^ Heff[idx]) + alpha * ((M[idx] / Ms) ^ (M[idx] ^ Heff[idx])));
 
 				//Now estimate magnetization using the second trapezoidal Euler step formula
 				M[idx] = ((*cuDiffEq.psM1)[idx] + M[idx] + rhs * dT) / 2;
@@ -292,16 +292,16 @@ __global__ void RunAHeun_Step1_LLG_withReductions_Kernel(ManagedDiffEqCUDA& cuDi
 {
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
 
-	cuReal dT = *cuDiffEq.pdT;
+	cuBReal dT = *cuDiffEq.pdT;
 
 	cuVEC_VC<cuReal3>& M = *cuMesh.pM;
 	cuVEC<cuReal3>& Heff = *cuMesh.pHeff;
 
-	cuReal Ms = *cuMesh.pMs;
-	cuReal alpha = *cuMesh.palpha;
-	cuReal grel = *cuMesh.pgrel;
+	cuBReal Ms = *cuMesh.pMs;
+	cuBReal alpha = *cuMesh.palpha;
+	cuBReal grel = *cuMesh.pgrel;
 
-	cuReal lte = 0.0;
+	cuBReal lte = 0.0;
 	cuReal3 dmdt = cuReal3();
 
 	if (idx < M.linear_size()) {
@@ -313,7 +313,7 @@ __global__ void RunAHeun_Step1_LLG_withReductions_Kernel(ManagedDiffEqCUDA& cuDi
 				//First evaluate RHS of set equation at the current time step
 				cuMesh.update_parameters_mcoarse(idx, *cuMesh.pMs, Ms, *cuMesh.palpha, alpha, *cuMesh.pgrel, grel);
 				
-				cuReal3 rhs = (-(cuReal)GAMMA * grel / (1 + alpha * alpha)) * ((M[idx] ^ Heff[idx]) + alpha * ((M[idx] / Ms) ^ (M[idx] ^ Heff[idx])));
+				cuReal3 rhs = (-(cuBReal)GAMMA * grel / (1 + alpha * alpha)) * ((M[idx] ^ Heff[idx]) + alpha * ((M[idx] / Ms) ^ (M[idx] ^ Heff[idx])));
 
 				//First save predicted magnetization for lte calculation
 				cuReal3 saveM = (*cuMesh.pM)[idx];
@@ -327,8 +327,8 @@ __global__ void RunAHeun_Step1_LLG_withReductions_Kernel(ManagedDiffEqCUDA& cuDi
 				}
 
 				//obtain maximum normalized dmdt term
-				cuReal Mnorm = (*cuMesh.pM)[idx].norm();
-				dmdt = ((*cuMesh.pM)[idx] - (*cuDiffEq.psM1)[idx]) / (dT * (cuReal)GAMMA * Mnorm * Mnorm);
+				cuBReal Mnorm = (*cuMesh.pM)[idx].norm();
+				dmdt = ((*cuMesh.pM)[idx] - (*cuDiffEq.psM1)[idx]) / (dT * (cuBReal)GAMMA * Mnorm * Mnorm);
 
 				//local truncation error (between predicted and corrected)
 				lte = cu_GetMagnitude((*cuMesh.pM)[idx] - saveM) / (*cuMesh.pM)[idx].norm();
@@ -354,16 +354,16 @@ __global__ void RunAHeun_Step1_LLG_Kernel(ManagedDiffEqCUDA& cuDiffEq, ManagedMe
 {
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
 
-	cuReal dT = *cuDiffEq.pdT;
+	cuBReal dT = *cuDiffEq.pdT;
 
 	cuVEC_VC<cuReal3>& M = *cuMesh.pM;
 	cuVEC<cuReal3>& Heff = *cuMesh.pHeff;
 
-	cuReal Ms = *cuMesh.pMs;
-	cuReal alpha = *cuMesh.palpha;
-	cuReal grel = *cuMesh.pgrel;
+	cuBReal Ms = *cuMesh.pMs;
+	cuBReal alpha = *cuMesh.palpha;
+	cuBReal grel = *cuMesh.pgrel;
 
-	cuReal lte = 0.0;
+	cuBReal lte = 0.0;
 
 	if (idx < M.linear_size()) {
 
@@ -374,7 +374,7 @@ __global__ void RunAHeun_Step1_LLG_Kernel(ManagedDiffEqCUDA& cuDiffEq, ManagedMe
 				//First evaluate RHS of set equation at the current time step
 				cuMesh.update_parameters_mcoarse(idx, *cuMesh.pMs, Ms, *cuMesh.palpha, alpha, *cuMesh.pgrel, grel);
 				
-				cuReal3 rhs = (-(cuReal)GAMMA * grel / (1 + alpha * alpha)) * ((M[idx] ^ Heff[idx]) + alpha * ((M[idx] / Ms) ^ (M[idx] ^ Heff[idx])));
+				cuReal3 rhs = (-(cuBReal)GAMMA * grel / (1 + alpha * alpha)) * ((M[idx] ^ Heff[idx]) + alpha * ((M[idx] / Ms) ^ (M[idx] ^ Heff[idx])));
 
 				//First save predicted magnetization for lte calculation
 				cuReal3 saveM = (*cuMesh.pM)[idx];
@@ -407,16 +407,16 @@ __global__ void RunRK4_Step0_LLG_withReductions_Kernel(ManagedDiffEqCUDA& cuDiff
 {
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
 
-	cuReal dT = *cuDiffEq.pdT;
+	cuBReal dT = *cuDiffEq.pdT;
 
 	cuVEC_VC<cuReal3>& M = *cuMesh.pM;
 	cuVEC<cuReal3>& Heff = *cuMesh.pHeff;
 
-	cuReal Ms = *cuMesh.pMs;
-	cuReal alpha = *cuMesh.palpha;
-	cuReal grel = *cuMesh.pgrel;
+	cuBReal Ms = *cuMesh.pMs;
+	cuBReal alpha = *cuMesh.palpha;
+	cuBReal grel = *cuMesh.pgrel;
 
-	cuReal mxh = 0.0;
+	cuBReal mxh = 0.0;
 
 	if (idx < M.linear_size()) {
 
@@ -429,10 +429,10 @@ __global__ void RunRK4_Step0_LLG_withReductions_Kernel(ManagedDiffEqCUDA& cuDiff
 
 				cuMesh.update_parameters_mcoarse(idx, *cuMesh.pMs, Ms, *cuMesh.palpha, alpha, *cuMesh.pgrel, grel);
 
-				(*cuDiffEq.psEval0)[idx] = (-(cuReal)GAMMA * grel / (1 + alpha * alpha)) * ((M[idx] ^ Heff[idx]) + alpha * ((M[idx] / Ms) ^ (M[idx] ^ Heff[idx])));
+				(*cuDiffEq.psEval0)[idx] = (-(cuBReal)GAMMA * grel / (1 + alpha * alpha)) * ((M[idx] ^ Heff[idx]) + alpha * ((M[idx] / Ms) ^ (M[idx] ^ Heff[idx])));
 
 				//obtain maximum normalized torque term
-				cuReal Mnorm = M[idx].norm();
+				cuBReal Mnorm = M[idx].norm();
 				mxh = cu_GetMagnitude(M[idx] ^ Heff[idx]) / (Mnorm * Mnorm);
 
 				//Now estimate magnetization using RK4 midle step
@@ -452,14 +452,14 @@ __global__ void RunRK4_Step0_LLG_Kernel(ManagedDiffEqCUDA& cuDiffEq, ManagedMesh
 {
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
 
-	cuReal dT = *cuDiffEq.pdT;
+	cuBReal dT = *cuDiffEq.pdT;
 
 	cuVEC_VC<cuReal3>& M = *cuMesh.pM;
 	cuVEC<cuReal3>& Heff = *cuMesh.pHeff;
 
-	cuReal Ms = *cuMesh.pMs;
-	cuReal alpha = *cuMesh.palpha;
-	cuReal grel = *cuMesh.pgrel;
+	cuBReal Ms = *cuMesh.pMs;
+	cuBReal alpha = *cuMesh.palpha;
+	cuBReal grel = *cuMesh.pgrel;
 
 	if (idx < M.linear_size()) {
 
@@ -472,7 +472,7 @@ __global__ void RunRK4_Step0_LLG_Kernel(ManagedDiffEqCUDA& cuDiffEq, ManagedMesh
 
 				cuMesh.update_parameters_mcoarse(idx, *cuMesh.pMs, Ms, *cuMesh.palpha, alpha, *cuMesh.pgrel, grel);
 				
-				(*cuDiffEq.psEval0)[idx] = (-(cuReal)GAMMA * grel / (1 + alpha * alpha)) * ((M[idx] ^ Heff[idx]) + alpha * ((M[idx] / Ms) ^ (M[idx] ^ Heff[idx])));
+				(*cuDiffEq.psEval0)[idx] = (-(cuBReal)GAMMA * grel / (1 + alpha * alpha)) * ((M[idx] ^ Heff[idx]) + alpha * ((M[idx] / Ms) ^ (M[idx] ^ Heff[idx])));
 
 				//Now estimate magnetization using RK4 midle step
 				M[idx] += (*cuDiffEq.psEval0)[idx] * (dT / 2);
@@ -485,14 +485,14 @@ __global__ void RunRK4_Step1_LLG_Kernel(ManagedDiffEqCUDA& cuDiffEq, ManagedMesh
 {
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
 
-	cuReal dT = *cuDiffEq.pdT;
+	cuBReal dT = *cuDiffEq.pdT;
 
 	cuVEC_VC<cuReal3>& M = *cuMesh.pM;
 	cuVEC<cuReal3>& Heff = *cuMesh.pHeff;
 
-	cuReal Ms = *cuMesh.pMs;
-	cuReal alpha = *cuMesh.palpha;
-	cuReal grel = *cuMesh.pgrel;
+	cuBReal Ms = *cuMesh.pMs;
+	cuBReal alpha = *cuMesh.palpha;
+	cuBReal grel = *cuMesh.pgrel;
 
 	if (idx < M.linear_size()) {
 
@@ -500,7 +500,7 @@ __global__ void RunRK4_Step1_LLG_Kernel(ManagedDiffEqCUDA& cuDiffEq, ManagedMesh
 
 			cuMesh.update_parameters_mcoarse(idx, *cuMesh.pMs, Ms, *cuMesh.palpha, alpha, *cuMesh.pgrel, grel);
 			
-			(*cuDiffEq.psEval1)[idx] = (-(cuReal)GAMMA * grel / (1 + alpha * alpha)) * ((M[idx] ^ Heff[idx]) + alpha * ((M[idx] / Ms) ^ (M[idx] ^ Heff[idx])));
+			(*cuDiffEq.psEval1)[idx] = (-(cuBReal)GAMMA * grel / (1 + alpha * alpha)) * ((M[idx] ^ Heff[idx]) + alpha * ((M[idx] / Ms) ^ (M[idx] ^ Heff[idx])));
 
 			//Now estimate magnetization using RK4 midle step
 			M[idx] = (*cuDiffEq.psM1)[idx] + (*cuDiffEq.psEval1)[idx] * (dT / 2);
@@ -512,14 +512,14 @@ __global__ void RunRK4_Step2_LLG_Kernel(ManagedDiffEqCUDA& cuDiffEq, ManagedMesh
 {
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
 
-	cuReal dT = *cuDiffEq.pdT;
+	cuBReal dT = *cuDiffEq.pdT;
 
 	cuVEC_VC<cuReal3>& M = *cuMesh.pM;
 	cuVEC<cuReal3>& Heff = *cuMesh.pHeff;
 
-	cuReal Ms = *cuMesh.pMs;
-	cuReal alpha = *cuMesh.palpha;
-	cuReal grel = *cuMesh.pgrel;
+	cuBReal Ms = *cuMesh.pMs;
+	cuBReal alpha = *cuMesh.palpha;
+	cuBReal grel = *cuMesh.pgrel;
 
 	if (idx < M.linear_size()) {
 
@@ -527,7 +527,7 @@ __global__ void RunRK4_Step2_LLG_Kernel(ManagedDiffEqCUDA& cuDiffEq, ManagedMesh
 
 			cuMesh.update_parameters_mcoarse(idx, *cuMesh.pMs, Ms, *cuMesh.palpha, alpha, *cuMesh.pgrel, grel);
 			
-			(*cuDiffEq.psEval2)[idx] = (-(cuReal)GAMMA * grel / (1 + alpha * alpha)) * ((M[idx] ^ Heff[idx]) + alpha * ((M[idx] / Ms) ^ (M[idx] ^ Heff[idx])));
+			(*cuDiffEq.psEval2)[idx] = (-(cuBReal)GAMMA * grel / (1 + alpha * alpha)) * ((M[idx] ^ Heff[idx]) + alpha * ((M[idx] / Ms) ^ (M[idx] ^ Heff[idx])));
 
 			//Now estimate magnetization using RK4 last step
 			M[idx] = (*cuDiffEq.psM1)[idx] + (*cuDiffEq.psEval2)[idx] * dT;
@@ -539,16 +539,16 @@ __global__ void RunRK4_Step3_LLG_withReductions_Kernel(ManagedDiffEqCUDA& cuDiff
 {
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
 
-	cuReal dT = *cuDiffEq.pdT;
+	cuBReal dT = *cuDiffEq.pdT;
 
 	cuVEC_VC<cuReal3>& M = *cuMesh.pM;
 	cuVEC<cuReal3>& Heff = *cuMesh.pHeff;
 
-	cuReal Ms = *cuMesh.pMs;
-	cuReal alpha = *cuMesh.palpha;
-	cuReal grel = *cuMesh.pgrel;
+	cuBReal Ms = *cuMesh.pMs;
+	cuBReal alpha = *cuMesh.palpha;
+	cuBReal grel = *cuMesh.pgrel;
 
-	cuReal dmdt = 0.0;
+	cuBReal dmdt = 0.0;
 
 	if (idx < M.linear_size()) {
 
@@ -559,7 +559,7 @@ __global__ void RunRK4_Step3_LLG_withReductions_Kernel(ManagedDiffEqCUDA& cuDiff
 				//First evaluate RHS of set equation at the current time step
 				cuMesh.update_parameters_mcoarse(idx, *cuMesh.pMs, Ms, *cuMesh.palpha, alpha, *cuMesh.pgrel, grel);
 
-				cuReal3 rhs = (-(cuReal)GAMMA * grel / (1 + alpha * alpha)) * ((M[idx] ^ Heff[idx]) + alpha * ((M[idx] / Ms) ^ (M[idx] ^ Heff[idx])));
+				cuReal3 rhs = (-(cuBReal)GAMMA * grel / (1 + alpha * alpha)) * ((M[idx] ^ Heff[idx]) + alpha * ((M[idx] / Ms) ^ (M[idx] ^ Heff[idx])));
 
 				//Now estimate magnetization using previous RK4 evaluations
 				M[idx] = (*cuDiffEq.psM1)[idx] + ((*cuDiffEq.psEval0)[idx] + 2 * (*cuDiffEq.psEval1)[idx] + 2 * (*cuDiffEq.psEval2)[idx] + rhs) * (dT / 6);
@@ -570,8 +570,8 @@ __global__ void RunRK4_Step3_LLG_withReductions_Kernel(ManagedDiffEqCUDA& cuDiff
 				}
 
 				//obtain maximum normalized dmdt term
-				cuReal Mnorm = (*cuMesh.pM)[idx].norm();
-				dmdt = cu_GetMagnitude((*cuMesh.pM)[idx] - (*cuDiffEq.psM1)[idx]) / (dT * (cuReal)GAMMA * Mnorm * Mnorm);
+				cuBReal Mnorm = (*cuMesh.pM)[idx].norm();
+				dmdt = cu_GetMagnitude((*cuMesh.pM)[idx] - (*cuDiffEq.psM1)[idx]) / (dT * (cuBReal)GAMMA * Mnorm * Mnorm);
 			}
 			else {
 
@@ -592,14 +592,14 @@ __global__ void RunRK4_Step3_LLG_Kernel(ManagedDiffEqCUDA& cuDiffEq, ManagedMesh
 {
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
 
-	cuReal dT = *cuDiffEq.pdT;
+	cuBReal dT = *cuDiffEq.pdT;
 
 	cuVEC_VC<cuReal3>& M = *cuMesh.pM;
 	cuVEC<cuReal3>& Heff = *cuMesh.pHeff;
 
-	cuReal Ms = *cuMesh.pMs;
-	cuReal alpha = *cuMesh.palpha;
-	cuReal grel = *cuMesh.pgrel;
+	cuBReal Ms = *cuMesh.pMs;
+	cuBReal alpha = *cuMesh.palpha;
+	cuBReal grel = *cuMesh.pgrel;
 
 	if (idx < M.linear_size()) {
 
@@ -610,7 +610,7 @@ __global__ void RunRK4_Step3_LLG_Kernel(ManagedDiffEqCUDA& cuDiffEq, ManagedMesh
 				//First evaluate RHS of set equation at the current time step
 				cuMesh.update_parameters_mcoarse(idx, *cuMesh.pMs, Ms, *cuMesh.palpha, alpha, *cuMesh.pgrel, grel);
 				
-				cuReal3 rhs = (-(cuReal)GAMMA * grel / (1 + alpha * alpha)) * ((M[idx] ^ Heff[idx]) + alpha * ((M[idx] / Ms) ^ (M[idx] ^ Heff[idx])));
+				cuReal3 rhs = (-(cuBReal)GAMMA * grel / (1 + alpha * alpha)) * ((M[idx] ^ Heff[idx]) + alpha * ((M[idx] / Ms) ^ (M[idx] ^ Heff[idx])));
 
 				//Now estimate magnetization using previous RK4 evaluations
 				M[idx] = (*cuDiffEq.psM1)[idx] + ((*cuDiffEq.psEval0)[idx] + 2 * (*cuDiffEq.psEval1)[idx] + 2 * (*cuDiffEq.psEval2)[idx] + rhs) * (dT / 6);
@@ -635,16 +635,16 @@ __global__ void RunABM_Predictor_LLG_withReductions_Kernel(ManagedDiffEqCUDA& cu
 {
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
 
-	cuReal dT = *cuDiffEq.pdT;
+	cuBReal dT = *cuDiffEq.pdT;
 
 	cuVEC_VC<cuReal3>& M = *cuMesh.pM;
 	cuVEC<cuReal3>& Heff = *cuMesh.pHeff;
 
-	cuReal Ms = *cuMesh.pMs;
-	cuReal alpha = *cuMesh.palpha;
-	cuReal grel = *cuMesh.pgrel;
+	cuBReal Ms = *cuMesh.pMs;
+	cuBReal alpha = *cuMesh.palpha;
+	cuBReal grel = *cuMesh.pgrel;
 
-	cuReal mxh = 0.0;
+	cuBReal mxh = 0.0;
 
 	if (idx < M.linear_size()) {
 
@@ -657,10 +657,10 @@ __global__ void RunABM_Predictor_LLG_withReductions_Kernel(ManagedDiffEqCUDA& cu
 
 				//First evaluate RHS of set equation at the current time step
 				cuMesh.update_parameters_mcoarse(idx, *cuMesh.pMs, Ms, *cuMesh.palpha, alpha, *cuMesh.pgrel, grel);
-				cuReal3 rhs = (-(cuReal)GAMMA * grel / (1 + alpha * alpha)) * ((M[idx] ^ Heff[idx]) + alpha * ((M[idx] / Ms) ^ (M[idx] ^ Heff[idx])));
+				cuReal3 rhs = (-(cuBReal)GAMMA * grel / (1 + alpha * alpha)) * ((M[idx] ^ Heff[idx]) + alpha * ((M[idx] / Ms) ^ (M[idx] ^ Heff[idx])));
 
 				//obtain maximum normalized torque term
-				cuReal Mnorm = M[idx].norm();
+				cuBReal Mnorm = M[idx].norm();
 				mxh = cu_GetMagnitude(M[idx] ^ Heff[idx]) / (Mnorm * Mnorm);
 
 				//ABM predictor : pk+1 = mk + (dt/2) * (3*fk - fk-1)
@@ -689,14 +689,14 @@ __global__ void RunABM_Predictor_LLG_Kernel(ManagedDiffEqCUDA& cuDiffEq, Managed
 {
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
 
-	cuReal dT = *cuDiffEq.pdT;
+	cuBReal dT = *cuDiffEq.pdT;
 
 	cuVEC_VC<cuReal3>& M = *cuMesh.pM;
 	cuVEC<cuReal3>& Heff = *cuMesh.pHeff;
 
-	cuReal Ms = *cuMesh.pMs;
-	cuReal alpha = *cuMesh.palpha;
-	cuReal grel = *cuMesh.pgrel;
+	cuBReal Ms = *cuMesh.pMs;
+	cuBReal alpha = *cuMesh.palpha;
+	cuBReal grel = *cuMesh.pgrel;
 
 	if (idx < M.linear_size()) {
 
@@ -709,7 +709,7 @@ __global__ void RunABM_Predictor_LLG_Kernel(ManagedDiffEqCUDA& cuDiffEq, Managed
 
 				//First evaluate RHS of set equation at the current time step
 				cuMesh.update_parameters_mcoarse(idx, *cuMesh.pMs, Ms, *cuMesh.palpha, alpha, *cuMesh.pgrel, grel);
-				cuReal3 rhs = (-(cuReal)GAMMA * grel / (1 + alpha * alpha)) * ((M[idx] ^ Heff[idx]) + alpha * ((M[idx] / Ms) ^ (M[idx] ^ Heff[idx])));
+				cuReal3 rhs = (-(cuBReal)GAMMA * grel / (1 + alpha * alpha)) * ((M[idx] ^ Heff[idx]) + alpha * ((M[idx] / Ms) ^ (M[idx] ^ Heff[idx])));
 
 				//ABM predictor : pk+1 = mk + (dt/2) * (3*fk - fk-1)
 				if (*cuDiffEq.palternator) {
@@ -731,17 +731,17 @@ __global__ void RunABM_Corrector_LLG_withReductions_Kernel(ManagedDiffEqCUDA& cu
 {
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
 
-	cuReal dT = *cuDiffEq.pdT;
+	cuBReal dT = *cuDiffEq.pdT;
 
 	cuVEC_VC<cuReal3>& M = *cuMesh.pM;
 	cuVEC<cuReal3>& Heff = *cuMesh.pHeff;
 
-	cuReal Ms = *cuMesh.pMs;
-	cuReal alpha = *cuMesh.palpha;
-	cuReal grel = *cuMesh.pgrel;
+	cuBReal Ms = *cuMesh.pMs;
+	cuBReal alpha = *cuMesh.palpha;
+	cuBReal grel = *cuMesh.pgrel;
 
-	cuReal dmdt = 0.0;
-	cuReal lte = 0.0;
+	cuBReal dmdt = 0.0;
+	cuBReal lte = 0.0;
 
 	if (idx < M.linear_size()) {
 
@@ -751,7 +751,7 @@ __global__ void RunABM_Corrector_LLG_withReductions_Kernel(ManagedDiffEqCUDA& cu
 
 				//First evaluate RHS of set equation at the current time step
 				cuMesh.update_parameters_mcoarse(idx, *cuMesh.pMs, Ms, *cuMesh.palpha, alpha, *cuMesh.pgrel, grel);
-				cuReal3 rhs = (-(cuReal)GAMMA * grel / (1 + alpha * alpha)) * ((M[idx] ^ Heff[idx]) + alpha * ((M[idx] / Ms) ^ (M[idx] ^ Heff[idx])));
+				cuReal3 rhs = (-(cuBReal)GAMMA * grel / (1 + alpha * alpha)) * ((M[idx] ^ Heff[idx]) + alpha * ((M[idx] / Ms) ^ (M[idx] ^ Heff[idx])));
 
 				//First save predicted magnetization for lte calculation
 				cuReal3 saveM = M[idx];
@@ -772,8 +772,8 @@ __global__ void RunABM_Corrector_LLG_withReductions_Kernel(ManagedDiffEqCUDA& cu
 				}
 
 				//obtain maximum normalized dmdt term
-				cuReal Mnorm = (*cuMesh.pM)[idx].norm();
-				dmdt = cu_GetMagnitude((*cuMesh.pM)[idx] - (*cuDiffEq.psM1)[idx]) / (dT * (cuReal)GAMMA * Mnorm * Mnorm);		
+				cuBReal Mnorm = (*cuMesh.pM)[idx].norm();
+				dmdt = cu_GetMagnitude((*cuMesh.pM)[idx] - (*cuDiffEq.psM1)[idx]) / (dT * (cuBReal)GAMMA * Mnorm * Mnorm);		
 
 				//local truncation error (between predicted and corrected)
 				lte = cu_GetMagnitude(M[idx] - saveM) / Ms;
@@ -799,16 +799,16 @@ __global__ void RunABM_Corrector_LLG_Kernel(ManagedDiffEqCUDA& cuDiffEq, Managed
 {
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
 
-	cuReal dT = *cuDiffEq.pdT;
+	cuBReal dT = *cuDiffEq.pdT;
 
 	cuVEC_VC<cuReal3>& M = *cuMesh.pM;
 	cuVEC<cuReal3>& Heff = *cuMesh.pHeff;
 
-	cuReal Ms = *cuMesh.pMs;
-	cuReal alpha = *cuMesh.palpha;
-	cuReal grel = *cuMesh.pgrel;
+	cuBReal Ms = *cuMesh.pMs;
+	cuBReal alpha = *cuMesh.palpha;
+	cuBReal grel = *cuMesh.pgrel;
 
-	cuReal lte = 0.0;
+	cuBReal lte = 0.0;
 
 	if (idx < M.linear_size()) {
 
@@ -818,7 +818,7 @@ __global__ void RunABM_Corrector_LLG_Kernel(ManagedDiffEqCUDA& cuDiffEq, Managed
 
 				//First evaluate RHS of set equation at the current time step
 				cuMesh.update_parameters_mcoarse(idx, *cuMesh.pMs, Ms, *cuMesh.palpha, alpha, *cuMesh.pgrel, grel);
-				cuReal3 rhs = (-(cuReal)GAMMA * grel / (1 + alpha * alpha)) * ((M[idx] ^ Heff[idx]) + alpha * ((M[idx] / Ms) ^ (M[idx] ^ Heff[idx])));
+				cuReal3 rhs = (-(cuBReal)GAMMA * grel / (1 + alpha * alpha)) * ((M[idx] ^ Heff[idx]) + alpha * ((M[idx] / Ms) ^ (M[idx] ^ Heff[idx])));
 
 				//First save predicted magnetization for lte calculation
 				cuReal3 saveM = M[idx];
@@ -856,14 +856,14 @@ __global__ void RunABMTEuler_Step0_LLG_Kernel(ManagedDiffEqCUDA& cuDiffEq, Manag
 {
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
 
-	cuReal dT = *cuDiffEq.pdT;
+	cuBReal dT = *cuDiffEq.pdT;
 
 	cuVEC_VC<cuReal3>& M = *cuMesh.pM;
 	cuVEC<cuReal3>& Heff = *cuMesh.pHeff;
 
-	cuReal Ms = *cuMesh.pMs;
-	cuReal alpha = *cuMesh.palpha;
-	cuReal grel = *cuMesh.pgrel;
+	cuBReal Ms = *cuMesh.pMs;
+	cuBReal alpha = *cuMesh.palpha;
+	cuBReal grel = *cuMesh.pgrel;
 
 	if (idx < M.linear_size()) {
 
@@ -876,7 +876,7 @@ __global__ void RunABMTEuler_Step0_LLG_Kernel(ManagedDiffEqCUDA& cuDiffEq, Manag
 
 				//First evaluate RHS of set equation at the current time step
 				cuMesh.update_parameters_mcoarse(idx, *cuMesh.pMs, Ms, *cuMesh.palpha, alpha, *cuMesh.pgrel, grel);
-				(*cuDiffEq.psEval0)[idx] = (-(cuReal)GAMMA * grel / (1 + alpha * alpha)) * ((M[idx] ^ Heff[idx]) + alpha * ((M[idx] / Ms) ^ (M[idx] ^ Heff[idx])));
+				(*cuDiffEq.psEval0)[idx] = (-(cuBReal)GAMMA * grel / (1 + alpha * alpha)) * ((M[idx] ^ Heff[idx]) + alpha * ((M[idx] / Ms) ^ (M[idx] ^ Heff[idx])));
 
 				//Now estimate magnetization for the next time step
 				M[idx] += (*cuDiffEq.psEval0)[idx] * dT;
@@ -889,14 +889,14 @@ __global__ void RunABMTEuler_Step1_LLG_Kernel(ManagedDiffEqCUDA& cuDiffEq, Manag
 {
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
 
-	cuReal dT = *cuDiffEq.pdT;
+	cuBReal dT = *cuDiffEq.pdT;
 
 	cuVEC_VC<cuReal3>& M = *cuMesh.pM;
 	cuVEC<cuReal3>& Heff = *cuMesh.pHeff;
 
-	cuReal Ms = *cuMesh.pMs;
-	cuReal alpha = *cuMesh.palpha;
-	cuReal grel = *cuMesh.pgrel;
+	cuBReal Ms = *cuMesh.pMs;
+	cuBReal alpha = *cuMesh.palpha;
+	cuBReal grel = *cuMesh.pgrel;
 
 	if (idx < M.linear_size()) {
 
@@ -906,7 +906,7 @@ __global__ void RunABMTEuler_Step1_LLG_Kernel(ManagedDiffEqCUDA& cuDiffEq, Manag
 
 				//First evaluate RHS of set equation at the current time step
 				cuMesh.update_parameters_mcoarse(idx, *cuMesh.pMs, Ms, *cuMesh.palpha, alpha, *cuMesh.pgrel, grel);
-				cuReal3 rhs = (-(cuReal)GAMMA * grel / (1 + alpha * alpha)) * ((M[idx] ^ Heff[idx]) + alpha * ((M[idx] / Ms) ^ (M[idx] ^ Heff[idx])));
+				cuReal3 rhs = (-(cuBReal)GAMMA * grel / (1 + alpha * alpha)) * ((M[idx] ^ Heff[idx]) + alpha * ((M[idx] / Ms) ^ (M[idx] ^ Heff[idx])));
 
 				//Now estimate magnetization using the second trapezoidal Euler step formula
 				M[idx] = ((*cuDiffEq.psM1)[idx] + M[idx] + rhs * dT) / 2;
@@ -931,16 +931,16 @@ __global__ void RunRKF45_Step0_LLG_withReductions_Kernel(ManagedDiffEqCUDA& cuDi
 {
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
 
-	cuReal dT = *cuDiffEq.pdT;
+	cuBReal dT = *cuDiffEq.pdT;
 
 	cuVEC_VC<cuReal3>& M = *cuMesh.pM;
 	cuVEC<cuReal3>& Heff = *cuMesh.pHeff;
 
-	cuReal Ms = *cuMesh.pMs;
-	cuReal alpha = *cuMesh.palpha;
-	cuReal grel = *cuMesh.pgrel;
+	cuBReal Ms = *cuMesh.pMs;
+	cuBReal alpha = *cuMesh.palpha;
+	cuBReal grel = *cuMesh.pgrel;
 
-	cuReal mxh = 0.0;
+	cuBReal mxh = 0.0;
 
 	if (idx < M.linear_size()) {
 
@@ -953,10 +953,10 @@ __global__ void RunRKF45_Step0_LLG_withReductions_Kernel(ManagedDiffEqCUDA& cuDi
 
 				//First evaluate RHS of set equation at the current time step
 				cuMesh.update_parameters_mcoarse(idx, *cuMesh.pMs, Ms, *cuMesh.palpha, alpha, *cuMesh.pgrel, grel);
-				(*cuDiffEq.psEval0)[idx] = (-(cuReal)GAMMA * grel / (1 + alpha * alpha)) * ((M[idx] ^ Heff[idx]) + alpha * ((M[idx] / Ms) ^ (M[idx] ^ Heff[idx])));
+				(*cuDiffEq.psEval0)[idx] = (-(cuBReal)GAMMA * grel / (1 + alpha * alpha)) * ((M[idx] ^ Heff[idx]) + alpha * ((M[idx] / Ms) ^ (M[idx] ^ Heff[idx])));
 
 				//obtain maximum normalized torque term
-				cuReal Mnorm = M[idx].norm();
+				cuBReal Mnorm = M[idx].norm();
 				mxh = cu_GetMagnitude(M[idx] ^ Heff[idx]) / (Mnorm * Mnorm);
 
 				//Now estimate magnetization using RKF first step
@@ -976,14 +976,14 @@ __global__ void RunRKF45_Step0_LLG_Kernel(ManagedDiffEqCUDA& cuDiffEq, ManagedMe
 {
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
 
-	cuReal dT = *cuDiffEq.pdT;
+	cuBReal dT = *cuDiffEq.pdT;
 
 	cuVEC_VC<cuReal3>& M = *cuMesh.pM;
 	cuVEC<cuReal3>& Heff = *cuMesh.pHeff;
 
-	cuReal Ms = *cuMesh.pMs;
-	cuReal alpha = *cuMesh.palpha;
-	cuReal grel = *cuMesh.pgrel;
+	cuBReal Ms = *cuMesh.pMs;
+	cuBReal alpha = *cuMesh.palpha;
+	cuBReal grel = *cuMesh.pgrel;
 
 	if (idx < M.linear_size()) {
 
@@ -996,7 +996,7 @@ __global__ void RunRKF45_Step0_LLG_Kernel(ManagedDiffEqCUDA& cuDiffEq, ManagedMe
 
 				//First evaluate RHS of set equation at the current time step
 				cuMesh.update_parameters_mcoarse(idx, *cuMesh.pMs, Ms, *cuMesh.palpha, alpha, *cuMesh.pgrel, grel);
-				(*cuDiffEq.psEval0)[idx] = (-(cuReal)GAMMA * grel / (1 + alpha * alpha)) * ((M[idx] ^ Heff[idx]) + alpha * ((M[idx] / Ms) ^ (M[idx] ^ Heff[idx])));
+				(*cuDiffEq.psEval0)[idx] = (-(cuBReal)GAMMA * grel / (1 + alpha * alpha)) * ((M[idx] ^ Heff[idx]) + alpha * ((M[idx] / Ms) ^ (M[idx] ^ Heff[idx])));
 
 				//Now estimate magnetization using RKF first step
 				M[idx] += (*cuDiffEq.psEval0)[idx] * (dT / 4);
@@ -1009,14 +1009,14 @@ __global__ void RunRKF45_Step1_LLG_Kernel(ManagedDiffEqCUDA& cuDiffEq, ManagedMe
 {
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
 
-	cuReal dT = *cuDiffEq.pdT;
+	cuBReal dT = *cuDiffEq.pdT;
 
 	cuVEC_VC<cuReal3>& M = *cuMesh.pM;
 	cuVEC<cuReal3>& Heff = *cuMesh.pHeff;
 
-	cuReal Ms = *cuMesh.pMs;
-	cuReal alpha = *cuMesh.palpha;
-	cuReal grel = *cuMesh.pgrel;
+	cuBReal Ms = *cuMesh.pMs;
+	cuBReal alpha = *cuMesh.palpha;
+	cuBReal grel = *cuMesh.pgrel;
 
 	if (idx < M.linear_size()) {
 
@@ -1024,7 +1024,7 @@ __global__ void RunRKF45_Step1_LLG_Kernel(ManagedDiffEqCUDA& cuDiffEq, ManagedMe
 
 			//First evaluate RHS of set equation at the current time step
 			cuMesh.update_parameters_mcoarse(idx, *cuMesh.pMs, Ms, *cuMesh.palpha, alpha, *cuMesh.pgrel, grel);
-			(*cuDiffEq.psEval1)[idx] = (-(cuReal)GAMMA * grel / (1 + alpha * alpha)) * ((M[idx] ^ Heff[idx]) + alpha * ((M[idx] / Ms) ^ (M[idx] ^ Heff[idx])));
+			(*cuDiffEq.psEval1)[idx] = (-(cuBReal)GAMMA * grel / (1 + alpha * alpha)) * ((M[idx] ^ Heff[idx]) + alpha * ((M[idx] / Ms) ^ (M[idx] ^ Heff[idx])));
 
 			//Now estimate magnetization using RKF midle step 1
 			M[idx] = (*cuDiffEq.psM1)[idx] + (3 * (*cuDiffEq.psEval0)[idx] + 9 * (*cuDiffEq.psEval1)[idx]) * dT / 32;
@@ -1036,14 +1036,14 @@ __global__ void RunRKF45_Step2_LLG_Kernel(ManagedDiffEqCUDA& cuDiffEq, ManagedMe
 {
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
 
-	cuReal dT = *cuDiffEq.pdT;
+	cuBReal dT = *cuDiffEq.pdT;
 
 	cuVEC_VC<cuReal3>& M = *cuMesh.pM;
 	cuVEC<cuReal3>& Heff = *cuMesh.pHeff;
 
-	cuReal Ms = *cuMesh.pMs;
-	cuReal alpha = *cuMesh.palpha;
-	cuReal grel = *cuMesh.pgrel;
+	cuBReal Ms = *cuMesh.pMs;
+	cuBReal alpha = *cuMesh.palpha;
+	cuBReal grel = *cuMesh.pgrel;
 
 	if (idx < M.linear_size()) {
 
@@ -1051,7 +1051,7 @@ __global__ void RunRKF45_Step2_LLG_Kernel(ManagedDiffEqCUDA& cuDiffEq, ManagedMe
 
 			//First evaluate RHS of set equation at the current time step
 			cuMesh.update_parameters_mcoarse(idx, *cuMesh.pMs, Ms, *cuMesh.palpha, alpha, *cuMesh.pgrel, grel);
-			(*cuDiffEq.psEval2)[idx] = (-(cuReal)GAMMA * grel / (1 + alpha * alpha)) * ((M[idx] ^ Heff[idx]) + alpha * ((M[idx] / Ms) ^ (M[idx] ^ Heff[idx])));
+			(*cuDiffEq.psEval2)[idx] = (-(cuBReal)GAMMA * grel / (1 + alpha * alpha)) * ((M[idx] ^ Heff[idx]) + alpha * ((M[idx] / Ms) ^ (M[idx] ^ Heff[idx])));
 
 			//Now estimate magnetization using RKF midle step 2
 			M[idx] = (*cuDiffEq.psM1)[idx] + (1932 * (*cuDiffEq.psEval0)[idx] - 7200 * (*cuDiffEq.psEval1)[idx] + 7296 * (*cuDiffEq.psEval2)[idx]) * dT / 2197;
@@ -1063,14 +1063,14 @@ __global__ void RunRKF45_Step3_LLG_Kernel(ManagedDiffEqCUDA& cuDiffEq, ManagedMe
 {
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
 
-	cuReal dT = *cuDiffEq.pdT;
+	cuBReal dT = *cuDiffEq.pdT;
 
 	cuVEC_VC<cuReal3>& M = *cuMesh.pM;
 	cuVEC<cuReal3>& Heff = *cuMesh.pHeff;
 
-	cuReal Ms = *cuMesh.pMs;
-	cuReal alpha = *cuMesh.palpha;
-	cuReal grel = *cuMesh.pgrel;
+	cuBReal Ms = *cuMesh.pMs;
+	cuBReal alpha = *cuMesh.palpha;
+	cuBReal grel = *cuMesh.pgrel;
 
 	if (idx < M.linear_size()) {
 
@@ -1078,7 +1078,7 @@ __global__ void RunRKF45_Step3_LLG_Kernel(ManagedDiffEqCUDA& cuDiffEq, ManagedMe
 
 			//First evaluate RHS of set equation at the current time step
 			cuMesh.update_parameters_mcoarse(idx, *cuMesh.pMs, Ms, *cuMesh.palpha, alpha, *cuMesh.pgrel, grel);
-			(*cuDiffEq.psEval3)[idx] = (-(cuReal)GAMMA * grel / (1 + alpha * alpha)) * ((M[idx] ^ Heff[idx]) + alpha * ((M[idx] / Ms) ^ (M[idx] ^ Heff[idx])));
+			(*cuDiffEq.psEval3)[idx] = (-(cuBReal)GAMMA * grel / (1 + alpha * alpha)) * ((M[idx] ^ Heff[idx]) + alpha * ((M[idx] / Ms) ^ (M[idx] ^ Heff[idx])));
 
 			//Now estimate magnetization using RKF midle step 3
 			M[idx] = (*cuDiffEq.psM1)[idx] + (439 * (*cuDiffEq.psEval0)[idx] / 216 - 8 * (*cuDiffEq.psEval1)[idx] + 3680 * (*cuDiffEq.psEval2)[idx] / 513 - 845 * (*cuDiffEq.psEval3)[idx] / 4104) * dT;
@@ -1090,14 +1090,14 @@ __global__ void RunRKF45_Step4_LLG_Kernel(ManagedDiffEqCUDA& cuDiffEq, ManagedMe
 {
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
 
-	cuReal dT = *cuDiffEq.pdT;
+	cuBReal dT = *cuDiffEq.pdT;
 
 	cuVEC_VC<cuReal3>& M = *cuMesh.pM;
 	cuVEC<cuReal3>& Heff = *cuMesh.pHeff;
 
-	cuReal Ms = *cuMesh.pMs;
-	cuReal alpha = *cuMesh.palpha;
-	cuReal grel = *cuMesh.pgrel;
+	cuBReal Ms = *cuMesh.pMs;
+	cuBReal alpha = *cuMesh.palpha;
+	cuBReal grel = *cuMesh.pgrel;
 
 	if (idx < M.linear_size()) {
 
@@ -1105,7 +1105,7 @@ __global__ void RunRKF45_Step4_LLG_Kernel(ManagedDiffEqCUDA& cuDiffEq, ManagedMe
 
 			//First evaluate RHS of set equation at the current time step
 			cuMesh.update_parameters_mcoarse(idx, *cuMesh.pMs, Ms, *cuMesh.palpha, alpha, *cuMesh.pgrel, grel);
-			(*cuDiffEq.psEval4)[idx] = (-(cuReal)GAMMA * grel / (1 + alpha * alpha)) * ((M[idx] ^ Heff[idx]) + alpha * ((M[idx] / Ms) ^ (M[idx] ^ Heff[idx])));
+			(*cuDiffEq.psEval4)[idx] = (-(cuBReal)GAMMA * grel / (1 + alpha * alpha)) * ((M[idx] ^ Heff[idx]) + alpha * ((M[idx] / Ms) ^ (M[idx] ^ Heff[idx])));
 
 			//Now estimate magnetization using RKF midle step 4
 			M[idx] = (*cuDiffEq.psM1)[idx] + (-8 * (*cuDiffEq.psEval0)[idx] / 27 + 2 * (*cuDiffEq.psEval1)[idx] - 3544 * (*cuDiffEq.psEval2)[idx] / 2565 + 1859 * (*cuDiffEq.psEval3)[idx] / 4104 - 11 * (*cuDiffEq.psEval4)[idx] / 40) * dT;
@@ -1117,17 +1117,17 @@ __global__ void RunRKF45_Step5_LLG_withReductions_Kernel(ManagedDiffEqCUDA& cuDi
 {
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
 
-	cuReal dT = *cuDiffEq.pdT;
+	cuBReal dT = *cuDiffEq.pdT;
 
 	cuVEC_VC<cuReal3>& M = *cuMesh.pM;
 	cuVEC<cuReal3>& Heff = *cuMesh.pHeff;
 
-	cuReal Ms = *cuMesh.pMs;
-	cuReal alpha = *cuMesh.palpha;
-	cuReal grel = *cuMesh.pgrel;
+	cuBReal Ms = *cuMesh.pMs;
+	cuBReal alpha = *cuMesh.palpha;
+	cuBReal grel = *cuMesh.pgrel;
 
-	cuReal dmdt = 0.0;
-	cuReal lte = 0.0;
+	cuBReal dmdt = 0.0;
+	cuBReal lte = 0.0;
 
 	if (idx < M.linear_size()) {
 
@@ -1137,7 +1137,7 @@ __global__ void RunRKF45_Step5_LLG_withReductions_Kernel(ManagedDiffEqCUDA& cuDi
 
 				//First evaluate RHS of set equation at the current time step
 				cuMesh.update_parameters_mcoarse(idx, *cuMesh.pMs, Ms, *cuMesh.palpha, alpha, *cuMesh.pgrel, grel);
-				cuReal3 rhs = (-(cuReal)GAMMA * grel / (1 + alpha * alpha)) * ((M[idx] ^ Heff[idx]) + alpha * ((M[idx] / Ms) ^ (M[idx] ^ Heff[idx])));
+				cuReal3 rhs = (-(cuBReal)GAMMA * grel / (1 + alpha * alpha)) * ((M[idx] ^ Heff[idx]) + alpha * ((M[idx] / Ms) ^ (M[idx] ^ Heff[idx])));
 
 				//4th order evaluation
 				cuReal3 prediction = (*cuDiffEq.psM1)[idx] + (25 * (*cuDiffEq.psEval0)[idx] / 216 + 1408 * (*cuDiffEq.psEval2)[idx] / 2565 + 2197 * (*cuDiffEq.psEval3)[idx] / 4101 - (*cuDiffEq.psEval4)[idx] / 5) * dT;
@@ -1151,8 +1151,8 @@ __global__ void RunRKF45_Step5_LLG_withReductions_Kernel(ManagedDiffEqCUDA& cuDi
 				}
 
 				//obtain maximum normalized dmdt term
-				cuReal Mnorm = (*cuMesh.pM)[idx].norm();
-				dmdt = cu_GetMagnitude((*cuMesh.pM)[idx] - (*cuDiffEq.psM1)[idx]) / (dT * (cuReal)GAMMA * Mnorm * Mnorm);
+				cuBReal Mnorm = (*cuMesh.pM)[idx].norm();
+				dmdt = cu_GetMagnitude((*cuMesh.pM)[idx] - (*cuDiffEq.psM1)[idx]) / (dT * (cuBReal)GAMMA * Mnorm * Mnorm);
 
 				//local truncation error (between predicted and corrected)
 				lte = cu_GetMagnitude(M[idx] - prediction) / Ms;
@@ -1178,16 +1178,16 @@ __global__ void RunRKF45_Step5_LLG_Kernel(ManagedDiffEqCUDA& cuDiffEq, ManagedMe
 {
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
 
-	cuReal dT = *cuDiffEq.pdT;
+	cuBReal dT = *cuDiffEq.pdT;
 
 	cuVEC_VC<cuReal3>& M = *cuMesh.pM;
 	cuVEC<cuReal3>& Heff = *cuMesh.pHeff;
 
-	cuReal Ms = *cuMesh.pMs;
-	cuReal alpha = *cuMesh.palpha;
-	cuReal grel = *cuMesh.pgrel;
+	cuBReal Ms = *cuMesh.pMs;
+	cuBReal alpha = *cuMesh.palpha;
+	cuBReal grel = *cuMesh.pgrel;
 
-	cuReal lte = 0.0;
+	cuBReal lte = 0.0;
 
 	if (idx < M.linear_size()) {
 
@@ -1197,7 +1197,7 @@ __global__ void RunRKF45_Step5_LLG_Kernel(ManagedDiffEqCUDA& cuDiffEq, ManagedMe
 
 				//First evaluate RHS of set equation at the current time step
 				cuMesh.update_parameters_mcoarse(idx, *cuMesh.pMs, Ms, *cuMesh.palpha, alpha, *cuMesh.pgrel, grel);
-				cuReal3 rhs = (-(cuReal)GAMMA * grel / (1 + alpha * alpha)) * ((M[idx] ^ Heff[idx]) + alpha * ((M[idx] / Ms) ^ (M[idx] ^ Heff[idx])));
+				cuReal3 rhs = (-(cuBReal)GAMMA * grel / (1 + alpha * alpha)) * ((M[idx] ^ Heff[idx]) + alpha * ((M[idx] / Ms) ^ (M[idx] ^ Heff[idx])));
 
 				//4th order evaluation
 				cuReal3 prediction = (*cuDiffEq.psM1)[idx] + (25 * (*cuDiffEq.psEval0)[idx] / 216 + 1408 * (*cuDiffEq.psEval2)[idx] / 2565 + 2197 * (*cuDiffEq.psEval3)[idx] / 4101 - (*cuDiffEq.psEval4)[idx] / 5) * dT;

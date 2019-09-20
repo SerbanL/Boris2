@@ -317,16 +317,16 @@ BError ConvolutionDataCUDA::SetConvolutionDimensions(cuSZ3 n_, cuReal3 h_, bool 
 	if (!cuIn_x.resize(N.x*n.y*n.z)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
 	if (!cuIn_y.resize(N.x*n.y*n.z)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
 	if (!cuIn_z.resize(N.x*n.y*n.z)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
-	cuIn_x.set(cuReal(0.0));
-	cuIn_y.set(cuReal(0.0));
-	cuIn_z.set(cuReal(0.0));
+	cuIn_x.set(cuBReal(0.0));
+	cuIn_y.set(cuBReal(0.0));
+	cuIn_z.set(cuBReal(0.0));
 
 	if (!cuOut_x.resize(N.x*n.y*n.z)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
 	if (!cuOut_y.resize(N.x*n.y*n.z)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
 	if (!cuOut_z.resize(N.x*n.y*n.z)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
-	cuOut_x.set(cuReal(0.0));
-	cuOut_y.set(cuReal(0.0));
-	cuOut_z.set(cuReal(0.0));
+	cuOut_x.set(cuBReal(0.0));
+	cuOut_y.set(cuBReal(0.0));
+	cuOut_z.set(cuBReal(0.0));
 	
 	//full-size scratch space
 	if (!q2D_level) {
@@ -336,9 +336,9 @@ BError ConvolutionDataCUDA::SetConvolutionDimensions(cuSZ3 n_, cuReal3 h_, bool 
 		if (!cuS_x.resize((N.x / 2 + 1) * N.y * N.z)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
 		if (!cuS_y.resize((N.x / 2 + 1) * N.y * N.z)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
 		if (!cuS_z.resize((N.x / 2 + 1) * N.y * N.z)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
-		cuS_x.set(cuComplex());
-		cuS_y.set(cuComplex());
-		cuS_z.set(cuComplex());
+		cuS_x.set(cuBComplex());
+		cuS_y.set(cuBComplex());
+		cuS_z.set(cuBComplex());
 	}
 	else {
 
@@ -348,9 +348,9 @@ BError ConvolutionDataCUDA::SetConvolutionDimensions(cuSZ3 n_, cuReal3 h_, bool 
 		if (!cuS_y.resize((N.x / 2 + 1) * N.y * N.z / 2)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
 		if (!cuS_z.resize((N.x / 2 + 1) * N.y * N.z / 2)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
 
-		cuS_x.set(cuComplex());
-		cuS_y.set(cuComplex());
-		cuS_z.set(cuComplex());
+		cuS_x.set(cuBComplex());
+		cuS_y.set(cuBComplex());
+		cuS_z.set(cuBComplex());
 	}
 
 	if (!embed_multiplication) {
@@ -359,9 +359,9 @@ BError ConvolutionDataCUDA::SetConvolutionDimensions(cuSZ3 n_, cuReal3 h_, bool 
 		if (!cuS2_x.resize((N.x / 2 + 1) * N.y * N.z)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
 		if (!cuS2_y.resize((N.x / 2 + 1) * N.y * N.z)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
 		if (!cuS2_z.resize((N.x / 2 + 1) * N.y * N.z)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
-		cuS2_x.set(cuComplex());
-		cuS2_y.set(cuComplex());
-		cuS2_z.set(cuComplex());
+		cuS2_x.set(cuBComplex());
+		cuS2_y.set(cuBComplex());
+		cuS2_z.set(cuBComplex());
 	}
 
 	//quarter scratch space used only if transpose mode is on
@@ -370,9 +370,9 @@ BError ConvolutionDataCUDA::SetConvolutionDimensions(cuSZ3 n_, cuReal3 h_, bool 
 		if (!cuSquart_x.resize((N.x / 2 + 1) * n.y * n.z)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
 		if (!cuSquart_y.resize((N.x / 2 + 1) * n.y * n.z)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
 		if (!cuSquart_z.resize((N.x / 2 + 1) * n.y * n.z)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
-		cuSquart_x.set(cuComplex());
-		cuSquart_y.set(cuComplex());
-		cuSquart_z.set(cuComplex());
+		cuSquart_x.set(cuBComplex());
+		cuSquart_y.set(cuBComplex());
+		cuSquart_z.set(cuBComplex());
 	}
 	else {
 

@@ -47,7 +47,7 @@ BError SuperMesh::AddMesh(string meshName, MESH_ meshType, Rect meshRect)
 	//check the mesh was created correctly - if not, delete it
 	error = pMesh.back()->Error_On_Create();
 
-	if (!error) error = UpdateConfiguration();
+	if (!error) error = UpdateConfiguration(UPDATECONFIG_MESHADDED);
 	else pMesh.pop_back();
 
 	return error;
@@ -68,7 +68,7 @@ BError SuperMesh::DelMesh(string meshName)
 
 	if (activeMeshName == meshName) activeMeshName = pMesh.get_key_from_index(0);
 
-	error = UpdateConfiguration();
+	error = UpdateConfiguration(UPDATECONFIG_MESHDELETED);
 
 	return error;
 }
@@ -430,19 +430,7 @@ BError SuperMesh::PrepareMovingMesh(string meshName)
 
 	if (!contains(meshName) || !pMesh[meshName]->MComputation_Enabled()) return error(BERROR_INCORRECTNAME);
 
-	//1. Set moving mesh trigger, antisymmetric type and threshold
-	odeSolver.SetMoveMeshTrigger(true, pMesh[meshName]->get_id());
-	odeSolver.SetMoveMeshAntisymmetric(true);
-	odeSolver.SetMoveMeshThreshold(MOVEMESH_ANTISYMMETRIC_THRESHOLD);
-
-	//2. Set transverse domain wall structure along the x direction. Set the ends along x direction.
-	SetMagnetisationDomainWall(meshName, "x", "y", pMesh[meshName]->GetMeshDimensions().x, 0.0);
-	
-	DBL3 dim = pMesh[meshName]->GetMeshDimensions();
-	pMesh[meshName]->SetMagnetisationAngle(90, 0, Rect(DBL3(0), DBL3(MOVEMESH_ENDRATIO * dim.x, dim.y, dim.z)));
-	pMesh[meshName]->SetMagnetisationAngle(90, 180, Rect(DBL3((1 - MOVEMESH_ENDRATIO) * dim.x, 0, 0), dim));
-
-	//3. Set dipoles left and right, size 4 times the mesh length
+	//1. Set dipoles left and right, size 4 times the mesh length
 	string left_dipole = "dip_left", right_dipole = "dip_right";
 
 	auto adjust_name = [&](string& name) {
@@ -478,6 +466,18 @@ BError SuperMesh::PrepareMovingMesh(string meshName)
 	if (!error) error = SetMagnetisationAngle(left_dipole, 90.0, 0.0);
 	if (!error) error = AddMesh(right_dipole, MESH_DIPOLE, meshRect_right);
 	if (!error) error = SetMagnetisationAngle(right_dipole, 90.0, 180.0);
+
+	//2. Set moving mesh trigger, antisymmetric type and threshold
+	odeSolver.SetMoveMeshTrigger(true, pMesh[meshName]->get_id());
+	odeSolver.SetMoveMeshAntisymmetric(true);
+	odeSolver.SetMoveMeshThreshold(MOVEMESH_ANTISYMMETRIC_THRESHOLD);
+
+	//3. Set transverse domain wall structure along the x direction. Set the ends along x direction.
+	SetMagnetisationDomainWall(meshName, "x", "y", pMesh[meshName]->GetMeshDimensions().x, 0.0);
+	
+	DBL3 dim = pMesh[meshName]->GetMeshDimensions();
+	pMesh[meshName]->SetMagnetisationAngle(90, 0, Rect(DBL3(0), DBL3(MOVEMESH_ENDRATIO * dim.x, dim.y, dim.z)));
+	pMesh[meshName]->SetMagnetisationAngle(90, 180, Rect(DBL3((1 - MOVEMESH_ENDRATIO) * dim.x, 0, 0), dim));
 
 	//4. add stray field module
 	if (!error) error = AddModule(superMeshHandle, MODS_STRAYFIELD);
@@ -564,19 +564,7 @@ BError SuperMesh::PrepareMovingMesh_Neel(string meshName)
 
 	if (!contains(meshName) || !pMesh[meshName]->MComputation_Enabled()) return error(BERROR_INCORRECTNAME);
 
-	//1. Set moving mesh trigger, antisymmetric type and threshold
-	odeSolver.SetMoveMeshTrigger(true, pMesh[meshName]->get_id());
-	odeSolver.SetMoveMeshAntisymmetric(true);
-	odeSolver.SetMoveMeshThreshold(MOVEMESH_ANTISYMMETRIC_THRESHOLD);
-
-	//2. Set Bloch domain wall structure along the x direction. Set the ends along x direction.
-	SetMagnetisationDomainWall(meshName, "z", "x", pMesh[meshName]->GetMeshDimensions().x, 0.0);
-
-	DBL3 dim = pMesh[meshName]->GetMeshDimensions();
-	pMesh[meshName]->SetMagnetisationAngle(0, 0, Rect(DBL3(0), DBL3(MOVEMESH_ENDRATIO * dim.x, dim.y, dim.z)));
-	pMesh[meshName]->SetMagnetisationAngle(180, 0, Rect(DBL3((1 - MOVEMESH_ENDRATIO) * dim.x, 0, 0), dim));
-
-	//3. Set dipoles left and right, size 4 times the mesh length
+	//1. Set dipoles left and right, size 4 times the mesh length
 	string left_dipole = "dip_left", right_dipole = "dip_right";
 
 	auto adjust_name = [&](string& name) {
@@ -613,6 +601,18 @@ BError SuperMesh::PrepareMovingMesh_Neel(string meshName)
 	if (!error) error = AddMesh(right_dipole, MESH_DIPOLE, meshRect_right);
 	if (!error) error = SetMagnetisationAngle(right_dipole, 180.0, 0.0);
 
+	//2. Set moving mesh trigger, antisymmetric type and threshold
+	odeSolver.SetMoveMeshTrigger(true, pMesh[meshName]->get_id());
+	odeSolver.SetMoveMeshAntisymmetric(true);
+	odeSolver.SetMoveMeshThreshold(MOVEMESH_ANTISYMMETRIC_THRESHOLD);
+
+	//3. Set Bloch domain wall structure along the x direction. Set the ends along x direction.
+	SetMagnetisationDomainWall(meshName, "z", "x", pMesh[meshName]->GetMeshDimensions().x, 0.0);
+
+	DBL3 dim = pMesh[meshName]->GetMeshDimensions();
+	pMesh[meshName]->SetMagnetisationAngle(0, 0, Rect(DBL3(0), DBL3(MOVEMESH_ENDRATIO * dim.x, dim.y, dim.z)));
+	pMesh[meshName]->SetMagnetisationAngle(180, 0, Rect(DBL3((1 - MOVEMESH_ENDRATIO) * dim.x, 0, 0), dim));
+
 	//4. add stray field module
 	if (!error) error = AddModule(superMeshHandle, MODS_STRAYFIELD);
 
@@ -631,19 +631,7 @@ BError SuperMesh::PrepareMovingMesh_Skyrmion(string meshName)
 
 	if (!contains(meshName) || !pMesh[meshName]->MComputation_Enabled()) return error(BERROR_INCORRECTNAME);
 
-	//1. Set moving mesh trigger, symmetric type and threshold
-	odeSolver.SetMoveMeshTrigger(true, pMesh[meshName]->get_id());
-	odeSolver.SetMoveMeshAntisymmetric(false);
-	odeSolver.SetMoveMeshThreshold(MOVEMESH_SYMMETRIC_THRESHOLD);
-
-	//2. Set skyrmion in the centre amd up direction everywhere else
-	pMesh[meshName]->SetMagnetisationAngle(0, 0);
-
-	DBL3 dim = pMesh[meshName]->GetMeshDimensions();
-	Rect sky_rect = Rect(DBL3(dim.x / 2 - dim.y / 4, dim.y / 4, 0), DBL3(dim.x / 2 + dim.y / 4, dim.y * 3 / 4, dim.z));
-	pMesh[meshName]->SetSkyrmion(-1, 1, sky_rect);
-
-	//3. Set dipoles left and right, size 4 times the mesh length
+	//1. Set dipoles left and right, size 4 times the mesh length
 	string left_dipole = "dip_left", right_dipole = "dip_right";
 
 	auto adjust_name = [&](string& name) {
@@ -680,6 +668,18 @@ BError SuperMesh::PrepareMovingMesh_Skyrmion(string meshName)
 	if (!error) error = AddMesh(right_dipole, MESH_DIPOLE, meshRect_right);
 	if (!error) error = SetMagnetisationAngle(right_dipole, 0.0, 0.0);
 
+	//2. Set moving mesh trigger, symmetric type and threshold
+	odeSolver.SetMoveMeshTrigger(true, pMesh[meshName]->get_id());
+	odeSolver.SetMoveMeshAntisymmetric(false);
+	odeSolver.SetMoveMeshThreshold(MOVEMESH_SYMMETRIC_THRESHOLD);
+
+	//3. Set skyrmion in the centre amd up direction everywhere else
+	pMesh[meshName]->SetMagnetisationAngle(0, 0);
+
+	DBL3 dim = pMesh[meshName]->GetMeshDimensions();
+	Rect sky_rect = Rect(DBL3(dim.x / 2 - dim.y / 4, dim.y / 4, 0), DBL3(dim.x / 2 + dim.y / 4, dim.y * 3 / 4, dim.z));
+	pMesh[meshName]->SetSkyrmion(-1, 1, sky_rect);
+
 	//4. add stray field module
 	if (!error) error = AddModule(superMeshHandle, MODS_STRAYFIELD);
 
@@ -689,6 +689,46 @@ BError SuperMesh::PrepareMovingMesh_Skyrmion(string meshName)
 	if (!error) error = UpdateConfiguration();
 
 	return error;
+}
+
+//Clear moving mesh settings made by a prepare method
+void SuperMesh::ClearMovingMesh(void)
+{
+	//1. Delete all dipole meshes which contain dip_left or dip_right in the name
+	string left_dipole = "dip_left", right_dipole = "dip_right";
+
+	vector<string> meshes_to_delete;
+
+	for (int idx = 0; idx < pMesh.size(); idx++) {
+
+		if (pMesh[idx]->GetMeshType() == MESH_DIPOLE) {
+
+			string meshName = pMesh.get_key_from_index(idx);
+
+			if (meshName.find(left_dipole) != std::string::npos || meshName.find(right_dipole) != std::string::npos) {
+
+				meshes_to_delete.push_back(meshName);
+			}
+		}
+	}
+
+	for (int idx = 0; idx < meshes_to_delete.size(); idx++) {
+
+		DelMesh(meshes_to_delete[idx]);
+	}
+
+	//2. Disable moving mesh trigger
+	odeSolver.SetMoveMeshTrigger(false);
+
+	//3. N/A
+
+	//4. Delete Stray Field module
+	DelModule(superMeshHandle, MODS_STRAYFIELD);
+
+	//5. set scalemeshrects to false
+	scale_rects = false;
+
+	UpdateConfiguration();
 }
 
 //set ferromagnetic mesh roughness refinement if Roughness module enabled in given mesh
@@ -719,9 +759,9 @@ BError SuperMesh::Set_PBC(string meshName, string flag, int images)
 
 		//pbc setting for individual mesh demag module
 
-		if (flag == "x") pMesh[meshName]->Set_PBC_X(images);
-		else if (flag == "y") pMesh[meshName]->Set_PBC_Y(images);
-		else if (flag == "z") pMesh[meshName]->Set_PBC_Z(images);
+		if (flag == "x") error = pMesh[meshName]->Set_PBC_X(images);
+		else if (flag == "y") error = pMesh[meshName]->Set_PBC_Y(images);
+		else if (flag == "z") error = pMesh[meshName]->Set_PBC_Z(images);
 		else return error(BERROR_INCORRECTVALUE);
 	}
 	else {
@@ -736,19 +776,9 @@ BError SuperMesh::Set_PBC(string meshName, string flag, int images)
 			else if (flag == "z") pbc_images.z = images;
 			else return error(BERROR_INCORRECTVALUE);
 
-			reinterpret_cast<SDemag*>(pSMod(MODS_SDEMAG))->Set_PBC(pbc_images);
+			error = reinterpret_cast<SDemag*>(pSMod(MODS_SDEMAG))->Set_PBC(pbc_images);
 		}
-
-		//also need to set flags in M VECs in all meshes with magnetisation computation enabled
-		for (int idx = 0; idx < pMesh.size(); idx++) {
-
-			if (pMesh[idx]->MComputation_Enabled()) {
-
-				if (flag == "x") pMesh[idx]->Set_PBC_X(images);
-				else if (flag == "y") pMesh[idx]->Set_PBC_Y(images);
-				else if (flag == "z") pMesh[idx]->Set_PBC_Z(images);
-			}
-		}
+		else return error(BERROR_GPUERROR_CRIT);
 	}
 
 	return error;

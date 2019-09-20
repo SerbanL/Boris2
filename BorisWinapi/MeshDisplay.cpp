@@ -18,15 +18,15 @@ PhysQ Mesh::FetchOnScreenPhysicalQuantity(double detail_level)
 		break;
 
 	case MESHDISPLAY_MAGNETIZATION:
-		return PhysQ(&M, displayedPhysicalQuantity);
+		return PhysQ(&M, displayedPhysicalQuantity, (VEC3REP_)vec3rep);
 		break;
 
 	case MESHDISPLAY_EFFECTIVEFIELD:
-		return PhysQ(&Heff, displayedPhysicalQuantity);
+		return PhysQ(&Heff, displayedPhysicalQuantity, (VEC3REP_)vec3rep);
 		break;
 
 	case MESHDISPLAY_CURRDENSITY:
-		return PhysQ(&Jc, displayedPhysicalQuantity);
+		return PhysQ(&Jc, displayedPhysicalQuantity, (VEC3REP_)vec3rep);
 		break;
 
 	case MESHDISPLAY_VOLTAGE:
@@ -38,34 +38,34 @@ PhysQ Mesh::FetchOnScreenPhysicalQuantity(double detail_level)
 		break;
 
 	case MESHDISPLAY_SACCUM:
-		return PhysQ(&S, displayedPhysicalQuantity);
+		return PhysQ(&S, displayedPhysicalQuantity, (VEC3REP_)vec3rep);
 		break;
 
 	case MESHDISPLAY_JSX:
 		if (IsModuleSet(MOD_TRANSPORT)) {
 
-			return PhysQ(&reinterpret_cast<Transport*>(pMod(MOD_TRANSPORT))->GetSpinCurrent(0), displayedPhysicalQuantity);
+			return PhysQ(&reinterpret_cast<Transport*>(pMod(MOD_TRANSPORT))->GetSpinCurrent(0), displayedPhysicalQuantity, (VEC3REP_)vec3rep);
 		}
 		break;
 
 	case MESHDISPLAY_JSY:
 		if (IsModuleSet(MOD_TRANSPORT)) {
 
-			return PhysQ(&reinterpret_cast<Transport*>(pMod(MOD_TRANSPORT))->GetSpinCurrent(1), displayedPhysicalQuantity);
+			return PhysQ(&reinterpret_cast<Transport*>(pMod(MOD_TRANSPORT))->GetSpinCurrent(1), displayedPhysicalQuantity, (VEC3REP_)vec3rep);
 		}
 		break;
 
 	case MESHDISPLAY_JSZ:
 		if (IsModuleSet(MOD_TRANSPORT)) {
 
-			return PhysQ(&reinterpret_cast<Transport*>(pMod(MOD_TRANSPORT))->GetSpinCurrent(2), displayedPhysicalQuantity);
+			return PhysQ(&reinterpret_cast<Transport*>(pMod(MOD_TRANSPORT))->GetSpinCurrent(2), displayedPhysicalQuantity, (VEC3REP_)vec3rep);
 		}
 		break;
 
 	case MESHDISPLAY_TS:
 		if (IsModuleSet(MOD_TRANSPORT)) {
 
-			return PhysQ(&reinterpret_cast<Transport*>(pMod(MOD_TRANSPORT))->GetSpinTorque(), displayedPhysicalQuantity);
+			return PhysQ(&reinterpret_cast<Transport*>(pMod(MOD_TRANSPORT))->GetSpinTorque(), displayedPhysicalQuantity, (VEC3REP_)vec3rep);
 		}
 		break;
 
@@ -74,7 +74,7 @@ PhysQ Mesh::FetchOnScreenPhysicalQuantity(double detail_level)
 
 			return PhysQ(
 				&reinterpret_cast<STransport*>(pSMesh->pSMod(MODS_STRANSPORT))->GetInterfacialSpinTorque(reinterpret_cast<Transport*>(pMod(MOD_TRANSPORT))),
-				displayedPhysicalQuantity);
+				displayedPhysicalQuantity, (VEC3REP_)vec3rep);
 		}
 		break;
 
@@ -89,7 +89,7 @@ PhysQ Mesh::FetchOnScreenPhysicalQuantity(double detail_level)
 		if (is_s_scaling_scalar((PARAM_)displayedParamVar))
 			return PhysQ(reinterpret_cast<VEC<double>*>(s_scaling), displayedPhysicalQuantity);
 		else
-			return PhysQ(reinterpret_cast<VEC<DBL3>*>(s_scaling), displayedPhysicalQuantity);
+			return PhysQ(reinterpret_cast<VEC<DBL3>*>(s_scaling), displayedPhysicalQuantity, (VEC3REP_)vec3rep);
 	}
 		break;
 

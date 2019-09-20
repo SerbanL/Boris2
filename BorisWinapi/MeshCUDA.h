@@ -87,10 +87,10 @@ public:
 	DBL3& h_e;
 
 	//electrical potential - on n_e, h_e mesh
-	cu_obj<cuVEC_VC<cuReal>> V;
+	cu_obj<cuVEC_VC<cuBReal>> V;
 
 	//electrical conductivity - on n_e, h_e mesh
-	cu_obj<cuVEC_VC<cuReal>> elC;
+	cu_obj<cuVEC_VC<cuBReal>> elC;
 
 	//electrical current density - on n_e, h_e mesh
 	cu_obj<cuVEC_VC<cuReal3>> Jc;
@@ -107,7 +107,7 @@ public:
 	DBL3& h_t;
 
 	//temperature calculated by Heat module
-	cu_obj<cuVEC_VC<cuReal>> Temp;
+	cu_obj<cuVEC_VC<cuBReal>> Temp;
 
 	//-----Elastic properties
 
@@ -160,6 +160,12 @@ public:
 
 	//check if the ODECommon::available flag is true (ode step solved)
 	bool CurrentTimeStepSolved(void);
+	
+	//check evaluation speedup flag in ODECommon
+	int EvaluationSpeedup(void);
+
+	//check in ODECommon the type of field update we need to do depending on the ODE evaluation step
+	int Check_Step_Update(void);
 
 	//check if all params are constant (no temperature dependence or spatial variation)
 	//need a variable argument list here
@@ -175,16 +181,16 @@ public:
 
 	cuReal3 GetAverageChargeCurrentDensity(cuRect rectangle);
 
-	cuReal GetAverageElectricalPotential(cuRect rectangle);
+	cuBReal GetAverageElectricalPotential(cuRect rectangle);
 	cuReal3 GetAverageSpinAccumulation(cuRect rectangle);
-	cuReal GetAverageElectricalConductivity(cuRect rectangle);
+	cuBReal GetAverageElectricalConductivity(cuRect rectangle);
 
-	cuReal GetAverageTemperature(cuRect rectangle);
+	cuBReal GetAverageTemperature(cuRect rectangle);
 
 	//----------------------------------- MESH SHAPE CONTROL
 
 	//mask cells using bitmap image : white -> empty cells. black -> keep values. Apply mask up to given z depth number of cells depending on grayscale value (zDepth, all if 0).
-	BError applymask(cuReal zDepth_m, string fileName, function<vector<BYTE>(string, INT2)>& bitmap_loader);
+	BError applymask(cuBReal zDepth_m, string fileName, function<vector<BYTE>(string, INT2)>& bitmap_loader);
 
 	//set cells to empty in given rectangle (delete by setting entries to zero). The rectangle is relative to this mesh.
 	BError delrect(cuRect rectangle);

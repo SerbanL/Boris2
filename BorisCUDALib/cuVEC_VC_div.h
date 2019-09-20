@@ -7,12 +7,12 @@
 //divergence operator. Use Neumann boundary conditions (homogeneous).
 //Can be used at composite media boundaries where sided differentials will be used instead.
 //div operator can be applied if VType is a VAL3<Type>, returning Type
-template __device__ cuReal cuVEC_VC<cuReal3>::div_neu(int idx) const;
+template __device__ cuBReal cuVEC_VC<cuReal3>::div_neu(int idx) const;
 
 template <typename VType>
-__device__ cuReal cuVEC_VC<VType>::div_neu(int idx) const
+__device__ cuBReal cuVEC_VC<VType>::div_neu(int idx) const
 {
-	cuReal div = 0.0;
+	cuBReal div = 0.0;
 
 	if (!(ngbrFlags[idx] & NF_NOTEMPTY)) return div;
 
@@ -141,9 +141,9 @@ __device__ cuReal cuVEC_VC<VType>::div_neu(int idx) const
 //div operator can be applied if VType is a VAL3<Type>, returning Type
 template <typename VType>
 template <typename Class_BDiff>
-__device__ cuReal cuVEC_VC<VType>::div_nneu(int idx, Class_BDiff& bdiff_class) const
+__device__ cuBReal cuVEC_VC<VType>::div_nneu(int idx, Class_BDiff& bdiff_class) const
 {
-	cuReal div = 0.0;
+	cuBReal div = 0.0;
 
 	if (!(ngbrFlags[idx] & NF_NOTEMPTY)) return div;
 
@@ -274,9 +274,9 @@ __device__ cuReal cuVEC_VC<VType>::div_nneu(int idx, Class_BDiff& bdiff_class) c
 
 //Same as above but boundary conditions specified using a constant
 template <typename VType>
-__device__ cuReal cuVEC_VC<VType>::div_nneu(int idx, cuVAL3<VType>& bdiff) const
+__device__ cuBReal cuVEC_VC<VType>::div_nneu(int idx, cuVAL3<VType>& bdiff) const
 {
-	cuReal div = 0.0;
+	cuBReal div = 0.0;
 
 	if (!(ngbrFlags[idx] & NF_NOTEMPTY)) return div;
 
@@ -402,12 +402,12 @@ __device__ cuReal cuVEC_VC<VType>::div_nneu(int idx, cuVAL3<VType>& bdiff) const
 //divergence operator. Use Dirichlet conditions if set, else Neumann boundary conditions (homogeneous).
 //Can be used at composite media boundaries where sided differentials will be used instead.
 //div operator can be applied if VType is a VAL3<Type>, returning Type
-template __device__ cuReal cuVEC_VC<cuReal3>::div_diri(int idx) const;
+template __device__ cuBReal cuVEC_VC<cuReal3>::div_diri(int idx) const;
 
 template <typename VType>
-__device__ cuReal cuVEC_VC<VType>::div_diri(int idx) const
+__device__ cuBReal cuVEC_VC<VType>::div_diri(int idx) const
 {
-	cuReal div = 0.0;
+	cuBReal div = 0.0;
 
 	if (!(ngbrFlags[idx] & NF_NOTEMPTY)) return div;
 
@@ -552,9 +552,9 @@ __device__ cuReal cuVEC_VC<VType>::div_diri(int idx) const
 //div operator can be applied if VType is a VAL3<Type>, returning Type
 template <typename VType>
 template <typename Class_BDiff>
-__device__ cuReal cuVEC_VC<VType>::div_diri_nneu(int idx, Class_BDiff& bdiff_class) const
+__device__ cuBReal cuVEC_VC<VType>::div_diri_nneu(int idx, Class_BDiff& bdiff_class) const
 {
-	cuReal div = 0.0;
+	cuBReal div = 0.0;
 
 	if (!(ngbrFlags[idx] & NF_NOTEMPTY)) return div;
 
@@ -701,9 +701,9 @@ __device__ cuReal cuVEC_VC<VType>::div_diri_nneu(int idx, Class_BDiff& bdiff_cla
 
 //Same as above but boundary conditions specified using a constant
 template <typename VType>
-__device__ cuReal cuVEC_VC<VType>::div_diri_nneu(int idx, cuVAL3<VType>& bdiff) const
+__device__ cuBReal cuVEC_VC<VType>::div_diri_nneu(int idx, cuVAL3<VType>& bdiff) const
 {
-	cuReal div = 0.0;
+	cuBReal div = 0.0;
 
 	if (!(ngbrFlags[idx] & NF_NOTEMPTY)) return div;
 
@@ -844,12 +844,12 @@ __device__ cuReal cuVEC_VC<VType>::div_diri_nneu(int idx, cuVAL3<VType>& bdiff) 
 
 //divergence operator. Use sided differentials (also at composite media boundaries)
 //div operator can be applied if VType is a VAL3<Type>, returning Type
-template __device__ cuReal cuVEC_VC<cuReal3>::div_sided(int idx) const;
+template __device__ cuBReal cuVEC_VC<cuReal3>::div_sided(int idx) const;
 
 template <typename VType>
-__device__ cuReal cuVEC_VC<VType>::div_sided(int idx) const
+__device__ cuBReal cuVEC_VC<VType>::div_sided(int idx) const
 {
-	cuReal div = 0.0;
+	cuBReal div = 0.0;
 
 	if (!(ngbrFlags[idx] & NF_NOTEMPTY)) return div;
 

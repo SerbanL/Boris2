@@ -9,14 +9,14 @@
 
 #include "BorisCUDALib.cuh"
 
-__global__ void Anisotropy_UniaxialCUDA_UpdateField(ManagedMeshCUDA& cuMesh, cuReal& energy, bool do_reduction)
+__global__ void Anisotropy_UniaxialCUDA_UpdateField(ManagedMeshCUDA& cuMesh, cuBReal& energy, bool do_reduction)
 {
 	cuVEC_VC<cuReal3>& M = *cuMesh.pM;
 	cuVEC<cuReal3>& Heff = *cuMesh.pHeff;
 
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
 
-	cuReal energy_ = 0.0;
+	cuBReal energy_ = 0.0;
 
 	if (idx < Heff.linear_size()) {
 
@@ -24,18 +24,18 @@ __global__ void Anisotropy_UniaxialCUDA_UpdateField(ManagedMeshCUDA& cuMesh, cuR
 
 		if (M.is_not_empty(idx)) {
 
-			cuReal Ms = *cuMesh.pMs;
-			cuReal K1 = *cuMesh.pK1;
-			cuReal K2 = *cuMesh.pK2;
+			cuBReal Ms = *cuMesh.pMs;
+			cuBReal K1 = *cuMesh.pK1;
+			cuBReal K2 = *cuMesh.pK2;
 			cuReal3 mcanis_ea1 = *cuMesh.pmcanis_ea1;
 
 			cuMesh.update_parameters_mcoarse(idx, *cuMesh.pMs, Ms, *cuMesh.pK1, K1, *cuMesh.pK2, K2, *cuMesh.pmcanis_ea1, mcanis_ea1);
 
 			//calculate m.ea dot product
-			cuReal dotprod = (M[idx] * mcanis_ea1) / Ms;
+			cuBReal dotprod = (M[idx] * mcanis_ea1) / Ms;
 
 			//update effective field with the anisotropy field
-			Heff_value = (2 / ((cuReal)MU0 * Ms)) * dotprod * (K1 + 2 * K2 * (1 - dotprod * dotprod)) * mcanis_ea1;
+			Heff_value = (2 / ((cuBReal)MU0 * Ms)) * dotprod * (K1 + 2 * K2 * (1 - dotprod * dotprod)) * mcanis_ea1;
 
 			if (do_reduction) {
 

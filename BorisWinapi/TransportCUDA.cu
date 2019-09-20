@@ -15,7 +15,7 @@
 
 __global__ void CalculateElectricalConductivity_AMR_Kernel(ManagedMeshCUDA& cuMesh)
 {
-	cuVEC_VC<cuReal>& elC = *cuMesh.pelC;
+	cuVEC_VC<cuBReal>& elC = *cuMesh.pelC;
 	cuVEC<cuReal3>& Jc = *cuMesh.pJc;
 	cuVEC_VC<cuReal3>& M = *cuMesh.pM;
 
@@ -25,8 +25,8 @@ __global__ void CalculateElectricalConductivity_AMR_Kernel(ManagedMeshCUDA& cuMe
 
 		if (elC.is_not_empty(idx)) {
 
-			cuReal elecCond = *cuMesh.pelecCond;
-			cuReal amrPercentage = *cuMesh.pamrPercentage;
+			cuBReal elecCond = *cuMesh.pelecCond;
+			cuBReal amrPercentage = *cuMesh.pamrPercentage;
 			cuMesh.update_parameters_ecoarse(idx, *cuMesh.pelecCond, elecCond, *cuMesh.pamrPercentage, amrPercentage);
 
 			//get current density value at this conductivity cell
@@ -35,8 +35,8 @@ __global__ void CalculateElectricalConductivity_AMR_Kernel(ManagedMeshCUDA& cuMe
 			//get M value (M is on n, h mesh so could be different)
 			cuReal3 M_value = M[elC.cellidx_to_position(idx)];
 
-			cuReal magnitude = Jc_value.norm() * M_value.norm();
-			cuReal dotproduct = 0.0;
+			cuBReal magnitude = Jc_value.norm() * M_value.norm();
+			cuBReal dotproduct = 0.0;
 
 			if (cuIsNZ(magnitude)) dotproduct = (Jc_value * M_value) / magnitude;
 
@@ -55,7 +55,7 @@ void TransportCUDA::CalculateElectricalConductivity_AMR(void)
 
 __global__ void CalculateElectricalConductivity_NoAMR_Kernel(ManagedMeshCUDA& cuMesh)
 {
-	cuVEC_VC<cuReal>& elC = *cuMesh.pelC;
+	cuVEC_VC<cuBReal>& elC = *cuMesh.pelC;
 
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
 
@@ -63,7 +63,7 @@ __global__ void CalculateElectricalConductivity_NoAMR_Kernel(ManagedMeshCUDA& cu
 
 		if (elC.is_not_empty(idx)) {
 
-			cuReal elecCond = *cuMesh.pelecCond;
+			cuBReal elecCond = *cuMesh.pelecCond;
 			cuMesh.update_parameters_ecoarse(idx, *cuMesh.pelecCond, elecCond);
 
 			elC[idx] = elecCond;
@@ -80,7 +80,7 @@ void TransportCUDA::CalculateElectricalConductivity_NoAMR(void)
 //--------------------------------------------------------------- Current Density
 
 //Current density when only charge solver is used
-__global__ void CalculateCurrentDensity_Charge_Kernel(cuVEC<cuReal3>& Jc, cuVEC_VC<cuReal>& V, cuVEC_VC<cuReal>& elC)
+__global__ void CalculateCurrentDensity_Charge_Kernel(cuVEC<cuReal3>& Jc, cuVEC_VC<cuBReal>& V, cuVEC_VC<cuBReal>& elC)
 {
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
 
@@ -98,8 +98,8 @@ __global__ void CalculateCurrentDensity_Charge_Kernel(cuVEC<cuReal3>& Jc, cuVEC_
 __global__ void CalculateCurrentDensity_Spin_Kernel(ManagedMeshCUDA& cuMesh, TransportCUDA_Spin_V_Funcs& poisson_Spin_V, TransportCUDA_Spin_S_Funcs& poisson_Spin_S)
 {
 	cuVEC<cuReal3>& Jc = *cuMesh.pJc;
-	cuVEC_VC<cuReal>& V = *cuMesh.pV;
-	cuVEC_VC<cuReal>& elC = *cuMesh.pelC;
+	cuVEC_VC<cuBReal>& V = *cuMesh.pV;
+	cuVEC_VC<cuBReal>& elC = *cuMesh.pelC;
 	cuVEC_VC<cuReal3>& S = *cuMesh.pS;
 	cuVEC_VC<cuReal3>& M = *cuMesh.pM;
 
@@ -110,13 +110,13 @@ __global__ void CalculateCurrentDensity_Spin_Kernel(ManagedMeshCUDA& cuMesh, Tra
 		//only calculate current on non-empty cells - empty cells have already been assigned 0 at UpdateConfiguration
 		if (V.is_not_empty(idx)) {
 
-			cuReal iSHA = *cuMesh.piSHA;
-			cuReal De = *cuMesh.pDe;
-			cuReal betaD = *cuMesh.pbetaD;
+			cuBReal iSHA = *cuMesh.piSHA;
+			cuBReal De = *cuMesh.pDe;
+			cuBReal betaD = *cuMesh.pbetaD;
 			cuMesh.update_parameters_ecoarse(idx, *cuMesh.piSHA, iSHA, *cuMesh.pDe, De, *cuMesh.pbetaD, betaD);
 
 			//1. Ohm's law contribution
-			if (cuIsZ((cuReal)iSHA) || M.linear_size()) {
+			if (cuIsZ((cuBReal)iSHA) || M.linear_size()) {
 
 				//no iSHE contribution. Note, iSHE is not included in magnetic meshes.
 				Jc[idx] = -elC[idx] * V.grad_diri(idx);
@@ -127,13 +127,13 @@ __global__ void CalculateCurrentDensity_Spin_Kernel(ManagedMeshCUDA& cuMesh, Tra
 				Jc[idx] = -elC[idx] * V.grad_diri_nneu(idx, poisson_Spin_V);
 
 				//must also add iSHE contribution -> here we must use non-homogeneous Neumann boundary conditions when calculating S differentials
-				Jc[idx] += (iSHA * De / (cuReal)MUB_E) * S.curl_nneu(idx, poisson_Spin_S);
+				Jc[idx] += (iSHA * De / (cuBReal)MUB_E) * S.curl_nneu(idx, poisson_Spin_S);
 			}
 
 			//2. CPP-GMR contribution
-			if (M.linear_size() && cuIsNZ((cuReal)betaD)) {
+			if (M.linear_size() && cuIsNZ((cuBReal)betaD)) {
 
-				cuReal Ms = *cuMesh.pMs;
+				cuBReal Ms = *cuMesh.pMs;
 				cuMesh.update_parameters_ecoarse(idx, *cuMesh.pMs, Ms);
 
 				int idx_M = M.position_to_cellidx(S.cellidx_to_position(idx));
@@ -141,7 +141,7 @@ __global__ void CalculateCurrentDensity_Spin_Kernel(ManagedMeshCUDA& cuMesh, Tra
 				cuReal3 Mval = M[idx_M];
 				cuReal33 grad_S = S.grad_neu(idx);		//homogeneous Neumann since SHA = 0 in magnetic meshes
 
-				Jc[idx] += (grad_S * Mval) * betaD * De / ((cuReal)MUB_E * Ms);
+				Jc[idx] += (grad_S * Mval) * betaD * De / ((cuBReal)MUB_E * Ms);
 			}
 		}
 		else Jc[idx] = cuReal3(0);
@@ -165,7 +165,7 @@ void TransportCUDA::CalculateCurrentDensity(void)
 
 //--------------------------------------------------------------- Electrode Current
 
-__global__ void CalculateElectrodeCurrent_nX_Side_Kernel(cuVEC_VC<cuReal>& elC, cuVEC_VC<cuReal>& V, cuReal& current, cuBox electrode_box)
+__global__ void CalculateElectrodeCurrent_nX_Side_Kernel(cuVEC_VC<cuBReal>& elC, cuVEC_VC<cuBReal>& V, cuBReal& current, cuBox electrode_box)
 {
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
 
@@ -176,7 +176,7 @@ __global__ void CalculateElectrodeCurrent_nX_Side_Kernel(cuVEC_VC<cuReal>& elC, 
 
 	cuReal3 h_e = V.h;
 
-	cuReal current_ = 0.0;
+	cuBReal current_ = 0.0;
 
 	if (idx < stride * (electrode_box.e.k - electrode_box.s.k)) {
 
@@ -186,7 +186,7 @@ __global__ void CalculateElectrodeCurrent_nX_Side_Kernel(cuVEC_VC<cuReal>& elC, 
 	reduction_sum(0, 1, &current_, current);
 }
 
-__global__ void CalculateElectrodeCurrent_pX_Side_Kernel(cuVEC_VC<cuReal>& elC, cuVEC_VC<cuReal>& V, cuReal& current, cuBox electrode_box)
+__global__ void CalculateElectrodeCurrent_pX_Side_Kernel(cuVEC_VC<cuBReal>& elC, cuVEC_VC<cuBReal>& V, cuBReal& current, cuBox electrode_box)
 {
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
 
@@ -197,7 +197,7 @@ __global__ void CalculateElectrodeCurrent_pX_Side_Kernel(cuVEC_VC<cuReal>& elC, 
 
 	cuReal3 h_e = V.h;
 
-	cuReal current_ = 0.0;
+	cuBReal current_ = 0.0;
 
 	if (idx < stride * (electrode_box.e.k - electrode_box.s.k)) {
 
@@ -207,7 +207,7 @@ __global__ void CalculateElectrodeCurrent_pX_Side_Kernel(cuVEC_VC<cuReal>& elC, 
 	reduction_sum(0, 1, &current_, current);
 }
 
-__global__ void CalculateElectrodeCurrent_nY_Side_Kernel(cuVEC_VC<cuReal>& elC, cuVEC_VC<cuReal>& V, cuReal& current, cuBox electrode_box)
+__global__ void CalculateElectrodeCurrent_nY_Side_Kernel(cuVEC_VC<cuBReal>& elC, cuVEC_VC<cuBReal>& V, cuBReal& current, cuBox electrode_box)
 {
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
 
@@ -218,7 +218,7 @@ __global__ void CalculateElectrodeCurrent_nY_Side_Kernel(cuVEC_VC<cuReal>& elC, 
 
 	cuReal3 h_e = V.h;
 
-	cuReal current_ = 0.0;
+	cuBReal current_ = 0.0;
 
 	if (idx < stride * (electrode_box.e.k - electrode_box.s.k)) {
 
@@ -228,7 +228,7 @@ __global__ void CalculateElectrodeCurrent_nY_Side_Kernel(cuVEC_VC<cuReal>& elC, 
 	reduction_sum(0, 1, &current_, current);
 }
 
-__global__ void CalculateElectrodeCurrent_pY_Side_Kernel(cuVEC_VC<cuReal>& elC, cuVEC_VC<cuReal>& V, cuReal& current, cuBox electrode_box)
+__global__ void CalculateElectrodeCurrent_pY_Side_Kernel(cuVEC_VC<cuBReal>& elC, cuVEC_VC<cuBReal>& V, cuBReal& current, cuBox electrode_box)
 {
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
 
@@ -239,7 +239,7 @@ __global__ void CalculateElectrodeCurrent_pY_Side_Kernel(cuVEC_VC<cuReal>& elC, 
 
 	cuReal3 h_e = V.h;
 
-	cuReal current_ = 0.0;
+	cuBReal current_ = 0.0;
 
 	if (idx < stride * (electrode_box.e.k - electrode_box.s.k)) {
 
@@ -249,7 +249,7 @@ __global__ void CalculateElectrodeCurrent_pY_Side_Kernel(cuVEC_VC<cuReal>& elC, 
 	reduction_sum(0, 1, &current_, current);
 }
 
-__global__ void CalculateElectrodeCurrent_nZ_Side_Kernel(cuVEC_VC<cuReal>& elC, cuVEC_VC<cuReal>& V, cuReal& current, cuBox electrode_box)
+__global__ void CalculateElectrodeCurrent_nZ_Side_Kernel(cuVEC_VC<cuBReal>& elC, cuVEC_VC<cuBReal>& V, cuBReal& current, cuBox electrode_box)
 {
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
 
@@ -260,7 +260,7 @@ __global__ void CalculateElectrodeCurrent_nZ_Side_Kernel(cuVEC_VC<cuReal>& elC, 
 
 	cuReal3 h_e = V.h;
 
-	cuReal current_ = 0.0;
+	cuBReal current_ = 0.0;
 
 	if (idx < stride * (electrode_box.e.j - electrode_box.s.j)) {
 
@@ -270,7 +270,7 @@ __global__ void CalculateElectrodeCurrent_nZ_Side_Kernel(cuVEC_VC<cuReal>& elC, 
 	reduction_sum(0, 1, &current_, current);
 }
 
-__global__ void CalculateElectrodeCurrent_pZ_Side_Kernel(cuVEC_VC<cuReal>& elC, cuVEC_VC<cuReal>& V, cuReal& current, cuBox electrode_box)
+__global__ void CalculateElectrodeCurrent_pZ_Side_Kernel(cuVEC_VC<cuBReal>& elC, cuVEC_VC<cuBReal>& V, cuBReal& current, cuBox electrode_box)
 {
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
 
@@ -281,7 +281,7 @@ __global__ void CalculateElectrodeCurrent_pZ_Side_Kernel(cuVEC_VC<cuReal>& elC, 
 
 	cuReal3 h_e = V.h;
 
-	cuReal current_ = 0.0;
+	cuBReal current_ = 0.0;
 
 	if (idx < stride * (electrode_box.e.j - electrode_box.s.j)) {
 
@@ -291,7 +291,7 @@ __global__ void CalculateElectrodeCurrent_pZ_Side_Kernel(cuVEC_VC<cuReal>& elC, 
 	reduction_sum(0, 1, &current_, current);
 }
 
-cuReal TransportCUDA::CalculateElectrodeCurrent(cuBox electrode_box)
+cuBReal TransportCUDA::CalculateElectrodeCurrent(cuBox electrode_box)
 {
 	//calculate current from current density in cells just next to the box
 	//Normally there is only one side of the box we can use so it's easier to separate into multiple kernels - one per side.

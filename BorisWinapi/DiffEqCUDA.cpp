@@ -8,18 +8,18 @@
 
 #if COMPILECUDA == 1
 
-cu_obj<cuReal>* ODECommonCUDA::pdT = nullptr;
-cu_obj<cuReal>* ODECommonCUDA::pdT_last = nullptr;
+cu_obj<cuBReal>* ODECommonCUDA::pdT = nullptr;
+cu_obj<cuBReal>* ODECommonCUDA::pdT_last = nullptr;
 
-cu_obj<cuReal>* ODECommonCUDA::pmxh = nullptr;
+cu_obj<cuBReal>* ODECommonCUDA::pmxh = nullptr;
 cu_obj<cuReal3>* ODECommonCUDA::pmxh_av = nullptr;
 cu_obj<size_t>* ODECommonCUDA::pavpoints = nullptr;
 
-cu_obj<cuReal>* ODECommonCUDA::pdmdt = nullptr;
+cu_obj<cuBReal>* ODECommonCUDA::pdmdt = nullptr;
 cu_obj<cuReal3>* ODECommonCUDA::pdmdt_av = nullptr;
 cu_obj<size_t>* ODECommonCUDA::pavpoints2 = nullptr;
 
-cu_obj<cuReal>* ODECommonCUDA::plte = nullptr;
+cu_obj<cuBReal>* ODECommonCUDA::plte = nullptr;
 
 cu_obj<bool>* ODECommonCUDA::prenormalize = nullptr;
 
@@ -29,9 +29,9 @@ cu_obj<int>* ODECommonCUDA::psetODE = nullptr;
 
 cu_obj<bool>* ODECommonCUDA::palternator = nullptr;
 
-cu_obj<cuReal>* ODECommonCUDA::pdelta_M_sq = nullptr;
-cu_obj<cuReal>* ODECommonCUDA::pdelta_G_sq = nullptr;
-cu_obj<cuReal>* ODECommonCUDA::pdelta_M_dot_delta_G = nullptr;
+cu_obj<cuBReal>* ODECommonCUDA::pdelta_M_sq = nullptr;
+cu_obj<cuBReal>* ODECommonCUDA::pdelta_G_sq = nullptr;
+cu_obj<cuBReal>* ODECommonCUDA::pdelta_M_dot_delta_G = nullptr;
 
 ODECommon* ODECommonCUDA::pODE = nullptr;
 
@@ -39,18 +39,18 @@ ODECommonCUDA::ODECommonCUDA(ODECommon *pODE_)
 {
 	pODE = pODE_;
 	
-	if(!pdT) pdT = new cu_obj<cuReal>();
-	if (!pdT_last) pdT_last = new cu_obj<cuReal>();
+	if(!pdT) pdT = new cu_obj<cuBReal>();
+	if (!pdT_last) pdT_last = new cu_obj<cuBReal>();
 	
-	if (!pmxh) pmxh = new cu_obj<cuReal>();
+	if (!pmxh) pmxh = new cu_obj<cuBReal>();
 	if (!pmxh_av) pmxh_av = new cu_obj<cuReal3>();
 	if (!pavpoints) pavpoints = new cu_obj<size_t>();
 
-	if (!pdmdt) pdmdt = new cu_obj<cuReal>();
+	if (!pdmdt) pdmdt = new cu_obj<cuBReal>();
 	if (!pdmdt_av) pdmdt_av = new cu_obj<cuReal3>();
 	if (!pavpoints2) pavpoints2 = new cu_obj<size_t>();
 	
-	if (!plte) plte = new cu_obj<cuReal>();
+	if (!plte) plte = new cu_obj<cuBReal>();
 	
 	if (!prenormalize) prenormalize = new cu_obj<bool>();
 	
@@ -60,9 +60,9 @@ ODECommonCUDA::ODECommonCUDA(ODECommon *pODE_)
 	
 	if (!palternator) palternator = new cu_obj<bool>();
 
-	if (!pdelta_M_sq) pdelta_M_sq = new cu_obj<cuReal>();
-	if (!pdelta_G_sq) pdelta_G_sq = new cu_obj<cuReal>();
-	if (!pdelta_M_dot_delta_G) pdelta_M_dot_delta_G = new cu_obj<cuReal>();
+	if (!pdelta_M_sq) pdelta_M_sq = new cu_obj<cuBReal>();
+	if (!pdelta_G_sq) pdelta_G_sq = new cu_obj<cuBReal>();
+	if (!pdelta_M_dot_delta_G) pdelta_M_dot_delta_G = new cu_obj<cuBReal>();
 
 	SyncODEValues();
 }

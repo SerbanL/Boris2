@@ -10,13 +10,13 @@
 
 //-------------------Getters
 
-__global__ void Add_Energy_Kernel(cuReal& energy, cuReal& total_energy)
+__global__ void Add_Energy_Kernel(cuBReal& energy, cuBReal& total_energy)
 {
 	if (threadIdx.x == 0) total_energy += energy;
 }
 
 //add energy in this module to a running total
-void SDemagCUDA_Demag::Add_Energy(cu_obj<cuReal>& total_energy)
+void SDemagCUDA_Demag::Add_Energy(cu_obj<cuBReal>& total_energy)
 {
 	Add_Energy_Kernel <<< (1 + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (energy, total_energy);
 }

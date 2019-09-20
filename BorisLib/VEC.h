@@ -248,6 +248,22 @@ public:
 	//count cells which don't have a null value set : i.e. non-empty.
 	int get_nonempty_cells(void) const;
 
+	//--------------------------------------------EXTRACT A LINE PROFILE : VEC_mng.h
+
+	//extract profile to a vector : extract size points starting at (start + step * 0.5) in the direction step; use weighted average to extract profile with stencil given by h
+	//e.g. if you have a start and end point with given step, then setting size = |end - start| / |step| means the profile must be extracted between (start + 0.5*step) and (end - 0.5*step). e.g.: |.|.|.|.|
+	void extract_profile(size_t size, std::vector<VType>& profile, DBL3 start, DBL3 step);
+
+	//these specifically apply for VType == cuReal3, allowing extraction of the x, y, z components separately
+	template <typename PType = decltype(GetMagnitude(std::declval<VType>()))>
+	void extract_profile_component_x(size_t size, std::vector<PType>& profile, DBL3 start, DBL3 step);
+
+	template <typename PType = decltype(GetMagnitude(std::declval<VType>()))>
+	void extract_profile_component_y(size_t size, std::vector<PType>& profile, DBL3 start, DBL3 step);
+
+	template <typename PType = decltype(GetMagnitude(std::declval<VType>()))>
+	void extract_profile_component_z(size_t size, std::vector<PType>& profile, DBL3 start, DBL3 step);
+
 	//--------------------------------------------TRANSPOSITION : VEC_trans.h
 
 	//transpose values from this VEC to output VEC

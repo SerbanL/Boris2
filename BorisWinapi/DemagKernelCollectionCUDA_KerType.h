@@ -16,7 +16,7 @@ class cuKerType {
 public:
 
 	//2D off-diagonal for self-demag (only need real version)
-	cuVEC<cuReal> K2D_odiag;
+	cuVEC<cuBReal> K2D_odiag;
 
 	//3D Complex
 	cuVEC<cuReIm3> Kdiag_cmpl, Kodiag_cmpl;
@@ -203,13 +203,13 @@ __host__ inline bool cuKerType::AllocateKernels(cuRect from_rect, cuRect this_re
 
 				//z shifted for 3D : can use kernels of reduced dimensions but must be complex
 				//
-				//Kxx : y - symmetrical (+), z - Re part symmetrical (+), Im part asymmetrical (-)
-				//Kyy : y - symmetrical (+), z - Re part symmetrical (+), Im part asymmetrical (-)
-				//Kzz : y - symmetrical (+), z - Re part symmetrical (+), Im part asymmetrical (-)
+				//Kxx : y - symmetrical (+), z - Re part symmetrical (+), Im part inv. symmetric (-)
+				//Kyy : y - symmetrical (+), z - Re part symmetrical (+), Im part inv. symmetric (-)
+				//Kzz : y - symmetrical (+), z - Re part symmetrical (+), Im part inv. symmetric (-)
 				//
-				//Kxy : y - asymmetrical (-), z - Re part symmetrical  (+), Im part asymmetrical (-)
-				//Kxz : y - symmetrical  (+), z - Re part asymmetrical (-), Im part symmetrical  (+)
-				//Kyz : y - asymmetrical (-), z - Re part asymmetrical (-), Im part symmetrical  (+)
+				//Kxy : y - inv. symmetric (-), z - Re part symmetrical  (+), Im part inv. symmetric (-)
+				//Kxz : y - symmetrical  (+), z - Re part inv. symmetric (-), Im part symmetrical  (+)
+				//Kyz : y - inv. symmetric (-), z - Re part inv. symmetric (-), Im part symmetrical  (+)
 
 				if (!Kdiag_cmpl.resize(cuSZ3(N_cpu.x / 2 + 1, N_cpu.y / 2 + 1, N_cpu.z / 2 + 1))) return false;
 				if (!Kodiag_cmpl.resize(cuSZ3(N_cpu.x / 2 + 1, N_cpu.y / 2 + 1, N_cpu.z / 2 + 1))) return false;

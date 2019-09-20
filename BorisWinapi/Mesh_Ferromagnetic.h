@@ -18,13 +18,13 @@ class FMesh :
 	public Mesh,
 	public ProgramState<FMesh,
 	//Mesh members
-	tuple<int, int, int, int, int, Rect, SZ3, DBL3, SZ3, DBL3, SZ3, DBL3, VEC_VC<DBL3>, VEC_VC<double>, VEC_VC<DBL3>, VEC_VC<double>, VEC_VC<double>, vector_lut<Modules*>,
+	tuple<int, int, int, int, int, int, Rect, SZ3, DBL3, SZ3, DBL3, SZ3, DBL3, VEC_VC<DBL3>, VEC_VC<double>, VEC_VC<DBL3>, VEC_VC<double>, VEC_VC<double>, vector_lut<Modules*>,
 	//Members in this derived class
 	bool, SkyrmionTrack, bool,
 	//Material Parameters
 	MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<DBL2, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<DBL3, DBL3>, MatP<DBL3, DBL3>, MatP<double, double>, MatP<double, double>, MatP<double, double>,
 	MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<DBL2, double>, MatP<DBL2, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>,
-	double, double, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>>,
+	double, double, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>>,
 	//Module Implementations
 	tuple<Demag_N, Demag, SDemag_Demag, Exch_6ngbr_Neu, DMExchange, iDMExchange, SurfExchange, Zeeman, Anisotropy_Uniaxial, Anisotropy_Cubic, Transport, Heat, SOTField, Roughness> >
 {
@@ -129,9 +129,9 @@ public:
 	void SetMagnetisationFromData(VEC<DBL3>& data);
 
 	//set periodic boundary conditions for magnetization
-	void Set_PBC_X(int pbc_x);
-	void Set_PBC_Y(int pbc_y);
-	void Set_PBC_Z(int pbc_z);
+	BError Set_PBC_X(int pbc_x);
+	BError Set_PBC_Y(int pbc_y);
+	BError Set_PBC_Z(int pbc_z);
 
 	//----------------------------------- OVERLOAD MESH VIRTUAL METHODS
 
@@ -154,6 +154,15 @@ public:
 		if(pMeshCUDA) return skyShift.Get_skyshiftCUDA(n.dim(), h, pMeshCUDA->M, skyRect);
 #endif
 		return skyShift.Get_skyshift(M, skyRect); 
+	}
+
+	//get skyrmion shift for a skyrmion initially in the given rectangle (works only with data in output data, not with ShowData or with data box), as well as diameters along x and y directions.
+	DBL4 Get_skypos_diameters(Rect skyRect)
+	{ 
+#if COMPILECUDA == 1
+		if (pMeshCUDA) return skyShift.Get_skypos_diametersCUDA(n.dim(), h, meshRect, pMeshCUDA->M, skyRect);
+#endif
+		return skyShift.Get_skypos_diameters(M, skyRect);
 	}
 
 	//set/get exchange_couple_to_meshes status flag

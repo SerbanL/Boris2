@@ -455,6 +455,13 @@ struct __Rect {
 		return __Rect(DBL3(s.x, s.y, e.z - thickness), e);
 	}
 
+	//return rectangle of given z layer, where layer_idx must range from 0 to (e.z - s.z) / thickness - 1; if outside of this range then return the entire rectangle.
+	__Rect get_zlayer(int layer_idx, double thickness) const
+	{
+		if (layer_idx * thickness < 0 || (layer_idx + 1) * thickness > (e.z - s.z)) return *this;
+		else return __Rect(DBL3(s.x, s.y, s.z + layer_idx * thickness), DBL3(e.x, e.y, s.z + (layer_idx + 1) * thickness));
+	}
+
 	//----------------------------- GET PROPERTIES INVOLVING ANOTHER RECT
 
 	//get intersection rectangle

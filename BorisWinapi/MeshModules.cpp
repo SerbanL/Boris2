@@ -4,21 +4,21 @@
 
 //----------------------------------- MODULES CONTROL
 
-BError Mesh::AddModule(MOD_ moduleId, bool force_add)
+BError Mesh::AddModule(MOD_ moduleID, bool force_add)
 {
 	BError error(__FUNCTION__);
 
-	if (moduleId <= MOD_ERROR) return error(BERROR_INCORRECTNAME);
+	if (moduleID <= MOD_ERROR) return error(BERROR_INCORRECTNAME);
 
 	//first make sure the module can be added to this mesh type
-	if (!vector_contains(modules_for_meshtype[INT2(meshType, 0)], moduleId)) return error(BERROR_INCORRECTNAME);
+	if (!vector_contains(modules_for_meshtype[INT2(meshType, 0)], moduleID)) return error(BERROR_INCORRECTNAME);
 
 	//if module is already set then don't add another one unless we specifically ask to do it.
 	//only one module of each type allowed normally, but we may want to force adding of multiple modules of same type (force_add = true)
-	if (!force_add && IsModuleSet(moduleId)) return error(BERROR_INCORRECTACTION_SILENT);
+	if (!force_add && IsModuleSet(moduleID)) return error(BERROR_INCORRECTACTION_SILENT);
 
 	//now set the module
-	switch (moduleId) {
+	switch (moduleID) {
 
 	case MOD_DEMAG_N:
 		pMod.push_back(new Demag_N(this), MOD_DEMAG_N);
@@ -85,10 +85,10 @@ BError Mesh::AddModule(MOD_ moduleId, bool force_add)
 	else {
 
 		//Delete any modules which are exclusive to moduleId
-		for (int idx = 0; idx < (int)exclusiveModules[moduleId].size(); idx++) {
+		for (int idx = 0; idx < (int)exclusiveModules[moduleID].size(); idx++) {
 
-			MOD_ module = exclusiveModules[moduleId][idx];
-			if (module == moduleId) continue;
+			MOD_ module = exclusiveModules[moduleID][idx];
+			if (module == moduleID) continue;
 
 			if (IsModuleSet(module)) { delete pMod[pMod.get_index_from_ID(module)]; pMod.erase(INT2(module, 0)); }
 		}
@@ -97,17 +97,44 @@ BError Mesh::AddModule(MOD_ moduleId, bool force_add)
 	return error;
 }
 
-void Mesh::DelModule(MOD_ moduleId)
+void Mesh::DelModule(MOD_ moduleID)
 {
-	if (IsModuleSet(moduleId)) { 
+	//mesh modules allowed to occur more than once, e.g. SDemag_Demag : calling this method will erase all.
+	while (IsModuleSet(moduleID)) {
 		
 		//delete memory allocated, then erase from list of modules. 
-		if (pMod(moduleId)) delete pMod(moduleId);
-		pMod.erase(INT2(moduleId, 0));
+		if (pMod(moduleID)) delete pMod(moduleID);
+		pMod.erase(INT2(moduleID, 0));
 
 		//there may be cases where we want multiple modules of same type
 		//we always want the minor ids to start numbering at 0 so regularise them
-		pMod.regularise_minor_ids(moduleId);
+		pMod.regularise_minor_ids(moduleID);
+	}
+}
+
+//Delete this particular module, if found.
+//This method is intended to be called from within the module itself, asking for it to be deleted - a call to its dtor will be issued.
+//When using this method in this way, the calling module should immediately return as any further data access there will result in bad memory access.
+//The return addess is still valid as it will be stored on the stack.
+void Mesh::DelModule(Modules* pModule)
+{
+	for (int idx = 0; idx < pMod.size(); idx++) {
+
+		if (pMod[idx] == pModule) {
+
+			//found it
+
+			//the major ID of this module
+			MOD_ moduleID = (MOD_)pMod.get_ID_from_index(idx);
+
+			//delete it - free memory then delete it from the list of active module
+			delete pMod[idx];
+			pMod.erase(idx);
+
+			//there may be cases where we want multiple modules of same type
+			//we always want the minor ids to start numbering at 0 so regularise them
+			pMod.regularise_minor_ids(moduleID);
+		}
 	}
 }
 

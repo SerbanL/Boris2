@@ -29,7 +29,7 @@ class SDemagCUDA;
 class SDemag_Demag :
 	public Modules,
 	public Convolution<DemagKernelCollection>,
-	public ProgramState<SDemag_Demag, tuple<SZ3, DBL3, Rect>, tuple<>>
+	public ProgramState<SDemag_Demag, tuple<SZ3, DBL3, Rect, int>, tuple<>>
 {
 
 	friend SDemag;
@@ -52,6 +52,12 @@ private:
 	DBL3 h;
 	Rect meshRect;
 
+	//when used with 2d layering mode this will identify the layer number along z direction. Must have layer_number_2d < n.z.
+	//if layer_number_2d = -1 then 2d layering is disabled.
+	//can use this layer number to set convolution data, as well as detect if this module needs to be deleted (layer_number_2d >= n.z)
+	//If n.z changes then we'll either need to delete some layers (SDemag_Demag modules) - done here - or add some more SDemag_Demag modules - done in SDemag
+	int layer_number_2d = -1;
+
 	//transfer values from M of this mesh to a VEC with fixed number of cells -> use same meshing for all layers.
 	VEC<DBL3> transfer;
 
@@ -59,6 +65,10 @@ private:
 	//if false then don't use the transfer VEC but can do M -> convolution -> Heff directly
 	//this flag will be set false only if the convolution rect matches that of M and n_common matches the discretisation of M (i.e. in this case a mesh transfer would be pointless).
 	bool do_transfer = true;
+
+	//The demag field computed separately : at certain steps in the ODE evaluation method we don't need to recalculate the demag field but can use a previous evaluation with an acceptable impact on the numerical error.
+	//This mode needs to be enabled by the user, and can be much faster than the default mode. The default mode is to re-evaluate the demag field at every step.
+	VEC<DBL3> Hdemag;
 
 	//number of non-empty cells in transfer
 	int non_empty_cells;
@@ -95,6 +105,11 @@ public:
 	//-------------------Setters
 
 	void Set_SDemag_Pointer(SDemag *pSDemag_);
+
+	//Force the SDemag_Demag modules to calculate the layer_number_2d value, used for 2D layered convolution
+	//this value is obtained from the minor id of this module held in *pMesh : the minor ids are guaranteed to be sequential and start from zero
+	//thus if we've added enough of these SDemag_Demag modules, all layers will be covered
+	void Set_2D_Layering(void);
 };
 
 #else

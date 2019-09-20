@@ -36,7 +36,7 @@ private:
 	Heat* pHeat;
 
 	//evaluate heat equation and store result here. After this is done advance time for temperature based on values stored here.
-	cu_arr<cuReal> heatEq_RHS;
+	cu_arr<cuBReal> heatEq_RHS;
 
 	//HeatCUDA_CMBND holds methods used in setting cmbnd conditions.
 	//Pass the managed HeatCUDA_CMBND object to set_cmbnd_continuous in Temp
@@ -46,7 +46,7 @@ private:
 
 	//-------------------Calculation Methods
 
-	void IterateHeatEquation(cuReal dT);
+	void IterateHeatEquation(cuBReal dT);
 
 public:
 
@@ -66,7 +66,10 @@ public:
 	//-------------------Setters
 
 	//set Temp uniformly to base temperature
-	void SetBaseTemperature(cuReal Temperature);
+	void SetBaseTemperature(cuBReal Temperature);
+
+	//set Temp non-uniformly as specified through the cT mesh parameter
+	void SetBaseTemperature_Nonuniform(cuBReal Temperature);
 };
 
 #else

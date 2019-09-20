@@ -35,7 +35,7 @@ private:
 
 	//used to monitor Poisson equation convergence : max_error is the maximum change in solved quantity from one iteration to the next, max_value is the maximum value in that iteration
 	//Find global max_value to divide and obtain normalized maximum error
-	cu_obj<cuReal> max_error, max_value;
+	cu_obj<cuBReal> max_error, max_value;
 
 	//---------------------- CMBND data
 
@@ -50,7 +50,7 @@ private:
 	vector<TransportCUDA*> pTransport;
 
 	//vector of pointers to all V - need this to set cmbnd flags (same ordering as first vector in CMBNDcontacts)
-	vector<cu_obj<cuVEC_VC<cuReal>>*> pV;
+	vector<cu_obj<cuVEC_VC<cuBReal>>*> pV;
 
 	//vector of pointers to all S - need this to set cmbnd flags (same ordering as first vector in CMBNDcontacts)
 	vector<cu_obj<cuVEC_VC<cuReal3>>*> pS;
@@ -61,15 +61,15 @@ private:
 	cu_obj<STransportCUDA_GInterf_S_FN_Funcs> gInterf_S_FN;
 
 	//fixed SOR damping to use for V and S (second value) Poisson equations - copied from SOR_damping in STransport
-	cu_obj<cuReal> SOR_damping_V;
-	cu_obj<cuReal> SOR_damping_S;
+	cu_obj<cuBReal> SOR_damping_V;
+	cu_obj<cuBReal> SOR_damping_S;
 
 private:
 
 	void Zero_Errors(void);
 
 	//scale all potential values in all V cuVECs by given scaling value
-	void scale_potential_values(cuReal scaling);
+	void scale_potential_values(cuBReal scaling);
 
 	//set potential values using a slope between the potential values of ground and another electrode (if set)
 	void initialize_potential_values(void);

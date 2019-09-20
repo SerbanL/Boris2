@@ -2,7 +2,7 @@
 
 #if COMPILECUDA == 1
 
-__global__ void ZeroEnergy_kernel(cuReal& energy)
+__global__ void ZeroEnergy_kernel(cuBReal& energy)
 {
 	if (threadIdx.x == 0) energy = 0.0;
 }

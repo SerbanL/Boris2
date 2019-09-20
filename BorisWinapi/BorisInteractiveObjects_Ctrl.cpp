@@ -19,7 +19,7 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 
 	//Makes changes in the program depending on the interactive object properties and the action type with which it was interacted with. No changes to the object are made here, that is handled by ConsoleInteractiveObjectState during Refresh cycles
 
-	InteractiveObjectActionOutcome actionOutcome = AO_NONE;
+	InteractiveObjectActionOutcome actionOutcome = AO_NOTHING;
 
 	//action codes which can be handled in the same way for all objects
 	if (actionCode == AC_HOVERCHECK) {
@@ -210,6 +210,28 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 
 		//try to set ODE and its default evaluation method
 		if (actionCode == AC_MOUSELEFTDOWN) sendCommand(CMD_SETODE, odeHandles(odeID), odeEvalHandles(odeDefaultEval(odeID)));
+	}
+	break;
+
+	//Set ODE time step: textId is the value
+	case IOI_ODEDT:
+	{
+		//parameters from iop
+		string dT_string = ToNum(iop.textId);
+
+		//try to set ODE time step
+		if (actionCode == AC_DOUBLECLICK) setConsoleEntry(CMD_SETDT, dT_string);
+	}
+	break;
+
+	//Set heat equation time step: textId is the value
+	case IOI_HEATDT:
+	{
+		//parameters from iop
+		string dT_string = ToNum(iop.textId);
+
+		//try to set ODE time step
+		if (actionCode == AC_DOUBLECLICK) setConsoleEntry(CMD_SETHEATDT, dT_string);
 	}
 	break;
 
@@ -671,6 +693,29 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 	}
 	break;
 
+	//Shows mesh vectorial quantity display option : minorId is the unique mesh id number, auxId is the display option
+	case IOI_MESHVECREP:
+	{
+		//parameters from iop
+		int meshId = iop.minorId;
+		VEC3REP_ option = (VEC3REP_)iop.auxId;
+
+		string meshName = SMesh.key_from_meshId(meshId);
+
+		if (actionCode == AC_MOUSELEFTDOWN) sendCommand(CMD_VECREP, meshName, (option + 1) % VEC3REP_NUMOPTIONS);
+	}
+	break;
+
+	//Shows supermesh vectorial quantity display option : auxId is the display option
+	case IOI_SMESHVECREP:
+	{
+		//parameters from iop
+		VEC3REP_ option = (VEC3REP_)iop.auxId;
+
+		if (actionCode == AC_MOUSELEFTDOWN) sendCommand(CMD_VECREP, SMesh.superMeshHandle, (option + 1) % VEC3REP_NUMOPTIONS);
+	}
+	break;
+
 	//Shows movingmesh trigger settings : minorId is the unique mesh id number (if set), auxId is the trigger state (used or not used), textId is the mesh name (if set)
 	case IOI_MOVINGMESH:
 	{
@@ -988,7 +1033,7 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 	{
 		int status = iop.auxId;
 
-		if (status >= 0 && (actionCode == AC_MOUSERIGHTDOWN || actionCode == AC_MOUSELEFTDOWN)) sendCommand(CMD_2DMULTICONV, !status);
+		if (status >= 0 && (actionCode == AC_MOUSERIGHTDOWN || actionCode == AC_MOUSELEFTDOWN)) sendCommand(CMD_2DMULTICONV, (status + 1) % 3);
 	}
 	break;
 
@@ -1168,6 +1213,14 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 	}
 	break;
 
+	//Shows image cropping settings : textId has the DBL4 value as text
+	case IOI_IMAGECROPPING:
+	{
+		string value_text = iop.textId;
+
+		if (actionCode == AC_DOUBLECLICK) setConsoleEntry(CMD_IMAGECROPPING, trim(value_text, ","));
+	}
+	break;
 
 	default:
 		break;

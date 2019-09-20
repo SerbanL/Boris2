@@ -871,7 +871,7 @@ __device__ VType cuVEC_VC<VType>::delsq_diri_nneu(int idx, cuVAL3<VType>& bdiff)
 //calculate Laplace operator at cell with given index. Use Robin boundary conditions, defaulting to Neumann if not set.
 //Returns zero at composite media boundary cells.
 template <typename VType>
-__device__ VType cuVEC_VC<VType>::delsq_robin(int idx, cuReal K) const
+__device__ VType cuVEC_VC<VType>::delsq_robin(int idx, cuBReal K) const
 {
 	VType diff_x = VType(), diff_y = VType(), diff_z = VType();
 

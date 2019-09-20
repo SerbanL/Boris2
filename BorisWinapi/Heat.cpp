@@ -184,6 +184,15 @@ void Heat::IterateHeatEquation(double dT)
 			//add Joule heating source term
 			heatEq_RHS[idx] += (Jc_value * Jc_value) / (cro * elC_value);
 		}
+
+		//add heat source contribution if set
+		if (IsNZ(pMesh->Q.get0())) {
+
+			double Q = pMesh->Q;
+			pMesh->update_parameters_tcoarse(idx, pMesh->Q, Q);
+
+			heatEq_RHS[idx] += Q / cro;
+		}
 	}
 
 	//2. Now use forward time to advance by dT:
@@ -230,28 +239,64 @@ double Heat::bfunc_pri(int cell1_idx, int cell2_idx) const
 //second order differential of T at cells either side of the boundary; delsq T = -Jc^2 / K * elC
 double Heat::diff2_sec(DBL3 relpos_m1, DBL3 stencil) const
 {
-	if (pMesh->Jc.linear_size()) {
+	double thermCond = pMesh->thermCond;
 
-		double thermCond = pMesh->thermCond;
+	if (pMesh->Jc.linear_size() || IsNZ(pMesh->Q.get0())) {
+
 		pMesh->update_parameters_atposition(relpos_m1, pMesh->thermCond, thermCond);
-
-		DBL3 Jcval = pMesh->Jc.weighted_average(relpos_m1, stencil);
-		return -(Jcval * Jcval) / (pMesh->elC.weighted_average(relpos_m1, stencil) * thermCond);
 	}
 	else return 0.0;
+
+	double value = 0.0;
+
+	//Joule heating
+	if (pMesh->Jc.linear_size()) {
+
+		DBL3 Jcval = pMesh->Jc.weighted_average(relpos_m1, stencil);
+		value = -(Jcval * Jcval) / (pMesh->elC.weighted_average(relpos_m1, stencil) * thermCond);
+	}
+	
+	//heat source contribution if set
+	if (IsNZ(pMesh->Q.get0())) {
+
+		double Q = pMesh->Q;
+		pMesh->update_parameters_atposition(relpos_m1, pMesh->Q, Q);
+
+		value -= Q / thermCond;
+	}
+
+	return value;
 }
 
 double Heat::diff2_pri(int cell1_idx) const
 {
-	if (pMesh->Jc.linear_size()) {
+	double thermCond = pMesh->thermCond;
 
-		double thermCond = pMesh->thermCond;
+	if (pMesh->Jc.linear_size() || IsNZ(pMesh->Q.get0())) {
+
 		pMesh->update_parameters_tcoarse(cell1_idx, pMesh->thermCond, thermCond);
-
-		int idx1_Jc = pMesh->Jc.position_to_cellidx(pMesh->Temp.cellidx_to_position(cell1_idx));
-		return -(pMesh->Jc[idx1_Jc] * pMesh->Jc[idx1_Jc]) / (pMesh->elC[idx1_Jc] * thermCond);
 	}
 	else return 0.0;
+
+	double value = 0.0;
+
+	//Joule heating
+	if (pMesh->Jc.linear_size()) {
+
+		int idx1_Jc = pMesh->Jc.position_to_cellidx(pMesh->Temp.cellidx_to_position(cell1_idx));
+		value = -(pMesh->Jc[idx1_Jc] * pMesh->Jc[idx1_Jc]) / (pMesh->elC[idx1_Jc] * thermCond);
+	}
+
+	//heat source contribution if set
+	if (IsNZ(pMesh->Q.get0())) {
+
+		double Q = pMesh->Q;
+		pMesh->update_parameters_tcoarse(cell1_idx, pMesh->Q, Q);
+
+		value -= Q / thermCond;
+	}
+
+	return value;
 }
 
 //-------------------Setters
@@ -272,18 +317,45 @@ void Heat::SetAlphaBoundary(double alpha_boundary_)
 	SetRobinBoundaryConditions();
 }
 
-//set Temp uniformly to base temperature
+//set Temp uniformly to base temperature, unless a spatial variation is also specified through the cT mesh parameter
 void Heat::SetBaseTemperature(double Temperature)
 {
 #if COMPILECUDA == 1
 	if (pModuleCUDA) {
 
-		reinterpret_cast<HeatCUDA*>(pModuleCUDA)->SetBaseTemperature(Temperature);
+		if (!pMesh->cT.is_sdep()) {
+
+			reinterpret_cast<HeatCUDA*>(pModuleCUDA)->SetBaseTemperature(Temperature);
+		}
+		else {
+
+			reinterpret_cast<HeatCUDA*>(pModuleCUDA)->SetBaseTemperature_Nonuniform(Temperature);
+		}
+
 		return;
 	}
 #endif
 
-	pMesh->Temp.setnonempty(Temperature);
+	if (!pMesh->cT.is_sdep()) {
+
+		//uniform temperature
+		pMesh->Temp.setnonempty(Temperature);
+	}
+	else {
+
+		//non-uniform temperature setting
+#pragma omp parallel for
+		for (int idx = 0; idx < pMesh->Temp.linear_size(); idx++) {
+
+			if (pMesh->Temp.is_not_empty(idx)) {
+
+				double cT = pMesh->cT;
+				pMesh->update_parameters_tcoarse(idx, pMesh->cT, cT);
+
+				pMesh->Temp[idx] = cT * Temperature;
+			}
+		}
+	}
 }
 
 //set insulating mesh sides flags. str can be "x", "-x", "y", "-y", "z", "-z"

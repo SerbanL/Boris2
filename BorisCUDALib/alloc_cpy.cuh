@@ -27,7 +27,7 @@ template void set_cuda_array_launcher<size_t>(size_t size, size_t* cu_dest_ptr, 
 template void set_cuda_array_launcher<float>(size_t size, float* cu_dest_ptr, float value);
 template void set_cuda_array_launcher<double>(size_t size, double* cu_dest_ptr, double value);
 
-template void set_cuda_array_launcher<cuComplex>(size_t size, cuComplex* cu_dest_ptr, cuComplex value);
+template void set_cuda_array_launcher<cuBComplex>(size_t size, cuBComplex* cu_dest_ptr, cuBComplex value);
 
 template void set_cuda_array_launcher<cuINT2>(size_t size, cuINT2* cu_dest_ptr, cuINT2 value);
 template void set_cuda_array_launcher<cuFLT2>(size_t size, cuFLT2* cu_dest_ptr, cuFLT2 value);

@@ -54,6 +54,16 @@ class WSClient:
         print('connecting to %s:%s' % server_address)
         self.sock.connect(server_address)
 
+    def WaitForResponse(self):
+
+        data = self.sock.recv(maxLenMessage)
+        print('RX : %s' % data)
+
+    def Run(self):
+
+        self.SendCommand("run")
+        self.WaitForResponse()
+
     def SendCommand(self, command, values = None):
         """Send a single command with any given parameters from the values list to console, and return values as a list if any"""
 
@@ -81,18 +91,13 @@ class WSClient:
              # Look for the response
             data = self.sock.recv(maxLenMessage)
 
-            print('RX : %s' % data)
-
             #note, the returned data always starts with a tab
             fields = data.split('\t')
 
-            if len(fields) == 1:
-                break;
+            print('RX : %s' % data)
 
-            if fields[1] != '!':
-                break
-            else:
-                print('Something went wrong! Trying again. Did you enter the correct format? This is what was received: %s' % fields[2])
+            if len(fields) >= 2:
+                break        
 
         #list of floats where there should be floats instead of strings
         fFields = []

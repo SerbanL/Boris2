@@ -55,6 +55,24 @@ void Simulation::MakeIOInfo(void)
 
 	ioInfo.push_back(ode_info, IOI_ODE);
 
+	//Set ODE time step: textId is the value
+	//IOI_ODEDT
+
+	string odedt_info =
+		string("[tc1,1,0,1/tc]<b>ODE Time Step</b>") +
+		string("\n[tc1,1,0,1/tc]double-click: edit\n");
+
+	ioInfo.push_back(odedt_info, IOI_ODEDT);
+
+	//Set heat equation time step: textId is the value
+	//IOI_HEATDT
+
+	string odeheatdt_info =
+		string("[tc1,1,0,1/tc]<b>Heat Equation Time Step</b>") +
+		string("\n[tc1,1,0,1/tc]double-click: edit\n");
+
+	ioInfo.push_back(odeheatdt_info, IOI_HEATDT);
+
 	//Available/set ode evaluation method for ode : minorId is an entry from ODE_ (the equation), auxId is the EVAL_ entry (the evaluation method), textId is the name of the evaluation method
 	//IOI_ODE_EVAL
 
@@ -212,7 +230,8 @@ void Simulation::MakeIOInfo(void)
 	ioInfo.set(showdata_info_generic + string("<i><b>Energy density: roughness</i>"), INT2(IOI_SHOWDATA, DATA_E_ROUGH));
 	ioInfo.set(showdata_info_generic + string("<i><b>Energy density: Total</i>"), INT2(IOI_SHOWDATA, DATA_E_TOTAL));
 	ioInfo.set(showdata_info_generic + string("<i><b>Domain wall shift\n<i><b>for moving mesh</i>"), INT2(IOI_SHOWDATA, DATA_DWSHIFT));
-	ioInfo.set(showdata_info_generic + string("<i><b>Skyrmion shift in the xy plan\n<i><b>Only use with output save data</i>"), INT2(IOI_SHOWDATA, DATA_SKYSHIFT));
+	ioInfo.set(showdata_info_generic + string("<i><b>Skyrmion shift in the xy plane\n<i><b>Only use with output save data</i>"), INT2(IOI_SHOWDATA, DATA_SKYSHIFT));
+	ioInfo.set(showdata_info_generic + string("<i><b>Skyrmion shift in the xy plane\n<i><b>Additional saving of x and y axis diameters\n<i><b>Only use with output save data</i>"), INT2(IOI_SHOWDATA, DATA_SKYPOS));
 	ioInfo.set(showdata_info_generic + string("<i><b>Transport solver:\n<i><b>V iterations to convergence</i>"), INT2(IOI_SHOWDATA, DATA_TRANSPORT_ITERSTOCONV));
 	ioInfo.set(showdata_info_generic + string("<i><b>Transport solver:\n<i><b>S iterations to convergence</i>"), INT2(IOI_SHOWDATA, DATA_TRANSPORT_SITERSTOCONV));
 	ioInfo.set(showdata_info_generic + string("<i><b>Transport solver:\n<i><b>achieved convergence error</i>"), INT2(IOI_SHOWDATA, DATA_TRANSPORT_CONVERROR));
@@ -255,6 +274,7 @@ void Simulation::MakeIOInfo(void)
 	ioInfo.set(data_info_generic + string("<i><b>Energy density: Total</i>"), INT2(IOI_DATA, DATA_E_TOTAL));
 	ioInfo.set(data_info_generic + string("<i><b>Domain wall shift\n<i><b>for moving mesh</i>"), INT2(IOI_DATA, DATA_DWSHIFT));
 	ioInfo.set(data_info_generic + string("<i><b>Skyrmion shift in the xy plane\n<i><b>Rectangle must circumscribe skyrmion</i>"), INT2(IOI_DATA, DATA_SKYSHIFT));
+	ioInfo.set(data_info_generic + string("<i><b>Skyrmion shift in the xy plane\n<i><b>Also save x and y axis diameters\n<i><b>Rectangle must circumscribe skyrmion</i>"), INT2(IOI_DATA, DATA_SKYPOS));
 	ioInfo.set(data_info_generic + string("<i><b>Transport solver:\n<i><b>V iterations to convergence</i>"), INT2(IOI_DATA, DATA_TRANSPORT_ITERSTOCONV));
 	ioInfo.set(data_info_generic + string("<i><b>Transport solver:\n<i><b>S iterations to convergence</i>"), INT2(IOI_DATA, DATA_TRANSPORT_SITERSTOCONV));
 	ioInfo.set(data_info_generic + string("<i><b>Transport solver:\n<i><b>achieved convergence error</i>"), INT2(IOI_DATA, DATA_TRANSPORT_CONVERROR));
@@ -377,6 +397,8 @@ void Simulation::MakeIOInfo(void)
 	ioInfo.set(stage_generic_info + string("<i><b>Amplitude, steps per cycle, cycles"), INT2(IOI_SETSTAGEVALUE, SS_ICOS));
 	ioInfo.set(stagevalue_generic_info + string("<i><b>Base temperature value"), INT2(IOI_SETSTAGEVALUE, SS_T));
 	ioInfo.set(stagevalue_generic_info + string("<i><b>Tstart; Tstop; Steps: Tstep = (Tstop - Tstart) / Steps"), INT2(IOI_SETSTAGEVALUE, SS_TSEQ));
+	ioInfo.set(stagevalue_generic_info + string("<i><b>Heat source value"), INT2(IOI_SETSTAGEVALUE, SS_Q));
+	ioInfo.set(stagevalue_generic_info + string("<i><b>Qstart; Qstop; Steps: Qstep = (Qstop - Qstart) / Steps"), INT2(IOI_SETSTAGEVALUE, SS_QSEQ));
 
 	//Shows the stop condition for the simulation schedule stage : minorId is the minor id of elements in Simulation::simStages (major id there is always 0), auxId is the number of the interactive object in the list, textId is the stop type and value as a string
 	//IOI_STAGESTOPCONDITION
@@ -454,6 +476,8 @@ void Simulation::MakeIOInfo(void)
 	ioInfo.set(param_generic_info + string("<i><b>Relative longitudinal\n<i><b>susceptibility for LLB"), INT2(IOI_MESHPARAM, PARAM_SUSREL));
 	ioInfo.set(param_generic_info + string("<i><b>Relative transverse\n<i><b>susceptibility for LLB"), INT2(IOI_MESHPARAM, PARAM_SUSPREL));
 	ioInfo.set(param_generic_info + string("<i><b>Applied field coefficient"), INT2(IOI_MESHPARAM, PARAM_HA));
+	ioInfo.set(param_generic_info + string("<i><b>Set temperature coefficient"), INT2(IOI_MESHPARAM, PARAM_T));
+	ioInfo.set(param_generic_info + string("<i><b>Heat source"), INT2(IOI_MESHPARAM, PARAM_Q));
 	ioInfo.set(param_generic_info + string("<i><b>Base electrical conductivity"), INT2(IOI_MESHPARAM, PARAM_ELC));
 	ioInfo.set(param_generic_info + string("<i><b>Anisotropic magnetoresistance"), INT2(IOI_MESHPARAM, PARAM_AMR));
 	ioInfo.set(param_generic_info + string("<i><b>Current spin polarisation"), INT2(IOI_MESHPARAM, PARAM_P));
@@ -567,6 +591,18 @@ void Simulation::MakeIOInfo(void)
 	ioInfo.set(smeshdisplay_generic_info + string("<i><b>Demagnetising field"), INT2(IOI_SMESHDISPLAY, MESHDISPLAY_SM_DEMAG));
 	ioInfo.set(smeshdisplay_generic_info + string("<i><b>Oersted field"), INT2(IOI_SMESHDISPLAY, MESHDISPLAY_SM_OERSTED));
 	ioInfo.set(smeshdisplay_generic_info + string("<i><b>Total dipole stray field"), INT2(IOI_SMESHDISPLAY, MESHDISPLAY_SM_STRAYH));
+
+	//Shows mesh vectorial quantity display option : minorId is the unique mesh id number, auxId is the display option
+	//IOI_MESHVECREP
+	//IOI_SMESHVECREP
+
+	string meshdisplay_option_info =
+		string("[tc1,1,0,1/tc]<b>Vectorial quantity display option") +
+		string("\n[tc1,1,0,1/tc]<i>full, X, Y, Z, direction</i>") +
+		string("\n[tc1,1,0,1/tc]click: change state\n");
+
+	ioInfo.push_back(meshdisplay_option_info, IOI_MESHVECREP);
+	ioInfo.push_back(meshdisplay_option_info, IOI_SMESHVECREP);
 
 	//Shows movingmesh trigger settings : minorId is the unique mesh id number (if set), auxId is the trigger state (used or not used), textId is the mesh name (if set)
 	//IOI_MOVINGMESH
@@ -1012,6 +1048,15 @@ void Simulation::MakeIOInfo(void)
 		string("\n[tc1,1,0,1/tc]click: change status\n");
 
 	ioInfo.push_back(IOI_INDIVIDUALSHAPE_info, IOI_INDIVIDUALSHAPE);
+
+	//Shows image cropping settings : textId has the DBL4 value as text
+	//IOI_IMAGECROPPING
+
+	string IOI_IMAGECROPPING_info =
+		string("[tc1,1,0,1/tc]<b>Image save cropping, normalized.") +
+		string("\n[tc1,1,0,1/tc]double-click: edit\n");
+
+	ioInfo.push_back(IOI_IMAGECROPPING_info, IOI_IMAGECROPPING);
 }
 
 //---------------------------------------------------- MAKE INTERACTIVE OBJECT : Auxiliary method
@@ -1139,6 +1184,19 @@ string Simulation::MakeIO(IOI_ identifier, PType ... params)
 		}
 		break;
 
+	case IOI_MESHVECREP:
+		if (params_str.size() == 1) {
+
+			int meshIndex = ToNum(params_str[0]);
+
+			return MakeInteractiveObject("full", IOI_MESHVECREP, SMesh[meshIndex]->get_id(), 0);
+		}
+		break;
+
+	case IOI_SMESHVECREP:
+		return MakeInteractiveObject("full", IOI_SMESHVECREP, 0, 0);
+		break;
+
 	case IOI_MESH_FORDISPLAYOPTIONS:
 		if (params_str.size() == 1) {
 
@@ -1191,6 +1249,14 @@ string Simulation::MakeIO(IOI_ identifier, PType ... params)
 
 			return MakeInteractiveObject(odeHandle, IOI_ODE, odeId);
 		}
+		break;
+
+	case IOI_ODEDT:
+		return MakeInteractiveObject("0", IOI_ODEDT, 0, 0, "0");
+		break;
+
+	case IOI_HEATDT:
+		return MakeInteractiveObject("0", IOI_HEATDT, 0, 0, "0");
 		break;
 
 	case IOI_ODE_EVAL:
@@ -1937,6 +2003,11 @@ string Simulation::MakeIO(IOI_ identifier, PType ... params)
 			}
 		}
 		break;
+
+	case IOI_IMAGECROPPING:
+		return MakeInteractiveObject("0, 0, 1, 1", IOI_IMAGECROPPING, 0, 0, "0, 0, 1, 1");
+		break;
+	
 	}
 
 	return "";

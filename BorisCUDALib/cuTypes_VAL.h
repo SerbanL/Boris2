@@ -123,7 +123,7 @@ struct cuVAL2 {
 		typename VType_,
 		std::enable_if_t<std::is_same<VType, VType_>::value>* = nullptr
 	>
-	__host__ __device__ cuReal operator*(const cuVAL2<VType_> &rhs) const { return cuReal(x * rhs.x + y * rhs.y); }
+	__host__ __device__ cuBReal operator*(const cuVAL2<VType_> &rhs) const { return cuBReal(x * rhs.x + y * rhs.y); }
 
 	//SIMPLE PRODUCT (component by component)
 	template <
@@ -226,7 +226,7 @@ struct cuVAL2 {
 
 typedef cuVAL2<int> cuINT2;
 typedef cuVAL2<float> cuFLT2;
-typedef cuVAL2<cuReal> cuReal2;
+typedef cuVAL2<cuBReal> cuReal2;
 typedef cuVAL2<double> cuDBL2;
 
 ////////////////////////////////////////////////////////////////////////////////////////////////// cuVAL3 and special cases INT3, FLT3, DBL3
@@ -259,6 +259,7 @@ struct cuVAL3 {
 	{
 		set_gpu_value(x, VType());
 		set_gpu_value(y, VType());
+		set_gpu_value(z, VType());
 	}
 
 	__host__ void construct_cu_obj(const cuVAL3& copyThis)
@@ -339,7 +340,7 @@ struct cuVAL3 {
 		typename VType_,
 		std::enable_if_t<std::is_same<VType, VType_>::value && std::is_fundamental<VType>::value>* = nullptr
 	>
-	__host__ __device__ cuReal operator*(const cuVAL3<VType_> &rhs) const { return cuReal(x * rhs.x + y * rhs.y + z * rhs.z); }
+	__host__ __device__ cuBReal operator*(const cuVAL3<VType_> &rhs) const { return cuBReal(x * rhs.x + y * rhs.y + z * rhs.z); }
 
 	//MATRIX PRODUCT : (same types but not fundamental, e.g. DBL33 with a DBL33 -> DBL33)
 	template <
@@ -476,7 +477,7 @@ typedef cuVAL3<int> cuINT3;
 typedef cuVAL3<size_t> cuSZ3;
 
 typedef cuVAL3<float> cuFLT3;
-typedef cuVAL3<cuReal> cuReal3;
+typedef cuVAL3<cuBReal> cuReal3;
 typedef cuVAL3<double> cuDBL3;
 
 typedef cuVAL3<cuINT3> cuINT33;
@@ -484,3 +485,218 @@ typedef cuVAL3<cuINT3> cuINT33;
 typedef cuVAL3<cuFLT3> cuFLT33;
 typedef cuVAL3<cuReal3> cuReal33;
 typedef cuVAL3<cuDBL3> cuDBL33;
+
+////////////////////////////////////////////////////////////////////////////////////////////////// cuVAL4 and special cases INT4, FLT4, DBL4
+//
+//
+
+template <typename VType>
+struct cuVAL4 {
+
+	//----------------------------- DATA
+
+	union {
+
+		VType i, x;
+	};
+
+	union {
+
+		VType j, y;
+	};
+
+	union {
+
+		VType k, z;
+	};
+
+	union {
+
+		VType l, t;
+	};
+
+	//----------------------------- cu_obj MANAGED CONSTRUCTORS / DESTRUCTOR
+
+	__host__ void construct_cu_obj(void)
+	{
+		set_gpu_value(x, VType());
+		set_gpu_value(y, VType());
+		set_gpu_value(z, VType());
+		set_gpu_value(t, VType());
+	}
+
+	__host__ void construct_cu_obj(const cuVAL4& copyThis)
+	{
+		assign_cu_obj(copyThis);
+	}
+
+	__host__ void assign_cu_obj(const cuVAL4& copyThis)
+	{
+		gpu_to_gpu(x, copyThis.x);
+		gpu_to_gpu(y, copyThis.y);
+		gpu_to_gpu(z, copyThis.z);
+		gpu_to_gpu(t, copyThis.t);
+	}
+
+	__host__ void destruct_cu_obj(void)
+	{
+	}
+
+	//----------------------------- VALUE CONSTRUCTORS
+
+	__host__ __device__ cuVAL4(void) { x = VType(); y = VType(); z = VType(); t = VType(); }
+	__host__ __device__ cuVAL4(VType val) { x = val; y = val; z = val; t = val; }
+	__host__ __device__ cuVAL4(VType x, VType y, VType z, VType t) { this->x = x; this->y = y; this->z = z; this->t = t; }
+
+	//----------------------------- CONVERTING CONSTRUCTORS
+
+	//type conversion constructor
+	template <typename CVType>
+	__host__ __device__ cuVAL4(const cuVAL4<CVType> &convThis) { x = (VType)convThis.x; y = (VType)convThis.y; z = (VType)convThis.z; t = (VType)convThis.t; }
+
+	//copy constructor
+	__host__ __device__ cuVAL4(const cuVAL4 &copyThis) { x = copyThis.x; y = copyThis.y; z = copyThis.z; t = copyThis.t; }
+
+	//assignment operator
+	__host__ __device__ cuVAL4& operator=(const cuVAL4 &rhs) { x = rhs.x; y = rhs.y; z = rhs.z; t = rhs.t; return *this; }
+
+	//----------------------------- CONVERSION TO/FROM NON-CUDA VERSION
+
+	template <typename SType>
+	__host__ operator VAL4<SType>() const
+	{
+		return VAL4<SType>((SType)x, (SType)y, (SType)z, (SType)t);
+	}
+
+	template <typename SType>
+	__host__ cuVAL4<VType>& operator=(const VAL4<SType> &rhs)
+	{
+		x = (VType)rhs.x; y = (VType)rhs.y; z = (VType)rhs.z; t = (VType)rhs.t;
+		return *this;
+	}
+
+	template <typename SType>
+	__host__ cuVAL4(const VAL4<SType> &rhs)
+	{
+		x = (VType)rhs.x; y = (VType)rhs.y; z = (VType)rhs.z; t = (VType)rhs.t;
+	}
+
+	//----------------------------- ARITHMETIC OPERATORS
+
+	//For binary operators if the second operand uses a floating point and the first is integral type, the return type favours the second; otherwise the return type favours the first operand.
+
+	//SUM
+	template <
+		typename VType_,
+		typename RType = std::conditional<std::is_floating_point<VType_>::value && std::is_integral<VType>::value, VType_, VType>::type
+	>
+		__host__ __device__ cuVAL4<RType> operator+(const cuVAL4<VType_> &rhs) const { return cuVAL4<RType>(x + rhs.x, y + rhs.y, z + rhs.z, t + rhs.t); }
+
+	//DIFFERENCE
+	template <
+		typename VType_,
+		typename RType = std::conditional<std::is_floating_point<VType_>::value && std::is_integral<VType>::value, VType_, VType>::type
+	>
+		__host__ __device__ cuVAL4<RType> operator-(const cuVAL4<VType_> &rhs) const { return cuVAL4<RType>(x - rhs.x, y - rhs.y, z - rhs.z, t - rhs.t); }
+
+	//SCALAR PRODUCT : (same fundamental types, e.g. DBL4 with a DBL4 -> double)
+	template <
+		typename VType_,
+		std::enable_if_t<std::is_same<VType, VType_>::value && std::is_fundamental<VType>::value>* = nullptr
+	>
+		__host__ __device__ cuBReal operator*(const cuVAL4<VType_> &rhs) const { return cuBReal(x * rhs.x + y * rhs.y + z * rhs.z + t * rhs.t); }
+
+	//PRODUCTS WITH A CONSTANT
+
+	//product with a constant (must be fundamental type) on the RHS
+	template <
+		typename MVType,
+		std::enable_if_t<std::is_fundamental<MVType>::value>* = nullptr
+	>
+		__host__ __device__ cuVAL4<VType> operator*(const MVType &mult) const { return cuVAL4<VType>(x * mult, y * mult, z * mult, t * mult); }
+
+	//product with a constant (must be fundamental type) on the LHS
+	template <
+		typename MVType,
+		std::enable_if_t<std::is_fundamental<MVType>::value>* = nullptr
+	>
+		__host__ __device__ friend cuVAL4<VType> operator*(const MVType &mult, const cuVAL4<VType> &rhs) { return cuVAL4<VType>(rhs.x * mult, rhs.y * mult, rhs.z * mult, rhs.t * mult); }
+
+	//SIMPLE DIVISION (component by component)
+	template <
+		typename VType_,
+		typename RType = std::conditional<std::is_floating_point<VType_>::value && std::is_integral<VType>::value, VType_, VType>::type
+	>
+		__host__ __device__ cuVAL4<RType> operator/(const cuVAL4<VType_> &rhs) const { return cuVAL4<RType>(x / rhs.x, y / rhs.y, z / rhs.z, t / rhs.t); }
+
+	//DIVISION BY A CONSTANT (must be fundamental type)
+	template <
+		class DVType,
+		std::enable_if_t<std::is_fundamental<DVType>::value>* = nullptr
+	>
+		__host__ __device__ cuVAL4<VType> operator/(const DVType &divisor) const { return cuVAL4<VType>(x / divisor, y / divisor, z / divisor, t / divisor); }
+
+	//OPERATION-ASSIGN : ADD
+	template <typename VType_>
+	__host__ __device__ void operator+=(const cuVAL4<VType_> &rhs) { x += rhs.x; y += rhs.y; z += rhs.z; t += rhs.t; }
+
+	//OPERATION-ASSIGN : SUBTRACT
+	template <typename VType_>
+	__host__ __device__ void operator-=(const cuVAL4<VType_> &rhs) { x -= rhs.x; y -= rhs.y; z -= rhs.z; t -= rhs.t; }
+
+	//OPERATION-ASSIGN : PRODUCT WITH CONSTANT (must be fundamental type)
+	template <
+		typename MVType,
+		std::enable_if_t<std::is_fundamental<MVType>::value>* = nullptr
+	>
+		__host__ __device__ void operator*=(const MVType &mult) { x *= mult; y *= mult; z *= mult; t *= mult; }
+
+	//OPERATION-ASSIGN : DIVISION BY CONSTANT (must be fundamental type)
+	template <
+		typename DVType,
+		std::enable_if_t<std::is_fundamental<DVType>::value>* = nullptr
+	>
+		__host__ __device__ void operator/=(const DVType &divisor) { x /= divisor; y /= divisor; z /= divisor; t /= divisor; }
+
+	//----------------------------- OTHER NUMERIC OPERATORS
+
+	//the norm or magnitude
+	__host__ __device__ VType norm(void) const { return sqrt(x * x + y * y + z * z + t * t); }
+
+	//get this cuVAL4 in normalized form - not checking for zero magnitude here this must be ensured externally
+	__host__ __device__ cuVAL4 normalized(void) const { return *this / norm(); }
+
+	//set new magnitude (norm) - not checking for zero magnitude here this must be ensured externally
+	__host__ __device__ void renormalize(VType new_norm) { *this *= new_norm / norm(); }
+
+	//----------------------------- COMPARISON OPERATORS
+
+	//comparison
+	__host__ __device__ bool operator==(const cuVAL4 &rhs) const { return (cuIsZ(x - rhs.x) && cuIsZ(y - rhs.y) && cuIsZ(z - rhs.z) && cuIsZ(t - rhs.t)); }
+	__host__ __device__ bool operator!=(const cuVAL4 &rhs) const { return (cuIsNZ(x - rhs.x) || cuIsNZ(y - rhs.y) || cuIsNZ(z - rhs.z) || cuIsNZ(t - rhs.t)); }
+
+	//ordering operators
+	__host__ __device__ bool operator>=(const cuVAL4 &rhs) const { return (cuIsZoP(x - rhs.x) && cuIsZoP(y - rhs.y) && cuIsZoP(z - rhs.z) && cuIsZoP(t - rhs.t)); }
+	__host__ __device__ bool operator<=(const cuVAL4 &rhs) const { return (cuIsZoN(x - rhs.x) && cuIsZoN(y - rhs.y) && cuIsZoN(z - rhs.z) && cuIsZoN(t - rhs.t)); }
+	__host__ __device__ bool operator>(const cuVAL4 &rhs) const { return ((x > rhs.x) && (y > rhs.y) && (z > rhs.z) && (t > rhs.t)); }
+	__host__ __device__ bool operator<(const cuVAL4 &rhs) const { return ((x < rhs.x) && (y < rhs.y) && (z < rhs.z) && (t < rhs.t)); }
+
+	__host__ __device__ bool IsNull(void) const { return (*this == cuVAL4()); }
+
+	//----------------------------- OTHER
+
+	__host__ __device__ VType dim(void) const { return x * y * z * t; }
+};
+
+typedef cuVAL4<int> cuINT4;
+typedef cuVAL4<size_t> cuSZ4;
+
+typedef cuVAL4<float> cuFLT4;
+typedef cuVAL4<cuBReal> cuReal4;
+typedef cuVAL4<double> cuDBL4;
+
+typedef cuVAL4<cuINT4> cuINT44;
+
+typedef cuVAL4<cuFLT4> cuFLT44;
+typedef cuVAL4<cuReal4> cuReal44;
+typedef cuVAL4<cuDBL4> cuDBL44;

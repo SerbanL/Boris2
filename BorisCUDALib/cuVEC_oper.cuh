@@ -271,3 +271,61 @@ __host__ VType cuVEC<VType>::average_nonempty(size_t arr_size, cuRect rectangle)
 	if (points) return av / points;
 	else return VType();
 }
+
+//------------------------------------------------------------------- ADDITION
+
+template <typename VType>
+__global__ void add_withscalarmult_kernel(cuVEC<VType>& add_to_this, cuVEC<VType>& add_this, cuBReal scalar_mult)
+{
+	int idx = blockIdx.x * blockDim.x + threadIdx.x;
+
+	if (idx < add_this.linear_size() && idx < add_to_this.linear_size()) {
+
+		add_to_this[idx] = add_to_this[idx] + scalar_mult * add_this[idx];
+	}
+}
+
+template <typename VType>
+__global__ void add_kernel(cuVEC<VType>& add_to_this, cuVEC<VType>& add_this)
+{
+	int idx = blockIdx.x * blockDim.x + threadIdx.x;
+
+	if (idx < add_this.linear_size() && idx < add_to_this.linear_size()) {
+
+		add_to_this[idx] = add_to_this[idx] + add_this[idx];
+	}
+}
+
+template void cuVEC<char>::add(size_t size, cu_obj<cuVEC<char>>& add_this, cuBReal scalar_mult);
+template void cuVEC<int>::add(size_t size, cu_obj<cuVEC<int>>& add_this, cuBReal scalar_mult);
+template void cuVEC<unsigned>::add(size_t size, cu_obj<cuVEC<unsigned>>& add_this, cuBReal scalar_mult);
+template void cuVEC<long>::add(size_t size, cu_obj<cuVEC<long>>& add_this, cuBReal scalar_mult);
+template void cuVEC<size_t>::add(size_t size, cu_obj<cuVEC<size_t>>& add_this, cuBReal scalar_mult);
+template void cuVEC<float>::add(size_t size, cu_obj<cuVEC<float>>& add_this, cuBReal scalar_mult);
+template void cuVEC<double>::add(size_t size, cu_obj<cuVEC<double>>& add_this, cuBReal scalar_mult);
+
+template void cuVEC<cuINT3>::add(size_t size, cu_obj<cuVEC<cuINT3>>& add_this, cuBReal scalar_mult);
+template void cuVEC<cuSZ3>::add(size_t size, cu_obj<cuVEC<cuSZ3>>& add_this, cuBReal scalar_mult);
+template void cuVEC<cuFLT3>::add(size_t size, cu_obj<cuVEC<cuFLT3>>& add_this, cuBReal scalar_mult);
+template void cuVEC<cuDBL3>::add(size_t size, cu_obj<cuVEC<cuDBL3>>& add_this, cuBReal scalar_mult);
+
+template void cuVEC<cuINT33>::add(size_t size, cu_obj<cuVEC<cuINT33>>& add_this, cuBReal scalar_mult);
+template void cuVEC<cuFLT33>::add(size_t size, cu_obj<cuVEC<cuFLT33>>& add_this, cuBReal scalar_mult);
+template void cuVEC<cuDBL33>::add(size_t size, cu_obj<cuVEC<cuDBL33>>& add_this, cuBReal scalar_mult);
+
+template void cuVEC<cuReIm>::add(size_t size, cu_obj<cuVEC<cuReIm>>& add_this, cuBReal scalar_mult);
+template void cuVEC<cuReIm3>::add(size_t size, cu_obj<cuVEC<cuReIm3>>& add_this, cuBReal scalar_mult);
+
+//add to this vec the values in add_this : must have same size : size; can optionally specify a scalar multiplier i.e. this += scalar_mult * add_this
+template <typename VType>
+__host__ void cuVEC<VType>::add(size_t size, cu_obj<cuVEC<VType>>& add_this, cuBReal scalar_mult)
+{
+	if (cuIsE(scalar_mult, (cuBReal)1.0)) {
+
+		add_kernel <<< (size + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (*this, (cuVEC<VType>&)add_this);
+	}
+	else {
+
+		add_withscalarmult_kernel << < (size + CUDATHREADS) / CUDATHREADS, CUDATHREADS >> > (*this, (cuVEC<VType>&)add_this, scalar_mult);
+	}
+}

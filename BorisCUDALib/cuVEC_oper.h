@@ -35,15 +35,15 @@ __device__ VType cuVEC<VType>::weighted_average(const cuReal3& coord, const cuRe
 	cuINT3 idx_ur = cu_ceil(pos_ur / h);
 
 	//2. obtain weighted average value from cells intersecting with the stencil (the larger the distance of the cell centre from coord, the lower the weight)
-	cuReal d_max = cu_GetMagnitude(stencil / 2 + h / 2);						//this is the maximum possible distance (a cell at this distance will get a weight of zero)	
-	cuReal d_total = 0;														//total reciprocal distance
+	cuBReal d_max = cu_GetMagnitude(stencil / 2 + h / 2);						//this is the maximum possible distance (a cell at this distance will get a weight of zero)	
+	cuBReal d_total = 0;														//total reciprocal distance
 	
 	for (int ii = (idx_ll.i >= 0 ? idx_ll.i : 0); ii < (idx_ur.i < n.x ? idx_ur.i : n.x); ii++) {
 		for (int jj = (idx_ll.j >= 0 ? idx_ll.j : 0); jj < (idx_ur.j < n.y ? idx_ur.j : n.y); jj++) {
 			for (int kk = (idx_ll.k >= 0 ? idx_ll.k : 0); kk < (idx_ur.k < n.z ? idx_ur.k : n.z); kk++) {
 
 				//find reciprocal distance for each cell : this is its weight * total reciprocal distance (to divide by d_total at the end)
-				cuReal d_recip = d_max - cu_get_distance(coord, cuReal3(((cuReal)ii + 0.5)*h.x, ((cuReal)jj + 0.5)*h.y, ((cuReal)kk + 0.5)*h.z));
+				cuBReal d_recip = d_max - cu_get_distance(coord, cuReal3(((cuBReal)ii + 0.5)*h.x, ((cuBReal)jj + 0.5)*h.y, ((cuBReal)kk + 0.5)*h.z));
 				d_total += d_recip;
 
 				smoothedValue += d_recip * quantity[ii + jj * n.x + kk * n.x*n.y];
@@ -74,15 +74,15 @@ __device__ VType cuVEC<VType>::weighted_average(const cuRect& rectangle)
 	cuReal3 center = ((rectangle.e + rectangle.s) / 2) - rect.s;
 
 	//2. obtain weighted average value from cells intersecting with the stencil (the larger the distance of the cell centre from coord, the lower the weight)
-	cuReal d_max = cu_GetMagnitude(stencil / 2 + h / 2);						//this is the maximum possible distance (a cell at this distance will get a weight of zero)	
-	cuReal d_total = 0;														//total reciprocal distance
+	cuBReal d_max = cu_GetMagnitude(stencil / 2 + h / 2);						//this is the maximum possible distance (a cell at this distance will get a weight of zero)	
+	cuBReal d_total = 0;														//total reciprocal distance
 
 	for (int ii = (idx_ll.i >= 0 ? idx_ll.i : 0); ii < (idx_ur.i < n.x ? idx_ur.i : n.x); ii++) {
 		for (int jj = (idx_ll.j >= 0 ? idx_ll.j : 0); jj < (idx_ur.j < n.y ? idx_ur.j : n.y); jj++) {
 			for (int kk = (idx_ll.k >= 0 ? idx_ll.k : 0); kk < (idx_ur.k < n.z ? idx_ur.k : n.z); kk++) {
 
 				//find reciprocal distance for each cell : this is its weight * total reciprocal distance (to divide by d_total at the end)
-				cuReal d_recip = d_max - cu_get_distance(center, cuReal3(((cuReal)ii + 0.5)*h.x, ((cuReal)jj + 0.5)*h.y, ((cuReal)kk + 0.5)*h.z));
+				cuBReal d_recip = d_max - cu_get_distance(center, cuReal3(((cuBReal)ii + 0.5)*h.x, ((cuBReal)jj + 0.5)*h.y, ((cuBReal)kk + 0.5)*h.z));
 				d_total += d_recip;
 
 				smoothedValue += d_recip * quantity[ii + jj * n.x + kk * n.x*n.y];
@@ -117,15 +117,15 @@ __device__ VType cuVEC<VType>::weighted_average(const cuINT3& ijk, const cuReal3
 	cuReal3 coord = pos_ll + (cs / 2);
 	
 	//2. obtain weighted average value from cells intersecting with the stencil (the larger the distance of the cell centre from coord, the lower the weight)
-	cuReal d_max = cu_GetMagnitude(cs / 2 + h / 2);						//this is the maximum possible distance (a cell at this distance will get a weight of zero)	
-	cuReal d_total = 0;														//total reciprocal distance
+	cuBReal d_max = cu_GetMagnitude(cs / 2 + h / 2);						//this is the maximum possible distance (a cell at this distance will get a weight of zero)	
+	cuBReal d_total = 0;														//total reciprocal distance
 	
 	for (int ii = (idx_ll.i >= 0 ? idx_ll.i : 0); ii < (idx_ur.i < n.x ? idx_ur.i : n.x); ii++) {
 		for (int jj = (idx_ll.j >= 0 ? idx_ll.j : 0); jj < (idx_ur.j < n.y ? idx_ur.j : n.y); jj++) {
 			for (int kk = (idx_ll.k >= 0 ? idx_ll.k : 0); kk < (idx_ur.k < n.z ? idx_ur.k : n.z); kk++) {
 
 				//find reciprocal distance for each cell : this is its weight * total reciprocal distance (to divide by d_total at the end)
-				cuReal d_recip = d_max - cu_get_distance(coord, cuReal3(((cuReal)ii + 0.5)*h.x, ((cuReal)jj + 0.5)*h.y, ((cuReal)kk + 0.5)*h.z));
+				cuBReal d_recip = d_max - cu_get_distance(coord, cuReal3(((cuBReal)ii + 0.5)*h.x, ((cuBReal)jj + 0.5)*h.y, ((cuBReal)kk + 0.5)*h.z));
 				d_total += d_recip;
 
 				smoothedValue += d_recip * quantity[ii + jj * n.x + kk * n.x*n.y];

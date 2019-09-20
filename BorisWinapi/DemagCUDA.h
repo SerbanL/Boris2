@@ -26,6 +26,13 @@ private:
 	//point to cpu version of this module
 	Demag *pDemag;
 
+	//The demag field computed separately : at certain steps in the ODE evaluation method we don't need to recalculate the demag field but can use a previous evaluation with an acceptable impact on the numerical error.
+	//This mode needs to be enabled by the user, and can be much faster than the default mode. The default mode is to re-evaluate the demag field at every step.
+	cu_obj<cuVEC<cuReal3>> Hdemag;
+
+	//when using the evaluation speedup method we must ensure we have a previous Hdemag evaluation available
+	bool Hdemag_calculated = false;
+
 public:
 
 	DemagCUDA(FMeshCUDA* pMeshCUDA_, Demag *pDemag_);
@@ -40,8 +47,6 @@ public:
 	BError UpdateConfiguration(UPDATECONFIG_ cfgMessage = UPDATECONFIG_GENERIC);
 
 	void UpdateField(void);
-
-	//-------------------
 };
 
 #else

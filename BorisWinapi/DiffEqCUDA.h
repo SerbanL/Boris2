@@ -30,20 +30,20 @@ protected:
 	//-----------------------------------Time step
 
 	//these need to be pointers, not cu_obj directly : we only want to make the cuda objects when ODECommonCUDA is made (cuda switched on), not at the start of the program - what if cuda not available on the system?
-	static cu_obj<cuReal>* pdT;
-	static cu_obj<cuReal>* pdT_last;
+	static cu_obj<cuBReal>* pdT;
+	static cu_obj<cuBReal>* pdT_last;
 
 	//-----------------------------------Primary data
 
-	static cu_obj<cuReal>* pmxh;
+	static cu_obj<cuBReal>* pmxh;
 	static cu_obj<cuReal3>* pmxh_av;
 	static cu_obj<size_t>* pavpoints;
 
-	static cu_obj<cuReal>* pdmdt;
+	static cu_obj<cuBReal>* pdmdt;
 	static cu_obj<cuReal3>* pdmdt_av;
 	static cu_obj<size_t>* pavpoints2;
 
-	static cu_obj<cuReal>* plte;
+	static cu_obj<cuBReal>* plte;
 
 	//-----------------------------------Evaluation method modifiers
 
@@ -67,9 +67,9 @@ protected:
 	//Accumulate values in these quantities, then obtain stepsizes as:
 	//step1 = delta_M_sq / delta_M_dot_delta_G
 	//step2 = delta_M_dot_delta_G / delta_G_sq
-	static cu_obj<cuReal>* pdelta_M_sq;
-	static cu_obj<cuReal>* pdelta_G_sq;
-	static cu_obj<cuReal>* pdelta_M_dot_delta_G;
+	static cu_obj<cuBReal>* pdelta_M_sq;
+	static cu_obj<cuBReal>* pdelta_G_sq;
+	static cu_obj<cuBReal>* pdelta_M_dot_delta_G;
 
 private:
 
@@ -112,9 +112,9 @@ public:
 
 	//---------------------------------------- GET METHODS
 
-	cuReal Get_mxh(void) { return pmxh->to_cpu(); }
-	cuReal Get_dmdt(void) { return pdmdt->to_cpu(); }
-	cuReal Get_lte(void) { return plte->to_cpu(); }
+	cuBReal Get_mxh(void) { return pmxh->to_cpu(); }
+	cuBReal Get_dmdt(void) { return pdmdt->to_cpu(); }
+	cuBReal Get_lte(void) { return plte->to_cpu(); }
 
 };
 

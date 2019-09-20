@@ -468,9 +468,9 @@ BError DPArrays::add_dparr(int dp_x1, int dp_x2, int dp_dest)
 {
 	BError error(__FUNCTION__);
 
-	if (!GoodArrays(dp_x1, dp_x2, dp_dest) || dpA[dp_x1].size() != dpA[dp_x2].size()) return error(BERROR_INCORRECTARRAYS);
+	if (!GoodArrays(dp_x1, dp_x2, dp_dest)) return error(BERROR_INCORRECTARRAYS);
 
-	int vec_size = dpA[dp_x1].size();
+	int vec_size = minimum(dpA[dp_x1].size(), dpA[dp_x2].size());
 
 	resize(dp_dest, vec_size);
 
@@ -487,9 +487,9 @@ BError DPArrays::subtract_dparr(int dp_x1, int dp_x2, int dp_dest)
 {
 	BError error(__FUNCTION__);
 
-	if (!GoodArrays(dp_x1, dp_x2, dp_dest) || dpA[dp_x1].size() != dpA[dp_x2].size()) return error(BERROR_INCORRECTARRAYS);
+	if (!GoodArrays(dp_x1, dp_x2, dp_dest)) return error(BERROR_INCORRECTARRAYS);
 
-	int vec_size = dpA[dp_x1].size();
+	int vec_size = minimum(dpA[dp_x1].size(), dpA[dp_x2].size());
 
 	resize(dp_dest, vec_size);
 
@@ -506,9 +506,9 @@ BError DPArrays::multiply_dparr(int dp_x1, int dp_x2, int dp_dest)
 {
 	BError error(__FUNCTION__);
 
-	if (!GoodArrays(dp_x1, dp_x2, dp_dest) || dpA[dp_x1].size() != dpA[dp_x2].size()) return error(BERROR_INCORRECTARRAYS);
+	if (!GoodArrays(dp_x1, dp_x2, dp_dest)) return error(BERROR_INCORRECTARRAYS);
 
-	int vec_size = dpA[dp_x1].size();
+	int vec_size = minimum(dpA[dp_x1].size(), dpA[dp_x2].size());
 
 	resize(dp_dest, vec_size);
 
@@ -525,9 +525,9 @@ BError DPArrays::divide_dparr(int dp_x1, int dp_x2, int dp_dest)
 {
 	BError error(__FUNCTION__);
 
-	if (!GoodArrays(dp_x1, dp_x2, dp_dest) || dpA[dp_x1].size() != dpA[dp_x2].size()) return error(BERROR_INCORRECTARRAYS);
+	if (!GoodArrays(dp_x1, dp_x2, dp_dest)) return error(BERROR_INCORRECTARRAYS);
 
-	int vec_size = dpA[dp_x1].size();
+	int vec_size = minimum(dpA[dp_x1].size(), dpA[dp_x2].size());
 
 	resize(dp_dest, vec_size);
 
@@ -545,9 +545,9 @@ BError DPArrays::dotproduct_dparr(int dp_x1, int dp_x2, double *pvalue)
 {
 	BError error(__FUNCTION__);
 
-	if (!GoodArrays(dp_x1, dp_x2) || dpA[dp_x1].size() != dpA[dp_x2].size()) return error(BERROR_INCORRECTARRAYS);
+	if (!GoodArrays(dp_x1, dp_x2)) return error(BERROR_INCORRECTARRAYS);
 
-	int vec_size = dpA[dp_x1].size();
+	int vec_size = minimum(dpA[dp_x1].size(), dpA[dp_x2].size());
 
 	double value = 0.0;
 
@@ -875,8 +875,8 @@ BError DPArrays::fit_lorentz(int dp_x, int dp_y, DBL2 *pS, DBL2 *pH0, DBL2 *pdH,
 	return error;
 }
 
-//fit Mz(r) = Ms * cos(2*arctan(sinh(R/w)/sinh(r/w))). Return fitting parameters with their standard deviations.
-BError DPArrays::fit_skyrmion(int dp_x, int dp_y, DBL2 *pR, DBL2 *pMs, DBL2 *pw)
+//fit Mz(x) = Ms * cos(2*arctan(sinh(R/w)/sinh((x-x0)/w))). Return fitting parameters with their standard deviations.
+BError DPArrays::fit_skyrmion(int dp_x, int dp_y, DBL2 *pR, DBL2 *px0, DBL2 *pMs, DBL2 *pw)
 {
 	BError error(__FUNCTION__);
 
@@ -898,13 +898,12 @@ BError DPArrays::fit_skyrmion(int dp_x, int dp_y, DBL2 *pR, DBL2 *pMs, DBL2 *pw)
 
 	curve_fit.FitSkyrmion_LMA(xy_data, params, params_std);
 
-	if (params.size() >= 3 && params_std.size() >= 2) {
+	if (params.size() >= 4 && params_std.size() >= 4) {
 
 		*pR = DBL2(params[0], params_std[0]);
-		*pMs = DBL2(params[1], params_std[1]);
-
-		if (params_std.size() >= 2) *pw = DBL2(params[2], params_std[2]);
-		else *pw = DBL2(params[2], 0.0);
+		*px0 = DBL2(params[1], params_std[1]);
+		*pMs = DBL2(params[2], params_std[2]);
+		*pw = DBL2(params[3], params_std[3]);
 	}
 	else return error(BERROR_INCORRECTARRAYS);
 

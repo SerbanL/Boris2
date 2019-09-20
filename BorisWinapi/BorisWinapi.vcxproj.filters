@@ -513,6 +513,9 @@
     <ClInclude Include="ExchangeBaseCUDA.h">
       <Filter>EXCHANGE - CUDA</Filter>
     </ClInclude>
+    <ClInclude Include="resource.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="BorisGraphics.cpp">
@@ -961,6 +964,9 @@
     </ClCompile>
     <ClCompile Include="DemagTFunc_Irregular_PBC.cpp">
       <Filter>FUNCS</Filter>
+    </ClCompile>
+    <ClCompile Include="SkyrmionTrackCUDA.cpp">
+      <Filter>MESHES</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

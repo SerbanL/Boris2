@@ -37,6 +37,9 @@ struct PhysQRepComponent :
 	//the mesh name from which the PhysQ which generated this PhysQRepComponent was collected
 	string meshName;
 
+	//the type of representation to use for vectorial quantities (specified when a PhysQ is returned, so value set here before calculating a representation for it)
+	VEC3REP_ vec3rep;
+
 	PhysQRepComponent(void) :
 		ProgramStateNames(this,
 			{
@@ -168,7 +171,7 @@ class PhysQRep :
 {
 private:
 
-	OmpReduction<double> omp_reduction;
+	OmpReduction<double> omp_reduction, omp_reduction2;
 
 	//conversion factor from meters to logical units : multiply mesh dimensions by this to obtain logical dimensions
 	double m_to_l = 1e9;
@@ -204,12 +207,12 @@ private:
 
 private:
 
-	//calculate representation for a component and return minimum and maximum values - for VEC<DBL3> / VEC_VC<DBL3>
+	//calculate representation for a component and return minimum and maximum values (either of components, or magnitude), as well as maximum magnitude value - for VEC<DBL3> / VEC_VC<DBL3>
 	template <typename VECType>
-	DBL2 CalculateRepresentation_VEC(VECType* pQ, PhysQRepComponent& physQRepComponent);
+	DBL3 CalculateRepresentation_VEC(VECType* pQ, PhysQRepComponent& physQRepComponent);
 
 	//after global minimum and maximum found use this to make adjustments - scaling changes
-	void AdjustMagnitude_VEC(PhysQRepComponent& physQRepComponent, DBL2 minmax);
+	void AdjustMagnitude_VEC(PhysQRepComponent& physQRepComponent, DBL3 minmaxmax);
 
 	//calculate representation for a component and return minimum and maximum values - for VEC<double> / VEC_VC<double>
 	template <typename VECType>

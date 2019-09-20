@@ -49,14 +49,14 @@ MeshParams::MeshParams(vector<PARAM_>& enabledParams)
 			meshParams.push_back("K2", MeshParamDescriptor(PARAMTYPE_MAGNETIC, "J/m3"), PARAM_K2);
 			break;
 
-		case SPARAM_TC:
+		case PARAM_TC:
 			//add it to mesh but mark it as hidden
-			meshParams.push_back("Tc", MeshParamDescriptor(PARAMTYPE_MAGNETIC, "K", true), SPARAM_TC);
+			meshParams.push_back("Tc", MeshParamDescriptor(PARAMTYPE_MAGNETIC, "K", true), PARAM_TC);
 			break;
 
-		case SPARAM_MUB:
+		case PARAM_MUB:
 			//add it to mesh but mark it as hidden
-			meshParams.push_back("muB", MeshParamDescriptor(PARAMTYPE_MAGNETIC, "K", true), SPARAM_MUB);
+			meshParams.push_back("muB", MeshParamDescriptor(PARAMTYPE_MAGNETIC, "K", true), PARAM_MUB);
 			break;
 
 		case PARAM_EA1:
@@ -77,6 +77,14 @@ MeshParams::MeshParams(vector<PARAM_>& enabledParams)
 
 		case PARAM_HA:
 			meshParams.push_back("cHa", MeshParamDescriptor(PARAMTYPE_MAGNETIC), PARAM_HA);
+			break;
+
+		case PARAM_T:
+			meshParams.push_back("cT", MeshParamDescriptor(PARAMTYPE_THERMAL), PARAM_T);
+			break;
+
+		case PARAM_Q:
+			meshParams.push_back("Q", MeshParamDescriptor(PARAMTYPE_THERMAL, "W/m3"), PARAM_Q);
 			break;
 
 		case PARAM_ELC:

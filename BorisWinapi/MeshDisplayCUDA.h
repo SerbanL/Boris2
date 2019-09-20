@@ -27,10 +27,10 @@ private:
 	cu_obj<cuVEC<cuReal3>> display_vec_vec_CUDA;
 
 	//scalar cuVEC_VC
-	cu_obj<cuVEC_VC<cuReal>> display_vec_vc_sca_CUDA;
+	cu_obj<cuVEC_VC<cuBReal>> display_vec_vc_sca_CUDA;
 
 	//scalar cuVEC
-	cu_obj<cuVEC<cuReal>> display_vec_sca_CUDA;
+	cu_obj<cuVEC<cuBReal>> display_vec_sca_CUDA;
 
 protected:
 
@@ -58,7 +58,7 @@ protected:
 	VEC_VC<double>* pdisplay_vec_vc_sca;
 
 	//scalar cuVEC
-	VEC_VC<double>* pdisplay_vec_sca;
+	VEC<double>* pdisplay_vec_sca;
 #endif
 
 protected:
@@ -70,9 +70,9 @@ protected:
 	//extract from mesh display (in gpu memory) a coarser mesh display (still in gpu memory), then copy the coarse display to cpu memory ready to use further.
 	//n_quantity and meshRect are the same as those in cu_obj_quantity : pass in values in cpu memory to speed up function execution
 	bool prepare_display(SZ3 n_quantity, Rect meshRect, double detail_level, cu_obj<cuVEC_VC<cuReal3>>& cu_obj_quantity);
-	bool prepare_display(SZ3 n_quantity, Rect meshRect, double detail_level, cu_obj<cuVEC_VC<cuReal>>& cu_obj_quantity);
+	bool prepare_display(SZ3 n_quantity, Rect meshRect, double detail_level, cu_obj<cuVEC_VC<cuBReal>>& cu_obj_quantity);
 	bool prepare_display(SZ3 n_quantity, Rect meshRect, double detail_level, cu_obj<cuVEC<cuReal3>>& cu_obj_quantity);
-	bool prepare_display(SZ3 n_quantity, Rect meshRect, double detail_level, cu_obj<cuVEC<cuReal>>& cu_obj_quantity);
+	bool prepare_display(SZ3 n_quantity, Rect meshRect, double detail_level, cu_obj<cuVEC<cuBReal>>& cu_obj_quantity);
 };
 
 #endif

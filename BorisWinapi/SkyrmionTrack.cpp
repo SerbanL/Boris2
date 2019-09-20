@@ -13,7 +13,7 @@ DBL2 SkyrmionTrack::Get_skyshift(VEC_VC<DBL3>& M, Rect skyRect)
 	//must have a set rectangle
 	if (skyRect.IsNull()) return DBL2();
 
-	int skyTrack_idx = Get_skyTrack_index(DBL2(skyRect.s.x, skyRect.s.y));
+	int skyTrack_idx = Get_skyTrack_index(skyRect);
 
 	//shift the skyrmion rectangle to current tracking position
 	skyRect += DBL3(skyTrack_ShiftLast[skyTrack_idx].x, skyTrack_ShiftLast[skyTrack_idx].y, 0.0);
@@ -56,63 +56,114 @@ DBL2 SkyrmionTrack::Get_skyshift(VEC_VC<DBL3>& M, Rect skyRect)
 	return skyTrack_Shift[skyTrack_idx];
 }
 
-//-------------------------------------------------- Get_skyshift : CUDA 
-
-#if COMPILECUDA == 1
-DBL2 SkyrmionTrack::Get_skyshiftCUDA(size_t size, DBL3 h, cu_obj<cuVEC_VC<cuReal3>>& M, Rect skyRect)
+//additionally return the x and y diameters
+DBL4 SkyrmionTrack::Get_skypos_diameters(VEC_VC<DBL3>& M, Rect skyRect)
 {
 	//must have a set rectangle
-	if (skyRect.IsNull()) return DBL2();
+	if (skyRect.IsNull()) return DBL4();
 
-	int skyTrack_idx = Get_skyTrack_index(DBL2(skyRect.s.x, skyRect.s.y));
+	int skyTrack_idx = Get_skyTrack_index(skyRect);
+	
+	CurveFitting fit;
 
-	//shift the skyrmion rectangle to current tracking position
-	skyRect += DBL3(skyTrack_ShiftLast[skyTrack_idx].x, skyTrack_ShiftLast[skyTrack_idx].y, 0.0);
+	vector<double> params;
 
-	//Find M averages in the 4 skyRect xy-plane quadrants
-	DBL3 bottom_left = (DBL3)M()->average_nonempty(size, skyRect.get_quadrant_bl());
-	DBL3 bottom_right = (DBL3)M()->average_nonempty(size, skyRect.get_quadrant_br());
-	DBL3 top_left = (DBL3)M()->average_nonempty(size, skyRect.get_quadrant_tl());
-	DBL3 top_right = (DBL3)M()->average_nonempty(size, skyRect.get_quadrant_tr());
+	//skyRect was the original skyrmion rectangle, used to identify it. We now want to work with the updated skyrmion rectangle.
+	skyRect = skyTrack_rect[skyTrack_idx];
 
-	//the new shift value
-	DBL2 skyTrack_newShift = DBL2();
+	//get x axis data then fit to find skyrmion diameter and center position
+	auto fit_x_axis = [&](void) -> DBL2 {
 
-	//if left half z-component value modulus has increased compared to the right half then it contains less of the skyrmion ring -> skyrmion must have shifted along +x so follow it
-	if (mod(bottom_left.z + top_left.z) > mod(bottom_right.z + top_right.z)) {
+		int points_x = (skyRect.e.x - skyRect.s.x) / M.h.x;
+		
+		if (xy_data.size() < points_x) xy_data.resize(points_x);
 
-		skyTrack_newShift.x += h.x;
-	}
-	else {
+#pragma omp parallel for
+		for (int idx = 0; idx < points_x; idx++) {
 
-		skyTrack_newShift.x -= h.x;
-	}
+			xy_data[idx].x = ((double)idx + 0.5) * M.h.x + skyRect.s.x;
 
-	//if bottom half z-component value modulus has increased compared to the top half then it contains less of the skyrmion ring -> skyrmion must have shifted along +y so follow it
-	if (mod(bottom_left.z + bottom_right.z) > mod(top_left.z + top_right.z)) {
+			DBL3 value = M.weighted_average(DBL3(xy_data[idx].x, (skyRect.e.y + skyRect.s.y) / 2, M.h.z / 2), M.h);
+			xy_data[idx].y = value.z;
+		}
 
-		skyTrack_newShift.y += h.y;
-	}
-	else {
+		fit.FitSkyrmion_LMA(xy_data, params, points_x);
+		
+		return DBL2(params[0] * 2, params[1]);
+	};
 
-		skyTrack_newShift.y -= h.y;
-	}
+	//get y axis data then fit to find skyrmion diameter and center position
+	auto fit_y_axis = [&](void) -> DBL2 {
 
-	//set actual total shift as average of new and last total shift values - this eliminates tracking oscillations
-	skyTrack_Shift[skyTrack_idx] = skyTrack_ShiftLast[skyTrack_idx] + skyTrack_newShift / 2;
+		//get y axis data then fit to find skyrmion radius
+		int points_y = (skyRect.e.y - skyRect.s.y) / M.h.y;
+		
+		if (xy_data.size() < points_y) xy_data.resize(points_y);
 
-	//save current total shift for next time
-	skyTrack_ShiftLast[skyTrack_idx] += skyTrack_newShift;
+#pragma omp parallel for
+		for (int idx = 0; idx < points_y; idx++) {
 
-	return skyTrack_Shift[skyTrack_idx];
+			xy_data[idx].x = ((double)idx + 0.5) * M.h.y + skyRect.s.y;
+
+			DBL3 value = M.weighted_average(DBL3((skyRect.e.x + skyRect.s.x) / 2, xy_data[idx].x, M.h.z / 2), M.h);
+			xy_data[idx].y = value.z;
+		}
+
+		fit.FitSkyrmion_LMA(xy_data, params, points_y);
+
+		return DBL2(params[0] * 2, params[1]);
+	};
+
+	//1. First fitting along x direction - only need skyrmion center x position now so we can center the rect along x (the "radius" returned will not be the actual radius).
+
+	DBL2 dia_pos = fit_x_axis();
+	
+	//center rectangle along x
+	skyRect += DBL3(dia_pos.j - (skyRect.e.x + skyRect.s.x) / 2, 0.0, 0.0);
+
+	//2. Fit along y direction - this gives us the correct y axis diameter, and also allows us to center the rectangle along y
+
+	dia_pos = fit_y_axis();
+	double diameter_y = dia_pos.i;
+
+	//center rectangle along y
+	skyRect += DBL3(0.0, dia_pos.j - (skyRect.e.y + skyRect.s.y) / 2, 0.0);
+
+	//3. Finally fit along x direction again to obtain correct x diameter.
+	
+	dia_pos = fit_x_axis();
+	double diameter_x = dia_pos.i;
+
+	double position_x = (skyRect.s.x + skyRect.e.x) / 2;
+	double position_y = (skyRect.s.y + skyRect.e.y) / 2;
+
+	//Update the skyrmion rectangle for next time - center it on the skyrmion with dimensions 50% larger than the diameter.
+	//Also make sure to cap the rectangle to the mesh dimensions so we don't attempt to read data outside of M
+	double start_x = position_x - diameter_x * 0.75;
+	if (start_x < 0.0) start_x = 0.0;
+
+	double start_y = position_y - diameter_y * 0.75;
+	if (start_y < 0.0) start_y = 0.0;
+
+	double end_x = position_x + diameter_x * 0.75;
+	if (end_x > M.rect.e.x) end_x = M.rect.e.x;
+
+	double end_y = position_y + diameter_y * 0.75;
+	if (end_y > M.rect.e.y) end_y = M.rect.e.y;
+
+	//Update the skyrmion rectangle for next time - center it on the skyrmion with dimensions 50% larger than the diameter.
+	skyTrack_rect[skyTrack_idx] = Rect(DBL3(start_x, start_y, 0.0), DBL3(end_x, end_y, M.h.z));
+
+	return DBL4(position_x, position_y, diameter_x, diameter_y);
 }
-#endif
 
 //-------------------------------------------------- AUXILIARY
 
 //for given skyrmion identifying rectangle obtain an index in skyTrack_Shift - either an existing entry if skyRectOrigin found in skyTrack_Id, else make a new entry
-int SkyrmionTrack::Get_skyTrack_index(DBL2 skyRectOrigin)
+int SkyrmionTrack::Get_skyTrack_index(Rect skyRect)
 {
+	DBL2 skyRectOrigin = DBL2(skyRect.s.x, skyRect.s.y);
+
 	for (int idx = 0; idx < skyTrack_Id.size(); idx++) {
 
 		if (skyRectOrigin == skyTrack_Id[idx]) return idx;
@@ -122,6 +173,7 @@ int SkyrmionTrack::Get_skyTrack_index(DBL2 skyRectOrigin)
 	skyTrack_Id.push_back(skyRectOrigin);
 	skyTrack_Shift.push_back(DBL2());
 	skyTrack_ShiftLast.push_back(DBL2());
+	skyTrack_rect.push_back(skyRect);
 
 	return skyTrack_Id.size() - 1;
 }
@@ -130,12 +182,12 @@ int SkyrmionTrack::Get_skyTrack_index(DBL2 skyRectOrigin)
 //This method is called by FMesh::UpdateConfiguration
 void SkyrmionTrack::UpdateConfiguration(vector_lut<DatumConfig>& saveDataList)
 {
-	//check saveDataList to see if there is a DATA_SKYSHIFT entry with matching rectangle xy origin.
+	//check saveDataList to see if there is a DATA_SKYSHIFT or DATA_SKYPOS entry with matching rectangle xy origin.
 	auto FindEntry = [&](DBL2 skyRectOrigin) -> bool {
 
 		for (int idx = 0; idx < saveDataList.size(); idx++) {
 
-			if (saveDataList[idx].datumId == DATA_SKYSHIFT) {
+			if (saveDataList[idx].datumId == DATA_SKYSHIFT || saveDataList[idx].datumId == DATA_SKYPOS) {
 
 				//found it
 				if (DBL2(saveDataList[idx].rectangle.s.x, saveDataList[idx].rectangle.s.y) == skyRectOrigin) return true;
@@ -156,6 +208,7 @@ void SkyrmionTrack::UpdateConfiguration(vector_lut<DatumConfig>& saveDataList)
 			skyTrack_Id.erase(skyTrack_Id.begin() + entry_idx);
 			skyTrack_Shift.erase(skyTrack_Shift.begin() + entry_idx);
 			skyTrack_ShiftLast.erase(skyTrack_ShiftLast.begin() + entry_idx);
+			skyTrack_rect.erase(skyTrack_rect.begin() + entry_idx);
 
 			//check next entry but don't increment entry_idx as we just erased entry at entry_idx
 		}

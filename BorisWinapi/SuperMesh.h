@@ -28,7 +28,7 @@ using namespace std;
 class SuperMesh : 
 	public SimulationSharedData, 
 	public ProgramState<SuperMesh,
-	tuple<int, SZ3, DBL3, Rect, SZ3, DBL3, Rect, ODECommon, vector_key<Mesh*>, vector_lut<Modules*>, string, string, bool, bool>,
+	tuple<int, int, SZ3, DBL3, Rect, SZ3, DBL3, Rect, ODECommon, vector_key<Mesh*>, vector_lut<Modules*>, string, string, bool, bool>,
 	tuple<FMesh, DipoleMesh, MetalMesh, InsulatorMesh,
 		  SDemag, StrayField, STransport, Oersted, SHeat> >
 {
@@ -64,6 +64,9 @@ private:
 
 	//current quantity displayed on screen for super-mesh
 	int displayedPhysicalQuantity = MESHDISPLAY_NONE;
+
+	//type of representation to use for vectorial quantities (see VEC3REP_ enum in PhysQDefs.h)
+	int vec3rep = (int)VEC3REP_FULL;
 
 	//the entire super-mesh rectangle (rectangle containing all meshes)
 	Rect sMeshRect;
@@ -206,6 +209,8 @@ public:
 	//set the ode and evaluation method. Any new ODE in a ferromagnetic mesh will use these settings.
 	BError SetODE(ODE_ setOde, EVAL_ evalMethod);
 
+	void SetEvaluationSpeedup(int status) { odeSolver.SetEvaluationSpeedup(status); UpdateConfiguration(); }
+
 	//set the time step for the magnetisation solver
 	void SetTimeStep(double dT) { odeSolver.SetdT(dT); }
 
@@ -214,6 +219,12 @@ public:
 
 	//is the current time step fully finished? - most evaluation schemes need multiple sub-steps
 	bool CurrentTimeStepSolved(void) { return odeSolver.TimeStepSolved(); }
+	
+	//check evaluation speedup settings in ode solver
+	int EvaluationSpeedup(void) { return odeSolver.EvaluationSpeedup(); }
+
+	//check in ODECommon the type of field update we need to do depending on the ODE evaluation step
+	int Check_Step_Update(void) { return odeSolver.Check_Step_Update(); }
 
 	//check if ODE solver needs spin accumulation solved
 	bool SolveSpinCurrent(void) { return odeSolver.SolveSpinCurrent(); }
@@ -327,6 +338,9 @@ public:
 	//fully prepare moving mesh algorithm on named mesh (must be ferromagnetic) - skyrmion
 	BError PrepareMovingMesh_Skyrmion(string meshName);
 
+	//Clear moving mesh settings made by a prepare method
+	void ClearMovingMesh(void);
+
 	//set ferromagnetic mesh roughness refinement if Roughness module enabled in given mesh
 	BError SetMeshRoughnessRefinement(string meshName, INT3 refine);
 
@@ -370,6 +384,7 @@ public:
 
 	//others
 
+	//set mesh base temperature. If spatial variation set and Heat module enabled then non-uniform base temperature will be set
 	BError SetBaseTemperature(string meshName, double Temperature);
 
 	//ambient and alpha boundary coefficient for Robin boundary conditions - set in Heat module if active
@@ -476,6 +491,10 @@ public:
 	int GetDisplayedPhysicalQuantity(void) { return displayedPhysicalQuantity; }
 
 	BError SetDisplayedPhysicalQuantity(string meshName, int displayedPhysicalQuantity_);
+
+	//Get/Set vectorial quantity representation options in named mesh (which could be the supermesh)
+	BError SetVEC3Rep(string meshName, int vec3rep_);
+	int GetVEC3Rep(string meshName);
 
 	//--------------------------------------------------------- MODULE METHODS TEMPLATED CALLERS
 

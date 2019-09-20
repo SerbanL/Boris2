@@ -29,9 +29,9 @@ __global__ void set_cmbnd_continuous_kernel(
 		int k = (box_idx / (box_sizes.x * box_sizes.y)) + contact.cells_box.s.k;
 
 		//cellsizes perpendicular to interface
-		cuReal hL = contact.hshift_secondary.norm();
-		cuReal hR = contact.hshift_primary.norm();
-		cuReal hmax = (hL > hR ? hL : hR);
+		cuBReal hL = contact.hshift_secondary.norm();
+		cuBReal hR = contact.hshift_primary.norm();
+		cuBReal hmax = (hL > hR ? hL : hR);
 
 		int cell1_idx = i + j * V_pri.n.x + k * V_pri.n.x*V_pri.n.y;
 
@@ -61,8 +61,8 @@ __global__ void set_cmbnd_continuous_kernel(
 		VType a_val_pri = cmbndFuncs_pri.a_func_pri(cell1_idx, cell2_idx, contact.hshift_secondary);
 
 		//b values adjusted with weights
-		cuReal b_val_sec = cmbndFuncs_sec.b_func_sec(relpos_m1, contact.hshift_secondary, stencil) * contact.weights.i;
-		cuReal b_val_pri = cmbndFuncs_pri.b_func_pri(cell1_idx, cell2_idx) * contact.weights.j;
+		cuBReal b_val_sec = cmbndFuncs_sec.b_func_sec(relpos_m1, contact.hshift_secondary, stencil) * contact.weights.i;
+		cuBReal b_val_pri = cmbndFuncs_pri.b_func_pri(cell1_idx, cell2_idx) * contact.weights.j;
 
 		//V'' values at cell positions -1 and 1
 		VType Vdiff2_sec = cmbndFuncs_sec.diff2_sec(relpos_m1, stencil);
@@ -107,9 +107,9 @@ __global__ void set_cmbnd_continuousflux_kernel(
 		int k = (box_idx / (box_sizes.x * box_sizes.y)) + contact.cells_box.s.k;
 
 		//cellsizes perpendicular to interface
-		cuReal hL = contact.hshift_secondary.norm();
-		cuReal hR = contact.hshift_primary.norm();
-		cuReal hmax = (hL > hR ? hL : hR);
+		cuBReal hL = contact.hshift_secondary.norm();
+		cuBReal hR = contact.hshift_primary.norm();
+		cuBReal hmax = (hL > hR ? hL : hR);
 
 		int cell1_idx = i + j * V_pri.n.x + k * V_pri.n.x*V_pri.n.y;
 
@@ -139,8 +139,8 @@ __global__ void set_cmbnd_continuousflux_kernel(
 		VType a_val_pri = cmbndFuncs_pri.a_func_pri(cell1_idx, cell2_idx, contact.hshift_secondary);
 
 		//b values adjusted with weights
-		cuReal b_val_sec = cmbndFuncs_sec.b_func_sec(relpos_m1, contact.hshift_secondary, stencil) * contact.weights.i;
-		cuReal b_val_pri = cmbndFuncs_pri.b_func_pri(cell1_idx, cell2_idx) * contact.weights.j;
+		cuBReal b_val_sec = cmbndFuncs_sec.b_func_sec(relpos_m1, contact.hshift_secondary, stencil) * contact.weights.i;
+		cuBReal b_val_pri = cmbndFuncs_pri.b_func_pri(cell1_idx, cell2_idx) * contact.weights.j;
 
 		//V'' values at cell positions -1 and 1
 		VType Vdiff2_sec = cmbndFuncs_sec.diff2_sec(relpos_m1, stencil);
@@ -150,9 +150,9 @@ __global__ void set_cmbnd_continuousflux_kernel(
 		VType A_val = cmbndFuncs_s.A_func(cell1_idx, cell2_idx, relpos_m1, contact.hshift_secondary, stencil, cmbndFuncs_sec, cmbndFuncs_pri);
 
 		//B value, then use it to find G value
-		cuReal B_val = cmbndFuncs_s.B_func(cell1_idx, cell2_idx, relpos_m1, contact.hshift_secondary, stencil, cmbndFuncs_sec, cmbndFuncs_pri);
+		cuBReal B_val = cmbndFuncs_s.B_func(cell1_idx, cell2_idx, relpos_m1, contact.hshift_secondary, stencil, cmbndFuncs_sec, cmbndFuncs_pri);
 
-		cuReal G_val = 0.0;
+		cuBReal G_val = 0.0;
 		if (B_val) G_val = 2 * b_val_pri * b_val_sec / (3 * B_val * hmax);
 
 		//Formula for V1 - note, this reduces to the continuous case for G_val = 0 (or B_val tends to infinity) and A_val = VType(0)
@@ -194,9 +194,9 @@ __global__ void set_cmbnd_discontinuous_kernel(
 		int k = (box_idx / (box_sizes.x * box_sizes.y)) + contact.cells_box.s.k;
 
 		//cellsizes perpendicular to interface
-		cuReal hL = contact.hshift_secondary.norm();
-		cuReal hR = contact.hshift_primary.norm();
-		cuReal hmax = (hL > hR ? hL : hR);
+		cuBReal hL = contact.hshift_secondary.norm();
+		cuBReal hR = contact.hshift_primary.norm();
+		cuBReal hmax = (hL > hR ? hL : hR);
 
 		int cell1_idx = i + j * V_pri.n.x + k * V_pri.n.x*V_pri.n.y;
 
@@ -226,8 +226,8 @@ __global__ void set_cmbnd_discontinuous_kernel(
 		VType a_val_pri = cmbndFuncs_pri.a_func_pri(cell1_idx, cell2_idx, contact.hshift_secondary);
 
 		//b values adjusted with weights
-		cuReal b_val_sec = cmbndFuncs_sec.b_func_sec(relpos_m1, contact.hshift_secondary, stencil) * contact.weights.i;
-		cuReal b_val_pri = cmbndFuncs_pri.b_func_pri(cell1_idx, cell2_idx) * contact.weights.j;
+		cuBReal b_val_sec = cmbndFuncs_sec.b_func_sec(relpos_m1, contact.hshift_secondary, stencil) * contact.weights.i;
+		cuBReal b_val_pri = cmbndFuncs_pri.b_func_pri(cell1_idx, cell2_idx) * contact.weights.j;
 
 		//V'' values at cell positions -1 and 1
 		VType Vdiff2_sec = cmbndFuncs_sec.diff2_sec(relpos_m1, stencil);
@@ -242,10 +242,10 @@ __global__ void set_cmbnd_discontinuous_kernel(
 		auto B_val_pri = cmbndFuncs_s.B_func_pri(cell1_idx, cell2_idx, relpos_m1, contact.hshift_secondary, stencil, cmbndFuncs_sec, cmbndFuncs_pri);
 
 		//c values
-		cuReal c_m1 = cmbndFuncs_sec.c_func_sec(relpos_m1, stencil);
-		cuReal c_m2 = cmbndFuncs_sec.c_func_sec(relpos_m1 + contact.hshift_secondary, stencil);
-		cuReal c_1 = cmbndFuncs_pri.c_func_pri(cell1_idx);
-		cuReal c_2 = cmbndFuncs_pri.c_func_pri(cell2_idx);
+		cuBReal c_m1 = cmbndFuncs_sec.c_func_sec(relpos_m1, stencil);
+		cuBReal c_m2 = cmbndFuncs_sec.c_func_sec(relpos_m1 + contact.hshift_secondary, stencil);
+		cuBReal c_1 = cmbndFuncs_pri.c_func_pri(cell1_idx);
+		cuBReal c_2 = cmbndFuncs_pri.c_func_pri(cell2_idx);
 
 		//Form N and N3 values:
 		decltype(B_val_sec) N = hmax * c_m2 * B_val_sec + 2.0 * b_val_sec * cu_ident<decltype(B_val_sec)>();

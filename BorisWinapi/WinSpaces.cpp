@@ -259,7 +259,10 @@ ActionOutcome WinSpace::NewMessage_CommonResponses(AC_ aCode, INT2 mouse, string
 					}
 				}
 			}
-			else actionResult.SetCode(winId, mouse, AO_NOTHANDLED);
+			else {
+
+				actionResult.SetCode(winId, mouse, AO_NOTHANDLED);
+			}
 		}
 	}
 	break;

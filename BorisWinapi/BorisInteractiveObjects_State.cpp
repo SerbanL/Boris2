@@ -231,6 +231,55 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 	}
 	break;
 
+	//Set ODE time step: textId is the value
+	case IOI_ODEDT:
+	{
+		//parameters from iop
+		string dT_string = iop.textId;
+
+		if (dT_string != ToString(SMesh.GetTimeStep(), "s")) {
+
+			iop.textId = ToString(SMesh.GetTimeStep(), "s");
+
+			pTO->set(" " + iop.textId + " ");
+			stateChanged = true;
+		}
+	}
+	break;
+
+	//Set heat equation time step: textId is the value
+	case IOI_HEATDT:
+	{
+		//parameters from iop
+		string dT_string = iop.textId;
+
+		if (SMesh.IsSuperMeshModuleSet(MODS_SHEAT)) {
+
+			string actualdT_string = ToString(SMesh.CallModuleMethod(&SHeat::get_heat_dT), "s");
+
+			if (dT_string != actualdT_string) {
+
+				iop.textId = actualdT_string;
+
+				pTO->set(" " + iop.textId + " ");
+				if (dT_string == "N/A") pTO->SetBackgroundColor(ONCOLOR);
+
+				stateChanged = true;
+			}
+		}
+		else {
+
+			if (dT_string != "N/A") {
+
+				iop.textId = "N/A";
+				pTO->set(" " + iop.textId + " ");
+				pTO->SetBackgroundColor(UNAVAILABLECOLOR);
+				stateChanged = true;
+			}
+		}
+	}
+	break;
+
 	//Available/set evaluation method for ode : minorId is an entry from ODE_ (the equation), auxId is the EVAL_ entry (the evaluation method), textId is the name of the evaluation method
 	case IOI_ODE_EVAL:
 	{
@@ -1001,6 +1050,79 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 
 			//this display option disabled
 			pTO->SetBackgroundColor(OFFCOLOR);
+		}
+	}
+	break;
+
+	//Shows mesh vectorial quantity display option : minorId is the unique mesh id number, auxId is the display option
+	case IOI_MESHVECREP:
+	{
+		//parameters from iop
+		int meshId = iop.minorId;
+		int option = iop.auxId;
+
+		int meshIdx = SMesh.contains_id(meshId);
+		if (meshIdx >= 0) {
+
+			if (option != SMesh[meshIdx]->GetVEC3Rep()) {
+
+				iop.auxId = SMesh[meshIdx]->GetVEC3Rep();
+
+				switch (iop.auxId) {
+
+				case 0:
+					pTO->set(" full ");
+					break;
+				case 1:
+					pTO->set(" X ");
+					break;
+				case 2:
+					pTO->set(" Y ");
+					break;
+				case 3:
+					pTO->set(" Z ");
+					break;
+				case 4:
+					pTO->set(" direction ");
+					break;
+				}
+
+				stateChanged = true;
+			}
+		}
+	}
+	break;
+
+	//Shows supermesh vectorial quantity display option : auxId is the display option
+	case IOI_SMESHVECREP:
+	{
+		//parameters from iop
+		int option = iop.auxId;
+
+		if (option != SMesh.GetVEC3Rep(SMesh.superMeshHandle)) {
+
+			iop.auxId = SMesh.GetVEC3Rep(SMesh.superMeshHandle);
+
+			switch (iop.auxId) {
+
+			case 0:
+				pTO->set(" full ");
+				break;
+			case 1:
+				pTO->set(" X ");
+				break;
+			case 2:
+				pTO->set(" Y ");
+				break;
+			case 3:
+				pTO->set(" Z ");
+				break;
+			case 4:
+				pTO->set(" direction ");
+				break;
+			}
+
+			stateChanged = true;
 		}
 	}
 	break;
@@ -1780,10 +1902,16 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 
 			iop.auxId = SMesh.Get_2D_Multilayered_Convolution_Status();
 
-			if (iop.auxId == 1) {
+			if (iop.auxId == 2) {
 
 				pTO->SetBackgroundColor(ONCOLOR);
-				pTO->set(" On ");
+				pTO->set(" 2D layered ");
+
+			}
+			else if (iop.auxId == 1) {
+
+				pTO->SetBackgroundColor(ONCOLOR);
+				pTO->set(" 2D meshes ");
 			}
 			else if (iop.auxId == 0) {
 
@@ -2258,6 +2386,24 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 				pTO->SetBackgroundColor(OFFCOLOR);
 				pTO->set(" Off ");
 			}
+
+			stateChanged = true;
+		}
+	}
+	break;
+
+	//Shows image cropping settings : textId has the DBL4 value as text
+	case IOI_IMAGECROPPING:
+	{
+		string value_text = iop.textId;
+
+		DBL4 value = ToNum(value_text);
+
+		if (value != image_cropping) {
+
+			iop.textId = ToString(image_cropping);
+
+			pTO->set(" " + iop.textId + " ");
 
 			stateChanged = true;
 		}

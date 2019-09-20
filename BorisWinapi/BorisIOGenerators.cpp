@@ -100,7 +100,7 @@ void Simulation::Print_MeshDisplay_List(void)
 		mesh_display_list += "[a" + ToString(idx + 1) + "/a]" + MakeIO(IOI_SMESHDISPLAY, meshAllowedDisplay(MESH_SUPERMESH)[idx]) + "</c> ";
 	}
 
-	mesh_display_list += "\n";
+	mesh_display_list += " (Vector display: " + MakeIO(IOI_SMESHVECREP) + "</c>)\n";
 
 	//normal meshes
 	for (int meshIndex = 0; meshIndex < (int)SMesh().size(); meshIndex++) {
@@ -122,6 +122,8 @@ string Simulation::Build_MeshDisplay_ListLine(int meshIndex)
 
 		mesh_display_line += "[sa" + ToString(idx + 1) + "/sa]" + MakeIO(IOI_MESHDISPLAY, meshIndex, meshAllowedDisplay(meshType)[idx]) + "</c> ";
 	}
+
+	mesh_display_line += " (Vector display: " + MakeIO(IOI_MESHVECREP, meshIndex) + "</c>)";
 
 	return mesh_display_line;
 }
@@ -205,6 +207,9 @@ void Simulation::Print_ODEs(void)
 		odes_eval_list += "[tc1,1,1,1/tc]" + MakeIO(IOI_ODE_EVAL, evalId) + "</c> ";
 	}
 
+	odes_eval_list += "\n";
+	odes_eval_list += "[tc1,1,1,1/tc]Time Step: " + MakeIO(IOI_ODEDT) + "</c>";
+
 	BD.DisplayFormattedConsoleMessage(odes_eval_list);
 }
 
@@ -212,7 +217,7 @@ void Simulation::Print_ODEs(void)
 
 void Simulation::Print_ShowData(void) 
 {
-	string showData = "[tc1,1,1,1/tc]Choose data to show value for :\n";
+	string showData = "[tc1,1,1,1/tc]Choose data to show value for (double-click to show, right click to pin it to data box):\n";
 
 	for (int idx = 0; idx < (int)dataDescriptor.size(); idx++) {
 

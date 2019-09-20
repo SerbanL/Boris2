@@ -537,6 +537,9 @@ __global__ static void set_robin_flags_kernel(
 
 	if (idx < n.dim()) {
 
+		//first clear any robin flags already set
+		ngbrFlags[idx] &= ~NF_ROBIN;
+
 		if (ngbrFlags[idx] & NF_NOTEMPTY) {
 
 			//neighbors
@@ -616,6 +619,9 @@ __global__ static void set_pbc_flags_kernel(
 	if (idx < n.dim()) {
 
 		if (ngbrFlags[idx] & NF_NOTEMPTY) {
+
+			//first clear pbc in this cell before recalculating pbc flags
+			ngbrFlags[idx] &= ~NF_PBC;
 
 			//-x side, and on the +x side there is a non-empty cell : set pbc
 			if (pbc_x) {

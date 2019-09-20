@@ -13,16 +13,16 @@ __global__ void GenerateThermalField_Kernel(cuBorisRand& prng, ManagedDiffEqCUDA
 {
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
 
-	cuReal grel = cuMesh.pgrel->get0();
+	cuBReal grel = cuMesh.pgrel->get0();
 
 	if (idx < cuDiffEq.pH_Thermal->linear_size() && cuIsNZ(grel)) {
 
 		if (cuMesh.pM->is_not_empty(idx) && !cuMesh.pM->is_skipcell(idx)) {
 
 			cuReal3 h = cuMesh.pM->h;
-			cuReal dT = *cuDiffEq.pdT;
+			cuBReal dT = *cuDiffEq.pdT;
 
-			cuReal Temperature;
+			cuBReal Temperature;
 
 			if (cuMesh.pTemp->linear_size()) {
 
@@ -32,9 +32,9 @@ __global__ void GenerateThermalField_Kernel(cuBorisRand& prng, ManagedDiffEqCUDA
 			else Temperature = (*cuMesh.pbase_temperature);
 
 			//do not include any damping here - this will be included in the stochastic equations
-			cuReal Mag = prng.rand() * sqrt(2 * (cuReal)BOLTZMANN * Temperature / ((cuReal)GAMMA * grel * h.dim() * (cuReal)MU0 * cuMesh.pMs->get0() * dT));
-			cuReal theta = prng.rand() * (cuReal)TWO_PI;
-			cuReal phi = prng.rand() * (cuReal)TWO_PI;
+			cuBReal Mag = prng.rand() * sqrt(2 * (cuBReal)BOLTZMANN * Temperature / ((cuBReal)GAMMA * grel * h.dim() * (cuBReal)MU0 * cuMesh.pMs->get0() * dT));
+			cuBReal theta = prng.rand() * (cuBReal)TWO_PI;
+			cuBReal phi = prng.rand() * (cuBReal)TWO_PI;
 
 			(*cuDiffEq.pH_Thermal)[idx] = Mag * cuReal3(cos(phi)*sin(theta), sin(phi)*sin(theta), cos(theta));
 		}
@@ -53,16 +53,16 @@ __global__ void GenerateThermalField_and_Torque_Kernel(cuBorisRand& prng, Manage
 {
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
 
-	cuReal grel = cuMesh.pgrel->get0();
+	cuBReal grel = cuMesh.pgrel->get0();
 
 	if (idx < cuDiffEq.pH_Thermal->linear_size() && cuIsNZ(grel)) {
 
 		if (cuMesh.pM->is_not_empty(idx) && !cuMesh.pM->is_skipcell(idx)) {
 
 			cuReal3 h = cuMesh.pM->h;
-			cuReal dT = *cuDiffEq.pdT;
+			cuBReal dT = *cuDiffEq.pdT;
 
-			cuReal Temperature;
+			cuBReal Temperature;
 
 			if (cuMesh.pTemp->linear_size()) {
 				
@@ -73,17 +73,17 @@ __global__ void GenerateThermalField_and_Torque_Kernel(cuBorisRand& prng, Manage
 
 			//1. Thermal Field
 			//do not include any damping here - this will be included in the stochastic equations
-			cuReal Mag = prng.rand() * sqrt(2 * (cuReal)BOLTZMANN * Temperature / ((cuReal)GAMMA * grel * h.dim() * (cuReal)MU0 * cuMesh.pMs->get0() * dT));
-			cuReal theta = prng.rand() * (cuReal)TWO_PI;
-			cuReal phi = prng.rand() * (cuReal)TWO_PI;
+			cuBReal Mag = prng.rand() * sqrt(2 * (cuBReal)BOLTZMANN * Temperature / ((cuBReal)GAMMA * grel * h.dim() * (cuBReal)MU0 * cuMesh.pMs->get0() * dT));
+			cuBReal theta = prng.rand() * (cuBReal)TWO_PI;
+			cuBReal phi = prng.rand() * (cuBReal)TWO_PI;
 
 			(*cuDiffEq.pH_Thermal)[idx] = Mag * cuReal3(cos(phi)*sin(theta), sin(phi)*sin(theta), cos(theta));
 
 			//2. Thermal Torque
 			//do not include any damping here - this will be included in the stochastic equations
-			Mag = prng.rand() * sqrt(2 * (cuReal)BOLTZMANN * Temperature * (cuReal)GAMMA * grel * cuMesh.pMs->get0() / ((cuReal)MU0 * h.dim() * dT));
-			theta = prng.rand() * (cuReal)TWO_PI;
-			phi = prng.rand() * (cuReal)TWO_PI;
+			Mag = prng.rand() * sqrt(2 * (cuBReal)BOLTZMANN * Temperature * (cuBReal)GAMMA * grel * cuMesh.pMs->get0() / ((cuBReal)MU0 * h.dim() * dT));
+			theta = prng.rand() * (cuBReal)TWO_PI;
+			phi = prng.rand() * (cuBReal)TWO_PI;
 
 			(*cuDiffEq.pTorque_Thermal)[idx] = Mag * cuReal3(cos(phi)*sin(theta), sin(phi)*sin(theta), cos(theta));
 		}

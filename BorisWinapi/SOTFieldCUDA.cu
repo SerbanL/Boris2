@@ -23,12 +23,12 @@ __global__ void SOTFieldCUDA_UpdateField(ManagedMeshCUDA& cuMesh)
 
 			int idx_Jc = Jc.position_to_cellidx(M.cellidx_to_position(idx));
 
-			cuReal Ms = *cuMesh.pMs;
-			cuReal SHA = *cuMesh.pSHA;
-			cuReal flSOT = *cuMesh.pflSOT;
+			cuBReal Ms = *cuMesh.pMs;
+			cuBReal SHA = *cuMesh.pSHA;
+			cuBReal flSOT = *cuMesh.pflSOT;
 			cuMesh.update_parameters_mcoarse(idx, *cuMesh.pMs, Ms, *cuMesh.pSHA, SHA, *cuMesh.pflSOT, flSOT);
 
-			cuReal a_const = -((cuReal)HBAR_E / (cuReal)MU0) * SHA / (2 * Ms * Ms * (M.rect.e.z - M.rect.s.z));
+			cuBReal a_const = -((cuBReal)HBAR_E / (cuBReal)MU0) * SHA / (2 * Ms * Ms * (M.rect.e.z - M.rect.s.z));
 
 			cuReal3 p_vec = cuReal3(0, 0, 1) ^ Jc[idx_Jc];
 

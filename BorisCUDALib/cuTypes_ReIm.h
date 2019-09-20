@@ -18,15 +18,15 @@ struct __cuReIm {
 
 	//----------------------------- DATA
 
-	cuReal Re;
-	cuReal Im;
+	cuBReal Re;
+	cuBReal Im;
 
 	//----------------------------- cu_obj MANAGED CONSTRUCTORS / DESTRUCTOR
 
 	__host__ void construct_cu_obj(void)
 	{
-		set_gpu_value(Re, (cuReal)0.0);
-		set_gpu_value(Im, (cuReal)0.0);
+		set_gpu_value(Re, (cuBReal)0.0);
+		set_gpu_value(Im, (cuBReal)0.0);
 	}
 
 	__host__ void construct_cu_obj(const __cuReIm& copyThis)
@@ -47,7 +47,7 @@ struct __cuReIm {
 	//----------------------------- VALUE CONSTRUCTORS
 
 	__host__ __device__ __cuReIm(void) { Re = 0; Im = 0; }
-	__host__ __device__ __cuReIm(cuReal _Re, cuReal _Im) { Re = _Re; Im = _Im; }
+	__host__ __device__ __cuReIm(cuBReal _Re, cuBReal _Im) { Re = _Re; Im = _Im; }
 
 	//----------------------------- CONVERTING CONSTRUCTORS
 
@@ -66,35 +66,35 @@ struct __cuReIm {
 
 	__host__ __cuReIm& operator=(const ReIm &rhs)
 	{
-		Re = (cuReal)rhs.Re; 
-		Im = (cuReal)rhs.Im;
+		Re = (cuBReal)rhs.Re; 
+		Im = (cuBReal)rhs.Im;
 		return *this;
 	}
 
 	__host__ __cuReIm(const ReIm &rhs)
 	{
-		Re = (cuReal)rhs.Re; 
-		Im = (cuReal)rhs.Im;
+		Re = (cuBReal)rhs.Re; 
+		Im = (cuBReal)rhs.Im;
 	}
 	
-	//----------------------------- CONVERSION TO/FROM cuComplex
+	//----------------------------- CONVERSION TO/FROM cuBComplex
 
-	__host__ __device__ operator cuComplex() const
+	__host__ __device__ operator cuBComplex() const
 	{
 		return { Re, Im };
 	}
 
-	__host__ __device__ __cuReIm& operator=(const cuComplex &rhs)
+	__host__ __device__ __cuReIm& operator=(const cuBComplex &rhs)
 	{
-		Re = (cuReal)rhs.x;
-		Im = (cuReal)rhs.y;
+		Re = (cuBReal)rhs.x;
+		Im = (cuBReal)rhs.y;
 		return *this;
 	}
 
-	__host__ __device__ __cuReIm(const cuComplex &rhs)
+	__host__ __device__ __cuReIm(const cuBComplex &rhs)
 	{
-		Re = (cuReal)rhs.x;
-		Im = (cuReal)rhs.y;
+		Re = (cuBReal)rhs.x;
+		Im = (cuBReal)rhs.y;
 	}
 
 	//----------------------------- ARITHMETIC OPERATORS
@@ -112,23 +112,23 @@ struct __cuReIm {
 	//multiplication of two complex numbers
 	__host__ __device__ __cuReIm operator*(const __cuReIm &rhs) const { return __cuReIm(Re * rhs.Re - Im * rhs.Im, Re * rhs.Im + Im * rhs.Re); }
 
-	//multiplication with a cuComplex : cuComplex on the RHS
-	__host__ __device__ __cuReIm operator*(const cuComplex &rhs) const { return __cuReIm(Re * rhs.x - Im * rhs.y, Re * rhs.y + Im * rhs.x); }
+	//multiplication with a cuBComplex : cuBComplex on the RHS
+	__host__ __device__ __cuReIm operator*(const cuBComplex &rhs) const { return __cuReIm(Re * rhs.x - Im * rhs.y, Re * rhs.y + Im * rhs.x); }
 
-	//multiplication with a cuComplex : cuComplex on the LHS
-	__host__ __device__ friend __cuReIm operator*(const cuComplex &lhs, const __cuReIm &rhs) { return __cuReIm( lhs.x * rhs.Re - lhs.y * rhs.Im, lhs.x * rhs.Im + lhs.y * rhs.Re ); }
+	//multiplication with a cuBComplex : cuBComplex on the LHS
+	__host__ __device__ friend __cuReIm operator*(const cuBComplex &lhs, const __cuReIm &rhs) { return __cuReIm( lhs.x * rhs.Re - lhs.y * rhs.Im, lhs.x * rhs.Im + lhs.y * rhs.Re ); }
 
 	//multiplication by a constant - constant on the right (must be fundamental)
 	template <typename VType, std::enable_if_t<std::is_fundamental<VType>::value>* = nullptr>
-	__host__ __device__ __cuReIm operator*(const VType &rhs) const { return __cuReIm(Re * (cuReal)rhs, Im * (cuReal)rhs); }
+	__host__ __device__ __cuReIm operator*(const VType &rhs) const { return __cuReIm(Re * (cuBReal)rhs, Im * (cuBReal)rhs); }
 
 	//multiplication by a constant - constant on the left (must be fundamental)
 	template <typename VType, std::enable_if_t<std::is_fundamental<VType>::value>* = nullptr>
-	__host__ __device__ friend __cuReIm operator*(const VType &lhs, const __cuReIm &rhs) { return __cuReIm((cuReal)lhs * rhs.Re, (cuReal)lhs * rhs.Im); }
+	__host__ __device__ friend __cuReIm operator*(const VType &lhs, const __cuReIm &rhs) { return __cuReIm((cuBReal)lhs * rhs.Re, (cuBReal)lhs * rhs.Im); }
 
 	//division by a constant (must be fundamental)
 	template <typename VType, std::enable_if_t<std::is_fundamental<VType>::value>* = nullptr>
-	__host__ __device__ __cuReIm operator/(const VType &divisor) const { return __cuReIm(Re / (cuReal)divisor, Im / (cuReal)divisor); }
+	__host__ __device__ __cuReIm operator/(const VType &divisor) const { return __cuReIm(Re / (cuBReal)divisor, Im / (cuBReal)divisor); }
 
 	//addition
 	__host__ __device__ __cuReIm operator+(const __cuReIm &rhs) const { return __cuReIm(Re + rhs.Re, Im + rhs.Im); }
@@ -239,15 +239,15 @@ struct __cuReIm3 {
 
 	//multiplication by a constant - constant on the right (must be fundamental)
 	template <typename VType, std::enable_if_t<std::is_fundamental<VType>::value>* = nullptr>
-	__host__ __device__ __cuReIm3 operator*(const VType &rhs) const { return __cuReIm3(x * (cuReal)rhs, y * (cuReal)rhs, z * (cuReal)rhs); }
+	__host__ __device__ __cuReIm3 operator*(const VType &rhs) const { return __cuReIm3(x * (cuBReal)rhs, y * (cuBReal)rhs, z * (cuBReal)rhs); }
 
 	//multiplication by a constant - constant on the left (must be fundamental)
 	template <typename VType, std::enable_if_t<std::is_fundamental<VType>::value>* = nullptr>
-	__host__ __device__ friend __cuReIm3 operator*(const VType &lhs, const __cuReIm3 &rhs) { return __cuReIm3((cuReal)lhs * rhs.x, (cuReal)lhs * rhs.y, (cuReal)lhs * rhs.z); }
+	__host__ __device__ friend __cuReIm3 operator*(const VType &lhs, const __cuReIm3 &rhs) { return __cuReIm3((cuBReal)lhs * rhs.x, (cuBReal)lhs * rhs.y, (cuBReal)lhs * rhs.z); }
 
 	//division by a constant (must be fundamental)
 	template <typename VType, std::enable_if_t<std::is_fundamental<VType>::value>* = nullptr>
-	__host__ __device__ __cuReIm3 operator/(const VType &divisor) const { return __cuReIm3(x / (cuReal)divisor, y / (cuReal)divisor, z / (cuReal)divisor); }
+	__host__ __device__ __cuReIm3 operator/(const VType &divisor) const { return __cuReIm3(x / (cuBReal)divisor, y / (cuBReal)divisor, z / (cuBReal)divisor); }
 
 	//addition
 	__host__ __device__ __cuReIm3 operator+(const __cuReIm3 &rhs) const { return __cuReIm3(x + rhs.x, y + rhs.y, z + rhs.z); }

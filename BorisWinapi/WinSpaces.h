@@ -26,20 +26,22 @@ using namespace std;
 //Main window action codes (mouse actions, keyboard actions etc). Many of these are directly translated from WM_ codes in WndProc, some are not, so it's easier to work with these.
 enum AC_ 
 {
-	AC_NONE = 0,      
+	AC_NONE = 0, 
+	AC_ALLWINDOWSLEFT,
 	AC_MOUSELEFTDOWN, AC_SHIFT_MOUSELEFTDOWN, AC_MOUSERIGHTDOWN, AC_MOUSERIGHTUP, AC_MOUSELEFTUP, AC_MOUSEMIDDLEDOWN, AC_MOUSEMIDDLEUP, AC_CLICK, AC_DOUBLECLICK, AC_MOUSEWHEEL,
 	AC_MOUSEMOVE, AC_HOVERCHECK,
 	AC_DROPFILES, 
 	AC_KEYBOARD, 
 	AC_KBDENTER, AC_KBDBACK, AC_KBDINS, AC_KBDDEL, AC_KBDLEFT, AC_KBDSHIFTLEFT, AC_KBDRIGHT, AC_KBDSHIFTRIGHT, AC_KBDDN, AC_KBDUP, AC_KBDEND, AC_KBDSHIFTEND, AC_KBDHOME, AC_KBDSHIFTHOME, AC_KBDPGDN, AC_KBDPGUP, AC_KBDESC,
 	AC_CTRL_C, AC_CTRL_V,
-	AC_INTERACTOBJECTS, AC_INTERACTOBJECTWITHWINDOW, AC_DROPINTERACTOBJECTS, AC_DROPINTERACTOBJECTWITHWINDOW
+	AC_INTERACTOBJECTS, AC_INTERACTOBJECTWITHWINDOW, AC_DROPINTERACTOBJECTS, AC_DROPINTERACTOBJECTWITHWINDOW,
+	AC_CONSOLECOMMAND, AC_CONSOLEENTRY, AC_CONSOLECOMMAND_ENTRY, AC_CONSOLECOMMAND_NOPARAMS_ENTRY
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 //Action outcome codes, usually generated after processing AC_ messages, but can also be used to pass messages around
-enum AO_ {AO_NONE = 0, AO_NOTHANDLED, 
+enum AO_ {AO_NOTHING = 0, AO_NOTHANDLED, 
 		  AO_TEXTRETURNED, AO_MESSAGERETURNED, AO_MESHFOCUS2, AO_FILEDROPPEDINCONSOLE, AO_FILEDROPPEDINMESH,
 		  AO_SETTOPMOST, 
 		  AO_REFRESH, AO_REFRESHWINDOW, AO_DELAYEDREFRESH,
@@ -79,7 +81,7 @@ public:
 
 		text = "";
 		mouse = INT2(0,0);
-		aoCodes.push_back(AO_NONE);
+		aoCodes.push_back(AO_NOTHING);
 	}
 
 	ActionOutcome(AO_ aoCode) {
@@ -112,10 +114,10 @@ public:
 		AddCodes((AO_)aoCodes...);
 	}
 
-	//Add a code: aoCodes always has size >= 1. If no code set before aoCodes[0] is AO_NONE.
+	//Add a code: aoCodes always has size >= 1. If no code set before aoCodes[0] is AO_NOTHING.
 	void AddCode(INT2 winId, INT2 mouse, AO_ aoCode) { 
 		
-		if(aoCodes[0] != AO_NONE && aoCodes[0] != AO_NOTHANDLED)
+		if(aoCodes[0] != AO_NOTHING && aoCodes[0] != AO_NOTHANDLED)
 			aoCodes.push_back(aoCode);
 		else aoCodes[0] = aoCode;
 		

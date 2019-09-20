@@ -14,7 +14,10 @@ void Simulation::Listen_Incoming_Message(void) {
 
 		//handle command using the usual HandleCommand method, but on a blocking thread call - need to wait for it to finish before responding to client
 		set_blocking_thread(THREAD_HANDLEMESSAGE);
-		single_call_launch<string>(&Simulation::HandleCommand, message, THREAD_HANDLEMESSAGE);
+		//Keep trying to launch the command handler : if THREAD_HANDLEMESSAGE is busy or has not yet been marked as not active (this is possible even if the previous call to THREAD_HANDLEMESSAGE has finished and we returned parameters to client - it can take much longer than usual sometimes),
+		//we receive THREAD_GENERATENEW response back until THREAD_HANDLEMESSAGE is available (marked as not active).
+		//If the command handler was launched and completed successfully, the single_call_launch method will respond with THREAD_HANDLEMESSAGE after it returns.
+		while (single_call_launch<string>(&Simulation::HandleCommand, message, THREAD_HANDLEMESSAGE) != THREAD_HANDLEMESSAGE);
 
 		//the command was handled using a blocking thread, so now parameters should be available to send
 		commSocket.SendDataParams();
@@ -115,7 +118,11 @@ void Simulation::HandleCommand(string command_string) {
 				iterUpdate = iterations;
 				UpdateScreen();
 			}
-			else if (verbose) BD.DisplayConsoleListing("iterupdate: " + ToString(iterUpdate));
+			else if (verbose) {
+
+				PrintCommandUsage(command_name);
+				BD.DisplayConsoleListing("iterupdate: " + ToString(iterUpdate));
+			}
 
 			if (script_client_connected) commSocket.SetSendData(commandSpec.PrepareReturnParameters(iterUpdate));
 		}
@@ -856,7 +863,7 @@ void Simulation::HandleCommand(string command_string) {
 
 		case CMD_2DMULTICONV:
 		{
-			bool status;
+			int status;
 
 			error = commandSpec.GetParameters(command_fields, status);
 
@@ -935,6 +942,24 @@ void Simulation::HandleCommand(string command_string) {
 					}
 				}
 				else if (verbose) error(BERROR_INCORRECTCONFIG);
+			}
+			else if (verbose) PrintCommandUsage(command_name);
+		}
+		break;
+
+		case CMD_EVALSPEEDUP:
+		{
+			int status;
+
+			error = commandSpec.GetParameters(command_fields, status);
+
+			if (!error) {
+
+				StopSimulation();
+
+				SMesh.SetEvaluationSpeedup(status);
+
+				UpdateScreen();
 			}
 			else if (verbose) PrintCommandUsage(command_name);
 		}
@@ -1757,7 +1782,7 @@ void Simulation::HandleCommand(string command_string) {
 
 		case CMD_DEFAULT:
 		{
-			LoadSimulation(GetDirectory() + std::string("User\\") + "default");
+			LoadSimulation(GetUserDocumentsPath() + "Boris Data\\Simulations\\" + "default");
 		}
 		break;
 
@@ -1781,6 +1806,24 @@ void Simulation::HandleCommand(string command_string) {
 		}
 		break;
 
+		case CMD_VECREP:
+		{
+			string meshName;
+			int vecreptype;
+
+			error = commandSpec.GetParameters(command_fields, meshName, vecreptype);
+
+			if (!error) {
+
+				if (!err_hndl.qcall(&SuperMesh::SetVEC3Rep, &SMesh, meshName, (int)vecreptype)) {
+
+					UpdateScreen();
+				}
+			}
+			else if (verbose) Print_MeshDisplay_List();
+		}
+		break;
+
 		case CMD_SAVEMESHIMAGE:
 		{
 			string fileName;
@@ -1800,7 +1843,7 @@ void Simulation::HandleCommand(string command_string) {
 				if (!GetFilenameDirectory(fileName).length()) fileName = directory + fileName;
 			}
 
-			if (BD.SaveMeshImage(fileName)) {
+			if (BD.SaveMeshImage(fileName, image_cropping)) {
 
 				if (verbose) BD.DisplayConsoleMessage("Saved : " + fileName);
 			}
@@ -1834,6 +1877,26 @@ void Simulation::HandleCommand(string command_string) {
 				else if (verbose) error(BERROR_COULDNOTSAVEFILE);
 			}
 			else if(verbose) PrintCommandUsage(command_name);
+		}
+		break;
+
+		case CMD_IMAGECROPPING:
+		{
+			double left, bottom, right, top;
+
+			error = commandSpec.GetParameters(command_fields, left, bottom, right, top);
+
+			if (!error) {
+
+				image_cropping = DBL4(left, bottom, right, top);
+
+				UpdateScreen();
+			}
+			else if (verbose) {
+
+				string text = "[tc1,1,1,1/tc]Image cropping settings : " + MakeIO(IOI_IMAGECROPPING);
+				if (verbose) BD.DisplayFormattedConsoleMessage(text);
+			}
 		}
 		break;
 
@@ -1893,6 +1956,14 @@ void Simulation::HandleCommand(string command_string) {
 				UpdateScreen();
 			}
 			else if (verbose) PrintMovingMeshSettings();
+		}
+		break;
+
+		case CMD_CLEARMOVINGMESH:
+		{
+			StopSimulation();
+			SMesh.ClearMovingMesh();
+			UpdateScreen();
 		}
 		break;
 
@@ -2370,7 +2441,11 @@ void Simulation::HandleCommand(string command_string) {
 
 				UpdateScreen();
 			}
-			else if (verbose) PrintCommandUsage(command_name);
+			else if (verbose) {
+
+				string heatdT = "[tc1,1,1,1/tc]Heat Equation Time Step: " + MakeIO(IOI_HEATDT) + "</c>";
+				BD.DisplayFormattedConsoleMessage(heatdT);
+			}
 
 			if (script_client_connected)
 				commSocket.SetSendData(commandSpec.PrepareReturnParameters(SMesh.CallModuleMethod(&SHeat::get_heat_dT)));
@@ -2569,7 +2644,7 @@ void Simulation::HandleCommand(string command_string) {
 
 		case CMD_OPENMANUAL:
 		{
-			string directory = GetDirectory() + "Manual\\";
+			string directory = GetUserDocumentsPath() + "Boris Data\\";
 			string fileName = "BorisManual-v" + ToString(Program_Version) + ".pdf";
 
 			open_file(directory + fileName);
@@ -2900,7 +2975,7 @@ void Simulation::HandleCommand(string command_string) {
 		{
 			string returnMessage;
 
-			if (!err_hndl.call(&MaterialsDB::UpdateMDB, &mdb,domain_name, mdb_update_handler, &returnMessage)) {
+			if (!err_hndl.call(&MaterialsDB::UpdateMDB, &mdb, domain_name, mdb_update_handler, &returnMessage)) {
 
 				BD.DisplayConsoleMessage("Materials database successfully updated.");
 			}
@@ -3135,10 +3210,16 @@ void Simulation::HandleCommand(string command_string) {
 
 				if (dp_arr_idx < 0) {
 
+					bool found_nonempty = false;
+
 					for (int arr_idx = 0; arr_idx < dpArr.size(); arr_idx++) {
+
+						found_nonempty |= (bool)dpArr[arr_idx].size();
 
 						if (dpArr[arr_idx].size()) BD.DisplayConsoleListing("dp array " + ToString(arr_idx) + " has size " + ToString((int)dpArr[arr_idx].size()));
 					}
+
+					if (!found_nonempty) BD.DisplayConsoleMessage("All arrays are empty.");
 				}
 				else if (dpArr[dp_arr_idx].size()) BD.DisplayConsoleListing("dp array " + ToString(dp_arr_idx) + " has size " + ToString((int)dpArr[dp_arr_idx].size()));
 			}
@@ -3212,12 +3293,18 @@ void Simulation::HandleCommand(string command_string) {
 
 		case CMD_DP_SAVE:
 		{
-			string fileName;
-			string indexes_string;
+			string fileName_indexes_string;
 
-			error = commandSpec.GetParameters(command_fields, fileName, indexes_string);
+			error = commandSpec.GetParameters(command_fields, fileName_indexes_string);
+
+			//using split_numeric approach since the file name path can contain spaces. If parameters correct then we'll have first a non-numeric string (the file path and file name) then a numeric string.
+			vector<string> entries = split_numeric(fileName_indexes_string);
+			if (entries.size() < 2) error(BERROR_PARAMMISMATCH);
 
 			if (!error) {
+
+				string fileName = combine(subvec(entries, 0, entries.size() - 1), " ");
+				string indexes_string = entries.back();
 
 				if (!GetFilenameDirectory(fileName).length()) fileName = directory + fileName;
 
@@ -3713,29 +3800,26 @@ void Simulation::HandleCommand(string command_string) {
 		case CMD_DP_FITSKYRMION:
 		{
 			int dp_x, dp_y;
-			double w_val = 0.0;
 
-			error = commandSpec.GetParameters(command_fields, dp_x, dp_y, w_val);
-			if (error) { error.reset() = commandSpec.GetParameters(command_fields, dp_x, dp_y); w_val = 0.0; }
+			error = commandSpec.GetParameters(command_fields, dp_x, dp_y);
 
 			if (!error) {
 
-				DBL2 R, Ms, w;
+				DBL2 R, x0, Ms, w;
 
-				if (IsNZ(w_val)) w.major = w_val;
-
-				error = dpArr.fit_skyrmion(dp_x, dp_y, &R, &Ms, &w);
+				error = dpArr.fit_skyrmion(dp_x, dp_y, &R, &x0, &Ms, &w);
 
 				if (verbose && !error) {
 
 					BD.DisplayConsoleMessage(
 						"R = " + ToString(R.major) + " +/- " + ToString(R.minor) + ", " +
+						"x0 = " + ToString(x0.major) + " +/- " + ToString(x0.minor) + ", " +
 						"Ms = " + ToString(Ms.major) + " +/- " + ToString(Ms.minor) + ", " +
 						"w = " + ToString(w.major) + " +/- " + ToString(w.minor)
 					);
 				}
 
-				if (script_client_connected) commSocket.SetSendData(commandSpec.PrepareReturnParameters(R.major, Ms.major, w.major, R.minor, Ms.minor, w.minor));
+				if (script_client_connected) commSocket.SetSendData(commandSpec.PrepareReturnParameters(R.major, x0.major, Ms.major, w.major, R.minor, x0.minor, Ms.minor, w.minor));
 			}
 			else if (verbose) PrintCommandUsage(command_name);
 		}
@@ -3809,7 +3893,6 @@ void Simulation::HandleCommand(string command_string) {
 
 		case CMD_TEST:
 		{
-			/*
 			vector<string> commands_output;
 			commands_output.resize(commands.size());
 
@@ -3845,10 +3928,6 @@ void Simulation::HandleCommand(string command_string) {
 			commands_description = trim(commands_description, "</i>");
 
 			SaveTextToFile("c:/commands.txt", commands_description);
-			*/
-
-			BD.DisplayConsoleMessage(ToString(SMesh[SMesh.GetMeshFocus()]->n));
-			
 		}
 		break;
 

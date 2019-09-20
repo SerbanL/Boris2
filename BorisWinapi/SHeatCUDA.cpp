@@ -96,15 +96,16 @@ BError SHeatCUDA::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 void SHeatCUDA::UpdateField(void)
 {
 	//only need to update this after an entire magnetisation equation time step is solved
-	if (!pSMesh->CurrentTimeStepSolved()) return;
+	//also if heat_dT is set to zero skip the heat equation solver : this will maintain a fixed temperature
+	if (!pSMesh->CurrentTimeStepSolved() || pSHeat->heat_dT < MINTIMESTEP) return;
 	
-	cuReal dT = pSHeat->heat_dT;
+	cuBReal dT = pSHeat->heat_dT;
 
 	//number of sub_steps to cover magnetic_dT required when advancing in smaller heat_dT steps
 	int sub_steps = (int)floor_epsilon(pSHeat->magnetic_dT / pSHeat->heat_dT);
 
 	//any left-over epsilon_dT < heat_dT
-	cuReal epsilon_dT = pSHeat->magnetic_dT - pSHeat->heat_dT * sub_steps;
+	cuBReal epsilon_dT = pSHeat->magnetic_dT - pSHeat->heat_dT * sub_steps;
 
 	for (int step_idx = 0; step_idx < sub_steps + 1; step_idx++) {
 

@@ -44,7 +44,7 @@ public:
 	//set magnitude for Mdipole
 	void Reset_Mdipole(void);
 
-	void SetMagnetisationAngle(cuReal polar, cuReal azim);
+	void SetMagnetisationAngle(cuBReal polar, cuBReal azim);
 
 	void Reset_recalculateStrayField(void) { recalculateStrayField = false; }
 

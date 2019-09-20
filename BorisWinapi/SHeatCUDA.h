@@ -45,7 +45,7 @@ private:
 	vector<HeatCUDA*> pHeat;
 
 	//vector of pointers to all V - need this to set cmbnd flags (same ordering as first vector in CMBNDcontacts)
-	vector<cu_obj<cuVEC_VC<cuReal>>*> pTemp;
+	vector<cu_obj<cuVEC_VC<cuBReal>>*> pTemp;
 
 private:
 

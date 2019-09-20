@@ -1124,9 +1124,19 @@ void BorisMeshWindow::UpdatePhysQRep(vector<PhysQ> physQ)
 	physQRep.CalculateRepresentation(physQ);
 }
 
-bool BorisMeshWindow::SaveMeshImage(string fileName)
+//image_cropping specify normalized cropping within the mesh image, as left, bottom, right, top : 0, 0 point is left, bottom of screen as far as user is concerned.
+bool BorisMeshWindow::SaveMeshImage(string fileName, DBL4 image_cropping)
 {
-	return pBG->SaveScreenToFile(fileName, spaceRect);
+	//here remember D2D wants 0, 0 point as the left, top points of screen, so need to invert role of bottom and top in image_cropping.
+	double left = spaceRectDims.width * image_cropping.i + spaceRect.left;
+	double right = spaceRectDims.width * image_cropping.k + spaceRect.left;
+	
+	double top = spaceRectDims.height * (1 - image_cropping.l) + spaceRect.top;
+	double bottom = spaceRectDims.height * (1 - image_cropping.j) + spaceRect.top;
+
+	D2D1_RECT_F saveRect = D2D1::RectF(left, top, right, bottom);
+
+	return pBG->SaveScreenToFile(fileName, saveRect);
 }
 
 void BorisMeshWindow::ZoomNotchUp(void) 
@@ -1604,7 +1614,15 @@ ActionOutcome BorisDisplay::NewMessage(AC_ aCode, INT2 mouse, string data) {
 	//Dispatch message to top-most window first (first in bWin vector).
 	//The top-most window will decide if it will relinquish top-most position (e.g. if a mouse click occured, check if we need to make another window the top one).
 
-	if (bWin.size()) {
+	if (aCode == AC_ALLWINDOWSLEFT) {
+
+		//The display area was left : signal this to all windows and set cursor back to arrow default.
+		for (int i = 0; i < bWin.size(); i++)
+			bWin[i]->WindowLeft();
+
+		SetCursor(LoadCursor(nullptr, IDC_ARROW));
+	}
+	else if (bWin.size()) {
 
 		//Starting from the top, check for the first window to handle this message
 		for (int i = 0; i < bWin.size(); i++) {

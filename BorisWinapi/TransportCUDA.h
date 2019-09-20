@@ -54,7 +54,7 @@ private:
 	//------------------Others
 
 	//set fixed potential cells in this mesh for given rectangle
-	bool SetFixedPotentialCells(cuRect rectangle, cuReal potential);
+	bool SetFixedPotentialCells(cuRect rectangle, cuBReal potential);
 
 	void ClearFixedPotentialCells(void);
 
@@ -73,30 +73,30 @@ private:
 	void CalculateCurrentDensity(void);
 
 	//calculate total current flowing into an electrode with given box - return ground_current and net_current values
-	cuReal CalculateElectrodeCurrent(cuBox electrode_box);
+	cuBReal CalculateElectrodeCurrent(cuBox electrode_box);
 
 	//Charge transport only : V
 
 	//take a single iteration of the Transport solver in this Mesh (cannot solve fully in one go as there may be other meshes so need boundary conditions set externally). Use adaptive SOR. Return relaxation value (tends to zero).
-	void IterateChargeSolver_aSOR(bool start_iters, cuReal conv_error, cu_obj<cuReal>& max_error, cu_obj<cuReal>& max_value);
+	void IterateChargeSolver_aSOR(bool start_iters, cuBReal conv_error, cu_obj<cuBReal>& max_error, cu_obj<cuBReal>& max_value);
 	//take a single iteration of the Transport solver in this Mesh (cannot solve fully in one go as there may be other meshes so need boundary conditions set externally). Use SOR. Return relaxation value (tends to zero).
-	void IterateChargeSolver_SOR(cu_obj<cuReal>& damping, cu_obj<cuReal>& max_error, cu_obj<cuReal>& max_value);
+	void IterateChargeSolver_SOR(cu_obj<cuBReal>& damping, cu_obj<cuBReal>& max_error, cu_obj<cuBReal>& max_value);
 
 	//Calculation Methods used by Spin Current Solver only
 
 	//take a single iteration of the charge transport solver (within the spin current solver) in this Mesh (cannot solve fully in one go as there may be other meshes so need boundary conditions set externally). Use adaptive SOR. Return relaxation value (tends to zero).
 	//use_NNeu flag indicates if we need to use the homogeneous or non-homogeneous Neumann boundary conditions versions
-	void IterateSpinSolver_Charge_aSOR(bool start_iters, cuReal conv_error, cu_obj<cuReal>& max_error, cu_obj<cuReal>& max_value, bool use_NNeu);
+	void IterateSpinSolver_Charge_aSOR(bool start_iters, cuBReal conv_error, cu_obj<cuBReal>& max_error, cu_obj<cuBReal>& max_value, bool use_NNeu);
 	//take a single iteration of the charge transport solver (within the spin current solver) in this Mesh (cannot solve fully in one go as there may be other meshes so need boundary conditions set externally). Use SOR. Return relaxation value (tends to zero).
 	//use_NNeu flag indicates if we need to use the homogeneous or non-homogeneous Neumann boundary conditions versions
-	void IterateSpinSolver_Charge_SOR(cu_obj<cuReal>& damping, cu_obj<cuReal>& max_error, cu_obj<cuReal>& max_value, bool use_NNeu);
+	void IterateSpinSolver_Charge_SOR(cu_obj<cuBReal>& damping, cu_obj<cuBReal>& max_error, cu_obj<cuBReal>& max_value, bool use_NNeu);
 
 	//solve for spin accumulation using Poisson equation for delsq_S. Use adaptive SOR.
 	//use_NNeu flag indicates if we need to use the homogeneous or non-homogeneous Neumann boundary conditions versions
-	void IterateSpinSolver_Spin_aSOR(bool start_iters, cuReal conv_error, cu_obj<cuReal>& max_error, cu_obj<cuReal>& max_value, bool use_NNeu);
+	void IterateSpinSolver_Spin_aSOR(bool start_iters, cuBReal conv_error, cu_obj<cuBReal>& max_error, cu_obj<cuBReal>& max_value, bool use_NNeu);
 	//solve for spin accumulation using Poisson equation for delsq_S. Use SOR.
 	//use_NNeu flag indicates if we need to use the homogeneous or non-homogeneous Neumann boundary conditions versions
-	void IterateSpinSolver_Spin_SOR(cu_obj<cuReal>& damping, cu_obj<cuReal>& max_error, cu_obj<cuReal>& max_value, bool use_NNeu);
+	void IterateSpinSolver_Spin_SOR(cu_obj<cuBReal>& damping, cu_obj<cuBReal>& max_error, cu_obj<cuBReal>& max_value, bool use_NNeu);
 
 public:
 

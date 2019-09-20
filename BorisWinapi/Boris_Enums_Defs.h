@@ -13,23 +13,15 @@ enum UPDATECONFIG_ {
 	//mesh shape has changed (not the rectangle but the shape inside the rectangle)
 	UPDATECONFIG_MESHSHAPECHANGE,
 
+	//a new mesh has been added (all meshes added through the AddMesh method in supermesh so that method would signal this)
+	UPDATECONFIG_MESHADDED,
+
+	//a mesh has been deleted (all meshes deleted through the DelMesh method in supermesh so that method would signal this)
+	UPDATECONFIG_MESHDELETED,
+
 	//use this message to force updates by calling the required UpdateConfig method directly in the required object (which must check for it)
 	UPDATECONFIG_FORCEUPDATE
 };
-
-#if COMPILECUDA == 1
-#if SINGLEPRECISION == 1
-
-	#define cuReal cufftReal
-	#define cuComplex cufftComplex
-
-#else
-
-	#define cuReal cufftDoubleReal
-	#define cuComplex cufftDoubleComplex
-
-#endif
-#endif
 
 #define CONVERSIONPRECISION 6						//Precision when converting to/from strings
 

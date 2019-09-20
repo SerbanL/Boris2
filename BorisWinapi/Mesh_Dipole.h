@@ -17,10 +17,11 @@ class DipoleMesh :
 	public ProgramState<DipoleMesh,
 	tuple<
 	//Mesh members
-	int, int, int, int, int, Rect, SZ3, DBL3, SZ3, DBL3, SZ3, DBL3, VEC_VC<DBL3>, VEC_VC<double>, VEC_VC<DBL3>, VEC_VC<double>, VEC_VC<double>, vector_lut<Modules*>,
+	int, int, int, int, int, int, Rect, SZ3, DBL3, SZ3, DBL3, SZ3, DBL3, VEC_VC<DBL3>, VEC_VC<double>, VEC_VC<DBL3>, VEC_VC<double>, VEC_VC<double>, vector_lut<Modules*>,
 	//Members in this derived clas
 	//Material Parameters
-	MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<DBL2, double>, MatP<DBL2, double>, double, double, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>>,
+	MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<DBL2, double>, MatP<DBL2, double>, double, double, MatP<double, double>, MatP<double, double>, 
+	MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>>,
 	tuple<Transport, Heat> >
 {
 

@@ -22,20 +22,20 @@ public:
 
 	//-----------------------------------Time step
 
-	cuReal* pdT;
-	cuReal* pdT_last;
+	cuBReal* pdT;
+	cuBReal* pdT_last;
 	
 	//-----------------------------------Primary data
 
-	cuReal* pmxh;
+	cuBReal* pmxh;
 	cuReal3* pmxh_av;
 	size_t* pavpoints;
 
-	cuReal* pdmdt;
+	cuBReal* pdmdt;
 	cuReal3* pdmdt_av;
 	size_t* pavpoints2;
 	
-	cuReal* plte;
+	cuBReal* plte;
 	
 	//-----------------------------------Evaluation method modifiers
 
@@ -59,9 +59,9 @@ public:
 	//Accumulate values in these quantities, then obtain stepsizes as:
 	//step1 = delta_M_sq / delta_M_dot_delta_G
 	//step2 = delta_M_dot_delta_G / delta_G_sq
-	cuReal* pdelta_M_sq;
-	cuReal* pdelta_G_sq;
-	cuReal* pdelta_M_dot_delta_G;
+	cuBReal* pdelta_M_sq;
+	cuBReal* pdelta_G_sq;
+	cuBReal* pdelta_M_dot_delta_G;
 
 	//-----------------------------------Pointers to data in DifferentialEquationCUDA
 

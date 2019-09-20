@@ -14,7 +14,7 @@ __global__ void RunEuler_Kernel_withReductions(ManagedDiffEqCUDA& cuDiffEq, Mana
 {
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
 
-	cuReal dT = *cuDiffEq.pdT;
+	cuBReal dT = *cuDiffEq.pdT;
 
 	cuReal3 mxh = cuReal3();
 	cuReal3 dmdt = cuReal3();
@@ -29,7 +29,7 @@ __global__ void RunEuler_Kernel_withReductions(ManagedDiffEqCUDA& cuDiffEq, Mana
 			if (!cuMesh.pM->is_skipcell(idx)) {
 
 				//obtain average normalized torque term
-				cuReal Mnorm = (*cuMesh.pM)[idx].norm();
+				cuBReal Mnorm = (*cuMesh.pM)[idx].norm();
 				
 				if (cuDiffEq.pH_Thermal->linear_size()) {
 
@@ -45,17 +45,17 @@ __global__ void RunEuler_Kernel_withReductions(ManagedDiffEqCUDA& cuDiffEq, Mana
 
 				if (*cuDiffEq.prenormalize) {
 
-					cuReal Ms = *cuMesh.pMs;
+					cuBReal Ms = *cuMesh.pMs;
 					cuMesh.update_parameters_mcoarse(idx, *cuMesh.pMs, Ms);
 					(*cuMesh.pM)[idx].renormalize(Ms);
 				}
 
 				//obtain maximum normalized dmdt term
-				dmdt = ((*cuMesh.pM)[idx] - (*cuDiffEq.psM1)[idx]) / (dT * (cuReal)GAMMA * Mnorm * Mnorm);
+				dmdt = ((*cuMesh.pM)[idx] - (*cuDiffEq.psM1)[idx]) / (dT * (cuBReal)GAMMA * Mnorm * Mnorm);
 			}
 			else {
 
-				cuReal Ms = *cuMesh.pMs;
+				cuBReal Ms = *cuMesh.pMs;
 				cuMesh.update_parameters_mcoarse(idx, *cuMesh.pMs, Ms);
 				(*cuMesh.pM)[idx].renormalize(Ms);		//re-normalize the skipped cells no matter what - temperature can change
 			}
@@ -74,7 +74,7 @@ __global__ void RunEuler_Kernel(ManagedDiffEqCUDA& cuDiffEq, ManagedMeshCUDA& cu
 {
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
 
-	cuReal dT = *cuDiffEq.pdT;
+	cuBReal dT = *cuDiffEq.pdT;
 
 	if (idx < cuMesh.pM->linear_size()) {
 
@@ -93,14 +93,14 @@ __global__ void RunEuler_Kernel(ManagedDiffEqCUDA& cuDiffEq, ManagedMeshCUDA& cu
 
 				if (*cuDiffEq.prenormalize) {
 
-					cuReal Ms = *cuMesh.pMs;
+					cuBReal Ms = *cuMesh.pMs;
 					cuMesh.update_parameters_mcoarse(idx, *cuMesh.pMs, Ms);
 					(*cuMesh.pM)[idx].renormalize(Ms);
 				}
 			}
 			else {
 
-				cuReal Ms = *cuMesh.pMs;
+				cuBReal Ms = *cuMesh.pMs;
 				cuMesh.update_parameters_mcoarse(idx, *cuMesh.pMs, Ms);
 				(*cuMesh.pM)[idx].renormalize(Ms);		//re-normalize the skipped cells no matter what - temperature can change
 			}

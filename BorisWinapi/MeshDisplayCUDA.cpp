@@ -70,7 +70,7 @@ bool MeshDisplayCUDA::prepare_display(SZ3 n_quantity, Rect meshRect, double deta
 	return true;
 }
 
-bool MeshDisplayCUDA::prepare_display(SZ3 n_quantity, Rect meshRect, double detail_level, cu_obj<cuVEC_VC<cuReal>>& cu_obj_quantity)
+bool MeshDisplayCUDA::prepare_display(SZ3 n_quantity, Rect meshRect, double detail_level, cu_obj<cuVEC_VC<cuBReal>>& cu_obj_quantity)
 {
 	//the cu_obj managed quantity cannot be empty
 	if (!cu_obj_quantity()->size_cpu().dim()) return false;
@@ -128,7 +128,7 @@ bool MeshDisplayCUDA::prepare_display(SZ3 n_quantity, Rect meshRect, double deta
 	return true;
 }
 
-bool MeshDisplayCUDA::prepare_display(SZ3 n_quantity, Rect meshRect, double detail_level, cu_obj<cuVEC<cuReal>>& cu_obj_quantity)
+bool MeshDisplayCUDA::prepare_display(SZ3 n_quantity, Rect meshRect, double detail_level, cu_obj<cuVEC<cuBReal>>& cu_obj_quantity)
 {
 	//the cu_obj managed quantity cannot be empty
 	if (!cu_obj_quantity()->size_cpu().dim()) return false;

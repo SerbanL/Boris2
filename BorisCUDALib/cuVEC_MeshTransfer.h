@@ -6,11 +6,11 @@ template <typename VType>
 class cuTransfer {
 
 	//array with transfer information from mesh_in : full cell indexes for transfer : i - mesh index, j - mesh cell index, k - supermesh (this mesh) cell index
-	cuPair<cuINT3, cuReal>* transfer_in_info;
+	cuPair<cuINT3, cuBReal>* transfer_in_info;
 	size_t transfer_in_info_size;
 
 	//array with transfer information to mesh_out : full cell indexes for transfer : i - mesh index, j - mesh cell index, k - supermesh (this mesh) cell index
-	cuPair<cuINT3, cuReal>* transfer_out_info;
+	cuPair<cuINT3, cuBReal>* transfer_out_info;
 	size_t transfer_out_info_size;
 
 	//array of meshes for transfer in and out from / to
@@ -162,7 +162,7 @@ __host__ bool cuTransfer<VType>::copy_transfer_info(cu_arr<cuVEC<VType>>& mesh_i
 	//------
 
 	//copy transfer_in_info_cpu to transfer_in_info : convert it first
-	std::vector<std::pair<cuINT3, cuReal>> transfer_in_info_cpu;
+	std::vector<std::pair<cuINT3, cuBReal>> transfer_in_info_cpu;
 
 	//set size
 	if (!malloc_vector(transfer_in_info_cpu, cpuVEC.size_transfer_in())) return false;
@@ -187,7 +187,7 @@ __host__ bool cuTransfer<VType>::copy_transfer_info(cu_arr<cuVEC<VType>>& mesh_i
 	//------
 	
 	//copy transfer_out_info_cpu to transfer_out_info : convert it first
-	std::vector<std::pair<cuINT3, cuReal>> transfer_out_info_cpu;
+	std::vector<std::pair<cuINT3, cuBReal>> transfer_out_info_cpu;
 
 	//set size
 	if (!malloc_vector(transfer_out_info_cpu, cpuVEC.size_transfer_out())) return false;

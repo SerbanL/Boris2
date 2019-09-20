@@ -104,7 +104,7 @@ private:
 				// The buffer length is changed by each call to WSAAddresstoString
 				// So we need to set it for each iteration through the loop for safety
 				ipbufferlength = 46;
-				iRetval = WSAAddressToString(sockaddr_ip, (DWORD)ptr->ai_addrlen, nullptr, StringtoWCHARPointer(ipstringbuffer), &ipbufferlength);
+				iRetval = WSAAddressToString(sockaddr_ip, (DWORD)ptr->ai_addrlen, nullptr, StringtoWCHARPointer(std::string(ipstringbuffer)), &ipbufferlength);
 				if (iRetval) {
 
 					//error

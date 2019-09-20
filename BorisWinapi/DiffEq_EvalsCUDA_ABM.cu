@@ -14,9 +14,9 @@ __global__ void RunABM_Predictor_withReductions_Kernel(ManagedDiffEqCUDA& cuDiff
 {
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
 
-	cuReal dT = *cuDiffEq.pdT;
+	cuBReal dT = *cuDiffEq.pdT;
 
-	cuReal mxh = 0.0;
+	cuBReal mxh = 0.0;
 
 	if (idx < cuMesh.pM->linear_size()) {
 
@@ -28,7 +28,7 @@ __global__ void RunABM_Predictor_withReductions_Kernel(ManagedDiffEqCUDA& cuDiff
 			if (!cuMesh.pM->is_skipcell(idx)) {
 
 				//obtain maximum normalized torque term
-				cuReal Mnorm = (*cuMesh.pM)[idx].norm();
+				cuBReal Mnorm = (*cuMesh.pM)[idx].norm();
 				mxh = cu_GetMagnitude((*cuMesh.pM)[idx] ^ (*cuMesh.pHeff)[idx]) / (Mnorm * Mnorm);
 
 				//First evaluate RHS of set equation at the current time step
@@ -60,7 +60,7 @@ __global__ void RunABM_Predictor_Kernel(ManagedDiffEqCUDA& cuDiffEq, ManagedMesh
 {
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
 
-	cuReal dT = *cuDiffEq.pdT;
+	cuBReal dT = *cuDiffEq.pdT;
 
 	if (idx < cuMesh.pM->linear_size()) {
 
@@ -94,10 +94,10 @@ __global__ void RunABM_Corrector_withReductions_Kernel(ManagedDiffEqCUDA& cuDiff
 {
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
 
-	cuReal dT = *cuDiffEq.pdT;
+	cuBReal dT = *cuDiffEq.pdT;
 
-	cuReal dmdt = 0.0;
-	cuReal lte = 0.0;
+	cuBReal dmdt = 0.0;
+	cuBReal lte = 0.0;
 
 	if (idx < cuMesh.pM->linear_size()) {
 
@@ -123,21 +123,21 @@ __global__ void RunABM_Corrector_withReductions_Kernel(ManagedDiffEqCUDA& cuDiff
 
 				if (*cuDiffEq.prenormalize) {
 
-					cuReal Ms = *cuMesh.pMs;
+					cuBReal Ms = *cuMesh.pMs;
 					cuMesh.update_parameters_mcoarse(idx, *cuMesh.pMs, Ms);
 					(*cuMesh.pM)[idx].renormalize(Ms);
 				}
 
 				//obtain maximum normalized dmdt term
-				cuReal Mnorm = (*cuMesh.pM)[idx].norm();
-				dmdt = cu_GetMagnitude((*cuMesh.pM)[idx] - (*cuDiffEq.psM1)[idx]) / (dT * (cuReal)GAMMA * Mnorm * Mnorm);
+				cuBReal Mnorm = (*cuMesh.pM)[idx].norm();
+				dmdt = cu_GetMagnitude((*cuMesh.pM)[idx] - (*cuDiffEq.psM1)[idx]) / (dT * (cuBReal)GAMMA * Mnorm * Mnorm);
 
 				//local truncation error (between predicted and corrected)
 				lte = cu_GetMagnitude((*cuMesh.pM)[idx] - saveM) / (*cuMesh.pM)[idx].norm();
 			}
 			else {
 
-				cuReal Ms = *cuMesh.pMs;
+				cuBReal Ms = *cuMesh.pMs;
 				cuMesh.update_parameters_mcoarse(idx, *cuMesh.pMs, Ms);
 				(*cuMesh.pM)[idx].renormalize(Ms);		//re-normalize the skipped cells no matter what - temperature can change
 			}
@@ -157,9 +157,9 @@ __global__ void RunABM_Corrector_Kernel(ManagedDiffEqCUDA& cuDiffEq, ManagedMesh
 {
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
 
-	cuReal dT = *cuDiffEq.pdT;
+	cuBReal dT = *cuDiffEq.pdT;
 
-	cuReal lte = 0.0;
+	cuBReal lte = 0.0;
 
 	if (idx < cuMesh.pM->linear_size()) {
 
@@ -185,7 +185,7 @@ __global__ void RunABM_Corrector_Kernel(ManagedDiffEqCUDA& cuDiffEq, ManagedMesh
 
 				if (*cuDiffEq.prenormalize) {
 
-					cuReal Ms = *cuMesh.pMs;
+					cuBReal Ms = *cuMesh.pMs;
 					cuMesh.update_parameters_mcoarse(idx, *cuMesh.pMs, Ms);
 					(*cuMesh.pM)[idx].renormalize(Ms);
 				}
@@ -195,7 +195,7 @@ __global__ void RunABM_Corrector_Kernel(ManagedDiffEqCUDA& cuDiffEq, ManagedMesh
 			}
 			else {
 
-				cuReal Ms = *cuMesh.pMs;
+				cuBReal Ms = *cuMesh.pMs;
 				cuMesh.update_parameters_mcoarse(idx, *cuMesh.pMs, Ms);
 				(*cuMesh.pM)[idx].renormalize(Ms);		//re-normalize the skipped cells no matter what - temperature can change
 			}
@@ -209,7 +209,7 @@ __global__ void RunABMTEuler_Step0_Kernel(ManagedDiffEqCUDA& cuDiffEq, ManagedMe
 {
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
 
-	cuReal dT = *cuDiffEq.pdT;
+	cuBReal dT = *cuDiffEq.pdT;
 
 	if (idx < cuMesh.pM->linear_size()) {
 
@@ -234,7 +234,7 @@ __global__ void RunABMTEuler_Step1_Kernel(ManagedDiffEqCUDA& cuDiffEq, ManagedMe
 {
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
 
-	cuReal dT = *cuDiffEq.pdT;
+	cuBReal dT = *cuDiffEq.pdT;
 
 	if (idx < cuMesh.pM->linear_size()) {
 
@@ -250,14 +250,14 @@ __global__ void RunABMTEuler_Step1_Kernel(ManagedDiffEqCUDA& cuDiffEq, ManagedMe
 
 				if (*cuDiffEq.prenormalize) {
 
-					cuReal Ms = *cuMesh.pMs;
+					cuBReal Ms = *cuMesh.pMs;
 					cuMesh.update_parameters_mcoarse(idx, *cuMesh.pMs, Ms);
 					(*cuMesh.pM)[idx].renormalize(Ms);
 				}
 			}
 			else {
 
-				cuReal Ms = *cuMesh.pMs;
+				cuBReal Ms = *cuMesh.pMs;
 				cuMesh.update_parameters_mcoarse(idx, *cuMesh.pMs, Ms);
 				(*cuMesh.pM)[idx].renormalize(Ms);		//re-normalize the skipped cells no matter what - temperature can change
 			}

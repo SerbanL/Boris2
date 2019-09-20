@@ -455,7 +455,7 @@ bool D3D::SaveScreenToPNG(string fileName, D2D1_RECT_F capture_rect)
 
 	HRESULT hr = S_OK;
 
-	//convert string to LPCWSTR
+	//convert string
 	wstring pfileName = StringtoWideString(fileName);
 
 	ID3D11Texture2D *pDestTexture = nullptr;
@@ -503,7 +503,7 @@ HRESULT D3D::LoadScaledBitmap(string fileName, IWICFormatConverter **ppWICFormat
 
 	HRESULT hr = S_OK;
 
-	//convert string to LPCWSTR
+	//convert string
 	wstring pfileName = StringtoWideString(fileName);
 
 	//stuff needed for d2d operations
@@ -559,7 +559,7 @@ HRESULT D3D::GetImageDimensions(string fileName, UINT *pbmpWidth, UINT *pbmpHeig
 
 	HRESULT hr = S_OK;
 
-	//convert string to LPCWSTR
+	//convert string
 	wstring pfileName = StringtoWideString(fileName);
 
 	//stuff needed for d2d operations
@@ -636,7 +636,7 @@ HRESULT D3D::InitializeSinkWriter(string fileName, IMFSinkWriter **ppWriter, DWO
     IMFMediaType    *pMediaTypeIn = nullptr;   
     DWORD           streamIndex = 0;     
 
-	//convert string to LPCWSTR
+	//convert string
 	wstring pfileName = StringtoWideString(fileName);
 
     HRESULT hr = MFCreateSinkWriterFromURL(pfileName.c_str(), nullptr, nullptr, &pSinkWriter);

@@ -51,17 +51,17 @@ BError DipoleMeshCUDA::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 void DipoleMeshCUDA::Reset_Mdipole(void)
 {
 	//set dipole value from Ms - this could have changed
-	if (!pDipoleMesh->Temp.linear_size()) M()->renormalize(pDipoleMesh->M.linear_size(), (cuReal)pDipoleMesh->Ms);
+	if (!pDipoleMesh->Temp.linear_size()) M()->renormalize(pDipoleMesh->M.linear_size(), (cuBReal)pDipoleMesh->Ms);
 	else {
 
-		cuReal Temperature = Temp()->average_nonempty(pDipoleMesh->Temp.linear_size());
-		M()->renormalize(pDipoleMesh->M.linear_size(), (cuReal)pDipoleMesh->Ms.get(Temperature));
+		cuBReal Temperature = Temp()->average_nonempty(pDipoleMesh->Temp.linear_size());
+		M()->renormalize(pDipoleMesh->M.linear_size(), (cuBReal)pDipoleMesh->Ms.get(Temperature));
 	}
 
 	recalculateStrayField = true;
 }
 
-void DipoleMeshCUDA::SetMagnetisationAngle(cuReal polar, cuReal azim)
+void DipoleMeshCUDA::SetMagnetisationAngle(cuBReal polar, cuBReal azim)
 {
 	pDipoleMesh->M[0] = Polar_to_Cartesian(cuReal3(pDipoleMesh->Ms, polar, azim));
 	
@@ -78,9 +78,9 @@ bool DipoleMeshCUDA::Check_recalculateStrayField(void)
 
 	if (pDipoleMesh->Temp.linear_size() && pDipoleMesh->Ms.is_tdep()) {
 
-		cuReal Temperature = Temp()->average_nonempty(pDipoleMesh->Temp.linear_size());
+		cuBReal Temperature = Temp()->average_nonempty(pDipoleMesh->Temp.linear_size());
 		
-		M()->renormalize(pDipoleMesh->M.linear_size(), (cuReal)pDipoleMesh->Ms.get(Temperature));
+		M()->renormalize(pDipoleMesh->M.linear_size(), (cuBReal)pDipoleMesh->Ms.get(Temperature));
 
 		return true;
 	}

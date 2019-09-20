@@ -28,7 +28,7 @@ class SuperMesh;
 class SDemag :
 	public Modules,
 	public Convolution<DemagKernel>,
-	public ProgramState<SDemag, tuple<bool, SZ3, bool, bool, INT3>, tuple<>>
+	public ProgramState<SDemag, tuple<bool, SZ3, bool, int, INT3>, tuple<>>
 {
 #if COMPILECUDA == 1
 	friend SDemagCUDA;
@@ -48,6 +48,9 @@ private:
 
 	//number of non-empty cells in sm_Vals
 	int non_empty_cells;
+
+	//total non-empty volume from all meshes participating in convolution
+	double total_nonempty_volume = 0.0;
 
 	//--------
 
@@ -80,19 +83,28 @@ private:
 	//keep calculating a default value for n when configuration changes, as opposed to the user having to set n_common
 	bool use_default_n = true;
 
-	//if set to true then always use 2D multi-layered convolution irrespective of how the individual meshes are discretised
-	bool force_2d_convolution = false;
+	//0 : don't use 2D
+	//1 : always use 2D multi-layered convolution irrespective of how the individual meshes are discretised, i.e. each mesh will be taken as 2D
+	//2 : each mesh will be layared along z direction as 2D layers. Thus this is a fully 2D layered convolution but more accurate than option 1.
+	int force_2d_convolution = 0;
 
 	//number of pbc images in each dimension (set to zero to disable).
 	//There is also a copy of this in ConvolutionData inherited from Convolution - we need another copy here to detect changes
 	//these pbc images are applicable for supermesh or multilayered convolution only - in the case of multilayered convolution all meshes have the same pbc conditions applied.
 	INT3 demag_pbc_images = INT3();
 
+	//The demag field computed separately (supermesh convolution): at certain steps in the ODE evaluation method we don't need to recalculate the demag field but can use a previous evaluation with an acceptable impact on the numerical error.
+	//This mode needs to be enabled by the user, and can be much faster than the default mode. The default mode is to re-evaluate the demag field at every step.
+	VEC<DBL3> Hdemag;
+
+	//when using the evaluation speedup method we must ensure we have a previous Hdemag evaluation available; this flag applies to both supermesh and multilayered convolution
+	bool Hdemag_calculated = false;
+
 private:
 
 	//------------------ Helpers for multi-layered convolution control
 
-	//when SDemag created, it needs to add one SDemag_Demag module to each ferromagnetic mesh
+	//when SDemag created, it needs to add one SDemag_Demag module to each ferromagnetic mesh (or multiple if the 2D layering option is enabled).
 	BError Create_SDemag_Demag_Modules(void);
 
 	//when SDemag destroyed, it must destroy the SDemag_Demag module from each ferromagnetic mesh
@@ -116,6 +128,9 @@ private:
 
 	//initialize transfer object
 	BError Initialize_Mesh_Transfer(void);
+
+	//Set PBC settings for M in all meshes
+	BError Set_M_PBC(void);
 
 public:
 
@@ -153,8 +168,8 @@ public:
 	//change between demag calculation types : super-mesh (status = false) or multilayered (status = true)
 	BError Set_Multilayered_Convolution(bool status);
 
-	//enable multi-layered convolution and force it to 2D for all layers
-	BError Set_2D_Multilayered_Convolution(bool status);
+	//enable multi-layered convolution and force it to 2D for all layers (1), or as 2D layers in each mesh (2). 0 to turn off any forced 2D layering.
+	BError Set_2D_Multilayered_Convolution(int status);
 
 	//set n_common for multi-layered convolution
 	BError Set_n_common(SZ3 n);
@@ -163,7 +178,7 @@ public:
 	BError Set_Default_n_status(bool status);
 
 	//Set PBC images for supermesh demag
-	void Set_PBC(INT3 demag_pbc_images_);
+	BError Set_PBC(INT3 demag_pbc_images_);
 
 	//-------------------Getters
 
@@ -178,7 +193,7 @@ public:
 
 	//getters for multi-layered convolution
 	bool Get_Multilayered_Convolution_Status(void) { return use_multilayered_convolution; }
-	bool Get_2D_Multilayered_Convolution_Status(void) { return force_2d_convolution; }
+	int Get_2D_Multilayered_Convolution_Status(void) { return force_2d_convolution; }
 
 	bool Use_Default_n_Status(void) { return use_default_n; }
 
@@ -225,7 +240,7 @@ public:
 	BError Set_Multilayered_Convolution(bool status) { return BError(); }
 
 	//enable multi-layered convolution and force it to 2D for all layers
-	BError Set_2D_Multilayered_Convolution(bool status) { return BError(); }
+	BError Set_2D_Multilayered_Convolution(int status) { return BError(); }
 
 	//set n_common for multi-layered convolution
 	BError Set_n_common(SZ3 n) { return BError(); }
@@ -233,9 +248,14 @@ public:
 	//set status for use_default_n
 	BError Set_Default_n_status(bool status) { return BError(); }
 
+	BError Set_PBC(INT3 demag_pbc_images_) {}
+
 	//-------------------Getters
 
 	VEC<DBL3>& GetDemagField(void) { return sm_Vals; }
+
+	//Get PBC images for supermesh demag
+	INT3 Get_PBC(void) { return INT3(); }
 
 #if COMPILECUDA == 1
 	cu_obj<cuVEC<cuReal3>>& GetDemagFieldCUDA(void) { return sm_Vals_CUDA; }
@@ -243,7 +263,7 @@ public:
 
 	//getters for multi-layered convolution
 	bool Get_Multilayered_Convolution_Status(void) { return true; }
-	bool Get_2D_Multilayered_Convolution_Status(void) { return true; }
+	int Get_2D_Multilayered_Convolution_Status(void) { return 0; }
 
 	bool Use_Default_n_Status(void) { return true; }
 

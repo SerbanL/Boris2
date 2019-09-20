@@ -101,7 +101,7 @@ public:
 	void SetAmbientTemperature(double T_ambient_);
 	void SetAlphaBoundary(double alpha_boundary_);
 
-	//set Temp uniformly to base temperature
+	//set Temp uniformly to base temperature, unless a spatial variation is also specified through the cT mesh parameter
 	void SetBaseTemperature(double Temperature);
 
 	//set insulating mesh sides flags. literal can be "x", "-x", "y", "-y", "z", "-z"
@@ -158,7 +158,7 @@ public:
 	void SetAmbientTemperature(double T_ambient_) {}
 	void SetAlphaBoundary(double alpha_boundary_) {}
 
-	//set Temp uniformly to base temperature
+	//set Temp uniformly to base temperature, unless a spatial variation is also specified through the cT mesh parameter
 	void SetBaseTemperature(double Temperature) {}
 
 	//set insulating mesh sides flags. literal can be "x", "-x", "y", "-y", "z", "-z"

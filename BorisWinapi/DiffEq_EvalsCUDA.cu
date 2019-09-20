@@ -9,7 +9,7 @@
 
 //----------------------------------------- AUXILIARY
 
-__global__ void Zerovalues_kernel(cuReal& mxh, cuReal3& mxh_av, size_t& avpoints, cuReal& dmdt, cuReal3& dmdt_av, size_t& avpoints2, cuReal& lte)
+__global__ void Zerovalues_kernel(cuBReal& mxh, cuReal3& mxh_av, size_t& avpoints, cuBReal& dmdt, cuReal3& dmdt_av, size_t& avpoints2, cuBReal& lte)
 {
 	if (threadIdx.x == 0) mxh = 0.0;
 	else if (threadIdx.x == 1) mxh_av = cuReal3(0.0);
@@ -27,7 +27,7 @@ void ODECommonCUDA::Zero_reduction_values(void)
 
 //-----------------------------------------
 
-__global__ void Zeromxh_kernel(cuReal& mxh, cuReal3& mxh_av, size_t& avpoints, cuReal& lte)
+__global__ void Zeromxh_kernel(cuBReal& mxh, cuReal3& mxh_av, size_t& avpoints, cuBReal& lte)
 {
 	if (threadIdx.x == 0) mxh = 0.0;
 	else if (threadIdx.x == 1) mxh_av = cuReal3(0.0);
@@ -42,7 +42,7 @@ void ODECommonCUDA::Zero_mxh_lte_values(void)
 
 //-----------------------------------------
 
-__global__ void Zerodmdt_kernel(cuReal& dmdt, cuReal3& dmdt_av, size_t& avpoints2, cuReal& lte)
+__global__ void Zerodmdt_kernel(cuBReal& dmdt, cuReal3& dmdt_av, size_t& avpoints2, cuBReal& lte)
 {
 	if (threadIdx.x == 0) dmdt = 0.0;
 	else if (threadIdx.x == 1) dmdt_av = cuReal3(0.0);
@@ -57,7 +57,7 @@ void ODECommonCUDA::Zero_dmdt_lte_values(void)
 
 //-----------------------------------------
 
-__global__ void Zerolte_kernel(cuReal& lte)
+__global__ void Zerolte_kernel(cuBReal& lte)
 {
 	if (threadIdx.x == 0) lte = 0.0;
 }
@@ -69,7 +69,7 @@ void ODECommonCUDA::Zero_lte_value(void)
 
 //-----------------------------------------
 
-__global__ void mxhav_to_mxh_kernel(cuReal& mxh, cuReal3& mxh_av, size_t& avpoints)
+__global__ void mxhav_to_mxh_kernel(cuBReal& mxh, cuReal3& mxh_av, size_t& avpoints)
 {
 	if (threadIdx.x == 0) {
 
@@ -91,7 +91,7 @@ void ODECommonCUDA::mxhav_to_mxh(void)
 
 //-----------------------------------------
 
-__global__ void dmdtav_to_dmdt_kernel(cuReal& dmdt, cuReal3& dmdt_av, size_t& avpoints2)
+__global__ void dmdtav_to_dmdt_kernel(cuBReal& dmdt, cuReal3& dmdt_av, size_t& avpoints2)
 {
 	if (threadIdx.x == 0) {
 
@@ -113,7 +113,7 @@ void ODECommonCUDA::dmdtav_to_dmdt(void)
 
 //-----------------------------------------
 
-__global__ void Zero_SD_Solver_BB_Values_kernel(cuReal& delta_M_sq, cuReal& delta_G_sq, cuReal& delta_M_dot_delta_G)
+__global__ void Zero_SD_Solver_BB_Values_kernel(cuBReal& delta_M_sq, cuBReal& delta_G_sq, cuBReal& delta_M_dot_delta_G)
 {
 	if (threadIdx.x == 0) delta_M_sq = 0.0;
 	else if (threadIdx.x == 1) delta_G_sq = 0.0;

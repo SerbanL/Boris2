@@ -33,13 +33,13 @@ public:
 
 		//Secondary is an N here
 
-		cuVEC_VC<cuReal>& V_sec = *(trans_sec.pcuMesh->pV);
-		cuVEC_VC<cuReal>& V_pri = *(trans_pri.pcuMesh->pV);
+		cuVEC_VC<cuBReal>& V_sec = *(trans_sec.pcuMesh->pV);
+		cuVEC_VC<cuBReal>& V_pri = *(trans_pri.pcuMesh->pV);
 
 		cuVEC_VC<cuReal3>& M_pri = *(trans_pri.pcuMesh->pM);
 
-		cuReal Ms_pri = *(trans_pri.pcuMesh->pMs);
-		cuReal pump_eff_pri = *(trans_pri.pcuMesh->ppump_eff);
+		cuBReal Ms_pri = *(trans_pri.pcuMesh->pMs);
+		cuBReal pump_eff_pri = *(trans_pri.pcuMesh->ppump_eff);
 
 		//Get G values from top contacting mesh
 		cuReal2 Gi, Gmix;
@@ -72,20 +72,20 @@ public:
 			int idx2_M = M_pri.position_to_cellidx(V_pri.cellidx_to_position(cell2_idx));
 			m = (1.5 * M_pri[idx1_M] - 0.5 * M_pri[idx2_M]) / Ms_pri;
 			
-			if (cuIsNZ((cuReal)pump_eff_pri) && trans_pri.pcuDiffEq) {
+			if (cuIsNZ((cuBReal)pump_eff_pri) && trans_pri.pcuDiffEq) {
 
 				cuReal3 dmdt = (1.5 * (trans_pri.pcuDiffEq)->dMdt(idx1_M) - 0.5 * (trans_pri.pcuDiffEq)->dMdt(idx2_M)) / Ms_pri;
 
-				Js_pump = pump_eff_pri * (cuReal)MUB_E * (cuReal)HBAR_E * (Gmix.i * (m ^ dmdt) + Gmix.j * m);
+				Js_pump = pump_eff_pri * (cuBReal)MUB_E * (cuBReal)HBAR_E * (Gmix.i * (m ^ dmdt) + Gmix.j * m);
 			}
 		}
 
 		//V values at the interface obtained using interpolation
-		cuReal V_pri_val = 1.5 * V_pri[cell1_idx] - 0.5 * V_pri[cell2_idx];
-		cuReal V_sec_val = 1.5 * V_sec.weighted_average(relpos_m1, stencil) - 0.5 * V_sec.weighted_average(relpos_m1 + shift, stencil);
-		cuReal dV = V_pri_val - V_sec_val;
+		cuBReal V_pri_val = 1.5 * V_pri[cell1_idx] - 0.5 * V_pri[cell2_idx];
+		cuBReal V_sec_val = 1.5 * V_sec.weighted_average(relpos_m1, stencil) - 0.5 * V_sec.weighted_average(relpos_m1 + shift, stencil);
+		cuBReal dV = V_pri_val - V_sec_val;
 
-		return (cuReal)MUB_E * (Gi.i - Gi.j) * dV * m - Js_pump;
+		return (cuBReal)MUB_E * (Gi.i - Gi.j) * dV * m - Js_pump;
 	}
 
 	//A-Function for F
@@ -96,12 +96,12 @@ public:
 
 		//Primary is an F here
 
-		cuVEC_VC<cuReal>& V_sec = *(trans_sec.pcuMesh->pV);
-		cuVEC_VC<cuReal>& V_pri = *(trans_pri.pcuMesh->pV);
+		cuVEC_VC<cuBReal>& V_sec = *(trans_sec.pcuMesh->pV);
+		cuVEC_VC<cuBReal>& V_pri = *(trans_pri.pcuMesh->pV);
 		
 		cuVEC_VC<cuReal3>& M_pri = *(trans_pri.pcuMesh->pM);
 		
-		cuReal Ms_pri = *(trans_pri.pcuMesh->pMs);
+		cuBReal Ms_pri = *(trans_pri.pcuMesh->pMs);
 
 		//Get G values from top contacting mesh
 		cuReal2 Gi;
@@ -131,10 +131,10 @@ public:
 		}
 
 		//V values at the interface obtained using interpolation
-		cuReal V_pri_val = 1.5 * V_pri[cell1_idx] - 0.5 * V_pri[cell2_idx];
-		cuReal V_sec_val = 1.5 * V_sec.weighted_average(relpos_m1, stencil) - 0.5 * V_sec.weighted_average(relpos_m1 + shift, stencil);
+		cuBReal V_pri_val = 1.5 * V_pri[cell1_idx] - 0.5 * V_pri[cell2_idx];
+		cuBReal V_sec_val = 1.5 * V_sec.weighted_average(relpos_m1, stencil) - 0.5 * V_sec.weighted_average(relpos_m1 + shift, stencil);
 
-		cuReal dV = V_pri_val - V_sec_val;
+		cuBReal dV = V_pri_val - V_sec_val;
 
 		return MUB_E * (Gi.i - Gi.j) * dV * m;
 	}
@@ -151,7 +151,7 @@ public:
 
 		cuVEC_VC<cuReal3>& M_pri = *(trans_pri.pcuMesh->pM);
 		
-		cuReal Ms_pri = *(trans_pri.pcuMesh->pMs);
+		cuBReal Ms_pri = *(trans_pri.pcuMesh->pMs);
 
 		//Get G values from top contacting mesh
 		cuReal2 Gi, Gmix;
@@ -182,12 +182,12 @@ public:
 			m = (1.5 * M_pri[idx1_M] - 0.5 * M_pri[idx2_M]) / Ms_pri;
 		}
 
-		cuReal gR = 2 * (cuReal)MUB_E * Gmix.i;
-		cuReal gI = 2 * (cuReal)MUB_E * Gmix.j;
+		cuBReal gR = 2 * (cuBReal)MUB_E * Gmix.i;
+		cuBReal gI = 2 * (cuBReal)MUB_E * Gmix.j;
 
 		cuReal33 eps_m = cu_epsilon3(m);
 
-		return (-(cuReal)MUB_E * (Gi.i + Gi.j) * (m | m)) + (eps_m * (gR * eps_m + gI * cu_ident<cuReal33>()));
+		return (-(cuBReal)MUB_E * (Gi.i + Gi.j) * (m | m)) + (eps_m * (gR * eps_m + gI * cu_ident<cuReal33>()));
 	}
 
 	//B-Function for F
@@ -202,7 +202,7 @@ public:
 
 		cuVEC_VC<cuReal3>& M_pri = *(trans_pri.pcuMesh->pM);
 
-		cuReal Ms_pri = *(trans_pri.pcuMesh->pMs);
+		cuBReal Ms_pri = *(trans_pri.pcuMesh->pMs);
 
 		//Get G values from top contacting mesh
 		cuReal2 Gi;
@@ -231,7 +231,7 @@ public:
 			m = (1.5 * M_pri[idx1_M] - 0.5 * M_pri[idx2_M]) / Ms_pri;
 		}
 
-		return -(cuReal)MUB_E * (Gi.i + Gi.j) * (m | m);
+		return -(cuBReal)MUB_E * (Gi.i + Gi.j) * (m | m);
 	}
 };
 
@@ -256,13 +256,13 @@ public:
 
 		//Primary is an N here
 
-		cuVEC_VC<cuReal>& V_sec = *(trans_sec.pcuMesh->pV);
-		cuVEC_VC<cuReal>& V_pri = *(trans_pri.pcuMesh->pV);
+		cuVEC_VC<cuBReal>& V_sec = *(trans_sec.pcuMesh->pV);
+		cuVEC_VC<cuBReal>& V_pri = *(trans_pri.pcuMesh->pV);
 
 		cuVEC_VC<cuReal3>& M_sec = *(trans_sec.pcuMesh->pM);
 
-		cuReal Ms_sec = *(trans_sec.pcuMesh->pMs);
-		cuReal pump_eff_sec = *(trans_sec.pcuMesh->ppump_eff);
+		cuBReal Ms_sec = *(trans_sec.pcuMesh->pMs);
+		cuBReal pump_eff_sec = *(trans_sec.pcuMesh->ppump_eff);
 
 		//Get G values from top contacting mesh
 		cuReal2 Gi, Gmix;
@@ -293,23 +293,23 @@ public:
 			//M value at the interface obtained using interpolation
 			m = (1.5 * M_sec.weighted_average(relpos_m1, stencil) - 0.5 * M_sec.weighted_average(relpos_m1 + shift, stencil)) / Ms_sec;
 
-			if (cuIsNZ((cuReal)pump_eff_sec) && trans_sec.pcuDiffEq) {
+			if (cuIsNZ((cuBReal)pump_eff_sec) && trans_sec.pcuDiffEq) {
 
 				int idx1_M = M_sec.position_to_cellidx(relpos_m1);
 				int idx2_M = M_sec.position_to_cellidx(relpos_m1 + shift);
 
 				cuReal3 dmdt = (1.5 * (trans_sec.pcuDiffEq)->dMdt(idx1_M) - 0.5 * (trans_sec.pcuDiffEq)->dMdt(idx2_M)) / Ms_sec;
 
-				Js_pump = pump_eff_sec * (cuReal)MUB_E * (cuReal)HBAR_E * (Gmix.i * (m ^ dmdt) + Gmix.j * m);
+				Js_pump = pump_eff_sec * (cuBReal)MUB_E * (cuBReal)HBAR_E * (Gmix.i * (m ^ dmdt) + Gmix.j * m);
 			}
 		}
 
 		//V values at the interface obtained using interpolation
-		cuReal V_pri_val = 1.5 * V_pri[cell1_idx] - 0.5 * V_pri[cell2_idx];
-		cuReal V_sec_val = 1.5 * V_sec.weighted_average(relpos_m1, stencil) - 0.5 * V_sec.weighted_average(relpos_m1 + shift, stencil);
-		cuReal dV = V_pri_val - V_sec_val;
+		cuBReal V_pri_val = 1.5 * V_pri[cell1_idx] - 0.5 * V_pri[cell2_idx];
+		cuBReal V_sec_val = 1.5 * V_sec.weighted_average(relpos_m1, stencil) - 0.5 * V_sec.weighted_average(relpos_m1 + shift, stencil);
+		cuBReal dV = V_pri_val - V_sec_val;
 
-		return (cuReal)MUB_E * (Gi.i - Gi.j) * dV * m - Js_pump;
+		return (cuBReal)MUB_E * (Gi.i - Gi.j) * dV * m - Js_pump;
 	}
 
 	//A-Function for F
@@ -320,12 +320,12 @@ public:
 
 		//Secondary is an F here
 
-		cuVEC_VC<cuReal>& V_sec = *(trans_sec.pcuMesh->pV);
-		cuVEC_VC<cuReal>& V_pri = *(trans_pri.pcuMesh->pV);
+		cuVEC_VC<cuBReal>& V_sec = *(trans_sec.pcuMesh->pV);
+		cuVEC_VC<cuBReal>& V_pri = *(trans_pri.pcuMesh->pV);
 
 		cuVEC_VC<cuReal3>& M_sec = *(trans_sec.pcuMesh->pM);
 
-		cuReal Ms_sec = *(trans_sec.pcuMesh->pMs);
+		cuBReal Ms_sec = *(trans_sec.pcuMesh->pMs);
 
 		//Get G values from top contacting mesh
 		cuReal2 Gi;
@@ -353,10 +353,10 @@ public:
 		}
 
 		//V values at the interface obtained using interpolation
-		cuReal V_pri_val = 1.5 * V_pri[cell1_idx] - 0.5 * V_pri[cell2_idx];
-		cuReal V_sec_val = 1.5 * V_sec.weighted_average(relpos_m1, stencil) - 0.5 * V_sec.weighted_average(relpos_m1 + shift, stencil);
+		cuBReal V_pri_val = 1.5 * V_pri[cell1_idx] - 0.5 * V_pri[cell2_idx];
+		cuBReal V_sec_val = 1.5 * V_sec.weighted_average(relpos_m1, stencil) - 0.5 * V_sec.weighted_average(relpos_m1 + shift, stencil);
 
-		cuReal dV = V_pri_val - V_sec_val;
+		cuBReal dV = V_pri_val - V_sec_val;
 
 		return MUB_E * (Gi.i - Gi.j) * dV * m;
 	}
@@ -371,7 +371,7 @@ public:
 
 		cuVEC_VC<cuReal3>& M_sec = *(trans_sec.pcuMesh->pM);
 
-		cuReal Ms_sec = *(trans_sec.pcuMesh->pMs);
+		cuBReal Ms_sec = *(trans_sec.pcuMesh->pMs);
 
 		//Get G values from top contacting mesh
 		cuReal2 Gi, Gmix;
@@ -400,12 +400,12 @@ public:
 			m = (1.5 * M_sec.weighted_average(relpos_m1, stencil) - 0.5 * M_sec.weighted_average(relpos_m1 + shift, stencil)) / Ms_sec;
 		}
 
-		cuReal gR = 2 * (cuReal)MUB_E * Gmix.i;
-		cuReal gI = 2 * (cuReal)MUB_E * Gmix.j;
+		cuBReal gR = 2 * (cuBReal)MUB_E * Gmix.i;
+		cuBReal gI = 2 * (cuBReal)MUB_E * Gmix.j;
 
 		cuReal33 eps_m = cu_epsilon3(m);
 
-		return (-(cuReal)MUB_E * (Gi.i + Gi.j) * (m | m)) + (eps_m * (gR * eps_m + gI * cu_ident<cuReal33>()));
+		return (-(cuBReal)MUB_E * (Gi.i + Gi.j) * (m | m)) + (eps_m * (gR * eps_m + gI * cu_ident<cuReal33>()));
 	}
 
 	//B-Function for F
@@ -418,7 +418,7 @@ public:
 
 		cuVEC_VC<cuReal3>& M_sec = *(trans_sec.pcuMesh->pM);
 
-		cuReal Ms_sec = *(trans_sec.pcuMesh->pMs);
+		cuBReal Ms_sec = *(trans_sec.pcuMesh->pMs);
 
 		//Get G values from top contacting mesh
 		cuReal2 Gi;
@@ -445,7 +445,7 @@ public:
 			m = (1.5 * M_sec.weighted_average(relpos_m1, stencil) - 0.5 * M_sec.weighted_average(relpos_m1 + shift, stencil)) / Ms_sec;
 		}
 
-		return -(cuReal)MUB_E * (Gi.i + Gi.j) * (m | m);
+		return -(cuBReal)MUB_E * (Gi.i + Gi.j) * (m | m);
 	}
 };
 

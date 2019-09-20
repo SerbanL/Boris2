@@ -16,7 +16,7 @@ BError SuperMesh::AddModule(string meshName, MOD_ moduleId)
 
 		error = pMesh[meshName]->AddModule(moduleId);
 	}
-	//add module to supermesh. If module is already set then don't add another one : only one module of each type allowed
+	//add module to supermesh. If module is already set then don't add another one : only one module of each type allowed on the supermesh
 	else if (!IsSuperMeshModuleSet(moduleId)) {
 
 		//add module to super-mesh

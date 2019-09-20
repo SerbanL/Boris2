@@ -273,7 +273,8 @@ protected:
 
 	void SetDefaultCursor(void) { SetCursor(LoadCursor(nullptr, IDC_ARROW)); }
 
-	bool SaveMeshImage(string fileName);
+	//image_cropping specify normalized cropping within the mesh image, as left, bottom, right, top : 0, 0 point is left, bottom of screen as far as user is concerned.
+	bool SaveMeshImage(string fileName, DBL4 image_cropping);
 
 public: 
 
@@ -411,7 +412,8 @@ public:
 	//only update if mutex can be locked right away, as this is used in performance-critical parts
 	void UpdateMeshDisplay(vector<PhysQ> physQ) { if (displayMutex.try_lock()) { pbMeshWin->UpdatePhysQRep(physQ); displayMutex.unlock(); } }
 
-	bool SaveMeshImage(string fileName) { displayMutex.lock(); bool success = pbMeshWin->SaveMeshImage(fileName); displayMutex.unlock(); return success; }
+	//image_cropping specify normalized cropping within the mesh image, as left, bottom, right, top : 0, 0 point is left, bottom of screen as far as user is concerned.
+	bool SaveMeshImage(string fileName, DBL4 image_cropping = DBL4(0, 0, 1, 1)) { displayMutex.lock(); bool success = pbMeshWin->SaveMeshImage(fileName, image_cropping); displayMutex.unlock(); return success; }
 
 	//allows access to Boris Graphics public methods.
 	BorisGraphics* BGMethods(void) { return pBG; }

@@ -33,10 +33,13 @@ private:
 	//This mode needs to be enabled by the user, and can be much faster than the default mode. The default mode is to re-evaluate the demag field at every step.
 	VEC<DBL3> Hdemag;
 
+	//when using the evaluation speedup method we must ensure we have a previous Hdemag evaluation available
+	bool Hdemag_calculated = false;
+
 public:
 
 	Demag(Mesh *pMesh_);
-	~Demag() {}
+	~Demag();
 
 	//-------------------Implement ProgramState method
 
@@ -57,7 +60,7 @@ public:
 	//-------------------Setters
 
 	//Set PBC
-	void Set_PBC(INT3 demag_pbc_images_);
+	BError Set_PBC(INT3 demag_pbc_images_);
 
 	//-------------------Getters
 
@@ -96,6 +99,16 @@ public:
 	BError MakeCUDAModule(void) { return BError(); }
 
 	double UpdateField(void) { return 0.0; }
+
+	//-------------------Setters
+
+	//Set PBC
+	BError Set_PBC(INT3 demag_pbc_images_) { return BError(); }
+
+	//-------------------Getters
+
+	//Get PBC images
+	INT3 Get_PBC(void) { return INT3(); }
 };
 
 #endif

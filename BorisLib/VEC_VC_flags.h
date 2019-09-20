@@ -250,6 +250,9 @@ void VEC_VC<VType>::set_robin_flags(void)
 
 				int idx = i + j * n.x + k * n.x*n.y;
 
+				//first clear any robin flags already set
+				ngbrFlags[idx] &= ~NF_ROBIN;
+
 				if (ngbrFlags[idx] & NF_NOTEMPTY) {
 
 					//neighbors

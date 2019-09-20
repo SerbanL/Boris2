@@ -21,6 +21,12 @@ enum IOI_
 	//Available/set ode : minorId is an entry from ODE_ (the equation)
 	IOI_ODE,
 
+	//Set ODE time step: textId is the value
+	IOI_ODEDT,
+
+	//Set heat equation time step: textId is the value
+	IOI_HEATDT,
+
 	//Available/set evaluation method for ode : minorId is an entry from ODE_ (the equation), auxId is the EVAL_ entry (the evaluation method), textId is the name of the evaluation method
 	IOI_ODE_EVAL,
 
@@ -122,6 +128,11 @@ enum IOI_
 	IOI_MESHDISPLAY,
 	//Shows super-mesh display option : minorId is the MESHDISPLAY_ value, textId is the MESHDISPLAY_ handle
 	IOI_SMESHDISPLAY,
+
+	//Shows mesh vectorial quantity display option : minorId is the unique mesh id number, auxId is the display option
+	IOI_MESHVECREP,
+	//Shows supermesh vectorial quantity display option : auxId is the display option
+	IOI_SMESHVECREP,
 
 	//Shows movingmesh trigger settings : minorId is the unique mesh id number (if set), auxId is the trigger state (used or not used), textId is the mesh name (if set)
 	IOI_MOVINGMESH,
@@ -257,5 +268,8 @@ enum IOI_
 	IOI_INDIVIDUALSHAPE,
 
 	//Static transport solver state. auxId is the value (0/1)
-	IOI_STATICTRANSPORT
+	IOI_STATICTRANSPORT,
+
+	//Shows image cropping settings : textId has the DBL4 value as text
+	IOI_IMAGECROPPING
 };

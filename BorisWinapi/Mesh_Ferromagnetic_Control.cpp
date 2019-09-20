@@ -300,58 +300,58 @@ void FMesh::SetMagnetisationFromData(VEC<DBL3>& data)
 }
 
 //set periodic boundary conditions for magnetization
-void FMesh::Set_PBC_X(int pbc_x)
+BError FMesh::Set_PBC_X(int pbc_x)
 {
-	//set pbc conditions in M : if any are zero then pbc is disabled in that dimension
-	M.set_pbc(pbc_x, M.is_pbc_y(), M.is_pbc_z());
+	BError error(__FUNCTION__);
 
 	//set pbc conditions for demag module if available
 	if (IsModuleSet(MOD_DEMAG)) {
 
 		INT3 pbc_images = reinterpret_cast<Demag*>(pMod(MOD_DEMAG))->Get_PBC();
+
 		pbc_images.x = pbc_x;
-		reinterpret_cast<Demag*>(pMod(MOD_DEMAG))->Set_PBC(pbc_images);
+		
+		error = reinterpret_cast<Demag*>(pMod(MOD_DEMAG))->Set_PBC(pbc_images);
 	}
+	else return error(BERROR_GPUERROR_CRIT);
 
-#if COMPILECUDA == 1
-	if (pMeshCUDA) pMeshCUDA->M()->copyflags_from_cpuvec(M);
-#endif
+	return error;
 }
 
 //set periodic boundary conditions for magnetization
-void FMesh::Set_PBC_Y(int pbc_y)
+BError FMesh::Set_PBC_Y(int pbc_y)
 {
-	//set pbc conditions in M : if any are zero then pbc is disabled in that dimension
-	M.set_pbc(M.is_pbc_x(), pbc_y, M.is_pbc_z());
+	BError error(__FUNCTION__);
 
 	//set pbc conditions for demag module if available
 	if (IsModuleSet(MOD_DEMAG)) {
 
 		INT3 pbc_images = reinterpret_cast<Demag*>(pMod(MOD_DEMAG))->Get_PBC();
+		
 		pbc_images.y = pbc_y;
-		reinterpret_cast<Demag*>(pMod(MOD_DEMAG))->Set_PBC(pbc_images);
+		
+		error = reinterpret_cast<Demag*>(pMod(MOD_DEMAG))->Set_PBC(pbc_images);
 	}
+	else return error(BERROR_GPUERROR_CRIT);
 
-#if COMPILECUDA == 1
-	if (pMeshCUDA) pMeshCUDA->M()->copyflags_from_cpuvec(M);
-#endif
+	return error;
 }
 
 //set periodic boundary conditions for magnetization
-void FMesh::Set_PBC_Z(int pbc_z)
+BError FMesh::Set_PBC_Z(int pbc_z)
 {
-	//set pbc conditions in M : if any are zero then pbc is disabled in that dimension
-	M.set_pbc(M.is_pbc_x(), M.is_pbc_y(), pbc_z);
+	BError error(__FUNCTION__);
 
 	//set pbc conditions for demag module if available
 	if (IsModuleSet(MOD_DEMAG)) {
 
 		INT3 pbc_images = reinterpret_cast<Demag*>(pMod(MOD_DEMAG))->Get_PBC();
+		
 		pbc_images.z = pbc_z;
-		reinterpret_cast<Demag*>(pMod(MOD_DEMAG))->Set_PBC(pbc_images);
+		
+		error = reinterpret_cast<Demag*>(pMod(MOD_DEMAG))->Set_PBC(pbc_images);
 	}
+	else return error(BERROR_GPUERROR_CRIT);
 
-#if COMPILECUDA == 1
-	if (pMeshCUDA) pMeshCUDA->M()->copyflags_from_cpuvec(M);
-#endif
+	return error;
 }

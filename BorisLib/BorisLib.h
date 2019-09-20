@@ -6,7 +6,6 @@
 //base headers (do not include other BorisLib headers)
 
 #include "Introspection_base.h"	//None
-#include "Funcs_Windows.h"		//None
 #include "Tuples.h"				//None
 #include "WinSocks.h"			//None
 #include "Funcs_Aux_base.h"		//None
@@ -92,6 +91,10 @@
 
 #include "Funcs_Files.h"		//Funcs_Conv.h, Funcs_Vectors.h, VEC.h
 
+//---------------------------------------------------------------------------------------
+//7th order
+
+#include "Funcs_Windows.h"		//Funcs_Files.h
 
 
 

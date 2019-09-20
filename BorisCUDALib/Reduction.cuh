@@ -100,7 +100,7 @@ __device__ void reduction_avg(int element_idx, size_t array_size, FType* large_a
 //Important : result must be reset to zero before calling this
 
 template <typename FType>
-__device__ void reduction_delta(int element_idx, size_t array_size, FType* large_array, FType old_value, cuReal& result, bool include_in_reduction = true)
+__device__ void reduction_delta(int element_idx, size_t array_size, FType* large_array, FType old_value, cuBReal& result, bool include_in_reduction = true)
 {
 	//memory shared between threads in a block
 	__shared__ FType shared_memory[CUDATHREADS];
@@ -133,7 +133,7 @@ __device__ void reduction_delta(int element_idx, size_t array_size, FType* large
 	if (thread_idx == 0) {
 
 		//use atomic operation to reduce all shared_memory[0] elements from different blocks to a single value. 
-		atomicMax(&result, (cuReal)cu_GetMagnitude(shared_memory[0]));
+		atomicMax(&result, (cuBReal)cu_GetMagnitude(shared_memory[0]));
 	}
 }
 

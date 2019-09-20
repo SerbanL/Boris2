@@ -4,12 +4,12 @@
 
 #if SINGLEPRECISION == 1
 
-#define cuReal cufftReal
-#define cuComplex cufftComplex
+#define cuBReal cufftReal
+#define cuBComplex cufftComplex
 
 #else
 
-#define cuReal cufftDoubleReal
-#define cuComplex cufftDoubleComplex
+#define cuBReal cufftDoubleReal
+#define cuBComplex cufftDoubleComplex
 
 #endif

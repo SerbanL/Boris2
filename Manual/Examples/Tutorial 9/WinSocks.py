@@ -91,18 +91,13 @@ class WSClient:
              # Look for the response
             data = self.sock.recv(maxLenMessage)
 
-            print('RX : %s' % data)
-
             #note, the returned data always starts with a tab
             fields = data.split('\t')
 
-            if len(fields) == 1:
-                break;
+            print('RX : %s' % data)
 
-            if fields[1] != '!':
-                break
-            else:
-                print('Something went wrong! Trying again. Did you enter the correct format? This is what was received: %s' % fields[2])
+            if len(fields) >= 2:
+                break        
 
         #list of floats where there should be floats instead of strings
         fFields = []

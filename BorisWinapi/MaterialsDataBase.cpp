@@ -7,17 +7,17 @@ MaterialsDB::MaterialsDB(vector<PARAM_>& enabledParams) :
 	dbEntry(enabledParams)
 {
 	//default database
-	databaseName = GetDirectory() + default_databaseName;
+	databaseName_withpath = GetUserDocumentsPath() + string("Boris Data\\") + default_databaseName;
 
 	//if BorisMDB.txt doesn't exist, make it
 
 	ifstream bdin;
-	bdin.open(databaseName.c_str(), std::ios::in);
+	bdin.open(databaseName_withpath.c_str(), std::ios::in);
 
 	if (!bdin.is_open()) {
 
 		//file doesn't exist so make it
-		make_mdb_file(databaseName);
+		make_mdb_file(databaseName_withpath);
 	}
 	else {
 
@@ -43,7 +43,7 @@ MaterialsDB::MaterialsDB(vector<PARAM_>& enabledParams) :
 
 //-------------------------------------------------------------------- AUXILIARY
 
-//make a fresh mdb file at databaseName, erasing any existing file
+//make a fresh mdb file at databaseName_withpath, erasing any existing file
 BError MaterialsDB::make_mdb_file(string newdatabaseName)
 {
 	//0. Name - this is the material name, and it is the handle used with addmaterial command
@@ -227,7 +227,7 @@ BError MaterialsDB::load_entries(void)
 {
 	BError error(__FUNCTION__);
 
-	if (!ReadData(databaseName, "\t", entries)) return error(BERROR_COULDNOTLOADFILE);
+	if (!ReadData(databaseName_withpath, "\t", entries)) return error(BERROR_COULDNOTLOADFILE);
 
 	//for multicomponent values, e.g. Gi, Gmix, some external editors like to put quotation marks!
 	//get rid of them
@@ -248,7 +248,7 @@ BError MaterialsDB::store_entries(void)
 {
 	BError error(__FUNCTION__);
 
-	if (!SaveData(databaseName, "\t", entries)) return error(BERROR_COULDNOTSAVEFILE);
+	if (!SaveData(databaseName_withpath, "\t", entries)) return error(BERROR_COULDNOTSAVEFILE);
 
 	return error;
 }
@@ -300,7 +300,7 @@ BError MaterialsDB::SwitchDataBase(string newdatabaseName)
 
 	if (!error) {
 
-		databaseName = newdatabaseName;
+		databaseName_withpath = newdatabaseName;
 
 		//make sure the existing file parameters list contains all the entries found in dbEntry (e.g. the program might have new material parameters not found in the old database)
 		error = fix_mdb_file();
@@ -615,7 +615,7 @@ BError MaterialsDB::UpdateMDB(string domain_name, string mdb_handler, string* pr
 {
 	BError error(__FUNCTION__);
 
-	error = SwitchDataBase(default_databaseName);
+	error = SwitchDataBase(databaseName_withpath);
 	if (error) return error;
 
 	//////////////////////////////////////////

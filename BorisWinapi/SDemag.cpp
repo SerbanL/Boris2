@@ -27,6 +27,12 @@ SDemag::SDemag(SuperMesh *pSMesh_) :
 
 SDemag::~SDemag()
 {
+	//when deleting the SDemag module any pbc settings should no longer take effect in all meshes
+	//thus must clear pbc flags in all M
+
+	demag_pbc_images = INT3();
+	Set_M_PBC();
+
 	//RAII : SDemag_Demag module were created in the constructor, so delete them here in any remaining ferromagnetic meshes 
 	//(some could have been deleted already if any ferromagnetic mesh was deleted in the mean-time)
 	Destroy_SDemag_Demag_Modules();
@@ -34,7 +40,7 @@ SDemag::~SDemag()
 
 //------------------ Helpers for multi-layered convolution control
 
-//when SDemag created, it needs to add one SDemag_Demag module to each ferromagnetic mesh
+//when SDemag created, it needs to add one SDemag_Demag module to each ferromagnetic mesh (or multiple if the 2D layering option is enabled).
 BError SDemag::Create_SDemag_Demag_Modules(void)
 {
 	BError error(CLASS_STR(SDemag));
@@ -44,13 +50,38 @@ BError SDemag::Create_SDemag_Demag_Modules(void)
 
 		if ((*pSMesh)[idx]->MComputation_Enabled()) {
 
-			//Make sure each ferromagnetic mesh has one SDemag_Demag module added
-			if (!(*pSMesh)[idx]->IsModuleSet(MOD_SDEMAG_DEMAG)) {
+			if (force_2d_convolution < 2) {
 
-				error = (*pSMesh)[idx]->AddModule(MOD_SDEMAG_DEMAG);
+				//not 2d layered convolution, so there can only be 1 SDemag_Demag module in each layer
+
+				//Make sure each ferromagnetic mesh has one SDemag_Demag module added
+				if (!(*pSMesh)[idx]->IsModuleSet(MOD_SDEMAG_DEMAG)) {
+
+					error = (*pSMesh)[idx]->AddModule(MOD_SDEMAG_DEMAG);
+				}
+
+				(*pSMesh)[idx]->CallModuleMethod(&SDemag_Demag::Set_SDemag_Pointer, this);
 			}
+			else {
 
-			(*pSMesh)[idx]->CallModuleMethod(&SDemag_Demag::Set_SDemag_Pointer, this);
+				//2d layered convolution - in each mesh need Mesh::n.z SDemag_Demag modules - one for each layer.
+				//here we must ensure we have at least n.z such modules - if there are more, they will be deleted through UpdateConfiguration method in the respective SDemag_Demag modules.
+				
+				//number of layers required
+				int num_layers = (*pSMesh)[idx]->n.z;
+
+				while ((*pSMesh)[idx]->GetNumModules(MOD_SDEMAG_DEMAG) < num_layers && !error) {
+
+					//keep adding SDemag_Demag modules until we have enough to cover all layers
+					error = (*pSMesh)[idx]->AddModule(MOD_SDEMAG_DEMAG, true);
+				}
+
+				//set SDemag pointer in all SDemag_Demag modules
+				(*pSMesh)[idx]->CallAllModulesMethod(&SDemag_Demag::Set_SDemag_Pointer, this);
+
+				//switch on 2D layering in all SDemag_Demag modules in this mesh, making sure each one knows exactly what layer it is
+				(*pSMesh)[idx]->CallAllModulesMethod(&SDemag_Demag::Set_2D_Layering);
+			}
 		}
 	}
 
@@ -88,14 +119,16 @@ bool SDemag::Update_SDemag_Demag_List(void)
 
 		if ((*pSMesh)[idx]->MComputation_Enabled()) {
 
-			SDemag_Demag *pSDemag_Demag_Module = dynamic_cast<SDemag_Demag*>((*pSMesh)[idx]->GetModule(MOD_SDEMAG_DEMAG));
+			for (int layer_idx = 0; layer_idx < (*pSMesh)[idx]->GetNumModules(MOD_SDEMAG_DEMAG); layer_idx++) {
 
-			pSDemag_Demag_.push_back(pSDemag_Demag_Module);
+				SDemag_Demag *pSDemag_Demag_Module = dynamic_cast<SDemag_Demag*>((*pSMesh)[idx]->GetModule(MOD_SDEMAG_DEMAG, layer_idx));
 
-			//build the fft spaces, rectangles list, and demag kernels
-			FFT_Spaces_Input.push_back(pSDemag_Demag_.back()->Get_Input_Scratch_Space());
-			Rect_collection.push_back((*pSMesh)[idx]->GetMeshRect());
-			kernel_collection.push_back(dynamic_cast<DemagKernelCollection*>(pSDemag_Demag_.back()));
+				pSDemag_Demag_.push_back(pSDemag_Demag_Module);
+
+				//build the fft spaces, rectangles list, and demag kernels
+				FFT_Spaces_Input.push_back(pSDemag_Demag_.back()->Get_Input_Scratch_Space());
+				kernel_collection.push_back(dynamic_cast<DemagKernelCollection*>(pSDemag_Demag_.back()));
+			}
 		}
 	}
 
@@ -127,16 +160,16 @@ void SDemag::set_default_n_common(void)
 
 	n_common = SZ3(1);
 
-	bool layers_2d = true;
+	bool meshes_2d = true;
 
-	//are all the layers 2d?
+	//are all the meshes 2d?
 	for (int idx = 0; idx < (int)pSMesh->pMesh.size(); idx++) {
 
 		if ((*pSMesh)[idx]->MComputation_Enabled()) {
 
 			if ((*pSMesh)[idx]->n.z != 1) {
 
-				layers_2d = false;
+				meshes_2d = false;
 				break;
 			}
 		}
@@ -146,20 +179,16 @@ void SDemag::set_default_n_common(void)
 
 		if ((*pSMesh)[idx]->MComputation_Enabled()) {
 
-			if (layers_2d || force_2d_convolution) {
-
-				//2D layers
-				if (n_common.x < (*pSMesh)[idx]->n.x) n_common.x = (*pSMesh)[idx]->n.x;
-				if (n_common.y < (*pSMesh)[idx]->n.y) n_common.y = (*pSMesh)[idx]->n.y;
-				n_common.z = 1;
-			}
-			else {
-
-				if (n_common.x < (*pSMesh)[idx]->n.x) n_common.x = (*pSMesh)[idx]->n.x;
-				if (n_common.y < (*pSMesh)[idx]->n.y) n_common.y = (*pSMesh)[idx]->n.y;
-				if (n_common.z < (*pSMesh)[idx]->n.z) n_common.z = (*pSMesh)[idx]->n.z;
-			}
+			if (n_common.x < (*pSMesh)[idx]->n.x) n_common.x = (*pSMesh)[idx]->n.x;
+			if (n_common.y < (*pSMesh)[idx]->n.y) n_common.y = (*pSMesh)[idx]->n.y;
+			if (n_common.z < (*pSMesh)[idx]->n.z) n_common.z = (*pSMesh)[idx]->n.z;
 		}
+	}
+
+	if (meshes_2d || force_2d_convolution) {
+
+		//all 2D meshes, or 2D layered meshes, forced or otherwise : common n.z must be 1, thus enabling exact computation for layers with arbitrary thicknesses.
+		n_common.z = 1;
 	}
 
 	//uninitialize only if n_common has changed
@@ -176,7 +205,18 @@ void SDemag::set_Rect_collection(void)
 
 		if ((*pSMesh)[idx]->MComputation_Enabled()) {
 
-			Rect_collection.push_back((*pSMesh)[idx]->GetMeshRect());
+			for (int layer_idx = 0; layer_idx < (*pSMesh)[idx]->GetNumModules(MOD_SDEMAG_DEMAG); layer_idx++) {
+
+				if (force_2d_convolution == 2) {
+
+					//if in 2d layering mode, then the rectangle set in the rect collection must be that of the respective layer, not the entire mesh
+					Rect_collection.push_back((*pSMesh)[idx]->GetMeshRect().get_zlayer(layer_idx, (*pSMesh)[idx]->GetMeshCellsize().z));
+				}
+				else {
+
+					Rect_collection.push_back((*pSMesh)[idx]->GetMeshRect());
+				}
+			}
 		}
 	}
 
@@ -278,15 +318,19 @@ BError SDemag::Set_Multilayered_Convolution(bool status)
 }
 
 //enable multi-layered convolution and force it to 2D for all layers
-BError SDemag::Set_2D_Multilayered_Convolution(bool status)
+BError SDemag::Set_2D_Multilayered_Convolution(int status)
 {
 	BError error(CLASS_STR(SDemag));
 
 	use_multilayered_convolution = true;
+
 	force_2d_convolution = status;
 
 	if (force_2d_convolution) n_common.z = 1;
 	else if (use_default_n) set_default_n_common();
+
+	//first clear all currently set SDemag_Demag modules - these will be created as required through the UpdateConfiguration() method below.
+	Destroy_SDemag_Demag_Modules();
 
 	error = UpdateConfiguration();
 
@@ -305,8 +349,12 @@ BError SDemag::Set_n_common(SZ3 n)
 	use_multilayered_convolution = true;
 	use_default_n = false;
 
-	if (n_common.z == 1) force_2d_convolution = true;
-	else force_2d_convolution = false;
+	if (n_common.z == 1) force_2d_convolution = 1;
+	else force_2d_convolution = 0;
+
+	//first clear all currently set SDemag_Demag modules - these will be created as required through the UpdateConfiguration() method below.
+	//we need to do this since it's possible force_2d_convolution mode was changed e.g. from 2 to 1.
+	Destroy_SDemag_Demag_Modules();
 
 	error = UpdateConfiguration();
 
@@ -333,12 +381,44 @@ BError SDemag::Set_Default_n_status(bool status)
 }
 
 //Set PBC images for supermesh demag
-void SDemag::Set_PBC(INT3 demag_pbc_images_)
+BError SDemag::Set_PBC(INT3 demag_pbc_images_)
 {
+	BError error(__FUNCTION__);
+
 	demag_pbc_images = demag_pbc_images_;
 
+	error = Set_M_PBC();
+
 	//update will be needed if pbc settings have changed
-	UpdateConfiguration();
+	error = UpdateConfiguration();
+
+	return error;
+}
+
+//Set PBC settings for M in all meshes
+BError SDemag::Set_M_PBC(void)
+{
+	BError error(__FUNCTION__);
+
+	//set pbc conditions in all M : if any are zero then pbc is disabled in that dimension
+
+	for (int idx = 0; idx < (int)pSMesh->pMesh.size(); idx++) {
+
+		if ((*pSMesh)[idx]->MComputation_Enabled()) {
+
+			(*pSMesh)[idx]->M.set_pbc(demag_pbc_images.x, demag_pbc_images.y, demag_pbc_images.z);
+
+			//same for the CUDA version if we are in cuda mode
+#if COMPILECUDA == 1
+			if (pModuleCUDA) {
+
+				if (!(*pSMesh)[idx]->pMeshCUDA->M()->copyflags_from_cpuvec((*pSMesh)[idx]->M)) return error(BERROR_GPUERROR_CRIT);
+			}
+#endif
+		}
+	}
+
+	return error;
 }
 
 //-------------------Abstract base class method implementations
@@ -346,6 +426,15 @@ void SDemag::Set_PBC(INT3 demag_pbc_images_)
 BError SDemag::Initialize(void)
 {
 	BError error(CLASS_STR(SDemag));
+
+	if (!use_multilayered_convolution) {
+
+		//make sure to allocate memory for Hdemag if we need it
+		if (pSMesh->EvaluationSpeedup()) Hdemag.resize(pSMesh->h_fm, pSMesh->sMeshRect_fm);
+		else Hdemag.clear();
+	}
+
+	Hdemag_calculated = false;
 
 	//FFT Kernels are not so quick to calculate - if already initialized then we are guaranteed they are correct
 	if (!initialized) {
@@ -369,7 +458,7 @@ BError SDemag::Initialize(void)
 
 			//make sure Rect_collection is correct
 			set_Rect_collection();
-
+			
 			double h_max = get_maximum_cellsize();
 
 			for (int idx = 0; idx < pSDemag_Demag.size(); idx++) {
@@ -389,7 +478,7 @@ BError SDemag::Initialize(void)
 				error = pSDemag_Demag[idx]->Set_Rect_Collection(Rect_collection, Rect_collection[idx], h_max);
 				if (error) return error;
 			}
-
+			
 			//now everything is set correctly, ready to calculate demag kernel collections
 		}
 
@@ -397,21 +486,16 @@ BError SDemag::Initialize(void)
 		initialized = true;
 	}
 
-	//make sure the energy density weights are correct
+	//calculate total_nonempty_volume from all meshes participating in convolution
 	if (use_multilayered_convolution) {
 
-		double total_nonempty_volume = 0.0;
+		total_nonempty_volume = 0.0;
 
-		for (int idx = 0; idx < (int)pSDemag_Demag.size(); idx++) {
+		for (int idx = 0; idx < (int)pSMesh->pMesh.size(); idx++) {
 
-			total_nonempty_volume += (double)pSDemag_Demag[idx]->pMesh->M.get_nonempty_cells() * pSDemag_Demag[idx]->pMesh->M.h.dim();
-		}
+			if ((*pSMesh)[idx]->MComputation_Enabled()) {
 
-		if (total_nonempty_volume) {
-
-			for (int idx = 0; idx < (int)pSDemag_Demag.size(); idx++) {
-
-				pSDemag_Demag[idx]->energy_density_weight = (double)pSDemag_Demag[idx]->pMesh->M.get_nonempty_cells() * pSDemag_Demag[idx]->pMesh->M.h.dim() / total_nonempty_volume;
+				total_nonempty_volume += (double)pSMesh->pMesh[idx]->M.get_nonempty_cells() * pSMesh->pMesh[idx]->M.h.dim();
 			}
 		}
 	}
@@ -442,6 +526,14 @@ BError SDemag::Initialize_Mesh_Transfer(void)
 
 	//use built-in corrections based on interpolation
 	if (!sm_Vals.Initialize_MeshTransfer(pVal_from, pVal_to, MESHTRANSFERTYPE_WEIGHTED)) return error(BERROR_OUTOFMEMORY_CRIT);
+
+	//the Hdemag.size() check is needed : if in CUDA mode, this method will be called to initialize mesh transfer in sm_Vals so the transfer info can be copied over to the gpu
+	//In this case it's possible Hdemag does not have the correct memory allocated; if not in CUDA mode we first pass through Initialization method before calling this, in which case Hdemag will be sized correctly.
+	if (pSMesh->EvaluationSpeedup() && Hdemag.size() == sm_Vals.size()) {
+
+		//initialize mesh transfer for Hdemag as well if we are using evaluation speedup
+		if (!Hdemag.Initialize_MeshTransfer(pVal_from, pVal_to, MESHTRANSFERTYPE_WEIGHTED)) return error(BERROR_OUTOFMEMORY_CRIT);
+	}
 
 	//transfer values from invidual M meshes to sm_Vals - we need this to get number of non-empty cells
 	sm_Vals.transfer_in();
@@ -481,6 +573,10 @@ BError SDemag::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 {
 	BError error(CLASS_STR(SDemag));
 
+	//if memory needs to be allocated for Hdemag, it will be done through Initialize 
+	Hdemag.clear();
+	Hdemag_calculated = false;
+
 	if (!use_multilayered_convolution) {
 
 		//don't need memory allocated for multi-layered convolution
@@ -505,7 +601,7 @@ BError SDemag::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 
 		if (use_default_n) set_default_n_common();
 
-		//for multi-layered convolution need a convolution object for each mesh (make modules)
+		//for multi-layered convolution need a convolution object for each mesh (make modules) - or multiple if the 2D layering option is enabled.
 
 		//new ferromagnetic meshes could have been added
 		Create_SDemag_Demag_Modules();
@@ -519,6 +615,9 @@ BError SDemag::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 			initialized &= pSDemag_Demag[idx]->IsInitialized();
 		}
 	}
+
+	//if a new mesh has been added we must also set any possible pbc conditions for M
+	error = Set_M_PBC();
 
 	//------------------------ CUDA UpdateConfiguration if set
 
@@ -555,65 +654,240 @@ double SDemag::UpdateField(void)
 {
 	if (!use_multilayered_convolution) {
 
-		//transfer values from invidual M meshes to sm_Vals
-		sm_Vals.transfer_in();
+		if (pSMesh->EvaluationSpeedup()) {
 
-		//convolution with demag kernels, output overwrites in sm_Vals
-		energy = Convolute(sm_Vals, sm_Vals, true);
+			//use evaluation speedup method (Hdemag will have memory allocated - this was done in the Initialize method)
 
-		//finish off energy value
-		energy *= -MU0 / (2 * non_empty_cells);
+			int update_type = pSMesh->Check_Step_Update();
 
-		//transfer to individual Heff meshes
-		sm_Vals.transfer_out();
+			if (update_type != EVALSPEEDUPSTEP_SKIP || !Hdemag_calculated) {
+
+				//calculate field required
+
+				if (update_type == EVALSPEEDUPSTEP_COMPUTE_AND_SAVE) {
+
+					//calculate field and save it for next time : we'll need to use it (expecting update_type = EVALSPEEDUPSTEP_SKIP next time)
+
+					//transfer values from invidual M meshes to sm_Vals
+					sm_Vals.transfer_in();
+
+					//convolute and get "energy" value
+					energy = Convolute(sm_Vals, Hdemag, true);
+
+					Hdemag_calculated = true;
+
+					//finish off energy value
+					energy *= -MU0 / (2 * non_empty_cells);
+				}
+				else {
+
+					//calculate field but do not save it for next time : we'll need to recalculate it again (expecting update_type != EVALSPEEDUPSTEP_SKIP again next time : EVALSPEEDUPSTEP_COMPUTE_NO_SAVE or EVALSPEEDUPSTEP_COMPUTE_AND_SAVE)
+
+					//transfer values from invidual M meshes to sm_Vals
+					sm_Vals.transfer_in();
+
+					//convolute and get "energy" value
+					energy = Convolute(sm_Vals, sm_Vals, true);
+
+					//good practice to set this to false
+					Hdemag_calculated = false;
+
+					//finish off energy value
+					energy *= -MU0 / (2 * non_empty_cells);
+
+					//transfer to individual Heff meshes
+					sm_Vals.transfer_out();
+
+					//return here to avoid adding Hdemag to Heff : we've already added demag field contribution
+					return energy;
+				}
+			}
+
+			//transfer contribution to meshes Heff
+			Hdemag.transfer_out();
+		}
+		else {
+
+			//don't use evaluation speedup, so no need to use Hdemag (this won't have memory allocated anyway)
+
+			//transfer values from invidual M meshes to sm_Vals
+			sm_Vals.transfer_in();
+
+			//convolution with demag kernels, output overwrites in sm_Vals
+			energy = Convolute(sm_Vals, sm_Vals, true);
+
+			//finish off energy value
+			energy *= -MU0 / (2 * non_empty_cells);
+
+			//transfer to individual Heff meshes
+			sm_Vals.transfer_out();
+		}
 	}
 	else {
+
+		if (pSMesh->EvaluationSpeedup()) {
+
+			//use evaluation speedup method (Hdemag will have memory allocated - this was done in the Initialize method)
+
+			int update_type = pSMesh->Check_Step_Update();
+
+			if (update_type != EVALSPEEDUPSTEP_SKIP || !Hdemag_calculated) {
+
+				//calculate field required
+
+				//Forward FFT for all ferromagnetic meshes
+				for (int idx = 0; idx < pSDemag_Demag.size(); idx++) {
+
+					if (pSDemag_Demag[idx]->do_transfer) {
+
+						//transfer from M to common meshing
+						pSDemag_Demag[idx]->transfer.transfer_in();
+
+						//do forward FFT
+						pSDemag_Demag[idx]->ForwardFFT(pSDemag_Demag[idx]->transfer);
+					}
+					else {
+
+						pSDemag_Demag[idx]->ForwardFFT(pSDemag_Demag[idx]->pMesh->M);
+					}
+				}
 		
-		//Forward FFT for all ferromagnetic meshes
-		for (int idx = 0; idx < pSDemag_Demag.size(); idx++) {
+				//Kernel multiplications for multiple inputs. Reverse loop ordering improves cache use at both ends.
+				for (int idx = pSDemag_Demag.size() - 1; idx >= 0; idx--) {
 
-			if (pSDemag_Demag[idx]->do_transfer) {
+					pSDemag_Demag[idx]->KernelMultiplication_MultipleInputs(FFT_Spaces_Input);
+				}
 
-				//transfer from M to common meshing
-				pSDemag_Demag[idx]->transfer.transfer_in();
+				if (update_type == EVALSPEEDUPSTEP_COMPUTE_AND_SAVE) {
 
-				//do forward FFT
-				pSDemag_Demag[idx]->ForwardFFT(pSDemag_Demag[idx]->transfer);
+					//calculate field and save it for next time : we'll need to use it (expecting update_type = EVALSPEEDUPSTEP_SKIP next time)
+
+					energy = 0;
+
+					//Inverse FFT
+					for (int idx_mesh = 0; idx_mesh < pSDemag_Demag.size(); idx_mesh++) {
+
+						if (pSDemag_Demag[idx_mesh]->do_transfer) {
+
+							//do inverse FFT and accumulate energy
+							energy += (pSDemag_Demag[idx_mesh]->InverseFFT(pSDemag_Demag[idx_mesh]->transfer, pSDemag_Demag[idx_mesh]->Hdemag, true) / pSDemag_Demag[idx_mesh]->non_empty_cells) * pSDemag_Demag[idx_mesh]->energy_density_weight;
+						}
+						else {
+
+							//do inverse FFT and accumulate energy
+							energy += (pSDemag_Demag[idx_mesh]->InverseFFT(pSDemag_Demag[idx_mesh]->pMesh->M, pSDemag_Demag[idx_mesh]->Hdemag, true) / pSDemag_Demag[idx_mesh]->non_empty_cells) * pSDemag_Demag[idx_mesh]->energy_density_weight;
+						}
+					}
+
+					//finish off energy value
+					energy *= -MU0 / 2;
+
+					Hdemag_calculated = true;
+				}
+				else {
+
+					//calculate field but do not save it for next time : we'll need to recalculate it again (expecting update_type != EVALSPEEDUPSTEP_SKIP again next time : EVALSPEEDUPSTEP_COMPUTE_NO_SAVE or EVALSPEEDUPSTEP_COMPUTE_AND_SAVE)
+
+					energy = 0;
+
+					//Inverse FFT
+					for (int idx_mesh = 0; idx_mesh < pSDemag_Demag.size(); idx_mesh++) {
+
+						if (pSDemag_Demag[idx_mesh]->do_transfer) {
+
+							//do inverse FFT and accumulate energy
+							energy += (pSDemag_Demag[idx_mesh]->InverseFFT(pSDemag_Demag[idx_mesh]->transfer, pSDemag_Demag[idx_mesh]->transfer, true) / pSDemag_Demag[idx_mesh]->non_empty_cells) * pSDemag_Demag[idx_mesh]->energy_density_weight;
+
+							//transfer to Heff in each mesh
+							pSDemag_Demag[idx_mesh]->transfer.transfer_out();
+						}
+						else {
+
+							//do inverse FFT and accumulate energy
+							energy += (pSDemag_Demag[idx_mesh]->InverseFFT(pSDemag_Demag[idx_mesh]->pMesh->M, pSDemag_Demag[idx_mesh]->pMesh->Heff, false) / pSDemag_Demag[idx_mesh]->non_empty_cells) * pSDemag_Demag[idx_mesh]->energy_density_weight;
+						}
+					}
+
+					//finish off energy value
+					energy *= -MU0 / 2;
+
+					//good practice to set this to false
+					Hdemag_calculated = false;
+
+					//return here to avoid adding Hdemag to Heff : we've already added demag field contribution
+					return energy;
+				}
 			}
-			else {
 
-				pSDemag_Demag[idx]->ForwardFFT(pSDemag_Demag[idx]->pMesh->M);
+			//add contribution to Heff in each mesh
+			for (int idx_mesh = 0; idx_mesh < pSDemag_Demag.size(); idx_mesh++) {
+
+				if (pSDemag_Demag[idx_mesh]->do_transfer) {
+
+					//transfer to Heff in each mesh
+					pSDemag_Demag[idx_mesh]->Hdemag.transfer_out();
+				}
+				else {
+
+					//add contribution to Heff in each mesh
+					#pragma omp parallel for
+					for (int idx_point = 0; idx_point < pSDemag_Demag[idx_mesh]->Hdemag.linear_size(); idx_point++) {
+
+						pSDemag_Demag[idx_mesh]->pMesh->Heff[idx_point] += pSDemag_Demag[idx_mesh]->Hdemag[idx_point];
+					}
+				}
 			}
 		}
-		
-		//Kernel multiplications for multiple inputs. Reverse loop ordering improves cache use at both ends.
-		for (int idx = pSDemag_Demag.size() - 1; idx >= 0; idx--) {
+		else {
 
-			pSDemag_Demag[idx]->KernelMultiplication_MultipleInputs(FFT_Spaces_Input);
-		}
+			//don't use evaluation speedup, so no need to use Hdemag in SDemag_Demag modules (this won't have memory allocated anyway)
+			
+			//Forward FFT for all ferromagnetic meshes
+			for (int idx = 0; idx < pSDemag_Demag.size(); idx++) {
 
-		energy = 0;
+				if (pSDemag_Demag[idx]->do_transfer) {
 
-		//Inverse FFT
-		for (int idx = 0; idx < pSDemag_Demag.size(); idx++) {
+					//transfer from M to common meshing
+					pSDemag_Demag[idx]->transfer.transfer_in();
 
-			if (pSDemag_Demag[idx]->do_transfer) {
+					//do forward FFT
+					pSDemag_Demag[idx]->ForwardFFT(pSDemag_Demag[idx]->transfer);
+				}
+				else {
 
-				//do inverse FFT and accumulate energy
-				energy += (pSDemag_Demag[idx]->InverseFFT(pSDemag_Demag[idx]->transfer, pSDemag_Demag[idx]->transfer, true) / pSDemag_Demag[idx]->non_empty_cells) * pSDemag_Demag[idx]->energy_density_weight;
-
-				//transfer to Heff in each mesh
-				pSDemag_Demag[idx]->transfer.transfer_out();
+					pSDemag_Demag[idx]->ForwardFFT(pSDemag_Demag[idx]->pMesh->M);
+				}
 			}
-			else {
 
-				//do inverse FFT and accumulate energy
-				energy += (pSDemag_Demag[idx]->InverseFFT(pSDemag_Demag[idx]->pMesh->M, pSDemag_Demag[idx]->pMesh->Heff, false) / pSDemag_Demag[idx]->non_empty_cells) * pSDemag_Demag[idx]->energy_density_weight;
+			//Kernel multiplications for multiple inputs. Reverse loop ordering improves cache use at both ends.
+			for (int idx = pSDemag_Demag.size() - 1; idx >= 0; idx--) {
+
+				pSDemag_Demag[idx]->KernelMultiplication_MultipleInputs(FFT_Spaces_Input);
 			}
-		}
 
-		//finish off energy value
-		energy *= -MU0 / 2;
+			energy = 0;
+
+			//Inverse FFT
+			for (int idx = 0; idx < pSDemag_Demag.size(); idx++) {
+
+				if (pSDemag_Demag[idx]->do_transfer) {
+
+					//do inverse FFT and accumulate energy
+					energy += (pSDemag_Demag[idx]->InverseFFT(pSDemag_Demag[idx]->transfer, pSDemag_Demag[idx]->transfer, true) / pSDemag_Demag[idx]->non_empty_cells) * pSDemag_Demag[idx]->energy_density_weight;
+
+					//transfer to Heff in each mesh
+					pSDemag_Demag[idx]->transfer.transfer_out();
+				}
+				else {
+
+					//do inverse FFT and accumulate energy
+					energy += (pSDemag_Demag[idx]->InverseFFT(pSDemag_Demag[idx]->pMesh->M, pSDemag_Demag[idx]->pMesh->Heff, false) / pSDemag_Demag[idx]->non_empty_cells) * pSDemag_Demag[idx]->energy_density_weight;
+				}
+			}
+
+			//finish off energy value
+			energy *= -MU0 / 2;
+		}
 	}
 
 	return energy;

@@ -289,6 +289,16 @@ private:
 			return RunThisMethod<RType, DBL3>(param);
 		}
 
+		else if (type_name == typeid(INT4).name()) {
+
+			return RunThisMethod<RType, INT4>(param);
+		}
+
+		else if (type_name == typeid(DBL4).name()) {
+
+			return RunThisMethod<RType, DBL4>(param);
+		}
+
 		else if(type_name == typeid(Box).name()) {
 
 			return RunThisMethod<RType, Box>(param);

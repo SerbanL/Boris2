@@ -7,7 +7,7 @@
 //---------------------------------------------------Copy input arrays from cuVEC or cuVEC_VC ( all <cuReal3> )
 
 template <typename cuVECIn>
-__global__ void In_to_cuFFTArrays_forInPlace(cuVECIn& In, cuReal* cuSx, cuReal* cuSy, cuReal* cuSz, cuSZ3& N)
+__global__ void In_to_cuFFTArrays_forInPlace(cuVECIn& In, cuBReal* cuSx, cuBReal* cuSy, cuBReal* cuSz, cuSZ3& N)
 {
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
 
@@ -34,7 +34,7 @@ __global__ void In_to_cuFFTArrays_forInPlace(cuVECIn& In, cuReal* cuSx, cuReal* 
 }
 
 template <typename cuVECIn>
-__global__ void In_to_cuFFTArrays_forOutOfPlace(cuVECIn& In, cuReal* cuSx, cuReal* cuSy, cuReal* cuSz, cuSZ3& N)
+__global__ void In_to_cuFFTArrays_forOutOfPlace(cuVECIn& In, cuBReal* cuSx, cuBReal* cuSy, cuBReal* cuSz, cuSZ3& N)
 {	
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
 
@@ -54,14 +54,14 @@ __global__ void In_to_cuFFTArrays_forOutOfPlace(cuVECIn& In, cuReal* cuSx, cuRea
 //---------------------------------------------------Set/Add to output cuVEC_VC to cuVEC or cuVEC_VC ( all <cuReal3> )
 
 template <typename cuVECOut>
-__global__ void cuFFTArrays_to_Out_Set_forInPlace(cuVEC_VC<cuReal3>& In, cuVECOut& Out, cuReal* cuSx, cuReal* cuSy, cuReal* cuSz, cuSZ3& N, cuReal& energy, bool do_reduction)
+__global__ void cuFFTArrays_to_Out_Set_forInPlace(cuVEC_VC<cuReal3>& In, cuVECOut& Out, cuBReal* cuSx, cuBReal* cuSy, cuBReal* cuSz, cuSZ3& N, cuBReal& energy, bool do_reduction)
 {
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
 
 	cuSZ3 n = Out.n;
 	cuINT3 ijk = cuINT3(idx % n.x, (idx / n.x) % n.y, idx / (n.x*n.y));
 
-	cuReal energy_ = 0.0;
+	cuBReal energy_ = 0.0;
 
 	if (idx < Out.linear_size()) {
 
@@ -74,7 +74,7 @@ __global__ void cuFFTArrays_to_Out_Set_forInPlace(cuVEC_VC<cuReal3>& In, cuVECOu
 		if (do_reduction) {
 
 			int non_empty_cells = In.get_nonempty_cells();
-			if (non_empty_cells) energy_ = -(cuReal)MU0 * In[idx] * Heff_value / (2 * non_empty_cells);
+			if (non_empty_cells) energy_ = -(cuBReal)MU0 * In[idx] * Heff_value / (2 * non_empty_cells);
 		}
 
 		Out[idx] = Heff_value;
@@ -84,14 +84,14 @@ __global__ void cuFFTArrays_to_Out_Set_forInPlace(cuVEC_VC<cuReal3>& In, cuVECOu
 }
 
 template <typename cuVECOut>
-__global__ void cuFFTArrays_to_Out_Add_forInPlace(cuVEC_VC<cuReal3>& In, cuVECOut& Out, cuReal* cuSx, cuReal* cuSy, cuReal* cuSz, cuSZ3& N, cuReal& energy, bool do_reduction)
+__global__ void cuFFTArrays_to_Out_Add_forInPlace(cuVEC_VC<cuReal3>& In, cuVECOut& Out, cuBReal* cuSx, cuBReal* cuSy, cuBReal* cuSz, cuSZ3& N, cuBReal& energy, bool do_reduction)
 {
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
 
 	cuSZ3 n = Out.n;
 	cuINT3 ijk = cuINT3(idx % n.x, (idx / n.x) % n.y, idx / (n.x*n.y));
 
-	cuReal energy_ = 0.0;
+	cuBReal energy_ = 0.0;
 
 	if (idx < Out.linear_size()) {
 
@@ -104,7 +104,7 @@ __global__ void cuFFTArrays_to_Out_Add_forInPlace(cuVEC_VC<cuReal3>& In, cuVECOu
 		if (do_reduction) {
 
 			int non_empty_cells = In.get_nonempty_cells();
-			if (non_empty_cells) energy_ = -(cuReal)MU0 * In[idx] * Heff_value / (2 * non_empty_cells);
+			if (non_empty_cells) energy_ = -(cuBReal)MU0 * In[idx] * Heff_value / (2 * non_empty_cells);
 		}
 
 		Out[idx] += Heff_value;
@@ -114,14 +114,14 @@ __global__ void cuFFTArrays_to_Out_Add_forInPlace(cuVEC_VC<cuReal3>& In, cuVECOu
 }
 
 template <typename cuVECOut>
-__global__ void cuFFTArrays_to_Out_Set_forOutOfPlace(cuVEC_VC<cuReal3>& In, cuVECOut& Out, cuReal* cuSx, cuReal* cuSy, cuReal* cuSz, cuSZ3& N, cuReal& energy, bool do_reduction)
+__global__ void cuFFTArrays_to_Out_Set_forOutOfPlace(cuVEC_VC<cuReal3>& In, cuVECOut& Out, cuBReal* cuSx, cuBReal* cuSy, cuBReal* cuSz, cuSZ3& N, cuBReal& energy, bool do_reduction)
 {
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
 
 	cuSZ3 n = Out.n;
 	cuINT3 ijk = cuINT3(idx % n.x, (idx / n.x) % n.y, idx / (n.x*n.y));
 
-	cuReal energy_ = 0.0;
+	cuBReal energy_ = 0.0;
 
 	if (idx < Out.linear_size()) {
 
@@ -134,7 +134,7 @@ __global__ void cuFFTArrays_to_Out_Set_forOutOfPlace(cuVEC_VC<cuReal3>& In, cuVE
 		if (do_reduction) {
 
 			int non_empty_cells = In.get_nonempty_cells();
-			if (non_empty_cells) energy_ = -(cuReal)MU0 * In[idx] * Heff_value / (2 * non_empty_cells);
+			if (non_empty_cells) energy_ = -(cuBReal)MU0 * In[idx] * Heff_value / (2 * non_empty_cells);
 		}
 
 		Out[idx] = Heff_value;
@@ -144,14 +144,14 @@ __global__ void cuFFTArrays_to_Out_Set_forOutOfPlace(cuVEC_VC<cuReal3>& In, cuVE
 }
 
 template <typename cuVECOut>
-__global__ void cuFFTArrays_to_Out_Set_forOutOfPlace_batched_xy(cuVEC_VC<cuReal3>& In, cuVECOut& Out, cuReal* cuSx, cuReal* cuSy, cuReal* cuSz, cuSZ3& N, cuReal& energy, bool do_reduction)
+__global__ void cuFFTArrays_to_Out_Set_forOutOfPlace_batched_xy(cuVEC_VC<cuReal3>& In, cuVECOut& Out, cuBReal* cuSx, cuBReal* cuSy, cuBReal* cuSz, cuSZ3& N, cuBReal& energy, bool do_reduction)
 {
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
 
 	cuSZ3 n = Out.n;
 	cuINT3 ijk = cuINT3(idx % n.x, (idx / n.x) % n.y, idx / (n.x*n.y));
 
-	cuReal energy_ = 0.0;
+	cuBReal energy_ = 0.0;
 
 	if (idx < Out.linear_size()) {
 
@@ -164,7 +164,7 @@ __global__ void cuFFTArrays_to_Out_Set_forOutOfPlace_batched_xy(cuVEC_VC<cuReal3
 		if (do_reduction) {
 
 			int non_empty_cells = In.get_nonempty_cells();
-			if (non_empty_cells) energy_ = -(cuReal)MU0 * In[idx] * Heff_value / (2 * non_empty_cells);
+			if (non_empty_cells) energy_ = -(cuBReal)MU0 * In[idx] * Heff_value / (2 * non_empty_cells);
 		}
 
 		Out[idx] = Heff_value;
@@ -174,14 +174,14 @@ __global__ void cuFFTArrays_to_Out_Set_forOutOfPlace_batched_xy(cuVEC_VC<cuReal3
 }
 
 template <typename cuVECOut>
-__global__ void cuFFTArrays_to_Out_Add_forOutOfPlace(cuVEC_VC<cuReal3>& In, cuVECOut& Out, cuReal* cuSx, cuReal* cuSy, cuReal* cuSz, cuSZ3& N, cuReal& energy, bool do_reduction)
+__global__ void cuFFTArrays_to_Out_Add_forOutOfPlace(cuVEC_VC<cuReal3>& In, cuVECOut& Out, cuBReal* cuSx, cuBReal* cuSy, cuBReal* cuSz, cuSZ3& N, cuBReal& energy, bool do_reduction)
 {
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
 
 	cuSZ3 n = Out.n;
 	cuINT3 ijk = cuINT3(idx % n.x, (idx / n.x) % n.y, idx / (n.x*n.y));
 
-	cuReal energy_ = 0.0;
+	cuBReal energy_ = 0.0;
 
 	if (idx < Out.linear_size()) {
 
@@ -194,7 +194,7 @@ __global__ void cuFFTArrays_to_Out_Add_forOutOfPlace(cuVEC_VC<cuReal3>& In, cuVE
 		if (do_reduction) {
 
 			int non_empty_cells = In.get_nonempty_cells();
-			if (non_empty_cells) energy_ = -(cuReal)MU0 * In[idx] * Heff_value / (2 * non_empty_cells);
+			if (non_empty_cells) energy_ = -(cuBReal)MU0 * In[idx] * Heff_value / (2 * non_empty_cells);
 		}
 
 		Out[idx] += Heff_value;
@@ -206,14 +206,14 @@ __global__ void cuFFTArrays_to_Out_Add_forOutOfPlace(cuVEC_VC<cuReal3>& In, cuVE
 //---------------------------------------------------Set/Add to output cuVEC to cuVEC or cuVEC_VC ( all <cuReal3> )
 
 template <typename cuVECOut>
-__global__ void cuFFTArrays_to_Out_Set_forInPlace(cuVEC<cuReal3>& In, cuVECOut& Out, cuReal* cuSx, cuReal* cuSy, cuReal* cuSz, cuSZ3& N, cuReal& energy, bool do_reduction)
+__global__ void cuFFTArrays_to_Out_Set_forInPlace(cuVEC<cuReal3>& In, cuVECOut& Out, cuBReal* cuSx, cuBReal* cuSy, cuBReal* cuSz, cuSZ3& N, cuBReal& energy, bool do_reduction)
 {
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
 
 	cuSZ3 n = Out.n;
 	cuINT3 ijk = cuINT3(idx % n.x, (idx / n.x) % n.y, idx / (n.x*n.y));
 
-	cuReal energy_ = 0.0;
+	cuBReal energy_ = 0.0;
 
 	if (idx < Out.linear_size()) {
 
@@ -226,7 +226,7 @@ __global__ void cuFFTArrays_to_Out_Set_forInPlace(cuVEC<cuReal3>& In, cuVECOut& 
 		if (do_reduction) {
 
 			size_t non_empty_cells = In.get_aux_integer();
-			if (non_empty_cells) energy_ = -(cuReal)MU0 * In[idx] * Heff_value / (2 * non_empty_cells);
+			if (non_empty_cells) energy_ = -(cuBReal)MU0 * In[idx] * Heff_value / (2 * non_empty_cells);
 		}
 
 		Out[idx] = Heff_value;
@@ -236,14 +236,14 @@ __global__ void cuFFTArrays_to_Out_Set_forInPlace(cuVEC<cuReal3>& In, cuVECOut& 
 }
 
 template <typename cuVECOut>
-__global__ void cuFFTArrays_to_Out_Add_forInPlace(cuVEC<cuReal3>& In, cuVECOut& Out, cuReal* cuSx, cuReal* cuSy, cuReal* cuSz, cuSZ3& N, cuReal& energy, bool do_reduction)
+__global__ void cuFFTArrays_to_Out_Add_forInPlace(cuVEC<cuReal3>& In, cuVECOut& Out, cuBReal* cuSx, cuBReal* cuSy, cuBReal* cuSz, cuSZ3& N, cuBReal& energy, bool do_reduction)
 {
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
 
 	cuSZ3 n = Out.n;
 	cuINT3 ijk = cuINT3(idx % n.x, (idx / n.x) % n.y, idx / (n.x*n.y));
 
-	cuReal energy_ = 0.0;
+	cuBReal energy_ = 0.0;
 
 	if (idx < Out.linear_size()) {
 
@@ -256,7 +256,7 @@ __global__ void cuFFTArrays_to_Out_Add_forInPlace(cuVEC<cuReal3>& In, cuVECOut& 
 		if (do_reduction) {
 
 			size_t non_empty_cells = In.get_aux_integer();
-			if (non_empty_cells) energy_ = -(cuReal)MU0 * In[idx] * Heff_value / (2 * non_empty_cells);
+			if (non_empty_cells) energy_ = -(cuBReal)MU0 * In[idx] * Heff_value / (2 * non_empty_cells);
 		}
 
 		Out[idx] += Heff_value;
@@ -266,14 +266,14 @@ __global__ void cuFFTArrays_to_Out_Add_forInPlace(cuVEC<cuReal3>& In, cuVECOut& 
 }
 
 template <typename cuVECOut>
-__global__ void cuFFTArrays_to_Out_Set_forOutOfPlace(cuVEC<cuReal3>& In, cuVECOut& Out, cuReal* cuSx, cuReal* cuSy, cuReal* cuSz, cuSZ3& N, cuReal& energy, bool do_reduction)
+__global__ void cuFFTArrays_to_Out_Set_forOutOfPlace(cuVEC<cuReal3>& In, cuVECOut& Out, cuBReal* cuSx, cuBReal* cuSy, cuBReal* cuSz, cuSZ3& N, cuBReal& energy, bool do_reduction)
 {
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
 
 	cuSZ3 n = Out.n;
 	cuINT3 ijk = cuINT3(idx % n.x, (idx / n.x) % n.y, idx / (n.x*n.y));
 
-	cuReal energy_ = 0.0;
+	cuBReal energy_ = 0.0;
 
 	if (idx < Out.linear_size()) {
 
@@ -286,7 +286,7 @@ __global__ void cuFFTArrays_to_Out_Set_forOutOfPlace(cuVEC<cuReal3>& In, cuVECOu
 		if (do_reduction) {
 
 			size_t non_empty_cells = In.get_aux_integer();
-			if (non_empty_cells) energy_ = -(cuReal)MU0 * In[idx] * Heff_value / (2 * non_empty_cells);
+			if (non_empty_cells) energy_ = -(cuBReal)MU0 * In[idx] * Heff_value / (2 * non_empty_cells);
 		}
 
 		Out[idx] = Heff_value;
@@ -296,14 +296,14 @@ __global__ void cuFFTArrays_to_Out_Set_forOutOfPlace(cuVEC<cuReal3>& In, cuVECOu
 }
 
 template <typename cuVECOut>
-__global__ void cuFFTArrays_to_Out_Add_forOutOfPlace(cuVEC<cuReal3>& In, cuVECOut& Out, cuReal* cuSx, cuReal* cuSy, cuReal* cuSz, cuSZ3& N, cuReal& energy, bool do_reduction)
+__global__ void cuFFTArrays_to_Out_Add_forOutOfPlace(cuVEC<cuReal3>& In, cuVECOut& Out, cuBReal* cuSx, cuBReal* cuSy, cuBReal* cuSz, cuSZ3& N, cuBReal& energy, bool do_reduction)
 {
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
 
 	cuSZ3 n = Out.n;
 	cuINT3 ijk = cuINT3(idx % n.x, (idx / n.x) % n.y, idx / (n.x*n.y));
 
-	cuReal energy_ = 0.0;
+	cuBReal energy_ = 0.0;
 
 	if (idx < Out.linear_size()) {
 
@@ -316,7 +316,7 @@ __global__ void cuFFTArrays_to_Out_Add_forOutOfPlace(cuVEC<cuReal3>& In, cuVECOu
 		if (do_reduction) {
 
 			size_t non_empty_cells = In.get_aux_integer();
-			if (non_empty_cells) energy_ = -(cuReal)MU0 * In[idx] * Heff_value / (2 * non_empty_cells);
+			if (non_empty_cells) energy_ = -(cuBReal)MU0 * In[idx] * Heff_value / (2 * non_empty_cells);
 		}
 
 		Out[idx] += Heff_value;
@@ -326,14 +326,14 @@ __global__ void cuFFTArrays_to_Out_Add_forOutOfPlace(cuVEC<cuReal3>& In, cuVECOu
 }
 
 template <typename cuVECOut>
-__global__ void cuFFTArrays_to_Out_Set_weighted_forOutOfPlace(cuVEC<cuReal3>& In, cuVECOut& Out, cuReal* cuSx, cuReal* cuSy, cuReal* cuSz, cuSZ3& N, cuReal& energy, cuReal& energy_weight)
+__global__ void cuFFTArrays_to_Out_Set_weighted_forOutOfPlace(cuVEC<cuReal3>& In, cuVECOut& Out, cuBReal* cuSx, cuBReal* cuSy, cuBReal* cuSz, cuSZ3& N, cuBReal& energy, cuBReal& energy_weight)
 {
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
 
 	cuSZ3 n = Out.n;
 	cuINT3 ijk = cuINT3(idx % n.x, (idx / n.x) % n.y, idx / (n.x*n.y));
 
-	cuReal energy_ = 0.0;
+	cuBReal energy_ = 0.0;
 
 	if (idx < Out.linear_size()) {
 
@@ -344,7 +344,7 @@ __global__ void cuFFTArrays_to_Out_Set_weighted_forOutOfPlace(cuVEC<cuReal3>& In
 		Heff_value.z = cuSz[ijk.i + ijk.j * N.x + ijk.k * N.x * n.y] / N.dim();
 
 		size_t non_empty_cells = In.get_aux_integer();
-		if (non_empty_cells) energy_ = -(cuReal)MU0 * In[idx] * Heff_value * energy_weight / (2 * non_empty_cells);
+		if (non_empty_cells) energy_ = -(cuBReal)MU0 * In[idx] * Heff_value * energy_weight / (2 * non_empty_cells);
 
 		Out[idx] = Heff_value;
 	}
@@ -353,14 +353,14 @@ __global__ void cuFFTArrays_to_Out_Set_weighted_forOutOfPlace(cuVEC<cuReal3>& In
 }
 
 template <typename cuVECOut>
-__global__ void cuFFTArrays_to_Out_Add_weighted_forOutOfPlace(cuVEC<cuReal3>& In, cuVECOut& Out, cuReal* cuSx, cuReal* cuSy, cuReal* cuSz, cuSZ3& N, cuReal& energy, cuReal& energy_weight)
+__global__ void cuFFTArrays_to_Out_Add_weighted_forOutOfPlace(cuVEC<cuReal3>& In, cuVECOut& Out, cuBReal* cuSx, cuBReal* cuSy, cuBReal* cuSz, cuSZ3& N, cuBReal& energy, cuBReal& energy_weight)
 {
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
 
 	cuSZ3 n = Out.n;
 	cuINT3 ijk = cuINT3(idx % n.x, (idx / n.x) % n.y, idx / (n.x*n.y));
 
-	cuReal energy_ = 0.0;
+	cuBReal energy_ = 0.0;
 
 	if (idx < Out.linear_size()) {
 
@@ -371,7 +371,7 @@ __global__ void cuFFTArrays_to_Out_Add_weighted_forOutOfPlace(cuVEC<cuReal3>& In
 		Heff_value.z = cuSz[ijk.i + ijk.j * N.x + ijk.k * N.x * n.y] / N.dim();
 
 		size_t non_empty_cells = In.get_aux_integer();
-		if (non_empty_cells) energy_ = -(cuReal)MU0 * In[idx] * Heff_value * energy_weight / (2 * non_empty_cells);
+		if (non_empty_cells) energy_ = -(cuBReal)MU0 * In[idx] * Heff_value * energy_weight / (2 * non_empty_cells);
 
 		Out[idx] += Heff_value;
 	}
@@ -1217,14 +1217,14 @@ void ConvolutionDataCUDA::inverse_fft_q2D(void)
 #endif
 }
 
-template void ConvolutionDataCUDA::FinishConvolution_Set(cu_obj<cuVEC<cuReal3>>& In, cu_obj<cuVEC<cuReal3>>& Out, cu_obj<cuReal>& energy, bool get_energy);
-template void ConvolutionDataCUDA::FinishConvolution_Set(cu_obj<cuVEC<cuReal3>>& In, cu_obj<cuVEC_VC<cuReal3>>& Out, cu_obj<cuReal>& energy, bool get_energy);
-template void ConvolutionDataCUDA::FinishConvolution_Set(cu_obj<cuVEC_VC<cuReal3>>& In, cu_obj<cuVEC<cuReal3>>& Out, cu_obj<cuReal>& energy, bool get_energy);
-template void ConvolutionDataCUDA::FinishConvolution_Set(cu_obj<cuVEC_VC<cuReal3>>& In, cu_obj<cuVEC_VC<cuReal3>>& Out, cu_obj<cuReal>& energy, bool get_energy);
+template void ConvolutionDataCUDA::FinishConvolution_Set(cu_obj<cuVEC<cuReal3>>& In, cu_obj<cuVEC<cuReal3>>& Out, cu_obj<cuBReal>& energy, bool get_energy);
+template void ConvolutionDataCUDA::FinishConvolution_Set(cu_obj<cuVEC<cuReal3>>& In, cu_obj<cuVEC_VC<cuReal3>>& Out, cu_obj<cuBReal>& energy, bool get_energy);
+template void ConvolutionDataCUDA::FinishConvolution_Set(cu_obj<cuVEC_VC<cuReal3>>& In, cu_obj<cuVEC<cuReal3>>& Out, cu_obj<cuBReal>& energy, bool get_energy);
+template void ConvolutionDataCUDA::FinishConvolution_Set(cu_obj<cuVEC_VC<cuReal3>>& In, cu_obj<cuVEC_VC<cuReal3>>& Out, cu_obj<cuBReal>& energy, bool get_energy);
 
 //Copy convolution result (in cuS arrays) to output and obtain energy value : product of In with Out times -MU0 / (2 * non_empty_points), where non_empty_points = In.get_nonempty_points();
 template <typename cuVECIn, typename cuVECOut>
-void ConvolutionDataCUDA::FinishConvolution_Set(cu_obj<cuVECIn>& In, cu_obj<cuVECOut>& Out, cu_obj<cuReal>& energy, bool get_energy)
+void ConvolutionDataCUDA::FinishConvolution_Set(cu_obj<cuVECIn>& In, cu_obj<cuVECOut>& Out, cu_obj<cuBReal>& energy, bool get_energy)
 {
 	if (get_energy) {
 
@@ -1235,13 +1235,13 @@ void ConvolutionDataCUDA::FinishConvolution_Set(cu_obj<cuVECIn>& In, cu_obj<cuVE
 	cuFFTArrays_to_Out_Set_forOutOfPlace << < (n.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >> > (*In(), *Out(), cuOut_x, cuOut_y, cuOut_z, cuN, energy, get_energy);
 }
 
-template void ConvolutionDataCUDA::FinishConvolution_Add(cu_obj<cuVEC<cuReal3>>& In, cu_obj<cuVEC<cuReal3>>& Out, cu_obj<cuReal>& energy, bool get_energy);
-template void ConvolutionDataCUDA::FinishConvolution_Add(cu_obj<cuVEC<cuReal3>>& In, cu_obj<cuVEC_VC<cuReal3>>& Out, cu_obj<cuReal>& energy, bool get_energy);
-template void ConvolutionDataCUDA::FinishConvolution_Add(cu_obj<cuVEC_VC<cuReal3>>& In, cu_obj<cuVEC<cuReal3>>& Out, cu_obj<cuReal>& energy, bool get_energy);
-template void ConvolutionDataCUDA::FinishConvolution_Add(cu_obj<cuVEC_VC<cuReal3>>& In, cu_obj<cuVEC_VC<cuReal3>>& Out, cu_obj<cuReal>& energy, bool get_energy);
+template void ConvolutionDataCUDA::FinishConvolution_Add(cu_obj<cuVEC<cuReal3>>& In, cu_obj<cuVEC<cuReal3>>& Out, cu_obj<cuBReal>& energy, bool get_energy);
+template void ConvolutionDataCUDA::FinishConvolution_Add(cu_obj<cuVEC<cuReal3>>& In, cu_obj<cuVEC_VC<cuReal3>>& Out, cu_obj<cuBReal>& energy, bool get_energy);
+template void ConvolutionDataCUDA::FinishConvolution_Add(cu_obj<cuVEC_VC<cuReal3>>& In, cu_obj<cuVEC<cuReal3>>& Out, cu_obj<cuBReal>& energy, bool get_energy);
+template void ConvolutionDataCUDA::FinishConvolution_Add(cu_obj<cuVEC_VC<cuReal3>>& In, cu_obj<cuVEC_VC<cuReal3>>& Out, cu_obj<cuBReal>& energy, bool get_energy);
 
 template <typename cuVECIn, typename cuVECOut>
-void ConvolutionDataCUDA::FinishConvolution_Add(cu_obj<cuVECIn>& In, cu_obj<cuVECOut>& Out, cu_obj<cuReal>& energy, bool get_energy)
+void ConvolutionDataCUDA::FinishConvolution_Add(cu_obj<cuVECIn>& In, cu_obj<cuVECOut>& Out, cu_obj<cuBReal>& energy, bool get_energy)
 {
 	if (get_energy) {
 
@@ -1252,14 +1252,14 @@ void ConvolutionDataCUDA::FinishConvolution_Add(cu_obj<cuVECIn>& In, cu_obj<cuVE
 	cuFFTArrays_to_Out_Add_forOutOfPlace << < (n.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >> > (*In(), *Out(), cuOut_x, cuOut_y, cuOut_z, cuN, energy, get_energy);
 }
 
-template void ConvolutionDataCUDA::FinishConvolution_Set(cu_obj<cuVEC<cuReal3>>& In, cu_obj<cuVEC<cuReal3>>& Out, cu_obj<cuReal>& energy, cu_obj<cuReal>& energy_weight);
-template void ConvolutionDataCUDA::FinishConvolution_Set(cu_obj<cuVEC<cuReal3>>& In, cu_obj<cuVEC_VC<cuReal3>>& Out, cu_obj<cuReal>& energy, cu_obj<cuReal>& energy_weight);
-template void ConvolutionDataCUDA::FinishConvolution_Set(cu_obj<cuVEC_VC<cuReal3>>& In, cu_obj<cuVEC<cuReal3>>& Out, cu_obj<cuReal>& energy, cu_obj<cuReal>& energy_weight);
-template void ConvolutionDataCUDA::FinishConvolution_Set(cu_obj<cuVEC_VC<cuReal3>>& In, cu_obj<cuVEC_VC<cuReal3>>& Out, cu_obj<cuReal>& energy, cu_obj<cuReal>& energy_weight);
+template void ConvolutionDataCUDA::FinishConvolution_Set(cu_obj<cuVEC<cuReal3>>& In, cu_obj<cuVEC<cuReal3>>& Out, cu_obj<cuBReal>& energy, cu_obj<cuBReal>& energy_weight);
+template void ConvolutionDataCUDA::FinishConvolution_Set(cu_obj<cuVEC<cuReal3>>& In, cu_obj<cuVEC_VC<cuReal3>>& Out, cu_obj<cuBReal>& energy, cu_obj<cuBReal>& energy_weight);
+template void ConvolutionDataCUDA::FinishConvolution_Set(cu_obj<cuVEC_VC<cuReal3>>& In, cu_obj<cuVEC<cuReal3>>& Out, cu_obj<cuBReal>& energy, cu_obj<cuBReal>& energy_weight);
+template void ConvolutionDataCUDA::FinishConvolution_Set(cu_obj<cuVEC_VC<cuReal3>>& In, cu_obj<cuVEC_VC<cuReal3>>& Out, cu_obj<cuBReal>& energy, cu_obj<cuBReal>& energy_weight);
 
 //Copy convolution result (in cuS arrays) to output and obtain energy value : weighted product of In with Out times -MU0 / (2 * non_empty_points), where non_empty_points = In.get_nonempty_points();
 template <typename cuVECIn, typename cuVECOut>
-void ConvolutionDataCUDA::FinishConvolution_Set(cu_obj<cuVECIn>& In, cu_obj<cuVECOut>& Out, cu_obj<cuReal>& energy, cu_obj<cuReal>& energy_weight)
+void ConvolutionDataCUDA::FinishConvolution_Set(cu_obj<cuVECIn>& In, cu_obj<cuVECOut>& Out, cu_obj<cuBReal>& energy, cu_obj<cuBReal>& energy_weight)
 {
 	//set aux_integer in In
 	In()->count_nonempty_cells(n.dim());
@@ -1267,14 +1267,14 @@ void ConvolutionDataCUDA::FinishConvolution_Set(cu_obj<cuVECIn>& In, cu_obj<cuVE
 	cuFFTArrays_to_Out_Set_weighted_forOutOfPlace << < (n.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >> > (*In(), *Out(), cuOut_x, cuOut_y, cuOut_z, cuN, energy, energy_weight);
 }
 
-template void ConvolutionDataCUDA::FinishConvolution_Add(cu_obj<cuVEC<cuReal3>>& In, cu_obj<cuVEC<cuReal3>>& Out, cu_obj<cuReal>& energy, cu_obj<cuReal>& energy_weight);
-template void ConvolutionDataCUDA::FinishConvolution_Add(cu_obj<cuVEC<cuReal3>>& In, cu_obj<cuVEC_VC<cuReal3>>& Out, cu_obj<cuReal>& energy, cu_obj<cuReal>& energy_weight);
-template void ConvolutionDataCUDA::FinishConvolution_Add(cu_obj<cuVEC_VC<cuReal3>>& In, cu_obj<cuVEC<cuReal3>>& Out, cu_obj<cuReal>& energy, cu_obj<cuReal>& energy_weight);
-template void ConvolutionDataCUDA::FinishConvolution_Add(cu_obj<cuVEC_VC<cuReal3>>& In, cu_obj<cuVEC_VC<cuReal3>>& Out, cu_obj<cuReal>& energy, cu_obj<cuReal>& energy_weight);
+template void ConvolutionDataCUDA::FinishConvolution_Add(cu_obj<cuVEC<cuReal3>>& In, cu_obj<cuVEC<cuReal3>>& Out, cu_obj<cuBReal>& energy, cu_obj<cuBReal>& energy_weight);
+template void ConvolutionDataCUDA::FinishConvolution_Add(cu_obj<cuVEC<cuReal3>>& In, cu_obj<cuVEC_VC<cuReal3>>& Out, cu_obj<cuBReal>& energy, cu_obj<cuBReal>& energy_weight);
+template void ConvolutionDataCUDA::FinishConvolution_Add(cu_obj<cuVEC_VC<cuReal3>>& In, cu_obj<cuVEC<cuReal3>>& Out, cu_obj<cuBReal>& energy, cu_obj<cuBReal>& energy_weight);
+template void ConvolutionDataCUDA::FinishConvolution_Add(cu_obj<cuVEC_VC<cuReal3>>& In, cu_obj<cuVEC_VC<cuReal3>>& Out, cu_obj<cuBReal>& energy, cu_obj<cuBReal>& energy_weight);
 
 //Add convolution result (in cuS arrays) to output and obtain energy value : weighted product of In with Out times -MU0 / (2 * non_empty_points), where non_empty_points = In.get_nonempty_points();
 template <typename cuVECIn, typename cuVECOut>
-void ConvolutionDataCUDA::FinishConvolution_Add(cu_obj<cuVECIn>& In, cu_obj<cuVECOut>& Out, cu_obj<cuReal>& energy, cu_obj<cuReal>& energy_weight)
+void ConvolutionDataCUDA::FinishConvolution_Add(cu_obj<cuVECIn>& In, cu_obj<cuVECOut>& Out, cu_obj<cuBReal>& energy, cu_obj<cuBReal>& energy_weight)
 {
 	//set aux_integer in In
 	In()->count_nonempty_cells(n.dim());

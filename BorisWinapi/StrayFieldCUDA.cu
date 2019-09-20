@@ -40,7 +40,7 @@ __global__ void CalculateStrayField_kernel(cuVEC<cuReal3>& strayField, cuVEC_VC<
 			//distance from dipole_centre to current supermesh-cell
 			cuReal3 xyz = dipole_centre - cuReal3((ijk.i + 0.5)*h_fm.x + sMeshOrigin.x, (ijk.j + 0.5)*h_fm.y + sMeshOrigin.y, (ijk.k + 0.5)*h_fm.z + sMeshOrigin.z);
 
-			cuReal p11, p22, p33, p12, p13, p23;
+			cuBReal p11, p22, p33, p12, p13, p23;
 
 			p11 = Nxx(xyz, abc);
 			p22 = Nyy(xyz, abc);

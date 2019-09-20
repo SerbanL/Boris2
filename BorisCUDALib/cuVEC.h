@@ -4,6 +4,7 @@
 #include "cuFuncs_Aux.h"
 #include "alloc_cpy.h"
 #include "cuArray.h"
+#include "cuObject.h"
 
 #include "Types_VAL.h"
 
@@ -33,7 +34,7 @@ protected:
 
 	//pre-allocated memory used for calculations
 	VType aux_value, aux_value2, aux_value3;
-	cuReal aux_real;
+	cuBReal aux_real;
 	size_t aux_integer;
 
 	//pre-allocate array used for reductions : this array has size (n.dim() + CUDATHREADS) / CUDATHREADS), i.e. one entry per block used
@@ -152,6 +153,17 @@ public:
 
 	__host__ bool copy_to_vector(std::vector<VType>& vec);
 	__host__ bool copy_from_vector(std::vector<VType>& vec);
+
+	//--------------------------------------------EXTRACT A LINE PROFILE : cuVEC_mng.h
+
+	//extract profile to a cu_arr : extract size points starting at (start + step * 0.5) in the direction step; use weighted average to extract profile with stencil given by h
+	//e.g. if you have a start and end point with given step, then setting size = |end - start| / |step| means the profile must be extracted between (start + 0.5*step) and (end - 0.5*step). e.g.: |.|.|.|.|
+	__host__ void extract_profile(size_t size, cu_arr<VType>& profile_gpu, cuReal3 start, cuReal3 step);
+
+	//these specifically apply for VType == cuReal3, allowing extraction of the x, y, z components separately
+	__host__ void extract_profile_component_x(size_t size, cu_arr<cuBReal>& profile_gpu, cuReal3 start, cuReal3 step);
+	__host__ void extract_profile_component_y(size_t size, cu_arr<cuBReal>& profile_gpu, cuReal3 start, cuReal3 step);
+	__host__ void extract_profile_component_z(size_t size, cu_arr<cuBReal>& profile_gpu, cuReal3 start, cuReal3 step);
 
 	//--------------------------------------------INDEXING
 
@@ -290,6 +302,9 @@ public:
 
 	//ijk is the cell index in a mesh with cellsize cs and same rect as this cuVEC; if cs is same as h then just read the value at ijk - much faster! If not then get the usual weighted average.
 	__device__ VType weighted_average(const cuINT3& ijk, const cuReal3& cs);
+
+	//add to this vec the values in add_this : must have same size : size; can optionally specify a scalar multiplier i.e. this += scalar_mult * add_this
+	__host__ void add(size_t size, cu_obj<cuVEC<VType>>& add_this, cuBReal scalar_mult = 1.0);
 
 	//--------------------------------------------MESH TRANSFER : cuVEC_MeshTransfer.h
 

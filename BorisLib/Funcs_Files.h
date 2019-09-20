@@ -108,7 +108,7 @@ inline std::vector<std::string> GetFilesInDirectory(std::string directory, std::
 			uli.HighPart = ffd.ftCreationTime.dwHighDateTime;
 
 			//get the file name
-			std::string fileName = WideStringtoString(ffd.cFileName);
+			std::string fileName = WideStringtoString(std::wstring(ffd.cFileName));
 
 			//if filename including termination is too short then skip it
 			if (fileName.length() < termination.length()) continue;
