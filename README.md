@@ -39,21 +39,3 @@ Instructions will be provided soon.
 # Publication
 
 A technical peer-reviewed publication on Boris to follow soon.
-
-# Bugs Status
-
-NOT SOLVED:
-
-1. Saving simulation file sometimes sets dT to zero (to a floating point error). I've only seen it happen with CUDA enabled. Very rare, no apparent cause found yet.
-
-LIKELY SOLVED:
-
-1. Using a python script may result in program hanging if issuing a flood of commands.
-
-2. If heat solver diverges (e.g. due to too high a time step), and at least 1 material parameter has a temperature dependence, when in CUDA mode out of gpu memory errors can result requiring a program restart. 
-I seem to have fixed it using extra checks on Temperature when getting updated parameter values, but I don't understand why this happens without the checks so the solution seems like a hack. Not happy with this!
-
-SOLVED:
-
-1. Drag and drop simulation file sometimes crashes program. Found bad conversion function - I'm certain that was the problem, so consider this solved but keep an eye on this for a while.
-
