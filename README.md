@@ -3,7 +3,7 @@
 Boris Computational Spintronics.
 
 C++14 used. 
-As a rough idea of codebase size, at the last count there were 129491 lines of code in 426 files. A full compilation without precompiled headers takes around 30 mins.
+As a rough idea of codebase size, at the last count there were 129491 lines of code in 426 files.
 
 # Download
 
