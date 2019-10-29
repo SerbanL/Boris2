@@ -910,6 +910,392 @@ BError DPArrays::fit_skyrmion(int dp_x, int dp_y, DBL2 *pR, DBL2 *px0, DBL2 *pMs
 	return error;
 }
 
+//fit STT function : 
+BError DPArrays::fit_stt(VEC<DBL3>& T, VEC_VC<DBL3>& M, VEC_VC<DBL3>& J, Rect rectangle, DBL2* pP, DBL2 *pbeta, double *pRsq)
+{
+	BError error(__FUNCTION__);
+
+	Box cells_box = M.box_from_rect_max(rectangle + M.rect.s);
+	INT3 box_sizes = cells_box.size();
+	int points = box_sizes.dim();
+
+	vector<DBL2> xy_data_adiabatic_y(points, DBL2()), xy_data_nonadiabatic_y(points, DBL2());
+	vector<double> adiabatic_x(points, 0.0), nonadiabatic_x(points, 0.0);
+
+	//to extract P and beta we separate the orthogonal adiabatic and non-adiabatic terms and fit them separately
+	//Thus first fit (J.del)m * Ts = P * MUB_E * [(J.del)m]^2 -> this gives P
+	//Next, using the obtained P, fit (m^(J.del)m) * Ts = -P * MUB_E * beta * [m^(J.del)m]^2 -> this gives beta
+
+#pragma omp parallel for
+	for (int i = cells_box.s.i; i < cells_box.e.i; i++) {
+		for (int j = cells_box.s.j; j < cells_box.e.j; j++) {
+			for (int k = cells_box.s.k; k < cells_box.e.k; k++) {
+
+				DBL3 position = M.cellidx_to_position(INT3(i, j, k));
+				int idx_M = M.position_to_cellidx(position);
+				int idx_J = J.position_to_cellidx(position);
+				int idx = (i - cells_box.s.i) + (j - cells_box.s.j) * box_sizes.x + (k - cells_box.s.k) * box_sizes.x * box_sizes.y;
+
+				if (M.is_not_empty(idx_M) && J.is_not_empty(idx_J)) {
+
+					double Mnorm = M[idx_M].norm();
+					DBL3 m = M[idx_M] / Mnorm;
+					DBL33 grad_m = M.grad_neu(idx_M) / Mnorm;
+					DBL3 J_dot_del_m = grad_m.x * J[idx_J].x + grad_m.y * J[idx_J].y + grad_m.z * J[idx_J].z;
+					DBL3 m_cross_J_dot_del_m = m ^ J_dot_del_m;
+
+					xy_data_adiabatic_y[idx] = DBL2(idx, J_dot_del_m * T[idx_M]);
+					xy_data_nonadiabatic_y[idx] = DBL2(idx, m_cross_J_dot_del_m * T[idx_M]);
+
+					adiabatic_x[idx] = J_dot_del_m * J_dot_del_m;
+					nonadiabatic_x[idx] = m_cross_J_dot_del_m * m_cross_J_dot_del_m;
+				}
+			}
+		}
+	}
+
+	CurveFitting curve_fit;
+
+	vector<double> params, params_std;
+
+	curve_fit.FitSTT_LMA(xy_data_adiabatic_y, xy_data_nonadiabatic_y, adiabatic_x, nonadiabatic_x, params, params_std, pRsq);
+
+	if (params.size() >= 2 && params_std.size() >= 2) {
+
+		*pP = DBL2(params[0], params_std[0]);
+		*pbeta = DBL2(params[1], params_std[1]);
+	}
+	else return error(BERROR_INCORRECTARRAYS);
+
+	return error;
+}
+
+//fit STT function using a stencil to obtain spatial dependence of P parameter
+BError DPArrays::fit_stt_variation(VEC<DBL3>& T, VEC_VC<DBL3>& M, VEC_VC<DBL3>& J, VEC<double>& output, bool adiabatic, double absolute_error_threshold, double Rsq_threshold, double Torque_ratio_threshold, int stencil_size)
+{
+	BError error(__FUNCTION__);
+
+	//to extract P and beta we separate the orthogonal adiabatic and non-adiabatic terms and fit them separately
+	//Thus first fit (J.del)m * Ts = P * MUB_E * [(J.del)m]^2 -> this gives P
+	//Next, using the obtained P, fit (m^(J.del)m) * Ts = -P * MUB_E * beta * [m^(J.del)m]^2 -> this gives beta
+
+	INT3 n = M.n;
+	int points = n.dim();
+
+	if (!output.assign(M.h, M.rect, 0.0)) return error(BERROR_OUTOFMEMORY_NCRIT);
+
+	//1. Find maximum torque to use when calculating cutoff
+	double T_max = 0.0;
+
+	for (int idx = 0; idx < T.linear_size(); idx++) {
+
+		if (T_max < T[idx].norm()) T_max = T[idx].norm();
+	}
+
+	//2. Calculate fitting vectors for the entire mesh space
+	vector<double> xy_data_adiabatic_y(points, 0.0), xy_data_nonadiabatic_y(points, 0.0);
+	vector<double> adiabatic_x(points, 0.0), nonadiabatic_x(points, 0.0);
+
+#pragma omp parallel for
+	for (int i = 0; i < n.i; i++) {
+		for (int j = 0; j < n.j; j++) {
+			for (int k = 0; k < n.k; k++) {
+
+				DBL3 position = M.cellidx_to_position(INT3(i, j, k));
+				int idx_M = M.position_to_cellidx(position);
+				int idx_J = J.position_to_cellidx(position);
+				int idx = i + j * n.i + k * n.i * n.j;
+
+				if (M.is_not_empty(idx_M) && J.is_not_empty(idx_J)) {
+
+					double Mnorm = M[idx_M].norm();
+					DBL3 m = M[idx_M] / Mnorm;
+					DBL33 grad_m = M.grad_neu(idx_M) / Mnorm;
+					DBL3 J_dot_del_m = grad_m.x * J[idx_J].x + grad_m.y * J[idx_J].y + grad_m.z * J[idx_J].z;
+					DBL3 m_cross_J_dot_del_m = m ^ J_dot_del_m;
+
+					xy_data_adiabatic_y[idx] = J_dot_del_m * T[idx_M];
+					xy_data_nonadiabatic_y[idx] = m_cross_J_dot_del_m * T[idx_M];
+
+					adiabatic_x[idx] = J_dot_del_m * J_dot_del_m;
+					nonadiabatic_x[idx] = m_cross_J_dot_del_m * m_cross_J_dot_del_m;
+				}
+			}
+		}
+	}
+
+	//3. next use a nearest neighbor stencil centered around a point to fit for beta at that point
+
+	//stencil with odd dimensions
+	stencil_size += int((stencil_size % 2) == 0);
+
+	INT3 n_stencil = INT3(stencil_size, stencil_size, 1);
+
+	CurveFitting curve_fit;
+	vector<double> params, params_std;
+	double Rsq;
+
+	vector<DBL2> stencil_xy_data_adiabatic_y(n_stencil.dim(), DBL2()), stencil_xy_data_nonadiabatic_y(n_stencil.dim(), DBL2());
+	vector<double> stencil_adiabatic_x(n_stencil.dim(), 0.0), stencil_nonadiabatic_x(n_stencil.dim(), 0.0);
+
+	//setup indexes in xy_data to fit : these are fixed for the stencil
+	for (int idx = 0; idx < n_stencil.dim(); idx++) {
+
+		stencil_xy_data_adiabatic_y[idx].x = idx;
+		stencil_xy_data_nonadiabatic_y[idx].x = idx;
+	}
+
+	//now fit point by point
+	for (int i = (n_stencil.x - 1) / 2; i < n.i - (n_stencil.x - 1) / 2; i++) {
+		for (int j = (n_stencil.y - 1) / 2; j < n.j - (n_stencil.y - 1) / 2; j++) {
+			for (int k = (n_stencil.z - 1) / 2; k < n.k - (n_stencil.z - 1) / 2; k++) {
+
+				if (M.is_not_empty(INT3(i, j, k)) && ((T[INT3(i, j, k)].norm() / T_max > Torque_ratio_threshold) || IsZ(Torque_ratio_threshold))) {
+
+					//setup stencil data
+					for (int i_s = -(n_stencil.x - 1) / 2; i_s <= (n_stencil.x - 1) / 2; i_s++) {
+						for (int j_s = -(n_stencil.y - 1) / 2; j_s <= (n_stencil.y - 1) / 2; j_s++) {
+
+							//index to read from main arrays
+							int idx = (i + i_s) + (j + j_s) * n.x + k * n.x * n.y;
+
+							//index in stencil arrays
+							int idx_stencil = (i_s + (n_stencil.x - 1) / 2) + (j_s + (n_stencil.y - 1) / 2) * n_stencil.x;
+
+							stencil_xy_data_adiabatic_y[idx_stencil].y = xy_data_adiabatic_y[idx];
+							stencil_xy_data_nonadiabatic_y[idx_stencil].y = xy_data_nonadiabatic_y[idx];
+							stencil_adiabatic_x[idx_stencil] = adiabatic_x[idx];
+							stencil_nonadiabatic_x[idx_stencil] = nonadiabatic_x[idx];
+						}
+					}
+
+					//fit stencil
+					curve_fit.FitSTT_LMA(stencil_xy_data_adiabatic_y, stencil_xy_data_nonadiabatic_y, stencil_adiabatic_x, stencil_nonadiabatic_x, params, params_std, &Rsq);
+
+					//set output if threshold criteria are met only
+					if (
+						((params[1] && abs(params_std[1] / params[1]) < absolute_error_threshold) || IsZ(absolute_error_threshold)) &&
+						((Rsq > Rsq_threshold) || IsZ(Rsq_threshold)))
+					{
+						if (adiabatic) output[INT3(i, j, k)] = params[0];
+						else output[INT3(i, j, k)] = params[1];
+					}
+				}
+			}
+		}
+	}
+
+	return error;
+}
+
+//fit SOT function :
+BError DPArrays::fit_sot(VEC<DBL3>& T, VEC_VC<DBL3>& M, VEC_VC<DBL3>& J, Rect rectangle, DBL2* pSHAeff, DBL2 *pflST, double *pRsq)
+{
+	BError error(__FUNCTION__);
+
+	//change the rectangle to absolute coordinates
+	rectangle += M.rect.s;
+
+	//get contacting rectangle between J and M, as well as intersection with the user specified rectangle
+	Rect contact_rect = M.rect.get_intersection(J.rect).get_intersection(rectangle);
+
+	if (contact_rect.IsNull()) {
+
+		//ERROR: heavy metal mesh must be in contact with the focused ferromagnetic mesh and any specified rectangle must intersect the contact.
+		return error(BERROR_INCORRECTCONFIG);
+	}
+
+	if (!contact_rect.IsPlane() || IsNZ(contact_rect.height())) {
+
+		//ERROR: contacting meshes must be stacked in the z direction.
+		return error(BERROR_INCORRECTCONFIG);
+	}
+
+	double dh = M.h.z;
+
+	Box cells_box = M.box_from_rect_max(contact_rect);
+	INT3 box_sizes = cells_box.size();
+	int points = box_sizes.dim();
+
+	vector<DBL2> xy_data_dampinglike_y(points, DBL2()), xy_data_fieldlike_y(points, DBL2());
+	vector<double> dampinglike_x(points, 0.0), fieldlike_x(points, 0.0);
+
+#pragma omp parallel for
+	for (int i = cells_box.s.i; i < cells_box.e.i; i++) {
+		for (int j = cells_box.s.j; j < cells_box.e.j; j++) {
+			for (int k = cells_box.s.k; k < cells_box.e.k; k++) {
+
+				DBL3 position = M.cellidx_to_position(INT3(i, j, k));
+				DBL3 position_J;
+
+				if (M.rect.s.z > J.rect.s.z) {
+
+					position_J = position + M.rect.s - J.rect.s - DBL3(0, 0, M.h.z / 2) - DBL3(0, 0, J.h.z / 2);
+				}
+				else {
+
+					position_J = position + M.rect.s - J.rect.s + DBL3(0, 0, M.h.z / 2) + DBL3(0, 0, J.h.z / 2);
+				}
+
+				int idx_M = M.position_to_cellidx(position);
+				int idx_J = J.position_to_cellidx(position_J);
+				int idx = (i - cells_box.s.i) + (j - cells_box.s.j) * box_sizes.x + (k - cells_box.s.k) * box_sizes.x * box_sizes.y;
+
+				if (M.is_not_empty(idx_M) && J.is_not_empty(idx_J)) {
+
+					double Mnorm = M[idx_M].norm();
+					DBL3 m = M[idx_M] / Mnorm;
+					DBL3 p = (DBL3(0, 0, 1) ^ J[idx_J]) / dh;
+
+					DBL3 mxp = m ^ p;
+					DBL3 mxmxp = m ^ mxp;
+
+					xy_data_dampinglike_y[idx] = DBL2(idx, mxmxp * T[idx_M]);
+					xy_data_fieldlike_y[idx] = DBL2(idx, mxp * T[idx_M]);
+
+					dampinglike_x[idx] = mxmxp * mxmxp;
+					fieldlike_x[idx] = mxp * mxp;
+				}
+			}
+		}
+	}
+
+	CurveFitting curve_fit;
+
+	vector<double> params, params_std;
+
+	curve_fit.FitSOT_LMA(xy_data_dampinglike_y, xy_data_fieldlike_y, dampinglike_x, fieldlike_x, params, params_std, pRsq);
+
+	if (params.size() >= 2 && params_std.size() >= 2) {
+
+		*pSHAeff = DBL2(params[0], params_std[0]);
+		*pflST = DBL2(params[1], params_std[1]);
+	}
+	else return error(BERROR_INCORRECTARRAYS);
+
+	return error;
+}
+
+//fit simultaneously STT and SOT when the self-consistent interfacial spin torque contains both
+BError DPArrays::fit_sotstt(VEC<DBL3>& T, VEC_VC<DBL3>& M, VEC_VC<DBL3>& J_hm, VEC_VC<DBL3>& J_fm, Rect rectangle, DBL2* pSHAeff, DBL2 *pflST, DBL2* pP, DBL2 *pbeta, double *pRsq)
+{
+	BError error(__FUNCTION__);
+
+	//change the rectangle to absolute coordinates
+	rectangle += M.rect.s;
+
+	//get contacting rectangle between J and M, as well as intersection with the user specified rectangle
+	Rect contact_rect = M.rect.get_intersection(J_hm.rect).get_intersection(rectangle);
+
+	if (contact_rect.IsNull()) {
+
+		//ERROR: heavy metal mesh must be in contact with the focused ferromagnetic mesh and any specified rectangle must intersect the contact.
+		return error(BERROR_INCORRECTCONFIG);
+	}
+
+	if (!contact_rect.IsPlane() || IsNZ(contact_rect.height())) {
+
+		//ERROR: contacting meshes must be stacked in the z direction.
+		return error(BERROR_INCORRECTCONFIG);
+	}
+
+	double dh = M.h.z;
+
+	Box cells_box = M.box_from_rect_max(contact_rect);
+	INT3 box_sizes = cells_box.size();
+	int points = box_sizes.dim();
+
+	vector<DBL2> xy_data_adiabatic_y(points, DBL2()), xy_data_nonadiabatic_y(points, DBL2());
+	vector<DBL2> xy_data_dampinglike_y(points, DBL2()), xy_data_fieldlike_y(points, DBL2());
+
+	vector<double> adiabatic_fit_main_x(points, 0.0), adiabatic_fit_dampinglike_x(points, 0.0), adiabatic_fit_fieldlike_x(points, 0.0);
+	vector<double> nonadiabatic_fit_main_x(points, 0.0), nonadiabatic_fit_dampinglike_x(points, 0.0), nonadiabatic_fit_fieldlike_x(points, 0.0);
+	vector<double> dampinglike_fit_main_x(points, 0.0), dampinglike_fit_adiabatic_x(points, 0.0), dampinglike_fit_nonadiabatic_x(points, 0.0);
+	vector<double> fieldlike_fit_main_x(points, 0.0), fieldlike_fit_adiabatic_x(points, 0.0), fieldlike_fit_nonadiabatic_x(points, 0.0);
+
+#pragma omp parallel for
+	for (int i = cells_box.s.i; i < cells_box.e.i; i++) {
+		for (int j = cells_box.s.j; j < cells_box.e.j; j++) {
+			for (int k = cells_box.s.k; k < cells_box.e.k; k++) {
+
+				DBL3 position = M.cellidx_to_position(INT3(i, j, k));
+				DBL3 position_J_hm;
+				
+				if (M.rect.s.z > J_hm.rect.s.z) {
+
+					position_J_hm = position + M.rect.s - J_hm.rect.s - DBL3(0, 0, M.h.z / 2) - DBL3(0, 0, J_hm.h.z / 2);
+				}
+				else {
+
+					position_J_hm = position + M.rect.s - J_hm.rect.s + DBL3(0, 0, M.h.z / 2) + DBL3(0, 0, J_hm.h.z / 2);
+				}
+
+				int idx_M = M.position_to_cellidx(position);
+				int idx_J_hm = J_hm.position_to_cellidx(position_J_hm);
+				int idx_J_fm = J_fm.position_to_cellidx(position);
+				int idx = (i - cells_box.s.i) + (j - cells_box.s.j) * box_sizes.x + (k - cells_box.s.k) * box_sizes.x * box_sizes.y;
+
+				if (M.is_not_empty(idx_M) && J_hm.is_not_empty(idx_J_hm) && J_fm.is_not_empty(idx_J_fm)) {
+
+					double Mnorm = M[idx_M].norm();
+					DBL3 m = M[idx_M] / Mnorm;
+					DBL3 p = (DBL3(0, 0, 1) ^ J_hm[idx_J_hm]) / dh;
+
+					DBL3 mxp = m ^ p;
+					DBL3 mxmxp = m ^ mxp;
+
+					DBL33 grad_m = M.grad_neu(idx_M) / Mnorm;
+					DBL3 J_dot_del_m = grad_m.x * J_fm[idx_J_fm].x + grad_m.y * J_fm[idx_J_fm].y + grad_m.z * J_fm[idx_J_fm].z;
+					DBL3 m_cross_J_dot_del_m = m ^ J_dot_del_m;
+
+					xy_data_dampinglike_y[idx] = DBL2(idx, mxmxp * T[idx_M]);
+					xy_data_fieldlike_y[idx] = DBL2(idx, mxp * T[idx_M]);
+					xy_data_adiabatic_y[idx] = DBL2(idx, J_dot_del_m * T[idx_M]);
+					xy_data_nonadiabatic_y[idx] = DBL2(idx, m_cross_J_dot_del_m * T[idx_M]);
+
+					dampinglike_fit_main_x[idx] = mxmxp * mxmxp;
+					dampinglike_fit_adiabatic_x[idx] = mxmxp * J_dot_del_m;
+					dampinglike_fit_nonadiabatic_x[idx] = mxmxp * m_cross_J_dot_del_m;
+
+					fieldlike_fit_main_x[idx] = mxp * mxp;
+					fieldlike_fit_adiabatic_x[idx] = mxp * J_dot_del_m;
+					fieldlike_fit_nonadiabatic_x[idx] = mxp * m_cross_J_dot_del_m;
+
+					adiabatic_fit_main_x[idx] = J_dot_del_m * J_dot_del_m;
+					adiabatic_fit_dampinglike_x[idx] = J_dot_del_m * mxmxp;
+					adiabatic_fit_fieldlike_x[idx] = J_dot_del_m * mxp;
+
+					nonadiabatic_fit_main_x[idx] = m_cross_J_dot_del_m * m_cross_J_dot_del_m;
+					nonadiabatic_fit_dampinglike_x[idx] = m_cross_J_dot_del_m * mxmxp;
+					nonadiabatic_fit_fieldlike_x[idx] = m_cross_J_dot_del_m * mxp;
+				}
+			}
+		}
+	}
+
+	CurveFitting curve_fit;
+
+	vector<double> params, params_std;
+	
+	curve_fit.FitSOTSTT_LMA(xy_data_adiabatic_y, xy_data_nonadiabatic_y, xy_data_dampinglike_y, xy_data_fieldlike_y,
+		adiabatic_fit_main_x, adiabatic_fit_dampinglike_x, adiabatic_fit_fieldlike_x,
+		nonadiabatic_fit_main_x, nonadiabatic_fit_dampinglike_x, nonadiabatic_fit_fieldlike_x,
+		dampinglike_fit_main_x, dampinglike_fit_adiabatic_x, dampinglike_fit_nonadiabatic_x,
+		fieldlike_fit_main_x, fieldlike_fit_adiabatic_x, fieldlike_fit_nonadiabatic_x, 
+		params, params_std, pRsq);
+
+	if (params.size() >= 4 && params_std.size() >= 4) {
+
+		*pP = DBL2(params[0], params_std[0]);
+		*pbeta = DBL2(params[1], params_std[1]);
+		*pSHAeff = DBL2(params[2], params_std[2]);
+		*pflST = DBL2(params[3], params_std[3]);
+	}
+	else return error(BERROR_INCORRECTARRAYS);
+	
+	return error;
+}
+
 //--------------------- data processing
 
 //Replace repeated points from using linear interpolation: if two adjacent sets of repeated points found, replace repeats between the mid-points of the sets
@@ -1133,6 +1519,35 @@ BError DPArrays::adjacent_averaging(int dp_in, int dp_out, int window_size)
 		average = (average * (window_size / 2 + dpA[dp_in].size() - idx) - dpA[dp_in][idx]) / (window_size / 2 + dpA[dp_in].size() - idx - 1);
 
 		dpA[dp_out][idx] = average;
+	}
+
+	return error;
+}
+
+//extract monotonic sequence form input arrays and place it in output arrays. Primary array (dp_in_pri) decides ordering and dependent array (dp_in_dep) must have same size
+BError DPArrays::extract_monotonic(int dp_in_pri, int dp_in_dep, int dp_out_pri, int dp_out_dep)
+{
+	BError error(__FUNCTION__);
+
+	if (!GoodArrays_Unique(dp_in_pri, dp_in_dep, dp_out_pri, dp_out_dep) || !dpA[dp_in_pri].size() || dpA[dp_in_pri].size() != dpA[dp_in_dep].size()) return error(BERROR_INCORRECTARRAYS);
+
+	resize(dp_out_pri, 0);
+	resize(dp_out_dep, 0);
+
+	bool increasing = dpA[dp_in_pri].back() > dpA[dp_in_pri].front();
+
+	double last_value = dpA[dp_in_pri][0];
+	dpA[dp_out_pri].push_back(last_value);
+	dpA[dp_out_dep].push_back(dpA[dp_in_dep][0]);
+
+	for (int idx = 1; idx < dpA[dp_in_pri].size(); idx++) {
+
+		if (dpA[dp_in_pri][idx] >= last_value) {
+
+			last_value = dpA[dp_in_pri][idx];
+			dpA[dp_out_pri].push_back(last_value);
+			dpA[dp_out_dep].push_back(dpA[dp_in_dep][idx]);
+		}
 	}
 
 	return error;

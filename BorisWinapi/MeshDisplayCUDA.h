@@ -38,9 +38,11 @@ protected:
 #if SINGLEPRECISION == 1
 	//vectorial cuVEC_VC
 	VEC_VC<FLT3>* pdisplay_vec_vc_vec;
+	VEC_VC<FLT3>* pdisplay2_vec_vc_vec;
 
 	//vectorial cuVEC
 	VEC<FLT3>* pdisplay_vec_vec;
+	VEC<FLT3>* pdisplay2_vec_vec;
 
 	//scalar cuVEC_VC
 	VEC_VC<float>* pdisplay_vec_vc_sca;
@@ -50,9 +52,11 @@ protected:
 #else
 	//vectorial cuVEC_VC
 	VEC_VC<DBL3>* pdisplay_vec_vc_vec;
+	VEC_VC<DBL3>* pdisplay2_vec_vc_vec;
 
 	//vectorial cuVEC
 	VEC<DBL3>* pdisplay_vec_vec;
+	VEC<DBL3>* pdisplay2_vec_vec;
 
 	//scalar cuVEC_VC
 	VEC_VC<double>* pdisplay_vec_vc_sca;
@@ -70,8 +74,14 @@ protected:
 	//extract from mesh display (in gpu memory) a coarser mesh display (still in gpu memory), then copy the coarse display to cpu memory ready to use further.
 	//n_quantity and meshRect are the same as those in cu_obj_quantity : pass in values in cpu memory to speed up function execution
 	bool prepare_display(SZ3 n_quantity, Rect meshRect, double detail_level, cu_obj<cuVEC_VC<cuReal3>>& cu_obj_quantity);
+	
+	bool prepare_display(SZ3 n_quantity, Rect meshRect, double detail_level, cu_obj<cuVEC_VC<cuReal3>>& cu_obj_quantity, cu_obj<cuVEC_VC<cuReal3>>& cu_obj_quantity2);
+	
 	bool prepare_display(SZ3 n_quantity, Rect meshRect, double detail_level, cu_obj<cuVEC_VC<cuBReal>>& cu_obj_quantity);
+	
 	bool prepare_display(SZ3 n_quantity, Rect meshRect, double detail_level, cu_obj<cuVEC<cuReal3>>& cu_obj_quantity);
+	bool prepare_display(SZ3 n_quantity, Rect meshRect, double detail_level, cu_obj<cuVEC<cuReal3>>& cu_obj_quantity, cu_obj<cuVEC<cuReal3>>& cu_obj_quantity2);
+	
 	bool prepare_display(SZ3 n_quantity, Rect meshRect, double detail_level, cu_obj<cuVEC<cuBReal>>& cu_obj_quantity);
 };
 

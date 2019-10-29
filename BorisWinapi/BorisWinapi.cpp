@@ -36,9 +36,9 @@ enum IDM_ {
 	//FILE
 	IDM_FILE_DEFAULT, IDM_FILE_LOAD, IDM_FILE_LOADEXAMPLE, IDM_FILE_SAVE, IDM_FILE_SAVEAS, IDM_FILE_SAVEIMAGE, IDM_FILE_MAKEVIDEO, IDM_FILE_IMAGECROPPING, IDM_FILE_CHDIR, IDM_FILE_QUIT,
 	//SIMULATION
-	IDM_SIM_RUN, IDM_SIM_COMPUTEFIELDS, IDM_SIM_STOP, IDM_SIM_RESET, IDM_SIM_CUDA, IDM_SIM_SCHEDULE, IDM_SIM_DATA, IDM_SIM_SHOWDATA, IDM_SIM_BENCHTIME,
+	IDM_SIM_RUN, IDM_SIM_COMPUTEFIELDS, IDM_SIM_STOP, IDM_SIM_RESET, IDM_SIM_CUDA, IDM_SIM_SERVER, IDM_SIM_SCHEDULE, IDM_SIM_DATA, IDM_SIM_SHOWDATA, IDM_SIM_BENCHTIME,
 	//MESH
-	IDM_MESH_SHOW, IDM_MESH_LOADMASK, IDM_MESH_MASKALL, IDM_MESH_SCALERECTS, IDM_MESH_RESET, IDM_MESH_ADDMATERIAL, IDM_MESH_ADDFERROMAGNET, IDM_MESH_ADDMETAL, IDM_MESH_ADDINSULATOR, IDM_MESH_ADDDIPOLE, IDM_MESH_EXCHANGECOUPLED, IDM_MESH_COUPLETODIPOLES, IDM_MESH_COPY,
+	IDM_MESH_SHOW, IDM_MESH_LOADMASK, IDM_MESH_MASKALL, IDM_MESH_SCALERECTS, IDM_MESH_RESET, IDM_MESH_ADDMATERIAL, IDM_MESH_ADDFERROMAGNET, IDM_MESH_ADDANTIFERROMAGNET, IDM_MESH_ADDMETAL, IDM_MESH_ADDINSULATOR, IDM_MESH_ADDDIPOLE, IDM_MESH_EXCHANGECOUPLED, IDM_MESH_COUPLETODIPOLES, IDM_MESH_COPY,
 	//CONFIGURATION
 	IDM_CFG_MODULES, IDM_CFG_ODE, IDM_CFG_TIMESTEP, IDM_CFG_ASTEP, IDM_CFG_MULTICONV, IDM_CFG_PBC,
 	//PARAMETERS
@@ -57,9 +57,9 @@ enum IDM_ {
 	IDM_ALGO_MOVINGMESH, IDM_ALGO_BLOCHMOVINGMESH, IDM_ALGO_NEELMOVINGMESH, IDM_ALGO_SKYMOVINGMESH, IDM_ALGO_CLEARMOVINGMESH, IDM_ALGO_MOVINGMESHENABLED,
 	//DATA PROCESSING
 	IDM_DP_CLEARALL, IDM_DP_SHOWSIZES, IDM_DP_LOAD, IDM_DP_SAVE, IDM_DP_GETPROFILE, IDM_DP_AVERAGEMESHRECT, IDM_DP_TOPOCHARGE, IDM_DP_MUL, IDM_DP_DOTPROD, IDM_DP_ADDDP, IDM_DP_SUBDP, IDM_DP_MINMAX, IDM_DP_MEAN, IDM_DP_LINREG, IDM_DP_COERCIVITY, IDM_DP_REMANENCE, IDM_DP_COMPLETEHYSTER, IDM_DP_DUMPTDEP,
-	IDM_DP_FITLORENTZ, IDM_DP_FITSKYRMION, IDM_DP_REMOVEOFFSET, IDM_DP_CARTESIANTOPOLAR, IDM_DP_SMOOTH,
+	IDM_DP_FITLORENTZ, IDM_DP_FITSKYRMION, IDM_DP_FITSTT, IDM_DP_FITSOT, IDM_DP_FITSOTSTT, IDM_DP_FITADIA, IDM_DP_FITNONADIA, IDM_DP_REMOVEOFFSET, IDM_DP_CARTESIANTOPOLAR, IDM_DP_SMOOTH,
 	//ABOUT
-	IDM_ABOUT_MANUAL, IDM_ABOUT_MDB, IDM_ABOUT_UPDATEMDB, IDM_ABOUT_ABOUT
+	IDM_ABOUT_MANUAL, IDM_ABOUT_MDB, IDM_ABOUT_UPDATEMDB, IDM_ABOUT_CHECKUPDATES, IDM_ABOUT_ABOUT
 };
 
 void AddMenus(HWND hwnd)
@@ -103,6 +103,7 @@ void AddMenus(HWND hwnd)
 		if (status == -1) EnableMenuItem(hMenu_Sim, IDM_SIM_CUDA, MF_DISABLED);
 		else if (status == 1) CheckMenuItem(hMenu_Sim, IDM_SIM_CUDA, MF_CHECKED);
 	}
+	AppendMenuW(hMenu_Sim, MF_STRING, IDM_SIM_SERVER, L"&Script Server");
 	AppendMenuW(hMenu_Sim, MF_SEPARATOR, 0, NULL);
 	AppendMenuW(hMenu_Sim, MF_STRING, IDM_SIM_SCHEDULE, L"&Schedule\tAlt-S");
 	AppendMenuW(hMenu_Sim, MF_SEPARATOR, 0, NULL);
@@ -127,6 +128,7 @@ void AddMenus(HWND hwnd)
 	AppendMenuW(hMenu_Mesh, MF_SEPARATOR, 0, NULL);
 	AppendMenuW(hMenu_Mesh, MF_STRING, IDM_MESH_ADDMATERIAL, L"&Add Material");
 	AppendMenuW(hMenu_Mesh, MF_STRING, IDM_MESH_ADDFERROMAGNET, L"&Add Ferromagnet");
+	AppendMenuW(hMenu_Mesh, MF_STRING, IDM_MESH_ADDANTIFERROMAGNET, L"&Add Antiferromagnet");
 	AppendMenuW(hMenu_Mesh, MF_STRING, IDM_MESH_ADDDIPOLE, L"&Add Dipole");
 	AppendMenuW(hMenu_Mesh, MF_STRING, IDM_MESH_ADDMETAL, L"&Add Metal");
 	AppendMenuW(hMenu_Mesh, MF_STRING, IDM_MESH_ADDINSULATOR, L"&Add Insulator");
@@ -279,6 +281,11 @@ void AddMenus(HWND hwnd)
 	AppendMenuW(hMenu_DP, MF_STRING, IDM_DP_LINREG, L"&Linear Regression");
 	AppendMenuW(hMenu_DP, MF_STRING, IDM_DP_FITLORENTZ, L"&Fit Lorentzian");
 	AppendMenuW(hMenu_DP, MF_STRING, IDM_DP_FITSKYRMION, L"&Fit Skyrmion");
+	AppendMenuW(hMenu_DP, MF_STRING, IDM_DP_FITSTT, L"&Fit STT");
+	AppendMenuW(hMenu_DP, MF_STRING, IDM_DP_FITSOT, L"&Fit SOT");
+	AppendMenuW(hMenu_DP, MF_STRING, IDM_DP_FITSOTSTT, L"&Fit SOT and STT");
+	AppendMenuW(hMenu_DP, MF_STRING, IDM_DP_FITADIA, L"&Fit Adiabatic");
+	AppendMenuW(hMenu_DP, MF_STRING, IDM_DP_FITNONADIA, L"&Fit Nonadiabatic");
 	AppendMenuW(hMenu_DP, MF_SEPARATOR, 0, NULL);
 	AppendMenuW(hMenu_DP, MF_STRING, IDM_DP_COERCIVITY, L"&Coercivity");
 	AppendMenuW(hMenu_DP, MF_STRING, IDM_DP_REMANENCE, L"&Remanence");
@@ -294,6 +301,7 @@ void AddMenus(HWND hwnd)
 	AppendMenuW(hMenu_About, MF_STRING, IDM_ABOUT_MDB, L"&Materials Database");
 	AppendMenuW(hMenu_About, MF_STRING, IDM_ABOUT_UPDATEMDB, L"&Update Database");
 	AppendMenuW(hMenu_About, MF_SEPARATOR, 0, NULL);
+	AppendMenuW(hMenu_About, MF_STRING, IDM_ABOUT_CHECKUPDATES, L"&Check Updates");
 	AppendMenuW(hMenu_About, MF_STRING, IDM_ABOUT_ABOUT, L"&About");
 
 	AppendMenuW(hMenubar, MF_POPUP, (UINT_PTR)hMenu_About, L"&About");
@@ -324,7 +332,7 @@ int APIENTRY _tWinMain(_In_ HINSTANCE hInstance,
 	//If however you declare a stringstream variable before (just declare, you don't have to use it!) then program doesn't crash!
 	//Gets better : it used to work with (float) but for an unknown reason it suddenly started crashing and I don't know what's changed.
 	//Without a doubt the strangest bug I have ever seen - but as usual it will make sense when investigated properly, but I suspect it won't be easy. TO DO if you have time.
-	string sTitle = string("Boris v") + ToString((double)Program_Version / 100) + string(" (CUDA sp)");
+	string sTitle = string("Boris v") + ToString((double)Program_Version / 100) + string(" (v2.5 development)");
 	copy(sTitle.begin(), sTitle.end(), szTitle);
 	szTitle[sTitle.size()] = 0;
 
@@ -578,6 +586,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		//Make sure all menu items wich can be checked/unchecked reflect the simulation state correctly
 		if (pSim) {
 
+			CheckMenuItem(hMenubar, IDM_SIM_SERVER, (pSim->GetScriptServerStatus() ? MF_CHECKED : MF_UNCHECKED));
 			CheckMenuItem(hMenubar, IDM_MESH_MASKALL, (pSim->GetIndividualShapeStatus() ? MF_UNCHECKED : MF_CHECKED));
 			CheckMenuItem(hMenubar, IDM_MESH_SCALERECTS, (pSim->GetScaleRectsStatus() ? MF_CHECKED : MF_UNCHECKED));
 			CheckMenuItem(hMenubar, IDM_MESH_COUPLETODIPOLES, (pSim->GetCoupleToDipolesStatus() ? MF_CHECKED : MF_UNCHECKED));
@@ -721,6 +730,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			if (pSim) pSim->NewMessage(AC_CONSOLECOMMAND_ENTRY, INT2(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam)), ToString(CMD_ADDFMESH));
 			break;
 
+		case IDM_MESH_ADDANTIFERROMAGNET:
+			if (pSim) pSim->NewMessage(AC_CONSOLECOMMAND_ENTRY, INT2(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam)), ToString(CMD_ADDAFMESH));
+			break;
+
 		case IDM_MESH_ADDMETAL:
 			if (pSim) pSim->NewMessage(AC_CONSOLECOMMAND_ENTRY, INT2(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam)), ToString(CMD_ADDMETALMESH));
 			break;
@@ -801,6 +814,25 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 					}
 				}
 			}
+			break;
+
+		case IDM_SIM_SERVER:
+		{
+			UINT state = GetMenuState(hMenubar, IDM_SIM_SERVER, MF_BYCOMMAND);
+
+			if (state == MF_CHECKED) {
+
+				CheckMenuItem(hMenubar, IDM_SIM_SERVER, MF_UNCHECKED);
+
+				if (pSim) pSim->NewMessage(AC_CONSOLECOMMAND, INT2(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam)), ToString(CMD_SCRIPTSERVER) + " 0");
+			}
+			else {
+
+				CheckMenuItem(hMenubar, IDM_SIM_SERVER, MF_CHECKED);
+
+				if (pSim) pSim->NewMessage(AC_CONSOLECOMMAND, INT2(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam)), ToString(CMD_SCRIPTSERVER) + " 1");
+			}
+		}
 			break;
 
 		case IDM_SIM_SCHEDULE_HK:
@@ -1158,6 +1190,26 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			if (pSim) pSim->NewMessage(AC_CONSOLECOMMAND_ENTRY, INT2(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam)), ToString(CMD_DP_FITSKYRMION));
 			break;
 
+		case IDM_DP_FITSTT:
+			if (pSim) pSim->NewMessage(AC_CONSOLECOMMAND, INT2(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam)), ToString(CMD_DP_FITSTT));
+			break;
+
+		case IDM_DP_FITSOT:
+			if (pSim) pSim->NewMessage(AC_CONSOLECOMMAND_ENTRY, INT2(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam)), ToString(CMD_DP_FITSOT));
+			break;
+
+		case IDM_DP_FITSOTSTT:
+			if (pSim) pSim->NewMessage(AC_CONSOLECOMMAND_ENTRY, INT2(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam)), ToString(CMD_DP_FITSOTSTT));
+			break;
+
+		case IDM_DP_FITADIA:
+			if (pSim) pSim->NewMessage(AC_CONSOLECOMMAND, INT2(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam)), ToString(CMD_DP_FITADIABATIC));
+			break;
+
+		case IDM_DP_FITNONADIA:
+			if (pSim) pSim->NewMessage(AC_CONSOLECOMMAND, INT2(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam)), ToString(CMD_DP_FITNONADIABATIC));
+			break;
+
 		case IDM_DP_REMOVEOFFSET:
 			if (pSim) pSim->NewMessage(AC_CONSOLECOMMAND_ENTRY, INT2(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam)), ToString(CMD_DP_REMOVEOFFSET));
 			break;
@@ -1181,6 +1233,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 		case IDM_ABOUT_UPDATEMDB:
 			if (pSim) pSim->NewMessage(AC_CONSOLECOMMAND, INT2(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam)), ToString(CMD_UPDATEMDB));
+			break;
+
+		case IDM_ABOUT_CHECKUPDATES:
+			if (pSim) pSim->NewMessage(AC_CONSOLECOMMAND, INT2(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam)), ToString(CMD_CHECKUPDATES));
 			break;
 
 		case IDM_ABOUT_ABOUT:

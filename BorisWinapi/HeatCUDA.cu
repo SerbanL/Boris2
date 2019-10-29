@@ -14,8 +14,8 @@
 __global__ void IterateHeatEquation_Kernel(ManagedMeshCUDA& cuMesh, cuBReal* heatEq_RHS)
 {
 	cuVEC_VC<cuBReal>& Temp = *cuMesh.pTemp; 
+	cuVEC_VC<cuReal3>& E = *cuMesh.pE;
 	cuVEC_VC<cuBReal>& elC = *cuMesh.pelC;
-	cuVEC<cuReal3>& Jc = *cuMesh.pJc;
 
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
 
@@ -35,19 +35,15 @@ __global__ void IterateHeatEquation_Kernel(ManagedMeshCUDA& cuMesh, cuBReal* hea
 		heatEq_RHS[idx] = Temp.delsq_robin(idx, K) * K / cro;
 
 		//add Joule heating if set
-		if (Jc.linear_size()) {
+		if (E.linear_size()) {
 
-			cuINT3 n_t = Temp.n;
+			cuReal3 position = Temp.cellidx_to_position(idx);
 
-			int i = idx % n_t.x;
-			int j = (idx / n_t.x) % n_t.y;
-			int k = idx / (n_t.x * n_t.y);
-
-			cuReal3 Jc_value = Jc.weighted_average(cuINT3(i, j, k), Temp.h);
-			cuBReal elC_value = elC.weighted_average(cuINT3(i, j, k), Temp.h);
+			cuReal3 E_value = E.weighted_average(position, Temp.h);
+			cuBReal elC_value = elC.weighted_average(position, Temp.h);
 
 			//add Joule heating source term
-			heatEq_RHS[idx] += (Jc_value * Jc_value) / (cro * elC_value);
+			heatEq_RHS[idx] += (elC_value * E_value * E_value) / cro;
 		}
 
 		//add heat source contribution if set

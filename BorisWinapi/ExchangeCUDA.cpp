@@ -4,11 +4,11 @@
 
 #ifdef MODULE_EXCHANGE
 
-#include "Mesh_FerromagneticCUDA.h"
+#include "MeshCUDA.h"
 
 #if COMPILECUDA == 1
 
-Exch_6ngbr_NeuCUDA::Exch_6ngbr_NeuCUDA(FMeshCUDA* pMeshCUDA_, Exch_6ngbr_Neu* pExch_6ngbr_Neu)
+Exch_6ngbr_NeuCUDA::Exch_6ngbr_NeuCUDA(MeshCUDA* pMeshCUDA_, Exch_6ngbr_Neu* pExch_6ngbr_Neu)
 	: 
 	ModulesCUDA(),
 	ExchangeBaseCUDA(pMeshCUDA_, pExch_6ngbr_Neu)

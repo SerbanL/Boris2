@@ -40,6 +40,36 @@ PhysQ::PhysQ(VEC<FLT3> *pVEC_, unsigned displayedType_, VEC3REP_ vec3rep_)
 	vec3rep = vec3rep_;
 }
 
+PhysQ::PhysQ(VEC<DBL3> *pVEC_, VEC<DBL3> *pVEC2_, unsigned displayedType_, VEC3REP_ vec3rep_)
+{
+	pVEC = pVEC_;
+	pVEC2 = pVEC2_;
+	vtype = VECTYPE_VEC;
+	vstype = VECSTYPE_DBL3;
+
+	rect = pVEC_->rect;
+	h = pVEC_->h;
+	n = pVEC_->n;
+	displayedType = displayedType_;
+
+	vec3rep = vec3rep_;
+}
+
+PhysQ::PhysQ(VEC<FLT3> *pVEC_, VEC<FLT3> *pVEC2_, unsigned displayedType_, VEC3REP_ vec3rep_)
+{
+	pVEC = pVEC_;
+	pVEC2 = pVEC2_;
+	vtype = VECTYPE_VEC;
+	vstype = VECSTYPE_FLT3;
+
+	rect = pVEC_->rect;
+	h = pVEC_->h;
+	n = pVEC_->n;
+	displayedType = displayedType_;
+
+	vec3rep = vec3rep_;
+}
+
 PhysQ::PhysQ(VEC<double> *pVEC_, unsigned displayedType_)
 {
 	pVEC = pVEC_;
@@ -92,6 +122,36 @@ PhysQ::PhysQ(VEC_VC<FLT3> *pVEC_, unsigned displayedType_, VEC3REP_ vec3rep_)
 	vec3rep = vec3rep_;
 }
 
+PhysQ::PhysQ(VEC_VC<DBL3> *pVEC_, VEC_VC<DBL3> *pVEC2_, unsigned displayedType_, VEC3REP_ vec3rep_)
+{
+	pVEC = pVEC_;
+	pVEC2 = pVEC2_;
+	vtype = VECTYPE_VEC_VC;
+	vstype = VECSTYPE_DBL3;
+
+	rect = pVEC_->rect;
+	h = pVEC_->h;
+	n = pVEC_->n;
+	displayedType = displayedType_;
+
+	vec3rep = vec3rep_;
+}
+
+PhysQ::PhysQ(VEC_VC<FLT3> *pVEC_, VEC_VC<FLT3> *pVEC2_, unsigned displayedType_, VEC3REP_ vec3rep_)
+{
+	pVEC = pVEC_;
+	pVEC2 = pVEC2_;
+	vtype = VECTYPE_VEC_VC;
+	vstype = VECSTYPE_FLT3;
+
+	rect = pVEC_->rect;
+	h = pVEC_->h;
+	n = pVEC_->n;
+	displayedType = displayedType_;
+
+	vec3rep = vec3rep_;
+}
+
 PhysQ::PhysQ(VEC_VC<double> *pVEC_, unsigned displayedType_)
 {
 	pVEC = pVEC_;
@@ -119,6 +179,8 @@ PhysQ::PhysQ(VEC_VC<float> *pVEC_, unsigned displayedType_)
 PhysQ& PhysQ::operator=(const PhysQ& copyThis)
 {
 	pVEC = copyThis.pVEC;
+	pVEC2 = copyThis.pVEC2;
+
 	vtype = copyThis.vtype;
 	vstype = copyThis.vstype;
 

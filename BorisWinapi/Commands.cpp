@@ -318,6 +318,27 @@ void Simulation::HandleCommand(string command_string) {
 		}
 		break;
 
+		case CMD_ADDAFMESH:
+		{
+			string meshName;
+			Rect meshRect;
+
+			//note, mesh name is not allowed to have any spaces - needs to be a single word
+			error = commandSpec.GetParameters(command_fields, meshName, meshRect);
+
+			if (!error) {
+
+				StopSimulation();
+
+				if (!err_hndl.call(&SuperMesh::AddMesh, &SMesh, meshName, MESH_ANTIFERROMAGNETIC, meshRect)) {
+
+					UpdateScreen();
+				}
+			}
+			else if (verbose) PrintCommandUsage(command_name);
+		}
+		break;
+
 		case CMD_ADDMETALMESH:
 		{
 			string meshName;
@@ -1757,6 +1778,8 @@ void Simulation::HandleCommand(string command_string) {
 				simFileName = currentSimulationFile;
 			}
 
+			if (verbose) BD.DisplayConsoleMessage("Saving simulation ... please wait.");
+
 			error = SaveSimulation(simFileName);
 
 			if(verbose && !error) BD.DisplayConsoleMessage("Simulation saved : " + simFileName);
@@ -1770,6 +1793,8 @@ void Simulation::HandleCommand(string command_string) {
 			error = commandSpec.GetParameters(command_fields, simFileName);
 
 			if (!error) {
+
+				if (verbose) BD.DisplayConsoleMessage("Loading simulation ... please wait.");
 
 				if (!err_hndl.call(&Simulation::LoadSimulation, this, simFileName)) {
 
@@ -2331,29 +2356,6 @@ void Simulation::HandleCommand(string command_string) {
 					commSocket.SetSendData(commandSpec.PrepareReturnParameters(
 						DBL2(SMesh.CallModuleMethod(&STransport::GetSConvergenceError),
 							SMesh.CallModuleMethod(&STransport::GetSConvergenceTimeout))));
-			}
-			else error(BERROR_INCORRECTACTION);
-		}
-		break;
-
-		case CMD_SETFIXEDSOR:
-		{
-			if (SMesh.IsSuperMeshModuleSet(MODS_STRANSPORT)) {
-
-				bool fixed_SOR_damping;
-
-				error = commandSpec.GetParameters(command_fields, fixed_SOR_damping);
-
-				if (!error) {
-
-					SMesh.CallModuleMethod(&STransport::SetSORType, fixed_SOR_damping);
-
-					UpdateScreen();
-				}
-				else if (verbose) PrintTransportSolverConfig();
-
-				if (script_client_connected)
-					commSocket.SetSendData(commandSpec.PrepareReturnParameters(SMesh.CallModuleMethod(&STransport::IsFixedSORdamping)));
 			}
 			else error(BERROR_INCORRECTACTION);
 		}
@@ -3177,6 +3179,39 @@ void Simulation::HandleCommand(string command_string) {
 		}
 		break;
 
+		case CMD_SCRIPTSERVER:
+		{
+			bool status;
+
+			error = commandSpec.GetParameters(command_fields, status);
+
+			if (!error) {
+
+				if (status && !is_thread_running(THREAD_NETWORK)) {
+
+					//start window sockets thread to listen for incoming messages
+					infinite_loop_launch(&Simulation::Listen_Incoming_Message, THREAD_NETWORK);
+
+					if (verbose) BD.DisplayConsoleMessage("Script server running.");
+				}
+				else if (!status && is_thread_running(THREAD_NETWORK)) {
+
+					stop_thread(THREAD_NETWORK);
+
+					if (verbose) BD.DisplayConsoleMessage("Script server stopped.");
+				}
+			}
+			else if (verbose) PrintCommandUsage(command_name);
+		}
+		break;
+
+		case CMD_CHECKUPDATES:
+		{
+			//Check with "www.boris-spintronics.uk" if program version is up to date, and get latest update time for materials database
+			single_call_launch(&Simulation::CheckUpdate, THREAD_HANDLEMESSAGE2);
+		}
+		break;
+
 		//---------------- CMD_DP_ commands here
 
 		case CMD_DP_CLEARALL:
@@ -3825,6 +3860,333 @@ void Simulation::HandleCommand(string command_string) {
 		}
 		break;
 
+		case CMD_DP_FITSTT:
+		{
+			Rect rectangle;
+
+			error = commandSpec.GetParameters(command_fields, rectangle);
+			if (error == BERROR_PARAMMISMATCH) { error.reset(); rectangle = SMesh.active_mesh()->GetMeshRect(); }
+
+			if (!error) {
+
+				string meshName = SMesh.GetMeshFocus();
+
+				if (SMesh[meshName]->GetMeshType() == MESH_FERROMAGNETIC && SMesh[meshName]->IsModuleSet(MOD_TRANSPORT) && SMesh.SolveSpinCurrent() && 
+					(IsNZ(SMesh[meshName]->ts_eff.get0()) || IsNZ(SMesh[meshName]->tsi_eff.get0()))) {
+
+					VEC_VC<DBL3>& M = SMesh[meshName]->Get_M();
+					VEC_VC<DBL3>& J = SMesh[meshName]->Get_Jc();
+					VEC<DBL3> T(M.h, M.rect);
+
+					if (IsZ(SMesh[meshName]->ts_eff.get0())) {
+
+						//interfacial spin torque only
+						T.copy_values(SMesh[meshName]->Get_InterfacialSpinTorque());
+
+						if (!T.linear_size()) {
+
+							if (verbose) BD.DisplayConsoleError("ERROR: Tsi not computed.");
+							break;
+						}
+					}
+					else if (IsZ(SMesh[meshName]->tsi_eff.get0())) {
+
+						//bulk spin torque only
+						T.copy_values(SMesh[meshName]->Get_SpinTorque());
+
+						if (!T.linear_size()) {
+
+							if (verbose) BD.DisplayConsoleError("ERROR: Ts not computed.");
+							break;
+						}
+					}
+					else {
+
+						//both bulk and interfacial spin torque
+						T.copy_values(SMesh[meshName]->Get_InterfacialSpinTorque());
+
+						if (!T.linear_size()) {
+
+							if (verbose) BD.DisplayConsoleError("ERROR: Tsi not computed.");
+							break;
+						}
+
+						T.add_values(SMesh[meshName]->Get_SpinTorque());
+					}		
+
+					DBL2 P, beta;
+					double Rsq = 0.0;
+					error = dpArr.fit_stt(T, M, J, rectangle, &P, &beta, &Rsq);
+
+					if (verbose && !error) {
+
+						BD.DisplayConsoleMessage(
+							"P = " + ToString(P.major) + " +/- " + ToString(P.minor) + ", " +
+							"beta = " + ToString(beta.major) + " +/- " + ToString(beta.minor) +
+							", R^2 = " + ToString(Rsq));
+					}
+
+					if (script_client_connected) commSocket.SetSendData(commandSpec.PrepareReturnParameters(P.major, beta.major, P.minor, beta.minor, Rsq));
+				}
+				else if (verbose) BD.DisplayConsoleError("ERROR: Must be ferromagnetic mesh with transport module added and spin transport solver enabled. Must also have either Ts or Tsi computed.");
+			}
+			else if (verbose) PrintCommandUsage(command_name);
+		}
+		break;
+
+		case CMD_DP_FITADIABATIC:
+		case CMD_DP_FITNONADIABATIC:
+		{
+			string meshName = SMesh.GetMeshFocus();
+
+			double abs_error_threshold, Rsq_threshold, T_ratio_threshold;
+			int stencil = 3;
+			bool user_thresholds = true;
+
+			error = commandSpec.GetParameters(command_fields, abs_error_threshold, Rsq_threshold, T_ratio_threshold, stencil);
+			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, abs_error_threshold, Rsq_threshold, T_ratio_threshold);  stencil = 3; }
+			if (error == BERROR_PARAMMISMATCH) { error.reset(); user_thresholds = false; }
+
+			if (SMesh[meshName]->GetMeshType() == MESH_FERROMAGNETIC && SMesh[meshName]->IsModuleSet(MOD_TRANSPORT) && SMesh.SolveSpinCurrent() &&
+				(IsNZ(SMesh[meshName]->ts_eff.get0()) || IsNZ(SMesh[meshName]->tsi_eff.get0()))) {
+
+				VEC_VC<DBL3>& M = SMesh[meshName]->Get_M();
+				VEC_VC<DBL3>& J = SMesh[meshName]->Get_Jc();
+				VEC<DBL3> T(M.h, M.rect);
+
+				if (IsZ(SMesh[meshName]->ts_eff.get0())) {
+
+					//interfacial spin torque only
+					T.copy_values(SMesh[meshName]->Get_InterfacialSpinTorque());
+
+					if (!T.linear_size()) {
+
+						if (verbose) BD.DisplayConsoleError("ERROR: Tsi not computed.");
+						break;
+					}
+				}
+				else if (IsZ(SMesh[meshName]->tsi_eff.get0())) {
+
+					//bulk spin torque only
+					T.copy_values(SMesh[meshName]->Get_SpinTorque());
+
+					if (!T.linear_size()) {
+
+						if (verbose) BD.DisplayConsoleError("ERROR: Ts not computed.");
+						break;
+					}
+				}
+				else {
+
+					//both bulk and interfacial spin torque
+					T.copy_values(SMesh[meshName]->Get_InterfacialSpinTorque());
+
+					if (!T.linear_size()) {
+
+						if (verbose) BD.DisplayConsoleError("ERROR: Tsi not computed.");
+						break;
+					}
+
+					T.add_values(SMesh[meshName]->Get_SpinTorque());
+				}
+
+				if (verbose) BD.DisplayConsoleMessage("Fitting... Please wait.");
+
+				if (user_thresholds) {
+
+					error = dpArr.fit_stt_variation(T, M, J, SMesh[meshName]->displayVEC_SCA, commandSpec.cmdId == CMD_DP_FITADIABATIC, abs_error_threshold, Rsq_threshold, T_ratio_threshold, stencil);
+				}
+				else {
+
+					error = dpArr.fit_stt_variation(T, M, J, SMesh[meshName]->displayVEC_SCA, commandSpec.cmdId == CMD_DP_FITADIABATIC);
+				}
+
+				if (!error) {
+
+					if (commandSpec.cmdId == CMD_DP_FITADIABATIC) {
+
+						if (verbose) BD.DisplayConsoleMessage("Finished fitting P - see results in Cust_S display.");
+					}
+					else {
+
+						if (verbose) BD.DisplayConsoleMessage("Finished fitting beta - see results in Cust_S display.");
+					}
+
+					UpdateScreen();
+				}
+			}
+			else if (verbose) BD.DisplayConsoleError("ERROR: Must be ferromagnetic mesh with transport module added and spin transport solver enabled.");
+		}
+		break;
+
+		case CMD_DP_FITSOT:
+		{
+			Rect rectangle;
+			string hm_mesh;
+
+			error = commandSpec.GetParameters(command_fields, hm_mesh, rectangle);
+			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, hm_mesh); rectangle = SMesh.active_mesh()->GetMeshRect(); }
+
+			if (!error) {
+
+				string meshName = SMesh.GetMeshFocus();
+
+				if (SMesh[meshName]->GetMeshType() == MESH_FERROMAGNETIC && SMesh[meshName]->IsModuleSet(MOD_TRANSPORT) && SMesh.SolveSpinCurrent()
+					&& SMesh.contains(hm_mesh) && SMesh[hm_mesh]->GetMeshType() == MESH_METAL && SMesh[hm_mesh]->IsModuleSet(MOD_TRANSPORT)) {
+
+					VEC<DBL3>& T = SMesh[meshName]->Get_InterfacialSpinTorque();
+					VEC_VC<DBL3>& M = SMesh[meshName]->Get_M();
+					VEC_VC<DBL3>& J = SMesh[hm_mesh]->Get_Jc();
+
+					DBL2 SHAeff, flST;
+					double Rsq = 0.0;
+					error = dpArr.fit_sot(T, M, J, rectangle, &SHAeff, &flST, &Rsq);
+
+					if (verbose && !error) {
+
+						BD.DisplayConsoleMessage(
+							"SHAeff = " + ToString(SHAeff.major) + " +/- " + ToString(SHAeff.minor) + ", " +
+							"flST = " + ToString(flST.major) + " +/- " + ToString(flST.minor) +
+							", R^2 = " + ToString(Rsq));
+					}
+
+					if (script_client_connected) commSocket.SetSendData(commandSpec.PrepareReturnParameters(SHAeff.major, flST.major, SHAeff.minor, flST.minor, Rsq));
+				}
+				else if (verbose) BD.DisplayConsoleError("ERROR: Must be ferromagnetic mesh with transport module added and spin transport solver enabled. hm_mesh must be a metal mesh with transport module added.");
+			}
+			else if (verbose) PrintCommandUsage(command_name);
+		}
+		break;
+
+		case CMD_DP_FITSOTSTT:
+		{
+			Rect rectangle;
+			string hm_mesh;
+
+			error = commandSpec.GetParameters(command_fields, hm_mesh, rectangle);
+			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, hm_mesh); rectangle = SMesh.active_mesh()->GetMeshRect(); }
+
+			if (!error) {
+
+				string meshName = SMesh.GetMeshFocus();
+
+				if (SMesh[meshName]->GetMeshType() == MESH_FERROMAGNETIC && SMesh[meshName]->IsModuleSet(MOD_TRANSPORT) && SMesh.SolveSpinCurrent()
+					&& SMesh.contains(hm_mesh) && SMesh[hm_mesh]->GetMeshType() == MESH_METAL && SMesh[hm_mesh]->IsModuleSet(MOD_TRANSPORT)) {
+
+					VEC_VC<DBL3>& M = SMesh[meshName]->Get_M();
+					VEC_VC<DBL3>& J_hm = SMesh[hm_mesh]->Get_Jc();
+					VEC_VC<DBL3>& J_fm = SMesh[meshName]->Get_Jc();
+					VEC<DBL3> T(M.h, M.rect);
+
+					if (IsZ(SMesh[meshName]->ts_eff.get0())) {
+
+						//interfacial spin torque only
+						T.copy_values(SMesh[meshName]->Get_InterfacialSpinTorque());
+
+						if (!T.linear_size()) {
+
+							if (verbose) BD.DisplayConsoleError("ERROR: Tsi not computed.");
+							break;
+						}
+					}
+					else if (IsZ(SMesh[meshName]->tsi_eff.get0())) {
+
+						//bulk spin torque only
+						T.copy_values(SMesh[meshName]->Get_SpinTorque());
+
+						if (!T.linear_size()) {
+
+							if (verbose) BD.DisplayConsoleError("ERROR: Ts not computed.");
+							break;
+						}
+					}
+					else {
+
+						//both bulk and interfacial spin torque
+						T.copy_values(SMesh[meshName]->Get_InterfacialSpinTorque());
+
+						if (!T.linear_size()) {
+
+							if (verbose) BD.DisplayConsoleError("ERROR: Tsi not computed.");
+							break;
+						}
+
+						T.add_values(SMesh[meshName]->Get_SpinTorque());
+					}
+
+					DBL2 SHAeff, flST, P, beta;
+					double Rsq = 0.0;
+					error = dpArr.fit_sotstt(T, M, J_hm, J_fm, rectangle, &SHAeff, &flST, &P, &beta, &Rsq);
+
+					if (verbose && !error) {
+
+						BD.DisplayConsoleMessage(
+							"SHAeff = " + ToString(SHAeff.major) + " +/- " + ToString(SHAeff.minor) + ", " +
+							"flST = " + ToString(flST.major) + " +/- " + ToString(flST.minor) + ", " +
+							"P = " + ToString(P.major) + " +/- " + ToString(P.minor) + ", " +
+							"beta = " + ToString(beta.major) + " +/- " + ToString(beta.minor) +
+							", R^2 = " + ToString(Rsq));
+					}
+
+					if (script_client_connected) commSocket.SetSendData(commandSpec.PrepareReturnParameters(SHAeff.major, flST.major, P.major, beta.major, SHAeff.minor, flST.minor, P.minor, beta.minor, Rsq));
+				}
+				else if (verbose) BD.DisplayConsoleError("ERROR: Must be ferromagnetic mesh with transport module added and spin transport solver enabled. hm_mesh must be a metal mesh with transport module added.");
+			}
+			else if (verbose) PrintCommandUsage(command_name);
+		}
+		break;
+
+		case CMD_DP_CALCSOT:
+		{
+			string hm_mesh, fm_mesh;
+
+			error = commandSpec.GetParameters(command_fields, hm_mesh, fm_mesh);
+
+			if (!error) {
+
+				if (SMesh.contains(fm_mesh) && SMesh[fm_mesh]->GetMeshType() == MESH_FERROMAGNETIC && 
+					SMesh.contains(hm_mesh) && SMesh[hm_mesh]->GetMeshType() == MESH_METAL) {
+
+					double SHAeff, flST;
+
+					double SHA = SMesh[hm_mesh]->SHA.get0();
+					double d_N = SMesh[hm_mesh]->GetMeshDimensions().z;
+					double lsf_N = SMesh[hm_mesh]->l_sf.get0();
+					double sigma_N = SMesh[hm_mesh]->elecCond.get0();
+					DBL2 G;
+
+					if (SMesh[hm_mesh]->GetOrigin().z > SMesh[fm_mesh]->GetOrigin().z) {
+
+						//hm mesh on top of fm mesh : hm mesh sets Gmix
+						G = SMesh[hm_mesh]->Gmix.get0();
+					}
+					else {
+
+						//fm mesh on top of hm mesh : fm mesh sets Gmix
+						G = SMesh[fm_mesh]->Gmix.get0();
+					}
+
+					//this is G tilda
+					G *= 2 / sigma_N;
+
+					double Nlam = tanh(d_N / lsf_N) / lsf_N;
+
+					SHAeff = SHA * (1.0 - 1.0 / cosh(d_N / lsf_N)) * (Nlam*G.i + G.i*G.i - G.j*G.j) / ((Nlam + G.i)*(Nlam + G.i) + G.j*G.j);
+					flST = (Nlam*G.j + 2 * G.i*G.j) / (G.i*G.i - G.j*G.j + Nlam*G.i);
+
+					if (verbose) {
+
+						BD.DisplayConsoleMessage("SHAeff = " + ToString(SHAeff) + ", " + "flST = " + ToString(flST));
+					}
+
+					if (script_client_connected) commSocket.SetSendData(commandSpec.PrepareReturnParameters(SHAeff, flST));
+				}
+				else if (verbose) BD.DisplayConsoleError("ERROR: Must give metal and ferromagnetic meshes in this order.");
+			}
+			else if (verbose) PrintCommandUsage(command_name);
+		}
+		break;
+
 		case CMD_DP_REPLACEREPEATS:
 		{
 			int dp_in, dp_out;
@@ -3884,6 +4246,20 @@ void Simulation::HandleCommand(string command_string) {
 			if (!error) {
 
 				error = dpArr.adjacent_averaging(dp_in, dp_out, window_size);
+			}
+			else if (verbose) PrintCommandUsage(command_name);
+		}
+		break;
+
+		case CMD_DP_MONOTONIC:
+		{
+			int dp_in_x, dp_in_y, dp_out_x, dp_out_y;
+
+			error = commandSpec.GetParameters(command_fields, dp_in_x, dp_in_y, dp_out_x, dp_out_y);
+
+			if (!error) {
+
+				error = dpArr.extract_monotonic(dp_in_x, dp_in_y, dp_out_x, dp_out_y);
 			}
 			else if (verbose) PrintCommandUsage(command_name);
 		}

@@ -5,10 +5,10 @@
 
 #ifdef MODULE_DEMAG
 
-#include "Mesh_FerromagneticCUDA.h"
-#include "Mesh_Ferromagnetic.h"
+#include "MeshCUDA.h"
+#include "Mesh.h"
 
-DemagCUDA::DemagCUDA(FMeshCUDA* pMeshCUDA_, Demag *pDemag_) :
+DemagCUDA::DemagCUDA(MeshCUDA* pMeshCUDA_, Demag *pDemag_) :
 	ModulesCUDA(), 
 	ConvolutionCUDA<DemagKernelCUDA>(pMeshCUDA_->n, pMeshCUDA_->h)
 {
@@ -35,8 +35,14 @@ BError DemagCUDA::Initialize(void)
 	}
 
 	//make sure to allocate memory for Hdemag if we need it
-	if (pMeshCUDA->EvaluationSpeedup()) Hdemag()->resize(pMeshCUDA->h, pMeshCUDA->meshRect);
-	else Hdemag()->clear();
+	if (pMeshCUDA->EvaluationSpeedup()) {
+
+		Hdemag()->resize(pMeshCUDA->h, pMeshCUDA->meshRect);
+	}
+	else {
+
+		Hdemag()->clear();
+	}
 
 	Hdemag_calculated = false;
 
@@ -81,7 +87,15 @@ void DemagCUDA::UpdateField(void)
 
 				//convolute and get energy value
 				ZeroEnergy();
-				Convolute(pMeshCUDA->M, Hdemag, energy, true, true);
+
+				if (pMeshCUDA->GetMeshType() == MESH_FERROMAGNETIC) {
+
+					Convolute(pMeshCUDA->M, Hdemag, energy, true, true);
+				}
+				else if (pMeshCUDA->GetMeshType() == MESH_ANTIFERROMAGNETIC) {
+
+					Convolute_AveragedInputs(pMeshCUDA->M, pMeshCUDA->M2, Hdemag, energy, true, true);
+				}
 
 				Hdemag_calculated = true;
 			}
@@ -91,7 +105,15 @@ void DemagCUDA::UpdateField(void)
 
 				//convolute and get energy value
 				ZeroEnergy();
-				Convolute(pMeshCUDA->M, pMeshCUDA->Heff, energy, true, false);
+
+				if (pMeshCUDA->GetMeshType() == MESH_FERROMAGNETIC) {
+
+					Convolute(pMeshCUDA->M, pMeshCUDA->Heff, energy, true, false);
+				}
+				else if (pMeshCUDA->GetMeshType() == MESH_ANTIFERROMAGNETIC) {
+
+					Convolute_AveragedInputs_DuplicatedOutputs(pMeshCUDA->M, pMeshCUDA->M2, pMeshCUDA->Heff, pMeshCUDA->Heff2, energy, true, true);
+				}
 
 				//good practice to set this to false
 				Hdemag_calculated = false;
@@ -103,12 +125,24 @@ void DemagCUDA::UpdateField(void)
 
 		//add contribution to Heff
 		pMeshCUDA->Heff()->add(pMeshCUDA->n.dim(), Hdemag);
+
+		if (pMeshCUDA->GetMeshType() == MESH_ANTIFERROMAGNETIC) pMeshCUDA->Heff2()->add(pMeshCUDA->n.dim(), Hdemag);
 	}
 	else {
 
 		if (pMeshCUDA->CurrentTimeStepSolved()) ZeroEnergy();
 
-		Convolute(pMeshCUDA->M, pMeshCUDA->Heff, energy, pMeshCUDA->CurrentTimeStepSolved(), false);
+		//Convolute_AveragedInputs_DuplicatedOutputs
+
+		if (pMeshCUDA->GetMeshType() == MESH_FERROMAGNETIC) {
+
+			Convolute(pMeshCUDA->M, pMeshCUDA->Heff, energy, pMeshCUDA->CurrentTimeStepSolved(), false);
+		}
+
+		else if (pMeshCUDA->GetMeshType() == MESH_ANTIFERROMAGNETIC) {
+
+			Convolute_AveragedInputs_DuplicatedOutputs(pMeshCUDA->M, pMeshCUDA->M2, pMeshCUDA->Heff, pMeshCUDA->Heff2, energy, pMeshCUDA->CurrentTimeStepSolved(), false);
+		}
 	}
 }
 

@@ -14,7 +14,7 @@ SHeatCUDA::SHeatCUDA(SuperMesh* pSMesh_, SHeat* pSHeat_) :
 	pSMesh = pSMesh_;
 	pSHeat = pSHeat_;
 
-	error_on_create = UpdateConfiguration();
+	error_on_create = UpdateConfiguration(UPDATECONFIG_FORCEUPDATE);
 }
 
 SHeatCUDA::~SHeatCUDA()
@@ -31,17 +31,11 @@ BError SHeatCUDA::Initialize(void)
 	//no energy density contribution here
 	ZeroEnergy();
 
-	return error;
-}
+	error = pSHeat->Initialize();
+	if (error) return error;
 
-BError SHeatCUDA::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
-{
-	BError error(CLASS_STR(SHeatCUDA));
-
-	Uninitialize();
-	
 	//check meshes to set heat boundary flags (NF_CMBND flags for Temp)
-	
+
 	//clear everything then rebuild
 	pHeat.clear();
 	CMBNDcontactsCUDA.clear();
@@ -69,7 +63,7 @@ BError SHeatCUDA::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 
 		if (!(*pTemp[idx])()->copyflags_from_cpuvec(*pSHeat->pTemp[idx])) error(BERROR_GPUERROR_CRIT);
 	}
-	
+
 	for (int idx = 0; idx < pSHeat->CMBNDcontacts.size(); idx++) {
 
 		vector<cu_obj<CMBNDInfoCUDA>> mesh_contacts;
@@ -88,6 +82,34 @@ BError SHeatCUDA::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 
 		CMBNDcontactsCUDA.push_back(mesh_contacts);
 		CMBNDcontacts.push_back(mesh_contacts_cpu);
+	}
+
+	initialized = true;
+
+	return error;
+}
+
+BError SHeatCUDA::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
+{
+	BError error(CLASS_STR(SHeatCUDA));
+
+	Uninitialize();
+
+	if (ucfg::check_cfgflags(cfgMessage, UPDATECONFIG_MESHADDED, UPDATECONFIG_MESHDELETED, UPDATECONFIG_MODULEADDED, UPDATECONFIG_MODULEDELETED, UPDATECONFIG_SWITCHCUDASTATE)) {
+
+		//clear everything then rebuild
+		pHeat.clear();
+		pTemp.clear();
+
+		//now build pHeat (and pTemp)
+		for (int idx = 0; idx < pSMesh->size(); idx++) {
+
+			if ((*pSMesh)[idx]->IsModuleSet(MOD_HEAT)) {
+
+				pHeat.push_back(dynamic_cast<HeatCUDA*>((*pSMesh)[idx]->GetCUDAModule(MOD_HEAT)));
+				pTemp.push_back(&(*pSMesh)[idx]->pMeshCUDA->Temp);
+			}
+		}
 	}
 
 	return error;

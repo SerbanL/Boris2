@@ -122,7 +122,7 @@ __device__ void ManagedMeshCUDA::update_parameters_mcoarse_full(int mcell_idx, M
 	}
 }
 
-//UPDATER M CORSENESS - PUBLIC
+//UPDATER M COARSENESS - PUBLIC
 
 //Update parameter values if temperature dependent at the given cell index - M cell index; position not calculated
 template <typename ... MeshParam_List>
@@ -215,7 +215,7 @@ __device__ void ManagedMeshCUDA::update_parameters_ecoarse_full(int ecell_idx, M
 	}
 }
 
-//UPDATER M CORSENESS - PUBLIC
+//UPDATER M COARSENESS - PUBLIC
 
 //Update parameter values if temperature dependent at the given cell index - M cell index; position not calculated
 template <typename ... MeshParam_List>
@@ -306,7 +306,7 @@ __device__ void ManagedMeshCUDA::update_parameters_tcoarse_full(int tcell_idx, M
 	}
 }
 
-//UPDATER M CORSENESS - PUBLIC
+//UPDATER M COARSENESS - PUBLIC
 
 //Update parameter values if temperature dependent at the given cell index - M cell index; position not calculated
 template <typename ... MeshParam_List>

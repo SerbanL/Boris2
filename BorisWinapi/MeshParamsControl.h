@@ -120,7 +120,7 @@ void Mesh::update_parameters_mcoarse_full(int mcell_idx, MatP<PType, SType>& mat
 	}
 }
 
-//UPDATER M CORSENESS - PUBLIC
+//UPDATER M COARSENESS - PUBLIC
 
 //Update parameter values if temperature dependent at the given cell index - M cell index; position not calculated
 template <typename ... MeshParam_List>
@@ -213,7 +213,7 @@ void Mesh::update_parameters_ecoarse_full(int ecell_idx, MatP<PType, SType>& mat
 	}
 }
 
-//UPDATER M CORSENESS - PUBLIC
+//UPDATER E COARSENESS - PUBLIC
 
 //Update parameter values if temperature dependent at the given cell index - M cell index; position not calculated
 template <typename ... MeshParam_List>
@@ -304,7 +304,7 @@ void Mesh::update_parameters_tcoarse_full(int tcell_idx, MatP<PType, SType>& mat
 	}
 }
 
-//UPDATER M CORSENESS - PUBLIC
+//UPDATER T COARSENESS - PUBLIC
 
 //Update parameter values if temperature dependent at the given cell index - M cell index; position not calculated
 template <typename ... MeshParam_List>

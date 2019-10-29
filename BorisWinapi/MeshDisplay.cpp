@@ -21,12 +21,31 @@ PhysQ Mesh::FetchOnScreenPhysicalQuantity(double detail_level)
 		return PhysQ(&M, displayedPhysicalQuantity, (VEC3REP_)vec3rep);
 		break;
 
+	case MESHDISPLAY_MAGNETIZATION2:
+		return PhysQ(&M2, displayedPhysicalQuantity, (VEC3REP_)vec3rep);
+		break;
+
+	case MESHDISPLAY_MAGNETIZATION12:
+		return PhysQ(&M, &M2, displayedPhysicalQuantity, (VEC3REP_)vec3rep);
+		break;
+
 	case MESHDISPLAY_EFFECTIVEFIELD:
 		return PhysQ(&Heff, displayedPhysicalQuantity, (VEC3REP_)vec3rep);
 		break;
 
+	case MESHDISPLAY_EFFECTIVEFIELD2:
+		return PhysQ(&Heff2, displayedPhysicalQuantity, (VEC3REP_)vec3rep);
+		break;
+
+	case MESHDISPLAY_EFFECTIVEFIELD12:
+		return PhysQ(&Heff, &Heff2, displayedPhysicalQuantity, (VEC3REP_)vec3rep);
+		break;
+
 	case MESHDISPLAY_CURRDENSITY:
-		return PhysQ(&Jc, displayedPhysicalQuantity, (VEC3REP_)vec3rep);
+		if (IsModuleSet(MOD_TRANSPORT)) {
+
+			return PhysQ(&reinterpret_cast<Transport*>(pMod(MOD_TRANSPORT))->GetChargeCurrent(), displayedPhysicalQuantity, (VEC3REP_)vec3rep);
+		}
 		break;
 
 	case MESHDISPLAY_VOLTAGE:
@@ -98,6 +117,14 @@ PhysQ Mesh::FetchOnScreenPhysicalQuantity(double detail_level)
 
 			return PhysQ(&reinterpret_cast<Roughness*>(pMod(MOD_ROUGHNESS))->GetRoughness(), displayedPhysicalQuantity);
 		}
+		break;
+
+	case MESHDISPLAY_CUSTOM_VEC:
+		return PhysQ(&displayVEC_VEC, displayedPhysicalQuantity, (VEC3REP_)vec3rep);
+		break;
+
+	case MESHDISPLAY_CUSTOM_SCA:
+		return PhysQ(&displayVEC_SCA, displayedPhysicalQuantity);
 		break;
 	}
 

@@ -6,9 +6,10 @@
 #ifdef MODULE_TRANSPORT
 
 #include "MeshCUDA.h"
-#include "DiffEqCUDA.h"
+#include "DiffEqFMCUDA.h"
+#include "TransportCUDA.h"
 
-BError TransportCUDA_Spin_S_Funcs::set_pointers(MeshCUDA* pMeshCUDA, DifferentialEquationCUDA* pdiffEqCUDA)
+BError TransportCUDA_Spin_S_Funcs::set_pointers(MeshCUDA* pMeshCUDA, DifferentialEquationFMCUDA* pdiffEqCUDA, TransportCUDA* pTransportCUDA)
 {
 	BError error(__FUNCTION__);
 
@@ -22,6 +23,11 @@ BError TransportCUDA_Spin_S_Funcs::set_pointers(MeshCUDA* pMeshCUDA, Differentia
 
 		nullgpuptr(pcuDiffEq);
 	}
+
+	if (set_gpu_value(pPoisson_Spin_V, pTransportCUDA->poisson_Spin_V.get_managed_object()) != cudaSuccess) error(BERROR_GPUERROR_CRIT);
+
+	if (set_gpu_value(pdM_dt, pTransportCUDA->dM_dt.get_managed_object()) != cudaSuccess) error(BERROR_GPUERROR_CRIT);
+	if (set_gpu_value(pdelsq_S_fixed, pTransportCUDA->delsq_S_fixed.get_managed_object()) != cudaSuccess) error(BERROR_GPUERROR_CRIT);
 
 	return error;
 }

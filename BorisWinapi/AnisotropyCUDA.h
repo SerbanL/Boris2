@@ -8,7 +8,7 @@
 #include "BorisCUDALib.h"
 #include "ModulesCUDA.h"
 
-class FMeshCUDA;
+class MeshCUDA;
 
 //--------------- UNIAXIAL
 
@@ -17,11 +17,11 @@ class Anisotropy_UniaxialCUDA :
 {
 
 	//pointer to CUDA version of mesh object holding the effective field module holding this CUDA module
-	FMeshCUDA* pMeshCUDA;
+	MeshCUDA* pMeshCUDA;
 
 public:
 
-	Anisotropy_UniaxialCUDA(FMeshCUDA* pMeshCUDA_);
+	Anisotropy_UniaxialCUDA(MeshCUDA* pMeshCUDA_);
 	~Anisotropy_UniaxialCUDA();
 
 	//-------------------Abstract base class method implementations
@@ -30,7 +30,7 @@ public:
 
 	BError Initialize(void);
 
-	BError UpdateConfiguration(UPDATECONFIG_ cfgMessage = UPDATECONFIG_GENERIC);
+	BError UpdateConfiguration(UPDATECONFIG_ cfgMessage);
 
 	void UpdateField(void);
 

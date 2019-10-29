@@ -165,6 +165,15 @@ public:
 	__host__ void extract_profile_component_y(size_t size, cu_arr<cuBReal>& profile_gpu, cuReal3 start, cuReal3 step);
 	__host__ void extract_profile_component_z(size_t size, cu_arr<cuBReal>& profile_gpu, cuReal3 start, cuReal3 step);
 
+	//extract profile to a cu_arr : extract size points starting at (start + step * 0.5) in the direction step; don't use weighted averaging, just read points at position
+	//e.g. if you have a start and end point with given step, then setting size = |end - start| / |step| means the profile must be extracted between (start + 0.5*step) and (end - 0.5*step). e.g.: |.|.|.|.|
+	__host__ void extract_profilepoints(size_t size, cu_arr<VType>& profile_gpu, cuReal3 start, cuReal3 step);
+
+	//these specifically apply for VType == cuReal3, allowing extraction of the x, y, z components separately
+	__host__ void extract_profilepoints_component_x(size_t size, cu_arr<cuBReal>& profile_gpu, cuReal3 start, cuReal3 step);
+	__host__ void extract_profilepoints_component_y(size_t size, cu_arr<cuBReal>& profile_gpu, cuReal3 start, cuReal3 step);
+	__host__ void extract_profilepoints_component_z(size_t size, cu_arr<cuBReal>& profile_gpu, cuReal3 start, cuReal3 step);
+
 	//--------------------------------------------INDEXING
 
 	//Index using a single combined index (use e.g. when more convenient to use a single for loop to iterate over the quantity's elements)
@@ -308,9 +317,47 @@ public:
 
 	//--------------------------------------------MESH TRANSFER : cuVEC_MeshTransfer.h
 
+	//SINGLE INPUT, SINGLE OUTPUT
+
 	//copy pre-calculated transfer info from cpu memory. return false if not enough memory to copy
 	template <typename cpuVEC>
-	__host__ bool copy_transfer_info(cu_arr<cuVEC<VType>>& mesh_in_arr, cu_arr<cuVEC<VType>>& mesh_out_arr, cpuVEC& cpuVEC) { return transfer.copy_transfer_info(mesh_in_arr, mesh_out_arr, cpuVEC); }
+	__host__ bool copy_transfer_info(cu_arr<cuVEC<VType>>& mesh_in_arr, cu_arr<cuVEC<VType>>& mesh_out_arr, cpuVEC& cpuVEC) 
+	{ 
+		return transfer.copy_transfer_info(mesh_in_arr, mesh_out_arr, cpuVEC); 
+	}
+
+	//MULTIPLE INPUTS, SINGLE OUTPUT
+
+	//copy pre-calculated transfer info from cpu memory. return false if not enough memory to copy
+	//mesh_in and mesh_in2 vectors must have same sizes
+	//All VECs in mesh_in should be non-empty
+	//Some VECs in mesh_in2 allowed to be non-empty (in this case single input is used), but otherwise should have exactly same dimensions as the corresponding VECs in mesh_in
+	template <typename cpuVEC>
+	__host__ bool copy_transfer_info_averagedinputs(cu_arr<cuVEC<VType>>& mesh_in_arr1, cu_arr<cuVEC<VType>>& mesh_in_arr2, cu_arr<cuVEC<VType>>& mesh_out_arr, cpuVEC& cpuVEC) 
+	{ 
+		return transfer.copy_transfer_info_averagedinputs(mesh_in_arr1, mesh_in_arr2, mesh_out_arr, cpuVEC);
+	}
+
+	template <typename cpuVEC>
+	__host__ bool copy_transfer_info_multipliedinputs(cu_arr<cuVEC<VType>>& mesh_in_arr1, cu_arr<cuVEC<cuBReal>>& mesh_in_arr2_real, cu_arr<cuVEC<VType>>& mesh_out_arr, cpuVEC& cpuVEC)
+	{
+		return transfer.copy_transfer_info_multipliedinputs(mesh_in_arr1, mesh_in_arr2_real, mesh_out_arr, cpuVEC);
+	}
+
+	//MULTIPLE INPUTS, MULTIPLE OUTPUT
+
+	//copy pre-calculated transfer info from cpu memory. return false if not enough memory to copy
+	//mesh_in and mesh_in2 vectors must have same sizes; same as mesh_out, mesh_out2
+	//All VECs in mesh_in and mesh_out should be non-empty
+	//Some VECs in mesh_in2 and mesh_out2 allowed to be non-empty (in this single input/output is used), but otherwise should have exactly same dimensions as the corresponding VECs in mesh_in, mesh_out
+	//Also if a VEC in mesh_in2 is non-empty the corresponding VEC in mesh_out2 should also be non-empty.
+	template <typename cpuVEC>
+	__host__ bool copy_transfer_info_averagedinputs_duplicatedoutputs(cu_arr<cuVEC<VType>>& mesh_in_arr1, cu_arr<cuVEC<VType>>& mesh_in_arr2, cu_arr<cuVEC<VType>>& mesh_out_arr1, cu_arr<cuVEC<VType>>& mesh_out_arr2, cpuVEC& cpuVEC)
+	{
+		return transfer.copy_transfer_info_averagedinputs_duplicatedoutputs(mesh_in_arr1, mesh_in_arr2, mesh_out_arr1, mesh_out_arr2, cpuVEC);
+	}
+
+	//SINGLE INPUT, SINGLE OUTPUT
 
 	//do the actual transfer of values to and from this mesh using these - pass in the size of quantity (= get_gpu_value(n).dim()), and transfer_info size to speed up call
 	void transfer_in(size_t size, size_t size_transfer) 
@@ -321,5 +368,36 @@ public:
 	}
 
 	//transfer to output meshes. Pass in size_transfer (transfer_info_size) and number of output meshes if you want to zero the output meshes first (leave this default zero not to clear output meshes first)
-	void transfer_out(size_t size_transfer, int mesh_out_num = 0) { transfer.transfer_out(size_transfer, quantity, mesh_out_num); }
+	void transfer_out(size_t size_transfer, int mesh_out_num = 0) 
+	{ 
+		transfer.transfer_out(size_transfer, quantity, mesh_out_num); 
+	}
+
+	//AVERAGED INPUT
+
+	//do the actual transfer of values to and from this mesh using these - pass in the size of quantity (= get_gpu_value(n).dim()), and transfer_info size to speed up call
+	void transfer_in_averaged(size_t size, size_t size_transfer)
+	{
+		//first zero smesh quantity as we'll be adding in values from meshes in mesh_in
+		set(size, VType());
+		transfer.transfer_in_averaged(size_transfer, quantity);
+	}
+
+	//MULTIPLIED INPUTS
+
+	//do the actual transfer of values to and from this mesh using these - pass in the size of quantity (= get_gpu_value(n).dim()), and transfer_info size to speed up call
+	void transfer_in_multiplied(size_t size, size_t size_transfer)
+	{
+		//first zero smesh quantity as we'll be adding in values from meshes in mesh_in
+		set(size, VType());
+		transfer.transfer_in_multiplied(size_transfer, quantity);
+	}
+
+	//DUPLICATED OUTPUT
+
+	//transfer to output meshes. Pass in size_transfer (transfer_info_size) and number of output meshes if you want to zero the output meshes first (leave this default zero not to clear output meshes first)
+	void transfer_out_duplicated(size_t size_transfer, int mesh_out_num = 0)
+	{
+		transfer.transfer_out_duplicated(size_transfer, quantity, mesh_out_num);
+	}
 };

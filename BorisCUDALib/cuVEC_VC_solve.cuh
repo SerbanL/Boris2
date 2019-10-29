@@ -79,8 +79,6 @@ __device__ void cuVEC_VC<VType>::IterateLaplace_SOR_red(cuBReal damping)
 	//calculate new value only in non-empty cells; also skip if indicated as a composite media boundary condition cell
 	bool calculate_idx = idx < n.dim() && (!(ngbrFlags[idx] & NF_CMBND) && (ngbrFlags[idx] & NF_NOTEMPTY));
 
-	//VType old_value = VType();
-
 	if (calculate_idx) {
 
 		//get maximum cell side
@@ -100,12 +98,18 @@ __device__ void cuVEC_VC<VType>::IterateLaplace_SOR_red(cuBReal damping)
 			total_weight += 2 * w_x;
 			weighted_sum += w_x * (quantity[idx - 1] + quantity[idx + 1]);
 		}
-		else if (ngbrFlags[idx] & NF_DIRICHLETX) {
+		else if (using_extended_flags && (ngbrFlags2[idx] & NF2_DIRICHLETX)) {
 
 			total_weight += 6 * w_x;
 
-			if (ngbrFlags[idx] & NF_DIRICHLETPX) weighted_sum += w_x * (4 * get_dirichlet_value(NF_DIRICHLETPX, idx) + 2 * quantity[idx + 1]);
-			else								 weighted_sum += w_x * (4 * get_dirichlet_value(NF_DIRICHLETNX, idx) + 2 * quantity[idx - 1]);
+			if (ngbrFlags2[idx] & NF2_DIRICHLETPX) {
+
+				weighted_sum += w_x * (4 * get_dirichlet_value(NF2_DIRICHLETPX, idx) + 2 * quantity[idx + 1]);
+			}
+			else {
+
+				weighted_sum += w_x * (4 * get_dirichlet_value(NF2_DIRICHLETNX, idx) + 2 * quantity[idx - 1]);
+			}
 		}
 		else if (ngbrFlags[idx] & NF_NGBRX) {
 
@@ -121,12 +125,18 @@ __device__ void cuVEC_VC<VType>::IterateLaplace_SOR_red(cuBReal damping)
 			total_weight += 2 * w_y;
 			weighted_sum += w_y * (quantity[idx - n.x] + quantity[idx + n.x]);
 		}
-		else if (ngbrFlags[idx] & NF_DIRICHLETY) {
+		else if (using_extended_flags && (ngbrFlags2[idx] & NF2_DIRICHLETY)) {
 
 			total_weight += 6 * w_y;
 
-			if (ngbrFlags[idx] & NF_DIRICHLETPY) weighted_sum += w_y * (4 * get_dirichlet_value(NF_DIRICHLETPY, idx) + 2 * quantity[idx + n.x]);
-			else								 weighted_sum += w_y * (4 * get_dirichlet_value(NF_DIRICHLETNY, idx) + 2 * quantity[idx - n.x]);
+			if (ngbrFlags2[idx] & NF2_DIRICHLETPY) {
+
+				weighted_sum += w_y * (4 * get_dirichlet_value(NF2_DIRICHLETPY, idx) + 2 * quantity[idx + n.x]);
+			}
+			else {
+
+				weighted_sum += w_y * (4 * get_dirichlet_value(NF2_DIRICHLETNY, idx) + 2 * quantity[idx - n.x]);
+			}
 		}
 		else if (ngbrFlags[idx] & NF_NGBRY) {
 
@@ -142,12 +152,18 @@ __device__ void cuVEC_VC<VType>::IterateLaplace_SOR_red(cuBReal damping)
 			total_weight += 2 * w_z;
 			weighted_sum += w_z * (quantity[idx - n.x*n.y] + quantity[idx + n.x*n.y]);
 		}
-		else if (ngbrFlags[idx] & NF_DIRICHLETZ) {
+		else if (using_extended_flags && (ngbrFlags2[idx] & NF2_DIRICHLETZ)) {
 
 			total_weight += 6 * w_z;
 
-			if (ngbrFlags[idx] & NF_DIRICHLETPZ) weighted_sum += w_z * (4 * get_dirichlet_value(NF_DIRICHLETPZ, idx) + 2 * quantity[idx + n.x*n.y]);
-			else								 weighted_sum += w_z * (4 * get_dirichlet_value(NF_DIRICHLETNZ, idx) + 2 * quantity[idx - n.x*n.y]);
+			if (ngbrFlags2[idx] & NF2_DIRICHLETPZ) {
+
+				weighted_sum += w_z * (4 * get_dirichlet_value(NF2_DIRICHLETPZ, idx) + 2 * quantity[idx + n.x*n.y]);
+			}
+			else {
+
+				weighted_sum += w_z * (4 * get_dirichlet_value(NF2_DIRICHLETNZ, idx) + 2 * quantity[idx - n.x*n.y]);
+			}
 		}
 		else if (ngbrFlags[idx] & NF_NGBRZ) {
 
@@ -234,12 +250,18 @@ __device__ void cuVEC_VC<VType>::IterateLaplace_SOR_black(cuBReal damping, cuBRe
 			total_weight += 2 * w_x;
 			weighted_sum += w_x * (quantity[idx - 1] + quantity[idx + 1]);
 		}
-		else if (ngbrFlags[idx] & NF_DIRICHLETX) {
+		else if (using_extended_flags && (ngbrFlags2[idx] & NF2_DIRICHLETX)) {
 
 			total_weight += 6 * w_x;
 
-			if (ngbrFlags[idx] & NF_DIRICHLETPX) weighted_sum += w_x * (4 * get_dirichlet_value(NF_DIRICHLETPX, idx) + 2 * quantity[idx + 1]);
-			else								 weighted_sum += w_x * (4 * get_dirichlet_value(NF_DIRICHLETNX, idx) + 2 * quantity[idx - 1]);
+			if (ngbrFlags2[idx] & NF2_DIRICHLETPX) {
+
+				weighted_sum += w_x * (4 * get_dirichlet_value(NF2_DIRICHLETPX, idx) + 2 * quantity[idx + 1]);
+			}
+			else {
+
+				weighted_sum += w_x * (4 * get_dirichlet_value(NF2_DIRICHLETNX, idx) + 2 * quantity[idx - 1]);
+			}
 		}
 		else if (ngbrFlags[idx] & NF_NGBRX) {
 
@@ -255,12 +277,18 @@ __device__ void cuVEC_VC<VType>::IterateLaplace_SOR_black(cuBReal damping, cuBRe
 			total_weight += 2 * w_y;
 			weighted_sum += w_y * (quantity[idx - n.x] + quantity[idx + n.x]);
 		}
-		else if (ngbrFlags[idx] & NF_DIRICHLETY) {
+		else if (using_extended_flags && (ngbrFlags2[idx] & NF2_DIRICHLETY)) {
 
 			total_weight += 6 * w_y;
 
-			if (ngbrFlags[idx] & NF_DIRICHLETPY) weighted_sum += w_y * (4 * get_dirichlet_value(NF_DIRICHLETPY, idx) + 2 * quantity[idx + n.x]);
-			else								 weighted_sum += w_y * (4 * get_dirichlet_value(NF_DIRICHLETNY, idx) + 2 * quantity[idx - n.x]);
+			if (ngbrFlags2[idx] & NF2_DIRICHLETPY) {
+
+				weighted_sum += w_y * (4 * get_dirichlet_value(NF2_DIRICHLETPY, idx) + 2 * quantity[idx + n.x]);
+			}
+			else {
+
+				weighted_sum += w_y * (4 * get_dirichlet_value(NF2_DIRICHLETNY, idx) + 2 * quantity[idx - n.x]);
+			}
 		}
 		else if (ngbrFlags[idx] & NF_NGBRY) {
 
@@ -276,12 +304,18 @@ __device__ void cuVEC_VC<VType>::IterateLaplace_SOR_black(cuBReal damping, cuBRe
 			total_weight += 2 * w_z;
 			weighted_sum += w_z * (quantity[idx - n.x*n.y] + quantity[idx + n.x*n.y]);
 		}
-		else if (ngbrFlags[idx] & NF_DIRICHLETZ) {
+		else if (using_extended_flags && (ngbrFlags2[idx] & NF2_DIRICHLETZ)) {
 
 			total_weight += 6 * w_z;
 
-			if (ngbrFlags[idx] & NF_DIRICHLETPZ) weighted_sum += w_z * (4 * get_dirichlet_value(NF_DIRICHLETPZ, idx) + 2 * quantity[idx + n.x*n.y]);
-			else								 weighted_sum += w_z * (4 * get_dirichlet_value(NF_DIRICHLETNZ, idx) + 2 * quantity[idx - n.x*n.y]);
+			if (ngbrFlags2[idx] & NF2_DIRICHLETPZ) {
+
+				weighted_sum += w_z * (4 * get_dirichlet_value(NF2_DIRICHLETPZ, idx) + 2 * quantity[idx + n.x*n.y]);
+			}
+			else {
+
+				weighted_sum += w_z * (4 * get_dirichlet_value(NF2_DIRICHLETNZ, idx) + 2 * quantity[idx - n.x*n.y]);
+			}
 		}
 		else if (ngbrFlags[idx] & NF_NGBRZ) {
 
@@ -375,8 +409,6 @@ __device__ void cuVEC_VC<VType>::IteratePoisson_SOR_red(Class_Poisson_RHS& obj, 
 	//calculate new value only in non-empty cells; also skip if indicated as a composite media boundary condition cell
 	bool calculate_idx = idx < n.dim() && (!(ngbrFlags[idx] & NF_CMBND) && (ngbrFlags[idx] & NF_NOTEMPTY));
 
-	//VType old_value = VType();
-
 	if (calculate_idx) {
 
 		//get maximum cell side
@@ -396,12 +428,18 @@ __device__ void cuVEC_VC<VType>::IteratePoisson_SOR_red(Class_Poisson_RHS& obj, 
 			total_weight += 2 * w_x;
 			weighted_sum += w_x * (quantity[idx - 1] + quantity[idx + 1]);
 		}
-		else if (ngbrFlags[idx] & NF_DIRICHLETX) {
+		else if (using_extended_flags && (ngbrFlags2[idx] & NF2_DIRICHLETX)) {
 
 			total_weight += 6 * w_x;
 
-			if (ngbrFlags[idx] & NF_DIRICHLETPX) weighted_sum += w_x * (4 * get_dirichlet_value(NF_DIRICHLETPX, idx) + 2 * quantity[idx + 1]);
-			else								 weighted_sum += w_x * (4 * get_dirichlet_value(NF_DIRICHLETNX, idx) + 2 * quantity[idx - 1]);
+			if (ngbrFlags2[idx] & NF2_DIRICHLETPX) {
+
+				weighted_sum += w_x * (4 * get_dirichlet_value(NF2_DIRICHLETPX, idx) + 2 * quantity[idx + 1]);
+			}
+			else {
+
+				weighted_sum += w_x * (4 * get_dirichlet_value(NF2_DIRICHLETNX, idx) + 2 * quantity[idx - 1]);
+			}
 		}
 		else if (ngbrFlags[idx] & NF_NGBRX) {
 
@@ -417,12 +455,18 @@ __device__ void cuVEC_VC<VType>::IteratePoisson_SOR_red(Class_Poisson_RHS& obj, 
 			total_weight += 2 * w_y;
 			weighted_sum += w_y * (quantity[idx - n.x] + quantity[idx + n.x]);
 		}
-		else if (ngbrFlags[idx] & NF_DIRICHLETY) {
+		else if (using_extended_flags && (ngbrFlags2[idx] & NF2_DIRICHLETY)) {
 
 			total_weight += 6 * w_y;
 
-			if (ngbrFlags[idx] & NF_DIRICHLETPY) weighted_sum += w_y * (4 * get_dirichlet_value(NF_DIRICHLETPY, idx) + 2 * quantity[idx + n.x]);
-			else								 weighted_sum += w_y * (4 * get_dirichlet_value(NF_DIRICHLETNY, idx) + 2 * quantity[idx - n.x]);
+			if (ngbrFlags2[idx] & NF2_DIRICHLETPY) {
+
+				weighted_sum += w_y * (4 * get_dirichlet_value(NF2_DIRICHLETPY, idx) + 2 * quantity[idx + n.x]);
+			}
+			else {
+
+				weighted_sum += w_y * (4 * get_dirichlet_value(NF2_DIRICHLETNY, idx) + 2 * quantity[idx - n.x]);
+			}
 		}
 		else if (ngbrFlags[idx] & NF_NGBRY) {
 
@@ -438,12 +482,18 @@ __device__ void cuVEC_VC<VType>::IteratePoisson_SOR_red(Class_Poisson_RHS& obj, 
 			total_weight += 2 * w_z;
 			weighted_sum += w_z * (quantity[idx - n.x*n.y] + quantity[idx + n.x*n.y]);
 		}
-		else if (ngbrFlags[idx] & NF_DIRICHLETZ) {
+		else if (using_extended_flags && ngbrFlags2[idx] & NF2_DIRICHLETZ) {
 
 			total_weight += 6 * w_z;
 
-			if (ngbrFlags[idx] & NF_DIRICHLETPZ) weighted_sum += w_z * (4 * get_dirichlet_value(NF_DIRICHLETPZ, idx) + 2 * quantity[idx + n.x*n.y]);
-			else								 weighted_sum += w_z * (4 * get_dirichlet_value(NF_DIRICHLETNZ, idx) + 2 * quantity[idx - n.x*n.y]);
+			if (ngbrFlags2[idx] & NF2_DIRICHLETPZ) {
+
+				weighted_sum += w_z * (4 * get_dirichlet_value(NF2_DIRICHLETPZ, idx) + 2 * quantity[idx + n.x*n.y]);
+			}
+			else {
+
+				weighted_sum += w_z * (4 * get_dirichlet_value(NF2_DIRICHLETNZ, idx) + 2 * quantity[idx - n.x*n.y]);
+			}
 		}
 		else if (ngbrFlags[idx] & NF_NGBRZ) {
 
@@ -530,12 +580,18 @@ __device__ void cuVEC_VC<VType>::IteratePoisson_SOR_black(Class_Poisson_RHS& obj
 			total_weight += 2 * w_x;
 			weighted_sum += w_x * (quantity[idx - 1] + quantity[idx + 1]);
 		}
-		else if (ngbrFlags[idx] & NF_DIRICHLETX) {
+		else if (using_extended_flags && (ngbrFlags2[idx] & NF2_DIRICHLETX)) {
 
 			total_weight += 6 * w_x;
 
-			if (ngbrFlags[idx] & NF_DIRICHLETPX) weighted_sum += w_x * (4 * get_dirichlet_value(NF_DIRICHLETPX, idx) + 2 * quantity[idx + 1]);
-			else								 weighted_sum += w_x * (4 * get_dirichlet_value(NF_DIRICHLETNX, idx) + 2 * quantity[idx - 1]);
+			if (ngbrFlags2[idx] & NF2_DIRICHLETPX) {
+
+				weighted_sum += w_x * (4 * get_dirichlet_value(NF2_DIRICHLETPX, idx) + 2 * quantity[idx + 1]);
+			}
+			else {
+
+				weighted_sum += w_x * (4 * get_dirichlet_value(NF2_DIRICHLETNX, idx) + 2 * quantity[idx - 1]);
+			}
 		}
 		else if (ngbrFlags[idx] & NF_NGBRX) {
 
@@ -551,12 +607,18 @@ __device__ void cuVEC_VC<VType>::IteratePoisson_SOR_black(Class_Poisson_RHS& obj
 			total_weight += 2 * w_y;
 			weighted_sum += w_y * (quantity[idx - n.x] + quantity[idx + n.x]);
 		}
-		else if (ngbrFlags[idx] & NF_DIRICHLETY) {
+		else if (using_extended_flags && (ngbrFlags2[idx] & NF2_DIRICHLETY)) {
 
 			total_weight += 6 * w_y;
 
-			if (ngbrFlags[idx] & NF_DIRICHLETPY) weighted_sum += w_y * (4 * get_dirichlet_value(NF_DIRICHLETPY, idx) + 2 * quantity[idx + n.x]);
-			else								 weighted_sum += w_y * (4 * get_dirichlet_value(NF_DIRICHLETNY, idx) + 2 * quantity[idx - n.x]);
+			if (ngbrFlags2[idx] & NF2_DIRICHLETPY) {
+
+				weighted_sum += w_y * (4 * get_dirichlet_value(NF2_DIRICHLETPY, idx) + 2 * quantity[idx + n.x]);
+			}
+			else {
+
+				weighted_sum += w_y * (4 * get_dirichlet_value(NF2_DIRICHLETNY, idx) + 2 * quantity[idx - n.x]);
+			}
 		}
 		else if (ngbrFlags[idx] & NF_NGBRY) {
 
@@ -572,12 +634,18 @@ __device__ void cuVEC_VC<VType>::IteratePoisson_SOR_black(Class_Poisson_RHS& obj
 			total_weight += 2 * w_z;
 			weighted_sum += w_z * (quantity[idx - n.x*n.y] + quantity[idx + n.x*n.y]);
 		}
-		else if (ngbrFlags[idx] & NF_DIRICHLETZ) {
+		else if (using_extended_flags && (ngbrFlags2[idx] & NF2_DIRICHLETZ)) {
 
 			total_weight += 6 * w_z;
 
-			if (ngbrFlags[idx] & NF_DIRICHLETPZ) weighted_sum += w_z * (4 * get_dirichlet_value(NF_DIRICHLETPZ, idx) + 2 * quantity[idx + n.x*n.y]);
-			else								 weighted_sum += w_z * (4 * get_dirichlet_value(NF_DIRICHLETNZ, idx) + 2 * quantity[idx - n.x*n.y]);
+			if (ngbrFlags2[idx] & NF2_DIRICHLETPZ) {
+
+				weighted_sum += w_z * (4 * get_dirichlet_value(NF2_DIRICHLETPZ, idx) + 2 * quantity[idx + n.x*n.y]);
+			}
+			else {
+
+				weighted_sum += w_z * (4 * get_dirichlet_value(NF2_DIRICHLETNZ, idx) + 2 * quantity[idx - n.x*n.y]);
+			}
 		}
 		else if (ngbrFlags[idx] & NF_NGBRZ) {
 
@@ -604,111 +672,6 @@ __host__ void cuVEC_VC<VType>::IteratePoisson_SOR(size_t arr_size, Class_Poisson
 	IteratePoisson_SOR_red_kernel <<< (arr_size / 2 + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (*this, obj, damping);
 
 	IteratePoisson_SOR_black_kernel <<< (arr_size / 2 + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (*this, obj, damping, max_error, max_val);
-}
-
-//---------------------------------------------------- POISSON with adaptive SOR
-
-//-------------------- GLOBAL
-
-template <typename VType>
-__global__ void adjust_aSOR_damping_kernel(cuVEC_VC<VType>& vec, bool start_iters, cuBReal err_limit, cuBReal& error, cuBReal& max_val)
-{
-	int idx = blockIdx.x * blockDim.x + threadIdx.x;
-
-	if(idx == 0) vec.adjust_aSOR_damping(start_iters, err_limit, error, max_val);
-}
-
-//-------------------- GLOBAL RED
-
-template <typename VType, typename Class_Poisson_RHS>
-__global__ void IteratePoisson_aSOR_red_kernel(cuVEC_VC<VType>& vec, Class_Poisson_RHS& obj)
-{
-	vec.IteratePoisson_SOR_red(obj, vec.aSOR_damping);
-}
-
-//-------------------- GLOBAL BLACK
-
-template <typename VType, typename Class_Poisson_RHS>
-__global__ void IteratePoisson_aSOR_black_kernel(cuVEC_VC<VType>& vec, Class_Poisson_RHS& obj, cuBReal& max_error, cuBReal& max_val)
-{
-	vec.IteratePoisson_SOR_black(obj, vec.aSOR_damping, max_error, max_val);
-}
-
-//-------------------- DEVICE
-
-template <typename VType>
-__device__ void cuVEC_VC<VType>::adjust_aSOR_damping(bool start_iters, cuBReal err_limit, cuBReal& error, cuBReal& max_val)
-{
-#define ASOR_SPIKEVAL	0.4F
-#define ASOR_EXPONENT	2.1F
-#define ASOR_BIAS	0.02F
-#define ASOR_NUDGE	1.018F
-#define	ASOR_MINDAMPING	0.2F
-#define	ASOR_MAXDAMPING	2.0F
-
-	cuBReal norm_error = (max_val > 0 ? error / max_val : error);
-
-	//prepare start of a sequence of iterations but don't adjust damping at the start
-	if (start_iters) {
-
-		aSOR_lasterror = norm_error;
-		aSOR_lastgrad = 0.0;
-		return;
-	}
-
-	//adjust damping
-	cuBReal grad_lnerror = (log(norm_error) - log(aSOR_lasterror)) / aSOR_damping;
-
-	//apply full adjustment mechanism only if error is above threshold : below this cannot apply the normal mechanism due to "numerical noise"
-	if (norm_error > err_limit) {
-
-		//positive gradient - should decrease damping
-		if (grad_lnerror >= 0) {
-
-			//avoid spikes : do nothing if simple spike detected
-			if (aSOR_lastgrad <= 0 && grad_lnerror > ASOR_SPIKEVAL) {
-
-				//save parameters from this iteration
-				aSOR_lasterror = norm_error;
-				aSOR_lastgrad = grad_lnerror;
-				return;
-			}
-
-			//decrease damping using formula : larger g results in bigger decrease
-			aSOR_damping *= exp(-grad_lnerror * ASOR_EXPONENT - ASOR_BIAS);
-		}
-		//negative g - might be able to do better by increasing damping
-		else {
-
-			aSOR_damping *= ASOR_NUDGE;
-		}
-	}
-	else {
-
-		//error is below threshold, but don't want to be stuck with a low damping value : give it a gentle increase
-		aSOR_damping *= ASOR_NUDGE;
-	}
-
-	//make sure damping is within bounds
-	if (aSOR_damping < ASOR_MINDAMPING) aSOR_damping = ASOR_MINDAMPING;
-	if (aSOR_damping > ASOR_MAXDAMPING) aSOR_damping = ASOR_MAXDAMPING;
-
-	//save parameters from this iteration
-	aSOR_lasterror = norm_error;
-	aSOR_lastgrad = grad_lnerror;
-}
-
-//-------------------- LAUNCHER
-
-template <typename VType>
-template <typename Class_Poisson_RHS>
-__host__ void cuVEC_VC<VType>::IteratePoisson_aSOR(size_t arr_size, Class_Poisson_RHS& obj, bool start_iters, cuBReal err_limit, cuBReal& max_error, cuBReal& max_val)
-{
-	IteratePoisson_aSOR_red_kernel <<< (arr_size / 2 + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (*this, obj);
-
-	IteratePoisson_aSOR_black_kernel <<< (arr_size / 2 + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (*this, obj, max_error, max_val);
-
-	adjust_aSOR_damping_kernel <<<1, CUDATHREADS >>> (*this, start_iters, err_limit, max_error, max_val);
 }
 
 //---------------------------------------------------- POISSON with non-homogeneous Neumann boundaries
@@ -777,8 +740,6 @@ __device__ void cuVEC_VC<VType>::IteratePoisson_NNeu_SOR_red(Class_Poisson_NNeu&
 	//calculate new value only in non-empty cells; also skip if indicated as a composite media boundary condition cell
 	bool calculate_idx = idx < n.dim() && (!(ngbrFlags[idx] & NF_CMBND) && (ngbrFlags[idx] & NF_NOTEMPTY));
 
-	//VType old_value = VType();
-
 	if (calculate_idx) {
 
 		//get maximum cell side
@@ -798,12 +759,18 @@ __device__ void cuVEC_VC<VType>::IteratePoisson_NNeu_SOR_red(Class_Poisson_NNeu&
 			total_weight += 2 * w_x;
 			weighted_sum += w_x * (quantity[idx - 1] + quantity[idx + 1]);
 		}
-		else if (ngbrFlags[idx] & NF_DIRICHLETX) {
+		else if (using_extended_flags && (ngbrFlags2[idx] & NF2_DIRICHLETX)) {
 
 			total_weight += 6 * w_x;
 
-			if (ngbrFlags[idx] & NF_DIRICHLETPX) weighted_sum += w_x * (4 * get_dirichlet_value(NF_DIRICHLETPX, idx) + 2 * quantity[idx + 1]);
-			else								 weighted_sum += w_x * (4 * get_dirichlet_value(NF_DIRICHLETNX, idx) + 2 * quantity[idx - 1]);
+			if (ngbrFlags2[idx] & NF2_DIRICHLETPX) {
+
+				weighted_sum += w_x * (4 * get_dirichlet_value(NF2_DIRICHLETPX, idx) + 2 * quantity[idx + 1]);
+			}
+			else {
+
+				weighted_sum += w_x * (4 * get_dirichlet_value(NF2_DIRICHLETNX, idx) + 2 * quantity[idx - 1]);
+			}
 		}
 		else if (ngbrFlags[idx] & NF_NGBRX) {
 
@@ -819,12 +786,18 @@ __device__ void cuVEC_VC<VType>::IteratePoisson_NNeu_SOR_red(Class_Poisson_NNeu&
 			total_weight += 2 * w_y;
 			weighted_sum += w_y * (quantity[idx - n.x] + quantity[idx + n.x]);
 		}
-		else if (ngbrFlags[idx] & NF_DIRICHLETY) {
+		else if (using_extended_flags && (ngbrFlags2[idx] & NF2_DIRICHLETY)) {
 
 			total_weight += 6 * w_y;
 
-			if (ngbrFlags[idx] & NF_DIRICHLETPY) weighted_sum += w_y * (4 * get_dirichlet_value(NF_DIRICHLETPY, idx) + 2 * quantity[idx + n.x]);
-			else								 weighted_sum += w_y * (4 * get_dirichlet_value(NF_DIRICHLETNY, idx) + 2 * quantity[idx - n.x]);
+			if (ngbrFlags2[idx] & NF2_DIRICHLETPY) {
+
+				weighted_sum += w_y * (4 * get_dirichlet_value(NF2_DIRICHLETPY, idx) + 2 * quantity[idx + n.x]);
+			}
+			else {
+
+				weighted_sum += w_y * (4 * get_dirichlet_value(NF2_DIRICHLETNY, idx) + 2 * quantity[idx - n.x]);
+			}
 		}
 		else if (ngbrFlags[idx] & NF_NGBRY) {
 
@@ -840,12 +813,18 @@ __device__ void cuVEC_VC<VType>::IteratePoisson_NNeu_SOR_red(Class_Poisson_NNeu&
 			total_weight += 2 * w_z;
 			weighted_sum += w_z * (quantity[idx - n.x*n.y] + quantity[idx + n.x*n.y]);
 		}
-		else if (ngbrFlags[idx] & NF_DIRICHLETZ) {
+		else if (using_extended_flags && (ngbrFlags2[idx] & NF2_DIRICHLETZ)) {
 
 			total_weight += 6 * w_z;
 
-			if (ngbrFlags[idx] & NF_DIRICHLETPZ) weighted_sum += w_z * (4 * get_dirichlet_value(NF_DIRICHLETPZ, idx) + 2 * quantity[idx + n.x*n.y]);
-			else								 weighted_sum += w_z * (4 * get_dirichlet_value(NF_DIRICHLETNZ, idx) + 2 * quantity[idx - n.x*n.y]);
+			if (ngbrFlags2[idx] & NF2_DIRICHLETPZ) {
+
+				weighted_sum += w_z * (4 * get_dirichlet_value(NF2_DIRICHLETPZ, idx) + 2 * quantity[idx + n.x*n.y]);
+			}
+			else {
+
+				weighted_sum += w_z * (4 * get_dirichlet_value(NF2_DIRICHLETNZ, idx) + 2 * quantity[idx - n.x*n.y]);
+			}
 		}
 		else if (ngbrFlags[idx] & NF_NGBRZ) {
 
@@ -932,12 +911,18 @@ __device__ void cuVEC_VC<VType>::IteratePoisson_NNeu_SOR_black(Class_Poisson_NNe
 			total_weight += 2 * w_x;
 			weighted_sum += w_x * (quantity[idx - 1] + quantity[idx + 1]);
 		}
-		else if (ngbrFlags[idx] & NF_DIRICHLETX) {
+		else if (using_extended_flags && (ngbrFlags2[idx] & NF2_DIRICHLETX)) {
 
 			total_weight += 6 * w_x;
 
-			if (ngbrFlags[idx] & NF_DIRICHLETPX) weighted_sum += w_x * (4 * get_dirichlet_value(NF_DIRICHLETPX, idx) + 2 * quantity[idx + 1]);
-			else								 weighted_sum += w_x * (4 * get_dirichlet_value(NF_DIRICHLETNX, idx) + 2 * quantity[idx - 1]);
+			if (ngbrFlags2[idx] & NF2_DIRICHLETPX) {
+
+				weighted_sum += w_x * (4 * get_dirichlet_value(NF2_DIRICHLETPX, idx) + 2 * quantity[idx + 1]);
+			}
+			else {
+
+				weighted_sum += w_x * (4 * get_dirichlet_value(NF2_DIRICHLETNX, idx) + 2 * quantity[idx - 1]);
+			}
 		}
 		else if (ngbrFlags[idx] & NF_NGBRX) {
 
@@ -953,12 +938,18 @@ __device__ void cuVEC_VC<VType>::IteratePoisson_NNeu_SOR_black(Class_Poisson_NNe
 			total_weight += 2 * w_y;
 			weighted_sum += w_y * (quantity[idx - n.x] + quantity[idx + n.x]);
 		}
-		else if (ngbrFlags[idx] & NF_DIRICHLETY) {
+		else if (using_extended_flags && (ngbrFlags2[idx] & NF2_DIRICHLETY)) {
 
 			total_weight += 6 * w_y;
 
-			if (ngbrFlags[idx] & NF_DIRICHLETPY) weighted_sum += w_y * (4 * get_dirichlet_value(NF_DIRICHLETPY, idx) + 2 * quantity[idx + n.x]);
-			else								 weighted_sum += w_y * (4 * get_dirichlet_value(NF_DIRICHLETNY, idx) + 2 * quantity[idx - n.x]);
+			if (ngbrFlags2[idx] & NF2_DIRICHLETPY) {
+
+				weighted_sum += w_y * (4 * get_dirichlet_value(NF2_DIRICHLETPY, idx) + 2 * quantity[idx + n.x]);
+			}
+			else {
+
+				weighted_sum += w_y * (4 * get_dirichlet_value(NF2_DIRICHLETNY, idx) + 2 * quantity[idx - n.x]);
+			}
 		}
 		else if (ngbrFlags[idx] & NF_NGBRY) {
 
@@ -974,12 +965,18 @@ __device__ void cuVEC_VC<VType>::IteratePoisson_NNeu_SOR_black(Class_Poisson_NNe
 			total_weight += 2 * w_z;
 			weighted_sum += w_z * (quantity[idx - n.x*n.y] + quantity[idx + n.x*n.y]);
 		}
-		else if (ngbrFlags[idx] & NF_DIRICHLETZ) {
+		else if (using_extended_flags && (ngbrFlags2[idx] & NF2_DIRICHLETZ)) {
 
 			total_weight += 6 * w_z;
 
-			if (ngbrFlags[idx] & NF_DIRICHLETPZ) weighted_sum += w_z * (4 * get_dirichlet_value(NF_DIRICHLETPZ, idx) + 2 * quantity[idx + n.x*n.y]);
-			else								 weighted_sum += w_z * (4 * get_dirichlet_value(NF_DIRICHLETNZ, idx) + 2 * quantity[idx - n.x*n.y]);
+			if (ngbrFlags2[idx] & NF2_DIRICHLETPZ) {
+
+				weighted_sum += w_z * (4 * get_dirichlet_value(NF2_DIRICHLETPZ, idx) + 2 * quantity[idx + n.x*n.y]);
+			}
+			else {
+				
+				weighted_sum += w_z * (4 * get_dirichlet_value(NF2_DIRICHLETNZ, idx) + 2 * quantity[idx - n.x*n.y]);
+			}
 		}
 		else if (ngbrFlags[idx] & NF_NGBRZ) {
 
@@ -1006,35 +1003,4 @@ __host__ void cuVEC_VC<VType>::IteratePoisson_NNeu_SOR(size_t arr_size, Class_Po
 	IteratePoisson_NNeu_SOR_red_kernel <<< (arr_size / 2 + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (*this, obj, damping);
 
 	IteratePoisson_NNeu_SOR_black_kernel <<< (arr_size / 2 + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (*this, obj, damping, max_error, max_val);
-}
-
-//---------------------------------------------------- POISSON with non-homogeneous Neumann boundaries and adaptive SOR algorithm
-
-//-------------------- GLOBAL RED
-
-template <typename VType, typename Class_Poisson_NNeu>
-__global__ void IteratePoisson_NNeu_aSOR_red_kernel(cuVEC_VC<VType>& vec, Class_Poisson_NNeu& obj)
-{
-	vec.IteratePoisson_NNeu_SOR_red(obj, vec.aSOR_damping);
-}
-
-//-------------------- GLOBAL BLACK
-
-template <typename VType, typename Class_Poisson_NNeu>
-__global__ void IteratePoisson_NNeu_aSOR_black_kernel(cuVEC_VC<VType>& vec, Class_Poisson_NNeu& obj, cuBReal& max_error, cuBReal& max_val)
-{
-	vec.IteratePoisson_NNeu_SOR_black(obj, vec.aSOR_damping, max_error, max_val);
-}
-
-//-------------------- LAUNCHER
-
-template <typename VType>
-template <typename Class_Poisson_NNeu>
-__host__ void cuVEC_VC<VType>::IteratePoisson_NNeu_aSOR(size_t arr_size, Class_Poisson_NNeu& obj, bool start_iters, cuBReal err_limit, cuBReal& max_error, cuBReal& max_val)
-{
-	IteratePoisson_NNeu_aSOR_red_kernel <<< (arr_size / 2 + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (*this, obj);
-
-	IteratePoisson_NNeu_aSOR_black_kernel <<< (arr_size / 2 + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (*this, obj, max_error, max_val);
-
-	adjust_aSOR_damping_kernel <<<1, CUDATHREADS >>> (*this, start_iters, err_limit, max_error, max_val);
 }

@@ -110,6 +110,8 @@ VType CGSolve<VType>::A_p_Laplace_diri(int idx)
 
 	if (!(pV->ngbrFlags[idx] & NF_NOTEMPTY)) return VType();
 
+	bool using_extended_flags = pV->ngbrFlags2.size();
+
 	//x axis
 	if ((pV->ngbrFlags[idx] & NF_BOTHX) == NF_BOTHX) {
 
@@ -123,9 +125,9 @@ VType CGSolve<VType>::A_p_Laplace_diri(int idx)
 	else if (pV->ngbrFlags[idx] & NF_NGBRX) {
 
 		//only one neighbor available. Does it use a fixed boundary value (Dirichlet)?
-		if (pV->ngbrFlags[idx] & NF_DIRICHLETX) {
+		if (using_extended_flags && (pV->ngbrFlags2[idx] & NF2_DIRICHLETX)) {
 
-			if (pV->ngbrFlags[idx] & NF_DIRICHLETPX) diff_x = (2 * p[idx + 1] - 6 * p[idx]) / (h.x*h.x);
+			if (pV->ngbrFlags2[idx] & NF2_DIRICHLETPX) diff_x = (2 * p[idx + 1] - 6 * p[idx]) / (h.x*h.x);
 			else									 diff_x = (2 * p[idx - 1] - 6 * p[idx]) / (h.x*h.x);
 		}
 		//stencil at surface for homogeneous Neumann boundary condition - correct, do not multiply by 2! 
@@ -145,9 +147,9 @@ VType CGSolve<VType>::A_p_Laplace_diri(int idx)
 	}
 	else if (pV->ngbrFlags[idx] & NF_NGBRY) {
 
-		if (pV->ngbrFlags[idx] & NF_DIRICHLETY) {
+		if (using_extended_flags && (pV->ngbrFlags2[idx] & NF2_DIRICHLETY)) {
 
-			if (pV->ngbrFlags[idx] & NF_DIRICHLETPY) diff_y = (2 * p[idx + n.x] - 6 * p[idx]) / (h.y*h.y);
+			if (pV->ngbrFlags2[idx] & NF2_DIRICHLETPY) diff_y = (2 * p[idx + n.x] - 6 * p[idx]) / (h.y*h.y);
 			else									 diff_y = (2 * p[idx - n.x] - 6 * p[idx]) / (h.y*h.y);
 		}
 		else if (pV->ngbrFlags[idx] & NF_NPY) diff_y = (p[idx + n.x] - p[idx]) / (h.y*h.y);
@@ -165,9 +167,9 @@ VType CGSolve<VType>::A_p_Laplace_diri(int idx)
 	}
 	else if (pV->ngbrFlags[idx] & NF_NGBRZ) {
 
-		if (pV->ngbrFlags[idx] & NF_DIRICHLETZ) {
+		if (using_extended_flags && (pV->ngbrFlags2[idx] & NF2_DIRICHLETZ)) {
 
-			if (pV->ngbrFlags[idx] & NF_DIRICHLETPZ) diff_z = (2 * p[idx + n.x*n.y] - 6 * p[idx]) / (h.z*h.z);
+			if (pV->ngbrFlags2[idx] & NF2_DIRICHLETPZ) diff_z = (2 * p[idx + n.x*n.y] - 6 * p[idx]) / (h.z*h.z);
 			else									 diff_z = (2 * p[idx - n.x*n.y] - 6 * p[idx]) / (h.z*h.z);
 		}
 		else if (pV->ngbrFlags[idx] & NF_NPZ) diff_z = (p[idx + n.x*n.y] - p[idx]) / (h.z*h.z);
@@ -187,6 +189,8 @@ VType CGSolve<VType>::b_minus_A(int idx)
 
 	if (!(pV->ngbrFlags[idx] & NF_NOTEMPTY)) return VType();
 
+	bool using_extended_flags = pV->ngbrFlags2.size();
+
 	//x axis
 	if ((pV->ngbrFlags[idx] & NF_BOTHX) == NF_BOTHX) {
 		//both neighbors available so must be an inner point along this direction
@@ -199,10 +203,10 @@ VType CGSolve<VType>::b_minus_A(int idx)
 	else if (pV->ngbrFlags[idx] & NF_NGBRX) {
 
 		//only one neighbor available. Does it use a fixed boundary value (Dirichlet)?
-		if (pV->ngbrFlags[idx] & NF_DIRICHLETX) {
+		if (using_extended_flags && (pV->ngbrFlags2[idx] & NF2_DIRICHLETX)) {
 
-			if (pV->ngbrFlags[idx] & NF_DIRICHLETPX) diff_x = (2 * pV->quantity[idx + 1] + 4 * pV->get_dirichlet_value(NF_DIRICHLETPX, idx) - 6 * pV->quantity[idx]);
-			else									 diff_x = (2 * pV->quantity[idx - 1] + 4 * pV->get_dirichlet_value(NF_DIRICHLETNX, idx) - 6 * pV->quantity[idx]);
+			if (pV->ngbrFlags2[idx] & NF2_DIRICHLETPX) diff_x = (2 * pV->quantity[idx + 1] + 4 * pV->get_dirichlet_value(NF2_DIRICHLETPX, idx) - 6 * pV->quantity[idx]);
+			else									 diff_x = (2 * pV->quantity[idx - 1] + 4 * pV->get_dirichlet_value(NF2_DIRICHLETNX, idx) - 6 * pV->quantity[idx]);
 		}
 		//stencil at surface for homogeneous Neumann boundary condition - correct, do not multiply by 2! 
 		//See conservation law approach derivation for heat equation (integrate then use mid-point rule approximations) for cell-centered grids.
@@ -223,10 +227,10 @@ VType CGSolve<VType>::b_minus_A(int idx)
 	}
 	else if (pV->ngbrFlags[idx] & NF_NGBRY) {
 
-		if (pV->ngbrFlags[idx] & NF_DIRICHLETY) {
+		if (using_extended_flags && (pV->ngbrFlags2[idx] & NF2_DIRICHLETY)) {
 
-			if (pV->ngbrFlags[idx] & NF_DIRICHLETPY) diff_y = (2 * pV->quantity[idx + n.x] + 4 * pV->get_dirichlet_value(NF_DIRICHLETPY, idx) - 6 * pV->quantity[idx]);
-			else									 diff_y = (2 * pV->quantity[idx - n.x] + 4 * pV->get_dirichlet_value(NF_DIRICHLETNY, idx) - 6 * pV->quantity[idx]);
+			if (pV->ngbrFlags2[idx] & NF2_DIRICHLETPY) diff_y = (2 * pV->quantity[idx + n.x] + 4 * pV->get_dirichlet_value(NF2_DIRICHLETPY, idx) - 6 * pV->quantity[idx]);
+			else									 diff_y = (2 * pV->quantity[idx - n.x] + 4 * pV->get_dirichlet_value(NF2_DIRICHLETNY, idx) - 6 * pV->quantity[idx]);
 		}
 		else if (pV->ngbrFlags[idx] & NF_NPY) diff_y = (pV->quantity[idx + n.x] - pV->quantity[idx]);
 		else								  diff_y = (pV->quantity[idx - n.x] - pV->quantity[idx]);
@@ -245,10 +249,10 @@ VType CGSolve<VType>::b_minus_A(int idx)
 	}
 	else if (pV->ngbrFlags[idx] & NF_NGBRZ) {
 
-		if (pV->ngbrFlags[idx] & NF_DIRICHLETZ) {
+		if (using_extended_flags && (pV->ngbrFlags2[idx] & NF2_DIRICHLETZ)) {
 
-			if (pV->ngbrFlags[idx] & NF_DIRICHLETPZ) diff_z = (2 * pV->quantity[idx + n.x*n.y] + 4 * pV->get_dirichlet_value(NF_DIRICHLETPZ, idx) - 6 * pV->quantity[idx]);
-			else									 diff_z = (2 * pV->quantity[idx - n.x*n.y] + 4 * pV->get_dirichlet_value(NF_DIRICHLETNZ, idx) - 6 * pV->quantity[idx]);
+			if (pV->ngbrFlags2[idx] & NF2_DIRICHLETPZ) diff_z = (2 * pV->quantity[idx + n.x*n.y] + 4 * pV->get_dirichlet_value(NF2_DIRICHLETPZ, idx) - 6 * pV->quantity[idx]);
+			else									 diff_z = (2 * pV->quantity[idx - n.x*n.y] + 4 * pV->get_dirichlet_value(NF2_DIRICHLETNZ, idx) - 6 * pV->quantity[idx]);
 		}
 		else if (pV->ngbrFlags[idx] & NF_NPZ) diff_z = (pV->quantity[idx + n.x*n.y] - pV->quantity[idx]);
 		else								  diff_z = (pV->quantity[idx - n.x*n.y] - pV->quantity[idx]);

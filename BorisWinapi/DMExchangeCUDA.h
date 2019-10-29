@@ -9,7 +9,7 @@
 #include "ModulesCUDA.h"
 #include "ExchangeBaseCUDA.h"
 
-class FMeshCUDA;
+class MeshCUDA;
 class DMExchange;
 
 class DMExchangeCUDA :
@@ -18,11 +18,11 @@ class DMExchangeCUDA :
 {
 
 	//pointer to CUDA version of mesh object holding the effective field module holding this CUDA module
-	FMeshCUDA* pMeshCUDA;
+	MeshCUDA* pMeshCUDA;
 
 public:
 
-	DMExchangeCUDA(FMeshCUDA* pMeshCUDA_, DMExchange* pDMExchange);
+	DMExchangeCUDA(MeshCUDA* pMeshCUDA_, DMExchange* pDMExchange);
 	~DMExchangeCUDA();
 
 	//-------------------Abstract base class method implementations
@@ -31,12 +31,14 @@ public:
 
 	BError Initialize(void);
 
-	BError UpdateConfiguration(UPDATECONFIG_ cfgMessage = UPDATECONFIG_GENERIC);
+	BError UpdateConfiguration(UPDATECONFIG_ cfgMessage);
 
 	void UpdateField(void);
 
 	//-------------------
 
+	//calculate exchange field at coupled cells in this mesh; accumulate energy density contribution in energy
+	void CalculateExchangeCoupling(cu_obj<cuBReal>& energy);
 };
 
 #else

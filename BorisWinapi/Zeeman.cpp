@@ -4,6 +4,7 @@
 #ifdef MODULE_ZEEMAN
 
 #include "Mesh_Ferromagnetic.h"
+#include "Mesh_AntiFerromagnetic.h"
 
 #if COMPILECUDA == 1
 #include "ZeemanCUDA.h"
@@ -13,11 +14,11 @@ Zeeman::Zeeman(Mesh *pMesh_) :
 	Modules(),
 	ProgramStateNames(this, { VINFO(Ha) }, {})
 {
-	pMesh = dynamic_cast<FMesh*>(pMesh_);
+	pMesh = pMesh_;
 
 	Ha = DBL3(0,0,0);
 
-	error_on_create = UpdateConfiguration();
+	error_on_create = UpdateConfiguration(UPDATECONFIG_FORCEUPDATE);
 
 	//-------------------------- Is CUDA currently enabled?
 
@@ -54,7 +55,7 @@ BError Zeeman::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 #if COMPILECUDA == 1
 	if (pModuleCUDA) {
 
-		if (!error) error = pModuleCUDA->UpdateConfiguration();
+		if (!error) error = pModuleCUDA->UpdateConfiguration(cfgMessage);
 	}
 #endif
 
@@ -71,7 +72,7 @@ BError Zeeman::MakeCUDAModule(void)
 
 			//Note : it is posible pMeshCUDA has not been allocated yet, but this module has been created whilst cuda is switched on. This will happen when a new mesh is being made which adds this module by default.
 			//In this case, after the mesh has been fully made, it will call SwitchCUDAState on the mesh, which in turn will call this SwitchCUDAState method; then pMeshCUDA will not be nullptr and we can make the cuda module version
-			pModuleCUDA = new ZeemanCUDA(dynamic_cast<FMeshCUDA*>(pMesh->pMeshCUDA), this);
+			pModuleCUDA = new ZeemanCUDA(pMesh->pMeshCUDA, this);
 			error = pModuleCUDA->Error_On_Create();
 		}
 
@@ -90,18 +91,35 @@ double Zeeman::UpdateField(void)
 
 	double energy = 0;
 	
+	if (pMesh->GetMeshType() == MESH_FERROMAGNETIC) {
+
 #pragma omp parallel for reduction(+:energy)
-	for(int idx = 0; idx < pMesh->n.dim(); idx++) {
+		for (int idx = 0; idx < pMesh->n.dim(); idx++) {
 
-		double cHA = pMesh->cHA;
-		pMesh->update_parameters_mcoarse(idx, pMesh->cHA, cHA);
+			double cHA = pMesh->cHA;
+			pMesh->update_parameters_mcoarse(idx, pMesh->cHA, cHA);
 
-		pMesh->Heff[idx] += (cHA * Ha);
+			pMesh->Heff[idx] += (cHA * Ha);
 
-		energy += pMesh->M[idx]*(cHA * Ha);
+			energy += pMesh->M[idx] * (cHA * Ha);
+		}
+	}
+	else if (pMesh->GetMeshType() == MESH_ANTIFERROMAGNETIC) {
+
+#pragma omp parallel for reduction(+:energy)
+		for (int idx = 0; idx < pMesh->n.dim(); idx++) {
+
+			double cHA = pMesh->cHA;
+			pMesh->update_parameters_mcoarse(idx, pMesh->cHA, cHA);
+
+			pMesh->Heff[idx] += (cHA * Ha);
+			pMesh->Heff2[idx] += (cHA * Ha);
+
+			energy += (pMesh->M[idx] + pMesh->M2[idx]) * (cHA * Ha) / 2;
+		}
 	}
 
-	if(pMesh->M.get_nonempty_cells()) energy *= -MU0 / pMesh->M.get_nonempty_cells();
+	if (pMesh->M.get_nonempty_cells()) energy *= -MU0 / pMesh->M.get_nonempty_cells();
 	else energy = 0;
 
 	this->energy = energy;

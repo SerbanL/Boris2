@@ -62,18 +62,20 @@ protected:
 	//this allows setting different shapes for these quantities in the same mesh
 	static bool shape_change_individual;
 
+	//free and total memory for gpu and cpu - update these as memory is allocated / freed so we can keep track of it in console interactive objects without having to interrogate at every refresh
+	static size_t gpuMemFree_MB;
+	static size_t gpuMemTotal_MB;
+	static size_t cpuMemFree_MB;
+	static size_t cpuMemTotal_MB;
+
+public:
+
 	//if set to true, the transport solver is iterated only at the end of a step or stage
 	//this is useful for static problems, e.g. MR loops, where it's more efficient to have the magnetization state solved separately.
 	static bool static_transport_solver;
 
 	//enable all cuda computations?
 	static bool cudaEnabled;
-
-	//free and total memory for gpu and cpu - update these as memory is allocated / freed so we can keep track of it in console interactive objects without having to interrogate at every refresh
-	static size_t gpuMemFree_MB;
-	static size_t gpuMemTotal_MB;
-	static size_t cpuMemFree_MB;
-	static size_t cpuMemTotal_MB;
 
 public:
 

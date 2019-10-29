@@ -21,21 +21,28 @@ public:
 
 	//Relative electron gyromagnetic ratio
 	MatPCUDA<cuBReal, cuBReal>* pgrel;
+	MatPCUDA<cuReal2, cuBReal>* pgrel_AFM;
 
 	//Gilbert damping
 	MatPCUDA<cuBReal, cuBReal>* palpha;
+	MatPCUDA<cuReal2, cuBReal>* palpha_AFM;
 
 	//Saturation magnetisation (A/m)
 	MatPCUDA<cuBReal, cuBReal>* pMs;
+	MatPCUDA<cuReal2, cuBReal>* pMs_AFM;
 
 	//in-plane demagnetizing factors (used for Demag_N module)
 	MatPCUDA<cuReal2, cuBReal>* pNxy;
 
-	//Exchange stifness (J/m)
+	//Exchange stiffness (J/m)
 	MatPCUDA<cuBReal, cuBReal>* pA;
+	MatPCUDA<cuReal2, cuBReal>* pA_AFM;
+	//AFM coupling (J/m^3)
+	MatPCUDA<cuBReal, cuBReal>* pA12;
 
 	//Dzyaloshinskii-Moriya exchange constant (J/m2)
 	MatPCUDA<cuBReal, cuBReal>* pD;
+	MatPCUDA<cuReal2, cuBReal>* pD_AFM;
 
 	//bilinear surface exchange coupling (J/m^2) : J1, bottom and top layer values
 	//biquadratic surface exchange coupling (J/m^2) : J2, bottom and top layer values
@@ -70,6 +77,7 @@ public:
 	MatPCUDA<cuBReal, cuBReal>* pbeta;
 
 	MatPCUDA<cuBReal, cuBReal>* pDe;
+	MatPCUDA<cuBReal, cuBReal>* pn_density;
 	MatPCUDA<cuBReal, cuBReal>* pbetaD;
 
 	MatPCUDA<cuBReal, cuBReal>* pSHA;
@@ -87,6 +95,8 @@ public:
 	MatPCUDA<cuBReal, cuBReal>* ptsi_eff;
 
 	MatPCUDA<cuBReal, cuBReal>* ppump_eff;
+	MatPCUDA<cuBReal, cuBReal>* pcpump_eff;
+	MatPCUDA<cuBReal, cuBReal>* pthe_eff;
 
 	//the mesh base temperature (K)
 	cuBReal* pbase_temperature;
@@ -113,9 +123,11 @@ public:
 
 	//Magnetization
 	cuVEC_VC<cuReal3>* pM;
+	cuVEC_VC<cuReal3>* pM2;
 
 	//effective field - sum total field of all the added modules
 	cuVEC<cuReal3>* pHeff;
+	cuVEC<cuReal3>* pHeff2;
 
 	//-----Electric conduction properties (Electron charge and spin Transport)
 
@@ -125,8 +137,8 @@ public:
 	//electrical conductivity - on n_e, h_e mesh
 	cuVEC_VC<cuBReal>* pelC;
 
-	//electrical current density - on n_e, h_e mesh
-	cuVEC_VC<cuReal3>* pJc;
+	//electrical field - on n_e, h_e mesh
+	cuVEC_VC<cuReal3>* pE;
 
 	//spin accumulation - on n_e, h_e mesh
 	cuVEC_VC<cuReal3>* pS;
@@ -140,7 +152,7 @@ private:
 
 	//----------------------------------- RUNTIME PARAMETER UPDATERS (AUXILIARY) (MeshParamsControlCUDA.h)
 
-	//UPDATER M CORSENESS - PRIVATE
+	//UPDATER M COARSENESS - PRIVATE
 
 	//SPATIAL DEPENDENCE ONLY - NO POSITION YET
 
@@ -162,7 +174,7 @@ private:
 	template <typename PType, typename SType>
 	__device__ void update_parameters_mcoarse_full(int mcell_idx, MatPCUDA<PType, SType>& matp, PType& matp_value);
 
-	//UPDATER E CORSENESS - PRIVATE
+	//UPDATER E COARSENESS - PRIVATE
 
 	//SPATIAL DEPENDENCE ONLY - NO POSITION YET
 
@@ -184,7 +196,7 @@ private:
 	template <typename PType, typename SType>
 	__device__ void update_parameters_ecoarse_full(int ecell_idx, MatPCUDA<PType, SType>& matp, PType& matp_value);
 
-	//UPDATER T CORSENESS - PRIVATE
+	//UPDATER T COARSENESS - PRIVATE
 
 	//SPATIAL DEPENDENCE ONLY - NO POSITION YET
 
@@ -236,19 +248,19 @@ public:
 	template <typename PType, typename SType>
 	__device__ void update_parameters_full(const cuReal3& position, const cuBReal& Temperature, MatPCUDA<PType, SType>& matp, PType& matp_value);
 
-	//UPDATER M CORSENESS - PUBLIC
+	//UPDATER M COARSENESS - PUBLIC
 
 	//Update parameter values if temperature dependent at the given cell index - M cell index; position not calculated
 	template <typename ... MeshParam_List>
 	__device__ void update_parameters_mcoarse(int mcell_idx, MeshParam_List& ... params);
 
-	//UPDATER E CORSENESS - PUBLIC
+	//UPDATER E COARSENESS - PUBLIC
 
 	//Update parameter values if temperature dependent at the given cell index - M cell index; position not calculated
 	template <typename ... MeshParam_List>
 	__device__ void update_parameters_ecoarse(int ecell_idx, MeshParam_List& ... params);
 
-	//UPDATER T CORSENESS - PUBLIC
+	//UPDATER T COARSENESS - PUBLIC
 
 	//Update parameter values if temperature dependent at the given cell index - M cell index; position not calculated
 	template <typename ... MeshParam_List>

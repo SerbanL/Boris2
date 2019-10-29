@@ -20,7 +20,7 @@ StrayFieldCUDA::StrayFieldCUDA(SuperMesh* pSMesh_, StrayField* pStrayField_) :
 	//set from cpu version of sm_vals
 	if (!strayField()->set_from_cpuvec(pStrayField->strayField)) error_on_create(BERROR_OUTOFGPUMEMORY_CRIT);
 
-	error_on_create = UpdateConfiguration();
+	error_on_create = UpdateConfiguration(UPDATECONFIG_FORCEUPDATE);
 }
 
 StrayFieldCUDA::~StrayFieldCUDA()

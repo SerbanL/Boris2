@@ -7,6 +7,7 @@
 #include "MeshParamsControl.h"
 
 //functions to specify boundary conditions for interface conductance approach for charge : Jc_N = Jc_F = A + B * dV
+//VERIFIED - CORRECT
 double STransport::Afunc_V(int cell1_idx, int cell2_idx, DBL3 relpos_m1, DBL3 shift, DBL3 stencil, Transport& trans_sec, Transport& trans_pri) const
 {
 	//the shift value comes from CMBNDInfo and is used to find positions in secondary mesh. If negative then secondary mesh is on -ve side (bottom).
@@ -78,6 +79,7 @@ double STransport::Afunc_V(int cell1_idx, int cell2_idx, DBL3 relpos_m1, DBL3 sh
 }
 
 //functions to specify boundary conditions for interface conductance approach for charge : Jc_N = Jc_F = A + B * dV
+//VERIFIED - CORRECT
 double STransport::Bfunc_V(int cell1_idx, int cell2_idx, DBL3 relpos_m1, DBL3 shift, DBL3 stencil, Transport& trans_sec, Transport& trans_pri) const
 {
 	//the shift value comes from CMBNDInfo and is used to find positions in secondary mesh. If negative then secondary mesh is on -ve side (bottom).
@@ -103,7 +105,8 @@ double STransport::Bfunc_V(int cell1_idx, int cell2_idx, DBL3 relpos_m1, DBL3 sh
 	return -(Gi.i + Gi.j);
 }
 
-//functions to specify boundary conditions for interface conductance approach for spin : Js_N = A_N + B_N * dVs, Js_F = A_F + B_F * dVs
+//functions to specify boundary conditions for interface conductance approach for spin : Js_N = A_N + B_N * dVs, Js_F = A_F + B_F * dVs#
+//VERIFIED - CORRECT
 DBL3 STransport::Afunc_N_S(int cell1_idx, int cell2_idx, DBL3 relpos_m1, DBL3 shift, DBL3 stencil, Transport& trans_sec, Transport& trans_pri) const
 {
 	//the shift value comes from CMBNDInfo and is used to find positions in secondary mesh. If negative then secondary mesh is on -ve side (bottom).
@@ -184,6 +187,7 @@ DBL3 STransport::Afunc_N_S(int cell1_idx, int cell2_idx, DBL3 relpos_m1, DBL3 sh
 }
 
 //functions to specify boundary conditions for interface conductance approach for spin : Js_N = A_N + B_N * dVs, Js_F = A_F + B_F * dVs
+//VERIFIED - CORRECT
 DBL3 STransport::Afunc_F_S(int cell1_idx, int cell2_idx, DBL3 relpos_m1, DBL3 shift, DBL3 stencil, Transport& trans_sec, Transport& trans_pri) const
 {
 	//the shift value comes from CMBNDInfo and is used to find positions in secondary mesh. If negative then secondary mesh is on -ve side (bottom).
@@ -241,6 +245,7 @@ DBL3 STransport::Afunc_F_S(int cell1_idx, int cell2_idx, DBL3 relpos_m1, DBL3 sh
 }
 
 //functions to specify boundary conditions for interface conductance approach for spin : Js_N = A_N + B_N * dVs, Js_F = A_F + B_F * dVs
+//VERIFIED - CORRECT
 DBL33 STransport::Bfunc_N_S(int cell1_idx, int cell2_idx, DBL3 relpos_m1, DBL3 shift, DBL3 stencil, Transport& trans_sec, Transport& trans_pri) const
 {
 	//the shift value comes from CMBNDInfo and is used to find positions in secondary mesh. If negative then secondary mesh is on -ve side (bottom).
@@ -299,6 +304,7 @@ DBL33 STransport::Bfunc_N_S(int cell1_idx, int cell2_idx, DBL3 relpos_m1, DBL3 s
 }
 
 //functions to specify boundary conditions for interface conductance approach for spin : Js_N = A_N + B_N * dVs, Js_F = A_F + B_F * dVs
+//VERIFIED - CORRECT
 DBL33 STransport::Bfunc_F_S(int cell1_idx, int cell2_idx, DBL3 relpos_m1, DBL3 shift, DBL3 stencil, Transport& trans_sec, Transport& trans_pri) const
 {
 	//the shift value comes from CMBNDInfo and is used to find positions in secondary mesh. If negative then secondary mesh is on -ve side (bottom).

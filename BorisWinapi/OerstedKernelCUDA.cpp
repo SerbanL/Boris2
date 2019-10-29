@@ -65,15 +65,30 @@ BError OerstedKernelCUDA::Calculate_Oersted_Kernels_3D(void)
 		if (!KOe_cpu.resize(SZ3(N.y / 2 + 1, N.x / 2 + 1, N.z / 2 + 1))) return error(BERROR_OUTOFMEMORY_CRIT);
 	}
 
-	//-------------- FFT SETUP
+	//-------------- SETUP FFT
 
-	//setup fft object with fft computation lines
-	FFTMethods_Cpp<double> fft;
+	double* pline_real = fftw_alloc_real(maximum(N.x, N.y, N.z) * 3);
+	fftw_complex* pline = fftw_alloc_complex(maximum(N.x / 2 + 1, N.y, N.z) * 3);
 
-	size_t maxN = maximum(N.x / 2 + 1, N.y / 2 + 1, N.z / 2 + 1);
+	//make fft plans
+	int dims_x[1] = { (int)N.x };
+	int dims_y[1] = { (int)N.y };
+	int dims_z[1] = { (int)N.z };
 
-	vector<ReIm3> fft_line(maxN);
-	vector<ReIm3> fft_line2(maxN);
+	fftw_plan plan_fwd_x = fftw_plan_many_dft_r2c(1, dims_x, 3,
+		pline_real, nullptr, 3, 1,
+		pline, nullptr, 3, 1,
+		FFTW_PATIENT);
+
+	fftw_plan plan_fwd_y = fftw_plan_many_dft_r2c(1, dims_y, 3,
+		pline_real, nullptr, 3, 1,
+		pline, nullptr, 3, 1,
+		FFTW_PATIENT);
+
+	fftw_plan plan_fwd_z = fftw_plan_many_dft_r2c(1, dims_z, 3,
+		pline_real, nullptr, 3, 1,
+		pline, nullptr, 3, 1,
+		FFTW_PATIENT);
 
 	//lambda used to transform an input real tensor into an output real kernel
 	auto tensor_to_kernel = [&](VEC<DBL3>& tensor, VEC<DBL3>& kernel) -> void {
@@ -88,15 +103,24 @@ BError OerstedKernelCUDA::Calculate_Oersted_Kernels_3D(void)
 		for (int k = 0; k < N.z; k++) {
 			for (int j = 0; j < N.y; j++) {
 
-				fft.CopyRealShuffle(tensor.data() + j * N.x + k * N.x*N.y, fft_line.data(), N.x / 2);
-				fft.FFT_Radix4_DIT(fft_line.data(), log2(N.x) - 1, N.x / 2);
-				fft.RealfromComplexFFT(fft_line.data(), fft_line2.data(), N.x / 2);
+				//write input into fft line (zero padding kept)
+				for (int i = 0; i < N.x; i++) {
+
+					int idx_in = i + j * N.x + k * N.x * N.y;
+
+					*reinterpret_cast<DBL3*>(pline_real + i * 3) = tensor[idx_in];
+				}
+
+				//fft on line
+				fftw_execute(plan_fwd_x);
 
 				//pack into lower half of tensor row for next step (keep same row and plane strides)
 				for (int i = 0; i < N.x / 2 + 1; i++) {
 
+					ReIm3 value = *reinterpret_cast<ReIm3*>(pline + i * 3);
+
 					//Dxy : even x, Dxz : even x, Dyz : odd x
-					tensor[i + j * (N.x / 2 + 1) + k * (N.x / 2 + 1) * N.y] = DBL3(fft_line2[i].x.Re, fft_line2[i].y.Re, fft_line2[i].z.Im);
+					tensor[i + j * (N.x / 2 + 1) + k * (N.x / 2 + 1) * N.y] = DBL3(value.x.Re, value.y.Re, value.z.Im);
 				}
 			}
 		}
@@ -104,15 +128,24 @@ BError OerstedKernelCUDA::Calculate_Oersted_Kernels_3D(void)
 		for (int k = 0; k < N.z; k++) {
 			for (int i = 0; i < N.x / 2 + 1; i++) {
 
-				fft.CopyRealShuffle(tensor.data() + i + k * (N.x / 2 + 1)*N.y, fft_line.data(), N.x / 2 + 1, N.y / 2);
-				fft.FFT_Radix4_DIT(fft_line.data(), log2(N.y) - 1, N.y / 2);
-				fft.RealfromComplexFFT(fft_line.data(), fft_line2.data(), N.y / 2);
+				//fetch line from fft array (zero padding kept)
+				for (int j = 0; j < N.y; j++) {
+
+					int idx_in = i + j * (N.x / 2 + 1) + k * (N.x / 2 + 1) * N.y;
+
+					*reinterpret_cast<DBL3*>(pline_real + j * 3) = tensor[idx_in];
+				}
+
+				//fft on line
+				fftw_execute(plan_fwd_y);
 
 				//pack into lower half of tensor column for next step (keep same row and plane strides)
 				for (int j = 0; j < N.y / 2 + 1; j++) {
 
+					ReIm3 value = *reinterpret_cast<ReIm3*>(pline + j * 3);
+
 					//Dxy : even y, Dxz : odd y, Dyz : even y
-					tensor[i + j * (N.x / 2 + 1) + k * (N.x / 2 + 1) * N.y] = DBL3(fft_line2[j].x.Re, fft_line2[j].y.Im, fft_line2[j].z.Re);
+					tensor[i + j * (N.x / 2 + 1) + k * (N.x / 2 + 1) * (N.y / 2 + 1)] = DBL3(value.x.Re, value.y.Im, value.z.Re);
 				}
 			}
 		}
@@ -120,24 +153,33 @@ BError OerstedKernelCUDA::Calculate_Oersted_Kernels_3D(void)
 		for (int j = 0; j < N.y / 2 + 1; j++) {
 			for (int i = 0; i < N.x / 2 + 1; i++) {
 
-				fft.CopyRealShuffle(tensor.data() + i + j * (N.x / 2 + 1), fft_line.data(), (N.x / 2 + 1)*N.y, N.z / 2);
-				fft.FFT_Radix4_DIT(fft_line.data(), log2(N.z) - 1, N.z / 2);
-				fft.RealfromComplexFFT(fft_line.data(), fft_line2.data(), N.z / 2);
+				//fetch line from fft array (zero padding kept)
+				for (int k = 0; k < N.z; k++) {
+
+					int idx_in = i + j * (N.x / 2 + 1) + k * (N.x / 2 + 1) * (N.y / 2 + 1);
+
+					*reinterpret_cast<DBL3*>(pline_real + k * 3) = tensor[idx_in];
+				}
+
+				//fft on line
+				fftw_execute(plan_fwd_z);
 
 				//pack into output kernels with reduced strides
 				for (int k = 0; k < N.z / 2 + 1; k++) {
+
+					ReIm3 value = *reinterpret_cast<ReIm3*>(pline + k * 3);
 
 					//Dxy : odd z, Dxz : even z, Dyz : even z
 					//Note, all tensor elements where odd exactly once, thus the output will be purely real
 					//This means when we use the kernel elements we need to multiply by i since we are saving the result as real values.
 
 					if (!transpose_xy) {
-						
-						kernel[i + j * (N.x / 2 + 1) + k * (N.x / 2 + 1) * (N.y / 2 + 1)] = DBL3(fft_line2[k].x.Im, fft_line2[k].y.Re, fft_line2[k].z.Re);
+
+						kernel[i + j * (N.x / 2 + 1) + k * (N.x / 2 + 1) * (N.y / 2 + 1)] = DBL3(value.x.Im, value.y.Re, value.z.Re);
 					}
 					else {
 
-						kernel[j + i * (N.y / 2 + 1) + k * (N.x / 2 + 1) * (N.y / 2 + 1)] = DBL3(fft_line2[k].x.Im, fft_line2[k].y.Re, fft_line2[k].z.Re);
+						kernel[j + i * (N.y / 2 + 1) + k * (N.y / 2 + 1) * (N.x / 2 + 1)] = DBL3(value.x.Im, value.y.Re, value.z.Re);
 					}
 				}
 			}
@@ -152,6 +194,15 @@ BError OerstedKernelCUDA::Calculate_Oersted_Kernels_3D(void)
 
 	//transfer to GPU
 	KOe()->copy_from_cpuvec(KOe_cpu);
+
+	//-------------- CLEANUP
+
+	fftw_destroy_plan(plan_fwd_x);
+	fftw_destroy_plan(plan_fwd_y);
+	fftw_destroy_plan(plan_fwd_z);
+
+	fftw_free((double*)pline_real);
+	fftw_free((fftw_complex*)pline);
 
 	//Done
 	return error;

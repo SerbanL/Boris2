@@ -39,9 +39,6 @@ private:
 	//super-mesh current density values used for computing Oersted field on the super-mesh
 	VEC<DBL3> sm_Vals;
 
-	//number of non-empty cells in sm_Vals
-	int non_empty_cells;
-
 	//don't need to compute Oe field every iteration, only when a significant change in Jc occurs; but do need to compute it initially.
 	bool oefield_computed = false;
 
@@ -60,7 +57,7 @@ public:
 
 	BError Initialize(void);
 
-	BError UpdateConfiguration(UPDATECONFIG_ cfgMessage = UPDATECONFIG_GENERIC);
+	BError UpdateConfiguration(UPDATECONFIG_ cfgMessage);
 
 	BError MakeCUDAModule(void);
 

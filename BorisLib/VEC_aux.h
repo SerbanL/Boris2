@@ -73,6 +73,8 @@ Box VEC<VType>::box_from_rect_min(const Rect& rectangle) const
 	cell_rect = get_cellrect(start);
 	if (!rectangle.contains(cell_rect)) start += INT3(1, 1, 0);
 
+	if (end.x < start.x || end.y < start.y || end.z < start.z) return Box();
+
 	return Box(start, end);
 }
 

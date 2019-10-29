@@ -14,7 +14,7 @@ StrayField::StrayField(SuperMesh *pSMesh_) :
 {
 	pSMesh = pSMesh_;
 
-	error_on_create = UpdateConfiguration();
+	error_on_create = UpdateConfiguration(UPDATECONFIG_FORCEUPDATE);
 
 	//-------------------------- Is CUDA currently enabled?
 
@@ -79,7 +79,7 @@ BError StrayField::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 	//------------------------ CUDA UpdateConfiguration if set
 
 #if COMPILECUDA == 1
-	if(pModuleCUDA) error = pModuleCUDA->UpdateConfiguration();
+	if(pModuleCUDA) error = pModuleCUDA->UpdateConfiguration(cfgMessage);
 #endif
 
 	return error;

@@ -277,10 +277,10 @@ VAL3<VType> VEC_VC<VType>::grad_diri(int idx) const
 		diff.x = (quantity[idx + 1] - quantity[idx - 1]) / (2 * h.x);
 	}
 	//not an inner point along this direction - Use Dirichlet?
-	else if (ngbrFlags[idx] & NF_DIRICHLETX) {
+	else if (ngbrFlags2.size() && (ngbrFlags2[idx] & NF2_DIRICHLETX)) {
 
-		if (ngbrFlags[idx] & NF_DIRICHLETPX) diff.x = (quantity[idx + 1] + quantity[idx] - 2 * get_dirichlet_value(NF_DIRICHLETPX, idx)) / (2 * h.x);
-		else								 diff.x = (2 * get_dirichlet_value(NF_DIRICHLETNX, idx) - quantity[idx] - quantity[idx - 1]) / (2 * h.x);
+		if (ngbrFlags2[idx] & NF2_DIRICHLETPX) diff.x = (quantity[idx + 1] + quantity[idx] - 2 * get_dirichlet_value(NF2_DIRICHLETPX, idx)) / (2 * h.x);
+		else								 diff.x = (2 * get_dirichlet_value(NF2_DIRICHLETNX, idx) - quantity[idx] - quantity[idx - 1]) / (2 * h.x);
 	}
 	//Not Dirichlet, is it a CMBND boundary? - if not this either then use homogeneous Neumann condition
 	else if (ngbrFlags[idx] & NF_CMBNDX) {
@@ -321,10 +321,10 @@ VAL3<VType> VEC_VC<VType>::grad_diri(int idx) const
 
 		diff.y = (quantity[idx + n.x] - quantity[idx - n.x]) / (2 * h.y);
 	}
-	else if (ngbrFlags[idx] & NF_DIRICHLETY) {
+	else if (ngbrFlags2.size() && (ngbrFlags2[idx] & NF2_DIRICHLETY)) {
 
-		if (ngbrFlags[idx] & NF_DIRICHLETPY) diff.y = (quantity[idx + n.x] + quantity[idx] - 2 * get_dirichlet_value(NF_DIRICHLETPY, idx)) / (2 * h.y);
-		else								 diff.y = (2 * get_dirichlet_value(NF_DIRICHLETNY, idx) - quantity[idx] - quantity[idx - n.x]) / (2 * h.y);
+		if (ngbrFlags2[idx] & NF2_DIRICHLETPY) diff.y = (quantity[idx + n.x] + quantity[idx] - 2 * get_dirichlet_value(NF2_DIRICHLETPY, idx)) / (2 * h.y);
+		else								 diff.y = (2 * get_dirichlet_value(NF2_DIRICHLETNY, idx) - quantity[idx] - quantity[idx - n.x]) / (2 * h.y);
 	}
 	else if (ngbrFlags[idx] & NF_CMBNDY) {
 
@@ -364,10 +364,10 @@ VAL3<VType> VEC_VC<VType>::grad_diri(int idx) const
 
 		diff.z = (quantity[idx + n.x*n.y] - quantity[idx - n.x*n.y]) / (2 * h.z);
 	}
-	else if (ngbrFlags[idx] & NF_DIRICHLETZ) {
+	else if (ngbrFlags2.size() && (ngbrFlags2[idx] & NF2_DIRICHLETZ)) {
 
-		if (ngbrFlags[idx] & NF_DIRICHLETPZ) diff.z = (quantity[idx + n.x*n.y] + quantity[idx] - 2 * get_dirichlet_value(NF_DIRICHLETPZ, idx)) / (2 * h.z);
-		else								 diff.z = (2 * get_dirichlet_value(NF_DIRICHLETNZ, idx) - quantity[idx] - quantity[idx - n.x*n.y]) / (2 * h.z);
+		if (ngbrFlags2[idx] & NF2_DIRICHLETPZ) diff.z = (quantity[idx + n.x*n.y] + quantity[idx] - 2 * get_dirichlet_value(NF2_DIRICHLETPZ, idx)) / (2 * h.z);
+		else								 diff.z = (2 * get_dirichlet_value(NF2_DIRICHLETNZ, idx) - quantity[idx] - quantity[idx - n.x*n.y]) / (2 * h.z);
 	}
 	else if (ngbrFlags[idx] & NF_CMBNDZ) {
 
@@ -422,10 +422,10 @@ VAL3<VType> VEC_VC<VType>::grad_diri_nneu(int idx, VAL3<VType>& bdiff) const
 		diff.x = (quantity[idx + 1] - quantity[idx - 1]) / (2 * h.x);
 	}
 	//not an inner point along this direction - Use Dirichlet?
-	else if (ngbrFlags[idx] & NF_DIRICHLETX) {
+	else if (ngbrFlags2.size() && (ngbrFlags2[idx] & NF2_DIRICHLETX)) {
 
-		if (ngbrFlags[idx] & NF_DIRICHLETPX) diff.x = (quantity[idx + 1] + quantity[idx] - 2 * get_dirichlet_value(NF_DIRICHLETPX, idx)) / (2 * h.x);
-		else								 diff.x = (2 * get_dirichlet_value(NF_DIRICHLETNX, idx) - quantity[idx] - quantity[idx - 1]) / (2 * h.x);
+		if (ngbrFlags2[idx] & NF2_DIRICHLETPX) diff.x = (quantity[idx + 1] + quantity[idx] - 2 * get_dirichlet_value(NF2_DIRICHLETPX, idx)) / (2 * h.x);
+		else								 diff.x = (2 * get_dirichlet_value(NF2_DIRICHLETNX, idx) - quantity[idx] - quantity[idx - 1]) / (2 * h.x);
 	}
 	//Not Dirichlet, is it a CMBND boundary? - if not this either then use homogeneous Neumann condition
 	else if (ngbrFlags[idx] & NF_CMBNDX) {
@@ -466,10 +466,10 @@ VAL3<VType> VEC_VC<VType>::grad_diri_nneu(int idx, VAL3<VType>& bdiff) const
 
 		diff.y = (quantity[idx + n.x] - quantity[idx - n.x]) / (2 * h.y);
 	}
-	else if (ngbrFlags[idx] & NF_DIRICHLETY) {
+	else if (ngbrFlags2.size() && (ngbrFlags2[idx] & NF2_DIRICHLETY)) {
 
-		if (ngbrFlags[idx] & NF_DIRICHLETPY) diff.y = (quantity[idx + n.x] + quantity[idx] - 2 * get_dirichlet_value(NF_DIRICHLETPY, idx)) / (2 * h.y);
-		else								 diff.y = (2 * get_dirichlet_value(NF_DIRICHLETNY, idx) - quantity[idx] - quantity[idx - n.x]) / (2 * h.y);
+		if (ngbrFlags2[idx] & NF2_DIRICHLETPY) diff.y = (quantity[idx + n.x] + quantity[idx] - 2 * get_dirichlet_value(NF2_DIRICHLETPY, idx)) / (2 * h.y);
+		else								 diff.y = (2 * get_dirichlet_value(NF2_DIRICHLETNY, idx) - quantity[idx] - quantity[idx - n.x]) / (2 * h.y);
 	}
 	else if (ngbrFlags[idx] & NF_CMBNDY) {
 
@@ -509,10 +509,10 @@ VAL3<VType> VEC_VC<VType>::grad_diri_nneu(int idx, VAL3<VType>& bdiff) const
 
 		diff.z = (quantity[idx + n.x*n.y] - quantity[idx - n.x*n.y]) / (2 * h.z);
 	}
-	else if (ngbrFlags[idx] & NF_DIRICHLETZ) {
+	else if (ngbrFlags2.size() && (ngbrFlags2[idx] & NF2_DIRICHLETZ)) {
 
-		if (ngbrFlags[idx] & NF_DIRICHLETPZ) diff.z = (quantity[idx + n.x*n.y] + quantity[idx] - 2 * get_dirichlet_value(NF_DIRICHLETPZ, idx)) / (2 * h.z);
-		else								 diff.z = (2 * get_dirichlet_value(NF_DIRICHLETNZ, idx) - quantity[idx] - quantity[idx - n.x*n.y]) / (2 * h.z);
+		if (ngbrFlags2[idx] & NF2_DIRICHLETPZ) diff.z = (quantity[idx + n.x*n.y] + quantity[idx] - 2 * get_dirichlet_value(NF2_DIRICHLETPZ, idx)) / (2 * h.z);
+		else								 diff.z = (2 * get_dirichlet_value(NF2_DIRICHLETNZ, idx) - quantity[idx] - quantity[idx - n.x*n.y]) / (2 * h.z);
 	}
 	else if (ngbrFlags[idx] & NF_CMBNDZ) {
 

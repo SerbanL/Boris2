@@ -834,6 +834,9 @@ void ODECommon::Iterate(void)
 			delta_M_sq = 0.0;
 			delta_G_sq = 0.0;
 			delta_M_dot_delta_G = 0.0;
+			delta_M2_sq = 0.0;
+			delta_G2_sq = 0.0;
+			delta_M2_dot_delta_G2 = 0.0;
 
 			for (int idx = 0; idx < (int)pODE.size(); idx++)
 				pODE[idx]->RunSD_BB();
@@ -844,6 +847,13 @@ void ODECommon::Iterate(void)
 				if (delta_M_dot_delta_G) {
 
 					dT = delta_M_sq / delta_M_dot_delta_G;
+
+					//for antiferromagnetic meshes also consider sub-lattice B, take smallest dT value
+					if (delta_M2_dot_delta_G2) {
+
+						double dT_2 = delta_M2_sq / delta_M2_dot_delta_G2;
+						dT = (dT_2 < dT ? dT_2 : dT);
+					}
 				}
 				else dT = SD_DEFAULT_DT;
 			}
@@ -852,6 +862,13 @@ void ODECommon::Iterate(void)
 				if (delta_G_sq) {
 
 					dT = delta_M_dot_delta_G / delta_G_sq;
+
+					//for antiferromagnetic meshes also consider sub-lattice B, take smallest dT value
+					if (delta_G2_sq) {
+
+						double dT_2 = delta_M2_dot_delta_G2 / delta_G2_sq;
+						dT = (dT_2 < dT ? dT_2 : dT);
+					}
 				}
 				else dT = SD_DEFAULT_DT;
 			}

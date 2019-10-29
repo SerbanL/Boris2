@@ -108,6 +108,12 @@ Simulation::Simulation(int Program_Version) :
 	commands[CMD_ADDFMESH].descr = "[tc0,0.5,0.5,1/tc]Add a ferromagnetic mesh with given name and rectangle (m). The rectangle can be specified as: <i>sx sy sz ex ey ez</i> for the start and end points in Cartesian coordinates, or as: <i>ex ey ez</i> with the start point as the origin.";
 	commands[CMD_ADDFMESH].unit = "m";
 
+	commands.insert(CMD_ADDAFMESH, CommandSpecifier(CMD_ADDAFMESH), "addafmesh");
+	commands[CMD_ADDAFMESH].usage = "[tc0,0.5,0,1/tc]USAGE : <b>addafmesh</b> <i>name rectangle</i>";
+	commands[CMD_ADDAFMESH].limits = { { Any(), Any() }, { Rect(DBL3(-MAXSIMSPACE / 2), DBL3(-MAXSIMSPACE / 2) + DBL3(MINMESHSPACE)), Rect(DBL3(-MAXSIMSPACE / 2), DBL3(MAXSIMSPACE / 2)) } };
+	commands[CMD_ADDAFMESH].descr = "[tc0,0.5,0.5,1/tc]Add antiferromagnetic mesh with given name and rectangle (m). The rectangle can be specified as: <i>sx sy sz ex ey ez</i> for the start and end points in Cartesian coordinates, or as: <i>ex ey ez</i> with the start point as the origin.";
+	commands[CMD_ADDAFMESH].unit = "m";
+
 	commands.insert(CMD_ADDMETALMESH, CommandSpecifier(CMD_ADDMETALMESH), "addconductor");
 	commands[CMD_ADDMETALMESH].usage = "[tc0,0.5,0,1/tc]USAGE : <b>addconductor</b> <i>name rectangle</i>";
 	commands[CMD_ADDMETALMESH].limits = { { Any(), Any() },{ Rect(DBL3(-MAXSIMSPACE / 2), DBL3(-MAXSIMSPACE / 2) + DBL3(MINMESHSPACE)), Rect(DBL3(-MAXSIMSPACE / 2), DBL3(MAXSIMSPACE / 2)) } };
@@ -218,7 +224,7 @@ Simulation::Simulation(int Program_Version) :
 
 	commands.insert(CMD_INDIVIDUALMASKSHAPE, CommandSpecifier(CMD_INDIVIDUALMASKSHAPE), "individualshape");
 	commands[CMD_INDIVIDUALMASKSHAPE].usage = "[tc0,0.5,0,1/tc]USAGE : <b>individualmaskshape</b> <i>status</i>";
-	commands[CMD_ADDRECT].limits = { { int(0), int(1) } };
+	commands[CMD_INDIVIDUALMASKSHAPE].limits = { { int(0), int(1) } };
 	commands[CMD_INDIVIDUALMASKSHAPE].descr = "[tc0,0.5,0.5,1/tc]When changing the shape inside a mesh, e.g. through a mask file, set this flag to true so the shape is applied only to the primary displayed physical quantity. If set to false then all relevant physical quantities are shaped.";
 	commands[CMD_INDIVIDUALMASKSHAPE].return_descr = "[tc0,0.5,0,1/tc]Script return values: <i>status</i>";
 
@@ -630,11 +636,6 @@ Simulation::Simulation(int Program_Version) :
 	commands[CMD_SSOLVERCONFIG].limits = { { double(1e-10), double(1e-1) },{ int(1), int(50000) } };
 	commands[CMD_SSOLVERCONFIG].descr = "[tc0,0.5,0.5,1/tc]Set spin-transport solver convergence error and iterations for timeout (if given, else use default).";
 	commands[CMD_SSOLVERCONFIG].return_descr = "[tc0,0.5,0,1/tc]Script return values: <i>s_convergence_error s_iters_timeout</i>";
-
-	commands.insert(CMD_SETFIXEDSOR, CommandSpecifier(CMD_SETFIXEDSOR), "setfixedsor");
-	commands[CMD_SETFIXEDSOR].usage = "[tc0,0.5,0,1/tc]USAGE : <b>setfixedsor</b> <i>status</i>";
-	commands[CMD_SETFIXEDSOR].descr = "[tc0,0.5,0.5,1/tc]Set damping type for SOR algorithm (adaptive or fixed) used for transport solver Poisson equations.";
-	commands[CMD_SETFIXEDSOR].return_descr = "[tc0,0.5,0,1/tc]Script return values: <i>status</i>";
 	
 	commands.insert(CMD_SETSORDAMPING, CommandSpecifier(CMD_SETSORDAMPING), "setsordamping");
 	commands[CMD_SETSORDAMPING].usage = "[tc0,0.5,0,1/tc]USAGE : <b>setsordamping</b> <i>damping_v damping_s</i>";
@@ -812,6 +813,14 @@ Simulation::Simulation(int Program_Version) :
 	commands.insert(CMD_SAVEOVF2MAG, CommandSpecifier(CMD_SAVEOVF2MAG), "saveovf2mag");
 	commands[CMD_SAVEOVF2MAG].usage = "[tc0,0.5,0,1/tc]USAGE : <b>saveovf2mag</b> <i>(n) (data_type) (directory\\)filename</i>";
 	commands[CMD_SAVEOVF2MAG].descr = "[tc0,0.5,0.5,1/tc]Save an OOMMF-style OVF 2.0 file containing magnetisation data from the currently focused mesh (which must be ferromagnetic). You can normalize the data to Ms0 value by specifying the n flag (e.g. saveovf2mag n filename) - by default the data is not normalized. You can specify the data type as data_type = bin4 (single precision 4 bytes per float), data_type = bin8 (double precision 8 bytes per float), or data_type = text. By default bin8 is used.";
+
+	commands.insert(CMD_SCRIPTSERVER, CommandSpecifier(CMD_SCRIPTSERVER), "scriptserver");
+	commands[CMD_SCRIPTSERVER].usage = "[tc0,0.5,0,1/tc]USAGE : <b>scriptserver</b> <i>status</i>";
+	commands[CMD_SCRIPTSERVER].descr = "[tc0,0.5,0.5,1/tc]Enable or disable the script communication server. When enabled the program will listen for commands received using network sockets on port 1542.";
+
+	commands.insert(CMD_CHECKUPDATES, CommandSpecifier(CMD_CHECKUPDATES), "checkupdates");
+	commands[CMD_CHECKUPDATES].usage = "[tc0,0.5,0,1/tc]USAGE : <b>checkupdates</b>";
+	commands[CMD_CHECKUPDATES].descr = "[tc0,0.5,0.5,1/tc]Connect to boris-spintronics.uk to check if updates to program or materials database are available.";
 
 	commands.insert(CMD_DP_CLEARALL, CommandSpecifier(CMD_DP_CLEARALL), "dp_clearall");
 	commands[CMD_DP_CLEARALL].usage = "[tc0,0.5,0,1/tc]USAGE : <b>dp_clearall</b>";
@@ -1001,6 +1010,43 @@ Simulation::Simulation(int Program_Version) :
 	commands[CMD_DP_FITSKYRMION].descr = "[tc0,0.5,0.5,1/tc]Fit skyrmion z component to obtain radius and center position : Mz(x) = Ms * cos(2*arctan(sinh(R/w)/sinh((x-x0)/w))).";
 	commands[CMD_DP_FITSKYRMION].return_descr = "[tc0,0.5,0,1/tc]Script return values: <i>R, x0, Ms, w, std_R, std_x0, std_Ms, std_w</i>.";
 
+	commands.insert(CMD_DP_FITSTT, CommandSpecifier(CMD_DP_FITSTT), "dp_fitstt");
+	commands[CMD_DP_FITSTT].usage = "[tc0,0.5,0,1/tc]USAGE : <b>dp_fitstt</b> <i>(rectangle)</i>";
+	commands[CMD_DP_FITSTT].limits = { {Rect(), Any()} };
+	commands[CMD_DP_FITSTT].descr = "[tc0,0.5,0.5,1/tc]Fit the computed self-consistent spin torque (see below) using Zhang-Li STT with fitting parameters P and beta (non-adiabaticity). The fitting is done inside the specified rectangle for the focused mesh, with the rectangle specified using relative coordinates as sx sy sz ex ey ez (entire mesh if not specified). The focused mesh must be ferromagnetic, have the transport module set with spin solver enabled, and we also require Jc and either Ts or Tsi to have been computed. The fitting is done on Ts, Tsi, or on their sum depending if they’ve been enabled or not.";
+	commands[CMD_DP_FITSTT].unit = "m";
+	commands[CMD_DP_FITSTT].return_descr = "[tc0,0.5,0,1/tc]Script return values: <i>P, beta, std_P, std_beta, Rsq</i>.";
+
+	commands.insert(CMD_DP_FITSOT, CommandSpecifier(CMD_DP_FITSOT), "dp_fitsot");
+	commands[CMD_DP_FITSOT].usage = "[tc0,0.5,0,1/tc]USAGE : <b>dp_fitsot</b> <i>hm_mesh (rectangle)</i>";
+	commands[CMD_DP_FITSOT].limits = { {Any(), Any()}, {Rect(), Any()} };
+	commands[CMD_DP_FITSOT].descr = "[tc0,0.5,0.5,1/tc]Fit the computed self-consistent interfacial spin torque using SOT with fitting parameters SHAeff and flST (field-like torque coefficient). hm_mesh specifies the heavy metal mesh from which to obtain the current density. The fitting is done inside the specified rectangle for the focused mesh, with the rectangle specified using relative coordinates as sx sy sz ex ey ez (entire mesh if not specified). The focused mesh must be ferromagnetic, have the transport module set with spin solver enabled, and we also require Jc and Tsi to have been computed.";
+	commands[CMD_DP_FITSOT].unit = "m";
+	commands[CMD_DP_FITSOT].return_descr = "[tc0,0.5,0,1/tc]Script return values: <i>SHAeff, flST, std_SHAeff, std_flST, Rsq</i>.";
+
+	commands.insert(CMD_DP_FITSOTSTT, CommandSpecifier(CMD_DP_FITSOTSTT), "dp_fitsotstt");
+	commands[CMD_DP_FITSOTSTT].usage = "[tc0,0.5,0,1/tc]USAGE : <b>dp_fitsotstt</b> <i>hm_mesh (rectangle)</i>";
+	commands[CMD_DP_FITSOTSTT].limits = { {Any(), Any()}, {Rect(), Any()} };
+	commands[CMD_DP_FITSOTSTT].descr = "[tc0,0.5,0.5,1/tc]Fit the computed self-consistent spin torque (see below) using Zhang-Li STT with fitting parameters P and beta (non-adiabaticity), and simultaneously also using SOT with fitting parameters SHAeff and flST (field-like torque coefficient). hm_mesh specifies the heavy metal mesh from which to obtain the current density for SOT. The fitting is done inside the specified rectangle for the focused mesh, with the rectangle specified using relative coordinates as sx sy sz ex ey ez (entire mesh if not specified). The focused mesh must be ferromagnetic, have the transport module set with spin solver enabled, and we also require Jc and either Ts or Tsi to have been computed to have been computed. The fitting is done on Ts, Tsi, or on their sum depending if they’ve been enabled or not.";
+	commands[CMD_DP_FITSOTSTT].unit = "m";
+	commands[CMD_DP_FITSOTSTT].return_descr = "[tc0,0.5,0,1/tc]Script return values: <i>SHAeff, flST, P, beta, std_SHAeff, std_flST, std_P, std_beta, Rsq</i>.";
+
+	commands.insert(CMD_DP_CALCSOT, CommandSpecifier(CMD_DP_CALCSOT), "dp_calcsot");
+	commands[CMD_DP_CALCSOT].usage = "[tc0,0.5,0,1/tc]USAGE : <b>dp_calcsot</b> <i>hm_mesh fm_mesh</i>";
+	commands[CMD_DP_CALCSOT].limits = { {Any(), Any()}, {Any(), Any()} };
+	commands[CMD_DP_CALCSOT].descr = "[tc0,0.5,0.5,1/tc]. For the given heavy metal and ferromagnetic meshes calculate the expected effective spin Hall angle and field-like torque coefficient according to analytical formulas (see manual).";
+	commands[CMD_DP_CALCSOT].return_descr = "[tc0,0.5,0,1/tc]Script return values: <i>SHAeff, flST</i>.";
+
+	commands.insert(CMD_DP_FITNONADIABATIC, CommandSpecifier(CMD_DP_FITNONADIABATIC), "dp_fitnonadiabatic");
+	commands[CMD_DP_FITNONADIABATIC].usage = "[tc0,0.5,0,1/tc]USAGE : <b>dp_fitnonadiabatic</b> <i>(abs_err Rsq T_ratio (stencil))</i>";
+	commands[CMD_DP_FITNONADIABATIC].limits = { {double(0.0), Any()}, {double(0.0), Any()}, {double(0.0), Any()}, {int(3), Any()} };
+	commands[CMD_DP_FITNONADIABATIC].descr = "[tc0,0.5,0.5,1/tc]Fit the computed self-consistent spin torque (see below) using Zhang-Li STT with fitting parameters P and beta (non-adiabaticity) using a given square in-plane stencil (default size 3) in order to extract the spatial variation of beta. Cut-off values for absolute fitting error (default 0.1), Rsq measure (default 0.9), and normalized torque magnitude (default 0.1) can be set - value of zero disables cutoff. The focused mesh must be ferromagnetic, have the transport module set with spin solver enabled, and we also require Jc and either Ts or Tsi to have been computed. The fitting is done on Ts, Tsi, or on their sum depending if they’ve been enabled or not.";
+
+	commands.insert(CMD_DP_FITADIABATIC, CommandSpecifier(CMD_DP_FITADIABATIC), "dp_fitadiabatic");
+	commands[CMD_DP_FITADIABATIC].usage = "[tc0,0.5,0,1/tc]USAGE : <b>dp_fitadiabatic</b> <i>(abs_err Rsq T_ratio (stencil))</i>";
+	commands[CMD_DP_FITADIABATIC].limits = { {double(0.0), Any()}, {double(0.0), Any()}, {double(0.0), Any()}, {int(3), Any()} };
+	commands[CMD_DP_FITADIABATIC].descr = "[tc0,0.5,0.5,1/tc]Fit the computed self-consistent spin torque (see below) using Zhang-Li STT with fitting parameters P and beta (non-adiabaticity) using a given square in-plane stencil (default size 3) in order to extract the spatial variation of P. Cut-off values for absolute fitting error (default 0.1), Rsq measure (default 0.9), and normalized torque magnitude (default 0.1) can be set - value of zero disables cutoff. The focused mesh must be ferromagnetic, have the transport module set with spin solver enabled, and we also require Jc and either Ts or Tsi to have been computed. The fitting is done on Ts, Tsi, or on their sum depending if they’ve been enabled or not.";
+
 	commands.insert(CMD_DP_REPLACEREPEATS, CommandSpecifier(CMD_DP_REPLACEREPEATS), "dp_replacerepeats");
 	commands[CMD_DP_REPLACEREPEATS].usage = "[tc0,0.5,0,1/tc]USAGE : <b>dp_replacerepeats</b> <i>dp_index (dp_index_out)</i>";
 	commands[CMD_DP_REPLACEREPEATS].limits = { { int(0), int(MAX_ARRAYS - 1) },{ int(0), int(MAX_ARRAYS - 1) } };
@@ -1021,6 +1067,11 @@ Simulation::Simulation(int Program_Version) :
 	commands[CMD_DP_SMOOTH].limits = { { int(0), int(MAX_ARRAYS - 1) },{ int(0), int(MAX_ARRAYS - 1) }, { int(2), Any() } };
 	commands[CMD_DP_SMOOTH].descr = "[tc0,0.5,0.5,1/tc]Smooth data in dp_in using nearest-neighbor averaging with given window size, and place result in dp_out (must be different).";
 
+	commands.insert(CMD_DP_MONOTONIC, CommandSpecifier(CMD_DP_MONOTONIC), "dp_monotonic");
+	commands[CMD_DP_MONOTONIC].usage = "[tc0,0.5,0,1/tc]USAGE : <b>dp_monotonic</b> <i>dp_in_x dp_in_y dp_out_x dp_out_y</i>";
+	commands[CMD_DP_MONOTONIC].limits = { { int(0), int(MAX_ARRAYS - 1) },{ int(0), int(MAX_ARRAYS - 1) }, { int(0), int(MAX_ARRAYS - 1) }, { int(0), int(MAX_ARRAYS - 1) } };
+	commands[CMD_DP_MONOTONIC].descr = "[tc0,0.5,0.5,1/tc]From input x-y data extract monotonic sequence and place it in output x y arrays.";
+
 	commands.insert(CMD_TEST, CommandSpecifier(CMD_TEST), "test");
 	commands[CMD_TEST].usage = "[tc0,0.5,0,1/tc]USAGE : ";
 	commands[CMD_TEST].descr = "[tc0,0.5,0.5,1/tc].";
@@ -1034,10 +1085,12 @@ Simulation::Simulation(int Program_Version) :
 	dataDescriptor.push_back("iter", DatumSpecifier("Iterations : ", 1), DATA_ITERATIONS);
 	dataDescriptor.push_back("siter", DatumSpecifier("Stage Iterations : ", 1), DATA_SITERATIONS);
 	dataDescriptor.push_back("dt", DatumSpecifier("ODE dT : ", 1, "s"), DATA_DT);
+	dataDescriptor.push_back("heat_dT", DatumSpecifier("heat dT : ", 1, "s"), DATA_HEATDT);
 	dataDescriptor.push_back("mxh", DatumSpecifier("|mxh| : ", 1), DATA_MXH);
 	dataDescriptor.push_back("dmdt", DatumSpecifier("|dm/dt| : ", 1), DATA_DMDT);
 	dataDescriptor.push_back("Ha", DatumSpecifier("Applied Field : ", 3, "A/m", false), DATA_HA);
 	dataDescriptor.push_back("<M>", DatumSpecifier("<M> : ", 3, "A/m", false, false), DATA_AVM);
+	dataDescriptor.push_back("<M2>", DatumSpecifier("<M2> : ", 3, "A/m", false, false), DATA_AVM2);
 	dataDescriptor.push_back("<Jc>", DatumSpecifier("<Jc> : ", 3, "A/m^2", false, false), DATA_JC);
 	dataDescriptor.push_back("<Jsx>", DatumSpecifier("<Jsx> : ", 3, "A/s", false, false), DATA_JSX);
 	dataDescriptor.push_back("<Jsy>", DatumSpecifier("<Jsy> : ", 3, "A/s", false, false), DATA_JSY);
@@ -1045,6 +1098,7 @@ Simulation::Simulation(int Program_Version) :
 	dataDescriptor.push_back("<V>", DatumSpecifier("<V> : ", 1, "V", false, false), DATA_V);
 	dataDescriptor.push_back("<S>", DatumSpecifier("<S> : ", 3, "A/m", false, false), DATA_S);
 	dataDescriptor.push_back("<elC>", DatumSpecifier("<elC> : ", 1, "S/m", false, false), DATA_ELC);
+	dataDescriptor.push_back("<T>", DatumSpecifier("<Temperature> : ", 1, "K", false, false), DATA_TEMP);
 	dataDescriptor.push_back("V", DatumSpecifier("Potential : ", 1, "V"), DATA_POTENTIAL);
 	dataDescriptor.push_back("I", DatumSpecifier("I, Net I : ", 2, "A"), DATA_CURRENT);
 	dataDescriptor.push_back("R", DatumSpecifier("Resistance : ", 1, "Ohm"), DATA_RESISTANCE);
@@ -1061,9 +1115,6 @@ Simulation::Simulation(int Program_Version) :
 	dataDescriptor.push_back("v_iter", DatumSpecifier("V Solver Iterations : ", 1), DATA_TRANSPORT_ITERSTOCONV);
 	dataDescriptor.push_back("s_iter", DatumSpecifier("S Solver Iterations : ", 1), DATA_TRANSPORT_SITERSTOCONV);
 	dataDescriptor.push_back("ts_err", DatumSpecifier("Transport Solver Error : ", 1), DATA_TRANSPORT_CONVERROR);
-	dataDescriptor.push_back("ts_aSOR", DatumSpecifier("Transport Solver aSOR damping : ", 2), DATA_TRANSPORT_ASOR);
-	dataDescriptor.push_back("<T>", DatumSpecifier("<Temperature> : ", 1, "K", false, false), DATA_TEMP);
-	dataDescriptor.push_back("heat_dT", DatumSpecifier("heat dT : ", 1, "s"), DATA_HEATDT);
 	
 	//---------------------------------------------------------------- MODULES
 
@@ -1080,7 +1131,7 @@ Simulation::Simulation(int Program_Version) :
 	moduleHandles.push_back("transport", MOD_TRANSPORT);
 	moduleHandles.push_back("heat", MOD_HEAT);
 	moduleHandles.push_back("SOTfield", MOD_SOTFIELD);
-	moduleHandles.push_back("Roughness", MOD_ROUGHNESS);
+	moduleHandles.push_back("roughness", MOD_ROUGHNESS);
 
 	//super-mesh modules
 	moduleHandles.push_back("sdemag", MODS_SDEMAG);
@@ -1202,7 +1253,8 @@ Simulation::Simulation(int Program_Version) :
 	BD.DisplayConsoleMessage("Console activated...");
 
 	//start window sockets thread to listen for incoming messages
-	infinite_loop_launch(&Simulation::Listen_Incoming_Message, THREAD_NETWORK);
+	//Disabled by default : user can enabled it using the scriptserver command
+	//infinite_loop_launch(&Simulation::Listen_Incoming_Message, THREAD_NETWORK);
 
 	//Update display - do not animate starting view
 	UpdateScreen_AutoSet_Sudden();
@@ -1215,9 +1267,6 @@ Simulation::Simulation(int Program_Version) :
 
 	//save the default state in program directory for loading with "default" command (update this automatically in case the program version has changed)
 	SaveSimulation(directory + "default");
-
-	//Check with "www.boris-spintronics.uk" if program version is up to date
-	single_call_launch(&Simulation::CheckUpdate, THREAD_HANDLEMESSAGE);
 
 	BD.DisplayFormattedConsoleMessage("[tc0,0.5,0,1/tc]To open manual use the <b>manual</b> command.");
 }

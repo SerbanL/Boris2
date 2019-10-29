@@ -16,7 +16,7 @@
 __global__ void CalculateElectricalConductivity_AMR_Kernel(ManagedMeshCUDA& cuMesh)
 {
 	cuVEC_VC<cuBReal>& elC = *cuMesh.pelC;
-	cuVEC<cuReal3>& Jc = *cuMesh.pJc;
+	cuVEC<cuReal3>& E = *cuMesh.pE;
 	cuVEC_VC<cuReal3>& M = *cuMesh.pM;
 
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
@@ -30,7 +30,7 @@ __global__ void CalculateElectricalConductivity_AMR_Kernel(ManagedMeshCUDA& cuMe
 			cuMesh.update_parameters_ecoarse(idx, *cuMesh.pelecCond, elecCond, *cuMesh.pamrPercentage, amrPercentage);
 
 			//get current density value at this conductivity cell
-			cuReal3 Jc_value = Jc[idx];
+			cuReal3 Jc_value = elC[idx] * E[idx];
 
 			//get M value (M is on n, h mesh so could be different)
 			cuReal3 M_value = M[elC.cellidx_to_position(idx)];
@@ -77,27 +77,27 @@ void TransportCUDA::CalculateElectricalConductivity_NoAMR(void)
 	CalculateElectricalConductivity_NoAMR_Kernel <<< (pMeshCUDA->n_e.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (pMeshCUDA->cuMesh);
 }
 
-//--------------------------------------------------------------- Current Density
+//--------------------------------------------------------------- Electric Field
 
 //Current density when only charge solver is used
-__global__ void CalculateCurrentDensity_Charge_Kernel(cuVEC<cuReal3>& Jc, cuVEC_VC<cuBReal>& V, cuVEC_VC<cuBReal>& elC)
+__global__ void CalculateElectricField_Charge_Kernel(cuVEC<cuReal3>& E, cuVEC_VC<cuBReal>& V)
 {
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
 
-	if (idx < Jc.linear_size()) {
+	if (idx < V.linear_size()) {
 
 		//only calculate current on non-empty cells - empty cells have already been assigned 0 at UpdateConfiguration
 		if (V.is_not_empty(idx)) {
 
-			Jc[idx] = -elC[idx] * V.grad_diri(idx);
+			E[idx] = -1.0 * V.grad_diri(idx);
 		}
-		else Jc[idx] = cuReal3(0.0);
+		else E[idx] = cuReal3(0.0);
 	}
 }
 
-__global__ void CalculateCurrentDensity_Spin_Kernel(ManagedMeshCUDA& cuMesh, TransportCUDA_Spin_V_Funcs& poisson_Spin_V, TransportCUDA_Spin_S_Funcs& poisson_Spin_S)
+__global__ void CalculateElectricField_Spin_Kernel(ManagedMeshCUDA& cuMesh, TransportCUDA_Spin_V_Funcs& poisson_Spin_V, TransportCUDA_Spin_S_Funcs& poisson_Spin_S)
 {
-	cuVEC<cuReal3>& Jc = *cuMesh.pJc;
+	cuVEC<cuReal3>& E = *cuMesh.pE;
 	cuVEC_VC<cuBReal>& V = *cuMesh.pV;
 	cuVEC_VC<cuBReal>& elC = *cuMesh.pelC;
 	cuVEC_VC<cuReal3>& S = *cuMesh.pS;
@@ -105,61 +105,42 @@ __global__ void CalculateCurrentDensity_Spin_Kernel(ManagedMeshCUDA& cuMesh, Tra
 
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
 
-	if (idx < Jc.linear_size()) {
+	if (idx < E.linear_size()) {
 
 		//only calculate current on non-empty cells - empty cells have already been assigned 0 at UpdateConfiguration
 		if (V.is_not_empty(idx)) {
 
-			cuBReal iSHA = *cuMesh.piSHA;
-			cuBReal De = *cuMesh.pDe;
-			cuBReal betaD = *cuMesh.pbetaD;
-			cuMesh.update_parameters_ecoarse(idx, *cuMesh.piSHA, iSHA, *cuMesh.pDe, De, *cuMesh.pbetaD, betaD);
+			if (cuIsZ(cuMesh.piSHA->get0()) || M.linear_size()) {
 
-			//1. Ohm's law contribution
-			if (cuIsZ((cuBReal)iSHA) || M.linear_size()) {
-
-				//no iSHE contribution. Note, iSHE is not included in magnetic meshes.
-				Jc[idx] = -elC[idx] * V.grad_diri(idx);
+				//use homogeneous Neumann boundary conditions - no ISHE
+				E[idx] = -1.0 * V.grad_diri(idx);
 			}
 			else {
 
-				//iSHE enabled, must use non-homogeneous Neumann boundary condition for grad V -> Note homogeneous Neumann boundary conditions apply when calculating S differentials here (due to Jc.n = 0 at boundaries)
-				Jc[idx] = -elC[idx] * V.grad_diri_nneu(idx, poisson_Spin_V);
+				//ISHE enabled - use nonhomogeneous Neumann boundary conditions
+				cuBReal iSHA = *cuMesh.piSHA;
+				cuBReal De = *cuMesh.pDe;
+				cuMesh.update_parameters_ecoarse(idx, *cuMesh.piSHA, iSHA, *cuMesh.pDe, De);
 
-				//must also add iSHE contribution -> here we must use non-homogeneous Neumann boundary conditions when calculating S differentials
-				Jc[idx] += (iSHA * De / (cuBReal)MUB_E) * S.curl_nneu(idx, poisson_Spin_S);
-			}
-
-			//2. CPP-GMR contribution
-			if (M.linear_size() && cuIsNZ((cuBReal)betaD)) {
-
-				cuBReal Ms = *cuMesh.pMs;
-				cuMesh.update_parameters_ecoarse(idx, *cuMesh.pMs, Ms);
-
-				int idx_M = M.position_to_cellidx(S.cellidx_to_position(idx));
-
-				cuReal3 Mval = M[idx_M];
-				cuReal33 grad_S = S.grad_neu(idx);		//homogeneous Neumann since SHA = 0 in magnetic meshes
-
-				Jc[idx] += (grad_S * Mval) * betaD * De / ((cuBReal)MUB_E * Ms);
+				E[idx] = -1.0 * V.grad_diri_nneu(idx, (iSHA * De / ((cuBReal)MUB_E * elC[idx])) * S.curl_neu(idx));
 			}
 		}
-		else Jc[idx] = cuReal3(0);
+		else E[idx] = cuReal3(0);
 	}
 }
 
-//-------------------Calculation Methods
+//-------------------Calculation Methods : Electric Field
 
-//calculate charge current density over the mesh
-void TransportCUDA::CalculateCurrentDensity(void)
+//calculate electric field as the negative gradient of V
+void TransportCUDA::CalculateElectricField(void)
 {
 	if (!pSMeshCUDA->SolveSpinCurrent()) {
 
-		CalculateCurrentDensity_Charge_Kernel <<< (pMeshCUDA->n_e.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (pMeshCUDA->Jc, pMeshCUDA->V, pMeshCUDA->elC);
+		CalculateElectricField_Charge_Kernel << < (pMeshCUDA->n_e.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (pMeshCUDA->E, pMeshCUDA->V);
 	}
 	else {
 
-		CalculateCurrentDensity_Spin_Kernel <<< (pMeshCUDA->n_e.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (pMeshCUDA->cuMesh, poisson_Spin_V, poisson_Spin_S);
+		CalculateElectricField_Spin_Kernel <<< (pMeshCUDA->n_e.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (pMeshCUDA->cuMesh, poisson_Spin_V, poisson_Spin_S);
 	}
 }
 

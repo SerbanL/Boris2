@@ -10,7 +10,7 @@
 #include "ConvolutionCUDA.h"
 #include "DemagKernelCUDA.h"
 
-class FMeshCUDA;
+class MeshCUDA;
 class Demag;
 
 class DemagCUDA :
@@ -21,7 +21,7 @@ class DemagCUDA :
 private:
 
 	//pointer to CUDA version of mesh object holding the effective field module holding this CUDA module
-	FMeshCUDA* pMeshCUDA;
+	MeshCUDA* pMeshCUDA;
 
 	//point to cpu version of this module
 	Demag *pDemag;
@@ -35,7 +35,7 @@ private:
 
 public:
 
-	DemagCUDA(FMeshCUDA* pMeshCUDA_, Demag *pDemag_);
+	DemagCUDA(MeshCUDA* pMeshCUDA_, Demag *pDemag_);
 	~DemagCUDA();
 
 	//-------------------Abstract base class method implementations
@@ -44,7 +44,7 @@ public:
 
 	BError Initialize(void);
 
-	BError UpdateConfiguration(UPDATECONFIG_ cfgMessage = UPDATECONFIG_GENERIC);
+	BError UpdateConfiguration(UPDATECONFIG_ cfgMessage);
 
 	void UpdateField(void);
 };

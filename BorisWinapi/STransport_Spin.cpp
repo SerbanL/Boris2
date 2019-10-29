@@ -13,8 +13,12 @@ void STransport::solve_spin_transport_sor(void)
 
 	iters_to_conv = 0;
 
-	bool start_iters = true;
+	//Prime the spin solver for the charge part
+	for (int idx = 0; idx < (int)pTransport.size(); idx++) {
 
+		pTransport[idx]->PrimeSpinSolver_Charge();
+	}
+	
 	//1. Solve V everywhere for current S until convergence criteria hit
 
 	do {
@@ -27,8 +31,7 @@ void STransport::solve_spin_transport_sor(void)
 
 			DBL2 error;
 
-			if (fixed_SOR_damping) error = pTransport[idx]->IterateSpinSolver_Charge_SOR(SOR_damping.i);
-			else error = pTransport[idx]->IterateSpinSolver_Charge_aSOR(start_iters, s_errorMax);
+			error = pTransport[idx]->IterateSpinSolver_Charge_SOR(SOR_damping.i);
 
 			if (error.first > max_error.first) max_error.first = error.first;
 			if (error.second > max_error.second) max_error.second = error.second;
@@ -37,8 +40,6 @@ void STransport::solve_spin_transport_sor(void)
 		//normalize error to maximum change
 		max_error.first = (max_error.second > 0 ? max_error.first / max_error.second : max_error.first);
 
-		start_iters = false;
-
 		//now set CMBND cells for V
 		set_cmbnd_spin_transport_V();
 
@@ -46,10 +47,10 @@ void STransport::solve_spin_transport_sor(void)
 
 	} while (max_error.first > errorMaxLaplace && iters_to_conv < maxLaplaceIterations);
 
-	//2. update Jc in all meshes if a significant change occured
+	//2. update E in all meshes
 	for (int idx = 0; idx < (int)pTransport.size(); idx++) {
 
-		pTransport[idx]->CalculateCurrentDensity();
+		pTransport[idx]->CalculateElectricField();
 	}
 
 	//--------------
@@ -58,11 +59,13 @@ void STransport::solve_spin_transport_sor(void)
 
 	s_iters_to_conv = 0;
 
-	start_iters = true;
+	//Prime the spin solver for the spin part
+	for (int idx = 0; idx < (int)pTransport.size(); idx++) {
+
+		pTransport[idx]->PrimeSpinSolver_Spin();
+	}
 
 	do {
-
-		aSOR_damping = DBL2();
 
 		//get max error : the max change in |S| from one iteration to the next
 		max_error = DBL2();
@@ -72,22 +75,14 @@ void STransport::solve_spin_transport_sor(void)
 
 			DBL2 error;
 
-			if (fixed_SOR_damping) error = pTransport[idx]->IterateSpinSolver_Spin_SOR(SOR_damping.j);
-			else error = pTransport[idx]->IterateSpinSolver_Spin_aSOR(start_iters, s_errorMax);
+			error = pTransport[idx]->IterateSpinSolver_Spin_SOR(SOR_damping.j);
 
 			if (error.first > max_error.first) max_error.first = error.first;
 			if (error.second > max_error.second) max_error.second = error.second;
-
-			//store minimum and maximum damping values
-			double damping = pS[idx]->aSOR_get_damping();
-			if (aSOR_damping == DBL2()) aSOR_damping = DBL2(damping, damping);
-			else aSOR_damping = DBL2(min(aSOR_damping.i, damping), max(aSOR_damping.j, damping));
 		}
 
 		//normalize error to maximum change
 		max_error.first = (max_error.second > 0 ? max_error.first / max_error.second : max_error.first);
-
-		start_iters = false;
 
 		//now set CMBND cells for S
 		set_cmbnd_spin_transport_S();
@@ -246,35 +241,5 @@ void STransport::CalculateSAInterfaceField(void)
 		}
 	}
 }
-
-//Calculate interface spin accumulation torque only in mesh with matching transport module
-VEC<DBL3>& STransport::GetInterfacialSpinTorque(Transport* pMeshTrans)
-{
-	if (!pMeshTrans->PrepareDisplayVEC(pMeshTrans->pMesh->h))
-		return pMeshTrans->displayVEC;
-
-	//calculate interfacial spin torque in displayVEC from all contacts with matching mesh
-	for (int idx1 = 0; idx1 < (int)CMBNDcontacts.size(); idx1++) {
-
-		for (int idx2 = 0; idx2 < (int)CMBNDcontacts[idx1].size(); idx2++) {
-
-			int idx_sec = CMBNDcontacts[idx1][idx2].mesh_idx.i;
-			int idx_pri = CMBNDcontacts[idx1][idx2].mesh_idx.j;
-
-			if (pTransport[idx_pri] == pMeshTrans)
-				pTransport[idx_pri]->CalculateDisplaySAInterfaceTorque(pTransport[idx_sec], CMBNDcontacts[idx1][idx2]);
-		}
-	}
-
-	return pMeshTrans->displayVEC;
-}
-
-#if COMPILECUDA == 1
-//return interfacial spin torque in given mesh with matching transport module
-cu_obj<cuVEC<cuReal3>>& STransport::GetInterfacialSpinTorqueCUDA(Transport* pMeshTrans)
-{
-	return reinterpret_cast<STransportCUDA*>(pModuleCUDA)->GetInterfacialSpinTorque(reinterpret_cast<TransportCUDA*>(pMeshTrans->pModuleCUDA));
-}
-#endif
 
 #endif

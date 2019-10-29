@@ -372,17 +372,17 @@ VType VEC_VC<VType>::curl_diri(int idx) const
 		curl.z += (quantity[idx + 1].y - quantity[idx - 1].y) / (2 * h.x);
 	}
 	//not an inner point along this direction - Use Dirichlet?
-	else if (ngbrFlags[idx] & NF_DIRICHLETX) {
+	else if (ngbrFlags2.size() && (ngbrFlags2[idx] & NF2_DIRICHLETX)) {
 
-		if (ngbrFlags[idx] & NF_DIRICHLETPX) {
+		if (ngbrFlags2[idx] & NF2_DIRICHLETPX) {
 
-			curl.y -= 0.5 * (quantity[idx + 1].z + quantity[idx].z - 2 * get_dirichlet_value(NF_DIRICHLETPX, idx).z) / h.x;
-			curl.z += 0.5 * (quantity[idx + 1].y + quantity[idx].y - 2 * get_dirichlet_value(NF_DIRICHLETPX, idx).y) / h.x;
+			curl.y -= 0.5 * (quantity[idx + 1].z + quantity[idx].z - 2 * get_dirichlet_value(NF2_DIRICHLETPX, idx).z) / h.x;
+			curl.z += 0.5 * (quantity[idx + 1].y + quantity[idx].y - 2 * get_dirichlet_value(NF2_DIRICHLETPX, idx).y) / h.x;
 		}
 		else {
 
-			curl.y -= 0.5 * (2 * get_dirichlet_value(NF_DIRICHLETNX, idx).z - quantity[idx].z - quantity[idx - 1].z) / h.x;
-			curl.z += 0.5 * (2 * get_dirichlet_value(NF_DIRICHLETNX, idx).y - quantity[idx].y - quantity[idx - 1].y) / h.x;
+			curl.y -= 0.5 * (2 * get_dirichlet_value(NF2_DIRICHLETNX, idx).z - quantity[idx].z - quantity[idx - 1].z) / h.x;
+			curl.z += 0.5 * (2 * get_dirichlet_value(NF2_DIRICHLETNX, idx).y - quantity[idx].y - quantity[idx - 1].y) / h.x;
 		}
 	}
 	//Is it a CMBND boundary? - if not then use homogeneous Neumann condition (differential zero at the boundary)
@@ -439,17 +439,17 @@ VType VEC_VC<VType>::curl_diri(int idx) const
 		curl.x += (quantity[idx + n.x].z - quantity[idx - n.x].z) / (2 * h.y);
 		curl.z -= (quantity[idx + n.x].x - quantity[idx - n.x].x) / (2 * h.y);
 	}
-	else if (ngbrFlags[idx] & NF_DIRICHLETY) {
+	else if (ngbrFlags2.size() && (ngbrFlags2[idx] & NF2_DIRICHLETY)) {
 
-		if (ngbrFlags[idx] & NF_DIRICHLETPY) {
+		if (ngbrFlags2[idx] & NF2_DIRICHLETPY) {
 
-			curl.x += 0.5 * (quantity[idx + n.x].z + quantity[idx].z - 2 * get_dirichlet_value(NF_DIRICHLETPY, idx).z) / h.y;
-			curl.z -= 0.5 * (quantity[idx + n.x].x + quantity[idx].x - 2 * get_dirichlet_value(NF_DIRICHLETPY, idx).x) / h.y;
+			curl.x += 0.5 * (quantity[idx + n.x].z + quantity[idx].z - 2 * get_dirichlet_value(NF2_DIRICHLETPY, idx).z) / h.y;
+			curl.z -= 0.5 * (quantity[idx + n.x].x + quantity[idx].x - 2 * get_dirichlet_value(NF2_DIRICHLETPY, idx).x) / h.y;
 		}
 		else {
 
-			curl.x += 0.5 * (2 * get_dirichlet_value(NF_DIRICHLETNY, idx).z - quantity[idx].z - quantity[idx - n.x].z) / h.y;
-			curl.z -= 0.5 * (2 * get_dirichlet_value(NF_DIRICHLETNY, idx).x - quantity[idx].x - quantity[idx - n.x].x) / h.y;
+			curl.x += 0.5 * (2 * get_dirichlet_value(NF2_DIRICHLETNY, idx).z - quantity[idx].z - quantity[idx - n.x].z) / h.y;
+			curl.z -= 0.5 * (2 * get_dirichlet_value(NF2_DIRICHLETNY, idx).x - quantity[idx].x - quantity[idx - n.x].x) / h.y;
 		}
 	}
 	//Is it a CMBND boundary? - if not then use homogeneous Neumann condition (differential zero at the boundary)
@@ -506,17 +506,17 @@ VType VEC_VC<VType>::curl_diri(int idx) const
 		curl.x -= (quantity[idx + n.x*n.y].y - quantity[idx - n.x*n.y].y) / (2 * h.z);
 		curl.y += (quantity[idx + n.x*n.y].x - quantity[idx - n.x*n.y].x) / (2 * h.z);
 	}
-	else if (ngbrFlags[idx] & NF_DIRICHLETZ) {
+	else if (ngbrFlags2.size() && (ngbrFlags2[idx] & NF2_DIRICHLETZ)) {
 
-		if (ngbrFlags[idx] & NF_DIRICHLETPZ) {
+		if (ngbrFlags2[idx] & NF2_DIRICHLETPZ) {
 
-			curl.x -= 0.5 * (quantity[idx + n.x*n.y].y + quantity[idx].y - 2 * get_dirichlet_value(NF_DIRICHLETPZ, idx).y) / h.z;
-			curl.y += 0.5 * (quantity[idx + n.x*n.y].x + quantity[idx].x - 2 * get_dirichlet_value(NF_DIRICHLETPZ, idx).x) / h.z;
+			curl.x -= 0.5 * (quantity[idx + n.x*n.y].y + quantity[idx].y - 2 * get_dirichlet_value(NF2_DIRICHLETPZ, idx).y) / h.z;
+			curl.y += 0.5 * (quantity[idx + n.x*n.y].x + quantity[idx].x - 2 * get_dirichlet_value(NF2_DIRICHLETPZ, idx).x) / h.z;
 		}
 		else {
 
-			curl.x -= 0.5 * (2 * get_dirichlet_value(NF_DIRICHLETNZ, idx).y - quantity[idx].y - quantity[idx - n.x*n.y].y) / h.z;
-			curl.y += 0.5 * (2 * get_dirichlet_value(NF_DIRICHLETNZ, idx).x - quantity[idx].x - quantity[idx - n.x*n.y].x) / h.z;
+			curl.x -= 0.5 * (2 * get_dirichlet_value(NF2_DIRICHLETNZ, idx).y - quantity[idx].y - quantity[idx - n.x*n.y].y) / h.z;
+			curl.y += 0.5 * (2 * get_dirichlet_value(NF2_DIRICHLETNZ, idx).x - quantity[idx].x - quantity[idx - n.x*n.y].x) / h.z;
 		}
 	}
 	//Is it a CMBND boundary? - if not then use homogeneous Neumann condition (differential zero at the boundary)
@@ -588,17 +588,17 @@ VType VEC_VC<VType>::curl_diri_nneu(int idx, VAL3<VType>& bdiff) const
 		curl.z += (quantity[idx + 1].y - quantity[idx - 1].y) / (2 * h.x);
 	}
 	//not an inner point along this direction - Use Dirichlet?
-	else if (ngbrFlags[idx] & NF_DIRICHLETX) {
+	else if (ngbrFlags2.size() && (ngbrFlags2[idx] & NF2_DIRICHLETX)) {
 
-		if (ngbrFlags[idx] & NF_DIRICHLETPX) {
+		if (ngbrFlags2[idx] & NF2_DIRICHLETPX) {
 
-			curl.y -= 0.5 * (quantity[idx + 1].z + quantity[idx].z - 2 * get_dirichlet_value(NF_DIRICHLETPX, idx).z) / h.x;
-			curl.z += 0.5 * (quantity[idx + 1].y + quantity[idx].y - 2 * get_dirichlet_value(NF_DIRICHLETPX, idx).y) / h.x;
+			curl.y -= 0.5 * (quantity[idx + 1].z + quantity[idx].z - 2 * get_dirichlet_value(NF2_DIRICHLETPX, idx).z) / h.x;
+			curl.z += 0.5 * (quantity[idx + 1].y + quantity[idx].y - 2 * get_dirichlet_value(NF2_DIRICHLETPX, idx).y) / h.x;
 		}
 		else {
 
-			curl.y -= 0.5 * (2 * get_dirichlet_value(NF_DIRICHLETNX, idx).z - quantity[idx].z - quantity[idx - 1].z) / h.x;
-			curl.z += 0.5 * (2 * get_dirichlet_value(NF_DIRICHLETNX, idx).y - quantity[idx].y - quantity[idx - 1].y) / h.x;
+			curl.y -= 0.5 * (2 * get_dirichlet_value(NF2_DIRICHLETNX, idx).z - quantity[idx].z - quantity[idx - 1].z) / h.x;
+			curl.z += 0.5 * (2 * get_dirichlet_value(NF2_DIRICHLETNX, idx).y - quantity[idx].y - quantity[idx - 1].y) / h.x;
 		}
 	}
 	//Is it a CMBND boundary? - if not then use homogeneous Neumann condition (differential zero at the boundary)
@@ -655,17 +655,17 @@ VType VEC_VC<VType>::curl_diri_nneu(int idx, VAL3<VType>& bdiff) const
 		curl.x += (quantity[idx + n.x].z - quantity[idx - n.x].z) / (2 * h.y);
 		curl.z -= (quantity[idx + n.x].x - quantity[idx - n.x].x) / (2 * h.y);
 	}
-	else if (ngbrFlags[idx] & NF_DIRICHLETY) {
+	else if (ngbrFlags2.size() && (ngbrFlags2[idx] & NF2_DIRICHLETY)) {
 
-		if (ngbrFlags[idx] & NF_DIRICHLETPY) {
+		if (ngbrFlags2[idx] & NF2_DIRICHLETPY) {
 
-			curl.x += 0.5 * (quantity[idx + n.x].z + quantity[idx].z - 2 * get_dirichlet_value(NF_DIRICHLETPY, idx).z) / h.y;
-			curl.z -= 0.5 * (quantity[idx + n.x].x + quantity[idx].x - 2 * get_dirichlet_value(NF_DIRICHLETPY, idx).x) / h.y;
+			curl.x += 0.5 * (quantity[idx + n.x].z + quantity[idx].z - 2 * get_dirichlet_value(NF2_DIRICHLETPY, idx).z) / h.y;
+			curl.z -= 0.5 * (quantity[idx + n.x].x + quantity[idx].x - 2 * get_dirichlet_value(NF2_DIRICHLETPY, idx).x) / h.y;
 		}
 		else {
 
-			curl.x += 0.5 * (2 * get_dirichlet_value(NF_DIRICHLETNY, idx).z - quantity[idx].z - quantity[idx - n.x].z) / h.y;
-			curl.z -= 0.5 * (2 * get_dirichlet_value(NF_DIRICHLETNY, idx).x - quantity[idx].x - quantity[idx - n.x].x) / h.y;
+			curl.x += 0.5 * (2 * get_dirichlet_value(NF2_DIRICHLETNY, idx).z - quantity[idx].z - quantity[idx - n.x].z) / h.y;
+			curl.z -= 0.5 * (2 * get_dirichlet_value(NF2_DIRICHLETNY, idx).x - quantity[idx].x - quantity[idx - n.x].x) / h.y;
 		}
 	}
 	//Is it a CMBND boundary? - if not then use homogeneous Neumann condition (differential zero at the boundary)
@@ -722,17 +722,17 @@ VType VEC_VC<VType>::curl_diri_nneu(int idx, VAL3<VType>& bdiff) const
 		curl.x -= (quantity[idx + n.x*n.y].y - quantity[idx - n.x*n.y].y) / (2 * h.z);
 		curl.y += (quantity[idx + n.x*n.y].x - quantity[idx - n.x*n.y].x) / (2 * h.z);
 	}
-	else if (ngbrFlags[idx] & NF_DIRICHLETZ) {
+	else if (ngbrFlags2.size() && (ngbrFlags2[idx] & NF2_DIRICHLETZ)) {
 
-		if (ngbrFlags[idx] & NF_DIRICHLETPZ) {
+		if (ngbrFlags2[idx] & NF2_DIRICHLETPZ) {
 
-			curl.x -= 0.5 * (quantity[idx + n.x*n.y].y + quantity[idx].y - 2 * get_dirichlet_value(NF_DIRICHLETPZ, idx).y) / h.z;
-			curl.y += 0.5 * (quantity[idx + n.x*n.y].x + quantity[idx].x - 2 * get_dirichlet_value(NF_DIRICHLETPZ, idx).x) / h.z;
+			curl.x -= 0.5 * (quantity[idx + n.x*n.y].y + quantity[idx].y - 2 * get_dirichlet_value(NF2_DIRICHLETPZ, idx).y) / h.z;
+			curl.y += 0.5 * (quantity[idx + n.x*n.y].x + quantity[idx].x - 2 * get_dirichlet_value(NF2_DIRICHLETPZ, idx).x) / h.z;
 		}
 		else {
 
-			curl.x -= 0.5 * (2 * get_dirichlet_value(NF_DIRICHLETNZ, idx).y - quantity[idx].y - quantity[idx - n.x*n.y].y) / h.z;
-			curl.y += 0.5 * (2 * get_dirichlet_value(NF_DIRICHLETNZ, idx).x - quantity[idx].x - quantity[idx - n.x*n.y].x) / h.z;
+			curl.x -= 0.5 * (2 * get_dirichlet_value(NF2_DIRICHLETNZ, idx).y - quantity[idx].y - quantity[idx - n.x*n.y].y) / h.z;
+			curl.y += 0.5 * (2 * get_dirichlet_value(NF2_DIRICHLETNZ, idx).x - quantity[idx].x - quantity[idx - n.x*n.y].x) / h.z;
 		}
 	}
 	//Is it a CMBND boundary? - if not then use homogeneous Neumann condition (differential zero at the boundary)

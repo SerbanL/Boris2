@@ -1,6 +1,6 @@
 #include "stdafx.h"
 #include "DiffEq.h"
-#include "Mesh_Ferromagnetic.h"
+#include "Mesh.h"
 #include "SuperMesh.h"
 
 ///////////////////////////////////////////////////////////////////////
@@ -32,6 +32,10 @@ double ODECommon::dT_min = RKF_MINDT;
 double ODECommon::delta_M_sq = 0.0;
 double ODECommon::delta_G_sq = 0.0;
 double ODECommon::delta_M_dot_delta_G = 0.0;
+
+double ODECommon::delta_M2_sq = 0.0;
+double ODECommon::delta_G2_sq = 0.0;
+double ODECommon::delta_M2_dot_delta_G2 = 0.0;
 
 int ODECommon::evalStep = 0;
 
@@ -117,6 +121,11 @@ BError ODECommon::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 			break;
 		}
 	}
+
+	//reset evaluation method priming and step
+	evalStep = 0;
+	alternator = false;
+	primed = false;
 
 #if COMPILECUDA == 1
 	if (pODECUDA) pODECUDA->UpdateConfiguration(cfgMessage);

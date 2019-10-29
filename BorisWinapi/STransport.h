@@ -16,7 +16,7 @@ class SuperMesh;
 
 class STransport :
 	public Modules,
-	public ProgramState<STransport, tuple<vector_lut<Rect>, vector<double>, int, double, double, double, double, bool, double, int, double, int, bool, DBL2>, tuple<>>
+	public ProgramState<STransport, tuple<vector_lut<Rect>, vector<double>, int, double, double, double, double, bool, double, int, double, int, DBL2>, tuple<>>
 {
 
 #if COMPILECUDA == 1
@@ -78,14 +78,8 @@ private:
 	//iterations taken by spin accumulation solver to converge to given s_errorMax
 	int s_iters_to_conv = 0;
 
-	//used fixed SOR damping method
-	bool fixed_SOR_damping = true;
-
 	//fixed SOR damping to use for V (first value) and S (second value) Poisson equations
 	DBL2 SOR_damping = DBL2(1.4, 0.5);
-
-	//adaptive SOR algorithm (for spin current solver) damping values, minimum and maximum used - monitor algorithm with these
-	DBL2 aSOR_damping;
 
 	//after transport solver has relaxed below errorMaxLaplace, it only needs to be updated if relevant quantities change (e.g. potential, conductivity)
 	//When these changes occur this flag is set to true.
@@ -150,21 +144,23 @@ public:
 
 	BError Initialize(void);
 
-	BError UpdateConfiguration(UPDATECONFIG_ cfgMessage = UPDATECONFIG_GENERIC);
+	BError UpdateConfiguration(UPDATECONFIG_ cfgMessage);
 
 	BError MakeCUDAModule(void);
 
 	double UpdateField(void);
 
-	//-------------------Getters
+	//-------------------Display Calculation Methods
 
-	//return interfacial spin torque in given mesh with matching transport module
+		//return interfacial spin torque in given mesh with matching transport module
 	VEC<DBL3>& GetInterfacialSpinTorque(Transport* pMeshTrans);
 
 #if COMPILECUDA == 1
 	//return interfacial spin torque in given mesh with matching transport module
 	cu_obj<cuVEC<cuReal3>>& GetInterfacialSpinTorqueCUDA(Transport* pMeshTrans);
 #endif
+
+	//-------------------Getters
 
 	//get currently set potential
 	double GetPotential(void) { return potential; }
@@ -188,11 +184,7 @@ public:
 	double GetSConvergenceError(void) { return s_errorMax; }
 	int GetSConvergenceTimeout(void) { return s_maxIterations; }
 
-	DBL2 Get_aSOR_Damping(void) { return aSOR_damping; }
-
-	//get SOR type (fixed or adaptive damping)
-	bool IsFixedSORdamping(void) { return fixed_SOR_damping; }
-	//set fixed SOR damping values (for V and S solvers)
+	//get fixed SOR damping values (for V and S solvers)
 	DBL2 GetSORDamping(void) { return SOR_damping; }
 
 	//-------------------Setters
@@ -207,8 +199,6 @@ public:
 	void SetConvergenceError(double errorMaxLaplace_, int maxLaplaceIterations_);
 	void SetSConvergenceError(double s_errorMax_, int s_maxIterations_);
 
-	//set SOR type (fixed or adaptive damping)
-	void SetSORType(bool _fixed_SOR_damping) { fixed_SOR_damping = _fixed_SOR_damping; }
 	//set fixed SOR damping values (for V and S solvers)
 	void SetSORDamping(DBL2 _SOR_damping);
 
@@ -281,7 +271,7 @@ public:
 
 	double UpdateField(void) { return 0.0; }
 
-	//-------------------Getters
+	//-------------------Display Calculation Methods
 
 	//return interfacial spin torque in given mesh with matching transport module
 	VEC<DBL3>& GetInterfacialSpinTorque(Transport* pMeshTrans) { return pMeshTrans->displayVEC; }
@@ -290,6 +280,8 @@ public:
 	//return interfacial spin torque in given mesh with matching transport module
 	cu_obj<cuVEC<cuReal3>>& GetInterfacialSpinTorqueCUDA(Transport* pMeshTrans) { return pMeshTrans->displayVEC_CUDA; }
 #endif
+
+	//-------------------Getters
 
 	//get currently set potential
 	double GetPotential(void) { return 0.0; }
@@ -313,11 +305,7 @@ public:
 	double GetSConvergenceError(void) { return 0.0; }
 	int GetSConvergenceTimeout(void) { return 0; }
 
-	DBL2 Get_aSOR_Damping(void) { return DBL2(); }
-
-	//get SOR type (fixed or adaptive damping)
-	bool IsFixedSORdamping(void) { return true; }
-	//set fixed SOR damping values (for V and S solvers)
+	//get fixed SOR damping values (for V and S solvers)
 	DBL2 GetSORDamping(void) { return DBL2(); }
 
 	//-------------------Setters
@@ -332,8 +320,6 @@ public:
 	void SetConvergenceError(double errorMaxLaplace_, int maxLaplaceIterations_) {}
 	void SetSConvergenceError(double s_errorMax_, int s_maxIterations_) {}
 
-	//set SOR type (fixed or adaptive damping)
-	void SetSORType(bool _fixed_SOR_damping) {}
 	//set fixed SOR damping values (for V and S solvers)
 	void SetSORDamping(DBL2 _SOR_damping) {}
 

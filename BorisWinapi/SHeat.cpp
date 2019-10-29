@@ -11,7 +11,7 @@ SHeat::SHeat(SuperMesh *pSMesh_) :
 {
 	pSMesh = pSMesh_;
 
-	error_on_create = UpdateConfiguration();
+	error_on_create = UpdateConfiguration(UPDATECONFIG_FORCEUPDATE);
 
 	//-------------------------- Is CUDA currently enabled?
 
@@ -28,18 +28,7 @@ BError SHeat::Initialize(void)
 {
 	BError error(CLASS_STR(SHeat));
 
-	initialized = true;
-
-	return error;
-}
-
-BError SHeat::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
-{
-	BError error(CLASS_STR(SHeat));
-
-	Uninitialize();
-	
-	//heat_dT must be set correctly
+	//heat_dT must be set correctly using the magnetic time step
 	magnetic_dT = pSMesh->GetTimeStep();
 
 	//check meshes to set heat boundary flags (NF_CMBND flags for Temp)
@@ -66,12 +55,40 @@ BError SHeat::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 		CMBNDcontacts.push_back(pTemp[idx]->set_cmbnd_flags(idx, pTemp));
 	}
 
+	initialized = true;
+
+	return error;
+}
+
+BError SHeat::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
+{
+	BError error(CLASS_STR(SHeat));
+
+	Uninitialize();
+
+	if (ucfg::check_cfgflags(cfgMessage, UPDATECONFIG_MESHADDED, UPDATECONFIG_MESHDELETED, UPDATECONFIG_MODULEADDED, UPDATECONFIG_MODULEDELETED, UPDATECONFIG_SWITCHCUDASTATE)) {
+
+		//clear everything then rebuild
+		pHeat.clear();
+		pTemp.clear();
+
+		//now build pHeat (and pTemp)
+		for (int idx = 0; idx < pSMesh->size(); idx++) {
+
+			if ((*pSMesh)[idx]->IsModuleSet(MOD_HEAT)) {
+
+				pHeat.push_back(dynamic_cast<Heat*>((*pSMesh)[idx]->GetModule(MOD_HEAT)));
+				pTemp.push_back(&(*pSMesh)[idx]->Temp);
+			}
+		}
+	}
+
 	//------------------------ CUDA UpdateConfiguration if set
 
 #if COMPILECUDA == 1
 	if (pModuleCUDA) {
 
-		if (!error) error = pModuleCUDA->UpdateConfiguration();
+		if (!error) error = pModuleCUDA->UpdateConfiguration(cfgMessage);
 	}
 #endif
 

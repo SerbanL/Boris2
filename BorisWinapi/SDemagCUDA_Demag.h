@@ -11,7 +11,7 @@
 #include "ConvolutionCUDA.h"
 #include "DemagKernelCollectionCUDA.h"
 
-class FMeshCUDA;
+class MeshCUDA;
 class ManagedMeshCUDA;
 class SDemag_Demag;
 class SDemagCUDA;
@@ -25,7 +25,7 @@ class SDemagCUDA_Demag :
 private:
 
 	//pointer to CUDA version of mesh object holding the effective field module holding this CUDA module
-	FMeshCUDA * pMeshCUDA;
+	MeshCUDA * pMeshCUDA;
 
 	//pointer to cpu version of this module
 	SDemag_Demag *pSDemag_Demag;
@@ -47,7 +47,7 @@ private:
 
 public:
 
-	SDemagCUDA_Demag(FMeshCUDA* pMeshCUDA_, SDemag_Demag *pSDemag_Demag_);
+	SDemagCUDA_Demag(MeshCUDA* pMeshCUDA_, SDemag_Demag *pSDemag_Demag_);
 	~SDemagCUDA_Demag();
 
 	//-------------------Abstract base class method implementations
@@ -56,7 +56,7 @@ public:
 
 	BError Initialize(void);
 
-	BError UpdateConfiguration(UPDATECONFIG_ cfgMessage = UPDATECONFIG_GENERIC);
+	BError UpdateConfiguration(UPDATECONFIG_ cfgMessage);
 
 	void UpdateField(void) {}
 	

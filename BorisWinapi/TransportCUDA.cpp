@@ -11,7 +11,7 @@
 #include "SuperMeshCUDA.h"
 #include "SuperMesh.h"
 
-TransportCUDA::TransportCUDA(Mesh* pMesh_, SuperMesh* pSMesh_)
+TransportCUDA::TransportCUDA(Mesh* pMesh_, SuperMesh* pSMesh_, Transport* pTransport_)
 	: ModulesCUDA()
 {
 	pMesh = pMesh_;
@@ -19,7 +19,9 @@ TransportCUDA::TransportCUDA(Mesh* pMesh_, SuperMesh* pSMesh_)
 	pSMesh = pSMesh_;
 	pSMeshCUDA = pSMesh->pSMeshCUDA;
 
-	error_on_create = UpdateConfiguration();
+	pTransport = pTransport_;
+
+	error_on_create = UpdateConfiguration(UPDATECONFIG_FORCEUPDATE);
 
 	//setup objects with methods used for Poisson equation solvers
 	if (!error_on_create) error_on_create = poisson_V()->set_pointers(pMeshCUDA);
@@ -27,11 +29,14 @@ TransportCUDA::TransportCUDA(Mesh* pMesh_, SuperMesh* pSMesh_)
 
 		if (pMesh->MComputation_Enabled()) {
 
-			error_on_create = poisson_Spin_S()->set_pointers(pMeshCUDA, reinterpret_cast<FMesh*>(pMesh)->Get_DifferentialEquation().Get_DifferentialEquationCUDA_ptr());
+			error_on_create = poisson_Spin_S()->set_pointers(
+				pMeshCUDA,
+				reinterpret_cast<DifferentialEquationFMCUDA*>(reinterpret_cast<FMesh*>(pMesh)->Get_DifferentialEquation().Get_DifferentialEquationCUDA_ptr()),
+				this);
 		}
-		else error_on_create = poisson_Spin_S()->set_pointers(pMeshCUDA, nullptr);
+		else error_on_create = poisson_Spin_S()->set_pointers(pMeshCUDA, nullptr, this);
 	}
-	if (!error_on_create) error_on_create = poisson_Spin_V()->set_pointers(pMeshCUDA, poisson_Spin_S);
+	if (!error_on_create) error_on_create = poisson_Spin_V()->set_pointers(pMeshCUDA, this);
 }
 
 TransportCUDA::~TransportCUDA()
@@ -41,14 +46,14 @@ TransportCUDA::~TransportCUDA()
 
 		pMeshCUDA->elC()->copy_to_cpuvec(pMesh->elC);
 		pMeshCUDA->V()->copy_to_cpuvec(pMesh->V);
-		pMeshCUDA->Jc()->copy_to_cpuvec(pMesh->Jc);
+		pMeshCUDA->E()->copy_to_cpuvec(pMesh->E);
 		pMeshCUDA->S()->copy_to_cpuvec(pMesh->S);
 	}
 
 	//clear mesh quantities as they're not used any more
 	pMeshCUDA->elC()->clear();
 	pMeshCUDA->V()->clear();
-	pMeshCUDA->Jc()->clear();
+	pMeshCUDA->E()->clear();
 	pMeshCUDA->S()->clear();
 }
 
@@ -65,6 +70,24 @@ void TransportCUDA::ClearFixedPotentialCells(void)
 	pMeshCUDA->V()->clear_dirichlet_flags();
 }
 
+//check if dM_dt Calculation should be enabled
+bool TransportCUDA::Need_dM_dt_Calculation(void)
+{
+	return pTransport->Need_dM_dt_Calculation();
+}
+
+//check if the delsq_V_fixed VEC is needed
+bool TransportCUDA::Need_delsq_V_fixed_Precalculation(void)
+{
+	return pTransport->Need_delsq_V_fixed_Precalculation();
+}
+
+//check if the delsq_S_fixed VEC is needed
+bool TransportCUDA::Need_delsq_S_fixed_Precalculation(void)
+{
+	return pTransport->Need_delsq_S_fixed_Precalculation();
+}
+
 //-------------------Abstract base class method implementations
 
 BError TransportCUDA::Initialize(void)
@@ -74,12 +97,40 @@ BError TransportCUDA::Initialize(void)
 	//no energy density contribution here
 	ZeroEnergy();
 
-	if (!initialized) {
+	//do we need to enable dM_dt calculation?
+	if (Need_dM_dt_Calculation()) {
 
-		initialized = true;
-
-		CalculateElectricalConductivity(true);
+		if (!dM_dt()->assign(pMeshCUDA->h, pMeshCUDA->meshRect, cuReal3(), (cuVEC_VC<cuReal3>&)pMeshCUDA->M)) return error(BERROR_OUTOFMEMORY_CRIT);
 	}
+	else {
+
+		//disabled
+		dM_dt()->clear();
+	}
+
+	if (pSMesh->SolveSpinCurrent()) {
+
+		//Poisson equation helper storage allocation
+		if (Need_delsq_V_fixed_Precalculation()) {
+
+			if (!delsq_V_fixed()->assign(pMeshCUDA->h_e, pMeshCUDA->meshRect, 0.0)) return error(BERROR_OUTOFMEMORY_CRIT);
+		}
+		else delsq_V_fixed()->clear();
+
+		if (Need_delsq_S_fixed_Precalculation()) {
+
+			if (!delsq_S_fixed()->assign(pMeshCUDA->h_e, pMeshCUDA->meshRect, cuReal3())) return error(BERROR_OUTOFMEMORY_CRIT);
+		}
+		else delsq_S_fixed()->clear();
+	}
+	else {
+
+		//Poisson equation helper storage not needed
+		delsq_V_fixed()->clear();
+		delsq_S_fixed()->clear();
+	}
+
+	initialized = true;
 
 	return error;
 }
@@ -94,35 +145,58 @@ BError TransportCUDA::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 
 	//make sure correct memory is assigned for electrical quantities
 	
-	if (pMeshCUDA->elC()->size_cpu().dim())
-		success = pMeshCUDA->elC()->resize(pMeshCUDA->h_e, pMeshCUDA->meshRect);
-	else
-		success = pMeshCUDA->elC()->set_from_cpuvec(pMesh->elC);
+	if (ucfg::check_cfgflags(cfgMessage, UPDATECONFIG_MESHSHAPECHANGE, UPDATECONFIG_MESHCHANGE)) {
 
-	//electrical potential - set empty cells using information in elC (empty cells have zero electrical conductivity)
-	if (pMeshCUDA->V()->size_cpu().dim())
-		success = pMeshCUDA->V()->resize(pMeshCUDA->h_e, pMeshCUDA->meshRect, (cuVEC_VC<cuBReal>&)pMeshCUDA->elC);
-	else
-		success = pMeshCUDA->V()->assign(pMeshCUDA->h_e, pMeshCUDA->meshRect, (cuBReal)0.0, (cuVEC_VC<cuBReal>&)pMeshCUDA->elC);
+		if (pMeshCUDA->elC()->size_cpu().dim() && cfgMessage != UPDATECONFIG_MESHSHAPECHANGE) {
 
-	//electrical current density - set empty cells using information in elC (empty cells have zero electrical conductivity)
-	if (pMeshCUDA->Jc()->size_cpu().dim())
-		success = pMeshCUDA->Jc()->resize(pMeshCUDA->h_e, pMeshCUDA->meshRect, (cuVEC_VC<cuBReal>&)pMeshCUDA->elC);
-	else
-		success = pMeshCUDA->Jc()->assign(pMeshCUDA->h_e, pMeshCUDA->meshRect, cuReal3(0.0), (cuVEC_VC<cuBReal>&)pMeshCUDA->elC);
+			success = pMeshCUDA->elC()->resize(pMeshCUDA->h_e, pMeshCUDA->meshRect);
+		}
+		else {
 
-	//spin accumulation if needed - set empty cells using information in elC (empty cells have zero electrical conductivity)
-	if (success && pSMesh->SolveSpinCurrent()) {
+			success = pMeshCUDA->elC()->set_from_cpuvec(pMesh->elC);
+		}
 
-		if (pMeshCUDA->S()->size_cpu().dim())
-			success = pMeshCUDA->S()->resize(pMeshCUDA->h_e, pMeshCUDA->meshRect, (cuVEC_VC<cuBReal>&)pMeshCUDA->elC);
-		else
-			success = pMeshCUDA->S()->assign(pMeshCUDA->h_e, pMeshCUDA->meshRect, cuReal3(0.0), (cuVEC_VC<cuBReal>&)pMeshCUDA->elC);
+		//electrical potential - set empty cells using information in elC (empty cells have zero electrical conductivity)
+		if (pMeshCUDA->V()->size_cpu().dim() && cfgMessage != UPDATECONFIG_MESHSHAPECHANGE) {
+
+			success = pMeshCUDA->V()->resize(pMeshCUDA->h_e, pMeshCUDA->meshRect, (cuVEC_VC<cuBReal>&)pMeshCUDA->elC);
+		}
+		else {
+
+			success = pMeshCUDA->V()->assign(pMeshCUDA->h_e, pMeshCUDA->meshRect, (cuBReal)0.0, (cuVEC_VC<cuBReal>&)pMeshCUDA->elC);
+		}
+		
+		//electrical field - set empty cells using information in elC (empty cells have zero electrical conductivity)
+		if (pMeshCUDA->E()->size_cpu().dim() && cfgMessage != UPDATECONFIG_MESHSHAPECHANGE) {
+
+			success = pMeshCUDA->E()->resize(pMeshCUDA->h_e, pMeshCUDA->meshRect, (cuVEC_VC<cuBReal>&)pMeshCUDA->elC);
+		}
+		else {
+
+			success = pMeshCUDA->E()->assign(pMeshCUDA->h_e, pMeshCUDA->meshRect, cuReal3(0.0), (cuVEC_VC<cuBReal>&)pMeshCUDA->elC);
+		}
 	}
-	else {
 
-		pMeshCUDA->S()->clear();
-		displayVEC()->clear();
+	//here also need to update on ODE change as SolveSpinCurrent state might change
+	if (ucfg::check_cfgflags(cfgMessage, UPDATECONFIG_MESHSHAPECHANGE, UPDATECONFIG_MESHCHANGE, UPDATECONFIG_ODE_SOLVER)) {
+
+		//spin accumulation if needed - set empty cells using information in elC (empty cells have zero electrical conductivity)
+		if (success && pSMesh->SolveSpinCurrent()) {
+
+			if (pMeshCUDA->S()->size_cpu().dim() && cfgMessage != UPDATECONFIG_MESHSHAPECHANGE) {
+
+				success = pMeshCUDA->S()->resize(pMeshCUDA->h_e, pMeshCUDA->meshRect, (cuVEC_VC<cuBReal>&)pMeshCUDA->elC);
+			}
+			else {
+
+				success = pMeshCUDA->S()->assign(pMeshCUDA->h_e, pMeshCUDA->meshRect, cuReal3(0.0), (cuVEC_VC<cuBReal>&)pMeshCUDA->elC);
+			}
+		}
+		else {
+
+			pMeshCUDA->S()->clear();
+			displayVEC()->clear();
+		}
 	}
 
 	if (!success) return error(BERROR_OUTOFGPUMEMORY_CRIT);

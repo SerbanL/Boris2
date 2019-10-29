@@ -39,7 +39,7 @@ using namespace std;
 enum TOO_ {TOO_NONE = 0, TOO_ROUND, TOO_SQUARE};
 
 //cell display object - objects in objCol (ObjectBufferCollection). These must be loaded in objCol in the same order as they appear in the enum.
-enum CDO_ {CDO_NONE = -1, CDO_CONE = 0, CDO_ARROW, CDO_CUBE, CDO_CUBEFRAME, CDO_DODECA, CDO_AXISX, CDO_AXISY, CDO_AXISZ};
+enum CDO_ {CDO_NONE = -1, CDO_CONE = 0, CDO_ARROW, CDO_HALFARROW, CDO_CUBE, CDO_HALFCUBE, CDO_CUBEFRAME, CDO_DODECA, CDO_AXISX, CDO_AXISY, CDO_AXISZ};
 
 ////////////////////////////////////////////////////////////////////////////////////////
 //Text formatting specifier

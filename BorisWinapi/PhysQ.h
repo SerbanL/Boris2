@@ -23,6 +23,9 @@ private:
 	//VEC or VEC_VC quantity : vtype specifies the exact type we need to cast this to
 	void *pVEC = nullptr;
 
+	//second vec to display if in dual display mode : must be same type as pVEC and same dimensions
+	void *pVEC2 = nullptr;
+
 	//representation of type of *pVEC
 	VECTYPE_ vtype = VECTYPE_VOID;
 	//and its stored type
@@ -59,10 +62,19 @@ public:
 	//constructors for various displayed types
 	PhysQ(VEC<DBL3> *pVEC_, unsigned displayedType_, VEC3REP_ vec3rep_);
 	PhysQ(VEC<FLT3> *pVEC_, unsigned displayedType_, VEC3REP_ vec3rep_);
+
+	PhysQ(VEC<DBL3> *pVEC_, VEC<DBL3> *pVEC2_, unsigned displayedType_, VEC3REP_ vec3rep_);
+	PhysQ(VEC<FLT3> *pVEC_, VEC<FLT3> *pVEC2_, unsigned displayedType_, VEC3REP_ vec3rep_);
+	
 	PhysQ(VEC<double> *pVEC_, unsigned displayedType_);
 	PhysQ(VEC<float> *pVEC_, unsigned displayedType_);
+	
 	PhysQ(VEC_VC<DBL3> *pVEC_, unsigned displayedType_, VEC3REP_ vec3rep_);
 	PhysQ(VEC_VC<FLT3> *pVEC_, unsigned displayedType_, VEC3REP_ vec3rep_);
+	
+	PhysQ(VEC_VC<DBL3> *pVEC_, VEC_VC<DBL3> *pVEC2_, unsigned displayedType_, VEC3REP_ vec3rep_);
+	PhysQ(VEC_VC<FLT3> *pVEC_, VEC_VC<FLT3> *pVEC2_, unsigned displayedType_, VEC3REP_ vec3rep_);
+	
 	PhysQ(VEC_VC<double> *pVEC_, unsigned displayedType_);
 	PhysQ(VEC_VC<float> *pVEC_, unsigned displayedType_);
 
@@ -79,6 +91,12 @@ public:
 
 	VEC<FLT3>* get_vec_flt3(void) { return static_cast<VEC<FLT3>*>(pVEC); }
 	VEC_VC<FLT3>* get_vec_vc_flt3(void) { return static_cast<VEC_VC<FLT3>*>(pVEC); }
+
+	VEC<DBL3>* get2_vec_dbl3(void) { return static_cast<VEC<DBL3>*>(pVEC2); }
+	VEC_VC<DBL3>* get2_vec_vc_dbl3(void) { return static_cast<VEC_VC<DBL3>*>(pVEC2); }
+
+	VEC<FLT3>* get2_vec_flt3(void) { return static_cast<VEC<FLT3>*>(pVEC2); }
+	VEC_VC<FLT3>* get2_vec_vc_flt3(void) { return static_cast<VEC_VC<FLT3>*>(pVEC2); }
 
 	VEC<double>* get_vec_double(void) { return static_cast<VEC<double>*>(pVEC); }
 	VEC_VC<double>* get_vec_vc_double(void) { return static_cast<VEC_VC<double>*>(pVEC); }
@@ -116,4 +134,6 @@ public:
 	bool is_double_precision(void) { return (vstype == VECSTYPE_DBL3 || vstype == VECSTYPE_DOUBLE); }
 
 	bool is_empty(void) { return (pVEC == nullptr || !n.dim()); }
+
+	bool is_dual(void) { return pVEC2 != nullptr; }
 };

@@ -78,7 +78,7 @@ BError SuperMesh::AddModule(string meshName, MOD_ moduleId)
 			}
 		}
 
-		error = UpdateConfiguration();
+		error = UpdateConfiguration(UPDATECONFIG_MODULEADDED);
 	}
 
 	return error;
@@ -145,7 +145,7 @@ BError SuperMesh::DelModule(string meshName, MOD_ moduleId)
 		}
 	}
 
-	error = UpdateConfiguration();
+	error = UpdateConfiguration(UPDATECONFIG_MODULEDELETED);
 
 	return error;
 }

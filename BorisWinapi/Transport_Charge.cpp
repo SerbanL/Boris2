@@ -12,11 +12,6 @@
 
 //-------------------Calculation Methods
 
-DBL2 Transport::IterateChargeSolver_aSOR(bool start_iters, double conv_error)
-{
-	return pMesh->V.IteratePoisson_aSOR<Transport>(&Transport::Evaluate_ChargeSolver_delsqV_RHS, *this, start_iters, conv_error);
-}
-
 DBL2 Transport::IterateChargeSolver_SOR(double damping)
 {
 	return pMesh->V.IteratePoisson_SOR<Transport>(&Transport::Evaluate_ChargeSolver_delsqV_RHS, *this, damping);
@@ -57,16 +52,16 @@ double Transport::bfunc_V_pri(int cell1_idx, int cell2_idx) const
 }
 
 //second order differential of V at cells either side of the boundary; delsq V = -grad V * grad elC / elC
-double Transport::diff2_V_sec(DBL3 relpos_m1, DBL3 stencil) const
+double Transport::diff2_V_sec(DBL3 relpos_m1, DBL3 stencil, DBL3 shift) const
 {
 	int cellm1_idx = pMesh->V.position_to_cellidx(relpos_m1);
 
-	return -(pMesh->V.grad_diri(cellm1_idx) * pMesh->elC.grad_sided(cellm1_idx)) / pMesh->elC[cellm1_idx];
+	return Evaluate_ChargeSolver_delsqV_RHS(cellm1_idx);
 }
 
-double Transport::diff2_V_pri(int cell1_idx) const
+double Transport::diff2_V_pri(int cell1_idx, DBL3 shift) const
 {
-	return -(pMesh->V.grad_diri(cell1_idx) * pMesh->elC.grad_sided(cell1_idx)) / pMesh->elC[cell1_idx];
+	return Evaluate_ChargeSolver_delsqV_RHS(cell1_idx);
 }
 
 #endif

@@ -14,7 +14,7 @@ STransportCUDA::STransportCUDA(SuperMesh* pSMesh_, STransport* pSTrans_) :
 	pSMesh = pSMesh_;
 	pSTrans = pSTrans_;
 
-	error_on_create = UpdateConfiguration();
+	error_on_create = UpdateConfiguration(UPDATECONFIG_FORCEUPDATE);
 }
 
 STransportCUDA::~STransportCUDA()
@@ -33,10 +33,19 @@ BError STransportCUDA::Initialize(void)
 
 	if (!initialized) {
 
-		//Calculate V and Jc before starting
+		////////////////////////////////////////////////////////////////////////////
+		//Calculate V, E and elC before starting
+		////////////////////////////////////////////////////////////////////////////
 
 		//initialize V with a linear slope between ground and another electrode (in most problems there are only 2 electrodes setup) - do this for all transport meshes
 		initialize_potential_values();
+
+		//set electric field and  electrical conductivity in individual transport modules (in this order!)
+		for (int idx = 0; idx < (int)pTransport.size(); idx++) {
+
+			pTransport[idx]->CalculateElectricField();
+			pTransport[idx]->CalculateElectricalConductivity(true);
+		}
 
 		//solve only for charge current (V and Jc with continuous boundaries)
 		if (!pSMesh->SolveSpinCurrent()) solve_charge_transport_sor();
@@ -58,66 +67,76 @@ BError STransportCUDA::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 
 	Uninitialize();
 
-	//check meshes to set transport boundary flags (NF_CMBND flags for V)
-	
-	//clear everything then rebuild
-	pTransport.clear();
-	CMBNDcontactsCUDA.clear();
-	CMBNDcontacts.clear();
-	pV.clear();
-	pS.clear();
+	if (ucfg::check_cfgflags(cfgMessage,
+		UPDATECONFIG_MESHSHAPECHANGE, UPDATECONFIG_MESHCHANGE,
+		UPDATECONFIG_MESHADDED, UPDATECONFIG_MESHDELETED,
+		UPDATECONFIG_MODULEADDED, UPDATECONFIG_MODULEDELETED,
+		UPDATECONFIG_TRANSPORT_ELECTRODE,
+		UPDATECONFIG_ODE_SOLVER, UPDATECONFIG_SWITCHCUDASTATE)) {
 
-	//now build pTransport (and pV)
-	for (int idx = 0; idx < pSMesh->size(); idx++) {
+		////////////////////////////////////////////////////////////////////////////
+		//check meshes to set transport boundary flags (NF_CMBND flags for V)
+		////////////////////////////////////////////////////////////////////////////
 
-		if ((*pSMesh)[idx]->IsModuleSet(MOD_TRANSPORT)) {
+		//clear everything then rebuild
+		pTransport.clear();
+		CMBNDcontactsCUDA.clear();
+		CMBNDcontacts.clear();
+		pV.clear();
+		pS.clear();
 
-			pTransport.push_back(dynamic_cast<TransportCUDA*>((*pSMesh)[idx]->GetCUDAModule(MOD_TRANSPORT)));
-			pV.push_back(&(*pSMesh)[idx]->pMeshCUDA->V);
-			pS.push_back(&(*pSMesh)[idx]->pMeshCUDA->S);
-		}
-	}
+		//now build pTransport (and pV)
+		for (int idx = 0; idx < pSMesh->size(); idx++) {
 
-	//set fixed potential cells and cmbnd flags
-	for (int idx = 0; idx < (int)pTransport.size(); idx++) {
+			if ((*pSMesh)[idx]->IsModuleSet(MOD_TRANSPORT)) {
 
-		//it's easier to just copy the flags entirely from the cpu versions.
-		//Notes :
-		//1. By design the cpu versions are required to keep size and flags up to date (but not mesh values)
-		//2. pTransport in STransport has exactly the same size and order
-		//3. STransport UpdateConfiguration was called just before, which called this CUDA version at the end.
-
-		if (!(*pV[idx])()->copyflags_from_cpuvec(*pSTrans->pV[idx])) error(BERROR_GPUERROR_CRIT);
-
-		if (pSMesh->SolveSpinCurrent()) {
-
-			if (!(*pS[idx])()->copyflags_from_cpuvec(*pSTrans->pS[idx])) error(BERROR_GPUERROR_CRIT);
-		}
-	}
-
-	for (int idx = 0; idx < pSTrans->CMBNDcontacts.size(); idx++) {
-
-		vector<cu_obj<CMBNDInfoCUDA>> mesh_contacts;
-		vector<CMBNDInfoCUDA> mesh_contacts_cpu;
-
-		for (int idx_contact = 0; idx_contact < pSTrans->CMBNDcontacts[idx].size(); idx_contact++) {
-
-			cu_obj<CMBNDInfoCUDA> contact;
-
-			contact()->copy_from_CMBNDInfo<CMBNDInfo>(pSTrans->CMBNDcontacts[idx][idx_contact]);
-
-			mesh_contacts.push_back(contact);
-
-			mesh_contacts_cpu.push_back(pSTrans->CMBNDcontacts[idx][idx_contact]);
+				pTransport.push_back(dynamic_cast<TransportCUDA*>((*pSMesh)[idx]->GetCUDAModule(MOD_TRANSPORT)));
+				pV.push_back(&(*pSMesh)[idx]->pMeshCUDA->V);
+				pS.push_back(&(*pSMesh)[idx]->pMeshCUDA->S);
+			}
 		}
 
-		CMBNDcontactsCUDA.push_back(mesh_contacts);
-		CMBNDcontacts.push_back(mesh_contacts_cpu);
+		//set fixed potential cells and cmbnd flags
+		for (int idx = 0; idx < (int)pTransport.size(); idx++) {
+
+			//it's easier to just copy the flags entirely from the cpu versions.
+			//Notes :
+			//1. By design the cpu versions are required to keep size and flags up to date (but not mesh values)
+			//2. pTransport in STransport has exactly the same size and order
+			//3. STransport UpdateConfiguration was called just before, which called this CUDA version at the end.
+
+			if (!(*pV[idx])()->copyflags_from_cpuvec(*pSTrans->pV[idx])) error(BERROR_GPUERROR_CRIT);
+
+			if (pSMesh->SolveSpinCurrent()) {
+
+				if (!(*pS[idx])()->copyflags_from_cpuvec(*pSTrans->pS[idx])) error(BERROR_GPUERROR_CRIT);
+			}
+		}
+
+		for (int idx = 0; idx < pSTrans->CMBNDcontacts.size(); idx++) {
+
+			vector<cu_obj<CMBNDInfoCUDA>> mesh_contacts;
+			vector<CMBNDInfoCUDA> mesh_contacts_cpu;
+
+			for (int idx_contact = 0; idx_contact < pSTrans->CMBNDcontacts[idx].size(); idx_contact++) {
+
+				cu_obj<CMBNDInfoCUDA> contact;
+
+				contact()->copy_from_CMBNDInfo<CMBNDInfo>(pSTrans->CMBNDcontacts[idx][idx_contact]);
+
+				mesh_contacts.push_back(contact);
+
+				mesh_contacts_cpu.push_back(pSTrans->CMBNDcontacts[idx][idx_contact]);
+			}
+
+			CMBNDcontactsCUDA.push_back(mesh_contacts);
+			CMBNDcontacts.push_back(mesh_contacts_cpu);
+		}
+
+		//copy fixed SOR damping from STransport
+		SOR_damping_V.from_cpu(pSTrans->SOR_damping.i);
+		SOR_damping_S.from_cpu(pSTrans->SOR_damping.j);
 	}
-	
-	//copy fixed SOR damping from STransport
-	SOR_damping_V.from_cpu(pSTrans->SOR_damping.i);
-	SOR_damping_S.from_cpu(pSTrans->SOR_damping.j);
 
 	return error;
 }
@@ -125,12 +144,9 @@ BError STransportCUDA::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 //scale all potential values in all V cuVECs by given scaling value
 void STransportCUDA::scale_potential_values(cuBReal scaling)
 {
-	if (initialized) {
+	for (int idx = 0; idx < (int)pTransport.size(); idx++) {
 
-		for (int idx = 0; idx < (int)pTransport.size(); idx++) {
-
-			(*pV[idx])()->scale_values(scaling);
-		}
+		(*pV[idx])()->scale_values(scaling);
 	}
 }
 

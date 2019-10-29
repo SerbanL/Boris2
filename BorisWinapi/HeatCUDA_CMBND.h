@@ -61,15 +61,15 @@ public:
 	}
 
 	//second order differential of V at cells either side of the boundary; delsq V = -grad V * grad elC / elC
-	__device__ cuBReal diff2_pri(int cell1_idx)
+	__device__ cuBReal diff2_pri(int cell1_idx, cuReal3 shift)
 	{
 		cuVEC_VC<cuBReal>& Temp = *pcuMesh->pTemp;
-		cuVEC_VC<cuReal3>& Jc = *pcuMesh->pJc;
+		cuVEC_VC<cuReal3>& E = *pcuMesh->pE;
 		cuVEC_VC<cuBReal>& elC = *pcuMesh->pelC;
 
 		cuBReal thermCond = *pcuMesh->pthermCond;
 
-		if (Jc.linear_size() || cuIsNZ(pcuMesh->pQ->get0())) {
+		if (E.linear_size() || cuIsNZ(pcuMesh->pQ->get0())) {
 
 			pcuMesh->update_parameters_tcoarse(cell1_idx, *pcuMesh->pthermCond, thermCond);
 		}
@@ -78,10 +78,10 @@ public:
 		cuBReal value = 0.0;
 		
 		//Joule heating
-		if (Jc.linear_size()) {
+		if (E.linear_size()) {
 
-			int idx1_Jc = Jc.position_to_cellidx(Temp.cellidx_to_position(cell1_idx));
-			value = -(Jc[idx1_Jc] * Jc[idx1_Jc]) / (elC[idx1_Jc] * thermCond);
+			int idx1_E = E.position_to_cellidx(Temp.cellidx_to_position(cell1_idx));
+			value = -(elC[idx1_E] * E[idx1_E] * E[idx1_E]) / thermCond;
 		}
 
 		//heat source contribution if set
@@ -96,14 +96,14 @@ public:
 		return value;
 	}
 
-	__device__ cuBReal diff2_sec(cuReal3 relpos_m1, cuReal3 stencil)
+	__device__ cuBReal diff2_sec(cuReal3 relpos_m1, cuReal3 stencil, cuReal3 shift)
 	{
-		cuVEC_VC<cuReal3>& Jc = *pcuMesh->pJc;
+		cuVEC_VC<cuReal3>& E = *pcuMesh->pE;
 		cuVEC_VC<cuBReal>& elC = *pcuMesh->pelC;
 
 		cuBReal thermCond = *pcuMesh->pthermCond;
 
-		if (Jc.linear_size() || cuIsNZ(pcuMesh->pQ->get0())) {
+		if (E.linear_size() || cuIsNZ(pcuMesh->pQ->get0())) {
 
 			pcuMesh->update_parameters_atposition(relpos_m1, *pcuMesh->pthermCond, thermCond);
 		}
@@ -112,10 +112,10 @@ public:
 		cuBReal value = 0.0;
 
 		//Joule heating
-		if (Jc.linear_size()) {
+		if (E.linear_size()) {
 
-			int idx1_Jc = Jc.position_to_cellidx(relpos_m1);
-			value = -(Jc[idx1_Jc] * Jc[idx1_Jc]) / (elC[idx1_Jc] * thermCond);
+			int idx1_E = E.position_to_cellidx(relpos_m1);
+			value = -(elC[idx1_E] * E[idx1_E] * E[idx1_E]) / thermCond;
 		}
 		
 		//heat source contribution if set

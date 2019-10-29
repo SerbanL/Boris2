@@ -14,7 +14,8 @@ FMesh::FMesh(SuperMesh *pSMesh_) :
 			VINFO(move_mesh_trigger), VINFO(skyShift), VINFO(exchange_couple_to_meshes),
 			//Material Parameters
 			VINFO(grel), VINFO(alpha), VINFO(Ms), VINFO(Nxy), VINFO(A), VINFO(D), VINFO(J1), VINFO(J2), VINFO(K1), VINFO(K2), VINFO(mcanis_ea1), VINFO(mcanis_ea2), VINFO(susrel), VINFO(susprel), VINFO(cHA),
-			VINFO(elecCond), VINFO(amrPercentage), VINFO(P), VINFO(beta), VINFO(De), VINFO(SHA), VINFO(flSOT), VINFO(betaD), VINFO(l_sf), VINFO(l_ex), VINFO(l_ph), VINFO(Gi), VINFO(Gmix), VINFO(ts_eff), VINFO(tsi_eff), VINFO(pump_eff),
+			VINFO(elecCond), VINFO(amrPercentage), VINFO(P), VINFO(beta), VINFO(De), VINFO(n_density), VINFO(SHA), VINFO(flSOT), VINFO(betaD), VINFO(l_sf), VINFO(l_ex), VINFO(l_ph), VINFO(Gi), VINFO(Gmix), 
+			VINFO(ts_eff), VINFO(tsi_eff), VINFO(pump_eff), VINFO(cpump_eff), VINFO(the_eff),
 			VINFO(base_temperature), VINFO(T_Curie), VINFO(T_Curie_material), VINFO(atomic_moment), VINFO(thermCond), VINFO(density), VINFO(shc), VINFO(cT), VINFO(Q)
 		},
 		{
@@ -40,7 +41,8 @@ FMesh::FMesh(Rect meshRect_, DBL3 h_, SuperMesh *pSMesh_) :
 			VINFO(move_mesh_trigger), VINFO(skyShift), VINFO(exchange_couple_to_meshes),
 			//Material Parameters
 			VINFO(grel), VINFO(alpha), VINFO(Ms), VINFO(Nxy), VINFO(A), VINFO(D), VINFO(J1), VINFO(J2), VINFO(K1), VINFO(K2), VINFO(mcanis_ea1), VINFO(mcanis_ea2), VINFO(susrel), VINFO(susprel), VINFO(cHA),
-			VINFO(elecCond), VINFO(amrPercentage), VINFO(P), VINFO(beta), VINFO(De), VINFO(SHA), VINFO(flSOT), VINFO(betaD), VINFO(l_sf), VINFO(l_ex), VINFO(l_ph), VINFO(Gi), VINFO(Gmix), VINFO(ts_eff), VINFO(tsi_eff), VINFO(pump_eff),
+			VINFO(elecCond), VINFO(amrPercentage), VINFO(P), VINFO(beta), VINFO(De), VINFO(n_density), VINFO(SHA), VINFO(flSOT), VINFO(betaD), VINFO(l_sf), VINFO(l_ex), VINFO(l_ph), VINFO(Gi), VINFO(Gmix),
+			VINFO(ts_eff), VINFO(tsi_eff), VINFO(pump_eff), VINFO(cpump_eff), VINFO(the_eff),
 			VINFO(base_temperature), VINFO(T_Curie), VINFO(T_Curie_material), VINFO(atomic_moment), VINFO(thermCond), VINFO(density), VINFO(shc), VINFO(cT), VINFO(Q)
 		},
 		{
@@ -64,7 +66,7 @@ FMesh::FMesh(Rect meshRect_, DBL3 h_, SuperMesh *pSMesh_) :
 	h_e = h_;
 	h_t = h_;
 
-	error_on_create = UpdateConfiguration();
+	error_on_create = UpdateConfiguration(UPDATECONFIG_FORCEUPDATE);
 
 	//when creating a new ferromagnetic mesh set the default Curie temperature for permalloy, including temperature dependence for parameters which depend on it
 	if (!error_on_create) SetCurieTemperature(T_Curie);
@@ -100,22 +102,32 @@ BError FMesh::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 {
 	BError error(string(CLASS_STR(FMesh)) + "(" + (*pSMesh).key_from_meshId(meshId) + ")");
 
-	//get number of cells in each dimension : first divide the mesh rectangle with rounding to get an integer number of cells, then adjust cellsize so h * n gives the rectangle dimensions
-	
-	n = round(meshRect / h);
-	if (n.x == 0) n.x = 1;
-	if (n.y == 0) n.y = 1;
-	if (n.z == 0) n.z = 1;
-	h = meshRect / n;
-	
-	//resize arrays held in Mesh - if changing mesh to new size then use resize : this maps values from old mesh to new mesh size (keeping magnitudes). Otherwise assign magnetization along x in whole mesh.
-	if (M.linear_size()) {
+	///////////////////////////////////////////////////////
+	//Mesh specific configuration
+	///////////////////////////////////////////////////////
 
-		if (!M.resize(h, meshRect)) return error(BERROR_OUTOFMEMORY_CRIT);
+	if (ucfg::check_cfgflags(cfgMessage, UPDATECONFIG_MESHCHANGE)) {
+
+		//get number of cells in each dimension : first divide the mesh rectangle with rounding to get an integer number of cells, then adjust cellsize so h * n gives the rectangle dimensions
+
+		n = round(meshRect / h);
+		if (n.x == 0) n.x = 1;
+		if (n.y == 0) n.y = 1;
+		if (n.z == 0) n.z = 1;
+		h = meshRect / n;
+
+		//resize arrays held in Mesh - if changing mesh to new size then use resize : this maps values from old mesh to new mesh size (keeping magnitudes). Otherwise assign magnetization along x in whole mesh.
+		if (M.linear_size()) {
+
+			if (!M.resize(h, meshRect)) return error(BERROR_OUTOFMEMORY_CRIT);
+		}
+		else if (!M.assign(h, meshRect, DBL3(-Ms, 0, 0))) return error(BERROR_OUTOFMEMORY_CRIT);
+
+		if (!Heff.assign(h, meshRect, DBL3(0, 0, 0))) return error(BERROR_OUTOFMEMORY_CRIT);
+
+		//update material parameters spatial dependence as cellsize and rectangle could have changed
+		if (!error && !update_meshparam_var()) error(BERROR_OUTOFMEMORY_NCRIT);
 	}
-	else if (!M.assign(h, meshRect, DBL3(-Ms, 0, 0))) return error(BERROR_OUTOFMEMORY_CRIT);
-	
-	if (!Heff.assign(h, meshRect, DBL3(0, 0, 0))) return error(BERROR_OUTOFMEMORY_CRIT);
 
 	//erase any unused skyrmion trackers in this mesh
 	skyShift.UpdateConfiguration(saveDataList);
@@ -131,7 +143,10 @@ BError FMesh::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 
 	//------------------------
 	
-	//change mesh dimensions in all currently set effective field modules
+	///////////////////////////////////////////////////////
+	//Update configuration for mesh modules
+	///////////////////////////////////////////////////////
+
 	for (int idx = 0; idx < (int)pMod.size(); idx++) {
 		
 		if (pMod[idx] && !error) {
@@ -140,10 +155,11 @@ BError FMesh::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 		}
 	}
 
+	///////////////////////////////////////////////////////
+	//Update configuration for mesh ode solver
+	///////////////////////////////////////////////////////
+
 	if (!error) error = meshODE.UpdateConfiguration(cfgMessage);
-	
-	//update material parameters spatial dependence as cellsize and rectangle could have changed
-	if (!error && !update_meshparam_var()) error(BERROR_OUTOFMEMORY_NCRIT);
 
 	return error;
 }

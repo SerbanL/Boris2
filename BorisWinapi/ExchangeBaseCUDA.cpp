@@ -1,12 +1,13 @@
 #include "stdafx.h"
 #include "ExchangeBaseCUDA.h"
 #include "ExchangeBase.h"
-#include "Mesh_Ferromagnetic.h"
-#include "Mesh_FerromagneticCUDA.h"
+#include "Mesh.h"
 
 #if COMPILECUDA == 1
 
-ExchangeBaseCUDA::ExchangeBaseCUDA(FMeshCUDA* pMeshCUDA_, ExchangeBase* pExchBase_)
+#include "MeshCUDA.h"
+
+ExchangeBaseCUDA::ExchangeBaseCUDA(MeshCUDA* pMeshCUDA_, ExchangeBase* pExchBase_)
 {
 	pMeshCUDA = pMeshCUDA_;
 	pExchBase = pExchBase_;
@@ -24,11 +25,13 @@ BError ExchangeBaseCUDA::Initialize(void)
 	CMBNDcontactsCUDA.clear();
 	CMBNDcontacts.clear();
 	pContactingManagedMeshes.clear();
+	pContactingMeshes.clear();
 
 	//copy managed cuda meshes to pContactingManagedMeshes using the pFMeshes initialized in ExchangeBase
-	for (int idx = 0; idx < pExchBase->pFMeshes.size(); idx++) {
+	for (int idx = 0; idx < pExchBase->pMeshes.size(); idx++) {
 
-		pContactingManagedMeshes.push_back(&(pExchBase->pFMeshes[idx]->pMeshCUDA->cuMesh));
+		pContactingManagedMeshes.push_back(&(pExchBase->pMeshes[idx]->pMeshCUDA->cuMesh));
+		pContactingMeshes.push_back(pExchBase->pMeshes[idx]->pMeshCUDA);
 	}
 
 	//set cmbnd flags

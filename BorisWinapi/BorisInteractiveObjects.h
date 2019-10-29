@@ -167,9 +167,6 @@ enum IOI_
 	//Shows spin transport solver timeout iterations. auxId is the timeout value.
 	IOI_SSOLVERTIMEOUT,
 
-	//Shows Poisson solver SOR damping type : true for fixed, false for adaptive. auxId is enabled (1)/disabled(0) status.
-	IOI_SORFIXEDDAMPING,
-
 	//Shows SOR damping values when used in fixed damping mode. textId is the DBL2 damping value as a string. (DBL2 since we need different damping values for V and S solvers)
 	IOI_SORDAMPING,
 

@@ -208,6 +208,18 @@ public:
 	//fit Mz(x) = Ms * cos(2*arctan(sinh(R/w)/sinh((x-x0)/w))). Return fitting parameters with their standard deviations.
 	BError fit_skyrmion(int dp_x, int dp_y, DBL2 *pR, DBL2 *px0, DBL2 *pMs, DBL2 *pw);
 
+	//fit STT function
+	BError fit_stt(VEC<DBL3>& T, VEC_VC<DBL3>& M, VEC_VC<DBL3>& J, Rect rectangle, DBL2* pP, DBL2 *pbeta, double *pRsq);
+
+	//fit STT function using a stencil to obtain spatial dependence of P parameter (adiabatic == true) or nonadiabaticity parameter (adiabatic == false)
+	BError fit_stt_variation(VEC<DBL3>& T, VEC_VC<DBL3>& M, VEC_VC<DBL3>& J, VEC<double>& output, bool adiabatic, double absolute_error_threshold = 0.1, double Rsq_threshold = 0.9, double Torque_ratio_threshold = 0.1, int stencil_size = 3);
+
+	//fit SOT function
+	BError fit_sot(VEC<DBL3>& T, VEC_VC<DBL3>& M, VEC_VC<DBL3>& J, Rect rectangle, DBL2* pSHAeff, DBL2 *pflST, double *pRsq);
+
+	//fit simultaneously STT and SOT when the self-consistent interfacial spin torque contains both
+	BError fit_sotstt(VEC<DBL3>& T, VEC_VC<DBL3>& M, VEC_VC<DBL3>& J_hm, VEC_VC<DBL3>& J_fm, Rect rectangle, DBL2* pSHAeff, DBL2 *pflST, DBL2* pP, DBL2 *pbeta, double *pRsq);
+
 	//--------------------- data processing
 	
 	//Replace repeated points from using linear interpolation: if two adjacent sets of repeated points found, replace repeats between the mid-points of the sets
@@ -218,6 +230,9 @@ public:
 
 	//smooth data in dp_in using nearest-neighbor averaging with given window size, and place result in dp_out (must be different)
 	BError adjacent_averaging(int dp_in, int dp_out, int window_size);
+
+	//extract monotonic sequence form input arrays and place it in output arrays. Primary array (dp_in_pri) decides ordering and dependent array (dp_in_dep) must have same size
+	BError extract_monotonic(int dp_in_pri, int dp_in_dep, int dp_out_pri, int dp_out_dep);
 
 	//convert from Cartesian to polar (as r, theta)
 	BError Cartesian_to_Polar(int dp_in_x, int dp_in_y, int dp_out_x, int dp_out_y);

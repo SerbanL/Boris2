@@ -595,8 +595,14 @@ public:
 
 	//-1 : N/A, 0 : Off, 1 : On
 	int GetCUDAStatus(void) { if (!cudaAvailable) return -1; else return cudaEnabled; }
+	
 	bool GetIndividualShapeStatus(void) { return shape_change_individual; }
+	
 	bool GetScaleRectsStatus(void) { return SMesh.Get_Scale_Rects(); }
+	
 	bool GetCoupleToDipolesStatus(void) { return SMesh.Get_Coupled_To_Dipoles(); }
+	
 	bool GetMovingMeshStatus(void) { return SMesh.IsMovingMeshSet(); }
+
+	bool GetScriptServerStatus(void) { return is_thread_running(THREAD_NETWORK); }
 };

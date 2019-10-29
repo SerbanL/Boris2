@@ -18,7 +18,7 @@ Heat::Heat(Mesh *pMesh_) :
 	pMesh = pMesh_;
 	pSMesh = pMesh->pSMesh;
 
-	error_on_create = UpdateConfiguration();
+	error_on_create = UpdateConfiguration(UPDATECONFIG_FORCEUPDATE);
 
 
 	//-------------------------- Is CUDA currently enabled?
@@ -44,6 +44,8 @@ BError Heat::Initialize(void)
 
 	initialized = true;
 
+	SetRobinBoundaryConditions();
+
 	return error;
 }
 
@@ -55,59 +57,72 @@ BError Heat::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 
 	bool success = true;
 
-	//make sure the cellsize divides the mesh rectangle
-	pMesh->n_t = round(pMesh->meshRect / pMesh->h_t);
-	if (pMesh->n_t.x < 2) pMesh->n_t.x = 2;
-	if (pMesh->n_t.y < 2) pMesh->n_t.y = 2;
-	if (pMesh->n_t.z < 2) pMesh->n_t.z = 2;
-	pMesh->h_t = pMesh->meshRect / pMesh->n_t;
+	if (ucfg::check_cfgflags(cfgMessage, UPDATECONFIG_MESHSHAPECHANGE, UPDATECONFIG_MESHCHANGE, UPDATECONFIG_MODULEADDED, UPDATECONFIG_MODULEDELETED)) {
 
-	//make sure correct memory is assigned for heat solver quantities
+		//make sure the cellsize divides the mesh rectangle
+		pMesh->n_t = round(pMesh->meshRect / pMesh->h_t);
+		if (pMesh->n_t.x < 2) pMesh->n_t.x = 2;
+		if (pMesh->n_t.y < 2) pMesh->n_t.y = 2;
+		if (pMesh->n_t.z < 2) pMesh->n_t.z = 2;
+		pMesh->h_t = pMesh->meshRect / pMesh->n_t;
 
-	if (pMesh->M.linear_size()) {
+		//make sure correct memory is assigned for heat solver quantities
 
-		//in a ferromagnet the magnetization sets the shape only on initialization. If already initialized then shape already set.
-		if (pMesh->Temp.linear_size()) 
-			success = pMesh->Temp.resize(pMesh->h_t, pMesh->meshRect);
-		else 
-			success = pMesh->Temp.assign(pMesh->h_t, pMesh->meshRect, pMesh->base_temperature, pMesh->M);
-	}
-	else if (pMesh->elC.linear_size()) {
+		if (pMesh->M.linear_size()) {
 
-		//in a normal metal the electrical conductivity sets the shape
+			//in a ferromagnet the magnetization sets the shape only on initialization. If already initialized then shape already set.
+			if (pMesh->Temp.linear_size()) {
 
-		//before doing this must make sure elC was itself set in the Transport module (it could be this module is being updated before the Transport module)
-		//Transport module is guaranteed to be set otherwise elC would have zero size - it does mean Transport has UpdateConfiguration called twice but it doesn't matter.
-		if (pMesh->IsModuleSet(MOD_TRANSPORT)) {
+				success = pMesh->Temp.resize(pMesh->h_t, pMesh->meshRect);
+			}
+			else {
 
-			error = pMesh->pMod(MOD_TRANSPORT)->UpdateConfiguration();
-			if (error) return error;
+				success = pMesh->Temp.assign(pMesh->h_t, pMesh->meshRect, pMesh->base_temperature, pMesh->M);
+			}
+		}
+		else if (pMesh->elC.linear_size()) {
+
+			//in a normal metal the electrical conductivity sets the shape
+
+			//before doing this must make sure elC was itself set in the Transport module (it could be this module is being updated before the Transport module)
+			//Transport module is guaranteed to be set otherwise elC would have zero size - it does mean Transport has UpdateConfiguration called twice but it doesn't matter.
+			if (pMesh->IsModuleSet(MOD_TRANSPORT)) {
+
+				error = (*pMesh)(MOD_TRANSPORT)->UpdateConfiguration(cfgMessage);
+				if (error) return error;
+			}
+
+			if (success) {
+
+				if (pMesh->Temp.linear_size()) {
+
+					success = pMesh->Temp.resize(pMesh->h_t, pMesh->meshRect, pMesh->elC);
+				}
+				else {
+
+					success = pMesh->Temp.assign(pMesh->h_t, pMesh->meshRect, pMesh->base_temperature, pMesh->elC);
+				}
+			}
+		}
+		else {
+
+			//in an insulator (or conductor with Transport module not set) the shape is set directly in Temp
+			if (pMesh->Temp.linear_size()) {
+
+				success = pMesh->Temp.resize(pMesh->h_t, pMesh->meshRect);
+			}
+			else {
+
+				success = pMesh->Temp.assign(pMesh->h_t, pMesh->meshRect, pMesh->base_temperature);
+			}
 		}
 
+		//allocate memory for the heatEq_RHS auxiliary vector
 		if (success) {
 
-			if (pMesh->Temp.linear_size()) 
-				success = pMesh->Temp.resize(pMesh->h_t, pMesh->meshRect, pMesh->elC);
-			else 
-				success = pMesh->Temp.assign(pMesh->h_t, pMesh->meshRect, pMesh->base_temperature, pMesh->elC);
+			success = malloc_vector(heatEq_RHS, pMesh->n_t.dim(), 0.0);
 		}
 	}
-	else {
-
-		//in an insulator (or conductor with Transport module not set) the shape is set directly in Temp
-		if (pMesh->Temp.linear_size()) 
-			success = pMesh->Temp.resize(pMesh->h_t, pMesh->meshRect);
-		else 
-			success = pMesh->Temp.assign(pMesh->h_t, pMesh->meshRect, pMesh->base_temperature);
-	}
-
-	//allocate memory for the heatEq_RHS auxiliary vector
-	if (success) {
-
-		success = malloc_vector(heatEq_RHS, pMesh->n_t.dim(), 0.0);
-	}
-
-	SetRobinBoundaryConditions();
 
 	if (!success) return error(BERROR_OUTOFMEMORY_CRIT);
 
@@ -116,7 +131,7 @@ BError Heat::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 #if COMPILECUDA == 1
 	if (pModuleCUDA) {
 
-		if (!error) error = pModuleCUDA->UpdateConfiguration();
+		if (!error) error = pModuleCUDA->UpdateConfiguration(cfgMessage);
 	}
 #endif
 
@@ -172,17 +187,15 @@ void Heat::IterateHeatEquation(double dT)
 		heatEq_RHS[idx] = pMesh->Temp.delsq_robin(idx, K) * K / cro;
 
 		//add Joule heating if set
-		if (pMesh->Jc.linear_size()) {
+		if (pMesh->E.linear_size()) {
 
-			int i = idx % pMesh->n_t.x;
-			int j = (idx / pMesh->n_t.x) % pMesh->n_t.y;
-			int k = idx / (pMesh->n_t.x * pMesh->n_t.y);
+			DBL3 position = pMesh->Temp.cellidx_to_position(idx);
 
-			DBL3 Jc_value = pMesh->Jc.weighted_average(INT3(i, j, k), pMesh->Temp.h);
-			double elC_value = pMesh->elC.weighted_average(INT3(i, j, k), pMesh->Temp.h);
+			double elC_value = pMesh->elC.weighted_average(position, pMesh->Temp.h);
+			DBL3 E_value = pMesh->E.weighted_average(position, pMesh->Temp.h);
 
 			//add Joule heating source term
-			heatEq_RHS[idx] += (Jc_value * Jc_value) / (cro * elC_value);
+			heatEq_RHS[idx] += (elC_value * E_value * E_value) / cro;
 		}
 
 		//add heat source contribution if set
@@ -237,11 +250,11 @@ double Heat::bfunc_pri(int cell1_idx, int cell2_idx) const
 }
 
 //second order differential of T at cells either side of the boundary; delsq T = -Jc^2 / K * elC
-double Heat::diff2_sec(DBL3 relpos_m1, DBL3 stencil) const
+double Heat::diff2_sec(DBL3 relpos_m1, DBL3 stencil, DBL3 shift) const
 {
 	double thermCond = pMesh->thermCond;
 
-	if (pMesh->Jc.linear_size() || IsNZ(pMesh->Q.get0())) {
+	if (pMesh->E.linear_size() || IsNZ(pMesh->Q.get0())) {
 
 		pMesh->update_parameters_atposition(relpos_m1, pMesh->thermCond, thermCond);
 	}
@@ -250,10 +263,11 @@ double Heat::diff2_sec(DBL3 relpos_m1, DBL3 stencil) const
 	double value = 0.0;
 
 	//Joule heating
-	if (pMesh->Jc.linear_size()) {
+	if (pMesh->E.linear_size()) {
 
-		DBL3 Jcval = pMesh->Jc.weighted_average(relpos_m1, stencil);
-		value = -(Jcval * Jcval) / (pMesh->elC.weighted_average(relpos_m1, stencil) * thermCond);
+		double elCval = pMesh->elC.weighted_average(relpos_m1, stencil);
+		DBL3 Eval = pMesh->E.weighted_average(relpos_m1, stencil);
+		value = -(elCval * Eval * Eval) / thermCond;
 	}
 	
 	//heat source contribution if set
@@ -264,15 +278,15 @@ double Heat::diff2_sec(DBL3 relpos_m1, DBL3 stencil) const
 
 		value -= Q / thermCond;
 	}
-
+	
 	return value;
 }
 
-double Heat::diff2_pri(int cell1_idx) const
+double Heat::diff2_pri(int cell1_idx, DBL3 shift) const
 {
 	double thermCond = pMesh->thermCond;
 
-	if (pMesh->Jc.linear_size() || IsNZ(pMesh->Q.get0())) {
+	if (pMesh->E.linear_size() || IsNZ(pMesh->Q.get0())) {
 
 		pMesh->update_parameters_tcoarse(cell1_idx, pMesh->thermCond, thermCond);
 	}
@@ -281,10 +295,10 @@ double Heat::diff2_pri(int cell1_idx) const
 	double value = 0.0;
 
 	//Joule heating
-	if (pMesh->Jc.linear_size()) {
+	if (pMesh->E.linear_size()) {
 
-		int idx1_Jc = pMesh->Jc.position_to_cellidx(pMesh->Temp.cellidx_to_position(cell1_idx));
-		value = -(pMesh->Jc[idx1_Jc] * pMesh->Jc[idx1_Jc]) / (pMesh->elC[idx1_Jc] * thermCond);
+		int idx1_E = pMesh->E.position_to_cellidx(pMesh->Temp.cellidx_to_position(cell1_idx));
+		value = -(pMesh->elC[idx1_E] * pMesh->E[idx1_E] * pMesh->E[idx1_E]) / thermCond;
 	}
 
 	//heat source contribution if set

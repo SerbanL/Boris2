@@ -13,7 +13,8 @@ __global__ void SOTFieldCUDA_UpdateField(ManagedMeshCUDA& cuMesh)
 {
 	cuVEC_VC<cuReal3>& M = *cuMesh.pM;
 	cuVEC<cuReal3>& Heff = *cuMesh.pHeff;
-	cuVEC_VC<cuReal3>& Jc = *cuMesh.pJc;
+	cuVEC_VC<cuReal3>& E = *cuMesh.pE;
+	cuVEC_VC<cuBReal>& elC = *cuMesh.pelC;
 
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
 
@@ -21,7 +22,7 @@ __global__ void SOTFieldCUDA_UpdateField(ManagedMeshCUDA& cuMesh)
 
 		if (M.is_not_empty(idx)) {
 
-			int idx_Jc = Jc.position_to_cellidx(M.cellidx_to_position(idx));
+			int idx_E = E.position_to_cellidx(M.cellidx_to_position(idx));
 
 			cuBReal Ms = *cuMesh.pMs;
 			cuBReal SHA = *cuMesh.pSHA;
@@ -30,7 +31,7 @@ __global__ void SOTFieldCUDA_UpdateField(ManagedMeshCUDA& cuMesh)
 
 			cuBReal a_const = -((cuBReal)HBAR_E / (cuBReal)MU0) * SHA / (2 * Ms * Ms * (M.rect.e.z - M.rect.s.z));
 
-			cuReal3 p_vec = cuReal3(0, 0, 1) ^ Jc[idx_Jc];
+			cuReal3 p_vec = cuReal3(0, 0, 1) ^ (elC[idx_E] * E[idx_E]);
 
 			Heff[idx] += a_const * ((M[idx] ^ p_vec) + flSOT * Ms * p_vec);
 		}

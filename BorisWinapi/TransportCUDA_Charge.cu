@@ -10,11 +10,6 @@
 
 //-------------------Calculation Methods
 
-void TransportCUDA::IterateChargeSolver_aSOR(bool start_iters, cuBReal conv_error, cu_obj<cuBReal>& max_error, cu_obj<cuBReal>& max_value)
-{
-	pMeshCUDA->V()->IteratePoisson_aSOR(pMeshCUDA->n_e.dim(), (TransportCUDA_V_Funcs&)poisson_V, start_iters, conv_error, max_error, max_value);
-}
-
 void TransportCUDA::IterateChargeSolver_SOR(cu_obj<cuBReal>& damping, cu_obj<cuBReal>& max_error, cu_obj<cuBReal>& max_value)
 {
 	pMeshCUDA->V()->IteratePoisson_SOR(pMeshCUDA->n_e.dim(), (TransportCUDA_V_Funcs&)poisson_V, damping, max_error, max_value);

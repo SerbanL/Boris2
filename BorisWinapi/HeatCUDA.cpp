@@ -18,7 +18,7 @@ HeatCUDA::HeatCUDA(Mesh* pMesh_, SuperMesh* pSMesh_, Heat* pHeat_)
 	pSMesh = pSMesh_;
 	pHeat = pHeat_;
 
-	error_on_create = UpdateConfiguration();
+	error_on_create = UpdateConfiguration(UPDATECONFIG_FORCEUPDATE);
 
 	if (!error_on_create) error_on_create = temp_cmbnd_funcs()->set_pointers(pMeshCUDA);
 }
@@ -42,10 +42,12 @@ BError HeatCUDA::Initialize(void)
 {
 	BError error(CLASS_STR(HeatCUDA));
 
-	initialized = true;
-
 	//no energy density contribution here
 	ZeroEnergy();
+
+	pHeat->SetRobinBoundaryConditions();
+
+	initialized = true;
 
 	return error;
 }
@@ -58,55 +60,68 @@ BError HeatCUDA::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 	
 	bool success = true;
 	
-	if (pMeshCUDA->M()->size_cpu().dim()) {
+	if (ucfg::check_cfgflags(cfgMessage, UPDATECONFIG_MESHSHAPECHANGE, UPDATECONFIG_MESHCHANGE, UPDATECONFIG_MODULEADDED, UPDATECONFIG_MODULEDELETED)) {
 
-		//in a ferromagnet the magnetization sets the shape only on initialization. If already initialized then shape already set.
-		if (pMeshCUDA->Temp()->size_cpu().dim())
-			success = pMeshCUDA->Temp()->resize(pMesh->h_t, pMesh->meshRect);
-		else
-			success = pMeshCUDA->Temp()->set_from_cpuvec(pMesh->Temp);
-	}
-	else if (pMeshCUDA->elC()->size_cpu().dim()) {
+		if (pMeshCUDA->M()->size_cpu().dim()) {
 
-		//in a normal metal the electrical conductivity sets the shape
+			//in a ferromagnet the magnetization sets the shape only on initialization. If already initialized then shape already set.
+			if (pMeshCUDA->Temp()->size_cpu().dim()) {
 
-		//before doing this must make sure elC was itself set in the Transport module (it could be this module is being updated before the Transport module)
-		//Transport module is guaranteed to be set otherwise elC would have zero size - it does mean Transport has UpdateConfiguration called twice but it doesn't matter.
-		if (pMesh->IsModuleSet(MOD_TRANSPORT)) {
+				success = pMeshCUDA->Temp()->resize(pMesh->h_t, pMesh->meshRect);
+			}
+			else {
 
-			error = pMesh->pMod(MOD_TRANSPORT)->UpdateConfiguration();
-			if (error) return error;
+				success = pMeshCUDA->Temp()->set_from_cpuvec(pMesh->Temp);
+			}
+		}
+		else if (pMeshCUDA->elC()->size_cpu().dim()) {
+
+			//in a normal metal the electrical conductivity sets the shape
+
+			//before doing this must make sure elC was itself set in the Transport module (it could be this module is being updated before the Transport module)
+			//Transport module is guaranteed to be set otherwise elC would have zero size - it does mean Transport has UpdateConfiguration called twice but it doesn't matter.
+			if (pMesh->IsModuleSet(MOD_TRANSPORT)) {
+
+				error = (*pMesh)(MOD_TRANSPORT)->UpdateConfiguration(cfgMessage);
+				if (error) return error;
+			}
+
+			if (success) {
+
+				if (pMeshCUDA->Temp()->size_cpu().dim()) {
+
+					success = pMeshCUDA->Temp()->resize(pMesh->h_t, pMesh->meshRect, (cuVEC_VC<cuBReal>&)pMeshCUDA->elC);
+				}
+				else {
+
+					success = pMeshCUDA->Temp()->set_from_cpuvec(pMesh->Temp);
+				}
+			}
+		}
+		else {
+
+			//in an insulator (or conductor with Transport module not set) the shape is set directly in Temp
+			if (pMeshCUDA->Temp()->size_cpu().dim()) {
+
+				success = pMeshCUDA->Temp()->resize(pMesh->h_t, pMesh->meshRect);
+			}
+			else {
+
+				success = pMeshCUDA->Temp()->set_from_cpuvec(pMesh->Temp);
+			}
 		}
 
+		//allocate memory for the heatEq_RHS auxiliary vector
 		if (success) {
 
-			if (pMeshCUDA->Temp()->size_cpu().dim())
-				success = pMeshCUDA->Temp()->resize(pMesh->h_t, pMesh->meshRect, (cuVEC_VC<cuBReal>&)pMeshCUDA->elC);
-			else
-				success = pMeshCUDA->Temp()->set_from_cpuvec(pMesh->Temp);
+			if (heatEq_RHS.size() != pMesh->n_t.dim()) {
+
+				success = heatEq_RHS.resize(pMesh->n_t.dim());
+				if (success) heatEq_RHS.set(0.0);
+			}
 		}
 	}
-	else {
 
-		//in an insulator (or conductor with Transport module not set) the shape is set directly in Temp
-		if (pMeshCUDA->Temp()->size_cpu().dim())
-			success = pMeshCUDA->Temp()->resize(pMesh->h_t, pMesh->meshRect);
-		else
-			success = pMeshCUDA->Temp()->set_from_cpuvec(pMesh->Temp);
-	}
-	
-	//allocate memory for the heatEq_RHS auxiliary vector
-	if (success) {
-
-		if (heatEq_RHS.size() != pMesh->n_t.dim()) {
-
-			success = heatEq_RHS.resize(pMesh->n_t.dim());
-			if (success) heatEq_RHS.set(0.0);
-		}
-	}
-	
-	pHeat->SetRobinBoundaryConditions();
-	
 	if (!success) return error(BERROR_OUTOFGPUMEMORY_CRIT);
 	
 	return error;

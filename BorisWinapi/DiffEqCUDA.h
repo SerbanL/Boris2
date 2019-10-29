@@ -8,130 +8,30 @@
 #include "ErrorHandler.h"
 
 #include "MeshParamsCUDA.h"
-#include "ManagedDiffEqCUDA.h"
+
+#include "DiffEq_CommonCUDA.h"
 
 //NOTES : renormalize at last step for all equations except all LLB versions
 
 class ODECommon;
 class DifferentialEquation;
-class FMesh;
-class FMeshCUDA;
-
-class ODECommonCUDA 
-{
-	friend ODECommon;
-
-private:
-
-	static ODECommon *pODE;
-
-protected:
-
-	//-----------------------------------Time step
-
-	//these need to be pointers, not cu_obj directly : we only want to make the cuda objects when ODECommonCUDA is made (cuda switched on), not at the start of the program - what if cuda not available on the system?
-	static cu_obj<cuBReal>* pdT;
-	static cu_obj<cuBReal>* pdT_last;
-
-	//-----------------------------------Primary data
-
-	static cu_obj<cuBReal>* pmxh;
-	static cu_obj<cuReal3>* pmxh_av;
-	static cu_obj<size_t>* pavpoints;
-
-	static cu_obj<cuBReal>* pdmdt;
-	static cu_obj<cuReal3>* pdmdt_av;
-	static cu_obj<size_t>* pavpoints2;
-
-	static cu_obj<cuBReal>* plte;
-
-	//-----------------------------------Evaluation method modifiers
-
-	static cu_obj<bool>* prenormalize;
-
-	//-----------------------------------Properties flags
-
-	static cu_obj<bool>* psolve_spin_current;
-
-	//-----------------------------------Equation and Evaluation method values
-
-	static cu_obj<int>* psetODE;
-
-	//-----------------------------------Special values
-
-	static cu_obj<bool>* palternator;
-
-	//-----------------------------------Steepest Descent Solver
-
-	//quantities used to calculate Barzilai-Borwein stepsizes across multiple meshes
-	//Accumulate values in these quantities, then obtain stepsizes as:
-	//step1 = delta_M_sq / delta_M_dot_delta_G
-	//step2 = delta_M_dot_delta_G / delta_G_sq
-	static cu_obj<cuBReal>* pdelta_M_sq;
-	static cu_obj<cuBReal>* pdelta_G_sq;
-	static cu_obj<cuBReal>* pdelta_M_dot_delta_G;
-
-private:
-
-	//---------------------------------------- SET-UP METHODS : DiffEqCUDA.cpp, DiffEq_EvalsCUDA.cu
-
-	BError UpdateConfiguration(UPDATECONFIG_ cfgMessage = UPDATECONFIG_GENERIC);
-
-	//zero all main reduction values : mxh, dmdt, lte
-	void Zero_reduction_values(void);
-	void Zero_mxh_lte_values(void);
-	void Zero_dmdt_lte_values(void);
-	void Zero_lte_value(void);
-	
-	void mxhav_to_mxh(void);
-	void dmdtav_to_dmdt(void);
-
-	//set all cuda values here from their cpu values held in ODECommon
-	void SyncODEValues(void);
-
-	//set specific cuda values (used often)
-	void Sync_dT(void);
-	void Sync_dT_last(void);
-	void Sync_alternator(void);
-
-	//specific to SD solver
-	void Zero_SD_Solver_BB_Values(void);
-	void Get_SD_Solver_BB_Values(double* pdelta_M_sq_cpu, double* pdelta_G_sq_cpu, double* pdelta_M_dot_delta_G_cpu)
-	{
-		*pdelta_M_sq_cpu = pdelta_M_sq->to_cpu();
-		*pdelta_G_sq_cpu = pdelta_G_sq->to_cpu();
-		*pdelta_M_dot_delta_G_cpu = pdelta_M_dot_delta_G->to_cpu();
-	}
-
-public:
-
-	ODECommonCUDA(void) {}
-	ODECommonCUDA(ODECommon *pODE_);
-
-	virtual ~ODECommonCUDA();
-
-	//---------------------------------------- GET METHODS
-
-	cuBReal Get_mxh(void) { return pmxh->to_cpu(); }
-	cuBReal Get_dmdt(void) { return pdmdt->to_cpu(); }
-	cuBReal Get_lte(void) { return plte->to_cpu(); }
-
-};
+class DifferentialEquationFM;
+class DifferentialEquationAFM;
+class ManagedDiffEqFMCUDA;
+class ManagedDiffEqAFMCUDA;
+class Mesh;
+class MeshCUDA;
 
 class DifferentialEquationCUDA :
 	public ODECommonCUDA
 {
 	friend ODECommon;
-	friend DifferentialEquation;
+	friend DifferentialEquationFM;
+	friend DifferentialEquationAFM;
+	friend ManagedDiffEqFMCUDA;
+	friend ManagedDiffEqAFMCUDA;
 
-	friend ManagedDiffEqCUDA;
-
-private:
-
-	//ManagedDiffEqCUDA holds pointers to data in DifferentialEquationCUDA and ODECommonCUDA in an object in gpu memory.
-	//pass cuDiffEq to a cuda kernel then all gpu data held here in cu_obj objects can be accessed in device code.
-	//Initialize ManagedDiffEqCUDA with all the pointers you need then forget about it - no book-keeping required.
-	cu_obj<ManagedDiffEqCUDA> cuDiffEq;
+protected:
 
 	//if the object couldn't be created properly in the constructor an error is set here
 	BError error_on_create;
@@ -149,137 +49,132 @@ private:
 	cu_obj<cuBorisRand> prng;
 
 	//pointer to mesh with this ODE set
-	FMesh *pMesh;
+	Mesh *pMesh;
 
 	//pointer to CUDA version of mesh with this ODE set
-	FMeshCUDA *pMeshCUDA;
+	MeshCUDA *pMeshCUDA;
 
 	//pointer to DifferentialEquation holding this CUDA object
 	DifferentialEquation *pmeshODE;
 
-private:
+protected:
 
-	//---------------------------------------- SET-UP METHODS  : DiffEqCUDA.cpp and DiffEqCUDA.cu
+	//---------------------------------------- SET-UP METHODS
 
 	//allocate memory depending on set evaluation method - also cleans up previously allocated memory by calling CleanupMemory();
-	BError AllocateMemory(void);
+	virtual BError AllocateMemory(void) = 0;
 
 	//deallocate memory before re-allocating it (depending on evaluation method previously allocated memory might not be used again, so need clean-up before)
-	void CleanupMemory(void);
+	virtual void CleanupMemory(void) = 0;
 
-	void SetODEMethodPointers(void);
+	virtual void SetODEMethodPointers(void) = 0;
 
-	//---------------------------------------- EQUATIONS : these are defined as __device__ methods in ManagedDiffEqCUDA
+	//---------------------------------------- EQUATIONS : these are defined as __device__ methods in ManagedDiffEqFMCUDA
 
 	//---------------------------------------- SOLVER KERNEL LAUNCHERS generic : DiffEq_EvalsCUDA.cu
 
 #ifdef ODE_EVAL_EULER
 	//Euler evaluation of ODE
-	void RunEuler(bool calculate_mxh, bool calculate_dmdt);
+	virtual void RunEuler(bool calculate_mxh, bool calculate_dmdt) = 0;
 #endif
 
 #ifdef ODE_EVAL_TEULER
 	//Trapezoidal Euler evaluation of ODE
-	void RunTEuler(int step, bool calculate_mxh, bool calculate_dmdt);
+	virtual void RunTEuler(int step, bool calculate_mxh, bool calculate_dmdt) = 0;
 #endif
 
 #ifdef ODE_EVAL_AHEUN
 	//Adaptive Huen evaluation of ODE
-	void RunAHeun(int step, bool calculate_mxh, bool calculate_dmdt);
+	virtual void RunAHeun(int step, bool calculate_mxh, bool calculate_dmdt) = 0;
 #endif
 
 #ifdef ODE_EVAL_ABM
 	//ABM
-	void RunABM(int step, bool calculate_mxh, bool calculate_dmdt);
-	void RunABMTEuler(int step);
+	virtual void RunABM(int step, bool calculate_mxh, bool calculate_dmdt) = 0;
+	virtual void RunABMTEuler(int step) = 0;
 #endif
 
 #ifdef ODE_EVAL_RK23
 	//RK23 (Bogacki-Shampine)
-	void RunRK23_Step0_NoAdvance(bool calculate_mxh = false);
-	void RunRK23(int step, bool calculate_mxh = false, bool calculate_dmdt = false);
+	virtual void RunRK23_Step0_NoAdvance(bool calculate_mxh = false) = 0;
+	virtual void RunRK23(int step, bool calculate_mxh = false, bool calculate_dmdt = false) = 0;
 #endif
 
 #ifdef ODE_EVAL_RK4
 	//RK4 evaluation of ODE
-	void RunRK4(int step, bool calculate_mxh = false, bool calculate_dmdt = false);
+	virtual void RunRK4(int step, bool calculate_mxh = false, bool calculate_dmdt = false) = 0;
 #endif
 
 #ifdef ODE_EVAL_RKF
 	//RKF45
-	void RunRKF45(int step, bool calculate_mxh = false, bool calculate_dmdt = false);
+	virtual void RunRKF45(int step, bool calculate_mxh = false, bool calculate_dmdt = false) = 0;
 #endif
 
 #ifdef ODE_EVAL_RKCK
 	//RKCK45
-	void RunRKCK45(int step, bool calculate_mxh = false, bool calculate_dmdt = false);
+	virtual void RunRKCK45(int step, bool calculate_mxh = false, bool calculate_dmdt = false) = 0;
 #endif
 
 #ifdef ODE_EVAL_RKDP
 	//RKDP54
-	void RunRKDP54_Step0_NoAdvance(bool calculate_mxh = false);
-	void RunRKDP54(int step, bool calculate_mxh = false, bool calculate_dmdt = false);
+	virtual void RunRKDP54_Step0_NoAdvance(bool calculate_mxh = false) = 0;
+	virtual void RunRKDP54(int step, bool calculate_mxh = false, bool calculate_dmdt = false) = 0;
 #endif
 
 #ifdef ODE_EVAL_SD
 	//0. prime the SD solver
-	void RunSD_Start(void);
+	virtual void RunSD_Start(void) = 0;
 	//1. calculate parameters for Barzilai-Borwein stepsizes -> solver must be primed with step 0 (after it is primed next loop starts from step 1)
 	//must reset the static delta_... quantities before running these across all meshes
-	void RunSD_BB(void);
+	virtual void RunSD_BB(void) = 0;
 	//2. Set stepsize -> done in the Iterate method
 	//3. set new magnetization vectors
-	void RunSD_Advance(bool calculate_mxh, bool calculate_dmdt);
+	virtual void RunSD_Advance(bool calculate_mxh, bool calculate_dmdt) = 0;
 #endif
 
 	//---------------------------------------- SOLVER KERNEL LAUNCHERS with in-lined LLG (faster) : DiffEq_EvalsLLGCUDA.cu
 
 	//Euler evaluation of ODE
-	void RunEuler_LLG(bool calculate_mxh, bool calculate_dmdt);
+	virtual void RunEuler_LLG(bool calculate_mxh, bool calculate_dmdt) = 0;
 
 	//Trapezoidal Euler evaluation of ODE
-	void RunTEuler_LLG(int step, bool calculate_mxh, bool calculate_dmdt);
+	virtual void RunTEuler_LLG(int step, bool calculate_mxh, bool calculate_dmdt) = 0;
 
 	//Adaptive Huen evaluation of ODE
-	void RunAHeun_LLG(int step, bool calculate_mxh, bool calculate_dmdt);
+	virtual void RunAHeun_LLG(int step, bool calculate_mxh, bool calculate_dmdt) = 0;
 
 	//RK4 evaluation of ODE
-	void RunRK4_LLG(int step, bool calculate_mxh = false, bool calculate_dmdt = false);
+	virtual void RunRK4_LLG(int step, bool calculate_mxh = false, bool calculate_dmdt = false) = 0;
 
 	//ABM
-	void RunABM_LLG(int step, bool calculate_mxh, bool calculate_dmdt);
-	void RunABMTEuler_LLG(int step);
+	virtual void RunABM_LLG(int step, bool calculate_mxh, bool calculate_dmdt) = 0;
+	virtual void RunABMTEuler_LLG(int step) = 0;
 
 	//RKF45
-	void RunRKF45_LLG(int step, bool calculate_mxh = false, bool calculate_dmdt = false);
+	virtual void RunRKF45_LLG(int step, bool calculate_mxh = false, bool calculate_dmdt = false) = 0;
 
 	//---------------------------------------- OTHERS : DiffEq_EvalsCUDA.cu
 
 	//Restore magnetisation after a failed step for adaptive time-step methods
-	void RestoreMagnetisation(void);
+	virtual void RestoreMagnetisation(void) = 0;
 
 	//---------------------------------------- OTHER CALCULATION METHODS : DiffEq_SEquationsCUDA.cu
 
 	//called when using stochastic equations
-	void GenerateThermalField(void);
-	void GenerateThermalField_and_Torque(void);
+	virtual void GenerateThermalField(void) = 0;
+	virtual void GenerateThermalField_and_Torque(void) = 0;
 
 public:
 
 	DifferentialEquationCUDA(DifferentialEquation *pmeshODE);
 
-	~DifferentialEquationCUDA() { CleanupMemory(); }
+	virtual ~DifferentialEquationCUDA() {}
 
 	BError Error_On_Create(void) { return error_on_create; }
 
-	//---------------------------------------- SET-UP METHODS : DiffEqCUDA.cpp
+	//---------------------------------------- SET-UP METHODS
 
-	BError UpdateConfiguration(UPDATECONFIG_ cfgMessage = UPDATECONFIG_GENERIC);
-
-	//----------------------------------- GETTERS
-
-	//get reference to stored managed cuda differential equation object (cuDiffEq)
-	cu_obj<ManagedDiffEqCUDA>& Get_ManagedDiffEqCUDA(void) { return cuDiffEq; }
+	virtual BError UpdateConfiguration(UPDATECONFIG_ cfgMessage = UPDATECONFIG_GENERIC) = 0;
 };
 
 #endif

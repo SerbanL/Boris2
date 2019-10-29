@@ -9,7 +9,7 @@
 #include "ModulesCUDA.h"
 #include "ExchangeBaseCUDA.h"
 
-class FMeshCUDA;
+class MeshCUDA;
 class Exch_6ngbr_Neu;
 
 class Exch_6ngbr_NeuCUDA :
@@ -18,11 +18,11 @@ class Exch_6ngbr_NeuCUDA :
 {
 
 	//pointer to CUDA version of mesh object holding the effective field module holding this CUDA module
-	FMeshCUDA* pMeshCUDA;
+	MeshCUDA* pMeshCUDA;
 
 public:
 
-	Exch_6ngbr_NeuCUDA(FMeshCUDA* pMeshCUDA_, Exch_6ngbr_Neu* pExch_6ngbr_Neu);
+	Exch_6ngbr_NeuCUDA(MeshCUDA* pMeshCUDA_, Exch_6ngbr_Neu* pExch_6ngbr_Neu);
 	~Exch_6ngbr_NeuCUDA();
 
 	//-------------------Abstract base class method implementations
@@ -31,11 +31,14 @@ public:
 
 	BError Initialize(void);
 
-	BError UpdateConfiguration(UPDATECONFIG_ cfgMessage = UPDATECONFIG_GENERIC);
+	BError UpdateConfiguration(UPDATECONFIG_ cfgMessage);
 
 	void UpdateField(void);
 
 	//-------------------
+
+	//calculate exchange field at coupled cells in this mesh; accumulate energy density contribution in energy
+	void CalculateExchangeCoupling(cu_obj<cuBReal>& energy);
 
 };
 

@@ -81,14 +81,20 @@ DBL3 Mesh::GetAverageMagnetisation(Rect rectangle)
 	else return DBL3(0.0);
 }
 
-DBL3 Mesh::GetAverageChargeCurrentDensity(Rect rectangle)
-{ 
+//get average magnetisation in given rectangle (entire mesh if none specified); sub-lattice B
+DBL3 Mesh::GetAverageMagnetisation2(Rect rectangle)
+{
 #if COMPILECUDA == 1
-	if (pMeshCUDA) return pMeshCUDA->GetAverageChargeCurrentDensity(rectangle);
+	if (pMeshCUDA) return pMeshCUDA->GetAverageMagnetisation2(rectangle);
 #endif
 
-	if (Jc.linear_size()) return Jc.average_nonempty_omp(rectangle);
+	if (M2.linear_size()) return M2.average_nonempty_omp(rectangle);
 	else return DBL3(0.0);
+}
+
+DBL3 Mesh::GetAverageChargeCurrentDensity(Rect rectangle)
+{ 
+	return CallModuleMethod(&Transport::GetAverageChargeCurrent, rectangle);
 }
 
 DBL3 Mesh::GetAverageSpinCurrentX(Rect rectangle)
@@ -161,6 +167,24 @@ VEC_VC<DBL3>& Mesh::Get_M(void)
 	return M;
 }
 
+//returns charge current on the cpu, assuming transport module is enabled
+VEC_VC<DBL3>& Mesh::Get_Jc(void)
+{
+	return reinterpret_cast<Transport*>(pMod(MOD_TRANSPORT))->GetChargeCurrent();
+}
+
+//returns bulk self-consistent spin torque on the cpu, assuming transport module is enabled and spin solver is enabled
+VEC<DBL3>& Mesh::Get_SpinTorque(void)
+{
+	return reinterpret_cast<Transport*>(pMod(MOD_TRANSPORT))->GetSpinTorque();
+}
+
+//returns interfacial self-consistent spin torque on the cpu, assuming transport module is enabled and spin solver is enabled
+VEC<DBL3>& Mesh::Get_InterfacialSpinTorque(void)
+{
+	return reinterpret_cast<STransport*>(pSMesh->GetSuperMeshModule(MODS_STRANSPORT))->GetInterfacialSpinTorque(reinterpret_cast<Transport*>(pMod(MOD_TRANSPORT)));
+}
+
 //----------------------------------- MESH INFO AND SIZE GET/SET METHODS
 
 BError Mesh::SetMeshRect(Rect meshRect_)
@@ -190,7 +214,7 @@ BError Mesh::SetMeshRect(Rect meshRect_)
 	adjust_default_cellsize(meshRect, h_e);
 	adjust_default_cellsize(meshRect, h_t);
 
-	error = pSMesh->UpdateConfiguration();
+	error = pSMesh->UpdateConfiguration(UPDATECONFIG_MESHCHANGE);
 
 	return error;
 }
@@ -201,7 +225,7 @@ BError Mesh::SetMeshCellsize(DBL3 h_)
 	BError error(__FUNCTION__);
 
 	h = h_;
-	error = pSMesh->UpdateConfiguration();
+	error = pSMesh->UpdateConfiguration(UPDATECONFIG_MESHCHANGE);
 
 	return error;
 }
@@ -212,7 +236,7 @@ BError Mesh::SetMeshECellsize(DBL3 h_e_)
 	BError error(__FUNCTION__);
 
 	h_e = h_e_;
-	error = pSMesh->UpdateConfiguration();
+	error = pSMesh->UpdateConfiguration(UPDATECONFIG_MESHCHANGE);
 
 	return error;
 }
@@ -223,7 +247,7 @@ BError Mesh::SetMeshTCellsize(DBL3 h_t_)
 	BError error(__FUNCTION__);
 
 	h_t = h_t_;
-	error = pSMesh->UpdateConfiguration();
+	error = pSMesh->UpdateConfiguration(UPDATECONFIG_MESHCHANGE);
 
 	return error;
 }
@@ -244,7 +268,7 @@ BError Mesh::copy_mesh_data(Mesh& copy_this)
 	}
 #endif
 
-	//1. shape magnetization
+	//1a. shape magnetization
 	if (M.linear_size() && copy_this.M.linear_size()) {
 
 		//if Roughness module is enabled then apply shape via the Roughness module instead
@@ -254,7 +278,16 @@ BError Mesh::copy_mesh_data(Mesh& copy_this)
 
 			if (error) return error;
 		}
-		else M.copy_values(copy_this.M);
+		else {
+
+			M.copy_values(copy_this.M);
+
+			//1b. shape magnetization in AF meshes
+			if (M2.linear_size() && copy_this.M2.linear_size()) {
+
+				M2.copy_values(copy_this.M2);
+			}
+		}
 	}
 
 	//2. shape electrical conductivity
@@ -403,61 +436,53 @@ BError Mesh::RoughenMeshSurfaces_Jagged(double depth, double spacing, unsigned s
 }
 
 //Generate Voronoi 2D grains in xy plane (boundaries between Voronoi cells set to empty) at given average spacing with prng instantiated with given seed.
-//The grains only apply to M and do not shape any other quantity (e.g. elC ot Temp).
-//You can still transfer the granular M shape to elC ot Temp by applying the grains without the Transport or Heat modules active. Enabling these modules after will copy the shape from M on initialization.
-//If you generate grains with these modules already active then only M keeps the grain structure.
 BError Mesh::GenerateGrains2D(double spacing, unsigned seed)
 {
 	BError error(__FUNCTION__);
 
 	if (spacing <= 0 || seed < 1) return error(BERROR_INCORRECTVALUE);
 
-	if (M.linear_size()) {
+	auto run_this = [](auto& VEC_VC_quantity, auto default_value, double spacing, unsigned seed) -> BError {
 
 		bool success = true;
 
-		success = M.generate_Voronoi2D(spacing, seed);
+		success = VEC_VC_quantity.generate_Voronoi2D(spacing, seed);
 
-#if COMPILECUDA == 1
-		if (success && pMeshCUDA) {
+		if (success) return BError();
+		else {
 
-			error = pMeshCUDA->copy_shapes_from_cpu();
+			BError error;
+			return error(BERROR_INCORRECTVALUE);
 		}
-#endif
+	};
 
-		if (!success) return error(BERROR_INCORRECTVALUE);
-		else error = pSMesh->UpdateConfiguration(UPDATECONFIG_MESHSHAPECHANGE);
-	}
+	error = change_mesh_shape(run_this, spacing, seed);
 
 	return error;
 }
 
 //Generate Voronoi 3D grains (boundaries between Voronoi cells set to empty) at given average spacing with prng instantiated with given seed.
-//The grains only apply to M and do not shape any other quantity (e.g. elC ot Temp).
-//You can still transfer the granular M shape to elC ot Temp by applying the grains without the Transport or Heat modules active. Enabling these modules after will copy the shape from M on initialization.
-//If you generate grains with these modules already active then only M keeps the grain structure.
 BError Mesh::GenerateGrains3D(double spacing, unsigned seed)
 {
 	BError error(__FUNCTION__);
 
 	if (spacing <= 0 || seed < 1) return error(BERROR_INCORRECTVALUE);
 
-	if (M.linear_size()) {
+	auto run_this = [](auto& VEC_VC_quantity, auto default_value, double spacing, unsigned seed) -> BError {
 
 		bool success = true;
 
-		success = M.generate_Voronoi3D(spacing, seed);
+		success = VEC_VC_quantity.generate_Voronoi3D(spacing, seed);
 
-#if COMPILECUDA == 1
-		if (success && pMeshCUDA) {
+		if (success) return BError();
+		else {
 
-			error = pMeshCUDA->copy_shapes_from_cpu();
+			BError error;
+			return error(BERROR_INCORRECTVALUE);
 		}
-#endif
+	};
 
-		if (!success) return error(BERROR_INCORRECTVALUE);
-		else error = pSMesh->UpdateConfiguration(UPDATECONFIG_MESHSHAPECHANGE);
-	}
+	error = change_mesh_shape(run_this, spacing, seed);
 
 	return error;
 }

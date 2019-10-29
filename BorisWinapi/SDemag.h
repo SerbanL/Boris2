@@ -46,6 +46,9 @@ private:
 	//super-mesh magnetization values used for computing demag field on the super-mesh
 	VEC<DBL3> sm_Vals;
 
+	//with supermesh convolution we need to know if any antiferromagnetic meshes are present so we can adjust the type of transfers used
+	bool antiferromagnetic_meshes_present = false;
+
 	//number of non-empty cells in sm_Vals
 	int non_empty_cells;
 
@@ -58,7 +61,7 @@ private:
 	//for convolution on the super-mesh to be exact, the super-mesh cells must either be empty or be covered fully by a single input mesh
 	bool use_multilayered_convolution = true;
 
-	//collection of all SDemag_Demag modules in individual ferromagnetic meshes - these modules are only created by this SDemag module
+	//collection of all SDemag_Demag modules in individual (anti)ferromagnetic meshes - these modules are only created by this SDemag module
 	vector<SDemag_Demag*> pSDemag_Demag;
 
 	//collect FFT input spaces : after Forward FFT the ffts of M from the individual meshes will be found here
@@ -104,16 +107,16 @@ private:
 
 	//------------------ Helpers for multi-layered convolution control
 
-	//when SDemag created, it needs to add one SDemag_Demag module to each ferromagnetic mesh (or multiple if the 2D layering option is enabled).
+	//when SDemag created, it needs to add one SDemag_Demag module to each (anti)ferromagnetic mesh (or multiple if the 2D layering option is enabled).
 	BError Create_SDemag_Demag_Modules(void);
 
-	//when SDemag destroyed, it must destroy the SDemag_Demag module from each ferromagnetic mesh
+	//delete all SDemag_Demag modules - these are only created by SDemag
 	void Destroy_SDemag_Demag_Modules(void);
 
 	//make sure the pSDemag_Demag list is up to date : if any mismatches found return false
 	bool Update_SDemag_Demag_List(void);
 
-	//set default value for n_common : largest value from all ferromagnetic meshes
+	//set default value for n_common : largest value from all (anti)ferromagnetic meshes
 	void set_default_n_common(void);
 
 	//get and adjust Rect_collection so the rectangles are matching for multi-layered convolution. n_common should be calculated already.
@@ -157,7 +160,7 @@ public:
 
 	BError Initialize(void);
 
-	BError UpdateConfiguration(UPDATECONFIG_ cfgMessage = UPDATECONFIG_GENERIC);
+	BError UpdateConfiguration(UPDATECONFIG_ cfgMessage);
 
 	BError MakeCUDAModule(void);
 
@@ -182,7 +185,11 @@ public:
 
 	//-------------------Getters
 
-	VEC<DBL3>& GetDemagField(void) { return sm_Vals; }
+	VEC<DBL3>& GetDemagField(void) 
+	{ 
+		if (Hdemag_calculated) return Hdemag;
+		else return sm_Vals; 
+	}
 
 	//Get PBC images for supermesh demag
 	INT3 Get_PBC(void) { return demag_pbc_images; }
@@ -248,7 +255,7 @@ public:
 	//set status for use_default_n
 	BError Set_Default_n_status(bool status) { return BError(); }
 
-	BError Set_PBC(INT3 demag_pbc_images_) {}
+	BError Set_PBC(INT3 demag_pbc_images_) { return BError(); }
 
 	//-------------------Getters
 

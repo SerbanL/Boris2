@@ -661,8 +661,7 @@ void Simulation::PrintTransportSolverConfig(void)
 	tsolver_text += " with iterations timeout : " + MakeIO(IOI_TSOLVERTIMEOUT) + "</c>";
 	tsolver_text += " Spin-solver convergence error : " + MakeIO(IOI_SSOLVERCONVERROR) + "</c>";
 	tsolver_text += " with iterations timeout : " + MakeIO(IOI_SSOLVERTIMEOUT) + "</c>\n";
-	tsolver_text += "SOR damping type : " + MakeIO(IOI_SORFIXEDDAMPING) + "</c>";
-	tsolver_text += " fixed SOR damping values (V, S) : " + MakeIO(IOI_SORDAMPING) + "</c>\n";
+	tsolver_text += " SOR damping values (V, S) : " + MakeIO(IOI_SORDAMPING) + "</c>\n";
 	tsolver_text += "Static transport solver : " + MakeIO(IOI_STATICTRANSPORT) + "</c>\n";
 
 	BD.DisplayFormattedConsoleMessage(tsolver_text);

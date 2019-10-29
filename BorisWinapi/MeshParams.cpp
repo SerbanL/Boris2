@@ -13,12 +13,24 @@ MeshParams::MeshParams(vector<PARAM_>& enabledParams)
 			meshParams.push_back("grel", MeshParamDescriptor(PARAMTYPE_MAGNETIC), PARAM_GREL);
 			break;
 
+		case PARAM_GREL_AFM:
+			meshParams.push_back("grel_AFM", MeshParamDescriptor(PARAMTYPE_MAGNETIC), PARAM_GREL_AFM);
+			break;
+
 		case PARAM_GDAMPING:
 			meshParams.push_back("damping", MeshParamDescriptor(PARAMTYPE_MAGNETIC), PARAM_GDAMPING);
 			break;
 
+		case PARAM_GDAMPING_AFM:
+			meshParams.push_back("damping_AFM", MeshParamDescriptor(PARAMTYPE_MAGNETIC), PARAM_GDAMPING_AFM);
+			break;
+
 		case PARAM_MS:
 			meshParams.push_back("Ms", MeshParamDescriptor(PARAMTYPE_MAGNETIC, "A/m"), PARAM_MS);
+			break;
+
+		case PARAM_MS_AFM:
+			meshParams.push_back("Ms_AFM", MeshParamDescriptor(PARAMTYPE_MAGNETIC, "A/m"), PARAM_MS_AFM);
 			break;
 
 		case PARAM_DEMAGXY:
@@ -29,8 +41,20 @@ MeshParams::MeshParams(vector<PARAM_>& enabledParams)
 			meshParams.push_back("A", MeshParamDescriptor(PARAMTYPE_MAGNETIC, "J/m"), PARAM_A);
 			break;
 
+		case PARAM_A_AFM:
+			meshParams.push_back("A_AFM", MeshParamDescriptor(PARAMTYPE_MAGNETIC, "J/m"), PARAM_A_AFM);
+			break;
+
+		case PARAM_A12:
+			meshParams.push_back("A12", MeshParamDescriptor(PARAMTYPE_MAGNETIC, "J/m3"), PARAM_A12);
+			break;
+
 		case PARAM_D:
 			meshParams.push_back("D", MeshParamDescriptor(PARAMTYPE_MAGNETIC, "J/m2"), PARAM_D);
+			break;
+
+		case PARAM_D_AFM:
+			meshParams.push_back("D_AFM", MeshParamDescriptor(PARAMTYPE_MAGNETIC, "J/m2"), PARAM_D_AFM);
 			break;
 
 		case PARAM_J1:
@@ -153,6 +177,18 @@ MeshParams::MeshParams(vector<PARAM_>& enabledParams)
 
 		case PARAM_PUMPEFF:
 			meshParams.push_back("pump_eff", MeshParamDescriptor(PARAMTYPE_ELECTRIC), PARAM_PUMPEFF);
+			break;
+
+		case PARAM_CPUMP_EFF:
+			meshParams.push_back("cpump_eff", MeshParamDescriptor(PARAMTYPE_ELECTRIC), PARAM_CPUMP_EFF);
+			break;
+
+		case PARAM_THE_EFF:
+			meshParams.push_back("the_eff", MeshParamDescriptor(PARAMTYPE_ELECTRIC), PARAM_THE_EFF);
+			break;
+
+		case PARAM_NDENSITY:
+			meshParams.push_back("n", MeshParamDescriptor(PARAMTYPE_ELECTRIC, "m-3"), PARAM_NDENSITY);
 			break;
 
 		case PARAM_THERMCOND:

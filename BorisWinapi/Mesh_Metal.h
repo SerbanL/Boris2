@@ -21,7 +21,7 @@ class MetalMesh :
 	//Members in this derived class
 	
 	//Material Parameters
-	MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<DBL2, double>, MatP<DBL2, double>, double, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>
+	MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<DBL2, double>, MatP<DBL2, double>, double, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>
 	>,
 	//Module Implementations
 	tuple<Transport, Heat> >
@@ -30,12 +30,6 @@ class MetalMesh :
 #if COMPILECUDA == 1
 	friend MetalMeshCUDA;
 #endif
-
-private:
-
-public:
-
-private:
 
 public:
 
@@ -54,7 +48,7 @@ public:
 	//----------------------------------- IMPORTANT CONTROL METHODS
 
 	//call when the mesh dimensions have changed - sets every quantity to the right dimensions
-	BError UpdateConfiguration(UPDATECONFIG_ cfgMessage = UPDATECONFIG_GENERIC);
+	BError UpdateConfiguration(UPDATECONFIG_ cfgMessage);
 
 	BError SwitchCUDAState(bool cudaState);
 

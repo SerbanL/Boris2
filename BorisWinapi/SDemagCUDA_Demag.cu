@@ -6,8 +6,6 @@
 
 #include "BorisCUDALib.cuh"
 
-#include "Mesh_FerromagneticCUDA.h"
-
 //-------------------Getters
 
 __global__ void Add_Energy_Kernel(cuBReal& energy, cuBReal& total_energy)

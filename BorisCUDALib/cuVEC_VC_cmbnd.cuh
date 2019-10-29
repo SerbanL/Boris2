@@ -65,8 +65,8 @@ __global__ void set_cmbnd_continuous_kernel(
 		cuBReal b_val_pri = cmbndFuncs_pri.b_func_pri(cell1_idx, cell2_idx) * contact.weights.j;
 
 		//V'' values at cell positions -1 and 1
-		VType Vdiff2_sec = cmbndFuncs_sec.diff2_sec(relpos_m1, stencil);
-		VType Vdiff2_pri = cmbndFuncs_pri.diff2_pri(cell1_idx);
+		VType Vdiff2_sec = cmbndFuncs_sec.diff2_sec(relpos_m1, stencil, contact.hshift_secondary);
+		VType Vdiff2_pri = cmbndFuncs_pri.diff2_pri(cell1_idx, contact.hshift_secondary);
 
 		//Formula for V1
 		
@@ -143,8 +143,8 @@ __global__ void set_cmbnd_continuousflux_kernel(
 		cuBReal b_val_pri = cmbndFuncs_pri.b_func_pri(cell1_idx, cell2_idx) * contact.weights.j;
 
 		//V'' values at cell positions -1 and 1
-		VType Vdiff2_sec = cmbndFuncs_sec.diff2_sec(relpos_m1, stencil);
-		VType Vdiff2_pri = cmbndFuncs_pri.diff2_pri(cell1_idx);
+		VType Vdiff2_sec = cmbndFuncs_sec.diff2_sec(relpos_m1, stencil, contact.hshift_secondary);
+		VType Vdiff2_pri = cmbndFuncs_pri.diff2_pri(cell1_idx, contact.hshift_secondary);
 
 		//A value
 		VType A_val = cmbndFuncs_s.A_func(cell1_idx, cell2_idx, relpos_m1, contact.hshift_secondary, stencil, cmbndFuncs_sec, cmbndFuncs_pri);
@@ -230,8 +230,8 @@ __global__ void set_cmbnd_discontinuous_kernel(
 		cuBReal b_val_pri = cmbndFuncs_pri.b_func_pri(cell1_idx, cell2_idx) * contact.weights.j;
 
 		//V'' values at cell positions -1 and 1
-		VType Vdiff2_sec = cmbndFuncs_sec.diff2_sec(relpos_m1, stencil);
-		VType Vdiff2_pri = cmbndFuncs_pri.diff2_pri(cell1_idx);
+		VType Vdiff2_sec = cmbndFuncs_sec.diff2_sec(relpos_m1, stencil, contact.hshift_secondary);
+		VType Vdiff2_pri = cmbndFuncs_pri.diff2_pri(cell1_idx, contact.hshift_secondary);
 
 		//A values
 		VType A_val_sec = cmbndFuncs_s.A_func_sec(cell1_idx, cell2_idx, relpos_m1, contact.hshift_secondary, stencil, cmbndFuncs_sec, cmbndFuncs_pri);

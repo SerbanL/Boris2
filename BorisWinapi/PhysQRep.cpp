@@ -163,10 +163,8 @@ void PhysQRep::CalculateRepresentation(vector<PhysQ> physQ)
 
 	minimum.assign(maxtypeval + 1, 0.0);
 	maximum.assign(maxtypeval + 1, 0.0);
-	maximum2.assign(maxtypeval + 1, 0.0);
 	min_not_set.assign(maxtypeval + 1, true);
 	max_not_set.assign(maxtypeval + 1, true);
-	max2_not_set.assign(maxtypeval + 1, true);
 
 	//calculate all representations and find minimum, maximum for each type of physical quantity
 	for (int idx = 0; idx < (int)physQ.size(); idx++) {
@@ -185,7 +183,6 @@ void PhysQRep::CalculateRepresentation(vector<PhysQ> physQ)
 		}
 
 		DBL2 minmax;
-		DBL3 minmaxmax;
 
 		//Separate computations for vectorial and scalar quantities
 		if (physQ[idx].is_vectorial()) {
@@ -193,42 +190,59 @@ void PhysQRep::CalculateRepresentation(vector<PhysQ> physQ)
 			//vectorial
 			if (physQ[idx].is_vec_vc()) {
 
-				//VEC_VC. Finally, single or double precision used?
-				if(physQ[idx].is_double_precision()) 
-					minmaxmax = CalculateRepresentation_VEC(physQ[idx].get_vec_vc_dbl3(), physQRep[idx]);
-				else 
-					minmaxmax = CalculateRepresentation_VEC(physQ[idx].get_vec_vc_flt3(), physQRep[idx]);
+				//VEC_VC. Single or double precision used?
+				if (physQ[idx].is_double_precision()) {
+
+					if (physQ[idx].is_dual()) minmax = CalculateRepresentation_VEC(physQ[idx].get_vec_vc_dbl3(), physQ[idx].get2_vec_vc_dbl3(), physQRep[idx]);
+					else minmax = CalculateRepresentation_VEC(physQ[idx].get_vec_vc_dbl3(), physQRep[idx]);
+				}
+				else {
+
+					if (physQ[idx].is_dual()) minmax = CalculateRepresentation_VEC(physQ[idx].get_vec_vc_flt3(), physQ[idx].get2_vec_vc_flt3(), physQRep[idx]);
+					else minmax = CalculateRepresentation_VEC(physQ[idx].get_vec_vc_flt3(), physQRep[idx]);
+				}
 			}
 			else {
 
 				//just a VEC
-				if (physQ[idx].is_double_precision())
-					minmaxmax = CalculateRepresentation_VEC(physQ[idx].get_vec_dbl3(), physQRep[idx]);
-				else
-					minmaxmax = CalculateRepresentation_VEC(physQ[idx].get_vec_flt3(), physQRep[idx]);
-			}
+				if (physQ[idx].is_double_precision()) {
 
-			minmax.i = minmaxmax.i;
-			minmax.j = minmaxmax.j;
+					if (physQ[idx].is_dual()) minmax = CalculateRepresentation_VEC(physQ[idx].get_vec_dbl3(), physQ[idx].get2_vec_dbl3(), physQRep[idx]);
+					else minmax = CalculateRepresentation_VEC(physQ[idx].get_vec_dbl3(), physQRep[idx]);
+				}
+				else {
+
+					if (physQ[idx].is_dual()) minmax = CalculateRepresentation_VEC(physQ[idx].get_vec_flt3(), physQ[idx].get2_vec_flt3(), physQRep[idx]);
+					else minmax = CalculateRepresentation_VEC(physQ[idx].get_vec_flt3(), physQRep[idx]);
+				}
+			}
 		}
 		else {
 
 			//scalar
 			if (physQ[idx].is_vec_vc()) {
 
-				//VEC_VC. Finally, single or double precision used?
-				if (physQ[idx].is_double_precision())
+				//VEC_VC. Single or double precision used?
+				if (physQ[idx].is_double_precision()) {
+
 					minmax = CalculateRepresentation_SCA(physQ[idx].get_vec_vc_double(), physQRep[idx]);
-				else
+				}
+				else {
+
 					minmax = CalculateRepresentation_SCA(physQ[idx].get_vec_vc_float(), physQRep[idx]);
+				}
 			}
 			else {
 
 				//just a VEC
-				if (physQ[idx].is_double_precision())
+				if (physQ[idx].is_double_precision()) {
+
 					minmax = CalculateRepresentation_SCA(physQ[idx].get_vec_double(), physQRep[idx]);
-				else
+				}
+				else {
+
 					minmax = CalculateRepresentation_SCA(physQ[idx].get_vec_float(), physQRep[idx]);
+				}
 			}
 		}
 
@@ -241,9 +255,6 @@ void PhysQRep::CalculateRepresentation(vector<PhysQ> physQ)
 
 		if (max_not_set[type]) { maximum[type] = minmax.j; max_not_set[type] = false; }
 		else maximum[type] = (maximum[type] > minmax.j ? maximum[type] : minmax.j);
-
-		if (max2_not_set[type]) { maximum2[type] = minmaxmax.k; max2_not_set[type] = false; }
-		else maximum2[type] = (maximum2[type] > minmaxmax.k ? maximum2[type] : minmaxmax.k);
 	}
 	
 	//now that we have minimum and maximum values for each type adjust physical representations accordingly
@@ -256,7 +267,7 @@ void PhysQRep::CalculateRepresentation(vector<PhysQ> physQ)
 
 			if (physQ[idx].is_vectorial()) {
 
-				AdjustMagnitude_VEC(physQRep[idx], DBL3(minimum[type], maximum[type], maximum2[type]));
+				AdjustMagnitude_VEC(physQRep[idx], DBL2(minimum[type], maximum[type]));
 			}
 			else {
 
@@ -268,13 +279,15 @@ void PhysQRep::CalculateRepresentation(vector<PhysQ> physQ)
 
 //------------------------------------------------------------------------------ VECTOR QUANTITIES ------------------------------------------------------------------------------//
 
-template DBL3 PhysQRep::CalculateRepresentation_VEC<VEC<DBL3>>(VEC<DBL3>* pQ, PhysQRepComponent& physQRepComponent);
-template DBL3 PhysQRep::CalculateRepresentation_VEC<VEC_VC<DBL3>>(VEC_VC<DBL3>* pQ, PhysQRepComponent& physQRepComponent);
-template DBL3 PhysQRep::CalculateRepresentation_VEC<VEC<FLT3>>(VEC<FLT3>* pQ, PhysQRepComponent& physQRepComponent);
-template DBL3 PhysQRep::CalculateRepresentation_VEC<VEC_VC<FLT3>>(VEC_VC<FLT3>* pQ, PhysQRepComponent& physQRepComponent);
+//////////////////// SINGLE VEC DISPLAY
+
+template DBL2 PhysQRep::CalculateRepresentation_VEC<VEC<DBL3>>(VEC<DBL3>* pQ, PhysQRepComponent& physQRepComponent);
+template DBL2 PhysQRep::CalculateRepresentation_VEC<VEC_VC<DBL3>>(VEC_VC<DBL3>* pQ, PhysQRepComponent& physQRepComponent);
+template DBL2 PhysQRep::CalculateRepresentation_VEC<VEC<FLT3>>(VEC<FLT3>* pQ, PhysQRepComponent& physQRepComponent);
+template DBL2 PhysQRep::CalculateRepresentation_VEC<VEC_VC<FLT3>>(VEC_VC<FLT3>* pQ, PhysQRepComponent& physQRepComponent);
 
 template <typename VECType>
-DBL3 PhysQRep::CalculateRepresentation_VEC(VECType* pQ, PhysQRepComponent& physQRepComponent)
+DBL2 PhysQRep::CalculateRepresentation_VEC(VECType* pQ, PhysQRepComponent& physQRepComponent)
 {	
 	Rect meshRect = pQ->rect;
 	DBL3 h = pQ->h;
@@ -309,7 +322,6 @@ DBL3 PhysQRep::CalculateRepresentation_VEC(VECType* pQ, PhysQRepComponent& physQ
 	//Vector quantity - we need to compute rotations, scaling and color coding
 	
 	omp_reduction.new_minmax_reduction();
-	omp_reduction2.new_minmax_reduction();
 
 	for (int k = 0; k < ndisp.z; k++) {
 #pragma omp parallel for
@@ -449,21 +461,18 @@ DBL3 PhysQRep::CalculateRepresentation_VEC(VECType* pQ, PhysQRepComponent& physQ
 				case VEC3REP_X:
 					//reduce x values
 					omp_reduction.reduce_minmax(value.x);
-					omp_reduction2.reduce_max(value_mag);
 					physQRepComponent.transformBatch[i + j * ndisp.x + k * ndisp.x*ndisp.y] = CBObjectTransform(Rotation, Scale, Translation, Color, translation, value.x);
 					break;
 
 				case VEC3REP_Y:
 					//reduce y values
 					omp_reduction.reduce_minmax(value.y);
-					omp_reduction2.reduce_max(value_mag);
 					physQRepComponent.transformBatch[i + j * ndisp.x + k * ndisp.x*ndisp.y] = CBObjectTransform(Rotation, Scale, Translation, Color, translation, value.y);
 					break;
 
 				case VEC3REP_Z:
 					//reduce z values
 					omp_reduction.reduce_minmax(value.z);
-					omp_reduction2.reduce_max(value_mag);
 					physQRepComponent.transformBatch[i + j * ndisp.x + k * ndisp.x*ndisp.y] = CBObjectTransform(Rotation, Scale, Translation, Color, translation, value.z);
 					break;
 				}
@@ -471,38 +480,298 @@ DBL3 PhysQRep::CalculateRepresentation_VEC(VECType* pQ, PhysQRepComponent& physQ
 		}
 	}
 
-	//return minimum, maximum, maximum
-
-	DBL2 minmax = omp_reduction.minmax();
-	double max = omp_reduction2.maximum();
-
-	return DBL3(minmax.i, minmax.j, max);
+	//return minimum, maximum
+	return omp_reduction.minmax();
 }
 
-void PhysQRep::AdjustMagnitude_VEC(PhysQRepComponent& physQRepComponent, DBL3 minmaxmax)
+//////////////////// DUAL VEC DISPLAY
+
+template DBL2 PhysQRep::CalculateRepresentation_VEC<VEC<DBL3>>(VEC<DBL3>* pQ, VEC<DBL3>* pQ2, PhysQRepComponent& physQRepComponent);
+template DBL2 PhysQRep::CalculateRepresentation_VEC<VEC_VC<DBL3>>(VEC_VC<DBL3>* pQ, VEC_VC<DBL3>* pQ2, PhysQRepComponent& physQRepComponent);
+template DBL2 PhysQRep::CalculateRepresentation_VEC<VEC<FLT3>>(VEC<FLT3>* pQ, VEC<FLT3>* pQ2, PhysQRepComponent& physQRepComponent);
+template DBL2 PhysQRep::CalculateRepresentation_VEC<VEC_VC<FLT3>>(VEC_VC<FLT3>* pQ, VEC_VC<FLT3>* pQ2, PhysQRepComponent& physQRepComponent);
+
+template <typename VECType>
+DBL2 PhysQRep::CalculateRepresentation_VEC(VECType* pQ, VECType* pQ2, PhysQRepComponent& physQRepComponent)
+{
+	Rect meshRect = pQ->rect;
+	DBL3 h = pQ->h;
+	INT3 n = pQ->n;
+
+	//display cell size - this sets the level of displayed detail
+	DBL3 hdisp(detail_level);
+
+	//number of cells for display, and adjust display cell size (must have an integer number of cells to display)
+	INT3 ndisp = round(meshRect / hdisp);
+	
+	if (ndisp.x < 1) ndisp.x = 1;
+	if (ndisp.y < 1) ndisp.y = 1;
+	if (ndisp.z < 1) ndisp.z = 1;
+	if (ndisp.x > n.x)  ndisp.x = n.x;
+	if (ndisp.y > n.y)  ndisp.y = n.y;
+	if (ndisp.z > n.z)  ndisp.z = n.z;
+
+	//double the number of cells along z to fit in the dual representation : this will also halve the z cellsize
+	ndisp.z *= 2;
+
+	hdisp = meshRect / ndisp;
+
+	physQRepComponent.transformBatch.resize(hdisp, meshRect);
+	if (physQRepComponent.emptyCell.size() != ndisp.dim()) physQRepComponent.emptyCell.assign(physQRepComponent.transformBatch.linear_size(), false);
+
+	//when calculating representation to go back to single representation values
+	ndisp.z /= 2;
+	hdisp.z *= 2;
+
+	if (physQRepComponent.vec3rep == VEC3REP_FULL) {
+
+		physQRepComponent.obSelector = CDO_HALFARROW;
+	}
+	else {
+
+		//if not a full representation then we'll be representing a scalar-type quantity extracted from the VEC
+		physQRepComponent.obSelector = CDO_HALFCUBE;
+	}
+
+	//Vector quantity - we need to compute rotations, scaling and color coding
+
+	omp_reduction.new_minmax_reduction();
+
+	for (int k = 0; k < ndisp.z; k++) {
+#pragma omp parallel for
+		for (int j = 0; j < ndisp.y; j++) {
+			for (int i = 0; i < ndisp.x; i++) {
+
+				DBL3 value, value2;
+
+				DBL3 rel_pos = hdisp & (DBL3(i, j, k) + DBL3(0.5));
+
+				if (pQ->is_empty(rel_pos)) {
+
+					//most cells are not empty, so the check above should be kept since it's fast
+					//there is the possibility that for a coarse display cell the check above returns empty but actually the coarse cell is not empty
+					//thus use the complete check here with the coarse cell rectangle
+					Rect cellRect = Rect(DBL3(i, j, k) & hdisp, DBL3(i + 1, j + 1, k + 1) & hdisp);
+					if (pQ->is_empty(cellRect)) {
+
+						//set this to empty
+						physQRepComponent.transformBatch[i + j * ndisp.x + 2 * k * ndisp.x*ndisp.y] = CBObjectTransform();
+						physQRepComponent.transformBatch[i + j * ndisp.x + (2 * k + 1) * ndisp.x*ndisp.y] = CBObjectTransform();
+						
+						physQRepComponent.emptyCell[i + j * ndisp.x + 2 * k * ndisp.x*ndisp.y] = true;
+						physQRepComponent.emptyCell[i + j * ndisp.x + (2 * k + 1) * ndisp.x*ndisp.y] = true;
+						continue;
+					}
+					else {
+
+						value = (DBL3)(*pQ).average(cellRect);
+						physQRepComponent.emptyCell[i + j * ndisp.x + 2 * k * ndisp.x*ndisp.y] = false;
+
+						value2 = (DBL3)(*pQ2).average(cellRect);
+						physQRepComponent.emptyCell[i + j * ndisp.x + (2 * k + 1) * ndisp.x*ndisp.y] = false;
+					}
+				}
+				else {
+
+					value = (DBL3)(*pQ)[rel_pos];
+					physQRepComponent.emptyCell[i + j * ndisp.x + 2 * k * ndisp.x*ndisp.y] = false;
+
+					value2 = (DBL3)(*pQ2)[rel_pos];
+					physQRepComponent.emptyCell[i + j * ndisp.x + (2 * k + 1) * ndisp.x*ndisp.y] = false;
+				}
+
+				//the magnitude of VEC3 value
+				double value_mag = (double)GetMagnitude(value);
+				double value_mag2 = (double)GetMagnitude(value2);
+
+				XMMATRIX Rotation = XMMatrixIdentity();
+				XMMATRIX Rotation2 = XMMatrixIdentity();
+
+				DBL3 scaling = hdisp * m_to_l;
+				XMMATRIX Scale = XMMatrixIdentity() * XMMatrixScaling(scaling.x, scaling.y, scaling.z);
+
+				switch (physQRepComponent.vec3rep) {
+
+				case VEC3REP_FULL:
+					//Only need rotation for full representations
+					if (IsNZ(value.x) || IsNZ(value.y)) Rotation = XMMatrixRotationAxis(XMLoadFloat3(&XMFLOAT3((float)-value.y, (float)value.x, 0)), (float)acos(value.z / value_mag));
+					else {
+
+						if (value.z > 0) Rotation = XMMatrixIdentity();
+						else Rotation = XMMatrixRotationX(XM_PI);
+					}
+
+					if (IsNZ(value2.x) || IsNZ(value2.y)) Rotation2 = XMMatrixRotationAxis(XMLoadFloat3(&XMFLOAT3((float)-value2.y, (float)value2.x, 0)), (float)acos(value2.z / value_mag2));
+					else {
+
+						if (value2.z > 0) Rotation2 = XMMatrixIdentity();
+						else Rotation2 = XMMatrixRotationX(XM_PI);
+					}
+					break;
+
+				case VEC3REP_X:
+					Rotation = XMMatrixRotationAxis(XMLoadFloat3(&XMFLOAT3(0, 1, 0)), PI / 2);
+					Rotation2 = XMMatrixRotationAxis(XMLoadFloat3(&XMFLOAT3(0, -1, 0)), PI / 2);
+					break;
+
+				case VEC3REP_Y:
+					Rotation = XMMatrixRotationAxis(XMLoadFloat3(&XMFLOAT3(1, 0, 0)), PI / 2);
+					Rotation2 = XMMatrixRotationAxis(XMLoadFloat3(&XMFLOAT3(-1, 0, 0)), PI / 2);
+					break;
+
+				case VEC3REP_DIRECTION:
+				case VEC3REP_Z:
+					Rotation2 = XMMatrixRotationAxis(XMLoadFloat3(&XMFLOAT3(0, 0, 0)), (float)XM_PI);
+					break;
+				}
+
+				DBL3 translation = (DBL3(i + 0.5, j + 0.5, k + 0.5) & hdisp) * m_to_l * 2 + (meshRect.s - focusRect.s) * m_to_l * 2 - (focusRect.size() * m_to_l);
+				XMMATRIX Translation = XMMatrixTranslation(translation.x, translation.y, translation.z);
+				
+				XMFLOAT4 Color, Color2;
+
+				float alpha = get_alpha_value(translation);
+
+				auto get_color = [](DBL3 value, double value_mag, float alpha) ->XMFLOAT4 {
+
+					XMFLOAT4 Color;
+
+					//use color wheel coding for full representations and direction-only representations
+
+					//(R,G,B) channels. Linear transition between the 6 points defined below.
+					//
+					//+x : (1,0,0) : RED
+					//+y : (1,1,0) : YELLOW
+					//-x : (0,0,1) : BLUE
+					//-y : (0,1,1) : CYAN
+					//+z : (0,1,0) : GREEN
+					//-z : (1,0,1) : MAGENTA
+
+					//b is the normalized polar angle, ranges from 0 to 1 for +z and 1 to 2 for -z
+					//a1, a2, a3, a4 are in-plane angles in the 4 quadrants: a1 measured from +x axis, a2 from +y axis, a3 from -x axis, a4 from -y axis
+
+					if (value_mag > 0) {
+
+						if (value.x > 0 && value.y >= 0) {
+
+							float a1 = (float)asin(value.y / sqrt(value.x*value.x + value.y*value.y)) * 2 / XM_PI;
+							float b = (float)acos(value.z / value_mag) * 2 / XM_PI;
+
+							if (value.z >= 0) Color = XMFLOAT4(b, 1 - b + b * a1, 0.0f, alpha);
+							else Color = XMFLOAT4(1, (2 - b)*a1, b - 1, alpha);
+						}
+						if (value.x <= 0 && value.y > 0) {
+
+							float a2 = (float)asin(-value.x / sqrt(value.x*value.x + value.y*value.y)) * 2 / XM_PI;
+							float b = (float)acos(value.z / value_mag) * 2 / XM_PI;
+
+							if (value.z >= 0) Color = XMFLOAT4(b - a2 * b, 1 - a2 * b, a2*b, alpha);
+							else Color = XMFLOAT4(1 - a2 * (2 - b), (2 - b)*(1 - a2), 1 - (2 - b)*(1 - a2), alpha);
+						}
+						if (value.x < 0 && value.y <= 0) {
+
+							float a3 = (float)asin(-value.y / sqrt(value.x*value.x + value.y*value.y)) * 2 / XM_PI;
+							float b = (float)acos(value.z / value_mag) * 2 / XM_PI;
+
+							if (value.z >= 0) Color = XMFLOAT4(0, 1 - b + a3 * b, b, alpha);
+							else Color = XMFLOAT4(b - 1, a3*(2 - b), 1, alpha);
+						}
+						if (value.x >= 0 && value.y < 0) {
+
+							float a4 = (float)asin(value.x / sqrt(value.x*value.x + value.y*value.y)) * 2 / XM_PI;
+							float b = (float)acos(value.z / value_mag) * 2 / XM_PI;
+
+							if (value.z >= 0) Color = XMFLOAT4(a4*b, 1 - a4 * b, b - a4 * b, alpha);
+							else Color = XMFLOAT4(1 - (2 - b)*(1 - a4), (2 - b)*(1 - a4), 1 - a4 * (2 - b), alpha);
+						}
+						if (IsZ(value.x) && IsZ(value.y)) {
+
+							if (value.z > 0) Color = XMFLOAT4(0.0f, 1.0f, 0.0f, alpha);
+							else Color = XMFLOAT4(1.0f, 0.0f, 1.0f, alpha);
+						}
+					}
+					else Color = XMFLOAT4(1.0f, 1.0f, 1.0f, alpha);
+
+					return Color;
+				};
+				
+				if (physQRepComponent.vec3rep == VEC3REP_FULL || physQRepComponent.vec3rep == VEC3REP_DIRECTION) {
+
+					Color = get_color(value, value_mag, alpha);
+					Color2 = get_color(value2, value_mag2, alpha);
+				}
+				else {
+
+					//for VEC3REP_X, VEC3REP_Y and VEC3REP_Z, use color coding based on min-max values, i.e. calculated the same as for a scalar quantity : done in AdjustMagnitude_VEC
+					Color = XMFLOAT4(0.0f, 0.0f, 1.0f, get_alpha_value(translation));
+					Color2 = XMFLOAT4(0.0f, 0.0f, 1.0f, get_alpha_value(translation));
+				}
+
+				switch (physQRepComponent.vec3rep)
+				{
+				case VEC3REP_FULL:
+				case VEC3REP_DIRECTION:
+					//reduce magnitude values
+					omp_reduction.reduce_minmax(value_mag);
+					omp_reduction.reduce_minmax(value_mag2);
+					physQRepComponent.transformBatch[i + j * ndisp.x + 2 * k * ndisp.x*ndisp.y] = CBObjectTransform(Rotation, Scale, Translation, Color, translation, value_mag);
+					physQRepComponent.transformBatch[i + j * ndisp.x + (2 * k + 1) * ndisp.x*ndisp.y] = CBObjectTransform(Rotation2, Scale, Translation, Color2, translation, value_mag2);
+					break;
+
+				case VEC3REP_X:
+					//reduce x values
+					omp_reduction.reduce_minmax(value.x);
+					omp_reduction.reduce_minmax(value2.x);
+					physQRepComponent.transformBatch[i + j * ndisp.x + 2 * k * ndisp.x*ndisp.y] = CBObjectTransform(Rotation, Scale, Translation, Color, translation, value.x);
+					physQRepComponent.transformBatch[i + j * ndisp.x + (2 * k + 1) * ndisp.x*ndisp.y] = CBObjectTransform(Rotation2, Scale, Translation, Color2, translation, value2.x);
+					break;
+
+				case VEC3REP_Y:
+					//reduce y values
+					omp_reduction.reduce_minmax(value.y);
+					omp_reduction.reduce_minmax(value2.y);
+					physQRepComponent.transformBatch[i + j * ndisp.x + 2 * k * ndisp.x*ndisp.y] = CBObjectTransform(Rotation, Scale, Translation, Color, translation, value.y);
+					physQRepComponent.transformBatch[i + j * ndisp.x + (2 * k + 1) * ndisp.x*ndisp.y] = CBObjectTransform(Rotation2, Scale, Translation, Color2, translation, value2.y);
+					break;
+
+				case VEC3REP_Z:
+					//reduce z values
+					omp_reduction.reduce_minmax(value.z);
+					omp_reduction.reduce_minmax(value2.z);
+					physQRepComponent.transformBatch[i + j * ndisp.x + 2 * k * ndisp.x*ndisp.y] = CBObjectTransform(Rotation, Scale, Translation, Color, translation, value.z);
+					physQRepComponent.transformBatch[i + j * ndisp.x + (2 * k + 1) * ndisp.x*ndisp.y] = CBObjectTransform(Rotation2, Scale, Translation, Color2, translation, value2.z);
+					break;
+				}
+			}
+		}
+	}
+
+	//return minimum, maximum
+	return omp_reduction.minmax();
+}
+
+void PhysQRep::AdjustMagnitude_VEC(PhysQRepComponent& physQRepComponent, DBL2 minmax)
 {
 	if (physQRepComponent.vec3rep == VEC3REP_FULL) {
 
 		//only adjust scaling for full representations
 
-		double delta = minmaxmax.j - minmaxmax.i;
+		double delta = minmax.j - minmax.i;
 
-		if (delta > 0 && minmaxmax.j) {
+		if (delta > 0 && minmax.j) {
 
 #pragma omp parallel for
 			for (int tbidx = 0; tbidx < physQRepComponent.transformBatch.linear_size(); tbidx++) {
 
 				//do not use a linear scaling as it doesn't look good. Use a gentle decrease in the upper range of 0 to 1 : power 0.2 works nicely
-				float magRel = (float)pow(physQRepComponent.transformBatch[tbidx].value / minmaxmax.j, physQRepComponent.exponent);
+				float magRel = (float)pow(physQRepComponent.transformBatch[tbidx].value / minmax.j, physQRepComponent.exponent);
 				physQRepComponent.transformBatch[tbidx].Scale *= XMMatrixScaling(magRel, magRel, magRel);
 			}
 		}
 	}
 	else if (physQRepComponent.vec3rep != VEC3REP_DIRECTION) {
 
-		//for a more natural display, the minmax values are set as minimum = -maximum, maximum = maximum
-		//The maximum is the maximum magnitude of the vector (stored in minmaxmax.k)
-		AdjustMagnitude_SCA(physQRepComponent, DBL2(-minmaxmax.k, minmaxmax.k));
+		AdjustMagnitude_SCA(physQRepComponent, minmax);
 	}
 }
 

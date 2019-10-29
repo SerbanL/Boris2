@@ -5,10 +5,10 @@
 #include "ErrorHandler.h"
 
 #include "PhysQRep.h"
+
 #include "SimSharedData.h"
 
 #include "MeshDefs.h"
-
 #include "MeshParams.h"
 
 #include "DiffEq.h"
@@ -45,19 +45,11 @@ class Mesh :
 	public SimulationSharedData,
 	public MeshParams
 {
-	//List modules which can be used by more than one type of mesh - these modules will hold a pointer to this base class directly
-	friend Transport;
-	friend Heat;
-
-	//special cases here
-	friend ExchangeBase;
-	friend SDemag_Demag;
-
 #if COMPILECUDA == 1
 	friend MeshCUDA;
 
-	friend TransportCUDA;
-	friend HeatCUDA;
+	//friend TransportCUDA;
+	//friend HeatCUDA;
 #endif
 
 protected:
@@ -88,9 +80,6 @@ protected:
 	//effective field modules currently assigned to this mesh
 	vector_lut<Modules*> pMod;
 
-	//pointer to the supermesh holding this mesh (some modules in this mesh will need to see other meshes).
-	SuperMesh* pSMesh;
-
 public:
 
 #if COMPILECUDA == 1
@@ -98,8 +87,16 @@ public:
 	MeshCUDA* pMeshCUDA = nullptr;
 #endif
 
+	//pointer to the supermesh holding this mesh (some modules in this mesh will need to see other meshes).
+	SuperMesh* pSMesh;
+
 	//the mesh rectangle in meters : this defines the mesh position in the world (in the super-mesh). cellsizes must divide the mesh rectangle, giving the number of cells in each dimension
 	Rect meshRect;
+
+	//-----Custom Mesh Display
+	
+	VEC<DBL3> displayVEC_VEC;
+	VEC<double> displayVEC_SCA;
 
 	//-----Ferromagnetic properties
 
@@ -112,8 +109,14 @@ public:
 	//Magnetization using double floating point precision
 	VEC_VC<DBL3> M;
 
+	//Additional magnetization used for antiferromagnetic meshes with 2 sub-lattice local approximation; exactly same dimensions as M
+	VEC_VC<DBL3> M2;
+
 	//effective field - sum total field of all the added modules
 	VEC<DBL3> Heff;
+
+	//Additional effective field used for antiferromagnetic meshes with 2 sub-lattice local approximation; exactly same dimensions as Heff
+	VEC<DBL3> Heff2;
 
 	//-----Electric conduction properties (Electron charge and spin Transport)
 
@@ -128,9 +131,9 @@ public:
 	
 	//electrical conductivity - on n_e, h_e mesh
 	VEC_VC<double> elC;
-	
-	//electrical current density - on n_e, h_e mesh
-	VEC_VC<DBL3> Jc;
+
+	//electric field - on n_e, h_e mesh
+	VEC_VC<DBL3> E;
 
 	//spin accumulation - on n_e, h_e mesh
 	VEC_VC<DBL3> S;
@@ -163,7 +166,7 @@ private:
 
 	//----------------------------------- RUNTIME PARAMETER UPDATERS (AUXILIARY) (MeshParamsControl.h)
 
-	//UPDATER M CORSENESS - PRIVATE
+	//UPDATER M COARSENESS - PRIVATE
 
 	//SPATIAL DEPENDENCE ONLY - NO POSITION YET
 
@@ -185,7 +188,7 @@ private:
 	template <typename PType, typename SType>
 	void update_parameters_mcoarse_full(int mcell_idx, MatP<PType, SType>& matp, PType& matp_value);
 
-	//UPDATER E CORSENESS - PRIVATE
+	//UPDATER E COARSENESS - PRIVATE
 
 	//SPATIAL DEPENDENCE ONLY - NO POSITION YET
 
@@ -207,7 +210,7 @@ private:
 	template <typename PType, typename SType>
 	void update_parameters_ecoarse_full(int ecell_idx, MatP<PType, SType>& matp, PType& matp_value);
 
-	//UPDATER T CORSENESS - PRIVATE
+	//UPDATER T COARSENESS - PRIVATE
 
 	//SPATIAL DEPENDENCE ONLY - NO POSITION YET
 
@@ -237,6 +240,17 @@ public:
 
 	//obtain error_on_create from this mesh, as well as any set modules - return first error found
 	BError Error_On_Create(void);
+
+	//----------------------------------- MODULES indexing
+
+	//index by actual index in pMod
+	Modules* operator[](const int &modIdx) { return pMod[modIdx]; }
+
+	//index by module ID
+	Modules* operator()(const int &modID) { return pMod(modID); }
+
+	//return entire pMod vector (used to access methods in vector_lut on pMod)
+	vector_lut<Modules*>& operator()(void) { return pMod; }
 
 	//----------------------------------- MODULES CONTROL : MeshModules.cpp
 
@@ -330,19 +344,19 @@ public:
 	template <typename PType, typename SType>
 	void update_parameters_full(const DBL3& position, const double& Temperature, MatP<PType, SType>& matp, PType& matp_value);
 
-	//UPDATER M CORSENESS - PUBLIC
+	//UPDATER M COARSENESS - PUBLIC
 
 	//Update parameter values if temperature dependent at the given cell index - M cell index; position not calculated
 	template <typename ... MeshParam_List>
 	void update_parameters_mcoarse(int mcell_idx, MeshParam_List& ... params);
 
-	//UPDATER E CORSENESS - PUBLIC
+	//UPDATER E COARSENESS - PUBLIC
 
 	//Update parameter values if temperature dependent at the given cell index - M cell index; position not calculated
 	template <typename ... MeshParam_List>
 	void update_parameters_ecoarse(int ecell_idx, MeshParam_List& ... params);
 
-	//UPDATER T CORSENESS - PUBLIC
+	//UPDATER T COARSENESS - PUBLIC
 
 	//Update parameter values if temperature dependent at the given cell index - M cell index; position not calculated
 	template <typename ... MeshParam_List>
@@ -357,7 +371,7 @@ public:
 	//----------------------------------- OTHER IMPORTANT CONTROL METHODS : MeshControl.cpp
 
 	//call when the mesh dimensions have changed - sets every quantity to the right dimensions
-	virtual BError UpdateConfiguration(UPDATECONFIG_ cfgMessage = UPDATECONFIG_GENERIC) = 0;
+	virtual BError UpdateConfiguration(UPDATECONFIG_ cfgMessage) = 0;
 
 	//at the start of each iteration the mesh might have to be prepared (e.g. state flags set)
 	virtual void PrepareNewIteration(void) = 0;
@@ -441,7 +455,7 @@ public:
 	bool TComputation_Enabled(void) { return Temp.linear_size(); }
 
 	//check if interface conductance is enabled (for spin transport solver)
-	bool GInterface_Enabled(void) { return (DBL2(Gi).norm() > 0); }
+	bool GInterface_Enabled(void) { return (DBL2(Gmix.get0()).norm() > 0); }
 
 	//are periodic boundary conditions set for magnetization?
 	bool Is_PBC_x(void) { return M.is_pbc_x(); }
@@ -455,6 +469,7 @@ public:
 
 	//get average magnetisation in given rectangle (entire mesh if none specified)
 	DBL3 GetAverageMagnetisation(Rect rectangle = Rect());
+	DBL3 GetAverageMagnetisation2(Rect rectangle = Rect());
 
 	DBL3 GetAverageChargeCurrentDensity(Rect rectangle = Rect());
 
@@ -476,10 +491,21 @@ public:
 	//get Curie temperature for the material (the indicative value)
 	double GetCurieTemperatureMaterial(void) { return T_Curie_material; }
 
+	double GetAtomicMoment(void) { return atomic_moment; }
+
 	//----------------------------------- QUANTITY GETTERS
 
 	//returns M on the cpu, thus transfers M from gpu to cpu before returning if cuda enabled
 	VEC_VC<DBL3>& Get_M(void);
+
+	//returns charge current on the cpu, assuming transport module is enabled
+	VEC_VC<DBL3>& Get_Jc(void);
+
+	//returns bulk self-consistent spin torque on the cpu, assuming transport module is enabled and spin solver is enabled
+	VEC<DBL3>& Get_SpinTorque(void);
+
+	//returns interfacial self-consistent spin torque on the cpu, assuming transport module is enabled and spin solver is enabled
+	VEC<DBL3>& Get_InterfacialSpinTorque(void);
 
 	//----------------------------------- OTHER MESH SHAPE CONTROL
 
@@ -516,15 +542,12 @@ public:
 
 	//Curie temperature for ferromagnetic meshes. Calling this forces recalculation of affected material parameters temperature dependence - any custom dependence set will be overwritten.
 	virtual void SetCurieTemperature(double Tc) {}
+
 	//this just sets the indicative material Tc value
-	virtual void SetCurieTemperatureMaterial(double Tc_material) {}
+	virtual void SetCurieTemperatureMaterial(double Tc_material) { T_Curie_material = Tc_material; }
 
 	//atomic moment (as multiple of Bohr magneton) for ferromagnetic meshes. Calling this forces recalculation of affected material parameters temperature dependence - any custom dependence set will be overwritten.
 	virtual void SetAtomicMoment(double atomic_moment_ub) {}
-	virtual double GetAtomicMoment(void) { return 0.0; }
-
-	//get rate of change of magnetization (overloaded by Ferromagentic meshes)
-	virtual DBL3 dMdt(int idx) { return DBL3(); }
 
 	//get skyrmion shift for a skyrmion initially in the given rectangle (works only with data in output data, not with ShowData or with data box)
 	virtual DBL2 Get_skyshift(Rect skyRect) { return DBL2(); }
@@ -532,7 +555,12 @@ public:
 	//get skyrmion shift for a skyrmion initially in the given rectangle (works only with data in output data, not with ShowData or with data box), as well as diameters along x and y directions.
 	virtual DBL4 Get_skypos_diameters(Rect skyRect) { return DBL4(); }
 
-	//----------------------------------- FERROMAGNETIC MESH QUANTITIES CONTROL : Mesh_Ferromagnetic_Control.cpp
+	//----------------------------------- ODE METHODS IN (ANTI)FERROMAGNETIC MESH : Mesh_..._ODEControl.cpp
+
+	//get rate of change of magnetization (overloaded by Ferromagnetic meshes)
+	virtual DBL3 dMdt(int idx) { return DBL3(); }
+
+	//----------------------------------- (ANTI)FERROMAGNETIC MESH QUANTITIES CONTROL : Mesh_..._Control.cpp
 
 	//this method is also used by the dipole mesh where it does something else - sets the dipole direction
 	virtual void SetMagnetisationAngle(double polar, double azim, Rect rectangle = Rect()) {}
@@ -635,8 +663,9 @@ BError Mesh::change_mesh_shape(Lambda& run_this, PType& ... params)
 
 	BError error(__FUNCTION__);
 
-	if (!shape_change_individual || (shape_change_individual && displayedPhysicalQuantity == MESHDISPLAY_MAGNETIZATION)) {
-
+	if (!shape_change_individual || 
+		(shape_change_individual && (displayedPhysicalQuantity == MESHDISPLAY_MAGNETIZATION || displayedPhysicalQuantity == MESHDISPLAY_MAGNETIZATION2 || displayedPhysicalQuantity == MESHDISPLAY_MAGNETIZATION12)))
+	{
 		//1. shape magnetization
 		if (M.linear_size()) {
 
@@ -645,7 +674,15 @@ BError Mesh::change_mesh_shape(Lambda& run_this, PType& ... params)
 
 				error = reinterpret_cast<Roughness*>(pMod(MOD_ROUGHNESS))->change_mesh_shape(run_this, params...);
 			}
-			else error = run_this(M, DBL3(-Ms, 0, 0), params...);
+			else {
+
+				if (M2.linear_size()) {
+
+					error = run_this(M, DBL3(-Ms_AFM.get_current().i, 0, 0), params...);
+					error = run_this(M2, DBL3(Ms_AFM.get_current().j, 0, 0), params...);
+				}
+				else error = run_this(M, DBL3(-Ms.get_current(), 0, 0), params...);
+			}
 		}
 	}
 	

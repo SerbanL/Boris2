@@ -5,10 +5,10 @@
 
 #ifdef MODULE_ROUGHNESS
 
-#include "Mesh_FerromagneticCUDA.h"
+#include "MeshCUDA.h"
 #include "Roughness.h"
 
-RoughnessCUDA::RoughnessCUDA(FMeshCUDA* pMeshCUDA_, Roughness* pRough_) :
+RoughnessCUDA::RoughnessCUDA(MeshCUDA* pMeshCUDA_, Roughness* pRough_) :
 	ModulesCUDA()
 {
 	Uninitialize();
@@ -16,7 +16,7 @@ RoughnessCUDA::RoughnessCUDA(FMeshCUDA* pMeshCUDA_, Roughness* pRough_) :
 	pMeshCUDA = pMeshCUDA_;
 	pRough = pRough_;
 
-	error_on_create = UpdateConfiguration();
+	error_on_create = UpdateConfiguration(UPDATECONFIG_FORCEUPDATE);
 }
 
 RoughnessCUDA::~RoughnessCUDA() {}

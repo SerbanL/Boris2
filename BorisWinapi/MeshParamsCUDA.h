@@ -17,23 +17,33 @@ private:
 
 public:
 
+	//A number of parameters have _AFM termination. These are used for antiferromagnetic meshes with 2-sublattice local approximation and are doubled-up for sub-lattices A, B
+
 	//Relative electron gyromagnetic ratio
 	cu_obj<MatPCUDA<cuBReal, cuBReal>> grel;
+	cu_obj<MatPCUDA<cuReal2, cuBReal>> grel_AFM;
 
 	//Gilbert damping
 	cu_obj<MatPCUDA<cuBReal, cuBReal>> alpha;
+	cu_obj<MatPCUDA<cuReal2, cuBReal>> alpha_AFM;
 
 	//Saturation magnetisation (A/m)
 	cu_obj<MatPCUDA<cuBReal, cuBReal>> Ms;
+	cu_obj<MatPCUDA<cuReal2, cuBReal>> Ms_AFM;
 
 	//in-plane demagnetizing factors (used for Demag_N module)
 	cu_obj<MatPCUDA<cuReal2, cuBReal>> Nxy;
 
-	//Exchange stifness (J/m)
+	//Exchange stiffness (J/m)
 	cu_obj<MatPCUDA<cuBReal, cuBReal>> A;
+	cu_obj<MatPCUDA<cuReal2, cuBReal>> A_AFM;
+
+	//AFM coupling between sub-lattices A and B (J/m^3)
+	cu_obj<MatPCUDA<cuBReal, cuBReal>> A12;
 
 	//Dzyaloshinskii-Moriya exchange constant (J/m^2)
 	cu_obj<MatPCUDA<cuBReal, cuBReal>> D;
+	cu_obj<MatPCUDA<cuReal2, cuBReal>> D_AFM;
 
 	//bilinear surface exchange coupling (J/m^2) : J1, bottom and top layer values
 	//biquadratic surface exchange coupling (J/m^2) : J2, bottom and top layer values
@@ -72,6 +82,9 @@ public:
 	//electron diffusion constant (m^2/s)
 	cu_obj<MatPCUDA<cuBReal, cuBReal>> De;
 
+	//electron carrier density (1/m^3)
+	cu_obj<MatPCUDA<cuBReal, cuBReal>> n_density = 1.8e29;
+
 	//diffusion spin polarisation (unitless)
 	cu_obj<MatPCUDA<cuBReal, cuBReal>> betaD;
 
@@ -107,6 +120,12 @@ public:
 
 	//spin pumping efficiency (unitless, varies from 0 : no spin pumping, up to 1 : full strength)
 	cu_obj<MatPCUDA<cuBReal, cuBReal>> pump_eff;
+
+	//charge pumping efficiency (unitless, varies from 0 : no charge pumping, up to 1 : full strength)
+	cu_obj<MatPCUDA<cuBReal, cuBReal>> cpump_eff = 1;
+
+	//topological Hall effect efficiency (unitless, varies from 0 : none, up to 1 : full strength)
+	cu_obj<MatPCUDA<cuBReal, cuBReal>> the_eff = 1;
 
 	//the mesh base temperature (K)
 	cu_obj<cuBReal> base_temperature;

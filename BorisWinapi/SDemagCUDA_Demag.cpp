@@ -5,11 +5,12 @@
 
 #ifdef MODULE_SDEMAG
 
-#include "Mesh_FerromagneticCUDA.h"
+#include "MeshCUDA.h"
 #include "SDemag.h"
 #include "SDemag_Demag.h"
+#include "MeshDefs.h"
 
-SDemagCUDA_Demag::SDemagCUDA_Demag(FMeshCUDA* pMeshCUDA_, SDemag_Demag *pSDemag_Demag_) :
+SDemagCUDA_Demag::SDemagCUDA_Demag(MeshCUDA* pMeshCUDA_, SDemag_Demag *pSDemag_Demag_) :
 	ModulesCUDA(),
 	ConvolutionCUDA<DemagKernelCollectionCUDA>()
 {
@@ -81,28 +82,53 @@ BError SDemagCUDA_Demag::Initialize(void)
 			if (!transfer()->resize(h_common, convolution_rect)) error_on_create(BERROR_OUTOFMEMORY_CRIT);
 
 			//Now copy mesh transfer object to cuda version
-			cu_arr<cuVEC<cuReal3>> pVal_from;
-			cu_arr<cuVEC<cuReal3>> pVal_to;
+			cu_arr<cuVEC<cuReal3>> pVal_from, pVal_from2;
+			cu_arr<cuVEC<cuReal3>> pVal_to, pVal_to2;
 
 			pVal_from.push_back((cuVEC<cuReal3>*&)pMeshCUDA->M.get_managed_object());
 			pVal_to.push_back((cuVEC<cuReal3>*&)pMeshCUDA->Heff.get_managed_object());
+			pVal_from2.push_back((cuVEC<cuReal3>*&)pMeshCUDA->M2.get_managed_object());
+			pVal_to2.push_back((cuVEC<cuReal3>*&)pMeshCUDA->Heff2.get_managed_object());
 
-			if (!transfer()->copy_transfer_info(pVal_from, pVal_to, pSDemag_Demag->transfer)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
+			///////////////////////////////////////////////////////////////////////////////////////////////
+			////////////////////////////////////// FERROMAGNETIC MESH /////////////////////////////////////
+			///////////////////////////////////////////////////////////////////////////////////////////////
 
-			if (pMeshCUDA->EvaluationSpeedup()) {
+			if (pMeshCUDA->GetMeshType() == MESH_FERROMAGNETIC) {
 
-				//initialize mesh transfer for Hdemag as well if we are using evaluation speedup
-				if (!Hdemag()->copy_transfer_info(pVal_from, pVal_to, pSDemag_Demag->transfer)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
+				if (!transfer()->copy_transfer_info(pVal_from, pVal_to, pSDemag_Demag->transfer)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
+
+				if (pMeshCUDA->EvaluationSpeedup()) {
+
+					//initialize mesh transfer for Hdemag as well if we are using evaluation speedup
+					if (!Hdemag()->copy_transfer_info(pVal_from, pVal_to, pSDemag_Demag->transfer)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
+				}
+			}
+
+			///////////////////////////////////////////////////////////////////////////////////////////////
+			//////////////////////////////////// ANTIFERROMAGNETIC MESH ///////////////////////////////////
+			///////////////////////////////////////////////////////////////////////////////////////////////
+
+			else if (pMeshCUDA->GetMeshType() == MESH_ANTIFERROMAGNETIC) {
+
+				if (!transfer()->copy_transfer_info_averagedinputs_duplicatedoutputs(pVal_from, pVal_from2, pVal_to, pVal_to2, pSDemag_Demag->transfer)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
+
+				if (pMeshCUDA->EvaluationSpeedup()) {
+
+					//initialize mesh transfer for Hdemag as well if we are using evaluation speedup
+					if (!Hdemag()->copy_transfer_info_averagedinputs_duplicatedoutputs(pVal_from, pVal_from2, pVal_to, pVal_to2, pSDemag_Demag->transfer)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
+				}
 			}
 
 			non_empty_cells = pSDemag_Demag->transfer.get_nonempty_cells();
 		}
+		
+		if (pSDemagCUDA->total_nonempty_volume) {
 
-		if (pSDemag->total_nonempty_volume) {
-
-			energy_density_weight.from_cpu((cuBReal)(non_empty_cells * h_common.dim() / pSDemag->total_nonempty_volume));
+			energy_density_weight.from_cpu((cuBReal)(non_empty_cells * h_common.dim() / pSDemagCUDA->total_nonempty_volume));
 		}
-
+		
+		
 		initialized = true;
 	}
 

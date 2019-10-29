@@ -6,7 +6,6 @@
 using namespace std;
 
 class Mesh;
-class FMesh;
 
 #ifdef MODULE_ZEEMAN
 
@@ -20,7 +19,7 @@ class Zeeman :
 private:
 
 	//pointer to mesh object holding this effective field module
-	FMesh *pMesh;
+	Mesh *pMesh;
 
 	//Applied field
 	DBL3 Ha;
@@ -40,7 +39,7 @@ public:
 
 	BError Initialize(void);
 
-	BError UpdateConfiguration(UPDATECONFIG_ cfgMessage = UPDATECONFIG_GENERIC);
+	BError UpdateConfiguration(UPDATECONFIG_ cfgMessage);
 
 	BError MakeCUDAModule(void);
 

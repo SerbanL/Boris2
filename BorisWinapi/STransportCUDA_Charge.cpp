@@ -18,21 +18,13 @@ void STransportCUDA::solve_charge_transport_sor(void)
 
 	do {
 
-		pSTrans->aSOR_damping = DBL2();
-
 		Zero_Errors();
 		normalized_max_error = cuReal2();
 
 		//1. solve V in each mesh separately (1 iteration each) - but do not set CMBND cells yet
 		for (int idx = 0; idx < (int)pTransport.size(); idx++) {
 
-			if (pSTrans->fixed_SOR_damping) pTransport[idx]->IterateChargeSolver_SOR(SOR_damping_V, max_error, max_value);
-			else pTransport[idx]->IterateChargeSolver_aSOR(start_iters, pSTrans->s_errorMax, max_error, max_value);
-
-			//store minimum and maximum damping values
-			double damping = (*pV[idx])()->aSOR_get_damping_cpu();
-			if (pSTrans->aSOR_damping == DBL2()) pSTrans->aSOR_damping = DBL2(damping, damping);
-			else pSTrans->aSOR_damping = DBL2(min(pSTrans->aSOR_damping.i, damping), max(pSTrans->aSOR_damping.j, damping));
+			pTransport[idx]->IterateChargeSolver_SOR(SOR_damping_V, max_error, max_value);
 		}
 
 		//normalize error to maximum change in cpu memory
@@ -51,10 +43,10 @@ void STransportCUDA::solve_charge_transport_sor(void)
 	//continue next iteration if iterations timeout reached - with this timeout built in the program doesn't block if errorMaxLaplace cannot be reached. 
 	if (pSTrans->iters_to_conv == pSTrans->maxLaplaceIterations) pSTrans->recalculate_transport = true;
 
-	//3. update Jc in all meshes if a significant change occured
+	//2. update E in all meshes
 	for (int idx = 0; idx < (int)pTransport.size(); idx++) {
 
-		pTransport[idx]->CalculateCurrentDensity();
+		pTransport[idx]->CalculateElectricField();
 	}
 
 	//store the current max error in the energy term so it can be read if requested

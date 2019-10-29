@@ -3,7 +3,7 @@
 
 #ifdef MODULE_ROUGHNESS
 
-#include "Mesh_Ferromagnetic.h"
+#include "Mesh.h"
 #include "SuperMesh.h"
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -13,7 +13,7 @@ Roughness::Roughness(Mesh *pMesh_) :
 	Convolution<RoughnessKernel<Roughness>>(pMesh_->GetMeshSize(), pMesh_->GetMeshCellsize(), this),
 	ProgramStateNames(this, {VINFO(refine), VINFO(Mshape_fine)}, {})
 {
-	pMesh = dynamic_cast<FMesh*>(pMesh_);
+	pMesh = pMesh_;
 
 	Uninitialize();
 
@@ -27,7 +27,7 @@ Roughness::Roughness(Mesh *pMesh_) :
 		if (!error_on_create) error_on_create = SwitchCUDAState(true);
 	}
 
-	error_on_create = UpdateConfiguration();
+	error_on_create = UpdateConfiguration(UPDATECONFIG_FORCEUPDATE);
 }
 
 void Roughness::RepairObjectState(void) {}
@@ -37,6 +37,11 @@ void Roughness::Set_Coarse_M_Inclusion(void)
 {
 	pMesh->M.resize(pMesh->h, pMesh->meshRect, Mshape_fine);
 
+	if (pMesh->GetMeshType() == MESH_ANTIFERROMAGNETIC) {
+
+		pMesh->M2.resize(pMesh->h, pMesh->meshRect, Mshape_fine);
+	}
+
 	//it's possible mesh was reset and previously empty cells are now not empty : must set a value in these as they will now have zero value
 #pragma omp parallel for
 	for (int idx = 0; idx < pMesh->M.linear_size(); idx++) {
@@ -44,6 +49,8 @@ void Roughness::Set_Coarse_M_Inclusion(void)
 		if (pMesh->M.is_not_empty(idx) && pMesh->M[idx] == DBL3(0.0)) {
 
 			pMesh->M[idx] = DBL3(-pMesh->Ms.get0(), 0, 0);
+
+			if (pMesh->GetMeshType() == MESH_ANTIFERROMAGNETIC) pMesh->M2[idx] = pMesh->M[idx] * -1.0;
 		}
 	}
 
@@ -126,7 +133,7 @@ BError Roughness::copy_roughness(Roughness* pRough_copy_this)
 	refine = pRough_copy_this->get_refine();
 
 	//discretisation may have changed so must update (also takes care of CUDA version)
-	UpdateConfiguration();
+	UpdateConfiguration(UPDATECONFIG_ROUGHNESS_CHANGE);
 
 	//copy values
 	Mshape_fine.copy_values(pRough_copy_this->Mshape_fine);
@@ -310,7 +317,7 @@ BError Roughness::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 #if COMPILECUDA == 1
 	if (pModuleCUDA) {
 
-		if (!error) error = pModuleCUDA->UpdateConfiguration();
+		if (!error) error = pModuleCUDA->UpdateConfiguration(cfgMessage);
 	}
 #endif
 
@@ -327,7 +334,7 @@ BError Roughness::MakeCUDAModule(void)
 
 		//Note : it is posible pMeshCUDA has not been allocated yet, but this module has been created whilst cuda is switched on. This will happen when a new mesh is being made which adds this module by default.
 		//In this case, after the mesh has been fully made, it will call SwitchCUDAState on the mesh, which in turn will call this SwitchCUDAState method; then pMeshCUDA will not be nullptr and we can make the cuda module version
-		pModuleCUDA = new RoughnessCUDA(dynamic_cast<FMeshCUDA*>(pMesh->pMeshCUDA), this);
+		pModuleCUDA = new RoughnessCUDA(pMesh->pMeshCUDA, this);
 		error = pModuleCUDA->Error_On_Create();
 	}
 
@@ -340,19 +347,42 @@ double Roughness::UpdateField(void)
 {
 	double energy = 0;
 
+	if (pMesh->GetMeshType() == MESH_FERROMAGNETIC) {
+
 #pragma omp parallel for reduction(+:energy)
-	for (int idx = 0; idx < pMesh->n.dim(); idx++) {
-		
-		if (pMesh->M.is_not_empty(idx)) {
+		for (int idx = 0; idx < pMesh->n.dim(); idx++) {
 
-			DBL3 Hrough = DBL33(
-				DBL3(Fmul_rough[idx].x, Fomul_rough[idx].x, Fomul_rough[idx].y),
-				DBL3(Fomul_rough[idx].x, Fmul_rough[idx].y, Fomul_rough[idx].z),
-				DBL3(Fomul_rough[idx].y, Fomul_rough[idx].z, Fmul_rough[idx].z)) * pMesh->M[idx];
+			if (pMesh->M.is_not_empty(idx)) {
 
-			pMesh->Heff[idx] += Hrough;
+				DBL3 Hrough = DBL33(
+					DBL3(Fmul_rough[idx].x, Fomul_rough[idx].x, Fomul_rough[idx].y),
+					DBL3(Fomul_rough[idx].x, Fmul_rough[idx].y, Fomul_rough[idx].z),
+					DBL3(Fomul_rough[idx].y, Fomul_rough[idx].z, Fmul_rough[idx].z)) * pMesh->M[idx];
 
-			energy += Hrough * pMesh->M[idx];
+				pMesh->Heff[idx] += Hrough;
+
+				energy += Hrough * pMesh->M[idx];
+			}
+		}
+	}
+
+	else if (pMesh->GetMeshType() == MESH_ANTIFERROMAGNETIC) {
+
+#pragma omp parallel for reduction(+:energy)
+		for (int idx = 0; idx < pMesh->n.dim(); idx++) {
+
+			if (pMesh->M.is_not_empty(idx)) {
+
+				DBL3 Hrough = DBL33(
+					DBL3(Fmul_rough[idx].x, Fomul_rough[idx].x, Fomul_rough[idx].y),
+					DBL3(Fomul_rough[idx].x, Fmul_rough[idx].y, Fomul_rough[idx].z),
+					DBL3(Fomul_rough[idx].y, Fomul_rough[idx].z, Fmul_rough[idx].z)) * (pMesh->M[idx] + pMesh->M2[idx]) / 2;
+
+				pMesh->Heff[idx] += Hrough;
+				pMesh->Heff2[idx] += Hrough;
+
+				energy += Hrough * (pMesh->M[idx] + pMesh->M2[idx]) / 2;
+			}
 		}
 	}
 

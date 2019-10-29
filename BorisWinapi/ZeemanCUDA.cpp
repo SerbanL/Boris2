@@ -7,8 +7,9 @@
 
 #include "Zeeman.h"
 #include "Mesh_FerromagneticCUDA.h"
+#include "Mesh_AntiFerromagneticCUDA.h"
 
-ZeemanCUDA::ZeemanCUDA(FMeshCUDA* pMeshCUDA_, Zeeman* pHolderModule)
+ZeemanCUDA::ZeemanCUDA(MeshCUDA* pMeshCUDA_, Zeeman* pHolderModule)
 	: ModulesCUDA()
 {
 	pMeshCUDA = pMeshCUDA_;

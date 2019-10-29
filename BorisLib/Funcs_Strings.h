@@ -201,7 +201,10 @@ inline std::vector<std::string> split_numeric(const std::string& textstring)
 
 				//found start of a potentially numeric substring
 				int start_idx = idx;
-				int end_idx;
+				int end_idx = start_idx + 1;
+
+				//reached end : the last string was numeric
+				if (end_idx == textstring.length()) isnumeric = true;
 
 				//is it a numeric substring? There must be a space after a digit to be a real numeric substring
 				for (end_idx = start_idx + 1; end_idx < textstring.length(); end_idx++) {

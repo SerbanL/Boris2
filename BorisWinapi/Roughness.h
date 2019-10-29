@@ -6,7 +6,6 @@
 using namespace std;
 
 class Mesh;
-class FMesh;
 
 #ifdef MODULE_ROUGHNESS
 
@@ -35,7 +34,7 @@ class Roughness :
 private:
 
 	//pointer to mesh object holding this effective field module
-	FMesh* pMesh;
+	Mesh* pMesh;
 
 	//cellsize refine factors : if pMesh->n is the number of cells in the F mesh, then refine & pMesh->n is the number of cells in the refined mesh for Roughness computations
 	//Similarly the cellsize of the refined mesh is given by pMesh->h / refine
@@ -79,7 +78,7 @@ public:
 
 	BError Initialize(void);
 
-	BError UpdateConfiguration(UPDATECONFIG_ cfgMessage = UPDATECONFIG_GENERIC);
+	BError UpdateConfiguration(UPDATECONFIG_ cfgMessage);
 
 	BError MakeCUDAModule(void);
 
@@ -88,7 +87,7 @@ public:
 	//-------------------Setters
 
 	//change cellsize refinement
-	void set_refine(INT3 refine_) { refine = refine_; UpdateConfiguration(); }
+	void set_refine(INT3 refine_) { refine = refine_; UpdateConfiguration(UPDATECONFIG_ROUGHNESS_CHANGE); }
 
 	//called from Mesh::change_mesh_shape : apply shape to Mshape_fine, then set pMesh->M from it
 	template  <typename Lambda, typename ... PType>

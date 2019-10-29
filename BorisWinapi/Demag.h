@@ -6,7 +6,6 @@
 using namespace std;
 
 class Mesh;
-class FMesh;
 
 #ifdef MODULE_DEMAG
 
@@ -22,7 +21,7 @@ class Demag :
 private:
 
 	//pointer to mesh object holding this effective field module
-	FMesh *pMesh;
+	Mesh *pMesh;
 
 	//number of pbc images in each dimension (set to zero to disable).
 	//There is also a copy of this in ConvolutionData inherited from Convolution - we need another copy here to detect changes
@@ -51,7 +50,7 @@ public:
 
 	BError Initialize(void);
 
-	BError UpdateConfiguration(UPDATECONFIG_ cfgMessage = UPDATECONFIG_GENERIC);
+	BError UpdateConfiguration(UPDATECONFIG_ cfgMessage);
 
 	BError MakeCUDAModule(void);
 
@@ -77,7 +76,7 @@ class Demag :
 private:
 
 	//pointer to mesh object holding this effective field module
-	FMesh * pMesh;
+	Mesh * pMesh;
 
 public:
 

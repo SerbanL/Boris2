@@ -9,11 +9,11 @@ STransport::STransport(SuperMesh *pSMesh_) :
 	Modules(),
 	ProgramStateNames(this, { VINFO(electrode_rects), VINFO(electrode_potentials), 
 							  VINFO(ground_electrode_index), VINFO(potential), VINFO(current), VINFO(net_current), VINFO(resistance), VINFO(constant_current_source), 
-							  VINFO(errorMaxLaplace), VINFO(maxLaplaceIterations), VINFO(s_errorMax), VINFO(s_maxIterations), VINFO(fixed_SOR_damping), VINFO(SOR_damping) }, {})
+							  VINFO(errorMaxLaplace), VINFO(maxLaplaceIterations), VINFO(s_errorMax), VINFO(s_maxIterations), VINFO(SOR_damping) }, {})
 {
 	pSMesh = pSMesh_;
 
-	error_on_create = UpdateConfiguration();
+	error_on_create = UpdateConfiguration(UPDATECONFIG_FORCEUPDATE);
 
 	//-------------------------- Is CUDA currently enabled?
 
@@ -32,10 +32,19 @@ BError STransport::Initialize(void)
 
 	if (!initialized) {
 
-		//Calculate V and Jc before starting
+		////////////////////////////////////////////////////////////////////////////
+		//Calculate V, E and elC before starting
+		////////////////////////////////////////////////////////////////////////////
 
 		//initialize V with a linear slope between ground and another electrode (in most problems there are only 2 electrodes setup) - do this for all transport meshes
 		initialize_potential_values();
+
+		//set electric field and  electrical conductivity in individual transport modules (in this order!)
+		for (int idx = 0; idx < (int)pTransport.size(); idx++) {
+
+			pTransport[idx]->CalculateElectricField();
+			pTransport[idx]->CalculateElectricalConductivity(true);
+		}
 
 		//solve only for charge current (V and Jc with continuous boundaries)
 		if (!pSMesh->SolveSpinCurrent()) solve_charge_transport_sor();
@@ -56,46 +65,56 @@ BError STransport::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 	BError error(CLASS_STR(STransport));
 
 	Uninitialize();
-	
-	//check meshes to set transport boundary flags (NF_CMBND flags for V)
 
-	//clear everything then rebuild
-	pTransport.clear();
-	CMBNDcontacts.clear();
-	pV.clear();
-	pS.clear();
+	if (ucfg::check_cfgflags(cfgMessage, 
+		UPDATECONFIG_MESHSHAPECHANGE, UPDATECONFIG_MESHCHANGE, 
+		UPDATECONFIG_MESHADDED, UPDATECONFIG_MESHDELETED,
+		UPDATECONFIG_MODULEADDED, UPDATECONFIG_MODULEDELETED, 
+		UPDATECONFIG_TRANSPORT_ELECTRODE, 
+		UPDATECONFIG_ODE_SOLVER, UPDATECONFIG_SWITCHCUDASTATE)) {
 
-	//now build pTransport (and pV)
-	for (int idx = 0; idx < pSMesh->size(); idx++) {
+		////////////////////////////////////////////////////////////////////////////
+		//check meshes to set transport boundary flags (NF_CMBND flags for V)
+		////////////////////////////////////////////////////////////////////////////
 
-		if ((*pSMesh)[idx]->IsModuleSet(MOD_TRANSPORT)) {
+		//clear everything then rebuild
+		pTransport.clear();
+		CMBNDcontacts.clear();
+		pV.clear();
+		pS.clear();
 
-			pTransport.push_back(dynamic_cast<Transport*>((*pSMesh)[idx]->GetModule(MOD_TRANSPORT)));
-			pV.push_back(&(*pSMesh)[idx]->V);
-			pS.push_back(&(*pSMesh)[idx]->S);
-		}
-	}
+		//now build pTransport (and pV)
+		for (int idx = 0; idx < pSMesh->size(); idx++) {
 
-	//set fixed potential cells and cmbnd flags (also building contacts)
-	for (int idx = 0; idx < (int)pTransport.size(); idx++) {
+			if ((*pSMesh)[idx]->IsModuleSet(MOD_TRANSPORT)) {
 
-		//1. Dirichlet conditions
-
-		//make sure all fixed potential cells are marked
-		pTransport[idx]->ClearFixedPotentialCells();
-
-		for (int el_idx = 0; el_idx < electrode_rects.size(); el_idx++) {
-
-			if (!pTransport[idx]->SetFixedPotentialCells(electrode_rects[el_idx], electrode_potentials[el_idx])) return error(BERROR_OUTOFMEMORY_NCRIT);
+				pTransport.push_back(dynamic_cast<Transport*>((*pSMesh)[idx]->GetModule(MOD_TRANSPORT)));
+				pV.push_back(&(*pSMesh)[idx]->V);
+				pS.push_back(&(*pSMesh)[idx]->S);
+			}
 		}
 
-		//2. CMBND conditions
+		//set fixed potential cells and cmbnd flags (also building contacts)
+		for (int idx = 0; idx < (int)pTransport.size(); idx++) {
 
-		//build CMBND contacts and set flags for V
-		CMBNDcontacts.push_back(pV[idx]->set_cmbnd_flags(idx, pV));
-		
-		//set flags for S also (same mesh dimensions as V so CMBNDcontacts are the same)
-		if (pSMesh->SolveSpinCurrent()) pS[idx]->set_cmbnd_flags(idx, pS);
+			//1. Dirichlet conditions
+
+			//make sure all fixed potential cells are marked
+			pTransport[idx]->ClearFixedPotentialCells();
+
+			for (int el_idx = 0; el_idx < electrode_rects.size(); el_idx++) {
+
+				if (!pTransport[idx]->SetFixedPotentialCells(electrode_rects[el_idx], electrode_potentials[el_idx])) return error(BERROR_OUTOFMEMORY_NCRIT);
+			}
+
+			//2. CMBND conditions
+
+			//build CMBND contacts and set flags for V
+			CMBNDcontacts.push_back(pV[idx]->set_cmbnd_flags(idx, pV));
+
+			//set flags for S also (same mesh dimensions as V so CMBNDcontacts are the same)
+			if (pSMesh->SolveSpinCurrent()) pS[idx]->set_cmbnd_flags(idx, pS);
+		}
 	}
 
 	//------------------------ CUDA UpdateConfiguration if set
@@ -103,7 +122,7 @@ BError STransport::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 #if COMPILECUDA == 1
 	if (pModuleCUDA) {
 
-		if (!error) error = pModuleCUDA->UpdateConfiguration();
+		if (!error) error = pModuleCUDA->UpdateConfiguration(cfgMessage);
 	}
 #endif
 
@@ -292,7 +311,7 @@ void STransport::adjust_potential(double potential_)
 #if COMPILECUDA == 1
 	if (pModuleCUDA) {
 
-		if (IsNZ(potential_) && initialized) {
+		if (IsNZ(potential_)) {
 
 			reinterpret_cast<STransportCUDA*>(pModuleCUDA)->scale_potential_values(potential / potential_);
 		}
@@ -303,7 +322,7 @@ void STransport::adjust_potential(double potential_)
 #endif
 	
 	//if previous potential value was not zero then scale all V values - saves on transport solver computations
-	if (IsNZ(potential_) && initialized) {
+	if (IsNZ(potential_)) {
 
 		for (int idx = 0; idx < (int)pTransport.size(); idx++) {
 
@@ -388,7 +407,7 @@ void STransport::AddElectrode(double electrode_potential, Rect electrode_rect)
 	electrode_rects.push_back(electrode_rect);
 	electrode_potentials.push_back(electrode_potential);
 
-	UpdateConfiguration();
+	UpdateConfiguration(UPDATECONFIG_TRANSPORT_ELECTRODE);
 }
 
 bool STransport::DelElectrode(int index)
@@ -401,7 +420,7 @@ bool STransport::DelElectrode(int index)
 		//have we deleted the ground electrode?
 		if (ground_electrode_index == index) ground_electrode_index = -1;
 
-		UpdateConfiguration();
+		UpdateConfiguration(UPDATECONFIG_TRANSPORT_ELECTRODE);
 
 		return true;
 	}
@@ -413,7 +432,7 @@ void STransport::ClearElectrodes(void)
 	electrode_rects.clear();
 	electrode_potentials.clear();
 
-	UpdateConfiguration();
+	UpdateConfiguration(UPDATECONFIG_TRANSPORT_ELECTRODE);
 }
 
 void STransport::DesignateGroundElectrode(int index)
@@ -430,7 +449,7 @@ bool STransport::SetElectrodeRect(int index, Rect electrode_rect)
 
 		electrode_rects[index] = electrode_rect;
 
-		UpdateConfiguration();
+		UpdateConfiguration(UPDATECONFIG_TRANSPORT_ELECTRODE);
 
 		return true;
 	}

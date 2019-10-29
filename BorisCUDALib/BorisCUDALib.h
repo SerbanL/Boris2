@@ -39,6 +39,7 @@
 #include "cuVEC_VC_cmbnd.h"
 #include "cuVEC_VC_oper.h"
 #include "cuVEC_VC_del.h"
+#include "cuVEC_VC_diff2.h"
 #include "cuVEC_VC_grad.h"
 #include "cuVEC_VC_div.h"
 #include "cuVEC_VC_curl.h"

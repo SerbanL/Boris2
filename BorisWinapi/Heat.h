@@ -74,7 +74,7 @@ public:
 
 	BError Initialize(void);
 
-	BError UpdateConfiguration(UPDATECONFIG_ cfgMessage = UPDATECONFIG_GENERIC);
+	BError UpdateConfiguration(UPDATECONFIG_ cfgMessage);
 
 	BError MakeCUDAModule(void);
 
@@ -92,8 +92,8 @@ public:
 	double bfunc_pri(int cell1_idx, int cell2_idx) const;
 
 	//second order differential of T at cells either side of the boundary; delsq T = -Jc^2 / K * elC
-	double diff2_sec(DBL3 relpos_m1, DBL3 stencil) const;
-	double diff2_pri(int cell1_idx) const;
+	double diff2_sec(DBL3 relpos_m1, DBL3 stencil, DBL3 shift) const;
+	double diff2_pri(int cell1_idx, DBL3 shift) const;
 
 	//-------------------Setters
 

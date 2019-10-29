@@ -44,7 +44,7 @@ InsulatorMesh::InsulatorMesh(Rect meshRect_, DBL3 h_, SuperMesh *pSMesh_) :
 
 	h_t = h_;
 
-	error_on_create = UpdateConfiguration();
+	error_on_create = UpdateConfiguration(UPDATECONFIG_FORCEUPDATE);
 
 	//--------------------------
 
@@ -67,6 +67,16 @@ BError InsulatorMesh::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 {
 	BError error(string(CLASS_STR(InsulatorMesh)) + "(" + (*pSMesh).key_from_meshId(meshId) + ")");
 
+	///////////////////////////////////////////////////////
+	//Mesh specific configuration
+	///////////////////////////////////////////////////////
+
+	if (ucfg::check_cfgflags(cfgMessage, UPDATECONFIG_MESHCHANGE)) {
+
+		//update material parameters spatial dependence as cellsize and rectangle could have changed
+		if (!error && !update_meshparam_var()) error(BERROR_OUTOFMEMORY_NCRIT);
+	}
+
 	//------------------------ CUDA UpdateConfiguration if set
 
 #if COMPILECUDA == 1
@@ -76,7 +86,10 @@ BError InsulatorMesh::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 	}
 #endif
 
-	//change mesh dimensions in all currently set effective field modules
+	///////////////////////////////////////////////////////
+	//Update configuration for mesh modules
+	///////////////////////////////////////////////////////
+
 	for (int idx = 0; idx < (int)pMod.size(); idx++) {
 
 		if (pMod[idx] && !error) {
@@ -84,9 +97,6 @@ BError InsulatorMesh::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 			error = pMod[idx]->UpdateConfiguration(cfgMessage);
 		}
 	}
-
-	//update material parameters spatial dependence as cellsize and rectangle could have changed
-	if (!error && !update_meshparam_var()) error(BERROR_OUTOFMEMORY_NCRIT);
 
 	return error;
 }

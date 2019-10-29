@@ -100,6 +100,14 @@ __host__ cudaError_t cuVEC_VC<VType>::resize_ngbrFlags(cuSZ3 new_n)
 		}
 	}
 
+	//clear ngbrFlags2 if in use
+	if (use_extended_flags()) {
+
+		gpu_alloc_managed(ngbrFlags2, new_n.dim());
+		gpu_set_managed(ngbrFlags2, (int)0, new_n.dim());
+		set_gpu_value(using_extended_flags, true);
+	}
+
 	return error;
 }
 
@@ -119,36 +127,131 @@ __global__ void set_ngbrFlags_kernel(const cuSZ3& n, int*& ngbrFlags, VType*& qu
 
 			atomicAdd(&nonempty_cells, 1);
 
-			//neighbors
 			if (ijk.i < n.x - 1) {
 
+				//on-axis
 				if (ngbrFlags[idx + 1] & NF_NOTEMPTY) { ngbrFlags[idx] |= NF_NPX; }
+
+				//off-axis (z slice : xy)
+				if (ijk.j < n.y - 1) {
+
+					if (ngbrFlags[idx + 1 + n.x] & NF_NOTEMPTY) { ngbrFlags[idx] |= NF_XY_PXPY; }
+				}
+
+				if (ijk.j > 0) {
+
+					if (ngbrFlags[idx + 1 - n.x] & NF_NOTEMPTY) { ngbrFlags[idx] |= NF_XY_PXNY; }
+				}
 			}
 
 			if (ijk.i > 0) {
 
+				//on-axis
 				if (ngbrFlags[idx - 1] & NF_NOTEMPTY) { ngbrFlags[idx] |= NF_NNX; }
+
+				//off-axis (z slice : xy)
+				if (ijk.j < n.y - 1) {
+
+					if (ngbrFlags[idx - 1 + n.x] & NF_NOTEMPTY) { ngbrFlags[idx] |= NF_XY_NXPY; }
+				}
+
+				if (ijk.j > 0) {
+
+					if (ngbrFlags[idx - 1 - n.x] & NF_NOTEMPTY) { ngbrFlags[idx] |= NF_XY_NXNY; }
+				}
 			}
 
 			if (ijk.j < n.y - 1) {
 
+				//on-axis
 				if (ngbrFlags[idx + n.x] & NF_NOTEMPTY) { ngbrFlags[idx] |= NF_NPY; }
+
+				//off-axis (x slice : yz)
+				if (ijk.k < n.z - 1) {
+
+					if (ngbrFlags[idx + n.x + n.x*n.y] & NF_NOTEMPTY) { ngbrFlags[idx] |= NF_YZ_PYPZ; }
+				}
+
+				if (ijk.k > 0) {
+
+					if (ngbrFlags[idx + n.x - n.x*n.y] & NF_NOTEMPTY) { ngbrFlags[idx] |= NF_YZ_PYNZ; }
+				}
 			}
 
 			if (ijk.j > 0) {
 
+				//on-axis
 				if (ngbrFlags[idx - n.x] & NF_NOTEMPTY) { ngbrFlags[idx] |= NF_NNY; }
+
+				//off-axis (x slice : yz)
+				if (ijk.k < n.z - 1) {
+
+					if (ngbrFlags[idx - n.x + n.x*n.y] & NF_NOTEMPTY) { ngbrFlags[idx] |= NF_YZ_NYPZ; }
+				}
+
+				if (ijk.k > 0) {
+
+					if (ngbrFlags[idx - n.x - n.x*n.y] & NF_NOTEMPTY) { ngbrFlags[idx] |= NF_YZ_NYNZ; }
+				}
 			}
 
 			if (ijk.k < n.z - 1) {
 
+				//on-axis
 				if (ngbrFlags[idx + n.x*n.y] & NF_NOTEMPTY) { ngbrFlags[idx] |= NF_NPZ; }
+
+				//off-axis (y slice : xz)
+				if (ijk.i < n.x - 1) {
+
+					if (ngbrFlags[idx + 1 + n.x*n.y] & NF_NOTEMPTY) { ngbrFlags[idx] |= NF_XZ_PXPZ; }
+				}
+
+				if (ijk.i > 0) {
+
+					if (ngbrFlags[idx - 1 + n.x*n.y] & NF_NOTEMPTY) { ngbrFlags[idx] |= NF_XZ_NXPZ; }
+				}
 			}
 
 			if (ijk.k > 0) {
 
+				//on-axis
 				if (ngbrFlags[idx - n.x*n.y] & NF_NOTEMPTY) { ngbrFlags[idx] |= NF_NNZ; }
+
+				//off-axis (y slice : xz)
+				if (ijk.i < n.x - 1) {
+
+					if (ngbrFlags[idx + 1 - n.x*n.y] & NF_NOTEMPTY) { ngbrFlags[idx] |= NF_XZ_PXNZ; }
+				}
+
+				if (ijk.i > 0) {
+
+					if (ngbrFlags[idx - 1 - n.x*n.y] & NF_NOTEMPTY) { ngbrFlags[idx] |= NF_XZ_NXNZ; }
+				}
 			}
+
+			//calculate mixed second order differentials off-axis stencils
+			bool right_side, left_side, center_column;
+
+			//XY plane
+			right_side = ((int(ngbrFlags[idx] & NF_XY_PXPY) + int(ngbrFlags[idx] & NF_XY_PXNY) + int(ngbrFlags[idx] & NF_NPX)) >= 2);
+			left_side = ((int(ngbrFlags[idx] & NF_XY_NXPY) + int(ngbrFlags[idx] & NF_XY_NXNY) + int(ngbrFlags[idx] & NF_NNX)) >= 2);
+			center_column = ((ngbrFlags[idx] & NF_NPY) || (ngbrFlags[idx] & NF_NNY));
+
+			if ((right_side && left_side) || (right_side && center_column) || (center_column && left_side)) ngbrFlags[idx] |= NF_XY_OASTENCIL;
+
+			//XZ plane
+			right_side = ((int(ngbrFlags[idx] & NF_XZ_PXPZ) + int(ngbrFlags[idx] & NF_XZ_PXNZ) + int(ngbrFlags[idx] & NF_NPX)) >= 2);
+			left_side = ((int(ngbrFlags[idx] & NF_XZ_NXPZ) + int(ngbrFlags[idx] & NF_XZ_NXNZ) + int(ngbrFlags[idx] & NF_NNX)) >= 2);
+			center_column = ((ngbrFlags[idx] & NF_NPZ) || (ngbrFlags[idx] & NF_NNZ));
+
+			if ((right_side && left_side) || (right_side && center_column) || (center_column && left_side)) ngbrFlags[idx] |= NF_XZ_OASTENCIL;
+
+			//YZ plane
+			right_side = ((int(ngbrFlags[idx] & NF_YZ_PYPZ) + int(ngbrFlags[idx] & NF_YZ_PYNZ) + int(ngbrFlags[idx] & NF_NPY)) >= 2);
+			left_side = ((int(ngbrFlags[idx] & NF_YZ_NYPZ) + int(ngbrFlags[idx] & NF_YZ_NYNZ) + int(ngbrFlags[idx] & NF_NNY)) >= 2);
+			//center_column same as above
+
+			if ((right_side && left_side) || (right_side && center_column) || (center_column && left_side)) ngbrFlags[idx] |= NF_YZ_OASTENCIL;
 		}
 		else {
 
@@ -191,9 +294,9 @@ __host__ void cuVEC_VC<VType>::set_ngbrFlags(void)
 
 //------------------------------------------------------------------- SET NGBRFLAGS linked cuVEC
 
-//ngbrFlags size kept : just erase every flag but the shape
+//copy shape from linked vec
 template <typename VType>
-__global__ void set_ngbrFlags_kernel(const cuSZ3& n, const cuReal3& h, const cuRect& rect, int*& ngbrFlags, const cuSZ3& linked_n, const cuReal3& linked_h, const cuRect& linked_rect, int*& linked_ngbrFlags, VType*& quantity, int& nonempty_cells)
+__global__ void set_ngbrFlags_copylinkedshape_kernel(const cuSZ3& n, const cuReal3& h, const cuRect& rect, int*& ngbrFlags, const cuSZ3& linked_n, const cuReal3& linked_h, const cuRect& linked_rect, int*& linked_ngbrFlags)
 {
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
 
@@ -274,48 +377,10 @@ __global__ void set_ngbrFlags_kernel(const cuSZ3& n, const cuReal3& h, const cuR
 
 			//mark cell as not empty
 			ngbrFlags[idx] |= NF_NOTEMPTY;
-			atomicAdd(&nonempty_cells, 1);
-
-			if (ijk.i < n.x - 1) {
-
-				cellRect = get_cellrect(h, rect, ijk + cuINT3(1, 0 ,0));
-				if (!is_empty(linked_n, linked_h, linked_rect, linked_ngbrFlags, cellRect)) { ngbrFlags[idx] |= NF_NPX; }
-			}
-
-			if (ijk.i > 0) {
-
-				cellRect = get_cellrect(h, rect, ijk - cuINT3(1, 0, 0));
-				if (!is_empty(linked_n, linked_h, linked_rect, linked_ngbrFlags, cellRect)) { ngbrFlags[idx] |= NF_NNX; }
-			}
-
-			if (ijk.j < n.y - 1) {
-
-				cellRect = get_cellrect(h, rect, ijk + cuINT3(0, 1, 0));
-				if (!is_empty(linked_n, linked_h, linked_rect, linked_ngbrFlags, cellRect)) { ngbrFlags[idx] |= NF_NPY; }
-			}
-
-			if (ijk.j > 0) {
-
-				cellRect = get_cellrect(h, rect, ijk - cuINT3(0, 1, 0));
-				if (!is_empty(linked_n, linked_h, linked_rect, linked_ngbrFlags, cellRect)) { ngbrFlags[idx] |= NF_NNY; }
-			}
-
-			if (ijk.k < n.z - 1) {
-
-				cellRect = get_cellrect(h, rect, ijk + cuINT3(0, 0, 1));
-				if (!is_empty(linked_n, linked_h, linked_rect, linked_ngbrFlags, cellRect)) { ngbrFlags[idx] |= NF_NPZ; }
-			}
-
-			if (ijk.k > 0) {
-
-				cellRect = get_cellrect(h, rect, ijk - cuINT3(0, 0, 1));
-				if (!is_empty(linked_n, linked_h, linked_rect, linked_ngbrFlags, cellRect)) { ngbrFlags[idx] |= NF_NNZ; }
-			}
 		}
 		else {
 
 			//if linked quantity is empty then also empty the quantity in this VEC. Note, the linked vec could actually be the same vec - in this case the shape is not changed since the NF_NOTEMPTY flags have already been mapped to the new size
-			quantity[idx] = VType();
 			ngbrFlags[idx] &= ~NF_NOTEMPTY;
 		}
 	}
@@ -336,29 +401,18 @@ __host__ void cuVEC_VC<VType>::set_ngbrFlags(const cuSZ3& linked_n, const cuReal
 {
 	if (get_gpu_value(rect).IsNull() || get_gpu_value(h) == cuReal3()) return;
 
-	//clear any shift debt as mesh has been resized so not valid anymore
-	set_gpu_value(shift_debt, cuReal3());
+	//copy shape from linked vec (linked_ngbrFlags)
+	set_ngbrFlags_copylinkedshape_kernel<VType> <<< (get_ngbrFlags_size() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (n, h, rect, ngbrFlags, linked_n, linked_h, linked_rect, linked_ngbrFlags);
 
-	//dirichlet flags will be cleared from ngbrFlags, so also clear the dirichlet vectors
-	clear_dirichlet_flags();
-
-	//1. Count all the neighbors
-	set_gpu_value(nonempty_cells, (int)0);
-	set_ngbrFlags_kernel <<< (get_ngbrFlags_size() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (n, h, rect, ngbrFlags, linked_n, linked_h, linked_rect, linked_ngbrFlags, quantity, nonempty_cells);
-
-	//2. set Robin flags depending on set conditions
-	set_robin_flags();
-
-	//3. set pbc flags depending on set conditions and currently calculated flags
-	set_pbc_flags();
+	//now continue with set_ngbrFlags as normal
+	set_ngbrFlags();
 }
 
 //------------------------------------------------------------------- SET DIRICHLET CONDITIONS
 
-//ngbrFlags size kept : just erase every flag but the shape
 template <typename VType>
 __global__ void set_dirichlet_conditions_kernel(
-	const cuSZ3& n, int*& ngbrFlags, 
+	const cuSZ3& n, int*& ngbrFlags, int*& ngbrFlags2,
 	VType*& dirichlet_px, VType*& dirichlet_nx, VType*& dirichlet_py, VType*& dirichlet_ny, VType*& dirichlet_pz, VType*& dirichlet_nz,
 	int dirichlet_flag, cuBox flags_box, VType value)
 {
@@ -370,38 +424,38 @@ __global__ void set_dirichlet_conditions_kernel(
 
 		switch (dirichlet_flag) {
 
-		case NF_DIRICHLETPX:
+		case NF2_DIRICHLETPX:
 			if ((cell_idx % n.x) != 0 || !(ngbrFlags[cell_idx] & NF_NPX)) return;
 			dirichlet_nx[((cell_idx / n.x) % n.y) + (cell_idx / (n.x*n.y)) * n.y] = value;
 			break;
 
-		case NF_DIRICHLETNX:
+		case NF2_DIRICHLETNX:
 			if ((cell_idx % n.x) != (n.x - 1) || !(ngbrFlags[cell_idx] & NF_NNX)) return;
 			dirichlet_px[((cell_idx / n.x) % n.y) + (cell_idx / (n.x*n.y)) * n.y] = value;
 			break;
 
-		case NF_DIRICHLETPY:
+		case NF2_DIRICHLETPY:
 			if (((cell_idx / n.x) % n.y) != 0 || !(ngbrFlags[cell_idx] & NF_NPY)) return;
 			dirichlet_ny[(cell_idx % n.x) + (cell_idx / (n.x*n.y)) * n.x] = value;
 			break;
 
-		case NF_DIRICHLETNY:
+		case NF2_DIRICHLETNY:
 			if (((cell_idx / n.x) % n.y) != (n.y - 1) || !(ngbrFlags[cell_idx] & NF_NNY)) return;
 			dirichlet_py[(cell_idx % n.x) + (cell_idx / (n.x*n.y)) * n.x] = value;
 			break;
 
-		case NF_DIRICHLETPZ:
+		case NF2_DIRICHLETPZ:
 			if ((cell_idx / (n.x*n.y)) != 0 || !(ngbrFlags[cell_idx] & NF_NPZ)) return;
 			dirichlet_nz[(cell_idx % n.x) + ((cell_idx / n.x) % n.y) * n.x] = value;
 			break;
 
-		case NF_DIRICHLETNZ:
+		case NF2_DIRICHLETNZ:
 			if ((cell_idx / (n.x*n.y)) != (n.z - 1) || !(ngbrFlags[cell_idx] & NF_NNZ)) return;
 			dirichlet_pz[(cell_idx % n.x) + ((cell_idx / n.x) % n.y) * n.x] = value;
 			break;
 		}
 
-		ngbrFlags[cell_idx] |= dirichlet_flag;
+		ngbrFlags2[cell_idx] |= dirichlet_flag;
 	}
 }
 
@@ -428,34 +482,46 @@ __host__ bool cuVEC_VC<VType>::set_dirichlet_conditions(cuRect surface_rect, VTy
 	cuRect intersection = rect_.get_intersection(surface_rect);
 	if (!intersection.IsPlane()) return true;
 
+	//DIRICHLET flags used with extended ngbrFlags so make sure it has memory allocated now
+	cudaError_t error = gpu_alloc_managed(ngbrFlags2, get_ngbrFlags_size());
+	if (error != cudaSuccess) {
+
+		set_gpu_value(using_extended_flags, false);
+		return false;
+	}
+	else {
+
+		set_gpu_value(using_extended_flags, true);
+	}
+
 	//y-z plane
 	if (cuIsZ(intersection.s.x - intersection.e.x)) {
 
 		//on lower x side
 		if (cuIsZ(rect_.s.x - intersection.s.x)) {
 
-			if (!get_dirichlet_size(NF_DIRICHLETNX)) {
+			if (!get_dirichlet_size(NF2_DIRICHLETNX)) {
 
-				if (set_dirichlet_size(n_.y*n_.z, NF_DIRICHLETNX) != cudaSuccess) return false;
+				if (set_dirichlet_size(n_.y*n_.z, NF2_DIRICHLETNX) != cudaSuccess) return false;
 			}
 
 			intersection.e.x += h_.x;
 			cuBox flags_box = cuBox(box_from_rect_max_cpu(intersection).s, box_from_rect_max_cpu(intersection).e);
 			set_dirichlet_conditions_kernel <<< (n_.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> 
-				(n, ngbrFlags, dirichlet_px, dirichlet_nx, dirichlet_py, dirichlet_ny, dirichlet_pz, dirichlet_nz, NF_DIRICHLETPX, flags_box, value);
+				(n, ngbrFlags, ngbrFlags2, dirichlet_px, dirichlet_nx, dirichlet_py, dirichlet_ny, dirichlet_pz, dirichlet_nz, NF2_DIRICHLETPX, flags_box, value);
 		}
 		//on upper x side
 		else if (cuIsZ(rect_.e.x - intersection.s.x)) {
 
-			if (!get_dirichlet_size(NF_DIRICHLETPX)) {
+			if (!get_dirichlet_size(NF2_DIRICHLETPX)) {
 
-				if (set_dirichlet_size(n_.y*n_.z, NF_DIRICHLETPX) != cudaSuccess) return false;
+				if (set_dirichlet_size(n_.y*n_.z, NF2_DIRICHLETPX) != cudaSuccess) return false;
 			}
 
 			intersection.s.x -= h_.x;
 			cuBox flags_box = cuBox(box_from_rect_max_cpu(intersection).s, box_from_rect_max_cpu(intersection).e);
 			set_dirichlet_conditions_kernel <<< (n_.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>>
-				(n, ngbrFlags, dirichlet_px, dirichlet_nx, dirichlet_py, dirichlet_ny, dirichlet_pz, dirichlet_nz, NF_DIRICHLETNX, flags_box, value);
+				(n, ngbrFlags, ngbrFlags2, dirichlet_px, dirichlet_nx, dirichlet_py, dirichlet_ny, dirichlet_pz, dirichlet_nz, NF2_DIRICHLETNX, flags_box, value);
 		}
 	}
 	//x-z plane
@@ -464,28 +530,28 @@ __host__ bool cuVEC_VC<VType>::set_dirichlet_conditions(cuRect surface_rect, VTy
 		//on lower y side
 		if (cuIsZ(rect_.s.y - intersection.s.y)) {
 
-			if (!get_dirichlet_size(NF_DIRICHLETNY)) {
+			if (!get_dirichlet_size(NF2_DIRICHLETNY)) {
 
-				if (set_dirichlet_size(n_.x*n_.z, NF_DIRICHLETNY) != cudaSuccess) return false;
+				if (set_dirichlet_size(n_.x*n_.z, NF2_DIRICHLETNY) != cudaSuccess) return false;
 			}
 			
 			intersection.e.y += h_.y;
 			cuBox flags_box = cuBox(box_from_rect_max_cpu(intersection).s, box_from_rect_max_cpu(intersection).e);
 			set_dirichlet_conditions_kernel <<< (n_.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> 
-				(n, ngbrFlags, dirichlet_px, dirichlet_nx, dirichlet_py, dirichlet_ny, dirichlet_pz, dirichlet_nz, NF_DIRICHLETPY, flags_box, value);
+				(n, ngbrFlags, ngbrFlags2, dirichlet_px, dirichlet_nx, dirichlet_py, dirichlet_ny, dirichlet_pz, dirichlet_nz, NF2_DIRICHLETPY, flags_box, value);
 		}
 		//on upper y side
 		else if (cuIsZ(rect_.e.y - intersection.s.y)) {
 
-			if (!get_dirichlet_size(NF_DIRICHLETPY)) {
+			if (!get_dirichlet_size(NF2_DIRICHLETPY)) {
 
-				if (set_dirichlet_size(n_.x*n_.z, NF_DIRICHLETPY) != cudaSuccess) return false;
+				if (set_dirichlet_size(n_.x*n_.z, NF2_DIRICHLETPY) != cudaSuccess) return false;
 			}
 			
 			intersection.s.y -= h_.y;
 			cuBox flags_box = cuBox(box_from_rect_max_cpu(intersection).s, box_from_rect_max_cpu(intersection).e);
 			set_dirichlet_conditions_kernel <<< (n_.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> 
-				(n, ngbrFlags, dirichlet_px, dirichlet_nx, dirichlet_py, dirichlet_ny, dirichlet_pz, dirichlet_nz, NF_DIRICHLETNY, flags_box, value);
+				(n, ngbrFlags, ngbrFlags2, dirichlet_px, dirichlet_nx, dirichlet_py, dirichlet_ny, dirichlet_pz, dirichlet_nz, NF2_DIRICHLETNY, flags_box, value);
 		}
 	}
 	//x-y plane
@@ -494,28 +560,28 @@ __host__ bool cuVEC_VC<VType>::set_dirichlet_conditions(cuRect surface_rect, VTy
 		//on lower z side
 		if (cuIsZ(rect_.s.z - intersection.s.z)) {
 
-			if (!get_dirichlet_size(NF_DIRICHLETNZ)) {
+			if (!get_dirichlet_size(NF2_DIRICHLETNZ)) {
 
-				if (set_dirichlet_size(n_.x*n_.y, NF_DIRICHLETNZ) != cudaSuccess) return false;
+				if (set_dirichlet_size(n_.x*n_.y, NF2_DIRICHLETNZ) != cudaSuccess) return false;
 			}
 			
 			intersection.e.z += h_.z;
 			cuBox flags_box = cuBox(box_from_rect_max_cpu(intersection).s, box_from_rect_max_cpu(intersection).e);
 			set_dirichlet_conditions_kernel <<< (n_.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> 
-				(n, ngbrFlags, dirichlet_px, dirichlet_nx, dirichlet_py, dirichlet_ny, dirichlet_pz, dirichlet_nz, NF_DIRICHLETPZ, flags_box, value);
+				(n, ngbrFlags, ngbrFlags2, dirichlet_px, dirichlet_nx, dirichlet_py, dirichlet_ny, dirichlet_pz, dirichlet_nz, NF2_DIRICHLETPZ, flags_box, value);
 		}
 		//on upper z side
 		else if (cuIsZ(rect_.e.z - intersection.s.z)) {
 
-			if (!get_dirichlet_size(NF_DIRICHLETPZ)) {
+			if (!get_dirichlet_size(NF2_DIRICHLETPZ)) {
 
-				if (set_dirichlet_size(n_.x*n_.y, NF_DIRICHLETPZ) != cudaSuccess) return false;
+				if (set_dirichlet_size(n_.x*n_.y, NF2_DIRICHLETPZ) != cudaSuccess) return false;
 			}
 			
 			intersection.s.z -= h_.z;
 			cuBox flags_box = cuBox(box_from_rect_max_cpu(intersection).s, box_from_rect_max_cpu(intersection).e);
 			set_dirichlet_conditions_kernel <<< (n_.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> 
-				(n, ngbrFlags, dirichlet_px, dirichlet_nx, dirichlet_py, dirichlet_ny, dirichlet_pz, dirichlet_nz, NF_DIRICHLETNZ, flags_box, value);
+				(n, ngbrFlags, ngbrFlags2, dirichlet_px, dirichlet_nx, dirichlet_py, dirichlet_ny, dirichlet_pz, dirichlet_nz, NF2_DIRICHLETNZ, flags_box, value);
 		}
 	}
 
@@ -525,7 +591,7 @@ __host__ bool cuVEC_VC<VType>::set_dirichlet_conditions(cuRect surface_rect, VTy
 //------------------------------------------------------------------- SET ROBIN FLAGS
 
 __global__ static void set_robin_flags_kernel(
-	const cuSZ3& n, int*& ngbrFlags, 
+	const cuSZ3& n, int*& ngbrFlags, int*& ngbrFlags2,
 	const cuReal2& robin_px, const cuReal2& robin_nx,
 	const cuReal2& robin_py, const cuReal2& robin_ny,
 	const cuReal2& robin_pz, const cuReal2& robin_nz,
@@ -538,7 +604,7 @@ __global__ static void set_robin_flags_kernel(
 	if (idx < n.dim()) {
 
 		//first clear any robin flags already set
-		ngbrFlags[idx] &= ~NF_ROBIN;
+		ngbrFlags2[idx] &= ~NF2_ROBIN;
 
 		if (ngbrFlags[idx] & NF_NOTEMPTY) {
 
@@ -547,45 +613,45 @@ __global__ static void set_robin_flags_kernel(
 
 				if (!(ngbrFlags[idx + 1] & NF_NOTEMPTY))
 					//inner cell next to a void cell on the -x side
-					if (cuIsNZ(robin_v.i) && ijk.i > 0 && ngbrFlags[idx - 1] & NF_NOTEMPTY) { ngbrFlags[idx] |= (NF_ROBINNX + NF_ROBINV); }
+					if (cuIsNZ(robin_v.i) && ijk.i > 0 && ngbrFlags[idx - 1] & NF_NOTEMPTY) { ngbrFlags2[idx] |= (NF2_ROBINNX + NF2_ROBINV); }
 			}
 			//surface cell on the -x side of the surface
-			else if (cuIsNZ(robin_px.i) && ijk.i > 0 && (ngbrFlags[idx - 1] & NF_NOTEMPTY)) ngbrFlags[idx] |= NF_ROBINNX;
+			else if (cuIsNZ(robin_px.i) && ijk.i > 0 && (ngbrFlags[idx - 1] & NF_NOTEMPTY)) ngbrFlags2[idx] |= NF2_ROBINNX;
 
 			if (ijk.i > 0) {
 
 				if (!(ngbrFlags[idx - 1] & NF_NOTEMPTY))
-					if (cuIsNZ(robin_v.i) && ijk.i < n.x - 1 && ngbrFlags[idx + 1] & NF_NOTEMPTY) { ngbrFlags[idx] |= (NF_ROBINPX + NF_ROBINV); }
+					if (cuIsNZ(robin_v.i) && ijk.i < n.x - 1 && ngbrFlags[idx + 1] & NF_NOTEMPTY) { ngbrFlags2[idx] |= (NF2_ROBINPX + NF2_ROBINV); }
 			}
-			else if (cuIsNZ(robin_nx.i) && ijk.i < n.x - 1 && (ngbrFlags[idx + 1] & NF_NOTEMPTY)) ngbrFlags[idx] |= NF_ROBINPX;
+			else if (cuIsNZ(robin_nx.i) && ijk.i < n.x - 1 && (ngbrFlags[idx + 1] & NF_NOTEMPTY)) ngbrFlags2[idx] |= NF2_ROBINPX;
 
 			if (ijk.j < n.y - 1) {
 
 				if (!(ngbrFlags[idx + n.x] & NF_NOTEMPTY))
-					if (cuIsNZ(robin_v.i) && ijk.j > 0 && (ngbrFlags[idx - n.x] & NF_NOTEMPTY)) { ngbrFlags[idx] |= (NF_ROBINNY + NF_ROBINV); }
+					if (cuIsNZ(robin_v.i) && ijk.j > 0 && (ngbrFlags[idx - n.x] & NF_NOTEMPTY)) { ngbrFlags2[idx] |= (NF2_ROBINNY + NF2_ROBINV); }
 			}
-			else if (cuIsNZ(robin_py.i) && ijk.j > 0 && (ngbrFlags[idx - n.x] & NF_NOTEMPTY)) ngbrFlags[idx] |= NF_ROBINNY;
+			else if (cuIsNZ(robin_py.i) && ijk.j > 0 && (ngbrFlags[idx - n.x] & NF_NOTEMPTY)) ngbrFlags2[idx] |= NF2_ROBINNY;
 
 			if (ijk.j > 0) {
 
 				if (!(ngbrFlags[idx - n.x] & NF_NOTEMPTY))
-					if (cuIsNZ(robin_v.i) && ijk.j < n.y - 1 && (ngbrFlags[idx + n.x] & NF_NOTEMPTY)) { ngbrFlags[idx] |= (NF_ROBINPY + NF_ROBINV); }
+					if (cuIsNZ(robin_v.i) && ijk.j < n.y - 1 && (ngbrFlags[idx + n.x] & NF_NOTEMPTY)) { ngbrFlags2[idx] |= (NF2_ROBINPY + NF2_ROBINV); }
 			}
-			else if (cuIsNZ(robin_ny.i) && ijk.j < n.y - 1 && (ngbrFlags[idx + n.x] & NF_NOTEMPTY)) ngbrFlags[idx] |= NF_ROBINPY;
+			else if (cuIsNZ(robin_ny.i) && ijk.j < n.y - 1 && (ngbrFlags[idx + n.x] & NF_NOTEMPTY)) ngbrFlags2[idx] |= NF2_ROBINPY;
 
 			if (ijk.k < n.z - 1) {
 
 				if (!(ngbrFlags[idx + n.x*n.y] & NF_NOTEMPTY))
-					if (cuIsNZ(robin_v.i) && ijk.k > 0 && (ngbrFlags[idx - n.x*n.y] & NF_NOTEMPTY)) { ngbrFlags[idx] |= (NF_ROBINNZ + NF_ROBINV); }
+					if (cuIsNZ(robin_v.i) && ijk.k > 0 && (ngbrFlags[idx - n.x*n.y] & NF_NOTEMPTY)) { ngbrFlags2[idx] |= (NF2_ROBINNZ + NF2_ROBINV); }
 			}
-			else if (cuIsNZ(robin_pz.i) && ijk.k > 0 && (ngbrFlags[idx - n.x*n.y] & NF_NOTEMPTY)) ngbrFlags[idx] |= NF_ROBINNZ;
+			else if (cuIsNZ(robin_pz.i) && ijk.k > 0 && (ngbrFlags[idx - n.x*n.y] & NF_NOTEMPTY)) ngbrFlags2[idx] |= NF2_ROBINNZ;
 
 			if (ijk.k > 0) {
 
 				if (!(ngbrFlags[idx - n.x*n.y] & NF_NOTEMPTY))
-					if (cuIsNZ(robin_v.i) && ijk.k < n.z - 1 && (ngbrFlags[idx + n.x*n.y] & NF_NOTEMPTY)) { ngbrFlags[idx] |= (NF_ROBINPZ + NF_ROBINV); }
+					if (cuIsNZ(robin_v.i) && ijk.k < n.z - 1 && (ngbrFlags[idx + n.x*n.y] & NF_NOTEMPTY)) { ngbrFlags2[idx] |= (NF2_ROBINPZ + NF2_ROBINV); }
 			}
-			else if (cuIsNZ(robin_nz.i) && ijk.k < n.z - 1 && (ngbrFlags[idx + n.x*n.y] & NF_NOTEMPTY)) ngbrFlags[idx] |= NF_ROBINPZ;
+			else if (cuIsNZ(robin_nz.i) && ijk.k < n.z - 1 && (ngbrFlags[idx + n.x*n.y] & NF_NOTEMPTY)) ngbrFlags2[idx] |= NF2_ROBINPZ;
 		}
 	}
 }
@@ -603,7 +669,10 @@ template void cuVEC_VC<cuDBL33>::set_robin_flags(void);
 template <typename VType>
 __host__ void cuVEC_VC<VType>::set_robin_flags(void)
 {
-	set_robin_flags_kernel <<< (get_gpu_value(n).dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (n, ngbrFlags, robin_px, robin_nx, robin_py, robin_ny, robin_pz, robin_nz, robin_v);
+	if (use_extended_flags()) {
+
+		set_robin_flags_kernel << < (get_gpu_value(n).dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >> > (n, ngbrFlags, ngbrFlags2, robin_px, robin_nx, robin_py, robin_ny, robin_pz, robin_nz, robin_v);
+	}
 }
 
 //------------------------------------------------------------------- SET PBC FLAGS

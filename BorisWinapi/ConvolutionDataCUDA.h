@@ -113,6 +113,10 @@ protected:
 	template <typename cuVECIn>
 	void CopyInputData(cu_obj<cuVECIn>& In);
 
+	//Average input data - (In1 + In2 ) / 2 - to cuSx, cuSy, cuSz arrays at start of convolution iteration
+	template <typename cuVECIn>
+	void AverageInputData(cu_obj<cuVECIn>& In1, cu_obj<cuVECIn>& In2);
+
 	//FFTs
 
 	void forward_fft_2D(void);
@@ -127,6 +131,8 @@ protected:
 	void inverse_fft_q2D(void);
 
 	//Output
+
+	//SINGLE INPUT, SINGLE OUTPUT
 
 	//Copy convolution result (in cuS arrays) to output and obtain energy value : product of In with Out times -MU0 / (2 * non_empty_points), where non_empty_points = In.get_nonempty_points();
 	template <typename cuVECIn, typename cuVECOut>
@@ -143,6 +149,36 @@ protected:
 	//Add convolution result (in cuS arrays) to output and obtain energy value : weighted product of In with Out times -MU0 / (2 * non_empty_points), where non_empty_points = In.get_nonempty_points();
 	template <typename cuVECIn, typename cuVECOut>
 	void FinishConvolution_Add(cu_obj<cuVECIn>& In, cu_obj<cuVECOut>& Out, cu_obj<cuBReal>& energy, cu_obj<cuBReal>& energy_weight);
+
+	//AVERAGED INPUTS, SINGLE OUTPUT
+
+	//same as above but for averaged input
+	template <typename cuVECIn, typename cuVECOut>
+	void FinishConvolution_Set(cu_obj<cuVECIn>& In1, cu_obj<cuVECIn>& In2, cu_obj<cuVECOut>& Out, cu_obj<cuBReal>& energy, bool get_energy);
+
+	template <typename cuVECIn, typename cuVECOut>
+	void FinishConvolution_Add(cu_obj<cuVECIn>& In1, cu_obj<cuVECIn>& In2, cu_obj<cuVECOut>& Out, cu_obj<cuBReal>& energy, bool get_energy);
+
+	template <typename cuVECIn, typename cuVECOut>
+	void FinishConvolution_Set(cu_obj<cuVECIn>& In1, cu_obj<cuVECIn>& In2, cu_obj<cuVECOut>& Out, cu_obj<cuBReal>& energy, cu_obj<cuBReal>& energy_weight);
+
+	template <typename cuVECIn, typename cuVECOut>
+	void FinishConvolution_Add(cu_obj<cuVECIn>& In1, cu_obj<cuVECIn>& In2, cu_obj<cuVECOut>& Out, cu_obj<cuBReal>& energy, cu_obj<cuBReal>& energy_weight);
+
+	//AVERAGED INPUTS, DUPLICATED OUTPUTS
+
+	//same as above but for averaged input and duplicated output
+	template <typename cuVECIn, typename cuVECOut>
+	void FinishConvolution_Set(cu_obj<cuVECIn>& In1, cu_obj<cuVECIn>& In2, cu_obj<cuVECOut>& Out1, cu_obj<cuVECOut>& Out2, cu_obj<cuBReal>& energy, bool get_energy);
+	
+	template <typename cuVECIn, typename cuVECOut>
+	void FinishConvolution_Add(cu_obj<cuVECIn>& In1, cu_obj<cuVECIn>& In2, cu_obj<cuVECOut>& Out1, cu_obj<cuVECOut>& Out2, cu_obj<cuBReal>& energy, bool get_energy);
+
+	template <typename cuVECIn, typename cuVECOut>
+	void FinishConvolution_Set(cu_obj<cuVECIn>& In1, cu_obj<cuVECIn>& In2, cu_obj<cuVECOut>& Out1, cu_obj<cuVECOut>& Out2, cu_obj<cuBReal>& energy, cu_obj<cuBReal>& energy_weight);
+
+	template <typename cuVECIn, typename cuVECOut>
+	void FinishConvolution_Add(cu_obj<cuVECIn>& In1, cu_obj<cuVECIn>& In2, cu_obj<cuVECOut>& Out1, cu_obj<cuVECOut>& Out2, cu_obj<cuBReal>& energy, cu_obj<cuBReal>& energy_weight);
 
 	//-------------------------- GETTERS
 

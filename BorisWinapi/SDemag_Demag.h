@@ -6,7 +6,6 @@
 using namespace std;
 
 class Mesh;
-class FMesh;
 class SDemag;
 
 #ifdef MODULE_SDEMAG
@@ -42,7 +41,7 @@ class SDemag_Demag :
 private:
 
 	//pointer to mesh object holding this effective field module
-	FMesh* pMesh;
+	Mesh* pMesh;
 
 	//pointer to managing SDemag module
 	SDemag *pSDemag = nullptr;
@@ -96,7 +95,7 @@ public:
 
 	BError Initialize(void);
 
-	BError UpdateConfiguration(UPDATECONFIG_ cfgMessage = UPDATECONFIG_GENERIC);
+	BError UpdateConfiguration(UPDATECONFIG_ cfgMessage);
 
 	BError MakeCUDAModule(void);
 

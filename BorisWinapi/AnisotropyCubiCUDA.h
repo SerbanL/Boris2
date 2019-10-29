@@ -9,7 +9,7 @@
 #include "BorisCUDALib.h"
 #include "ModulesCUDA.h"
 
-class FMeshCUDA;
+class MeshCUDA;
 
 //--------------- CUBIC
 
@@ -18,11 +18,11 @@ class Anisotropy_CubicCUDA :
 {
 
 	//pointer to CUDA version of mesh object holding the effective field module holding this CUDA module
-	FMeshCUDA* pMeshCUDA;
+	MeshCUDA* pMeshCUDA;
 
 public:
 
-	Anisotropy_CubicCUDA(FMeshCUDA* pMeshCUDA_);
+	Anisotropy_CubicCUDA(MeshCUDA* pMeshCUDA_);
 	~Anisotropy_CubicCUDA();
 
 	//-------------------Abstract base class method implementations
@@ -31,7 +31,7 @@ public:
 
 	BError Initialize(void);
 
-	BError UpdateConfiguration(UPDATECONFIG_ cfgMessage = UPDATECONFIG_GENERIC);
+	BError UpdateConfiguration(UPDATECONFIG_ cfgMessage);
 
 	void UpdateField(void);
 

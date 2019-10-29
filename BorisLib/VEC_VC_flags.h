@@ -4,6 +4,31 @@
 
 //--------------------------------------------IMPORTANT FLAG MANIPULATION METHODS
 
+//check if we need to use ngbrFlags2 (allocate memory etc.)
+template <typename VType>
+bool VEC_VC<VType>::use_extended_flags(void)
+{
+	//currently ngbrFlags2 used for:
+
+	//ROBIN
+	//DIRICHLET
+
+	bool using_dirichlet = (dirichlet_nx.size() || dirichlet_px.size() || dirichlet_ny.size() || dirichlet_py.size() || dirichlet_nz.size() || dirichlet_pz.size());
+
+	bool using_robin = (robin_px != DBL2() || robin_nx != DBL2() || robin_py != DBL2() || robin_ny != DBL2() || robin_pz != DBL2() || robin_nz != DBL2() || robin_v != DBL2());
+
+	bool using_extended_flags = (using_dirichlet || using_robin);
+
+	//make sure ngbrFlags2 has the correct memory allocated only if currently empty
+	if (using_extended_flags && !ngbrFlags2.size()) {
+
+		malloc_vector(ngbrFlags2, n.dim());
+		ngbrFlags2.assign(n.dim(), 0);
+	}
+
+	return using_extended_flags;
+}
+
 template <typename VType>
 void VEC_VC<VType>::resize_ngbrFlags(SZ3 new_n)
 {
@@ -50,8 +75,13 @@ void VEC_VC<VType>::resize_ngbrFlags(SZ3 new_n)
 			}
 		}
 	}
-}
 
+	//clear ngbrFlags2 if in use
+	if (use_extended_flags()) {
+
+		ngbrFlags2.assign(new_n.dim(), 0);
+	}
+}
 
 //initialization method for neighbor flags : set flags at size n, counting neighbors etc. Use current shape in ngbrFlags
 template <typename VType>
@@ -81,36 +111,131 @@ void VEC_VC<VType>::set_ngbrFlags(void)
 
 					cellsCount++;
 
-					//neighbors
 					if (i < n.x - 1) {
 
+						//on-axis
 						if (ngbrFlags[idx + 1] & NF_NOTEMPTY) { ngbrFlags[idx] |= NF_NPX; }
+
+						//off-axis (z slice : xy)
+						if (j < n.y - 1) {
+
+							if (ngbrFlags[idx + 1 + n.x] & NF_NOTEMPTY) { ngbrFlags[idx] |= NF_XY_PXPY; }
+						}
+
+						if (j > 0) {
+
+							if (ngbrFlags[idx + 1 - n.x] & NF_NOTEMPTY) { ngbrFlags[idx] |= NF_XY_PXNY; }
+						}
 					}
 
 					if (i > 0) {
 
+						//on-axis
 						if (ngbrFlags[idx - 1] & NF_NOTEMPTY) { ngbrFlags[idx] |= NF_NNX; }
+
+						//off-axis (z slice : xy)
+						if (j < n.y - 1) {
+
+							if (ngbrFlags[idx - 1 + n.x] & NF_NOTEMPTY) { ngbrFlags[idx] |= NF_XY_NXPY; }
+						}
+
+						if (j > 0) {
+
+							if (ngbrFlags[idx - 1 - n.x] & NF_NOTEMPTY) { ngbrFlags[idx] |= NF_XY_NXNY; }
+						}
 					}
 
 					if (j < n.y - 1) {
 
+						//on-axis
 						if (ngbrFlags[idx + n.x] & NF_NOTEMPTY) { ngbrFlags[idx] |= NF_NPY; }
+
+						//off-axis (x slice : yz)
+						if (k < n.z - 1) {
+
+							if (ngbrFlags[idx + n.x + n.x*n.y] & NF_NOTEMPTY) { ngbrFlags[idx] |= NF_YZ_PYPZ; }
+						}
+
+						if (k > 0) {
+
+							if (ngbrFlags[idx + n.x - n.x*n.y] & NF_NOTEMPTY) { ngbrFlags[idx] |= NF_YZ_PYNZ; }
+						}
 					}
 
 					if (j > 0) {
 
+						//on-axis
 						if (ngbrFlags[idx - n.x] & NF_NOTEMPTY) { ngbrFlags[idx] |= NF_NNY; }
+
+						//off-axis (x slice : yz)
+						if (k < n.z - 1) {
+
+							if (ngbrFlags[idx - n.x + n.x*n.y] & NF_NOTEMPTY) { ngbrFlags[idx] |= NF_YZ_NYPZ; }
+						}
+
+						if (k > 0) {
+
+							if (ngbrFlags[idx - n.x - n.x*n.y] & NF_NOTEMPTY) { ngbrFlags[idx] |= NF_YZ_NYNZ; }
+						}
 					}
 
 					if (k < n.z - 1) {
 
+						//on-axis
 						if (ngbrFlags[idx + n.x*n.y] & NF_NOTEMPTY) { ngbrFlags[idx] |= NF_NPZ; }
+
+						//off-axis (y slice : xz)
+						if (i < n.x - 1) {
+
+							if (ngbrFlags[idx + 1 + n.x*n.y] & NF_NOTEMPTY) { ngbrFlags[idx] |= NF_XZ_PXPZ; }
+						}
+
+						if (i > 0) {
+
+							if (ngbrFlags[idx - 1 + n.x*n.y] & NF_NOTEMPTY) { ngbrFlags[idx] |= NF_XZ_NXPZ; }
+						}
 					}
 
 					if (k > 0) {
 
+						//on-axis
 						if (ngbrFlags[idx - n.x*n.y] & NF_NOTEMPTY) { ngbrFlags[idx] |= NF_NNZ; }
+
+						//off-axis (y slice : xz)
+						if (i < n.x - 1) {
+
+							if (ngbrFlags[idx + 1 - n.x*n.y] & NF_NOTEMPTY) { ngbrFlags[idx] |= NF_XZ_PXNZ; }
+						}
+
+						if (i > 0) {
+
+							if (ngbrFlags[idx - 1 - n.x*n.y] & NF_NOTEMPTY) { ngbrFlags[idx] |= NF_XZ_NXNZ; }
+						}
 					}
+
+					//calculate mixed second order differentials off-axis stencils
+					bool right_side, left_side, center_column;
+
+					//XY plane
+					right_side = ((int(ngbrFlags[idx] & NF_XY_PXPY) + int(ngbrFlags[idx] & NF_XY_PXNY) + int(ngbrFlags[idx] & NF_NPX)) >= 2);
+					left_side = ((int(ngbrFlags[idx] & NF_XY_NXPY) + int(ngbrFlags[idx] & NF_XY_NXNY) + int(ngbrFlags[idx] & NF_NNX)) >= 2);
+					center_column = ((ngbrFlags[idx] & NF_NPY) || (ngbrFlags[idx] & NF_NNY));
+
+					if ((right_side && left_side) || (right_side && center_column) || (center_column && left_side)) ngbrFlags[idx] |= NF_XY_OASTENCIL;
+
+					//XZ plane
+					right_side = ((int(ngbrFlags[idx] & NF_XZ_PXPZ) + int(ngbrFlags[idx] & NF_XZ_PXNZ) + int(ngbrFlags[idx] & NF_NPX)) >= 2);
+					left_side = ((int(ngbrFlags[idx] & NF_XZ_NXPZ) + int(ngbrFlags[idx] & NF_XZ_NXNZ) + int(ngbrFlags[idx] & NF_NNX)) >= 2);
+					center_column = ((ngbrFlags[idx] & NF_NPZ) || (ngbrFlags[idx] & NF_NNZ));
+
+					if ((right_side && left_side) || (right_side && center_column) || (center_column && left_side)) ngbrFlags[idx] |= NF_XZ_OASTENCIL;
+
+					//YZ plane
+					right_side = ((int(ngbrFlags[idx] & NF_YZ_PYPZ) + int(ngbrFlags[idx] & NF_YZ_PYNZ) + int(ngbrFlags[idx] & NF_NPY)) >= 2);
+					left_side = ((int(ngbrFlags[idx] & NF_YZ_NYPZ) + int(ngbrFlags[idx] & NF_YZ_NYNZ) + int(ngbrFlags[idx] & NF_NNY)) >= 2);
+					//center_column same as above
+
+					if ((right_side && left_side) || (right_side && center_column) || (center_column && left_side)) ngbrFlags[idx] |= NF_YZ_OASTENCIL;
 				}
 				else {
 
@@ -139,100 +264,40 @@ void VEC_VC<VType>::set_ngbrFlags(VEC_VC<LVType>& linked_vec)
 	//linked_vec must have same mesh rect
 	if (linked_vec.rect != rect || rect.IsNull() || h == DBL3()) return;
 
-	//clear any shift debt as mesh has been resized so not valid anymore
-	shift_debt = DBL3();
+	//copy shape from linked_vec
+#pragma omp parallel for
+	for (int idx = 0; idx < n.dim(); idx++) {
 
-	//dirichlet flags will be cleared from ngbrFlags, so also clear the dirichlet vectors
-	clear_dirichlet_flags();
-
-	//also count non-empty points
-	int cellsCount = 0;
-
-	//1. Count all the neighbors
-
-#pragma omp parallel for reduction(+:cellsCount)
-	for (int j = 0; j < n.y; j++) {
-		for (int k = 0; k < n.z; k++) {
-			for (int i = 0; i < n.x; i++) {
-
-				int idx = i + j * n.x + k * n.x*n.y;
-
-				if (!linked_vec.is_empty(get_cellrect(INT3(i, j, k)))) {
-
-					//mark cell as not empty
-					mark_not_empty(idx);
-					cellsCount++;
-
-					if (i < n.x - 1) {
-
-						if (!linked_vec.is_empty(get_cellrect(INT3(i + 1, j, k)))) { ngbrFlags[idx] |= NF_NPX; }
-					}
-
-					if (i > 0) {
-
-						if (!linked_vec.is_empty(get_cellrect(INT3(i - 1, j, k)))) { ngbrFlags[idx] |= NF_NNX; }
-					}
-
-					if (j < n.y - 1) {
-
-						if (!linked_vec.is_empty(get_cellrect(INT3(i, j + 1, k)))) { ngbrFlags[idx] |= NF_NPY; }
-					}
-
-					if (j > 0) {
-
-						if (!linked_vec.is_empty(get_cellrect(INT3(i, j - 1, k)))) { ngbrFlags[idx] |= NF_NNY; }
-					}
-
-					if (k < n.z - 1) {
-
-						if (!linked_vec.is_empty(get_cellrect(INT3(i, j, k + 1)))) { ngbrFlags[idx] |= NF_NPZ; }
-					}
-
-					if (k > 0) {
-
-						if (!linked_vec.is_empty(get_cellrect(INT3(i, j, k - 1)))) { ngbrFlags[idx] |= NF_NNZ; }
-					}
-				}
-				else {
-
-					//if linked quantity is empty then also empty the quantity in this VEC. Note, the linked vec could actually be the same vec - in this case the shape is not changed since the NF_NOTEMPTY flags have already been mapped to the new size
-					mark_empty(idx);
-				}
-			}
-		}
+		if (!linked_vec.is_empty(get_cellrect(idx))) mark_not_empty(idx);
+		else mark_empty(idx);
 	}
 
-	//2. set Robin flags depending on set conditions
-	set_robin_flags();
-
-	//3. set pbc flags depending on set conditions and currently calculated flags
-	set_pbc_flags();
-
-	nonempty_cells = cellsCount;
+	//now continue with set_ngbrFlags
+	set_ngbrFlags();
 }
 
-//from NF_DIRICHLET type flag and cell_idx return boundary value from one of the dirichlet vectors
+//from NF2_DIRICHLET type flag and cell_idx return boundary value from one of the dirichlet vectors
 template <typename VType>
 VType VEC_VC<VType>::get_dirichlet_value(int dirichlet_flag, int cell_idx) const
 {
 	switch (dirichlet_flag) {
 
-	case NF_DIRICHLETPX:
+	case NF2_DIRICHLETPX:
 		return dirichlet_nx[((cell_idx / n.x) % n.y) + (cell_idx / (n.x*n.y))*n.y];
 
-	case NF_DIRICHLETNX:
+	case NF2_DIRICHLETNX:
 		return dirichlet_px[((cell_idx / n.x) % n.y) + (cell_idx / (n.x*n.y))*n.y];
 
-	case NF_DIRICHLETPY:
+	case NF2_DIRICHLETPY:
 		return dirichlet_ny[(cell_idx % n.x) + (cell_idx / (n.x*n.y))*n.x];
 
-	case NF_DIRICHLETNY:
+	case NF2_DIRICHLETNY:
 		return dirichlet_py[(cell_idx % n.x) + (cell_idx / (n.x*n.y))*n.x];
 
-	case NF_DIRICHLETPZ:
+	case NF2_DIRICHLETPZ:
 		return dirichlet_nz[(cell_idx % n.x) + ((cell_idx / n.x) % n.y)*n.x];
 
-	case NF_DIRICHLETNZ:
+	case NF2_DIRICHLETNZ:
 		return dirichlet_pz[(cell_idx % n.x) + ((cell_idx / n.x) % n.y)*n.x];
 	}
 
@@ -243,62 +308,66 @@ VType VEC_VC<VType>::get_dirichlet_value(int dirichlet_flag, int cell_idx) const
 template <typename VType>
 void VEC_VC<VType>::set_robin_flags(void)
 {
+	//ROBIN flags used with extended ngbrFlags only
+	if (use_extended_flags()) {
+
 #pragma omp parallel for
-	for (int j = 0; j < n.y; j++) {
-		for (int k = 0; k < n.z; k++) {
-			for (int i = 0; i < n.x; i++) {
+		for (int j = 0; j < n.y; j++) {
+			for (int k = 0; k < n.z; k++) {
+				for (int i = 0; i < n.x; i++) {
 
-				int idx = i + j * n.x + k * n.x*n.y;
+					int idx = i + j * n.x + k * n.x*n.y;
 
-				//first clear any robin flags already set
-				ngbrFlags[idx] &= ~NF_ROBIN;
+					//first clear any robin flags already set
+					ngbrFlags2[idx] &= ~NF2_ROBIN;
 
-				if (ngbrFlags[idx] & NF_NOTEMPTY) {
+					if (ngbrFlags[idx] & NF_NOTEMPTY) {
 
-					//neighbors
-					if (i < n.x - 1) {
+						//neighbors
+						if (i < n.x - 1) {
 
-						if (!(ngbrFlags[idx + 1] & NF_NOTEMPTY))
-							//inner cell next to a void cell on the -x side
-							if (IsNZ(robin_v.i) && i > 0 && ngbrFlags[idx - 1] & NF_NOTEMPTY) { ngbrFlags[idx] |= (NF_ROBINNX + NF_ROBINV); }
+							if (!(ngbrFlags[idx + 1] & NF_NOTEMPTY))
+								//inner cell next to a void cell on the -x side
+								if (IsNZ(robin_v.i) && i > 0 && ngbrFlags[idx - 1] & NF_NOTEMPTY) { ngbrFlags2[idx] |= (NF2_ROBINNX + NF2_ROBINV); }
+						}
+						//surface cell on the -x side of the surface
+						else if (IsNZ(robin_px.i) && i > 0 && (ngbrFlags[idx - 1] & NF_NOTEMPTY)) ngbrFlags2[idx] |= NF2_ROBINNX;
+
+						if (i > 0) {
+
+							if (!(ngbrFlags[idx - 1] & NF_NOTEMPTY))
+								if (IsNZ(robin_v.i) && i < n.x - 1 && ngbrFlags[idx + 1] & NF_NOTEMPTY) { ngbrFlags2[idx] |= (NF2_ROBINPX + NF2_ROBINV); }
+						}
+						else if (IsNZ(robin_nx.i) && i < n.x - 1 && (ngbrFlags[idx + 1] & NF_NOTEMPTY)) ngbrFlags2[idx] |= NF2_ROBINPX;
+
+						if (j < n.y - 1) {
+
+							if (!(ngbrFlags[idx + n.x] & NF_NOTEMPTY))
+								if (IsNZ(robin_v.i) && j > 0 && (ngbrFlags[idx - n.x] & NF_NOTEMPTY)) { ngbrFlags2[idx] |= (NF2_ROBINNY + NF2_ROBINV); }
+						}
+						else if (IsNZ(robin_py.i) && j > 0 && (ngbrFlags[idx - n.x] & NF_NOTEMPTY)) ngbrFlags2[idx] |= NF2_ROBINNY;
+
+						if (j > 0) {
+
+							if (!(ngbrFlags[idx - n.x] & NF_NOTEMPTY))
+								if (IsNZ(robin_v.i) && j < n.y - 1 && (ngbrFlags[idx + n.x] & NF_NOTEMPTY)) { ngbrFlags2[idx] |= (NF2_ROBINPY + NF2_ROBINV); }
+						}
+						else if (IsNZ(robin_ny.i) && j < n.y - 1 && (ngbrFlags[idx + n.x] & NF_NOTEMPTY)) ngbrFlags2[idx] |= NF2_ROBINPY;
+
+						if (k < n.z - 1) {
+
+							if (!(ngbrFlags[idx + n.x*n.y] & NF_NOTEMPTY))
+								if (IsNZ(robin_v.i) && k > 0 && (ngbrFlags[idx - n.x*n.y] & NF_NOTEMPTY)) { ngbrFlags2[idx] |= (NF2_ROBINNZ + NF2_ROBINV); }
+						}
+						else if (IsNZ(robin_pz.i) && k > 0 && (ngbrFlags[idx - n.x*n.y] & NF_NOTEMPTY)) ngbrFlags2[idx] |= NF2_ROBINNZ;
+
+						if (k > 0) {
+
+							if (!(ngbrFlags[idx - n.x*n.y] & NF_NOTEMPTY))
+								if (IsNZ(robin_v.i) && k < n.z - 1 && (ngbrFlags[idx + n.x*n.y] & NF_NOTEMPTY)) { ngbrFlags2[idx] |= (NF2_ROBINPZ + NF2_ROBINV); }
+						}
+						else if (IsNZ(robin_nz.i) && k < n.z - 1 && (ngbrFlags[idx + n.x*n.y] & NF_NOTEMPTY)) ngbrFlags2[idx] |= NF2_ROBINPZ;
 					}
-					//surface cell on the -x side of the surface
-					else if (IsNZ(robin_px.i) && i > 0 && (ngbrFlags[idx - 1] & NF_NOTEMPTY)) ngbrFlags[idx] |= NF_ROBINNX;
-
-					if (i > 0) {
-
-						if (!(ngbrFlags[idx - 1] & NF_NOTEMPTY))
-							if (IsNZ(robin_v.i) && i < n.x - 1 && ngbrFlags[idx + 1] & NF_NOTEMPTY) { ngbrFlags[idx] |= (NF_ROBINPX + NF_ROBINV); }
-					}
-					else if (IsNZ(robin_nx.i) && i < n.x - 1 && (ngbrFlags[idx + 1] & NF_NOTEMPTY)) ngbrFlags[idx] |= NF_ROBINPX;
-
-					if (j < n.y - 1) {
-
-						if (!(ngbrFlags[idx + n.x] & NF_NOTEMPTY))
-							if (IsNZ(robin_v.i) && j > 0 && (ngbrFlags[idx - n.x] & NF_NOTEMPTY)) { ngbrFlags[idx] |= (NF_ROBINNY + NF_ROBINV); }
-					}
-					else if (IsNZ(robin_py.i) && j > 0 && (ngbrFlags[idx - n.x] & NF_NOTEMPTY)) ngbrFlags[idx] |= NF_ROBINNY;
-
-					if (j > 0) {
-
-						if (!(ngbrFlags[idx - n.x] & NF_NOTEMPTY))
-							if (IsNZ(robin_v.i) && j < n.y - 1 && (ngbrFlags[idx + n.x] & NF_NOTEMPTY)) { ngbrFlags[idx] |= (NF_ROBINPY + NF_ROBINV); }
-					}
-					else if (IsNZ(robin_ny.i) && j < n.y - 1 && (ngbrFlags[idx + n.x] & NF_NOTEMPTY)) ngbrFlags[idx] |= NF_ROBINPY;
-
-					if (k < n.z - 1) {
-
-						if (!(ngbrFlags[idx + n.x*n.y] & NF_NOTEMPTY))
-							if (IsNZ(robin_v.i) && k > 0 && (ngbrFlags[idx - n.x*n.y] & NF_NOTEMPTY)) { ngbrFlags[idx] |= (NF_ROBINNZ + NF_ROBINV); }
-					}
-					else if (IsNZ(robin_pz.i) && k > 0 && (ngbrFlags[idx - n.x*n.y] & NF_NOTEMPTY)) ngbrFlags[idx] |= NF_ROBINNZ;
-
-					if (k > 0) {
-
-						if (!(ngbrFlags[idx - n.x*n.y] & NF_NOTEMPTY))
-							if (IsNZ(robin_v.i) && k < n.z - 1 && (ngbrFlags[idx + n.x*n.y] & NF_NOTEMPTY)) { ngbrFlags[idx] |= (NF_ROBINPZ + NF_ROBINV); }
-					}
-					else if (IsNZ(robin_nz.i) && k < n.z - 1 && (ngbrFlags[idx + n.x*n.y] & NF_NOTEMPTY)) ngbrFlags[idx] |= NF_ROBINPZ;
 				}
 			}
 		}
@@ -370,42 +439,45 @@ bool VEC_VC<VType>::set_dirichlet_conditions(const Rect& surface_rect, VType val
 
 					switch (flag_value) {
 
-					case NF_DIRICHLETPX:
+					case NF2_DIRICHLETPX:
 						if ((cell_idx % n.x) != 0 || !(ngbrFlags[cell_idx] & NF_NPX)) continue;
 						dirichlet_nx[((cell_idx / n.x) % n.y) + (cell_idx / (n.x*n.y)) * n.y] = value;
 						break;
 
-					case NF_DIRICHLETNX:
+					case NF2_DIRICHLETNX:
 						if ((cell_idx % n.x) != (n.x - 1) || !(ngbrFlags[cell_idx] & NF_NNX)) continue;
 						dirichlet_px[((cell_idx / n.x) % n.y) + (cell_idx / (n.x*n.y)) * n.y] = value;
 						break;
 
-					case NF_DIRICHLETPY:
+					case NF2_DIRICHLETPY:
 						if (((cell_idx / n.x) % n.y) != 0 || !(ngbrFlags[cell_idx] & NF_NPY)) continue;
 						dirichlet_ny[(cell_idx % n.x) + (cell_idx / (n.x*n.y)) * n.x] = value;
 						break;
 
-					case NF_DIRICHLETNY:
+					case NF2_DIRICHLETNY:
 						if (((cell_idx / n.x) % n.y) != (n.y - 1) || !(ngbrFlags[cell_idx] & NF_NNY)) continue;
 						dirichlet_py[(cell_idx % n.x) + (cell_idx / (n.x*n.y)) * n.x] = value;
 						break;
 
-					case NF_DIRICHLETPZ:
+					case NF2_DIRICHLETPZ:
 						if ((cell_idx / (n.x*n.y)) != 0 || !(ngbrFlags[cell_idx] & NF_NPZ)) continue;
 						dirichlet_nz[(cell_idx % n.x) + ((cell_idx / n.x) % n.y) * n.x] = value;
 						break;
 
-					case NF_DIRICHLETNZ:
+					case NF2_DIRICHLETNZ:
 						if ((cell_idx / (n.x*n.y)) != (n.z - 1) || !(ngbrFlags[cell_idx] & NF_NNZ)) continue;
 						dirichlet_pz[(cell_idx % n.x) + ((cell_idx / n.x) % n.y) * n.x] = value;
 						break;
 					}
 
-					ngbrFlags[cell_idx] |= flag_value;
+					ngbrFlags2[cell_idx] |= flag_value;
 				}
 			}
 		}
 	};
+
+	//DIRICHLET flags used with extended ngbrFlags so make sure it has memory allocated now
+	if (!malloc_vector(ngbrFlags2, n.dim())) return false;
 
 	//y-z plane
 	if (IsZ(intersection.s.x - intersection.e.x)) {
@@ -419,7 +491,7 @@ bool VEC_VC<VType>::set_dirichlet_conditions(const Rect& surface_rect, VType val
 			}
 
 			intersection.e.x += h.x;
-			set_dirichlet_value(intersection, value, NF_DIRICHLETPX);
+			set_dirichlet_value(intersection, value, NF2_DIRICHLETPX);
 		}
 		//on upper x side
 		else if (IsZ(rect.e.x - intersection.s.x)) {
@@ -430,7 +502,7 @@ bool VEC_VC<VType>::set_dirichlet_conditions(const Rect& surface_rect, VType val
 			}
 
 			intersection.s.x -= h.x;
-			set_dirichlet_value(intersection, value, NF_DIRICHLETNX);
+			set_dirichlet_value(intersection, value, NF2_DIRICHLETNX);
 		}
 	}
 	//x-z plane
@@ -445,7 +517,7 @@ bool VEC_VC<VType>::set_dirichlet_conditions(const Rect& surface_rect, VType val
 			}
 
 			intersection.e.y += h.y;
-			set_dirichlet_value(intersection, value, NF_DIRICHLETPY);
+			set_dirichlet_value(intersection, value, NF2_DIRICHLETPY);
 		}
 		//on upper y side
 		else if (IsZ(rect.e.y - intersection.s.y)) {
@@ -456,7 +528,7 @@ bool VEC_VC<VType>::set_dirichlet_conditions(const Rect& surface_rect, VType val
 			}
 
 			intersection.s.y -= h.y;
-			set_dirichlet_value(intersection, value, NF_DIRICHLETNY);
+			set_dirichlet_value(intersection, value, NF2_DIRICHLETNY);
 		}
 	}
 	//x-y plane
@@ -471,7 +543,7 @@ bool VEC_VC<VType>::set_dirichlet_conditions(const Rect& surface_rect, VType val
 			}
 
 			intersection.e.z += h.z;
-			set_dirichlet_value(intersection, value, NF_DIRICHLETPZ);
+			set_dirichlet_value(intersection, value, NF2_DIRICHLETPZ);
 		}
 		//on upper z side
 		else if (IsZ(rect.e.z - intersection.s.z)) {
@@ -482,7 +554,7 @@ bool VEC_VC<VType>::set_dirichlet_conditions(const Rect& surface_rect, VType val
 			}
 
 			intersection.s.z -= h.z;
-			set_dirichlet_value(intersection, value, NF_DIRICHLETNZ);
+			set_dirichlet_value(intersection, value, NF2_DIRICHLETNZ);
 		}
 	}
 
@@ -493,25 +565,41 @@ bool VEC_VC<VType>::set_dirichlet_conditions(const Rect& surface_rect, VType val
 template <typename VType>
 void VEC_VC<VType>::clear_dirichlet_flags(void)
 {
+	//DIRICHLET flags used with extended ngbrFlags only.
+	if (use_extended_flags()) {
+
 #pragma omp parallel for
-	for (int idx = 0; idx < (int)ngbrFlags.size(); idx++) {
+		for (int idx = 0; idx < (int)ngbrFlags2.size(); idx++) {
 
-		ngbrFlags[idx] &= ~NF_DIRICHLET;
+			ngbrFlags2[idx] &= ~NF2_DIRICHLET;
+		}
+
+		dirichlet_px.clear();
+		dirichlet_nx.clear();
+		dirichlet_py.clear();
+		dirichlet_ny.clear();
+		dirichlet_pz.clear();
+		dirichlet_nz.clear();
+
+		dirichlet_px.shrink_to_fit();
+		dirichlet_nx.shrink_to_fit();
+		dirichlet_py.shrink_to_fit();
+		dirichlet_ny.shrink_to_fit();
+		dirichlet_pz.shrink_to_fit();
+		dirichlet_nz.shrink_to_fit();
+
+		//clear memory for extended ngbrFlags if now not used for anything else
+		if (!use_extended_flags()) {
+
+			ngbrFlags2.clear();
+			ngbrFlags2.shrink_to_fit();
+		}
 	}
+	else {
 
-	dirichlet_px.clear();
-	dirichlet_nx.clear();
-	dirichlet_py.clear();
-	dirichlet_ny.clear();
-	dirichlet_pz.clear();
-	dirichlet_nz.clear();
-
-	dirichlet_px.shrink_to_fit();
-	dirichlet_nx.shrink_to_fit();
-	dirichlet_py.shrink_to_fit();
-	dirichlet_ny.shrink_to_fit();
-	dirichlet_pz.shrink_to_fit();
-	dirichlet_nz.shrink_to_fit();
+		ngbrFlags2.clear();
+		ngbrFlags2.shrink_to_fit();
+	}
 }
 
 //set pbc flags depending on set conditions and currently calculated flags - ngbrFlags must already be calculated before using this
@@ -652,8 +740,18 @@ void VEC_VC<VType>::clear_robin_conditions(void)
 
 	robin_v = DBL2();
 
-	//clear Robin flags
+	if (use_extended_flags()) {
+
+		//clear Robin flags
 #pragma omp parallel for
-	for (int idx = 0; idx < (int)ngbrFlags.size(); idx++)
-		ngbrFlags[idx] &= ~NF_ROBIN;
+		for (int idx = 0; idx < (int)ngbrFlags2.size(); idx++) {
+
+			ngbrFlags2[idx] &= ~NF2_ROBIN;
+		}
+	}
+	else {
+
+		ngbrFlags2.clear();
+		ngbrFlags2.shrink_to_fit();
+	}
 }

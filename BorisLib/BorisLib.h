@@ -72,7 +72,7 @@
 //---------------------------------------------------------------------------------------
 //6th order
 
-#include "Funcs_VEC_Algorithms.h"	//VEC.h
+#include "CurveFitting.h"	//VEC.h
 
 #include "VEC_VC.h"				//VEC.h, ProgramState.h
 #include "VEC_VC_mng.h"			//extends VEC_VC (don't count it as higher order)
@@ -86,6 +86,7 @@
 #include "VEC_VC_Div.h"			//extends VEC_VC (don't count it as higher order)
 #include "VEC_VC_Curl.h"		//extends VEC_VC (don't count it as higher order)
 #include "VEC_VC_Del.h"			//extends VEC_VC (don't count it as higher order)
+#include "VEC_VC_diff2.h"		//extends VEC_VC (don't count it as higher order)
 #include "VEC_VC_Solve.h"		//extends VEC_VC (don't count it as higher order)
 #include "VEC_VC_CGSolve.h"		//extends VEC_VC (don't count it as higher order)
 

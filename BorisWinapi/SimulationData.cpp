@@ -149,6 +149,12 @@ Any Simulation::GetDataValue(DatumConfig dConfig)
 	}
 	break;
 
+	case DATA_AVM2:
+	{
+		return Any(SMesh[dConfig.meshName]->GetAverageMagnetisation2(dConfig.rectangle));
+	}
+	break;
+
 	case DATA_HA:
 	{
 		return Any(SMesh[dConfig.meshName]->CallModuleMethod(&Zeeman::GetField));
@@ -301,12 +307,6 @@ Any Simulation::GetDataValue(DatumConfig dConfig)
 	case DATA_TRANSPORT_CONVERROR:
 	{
 		return Any(SMesh.CallModuleMethod<double, STransport>(&STransport::GetEnergy));
-	}
-	break;
-
-	case DATA_TRANSPORT_ASOR:
-	{
-		return Any(SMesh.CallModuleMethod<DBL2, STransport>(&STransport::Get_aSOR_Damping));
 	}
 	break;
 

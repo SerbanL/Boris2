@@ -39,37 +39,43 @@ BError OerstedCUDA::Initialize(void)
 	//not counting this to the total energy density for now
 	ZeroEnergy();
 
-	//FFT Kernels are not so quick to calculate - if already initialized then we are guaranteed they are correct
-	if (!initialized) {
+	//always recalculate the mesh transfer as some meshes could have changed
+	vector< VEC<DBL3>* > pVal_from_cpu_E;
+	vector< VEC<double>* > pVal_from_cpu_elC;
+	vector< VEC<DBL3>* > pVal_to_cpu;
 
-		vector< VEC<DBL3>* > pVal_from_cpu;
-		vector< VEC<DBL3>* > pVal_to_cpu;
+	//array of pointers to input meshes (M) and oputput meshes (Heff) to transfer from and to
+	cu_arr<cuVEC<cuReal3>> pVal_from_E;
+	cu_arr<cuVEC<cuBReal>> pVal_from_elC;
+	cu_arr<cuVEC<cuReal3>> pVal_to;
 
-		//array of pointers to input meshes (M) and oputput meshes (Heff) to transfer from and to
-		cu_arr<cuVEC<cuReal3>> pVal_from;
-		cu_arr<cuVEC<cuReal3>> pVal_to;
+	//identify all existing ferrommagnetic meshes (magnetic computation enabled)
+	for (int idx = 0; idx < (int)pSMesh->pMesh.size(); idx++) {
 
-		//identify all existing ferrommagnetic meshes (magnetic computation enabled)
-		for (int idx = 0; idx < (int)pSMesh->pMesh.size(); idx++) {
+		if ((*pSMesh)[idx]->EComputation_Enabled()) {
 
-			if ((*pSMesh)[idx]->EComputation_Enabled()) {
+			pVal_from_cpu_E.push_back(&((*pSMesh)[idx]->E));
+			pVal_from_E.push_back((cuVEC<cuReal3>*&)(*pSMesh)[idx]->pMeshCUDA->E.get_managed_object());
 
-				pVal_from_cpu.push_back(&((*pSMesh)[idx]->Jc));
-				pVal_from.push_back((cuVEC<cuReal3>*&)(*pSMesh)[idx]->pMeshCUDA->Jc.get_managed_object());
-			}
-
-			if ((*pSMesh)[idx]->MComputation_Enabled()) {
-
-				pVal_to_cpu.push_back(&((*pSMesh)[idx]->Heff));
-				pVal_to.push_back((cuVEC<cuReal3>*&)(*pSMesh)[idx]->pMeshCUDA->Heff.get_managed_object());
-			}
+			pVal_from_cpu_elC.push_back(&((*pSMesh)[idx]->elC));
+			pVal_from_elC.push_back((cuVEC<cuBReal>*&)(*pSMesh)[idx]->pMeshCUDA->elC.get_managed_object());
 		}
 
-		//Initialize the mesh transfer object.
-		if (!pOersted->sm_Vals.Initialize_MeshTransfer(pVal_from_cpu, pVal_to_cpu, MESHTRANSFERTYPE_WEIGHTED)) return error(BERROR_OUTOFMEMORY_CRIT);
+		if ((*pSMesh)[idx]->MComputation_Enabled()) {
 
-		//Now copy mesh transfer object to cuda version
-		if (!sm_Vals()->copy_transfer_info(pVal_from, pVal_to, pOersted->sm_Vals)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
+			pVal_to_cpu.push_back(&((*pSMesh)[idx]->Heff));
+			pVal_to.push_back((cuVEC<cuReal3>*&)(*pSMesh)[idx]->pMeshCUDA->Heff.get_managed_object());
+		}
+	}
+
+	//Initialize the mesh transfer object.
+	if (!pOersted->sm_Vals.Initialize_MeshTransfer_MultipliedInputs(pVal_from_cpu_E, pVal_from_cpu_elC, pVal_to_cpu, MESHTRANSFERTYPE_WEIGHTED)) return error(BERROR_OUTOFMEMORY_CRIT);
+
+	//Now copy mesh transfer object to cuda version
+	if (!sm_Vals()->copy_transfer_info_multipliedinputs(pVal_from_E, pVal_from_elC, pVal_to, pOersted->sm_Vals)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
+
+	//FFT Kernels are not so quick to calculate - if already initialized then we are guaranteed they are correct
+	if (!initialized) {
 
 		error = Calculate_Oersted_Kernels();
 
@@ -101,7 +107,7 @@ void OerstedCUDA::UpdateField(void)
 	if (pSMesh->CallModuleMethod(&STransport::Transport_Recalculated) || !pOersted->oefield_computed) {
 
 		//transfer values from invidual Jc meshes to sm_Vals
-		sm_Vals()->transfer_in(pOersted->sm_Vals.linear_size(), pOersted->sm_Vals.size_transfer_in());
+		sm_Vals()->transfer_in_multiplied(pOersted->sm_Vals.linear_size(), pOersted->sm_Vals.size_transfer_in());
 
 		//only need energy after ode solver step finished
 		if (pSMesh->CurrentTimeStepSolved()) ZeroEnergy();

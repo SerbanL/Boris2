@@ -18,6 +18,7 @@ void Mesh::MoveMesh(double x_shift)
 		
 		//1. shift M
 		if (M.linear_size()) pMeshCUDA->M()->shift_x(M.linear_size(), x_shift, shift_rect);
+		if (M2.linear_size()) pMeshCUDA->M2()->shift_x(M2.linear_size(), x_shift, shift_rect);
 
 		//2. shift elC
 		if (elC.linear_size()) CallModuleMethod(&Transport::MoveMesh_Transport, x_shift);
@@ -33,6 +34,7 @@ void Mesh::MoveMesh(double x_shift)
 
 	//1. shift M
 	if (M.linear_size()) M.shift_x(x_shift, shift_rect);
+	if (M2.linear_size()) M2.shift_x(x_shift, shift_rect);
 
 	//2. shift elC
 	if (elC.linear_size()) CallModuleMethod(&Transport::MoveMesh_Transport, x_shift);

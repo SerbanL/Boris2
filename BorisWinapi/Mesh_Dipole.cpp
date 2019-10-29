@@ -12,7 +12,7 @@ DipoleMesh::DipoleMesh(SuperMesh *pSMesh_) :
 			VINFO(meshType), VINFO(meshIdCounter), VINFO(meshId), VINFO(displayedPhysicalQuantity), VINFO(vec3rep), VINFO(displayedParamVar), VINFO(meshRect), VINFO(n), VINFO(h), VINFO(n_e), VINFO(h_e), VINFO(n_t), VINFO(h_t), VINFO(M), VINFO(V), VINFO(S), VINFO(elC), VINFO(Temp), VINFO(pMod),
 			//Members in this derived class
 			//Material Parameters
-			VINFO(Ms), VINFO(elecCond), VINFO(amrPercentage), VINFO(P), VINFO(De), VINFO(betaD), VINFO(l_sf), VINFO(l_ex), VINFO(l_ph), VINFO(Gi), VINFO(Gmix), VINFO(base_temperature), VINFO(T_Curie), VINFO(T_Curie_material), VINFO(thermCond), VINFO(density), VINFO(shc), VINFO(cT), VINFO(Q)
+			VINFO(Ms), VINFO(elecCond), VINFO(amrPercentage), VINFO(P), VINFO(De), VINFO(n_density), VINFO(betaD), VINFO(l_sf), VINFO(l_ex), VINFO(l_ph), VINFO(Gi), VINFO(Gmix), VINFO(base_temperature), VINFO(T_Curie), VINFO(T_Curie_material), VINFO(thermCond), VINFO(density), VINFO(shc), VINFO(cT), VINFO(Q)
 		},
 		{
 			IINFO(Transport), IINFO(Heat)
@@ -31,7 +31,7 @@ DipoleMesh::DipoleMesh(Rect meshRect_, DBL3 h_, SuperMesh *pSMesh_) :
 			VINFO(meshType), VINFO(meshIdCounter), VINFO(meshId), VINFO(displayedPhysicalQuantity), VINFO(vec3rep), VINFO(displayedParamVar), VINFO(meshRect), VINFO(n), VINFO(h), VINFO(n_e), VINFO(h_e), VINFO(n_t), VINFO(h_t), VINFO(M), VINFO(V), VINFO(S), VINFO(elC), VINFO(Temp), VINFO(pMod),
 			//Members in this derived class
 			//Material Parameters
-			VINFO(Ms), VINFO(elecCond), VINFO(amrPercentage), VINFO(P), VINFO(De), VINFO(betaD), VINFO(l_sf), VINFO(l_ex), VINFO(l_ph), VINFO(Gi), VINFO(Gmix), VINFO(base_temperature), VINFO(T_Curie), VINFO(T_Curie_material), VINFO(thermCond), VINFO(density), VINFO(shc), VINFO(cT), VINFO(Q)
+			VINFO(Ms), VINFO(elecCond), VINFO(amrPercentage), VINFO(P), VINFO(De), VINFO(n_density), VINFO(betaD), VINFO(l_sf), VINFO(l_ex), VINFO(l_ph), VINFO(Gi), VINFO(Gmix), VINFO(base_temperature), VINFO(T_Curie), VINFO(T_Curie_material), VINFO(thermCond), VINFO(density), VINFO(shc), VINFO(cT), VINFO(Q)
 		},
 		{
 			IINFO(Transport), IINFO(Heat)
@@ -47,7 +47,7 @@ DipoleMesh::DipoleMesh(Rect meshRect_, DBL3 h_, SuperMesh *pSMesh_) :
 	h_e = h_;
 	h_t = h_;
 
-	error_on_create = UpdateConfiguration();
+	error_on_create = UpdateConfiguration(UPDATECONFIG_FORCEUPDATE);
 
 	//--------------------------
 
@@ -68,8 +68,15 @@ BError DipoleMesh::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 	n = SZ3(1);
 	h = meshRect.size();
 
+	///////////////////////////////////////////////////////
+	//Mesh specific configuration
+	///////////////////////////////////////////////////////
+
 	if (M.linear_size()) M.resize(h, meshRect);
 	else M.assign(h, meshRect, DBL3(-Ms, 0, 0));
+
+	//update material parameters spatial dependence as cellsize and rectangle could have changed
+	if (!error && !update_meshparam_var()) error(BERROR_OUTOFMEMORY_NCRIT);
 
 	//set dipole value from Ms - this could have changed
 	Reset_Mdipole();
@@ -83,6 +90,10 @@ BError DipoleMesh::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 	}
 #endif
 
+	///////////////////////////////////////////////////////
+	//Update configuration for mesh modules
+	///////////////////////////////////////////////////////
+
 	//update configuration in all currently set modules in this mesh
 	for (int idx = 0; idx < (int)pMod.size(); idx++) {
 
@@ -91,9 +102,6 @@ BError DipoleMesh::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 			error = pMod[idx]->UpdateConfiguration(cfgMessage);
 		}
 	}
-
-	//update material parameters spatial dependence as cellsize and rectangle could have changed
-	if (!error && !update_meshparam_var()) error(BERROR_OUTOFMEMORY_NCRIT);
 
 	return error;
 }

@@ -1,9 +1,10 @@
 #include "stdafx.h"
 #include "Demag.h"
+#include "SuperMesh.h"
 
 #ifdef MODULE_DEMAG
 
-#include "Mesh_Ferromagnetic.h"
+#include "Mesh.h"
 
 #if COMPILECUDA == 1
 #include "DemagCUDA.h"
@@ -16,7 +17,7 @@ Demag::Demag(Mesh *pMesh_) :
 	Convolution<DemagKernel>(pMesh_->GetMeshSize(), pMesh_->GetMeshCellsize()),
 	ProgramStateNames(this, {VINFO(demag_pbc_images)}, {})
 {
-	pMesh = dynamic_cast<FMesh*>(pMesh_);
+	pMesh = pMesh_;
 
 	Uninitialize();
 
@@ -37,6 +38,7 @@ Demag::~Demag()
 	//thus must clear pbc flags in M
 
 	pMesh->M.set_pbc(false, false, false);
+	pMesh->M2.set_pbc(false, false, false);
 
 	//same for the CUDA version if we are in cuda mode
 #if COMPILECUDA == 1
@@ -59,8 +61,14 @@ BError Demag::Initialize(void)
 	}
 
 	//make sure to allocate memory for Hdemag if we need it
-	if (pMesh->meshODE.EvaluationSpeedup()) Hdemag.resize(pMesh->h, pMesh->meshRect);
-	else Hdemag.clear();
+	if (pMesh->pSMesh->EvaluationSpeedup()) {
+
+		Hdemag.resize(pMesh->h, pMesh->meshRect);
+	}
+	else {
+
+		Hdemag.clear();
+	}
 
 	Hdemag_calculated = false;
 	
@@ -89,7 +97,7 @@ BError Demag::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 #if COMPILECUDA == 1
 	if (pModuleCUDA) {
 
-		if (!error) error = pModuleCUDA->UpdateConfiguration();
+		if (!error) error = pModuleCUDA->UpdateConfiguration(cfgMessage);
 	}
 #endif
 
@@ -106,16 +114,26 @@ BError Demag::Set_PBC(INT3 demag_pbc_images_)
 	//set pbc conditions in M : if any are zero then pbc is disabled in that dimension
 	pMesh->M.set_pbc(demag_pbc_images.x, demag_pbc_images.y, demag_pbc_images.z);
 
+	if (pMesh->GetMeshType() == MESH_ANTIFERROMAGNETIC) {
+
+		pMesh->M2.set_pbc(demag_pbc_images.x, demag_pbc_images.y, demag_pbc_images.z);
+	}
+
 	//same for the CUDA version if we are in cuda mode
 #if COMPILECUDA == 1
 	if (pModuleCUDA) {
 
 		if (!pMesh->pMeshCUDA->M()->copyflags_from_cpuvec(pMesh->M)) return error(BERROR_GPUERROR_CRIT);
+		
+		if (pMesh->GetMeshType() == MESH_ANTIFERROMAGNETIC) {
+
+			if (!pMesh->pMeshCUDA->M2()->copyflags_from_cpuvec(pMesh->M2)) return error(BERROR_GPUERROR_CRIT);
+		}
 	}
 #endif
 
 	//update will be needed if pbc settings have changed
-	error = UpdateConfiguration();
+	error = UpdateConfiguration(UPDATECONFIG_DEMAG_CONVCHANGE);
 
 	return error;
 }
@@ -130,7 +148,7 @@ BError Demag::MakeCUDAModule(void)
 
 		//Note : it is posible pMeshCUDA has not been allocated yet, but this module has been created whilst cuda is switched on. This will happen when a new mesh is being made which adds this module by default.
 		//In this case, after the mesh has been fully made, it will call SwitchCUDAState on the mesh, which in turn will call this SwitchCUDAState method; then pMeshCUDA will not be nullptr and we can make the cuda module version
-		pModuleCUDA = new DemagCUDA(dynamic_cast<FMeshCUDA*>(pMesh->pMeshCUDA), this);
+		pModuleCUDA = new DemagCUDA(pMesh->pMeshCUDA, this);
 		error = pModuleCUDA->Error_On_Create();
 	}
 
@@ -141,11 +159,15 @@ BError Demag::MakeCUDAModule(void)
 
 double Demag::UpdateField(void) 
 {
-	if (pMesh->meshODE.EvaluationSpeedup()) {
+	///////////////////////////////////////////////////////////////////////////////////////////////
+	//////////////////////////////////////// EVAL SPEEDUP /////////////////////////////////////////
+	///////////////////////////////////////////////////////////////////////////////////////////////
+
+	if (pMesh->pSMesh->EvaluationSpeedup()) {
 
 		//use evaluation speedup method (Hdemag will have memory allocated - this was done in the Initialize method)
 
-		int update_type = pMesh->meshODE.Check_Step_Update();
+		int update_type = pMesh->pSMesh->Check_Step_Update();
 
 		if (update_type != EVALSPEEDUPSTEP_SKIP || !Hdemag_calculated) {
 
@@ -156,7 +178,14 @@ double Demag::UpdateField(void)
 				//calculate field and save it for next time : we'll need to use it (expecting update_type = EVALSPEEDUPSTEP_SKIP next time)
 
 				//convolute and get "energy" value
-				energy = Convolute(pMesh->M, Hdemag, true);
+				if (pMesh->GetMeshType() == MESH_FERROMAGNETIC) {
+
+					energy = Convolute(pMesh->M, Hdemag, true);
+				}
+				else if (pMesh->GetMeshType() == MESH_ANTIFERROMAGNETIC) {
+
+					energy = Convolute_AveragedInputs(pMesh->M, pMesh->M2, Hdemag, true);
+				}
 
 				Hdemag_calculated = true;
 
@@ -169,7 +198,14 @@ double Demag::UpdateField(void)
 				//calculate field but do not save it for next time : we'll need to recalculate it again (expecting update_type != EVALSPEEDUPSTEP_SKIP again next time : EVALSPEEDUPSTEP_COMPUTE_NO_SAVE or EVALSPEEDUPSTEP_COMPUTE_AND_SAVE)
 
 				//convolute and get "energy" value
-				energy = Convolute(pMesh->M, pMesh->Heff, false);
+				if (pMesh->GetMeshType() == MESH_FERROMAGNETIC) {
+
+					energy = Convolute(pMesh->M, pMesh->Heff, false);
+				}
+				else if (pMesh->GetMeshType() == MESH_ANTIFERROMAGNETIC) {
+
+					energy = Convolute_AveragedInputs_DuplicatedOutputs(pMesh->M, pMesh->M2, pMesh->Heff, pMesh->Heff2, false);
+				}
 
 				//good practice to set this to false
 				Hdemag_calculated = false;
@@ -183,19 +219,45 @@ double Demag::UpdateField(void)
 			}
 		}
 
-		//add contribution to Heff
-		#pragma omp parallel for
-		for (int idx = 0; idx < Hdemag.linear_size(); idx++) {
+		if (pMesh->GetMeshType() == MESH_FERROMAGNETIC) {
 
-			pMesh->Heff[idx] += Hdemag[idx];
+			//add contribution to Heff
+#pragma omp parallel for
+			for (int idx = 0; idx < Hdemag.linear_size(); idx++) {
+
+				pMesh->Heff[idx] += Hdemag[idx];
+			}
+		}
+
+		else if (pMesh->GetMeshType() == MESH_ANTIFERROMAGNETIC) {
+
+			//add contribution to Heff and Heff2
+#pragma omp parallel for
+			for (int idx = 0; idx < Hdemag.linear_size(); idx++) {
+
+				pMesh->Heff[idx] += Hdemag[idx];
+				pMesh->Heff2[idx] += Hdemag[idx];
+			}
 		}
 	}
+
+	///////////////////////////////////////////////////////////////////////////////////////////////
+	///////////////////////////////////////// NO SPEEDUP //////////////////////////////////////////
+	///////////////////////////////////////////////////////////////////////////////////////////////
+
 	else {
 
 		//don't use evaluation speedup, so no need to use Hdemag (this won't have memory allocated anyway)
 
 		//convolute and get "energy" value
-		energy = Convolute(pMesh->M, pMesh->Heff, false);
+		if (pMesh->GetMeshType() == MESH_FERROMAGNETIC) {
+
+			energy = Convolute(pMesh->M, pMesh->Heff, false);
+		}
+		else if (pMesh->GetMeshType() == MESH_ANTIFERROMAGNETIC) {
+
+			energy = Convolute_AveragedInputs_DuplicatedOutputs(pMesh->M, pMesh->M2, pMesh->Heff, pMesh->Heff2, false);
+		}
 
 		//finish off energy value
 		if (pMesh->M.get_nonempty_cells()) energy *= -MU0 / (2 * pMesh->M.get_nonempty_cells());

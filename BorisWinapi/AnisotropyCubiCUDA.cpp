@@ -5,11 +5,11 @@
 
 #ifdef MODULE_ANICUBI
 
-#include "Mesh_FerromagneticCUDA.h"
+#include "MeshCUDA.h"
 
 //--------------- CUBIC
 
-Anisotropy_CubicCUDA::Anisotropy_CubicCUDA(FMeshCUDA* pMeshCUDA_)
+Anisotropy_CubicCUDA::Anisotropy_CubicCUDA(MeshCUDA* pMeshCUDA_)
 	: ModulesCUDA()
 {
 	pMeshCUDA = pMeshCUDA_;

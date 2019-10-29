@@ -48,12 +48,6 @@
     <Filter Include="SIMULATION">
       <UniqueIdentifier>{8168bf67-9e8a-4c8b-97cc-7f030cc7ce88}</UniqueIdentifier>
     </Filter>
-    <Filter Include="DIFF EQUATIONS - CUDA">
-      <UniqueIdentifier>{71d9802d-cc16-4e0b-ab33-b186772c35cc}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="DIFF EQUATIONS">
-      <UniqueIdentifier>{21acb381-2343-4d11-ac9d-4dbe490bba1b}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Header Files">
       <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
       <Extensions>h;hpp;hxx;hm;inl;inc;xsd</Extensions>
@@ -130,6 +124,24 @@
     <Filter Include="EXCHANGE - CUDA">
       <UniqueIdentifier>{8bed687c-fe34-444d-9fd5-70d936b4dce2}</UniqueIdentifier>
     </Filter>
+    <Filter Include="DIFF EQUATIONS INTERFACE">
+      <UniqueIdentifier>{dc12c84a-9be4-44e8-863b-85fe624c335e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="DIFF EQUATIONS FM">
+      <UniqueIdentifier>{21acb381-2343-4d11-ac9d-4dbe490bba1b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="DIFF EQUATIONS FM - CUDA">
+      <UniqueIdentifier>{71d9802d-cc16-4e0b-ab33-b186772c35cc}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="DIFF EQUATIONS INTERFACE - CUDA">
+      <UniqueIdentifier>{64b693fb-8582-44f3-819c-9aa8e5e2e37e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="DIFF EQUATIONS AFM">
+      <UniqueIdentifier>{71107f28-a016-4372-bc08-c83e77bf0135}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="DIFF EQUATIONS AFM - CUDA">
+      <UniqueIdentifier>{5f26914b-0f43-49a2-a4ee-2e5155e418cb}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <Text Include="ReadMe.txt" />
@@ -192,9 +204,6 @@
     <ClInclude Include="ZeemanCUDA.h">
       <Filter>MODULES - CUDA</Filter>
     </ClInclude>
-    <ClInclude Include="DiffEq.h">
-      <Filter>DIFF EQUATIONS</Filter>
-    </ClInclude>
     <ClInclude Include="MaterialParameter.h">
       <Filter>MAT PARAMS</Filter>
     </ClInclude>
@@ -245,12 +254,6 @@
     </ClInclude>
     <ClInclude Include="SimulationData.h">
       <Filter>SIMULATION</Filter>
-    </ClInclude>
-    <ClInclude Include="DiffEqCUDA.h">
-      <Filter>DIFF EQUATIONS - CUDA</Filter>
-    </ClInclude>
-    <ClInclude Include="DiffEq_Defs.h">
-      <Filter>DIFF EQUATIONS</Filter>
     </ClInclude>
     <ClInclude Include="MeshParamsCUDA.h">
       <Filter>MAT PARAMS - CUDA</Filter>
@@ -342,17 +345,8 @@
     <ClInclude Include="MeshDisplayCUDA.h">
       <Filter>MESHES INTERFACE - CUDA</Filter>
     </ClInclude>
-    <ClInclude Include="DiffEq_EquationsCUDA.h">
-      <Filter>DIFF EQUATIONS - CUDA</Filter>
-    </ClInclude>
-    <ClInclude Include="ManagedDiffEqCUDA.h">
-      <Filter>DIFF EQUATIONS - CUDA</Filter>
-    </ClInclude>
     <ClInclude Include="ManagedMeshCUDA.h">
       <Filter>MESHES INTERFACE - CUDA</Filter>
-    </ClInclude>
-    <ClInclude Include="DiffEq_SEquationsCUDA.h">
-      <Filter>DIFF EQUATIONS - CUDA</Filter>
     </ClInclude>
     <ClInclude Include="Mesh_InsulatorCUDA.h">
       <Filter>MESHES - CUDA</Filter>
@@ -516,6 +510,57 @@
     <ClInclude Include="resource.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Mesh_AntiFerromagnetic.h">
+      <Filter>MESHES</Filter>
+    </ClInclude>
+    <ClInclude Include="Mesh_AntiFerromagneticCUDA.h">
+      <Filter>MESHES - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="DiffEqFM.h">
+      <Filter>DIFF EQUATIONS FM</Filter>
+    </ClInclude>
+    <ClInclude Include="DiffEqFMCUDA.h">
+      <Filter>DIFF EQUATIONS FM - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="ManagedDiffEqFMCUDA.h">
+      <Filter>DIFF EQUATIONS FM - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="DiffEqFM_EquationsCUDA.h">
+      <Filter>DIFF EQUATIONS FM - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="DiffEqFM_SEquationsCUDA.h">
+      <Filter>DIFF EQUATIONS FM - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="DiffEq.h">
+      <Filter>DIFF EQUATIONS INTERFACE</Filter>
+    </ClInclude>
+    <ClInclude Include="DiffEq_Common.h">
+      <Filter>DIFF EQUATIONS INTERFACE</Filter>
+    </ClInclude>
+    <ClInclude Include="DiffEq_Defs.h">
+      <Filter>DIFF EQUATIONS INTERFACE</Filter>
+    </ClInclude>
+    <ClInclude Include="DiffEq_CommonCUDA.h">
+      <Filter>DIFF EQUATIONS INTERFACE - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="DiffEqCUDA.h">
+      <Filter>DIFF EQUATIONS INTERFACE - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="DiffEqAFM.h">
+      <Filter>DIFF EQUATIONS AFM</Filter>
+    </ClInclude>
+    <ClInclude Include="DiffEqAFM_SEquationsCUDA.h">
+      <Filter>DIFF EQUATIONS AFM - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="DiffEqAFMCUDA.h">
+      <Filter>DIFF EQUATIONS AFM - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="ManagedDiffEqAFMCUDA.h">
+      <Filter>DIFF EQUATIONS AFM - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="DiffEqAFM_EquationsCUDA.h">
+      <Filter>DIFF EQUATIONS AFM - CUDA</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="BorisGraphics.cpp">
@@ -572,15 +617,6 @@
     <ClCompile Include="SurfExchange.cpp">
       <Filter>MODULES</Filter>
     </ClCompile>
-    <ClCompile Include="DiffEq.cpp">
-      <Filter>DIFF EQUATIONS</Filter>
-    </ClCompile>
-    <ClCompile Include="DiffEq_Equations.cpp">
-      <Filter>DIFF EQUATIONS</Filter>
-    </ClCompile>
-    <ClCompile Include="DiffEq_SEquations.cpp">
-      <Filter>DIFF EQUATIONS</Filter>
-    </ClCompile>
     <ClCompile Include="MaterialParameterFormulas.cpp">
       <Filter>MAT PARAMS</Filter>
     </ClCompile>
@@ -622,9 +658,6 @@
     </ClCompile>
     <ClCompile Include="SimulationData.cpp">
       <Filter>SIMULATION</Filter>
-    </ClCompile>
-    <ClCompile Include="DiffEqCUDA.cpp">
-      <Filter>DIFF EQUATIONS - CUDA</Filter>
     </ClCompile>
     <ClCompile Include="MeshParamsCUDA.cpp">
       <Filter>MAT PARAMS - CUDA</Filter>
@@ -704,20 +737,8 @@
     <ClCompile Include="MeshModules.cpp">
       <Filter>MESHES INTERFACE</Filter>
     </ClCompile>
-    <ClCompile Include="DiffEq_Iterate.cpp">
-      <Filter>DIFF EQUATIONS</Filter>
-    </ClCompile>
-    <ClCompile Include="DiffEq_Common.cpp">
-      <Filter>DIFF EQUATIONS</Filter>
-    </ClCompile>
-    <ClCompile Include="DiffEq_IterateCUDA.cpp">
-      <Filter>DIFF EQUATIONS - CUDA</Filter>
-    </ClCompile>
     <ClCompile Include="ManagedMeshCUDA.cpp">
       <Filter>MESHES INTERFACE - CUDA</Filter>
-    </ClCompile>
-    <ClCompile Include="ManagedDiffEqCUDA.cpp">
-      <Filter>DIFF EQUATIONS - CUDA</Filter>
     </ClCompile>
     <ClCompile Include="Mesh_InsulatorCUDA.cpp">
       <Filter>MESHES - CUDA</Filter>
@@ -893,44 +914,11 @@
     <ClCompile Include="OVF2_Handlers.cpp">
       <Filter>SIMULATION</Filter>
     </ClCompile>
-    <ClCompile Include="DiffEq_Evals_Euler.cpp">
-      <Filter>DIFF EQUATIONS</Filter>
-    </ClCompile>
-    <ClCompile Include="DiffEq_Evals_TEuler.cpp">
-      <Filter>DIFF EQUATIONS</Filter>
-    </ClCompile>
-    <ClCompile Include="DiffEq_Evals_ABM.cpp">
-      <Filter>DIFF EQUATIONS</Filter>
-    </ClCompile>
-    <ClCompile Include="DiffEq_Evals_RK4.cpp">
-      <Filter>DIFF EQUATIONS</Filter>
-    </ClCompile>
-    <ClCompile Include="DiffEq_Evals_RKF.cpp">
-      <Filter>DIFF EQUATIONS</Filter>
-    </ClCompile>
-    <ClCompile Include="DiffEq_Evals.cpp">
-      <Filter>DIFF EQUATIONS</Filter>
-    </ClCompile>
-    <ClCompile Include="DiffEq_Evals_RK23.cpp">
-      <Filter>DIFF EQUATIONS</Filter>
-    </ClCompile>
     <ClCompile Include="BorisInteractiveObjects_Ctrl.cpp">
       <Filter>INTERACTIVE OBJ</Filter>
     </ClCompile>
     <ClCompile Include="BorisInteractiveObjects_State.cpp">
       <Filter>INTERACTIVE OBJ</Filter>
-    </ClCompile>
-    <ClCompile Include="DiffEq_Evals_SD.cpp">
-      <Filter>DIFF EQUATIONS</Filter>
-    </ClCompile>
-    <ClCompile Include="DiffEq_Evals_AHeun.cpp">
-      <Filter>DIFF EQUATIONS</Filter>
-    </ClCompile>
-    <ClCompile Include="DiffEq_Evals_RKCK45.cpp">
-      <Filter>DIFF EQUATIONS</Filter>
-    </ClCompile>
-    <ClCompile Include="DiffEq_Evals_RKDP54.cpp">
-      <Filter>DIFF EQUATIONS</Filter>
     </ClCompile>
     <ClCompile Include="DemagTFunc_PBC.cpp">
       <Filter>FUNCS</Filter>
@@ -968,6 +956,141 @@
     <ClCompile Include="SkyrmionTrackCUDA.cpp">
       <Filter>MESHES</Filter>
     </ClCompile>
+    <ClCompile Include="Mesh_AntiFerromagnetic.cpp">
+      <Filter>MESHES</Filter>
+    </ClCompile>
+    <ClCompile Include="Mesh_AntiFerromagnetic_Control.cpp">
+      <Filter>MESHES</Filter>
+    </ClCompile>
+    <ClCompile Include="Mesh_AntiFerromagneticCUDA.cpp">
+      <Filter>MESHES - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="DiffEqFM.cpp">
+      <Filter>DIFF EQUATIONS FM</Filter>
+    </ClCompile>
+    <ClCompile Include="DiffEqFM_Equations.cpp">
+      <Filter>DIFF EQUATIONS FM</Filter>
+    </ClCompile>
+    <ClCompile Include="DiffEqFM_Evals_ABM.cpp">
+      <Filter>DIFF EQUATIONS FM</Filter>
+    </ClCompile>
+    <ClCompile Include="DiffEqFM_Evals_AHeun.cpp">
+      <Filter>DIFF EQUATIONS FM</Filter>
+    </ClCompile>
+    <ClCompile Include="DiffEqFM_Evals_Euler.cpp">
+      <Filter>DIFF EQUATIONS FM</Filter>
+    </ClCompile>
+    <ClCompile Include="DiffEqFM_Evals_RK4.cpp">
+      <Filter>DIFF EQUATIONS FM</Filter>
+    </ClCompile>
+    <ClCompile Include="DiffEqFM_Evals_RK23.cpp">
+      <Filter>DIFF EQUATIONS FM</Filter>
+    </ClCompile>
+    <ClCompile Include="DiffEqFM_Evals_RKCK45.cpp">
+      <Filter>DIFF EQUATIONS FM</Filter>
+    </ClCompile>
+    <ClCompile Include="DiffEqFM_Evals_RKDP54.cpp">
+      <Filter>DIFF EQUATIONS FM</Filter>
+    </ClCompile>
+    <ClCompile Include="DiffEqFM_Evals_RKF.cpp">
+      <Filter>DIFF EQUATIONS FM</Filter>
+    </ClCompile>
+    <ClCompile Include="DiffEqFM_Evals_SD.cpp">
+      <Filter>DIFF EQUATIONS FM</Filter>
+    </ClCompile>
+    <ClCompile Include="DiffEqFM_Evals_TEuler.cpp">
+      <Filter>DIFF EQUATIONS FM</Filter>
+    </ClCompile>
+    <ClCompile Include="DiffEqFM_SEquations.cpp">
+      <Filter>DIFF EQUATIONS FM</Filter>
+    </ClCompile>
+    <ClCompile Include="DiffEqFMCUDA.cpp">
+      <Filter>DIFF EQUATIONS FM - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="ManagedDiffEqFMCUDA.cpp">
+      <Filter>DIFF EQUATIONS FM - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="DiffEq.cpp">
+      <Filter>DIFF EQUATIONS INTERFACE</Filter>
+    </ClCompile>
+    <ClCompile Include="DiffEq_Common.cpp">
+      <Filter>DIFF EQUATIONS INTERFACE</Filter>
+    </ClCompile>
+    <ClCompile Include="DiffEq_Iterate.cpp">
+      <Filter>DIFF EQUATIONS INTERFACE</Filter>
+    </ClCompile>
+    <ClCompile Include="DiffEq_CommonCUDA.cpp">
+      <Filter>DIFF EQUATIONS INTERFACE - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="DiffEq_IterateCUDA.cpp">
+      <Filter>DIFF EQUATIONS INTERFACE - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="DiffEqCUDA.cpp">
+      <Filter>DIFF EQUATIONS INTERFACE - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="DiffEqAFM.cpp">
+      <Filter>DIFF EQUATIONS AFM</Filter>
+    </ClCompile>
+    <ClCompile Include="DiffEqAFM_Equations.cpp">
+      <Filter>DIFF EQUATIONS AFM</Filter>
+    </ClCompile>
+    <ClCompile Include="DiffEqAFM_Evals_ABM.cpp">
+      <Filter>DIFF EQUATIONS AFM</Filter>
+    </ClCompile>
+    <ClCompile Include="DiffEqAFM_Evals_AHeun.cpp">
+      <Filter>DIFF EQUATIONS AFM</Filter>
+    </ClCompile>
+    <ClCompile Include="DiffEqAFM_Evals_Euler.cpp">
+      <Filter>DIFF EQUATIONS AFM</Filter>
+    </ClCompile>
+    <ClCompile Include="DiffEqAFM_Evals_RK4.cpp">
+      <Filter>DIFF EQUATIONS AFM</Filter>
+    </ClCompile>
+    <ClCompile Include="DiffEqAFM_Evals_RK23.cpp">
+      <Filter>DIFF EQUATIONS AFM</Filter>
+    </ClCompile>
+    <ClCompile Include="DiffEqAFM_Evals_RKCK45.cpp">
+      <Filter>DIFF EQUATIONS AFM</Filter>
+    </ClCompile>
+    <ClCompile Include="DiffEqAFM_Evals_RKDP54.cpp">
+      <Filter>DIFF EQUATIONS AFM</Filter>
+    </ClCompile>
+    <ClCompile Include="DiffEqAFM_Evals_RKF.cpp">
+      <Filter>DIFF EQUATIONS AFM</Filter>
+    </ClCompile>
+    <ClCompile Include="DiffEqAFM_Evals_SD.cpp">
+      <Filter>DIFF EQUATIONS AFM</Filter>
+    </ClCompile>
+    <ClCompile Include="DiffEqAFM_Evals_TEuler.cpp">
+      <Filter>DIFF EQUATIONS AFM</Filter>
+    </ClCompile>
+    <ClCompile Include="DiffEqAFM_SEquations.cpp">
+      <Filter>DIFF EQUATIONS AFM</Filter>
+    </ClCompile>
+    <ClCompile Include="DiffEqAFMCUDA.cpp">
+      <Filter>DIFF EQUATIONS AFM - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="ManagedDiffEqAFMCUDA.cpp">
+      <Filter>DIFF EQUATIONS AFM - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="Mesh_Ferromagnetic_ODEControl.cpp">
+      <Filter>MESHES</Filter>
+    </ClCompile>
+    <ClCompile Include="Mesh_AntiFerromagnetic_ODEControl.cpp">
+      <Filter>MESHES</Filter>
+    </ClCompile>
+    <ClCompile Include="Transport_Spin_Display.cpp">
+      <Filter>TRANSPORT SOLVER</Filter>
+    </ClCompile>
+    <ClCompile Include="STransport_Spin_Display.cpp">
+      <Filter>TRANSPORT SOLVER</Filter>
+    </ClCompile>
+    <ClCompile Include="STransportCUDA_Spin_Display.cpp">
+      <Filter>TRANSPORT SOLVER - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="Transport_Charge_Display.cpp">
+      <Filter>TRANSPORT SOLVER</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="BorisWinapi.rc">
@@ -997,9 +1120,6 @@
     <CudaCompile Include="ZeemanCUDA.cu">
       <Filter>MODULES - CUDA</Filter>
     </CudaCompile>
-    <CudaCompile Include="DiffEq_EvalsCUDA.cu">
-      <Filter>DIFF EQUATIONS - CUDA</Filter>
-    </CudaCompile>
     <CudaCompile Include="ModulesCUDA.cu">
       <Filter>MODULES INTERFACE - CUDA</Filter>
     </CudaCompile>
@@ -1021,9 +1141,6 @@
     <CudaCompile Include="StrayFieldCUDA.cu">
       <Filter>MODULES - SUPERMESH - CUDA</Filter>
     </CudaCompile>
-    <CudaCompile Include="DiffEq_SEquationsCUDA.cu">
-      <Filter>DIFF EQUATIONS - CUDA</Filter>
-    </CudaCompile>
     <CudaCompile Include="OerstedKernelCUDA.cu">
       <Filter>CONVOLUTION - CUDA</Filter>
     </CudaCompile>
@@ -1032,9 +1149,6 @@
     </CudaCompile>
     <CudaCompile Include="HeatCUDA.cu">
       <Filter>MODULES - CUDA</Filter>
-    </CudaCompile>
-    <CudaCompile Include="DiffEqCUDA.cu">
-      <Filter>DIFF EQUATIONS - CUDA</Filter>
     </CudaCompile>
     <CudaCompile Include="SurfExchangeCUDA.cu">
       <Filter>MODULES - CUDA</Filter>
@@ -1066,41 +1180,8 @@
     <CudaCompile Include="STransportCUDA.cu">
       <Filter>TRANSPORT SOLVER - CUDA</Filter>
     </CudaCompile>
-    <CudaCompile Include="DiffEq_EvalsLLGCUDA.cu">
-      <Filter>DIFF EQUATIONS - CUDA</Filter>
-    </CudaCompile>
     <CudaCompile Include="DemagKernelCollectionCUDA_Mult.cu">
       <Filter>CONVOLUTION - CUDA</Filter>
-    </CudaCompile>
-    <CudaCompile Include="DiffEq_EvalsCUDA_Euler.cu">
-      <Filter>DIFF EQUATIONS - CUDA</Filter>
-    </CudaCompile>
-    <CudaCompile Include="DiffEq_EvalsCUDA_TEuler.cu">
-      <Filter>DIFF EQUATIONS - CUDA</Filter>
-    </CudaCompile>
-    <CudaCompile Include="DiffEq_EvalsCUDA_ABM.cu">
-      <Filter>DIFF EQUATIONS - CUDA</Filter>
-    </CudaCompile>
-    <CudaCompile Include="DiffEq_EvalsCUDA_RK4.cu">
-      <Filter>DIFF EQUATIONS - CUDA</Filter>
-    </CudaCompile>
-    <CudaCompile Include="DiffEq_EvalsCUDA_RKF.cu">
-      <Filter>DIFF EQUATIONS - CUDA</Filter>
-    </CudaCompile>
-    <CudaCompile Include="DiffEq_EvalsCUDA_RK23.cu">
-      <Filter>DIFF EQUATIONS - CUDA</Filter>
-    </CudaCompile>
-    <CudaCompile Include="DiffEq_EvalsCUDA_SD.cu">
-      <Filter>DIFF EQUATIONS - CUDA</Filter>
-    </CudaCompile>
-    <CudaCompile Include="DiffEq_EvalsCUDA_AHeun.cu">
-      <Filter>DIFF EQUATIONS - CUDA</Filter>
-    </CudaCompile>
-    <CudaCompile Include="DiffEq_EvalsCUDA_RKCK45.cu">
-      <Filter>DIFF EQUATIONS - CUDA</Filter>
-    </CudaCompile>
-    <CudaCompile Include="DiffEq_EvalsCUDA_RKDP54.cu">
-      <Filter>DIFF EQUATIONS - CUDA</Filter>
     </CudaCompile>
     <CudaCompile Include="DMExchangeCUDA.cu">
       <Filter>EXCHANGE - CUDA</Filter>
@@ -1111,8 +1192,107 @@
     <CudaCompile Include="iDMExchangeCUDA.cu">
       <Filter>EXCHANGE - CUDA</Filter>
     </CudaCompile>
-    <CudaCompile Include="ExchangeBaseCUDA.cu">
+    <CudaCompile Include="DiffEqFM_SEquationsCUDA.cu">
+      <Filter>DIFF EQUATIONS FM - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="DiffEqFMCUDA.cu">
+      <Filter>DIFF EQUATIONS FM - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="DiffEqFM_EvalsCUDA.cu">
+      <Filter>DIFF EQUATIONS FM - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="DiffEqFM_EvalsCUDA_ABM.cu">
+      <Filter>DIFF EQUATIONS FM - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="DiffEqFM_EvalsCUDA_AHeun.cu">
+      <Filter>DIFF EQUATIONS FM - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="DiffEqFM_EvalsCUDA_Euler.cu">
+      <Filter>DIFF EQUATIONS FM - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="DiffEqFM_EvalsCUDA_RK4.cu">
+      <Filter>DIFF EQUATIONS FM - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="DiffEqFM_EvalsCUDA_RK23.cu">
+      <Filter>DIFF EQUATIONS FM - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="DiffEqFM_EvalsCUDA_RKCK45.cu">
+      <Filter>DIFF EQUATIONS FM - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="DiffEqFM_EvalsCUDA_RKDP54.cu">
+      <Filter>DIFF EQUATIONS FM - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="DiffEqFM_EvalsCUDA_RKF.cu">
+      <Filter>DIFF EQUATIONS FM - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="DiffEqFM_EvalsCUDA_SD.cu">
+      <Filter>DIFF EQUATIONS FM - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="DiffEqFM_EvalsCUDA_TEuler.cu">
+      <Filter>DIFF EQUATIONS FM - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="DiffEqFM_EvalsLLGCUDA.cu">
+      <Filter>DIFF EQUATIONS FM - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="DiffEqAFM_EvalsCUDA_RK23.cu">
+      <Filter>DIFF EQUATIONS AFM - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="DiffEqAFM_EvalsCUDA_RKCK45.cu">
+      <Filter>DIFF EQUATIONS AFM - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="DiffEqAFM_EvalsCUDA_RKDP54.cu">
+      <Filter>DIFF EQUATIONS AFM - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="DiffEqAFM_EvalsCUDA_RKF.cu">
+      <Filter>DIFF EQUATIONS AFM - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="DiffEqAFM_EvalsCUDA_SD.cu">
+      <Filter>DIFF EQUATIONS AFM - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="DiffEqAFM_EvalsCUDA_TEuler.cu">
+      <Filter>DIFF EQUATIONS AFM - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="DiffEqAFM_EvalsLLGCUDA.cu">
+      <Filter>DIFF EQUATIONS AFM - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="DiffEqAFM_SEquationsCUDA.cu">
+      <Filter>DIFF EQUATIONS AFM - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="DiffEqAFMCUDA.cu">
+      <Filter>DIFF EQUATIONS AFM - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="DiffEqAFM_EvalsCUDA.cu">
+      <Filter>DIFF EQUATIONS AFM - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="DiffEqAFM_EvalsCUDA_ABM.cu">
+      <Filter>DIFF EQUATIONS AFM - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="DiffEqAFM_EvalsCUDA_AHeun.cu">
+      <Filter>DIFF EQUATIONS AFM - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="DiffEqAFM_EvalsCUDA_Euler.cu">
+      <Filter>DIFF EQUATIONS AFM - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="DiffEqAFM_EvalsCUDA_RK4.cu">
+      <Filter>DIFF EQUATIONS AFM - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="DiffEq_CommonCUDA.cu">
+      <Filter>DIFF EQUATIONS INTERFACE - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="ExchangeCoupling_CUDA.cu">
       <Filter>EXCHANGE - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="DMExchangeCoupling_CUDA.cu">
+      <Filter>EXCHANGE - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="iDMExchangeCoupling_CUDA.cu">
+      <Filter>EXCHANGE - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="TransportCUDA_Spin_Display.cu">
+      <Filter>TRANSPORT SOLVER - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="TransportCUDA_Charge_Display.cu">
+      <Filter>TRANSPORT SOLVER - CUDA</Filter>
     </CudaCompile>
   </ItemGroup>
 </Project>

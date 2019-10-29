@@ -26,6 +26,8 @@ class TransportCUDA :
 
 	friend Transport;
 	friend STransportCUDA;
+	friend TransportCUDA_Spin_V_Funcs;
+	friend TransportCUDA_Spin_S_Funcs;
 
 private:
 
@@ -35,8 +37,12 @@ private:
 	//pointer to cpuversion of MeshCUDA : *pMesh holds pMeshCUDA
 	Mesh* pMesh;
 
+	//Same for the supermesgh
 	SuperMeshCUDA* pSMeshCUDA;
 	SuperMesh* pSMesh;
+
+	//pointer to cpu version of this module
+	Transport* pTransport;
 
 	//TransportCUDA_V_Funcs holds the Poisson_RHS method used in solving the Poisson equation.
 	//Pass the managed TransportCUDA_V_Funcs object to IteratePoisson_SOR method in V -  see IterateTransportSolver_SOR method here. IteratePoisson_SOR will then use the Poisson_RHS method defined in TransportCUDA_V_Funcs.
@@ -46,8 +52,18 @@ private:
 	cu_obj<TransportCUDA_Spin_V_Funcs> poisson_Spin_V;
 	cu_obj<TransportCUDA_Spin_S_Funcs> poisson_Spin_S;
 
+	//dM_dt VEC when we need to do vector calculus operations on it
+	cu_obj<cuVEC_VC<cuReal3>> dM_dt;
+
+	//for Poisson equations for V and S some values are fixed during relaxation, so pre-calculate them and store here to re-use.
+	cu_obj <cuVEC<cuBReal>> delsq_V_fixed;
+	cu_obj <cuVEC<cuReal3>> delsq_S_fixed;
+
 	//used to compute spin current components and spin torque for display purposes - only calculated and memory allocated when asked to do so.
 	cu_obj<cuVEC<cuReal3>> displayVEC;
+
+	//used to compute charge current for display purposes (and in some cases we need to run vector calculus operations on it)
+	cu_obj<cuVEC_VC<cuReal3>> displayVEC_VC;
 
 private:
 
@@ -61,6 +77,18 @@ private:
 	//prepare displayVEC ready for calculation of display quantity
 	bool PrepareDisplayVEC(DBL3 cellsize);
 
+	//prepare displayVEC_VC ready for calculation of display quantity - used for charge current
+	bool PrepareDisplayVEC_VC(DBL3 cellsize);
+
+	//check if dM_dt Calculation should be enabled
+	bool Need_dM_dt_Calculation(void);
+
+	//check if the delsq_V_fixed VEC is needed
+	bool Need_delsq_V_fixed_Precalculation(void);
+
+	//check if the delsq_S_fixed VEC is needed
+	bool Need_delsq_S_fixed_Precalculation(void);
+
 	//-------------------Calculation Methods
 
 	//calculate electrical conductivity with AMR present
@@ -69,38 +97,36 @@ private:
 	//calculate electrical conductivity without AMR
 	void CalculateElectricalConductivity_NoAMR(void);
 
-	//calculate charge current density over the mesh
-	void CalculateCurrentDensity(void);
+	//calculate electric field as the negative gradient of V
+	void CalculateElectricField(void);
 
 	//calculate total current flowing into an electrode with given box - return ground_current and net_current values
 	cuBReal CalculateElectrodeCurrent(cuBox electrode_box);
 
 	//Charge transport only : V
 
-	//take a single iteration of the Transport solver in this Mesh (cannot solve fully in one go as there may be other meshes so need boundary conditions set externally). Use adaptive SOR. Return relaxation value (tends to zero).
-	void IterateChargeSolver_aSOR(bool start_iters, cuBReal conv_error, cu_obj<cuBReal>& max_error, cu_obj<cuBReal>& max_value);
 	//take a single iteration of the Transport solver in this Mesh (cannot solve fully in one go as there may be other meshes so need boundary conditions set externally). Use SOR. Return relaxation value (tends to zero).
 	void IterateChargeSolver_SOR(cu_obj<cuBReal>& damping, cu_obj<cuBReal>& max_error, cu_obj<cuBReal>& max_value);
 
 	//Calculation Methods used by Spin Current Solver only
 
-	//take a single iteration of the charge transport solver (within the spin current solver) in this Mesh (cannot solve fully in one go as there may be other meshes so need boundary conditions set externally). Use adaptive SOR. Return relaxation value (tends to zero).
-	//use_NNeu flag indicates if we need to use the homogeneous or non-homogeneous Neumann boundary conditions versions
-	void IterateSpinSolver_Charge_aSOR(bool start_iters, cuBReal conv_error, cu_obj<cuBReal>& max_error, cu_obj<cuBReal>& max_value, bool use_NNeu);
+	//before iterating the spin solver (charge part) we need to prime it : pre-compute values which do not change as the spin solver relaxes.
+	void PrimeSpinSolver_Charge(void);
+
 	//take a single iteration of the charge transport solver (within the spin current solver) in this Mesh (cannot solve fully in one go as there may be other meshes so need boundary conditions set externally). Use SOR. Return relaxation value (tends to zero).
 	//use_NNeu flag indicates if we need to use the homogeneous or non-homogeneous Neumann boundary conditions versions
 	void IterateSpinSolver_Charge_SOR(cu_obj<cuBReal>& damping, cu_obj<cuBReal>& max_error, cu_obj<cuBReal>& max_value, bool use_NNeu);
 
-	//solve for spin accumulation using Poisson equation for delsq_S. Use adaptive SOR.
-	//use_NNeu flag indicates if we need to use the homogeneous or non-homogeneous Neumann boundary conditions versions
-	void IterateSpinSolver_Spin_aSOR(bool start_iters, cuBReal conv_error, cu_obj<cuBReal>& max_error, cu_obj<cuBReal>& max_value, bool use_NNeu);
+	//before iterating the spin solver (spin part) we need to prime it : pre-compute values which do not change as the spin solver relaxes.
+	void PrimeSpinSolver_Spin(void);
+
 	//solve for spin accumulation using Poisson equation for delsq_S. Use SOR.
 	//use_NNeu flag indicates if we need to use the homogeneous or non-homogeneous Neumann boundary conditions versions
 	void IterateSpinSolver_Spin_SOR(cu_obj<cuBReal>& damping, cu_obj<cuBReal>& max_error, cu_obj<cuBReal>& max_value, bool use_NNeu);
 
 public:
 
-	TransportCUDA(Mesh* pMesh_, SuperMesh* pSMesh_);
+	TransportCUDA(Mesh* pMesh_, SuperMesh* pSMesh_, Transport* pTransport_);
 	~TransportCUDA();
 
 	//-------------------Abstract base class method implementations
@@ -109,7 +135,7 @@ public:
 
 	BError Initialize(void);
 
-	BError UpdateConfiguration(UPDATECONFIG_ cfgMessage = UPDATECONFIG_GENERIC);
+	BError UpdateConfiguration(UPDATECONFIG_ cfgMessage);
 
 	void UpdateField(void);
 
@@ -131,6 +157,8 @@ public:
 
 	//return x, y, or z component of spin current (component = 0, 1, or 2)
 	cu_obj<cuVEC<cuReal3>>& GetSpinCurrent(int component);
+
+	cu_obj<cuVEC_VC<cuReal3>>& GetChargeCurrent(void);
 
 	//return spin torque computed from spin accumulation
 	cu_obj<cuVEC<cuReal3>>& GetSpinTorque(void);

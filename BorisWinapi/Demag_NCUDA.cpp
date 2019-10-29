@@ -5,9 +5,9 @@
 
 #ifdef MODULE_DEMAG_N
 
-#include "Mesh_FerromagneticCUDA.h"
+#include "MeshCUDA.h"
 
-Demag_NCUDA::Demag_NCUDA(FMeshCUDA* pMeshCUDA_)
+Demag_NCUDA::Demag_NCUDA(MeshCUDA* pMeshCUDA_)
 	: ModulesCUDA()
 {
 	pMeshCUDA = pMeshCUDA_;

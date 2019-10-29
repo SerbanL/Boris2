@@ -11,11 +11,20 @@ class STransport;
 
 #ifdef MODULE_TRANSPORT
 
+#if COMPILECUDA == 1
+#include "TransportCUDA.h"
+#endif
+
 class Transport :
 	public Modules,
 	public ProgramState<Transport, tuple<>,	tuple<>>
 {
+	
 	friend STransport;
+
+#if COMPILECUDA == 1
+	friend TransportCUDA;
+#endif
 
 private:
 
@@ -27,18 +36,26 @@ private:
 	//used to compute spin current components and spin torque for display purposes - only calculated and memory allocated when asked to do so.
 	VEC<DBL3> displayVEC;
 
+	//used to compute charge current for display purposes (and in some cases we need to run vector calculus operations on it)
+	VEC_VC<DBL3> displayVEC_VC;
+
+	//dM_dt VEC when we need to do vector calculus operations on it
+	//used inside a Transport const function, so needs to be mutable, else the compiler is unhappy!
+	mutable VEC_VC<DBL3> dM_dt;
+
+	//for Poisson equations for V and S some values are fixed during relaxation, so pre-calculate them and store here to re-use.
+	mutable VEC<double> delsq_V_fixed;
+	mutable VEC<DBL3> delsq_S_fixed;
+
 private:
 
 	//-------------------Calculation Methods
-	
-	//calculate charge current density over the mesh : applies to both charge-only transport and spin transport solvers (if check used inside this method)
-	void CalculateCurrentDensity(void);
+
+	//calculate electric field as the negative gradient of V
+	void CalculateElectricField(void);
 
 	//Charge transport only : V
 
-	//take a single iteration of the charge transport solver in this Mesh (cannot solve fully in one go as there may be other meshes so need boundary conditions set externally). Use adaptive SOR. 
-	//Return un-normalized error (maximum change in quantity from one iteration to the next) - first - and maximum value  -second - divide them to obtain normalized error
-	DBL2 IterateChargeSolver_aSOR(bool start_iters, double conv_error);
 	//take a single iteration of the charge transport solver in this Mesh (cannot solve fully in one go as there may be other meshes so need boundary conditions set externally). Use SOR. 
 	//Return un-normalized error (maximum change in quantity from one iteration to the next) - first - and maximum value  -second - divide them to obtain normalized error
 	DBL2 IterateChargeSolver_SOR(double damping);
@@ -48,22 +65,22 @@ private:
 
 	//Calculation Methods used by Spin Current Solver only
 
-	//take a single iteration of the charge transport solver (within the spin current solver) in this Mesh (cannot solve fully in one go as there may be other meshes so need boundary conditions set externally). Use adaptive SOR. 
-	//Return un-normalized error (maximum change in quantity from one iteration to the next) - first - and maximum value  -second - divide them to obtain normalized error
-	DBL2 IterateSpinSolver_Charge_aSOR(bool start_iters, double conv_error);
 	//take a single iteration of the charge transport solver (within the spin current solver) in this Mesh (cannot solve fully in one go as there may be other meshes so need boundary conditions set externally). Use SOR. 
 	//Return un-normalized error (maximum change in quantity from one iteration to the next) - first - and maximum value  -second - divide them to obtain normalized error
 	DBL2 IterateSpinSolver_Charge_SOR(double damping);
 
+	//before iterating the spin solver (charge part) we need to prime it : pre-compute values which do not change as the spin solver relaxes.
+	void PrimeSpinSolver_Charge(void);
+
 	//call-back method for Poisson equation to evaluate RHS
 	double Evaluate_SpinSolver_delsqV_RHS(int idx) const;
 
-	//solve for spin accumulation using Poisson equation for delsq_S. Use adaptive SOR. 
-	//Return un-normalized error (maximum change in quantity from one iteration to the next) - first - and maximum value  -second - divide them to obtain normalized error
-	DBL2 IterateSpinSolver_Spin_aSOR(bool start_iters, double conv_error);
 	//solve for spin accumulation using Poisson equation for delsq_S. Use SOR. 
 	//Return un-normalized error (maximum change in quantity from one iteration to the next) - first - and maximum value  -second - divide them to obtain normalized error
 	DBL2 IterateSpinSolver_Spin_SOR(double damping);
+
+	//before iterating the spin solver (spin part) we need to prime it : pre-compute values which do not change as the spin solver relaxes.
+	void PrimeSpinSolver_Spin(void);
 
 	//call-back method for Poisson equation for S
 	DBL3 Evaluate_SpinSolver_delsqS_RHS(int idx) const;
@@ -86,8 +103,20 @@ private:
 
 	void ClearFixedPotentialCells(void);
 
-	//prepare displayVEC ready for calculation of display quantity
+	//prepare displayVEC ready for calculation of display quantity - used for spin current
 	bool PrepareDisplayVEC(DBL3 cellsize);
+
+	//prepare displayVEC_VC ready for calculation of display quantity - used for charge current
+	bool PrepareDisplayVEC_VC(DBL3 cellsize);
+
+	//check if dM_dt Calculation should be enabled
+	bool Need_dM_dt_Calculation(void);
+
+	//check if the delsq_V_fixed VEC is needed
+	bool Need_delsq_V_fixed_Precalculation(void);
+
+	//check if the delsq_S_fixed VEC is needed
+	bool Need_delsq_S_fixed_Precalculation(void);
 
 public:
 
@@ -104,7 +133,7 @@ public:
 
 	BError Initialize(void);
 
-	BError UpdateConfiguration(UPDATECONFIG_ cfgMessage = UPDATECONFIG_GENERIC);
+	BError UpdateConfiguration(UPDATECONFIG_ cfgMessage);
 
 	BError MakeCUDAModule(void);
 
@@ -124,8 +153,8 @@ public:
 	double bfunc_V_pri(int cell1_idx, int cell2_idx) const;
 
 	//second order differential of V at cells either side of the boundary; delsq V = -grad V * grad elC / elC
-	double diff2_V_sec(DBL3 relpos_m1, DBL3 stencil) const;
-	double diff2_V_pri(int cell1_idx) const;
+	double diff2_V_sec(DBL3 relpos_m1, DBL3 stencil, DBL3 shift) const;
+	double diff2_V_pri(int cell1_idx, DBL3 shift) const;
 
 	//Spin transport : V and S
 	//CMBND for V
@@ -135,8 +164,8 @@ public:
 	double bfunc_st_V_sec(DBL3 relpos_m1, DBL3 shift, DBL3 stencil) const;
 	double bfunc_st_V_pri(int cell1_idx, int cell2_idx) const;
 
-	double diff2_st_V_sec(DBL3 relpos_m1, DBL3 stencil) const;
-	double diff2_st_V_pri(int cell1_idx) const;
+	double diff2_st_V_sec(DBL3 relpos_m1, DBL3 stencil, DBL3 shift) const;
+	double diff2_st_V_pri(int cell1_idx, DBL3 shift) const;
 
 	//CMBND for S
 	DBL3 afunc_st_S_sec(DBL3 relpos_m1, DBL3 shift, DBL3 stencil) const;
@@ -145,8 +174,8 @@ public:
 	double bfunc_st_S_sec(DBL3 relpos_m1, DBL3 shift, DBL3 stencil) const;
 	double bfunc_st_S_pri(int cell1_idx, int cell2_idx) const;
 
-	DBL3 diff2_st_S_sec(DBL3 relpos_m1, DBL3 stencil) const;
-	DBL3 diff2_st_S_pri(int cell1_idx) const;
+	DBL3 diff2_st_S_sec(DBL3 relpos_m1, DBL3 stencil, DBL3 shift) const;
+	DBL3 diff2_st_S_pri(int cell1_idx, DBL3 shift) const;
 
 	//multiply spin accumulation by these to obtain spin potential, i.e. Vs = (De / elC) * (e/muB) * S, evaluated at the boundary
 	double cfunc_sec(DBL3 relpos, DBL3 stencil) const;
@@ -178,11 +207,19 @@ public:
 
 	DBL3 GetAverageSpinCurrent(int component, Rect rectangle = Rect());
 
+	//calculate charge current density over the mesh : applies to both charge-only transport and spin transport solvers (if check used inside this method)
+	VEC_VC<DBL3>& GetChargeCurrent(void);
+
+	DBL3 GetAverageChargeCurrent(Rect rectangle = Rect());
+
 	//return spin torque computed from spin accumulation
 	VEC<DBL3>& GetSpinTorque(void);
 
 #if COMPILECUDA == 1
+	//Only use these if pModuleCUDA is enabled
 	cu_obj<cuVEC<cuReal3>>& GetSpinCurrentCUDA(int component);
+	cu_obj<cuVEC_VC<cuReal3>>& GetChargeCurrentCUDA(void);
+
 	cu_obj<cuVEC<cuReal3>>& GetSpinTorqueCUDA(void);
 #endif
 };

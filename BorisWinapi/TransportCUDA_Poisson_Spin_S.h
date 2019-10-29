@@ -13,9 +13,12 @@
 
 #include "MeshParamsControlCUDA.h"
 
+#include "TransportCUDA_Poisson_Spin_V.h"
+
 class MeshCUDA;
-class ManagedDiffEqCUDA;
-class DifferentialEquationCUDA;
+class ManagedDiffEqFMCUDA;
+class DifferentialEquationFMCUDA;
+class TransportCUDA;
 
 //This is held as a cu_obj managed class in TransportCUDA modules
 //It provides methods and access to mesh data for use in cuVEC_VC methods.
@@ -32,79 +35,60 @@ public:
 
 	//need this to obtain dMdt in this mesh when calculating spin pumping - not used here but this object is passed to STransportCUDA_GInterf_S_NF_Funcs to use there.
 	//this will be a nullptr if not a magnetic mesh
-	ManagedDiffEqCUDA* pcuDiffEq;
+	ManagedDiffEqFMCUDA* pcuDiffEq;
+
+	//need this (held in TransportCUDA) to access delsq V (Poisson_RHS) calculation
+	TransportCUDA_Spin_V_Funcs* pPoisson_Spin_V;
+
+	//dM_dt VEC when we need to do vector calculus operations on it
+	//points to cuVEC in TransportCUDA
+	cuVEC_VC<cuReal3>* pdM_dt;
+
+	//for Poisson equations for S some values are fixed during relaxation, so pre-calculate them and store here to re-use.
+	////points to cuVEC in TransportCUDA
+	cuVEC<cuReal3>* pdelsq_S_fixed;
 
 public:
 
 	__host__ void construct_cu_obj(void) {}
 	__host__ void destruct_cu_obj(void) {}
 
-	BError set_pointers(MeshCUDA* pMeshCUDA, DifferentialEquationCUDA* pdiffEqCUDA);
+	BError set_pointers(MeshCUDA* pMeshCUDA, DifferentialEquationFMCUDA* pdiffEqCUDA, TransportCUDA* pTransportCUDA);
 
 	//this evaluates the Poisson RHS when solving the Poisson equation on S
 	__device__ cuReal3 Poisson_RHS(int idx)
 	{
-		cuReal3 delsq_S_RHS = cuReal3();
+		cuReal3 delsq_S_RHS;
 
-		cuVEC_VC<cuReal3>& M = *pcuMesh->pM;
+		cuVEC_VC<cuBReal>& V = *pcuMesh->pV;
 		cuVEC_VC<cuReal3>& S = *pcuMesh->pS;
-		cuVEC_VC<cuReal3>& Jc = *pcuMesh->pJc;
+		cuVEC_VC<cuReal3>& M = *pcuMesh->pM;
 
-		cuBReal De = *pcuMesh->pDe;
-		cuBReal SHA = *pcuMesh->pSHA;
 		cuBReal l_sf = *pcuMesh->pl_sf;
-		pcuMesh->update_parameters_ecoarse(idx, *pcuMesh->pDe, De, *pcuMesh->pSHA, SHA, *pcuMesh->pl_sf, l_sf);
-
-		//Terms occuring only in ferromagnetic meshes (where SHA = 0)
-		if (M.linear_size()) {
-			
-			cuBReal Ms = *pcuMesh->pMs;
-			cuBReal P = *pcuMesh->pP;
-			cuBReal betaD = *pcuMesh->pbetaD;
-			cuBReal l_ex = *pcuMesh->pl_ex;
-			cuBReal l_ph = *pcuMesh->pl_ph;
-			pcuMesh->update_parameters_ecoarse(idx, *pcuMesh->pMs, Ms, *pcuMesh->pP, P, *pcuMesh->pbetaD, betaD, *pcuMesh->pl_ex, l_ex, *pcuMesh->pl_ph, l_ph);
-
-			//1. term due to non-uniformity of M
-
-			//find grad M and M at the M cell in which the current S cell center is
-			int idx_M = M.position_to_cellidx(S.cellidx_to_position(idx));
-
-			cuReal3 Mval = M[idx_M];
-			cuReal33 grad_M = M.grad_neu(idx_M);
-			cuReal3 Jc_dot_del_M = grad_M | Jc[idx];
-
-			delsq_S_RHS -= P * (cuBReal)MUB_E * Jc_dot_del_M / (Ms * De);
-
-			//2. transverse S decay terms
-
-			delsq_S_RHS += ((S[idx] ^ Mval) / (Ms * l_ex * l_ex) + (Mval ^ (S[idx] ^ Mval)) / (Ms * Ms * l_ph * l_ph));
-
-			//3. CPP-GMR term
-			if (cuIsNZ((cuBReal)betaD)) {
-
-				cuReal33 grad_S = S.grad_neu(idx);
-				cuReal3 delsq_S = S.delsq_neu(idx);
-
-				cuReal3 grad_S_M_dot_del_M = grad_M | (grad_S * Mval);
-
-				delsq_S_RHS += (grad_S_M_dot_del_M + Mval * ((grad_M.i * grad_S.i) + (grad_M.j * grad_S.j) + (grad_M.k * grad_S.k) + (Mval * delsq_S))) * betaD * P / (Ms * Ms);
-			}
-		}
-		//terms occuring only in non-ferromagnetic meshes (i.e. those with SHA not zero)
-		else {
-
-			//1. SHA term. 
-
-			//Check boundary conditions for this term : should be Dirichlet with 0 Jc value normal to the boundary except for electrodes.
-			delsq_S_RHS += (SHA * (cuBReal)MUB_E / De) * Jc.diveps3_sided(idx);
-		}
+		pcuMesh->update_parameters_ecoarse(idx, *pcuMesh->pl_sf, l_sf);
 
 		//Contributions which apply equally in ferromagnetic and non-ferromagnetic meshes
+		//longitudinal S decay term
+		delsq_S_RHS = (S[idx] / (l_sf * l_sf));
 
-		//1. longitudinal S decay term
+		//Terms occuring only in magnetic meshes
+		if (M.linear_size()) {
 
-		delsq_S_RHS += (S[idx] / (l_sf * l_sf));
+			cuBReal Ms = *pcuMesh->pMs;
+			cuBReal l_ex = *pcuMesh->pl_ex;
+			cuBReal l_ph = *pcuMesh->pl_ph;
+			pcuMesh->update_parameters_ecoarse(idx, *pcuMesh->pMs, Ms, *pcuMesh->pl_ex, l_ex, *pcuMesh->pl_ph, l_ph);
+
+			//find grad M and M at the M cell in which the current S cell center is
+			int idx_M = M.position_to_cellidx(V.cellidx_to_position(idx));
+			cuReal3 m = M[idx_M] / Ms;
+
+			//transverse S decay terms
+			delsq_S_RHS += ((S[idx] ^ m) / (l_ex * l_ex) + (m ^ (S[idx] ^ m)) / (l_ph * l_ph));
+		}
+
+		//additional fixed contributions if needed
+		if (pdelsq_S_fixed->linear_size()) delsq_S_RHS += (*pdelsq_S_fixed)[idx];
 
 		return delsq_S_RHS;
 	}
@@ -113,7 +97,8 @@ public:
 	__device__ cuVAL3<cuReal3> bdiff(int idx)
 	{
 		cuVEC_VC<cuReal3>& M = *pcuMesh->pM;
-		cuVEC_VC<cuReal3>& Jc = *pcuMesh->pJc;
+		cuVEC_VC<cuReal3>& E = *pcuMesh->pE;
+		cuVEC_VC<cuBReal>& elC = *pcuMesh->pelC;
 
 		if (M.linear_size()) return cuReal33();
 
@@ -121,50 +106,86 @@ public:
 		cuBReal SHA = *pcuMesh->pSHA;
 		pcuMesh->update_parameters_ecoarse(idx, *pcuMesh->pSHA, SHA, *pcuMesh->pDe, De);
 
-		return cu_epsilon3(Jc[idx]) * (SHA * (cuBReal)MUB_E / De);
+		return cu_epsilon3(E[idx]) * (SHA * elC[idx] * (cuBReal)MUB_E / De);
 	}
 
 	//Functions used for calculating CMBND values
 
-	//For V only : V and Jc are continuous; Jc = -sigma * grad V = a + b * grad V -> a = 0 and b = -sigma taken at the interface	
+	//CMBND for S
+	//flux = a + b S' at the interface, b = -De, a = -(muB*P*sigma/e) * E ox m + (SHA*sigma*muB/e)*epsE + spin pumping + topological spin Hall effect	
 	__device__ cuReal3 a_func_pri(int cell1_idx, int cell2_idx, cuReal3 shift)
 	{
-		cuVEC_VC<cuReal3>& M = *pcuMesh->pM;
-		cuVEC_VC<cuReal3>& Jc = *pcuMesh->pJc;
-		cuVEC_VC<cuReal3>& S = *pcuMesh->pS;
+		//need to find value at boundary so use interpolation
 
+		cuVEC_VC<cuReal3>& E = *pcuMesh->pE;
+		cuVEC_VC<cuBReal>& elC = *pcuMesh->pelC;
+		cuVEC_VC<cuReal3>& S = *pcuMesh->pS;
+		cuVEC_VC<cuReal3>& M = *pcuMesh->pM;
+
+		//unit vector perpendicular to interface (pointing from secondary to primary mesh)
 		cuReal3 u = shift.normalized() * -1;
 
-		//values on primary side
+		//values on secondary side
 		if (M.linear_size()) {
 
 			cuBReal Ms = *pcuMesh->pMs;
-			cuBReal P = *pcuMesh->pP;
-			cuBReal betaD = *pcuMesh->pbetaD;
 			cuBReal De = *pcuMesh->pDe;
-			pcuMesh->update_parameters_ecoarse(cell1_idx, *pcuMesh->pMs, Ms, *pcuMesh->pDe, De, *pcuMesh->pP, P, *pcuMesh->pbetaD, betaD);
+			cuBReal P = *pcuMesh->pP;
+			pcuMesh->update_parameters_ecoarse(cell1_idx, *pcuMesh->pMs, Ms, *pcuMesh->pDe, De, *pcuMesh->pP, P);
 
-			//magnetic mesh
-			int idx_M1 = M.position_to_cellidx(Jc.cellidx_to_position(cell1_idx));
-			cuReal3 M1 = M[idx_M1];
-			cuReal3 Jc1 = Jc[cell1_idx];
+			int idx_M1 = M.position_to_cellidx(S.cellidx_to_position(cell1_idx));
+			int idx_M2 = M.position_to_cellidx(S.cellidx_to_position(cell2_idx));
 
-			cuReal3 a1 = ((Jc1 | M1) | u) * (P / Ms) * (-(cuBReal)MUB_E);
+			//a1 value
+			cuReal3 m1 = M[idx_M1] / Ms;
+			cuReal3 E1 = E[cell1_idx];
+			cuBReal sigma_1 = elC[cell1_idx];
 
 			cuReal33 grad_S1 = S.grad_neu(cell1_idx);
 
-			a1 += (((grad_S1 * M1) | M1) * betaD * P * De / (Ms * Ms)) | u;
+			cuReal3 a1 = -(cuBReal)MUB_E * ((E1 | m1) | u) * (P * sigma_1);
 
-			//magnetic mesh
-			int idx_M2 = M.position_to_cellidx(Jc.cellidx_to_position(cell2_idx));
-			cuReal3 M2 = M[idx_M2];
-			cuReal3 Jc2 = Jc[cell2_idx];
-
-			cuReal3 a2 = ((Jc2 | M2) | u) * (P / Ms) * (-(cuBReal)MUB_E);
+			//a2 value
+			cuReal3 m2 = M[idx_M2] / Ms;
+			cuReal3 E2 = E[cell2_idx];
+			cuBReal sigma_2 = elC[cell2_idx];
 
 			cuReal33 grad_S2 = S.grad_neu(cell2_idx);
 
-			a2 += (((grad_S2 * M2) | M2) * betaD * P * De / (Ms * Ms)) | u;
+			cuReal3 a2 = -(cuBReal)MUB_E * ((E2 | m2) | u) * (P * sigma_2);
+
+			bool cpump_enabled = cuIsNZ(pcuMesh->pcpump_eff->get0());
+			bool the_enabled = cuIsNZ(pcuMesh->pthe_eff->get0());
+
+			if (cuIsZ(shift.z) && (cpump_enabled || the_enabled)) {
+
+				cuReal33 grad_m1 = M.grad_neu(idx_M1) / Ms;
+				cuReal33 grad_m2 = M.grad_neu(idx_M2) / Ms;
+
+				//topological Hall effect contribution
+				if (the_enabled) {
+
+					cuBReal n_density = *pcuMesh->pn_density;
+					pcuMesh->update_parameters_ecoarse(cell1_idx, *pcuMesh->pn_density, n_density);
+
+					cuReal3 B1 = (grad_m1.x ^ grad_m1.y);
+					a1 += pcuMesh->pthe_eff->get0() * ((cuBReal)HBAR_E * (cuBReal)MUB_E * sigma_1 * sigma_1 / ((cuBReal)ECHARGE * n_density)) * ((-E1.y * B1 * u.x) + (E1.x * B1 * u.y));
+
+					cuReal3 B2 = (grad_m2.x ^ grad_m2.y);
+					a2 += pcuMesh->pthe_eff->get0() * ((cuBReal)HBAR_E * (cuBReal)MUB_E * sigma_2 * sigma_2 / ((cuBReal)ECHARGE * n_density)) * ((-E2.y * B2 * u.x) + (E2.x * B2 * u.y));
+				}
+
+				//charge pumping contribution
+				if (cpump_enabled) {
+
+					//value a1
+					cuReal3 dm_dt_1 = (*pdM_dt)[idx_M1] / Ms;
+					a1 += pcuMesh->pcpump_eff->get0() * ((cuBReal)HBAR_E * (cuBReal)MUB_E * sigma_1 / 2) * (((dm_dt_1 ^ grad_m1.x) * u.x) + ((dm_dt_1 ^ grad_m1.y) * u.y));
+
+					cuReal3 dm_dt_2 = (*pdM_dt)[idx_M2] / Ms;
+					a2 += pcuMesh->pcpump_eff->get0() * ((cuBReal)HBAR_E * (cuBReal)MUB_E * sigma_2 / 2) * (((dm_dt_2 ^ grad_m2.x) * u.x) + ((dm_dt_2 ^ grad_m2.y) * u.y));
+				}
+			}
 
 			return (1.5 * a1 - 0.5 * a2);
 		}
@@ -174,18 +195,22 @@ public:
 			pcuMesh->update_parameters_ecoarse(cell1_idx, *pcuMesh->pSHA, SHA);
 
 			//non-magnetic mesh
-			cuReal3 a1 = (cu_epsilon3(Jc[cell1_idx]) | u) * SHA * (cuBReal)MUB_E;
-			cuReal3 a2 = (cu_epsilon3(Jc[cell2_idx]) | u) * SHA * (cuBReal)MUB_E;
+			cuReal3 a1 = (cu_epsilon3(E[cell1_idx]) | u) * SHA * elC[cell1_idx] * (cuBReal)MUB_E;
+			cuReal3 a2 = (cu_epsilon3(E[cell2_idx]) | u) * SHA * elC[cell2_idx] * (cuBReal)MUB_E;
 
 			return (1.5 * a1 - 0.5 * a2);
 		}
 	}
 
+	//flux = a + b S' at the interface, b = -De, a = -(muB*P*sigma/e) * E ox m + (SHA*sigma*muB/e)*epsE + spin pumping + topological spin Hall effect
 	__device__ cuReal3 a_func_sec(cuReal3 relpos_m1, cuReal3 shift, cuReal3 stencil)
 	{
-		cuVEC_VC<cuReal3>& M = *pcuMesh->pM;
-		cuVEC_VC<cuReal3>& Jc = *pcuMesh->pJc;
+		//need to find value at boundary so use interpolation
+
+		cuVEC_VC<cuReal3>& E = *pcuMesh->pE;
+		cuVEC_VC<cuBReal>& elC = *pcuMesh->pelC;
 		cuVEC_VC<cuReal3>& S = *pcuMesh->pS;
+		cuVEC_VC<cuReal3>& M = *pcuMesh->pM;
 
 		//unit vector perpendicular to interface (pointing from secondary to primary mesh)
 		cuReal3 u = shift.normalized() * -1;
@@ -194,30 +219,65 @@ public:
 		if (M.linear_size()) {
 
 			cuBReal Ms = *pcuMesh->pMs;
-			cuBReal P = *pcuMesh->pP;
-			cuBReal betaD = *pcuMesh->pbetaD;
 			cuBReal De = *pcuMesh->pDe;
-			pcuMesh->update_parameters_atposition(relpos_m1, *pcuMesh->pMs, Ms, *pcuMesh->pDe, De, *pcuMesh->pP, P, *pcuMesh->pbetaD, betaD);
+			cuBReal P = *pcuMesh->pP;
+			pcuMesh->update_parameters_atposition(relpos_m1, *pcuMesh->pMs, Ms, *pcuMesh->pDe, De, *pcuMesh->pP, P);
 
 			//a1 value
-			cuReal3 M1 = M.weighted_average(relpos_m1, stencil);
-			cuReal3 Jc1 = Jc.weighted_average(relpos_m1, stencil);
+			cuReal3 m1 = M.weighted_average(relpos_m1, stencil) / Ms;
+			cuReal3 E1 = E.weighted_average(relpos_m1, stencil);
+			cuBReal sigma_1 = elC.weighted_average(relpos_m1, stencil);
+
 			int idx_S1 = S.position_to_cellidx(relpos_m1);
 			cuReal33 grad_S1 = S.grad_neu(idx_S1);
 
-			cuReal3 a1 =
-				-(cuBReal)MUB_E * ((Jc1 | M1) | u) * (P / Ms)
-				+ ((((grad_S1 * M1) | M1) * betaD * P * De / (Ms * Ms)) | u);
+			cuReal3 a1 = -(cuBReal)MUB_E * ((E1 | m1) | u) * (P * sigma_1);
 
 			//a2 value
-			cuReal3 M2 = M.weighted_average(relpos_m1 + shift, stencil);
-			cuReal3 Jc2 = Jc.weighted_average(relpos_m1 + shift, stencil);
+			cuReal3 m2 = M.weighted_average(relpos_m1 + shift, stencil) / Ms;
+			cuReal3 E2 = E.weighted_average(relpos_m1 + shift, stencil);
+			cuBReal sigma_2 = elC.weighted_average(relpos_m1 + shift, stencil);
+
 			int idx_S2 = S.position_to_cellidx(relpos_m1 + shift);
 			cuReal33 grad_S2 = S.grad_neu(idx_S2);
 
-			cuReal3 a2 =
-				-(cuBReal)MUB_E * ((Jc2 | M2) | u) * (P / Ms)
-				+ ((((grad_S2 * M2) | M2) * betaD * P * De / (Ms * Ms)) | u);
+			cuReal3 a2 = -(cuBReal)MUB_E * ((E2 | m2) | u) * (P * sigma_2);
+
+			bool cpump_enabled = cuIsNZ(pcuMesh->pcpump_eff->get0());
+			bool the_enabled = cuIsNZ(pcuMesh->pthe_eff->get0());
+
+			if (cuIsZ(shift.z) && (cpump_enabled || the_enabled)) {
+
+				int idx_M1 = M.position_to_cellidx(relpos_m1);
+				int idx_M2 = M.position_to_cellidx(relpos_m1 + shift);
+
+				cuReal33 grad_m1 = M.grad_neu(idx_M1) / Ms;
+				cuReal33 grad_m2 = M.grad_neu(idx_M2) / Ms;
+
+				//topological Hall effect contribution
+				if (the_enabled) {
+
+					cuBReal n_density = *pcuMesh->pn_density;
+					pcuMesh->update_parameters_atposition(relpos_m1, *pcuMesh->pn_density, n_density);
+
+					cuReal3 B1 = (grad_m1.x ^ grad_m1.y);
+					a1 += pcuMesh->pthe_eff->get0() * ((cuBReal)HBAR_E * (cuBReal)MUB_E * sigma_1 * sigma_1 / ((cuBReal)ECHARGE * n_density)) * ((-E1.y * B1 * u.x) + (E1.x * B1 * u.y));
+
+					cuReal3 B2 = (grad_m2.x ^ grad_m2.y);
+					a2 += pcuMesh->pthe_eff->get0() * ((cuBReal)HBAR_E * (cuBReal)MUB_E * sigma_2 * sigma_2 / ((cuBReal)ECHARGE * n_density)) * ((-E2.y * B2 * u.x) + (E2.x * B2 * u.y));
+				}
+
+				//charge pumping contribution
+				if (cpump_enabled) {
+
+					//value a1
+					cuReal3 dm_dt_1 = pdM_dt->weighted_average(relpos_m1, stencil) / Ms;
+					a1 += pcuMesh->pcpump_eff->get0() * ((cuBReal)HBAR_E * (cuBReal)MUB_E * sigma_1 / 2) * (((dm_dt_1 ^ grad_m1.x) * u.x) + ((dm_dt_1 ^ grad_m1.y) * u.y));
+
+					cuReal3 dm_dt_2 = pdM_dt->weighted_average(relpos_m1 + shift, stencil) / Ms;
+					a2 += pcuMesh->pcpump_eff->get0() * ((cuBReal)HBAR_E * (cuBReal)MUB_E * sigma_2 / 2) * (((dm_dt_2 ^ grad_m2.x) * u.x) + ((dm_dt_2 ^ grad_m2.y) * u.y));
+				}
+			}
 
 			return (1.5 * a1 - 0.5 * a2);
 		}
@@ -227,8 +287,8 @@ public:
 			pcuMesh->update_parameters_atposition(relpos_m1, *pcuMesh->pSHA, SHA);
 
 			//non-magnetic mesh
-			cuReal3 a1 = (cu_epsilon3(Jc.weighted_average(relpos_m1, stencil)) | u) * SHA * (cuBReal)MUB_E;
-			cuReal3 a2 = (cu_epsilon3(Jc.weighted_average(relpos_m1 + shift, stencil)) | u) * SHA * (cuBReal)MUB_E;
+			cuReal3 a1 = (cu_epsilon3(E.weighted_average(relpos_m1, stencil)) | u) * SHA * elC.weighted_average(relpos_m1, stencil) * (cuBReal)MUB_E;
+			cuReal3 a2 = (cu_epsilon3(E.weighted_average(relpos_m1 + shift, stencil)) | u) * SHA * elC.weighted_average(relpos_m1 + shift, stencil) * (cuBReal)MUB_E;
 
 			return (1.5 * a1 - 0.5 * a2);
 		}
@@ -251,131 +311,22 @@ public:
 		return -1.0 * De;
 	}
 
-	//second order differential of V at cells either side of the boundary; delsq V = -grad V * grad elC / elC
-	__device__ cuReal3 diff2_pri(int cell1_idx)
+	//second order differential of S along the shift axis
+	//this is simply Evaluate_SpinSolver_delsqS_RHS from which we subtract second order differentials orthogonal to the shift axis
+	__device__ cuReal3 diff2_pri(int cell1_idx, cuReal3 shift)
 	{
-		cuVEC_VC<cuReal3>& M = *pcuMesh->pM;
-		cuVEC_VC<cuReal3>& S = *pcuMesh->pS;
-		cuVEC_VC<cuReal3>& Jc = *pcuMesh->pJc;
-
-		if (M.linear_size()) {
-
-			cuBReal Ms = *pcuMesh->pMs;
-			cuBReal De = *pcuMesh->pDe;
-			cuBReal P = *pcuMesh->pP;
-			cuBReal betaD = *pcuMesh->pbetaD;
-			cuBReal l_sf = *pcuMesh->pl_sf;
-			cuBReal l_ex = *pcuMesh->pl_ex;
-			cuBReal l_ph = *pcuMesh->pl_ph;
-			pcuMesh->update_parameters_ecoarse(cell1_idx, *pcuMesh->pMs, Ms, *pcuMesh->pDe, De, *pcuMesh->pP, P, *pcuMesh->pbetaD, betaD, *pcuMesh->pl_ex, l_ex, *pcuMesh->pl_ph, l_ph, *pcuMesh->pl_sf, l_sf);
-
-			cuReal3 value = S[cell1_idx] / (l_sf * l_sf);
-
-			//add to value for magnetic mesh
-
-			int idx_M = M.position_to_cellidx(S.cellidx_to_position(cell1_idx));
-
-			cuReal3 Sval = S[cell1_idx];
-			cuReal3 Mval = M[idx_M];
-
-			value += (Sval ^ Mval) / (Ms * l_ex * l_ex) + (Mval ^ (Sval ^ Mval)) / (Ms * Ms * l_ph * l_ph);
-
-			//find grad M and M at the M cell in which the current S cell center is
-			cuReal33 grad_M = M.grad_neu(idx_M);
-			cuReal3 Jc_dot_del_M = grad_M | Jc[cell1_idx];
-
-			value -= P * (cuBReal)MUB_E * Jc_dot_del_M / (Ms * De);
-
-			if (cuIsNZ((cuBReal)betaD)) {
-
-				cuReal33 grad_S = S.grad_neu(cell1_idx);
-				cuReal3 delsq_S = S.delsq_neu(cell1_idx);
-
-				cuReal3 grad_S_M_dot_del_M = grad_M | (grad_S * Mval);
-
-				value += (grad_S_M_dot_del_M + Mval * ((grad_M.i * grad_S.i) + (grad_M.j * grad_S.j) + (grad_M.k * grad_S.k) + (Mval * delsq_S))) * betaD * P / (Ms * Ms);
-			}
-
-			return value;
-		}
-		else {
-
-			cuBReal SHA = *pcuMesh->pSHA;
-			cuBReal De = *pcuMesh->pDe;
-			cuBReal l_sf = *pcuMesh->pl_sf;
-			pcuMesh->update_parameters_ecoarse(cell1_idx, *pcuMesh->pSHA, SHA, *pcuMesh->pDe, De, *pcuMesh->pl_sf, l_sf);
-
-			cuReal3 value = S[cell1_idx] / (l_sf * l_sf);
-
-			//add to value for non-magnetic mesh
-			value += (SHA * (cuBReal)MUB_E / De) * Jc.diveps3_sided(cell1_idx);
-
-			return value;
-		}
+		return Poisson_RHS(cell1_idx);
 	}
 
-	__device__ cuReal3 diff2_sec(cuReal3 relpos_m1, cuReal3 stencil)
+	//second order differential of S along the shift axis
+	//this is simply Evaluate_SpinSolver_delsqS_RHS from which we subtract second order differentials orthogonal to the shift axis
+	__device__ cuReal3 diff2_sec(cuReal3 relpos_m1, cuReal3 stencil, cuReal3 shift)
 	{
-		cuVEC_VC<cuReal3>& M = *pcuMesh->pM;
 		cuVEC_VC<cuReal3>& S = *pcuMesh->pS;
-		cuVEC_VC<cuReal3>& Jc = *pcuMesh->pJc;
 
-		if (M.linear_size()) {
+		int cellm1_idx = S.position_to_cellidx(relpos_m1);
 
-			cuBReal Ms = *pcuMesh->pMs;
-			cuBReal De = *pcuMesh->pDe;
-			cuBReal P = *pcuMesh->pP;
-			cuBReal betaD = *pcuMesh->pbetaD;
-			cuBReal l_sf = *pcuMesh->pl_sf;
-			cuBReal l_ex = *pcuMesh->pl_ex;
-			cuBReal l_ph = *pcuMesh->pl_ph;
-			pcuMesh->update_parameters_atposition(relpos_m1, *pcuMesh->pMs, Ms, *pcuMesh->pDe, De, *pcuMesh->pP, P, *pcuMesh->pbetaD, betaD, *pcuMesh->pl_ex, l_ex, *pcuMesh->pl_ph, l_ph, *pcuMesh->pl_sf, l_sf);
-
-			cuReal3 value = S.weighted_average(relpos_m1, stencil) / (l_sf * l_sf);
-
-			//add to value for magnetic mesh
-
-			cuReal3 Sval = S.weighted_average(relpos_m1, stencil);
-			cuReal3 Mval = M.weighted_average(relpos_m1, stencil);
-
-			value += (Sval ^ Mval) / (Ms * l_ex * l_ex) + (Mval ^ (Sval ^ Mval)) / (Ms * Ms * l_ph * l_ph);
-
-			//find grad M and M at the M cell in which the current S cell center is
-			int idx_M = M.position_to_cellidx(relpos_m1);
-			cuReal33 grad_M = M.grad_neu(idx_M);
-			cuReal3 Jc_dot_del_M = grad_M | Jc.weighted_average(relpos_m1, stencil);
-
-			value -= P * (cuBReal)MUB_E * Jc_dot_del_M / (Ms * De);
-
-			if (cuIsNZ((cuBReal)betaD)) {
-
-				int idx_S = S.position_to_cellidx(relpos_m1);
-				cuReal33 grad_S = S.grad_neu(idx_S);
-				cuReal3 delsq_S = S.delsq_neu(idx_S);
-
-				cuReal3 grad_S_M_dot_del_M = grad_M | (grad_S * Mval);
-
-				value += (grad_S_M_dot_del_M + Mval * ((grad_M.i * grad_S.i) + (grad_M.j * grad_S.j) + (grad_M.k * grad_S.k) + (Mval * delsq_S))) * betaD * P / (Ms * Ms);
-			}
-
-			return value;
-		}
-		else {
-
-			cuBReal SHA = *pcuMesh->pSHA;
-			cuBReal De = *pcuMesh->pDe;
-			cuBReal l_sf = *pcuMesh->pl_sf;
-			pcuMesh->update_parameters_atposition(relpos_m1, *pcuMesh->pSHA, SHA, *pcuMesh->pDe, De, *pcuMesh->pl_sf, l_sf);
-
-			cuReal3 value = S.weighted_average(relpos_m1, stencil) / (l_sf * l_sf);
-
-			//add to value for non-magnetic mesh
-			int idx_Jc = Jc.position_to_cellidx(relpos_m1);
-
-			value += (SHA * (cuBReal)MUB_E / De) * Jc.diveps3_sided(idx_Jc);
-
-			return value;
-		}
+		return Poisson_RHS(cellm1_idx);
 	}
 
 	//multiply spin accumulation by these to obtain spin potential, i.e. Vs = (De / elC) * (e/muB) * S, evaluated at the boundary

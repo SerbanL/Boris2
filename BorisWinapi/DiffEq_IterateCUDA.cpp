@@ -839,13 +839,20 @@ void ODECommon::IterateCUDA(void)
 
 			//2. Set stepsize - alternate between BB values
 			//first transfer BB values to cpu memory
-			pODECUDA->Get_SD_Solver_BB_Values(&delta_M_sq, &delta_G_sq, &delta_M_dot_delta_G);
-
+			pODECUDA->Get_SD_Solver_BB_Values(&delta_M_sq, &delta_G_sq, &delta_M_dot_delta_G, &delta_M2_sq, &delta_G2_sq, &delta_M2_dot_delta_G2);
+			
 			if (iteration % 2) {
 
 				if (delta_M_dot_delta_G) {
 
 					dT = delta_M_sq / delta_M_dot_delta_G;
+
+					//for antiferromagnetic meshes also consider sub-lattice B, take smallest dT value
+					if (delta_M2_dot_delta_G2) {
+
+						double dT_2 = delta_M2_sq / delta_M2_dot_delta_G2;
+						dT = (dT_2 < dT ? dT_2 : dT);
+					}
 				}
 				else dT = SD_DEFAULT_DT;
 			}
@@ -854,6 +861,13 @@ void ODECommon::IterateCUDA(void)
 				if (delta_G_sq) {
 
 					dT = delta_M_dot_delta_G / delta_G_sq;
+
+					//for antiferromagnetic meshes also consider sub-lattice B, take smallest dT value
+					if (delta_G2_sq) {
+
+						double dT_2 = delta_M2_dot_delta_G2 / delta_G2_sq;
+						dT = (dT_2 < dT ? dT_2 : dT);
+					}
 				}
 				else dT = SD_DEFAULT_DT;
 			}

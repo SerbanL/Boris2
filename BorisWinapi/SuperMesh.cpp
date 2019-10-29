@@ -14,7 +14,7 @@ SuperMesh::SuperMesh(void) :
 		}, 
 		{
 			//Mesh implementations
-			IINFO(FMesh), IINFO(DipoleMesh), IINFO(MetalMesh), IINFO(InsulatorMesh),
+			IINFO(FMesh), IINFO(DipoleMesh), IINFO(MetalMesh), IINFO(InsulatorMesh), IINFO(AFMesh),
 			//Super-mesh modules implementations (for pSMod)
 			IINFO(SDemag), IINFO(StrayField), IINFO(STransport), IINFO(Oersted), IINFO(SHeat)
 		})
@@ -65,7 +65,7 @@ BError SuperMesh::SetODE(ODE_ setOde, EVAL_ evalMethod)
 
 	error = odeSolver.SetODE(setOde, evalMethod);
 
-	error = UpdateConfiguration();
+	error = UpdateConfiguration(UPDATECONFIG_ODE_SOLVER);
 
 	return error; 
 }
@@ -80,7 +80,7 @@ void SuperMesh::SetMoveMeshTrigger(bool status, string meshName)
 	//if calling with meshId = -1 then first ferromagnetic mesh will be used
 	odeSolver.SetMoveMeshTrigger(status, meshId);
 
-	UpdateConfiguration();
+	UpdateConfiguration(UPDATECONFIG_ODE_MOVEMESH);
 }
 
 //--------------------------------------------------------- VALUE SETTERS
@@ -91,7 +91,7 @@ BError SuperMesh::SetFMSMeshCellsize(DBL3 h_fm_)
 
 	h_fm = h_fm_;
 	
-	error = UpdateConfiguration(); 
+	error = UpdateConfiguration(UPDATECONFIG_SMESH_CELLSIZE);
 
 	return error;
 }
@@ -102,7 +102,7 @@ BError SuperMesh::SetESMeshCellsize(DBL3 h_e_)
 	
 	h_e = h_e_;
 
-	error = UpdateConfiguration();
+	error = UpdateConfiguration(UPDATECONFIG_SMESH_CELLSIZE);
 
 	return error;
 }
@@ -115,8 +115,9 @@ double SuperMesh::GetTotalEnergy(void)
 #if COMPILECUDA == 1
 
 	//If CUDA enabled then obtain total energy density from all modules -> this involves potentially many individual cuBReal transfers from gpu to cpu so not ideal
-	//This is fine since we don't need to get the total energy often (but will not optimizing if we need to use the total energy density every iteration in some solvers in the future).
-	if (pSMeshCUDA) {
+	//This is fine since we don't need to get the total energy often (but will need optimizing if we need to use the total energy density every iteration in some solvers in the future).
+	//If we've just switched CUDA on but didn't initialize yet we won't have the correct energy_density_weights (or even memory size!), so skip this for now.
+	if (pSMeshCUDA && energy_density_weights.size() == pMesh.size()) {
 
 		total_energy_density = 0.0;
 

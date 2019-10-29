@@ -1365,32 +1365,6 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 	}
 	break;
 
-	//Shows Poisson solver SOR damping type : true for adaptive, false for fixed. auxId is enabled (1)/disabled(0) status.
-	case IOI_SORFIXEDDAMPING:
-	{
-		//parameters from iop
-		bool status = iop.auxId;
-
-		if (status != SMesh.CallModuleMethod(&STransport::IsFixedSORdamping)) {
-
-			iop.auxId = !status;
-
-			if (iop.auxId == 1) {
-
-				pTO->SetBackgroundColor(ONCOLOR);
-				pTO->set(" Fixed ");
-			}
-			else {
-
-				pTO->SetBackgroundColor(OFFCOLOR);
-				pTO->set(" Adaptive ");
-			}
-
-			stateChanged = true;
-		}
-	}
-	break;
-
 	//Shows SOR damping values when used in fixed damping mode. textId is the DBL2 damping value as a string. (DBL2 since we need different damping values for V and S solvers)
 	case IOI_SORDAMPING:
 	{

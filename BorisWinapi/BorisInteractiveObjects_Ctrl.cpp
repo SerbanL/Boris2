@@ -703,6 +703,7 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 		string meshName = SMesh.key_from_meshId(meshId);
 
 		if (actionCode == AC_MOUSELEFTDOWN) sendCommand(CMD_VECREP, meshName, (option + 1) % VEC3REP_NUMOPTIONS);
+		if (actionCode == AC_MOUSERIGHTDOWN) sendCommand(CMD_VECREP, meshName, (option + VEC3REP_NUMOPTIONS - 1) % VEC3REP_NUMOPTIONS);
 	}
 	break;
 
@@ -713,6 +714,7 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 		VEC3REP_ option = (VEC3REP_)iop.auxId;
 
 		if (actionCode == AC_MOUSELEFTDOWN) sendCommand(CMD_VECREP, SMesh.superMeshHandle, (option + 1) % VEC3REP_NUMOPTIONS);
+		if (actionCode == AC_MOUSERIGHTDOWN) sendCommand(CMD_VECREP, SMesh.superMeshHandle, (option + VEC3REP_NUMOPTIONS - 1) % VEC3REP_NUMOPTIONS);
 	}
 	break;
 
@@ -844,16 +846,6 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 		int timeout = iop.auxId;
 
 		if (actionCode == AC_DOUBLECLICK) setConsoleEntry(CMD_SSOLVERCONFIG, SMesh.CallModuleMethod(&STransport::GetSConvergenceError), timeout);
-	}
-	break;
-
-	//Shows Poisson solver SOR damping type : true for adaptive, false for fixed. auxId is enabled (1)/disabled(0) status.
-	case IOI_SORFIXEDDAMPING:
-	{
-		//parameters from iop
-		bool status = iop.auxId;
-
-		if (actionCode == AC_MOUSERIGHTDOWN || actionCode == AC_MOUSELEFTDOWN) sendCommand(CMD_SETFIXEDSOR, !status);
 	}
 	break;
 

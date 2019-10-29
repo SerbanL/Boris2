@@ -3,7 +3,7 @@
 
 #ifdef MODULE_DEMAG_N
 
-#include "Mesh_Ferromagnetic.h"
+#include "Mesh.h"
 
 #if COMPILECUDA == 1
 #include "Demag_NCUDA.h"
@@ -15,9 +15,9 @@ Demag_N::Demag_N(Mesh *pMesh_) :
 	Modules(),
 	ProgramStateNames(this, {}, {})
 {
-	pMesh = dynamic_cast<FMesh*>(pMesh_);
+	pMesh = pMesh_;
 
-	error_on_create = UpdateConfiguration();
+	error_on_create = UpdateConfiguration(UPDATECONFIG_FORCEUPDATE);
 
 	//-------------------------- Is CUDA currently enabled?
 
@@ -52,7 +52,7 @@ BError Demag_N::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 #if COMPILECUDA == 1
 	if (pModuleCUDA) {
 
-		if (!error) error = pModuleCUDA->UpdateConfiguration();
+		if (!error) error = pModuleCUDA->UpdateConfiguration(cfgMessage);
 	}
 #endif
 
@@ -69,7 +69,7 @@ BError Demag_N::MakeCUDAModule(void)
 
 		//Note : it is posible pMeshCUDA has not been allocated yet, but this module has been created whilst cuda is switched on. This will happen when a new mesh is being made which adds this module by default.
 		//In this case, after the mesh has been fully made, it will call SwitchCUDAState on the mesh, which in turn will call this SwitchCUDAState method; then pMeshCUDA will not be nullptr and we can make the cuda module version
-		pModuleCUDA = new Demag_NCUDA(dynamic_cast<FMeshCUDA*>(pMesh->pMeshCUDA));
+		pModuleCUDA = new Demag_NCUDA(pMesh->pMeshCUDA);
 		error = pModuleCUDA->Error_On_Create();
 	}
 
@@ -82,19 +82,44 @@ double Demag_N::UpdateField(void)
 {
 	double energy = 0;
 
+	if (pMesh->GetMeshType() == MESH_FERROMAGNETIC) {
+
 #pragma omp parallel for reduction (+:energy)
-	for (int idx = 0; idx < pMesh->n.dim(); idx++) {
+		for (int idx = 0; idx < pMesh->n.dim(); idx++) {
 
-		if (pMesh->M.is_not_empty(idx)) {
+			if (pMesh->M.is_not_empty(idx)) {
 
-			//Nxy shouldn't have a temperature (or spatial) dependence so not using update_parameters_mcoarse here
-			DBL2 Nxy = pMesh->Nxy;
+				//Nxy shouldn't have a temperature (or spatial) dependence so not using update_parameters_mcoarse here
+				DBL2 Nxy = pMesh->Nxy;
 
-			DBL3 Heff_value = DBL3(-Nxy.x * pMesh->M[idx].x, -Nxy.y * pMesh->M[idx].y, -(1 - Nxy.x - Nxy.y) * pMesh->M[idx].z);
+				DBL3 Heff_value = DBL3(-Nxy.x * pMesh->M[idx].x, -Nxy.y * pMesh->M[idx].y, -(1 - Nxy.x - Nxy.y) * pMesh->M[idx].z);
 
-			pMesh->Heff[idx] += Heff_value;
+				pMesh->Heff[idx] += Heff_value;
 
-			energy += pMesh->M[idx] * Heff_value;
+				energy += pMesh->M[idx] * Heff_value;
+			}
+		}
+	}
+
+	else if (pMesh->GetMeshType() == MESH_ANTIFERROMAGNETIC) {
+
+#pragma omp parallel for reduction (+:energy)
+		for (int idx = 0; idx < pMesh->n.dim(); idx++) {
+
+			if (pMesh->M.is_not_empty(idx)) {
+
+				//Nxy shouldn't have a temperature (or spatial) dependence so not using update_parameters_mcoarse here
+				DBL2 Nxy = pMesh->Nxy;
+
+				DBL3 Mval = (pMesh->M[idx] + pMesh->M2[idx]) / 2;
+
+				DBL3 Heff_value = DBL3(-Nxy.x * Mval.x, -Nxy.y * Mval.y, -(1 - Nxy.x - Nxy.y) * Mval.z);
+
+				pMesh->Heff[idx] += Heff_value;
+				pMesh->Heff2[idx] += Heff_value;
+
+				energy += Mval * Heff_value;
+			}
 		}
 	}
 

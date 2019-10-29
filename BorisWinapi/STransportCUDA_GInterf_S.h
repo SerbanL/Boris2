@@ -14,7 +14,7 @@
 
 #include "TransportCUDA_Poisson_Spin_S.h"
 
-#include "ManagedDiffEqCUDA.h"
+#include "ManagedDiffEqFMCUDA.h"
 
 //Use to set cmbnd S values using discontinuous method - A_func_sec, B_func_sec and A_func_pri, B_func_pri define the fluxes either side of the interface as flux = A + B * dVs, where dVs = Vs_pri - Vs_sec
 //This is for an NF interface : N secondary, F primary

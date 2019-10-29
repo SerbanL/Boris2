@@ -10,20 +10,33 @@ MeshParamsCUDA::MeshParamsCUDA(MeshParams *pmeshParams)
 	
 	grel()->set_from_cpu(pmeshParams->grel);
 	pmeshParams->grel.set_p_cu_obj_mpcuda(&grel);
+	grel_AFM()->set_from_cpu(pmeshParams->grel_AFM);
+	pmeshParams->grel_AFM.set_p_cu_obj_mpcuda(&grel_AFM);
 
 	alpha()->set_from_cpu(pmeshParams->alpha);
 	pmeshParams->alpha.set_p_cu_obj_mpcuda(&alpha);
+	alpha_AFM()->set_from_cpu(pmeshParams->alpha_AFM);
+	pmeshParams->alpha_AFM.set_p_cu_obj_mpcuda(&alpha_AFM);
 
 	Ms()->set_from_cpu(pmeshParams->Ms);
 	pmeshParams->Ms.set_p_cu_obj_mpcuda(&Ms);
+	Ms_AFM()->set_from_cpu(pmeshParams->Ms_AFM);
+	pmeshParams->Ms_AFM.set_p_cu_obj_mpcuda(&Ms_AFM);
 
 	Nxy()->set_from_cpu(pmeshParams->Nxy);
 	pmeshParams->Nxy.set_p_cu_obj_mpcuda(&Nxy);
 
 	A()->set_from_cpu(pmeshParams->A);
 	pmeshParams->A.set_p_cu_obj_mpcuda(&A);
+	A_AFM()->set_from_cpu(pmeshParams->A_AFM);
+	pmeshParams->A_AFM.set_p_cu_obj_mpcuda(&A_AFM);
+	A12()->set_from_cpu(pmeshParams->A12);
+	pmeshParams->A12.set_p_cu_obj_mpcuda(&A12);
+
 	D()->set_from_cpu(pmeshParams->D);
 	pmeshParams->D.set_p_cu_obj_mpcuda(&D);
+	D_AFM()->set_from_cpu(pmeshParams->D_AFM);
+	pmeshParams->D_AFM.set_p_cu_obj_mpcuda(&D_AFM);
 
 	J1()->set_from_cpu(pmeshParams->J1);
 	pmeshParams->J1.set_p_cu_obj_mpcuda(&J1);
@@ -59,6 +72,9 @@ MeshParamsCUDA::MeshParamsCUDA(MeshParams *pmeshParams)
 
 	De()->set_from_cpu(pmeshParams->De);
 	pmeshParams->De.set_p_cu_obj_mpcuda(&De);
+
+	n_density()->set_from_cpu(pmeshParams->n_density);
+	pmeshParams->n_density.set_p_cu_obj_mpcuda(&n_density);
 	
 	betaD()->set_from_cpu(pmeshParams->betaD);
 	pmeshParams->betaD.set_p_cu_obj_mpcuda(&betaD);
@@ -90,6 +106,12 @@ MeshParamsCUDA::MeshParamsCUDA(MeshParams *pmeshParams)
 	pump_eff()->set_from_cpu(pmeshParams->pump_eff);
 	pmeshParams->pump_eff.set_p_cu_obj_mpcuda(&pump_eff);
 
+	cpump_eff()->set_from_cpu(pmeshParams->cpump_eff);
+	pmeshParams->cpump_eff.set_p_cu_obj_mpcuda(&cpump_eff);
+
+	the_eff()->set_from_cpu(pmeshParams->the_eff);
+	pmeshParams->the_eff.set_p_cu_obj_mpcuda(&the_eff);
+
 	base_temperature.from_cpu(pmeshParams->base_temperature);
 	T_Curie.from_cpu(pmeshParams->T_Curie);
 
@@ -112,14 +134,22 @@ MeshParamsCUDA::~MeshParamsCUDA()
 	//Mesh destructor then calls for MeshCUDA implementation to be destroyed, then we get here since MeshCUDA inherits from MeshParamsCUDA. After this we return back to Mesh destructor to continue destruction down the list.
 	
 	pmeshParams->grel.null_p_cu_obj_mpcuda();
+	pmeshParams->grel_AFM.null_p_cu_obj_mpcuda();
+
 	pmeshParams->alpha.null_p_cu_obj_mpcuda();
+	pmeshParams->alpha_AFM.null_p_cu_obj_mpcuda();
 
 	pmeshParams->Ms.null_p_cu_obj_mpcuda();
+	pmeshParams->Ms_AFM.null_p_cu_obj_mpcuda();
 
 	pmeshParams->Nxy.null_p_cu_obj_mpcuda();
 
 	pmeshParams->A.null_p_cu_obj_mpcuda();
+	pmeshParams->A_AFM.null_p_cu_obj_mpcuda();
+	pmeshParams->A12.null_p_cu_obj_mpcuda();
+
 	pmeshParams->D.null_p_cu_obj_mpcuda();
+	pmeshParams->D_AFM.null_p_cu_obj_mpcuda();
 
 	pmeshParams->J1.null_p_cu_obj_mpcuda();
 	pmeshParams->J2.null_p_cu_obj_mpcuda();
@@ -141,6 +171,7 @@ MeshParamsCUDA::~MeshParamsCUDA()
 	pmeshParams->beta.null_p_cu_obj_mpcuda();
 
 	pmeshParams->De.null_p_cu_obj_mpcuda();
+	pmeshParams->n_density.null_p_cu_obj_mpcuda();
 	pmeshParams->betaD.null_p_cu_obj_mpcuda();
 	
 	pmeshParams->SHA.null_p_cu_obj_mpcuda();
@@ -158,6 +189,8 @@ MeshParamsCUDA::~MeshParamsCUDA()
 	pmeshParams->tsi_eff.null_p_cu_obj_mpcuda();
 	
 	pmeshParams->pump_eff.null_p_cu_obj_mpcuda();
+	pmeshParams->cpump_eff.null_p_cu_obj_mpcuda();
+	pmeshParams->the_eff.null_p_cu_obj_mpcuda();
 
 	pmeshParams->thermCond.null_p_cu_obj_mpcuda();
 	pmeshParams->density.null_p_cu_obj_mpcuda();

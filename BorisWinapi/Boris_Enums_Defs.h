@@ -4,14 +4,41 @@
 
 //All widely applicable enums and defines go here. Further smaller scope enums and defines are given where needed.
 
-//when UpdateConfiguration method is called you can pass a value from this enum to signal the reason it was called - some modules need to know (e.g. SDemag needs to know if shape has changed)
+//when UpdateConfiguration method is called, pass a value from this enum to signal the reason it was called
 enum UPDATECONFIG_ {
 
-	//no reason given - Update Configuration without consideration for special cases
+	////////////////////////////
+	//GENERIC
+	////////////////////////////
+
+	//no reason given
 	UPDATECONFIG_GENERIC,
+
+	//Brute force update : when this message is received all objects handling UpdateConfiguration method should update fully
+	UPDATECONFIG_FORCEUPDATE,
+
+	//Generic message issued by RepairObjectState method
+	UPDATECONFIG_REPAIROBJECTSTATE,
+
+	//Cuda state has changed
+	UPDATECONFIG_SWITCHCUDASTATE,
+
+	////////////////////////////
+	//SUPERMESH
+	////////////////////////////
+
+	//A supermesh cellsize has changed
+	UPDATECONFIG_SMESH_CELLSIZE,
+
+	////////////////////////////
+	//MESHES
+	////////////////////////////
 
 	//mesh shape has changed (not the rectangle but the shape inside the rectangle)
 	UPDATECONFIG_MESHSHAPECHANGE,
+
+	//The mesh has changed: cellsize, rectangle, or number of cells
+	UPDATECONFIG_MESHCHANGE,
 
 	//a new mesh has been added (all meshes added through the AddMesh method in supermesh so that method would signal this)
 	UPDATECONFIG_MESHADDED,
@@ -19,8 +46,61 @@ enum UPDATECONFIG_ {
 	//a mesh has been deleted (all meshes deleted through the DelMesh method in supermesh so that method would signal this)
 	UPDATECONFIG_MESHDELETED,
 
-	//use this message to force updates by calling the required UpdateConfig method directly in the required object (which must check for it)
-	UPDATECONFIG_FORCEUPDATE
+	////////////////////////////
+	//PARAMETERS
+	////////////////////////////
+
+	//Param value changed
+	UPDATECONFIG_PARAMVALUECHANGED,
+
+	//mesh param settings changed
+	UPDATECONFIG_PARAMCHANGED,
+
+	////////////////////////////
+	//ODE SOLVER
+	////////////////////////////
+
+	//Equation or evaluation method or settings changed
+	UPDATECONFIG_ODE_SOLVER,
+
+	//Moving mesh algorithm settings changed
+	UPDATECONFIG_ODE_MOVEMESH,
+
+	////////////////////////////
+	//MODULES
+	////////////////////////////
+
+	//A module was added
+	UPDATECONFIG_MODULEADDED,
+
+	//A module was deleted
+	UPDATECONFIG_MODULEDELETED,
+
+	////////////////////////////
+	//SPECIFIC MODULES
+	////////////////////////////
+
+	//SDemag or Demag module convolution type or settings change
+	UPDATECONFIG_DEMAG_CONVCHANGE,
+
+	//Change in roughness module
+	UPDATECONFIG_ROUGHNESS_CHANGE,
+
+	//Transport module electrode changed
+	UPDATECONFIG_TRANSPORT_ELECTRODE
+};
+
+namespace ucfg {
+
+	template <typename Flag>
+	bool check_cfgflags(UPDATECONFIG_ cfgMessage, Flag flag) { return (cfgMessage == UPDATECONFIG_FORCEUPDATE || cfgMessage == flag); }
+
+	template <typename Flag, typename ... Flags>
+	bool check_cfgflags(UPDATECONFIG_ cfgMessage, Flag flag, Flags... flags)
+	{
+		if (cfgMessage == UPDATECONFIG_FORCEUPDATE || cfgMessage == flag) return true;
+		else return check_cfgflags(cfgMessage, flags...);
+	}
 };
 
 #define CONVERSIONPRECISION 6						//Precision when converting to/from strings

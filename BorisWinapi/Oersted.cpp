@@ -13,7 +13,7 @@ Oersted::Oersted(SuperMesh *pSMesh_) :
 {
 	pSMesh = pSMesh_;
 
-	error_on_create = UpdateConfiguration();
+	error_on_create = UpdateConfiguration(UPDATECONFIG_FORCEUPDATE);
 
 	//make sure to resize sm_Vals here as UpdateConfiguration will not do it now : the convolution dimensions have already been set when calling the Convolution constructor, so CheckDimensions check will return true
 	if (!sm_Vals.resize(pSMesh->h_e, pSMesh->sMeshRect_e)) error_on_create(BERROR_OUTOFMEMORY_CRIT);
@@ -33,36 +33,31 @@ BError Oersted::Initialize(void)
 
 	if (pSMesh->sMeshRect_e.IsNull() || pSMesh->sMeshRect_fm.IsNull()) return error(BERROR_INCORRECTMODCONFIG);
 
-	//FFT Kernels are not so quick to calculate - if already initialized then we are guaranteed they are correct
-	if (!initialized) {
+	//always recalculate the mesh transfer as some meshes could have changed
+	vector< VEC<DBL3>* > pVal_from_E;
+	vector< VEC<double>* > pVal_from_elC;
+	vector< VEC<DBL3>* > pVal_to;
 
-		vector< VEC<DBL3>* > pVal_from;
-		vector< VEC<DBL3>* > pVal_to;
+	//identify all existing electric computation meshes to get Jc from and magnetic computation meshes to transfer Heff to
+	for (int idx = 0; idx < (int)pSMesh->pMesh.size(); idx++) {
 
-		//identify all existing electric computation meshes to get Jc from and magnetic computation meshes to transfer Heff to
-		for (int idx = 0; idx < (int)pSMesh->pMesh.size(); idx++) {
+		if ((*pSMesh)[idx]->EComputation_Enabled()) {
 
-			if ((*pSMesh)[idx]->EComputation_Enabled()) {
-
-				pVal_from.push_back(&((*pSMesh)[idx]->Jc));
-			}
-
-			if ((*pSMesh)[idx]->MComputation_Enabled()) {
-
-				pVal_to.push_back(&((*pSMesh)[idx]->Heff));
-			}
+			pVal_from_elC.push_back(&((*pSMesh)[idx]->elC));
+			pVal_from_E.push_back(&((*pSMesh)[idx]->E));
 		}
 
-		//Initialize the mesh transfer object.
-		if (!sm_Vals.Initialize_MeshTransfer(pVal_from, pVal_to, MESHTRANSFERTYPE_WEIGHTED)) return error(BERROR_OUTOFMEMORY_CRIT);
+		if ((*pSMesh)[idx]->MComputation_Enabled()) {
 
-		//transfer values from invidual M meshes to sm_Vals - we need this to get number of non-empty cells
-		sm_Vals.transfer_in();
+			pVal_to.push_back(&((*pSMesh)[idx]->Heff));
+		}
+	}
 
-		non_empty_cells = sm_Vals.get_nonempty_cells();
+	//Initialize the mesh transfer object.
+	if (!sm_Vals.Initialize_MeshTransfer_MultipliedInputs(pVal_from_E, pVal_from_elC, pVal_to, MESHTRANSFERTYPE_WEIGHTED)) return error(BERROR_OUTOFMEMORY_CRIT);
 
-		//avoid division by zero
-		if (!non_empty_cells) non_empty_cells = 1;
+	//FFT Kernels are not so quick to calculate - if already initialized then we are guaranteed they are correct
+	if (!initialized) {
 
 		error = Calculate_Oersted_Kernels();
 
@@ -111,7 +106,7 @@ BError Oersted::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 #if COMPILECUDA == 1
 	if (pModuleCUDA) {
 
-		if (!error) error = pModuleCUDA->UpdateConfiguration();
+		if (!error) error = pModuleCUDA->UpdateConfiguration(cfgMessage);
 	}
 #endif
 
@@ -138,12 +133,12 @@ double Oersted::UpdateField(void)
 	if (pSMesh->CallModuleMethod(&STransport::Transport_Recalculated) || !oefield_computed) {
 
 		//transfer values from invidual Jc meshes to sm_Vals
-		sm_Vals.transfer_in();
+		sm_Vals.transfer_in_multiplied();
 
 		Convolute(sm_Vals, sm_Vals, true);
 
 		//transfer to individual Heff meshes
-		sm_Vals.transfer_out(false);
+		sm_Vals.transfer_out();
 
 		oefield_computed = true;
 	}
@@ -152,7 +147,7 @@ double Oersted::UpdateField(void)
 		//transfer to individual Heff meshes
 		sm_Vals.transfer_out();
 	}
-
+	
 	//not counting this to the total energy density for now
 	return 0.0;
 }

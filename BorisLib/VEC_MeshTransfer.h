@@ -151,7 +151,15 @@ private:
 	VEC<VType>* pVEC;
 
 	//mesh_in and mesh_out VECs have exactly the same rectangle and cellsize for each index, but may differ in value stored (e.g. magnetisation and effective field) - they could also be exactly the same VEC
-	std::vector<VEC<VType>*> mesh_in, mesh_out;
+	//mesh_in2 can be used if we require multiple inputs, e.g. an averaged input (mesh_in + mesh_in2) / 2, or multiplied input : mesh_in * mesh_in2.
+	//mesh_out2 can be used if require duplicating outputs
+	//For both mesh_in2 and mesh_out2, the input averaging and output duplicating is done if the respective VECs are not empty
+	//Thus when using these modes, the secondary VECs should either be empty or have exactly same size as the primary VECs.
+	//In any case, if using these modes the vectors below have to have exactly the same dimensions
+	std::vector<VEC<VType>*> mesh_in, mesh_in2, mesh_out, mesh_out2;
+
+	//secondary input specifically specified as a double
+	std::vector<VEC<double>*> mesh_in2_double;
 
 	//input mesh list of contributing cells and weights - transfer_in_info has size pVEC->linear_size()
 	//for each super-mesh cell, we have a list of contributing cells from the in meshes together with pre-calculated weights - InMeshCellsWeights
@@ -177,16 +185,18 @@ private:
 
 	double build_supermeshcells_weights(SuperMeshCellsWeights &cellsWeights, Rect rect_mc);
 
+	//before calling the helpers below you must make sure mesh_in, mesh_in2, mesh_out, mesh_out2 are set correctly as required
+
 	//MESHTRANSFERTYPE_WEIGHTED
-	bool initialize_transfer_in_weighted(const std::vector< VEC<VType>* >& mesh_in_);
+	bool initialize_transfer_in_weighted(void);
 
 	//MESHTRANSFERTYPE_CLIPPED
-	bool initialize_transfer_in_clipped(const std::vector< VEC<VType>* >& mesh_in_);
+	bool initialize_transfer_in_clipped(void);
 
 	//MESHTRANSFERTYPE_ENLARGED
-	bool initialize_transfer_in_enlarged(const std::vector< VEC<VType>* >& mesh_in_);
+	bool initialize_transfer_in_enlarged(void);
 
-	bool initialize_transfer_out(const std::vector< VEC<VType>* >& mesh_out_);
+	bool initialize_transfer_out(void);
 
 public:
 
@@ -199,11 +209,27 @@ public:
 
 	//----------------------------------- RUN-TIME TRANSFER METHODS
 
+	//SINGLE INPUT
+
 	//transfer values from the external meshes (mesh_in) into supermesh
 	void transfer_from_external_meshes(bool clear = true);
 
+	//AVERAGED INPUTS
+
+	void transfer_from_external_meshes_averaged(bool clear = true);
+
+	//MULTIPLIED INPUTS
+
+	void transfer_from_external_meshes_multiplied(bool clear = true);
+
+	//SINGLE OUTPUT
+
 	//transfer values to the external meshes (mesh_out) from the supermesh
 	void transfer_to_external_meshes(bool clear = true);
+
+	//DUPLICATED OUTPUTS
+
+	void transfer_to_external_meshes_duplicated(bool clear = true);
 
 	//----------------------------------- CONFIGURATION
 
@@ -212,7 +238,28 @@ public:
 
 	//----------------------------------- INITIALIZE TRANSFER
 
-	bool initialize_transfer(const std::vector< VEC<VType>* >& mesh_in_, const std::vector< VEC<VType>* >& mesh_out_, int correction_type);
+	//SINGLE INPUT, SINGLE OUTPUT
+
+	bool initialize_transfer(
+		const std::vector< VEC<VType>* >& mesh_in_, const std::vector< VEC<VType>* >& mesh_out_, 
+		int correction_type);
+
+	//MULTIPLE INPUTS, SINGLE OUTPUT
+
+	bool initialize_transfer_averagedinputs(
+		const std::vector< VEC<VType>* >& mesh_in_, const std::vector< VEC<VType>* >& mesh_in2_, 
+		const std::vector< VEC<VType>* >& mesh_out_, int correction_type);
+
+	bool initialize_transfer_multipliedinputs(
+		const std::vector< VEC<VType>* >& mesh_in_, const std::vector< VEC<double>* >& mesh_in2_,
+		const std::vector< VEC<VType>* >& mesh_out_, int correction_type);
+
+	//MULTIPLE INPUTS, MULTIPLE OUTPUTS
+
+	bool initialize_transfer_averagedinputs_duplicatedoutputs(
+		const std::vector< VEC<VType>* >& mesh_in_, const std::vector< VEC<VType>* >& mesh_in2_, 
+		const std::vector< VEC<VType>* >& mesh_out_, const std::vector< VEC<VType>* >& mesh_out2_, 
+		int correction_type);
 	
 	//----------------------------------- INFO
 
@@ -321,6 +368,8 @@ double Transfer<VType>::build_supermeshcells_weights(SuperMeshCellsWeights &cell
 
 //----------------------------------- RUN-TIME TRANSFER METHODS
 
+//SINGLE INPUT
+
 //transfer values from the external meshes (mesh_in) into supermesh
 template <typename VType>
 void Transfer<VType>::transfer_from_external_meshes(bool clear)
@@ -336,11 +385,7 @@ void Transfer<VType>::transfer_from_external_meshes(bool clear)
 			double weight = transfer_in_info[idx][0].second;
 
 			//obtain weighted value from external mesh
-			VType weighted_value = (*mesh_in[full_index.i])[full_index.j] * weight;
-
-			//stored contribution in supermesh
-			if (clear) (*pVEC)[idx] = weighted_value;
-			else (*pVEC)[idx] += weighted_value;
+			VType total_weighted_value = (*mesh_in[full_index.i])[full_index.j] * weight;
 
 			//go through all other contributions to cell idx
 			for (int cidx = 1; cidx < transfer_in_info[idx].size(); cidx++) {
@@ -349,15 +394,114 @@ void Transfer<VType>::transfer_from_external_meshes(bool clear)
 				double weight = transfer_in_info[idx][cidx].second;
 
 				//obtain weighted value from external mesh
-				VType weighted_value = (*mesh_in[full_index.i])[full_index.j] * weight;
-
-				//stored contribution in supermesh
-				(*pVEC)[idx] += weighted_value;
+				total_weighted_value += (*mesh_in[full_index.i])[full_index.j] * weight;
 			}
+
+			//stored contribution in supermesh
+			if (clear) (*pVEC)[idx] = total_weighted_value;
+			else (*pVEC)[idx] += total_weighted_value;
 		}
 		else if(clear) (*pVEC)[idx] = VType();
 	}
 }
+
+//AVERAGED INPUTS
+
+template <typename VType>
+void Transfer<VType>::transfer_from_external_meshes_averaged(bool clear)
+{
+	//go through all super-mesh cells
+#pragma omp parallel for
+	for (int idx = 0; idx < pVEC->linear_size(); idx++) {
+
+		if (transfer_in_info[idx].size()) {
+
+			//first contribution to cell idx : set or add depending on clear flag
+			INT2 full_index = transfer_in_info[idx][0].first;
+			double weight = transfer_in_info[idx][0].second;
+
+			//obtain weighted value from external mesh
+			VType total_weighted_value = VType();
+			
+			//average input if possible else simple input
+			if (mesh_in2[full_index.i]->linear_size()) {
+
+				total_weighted_value = ((*mesh_in[full_index.i])[full_index.j] + (*mesh_in2[full_index.i])[full_index.j]) * weight / 2;
+			}
+			else total_weighted_value = (*mesh_in[full_index.i])[full_index.j] * weight;
+
+			//go through all other contributions to cell idx
+			for (int cidx = 1; cidx < transfer_in_info[idx].size(); cidx++) {
+
+				INT2 full_index = transfer_in_info[idx][cidx].first;
+				double weight = transfer_in_info[idx][cidx].second;
+
+				//obtain weighted value from external mesh
+				//average input if possible else simple input
+				if (mesh_in2[full_index.i]->linear_size()) {
+
+					total_weighted_value += ((*mesh_in[full_index.i])[full_index.j] + (*mesh_in2[full_index.i])[full_index.j]) * weight / 2;
+				}
+				else total_weighted_value += (*mesh_in[full_index.i])[full_index.j] * weight;
+			}
+
+			//stored contribution in supermesh
+			if (clear) (*pVEC)[idx] = total_weighted_value;
+			else (*pVEC)[idx] += total_weighted_value;
+		}
+		else if (clear) (*pVEC)[idx] = VType();
+	}
+}
+
+//MULTIPLIED INPUTS
+
+template <typename VType>
+void Transfer<VType>::transfer_from_external_meshes_multiplied(bool clear)
+{
+	//go through all super-mesh cells
+#pragma omp parallel for
+	for (int idx = 0; idx < pVEC->linear_size(); idx++) {
+
+		if (transfer_in_info[idx].size()) {
+
+			//first contribution to cell idx : set or add depending on clear flag
+			INT2 full_index = transfer_in_info[idx][0].first;
+			double weight = transfer_in_info[idx][0].second;
+
+			//obtain weighted value from external mesh
+			VType total_weighted_value = VType();
+
+			//multiply inputs if possible else simple input
+			if (mesh_in2_double[full_index.i]->linear_size()) {
+
+				total_weighted_value = ((*mesh_in[full_index.i])[full_index.j] * (*mesh_in2_double[full_index.i])[full_index.j]) * weight;
+			}
+			else total_weighted_value = (*mesh_in[full_index.i])[full_index.j] * weight;
+
+			//go through all other contributions to cell idx
+			for (int cidx = 1; cidx < transfer_in_info[idx].size(); cidx++) {
+
+				INT2 full_index = transfer_in_info[idx][cidx].first;
+				double weight = transfer_in_info[idx][cidx].second;
+
+				//obtain weighted value from external mesh
+				//multiply inputs if possible else simple input
+				if (mesh_in2_double[full_index.i]->linear_size()) {
+
+					total_weighted_value += ((*mesh_in[full_index.i])[full_index.j] * (*mesh_in2_double[full_index.i])[full_index.j]) * weight;
+				}
+				else total_weighted_value += (*mesh_in[full_index.i])[full_index.j] * weight;
+			}
+
+			//stored contribution in supermesh
+			if (clear) (*pVEC)[idx] = total_weighted_value;
+			else (*pVEC)[idx] += total_weighted_value;
+		}
+		else if (clear) (*pVEC)[idx] = VType();
+	}
+}
+
+//SINGLE OUTPUT
 
 //transfer values to the external meshes (mesh_out) from the supermesh
 template <typename VType>
@@ -376,8 +520,9 @@ void Transfer<VType>::transfer_to_external_meshes(bool clear)
 				int index = transfer_out_info[meshIdx][idx][0].first;
 				double weight = transfer_out_info[meshIdx][idx][0].second;
 
-				if (clear) (*mesh_out[meshIdx])[idx] = (*pVEC)[index] * weight;
-				else (*mesh_out[meshIdx])[idx] += (*pVEC)[index] * weight;
+				VType total_weighted_value = VType();
+
+				total_weighted_value = (*pVEC)[index] * weight;
 
 				//go through all other contributions to cell idx
 				for (int cidx = 1; cidx < transfer_out_info[meshIdx][idx].size(); cidx++) {
@@ -385,10 +530,70 @@ void Transfer<VType>::transfer_to_external_meshes(bool clear)
 					int index = transfer_out_info[meshIdx][idx][cidx].first;
 					double weight = transfer_out_info[meshIdx][idx][cidx].second;
 
-					(*mesh_out[meshIdx])[idx] += (*pVEC)[index] * weight;
+					total_weighted_value += (*pVEC)[index] * weight;
 				}
+
+				if (clear) (*mesh_out[meshIdx])[idx] = total_weighted_value;
+				else (*mesh_out[meshIdx])[idx] += total_weighted_value;
 			}
 			else if (clear) (*mesh_out[meshIdx])[idx] = VType();
+		}
+	}
+}
+
+//DUPLICATED OUTPUTS
+
+template <typename VType>
+void Transfer<VType>::transfer_to_external_meshes_duplicated(bool clear)
+{
+	//go through all out meshes
+	for (int meshIdx = 0; meshIdx < mesh_out.size(); meshIdx++) {
+
+		//for each out mesh go through all its cells to build mesh_entry
+#pragma omp parallel for
+		for (int idx = 0; idx < mesh_out[meshIdx]->linear_size(); idx++) {
+
+			if (transfer_out_info[meshIdx][idx].size()) {
+
+				//first contribution to cell idx : set or add depending on clear flag
+				int index = transfer_out_info[meshIdx][idx][0].first;
+				double weight = transfer_out_info[meshIdx][idx][0].second;
+
+				VType total_weighted_value = VType();
+
+				total_weighted_value = (*pVEC)[index] * weight;
+
+				//go through all other contributions to cell idx
+				for (int cidx = 1; cidx < transfer_out_info[meshIdx][idx].size(); cidx++) {
+
+					int index = transfer_out_info[meshIdx][idx][cidx].first;
+					double weight = transfer_out_info[meshIdx][idx][cidx].second;
+
+					total_weighted_value += (*pVEC)[index] * weight;
+				}
+
+				if (clear) {
+
+					(*mesh_out[meshIdx])[idx] = total_weighted_value;
+					
+					//duplicate output if possible
+					if (mesh_out2[meshIdx]->linear_size()) (*mesh_out2[meshIdx])[idx] = total_weighted_value;
+				}
+				else {
+
+					(*mesh_out[meshIdx])[idx] += total_weighted_value;
+
+					//duplicate output if possible
+					if (mesh_out2[meshIdx]->linear_size()) (*mesh_out2[meshIdx])[idx] += total_weighted_value;
+				}
+			}
+			else if (clear) {
+
+				(*mesh_out[meshIdx])[idx] = VType();
+
+				//duplicate output if possible
+				if (mesh_out2[meshIdx]->linear_size()) (*mesh_out2[meshIdx])[idx] = VType();
+			}
 		}
 	}
 }
@@ -401,6 +606,10 @@ void Transfer<VType>::clear(void)
 {
 	mesh_in.clear();
 	mesh_out.clear();
+	mesh_in2.clear();
+	mesh_out2.clear();
+
+	mesh_in2_double.clear();
 
 	transfer_in_info.clear();
 	transfer_in_info.shrink_to_fit();
@@ -413,38 +622,167 @@ void Transfer<VType>::clear(void)
 
 //----------------------------------- INITIALIZE TRANSFER
 
+//SINGLE INPUT, SINGLE OUTPUT
+
 template <typename VType>
-bool Transfer<VType>::initialize_transfer(const std::vector< VEC<VType>* >& mesh_in_, const std::vector< VEC<VType>* >& mesh_out_, int correction_type)
+bool Transfer<VType>::initialize_transfer(
+	const std::vector< VEC<VType>* >& mesh_in_, const std::vector< VEC<VType>* >& mesh_out_, 
+	int correction_type)
 {
 	//-------------------------------------------------------------- Build transfer_in_info
+
+	mesh_in = mesh_in_;
+	mesh_in2.clear();
+	mesh_in2_double.clear();
 
 	switch (correction_type) {
 
 	case MESHTRANSFERTYPE_WEIGHTED:
-		if (!initialize_transfer_in_weighted(mesh_in_)) return false;
+		if (!initialize_transfer_in_weighted()) return false;
 		break;
 
 	case MESHTRANSFERTYPE_CLIPPED:
-		if (!initialize_transfer_in_clipped(mesh_in_)) return false;
+		if (!initialize_transfer_in_clipped()) return false;
 		break;
 
 	case MESHTRANSFERTYPE_ENLARGED:
-		if (!initialize_transfer_in_enlarged(mesh_in_)) return false;
+		if (!initialize_transfer_in_enlarged()) return false;
 		break;
 	};
 
 	//-------------------------------------------------------------- Build transfer_out_info
 
-	if (!initialize_transfer_out(mesh_out_)) return false;
+	mesh_out = mesh_out_;
+	mesh_out2.clear();
+
+	if (!initialize_transfer_out()) return false;
+
+	return true;
+}
+
+//MULTIPLE INPUTS, SINGLE OUTPUT
+
+template <typename VType>
+bool Transfer<VType>::initialize_transfer_averagedinputs(
+	const std::vector< VEC<VType>* >& mesh_in_, const std::vector< VEC<VType>* >& mesh_in2_,
+	const std::vector< VEC<VType>* >& mesh_out_, int correction_type)
+{
+	if (mesh_in_.size() != mesh_in2_.size()) return false;
+
+	//-------------------------------------------------------------- Build transfer_in_info
+
+	mesh_in = mesh_in_;
+	mesh_in2 = mesh_in2_;
+	mesh_in2_double.clear();
+
+	switch (correction_type) {
+
+	case MESHTRANSFERTYPE_WEIGHTED:
+		if (!initialize_transfer_in_weighted()) return false;
+		break;
+
+	case MESHTRANSFERTYPE_CLIPPED:
+		if (!initialize_transfer_in_clipped()) return false;
+		break;
+
+	case MESHTRANSFERTYPE_ENLARGED:
+		if (!initialize_transfer_in_enlarged()) return false;
+		break;
+	};
+
+	//-------------------------------------------------------------- Build transfer_out_info
+
+	mesh_out = mesh_out_;
+	mesh_out2.clear();
+
+	if (!initialize_transfer_out()) return false;
+
+	return true;
+}
+
+template <typename VType>
+bool Transfer<VType>::initialize_transfer_multipliedinputs(
+	const std::vector< VEC<VType>* >& mesh_in_, const std::vector< VEC<double>* >& mesh_in2_,
+	const std::vector< VEC<VType>* >& mesh_out_, int correction_type)
+{
+	if (mesh_in_.size() != mesh_in2_.size()) return false;
+
+	//-------------------------------------------------------------- Build transfer_in_info
+
+	mesh_in = mesh_in_;
+	mesh_in2_double = mesh_in2_;
+	mesh_in2.clear();
+
+	switch (correction_type) {
+
+	case MESHTRANSFERTYPE_WEIGHTED:
+		if (!initialize_transfer_in_weighted()) return false;
+		break;
+
+	case MESHTRANSFERTYPE_CLIPPED:
+		if (!initialize_transfer_in_clipped()) return false;
+		break;
+
+	case MESHTRANSFERTYPE_ENLARGED:
+		if (!initialize_transfer_in_enlarged()) return false;
+		break;
+	};
+
+	//-------------------------------------------------------------- Build transfer_out_info
+
+	mesh_out = mesh_out_;
+	mesh_out2.clear();
+
+	if (!initialize_transfer_out()) return false;
+
+	return true;
+}
+
+//MULTIPLE INPUTS, MULTIPLE OUTPUTS
+
+template <typename VType>
+bool Transfer<VType>::initialize_transfer_averagedinputs_duplicatedoutputs(
+	const std::vector< VEC<VType>* >& mesh_in_, const std::vector< VEC<VType>* >& mesh_in2_,
+	const std::vector< VEC<VType>* >& mesh_out_, const std::vector< VEC<VType>* >& mesh_out2_,
+	int correction_type)
+{
+	if (mesh_in_.size() != mesh_in2_.size() || mesh_out_.size() != mesh_out2_.size()) return false;
+
+	//-------------------------------------------------------------- Build transfer_in_info
+
+	mesh_in = mesh_in_;
+	mesh_in2 = mesh_in2_;
+	mesh_in2_double.clear();
+
+	switch (correction_type) {
+
+	case MESHTRANSFERTYPE_WEIGHTED:
+		if (!initialize_transfer_in_weighted()) return false;
+		break;
+
+	case MESHTRANSFERTYPE_CLIPPED:
+		if (!initialize_transfer_in_clipped()) return false;
+		break;
+
+	case MESHTRANSFERTYPE_ENLARGED:
+		if (!initialize_transfer_in_enlarged()) return false;
+		break;
+	};
+
+	//-------------------------------------------------------------- Build transfer_out_info
+
+	mesh_out = mesh_out_;
+	mesh_out2 = mesh_out2_;
+
+	if (!initialize_transfer_out()) return false;
 
 	return true;
 }
 
 //MESHTRANSFERTYPE_WEIGHTED
 template <typename VType>
-bool Transfer<VType>::initialize_transfer_in_weighted(const std::vector< VEC<VType>* >& mesh_in_)
+bool Transfer<VType>::initialize_transfer_in_weighted(void)
 {
-	mesh_in = mesh_in_;
 
 	//-------------------------------------------------------------- Build transfer_in_info
 
@@ -501,9 +839,8 @@ bool Transfer<VType>::initialize_transfer_in_weighted(const std::vector< VEC<VTy
 
 //MESHTRANSFERTYPE_CLIPPED
 template <typename VType>
-bool Transfer<VType>::initialize_transfer_in_clipped(const std::vector< VEC<VType>* >& mesh_in_)
+bool Transfer<VType>::initialize_transfer_in_clipped(void)
 {
-	mesh_in = mesh_in_;
 
 	//-------------------------------------------------------------- Build transfer_in_info
 
@@ -559,9 +896,8 @@ bool Transfer<VType>::initialize_transfer_in_clipped(const std::vector< VEC<VTyp
 
 //MESHTRANSFERTYPE_ENLARGED
 template <typename VType>
-bool Transfer<VType>::initialize_transfer_in_enlarged(const std::vector< VEC<VType>* >& mesh_in_)
+bool Transfer<VType>::initialize_transfer_in_enlarged(void)
 {
-	mesh_in = mesh_in_;
 
 	//-------------------------------------------------------------- Build transfer_in_info
 
@@ -612,9 +948,8 @@ bool Transfer<VType>::initialize_transfer_in_enlarged(const std::vector< VEC<VTy
 }
 
 template <typename VType>
-bool Transfer<VType>::initialize_transfer_out(const std::vector< VEC<VType>* >& mesh_out_)
+bool Transfer<VType>::initialize_transfer_out(void)
 {
-	mesh_out = mesh_out_;
 
 	//-------------------------------------------------------------- Build transfer_out_info
 

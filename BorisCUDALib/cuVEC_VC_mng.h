@@ -13,6 +13,7 @@ template <typename VType>
 __host__ void cuVEC_VC<VType>::alloc_initialize_data(void)
 {
 	nullgpuptr(ngbrFlags);
+	nullgpuptr(ngbrFlags2);
 	nullgpuptr(dirichlet_px);
 	nullgpuptr(dirichlet_nx);
 	nullgpuptr(dirichlet_py);
@@ -21,28 +22,25 @@ __host__ void cuVEC_VC<VType>::alloc_initialize_data(void)
 	nullgpuptr(dirichlet_nz);
 
 	set_ngbrFlags_size(0);
+	set_gpu_value(using_extended_flags, false);
 	set_gpu_value(nonempty_cells, (int)0);
 
-	set_dirichlet_size(0, NF_DIRICHLETPX);
-	set_dirichlet_size(0, NF_DIRICHLETNX);
-	set_dirichlet_size(0, NF_DIRICHLETPY);
-	set_dirichlet_size(0, NF_DIRICHLETNY);
-	set_dirichlet_size(0, NF_DIRICHLETPZ);
-	set_dirichlet_size(0, NF_DIRICHLETNZ);
+	set_dirichlet_size(0, NF2_DIRICHLETPX);
+	set_dirichlet_size(0, NF2_DIRICHLETNX);
+	set_dirichlet_size(0, NF2_DIRICHLETPY);
+	set_dirichlet_size(0, NF2_DIRICHLETNY);
+	set_dirichlet_size(0, NF2_DIRICHLETPZ);
+	set_dirichlet_size(0, NF2_DIRICHLETNZ);
 
-	set_robin(cuReal2(), NF_ROBINPX);
-	set_robin(cuReal2(), NF_ROBINNX);
-	set_robin(cuReal2(), NF_ROBINPY);
-	set_robin(cuReal2(), NF_ROBINNY);
-	set_robin(cuReal2(), NF_ROBINPZ);
-	set_robin(cuReal2(), NF_ROBINNZ);
-	set_robin(cuReal2(), NF_ROBINV);
+	set_robin(cuReal2(), NF2_ROBINPX);
+	set_robin(cuReal2(), NF2_ROBINNX);
+	set_robin(cuReal2(), NF2_ROBINPY);
+	set_robin(cuReal2(), NF2_ROBINNY);
+	set_robin(cuReal2(), NF2_ROBINPZ);
+	set_robin(cuReal2(), NF2_ROBINNZ);
+	set_robin(cuReal2(), NF2_ROBINV);
 
 	set_gpu_value(shift_debt, cuReal3());
-
-	set_gpu_value(aSOR_damping, (cuBReal)1.0);
-	set_gpu_value(aSOR_lasterror, (cuBReal)0.0);
-	set_gpu_value(aSOR_lastgrad, (cuBReal)0.0);
 
 	set_gpu_value(pbc_x, (int)0);
 	set_gpu_value(pbc_y, (int)0);
@@ -78,37 +76,45 @@ __host__ size_t cuVEC_VC<VType>::get_ngbrFlags_size(void) const
 	return get_gpu_value(ngbrFlags_size);
 }
 
+//get ngbrFlags_size value in cpu memory
+template <typename VType>
+__host__ size_t cuVEC_VC<VType>::get_ngbrFlags2_size(void) const
+{
+	if (isnullgpuptr((int*&)ngbrFlags2)) return 0;
+	else return get_gpu_value(ngbrFlags_size);
+}
+
 //set robin values using a robin id
 template <typename VType>
 __host__ void cuVEC_VC<VType>::set_robin(cuReal2 robin_value, int robin_id)
 {
 	switch (robin_id) {
 
-	case NF_ROBINPX:
+	case NF2_ROBINPX:
 		set_gpu_value(robin_px, robin_value);
 		break;
 		
-	case NF_ROBINNX:
+	case NF2_ROBINNX:
 		set_gpu_value(robin_nx, robin_value);
 		break;
 		
-	case NF_ROBINPY:
+	case NF2_ROBINPY:
 		set_gpu_value(robin_py, robin_value);
 		break;
 		
-	case NF_ROBINNY:
+	case NF2_ROBINNY:
 		set_gpu_value(robin_ny, robin_value);
 		break;
 		
-	case NF_ROBINPZ:
+	case NF2_ROBINPZ:
 		set_gpu_value(robin_pz, robin_value);
 		break;
 		
-	case NF_ROBINNZ:
+	case NF2_ROBINNZ:
 		set_gpu_value(robin_nz, robin_value);
 		break;
 		
-	case NF_ROBINV:
+	case NF2_ROBINV:
 		set_gpu_value(robin_v, robin_value);
 		break;
 	}
@@ -123,7 +129,7 @@ __host__ cudaError_t cuVEC_VC<VType>::set_dirichlet_size(size_t size, int dirich
 
 	switch (dirichlet_id) {
 
-	case NF_DIRICHLETPX:
+	case NF2_DIRICHLETPX:
 		error = gpu_alloc_managed(dirichlet_px, size);
 		if (error != cudaSuccess) {
 
@@ -133,7 +139,7 @@ __host__ cudaError_t cuVEC_VC<VType>::set_dirichlet_size(size_t size, int dirich
 		set_gpu_value(dirichlet_px_size, size);
 		break;
 		
-	case NF_DIRICHLETNX:
+	case NF2_DIRICHLETNX:
 		error = gpu_alloc_managed(dirichlet_nx, size);
 		if (error != cudaSuccess) {
 
@@ -143,7 +149,7 @@ __host__ cudaError_t cuVEC_VC<VType>::set_dirichlet_size(size_t size, int dirich
 		set_gpu_value(dirichlet_nx_size, size);
 		break;
 		
-	case NF_DIRICHLETPY:
+	case NF2_DIRICHLETPY:
 		error = gpu_alloc_managed(dirichlet_py, size);
 		if (error != cudaSuccess) {
 
@@ -153,7 +159,7 @@ __host__ cudaError_t cuVEC_VC<VType>::set_dirichlet_size(size_t size, int dirich
 		set_gpu_value(dirichlet_py_size, size);
 		break;
 		
-	case NF_DIRICHLETNY:
+	case NF2_DIRICHLETNY:
 		error = gpu_alloc_managed(dirichlet_ny, size);
 		if (error != cudaSuccess) {
 
@@ -163,7 +169,7 @@ __host__ cudaError_t cuVEC_VC<VType>::set_dirichlet_size(size_t size, int dirich
 		set_gpu_value(dirichlet_ny_size, size);
 		break;
 		
-	case NF_DIRICHLETPZ:
+	case NF2_DIRICHLETPZ:
 		error = gpu_alloc_managed(dirichlet_pz, size);
 		if (error != cudaSuccess) {
 
@@ -173,7 +179,7 @@ __host__ cudaError_t cuVEC_VC<VType>::set_dirichlet_size(size_t size, int dirich
 		set_gpu_value(dirichlet_pz_size, size);
 		break;
 		
-	case NF_DIRICHLETNZ:
+	case NF2_DIRICHLETNZ:
 		error = gpu_alloc_managed(dirichlet_nz, size);
 		if (error != cudaSuccess) {
 
@@ -193,22 +199,22 @@ __host__ size_t cuVEC_VC<VType>::get_dirichlet_size(int dirichlet_id) const
 {
 	switch (dirichlet_id) {
 
-	case NF_DIRICHLETPX:
+	case NF2_DIRICHLETPX:
 		return get_gpu_value(dirichlet_px_size);
 	
-	case NF_DIRICHLETNX:
+	case NF2_DIRICHLETNX:
 		return get_gpu_value(dirichlet_nx_size);
 	
-	case NF_DIRICHLETPY:
+	case NF2_DIRICHLETPY:
 		return get_gpu_value(dirichlet_py_size);
 	
-	case NF_DIRICHLETNY:
+	case NF2_DIRICHLETNY:
 		return get_gpu_value(dirichlet_ny_size);
 	
-	case NF_DIRICHLETPZ:
+	case NF2_DIRICHLETPZ:
 		return get_gpu_value(dirichlet_pz_size);
 	
-	case NF_DIRICHLETNZ:
+	case NF2_DIRICHLETNZ:
 		return get_gpu_value(dirichlet_nz_size);
 	}
 
@@ -329,6 +335,28 @@ __host__ void cuVEC_VC<VType>::assign_cu_obj(const cuVEC_VC<VType>& copyThis)
 		gpu_to_gpu_managed(ngbrFlags, copyThis.ngbrFlags, get_ngbrFlags_size());
 	}
 
+	//copy ngbrFlags2 if needed (else free and null it)
+	if (isnullgpuptr((int*&)copyThis.ngbrFlags2)) {
+
+		gpu_free_managed(ngbrFlags2);
+		set_gpu_value(using_extended_flags, false);
+	}
+	else {
+
+		error = gpu_alloc_managed(ngbrFlags2, get_ngbrFlags_size());
+		if (error != cudaSuccess) {
+
+			//failed : nullptr
+			nullgpuptr(ngbrFlags2);
+			set_gpu_value(using_extended_flags, false);
+		}
+		else {
+
+			gpu_to_gpu_managed(ngbrFlags2, copyThis.ngbrFlags2, get_ngbrFlags_size());
+			set_gpu_value(using_extended_flags, true);
+		}
+	}
+
 	//copy nonempty_cells
 	gpu_to_gpu(nonempty_cells, copyThis.nonempty_cells);
 
@@ -355,70 +383,65 @@ __host__ void cuVEC_VC<VType>::assign_cu_obj(const cuVEC_VC<VType>& copyThis)
 	//copy dirichlet values arrays
 	size_t size;
 	
-	size = get_dirichlet_size(NF_DIRICHLETPX);
+	size = get_dirichlet_size(NF2_DIRICHLETPX);
 	if (size) {
 
-		error = set_dirichlet_size(size, NF_DIRICHLETPX);
+		error = set_dirichlet_size(size, NF2_DIRICHLETPX);
 		if (error == cudaSuccess) {
 
 			gpu_to_gpu_managed(dirichlet_px, copyThis.dirichlet_px, size);
 		}
 	}
 
-	size = get_dirichlet_size(NF_DIRICHLETNX);
+	size = get_dirichlet_size(NF2_DIRICHLETNX);
 	if (size) {
 
-		error = set_dirichlet_size(size, NF_DIRICHLETNX);
+		error = set_dirichlet_size(size, NF2_DIRICHLETNX);
 		if (error == cudaSuccess) {
 
 			gpu_to_gpu_managed(dirichlet_nx, copyThis.dirichlet_nx, size);
 		}
 	}
 
-	size = get_dirichlet_size(NF_DIRICHLETPY);
+	size = get_dirichlet_size(NF2_DIRICHLETPY);
 	if (size) {
 
-		error = set_dirichlet_size(size, NF_DIRICHLETPY);
+		error = set_dirichlet_size(size, NF2_DIRICHLETPY);
 		if (error == cudaSuccess) {
 
 			gpu_to_gpu_managed(dirichlet_py, copyThis.dirichlet_py, size);
 		}
 	}
 
-	size = get_dirichlet_size(NF_DIRICHLETNY);
+	size = get_dirichlet_size(NF2_DIRICHLETNY);
 	if (size) {
 
-		error = set_dirichlet_size(size, NF_DIRICHLETNY);
+		error = set_dirichlet_size(size, NF2_DIRICHLETNY);
 		if (error == cudaSuccess) {
 
 			gpu_to_gpu_managed(dirichlet_ny, copyThis.dirichlet_ny, size);
 		}
 	}
 
-	size = get_dirichlet_size(NF_DIRICHLETPZ);
+	size = get_dirichlet_size(NF2_DIRICHLETPZ);
 	if (size) {
 
-		error = set_dirichlet_size(size, NF_DIRICHLETPZ);
+		error = set_dirichlet_size(size, NF2_DIRICHLETPZ);
 		if (error == cudaSuccess) {
 
 			gpu_to_gpu_managed(dirichlet_pz, copyThis.dirichlet_pz, size);
 		}
 	}
 
-	size = get_dirichlet_size(NF_DIRICHLETNZ);
+	size = get_dirichlet_size(NF2_DIRICHLETNZ);
 	if (size) {
 
-		error = set_dirichlet_size(size, NF_DIRICHLETNZ);
+		error = set_dirichlet_size(size, NF2_DIRICHLETNZ);
 		if (error == cudaSuccess) {
 
 			gpu_to_gpu_managed(dirichlet_nz, copyThis.dirichlet_nz, size);
 		}
 	}
-
-	//copy aSOR parameters
-	gpu_go_gpu(aSOR_lasterror, copyThis.aSOR_lasterror);
-	gpu_go_gpu(aSOR_damping, copyThis.aSOR_damping);
-	gpu_go_gpu(aSOR_lastgrad, copyThis.aSOR_lastgrad);
 
 	//copy pbc settings
 	gpu_go_gpu(pbc_x, copyThis.pbc_x);
@@ -431,6 +454,10 @@ template <typename VType>
 __host__ void cuVEC_VC<VType>::destruct_cu_obj(void)
 {
 	gpu_free_managed(ngbrFlags);
+	
+	gpu_free_managed(ngbrFlags2);
+	set_gpu_value(using_extended_flags, false);
+	
 	gpu_free_managed(dirichlet_px);
 	gpu_free_managed(dirichlet_nx);
 	gpu_free_managed(dirichlet_py);
@@ -458,7 +485,6 @@ __host__ bool cuVEC_VC<VType>::set_from_cpuvec(cpuVEC_VC& vec_vc)
 	//dirichlet vectors (and set sizes)
 	//robin values
 	//shift debt
-	//aSOR parameters
 
 	//-----------
 
@@ -488,6 +514,26 @@ __host__ bool cuVEC_VC<VType>::set_from_cpuvec(cpuVEC_VC& vec_vc)
 	//now copy
 	cpu_to_gpu_managed(ngbrFlags, vec_vc.ngbrFlags_ref().data(), cpu_n.dim());
 
+	//copy ngbrFlags2
+	if (vec_vc.ngbrFlags2_ref().size()) {
+
+		//first allocate memory
+		error = gpu_alloc_managed(ngbrFlags2, cpu_n.dim());
+		if (error != cudaSuccess) return false; //not enough memory so abort
+
+		set_gpu_value(using_extended_flags, true);
+
+		//now copy
+		cpu_to_gpu_managed(ngbrFlags2, vec_vc.ngbrFlags2_ref().data(), cpu_n.dim());
+
+	}
+	else {
+
+		//ngbrFlags2 not used
+		gpu_free_managed(ngbrFlags2);
+		set_gpu_value(using_extended_flags, false);
+	}
+
 	//-----------
 
 	//copy nonempty_cells
@@ -499,11 +545,11 @@ __host__ bool cuVEC_VC<VType>::set_from_cpuvec(cpuVEC_VC& vec_vc)
 	
 	size_t dirichlet_size;
 
-	//---NF_DIRICHLETPX
+	//---NF2_DIRICHLETPX
 	
 	//allocate gpu memory if sizes don't match
 	dirichlet_size = vec_vc.dirichlet_px_ref().size();
-	if (get_dirichlet_size(NF_DIRICHLETPX) != dirichlet_size) {
+	if (get_dirichlet_size(NF2_DIRICHLETPX) != dirichlet_size) {
 
 		error = gpu_alloc_managed(dirichlet_px, dirichlet_size);
 		if (error != cudaSuccess) return false; //not enough memory so abort
@@ -515,11 +561,11 @@ __host__ bool cuVEC_VC<VType>::set_from_cpuvec(cpuVEC_VC& vec_vc)
 	//copy over
 	cpu_to_gpu_managed(dirichlet_px, vec_vc.dirichlet_px_ref().data(), dirichlet_size);
 
-	//---NF_DIRICHLETNX
+	//---NF2_DIRICHLETNX
 
 	//allocate gpu memory if sizes don't match
 	dirichlet_size = vec_vc.dirichlet_nx_ref().size();
-	if (get_dirichlet_size(NF_DIRICHLETNX) != dirichlet_size) {
+	if (get_dirichlet_size(NF2_DIRICHLETNX) != dirichlet_size) {
 
 		error = gpu_alloc_managed(dirichlet_nx, dirichlet_size);
 		if (error != cudaSuccess) return false; //not enough memory so abort
@@ -531,11 +577,11 @@ __host__ bool cuVEC_VC<VType>::set_from_cpuvec(cpuVEC_VC& vec_vc)
 	//copy over
 	cpu_to_gpu_managed(dirichlet_nx, vec_vc.dirichlet_nx_ref().data(), dirichlet_size);
 	
-	//---NF_DIRICHLETPY
+	//---NF2_DIRICHLETPY
 
 	//allocate gpu memory if sizes don't match
 	dirichlet_size = vec_vc.dirichlet_py_ref().size();
-	if (get_dirichlet_size(NF_DIRICHLETPY) != dirichlet_size) {
+	if (get_dirichlet_size(NF2_DIRICHLETPY) != dirichlet_size) {
 
 		error = gpu_alloc_managed(dirichlet_py, dirichlet_size);
 		if (error != cudaSuccess) return false; //not enough memory so abort
@@ -547,11 +593,11 @@ __host__ bool cuVEC_VC<VType>::set_from_cpuvec(cpuVEC_VC& vec_vc)
 	//copy over
 	cpu_to_gpu_managed(dirichlet_py, vec_vc.dirichlet_py_ref().data(), dirichlet_size);
 
-	//---NF_DIRICHLETNY
+	//---NF2_DIRICHLETNY
 
 	//allocate gpu memory if sizes don't match
 	dirichlet_size = vec_vc.dirichlet_ny_ref().size();
-	if (get_dirichlet_size(NF_DIRICHLETNY) != dirichlet_size) {
+	if (get_dirichlet_size(NF2_DIRICHLETNY) != dirichlet_size) {
 
 		error = gpu_alloc_managed(dirichlet_ny, dirichlet_size);
 		if (error != cudaSuccess) return false; //not enough memory so abort
@@ -563,11 +609,11 @@ __host__ bool cuVEC_VC<VType>::set_from_cpuvec(cpuVEC_VC& vec_vc)
 	//copy over
 	cpu_to_gpu_managed(dirichlet_ny, vec_vc.dirichlet_ny_ref().data(), dirichlet_size);
 
-	//---NF_DIRICHLETPZ
+	//---NF2_DIRICHLETPZ
 
 	//allocate gpu memory if sizes don't match
 	dirichlet_size = vec_vc.dirichlet_pz_ref().size();
-	if (get_dirichlet_size(NF_DIRICHLETPZ) != dirichlet_size) {
+	if (get_dirichlet_size(NF2_DIRICHLETPZ) != dirichlet_size) {
 
 		error = gpu_alloc_managed(dirichlet_pz, dirichlet_size);
 		if (error != cudaSuccess) return false; //not enough memory so abort
@@ -579,11 +625,11 @@ __host__ bool cuVEC_VC<VType>::set_from_cpuvec(cpuVEC_VC& vec_vc)
 	//copy over
 	cpu_to_gpu_managed(dirichlet_pz, vec_vc.dirichlet_pz_ref().data(), dirichlet_size);
 
-	//---NF_DIRICHLETNZ
+	//---NF2_DIRICHLETNZ
 
 	//allocate gpu memory if sizes don't match
 	dirichlet_size = vec_vc.dirichlet_nz_ref().size();
-	if (get_dirichlet_size(NF_DIRICHLETNZ) != dirichlet_size) {
+	if (get_dirichlet_size(NF2_DIRICHLETNZ) != dirichlet_size) {
 
 		error = gpu_alloc_managed(dirichlet_nz, dirichlet_size);
 		if (error != cudaSuccess) return false; //not enough memory so abort
@@ -609,9 +655,6 @@ __host__ bool cuVEC_VC<VType>::set_from_cpuvec(cpuVEC_VC& vec_vc)
 	//copy shift debt
 	set_gpu_value(shift_debt, (cuReal3)vec_vc.shift_debt_ref());
 
-	//copy aSOR parameters
-	set_gpu_value(aSOR_damping, (cuBReal)vec_vc.aSOR_damping_ref());
-
 	//copy pbc parameters
 	set_gpu_value(pbc_x, (int)vec_vc.pbc_x_ref());
 	set_gpu_value(pbc_y, (int)vec_vc.pbc_y_ref());
@@ -635,7 +678,6 @@ __host__ bool cuVEC_VC<VType>::set_cpuvec(cpuVEC_VC& vec_vc)
 	//dirichlet vectors
 	//robin values
 	//shift debt
-	//aSOR parameters
 
 	//----------- copy to VEC part (n, h, rect, quantity)
 
@@ -659,6 +701,22 @@ __host__ bool cuVEC_VC<VType>::set_cpuvec(cpuVEC_VC& vec_vc)
 	//now copy
 	gpu_to_cpu_managed(vec_vc.ngbrFlags_ref().data(), ngbrFlags, cpu_n.dim());
 
+	//copy ngbrFlags2 if needed
+	if (!isnullgpuptr(ngbrFlags2)) {
+
+		//first allocate memory
+		if (!malloc_vector(vec_vc.ngbrFlags2_ref(), cpu_n.dim())) return false;		//couldn't allocate memory
+
+		//now copy
+		gpu_to_cpu_managed(vec_vc.ngbrFlags2_ref().data(), ngbrFlags2, cpu_n.dim());
+	}
+	else {
+		
+		//ngbrFlags2 not used
+		vec_vc.ngbrFlags2_ref().clear();
+		vec_vc.ngbrFlags2_ref().shrink_to_fit();
+	}
+
 	//-----------
 
 	//copy nonempty_cells
@@ -670,49 +728,49 @@ __host__ bool cuVEC_VC<VType>::set_cpuvec(cpuVEC_VC& vec_vc)
 	
 	size_t dirichlet_size;
 
-	//---NF_DIRICHLETPX
+	//---NF2_DIRICHLETPX
 
-	dirichlet_size = get_dirichlet_size(NF_DIRICHLETPX);
+	dirichlet_size = get_dirichlet_size(NF2_DIRICHLETPX);
 
 	//copy dirichlet array to cpu memory
 	if (!malloc_vector(vec_vc.dirichlet_px_ref(), dirichlet_size)) return false;		//couldn't allocate memory	
 	gpu_to_cpu_managed(vec_vc.dirichlet_px_ref().data(), dirichlet_px, dirichlet_size);
 
-	//---NF_DIRICHLETNX
+	//---NF2_DIRICHLETNX
 
-	dirichlet_size = get_dirichlet_size(NF_DIRICHLETNX);
+	dirichlet_size = get_dirichlet_size(NF2_DIRICHLETNX);
 
 	//copy dirichlet array to cpu memory
 	if (!malloc_vector(vec_vc.dirichlet_nx_ref(), dirichlet_size)) return false;		//couldn't allocate memory	
 	gpu_to_cpu_managed(vec_vc.dirichlet_nx_ref().data(), dirichlet_nx, dirichlet_size);
 
-	//---NF_DIRICHLETPY
+	//---NF2_DIRICHLETPY
 
-	dirichlet_size = get_dirichlet_size(NF_DIRICHLETPY);
+	dirichlet_size = get_dirichlet_size(NF2_DIRICHLETPY);
 
 	//copy dirichlet array to cpu memory
 	if (!malloc_vector(vec_vc.dirichlet_py_ref(), dirichlet_size)) return false;		//couldn't allocate memory	
 	gpu_to_cpu_managed(vec_vc.dirichlet_py_ref().data(), dirichlet_py, dirichlet_size);
 
-	//---NF_DIRICHLETNY
+	//---NF2_DIRICHLETNY
 
-	dirichlet_size = get_dirichlet_size(NF_DIRICHLETNY);
+	dirichlet_size = get_dirichlet_size(NF2_DIRICHLETNY);
 
 	//copy dirichlet array to cpu memory
 	if (!malloc_vector(vec_vc.dirichlet_ny_ref(), dirichlet_size)) return false;		//couldn't allocate memory	
 	gpu_to_cpu_managed(vec_vc.dirichlet_ny_ref().data(), dirichlet_ny, dirichlet_size);
 
-	//---NF_DIRICHLETPZ
+	//---NF2_DIRICHLETPZ
 
-	dirichlet_size = get_dirichlet_size(NF_DIRICHLETPZ);
+	dirichlet_size = get_dirichlet_size(NF2_DIRICHLETPZ);
 
 	//copy dirichlet array to cpu memory
 	if (!malloc_vector(vec_vc.dirichlet_pz_ref(), dirichlet_size)) return false;		//couldn't allocate memory	
 	gpu_to_cpu_managed(vec_vc.dirichlet_pz_ref().data(), dirichlet_pz, dirichlet_size);
 
-	//---NF_DIRICHLETNZ
+	//---NF2_DIRICHLETNZ
 
-	dirichlet_size = get_dirichlet_size(NF_DIRICHLETNZ);
+	dirichlet_size = get_dirichlet_size(NF2_DIRICHLETNZ);
 
 	//copy dirichlet array to cpu memory
 	if (!malloc_vector(vec_vc.dirichlet_nz_ref(), dirichlet_size)) return false;		//couldn't allocate memory	
@@ -731,9 +789,6 @@ __host__ bool cuVEC_VC<VType>::set_cpuvec(cpuVEC_VC& vec_vc)
 	
 	//copy shift debt
 	vec_vc.shift_debt_ref() = get_gpu_value(shift_debt);
-
-	//copy aSOR parameters
-	vec_vc.aSOR_damping_ref() = get_gpu_value(aSOR_damping);
 
 	//copy pbc parameters
 	vec_vc.pbc_x_ref() = get_gpu_value(pbc_x);
@@ -754,18 +809,35 @@ __host__ bool cuVEC_VC<VType>::copy_from_cpuvec(cpuVEC_VC& vec_vc)
 	//copy shift debt
 	set_gpu_value(shift_debt, (cuReal3)vec_vc.shift_debt_ref());
 
-	//copy aSOR parameters
-	set_gpu_value(aSOR_damping, (cuBReal)vec_vc.aSOR_damping_ref());
-
 	//copy pbc parameters
 	set_gpu_value(pbc_x, (int)vec_vc.pbc_x_ref());
 	set_gpu_value(pbc_y, (int)vec_vc.pbc_y_ref());
 	set_gpu_value(pbc_z, (int)vec_vc.pbc_z_ref());
 
-	//now copy ngbrFlags
+	//copy ngbrFlags
 	cudaError_t error = cpu_to_gpu_managed(ngbrFlags, vec_vc.ngbrFlags_ref().data(), vec_vc.linear_size());
 	if (error != cudaSuccess) return false;
-	else return true;
+	
+	//copy ngbrFlags2 if needed
+	if (vec_vc.ngbrFlags2_ref().size()) {
+
+		//first allocate memory
+		error = gpu_alloc_managed(ngbrFlags2, vec_vc.linear_size());
+		if (error != cudaSuccess) return false; //not enough memory so abort
+
+		set_gpu_value(using_extended_flags, true);
+
+		//now copy
+		cpu_to_gpu_managed(ngbrFlags2, vec_vc.ngbrFlags2_ref().data(), vec_vc.linear_size());
+	}
+	else {
+
+		//ngbrFlags2 not used
+		gpu_free_managed(ngbrFlags2);
+		set_gpu_value(using_extended_flags, false);
+	}
+	
+	return true;
 }
 
 //faster version of set_cpuvec, where it is assumed the cpu vec already has the same sizes as this cuVEC_VC : only quantity and ngbrFlags are copied.
@@ -779,9 +851,6 @@ __host__ bool cuVEC_VC<VType>::copy_to_cpuvec(cpuVEC_VC& vec_vc)
 	//copy shift debt
 	vec_vc.shift_debt_ref() = get_gpu_value(shift_debt);
 
-	//copy aSOR parameters
-	vec_vc.aSOR_damping_ref() = get_gpu_value(aSOR_damping);
-
 	//copy pbc parameters
 	vec_vc.pbc_x_ref() = get_gpu_value(pbc_x);
 	vec_vc.pbc_y_ref() = get_gpu_value(pbc_y);
@@ -790,7 +859,24 @@ __host__ bool cuVEC_VC<VType>::copy_to_cpuvec(cpuVEC_VC& vec_vc)
 	//now copy ngbrFlags
 	cudaError_t error = gpu_to_cpu_managed(vec_vc.ngbrFlags_ref().data(), ngbrFlags, vec_vc.linear_size());
 	if (error != cudaSuccess) return false;
-	else return true;
+	
+	//copy ngbrFlags2 if needed
+	if (!isnullgpuptr(ngbrFlags2)) {
+
+		//first allocate memory
+		if (!malloc_vector(vec_vc.ngbrFlags2_ref(), vec_vc.linear_size())) return false;		//couldn't allocate memory
+
+		//now copy
+		gpu_to_cpu_managed(vec_vc.ngbrFlags2_ref().data(), ngbrFlags2, vec_vc.linear_size());
+	}
+	else {
+
+		//ngbrFlags2 not used
+		vec_vc.ngbrFlags2_ref().clear();
+		vec_vc.ngbrFlags2_ref().shrink_to_fit();
+	}
+	
+	return true;
 }
 
 //copy flags only from vec_vc, where sizes must match
@@ -807,5 +893,25 @@ __host__ bool cuVEC_VC<VType>::copyflags_from_cpuvec(cpuVEC_VC& vec_vc)
 
 	cudaError_t error = cpu_to_gpu_managed(ngbrFlags, ngbrFlags_cpu.data(), ngbrFlags_cpu.size());
 	if (error != cudaSuccess) return false;
-	else return true;
+
+	//copy ngbrFlags2 if needed
+	if (vec_vc.ngbrFlags2_ref().size()) {
+
+		//first allocate memory
+		error = gpu_alloc_managed(ngbrFlags2, ngbrFlags_cpu.size());
+		if (error != cudaSuccess) return false; //not enough memory so abort
+
+		set_gpu_value(using_extended_flags, true);
+
+		//now copy
+		cpu_to_gpu_managed(ngbrFlags2, vec_vc.ngbrFlags2_ref().data(), ngbrFlags_cpu.size());
+	}
+	else {
+
+		//ngbrFlags2 not used
+		gpu_free_managed(ngbrFlags2);
+		set_gpu_value(using_extended_flags, false);
+	}
+
+	return true;
 }

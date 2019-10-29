@@ -16,6 +16,12 @@ void STransportCUDA::solve_spin_transport_sor(void)
 
 	bool start_iters = true;
 
+	//Prime the spin solver for the charge part
+	for (int idx = 0; idx < (int)pTransport.size(); idx++) {
+
+		pTransport[idx]->PrimeSpinSolver_Charge();
+	}
+
 	//1. Solve V everywhere for current S until convergence criteria hit
 
 	do {
@@ -29,8 +35,7 @@ void STransportCUDA::solve_spin_transport_sor(void)
 			//use non-homogeneous Neumann boundary conditions for V? Only use them if iSHE is enabled and not a magnetic mesh
 			bool use_NNeu = IsNZ((double)pTransport[idx]->pMesh->iSHA) && !pTransport[idx]->pMesh->M.linear_size();
 
-			if (pSTrans->fixed_SOR_damping) pTransport[idx]->IterateSpinSolver_Charge_SOR(SOR_damping_V, max_error, max_value, use_NNeu);
-			else pTransport[idx]->IterateSpinSolver_Charge_aSOR(start_iters, pSTrans->s_errorMax, max_error, max_value, use_NNeu);
+			pTransport[idx]->IterateSpinSolver_Charge_SOR(SOR_damping_V, max_error, max_value, use_NNeu);
 		}
 
 		//normalize error to maximum change in cpu memory
@@ -49,7 +54,7 @@ void STransportCUDA::solve_spin_transport_sor(void)
 	//2. update Jc in all meshes if a significant change occured
 	for (int idx = 0; idx < (int)pTransport.size(); idx++) {
 
-		pTransport[idx]->CalculateCurrentDensity();
+		pTransport[idx]->CalculateElectricField();
 	}
 
 	//--------------
@@ -60,9 +65,13 @@ void STransportCUDA::solve_spin_transport_sor(void)
 
 	start_iters = true;
 
-	do {
+	//Prime the spin solver for the spin part
+	for (int idx = 0; idx < (int)pTransport.size(); idx++) {
 
-		pSTrans->aSOR_damping = DBL2();
+		pTransport[idx]->PrimeSpinSolver_Spin();
+	}
+
+	do {
 
 		Zero_Errors();
 		normalized_max_error = cuReal2();
@@ -73,13 +82,7 @@ void STransportCUDA::solve_spin_transport_sor(void)
 			//use non-homogeneous Neumann boundary conditions for S? Only use them if SHE is enabled and not a magnetic mesh
 			bool use_NNeu = IsNZ((double)pTransport[idx]->pMesh->SHA) && !pTransport[idx]->pMesh->M.linear_size();
 
-			if (pSTrans->fixed_SOR_damping) pTransport[idx]->IterateSpinSolver_Spin_SOR(SOR_damping_S, max_error, max_value, use_NNeu);
-			else pTransport[idx]->IterateSpinSolver_Spin_aSOR(start_iters, pSTrans->s_errorMax, max_error, max_value, use_NNeu);
-
-			//store minimum and maximum damping values
-			double damping = (*pS[idx])()->aSOR_get_damping_cpu();
-			if (pSTrans->aSOR_damping == DBL2()) pSTrans->aSOR_damping = DBL2(damping, damping);
-			else pSTrans->aSOR_damping = DBL2(min(pSTrans->aSOR_damping.i, damping), max(pSTrans->aSOR_damping.j, damping));
+			pTransport[idx]->IterateSpinSolver_Spin_SOR(SOR_damping_S, max_error, max_value, use_NNeu);
 		}
 
 		//normalize error to maximum change in cpu memory
@@ -118,30 +121,6 @@ void STransportCUDA::CalculateSAInterfaceField(void)
 			pTransport[idx_pri]->CalculateSAInterfaceField(pTransport[idx_sec], CMBNDcontactsCUDA[idx1][idx2], CMBNDcontacts[idx1][idx2].IsPrimaryTop());
 		}
 	}
-}
-
-//-------------------Getters
-
-//return interfacial spin torque in given mesh with matching transport module
-cu_obj<cuVEC<cuReal3>>& STransportCUDA::GetInterfacialSpinTorque(TransportCUDA* pMeshTrans)
-{
-	if (!pMeshTrans->PrepareDisplayVEC(pMeshTrans->pMesh->h))
-		return pMeshTrans->displayVEC;
-
-	//calculate and add Ts values in Ts_interf VECs
-	for (int idx1 = 0; idx1 < (int)CMBNDcontacts.size(); idx1++) {
-
-		for (int idx2 = 0; idx2 < (int)CMBNDcontacts[idx1].size(); idx2++) {
-
-			int idx_sec = CMBNDcontacts[idx1][idx2].mesh_idx.i;
-			int idx_pri = CMBNDcontacts[idx1][idx2].mesh_idx.j;
-
-			if (pTransport[idx_pri] == pMeshTrans)
-				pTransport[idx_pri]->CalculateDisplaySAInterfaceTorque(pTransport[idx_sec], CMBNDcontactsCUDA[idx1][idx2], CMBNDcontacts[idx1][idx2].IsPrimaryTop());
-		}
-	}
-
-	return pMeshTrans->displayVEC;
 }
 
 #endif

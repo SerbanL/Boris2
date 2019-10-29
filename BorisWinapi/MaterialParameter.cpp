@@ -48,7 +48,7 @@ void MatP<DBL3, DBL3>::update_cuda_value(void)
 
 //-------------- UPDATE FULL CUDA OBJECT
 
-//update just the value at 0K and current value in the corresponding MatPCUDA
+//fully update the corresponding MatPCUDA
 void MatP<float, double>::update_cuda_object(void)
 {
 	reinterpret_cast<cu_obj<MatPCUDA<cuBReal, cuBReal>>*>(p_cu_obj_mpcuda)->get_managed_object()->set_from_cpu(*this);

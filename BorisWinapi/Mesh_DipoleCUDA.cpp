@@ -12,7 +12,7 @@ DipoleMeshCUDA::DipoleMeshCUDA(DipoleMesh* pDipoleMesh_) :
 
 	if (!M()->set_from_cpuvec(pDipoleMesh->M)) error_on_create(BERROR_OUTOFGPUMEMORY_CRIT);
 
-	error_on_create = UpdateConfiguration();
+	error_on_create = UpdateConfiguration(UPDATECONFIG_FORCEUPDATE);
 }
 
 DipoleMeshCUDA::~DipoleMeshCUDA()

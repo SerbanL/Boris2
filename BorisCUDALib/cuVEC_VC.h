@@ -18,9 +18,9 @@ class cuVEC_VC :
 	public cuVEC<VType>
 {
 
-	//the following are used as masks for ngbrFlags. 32 bits in total (4 bytes for an int)
+//the following are used as masks for ngbrFlags. 32 bits in total (4 bytes for an int)
 
-	//magnetic neighbor existence masks (+x, -x, +y, -y, +z, -z). Bits 0, 1, 2, 3, 4, 5
+//neighbor existence masks (+x, -x, +y, -y, +z, -z). Bits 0, 1, 2, 3, 4, 5
 #define NF_NPX	1
 #define NF_NNX	2
 #define NF_NPY	4
@@ -48,7 +48,7 @@ class cuVEC_VC :
 //periodic boundary condition along z. Set at z sides only if there is a neighbor present at the other side - this is how we know which side to use, +z or -z : bit 8
 #define NF_PBCZ	256
 
-//mask for pbc flags, either x or y
+//mask for all pbc flags
 #define NF_PBC (NF_PBCX + NF_PBCY + NF_PBCZ)
 
 //mask to check for cell with zero value set : bit 9
@@ -57,39 +57,19 @@ class cuVEC_VC :
 //this is not necessarily an empty cell, but mark them to be skipped during computations for some algorithms (e.g. moving mesh algorithm where the ends of the magnetic mesh must not be updated by the ODE solver) : bit 10
 #define NF_SKIPCELL	1024
 
-//these are used in conjunction with dirichlet vectors to indicate dirichlet boundary conditions should be used
-//cell on +x side of boundary : bit 11
-#define NF_DIRICHLETPX	2048
-//cell on -x side of boundary : bit 12
-#define NF_DIRICHLETNX	4096
-//cell on +y side of boundary : bit 13
-#define NF_DIRICHLETPY	8192
-//cell on -y side of boundary : bit 14
-#define NF_DIRICHLETNY	16384
-//cell on +z side of boundary : bit 15
-#define NF_DIRICHLETPZ	32768
-//cell on -z side of boundary : bit 16
-#define NF_DIRICHLETNZ	65536
-
-//masks for x, y, z directions for Dirichlet cells
-#define NF_DIRICHLETX (NF_DIRICHLETPX + NF_DIRICHLETNX)
-#define NF_DIRICHLETY (NF_DIRICHLETPY + NF_DIRICHLETNY)
-#define NF_DIRICHLETZ (NF_DIRICHLETPZ + NF_DIRICHLETNZ)
-#define NF_DIRICHLET (NF_DIRICHLETX + NF_DIRICHLETY + NF_DIRICHLETZ)
-
 //composite media boundary cells (used to flag cells where boundary conditions must be applied). These flags are not set using set_ngbrFlags, but must be externally set
-//cell on positive x side of boundary : bit 17 -> use dirichlet_nx values
-#define NF_CMBNDPX	131072
-//cell on negative x side of boundary : bit 18 -> use dirichlet_px values, etc.
-#define NF_CMBNDNX	262144
-//cell on positive y side of boundary : bit 19
-#define NF_CMBNDPY	524288
-//cell on negative y side of boundary : bit 20
-#define NF_CMBNDNY	1048576
-//cell on positive z side of boundary : bit 21
-#define NF_CMBNDPZ	2097152
-//cell on negative z side of boundary : bit 22
-#define NF_CMBNDNZ	4194304
+//cell on positive x side of boundary : bit 11 -> use dirichlet_nx values
+#define NF_CMBNDPX	2048
+//cell on negative x side of boundary : bit 12 -> use dirichlet_px values, etc.
+#define NF_CMBNDNX	4096
+//cell on positive y side of boundary : bit 13
+#define NF_CMBNDPY	8192
+//cell on negative y side of boundary : bit 14
+#define NF_CMBNDNY	16384
+//cell on positive z side of boundary : bit 15
+#define NF_CMBNDPZ	32768
+//cell on negative z side of boundary : bit 16
+#define NF_CMBNDNZ	65536
 
 //mask for all cmbnd flags
 #define NF_CMBND	(NF_CMBNDPX + NF_CMBNDNX + NF_CMBNDPY + NF_CMBNDNY + NF_CMBNDPZ + NF_CMBNDNZ)
@@ -98,35 +78,104 @@ class cuVEC_VC :
 #define NF_CMBNDY	(NF_CMBNDPY + NF_CMBNDNY)
 #define NF_CMBNDZ	(NF_CMBNDPZ + NF_CMBNDNZ)
 
+//off-axis neighbor at +x, +y, 0z (xy differentials) : bit 17
+#define NF_XY_PXPY	131072
+//off-axis neighbor at +x, -y, 0z (xy differentials) : bit 18
+#define NF_XY_PXNY	262144
+//off-axis neighbor at -x, +y, 0z (xy differentials) : bit 19
+#define NF_XY_NXPY	524288
+//off-axis neighbor at -x, -y, 0z (xy differentials) : bit 20
+#define NF_XY_NXNY	1048576
+//off-axis neighbor at +x, 0y, +z (xz differentials) : bit 21
+#define NF_XZ_PXPZ	2097152
+//off-axis neighbor at +x, 0y, -z (xz differentials) : bit 22
+#define NF_XZ_PXNZ	4194304
+//off-axis neighbor at -x, 0y, +z (xz differentials) : bit 23
+#define NF_XZ_NXPZ	8388608
+//off-axis neighbor at -x, 0y, -z (xz differentials) : bit 24
+#define NF_XZ_NXNZ	16777216
+//off-axis neighbor at 0x, +y, +z (yz differentials) : bit 25
+#define NF_YZ_PYPZ	33554432
+//off-axis neighbor at 0x, +y, -z (yz differentials) : bit 26
+#define NF_YZ_PYNZ	67108864
+//off-axis neighbor at 0x, -y, +z (yz differentials) : bit 27
+#define NF_YZ_NYPZ	134217728
+//off-axis neighbor at 0x, -y, -z (yz differentials) : bit 28
+#define NF_YZ_NYNZ	268435456
+
+//for off-axis neighbors stencil, indicate if mixed second order differential stencil is available, i.e. at least 2 columns must have at least 2 non-empty cells.
+//Better to use 3 additional bits to speed up these checks rather than build it every time from the above bits.
+
+//off-axis stencil available in XY plane : bit 29
+#define NF_XY_OASTENCIL	536870912
+//off-axis stencil available in XZ plane : bit 30
+#define NF_XZ_OASTENCIL	1073741824
+//off-axis stencil available in YZ plane : bit 31
+#define NF_YZ_OASTENCIL	2147483648
+
+//check for full off-axis stencil in a plane as (ngbrFlags[idx] & NF_XY_FULL) == NF_XY_FULL
+#define NF_XY_FULL	(NF_XY_PXPY + NF_XY_PXNY + NF_XY_NXPY + NF_XY_NXNY)
+#define NF_XZ_FULL	(NF_XZ_PXPZ + NF_XZ_PXNZ + NF_XZ_NXPZ + NF_XZ_NXNZ)
+#define NF_YZ_FULL	(NF_YZ_PYPZ + NF_YZ_PYNZ + NF_YZ_NYPZ + NF_YZ_NYNZ)
+
+//Extended flags
+
 //Robin boundary conditions flags
-//cell on positive x side of boundary : bit 23 -> use robin_nx values
-#define NF_ROBINPX	8388608
-//cell on negative x side of boundary : bit 24 -> use robin_px values, etc.
-#define NF_ROBINNX	16777216
-//cell on positive y side of boundary : bit 25
-#define NF_ROBINPY	33554432
-//cell on negative y side of boundary : bit 26
-#define NF_ROBINNY	67108864
-//cell on positive z side of boundary : bit 27
-#define NF_ROBINPZ	134217728
-//cell on negative z side of boundary : bit 28
-#define NF_ROBINNZ	268435456
-//flag Robin boundary with a void cell (use robin_v values) : bit 29
-#define NF_ROBINV	536870912
+//cell on positive x side of boundary : bit 0 -> use robin_nx values
+#define NF2_ROBINPX	1
+//cell on negative x side of boundary : bit 1 -> use robin_px values, etc.
+#define NF2_ROBINNX	2
+//cell on positive y side of boundary : bit 2
+#define NF2_ROBINPY	4
+//cell on negative y side of boundary : bit 3
+#define NF2_ROBINNY	8
+//cell on positive z side of boundary : bit 4
+#define NF2_ROBINPZ	16
+//cell on negative z side of boundary : bit 5
+#define NF2_ROBINNZ	32
+//flag Robin boundary with a void cell (use robin_v values) : bit 6
+#define NF2_ROBINV	64
 
 //mask for all Robin flags
-#define NF_ROBIN	(NF_ROBINPX + NF_ROBINNX + NF_ROBINPY + NF_ROBINNY + NF_ROBINPZ + NF_ROBINNZ + NF_ROBINV)
+#define NF2_ROBIN	(NF2_ROBINPX + NF2_ROBINNX + NF2_ROBINPY + NF2_ROBINNY + NF2_ROBINPZ + NF2_ROBINNZ + NF2_ROBINV)
 //masks for Robin flags along the x, y, or z axes
-#define NF_ROBINX	(NF_ROBINPX + NF_ROBINNX)
-#define NF_ROBINY	(NF_ROBINPY + NF_ROBINNY)
-#define NF_ROBINZ	(NF_ROBINPZ + NF_ROBINNZ)
+#define NF2_ROBINX	(NF2_ROBINPX + NF2_ROBINNX)
+#define NF2_ROBINY	(NF2_ROBINPY + NF2_ROBINNY)
+#define NF2_ROBINZ	(NF2_ROBINPZ + NF2_ROBINNZ)
+
+//these are used in conjunction with dirichlet vectors to indicate dirichlet boundary conditions should be used
+//cell on +x side of boundary : bit 7
+#define NF2_DIRICHLETPX	128
+//cell on -x side of boundary : bit 8
+#define NF2_DIRICHLETNX	256
+//cell on +y side of boundary : bit 9
+#define NF2_DIRICHLETPY	512
+//cell on -y side of boundary : bit 10
+#define NF2_DIRICHLETNY	1024
+//cell on +z side of boundary : bit 11
+#define NF2_DIRICHLETPZ	2048
+//cell on -z side of boundary : bit 12
+#define NF2_DIRICHLETNZ	4096
+
+//masks for x, y, z directions for Dirichlet cells
+#define NF2_DIRICHLETX (NF2_DIRICHLETPX + NF2_DIRICHLETNX)
+#define NF2_DIRICHLETY (NF2_DIRICHLETPY + NF2_DIRICHLETNY)
+#define NF2_DIRICHLETZ (NF2_DIRICHLETPZ + NF2_DIRICHLETNZ)
+#define NF2_DIRICHLET (NF2_DIRICHLETX + NF2_DIRICHLETY + NF2_DIRICHLETZ)
 
 private:
 
 	//mark cells with various flags to indicate properties of neighboring cells
 	int* ngbrFlags;
+
+	//ngbrFlags2 defines additional flags. Only allocate memory if these additional flags are enabled - this is more memory efficient + I need to do it this way to keep older save files backward compatible.
+	int* ngbrFlags2;
+
 	//allocated size for ngbrFlags (value stored on gpu)
 	size_t ngbrFlags_size;
+
+	//indicates if ngbrFlags2 is in use, and is meant to speed up checks during computations only. This is strictly linked to the size of ngbrFlags2: if nullptr this is false, else it is true.
+	bool using_extended_flags;
 
 	//number of non-empty cells (i.e. cells  not marked with NF_NOTEMPTY)
 	int nonempty_cells;
@@ -151,28 +200,18 @@ private:
 	//Robin boundary conditions values : diff_norm(u) = alpha * (u - h), where diff_norm means differential along surface normal (e.g. positive sign at +x boundary, negative sign at -x boundary).
 	//alpha is a positive constant : robins_nx.i. Note, if this is zero then homogeneous Neumann boundary condition results.
 	//h is a value (e.g. ambient temperature for heat equation): robins_nx.j
-	//nx, px, etc... for mesh boundaries - use these when flagged with NF_ROBINNX etc. and not flagged with NF_ROBINV
+	//nx, px, etc... for mesh boundaries - use these when flagged with NF2_ROBINNX etc. and not flagged with NF2_ROBINV
 	cuReal2 robin_px, robin_nx;
 	cuReal2 robin_py, robin_ny;
 	cuReal2 robin_pz, robin_nz;
-	//robin_v applies for boundary conditions at void cells - more precisely for cells next to a void cell. Use this when flagged with NF_ROBINNX etc. and also flagged with NF_ROBINV
+	//robin_v applies for boundary conditions at void cells - more precisely for cells next to a void cell. Use this when flagged with NF2_ROBINNX etc. and also flagged with NF2_ROBINV
 	cuReal2 robin_v;
 
 	//when used with moving mesh algorithms calls to shift... functions may be used. If the shift requested is smaller than the cellsize then we cannot perform the shift. 
 	//Add it to shift_debt and on next shift call we might be able to shift the mesh values.
 	cuReal3 shift_debt;
-
-public:
-
-	//adaptive SOR algorithm damping value
-	cuBReal aSOR_damping;
 	
 private:
-
-	//save last aSOR error
-	cuBReal aSOR_lasterror;
-	//save last aSOR ln(error) gradient
-	cuBReal aSOR_lastgrad;
 
 	//Periodic boundary conditions for evaluating differential operators. If these are set then neighbor flags are calculated accordingly, and applied when evaluating operators.
 	int pbc_x;
@@ -191,6 +230,9 @@ private:
 
 	//get ngbrFlags_size value in cpu memory
 	__host__ size_t get_ngbrFlags_size(void) const;
+
+	//get ngbrFlags2_size value in cpu memory
+	__host__ size_t get_ngbrFlags2_size(void) const;
 
 	//set robin values using a robin id
 	__host__ void set_robin(cuReal2 robin_value, int robin_id);
@@ -213,7 +255,7 @@ private:
 	//initialization method for neighbor flags : set flags at size n, counting neighbors etc. Use current shape in ngbrFlags
 	__host__ void set_ngbrFlags(void);
 	
-	//from NF_DIRICHLET type flag and cell_idx return boundary value from one of the dirichlet vectors
+	//from NF2_DIRICHLET type flag and cell_idx return boundary value from one of the dirichlet vectors
 	__device__ VType get_dirichlet_value(int dirichlet_flag, int idx) const;
 	__device__ VType get_dirichlet_value(int dirichlet_flag, const cuINT3& ijk) const;
 	
@@ -226,6 +268,9 @@ private:
 	//mark cell as not empty / empty : internal use only; routines that use these must finish with recalculating ngbrflags as neighbours will have changed
 	__device__ void mark_not_empty(int index) { ngbrFlags[index] |= NF_NOTEMPTY; }
 	__device__ void mark_empty(int index) { ngbrFlags[index] &= ~NF_NOTEMPTY; quantity[index] = VType(); }
+
+	//check if we need to use ngbrFlags2 (allocate memory etc.)
+	__host__ bool use_extended_flags(void);
 
 public:
 
@@ -421,10 +466,10 @@ public:
 	//Functions which must be defined in Class_CMBND:
 	//a_func_sec is for the secondary side and takes a position for cell -1, a position shift to add to position to reach cell -2 and finally a stencil to use when obtaining values at cells -1 and -2 (use weighted_average)
 	//b_func_sec similar
-	//diff2_sec only takes a position and stencil (since only need cell -1)
+	//diff2_sec takes a position and stencil (since only need cell -1). It also takes a position shift vector perpendicular to the interface and pointing from primary to secondary.
 	//a_func_pri takes indexes for cells 1 and 2. It also takes a position shift vector perpendicular to the interface and pointing from primary to secondary.
 	//b_func_pri takes indexes for cells 1 and 2
-	//diff2_pri only takes index for cell 1
+	//diff2_pri takes index for cell 1. It also takes a position shift vector perpendicular to the interface and pointing from primary to secondary.
 	//also need instances for the secondary and primary objects whose classes contain the above methods
 	template <typename Class_CMBND>
 	__host__ void set_cmbnd_continuous(size_t size, cuVEC_VC<VType>& V_sec, Class_CMBND& cmbndFuncs_sec, Class_CMBND& cmbndFuncs_pri, CMBNDInfoCUDA& contact);
@@ -596,6 +641,73 @@ public:
 	//can only be applied if VType is a VAL3
 	__device__ VType curl_sided(int idx) const;
 
+	//---- SECOND ORDER DIFFERENTIALS : cuVEC_VC_diff2.h
+
+	//homogeneous second order.
+	//Use Neumann boundary conditions.
+	//Returns zero at composite media boundary cells
+	__device__ VType dxx_neu(int idx) const;
+	__device__ VType dyy_neu(int idx) const;
+	__device__ VType dzz_neu(int idx) const;
+
+	//Use non-homogeneous Neumann boundary conditions.
+	//Returns zero at composite media boundary cells
+	//NOTE : the boundary differential is specified with 3 components, one for each of +x, +y, +z surface normal directions
+	template <typename Class_BDiff>
+	__device__ VType dxx_nneu(int idx, Class_BDiff& bdiff_class) const;
+
+	template <typename Class_BDiff>
+	__device__ VType dyy_nneu(int idx, Class_BDiff& bdiff_class) const;
+
+	template <typename Class_BDiff>
+	__device__ VType dzz_nneu(int idx, Class_BDiff& bdiff_class) const;
+
+	__device__ VType dxx_nneu(int idx, cuVAL3<VType>& bdiff) const;
+	__device__ VType dyy_nneu(int idx, cuVAL3<VType>& bdiff) const;
+	__device__ VType dzz_nneu(int idx, cuVAL3<VType>& bdiff) const;
+
+	//Use Dirichlet boundary conditions, else Neumann boundary conditions (homogeneous).
+	//Returns zero at composite media boundary cells.
+	__device__ VType dxx_diri(int idx) const;
+	__device__ VType dyy_diri(int idx) const;
+	__device__ VType dzz_diri(int idx) const;
+
+	//Use Dirichlet boundary conditions, else non-homogeneous Neumann boundary conditions.
+	//Returns zero at composite media boundary cells.
+	//NOTE : the boundary differential is specified with 3 components, one for each of +x, +y, +z surface normal directions
+	template <typename Class_BDiff>
+	__device__ VType dxx_diri_nneu(int idx, Class_BDiff& bdiff_class) const;
+	
+	template <typename Class_BDiff>
+	__device__ VType dyy_diri_nneu(int idx, Class_BDiff& bdiff_class) const;
+	
+	template <typename Class_BDiff>
+	__device__ VType dzz_diri_nneu(int idx, Class_BDiff& bdiff_class) const;
+
+	__device__ VType dxx_diri_nneu(int idx, cuVAL3<VType>& bdiff) const;
+	__device__ VType dyy_diri_nneu(int idx, cuVAL3<VType>& bdiff) const;
+	__device__ VType dzz_diri_nneu(int idx, cuVAL3<VType>& bdiff) const;
+
+	//Use Robin boundary conditions (defaulting to Neumann if not set).
+	//Returns zero at composite media boundary cells.
+	//The K constant is used in Robin boundary condition calculations, where -K*diff_norm(T) = alpha*(Tboundary - Tambient) is the flux normal to the boundary - K is the thermal conductivity in the heat equation
+	__device__ VType dxx_robin(int idx, cuBReal K) const;
+	__device__ VType dyy_robin(int idx, cuBReal K) const;
+	__device__ VType dzz_robin(int idx, cuBReal K) const;
+
+	//mixed second order
+
+	//Use Neumann boundary conditions(homogeneous).
+	//Can be used at composite media boundaries where sided differentials will be used instead.
+	//dxy same as dyx
+	__device__ VType dxy_neu(int idx) const;
+
+	//dxz same as dzx
+	__device__ VType dxz_neu(int idx) const;
+
+	//dyz same as dzy
+	__device__ VType dyz_neu(int idx) const;
+
 	//----LAPLACE / POISSON EQUATION : cuVEC_VC_solve.cuh
 	
 	//LAPLACE
@@ -629,18 +741,6 @@ public:
 	template <typename Class_Poisson_RHS>
 	__device__ void IteratePoisson_SOR_black(Class_Poisson_RHS& obj, cuBReal damping, cuBReal& max_error, cuBReal& max_val);
 
-	//POISSON with homogeneous Neumann boundaries and adaptive SOR algorithm
-
-	//Poisson equation solved using adaptive SOR algorithm, using homogeneous Neumann boundary condition
-	//The algorithm also requires error limits : min error below which the solution is assumed to have converged, max error above which damping must be immediately set to smallest value to avoid solution divergence.
-	//These errors must be specified un-normalized, noting the return error is also un-normalized. 
-	//Launch it with arr_size = n.dim() : quicker to pass in this value rather than get it internally using get_gpu_value(n).dim()
-	template <typename Class_Poisson_RHS>
-	__host__ void IteratePoisson_aSOR(size_t arr_size, Class_Poisson_RHS& obj, bool start_iters, cuBReal err_limit, cuBReal& max_error, cuBReal& max_val);
-
-	//adjust aSOR parameters depending on passed error value (and also set the error value to the current aSOR error as required by the algorithm)
-	__device__ void adjust_aSOR_damping(bool start_iters, cuBReal err_limit, cuBReal& error, cuBReal& max_val);
-
 	//POISSON with non-homogeneous Neumann boundaries
 
 	//For Poisson equation we need a function to specify the RHS of the equation delsq V = Poisson_RHS
@@ -659,18 +759,4 @@ public:
 	__device__ void IteratePoisson_NNeu_SOR_red(Class_Poisson_NNeu& obj, cuBReal damping);
 	template <typename Class_Poisson_NNeu>
 	__device__ void IteratePoisson_NNeu_SOR_black(Class_Poisson_NNeu& obj, cuBReal damping, cuBReal& max_error, cuBReal& max_val);
-
-	//POISSON with non-homogeneous Neumann boundaries and adaptive SOR algorithm
-
-	//Poisson equation solved using adaptive SOR algorithm, using homogeneous Neumann boundary condition
-	//The algorithm also requires error limits : min error below which the solution is assumed to have converged, max error above which damping must be immediately set to smallest value to avoid solution divergence.
-	//These errors must be specified un-normalized, noting the return error is also un-normalized. 
-	//Launch it with arr_size = n.dim() : quicker to pass in this value rather than get it internally using get_gpu_value(n).dim()
-	//Poisson_RHS must be a member const method of Class_Poisson_NNeu taking an index value (the index ranges over this VEC) and returning a cuBReal value : Poisson_RHS(index) evaluated at the index-th cell.
-	//Class_Poisson_NNeu must also define a method bdiff returning a cuVAL3<VType> and taking an int (the cell index) - this is the non-homogeneous Neumann boundary condition at that cell
-	template <typename Class_Poisson_NNeu>
-	__host__ void IteratePoisson_NNeu_aSOR(size_t arr_size, Class_Poisson_NNeu& obj, bool start_iters, cuBReal err_limit, cuBReal& max_error, cuBReal& max_val);
-
-	//return current aSOR damping value
-	cuBReal aSOR_get_damping_cpu(void) { return get_gpu_value(aSOR_damping); }
 };

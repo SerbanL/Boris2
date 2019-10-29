@@ -75,8 +75,14 @@ public:
 	//Magnetization
 	cu_obj<cuVEC_VC<cuReal3>> M;
 
+	//Additional magnetization used for antiferromagnetic meshes with 2 sub-lattice local approximation; exactly same dimensions as M
+	cu_obj<cuVEC_VC<cuReal3>> M2;
+
 	//effective field - sum total field of all the added modules
 	cu_obj<cuVEC<cuReal3>> Heff;
+
+	//Additional effective field used for antiferromagnetic meshes with 2 sub-lattice local approximation; exactly same dimensions as Heff
+	cu_obj<cuVEC<cuReal3>> Heff2;
 
 	//-----Electric conduction properties (Electron charge and spin Transport)
 
@@ -92,8 +98,8 @@ public:
 	//electrical conductivity - on n_e, h_e mesh
 	cu_obj<cuVEC_VC<cuBReal>> elC;
 
-	//electrical current density - on n_e, h_e mesh
-	cu_obj<cuVEC_VC<cuReal3>> Jc;
+	//electric field - on n_e, h_e mesh
+	cu_obj<cuVEC_VC<cuReal3>> E;
 
 	//spin accumulation - on n_e, h_e mesh
 	cu_obj<cuVEC_VC<cuReal3>> S;
@@ -110,13 +116,6 @@ public:
 	cu_obj<cuVEC_VC<cuBReal>> Temp;
 
 	//-----Elastic properties
-
-private:
-
-	//When changing the mesh shape then some of the primary VEC_VC quantities held in Mesh need to shaped (NF_EMPTY flags set inside VEC_VC)
-	//Which quantities are shaped and in which order is decided in this method. All public methods which change shape must define code in a lambda (run_this) then invoke this method with any required parameters for the lambda
-	template  <typename Lambda, typename ... PType>
-	BError change_mesh_shape(Lambda& run_this, PType& ... params);
 
 public:
 
@@ -141,6 +140,10 @@ public:
 	//----------------------------------- DISPLAY-ASSOCIATED GET/SET METHODS
 
 	PhysQ FetchOnScreenPhysicalQuantity(double detail_level);
+
+	//----------------------------------- MESH INFO GET/SET METHODS
+
+	int GetMeshType(void);
 
 	//----------------------------------- ENABLED MESH PROPERTIES CHECKERS
 
@@ -167,19 +170,13 @@ public:
 	//check in ODECommon the type of field update we need to do depending on the ODE evaluation step
 	int Check_Step_Update(void);
 
-	//check if all params are constant (no temperature dependence or spatial variation)
-	//need a variable argument list here
-	//cannot use a variadic template since this method needs to use pMesh which cannot be defined in this file
-	//moreover this method is used in .cu files so if this method is implemented in another .h file, it must be included in the .cu file, which means it will also include Mesh.h, and thus BorisLib.h
-	//this will spit out compilation errors since nvcc doesn't understand C++14 from BorisLib.h
-	bool are_all_params_const(int numParams, ...);
+	virtual bool GetMeshExchangeCoupling(void) { return false; }
 
 	//----------------------------------- VALUE GETTERS
 
 	//get average magnetisation in given rectangle (entire mesh if none specified)
 	cuReal3 GetAverageMagnetisation(cuRect rectangle);
-
-	cuReal3 GetAverageChargeCurrentDensity(cuRect rectangle);
+	cuReal3 GetAverageMagnetisation2(cuRect rectangle);
 
 	cuBReal GetAverageElectricalPotential(cuRect rectangle);
 	cuReal3 GetAverageSpinAccumulation(cuRect rectangle);
@@ -189,44 +186,11 @@ public:
 
 	//----------------------------------- MESH SHAPE CONTROL
 
-	//mask cells using bitmap image : white -> empty cells. black -> keep values. Apply mask up to given z depth number of cells depending on grayscale value (zDepth, all if 0).
-	BError applymask(cuBReal zDepth_m, string fileName, function<vector<BYTE>(string, INT2)>& bitmap_loader);
-
-	//set cells to empty in given rectangle (delete by setting entries to zero). The rectangle is relative to this mesh.
-	BError delrect(cuRect rectangle);
-
-	//set cells to non-empty in given box
-	BError setrect(cuRect rectangle);
-
 	//copy all meshes controlled using change_mesh_shape from cpu to gpu versions
 	BError copy_shapes_from_cpu(void);
 
 	//copy all meshes controlled using change_mesh_shape from gpu to cpu versions
 	BError copy_shapes_to_cpu(void);
 };
-
-template  <typename Lambda, typename ... PType>
-BError MeshCUDA::change_mesh_shape(Lambda& run_this, PType& ... params)
-{
-	//When changing the mesh shape then some of the primary VEC_VC quantities held in Mesh need to shaped (NF_EMPTY flags set inside VEC_VC)
-	//Which quantities are shaped and in which order is decided in this method. All public methods which change shape must define code in a lambda (run_this) then invoke this method with any required parameters for the lambda
-
-	//Primary quantities are : M, elC, Temp
-
-	BError error(__FUNCTION__);
-
-	//1. shape magnetization
-	if (M()->size_cpu().dim()) error = run_this(M, cuReal3(-Ms()->get_current_cpu(), 0, 0), params...);
-	
-	//2. shape electrical conductivity
-	if (elC()->size_cpu().dim()) error = run_this(elC, elecCond()->get_current_cpu(), params...);
-	
-	//3. shape temperature
-	if (Temp()->size_cpu().dim()) error = run_this(Temp, base_temperature.to_cpu(), params...);
-
-	//if adding any more here also remember to edit copy_shapes_from_cpu and copy_shapes_to_cpu
-
-	return error;
-}
 
 #endif

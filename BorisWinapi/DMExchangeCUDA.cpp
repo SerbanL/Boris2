@@ -6,9 +6,9 @@
 
 #ifdef MODULE_DMEXCHANGE
 
-#include "Mesh_FerromagneticCUDA.h"
+#include "MeshCUDA.h"
 
-DMExchangeCUDA::DMExchangeCUDA(FMeshCUDA* pMeshCUDA_, DMExchange* pDMExchange)
+DMExchangeCUDA::DMExchangeCUDA(MeshCUDA* pMeshCUDA_, DMExchange* pDMExchange)
 	: 
 	ModulesCUDA(),
 	ExchangeBaseCUDA(pMeshCUDA_, pDMExchange)

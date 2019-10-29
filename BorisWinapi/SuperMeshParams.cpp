@@ -14,7 +14,7 @@ BError SuperMesh::set_meshparam_value(string meshName, string paramHandle, strin
 
 	pMesh[meshName]->set_meshparam_value(paramID, value_text);
 
-	error = UpdateConfiguration();
+	error = UpdateConfiguration(UPDATECONFIG_PARAMVALUECHANGED);
 
 	return error;
 }
@@ -46,7 +46,7 @@ BError SuperMesh::set_meshparam_formula(string meshName, string paramHandle, str
 
 	pMesh[meshName]->set_meshparam_formula(paramID, formulaID, coefficients);
 
-	error = UpdateConfiguration();
+	error = UpdateConfiguration(UPDATECONFIG_PARAMCHANGED);
 
 	return error;
 }
@@ -61,7 +61,7 @@ BError SuperMesh::set_meshparam_tscaling_array(string meshName, string paramHand
 
 	if (pMesh[meshName]->set_meshparam_tscaling_array(paramID, temp, scaling)) {
 
-		error = UpdateConfiguration();
+		error = UpdateConfiguration(UPDATECONFIG_PARAMCHANGED);
 
 		return error;
 	}
@@ -87,7 +87,7 @@ BError SuperMesh::clear_meshparam_temp(string meshName)
 		}
 	}
 
-	error = UpdateConfiguration();
+	error = UpdateConfiguration(UPDATECONFIG_PARAMCHANGED);
 
 	return error;
 }
@@ -113,7 +113,7 @@ BError SuperMesh::clear_meshparam_variation(string meshName)
 		}
 	}
 
-	error = UpdateConfiguration();
+	error = UpdateConfiguration(UPDATECONFIG_PARAMCHANGED);
 
 	return error;
 }
@@ -129,7 +129,7 @@ BError SuperMesh::clear_meshparam_variation(string meshName, string paramHandle)
 
 	pMesh[meshName]->clear_meshparam_variation(paramID);
 
-	error = UpdateConfiguration();
+	error = UpdateConfiguration(UPDATECONFIG_PARAMCHANGED);
 
 	return error;
 }
@@ -160,7 +160,7 @@ BError SuperMesh::set_meshparam_var(string meshName, string paramHandle, string 
 
 	error = pMesh[meshName]->set_meshparam_var(paramID, generatorID, generatorArgs, bitmap_loader);
 
-	if (!error) error = UpdateConfiguration();
+	if (!error) error = UpdateConfiguration(UPDATECONFIG_PARAMCHANGED);
 
 	return error;
 }

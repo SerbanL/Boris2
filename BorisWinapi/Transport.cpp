@@ -7,10 +7,6 @@
 #include "SuperMesh.h"
 #include "MeshParamsControl.h"
 
-#if COMPILECUDA == 1
-#include "TransportCUDA.h"
-#endif
-
 Transport::Transport(Mesh *pMesh_) :
 	Modules(),
 	ProgramStateNames(this, {}, {})
@@ -19,7 +15,7 @@ Transport::Transport(Mesh *pMesh_) :
 
 	pSMesh = pMesh->pSMesh;
 
-	error_on_create = UpdateConfiguration();
+	error_on_create = UpdateConfiguration(UPDATECONFIG_FORCEUPDATE);
 
 	//-------------------------- Is CUDA currently enabled?
 
@@ -37,7 +33,7 @@ Transport::~Transport()
 
 	pMesh->elC.clear();
 
-	pMesh->Jc.clear();
+	pMesh->E.clear();
 
 	pMesh->S.clear();
 }
@@ -64,18 +60,72 @@ void Transport::ClearFixedPotentialCells(void)
 #endif
 }
 
+//check if dM_dt Calculation should be enabled
+bool Transport::Need_dM_dt_Calculation(void)
+{
+	if (pMesh->M.linear_size()) {
+
+		//enabled for charge pumping (for spin pumping we can just read it cell by cell, don't need vector calculus in this case).
+		if (IsNZ((double)pMesh->cpump_eff.get0())) return true;
+	}
+
+	return false;
+}
+
+//check if the delsq_V_fixed VEC is needed
+bool Transport::Need_delsq_V_fixed_Precalculation(void)
+{
+	//precalculation only needed in magnetic meshes if CPP-GMR or charge pumping are enabled
+	return (pMesh->M.linear_size() && (IsNZ(pMesh->betaD.get0()) || IsNZ(pMesh->cpump_eff.get0())));
+}
+
+//check if the delsq_S_fixed VEC is needed
+bool Transport::Need_delsq_S_fixed_Precalculation(void)
+{
+	//precalculation only needed in magnetic meshes
+	return (pMesh->M.linear_size() || (!pMesh->M.linear_size() && IsNZ(pMesh->SHA.get0())));
+}
+
 //-------------------Abstract base class method implementations
 
 BError Transport::Initialize(void)
 {
 	BError error(CLASS_STR(Transport));
 
-	if (!initialized) {
+	//do we need to enable dM_dt calculation?
+	if (Need_dM_dt_Calculation()) {
 
-		initialized = true;
-
-		CalculateElectricalConductivity(true);
+		if (!dM_dt.assign(pMesh->h, pMesh->meshRect, DBL3(), pMesh->M)) return error(BERROR_OUTOFMEMORY_CRIT);
 	}
+	else {
+
+		//disabled
+		dM_dt.clear();
+	}
+
+	if (pSMesh->SolveSpinCurrent()) {
+
+		//Poisson equation helper storage allocation
+		if (Need_delsq_V_fixed_Precalculation()) {
+
+			if (!delsq_V_fixed.assign(pMesh->h_e, pMesh->meshRect, 0.0)) return error(BERROR_OUTOFMEMORY_CRIT);
+		}
+		else delsq_V_fixed.clear();
+
+		if (Need_delsq_S_fixed_Precalculation()) {
+
+			if (!delsq_S_fixed.assign(pMesh->h_e, pMesh->meshRect, DBL3())) return error(BERROR_OUTOFMEMORY_CRIT);
+		}
+		else delsq_S_fixed.clear();
+	}
+	else {
+
+		//Poisson equation helper storage not needed
+		delsq_V_fixed.clear();
+		delsq_S_fixed.clear();
+	}
+
+	initialized = true;
 
 	return error;
 }
@@ -88,59 +138,86 @@ BError Transport::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 
 	bool success = true;
 
-	//make sure the cellsize divides the mesh rectangle
-	pMesh->n_e = round(pMesh->meshRect / pMesh->h_e);
-	if (pMesh->n_e.x < 2) pMesh->n_e.x = 2;
-	if (pMesh->n_e.y < 2) pMesh->n_e.y = 2;
-	if (pMesh->n_e.z < 2) pMesh->n_e.z = 2;
-	pMesh->h_e = pMesh->meshRect / pMesh->n_e;
+	if (ucfg::check_cfgflags(cfgMessage, UPDATECONFIG_MESHSHAPECHANGE, UPDATECONFIG_MESHCHANGE)) {
 
-	//make sure correct memory is assigned for electrical quantities
+		//make sure the cellsize divides the mesh rectangle
+		pMesh->n_e = round(pMesh->meshRect / pMesh->h_e);
+		if (pMesh->n_e.x < 2) pMesh->n_e.x = 2;
+		if (pMesh->n_e.y < 2) pMesh->n_e.y = 2;
+		if (pMesh->n_e.z < 2) pMesh->n_e.z = 2;
+		pMesh->h_e = pMesh->meshRect / pMesh->n_e;
 
-	//electrical conductivity
-	if (pMesh->M.linear_size()) {
+		//make sure correct memory is assigned for electrical quantities
 
-		//for ferromagnetic meshes set empty cells using information in M (empty cells have zero electrical conductivity) only on initialization. If already initialized then shape already set.
-		if(pMesh->elC.linear_size()) 
-			success = pMesh->elC.resize(pMesh->h_e, pMesh->meshRect);
-		else 
-			success = pMesh->elC.assign(pMesh->h_e, pMesh->meshRect, pMesh->elecCond, pMesh->M);
+		//electrical conductivity
+		if (pMesh->M.linear_size()) {
+
+			//for ferromagnetic meshes set empty cells using information in M (empty cells have zero electrical conductivity) only on initialization. If already initialized then shape already set.
+			if (pMesh->elC.linear_size() && cfgMessage != UPDATECONFIG_MESHSHAPECHANGE) {
+
+				success = pMesh->elC.resize(pMesh->h_e, pMesh->meshRect);
+			}
+			else {
+
+				success = pMesh->elC.assign(pMesh->h_e, pMesh->meshRect, pMesh->elecCond, pMesh->M);
+			}
+		}
+		else {
+
+			//for non-ferromagnetic meshes (e.g. simple electrical conductor) then elC contains directly any empty cells information
+			if (pMesh->elC.linear_size() && cfgMessage != UPDATECONFIG_MESHSHAPECHANGE) {
+
+				success = pMesh->elC.resize(pMesh->h_e, pMesh->meshRect);
+			}
+			else {
+
+				success = pMesh->elC.assign(pMesh->h_e, pMesh->meshRect, pMesh->elecCond);
+			}
+		}
+
+		//electrical potential - set empty cells using information in elC (empty cells have zero electrical conductivity)
+		if (pMesh->V.linear_size() && cfgMessage != UPDATECONFIG_MESHSHAPECHANGE) {
+
+			success &= pMesh->V.resize(pMesh->h_e, pMesh->meshRect, pMesh->elC);
+		}
+		else {
+
+			success &= pMesh->V.assign(pMesh->h_e, pMesh->meshRect, 0.0, pMesh->elC);
+		}
+
+		//electric field - set empty cells using information in elC (empty cells have zero electrical conductivity)
+		if (pMesh->E.linear_size() && cfgMessage != UPDATECONFIG_MESHSHAPECHANGE) {
+
+			success &= pMesh->E.resize(pMesh->h_e, pMesh->meshRect, pMesh->elC);
+		}
+		else {
+
+			success &= pMesh->E.assign(pMesh->h_e, pMesh->meshRect, DBL3(0.0), pMesh->elC);
+		}
 	}
-	else {
 
-		//for non-ferromagnetic meshes (e.g. simple electrical conductor) then elC contains directly any empty cells information
-		if(pMesh->elC.linear_size()) 
-			success = pMesh->elC.resize(pMesh->h_e, pMesh->meshRect);
-		else 
-			success = pMesh->elC.assign(pMesh->h_e, pMesh->meshRect, pMesh->elecCond);
-	}
+	//here also need to update on ODE change as SolveSpinCurrent state might change
+	if (ucfg::check_cfgflags(cfgMessage, UPDATECONFIG_MESHSHAPECHANGE, UPDATECONFIG_MESHCHANGE, UPDATECONFIG_ODE_SOLVER)) {
 
-	//electrical potential - set empty cells using information in elC (empty cells have zero electrical conductivity)
-	if (pMesh->V.linear_size())
-		success = pMesh->V.resize(pMesh->h_e, pMesh->meshRect, pMesh->elC);
-	else
-		success = pMesh->V.assign(pMesh->h_e, pMesh->meshRect, 0.0, pMesh->elC);
-	
-	//electrical current density - set empty cells using information in elC (empty cells have zero electrical conductivity)
-	if (pMesh->Jc.linear_size())
-		success = pMesh->Jc.resize(pMesh->h_e, pMesh->meshRect, pMesh->elC);
-	else
-		success = pMesh->Jc.assign(pMesh->h_e, pMesh->meshRect, DBL3(0.0), pMesh->elC);
+		//spin accumulation if needed - set empty cells using information in elC (empty cells have zero electrical conductivity)
+		if (success && pSMesh->SolveSpinCurrent()) {
 
-	//spin accumulation if needed - set empty cells using information in elC (empty cells have zero electrical conductivity)
-	if (success && pSMesh->SolveSpinCurrent()) {
+			if (pMesh->S.linear_size() && cfgMessage != UPDATECONFIG_MESHSHAPECHANGE) {
 
-		if (pMesh->S.linear_size())
-			success = pMesh->S.resize(pMesh->h_e, pMesh->meshRect, pMesh->elC);
-		else
-			success = pMesh->S.assign(pMesh->h_e, pMesh->meshRect, DBL3(0.0), pMesh->elC);
-	}
-	else {
+				success &= pMesh->S.resize(pMesh->h_e, pMesh->meshRect, pMesh->elC);
+			}
+			else {
 
-		pMesh->S.clear();
+				success &= pMesh->S.assign(pMesh->h_e, pMesh->meshRect, DBL3(0.0), pMesh->elC);
+			}
+		}
+		else {
 
-		//clear display VEC used for spin currents and torque
-		displayVEC.clear();
+			pMesh->S.clear();
+
+			//clear display VEC used for spin currents and torque
+			displayVEC.clear();
+		}
 	}
 
 	if (!success) return error(BERROR_OUTOFMEMORY_CRIT);
@@ -150,7 +227,7 @@ BError Transport::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 #if COMPILECUDA == 1
 	if (pModuleCUDA) {
 
-		if (!error) error = pModuleCUDA->UpdateConfiguration();
+		if (!error) error = pModuleCUDA->UpdateConfiguration(cfgMessage);
 	}
 #endif
 
@@ -167,7 +244,7 @@ BError Transport::MakeCUDAModule(void)
 
 		//Note : it is posible pMeshCUDA has not been allocated yet, but this module has been created whilst cuda is switched on. This will happen when a new mesh is being made which adds this module by default.
 		//In this case, after the mesh has been fully made, it will call SwitchCUDAState on the mesh, which in turn will call this SwitchCUDAState method; then pMeshCUDA will not be nullptr and we can make the cuda module version
-		pModuleCUDA = new TransportCUDA(pMesh, pSMesh);
+		pModuleCUDA = new TransportCUDA(pMesh, pSMesh, this);
 		error = pModuleCUDA->Error_On_Create();
 	}
 
@@ -192,67 +269,49 @@ double Transport::UpdateField(void)
 
 //-------------------Calculation Methods
 
-void Transport::CalculateCurrentDensity(void)
+//calculate electric field as the negative gradient of V
+//VERIFIED - CORRECT
+void Transport::CalculateElectricField(void)
 {
 	if (!pSMesh->SolveSpinCurrent()) {
 
-		//calculate current density using Jc = -sigma * grad V
+		//calculate electric field using E = - grad V
 #pragma omp parallel for
-		for (int idx = 0; idx < pMesh->Jc.linear_size(); idx++) {
+		for (int idx = 0; idx < pMesh->E.linear_size(); idx++) {
 
 			//only calculate current on non-empty cells - empty cells have already been assigned 0 at UpdateConfiguration
 			if (pMesh->V.is_not_empty(idx)) {
 
-				pMesh->Jc[idx] = -pMesh->elC[idx] * pMesh->V.grad_diri(idx);
+				pMesh->E[idx] = -1.0 * pMesh->V.grad_diri(idx);
 			}
-			else pMesh->Jc[idx] = DBL3(0);
+			else pMesh->E[idx] = DBL3(0);
 		}
 	}
 	else {
 
-		//Current density when contributions from spin accumulation are present
+		//calculate electric field using E = - grad V, but using non-homogeneous Neumann boundary conditions
 #pragma omp parallel for
-		for (int idx = 0; idx < pMesh->Jc.linear_size(); idx++) {
+		for (int idx = 0; idx < pMesh->E.linear_size(); idx++) {
 
 			//only calculate current on non-empty cells - empty cells have already been assigned 0 at UpdateConfiguration
 			if (pMesh->V.is_not_empty(idx)) {
 
-				double iSHA = pMesh->iSHA;
-				double SHA = pMesh->SHA;
-				double De = pMesh->De;
-				double betaD = pMesh->betaD;
-				pMesh->update_parameters_ecoarse(idx, pMesh->iSHA, iSHA, pMesh->SHA, SHA, pMesh->De, De, pMesh->betaD, betaD);
+				if (IsZ(pMesh->iSHA.get0()) || pMesh->M.linear_size()) {
 
-				//1. Ohm's law contribution
-				if (IsZ((double)iSHA) || pMesh->M.linear_size()) {
-
-					//no iSHE contribution. Note, iSHE is not included in magnetic meshes.
-					pMesh->Jc[idx] = -pMesh->elC[idx] * pMesh->V.grad_diri(idx);
+					//use homogeneous Neumann boundary conditions - no ISHE
+					pMesh->E[idx] = -1.0 * pMesh->V.grad_diri(idx);
 				}
 				else {
 
-					//iSHE enabled, must use non-homogeneous Neumann boundary condition for grad V -> Note homogeneous Neumann boundary conditions apply when calculating S differentials here (due to Jc.n = 0 at boundaries)
-					pMesh->Jc[idx] = -pMesh->elC[idx] * pMesh->V.grad_diri_nneu(idx, (iSHA * De / (MUB_E * pMesh->elC[idx])) * pMesh->S.curl_neu(idx));
+					//ISHE enabled - use nonhomogeneous Neumann boundary conditions
+					double iSHA = pMesh->iSHA;
+					double De = pMesh->De;
+					pMesh->update_parameters_ecoarse(idx, pMesh->iSHA, iSHA, pMesh->De, De);
 
-					//must also add iSHE contribution -> here we must use non-homogeneous Neumann boundary conditions when calculating S differentials
-					pMesh->Jc[idx] += (iSHA * De / MUB_E) * pMesh->S.curl_nneu(idx, epsilon3(pMesh->Jc[idx]) * (SHA * MUB_E / De));
-				}
-
-				//2. CPP-GMR contribution
-				if (pMesh->M.linear_size() && IsNZ((double)betaD)) {
-
-					double Ms = pMesh->Ms;
-					pMesh->update_parameters_ecoarse(idx, pMesh->Ms, Ms);
-
-					int idx_M = pMesh->M.position_to_cellidx(pMesh->S.cellidx_to_position(idx));
-
-					DBL3 M = pMesh->M[idx_M];
-					DBL33 grad_S = pMesh->S.grad_neu(idx);		//homogeneous Neumann since SHA = 0 in magnetic meshes
-						
-					pMesh->Jc[idx] += (grad_S * M) * betaD * De / (MUB_E * Ms);
+					pMesh->E[idx] = -1.0 * pMesh->V.grad_diri_nneu(idx, (iSHA * De / (MUB_E * pMesh->elC[idx])) * pMesh->S.curl_neu(idx));
 				}
 			}
-			else pMesh->Jc[idx] = DBL3(0);
+			else pMesh->E[idx] = DBL3(0);
 		}
 	}
 }
@@ -371,7 +430,7 @@ void Transport::CalculateElectricalConductivity(bool force_recalculate)
 				pMesh->update_parameters_ecoarse(idx, pMesh->elecCond, elecCond, pMesh->amrPercentage, amrPercentage);
 
 				//get current density value at this conductivity cell
-				DBL3 Jc_value = pMesh->Jc[idx];
+				DBL3 Jc_value = pMesh->elC[idx] * pMesh->E[idx];
 
 				//get M value (M is on n, h mesh so could be different)
 				DBL3 M_value = pMesh->M[pMesh->elC.cellidx_to_position(idx)];

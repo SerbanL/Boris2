@@ -18,6 +18,9 @@ DBL2 VEC_VC<VType>::IterateLaplace_SOR(double relaxation_param)
 	magnitude_reduction.new_minmax_reduction();
 	magnitude_reduction2.new_minmax_reduction();
 
+	//need to check for DIRICHLET flags which are held in the extended ngbrFlags (may be empty if not set)
+	bool using_extended_flags = ngbrFlags2.size();
+
 	//red-black : two passes will be taken
 	int rb = 0;
 	while (rb < 2) {
@@ -48,12 +51,18 @@ DBL2 VEC_VC<VType>::IterateLaplace_SOR(double relaxation_param)
 					total_weight += 2 * w_x;
 					weighted_sum += w_x * (quantity[idx - 1] + quantity[idx + 1]);
 				}
-				else if (ngbrFlags[idx] & NF_DIRICHLETX) {
+				else if (using_extended_flags && (ngbrFlags2[idx] & NF2_DIRICHLETX)) {
 
 					total_weight += 6 * w_x;
 
-					if (ngbrFlags[idx] & NF_DIRICHLETPX) weighted_sum += w_x * (4 * get_dirichlet_value(NF_DIRICHLETPX, idx) + 2 * quantity[idx + 1]);
-					else								 weighted_sum += w_x * (4 * get_dirichlet_value(NF_DIRICHLETNX, idx) + 2 * quantity[idx - 1]);
+					if (ngbrFlags2[idx] & NF2_DIRICHLETPX) {
+
+						weighted_sum += w_x * (4 * get_dirichlet_value(NF2_DIRICHLETPX, idx) + 2 * quantity[idx + 1]);
+					}
+					else {
+
+						weighted_sum += w_x * (4 * get_dirichlet_value(NF2_DIRICHLETNX, idx) + 2 * quantity[idx - 1]);
+					}
 				}
 				else if (ngbrFlags[idx] & NF_NGBRX) {
 
@@ -69,12 +78,18 @@ DBL2 VEC_VC<VType>::IterateLaplace_SOR(double relaxation_param)
 					total_weight += 2 * w_y;
 					weighted_sum += w_y * (quantity[idx - n.x] + quantity[idx + n.x]);
 				}
-				else if (ngbrFlags[idx] & NF_DIRICHLETY) {
+				else if (using_extended_flags && (ngbrFlags2[idx] & NF2_DIRICHLETY)) {
 
 					total_weight += 6 * w_y;
 
-					if (ngbrFlags[idx] & NF_DIRICHLETPY) weighted_sum += w_y * (4 * get_dirichlet_value(NF_DIRICHLETPY, idx) + 2 * quantity[idx + n.x]);
-					else								 weighted_sum += w_y * (4 * get_dirichlet_value(NF_DIRICHLETNY, idx) + 2 * quantity[idx - n.x]);
+					if (ngbrFlags2[idx] & NF2_DIRICHLETPY) {
+
+						weighted_sum += w_y * (4 * get_dirichlet_value(NF2_DIRICHLETPY, idx) + 2 * quantity[idx + n.x]);
+					}
+					else {
+
+						weighted_sum += w_y * (4 * get_dirichlet_value(NF2_DIRICHLETNY, idx) + 2 * quantity[idx - n.x]);
+					}
 				}
 				else if (ngbrFlags[idx] & NF_NGBRY) {
 
@@ -90,12 +105,18 @@ DBL2 VEC_VC<VType>::IterateLaplace_SOR(double relaxation_param)
 					total_weight += 2 * w_z;
 					weighted_sum += w_z * (quantity[idx - n.x*n.y] + quantity[idx + n.x*n.y]);
 				}
-				else if (ngbrFlags[idx] & NF_DIRICHLETZ) {
+				else if (using_extended_flags && (ngbrFlags2[idx] & NF2_DIRICHLETZ)) {
 
 					total_weight += 6 * w_z;
 
-					if (ngbrFlags[idx] & NF_DIRICHLETPZ) weighted_sum += w_z * (4 * get_dirichlet_value(NF_DIRICHLETPZ, idx) + 2 * quantity[idx + n.x*n.y]);
-					else								 weighted_sum += w_z * (4 * get_dirichlet_value(NF_DIRICHLETNZ, idx) + 2 * quantity[idx - n.x*n.y]);
+					if (ngbrFlags2[idx] & NF2_DIRICHLETPZ) {
+
+						weighted_sum += w_z * (4 * get_dirichlet_value(NF2_DIRICHLETPZ, idx) + 2 * quantity[idx + n.x*n.y]);
+					}
+					else {
+
+						weighted_sum += w_z * (4 * get_dirichlet_value(NF2_DIRICHLETNZ, idx) + 2 * quantity[idx - n.x*n.y]);
+					}
 				}
 				else if (ngbrFlags[idx] & NF_NGBRZ) {
 
@@ -138,6 +159,9 @@ DBL2 VEC_VC<VType>::IteratePoisson_SOR(std::function<VType(const Owner&, int)> P
 	magnitude_reduction.new_minmax_reduction();
 	magnitude_reduction2.new_minmax_reduction();
 
+	//need to check for DIRICHLET flags which are held in the extended ngbrFlags (may be empty if not set)
+	bool using_extended_flags = ngbrFlags2.size();
+
 	//red-black : two passes will be taken
 	int rb = 0;
 	while (rb < 2) {
@@ -168,12 +192,18 @@ DBL2 VEC_VC<VType>::IteratePoisson_SOR(std::function<VType(const Owner&, int)> P
 					total_weight += 2 * w_x;
 					weighted_sum += w_x * (quantity[idx - 1] + quantity[idx + 1]);
 				}
-				else if (ngbrFlags[idx] & NF_DIRICHLETX) {
+				else if (using_extended_flags && (ngbrFlags2[idx] & NF2_DIRICHLETX)) {
 
 					total_weight += 6 * w_x;
 
-					if (ngbrFlags[idx] & NF_DIRICHLETPX) weighted_sum += w_x * (4 * get_dirichlet_value(NF_DIRICHLETPX, idx) + 2 * quantity[idx + 1]);
-					else								 weighted_sum += w_x * (4 * get_dirichlet_value(NF_DIRICHLETNX, idx) + 2 * quantity[idx - 1]);
+					if (ngbrFlags2[idx] & NF2_DIRICHLETPX) {
+
+						weighted_sum += w_x * (4 * get_dirichlet_value(NF2_DIRICHLETPX, idx) + 2 * quantity[idx + 1]);
+					}
+					else {
+
+						weighted_sum += w_x * (4 * get_dirichlet_value(NF2_DIRICHLETNX, idx) + 2 * quantity[idx - 1]);
+					}
 				}
 				else if (ngbrFlags[idx] & NF_NGBRX) {
 
@@ -189,12 +219,18 @@ DBL2 VEC_VC<VType>::IteratePoisson_SOR(std::function<VType(const Owner&, int)> P
 					total_weight += 2 * w_y;
 					weighted_sum += w_y * (quantity[idx - n.x] + quantity[idx + n.x]);
 				}
-				else if (ngbrFlags[idx] & NF_DIRICHLETY) {
+				else if (using_extended_flags && (ngbrFlags2[idx] & NF2_DIRICHLETY)) {
 
 					total_weight += 6 * w_y;
 
-					if (ngbrFlags[idx] & NF_DIRICHLETPY) weighted_sum += w_y * (4 * get_dirichlet_value(NF_DIRICHLETPY, idx) + 2 * quantity[idx + n.x]);
-					else								 weighted_sum += w_y * (4 * get_dirichlet_value(NF_DIRICHLETNY, idx) + 2 * quantity[idx - n.x]);
+					if (ngbrFlags2[idx] & NF2_DIRICHLETPY) {
+
+						weighted_sum += w_y * (4 * get_dirichlet_value(NF2_DIRICHLETPY, idx) + 2 * quantity[idx + n.x]);
+					}
+					else {
+
+						weighted_sum += w_y * (4 * get_dirichlet_value(NF2_DIRICHLETNY, idx) + 2 * quantity[idx - n.x]);
+					}
 				}
 				else if (ngbrFlags[idx] & NF_NGBRY) {
 
@@ -210,12 +246,18 @@ DBL2 VEC_VC<VType>::IteratePoisson_SOR(std::function<VType(const Owner&, int)> P
 					total_weight += 2 * w_z;
 					weighted_sum += w_z * (quantity[idx - n.x*n.y] + quantity[idx + n.x*n.y]);
 				}
-				else if (ngbrFlags[idx] & NF_DIRICHLETZ) {
+				else if (using_extended_flags && (ngbrFlags2[idx] & NF2_DIRICHLETZ)) {
 
 					total_weight += 6 * w_z;
 
-					if (ngbrFlags[idx] & NF_DIRICHLETPZ) weighted_sum += w_z * (4 * get_dirichlet_value(NF_DIRICHLETPZ, idx) + 2 * quantity[idx + n.x*n.y]);
-					else								 weighted_sum += w_z * (4 * get_dirichlet_value(NF_DIRICHLETNZ, idx) + 2 * quantity[idx - n.x*n.y]);
+					if (ngbrFlags2[idx] & NF2_DIRICHLETPZ) {
+
+						weighted_sum += w_z * (4 * get_dirichlet_value(NF2_DIRICHLETPZ, idx) + 2 * quantity[idx + n.x*n.y]);
+					}
+					else {
+
+						weighted_sum += w_z * (4 * get_dirichlet_value(NF2_DIRICHLETNZ, idx) + 2 * quantity[idx - n.x*n.y]);
+					}
 				}
 				else if (ngbrFlags[idx] & NF_NGBRZ) {
 
@@ -261,6 +303,9 @@ DBL2 VEC_VC<VType>::IteratePoisson_SOR(std::function<VType(const Owner&, int)> P
 	magnitude_reduction.new_minmax_reduction();
 	magnitude_reduction2.new_minmax_reduction();
 
+	//need to check for DIRICHLET flags which are held in the extended ngbrFlags (may be empty if not set)
+	bool using_extended_flags = ngbrFlags2.size();
+
 	//red-black : two passes will be taken
 	int rb = 0;
 	while (rb < 2) {
@@ -291,12 +336,18 @@ DBL2 VEC_VC<VType>::IteratePoisson_SOR(std::function<VType(const Owner&, int)> P
 					total_weight += 2 * w_x;
 					weighted_sum += w_x * (quantity[idx - 1] + quantity[idx + 1]);
 				}
-				else if (ngbrFlags[idx] & NF_DIRICHLETX) {
+				else if (using_extended_flags && (ngbrFlags2[idx] & NF2_DIRICHLETX)) {
 
 					total_weight += 6 * w_x;
 
-					if (ngbrFlags[idx] & NF_DIRICHLETPX) weighted_sum += w_x * (4 * get_dirichlet_value(NF_DIRICHLETPX, idx) + 2 * quantity[idx + 1]);
-					else								 weighted_sum += w_x * (4 * get_dirichlet_value(NF_DIRICHLETNX, idx) + 2 * quantity[idx - 1]);
+					if (ngbrFlags2[idx] & NF2_DIRICHLETPX) {
+
+						weighted_sum += w_x * (4 * get_dirichlet_value(NF2_DIRICHLETPX, idx) + 2 * quantity[idx + 1]);
+					}
+					else {
+
+						weighted_sum += w_x * (4 * get_dirichlet_value(NF2_DIRICHLETNX, idx) + 2 * quantity[idx - 1]);
+					}
 				}
 				else if (ngbrFlags[idx] & NF_NGBRX) {
 
@@ -312,12 +363,18 @@ DBL2 VEC_VC<VType>::IteratePoisson_SOR(std::function<VType(const Owner&, int)> P
 					total_weight += 2 * w_y;
 					weighted_sum += w_y * (quantity[idx - n.x] + quantity[idx + n.x]);
 				}
-				else if (ngbrFlags[idx] & NF_DIRICHLETY) {
+				else if (using_extended_flags && (ngbrFlags2[idx] & NF2_DIRICHLETY)) {
 
 					total_weight += 6 * w_y;
 
-					if (ngbrFlags[idx] & NF_DIRICHLETPY) weighted_sum += w_y * (4 * get_dirichlet_value(NF_DIRICHLETPY, idx) + 2 * quantity[idx + n.x]);
-					else								 weighted_sum += w_y * (4 * get_dirichlet_value(NF_DIRICHLETNY, idx) + 2 * quantity[idx - n.x]);
+					if (ngbrFlags2[idx] & NF2_DIRICHLETPY) {
+
+						weighted_sum += w_y * (4 * get_dirichlet_value(NF2_DIRICHLETPY, idx) + 2 * quantity[idx + n.x]);
+					}
+					else {
+
+						weighted_sum += w_y * (4 * get_dirichlet_value(NF2_DIRICHLETNY, idx) + 2 * quantity[idx - n.x]);
+					}
 				}
 				else if (ngbrFlags[idx] & NF_NGBRY) {
 
@@ -333,12 +390,18 @@ DBL2 VEC_VC<VType>::IteratePoisson_SOR(std::function<VType(const Owner&, int)> P
 					total_weight += 2 * w_z;
 					weighted_sum += w_z * (quantity[idx - n.x*n.y] + quantity[idx + n.x*n.y]);
 				}
-				else if (ngbrFlags[idx] & NF_DIRICHLETZ) {
+				else if (using_extended_flags && (ngbrFlags2[idx] & NF2_DIRICHLETZ)) {
 
 					total_weight += 6 * w_z;
 
-					if (ngbrFlags[idx] & NF_DIRICHLETPZ) weighted_sum += w_z * (4 * get_dirichlet_value(NF_DIRICHLETPZ, idx) + 2 * quantity[idx + n.x*n.y]);
-					else								 weighted_sum += w_z * (4 * get_dirichlet_value(NF_DIRICHLETNZ, idx) + 2 * quantity[idx - n.x*n.y]);
+					if (ngbrFlags2[idx] & NF2_DIRICHLETPZ) {
+
+						weighted_sum += w_z * (4 * get_dirichlet_value(NF2_DIRICHLETPZ, idx) + 2 * quantity[idx + n.x*n.y]);
+					}
+					else {
+
+						weighted_sum += w_z * (4 * get_dirichlet_value(NF2_DIRICHLETNZ, idx) + 2 * quantity[idx - n.x*n.y]);
+					}
 				}
 				else if (ngbrFlags[idx] & NF_NGBRZ) {
 
@@ -365,34 +428,6 @@ DBL2 VEC_VC<VType>::IteratePoisson_SOR(std::function<VType(const Owner&, int)> P
 	return DBL2(magnitude_reduction.maximum(), magnitude_reduction2.maximum());
 }
 
-template <typename VType>
-template <typename Owner>
-DBL2 VEC_VC<VType>::IteratePoisson_aSOR(std::function<VType(const Owner&, int)> Poisson_RHS, Owner& instance, bool start_iters, double err_limit)
-{
-	DBL2 error_parts = IteratePoisson_SOR(Poisson_RHS, instance, aSOR_damping);
-
-	double error = (error_parts.j > 0 ? error_parts.i / error_parts.j : error_parts.i);
-
-	//prepare start of a sequence of iterations but don't adjust damping at the start
-	if (start_iters) {
-
-		aSOR_lasterror = error;
-		aSOR_lastgrad = 0;
-		return error_parts;
-	}
-
-	//adjust damping
-	double grad_lnerror = (log(error) - log(aSOR_lasterror)) / aSOR_damping;
-	adjust_aSOR_damping(grad_lnerror, error, err_limit);
-
-	//save parameters from this iteration
-	aSOR_lasterror = error;
-	aSOR_lastgrad = grad_lnerror;
-
-	//return the current error
-	return error_parts;
-}
-
 //Poisson equation solved using SOR, but using non-homogeneous Neumann boundary condition - this is evaluated using the bdiff call-back method.
 //NOTE : the boundary differential is specified with 3 components, one for each of +x, +y, +z surface normal directions
 template <typename VType>
@@ -410,6 +445,9 @@ DBL2 VEC_VC<VType>::IteratePoisson_SOR(std::function<VType(const Owner&, int)> P
 
 	magnitude_reduction.new_minmax_reduction();
 	magnitude_reduction2.new_minmax_reduction();
+
+	//need to check for DIRICHLET flags which are held in the extended ngbrFlags (may be empty if not set)
+	bool using_extended_flags = ngbrFlags2.size();
 
 	//red-black : two passes will be taken
 	int rb = 0;
@@ -441,12 +479,18 @@ DBL2 VEC_VC<VType>::IteratePoisson_SOR(std::function<VType(const Owner&, int)> P
 					total_weight += 2 * w_x;
 					weighted_sum += w_x * (quantity[idx - 1] + quantity[idx + 1]);
 				}
-				else if (ngbrFlags[idx] & NF_DIRICHLETX) {
+				else if (using_extended_flags && (ngbrFlags2[idx] & NF2_DIRICHLETX)) {
 
 					total_weight += 6 * w_x;
 
-					if (ngbrFlags[idx] & NF_DIRICHLETPX) weighted_sum += w_x * (4 * get_dirichlet_value(NF_DIRICHLETPX, idx) + 2 * quantity[idx + 1]);
-					else								 weighted_sum += w_x * (4 * get_dirichlet_value(NF_DIRICHLETNX, idx) + 2 * quantity[idx - 1]);
+					if (ngbrFlags2[idx] & NF2_DIRICHLETPX) {
+
+						weighted_sum += w_x * (4 * get_dirichlet_value(NF2_DIRICHLETPX, idx) + 2 * quantity[idx + 1]);
+					}
+					else {
+
+						weighted_sum += w_x * (4 * get_dirichlet_value(NF2_DIRICHLETNX, idx) + 2 * quantity[idx - 1]);
+					}
 				}
 				else if (ngbrFlags[idx] & NF_NGBRX) {
 
@@ -462,12 +506,18 @@ DBL2 VEC_VC<VType>::IteratePoisson_SOR(std::function<VType(const Owner&, int)> P
 					total_weight += 2 * w_y;
 					weighted_sum += w_y * (quantity[idx - n.x] + quantity[idx + n.x]);
 				}
-				else if (ngbrFlags[idx] & NF_DIRICHLETY) {
+				else if (using_extended_flags && (ngbrFlags2[idx] & NF2_DIRICHLETY)) {
 
 					total_weight += 6 * w_y;
 
-					if (ngbrFlags[idx] & NF_DIRICHLETPY) weighted_sum += w_y * (4 * get_dirichlet_value(NF_DIRICHLETPY, idx) + 2 * quantity[idx + n.x]);
-					else								 weighted_sum += w_y * (4 * get_dirichlet_value(NF_DIRICHLETNY, idx) + 2 * quantity[idx - n.x]);
+					if (ngbrFlags2[idx] & NF2_DIRICHLETPY) {
+
+						weighted_sum += w_y * (4 * get_dirichlet_value(NF2_DIRICHLETPY, idx) + 2 * quantity[idx + n.x]);
+					}
+					else {
+
+						weighted_sum += w_y * (4 * get_dirichlet_value(NF2_DIRICHLETNY, idx) + 2 * quantity[idx - n.x]);
+					}
 				}
 				else if (ngbrFlags[idx] & NF_NGBRY) {
 
@@ -483,12 +533,18 @@ DBL2 VEC_VC<VType>::IteratePoisson_SOR(std::function<VType(const Owner&, int)> P
 					total_weight += 2 * w_z;
 					weighted_sum += w_z * (quantity[idx - n.x*n.y] + quantity[idx + n.x*n.y]);
 				}
-				else if (ngbrFlags[idx] & NF_DIRICHLETZ) {
+				else if (using_extended_flags && (ngbrFlags2[idx] & NF2_DIRICHLETZ)) {
 
 					total_weight += 6 * w_z;
 
-					if (ngbrFlags[idx] & NF_DIRICHLETPZ) weighted_sum += w_z * (4 * get_dirichlet_value(NF_DIRICHLETPZ, idx) + 2 * quantity[idx + n.x*n.y]);
-					else								 weighted_sum += w_z * (4 * get_dirichlet_value(NF_DIRICHLETNZ, idx) + 2 * quantity[idx - n.x*n.y]);
+					if (ngbrFlags2[idx] & NF2_DIRICHLETPZ) {
+
+						weighted_sum += w_z * (4 * get_dirichlet_value(NF2_DIRICHLETPZ, idx) + 2 * quantity[idx + n.x*n.y]);
+					}
+					else {
+
+						weighted_sum += w_z * (4 * get_dirichlet_value(NF2_DIRICHLETNZ, idx) + 2 * quantity[idx - n.x*n.y]);
+					}
 				}
 				else if (ngbrFlags[idx] & NF_NGBRZ) {
 
@@ -533,6 +589,9 @@ DBL2 VEC_VC<VType>::IteratePoisson_SOR(std::function<VType(const Owner&, int)> P
 	magnitude_reduction.new_minmax_reduction();
 	magnitude_reduction2.new_minmax_reduction();
 
+	//need to check for DIRICHLET flags which are held in the extended ngbrFlags (may be empty if not set)
+	bool using_extended_flags = ngbrFlags2.size();
+
 	//red-black : two passes will be taken
 	int rb = 0;
 	while (rb < 2) {
@@ -563,12 +622,18 @@ DBL2 VEC_VC<VType>::IteratePoisson_SOR(std::function<VType(const Owner&, int)> P
 					total_weight += 2 * w_x;
 					weighted_sum += w_x * (quantity[idx - 1] + quantity[idx + 1]);
 				}
-				else if (ngbrFlags[idx] & NF_DIRICHLETX) {
+				else if (using_extended_flags && (ngbrFlags2[idx] & NF2_DIRICHLETX)) {
 
 					total_weight += 6 * w_x;
 
-					if (ngbrFlags[idx] & NF_DIRICHLETPX) weighted_sum += w_x * (4 * get_dirichlet_value(NF_DIRICHLETPX, idx) + 2 * quantity[idx + 1]);
-					else								 weighted_sum += w_x * (4 * get_dirichlet_value(NF_DIRICHLETNX, idx) + 2 * quantity[idx - 1]);
+					if (ngbrFlags2[idx] & NF2_DIRICHLETPX) {
+
+						weighted_sum += w_x * (4 * get_dirichlet_value(NF2_DIRICHLETPX, idx) + 2 * quantity[idx + 1]);
+					}
+					else {
+
+						weighted_sum += w_x * (4 * get_dirichlet_value(NF2_DIRICHLETNX, idx) + 2 * quantity[idx - 1]);
+					}
 				}
 				else if (ngbrFlags[idx] & NF_NGBRX) {
 
@@ -584,12 +649,18 @@ DBL2 VEC_VC<VType>::IteratePoisson_SOR(std::function<VType(const Owner&, int)> P
 					total_weight += 2 * w_y;
 					weighted_sum += w_y * (quantity[idx - n.x] + quantity[idx + n.x]);
 				}
-				else if (ngbrFlags[idx] & NF_DIRICHLETY) {
+				else if (using_extended_flags && (ngbrFlags2[idx] & NF2_DIRICHLETY)) {
 
 					total_weight += 6 * w_y;
 
-					if (ngbrFlags[idx] & NF_DIRICHLETPY) weighted_sum += w_y * (4 * get_dirichlet_value(NF_DIRICHLETPY, idx) + 2 * quantity[idx + n.x]);
-					else								 weighted_sum += w_y * (4 * get_dirichlet_value(NF_DIRICHLETNY, idx) + 2 * quantity[idx - n.x]);
+					if (ngbrFlags2[idx] & NF2_DIRICHLETPY) {
+
+						weighted_sum += w_y * (4 * get_dirichlet_value(NF2_DIRICHLETPY, idx) + 2 * quantity[idx + n.x]);
+					}
+					else {
+
+						weighted_sum += w_y * (4 * get_dirichlet_value(NF2_DIRICHLETNY, idx) + 2 * quantity[idx - n.x]);
+					}
 				}
 				else if (ngbrFlags[idx] & NF_NGBRY) {
 
@@ -605,12 +676,18 @@ DBL2 VEC_VC<VType>::IteratePoisson_SOR(std::function<VType(const Owner&, int)> P
 					total_weight += 2 * w_z;
 					weighted_sum += w_z * (quantity[idx - n.x*n.y] + quantity[idx + n.x*n.y]);
 				}
-				else if (ngbrFlags[idx] & NF_DIRICHLETZ) {
+				else if (using_extended_flags && (ngbrFlags2[idx] & NF2_DIRICHLETZ)) {
 
 					total_weight += 6 * w_z;
 
-					if (ngbrFlags[idx] & NF_DIRICHLETPZ) weighted_sum += w_z * (4 * get_dirichlet_value(NF_DIRICHLETPZ, idx) + 2 * quantity[idx + n.x*n.y]);
-					else								 weighted_sum += w_z * (4 * get_dirichlet_value(NF_DIRICHLETNZ, idx) + 2 * quantity[idx - n.x*n.y]);
+					if (ngbrFlags2[idx] & NF2_DIRICHLETPZ) {
+
+						weighted_sum += w_z * (4 * get_dirichlet_value(NF2_DIRICHLETPZ, idx) + 2 * quantity[idx + n.x*n.y]);
+					}
+					else {
+
+						weighted_sum += w_z * (4 * get_dirichlet_value(NF2_DIRICHLETNZ, idx) + 2 * quantity[idx - n.x*n.y]);
+					}
 				}
 				else if (ngbrFlags[idx] & NF_NGBRZ) {
 
@@ -635,75 +712,4 @@ DBL2 VEC_VC<VType>::IteratePoisson_SOR(std::function<VType(const Owner&, int)> P
 	}
 
 	return DBL2(magnitude_reduction.maximum(), magnitude_reduction2.maximum());
-}
-
-//Poisson equation solved using adaptive SOR algorithm, using non-homogeneous Neumann boundary condition - this is evaluated using the bdiff call-back method.
-//NOTE : the boundary differential is specified with 3 components, one for each of +x, +y, +z surface normal directions
-template <typename VType>
-template <typename Owner>
-DBL2 VEC_VC<VType>::IteratePoisson_aSOR(std::function<VType(const Owner&, int)> Poisson_RHS, std::function<VAL3<VType>(const Owner&, int)> bdiff, Owner& instance, bool start_iters, double err_limit)
-{
-	DBL2 error_parts = IteratePoisson_SOR(Poisson_RHS, bdiff, instance, aSOR_damping);
-
-	double error = (error_parts.j > 0 ? error_parts.i / error_parts.j : error_parts.i);
-
-	//prepare start of a sequence of iterations but don't adjust damping at the start
-	if (start_iters) {
-
-		aSOR_lasterror = error;
-		aSOR_lastgrad = 0;
-		return error_parts;
-	}
-
-	//adjust damping
-	double grad_lnerror = (log(error) - log(aSOR_lasterror)) / aSOR_damping;
-	adjust_aSOR_damping(grad_lnerror, error, err_limit);
-
-	//save parameters from this iteration
-	aSOR_lasterror = error;
-	aSOR_lastgrad = grad_lnerror;
-
-	//return the current error
-	return error_parts;
-}
-
-//adjust aSOR damping based on current gradient of ln(error), if error > err_limit.
-template <typename VType>
-void VEC_VC<VType>::adjust_aSOR_damping(double grad_lnerror, double error, double err_limit)
-{
-
-#define ASOR_SPIKEVAL	0.4
-#define ASOR_EXPONENT	2.1
-#define ASOR_BIAS	0.02
-#define ASOR_NUDGE	1.018
-#define	ASOR_MINDAMPING	0.2
-#define	ASOR_MAXDAMPING	2.0
-
-	//apply full adjustment mechanism only if error is above threshold : below this cannot apply the normal mechanism due to "numerical noise"
-	if (error > err_limit) {
-
-		//positive gradient - should decrease damping
-		if (grad_lnerror >= 0) {
-
-			//avoid spikes : do nothing if simple spike detected
-			if (aSOR_lastgrad <= 0 && grad_lnerror > ASOR_SPIKEVAL) return;
-
-			//decrease damping using formula : larger g results in bigger decrease
-			aSOR_damping *= exp(-grad_lnerror * ASOR_EXPONENT - ASOR_BIAS);
-		}
-		//negative g - might be able to do better by increasing damping
-		else {
-
-			aSOR_damping *= ASOR_NUDGE;
-		}
-	}
-	else {
-
-		//error is below threshold, but don't want to be stuck with a low damping value : give it a gentle increase
-		aSOR_damping *= ASOR_NUDGE;
-	}
-
-	//make sure damping is within bounds
-	if (aSOR_damping < ASOR_MINDAMPING) aSOR_damping = ASOR_MINDAMPING;
-	if (aSOR_damping > ASOR_MAXDAMPING) aSOR_damping = ASOR_MAXDAMPING;
 }

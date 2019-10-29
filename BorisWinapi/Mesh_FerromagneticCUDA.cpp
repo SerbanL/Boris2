@@ -22,14 +22,17 @@ BError FMeshCUDA::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 {
 	BError error(CLASS_STR(FMeshCUDA));
 
-	//resize arrays held in Mesh - if changing mesh to new size then use resize : this maps values from old mesh to new mesh size (keeping magnitudes). Otherwise assign magnetization along x in whole mesh.
-	if (M()->size_cpu().dim()) {
+	if (ucfg::check_cfgflags(cfgMessage, UPDATECONFIG_MESHCHANGE)) {
 
-		if (!M()->resize((cuReal3)h, (cuRect)meshRect)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
+		//resize arrays held in Mesh - if changing mesh to new size then use resize : this maps values from old mesh to new mesh size (keeping magnitudes). Otherwise assign magnetization along x in whole mesh.
+		if (M()->size_cpu().dim()) {
+
+			if (!M()->resize((cuReal3)h, (cuRect)meshRect)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
+		}
+		else if (!M()->assign((cuReal3)h, (cuRect)meshRect, cuReal3(-(Ms()->get_current_cpu()), 0, 0))) return error(BERROR_OUTOFGPUMEMORY_CRIT);
+
+		if (!Heff()->assign((cuReal3)h, (cuRect)meshRect, cuReal3())) return error(BERROR_OUTOFGPUMEMORY_CRIT);
 	}
-	else if (!M()->assign((cuReal3)h, (cuRect)meshRect, cuReal3(-(Ms()->get_current_cpu()), 0, 0))) return error(BERROR_OUTOFGPUMEMORY_CRIT);
-
-	if (!Heff()->assign((cuReal3)h, (cuRect)meshRect, cuReal3())) return error(BERROR_OUTOFGPUMEMORY_CRIT);
 
 	return error;
 }

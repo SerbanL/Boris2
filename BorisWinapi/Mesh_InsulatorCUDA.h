@@ -31,7 +31,7 @@ public:
 	//----------------------------------- IMPORTANT CONTROL METHODS
 
 	//call when the mesh dimensions have changed - sets every quantity to the right dimensions
-	BError UpdateConfiguration(UPDATECONFIG_ cfgMessage = UPDATECONFIG_GENERIC);
+	BError UpdateConfiguration(UPDATECONFIG_ cfgMessage);
 };
 
 #endif

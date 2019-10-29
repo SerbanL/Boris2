@@ -31,6 +31,10 @@ BError SuperMesh::AddMesh(string meshName, MESH_ meshType, Rect meshRect)
 		pMesh.push_back(new FMesh(meshRect, cellsize, this), meshName);
 		break;
 
+	case MESH_ANTIFERROMAGNETIC:
+		pMesh.push_back(new AFMesh(meshRect, cellsize, this), meshName);
+		break;
+
 	case MESH_DIPOLE:
 		pMesh.push_back(new DipoleMesh(meshRect, cellsize, this), meshName);
 		break;
@@ -485,7 +489,7 @@ BError SuperMesh::PrepareMovingMesh(string meshName)
 	//5. set scalemeshrects to true
 	scale_rects = true;
 
-	if (!error) error = UpdateConfiguration();
+	if (!error) error = UpdateConfiguration(UPDATECONFIG_GENERIC);
 
 	return error;
 }
@@ -552,7 +556,7 @@ BError SuperMesh::PrepareMovingMesh_Bloch(string meshName)
 	//5. set scalemeshrects to true
 	scale_rects = true;
 
-	if (!error) error = UpdateConfiguration();
+	if (!error) error = UpdateConfiguration(UPDATECONFIG_GENERIC);
 
 	return error;
 }
@@ -619,7 +623,7 @@ BError SuperMesh::PrepareMovingMesh_Neel(string meshName)
 	//5. set scalemeshrects to true
 	scale_rects = true;
 
-	if (!error) error = UpdateConfiguration();
+	if (!error) error = UpdateConfiguration(UPDATECONFIG_GENERIC);
 
 	return error;
 }
@@ -686,7 +690,7 @@ BError SuperMesh::PrepareMovingMesh_Skyrmion(string meshName)
 	//5. set scalemeshrects to true
 	scale_rects = true;
 
-	if (!error) error = UpdateConfiguration();
+	if (!error) error = UpdateConfiguration(UPDATECONFIG_GENERIC);
 
 	return error;
 }
@@ -728,7 +732,7 @@ void SuperMesh::ClearMovingMesh(void)
 	//5. set scalemeshrects to false
 	scale_rects = false;
 
-	UpdateConfiguration();
+	UpdateConfiguration(UPDATECONFIG_GENERIC);
 }
 
 //set ferromagnetic mesh roughness refinement if Roughness module enabled in given mesh

@@ -73,24 +73,43 @@ DBL4 SkyrmionTrack::Get_skypos_diametersCUDA(size_t size, DBL3 h, Rect M_rect, c
 
 		int points_x = (skyRect.e.x - skyRect.s.x) / h.x;
 
-		if (xy_data.size() < points_x) xy_data.resize(points_x);
+		//to improve fitting accuracy extended the number of points either side by filling in start / end values.
+		int end_points = 100;
+
+		if (xy_data.size() < points_x + 2 * end_points) xy_data.resize(points_x + 2 * end_points);
 		if (data_gpu.size() < points_x) data_gpu.resize(points_x);
 		if (data_cpu.size() < points_x) data_cpu.resize(points_x);
 		
 		//Extract profile from M (gpu to gpu)
-		M()->extract_profile_component_z(points_x, data_gpu, cuReal3(skyRect.s.x, (skyRect.e.y + skyRect.s.y) / 2, h.z / 2), cuReal3(h.x, 0, 0));
+		M()->extract_profile_component_x(points_x, data_gpu, cuReal3(skyRect.s.x, (skyRect.e.y + skyRect.s.y) / 2, h.z / 2), cuReal3(h.x, 0, 0));
 
 		//Transfer extracted profile from gpu to cpu
 		data_gpu.copy_to_cpuvector(data_cpu);
 
+		double window_start = h.x / 2 + skyRect.s.x;
+		double window_end = ((double)points_x - 0.5) * h.x + skyRect.s.x;
+
 #pragma omp parallel for
 		for (int idx = 0; idx < points_x; idx++) {
 
-			xy_data[idx].x = ((double)idx + 0.5) * h.x + skyRect.s.x;
-			xy_data[idx].y = data_cpu[idx];
+			double position = window_start + idx * h.x;
+			xy_data[idx + end_points].x = position;
+			xy_data[idx + end_points].y = data_cpu[idx];
 		}
 
-		fit.FitSkyrmion_LMA(xy_data, params, points_x);
+#pragma omp parallel for
+		for (int idx = 0; idx < end_points; idx++) {
+
+			//left end
+			xy_data[idx].x = window_start - (end_points - idx) * h.x;
+			xy_data[idx].y = 0.0;
+
+			//right end
+			xy_data[idx + points_x + end_points].x = window_end + (idx + 1) * h.x;
+			xy_data[idx + points_x + end_points].y = 0.0;
+		}
+
+		fit.FitSkyrmion_Longitudinal_LMA(xy_data, params, points_x + 2 * end_points);
 
 		return DBL2(params[0] * 2, params[1]);
 	};
@@ -100,66 +119,96 @@ DBL4 SkyrmionTrack::Get_skypos_diametersCUDA(size_t size, DBL3 h, Rect M_rect, c
 
 		int points_y = (skyRect.e.y - skyRect.s.y) / h.y;
 
-		if (xy_data.size() < points_y) xy_data.resize(points_y);
+		//to improve fitting accuracy extended the number of points either side by filling in start / end values.
+		int end_points = 100;
+
+		if (xy_data.size() < points_y + 2 * end_points) xy_data.resize(points_y + 2 * end_points);
 		if (data_gpu.size() < points_y) data_gpu.resize(points_y);
 		if (data_cpu.size() < points_y) data_cpu.resize(points_y);
 
 		//Extract profile from M (gpu to gpu)
-		M()->extract_profile_component_z(points_y, data_gpu, cuReal3((skyRect.e.x + skyRect.s.x) / 2, skyRect.s.y, h.z / 2), cuReal3(0, h.y, 0));
+		M()->extract_profile_component_y(points_y, data_gpu, cuReal3((skyRect.e.x + skyRect.s.x) / 2, skyRect.s.y, h.z / 2), cuReal3(0, h.y, 0));
 
 		//Transfer extracted profile from gpu to cpu
 		data_gpu.copy_to_cpuvector(data_cpu);
 
+		double window_start = h.y / 2 + skyRect.s.y;
+		double window_end = ((double)points_y - 0.5) * h.y + skyRect.s.y;
+
 #pragma omp parallel for
 		for (int idx = 0; idx < points_y; idx++) {
 
-			xy_data[idx].x = ((double)idx + 0.5) * h.y + skyRect.s.y;
-			xy_data[idx].y = data_cpu[idx];
+			double position = window_start + idx * h.y;
+			xy_data[idx + end_points].x = position;
+			xy_data[idx + end_points].y = data_cpu[idx];
 		}
 
-		fit.FitSkyrmion_LMA(xy_data, params, points_y);
+#pragma omp parallel for
+		for (int idx = 0; idx < end_points; idx++) {
+
+			//left end
+			xy_data[idx].x = window_start - (end_points - idx) * h.y;
+			xy_data[idx].y = 0.0;
+
+			//right end
+			xy_data[idx + points_y + end_points].x = window_end + (idx + 1) * h.y;
+			xy_data[idx + points_y + end_points].y = 0.0;
+		}
+
+		fit.FitSkyrmion_Longitudinal_LMA(xy_data, params, points_y + 2 * end_points);
 
 		return DBL2(params[0] * 2, params[1]);
 	};
 
-	//1. First fitting along x direction - only need skyrmion center x position now so we can center the rect along x (the "radius" returned will not be the actual radius).
+	//1. Fitting along x direction
 
 	DBL2 dia_pos = fit_x_axis();
+
+	//need these checks just in case the fitting fails : otherwise we can crash the program
+	if (isnan(dia_pos.i) || isnan(dia_pos.j) || dia_pos.i < 0 || dia_pos.j < 0) return DBL4();
+
+	double diameter_x = dia_pos.i;
+	double position_x = dia_pos.j;
 
 	//center rectangle along x
 	skyRect += DBL3(dia_pos.j - (skyRect.e.x + skyRect.s.x) / 2, 0.0, 0.0);
 
-	//2. Fit along y direction - this gives us the correct y axis diameter, and also allows us to center the rectangle along y
+	//make sure the rectangle doesn't go out of bounds
+	if (skyRect.s.x < 0.0) skyRect.s.x = 0.0;
+	if (skyRect.e.x > M_rect.e.x) skyRect.e.x = M_rect.e.x;
+
+	//2. Fit along y direction - this gives us the correct y axis diameter and y center position, and also allows us to center the rectangle along y
 
 	dia_pos = fit_y_axis();
+
+	//need these checks just in case the fitting fails : otherwise we can crash the program
+	if (isnan(dia_pos.i) || isnan(dia_pos.j) || dia_pos.i < 0 || dia_pos.j < 0) return DBL4();
+
 	double diameter_y = dia_pos.i;
+	double position_y = dia_pos.j;
 
 	//center rectangle along y
 	skyRect += DBL3(0.0, dia_pos.j - (skyRect.e.y + skyRect.s.y) / 2, 0.0);
 
-	//3. Finally fit along x direction again to obtain correct x diameter.
-
-	dia_pos = fit_x_axis();
-	double diameter_x = dia_pos.i;
-
-	double position_x = (skyRect.s.x + skyRect.e.x) / 2;
-	double position_y = (skyRect.s.y + skyRect.e.y) / 2;
-
-	//Update the skyrmion rectangle for next time - center it on the skyrmion with dimensions 50% larger than the diameter.
+	//make sure the rectangle doesn't go out of bounds
+	if (skyRect.s.y < 0.0) skyRect.s.y = 0.0;
+	if (skyRect.e.y > M_rect.e.y) skyRect.e.y = M_rect.e.y;
+	
+	//Update the skyrmion rectangle for next time - center it on the skyrmion with dimensions 2 times larger than the diameter.
 	//Also make sure to cap the rectangle to the mesh dimensions so we don't attempt to read data outside of M
-	double start_x = position_x - diameter_x * 0.75;
+	double start_x = position_x - diameter_x;
 	if (start_x < 0.0) start_x = 0.0;
 
-	double start_y = position_y - diameter_y * 0.75;
+	double start_y = position_y - diameter_y;
 	if (start_y < 0.0) start_y = 0.0;
 
-	double end_x = position_x + diameter_x * 0.75;
+	double end_x = position_x + diameter_x;
 	if (end_x > M_rect.e.x) end_x = M_rect.e.x;
 
-	double end_y = position_y + diameter_y * 0.75;
+	double end_y = position_y + diameter_y;
 	if (end_y > M_rect.e.y) end_y = M_rect.e.y;
 
-	//Update the skyrmion rectangle for next time - center it on the skyrmion with dimensions 50% larger than the diameter.
+	//Update the skyrmion rectangle for next time - center it on the skyrmion with dimensions 2 times larger than the diameter.
 	skyTrack_rect[skyTrack_idx] = Rect(DBL3(start_x, start_y, 0.0), DBL3(end_x, end_y, h.z));
 
 	return DBL4(position_x, position_y, diameter_x, diameter_y);

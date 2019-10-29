@@ -211,6 +211,7 @@ void Simulation::MakeIOInfo(void)
 	ioInfo.set(showdata_info_generic + string("<i><b>Magnetisation relaxation |mxh|</i>"), INT2(IOI_SHOWDATA, DATA_MXH));
 	ioInfo.set(showdata_info_generic + string("<i><b>Magnetisation relaxation |dm/dt|</i>"), INT2(IOI_SHOWDATA, DATA_DMDT));
 	ioInfo.set(showdata_info_generic + string("<i><b>Average magnetisation</i>"), INT2(IOI_SHOWDATA, DATA_AVM));
+	ioInfo.set(showdata_info_generic + string("<i><b>Average magnetisation sub-lattice B</i>"), INT2(IOI_SHOWDATA, DATA_AVM2));
 	ioInfo.set(showdata_info_generic + string("<i><b>Applied magnetic field</i>"), INT2(IOI_SHOWDATA, DATA_HA));
 	ioInfo.set(showdata_info_generic + string("<i><b>Average charge current density</i>"), INT2(IOI_SHOWDATA, DATA_JC));
 	ioInfo.set(showdata_info_generic + string("<i><b>Average spin x-current density</i>"), INT2(IOI_SHOWDATA, DATA_JSX));
@@ -235,7 +236,6 @@ void Simulation::MakeIOInfo(void)
 	ioInfo.set(showdata_info_generic + string("<i><b>Transport solver:\n<i><b>V iterations to convergence</i>"), INT2(IOI_SHOWDATA, DATA_TRANSPORT_ITERSTOCONV));
 	ioInfo.set(showdata_info_generic + string("<i><b>Transport solver:\n<i><b>S iterations to convergence</i>"), INT2(IOI_SHOWDATA, DATA_TRANSPORT_SITERSTOCONV));
 	ioInfo.set(showdata_info_generic + string("<i><b>Transport solver:\n<i><b>achieved convergence error</i>"), INT2(IOI_SHOWDATA, DATA_TRANSPORT_CONVERROR));
-	ioInfo.set(showdata_info_generic + string("<i><b>Transport solver:\n<i><b>min and max aSOR damping</i>"), INT2(IOI_SHOWDATA, DATA_TRANSPORT_ASOR));
 	ioInfo.set(showdata_info_generic + string("<i><b>Average temperature</i>"), INT2(IOI_SHOWDATA, DATA_TEMP));
 	ioInfo.set(showdata_info_generic + string("<i><b>Heat solver time step</i>"), INT2(IOI_SHOWDATA, DATA_HEATDT));
 
@@ -254,6 +254,7 @@ void Simulation::MakeIOInfo(void)
 	ioInfo.set(data_info_generic + string("<i><b>Magnetisation relaxation |mxh|</i>"), INT2(IOI_DATA, DATA_MXH));
 	ioInfo.set(data_info_generic + string("<i><b>Magnetisation relaxation |dm/dt|</i>"), INT2(IOI_DATA, DATA_DMDT));
 	ioInfo.set(data_info_generic + string("<i><b>Average magnetisation</i>"), INT2(IOI_DATA, DATA_AVM));
+	ioInfo.set(data_info_generic + string("<i><b>Average magnetisation sub-lattice B</i>"), INT2(IOI_DATA, DATA_AVM2));
 	ioInfo.set(data_info_generic + string("<i><b>Applied magnetic field</i>"), INT2(IOI_DATA, DATA_HA));
 	ioInfo.set(data_info_generic + string("<i><b>Average charge current density</i>"), INT2(IOI_DATA, DATA_JC));
 	ioInfo.set(data_info_generic + string("<i><b>Average spin x-current density</i>"), INT2(IOI_DATA, DATA_JSX));
@@ -278,7 +279,6 @@ void Simulation::MakeIOInfo(void)
 	ioInfo.set(data_info_generic + string("<i><b>Transport solver:\n<i><b>V iterations to convergence</i>"), INT2(IOI_DATA, DATA_TRANSPORT_ITERSTOCONV));
 	ioInfo.set(data_info_generic + string("<i><b>Transport solver:\n<i><b>S iterations to convergence</i>"), INT2(IOI_DATA, DATA_TRANSPORT_SITERSTOCONV));
 	ioInfo.set(data_info_generic + string("<i><b>Transport solver:\n<i><b>achieved convergence error</i>"), INT2(IOI_DATA, DATA_TRANSPORT_CONVERROR));
-	ioInfo.set(data_info_generic + string("<i><b>Transport solver:\n<i><b>min and max aSOR damping</i>"), INT2(IOI_DATA, DATA_TRANSPORT_ASOR));
 	ioInfo.set(data_info_generic + string("<i><b>Average temperature</i>"), INT2(IOI_DATA, DATA_TEMP));
 	ioInfo.set(data_info_generic + string("<i><b>Heat solver time step</i>"), INT2(IOI_DATA, DATA_HEATDT));
 
@@ -462,11 +462,17 @@ void Simulation::MakeIOInfo(void)
 		string("\n[tc1,1,0,1/tc]dbl-click: edit\n");
 
 	ioInfo.set(param_generic_info + string("<i><b>Electron gyromagnetic ratio relative value"), INT2(IOI_MESHPARAM, PARAM_GREL));
+	ioInfo.set(param_generic_info + string("<i><b>Electron gyromagnetic ratio relative value"), INT2(IOI_MESHPARAM, PARAM_GREL_AFM));
 	ioInfo.set(param_generic_info + string("<i><b>Gilbert damping"), INT2(IOI_MESHPARAM, PARAM_GDAMPING));
+	ioInfo.set(param_generic_info + string("<i><b>Gilbert damping"), INT2(IOI_MESHPARAM, PARAM_GDAMPING_AFM));
 	ioInfo.set(param_generic_info + string("<i><b>Saturation magnetisation"), INT2(IOI_MESHPARAM, PARAM_MS));
+	ioInfo.set(param_generic_info + string("<i><b>Saturation magnetisation"), INT2(IOI_MESHPARAM, PARAM_MS_AFM));
 	ioInfo.set(param_generic_info + string("<i><b>Demag factors Nx, Ny"), INT2(IOI_MESHPARAM, PARAM_DEMAGXY));
-	ioInfo.set(param_generic_info + string("<i><b>Exchange stifness"), INT2(IOI_MESHPARAM, PARAM_A));
+	ioInfo.set(param_generic_info + string("<i><b>Exchange stiffness"), INT2(IOI_MESHPARAM, PARAM_A));
+	ioInfo.set(param_generic_info + string("<i><b>Exchange stiffness"), INT2(IOI_MESHPARAM, PARAM_A_AFM));
+	ioInfo.set(param_generic_info + string("<i><b>AFM coupling"), INT2(IOI_MESHPARAM, PARAM_A12));
 	ioInfo.set(param_generic_info + string("<i><b>Dzyaloshinskii-Moriya exchange"), INT2(IOI_MESHPARAM, PARAM_D));
+	ioInfo.set(param_generic_info + string("<i><b>Dzyaloshinskii-Moriya exchange"), INT2(IOI_MESHPARAM, PARAM_D_AFM));
 	ioInfo.set(param_generic_info + string("<i><b>Bilinear surface exchange\n<i><b>Top mesh sets value"), INT2(IOI_MESHPARAM, PARAM_J1));
 	ioInfo.set(param_generic_info + string("<i><b>Biquadratic surface exchange\n<i><b>Top mesh sets value"), INT2(IOI_MESHPARAM, PARAM_J2));
 	ioInfo.set(param_generic_info + string("<i><b>Magnetocrystalline anisotropy"), INT2(IOI_MESHPARAM, PARAM_K1));
@@ -490,11 +496,14 @@ void Simulation::MakeIOInfo(void)
 	ioInfo.set(param_generic_info + string("<i><b>Spin-flip length"), INT2(IOI_MESHPARAM, PARAM_LSF));
 	ioInfo.set(param_generic_info + string("<i><b>Exchange rotation length"), INT2(IOI_MESHPARAM, PARAM_LEX));
 	ioInfo.set(param_generic_info + string("<i><b>Spin dephasing length"), INT2(IOI_MESHPARAM, PARAM_LPH));
-	ioInfo.set(param_generic_info + string("<i><b>Interface spin conductances (majority, minority)\n<i><b>Set to zero for continuous N-F interface\n<i><b>Top mesh sets value even if N"), INT2(IOI_MESHPARAM, PARAM_GI));
-	ioInfo.set(param_generic_info + string("<i><b>Interface spin mixing conductance (real, imaginary)\n<i><b>Top mesh sets value even if N"), INT2(IOI_MESHPARAM, PARAM_GMIX));
+	ioInfo.set(param_generic_info + string("<i><b>Interface spin conductances (majority, minority)\n<i><b>Top mesh sets value even if N"), INT2(IOI_MESHPARAM, PARAM_GI));
+	ioInfo.set(param_generic_info + string("<i><b>Interface spin mixing conductance (real, imaginary)\n<i><b>Set to zero for continuous N-F interface\n<i><b>Top mesh sets value even if N"), INT2(IOI_MESHPARAM, PARAM_GMIX));
 	ioInfo.set(param_generic_info + string("<i><b>Spin torque efficiency in the bulk"), INT2(IOI_MESHPARAM, PARAM_TSEFF));
 	ioInfo.set(param_generic_info + string("<i><b>Spin torque efficiency at interfaces"), INT2(IOI_MESHPARAM, PARAM_TSIEFF));
 	ioInfo.set(param_generic_info + string("<i><b>Spin pumping efficiency"), INT2(IOI_MESHPARAM, PARAM_PUMPEFF));
+	ioInfo.set(param_generic_info + string("<i><b>Charge pumping efficiency"), INT2(IOI_MESHPARAM, PARAM_CPUMP_EFF));
+	ioInfo.set(param_generic_info + string("<i><b>Topological Hall efficiency"), INT2(IOI_MESHPARAM, PARAM_THE_EFF));
+	ioInfo.set(param_generic_info + string("<i><b>Carrier density"), INT2(IOI_MESHPARAM, PARAM_NDENSITY));
 	ioInfo.set(param_generic_info + string("<i><b>Thermal conductivity"), INT2(IOI_MESHPARAM, PARAM_THERMCOND));
 	ioInfo.set(param_generic_info + string("<i><b>Mass density"), INT2(IOI_MESHPARAM, PARAM_DENSITY));
 	ioInfo.set(param_generic_info + string("<i><b>Specific heat capacity"), INT2(IOI_MESHPARAM, PARAM_SHC));
@@ -563,7 +572,11 @@ void Simulation::MakeIOInfo(void)
 
 	ioInfo.set(meshdisplay_generic_info + string("<i><b>Nothing displayed"), INT2(IOI_MESHDISPLAY, MESHDISPLAY_NONE));
 	ioInfo.set(meshdisplay_generic_info + string("<i><b>Magnetisation"), INT2(IOI_MESHDISPLAY, MESHDISPLAY_MAGNETIZATION));
+	ioInfo.set(meshdisplay_generic_info + string("<i><b>Magnetisation sub-lattice 2"), INT2(IOI_MESHDISPLAY, MESHDISPLAY_MAGNETIZATION2));
+	ioInfo.set(meshdisplay_generic_info + string("<i><b>AF Magnetisation"), INT2(IOI_MESHDISPLAY, MESHDISPLAY_MAGNETIZATION12));
 	ioInfo.set(meshdisplay_generic_info + string("<i><b>Total effective H field"), INT2(IOI_MESHDISPLAY, MESHDISPLAY_EFFECTIVEFIELD));
+	ioInfo.set(meshdisplay_generic_info + string("<i><b>Total effective H field sub-lattice 2"), INT2(IOI_MESHDISPLAY, MESHDISPLAY_EFFECTIVEFIELD2));
+	ioInfo.set(meshdisplay_generic_info + string("<i><b>AF Total effective H field"), INT2(IOI_MESHDISPLAY, MESHDISPLAY_EFFECTIVEFIELD12));
 	ioInfo.set(meshdisplay_generic_info + string("<i><b>Charge current density"), INT2(IOI_MESHDISPLAY, MESHDISPLAY_CURRDENSITY));
 	ioInfo.set(meshdisplay_generic_info + string("<i><b>Charge potential"), INT2(IOI_MESHDISPLAY, MESHDISPLAY_VOLTAGE));
 	ioInfo.set(meshdisplay_generic_info + string("<i><b>Electrical conductivity"), INT2(IOI_MESHDISPLAY, MESHDISPLAY_ELCOND));
@@ -576,6 +589,8 @@ void Simulation::MakeIOInfo(void)
 	ioInfo.set(meshdisplay_generic_info + string("<i><b>Temperature"), INT2(IOI_MESHDISPLAY, MESHDISPLAY_TEMPERATURE));
 	ioInfo.set(meshdisplay_generic_info + string("<i><b>Mesh parameter spatial variation"), INT2(IOI_MESHDISPLAY, MESHDISPLAY_PARAMVAR));
 	ioInfo.set(meshdisplay_generic_info + string("<i><b>Roughness"), INT2(IOI_MESHDISPLAY, MESHDISPLAY_ROUGHNESS));
+	ioInfo.set(meshdisplay_generic_info + string("<i><b>Custom, Vectorial"), INT2(IOI_MESHDISPLAY, MESHDISPLAY_CUSTOM_VEC));
+	ioInfo.set(meshdisplay_generic_info + string("<i><b>Custom, Scalar"), INT2(IOI_MESHDISPLAY, MESHDISPLAY_CUSTOM_SCA));
 
 	//Shows super-mesh display option : minorId is the MESHDISPLAY_ value, textId is the MESHDISPLAY_ handle
 	//IOI_SMESHDISPLAY
@@ -599,7 +614,8 @@ void Simulation::MakeIOInfo(void)
 	string meshdisplay_option_info =
 		string("[tc1,1,0,1/tc]<b>Vectorial quantity display option") +
 		string("\n[tc1,1,0,1/tc]<i>full, X, Y, Z, direction</i>") +
-		string("\n[tc1,1,0,1/tc]click: change state\n");
+		string("\n[tc1,1,0,1/tc]left-click: change state forward") +
+		string("\n[tc1,1,0,1/tc]right-click: change state backward\n");
 
 	ioInfo.push_back(meshdisplay_option_info, IOI_MESHVECREP);
 	ioInfo.push_back(meshdisplay_option_info, IOI_SMESHVECREP);
@@ -720,15 +736,6 @@ void Simulation::MakeIOInfo(void)
 
 	ioInfo.push_back(ssolvertout_info, IOI_SSOLVERTIMEOUT);
 
-	//Shows Poisson solver SOR damping type : true for fixed, false for adaptive. auxId is enabled (1)/disabled(0) status.
-	//IOI_SORFIXEDDAMPING
-
-	string sortype_info =
-		string("[tc1,1,0,1/tc]<b>SOR damping type") +
-		string("\n[tc1,1,0,1/tc]<i>SOR fixed or adaptive damping</i>") +
-		string("\n[tc1,1,0,1/tc]click: switch mode\n");
-
-	ioInfo.push_back(sortype_info, IOI_SORFIXEDDAMPING);
 
 	//Shows SOR damping values when used in fixed damping mode. textId is the DBL2 damping value as a string. (DBL2 since we need different damping values for V and S solvers)
 	//IOI_SORDAMPING
@@ -1643,15 +1650,6 @@ string Simulation::MakeIO(IOI_ identifier, PType ... params)
 		int iters_timeout = SMesh.CallModuleMethod(&STransport::GetSConvergenceTimeout);
 
 		return MakeInteractiveObject(ToString(iters_timeout), IOI_SSOLVERTIMEOUT);
-	}
-	break;
-
-	case IOI_SORFIXEDDAMPING:
-	{
-		bool fixed_SOR_damping = SMesh.CallModuleMethod(&STransport::IsFixedSORdamping);
-
-		if (fixed_SOR_damping) return MakeInteractiveObject("Fixed", IOI_SORFIXEDDAMPING, -1, 1, "", ONCOLOR);
-		else return MakeInteractiveObject("Adaptive", IOI_SORFIXEDDAMPING, -1, 0, "", OFFCOLOR);
 	}
 	break;
 

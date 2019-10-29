@@ -5,6 +5,7 @@
 #include "SimSharedData.h"
 
 #include "Mesh_Ferromagnetic.h"
+#include "Mesh_AntiFerromagnetic.h"
 #include "Mesh_Dipole.h"
 #include "Mesh_Metal.h"
 #include "Mesh_Insulator.h"
@@ -29,7 +30,7 @@ class SuperMesh :
 	public SimulationSharedData, 
 	public ProgramState<SuperMesh,
 	tuple<int, int, SZ3, DBL3, Rect, SZ3, DBL3, Rect, ODECommon, vector_key<Mesh*>, vector_lut<Modules*>, string, string, bool, bool>,
-	tuple<FMesh, DipoleMesh, MetalMesh, InsulatorMesh,
+	tuple<FMesh, DipoleMesh, MetalMesh, InsulatorMesh, AFMesh,
 		  SDemag, StrayField, STransport, Oersted, SHeat> >
 {
 	//all supermesh modules are friends
@@ -132,7 +133,7 @@ public:
 	BError Error_On_Create(void);
 
 	//implement pure virtual method from ProgramState
-	void RepairObjectState(void) { error_on_create = UpdateConfiguration(); }
+	void RepairObjectState(void) { error_on_create = UpdateConfiguration(UPDATECONFIG_REPAIROBJECTSTATE); }
 
 	//--------------------------------------------------------- MESH INDEXING and related methods
 
@@ -209,7 +210,7 @@ public:
 	//set the ode and evaluation method. Any new ODE in a ferromagnetic mesh will use these settings.
 	BError SetODE(ODE_ setOde, EVAL_ evalMethod);
 
-	void SetEvaluationSpeedup(int status) { odeSolver.SetEvaluationSpeedup(status); UpdateConfiguration(); }
+	void SetEvaluationSpeedup(int status) { odeSolver.SetEvaluationSpeedup(status); UpdateConfiguration(UPDATECONFIG_ODE_SOLVER); }
 
 	//set the time step for the magnetisation solver
 	void SetTimeStep(double dT) { odeSolver.SetdT(dT); }

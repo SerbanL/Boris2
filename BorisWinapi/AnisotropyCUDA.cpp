@@ -5,11 +5,11 @@
 
 #ifdef MODULE_ANIUNI
 
-#include "Mesh_FerromagneticCUDA.h"
+#include "MeshCUDA.h"
 
 //--------------- UNIAXIAL
 
-Anisotropy_UniaxialCUDA::Anisotropy_UniaxialCUDA(FMeshCUDA* pMeshCUDA_)
+Anisotropy_UniaxialCUDA::Anisotropy_UniaxialCUDA(MeshCUDA* pMeshCUDA_)
 	: ModulesCUDA()
 {
 	pMeshCUDA = pMeshCUDA_;

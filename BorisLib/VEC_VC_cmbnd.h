@@ -193,7 +193,7 @@ void VEC_VC<VType>::set_cmbnd_continuous(
 	VEC_VC<VType> &V_sec, CMBNDInfo& contact,
 	std::function<VType(const Owner&, DBL3, DBL3, DBL3)> a_func_sec, std::function<VType(const Owner&, int, int, DBL3)> a_func_pri,
 	std::function<double(const Owner&, DBL3, DBL3, DBL3)> b_func_sec, std::function<double(const Owner&, int, int)> b_func_pri,
-	std::function<VType(const Owner&, DBL3, DBL3)> diff2_sec, std::function<VType(const Owner&, int)> diff2_pri,
+	std::function<VType(const Owner&, DBL3, DBL3, DBL3)> diff2_sec, std::function<VType(const Owner&, int, DBL3)> diff2_pri,
 	Owner& instance_sec, Owner& instance_pri)
 {
 	INT3 box_sizes = contact.cells_box.size();
@@ -242,8 +242,8 @@ void VEC_VC<VType>::set_cmbnd_continuous(
 		double b_val_pri = b_func_pri(instance_pri, cell1_idx, cell2_idx) * contact.weights.j;
 
 		//V'' values at cell positions -1 and 1
-		VType Vdiff2_sec = diff2_sec(instance_sec, relpos_m1, stencil);
-		VType Vdiff2_pri = diff2_pri(instance_pri, cell1_idx);
+		VType Vdiff2_sec = diff2_sec(instance_sec, relpos_m1, stencil, contact.hshift_secondary);
+		VType Vdiff2_pri = diff2_pri(instance_pri, cell1_idx, contact.hshift_secondary);
 
 		//Formula for V1
 		quantity[cell1_idx] = (V_m2 * 2 * b_val_sec / 3 + V_2 * (b_val_pri + b_val_sec / 3)
@@ -262,7 +262,7 @@ template <typename Owner, typename SOwner>
 void VEC_VC<VType>::set_cmbnd_continuousflux(VEC_VC<VType> &V_sec, CMBNDInfo& contact,
 	std::function<VType(const Owner&, DBL3, DBL3, DBL3)> a_func_sec, std::function<VType(const Owner&, int, int, DBL3)> a_func_pri,
 	std::function<double(const Owner&, DBL3, DBL3, DBL3)> b_func_sec, std::function<double(const Owner&, int, int)> b_func_pri,
-	std::function<VType(const Owner&, DBL3, DBL3)> diff2_sec, std::function<VType(const Owner&, int)> diff2_pri,
+	std::function<VType(const Owner&, DBL3, DBL3, DBL3)> diff2_sec, std::function<VType(const Owner&, int, DBL3)> diff2_pri,
 	std::function<VType(const SOwner&, int, int, DBL3, DBL3, DBL3, Owner&, Owner&)> A_func, std::function<double(const SOwner&, int, int, DBL3, DBL3, DBL3, Owner&, Owner&)> B_func,
 	Owner& instance_sec, Owner& instance_pri, SOwner& instance_s)
 {
@@ -312,8 +312,8 @@ void VEC_VC<VType>::set_cmbnd_continuousflux(VEC_VC<VType> &V_sec, CMBNDInfo& co
 		double b_val_pri = b_func_pri(instance_pri, cell1_idx, cell2_idx) * contact.weights.j;
 
 		//V'' values at cell positions -1 and 1
-		VType Vdiff2_sec = diff2_sec(instance_sec, relpos_m1, stencil);
-		VType Vdiff2_pri = diff2_pri(instance_pri, cell1_idx);
+		VType Vdiff2_sec = diff2_sec(instance_sec, relpos_m1, stencil, contact.hshift_secondary);
+		VType Vdiff2_pri = diff2_pri(instance_pri, cell1_idx, contact.hshift_secondary);
 
 		//A value
 		VType A_val = A_func(instance_s, cell1_idx, cell2_idx, relpos_m1, contact.hshift_secondary, stencil, instance_sec, instance_pri);
@@ -347,7 +347,7 @@ void VEC_VC<VType>::set_cmbnd_discontinuous(
 	VEC_VC<VType> &V_sec, CMBNDInfo& contact,
 	std::function<VType(const Owner&, DBL3, DBL3, DBL3)> a_func_sec, std::function<VType(const Owner&, int, int, DBL3)> a_func_pri,
 	std::function<double(const Owner&, DBL3, DBL3, DBL3)> b_func_sec, std::function<double(const Owner&, int, int)> b_func_pri,
-	std::function<VType(const Owner&, DBL3, DBL3)> diff2_sec, std::function<VType(const Owner&, int)> diff2_pri,
+	std::function<VType(const Owner&, DBL3, DBL3, DBL3)> diff2_sec, std::function<VType(const Owner&, int, DBL3)> diff2_pri,
 	std::function<VType(const SOwner&, int, int, DBL3, DBL3, DBL3, Owner&, Owner&)> A_func_sec, std::function<BType(const SOwner&, int, int, DBL3, DBL3, DBL3, Owner&, Owner&)> B_func_sec,
 	std::function<VType(const SOwner&, int, int, DBL3, DBL3, DBL3, Owner&, Owner&)> A_func_pri, std::function<BType(const SOwner&, int, int, DBL3, DBL3, DBL3, Owner&, Owner&)> B_func_pri,
 	std::function<double(const Owner&, DBL3, DBL3)> c_func_sec, std::function<double(const Owner&, int)> c_func_pri,
@@ -399,8 +399,8 @@ void VEC_VC<VType>::set_cmbnd_discontinuous(
 		double b_val_pri = b_func_pri(instance_pri, cell1_idx, cell2_idx) * contact.weights.j;
 
 		//V'' values at cell positions -1 and 1
-		VType Vdiff2_sec = diff2_sec(instance_sec, relpos_m1, stencil);
-		VType Vdiff2_pri = diff2_pri(instance_pri, cell1_idx);
+		VType Vdiff2_sec = diff2_sec(instance_sec, relpos_m1, stencil, contact.hshift_secondary);
+		VType Vdiff2_pri = diff2_pri(instance_pri, cell1_idx, contact.hshift_secondary);
 
 		//A values
 		VType A_val_sec = A_func_sec(instance_s, cell1_idx, cell2_idx, relpos_m1, contact.hshift_secondary, stencil, instance_sec, instance_pri);

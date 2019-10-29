@@ -107,14 +107,17 @@ public:
 
 	BError Initialize(void);
 
-	BError UpdateConfiguration(UPDATECONFIG_ cfgMessage = UPDATECONFIG_GENERIC);
+	BError UpdateConfiguration(UPDATECONFIG_ cfgMessage);
 
 	void UpdateField(void);
 
-	//-------------------Getters
+	//-------------------Display Calculation Methods
 
 	//return interfacial spin torque in given mesh with matching transport module
 	cu_obj<cuVEC<cuReal3>>& GetInterfacialSpinTorque(TransportCUDA* pMeshTrans);
+
+	//-------------------Getters
+
 };
 
 #else

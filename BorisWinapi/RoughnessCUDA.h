@@ -8,7 +8,7 @@
 #include "BorisCUDALib.h"
 #include "ModulesCUDA.h"
 
-class FMeshCUDA;
+class MeshCUDA;
 class Roughness;
 
 class RoughnessCUDA :
@@ -18,7 +18,7 @@ class RoughnessCUDA :
 private:
 
 	//pointer to CUDA version of mesh object holding the effective field module holding this CUDA module
-	FMeshCUDA * pMeshCUDA;
+	MeshCUDA * pMeshCUDA;
 
 	//pointer to non-CUDA version of this module
 	Roughness* pRough;
@@ -29,7 +29,7 @@ private:
 
 public:
 
-	RoughnessCUDA(FMeshCUDA* pMeshCUDA_, Roughness* pRough_);
+	RoughnessCUDA(MeshCUDA* pMeshCUDA_, Roughness* pRough_);
 	~RoughnessCUDA();
 
 	//-------------------Abstract base class method implementations
@@ -38,7 +38,7 @@ public:
 
 	BError Initialize(void);
 
-	BError UpdateConfiguration(UPDATECONFIG_ cfgMessage = UPDATECONFIG_GENERIC);
+	BError UpdateConfiguration(UPDATECONFIG_ cfgMessage);
 
 	void UpdateField(void);
 

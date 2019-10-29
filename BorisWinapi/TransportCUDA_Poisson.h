@@ -70,22 +70,16 @@ public:
 	}
 
 	//second order differential of V at cells either side of the boundary; delsq V = -grad V * grad elC / elC
-	__device__ cuBReal diff2_pri(int cell1_idx)
+	__device__ cuBReal diff2_pri(int cell1_idx, cuReal3 shift)
 	{
-		cuVEC_VC<cuBReal>& V = *pV;
-		cuVEC_VC<cuBReal>& elC = *pelC;
-
-		return -(V.grad_diri(cell1_idx) * elC.grad_sided(cell1_idx)) / elC[cell1_idx];
+		return Poisson_RHS(cell1_idx);
 	}
 
-	__device__ cuBReal diff2_sec(cuReal3 relpos_m1, cuReal3 stencil)
+	__device__ cuBReal diff2_sec(cuReal3 relpos_m1, cuReal3 stencil, cuReal3 shift)
 	{
-		cuVEC_VC<cuBReal>& V = *pV;
-		cuVEC_VC<cuBReal>& elC = *pelC;
+		int cellm1_idx = pV->position_to_cellidx(relpos_m1);
 
-		int cellm1_idx = V.position_to_cellidx(relpos_m1);
-
-		return -(V.grad_diri(cellm1_idx) * elC.grad_sided(cellm1_idx)) / elC[cellm1_idx];
+		return Poisson_RHS(cellm1_idx);
 	}
 };
 

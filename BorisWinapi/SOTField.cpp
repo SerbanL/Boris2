@@ -16,7 +16,7 @@ SOTField::SOTField(Mesh *pMesh_) :
 {
 	pMesh = dynamic_cast<FMesh*>(pMesh_);
 
-	error_on_create = UpdateConfiguration();
+	error_on_create = UpdateConfiguration(UPDATECONFIG_FORCEUPDATE);
 
 	//-------------------------- Is CUDA currently enabled?
 
@@ -53,7 +53,7 @@ BError SOTField::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 #if COMPILECUDA == 1
 	if (pModuleCUDA) {
 
-		if (!error) error = pModuleCUDA->UpdateConfiguration();
+		if (!error) error = pModuleCUDA->UpdateConfiguration(cfgMessage);
 	}
 #endif
 
@@ -81,7 +81,7 @@ BError SOTField::MakeCUDAModule(void)
 
 double SOTField::UpdateField(void)
 {
-	if (!pMesh->Jc.linear_size()) return 0.0;
+	if (!pMesh->E.linear_size()) return 0.0;
 
 #pragma omp parallel for
 	for (int idx = 0; idx < pMesh->n.dim(); idx++) {
@@ -93,8 +93,8 @@ double SOTField::UpdateField(void)
 
 		double a_const = -(HBAR_E / MU0) * SHA / (2 * Ms * Ms * pMesh->GetMeshDimensions().z);
 
-		int idx_Jc = pMesh->Jc.position_to_cellidx(pMesh->M.cellidx_to_position(idx));
-		DBL3 p_vec = DBL3(0, 0, 1) ^ pMesh->Jc[idx_Jc];
+		int idx_E = pMesh->E.position_to_cellidx(pMesh->M.cellidx_to_position(idx));
+		DBL3 p_vec = (DBL3(0, 0, 1) ^ pMesh->E[idx_E]) * pMesh->elC[idx_E];
 
 		pMesh->Heff[idx] += a_const * ((pMesh->M[idx] ^ p_vec) + flSOT * Ms * p_vec);
 	}

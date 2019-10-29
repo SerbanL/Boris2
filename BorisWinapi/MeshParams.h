@@ -55,23 +55,33 @@ public:
 
 	//-------------------------------- LIST ALL MESH PARAMETERS HERE
 
+	//A number of parameters have _AFM termination. These are used for antiferromagnetic meshes with 2-sublattice local approximation and are doubled-up for sub-lattices A, B
+
 	//Relative electron gyromagnetic ratio
 	MatP<double, double> grel = 1.0;
+	MatP<DBL2, double> grel_AFM = DBL2(1.0);
 
 	//Gilbert damping
 	MatP<double, double> alpha = 0.02;
+	MatP<DBL2, double> alpha_AFM = DBL2(0.02);
 
 	//Saturation magnetisation (A/m)
 	MatP<double, double> Ms = 8e5;
+	MatP<DBL2, double> Ms_AFM = DBL2(8e5);
 
 	//in-plane demagnetizing factors (used for Demag_N module)
 	MatP<DBL2, double> Nxy = DBL2(0);
 
-	//Exchange stifness (J/m)
+	//Exchange stiffness (J/m)
 	MatP<double, double> A = 1.3e-11;
+	MatP<DBL2, double> A_AFM = DBL2(1.3e-11);
+
+	//AFM coupling between sub-lattices A and B, defined as A / a*a (J/m^3), where A is the antiferromagnetic exchange stifness (negative), and a is the lattice constant.
+	MatP<double, double> A12 = -1e+6;
 
 	//Dzyaloshinskii-Moriya exchange constant (J/m^2)
 	MatP<double, double> D = 3e-3;
+	MatP<DBL2, double> D_AFM = 3e-3;
 
 	//bilinear surface exchange coupling (J/m^2) : J1
 	//biquadratic surface exchange coupling (J/m^2) : J2
@@ -110,6 +120,9 @@ public:
 	//electron diffusion constant (m^2/s)
 	MatP<double, double> De = 1e-2;
 
+	//electron carrier density (1/m^3)
+	MatP<double, double> n_density = 1.8e29;
+
 	//diffusion spin polarisation (unitless)
 	MatP<double, double> betaD = 0.5;
 
@@ -144,7 +157,16 @@ public:
 	MatP<double, double> tsi_eff = 1;
 
 	//spin pumping efficiency (unitless, varies from 0 : no spin pumping, up to 1 : full strength)
-	MatP<double, double> pump_eff = 1;
+	//disabled by default
+	MatP<double, double> pump_eff = 0;
+
+	//charge pumping efficiency (unitless, varies from 0 : no charge pumping, up to 1 : full strength)
+	//disabled by default
+	MatP<double, double> cpump_eff = 0;
+
+	//topological Hall effect efficiency (unitless, varies from 0 : none, up to 1 : full strength)
+	//disabled by default
+	MatP<double, double> the_eff = 0;
 
 	//the mesh base temperature (K)
 	double base_temperature = 0.0;
@@ -303,12 +325,24 @@ RType MeshParams::run_on_param(PARAM_ paramID, Lambda& run_this, PType& ... run_
 		return run_this(grel, run_this_args...);
 		break;
 
+	case PARAM_GREL_AFM:
+		return run_this(grel_AFM, run_this_args...);
+		break;
+
 	case PARAM_GDAMPING:
 		return run_this(alpha, run_this_args...);
 		break;
 
+	case PARAM_GDAMPING_AFM:
+		return run_this(alpha_AFM, run_this_args...);
+		break;
+
 	case PARAM_MS:
 		return run_this(Ms, run_this_args...);
+		break;
+
+	case PARAM_MS_AFM:
+		return run_this(Ms_AFM, run_this_args...);
 		break;
 
 	case PARAM_DEMAGXY:
@@ -319,8 +353,20 @@ RType MeshParams::run_on_param(PARAM_ paramID, Lambda& run_this, PType& ... run_
 		return run_this(A, run_this_args...);
 		break;
 
+	case PARAM_A_AFM:
+		return run_this(A_AFM, run_this_args...);
+		break;
+
+	case PARAM_A12:
+		return run_this(A12, run_this_args...);
+		break;
+
 	case PARAM_D:
 		return run_this(D, run_this_args...);
+		break;
+
+	case PARAM_D_AFM:
+		return run_this(D_AFM, run_this_args...);
 		break;
 
 	case PARAM_J1:
@@ -433,6 +479,18 @@ RType MeshParams::run_on_param(PARAM_ paramID, Lambda& run_this, PType& ... run_
 
 	case PARAM_PUMPEFF:
 		return run_this(pump_eff, run_this_args...);
+		break;
+
+	case PARAM_CPUMP_EFF:
+		return run_this(cpump_eff, run_this_args...);
+		break;
+
+	case PARAM_THE_EFF:
+		return run_this(the_eff, run_this_args...);
+		break;
+
+	case PARAM_NDENSITY:
+		return run_this(n_density, run_this_args...);
 		break;
 
 	case PARAM_THERMCOND:

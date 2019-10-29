@@ -133,7 +133,7 @@ BError Simulation::LoadSimulation(string fileName)
 
 		//check for any errors in loading program state
 		if (!error) error = SMesh.Error_On_Create();
-		if (!error) error = SMesh.UpdateConfiguration();
+		if (!error) error = SMesh.UpdateConfiguration(UPDATECONFIG_FORCEUPDATE);
 
 		if (error) return error;
 

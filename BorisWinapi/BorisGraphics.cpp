@@ -80,7 +80,9 @@ HRESULT BorisGraphics::Setup3DGraphicsResources() {
 
 	success &= LoadVINFile("CDO_CONE.vin", "ShaderFile_VS.cso", "ShaderFile_PS.cso", objCol);
 	success &= LoadVINFile("CDO_ARROW.vin", "ShaderFile_VS.cso", "ShaderFile_PS.cso", objCol);
+	success &= LoadVINFile("CDO_HALFARROW.vin", "ShaderFile_VS.cso", "ShaderFile_PS.cso", objCol);
 	success &= LoadVINFile("CDO_CUBE.vin", "ShaderFile_VS.cso", "ShaderFile_PS.cso", objCol);
+	success &= LoadVINFile("CDO_HALFCUBE.vin", "ShaderFile_VS.cso", "ShaderFile_PS.cso", objCol);
 	success &= LoadVINFile("CDO_CUBEFRAME.vin", "ShaderFile_VS.cso", "ShaderFile_PS.cso", objCol);
 	success &= LoadVINFile("CDO_DODECA.vin", "ShaderFile_VS.cso", "ShaderFile_PS.cso", objCol);
 	success &= LoadVINFile("CDO_AXISX.vin", "ShaderFile_VS.cso", "ShaderFile_PS.cso", objCol);

@@ -4,6 +4,8 @@
 
 #include "SkyrmionTrack.h"
 
+#include "DiffEqFM.h"
+
 #if COMPILECUDA == 1
 #include "Mesh_FerromagneticCUDA.h"
 #endif
@@ -23,27 +25,11 @@ class FMesh :
 	bool, SkyrmionTrack, bool,
 	//Material Parameters
 	MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<DBL2, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<DBL3, DBL3>, MatP<DBL3, DBL3>, MatP<double, double>, MatP<double, double>, MatP<double, double>,
-	MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<DBL2, double>, MatP<DBL2, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>,
-	double, double, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>>,
+	MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<DBL2, double>, MatP<DBL2, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>,
+	MatP<double, double>, MatP<double, double>, double, double, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>>,
 	//Module Implementations
 	tuple<Demag_N, Demag, SDemag_Demag, Exch_6ngbr_Neu, DMExchange, iDMExchange, SurfExchange, Zeeman, Anisotropy_Uniaxial, Anisotropy_Cubic, Transport, Heat, SOTField, Roughness> >
 {
-	//List modules which can only be used in this type of mesh (these modules will hold a pointer to this mesh directly, not the base Mesh class)
-	friend Demag_N;
-	friend Demag;
-	friend SDemag_Demag;
-	friend Exch_6ngbr_Neu;
-	friend DMExchange;
-	friend iDMExchange;
-	friend SurfExchange;
-	friend Zeeman;
-	friend Anisotropy_Uniaxial;
-	friend Anisotropy_Cubic;
-	friend SOTField;
-	friend Roughness;
-
-	friend DifferentialEquation;
-
 #if COMPILECUDA == 1
 	friend FMeshCUDA;
 #endif
@@ -51,7 +37,7 @@ class FMesh :
 private:
 
 	//The set ODE, associated with this ferromagnetic mesh (the ODE type and evaluation method is controlled from SuperMesh)
-	DifferentialEquation meshODE;
+	DifferentialEquationFM meshODE;
 
 	//is this mesh used to trigger mesh movement? i.e. the CheckMoveMesh method should only be used if this flag is set
 	bool move_mesh_trigger = false;
@@ -104,6 +90,11 @@ public:
 	bool GetMoveMeshTrigger(void) { return move_mesh_trigger; }
 	void SetMoveMeshTrigger(bool status) { move_mesh_trigger = status; }
 
+	//----------------------------------- ODE METHODS IN (ANTI)FERROMAGNETIC MESH : Mesh_Ferromagnetic_ODEControl.cpp
+
+	//get rate of change of magnetization (overloaded by Ferromagnetic meshes)
+	DBL3 dMdt(int idx);
+
 	//----------------------------------- FERROMAGNETIC MESH QUANTITIES CONTROL : Mesh_Ferromagnetic_Control.cpp
 
 	//this method is also used by the dipole mesh where it does something else - sets the dipole direction
@@ -137,14 +128,9 @@ public:
 
 	//Curie temperature for ferromagnetic meshes. Calling this forces recalculation of affected material parameters temperature dependence - any custom dependence set will be overwritten.
 	void SetCurieTemperature(double Tc);
-	//this just sets the indicative material Tc value
-	void SetCurieTemperatureMaterial(double Tc_material) { T_Curie_material = Tc_material; }
 
 	//atomic moment (as multiple of Bohr magneton) for ferromagnetic meshes. Calling this forces recalculation of affected material parameters temperature dependence - any custom dependence set will be overwritten.
 	void SetAtomicMoment(double atomic_moment_ub);
-	double GetAtomicMoment(void) { return atomic_moment; }
-
-	DBL3 dMdt(int idx) { return meshODE.dMdt(idx); }
 	
 	//get skyrmion shift for a skyrmion initially in the given rectangle (works only with data in data box or output data, not with ShowData)
 	//the rectangle must use relative coordinates
@@ -173,6 +159,6 @@ public:
 
 #if COMPILECUDA == 1
 	//get reference to stored differential equation object (meshODE)
-	DifferentialEquation& Get_DifferentialEquation(void) { return meshODE; }
+	DifferentialEquationFM& Get_DifferentialEquation(void) { return meshODE; }
 #endif
 };

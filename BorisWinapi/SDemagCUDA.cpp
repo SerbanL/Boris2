@@ -19,7 +19,7 @@ SDemagCUDA::SDemagCUDA(SuperMesh* pSMesh_, SDemag* pSDemag_) :
 	pSMesh = pSMesh_;
 	pSDemag = pSDemag_;
 
-	error_on_create = UpdateConfiguration();
+	error_on_create = UpdateConfiguration(UPDATECONFIG_FORCEUPDATE);
 }
 
 SDemagCUDA::~SDemagCUDA()
@@ -67,14 +67,18 @@ BError SDemagCUDA::Initialize(void)
 	//FFT Kernels are not so quick to calculate - if already initialized then we are guaranteed they are correct
 	if (!initialized) {
 		
+		///////////////////////////////////////////////////////////////////////////////////////////////
+		//////////////////////////////////// SUPERMESH CONVOLUTION ////////////////////////////////////
+		///////////////////////////////////////////////////////////////////////////////////////////////
+
 		if (!pSDemag->use_multilayered_convolution) {
 
 			error = Calculate_Demag_Kernels();
 			if (error) return error;
 
 			//array of pointers to input meshes (M) and oputput meshes (Heff) to transfer from and to
-			cu_arr<cuVEC<cuReal3>> pVal_from;
-			cu_arr<cuVEC<cuReal3>> pVal_to;
+			cu_arr<cuVEC<cuReal3>> pVal_from, pVal_from2;
+			cu_arr<cuVEC<cuReal3>> pVal_to, pVal_to2;
 
 			//identify all existing ferrommagnetic meshes (magnetic computation enabled)
 			for (int idx = 0; idx < (int)pSMesh->pMesh.size(); idx++) {
@@ -83,6 +87,9 @@ BError SDemagCUDA::Initialize(void)
 
 					pVal_from.push_back((cuVEC<cuReal3>*&)(*pSMesh)[idx]->pMeshCUDA->M.get_managed_object());
 					pVal_to.push_back((cuVEC<cuReal3>*&)(*pSMesh)[idx]->pMeshCUDA->Heff.get_managed_object());
+
+					pVal_from2.push_back((cuVEC<cuReal3>*&)(*pSMesh)[idx]->pMeshCUDA->M2.get_managed_object());
+					pVal_to2.push_back((cuVEC<cuReal3>*&)(*pSMesh)[idx]->pMeshCUDA->Heff2.get_managed_object());
 				}
 			}
 
@@ -90,15 +97,34 @@ BError SDemagCUDA::Initialize(void)
 			error = pSDemag->Initialize_Mesh_Transfer();
 			if (error) return error;
 
-			//Now copy mesh transfer object to cuda version
-			if (!sm_Vals()->copy_transfer_info(pVal_from, pVal_to, pSDemag->sm_Vals)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
+			if (!pSDemag->antiferromagnetic_meshes_present) {
 
-			if (pSMesh->EvaluationSpeedup()) {
+				//Now copy mesh transfer object to cuda version
+				if (!sm_Vals()->copy_transfer_info(pVal_from, pVal_to, pSDemag->sm_Vals)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
 
-				//initialize mesh transfer for Hdemag as well if we are using evaluation speedup
-				if (!Hdemag()->copy_transfer_info(pVal_from, pVal_to, pSDemag->sm_Vals)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
+				if (pSMesh->EvaluationSpeedup()) {
+
+					//initialize mesh transfer for Hdemag as well if we are using evaluation speedup
+					if (!Hdemag()->copy_transfer_info(pVal_from, pVal_to, pSDemag->sm_Vals)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
+				}
+			}
+			else {
+
+				//Now copy mesh transfer object to cuda version
+				if (!sm_Vals()->copy_transfer_info_averagedinputs_duplicatedoutputs(pVal_from, pVal_from2, pVal_to, pVal_to2, pSDemag->sm_Vals)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
+
+				if (pSMesh->EvaluationSpeedup()) {
+
+					//initialize mesh transfer for Hdemag as well if we are using evaluation speedup
+					if (!Hdemag()->copy_transfer_info_averagedinputs_duplicatedoutputs(pVal_from, pVal_from2, pVal_to, pVal_to2, pSDemag->sm_Vals)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
+				}
 			}
 		}
+
+		///////////////////////////////////////////////////////////////////////////////////////////////
+		/////////////////////////////////// MULTILAYERED CONVOLUTION //////////////////////////////////
+		///////////////////////////////////////////////////////////////////////////////////////////////
+
 		else {
 
 			//in multi-layered convolution mode must make sure all convolution sizes are set correctly, and rect collections also set
@@ -167,55 +193,58 @@ BError SDemagCUDA::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 {
 	BError error(CLASS_STR(SDemagCUDA));
 	
-	//if memory needs to be allocated for Hdemag, it will be done through Initialize 
-	Hdemag()->clear();
-	Hdemag_calculated = false;
+	if (ucfg::check_cfgflags(cfgMessage, UPDATECONFIG_DEMAG_CONVCHANGE, UPDATECONFIG_SMESH_CELLSIZE, UPDATECONFIG_MESHCHANGE, UPDATECONFIG_MESHADDED, UPDATECONFIG_MESHDELETED, UPDATECONFIG_MODULEADDED, UPDATECONFIG_MODULEDELETED)) {
 
-	if (!pSDemag->use_multilayered_convolution) {
+		//if memory needs to be allocated for Hdemag, it will be done through Initialize 
+		Hdemag()->clear();
+		Hdemag_calculated = false;
 
-		//only need to uninitialize if n or h have changed
-		if (!CheckDimensions(pSMesh->n_fm, pSMesh->h_fm, pSDemag->Get_PBC()) || cfgMessage == UPDATECONFIG_FORCEUPDATE) {
+		if (!pSDemag->use_multilayered_convolution) {
 
-			Uninitialize();
-			error = SetDimensions(pSMesh->n_fm, pSMesh->h_fm, true, pSDemag->Get_PBC());
+			//only need to uninitialize if n or h have changed
+			if (!CheckDimensions(pSMesh->n_fm, pSMesh->h_fm, pSDemag->Get_PBC())) {
 
-			if (!sm_Vals()->resize(pSMesh->h_fm, pSMesh->sMeshRect_fm)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
+				Uninitialize();
+				error = SetDimensions(pSMesh->n_fm, pSMesh->h_fm, true, pSDemag->Get_PBC());
+
+				if (!sm_Vals()->resize(pSMesh->h_fm, pSMesh->sMeshRect_fm)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
+			}
 		}
-	}
-	else {
+		else {
 
-		//don't need memory allocated for supermesh demag
-		SetDimensions(cuSZ3(1), cuReal3());
-		sm_Vals()->clear();
+			//don't need memory allocated for supermesh demag
+			SetDimensions(cuSZ3(1), cuReal3());
+			sm_Vals()->clear();
 
-		//rebuild kernel collection, and pSDemagCUDA_Demag
-		kernel_collection.resize(pSDemag->kernel_collection.size());
-		pSDemagCUDA_Demag.resize(pSDemag->pSDemag_Demag.size());
-		FFT_Spaces_x_Input.resize(pSDemag->FFT_Spaces_Input.size());
-		FFT_Spaces_y_Input.resize(pSDemag->FFT_Spaces_Input.size());
-		FFT_Spaces_z_Input.resize(pSDemag->FFT_Spaces_Input.size());
+			//rebuild kernel collection, and pSDemagCUDA_Demag
+			kernel_collection.resize(pSDemag->kernel_collection.size());
+			pSDemagCUDA_Demag.resize(pSDemag->pSDemag_Demag.size());
+			FFT_Spaces_x_Input.resize(pSDemag->FFT_Spaces_Input.size());
+			FFT_Spaces_y_Input.resize(pSDemag->FFT_Spaces_Input.size());
+			FFT_Spaces_z_Input.resize(pSDemag->FFT_Spaces_Input.size());
 
-		for (int idx = 0; idx < kernel_collection.size(); idx++) {
+			for (int idx = 0; idx < kernel_collection.size(); idx++) {
 
-			kernel_collection[idx] = dynamic_cast<DemagKernelCollectionCUDA*>(pSDemag->pSDemag_Demag[idx]->pModuleCUDA);
+				kernel_collection[idx] = dynamic_cast<DemagKernelCollectionCUDA*>(pSDemag->pSDemag_Demag[idx]->pModuleCUDA);
 
-			pSDemagCUDA_Demag[idx] = reinterpret_cast<SDemagCUDA_Demag*>(pSDemag->pSDemag_Demag[idx]->pModuleCUDA);
+				pSDemagCUDA_Demag[idx] = reinterpret_cast<SDemagCUDA_Demag*>(pSDemag->pSDemag_Demag[idx]->pModuleCUDA);
 
-			FFT_Spaces_x_Input[idx] = pSDemagCUDA_Demag[idx]->Get_Input_Scratch_Space_x();
-			FFT_Spaces_y_Input[idx] = pSDemagCUDA_Demag[idx]->Get_Input_Scratch_Space_y();
-			FFT_Spaces_z_Input[idx] = pSDemagCUDA_Demag[idx]->Get_Input_Scratch_Space_z();
+				FFT_Spaces_x_Input[idx] = pSDemagCUDA_Demag[idx]->Get_Input_Scratch_Space_x();
+				FFT_Spaces_y_Input[idx] = pSDemagCUDA_Demag[idx]->Get_Input_Scratch_Space_y();
+				FFT_Spaces_z_Input[idx] = pSDemagCUDA_Demag[idx]->Get_Input_Scratch_Space_z();
+			}
+
+			//mirror SDemag initialization flag
+			initialized &= pSDemag->IsInitialized();
+
+			//If SDemagCUDA or any SDemagCUDA_Demag modules are uninitialized, then Uninitialize all SDemagCUDA_Demag modules
+			for (int idx = 0; idx < pSDemagCUDA_Demag.size(); idx++) {
+
+				initialized &= pSDemagCUDA_Demag[idx]->IsInitialized();
+			}
+
+			if (!initialized) UninitializeAll();
 		}
-
-		//mirror SDemag initialization flag
-		initialized &= pSDemag->IsInitialized();
-
-		//If SDemagCUDA or any SDemagCUDA_Demag modules are uninitialized, then Uninitialize all SDemagCUDA_Demag modules
-		for (int idx = 0; idx < pSDemagCUDA_Demag.size(); idx++) {
-
-			initialized &= pSDemagCUDA_Demag[idx]->IsInitialized();
-		}
-
-		if (!initialized) UninitializeAll();
 	}
 	
 	return error;
@@ -223,7 +252,15 @@ BError SDemagCUDA::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 
 void SDemagCUDA::UpdateField(void)
 {
+	///////////////////////////////////////////////////////////////////////////////////////////////
+	//////////////////////////////////// SUPERMESH CONVOLUTION ////////////////////////////////////
+	///////////////////////////////////////////////////////////////////////////////////////////////
+
 	if (!pSDemag->use_multilayered_convolution) {
+
+		///////////////////////////////////////////////////////////////////////////////////////////////
+		////////////////////////////////// EVAL SPEEDUP - SUPERMESH ///////////////////////////////////
+		///////////////////////////////////////////////////////////////////////////////////////////////
 
 		if (pSMesh->EvaluationSpeedup()) {
 
@@ -239,8 +276,16 @@ void SDemagCUDA::UpdateField(void)
 
 					//calculate field and save it for next time : we'll need to use it (expecting update_type = EVALSPEEDUPSTEP_SKIP next time)
 
-					//transfer values from invidual M meshes to sm_Vals
-					sm_Vals()->transfer_in(pSDemag->sm_Vals.linear_size(), pSDemag->sm_Vals.size_transfer_in());
+					if (!pSDemag->antiferromagnetic_meshes_present) {
+
+						//transfer values from invidual M meshes to sm_Vals
+						sm_Vals()->transfer_in(pSDemag->sm_Vals.linear_size(), pSDemag->sm_Vals.size_transfer_in());				
+					}
+					else {
+
+						//transfer values from invidual M meshes to sm_Vals
+						sm_Vals()->transfer_in_averaged(pSDemag->sm_Vals.linear_size(), pSDemag->sm_Vals.size_transfer_in());
+					}
 
 					ZeroEnergy();
 					Convolute(sm_Vals, Hdemag, energy, true, true);
@@ -251,43 +296,99 @@ void SDemagCUDA::UpdateField(void)
 
 					//calculate field but do not save it for next time : we'll need to recalculate it again (expecting update_type != EVALSPEEDUPSTEP_SKIP again next time : EVALSPEEDUPSTEP_COMPUTE_NO_SAVE or EVALSPEEDUPSTEP_COMPUTE_AND_SAVE)
 
-					//transfer values from invidual M meshes to sm_Vals
-					sm_Vals()->transfer_in(pSDemag->sm_Vals.linear_size(), pSDemag->sm_Vals.size_transfer_in());
+					if (!pSDemag->antiferromagnetic_meshes_present) {
 
-					ZeroEnergy();
-					Convolute(sm_Vals, sm_Vals, energy, true, true);
+						//transfer values from invidual M meshes to sm_Vals
+						sm_Vals()->transfer_in(pSDemag->sm_Vals.linear_size(), pSDemag->sm_Vals.size_transfer_in());
 
-					//good practice to set this to false
-					Hdemag_calculated = false;
+						ZeroEnergy();
+						Convolute(sm_Vals, sm_Vals, energy, true, true);
 
-					//transfer to individual Heff meshes
-					sm_Vals()->transfer_out(pSDemag->sm_Vals.size_transfer_out());
+						//good practice to set this to false
+						Hdemag_calculated = false;
+
+						//transfer to individual Heff meshes
+						sm_Vals()->transfer_out(pSDemag->sm_Vals.size_transfer_out());
+					}
+					else {
+
+						//transfer values from invidual M meshes to sm_Vals
+						sm_Vals()->transfer_in_averaged(pSDemag->sm_Vals.linear_size(), pSDemag->sm_Vals.size_transfer_in());
+
+						ZeroEnergy();
+						Convolute(sm_Vals, sm_Vals, energy, true, true);
+
+						//good practice to set this to false
+						Hdemag_calculated = false;
+
+						//transfer to individual Heff meshes
+						sm_Vals()->transfer_out_duplicated(pSDemag->sm_Vals.size_transfer_out());
+					}
 
 					//return here to avoid adding Hdemag to Heff : we've already added demag field contribution
 					return;
+					
 				}
 			}
 
-			//transfer contribution to meshes Heff
-			Hdemag()->transfer_out(pSDemag->sm_Vals.size_transfer_out());
+			if (!pSDemag->antiferromagnetic_meshes_present) {
+
+				//transfer contribution to meshes Heff
+				Hdemag()->transfer_out(pSDemag->sm_Vals.size_transfer_out());
+			}
+			else {
+
+				//transfer contribution to meshes Heff
+				Hdemag()->transfer_out_duplicated(pSDemag->sm_Vals.size_transfer_out());
+			}
 		}
+
+		///////////////////////////////////////////////////////////////////////////////////////////////
+		//////////////////////////////////// NO SPEEDUP - SUPERMESH ///////////////////////////////////
+		///////////////////////////////////////////////////////////////////////////////////////////////
+
 		else {
 
 			//don't use evaluation speedup, so no need to use Hdemag (this won't have memory allocated anyway)
 
-			//transfer values from invidual M meshes to sm_Vals
-			sm_Vals()->transfer_in(pSDemag->sm_Vals.linear_size(), pSDemag->sm_Vals.size_transfer_in());
+			if (!pSDemag->antiferromagnetic_meshes_present) {
 
-			//only need energy after ode solver step finished
-			if (pSMesh->CurrentTimeStepSolved()) ZeroEnergy();
+				//transfer values from invidual M meshes to sm_Vals
+				sm_Vals()->transfer_in(pSDemag->sm_Vals.linear_size(), pSDemag->sm_Vals.size_transfer_in());
 
-			Convolute(sm_Vals, sm_Vals, energy, pSMesh->CurrentTimeStepSolved(), true);
+				//only need energy after ode solver step finished
+				if (pSMesh->CurrentTimeStepSolved()) ZeroEnergy();
 
-			//transfer to individual Heff meshes
-			sm_Vals()->transfer_out(pSDemag->sm_Vals.size_transfer_out());
+				Convolute(sm_Vals, sm_Vals, energy, pSMesh->CurrentTimeStepSolved(), true);
+
+				//transfer to individual Heff meshes
+				sm_Vals()->transfer_out(pSDemag->sm_Vals.size_transfer_out());
+			}
+			else {
+
+				//transfer values from invidual M meshes to sm_Vals
+				sm_Vals()->transfer_in_averaged(pSDemag->sm_Vals.linear_size(), pSDemag->sm_Vals.size_transfer_in());
+
+				//only need energy after ode solver step finished
+				if (pSMesh->CurrentTimeStepSolved()) ZeroEnergy();
+
+				Convolute(sm_Vals, sm_Vals, energy, pSMesh->CurrentTimeStepSolved(), true);
+
+				//transfer to individual Heff meshes
+				sm_Vals()->transfer_out_duplicated(pSDemag->sm_Vals.size_transfer_out());
+			}
 		}
 	}
+
+	///////////////////////////////////////////////////////////////////////////////////////////////
+	/////////////////////////////////// MULTILAYERED CONVOLUTION //////////////////////////////////
+	///////////////////////////////////////////////////////////////////////////////////////////////
+
 	else {
+
+		///////////////////////////////////////////////////////////////////////////////////////////////
+		////////////////////////////////// EVAL SPEEDUP - MULTILAYERED ////////////////////////////////
+		///////////////////////////////////////////////////////////////////////////////////////////////
 
 		if (pSMesh->EvaluationSpeedup()) {
 
@@ -302,17 +403,44 @@ void SDemagCUDA::UpdateField(void)
 				//Forward FFT for all ferromagnetic meshes
 				for (int idx = 0; idx < pSDemagCUDA_Demag.size(); idx++) {
 
-					if (pSDemagCUDA_Demag[idx]->do_transfer) {
+					///////////////////////////////////////////////////////////////////////////////////////////////
+					////////////////////////////////////// FERROMAGNETIC MESH /////////////////////////////////////
+					///////////////////////////////////////////////////////////////////////////////////////////////
 
-						//transfer from M to common meshing
-						pSDemagCUDA_Demag[idx]->transfer()->transfer_in(pSDemag->pSDemag_Demag[idx]->transfer.linear_size(), pSDemag->pSDemag_Demag[idx]->transfer.size_transfer_in());
+					if (pSDemagCUDA_Demag[idx]->pMeshCUDA->GetMeshType() == MESH_FERROMAGNETIC) {
 
-						//do forward FFT
-						pSDemagCUDA_Demag[idx]->ForwardFFT(pSDemagCUDA_Demag[idx]->transfer);
+						if (pSDemagCUDA_Demag[idx]->do_transfer) {
+
+							//transfer from M to common meshing
+							pSDemagCUDA_Demag[idx]->transfer()->transfer_in(pSDemag->pSDemag_Demag[idx]->transfer.linear_size(), pSDemag->pSDemag_Demag[idx]->transfer.size_transfer_in());
+
+							//do forward FFT
+							pSDemagCUDA_Demag[idx]->ForwardFFT(pSDemagCUDA_Demag[idx]->transfer);
+						}
+						else {
+
+							pSDemagCUDA_Demag[idx]->ForwardFFT(pSDemagCUDA_Demag[idx]->pMeshCUDA->M);
+						}
 					}
-					else {
 
-						pSDemagCUDA_Demag[idx]->ForwardFFT(pSDemagCUDA_Demag[idx]->pMeshCUDA->M);
+					///////////////////////////////////////////////////////////////////////////////////////////////
+					//////////////////////////////////// ANTIFERROMAGNETIC MESH ///////////////////////////////////
+					///////////////////////////////////////////////////////////////////////////////////////////////
+
+					else if (pSDemagCUDA_Demag[idx]->pMeshCUDA->GetMeshType() == MESH_ANTIFERROMAGNETIC) {
+
+						if (pSDemagCUDA_Demag[idx]->do_transfer) {
+
+							//transfer from M to common meshing
+							pSDemagCUDA_Demag[idx]->transfer()->transfer_in_averaged(pSDemag->pSDemag_Demag[idx]->transfer.linear_size(), pSDemag->pSDemag_Demag[idx]->transfer.size_transfer_in());
+
+							//do forward FFT
+							pSDemagCUDA_Demag[idx]->ForwardFFT(pSDemagCUDA_Demag[idx]->transfer);
+						}
+						else {
+
+							pSDemagCUDA_Demag[idx]->ForwardFFT_AveragedInputs(pSDemagCUDA_Demag[idx]->pMeshCUDA->M, pSDemagCUDA_Demag[idx]->pMeshCUDA->M2);
+						}
 					}
 				}
 
@@ -331,15 +459,42 @@ void SDemagCUDA::UpdateField(void)
 					//Inverse FFT
 					for (int idx = 0; idx < pSDemagCUDA_Demag.size(); idx++) {
 
-						if (pSDemagCUDA_Demag[idx]->do_transfer) {
+						///////////////////////////////////////////////////////////////////////////////////////////////
+						////////////////////////////////////// FERROMAGNETIC MESH /////////////////////////////////////
+						///////////////////////////////////////////////////////////////////////////////////////////////
 
-							//do inverse FFT and accumulate energy
-							pSDemagCUDA_Demag[idx]->InverseFFT(pSDemagCUDA_Demag[idx]->transfer, pSDemagCUDA_Demag[idx]->Hdemag, energy, pSDemagCUDA_Demag[idx]->energy_density_weight, true);
+						if (pSDemagCUDA_Demag[idx]->pMeshCUDA->GetMeshType() == MESH_FERROMAGNETIC) {
+
+							if (pSDemagCUDA_Demag[idx]->do_transfer) {
+
+								//do inverse FFT and accumulate energy
+								pSDemagCUDA_Demag[idx]->InverseFFT(pSDemagCUDA_Demag[idx]->transfer, pSDemagCUDA_Demag[idx]->Hdemag, energy, pSDemagCUDA_Demag[idx]->energy_density_weight, true);
+							}
+							else {
+
+								//do inverse FFT and accumulate energy.
+								pSDemagCUDA_Demag[idx]->InverseFFT(pSDemagCUDA_Demag[idx]->pMeshCUDA->M, pSDemagCUDA_Demag[idx]->Hdemag, energy, pSDemagCUDA_Demag[idx]->energy_density_weight, true);
+							}
 						}
-						else {
 
-							//do inverse FFT and accumulate energy.
-							pSDemagCUDA_Demag[idx]->InverseFFT(pSDemagCUDA_Demag[idx]->pMeshCUDA->M, pSDemagCUDA_Demag[idx]->Hdemag, energy, pSDemagCUDA_Demag[idx]->energy_density_weight, true);
+						///////////////////////////////////////////////////////////////////////////////////////////////
+						//////////////////////////////////// ANTIFERROMAGNETIC MESH ///////////////////////////////////
+						///////////////////////////////////////////////////////////////////////////////////////////////
+
+						else if (pSDemagCUDA_Demag[idx]->pMeshCUDA->GetMeshType() == MESH_ANTIFERROMAGNETIC) {
+
+							if (pSDemagCUDA_Demag[idx]->do_transfer) {
+
+								//do inverse FFT and accumulate energy
+								pSDemagCUDA_Demag[idx]->InverseFFT(pSDemagCUDA_Demag[idx]->transfer, pSDemagCUDA_Demag[idx]->Hdemag, energy, pSDemagCUDA_Demag[idx]->energy_density_weight, true);
+							}
+							else {
+
+								//do inverse FFT and accumulate energy.
+								pSDemagCUDA_Demag[idx]->InverseFFT_AveragedInputs(
+									pSDemagCUDA_Demag[idx]->pMeshCUDA->M, pSDemagCUDA_Demag[idx]->pMeshCUDA->M2, 
+									pSDemagCUDA_Demag[idx]->Hdemag, energy, pSDemagCUDA_Demag[idx]->energy_density_weight, true);
+							}
 						}
 					}
 
@@ -354,18 +509,49 @@ void SDemagCUDA::UpdateField(void)
 					//Inverse FFT
 					for (int idx = 0; idx < pSDemagCUDA_Demag.size(); idx++) {
 
-						if (pSDemagCUDA_Demag[idx]->do_transfer) {
+						///////////////////////////////////////////////////////////////////////////////////////////////
+						////////////////////////////////////// FERROMAGNETIC MESH /////////////////////////////////////
+						///////////////////////////////////////////////////////////////////////////////////////////////
 
-							//do inverse FFT and accumulate energy
-							pSDemagCUDA_Demag[idx]->InverseFFT(pSDemagCUDA_Demag[idx]->transfer, pSDemagCUDA_Demag[idx]->transfer, energy, pSDemagCUDA_Demag[idx]->energy_density_weight, true);
+						if (pSDemagCUDA_Demag[idx]->pMeshCUDA->GetMeshType() == MESH_FERROMAGNETIC) {
 
-							//transfer to Heff in each mesh
-							pSDemagCUDA_Demag[idx]->transfer()->transfer_out(pSDemag->pSDemag_Demag[idx]->transfer.size_transfer_out());
+							if (pSDemagCUDA_Demag[idx]->do_transfer) {
+
+								//do inverse FFT and accumulate energy
+								pSDemagCUDA_Demag[idx]->InverseFFT(pSDemagCUDA_Demag[idx]->transfer, pSDemagCUDA_Demag[idx]->transfer, energy, pSDemagCUDA_Demag[idx]->energy_density_weight, true);
+
+								//transfer to Heff in each mesh
+								pSDemagCUDA_Demag[idx]->transfer()->transfer_out(pSDemag->pSDemag_Demag[idx]->transfer.size_transfer_out());
+							}
+							else {
+
+								//do inverse FFT and accumulate energy. Add to Heff in each mesh
+								pSDemagCUDA_Demag[idx]->InverseFFT(pSDemagCUDA_Demag[idx]->pMeshCUDA->M, pSDemagCUDA_Demag[idx]->pMeshCUDA->Heff, energy, pSDemagCUDA_Demag[idx]->energy_density_weight, false);
+							}
 						}
-						else {
 
-							//do inverse FFT and accumulate energy. Add to Heff in each mesh
-							pSDemagCUDA_Demag[idx]->InverseFFT(pSDemagCUDA_Demag[idx]->pMeshCUDA->M, pSDemagCUDA_Demag[idx]->pMeshCUDA->Heff, energy, pSDemagCUDA_Demag[idx]->energy_density_weight, false);
+						///////////////////////////////////////////////////////////////////////////////////////////////
+						//////////////////////////////////// ANTIFERROMAGNETIC MESH ///////////////////////////////////
+						///////////////////////////////////////////////////////////////////////////////////////////////
+
+						else if (pSDemagCUDA_Demag[idx]->pMeshCUDA->GetMeshType() == MESH_ANTIFERROMAGNETIC) {
+
+							if (pSDemagCUDA_Demag[idx]->do_transfer) {
+
+								//do inverse FFT and accumulate energy
+								pSDemagCUDA_Demag[idx]->InverseFFT(pSDemagCUDA_Demag[idx]->transfer, pSDemagCUDA_Demag[idx]->transfer, energy, pSDemagCUDA_Demag[idx]->energy_density_weight, true);
+
+								//transfer to Heff in each mesh
+								pSDemagCUDA_Demag[idx]->transfer()->transfer_out_duplicated(pSDemag->pSDemag_Demag[idx]->transfer.size_transfer_out());
+							}
+							else {
+
+								//do inverse FFT and accumulate energy. Add to Heff in each mesh
+								pSDemagCUDA_Demag[idx]->InverseFFT_AveragedInputs_DuplicatedOutputs(
+									pSDemagCUDA_Demag[idx]->pMeshCUDA->M, pSDemagCUDA_Demag[idx]->pMeshCUDA->M2, 
+									pSDemagCUDA_Demag[idx]->pMeshCUDA->Heff, pSDemagCUDA_Demag[idx]->pMeshCUDA->Heff2, 
+									energy, pSDemagCUDA_Demag[idx]->energy_density_weight, false);
+							}
 						}
 					}
 					
@@ -380,18 +566,49 @@ void SDemagCUDA::UpdateField(void)
 			//add contribution to Heff in each mesh
 			for (int idx = 0; idx < pSDemagCUDA_Demag.size(); idx++) {
 
-				if (pSDemagCUDA_Demag[idx]->do_transfer) {
+				///////////////////////////////////////////////////////////////////////////////////////////////
+				////////////////////////////////////// FERROMAGNETIC MESH /////////////////////////////////////
+				///////////////////////////////////////////////////////////////////////////////////////////////
 
-					//transfer to Heff in each mesh
-					pSDemagCUDA_Demag[idx]->Hdemag()->transfer_out(pSDemag->pSDemag_Demag[idx]->Hdemag.size_transfer_out());
+				if (pSDemagCUDA_Demag[idx]->pMeshCUDA->GetMeshType() == MESH_FERROMAGNETIC) {
+
+					if (pSDemagCUDA_Demag[idx]->do_transfer) {
+
+						//transfer to Heff in each mesh
+						pSDemagCUDA_Demag[idx]->Hdemag()->transfer_out(pSDemag->pSDemag_Demag[idx]->Hdemag.size_transfer_out());
+					}
+					else {
+
+						//add contribution to Heff
+						pSDemagCUDA_Demag[idx]->pMeshCUDA->Heff()->add(pSDemagCUDA_Demag[idx]->pMeshCUDA->n.dim(), pSDemagCUDA_Demag[idx]->Hdemag);
+					}
 				}
-				else {
 
-					//add contribution to Heff
-					pSDemagCUDA_Demag[idx]->pMeshCUDA->Heff()->add(pSDemagCUDA_Demag[idx]->pMeshCUDA->n.dim(), pSDemagCUDA_Demag[idx]->Hdemag);
+				///////////////////////////////////////////////////////////////////////////////////////////////
+				//////////////////////////////////// ANTIFERROMAGNETIC MESH ///////////////////////////////////
+				///////////////////////////////////////////////////////////////////////////////////////////////
+
+				else if (pSDemagCUDA_Demag[idx]->pMeshCUDA->GetMeshType() == MESH_ANTIFERROMAGNETIC) {
+
+					if (pSDemagCUDA_Demag[idx]->do_transfer) {
+
+						//transfer to Heff in each mesh
+						pSDemagCUDA_Demag[idx]->Hdemag()->transfer_out_duplicated(pSDemag->pSDemag_Demag[idx]->Hdemag.size_transfer_out());
+					}
+					else {
+
+						//add contribution to Heff
+						pSDemagCUDA_Demag[idx]->pMeshCUDA->Heff()->add(pSDemagCUDA_Demag[idx]->pMeshCUDA->n.dim(), pSDemagCUDA_Demag[idx]->Hdemag);
+						pSDemagCUDA_Demag[idx]->pMeshCUDA->Heff2()->add(pSDemagCUDA_Demag[idx]->pMeshCUDA->n.dim(), pSDemagCUDA_Demag[idx]->Hdemag);
+					}
 				}
 			}
 		}
+
+		///////////////////////////////////////////////////////////////////////////////////////////////
+		/////////////////////////////////// NO SPEEDUP - MULTILAYERED /////////////////////////////////
+		///////////////////////////////////////////////////////////////////////////////////////////////
+
 		else {
 
 			//don't use evaluation speedup, so no need to use Hdemag in SDemag_Demag modules (this won't have memory allocated anyway)
@@ -399,17 +616,44 @@ void SDemagCUDA::UpdateField(void)
 			//Forward FFT for all ferromagnetic meshes
 			for (int idx = 0; idx < pSDemagCUDA_Demag.size(); idx++) {
 
-				if (pSDemagCUDA_Demag[idx]->do_transfer) {
+				///////////////////////////////////////////////////////////////////////////////////////////////
+				////////////////////////////////////// FERROMAGNETIC MESH /////////////////////////////////////
+				///////////////////////////////////////////////////////////////////////////////////////////////
 
-					//transfer from M to common meshing
-					pSDemagCUDA_Demag[idx]->transfer()->transfer_in(pSDemag->pSDemag_Demag[idx]->transfer.linear_size(), pSDemag->pSDemag_Demag[idx]->transfer.size_transfer_in());
+				if (pSDemagCUDA_Demag[idx]->pMeshCUDA->GetMeshType() == MESH_FERROMAGNETIC) {
 
-					//do forward FFT
-					pSDemagCUDA_Demag[idx]->ForwardFFT(pSDemagCUDA_Demag[idx]->transfer);
+					if (pSDemagCUDA_Demag[idx]->do_transfer) {
+
+						//transfer from M to common meshing
+						pSDemagCUDA_Demag[idx]->transfer()->transfer_in(pSDemag->pSDemag_Demag[idx]->transfer.linear_size(), pSDemag->pSDemag_Demag[idx]->transfer.size_transfer_in());
+
+						//do forward FFT
+						pSDemagCUDA_Demag[idx]->ForwardFFT(pSDemagCUDA_Demag[idx]->transfer);
+					}
+					else {
+
+						pSDemagCUDA_Demag[idx]->ForwardFFT(pSDemagCUDA_Demag[idx]->pMeshCUDA->M);
+					}
 				}
-				else {
 
-					pSDemagCUDA_Demag[idx]->ForwardFFT(pSDemagCUDA_Demag[idx]->pMeshCUDA->M);
+				///////////////////////////////////////////////////////////////////////////////////////////////
+				//////////////////////////////////// ANTIFERROMAGNETIC MESH ///////////////////////////////////
+				///////////////////////////////////////////////////////////////////////////////////////////////
+
+				else if (pSDemagCUDA_Demag[idx]->pMeshCUDA->GetMeshType() == MESH_ANTIFERROMAGNETIC) {
+
+					if (pSDemagCUDA_Demag[idx]->do_transfer) {
+
+						//transfer from M to common meshing
+						pSDemagCUDA_Demag[idx]->transfer()->transfer_in_averaged(pSDemag->pSDemag_Demag[idx]->transfer.linear_size(), pSDemag->pSDemag_Demag[idx]->transfer.size_transfer_in());
+
+						//do forward FFT
+						pSDemagCUDA_Demag[idx]->ForwardFFT(pSDemagCUDA_Demag[idx]->transfer);
+					}
+					else {
+
+						pSDemagCUDA_Demag[idx]->ForwardFFT_AveragedInputs(pSDemagCUDA_Demag[idx]->pMeshCUDA->M, pSDemagCUDA_Demag[idx]->pMeshCUDA->M2);
+					}
 				}
 			}
 
@@ -427,18 +671,49 @@ void SDemagCUDA::UpdateField(void)
 				//Inverse FFT
 				for (int idx = 0; idx < pSDemagCUDA_Demag.size(); idx++) {
 
-					if (pSDemagCUDA_Demag[idx]->do_transfer) {
+					///////////////////////////////////////////////////////////////////////////////////////////////
+					////////////////////////////////////// FERROMAGNETIC MESH /////////////////////////////////////
+					///////////////////////////////////////////////////////////////////////////////////////////////
 
-						//do inverse FFT and accumulate energy
-						pSDemagCUDA_Demag[idx]->InverseFFT(pSDemagCUDA_Demag[idx]->transfer, pSDemagCUDA_Demag[idx]->transfer, energy, pSDemagCUDA_Demag[idx]->energy_density_weight, true);
+					if (pSDemagCUDA_Demag[idx]->pMeshCUDA->GetMeshType() == MESH_FERROMAGNETIC) {
 
-						//transfer to Heff in each mesh
-						pSDemagCUDA_Demag[idx]->transfer()->transfer_out(pSDemag->pSDemag_Demag[idx]->transfer.size_transfer_out());
+						if (pSDemagCUDA_Demag[idx]->do_transfer) {
+
+							//do inverse FFT and accumulate energy
+							pSDemagCUDA_Demag[idx]->InverseFFT(pSDemagCUDA_Demag[idx]->transfer, pSDemagCUDA_Demag[idx]->transfer, energy, pSDemagCUDA_Demag[idx]->energy_density_weight, true);
+
+							//transfer to Heff in each mesh
+							pSDemagCUDA_Demag[idx]->transfer()->transfer_out(pSDemag->pSDemag_Demag[idx]->transfer.size_transfer_out());
+						}
+						else {
+
+							//do inverse FFT and accumulate energy. Add to Heff in each mesh
+							pSDemagCUDA_Demag[idx]->InverseFFT(pSDemagCUDA_Demag[idx]->pMeshCUDA->M, pSDemagCUDA_Demag[idx]->pMeshCUDA->Heff, energy, pSDemagCUDA_Demag[idx]->energy_density_weight, false);
+						}
 					}
-					else {
 
-						//do inverse FFT and accumulate energy. Add to Heff in each mesh
-						pSDemagCUDA_Demag[idx]->InverseFFT(pSDemagCUDA_Demag[idx]->pMeshCUDA->M, pSDemagCUDA_Demag[idx]->pMeshCUDA->Heff, energy, pSDemagCUDA_Demag[idx]->energy_density_weight, false);
+					///////////////////////////////////////////////////////////////////////////////////////////////
+					//////////////////////////////////// ANTIFERROMAGNETIC MESH ///////////////////////////////////
+					///////////////////////////////////////////////////////////////////////////////////////////////
+
+					else if (pSDemagCUDA_Demag[idx]->pMeshCUDA->GetMeshType() == MESH_ANTIFERROMAGNETIC) {
+
+						if (pSDemagCUDA_Demag[idx]->do_transfer) {
+
+							//do inverse FFT and accumulate energy
+							pSDemagCUDA_Demag[idx]->InverseFFT(pSDemagCUDA_Demag[idx]->transfer, pSDemagCUDA_Demag[idx]->transfer, energy, pSDemagCUDA_Demag[idx]->energy_density_weight, true);
+
+							//transfer to Heff in each mesh
+							pSDemagCUDA_Demag[idx]->transfer()->transfer_out_duplicated(pSDemag->pSDemag_Demag[idx]->transfer.size_transfer_out());
+						}
+						else {
+
+							//do inverse FFT and accumulate energy. Add to Heff in each mesh
+							pSDemagCUDA_Demag[idx]->InverseFFT_AveragedInputs_DuplicatedOutputs(
+								pSDemagCUDA_Demag[idx]->pMeshCUDA->M, pSDemagCUDA_Demag[idx]->pMeshCUDA->M2, 
+								pSDemagCUDA_Demag[idx]->pMeshCUDA->Heff, pSDemagCUDA_Demag[idx]->pMeshCUDA->Heff2, 
+								energy, pSDemagCUDA_Demag[idx]->energy_density_weight, false);
+						}
 					}
 				}
 			}
@@ -449,18 +724,49 @@ void SDemagCUDA::UpdateField(void)
 				//Inverse FFT
 				for (int idx = 0; idx < pSDemagCUDA_Demag.size(); idx++) {
 
-					if (pSDemagCUDA_Demag[idx]->do_transfer) {
+					///////////////////////////////////////////////////////////////////////////////////////////////
+					////////////////////////////////////// FERROMAGNETIC MESH /////////////////////////////////////
+					///////////////////////////////////////////////////////////////////////////////////////////////
 
-						//do inverse FFT
-						pSDemagCUDA_Demag[idx]->InverseFFT(pSDemagCUDA_Demag[idx]->transfer, pSDemagCUDA_Demag[idx]->transfer, energy, false, true);
+					if (pSDemagCUDA_Demag[idx]->pMeshCUDA->GetMeshType() == MESH_FERROMAGNETIC) {
 
-						//transfer to Heff in each mesh
-						pSDemagCUDA_Demag[idx]->transfer()->transfer_out(pSDemag->pSDemag_Demag[idx]->transfer.size_transfer_out());
+						if (pSDemagCUDA_Demag[idx]->do_transfer) {
+
+							//do inverse FFT
+							pSDemagCUDA_Demag[idx]->InverseFFT(pSDemagCUDA_Demag[idx]->transfer, pSDemagCUDA_Demag[idx]->transfer, energy, false, true);
+
+							//transfer to Heff in each mesh
+							pSDemagCUDA_Demag[idx]->transfer()->transfer_out(pSDemag->pSDemag_Demag[idx]->transfer.size_transfer_out());
+						}
+						else {
+
+							//do inverse FFT. Add to Heff in each mesh
+							pSDemagCUDA_Demag[idx]->InverseFFT(pSDemagCUDA_Demag[idx]->pMeshCUDA->M, pSDemagCUDA_Demag[idx]->pMeshCUDA->Heff, energy, false, false);
+						}
 					}
-					else {
 
-						//do inverse FFT. Add to Heff in each mesh
-						pSDemagCUDA_Demag[idx]->InverseFFT(pSDemagCUDA_Demag[idx]->pMeshCUDA->M, pSDemagCUDA_Demag[idx]->pMeshCUDA->Heff, energy, false, false);
+					///////////////////////////////////////////////////////////////////////////////////////////////
+					//////////////////////////////////// ANTIFERROMAGNETIC MESH ///////////////////////////////////
+					///////////////////////////////////////////////////////////////////////////////////////////////
+
+					else if (pSDemagCUDA_Demag[idx]->pMeshCUDA->GetMeshType() == MESH_ANTIFERROMAGNETIC) {
+
+						if (pSDemagCUDA_Demag[idx]->do_transfer) {
+
+							//do inverse FFT
+							pSDemagCUDA_Demag[idx]->InverseFFT(pSDemagCUDA_Demag[idx]->transfer, pSDemagCUDA_Demag[idx]->transfer, energy, false, true);
+
+							//transfer to Heff in each mesh
+							pSDemagCUDA_Demag[idx]->transfer()->transfer_out_duplicated(pSDemag->pSDemag_Demag[idx]->transfer.size_transfer_out());
+						}
+						else {
+
+							//do inverse FFT. Add to Heff in each mesh
+							pSDemagCUDA_Demag[idx]->InverseFFT_AveragedInputs_DuplicatedOutputs(
+								pSDemagCUDA_Demag[idx]->pMeshCUDA->M, pSDemagCUDA_Demag[idx]->pMeshCUDA->M2, 
+								pSDemagCUDA_Demag[idx]->pMeshCUDA->Heff, pSDemagCUDA_Demag[idx]->pMeshCUDA->Heff2, 
+								energy, false, false);
+						}
 					}
 				}
 			}

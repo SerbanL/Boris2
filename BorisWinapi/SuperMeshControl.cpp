@@ -55,23 +55,35 @@ BError SuperMesh::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 	if (n_e.z <= 1) n_e.z = 2;
 	if (!sMeshRect_e.IsNull()) h_e = sMeshRect_e / n_e;
 	
+	///////////////////////////////////////////////////////
 	//Update configuration for meshes and their modules
+	///////////////////////////////////////////////////////
+
 	for (int idx = 0; idx < (int)pMesh.size(); idx++) {
 
 		if (!error) error = pMesh[idx]->UpdateConfiguration(cfgMessage);
 	}
 	
-	//change mesh size for super-mesh modules
+	///////////////////////////////////////////////////////
+	//Update configuration for super-mesh modules
+	///////////////////////////////////////////////////////
+
 	for (int idx = 0; idx < (int)pSMod.size(); idx++) {
 
 		if (!error) error = pSMod[idx]->UpdateConfiguration(cfgMessage);
 	}
-	
+
+	///////////////////////////////////////////////////////
 	//Update configuration for ODECommon
+	///////////////////////////////////////////////////////
+
 	if (!error) error = odeSolver.UpdateConfiguration(cfgMessage);
 	
-	//Check if we need to couple ferromagnetic meshes to dipoles
-	if (!error) CoupleToDipoles();
+	if (ucfg::check_cfgflags(cfgMessage, UPDATECONFIG_MESHSHAPECHANGE, UPDATECONFIG_MESHCHANGE, UPDATECONFIG_MESHADDED, UPDATECONFIG_MESHDELETED, UPDATECONFIG_SWITCHCUDASTATE)) {
+
+		//Check if we need to couple ferromagnetic meshes to dipoles
+		if (!error) CoupleToDipoles();
+	}
 	
 #if COMPILECUDA == 1
 	gpuMemFree_MB = cudaMemGetFree() / (1024 * 1024);
@@ -139,7 +151,7 @@ BError SuperMesh::SwitchCUDAState(bool cudaState)
 	cpuMemTotal_MB = MemGetTotal() / (1024 * 1024);
 
 	//make sure configuration is updated for the new mode
-	error = UpdateConfiguration();
+	error = UpdateConfiguration(UPDATECONFIG_SWITCHCUDASTATE);
 
 #endif
 

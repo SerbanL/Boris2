@@ -22,9 +22,11 @@ MeshCUDA::MeshCUDA(Mesh* pMesh) :
 
 	//Magnetization
 	if (!M()->set_from_cpuvec(pMesh->M)) error_on_create(BERROR_OUTOFGPUMEMORY_CRIT);
+	if (!M2()->set_from_cpuvec(pMesh->M2)) error_on_create(BERROR_OUTOFGPUMEMORY_CRIT);
 	
 	//effective field - sum total field of all the added modules
 	if(!Heff()->set_from_cpuvec(pMesh->Heff)) error_on_create(BERROR_OUTOFGPUMEMORY_CRIT);
+	if (!Heff2()->set_from_cpuvec(pMesh->Heff2)) error_on_create(BERROR_OUTOFGPUMEMORY_CRIT);
 
 	//-----Electric conduction properties (Electron charge and spin Transport)
 
@@ -34,8 +36,8 @@ MeshCUDA::MeshCUDA(Mesh* pMesh) :
 	//electrical conductivity - on n_e, h_e mesh
 	if(!elC()->set_from_cpuvec(pMesh->elC)) error_on_create(BERROR_OUTOFGPUMEMORY_CRIT);
 
-	//electrical current density - on n_e, h_e mesh
-	if(!Jc()->set_from_cpuvec(pMesh->Jc)) error_on_create(BERROR_OUTOFGPUMEMORY_CRIT);
+	//electrical field - on n_e, h_e mesh
+	if (!E()->set_from_cpuvec(pMesh->E)) error_on_create(BERROR_OUTOFGPUMEMORY_CRIT);
 
 	//electrical current density - on n_e, h_e mesh
 	if (!S()->set_from_cpuvec(pMesh->S)) error_on_create(BERROR_OUTOFGPUMEMORY_CRIT);
@@ -58,9 +60,11 @@ MeshCUDA::~MeshCUDA()
 
 		//Magnetization
 		M()->copy_to_cpuvec(pMesh->M);
+		M2()->copy_to_cpuvec(pMesh->M2);
 
 		//effective field - sum total field of all the added modules
 		Heff()->copy_to_cpuvec(pMesh->Heff);
+		Heff2()->copy_to_cpuvec(pMesh->Heff2);
 
 		//-----Electric conduction properties (Electron charge and spin Transport)
 
@@ -70,8 +74,8 @@ MeshCUDA::~MeshCUDA()
 		//electrical conductivity - on n_e, h_e mesh
 		elC()->copy_to_cpuvec(pMesh->elC);
 
-		//electrical current density - on n_e, h_e mesh
-		Jc()->copy_to_cpuvec(pMesh->Jc);
+		//electrical field - on n_e, h_e mesh
+		E()->copy_to_cpuvec(pMesh->E);
 
 		//electrical current density - on n_e, h_e mesh
 		S()->copy_to_cpuvec(pMesh->S);
@@ -102,6 +106,24 @@ PhysQ MeshCUDA::FetchOnScreenPhysicalQuantity(double detail_level)
 			return PhysQ(pdisplay_vec_vc_vec, pMesh->displayedPhysicalQuantity, (VEC3REP_)pMesh->vec3rep);
 		}
 		break;
+
+	case MESHDISPLAY_MAGNETIZATION2:
+
+		if (prepare_display(n, meshRect, detail_level, M2)) {
+
+			//return PhysQ made from the cpu version of coarse mesh display.
+			return PhysQ(pdisplay_vec_vc_vec, pMesh->displayedPhysicalQuantity, (VEC3REP_)pMesh->vec3rep);
+		}
+		break;
+
+	case MESHDISPLAY_MAGNETIZATION12:
+
+		if (prepare_display(n, meshRect, detail_level, M, M2)) {
+
+			//return PhysQ made from the cpu version of coarse mesh display.
+			return PhysQ(pdisplay_vec_vc_vec, pdisplay2_vec_vc_vec, pMesh->displayedPhysicalQuantity, (VEC3REP_)pMesh->vec3rep);
+		}
+		break;
 		
 	case MESHDISPLAY_EFFECTIVEFIELD:
 		
@@ -111,13 +133,34 @@ PhysQ MeshCUDA::FetchOnScreenPhysicalQuantity(double detail_level)
 			return PhysQ(pdisplay_vec_vec, pMesh->displayedPhysicalQuantity, (VEC3REP_)pMesh->vec3rep);
 		}
 		break;
+
+	case MESHDISPLAY_EFFECTIVEFIELD2:
+
+		if (prepare_display(n, meshRect, detail_level, Heff2)) {
+
+			//return PhysQ made from the cpu version of coarse mesh display.
+			return PhysQ(pdisplay_vec_vec, pMesh->displayedPhysicalQuantity, (VEC3REP_)pMesh->vec3rep);
+		}
+		break;
+
+	case MESHDISPLAY_EFFECTIVEFIELD12:
+
+		if (prepare_display(n, meshRect, detail_level, Heff, Heff2)) {
+
+			//return PhysQ made from the cpu version of coarse mesh display.
+			return PhysQ(pdisplay_vec_vec, pdisplay2_vec_vec, pMesh->displayedPhysicalQuantity, (VEC3REP_)pMesh->vec3rep);
+		}
+		break;
 		
 	case MESHDISPLAY_CURRDENSITY:
 
-		if (prepare_display(n_e, meshRect, detail_level, Jc)) {
+		if (pMesh->IsModuleSet(MOD_TRANSPORT)) {
 
-			//return PhysQ made from the cpu version of coarse mesh display.
-			return PhysQ(pdisplay_vec_vc_vec, pMesh->displayedPhysicalQuantity, (VEC3REP_)pMesh->vec3rep);
+			if (prepare_display(n_e, meshRect, detail_level, reinterpret_cast<Transport*>(pMesh->pMod(MOD_TRANSPORT))->GetChargeCurrentCUDA())) {
+
+				//return PhysQ made from the cpu version of coarse mesh display.
+				return PhysQ(pdisplay_vec_vc_vec, pMesh->displayedPhysicalQuantity, (VEC3REP_)pMesh->vec3rep);
+			}
 		}
 		break;
 
@@ -235,9 +278,24 @@ PhysQ MeshCUDA::FetchOnScreenPhysicalQuantity(double detail_level)
 			return PhysQ(&reinterpret_cast<Roughness*>(pMesh->pMod(MOD_ROUGHNESS))->GetRoughness(), pMesh->displayedPhysicalQuantity);
 		}
 		break;
+
+	case MESHDISPLAY_CUSTOM_VEC:
+		return PhysQ(&pMesh->displayVEC_VEC, pMesh->displayedPhysicalQuantity, (VEC3REP_)pMesh->vec3rep);
+		break;
+
+	case MESHDISPLAY_CUSTOM_SCA:
+		return PhysQ(&pMesh->displayVEC_SCA, pMesh->displayedPhysicalQuantity);
+		break;
 	}
 	
 	return PhysQ(meshRect, h, pMesh->displayedPhysicalQuantity);
+}
+
+//----------------------------------- MESH INFO GET/SET METHODS
+
+int MeshCUDA::GetMeshType(void)
+{
+	return (int)pMesh->GetMeshType();
 }
 
 //----------------------------------- ENABLED MESH PROPERTIES CHECKERS
@@ -267,7 +325,7 @@ bool MeshCUDA::TComputation_Enabled(void)
 
 bool MeshCUDA::GInterface_Enabled(void)
 {
-	return (DBL2(pMesh->Gi).norm() > 0);
+	return (DBL2(pMesh->Gmix.get0()).norm() > 0);
 }
 
 //check if the ODECommon::available flag is true (ode step solved)
@@ -288,24 +346,6 @@ int MeshCUDA::Check_Step_Update(void)
 	return pMesh->pSMesh->Check_Step_Update();
 }
 
-bool MeshCUDA::are_all_params_const(int numParams, ...)
-{
-	va_list params;
-
-	va_start(params, numParams);
-
-	for (int idx = 0; idx < numParams; idx++) {
-
-		PARAM_ paramID = va_arg(params, PARAM_);
-
-		if (pMesh->is_param_nonconst(paramID)) return false;
-	}
-
-	va_end(params);
-
-	return true;
-}
-
 //----------------------------------- VALUE GETTERS
 
 //get average magnetisation in given box (entire mesh if none specified)
@@ -315,9 +355,10 @@ cuReal3 MeshCUDA::GetAverageMagnetisation(cuRect rectangle)
 	else return cuReal3(0.0);
 }
 
-cuReal3 MeshCUDA::GetAverageChargeCurrentDensity(cuRect rectangle)
+//get average magnetisation in given box (entire mesh if none specified); sub-lattice B
+cuReal3 MeshCUDA::GetAverageMagnetisation2(cuRect rectangle)
 {
-	if (pMesh->Jc.linear_size()) return Jc()->average_nonempty(n_e.dim(), rectangle);
+	if (pMesh->M2.linear_size()) return M2()->average_nonempty(n.dim(), rectangle);
 	else return cuReal3(0.0);
 }
 
@@ -347,79 +388,6 @@ cuBReal MeshCUDA::GetAverageTemperature(cuRect rectangle)
 
 //----------------------------------- OTHER MESH SHAPE CONTROL
 
-//mask cells using bitmap image : white -> empty cells. black -> keep values. Apply mask up to given z depth number of cells depending on grayscale value (zDepth, all if 0).
-BError MeshCUDA::applymask(cuBReal zDepth_m, string fileName, function<vector<BYTE>(string, INT2)>& bitmap_loader)
-{
-	BError error;
-
-	auto run_this = [](auto& VEC_quantity, auto default_value, cuBReal zDepth_m, string fileName, function<vector<BYTE>(string, INT2)>& bitmap_loader) -> BError {
-
-		BError error;
-
-		cuINT3 cells = VEC_quantity()->size_cpu();
-		cuReal3 cellsize = VEC_quantity()->cellsize_cpu();
-		
-		if (!VEC_quantity()->apply_bitmap_mask(bitmap_loader(fileName, INT2(cells.x, cells.y)), (int)round(zDepth_m / cellsize.z)))
-			return error(BERROR_COULDNOTLOADFILE);
-			
-		return error;
-	};
-
-	error = change_mesh_shape(run_this, zDepth_m, fileName, bitmap_loader);
-
-	if (!error) {
-
-		//update mesh (and modules more importantly which will control any dependent VEC and VEC_VC quantites!)
-		error = pMesh->pSMesh->UpdateConfiguration(UPDATECONFIG_MESHSHAPECHANGE);
-	}
-
-	return error;
-}
-
-//set cells to empty in given box (delete by setting entries to zero)
-BError MeshCUDA::delrect(cuRect rectangle)
-{
-	BError error;
-
-	auto run_this = [](auto& VEC_quantity, auto default_value, cuRect& rectangle) -> BError {
-
-		VEC_quantity()->delrect(rectangle);
-		return BError();
-	};
-
-	error = change_mesh_shape(run_this, rectangle);
-
-	if (!error) {
-
-		//update mesh (and modules more importantly which will control any dependent VEC and VEC_VC quantites!)
-		error = pMesh->pSMesh->UpdateConfiguration(UPDATECONFIG_MESHSHAPECHANGE);
-	}
-
-	return error;
-}
-
-//set cells to non-empty in given box
-BError MeshCUDA::setrect(cuRect rectangle)
-{
-	BError error;
-
-	auto run_this = [](auto& VEC_quantity, auto default_value, cuRect& rectangle) -> BError {
-
-		VEC_quantity()->setrect(rectangle, default_value);
-		return BError();
-	};
-
-	error = change_mesh_shape(run_this, rectangle);
-
-	if (!error) {
-
-		//update mesh (and modules more importantly which will control any dependent VEC and VEC_VC quantites!)
-		error = pMesh->pSMesh->UpdateConfiguration(UPDATECONFIG_MESHSHAPECHANGE);
-	}
-
-	return error;
-}
-
 //copy all meshes controlled using change_mesh_shape from cpu to gpu versions
 BError MeshCUDA::copy_shapes_from_cpu(void)
 {
@@ -429,8 +397,11 @@ BError MeshCUDA::copy_shapes_from_cpu(void)
 	
 	bool success = true;
 
-	//1. shape magnetization
+	//1a. shape magnetization
 	if (M()->size_cpu().dim()) success &= M()->set_from_cpuvec(pMesh->M);
+
+	//1b. shape magnetization for AFM meshes
+	if (M2()->size_cpu().dim()) success &= M2()->set_from_cpuvec(pMesh->M2);
 
 	//2. shape electrical conductivity
 	if (elC()->size_cpu().dim()) success &= elC()->set_from_cpuvec(pMesh->elC);
@@ -454,8 +425,11 @@ BError MeshCUDA::copy_shapes_to_cpu(void)
 
 	bool success = true;
 
-	//1. shape magnetization
+	//1a. shape magnetization
 	if (M()->size_cpu().dim()) success &= M()->set_cpuvec(pMesh->M);
+	
+	//1b. shape magnetization for AFM meshes
+	if (M2()->size_cpu().dim()) success &= M2()->set_cpuvec(pMesh->M2);
 
 	//2. shape electrical conductivity
 	if (elC()->size_cpu().dim()) success &= elC()->set_cpuvec(pMesh->elC);
