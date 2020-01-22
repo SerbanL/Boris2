@@ -18,7 +18,8 @@ Simulation::Simulation(HWND hWnd, int Program_Version) :
 			VINFO(cudaEnabled),
 			VINFO(shape_change_individual),
 			VINFO(static_transport_solver),
-			VINFO(image_cropping)
+			VINFO(image_cropping),
+			VINFO(userConstants)
 		}, {})
 #else
 Simulation::Simulation(int Program_Version) :
@@ -37,7 +38,8 @@ Simulation::Simulation(int Program_Version) :
 			VINFO(cudaEnabled),
 			VINFO(shape_change_individual),
 			VINFO(static_transport_solver),
-			VINFO(image_cropping)
+			VINFO(image_cropping),
+			VINFO(userConstants)
 		}, {})
 #endif
 {
@@ -86,7 +88,7 @@ Simulation::Simulation(int Program_Version) :
 
 	commands.insert(CMD_ITERUPDATE, CommandSpecifier(CMD_ITERUPDATE), "iterupdate");
 	commands[CMD_ITERUPDATE].usage = "[tc0,0.5,0,1/tc]USAGE : <b>iterupdate</b> <i>iterations</i>";
-	commands[CMD_ITERUPDATE].limits = { { (int)1, Any() } };
+	commands[CMD_ITERUPDATE].limits = { { int(0), Any() } };
 	commands[CMD_ITERUPDATE].descr = "[tc0,0.5,0.5,1/tc]Update mesh display every given number of iterations during a simulation.";
 	commands[CMD_ITERUPDATE].return_descr = "[tc0,0.5,0,1/tc]Script return values: <i>iterations</i> - return number of iterations for display update.";
 
@@ -254,6 +256,12 @@ Simulation::Simulation(int Program_Version) :
 	commands[CMD_DWALL].unit = "m";
 	commands[CMD_DWALL].descr = "[tc0,0.5,0.5,1/tc]Create an idealised domain wall (tanh profile for longitudinal component, 1/cosh profile for transverse component) along the x-axis direction in the given mesh (active mesh if name not specified). For longitudinal and transverse specify the components of magnetisation as x, -x, y, -y, z, -z, i.e. specify using these string literals. For width and position use metric units.";
 
+	commands.insert(CMD_VORTEX, CommandSpecifier(CMD_VORTEX), "vortex");
+	commands[CMD_VORTEX].usage = "[tc0,0.5,0,1/tc]USAGE : <b>vortex</b> <i>longitudinal rotation core (rectangle) (meshname)</i>";
+	commands[CMD_VORTEX].limits = { { int(-1), int(+1) } , { int(-1), int(+1) }, { int(-1), int(+1) }, { Rect(), Any() }, { Any(), Any() } };
+	commands[CMD_VORTEX].unit = "m";
+	commands[CMD_VORTEX].descr = "[tc0,0.5,0.5,1/tc]Create a vortex domain wall with settings: longitudinal (-1: tail-to-tail, 1: head-to-head), rotation (-1: clockwise, 1: counter-clockwise), core (-1: down, 1: up). The vortex may be set in the given rectangle (entire mesh if not given), in the given mesh (focused mesh if not given).";
+
 	commands.insert(CMD_SKYRMION, CommandSpecifier(CMD_SKYRMION), "skyrmion");
 	commands[CMD_SKYRMION].usage = "[tc0,0.5,0,1/tc]USAGE : <b>skyrmion</b> <i>core chirality diameter position (meshname)</i>";
 	commands[CMD_SKYRMION].limits = { { int(-1), int(1) } , { int(-1), int(1) }, { double(1e-9), Any() },{ Any(), Any() }, { Any(), Any() } };
@@ -339,7 +347,6 @@ Simulation::Simulation(int Program_Version) :
 		{double(MINTIMESTEP), double(MAXTIMESTEP)},
 		{double(MINTIMESTEP), double(MAXTIMESTEP)} };
 	commands[CMD_ASTEPCTRL].descr = "[tc0,0.5,0.5,1/tc]Set parameters for adaptive time step control: err_fail - repeat step above this, err_high - decrease dT abnove this, err_low - increase dT below this, dT_incr - increase dT using fixed multiplier, dT_min, dT_max - dT bounds.";
-	commands[CMD_ASTEPCTRL].unit = "s";
 
 	commands.insert(CMD_SHOWDATA, CommandSpecifier(CMD_SHOWDATA), "showdata");
 	commands[CMD_SHOWDATA].usage = "[tc0,0.5,0,1/tc]USAGE : <b>showdata</b> <i>dataname (meshname, (rectangle))</i>";
@@ -444,25 +451,25 @@ Simulation::Simulation(int Program_Version) :
 	commands[CMD_PARAMS].descr = "[tc0,0.5,0.5,1/tc]List all material parameters. If meshname not given use the active mesh.";
 
 	commands.insert(CMD_SETPARAM, CommandSpecifier(CMD_SETPARAM), "setparam");
-	commands[CMD_SETPARAM].usage = "[tc0,0.5,0,1/tc]USAGE : <b>setparam</b> <i>(meshname) paramname value</i>";
-	commands[CMD_SETPARAM].descr = "[tc0,0.5,0.5,1/tc]Set the named parameter to given value. If meshname not given use the active mesh.";
-	commands[CMD_SETPARAM].return_descr = "[tc0,0.5,0,1/tc]Script return values: <i>value</i> - return value of named parameter for the mesh in focus only.";
+	commands[CMD_SETPARAM].usage = "[tc0,0.5,0,1/tc]USAGE : <b>setparam</b> <i>meshname paramname (value)</i>";
+	commands[CMD_SETPARAM].descr = "[tc0,0.5,0.5,1/tc]Set the named parameter to given value.";
+	commands[CMD_SETPARAM].return_descr = "[tc0,0.5,0,1/tc]Script return values: <i>value</i> - return value of named parameter in named mesh.";
 
 	commands.insert(CMD_PARAMSTEMP, CommandSpecifier(CMD_PARAMSTEMP), "paramstemp");
 	commands[CMD_PARAMSTEMP].usage = "[tc0,0.5,0,1/tc]USAGE : <b>paramstemp</b> <i>(meshname)</i>";
 	commands[CMD_PARAMSTEMP].descr = "[tc0,0.5,0.5,1/tc]List all material parameters temperature dependence. If meshname not given use the active mesh.";
 
 	commands.insert(CMD_CLEARPARAMSTEMP, CommandSpecifier(CMD_CLEARPARAMSTEMP), "clearparamstemp");
-	commands[CMD_CLEARPARAMSTEMP].usage = "[tc0,0.5,0,1/tc]USAGE : <b>clearparamstemp</b> <i>(meshname)</i>";
-	commands[CMD_CLEARPARAMSTEMP].descr = "[tc0,0.5,0.5,1/tc]Clear all material parameters temperature dependence in given mesh. If meshname not given clear temperature dependence in all meshes.";
+	commands[CMD_CLEARPARAMSTEMP].usage = "[tc0,0.5,0,1/tc]USAGE : <b>clearparamstemp</b> <i>(meshname, (paramname))</i>";
+	commands[CMD_CLEARPARAMSTEMP].descr = "[tc0,0.5,0.5,1/tc]Clear material parameter temperature dependence in given mesh. If meshname not given clear temperature dependences in all meshes for all parameters. If paramname not given clear all parameters temperature dependences in named mesh.";
 	
-	commands.insert(CMD_SETPARAMTEMP, CommandSpecifier(CMD_SETPARAMTEMP), "setparamtemp");
-	commands[CMD_SETPARAMTEMP].usage = "[tc0,0.5,0,1/tc]USAGE : <b>setparamtemp</b> <i>meshname paramname formulaname (coefficients...)</i>";
-	commands[CMD_SETPARAMTEMP].descr = "[tc0,0.5,0.5,1/tc]Set the named parameter temperature dependence formula for the named mesh (including any required coefficients for the formula - if not given default values are used).";
+	commands.insert(CMD_SETPARAMTEMPEQUATION, CommandSpecifier(CMD_SETPARAMTEMPEQUATION), "setparamtempequation");
+	commands[CMD_SETPARAMTEMPEQUATION].usage = "[tc0,0.5,0,1/tc]USAGE : <b>setparamtempequation</b> <i>meshname paramname text_equation</i>";
+	commands[CMD_SETPARAMTEMPEQUATION].descr = "[tc0,0.5,0.5,1/tc]Set the named parameter temperature dependence equation for the named mesh.";
 
 	commands.insert(CMD_SETPARAMTEMPARRAY, CommandSpecifier(CMD_SETPARAMTEMPARRAY), "setparamtemparray");
-	commands[CMD_SETPARAMTEMPARRAY].usage = "[tc0,0.5,0,1/tc]USAGE : <b>setparamtemparray</b> <i>paramname [filename / dp_arr_T dp_arr_c]</i>";
-	commands[CMD_SETPARAMTEMPARRAY].descr = "[tc0,0.5,0.5,1/tc]Set the named parameter temperature dependence using an array. This must contain temperature values and scaling coefficients. Load directly from a file (tab spaced) or internal dp arrays.";
+	commands[CMD_SETPARAMTEMPARRAY].usage = "[tc0,0.5,0,1/tc]USAGE : <b>setparamtemparray</b> <i>meshname paramname [filename / dp_arr_T dp_arr_c]</i>";
+	commands[CMD_SETPARAMTEMPARRAY].descr = "[tc0,0.5,0.5,1/tc]Set the named parameter temperature dependence using an array in the given mesh. This must contain temperature values and scaling coefficients. Load directly from a file (tab spaced) or internal dp arrays.";
 
 	commands.insert(CMD_COPYPARAMS, CommandSpecifier(CMD_COPYPARAMS), "copyparams");
 	commands[CMD_COPYPARAMS].usage = "[tc0,0.5,0,1/tc]USAGE : <b>copyparams</b> <i>meshname_from meshname_to (...)</i>";
@@ -495,7 +502,7 @@ Simulation::Simulation(int Program_Version) :
 
 	commands.insert(CMD_SETPARAMVAR, CommandSpecifier(CMD_SETPARAMVAR), "setparamvar");
 	commands[CMD_SETPARAMVAR].usage = "[tc0,0.5,0,1/tc]USAGE : <b>setparamvar</b> <i>meshname paramname generatorname (arguments...)</i>";
-	commands[CMD_SETPARAMVAR].descr = "[tc0,0.5,0.5,1/tc]Set the named parameter spatial dependence for the named mesh using the given generator (including any required arguments for the generator - if not given default values are used).";
+	commands[CMD_SETPARAMVAR].descr = "[tc0,0.5,0.5,1/tc]Set the named parameter spatial dependence for the named mesh using the given generator (including any required arguments for the generator - if not given, default values are used).";
 
 	commands.insert(CMD_SAVESIM, CommandSpecifier(CMD_SAVESIM), "savesim");
 	commands[CMD_SAVESIM].usage = "[tc0,0.5,0,1/tc]USAGE : <b>savesim</b> <i>(directory\\)filename</i>";
@@ -516,7 +523,7 @@ Simulation::Simulation(int Program_Version) :
 	commands.insert(CMD_VECREP, CommandSpecifier(CMD_VECREP), "vecrep");
 	commands[CMD_VECREP].usage = "[tc0,0.5,0,1/tc]USAGE : <b>vecrep</b> <i>meshname vecreptype</i>";
 	commands[CMD_VECREP].limits = { { Any(), Any() }, { int(0), int(VEC3REP_NUMOPTIONS) } };
-	commands[CMD_VECREP].descr = "[tc0,0.5,0.5,1/tc]Set representation type for vectorial quantities in named mesh (or supermesh). vecreptype = 0 (full), vecreptype = 1 (x component), vecreptype = 2 (y component), vecreptype = 3 (z component), vecreptype = 4 (direction only).";
+	commands[CMD_VECREP].descr = "[tc0,0.5,0.5,1/tc]Set representation type for vectorial quantities in named mesh (or supermesh). vecreptype = 0 (full), vecreptype = 1 (x component), vecreptype = 2 (y component), vecreptype = 3 (z component), vecreptype = 4 (direction only), vecreptype = 5 (magnitude only).";
 
 	commands.insert(CMD_SAVEMESHIMAGE, CommandSpecifier(CMD_SAVEMESHIMAGE), "savemeshimage");
 	commands[CMD_SAVEMESHIMAGE].usage = "[tc0,0.5,0,1/tc]USAGE : <b>savemeshimage</b> <i>((directory\\)filename)</i>";
@@ -807,13 +814,17 @@ Simulation::Simulation(int Program_Version) :
 
 	commands.insert(CMD_LOADOVF2MAG, CommandSpecifier(CMD_LOADOVF2MAG), "loadovf2mag");
 	commands[CMD_LOADOVF2MAG].usage = "[tc0,0.5,0,1/tc]USAGE : <b>loadovf2mag</b> <i>(renormalize_value) (directory\\)filename</i>";
-	commands[CMD_LOADOVF2MAG].descr = "[tc0,0.5,0.5,1/tc]Load an OOMMF-style OVF 2.0 file containing magnetisation data, into the currently focused mesh (which must be ferromagnetic). The mesh dimensions will be changed using the settings in the OVF file. By default the loaded data will not be renormalized: renormalize_value = 0. If a value is specified for renormalize_value, the loaded data will be renormalized to it (e.g. this would be an Ms value).";
+	commands[CMD_LOADOVF2MAG].descr = "[tc0,0.5,0.5,1/tc]Load an OOMMF-style OVF 2.0 file containing magnetisation data, into the currently focused mesh (which must be ferromagnetic), mapping the data to the current mesh dimensions. By default the loaded data will not be renormalized: renormalize_value = 0. If a value is specified for renormalize_value, the loaded data will be renormalized to it (e.g. this would be an Ms value).";
 	commands[CMD_LOADOVF2MAG].unit = "A/m";
 
 	commands.insert(CMD_SAVEOVF2MAG, CommandSpecifier(CMD_SAVEOVF2MAG), "saveovf2mag");
 	commands[CMD_SAVEOVF2MAG].usage = "[tc0,0.5,0,1/tc]USAGE : <b>saveovf2mag</b> <i>(n) (data_type) (directory\\)filename</i>";
 	commands[CMD_SAVEOVF2MAG].descr = "[tc0,0.5,0.5,1/tc]Save an OOMMF-style OVF 2.0 file containing magnetisation data from the currently focused mesh (which must be ferromagnetic). You can normalize the data to Ms0 value by specifying the n flag (e.g. saveovf2mag n filename) - by default the data is not normalized. You can specify the data type as data_type = bin4 (single precision 4 bytes per float), data_type = bin8 (double precision 8 bytes per float), or data_type = text. By default bin8 is used.";
 
+	commands.insert(CMD_SAVEOVF2PARAMVAR, CommandSpecifier(CMD_SAVEOVF2PARAMVAR), "saveovf2param");
+	commands[CMD_SAVEOVF2PARAMVAR].usage = "[tc0,0.5,0,1/tc]USAGE : <b>saveovf2param</b> <i>(data_type) (meshname) paramname (directory\\)filename</i>";
+	commands[CMD_SAVEOVF2PARAMVAR].descr = "[tc0,0.5,0.5,1/tc]Save an OOMMF-style OVF 2.0 file containing the named parameter spatial variation data from the named mesh (currently focused mesh if not specified). You can specify the data type as data_type = bin4 (single precision 4 bytes per float), data_type = bin8 (double precision 8 bytes per float), or data_type = text. By default bin8 is used.";
+	
 	commands.insert(CMD_SCRIPTSERVER, CommandSpecifier(CMD_SCRIPTSERVER), "scriptserver");
 	commands[CMD_SCRIPTSERVER].usage = "[tc0,0.5,0,1/tc]USAGE : <b>scriptserver</b> <i>status</i>";
 	commands[CMD_SCRIPTSERVER].descr = "[tc0,0.5,0.5,1/tc]Enable or disable the script communication server. When enabled the program will listen for commands received using network sockets on port 1542.";
@@ -821,6 +832,18 @@ Simulation::Simulation(int Program_Version) :
 	commands.insert(CMD_CHECKUPDATES, CommandSpecifier(CMD_CHECKUPDATES), "checkupdates");
 	commands[CMD_CHECKUPDATES].usage = "[tc0,0.5,0,1/tc]USAGE : <b>checkupdates</b>";
 	commands[CMD_CHECKUPDATES].descr = "[tc0,0.5,0.5,1/tc]Connect to boris-spintronics.uk to check if updates to program or materials database are available.";
+
+	commands.insert(CMD_EQUATIONCONSTANTS, CommandSpecifier(CMD_EQUATIONCONSTANTS), "equationconstants");
+	commands[CMD_EQUATIONCONSTANTS].usage = "[tc0,0.5,0,1/tc]USAGE : <b>equationconstants</b> <i>name value</i>";
+	commands[CMD_EQUATIONCONSTANTS].descr = "[tc0,0.5,0.5,1/tc]Create or edit user constant to be used in text equations.";
+	
+	commands.insert(CMD_DELEQUATIONCONSTANT, CommandSpecifier(CMD_DELEQUATIONCONSTANT), "delequationconstant");
+	commands[CMD_DELEQUATIONCONSTANT].usage = "[tc0,0.5,0,1/tc]USAGE : <b>delequationconstant</b> <i>name</i>";
+	commands[CMD_DELEQUATIONCONSTANT].descr = "[tc0,0.5,0.5,1/tc]Delete named user constant used in text equations.";
+
+	commands.insert(CMD_CLEAREQUATIONCONSTANTS, CommandSpecifier(CMD_CLEAREQUATIONCONSTANTS), "clearequationconstants");
+	commands[CMD_CLEAREQUATIONCONSTANTS].usage = "[tc0,0.5,0,1/tc]USAGE : <b>clearequationconstants</b>";
+	commands[CMD_CLEAREQUATIONCONSTANTS].descr = "[tc0,0.5,0.5,1/tc]Clear all user-defined constants for text equations.";
 
 	commands.insert(CMD_DP_CLEARALL, CommandSpecifier(CMD_DP_CLEARALL), "dp_clearall");
 	commands[CMD_DP_CLEARALL].usage = "[tc0,0.5,0,1/tc]USAGE : <b>dp_clearall</b>";
@@ -1034,7 +1057,7 @@ Simulation::Simulation(int Program_Version) :
 	commands.insert(CMD_DP_CALCSOT, CommandSpecifier(CMD_DP_CALCSOT), "dp_calcsot");
 	commands[CMD_DP_CALCSOT].usage = "[tc0,0.5,0,1/tc]USAGE : <b>dp_calcsot</b> <i>hm_mesh fm_mesh</i>";
 	commands[CMD_DP_CALCSOT].limits = { {Any(), Any()}, {Any(), Any()} };
-	commands[CMD_DP_CALCSOT].descr = "[tc0,0.5,0.5,1/tc]. For the given heavy metal and ferromagnetic meshes calculate the expected effective spin Hall angle and field-like torque coefficient according to analytical formulas (see manual).";
+	commands[CMD_DP_CALCSOT].descr = "[tc0,0.5,0.5,1/tc]. For the given heavy metal and ferromagnetic meshes calculate the expected effective spin Hall angle and field-like torque coefficient according to analytical equations (see manual).";
 	commands[CMD_DP_CALCSOT].return_descr = "[tc0,0.5,0,1/tc]Script return values: <i>SHAeff, flST</i>.";
 
 	commands.insert(CMD_DP_FITNONADIABATIC, CommandSpecifier(CMD_DP_FITNONADIABATIC), "dp_fitnonadiabatic");
@@ -1205,18 +1228,30 @@ Simulation::Simulation(int Program_Version) :
 	stageDescriptors.push_back("Hxyz_seq", StageDescriptor(SS_HFIELDXYZSEQ, "A/m", false), SS_HFIELDXYZSEQ);
 	stageDescriptors.push_back("Hpolar_seq", StageDescriptor(SS_HPOLARSEQ, "A/m", false), SS_HPOLARSEQ);
 	stageDescriptors.push_back("Hfmr", StageDescriptor(SS_HFMR, "A/m", false), SS_HFMR);
+	stageDescriptors.push_back("Hequation", StageDescriptor(SS_HFIELDEQUATION, "", false), SS_HFIELDEQUATION);
+	stageDescriptors.push_back("Hequation_seq", StageDescriptor(SS_HFIELDEQUATIONSEQ, "", false), SS_HFIELDEQUATIONSEQ);
 	stageDescriptors.push_back("V", StageDescriptor(SS_V, "V"), SS_V);
 	stageDescriptors.push_back("V_seq", StageDescriptor(SS_VSEQ, "V"), SS_VSEQ);
-	stageDescriptors.push_back("Vsin", StageDescriptor(SS_VSIN, "V"), SS_VSIN);
-	stageDescriptors.push_back("Vcos", StageDescriptor(SS_VCOS, "V"), SS_VCOS);
+	//deprecated (use equation instead, but keep SS_ values to keep older simulation files compatible):
+	//stageDescriptors.push_back("Vsin", StageDescriptor(SS_VSIN, "V"), SS_VSIN);
+	//stageDescriptors.push_back("Vcos", StageDescriptor(SS_VCOS, "V"), SS_VCOS);
+	stageDescriptors.push_back("Vequation", StageDescriptor(SS_VEQUATION, ""), SS_VEQUATION);
+	stageDescriptors.push_back("Vequation_seq", StageDescriptor(SS_VEQUATIONSEQ, ""), SS_VEQUATIONSEQ);
 	stageDescriptors.push_back("I", StageDescriptor(SS_I, "A"), SS_I);
 	stageDescriptors.push_back("I_seq", StageDescriptor(SS_ISEQ, "A"), SS_ISEQ);
-	stageDescriptors.push_back("Isin", StageDescriptor(SS_ISIN, "A"), SS_ISIN);
-	stageDescriptors.push_back("Icos", StageDescriptor(SS_ICOS, "A"), SS_ICOS);
+	//deprecated (use equation instead, but keep SS_ values to keep older simulation files compatible):
+	//stageDescriptors.push_back("Isin", StageDescriptor(SS_ISIN, "A"), SS_ISIN);
+	//stageDescriptors.push_back("Icos", StageDescriptor(SS_ICOS, "A"), SS_ICOS);
+	stageDescriptors.push_back("Iequation", StageDescriptor(SS_IEQUATION, ""), SS_IEQUATION);
+	stageDescriptors.push_back("Iequation_seq", StageDescriptor(SS_IEQUATIONSEQ, ""), SS_IEQUATIONSEQ);
 	stageDescriptors.push_back("T", StageDescriptor(SS_T, "K", false), SS_T);
 	stageDescriptors.push_back("T_seq", StageDescriptor(SS_TSEQ, "K", false), SS_TSEQ);
+	stageDescriptors.push_back("Tequation", StageDescriptor(SS_TEQUATION, "", false), SS_TEQUATION);
+	stageDescriptors.push_back("Tequation_seq", StageDescriptor(SS_TEQUATIONSEQ, "", false), SS_TEQUATIONSEQ);
 	stageDescriptors.push_back("Q", StageDescriptor(SS_Q, "W/m3", false), SS_Q);
 	stageDescriptors.push_back("Q_seq", StageDescriptor(SS_QSEQ, "W/m3", false), SS_QSEQ);
+	stageDescriptors.push_back("Qequation", StageDescriptor(SS_QEQUATION, "", false), SS_QEQUATION);
+	stageDescriptors.push_back("Qequation_seq", StageDescriptor(SS_QEQUATIONSEQ, "", false), SS_QEQUATIONSEQ);
 
 	stageStopDescriptors.push_back("nostop", StageStopDescriptor(STOP_NOSTOP), STOP_NOSTOP);
 	stageStopDescriptors.push_back("iter", StageStopDescriptor(STOP_ITERATIONS), STOP_ITERATIONS);
@@ -1259,9 +1294,6 @@ Simulation::Simulation(int Program_Version) :
 	//Update display - do not animate starting view
 	UpdateScreen_AutoSet_Sudden();
 
-	//default directory
-	directory = GetUserDocumentsPath() + "Boris Data\\Simulations\\";
-
 	//if this directory doesn't exist create it
 	if (!MakeDirectory(directory)) BD.DisplayConsoleError("ERROR : Couldn't create user directory.");
 
@@ -1301,7 +1333,7 @@ void Simulation::Simulate(void)
 #endif
 
 		//Display update
-		if (SMesh.GetIteration() % iterUpdate == 0) UpdateScreen();
+		if (iterUpdate && SMesh.GetIteration() % iterUpdate == 0) UpdateScreen_Quick();
 
 		//Check conditions for advancing simulation schedule
 		CheckSimulationSchedule();

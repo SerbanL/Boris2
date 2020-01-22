@@ -26,8 +26,8 @@
 // Using Neumann boundary conditions : at boundary, derivative normal to the boundary is zero. Thus to evaluate Laplacian we use:
 //
 // On inner cells (i, j, k) : M(i-1,j,k) + M(i+1,j,k) + M(i,j-1,k) + M(i,j+1,k) + M(i,j,k-1) + M(i,j,k+1) - 6 * M(i,j,k). Number of neighbors is 6 in this case.
-// On boundary cells (including corners) : replace fictitious cell outside of mesh with value of opposite neighbor along same axis and use same formula as for inner cells.
-// If both neighbors are missing along an axis (e.g. a 2D problem) then reduce number of neighbors used by 2 (i.e. decrease dimensionality of inner cell Laplacian formula)
+// On boundary cells (including corners) : replace fictitious cell outside of mesh with value of opposite neighbor along same axis and use same equation as for inner cells.
+// If both neighbors are missing along an axis (e.g. a 2D problem) then reduce number of neighbors used by 2 (i.e. decrease dimensionality of inner cell Laplacian equation)
 
 Exch_6ngbr_Neu::Exch_6ngbr_Neu(Mesh *pMesh_) : 
 	Modules(),

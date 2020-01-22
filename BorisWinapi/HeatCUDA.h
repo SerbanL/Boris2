@@ -42,6 +42,10 @@ private:
 	//Pass the managed HeatCUDA_CMBND object to set_cmbnd_continuous in Temp
 	cu_obj<HeatCUDA_CMBND> temp_cmbnd_funcs;
 
+	//Set Q using user equation, thus allowing simultaneous spatial (x, y, z), stage time (t); stage step (Ss) introduced as user constant.
+	//A number of constants are always present : mesh dimensions in m (Lx, Ly, Lz)
+	TEquationCUDA<cuBReal, cuBReal, cuBReal, cuBReal> Q_equation;
+
 private:
 
 	//-------------------Calculation Methods
@@ -60,6 +64,7 @@ public:
 	BError Initialize(void);
 
 	BError UpdateConfiguration(UPDATECONFIG_ cfgMessage);
+	void UpdateConfiguration_Values(UPDATECONFIG_ cfgMessage);
 
 	void UpdateField(void);
 
@@ -70,6 +75,9 @@ public:
 
 	//set Temp non-uniformly as specified through the cT mesh parameter
 	void SetBaseTemperature_Nonuniform(cuBReal Temperature);
+
+	//Set Q_equation text equation object
+	BError SetQEquation(const std::vector< std::vector<EqComp::FSPEC> >& fspec);
 };
 
 #else

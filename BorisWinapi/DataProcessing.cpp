@@ -84,8 +84,8 @@ BError DPArrays::get_profile(DBL3 start, DBL3 end, SuperMesh *pSMesh, int arr_id
 	PhysQ *pcurrPhysQ = nullptr;
 
 	//start and end points must be contained in the supermesh rectangle
-	Rect sMeshRect = pSMesh->GetSMeshRect();
-	if (!sMeshRect.contains(start) || !sMeshRect.contains(end)) return error(BERROR_INCORRECTVALUE);
+	//Rect sMeshRect = pSMesh->GetSMeshRect();
+	//if (!sMeshRect.contains(start) || !sMeshRect.contains(end)) return error(BERROR_INCORRECTVALUE);
 
 	//point on line to get value at
 	DBL3 point = start;
@@ -249,7 +249,7 @@ string DPArrays::get_meshaverage(SuperMesh *pSMesh, string meshName, Rect rect)
 	return result_string;
 }
 
-//calculate topological charge in M and given rect, using formula Q = Integral(m.(dm/dx x dm/dy) dxdy) / 4PI
+//calculate topological charge in M and given rect, using equation Q = Integral(m.(dm/dx x dm/dy) dxdy) / 4PI
 BError DPArrays::get_topological_charge(VEC_VC<DBL3>& M, double x, double y, double radius, double* pQ)
 {
 	BError error(__FUNCTION__);

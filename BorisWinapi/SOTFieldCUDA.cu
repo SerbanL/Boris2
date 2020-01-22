@@ -22,18 +22,21 @@ __global__ void SOTFieldCUDA_UpdateField(ManagedMeshCUDA& cuMesh)
 
 		if (M.is_not_empty(idx)) {
 
-			int idx_E = E.position_to_cellidx(M.cellidx_to_position(idx));
-
+			cuBReal grel = *cuMesh.pgrel;
 			cuBReal Ms = *cuMesh.pMs;
 			cuBReal SHA = *cuMesh.pSHA;
 			cuBReal flSOT = *cuMesh.pflSOT;
-			cuMesh.update_parameters_mcoarse(idx, *cuMesh.pMs, Ms, *cuMesh.pSHA, SHA, *cuMesh.pflSOT, flSOT);
+			cuMesh.update_parameters_mcoarse(idx, *cuMesh.pgrel, grel, *cuMesh.pMs, Ms, *cuMesh.pSHA, SHA, *cuMesh.pflSOT, flSOT);
 
-			cuBReal a_const = -((cuBReal)HBAR_E / (cuBReal)MU0) * SHA / (2 * Ms * Ms * (M.rect.e.z - M.rect.s.z));
+			if (cuIsNZ(grel)) {
 
-			cuReal3 p_vec = cuReal3(0, 0, 1) ^ (elC[idx_E] * E[idx_E]);
+				cuBReal a_const = -(SHA * MUB_E / (GAMMA * grel)) / (Ms * Ms * (M.rect.e.z - M.rect.s.z));
 
-			Heff[idx] += a_const * ((M[idx] ^ p_vec) + flSOT * Ms * p_vec);
+				int idx_E = E.position_to_cellidx(M.cellidx_to_position(idx));
+				cuReal3 p_vec = cuReal3(0, 0, 1) ^ (elC[idx_E] * E[idx_E]);
+
+				Heff[idx] += a_const * ((M[idx] ^ p_vec) + flSOT * Ms * p_vec);
+			}
 		}
 	}
 }

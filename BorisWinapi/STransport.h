@@ -16,7 +16,7 @@ class SuperMesh;
 
 class STransport :
 	public Modules,
-	public ProgramState<STransport, tuple<vector_lut<Rect>, vector<double>, int, double, double, double, double, bool, double, int, double, int, DBL2>, tuple<>>
+	public ProgramState<STransport, tuple<vector_lut<Rect>, vector<double>, int, double, double, double, double, bool, double, int, double, int, DBL2, TEquation<double>, TEquation<double>>, tuple<>>
 {
 
 #if COMPILECUDA == 1
@@ -56,6 +56,9 @@ private:
 
 	//potential (V) drop to ground
 	double current = 0.0, net_current = 0.0, potential = 0.0;
+
+	//Set potential (or current) using user equation allowing dependence on stage time (t); stage step (Ss) is introduced as user constant.
+	TEquation<double> V_equation, I_equation;
 
 	//sample resistance defined as potential / current
 	double resistance = 0.0;
@@ -129,6 +132,9 @@ private:
 	//Calculate interface spin accumulation torque (in magnetic meshes for NF interfaces with G interface conductance set)
 	void CalculateSAInterfaceField(void);
 
+	//Update TEquation object with user constants values
+	void UpdateTEquationUserConstants(void);
+
 public:
 
 	STransport(SuperMesh *pSMesh_);
@@ -145,6 +151,7 @@ public:
 	BError Initialize(void);
 
 	BError UpdateConfiguration(UPDATECONFIG_ cfgMessage);
+	void UpdateConfiguration_Values(UPDATECONFIG_ cfgMessage);
 
 	BError MakeCUDAModule(void);
 
@@ -191,16 +198,21 @@ public:
 
 	void Flag_Recalculate_Transport(void) { recalculate_transport = true; }
 
-	//set potential value, also reset any constant current source settings
-	void SetPotential(double potential_);
+	//set potential value, also reset any constant current source settings; by default clear the text equation setting, unless we set the value from the equation evaluation (set flag to false then)
+	void SetPotential(double potential_, bool clear_equation = true);
 
-	void SetCurrent(double current_);
+	//set current value, also reset any constant potential source settings; by default clear the text equation setting, unless we set the value from the equation evaluation (set flag to false then)
+	void SetCurrent(double current_, bool clear_equation = true);
 
 	void SetConvergenceError(double errorMaxLaplace_, int maxLaplaceIterations_);
 	void SetSConvergenceError(double s_errorMax_, int s_maxIterations_);
 
 	//set fixed SOR damping values (for V and S solvers)
 	void SetSORDamping(DBL2 _SOR_damping);
+
+	//set text equation from string
+	BError SetPotentialEquation(string equation_string, int step);
+	BError SetCurrentEquation(string equation_string, int step);
 
 	//-------------------Electrodes methods
 
@@ -265,7 +277,8 @@ public:
 
 	BError Initialize(void) { return BError(); }
 
-	BError UpdateConfiguration(UPDATECONFIG_ cfgMessage = UPDATECONFIG_GENERIC) { return BError(); }
+	BError UpdateConfiguration(UPDATECONFIG_ cfgMessage) { return BError(); }
+	void UpdateConfiguration_Values(UPDATECONFIG_ cfgMessage) {}
 
 	BError MakeCUDAModule(void) { return BError(); }
 
@@ -313,15 +326,19 @@ public:
 	void Flag_Recalculate_Transport(void) {}
 
 	//set potential value, also reset any constant current source settings
-	void SetPotential(double potential_) {}
+	void SetPotential(double potential_, bool clear_equation) {}
 
-	void SetCurrent(double current_) {}
+	void SetCurrent(double current_, bool clear_equation) {}
 
 	void SetConvergenceError(double errorMaxLaplace_, int maxLaplaceIterations_) {}
 	void SetSConvergenceError(double s_errorMax_, int s_maxIterations_) {}
 
 	//set fixed SOR damping values (for V and S solvers)
 	void SetSORDamping(DBL2 _SOR_damping) {}
+
+	//set text equation from string
+	BError SetPotentialEquation(string equation_string, int step) { return BError(); }
+	BError SetCurrentEquation(string equation_string, int step) { return BError(); }
 
 	//-------------------Electrodes methods
 

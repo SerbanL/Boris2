@@ -29,12 +29,23 @@ inline std::string GetFileTermination(const std::string& fileName)
 	return fileName.substr(found);
 }
 
-//Get current directory
+//Get current directory (initially this will be the executable directory but can change if you load/save files through a windows dialog)
 inline std::string GetDirectory(void)
 {
 	TCHAR path[FILEROWCHARS];
 	GetCurrentDirectory(FILEROWCHARS, path);
 	std::string directory = std::string(CW2A(path)) + "\\";
+
+	return directory;
+}
+
+//Get executable file directory
+inline std::string GetExeDirectory(void)
+{
+	TCHAR path[FILEROWCHARS];
+	GetModuleFileName(NULL, path, FILEROWCHARS);
+	std::string fullPath = std::string(CW2A(path));
+	std::string directory = fullPath.substr(0, fullPath.find_last_of("\\/")) + "\\";
 
 	return directory;
 }

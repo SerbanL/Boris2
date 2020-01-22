@@ -164,13 +164,21 @@ public:
 	void renormalize(PType new_norm);
 
 	//copy values from copy_this but keep current dimensions - if necessary map values from copy_this to local dimensions
-	void copy_values(const VEC<VType>& copy_this);
+	//can specify destination and source rectangles in relative coordinates
+	void copy_values(const VEC<VType>& copy_this, Rect dstRect = Rect(), Rect srcRect = Rect());
+
+	//--------------------------------------------ARITHMETIC OPERATIONS ON ENTIRE VEC : VEC_arith.h
 
 	//add values from add_this but keep current dimensions - if necessary map values from add_this to local dimensions
 	void add_values(const VEC<VType>& add_this);
 
 	//subtract values from sub_this but keep current dimensions - if necessary map values from sub_this to local dimensions
 	void sub_values(const VEC<VType>& sub_this);
+
+	void operator+=(double constant);
+	void operator-=(double constant);
+	void operator*=(double constant);
+	void operator/=(double constant);
 
 	//--------------------------------------------VEC GENERATORS : VEC_generate.h, VEC_Voronoi.h
 
@@ -254,7 +262,7 @@ public:
 	//count cells which don't have a null value set : i.e. non-empty.
 	int get_nonempty_cells(void) const;
 
-	//--------------------------------------------EXTRACT A LINE PROFILE : VEC_mng.h
+	//--------------------------------------------EXTRACT A LINE PROFILE : VEC_extract.h
 
 	//extract profile to a vector : extract size points starting at (start + step * 0.5) in the direction step; use weighted average to extract profile with stencil given by h
 	//e.g. if you have a start and end point with given step, then setting size = |end - start| / |step| means the profile must be extracted between (start + 0.5*step) and (end - 0.5*step). e.g.: |.|.|.|.|
@@ -328,7 +336,7 @@ public:
 	//If not square in the xy plane the "diagonal" starts at (0,0) and has min(n.x, n.y) points
 	void matrix_getdiagonal(std::vector<VType>& diagonal, int plane = 0);
 
-	//--------------------------------------------OPERATIONS : VEC_oper.h
+	//--------------------------------------------AVERAGING OPERATIONS : VEC_avg.h
 
 	//average in a box (which should be contained in the VEC dimensions)
 	VType average(const Box& box) const;

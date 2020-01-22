@@ -53,22 +53,22 @@ public:
 	friend std::ostream& operator<<(std::ostream &os, const Sequence &rhs) { os << ToString(rhs.start) << "; " << ToString(rhs.end) << "; " << rhs.steps; return os; }
 
 	//this also does conversion to std::string, but allows further functionality through the stringconversion object, e.g. units.
-	friend Conversion::tostringconversion& operator<<(Conversion::tostringconversion &lhs, const Sequence &rhs) { 
-		
-		lhs << rhs.start << std::string("; ") << rhs.end << std::string("; ") << ToString(rhs.steps);	
+	friend Conversion::tostringconversion& operator<<(Conversion::tostringconversion &lhs, const Sequence &rhs) {
+
+		lhs << rhs.start << std::string("; ") << rhs.end << std::string("; ") << ToString(rhs.steps);
 		//steps cannot have units, it's just an integer, so pre-convert it to std::string as above
-		
-		return lhs; 
+
+		return lhs;
 	}
 
 	//allows conversions from std::string to Sequence
-	friend Sequence& operator>>(const std::stringstream &ss, Sequence &rhs) 
-	{ 
+	friend Sequence& operator>>(const std::stringstream &ss, Sequence &rhs)
+	{
 		//normally the values in std::string representation are as: "start; end; steps"
 		std::vector<std::string> components = split(ss.str(), ", ", "; ");
 		//it could be they are also given as: "start end steps"
-		if(components.size() == 1) components = split(ss.str(), " ");
-		
+		if (components.size() == 1) components = split(ss.str(), " ");
+
 		//now set values from strings
 		switch (components.size()) {
 
@@ -90,7 +90,7 @@ public:
 	//----------------------------- OTHERS
 
 	//return value for given step index (ranges from 0 to steps)
-	Type value(int stepIdx) 
+	Type value(int stepIdx)
 	{
 		Type increment = (end - start) / steps;
 
@@ -501,11 +501,114 @@ public:
 typedef CosSequence<double> COSSEQ;
 typedef CosSequence<DBL3> COSSEQ3;
 
+////////////////////////////////////////////////////////////////////////////////////////////////// String Sequence
+//
+// Has start and end points, with an integer number of steps between them. Minimum of one step (in this case the sequence has just the start and end points)
+
+class StringSequence
+{
+
+private:
+
+	std::string numsteps_and_text, textOnly;
+	int steps;
+
+public:
+
+	//----------------------------- VALUE CONSTRUCTORS
+
+	StringSequence(void)
+	{
+		steps = 1;
+	}
+
+	//input string specified as "n: ...", where n is the number of sequence outputs ( = steps + 1). Each step output has the same string output.
+	StringSequence(std::string string_seq)
+	{
+		size_t pos = string_seq.find_first_of(':');
+
+		numsteps_and_text = string_seq;
+		steps = 0;
+
+		if (pos != std::string::npos) {
+
+			steps = (int)ToNum(string_seq.substr(0, pos)) - 1;
+			if (steps < 0) steps = 0;
+
+			textOnly = string_seq.substr(pos + 1);
+		}
+	}
+
+	//----------------------------- CONVERTING CONSTRUCTORS
+
+	//copy constructor
+	StringSequence(const StringSequence &copyThis)
+	{
+		numsteps_and_text = copyThis.numsteps_and_text;
+		textOnly = copyThis.textOnly;
+		steps = copyThis.steps;
+	}
+
+	//assignment operator
+	StringSequence& operator=(const StringSequence &rhs)
+	{
+		numsteps_and_text = rhs.numsteps_and_text;
+		textOnly = rhs.textOnly;
+		steps = rhs.steps;
+		return *this;
+	}
+
+	//----------------------------- STREAM OPERATORS
+
+	//allows conversion to std::string and other functionality (e.g. saving to file, or output to text console - stream types derived from std::ostream)
+	friend std::ostream& operator<<(std::ostream &os, const StringSequence &rhs)
+	{
+		os << rhs.numsteps_and_text;
+		return os;
+	}
+
+	//this also does conversion to std::string, but allows further functionality through the stringconversion object, e.g. units.
+	friend Conversion::tostringconversion& operator<<(Conversion::tostringconversion &lhs, const StringSequence &rhs)
+	{
+		lhs << rhs.numsteps_and_text;
+		return lhs;
+	}
+
+	//allows conversions from std::string to Sequence
+	friend StringSequence& operator>>(const std::stringstream &ss, StringSequence &rhs)
+	{
+		size_t pos = ss.str().find_first_of(':');
+
+		rhs.numsteps_and_text = ss.str();
+		rhs.steps = 0;
+
+		if (pos != std::string::npos) {
+
+			rhs.steps = (int)ToNum(ss.str().substr(0, pos)) - 1;
+			if (rhs.steps < 0) rhs.steps = 0;
+
+			rhs.textOnly = ss.str().substr(pos + 1);
+		}
+
+		return rhs;
+	}
+
+	//----------------------------- OTHERS
+
+	//return value for given step index (ranges from 0 to steps)
+	std::string value(int stepIdx)
+	{
+		return textOnly;
+	}
+
+	int number_of_steps(void) { return steps; }
+};
+
 ////////////////////////////////////////////////////////////////////////////////////////////////// exclusions
 //
 //
 
-template <typename Type> 
+template <typename Type>
 struct exclusions {
 
 private:
@@ -517,8 +620,8 @@ private:
 public:
 
 	exclusions(void) {}
-	
-	std::vector<Type>& operator[](const Type& value) 
+
+	std::vector<Type>& operator[](const Type& value)
 	{
 		for (int idx = 0; idx < (int)sets.size(); idx++) {
 
@@ -529,7 +632,7 @@ public:
 	}
 
 	void clear(void) { sets.resize(0); }
-	
+
 	void storeset(std::vector<Type> new_set) { sets.push_back(newSet); }
 	template <typename ... VType> void storeset(VType ... values) { sets.push_back(make_vector(values...)); }
 };

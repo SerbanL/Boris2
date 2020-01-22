@@ -14,6 +14,10 @@ enum UPDATECONFIG_ {
 	//no reason given
 	UPDATECONFIG_GENERIC,
 
+	////////////////////////////
+	//PROGRAM-WIDE SCOPE
+	////////////////////////////
+
 	//Brute force update : when this message is received all objects handling UpdateConfiguration method should update fully
 	UPDATECONFIG_FORCEUPDATE,
 
@@ -87,30 +91,78 @@ enum UPDATECONFIG_ {
 	UPDATECONFIG_ROUGHNESS_CHANGE,
 
 	//Transport module electrode changed
-	UPDATECONFIG_TRANSPORT_ELECTRODE
+	UPDATECONFIG_TRANSPORT_ELECTRODE,
+
+	////////////////////////////
+	//UpdateConfiguration_Values MESSAGES
+	////////////////////////////
+
+	//User constants changed for text equation objects
+	UPDATECONFIG_TEQUATION_CONSTANTS,
+
+	//Clear all text equations
+	UPDATECONFIG_TEQUATION_CLEAR
 };
 
 namespace ucfg {
 
+	//version without forcing flags
 	template <typename Flag>
-	bool check_cfgflags(UPDATECONFIG_ cfgMessage, Flag flag) { return (cfgMessage == UPDATECONFIG_FORCEUPDATE || cfgMessage == flag); }
+	bool __check_cfgflags(UPDATECONFIG_ cfgMessage, Flag flag)
+	{
+		if (cfgMessage == flag) return true;
+		else return false;
+	}
 
+	//version without forcing flags
+	template <typename Flag, typename ... Flags>
+	bool __check_cfgflags(UPDATECONFIG_ cfgMessage, Flag flag, Flags... flags)
+	{
+		if (cfgMessage == flag) return true;
+		else return __check_cfgflags(cfgMessage, flags...);
+	}
+
+	//version with forcing flags - use this
+	template <typename Flag>
+	bool check_cfgflags(UPDATECONFIG_ cfgMessage, Flag flag) 
+	{ 
+		if (cfgMessage == UPDATECONFIG_FORCEUPDATE ||
+			cfgMessage == UPDATECONFIG_SWITCHCUDASTATE ||
+			cfgMessage == UPDATECONFIG_REPAIROBJECTSTATE ||
+			cfgMessage == UPDATECONFIG_MESHADDED ||
+			cfgMessage == UPDATECONFIG_MESHDELETED ||
+			cfgMessage == UPDATECONFIG_MODULEADDED ||
+			cfgMessage == UPDATECONFIG_MODULEDELETED) return true;
+
+		if (cfgMessage == flag) return true;
+		else return false;
+	}
+
+	//version with forcing flags - use this
 	template <typename Flag, typename ... Flags>
 	bool check_cfgflags(UPDATECONFIG_ cfgMessage, Flag flag, Flags... flags)
 	{
-		if (cfgMessage == UPDATECONFIG_FORCEUPDATE || cfgMessage == flag) return true;
-		else return check_cfgflags(cfgMessage, flags...);
+		if (cfgMessage == UPDATECONFIG_FORCEUPDATE ||
+			cfgMessage == UPDATECONFIG_SWITCHCUDASTATE ||
+			cfgMessage == UPDATECONFIG_REPAIROBJECTSTATE ||
+			cfgMessage == UPDATECONFIG_MESHADDED ||
+			cfgMessage == UPDATECONFIG_MESHDELETED ||
+			cfgMessage == UPDATECONFIG_MODULEADDED ||
+			cfgMessage == UPDATECONFIG_MODULEDELETED) return true;
+
+		if (cfgMessage == flag) return true;
+		else return __check_cfgflags(cfgMessage, flags...);
 	}
 };
 
 #define CONVERSIONPRECISION 6						//Precision when converting to/from strings
 
 #define MAXSIMSPACE		2.0							//Maximum side length of simulation space (m)
-#define MINMESHSPACE	1e-11						//Minimum mesh side length (m)
+#define MINMESHSPACE	4e-11						//Minimum mesh side length (m)
 #define MAXFIELD		1e8							//Maximum field strength (A/m)
 #define MINODERELERROR		1e-12					//Minimum relative error for ode solver that can be entered
 #define MAXODERELERROR		1e-2					//Maximum relative error for ode solver that can be entered
-#define MINTIMESTEP		1e-18						//Mnimum time step that can be entered (s)
+#define MINTIMESTEP		1e-18						//Minimum time step that can be entered (s)
 #define MAXTIMESTEP		1e-6						//Maximum time step that can be entered (s)
 
 //when creating a mesh limit the number of cells. The mesh can exceed these values but user will have to adjust the cellsize manually.

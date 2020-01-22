@@ -17,7 +17,7 @@ class SHeat;
 
 class Heat :
 	public Modules,
-	public ProgramState<Heat, tuple<double, double, bool, bool, bool, bool, bool, bool>, tuple<>>
+	public ProgramState<Heat, tuple<double, double, bool, bool, bool, bool, bool, bool, TEquation<double, double, double, double>>, tuple<>>
 {
 	friend SHeat;
 
@@ -49,6 +49,10 @@ private:
 	bool insulate_pz = false;
 	bool insulate_nz = false;
 
+	//Set Q using user equation, thus allowing simultaneous spatial (x, y, z), stage time (t); stage step (Ss) introduced as user constant.
+	//A number of constants are always present : mesh dimensions in m (Lx, Ly, Lz)
+	TEquation<double, double, double, double> Q_equation;
+
 private:
 
 	//-------------------Calculation Methods
@@ -58,6 +62,9 @@ private:
 	//------------------Others
 
 	void SetRobinBoundaryConditions(void);
+
+	//Update TEquation object with user constants values
+	void UpdateTEquationUserConstants(bool makeCuda = true);
 
 public:
 
@@ -75,6 +82,7 @@ public:
 	BError Initialize(void);
 
 	BError UpdateConfiguration(UPDATECONFIG_ cfgMessage);
+	void UpdateConfiguration_Values(UPDATECONFIG_ cfgMessage);
 
 	BError MakeCUDAModule(void);
 
@@ -106,6 +114,9 @@ public:
 
 	//set insulating mesh sides flags. literal can be "x", "-x", "y", "-y", "z", "-z"
 	void SetInsulatingSides(string literal, bool status);
+
+	//Set Q_equation text equation object
+	BError SetQEquation(string equation_string, int step);
 
 	//-------------------Getters
 
@@ -145,7 +156,8 @@ public:
 
 	BError Initialize(void) { return BError(); }
 
-	BError UpdateConfiguration(UPDATECONFIG_ cfgMessage = UPDATECONFIG_GENERIC) { return BError(); }
+	BError UpdateConfiguration(UPDATECONFIG_ cfgMessage) { return BError(); }
+	void UpdateConfiguration_Values(UPDATECONFIG_ cfgMessage) {}
 
 	BError MakeCUDAModule(void) { return BError(); }
 
@@ -163,6 +175,9 @@ public:
 
 	//set insulating mesh sides flags. literal can be "x", "-x", "y", "-y", "z", "-z"
 	void SetInsulatingSides(string literal, bool status) {}
+
+	//Set Q_equation text equation object
+	BError SetQEquation(string equation_string, int step) { return BError(); }
 
 	//-------------------Getters
 

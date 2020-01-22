@@ -250,17 +250,16 @@ BError DifferentialEquationFM::SwitchCUDAState(bool cudaState)
 	//are we switching to cuda?
 	if (cudaState) {
 
-		///delete cuda module object and null (just in case)
-		if (pmeshODECUDA) delete pmeshODECUDA;
-		pmeshODECUDA = nullptr;
+		if (!pmeshODECUDA) {
 
-		pmeshODECUDA = new DifferentialEquationFMCUDA(this);
-		error = pmeshODECUDA->Error_On_Create();
-		//setup the managed cuDiffEq object with pointers to all required data for differential equations calculations
-		if (!error) error = (reinterpret_cast<DifferentialEquationFMCUDA*>(pmeshODECUDA)->Get_ManagedDiffEqCUDA())()->set_pointers(reinterpret_cast<DifferentialEquationFMCUDA*>(pmeshODECUDA));
-		
-		//based on setODE value, setup device method pointers in cuDiffEq held in each DifferentialEquationCUDA object
-		if (!error) pmeshODECUDA->SetODEMethodPointers();
+			pmeshODECUDA = new DifferentialEquationFMCUDA(this);
+			error = pmeshODECUDA->Error_On_Create();
+			//setup the managed cuDiffEq object with pointers to all required data for differential equations calculations
+			if (!error) error = (reinterpret_cast<DifferentialEquationFMCUDA*>(pmeshODECUDA)->Get_ManagedDiffEqCUDA())()->set_pointers(reinterpret_cast<DifferentialEquationFMCUDA*>(pmeshODECUDA));
+
+			//based on setODE value, setup device method pointers in cuDiffEq held in each DifferentialEquationCUDA object
+			if (!error) pmeshODECUDA->SetODEMethodPointers();
+		}
 	}
 	else {
 

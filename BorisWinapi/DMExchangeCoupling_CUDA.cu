@@ -2,6 +2,8 @@
 
 #if COMPILECUDA == 1
 
+#ifdef MODULE_DMEXCHANGE
+
 #include "BorisCUDALib.cuh"
 
 #include "MeshCUDA.h"
@@ -363,5 +365,7 @@ void DMExchangeCUDA::CalculateExchangeCoupling(cu_obj<cuBReal>& energy)
 		}
 	}
 }
+
+#endif
 
 #endif

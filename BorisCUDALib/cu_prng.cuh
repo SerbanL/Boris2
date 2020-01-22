@@ -12,7 +12,7 @@ __device__ inline unsigned cuBorisRand::atomicLCG(unsigned* address)
 
 		assumed = old;
 
-		//LCG formula used to generate next number in sequence : the modulo operation is free since unsigned is 32 bits wide
+		//LCG equation used to generate next number in sequence : the modulo operation is free since unsigned is 32 bits wide
 		old = atomicCAS(address, assumed, (unsigned)1664525 * old + (unsigned)1013904223);
 
 	} while (old != assumed);

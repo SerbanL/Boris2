@@ -49,14 +49,14 @@ void DifferentialEquationFM::RunSD_Start(void)
 
 				/////////////////////////
 
-				//The updating formula is (see https://doi.org/10.1063/1.4862839):
+				//The updating equation is (see https://doi.org/10.1063/1.4862839):
 
 				//m_next = m - (dT/2) * (m_next + m) x ((gamma/2)m x Heff)
 				//Here gamma = mu0 * |gamma_e| as usual., m is the current normalized M value, Heff is the current effective field, and we need to find m_next.
 				//This is applicable to the LLGStatic approach, i.e. no precession term and damping set to 1.
 				//M_next = m_next * Ms
 
-				//The above formula can be solved for m_next explicitly (m_next . m = 1, i.e. norm conserved) as:
+				//The above equation can be solved for m_next explicitly (m_next . m = 1, i.e. norm conserved) as:
 				//
 				//Let s = dT * GAMMA / 4, the stepsize; H = Heff. Then:
 				//m = (m - s(m.H * (m - 2sH) + 2sm(H.H) - 2H)) / (1 + sm.H)
@@ -177,14 +177,14 @@ void DifferentialEquationFM::RunSD_Advance_withReductions(void)
 				double _mxh = GetMagnitude(m ^ H) / pMesh->M[idx].norm();
 				mxh_reduction.reduce_max(_mxh);
 
-				//The updating formula is (see https://doi.org/10.1063/1.4862839):
+				//The updating equation is (see https://doi.org/10.1063/1.4862839):
 
 				//m_next = m - (dT/2) * (m_next + m) x ((gamma/2)m x Heff)
 				//Here gamma = mu0 * |gamma_e| as usual., m is the current normalized M value, Heff is the current effective field, and we need to find m_next.
 				//This is applicable to the LLGStatic approach, i.e. no precession term and damping set to 1.
 				//M_next = m_next * Ms
 
-				//The above formula can be solved for m_next explicitly (m_next . m = 1, i.e. norm conserved) as:
+				//The above equation can be solved for m_next explicitly (m_next . m = 1, i.e. norm conserved) as:
 				//
 				//Let s = dT * GAMMA / 4, the stepsize; H = Heff. Then:
 				//m = (m - s(m.H * (m - 2sH) + 2sm(H.H) - 2H)) / (1 + sm.H)
@@ -250,14 +250,14 @@ void DifferentialEquationFM::RunSD_Advance(void)
 				DBL3 m = pMesh->M[idx] / Ms;
 				DBL3 H = pMesh->Heff[idx];
 
-				//The updating formula is (see https://doi.org/10.1063/1.4862839):
+				//The updating equation is (see https://doi.org/10.1063/1.4862839):
 
 				//m_next = m - (dT/2) * (m_next + m) x ((gamma/2)m x Heff)
 				//Here gamma = mu0 * |gamma_e| as usual., m is the current normalized M value, Heff is the current effective field, and we need to find m_next.
 				//This is applicable to the LLGStatic approach, i.e. no precession term and damping set to 1.
 				//M_next = m_next * Ms
 
-				//The above formula can be solved for m_next explicitly (m_next . m = 1, i.e. norm conserved) as:
+				//The above equation can be solved for m_next explicitly (m_next . m = 1, i.e. norm conserved) as:
 				//
 				//Let s = dT * GAMMA / 4, the stepsize; H = Heff. Then:
 				//m = (m - s(m.H * (m - 2sH) + 2sm(H.H) - 2H)) / (1 + sm.H)

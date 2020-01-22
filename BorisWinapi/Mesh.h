@@ -166,6 +166,26 @@ private:
 
 	//----------------------------------- RUNTIME PARAMETER UPDATERS (AUXILIARY) (MeshParamsControl.h)
 
+	//SPATIAL DEPENDENCE ONLY - HAVE POSITION
+
+	//update parameters in the list for spatial dependence only
+	template <typename PType, typename SType, typename ... MeshParam_List>
+	void update_parameters_spatial(const DBL3& position, MatP<PType, SType>& matp, PType& matp_value, MeshParam_List& ... params);
+
+	//update parameters in the list for spatial dependence only - single parameter version
+	template <typename PType, typename SType>
+	void update_parameters_spatial(const DBL3& position, MatP<PType, SType>& matp, PType& matp_value);
+
+	//SPATIAL AND TEMPERATURE DEPENDENCE - HAVE POSITION
+
+	//update parameters in the list for spatial dependence only
+	template <typename PType, typename SType, typename ... MeshParam_List>
+	void update_parameters_full(const DBL3& position, const double& Temperature, MatP<PType, SType>& matp, PType& matp_value, MeshParam_List& ... params);
+
+	//update parameters in the list for spatial dependence only - single parameter version
+	template <typename PType, typename SType>
+	void update_parameters_full(const DBL3& position, const double& Temperature, MatP<PType, SType>& matp, PType& matp_value);
+
 	//UPDATER M COARSENESS - PRIVATE
 
 	//SPATIAL DEPENDENCE ONLY - NO POSITION YET
@@ -178,7 +198,7 @@ private:
 	template <typename PType, typename SType>
 	void update_parameters_mcoarse_spatial(int mcell_idx, MatP<PType, SType>& matp, PType& matp_value);
 
-	//SPATIAL AND TIME DEPENDENCE - NO POSITION YET
+	//SPATIAL AND TEMPERATURE DEPENDENCE - NO POSITION YET
 
 	//update parameters in the list for spatial dependence only
 	template <typename PType, typename SType, typename ... MeshParam_List>
@@ -200,7 +220,7 @@ private:
 	template <typename PType, typename SType>
 	void update_parameters_ecoarse_spatial(int ecell_idx, MatP<PType, SType>& matp, PType& matp_value);
 
-	//SPATIAL AND TIME DEPENDENCE - NO POSITION YET
+	//SPATIAL AND TEMPERATURE DEPENDENCE - NO POSITION YET
 
 	//update parameters in the list for spatial dependence only
 	template <typename PType, typename SType, typename ... MeshParam_List>
@@ -222,7 +242,7 @@ private:
 	template <typename PType, typename SType>
 	void update_parameters_tcoarse_spatial(int tcell_idx, MatP<PType, SType>& matp, PType& matp_value);
 
-	//SPATIAL AND TIME DEPENDENCE - NO POSITION YET
+	//SPATIAL AND TEMPERATURE DEPENDENCE - NO POSITION YET
 
 	//update parameters in the list for spatial dependence only
 	template <typename PType, typename SType, typename ... MeshParam_List>
@@ -302,14 +322,21 @@ public:
 
 	//----------------------------------- PARAMETERS CONTROL/INFO : MeshParamsControl.cpp
 
-	//set/get mesh base temperature
-	void SetBaseTemperature(double Temperature);
+	//set/get mesh base temperature; by default any text equation dependence will be cleared unless indicated specifically not to (e.g. called when setting base temperature value after evaluating the text equation)
+	void SetBaseTemperature(double Temperature, bool clear_equation = true);
 	double GetBaseTemperature(void) { return base_temperature; }
+
+	//set text equation for base temperature : when iterating, the base temperature will be evaluated and set using the text equation
+	BError SetBaseTemperatureEquation(string equation_string, int step);
+	void UpdateTEquationUserConstants(void);
 
 	//parameters spatial variation setters
 	
 	//update all mesh parameters spatial variation (if needed)
 	bool update_meshparam_var(void);
+
+	//update text equations for mesh parameters with user constants, mesh dimensions, Curie temperature, base temperature
+	bool update_meshparam_equations(void);
 
 	//set parameter spatial variation using a given generator and arguments (arguments passed as a string to be interpreted and converted using ToNum)
 	BError set_meshparam_var(PARAM_ paramID, MATPVAR_ generatorID, string generatorArgs, function<vector<BYTE>(string, INT2)>& bitmap_loader);
@@ -323,26 +350,6 @@ public:
 	DBL3 get_paramtype_cellsize(PARAM_ paramID);
 
 	//----------------------------------- RUNTIME PARAMETER UPDATERS (MeshParamsControl.h)
-	
-	//SPATIAL DEPENDENCE ONLY - HAVE POSITION
-
-	//update parameters in the list for spatial dependence only
-	template <typename PType, typename SType, typename ... MeshParam_List>
-	void update_parameters_spatial(const DBL3& position, MatP<PType, SType>& matp, PType& matp_value, MeshParam_List& ... params);
-
-	//update parameters in the list for spatial dependence only - single parameter version
-	template <typename PType, typename SType>
-	void update_parameters_spatial(const DBL3& position, MatP<PType, SType>& matp, PType& matp_value);
-
-	//SPATIAL AND TIME DEPENDENCE - HAVE POSITION
-
-	//update parameters in the list for spatial dependence only
-	template <typename PType, typename SType, typename ... MeshParam_List>
-	void update_parameters_full(const DBL3& position, const double& Temperature, MatP<PType, SType>& matp, PType& matp_value, MeshParam_List& ... params);
-
-	//update parameters in the list for spatial dependence only - single parameter version
-	template <typename PType, typename SType>
-	void update_parameters_full(const DBL3& position, const double& Temperature, MatP<PType, SType>& matp, PType& matp_value);
 
 	//UPDATER M COARSENESS - PUBLIC
 
@@ -372,6 +379,10 @@ public:
 
 	//call when the mesh dimensions have changed - sets every quantity to the right dimensions
 	virtual BError UpdateConfiguration(UPDATECONFIG_ cfgMessage) = 0;
+
+	//This is a "softer" version of UpdateConfiguration, which can be used any time and doesn't require the object to be Uninitialized; 
+	//this will typically involve changing a value across multiple objects, thus better to call this method rather than try to remember which objects need the value changed.
+	virtual void UpdateConfiguration_Values(UPDATECONFIG_ cfgMessage) = 0;
 
 	//at the start of each iteration the mesh might have to be prepared (e.g. state flags set)
 	virtual void PrepareNewIteration(void) = 0;
@@ -533,7 +544,7 @@ public:
 	//Generate Voronoi 3D grains (boundaries between Voronoi cells set to empty) at given average spacing with prng instantiated with given seed.
 	BError GenerateGrains3D(double spacing, unsigned seed);
 
-	//----------------------------------- METHODS REDEFINED IN SOME IMPLEMENTATIONS (virtual here)
+	//----------------------------------- METHODS REDEFINED IN SOME IMPLEMENTATIONS (virtual here - with exceptions)
 
 	//use virtual to allow calling using base pointer - if called on "incorrect" mesh then nothing happens (the versions defined here used instead)
 
@@ -544,7 +555,11 @@ public:
 	virtual void SetCurieTemperature(double Tc) {}
 
 	//this just sets the indicative material Tc value
-	virtual void SetCurieTemperatureMaterial(double Tc_material) { T_Curie_material = Tc_material; }
+	void SetCurieTemperatureMaterial(double Tc_material) 
+	{ 
+		T_Curie_material = Tc_material;
+		update_meshparam_equations(); //material Curie temperature is a constant in mesh parameter equations, so update them
+	}
 
 	//atomic moment (as multiple of Bohr magneton) for ferromagnetic meshes. Calling this forces recalculation of affected material parameters temperature dependence - any custom dependence set will be overwritten.
 	virtual void SetAtomicMoment(double atomic_moment_ub) {}
@@ -582,7 +597,7 @@ public:
 	virtual void SetSkyrmionBloch(int orientation, int chirality, Rect skyrmion_rect) {}
 
 	//set M from given data VEC (0 values mean empty points) -> stretch data to M dimensions if needed.
-	virtual void SetMagnetisationFromData(VEC<DBL3>& data) {}
+	virtual void SetMagnetisationFromData(VEC<DBL3>& data, const Rect& dstRect = Rect()) {}
 
 	//set periodic boundary conditions for magnetization
 	virtual BError Set_PBC_X(int pbc_x) { return BError(); }

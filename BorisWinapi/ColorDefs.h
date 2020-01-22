@@ -19,6 +19,7 @@
 #define UNAVAILABLECOLOR D2D1::ColorF(D2D1::ColorF::Gray)
 #define UNAVAILABLECOLOR2 D2D1::ColorF(D2D1::ColorF::DarkGray)
 #define RESIZEFRAMECOLOR D2D1::ColorF(D2D1::ColorF::Orange)
+#define FRAMECOLOR D2D1::ColorF(D2D1::ColorF::Yellow)
 
 #else
 

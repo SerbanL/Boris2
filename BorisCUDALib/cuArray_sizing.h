@@ -14,7 +14,7 @@ __host__ bool cu_arr<VType>::resize(size_t size_)
 	cudaError_t error = gpu_alloc(cu_array, size_);
 	if (error == cudaSuccess) {
 
-		size_cpu = size_;
+		arr_size = size_;
 
 		if (!pcu_array) gpu_alloc(pcu_array);
 		cpu_to_gpu(pcu_array, &cu_array);
@@ -38,7 +38,7 @@ __host__ void cu_arr<VType>::clear(void)
 	gpu_free(pcu_array);
 	pcu_array = nullptr;
 
-	size_cpu = 0;
+	arr_size = 0;
 }
 
 //------------------------------------------- STORE NEW ENTRIES : cuArray_sizing.h
@@ -49,7 +49,7 @@ __host__ void cu_arr<VType>::push_back(VType*& new_entry)
 {
 	//allocate new memory size in a temporary array
 	VType* new_array = nullptr;
-	cudaError_t error = gpu_alloc(new_array, size_cpu + 1);
+	cudaError_t error = gpu_alloc(new_array, arr_size + 1);
 
 	if (error != cudaSuccess) {
 
@@ -58,13 +58,13 @@ __host__ void cu_arr<VType>::push_back(VType*& new_entry)
 	}
 
 	//copy data currently in array to temporary array (if any)
-	if (size_cpu > 0) {
+	if (arr_size > 0) {
 
-		gpu_to_gpu(new_array, cu_array, size_cpu);
+		gpu_to_gpu(new_array, cu_array, arr_size);
 	}
 
 	//add new entry to end of temporary array
-	gpu_to_gpu(new_array + size_cpu, new_entry);
+	gpu_to_gpu(new_array + arr_size, new_entry);
 
 	//swap pointers so array now points to newly constructed memory
 	gpu_swap(cu_array, new_array);
@@ -73,7 +73,7 @@ __host__ void cu_arr<VType>::push_back(VType*& new_entry)
 	gpu_free(new_array);
 
 	//set new size
-	size_cpu++;
+	arr_size++;
 
 	if (!pcu_array) gpu_alloc(pcu_array);
 	cpu_to_gpu(pcu_array, &cu_array);

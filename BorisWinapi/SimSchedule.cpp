@@ -58,6 +58,28 @@ void Simulation::AddGenericStage(SS_ stageType, string meshName)
 	}
 	break;
 	
+	case SS_HFIELDEQUATION:
+	{
+		//zero field with STOP_MXH
+		StageConfig stageConfig = StageConfig(stageDescriptors(stageType), stageStopDescriptors(STOP_MXH), meshName);
+		stageConfig.set_value(std::string("0, 0, 0"));
+		stageConfig.set_stopvalue(1e-4);
+
+		simStages.push_back(stageConfig);
+	}
+	break;
+
+	case SS_HFIELDEQUATIONSEQ:
+	{
+		//zero field with STOP_MXH
+		StageConfig stageConfig = StageConfig(stageDescriptors(stageType), stageStopDescriptors(STOP_MXH), meshName);
+		stageConfig.set_value(StringSequence(std::string("1: 0, 0, 0")));
+		stageConfig.set_stopvalue(1e-4);
+
+		simStages.push_back(stageConfig);
+	}
+	break;
+
 	case SS_V:
 	{
 		//zero potential with STOP_MXH
@@ -97,6 +119,28 @@ void Simulation::AddGenericStage(SS_ stageType, string meshName)
 		StageConfig stageConfig = StageConfig(stageDescriptors(stageType), stageStopDescriptors(STOP_TIME));
 		stageConfig.set_value(COSOSC(10e-3, 20, 100));
 		stageConfig.set_stopvalue(50e-12);
+
+		simStages.push_back(stageConfig);
+	}
+	break;
+
+	case SS_VEQUATION:
+	{
+		//zero potential with STOP_MXH
+		StageConfig stageConfig = StageConfig(stageDescriptors(stageType), stageStopDescriptors(STOP_MXH));
+		stageConfig.set_value(std::string("0"));
+		stageConfig.set_stopvalue(1e-4);
+
+		simStages.push_back(stageConfig);
+	}
+	break;
+
+	case SS_VEQUATIONSEQ:
+	{
+		//zero potential with STOP_MXH
+		StageConfig stageConfig = StageConfig(stageDescriptors(stageType), stageStopDescriptors(STOP_MXH));
+		stageConfig.set_value(StringSequence(std::string("1: 0")));
+		stageConfig.set_stopvalue(1e-4);
 
 		simStages.push_back(stageConfig);
 	}
@@ -146,6 +190,28 @@ void Simulation::AddGenericStage(SS_ stageType, string meshName)
 	}
 	break;
 
+	case SS_IEQUATION:
+	{
+		//zero current with STOP_MXH
+		StageConfig stageConfig = StageConfig(stageDescriptors(stageType), stageStopDescriptors(STOP_MXH));
+		stageConfig.set_value(std::string("0"));
+		stageConfig.set_stopvalue(1e-4);
+
+		simStages.push_back(stageConfig);
+	}
+	break;
+
+	case SS_IEQUATIONSEQ:
+	{
+		//zero current with STOP_MXH
+		StageConfig stageConfig = StageConfig(stageDescriptors(stageType), stageStopDescriptors(STOP_MXH));
+		stageConfig.set_value(StringSequence(std::string("1: 0")));
+		stageConfig.set_stopvalue(1e-4);
+
+		simStages.push_back(stageConfig);
+	}
+	break;
+
 	case SS_T:
 	{
 		//zero temperature with STOP_MXH
@@ -162,6 +228,28 @@ void Simulation::AddGenericStage(SS_ stageType, string meshName)
 		//T 0.0 to 300K in 10 steps with STOP_MXH
 		StageConfig stageConfig = StageConfig(stageDescriptors(stageType), stageStopDescriptors(STOP_MXH), meshName);
 		stageConfig.set_value(SEQ(0.0, 300.0, 10));
+		stageConfig.set_stopvalue(1e-4);
+
+		simStages.push_back(stageConfig);
+	}
+	break;
+
+	case SS_TEQUATION:
+	{
+		//zero temperature with STOP_MXH
+		StageConfig stageConfig = StageConfig(stageDescriptors(stageType), stageStopDescriptors(STOP_MXH), meshName);
+		stageConfig.set_value(std::string("0"));
+		stageConfig.set_stopvalue(1e-4);
+
+		simStages.push_back(stageConfig);
+	}
+	break;
+		
+	case SS_TEQUATIONSEQ:
+	{
+		//zero temperature with STOP_MXH
+		StageConfig stageConfig = StageConfig(stageDescriptors(stageType), stageStopDescriptors(STOP_MXH), meshName);
+		stageConfig.set_value(StringSequence(std::string("1: 0")));
 		stageConfig.set_stopvalue(1e-4);
 
 		simStages.push_back(stageConfig);
@@ -185,6 +273,28 @@ void Simulation::AddGenericStage(SS_ stageType, string meshName)
 		StageConfig stageConfig = StageConfig(stageDescriptors(stageType), stageStopDescriptors(STOP_TIME), meshName);
 		stageConfig.set_value(SEQ(0.0, 1e19, 10));
 		stageConfig.set_stopvalue(1e-9);
+
+		simStages.push_back(stageConfig);
+	}
+	break;
+
+	case SS_QEQUATION:
+	{
+		//zero Q with STOP_MXH
+		StageConfig stageConfig = StageConfig(stageDescriptors(stageType), stageStopDescriptors(STOP_MXH), meshName);
+		stageConfig.set_value(std::string("0"));
+		stageConfig.set_stopvalue(1e-4);
+
+		simStages.push_back(stageConfig);
+	}
+	break;
+
+	case SS_QEQUATIONSEQ:
+	{
+		//zero Q with STOP_MXH
+		StageConfig stageConfig = StageConfig(stageDescriptors(stageType), stageStopDescriptors(STOP_MXH), meshName);
+		stageConfig.set_value(StringSequence(std::string("1: 0")));
+		stageConfig.set_stopvalue(1e-4);
 
 		simStages.push_back(stageConfig);
 	}
@@ -469,8 +579,8 @@ void Simulation::AdvanceSimulationSchedule(void)
 	}
 }
 
-void Simulation::SetSimulationStageValue(void) {
-
+void Simulation::SetSimulationStageValue(void) 
+{
 	SMesh.NewStageODE();
 
 	//assume stage_step is correct (if called from AdvanceSimulationSchedule it will be. could also be called directly at the start of a simulation with stage_step reset, so it's also correct).
@@ -499,6 +609,59 @@ void Simulation::SetSimulationStageValue(void) {
 	}
 	break;
 
+	case SS_HFIELDEQUATION:
+	{
+		string meshName = simStages[stage_step.major].meshname();
+
+		std::string equation_text = simStages[stage_step.major].get_value<std::string>(stage_step.minor);
+
+		if (SMesh.contains(meshName)) SMesh[meshName]->CallModuleMethod(&Zeeman::SetFieldEquation, equation_text, 0);
+		else if (meshName == SMesh.superMeshHandle) {
+
+			for (int idx = 0; idx < SMesh.size(); idx++) {
+				SMesh[idx]->CallModuleMethod(&Zeeman::SetFieldEquation, equation_text, 0);
+			}
+		}
+	}
+	break;
+
+	case SS_HFIELDEQUATIONSEQ:
+	{
+		string meshName = simStages[stage_step.major].meshname();
+
+		std::string equation_text = simStages[stage_step.major].get_value<std::string>(stage_step.minor);
+		//for a equation sequence we have "n: actual equation", where n is the number of steps
+		std::string equation_equation_text = equation_text.substr(equation_text.find_first_of(':') + 1);
+
+		if (SMesh.contains(meshName)) SMesh[meshName]->CallModuleMethod(&Zeeman::SetFieldEquation, equation_equation_text, stage_step.minor);
+		else if (meshName == SMesh.superMeshHandle) {
+
+			for (int idx = 0; idx < SMesh.size(); idx++) {
+				SMesh[idx]->CallModuleMethod(&Zeeman::SetFieldEquation, equation_equation_text, stage_step.minor);
+			}
+		}
+	}
+	break;
+
+	case SS_VEQUATION:
+	{
+		std::string equation_text = simStages[stage_step.major].get_value<std::string>(stage_step.minor);
+
+		SMesh.CallModuleMethod(&STransport::SetPotentialEquation, equation_text, 0);
+	}
+	break;
+
+	case SS_VEQUATIONSEQ:
+	{
+		std::string equation_text = simStages[stage_step.major].get_value<std::string>(stage_step.minor);
+
+		//for a equation sequence we have "n: actual equation", where n is the number of steps
+		std::string equation_equation_text = equation_text.substr(equation_text.find_first_of(':') + 1);
+
+		SMesh.CallModuleMethod(&STransport::SetPotentialEquation, equation_equation_text, stage_step.minor);
+	}
+	break;
+
 	case SS_V:
 	case SS_VSEQ:
 	case SS_VSIN:
@@ -506,7 +669,7 @@ void Simulation::SetSimulationStageValue(void) {
 	{
 		double potential = simStages[stage_step.major].get_value<double>(stage_step.minor);
 
-		SMesh.CallModuleMethod(&STransport::SetPotential, potential);
+		SMesh.CallModuleMethod(&STransport::SetPotential, potential, true);
 	}
 	break;
 
@@ -517,7 +680,26 @@ void Simulation::SetSimulationStageValue(void) {
 	{
 		double current = simStages[stage_step.major].get_value<double>(stage_step.minor);
 
-		SMesh.CallModuleMethod(&STransport::SetCurrent, current);
+		SMesh.CallModuleMethod(&STransport::SetCurrent, current, true);
+	}
+	break;
+
+	case SS_IEQUATION:
+	{
+		std::string equation_text = simStages[stage_step.major].get_value<std::string>(stage_step.minor);
+
+		SMesh.CallModuleMethod(&STransport::SetCurrentEquation, equation_text, 0);
+	}
+	break;
+
+	case SS_IEQUATIONSEQ:
+	{
+		std::string equation_text = simStages[stage_step.major].get_value<std::string>(stage_step.minor);
+
+		//for a equation sequence we have "n: actual equation", where n is the number of steps
+		std::string equation_equation_text = equation_text.substr(equation_text.find_first_of(':') + 1);
+
+		SMesh.CallModuleMethod(&STransport::SetCurrentEquation, equation_equation_text, stage_step.minor);
 	}
 	break;
 
@@ -540,6 +722,45 @@ void Simulation::SetSimulationStageValue(void) {
 	}
 	break;
 
+	case SS_TEQUATION:
+	{
+		string meshName = simStages[stage_step.major].meshname();
+
+		std::string equation_text = simStages[stage_step.major].get_value<std::string>(stage_step.minor);
+
+		if (SMesh.contains(meshName)) SMesh[meshName]->SetBaseTemperatureEquation(equation_text, 0);
+		else if (meshName == SMesh.superMeshHandle) {
+
+			//all meshes
+			for (int idx = 0; idx < SMesh.size(); idx++) {
+
+				SMesh[idx]->SetBaseTemperatureEquation(equation_text, 0);
+			}
+		}
+	}
+	break;
+
+	case SS_TEQUATIONSEQ:
+	{
+		string meshName = simStages[stage_step.major].meshname();
+
+		std::string equation_text = simStages[stage_step.major].get_value<std::string>(stage_step.minor);
+
+		//for a equation sequence we have "n: actual equation", where n is the number of steps
+		std::string equation_equation_text = equation_text.substr(equation_text.find_first_of(':') + 1);
+
+		if (SMesh.contains(meshName)) SMesh[meshName]->SetBaseTemperatureEquation(equation_text, stage_step.minor);
+		else if (meshName == SMesh.superMeshHandle) {
+
+			//all meshes
+			for (int idx = 0; idx < SMesh.size(); idx++) {
+
+				SMesh[idx]->SetBaseTemperatureEquation(equation_text, stage_step.minor);
+			}
+		}
+	}
+	break;
+
 	case SS_Q:
 	case SS_QSEQ:
 	{
@@ -554,6 +775,41 @@ void Simulation::SetSimulationStageValue(void) {
 			for (int idx = 0; idx < SMesh.size(); idx++) {
 
 				SMesh[idx]->Q = Qvalue;
+			}
+		}
+	}
+	break;
+
+	case SS_QEQUATION:
+	{
+		string meshName = simStages[stage_step.major].meshname();
+
+		std::string equation_text = simStages[stage_step.major].get_value<std::string>(stage_step.minor);
+
+		if (SMesh.contains(meshName)) SMesh[meshName]->CallModuleMethod(&Heat::SetQEquation, equation_text, 0);
+		else if (meshName == SMesh.superMeshHandle) {
+
+			for (int idx = 0; idx < SMesh.size(); idx++) {
+				SMesh[idx]->CallModuleMethod(&Heat::SetQEquation, equation_text, 0);
+			}
+		}
+	}
+	break;
+
+	case SS_QEQUATIONSEQ:
+	{
+		string meshName = simStages[stage_step.major].meshname();
+
+		std::string equation_text = simStages[stage_step.major].get_value<std::string>(stage_step.minor);
+
+		//for a equation sequence we have "n: actual equation", where n is the number of steps
+		std::string equation_equation_text = equation_text.substr(equation_text.find_first_of(':') + 1);
+
+		if (SMesh.contains(meshName)) SMesh[meshName]->CallModuleMethod(&Heat::SetQEquation, equation_text, stage_step.minor);
+		else if (meshName == SMesh.superMeshHandle) {
+
+			for (int idx = 0; idx < SMesh.size(); idx++) {
+				SMesh[idx]->CallModuleMethod(&Heat::SetQEquation, equation_text, stage_step.minor);
 			}
 		}
 	}

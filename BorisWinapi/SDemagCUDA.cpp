@@ -580,7 +580,7 @@ void SDemagCUDA::UpdateField(void)
 					else {
 
 						//add contribution to Heff
-						pSDemagCUDA_Demag[idx]->pMeshCUDA->Heff()->add(pSDemagCUDA_Demag[idx]->pMeshCUDA->n.dim(), pSDemagCUDA_Demag[idx]->Hdemag);
+						pSDemagCUDA_Demag[idx]->pMeshCUDA->Heff()->add_values(pSDemagCUDA_Demag[idx]->pMeshCUDA->n.dim(), pSDemagCUDA_Demag[idx]->Hdemag);
 					}
 				}
 
@@ -598,8 +598,8 @@ void SDemagCUDA::UpdateField(void)
 					else {
 
 						//add contribution to Heff
-						pSDemagCUDA_Demag[idx]->pMeshCUDA->Heff()->add(pSDemagCUDA_Demag[idx]->pMeshCUDA->n.dim(), pSDemagCUDA_Demag[idx]->Hdemag);
-						pSDemagCUDA_Demag[idx]->pMeshCUDA->Heff2()->add(pSDemagCUDA_Demag[idx]->pMeshCUDA->n.dim(), pSDemagCUDA_Demag[idx]->Hdemag);
+						pSDemagCUDA_Demag[idx]->pMeshCUDA->Heff()->add_values(pSDemagCUDA_Demag[idx]->pMeshCUDA->n.dim(), pSDemagCUDA_Demag[idx]->Hdemag);
+						pSDemagCUDA_Demag[idx]->pMeshCUDA->Heff2()->add_values(pSDemagCUDA_Demag[idx]->pMeshCUDA->n.dim(), pSDemagCUDA_Demag[idx]->Hdemag);
 					}
 				}
 			}

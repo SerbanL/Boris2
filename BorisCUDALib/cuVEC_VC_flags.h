@@ -30,10 +30,10 @@ __host__ bool cuVEC_VC<VType>::use_extended_flags(void)
 		|| get_gpu_value(robin_nz) != cuReal2()
 		|| get_gpu_value(robin_v) != cuReal2());
 
-	bool using_extended_flags = (using_dirichlet || using_robin);
+	bool using_extended_flags_cpu = (using_dirichlet || using_robin);
 
 	//make sure ngbrFlags2 has the correct memory allocated only if currently empty
-	if (using_extended_flags && isnullgpuptr(ngbrFlags2)) {
+	if (using_extended_flags_cpu && isnullgpuptr(ngbrFlags2)) {
 
 		cudaError_t error = gpu_alloc_managed(ngbrFlags2, get_ngbrFlags_size());
 		if (error != cudaSuccess) return false;
@@ -41,16 +41,9 @@ __host__ bool cuVEC_VC<VType>::use_extended_flags(void)
 		gpu_set_managed(ngbrFlags2, (int)0, get_ngbrFlags_size());
 	}
 
-	if (!using_extended_flags) {
+	set_gpu_value(using_extended_flags, using_extended_flags_cpu);
 
-		set_gpu_value(using_extended_flags, false);
-	}
-	else {
-
-		set_gpu_value(using_extended_flags, true);
-	}
-
-	return using_extended_flags;
+	return using_extended_flags_cpu;
 }
 
 //from NF2_DIRICHLET type flag and cell_idx return boundary value from one of the dirichlet vectors

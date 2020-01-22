@@ -123,7 +123,10 @@ private:
 	const string defFont;
 	const float defFontSize;
 
-	int fontPixHeight;
+	float fontPixHeight;
+
+	//for monospaced fonts the width is fixed - calculated once when font is set
+	float monospacedfontPixWidth;
 
 	//collection of objects used to draw geometrical shapes
 	ObjectBufferCollection objCol;
@@ -162,6 +165,7 @@ public:
 	HRESULT CreatePath(D2D1_POINT_2F *ppathpoints, UINT32 pointsCount, ID2D1PathGeometry **ppPathGeometry);
 
 	void CalculateFontPixelsHeight(void);
+	void CalculateMonospacedFontPixelsWidth(void);
 
 	//---------------------------------------------------
 
@@ -198,8 +202,11 @@ public:
 	void DrawCoordinateSystem(D2D1_RECT_F spaceRect);
 
 	//Get dimensions in physical pixels of formatted text string
-	int GetFontStringPixelsWidth(string str, FormatSpecifier fs);
-	int GetFontPixelsHeight(void) { return fontPixHeight; }
+	float GetFontStringPixelsWidth(const string& str, const FormatSpecifier& fs);
+	float GetMonospacedFontStringPixelsWidth(const string& str);
+
+	float GetFontPixelsHeight(void) { return fontPixHeight; }
+	float GetMonospacedFontPixelsWidth(void) { return monospacedfontPixWidth; }
 
 	//save currently displayed image (in specified rectangle) to file
 	bool SaveScreenToFile(string fileName, D2D1_RECT_F capture_rect);

@@ -98,7 +98,7 @@ __global__ void RunAHeun_Step1_withReductions_Kernel(ManagedDiffEqFMCUDA& cuDiff
 				//First save predicted magnetization for lte calculation
 				cuReal3 saveM = (*cuMesh.pM)[idx];
 
-				//Now estimate magnetization using the second trapezoidal Euler step formula
+				//Now estimate magnetization using the second trapezoidal Euler step equation
 				(*cuMesh.pM)[idx] = ((*cuDiffEq.psM1)[idx] + (*cuMesh.pM)[idx] + rhs * dT) / 2;
 
 				if (*cuDiffEq.prenormalize) {
@@ -153,7 +153,7 @@ __global__ void RunAHeun_Step1_Kernel(ManagedDiffEqFMCUDA& cuDiffEq, ManagedMesh
 				//First save predicted magnetization for lte calculation
 				cuReal3 saveM = (*cuMesh.pM)[idx];
 
-				//Now estimate magnetization using the second trapezoidal Euler step formula
+				//Now estimate magnetization using the second trapezoidal Euler step equation
 				(*cuMesh.pM)[idx] = ((*cuDiffEq.psM1)[idx] + (*cuMesh.pM)[idx] + rhs * dT) / 2;
 
 				if (*cuDiffEq.prenormalize) {

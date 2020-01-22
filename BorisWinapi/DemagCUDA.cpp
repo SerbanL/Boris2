@@ -124,9 +124,9 @@ void DemagCUDA::UpdateField(void)
 		}
 
 		//add contribution to Heff
-		pMeshCUDA->Heff()->add(pMeshCUDA->n.dim(), Hdemag);
+		pMeshCUDA->Heff()->add_values(pMeshCUDA->n.dim(), Hdemag);
 
-		if (pMeshCUDA->GetMeshType() == MESH_ANTIFERROMAGNETIC) pMeshCUDA->Heff2()->add(pMeshCUDA->n.dim(), Hdemag);
+		if (pMeshCUDA->GetMeshType() == MESH_ANTIFERROMAGNETIC) pMeshCUDA->Heff2()->add_values(pMeshCUDA->n.dim(), Hdemag);
 	}
 	else {
 

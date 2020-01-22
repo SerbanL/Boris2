@@ -120,6 +120,10 @@ void BorisGraphics::Setup2DGraphicsResources(void) {
 	pBoldItalicTextFormat->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_NEAR);
 	pBoldItalicTextFormat->SetWordWrapping(DWRITE_WORD_WRAPPING_NO_WRAP);				//wrapping done manually, don't need in-built one
 
+	//if this is a monospaced font then the width value will be correct - save it
+	CalculateMonospacedFontPixelsWidth();
+	
+	//calculate height
 	CalculateFontPixelsHeight();
 }
 
@@ -206,8 +210,8 @@ HRESULT BorisGraphics::CreateTextFormat(string fontName, FLOAT fontSize, DWRITE_
 	return hr;
 }
 
-void BorisGraphics::CalculateFontPixelsHeight(void) {
-
+void BorisGraphics::CalculateFontPixelsHeight(void) 
+{
 	HRESULT hr = S_OK;
 
 	IDWriteTextLayout *pTextLayout = nullptr;
@@ -230,7 +234,29 @@ void BorisGraphics::CalculateFontPixelsHeight(void) {
 
 	SafeRelease(&pTextLayout);
 
-	fontPixHeight = (int)TextMetrics.height;
+	fontPixHeight = TextMetrics.height;
+}
+
+void BorisGraphics::CalculateMonospacedFontPixelsWidth(void)
+{
+	HRESULT hr = S_OK;
+
+	IDWriteTextLayout *pTextLayout = nullptr;
+	DWRITE_TEXT_METRICS TextMetrics;
+
+	if (SUCCEEDED(hr)) hr = pWriteFactory->CreateTextLayout(L"A", 1, pNormalTextFormat, (FLOAT)wndWidth, (FLOAT)wndHeight, &pTextLayout);
+
+	if (SUCCEEDED(hr)) hr = pTextLayout->GetMetrics(&TextMetrics);
+
+	//DWRITE_TEXT_METRICS struct has values specified in DIP (device independent pixels).
+	//To convert to physical pixels, use the conversion : pixels = DIP * DPI/96, where DPI is the dots per inch setting (see https://msdn.microsoft.com/en-gb/library/windows/desktop/ff684173%28v=vs.85%29.aspx)
+
+	//set width to physical pixels
+	TextMetrics.width = TextMetrics.width * dpiX / 96;
+
+	SafeRelease(&pTextLayout);
+
+	monospacedfontPixWidth = TextMetrics.width;
 }
 
 //Calculate FOV required to fit the given number of logical units along the viewing width. viewDims is the view port size in pixels.
@@ -480,8 +506,8 @@ void BorisGraphics::DrawCoordinateSystem(D2D1_RECT_F spaceRect) {
 	Set3DOriginPixelPosition(_view_shiftX, _view_shiftY, _view_shiftZ);
 }
 
-int BorisGraphics::GetFontStringPixelsWidth(string str, FormatSpecifier fs) {
-
+float BorisGraphics::GetFontStringPixelsWidth(const string& str, const FormatSpecifier& fs) 
+{
 	HRESULT hr = S_OK;
 
 	wchar_t *str_w = StringtoWCHARPointer(str);
@@ -501,19 +527,18 @@ int BorisGraphics::GetFontStringPixelsWidth(string str, FormatSpecifier fs) {
 	//To convert to physical pixels, use the conversion : pixels = DIP * DPI/96, where DPI is the dots per inch setting (see https://msdn.microsoft.com/en-gb/library/windows/desktop/ff684173%28v=vs.85%29.aspx)
 
 	//set width to physical pixels
-	TextMetrics.width = TextMetrics.widthIncludingTrailingWhitespace * dpiX/96;
+	TextMetrics.width = TextMetrics.width * dpiX/96;
 	
-	if(!SUCCEEDED(hr)) { 
-
-		TextMetrics.width = defFontSize;
-	}
-
 	SafeRelease(&pTextLayout);
 
 	if(str_w) delete [] str_w;
 
-	//need to include an extra pixel : if you use this width to draw text in a box, it will cause the text to wrap
-	return ((int)TextMetrics.width + 1);
+	return TextMetrics.width;
+}
+
+float BorisGraphics::GetMonospacedFontStringPixelsWidth(const string& str)
+{
+	return monospacedfontPixWidth * str.length();
 }
 
 bool BorisGraphics::SaveScreenToFile(string fileName, D2D1_RECT_F capture_rect)

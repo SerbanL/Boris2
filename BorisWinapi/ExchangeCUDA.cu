@@ -27,7 +27,6 @@ __global__ void ExchangeCUDA_FM_UpdateField(ManagedMeshCUDA& cuMesh, cuBReal& en
 
 			cuBReal Ms = *cuMesh.pMs;
 			cuBReal A = *cuMesh.pA;
-			
 			cuMesh.update_parameters_mcoarse(idx, *cuMesh.pMs, Ms, *cuMesh.pA, A);
 
 			Hexch = 2 * A * M.delsq_neu(idx) / ((cuBReal)MU0 * Ms * Ms);

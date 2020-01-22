@@ -9,10 +9,12 @@
 
 Heat::Heat(Mesh *pMesh_) :
 	Modules(),
+	Q_equation({ "x", "y", "z", "t" }),
 	ProgramStateNames(this, 
 		{ 
 			VINFO(T_ambient), VINFO(alpha_boundary), 
-			VINFO(insulate_px), VINFO(insulate_nx), VINFO(insulate_py), VINFO(insulate_ny), VINFO(insulate_pz), VINFO(insulate_nz) 
+			VINFO(insulate_px), VINFO(insulate_nx), VINFO(insulate_py), VINFO(insulate_ny), VINFO(insulate_pz), VINFO(insulate_nz),
+			VINFO(Q_equation)
 		}, {})
 {
 	pMesh = pMesh_;
@@ -58,6 +60,17 @@ BError Heat::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 	bool success = true;
 
 	if (ucfg::check_cfgflags(cfgMessage, UPDATECONFIG_MESHSHAPECHANGE, UPDATECONFIG_MESHCHANGE, UPDATECONFIG_MODULEADDED, UPDATECONFIG_MODULEDELETED)) {
+
+		//update mesh dimensions in equation constants
+		if (Q_equation.is_set()) {
+
+			DBL3 meshDim = pMesh->GetMeshDimensions();
+
+			Q_equation.set_constant("Lx", meshDim.x, false);
+			Q_equation.set_constant("Ly", meshDim.y, false);
+			Q_equation.set_constant("Lz", meshDim.z, false);
+			Q_equation.remake_equation();
+		}
 
 		//make sure the cellsize divides the mesh rectangle
 		pMesh->n_t = round(pMesh->meshRect / pMesh->h_t);
@@ -138,6 +151,25 @@ BError Heat::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 	return error;
 }
 
+void Heat::UpdateConfiguration_Values(UPDATECONFIG_ cfgMessage)
+{
+	if (cfgMessage == UPDATECONFIG_TEQUATION_CONSTANTS) {
+
+		UpdateTEquationUserConstants(false);
+	}
+	else if (cfgMessage == UPDATECONFIG_TEQUATION_CLEAR) {
+
+		if (Q_equation.is_set()) Q_equation.clear();
+	}
+
+#if COMPILECUDA == 1
+	if (pModuleCUDA) {
+
+		pModuleCUDA->UpdateConfiguration_Values(cfgMessage);
+	}
+#endif
+}
+
 BError Heat::MakeCUDAModule(void)
 {
 	BError error(CLASS_STR(Heat));
@@ -169,42 +201,99 @@ void Heat::IterateHeatEquation(double dT)
 {
 	//FTCS:
 
-	//1. First solve the RHS of the heat equation (centered space) : dT/dt = k del_sq T + j^2, where k = K/ c*ro , j^2 = Jc^2 / (c*ro*sigma)
-	#pragma omp parallel for
-	for (int idx = 0; idx < pMesh->Temp.linear_size(); idx++) {
+	/////////////////////////////////////////
+	// Fixed Q set (which could be zero)
+	/////////////////////////////////////////
 
-		if (!pMesh->Temp.is_not_empty(idx) || !pMesh->Temp.is_not_cmbnd(idx)) continue;
+	if (!Q_equation.is_set()) {
 
-		double density = pMesh->density;
-		double shc = pMesh->shc;
-		double thermCond = pMesh->thermCond;
-		pMesh->update_parameters_tcoarse(idx, pMesh->density, density, pMesh->shc, shc, pMesh->thermCond, thermCond);
+		//1. First solve the RHS of the heat equation (centered space) : dT/dt = k del_sq T + j^2, where k = K/ c*ro , j^2 = Jc^2 / (c*ro*sigma)
+#pragma omp parallel for
+		for (int idx = 0; idx < pMesh->Temp.linear_size(); idx++) {
 
-		double cro = density * shc;
-		double K = thermCond;
+			if (!pMesh->Temp.is_not_empty(idx) || !pMesh->Temp.is_not_cmbnd(idx)) continue;
 
-		//heat equation with Robin boundaries (based on Newton's law of cooling)
-		heatEq_RHS[idx] = pMesh->Temp.delsq_robin(idx, K) * K / cro;
+			double density = pMesh->density;
+			double shc = pMesh->shc;
+			double thermCond = pMesh->thermCond;
+			pMesh->update_parameters_tcoarse(idx, pMesh->density, density, pMesh->shc, shc, pMesh->thermCond, thermCond);
 
-		//add Joule heating if set
-		if (pMesh->E.linear_size()) {
+			double cro = density * shc;
+			double K = thermCond;
 
-			DBL3 position = pMesh->Temp.cellidx_to_position(idx);
+			//heat equation with Robin boundaries (based on Newton's law of cooling)
+			heatEq_RHS[idx] = pMesh->Temp.delsq_robin(idx, K) * K / cro;
 
-			double elC_value = pMesh->elC.weighted_average(position, pMesh->Temp.h);
-			DBL3 E_value = pMesh->E.weighted_average(position, pMesh->Temp.h);
+			//add Joule heating if set
+			if (pMesh->E.linear_size()) {
 
-			//add Joule heating source term
-			heatEq_RHS[idx] += (elC_value * E_value * E_value) / cro;
+				DBL3 position = pMesh->Temp.cellidx_to_position(idx);
+
+				double elC_value = pMesh->elC.weighted_average(position, pMesh->Temp.h);
+				DBL3 E_value = pMesh->E.weighted_average(position, pMesh->Temp.h);
+
+				//add Joule heating source term
+				heatEq_RHS[idx] += (elC_value * E_value * E_value) / cro;
+			}
+
+			//add heat source contribution if set
+			if (IsNZ(pMesh->Q.get0())) {
+
+				double Q = pMesh->Q;
+				pMesh->update_parameters_tcoarse(idx, pMesh->Q, Q);
+
+				heatEq_RHS[idx] += Q / cro;
+			}
 		}
+	}
 
-		//add heat source contribution if set
-		if (IsNZ(pMesh->Q.get0())) {
+	/////////////////////////////////////////
+	// Q set using text equation
+	/////////////////////////////////////////
 
-			double Q = pMesh->Q;
-			pMesh->update_parameters_tcoarse(idx, pMesh->Q, Q);
+	else {
 
-			heatEq_RHS[idx] += Q / cro;
+		double time = pSMesh->GetStageTime();
+
+		//1. First solve the RHS of the heat equation (centered space) : dT/dt = k del_sq T + j^2, where k = K/ c*ro , j^2 = Jc^2 / (c*ro*sigma)
+		for (int j = 0; j < pMesh->n_t.y; j++) {
+			for (int k = 0; k < pMesh->n_t.z; k++) {
+				for (int i = 0; i < pMesh->n_t.x; i++) {
+
+					int idx = i + j * pMesh->n_t.x + k * pMesh->n_t.x*pMesh->n_t.y;
+
+					if (!pMesh->Temp.is_not_empty(idx) || !pMesh->Temp.is_not_cmbnd(idx)) continue;
+
+					double density = pMesh->density;
+					double shc = pMesh->shc;
+					double thermCond = pMesh->thermCond;
+					pMesh->update_parameters_tcoarse(idx, pMesh->density, density, pMesh->shc, shc, pMesh->thermCond, thermCond);
+
+					double cro = density * shc;
+					double K = thermCond;
+
+					//heat equation with Robin boundaries (based on Newton's law of cooling)
+					heatEq_RHS[idx] = pMesh->Temp.delsq_robin(idx, K) * K / cro;
+
+					//add Joule heating if set
+					if (pMesh->E.linear_size()) {
+
+						DBL3 position = pMesh->Temp.cellidx_to_position(idx);
+
+						double elC_value = pMesh->elC.weighted_average(position, pMesh->Temp.h);
+						DBL3 E_value = pMesh->E.weighted_average(position, pMesh->Temp.h);
+
+						//add Joule heating source term
+						heatEq_RHS[idx] += (elC_value * E_value * E_value) / cro;
+					}
+
+					//add heat source contribution
+					DBL3 relpos = DBL3(i + 0.5, j + 0.5, k + 0.5) & pMesh->h_t;
+					double Q = Q_equation.evaluate(relpos.x, relpos.y, relpos.z, time);
+
+					heatEq_RHS[idx] += Q / cro;
+				}
+			}
 		}
 	}
 
@@ -369,6 +458,58 @@ void Heat::SetBaseTemperature(double Temperature)
 				pMesh->Temp[idx] = cT * Temperature;
 			}
 		}
+	}
+}
+
+//Set Q_equation text equation object
+BError Heat::SetQEquation(string equation_string, int step)
+{
+	BError error(CLASS_STR(Heat));
+
+	DBL3 meshDim = pMesh->GetMeshDimensions();
+
+	//set equation if not already set, or this is the first step in a stage
+	if (!Q_equation.is_set() || step == 0) {
+
+		//important to set user constants first : if these are required then the make_from_string call will fail. This may mean the user constants are not set when we expect them to.
+		UpdateTEquationUserConstants(false);
+
+		if (!Q_equation.make_from_string(equation_string, { {"Lx", meshDim.x}, {"Ly", meshDim.y}, {"Lz", meshDim.z}, {"Ss", 0} })) return error(BERROR_INCORRECTSTRING);
+	}
+	else {
+
+		//equation set and not the first step : adjust Ss constant
+		Q_equation.set_constant("Ss", step);
+		UpdateTEquationUserConstants(false);
+	}
+
+	//-------------------------- CUDA mirroring
+
+#if COMPILECUDA == 1
+	if (pModuleCUDA) error = reinterpret_cast<HeatCUDA*>(pModuleCUDA)->SetQEquation(Q_equation.get_scalar_fspec());
+#endif
+
+	return error;
+}
+
+//Update TEquation object with user constants values
+void Heat::UpdateTEquationUserConstants(bool makeCuda)
+{
+	if (pMesh->userConstants.size()) {
+
+		vector<pair<string, double>> constants(pMesh->userConstants.size());
+		for (int idx = 0; idx < pMesh->userConstants.size(); idx++) {
+
+			constants[idx] = { pMesh->userConstants.get_key_from_index(idx), pMesh->userConstants[idx] };
+		}
+
+		Q_equation.set_constants(constants);
+
+		//-------------------------- CUDA mirroring
+
+#if COMPILECUDA == 1
+		if (pModuleCUDA && makeCuda) reinterpret_cast<HeatCUDA*>(pModuleCUDA)->SetQEquation(Q_equation.get_scalar_fspec());
+#endif
 	}
 }
 

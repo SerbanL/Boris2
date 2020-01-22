@@ -144,11 +144,12 @@ BError ODECommon::SwitchCUDAState(bool cudaState)
 	//are we switching to cuda?
 	if (cudaState) {
 
-		///delete cuda module object and null (just in case)
-		if (pODECUDA) delete pODECUDA;
-		pODECUDA = nullptr;
+		if (!pODECUDA) {
 
-		pODECUDA = new ODECommonCUDA(this);
+			pODECUDA = new ODECommonCUDA(this);
+			//setup the managed cuDiffEq object with pointers to all required data for differential equations calculations
+			if (!error) error = (pODECUDA->Get_ManagedDiffEq_CommonCUDA())()->set_pointers(pODECUDA);
+		}
 	}
 	else {
 

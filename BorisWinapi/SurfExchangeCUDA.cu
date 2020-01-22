@@ -47,7 +47,7 @@ __global__ void SurfExchangeCUDA_Top_UpdateField(ManagedMeshCUDA& cuMesh, Manage
 				//coupling layer thickness
 				cuBReal thickness_top = M_Top.rect.e.z - M_Top.rect.s.z;
 
-				//effective thickness for the coupling formula
+				//effective thickness for the coupling equation
 				cuBReal thickness_eff = 2 * thickness * thickness_top / (thickness + thickness_top);
 
 				//can't couple to an empty cell
@@ -119,7 +119,7 @@ __global__ void SurfExchangeCUDA_Bot_UpdateField(ManagedMeshCUDA& cuMesh, Manage
 				//coupling layer thickness
 				cuBReal thickness_bot = M_Bot.rect.e.z - M_Bot.rect.s.z;
 
-				//effective thickness for the coupling formula
+				//effective thickness for the coupling equation
 				cuBReal thickness_eff = 2 * thickness * thickness_bot / (thickness + thickness_bot);
 
 				//can't couple to an empty cell

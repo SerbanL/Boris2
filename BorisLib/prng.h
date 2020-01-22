@@ -34,7 +34,7 @@ public:
 	{
 		int tn = omp_get_thread_num();
 
-		//LCG formula used to generate next number in sequence : the modulo operation is free since unsigned is 32 bits wide
+		//LCG equation used to generate next number in sequence : the modulo operation is free since unsigned is 32 bits wide
 		prn[tn] = ((unsigned)1664525 * prn[tn] + (unsigned)1013904223);
 
 		return prn[tn];

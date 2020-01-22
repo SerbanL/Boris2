@@ -14,12 +14,16 @@
 
 #include "TextFormatting.h"
 
+//maximum characters a text object can display (text it actually holds is not limited, but we do want to limit the text displayed on screen).
+#define MAX_TEXTOBJECT_LENGTH	50
+
 using namespace std;
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////TEXT OBJECT
 
-class TextObject : public GraphicalObject {
-
+class TextObject : 
+	public GraphicalObject 
+{
 	//TextObject should not be used directly from outside, but rather through TextLine and TextLines
 	friend class TextLine;
 	friend class TextLines;
@@ -29,10 +33,13 @@ class TextObject : public GraphicalObject {
 	//used for synchronised taos shared vector
 	typedef shared_ptr< vector<tao_ptr> > tao_vec_ptr;
 
-private: //private data
+private:
 
-	//The text string
-	string text;
+	//This is the full text stored in this object, which may be longer than the displayed text (only interactive objects which are not text alignment objects are limited in display length)
+	string fulltext;
+
+	//number of characters to display from fulltext : limit to MAX_TEXTOBJECT_LENGTH
+	int displayTextLength;
 
 	//text box for drawing
 	D2D1_RECT_F toRect;
@@ -49,7 +56,7 @@ private: //private data
 	//If one gets deleted then it removes its entry in the vector, thus this information is immediately available to all other synchronised taos. The first tao makes the shared_ptr, the others which synchronise on creation just add themselves to the vector.
 	tao_vec_ptr aligned_objects = nullptr;
 
-private:  //private methods
+private:
 
 	//-------------------Draw
 
@@ -68,12 +75,35 @@ private:  //private methods
 	//from this object extract the first word (identified using a space separator) to the new object (keep same formatting), including the space separator. If no space found then shift the whole text.
 	void ShiftFirstWord(TextObject &oneWordTextObject);
 
+	//from the set full text set the text string to display
+	void set_display_text_length(void)
+	{
+		//only limit interactive objects which are not text alignment objects
+		if (pActionHandler && !aligned_objects) {
+
+			if (fulltext.length() >= MAX_TEXTOBJECT_LENGTH) displayTextLength = MAX_TEXTOBJECT_LENGTH;
+			else displayTextLength = fulltext.length();
+		}
+		else displayTextLength = fulltext.length();
+	}
+
 	//-------------------Coordinates and rectangles set / get methods
 
-	//calculate rectangle for current top-left coordinates
-	void CalculateRectangle(void) { float width = (float)pBG->GetFontStringPixelsWidth(text, fs); float height = (float)pBG->GetFontPixelsHeight(); toRect = D2D1::RectF(toRect.left, toRect.top, toRect.left + width, toRect.top + height); }
+	//calculate rectangle for current top-left coordinates (for display purposes, so use text)
+	void CalculateRectangle(void) 
+	{ 
+		float width = (float)pBG->GetMonospacedFontPixelsWidth() * displayTextLength;
+		float height = (float)pBG->GetFontPixelsHeight(); 
+		toRect = D2D1::RectF(toRect.left, toRect.top, toRect.left + width, toRect.top + height); 
+	}
+
 	//calculate rectangle for given top-left coordinates
-	void CalculateRectangle(float X, float Y) { float width = (float)pBG->GetFontStringPixelsWidth(text, fs); float height = (float)pBG->GetFontPixelsHeight(); toRect = D2D1::RectF(X, Y, X + width, Y + height); }
+	void CalculateRectangle(float X, float Y) 
+	{ 
+		float width = (float)pBG->GetMonospacedFontPixelsWidth() * displayTextLength;
+		float height = (float)pBG->GetFontPixelsHeight(); 
+		toRect = D2D1::RectF(X, Y, X + width, Y + height); 
+	}
 
 	//set top-left coordinates but do not calculate rectangle
 	void set_top_left(float X, float Y) { toRect = D2D1::RectF(X, Y, X + width(), Y + height()); }
@@ -93,12 +123,10 @@ private:  //private methods
 
 	//-------------------Various properties getters and setters
 
-	int length(void) { return (int)text.length(); }
-	bool IsBlank(void) { return (text.compare("") == 0); }
+	int displayedtext_length(void) { return displayTextLength; }
+	bool IsBlank(void) { return (fulltext.compare("") == 0); }
 
 	void SetFormatSpecifier(FormatSpecifier fs) { this->fs = fs; set_top_left(toRect.left, toRect.top); }
-
-	FormatSpecifier GetFormatSpecifier(void) { return fs; }
 
 	//get tao number
 	int get_text_alignment_object_number(void) { return pActionHandler->iop.majorId; }
@@ -133,13 +161,29 @@ public:  //public methods
 	//-------------------Text modification methods
 
 	//Add to TextObject text
-	template <typename VType> void operator+=(const VType &rhs) { text += ToString(rhs); CalculateRectangle(); }
+	template <typename VType> void operator+=(const VType &rhs) 
+	{ 
+		fulltext += ToString(rhs); 
+		set_display_text_length();
+		CalculateRectangle(); 
+	}
 
 	//use this to insert text in TextObject at the index position
-	template <typename VType> void insert(int charIdx, VType &rhs) { if (!GoodIdx((int)text.length(), charIdx)) return; text = text.substr(0, charIdx) + ToString(rhs) + text.substr(charIdx); CalculateRectangle(); }
+	template <typename VType> void insert(int charIdx, VType &rhs) 
+	{ 
+		if (!GoodIdx((int)fulltext.length(), charIdx)) return;
+		fulltext = fulltext.substr(0, charIdx) + ToString(rhs) + fulltext.substr(charIdx);
+		set_display_text_length();
+		CalculateRectangle(); 
+	}
 
 	//Set TextObject text
-	template <typename VType> void set(VType &rhs) { text = ToString(rhs); CalculateRectangle(); }
+	template <typename VType> void set(VType &rhs) 
+	{ 
+		fulltext = ToString(rhs);
+		set_display_text_length();
+		CalculateRectangle(); 
+	}
 
 	//delete character from end of string or from the given index (if index is valid). Return true if deletion results in empty string.
 	bool delchar(int delIdx);
@@ -151,18 +195,20 @@ public:  //public methods
 	//-------------------Text get methods
 
 	//Get textObject text into a string
-	friend string& operator<<(string &lhs, const TextObject &rhs) { lhs = rhs.text; return lhs; }
+	friend string& operator<<(string &lhs, const TextObject &rhs) { lhs = rhs.fulltext; return lhs; }
 
 	//as above but using a method
-	string GetText(void) { return text; }
+	string GetText(void) { return fulltext; }
 
 	//Get textObject text into a string by adding to it
-	friend string& operator+=(string &lhs, const TextObject &rhs) { lhs += rhs.text; return lhs; }
+	friend string& operator+=(string &lhs, const TextObject &rhs) { lhs += rhs.fulltext; return lhs; }
+
+	FormatSpecifier GetFormatSpecifier(void) { return fs; }
 
 	//-------------------Comparisons
 
 	//complete comparison : text and formatting for non-interactive objects. Interactive objects are never considered identical.
-	bool operator==(const TextObject &rhs) { return (text.compare(rhs.text) == 0 && fs == rhs.fs && pActionHandler == nullptr && rhs.pActionHandler == nullptr); }
+	bool operator==(const TextObject &rhs) { return (fulltext.compare(rhs.fulltext) == 0 && fs == rhs.fs && pActionHandler == nullptr && rhs.pActionHandler == nullptr); }
 
 	//same type of object ? i.e. same formatting for non-interactive objects. Interactive objects are always considered to be different.
 	bool SameType(const TextObject &rhs) { return (fs == rhs.fs && pActionHandler == nullptr && rhs.pActionHandler == nullptr); }
@@ -180,6 +226,9 @@ public:  //public methods
 
 	//this object has been interacted with as specified in the action code (e.g. a moust click. Note here we don't need to know what actionCode is, just pass it to the handler which will know what to do)
 	InteractiveObjectActionOutcome ObjectInteraction(int actionCode) { if (pActionHandler && !aligned_objects) return pActionHandler->Action(actionCode, this); else return (AO_)0; }
+	
+	//same as above, but when the Action handler is called, instead of passing this TextObject, pass pInteractingObject
+	InteractiveObjectActionOutcome ObjectInteraction(int actionCode, TextObject* pInteractingObject) { if (pActionHandler && !aligned_objects) return pActionHandler->Action(actionCode, pInteractingObject); else return (AO_)0; }
 
 	//check state of this object using the state handler (if set, i.e. an interactive object).
 	InteractiveObjectStateChange CheckStateChange(void);
@@ -211,15 +260,15 @@ class TextLine {
 
 	friend class TextLines;
 
-private: //private data
+private:
 
 	vector<TextObject> textLineVEC;
 
 	SPLIT_ splitLine;
 
-public:  //public data
+public:
 
-private: //private methods
+private:
 
 	//-------------------Draw
 
@@ -260,7 +309,7 @@ private: //private methods
 	//elongate rectangle of last TextObject on this line up to the widthLimit value - used for split lines
 	TextLine& SetSplitLineRectangle(float widthLimit);
 
-public:  //public methods
+public:
 
 	TextLine(void);
 
@@ -354,9 +403,9 @@ public:  //public methods
 
 class TextLines {
 
-private: //private data
+private:
 
-		 //Action handler functionoid: pass this to interactive text objects. When the text objects are interacted with, they will use this functionoid to call the handler routine, using their id and message parameter
+	//Action handler functionoid: pass this to interactive text objects. When the text objects are interacted with, they will use this functionoid to call the handler routine, using their id and message parameter
 	SimTOFunct * pActionHandler;
 
 	//main text storage - line by line
@@ -365,9 +414,9 @@ private: //private data
 	//if set then text is wrapped to this limit
 	float widthLimit;
 
-public:  //public data
+public:
 
-private: //private methods
+private:
 
 	//Recalculate rectangles of TextLine objects from given index up (all if invalid index)
 	void RecalculateRectangles(int idx = -1);
@@ -393,7 +442,7 @@ private: //private methods
 	//delete line at given index, allowing deletion of a line in a split line sequence
 	void delline(int lineIdx);
 
-public:  //public methods
+public:
 
 	TextLines(void);
 	TextLines(SimTOFunct *pActionHandler);
@@ -407,6 +456,12 @@ public:  //public methods
 	//draw textLines starting from topLine index, drawing all lines up to the given height. The lines are drawn relative to the topLine position, i.e. subtract top Y coordinate of topLine. Add dX and dY shifts.
 	//return true if any lines in view had to be recalculated to fit the window width. doDraw flag decides if the lines are actually drawn (doDraw = false is used to test line width overflow, without actually updating the graphical display)
 	bool Draw(int &topLine, float height, float dX = 0, float dY = 0, bool doDraw = true);
+
+	//Faster version of Draw where we don't refresh any interactive objects but draw them in their current state. Also doesn't re-check for re-alignment of text objects, assumes everything is correct.
+	//Thus this method purely draws the screen from current state, which is assumed to be in the correct.
+	//use this whenever you know there cannot be any changes to interactive objects or any other settings (e.g. window dimensions)
+	//when there are alot of interactive objects on screen the refresh rate can drop significantly making the interface sluggish, so use the full Draw method sparingly)
+	void Draw_Quick(int &topLine, float height, float dX = 0, float dY = 0);
 
 	//-------------------Indexing
 

@@ -133,7 +133,7 @@ public:
 	//obtain average value in the given relative rect from the displayed quantity in the named mesh
 	string get_meshaverage(SuperMesh *pSMesh, string meshName, Rect rect);
 
-	//calculate topological charge in M and given rect, using formula Q = Integral(m.(dm/dx x dm/dy) dxdy) / 4PI
+	//calculate topological charge in M and given rect, using equation Q = Integral(m.(dm/dx x dm/dy) dxdy) / 4PI
 	BError get_topological_charge(VEC_VC<DBL3>& M, double x, double y, double radius, double* pQ);
 
 	//--------------------- dp array manipulation

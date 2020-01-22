@@ -13,7 +13,8 @@ MetalMesh::MetalMesh(SuperMesh *pSMesh_) :
 			//Members in this derived class
 
 			//Material Parameters
-			VINFO(elecCond), VINFO(De), VINFO(n_density), VINFO(SHA), VINFO(iSHA), VINFO(l_sf), VINFO(Gi), VINFO(Gmix), VINFO(base_temperature), VINFO(thermCond), VINFO(density), VINFO(shc), VINFO(cT), VINFO(Q)
+			VINFO(elecCond), VINFO(De), VINFO(n_density), VINFO(SHA), VINFO(iSHA), VINFO(l_sf), VINFO(Gi), VINFO(Gmix), 
+			VINFO(base_temperature), VINFO(T_equation), VINFO(thermCond), VINFO(density), VINFO(shc), VINFO(cT), VINFO(Q)
 		},
 		{
 			//Modules Implementations
@@ -30,7 +31,8 @@ MetalMesh::MetalMesh(Rect meshRect_, DBL3 h_, SuperMesh *pSMesh_) :
 			//Members in this derived class
 
 			//Material Parameters
-			VINFO(elecCond), VINFO(De), VINFO(n_density), VINFO(SHA), VINFO(iSHA), VINFO(l_sf), VINFO(Gi), VINFO(Gmix), VINFO(base_temperature), VINFO(thermCond), VINFO(density), VINFO(shc), VINFO(cT), VINFO(Q)
+			VINFO(elecCond), VINFO(De), VINFO(n_density), VINFO(SHA), VINFO(iSHA), VINFO(l_sf), VINFO(Gi), VINFO(Gmix), 
+			VINFO(base_temperature), VINFO(T_equation), VINFO(thermCond), VINFO(density), VINFO(shc), VINFO(cT), VINFO(Q)
 		},
 		{
 			//Modules Implementations
@@ -76,6 +78,9 @@ BError MetalMesh::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 
 		//update material parameters spatial dependence as cellsize and rectangle could have changed
 		if (!error && !update_meshparam_var()) error(BERROR_OUTOFMEMORY_NCRIT);
+
+		//update any text equations used in mesh parameters (dependence on mesh dimensions possible)
+		if (!error) update_meshparam_equations();
 	}
 
 	//------------------------ CUDA UpdateConfiguration if set
@@ -102,6 +107,47 @@ BError MetalMesh::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 	return error;
 }
 
+void MetalMesh::UpdateConfiguration_Values(UPDATECONFIG_ cfgMessage)
+{
+	///////////////////////////////////////////////////////
+	//Update configuration in this mesh
+	///////////////////////////////////////////////////////
+
+	if (cfgMessage == UPDATECONFIG_TEQUATION_CONSTANTS) {
+
+		//Update text equations other than those used in mesh parameters
+		UpdateTEquationUserConstants();
+
+		//update any text equations used in mesh parameters
+		update_meshparam_equations();
+	}
+	else if (cfgMessage == UPDATECONFIG_TEQUATION_CLEAR) {
+
+		if (T_equation.is_set()) T_equation.clear();
+	}
+
+	///////////////////////////////////////////////////////
+	//Update configuration for mesh modules
+	///////////////////////////////////////////////////////
+
+	for (int idx = 0; idx < (int)pMod.size(); idx++) {
+
+		if (pMod[idx]) {
+
+			pMod[idx]->UpdateConfiguration_Values(cfgMessage);
+		}
+	}
+
+	//------------------------ CUDA UpdateConfiguration if set
+
+#if COMPILECUDA == 1
+	if (pMeshCUDA) {
+
+		pMeshCUDA->UpdateConfiguration_Values(cfgMessage);
+	}
+#endif
+}
+
 BError MetalMesh::SwitchCUDAState(bool cudaState)
 {
 	BError error(string(CLASS_STR(MetalMesh)) + "(" + (*pSMesh).key_from_meshId(meshId) + ")");
@@ -113,14 +159,13 @@ BError MetalMesh::SwitchCUDAState(bool cudaState)
 	//are we switching to cuda?
 	if (cudaState) {
 
-		//delete MeshCUDA object and null (just in case)
-		if (pMeshCUDA) delete pMeshCUDA;
-		pMeshCUDA = nullptr;
+		if (!pMeshCUDA) {
 
-		//then make MeshCUDA object, copying over currently held cpu data
-		pMeshCUDA = new MetalMeshCUDA(this);
-		error = pMeshCUDA->Error_On_Create();
-		if (!error) error = pMeshCUDA->cuMesh()->set_pointers(pMeshCUDA);
+			//then make MeshCUDA object, copying over currently held cpu data
+			pMeshCUDA = new MetalMeshCUDA(this);
+			error = pMeshCUDA->Error_On_Create();
+			if (!error) error = pMeshCUDA->cuMesh()->set_pointers(pMeshCUDA);
+		}
 	}
 	else {
 

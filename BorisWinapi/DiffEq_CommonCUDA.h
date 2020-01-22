@@ -9,6 +9,8 @@
 
 #include "MeshParamsCUDA.h"
 
+#include "ManagedDiffEq_CommonCUDA.h"
+
 //NOTES : renormalize at last step for all equations except all LLB versions
 
 class ODECommon;
@@ -16,12 +18,23 @@ class ODECommon;
 class ODECommonCUDA
 {
 	friend ODECommon;
+	friend ManagedDiffEq_CommonCUDA;
 
 private:
 
 	static ODECommon *pODE;
 
+	//ManagedDiffEq_CommonCUDA holds pointers to data in ODECommonCUDA in an object in gpu memory.
+	//pass cuDiffEq to a cuda kernel then all gpu data held here in cu_obj objects can be accessed in device code.
+	//Initialize ManagedDiffEq_CommonCUDA with all the pointers you need then forget about it - no book-keeping required.
+	cu_obj<ManagedDiffEq_CommonCUDA> cuDiffEq;
+
 protected:
+
+	//-----------------------------------Time and Stage Time
+
+	static cu_obj<cuBReal>* ptime;
+	static cu_obj<cuBReal>* pstagetime;
 
 	//-----------------------------------Time step
 
@@ -76,6 +89,7 @@ private:
 	//---------------------------------------- SET-UP METHODS : DiffEqCUDA.cpp, DiffEq_EvalsCUDA.cu
 
 	BError UpdateConfiguration(UPDATECONFIG_ cfgMessage);
+	void UpdateConfiguration_Values(UPDATECONFIG_ cfgMessage) {}
 
 	//zero all main reduction values : mxh, dmdt, lte
 	void Zero_reduction_values(void);
@@ -90,6 +104,7 @@ private:
 	void SyncODEValues(void);
 
 	//set specific cuda values (used often)
+	void Sync_time(void);
 	void Sync_dT(void);
 	void Sync_dT_last(void);
 	void Sync_alternator(void);
@@ -122,6 +137,11 @@ public:
 	cuBReal Get_mxh(void) { return pmxh->to_cpu(); }
 	cuBReal Get_dmdt(void) { return pdmdt->to_cpu(); }
 	cuBReal Get_lte(void) { return plte->to_cpu(); }
+
+	//----------------------------------- GETTERS
+
+	//get reference to stored managed cuda differential equation object (cuDiffEq)
+	cu_obj<ManagedDiffEq_CommonCUDA>& Get_ManagedDiffEq_CommonCUDA(void) { return cuDiffEq; }
 
 };
 

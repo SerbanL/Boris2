@@ -99,7 +99,7 @@ void DifferentialEquationAFM::RunTEuler_Step1_withReductions(void)
 				DBL3 rhs = CALLFP(this, equation)(idx);
 				DBL3 rhs_2 = Equation_Eval_2[omp_get_thread_num()];
 
-				//Now estimate magnetization using the second trapezoidal Euler step formula
+				//Now estimate magnetization using the second trapezoidal Euler step equation
 				pMesh->M[idx] = (sM1[idx] + pMesh->M[idx] + rhs * dT) / 2;
 				pMesh->M2[idx] = (sM1_2[idx] + pMesh->M2[idx] + rhs_2 * dT) / 2;
 
@@ -149,7 +149,7 @@ void DifferentialEquationAFM::RunTEuler_Step1(void)
 				DBL3 rhs = CALLFP(this, equation)(idx);
 				DBL3 rhs_2 = Equation_Eval_2[omp_get_thread_num()];
 
-				//Now estimate magnetization using the second trapezoidal Euler step formula
+				//Now estimate magnetization using the second trapezoidal Euler step equation
 				pMesh->M[idx] = (sM1[idx] + pMesh->M[idx] + rhs * dT) / 2;
 				pMesh->M2[idx] = (sM1_2[idx] + pMesh->M2[idx] + rhs_2 * dT) / 2;
 

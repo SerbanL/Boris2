@@ -96,6 +96,33 @@ BError SuperMesh::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 	return error;
 }
 
+void SuperMesh::UpdateConfiguration_Values(UPDATECONFIG_ cfgMessage)
+{
+	///////////////////////////////////////////////////////
+	//Update configuration for meshes and their modules
+	///////////////////////////////////////////////////////
+
+	for (int idx = 0; idx < (int)pMesh.size(); idx++) {
+
+		pMesh[idx]->UpdateConfiguration_Values(cfgMessage);
+	}
+
+	///////////////////////////////////////////////////////
+	//Update configuration for super-mesh modules
+	///////////////////////////////////////////////////////
+
+	for (int idx = 0; idx < (int)pSMod.size(); idx++) {
+
+		pSMod[idx]->UpdateConfiguration_Values(cfgMessage);
+	}
+
+	///////////////////////////////////////////////////////
+	//Update configuration for ODECommon
+	///////////////////////////////////////////////////////
+
+	odeSolver.UpdateConfiguration_Values(cfgMessage);
+}
+
 //couple ferromagnetic meshes to any touching dipole meshes, setting interface cell values and flags
 void SuperMesh::CoupleToDipoles(void)
 {
@@ -119,9 +146,10 @@ BError SuperMesh::SwitchCUDAState(bool cudaState)
 
 	if (cudaState) {
 
-		if (pSMeshCUDA) delete pSMeshCUDA;
+		if (!pSMeshCUDA) {
 
-		pSMeshCUDA = new SuperMeshCUDA(this);
+			pSMeshCUDA = new SuperMeshCUDA(this);
+		}
 	}
 	else {
 
@@ -152,6 +180,8 @@ BError SuperMesh::SwitchCUDAState(bool cudaState)
 
 	//make sure configuration is updated for the new mode
 	error = UpdateConfiguration(UPDATECONFIG_SWITCHCUDASTATE);
+
+	if (!cudaState) cudaDeviceReset();
 
 #endif
 

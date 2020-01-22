@@ -118,8 +118,8 @@ enum IOI_
 	//Shows parameter spatial dependence for a given mesh : minorId is the major id of elements in SimParams::simParams (i.e. an entry from PARAM_ enum), auxId is the unique mesh id number, textId is the parameter spatial dependence setting
 	IOI_MESHPARAMVAR,
 
-	//Shows a possible formula name for mesh parameter temperature dependence : minorId is the MATPFORM_ enum value, textId is the formula name
-	IOI_MESHPARAMTEMPFORMULA,
+	//Shows a possible temperature dependence : minorId is the type (entry from MATPTDEP_ enum)
+	IOI_MESHPARAMTEMPTYPE,
 
 	//Shows a possible generator name for mesh parameter spatial dependence : minorId is the MATPVAR_ enum value, textId is the generator name
 	IOI_MESHPARAMVARGENERATOR,
@@ -268,5 +268,9 @@ enum IOI_
 	IOI_STATICTRANSPORT,
 
 	//Shows image cropping settings : textId has the DBL4 value as text
-	IOI_IMAGECROPPING
+	IOI_IMAGECROPPING,
+
+	//Show user constant for text equations : minorId is the index in Simulation::userConstants, auxId is the number of the interactive object in the list as it appears in the console, textId is the constant name and value string 
+	//Note this entry must always represent the entry in Simulation::userConstants with the index in auxId.
+	IOI_USERCONSTANT
 };

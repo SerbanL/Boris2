@@ -263,12 +263,48 @@ PhysQ MeshCUDA::FetchOnScreenPhysicalQuantity(double detail_level)
 
 	case MESHDISPLAY_PARAMVAR:
 	{
-		void* s_scaling = pMesh->get_meshparam_s_scaling((PARAM_)pMesh->displayedParamVar);
+		void* s_scaling;
 
-		if (pMesh->is_s_scaling_scalar((PARAM_)pMesh->displayedParamVar))
+		if (pMesh->is_paramvarequation_set((PARAM_)pMesh->displayedParamVar)) {
+
+			//if text equation is set, then we need to calculate the output into a display VEC
+			//We could of course calculate this inside the MatP object in its s_scaling VEC, then get it here through reference
+			//This is wasteful however as without some nasty book-keeping we could end up with many s_scaling VECs allocated when they are not needed
+			//better to just use the single VEC in Mesh intended for display purposes - just means a little bit more work here.
+
+			if (pMesh->is_paramvar_scalar((PARAM_)pMesh->displayedParamVar)) {
+
+				//first make sure the display VEC has the right rectangle and cellsize (cellsize appropriate to the type of mesh parameter being displayed - e.g. magnetic, electric, etc..)
+				pMesh->displayVEC_SCA.resize(pMesh->get_paramtype_cellsize((PARAM_)pMesh->displayedParamVar), pMesh->meshRect);
+				//now calculate it based on the set text equation
+				pMesh->calculate_meshparam_s_scaling((PARAM_)pMesh->displayedParamVar, pMesh->displayVEC_SCA, pMesh->pSMesh->GetStageTime());
+				//finally set it in s_scaling - come code for setting the PhysQ below
+				s_scaling = &pMesh->displayVEC_SCA;
+			}
+			else {
+
+				//first make sure the display VEC has the right rectangle and cellsize (cellsize appropriate to the type of mesh parameter being displayed - e.g. magnetic, electric, etc..)
+				pMesh->displayVEC_VEC.resize(pMesh->get_paramtype_cellsize((PARAM_)pMesh->displayedParamVar), pMesh->meshRect);
+				//now calculate it based on the set text equation
+				pMesh->calculate_meshparam_s_scaling((PARAM_)pMesh->displayedParamVar, pMesh->displayVEC_VEC, pMesh->pSMesh->GetStageTime());
+				//finally set it in s_scaling - come code for setting the PhysQ below
+				s_scaling = &pMesh->displayVEC_VEC;
+			}
+		}
+		else {
+
+			//..otherwise we can just get the s_scaling VEC from the MatP object directly.
+			s_scaling = pMesh->get_meshparam_s_scaling((PARAM_)pMesh->displayedParamVar);
+		}
+
+		if (pMesh->is_paramvar_scalar((PARAM_)pMesh->displayedParamVar)) {
+
 			return PhysQ(reinterpret_cast<VEC<double>*>(s_scaling), pMesh->displayedPhysicalQuantity);
-		else
+		}
+		else {
+
 			return PhysQ(reinterpret_cast<VEC<DBL3>*>(s_scaling), pMesh->displayedPhysicalQuantity, (VEC3REP_)pMesh->vec3rep);
+		}
 	}
 		break;
 
@@ -386,6 +422,16 @@ cuBReal MeshCUDA::GetAverageTemperature(cuRect rectangle)
 	else return pMesh->base_temperature;
 }
 
+cuBReal MeshCUDA::GetStageTime(void)
+{
+	return pMesh->pSMesh->GetStageTime();
+}
+
+int MeshCUDA::GetStageStep(void)
+{
+	return pMesh->pSMesh->stage_step.minor;
+}
+
 //----------------------------------- OTHER MESH SHAPE CONTROL
 
 //copy all meshes controlled using change_mesh_shape from cpu to gpu versions
@@ -442,6 +488,11 @@ BError MeshCUDA::copy_shapes_to_cpu(void)
 	if (!success) error(BERROR_OUTOFGPUMEMORY_CRIT);
 
 	return error;
+}
+
+cu_obj<ManagedDiffEq_CommonCUDA>& MeshCUDA::Get_ManagedDiffEq_CommonCUDA(void)
+{ 
+	return pMesh->pSMesh->Get_ManagedDiffEq_CommonCUDA(); 
 }
 
 #endif

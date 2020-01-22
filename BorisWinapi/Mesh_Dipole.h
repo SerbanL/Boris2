@@ -20,7 +20,7 @@ class DipoleMesh :
 	int, int, int, int, int, int, Rect, SZ3, DBL3, SZ3, DBL3, SZ3, DBL3, VEC_VC<DBL3>, VEC_VC<double>, VEC_VC<DBL3>, VEC_VC<double>, VEC_VC<double>, vector_lut<Modules*>,
 	//Members in this derived clas
 	//Material Parameters
-	MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<DBL2, double>, MatP<DBL2, double>, double, double, MatP<double, double>, MatP<double, double>,
+	MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<DBL2, double>, MatP<DBL2, double>, double, TEquation<double>, double, MatP<double, double>, MatP<double, double>,
 	MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>>,
 	tuple<Transport, Heat> >
 {
@@ -53,6 +53,7 @@ public:
 
 	//call when the mesh dimensions have changed - sets every quantity to the right dimensions
 	BError UpdateConfiguration(UPDATECONFIG_ cfgMessage);
+	void UpdateConfiguration_Values(UPDATECONFIG_ cfgMessage);
 
 	BError SwitchCUDAState(bool cudaState);
 
@@ -76,9 +77,6 @@ public:
 
 	//also need to set magnetisation temperature dependence in this mesh when a Curie temperature is set - don't need to store Curie temperature here, just set temperature dependence for Ms
 	void SetCurieTemperature(double Tc);
-
-	//this just sets the indicative material Tc value
-	void SetCurieTemperatureMaterial(double Tc_material) { T_Curie_material = Tc_material; }
 
 	//----------------------------------- VARIOUS GET METHODS
 

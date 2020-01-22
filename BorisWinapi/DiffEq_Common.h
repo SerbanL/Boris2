@@ -206,6 +206,7 @@ public:
 	//---------------------------------------- SET-UP METHODS : DiffEq_Common.cpp
 
 	BError UpdateConfiguration(UPDATECONFIG_ cfgMessage);
+	void UpdateConfiguration_Values(UPDATECONFIG_ cfgMessage) {}
 
 	//switch CUDA state on/off
 	BError SwitchCUDAState(bool cudaState);
@@ -279,4 +280,8 @@ public:
 
 	void QueryODE(ODE_ &setODE_, EVAL_ &evalMethod_) { setODE_ = (ODE_)setODE; evalMethod_ = (EVAL_)evalMethod; }
 	void QueryODE(ODE_ &setODE_) { setODE_ = (ODE_)setODE; }
+
+#if COMPILECUDA == 1
+	ODECommonCUDA* Get_pODECUDA(void) { return pODECUDA; }
+#endif
 };

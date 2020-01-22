@@ -43,7 +43,7 @@ bool Transport::SetFixedPotentialCells(Rect rectangle, double potential)
 	bool success = true;
 
 #if COMPILECUDA == 1
-	if (pModuleCUDA) success = reinterpret_cast<TransportCUDA*>(pModuleCUDA)->SetFixedPotentialCells(rectangle, potential);
+	if (pModuleCUDA) success &= reinterpret_cast<TransportCUDA*>(pModuleCUDA)->SetFixedPotentialCells(rectangle, potential);
 #endif
 
 	success &= pMesh->V.set_dirichlet_conditions(rectangle, potential);

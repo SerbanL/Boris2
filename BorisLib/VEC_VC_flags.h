@@ -422,7 +422,7 @@ bool VEC_VC<VType>::set_dirichlet_conditions(const Rect& surface_rect, VType val
 	if (!rect.intersects(surface_rect)) return true;
 
 	Rect intersection = rect.get_intersection(surface_rect);
-	if (!intersection.IsPlane()) return true;
+	//if (!intersection.IsPlane()) return true;
 
 	auto set_dirichlet_value = [&](Rect intersection, VType value, int flag_value) -> void {
 
@@ -476,9 +476,6 @@ bool VEC_VC<VType>::set_dirichlet_conditions(const Rect& surface_rect, VType val
 		}
 	};
 
-	//DIRICHLET flags used with extended ngbrFlags so make sure it has memory allocated now
-	if (!malloc_vector(ngbrFlags2, n.dim())) return false;
-
 	//y-z plane
 	if (IsZ(intersection.s.x - intersection.e.x)) {
 
@@ -488,6 +485,9 @@ bool VEC_VC<VType>::set_dirichlet_conditions(const Rect& surface_rect, VType val
 			if (!dirichlet_nx.size()) {
 
 				if (!malloc_vector(dirichlet_nx, n.y*n.z)) return false;
+
+				//DIRICHLET flags used with extended ngbrFlags so make sure it has memory allocated now
+				use_extended_flags();
 			}
 
 			intersection.e.x += h.x;
@@ -499,6 +499,9 @@ bool VEC_VC<VType>::set_dirichlet_conditions(const Rect& surface_rect, VType val
 			if (!dirichlet_px.size()) {
 
 				if (!malloc_vector(dirichlet_px, n.y*n.z)) return false;
+
+				//DIRICHLET flags used with extended ngbrFlags so make sure it has memory allocated now
+				use_extended_flags();
 			}
 
 			intersection.s.x -= h.x;
@@ -514,6 +517,9 @@ bool VEC_VC<VType>::set_dirichlet_conditions(const Rect& surface_rect, VType val
 			if (!dirichlet_ny.size()) {
 
 				if (!malloc_vector(dirichlet_ny, n.x*n.z)) return false;
+
+				//DIRICHLET flags used with extended ngbrFlags so make sure it has memory allocated now
+				use_extended_flags();
 			}
 
 			intersection.e.y += h.y;
@@ -525,6 +531,9 @@ bool VEC_VC<VType>::set_dirichlet_conditions(const Rect& surface_rect, VType val
 			if (!dirichlet_py.size()) {
 
 				if (!malloc_vector(dirichlet_py, n.x*n.z)) return false;
+
+				//DIRICHLET flags used with extended ngbrFlags so make sure it has memory allocated now
+				use_extended_flags();
 			}
 
 			intersection.s.y -= h.y;
@@ -540,6 +549,9 @@ bool VEC_VC<VType>::set_dirichlet_conditions(const Rect& surface_rect, VType val
 			if (!dirichlet_nz.size()) {
 
 				if (!malloc_vector(dirichlet_nz, n.x*n.y)) return false;
+
+				//DIRICHLET flags used with extended ngbrFlags so make sure it has memory allocated now
+				use_extended_flags();
 			}
 
 			intersection.e.z += h.z;
@@ -551,6 +563,9 @@ bool VEC_VC<VType>::set_dirichlet_conditions(const Rect& surface_rect, VType val
 			if (!dirichlet_pz.size()) {
 
 				if (!malloc_vector(dirichlet_pz, n.x*n.y)) return false;
+
+				//DIRICHLET flags used with extended ngbrFlags so make sure it has memory allocated now
+				use_extended_flags();
 			}
 
 			intersection.s.z -= h.z;

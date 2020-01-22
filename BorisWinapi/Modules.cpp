@@ -14,11 +14,10 @@ BError Modules::SwitchCUDAState(bool cudaState)
 	//are we switching to cuda?
 	if (cudaState) {
 
-		///delete cuda module object and null (just in case)
-		if (pModuleCUDA) delete pModuleCUDA;
-		pModuleCUDA = nullptr;
+		if (!pModuleCUDA) {
 
-		error = MakeCUDAModule();
+			error = MakeCUDAModule();
+		}
 	}
 	else {
 

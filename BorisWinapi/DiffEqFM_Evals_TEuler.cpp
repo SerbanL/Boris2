@@ -92,7 +92,7 @@ void DifferentialEquationFM::RunTEuler_Step1_withReductions(void)
 				//First evaluate RHS of set equation at the current time step
 				DBL3 rhs = CALLFP(this, equation)(idx);
 
-				//Now estimate magnetization using the second trapezoidal Euler step formula
+				//Now estimate magnetization using the second trapezoidal Euler step equation
 				pMesh->M[idx] = (sM1[idx] + pMesh->M[idx] + rhs * dT) / 2;
 
 				if (renormalize) {
@@ -138,7 +138,7 @@ void DifferentialEquationFM::RunTEuler_Step1(void)
 				//First evaluate RHS of set equation at the current time step
 				DBL3 rhs = CALLFP(this, equation)(idx);
 
-				//Now estimate magnetization using the second trapezoidal Euler step formula
+				//Now estimate magnetization using the second trapezoidal Euler step equation
 				pMesh->M[idx] = (sM1[idx] + pMesh->M[idx] + rhs * dT) / 2;
 
 				if (renormalize) {

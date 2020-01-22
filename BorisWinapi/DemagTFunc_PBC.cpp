@@ -42,7 +42,7 @@ bool DemagTFunc::CalcDiagTens2D_PBC(VEC<DBL3> &Ddiag, INT3 N, DBL3 hRatios, bool
 
 						int cells_radius_sq = i * i + j * j + k * k;
 
-						//apply asymptotic formulas?
+						//apply asymptotic equations?
 						if (cells_radius_sq >= asymptotic_distance * asymptotic_distance) {
 
 							//D12, D13, D23
@@ -140,7 +140,7 @@ bool DemagTFunc::CalcOffDiagTens2D_PBC(std::vector<double> &Dodiag, INT3 N, DBL3
 
 						int cells_radius_sq = i * i + j * j + k * k;
 
-						//apply asymptotic formulas?
+						//apply asymptotic equations?
 						if (cells_radius_sq >= asymptotic_distance * asymptotic_distance) {
 
 							//D12, D13, D23
@@ -222,7 +222,7 @@ bool DemagTFunc::CalcDiagTens3D_PBC(VEC<DBL3> &Ddiag, INT3 N, DBL3 hRatios, bool
 
 							int cells_radius_sq = i * i + j * j + k * k;
 
-							//apply asymptotic formulas?
+							//apply asymptotic equations?
 							if (cells_radius_sq >= asymptotic_distance * asymptotic_distance) {
 
 								//D12, D13, D23
@@ -338,7 +338,7 @@ bool DemagTFunc::CalcOffDiagTens3D_PBC(VEC<DBL3> &Dodiag, INT3 N, DBL3 hRatios, 
 
 							int cells_radius_sq = i * i + j * j + k * k;
 
-							//apply asymptotic formulas?
+							//apply asymptotic equations?
 							if (cells_radius_sq >= asymptotic_distance * asymptotic_distance) {
 
 								//D12, D13, D23

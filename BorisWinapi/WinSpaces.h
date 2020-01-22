@@ -35,7 +35,8 @@ enum AC_
 	AC_KBDENTER, AC_KBDBACK, AC_KBDINS, AC_KBDDEL, AC_KBDLEFT, AC_KBDSHIFTLEFT, AC_KBDRIGHT, AC_KBDSHIFTRIGHT, AC_KBDDN, AC_KBDUP, AC_KBDEND, AC_KBDSHIFTEND, AC_KBDHOME, AC_KBDSHIFTHOME, AC_KBDPGDN, AC_KBDPGUP, AC_KBDESC,
 	AC_CTRL_C, AC_CTRL_V,
 	AC_INTERACTOBJECTS, AC_INTERACTOBJECTWITHWINDOW, AC_DROPINTERACTOBJECTS, AC_DROPINTERACTOBJECTWITHWINDOW,
-	AC_CONSOLECOMMAND, AC_CONSOLEENTRY, AC_CONSOLECOMMAND_ENTRY, AC_CONSOLECOMMAND_NOPARAMS_ENTRY
+	AC_CONSOLECOMMAND, AC_CONSOLEENTRY, AC_CONSOLECOMMAND_ENTRY, AC_CONSOLECOMMAND_NOPARAMS_ENTRY,
+	AC_POPUPEDITTEXTBOXRETURNEDTEXT
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -44,8 +45,9 @@ enum AC_
 enum AO_ {AO_NOTHING = 0, AO_NOTHANDLED, 
 		  AO_TEXTRETURNED, AO_MESSAGERETURNED, AO_MESHFOCUS2, AO_FILEDROPPEDINCONSOLE, AO_FILEDROPPEDINMESH,
 		  AO_SETTOPMOST, 
-		  AO_REFRESH, AO_REFRESHWINDOW, AO_DELAYEDREFRESH,
+		  AO_REFRESH, AO_REFRESHWINDOW, AO_DELAYEDREFRESH, AO_DRAW, AO_DRAWWINDOW,
 		  AO_STARTINTERACTION, AO_ENDINTERACTION, AO_HOVERCHECK, AO_SHOWHOVERINFO, AO_DESTROYWINDOW, AO_CHECKIOINTERACTION, AO_CHECKIODROPINTERACTION, AO_WINRESIZED,
+		  AO_STARTPOPUPEDITBOX, AO_POPUPEDITBOXRETURNEDTEXT,
 		  AO_RECALCULATEMESHDISPLAY};
 
 //ActionOutcome object for passing action outcome messages after being handled in NewMessage method
@@ -335,6 +337,8 @@ protected: //Protected methods
 	//toggle between the MaximiseWindowSize and RestoreWindowSize depending on the windowMaximised flag setting
 	void Toggle_Maximise_Normal(INT2 mouse, ActionOutcome &actionResult);
 
+	void DrawFrame(void);
+
 	void DrawResizingFrame(void);
 
 	//set background color for this space
@@ -354,6 +358,9 @@ public: //Public methods
 
 	//Draw the window content. Do not call it directly, should only be called by Refresh method in BorisDisplay.
 	virtual void DrawWindow(void) = 0;
+
+	//Similar to DrawWindow but do not refresh interacitve objects
+	virtual void DrawWindow_Quick(void) = 0;
 
 	//Windows event occured in this space: process it.
 	virtual ActionOutcome NewMessage(AC_ aCode, INT2 mouse, string data = "") = 0;
@@ -416,6 +423,12 @@ protected: //protected methods
 
 	//draw the textLines content. return true if lines had to be recalculated to fit the window width
 	bool DrawTextLines(bool doDraw = true);
+
+	//Faster version of Draw where we don't refresh any interactive objects but draw them in their current state. Also doesn't re-check for re-alignment of text objects, assumes everything is correct.
+	//Thus this method purely draws the screen from current state, which is assumed to be in the correct.
+	//use this whenever you know there cannot be any changes to interactive objects or any other settings (e.g. window dimensions)
+	//when there are alot of interactive objects on screen the refresh rate can drop significantly making the interface sluggish, so use the full Draw method sparingly)
+	void DrawTextLines_Quick(void);
 
 	//set window size using ratios of screen dimensions / change window size by adjusting sides using delta values
 	void ResizeWindow(D2D1_RECT_F ratios);

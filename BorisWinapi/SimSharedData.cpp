@@ -5,7 +5,8 @@
 #include "MeshParams.h"
 #include "SimulationData.h"
 
-vector_key_lut<int> SimulationSharedData::formula_descriptor;
+vector_lut<string> SimulationSharedData::temperature_dependence_type;
+
 vector_key_lut<string> SimulationSharedData::vargenerator_descriptor;
 
 vector_lut<string> SimulationSharedData::meshDisplay_unit;
@@ -25,32 +26,43 @@ exclusions<MOD_> SimulationSharedData::superMeshCompanionModules;
 
 vector_lut<DatumConfig> SimulationSharedData::saveDataList;
 
+string SimulationSharedData::directory;
+
 bool SimulationSharedData::shape_change_individual = false;
 
 bool SimulationSharedData::static_transport_solver = false;
 
 bool SimulationSharedData::cudaEnabled = false;
 
+INT2 SimulationSharedData::stage_step = INT2();
+
 size_t SimulationSharedData::gpuMemFree_MB = 0;
 size_t SimulationSharedData::gpuMemTotal_MB = 0;
 size_t SimulationSharedData::cpuMemFree_MB = 0;
 size_t SimulationSharedData::cpuMemTotal_MB = 0;
+
+vector_key<double> SimulationSharedData::userConstants;
 
 SimulationSharedData::SimulationSharedData(bool called_from_Simulation)
 { 
 	//only make the statically shared objects once when called from Simulation object - other objects only inherit these but do not make any changes
 	if (called_from_Simulation) {
 
-		//--------------
-
-		formula_descriptor.push_back("none", 0, MATPFORM_NONE);
-		formula_descriptor.push_back("linear", 1, MATPFORM_LINEAR);
-		formula_descriptor.push_back("parabolic", 2, MATPFORM_PARABOLIC);
-		formula_descriptor.push_back("ilinear", 1, MATPFORM_INVERSELINEAR);
+		//default directory
+		directory = GetUserDocumentsPath() + "Boris Data\\Simulations\\";
 
 		//--------------
 
-		vargenerator_descriptor.push_back("custom", "0, 1; pngfile", MATPVAR_CUSTOM);
+		temperature_dependence_type.push_back("none", MATPTDEP_NONE);
+		temperature_dependence_type.push_back("array", MATPTDEP_ARRAY);
+		temperature_dependence_type.push_back("equation", MATPTDEP_EQUATION);
+
+		//--------------
+
+		vargenerator_descriptor.push_back("none", "", MATPVAR_NONE);
+		vargenerator_descriptor.push_back("mask", "0, 1; pngfile", MATPVAR_MASK);
+		vargenerator_descriptor.push_back("ovf2", "ovf2file", MATPVAR_OVF2);
+		vargenerator_descriptor.push_back("equation", "1", MATPVAR_EQUATION);
 		//DBL2 range, int seed
 		vargenerator_descriptor.push_back("random", "0.9, 1.1; 1", MATPVAR_RANDOM);
 		//DBL2 range, double spacing, int seed

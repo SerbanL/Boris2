@@ -2,6 +2,8 @@
 
 #if COMPILECUDA == 1
 
+#ifdef MODULE_EXCHANGE
+
 #include "BorisCUDALib.cuh"
 
 #include "MeshCUDA.h"
@@ -300,5 +302,7 @@ void Exch_6ngbr_NeuCUDA::CalculateExchangeCoupling(cu_obj<cuBReal>& energy)
 		}
 	}
 }
+
+#endif
 
 #endif

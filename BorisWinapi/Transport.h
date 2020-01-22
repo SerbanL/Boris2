@@ -134,6 +134,7 @@ public:
 	BError Initialize(void);
 
 	BError UpdateConfiguration(UPDATECONFIG_ cfgMessage);
+	void UpdateConfiguration_Values(UPDATECONFIG_ cfgMessage) {}
 
 	BError MakeCUDAModule(void);
 
@@ -236,8 +237,12 @@ private:
 	//used to compute spin current components and spin torque for display purposes - only calculated and memory allocated when asked to do so.
 	VEC<DBL3> displayVEC;
 
+	//used to compute charge current for display purposes (and in some cases we need to run vector calculus operations on it)
+	VEC_VC<DBL3> displayVEC_VC;
+
 #if COMPILECUDA == 1
 	cu_obj<cuVEC<cuReal3>> displayVEC_CUDA;
+	cu_obj<cuVEC_VC<cuReal3>> displayVEC_VC_CUDA;
 #endif
 
 private:
@@ -253,7 +258,8 @@ public:
 
 	BError Initialize(void) { return BError(); }
 
-	BError UpdateConfiguration(UPDATECONFIG_ cfgMessage = UPDATECONFIG_GENERIC) { return BError(); }
+	BError UpdateConfiguration(UPDATECONFIG_ cfgMessage) { return BError(); }
+	void UpdateConfiguration_Values(UPDATECONFIG_ cfgMessage) {}
 
 	BError MakeCUDAModule(void) { return BError(); }
 
@@ -285,11 +291,17 @@ public:
 
 	DBL3 GetAverageSpinCurrent(int component, Rect rectangle = Rect()) { return DBL3(); }
 
+	//calculate charge current density over the mesh : applies to both charge-only transport and spin transport solvers (if check used inside this method)
+	VEC_VC<DBL3>& GetChargeCurrent(void) { return displayVEC_VC; }
+
+	DBL3 GetAverageChargeCurrent(Rect rectangle = Rect()) { return DBL3(); }
+
 	//return spin torque computed from spin accumulation
 	VEC<DBL3>& GetSpinTorque(void) { return displayVEC; }
 
 #if COMPILECUDA == 1
 	cu_obj<cuVEC<cuReal3>>& GetSpinCurrentCUDA(int component) { return displayVEC_CUDA; }
+	cu_obj<cuVEC_VC<cuReal3>>& GetChargeCurrentCUDA(void) { return displayVEC_VC_CUDA;  }
 	cu_obj<cuVEC<cuReal3>>& GetSpinTorqueCUDA(void) { return displayVEC_CUDA; }
 #endif
 };

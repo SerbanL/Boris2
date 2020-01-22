@@ -96,7 +96,7 @@ void DifferentialEquationFM::RunAHeun_Step1_withReductions(void)
 				//First save predicted magnetization for lte calculation
 				DBL3 saveM = pMesh->M[idx];
 
-				//Now estimate magnetization using the second trapezoidal Euler step formula
+				//Now estimate magnetization using the second trapezoidal Euler step equation
 				pMesh->M[idx] = (sM1[idx] + pMesh->M[idx] + rhs * dT) / 2;
 
 				if (renormalize) {
@@ -153,7 +153,7 @@ void DifferentialEquationFM::RunAHeun_Step1(void)
 				//First save predicted magnetization for lte calculation
 				DBL3 saveM = pMesh->M[idx];
 
-				//Now estimate magnetization using the second trapezoidal Euler step formula
+				//Now estimate magnetization using the second trapezoidal Euler step equation
 				pMesh->M[idx] = (sM1[idx] + pMesh->M[idx] + rhs * dT) / 2;
 
 				if (renormalize) {

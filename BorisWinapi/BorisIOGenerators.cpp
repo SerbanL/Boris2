@@ -424,22 +424,26 @@ string Simulation::Build_MeshParams_Line(int meshIndex)
 			switch (paramType) {
 
 			case PARAMTYPE_MAGNETIC:
-				ferromagneticParameters += "[sa" + ToString(f_index) + "/sa]" + MakeIO(IOI_MESHPARAM, meshIndex, paramId) + "</c> ";
+				//ferromagneticParameters += "[sa" + ToString(f_index) + "/sa]" + MakeIO(IOI_MESHPARAM, meshIndex, paramId) + "</c> ";
+				ferromagneticParameters += MakeIO(IOI_MESHPARAM, meshIndex, paramId) + "</c> ";
 				f_index++;
 				break;
 
 			case PARAMTYPE_ELECTRIC:
-				econductionParameters += "[sa" + ToString(e_index) + "/sa]" + MakeIO(IOI_MESHPARAM, meshIndex, paramId) + "</c> ";
+				//econductionParameters += "[sa" + ToString(e_index) + "/sa]" + MakeIO(IOI_MESHPARAM, meshIndex, paramId) + "</c> ";
+				econductionParameters += MakeIO(IOI_MESHPARAM, meshIndex, paramId) + "</c> ";
 				e_index++;
 				break;
 
 			case PARAMTYPE_THERMAL:
-				tconductionParameters += "[sa" + ToString(t_index) + "/sa]" + MakeIO(IOI_MESHPARAM, meshIndex, paramId) + "</c> ";
+				//tconductionParameters += "[sa" + ToString(t_index) + "/sa]" + MakeIO(IOI_MESHPARAM, meshIndex, paramId) + "</c> ";
+				tconductionParameters += MakeIO(IOI_MESHPARAM, meshIndex, paramId) + "</c> ";
 				t_index++;
 				break;
 
 			case PARAMTYPE_MECHANICAL:
-				mechanicalParameters += "[sa" + ToString(m_index) + "/sa]" + MakeIO(IOI_MESHPARAM, meshIndex, paramId) + "</c> ";
+				//mechanicalParameters += "[sa" + ToString(m_index) + "/sa]" + MakeIO(IOI_MESHPARAM, meshIndex, paramId) + "</c> ";
+				mechanicalParameters += MakeIO(IOI_MESHPARAM, meshIndex, paramId) + "</c> ";
 				m_index++;
 				break;
 			}
@@ -469,13 +473,13 @@ void Simulation::Print_MeshParamsTemperature(string meshName)
 
 	string meshParamsTemp = Build_MeshParamsTemp_Text(SMesh().index_from_key(meshName));
 
-	meshParamsTemp += "[tc1,1,1,1/tc]\nAvailable formulas (drag to param, right click for info): ";
+	meshParamsTemp += "[tc1,1,1,1/tc]\nAvailable temperature dependence type (drag to param, right click for info): ";
 
-	for (int idx = 0; idx < formula_descriptor.size(); idx++) {
+	for (int idx = 0; idx < temperature_dependence_type.size(); idx++) {
 
-		MATPFORM_ formulaID = (MATPFORM_)formula_descriptor.get_ID_from_index(idx);
+		MATPTDEP_ type = (MATPTDEP_)temperature_dependence_type.get_ID_from_index(idx);
 
-		meshParamsTemp += "</c> " + MakeIO(IOI_MESHPARAMTEMPFORMULA, formulaID);
+		meshParamsTemp += "</c> " + MakeIO(IOI_MESHPARAMTEMPTYPE, type);
 	}
 
 	BD.DisplayFormattedConsoleMessage(meshParamsTemp);
@@ -502,22 +506,26 @@ string Simulation::Build_MeshParamsTemp_Text(int meshIndex)
 			switch (paramType) {
 
 			case PARAMTYPE_MAGNETIC:
-				ferromagneticParameters += "[sa" + ToString(f_index) + "/sa]" + MakeIO(IOI_MESHPARAMTEMP, meshIndex, paramId) + "</c> ";
+				//ferromagneticParameters += "[sa" + ToString(f_index) + "/sa]" + MakeIO(IOI_MESHPARAMTEMP, meshIndex, paramId) + "</c> ";
+				ferromagneticParameters += MakeIO(IOI_MESHPARAMTEMP, meshIndex, paramId) + "</c> ";
 				f_index++;
 				break;
 
 			case PARAMTYPE_ELECTRIC:
-				econductionParameters += "[sa" + ToString(e_index) + "/sa]" + MakeIO(IOI_MESHPARAMTEMP, meshIndex, paramId) + "</c> ";
+				//econductionParameters += "[sa" + ToString(e_index) + "/sa]" + MakeIO(IOI_MESHPARAMTEMP, meshIndex, paramId) + "</c> ";
+				econductionParameters += MakeIO(IOI_MESHPARAMTEMP, meshIndex, paramId) + "</c> ";
 				e_index++;
 				break;
 
 			case PARAMTYPE_THERMAL:
-				tconductionParameters += "[sa" + ToString(t_index) + "/sa]" + MakeIO(IOI_MESHPARAMTEMP, meshIndex, paramId) + "</c> ";
+				//tconductionParameters += "[sa" + ToString(t_index) + "/sa]" + MakeIO(IOI_MESHPARAMTEMP, meshIndex, paramId) + "</c> ";
+				tconductionParameters += MakeIO(IOI_MESHPARAMTEMP, meshIndex, paramId) + "</c> ";
 				t_index++;
 				break;
 
 			case PARAMTYPE_MECHANICAL:
-				mechanicalParameters += "[sa" + ToString(m_index) + "/sa]" + MakeIO(IOI_MESHPARAMTEMP, meshIndex, paramId) + "</c> ";
+				//mechanicalParameters += "[sa" + ToString(m_index) + "/sa]" + MakeIO(IOI_MESHPARAMTEMP, meshIndex, paramId) + "</c> ";
+				mechanicalParameters += MakeIO(IOI_MESHPARAMTEMP, meshIndex, paramId) + "</c> ";
 				m_index++;
 				break;
 			}
@@ -575,22 +583,26 @@ string Simulation::Build_MeshParamsVariation_Text(int meshIndex)
 			switch (paramType) {
 
 			case PARAMTYPE_MAGNETIC:
-				ferromagneticParameters += "[sa" + ToString(f_index) + "/sa]" + MakeIO(IOI_MESHPARAMVAR, meshIndex, paramId) + "</c> ";
+				//ferromagneticParameters += "[sa" + ToString(f_index) + "/sa]" + MakeIO(IOI_MESHPARAMVAR, meshIndex, paramId) + "</c> ";
+				ferromagneticParameters += MakeIO(IOI_MESHPARAMVAR, meshIndex, paramId) + "</c> ";
 				f_index++;
 				break;
 
 			case PARAMTYPE_ELECTRIC:
-				econductionParameters += "[sa" + ToString(e_index) + "/sa]" + MakeIO(IOI_MESHPARAMVAR, meshIndex, paramId) + "</c> ";
+				//econductionParameters += "[sa" + ToString(e_index) + "/sa]" + MakeIO(IOI_MESHPARAMVAR, meshIndex, paramId) + "</c> ";
+				econductionParameters += MakeIO(IOI_MESHPARAMVAR, meshIndex, paramId) + "</c> ";
 				e_index++;
 				break;
 
 			case PARAMTYPE_THERMAL:
-				tconductionParameters += "[sa" + ToString(t_index) + "/sa]" + MakeIO(IOI_MESHPARAMVAR, meshIndex, paramId) + "</c> ";
+				//tconductionParameters += "[sa" + ToString(t_index) + "/sa]" + MakeIO(IOI_MESHPARAMVAR, meshIndex, paramId) + "</c> ";
+				tconductionParameters += MakeIO(IOI_MESHPARAMVAR, meshIndex, paramId) + "</c> ";
 				t_index++;
 				break;
 
 			case PARAMTYPE_MECHANICAL:
-				mechanicalParameters += "[sa" + ToString(m_index) + "/sa]" + MakeIO(IOI_MESHPARAMVAR, meshIndex, paramId) + "</c> ";
+				//mechanicalParameters += "[sa" + ToString(m_index) + "/sa]" + MakeIO(IOI_MESHPARAMVAR, meshIndex, paramId) + "</c> ";
+				mechanicalParameters += MakeIO(IOI_MESHPARAMVAR, meshIndex, paramId) + "</c> ";
 				m_index++;
 				break;
 			}
@@ -884,4 +896,36 @@ void Simulation::Print_IndividualShapeStatus(void)
 	string individualshape_info = "[tc1,1,1,1/tc]Individual shape status flag : " + MakeIO(IOI_INDIVIDUALSHAPE, shape_change_individual);
 
 	BD.DisplayFormattedConsoleMessage(individualshape_info);
+}
+
+//---------------------------------------------------- USER EQUATION CONSTANTS
+
+//Print currently set equation constants
+void Simulation::Print_EquationConstants(void)
+{
+	string showUserConstants = "[tc1,1,1,1/tc]Defined user constants :\n";
+
+	for (int idx = 0; idx < (int)userConstants.size(); idx++) {
+
+		showUserConstants += Build_EquationConstants_ListLine(idx) + "\n";
+	}
+
+	BD.DisplayFormattedConsoleMessage(showUserConstants);
+}
+
+//build formatted string for interactive objects describing user constants at index_in_list from userConstants (also helper method to build the actual unformatted display text in the object)
+string Simulation::Build_EquationConstants_ListLine(int index_in_list)
+{
+	string name = userConstants.get_key_from_index(index_in_list);
+	double value = userConstants[index_in_list];
+
+	return MakeIO(IOI_USERCONSTANT, name, value, index_in_list);
+}
+
+string Simulation::Build_EquationConstants_Text(int index_in_list)
+{
+	string name = userConstants.get_key_from_index(index_in_list);
+	double value = userConstants[index_in_list];
+
+	return name + ": " + ToString(value);
 }

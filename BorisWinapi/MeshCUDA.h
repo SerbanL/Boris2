@@ -135,8 +135,12 @@ public:
 	//----------------------------------- OTHER IMPORTANT CONTROL METHODS
 
 	//call when the mesh dimensions have changed - sets every quantity to the right dimensions
-	virtual BError UpdateConfiguration(UPDATECONFIG_ cfgMessage = UPDATECONFIG_GENERIC) = 0;
+	virtual BError UpdateConfiguration(UPDATECONFIG_ cfgMessage) = 0;
 	
+	//This is a "softer" version of UpdateConfiguration, which can be used any time and doesn't require the object to be Uninitialized; 
+	//this will typically involve changing a value across multiple objects, thus better to call this method rather than try to remember which objects need the value changed.
+	virtual void UpdateConfiguration_Values(UPDATECONFIG_ cfgMessage) = 0;
+
 	//----------------------------------- DISPLAY-ASSOCIATED GET/SET METHODS
 
 	PhysQ FetchOnScreenPhysicalQuantity(double detail_level);
@@ -184,6 +188,9 @@ public:
 
 	cuBReal GetAverageTemperature(cuRect rectangle);
 
+	cuBReal GetStageTime(void);
+	int GetStageStep(void);
+
 	//----------------------------------- MESH SHAPE CONTROL
 
 	//copy all meshes controlled using change_mesh_shape from cpu to gpu versions
@@ -191,6 +198,10 @@ public:
 
 	//copy all meshes controlled using change_mesh_shape from gpu to cpu versions
 	BError copy_shapes_to_cpu(void);
+
+	//-----------------------------------OBJECT GETTERS
+
+	cu_obj<ManagedDiffEq_CommonCUDA>& Get_ManagedDiffEq_CommonCUDA(void);
 };
 
 #endif

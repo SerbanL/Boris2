@@ -11,7 +11,7 @@ __host__ cu_arr<VType>::cu_arr(void)
 	cu_array = nullptr;
 	pcu_array = nullptr;
 
-	size_cpu = 0;
+	arr_size = 0;
 }
 
 //size constructor
@@ -21,7 +21,7 @@ __host__ cu_arr<VType>::cu_arr(size_t size_)
 	cu_array = nullptr;
 	pcu_array = nullptr;
 
-	size_cpu = 0;
+	arr_size = 0;
 
 	resize(size_);
 }

@@ -21,7 +21,7 @@ class InsulatorMesh :
 	//Members in this derived class
 
 	//Material Parameters
-	double, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>
+	double, TEquation<double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>
 	>,
 	//Module Implementations
 	tuple<Heat> >
@@ -49,6 +49,7 @@ public:
 
 	//call when the mesh dimensions have changed - sets every quantity to the right dimensions
 	BError UpdateConfiguration(UPDATECONFIG_ cfgMessage);
+	void UpdateConfiguration_Values(UPDATECONFIG_ cfgMessage);
 
 	BError SwitchCUDAState(bool cudaState);
 

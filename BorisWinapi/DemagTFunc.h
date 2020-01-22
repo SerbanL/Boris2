@@ -6,7 +6,7 @@
 
 #include <math.h>
 
-/////////////////////////////////////////// EXACT NEWELL FORMULAS FOR SHORT DISTANCES
+/////////////////////////////////////////// EXACT NEWELL EQUATIONS FOR SHORT DISTANCES
 
 //default number of images to use for pbc calculations
 #define PBC_X_IMAGES	10

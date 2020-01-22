@@ -329,7 +329,7 @@ void AFMesh::SetSkyrmionBloch(int orientation, int chirality, Rect skyrmion_rect
 }
 
 //set M from given data VEC (0 values mean empty points) -> stretch data to M dimensions if needed.
-void AFMesh::SetMagnetisationFromData(VEC<DBL3>& data)
+void AFMesh::SetMagnetisationFromData(VEC<DBL3>& data, const Rect& dstRect)
 {
 #if COMPILECUDA == 1
 	//refresh M from gpu memory
@@ -346,17 +346,13 @@ void AFMesh::SetMagnetisationFromData(VEC<DBL3>& data)
 	if (!data.resize(M.n)) return;
 
 	//copy values in data, as well as shape, inverting it for M2
-	M.copy_values(data);
-	M2.copy_values(data);
+	M.copy_values(data, dstRect);
 
-#pragma omp parallel for
-	for (int idx = 0; idx < M2.linear_size(); idx++) {
-
-		if (M2.is_not_empty(idx)) {
-
-			M2[idx] *= -1;
-		}
-	}
+	//invert before copying to M2
+	data *= -1;
+	M2.copy_values(data, dstRect);
+	//invert back
+	data *= -1;
 
 #if COMPILECUDA == 1
 	//refresh gpu memory

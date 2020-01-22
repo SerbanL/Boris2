@@ -732,6 +732,75 @@ void Simulation::HandleCommand(string command_string) {
 		}
 		break;
 
+		case CMD_VORTEX:
+		{
+			int longitudinal, rotation, core;
+			Rect rect;
+			string meshName;
+
+			error = commandSpec.GetParameters(command_fields, longitudinal, rotation, core, rect, meshName);
+			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, longitudinal, rotation, core, rect); meshName = SMesh.GetMeshFocus(); }
+			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, longitudinal, rotation, core); rect = Rect(); meshName = SMesh.GetMeshFocus(); }
+
+			if (!error && longitudinal && rotation && core) {
+
+				StopSimulation();
+
+				string vortexFile;
+				bool invertMag = false;
+
+				//l = +1, r = -1, c = -1 : vortex_hh_clk_dn
+				//l = +1, r = -1, c = +1 : vortex_hh_clk_up
+				//l = +1, r = +1, c = -1 : vortex_hh_cclk_dn
+				//l = +1, r = +1, c = +1 : vortex_hh_cclk_up
+
+				//l = -1, r = -1, c = -1 : vortex_hh_cclk_up, then invert magnetisation.
+				//l = -1, r = -1, c = +1 : vortex_hh_cclk_dn, then invert magnetisation.
+				//l = -1, r = +1, c = -1 : vortex_hh_clk_up, then invert magnetisation.
+				//l = -1, r = +1, c = +1 : vortex_hh_clk_dn, then invert magnetisation.
+
+				if (longitudinal > 0) {
+
+					if (rotation < 0 && core < 0) vortexFile = "vortex_hh_clk_dn.ovf";
+					else if (rotation < 0 && core > 0) vortexFile = "vortex_hh_clk_up.ovf";
+					else if (rotation > 0 && core < 0) vortexFile = "vortex_hh_cclk_dn.ovf";
+					else vortexFile = "vortex_hh_cclk_up.ovf";
+				}
+				else {
+
+					invertMag = true;
+
+					if (rotation < 0 && core < 0) vortexFile = "vortex_hh_cclk_up.ovf";
+					else if (rotation < 0 && core > 0) vortexFile = "vortex_hh_cclk_dn.ovf";
+					else if (rotation > 0 && core < 0) vortexFile = "vortex_hh_clk_up.ovf";
+					else vortexFile = "vortex_hh_clk_dn.ovf";
+				}
+
+				VEC<DBL3> data;
+
+				OVF2 ovf2;
+				error = ovf2.Read_OVF2_VEC(GetExeDirectory() + vortexFile, data);
+
+				if (!error) {
+
+					//data loaded correctly, so resize currently focused mesh (if ferromagnetic) then copy magnetisation data to it.
+
+					data.renormalize(SMesh.active_mesh()->Ms.get0());
+
+					if (invertMag) data *= -1.0;
+
+					if (SMesh.active_mesh()->Magnetisation_Enabled()) {
+
+						SMesh.active_mesh()->SetMagnetisationFromData(data, rect);
+						UpdateScreen();
+					}
+					else if (verbose) BD.DisplayConsoleError("ERROR: Focused mesh must be ferromagnetic.");
+				}
+			}
+			else if (verbose) PrintCommandUsage(command_name);
+		}
+		break;
+
 		case CMD_SKYRMION:
 		{
 			int core, chirality;
@@ -1482,8 +1551,7 @@ void Simulation::HandleCommand(string command_string) {
 			bool set_value = true;
 
 			error = commandSpec.GetParameters(command_fields, meshName, paramName, paramValue);
-			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, paramName, paramValue); meshName = SMesh.GetMeshFocus(); }
-			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, paramName); meshName = SMesh.GetMeshFocus(); set_value = false; }
+			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, meshName, paramName); set_value = false; }
 
 			if (!error && set_value) {
 
@@ -1494,9 +1562,9 @@ void Simulation::HandleCommand(string command_string) {
 					UpdateScreen();
 				}
 			}
-			else if (verbose) PrintCommandUsage(command_name);
+			else if (verbose && set_value) PrintCommandUsage(command_name);
 
-			if (script_client_connected) {
+			if (script_client_connected && !error && !set_value) {
 
 				SMesh.get_meshparam_value(meshName, paramName, paramValue);
 				commSocket.SetSendData(commandSpec.PrepareReturnParameters(paramValue));
@@ -1522,9 +1590,10 @@ void Simulation::HandleCommand(string command_string) {
 
 		case CMD_CLEARPARAMSTEMP:
 		{
-			string meshName;
+			string meshName, paramName;
 
-			error = commandSpec.GetParameters(command_fields, meshName);
+			error = commandSpec.GetParameters(command_fields, meshName, paramName);
+			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, meshName); paramName = ""; }
 
 			if (error == BERROR_PARAMMISMATCH) {
 
@@ -1534,28 +1603,24 @@ void Simulation::HandleCommand(string command_string) {
 
 			StopSimulation();
 
-			if (!err_hndl.qcall(&SuperMesh::clear_meshparam_temp, &SMesh, meshName)) {
+			if (!err_hndl.qcall(&SuperMesh::clear_meshparam_temp, &SMesh, meshName, paramName)) {
 
 				UpdateScreen();
 			}
 		}
 		break;
 
-		case CMD_SETPARAMTEMP:
+		case CMD_SETPARAMTEMPEQUATION:
 		{
-			string meshName, paramName, formulaName, coeffs_string;
+			string meshName, paramName, equationText;
 
-			error = commandSpec.GetParameters(command_fields, meshName, paramName, formulaName, coeffs_string);
-			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, meshName, paramName, formulaName); coeffs_string = ""; }
+			error = commandSpec.GetParameters(command_fields, meshName, paramName, equationText);
 
 			if (!error) {
 
 				StopSimulation();
 
-				vector<string> coeffs_strings_vec = split(coeffs_string, " ");
-				vector<double> coeffs_vec = vec_convert<double, string>(coeffs_strings_vec);
-
-				if (!err_hndl.qcall(&SuperMesh::set_meshparam_formula, &SMesh, meshName, paramName, formulaName, coeffs_vec)) {
+				if (!err_hndl.qcall(&SuperMesh::set_meshparam_t_equation, &SMesh, meshName, paramName, equationText)) {
 
 					UpdateScreen();
 				}
@@ -1566,30 +1631,43 @@ void Simulation::HandleCommand(string command_string) {
 
 		case CMD_SETPARAMTEMPARRAY:
 		{
-			string paramName;
-			string fileName;
+			string meshName, paramName, fileName;
 
-			error = commandSpec.GetParameters(command_fields, paramName, fileName);
+			error = commandSpec.GetParameters(command_fields, meshName, paramName, fileName);
+			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, meshName, paramName); fileName = ""; }
 
 			//setting parameter with arrays loaded form file
 			if (!error) {
 
-				//load from a file directly
+				//load from a file directly if given
 				StopSimulation();
 
-				if (!GetFilenameDirectory(fileName).length()) fileName = directory + fileName;
+				if (fileName.length()) {
 
-				if (GetFileTermination(fileName) != ".txt")
-					fileName += ".txt";
+					if (!GetFilenameDirectory(fileName).length()) fileName = directory + fileName;
 
-				vector<vector<double>> load_arrays;
-				if (ReadDataColumns(fileName, "\t", load_arrays, { 0, 1 })) {
+					if (GetFileTermination(fileName) != ".txt")
+						fileName += ".txt";
 
-					error = SMesh.set_meshparam_tscaling_array(SMesh.GetMeshFocus(), paramName, load_arrays[0], load_arrays[1]);
+					vector<vector<double>> load_arrays;
+					if (ReadDataColumns(fileName, "\t", load_arrays, { 0, 1 })) {
+
+						error = SMesh.set_meshparam_tscaling_array(meshName, paramName, load_arrays[0], load_arrays[1]);
+
+						UpdateScreen();
+					}
+					else error(BERROR_COULDNOTLOADFILE);
+				}
+				else {
+
+					//default array
+					vector<double> temp(2), scaling(2);
+					temp = { 0.0, 1.0 };
+					scaling = { 1.0, 1.0 };
+					error = SMesh.set_meshparam_tscaling_array(meshName, paramName, temp, scaling);
 
 					UpdateScreen();
 				}
-				else error(BERROR_COULDNOTLOADFILE);
 			}
 
 			//if the above failed then try to load array from dp_arrays
@@ -1749,16 +1827,44 @@ void Simulation::HandleCommand(string command_string) {
 
 				StopSimulation();
 
-				//used with custom parameter variation generator (set from grayscale png file)
-				function<vector<BYTE>(string, INT2)> bitmap_loader = [&](string fileName, INT2 n_plane) -> vector<BYTE> {
+				//generatorName can be specified as equation, but typically this would not be specified and simply generatorName has the equation text
+				//in this case generatorName is not a key in vargenerator_descriptor - this is how we recognize this type of input
+				if (vargenerator_descriptor.get_ID_from_key(generatorName) == MATPVAR_EQUATION || !vargenerator_descriptor.has_key(generatorName)) {
 
-					vector<BYTE> bitmap;
-					BD.BGMethods()->GetBitmapFromImage(fileName, bitmap, n_plane);
+					string equationText;
 
-					return bitmap;
-				};
+					if (!vargenerator_descriptor.has_key(generatorName)) {
 
-				error = SMesh.set_meshparam_var(meshName, paramName, generatorName, generatorArgs, bitmap_loader);
+						//generatorName not a key in vargenerator_descriptor : this is the equation text, or part of it (it's possible the equation text is split between generatorName and generatorArgs if there was a space character
+						equationText = generatorName + " " + generatorArgs;
+					}
+					else {
+
+						//default equation if none specified
+						if (!generatorArgs.length()) generatorArgs = "1";
+
+						//generatorName specifically has the key corresponding to MATPVAR_EQUATION, thus generatorArgs holds the equation text.
+						equationText = generatorArgs;
+					}
+
+					if (!err_hndl.qcall(&SuperMesh::set_meshparam_s_equation, &SMesh, meshName, paramName, equationText)) {
+
+						UpdateScreen();
+					}
+				}
+				else {
+
+					//used with custom parameter variation generator (set from grayscale png file)
+					function<vector<BYTE>(string, INT2)> bitmap_loader = [&](string fileName, INT2 n_plane) -> vector<BYTE> {
+
+						vector<BYTE> bitmap;
+						BD.BGMethods()->GetBitmapFromImage(fileName, bitmap, n_plane);
+
+						return bitmap;
+					};
+
+					error = SMesh.set_meshparam_var(meshName, paramName, generatorName, generatorArgs, bitmap_loader);
+				}
 
 				UpdateScreen();
 			}
@@ -1793,8 +1899,6 @@ void Simulation::HandleCommand(string command_string) {
 			error = commandSpec.GetParameters(command_fields, simFileName);
 
 			if (!error) {
-
-				if (verbose) BD.DisplayConsoleMessage("Loading simulation ... please wait.");
 
 				if (!err_hndl.call(&Simulation::LoadSimulation, this, simFileName)) {
 
@@ -2181,7 +2285,7 @@ void Simulation::HandleCommand(string command_string) {
 				//right hand side electrode
 				SMesh.CallModuleMethod(&STransport::AddElectrode, 0.0, Rect(DBL3(smeshRect.e.x, smeshRect.s.y, smeshRect.s.z), smeshRect.e));
 
-				SMesh.CallModuleMethod(&STransport::SetPotential, 0.0);
+				SMesh.CallModuleMethod(&STransport::SetPotential, 0.0, true);
 
 				UpdateScreen();
 			}
@@ -2199,7 +2303,7 @@ void Simulation::HandleCommand(string command_string) {
 
 				if (!error) {
 
-					SMesh.CallModuleMethod(&STransport::SetPotential, potential);
+					SMesh.CallModuleMethod(&STransport::SetPotential, potential, true);
 
 					UpdateScreen();
 				}
@@ -2221,7 +2325,7 @@ void Simulation::HandleCommand(string command_string) {
 
 				if (!error) {
 
-					SMesh.CallModuleMethod(&STransport::SetCurrent, current);
+					SMesh.CallModuleMethod(&STransport::SetCurrent, current, true);
 
 					UpdateScreen();
 				}
@@ -2833,7 +2937,7 @@ void Simulation::HandleCommand(string command_string) {
 
 					if (!error) BD.DisplayConsoleMessage("Material added to local database.");
 				}
-				else BD.DisplayConsoleError("Mesh name doesn't exist.");
+				else BD.DisplayConsoleError("ERROR: Mesh name doesn't exist.");
 
 				UpdateScreen();
 
@@ -3005,7 +3109,7 @@ void Simulation::HandleCommand(string command_string) {
 
 					BD.DisplayConsoleMessage("l_ex = " + l_ex + ", l_Bloch = " + l_Bloch + ", l_sky = " + l_sky);
 				}
-				else BD.DisplayConsoleError("Focused mesh is not a ferromagnetic mesh.");
+				else BD.DisplayConsoleError("ERROR: Focused mesh is not a ferromagnetic mesh.");
 			}
 		}
 		break;
@@ -3018,21 +3122,31 @@ void Simulation::HandleCommand(string command_string) {
 
 				if (script_client_connected) commSocket.SetSendData(commandSpec.PrepareReturnParameters(SMesh.active_mesh()->n));
 			}
-			else if (verbose) BD.DisplayConsoleError("Focused mesh is not a ferromagnetic mesh.");
+			else if (verbose) BD.DisplayConsoleError("ERROR: Focused mesh is not a ferromagnetic mesh.");
 		}
 		break;
 
 		case CMD_LOADOVF2MESH:
 		{
-			double renormalize_value;
-			string fileName;
+			string params_string;
 
-			error = commandSpec.GetParameters(command_fields, renormalize_value, fileName);
-			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, fileName); renormalize_value = 0; }
-
+			error = commandSpec.GetParameters(command_fields, params_string);
 			if (!error) {
 
 				StopSimulation();
+
+				double renormalize_value = 0.0;
+				string fileName;
+
+				//using split_numeric approach since the file name path can contain spaces.
+				vector<string> entries = split_numeric(params_string);
+
+				if (entries.size() == 2) {
+
+					renormalize_value = ToNum(entries[0]);
+					fileName = entries[1];
+				}
+				else fileName = params_string;
 
 				if (GetFileTermination(fileName) != ".ovf")
 					fileName += ".ovf";
@@ -3077,15 +3191,25 @@ void Simulation::HandleCommand(string command_string) {
 
 		case CMD_LOADOVF2MAG:
 		{
-			double renormalize_value;
-			string fileName;
+			string params_string;
 
-			error = commandSpec.GetParameters(command_fields, renormalize_value, fileName);
-			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, fileName); renormalize_value = 0; }
-
+			error = commandSpec.GetParameters(command_fields, params_string);
 			if (!error) {
 
 				StopSimulation();
+
+				double renormalize_value = 0.0;
+				string fileName;
+
+				//using split_numeric approach since the file name path can contain spaces.
+				vector<string> entries = split_numeric(params_string);
+
+				if (entries.size() == 2) {
+
+					renormalize_value = ToNum(entries[0]);
+					fileName = entries[1];
+				}
+				else fileName = params_string;
 
 				if (GetFileTermination(fileName) != ".ovf")
 					fileName += ".ovf";
@@ -3104,24 +3228,11 @@ void Simulation::HandleCommand(string command_string) {
 					if (IsNZ(renormalize_value)) data.renormalize(renormalize_value);
 
 					if (SMesh.active_mesh()->Magnetisation_Enabled()) {
-						
-						std::function<void(string, Rect)> save_data_updater = [&](string meshName, Rect meshRect_old) -> void {
 
-							//update rectangles in saveDataList for the named mesh
-							UpdateSaveDataEntries(meshRect_old, SMesh[meshName]->GetMeshRect(), meshName);
-						};
-
-						if (!err_hndl.call(&SuperMesh::SetMeshRect, &SMesh, SMesh.GetMeshFocus(), data.rect, save_data_updater)) {
-							
-							if (!err_hndl.call(&Mesh::SetMeshCellsize, SMesh.active_mesh(), data.h)) {
-
-								SMesh.active_mesh()->SetMagnetisationFromData(data);
-
-								UpdateScreen_AutoSet();
-							}
-						}
+						SMesh.active_mesh()->SetMagnetisationFromData(data);
+						UpdateScreen();
 					}
-					else if (verbose) BD.DisplayConsoleError("Focused mesh must be ferromagnetic.");
+					else if (verbose) BD.DisplayConsoleError("ERROR: Focused mesh must be ferromagnetic.");
 				}
 			}
 			else if (verbose) PrintCommandUsage(command_name);
@@ -3173,7 +3284,103 @@ void Simulation::HandleCommand(string command_string) {
 					OVF2 ovf2;
 					error = ovf2.Write_OVF2_VEC(fileName, SMesh.active_mesh()->M, Ms0, data_type);
 				}
-				else if (verbose) BD.DisplayConsoleError("Focused mesh must be ferromagnetic.");
+				else if (verbose) BD.DisplayConsoleError("ERROR: Focused mesh must be ferromagnetic.");
+			}
+			else if (verbose) PrintCommandUsage(command_name);
+		}
+		break;
+
+		case CMD_SAVEOVF2PARAMVAR:
+		{
+			string parameters;
+
+			//expecting (data_type) (meshname) paramname (directory\\)filename
+			error = commandSpec.GetParameters(command_fields, parameters);
+
+			if (!error) {
+
+				string data_type = "bin8";
+				string fileName, meshname, paramname;
+
+				vector<string> fields = split(parameters, " ");
+
+				int oparams = 0;
+
+				if (fields[0] == "bin4" || fields[0] == "bin8" || fields[0] == "text") {
+
+					//data type specified (if not, default stands)
+					oparams++;
+					data_type = fields[0];
+				}
+
+				if (fields.size() > oparams) {
+
+					meshname = fields[oparams];
+					if (SMesh.contains(meshname)) {
+
+						//meshname specified
+						oparams++;
+					}
+					else {
+
+						//meshname not specified : use focused mesh
+						meshname = SMesh.GetMeshFocus();
+					}
+				}
+
+				if (fields.size() > oparams + 1) {
+
+					//get parameter name
+					paramname = fields[oparams];
+
+					if (!SMesh[meshname]->contains_param(paramname)) {
+
+						if (verbose) BD.DisplayConsoleError("ERROR: incorrect meshname and/or paramname.");
+						break;
+					}
+
+					//get filename
+					fileName = combine(subvec(fields, oparams + 1), " ");
+				}
+				//something wrong : not enough parameters specified
+				else {
+
+					if (verbose) BD.DisplayConsoleError("ERROR: not enough parameters provided.");
+					break;
+				}
+
+				if (GetFileTermination(fileName) != ".ovf")
+					fileName += ".ovf";
+
+				if (!GetFilenameDirectory(fileName).length()) fileName = directory + fileName;
+
+				OVF2 ovf2;
+				PARAM_ paramID = (PARAM_)SMesh[meshname]->get_meshparam_id(paramname);
+
+				if (SMesh[meshname]->is_paramvarequation_set(paramID)) {
+
+					if (SMesh[meshname]->is_paramvar_scalar(paramID)) {
+
+						VEC<double> s_scaling(SMesh[meshname]->get_paramtype_cellsize(paramID), SMesh[meshname]->meshRect);
+						SMesh[meshname]->calculate_meshparam_s_scaling(paramID, s_scaling, SMesh.GetStageTime());
+
+						error = ovf2.Write_OVF2_VEC(fileName, s_scaling, data_type);
+					}
+					else {
+
+						VEC<DBL3> s_scaling(SMesh[meshname]->get_paramtype_cellsize(paramID), SMesh[meshname]->meshRect);
+						SMesh[meshname]->calculate_meshparam_s_scaling(paramID, s_scaling, SMesh.GetStageTime());
+
+						error = ovf2.Write_OVF2_VEC(fileName, s_scaling, 1.0, data_type);
+					}
+				}
+				else {
+
+					void* s_scaling = SMesh[meshname]->get_meshparam_s_scaling(paramID);
+
+					if (SMesh[meshname]->is_paramvar_scalar(paramID)) error = ovf2.Write_OVF2_VEC(fileName, *reinterpret_cast<VEC<double>*>(s_scaling), data_type);
+					else error = ovf2.Write_OVF2_VEC(fileName, *reinterpret_cast<VEC<DBL3>*>(s_scaling), 1.0, data_type);
+				}
 			}
 			else if (verbose) PrintCommandUsage(command_name);
 		}
@@ -3209,6 +3416,74 @@ void Simulation::HandleCommand(string command_string) {
 		{
 			//Check with "www.boris-spintronics.uk" if program version is up to date, and get latest update time for materials database
 			single_call_launch(&Simulation::CheckUpdate, THREAD_HANDLEMESSAGE2);
+		}
+		break;
+
+		case CMD_EQUATIONCONSTANTS:
+		{
+			string userconstant_name;
+			double value;
+
+			error = commandSpec.GetParameters(command_fields, userconstant_name, value);
+			
+			if (error) {
+
+				error.reset() = commandSpec.GetParameters(command_fields, userconstant_name);
+
+				if (!error && verbose) {
+
+					if (userConstants.has_key(userconstant_name))
+						BD.DisplayConsoleListing(userconstant_name + " = " + ToString(userConstants[userconstant_name]));
+					else BD.DisplayConsoleError("ERROR : constant not defined.");
+				}
+				else if (verbose) Print_EquationConstants();
+			}
+			else {
+
+				StopSimulation();
+
+				if (!userConstants.has_key(userconstant_name)) userConstants.push_back(value, userconstant_name);
+				else userConstants[userconstant_name] = value;
+
+				//now update all objects which have a text equation
+				SMesh.UpdateConfiguration_Values(UPDATECONFIG_TEQUATION_CONSTANTS);
+
+				UpdateScreen();
+			}
+		}
+		break;
+
+		case CMD_DELEQUATIONCONSTANT:
+		{
+			string userconstant_name;
+
+			error = commandSpec.GetParameters(command_fields, userconstant_name);
+
+			if (!error) {
+
+				StopSimulation();
+
+				if (userConstants.has_key(userconstant_name)) userConstants.erase(userconstant_name);
+
+				//now update all objects which have a text equation
+				SMesh.UpdateConfiguration_Values(UPDATECONFIG_TEQUATION_CONSTANTS);
+
+				UpdateScreen();
+			}
+			else if (verbose) PrintCommandUsage(command_name);
+		}
+		break;
+
+		case CMD_CLEAREQUATIONCONSTANTS:
+		{
+			StopSimulation();
+
+			userConstants.clear();
+
+			//now update all objects which have a text equation
+			SMesh.UpdateConfiguration_Values(UPDATECONFIG_TEQUATION_CONSTANTS);
+
+			UpdateScreen();
 		}
 		break;
 
@@ -3490,7 +3765,7 @@ void Simulation::HandleCommand(string command_string) {
 				}
 				else {
 
-					if (verbose) BD.DisplayConsoleError("Focused mesh is not a ferromagnetic mesh.");
+					if (verbose) BD.DisplayConsoleError("ERROR: Focused mesh is not a ferromagnetic mesh.");
 				}
 			}
 			else if (verbose) PrintCommandUsage(command_name);
@@ -4269,6 +4544,7 @@ void Simulation::HandleCommand(string command_string) {
 
 		case CMD_TEST:
 		{
+			/*
 			vector<string> commands_output;
 			commands_output.resize(commands.size());
 
@@ -4304,6 +4580,7 @@ void Simulation::HandleCommand(string command_string) {
 			commands_description = trim(commands_description, "</i>");
 
 			SaveTextToFile("c:/commands.txt", commands_description);
+			*/
 		}
 		break;
 

@@ -254,7 +254,7 @@ __global__ void RunTEuler_Step1_LLG_withReductions_Kernel(ManagedDiffEqAFMCUDA& 
 				cuReal3 rhs = (-(cuBReal)GAMMA * grel_AFM.i / (1 + alpha_AFM.i * alpha_AFM.i)) * ((M[idx] ^ Heff[idx]) + alpha_AFM.i * ((M[idx] / Ms_AFM.i) ^ (M[idx] ^ Heff[idx])));
 				cuReal3 rhs2 = (-(cuBReal)GAMMA * grel_AFM.j / (1 + alpha_AFM.j * alpha_AFM.j)) * ((M2[idx] ^ Heff2[idx]) + alpha_AFM.j * ((M2[idx] / Ms_AFM.j) ^ (M2[idx] ^ Heff2[idx])));
 
-				//Now estimate magnetization using the second trapezoidal Euler step formula
+				//Now estimate magnetization using the second trapezoidal Euler step equation
 				M[idx] = ((*cuDiffEq.psM1)[idx] + M[idx] + rhs * dT) / 2;
 				M2[idx] = ((*cuDiffEq.psM1_2)[idx] + M2[idx] + rhs2 * dT) / 2;
 
@@ -312,7 +312,7 @@ __global__ void RunTEuler_Step1_LLG_Kernel(ManagedDiffEqAFMCUDA& cuDiffEq, Manag
 				cuReal3 rhs = (-(cuBReal)GAMMA * grel_AFM.i / (1 + alpha_AFM.i * alpha_AFM.i)) * ((M[idx] ^ Heff[idx]) + alpha_AFM.i * ((M[idx] / Ms_AFM.i) ^ (M[idx] ^ Heff[idx])));
 				cuReal3 rhs2 = (-(cuBReal)GAMMA * grel_AFM.j / (1 + alpha_AFM.j * alpha_AFM.j)) * ((M2[idx] ^ Heff2[idx]) + alpha_AFM.j * ((M2[idx] / Ms_AFM.j) ^ (M2[idx] ^ Heff2[idx])));
 
-				//Now estimate magnetization using the second trapezoidal Euler step formula
+				//Now estimate magnetization using the second trapezoidal Euler step equation
 				M[idx] = ((*cuDiffEq.psM1)[idx] + M[idx] + rhs * dT) / 2;
 				M2[idx] = ((*cuDiffEq.psM1_2)[idx] + M2[idx] + rhs2 * dT) / 2;
 
@@ -370,7 +370,7 @@ __global__ void RunAHeun_Step1_LLG_withReductions_Kernel(ManagedDiffEqAFMCUDA& c
 				//First save predicted magnetization for lte calculation
 				cuReal3 saveM = (*cuMesh.pM)[idx];
 
-				//Now estimate magnetization using the second trapezoidal Euler step formula
+				//Now estimate magnetization using the second trapezoidal Euler step equation
 				M[idx] = ((*cuDiffEq.psM1)[idx] + M[idx] + rhs * dT) / 2;
 				M2[idx] = ((*cuDiffEq.psM1_2)[idx] + M2[idx] + rhs2 * dT) / 2;
 
@@ -438,7 +438,7 @@ __global__ void RunAHeun_Step1_LLG_Kernel(ManagedDiffEqAFMCUDA& cuDiffEq, Manage
 				//First save predicted magnetization for lte calculation
 				cuReal3 saveM = (*cuMesh.pM)[idx];
 
-				//Now estimate magnetization using the second trapezoidal Euler step formula
+				//Now estimate magnetization using the second trapezoidal Euler step equation
 				M[idx] = ((*cuDiffEq.psM1)[idx] + M[idx] + rhs * dT) / 2;
 				M2[idx] = ((*cuDiffEq.psM1_2)[idx] + M2[idx] + rhs2 * dT) / 2;
 
@@ -1061,7 +1061,7 @@ __global__ void RunABMTEuler_Step1_LLG_Kernel(ManagedDiffEqAFMCUDA& cuDiffEq, Ma
 				cuReal3 rhs = (-(cuBReal)GAMMA * grel_AFM.i / (1 + alpha_AFM.i * alpha_AFM.i)) * ((M[idx] ^ Heff[idx]) + alpha_AFM.i * ((M[idx] / Ms_AFM.i) ^ (M[idx] ^ Heff[idx])));
 				cuReal3 rhs2 = (-(cuBReal)GAMMA * grel_AFM.j / (1 + alpha_AFM.j * alpha_AFM.j)) * ((M2[idx] ^ Heff2[idx]) + alpha_AFM.j * ((M2[idx] / Ms_AFM.j) ^ (M2[idx] ^ Heff2[idx])));
 
-				//Now estimate magnetization using the second trapezoidal Euler step formula
+				//Now estimate magnetization using the second trapezoidal Euler step equation
 				M[idx] = ((*cuDiffEq.psM1)[idx] + M[idx] + rhs * dT) / 2;
 				M2[idx] = ((*cuDiffEq.psM1_2)[idx] + M2[idx] + rhs2 * dT) / 2;
 

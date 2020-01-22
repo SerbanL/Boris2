@@ -16,7 +16,7 @@ FMesh::FMesh(SuperMesh *pSMesh_) :
 			VINFO(grel), VINFO(alpha), VINFO(Ms), VINFO(Nxy), VINFO(A), VINFO(D), VINFO(J1), VINFO(J2), VINFO(K1), VINFO(K2), VINFO(mcanis_ea1), VINFO(mcanis_ea2), VINFO(susrel), VINFO(susprel), VINFO(cHA),
 			VINFO(elecCond), VINFO(amrPercentage), VINFO(P), VINFO(beta), VINFO(De), VINFO(n_density), VINFO(SHA), VINFO(flSOT), VINFO(betaD), VINFO(l_sf), VINFO(l_ex), VINFO(l_ph), VINFO(Gi), VINFO(Gmix), 
 			VINFO(ts_eff), VINFO(tsi_eff), VINFO(pump_eff), VINFO(cpump_eff), VINFO(the_eff),
-			VINFO(base_temperature), VINFO(T_Curie), VINFO(T_Curie_material), VINFO(atomic_moment), VINFO(thermCond), VINFO(density), VINFO(shc), VINFO(cT), VINFO(Q)
+			VINFO(base_temperature), VINFO(T_equation), VINFO(T_Curie), VINFO(T_Curie_material), VINFO(atomic_moment), VINFO(thermCond), VINFO(density), VINFO(shc), VINFO(cT), VINFO(Q)
 		},
 		{
 			//Modules Implementations
@@ -43,7 +43,7 @@ FMesh::FMesh(Rect meshRect_, DBL3 h_, SuperMesh *pSMesh_) :
 			VINFO(grel), VINFO(alpha), VINFO(Ms), VINFO(Nxy), VINFO(A), VINFO(D), VINFO(J1), VINFO(J2), VINFO(K1), VINFO(K2), VINFO(mcanis_ea1), VINFO(mcanis_ea2), VINFO(susrel), VINFO(susprel), VINFO(cHA),
 			VINFO(elecCond), VINFO(amrPercentage), VINFO(P), VINFO(beta), VINFO(De), VINFO(n_density), VINFO(SHA), VINFO(flSOT), VINFO(betaD), VINFO(l_sf), VINFO(l_ex), VINFO(l_ph), VINFO(Gi), VINFO(Gmix),
 			VINFO(ts_eff), VINFO(tsi_eff), VINFO(pump_eff), VINFO(cpump_eff), VINFO(the_eff),
-			VINFO(base_temperature), VINFO(T_Curie), VINFO(T_Curie_material), VINFO(atomic_moment), VINFO(thermCond), VINFO(density), VINFO(shc), VINFO(cT), VINFO(Q)
+			VINFO(base_temperature), VINFO(T_equation), VINFO(T_Curie), VINFO(T_Curie_material), VINFO(atomic_moment), VINFO(thermCond), VINFO(density), VINFO(shc), VINFO(cT), VINFO(Q)
 		},
 		{
 			//Modules Implementations
@@ -127,6 +127,9 @@ BError FMesh::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 
 		//update material parameters spatial dependence as cellsize and rectangle could have changed
 		if (!error && !update_meshparam_var()) error(BERROR_OUTOFMEMORY_NCRIT);
+
+		//update any text equations used in mesh parameters (dependence on mesh dimensions possible)
+		if (!error) update_meshparam_equations();
 	}
 
 	//erase any unused skyrmion trackers in this mesh
@@ -162,6 +165,53 @@ BError FMesh::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 	if (!error) error = meshODE.UpdateConfiguration(cfgMessage);
 
 	return error;
+}
+
+void FMesh::UpdateConfiguration_Values(UPDATECONFIG_ cfgMessage)
+{
+	///////////////////////////////////////////////////////
+	//Update configuration in this mesh
+	///////////////////////////////////////////////////////
+
+	if (cfgMessage == UPDATECONFIG_TEQUATION_CONSTANTS) {
+
+		//Update text equations other than those used in mesh parameters
+		UpdateTEquationUserConstants();
+
+		//update any text equations used in mesh parameters
+		update_meshparam_equations();
+	}
+	else if (cfgMessage == UPDATECONFIG_TEQUATION_CLEAR) {
+
+		if (T_equation.is_set()) T_equation.clear();
+	}
+
+	///////////////////////////////////////////////////////
+	//Update configuration for mesh modules
+	///////////////////////////////////////////////////////
+
+	for (int idx = 0; idx < (int)pMod.size(); idx++) {
+
+		if (pMod[idx]) {
+
+			pMod[idx]->UpdateConfiguration_Values(cfgMessage);
+		}
+	}
+
+	///////////////////////////////////////////////////////
+	//Update configuration for mesh ode solver
+	///////////////////////////////////////////////////////
+
+	meshODE.UpdateConfiguration_Values(cfgMessage);
+
+	//------------------------ CUDA UpdateConfiguration if set
+
+#if COMPILECUDA == 1
+	if (pMeshCUDA) {
+
+		pMeshCUDA->UpdateConfiguration_Values(cfgMessage);
+	}
+#endif
 }
 
 void FMesh::CoupleToDipoles(bool status)
@@ -260,14 +310,13 @@ BError FMesh::SwitchCUDAState(bool cudaState)
 	//are we switching to cuda?
 	if (cudaState) {
 
-		//delete MeshCUDA object and null (just in case)
-		if (pMeshCUDA) delete pMeshCUDA;
-		pMeshCUDA = nullptr;
+		if (!pMeshCUDA) {
 
-		//then make MeshCUDA object, copying over currently held cpu data
-		pMeshCUDA = new FMeshCUDA(this);
-		error = pMeshCUDA->Error_On_Create();
-		if(!error) error = pMeshCUDA->cuMesh()->set_pointers(pMeshCUDA);
+			//then make MeshCUDA object, copying over currently held cpu data
+			pMeshCUDA = new FMeshCUDA(this);
+			error = pMeshCUDA->Error_On_Create();
+			if (!error) error = pMeshCUDA->cuMesh()->set_pointers(pMeshCUDA);
+		}
 	}
 	else {
 
@@ -347,7 +396,7 @@ void FMesh::SetCurieTemperature(double Tc)
 		//5. K1 and K2 anisotropy constants -> me^3
 		//6. P -> me^2
 
-		//1. alpha = alpha0 * (1 - T/3Tc) up to Tc then 2 * alpha0 * T / 3 Tc above Tc -> for this reason use an array, not a formula
+		//1. alpha = alpha0 * (1 - T/3Tc) up to Tc then 2 * alpha0 * T / 3 Tc above Tc -> for this reason use an array, not a equation
 
 		//-------------------------------
 
@@ -440,14 +489,14 @@ void FMesh::SetCurieTemperature(double Tc)
 		}
 
 		//set scaling arrays now
-		Ms.set_precalculated_scaling_array(t_scaling_me);
-		P.set_precalculated_scaling_array(t_scaling_me);
-		A.set_precalculated_scaling_array(t_scaling_me2);
-		D.set_precalculated_scaling_array(t_scaling_me2);
-		K1.set_precalculated_scaling_array(t_scaling_me3);
-		K2.set_precalculated_scaling_array(t_scaling_me3);
-		susrel.set_precalculated_scaling_array(t_scaling_sus);
-		alpha.set_precalculated_scaling_array(t_scaling_dam);
+		Ms.set_precalculated_t_scaling_array(t_scaling_me);
+		P.set_precalculated_t_scaling_array(t_scaling_me);
+		A.set_precalculated_t_scaling_array(t_scaling_me2);
+		D.set_precalculated_t_scaling_array(t_scaling_me2);
+		K1.set_precalculated_t_scaling_array(t_scaling_me3);
+		K2.set_precalculated_t_scaling_array(t_scaling_me3);
+		susrel.set_precalculated_t_scaling_array(t_scaling_sus);
+		alpha.set_precalculated_t_scaling_array(t_scaling_dam);
 
 		//make sure to also update them - this method can be called during a simulation, e.g. if field changes.
 		Ms.update(base_temperature);

@@ -167,7 +167,8 @@ public:
 	//---------------------------------------------------------IMPORTANT CONTROL METHODS : SuperMeshControl.cpp
 
 	//call whenever changes are made to meshes (e.g. dimensions, cellsize, modules added/deleted)
-	BError UpdateConfiguration(UPDATECONFIG_ cfgMessage = UPDATECONFIG_GENERIC);
+	BError UpdateConfiguration(UPDATECONFIG_ cfgMessage);
+	void UpdateConfiguration_Values(UPDATECONFIG_ cfgMessage);
 
 	//couple ferromagnetic meshes to any touching dipole meshes, setting interface cell values and flags
 	void CoupleToDipoles(void);
@@ -205,7 +206,13 @@ public:
 	void ResetODE(void) { odeSolver.Reset(); }
 
 	//set new stage for ODE solvers in the ferromagnetic meshes
-	void NewStageODE(void) { odeSolver.NewStage(); }
+	void NewStageODE(void) 
+	{ 
+		//if setting new stage first clear all text equation objects - if this stage uses a text equation then it will be set elsewhere after this call
+		UpdateConfiguration_Values(UPDATECONFIG_TEQUATION_CLEAR);
+		//new stage in ode
+		odeSolver.NewStage(); 
+	}
 
 	//set the ode and evaluation method. Any new ODE in a ferromagnetic mesh will use these settings.
 	BError SetODE(ODE_ setOde, EVAL_ evalMethod);
@@ -259,6 +266,10 @@ public:
 
 	bool MoveMeshAntisymmetric(void) { return odeSolver.MoveMeshAntisymmetric(); }
 	double MoveMeshThreshold(void) { return odeSolver.MoveMeshThreshold(); }
+
+#if COMPILECUDA == 1
+	cu_obj<ManagedDiffEq_CommonCUDA>& Get_ManagedDiffEq_CommonCUDA(void) { return odeSolver.Get_pODECUDA()->Get_ManagedDiffEq_CommonCUDA(); }
+#endif
 
 	//--------------------------------------------------------- MESH HANDLING - COMPONENTS : SuperMeshMeshes.cpp
 
@@ -362,14 +373,16 @@ public:
 
 	//temperature dependence
 
-	BError set_meshparam_formula(string meshName, string paramHandle, string formulaName, vector<double> coefficients);
+	BError set_meshparam_t_equation(string meshName, string paramHandle, string equationText);
 	
 	BError set_meshparam_tscaling_array(string meshName, string paramHandle, vector<double>& temp, vector<double>& scaling);
 
 	//clear parameters temperature dependence in given mesh (all meshes if empty string)
-	BError clear_meshparam_temp(string meshName);
+	BError clear_meshparam_temp(string meshName, string paramHandle);
 	
 	//spatial dependence
+
+	BError set_meshparam_s_equation(string meshName, string paramHandle, string equationText);
 
 	//clear parameters spatial dependence (variation) in given mesh (all meshes if empty string)
 	BError clear_meshparam_variation(string meshName);

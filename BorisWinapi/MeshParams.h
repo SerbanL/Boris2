@@ -171,6 +171,9 @@ public:
 	//the mesh base temperature (K)
 	double base_temperature = 0.0;
 
+	//text equation for base temperature dependence, allowing time dependence; stage step (Ss) is introduced as user constant.
+	TEquation<double> T_equation;
+
 	//Curie temperature - 870K for permalloy but turn it off by default. If LLG is the default equation we don't want temperature dependencies to be updated every time the applied field changes.
 	//This is the actually set value
 	double T_Curie = 0.0;
@@ -211,15 +214,6 @@ protected:
 
 	//call this to update given parameter output value to current base_temperature
 	void update_parameters(PARAM_ paramID = PARAM_ALL);
-
-	//-------------------------Info (Getters)
-
-	//get reference to mesh parameter spatial scaling VEC
-	//use void* since the scaling is templated. Caller must recast it correctly - see is_s_scaling_scalar method
-	void* get_meshparam_s_scaling(PARAM_ paramID);
-
-	//check if scaling array is scalar (or else vectorial)
-	bool is_s_scaling_scalar(PARAM_ paramID);
 
 public:
 
@@ -267,7 +261,7 @@ public:
 
 	PARAMTYPE_ get_meshparam_type(PARAM_ paramID) { return meshParams(paramID).get_type(); }
 
-	//returns a string describing the set temperature dependence ("none", "array" or set formula : "name parameters...") 
+	//returns a string describing the set temperature dependence ("none", "array" or set equation : "name parameters...") 
 	string get_paraminfo_string(PARAM_ paramID);
 
 	//returns a string describing the set spatial dependence with any parameters
@@ -275,8 +269,14 @@ public:
 
 	//check if the given parameter has a temperature dependence set
 	bool is_paramtemp_set(PARAM_ paramID);
+	//check if the given parameters has a temperature dependence specified using a text equation
+	bool is_paramtempequation_set(PARAM_ paramID);
 	//check if the given parameter has a  spatial variation set
 	bool is_paramvar_set(PARAM_ paramID);
+	//check if the spatial dependence is set using a text equation
+	bool is_paramvarequation_set(PARAM_ paramID);
+	//check if scaling array is scalar (or else vectorial)
+	bool is_paramvar_scalar(PARAM_ paramID);
 	//check if the given parameter has a  temperature dependence or a spatial variation set
 	bool is_param_nonconst(PARAM_ paramID);
 
@@ -285,6 +285,16 @@ public:
 
 	//is this param hidden or can we display it?
 	bool is_param_hidden(PARAM_ paramID) { return meshParams(paramID).hidden; }
+
+	//-------------------------Spatial scaling VEC get / calculate methods
+
+	//get reference to mesh parameter spatial scaling VEC
+	//use void* since the scaling is templated. Caller must recast it correctly - see is_paramvar_scalar method
+	void* get_meshparam_s_scaling(PARAM_ paramID);
+
+	//calculate spatial variation into the provided VECs - intended to be used when the spatial variation is set using a text equation
+	void calculate_meshparam_s_scaling(PARAM_ paramID, VEC<double>& displayVEC_SCA, double stime);
+	void calculate_meshparam_s_scaling(PARAM_ paramID, VEC<DBL3>& displayVEC_VEC, double stime);
 
 	//-------------------------Setters
 
@@ -296,19 +306,28 @@ public:
 	//set value from string for named parameter (units allowed in string)
 	void set_meshparam_value(PARAM_ paramID, string value_text);
 
-	//set the mesh parameter formula with given coefficients
-	void set_meshparam_formula(PARAM_ paramID, MATPFORM_ formulaID, vector<double> coefficients);
+	//set the mesh parameter temperature equation with given user constants
+	void set_meshparam_t_equation(PARAM_ paramID, string& equationText, vector_key<double>& userConstants);
+
+	//clear mesh parameter temperature dependence
+	void clear_meshparam_temp(PARAM_ paramID);
 
 	//set mesh parameter array scaling
 	bool set_meshparam_tscaling_array(PARAM_ paramID, vector<double>& temp, vector<double>& scaling);
 
 	//-------------------------Setters : spatial variation
 
+	//set the mesh parameter spatial variation equation with given user constants
+	void set_meshparam_s_equation(PARAM_ paramID, string& equationText, vector_key<double>& userConstants, DBL3 meshDimensions);
+
 	//clear mesh parameter spatial variation (all if paramID == PARAM_ALL)
 	void clear_meshparam_variation(PARAM_ paramID);
 
 	//update mesh parameter spatial variation (e.g. cellsize or rectangle could have changed)
 	bool update_meshparam_var(PARAM_ paramID, DBL3 h, Rect rect);
+
+	//update text equations for mesh parameters with user constants, mesh dimensions, Curie temperature, base temperature
+	bool update_meshparam_equations(PARAM_ paramID, vector_key<double>& userConstants, DBL3 meshDimensions);
 
 	//set parameter spatial variation using a given generator and arguments (arguments passed as a string to be interpreted and converted using ToNum)
 	BError set_meshparam_var(PARAM_ paramID, MATPVAR_ generatorID, DBL3 h, Rect rect, string generatorArgs, function<vector<BYTE>(string, INT2)>& bitmap_loader);

@@ -5,8 +5,10 @@
 //----------------------------------- PARAMETERS TEMPERATURE
 
 //set mesh base temperature
-void Mesh::SetBaseTemperature(double Temperature)
+void Mesh::SetBaseTemperature(double Temperature, bool clear_equation)
 {
+	if (clear_equation) T_equation.clear();
+
 	//new base temperature and adjust parameter output values for new base temperature
 	base_temperature = Temperature;
 
@@ -14,10 +16,18 @@ void Mesh::SetBaseTemperature(double Temperature)
 	if (pMeshCUDA) pMeshCUDA->base_temperature.from_cpu(base_temperature);
 #endif
 
+	//update any text equations used in mesh parameters (base temperature used as a constant - Tb)
+	//need to update equations before parameters : if a parameter has a temperature dependence set using an equation by Temp.size() is zero, then updating parameters sets values based on the mesh base temperature
+	update_meshparam_equations();
+
+	//update parameter current values : if they have a temperature dependence set the base temperature will change their values
 	update_parameters();
 
-	//1. reset Temp VEC to base temperature
+	//1a. reset Temp VEC to base temperature
 	CallModuleMethod(&Heat::SetBaseTemperature, Temperature);
+
+	//1b. Zeeman module might set field using a custom user equation where the base temperature is a parameter
+	CallModuleMethod(&Zeeman::SetBaseTemperature, Temperature);
 
 	//NOTE : do not call UpdateConfiguration here - this is to allow Temperature sequences in simulation stages
 	//Instead deal with any adjustments required on a module by module basis (e.g. StrayField)
@@ -27,6 +37,43 @@ void Mesh::SetBaseTemperature(double Temperature)
 
 	//3. electrical conductivity might also need updating so force it here - if Transport module not set then nothing happens (note elC will have zero size in this case)
 	CallModuleMethod(&Transport::CalculateElectricalConductivity, true);
+}
+
+//set text equation for base temperature : when iterating, the base temperature will be evaluated and set using the text equation
+BError Mesh::SetBaseTemperatureEquation(string equation_string, int step)
+{
+	BError error(CLASS_STR(Mesh));
+
+	//set equation if not already set, or this is the first step in a stage
+	if (!T_equation.is_set() || step == 0) {
+
+		//important to set user constants first : if these are required then the make_from_string call will fail. This may mean the user constants are not set when we expect them to.
+		UpdateTEquationUserConstants();
+
+		if (!T_equation.make_from_string(equation_string, { {"Ss", 0} })) return error(BERROR_INCORRECTSTRING);
+	}
+	else {
+
+		//equation set and not the first step : adjust Ss constant
+		T_equation.set_constant("Ss", step);
+		UpdateTEquationUserConstants();
+	}
+
+	return error;
+}
+
+void Mesh::UpdateTEquationUserConstants(void)
+{
+	if (userConstants.size()) {
+
+		vector<pair<string, double>> constants(userConstants.size());
+		for (int idx = 0; idx < userConstants.size(); idx++) {
+
+			constants[idx] = { userConstants.get_key_from_index(idx), userConstants[idx] };
+		}
+
+		T_equation.set_constants(constants);
+	}
 }
 
 //----------------------------------- PARAMETERS SPATIAL VARIATION
@@ -44,6 +91,21 @@ bool Mesh::update_meshparam_var(void)
 		DBL3 cellsize = get_paramtype_cellsize(paramID);
 
 		success &= MeshParams::update_meshparam_var(paramID, cellsize, meshRect);
+	}
+
+	return success;
+}
+
+//update text equations for mesh parameters with user constants, mesh dimensions, Curie temperature, base temperature
+bool Mesh::update_meshparam_equations(void)
+{
+	bool success = true;
+
+	for (int index = 0; index < get_num_meshparams(); index++) {
+
+		PARAM_ paramID = (PARAM_)get_meshparam_id(index);
+
+		success &= MeshParams::update_meshparam_equations(paramID, userConstants, meshRect.size());
 	}
 
 	return success;

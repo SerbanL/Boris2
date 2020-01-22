@@ -168,6 +168,12 @@ BError Mesh::InitializeAllModulesCUDA(void)
 
 double Mesh::UpdateModules(void)
 {
+	//if base_temperature is set using a text equation then set it now
+	if (T_equation.is_set()) {
+
+		SetBaseTemperature(T_equation.evaluate(pSMesh->GetStageTime()), false);
+	}
+
 	//volume energy density
 	double energy = 0;
 
@@ -184,6 +190,12 @@ double Mesh::UpdateModules(void)
 #if COMPILECUDA == 1
 void Mesh::UpdateModulesCUDA(void)
 {
+	//if base_temperature is set using a text equation then set it now
+	if (T_equation.is_set()) {
+
+		SetBaseTemperature(T_equation.evaluate(pSMesh->GetStageTime()), false);
+	}
+
 	//Update effective field by adding in contributions from each set module
 	for (int idx = 0; idx < (int)pMod.size(); idx++) {
 

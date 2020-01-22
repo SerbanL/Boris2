@@ -278,7 +278,7 @@ void FMesh::SetSkyrmionBloch(int orientation, int chirality, Rect skyrmion_rect)
 }
 
 //set M from given data VEC (0 values mean empty points) -> stretch data to M dimensions if needed.
-void FMesh::SetMagnetisationFromData(VEC<DBL3>& data)
+void FMesh::SetMagnetisationFromData(VEC<DBL3>& data, const Rect& dstRect)
 {
 #if COMPILECUDA == 1
 	//refresh M from gpu memory
@@ -291,7 +291,7 @@ void FMesh::SetMagnetisationFromData(VEC<DBL3>& data)
 	if (!data.resize(M.n)) return;
 
 	//copy values in data, as well as shape
-	M.copy_values(data);
+	M.copy_values(data, dstRect);
 
 #if COMPILECUDA == 1
 	//refresh gpu memory

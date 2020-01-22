@@ -115,6 +115,7 @@ public:
 	void SetODEMethodPointers(void);
 
 	BError UpdateConfiguration(UPDATECONFIG_ cfgMessage);
+	void UpdateConfiguration_Values(UPDATECONFIG_ cfgMessage) {}
 
 	//---------------------------------------- OTHERS
 

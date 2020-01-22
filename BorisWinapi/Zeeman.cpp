@@ -6,15 +6,20 @@
 #include "Mesh_Ferromagnetic.h"
 #include "Mesh_AntiFerromagnetic.h"
 
+#include "SuperMesh.h"
+
 #if COMPILECUDA == 1
 #include "ZeemanCUDA.h"
 #endif
 
 Zeeman::Zeeman(Mesh *pMesh_) : 
 	Modules(),
-	ProgramStateNames(this, { VINFO(Ha) }, {})
+	H_equation({ "x", "y", "z", "t" }),
+	ProgramStateNames(this, { VINFO(Ha), VINFO(H_equation) }, {})
 {
 	pMesh = pMesh_;
+
+	pSMesh = pMesh->pSMesh;
 
 	Ha = DBL3(0,0,0);
 
@@ -46,9 +51,23 @@ BError Zeeman::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 {
 	BError error(CLASS_STR(Zeeman));
 
-	Uninitialize();
+	if (ucfg::check_cfgflags(cfgMessage, UPDATECONFIG_MESHCHANGE)) {
 
-	Initialize();
+		Uninitialize();
+
+		//update mesh dimensions in equation constants
+		if (H_equation.is_set()) {
+
+			DBL3 meshDim = pMesh->GetMeshDimensions();
+
+			H_equation.set_constant("Lx", meshDim.x, false);
+			H_equation.set_constant("Ly", meshDim.y, false);
+			H_equation.set_constant("Lz", meshDim.z, false);
+			H_equation.remake_equation();
+		}
+
+		Initialize();
+	}
 
 	//------------------------ CUDA UpdateConfiguration if set
 
@@ -60,6 +79,25 @@ BError Zeeman::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 #endif
 
 	return error;
+}
+
+void Zeeman::UpdateConfiguration_Values(UPDATECONFIG_ cfgMessage)
+{
+	if (cfgMessage == UPDATECONFIG_TEQUATION_CONSTANTS) {
+
+		UpdateTEquationUserConstants(false);
+	}
+	else if (cfgMessage == UPDATECONFIG_TEQUATION_CLEAR) {
+
+		if (H_equation.is_set()) H_equation.clear();
+	}
+
+#if COMPILECUDA == 1
+	if (pModuleCUDA) {
+
+		pModuleCUDA->UpdateConfiguration_Values(cfgMessage);
+	}
+#endif
 }
 
 BError Zeeman::MakeCUDAModule(void)
@@ -83,39 +121,106 @@ BError Zeeman::MakeCUDAModule(void)
 
 double Zeeman::UpdateField(void) 
 {
-	if (IsZ(Ha.norm())) {
+	/////////////////////////////////////////
+	// Fixed set field
+	/////////////////////////////////////////
 
-		this->energy = 0;
-		return 0.0;
-	}
+	if (!H_equation.is_set()) {
 
-	double energy = 0;
-	
-	if (pMesh->GetMeshType() == MESH_FERROMAGNETIC) {
+		if (IsZ(Ha.norm())) {
+
+			this->energy = 0;
+			return 0.0;
+		}
+
+		double energy = 0;
+
+		if (pMesh->GetMeshType() == MESH_FERROMAGNETIC) {
 
 #pragma omp parallel for reduction(+:energy)
-		for (int idx = 0; idx < pMesh->n.dim(); idx++) {
+			for (int idx = 0; idx < pMesh->n.dim(); idx++) {
 
-			double cHA = pMesh->cHA;
-			pMesh->update_parameters_mcoarse(idx, pMesh->cHA, cHA);
+				double cHA = pMesh->cHA;
+				pMesh->update_parameters_mcoarse(idx, pMesh->cHA, cHA);
 
-			pMesh->Heff[idx] += (cHA * Ha);
+				pMesh->Heff[idx] += (cHA * Ha);
 
-			energy += pMesh->M[idx] * (cHA * Ha);
+				energy += pMesh->M[idx] * (cHA * Ha);
+			}
+		}
+		else if (pMesh->GetMeshType() == MESH_ANTIFERROMAGNETIC) {
+
+#pragma omp parallel for reduction(+:energy)
+			for (int idx = 0; idx < pMesh->n.dim(); idx++) {
+
+				double cHA = pMesh->cHA;
+				pMesh->update_parameters_mcoarse(idx, pMesh->cHA, cHA);
+
+				pMesh->Heff[idx] += (cHA * Ha);
+				pMesh->Heff2[idx] += (cHA * Ha);
+
+				energy += (pMesh->M[idx] + pMesh->M2[idx]) * (cHA * Ha) / 2;
+			}
 		}
 	}
-	else if (pMesh->GetMeshType() == MESH_ANTIFERROMAGNETIC) {
+
+	/////////////////////////////////////////
+	// Field set from user equation
+	/////////////////////////////////////////
+
+	else {
+
+		double energy = 0;
+
+		double time = pSMesh->GetStageTime();
+		double Temperature = pMesh->base_temperature;
+
+		if (pMesh->GetMeshType() == MESH_FERROMAGNETIC) {
 
 #pragma omp parallel for reduction(+:energy)
-		for (int idx = 0; idx < pMesh->n.dim(); idx++) {
+			for (int j = 0; j < pMesh->n.y; j++) {
+				for (int k = 0; k < pMesh->n.z; k++) {
+					for (int i = 0; i < pMesh->n.x; i++) {
 
-			double cHA = pMesh->cHA;
-			pMesh->update_parameters_mcoarse(idx, pMesh->cHA, cHA);
+						int idx = i + j * pMesh->n.x + k * pMesh->n.x*pMesh->n.y;
 
-			pMesh->Heff[idx] += (cHA * Ha);
-			pMesh->Heff2[idx] += (cHA * Ha);
+						//on top of spatial dependence specified through an equation, also allow spatial dependence through the cHA parameter
+						double cHA = pMesh->cHA;
+						pMesh->update_parameters_mcoarse(idx, pMesh->cHA, cHA);
 
-			energy += (pMesh->M[idx] + pMesh->M2[idx]) * (cHA * Ha) / 2;
+						DBL3 relpos = DBL3(i + 0.5, j + 0.5, k + 0.5) & pMesh->h;
+						DBL3 H = H_equation.evaluate_vector(relpos.x, relpos.y, relpos.z, time);
+
+						pMesh->Heff[idx] += (cHA * H);
+
+						energy += pMesh->M[idx] * (cHA * H);
+					}
+				}
+			}
+		}
+		else if (pMesh->GetMeshType() == MESH_ANTIFERROMAGNETIC) {
+
+#pragma omp parallel for reduction(+:energy)
+			for (int j = 0; j < pMesh->n.y; j++) {
+				for (int k = 0; k < pMesh->n.z; k++) {
+					for (int i = 0; i < pMesh->n.x; i++) {
+
+						int idx = i + j * pMesh->n.x + k * pMesh->n.x*pMesh->n.y;
+
+						//on top of spatial dependence specified through an equation, also allow spatial dependence through the cHA parameter
+						double cHA = pMesh->cHA;
+						pMesh->update_parameters_mcoarse(idx, pMesh->cHA, cHA);
+
+						DBL3 relpos = DBL3(i + 0.5, j + 0.5, k + 0.5) & pMesh->h;
+						DBL3 H = H_equation.evaluate_vector(relpos.x, relpos.y, relpos.z, time);
+
+						pMesh->Heff[idx] += (cHA * H);
+						pMesh->Heff2[idx] += (cHA * H);
+
+						energy += (pMesh->M[idx] + pMesh->M2[idx]) * (cHA * H) / 2;
+					}
+				}
+			}
 		}
 	}
 
@@ -131,6 +236,9 @@ double Zeeman::UpdateField(void)
 
 void Zeeman::SetField(DBL3 Hxyz)
 {
+	//fixed field is being set - remove any equation settings
+	if (H_equation.is_set()) H_equation.clear();
+
 	Ha = Hxyz;
 
 	//if atomic_moment is not zero then changing the applied field also changes the temperature dependence of me (normalised equilibrium magnetisation). This in turn affects a number of material parameters.
@@ -158,6 +266,72 @@ DBL3 Zeeman::GetField(void)
 #endif
 
 	return Ha;
+}
+
+BError Zeeman::SetFieldEquation(string equation_string, int step)
+{
+	BError error(CLASS_STR(Zeeman));
+
+	DBL3 meshDim = pMesh->GetMeshDimensions();
+
+	//set equation if not already set, or this is the first step in a stage
+	if (!H_equation.is_set() || step == 0) {
+
+		//important to set user constants first : if these are required then the make_from_string call will fail. This may mean the user constants are not set when we expect them to.
+		UpdateTEquationUserConstants(false);
+
+		if (!H_equation.make_from_string(equation_string, { {"Lx", meshDim.x}, {"Ly", meshDim.y}, {"Lz", meshDim.z}, {"Tb", pMesh->base_temperature}, {"Ss", 0} })) return error(BERROR_INCORRECTSTRING);
+	}
+	else {
+
+		//equation set and not the first step : adjust Ss constant
+		H_equation.set_constant("Ss", step);
+		UpdateTEquationUserConstants(false);
+	}
+
+	//-------------------------- CUDA mirroring
+
+#if COMPILECUDA == 1
+	if (pModuleCUDA) error = reinterpret_cast<ZeemanCUDA*>(pModuleCUDA)->SetFieldEquation(H_equation.get_vector_fspec());
+#endif
+
+	return error;
+}
+
+//Update TEquation object with user constants values
+void Zeeman::UpdateTEquationUserConstants(bool makeCuda)
+{
+	if (pMesh->userConstants.size()) {
+
+		vector<pair<string, double>> constants(pMesh->userConstants.size());
+		for (int idx = 0; idx < pMesh->userConstants.size(); idx++) {
+
+			constants[idx] = { pMesh->userConstants.get_key_from_index(idx), pMesh->userConstants[idx] };
+		}
+
+		H_equation.set_constants(constants);
+
+		//-------------------------- CUDA mirroring
+
+#if COMPILECUDA == 1
+		if (pModuleCUDA && makeCuda) reinterpret_cast<ZeemanCUDA*>(pModuleCUDA)->SetFieldEquation(H_equation.get_vector_fspec());
+#endif
+	}
+}
+
+//if base temperature changes we need to adjust Tb in H_equation if it's used.
+void Zeeman::SetBaseTemperature(double Temperature)
+{
+	if (H_equation.is_set()) {
+
+		H_equation.set_constant("Tb", Temperature);
+	}
+
+	//-------------------------- CUDA mirroring
+
+#if COMPILECUDA == 1
+	if (pModuleCUDA) reinterpret_cast<ZeemanCUDA*>(pModuleCUDA)->SetFieldEquation(H_equation.get_vector_fspec());
+#endif
 }
 
 #endif

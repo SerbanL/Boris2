@@ -126,7 +126,7 @@ DBL2 VEC_VC<VType>::IterateLaplace_SOR(double relaxation_param)
 					else						 weighted_sum += w_z * quantity[idx - n.x*n.y];
 				}
 
-				//advance using SOR formula
+				//advance using SOR equation
 				VType old_value = quantity[idx];
 				quantity[idx] = quantity[idx] * (1 - relaxation_param) + relaxation_param * (weighted_sum / total_weight);
 
@@ -267,7 +267,7 @@ DBL2 VEC_VC<VType>::IteratePoisson_SOR(std::function<VType(const Owner&, int)> P
 					else						 weighted_sum += w_z * quantity[idx - n.x*n.y];
 				}
 
-				//advance using SOR formula
+				//advance using SOR equation
 				VType old_value = quantity[idx];
 				quantity[idx] = quantity[idx] * (1 - relaxation_param) + relaxation_param * ((weighted_sum - h_max_sq*Poisson_RHS(instance, idx)) / total_weight);
 
@@ -413,7 +413,7 @@ DBL2 VEC_VC<VType>::IteratePoisson_SOR(std::function<VType(const Owner&, int)> P
 
 				MType tensor = total_weight * ident<MType>() + h_max_sq * Tensor_RHS(instance, idx);
 
-				//advance using SOR formula
+				//advance using SOR equation
 				VType old_value = quantity[idx];
 				quantity[idx] = quantity[idx] * (1 - relaxation_param) + relaxation_param * inverse<MType>(tensor) * (weighted_sum - h_max_sq * Poisson_RHS(instance, idx));
 
@@ -554,7 +554,7 @@ DBL2 VEC_VC<VType>::IteratePoisson_SOR(std::function<VType(const Owner&, int)> P
 					else						 weighted_sum += w_z * (quantity[idx - n.x*n.y] + bdiff(instance, idx).z * h.z);
 				}
 
-				//advance using SOR formula
+				//advance using SOR equation
 				VType old_value = quantity[idx];
 				quantity[idx] = quantity[idx] * (1 - relaxation_param) + relaxation_param * ((weighted_sum - h_max_sq * Poisson_RHS(instance, idx)) / total_weight);
 
@@ -699,7 +699,7 @@ DBL2 VEC_VC<VType>::IteratePoisson_SOR(std::function<VType(const Owner&, int)> P
 
 				MType tensor = total_weight * ident<MType>() + h_max_sq * Tensor_RHS(instance, idx);
 
-				//advance using SOR formula
+				//advance using SOR equation
 				VType old_value = quantity[idx];
 				quantity[idx] = quantity[idx] * (1 - relaxation_param) + relaxation_param * inverse<MType>(tensor) * (weighted_sum - h_max_sq * Poisson_RHS(instance, idx));
 

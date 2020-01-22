@@ -92,6 +92,21 @@ inline std::string trimblock(std::string text, const std::string& start, const s
 
 inline std::string trimspaces(std::string text) { return trim(text, " "); }
 
+inline std::string trimendspaces(std::string text) 
+{ 
+	if (text.length()) {
+
+		int s = 0, e = text.length();
+
+		if (text[0] == ' ') s++;
+		if (text.back() == ' ') e--;
+
+		if (e - s > 0) return text.substr(s, e - s);
+		else return "";
+	}
+	else return text;
+}
+
 //remove all leading spaces from text
 inline std::string trim_leading_spaces(const std::string& text)
 {
@@ -185,7 +200,7 @@ inline std::vector<std::string> split_numeric(const std::string& textstring)
 
 	if (!textstring.length()) return stringsVector;
 
-	std::string numeric_character = "0123456789";
+	std::string numeric_character = "0123456789eE-+.";
 
 	int start_text_idx = 0;
 	bool isnumeric = false;
@@ -194,8 +209,11 @@ inline std::vector<std::string> split_numeric(const std::string& textstring)
 
 		isnumeric = false;
 
-		//check for start of a potentially numeric substring : must have a space followed by a number
-		if (textstring[idx] == ' ' && ++idx < textstring.length()) {
+		//check for start of a potentially numeric substring : must have a space followed by a number, or be the first index
+		if (textstring[idx] == ' ' || idx == 0) {
+
+			//if first idx then check for start of a potentially numeric substring, else increment idx (was space at idx) and check if we finished textstring
+			if (idx != 0 && ++idx >= textstring.length()) break;
 
 			if (numeric_character.find(textstring[idx]) != std::string::npos) {
 
@@ -237,7 +255,8 @@ inline std::vector<std::string> split_numeric(const std::string& textstring)
 				if (isnumeric) {
 
 					//substring starting at start_text_idx with length start_idx - start_text_idx is a normal text substring
-					stringsVector.push_back(trim_trailing_spaces(textstring.substr(start_text_idx, start_idx - start_text_idx)));
+					if (start_idx != start_text_idx)
+						stringsVector.push_back(trim_trailing_spaces(textstring.substr(start_text_idx, start_idx - start_text_idx)));
 					
 					//substring starting at start_idx with length end_idx - start_idx is a numeric substring
 					stringsVector.push_back(trim_trailing_spaces(textstring.substr(start_idx, end_idx - start_idx)));
@@ -363,13 +382,81 @@ inline bool ShiftSubstring_L2R(std::string &leftString, std::string &rightString
 }
 
 //get first substring contained between start and end substrings
-inline std::string get_contained_substring(const std::string& text, const std::string& start, const std::string& end) 
+inline std::string get_first_contained_substring(const std::string& text, const std::string& start, const std::string& end) 
 {
 	size_t pos_start = text.find(start) + start.length();
 	size_t pos_end = text.find(end);
 
-	if(pos_start != std::string::npos && pos_end != std::string::npos && pos_end >= pos_end)
+	if(pos_start != std::string::npos && pos_end != std::string::npos && pos_end >= pos_start)
 		return text.substr(pos_start, pos_end - pos_start);
+
+	return "";
+}
+
+//get last substring contained between start and end substrings
+inline std::string get_last_contained_substring(const std::string& text, std::string& start, const std::string& end)
+{
+	std::string text_reverse = text;
+	std::string start_reverse = start;
+	std::string end_reverse = end;
+
+	std::reverse(text_reverse.begin(), text_reverse.end());
+	std::reverse(start_reverse.begin(), start_reverse.end());
+	std::reverse(end_reverse.begin(), end_reverse.end());
+
+	size_t pos_end = text_reverse.find(end_reverse) + end.length();
+	size_t pos_start = text_reverse.find(start_reverse);
+
+	if (pos_start != std::string::npos && pos_end != std::string::npos && pos_start >= pos_end) {
+
+		pos_end = text.length() - pos_end;
+		pos_start = text.length() - pos_start;
+
+		return text.substr(pos_start, pos_end - pos_start);
+	}
+
+	return "";
+}
+
+//get first substring contained between start and end substrings, also deleting it from the original string (including the start and end)
+inline std::string remove_first_contained_substring(std::string& text, const std::string& start, const std::string& end)
+{
+	size_t pos_start = text.find(start) + start.length();
+	size_t pos_end = text.find(end);
+
+	if (pos_start != std::string::npos && pos_end != std::string::npos && pos_end >= pos_start) {
+
+		std::string match = text.substr(pos_start, pos_end - pos_start);
+		text.erase(pos_start - start.length(), pos_end - pos_start + start.length() + end.length());
+		return match;
+	}
+
+	return "";
+}
+
+//get last substring contained between start and end substrings, also deleting it from the original string (including the start and end)
+inline std::string remove_last_contained_substring(std::string& text, const std::string& start, const std::string& end)
+{
+	std::string text_reverse = text;
+	std::string start_reverse = start;
+	std::string end_reverse = end;
+
+	std::reverse(text_reverse.begin(), text_reverse.end());
+	std::reverse(start_reverse.begin(), start_reverse.end());
+	std::reverse(end_reverse.begin(), end_reverse.end());
+
+	size_t pos_end = text_reverse.find(end_reverse) + end.length();
+	size_t pos_start = text_reverse.find(start_reverse);
+
+	if (pos_start != std::string::npos && pos_end != std::string::npos && pos_start >= pos_end) {
+
+		pos_end = text.length() - pos_end;
+		pos_start = text.length() - pos_start;
+
+		std::string match = text.substr(pos_start, pos_end - pos_start);
+		text.erase(pos_start - start.length(), pos_end - pos_start + start.length() + end.length());
+		return match;
+	}
 
 	return "";
 }
@@ -435,31 +522,19 @@ inline std::pair<int, int> get_word_indexes(const std::string& text, int charIdx
 }
 
 //check the input string contains only numbers : non-empty and, apart from separators list of characters, must contain only alphanumeric characters, e, -, +, .
-inline bool has_numbers_only(std::string text, std::string separators)
+inline bool has_numbers_only(const std::string& text, std::string separators)
 {
 	if (!text.length()) return false;
 
 	std::string allowed_characters = separators + "0123456789eE-+.";
 
-	for (int idx = 0; idx < (int)text.length(); idx++) {
-
-		if (allowed_characters.find(text[idx]) == std::string::npos) return false;
-	}
-
-	return true;
+	return (find_if(text.begin(), text.end(), [&](const char& c) { return (allowed_characters.find(c) == std::string::npos); }) == text.end());
 }
 
 //check the input string contains only digits
-inline bool has_digits_only(std::string text)
+inline bool has_digits_only(const std::string& text)
 {
 	if (!text.length()) return false;
 
-	std::string allowed_characters("0123456789");
-
-	for (int idx = 0; idx < (int)text.length(); idx++) {
-
-		if (allowed_characters.find(text[idx]) == std::string::npos) return false;
-	}
-
-	return true;
+	return (find_if(text.begin(), text.end(), [&](const char& c) { return !isdigit(c); }) == text.end());
 }

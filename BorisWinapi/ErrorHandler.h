@@ -18,6 +18,7 @@ enum BERROR_
 	BERROR_INCORRECTCONFIG,					//Incorrect configuration (e.g. eval method doesn't match ode allowed evals)
 	BERROR_INCORRECTARRAYS,					//Incorrect arrays used
 	BERROR_INCORRECTVALUE,					//Incorrect value used
+	BERROR_INCORRECTSTRING,					//Incorrect string used
 	BERROR_PARAMMISMATCH,					//Getting parameters from console command : parameters entered do not match expected parameters
 	BERROR_PARAMOUTOFBOUNDS,				//Getting parameters from console command : a parameter is out of specified bounds
 	BERROR_INCORRECTNAME,					//An incorrect name was given (e.g. a mesh name)
@@ -270,6 +271,7 @@ ErrorHandler<Owner>::ErrorHandler(Owner* pOwner_) :
 	errors[BERROR_INCORRECTCONFIG] = pair<string, ERRLEV_>( "Incorrect configuration", ERRLEV_NCRIT );
 	errors[BERROR_INCORRECTARRAYS] = pair<string, ERRLEV_>( "Incorrect arrays", ERRLEV_NCRIT );
 	errors[BERROR_INCORRECTVALUE] = pair<string, ERRLEV_>( "Incorrect value", ERRLEV_NCRIT );
+	errors[BERROR_INCORRECTSTRING] = pair<string, ERRLEV_>("Incorrect string", ERRLEV_NCRIT);
 	errors[BERROR_PARAMMISMATCH] = pair<string, ERRLEV_>( "Parameters mismatch", ERRLEV_SILENT );
 	errors[BERROR_PARAMOUTOFBOUNDS] = pair<string, ERRLEV_>( "Parameter out of bounds", ERRLEV_NCRIT );
 	errors[BERROR_INCORRECTNAME] = pair<string, ERRLEV_>( "Incorrect name", ERRLEV_NCRIT );

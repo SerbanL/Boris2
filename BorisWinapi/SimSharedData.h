@@ -19,9 +19,8 @@ class SimulationSharedData {
 
 protected:
 
-	//available pre-set formulas to use for material parameters temperature dependence
-	//key: name of formula to appear in console, lut: a MATPFORM_ entry, stored int : number of coefficients required for the formula
-	static vector_key_lut<int> formula_descriptor;
+	//material temperature dependence types : stored string : text to appear in console, lut : entry from MATPTDEP_ enum
+	static vector_lut<string> temperature_dependence_type;
 
 	//available pre-set spatial variation generators to use for material parameters spatial dependence
 	//key: name of generator to appear in console, lut: a MATPVAR_ entry, stored string : default parameters for generator stored as text, usable with ToNum
@@ -54,6 +53,9 @@ protected:
 	//list of data to output during a simulation (e.g. to output file and/or to processing arrays)
 	static vector_lut<DatumConfig> saveDataList;
 
+	//working directory
+	static string directory;
+
 	//modifier for mesh shaping functions
 	//all general shaping functions go through Mesh::change_mesh_shape to apply the shape
 	//Note, there are specific exceptions e.g. grain generators which only work on M)
@@ -76,6 +78,12 @@ public:
 
 	//enable all cuda computations?
 	static bool cudaEnabled;
+
+	//simulation schedule indexes : stage (main index in simStages) and step (sub-index in stage)
+	static INT2 stage_step;
+
+	//constants defined by user at runtime to be used with TEquation objects; the key is the user constant name
+	static vector_key<double> userConstants;
 
 public:
 

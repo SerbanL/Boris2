@@ -5,6 +5,8 @@
 
 #if COMPILECUDA == 1
 
+#include "SuperMesh.h"
+
 BError ManagedMeshCUDA::set_pointers(MeshCUDA* pMeshCUDA)
 {
 	BError error(__FUNCTION__);
@@ -93,6 +95,9 @@ BError ManagedMeshCUDA::set_pointers(MeshCUDA* pMeshCUDA)
 	
 	if (set_gpu_value(pTemp, pMeshCUDA->Temp.get_managed_object()) != cudaSuccess) error(BERROR_GPUERROR_CRIT);
 	
+	//Managed DiffEq_CommonCUDA pointer so all common diffeq data can be accessed in device code
+	if (set_gpu_value(pcuDiffEq, pMeshCUDA->Get_ManagedDiffEq_CommonCUDA().get_managed_object()) != cudaSuccess) error(BERROR_GPUERROR_CRIT);
+
 	return error;
 }
 

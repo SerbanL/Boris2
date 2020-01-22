@@ -59,12 +59,16 @@
 //5th order
 
 #include "ProgramState.h"		//Types.h, Types_Any.h, Introspection.h, Funcs_Vectors.h
+#include "TEquation.h"			//Funcs_Strings.h
 #include "VEC.h"				//Funcs_Vectors.h
 #include "VEC_mng.h"			//extends VEC (don't count it as higher order)
 #include "VEC_aux.h"			//extends VEC (don't count it as higher order)
 #include "VEC_generate.h"		//extends VEC (don't count it as higher order)
 #include "VEC_Voronoi.h"		//extends VEC (don't count it as higher order)
 #include "VEC_oper.h"			//extends VEC (don't count it as higher order)
+#include "VEC_avg.h"			//extends VEC (don't count it as higher order)
+#include "VEC_arith.h"			//extends VEC (don't count it as higher order)
+#include "VEC_extract.h"			//extends VEC (don't count it as higher order)
 #include "VEC_trans.h"			//extends VEC (don't count it as higher order)
 #include "VEC_matops.h"			//extends VEC (don't count it as higher order)
 #include "VEC_MeshTransfer.h"	//extends VEC (don't count it as higher order)
@@ -82,6 +86,8 @@
 #include "VEC_VC_genshape.h"	//extends VEC_VC (don't count it as higher order)
 #include "VEC_VC_Voronoi.h"		//extends VEC_VC (don't count it as higher order)
 #include "VEC_VC_oper.h"		//extends VEC_VC (don't count it as higher order)
+#include "VEC_VC_arith.h"		//extends VEC_VC (don't count it as higher order)
+#include "VEC_VC_avg.h"			//extends VEC_VC (don't count it as higher order)
 #include "VEC_VC_Grad.h"		//extends VEC_VC (don't count it as higher order)
 #include "VEC_VC_Div.h"			//extends VEC_VC (don't count it as higher order)
 #include "VEC_VC_Curl.h"		//extends VEC_VC (don't count it as higher order)

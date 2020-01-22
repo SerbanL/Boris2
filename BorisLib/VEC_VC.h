@@ -478,13 +478,10 @@ public:
 	void renormalize(PType new_norm);
 
 	//copy values from copy_this but keep current dimensions - if necessary map values from copy_this to local dimensions. Points with zero values are set as empty.
-	void copy_values(const VEC<VType>& copy_this);
+	void copy_values(const VEC<VType>& copy_this, Rect dstRect = Rect(), Rect srcRect = Rect());
 
 	//copy values from copy_this but keep current dimensions - if necessary map values from copy_this to local dimensions; from flags only copy the shape but not the boundary condition values or anything else - these are reset
-	void copy_values(const VEC_VC<VType>& copy_this);
-
-	//scale all stored values by the given constant
-	void scale_values(double constant);
+	void copy_values(const VEC_VC<VType>& copy_this, Rect dstRect = Rect(), Rect srcRect = Rect());
 
 	//shift all the values in this VEC by the given delta (units same as h). Shift values in given shift_rect (absolute coordinates). Not optimised, not parallel code.
 	void shift(const DBL3& delta, const Rect& shift_rect);
@@ -499,7 +496,25 @@ public:
 	//Also keep magnitude in each cell (e.g. use for vectorial quantities, such as magnetization, to shift only the direction). Not optimised, not parallel code.
 	void shift_keepmag(const DBL3& delta, const Rect& shift_rect);
 
-	//--------------------------------------------OPERATIONS : VEC_VC_oper.h
+	//--------------------------------------------ARITHMETIC OPERATIONS ON ENTIRE VEC : VEC_VC_arith.h
+
+	//scale all stored values by the given constant
+	void scale_values(double constant);
+
+	//add values from add_this but keep current dimensions - if necessary map values from add_this to local dimensions
+	void add_values(const VEC<VType>& add_this);
+	void add_values(const VEC_VC<VType>& add_this);
+
+	//subtract values from sub_this but keep current dimensions - if necessary map values from sub_this to local dimensions
+	void sub_values(const VEC<VType>& sub_this);
+	void sub_values(const VEC_VC<VType>& sub_this);
+
+	void operator+=(double constant);
+	void operator-=(double constant);
+	void operator*=(double constant);
+	void operator/=(double constant);
+
+	//--------------------------------------------AVERAGING OPERATIONS : VEC_VC_avg.h
 
 	//overload VEC method : use NF_NOTEMPTY flags instead here
 	VType average_nonempty(const Box& box) const;

@@ -273,7 +273,7 @@ BError Roughness::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 	if (refine.x == 0 || refine.y == 0 || refine.z == 0) return error(BERROR_INCORRECTCONFIG);
 
 	//Do we need to take into account PBC when calculating the fine roughness kernel?
-	//If PBCs are being used we have to set same settings here for the roughness formulas to apply.
+	//If PBCs are being used we have to set same settings here for the roughness equations to apply.
 	//If PBCs are set, these will be found either in the individual mesh Demag module, or else in the SDemag module.
 	//Must be careful though if using many PBC images and fine roughness discretisation : this will result in long kernel computation times.
 	INT3 pbc_images;

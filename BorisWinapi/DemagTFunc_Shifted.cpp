@@ -45,7 +45,7 @@ bool DemagTFunc::CalcDiagTens3D_Shifted(VEC<DBL3> &Ddiag, INT3 n, INT3 N, DBL3 h
 					
 					double cells_radius_sq = i * i + j * j + (k + (shift.z / hRatios.z)) * (k + (shift.z / hRatios.z));
 
-					//apply asymptotic formulas?
+					//apply asymptotic equations?
 					if (asymptotic_distance > 0 && int(floor_epsilon(cells_radius_sq)) >= asymptotic_distance * asymptotic_distance) {
 
 						val = DBL3(
@@ -85,7 +85,7 @@ bool DemagTFunc::CalcDiagTens3D_Shifted(VEC<DBL3> &Ddiag, INT3 n, INT3 N, DBL3 h
 						(j + (shift.y / hRatios.y)) * (j + (shift.y / hRatios.y)) + 
 						(k + (shift.z / hRatios.z)) * (k + (shift.z / hRatios.z));
 
-					//apply asymptotic formulas?
+					//apply asymptotic equations?
 					if (asymptotic_distance > 0 && int(floor_epsilon(cells_radius_sq)) >= asymptotic_distance * asymptotic_distance) {
 
 						val = DBL3(
@@ -157,7 +157,7 @@ bool DemagTFunc::CalcOffDiagTens3D_Shifted(VEC<DBL3> &Dodiag, INT3 n, INT3 N, DB
 
 					double cells_radius_sq = i * i + j * j + (k + (shift.z / hRatios.z)) * (k + (shift.z / hRatios.z));
 
-					//apply asymptotic formulas?
+					//apply asymptotic equations?
 					if (asymptotic_distance > 0 && int(floor_epsilon(cells_radius_sq)) >= asymptotic_distance * asymptotic_distance) {
 
 						//D12, D13, D23
@@ -198,7 +198,7 @@ bool DemagTFunc::CalcOffDiagTens3D_Shifted(VEC<DBL3> &Dodiag, INT3 n, INT3 N, DB
 						(j + (shift.y / hRatios.y)) * (j + (shift.y / hRatios.y)) +
 						(k + (shift.z / hRatios.z)) * (k + (shift.z / hRatios.z));
 
-					//apply asymptotic formulas?
+					//apply asymptotic equations?
 					if (asymptotic_distance > 0 && int(floor_epsilon(cells_radius_sq)) >= asymptotic_distance * asymptotic_distance) {
 
 						//D12, D13, D23
@@ -269,7 +269,7 @@ bool DemagTFunc::CalcDiagTens2D_Shifted(VEC<DBL3> &Ddiag, INT3 n, INT3 N, DBL3 h
 
 				double cells_radius_sq = i * i + j * j + (shift.z / hRatios.z) * (shift.z / hRatios.z);
 
-				//apply asymptotic formulas?
+				//apply asymptotic equations?
 				if (asymptotic_distance > 0 && int(floor_epsilon(cells_radius_sq)) >= asymptotic_distance * asymptotic_distance) {
 
 					val = DBL3(
@@ -307,7 +307,7 @@ bool DemagTFunc::CalcDiagTens2D_Shifted(VEC<DBL3> &Ddiag, INT3 n, INT3 N, DBL3 h
 					(j + (shift.y / hRatios.y)) * (j + (shift.y / hRatios.y)) +
 					(shift.z / hRatios.z) * (shift.z / hRatios.z);
 
-				//apply asymptotic formulas?
+				//apply asymptotic equations?
 				if (asymptotic_distance > 0 && int(floor_epsilon(cells_radius_sq)) >= asymptotic_distance * asymptotic_distance) {
 
 					val = DBL3(
@@ -376,7 +376,7 @@ bool DemagTFunc::CalcOffDiagTens2D_Shifted(VEC<DBL3> &Dodiag, INT3 n, INT3 N, DB
 
 				double cells_radius_sq = i * i + j * j + (shift.z / hRatios.z) * (shift.z / hRatios.z);
 
-				//apply asymptotic formulas?
+				//apply asymptotic equations?
 				if (asymptotic_distance > 0 && int(floor_epsilon(cells_radius_sq)) >= asymptotic_distance * asymptotic_distance) {
 
 					//D12, D13, D23
@@ -415,7 +415,7 @@ bool DemagTFunc::CalcOffDiagTens2D_Shifted(VEC<DBL3> &Dodiag, INT3 n, INT3 N, DB
 					(j + (shift.y / hRatios.y)) * (j + (shift.y / hRatios.y)) +
 					(shift.z / hRatios.z) * (shift.z / hRatios.z);
 
-				//apply asymptotic formulas?
+				//apply asymptotic equations?
 				if (asymptotic_distance > 0 && int(floor_epsilon(cells_radius_sq)) >= asymptotic_distance * asymptotic_distance) {
 
 					//D12, D13, D23

@@ -1,7 +1,8 @@
 #include "stdafx.h"
 #include "MeshParams.h"
 
-MeshParams::MeshParams(vector<PARAM_>& enabledParams)
+MeshParams::MeshParams(vector<PARAM_>& enabledParams) :
+	T_equation({ "t" })
 {
 	//store all simulation parameters in meshParams : allows easy handling in the console, as well as saving and loading. In the computational routines use the parmeters directly, not through simParams
 	for (int idx = 0; idx < (int)enabledParams.size(); idx++) {
@@ -340,6 +341,17 @@ bool MeshParams::is_paramtemp_set(PARAM_ paramID)
 	return run_on_param<bool>(paramID, code);
 }
 
+//check if the given parameters has a temperature dependence specified using a text equation (equation may still not be set due to missing constants)
+bool MeshParams::is_paramtempequation_set(PARAM_ paramID)
+{
+	auto code = [](auto& MatP_object) -> bool {
+
+		return MatP_object.is_t_equation_set();
+	};
+
+	return run_on_param<bool>(paramID, code);
+}
+
 //check if the given parameter has a  spatial variation set
 bool MeshParams::is_paramvar_set(PARAM_ paramID)
 {
@@ -383,14 +395,46 @@ void* MeshParams::get_meshparam_s_scaling(PARAM_ paramID)
 	return run_on_param<void*>(paramID, code);
 }
 
+//calculate spatial variation into the provided VECs - intended to be used when the spatial variation is set using a text equation
+void MeshParams::calculate_meshparam_s_scaling(PARAM_ paramID, VEC<double>& displayVEC_SCA, double stime)
+{
+	auto code = [](auto& MatP_object, VEC<double>& displayVEC_SCA, double stime) -> void {
+
+		MatP_object.calculate_s_scaling(displayVEC_SCA, stime);
+	};
+
+	run_on_param<void>(paramID, code, displayVEC_SCA, stime);
+}
+
+void MeshParams::calculate_meshparam_s_scaling(PARAM_ paramID, VEC<DBL3>& displayVEC_VEC, double stime)
+{
+	auto code = [](auto& MatP_object, VEC<DBL3>& displayVEC_VEC, double stime) -> void {
+
+		MatP_object.calculate_s_scaling(displayVEC_VEC, stime);
+	};
+
+	run_on_param<void>(paramID, code, displayVEC_VEC, stime);
+}
+
 //check if scaling array is scalar (or else vectorial)
-bool MeshParams::is_s_scaling_scalar(PARAM_ paramID)
+bool MeshParams::is_paramvar_scalar(PARAM_ paramID)
 {
 	auto code = [](auto& MatP_object) -> bool {
 
 		typedef contained_type<decltype(MatP_object.s_scaling_ref())>::type SType;
 
 		return std::is_same<SType, double>::value;
+	};
+
+	return run_on_param<bool>(paramID, code);
+}
+
+//check if the spatial dependence is set using a text equation
+bool MeshParams::is_paramvarequation_set(PARAM_ paramID)
+{
+	auto code = [](auto& MatP_object) -> bool {
+
+		return MatP_object.is_s_equation_set();
 	};
 
 	return run_on_param<bool>(paramID, code);
@@ -406,27 +450,45 @@ void MeshParams::set_meshparam_value(PARAM_ paramID, string value_text)
 		MatP_object = (decltype(MatP_object.get0()))ToNum(value_text, unit);
 	};
 
-	return run_on_param<void>(paramID, code, value_text, meshParams(paramID).unit);
+	run_on_param<void>(paramID, code, value_text, meshParams(paramID).unit);
 
 	update_parameters(paramID);
 }
 
-//set the mesh parameter named formula (see handles in MaterialsParameterFormulas.h) with given coefficients
-void MeshParams::set_meshparam_formula(PARAM_ paramID, MATPFORM_ formulaID, vector<double> coefficients)
+//set the mesh parameter equation with given user constants
+void MeshParams::set_meshparam_t_equation(PARAM_ paramID, string& equationText, vector_key<double>& userConstants)
 {
-	auto code = [](auto& MatP_object, MATPFORM_ formulaID, vector<double>& coefficients) -> void {
+	auto code = [](auto& MatP_object, string& equationText, vector_key<double>& userConstants, double T_Curie_material, double base_temperature) -> void {
 
-		MatP_object.set_scaling_formula(formulaID, coefficients);
+		MatP_object.set_t_scaling_equation(equationText, userConstants, T_Curie_material, base_temperature);
 	};
 
 	if (paramID == PARAM_ALL) {
 
 		for (int index = 0; index < meshParams.size(); index++) {
 
-			run_on_param<void>((PARAM_)meshParams.get_ID_from_index(index), code, formulaID, coefficients);
+			run_on_param<void>((PARAM_)meshParams.get_ID_from_index(index), code, equationText, userConstants, T_Curie_material, base_temperature);
 		}
 	}
-	else run_on_param<void>(paramID, code, formulaID, coefficients);
+	else run_on_param<void>(paramID, code, equationText, userConstants, T_Curie_material, base_temperature);
+}
+
+//clear mesh parameter temperature dependence
+void MeshParams::clear_meshparam_temp(PARAM_ paramID)
+{
+	auto code = [](auto& MatP_object) -> void {
+
+		MatP_object.clear_t_scaling();
+	};
+
+	if (paramID == PARAM_ALL) {
+
+		for (int index = 0; index < meshParams.size(); index++) {
+
+			run_on_param<void>((PARAM_)meshParams.get_ID_from_index(index), code);
+		}
+	}
+	else run_on_param<void>(paramID, code);
 }
 
 //set mesh parameter array scaling
@@ -434,13 +496,31 @@ bool MeshParams::set_meshparam_tscaling_array(PARAM_ paramID, vector<double>& te
 {
 	auto code = [](auto& MatP_object, vector<double>& temp, vector<double>& scaling) -> bool {
 
-		return MatP_object.set_scaling_array(temp, scaling);
+		return MatP_object.set_t_scaling_array(temp, scaling);
 	};
 
 	return run_on_param<bool>(paramID, code, temp, scaling);
 }
 
 //-------------------------Setters : spatial variation
+
+//set the mesh parameter spatial variation equation with given user constants
+void MeshParams::set_meshparam_s_equation(PARAM_ paramID, string& equationText, vector_key<double>& userConstants, DBL3 meshDimensions)
+{
+	auto code = [](auto& MatP_object, string& equationText, vector_key<double>& userConstants, DBL3 meshDimensions) -> void {
+
+		MatP_object.set_s_scaling_equation(equationText, userConstants, meshDimensions);
+	};
+
+	if (paramID == PARAM_ALL) {
+
+		for (int index = 0; index < meshParams.size(); index++) {
+
+			run_on_param<void>((PARAM_)meshParams.get_ID_from_index(index), code, equationText, userConstants, meshDimensions);
+		}
+	}
+	else run_on_param<void>(paramID, code, equationText, userConstants, meshDimensions);
+}
 
 //clear mesh parameter spatial variation (all if paramID == PARAM_ALL)
 void MeshParams::clear_meshparam_variation(PARAM_ paramID)
@@ -469,6 +549,17 @@ bool MeshParams::update_meshparam_var(PARAM_ paramID, DBL3 h, Rect rect)
 	};
 
 	return run_on_param<bool>(paramID, code, h, rect);
+}
+
+//update text equations for mesh parameters with user constants, mesh dimensions, Curie temperature, base temperature
+bool MeshParams::update_meshparam_equations(PARAM_ paramID, vector_key<double>& userConstants, DBL3 meshDimensions)
+{
+	auto code = [](auto& MatP_object, vector_key<double>& userConstants, DBL3 meshDimensions, double T_Curie_material, double base_temperature) -> bool {
+
+		return MatP_object.update_equations(userConstants, meshDimensions, T_Curie_material, base_temperature);
+	};
+
+	return run_on_param<bool>(paramID, code, userConstants, meshDimensions, T_Curie_material, base_temperature);
 }
 
 //set parameter spatial variation using a given generator and arguments (arguments passed as a string to be interpreted and converted using ToNum)

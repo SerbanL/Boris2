@@ -12,7 +12,8 @@ DipoleMesh::DipoleMesh(SuperMesh *pSMesh_) :
 			VINFO(meshType), VINFO(meshIdCounter), VINFO(meshId), VINFO(displayedPhysicalQuantity), VINFO(vec3rep), VINFO(displayedParamVar), VINFO(meshRect), VINFO(n), VINFO(h), VINFO(n_e), VINFO(h_e), VINFO(n_t), VINFO(h_t), VINFO(M), VINFO(V), VINFO(S), VINFO(elC), VINFO(Temp), VINFO(pMod),
 			//Members in this derived class
 			//Material Parameters
-			VINFO(Ms), VINFO(elecCond), VINFO(amrPercentage), VINFO(P), VINFO(De), VINFO(n_density), VINFO(betaD), VINFO(l_sf), VINFO(l_ex), VINFO(l_ph), VINFO(Gi), VINFO(Gmix), VINFO(base_temperature), VINFO(T_Curie), VINFO(T_Curie_material), VINFO(thermCond), VINFO(density), VINFO(shc), VINFO(cT), VINFO(Q)
+			VINFO(Ms), VINFO(elecCond), VINFO(amrPercentage), VINFO(P), VINFO(De), VINFO(n_density), VINFO(betaD), VINFO(l_sf), VINFO(l_ex), VINFO(l_ph), VINFO(Gi), VINFO(Gmix), 
+			VINFO(base_temperature), VINFO(T_equation), VINFO(T_Curie), VINFO(T_Curie_material), VINFO(thermCond), VINFO(density), VINFO(shc), VINFO(cT), VINFO(Q)
 		},
 		{
 			IINFO(Transport), IINFO(Heat)
@@ -31,7 +32,8 @@ DipoleMesh::DipoleMesh(Rect meshRect_, DBL3 h_, SuperMesh *pSMesh_) :
 			VINFO(meshType), VINFO(meshIdCounter), VINFO(meshId), VINFO(displayedPhysicalQuantity), VINFO(vec3rep), VINFO(displayedParamVar), VINFO(meshRect), VINFO(n), VINFO(h), VINFO(n_e), VINFO(h_e), VINFO(n_t), VINFO(h_t), VINFO(M), VINFO(V), VINFO(S), VINFO(elC), VINFO(Temp), VINFO(pMod),
 			//Members in this derived class
 			//Material Parameters
-			VINFO(Ms), VINFO(elecCond), VINFO(amrPercentage), VINFO(P), VINFO(De), VINFO(n_density), VINFO(betaD), VINFO(l_sf), VINFO(l_ex), VINFO(l_ph), VINFO(Gi), VINFO(Gmix), VINFO(base_temperature), VINFO(T_Curie), VINFO(T_Curie_material), VINFO(thermCond), VINFO(density), VINFO(shc), VINFO(cT), VINFO(Q)
+			VINFO(Ms), VINFO(elecCond), VINFO(amrPercentage), VINFO(P), VINFO(De), VINFO(n_density), VINFO(betaD), VINFO(l_sf), VINFO(l_ex), VINFO(l_ph), VINFO(Gi), VINFO(Gmix), 
+			VINFO(base_temperature), VINFO(T_equation), VINFO(T_Curie), VINFO(T_Curie_material), VINFO(thermCond), VINFO(density), VINFO(shc), VINFO(cT), VINFO(Q)
 		},
 		{
 			IINFO(Transport), IINFO(Heat)
@@ -78,6 +80,9 @@ BError DipoleMesh::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 	//update material parameters spatial dependence as cellsize and rectangle could have changed
 	if (!error && !update_meshparam_var()) error(BERROR_OUTOFMEMORY_NCRIT);
 
+	//update any text equations used in mesh parameters (dependence on mesh dimensions possible)
+	if (!error) update_meshparam_equations();
+
 	//set dipole value from Ms - this could have changed
 	Reset_Mdipole();
 
@@ -106,6 +111,47 @@ BError DipoleMesh::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 	return error;
 }
 
+void DipoleMesh::UpdateConfiguration_Values(UPDATECONFIG_ cfgMessage)
+{
+	///////////////////////////////////////////////////////
+	//Update configuration in this mesh
+	///////////////////////////////////////////////////////
+
+	if (cfgMessage == UPDATECONFIG_TEQUATION_CONSTANTS) {
+
+		//Update text equations other than those used in mesh parameters
+		UpdateTEquationUserConstants();
+
+		//update any text equations used in mesh parameters
+		update_meshparam_equations();
+	}
+	else if (cfgMessage == UPDATECONFIG_TEQUATION_CLEAR) {
+
+		if (T_equation.is_set()) T_equation.clear();
+	}
+
+	///////////////////////////////////////////////////////
+	//Update configuration for mesh modules
+	///////////////////////////////////////////////////////
+
+	for (int idx = 0; idx < (int)pMod.size(); idx++) {
+
+		if (pMod[idx]) {
+
+			pMod[idx]->UpdateConfiguration_Values(cfgMessage);
+		}
+	}
+
+	//------------------------ CUDA UpdateConfiguration if set
+
+#if COMPILECUDA == 1
+	if (pMeshCUDA) {
+
+		pMeshCUDA->UpdateConfiguration_Values(cfgMessage);
+	}
+#endif
+}
+
 BError DipoleMesh::SwitchCUDAState(bool cudaState)
 {
 	BError error(string(CLASS_STR(DipoleMesh)) + "(" + (*pSMesh).key_from_meshId(meshId) + ")");
@@ -117,14 +163,13 @@ BError DipoleMesh::SwitchCUDAState(bool cudaState)
 	//are we switching to cuda?
 	if (cudaState) {
 
-		//delete MeshCUDA object and null (just in case)
-		if (pMeshCUDA) delete pMeshCUDA;
-		pMeshCUDA = nullptr;
+		if (!pMeshCUDA) {
 
-		//then make MeshCUDA object, copying over currently held cpu data
-		pMeshCUDA = new DipoleMeshCUDA(this);
-		error = pMeshCUDA->Error_On_Create();
-		if (!error) error = pMeshCUDA->cuMesh()->set_pointers(pMeshCUDA);
+			//then make MeshCUDA object, copying over currently held cpu data
+			pMeshCUDA = new DipoleMeshCUDA(this);
+			error = pMeshCUDA->Error_On_Create();
+			if (!error) error = pMeshCUDA->cuMesh()->set_pointers(pMeshCUDA);
+		}
 	}
 	else {
 
@@ -227,7 +272,7 @@ void DipoleMesh::SetCurieTemperature(double Tc)
 			}
 		}
 
-		Ms.set_precalculated_scaling_array(t_scaling_me);
+		Ms.set_precalculated_t_scaling_array(t_scaling_me);
 		Ms.update(base_temperature);
 	}
 	else {

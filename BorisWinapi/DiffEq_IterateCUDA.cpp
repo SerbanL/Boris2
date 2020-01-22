@@ -10,6 +10,10 @@
 
 bool ODECommon::SetAdaptiveTimeStepCUDA(void)
 {
+	//save current dT value in case it changes (adaptive time step methods)
+	dT_last = dT;
+	pODECUDA->Sync_dT_last();
+
 	double lte = pODECUDA->Get_lte();
 
 	//adaptive time step based on lte - is lte over acceptable relative error?
@@ -59,6 +63,10 @@ bool ODECommon::SetAdaptiveTimeStepCUDA(void)
 
 bool ODECommon::SetAdaptiveTimeStepCUDA_SingleThreshold(void)
 {
+	//save current dT value in case it changes (adaptive time step methods)
+	dT_last = dT;
+	pODECUDA->Sync_dT_last();
+
 	double lte = pODECUDA->Get_lte();
 
 	//failed - try again. Restore state to start of evaluation and try again with smaller time step - output not available yet.
@@ -97,6 +105,10 @@ bool ODECommon::SetAdaptiveTimeStepCUDA_SingleThreshold(void)
 
 bool ODECommon::SetAdaptiveTimeStepCUDA_SingleThreshold2(void)
 {
+	//save current dT value in case it changes (adaptive time step methods)
+	dT_last = dT;
+	pODECUDA->Sync_dT_last();
+
 	double lte = pODECUDA->Get_lte();
 
 	//failed - try again. Restore state to start of evaluation and try again with smaller time step - output not available yet.
@@ -135,10 +147,6 @@ bool ODECommon::SetAdaptiveTimeStepCUDA_SingleThreshold2(void)
 
 void ODECommon::IterateCUDA(void)
 {
-	//save current dT value in case it changes (adaptive time step methods)
-	dT_last = dT;
-	pODECUDA->Sync_dT_last();
-
 	switch (evalMethod) {
 
 	case EVAL_EULER:
@@ -915,6 +923,8 @@ void ODECommon::IterateCUDA(void)
 	}
 	break;
 	}
+
+	pODECUDA->Sync_time();
 }
 
 #endif

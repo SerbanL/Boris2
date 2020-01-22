@@ -226,7 +226,7 @@ public:  //public methods
 
 	//---------------------------------------- SET-UP METHODS
 
-	virtual BError UpdateConfiguration(UPDATECONFIG_ cfgMessage = UPDATECONFIG_GENERIC) = 0;
+	virtual BError UpdateConfiguration(UPDATECONFIG_ cfgMessage) = 0;
 
 	//switch CUDA state on/off
 	virtual BError SwitchCUDAState(bool cudaState) = 0;

@@ -2,6 +2,8 @@
 
 #include "cuBLib_Flags.h"
 
+#include <cufft.h>
+
 #if SINGLEPRECISION == 1
 
 #define cuBReal cufftReal

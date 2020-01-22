@@ -60,7 +60,16 @@ BError HeatCUDA::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 	
 	bool success = true;
 	
+	//need this when we switch cuda mode
+	if (!Q_equation.is_set() && pHeat->Q_equation.is_set()) error = SetQEquation(pHeat->Q_equation.get_scalar_fspec());
+
 	if (ucfg::check_cfgflags(cfgMessage, UPDATECONFIG_MESHSHAPECHANGE, UPDATECONFIG_MESHCHANGE, UPDATECONFIG_MODULEADDED, UPDATECONFIG_MODULEDELETED)) {
+
+		//update mesh dimensions in equation constants
+		if (Q_equation.is_set()) {
+
+			error = SetQEquation(pHeat->Q_equation.get_scalar_fspec());
+		}
 
 		if (pMeshCUDA->M()->size_cpu().dim()) {
 
@@ -125,6 +134,21 @@ BError HeatCUDA::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 	if (!success) return error(BERROR_OUTOFGPUMEMORY_CRIT);
 	
 	return error;
+}
+
+void HeatCUDA::UpdateConfiguration_Values(UPDATECONFIG_ cfgMessage)
+{
+	if (cfgMessage == UPDATECONFIG_TEQUATION_CONSTANTS) {
+
+		if (Q_equation.is_set()) {
+
+			SetQEquation(pHeat->Q_equation.get_scalar_fspec());
+		}
+	}
+	else if (cfgMessage == UPDATECONFIG_TEQUATION_CLEAR) {
+
+		if (Q_equation.is_set()) Q_equation.clear();
+	}
 }
 
 void HeatCUDA::UpdateField(void)

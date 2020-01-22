@@ -36,6 +36,7 @@ public:
 	BError Initialize(void);
 
 	BError UpdateConfiguration(UPDATECONFIG_ cfgMessage);
+	void UpdateConfiguration_Values(UPDATECONFIG_ cfgMessage) {}
 
 	BError MakeCUDAModule(void);
 
@@ -50,7 +51,7 @@ class Anisotropy_Uniaxial :
 private:
 
 	//pointer to mesh object holding this effective field module
-	FMesh * pMesh;
+	Mesh * pMesh;
 
 public:
 
@@ -67,7 +68,8 @@ public:
 
 	BError Initialize(void) { return BError(); }
 
-	BError UpdateConfiguration(UPDATECONFIG_ cfgMessage = UPDATECONFIG_GENERIC) { return BError(); }
+	BError UpdateConfiguration(UPDATECONFIG_ cfgMessage) { return BError(); }
+	void UpdateConfiguration_Values(UPDATECONFIG_ cfgMessage) {}
 
 	BError MakeCUDAModule(void) { return BError(); }
 

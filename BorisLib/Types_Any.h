@@ -59,7 +59,7 @@ private:
 	//NEWVALUE
 	struct NewValue_Params {
 
-	void *pValue;
+		void *pValue;
 
 		NewValue_Params(void *pValue_) { pValue = pValue_; }
 	};
@@ -123,34 +123,31 @@ private:
 	//------------------------------- Overloaded functions selected through tag dispatching (where the tag also acts as useful input parameter). RType is the return type (must be selected correctly).
 
 	//NEWVALUE
-	template <typename RType, typename Type> RType RunThisMethod(NewValue_Params param) 
+	template <typename RType, typename Type> RType RunThisMethod(NewValue_Params param)
 	{
-		if(pValue && allocated)
-			MatchType_CallFunc<void, DeleteType_Params>(DeleteType_Params());
-
-		pValue = new Type( *reinterpret_cast<Type*>(param.pValue) );
+		pValue = new Type(*reinterpret_cast<Type*>(param.pValue));
 		allocated = true;
 	}
-	
+
 	//SETVALUE
-	template <typename RType, typename Type> RType Convert_RType_to_Type(SetValue_Params<RType> param, std::true_type) 
+	template <typename RType, typename Type> RType Convert_RType_to_Type(SetValue_Params<RType> param, std::true_type)
 	{
 		//can convert RType to Type : do it
 		RType value = *reinterpret_cast<RType*>(&param.value);
-		
+
 		*reinterpret_cast<Type*>(pValue) = static_cast<Type>(value);
 		return value;
 	}
 
 	template <typename RType, typename Type> RType Convert_RType_to_Type(...) { return RType(); }	//cannot convert : do nothing
 
-	template <typename RType, typename Type> RType RunThisMethod(SetValue_Params<RType> param) 
+	template <typename RType, typename Type> RType RunThisMethod(SetValue_Params<RType> param)
 	{
 		return Convert_RType_to_Type<RType, Type>(param, is_convertible<RType, Type>{});
 	}
 
 	//FROMSTRING
-	template <typename RType, typename Type> RType RunThisMethod(ConvertFromString_Params param) 
+	template <typename RType, typename Type> RType RunThisMethod(ConvertFromString_Params param)
 	{
 		//set value from std::string to Type as obtained from type_name
 		Type value = ToNum(param.text, param.unit);
@@ -171,7 +168,7 @@ private:
 		//find list of possible number of parameters accepted in Type constructors (all convertible from std::string using ToNum)
 		std::vector<int> ctor_parameters;
 		constructor_parameters<Type>::get_constructors(ctor_parameters);
-		
+
 		//for strings restrict to 1 parameter only (constructor_parameters<std::string>::get_constructors() also returns one with 3 parameters)
 		if (std::is_same<Type, std::string>::value) ctor_parameters.assign(1, 1);
 
@@ -203,13 +200,13 @@ private:
 	}
 
 	//TOSTRING
-	template <typename RType, typename Type> RType RunThisMethod(ConvertToString_Params param) 
+	template <typename RType, typename Type> RType RunThisMethod(ConvertToString_Params param)
 	{
-		return ToString( *reinterpret_cast<Type*>(pValue), param.unit );
+		return ToString(*reinterpret_cast<Type*>(pValue), param.unit);
 	}
 
 	//CONVERTTYPE
-	template <typename RType, typename Type> RType Convert_Type_to_RType(std::true_type) 
+	template <typename RType, typename Type> RType Convert_Type_to_RType(std::true_type)
 	{
 		Type value = *reinterpret_cast<Type*>(pValue);
 		return (RType)value;
@@ -217,7 +214,7 @@ private:
 
 	template <typename RType, typename Type> RType Convert_Type_to_RType(std::false_type) { return RType(); }
 
-	template <typename RType, typename Type> RType RunThisMethod(ConvertType_Params param) 
+	template <typename RType, typename Type> RType RunThisMethod(ConvertType_Params param)
 	{
 		return Convert_Type_to_RType<RType, Type>(std::is_convertible<Type, RType>());
 	}
@@ -231,60 +228,60 @@ private:
 			pValue = nullptr;
 			allocated = false;
 		}
-		
+
 		return RType();
 	}
 
 	//Type selector and dispatcher based on the PType tag (which also serves as useful input parameter in most cases so no need to optimize by static_cast<void> it away).
 	//The type is decided by type_name. Add all variable types which can be handled by Any objects here.
 	template <typename RType, typename PType> RType MatchType_CallFunc(PType param) {
-		
+
 		if (type_name == typeid(bool).name()) {
 
 			return RunThisMethod<RType, bool>(param);
 		}
 
-		else if(type_name == typeid(char).name()) {
+		else if (type_name == typeid(char).name()) {
 
 			return RunThisMethod<RType, char>(param);
 		}
-		
-		else if(type_name == typeid(int).name()) {
+
+		else if (type_name == typeid(int).name()) {
 
 			return RunThisMethod<RType, int>(param);
 		}
 
-		else if(type_name == typeid(float).name()) {
+		else if (type_name == typeid(float).name()) {
 
 			return RunThisMethod<RType, float>(param);
 		}
 
-		else if(type_name == typeid(double).name()) {
+		else if (type_name == typeid(double).name()) {
 
 			return RunThisMethod<RType, double>(param);
 		}
-		
-		else if(type_name == typeid(std::string).name()) {
+
+		else if (type_name == typeid(std::string).name()) {
 
 			return RunThisMethod<RType, std::string>(param);
 		}
-		
-		else if(type_name == typeid(INT2).name()) {
+
+		else if (type_name == typeid(INT2).name()) {
 
 			return RunThisMethod<RType, INT2>(param);
 		}
 
-		else if(type_name == typeid(DBL2).name()) {
+		else if (type_name == typeid(DBL2).name()) {
 
 			return RunThisMethod<RType, DBL2>(param);
 		}
 
-		else if(type_name == typeid(INT3).name()) {
+		else if (type_name == typeid(INT3).name()) {
 
 			return RunThisMethod<RType, INT3>(param);
 		}
 
-		else if(type_name == typeid(DBL3).name()) {
+		else if (type_name == typeid(DBL3).name()) {
 
 			return RunThisMethod<RType, DBL3>(param);
 		}
@@ -299,22 +296,22 @@ private:
 			return RunThisMethod<RType, DBL4>(param);
 		}
 
-		else if(type_name == typeid(Box).name()) {
+		else if (type_name == typeid(Box).name()) {
 
 			return RunThisMethod<RType, Box>(param);
 		}
 
-		else if(type_name == typeid(Rect).name()) {
+		else if (type_name == typeid(Rect).name()) {
 
 			return RunThisMethod<RType, Rect>(param);
 		}
-		
-		else if(type_name == typeid(SEQ).name()) {
+
+		else if (type_name == typeid(SEQ).name()) {
 
 			return RunThisMethod<RType, SEQ>(param);
 		}
-		
-		else if(type_name == typeid(SEQ3).name()) {
+
+		else if (type_name == typeid(SEQ3).name()) {
 
 			return RunThisMethod<RType, SEQ3>(param);
 		}
@@ -353,18 +350,26 @@ private:
 
 			return RunThisMethod<RType, COSOSC3>(param);
 		}
-		
+
+		else if (type_name == typeid(StringSequence).name()) {
+
+			return RunThisMethod<RType, StringSequence>(param);
+		}
+
 		return RType();
 	}
 
 	//------------------------------- AUX FUNCTIONS
 
 	//copy the value and type in copyThis by allocating new memory - results in independent object
-	void CopyAny(const Any& copyThis) 
+	void CopyAny(const Any& copyThis)
 	{
+		if (pValue && allocated)
+			MatchType_CallFunc<void, DeleteType_Params>(DeleteType_Params());
+
 		//copy type name
 		type_name = copyThis.type_name;
-		
+
 		//now match the type name with the actual type and allocate memory and set value
 		MatchType_CallFunc<void, NewValue_Params>(NewValue_Params(copyThis.pValue));
 	}
@@ -374,7 +379,7 @@ public:
 	//------------------------------- CONSTRUCTORS
 
 	//empty constructor : null object
-	Any(void) 
+	Any(void)
 	{
 		pValue = nullptr;
 		allocated = false;
@@ -382,31 +387,31 @@ public:
 	}
 
 	//value constructor - makes an independent Any object
-	template <typename Type> 
-	Any(Type value) 
+	template <typename Type>
+	Any(Type value)
 	{
 		pValue = new Type(value);
 		allocated = true;
 
 		type_name = typeid(Type).name();
 	}
-	
+
 	//pointer constructor - makes a pointer Any object, i.e. pValue points to passed value
-	template <typename Type> Any(Type *value) 
+	template <typename Type> Any(Type *value)
 	{
 		pValue = value;
 		allocated = false;
 
 		type_name = typeid(Type).name();
 	}
-	
+
 	//copy constructor - make an exact copy. This means: independent if object to copy from is independent (i.e. has allocated == true), else keep it as a dependent object - this means the value set in pValue is a pointer to some value allocated elsewhere.
-	Any(const Any& copyThis) 
-	{ 
-		if(copyThis.allocated) {
+	Any(const Any& copyThis)
+	{
+		if (copyThis.allocated) {
 
 			//make new Any object, independent of copyThis
-			CopyAny(copyThis); 
+			CopyAny(copyThis);
 		}
 		else {
 
@@ -416,18 +421,18 @@ public:
 		}
 	}
 
-	~Any() 
-	{ 
-		if(pValue && allocated) 
+	~Any()
+	{
+		if (pValue && allocated)
 			MatchType_CallFunc<void, DeleteType_Params>(DeleteType_Params());
 	}
-	
+
 	//------------------------------- READ VALUE FROM THIS
 
 	//conversion to external type, e.g. double value = a; //here a is of type Any. The value stored in a is converted to the type of value (double in this case). If conversion not possible then value is set to its default, here RType()
-	template <typename RType> 
-	operator RType() 
-	{ 	
+	template <typename RType>
+	operator RType()
+	{
 		if (pValue)
 			return MatchType_CallFunc<RType, ConvertType_Params>(ConvertType_Params());
 		else return RType();
@@ -437,10 +442,10 @@ public:
 
 	//set value, e.g. Any a; a = 5;
 	//If type of a is already set, the external value is converted to this type. e.g. if Any a(5); a = 6.5; results in a value of 6 stored, not 6.5, since a has been set to store a type integer.
-	template <typename RType> 
-	Any& operator=(const RType& value) 
+	template <typename RType>
+	Any& operator=(const RType& value)
 	{
-		if(pValue) {
+		if (pValue) {
 
 			MatchType_CallFunc<RType, SetValue_Params<RType>>(SetValue_Params<RType>(value));
 		}
@@ -456,16 +461,16 @@ public:
 	}
 
 	//assignment operator - make an exact copy. This means: independent if object to copy from is independent (i.e. has allocated == true), else keep it as a dependent object - this means the value set in pValue is a pointer to some value allocated elsewhere.
-	Any& operator=(const Any& copyThis) 
+	Any& operator=(const Any& copyThis)
 	{
-		 if(copyThis.allocated) {
+		if (copyThis.allocated) {
 
 			//make new Any object, independent of copyThis
-			CopyAny(copyThis); 
+			CopyAny(copyThis);
 		}
 		else {
 
-			if(pValue && allocated)
+			if (pValue && allocated)
 				MatchType_CallFunc<void, DeleteType_Params>(DeleteType_Params());
 
 			//copyThis points to a value allocated elsewhere. Keep this object the same.
@@ -479,9 +484,9 @@ public:
 
 	//------------------------------- CONVERSION FROM/TO STRING OR STREAMS
 
-	std::string convert_to_string(const std::string& unit = "") 
+	std::string convert_to_string(const std::string& unit = "")
 	{
-		if(pValue)
+		if (pValue)
 			return MatchType_CallFunc<std::string, ConvertToString_Params>(ConvertToString_Params(unit));
 		else return "";
 	}
@@ -500,7 +505,7 @@ public:
 	}
 
 	//convert std::string to currently set value type. You can also use ToNum, but need to specify the type, e.g. : Any a = (DBL3)ToNum("1.0"); If the type is already set but not sure what type then a.convert_string(...); can be used
-	void convert_string(const std::string& text, const std::string& unit = "") 
+	void convert_string(const std::string& text, const std::string& unit = "")
 	{
 		//if this is an empty Any then cannot use this : need to know what type to convert to - use convert_string_set_type instead
 		if (!text.length() || !pValue) return;
@@ -509,7 +514,7 @@ public:
 	}
 
 	//convert std::string to currently set value type. You can also use ToNum, but need to specify the type, e.g. : Any a = (DBL3)ToNum("1.0"); If the type is already set but not sure what type then a.convert_string(...); can be used
-	void convert_string_set_type(const std::string& text, const std::string& new_type) 
+	void convert_string_set_type(const std::string& text, const std::string& new_type)
 	{
 		if (!text.length() || !new_type.length()) return;
 
@@ -519,7 +524,7 @@ public:
 		//delete currently held value so we can set a new type from the std::string and specified type name (if type name not correct then this Any will in effect be cleared)
 		if (pValue && allocated)
 			MatchType_CallFunc<void, DeleteType_Params>(DeleteType_Params());
-		
+
 		pValue = nullptr;
 		allocated = false;
 
@@ -531,7 +536,7 @@ public:
 	//return number of components used
 	int convert_string(const std::vector<std::string>& components, const std::string& unit = "")
 	{
-		if(!components.size() || !pValue) return 0;
+		if (!components.size() || !pValue) return 0;
 
 		return MatchType_CallFunc<int, ConvertFromStringComponents_Params>(ConvertFromStringComponents_Params(components, unit));
 	}
@@ -542,7 +547,7 @@ public:
 
 	template <typename Type, std::enable_if_t<!is_string<Type>::value>* = nullptr>
 	bool operator>=(Type value) const { return *reinterpret_cast<Type*>(pValue) >= value; }
-	
+
 	template <typename Type, std::enable_if_t<is_string<Type>::value>* = nullptr>
 	bool operator>=(Type value) { return const_cast<Any*>(&rhs)->convert_to_string() >= value; }
 
@@ -604,7 +609,7 @@ public:
 
 	template <typename Type, std::enable_if_t<!is_string<Type>::value>* = nullptr>
 	friend bool operator==(Type value, const Any& rhs) { return value == (Type)*const_cast<Any*>(&rhs); }
-	
+
 	template <typename Type, std::enable_if_t<is_string<Type>::value>* = nullptr>
 	friend bool operator==(Type value, const Any& rhs) { return value == const_cast<Any*>(&rhs)->convert_to_string(); }
 
@@ -631,13 +636,12 @@ public:
 	std::string get_type(void) { return type_name; }
 
 	void clear(void)
-	{ 
+	{
 		if (pValue && allocated)
 			MatchType_CallFunc<void, DeleteType_Params>(DeleteType_Params());
-		
+
 		pValue = nullptr;
 		allocated = false;
 		type_name = "";
 	}
 };
-

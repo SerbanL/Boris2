@@ -58,29 +58,50 @@ void VEC_VC<VType>::renormalize(PType new_norm)
 
 //copy values from copy_this but keep current dimensions - if necessary map values from copy_this to local dimensions; from flags only copy the shape but not the boundary condition values or anything else - these are reset
 template <typename VType>
-void VEC_VC<VType>::copy_values(const VEC_VC<VType>& copy_this)
+void VEC_VC<VType>::copy_values(const VEC_VC<VType>& copy_this, Rect dstRect, Rect srcRect)
 {
 	//copy values
-	VEC<VType>::copy_values(copy_this);
+	VEC<VType>::copy_values(copy_this, dstRect, srcRect);
 
 	//copy shape
+
+	if (dstRect.IsNull()) dstRect = rect - rect.s;
+	if (srcRect.IsNull()) srcRect = copy_this.rect - copy_this.rect.s;
+
+	Box cells_box_dst = box_from_rect_max(dstRect + rect.s);
+	Box cells_box_src = copy_this.box_from_rect_max(srcRect + copy_this.rect.s);
+
+	SZ3 dst_n = cells_box_dst.size();
+	SZ3 src_n = cells_box_src.size();
+
+	DBL3 sourceIdx = (DBL3)src_n / dst_n;
 
 	//first clear current flags
 	ngbrFlags.assign(n.dim(), 0);
 
 	//now map shape from copy_this.ngbrFlags to ngbrFlags
-	SZ3 source_n = copy_this.n;
-	DBL3 sourceIdx = (DBL3)source_n / n;
 
 #pragma omp parallel for
-	for (int idx = 0; idx < n.dim(); idx++) {
+	for (int j = 0; j < dst_n.j; j++) {
+		for (int k = 0; k < dst_n.k; k++) {
+			for (int i = 0; i < dst_n.i; i++) {
 
-		int _x = (int)floor((idx % n.x) * sourceIdx.x);
-		int _y = (int)floor(((idx / n.x) % n.y) * sourceIdx.y);
-		int _z = (int)floor((idx / (n.x*n.y)) * sourceIdx.z);
+				int idx_box_dst = i + j * dst_n.x + k * dst_n.x*dst_n.y;
 
-		if (copy_this.ngbrFlags[_x + _y * source_n.x + _z * (source_n.x*source_n.y)] & NF_NOTEMPTY)
-			ngbrFlags[idx] = NF_NOTEMPTY;
+				int _x = (int)floor((idx_box_dst % dst_n.x) * sourceIdx.x);
+				int _y = (int)floor(((idx_box_dst / dst_n.x) % dst_n.y) * sourceIdx.y);
+				int _z = (int)floor((idx_box_dst / (dst_n.x*dst_n.y)) * sourceIdx.z);
+
+				int idx_out = (i + cells_box_dst.s.i) + (j + cells_box_dst.s.j) * n.x + (k + cells_box_dst.s.k) * n.x*n.y;
+				int idx_in = (_x + cells_box_src.s.i) + (_y + cells_box_src.s.j) * copy_this.n.x + (_z + cells_box_src.s.k) * (copy_this.n.x*copy_this.n.y);
+
+				if (idx_out < n.dim() && idx_in < copy_this.n.dim()) {
+
+					if (copy_this.ngbrFlags[idx_in] & NF_NOTEMPTY)
+						ngbrFlags[idx_out] = NF_NOTEMPTY;
+				}
+			}
+		}
 	}
 
 	//recalculate neighbor flags
@@ -89,31 +110,12 @@ void VEC_VC<VType>::copy_values(const VEC_VC<VType>& copy_this)
 
 //copy values from copy_this but keep current dimensions - if necessary map values from copy_this to local dimensions. Points with zero values are set as empty.
 template <typename VType>
-void VEC_VC<VType>::copy_values(const VEC<VType>& copy_this)
+void VEC_VC<VType>::copy_values(const VEC<VType>& copy_this, Rect dstRect, Rect srcRect)
 {
-	VEC<VType>::copy_values(copy_this);
+	VEC<VType>::copy_values(copy_this, dstRect, srcRect);
 
-	//mark zero points as empty before setting flags; otherwise they are not empty -> sets shape
-#pragma omp parallel for
-	for (int idx = 0; idx < n.dim(); idx++) {
-
-		if (VEC<VType>::is_empty(idx)) mark_empty(idx);
-		else mark_not_empty(idx);
-	}
-
-	//recalculate neighbor flags
+	//recalculate neighbor flags : current shape is maintained.
 	set_ngbrFlags();
-}
-
-//scale all stored values by the given constant
-template <typename VType>
-void VEC_VC<VType>::scale_values(double constant)
-{
-#pragma omp parallel for
-	for (int idx = 0; idx < n.dim(); idx++) {
-
-		quantity[idx] *= constant;
-	}
 }
 
 //shift all the values in this VEC by the given delta (units same as h)
@@ -303,90 +305,3 @@ void VEC_VC<VType>::shift_y(double delta, const Rect& shift_rect)
 		}
 	}
 }
-
-//--------------------------------------------OPERATIONS
-
-template <typename VType>
-VType VEC_VC<VType>::average_nonempty(const Box& box) const
-{
-	VType av = VType();
-	int count = 0;
-
-	for (int j = (box.s.y >= 0 ? box.s.y : 0); j < (box.e.y <= n.y ? box.e.y : n.y); j++) {
-		for (int k = (box.s.z >= 0 ? box.s.z : 0); k < (box.e.z <= n.z ? box.e.z : n.z); k++) {
-			for (int i = (box.s.x >= 0 ? box.s.x : 0); i < (box.e.x <= n.x ? box.e.x : n.x); i++) {
-
-				int idx = i + j * n.x + k * n.x*n.y;
-
-				//get running average
-				if (ngbrFlags[idx] & NF_NOTEMPTY) {
-
-					count++;
-					av = (av * (count - 1) + quantity[idx]) / count;
-				}
-			}
-		}
-	}
-
-	return av;
-}
-
-//average over non-empty cells intersecting given rectangle (relative to this VEC's rect)
-template <typename VType>
-VType VEC_VC<VType>::average_nonempty(const Rect& rectangle) const
-{
-	//if empty rectangle then average ove the entire mesh
-	if (rectangle.IsNull()) return average_nonempty(Box(n));
-
-	//... otherwise rectangle must intersect with this mesh
-	if (!rect.intersects(rectangle + rect.s)) return VType();
-
-	//convert rectangle to box (include all cells intersecting with the rectangle)
-	return average_nonempty(box_from_rect_max(rectangle + rect.s));
-}
-
-template <typename VType>
-VType VEC_VC<VType>::average_nonempty_omp(const Box& box) const
-{
-	reduction.new_average_reduction();
-
-#pragma omp parallel for
-	for (int idx_box = 0; idx_box < box.size().dim(); idx_box++) {
-
-		//i, j, k values inside the box only calculated from the box cell index
-		int i = (idx_box % box.size().x);
-		int j = ((idx_box / box.size().x) % box.size().y);
-		int k = (idx_box / (box.size().x * box.size().y));
-
-		//index inside the mesh for this box cell index
-		int idx = (i + box.s.i) + (j + box.s.j) * n.x + (k + box.s.k) * n.x * n.y;
-
-		//you shouldn't call this with a box that is not contained in Box(n), but this stops any bad memory accesses
-		if (idx < 0 || idx >= n.dim()) continue;
-
-		int tn = omp_get_thread_num();
-
-		//only include non-empty cells
-		if (ngbrFlags[idx] & NF_NOTEMPTY) {
-
-			reduction.reduce_average(quantity[idx]);
-		}
-	}
-
-	return reduction.average();;
-}
-
-//average over non-empty cells intersecting given rectangle (relative to this VEC's rect)
-template <typename VType>
-VType VEC_VC<VType>::average_nonempty_omp(const Rect& rectangle) const
-{
-	//if empty rectangle then average ove the entire mesh
-	if (rectangle.IsNull()) return average_nonempty_omp(Box(n));
-
-	//... otherwise rectangle must intersect with this mesh
-	if (!rect.intersects(rectangle + rect.s)) return VType();
-
-	//convert rectangle to box (include all cells intersecting with the rectangle)
-	return average_nonempty_omp(box_from_rect_max(rectangle + rect.s));
-}
-

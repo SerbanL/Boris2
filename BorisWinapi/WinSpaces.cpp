@@ -77,6 +77,14 @@ void WinSpace::RestoreWindowSize(void) {
 	windowMaximised = false;
 }
 
+void WinSpace::DrawFrame(void) 
+{
+	pBG->FillRectangle(D2D1::RectF(spaceRect.left - RESIZEFRAMEBORDER, spaceRect.top - RESIZEFRAMEBORDER, spaceRect.left, spaceRect.bottom + RESIZEFRAMEBORDER), FRAMECOLOR);
+	pBG->FillRectangle(D2D1::RectF(spaceRect.right, spaceRect.top - RESIZEFRAMEBORDER, spaceRect.right + RESIZEFRAMEBORDER, spaceRect.bottom + RESIZEFRAMEBORDER), FRAMECOLOR);
+	pBG->FillRectangle(D2D1::RectF(spaceRect.left, spaceRect.top - RESIZEFRAMEBORDER, spaceRect.right, spaceRect.top), FRAMECOLOR);
+	pBG->FillRectangle(D2D1::RectF(spaceRect.left, spaceRect.bottom, spaceRect.right, spaceRect.bottom + RESIZEFRAMEBORDER), FRAMECOLOR);
+}
+
 void WinSpace::DrawResizingFrame(void) {
 
 	if (resizing.IsResizeCursorSet()) {
@@ -319,7 +327,9 @@ bool WinSpace::IsHoveringOverResizeArea(void) {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////TEXT DISPLAY DERIVED ABSTRACT CLASS
 
-TextDisplay::TextDisplay(D2D1_RECT_F ratios, INT2 winId, SimTOFunct *pActionHandler) : WinSpace(ratios, winId), textLines(pActionHandler) {
+TextDisplay::TextDisplay(D2D1_RECT_F ratios, INT2 winId, SimTOFunct *pActionHandler) : 
+	WinSpace(ratios, winId), textLines(pActionHandler) 
+{
 
 	topLine = 0;
 
@@ -353,10 +363,20 @@ ActionOutcome TextDisplay::NewMessage_CommonResponses(AC_ aCode, INT2 mouse, str
 	return actionResult;
 }
 
-bool TextDisplay::DrawTextLines(bool doDraw) {
-
-	//Draw text lines in view. If liens had to be recalculated so they fit in window width, then reset top-line index
+bool TextDisplay::DrawTextLines(bool doDraw) 
+{
+	//Draw text lines in view. If lines had to be recalculated so they fit in window width, then reset top-line index
 	return textLines.Draw(topLine, spaceRectDims.height, spaceRect.left, spaceRect.top, doDraw);
+}
+
+//Faster version of Draw where we don't refresh any interactive objects but draw them in their current state. Also doesn't re-check for re-alignment of text objects, assumes everything is correct.
+//Thus this method purely draws the screen from current state, which is assumed to be in the correct.
+//use this whenever you know there cannot be any changes to interactive objects or any other settings (e.g. window dimensions)
+//when there are alot of interactive objects on screen the refresh rate can drop significantly making the interface sluggish, so use the full Draw method sparingly)
+void TextDisplay::DrawTextLines_Quick(void)
+{
+	//Draw text lines in view.
+	textLines.Draw_Quick(topLine, spaceRectDims.height, spaceRect.left, spaceRect.top);
 }
 
 void TextDisplay::ResizeWindow(D2D1_RECT_F ratios) {

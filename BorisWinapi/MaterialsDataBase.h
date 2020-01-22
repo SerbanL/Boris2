@@ -13,7 +13,7 @@ using namespace std;
 //mdb files contain the following entries:
 
 //0. Name - this is the material name, and it is the handle used with addmaterial command
-//1. Formula - symbol formula for material (information only)
+//1. Formula - symbol equation for material (information only)
 //2. Type - the type of mesh this material applies to (e.g. ferromagnetic, metal, insulator, ...)
 //3. Description - brief description of entry, e.g. could indicate if this is applicable to a particular type of interface, such as Pt/Co, Ta/Co, or just bulk Co etc., or other relevant information so users know how they should use this entry
 //4. Contributor - name of contributor for this entry (leave blank for Anonymous)

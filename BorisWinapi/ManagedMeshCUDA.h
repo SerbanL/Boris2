@@ -9,6 +9,8 @@
 
 #include "MeshParamsCUDA.h"
 
+#include "ManagedDiffEq_CommonCUDA.h"
+
 class MeshCUDA;
 
 //This holds pointers to managed objects in MeshCUDA (and inherited MeshParamsCUDA) : set and forget. They are available for use in cuda kernels by passing a cu_obj-managed object ManagedMeshCUDA
@@ -148,6 +150,9 @@ public:
 	//temperature calculated by Heat module
 	cuVEC_VC<cuBReal>* pTemp;
 
+	//Managed cuda mesh pointer so all mesh data can be accessed in device code
+	ManagedDiffEq_CommonCUDA* pcuDiffEq;
+
 private:
 
 	//----------------------------------- RUNTIME PARAMETER UPDATERS (AUXILIARY) (MeshParamsControlCUDA.h)
@@ -164,7 +169,7 @@ private:
 	template <typename PType, typename SType>
 	__device__ void update_parameters_mcoarse_spatial(int mcell_idx, MatPCUDA<PType, SType>& matp, PType& matp_value);
 
-	//SPATIAL AND TIME DEPENDENCE - NO POSITION YET
+	//SPATIAL AND TEMPERATURE DEPENDENCE - NO POSITION YET
 
 	//update parameters in the list for spatial dependence only
 	template <typename PType, typename SType, typename ... MeshParam_List>
@@ -186,7 +191,7 @@ private:
 	template <typename PType, typename SType>
 	__device__ void update_parameters_ecoarse_spatial(int ecell_idx, MatPCUDA<PType, SType>& matp, PType& matp_value);
 
-	//SPATIAL AND TIME DEPENDENCE - NO POSITION YET
+	//SPATIAL AND TEMPERATURE DEPENDENCE - NO POSITION YET
 
 	//update parameters in the list for spatial dependence only
 	template <typename PType, typename SType, typename ... MeshParam_List>
@@ -208,7 +213,7 @@ private:
 	template <typename PType, typename SType>
 	__device__ void update_parameters_tcoarse_spatial(int tcell_idx, MatPCUDA<PType, SType>& matp, PType& matp_value);
 
-	//SPATIAL AND TIME DEPENDENCE - NO POSITION YET
+	//SPATIAL AND TEMPERATURE DEPENDENCE - NO POSITION YET
 
 	//update parameters in the list for spatial dependence only
 	template <typename PType, typename SType, typename ... MeshParam_List>
@@ -238,7 +243,7 @@ public:
 	template <typename PType, typename SType>
 	__device__ void update_parameters_spatial(const cuReal3& position, MatPCUDA<PType, SType>& matp, PType& matp_value);
 
-	//SPATIAL AND TIME DEPENDENCE - HAVE POSITION
+	//SPATIAL AND TEMPERATURE DEPENDENCE - HAVE POSITION
 
 	//update parameters in the list for spatial dependence only
 	template <typename PType, typename SType, typename ... MeshParam_List>

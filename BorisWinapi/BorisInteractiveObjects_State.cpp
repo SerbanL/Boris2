@@ -11,8 +11,8 @@
 
 #include "Simulation.h"
 
-InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(InteractiveObjectProperties &iop, TextObject *pTO) {
-
+InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(InteractiveObjectProperties &iop, TextObject *pTO) 
+{
 	//!!!IMPORTANT!!!: Do not call for a Refresh in this method, as it is called during a Refresh() : causes infinite loop! 
 	//Also, this method was called from within BorisDisplay (through a function pointer), which was thread-safe accessed so the mutex is now locked.
 
@@ -968,6 +968,17 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 
 				stateChanged = true;
 			}
+
+			//red (offcolor) : no temperature dependence in effect, green (oncolor) : temperature dependence in effect
+			//this is useful if a text equation has been enetered but it is wrong : no temperature dependence is in effect.
+			if (SameColor(pTO->GetFormatSpecifier().bgrndColor, OFFCOLOR) && SMesh[meshIdx]->is_paramtemp_set(paramId)) {
+
+				pTO->SetBackgroundColor(ONCOLOR);
+			}
+			else if (SameColor(pTO->GetFormatSpecifier().bgrndColor, ONCOLOR) && !SMesh[meshIdx]->is_paramtemp_set(paramId)) {
+
+				pTO->SetBackgroundColor(OFFCOLOR);
+			}
 		}
 		else {
 
@@ -1084,6 +1095,9 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 					break;
 				case 4:
 					pTO->set(" direction ");
+					break; 
+				case 5:
+					pTO->set(" magnitude ");
 					break;
 				}
 
@@ -1119,6 +1133,9 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 				break;
 			case 4:
 				pTO->set(" direction ");
+				break;
+			case 5:
+				pTO->set(" magnitude ");
 				break;
 			}
 
@@ -2039,7 +2056,7 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 		//update value if not matching
 		if (value != SMesh.Get_AStepdTCtrl().i) {
 
-			iop.textId = ToString(SMesh.Get_AStepdTCtrl().i, "s");
+			iop.textId = ToString(SMesh.Get_AStepdTCtrl().i);
 			pTO->set(" " + iop.textId + " ");
 
 			stateChanged = true;
@@ -2056,7 +2073,7 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 		//update value if not matching
 		if (value != SMesh.Get_AStepdTCtrl().j) {
 
-			iop.textId = ToString(SMesh.Get_AStepdTCtrl().j, "s");
+			iop.textId = ToString(SMesh.Get_AStepdTCtrl().j);
 			pTO->set(" " + iop.textId + " ");
 
 			stateChanged = true;
@@ -2073,7 +2090,7 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 		//update value if not matching
 		if (value != SMesh.Get_AStepdTCtrl().k) {
 
-			iop.textId = ToString(SMesh.Get_AStepdTCtrl().k, "s");
+			iop.textId = ToString(SMesh.Get_AStepdTCtrl().k);
 			pTO->set(" " + iop.textId + " ");
 
 			stateChanged = true;
@@ -2381,6 +2398,28 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 
 			stateChanged = true;
 		}
+	}
+	break;
+
+	//Show user constant for text equations : minorId is the index in Simulation::userConstants, auxId is the number of the interactive object in the list as it appears in the console, textId is the constant name and value string 
+	//Note this entry must always represent the entry in Simulation::userConstants with the index in auxId.
+	case IOI_USERCONSTANT:
+	{
+		//parameters from iop
+		int index = iop.minorId;
+		int io_index = iop.auxId;
+		string userConstant_text = iop.textId;
+
+		if (io_index < userConstants.size() && (index != io_index || userConstant_text != Build_EquationConstants_Text(io_index))) {
+
+			iop.textId = Build_EquationConstants_Text(io_index);
+
+			pTO->set(" " + iop.textId + " ");
+			stateChanged = true;
+		}
+
+		//this object is part of a list : make sure this list is updated
+		updateList(io_index, userConstants.size() - 1, &Simulation::Build_EquationConstants_ListLine);
 	}
 	break;
 

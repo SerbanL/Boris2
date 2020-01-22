@@ -16,7 +16,7 @@
 //----------------------------------------------------------------- CUDA
 
 //include cuda code in compilation. If set to 0 then only C++ CPU code is compiled so the executable will not need any cuda dlls.
-#define COMPILECUDA	1
+#define COMPILECUDA	0
 
 //To change precision of floating point variables modify value cuBLib_FLags.h (BorisCUDALib)
 
@@ -31,7 +31,7 @@
 #define ODE_EVAL_CUST	3
 
 //Set this
-#define ODE_EVAL_COMPILATION	ODE_EVAL_ALL
+#define ODE_EVAL_COMPILATION	ODE_EVAL_TEST
 
 //full
 #if ODE_EVAL_COMPILATION == ODE_EVAL_ALL
@@ -74,7 +74,7 @@
 #define COMPILE_MODULES_CUST	4
 
 //Set this
-#define MODULE_COMPILATION	COMPILE_MODULES_ALL
+#define MODULE_COMPILATION	COMPILE_MODULES_MIN
 
 //full
 #if MODULE_COMPILATION == COMPILE_MODULES_ALL
@@ -115,12 +115,10 @@
 
 #define MODULE_DEMAG
 #define MODULE_EXCHANGE
-#define MODULE_DMEXCHANGE
-#define MODULE_IDMEXCHANGE
 #define MODULE_ZEEMAN
-#define MODULE_ANIUNI
+#define MODULE_TRANSPORT
 #define MODULE_HEAT
-
+#define MODULE_ROUGHNESS
 #define MODULE_SDEMAG
 
 #endif

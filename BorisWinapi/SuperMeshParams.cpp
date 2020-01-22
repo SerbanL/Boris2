@@ -35,16 +35,15 @@ BError SuperMesh::get_meshparam_value(string meshName, string paramHandle, strin
 
 //--------------------------------------------------------- temperature dependence
 
-BError SuperMesh::set_meshparam_formula(string meshName, string paramHandle, string formulaName, vector<double> coefficients)
+BError SuperMesh::set_meshparam_t_equation(string meshName, string paramHandle, string equationText)
 {
 	BError error(__FUNCTION__);
 
-	if (!contains(meshName) || !pMesh[meshName]->contains_param(paramHandle) || !formula_descriptor.has_key(formulaName)) return error(BERROR_INCORRECTNAME);
+	if (!contains(meshName) || !pMesh[meshName]->contains_param(paramHandle)) return error(BERROR_INCORRECTNAME);
 
 	PARAM_ paramID = (PARAM_)pMesh[meshName]->get_meshparam_id(paramHandle);
-	MATPFORM_ formulaID = (MATPFORM_)formula_descriptor.get_ID_from_key(formulaName);
 
-	pMesh[meshName]->set_meshparam_formula(paramID, formulaID, coefficients);
+	pMesh[meshName]->set_meshparam_t_equation(paramID, equationText, userConstants);
 
 	error = UpdateConfiguration(UPDATECONFIG_PARAMCHANGED);
 
@@ -68,22 +67,31 @@ BError SuperMesh::set_meshparam_tscaling_array(string meshName, string paramHand
 	else return error(BERROR_INCORRECTARRAYS);
 }
 
-//clear parameters temperature dependence in given mesh (all meshes if empty string)
-BError SuperMesh::clear_meshparam_temp(string meshName)
+//clear parameters temperature dependence in given mesh for given parameter (all meshes and parameters if empty string, all parameters in given mesh if empty string)
+BError SuperMesh::clear_meshparam_temp(string meshName, string paramHandle)
 {
 	BError error(__FUNCTION__);
 
 	if (meshName.length() && !contains(meshName)) return error(BERROR_INCORRECTNAME);
 
+	PARAM_ paramID = PARAM_ALL;
+
+	if (meshName.length() && paramHandle.length()) {
+
+		if (!pMesh[meshName]->contains_param(paramHandle)) return error(BERROR_INCORRECTNAME);
+
+		paramID = (PARAM_)pMesh[meshName]->get_meshparam_id(paramHandle);
+	}
+
 	if (meshName.length()) {
 
-		pMesh[meshName]->set_meshparam_formula(PARAM_ALL, MATPFORM_NONE, {});
+		pMesh[meshName]->clear_meshparam_temp(paramID);
 	}
 	else {
 
 		for (int idx = 0; idx < pMesh.size(); idx++) {
 
-			pMesh[idx]->set_meshparam_formula(PARAM_ALL, MATPFORM_NONE, {});
+			pMesh[idx]->clear_meshparam_temp(paramID);
 		}
 	}
 
@@ -93,6 +101,21 @@ BError SuperMesh::clear_meshparam_temp(string meshName)
 }
 
 //--------------------------------------------------------- spatial dependence
+
+BError SuperMesh::set_meshparam_s_equation(string meshName, string paramHandle, string equationText)
+{
+	BError error(__FUNCTION__);
+
+	if (!contains(meshName) || !pMesh[meshName]->contains_param(paramHandle)) return error(BERROR_INCORRECTNAME);
+
+	PARAM_ paramID = (PARAM_)pMesh[meshName]->get_meshparam_id(paramHandle);
+
+	pMesh[meshName]->set_meshparam_s_equation(paramID, equationText, userConstants, pMesh[meshName]->meshRect.size());
+
+	error = UpdateConfiguration(UPDATECONFIG_PARAMCHANGED);
+
+	return error;
+}
 
 //clear parameters spatial dependence (variation) in given mesh (all meshes if empty string)
 BError SuperMesh::clear_meshparam_variation(string meshName)

@@ -21,15 +21,15 @@
 //BUGS
 
 //NOT SOLVED:
-//Saving simulation file sometimes sets dT to zero (to a floating point error). I've only seen it happen with CUDA enabled. Very rare, no apparent cause found yet.
 
 //LIKELY SOLVED:
-//1. Using a python script may result in program hanging if issuing a flood of commands.
-//2. If heat solver diverges (e.g. due to too high a time step), and at least 1 material parameter has a temperature dependence, when in CUDA mode out of gpu memory errors can result requiring a program restart. 
-//I seem to have fixed it using extra checks on Temperature when getting updated parameter values, but I don't understand why this happens without the checks so the solution seems like a hack. Not happy with this!
 
 //SOLVED:
 //1. Drag and drop simulation file sometimes crashes program. Found bad conversion function - I'm certain that was the problem, so consider this solved but keep an eye on this for a while.
+//2. Saving simulation file sometimes sets dT to zero (to a floating point error). I've only seen it happen with CUDA enabled. Solution: Checks in ODECommonCUDA destructor. 
+//3. Using a python script may result in program hanging if issuing a flood of commands. Solution : reworked WinSocks module.
+//4. If heat solver diverges (e.g. due to too high a time step), and at least 1 material parameter has a temperature dependence, when in CUDA mode out of gpu memory errors can result requiring a program restart. 
+//I seem to have fixed it using extra checks on Temperature when getting updated parameter values, but I don't understand why this happens without the checks so the solution seems like a hack. Not happy with this!
 
 #pragma once
 
@@ -66,7 +66,7 @@ class Simulation :
 	public SimulationSharedData, 
 	public Threads<Simulation>,
 	public ProgramState<Simulation, 
-	tuple<BorisDisplay, string, string, string, string, bool, bool, bool, vector_lut<DatumConfig>, vector_lut<DatumConfig>, INT2, vector_lut<StageConfig>, int, bool, SuperMesh, bool, bool, bool, DBL4>,
+	tuple<BorisDisplay, string, string, string, string, bool, bool, bool, vector_lut<DatumConfig>, vector_lut<DatumConfig>, INT2, vector_lut<StageConfig>, int, bool, SuperMesh, bool, bool, bool, DBL4, vector_key<double>>,
 	tuple<> >
 {
 private:
@@ -111,8 +111,7 @@ private:
 	//lut-indexed output data descriptor : can be indexed using a value from DATA_ enum; can also be indexed using a key: this is the data handle as used in the console
 	vector_key_lut<DatumSpecifier> dataDescriptor;
 
-	//working directory and file for saving output data
-	string directory;
+	//files for saving output data
 	string savedataFile = "out_data.txt";
 	//image save file base (during a simulation this is complemented by _iteration.png termination)
 	string imageSaveFileBase = "mesh_image";
@@ -140,9 +139,6 @@ private:
 	vector_lut<string> odeHandles;
 	//Link EVAL_ entries with text handles (EVAL_ is the major id)
 	vector_lut<string> odeEvalHandles;
-
-	//simulation schedule indexes : stage (main index in simStages) and step (sub-index in stage)
-	INT2 stage_step = INT2();
 
 	//handles and descriptors for simulation stages types, stop conditions and data saving conditions, indexed by SS_ and STOP_ respectively, as well as keys (handles)
 	vector_key_lut<StageDescriptor> stageDescriptors;
@@ -429,6 +425,15 @@ private:
 
 	void Print_IndividualShapeStatus(void);
 
+	//---------------------------------------------------- USER EQUATION CONSTANTS
+
+	//Print currently set equation constants
+	void Print_EquationConstants(void);
+
+	//build formatted string for interactive objects describing user constants at index_in_list from userConstants (also helper method to build the actual unformatted display text in the object)
+	string Build_EquationConstants_ListLine(int index_in_list);
+	string Build_EquationConstants_Text(int index_in_list);
+
 	//---------------------------------------------------- MAKE INTERACTIVE OBJECT : Auxiliary method
 
 	//Generate a formatted string depending on the interactive object identifier
@@ -504,6 +509,8 @@ private:
 
 	//refresh screen (so similar to RefreshScreen();) but also update displayed quantites. 
 	void UpdateScreen(void) { UpdateDataBox(); UpdateMeshDisplay(); RefreshScreen(); }
+	//quicker version where interactive objects are not updated
+	void UpdateScreen_Quick(void) { UpdateDataBox(); UpdateMeshDisplay(); DrawScreen(); }
 
 	//update screen and set default view settings - animate view change from current to new settings
 	void UpdateScreen_AutoSet(void) { UpdateDataBox(); AutoSetMeshDisplay(); RefreshScreen(); }
@@ -538,6 +545,7 @@ private:
 
 	//refresh screen (so similar to RefreshScreen();) but also update displayed quantites. 
 	void UpdateScreen(void) {}
+	void DrawScreen(void) {}
 
 	//update screen and set default view settings - animate view change from current to new settings
 	void UpdateScreen_AutoSet(void) {}
@@ -578,10 +586,14 @@ public:
 
 #if GRAPHICS == 1
 	//Draw screen on request -> delegated to BorisDisplay using thread-safe access 
+	//Refresh : full refresh including interactive objects
 	void RefreshScreen(void) { BD.Refresh_ThreadSafe(); }
+	//Draw : only draw, do not refresh interactive objects
+	void DrawScreen(void) { BD.Draw_ThreadSafe(); }
 #else
 	//DUMMY METHODS TO KEEP THE REST OF THE CODE CLEAN
 	void RefreshScreen(void) {}
+	void DrawScreen(void) {}
 #endif
 
 #if GRAPHICS == 1

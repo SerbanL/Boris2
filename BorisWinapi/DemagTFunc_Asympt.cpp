@@ -1,9 +1,9 @@
 #include "stdafx.h"
 #include "DemagTFunc_Asympt.h"
 
-//I've adapted the asymptotic formulas from OOMMF code, not my work - credit goes to M.J. Donahue.
+//I've adapted the asymptotic equations from OOMMF code, not my work - credit goes to M.J. Donahue.
 //I've checked them, no point reinventing the wheel especially since it's quite a lot of work to write them.
-//I did code the rest from scratch though (exact Newell formulas implementation).
+//I did code the rest from scratch though (exact Newell equations implementation).
 
 DemagAsymptoticDiag::DemagAsymptoticDiag(double hx, double hy, double hz)
 {

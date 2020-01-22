@@ -26,7 +26,7 @@ class FMesh :
 	//Material Parameters
 	MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<DBL2, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<DBL3, DBL3>, MatP<DBL3, DBL3>, MatP<double, double>, MatP<double, double>, MatP<double, double>,
 	MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<DBL2, double>, MatP<DBL2, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>,
-	MatP<double, double>, MatP<double, double>, double, double, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>>,
+	MatP<double, double>, MatP<double, double>, double, TEquation<double>, double, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>>,
 	//Module Implementations
 	tuple<Demag_N, Demag, SDemag_Demag, Exch_6ngbr_Neu, DMExchange, iDMExchange, SurfExchange, Zeeman, Anisotropy_Uniaxial, Anisotropy_Cubic, Transport, Heat, SOTField, Roughness> >
 {
@@ -68,7 +68,8 @@ public:
 	//----------------------------------- IMPORTANT CONTROL METHODS
 
 	//call when the mesh dimensions have changed - sets every quantity to the right dimensions
-	BError UpdateConfiguration(UPDATECONFIG_ cfgMessage = UPDATECONFIG_GENERIC);
+	BError UpdateConfiguration(UPDATECONFIG_ cfgMessage);
+	void UpdateConfiguration_Values(UPDATECONFIG_ cfgMessage);
 
 	BError SwitchCUDAState(bool cudaState);
 
@@ -117,7 +118,7 @@ public:
 	void SetSkyrmionBloch(int orientation, int chirality, Rect skyrmion_rect);
 
 	//set M from given data VEC (0 values mean empty points) -> stretch data to M dimensions if needed.
-	void SetMagnetisationFromData(VEC<DBL3>& data);
+	void SetMagnetisationFromData(VEC<DBL3>& data, const Rect& dstRect = Rect());
 
 	//set periodic boundary conditions for magnetization
 	BError Set_PBC_X(int pbc_x);

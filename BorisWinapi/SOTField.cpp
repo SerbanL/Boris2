@@ -86,17 +86,21 @@ double SOTField::UpdateField(void)
 #pragma omp parallel for
 	for (int idx = 0; idx < pMesh->n.dim(); idx++) {
 
+		double grel = pMesh->grel;
 		double Ms = pMesh->Ms;
 		double SHA = pMesh->SHA;
 		double flSOT = pMesh->flSOT;
-		pMesh->update_parameters_mcoarse(idx, pMesh->Ms, Ms, pMesh->SHA, SHA, pMesh->flSOT, flSOT);
+		pMesh->update_parameters_mcoarse(idx, pMesh->grel, grel, pMesh->Ms, Ms, pMesh->SHA, SHA, pMesh->flSOT, flSOT);
 
-		double a_const = -(HBAR_E / MU0) * SHA / (2 * Ms * Ms * pMesh->GetMeshDimensions().z);
+		if (IsNZ(grel)) {
 
-		int idx_E = pMesh->E.position_to_cellidx(pMesh->M.cellidx_to_position(idx));
-		DBL3 p_vec = (DBL3(0, 0, 1) ^ pMesh->E[idx_E]) * pMesh->elC[idx_E];
+			double a_const = -(SHA * MUB_E / (GAMMA * grel)) / (Ms * Ms * pMesh->GetMeshDimensions().z);
 
-		pMesh->Heff[idx] += a_const * ((pMesh->M[idx] ^ p_vec) + flSOT * Ms * p_vec);
+			int idx_E = pMesh->E.position_to_cellidx(pMesh->M.cellidx_to_position(idx));
+			DBL3 p_vec = (DBL3(0, 0, 1) ^ pMesh->E[idx_E]) * pMesh->elC[idx_E];
+
+			pMesh->Heff[idx] += a_const * ((pMesh->M[idx] ^ p_vec) + flSOT * Ms * p_vec);
+		}
 	}
 
 	//don't count this as a contribution to the total energy density

@@ -7,9 +7,12 @@
 
 STransport::STransport(SuperMesh *pSMesh_) :
 	Modules(),
+	V_equation({ "t" }),
+	I_equation({ "t" }),
 	ProgramStateNames(this, { VINFO(electrode_rects), VINFO(electrode_potentials), 
 							  VINFO(ground_electrode_index), VINFO(potential), VINFO(current), VINFO(net_current), VINFO(resistance), VINFO(constant_current_source), 
-							  VINFO(errorMaxLaplace), VINFO(maxLaplaceIterations), VINFO(s_errorMax), VINFO(s_maxIterations), VINFO(SOR_damping) }, {})
+							  VINFO(errorMaxLaplace), VINFO(maxLaplaceIterations), VINFO(s_errorMax), VINFO(s_maxIterations), VINFO(SOR_damping),
+							  VINFO(V_equation), VINFO(I_equation) }, {})
 {
 	pSMesh = pSMesh_;
 
@@ -65,14 +68,14 @@ BError STransport::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 	BError error(CLASS_STR(STransport));
 
 	Uninitialize();
-
-	if (ucfg::check_cfgflags(cfgMessage, 
+	
+	if (ucfg::check_cfgflags(cfgMessage,
 		UPDATECONFIG_MESHSHAPECHANGE, UPDATECONFIG_MESHCHANGE, 
 		UPDATECONFIG_MESHADDED, UPDATECONFIG_MESHDELETED,
 		UPDATECONFIG_MODULEADDED, UPDATECONFIG_MODULEDELETED, 
 		UPDATECONFIG_TRANSPORT_ELECTRODE, 
-		UPDATECONFIG_ODE_SOLVER, UPDATECONFIG_SWITCHCUDASTATE)) {
-
+		UPDATECONFIG_ODE_SOLVER)) {
+		
 		////////////////////////////////////////////////////////////////////////////
 		//check meshes to set transport boundary flags (NF_CMBND flags for V)
 		////////////////////////////////////////////////////////////////////////////
@@ -129,6 +132,19 @@ BError STransport::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 	return error;
 }
 
+void STransport::UpdateConfiguration_Values(UPDATECONFIG_ cfgMessage)
+{
+	if (cfgMessage == UPDATECONFIG_TEQUATION_CONSTANTS) {
+
+		UpdateTEquationUserConstants();
+	}
+	else if (cfgMessage == UPDATECONFIG_TEQUATION_CLEAR) {
+
+		if (V_equation.is_set()) V_equation.clear();
+		if (I_equation.is_set()) I_equation.clear();
+	}
+}
+
 BError STransport::MakeCUDAModule(void)
 {
 	BError error(CLASS_STR(STransport));
@@ -152,6 +168,15 @@ double STransport::UpdateField(void)
 
 	//only need to update this after an entire magnetisation equation time step is solved (but always update spin accumulation field if spin current solver enabled)
 	if (pSMesh->CurrentTimeStepSolved()) {
+
+		//use V or I equation to set electrode potentials? time dependence only
+		if (V_equation.is_set() || I_equation.is_set()) {
+
+			if (V_equation.is_set()) SetPotential(V_equation.evaluate(pSMesh->GetStageTime()), false);
+			else SetCurrent(I_equation.evaluate(pSMesh->GetStageTime()), false);
+
+			recalculate_transport = true;
+		}
 
 		transport_recalculated = recalculate_transport;
 
@@ -274,11 +299,94 @@ double STransport::GetResistance(void)
 	return resistance; 
 }
 
-void STransport::SetPotential(double potential_)
+void STransport::SetPotential(double potential_, bool clear_equation)
 {
+	if (clear_equation) V_equation.clear();
+
 	constant_current_source = false;
 
 	adjust_potential(potential_);
+}
+
+void STransport::SetCurrent(double current_, bool clear_equation)
+{
+	if (clear_equation) I_equation.clear();
+
+	//before setting a constant current, make sure the currently set potential is not zero otherwise we won't be able to set a constant current source
+	if (IsZ(potential)) SetPotential(1.0);
+
+	constant_current_source = true;
+
+	current = current_;
+
+	//get_current will now also adjust the potential depending on the sample resistance
+	GetCurrent();
+}
+
+//set text equation from string
+BError STransport::SetPotentialEquation(string equation_string, int step)
+{
+	BError error(CLASS_STR(STransport));
+
+	//set equation if not already set, or this is the first step in a stage
+	if (!V_equation.is_set() || step == 0) {
+
+		if (!V_equation.make_from_string(equation_string, { {"Ss", 0} })) return error(BERROR_INCORRECTSTRING);
+		UpdateTEquationUserConstants();
+	}
+	else {
+
+		//equation set and not the first step : adjust Ss constant
+		V_equation.set_constant("Ss", step);
+		UpdateTEquationUserConstants();
+	}
+
+	//don't use both V and I equations at the same time
+	I_equation.clear();
+
+	return error;
+}
+
+//set text equation from string
+BError STransport::SetCurrentEquation(string equation_string, int step)
+{
+	BError error(CLASS_STR(STransport));
+
+	//set equation if not already set, or this is the first step in a stage
+	if (!I_equation.is_set() || step == 0) {
+
+		//important to set user constants first : if these are required then the make_from_string call will fail. This may mean the user constants are not set when we expect them to.
+		UpdateTEquationUserConstants();
+
+		if (!I_equation.make_from_string(equation_string, { {"Ss", 0} })) return error(BERROR_INCORRECTSTRING);
+	}
+	else {
+
+		//equation set and not the first step : adjust Ss constant
+		I_equation.set_constant("Ss", step);
+		UpdateTEquationUserConstants();
+	}
+
+	//don't use both V and I equations at the same time
+	V_equation.clear();
+
+	return error;
+}
+
+//Update TEquation object with user constants values
+void STransport::UpdateTEquationUserConstants(void)
+{
+	if (pSMesh->userConstants.size()) {
+
+		vector<pair<string, double>> constants(pSMesh->userConstants.size());
+		for (int idx = 0; idx < pSMesh->userConstants.size(); idx++) {
+
+			constants[idx] = { pSMesh->userConstants.get_key_from_index(idx), pSMesh->userConstants[idx] };
+		}
+
+		V_equation.set_constants(constants);
+		I_equation.set_constants(constants);
+	}
 }
 
 void STransport::adjust_potential(double potential_)
@@ -367,19 +475,6 @@ void STransport::initialize_potential_values(void)
 			}
 		}
 	}
-}
-
-void STransport::SetCurrent(double current_)
-{
-	//before setting a constant current, make sure the currently set potential is not zero otherwise we won't be able to set a constant current source
-	if (IsZ(potential)) SetPotential(1.0);
-
-	constant_current_source = true;
-
-	current = current_;
-	
-	//get_current will now also adjust the potential depending on the sample resistance
-	GetCurrent();
 }
 
 void STransport::SetConvergenceError(double errorMaxLaplace_, int maxLaplaceIterations_)

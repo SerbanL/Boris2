@@ -94,7 +94,7 @@ __global__ void RunTEuler_Step1_withReductions_Kernel(ManagedDiffEqFMCUDA& cuDif
 				//First evaluate RHS of set equation at the current time step
 				cuReal3 rhs = (cuDiffEq.*(cuDiffEq.pODEFunc))(idx);
 
-				//Now estimate magnetization using the second trapezoidal Euler step formula
+				//Now estimate magnetization using the second trapezoidal Euler step equation
 				(*cuMesh.pM)[idx] = ((*cuDiffEq.psM1)[idx] + (*cuMesh.pM)[idx] + rhs * dT) / 2;
 
 				if (*cuDiffEq.prenormalize) {
@@ -139,7 +139,7 @@ __global__ void RunTEuler_Step1_Kernel(ManagedDiffEqFMCUDA& cuDiffEq, ManagedMes
 				//First evaluate RHS of set equation at the current time step
 				cuReal3 rhs = (cuDiffEq.*(cuDiffEq.pODEFunc))(idx);
 
-				//Now estimate magnetization using the second trapezoidal Euler step formula
+				//Now estimate magnetization using the second trapezoidal Euler step equation
 				(*cuMesh.pM)[idx] = ((*cuDiffEq.psM1)[idx] + (*cuMesh.pM)[idx] + rhs * dT) / 2;
 
 				if (*cuDiffEq.prenormalize) {

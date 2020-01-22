@@ -66,18 +66,18 @@ BError STransportCUDA::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 	BError error(CLASS_STR(STransportCUDA));
 
 	Uninitialize();
-
+	
 	if (ucfg::check_cfgflags(cfgMessage,
 		UPDATECONFIG_MESHSHAPECHANGE, UPDATECONFIG_MESHCHANGE,
 		UPDATECONFIG_MESHADDED, UPDATECONFIG_MESHDELETED,
 		UPDATECONFIG_MODULEADDED, UPDATECONFIG_MODULEDELETED,
 		UPDATECONFIG_TRANSPORT_ELECTRODE,
-		UPDATECONFIG_ODE_SOLVER, UPDATECONFIG_SWITCHCUDASTATE)) {
+		UPDATECONFIG_ODE_SOLVER)) {
 
 		////////////////////////////////////////////////////////////////////////////
 		//check meshes to set transport boundary flags (NF_CMBND flags for V)
 		////////////////////////////////////////////////////////////////////////////
-
+		
 		//clear everything then rebuild
 		pTransport.clear();
 		CMBNDcontactsCUDA.clear();
@@ -95,7 +95,7 @@ BError STransportCUDA::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 				pS.push_back(&(*pSMesh)[idx]->pMeshCUDA->S);
 			}
 		}
-
+		
 		//set fixed potential cells and cmbnd flags
 		for (int idx = 0; idx < (int)pTransport.size(); idx++) {
 
@@ -194,6 +194,15 @@ void STransportCUDA::UpdateField(void)
 	//only need to update this after an entire magnetisation equation time step is solved (but always update spin accumulation field if spin current solver enabled)
 	if (pSMesh->CurrentTimeStepSolved()) {
 
+		//use V or I equation to set electrode potentials? time dependence only
+		if (pSTrans->V_equation.is_set() || pSTrans->I_equation.is_set()) {
+
+			if (pSTrans->V_equation.is_set()) pSTrans->SetPotential(pSTrans->V_equation.evaluate(pSMesh->GetStageTime()), false);
+			else pSTrans->SetCurrent(pSTrans->I_equation.evaluate(pSMesh->GetStageTime()), false);
+
+			pSTrans->recalculate_transport = true;
+		}
+
 		pSTrans->transport_recalculated = pSTrans->recalculate_transport;
 
 		if (pSTrans->recalculate_transport) {
@@ -243,6 +252,8 @@ void STransportCUDA::UpdateField(void)
 		CalculateSAInterfaceField();
 	}
 }
+
+//-------------------Setters
 
 #endif
 

@@ -105,11 +105,11 @@ private:
 	//array in gpu memory : cu_array itself is stored in cpu memory, but contains an address to gpu memory, i.e. you can only dereference it in device code
 	VType* cu_array;
 
+	//size value stored in cpu memory - only used if stand-alone object (as opposed to cu_obj managed)
+	size_t arr_size;
+
 	//pcu_array is stored in cpu memory, but contains an address to gpu memory, such that *pcu_array = cu_array, i.e. contains the value of cu_array but in gpu, not cpu, memory.
 	VType** pcu_array;
-
-	//size value stored in cpu memory - only used if stand-alone object (as opposed to cu_obj managed)
-	size_t size_cpu;
 
 private:
 
@@ -117,9 +117,6 @@ private:
 
 
 	//------------------------------------------- RESIZING cu_obj managed : cuArray_sizing.h
-
-	//resize when cu_obj managed : called by public resize method
-	__host__ bool resize_managed(size_t size_);
 
 public:
 
@@ -191,4 +188,6 @@ public:
 	//------------------------------------------- GET SIZE : cuArray_aux.h
 
 	__host__ size_t size(void);
+
+	//--------------------
 };

@@ -443,7 +443,7 @@ DBL2 PhysQRep::CalculateRepresentation_VEC(VECType* pQ, PhysQRepComponent& physQ
 				}
 				else {
 
-					//for VEC3REP_X, VEC3REP_Y and VEC3REP_Z, use color coding based on min-max values, i.e. calculated the same as for a scalar quantity : done in AdjustMagnitude_VEC
+					//for VEC3REP_X, VEC3REP_Y and VEC3REP_Z, VEC3REP_MAGNITUDE, use color coding based on min-max values, i.e. calculated the same as for a scalar quantity : done in AdjustMagnitude_VEC
 					Color = XMFLOAT4(0.0f, 0.0f, 1.0f, get_alpha_value(translation));
 				}
 
@@ -453,6 +453,12 @@ DBL2 PhysQRep::CalculateRepresentation_VEC(VECType* pQ, PhysQRepComponent& physQ
 				{
 				case VEC3REP_FULL:
 				case VEC3REP_DIRECTION:
+					//reduce magnitude values
+					omp_reduction.reduce_minmax(value_mag);
+					physQRepComponent.transformBatch[i + j * ndisp.x + k * ndisp.x*ndisp.y] = CBObjectTransform(Rotation, Scale, Translation, Color, translation, value_mag);
+					break;
+
+				case VEC3REP_MAGNITUDE:
 					//reduce magnitude values
 					omp_reduction.reduce_minmax(value_mag);
 					physQRepComponent.transformBatch[i + j * ndisp.x + k * ndisp.x*ndisp.y] = CBObjectTransform(Rotation, Scale, Translation, Color, translation, value_mag);
@@ -620,6 +626,7 @@ DBL2 PhysQRep::CalculateRepresentation_VEC(VECType* pQ, VECType* pQ2, PhysQRepCo
 					break;
 
 				case VEC3REP_DIRECTION:
+				case VEC3REP_MAGNITUDE:
 				case VEC3REP_Z:
 					Rotation2 = XMMatrixRotationAxis(XMLoadFloat3(&XMFLOAT3(0, 0, 0)), (float)XM_PI);
 					break;
@@ -702,7 +709,7 @@ DBL2 PhysQRep::CalculateRepresentation_VEC(VECType* pQ, VECType* pQ2, PhysQRepCo
 				}
 				else {
 
-					//for VEC3REP_X, VEC3REP_Y and VEC3REP_Z, use color coding based on min-max values, i.e. calculated the same as for a scalar quantity : done in AdjustMagnitude_VEC
+					//for VEC3REP_X, VEC3REP_Y, VEC3REP_Z, VEC3REP_MAGNITUDE use color coding based on min-max values, i.e. calculated the same as for a scalar quantity : done in AdjustMagnitude_VEC
 					Color = XMFLOAT4(0.0f, 0.0f, 1.0f, get_alpha_value(translation));
 					Color2 = XMFLOAT4(0.0f, 0.0f, 1.0f, get_alpha_value(translation));
 				}
@@ -711,6 +718,14 @@ DBL2 PhysQRep::CalculateRepresentation_VEC(VECType* pQ, VECType* pQ2, PhysQRepCo
 				{
 				case VEC3REP_FULL:
 				case VEC3REP_DIRECTION:
+					//reduce magnitude values
+					omp_reduction.reduce_minmax(value_mag);
+					omp_reduction.reduce_minmax(value_mag2);
+					physQRepComponent.transformBatch[i + j * ndisp.x + 2 * k * ndisp.x*ndisp.y] = CBObjectTransform(Rotation, Scale, Translation, Color, translation, value_mag);
+					physQRepComponent.transformBatch[i + j * ndisp.x + (2 * k + 1) * ndisp.x*ndisp.y] = CBObjectTransform(Rotation2, Scale, Translation, Color2, translation, value_mag2);
+					break;
+
+				case VEC3REP_MAGNITUDE:
 					//reduce magnitude values
 					omp_reduction.reduce_minmax(value_mag);
 					omp_reduction.reduce_minmax(value_mag2);

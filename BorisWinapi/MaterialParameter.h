@@ -2,11 +2,12 @@
 
 #include "BorisLib.h"
 
-#include "MaterialParameterFormulas.h"
-
 #include "ErrorHandler.h"
+#include "OVF2_Handlers.h"
+#include "SimSharedData.h"
 
 #include "Boris_Enums_Defs.h"
+#include "ParametersDefs.h"
 
 #if COMPILECUDA == 1
 #include "MaterialParameterCUDA.h"
@@ -16,7 +17,7 @@ using namespace std;
 
 /////////////////////////////////////////////////////////////////////////////////////////////////
 //Class holding a single material parameter with any associated temperature dependence and spatial variation.
-//This is designed to be used just as the type stored (PType) would be used on its own in mathematical formulas.
+//This is designed to be used just as the type stored (PType) would be used on its own in mathematical equations.
 //
 //PType is the parameter type
 //SType is the type used for spatial variation.
@@ -29,8 +30,8 @@ using namespace std;
 
 template <typename PType, typename SType>
 class MatP :
-	public MatPFormula,
-	public ProgramState<MatP<PType, SType>, tuple<PType, PType, vector<double>, VEC<SType>, int, string, int, vector<double>>, tuple<>>
+	public SimulationSharedData,
+	public ProgramState<MatP<PType, SType>, tuple<PType, PType, vector<double>, VEC<SType>, int, string, TEquation<double>, TEquation<double, double, double, double>>, tuple<>>
 {
 
 private:
@@ -51,17 +52,30 @@ private:
 	//array describing temperature scaling of value_at_0K. The index in this vector is the temperature value in K, i.e. values are set at 1K increments starting at 0K
 	vector<double> t_scaling;
 
+	//temperature scaling equation, if set : takes only the parameter T (temperature); Tc constant : Curie temperature, Tb constant : base temperature
+	TEquation<double> Tscaling_eq;
+
+#if COMPILECUDA == 1
+	//as above but CUDA version : need to keep this here not in MatPCUDA since MatPCUDA is cu_obj managed and TEquationCUDA is meant to be held in cpu memory
+	//instead you need to obtain the top-level ManagedFunctionCUDA from TEquationCUDA and store that in MatPCUDA using a pointer; then it can be used in device functions.
+	TEquationCUDA<cuBReal> Tscaling_CUDAeq;
+#endif
+
 	//VEC with spatial dependence scaling of value_at_0K. The VEC rect must match the rect of the mesh to which this MatP applies.
 	VEC<SType> s_scaling;
+
+	//spatial variation scaling equation : function of x, y, z, t (stage time); takes parameters Lx, Ly, Lz
+	TEquation<double, double, double, double> Sscaling_eq;
+
+#if COMPILECUDA == 1
+	TEquationCUDA<cuBReal, cuBReal, cuBReal, cuBReal> Sscaling_CUDAeq;
+#endif
 
 	//value from MATPVAR_ enum
 	int s_scaling_type = MATPVAR_NONE;
 
 	//spatial scaling setting info : text with ";" separators. First field is the scaling set type (e.g. none, custom, random, jagged, etc.); The other fields are parameters for spatial generators.
-	string s_scaling_info = "none";
-
-	//function object pointing to selected formula from MatPFormula. No coefficients passed, only the temperature, these are set in MatPFormula already. Always return a scaling factor as a double.
-	function<double(const MatPFormula&, double)> t_scaling_formula;
+	string s_scaling_info = vargenerator_descriptor.get_key_from_ID(MATPVAR_NONE);
 
 private:
 
@@ -79,6 +93,9 @@ private:
 
 	//custom, set from an image file : coefficients vary from 0 : black to 1 : white
 	bool set_s_custom(DBL3 h, Rect rect, double offset, double scale, string fileName, function<vector<BYTE>(string, INT2)>& bitmap_loader);
+
+	//set s_scaling VEC by loading it form the named OVF2 file -  data types must match, but data is stretched to given mesh dimensions.
+	bool set_s_ovf2(DBL3 h, Rect rect, string fileName);
 
 	//random points in given range
 	bool set_s_random(DBL3 h, Rect rect, DBL2 range, int seed);
@@ -117,20 +134,23 @@ public:
 	//---------Constructors
 
 	MatP(void) :
-		ProgramStateNames(this, { VINFO(value_at_0K), VINFO(current_value), VINFO(t_scaling), VINFO(s_scaling), VINFO(s_scaling_type), VINFO(s_scaling_info), VINFO(formula_selector), VINFO(coeff) }, {})
+		SimulationSharedData(),
+		Tscaling_eq({"T"}),
+		Sscaling_eq({"x", "y", "z", "t"}),
+		ProgramStateNames(this, { VINFO(value_at_0K), VINFO(current_value), VINFO(t_scaling), VINFO(s_scaling), VINFO(s_scaling_type), VINFO(s_scaling_info), VINFO(Tscaling_eq), VINFO(Sscaling_eq) }, {})
 	{
 		value_at_0K = PType();
 		current_value = value_at_0K;
-		t_scaling_formula = get_set_function();
 	}
 
 	MatP(PType value) :
+		SimulationSharedData(),
+		Tscaling_eq({ "T" }),
+		Sscaling_eq({ "x", "y", "z", "t" }),
 		value_at_0K(value),
-		ProgramStateNames(this, { VINFO(value_at_0K), VINFO(current_value), VINFO(t_scaling), VINFO(s_scaling), VINFO(s_scaling_type), VINFO(s_scaling_info), VINFO(formula_selector), VINFO(coeff) }, {})
-
+		ProgramStateNames(this, { VINFO(value_at_0K), VINFO(current_value), VINFO(t_scaling), VINFO(s_scaling), VINFO(s_scaling_type), VINFO(s_scaling_info), VINFO(Tscaling_eq), VINFO(Sscaling_eq) }, {})
 	{
 		current_value = value_at_0K;	//default to 0K value
-		t_scaling_formula = get_set_function();
 	}
 
 	//An assignment from a MatP to another must always have matched template parameters. 
@@ -144,8 +164,7 @@ public:
 
 	//---------Implement ProgramState method
 
-	//must set t_scaling_formula now depending on matp_formula_selector
-	void RepairObjectState(void) { t_scaling_formula = get_set_function((MATPFORM_)formula_selector); }
+	void RepairObjectState(void) {}
 
 	//---------Output value update
 
@@ -163,11 +182,11 @@ public:
 
 	//get value (at base temperature) with spatial scaling (must be set so check before!).
 	//Use with temperature dependence : NO, spatial variation : YES
-	PType get(const DBL3& position);
+	PType get(const DBL3& position, double stime);
 
 	//get value with spatial scaling (must be set so check before!) and temperature dependence
 	//Use with temperature dependence : YES, spatial variation : YES
-	PType get(const DBL3& position, double Temperature);
+	PType get(const DBL3& position, double stime, double Temperature);
 
 	//get 0K value
 	PType get0(void) const { return value_at_0K; }
@@ -175,10 +194,13 @@ public:
 	//get current output value (at base temperature with no spatial scaling)
 	PType get_current(void) const { return current_value; }
 
-	//---------Set scaling formula
+	//---------Set scaling equation (temperature)
 
-	//set scaling formula using enum entry
-	void set_scaling_formula(MATPFORM_ formula_selector_, vector<double> coefficients);
+	//set scaling text equation
+	void set_t_scaling_equation(string& equationText, vector_key<double>& userConstants, double T_Curie_material, double base_temperature);
+
+	//update set equations with user constants, mesh dimensions (where applicable), material Curie temperature and base temperature (where applicable)
+	bool update_equations(vector_key<double>& userConstants, DBL3 meshDimensions, double T_Curie_material, double base_temperature);
 
 	//---------Set scaling array (temperature)
 
@@ -186,10 +208,10 @@ public:
 	void clear_t_scaling(void);
 
 	//calculate t_scaling from given temperature dependence of scaling coefficients
-	bool set_scaling_array(vector<double>& temp_arr, vector<double>& scaling_arr);
+	bool set_t_scaling_array(vector<double>& temp_arr, vector<double>& scaling_arr);
 
 	//set scaling array directly, where the value indexes must correspond to temperature values (e.g. t_scaling[0] is for temperature 0 K, etc.).
-	void set_precalculated_scaling_array(vector<double>& scaling_arr);
+	void set_precalculated_t_scaling_array(vector<double>& scaling_arr);
 
 	//---------Set spatial dependence
 
@@ -202,10 +224,18 @@ public:
 	//set parameter spatial variation using a given generator and arguments (arguments passed as a string to be interpreted and converted using ToNum)
 	BError set_s_scaling(DBL3 h, Rect rect, MATPVAR_ generatorID, string generatorArgs, function<vector<BYTE>(string, INT2)>& bitmap_loader);
 
+	//set spatial scaling text equation
+	void set_s_scaling_equation(string& equationText, vector_key<double>& userConstants, DBL3 meshDimensions);
+
 	//---------Get temperature dependence
 
 	//get temperature scaling coefficients as an array from 0K up to and including max_temperature
 	vector<double> get_temperature_scaling(double max_temperature) const;
+
+	//---------Get spatial variation
+
+	void calculate_s_scaling(VEC<double>& displayVEC_SCA, double stime);
+	void calculate_s_scaling(VEC<DBL3>& displayVEC_VEC, double stime);
 
 	//---------Read value
 
@@ -219,17 +249,23 @@ public:
 
 	//---------Get Info (intended for console display)
 
-	//returns a string describing the set temperature dependence ("none", "array" or set formula : "name parameters...") 
+	//returns a string describing the set temperature dependence ("none", "array" or set equation : "equation equation") 
 	string get_info_string(void) const;
 
-	//returns a string describing the set spatial dependence ("none", "array" or set formula : "name parameters...") 
+	//returns a string describing the set spatial dependence ("none", "array" or set equation : "name parameters...") 
 	string get_varinfo_string(void) const { return s_scaling_info; }
 
 	//does it have a temperature dependence?
-	bool is_tdep(void) const { return (formula_selector != MATPFORM_NONE || t_scaling.size()); }
+	bool is_tdep(void) const { return (Tscaling_eq.is_set() || t_scaling.size()); }
 
-	//does it have a spacial dependence?
+	//does it have a temperature dependence specified using a text equation? (equation may still not be set due to missing constants)
+	bool is_t_equation_set(void) const { return Tscaling_eq.show_equation().length(); }
+
+	//does it have a spatial dependence?
 	bool is_sdep(void) const { return (s_scaling_type != MATPVAR_NONE); }
+
+	//does it have a spatial dependence specified using a text equation?
+	bool is_s_equation_set(void) const { return Sscaling_eq.is_set(); }
 
 	//---------Comparison operators
 
@@ -343,7 +379,11 @@ public:
 #if COMPILECUDA == 1
 	template <typename cu_obj_MatPCUDA_RType>
 	void set_p_cu_obj_mpcuda(cu_obj_MatPCUDA_RType* ptr) { p_cu_obj_mpcuda = ptr; }
+	
 	void null_p_cu_obj_mpcuda(void) { p_cu_obj_mpcuda = nullptr; }
+	
+	TEquationCUDA<cuBReal>& Tscaling_CUDAeq_ref(void) { return Tscaling_CUDAeq; }
+	TEquationCUDA<cuBReal, cuBReal, cuBReal, cuBReal>& Sscaling_CUDAeq_ref(void) { return Sscaling_CUDAeq; }
 #endif
 };
 
@@ -362,11 +402,9 @@ MatP<PType, SType>& MatP<PType, SType>::operator=(const MatP<PType, SType>& copy
 	clear_vector(t_scaling);
 	t_scaling = copy_this.t_scaling;
 
-	//copy MatPFormula base
-	MatPFormula::operator=(copy_this);
-
-	//now set scaling formula to match
-	t_scaling_formula = get_function();
+	//now copy scaling equation
+	Tscaling_eq = copy_this.Tscaling_eq;
+	Sscaling_eq = copy_this.Sscaling_eq;
 
 	//copy any spatial scaling
 	
@@ -393,10 +431,10 @@ MatP<PType, SType>& MatP<PType, SType>::operator=(const MatP<PType, SType>& copy
 template <typename PType, typename SType>
 PType MatP<PType, SType>::get(double Temperature)
 {
-	if (formula_selector != MATPFORM_NONE) {
+	if (Tscaling_eq.is_set()) {
 
-		//use pre-set formula
-		return value_at_0K * t_scaling_formula(*this, Temperature);
+		//use pre-set equation
+		return value_at_0K * Tscaling_eq.evaluate(Temperature);
 	}
 	else if (t_scaling.size()) {
 
@@ -419,28 +457,32 @@ PType MatP<PType, SType>::get(double Temperature)
 //get value (at base temperature) with spatial scaling (must be set so check before!)
 //Use with temperature dependence : NO, spatial variation : YES
 template <>
-inline double MatP<double, double>::get(const DBL3& position)
+inline double MatP<double, double>::get(const DBL3& position, double stime)
 {
-	return current_value * s_scaling[position];
+	if (s_scaling_type == MATPVAR_EQUATION) return current_value * Sscaling_eq.evaluate(position.x, position.y, position.z, stime);
+	else return current_value * s_scaling[position];
 }
 
 template <>
-inline DBL2 MatP<DBL2, double>::get(const DBL3& position)
+inline DBL2 MatP<DBL2, double>::get(const DBL3& position, double stime)
 {
-	return current_value * s_scaling[position];
+	if (s_scaling_type == MATPVAR_EQUATION) return current_value * Sscaling_eq.evaluate(position.x, position.y, position.z, stime);
+	else return current_value * s_scaling[position];
 }
 
 template <>
-inline DBL3 MatP<DBL3, double>::get(const DBL3& position)
+inline DBL3 MatP<DBL3, double>::get(const DBL3& position, double stime)
 {
-	return current_value * s_scaling[position];
+	if (s_scaling_type == MATPVAR_EQUATION) return current_value * Sscaling_eq.evaluate(position.x, position.y, position.z, stime);
+	else return current_value * s_scaling[position];
 }
 
 template <>
-inline DBL3 MatP<DBL3, DBL3>::get(const DBL3& position)
+inline DBL3 MatP<DBL3, DBL3>::get(const DBL3& position, double stime)
 {
 	//rotation not scalar multiplication
-	return rotate_polar(current_value, s_scaling[position]);
+	if (s_scaling_type == MATPVAR_EQUATION) return rotate_polar(current_value, Sscaling_eq.evaluate_vector(position.x, position.y, position.z, stime));
+	else return rotate_polar(current_value, s_scaling[position]);
 }
 
 //---------- TEMPERATURE and SPATIAL
@@ -448,12 +490,13 @@ inline DBL3 MatP<DBL3, DBL3>::get(const DBL3& position)
 //get value with spatial scaling (must be set so check before!) and temperature dependence
 //Use with temperature dependence : YES, spatial variation : YES
 template <>
-inline double MatP<double, double>::get(const DBL3& position, double Temperature)
+inline double MatP<double, double>::get(const DBL3& position, double stime, double Temperature)
 {
-	if (formula_selector != MATPFORM_NONE) {
+	if (Tscaling_eq.is_set()) {
 
-		//use pre-set formula
-		return (value_at_0K * t_scaling_formula(*this, Temperature)) * s_scaling[position];
+		//use pre-set equation
+		if (s_scaling_type == MATPVAR_EQUATION) return (value_at_0K * Tscaling_eq.evaluate(Temperature)) * Sscaling_eq.evaluate(position.x, position.y, position.z, stime);
+		else return (value_at_0K * Tscaling_eq.evaluate(Temperature)) * s_scaling[position];
 	}
 	else if (t_scaling.size()) {
 
@@ -462,22 +505,32 @@ inline double MatP<double, double>::get(const DBL3& position, double Temperature
 		if (index + 1 < (int)t_scaling.size() && index >= 0) {
 
 			//use linear interpolation for temperature in range index to index + 1
-			return (value_at_0K * (t_scaling[index] * (double(index + 1) - Temperature) + t_scaling[index + 1] * (Temperature - double(index)))) * s_scaling[position];
+			if (s_scaling_type == MATPVAR_EQUATION) return (value_at_0K * (t_scaling[index] * (double(index + 1) - Temperature) + t_scaling[index + 1] * (Temperature - double(index)))) * Sscaling_eq.evaluate(position.x, position.y, position.z, stime);
+			else return (value_at_0K * (t_scaling[index] * (double(index + 1) - Temperature) + t_scaling[index + 1] * (Temperature - double(index)))) * s_scaling[position];
 		}
 		//for temperatures higher than the loaded array just use the last scaling value
-		else return (value_at_0K * t_scaling.back()) * s_scaling[position];
+		else {
+
+			if (s_scaling_type == MATPVAR_EQUATION) return (value_at_0K * t_scaling.back()) * Sscaling_eq.evaluate(position.x, position.y, position.z, stime);
+			else return (value_at_0K * t_scaling.back()) * s_scaling[position];
+		}
 	}
 	//no temperature dependence set
-	else return value_at_0K * s_scaling[position];
+	else {
+		
+		if (s_scaling_type == MATPVAR_EQUATION) return value_at_0K * Sscaling_eq.evaluate(position.x, position.y, position.z, stime);
+		else return value_at_0K * s_scaling[position];
+	}
 }
 
 template <>
-inline DBL2 MatP<DBL2, double>::get(const DBL3& position, double Temperature)
+inline DBL2 MatP<DBL2, double>::get(const DBL3& position, double stime, double Temperature)
 {
-	if (formula_selector != MATPFORM_NONE) {
+	if (Tscaling_eq.is_set()) {
 
-		//use pre-set formula
-		return (value_at_0K * t_scaling_formula(*this, Temperature)) * s_scaling[position];
+		//use pre-set equation
+		if (s_scaling_type == MATPVAR_EQUATION) return (value_at_0K * Tscaling_eq.evaluate(Temperature)) * Sscaling_eq.evaluate(position.x, position.y, position.z, stime);
+		else return (value_at_0K * Tscaling_eq.evaluate(Temperature)) * s_scaling[position];
 	}
 	else if (t_scaling.size()) {
 
@@ -486,22 +539,32 @@ inline DBL2 MatP<DBL2, double>::get(const DBL3& position, double Temperature)
 		if (index + 1 < (int)t_scaling.size() && index >= 0) {
 
 			//use linear interpolation for temperature in range index to index + 1
-			return (value_at_0K * (t_scaling[index] * (double(index + 1) - Temperature) + t_scaling[index + 1] * (Temperature - double(index)))) * s_scaling[position];
+			if (s_scaling_type == MATPVAR_EQUATION) return (value_at_0K * (t_scaling[index] * (double(index + 1) - Temperature) + t_scaling[index + 1] * (Temperature - double(index)))) * Sscaling_eq.evaluate(position.x, position.y, position.z, stime);
+			else return (value_at_0K * (t_scaling[index] * (double(index + 1) - Temperature) + t_scaling[index + 1] * (Temperature - double(index)))) * s_scaling[position];
 		}
 		//for temperatures higher than the loaded array just use the last scaling value
-		else return (value_at_0K * t_scaling.back()) * s_scaling[position];
+		else {
+
+			if (s_scaling_type == MATPVAR_EQUATION) return (value_at_0K * t_scaling.back()) * Sscaling_eq.evaluate(position.x, position.y, position.z, stime);
+			else return (value_at_0K * t_scaling.back()) * s_scaling[position];
+		}
 	}
 	//no temperature dependence set
-	else return value_at_0K * s_scaling[position];
+	else {
+
+		if (s_scaling_type == MATPVAR_EQUATION) return value_at_0K * Sscaling_eq.evaluate(position.x, position.y, position.z, stime);
+		else return value_at_0K * s_scaling[position];
+	}
 }
 
 template <>
-inline DBL3 MatP<DBL3, double>::get(const DBL3& position, double Temperature)
+inline DBL3 MatP<DBL3, double>::get(const DBL3& position, double stime, double Temperature)
 {
-	if (formula_selector != MATPFORM_NONE) {
+	if (Tscaling_eq.is_set()) {
 
-		//use pre-set formula
-		return (value_at_0K * t_scaling_formula(*this, Temperature)) * s_scaling[position];
+		//use pre-set equation
+		if (s_scaling_type == MATPVAR_EQUATION) return (value_at_0K * Tscaling_eq.evaluate(Temperature)) * Sscaling_eq.evaluate(position.x, position.y, position.z, stime);
+		else return (value_at_0K * Tscaling_eq.evaluate(Temperature)) * s_scaling[position];
 	}
 	else if (t_scaling.size()) {
 
@@ -510,22 +573,32 @@ inline DBL3 MatP<DBL3, double>::get(const DBL3& position, double Temperature)
 		if (index + 1 < (int)t_scaling.size() && index >= 0) {
 
 			//use linear interpolation for temperature in range index to index + 1
-			return (value_at_0K * (t_scaling[index] * (double(index + 1) - Temperature) + t_scaling[index + 1] * (Temperature - double(index)))) * s_scaling[position];
+			if (s_scaling_type == MATPVAR_EQUATION) return (value_at_0K * (t_scaling[index] * (double(index + 1) - Temperature) + t_scaling[index + 1] * (Temperature - double(index)))) * Sscaling_eq.evaluate(position.x, position.y, position.z, stime);
+			else return (value_at_0K * (t_scaling[index] * (double(index + 1) - Temperature) + t_scaling[index + 1] * (Temperature - double(index)))) * s_scaling[position];
 		}
 		//for temperatures higher than the loaded array just use the last scaling value
-		else return (value_at_0K * t_scaling.back()) * s_scaling[position];
+		else {
+
+			if (s_scaling_type == MATPVAR_EQUATION) return (value_at_0K * t_scaling.back()) * Sscaling_eq.evaluate(position.x, position.y, position.z, stime);
+			else return (value_at_0K * t_scaling.back()) * s_scaling[position];
+		}
 	}
 	//no temperature dependence set
-	else return value_at_0K * s_scaling[position];
+	else {
+
+		if (s_scaling_type == MATPVAR_EQUATION) return value_at_0K * Sscaling_eq.evaluate(position.x, position.y, position.z, stime);
+		else return value_at_0K * s_scaling[position];
+	}
 }
 
 template <>
-inline DBL3 MatP<DBL3, DBL3>::get(const DBL3& position, double Temperature)
+inline DBL3 MatP<DBL3, DBL3>::get(const DBL3& position, double stime, double Temperature)
 {
-	if (formula_selector != MATPFORM_NONE) {
+	if (Tscaling_eq.is_set()) {
 
-		//use pre-set formula
-		return rotate_polar(value_at_0K * t_scaling_formula(*this, Temperature), s_scaling[position]);
+		//use pre-set equation
+		if (s_scaling_type == MATPVAR_EQUATION) rotate_polar(value_at_0K * Tscaling_eq.evaluate(Temperature), Sscaling_eq.evaluate_vector(position.x, position.y, position.z, stime));
+		else return rotate_polar(value_at_0K * Tscaling_eq.evaluate(Temperature), s_scaling[position]);
 	}
 	else if (t_scaling.size()) {
 
@@ -534,13 +607,22 @@ inline DBL3 MatP<DBL3, DBL3>::get(const DBL3& position, double Temperature)
 		if (index + 1 < (int)t_scaling.size() && index >= 0) {
 
 			//use linear interpolation for temperature in range index to index + 1
-			return rotate_polar(value_at_0K * (t_scaling[index] * (double(index + 1) - Temperature) + t_scaling[index + 1] * (Temperature - double(index))), s_scaling[position]);
+			if (s_scaling_type == MATPVAR_EQUATION) rotate_polar(value_at_0K * (t_scaling[index] * (double(index + 1) - Temperature) + t_scaling[index + 1] * (Temperature - double(index))), Sscaling_eq.evaluate_vector(position.x, position.y, position.z, stime));
+			else return rotate_polar(value_at_0K * (t_scaling[index] * (double(index + 1) - Temperature) + t_scaling[index + 1] * (Temperature - double(index))), s_scaling[position]);
 		}
 		//for temperatures higher than the loaded array just use the last scaling value
-		else return rotate_polar(value_at_0K * t_scaling.back(), s_scaling[position]);
+		else {
+
+			if (s_scaling_type == MATPVAR_EQUATION) rotate_polar(value_at_0K * t_scaling.back(), Sscaling_eq.evaluate_vector(position.x, position.y, position.z, stime));
+			else return rotate_polar(value_at_0K * t_scaling.back(), s_scaling[position]);
+		}
 	}
 	//no temperature dependence set
-	else return rotate_polar(value_at_0K, s_scaling[position]);
+	else {
+
+		if (s_scaling_type == MATPVAR_EQUATION) rotate_polar(value_at_0K, Sscaling_eq.evaluate_vector(position.x, position.y, position.z, stime));
+		else return rotate_polar(value_at_0K, s_scaling[position]);
+	}
 }
 
 //---------Output value update
@@ -559,10 +641,10 @@ void MatP<PType, SType>::update(double Temperature)
 template <typename PType, typename SType>
 void MatP<PType, SType>::set_current(double Temperature)
 {
-	if (formula_selector != MATPFORM_NONE) {
+	if (Tscaling_eq.is_set()) {
 
-		//use pre-set formula
-		current_value = value_at_0K * t_scaling_formula(*this, Temperature);
+		//use pre-set equation
+		current_value = value_at_0K * Tscaling_eq.evaluate(Temperature);
 	}
 	else if (t_scaling.size()) {
 
@@ -600,31 +682,65 @@ MatP<PType, SType>& MatP<PType, SType>::operator=(PType set_value)
 template <typename PType, typename SType>
 string MatP<PType, SType>::get_info_string(void) const
 {
-	if (formula_selector == MATPFORM_NONE) {
+	if (!is_t_equation_set()) {
 
-		if (t_scaling.size()) return "array";
-		else return "none";
+		if (t_scaling.size()) return temperature_dependence_type(MATPTDEP_ARRAY);
+		else return temperature_dependence_type(MATPTDEP_NONE);
 	}
-	else return get_formula_info();
+	else return Tscaling_eq.show_equation();
 }
 
-//---------Set scaling formula
+//---------Set scaling equation (temperature)
 
+//set scaling text equation
 template <typename PType, typename SType>
-void MatP<PType, SType>::set_scaling_formula(MATPFORM_ formula_selector_, vector<double> coefficients)
+void MatP<PType, SType>::set_t_scaling_equation(string& equationText, vector_key<double>& userConstants, double T_Curie_material, double base_temperature)
 {
-	t_scaling_formula = get_set_function(formula_selector_);
+	vector<pair<string, double>> constants(userConstants.size());
+	for (int idx = 0; idx < constants.size(); idx++) {
 
-	set_formula_coeffs(coefficients);
+		constants[idx] = { userConstants.get_key_from_index(idx), userConstants[idx] };
+	}
 
-	//if setting the none formula (no analytical temperature dependence) then also clear any array temperature dependence : i.e. set no temperature dependence
-	if (formula_selector == MATPFORM_NONE) t_scaling.clear();
+	Tscaling_eq.set_constants(constants, false);
+	Tscaling_eq.make_from_string(equationText, { {"Tc", T_Curie_material}, {"Tb", base_temperature} });
 
-	update();
+	//clear scaling array - you either use scaling array method, or equation - or none - not both
+	t_scaling.clear();
+
+	update(base_temperature);
 
 #if COMPILECUDA == 1
 	if (p_cu_obj_mpcuda) update_cuda_object();
 #endif
+}
+
+//update set equtions with user constants, mesh dimensions (where applicable), material Curie temperature and base temperature (where applicable)
+template <typename PType, typename SType>
+bool MatP<PType, SType>::update_equations(vector_key<double>& userConstants, DBL3 meshDimensions, double T_Curie_material, double base_temperature)
+{
+	bool success = true;
+
+	vector<pair<string, double>> constants(userConstants.size());
+	for (int idx = 0; idx < constants.size(); idx++) {
+
+		constants[idx] = { userConstants.get_key_from_index(idx), userConstants[idx] };
+	}
+
+	Tscaling_eq.set_constants(constants, false);
+	Tscaling_eq.set_constant("Tc", T_Curie_material, false);
+	Tscaling_eq.set_constant("Tb", base_temperature, false);
+	success = Tscaling_eq.remake_equation();
+
+	Sscaling_eq.set_constants(constants, false);
+	Sscaling_eq.set_constants({ {"Lx", meshDimensions.x}, {"Ly", meshDimensions.y}, {"Lz", meshDimensions.z} }, false);
+	success &= Sscaling_eq.remake_equation();
+
+#if COMPILECUDA == 1
+	if (p_cu_obj_mpcuda) update_cuda_object();
+#endif
+
+	return success;
 }
 
 //---------Set scaling array
@@ -633,8 +749,8 @@ void MatP<PType, SType>::set_scaling_formula(MATPFORM_ formula_selector_, vector
 template <typename PType, typename SType>
 void MatP<PType, SType>::clear_t_scaling(void)
 {
-	//reset formula
-	t_scaling_formula = get_set_function(MATPFORM_NONE);
+	//reset equation
+	Tscaling_eq.clear();
 
 	//clear scaling array
 	t_scaling.clear();
@@ -649,7 +765,7 @@ void MatP<PType, SType>::clear_t_scaling(void)
 
 //calculate t_scaling from given temperature dependence of scaling coefficients
 template <typename PType, typename SType>
-bool MatP<PType, SType>::set_scaling_array(vector<double>& temp_arr, vector<double>& scaling_arr)
+bool MatP<PType, SType>::set_t_scaling_array(vector<double>& temp_arr, vector<double>& scaling_arr)
 {
 	//vectors must have same size and must have at least 2 points
 	if (temp_arr.size() < 2 || temp_arr.size() != scaling_arr.size()) return false;
@@ -708,8 +824,9 @@ bool MatP<PType, SType>::set_scaling_array(vector<double>& temp_arr, vector<doub
 		t_scaling[t_value] = interpolate(DBL2(temp_a, scaling_a), DBL2(temp_b, scaling_b), t_value);
 	}
 
-	//no scaling formula - using array instead
-	t_scaling_formula = get_set_function(MATPFORM_NONE);
+	//no scaling equation - using array instead
+	Tscaling_eq.clear();
+
 	update();
 
 #if COMPILECUDA == 1
@@ -720,12 +837,13 @@ bool MatP<PType, SType>::set_scaling_array(vector<double>& temp_arr, vector<doub
 }
 
 template <typename PType, typename SType>
-void MatP<PType, SType>::set_precalculated_scaling_array(vector<double>& scaling_arr)
+void MatP<PType, SType>::set_precalculated_t_scaling_array(vector<double>& scaling_arr)
 {
 	t_scaling = scaling_arr;
 
-	//no scaling formula - using array instead
-	t_scaling_formula = get_set_function(MATPFORM_NONE);
+	//no scaling equation - using array instead
+	Tscaling_eq.clear();
+
 	update();
 
 #if COMPILECUDA == 1
@@ -741,7 +859,9 @@ void MatP<PType, SType>::clear_s_scaling(void)
 {
 	s_scaling.clear();
 	s_scaling_type = MATPVAR_NONE;
-	s_scaling_info = "none";
+	s_scaling_info = vargenerator_descriptor.get_key_from_ID(MATPVAR_NONE);
+
+	Sscaling_eq.clear();
 
 	//update cuda object also if set
 #if COMPILECUDA == 1
@@ -757,12 +877,28 @@ bool MatP<PType, SType>::update_s_scaling(DBL3 h, Rect rect)
 	if (s_scaling_type == MATPVAR_NONE) return true;
 
 	//there is a spatial scaling set
-	if (s_scaling_type == MATPVAR_CUSTOM) {
+	if (s_scaling_type == MATPVAR_MASK || s_scaling_type == MATPVAR_OVF2) {
 
-		//for custom spatial scaling just stretch to new sizes, but keep it 2D
-		INT3 cells = round(rect / h);
-		if (s_scaling.linear_size()) s_scaling.resize(rect / SZ3(cells.x, cells.y, 1), rect);
-		return true;
+		if (s_scaling_type == MATPVAR_MASK) {
+
+			//for mask spatial scaling just stretch to new sizes, but keep it 2D always
+			INT3 cells = round(rect / h);
+			if (s_scaling.linear_size()) s_scaling.resize(rect / SZ3(cells.x, cells.y, 1), rect);
+		}
+		else {
+
+			//for ovf2 scaling just stretch to new sizes, but keep it 2D if already 2D only
+			INT3 cells = round(rect / h);
+			if (s_scaling.linear_size()) {
+
+				if (s_scaling.h.z == 1) s_scaling.resize(rect / SZ3(cells.x, cells.y, 1), rect);
+				else s_scaling.resize(rect / SZ3(cells), rect);
+			}
+		}
+	}
+	else if (s_scaling_type == MATPVAR_EQUATION) {
+
+		Sscaling_eq.set_constants({ {"Lx", rect.size().x}, {"Ly", rect.size().y}, {"Lz", rect.size().z} });
 	}
 	else {
 
@@ -774,11 +910,14 @@ bool MatP<PType, SType>::update_s_scaling(DBL3 h, Rect rect)
 
 		//get rid of first field, then recombine into a string using " " as separators
 		BError error = set_s_scaling(h, rect, (MATPVAR_)s_scaling_type, combine(subvec(fields, 1), " "), function<vector<BYTE>(string, INT2)>());
-
-		if (!error) return true;
+		if (error) return false;
 	}
 
-	return false;
+#if COMPILECUDA == 1
+	if (p_cu_obj_mpcuda) update_cuda_object();
+#endif
+
+	return true;
 }
 
 //set parameter spatial variation using a given generator and arguments (arguments passed as a string to be interpreted and converted using ToNum)
@@ -787,9 +926,15 @@ BError MatP<PType, SType>::set_s_scaling(DBL3 h, Rect rect, MATPVAR_ generatorID
 {
 	BError error(__FUNCTION__);
 
+	Sscaling_eq.clear();
+
 	switch (generatorID) {
 
-	case MATPVAR_CUSTOM:
+	case MATPVAR_NONE:
+		clear_s_scaling();
+		break;
+
+	case MATPVAR_MASK:
 	{
 		vector<string> fields = split(generatorArgs, " ");
 
@@ -800,6 +945,14 @@ BError MatP<PType, SType>::set_s_scaling(DBL3 h, Rect rect, MATPVAR_ generatorID
 		string fileName = combine(subvec(fields, 2), " ");
 
 		if (!set_s_custom(h, rect, offset, scale, fileName, bitmap_loader)) error(BERROR_OUTOFMEMORY_NCRIT);
+	}
+	break;
+
+	case MATPVAR_OVF2:
+	{
+		string fileName = generatorArgs;
+
+		if (!set_s_ovf2(h, rect, fileName)) error(BERROR_OUTOFMEMORY_NCRIT);
 	}
 	break;
 
@@ -951,6 +1104,30 @@ BError MatP<PType, SType>::set_s_scaling(DBL3 h, Rect rect, MATPVAR_ generatorID
 	return error;
 }
 
+//set spatial scaling text equation
+template <typename PType, typename SType>
+void MatP<PType, SType>::set_s_scaling_equation(string& equationText, vector_key<double>& userConstants, DBL3 meshDimensions)
+{
+	vector<pair<string, double>> constants(userConstants.size());
+	for (int idx = 0; idx < constants.size(); idx++) {
+
+		constants[idx] = { userConstants.get_key_from_index(idx), userConstants[idx] };
+	}
+
+	Sscaling_eq.set_constants(constants, false);
+	Sscaling_eq.make_from_string(equationText, { {"Lx", meshDimensions.x}, {"Ly", meshDimensions.y}, {"Lz", meshDimensions.z} });
+
+	//clear scaling array - you either use scaling array method, or equation - or none - not both
+	s_scaling.clear();
+
+	s_scaling_type = MATPVAR_EQUATION;
+	s_scaling_info = Sscaling_eq.show_equation();
+
+#if COMPILECUDA == 1
+	if (p_cu_obj_mpcuda) update_cuda_object();
+#endif
+}
+
 //---------Set spatial dependence : generator methods
 
 //custom, set from an image file : coefficients vary from 0 : black to 1 : white
@@ -960,6 +1137,8 @@ bool MatP<PType, SType>::set_s_custom(DBL3 h, Rect rect, double offset, double s
 	if (GetFileTermination(fileName) != ".png")
 		fileName += ".png";
 	
+	if (!GetFilenameDirectory(fileName).length()) fileName = directory + fileName;
+
 	INT3 cells = round(rect / h);
 	bool success = s_scaling.generate_custom_2D(SZ3(cells.x, cells.y, 1), rect, offset, scale, bitmap_loader(fileName, INT2(cells.x, cells.y)));
 
@@ -967,10 +1146,38 @@ bool MatP<PType, SType>::set_s_custom(DBL3 h, Rect rect, double offset, double s
 	ExtractFilenameDirectory(fileName);
 	ExtractFilenameTermination(fileName);
 
-	s_scaling_type = MATPVAR_CUSTOM;
-	s_scaling_info = "custom; " + ToString(offset) + "; " + ToString(scale) + "; " + fileName;
+	s_scaling_type = MATPVAR_MASK;
+	s_scaling_info = vargenerator_descriptor.get_key_from_ID(MATPVAR_MASK) + "; " + ToString(offset) + "; " + ToString(scale) + "; " + fileName;
 
 	//update cuda object also if set
+#if COMPILECUDA == 1
+	if (p_cu_obj_mpcuda) update_cuda_object();
+#endif
+
+	//allow setting a wrong filename without causing error messages
+	return true;
+}
+
+//set s_scaling VEC by loading it form the named OVF2 file -  data types must match, but data is stretched to given mesh dimensions.
+template <typename PType, typename SType>
+bool MatP<PType, SType>::set_s_ovf2(DBL3 h, Rect rect, string fileName)
+{
+	if (GetFileTermination(fileName) != ".ovf")
+		fileName += ".ovf";
+
+	if (!GetFilenameDirectory(fileName).length()) fileName = directory + fileName;
+
+	OVF2 ovf;
+	ovf.Read_OVF2_VEC(fileName, s_scaling);
+
+	//make sure the data is loaded for the current mesh dimensions
+	s_scaling.resize(h, rect);
+
+	ExtractFilenameDirectory(fileName);
+	ExtractFilenameTermination(fileName);
+	s_scaling_type = MATPVAR_OVF2;
+	s_scaling_info = vargenerator_descriptor.get_key_from_ID(MATPVAR_OVF2) + "; " + fileName;
+
 #if COMPILECUDA == 1
 	if (p_cu_obj_mpcuda) update_cuda_object();
 #endif
@@ -988,7 +1195,7 @@ bool MatP<PType, SType>::set_s_random(DBL3 h, Rect rect, DBL2 range, int seed)
 	if (success) {
 
 		s_scaling_type = MATPVAR_RANDOM;
-		s_scaling_info = "random; " + ToString(range) + "; " + ToString(seed);
+		s_scaling_info = vargenerator_descriptor.get_key_from_ID(MATPVAR_RANDOM) + "; " + ToString(range) + "; " + ToString(seed);
 	}
 	else clear_s_scaling();
 
@@ -1009,7 +1216,7 @@ bool MatP<PType, SType>::set_s_jagged(DBL3 h, Rect rect, DBL2 range, double spac
 	if (success) {
 
 		s_scaling_type = MATPVAR_JAGGED;
-		s_scaling_info = "jagged; " + ToString(range) + "; " + ToString(spacing, "m") + "; " + ToString(seed);
+		s_scaling_info = vargenerator_descriptor.get_key_from_ID(MATPVAR_JAGGED) + "; " + ToString(range) + "; " + ToString(spacing, "m") + "; " + ToString(seed);
 	}
 	else clear_s_scaling();
 
@@ -1030,7 +1237,7 @@ bool MatP<PType, SType>::set_s_defects(DBL3 h, Rect rect, DBL2 range, DBL2 diame
 	if (success) {
 
 		s_scaling_type = MATPVAR_DEFECTS;
-		s_scaling_info = "defects; " + ToString(range) + "; " + ToString(diameter_range, "m") + "; " + ToString(spacing, "m") + "; " + ToString(seed);
+		s_scaling_info = vargenerator_descriptor.get_key_from_ID(MATPVAR_DEFECTS) + "; " + ToString(range) + "; " + ToString(diameter_range, "m") + "; " + ToString(spacing, "m") + "; " + ToString(seed);
 	}
 	else clear_s_scaling();
 
@@ -1051,7 +1258,7 @@ bool MatP<PType, SType>::set_s_faults(DBL3 h, Rect rect, DBL2 range, DBL2 length
 	if (success) {
 
 		s_scaling_type = MATPVAR_FAULTS;
-		s_scaling_info = "faults; " + ToString(range) + "; " + ToString(length_range, "m") + "; " + ToString(orientation_range) + "; " + ToString(spacing, "m") + "; " + ToString(seed);
+		s_scaling_info = vargenerator_descriptor.get_key_from_ID(MATPVAR_FAULTS) + "; " + ToString(range) + "; " + ToString(length_range, "m") + "; " + ToString(orientation_range) + "; " + ToString(spacing, "m") + "; " + ToString(seed);
 	}
 	else clear_s_scaling();
 
@@ -1072,7 +1279,7 @@ bool MatP<PType, SType>::set_s_voronoi2d(DBL3 h, Rect rect, DBL2 range, double s
 	if (success) {
 
 		s_scaling_type = MATPVAR_VORONOI2D;
-		s_scaling_info = "vor2D; " + ToString(range) + "; " + ToString(spacing, "m") + "; " + ToString(seed);
+		s_scaling_info = vargenerator_descriptor.get_key_from_ID(MATPVAR_VORONOI2D) + "; " + ToString(range) + "; " + ToString(spacing, "m") + "; " + ToString(seed);
 	}
 	else clear_s_scaling();
 
@@ -1093,7 +1300,7 @@ bool MatP<PType, SType>::set_s_voronoi3d(DBL3 h, Rect rect, DBL2 range, double s
 	if (success) {
 
 		s_scaling_type = MATPVAR_VORONOI3D;
-		s_scaling_info = "vor3D; " + ToString(range) + "; " + ToString(spacing, "m") + "; " + ToString(seed);
+		s_scaling_info = vargenerator_descriptor.get_key_from_ID(MATPVAR_VORONOI3D) + "; " + ToString(range) + "; " + ToString(spacing, "m") + "; " + ToString(seed);
 	}
 	else clear_s_scaling();
 
@@ -1114,7 +1321,7 @@ bool MatP<PType, SType>::set_s_voronoiboundary2d(DBL3 h, Rect rect, DBL2 range, 
 	if (success) {
 
 		s_scaling_type = MATPVAR_VORONOIBND2D;
-		s_scaling_info = "vorbnd2D; " + ToString(range) + "; " + ToString(spacing, "m") + "; " + ToString(seed);
+		s_scaling_info = vargenerator_descriptor.get_key_from_ID(MATPVAR_VORONOIBND2D) + "; " + ToString(range) + "; " + ToString(spacing, "m") + "; " + ToString(seed);
 	}
 	else clear_s_scaling();
 
@@ -1135,7 +1342,7 @@ bool MatP<PType, SType>::set_s_voronoiboundary3d(DBL3 h, Rect rect, DBL2 range, 
 	if (success) {
 
 		s_scaling_type = MATPVAR_VORONOIBND3D;
-		s_scaling_info = "vorbnd3D; " + ToString(range) + "; " + ToString(spacing, "m") + "; " + ToString(seed);
+		s_scaling_info = vargenerator_descriptor.get_key_from_ID(MATPVAR_VORONOIBND3D) + "; " + ToString(range) + "; " + ToString(spacing, "m") + "; " + ToString(seed);
 	}
 	else clear_s_scaling();
 
@@ -1157,7 +1364,7 @@ bool MatP<PType, SType>::set_s_voronoirotation2d(DBL3 h, Rect rect, DBL2 theta, 
 	if (success) {
 
 		s_scaling_type = MATPVAR_VORONOIROT2D;
-		s_scaling_info = "vorrot2D; " + ToString(theta) + "; " + ToString(phi) + "; " + ToString(spacing, "m") + "; " + ToString(seed);
+		s_scaling_info = vargenerator_descriptor.get_key_from_ID(MATPVAR_VORONOIROT2D) + "; " + ToString(theta) + "; " + ToString(phi) + "; " + ToString(spacing, "m") + "; " + ToString(seed);
 	}
 	else clear_s_scaling();
 
@@ -1179,7 +1386,7 @@ bool MatP<PType, SType>::set_s_voronoirotation3d(DBL3 h, Rect rect, DBL2 theta, 
 	if (success) {
 
 		s_scaling_type = MATPVAR_VORONOIROT3D;
-		s_scaling_info = "vorrot3D; " + ToString(theta) + "; " + ToString(phi) + "; " + ToString(spacing, "m") + "; " + ToString(seed);
+		s_scaling_info = vargenerator_descriptor.get_key_from_ID(MATPVAR_VORONOIROT3D) + "; " + ToString(theta) + "; " + ToString(phi) + "; " + ToString(spacing, "m") + "; " + ToString(seed);
 	}
 	else clear_s_scaling();
 
@@ -1205,10 +1412,10 @@ vector<double> MatP<PType, SType>::get_temperature_scaling(double max_temperatur
 
 	for (int t_value = 0; t_value <= max_temperature; t_value++) {
 
-		if (formula_selector != MATPFORM_NONE) {
+		if (Tscaling_eq.is_set()) {
 
-			//use pre-set formula
-			get_scaling[t_value] = t_scaling_formula(*this, (double)t_value);
+			//use pre-set equation
+			get_scaling[t_value] = Tscaling_eq.evaluate((double)t_value);
 		}
 		else if (t_value < t_scaling.size()) {
 
@@ -1222,4 +1429,82 @@ vector<double> MatP<PType, SType>::get_temperature_scaling(double max_temperatur
 	}
 
 	return get_scaling;
+}
+
+//---------Get spatial variation
+
+//scalar equation
+template <>
+inline void MatP<double, double>::calculate_s_scaling(VEC<double>& displayVEC_SCA, double stime)
+{
+	if (Sscaling_eq.is_set()) {
+
+#pragma omp parallel for
+		for (int idx = 0; idx < displayVEC_SCA.linear_size(); idx++) {
+
+			DBL3 position = displayVEC_SCA.cellidx_to_position(idx);
+			displayVEC_SCA[idx] = Sscaling_eq.evaluate(position.x, position.y, position.z, stime);
+		}
+	}
+}
+
+//scalar equation
+template <>
+inline void MatP<DBL2, double>::calculate_s_scaling(VEC<double>& displayVEC_SCA, double stime)
+{
+	if (Sscaling_eq.is_set()) {
+
+#pragma omp parallel for
+		for (int idx = 0; idx < displayVEC_SCA.linear_size(); idx++) {
+
+			DBL3 position = displayVEC_SCA.cellidx_to_position(idx);
+			displayVEC_SCA[idx] = Sscaling_eq.evaluate(position.x, position.y, position.z, stime);
+		}
+	}
+}
+
+//scalar equation
+template <>
+inline void MatP<DBL3, double>::calculate_s_scaling(VEC<double>& displayVEC_SCA, double stime)
+{
+	if (Sscaling_eq.is_set()) {
+
+#pragma omp parallel for
+		for (int idx = 0; idx < displayVEC_SCA.linear_size(); idx++) {
+
+			DBL3 position = displayVEC_SCA.cellidx_to_position(idx);
+			displayVEC_SCA[idx] = Sscaling_eq.evaluate(position.x, position.y, position.z, stime);
+		}
+	}
+}
+
+//N/A : keep compiler happy
+template <>
+inline void MatP<DBL3, DBL3>::calculate_s_scaling(VEC<double>& displayVEC_SCA, double stime) {}
+
+//N/A : keep compiler happy
+template <>
+inline void MatP<double, double>::calculate_s_scaling(VEC<DBL3>& displayVEC_VEC, double stime) {}
+
+//N/A : keep compiler happy
+template <>
+inline void MatP<DBL2, double>::calculate_s_scaling(VEC<DBL3>& displayVEC_VEC, double stime) {}
+
+//N/A : keep compiler happy
+template <>
+inline void MatP<DBL3, double>::calculate_s_scaling(VEC<DBL3>& displayVEC_VEC, double stime) {}
+
+//vector equation
+template <>
+inline void MatP<DBL3, DBL3>::calculate_s_scaling(VEC<DBL3>& displayVEC_VEC, double stime)
+{
+	if (Sscaling_eq.is_set()) {
+
+#pragma omp parallel for
+		for (int idx = 0; idx < displayVEC_VEC.linear_size(); idx++) {
+
+			DBL3 position = displayVEC_VEC.cellidx_to_position(idx);
+			displayVEC_VEC[idx] = Sscaling_eq.evaluate_vector(position.x, position.y, position.z, stime);
+		}
+	}
 }

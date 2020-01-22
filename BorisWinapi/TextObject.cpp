@@ -9,23 +9,26 @@
 TextObject::TextObject() : GraphicalObject()
 {
 	//Default settings
-	text = "";
+	fulltext = "";
+	set_display_text_length();
 	CalculateRectangle(0, 0);
 }
 
 
 //almost full constructor : no action handler set
-TextObject::TextObject(string text, FormatSpecifier fs) : GraphicalObject()
+TextObject::TextObject(string text_, FormatSpecifier fs) : GraphicalObject()
 {
-	this->text = text;
+	fulltext = text_;
+	set_display_text_length();
 	this->fs = fs;
 	CalculateRectangle(0, 0);
 }
 
 //full constructor
-TextObject::TextObject(string text, FormatSpecifier fs, SimTOFunct *pActionHandler_, float X, float Y)
+TextObject::TextObject(string text_, FormatSpecifier fs, SimTOFunct *pActionHandler_, float X, float Y)
 {
-	this->text = text;
+	fulltext = text_;
+	set_display_text_length();
 	this->fs = fs;
 	CalculateRectangle(X, Y);
 
@@ -36,9 +39,10 @@ TextObject::TextObject(string text, FormatSpecifier fs, SimTOFunct *pActionHandl
 }
 
 //full constructor for text alignment object starter. *ptao_line is the TextLine on which this TextObject being created will be located
-TextObject::TextObject(string text, FormatSpecifier fs, SimTOFunct *pActionHandler_, TextLine* ptao_line, float X, float Y)
+TextObject::TextObject(string text_, FormatSpecifier fs, SimTOFunct *pActionHandler_, TextLine* ptao_line, float X, float Y)
 {
-	this->text = text;
+	fulltext = text_;
+	set_display_text_length();
 	this->fs = fs;
 	CalculateRectangle(X, Y);
 
@@ -54,9 +58,10 @@ TextObject::TextObject(string text, FormatSpecifier fs, SimTOFunct *pActionHandl
 }
 
 //full constructor for text alignment object with synchronisation (synchronise to existing tao: synch_tao). *ptao_line is the TextLine on which this TextObject being created will be located
-TextObject::TextObject(string text, FormatSpecifier fs, SimTOFunct *pActionHandler_, TextLine* ptao_line, TextObject* psynch_tao, float X, float Y)
+TextObject::TextObject(string text_, FormatSpecifier fs, SimTOFunct *pActionHandler_, TextLine* ptao_line, TextObject* psynch_tao, float X, float Y)
 {
-	this->text = text;
+	fulltext = text_;
+	set_display_text_length();
 	this->fs = fs;
 	CalculateRectangle(X, Y);
 
@@ -109,11 +114,15 @@ TextObject& TextObject::operator=(const TextObject& copyThis)
 	}
 
 	//now can safely make the assignment
-	text = copyThis.text;
 	toRect = copyThis.toRect;
 	fs = copyThis.fs;
 	pActionHandler = copyThis.pActionHandler;
 	aligned_objects = copyThis.aligned_objects;
+	//only copy full text after the above properties have been copied - important
+	fulltext = copyThis.fulltext;
+	set_display_text_length();
+	//might need to adjust rectangle
+	CalculateRectangle();
 
 	//If copyThis is a tao: when making an assignment to_1 = to_2, the intention will be for to_2 to go out of scope before to_1. 
 	//In this case we want the address of to_1 to replace that of to_2 in the shared tao vector (note a similar consideration applied for TextLine but that is done in the TextLine class.
@@ -141,20 +150,33 @@ void TextObject::Draw(float dX, float dY, float widthLimit)
 		D2D1_RECT_F drawRect = toRect;
 		drawRect.right = widthLimit;
 
-		string cut_text = text;
+		string cut_text = fulltext;
 
-		for (int i = 1; i <= text.length(); i++) {
+		for (int i = 1; i <= fulltext.length(); i++) {
 
 			if (substr_right(0, i) > widthLimit) {
 
-				cut_text = text.substr(0, i - 1);
+				cut_text = fulltext.substr(0, i - 1);
 				break;
 			}
 		}
 
-		pBG->DrawTextLine(cut_text, GetShiftedRect(drawRect, dX, dY), fs);
+		if (cut_text.length() > displayTextLength) {
+
+			//limit displayed text and show ... termination
+			pBG->DrawTextLine(cut_text.substr(0, displayTextLength - 3) + string("..."), GetShiftedRect(drawRect, dX, dY), fs);
+		}
+		else pBG->DrawTextLine(cut_text, GetShiftedRect(drawRect, dX, dY), fs);
 	}
-	else pBG->DrawTextLine(text, GetShiftedRect(toRect, dX, dY), fs);
+	else {
+
+		if (fulltext.length() > displayTextLength) {
+
+			//limit displayed text and show ... termination
+			pBG->DrawTextLine(fulltext.substr(0, displayTextLength - 3) + string("..."), GetShiftedRect(toRect, dX, dY), fs);
+		}
+		else pBG->DrawTextLine(fulltext, GetShiftedRect(toRect, dX, dY), fs);
+	}
 }
 
 bool TextObject::SplitOnOverflow(TextObject &nonOverflowingTO, float right, char separator)
@@ -173,13 +195,13 @@ bool TextObject::SplitOnOverflow(TextObject &nonOverflowingTO, float right, char
 
 			//Shift one word at a time from current text to leftString, continue until the largest non-overflowing string is extracted
 			//It is possible the current text is a single word which overflows. In this case the output TextObject will have a blank string.
-			if (ShiftSubstring_R2L(leftString, text, separator)) {
+			if (ShiftSubstring_R2L(leftString, fulltext, separator)) {
 
 				nonOverflowingTO.set(leftString);
 
 				if (nonOverflowingTO.TextOverflows(right)) {
 
-					ShiftSubstring_L2R(leftString, text, separator);
+					ShiftSubstring_L2R(leftString, fulltext, separator);
 					nonOverflowingTO.set(leftString);
 					break;
 				}
@@ -191,7 +213,7 @@ bool TextObject::SplitOnOverflow(TextObject &nonOverflowingTO, float right, char
 		}
 
 		//update this text object with the split text.
-		set(text);
+		set(fulltext);
 		set_top_left(nonOverflowingTO.left(), nonOverflowingTO.top());
 
 		//overflow was detected, nonOverflowingTO object will not be overflowing
@@ -208,47 +230,47 @@ void TextObject::ShiftFirstWord(TextObject &oneWordTextObject)
 	string oneWordText;
 	oneWordTextObject.set(oneWordText);
 
-	if (!ShiftSubstring_R2L(oneWordText, text, ' ')) {
-		oneWordTextObject.set(text);
-		text = "";
+	if (!ShiftSubstring_R2L(oneWordText, fulltext, ' ')) {
+		oneWordTextObject.set(fulltext);
+		fulltext = "";
 	}
 	else oneWordTextObject.set(oneWordText);
 
-	set(text);
+	set(fulltext);
 	set_top_left(oneWordTextObject.left(), oneWordTextObject.top());
 }
 
-bool TextObject::delchar(int delIdx) {
-
+bool TextObject::delchar(int delIdx) 
+{
 	//Delete character from index position (do not delete if index outside range). Return true if deletion results in empty string.
 
-	if (GoodIdx((int)text.length() - 1, delIdx)) {
+	if (GoodIdx((int)fulltext.length() - 1, delIdx)) {
 
-		set(text.substr(0, delIdx) + text.substr(delIdx + 1));
+		set(fulltext.substr(0, delIdx) + fulltext.substr(delIdx + 1));
 	}
 
-	if (!text.length()) return true;
+	if (!fulltext.length()) return true;
 
 	return false;
 }
 
-D2D1_RECT_F TextObject::substr_rect(int charIdx, int length) {
-
+D2D1_RECT_F TextObject::substr_rect(int charIdx, int length) 
+{
 	//get the rectangle of substring starting at index idxS with given length
 	//if idxS is not a valid index then just get the rectangle for a space (" ") at the end of the text
 
 	D2D1_RECT_F substringRect;
 
-	if (GoodIdx((int)text.length() - 1, charIdx)) {
+	if (GoodIdx(displayTextLength - 1, charIdx)) {
 
-		float left = (float)pBG->GetFontStringPixelsWidth(text.substr(0, charIdx), fs) + (int)toRect.left;
-		float width = (float)pBG->GetFontStringPixelsWidth(text.substr(charIdx, length), fs);
+		float left = pBG->GetMonospacedFontPixelsWidth() * charIdx + toRect.left;
+		float width = pBG->GetMonospacedFontPixelsWidth() * length;
 
 		substringRect = D2D1::RectF(left, toRect.top, left + width, toRect.bottom);
 	}
 	else {
 
-		float width = (float)pBG->GetFontStringPixelsWidth(" ", fs);
+		float width = (float)pBG->GetMonospacedFontPixelsWidth();
 
 		substringRect = D2D1::RectF(toRect.right, toRect.top, toRect.right + width, toRect.bottom);
 	}
@@ -256,20 +278,20 @@ D2D1_RECT_F TextObject::substr_rect(int charIdx, int length) {
 	return substringRect;
 }
 
-float TextObject::substr_right(int charIdx, int length) {
-
+float TextObject::substr_right(int charIdx, int length) 
+{
 	float right;
 
-	if (GoodIdx((int)text.length() - 1, charIdx)) {
+	if (GoodIdx(displayTextLength - 1, charIdx)) {
 
-		float left = (float)pBG->GetFontStringPixelsWidth(text.substr(0, charIdx), fs) + (int)toRect.left;
-		float width = (float)pBG->GetFontStringPixelsWidth(text.substr(charIdx, length), fs);
+		float left = pBG->GetMonospacedFontPixelsWidth() * charIdx + toRect.left;
+		float width = pBG->GetMonospacedFontPixelsWidth() * length;
 
 		right = left + width;
 	}
 	else {
 
-		float width = (float)pBG->GetFontStringPixelsWidth(" ", fs);
+		float width = (float)pBG->GetMonospacedFontPixelsWidth();
 
 		right = toRect.right + width;
 	}
@@ -277,9 +299,9 @@ float TextObject::substr_right(int charIdx, int length) {
 	return right;
 }
 
-int TextObject::get_char_index(INT2 relMouse) {
-
-	for (int l = 1; l <= text.length(); l++) {
+int TextObject::get_char_index(INT2 relMouse) 
+{
+	for (int l = 1; l <= displayTextLength; l++) {
 
 		if (relMouse.i <= (int)substr_right(0, l)) {
 
@@ -290,8 +312,8 @@ int TextObject::get_char_index(INT2 relMouse) {
 	return -1;
 }
 
-InteractiveObjectStateChange TextObject::CheckStateChange(void) {
-
+InteractiveObjectStateChange TextObject::CheckStateChange(void) 
+{
 	InteractiveObjectStateChange stateChanged;
 
 	if (pActionHandler) {
@@ -307,8 +329,8 @@ InteractiveObjectStateChange TextObject::CheckStateChange(void) {
 			TextLine* tl = (*aligned_objects)[0].first;
 			TextObject* to = (*aligned_objects)[0].second;
 
-			int min_length = to->length();
-			int char_idx = tl->CharIndex_of_TextObject(to) + to->length();
+			int min_length = to->displayedtext_length();
+			int char_idx = tl->CharIndex_of_TextObject(to) + to->displayedtext_length();
 			
 			//check if there is a mismatch in ending character indexes.
 			for (int idx = 1; idx < aligned_objects->size(); idx++) {
@@ -316,13 +338,13 @@ InteractiveObjectStateChange TextObject::CheckStateChange(void) {
 				tl = (*aligned_objects)[idx].first;
 				to = (*aligned_objects)[idx].second;
 
-				if (char_idx != (tl->CharIndex_of_TextObject(to) + to->length())) {
+				if (char_idx != (tl->CharIndex_of_TextObject(to) + to->displayedtext_length())) {
 
 					pActionHandler->iop.state = IOS_MISALIGNEDTAO;
 					return stateChanged(true);
 				}
 
-				min_length = (min_length < to->length() ? min_length : to->length());
+				min_length = (min_length < to->displayedtext_length() ? min_length : to->displayedtext_length());
 			}
 			
 			//also return IOS_MISALIGNEDTAO if the minimum length across all synchronised taos is not met
@@ -447,7 +469,7 @@ INT2 TextLine::IndextoINT2Index(int idx)
 	//first find TextObject for which idx indexes its text
 	for (int i = 0; i <= LastElem(); i++) {
 
-		totalLength2 += textLineVEC[i].length();
+		totalLength2 += textLineVEC[i].displayedtext_length();
 
 		if (idx < totalLength2) break;
 		else { i2idx.i++; totalLength1 = totalLength2; }
@@ -459,7 +481,7 @@ INT2 TextLine::IndextoINT2Index(int idx)
 	if (i2idx.i > LastElem()) {
 
 		i2idx.i = LastElem();
-		i2idx.j = textLineVEC[i2idx.i].length();
+		i2idx.j = textLineVEC[i2idx.i].displayedtext_length();
 	}
 
 	return i2idx;
@@ -494,7 +516,7 @@ int TextLine::get_char_index(INT2 relMouse)
 			return (length + textLineVEC[i].get_char_index(relMouse));
 		}
 
-		length += textLineVEC[i].length();
+		length += textLineVEC[i].displayedtext_length();
 	}
 
 	return -1;
@@ -526,7 +548,7 @@ INT2 TextLine::get_char_and_textobject_index(INT2 relMouse)
 			return INT2(i, length + textLineVEC[i].get_char_index(relMouse));
 		}
 
-		length += textLineVEC[i].length();
+		length += textLineVEC[i].displayedtext_length();
 	}
 
 	return INT2(-1, -1);
@@ -684,7 +706,7 @@ int TextLine::CharIndex_of_TextObject(TextObject* pTO)
 
 		if (&(textLineVEC[to_idx]) == pTO) return length;
 
-		length += textLineVEC[to_idx].length();
+		length += textLineVEC[to_idx].displayedtext_length();
 	}
 
 	//-1 if couldn't find it
@@ -697,7 +719,7 @@ int TextLine::length(void)
 
 	for (int i = 0; i <= LastElem(); i++) {
 
-		textLength += textLineVEC[i].length();
+		textLength += textLineVEC[i].displayedtext_length();
 	}
 
 	return textLength;
@@ -755,8 +777,8 @@ void TextLines::RecalculateRectangles(int idx) {
 	}
 }
 
-bool TextLines::CheckLine_InteractiveObjectState(int lineIdx) {
-
+bool TextLines::CheckLine_InteractiveObjectState(int lineIdx) 
+{
 	bool stateChanged = false;
 
 	//check TextObjects on this line one by one
@@ -1038,31 +1060,30 @@ void TextLines::FitLinetoWidth(int &lineIdx)
 	RecalculateRectangles(lineIdx);
 }
 
-bool TextLines::LineNeedsRecalculation(int lineIdx) {
-
-	//either line overflows width, or a split line needs to be recalculated (its width doesn't match the current width
-
+bool TextLines::LineNeedsRecalculation(int lineIdx) 
+{
+	//either line overflows width, or a split line needs to be recalculated (its width doesn't match the current width)
 	return ((textLinesVEC[lineIdx].right() > widthLimit && IsNZ(widthLimit)) ||
 		((textLinesVEC[lineIdx].splitLine == SPLIT_START || textLinesVEC[lineIdx].splitLine == SPLIT_MIDDLE) && IsNZ(textLinesVEC[lineIdx].right() - widthLimit)));
 }
 
-int TextLines::GetSplitStartIndex(int lineIdx) {
-
+int TextLines::GetSplitStartIndex(int lineIdx) 
+{
 	while (lineIdx > 0 && (textLinesVEC[lineIdx].splitLine == SPLIT_MIDDLE || textLinesVEC[lineIdx].splitLine == SPLIT_END)) lineIdx--;
 
 	return lineIdx;
 }
 
-int TextLines::GetSplitEndIndex(int lineIdx) {
-
+int TextLines::GetSplitEndIndex(int lineIdx) 
+{
 	while (lineIdx < LastLine() && (textLinesVEC[lineIdx].splitLine == SPLIT_START || textLinesVEC[lineIdx].splitLine == SPLIT_MIDDLE)) lineIdx++;
 
 	return lineIdx;
 }
 
 //from lineIdx and paragraph character index given, find paragraph which contains lineIdx and return index of line and character index in that line containing the indexed character
-INT2 TextLines::GetParaLine_CharIdx(INT2 i2Idx) {
-
+INT2 TextLines::GetParaLine_CharIdx(INT2 i2Idx) 
+{
 	int idx = GetSplitStartIndex(i2Idx.i);
 
 	for (; idx <= GetSplitEndIndex(i2Idx.i); idx++) {
@@ -1079,8 +1100,8 @@ INT2 TextLines::GetParaLine_CharIdx(INT2 i2Idx) {
 	return INT2(idx - 1, i2Idx.j + textLinesVEC[idx - 1].length());
 }
 
-int TextLines::GetParaCharIdx(INT2 i2Idx) {
-
+int TextLines::GetParaCharIdx(INT2 i2Idx) 
+{
 	int length = 0;
 
 	for (int idx = GetSplitStartIndex(i2Idx.i); idx < i2Idx.i; idx++) {
@@ -1099,6 +1120,8 @@ bool TextLines::Draw(int &topLine, float height, float dX, float dY, bool doDraw
 
 	float relY = textLinesVEC[topLine].top();
 
+	/*
+	//OLD METHOD
 	//first go through all the lines on screen to check for any changes needed - e.g. interactive object state changes and to fit lines in console width
 	for (int i = topLine; ; i++) {
 
@@ -1108,8 +1131,9 @@ bool TextLines::Draw(int &topLine, float height, float dX, float dY, bool doDraw
 		//Check visible interactive object states on this line before drawing - if any of them have changed then recalculate lines before drawing. 
 		//Also delete TextObject if IOS_DELETING state is set. Insert objects if IOS_WASLASTINLIST is set. All this is done in the routine below.
 		//If a change did occur then start again - a change in an object can affect text above.
+		
 		if (CheckLine_InteractiveObjectState(i)) { i = topLine; continue; }
-
+		
 		//now check this line actually fits within the width limit - if not, split it into multiple lines which do fit (this will mean LastLine() value increases)
 		if (LineNeedsRecalculation(i)) {
 
@@ -1133,6 +1157,79 @@ bool TextLines::Draw(int &topLine, float height, float dX, float dY, bool doDraw
 		}
 		else if (textLinesVEC[i].bottom() - relY > height) break;	//only need lines in view
 	}
+	*/
+
+	//first go through all the lines on screen to check for any changes needed to interactive objects
+	for (int i = topLine; ; i++) {
+
+		//LastLine() can change value during the loop now since we could be adding or deleting objects.
+		if (i > LastLine()) break;
+
+		//Check visible interactive object states on this line before drawing - if any of them have changed then recalculate lines before drawing. 
+		//Also delete TextObject if IOS_DELETING state is set. Insert objects if IOS_WASLASTINLIST is set. All this is done in the routine below.
+
+		CheckLine_InteractiveObjectState(i);
+
+		//only need lines in view
+		if (textLinesVEC[i].bottom() - relY > height) break;
+	}
+
+	//next fit lines in console width
+	for (int i = topLine; ; i++) {
+
+		//LastLine() can change value during the loop now since we could be splitting or recombining lines.
+		if (i > LastLine()) break;
+
+		//now check this line actually fits within the width limit - if not, split it into multiple lines which do fit (this will mean LastLine() value increases)
+		if (LineNeedsRecalculation(i)) {
+
+			//the topLine index could also change (sometimes alot). e.g. window has small size so text is wrapped in short lines, then window is enlarged. When scrolling the sudden change in number of lines can be significant.
+			//measure the change in topLine index by look ast LastLine() index before and after.
+			int before = LastLine();
+
+			FitLinetoWidth(i);
+			linesRecalculated = true;
+
+			int after = LastLine();
+
+			//now adjust topLine index (was passed through reference). This seems to work very well from a user point of view, i.e. text displays where you think it should (POLA!)
+			topLine += (after - before);
+			if (topLine < 0) topLine = 0;
+			if (topLine > LastLine()) topLine = after;
+
+			//advance index i to end of freshly split line and check if still in view
+			i = GetSplitEndIndex(i);
+			if (textLinesVEC[i].bottom() - relY > height) break;	//only need lines in view
+		}
+		else if (textLinesVEC[i].bottom() - relY > height) break;	//only need lines in view
+	}
+
+	if (doDraw) {
+
+		//now all the lines have been adjusted we can just draw them
+		for (int i = topLine; i <= LastLine(); i++) {
+
+			if (textLinesVEC[i].bottom() - relY <= height) {
+
+				//in some cases we don't want to graphically update the display, but just recalculate the text lines - e.g. if called from somewhere outside of the required { pBG->BeginD3DDraw(); ... pBG->EndD3DDraw(); }
+				textLinesVEC[i].Draw(dX, dY - relY, widthLimit);
+			}
+			else return linesRecalculated;		//only draw the lines in view
+		}
+	}
+
+	return linesRecalculated;
+}
+
+//Faster version of Draw where we don't refresh any interactive objects but draw them in their current state. Also doesn't re-check for re-alignment of text objects, assumes everything is correct.
+//Thus this method purely draws the screen from current state, which is assumed to be in the correct.
+//use this whenever you know there cannot be any changes to interactive objects or any other settings (e.g. window dimensions)
+//when there are alot of interactive objects on screen the refresh rate can drop significantly making the interface sluggish, so use the full Draw method sparingly)
+void TextLines::Draw_Quick(int &topLine, float height, float dX, float dY)
+{
+	if (!GoodIdx(LastLine(), topLine)) return;
+
+	float relY = textLinesVEC[topLine].top();
 
 	//now all the lines have been adjusted we can just draw them
 	for (int i = topLine; i <= LastLine(); i++) {
@@ -1140,12 +1237,10 @@ bool TextLines::Draw(int &topLine, float height, float dX, float dY, bool doDraw
 		if (textLinesVEC[i].bottom() - relY <= height) {
 
 			//in some cases we don't want to graphically update the display, but just recalculate the text lines - e.g. if called from somewhere outside of the required { pBG->BeginD3DDraw(); ... pBG->EndD3DDraw(); }
-			if (doDraw) textLinesVEC[i].Draw(dX, dY - relY, widthLimit);
+			textLinesVEC[i].Draw(dX, dY - relY, widthLimit);
 		}
-		else return linesRecalculated;		//only draw the lines in view
+		else return;		//only draw the lines in view
 	}
-
-	return linesRecalculated;
 }
 
 //Set a single text line

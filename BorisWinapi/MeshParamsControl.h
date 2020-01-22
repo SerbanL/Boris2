@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Mesh.h"
+#include "SuperMesh.h"
 
 //----------------------------------- RUNTIME UPDATERS
 
@@ -13,7 +14,7 @@
 template <typename PType, typename SType, typename ... MeshParam_List>
 void Mesh::update_parameters_spatial(const DBL3& position, MatP<PType, SType>& matp, PType& matp_value, MeshParam_List& ... params)
 {
-	if (matp.is_sdep()) matp_value = matp.get(position);
+	if (matp.is_sdep()) matp_value = matp.get(position, pSMesh->GetStageTime());
 
 	update_parameters_spatial(position, params...);
 }
@@ -22,16 +23,16 @@ void Mesh::update_parameters_spatial(const DBL3& position, MatP<PType, SType>& m
 template <typename PType, typename SType>
 void Mesh::update_parameters_spatial(const DBL3& position, MatP<PType, SType>& matp, PType& matp_value)
 {
-	if (matp.is_sdep()) matp_value = matp.get(position);
+	if (matp.is_sdep()) matp_value = matp.get(position, pSMesh->GetStageTime());
 }
 
-//SPATIAL AND TIME DEPENDENCE - HAVE POSITION
+//SPATIAL AND TEMPERATURE DEPENDENCE - HAVE POSITION
 
 //update parameters in the list for spatial dependence only
 template <typename PType, typename SType, typename ... MeshParam_List>
 void Mesh::update_parameters_full(const DBL3& position, const double& Temperature, MatP<PType, SType>& matp, PType& matp_value, MeshParam_List& ... params)
 {
-	if (matp.is_sdep()) matp_value = matp.get(position, Temperature);
+	if (matp.is_sdep()) matp_value = matp.get(position, pSMesh->GetStageTime(), Temperature);
 	else if (matp.is_tdep()) matp_value = matp.get(Temperature);
 
 	update_parameters_full(position, Temperature, params...);
@@ -41,7 +42,7 @@ void Mesh::update_parameters_full(const DBL3& position, const double& Temperatur
 template <typename PType, typename SType>
 void Mesh::update_parameters_full(const DBL3& position, const double& Temperature, MatP<PType, SType>& matp, PType& matp_value)
 {
-	if (matp.is_sdep()) matp_value = matp.get(position, Temperature);
+	if (matp.is_sdep()) matp_value = matp.get(position, pSMesh->GetStageTime(), Temperature);
 	else if (matp.is_tdep()) matp_value = matp.get(Temperature);
 }
 
@@ -58,7 +59,7 @@ void Mesh::update_parameters_mcoarse_spatial(int mcell_idx, MatP<PType, SType>& 
 
 		DBL3 position = M.cellidx_to_position(mcell_idx);
 
-		matp_value = matp.get(position);
+		matp_value = matp.get(position, pSMesh->GetStageTime());
 		update_parameters_spatial(position, params...);
 	}
 	else {
@@ -71,10 +72,10 @@ void Mesh::update_parameters_mcoarse_spatial(int mcell_idx, MatP<PType, SType>& 
 template <typename PType, typename SType>
 void Mesh::update_parameters_mcoarse_spatial(int mcell_idx, MatP<PType, SType>& matp, PType& matp_value)
 {
-	if (matp.is_sdep()) matp_value = matp.get(M.cellidx_to_position(mcell_idx));
+	if (matp.is_sdep()) matp_value = matp.get(M.cellidx_to_position(mcell_idx), pSMesh->GetStageTime());
 }
 
-//SPATIAL AND TIME DEPENDENCE - NO POSITION YET
+//SPATIAL AND TEMPERATURE DEPENDENCE - NO POSITION YET
 
 //update parameters in the list for spatial dependence only
 template <typename PType, typename SType, typename ... MeshParam_List>
@@ -85,7 +86,7 @@ void Mesh::update_parameters_mcoarse_full(int mcell_idx, MatP<PType, SType>& mat
 		DBL3 position = M.cellidx_to_position(mcell_idx);
 		double Temperature = Temp[position];
 
-		matp_value = matp.get(position, Temperature);
+		matp_value = matp.get(position, pSMesh->GetStageTime(), Temperature);
 		update_parameters_full(position, Temperature, params...);
 	}
 	else if (matp.is_tdep()) {
@@ -110,7 +111,7 @@ void Mesh::update_parameters_mcoarse_full(int mcell_idx, MatP<PType, SType>& mat
 
 		DBL3 position = M.cellidx_to_position(mcell_idx);
 
-		matp_value = matp.get(position, Temp[position]);
+		matp_value = matp.get(position, pSMesh->GetStageTime(), Temp[position]);
 	}
 	else if (matp.is_tdep()) {
 
@@ -151,7 +152,7 @@ void Mesh::update_parameters_ecoarse_spatial(int ecell_idx, MatP<PType, SType>& 
 
 		DBL3 position = V.cellidx_to_position(ecell_idx);
 
-		matp_value = matp.get(position);
+		matp_value = matp.get(position, pSMesh->GetStageTime());
 		update_parameters_spatial(position, params...);
 	}
 	else {
@@ -164,10 +165,10 @@ void Mesh::update_parameters_ecoarse_spatial(int ecell_idx, MatP<PType, SType>& 
 template <typename PType, typename SType>
 void Mesh::update_parameters_ecoarse_spatial(int ecell_idx, MatP<PType, SType>& matp, PType& matp_value)
 {
-	if (matp.is_sdep()) matp_value = matp.get(V.cellidx_to_position(ecell_idx));
+	if (matp.is_sdep()) matp_value = matp.get(V.cellidx_to_position(ecell_idx), pSMesh->GetStageTime());
 }
 
-//SPATIAL AND TIME DEPENDENCE - NO POSITION YET
+//SPATIAL AND TEMPERATURE DEPENDENCE - NO POSITION YET
 
 //update parameters in the list for spatial dependence only
 template <typename PType, typename SType, typename ... MeshParam_List>
@@ -178,7 +179,7 @@ void Mesh::update_parameters_ecoarse_full(int ecell_idx, MatP<PType, SType>& mat
 		DBL3 position = V.cellidx_to_position(ecell_idx);
 		double Temperature = Temp[position];
 
-		matp_value = matp.get(position, Temperature);
+		matp_value = matp.get(position, pSMesh->GetStageTime(), Temperature);
 		update_parameters_full(position, Temperature, params...);
 	}
 	else if (matp.is_tdep()) {
@@ -203,7 +204,7 @@ void Mesh::update_parameters_ecoarse_full(int ecell_idx, MatP<PType, SType>& mat
 
 		DBL3 position = V.cellidx_to_position(ecell_idx);
 
-		matp_value = matp.get(position, Temp[position]);
+		matp_value = matp.get(position, pSMesh->GetStageTime(), Temp[position]);
 	}
 	else if (matp.is_tdep()) {
 
@@ -244,7 +245,7 @@ void Mesh::update_parameters_tcoarse_spatial(int tcell_idx, MatP<PType, SType>& 
 
 		DBL3 position = Temp.cellidx_to_position(tcell_idx);
 
-		matp_value = matp.get(position);
+		matp_value = matp.get(position, pSMesh->GetStageTime());
 		update_parameters_spatial(position, params...);
 	}
 	else {
@@ -257,10 +258,10 @@ void Mesh::update_parameters_tcoarse_spatial(int tcell_idx, MatP<PType, SType>& 
 template <typename PType, typename SType>
 void Mesh::update_parameters_tcoarse_spatial(int tcell_idx, MatP<PType, SType>& matp, PType& matp_value)
 {
-	if (matp.is_sdep()) matp_value = matp.get(Temp.cellidx_to_position(tcell_idx));
+	if (matp.is_sdep()) matp_value = matp.get(Temp.cellidx_to_position(tcell_idx), pSMesh->GetStageTime());
 }
 
-//SPATIAL AND TIME DEPENDENCE - NO POSITION YET
+//SPATIAL AND TEMPERATURE DEPENDENCE - NO POSITION YET
 
 //update parameters in the list for spatial dependence only
 template <typename PType, typename SType, typename ... MeshParam_List>
@@ -271,7 +272,7 @@ void Mesh::update_parameters_tcoarse_full(int tcell_idx, MatP<PType, SType>& mat
 		DBL3 position = Temp.cellidx_to_position(tcell_idx);
 		double Temperature = Temp[tcell_idx];
 
-		matp_value = matp.get(position, Temperature);
+		matp_value = matp.get(position, pSMesh->GetStageTime(), Temperature);
 		update_parameters_full(position, Temperature, params...);
 	}
 	else if (matp.is_tdep()) {
@@ -296,7 +297,7 @@ void Mesh::update_parameters_tcoarse_full(int tcell_idx, MatP<PType, SType>& mat
 
 		DBL3 position = Temp.cellidx_to_position(tcell_idx);
 
-		matp_value = matp.get(position, Temp[tcell_idx]);
+		matp_value = matp.get(position, pSMesh->GetStageTime(), Temp[tcell_idx]);
 	}
 	else if (matp.is_tdep()) {
 

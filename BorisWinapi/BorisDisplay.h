@@ -14,276 +14,20 @@
 #include "TextObject.h"
 #include "BorisGraphics.h"
 #include "WinSpaces.h"
-#include "PhysQRep.h"
 
-//default text font size
-#define FONT	"Consolas"		//nice monospaced font (default for Visual Studio)
-#define TEXTSIZE 15
-#define MESHTEXTSIZE	30
+#include "Display_BorisConsole.h"
+#include "Display_BorisTextBox.h"
+#include "Display_BorisIOIPopupTextBox.h"
+#include "Display_BorisIOIPopupEditBox.h"
+#include "Display_BorisHoverInfoTextBox.h"
+#include "Display_BorisMeshWindow.h"
 
-//number of pixels to shift the hover info text box away from mouse position (so the mouse is inside the window when created)
-#define HOVERINFOTEXTBOX_MOUSESHIFT 1
+#include "Display_Defs.h"
 
 //enum for different types of window spaces : these are the winId major identifier
-enum WIN_ { WIN_ALL = -1, WIN_CONSOLE = 0, WIN_DATABOX, WIN_MESHWINDOW, WIN_IOIPOPUPTEXTBOX, WIN_HOVERINFOTEXTBOX };
+enum WIN_ { WIN_ALL = -1, WIN_CONSOLE = 0, WIN_DATABOX, WIN_MESHWINDOW, WIN_IOIPOPUPTEXTBOX, WIN_IOIPOPUPEDITBOX, WIN_HOVERINFOTEXTBOX };
 
 using namespace std;
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//
-// CONSOLE (display text and allows user input)
-
-class BorisConsole : public TextDisplay {
-
-	friend class BorisDisplay;
-
-private: //Private data
-
-	//save user commands
-	TextLines savedCommands;
-
-	//index of command recall (index for savedCommands).
-	int recallIdx;
-
-	//prompter position in text on entry line (index of character)
-	int promptPos;
-
-	//text selection start and end indexes of characters on entry line (inclusive). Note, it is possible selectStart > selectEnd, these are just the start and end indexes of a text selection action.
-	int selectStart, selectEnd;
-
-	//prompter rectangle user to draw it
-	D2D1_RECT_F promptRect;
-
-	//rectangle of text selection box
-	D2D1_RECT_F selectRect;
-
-	bool mouseOverInteractiveObject;
-
-public:  //Public data
-
-private: //Private methods
-
-		 //set prompter on a new line
-	void SetNewLinePrompter(void);
-
-	//calculate prompter rectangle at the current position
-	void SetPrompterRect(bool recalculateTopLine = true);
-
-	//decrement/increment prompter position on entry line. Return true if prompter position has changed.
-	bool DecrementPrompter(void);
-	bool IncrementPrompter(void);
-	void SetPrompterEnd(void);
-	void SetPrompterHome(void);
-
-	//delete text on entry line between selectStart and selectEnd characters, inclusive, or if text selection not available just delete at prompter
-	void DeleteTextFromEntryLine(void);
-
-	void ResetTextSelector(void) { selectEnd = 0; selectStart = selectEnd; }
-
-	//Enter pressed, return command line text in command (if any). Return true if there was text on line, otherwise false. If true then set a new line prompter.
-	bool NewCommandEntered(string &command);
-
-	//Text on the entry line must always be of the form: first word bold, further words italic non-bold. Must have USERCOLOR textcolor and BGRNDTEXTCOLOR with no outline.
-	string FormatEntryLineText(string text);
-
-	//make sure formatting of entry line is correct 
-	void SetFormattingonEntryLine(void);
-
-protected: //Protected methods
-
-	void DrawWindow(void);
-
-	//Implementation of message handling routine
-	ActionOutcome NewMessage(AC_ aCode, INT2 mouse, string data = "");
-
-	void SetDefaultCursor(void) { SetCursor(LoadCursor(nullptr, IDC_IBEAM)); }
-
-	void AdjustWindowDimensions(D2D1_RECT_F delta) { ChangeWindowSides(delta); }
-
-	//New user entry at prompter position
-	void NewUserEntry(string text);
-
-	//add new simple text line (fixed formatting)
-	void NewTextLine(string text, FormatSpecifier fs);
-
-	//overloads the TextDisplay base method to add extra functionality : new text line with variable formatting
-	void NewFormattedTextLine(string text);
-
-	//insert text at prompter by adding to respective TextObject.
-	void InsertTextatPrompter(string text);
-
-	//set text as the entry line text (formatted type)
-	void SetEntryLineText(string text);
-
-public:
-
-	//Setup new window space with rectangle specified by ratios of the entire screen
-	BorisConsole(D2D1_RECT_F ratios, INT2 winId, SimTOFunct *pConsoleActionHandler);
-	~BorisConsole() {}
-};
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//
-// DATABOX WINDOW
-
-class BorisTextBox : public TextDisplay {
-
-	friend class BorisDisplay;
-
-private: //Private data
-
-public:  //Public data
-
-private: //Private methods
-
-protected: //Protected methods
-
-	void DrawWindow(void);
-
-	//Implementation of message handling routine
-	ActionOutcome NewMessage(AC_ aCode, INT2 mouse, string data = "");
-
-	void SetDefaultCursor(void) { SetCursor(LoadCursor(nullptr, IDC_HAND)); }
-
-	void AdjustWindowDimensions(D2D1_RECT_F delta) { ChangeWindowSides(delta); }
-
-public:  //Public methods
-
-	//Setup new window space with rectangle specified by ratios of the entire screen
-	BorisTextBox(D2D1_RECT_F ratios, INT2 winId, SimTOFunct *pActionHandler);
-	~BorisTextBox() {}
-};
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//
-// IOI Popup TextBox (carries information from one interactive object to another : inter-object interaction)
-
-class BorisIOIPopupTextBox : public TextDisplay {
-
-	friend class BorisDisplay;
-
-private: //Private data
-
-	//the extracted, or popped-up paragraph
-	TextLine poppedParagaph;
-
-	//the space which spawned this Popup
-	INT2 parent_winId;
-
-	//the Id of the interactive object in the parent window which spawned this popup (as a result of an interaction with it) - by dragging this popup to another interactive object, an inter-object interaction can be implemented (in the action handler)
-	INT2 IO_Id;
-
-	//the index (line, object) of the IO_Id object in the parent window
-	INT2 spawningObject_index;
-
-public:  //Public data
-
-private: //Private methods
-
-protected: //Protected methods
-
-	void DrawWindow(void);
-
-	//Implementation of message handling routine
-	ActionOutcome NewMessage(AC_ aCode, INT2 mouse, string data = "");
-
-	void SetDefaultCursor(void) { SetCursor(LoadCursor(nullptr, IDC_HAND)); }
-
-	void AdjustWindowDimensions(D2D1_RECT_F delta) { ChangeWindowSides(delta); }
-
-public:  //Public methods
-
-	//Setup new window space with rectangle specified by ratios of the entire screen
-	BorisIOIPopupTextBox(D2D1_RECT_F ratios, INT2 winId, SimTOFunct *pActionHandler);
-	~BorisIOIPopupTextBox() {}
-
-	void ResetActionHandler(void);
-};
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//
-// Hover Info TextBox (displays fixed text and is deleted as soon as the mouse leaves it)
-
-class BorisHoverInfoTextBox : public TextDisplay {
-
-	friend class BorisDisplay;
-
-protected:
-
-	void DrawWindow(void);
-
-	//Implementation of message handling routine
-	ActionOutcome NewMessage(AC_ aCode, INT2 mouse, string data = "");
-
-	void SetDefaultCursor(void) { SetCursor(LoadCursor(nullptr, IDC_HAND)); }
-
-	void AdjustWindowDimensions(D2D1_RECT_F delta) { ChangeWindowSides(delta); }
-
-public: 
-
-	//Setup new window space with rectangle specified by ratios of the entire screen
-	BorisHoverInfoTextBox(D2D1_RECT_F ratios, INT2 winId);
-	~BorisHoverInfoTextBox() {}
-};
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//
-// MESH WINDOW (graphical display)
-
-class BorisMeshWindow : 
-	public WinSpace,
-	public ProgramState<BorisMeshWindow,
-	tuple<PhysQRep, DBL3, string, string, string, string, bool>, tuple<>>
-{
-	friend class BorisDisplay;
-
-private:
-
-	//the computed graphical representation of a physical quantity (e.g. representation of magnetization, temperature etc.)
-	PhysQRep physQRep;
-
-	//Text Format for drawing text in mesh window
-	IDWriteTextFormat *pMeshWinTextFormat = nullptr;
-
-	//when mouse hovers over mesh values are picked and set here to be displayed
-	DBL3 meshPosition;
-	string meshName, typeName, mouse_mesh_info_position, mouse_mesh_info_value;
-	bool displayMeshInfo = false;
-
-private:
-
-	void ZoomNotchUp(void);
-	void ZoomNotchDn(void);
-
-protected:
-
-	void AdjustWindowDimensions(D2D1_RECT_F delta) { ChangeWindowSides(delta); }
-
-	//compute the physical quantity representation for the given physical quantity
-	void UpdatePhysQRep(vector<PhysQ> physQ);
-
-	//adjust mesh display camera fov and averaging stencil dimension for default physical quantity representation
-	void AutoSetMeshDisplaySettings(vector<PhysQ> physQ);
-
-	double Get_PhysQRep_DetailLevel(void) { return physQRep.get_detail_level(); }
-
-	void DrawWindow(void);
-
-	ActionOutcome NewMessage(AC_ aCode, INT2 mouse, string data = "");
-
-	void SetDefaultCursor(void) { SetCursor(LoadCursor(nullptr, IDC_ARROW)); }
-
-	//image_cropping specify normalized cropping within the mesh image, as left, bottom, right, top : 0, 0 point is left, bottom of screen as far as user is concerned.
-	bool SaveMeshImage(string fileName, DBL4 image_cropping);
-
-public: 
-
-	//Setup new window space with rectangle specified by ratios of the entire screen
-	BorisMeshWindow(D2D1_RECT_F ratios, INT2 winId);
-	~BorisMeshWindow();
-
-	void RepairObjectState(void) {}
-};
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
@@ -295,7 +39,7 @@ class BorisDisplay :
 	public ProgramState<BorisDisplay,
 	tuple<BorisGraphics*, BorisMeshWindow*>, tuple<>>
 {
-private: //Private data
+private:
 
 	//entire screen rectangle
 	D2D1_RECT_F screenRect;
@@ -317,9 +61,9 @@ private: //Private data
 	//need thread-safe access to BorisDisplay - guard all external points of access (public methods)
 	mutex displayMutex;
 
-public:  //Public data
+public:
 
-private: //Private methods
+private:
 
 	//Bring the window space currently at currPos in bWin vector to the top.
 	void BringWindowToFront(INT2 winId);
@@ -335,11 +79,17 @@ private: //Private methods
 	//Also carry an interactive object Id (this is the object which called for this popup to be made). By dragging this popup to another interactive object, an inter-object interaction is achieved.
 	void MakeIOIPopupTextBox(INT2 parent_winId, INT2 mouse);
 
+	//make a popup edit box. After editing the text send it back to the original interactive object to use.
+	void MakeIOIPopupEditBox(INT2 parent_winId, INT2 mouse);
+
 	//For the given popup try to interact it with an interactive object
 	void PopupTextBoxInteraction(INT2 popupId, INT2 mouse);
 
 	//For the given popup try to interact it with an interactive object, then destroy the popup
 	void PopupTextBoxDropInteraction(INT2 popupId, INT2 mouse);
+
+	//A popup edit box has returned text (e.g. after pressing enter)
+	void PopupEditBoxReturnedText(INT2 popupId, INT2 mouse);
 
 	//Make a text box which displays some fixed info. The window is deleted as soon as the mouse leaves it.
 	void MakeHoverInfoTextBox(INT2 mouse, string formatted_text_info_string);
@@ -361,7 +111,11 @@ private: //Private methods
 
 	//-----------------------------------------------Mirror public methods - accessed through their thread-safe callers from outside BorisDisplay; available here for internal use.
 
+	//refresh display, including recalculating interactive objects
 	void Refresh(int winIdMajor = WIN_ALL);
+
+	//draw display but do not recalculate interactive objects
+	void Draw(int winIdMajor = WIN_ALL);
 
 	//Process message received from WndProc
 	ActionOutcome NewMessage(AC_ aCode, INT2 mouse, string data = "");
@@ -379,6 +133,7 @@ public:
 	//-----------------------------------------------Thread-safe access points to BorisDisplay
 
 	void Refresh_ThreadSafe(void) { displayMutex.lock(); Refresh(); displayMutex.unlock(); }
+	void Draw_ThreadSafe(void) { displayMutex.lock(); Draw(); displayMutex.unlock(); }
 
 	void ClearScreen(void) { displayMutex.lock(); pbConsole->ClearWindow(); pbDataBox->ClearWindow(); Refresh(); displayMutex.unlock(); }
 	void ClearDataBox(void) { displayMutex.lock(); pbDataBox->ClearWindow(); Refresh(); displayMutex.unlock(); }

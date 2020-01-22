@@ -7,22 +7,20 @@
 
 #include "Funcs_Vectors.h"	//need malloc_vector
 
-#include "MaterialParameterFormulasCUDA.h"
+#include "ParametersDefs.h"
 
 using namespace std;
 
 /////////////////////////////////////////////////////////////////////////////////////////////////
 //Class holding a single material parameter with any associated temperature dependence.
-//This is designed to be used just as the type stored (PType) would be used on its own in mathematical formulas.
+//This is designed to be used just as the type stored (PType) would be used on its own in mathematical equations.
 //This is achieved by updating the parameter output value (current_value) if the temperature changes.
 //1. For uniform temperature just call update(Temperature) whenever the uniform base temperature is changed
 //2. For non-uniform temperature the value must be updated in every computational cell before being used, using current_value = get(Temperature). 
 //This should be done by an external variadic template function if there are multiple parameters to update.
 
-
 template <typename PType, typename SType>
-class MatPCUDA :
-	public MatPFormulaCUDA
+class MatPCUDA
 {
 
 private:
@@ -37,8 +35,21 @@ private:
 	cuBReal *pt_scaling;
 	int scaling_arr_size;
 
+public:
+	//temperature scaling equation, if set : takes only the parameter T (temperature); Tc constant : Curie temperature, Tb constant : base temperature
+	ManagedFunctionCUDA<cuBReal> *pTscaling_eq;
+
 	//spatial scaling, copied from CPU version
 	cuVEC<SType> s_scaling;
+
+	//spatial scaling equation, if set. function of x, y, z, t (stage time); takes parameters Lx, Ly, Lz
+	//x, y, and z components for vector equations (or use just x if scalar equation)
+	
+public:
+
+	ManagedFunctionCUDA<cuBReal, cuBReal, cuBReal, cuBReal> *pSscaling_eq_x;
+	ManagedFunctionCUDA<cuBReal, cuBReal, cuBReal, cuBReal> *pSscaling_eq_y;
+	ManagedFunctionCUDA<cuBReal, cuBReal, cuBReal, cuBReal> *pSscaling_eq_z;
 
 private:
 
@@ -67,13 +78,22 @@ public:
 
 	//---------Set MatPCUDA from cpu version (MatP)
 
-	//full copy of MatP : values, scaling array and formula setting with coefficients
+	//full copy of MatP : values, scaling array and equation setting with coefficients
 	template <typename MatP_PType_>
 	__host__ void set_from_cpu(MatP_PType_& matp);
 
 	//set both value_at_0K and current_value only from MatP
 	template <typename MatP_PType_>
 	__host__ void set_from_cpu_value(MatP_PType_& matp);
+
+	//set temperature equation from cpu version
+	__host__ void set_t_equation_from_cpu(TEquationCUDA<cuBReal>& Tscaling_CUDAeq, const std::vector< std::vector<EqComp::FSPEC> >& fspec);
+
+	//set spatial variation equation from cpu version : scalar version
+	__host__ void set_s_equation_from_cpu(TEquationCUDA<cuBReal, cuBReal, cuBReal, cuBReal>& Sscaling_CUDAeq, const std::vector< std::vector<EqComp::FSPEC> >& fspec);
+
+	//set spatial variation equation from cpu version : vector version
+	__host__ void set_s_equation_from_cpu(TEquationCUDA<cuBReal, cuBReal, cuBReal, cuBReal>& Sscaling_CUDAeq, const std::vector<std::vector< std::vector<EqComp::FSPEC> >>& fspec);
 
 	//---------Output value
 
@@ -83,11 +103,11 @@ public:
 
 	//get value (at base temperature) with spatial scaling (must be set so check before!).
 	//Use with temperature dependence : NO, spatial variation : YES
-	__device__ PType get(const cuReal3& position);
+	__device__ PType get(const cuReal3& position, cuBReal stime);
 
 	//get value with spatial scaling (must be set so check before!) and temperature dependence
 	//Use with temperature dependence : YES, spatial variation : YES
-	__device__ PType get(const cuReal3& position, cuBReal Temperature);
+	__device__ PType get(const cuReal3& position, cuBReal stime, cuBReal Temperature);
 
 	//get 0K value
 	__device__ PType get0(void) const { return value_at_0K; }
@@ -111,10 +131,10 @@ public:
 	//---------Get Info
 
 	//does it have a temperature dependence?
-	__device__ bool is_tdep(void) const { return (formula_selector != MATPFORM_NONE || scaling_arr_size); }
+	__device__ bool is_tdep(void) const { return (pTscaling_eq || scaling_arr_size); }
 
-	//does it have a spacial dependence?
-	__device__ bool is_sdep(void) const { return (s_scaling.linear_size() > 0); }
+	//does it have a spatial dependence?
+	__device__ bool is_sdep(void) const { return (pSscaling_eq_x || s_scaling.linear_size() > 0); }
 
 	//---------Comparison operators
 
@@ -266,28 +286,34 @@ __host__ int MatPCUDA<PType, SType>::get_scaling_arr_size(void)
 template <typename PType, typename SType>
 __host__ void MatPCUDA<PType, SType>::construct_cu_obj(void)
 {
-	MatPFormulaCUDA::construct_cu_obj();
-
 	nullgpuptr(pt_scaling);
 	set_gpu_value(scaling_arr_size, (int)0);
 	set_value_at_0K(PType());
 	set_current_value(PType());
 
 	s_scaling.construct_cu_obj();
+
+	nullgpuptr(pTscaling_eq);
+	nullgpuptr(pSscaling_eq_x);
+	nullgpuptr(pSscaling_eq_y);
+	nullgpuptr(pSscaling_eq_z);
 }
 
 //parameter constructor
 template <typename PType, typename SType>
 __host__ void MatPCUDA<PType, SType>::construct_cu_obj(PType value)
 {
-	MatPFormulaCUDA::construct_cu_obj();
-
 	nullgpuptr(pt_scaling);
 	set_gpu_value(scaling_arr_size, (int)0);
 	set_value_at_0K(value);
 	set_current_value(value);
 
 	s_scaling.construct_cu_obj();
+
+	nullgpuptr(pTscaling_eq);
+	nullgpuptr(pSscaling_eq_x);
+	nullgpuptr(pSscaling_eq_y);
+	nullgpuptr(pSscaling_eq_z);
 }
 
 //destructor
@@ -296,26 +322,21 @@ __host__ void MatPCUDA<PType, SType>::destruct_cu_obj(void)
 {
 	gpu_free_managed(pt_scaling);
 
-	MatPFormulaCUDA::destruct_cu_obj();
-
 	s_scaling.destruct_cu_obj();
 }
 
 //---------Set MatPCUDA from cpu version (MatP)
 
-//full copy of MatP : values, scaling array and formula setting with coefficients
+//full copy of MatP : values, scaling array and equation setting with coefficients
 template <typename PType, typename SType>
 template <typename MatP_PType_>
 __host__ void MatPCUDA<PType, SType>::set_from_cpu(MatP_PType_& matp)
 {
-	//need : value_at_0K, current_value, t_scaling vector, formula_selector, formula coefficients
+	//need : value_at_0K, current_value, t_scaling vector, equation_selector, equation coefficients
 
 	//0K and current value
 	set_value_at_0K((PType)matp.get0());
 	set_current_value((PType)matp.get_current());
-
-	//the formula selector
-	set_formula_selector(matp.get_formula_selector());
 
 	//the scaling array - we'll need to convert this
 	std::vector<double>& t_scaling_cpu = matp.t_scaling_ref();
@@ -326,13 +347,33 @@ __host__ void MatPCUDA<PType, SType>::set_from_cpu(MatP_PType_& matp)
 		cpu_to_gpu_managed(pt_scaling, t_scaling_cpu.data(), t_scaling_cpu.size());
 	}
 
-	//the formula coefficients - we'll need to convert this
-	std::vector<double>& coeff_cpu = matp.formula_coeff_ref();
-
-	cpu_to_gpu_managed(pcoeff, coeff_cpu.data(), (coeff_cpu.size() > MAXFORMULACOEFFICIENTS ? MAXFORMULACOEFFICIENTS : coeff_cpu.size()));
-
 	//spatial scaling
 	s_scaling.set_from_cpuvec(matp.s_scaling_ref());
+
+	//text equations
+	if (matp.Tscaling_CUDAeq_ref().is_set()) {
+
+		set_gpu_value(pTscaling_eq, matp.Tscaling_CUDAeq_ref().get_pcu_obj_x()->get_managed_object());
+	}
+	else nullgpuptr(pTscaling_eq);
+
+	if (matp.Sscaling_CUDAeq_ref().is_set()) {
+
+		if (matp.Sscaling_CUDAeq_ref().get_pcu_obj_x()) set_gpu_value(pSscaling_eq_x, matp.Sscaling_CUDAeq_ref().get_pcu_obj_x()->get_managed_object());
+		else nullgpuptr(pSscaling_eq_x);
+
+		if (matp.Sscaling_CUDAeq_ref().get_pcu_obj_y()) set_gpu_value(pSscaling_eq_y, matp.Sscaling_CUDAeq_ref().get_pcu_obj_y()->get_managed_object());
+		else nullgpuptr(pSscaling_eq_y);
+
+		if (matp.Sscaling_CUDAeq_ref().get_pcu_obj_z()) set_gpu_value(pSscaling_eq_z, matp.Sscaling_CUDAeq_ref().get_pcu_obj_z()->get_managed_object());
+		else nullgpuptr(pSscaling_eq_z);
+	}
+	else {
+
+		nullgpuptr(pSscaling_eq_x);
+		nullgpuptr(pSscaling_eq_y);
+		nullgpuptr(pSscaling_eq_z);
+	}
 }
 
 //set both value_at_0K and current_value only from MatP
@@ -352,10 +393,10 @@ __host__ void MatPCUDA<PType, SType>::set_from_cpu_value(MatP_PType_& matp)
 template <typename PType, typename SType>
 __device__ PType MatPCUDA<PType, SType>::get(cuBReal Temperature)
 {
-	if (formula_selector != MATPFORM_NONE) {
+	if (pTscaling_eq) {
 
-		//use pre-set formula
-		return value_at_0K * t_scaling_formula(Temperature);
+		//use pre-set equation
+		return value_at_0K * pTscaling_eq->evaluate(Temperature);
 	}
 	//The temperature checks apparently are needed. 
 	//This is a weird bug: the heat solver can diverge if the time step is too large, resulting in NaN values for temperature. This can of course be fixed by reseting the mesh and using a lower time step - no problem there.
@@ -384,28 +425,37 @@ __device__ PType MatPCUDA<PType, SType>::get(cuBReal Temperature)
 //get value (at base temperature) with spatial scaling (must be set so check before!)
 //Use with temperature dependence : NO, spatial variation : YES
 template <>
-__device__ inline cuBReal MatPCUDA<cuBReal, cuBReal>::get(const cuReal3& position)
+__device__ inline cuBReal MatPCUDA<cuBReal, cuBReal>::get(const cuReal3& position, cuBReal stime)
 {
-	return current_value * s_scaling[position];
+	if (pSscaling_eq_x) return current_value * pSscaling_eq_x->evaluate(position.x, position.y, position.z, stime);
+	else return current_value * s_scaling[position];
 }
 
 template <>
-__device__ inline cuReal2 MatPCUDA<cuReal2, cuBReal>::get(const cuReal3& position)
+__device__ inline cuReal2 MatPCUDA<cuReal2, cuBReal>::get(const cuReal3& position, cuBReal stime)
 {
-	return current_value * s_scaling[position];
+	if (pSscaling_eq_x) return current_value * pSscaling_eq_x->evaluate(position.x, position.y, position.z, stime);
+	else return current_value * s_scaling[position];
 }
 
 
 template <>
-__device__ inline cuReal3 MatPCUDA<cuReal3, cuBReal>::get(const cuReal3& position)
+__device__ inline cuReal3 MatPCUDA<cuReal3, cuBReal>::get(const cuReal3& position, cuBReal stime)
 {
-	return current_value * s_scaling[position];
+	if (pSscaling_eq_x) return current_value * pSscaling_eq_x->evaluate(position.x, position.y, position.z, stime);
+	else return current_value * s_scaling[position];
 }
 
 template <>
-__device__ inline cuReal3 MatPCUDA<cuReal3, cuReal3>::get(const cuReal3& position)
+__device__ inline cuReal3 MatPCUDA<cuReal3, cuReal3>::get(const cuReal3& position, cuBReal stime)
 {
-	return rotate_polar(current_value, s_scaling[position]);
+	if (pSscaling_eq_z) return rotate_polar(current_value, 
+		cuReal3(
+			pSscaling_eq_x->evaluate(position.x, position.y, position.z, stime),
+			pSscaling_eq_y->evaluate(position.x, position.y, position.z, stime),
+			pSscaling_eq_z->evaluate(position.x, position.y, position.z, stime))
+		);
+	else return rotate_polar(current_value, s_scaling[position]);
 }
 
 //---------- TEMPERATURE and SPATIAL
@@ -413,12 +463,13 @@ __device__ inline cuReal3 MatPCUDA<cuReal3, cuReal3>::get(const cuReal3& positio
 //get value with spatial scaling (must be set so check before!) and temperature dependence
 //Use with temperature dependence : YES, spatial variation : YES
 template <>
-__device__ inline cuBReal MatPCUDA<cuBReal, cuBReal>::get(const cuReal3& position, cuBReal Temperature)
+__device__ inline cuBReal MatPCUDA<cuBReal, cuBReal>::get(const cuReal3& position, cuBReal stime, cuBReal Temperature)
 {
-	if (formula_selector != MATPFORM_NONE) {
+	if (pTscaling_eq) {
 
-		//use pre-set formula
-		return (value_at_0K * t_scaling_formula(Temperature)) * s_scaling[position];
+		//use pre-set equation
+		if (pSscaling_eq_x) return (value_at_0K * pTscaling_eq->evaluate(Temperature)) * pSscaling_eq_x->evaluate(position.x, position.y, position.z, stime);
+		else return (value_at_0K * pTscaling_eq->evaluate(Temperature)) * s_scaling[position];
 	}
 	else if (scaling_arr_size && Temperature > 0 && Temperature < MAX_TEMPERATURE && !isnan(Temperature)) {
 
@@ -427,22 +478,32 @@ __device__ inline cuBReal MatPCUDA<cuBReal, cuBReal>::get(const cuReal3& positio
 		if (index + 1 < scaling_arr_size && index >= 0) {
 
 			//use linear interpolation for temperature in range index to index + 1
-			return (value_at_0K * (pt_scaling[index] * (cuBReal(index + 1) - Temperature) + pt_scaling[index + 1] * (Temperature - cuBReal(index)))) * s_scaling[position];
+			if (pSscaling_eq_x) return (value_at_0K * (pt_scaling[index] * (cuBReal(index + 1) - Temperature) + pt_scaling[index + 1] * (Temperature - cuBReal(index)))) * pSscaling_eq_x->evaluate(position.x, position.y, position.z, stime);
+			else return (value_at_0K * (pt_scaling[index] * (cuBReal(index + 1) - Temperature) + pt_scaling[index + 1] * (Temperature - cuBReal(index)))) * s_scaling[position];
 		}
 		//for temperatures higher than the loaded array just use the last scaling value
-		else return (value_at_0K * pt_scaling[scaling_arr_size - 1] * s_scaling[position]);
+		else {
+
+			if (pSscaling_eq_x) return (value_at_0K * pt_scaling[scaling_arr_size - 1] * pSscaling_eq_x->evaluate(position.x, position.y, position.z, stime));
+			else return (value_at_0K * pt_scaling[scaling_arr_size - 1] * s_scaling[position]);
+		}
 	}
 	//no temperature dependence set
-	else return value_at_0K * s_scaling[position];
+	else {
+
+		if (pSscaling_eq_x) return value_at_0K * pSscaling_eq_x->evaluate(position.x, position.y, position.z, stime);
+		else return value_at_0K * s_scaling[position];
+	}
 }
 
 template <>
-__device__ inline cuReal2 MatPCUDA<cuReal2, cuBReal>::get(const cuReal3& position, cuBReal Temperature)
+__device__ inline cuReal2 MatPCUDA<cuReal2, cuBReal>::get(const cuReal3& position, cuBReal stime, cuBReal Temperature)
 {
-	if (formula_selector != MATPFORM_NONE) {
+	if (pTscaling_eq) {
 
-		//use pre-set formula
-		return (value_at_0K * t_scaling_formula(Temperature)) * s_scaling[position];
+		//use pre-set equation
+		if (pSscaling_eq_x) return (value_at_0K * pTscaling_eq->evaluate(Temperature)) * pSscaling_eq_x->evaluate(position.x, position.y, position.z, stime);
+		else return (value_at_0K * pTscaling_eq->evaluate(Temperature)) * s_scaling[position];
 	}
 	else if (scaling_arr_size && Temperature > 0 && Temperature < MAX_TEMPERATURE && !isnan(Temperature)) {
 
@@ -451,22 +512,32 @@ __device__ inline cuReal2 MatPCUDA<cuReal2, cuBReal>::get(const cuReal3& positio
 		if (index + 1 < scaling_arr_size && index >= 0) {
 
 			//use linear interpolation for temperature in range index to index + 1
-			return (value_at_0K * (pt_scaling[index] * (cuBReal(index + 1) - Temperature) + pt_scaling[index + 1] * (Temperature - cuBReal(index)))) * s_scaling[position];
+			if (pSscaling_eq_x) return (value_at_0K * (pt_scaling[index] * (cuBReal(index + 1) - Temperature) + pt_scaling[index + 1] * (Temperature - cuBReal(index)))) * pSscaling_eq_x->evaluate(position.x, position.y, position.z, stime);
+			else return (value_at_0K * (pt_scaling[index] * (cuBReal(index + 1) - Temperature) + pt_scaling[index + 1] * (Temperature - cuBReal(index)))) * s_scaling[position];
 		}
 		//for temperatures higher than the loaded array just use the last scaling value
-		else return (value_at_0K * pt_scaling[scaling_arr_size - 1] * s_scaling[position]);
+		else {
+
+			if (pSscaling_eq_x) return (value_at_0K * pt_scaling[scaling_arr_size - 1] * pSscaling_eq_x->evaluate(position.x, position.y, position.z, stime));
+			else return (value_at_0K * pt_scaling[scaling_arr_size - 1] * s_scaling[position]);
+		}
 	}
 	//no temperature dependence set
-	else return value_at_0K * s_scaling[position];
+	else {
+
+		if (pSscaling_eq_x) return value_at_0K * pSscaling_eq_x->evaluate(position.x, position.y, position.z, stime);
+		else return value_at_0K * s_scaling[position];
+	}
 }
 
 template <>
-__device__ inline cuReal3 MatPCUDA<cuReal3, cuBReal>::get(const cuReal3& position, cuBReal Temperature)
+__device__ inline cuReal3 MatPCUDA<cuReal3, cuBReal>::get(const cuReal3& position, cuBReal stime, cuBReal Temperature)
 {
-	if (formula_selector != MATPFORM_NONE) {
+	if (pTscaling_eq) {
 
-		//use pre-set formula
-		return (value_at_0K * t_scaling_formula(Temperature)) * s_scaling[position];
+		//use pre-set equation
+		if (pSscaling_eq_x) return (value_at_0K * pTscaling_eq->evaluate(Temperature)) * pSscaling_eq_x->evaluate(position.x, position.y, position.z, stime);
+		else return (value_at_0K * pTscaling_eq->evaluate(Temperature)) * s_scaling[position];
 	}
 	else if (scaling_arr_size && Temperature > 0 && Temperature < MAX_TEMPERATURE && !isnan(Temperature)) {
 
@@ -475,22 +546,38 @@ __device__ inline cuReal3 MatPCUDA<cuReal3, cuBReal>::get(const cuReal3& positio
 		if (index + 1 < scaling_arr_size && index >= 0) {
 
 			//use linear interpolation for temperature in range index to index + 1
-			return (value_at_0K * (pt_scaling[index] * (cuBReal(index + 1) - Temperature) + pt_scaling[index + 1] * (Temperature - cuBReal(index)))) * s_scaling[position];
+			if (pSscaling_eq_x) return (value_at_0K * (pt_scaling[index] * (cuBReal(index + 1) - Temperature) + pt_scaling[index + 1] * (Temperature - cuBReal(index)))) * pSscaling_eq_x->evaluate(position.x, position.y, position.z, stime);
+			else return (value_at_0K * (pt_scaling[index] * (cuBReal(index + 1) - Temperature) + pt_scaling[index + 1] * (Temperature - cuBReal(index)))) * s_scaling[position];
 		}
 		//for temperatures higher than the loaded array just use the last scaling value
-		else return (value_at_0K * pt_scaling[scaling_arr_size - 1] * s_scaling[position]);
+		else {
+
+			if (pSscaling_eq_x) return (value_at_0K * pt_scaling[scaling_arr_size - 1] * pSscaling_eq_x->evaluate(position.x, position.y, position.z, stime));
+			else return (value_at_0K * pt_scaling[scaling_arr_size - 1] * s_scaling[position]);
+		}
 	}
 	//no temperature dependence set
-	else return value_at_0K * s_scaling[position];
+	else {
+
+		if (pSscaling_eq_x) return value_at_0K * pSscaling_eq_x->evaluate(position.x, position.y, position.z, stime);
+		else return value_at_0K * s_scaling[position];
+	}
 }
 
 template <>
-__device__ inline cuReal3 MatPCUDA<cuReal3, cuReal3>::get(const cuReal3& position, cuBReal Temperature)
+__device__ inline cuReal3 MatPCUDA<cuReal3, cuReal3>::get(const cuReal3& position, cuBReal stime, cuBReal Temperature)
 {
-	if (formula_selector != MATPFORM_NONE) {
+	if (pTscaling_eq) {
 
-		//use pre-set formula
-		return rotate_polar(value_at_0K * t_scaling_formula(Temperature), s_scaling[position]);
+		//use pre-set equation
+		if (pSscaling_eq_z) return rotate_polar(
+			value_at_0K * pTscaling_eq->evaluate(Temperature), 
+			cuReal3(
+			pSscaling_eq_x->evaluate(position.x, position.y, position.z, stime),
+			pSscaling_eq_y->evaluate(position.x, position.y, position.z, stime),
+			pSscaling_eq_z->evaluate(position.x, position.y, position.z, stime)));
+
+		else return rotate_polar(value_at_0K * pTscaling_eq->evaluate(Temperature), s_scaling[position]);
 	}
 	else if (scaling_arr_size && Temperature > 0 && Temperature < MAX_TEMPERATURE && !isnan(Temperature)) {
 
@@ -499,13 +586,38 @@ __device__ inline cuReal3 MatPCUDA<cuReal3, cuReal3>::get(const cuReal3& positio
 		if (index + 1 < scaling_arr_size && index >= 0) {
 
 			//use linear interpolation for temperature in range index to index + 1
-			return rotate_polar(value_at_0K * (pt_scaling[index] * (cuBReal(index + 1) - Temperature) + pt_scaling[index + 1] * (Temperature - cuBReal(index))), s_scaling[position]);
+			if (pSscaling_eq_z) return rotate_polar(
+				value_at_0K * (pt_scaling[index] * (cuBReal(index + 1) - Temperature) + pt_scaling[index + 1] * (Temperature - cuBReal(index))), 
+				cuReal3(
+					pSscaling_eq_x->evaluate(position.x, position.y, position.z, stime),
+					pSscaling_eq_y->evaluate(position.x, position.y, position.z, stime),
+					pSscaling_eq_z->evaluate(position.x, position.y, position.z, stime)));
+
+			else return rotate_polar(value_at_0K * (pt_scaling[index] * (cuBReal(index + 1) - Temperature) + pt_scaling[index + 1] * (Temperature - cuBReal(index))), s_scaling[position]);
 		}
 		//for temperatures higher than the loaded array just use the last scaling value
-		else return rotate_polar(value_at_0K * pt_scaling[scaling_arr_size - 1], s_scaling[position]);
+		else {
+
+			if (pSscaling_eq_z) return rotate_polar(
+				value_at_0K * pt_scaling[scaling_arr_size - 1], 
+				cuReal3(
+					pSscaling_eq_x->evaluate(position.x, position.y, position.z, stime),
+					pSscaling_eq_y->evaluate(position.x, position.y, position.z, stime),
+					pSscaling_eq_z->evaluate(position.x, position.y, position.z, stime)));
+			else return rotate_polar(value_at_0K * pt_scaling[scaling_arr_size - 1], s_scaling[position]);
+		}
 	}
 	//no temperature dependence set
-	else return rotate_polar(value_at_0K, s_scaling[position]);
+	else {
+
+		if (pSscaling_eq_z) return rotate_polar(
+			value_at_0K, 
+			cuReal3(
+				pSscaling_eq_x->evaluate(position.x, position.y, position.z, stime),
+				pSscaling_eq_y->evaluate(position.x, position.y, position.z, stime),
+				pSscaling_eq_z->evaluate(position.x, position.y, position.z, stime)));
+		else return rotate_polar(value_at_0K, s_scaling[position]);
+	}
 }
 
 //---------Set value
@@ -514,10 +626,10 @@ __device__ inline cuReal3 MatPCUDA<cuReal3, cuReal3>::get(const cuReal3& positio
 template <typename PType, typename SType>
 __device__ void MatPCUDA<PType, SType>::set_current(cuBReal Temperature)
 {
-	if (formula_selector != MATPFORM_NONE) {
+	if (pTscaling_eq) {
 
-		//use pre-set formula
-		current_value = value_at_0K * t_scaling_formula(Temperature);
+		//use pre-set equation
+		current_value = value_at_0K * pTscaling_eq->evaluate(Temperature);
 	}
 	else if (scaling_arr_size && Temperature > 0 && Temperature < MAX_TEMPERATURE && !isnan(Temperature)) {
 

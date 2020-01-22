@@ -352,16 +352,28 @@ void Simulation::MakeIOInfo(void)
 	ioInfo.set(stage_generic_info + string("<i><b>Set H field sequence in Cartesian coordinates\n<i><b>Start to stop H values in a number of steps"), INT2(IOI_STAGE, SS_HFIELDXYZSEQ));
 	ioInfo.set(stage_generic_info + string("<i><b>Set H field sequence in Polar coordinates\n<i><b>Start to stop H values in a number of steps"), INT2(IOI_STAGE, SS_HPOLARSEQ));
 	ioInfo.set(stage_generic_info + string("<i><b>Set FMR H field sequence in Cartesian coordinates\n<i><b>Bias field, rf field, rf field steps, rf field cycles"), INT2(IOI_STAGE, SS_HFMR));
+	ioInfo.set(stage_generic_info + string("<i><b>Set field using custom equation"), INT2(IOI_SETSTAGEVALUE, SS_HFIELDEQUATION));
+	ioInfo.set(stage_generic_info + string("<i><b>Set field sequence using custom equation"), INT2(IOI_SETSTAGEVALUE, SS_HFIELDEQUATIONSEQ));
 	ioInfo.set(stage_generic_info + string("<i><b>Set fixed voltage drop between electrodes"), INT2(IOI_STAGE, SS_V));
 	ioInfo.set(stage_generic_info + string("<i><b>Set fixed voltage sequence\n<i><b>Start to stop V values in a number of steps"), INT2(IOI_STAGE, SS_VSEQ));
 	ioInfo.set(stage_generic_info + string("<i><b>Set a sinusoidal voltage sequence\n<i><b>Amplitude, steps per cycle, cycles"), INT2(IOI_STAGE, SS_VSIN));
 	ioInfo.set(stage_generic_info + string("<i><b>Set a cosine voltage sequence\n<i><b>Amplitude, steps per cycle, cycles"), INT2(IOI_STAGE, SS_VCOS));
+	ioInfo.set(stage_generic_info + string("<i><b>Set potential using custom equation"), INT2(IOI_SETSTAGEVALUE, SS_VEQUATION));
+	ioInfo.set(stage_generic_info + string("<i><b>Set potential sequence using custom equation"), INT2(IOI_SETSTAGEVALUE, SS_VEQUATIONSEQ));
 	ioInfo.set(stage_generic_info + string("<i><b>Set fixed current into ground electrode"), INT2(IOI_STAGE, SS_I));
 	ioInfo.set(stage_generic_info + string("<i><b>Set fixed current sequence\n<i><b>Start to stop I values in a number of steps"), INT2(IOI_STAGE, SS_ISEQ));
 	ioInfo.set(stage_generic_info + string("<i><b>Set a sinusoidal current sequence\n<i><b>Amplitude, steps per cycle, cycles"), INT2(IOI_STAGE, SS_ISIN));
 	ioInfo.set(stage_generic_info + string("<i><b>Set a cosine current sequence\n<i><b>Amplitude, steps per cycle, cycles"), INT2(IOI_STAGE, SS_ICOS));
+	ioInfo.set(stage_generic_info + string("<i><b>Set current using custom equation"), INT2(IOI_SETSTAGEVALUE, SS_IEQUATION));
+	ioInfo.set(stage_generic_info + string("<i><b>Set current sequence using custom equation"), INT2(IOI_SETSTAGEVALUE, SS_IEQUATIONSEQ));
 	ioInfo.set(stage_generic_info + string("<i><b>Set base temperature value"), INT2(IOI_STAGE, SS_T));
 	ioInfo.set(stage_generic_info + string("<i><b>Set base temperature sequence\n<i><b>Start to stop T values in a number of steps"), INT2(IOI_STAGE, SS_TSEQ));
+	ioInfo.set(stage_generic_info + string("<i><b>Set base temperature using custom equation"), INT2(IOI_SETSTAGEVALUE, SS_TEQUATION));
+	ioInfo.set(stage_generic_info + string("<i><b>Set base temperature sequence using custom equation"), INT2(IOI_SETSTAGEVALUE, SS_TEQUATIONSEQ));
+	ioInfo.set(stage_generic_info + string("<i><b>Set heat source value"), INT2(IOI_STAGE, SS_Q));
+	ioInfo.set(stage_generic_info + string("<i><b>Set heat source sequence\n<i><b>Start to stop Q values in a number of steps"), INT2(IOI_STAGE, SS_QSEQ));
+	ioInfo.set(stage_generic_info + string("<i><b>Set heat source using custom equation"), INT2(IOI_SETSTAGEVALUE, SS_QEQUATION));
+	ioInfo.set(stage_generic_info + string("<i><b>Set heat source sequence using custom equation"), INT2(IOI_SETSTAGEVALUE, SS_QEQUATIONSEQ));
 
 	//Shows a stage added to the simulation schedule : minorId is the minor id of elements in Simulation::simStages (major id there is always 0), auxId is the number of the interactive object in the list, textId is the configured stage text
 	//Note this entry must always represent the entry in Simulation::simStages with the index in auxId.
@@ -387,18 +399,28 @@ void Simulation::MakeIOInfo(void)
 	ioInfo.set(stagevalue_generic_info + string("<i><b>Hstart; Hstop; Steps: Hstep = (Hstop - Hstart) / Steps"), INT2(IOI_SETSTAGEVALUE, SS_HFIELDXYZSEQ));
 	ioInfo.set(stagevalue_generic_info + string("<i><b>Hstart; Hstop; Steps: Hstep = (Hstop - Hstart) / Steps\n<i><b>H values in polar coordinates as:\n<i><b>strength value, polar angle, azimuthal angle"), INT2(IOI_SETSTAGEVALUE, SS_HPOLARSEQ));
 	ioInfo.set(stagevalue_generic_info + string("<i><b>Hbias; Hrf; rf steps; rf cycles\n<i><b>rf steps is the rf cycle discretization\n<i><b>rf cycles is the number of periods"), INT2(IOI_SETSTAGEVALUE, SS_HFMR));
+	ioInfo.set(stagevalue_generic_info + string("<i><b>Text vector equation"), INT2(IOI_SETSTAGEVALUE, SS_HFIELDEQUATION));
+	ioInfo.set(stagevalue_generic_info + string("<i><b>Steps: Text vector equation"), INT2(IOI_SETSTAGEVALUE, SS_HFIELDEQUATIONSEQ));
 	ioInfo.set(stagevalue_generic_info + string("<i><b>Fixed voltage drop between electrodes"), INT2(IOI_SETSTAGEVALUE, SS_V));
 	ioInfo.set(stagevalue_generic_info + string("<i><b>Vstart; Vstop; Steps: Vstep = (Vstop - Vstart) / Steps"), INT2(IOI_SETSTAGEVALUE, SS_VSEQ));
 	ioInfo.set(stage_generic_info + string("<i><b>Amplitude, steps per cycle, cycles"), INT2(IOI_SETSTAGEVALUE, SS_VSIN));
 	ioInfo.set(stage_generic_info + string("<i><b>Amplitude, steps per cycle, cycles"), INT2(IOI_SETSTAGEVALUE, SS_VCOS));
+	ioInfo.set(stagevalue_generic_info + string("<i><b>Text equation"), INT2(IOI_SETSTAGEVALUE, SS_VEQUATION));
+	ioInfo.set(stagevalue_generic_info + string("<i><b>Steps: Text equation"), INT2(IOI_SETSTAGEVALUE, SS_VEQUATIONSEQ));
 	ioInfo.set(stagevalue_generic_info + string("<i><b>Fixed current into ground electrode"), INT2(IOI_SETSTAGEVALUE, SS_I));
 	ioInfo.set(stagevalue_generic_info + string("<i><b>Istart; Istop; Steps: Istep = (Istop - Istart) / Steps"), INT2(IOI_SETSTAGEVALUE, SS_ISEQ));
 	ioInfo.set(stage_generic_info + string("<i><b>Amplitude, steps per cycle, cycles"), INT2(IOI_SETSTAGEVALUE, SS_ISIN));
 	ioInfo.set(stage_generic_info + string("<i><b>Amplitude, steps per cycle, cycles"), INT2(IOI_SETSTAGEVALUE, SS_ICOS));
+	ioInfo.set(stagevalue_generic_info + string("<i><b>Text equation"), INT2(IOI_SETSTAGEVALUE, SS_IEQUATION));
+	ioInfo.set(stagevalue_generic_info + string("<i><b>Steps: Text equation"), INT2(IOI_SETSTAGEVALUE, SS_IEQUATIONSEQ));
 	ioInfo.set(stagevalue_generic_info + string("<i><b>Base temperature value"), INT2(IOI_SETSTAGEVALUE, SS_T));
 	ioInfo.set(stagevalue_generic_info + string("<i><b>Tstart; Tstop; Steps: Tstep = (Tstop - Tstart) / Steps"), INT2(IOI_SETSTAGEVALUE, SS_TSEQ));
+	ioInfo.set(stagevalue_generic_info + string("<i><b>Text equation"), INT2(IOI_SETSTAGEVALUE, SS_TEQUATION));
+	ioInfo.set(stagevalue_generic_info + string("<i><b>Steps: Text equation"), INT2(IOI_SETSTAGEVALUE, SS_TEQUATIONSEQ));
 	ioInfo.set(stagevalue_generic_info + string("<i><b>Heat source value"), INT2(IOI_SETSTAGEVALUE, SS_Q));
 	ioInfo.set(stagevalue_generic_info + string("<i><b>Qstart; Qstop; Steps: Qstep = (Qstop - Qstart) / Steps"), INT2(IOI_SETSTAGEVALUE, SS_QSEQ));
+	ioInfo.set(stagevalue_generic_info + string("<i><b>Text equation"), INT2(IOI_SETSTAGEVALUE, SS_QEQUATION));
+	ioInfo.set(stagevalue_generic_info + string("<i><b>Steps: Text equation"), INT2(IOI_SETSTAGEVALUE, SS_QEQUATIONSEQ));
 
 	//Shows the stop condition for the simulation schedule stage : minorId is the minor id of elements in Simulation::simStages (major id there is always 0), auxId is the number of the interactive object in the list, textId is the stop type and value as a string
 	//IOI_STAGESTOPCONDITION
@@ -531,17 +553,16 @@ void Simulation::MakeIOInfo(void)
 
 	ioInfo.push_back(paramvar_generic_info, IOI_MESHPARAMVAR);
 
-	//Shows a possible formula name for mesh parameter temperature dependence : minorId is the MATPFORM_ enum value, textId is the formula name
-	//IOI_MESHPARAMTEMPFORMULA
+	//Shows a possible temperature dependence : minorId is the type (entry from MATPTDEP_ enum)
+	//IOI_MESHPARAMTEMPTYPE
 
-	string paramtempform_generic_info =
-		string("[tc1,1,0,1/tc]<b>Temperature dependence\n[tc1,1,0,1/tc]<b>scaling formula") +
+	string paramtemptype_generic_info =
+		string("[tc1,1,0,1/tc]<b>Temperature dependence type\n") +
 		string("\n[tc1,1,0,1/tc]drag: move to parameter to set\n");
 
-	ioInfo.set(paramtempform_generic_info + string("<i><b>No temperature dependence"), INT2(IOI_MESHPARAMTEMPFORMULA, MATPFORM_NONE));
-	ioInfo.set(paramtempform_generic_info + string("<i><b>Linear: y = c0 * x + 1\n<i><b>Can edit c0"), INT2(IOI_MESHPARAMTEMPFORMULA, MATPFORM_LINEAR));
-	ioInfo.set(paramtempform_generic_info + string("<i><b>Parabolic: y = c0 * x^2 + c1 * x + 1\n<i><b>Can edit c0 and c1"), INT2(IOI_MESHPARAMTEMPFORMULA, MATPFORM_PARABOLIC));
-	ioInfo.set(paramtempform_generic_info + string("<i><b>Inverse linear: y = 1 / (c0 * x + 1)\n<i><b>Can edit c0 >= 0"), INT2(IOI_MESHPARAMTEMPFORMULA, MATPFORM_INVERSELINEAR));
+	ioInfo.set(paramtemptype_generic_info + string("<i><b>No temperature dependence"), INT2(IOI_MESHPARAMTEMPTYPE, MATPTDEP_NONE));
+	ioInfo.set(paramtemptype_generic_info + string("<i><b>Array"), INT2(IOI_MESHPARAMTEMPTYPE, MATPTDEP_ARRAY));
+	ioInfo.set(paramtemptype_generic_info + string("<i><b>Custom equation"), INT2(IOI_MESHPARAMTEMPTYPE, MATPTDEP_EQUATION));
 
 	//Shows a possible generator name for mesh parameter spatial dependence : minorId is the MATPVAR_ enum value, textId is the generator name
 	//IOI_MESHPARAMVARGENERATOR 
@@ -550,7 +571,8 @@ void Simulation::MakeIOInfo(void)
 		string("[tc1,1,0,1/tc]<b>Spatial dependence generator") +
 		string("\n[tc1,1,0,1/tc]drag: move to parameter to set\n");
 
-	ioInfo.set(paramvargen_generic_info + string("<i><b>Custom set from png file with grayscale.\n<i><b>offset, scale, filename\n<i><b>black = 0, white = 1"), INT2(IOI_MESHPARAMVARGENERATOR, MATPVAR_CUSTOM));
+	ioInfo.set(paramvargen_generic_info + string("<i><b>Set from png mask file with grayscale.\n<i><b>offset, scale, filename\n<i><b>black = 0, white = 1"), INT2(IOI_MESHPARAMVARGENERATOR, MATPVAR_MASK));
+	ioInfo.set(paramvargen_generic_info + string("<i><b>Set from ovf2 file (mapped to current dimensions)."), INT2(IOI_MESHPARAMVARGENERATOR, MATPVAR_OVF2));
 	ioInfo.set(paramvargen_generic_info + string("<i><b>Random with range (min, max) and seed"), INT2(IOI_MESHPARAMVARGENERATOR, MATPVAR_RANDOM));
 	ioInfo.set(paramvargen_generic_info + string("<i><b>Jagged with range (min, max)\n<i><b>spacing (m) and seed"), INT2(IOI_MESHPARAMVARGENERATOR, MATPVAR_JAGGED));
 	ioInfo.set(paramvargen_generic_info + string("<i><b>Circular defects with value range (min, max)\n<i><b>diameter range (min, max)\n<i><b>average spacing (m) and seed"), INT2(IOI_MESHPARAMVARGENERATOR, MATPVAR_DEFECTS));
@@ -561,6 +583,7 @@ void Simulation::MakeIOInfo(void)
 	ioInfo.set(paramvargen_generic_info + string("<i><b>Voronoi 3D cells with value range (min, max)\n<i><b>average spacing (m) and seed\n<i><b>Apply to Voronoi cell bounaries."), INT2(IOI_MESHPARAMVARGENERATOR, MATPVAR_VORONOIBND3D));
 	ioInfo.set(paramvargen_generic_info + string("<i><b>Voronoi 2D cells for rotations.\n<i><b>Rotate vectorial parameters\n<i><b>through polar degrees (min, max)\n<i><b>and azimuthal degrees (min, max).\n<i><b>Average spacing (m) and seed"), INT2(IOI_MESHPARAMVARGENERATOR, MATPVAR_VORONOIROT2D));
 	ioInfo.set(paramvargen_generic_info + string("<i><b>Voronoi 3D cells for rotations.\n<i><b>Rotate vectorial parameters\n<i><b>through polar degrees (min, max)\n<i><b>and azimuthal degrees (min, max).\n<i><b>Average spacing (m) and seed"), INT2(IOI_MESHPARAMVARGENERATOR, MATPVAR_VORONOIROT3D));
+	ioInfo.set(paramvargen_generic_info + string("<i><b>User text equation.\n<i><b>Scalar or vector equation:\n<i><b>define vector equation for rotations only.\n<i><b>Rotation specified using unit vector:\n<i><b>use direction cosines."), INT2(IOI_MESHPARAMVARGENERATOR, MATPVAR_EQUATION));
 
 	//Shows mesh display option for a given mesh : minorId is the MESHDISPLAY_ value, auxId is the unique mesh id number, textId is the MESHDISPLAY_ handle
 	//IOI_MESHDISPLAY
@@ -1064,6 +1087,17 @@ void Simulation::MakeIOInfo(void)
 		string("\n[tc1,1,0,1/tc]double-click: edit\n");
 
 	ioInfo.push_back(IOI_IMAGECROPPING_info, IOI_IMAGECROPPING);
+
+	//Show user constant for text equations : minorId is the index in Simulation::userConstants, auxId is the number of the interactive object in the list as it appears in the console, textId is the constant name and value string 
+	//Note this entry must always represent the entry in Simulation::userConstants with the index in auxId.
+	//IOI_USERCONSTANT
+
+	string showuserconstant_info =
+		string("[tc1,1,0,1/tc]<b>User constant</b>") +
+		string("\n[tc1,1,0,1/tc]dbl-click: edit entry") +
+		string("\n[tc1,1,0,1/tc]right-click: delete entry\n");
+
+	ioInfo.push_back(showuserconstant_info, IOI_USERCONSTANT);
 }
 
 //---------------------------------------------------- MAKE INTERACTIVE OBJECT : Auxiliary method
@@ -1472,14 +1506,14 @@ string Simulation::MakeIO(IOI_ identifier, PType ... params)
 		}
 		break;
 
-	case IOI_MESHPARAMTEMPFORMULA:
+	case IOI_MESHPARAMTEMPTYPE:
 		if (params_str.size() == 1) {
 
-			int formulaID = ToNum(params_str[0]);
+			int dependenceID = ToNum(params_str[0]);
 			
-			string formulaName = formula_descriptor.get_key_from_ID(formulaID);
+			string type = temperature_dependence_type(dependenceID);
 
-			return MakeInteractiveObject(formulaName, IOI_MESHPARAMTEMPFORMULA, formulaID, 0, formulaName);
+			return MakeInteractiveObject(type, IOI_MESHPARAMTEMPTYPE, dependenceID, 0, type);
 		}
 		break;
 
@@ -2006,6 +2040,19 @@ string Simulation::MakeIO(IOI_ identifier, PType ... params)
 		return MakeInteractiveObject("0, 0, 1, 1", IOI_IMAGECROPPING, 0, 0, "0, 0, 1, 1");
 		break;
 	
+	case IOI_USERCONSTANT:
+		if (params_str.size() == 3) {
+
+			string constant_name = params_str[0];
+			double value = ToNum(params_str[1]);
+			int index_in_list = ToNum(params_str[2]);
+
+			string userConstant_text = Build_EquationConstants_Text(index_in_list);
+
+			return MakeInteractiveObject(userConstant_text, IOI_USERCONSTANT, index_in_list, index_in_list, userConstant_text);
+		}
+		break;
+
 	}
 
 	return "";

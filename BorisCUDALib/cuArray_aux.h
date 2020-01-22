@@ -8,7 +8,7 @@
 template <typename VType>
 __host__ void cu_arr<VType>::set(VType value)
 {
-	gpu_set(cu_array, value, size_cpu);
+	gpu_set(cu_array, value, arr_size);
 }
 
 //------------------------------------------- GET SIZE : cuArray_aux.h
@@ -16,5 +16,5 @@ __host__ void cu_arr<VType>::set(VType value)
 template <typename VType>
 __host__ size_t cu_arr<VType>::size(void)
 {
-	return size_cpu;
+	return arr_size;
 }

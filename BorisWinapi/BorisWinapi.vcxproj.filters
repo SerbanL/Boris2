@@ -207,9 +207,6 @@
     <ClInclude Include="MaterialParameter.h">
       <Filter>MAT PARAMS</Filter>
     </ClInclude>
-    <ClInclude Include="MaterialParameterFormulas.h">
-      <Filter>MAT PARAMS</Filter>
-    </ClInclude>
     <ClInclude Include="MeshParams.h">
       <Filter>MAT PARAMS</Filter>
     </ClInclude>
@@ -259,9 +256,6 @@
       <Filter>MAT PARAMS - CUDA</Filter>
     </ClInclude>
     <ClInclude Include="MaterialParameterCUDA.h">
-      <Filter>MAT PARAMS - CUDA</Filter>
-    </ClInclude>
-    <ClInclude Include="MaterialParameterFormulasCUDA.h">
       <Filter>MAT PARAMS - CUDA</Filter>
     </ClInclude>
     <ClInclude Include="ParametersDefs.h">
@@ -561,6 +555,30 @@
     <ClInclude Include="DiffEqAFM_EquationsCUDA.h">
       <Filter>DIFF EQUATIONS AFM - CUDA</Filter>
     </ClInclude>
+    <ClInclude Include="Display_BorisConsole.h">
+      <Filter>INTERFACE</Filter>
+    </ClInclude>
+    <ClInclude Include="Display_BorisTextBox.h">
+      <Filter>INTERFACE</Filter>
+    </ClInclude>
+    <ClInclude Include="Display_BorisIOIPopupTextBox.h">
+      <Filter>INTERFACE</Filter>
+    </ClInclude>
+    <ClInclude Include="Display_BorisIOIPopupEditBox.h">
+      <Filter>INTERFACE</Filter>
+    </ClInclude>
+    <ClInclude Include="Display_BorisHoverInfoTextBox.h">
+      <Filter>INTERFACE</Filter>
+    </ClInclude>
+    <ClInclude Include="Display_BorisMeshWindow.h">
+      <Filter>INTERFACE</Filter>
+    </ClInclude>
+    <ClInclude Include="Display_Defs.h">
+      <Filter>INTERFACE</Filter>
+    </ClInclude>
+    <ClInclude Include="ManagedDiffEq_CommonCUDA.h">
+      <Filter>DIFF EQUATIONS INTERFACE - CUDA</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="BorisGraphics.cpp">
@@ -616,9 +634,6 @@
     </ClCompile>
     <ClCompile Include="SurfExchange.cpp">
       <Filter>MODULES</Filter>
-    </ClCompile>
-    <ClCompile Include="MaterialParameterFormulas.cpp">
-      <Filter>MAT PARAMS</Filter>
     </ClCompile>
     <ClCompile Include="MeshParams.cpp">
       <Filter>MAT PARAMS</Filter>
@@ -1091,6 +1106,27 @@
     <ClCompile Include="Transport_Charge_Display.cpp">
       <Filter>TRANSPORT SOLVER</Filter>
     </ClCompile>
+    <ClCompile Include="Display_BorisConsole.cpp">
+      <Filter>INTERFACE</Filter>
+    </ClCompile>
+    <ClCompile Include="Display_BorisTextBox.cpp">
+      <Filter>INTERFACE</Filter>
+    </ClCompile>
+    <ClCompile Include="Display_BorisIOIPopupTextBox.cpp">
+      <Filter>INTERFACE</Filter>
+    </ClCompile>
+    <ClCompile Include="Display_BorisIOIPopupEditBox.cpp">
+      <Filter>INTERFACE</Filter>
+    </ClCompile>
+    <ClCompile Include="Display_BorisHoverInfoTextBox.cpp">
+      <Filter>INTERFACE</Filter>
+    </ClCompile>
+    <ClCompile Include="Display_BorisMeshWindow.cpp">
+      <Filter>INTERFACE</Filter>
+    </ClCompile>
+    <ClCompile Include="ManagedDiffEq_CommonCUDA.cpp">
+      <Filter>DIFF EQUATIONS INTERFACE - CUDA</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="BorisWinapi.rc">
@@ -1293,6 +1329,9 @@
     </CudaCompile>
     <CudaCompile Include="TransportCUDA_Charge_Display.cu">
       <Filter>TRANSPORT SOLVER - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="MaterialParameterCUDA.cu">
+      <Filter>MAT PARAMS - CUDA</Filter>
     </CudaCompile>
   </ItemGroup>
 </Project>

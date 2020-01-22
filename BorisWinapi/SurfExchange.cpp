@@ -295,7 +295,7 @@ double SurfExchange::UpdateField(void)
 					//coupling layer thickness
 					double thickness_top = pMesh_Top[mesh_idx]->meshRect.e.z - pMesh_Top[mesh_idx]->meshRect.s.z;
 
-					//effective thickness for the coupling formula
+					//effective thickness for the coupling equation
 					double thickness_eff = 2 * thickness * thickness_top / (thickness + thickness_top);
 
 					double J1 = pMesh_Top[mesh_idx]->J1;
@@ -348,7 +348,7 @@ double SurfExchange::UpdateField(void)
 					//coupling layer thickness
 					double thickness_bot = pMesh_Bot[mesh_idx]->meshRect.e.z - pMesh_Bot[mesh_idx]->meshRect.s.z;
 
-					//effective thickness for the coupling formula
+					//effective thickness for the coupling equation
 					double thickness_eff = 2 * thickness * thickness_bot / (thickness + thickness_bot);
 
 					//yes, then get value of magnetization used in coupling with current cell at cell_idx

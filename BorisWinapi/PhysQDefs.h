@@ -10,8 +10,10 @@
 //VEC3REP_X : show only the x component as a scalar quantity
 //VEC3REP_Y : show only the y component as a scalar quantity
 //VEC3REP_Z : show only the z component as a scalar quantity
-//VEC3REP_DIRECTION : show only the direction component as a scalar quantity (i.e. color coding of vector orientation only) - VEC3REP_NUMOPTIONS gives the number of options available
-enum VEC3REP_ { VEC3REP_FULL = 0, VEC3REP_X, VEC3REP_Y, VEC3REP_Z, VEC3REP_DIRECTION, VEC3REP_NUMOPTIONS };
+//VEC3REP_DIRECTION : show only the direction component as a scalar quantity (i.e. color coding of vector orientation only)
+//VEC3REP_MAGNITUDE : show magnitude as a scalar quantity
+//VEC3REP_NUMOPTIONS gives the number of options available
+enum VEC3REP_ { VEC3REP_FULL = 0, VEC3REP_X, VEC3REP_Y, VEC3REP_Z, VEC3REP_DIRECTION, VEC3REP_MAGNITUDE, VEC3REP_NUMOPTIONS };
 
 //number of logical units to display on screen along the width
 #define DISPLAYUNITS	100

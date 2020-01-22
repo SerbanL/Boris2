@@ -48,14 +48,14 @@ __global__ void RunSD_Start_Kernel(ManagedDiffEqFMCUDA& cuDiffEq, ManagedMeshCUD
 
 				/////////////////////////
 
-				//The updating formula is (see https://doi.org/10.1063/1.4862839):
+				//The updating equation is (see https://doi.org/10.1063/1.4862839):
 
 				//m_next = m - (dT/2) * (m_next + m) x ((gamma/2)m x Heff)
 				//Here gamma = mu0 * |gamma_e| as usual., m is the current normalized M value, Heff is the current effective field, and we need to find m_next.
 				//This is applicable to the LLGStatic approach, i.e. no precession term and damping set to 1.
 				//M_next = m_next * Ms
 
-				//The above formula can be solved for m_next explicitly (m_next . m = 1, i.e. norm conserved) as:
+				//The above equation can be solved for m_next explicitly (m_next . m = 1, i.e. norm conserved) as:
 				//
 				//Let s = dT * GAMMA / 4, the stepsize; H = Heff. Then:
 				//m = (m - s(m.H * (m - 2sH) + 2sm(H.H) - 2H)) / (1 + sm.H)
@@ -178,14 +178,14 @@ __global__ void RunSD_Advance_withReductions_Kernel(ManagedDiffEqFMCUDA& cuDiffE
 				cuBReal Mnorm = (*cuMesh.pM)[idx].norm();
 				mxh = cu_GetMagnitude(m ^ H) / Mnorm;
 
-				//The updating formula is (see https://doi.org/10.1063/1.4862839):
+				//The updating equation is (see https://doi.org/10.1063/1.4862839):
 
 				//m_next = m - (dT/2) * (m_next + m) x ((gamma/2)m x Heff)
 				//Here gamma = mu0 * |gamma_e| as usual., m is the current normalized M value, Heff is the current effective field, and we need to find m_next.
 				//This is applicable to the LLGStatic approach, i.e. no precession term and damping set to 1.
 				//M_next = m_next * Ms
 
-				//The above formula can be solved for m_next explicitly (m_next . m = 1, i.e. norm conserved) as:
+				//The above equation can be solved for m_next explicitly (m_next . m = 1, i.e. norm conserved) as:
 				//
 				//Let s = dT * GAMMA / 4, the stepsize; H = Heff. Then:
 				//m = (m - s(m.H * (m - 2sH) + 2sm(H.H) - 2H)) / (1 + sm.H)
@@ -247,14 +247,14 @@ __global__ void RunSD_Advance_withReduction_mxh_Kernel(ManagedDiffEqFMCUDA& cuDi
 				//obtained maximum normalized torque term
 				mxh = cu_GetMagnitude(m ^ H) / (*cuMesh.pM)[idx].norm();
 
-				//The updating formula is (see https://doi.org/10.1063/1.4862839):
+				//The updating equation is (see https://doi.org/10.1063/1.4862839):
 
 				//m_next = m - (dT/2) * (m_next + m) x ((gamma/2)m x Heff)
 				//Here gamma = mu0 * |gamma_e| as usual., m is the current normalized M value, Heff is the current effective field, and we need to find m_next.
 				//This is applicable to the LLGStatic approach, i.e. no precession term and damping set to 1.
 				//M_next = m_next * Ms
 
-				//The above formula can be solved for m_next explicitly (m_next . m = 1, i.e. norm conserved) as:
+				//The above equation can be solved for m_next explicitly (m_next . m = 1, i.e. norm conserved) as:
 				//
 				//Let s = dT * GAMMA / 4, the stepsize; H = Heff. Then:
 				//m = (m - s(m.H * (m - 2sH) + 2sm(H.H) - 2H)) / (1 + sm.H)
@@ -308,14 +308,14 @@ __global__ void RunSD_Advance_withReduction_dmdt_Kernel(ManagedDiffEqFMCUDA& cuD
 				cuReal3 m = (*cuMesh.pM)[idx] / Ms;
 				cuReal3 H = (*cuMesh.pHeff)[idx];
 
-				//The updating formula is (see https://doi.org/10.1063/1.4862839):
+				//The updating equation is (see https://doi.org/10.1063/1.4862839):
 
 				//m_next = m - (dT/2) * (m_next + m) x ((gamma/2)m x Heff)
 				//Here gamma = mu0 * |gamma_e| as usual., m is the current normalized M value, Heff is the current effective field, and we need to find m_next.
 				//This is applicable to the LLGStatic approach, i.e. no precession term and damping set to 1.
 				//M_next = m_next * Ms
 
-				//The above formula can be solved for m_next explicitly (m_next . m = 1, i.e. norm conserved) as:
+				//The above equation can be solved for m_next explicitly (m_next . m = 1, i.e. norm conserved) as:
 				//
 				//Let s = dT * GAMMA / 4, the stepsize; H = Heff. Then:
 				//m = (m - s(m.H * (m - 2sH) + 2sm(H.H) - 2H)) / (1 + sm.H)
@@ -372,14 +372,14 @@ __global__ void RunSD_Advance_Kernel(ManagedDiffEqFMCUDA& cuDiffEq, ManagedMeshC
 				cuReal3 m = (*cuMesh.pM)[idx] / Ms;
 				cuReal3 H = (*cuMesh.pHeff)[idx];
 
-				//The updating formula is (see https://doi.org/10.1063/1.4862839):
+				//The updating equation is (see https://doi.org/10.1063/1.4862839):
 
 				//m_next = m - (dT/2) * (m_next + m) x ((gamma/2)m x Heff)
 				//Here gamma = mu0 * |gamma_e| as usual., m is the current normalized M value, Heff is the current effective field, and we need to find m_next.
 				//This is applicable to the LLGStatic approach, i.e. no precession term and damping set to 1.
 				//M_next = m_next * Ms
 
-				//The above formula can be solved for m_next explicitly (m_next . m = 1, i.e. norm conserved) as:
+				//The above equation can be solved for m_next explicitly (m_next . m = 1, i.e. norm conserved) as:
 				//
 				//Let s = dT * GAMMA / 4, the stepsize; H = Heff. Then:
 				//m = (m - s(m.H * (m - 2sH) + 2sm(H.H) - 2H)) / (1 + sm.H)

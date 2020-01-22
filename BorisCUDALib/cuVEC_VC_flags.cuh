@@ -480,19 +480,7 @@ __host__ bool cuVEC_VC<VType>::set_dirichlet_conditions(cuRect surface_rect, VTy
 	if (!rect_.intersects(surface_rect)) return true;
 
 	cuRect intersection = rect_.get_intersection(surface_rect);
-	if (!intersection.IsPlane()) return true;
-
-	//DIRICHLET flags used with extended ngbrFlags so make sure it has memory allocated now
-	cudaError_t error = gpu_alloc_managed(ngbrFlags2, get_ngbrFlags_size());
-	if (error != cudaSuccess) {
-
-		set_gpu_value(using_extended_flags, false);
-		return false;
-	}
-	else {
-
-		set_gpu_value(using_extended_flags, true);
-	}
+	// if (!intersection.IsPlane()) return true;
 
 	//y-z plane
 	if (cuIsZ(intersection.s.x - intersection.e.x)) {
@@ -503,6 +491,9 @@ __host__ bool cuVEC_VC<VType>::set_dirichlet_conditions(cuRect surface_rect, VTy
 			if (!get_dirichlet_size(NF2_DIRICHLETNX)) {
 
 				if (set_dirichlet_size(n_.y*n_.z, NF2_DIRICHLETNX) != cudaSuccess) return false;
+
+				//DIRICHLET flags used with extended ngbrFlags so make sure it has memory allocated now
+				use_extended_flags();
 			}
 
 			intersection.e.x += h_.x;
@@ -516,6 +507,9 @@ __host__ bool cuVEC_VC<VType>::set_dirichlet_conditions(cuRect surface_rect, VTy
 			if (!get_dirichlet_size(NF2_DIRICHLETPX)) {
 
 				if (set_dirichlet_size(n_.y*n_.z, NF2_DIRICHLETPX) != cudaSuccess) return false;
+
+				//DIRICHLET flags used with extended ngbrFlags so make sure it has memory allocated now
+				use_extended_flags();
 			}
 
 			intersection.s.x -= h_.x;
@@ -533,6 +527,9 @@ __host__ bool cuVEC_VC<VType>::set_dirichlet_conditions(cuRect surface_rect, VTy
 			if (!get_dirichlet_size(NF2_DIRICHLETNY)) {
 
 				if (set_dirichlet_size(n_.x*n_.z, NF2_DIRICHLETNY) != cudaSuccess) return false;
+
+				//DIRICHLET flags used with extended ngbrFlags so make sure it has memory allocated now
+				use_extended_flags();
 			}
 			
 			intersection.e.y += h_.y;
@@ -546,6 +543,9 @@ __host__ bool cuVEC_VC<VType>::set_dirichlet_conditions(cuRect surface_rect, VTy
 			if (!get_dirichlet_size(NF2_DIRICHLETPY)) {
 
 				if (set_dirichlet_size(n_.x*n_.z, NF2_DIRICHLETPY) != cudaSuccess) return false;
+
+				//DIRICHLET flags used with extended ngbrFlags so make sure it has memory allocated now
+				use_extended_flags();
 			}
 			
 			intersection.s.y -= h_.y;
@@ -563,6 +563,9 @@ __host__ bool cuVEC_VC<VType>::set_dirichlet_conditions(cuRect surface_rect, VTy
 			if (!get_dirichlet_size(NF2_DIRICHLETNZ)) {
 
 				if (set_dirichlet_size(n_.x*n_.y, NF2_DIRICHLETNZ) != cudaSuccess) return false;
+
+				//DIRICHLET flags used with extended ngbrFlags so make sure it has memory allocated now
+				use_extended_flags();
 			}
 			
 			intersection.e.z += h_.z;
@@ -576,6 +579,9 @@ __host__ bool cuVEC_VC<VType>::set_dirichlet_conditions(cuRect surface_rect, VTy
 			if (!get_dirichlet_size(NF2_DIRICHLETPZ)) {
 
 				if (set_dirichlet_size(n_.x*n_.y, NF2_DIRICHLETPZ) != cudaSuccess) return false;
+
+				//DIRICHLET flags used with extended ngbrFlags so make sure it has memory allocated now
+				use_extended_flags();
 			}
 			
 			intersection.s.z -= h_.z;

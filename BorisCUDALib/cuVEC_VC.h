@@ -442,14 +442,16 @@ public:
 	template <typename PType = decltype(cu_GetMagnitude(std::declval<VType>()))>
 	__host__ void renormalize(size_t arr_size, PType new_norm);
 
-	//scale all stored values by the given constant
-	__host__ void scale_values(size_t size, cuBReal constant);
-	__host__ void scale_values(cuBReal constant) { scale_values(get_gpu_value(n).dim(), constant); }
-
 	//shift all the values in this cuVEC by the given delta (units same as h). Shift values in given shift_rect (absolute coordinates).
 	__host__ void shift_x(size_t size, cuBReal delta, cuRect shift_rect);
 
-	//--------------------------------------------OPERATIONS : cuVEC_VC_oper.h and cuVEC_VC_oper.cuh
+	//--------------------------------------------ARITHMETIC OPERATIONS ON ENTIRE VEC : cuVEC_VC_arith.cuh
+
+		//scale all stored values by the given constant
+	__host__ void scale_values(size_t size, cuBReal constant);
+	__host__ void scale_values(cuBReal constant) { scale_values(get_gpu_value(n).dim(), constant); }
+
+	//--------------------------------------------OPERATIONS : cuVEC_VC_avg.h and cuVEC_VC_avg.cuh
 
 	//overload VEC method : use NF_NOTEMPTY flags instead here
 	//Launch it with arr_size = n.dim() : quicker to pass in this value rather than get it internally using get_gpu_value(n).dim()

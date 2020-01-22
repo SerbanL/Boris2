@@ -26,10 +26,13 @@
 
 //second order
 
+#include "TEquationCUDA.h"
+
 #include "cuVEC.h"
 #include "cuVEC_mng.h"
 #include "cuVEC_aux.h"
 #include "cuVEC_oper.h"
+#include "cuVEC_avg.h"
 #include "cuVEC_MeshTransfer.h"
 #include "cuVEC_VC.h"
 #include "cuVEC_VC_mng.h"

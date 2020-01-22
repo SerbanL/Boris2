@@ -108,8 +108,12 @@ public:
 
 	//-------------------------- UpdateConfiguration
 
-	//Call this when the mesh size has changed or the body inside the mesh has changed, or CUDA flag has changed.
-	virtual BError UpdateConfiguration(UPDATECONFIG_ cfgMessage = UPDATECONFIG_GENERIC) = 0;
+	//Call this when the object configuration has changed.
+	virtual BError UpdateConfiguration(UPDATECONFIG_ cfgMessage) = 0;
+
+	//This is a "softer" version of UpdateConfiguration, which can be used any time and doesn't require the object to be Uninitialized; 
+	//this will typically involve changing a value across multiple objects, thus better to call this method rather than try to remember which objects need the value changed.
+	virtual void UpdateConfiguration_Values(UPDATECONFIG_ cfgMessage) = 0;
 
 	//-------------------------- CUDA Switch
 

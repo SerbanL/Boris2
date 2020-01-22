@@ -263,6 +263,13 @@
     <ClInclude Include="DiffEqFM_SEquationsCUDA.h" />
     <ClInclude Include="DipoleTFunc.h" />
     <ClInclude Include="DipoleTFuncCUDA.h" />
+    <ClInclude Include="Display_BorisConsole.h" />
+    <ClInclude Include="Display_BorisHoverInfoTextBox.h" />
+    <ClInclude Include="Display_BorisIOIPopupEditBox.h" />
+    <ClInclude Include="Display_BorisIOIPopupTextBox.h" />
+    <ClInclude Include="Display_BorisMeshWindow.h" />
+    <ClInclude Include="Display_BorisTextBox.h" />
+    <ClInclude Include="Display_Defs.h" />
     <ClInclude Include="DMExchange.h" />
     <ClInclude Include="DMExchangeCUDA.h" />
     <ClInclude Include="ErrorHandler.h" />
@@ -276,11 +283,13 @@
     <ClInclude Include="iDMExchangeCUDA.h" />
     <ClInclude Include="ManagedDiffEqAFMCUDA.h" />
     <ClInclude Include="ManagedDiffEqFMCUDA.h" />
+    <ClInclude Include="ManagedDiffEq_CommonCUDA.h" />
     <ClInclude Include="ManagedMeshCUDA.h" />
     <ClInclude Include="MaterialParameter.h" />
+    <CudaCompile Include="MaterialParameterCUDA.cu">
+      <FileType>Document</FileType>
+    </CudaCompile>
     <ClInclude Include="MaterialParameterCUDA.h" />
-    <ClInclude Include="MaterialParameterFormulas.h" />
-    <ClInclude Include="MaterialParameterFormulasCUDA.h" />
     <ClInclude Include="MaterialsDataBase.h" />
     <ClInclude Include="MeshCUDA.h" />
     <ClInclude Include="MeshDefs.h" />
@@ -430,6 +439,12 @@
     <ClCompile Include="DiffEq_IterateCUDA.cpp" />
     <ClCompile Include="DiffEqFM_SEquations.cpp" />
     <ClCompile Include="DipoleTFunc.cpp" />
+    <ClCompile Include="Display_BorisConsole.cpp" />
+    <ClCompile Include="Display_BorisHoverInfoTextBox.cpp" />
+    <ClCompile Include="Display_BorisIOIPopupEditBox.cpp" />
+    <ClCompile Include="Display_BorisIOIPopupTextBox.cpp" />
+    <ClCompile Include="Display_BorisMeshWindow.cpp" />
+    <ClCompile Include="Display_BorisTextBox.cpp" />
     <ClCompile Include="DMExchange.cpp" />
     <ClCompile Include="DMExchangeCUDA.cpp" />
     <ClCompile Include="ErrorHandler.cpp" />
@@ -444,9 +459,9 @@
     <ClCompile Include="iDMExchangeCUDA.cpp" />
     <ClCompile Include="ManagedDiffEqAFMCUDA.cpp" />
     <ClCompile Include="ManagedDiffEqFMCUDA.cpp" />
+    <ClCompile Include="ManagedDiffEq_CommonCUDA.cpp" />
     <ClCompile Include="ManagedMeshCUDA.cpp" />
     <ClCompile Include="MaterialParameter.cpp" />
-    <ClCompile Include="MaterialParameterFormulas.cpp" />
     <ClCompile Include="MaterialsDataBase.cpp" />
     <ClCompile Include="Mesh.cpp" />
     <ClCompile Include="MeshControl.cpp" />

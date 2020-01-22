@@ -47,6 +47,10 @@ BError Simulation::LoadSimulation(string fileName)
 
 	StopSimulation();
 
+	//clear screen before loading new simulation : if any interactive objects on screen are updated whilst simulation is loading the program can crash.
+	ClearScreen();
+	BD.DisplayConsoleMessage("Loading simulation ... please wait.");
+
 	if(GetFileTermination(fileName) != ".bsm")
 		fileName += ".bsm";
 

@@ -5,7 +5,19 @@
 using namespace std;
 
 //simulation stage/step settings -> add new values at the end to keep older simulation files compatible
-enum SS_ { SS_RELAX = 0, SS_HFIELDXYZ, SS_HFIELDXYZSEQ, SS_HPOLARSEQ, SS_HFMR, SS_V, SS_VSEQ, SS_VSIN, SS_VCOS, SS_I, SS_ISEQ, SS_ISIN, SS_ICOS, SS_T, SS_TSEQ, SS_Q, SS_QSEQ };
+enum SS_ { 
+	SS_RELAX = 0, 
+	SS_HFIELDXYZ, SS_HFIELDXYZSEQ, SS_HPOLARSEQ, SS_HFMR, 
+	SS_V, SS_VSEQ, SS_VSIN, SS_VCOS, 
+	SS_I, SS_ISEQ, SS_ISIN, SS_ICOS, 
+	SS_T, SS_TSEQ, 
+	SS_Q, SS_QSEQ, 
+	SS_HFIELDEQUATION, SS_HFIELDEQUATIONSEQ,
+	SS_VEQUATION, SS_VEQUATIONSEQ,
+	SS_IEQUATION, SS_IEQUATIONSEQ,
+	SS_TEQUATION, SS_TEQUATIONSEQ,
+	SS_QEQUATION, SS_QEQUATIONSEQ
+};
 
 //simulation stage stop conditions -> add new values at the end to keep older simulation files compatible
 enum STOP_ { STOP_NOSTOP = 0, STOP_ITERATIONS, STOP_MXH, STOP_TIME, STOP_DMDT };
@@ -293,6 +305,13 @@ public:
 			COSOSC3 sequence = setValue;
 			return sequence.number_of_steps();
 		}
+		else if (setValue.is_type(typeid(StringSequence))) {
+
+			StringSequence sequence = setValue;
+			return sequence.number_of_steps();
+		}
+
+		//cannot determine number of stage steps
 		else return 0;
 	}
 
@@ -370,9 +389,15 @@ public:
 			DBL3 value = sequence.value(step);
 			return *reinterpret_cast<Type*>(&value);
 		}
+		else if (setValue.is_type(typeid(StringSequence))) {
+
+			StringSequence sequence = setValue;
+			std::string value = sequence.value(step);
+			return *reinterpret_cast<Type*>(&value);
+		}
 
 		//not a sequence, so get value directly
-		else return static_cast<Type>(setValue);
+		else return setValue;
 	}
 
 	string get_value_string(void) { return setValue.convert_to_string( stageDescriptor.unit ); }

@@ -32,6 +32,7 @@ public:
 	
 	//call when the mesh dimensions have changed - sets every quantity to the right dimensions
 	BError UpdateConfiguration(UPDATECONFIG_ cfgMessage);
+	void UpdateConfiguration_Values(UPDATECONFIG_ cfgMessage) {}
 	
 	//----------------------------------- OTHER IMPORTANT CONTROL METHODS
 
