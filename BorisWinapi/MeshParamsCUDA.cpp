@@ -119,9 +119,16 @@ MeshParamsCUDA::MeshParamsCUDA(MeshParams *pmeshParams)
 	pmeshParams->thermCond.set_p_cu_obj_mpcuda(&thermCond);
 	density()->set_from_cpu(pmeshParams->density);
 	pmeshParams->density.set_p_cu_obj_mpcuda(&density);
+	
+	MEc()->set_from_cpu(pmeshParams->MEc);
+	pmeshParams->MEc.set_p_cu_obj_mpcuda(&MEc);
+	Ym()->set_from_cpu(pmeshParams->Ym);
+	pmeshParams->Ym.set_p_cu_obj_mpcuda(&Ym);
+	Pr()->set_from_cpu(pmeshParams->Pr);
+	pmeshParams->Pr.set_p_cu_obj_mpcuda(&Pr);
+	
 	shc()->set_from_cpu(pmeshParams->shc);
 	pmeshParams->shc.set_p_cu_obj_mpcuda(&shc);
-
 	cT()->set_from_cpu(pmeshParams->cT);
 	pmeshParams->cT.set_p_cu_obj_mpcuda(&cT);
 	Q()->set_from_cpu(pmeshParams->Q);
@@ -194,8 +201,12 @@ MeshParamsCUDA::~MeshParamsCUDA()
 
 	pmeshParams->thermCond.null_p_cu_obj_mpcuda();
 	pmeshParams->density.null_p_cu_obj_mpcuda();
+	
+	pmeshParams->MEc.null_p_cu_obj_mpcuda();
+	pmeshParams->Ym.null_p_cu_obj_mpcuda();
+	pmeshParams->Pr.null_p_cu_obj_mpcuda();
+	
 	pmeshParams->shc.null_p_cu_obj_mpcuda();
-
 	pmeshParams->cT.null_p_cu_obj_mpcuda();
 	pmeshParams->Q.null_p_cu_obj_mpcuda();
 }

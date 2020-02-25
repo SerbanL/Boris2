@@ -3,6 +3,8 @@
 #include "Mesh.h"
 #include "SuperMesh.h"
 #include "PhysQRep.h"
+#include "BorisLib.h"
+#include "OVF2_Handlers.h"
 
 #if COMPILECUDA == 1
 
@@ -12,7 +14,8 @@ MeshCUDA::MeshCUDA(Mesh* pMesh) :
 	meshRect(pMesh->meshRect),
 	n(pMesh->n), h(pMesh->h),
 	n_e(pMesh->n_e), h_e(pMesh->h_e),
-	n_t(pMesh->n_t), h_t(pMesh->h_t)
+	n_t(pMesh->n_t), h_t(pMesh->h_t),
+	n_m(pMesh->n_m), h_m(pMesh->h_m)
 {
 	this->pMesh = pMesh;
 
@@ -47,7 +50,12 @@ MeshCUDA::MeshCUDA(Mesh* pMesh) :
 	//temperature calculated by Heat module
 	if(!Temp()->set_from_cpuvec(pMesh->Temp)) error_on_create(BERROR_OUTOFGPUMEMORY_CRIT);
 
-	//-----Elastic properties
+	//-----Mechanical properties
+
+	//mechanical displacement and strain calculated by MElastic module
+	if (!u_disp()->set_from_cpuvec(pMesh->u_disp)) error_on_create(BERROR_OUTOFGPUMEMORY_CRIT);
+	if (!strain_diag()->set_from_cpuvec(pMesh->strain_diag)) error_on_create(BERROR_OUTOFGPUMEMORY_CRIT);
+	if (!strain_odiag()->set_from_cpuvec(pMesh->strain_odiag)) error_on_create(BERROR_OUTOFGPUMEMORY_CRIT);
 }
 
 MeshCUDA::~MeshCUDA()
@@ -85,25 +93,33 @@ MeshCUDA::~MeshCUDA()
 		//temperature calculated by Heat module
 		Temp()->copy_to_cpuvec(pMesh->Temp);
 
-		//-----Elastic properties
+		//-----Mechanical properties
+
+		//mechanical displacement and strain calculated by MElastic module
+		u_disp()->copy_to_cpuvec(pMesh->u_disp);
+		strain_diag()->copy_to_cpuvec(pMesh->strain_diag);
+		strain_odiag()->copy_to_cpuvec(pMesh->strain_odiag);
 	}
 }
 
 //----------------------------------- DISPLAY-ASSOCIATED GET/SET METHODS
 
-PhysQ MeshCUDA::FetchOnScreenPhysicalQuantity(double detail_level)
+PhysQ MeshCUDA::FetchOnScreenPhysicalQuantity(double detail_level, bool getBackground)
 {
-	switch (pMesh->displayedPhysicalQuantity) {
+	int physicalQuantity = pMesh->displayedPhysicalQuantity;
+	if (getBackground) physicalQuantity = pMesh->displayedBackgroundPhysicalQuantity;
+
+	switch (physicalQuantity) {
 
 	case MESHDISPLAY_NONE:
-		return PhysQ(meshRect, h, pMesh->displayedPhysicalQuantity);
+		return PhysQ(meshRect, h, physicalQuantity);
 
 	case MESHDISPLAY_MAGNETIZATION:
 		
 		if (prepare_display(n, meshRect, detail_level, M)) {
 
 			//return PhysQ made from the cpu version of coarse mesh display.
-			return PhysQ(pdisplay_vec_vc_vec, pMesh->displayedPhysicalQuantity, (VEC3REP_)pMesh->vec3rep);
+			return PhysQ(pdisplay_vec_vc_vec, physicalQuantity, (VEC3REP_)pMesh->vec3rep);
 		}
 		break;
 
@@ -112,7 +128,7 @@ PhysQ MeshCUDA::FetchOnScreenPhysicalQuantity(double detail_level)
 		if (prepare_display(n, meshRect, detail_level, M2)) {
 
 			//return PhysQ made from the cpu version of coarse mesh display.
-			return PhysQ(pdisplay_vec_vc_vec, pMesh->displayedPhysicalQuantity, (VEC3REP_)pMesh->vec3rep);
+			return PhysQ(pdisplay_vec_vc_vec, physicalQuantity, (VEC3REP_)pMesh->vec3rep);
 		}
 		break;
 
@@ -121,7 +137,7 @@ PhysQ MeshCUDA::FetchOnScreenPhysicalQuantity(double detail_level)
 		if (prepare_display(n, meshRect, detail_level, M, M2)) {
 
 			//return PhysQ made from the cpu version of coarse mesh display.
-			return PhysQ(pdisplay_vec_vc_vec, pdisplay2_vec_vc_vec, pMesh->displayedPhysicalQuantity, (VEC3REP_)pMesh->vec3rep);
+			return PhysQ(pdisplay_vec_vc_vec, pdisplay2_vec_vc_vec, physicalQuantity, (VEC3REP_)pMesh->vec3rep);
 		}
 		break;
 		
@@ -130,7 +146,7 @@ PhysQ MeshCUDA::FetchOnScreenPhysicalQuantity(double detail_level)
 		if (prepare_display(n, meshRect, detail_level, Heff)) {
 
 			//return PhysQ made from the cpu version of coarse mesh display.
-			return PhysQ(pdisplay_vec_vec, pMesh->displayedPhysicalQuantity, (VEC3REP_)pMesh->vec3rep);
+			return PhysQ(pdisplay_vec_vec, physicalQuantity, (VEC3REP_)pMesh->vec3rep);
 		}
 		break;
 
@@ -139,7 +155,7 @@ PhysQ MeshCUDA::FetchOnScreenPhysicalQuantity(double detail_level)
 		if (prepare_display(n, meshRect, detail_level, Heff2)) {
 
 			//return PhysQ made from the cpu version of coarse mesh display.
-			return PhysQ(pdisplay_vec_vec, pMesh->displayedPhysicalQuantity, (VEC3REP_)pMesh->vec3rep);
+			return PhysQ(pdisplay_vec_vec, physicalQuantity, (VEC3REP_)pMesh->vec3rep);
 		}
 		break;
 
@@ -148,7 +164,7 @@ PhysQ MeshCUDA::FetchOnScreenPhysicalQuantity(double detail_level)
 		if (prepare_display(n, meshRect, detail_level, Heff, Heff2)) {
 
 			//return PhysQ made from the cpu version of coarse mesh display.
-			return PhysQ(pdisplay_vec_vec, pdisplay2_vec_vec, pMesh->displayedPhysicalQuantity, (VEC3REP_)pMesh->vec3rep);
+			return PhysQ(pdisplay_vec_vec, pdisplay2_vec_vec, physicalQuantity, (VEC3REP_)pMesh->vec3rep);
 		}
 		break;
 		
@@ -159,7 +175,7 @@ PhysQ MeshCUDA::FetchOnScreenPhysicalQuantity(double detail_level)
 			if (prepare_display(n_e, meshRect, detail_level, reinterpret_cast<Transport*>(pMesh->pMod(MOD_TRANSPORT))->GetChargeCurrentCUDA())) {
 
 				//return PhysQ made from the cpu version of coarse mesh display.
-				return PhysQ(pdisplay_vec_vc_vec, pMesh->displayedPhysicalQuantity, (VEC3REP_)pMesh->vec3rep);
+				return PhysQ(pdisplay_vec_vc_vec, physicalQuantity, (VEC3REP_)pMesh->vec3rep);
 			}
 		}
 		break;
@@ -169,7 +185,7 @@ PhysQ MeshCUDA::FetchOnScreenPhysicalQuantity(double detail_level)
 		if (prepare_display(n_e, meshRect, detail_level, V)) {
 
 			//return PhysQ made from the cpu version of coarse mesh display.
-			return PhysQ(pdisplay_vec_vc_sca, pMesh->displayedPhysicalQuantity);
+			return PhysQ(pdisplay_vec_vc_sca, physicalQuantity);
 		}
 		break;
 
@@ -178,7 +194,7 @@ PhysQ MeshCUDA::FetchOnScreenPhysicalQuantity(double detail_level)
 		if (prepare_display(n_e, meshRect, detail_level, elC)) {
 
 			//return PhysQ made from the cpu version of coarse mesh display.
-			return PhysQ(pdisplay_vec_vc_sca, pMesh->displayedPhysicalQuantity);
+			return PhysQ(pdisplay_vec_vc_sca, physicalQuantity);
 		}
 		break;
 
@@ -187,7 +203,7 @@ PhysQ MeshCUDA::FetchOnScreenPhysicalQuantity(double detail_level)
 		if (prepare_display(n_e, meshRect, detail_level, S)) {
 
 			//return PhysQ made from the cpu version of coarse mesh display.
-			return PhysQ(pdisplay_vec_vc_vec, pMesh->displayedPhysicalQuantity, (VEC3REP_)pMesh->vec3rep);
+			return PhysQ(pdisplay_vec_vc_vec, physicalQuantity, (VEC3REP_)pMesh->vec3rep);
 		}
 		break;
 
@@ -198,7 +214,7 @@ PhysQ MeshCUDA::FetchOnScreenPhysicalQuantity(double detail_level)
 			if (prepare_display(n_e, meshRect, detail_level, reinterpret_cast<Transport*>(pMesh->pMod(MOD_TRANSPORT))->GetSpinCurrentCUDA(0))) {
 
 				//return PhysQ made from the cpu version of coarse mesh display.
-				return PhysQ(pdisplay_vec_vec, pMesh->displayedPhysicalQuantity, (VEC3REP_)pMesh->vec3rep);
+				return PhysQ(pdisplay_vec_vec, physicalQuantity, (VEC3REP_)pMesh->vec3rep);
 			}
 		}
 		break;
@@ -210,7 +226,7 @@ PhysQ MeshCUDA::FetchOnScreenPhysicalQuantity(double detail_level)
 			if (prepare_display(n_e, meshRect, detail_level, reinterpret_cast<Transport*>(pMesh->pMod(MOD_TRANSPORT))->GetSpinCurrentCUDA(1))) {
 
 				//return PhysQ made from the cpu version of coarse mesh display.
-				return PhysQ(pdisplay_vec_vec, pMesh->displayedPhysicalQuantity, (VEC3REP_)pMesh->vec3rep);
+				return PhysQ(pdisplay_vec_vec, physicalQuantity, (VEC3REP_)pMesh->vec3rep);
 			}
 		}
 		break;
@@ -222,7 +238,7 @@ PhysQ MeshCUDA::FetchOnScreenPhysicalQuantity(double detail_level)
 			if (prepare_display(n_e, meshRect, detail_level, reinterpret_cast<Transport*>(pMesh->pMod(MOD_TRANSPORT))->GetSpinCurrentCUDA(2))) {
 
 				//return PhysQ made from the cpu version of coarse mesh display.
-				return PhysQ(pdisplay_vec_vec, pMesh->displayedPhysicalQuantity, (VEC3REP_)pMesh->vec3rep);
+				return PhysQ(pdisplay_vec_vec, physicalQuantity, (VEC3REP_)pMesh->vec3rep);
 			}
 		}
 		break;
@@ -234,7 +250,7 @@ PhysQ MeshCUDA::FetchOnScreenPhysicalQuantity(double detail_level)
 			if (prepare_display(n, meshRect, detail_level, reinterpret_cast<Transport*>(pMesh->pMod(MOD_TRANSPORT))->GetSpinTorqueCUDA())) {
 
 				//return PhysQ made from the cpu version of coarse mesh display.
-				return PhysQ(pdisplay_vec_vec, pMesh->displayedPhysicalQuantity, (VEC3REP_)pMesh->vec3rep);
+				return PhysQ(pdisplay_vec_vec, physicalQuantity, (VEC3REP_)pMesh->vec3rep);
 			}
 		}
 		break;
@@ -247,7 +263,7 @@ PhysQ MeshCUDA::FetchOnScreenPhysicalQuantity(double detail_level)
 				reinterpret_cast<STransport*>(pMesh->pSMesh->pSMod(MODS_STRANSPORT))->GetInterfacialSpinTorqueCUDA(reinterpret_cast<Transport*>(pMesh->pMod(MOD_TRANSPORT))))) {
 
 				//return PhysQ made from the cpu version of coarse mesh display.
-				return PhysQ(pdisplay_vec_vec, pMesh->displayedPhysicalQuantity, (VEC3REP_)pMesh->vec3rep);
+				return PhysQ(pdisplay_vec_vec, physicalQuantity, (VEC3REP_)pMesh->vec3rep);
 			}
 		}
 		break;
@@ -257,7 +273,34 @@ PhysQ MeshCUDA::FetchOnScreenPhysicalQuantity(double detail_level)
 		if (prepare_display(n_t, meshRect, detail_level, Temp)) {
 
 			//return PhysQ made from the cpu version of coarse mesh display.
-			return PhysQ(pdisplay_vec_vc_sca, pMesh->displayedPhysicalQuantity);
+			return PhysQ(pdisplay_vec_vc_sca, physicalQuantity);
+		}
+		break;
+
+	case MESHDISPLAY_UDISP:
+
+		if (prepare_display(n_m, meshRect, detail_level, u_disp)) {
+
+			//return PhysQ made from the cpu version of coarse mesh display.
+			return PhysQ(pdisplay_vec_vc_vec, physicalQuantity, (VEC3REP_)pMesh->vec3rep);
+		}
+		break;
+
+	case MESHDISPLAY_STRAINDIAG:
+
+		if (prepare_display(n_m, meshRect, detail_level, strain_diag)) {
+
+			//return PhysQ made from the cpu version of coarse mesh display.
+			return PhysQ(pdisplay_vec_vc_vec, physicalQuantity, (VEC3REP_)pMesh->vec3rep);
+		}
+		break;
+
+	case MESHDISPLAY_STRAINODIAG:
+
+		if (prepare_display(n_m, meshRect, detail_level, strain_odiag)) {
+
+			//return PhysQ made from the cpu version of coarse mesh display.
+			return PhysQ(pdisplay_vec_vc_vec, physicalQuantity, (VEC3REP_)pMesh->vec3rep);
 		}
 		break;
 
@@ -299,11 +342,11 @@ PhysQ MeshCUDA::FetchOnScreenPhysicalQuantity(double detail_level)
 
 		if (pMesh->is_paramvar_scalar((PARAM_)pMesh->displayedParamVar)) {
 
-			return PhysQ(reinterpret_cast<VEC<double>*>(s_scaling), pMesh->displayedPhysicalQuantity);
+			return PhysQ(reinterpret_cast<VEC<double>*>(s_scaling), physicalQuantity);
 		}
 		else {
 
-			return PhysQ(reinterpret_cast<VEC<DBL3>*>(s_scaling), pMesh->displayedPhysicalQuantity, (VEC3REP_)pMesh->vec3rep);
+			return PhysQ(reinterpret_cast<VEC<DBL3>*>(s_scaling), physicalQuantity, (VEC3REP_)pMesh->vec3rep);
 		}
 	}
 		break;
@@ -311,20 +354,619 @@ PhysQ MeshCUDA::FetchOnScreenPhysicalQuantity(double detail_level)
 	case MESHDISPLAY_ROUGHNESS:
 		if (pMesh->IsModuleSet(MOD_ROUGHNESS)) {
 
-			return PhysQ(&reinterpret_cast<Roughness*>(pMesh->pMod(MOD_ROUGHNESS))->GetRoughness(), pMesh->displayedPhysicalQuantity);
+			return PhysQ(&reinterpret_cast<Roughness*>(pMesh->pMod(MOD_ROUGHNESS))->GetRoughness(), physicalQuantity);
 		}
 		break;
 
 	case MESHDISPLAY_CUSTOM_VEC:
-		return PhysQ(&pMesh->displayVEC_VEC, pMesh->displayedPhysicalQuantity, (VEC3REP_)pMesh->vec3rep);
+		return PhysQ(&pMesh->displayVEC_VEC, physicalQuantity, (VEC3REP_)pMesh->vec3rep);
 		break;
 
 	case MESHDISPLAY_CUSTOM_SCA:
-		return PhysQ(&pMesh->displayVEC_SCA, pMesh->displayedPhysicalQuantity);
+		return PhysQ(&pMesh->displayVEC_SCA, physicalQuantity);
 		break;
 	}
 	
-	return PhysQ(meshRect, h, pMesh->displayedPhysicalQuantity);
+	return PhysQ(meshRect, h, physicalQuantity);
+}
+
+//save the quantity currently displayed on screen in an ovf2 file using the specified format
+BError MeshCUDA::SaveOnScreenPhysicalQuantity(string fileName, string ovf2_dataType)
+{
+	BError error(__FUNCTION__);
+
+	OVF2 ovf2;
+
+	switch (pMesh->displayedPhysicalQuantity) {
+
+	case MESHDISPLAY_NONE:
+		return error(BERROR_COULDNOTSAVEFILE);
+		break;
+
+	case MESHDISPLAY_MAGNETIZATION:
+
+		//pdisplay_vec_vc_vec at maximum resolution
+		prepare_display(n, meshRect, h.mindim(), M);
+		error = ovf2.Write_OVF2_VEC(fileName, *pdisplay_vec_vc_vec, ovf2_dataType);
+		break;
+
+	case MESHDISPLAY_MAGNETIZATION2:
+
+		//pdisplay_vec_vc_vec at maximum resolution
+		prepare_display(n, meshRect, h.mindim(), M2);
+		error = ovf2.Write_OVF2_VEC(fileName, *pdisplay_vec_vc_vec, ovf2_dataType);
+		break;
+
+	case MESHDISPLAY_MAGNETIZATION12:
+
+		//pdisplay_vec_vc_vec at maximum resolution
+		prepare_display(n, meshRect, h.mindim(), M);
+		error = ovf2.Write_OVF2_VEC(fileName, *pdisplay_vec_vc_vec, ovf2_dataType);
+		break;
+
+	case MESHDISPLAY_EFFECTIVEFIELD:
+
+		//pdisplay_vec_vec at maximum resolution
+		prepare_display(n, meshRect, h.mindim(), Heff);
+		error = ovf2.Write_OVF2_VEC(fileName, *pdisplay_vec_vec, ovf2_dataType);
+		break;
+
+	case MESHDISPLAY_EFFECTIVEFIELD2:
+
+		//pdisplay_vec_vec at maximum resolution
+		prepare_display(n, meshRect, h.mindim(), Heff2);
+		error = ovf2.Write_OVF2_VEC(fileName, *pdisplay_vec_vec, ovf2_dataType);
+		break;
+
+	case MESHDISPLAY_EFFECTIVEFIELD12:
+
+		//pdisplay_vec_vec at maximum resolution
+		prepare_display(n, meshRect, h.mindim(), Heff);
+		error = ovf2.Write_OVF2_VEC(fileName, *pdisplay_vec_vec, ovf2_dataType);
+		break;
+
+	case MESHDISPLAY_CURRDENSITY:
+
+		//pdisplay_vec_vc_vec at maximum resolution
+		if (pMesh->IsModuleSet(MOD_TRANSPORT)) {
+
+			prepare_display(n_e, meshRect, h_e.mindim(), reinterpret_cast<Transport*>(pMesh->pMod(MOD_TRANSPORT))->GetChargeCurrentCUDA());
+			error = ovf2.Write_OVF2_VEC(fileName, *pdisplay_vec_vc_vec, ovf2_dataType);
+		}
+		break;
+
+	case MESHDISPLAY_VOLTAGE:
+
+		//pdisplay_vec_vc_sca at maximum resolution
+		prepare_display(n_e, meshRect, h_e.mindim(), V);
+		error = ovf2.Write_OVF2_SCA(fileName, *pdisplay_vec_vc_sca, ovf2_dataType);
+		break;
+
+	case MESHDISPLAY_ELCOND:
+
+		//pdisplay_vec_vc_sca at maximum resolution
+		prepare_display(n_e, meshRect, h_e.mindim(), elC);
+		error = ovf2.Write_OVF2_SCA(fileName, *pdisplay_vec_vc_sca, ovf2_dataType);
+		break;
+
+	case MESHDISPLAY_SACCUM:
+
+		//pdisplay_vec_vc_vec at maximum resolution
+		prepare_display(n_e, meshRect, h_e.mindim(), S);
+		error = ovf2.Write_OVF2_VEC(fileName, *pdisplay_vec_vc_vec, ovf2_dataType);
+		break;
+
+	case MESHDISPLAY_JSX:
+
+		//pdisplay_vec_vec at maximum resolution
+		if (pMesh->IsModuleSet(MOD_TRANSPORT)) {
+
+			prepare_display(n_e, meshRect, h_e.mindim(), reinterpret_cast<Transport*>(pMesh->pMod(MOD_TRANSPORT))->GetSpinCurrentCUDA(0));
+			error = ovf2.Write_OVF2_VEC(fileName, *pdisplay_vec_vec, ovf2_dataType);
+		}
+		break;
+
+	case MESHDISPLAY_JSY:
+
+		//pdisplay_vec_vec at maximum resolution
+		if (pMesh->IsModuleSet(MOD_TRANSPORT)) {
+
+			prepare_display(n_e, meshRect, h_e.mindim(), reinterpret_cast<Transport*>(pMesh->pMod(MOD_TRANSPORT))->GetSpinCurrentCUDA(1));
+			error = ovf2.Write_OVF2_VEC(fileName, *pdisplay_vec_vec, ovf2_dataType);
+		}
+		break;
+
+	case MESHDISPLAY_JSZ:
+
+		//pdisplay_vec_vec at maximum resolution
+		if (pMesh->IsModuleSet(MOD_TRANSPORT)) {
+
+			prepare_display(n_e, meshRect, h_e.mindim(), reinterpret_cast<Transport*>(pMesh->pMod(MOD_TRANSPORT))->GetSpinCurrentCUDA(2));
+			error = ovf2.Write_OVF2_VEC(fileName, *pdisplay_vec_vec, ovf2_dataType);
+		}
+		break;
+
+	case MESHDISPLAY_TS:
+
+		//pdisplay_vec_vec at maixmum resolution
+		if (pMesh->IsModuleSet(MOD_TRANSPORT)) {
+
+			prepare_display(n, meshRect, h.mindim(), reinterpret_cast<Transport*>(pMesh->pMod(MOD_TRANSPORT))->GetSpinTorqueCUDA());
+			error = ovf2.Write_OVF2_VEC(fileName, *pdisplay_vec_vec, ovf2_dataType);
+		}
+		break;
+
+	case MESHDISPLAY_TSI:
+
+		//pdisplay_vec_vec at maixmum resolution
+		if (pMesh->pSMesh->IsSuperMeshModuleSet(MODS_STRANSPORT) && pMesh->IsModuleSet(MOD_TRANSPORT)) {
+
+			prepare_display(n, meshRect, h.mindim(), reinterpret_cast<STransport*>(pMesh->pSMesh->pSMod(MODS_STRANSPORT))->GetInterfacialSpinTorqueCUDA(reinterpret_cast<Transport*>(pMesh->pMod(MOD_TRANSPORT))));
+			error = ovf2.Write_OVF2_VEC(fileName, *pdisplay_vec_vec, ovf2_dataType);
+		}
+		break;
+
+	case MESHDISPLAY_TEMPERATURE:
+
+		//pdisplay_vec_vc_sca at maximum resolution
+		prepare_display(n_t, meshRect, h_t.mindim(), Temp);
+		error = ovf2.Write_OVF2_SCA(fileName, *pdisplay_vec_vc_sca, ovf2_dataType);
+		break;
+
+	case MESHDISPLAY_UDISP:
+
+		//pdisplay_vec_vc_sca at maximum resolution
+		prepare_display(n_m, meshRect, h_m.mindim(), u_disp);
+		error = ovf2.Write_OVF2_VEC(fileName, *pdisplay_vec_vc_vec, ovf2_dataType);
+		break;
+
+	case MESHDISPLAY_STRAINDIAG:
+
+		//pdisplay_vec_vc_sca at maximum resolution
+		prepare_display(n_m, meshRect, h_m.mindim(), strain_diag);
+		error = ovf2.Write_OVF2_VEC(fileName, *pdisplay_vec_vc_vec, ovf2_dataType);
+		break;
+
+	case MESHDISPLAY_STRAINODIAG:
+
+		//pdisplay_vec_vc_sca at maximum resolution
+		prepare_display(n_m, meshRect, h_m.mindim(), strain_odiag);
+		error = ovf2.Write_OVF2_VEC(fileName, *pdisplay_vec_vc_vec, ovf2_dataType);
+		break;
+
+	case MESHDISPLAY_ROUGHNESS:
+		if (pMesh->IsModuleSet(MOD_ROUGHNESS)) {
+
+			error = ovf2.Write_OVF2_SCA(fileName, reinterpret_cast<Roughness*>(pMesh->pMod(MOD_ROUGHNESS))->GetRoughness(), ovf2_dataType);
+		}
+		break;
+
+	case MESHDISPLAY_CUSTOM_VEC:
+		error = ovf2.Write_OVF2_VEC(fileName, pMesh->displayVEC_VEC, ovf2_dataType);
+		break;
+
+	case MESHDISPLAY_CUSTOM_SCA:
+		error = ovf2.Write_OVF2_SCA(fileName, pMesh->displayVEC_SCA, ovf2_dataType);
+		break;
+	}
+
+	return error;
+}
+
+//Before calling a run of GetDisplayedMeshValue, make sure to call PrepareDisplayedMeshValue : this calculates and stores in displayVEC storage and quantities which don't have memory allocated directly, but require computation and temporary storage.
+void MeshCUDA::PrepareDisplayedMeshValue(void)
+{
+	switch (pMesh->displayedPhysicalQuantity) {
+
+	case MESHDISPLAY_MAGNETIZATION:
+
+		//pdisplay_vec_vc_vec at maximum resolution
+		prepare_display(n, meshRect, h.mindim(), M);
+		break;
+
+	case MESHDISPLAY_MAGNETIZATION2:
+
+		//pdisplay_vec_vc_vec at maximum resolution
+		prepare_display(n, meshRect, h.mindim(), M2);
+		break;
+
+	case MESHDISPLAY_MAGNETIZATION12:
+
+		//pdisplay_vec_vc_vec at maximum resolution
+		prepare_display(n, meshRect, h.mindim(), M);
+		break;
+
+	case MESHDISPLAY_EFFECTIVEFIELD:
+
+		//pdisplay_vec_vec at maximum resolution
+		prepare_display(n, meshRect, h.mindim(), Heff);
+		break;
+
+	case MESHDISPLAY_EFFECTIVEFIELD2:
+
+		//pdisplay_vec_vec at maximum resolution
+		prepare_display(n, meshRect, h.mindim(), Heff2);
+		break;
+
+	case MESHDISPLAY_EFFECTIVEFIELD12:
+
+		//pdisplay_vec_vec at maximum resolution
+		prepare_display(n, meshRect, h.mindim(), Heff);
+		break;
+
+	case MESHDISPLAY_CURRDENSITY:
+
+		//pdisplay_vec_vc_vec at maximum resolution
+		if (pMesh->IsModuleSet(MOD_TRANSPORT)) {
+
+			prepare_display(n_e, meshRect, h_e.mindim(), reinterpret_cast<Transport*>(pMesh->pMod(MOD_TRANSPORT))->GetChargeCurrentCUDA());
+		}
+		break;
+
+	case MESHDISPLAY_VOLTAGE:
+
+		//pdisplay_vec_vc_sca at maximum resolution
+		prepare_display(n_e, meshRect, h_e.mindim(), V);
+		break;
+
+	case MESHDISPLAY_ELCOND:
+
+		//pdisplay_vec_vc_sca at maximum resolution
+		prepare_display(n_e, meshRect, h_e.mindim(), elC);
+		break;
+
+	case MESHDISPLAY_SACCUM:
+
+		//pdisplay_vec_vc_vec at maximum resolution
+		prepare_display(n_e, meshRect, h_e.mindim(), S);
+		break;
+
+	case MESHDISPLAY_JSX:
+
+		//pdisplay_vec_vec at maximum resolution
+		if (pMesh->IsModuleSet(MOD_TRANSPORT)) {
+
+			prepare_display(n_e, meshRect, h_e.mindim(), reinterpret_cast<Transport*>(pMesh->pMod(MOD_TRANSPORT))->GetSpinCurrentCUDA(0));
+		}
+		break;
+
+	case MESHDISPLAY_JSY:
+
+		//pdisplay_vec_vec at maximum resolution
+		if (pMesh->IsModuleSet(MOD_TRANSPORT)) {
+
+			prepare_display(n_e, meshRect, h_e.mindim(), reinterpret_cast<Transport*>(pMesh->pMod(MOD_TRANSPORT))->GetSpinCurrentCUDA(1));
+		}
+		break;
+
+	case MESHDISPLAY_JSZ:
+
+		//pdisplay_vec_vec at maximum resolution
+		if (pMesh->IsModuleSet(MOD_TRANSPORT)) {
+
+			prepare_display(n_e, meshRect, h_e.mindim(), reinterpret_cast<Transport*>(pMesh->pMod(MOD_TRANSPORT))->GetSpinCurrentCUDA(2));
+		}
+		break;
+
+	case MESHDISPLAY_TS:
+
+		//pdisplay_vec_vec at maixmum resolution
+		if (pMesh->IsModuleSet(MOD_TRANSPORT)) {
+
+			prepare_display(n, meshRect, h.mindim(), reinterpret_cast<Transport*>(pMesh->pMod(MOD_TRANSPORT))->GetSpinTorqueCUDA());
+		}
+		break;
+
+	case MESHDISPLAY_TSI:
+
+		//pdisplay_vec_vec at maixmum resolution
+		if (pMesh->pSMesh->IsSuperMeshModuleSet(MODS_STRANSPORT) && pMesh->IsModuleSet(MOD_TRANSPORT)) {
+
+			prepare_display(n, meshRect, h.mindim(), reinterpret_cast<STransport*>(pMesh->pSMesh->pSMod(MODS_STRANSPORT))->GetInterfacialSpinTorqueCUDA(reinterpret_cast<Transport*>(pMesh->pMod(MOD_TRANSPORT))));
+		}
+		break;
+
+	case MESHDISPLAY_TEMPERATURE:
+
+		//pdisplay_vec_vc_sca at maximum resolution
+		prepare_display(n_t, meshRect, h_t.mindim(), Temp);
+		break;
+
+	case MESHDISPLAY_UDISP:
+
+		//pdisplay_vec_vc_vec at maximum resolution
+		prepare_display(n_m, meshRect, h_m.mindim(), u_disp);
+		break;
+
+	case MESHDISPLAY_STRAINDIAG:
+
+		//pdisplay_vec_vc_vec at maximum resolution
+		prepare_display(n_m, meshRect, h_m.mindim(), strain_diag);
+		break;
+
+	case MESHDISPLAY_STRAINODIAG:
+
+		//pdisplay_vec_vc_vec at maximum resolution
+		prepare_display(n_m, meshRect, h_m.mindim(), strain_odiag);
+		break;
+	}
+}
+
+//return value of currently displayed mesh quantity at the given absolute position; the value is read directly from the storage VEC, not from the displayed PhysQ.
+//Return an Any as the displayed quantity could be either a scalar or a vector.
+Any MeshCUDA::GetDisplayedMeshValue(DBL3 abs_pos)
+{
+	DBL3 rel_pos = abs_pos - meshRect.s;
+
+	switch (pMesh->displayedPhysicalQuantity) {
+
+	case MESHDISPLAY_NONE:
+		return (double)0.0;
+		break;
+
+	case MESHDISPLAY_MAGNETIZATION:
+		return (*pdisplay_vec_vc_vec)[rel_pos];
+		break;
+
+	case MESHDISPLAY_MAGNETIZATION2:
+		return (*pdisplay_vec_vc_vec)[rel_pos];
+		break;
+
+	case MESHDISPLAY_MAGNETIZATION12:
+		return (*pdisplay_vec_vc_vec)[rel_pos];
+		break;
+
+	case MESHDISPLAY_EFFECTIVEFIELD:
+		return (*pdisplay_vec_vec)[rel_pos];
+		break;
+
+	case MESHDISPLAY_EFFECTIVEFIELD2:
+		return (*pdisplay_vec_vec)[rel_pos];
+		break;
+
+	case MESHDISPLAY_EFFECTIVEFIELD12:
+		return (*pdisplay_vec_vec)[rel_pos];
+		break;
+
+	case MESHDISPLAY_CURRDENSITY:
+		return (*pdisplay_vec_vc_vec)[rel_pos];
+		break;
+
+	case MESHDISPLAY_VOLTAGE:
+		return (*pdisplay_vec_vc_sca)[rel_pos];
+		break;
+
+	case MESHDISPLAY_ELCOND:
+		return (*pdisplay_vec_vc_sca)[rel_pos];
+		break;
+
+	case MESHDISPLAY_SACCUM:
+		return (*pdisplay_vec_vc_vec)[rel_pos];
+		break;
+
+	case MESHDISPLAY_JSX:
+	case MESHDISPLAY_JSY:
+	case MESHDISPLAY_JSZ:
+		return (*pdisplay_vec_vec)[rel_pos];
+		break;
+
+	case MESHDISPLAY_TS:
+	case MESHDISPLAY_TSI:
+		return (*pdisplay_vec_vec)[rel_pos];
+		break;
+
+	case MESHDISPLAY_TEMPERATURE:
+		return (*pdisplay_vec_vc_sca)[rel_pos];
+		break;
+
+	case MESHDISPLAY_UDISP:
+		return (*pdisplay_vec_vc_vec)[rel_pos];
+		break;
+
+	case MESHDISPLAY_STRAINDIAG:
+		return (*pdisplay_vec_vc_vec)[rel_pos];
+		break;
+
+	case MESHDISPLAY_STRAINODIAG:
+		return (*pdisplay_vec_vc_vec)[rel_pos];
+		break;
+
+	case MESHDISPLAY_PARAMVAR:
+		return pMesh->get_meshparam_s_scaling_value((PARAM_)pMesh->displayedParamVar, rel_pos, pMesh->pSMesh->GetStageTime());
+		break;
+
+	case MESHDISPLAY_ROUGHNESS:
+		return reinterpret_cast<Roughness*>(pMesh->pMod(MOD_ROUGHNESS))->GetRoughness()[rel_pos];
+		break;
+
+	case MESHDISPLAY_CUSTOM_VEC:
+		if (pMesh->displayVEC_VEC.linear_size()) return pMesh->displayVEC_VEC[rel_pos];
+		break;
+
+	case MESHDISPLAY_CUSTOM_SCA:
+		if (pMesh->displayVEC_SCA.linear_size()) return pMesh->displayVEC_SCA[rel_pos];
+		break;
+	}
+
+	return (double)0.0;
+}
+
+//return average value for currently displayed mesh quantity in the given relative rectangle
+Any MeshCUDA::GetAverageDisplayedMeshValue(Rect rel_rect)
+{
+	switch (pMesh->displayedPhysicalQuantity) {
+
+	case MESHDISPLAY_NONE:
+		break;
+
+	case MESHDISPLAY_MAGNETIZATION:
+
+		//pdisplay_vec_vc_vec at maximum resolution
+		prepare_display(n, meshRect, h.mindim(), M);
+		return pdisplay_vec_vc_vec->average_nonempty_omp(rel_rect);
+		break;
+
+	case MESHDISPLAY_MAGNETIZATION2:
+
+		//pdisplay_vec_vc_vec at maximum resolution
+		prepare_display(n, meshRect, h.mindim(), M2);
+		return pdisplay_vec_vc_vec->average_nonempty_omp(rel_rect);
+		break;
+
+	case MESHDISPLAY_MAGNETIZATION12:
+
+		//pdisplay_vec_vc_vec at maximum resolution
+		prepare_display(n, meshRect, h.mindim(), M);
+		return pdisplay_vec_vc_vec->average_nonempty_omp(rel_rect);
+		break;
+
+	case MESHDISPLAY_EFFECTIVEFIELD:
+
+		//pdisplay_vec_vec at maximum resolution
+		prepare_display(n, meshRect, h.mindim(), Heff);
+		return pdisplay_vec_vec->average_nonempty_omp(rel_rect);
+		break;
+
+	case MESHDISPLAY_EFFECTIVEFIELD2:
+
+		//pdisplay_vec_vec at maximum resolution
+		prepare_display(n, meshRect, h.mindim(), Heff2);
+		return pdisplay_vec_vec->average_nonempty_omp(rel_rect);
+		break;
+
+	case MESHDISPLAY_EFFECTIVEFIELD12:
+
+		//pdisplay_vec_vec at maximum resolution
+		prepare_display(n, meshRect, h.mindim(), Heff);
+		return pdisplay_vec_vec->average_nonempty_omp(rel_rect);
+		break;
+
+	case MESHDISPLAY_CURRDENSITY:
+
+		//pdisplay_vec_vc_vec at maximum resolution
+		if (pMesh->IsModuleSet(MOD_TRANSPORT)) {
+
+			prepare_display(n_e, meshRect, h_e.mindim(), reinterpret_cast<Transport*>(pMesh->pMod(MOD_TRANSPORT))->GetChargeCurrentCUDA());
+			return pdisplay_vec_vc_vec->average_nonempty_omp(rel_rect);
+		}
+		break;
+
+	case MESHDISPLAY_VOLTAGE:
+
+		//pdisplay_vec_vc_sca at maximum resolution
+		prepare_display(n_e, meshRect, h_e.mindim(), V);
+		return pdisplay_vec_vc_sca->average_nonempty_omp(rel_rect);
+		break;
+
+	case MESHDISPLAY_ELCOND:
+
+		//pdisplay_vec_vc_sca at maximum resolution
+		prepare_display(n_e, meshRect, h_e.mindim(), elC);
+		return pdisplay_vec_vc_sca->average_nonempty_omp(rel_rect);
+		break;
+
+	case MESHDISPLAY_SACCUM:
+
+		//pdisplay_vec_vc_vec at maximum resolution
+		prepare_display(n_e, meshRect, h_e.mindim(), S);
+		return pdisplay_vec_vc_vec->average_nonempty_omp(rel_rect);
+		break;
+
+	case MESHDISPLAY_JSX:
+
+		//pdisplay_vec_vec at maximum resolution
+		if (pMesh->IsModuleSet(MOD_TRANSPORT)) {
+
+			prepare_display(n_e, meshRect, h_e.mindim(), reinterpret_cast<Transport*>(pMesh->pMod(MOD_TRANSPORT))->GetSpinCurrentCUDA(0));
+			return pdisplay_vec_vec->average_nonempty_omp(rel_rect);
+		}
+		break;
+
+	case MESHDISPLAY_JSY:
+
+		//pdisplay_vec_vec at maximum resolution
+		if (pMesh->IsModuleSet(MOD_TRANSPORT)) {
+
+			prepare_display(n_e, meshRect, h_e.mindim(), reinterpret_cast<Transport*>(pMesh->pMod(MOD_TRANSPORT))->GetSpinCurrentCUDA(1));
+			return pdisplay_vec_vec->average_nonempty_omp(rel_rect);
+		}
+		break;
+
+	case MESHDISPLAY_JSZ:
+
+		//pdisplay_vec_vec at maximum resolution
+		if (pMesh->IsModuleSet(MOD_TRANSPORT)) {
+
+			prepare_display(n_e, meshRect, h_e.mindim(), reinterpret_cast<Transport*>(pMesh->pMod(MOD_TRANSPORT))->GetSpinCurrentCUDA(2));
+			return pdisplay_vec_vec->average_nonempty_omp(rel_rect);
+		}
+		break;
+
+	case MESHDISPLAY_TS:
+
+		//pdisplay_vec_vec at maixmum resolution
+		if (pMesh->IsModuleSet(MOD_TRANSPORT)) {
+
+			prepare_display(n, meshRect, h.mindim(), reinterpret_cast<Transport*>(pMesh->pMod(MOD_TRANSPORT))->GetSpinTorqueCUDA());
+			return pdisplay_vec_vec->average_nonempty_omp(rel_rect);
+		}
+		break;
+
+	case MESHDISPLAY_TSI:
+
+		//pdisplay_vec_vec at maixmum resolution
+		if (pMesh->pSMesh->IsSuperMeshModuleSet(MODS_STRANSPORT) && pMesh->IsModuleSet(MOD_TRANSPORT)) {
+
+			prepare_display(n, meshRect, h.mindim(), reinterpret_cast<STransport*>(pMesh->pSMesh->pSMod(MODS_STRANSPORT))->GetInterfacialSpinTorqueCUDA(reinterpret_cast<Transport*>(pMesh->pMod(MOD_TRANSPORT))));
+			return pdisplay_vec_vec->average_nonempty_omp(rel_rect);
+		}
+		break;
+
+	case MESHDISPLAY_TEMPERATURE:
+
+		//pdisplay_vec_vc_sca at maximum resolution
+		prepare_display(n_t, meshRect, h_t.mindim(), Temp);
+		return pdisplay_vec_vc_sca->average_nonempty_omp(rel_rect);
+		break;
+
+	case MESHDISPLAY_UDISP:
+
+		//pdisplay_vec_vc_sca at maximum resolution
+		prepare_display(n_m, meshRect, h_m.mindim(), u_disp);
+		return pdisplay_vec_vc_vec->average_nonempty_omp(rel_rect);
+		break;
+
+	case MESHDISPLAY_STRAINDIAG:
+
+		//pdisplay_vec_vc_sca at maximum resolution
+		prepare_display(n_m, meshRect, h_m.mindim(), strain_diag);
+		return pdisplay_vec_vc_vec->average_nonempty_omp(rel_rect);
+		break;
+
+	case MESHDISPLAY_STRAINODIAG:
+
+		//pdisplay_vec_vc_sca at maximum resolution
+		prepare_display(n_m, meshRect, h_m.mindim(), strain_odiag);
+		return pdisplay_vec_vc_vec->average_nonempty_omp(rel_rect);
+		break;
+
+	case MESHDISPLAY_ROUGHNESS:
+		if (pMesh->IsModuleSet(MOD_ROUGHNESS)) {
+
+			return reinterpret_cast<Roughness*>(pMesh->pMod(MOD_ROUGHNESS))->GetRoughness().average_nonempty_omp(rel_rect);
+		}
+		break;
+
+	case MESHDISPLAY_CUSTOM_VEC:
+		return pMesh->displayVEC_VEC.average_nonempty_omp(rel_rect);
+		break;
+
+	case MESHDISPLAY_CUSTOM_SCA:
+		return pMesh->displayVEC_SCA.average_nonempty_omp(rel_rect);
+		break;
+	}
+
+	return (double)0.0;
 }
 
 //----------------------------------- MESH INFO GET/SET METHODS
@@ -357,6 +999,12 @@ bool MeshCUDA::EComputation_Enabled(void)
 bool MeshCUDA::TComputation_Enabled(void)
 {
 	return pMesh->Temp.linear_size();
+}
+
+//mechanical computation enabled
+bool MeshCUDA::MechComputation_Enabled(void)
+{
+	return pMesh->u_disp.linear_size();
 }
 
 bool MeshCUDA::GInterface_Enabled(void)
@@ -437,7 +1085,7 @@ int MeshCUDA::GetStageStep(void)
 //copy all meshes controlled using change_mesh_shape from cpu to gpu versions
 BError MeshCUDA::copy_shapes_from_cpu(void)
 {
-	//Primary quantities are : M, elC, Temp
+	//Primary quantities are : M, elC, Temp, u_disp
 
 	BError error(__FUNCTION__);
 	
@@ -454,6 +1102,9 @@ BError MeshCUDA::copy_shapes_from_cpu(void)
 
 	//3. shape temperature
 	if (Temp()->size_cpu().dim()) success &= Temp()->set_from_cpuvec(pMesh->Temp);
+
+	//4. shape mechanical properties
+	if (u_disp()->size_cpu().dim()) success &= u_disp()->set_from_cpuvec(pMesh->u_disp);
 
 	//if adding any more here also remember to edit change_mesh_shape
 
@@ -482,6 +1133,9 @@ BError MeshCUDA::copy_shapes_to_cpu(void)
 
 	//3. shape temperature
 	if (Temp()->size_cpu().dim()) success &= Temp()->set_cpuvec(pMesh->Temp);
+
+	//4. shape mechanical properties
+	if (u_disp()->size_cpu().dim()) success &= u_disp()->set_cpuvec(pMesh->u_disp);
 
 	//if adding any more here also remember to edit change_mesh_shape
 

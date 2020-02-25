@@ -10,8 +10,8 @@ AFMesh::AFMesh(SuperMesh *pSMesh_) :
 		{
 			//Mesh members
 			VINFO(meshType), VINFO(meshIdCounter), VINFO(meshId),
-			VINFO(displayedPhysicalQuantity), VINFO(vec3rep), VINFO(displayedParamVar),
-			VINFO(meshRect), VINFO(n), VINFO(h), VINFO(n_e), VINFO(h_e), VINFO(n_t), VINFO(h_t),
+			VINFO(displayedPhysicalQuantity), VINFO(displayedBackgroundPhysicalQuantity), VINFO(vec3rep), VINFO(displayedParamVar),
+			VINFO(meshRect), VINFO(n), VINFO(h), VINFO(n_e), VINFO(h_e), VINFO(n_t), VINFO(h_t), VINFO(n_m), VINFO(h_m),
 			VINFO(M), VINFO(M2), VINFO(pMod),
 			//Members in this derived class
 			VINFO(move_mesh_trigger), VINFO(skyShift), VINFO(exchange_couple_to_meshes),
@@ -20,7 +20,7 @@ AFMesh::AFMesh(SuperMesh *pSMesh_) :
 			VINFO(base_temperature), VINFO(T_equation), VINFO(thermCond), VINFO(density), VINFO(shc), VINFO(cT), VINFO(Q)
 		},
 		{
-			IINFO(Demag_N), IINFO(Demag), IINFO(SDemag_Demag), IINFO(Exch_6ngbr_Neu), IINFO(DMExchange), IINFO(iDMExchange),
+			IINFO(Demag_N), IINFO(Demag), IINFO(SDemag_Demag), IINFO(Exch_6ngbr_Neu), IINFO(DMExchange), IINFO(iDMExchange), IINFO(SurfExchange),
 			IINFO(Zeeman),
 			IINFO(Anisotropy_Uniaxial), IINFO(Anisotropy_Cubic),
 			IINFO(Roughness)
@@ -34,8 +34,8 @@ AFMesh::AFMesh(Rect meshRect_, DBL3 h_, SuperMesh *pSMesh_) :
 		{
 			//Mesh members
 			VINFO(meshType), VINFO(meshIdCounter), VINFO(meshId),
-			VINFO(displayedPhysicalQuantity), VINFO(vec3rep), VINFO(displayedParamVar),
-			VINFO(meshRect), VINFO(n), VINFO(h), VINFO(n_e), VINFO(h_e), VINFO(n_t), VINFO(h_t),
+			VINFO(displayedPhysicalQuantity), VINFO(displayedBackgroundPhysicalQuantity), VINFO(vec3rep), VINFO(displayedParamVar),
+			VINFO(meshRect), VINFO(n), VINFO(h), VINFO(n_e), VINFO(h_e), VINFO(n_t), VINFO(h_t), VINFO(n_m), VINFO(h_m),
 			VINFO(M), VINFO(M2), VINFO(pMod),
 			//Members in this derived class
 			VINFO(move_mesh_trigger), VINFO(skyShift), VINFO(exchange_couple_to_meshes),
@@ -44,7 +44,7 @@ AFMesh::AFMesh(Rect meshRect_, DBL3 h_, SuperMesh *pSMesh_) :
 			VINFO(base_temperature), VINFO(T_equation), VINFO(thermCond), VINFO(density), VINFO(shc), VINFO(cT), VINFO(Q)
 		},
 		{
-			IINFO(Demag_N), IINFO(Demag), IINFO(SDemag_Demag), IINFO(Exch_6ngbr_Neu), IINFO(DMExchange), IINFO(iDMExchange),
+			IINFO(Demag_N), IINFO(Demag), IINFO(SDemag_Demag), IINFO(Exch_6ngbr_Neu), IINFO(DMExchange), IINFO(iDMExchange), IINFO(SurfExchange),
 			IINFO(Zeeman),
 			IINFO(Anisotropy_Uniaxial), IINFO(Anisotropy_Cubic),
 			IINFO(Roughness)
@@ -59,6 +59,7 @@ AFMesh::AFMesh(Rect meshRect_, DBL3 h_, SuperMesh *pSMesh_) :
 	h = h_;
 	h_e = h_;
 	h_t = h_;
+	h_m = h_;
 
 	error_on_create = UpdateConfiguration(UPDATECONFIG_FORCEUPDATE);
 

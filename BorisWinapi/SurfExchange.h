@@ -10,11 +10,10 @@
 using namespace std;
 
 class Mesh;
-class FMesh;
 
 #ifdef MODULE_SURFEXCHANGE
 
-//Exchange modules can only be used in a ferromagnetic mesh
+//Exchange modules can only be used in a magnetic mesh
 
 class SurfExchange :
 	public Modules,
@@ -28,10 +27,10 @@ class SurfExchange :
 private:
 
 	//pointer to mesh object holding this effective field module
-	FMesh* pMesh;
+	Mesh* pMesh;
 
-	//ferromagnetic meshes in surface exchange coupling with the mesh holding this module, top and bottom
-	vector<FMesh*> pMesh_Bot, pMesh_Top;
+	//magnetic meshes in surface exchange coupling with the mesh holding this module, top and bottom
+	vector<Mesh*> pMesh_Bot, pMesh_Top;
 
 	//number of coupled cells (either top or bottom) in this mesh
 	int coupled_cells = 0;

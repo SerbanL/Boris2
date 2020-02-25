@@ -77,7 +77,7 @@ bool VEC<VType>::generate_random(DBL3 new_h, Rect new_rect, DBL2 range, unsigned
 
 	BorisRand prng(seed);
 
-#pragma omp parallel for
+	//Don't use parallel loop here, otherwise the random values will be different on different computers with differing number of cores
 	for (int idx = 0; idx < n.dim(); idx++) {
 
 		quantity[idx] = VType(prng.rand() * (range.j - range.i) + range.i);
@@ -102,7 +102,7 @@ bool VEC<double>::generate_jagged(DBL3 new_h, Rect new_rect, DBL2 range, double 
 	int cells_spacing_y = round(spacing / h.y);
 
 	//first generate random peak values at given square spacing
-#pragma omp parallel for
+	//Don't use parallel loop here, otherwise the random values will be different on different computers with differing number of cores
 	for (int j = 0; j < n.y; j += cells_spacing_y) {
 
 		for (int i = 0; i < n.x; i += cells_spacing_x) {

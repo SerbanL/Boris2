@@ -46,7 +46,7 @@ private:
 private:
 
 	//for given skyrmion identifying rectangle obtain an index in skyTrack_Shift - either an existing entry if skyRect origin found in skyTrack_Id, else make a new entry
-	int Get_skyTrack_index(Rect skyRect);
+	int Get_skyTrack_index(Rect skyRect, Rect maxRectAbsolute);
 
 public:
 
@@ -79,7 +79,7 @@ public:
 
 #if COMPILECUDA == 1
 	//as for the non-CUDA version but also pass in M.n.dim() and M.h so we don't have to get them from gpu memory
-	DBL2 Get_skyshiftCUDA(size_t size, DBL3 h, cu_obj<cuVEC_VC<cuReal3>>& M, Rect skyRect);
+	DBL2 Get_skyshiftCUDA(size_t size, DBL3 h, Rect M_rect, cu_obj<cuVEC_VC<cuReal3>>& M, Rect skyRect);
 
 	DBL4 Get_skypos_diametersCUDA(size_t size, DBL3 h, Rect M_rect, cu_obj<cuVEC_VC<cuReal3>>& M, Rect skyRect);
 #endif

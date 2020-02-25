@@ -9,7 +9,7 @@
 #include "Mesh_Ferromagnetic.h"
 #include "Mesh_FerromagneticCUDA.h"
 
-SurfExchangeCUDA::SurfExchangeCUDA(FMeshCUDA* pMeshCUDA_, SurfExchange* pSurfExch_)
+SurfExchangeCUDA::SurfExchangeCUDA(MeshCUDA* pMeshCUDA_, SurfExchange* pSurfExch_)
 	: ModulesCUDA()
 {
 	pMeshCUDA = pMeshCUDA_;

@@ -28,6 +28,10 @@ vector_lut<DatumConfig> SimulationSharedData::saveDataList;
 
 string SimulationSharedData::directory;
 
+DBL2 SimulationSharedData::displayTransparency = DBL2(0.7, 1.0);
+DBL2 SimulationSharedData::displayThresholds = DBL2();
+int SimulationSharedData::displayThresholdTrigger = (int)VEC3REP_Z;
+
 bool SimulationSharedData::shape_change_individual = false;
 
 bool SimulationSharedData::static_transport_solver = false;
@@ -106,6 +110,9 @@ SimulationSharedData::SimulationSharedData(bool called_from_Simulation)
 		meshDisplay_unit.push_back("A/ms", MESHDISPLAY_TS);
 		meshDisplay_unit.push_back("A/ms", MESHDISPLAY_TSI);
 		meshDisplay_unit.push_back("K", MESHDISPLAY_TEMPERATURE);
+		meshDisplay_unit.push_back("m", MESHDISPLAY_UDISP);
+		meshDisplay_unit.push_back("", MESHDISPLAY_STRAINDIAG);
+		meshDisplay_unit.push_back("", MESHDISPLAY_STRAINODIAG);
 		meshDisplay_unit.push_back("", MESHDISPLAY_PARAMVAR);
 		meshDisplay_unit.push_back("", MESHDISPLAY_ROUGHNESS);
 		meshDisplay_unit.push_back("", MESHDISPLAY_CUSTOM_VEC);
@@ -131,6 +138,9 @@ SimulationSharedData::SimulationSharedData(bool called_from_Simulation)
 		displayHandles.push_back("Ts", MESHDISPLAY_TS);
 		displayHandles.push_back("Tsi", MESHDISPLAY_TSI);
 		displayHandles.push_back("Temp", MESHDISPLAY_TEMPERATURE);
+		displayHandles.push_back("u", MESHDISPLAY_UDISP);
+		displayHandles.push_back("S_d", MESHDISPLAY_STRAINDIAG);
+		displayHandles.push_back("S_od", MESHDISPLAY_STRAINODIAG);
 		displayHandles.push_back("ParamVar", MESHDISPLAY_PARAMVAR);
 		displayHandles.push_back("Roughness", MESHDISPLAY_ROUGHNESS);
 		displayHandles.push_back("Cust_V", MESHDISPLAY_CUSTOM_VEC);
@@ -144,6 +154,7 @@ SimulationSharedData::SimulationSharedData(bool called_from_Simulation)
 		exclusiveModules.storeset(MOD_EXCHANGE6NGBR, MOD_DMEXCHANGE, MOD_IDMEXCHANGE);
 		exclusiveModules.storeset(MOD_SURFEXCHANGE);
 		exclusiveModules.storeset(MOD_ANIUNI, MOD_ANICUBI);
+		exclusiveModules.storeset(MOD_MELASTIC);
 		exclusiveModules.storeset(MOD_ZEEMAN);
 		exclusiveModules.storeset(MOD_TRANSPORT);
 		exclusiveModules.storeset(MOD_HEAT);
@@ -168,14 +179,14 @@ SimulationSharedData::SimulationSharedData(bool called_from_Simulation)
 			MOD_DEMAG_N, MOD_DEMAG, MOD_SDEMAG_DEMAG,
 			MOD_EXCHANGE6NGBR, MOD_DMEXCHANGE, MOD_IDMEXCHANGE, MOD_SURFEXCHANGE, 
 			MOD_ZEEMAN,
-			MOD_ANIUNI, MOD_ANICUBI,
+			MOD_ANIUNI, MOD_ANICUBI, MOD_MELASTIC,
 			MOD_TRANSPORT,
 			MOD_HEAT, 
 			MOD_SOTFIELD, MOD_ROUGHNESS), MESH_FERROMAGNETIC);
 
 		modules_for_meshtype.push_back(make_vector(
 			MOD_DEMAG_N, MOD_DEMAG, MOD_SDEMAG_DEMAG,
-			MOD_EXCHANGE6NGBR, MOD_DMEXCHANGE, MOD_IDMEXCHANGE, 
+			MOD_EXCHANGE6NGBR, MOD_DMEXCHANGE, MOD_IDMEXCHANGE, MOD_SURFEXCHANGE,
 			MOD_ZEEMAN, 
 			MOD_ANIUNI, MOD_ANICUBI, 
 			MOD_ROUGHNESS), MESH_ANTIFERROMAGNETIC);
@@ -193,7 +204,7 @@ SimulationSharedData::SimulationSharedData(bool called_from_Simulation)
 		meshAllowedDisplay.push_back(make_vector(
 			MESHDISPLAY_NONE, MESHDISPLAY_MAGNETIZATION, MESHDISPLAY_EFFECTIVEFIELD, 
 			MESHDISPLAY_CURRDENSITY, MESHDISPLAY_VOLTAGE, MESHDISPLAY_ELCOND, MESHDISPLAY_SACCUM, MESHDISPLAY_JSX, MESHDISPLAY_JSY, MESHDISPLAY_JSZ, MESHDISPLAY_TS, MESHDISPLAY_TSI,
-			MESHDISPLAY_TEMPERATURE, MESHDISPLAY_PARAMVAR, MESHDISPLAY_ROUGHNESS, MESHDISPLAY_CUSTOM_VEC, MESHDISPLAY_CUSTOM_SCA), MESH_FERROMAGNETIC);
+			MESHDISPLAY_TEMPERATURE, MESHDISPLAY_UDISP, MESHDISPLAY_STRAINDIAG, MESHDISPLAY_STRAINODIAG, MESHDISPLAY_PARAMVAR, MESHDISPLAY_ROUGHNESS, MESHDISPLAY_CUSTOM_VEC, MESHDISPLAY_CUSTOM_SCA), MESH_FERROMAGNETIC);
 
 		meshAllowedDisplay.push_back(make_vector(
 			MESHDISPLAY_NONE, MESHDISPLAY_MAGNETIZATION, MESHDISPLAY_MAGNETIZATION2, MESHDISPLAY_MAGNETIZATION12, MESHDISPLAY_EFFECTIVEFIELD, MESHDISPLAY_EFFECTIVEFIELD2, MESHDISPLAY_EFFECTIVEFIELD12,
@@ -216,7 +227,7 @@ SimulationSharedData::SimulationSharedData(bool called_from_Simulation)
 		//assign possible parameters for each mesh type
 		params_for_meshtype.push_back(make_vector(PARAM_GREL, PARAM_GDAMPING, PARAM_MS, PARAM_DEMAGXY, PARAM_A, PARAM_D, PARAM_J1, PARAM_J2, PARAM_K1, PARAM_K2, PARAM_EA1, PARAM_EA2, PARAM_TC, PARAM_MUB, PARAM_SUSREL, PARAM_SUSPREL, PARAM_HA,
 			PARAM_ELC, PARAM_AMR, PARAM_P, PARAM_BETA, PARAM_DE, PARAM_NDENSITY, PARAM_SHA, PARAM_FLSOT, PARAM_BETAD, PARAM_LSF, PARAM_LEX, PARAM_LPH, PARAM_GI, PARAM_GMIX, PARAM_PUMPEFF, PARAM_CPUMP_EFF, PARAM_THE_EFF, PARAM_TSEFF, PARAM_TSIEFF,
-			PARAM_THERMCOND, PARAM_DENSITY, PARAM_SHC, PARAM_T, PARAM_Q), MESH_FERROMAGNETIC);
+			PARAM_THERMCOND, PARAM_DENSITY, PARAM_MECOEFF, PARAM_YOUNGSMOD, PARAM_POISSONRATIO, PARAM_SHC, PARAM_T, PARAM_Q), MESH_FERROMAGNETIC);
 
 		params_for_meshtype.push_back(make_vector(PARAM_GREL_AFM, PARAM_GDAMPING_AFM, PARAM_MS_AFM, PARAM_DEMAGXY, PARAM_A_AFM, PARAM_A12, PARAM_D_AFM, PARAM_K1, PARAM_K2, PARAM_EA1, PARAM_EA2, PARAM_HA), MESH_ANTIFERROMAGNETIC);
 

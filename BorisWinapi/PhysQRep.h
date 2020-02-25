@@ -209,18 +209,18 @@ private:
 
 	//calculate representation for a component and return minimum and maximum values (either of components, or magnitude), as well as maximum magnitude value - for VEC<DBL3> / VEC_VC<DBL3>
 	template <typename VECType>
-	DBL2 CalculateRepresentation_VEC(VECType* pQ, PhysQRepComponent& physQRepComponent);
+	DBL2 CalculateRepresentation_VEC(VECType* pQ, PhysQRepComponent& physQRepComponent, double maxTransparency, DBL2 displayThresholds, int displayThresholdTrigger);
 
 	//dual VEC display mode
 	template <typename VECType>
-	DBL2 CalculateRepresentation_VEC(VECType* pQ, VECType* pQ2, PhysQRepComponent& physQRepComponent);
+	DBL2 CalculateRepresentation_VEC(VECType* pQ, VECType* pQ2, PhysQRepComponent& physQRepComponent, double maxTransparency, DBL2 displayThresholds, int displayThresholdTrigger);
 
 	//after global minimum and maximum found use this to make adjustments - scaling changes
 	void AdjustMagnitude_VEC(PhysQRepComponent& physQRepComponent, DBL2 minmax);
 
 	//calculate representation for a component and return minimum and maximum values - for VEC<double> / VEC_VC<double>
 	template <typename VECType>
-	DBL2 CalculateRepresentation_SCA(VECType* pQ, PhysQRepComponent& physQRepComponent);
+	DBL2 CalculateRepresentation_SCA(VECType* pQ, PhysQRepComponent& physQRepComponent, double maxTransparency, DBL2 displayThresholds);
 
 	//after global minimum and maximum found use this to make adjustments - coloring changes
 	void AdjustMagnitude_SCA(PhysQRepComponent& physQRepComponent, DBL2 minmax);

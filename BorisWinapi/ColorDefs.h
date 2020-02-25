@@ -15,6 +15,7 @@
 #define POPUPCOLOR D2D1::ColorF(11119017, 0.7)			//Gray: rgba = (255/255, 255/255, 255/255, 1). Thus single rgba value as UINT32 : 13882323 = 256^2 * 255 + 256 * 255 + 255
 #define HOVERINFOCOLOR D2D1::ColorF(D2D1::ColorF::Blue)
 #define ONCOLOR D2D1::ColorF(D2D1::ColorF::Green)
+#define ALTONCOLOR D2D1::ColorF(D2D1::ColorF::Orange)
 #define OFFCOLOR D2D1::ColorF(D2D1::ColorF::Red)
 #define UNAVAILABLECOLOR D2D1::ColorF(D2D1::ColorF::Gray)
 #define UNAVAILABLECOLOR2 D2D1::ColorF(D2D1::ColorF::DarkGray)

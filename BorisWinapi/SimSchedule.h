@@ -1,6 +1,7 @@
 #pragma once
 
 #include "BorisLib.h"
+#include "SimSharedData.h"
 
 using namespace std;
 
@@ -16,7 +17,9 @@ enum SS_ {
 	SS_VEQUATION, SS_VEQUATIONSEQ,
 	SS_IEQUATION, SS_IEQUATIONSEQ,
 	SS_TEQUATION, SS_TEQUATIONSEQ,
-	SS_QEQUATION, SS_QEQUATIONSEQ
+	SS_QEQUATION, SS_QEQUATIONSEQ,
+	SS_HFIELDFILE, SS_VFILE, SS_IFILE, SS_TFILE, SS_QFILE,
+	SS_TSIGPOLAR
 };
 
 //simulation stage stop conditions -> add new values at the end to keep older simulation files compatible
@@ -26,7 +29,7 @@ enum STOP_ { STOP_NOSTOP = 0, STOP_ITERATIONS, STOP_MXH, STOP_TIME, STOP_DMDT };
 enum DSAVE_ { DSAVE_NONE = 0, DSAVE_STAGE, DSAVE_STEP, DSAVE_ITER, DSAVE_TIME };
 
 struct StageDescriptor : 
-	public ProgramState<StageDescriptor, tuple<int, string, bool>, tuple<> >
+	public ProgramState<StageDescriptor, tuple<int, string, bool, bool>, tuple<> >
 {
 
 	int stageSetting;
@@ -34,24 +37,29 @@ struct StageDescriptor :
 
 	bool meshless;
 
-	StageDescriptor(int stageSetting_, string unit_ = "", bool meshless_ = true) :
-		ProgramStateNames(this, { VINFO(stageSetting), VINFO(unit) , VINFO(meshless) }, {})
+	//we don't want to display some stage descriptors : set this to true in that case
+	bool invisible = false;
+
+	StageDescriptor(int stageSetting_, string unit_ = "", bool meshless_ = true, bool invisible_ = false) :
+		ProgramStateNames(this, { VINFO(stageSetting), VINFO(unit) , VINFO(meshless), VINFO(invisible) }, {})
 	{
 		stageSetting = stageSetting_;
 		unit = unit_;
 		meshless = meshless_;
+		invisible = invisible_;
 	}
 
 	StageDescriptor(void) :
-		ProgramStateNames(this, { VINFO(stageSetting), VINFO(unit) , VINFO(meshless) }, {})
+		ProgramStateNames(this, { VINFO(stageSetting), VINFO(unit) , VINFO(meshless), VINFO(invisible) }, {})
 	{
 		stageSetting = SS_RELAX;
 		unit = "";
 		meshless = true;
+		invisible = false;
 	}
 
 	StageDescriptor(const StageDescriptor& copyThis) :
-		ProgramStateNames(this, { VINFO(stageSetting), VINFO(unit) , VINFO(meshless) }, {})
+		ProgramStateNames(this, { VINFO(stageSetting), VINFO(unit) , VINFO(meshless), VINFO(invisible) }, {})
 	{
 		*this = copyThis;
 	}
@@ -61,6 +69,7 @@ struct StageDescriptor :
 		stageSetting = copyThis.stageSetting;
 		unit = copyThis.unit;
 		meshless = copyThis.meshless;
+		invisible = copyThis.invisible;
 		return *this;
 	}
 
@@ -145,6 +154,7 @@ struct DataSaveDescriptor :
 };
 
 class StageConfig :
+	public SimulationSharedData,
 	public ProgramState<StageConfig, tuple< StageDescriptor, Any, StageStopDescriptor, Any, string, DataSaveDescriptor, Any >, tuple<> >
 {
 
@@ -166,6 +176,30 @@ private:
 	Any dsaveValue;
 
 private:
+
+	//----------------------------------- VALUES SETTERS : SPECIAL
+
+	//depending on the set stage type, we may need to adjust the stage value depending on other settings
+	void adjust_setValue_specials(void)
+	{
+		//depending on the set stage type, we may need to adjust the stage value depending on the set stop value
+		if ((SS_)stageDescriptor.stageSetting == SS_HFIELDFILE) {
+
+			FILESEQ3 fseq = setValue;
+			fseq.set_filename_and_time_resolution(directory, fseq.get_fileName(), (double)stopValue);
+			setValue = fseq;
+		}
+
+		else if ((SS_)stageDescriptor.stageSetting == SS_VFILE ||
+			(SS_)stageDescriptor.stageSetting == SS_IFILE ||
+			(SS_)stageDescriptor.stageSetting == SS_TFILE ||
+			(SS_)stageDescriptor.stageSetting == SS_QFILE) {
+
+			FILESEQ fseq = setValue;
+			fseq.set_filename_and_time_resolution(directory, fseq.get_fileName(), (double)stopValue);
+			setValue = fseq;
+		}
+	}
 
 public:
 
@@ -224,16 +258,48 @@ public:
 		return *this;
 	}
 
+	//like the assignment operator but only keep the general stage data, not stage value
+	void copy_stage_general_data(const StageConfig& copyThis)
+	{
+		stopDescriptor = copyThis.stopDescriptor;
+		stopValue = copyThis.stopValue;
+		meshName = copyThis.meshName;
+		dataSaveDescriptor = copyThis.dataSaveDescriptor;
+		dsaveValue = copyThis.dsaveValue;
+	}
+
 	~StageConfig() { }
 
 	//implement pure virtual method from ProgramState
-	void RepairObjectState(void) {}
+	void RepairObjectState(void) { adjust_setValue_specials(); }
 
 	//----------------------------------- VALUES SETTERS - Call after constructor
 
-	template <typename Type> void set_value(Type value) { setValue = Any(); setValue = value; }
-	template <typename Type> void set_stopvalue(Type value) { stopValue = Any(); stopValue = value; }
-	template <typename Type> void set_dsavevalue(Type value) { dsaveValue = Any(); dsaveValue = value; }
+	template <typename Type> 
+	void set_value(Type value) 
+	{ 
+		setValue = Any(); 
+		setValue = value;
+		
+		adjust_setValue_specials();
+	}
+	
+	template <typename Type> 
+	void set_stopvalue(Type value)
+	{ 
+		stopValue = Any(); 
+		stopValue = value; 
+
+		//for certain stage types we need to adjust them when we change the stopvalue
+		adjust_setValue_specials();
+	}
+
+	template <typename Type> 
+	void set_dsavevalue(Type value) 
+	{ 
+		dsaveValue = Any(); 
+		dsaveValue = value; 
+	}
 
 	void clear_stopvalue(void) { stopValue = Any(); }
 	void clear_stagevalue(void) { setValue = Any(); }
@@ -310,6 +376,16 @@ public:
 			StringSequence sequence = setValue;
 			return sequence.number_of_steps();
 		}
+		else if (setValue.is_type(typeid(FILESEQ))) {
+
+			FILESEQ sequence = setValue;
+			return sequence.number_of_steps();
+		}
+		else if (setValue.is_type(typeid(FILESEQ3))) {
+
+			FILESEQ3 sequence = setValue;
+			return sequence.number_of_steps();
+		}
 
 		//cannot determine number of stage steps
 		else return 0;
@@ -319,11 +395,34 @@ public:
 
 	void set_meshname(string meshName) { if(!stageDescriptor.meshless) this->meshName = meshName; }
 
-	void set_stagevalue_fromcomponents(const vector<string>& value_components) { if(!setValue.IsNull()) setValue.convert_string(value_components, stageDescriptor.unit); }
+	void set_stagevalue_fromcomponents(const vector<string>& value_components) 
+	{ 
+		if (!setValue.IsNull()) {
 
-	void set_stagevalue_fromstring(const string& value_string) { if(!setValue.IsNull()) setValue.convert_string(value_string, stageDescriptor.unit); }
+			setValue.convert_string(value_components, stageDescriptor.unit);
+			adjust_setValue_specials();
+		}
+	}
 
-	void set_stopvalue_fromstring(const string& value_string) { if(!stopValue.IsNull()) stopValue.convert_string(value_string, stopDescriptor.unit); }
+	void set_stagevalue_fromstring(const string& value_string) 
+	{ 
+		if (!setValue.IsNull()) {
+
+			setValue.convert_string(value_string, stageDescriptor.unit);
+			adjust_setValue_specials();
+		}
+	}
+
+	void set_stopvalue_fromstring(const string& value_string) 
+	{ 
+		if (!stopValue.IsNull()) {
+
+			stopValue.convert_string(value_string, stopDescriptor.unit);
+			
+			//for certain stage types we need to adjust them when we change the stopvalue
+			adjust_setValue_specials();
+		}
+	}
 
 	void set_dsavevalue_fromstring(const string& value_string) { if(!dsaveValue.IsNull()) dsaveValue.convert_string(value_string, dataSaveDescriptor.unit); }
 
@@ -393,6 +492,18 @@ public:
 
 			StringSequence sequence = setValue;
 			std::string value = sequence.value(step);
+			return *reinterpret_cast<Type*>(&value);
+		}
+		else if (setValue.is_type(typeid(FILESEQ))) {
+
+			FILESEQ sequence = setValue;
+			double value = sequence.value(step);
+			return *reinterpret_cast<Type*>(&value);
+		}
+		else if (setValue.is_type(typeid(FILESEQ3))) {
+
+			FILESEQ3 sequence = setValue;
+			DBL3 value = sequence.value(step);
 			return *reinterpret_cast<Type*>(&value);
 		}
 

@@ -22,6 +22,9 @@ enum VEC3REP_ { VEC3REP_FULL = 0, VEC3REP_X, VEC3REP_Y, VEC3REP_Z, VEC3REP_DIREC
 #define DETAILNOTCHUP 1.25
 #define DETAILNOTCHDN 0.75
 
+//aim to draw in maximum this amount of time (ms). If this is exceeded then try to reduce level of detail.
+#define MAXDRAWTIMEALLOWED_MS	250
+
 //default detail level in order to fit a maximum number of cells along maximum mesh dimensions
 #define DETAILDEFAULTCELLS	30
 

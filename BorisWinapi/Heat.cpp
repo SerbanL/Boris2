@@ -22,7 +22,6 @@ Heat::Heat(Mesh *pMesh_) :
 
 	error_on_create = UpdateConfiguration(UPDATECONFIG_FORCEUPDATE);
 
-
 	//-------------------------- Is CUDA currently enabled?
 
 	//If cuda is enabled we also need to make the cuda module version

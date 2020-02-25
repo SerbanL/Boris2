@@ -21,7 +21,10 @@ BorisMeshWindow::~BorisMeshWindow()
 	SafeRelease(&pMeshWinTextFormat);
 }
 
-void BorisMeshWindow::DrawWindow(void) {
+void BorisMeshWindow::DrawWindow(void) 
+{
+	//time the time it takes to draw the mesh window : this can be slow if there's too much detail, so in that case will want to reduce the amount of detail.
+	DWORD start_time_ms = GetTickCount();
 
 	//clear the drawing area
 	pBG->FillRectangle(spaceRect, bgrndColor);
@@ -52,6 +55,9 @@ void BorisMeshWindow::DrawWindow(void) {
 
 	//draw resizing frame if needed
 	DrawResizingFrame();
+
+	//too slow to be of any use : reduce amount of detail : this should speed up the drawing next time.
+	if (GetTickCount() - start_time_ms > MAXDRAWTIMEALLOWED_MS) ZoomNotchUp();
 }
 
 ActionOutcome BorisMeshWindow::NewMessage(AC_ aCode, INT2 mouse, string data) {

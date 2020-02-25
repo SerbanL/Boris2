@@ -112,6 +112,15 @@ public:
 	//mass density (kg/m^3) - default for permalloy
 	MatPCUDA<cuBReal, cuBReal>* pdensity;
 
+	//Magneto-elastic coefficients (J/m^3) - default for Ni
+	MatPCUDA<cuReal2, cuBReal>* pMEc;
+
+	//Young's modulus (Pa) - default for permalloy
+	MatPCUDA<cuBReal, cuBReal>* pYm ;
+
+	//Poisson's ratio (unitless) - default for permalloy
+	MatPCUDA<cuBReal, cuBReal>* pPr;
+
 	//specific heat capacity (J/kgK) - default for permalloy
 	MatPCUDA<cuBReal, cuBReal>* pshc;
 
@@ -149,6 +158,18 @@ public:
 
 	//temperature calculated by Heat module
 	cuVEC_VC<cuBReal>* pTemp;
+
+	//mechanical displacement vectors - on n_m, h_m mesh
+	cuVEC_VC<cuReal3>* pu_disp;
+
+	//strain tensor (symmetric):
+	//diagonal and off-diagonal components - on n_m, h_m mesh
+	//xx, yy, zz
+	cuVEC_VC<cuReal3>* pstrain_diag;
+	//yz, xz, xy
+	cuVEC_VC<cuReal3>* pstrain_odiag;
+
+	//-----
 
 	//Managed cuda mesh pointer so all mesh data can be accessed in device code
 	ManagedDiffEq_CommonCUDA* pcuDiffEq;

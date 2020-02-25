@@ -4,6 +4,7 @@
 #ifdef MODULE_SURFEXCHANGE
 
 #include "Mesh_Ferromagnetic.h"
+#include "Mesh_AntiFerromagnetic.h"
 #include "SuperMesh.h"
 #include "MeshParamsControl.h"
 
@@ -15,7 +16,7 @@ SurfExchange::SurfExchange(Mesh *pMesh_) :
 	Modules(),
 	ProgramStateNames(this, {}, {})
 {
-	pMesh = dynamic_cast<FMesh*>(pMesh_);
+	pMesh = pMesh_;
 
 	//-------------------------- Is CUDA currently enabled?
 
@@ -34,15 +35,25 @@ BError SurfExchange::Initialize(void)
 {
 	BError error(CLASS_STR(SurfExchange));
 
-	//Need to identify all ferromagnetic meshes participating in surface exchange coupling with this module:
-	//1. Must be ferromagnetic and have the SurfExchange module set
+	//Need to identify all magnetic meshes participating in surface exchange coupling with this module:
+	//1. Must be ferromagnetic or anti-ferromagnetic and have the SurfExchange module set -> this results in surface exchange coupling (or equivalently exchange bias - same formula, except in this case you should have J2 set to zero)
 	//2. Must overlap in the x-y plane only with the mesh holding this module (either top or bottom) but not along z (i.e. mesh rectangles must not intersect)
-	//3. No other ferromagnetic meshes can be sandwiched in between - there could be other types meshes in between of course (e.g. insulator, conductive layers etc).
+	//3. No other magnetic meshes can be sandwiched in between - there could be other types of non-magnetic meshes in between of course (e.g. insulator, conductive layers etc).
 
 	SuperMesh* pSMesh = pMesh->pSMesh;
 
 	pMesh_Bot.clear();
 	pMesh_Top.clear();
+
+	coupled_cells = 0;
+
+	if (pMesh->GetMeshType() == MESH_ANTIFERROMAGNETIC) {
+
+		//antiferromagnetic meshes can have a SurfExchange module, but in this case it's just a dummy module to enable exchange biasing of a neighboring ferromagnetic mesh
+		//we don't include a surface exchange field in the antiferromagnetic mesh
+		initialized = true;
+		return error;
+	}
 
 	//---
 
@@ -52,7 +63,7 @@ BError SurfExchange::Initialize(void)
 		//xy_intersection must have z coordinates set to zero, but set them here to be sure
 		xy_intersection.s.z = 0; xy_intersection.e.z = 0;
 
-		//check all meshes to find a ferromagnetic mesh with SurfExchange modules set, which intersects in the xy plane with xy_intersection, and has z coordinates between z1 and z2.
+		//check all meshes to find a magnetic mesh with SurfExchange modules set, which intersects in the xy plane with xy_intersection, and has z coordinates between z1 and z2.
 		//return index of found mesh, else return -1 (-1 return means candidate being checked - which generated this call - is valid, else a new, better candidate has been found.
 		for (int idx = 0; idx < pSMesh->size(); idx++) {
 
@@ -110,7 +121,8 @@ BError SurfExchange::Initialize(void)
 
 						if (check_idx < 0) {
 
-							pMesh_Top.push_back(dynamic_cast<FMesh*>((*pSMesh)[coupledmesh_idx]));
+							pMesh_Top.push_back((*pSMesh)[coupledmesh_idx]);
+							
 							break;
 						}
 						else {
@@ -141,7 +153,8 @@ BError SurfExchange::Initialize(void)
 
 						if (check_idx < 0) {
 
-							pMesh_Bot.push_back(dynamic_cast<FMesh*>((*pSMesh)[coupledmesh_idx]));
+							pMesh_Bot.push_back((*pSMesh)[coupledmesh_idx]);
+							
 							break;
 						}
 						else {
@@ -158,8 +171,6 @@ BError SurfExchange::Initialize(void)
 	}
 
 	//count number of coupled cells (either top or bottom) in this mesh
-
-	coupled_cells = 0;
 
 	INT3 n = pMesh->n;
 
@@ -250,7 +261,7 @@ BError SurfExchange::MakeCUDAModule(void)
 
 		//Note : it is posible pMeshCUDA has not been allocated yet, but this module has been created whilst cuda is switched on. This will happen when a new mesh is being made which adds this module by default.
 		//In this case, after the mesh has been fully made, it will call SwitchCUDAState on the mesh, which in turn will call this SwitchCUDAState method; then pMeshCUDA will not be nullptr and we can make the cuda module version
-		pModuleCUDA = new SurfExchangeCUDA(dynamic_cast<FMeshCUDA*>(pMesh->pMeshCUDA), this);
+		pModuleCUDA = new SurfExchangeCUDA(pMesh->pMeshCUDA, this);
 		error = pModuleCUDA->Error_On_Create();
 	}
 
@@ -261,6 +272,10 @@ BError SurfExchange::MakeCUDAModule(void)
 
 double SurfExchange::UpdateField(void)
 {
+	//antiferromagnetic meshes can have a SurfExchange module, but in this case it's just a dummy module to enable exchange biasing of a neighboring ferromagnetic mesh
+	//we don't include a surface exchange field in the antiferromagnetic mesh
+	if (pMesh->GetMeshType() == MESH_ANTIFERROMAGNETIC) return 0.0;
+
 	double energy = 0;
 
 	INT3 n = pMesh->n;
@@ -268,6 +283,7 @@ double SurfExchange::UpdateField(void)
 	//thickness of layer - SurfExchange applies for layers in the xy plane
 	double thickness = pMesh->meshRect.e.z - pMesh->meshRect.s.z;
 
+	//FM to FM coupling at the top
 	if (pMesh_Top.size()) {
 
 		//surface exchange coupling at the top
@@ -292,12 +308,6 @@ double SurfExchange::UpdateField(void)
 					//can't couple to an empty cell
 					if (IsZ(pMesh_Top[mesh_idx]->M[cell_rel_pos].norm())) continue;
 
-					//coupling layer thickness
-					double thickness_top = pMesh_Top[mesh_idx]->meshRect.e.z - pMesh_Top[mesh_idx]->meshRect.s.z;
-
-					//effective thickness for the coupling equation
-					double thickness_eff = 2 * thickness * thickness_top / (thickness + thickness_top);
-
 					double J1 = pMesh_Top[mesh_idx]->J1;
 					double J2 = pMesh_Top[mesh_idx]->J2;
 					pMesh_Top[mesh_idx]->update_parameters_atposition(cell_rel_pos, pMesh_Top[mesh_idx]->J1, J1, pMesh_Top[mesh_idx]->J2, J2);
@@ -309,16 +319,18 @@ double SurfExchange::UpdateField(void)
 					double dot_prod = m_i * m_j;
 
 					//total surface exchange field in coupling cells, including bilinear and biquadratic terms
-					DBL3 Hsurfexh = (m_j / (MU0 * Ms * thickness_eff)) * (J1 + 2 * J2 * dot_prod);
+					DBL3 Hsurfexh = (m_j / (MU0 * Ms * thickness)) * (J1 + 2 * J2 * dot_prod);
 
-					pMesh->Heff[cell_idx] += Hsurfexh;
+					//couple all cells through the layer thickness : the surface exchange field is applicable for effectively 2D layers, but the simulation allows 3D meshes.
+					for (int k = 0; k < n.z; k++) pMesh->Heff[i + j * n.x + k * n.x*n.y] += Hsurfexh;
 
-					energy += (-1 * J1 - 2 * J2 * dot_prod) * dot_prod / thickness_eff;
+					energy += (-1 * J1 - 2 * J2 * dot_prod) * dot_prod / thickness;
 				}
 			}
 		}
 	}
 
+	//FM to FM coupling at the bottom
 	if (pMesh_Bot.size()) {
 
 		//surface exchange coupling at the bottom
@@ -345,12 +357,6 @@ double SurfExchange::UpdateField(void)
 					//can't couple to an empty cell
 					if (IsZ(pMesh_Bot[mesh_idx]->M[cell_rel_pos].norm())) continue;
 
-					//coupling layer thickness
-					double thickness_bot = pMesh_Bot[mesh_idx]->meshRect.e.z - pMesh_Bot[mesh_idx]->meshRect.s.z;
-
-					//effective thickness for the coupling equation
-					double thickness_eff = 2 * thickness * thickness_bot / (thickness + thickness_bot);
-
 					//yes, then get value of magnetization used in coupling with current cell at cell_idx
 					DBL3 m_j = pMesh_Bot[mesh_idx]->M[cell_rel_pos].normalized();
 					DBL3 m_i = pMesh->M[cell_idx] / Ms;
@@ -358,20 +364,21 @@ double SurfExchange::UpdateField(void)
 					double dot_prod = m_i * m_j;
 
 					//total surface exchange field in coupling cells, including bilinear and biquadratic terms
-					DBL3 Hsurfexh = (m_j / (MU0 * Ms * thickness_eff)) * (J1 + 2 * J2 * dot_prod);
+					DBL3 Hsurfexh = (m_j / (MU0 * Ms * thickness)) * (J1 + 2 * J2 * dot_prod);
 
-					pMesh->Heff[cell_idx] += Hsurfexh;
+					//couple all cells through the layer thickness : the surface exchange field is applicable for effectively 2D layers, but the simulation allows 3D meshes.
+					for (int k = 0; k < n.z; k++) pMesh->Heff[i + j * n.x + k * n.x*n.y] += Hsurfexh;
 
-					energy += (-1 * J1 - 2 * J2 * dot_prod) * dot_prod / thickness_eff;
+					energy += (-1 * J1 - 2 * J2 * dot_prod) * dot_prod / thickness;
 				}
 			}
 		}
 	}
 
-	if (coupled_cells)
-		this->energy = energy / coupled_cells;
-	else
-		this->energy = 0.0;
+	if (coupled_cells) energy /= coupled_cells;
+	else energy = 0.0;
+
+	this->energy = energy;
 
 	return this->energy;
 }

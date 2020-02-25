@@ -9,21 +9,26 @@ FMesh::FMesh(SuperMesh *pSMesh_) :
 	ProgramStateNames(this,
 		{
 			//Mesh members
-			VINFO(meshType), VINFO(meshIdCounter), VINFO(meshId), VINFO(displayedPhysicalQuantity), VINFO(vec3rep), VINFO(displayedParamVar), VINFO(meshRect), VINFO(n), VINFO(h), VINFO(n_e), VINFO(h_e), VINFO(n_t), VINFO(h_t), VINFO(M), VINFO(V), VINFO(S), VINFO(elC), VINFO(Temp), VINFO(pMod),
+			VINFO(meshType), VINFO(meshIdCounter), VINFO(meshId), 
+			VINFO(displayedPhysicalQuantity), VINFO(displayedBackgroundPhysicalQuantity), VINFO(vec3rep), VINFO(displayedParamVar), 
+			VINFO(meshRect), VINFO(n), VINFO(h), VINFO(n_e), VINFO(h_e), VINFO(n_t), VINFO(h_t), VINFO(n_m), VINFO(h_m), VINFO(M), VINFO(V), VINFO(S), VINFO(elC), VINFO(Temp), VINFO(u_disp), VINFO(strain_diag), VINFO(strain_odiag), VINFO(pMod),
 			//Members in this derived class
 			VINFO(move_mesh_trigger), VINFO(skyShift), VINFO(exchange_couple_to_meshes),
 			//Material Parameters
 			VINFO(grel), VINFO(alpha), VINFO(Ms), VINFO(Nxy), VINFO(A), VINFO(D), VINFO(J1), VINFO(J2), VINFO(K1), VINFO(K2), VINFO(mcanis_ea1), VINFO(mcanis_ea2), VINFO(susrel), VINFO(susprel), VINFO(cHA),
 			VINFO(elecCond), VINFO(amrPercentage), VINFO(P), VINFO(beta), VINFO(De), VINFO(n_density), VINFO(SHA), VINFO(flSOT), VINFO(betaD), VINFO(l_sf), VINFO(l_ex), VINFO(l_ph), VINFO(Gi), VINFO(Gmix), 
 			VINFO(ts_eff), VINFO(tsi_eff), VINFO(pump_eff), VINFO(cpump_eff), VINFO(the_eff),
-			VINFO(base_temperature), VINFO(T_equation), VINFO(T_Curie), VINFO(T_Curie_material), VINFO(atomic_moment), VINFO(thermCond), VINFO(density), VINFO(shc), VINFO(cT), VINFO(Q)
+			VINFO(base_temperature), VINFO(T_equation), VINFO(T_Curie), VINFO(T_Curie_material), VINFO(atomic_moment), VINFO(thermCond), VINFO(density), VINFO(MEc), VINFO(Ym), VINFO(Pr), VINFO(shc), VINFO(cT), VINFO(Q),
+			
+			//OBSOLETE - must keep to allow older simulation files to load if they have these defined
+			VINFO(lambda), VINFO(cTsig), VINFO(dTsig)
 		},
 		{
 			//Modules Implementations
 			IINFO(Demag_N), IINFO(Demag), IINFO(SDemag_Demag),
 			IINFO(Exch_6ngbr_Neu), IINFO(DMExchange), IINFO(iDMExchange), IINFO(SurfExchange),
 			IINFO(Zeeman),
-			IINFO(Anisotropy_Uniaxial), IINFO(Anisotropy_Cubic),
+			IINFO(Anisotropy_Uniaxial), IINFO(Anisotropy_Cubic), IINFO(MElastic),
 			IINFO(Transport), IINFO(Heat),
 			IINFO(SOTField), 
 			IINFO(Roughness)
@@ -36,21 +41,26 @@ FMesh::FMesh(Rect meshRect_, DBL3 h_, SuperMesh *pSMesh_) :
 	ProgramStateNames(this,
 		{
 			//Mesh members
-			VINFO(meshType), VINFO(meshIdCounter), VINFO(meshId), VINFO(displayedPhysicalQuantity), VINFO(vec3rep), VINFO(displayedParamVar), VINFO(meshRect), VINFO(n), VINFO(h), VINFO(n_e), VINFO(h_e), VINFO(n_t), VINFO(h_t), VINFO(M), VINFO(V), VINFO(S), VINFO(elC), VINFO(Temp), VINFO(pMod),
+			VINFO(meshType), VINFO(meshIdCounter), VINFO(meshId), 
+			VINFO(displayedPhysicalQuantity), VINFO(displayedBackgroundPhysicalQuantity), VINFO(vec3rep), VINFO(displayedParamVar), 
+			VINFO(meshRect), VINFO(n), VINFO(h), VINFO(n_e), VINFO(h_e), VINFO(n_t), VINFO(h_t), VINFO(n_m), VINFO(h_m), VINFO(M), VINFO(V), VINFO(S), VINFO(elC), VINFO(Temp), VINFO(u_disp), VINFO(strain_diag), VINFO(strain_odiag), VINFO(pMod),
 			//Members in this derived class
 			VINFO(move_mesh_trigger), VINFO(skyShift), VINFO(exchange_couple_to_meshes),
 			//Material Parameters
 			VINFO(grel), VINFO(alpha), VINFO(Ms), VINFO(Nxy), VINFO(A), VINFO(D), VINFO(J1), VINFO(J2), VINFO(K1), VINFO(K2), VINFO(mcanis_ea1), VINFO(mcanis_ea2), VINFO(susrel), VINFO(susprel), VINFO(cHA),
 			VINFO(elecCond), VINFO(amrPercentage), VINFO(P), VINFO(beta), VINFO(De), VINFO(n_density), VINFO(SHA), VINFO(flSOT), VINFO(betaD), VINFO(l_sf), VINFO(l_ex), VINFO(l_ph), VINFO(Gi), VINFO(Gmix),
 			VINFO(ts_eff), VINFO(tsi_eff), VINFO(pump_eff), VINFO(cpump_eff), VINFO(the_eff),
-			VINFO(base_temperature), VINFO(T_equation), VINFO(T_Curie), VINFO(T_Curie_material), VINFO(atomic_moment), VINFO(thermCond), VINFO(density), VINFO(shc), VINFO(cT), VINFO(Q)
+			VINFO(base_temperature), VINFO(T_equation), VINFO(T_Curie), VINFO(T_Curie_material), VINFO(atomic_moment), VINFO(thermCond), VINFO(density), VINFO(MEc), VINFO(Ym), VINFO(Pr), VINFO(shc), VINFO(cT), VINFO(Q),
+			
+			//OBSOLETE - must keep to allow older simulation files to load if they have these defined
+			VINFO(lambda), VINFO(cTsig), VINFO(dTsig)
 		},
 		{
 			//Modules Implementations
 			IINFO(Demag_N), IINFO(Demag), IINFO(SDemag_Demag),
 			IINFO(Exch_6ngbr_Neu), IINFO(DMExchange), IINFO(iDMExchange), IINFO(SurfExchange),
 			IINFO(Zeeman),
-			IINFO(Anisotropy_Uniaxial), IINFO(Anisotropy_Cubic),
+			IINFO(Anisotropy_Uniaxial), IINFO(Anisotropy_Cubic), IINFO(MElastic),
 			IINFO(Transport), IINFO(Heat),
 			IINFO(SOTField),
 			IINFO(Roughness)
@@ -65,6 +75,7 @@ FMesh::FMesh(Rect meshRect_, DBL3 h_, SuperMesh *pSMesh_) :
 	h = h_;
 	h_e = h_;
 	h_t = h_;
+	h_m = h_;
 
 	error_on_create = UpdateConfiguration(UPDATECONFIG_FORCEUPDATE);
 

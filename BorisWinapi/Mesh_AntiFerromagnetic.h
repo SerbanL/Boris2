@@ -20,14 +20,14 @@ class AFMesh :
 	public Mesh,
 	public ProgramState<AFMesh,
 	//Mesh members
-	tuple<int, int, int, int, int, int, Rect, SZ3, DBL3, SZ3, DBL3, SZ3, DBL3, VEC_VC<DBL3>, VEC_VC<DBL3>, vector_lut<Modules*>,
+	tuple<int, int, int, int, int, int, int, Rect, SZ3, DBL3, SZ3, DBL3, SZ3, DBL3, SZ3, DBL3, VEC_VC<DBL3>, VEC_VC<DBL3>, vector_lut<Modules*>,
 	//Members in this derived class
 	bool, SkyrmionTrack, bool,
 	//Material Parameters
 	MatP<DBL2, double>, MatP<DBL2, double>, MatP<DBL2, double>, MatP<DBL2, double>, MatP<DBL2, double>, MatP<double, double>, MatP<DBL2, double>, MatP<double, double>, MatP<double, double>, MatP<DBL3, DBL3>, MatP<DBL3, DBL3>, MatP<double, double>, 
 	double, TEquation<double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>>,
 	//Module Implementations
-	tuple<Demag_N, Demag, SDemag_Demag, Exch_6ngbr_Neu, DMExchange, iDMExchange, Zeeman, Anisotropy_Uniaxial, Anisotropy_Cubic, Roughness> >
+	tuple<Demag_N, Demag, SDemag_Demag, Exch_6ngbr_Neu, DMExchange, iDMExchange, SurfExchange, Zeeman, Anisotropy_Uniaxial, Anisotropy_Cubic, Roughness> >
 {
 #if COMPILECUDA == 1
 	friend AFMeshCUDA;
@@ -143,7 +143,7 @@ public:
 	DBL2 Get_skyshift(Rect skyRect)
 	{
 #if COMPILECUDA == 1
-		if (pMeshCUDA) return skyShift.Get_skyshiftCUDA(n.dim(), h, pMeshCUDA->M, skyRect);
+		if (pMeshCUDA) return skyShift.Get_skyshiftCUDA(n.dim(), h, meshRect, pMeshCUDA->M, skyRect);
 #endif
 		return skyShift.Get_skyshift(M, skyRect);
 	}

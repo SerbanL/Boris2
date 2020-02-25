@@ -579,6 +579,12 @@
     <ClInclude Include="ManagedDiffEq_CommonCUDA.h">
       <Filter>DIFF EQUATIONS INTERFACE - CUDA</Filter>
     </ClInclude>
+    <ClInclude Include="MElastic.h">
+      <Filter>MODULES</Filter>
+    </ClInclude>
+    <ClInclude Include="MElasticCUDA.h">
+      <Filter>MODULES - CUDA</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="BorisGraphics.cpp">
@@ -1127,6 +1133,21 @@
     <ClCompile Include="ManagedDiffEq_CommonCUDA.cpp">
       <Filter>DIFF EQUATIONS INTERFACE - CUDA</Filter>
     </ClCompile>
+    <ClCompile Include="SimStartup.cpp">
+      <Filter>SIMULATION</Filter>
+    </ClCompile>
+    <ClCompile Include="SimControl.cpp">
+      <Filter>SIMULATION</Filter>
+    </ClCompile>
+    <ClCompile Include="SimMessages.cpp">
+      <Filter>SIMULATION</Filter>
+    </ClCompile>
+    <ClCompile Include="MElastic.cpp">
+      <Filter>MODULES</Filter>
+    </ClCompile>
+    <ClCompile Include="MElasticCUDA.cpp">
+      <Filter>MODULES - CUDA</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="BorisWinapi.rc">
@@ -1332,6 +1353,9 @@
     </CudaCompile>
     <CudaCompile Include="MaterialParameterCUDA.cu">
       <Filter>MAT PARAMS - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="MElasticCUDA.cu">
+      <Filter>MODULES - CUDA</Filter>
     </CudaCompile>
   </ItemGroup>
 </Project>

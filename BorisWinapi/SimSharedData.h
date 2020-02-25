@@ -53,9 +53,6 @@ protected:
 	//list of data to output during a simulation (e.g. to output file and/or to processing arrays)
 	static vector_lut<DatumConfig> saveDataList;
 
-	//working directory
-	static string directory;
-
 	//modifier for mesh shaping functions
 	//all general shaping functions go through Mesh::change_mesh_shape to apply the shape
 	//Note, there are specific exceptions e.g. grain generators which only work on M)
@@ -63,6 +60,19 @@ protected:
 	//if this flag is set to true, then Mesh::change_mesh_shape only applies the shape to the quantity currently focused in the display, e.g. only M, only elC, or only Temp
 	//this allows setting different shapes for these quantities in the same mesh
 	static bool shape_change_individual;
+
+	//display transparency for foreground (primary display - major) and background (minor); useful if you want to display both background and foreground and see them both
+	//only takes effect for dual display : foreground has some transparency by default. Values from 0 (fully transparent) to 1 (opaque).
+	static DBL2 displayTransparency;
+
+	//minimum and maximum values for mesh display; if both set to 0 0 then ignore limits.
+	static DBL2 displayThresholds;
+
+	//set which component to trigger display thresholds on when using vector quantities (x, y, z, or magnitude)
+	static int displayThresholdTrigger;
+
+	//working directory
+	static string directory;
 
 	//free and total memory for gpu and cpu - update these as memory is allocated / freed so we can keep track of it in console interactive objects without having to interrogate at every refresh
 	static size_t gpuMemFree_MB;

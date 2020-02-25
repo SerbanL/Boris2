@@ -17,7 +17,7 @@ class InsulatorMesh :
 	public ProgramState<InsulatorMesh,
 	tuple<
 	//Mesh members
-	int, int, int, int, int, int, Rect, SZ3, DBL3, VEC_VC<double>, vector_lut<Modules*>,
+	int, int, int, int, int, int, int, Rect, SZ3, DBL3, SZ3, DBL3, VEC_VC<double>, vector_lut<Modules*>,
 	//Members in this derived class
 
 	//Material Parameters

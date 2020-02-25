@@ -25,7 +25,7 @@
 #include "Display_Defs.h"
 
 //enum for different types of window spaces : these are the winId major identifier
-enum WIN_ { WIN_ALL = -1, WIN_CONSOLE = 0, WIN_DATABOX, WIN_MESHWINDOW, WIN_IOIPOPUPTEXTBOX, WIN_IOIPOPUPEDITBOX, WIN_HOVERINFOTEXTBOX };
+enum WIN_ { WIN_ALL = -1, WIN_NONE, WIN_CONSOLE, WIN_DATABOX, WIN_MESHWINDOW, WIN_IOIPOPUPTEXTBOX, WIN_IOIPOPUPEDITBOX, WIN_HOVERINFOTEXTBOX };
 
 using namespace std;
 

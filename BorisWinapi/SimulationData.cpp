@@ -20,9 +20,6 @@ void Simulation::NewDataBoxField(DatumConfig dConfig)
 
 		Label += dataDescriptor(dConfig.datumId).Label;
 
-		//data box entries do not allow use of boxes on data - use whole mesh for these data
-		dConfig.rectangle = Rect();
-
 		string formattedTextEntry = Label + "</io></b>" + GetDataValueString(dConfig);
 
 		BD.NewDataBoxField(formattedTextEntry);
@@ -86,6 +83,16 @@ void Simulation::ChangeDataBoxLabels(string oldMeshName, string newMeshName)
 	for (int idx = 0; idx < dataBoxList.size(); idx++) {
 
 		if (dataBoxList[idx].meshName == oldMeshName) dataBoxList[idx].meshName = newMeshName;
+	}
+}
+
+//update rectangles in dataBoxList (rect_old and rect_new are the old and new rectangles for the given mesh. All dataBoxList rectangles are scaled accordingly.
+void Simulation::UpdateDataBoxEntries(Rect rect_old, Rect rect_new, string meshName)
+{
+	for (int idx = 0; idx < dataBoxList.size(); idx++) {
+
+		if (!dataBoxList[idx].rectangle.IsNull() && dataBoxList[idx].meshName == meshName)
+			dataBoxList[idx].rectangle.resize(rect_old.size(), rect_new.size());
 	}
 }
 
@@ -253,6 +260,12 @@ Any Simulation::GetDataValue(DatumConfig dConfig)
 	case DATA_E_ZEE:
 	{
 		return Any(SMesh[dConfig.meshName]->GetEnergy(MOD_ZEEMAN));
+	}
+	break;
+
+	case DATA_E_MELASTIC:
+	{
+		return Any(SMesh[dConfig.meshName]->GetEnergy(MOD_MELASTIC));
 	}
 	break;
 

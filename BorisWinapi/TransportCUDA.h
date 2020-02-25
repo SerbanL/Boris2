@@ -34,7 +34,7 @@ private:
 	//pointer to CUDA version of mesh object holding the effective field module holding this CUDA module
 	MeshCUDA* pMeshCUDA;
 
-	//pointer to cpuversion of MeshCUDA : *pMesh holds pMeshCUDA
+	//pointer to cpu version of MeshCUDA
 	Mesh* pMesh;
 
 	//Same for the supermesgh

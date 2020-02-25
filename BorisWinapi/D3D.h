@@ -206,14 +206,17 @@ struct CBObjectTransform {
 	XMMATRIX Trans;
 	XMFLOAT4 Color;
 
+	//maximum set transparency (alpha value)
+	double maxTransparency = 1.0;
+
 	//the "value" of the quantity for which this transform was set. e.g. if a scalar physical quantity then this is its value, if a vector then this is its magnitude.
 	double value;
 
 	//the position of object (in world view, logical units) on which this Transform is used : this will be the translation value used to set Trans
 	DBL3 position;
 
-	CBObjectTransform(void) {
-
+	CBObjectTransform(void) 
+	{
 		Rotat = XMMatrixIdentity();
 		Scale = XMMatrixIdentity() * XMMatrixScaling(0, 0, 0);
 		Trans = XMMatrixIdentity();
@@ -222,18 +225,34 @@ struct CBObjectTransform {
 		position = DBL3();
 	}
 
-	CBObjectTransform(XMMATRIX _Rotat, XMMATRIX _Scale, XMMATRIX _Trans, XMFLOAT4 _Color, DBL3 position_, double _value) {
-
+	CBObjectTransform(XMMATRIX _Rotat, XMMATRIX _Scale, XMMATRIX _Trans, XMFLOAT4 _Color, double _maxTransparency, DBL3 position_, double _value) 
+	{
 		Rotat = _Rotat;
 		Scale = _Scale;
 		Trans = _Trans;
 		Color = _Color;
+		maxTransparency = _maxTransparency;
 		value = _value;
 		position = position_;
 	}
 
-	inline XMMATRIX Transform(void) {
-		 
+	CBObjectTransform(const CBObjectTransform& copyThis) { *this = copyThis; }
+	CBObjectTransform& operator=(const CBObjectTransform& copyThis)
+	{
+		Rotat = copyThis.Rotat;
+		Scale = copyThis.Scale;
+		Trans = copyThis.Trans;
+		Color = copyThis.Color;
+		maxTransparency = copyThis.maxTransparency;
+
+		value = copyThis.value;
+		position = copyThis.position;
+
+		return *this;
+	}
+
+	inline XMMATRIX Transform(void) 
+	{	 
 		return Rotat * Scale * Trans;
 	}
 };

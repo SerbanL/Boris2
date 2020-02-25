@@ -53,6 +53,10 @@ class ProgramState<OType, std::tuple<PType...>, std::tuple<IPType...> > {
 
 private: //--------------------------------------------------- DATA
 
+	//signal complex type start
+	const std::string startComplexType = "start complex type";
+	const std::string endComplexType = "end complex type";
+
 	//signal complex type end
 	const std::string endType = "end type";
 
@@ -218,7 +222,7 @@ private: //--------------------------------------------------- METHODS
 		if (!parse_implementations_save(bdout, pBase, std::get<I>(tup)...)) {
 
 			//implementation name not found
-			bdout << endl;
+			bdout << std::endl;
 			//complex or non-complex type?
 			using CType = typename std::remove_pointer<typename std::remove_reference<PointerType>::type>::type;
 			return parse_implementations_save(bdout, pBase, is_complex_type<CType>());
@@ -245,7 +249,7 @@ private: //--------------------------------------------------- METHODS
 		if (pDownCast) {
 
 			//Successful downcast of base class : found implementation. Save implementation name so we can remake this pointer when loading (it can change implementation or become nullptr)
-			bdout << entry.name << endl;
+			bdout << entry.name << std::endl;
 
 			//complex or non-complex type?
 			return parse_implementations_save(bdout, pDownCast, is_complex_type<IType>());
@@ -398,8 +402,11 @@ private: //--------------------------------------------------- METHODS
 	template <typename Type>
 	void parse_save_tuple(std::ofstream &bdout, Type& entry)
 	{
-		bdout << entry.name << endl;
-		save_tuple_entry(bdout, entry.value, int_tag< int_tag_select<decltype(entry.value)>::value >());
+		//signal start of complex type : save_tuple_entry will issue a call to SaveObjectState, but we want "start type" string to appear before the object name
+		if (int_tag_select<decltype(entry.value)>::value == 4) bdout << startComplexType << std::endl;
+
+		bdout << entry.name << std::endl;
+		save_tuple_entry(bdout, entry.value, int_tag<int_tag_select<decltype(entry.value)>::value>());
 	}
 
 	template <typename Type, typename ... PType>
@@ -416,10 +423,10 @@ private: //--------------------------------------------------- METHODS
 	template <typename Type>
 	void save_tuple_entry(std::ofstream& bdout, Type& value, int_tag<1>, bool vector_entry = false)
 	{
-		//only vector entries (strings and Any excepted) are saved using binary
+		//only simple vector entries (strings and Any excepted) are saved using binary
 		if (std::is_same<Type, std::string>::value || !vector_entry) {
 
-			bdout << value << endl;
+			bdout << value << std::endl;
 		}
 		else {
 
@@ -432,8 +439,8 @@ private: //--------------------------------------------------- METHODS
 	template <typename Type>
 	void save_tuple_entry(std::ofstream& bdout, Type& value, int_tag<2>, bool vector_entry = false)
 	{
-		bdout << value << endl;
-		bdout << value.get_type() << endl;
+		bdout << value << std::endl;
+		bdout << value.get_type() << std::endl;
 	}
 
 	//a std::vector type
@@ -449,15 +456,19 @@ private: //--------------------------------------------------- METHODS
 		//Nested vectors not currently implemented.
 
 		//signal std::vector start. size() returns the dimensions of the std::vector (the type is not necesarily an int - could be an INT3. It is the same type as that taken by the resize method, so can use ToNum method to convert when loading the std::vector later)
-		bdout << vec.size() << endl;
+		bdout << vec.size() << std::endl;
 		
-		//all vectors next contain 2 lines : first there's the binary data string, then the number of BYTEs (excluding any key and id lines)
-		size_t numBYTEs = (vec.end() - vec.begin()) * sizeof(SType);
-		bdout << binaryData << endl;
-		bdout << ToString(numBYTEs) << endl;
-
 		bool vec_with_key = is_vector_withkey<VType>::value;
 		bool vec_with_Id = is_vector_withId<VType>::value;
+
+		//only need to specify binary data and then on next line number of bytes saved in binary, if we are actually going to save in binary
+		//thus must be a simple type (int_tag<1>) excepting strings and Any
+		if (!std::is_same<SType, std::string>::value && !std::is_same<SType, Any>::value && int_tag_select<SType>::value == 1 && !vec_with_key && !vec_with_Id) {
+
+			size_t numBYTEs = (vec.end() - vec.begin()) * sizeof(SType);
+			bdout << binaryData << std::endl;
+			bdout << ToString(numBYTEs) << std::endl;
+		}
 
 		//use iterators to parse the std::vector, as this method doesn't depend on the std::vector dimensions type, but works for all std::vector types. Thus need begin() and end().
 		int idx = 0;
@@ -486,7 +497,7 @@ private: //--------------------------------------------------- METHODS
 	void save_tuple_entry_vector_key(std::ofstream& bdout, Type& vec, int idx, std::true_type)
 	{
 		std::string key = vec.get_key_from_index(idx);
-		bdout << key << endl;
+		bdout << key << std::endl;
 	}
 
 	template <typename Type>
@@ -497,7 +508,7 @@ private: //--------------------------------------------------- METHODS
 	void save_tuple_entry_vector_Id(std::ofstream& bdout, Type& vec, int idx, std::true_type)
 	{
 		INT2 Id = vec.get_id_from_index(idx);
-		bdout << Id << endl;
+		bdout << Id << std::endl;
 	}
 
 	template <typename Type>
@@ -510,6 +521,7 @@ private: //--------------------------------------------------- METHODS
 	void save_tuple_entry(std::ofstream &bdout, Type& value, int_tag<4>, bool vector_entry = false)
 	{
 		value.SaveObjectState(bdout);
+		bdout << endComplexType << std::endl;
 	}
 
 	//a pointer
@@ -522,7 +534,7 @@ private: //--------------------------------------------------- METHODS
 		//first check if nullptr. when loading this pointer will also be set to nullptr (first deleted if not nullptr on loading)
 		if (value == nullptr) {
 
-			bdout << "nullptr" << endl;
+			bdout << "nullptr" << std::endl;
 			return;
 		}
 
@@ -536,7 +548,7 @@ private: //--------------------------------------------------- METHODS
 	template <typename Type>
 	void save_tuple_entry_pointer(std::ofstream& bdout, Type& value, std::true_type pcomplexType)
 	{
-		bdout << "!nullptr" << endl;		//means pointer to a complex object (not null)
+		bdout << "!nullptr" << std::endl;		//means pointer to a complex object (not null)
 		value->SaveObjectState(bdout);
 	}
 
@@ -556,20 +568,20 @@ private: //--------------------------------------------------- METHODS
 	//--------------------------------------------------- TUPLE PARSING FOR LOADING : FIND VARIABLE NAME
 
 	template <typename Tuple, int... I>
-	bool parse_load_tuple(std::ifstream& bdin, const std::string& var_name, int& entry_count, Tuple& tup, std::index_sequence<I...> is)
+	bool parse_load_tuple(std::ifstream& bdin, const std::string& var_name, Tuple& tup, std::index_sequence<I...> is)
 	{
 		//see comments on parse_save_tuple for why this check is needed
-		return parse_load_tuple(bdin, var_name, entry_count, tup, is, std::bool_constant< (bool)std::tuple_size<Tuple>::value >());
+		return parse_load_tuple(bdin, var_name, tup, is, std::bool_constant< (bool)std::tuple_size<Tuple>::value >());
 	}
 
 	template <typename Tuple, int... I>
-	bool parse_load_tuple(std::ifstream& bdin, const std::string& var_name, int& entry_count, Tuple& tup, std::index_sequence<I...>, std::true_type)
+	bool parse_load_tuple(std::ifstream& bdin, const std::string& var_name, Tuple& tup, std::index_sequence<I...>, std::true_type)
 	{
-		return parse_load_tuple(bdin, var_name, entry_count, std::get<I>(tup)...);
+		return parse_load_tuple(bdin, var_name, std::get<I>(tup)...);
 	}
 
 	template <typename Tuple, int... I>
-	bool parse_load_tuple(std::ifstream& bdin, const std::string& var_name, int& entry_count, Tuple& tup, std::index_sequence<I...>, std::false_type)
+	bool parse_load_tuple(std::ifstream& bdin, const std::string& var_name, Tuple& tup, std::index_sequence<I...>, std::false_type)
 	{
 		//zero length index sequence (empty std::tuple) - nothing to do
 		return true;
@@ -577,24 +589,22 @@ private: //--------------------------------------------------- METHODS
 
 	//Methods used to iterate over elements in std::tuple
 	template <typename Type>
-	bool parse_load_tuple(std::ifstream& bdin, const std::string& var_name, int& entry_count, Type& entry)
+	bool parse_load_tuple(std::ifstream& bdin, const std::string& var_name, Type& entry)
 	{
 		if (var_name == entry.name) {
 
 			//found variable name : try to load it
-			entry_count++;
 			return load_tuple_entry(bdin, entry.value, int_tag< int_tag_select<decltype(entry.value)>::value >(), entry.keep_ptr);
 		}
-		else return true;	//not found variable but still return true to attempt further loading (must be an old save version with this extra variable no longer in use)
+		//not found variable so need to signal this (must be an old save version with this extra variable no longer in use)
+		else return false;
 	}
 
 	template <typename Type, typename ... PType>
-	bool parse_load_tuple(std::ifstream& bdin, const std::string& var_name, int& entry_count, Type& entry, PType& ... further_entries)
+	bool parse_load_tuple(std::ifstream& bdin, const std::string& var_name, Type& entry, PType& ... further_entries)
 	{
-		if (var_name == entry.name)
-			return parse_load_tuple(bdin, var_name, entry_count, entry);
-		else
-			return parse_load_tuple(bdin, var_name, entry_count, further_entries...);
+		if (var_name == entry.name) return parse_load_tuple(bdin, var_name, entry);
+		else return parse_load_tuple(bdin, var_name, further_entries...);
 	}
 
 	//--------------
@@ -671,11 +681,33 @@ private: //--------------------------------------------------- METHODS
 			value.resize(ToNum(vec_size_text));
 
 			//all vectors next contain 2 lines : first there's the binary data string, then the number of BYTEs (excluding any key and id lines). Skip over these as not needed.
-			if (!bdin.getline(line, FILEROWCHARS)) return false;
-			if (!bdin.getline(line, FILEROWCHARS)) return false;
+			//There are some exceptions however (e.g. strings and Any not saved as binary), so need to handle these cases too.
 
 			bool vec_with_key = is_vector_withkey<Type>::value;
 			bool vec_with_Id = is_vector_withId<Type>::value;
+
+			std::streampos curpos = bdin.tellg();
+			if (bdin.getline(line, FILEROWCHARS)) {
+
+				if (std::string(line) == binaryData) {
+
+					//binary data. next line has number of bytes
+					if (!bdin.getline(line, FILEROWCHARS)) return false;
+					
+					//if this is a vector of simple types, excepting strings and Any, then we can load all the bytes at once into the vector, rather than iterating
+					//NOTE : the vec_with_key and vec_with_Id checks are needed to allow some older saved files to still load (in the current ProgramState version we now check for these before specifying binary data in the saved file, so these checks are redundant for the latest saved files)
+					if (!std::is_same<SType, std::string>::value && !std::is_same<SType, Any>::value && int_tag_select<SType>::value == 1 && !vec_with_key && !vec_with_Id) {
+
+						int numBytes = ToNum(std::string(line));
+						bdin.read(reinterpret_cast<char*>(value.data()), numBytes);
+						
+						return true;
+					}
+				}
+				//not binary data so go back one line
+				else bdin.seekg(curpos);
+			}
+			else return false;
 
 			int idx = 0;
 			for (auto it = value.begin(); it != value.end(); ++it, idx++) {
@@ -803,17 +835,29 @@ public:
 
 	void SaveObjectState(std::ofstream &bdout)
 	{
+		//name was saved before this was called. don't signal startType here since we want it to appear before the object name.
 		parse_save_tuple(bdout, objects, std::make_index_sequence<sizeof...(PType)>{});
-		bdout << endType << endl;
+		bdout << endType << std::endl;
 	}
 
 	bool LoadObjectState(std::ifstream &bdin)
 	{
 		char line[FILEROWCHARS];
 
-		for (int tup_entries_count = 0; tup_entries_count < std::tuple_size<decltype(objects)>::value;) {
+		bool complex_type_just_started = false;
+
+		while (true) {
 
 			if (bdin.getline(line, FILEROWCHARS)) {
+				
+				if (std::string(line) == startComplexType) {
+
+					//starting a new complex type : the next line should contain the object name which will be loaded with its own LoadObjectState method.
+					//If all goes fine then this flag is not used.
+					//If there's a problem, in particular the object name is no longer defined, we'll need to search for a matching end type string and skip over the block
+					complex_type_just_started = true;
+					continue;
+				}
 
 				if (std::string(line) == binaryData) {
 
@@ -823,9 +867,16 @@ public:
 						int numBYTEs = ToNum(std::string(line));
 						bdin.ignore(numBYTEs);
 					}
-					else return false;
-				}
+					else {
 
+						RepairObjectState();
+						return false;
+					}
+
+					complex_type_just_started = false;
+					continue;
+				}
+				
 				//check for end of type - if found, return true to attempt further loading
 				if (std::string(line) == endType) {
 
@@ -833,11 +884,54 @@ public:
 					return true;
 				}
 
-				if (!parse_load_tuple(bdin, std::string(line), tup_entries_count, objects, std::make_index_sequence<sizeof...(PType)>{})) {
+				if (std::string(line) == endComplexType) {
 
-					RepairObjectState();
-					return false;
+					complex_type_just_started = false;
+					continue;
 				}
+
+				if (!parse_load_tuple(bdin, std::string(line), objects, std::make_index_sequence<sizeof...(PType)>{})) {
+
+					//name not found, or something else went wrong
+					if (complex_type_just_started) {
+
+						int started_types = 1;
+
+						//a complex type was just started before this, and we couldn't find the name : this means this name is no longer defined, and we should find the matching end type string and skip over without returning yet.
+						while (started_types) {
+
+							if (bdin.getline(line, FILEROWCHARS)) {
+
+								if (std::string(line) == endComplexType) --started_types;
+								if (std::string(line) == startComplexType) ++started_types;							
+								if (std::string(line) == binaryData) {
+
+									//next line gives the number of BYTEs in the block
+									if (bdin.getline(line, FILEROWCHARS)) {
+
+										int numBYTEs = ToNum(std::string(line));
+										bdin.ignore(numBYTEs);
+									}
+									else {
+
+										RepairObjectState();
+										return false;
+									}
+								}
+							}
+							else {
+
+								//something wrong : didn't find end type string
+								RepairObjectState();
+								return false;
+							}
+						}
+					}
+
+					//if this was not a complex type. continue on next line.
+				}
+
+				complex_type_just_started = false;
 			}
 			else {
 

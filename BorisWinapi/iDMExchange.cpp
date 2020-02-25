@@ -309,44 +309,24 @@ double iDMExchange::UpdateField(void)
 
 			energy_ = (M_1 * Hexch + M_1_B * Hexch_B) / 2;
 		}
-		else {
 
-			//one of the meshes in not antiferromagnetic (so ferromagnetic)
-			//only sub-lattice A couples but do not include anti AF coupling here as it has already been included in the main loop above
+		//FM to FM
+		else if (Mesh_pri.GetMeshType() == MESH_FERROMAGNETIC && Mesh_sec.GetMeshType() == MESH_FERROMAGNETIC) {
+
+			//both meshes are ferromagnetic
 			//here we only compute differential operators across a boundary.
 
 			double Ms, A, D;
-
-			if (Mesh_pri.GetMeshType() == MESH_ANTIFERROMAGNETIC) {
-
-				//primary mesh is antiferromagnetic
-
-				DBL2 Ms_AFM = Mesh_pri.Ms_AFM;
-				DBL2 A_AFM = Mesh_pri.A_AFM;
-				DBL2 D_AFM = Mesh_pri.D_AFM;
-				Mesh_pri.update_parameters_mcoarse(cell1_idx, Mesh_pri.A_AFM, A_AFM, Mesh_pri.D_AFM, D_AFM, Mesh_pri.Ms_AFM, Ms_AFM);
-
-				Ms = Ms_AFM.i;
-				A = A_AFM.i;
-				D = D_AFM.i;
-			}
-			else {
-
-				//primary mesh is ferromagnetic
-
-				Ms = Mesh_pri.Ms;
-				A = Mesh_pri.A;
-				D = Mesh_pri.D;
-				Mesh_pri.update_parameters_mcoarse(cell1_idx, Mesh_pri.A, A, Mesh_pri.D, D, Mesh_pri.Ms, Ms);
-			}
+			Ms = Mesh_pri.Ms;
+			A = Mesh_pri.A;
+			D = Mesh_pri.D;
+			Mesh_pri.update_parameters_mcoarse(cell1_idx, Mesh_pri.A, A, Mesh_pri.D, D, Mesh_pri.Ms, Ms);
 
 			DBL3 Hexch;
 
 			//values at cells -1, 1
 			DBL3 M_1 = Mesh_pri.M[cell1_idx];
 			DBL3 M_m1 = Mesh_sec.M.weighted_average(relpos_m1, stencil);
-
-			DBL3 M_1_B = Mesh_pri.M2[cell1_idx];
 
 			if (cell2_idx < Mesh_pri.n.dim() && Mesh_pri.M.is_not_empty(cell2_idx)) {
 
@@ -396,7 +376,7 @@ double iDMExchange::UpdateField(void)
 
 	this->energy = energy;
 
-	return energy;
+	return this->energy;
 }
 
 #endif

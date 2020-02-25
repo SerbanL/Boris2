@@ -18,7 +18,7 @@ Simulation::Simulation(HWND hWnd, int Program_Version) :
 			VINFO(cudaEnabled),
 			VINFO(shape_change_individual),
 			VINFO(static_transport_solver),
-			VINFO(image_cropping),
+			VINFO(image_cropping), VINFO(displayTransparency), VINFO(displayThresholds), VINFO(displayThresholdTrigger),
 			VINFO(userConstants)
 		}, {})
 #else
@@ -38,7 +38,7 @@ Simulation::Simulation(int Program_Version) :
 			VINFO(cudaEnabled),
 			VINFO(shape_change_individual),
 			VINFO(static_transport_solver),
-			VINFO(image_cropping),
+			VINFO(image_cropping), VINFO(displayTransparency), VINFO(displayThresholds), VINFO(displayThresholdTrigger),
 			VINFO(userConstants)
 		}, {})
 #endif
@@ -189,6 +189,13 @@ Simulation::Simulation(int Program_Version) :
 	commands[CMD_TCELLSIZE].unit = "m";
 	commands[CMD_TCELLSIZE].return_descr = "[tc0,0.5,0,1/tc]Script return values: <i>cellsize</i> - return thermal conduction cellsize of mesh in focus.";
 
+	commands.insert(CMD_MCELLSIZE, CommandSpecifier(CMD_MCELLSIZE), "mcellsize");
+	commands[CMD_MCELLSIZE].usage = "[tc0,0.5,0,1/tc]USAGE : <b>mcellsize</b> <i>value</i>";
+	commands[CMD_MCELLSIZE].limits = { { DBL3(MINMESHSPACE / 2), Any() } };
+	commands[CMD_MCELLSIZE].descr = "[tc0,0.5,0.5,1/tc]Change cellsize of mesh in focus for mechanical solver (m). The cellsize can be specified as: <i>hx hy hz</i>, or as: <i>hxyz</i>";
+	commands[CMD_MCELLSIZE].unit = "m";
+	commands[CMD_MCELLSIZE].return_descr = "[tc0,0.5,0,1/tc]Script return values: <i>cellsize</i> - return mechanical cellsize of mesh in focus.";
+
 	commands.insert(CMD_FMSCELLSIZE, CommandSpecifier(CMD_FMSCELLSIZE), "fmscellsize");
 	commands[CMD_FMSCELLSIZE].usage = "[tc0,0.5,0,1/tc]USAGE : <b>fmscellsize</b> <i>value</i>";
 	commands[CMD_FMSCELLSIZE].limits = { { DBL3(MINMESHSPACE/2), Any() } };
@@ -220,8 +227,8 @@ Simulation::Simulation(int Program_Version) :
 	commands[CMD_RESETMESH].descr = "[tc0,0.5,0.5,1/tc]Reset to constant magnetization in given mesh (active mesh if name not given).";
 
 	commands.insert(CMD_LOADMASKFILE, CommandSpecifier(CMD_LOADMASKFILE), "loadmaskfile");
-	commands[CMD_LOADMASKFILE].usage = "[tc0,0.5,0,1/tc]USAGE : <b>loadmaskfile</b> <i>(z-depth) (directory\\)filename</i>";
-	commands[CMD_LOADMASKFILE].descr = "[tc0,0.5,0.5,1/tc]Apply .png mask file to magnetization in active mesh (i.e. transfer shape from .png file to mesh - white means empty cells). If image is in grayscale then void cells up to given depth top down (z-depth > 0) or down up (z-depth < 0). If z-depth = 0 then void top down up to all z cells.";
+	commands[CMD_LOADMASKFILE].usage = "[tc0,0.5,0,1/tc]USAGE : <b>loadmaskfile</b> <i>(z_depth) (directory\\)filename</i>";
+	commands[CMD_LOADMASKFILE].descr = "[tc0,0.5,0.5,1/tc]Apply .png mask file to magnetization in active mesh (i.e. transfer shape from .png file to mesh - white means empty cells). If image is in grayscale then void cells up to given depth top down (z_depth > 0) or down up (z_depth < 0). If z-depth = 0 then void top down up to all z cells.";
 	commands[CMD_LOADMASKFILE].unit = "m";
 
 	commands.insert(CMD_INDIVIDUALMASKSHAPE, CommandSpecifier(CMD_INDIVIDUALMASKSHAPE), "individualshape");
@@ -282,9 +289,16 @@ Simulation::Simulation(int Program_Version) :
 	commands.insert(CMD_SETFIELD, CommandSpecifier(CMD_SETFIELD), "setfield");
 	commands[CMD_SETFIELD].usage = "[tc0,0.5,0,1/tc]USAGE : <b>setfield</b> <i>magnitude polar azimuthal (meshname)</i>";
 	commands[CMD_SETFIELD].limits = { { DBL3(-MAXFIELD, -360.0, -360.0), DBL3(MAXFIELD, 360.0, 360.0) }, { Any(), Any() } };
-	commands[CMD_SETFIELD].descr = "[tc0,0.5,0.5,1/tc]Set uniform magnetic field (A/m) using polar coordinates. If mesh name not specified, this is set for all ferromagnetic meshes - must have Zeeman module added.";
+	commands[CMD_SETFIELD].descr = "[tc0,0.5,0.5,1/tc]Set uniform magnetic field (A/m) using polar coordinates. If mesh name not specified, this is set for all magnetic meshes - must have Zeeman module added.";
 	commands[CMD_SETFIELD].return_descr = "[tc0,0.5,0,1/tc]Script return values: <i><Ha_x, Ha_y, Ha_z></i> - applied field in Cartesian coordinates for mesh in focus.";
 	commands[CMD_SETFIELD].unit = "A/m";
+
+	commands.insert(CMD_SETSTRESS, CommandSpecifier(CMD_SETSTRESS), "setstress");
+	commands[CMD_SETSTRESS].usage = "[tc0,0.5,0,1/tc]USAGE : <b>setstress</b> <i>magnitude polar azimuthal (meshname)</i>";
+	commands[CMD_SETSTRESS].limits = { { DBL3(-MAXSTRESS, -360.0, -360.0), DBL3(MAXSTRESS, 360.0, 360.0) }, { Any(), Any() } };
+	commands[CMD_SETSTRESS].descr = "[tc0,0.5,0.5,1/tc]Set uniform mechanical stress (Pa) using polar coordinates. If mesh name not specified, this is set for all magnetic meshes - must have MElastic module added.";
+	commands[CMD_SETSTRESS].return_descr = "[tc0,0.5,0,1/tc]Script return values: <i><Tsig_x, Tsig_y, Tsig_z></i> - applied mechanical stress in Cartesian coordinates for mesh in focus.";
+	commands[CMD_SETSTRESS].unit = "Pa";
 
 	commands.insert(CMD_MODULES, CommandSpecifier(CMD_MODULES), "modules");
 	commands[CMD_MODULES].usage = "[tc0,0.5,0,1/tc]USAGE : <b>modules</b>";
@@ -377,8 +391,8 @@ Simulation::Simulation(int Program_Version) :
 	commands[CMD_EDITDATA].unit = "m";
 
 	commands.insert(CMD_ADDPINNEDDATA, CommandSpecifier(CMD_ADDPINNEDDATA), "addpinneddata");
-	commands[CMD_ADDPINNEDDATA].usage = "[tc0,0.5,0,1/tc]USAGE : <b>addpinneddata</b> <i>dataname (meshname)</i>";
-	commands[CMD_ADDPINNEDDATA].descr = "[tc0,0.5,0.5,1/tc]Add new entry in data box (at the end) with given dataname and meshname if applicable.";
+	commands[CMD_ADDPINNEDDATA].usage = "[tc0,0.5,0,1/tc]USAGE : <b>addpinneddata</b> <i>dataname (meshname, (rectangle))</i>";
+	commands[CMD_ADDPINNEDDATA].descr = "[tc0,0.5,0.5,1/tc]Add new entry in data box (at the end) with given dataname and meshname if applicable. A rectangle may also be specified if applicable, however this will not be shown in the data box.";
 
 	commands.insert(CMD_DELPINNEDDATA, CommandSpecifier(CMD_DELPINNEDDATA), "delpinneddata");
 	commands[CMD_DELPINNEDDATA].usage = "[tc0,0.5,0,1/tc]USAGE : <b>delpinneddata</b> <i>index</i>";
@@ -468,8 +482,8 @@ Simulation::Simulation(int Program_Version) :
 	commands[CMD_SETPARAMTEMPEQUATION].descr = "[tc0,0.5,0.5,1/tc]Set the named parameter temperature dependence equation for the named mesh.";
 
 	commands.insert(CMD_SETPARAMTEMPARRAY, CommandSpecifier(CMD_SETPARAMTEMPARRAY), "setparamtemparray");
-	commands[CMD_SETPARAMTEMPARRAY].usage = "[tc0,0.5,0,1/tc]USAGE : <b>setparamtemparray</b> <i>meshname paramname [filename / dp_arr_T dp_arr_c]</i>";
-	commands[CMD_SETPARAMTEMPARRAY].descr = "[tc0,0.5,0.5,1/tc]Set the named parameter temperature dependence using an array in the given mesh. This must contain temperature values and scaling coefficients. Load directly from a file (tab spaced) or internal dp arrays.";
+	commands[CMD_SETPARAMTEMPARRAY].usage = "[tc0,0.5,0,1/tc]USAGE : <b>setparamtemparray</b> <i>meshname paramname filename</i>";
+	commands[CMD_SETPARAMTEMPARRAY].descr = "[tc0,0.5,0.5,1/tc]Set the named parameter temperature dependence using an array in the given mesh. This must contain temperature values and scaling coefficients. Load directly from a file (tab spaced).";
 
 	commands.insert(CMD_COPYPARAMS, CommandSpecifier(CMD_COPYPARAMS), "copyparams");
 	commands[CMD_COPYPARAMS].usage = "[tc0,0.5,0,1/tc]USAGE : <b>copyparams</b> <i>meshname_from meshname_to (...)</i>";
@@ -520,6 +534,10 @@ Simulation::Simulation(int Program_Version) :
 	commands[CMD_DISPLAY].usage = "[tc0,0.5,0,1/tc]USAGE : <b>display</b> <i>name (meshname)</i>";
 	commands[CMD_DISPLAY].descr = "[tc0,0.5,0.5,1/tc]Change quantity to display for given mesh (active mesh if name not given).";
 
+	commands.insert(CMD_DISPLAYBACKGROUND, CommandSpecifier(CMD_DISPLAYBACKGROUND), "displaybackground");
+	commands[CMD_DISPLAYBACKGROUND].usage = "[tc0,0.5,0,1/tc]USAGE : <b>displaybackground</b> <i>name (meshname)</i>";
+	commands[CMD_DISPLAYBACKGROUND].descr = "[tc0,0.5,0.5,1/tc]Change background quantity to display for given mesh (active mesh if name not given).";
+
 	commands.insert(CMD_VECREP, CommandSpecifier(CMD_VECREP), "vecrep");
 	commands[CMD_VECREP].usage = "[tc0,0.5,0,1/tc]USAGE : <b>vecrep</b> <i>meshname vecreptype</i>";
 	commands[CMD_VECREP].limits = { { Any(), Any() }, { int(0), int(VEC3REP_NUMOPTIONS) } };
@@ -538,6 +556,20 @@ Simulation::Simulation(int Program_Version) :
 	commands[CMD_IMAGECROPPING].usage = "[tc0,0.5,0,1/tc]USAGE : <b>imagecropping</b> <i>left bottom right top</i>";
 	commands[CMD_IMAGECROPPING].limits = { { double(0), double(1) }, { double(0), double(1) }, { double(0), double(1) }, { double(0), double(1) } };
 	commands[CMD_IMAGECROPPING].descr = "[tc0,0.5,0.5,1/tc]Set cropping of saved mesh images using normalized left, bottom, right, top values: 0, 0 point is left, bottom of mesh window and 1, 1 is right, top of mesh window.";
+
+	commands.insert(CMD_DISPLAYTRANSPARENCY, CommandSpecifier(CMD_DISPLAYTRANSPARENCY), "displaytransparency");
+	commands[CMD_DISPLAYTRANSPARENCY].usage = "[tc0,0.5,0,1/tc]USAGE : <b>displaytransparency</b> <i>foreground background</i>";
+	commands[CMD_DISPLAYTRANSPARENCY].limits = { { double(0), double(1) }, { double(0), double(1) } };
+	commands[CMD_DISPLAYTRANSPARENCY].descr = "[tc0,0.5,0.5,1/tc]Set alpha transparency for display. Values range from 0 (fully transparent) to 1 (opaque). This is applicable in dual display mode when we have a background and foreground for the same mesh.";
+	
+	commands.insert(CMD_DISPLAYTHRESHOLDS, CommandSpecifier(CMD_DISPLAYTHRESHOLDS), "displaythresholds");
+	commands[CMD_DISPLAYTHRESHOLDS].usage = "[tc0,0.5,0,1/tc]USAGE : <b>displaythresholds</b> <i>minimum maximum</i>";
+	commands[CMD_DISPLAYTHRESHOLDS].descr = "[tc0,0.5,0.5,1/tc]Set thresholds for foreground mesh display : magnitude values outside this range are not rendered. If both set to 0 then thresholds are ignored.";
+
+	commands.insert(CMD_DISPLAYTHRESHOLDTRIGGER, CommandSpecifier(CMD_DISPLAYTHRESHOLDTRIGGER), "displaythresholdtrigger");
+	commands[CMD_DISPLAYTHRESHOLDTRIGGER].usage = "[tc0,0.5,0,1/tc]USAGE : <b>displaythresholdtrigger</b> <i>trigtype</i>";
+	commands[CMD_DISPLAYTHRESHOLDTRIGGER].limits = { { int(0), int(VEC3REP_NUMOPTIONS) } };
+	commands[CMD_DISPLAYTHRESHOLDTRIGGER].descr = "[tc0,0.5,0.5,1/tc]For vector quantities, set component to trigger thresholds on. trigtype = 1 (x component), trigtype = 2 (y component), trigtype = 3 (z component), trigtype = 5 (magnitude only)";
 
 	commands.insert(CMD_MOVINGMESH, CommandSpecifier(CMD_MOVINGMESH), "movingmesh");
 	commands[CMD_MOVINGMESH].usage = "[tc0,0.5,0,1/tc]USAGE : <b>movingmesh</b> <i>status_or_meshname</i>";
@@ -825,6 +857,18 @@ Simulation::Simulation(int Program_Version) :
 	commands[CMD_SAVEOVF2PARAMVAR].usage = "[tc0,0.5,0,1/tc]USAGE : <b>saveovf2param</b> <i>(data_type) (meshname) paramname (directory\\)filename</i>";
 	commands[CMD_SAVEOVF2PARAMVAR].descr = "[tc0,0.5,0.5,1/tc]Save an OOMMF-style OVF 2.0 file containing the named parameter spatial variation data from the named mesh (currently focused mesh if not specified). You can specify the data type as data_type = bin4 (single precision 4 bytes per float), data_type = bin8 (double precision 8 bytes per float), or data_type = text. By default bin8 is used.";
 	
+	commands.insert(CMD_SAVEOVF2, CommandSpecifier(CMD_SAVEOVF2), "saveovf2");
+	commands[CMD_SAVEOVF2].usage = "[tc0,0.5,0,1/tc]USAGE : <b>saveovf2</b> <i>(data_type) (directory\\)filename</i>";
+	commands[CMD_SAVEOVF2].descr = "[tc0,0.5,0.5,1/tc]Save an OOMMF-style OVF 2.0 file containing data from the currently focused mesh. You can specify the data type as data_type = bin4 (single precision 4 bytes per float), data_type = bin8 (double precision 8 bytes per float), or data_type = text. By default bin8 is used.";
+
+	commands.insert(CMD_LOADOVF2DISP, CommandSpecifier(CMD_LOADOVF2DISP), "loadovf2disp");
+	commands[CMD_LOADOVF2DISP].usage = "[tc0,0.5,0,1/tc]USAGE : <b>loadovf2disp</b> <i>(directory\\)filename</i>";
+	commands[CMD_LOADOVF2DISP].descr = "[tc0,0.5,0.5,1/tc]Load an OOMMF-style OVF 2.0 file containing mechanical displacement data, into the currently focused mesh (which must be ferromagnetic and have the melastic module enabled), mapping the data to the current mesh dimensions. From the mechanical displacement the strain tensor is calculated.";
+
+	commands.insert(CMD_LOADOVF2STRAIN, CommandSpecifier(CMD_LOADOVF2STRAIN), "loadovf2strain");
+	commands[CMD_LOADOVF2STRAIN].usage = "[tc0,0.5,0,1/tc]USAGE : <b>loadovf2strain</b> <i>(directory\\)filename_diag filename_odiag</i>";
+	commands[CMD_LOADOVF2STRAIN].descr = "[tc0,0.5,0.5,1/tc]Load an OOMMF-style OVF 2.0 file containing strain tensor data, into the currently focused mesh (which must be ferromagnetic and have the melastic module enabled), mapping the data to the current mesh dimensions. The symmetric strain tensor is applicable for a cubic crystal, and has 3 diagonal component (specified in filename_diag with vector data as xx, yy, zz), and 3 off-diagonal components (specified in filename_odiag with vector data as yz, xz, xy).";
+
 	commands.insert(CMD_SCRIPTSERVER, CommandSpecifier(CMD_SCRIPTSERVER), "scriptserver");
 	commands[CMD_SCRIPTSERVER].usage = "[tc0,0.5,0,1/tc]USAGE : <b>scriptserver</b> <i>status</i>";
 	commands[CMD_SCRIPTSERVER].descr = "[tc0,0.5,0.5,1/tc]Enable or disable the script communication server. When enabled the program will listen for commands received using network sockets on port 1542.";
@@ -844,6 +888,22 @@ Simulation::Simulation(int Program_Version) :
 	commands.insert(CMD_CLEAREQUATIONCONSTANTS, CommandSpecifier(CMD_CLEAREQUATIONCONSTANTS), "clearequationconstants");
 	commands[CMD_CLEAREQUATIONCONSTANTS].usage = "[tc0,0.5,0,1/tc]USAGE : <b>clearequationconstants</b>";
 	commands[CMD_CLEAREQUATIONCONSTANTS].descr = "[tc0,0.5,0.5,1/tc]Clear all user-defined constants for text equations.";
+
+	commands.insert(CMD_FLUSHERRORLOG, CommandSpecifier(CMD_FLUSHERRORLOG), "flusherrorlog");
+	commands[CMD_FLUSHERRORLOG].usage = "[tc0,0.5,0,1/tc]USAGE : <b>flusherrorlog</b>";
+	commands[CMD_FLUSHERRORLOG].descr = "[tc0,0.5,0.5,1/tc]Clear error log.";
+
+	commands.insert(CMD_ERRORLOG, CommandSpecifier(CMD_ERRORLOG), "errorlog");
+	commands[CMD_ERRORLOG].usage = "[tc0,0.5,0,1/tc]USAGE : <b>errorlog</b> <i>status</i>";
+	commands[CMD_ERRORLOG].descr = "[tc0,0.5,0.5,1/tc]Set error log status.";
+
+	commands.insert(CMD_STARTUPUPDATECHECK, CommandSpecifier(CMD_STARTUPUPDATECHECK), "startupupdatecheck");
+	commands[CMD_STARTUPUPDATECHECK].usage = "[tc0,0.5,0,1/tc]USAGE : <b>startupupdatecheck</b> <i>status</i>";
+	commands[CMD_STARTUPUPDATECHECK].descr = "[tc0,0.5,0.5,1/tc]Set startup update check flag.";
+
+	commands.insert(CMD_STARTUPSCRIPTSERVER, CommandSpecifier(CMD_STARTUPSCRIPTSERVER), "startupscriptserver");
+	commands[CMD_STARTUPSCRIPTSERVER].usage = "[tc0,0.5,0,1/tc]USAGE : <b>startupscriptserver</b> <i>status</i>";
+	commands[CMD_STARTUPSCRIPTSERVER].descr = "[tc0,0.5,0.5,1/tc]Set startup script server flag.";
 
 	commands.insert(CMD_DP_CLEARALL, CommandSpecifier(CMD_DP_CLEARALL), "dp_clearall");
 	commands[CMD_DP_CLEARALL].usage = "[tc0,0.5,0,1/tc]USAGE : <b>dp_clearall</b>";
@@ -884,14 +944,27 @@ Simulation::Simulation(int Program_Version) :
 	commands.insert(CMD_DP_GETPROFILE, CommandSpecifier(CMD_DP_GETPROFILE), "dp_getprofile");
 	commands[CMD_DP_GETPROFILE].usage = "[tc0,0.5,0,1/tc]USAGE : <b>dp_getprofile</b> <i>start end dp_index</i>";
 	commands[CMD_DP_GETPROFILE].limits = { { DBL3(-MAXSIMSPACE), DBL3(MAXSIMSPACE) }, { DBL3(-MAXSIMSPACE), DBL3(MAXSIMSPACE) }, { int(0), int(MAX_ARRAYS - 1) } };
-	commands[CMD_DP_GETPROFILE].descr = "[tc0,0.5,0.5,1/tc]Extract profile of physical quantity displayed on screen along the line specified with given start and end cartesian absolute coordinates (m). Place profile in given dp arrays: 4 consecutive dp arrays are used, first for distance along line, the next 3 for physical quantity so allow space for these starting at dp_index.";
+	commands[CMD_DP_GETPROFILE].descr = "[tc0,0.5,0.5,1/tc]Extract profile of physical quantity displayed on screen, at the current display resolution, along the line specified with given start and end cartesian absolute coordinates (m). Place profile in given dp arrays: 4 consecutive dp arrays are used, first for distance along line, the next 3 for physical quantity so allow space for these starting at dp_index.";
 	commands[CMD_DP_GETPROFILE].unit = "m";
 
-	commands.insert(CMD_DP_AVERAGEMESHRECT, CommandSpecifier(CMD_DP_AVERAGEMESHRECT), "dp_averagemeshrect");
-	commands[CMD_DP_AVERAGEMESHRECT].usage = "[tc0,0.5,0,1/tc]USAGE : <b>dp_averagemeshrect</b> <i>(rectangle)</i>";
-	commands[CMD_DP_AVERAGEMESHRECT].descr = "[tc0,0.5,0.5,1/tc]Calculate the average value for the quantity displayed in the focused mesh. If specified the rectangle is relative to the focused mesh, otherwise average the entire focused mesh.";
-	commands[CMD_DP_AVERAGEMESHRECT].limits = { { Rect(DBL3(-MAXSIMSPACE / 2), DBL3(-MAXSIMSPACE / 2) + DBL3(MINMESHSPACE)), Rect(DBL3(-MAXSIMSPACE / 2), DBL3(MAXSIMSPACE / 2)) } };
-	commands[CMD_DP_AVERAGEMESHRECT].unit = "m";
+	commands.insert(CMD_DP_GETPATH, CommandSpecifier(CMD_DP_GETPATH), "dp_getpath");
+	commands[CMD_DP_GETPATH].usage = "[tc0,0.5,0,1/tc]USAGE : <b>dp_getpath</b> <i>dp_index_in dp_index_out</i>";
+	commands[CMD_DP_GETPATH].limits = { { int(0), int(MAX_ARRAYS - 3) }, { int(0), int(MAX_ARRAYS - 3) } };
+	commands[CMD_DP_GETPATH].descr = "[tc0,0.5,0.5,1/tc]Extract profile of physical quantity displayed on screen, directly from stored mesh data thus independent of display resolution, along the path specified in Cartesian absolute coordinates (m) through dp arrays at dp_index_in, dp_index_in + 1, dp_index_in + 2 (x, y, z coordinates resp.). Place extracted profile in given dp arrays dp_index_out, dp_index_out + 1, dp_index_out + 2 (x, y, z components for vector data).";
+
+	commands.insert(CMD_GETVALUE, CommandSpecifier(CMD_GETVALUE), "getvalue");
+	commands[CMD_GETVALUE].usage = "[tc0,0.5,0,1/tc]USAGE : <b>getvalue</b> <i>abspos</i>";
+	commands[CMD_GETVALUE].limits = { { DBL3(-MAXSIMSPACE), DBL3(MAXSIMSPACE) } };
+	commands[CMD_GETVALUE].descr = "[tc0,0.5,0.5,1/tc]Get data value at abspos (absolute position in Cartesian coordinates) depending on currently displayed quantities.";
+	commands[CMD_GETVALUE].unit = "m";
+	commands[CMD_GETVALUE].return_descr = "[tc0,0.5,0,1/tc]Script return values: <i>value</i>";
+
+	commands.insert(CMD_AVERAGEMESHRECT, CommandSpecifier(CMD_AVERAGEMESHRECT), "averagemeshrect");
+	commands[CMD_AVERAGEMESHRECT].usage = "[tc0,0.5,0,1/tc]USAGE : <b>averagemeshrect</b> <i>(rectangle)</i>";
+	commands[CMD_AVERAGEMESHRECT].descr = "[tc0,0.5,0.5,1/tc]Calculate the average value depending on currently displayed quantities. The rectangle is specified in relative coordinates to the currently focused mesh; if not specified average the entire focused mesh.";
+	commands[CMD_AVERAGEMESHRECT].limits = { { Rect(DBL3(-MAXSIMSPACE / 2), DBL3(-MAXSIMSPACE / 2) + DBL3(MINMESHSPACE)), Rect(DBL3(-MAXSIMSPACE / 2), DBL3(MAXSIMSPACE / 2)) } };
+	commands[CMD_AVERAGEMESHRECT].unit = "m";
+	commands[CMD_AVERAGEMESHRECT].return_descr = "[tc0,0.5,0,1/tc]Script return values: <i>value</i>";
 
 	commands.insert(CMD_DP_TOPOCHARGE, CommandSpecifier(CMD_DP_TOPOCHARGE), "dp_topocharge");
 	commands[CMD_DP_TOPOCHARGE].usage = "[tc0,0.5,0,1/tc]USAGE : <b>dp_topocharge</b> <i>(x y radius)</i>";
@@ -911,7 +984,7 @@ Simulation::Simulation(int Program_Version) :
 	commands[CMD_DP_SEQUENCE].descr = "[tc0,0.5,0.5,1/tc]Generate a sequence of data points in dp_index from start_value using increment.";
 
 	commands.insert(CMD_DP_RAREFY, CommandSpecifier(CMD_DP_RAREFY), "dp_rarefy");
-	commands[CMD_DP_RAREFY].usage = "[tc0,0.5,0,1/tc]USAGE : <b>dp_rarefy</b> <i>dp_in dp_out (skip = 1)</i>";
+	commands[CMD_DP_RAREFY].usage = "[tc0,0.5,0,1/tc]USAGE : <b>dp_rarefy</b> <i>dp_in dp_out (skip)</i>";
 	commands[CMD_DP_RAREFY].limits = { { int(0), int(MAX_ARRAYS - 1) },{ int(0), int(MAX_ARRAYS - 1) }, { int(1), Any() } };
 	commands[CMD_DP_RAREFY].descr = "[tc0,0.5,0.5,1/tc]Pick elements from dp_in using the skip value (1 by default) and set them in dp_out; e.g. with skip = 2 every 3rd data point is picked. The default skip = 1 picks every other point.";
 	
@@ -1129,6 +1202,7 @@ Simulation::Simulation(int Program_Version) :
 	dataDescriptor.push_back("e_exch", DatumSpecifier("Exchange e : ", 1, "J/m3", false), DATA_E_EXCH);
 	dataDescriptor.push_back("e_surfexch", DatumSpecifier("Surface exchange e : ", 1, "J/m3", false), DATA_E_SURFEXCH);
 	dataDescriptor.push_back("e_zee", DatumSpecifier("Zeeman e : ", 1, "J/m3", false), DATA_E_ZEE);
+	dataDescriptor.push_back("e_mel", DatumSpecifier("Magnetoelastic e : ", 1, "J/m3", false), DATA_E_MELASTIC);
 	dataDescriptor.push_back("e_anis", DatumSpecifier("Anisotropy e : ", 1, "J/m3", false), DATA_E_ANIS);
 	dataDescriptor.push_back("e_rough", DatumSpecifier("Roughness e : ", 1, "J/m3", false), DATA_E_ROUGH);
 	dataDescriptor.push_back("e_total", DatumSpecifier("Total e : ", 1, "J/m3", true), DATA_E_TOTAL);
@@ -1151,6 +1225,7 @@ Simulation::Simulation(int Program_Version) :
 	moduleHandles.push_back("zeeman", MOD_ZEEMAN);
 	moduleHandles.push_back("aniuni", MOD_ANIUNI);
 	moduleHandles.push_back("anicubi", MOD_ANICUBI);
+	moduleHandles.push_back("melastic", MOD_MELASTIC);
 	moduleHandles.push_back("transport", MOD_TRANSPORT);
 	moduleHandles.push_back("heat", MOD_HEAT);
 	moduleHandles.push_back("SOTfield", MOD_SOTFIELD);
@@ -1229,29 +1304,40 @@ Simulation::Simulation(int Program_Version) :
 	stageDescriptors.push_back("Hpolar_seq", StageDescriptor(SS_HPOLARSEQ, "A/m", false), SS_HPOLARSEQ);
 	stageDescriptors.push_back("Hfmr", StageDescriptor(SS_HFMR, "A/m", false), SS_HFMR);
 	stageDescriptors.push_back("Hequation", StageDescriptor(SS_HFIELDEQUATION, "", false), SS_HFIELDEQUATION);
-	stageDescriptors.push_back("Hequation_seq", StageDescriptor(SS_HFIELDEQUATIONSEQ, "", false), SS_HFIELDEQUATIONSEQ);
+	//Don't define equation sequences to reduce crowding of options in the interface : we can set an equation sequence using an equation stage by editing the text itself, e.g. a format of the type "number: ..." means an equation sequence
+	stageDescriptors.push_back("Hequation_seq", StageDescriptor(SS_HFIELDEQUATIONSEQ, "", false, true), SS_HFIELDEQUATIONSEQ);
+	stageDescriptors.push_back("Hfile", StageDescriptor(SS_HFIELDFILE, "", false), SS_HFIELDFILE);
 	stageDescriptors.push_back("V", StageDescriptor(SS_V, "V"), SS_V);
 	stageDescriptors.push_back("V_seq", StageDescriptor(SS_VSEQ, "V"), SS_VSEQ);
 	//deprecated (use equation instead, but keep SS_ values to keep older simulation files compatible):
 	//stageDescriptors.push_back("Vsin", StageDescriptor(SS_VSIN, "V"), SS_VSIN);
 	//stageDescriptors.push_back("Vcos", StageDescriptor(SS_VCOS, "V"), SS_VCOS);
 	stageDescriptors.push_back("Vequation", StageDescriptor(SS_VEQUATION, ""), SS_VEQUATION);
-	stageDescriptors.push_back("Vequation_seq", StageDescriptor(SS_VEQUATIONSEQ, ""), SS_VEQUATIONSEQ);
+	//Don't define equation sequences to reduce crowding of options in the interface : we can set an equation sequence using an equation stage by editing the text itself, e.g. a format of the type "number: ..." means an equation sequence
+	stageDescriptors.push_back("Vequation_seq", StageDescriptor(SS_VEQUATIONSEQ, "", true, true), SS_VEQUATIONSEQ);
+	stageDescriptors.push_back("Vfile", StageDescriptor(SS_VFILE, ""), SS_VFILE);
 	stageDescriptors.push_back("I", StageDescriptor(SS_I, "A"), SS_I);
 	stageDescriptors.push_back("I_seq", StageDescriptor(SS_ISEQ, "A"), SS_ISEQ);
 	//deprecated (use equation instead, but keep SS_ values to keep older simulation files compatible):
 	//stageDescriptors.push_back("Isin", StageDescriptor(SS_ISIN, "A"), SS_ISIN);
 	//stageDescriptors.push_back("Icos", StageDescriptor(SS_ICOS, "A"), SS_ICOS);
 	stageDescriptors.push_back("Iequation", StageDescriptor(SS_IEQUATION, ""), SS_IEQUATION);
-	stageDescriptors.push_back("Iequation_seq", StageDescriptor(SS_IEQUATIONSEQ, ""), SS_IEQUATIONSEQ);
+	//Don't define equation sequences to reduce crowding of options in the interface : we can set an equation sequence using an equation stage by editing the text itself, e.g. a format of the type "number: ..." means an equation sequence
+	stageDescriptors.push_back("Iequation_seq", StageDescriptor(SS_IEQUATIONSEQ, "", true, true), SS_IEQUATIONSEQ);
+	stageDescriptors.push_back("Ifile", StageDescriptor(SS_IFILE, ""), SS_IFILE);
 	stageDescriptors.push_back("T", StageDescriptor(SS_T, "K", false), SS_T);
 	stageDescriptors.push_back("T_seq", StageDescriptor(SS_TSEQ, "K", false), SS_TSEQ);
 	stageDescriptors.push_back("Tequation", StageDescriptor(SS_TEQUATION, "", false), SS_TEQUATION);
-	stageDescriptors.push_back("Tequation_seq", StageDescriptor(SS_TEQUATIONSEQ, "", false), SS_TEQUATIONSEQ);
+	//Don't define equation sequences to reduce crowding of options in the interface : we can set an equation sequence using an equation stage by editing the text itself, e.g. a format of the type "number: ..." means an equation sequence
+	stageDescriptors.push_back("Tequation_seq", StageDescriptor(SS_TEQUATIONSEQ, "", false, true), SS_TEQUATIONSEQ);
+	stageDescriptors.push_back("Tfile", StageDescriptor(SS_TFILE, "", false), SS_TFILE);
 	stageDescriptors.push_back("Q", StageDescriptor(SS_Q, "W/m3", false), SS_Q);
 	stageDescriptors.push_back("Q_seq", StageDescriptor(SS_QSEQ, "W/m3", false), SS_QSEQ);
 	stageDescriptors.push_back("Qequation", StageDescriptor(SS_QEQUATION, "", false), SS_QEQUATION);
-	stageDescriptors.push_back("Qequation_seq", StageDescriptor(SS_QEQUATIONSEQ, "", false), SS_QEQUATIONSEQ);
+	//Don't define equation sequences to reduce crowding of options in the interface : we can set an equation sequence using an equation stage by editing the text itself, e.g. a format of the type "number: ..." means an equation sequence
+	stageDescriptors.push_back("Qequation_seq", StageDescriptor(SS_QEQUATIONSEQ, "", false, true), SS_QEQUATIONSEQ);
+	stageDescriptors.push_back("Qfile", StageDescriptor(SS_QFILE, "", false), SS_QFILE);
+	stageDescriptors.push_back("Sunif", StageDescriptor(SS_TSIGPOLAR, "Pa", false), SS_TSIGPOLAR);
 
 	stageStopDescriptors.push_back("nostop", StageStopDescriptor(STOP_NOSTOP), STOP_NOSTOP);
 	stageStopDescriptors.push_back("iter", StageStopDescriptor(STOP_ITERATIONS), STOP_ITERATIONS);
@@ -1285,11 +1371,21 @@ Simulation::Simulation(int Program_Version) :
 
 	//---------------------------------------------------------------- START
 
+	//set error log file with path
+	errorlog_fileName = GetUserDocumentsPath() + boris_data_directory + "errorlog.txt";
+	//set startup options file with path
+	startup_options_file = GetUserDocumentsPath() + boris_data_directory + "startup.txt";
+
+	//Load options for startup first
+	Load_Startup_Flags();
+
 	BD.DisplayConsoleMessage("Console activated...");
 
 	//start window sockets thread to listen for incoming messages
-	//Disabled by default : user can enabled it using the scriptserver command
-	//infinite_loop_launch(&Simulation::Listen_Incoming_Message, THREAD_NETWORK);
+	if (start_scriptserver) Script_Server_Control(true);
+
+	//Check with "www.boris-spintronics.uk" if program version is up to date, and get latest update time for materials database
+	if (start_check_updates) single_call_launch(&Simulation::CheckUpdate, THREAD_HANDLEMESSAGE2);
 
 	//Update display - do not animate starting view
 	UpdateScreen_AutoSet_Sudden();
@@ -1313,323 +1409,3 @@ Simulation::~Simulation()
 
 	BD.DisplayConsoleMessage("All threads stopped. Clean-up...");
 }
-
-//MAIN SIMULATION LOOP. Runs in SimulationThread launched in BorisWinapi.
-void Simulation::Simulate(void)
-{
-	//stop other parts of the program from changing simulation parameters in the middle of an interation
-	//non-blocking mutex is needed here so we can stop the simulation from HandleCommand - it also uses the simulationMutex. If Simulation thread gets blocked by this mutex they'll wait on each other forever.
-	if (simulationMutex.try_lock()) {
-
-		//Check conditions for saving data
-		CheckSaveDataCondtions();
-
-		//advance time for this iteration
-#if COMPILECUDA == 1
-		if(cudaEnabled) SMesh.AdvanceTimeCUDA();
-		else SMesh.AdvanceTime();
-#else
-		SMesh.AdvanceTime();
-#endif
-
-		//Display update
-		if (iterUpdate && SMesh.GetIteration() % iterUpdate == 0) UpdateScreen_Quick();
-
-		//Check conditions for advancing simulation schedule
-		CheckSimulationSchedule();
-
-		//finished this iteration
-		simulationMutex.unlock();
-
-		//THREAD_HANDLEMESSAGE is used to run HandleCommand, which also uses simulationMutex to guard access.
-		//With Visual Studio 2017 v141 toolset : without the short wait below, when HandleCommand has been called, simulationMutex will block access for a long time as this Simulate method gets called over and over again on its thread.
-		//This means the command gets executed very late (ten seconds not unusual) - not good!
-		//This wasn't a problem with Visual Studio 2012, v110 or v120 toolset. Maybe with the VS2017 compiler the calls to Simulate on the infinite loop thread are all inlined. 
-		//Effectively there is almost no delay between unlocking and locking the mutex again on the next iteration - THREAD_HANDLEMESSAGE cannot sneak in to lock simulationMutex easily!
-		if (is_thread_running(THREAD_HANDLEMESSAGE)) Sleep(1);
-	}
-}
-
-//Similar to Simulate but only runs for one iteration and does not advance time
-void Simulation::ComputeFields(void)
-{
-	if (is_thread_running(THREAD_LOOP)) {
-
-		StopSimulation();
-	}
-	else {
-
-		BD.DisplayConsoleMessage("Initializing modules...");
-
-		bool initialization_error;
-
-		if (!cudaEnabled) {
-
-			initialization_error = err_hndl.qcall(&SuperMesh::InitializeAllModules, &SMesh);
-		}
-		else {
-
-#if COMPILECUDA == 1
-			initialization_error = err_hndl.qcall(&SuperMesh::InitializeAllModulesCUDA, &SMesh);
-#endif
-		}
-
-		if (initialization_error) {
-
-			BD.DisplayConsoleError("Failed to initialize simulation.");
-			return;
-		}
-	}
-
-	BD.DisplayConsoleMessage("Initialized. Updating fields.");
-
-	//advance time for this iteration
-#if COMPILECUDA == 1
-	if (cudaEnabled) SMesh.ComputeFieldsCUDA();
-	else SMesh.ComputeFields();
-#else
-	SMesh.ComputeFields();
-#endif
-
-	//Display update
-	UpdateScreen();
-
-	BD.DisplayConsoleMessage("Fields updated.");
-}
-
-void Simulation::RunSimulation(void)
-{
-	if (is_thread_running(THREAD_LOOP)) {
-
-		BD.DisplayConsoleMessage("Simulation already running.");
-		return;
-	}
-
-	BD.DisplayConsoleMessage("Initializing modules...");
-
-	bool initialization_error;
-
-	if (!cudaEnabled) {
-
-		initialization_error = err_hndl.qcall(&SuperMesh::InitializeAllModules, &SMesh);
-	}
-	else {
-#if COMPILECUDA == 1
-		initialization_error = err_hndl.qcall(&SuperMesh::InitializeAllModulesCUDA, &SMesh);
-#endif
-	}
-
-	if (initialization_error) {
-
-		BD.DisplayConsoleError("Failed to initialize simulation.");
-		return;
-	}
-
-	//set initial stage values if at the beginning (stage = 0, step = 0, and stageiteration = 0)
-	if (Check_and_GetStageStep() == INT2()) {
-
-		if (SMesh.GetStageIteration() == 0) {
-
-			SetSimulationStageValue();
-			appendToDataFile = false;
-		}
-	}
-
-	infinite_loop_launch(&Simulation::Simulate, THREAD_LOOP);
-	BD.DisplayConsoleMessage("Initialized. Simulation running. Started at: " + Get_Date_Time());
-
-	sim_start_ms = GetTickCount();
-}
-
-void Simulation::StopSimulation(void)
-{
-	if (is_thread_running(THREAD_LOOP)) {
-
-		stop_thread(THREAD_LOOP);
-
-		//make sure the current time step is finished, by iterating a bit more if necessary, before relinquishing control
-		while (!SMesh.CurrentTimeStepSolved()) Simulate();
-
-		sim_end_ms = GetTickCount();
-
-		BD.DisplayConsoleMessage("Simulation stopped. " + Get_Date_Time());
-
-		//if client connected, signal simulation has finished
-		commSocket.SetSendData({ "stopped" });
-		commSocket.SendDataParams();
-
-		UpdateScreen();
-	}
-}
-
-void Simulation::ResetSimulation(void)
-{
-	StopSimulation();
-
-	stage_step = INT2();
-	SMesh.ResetODE();
-
-	UpdateScreen();
-}
-
-#if GRAPHICS == 1
-void Simulation::NewMessage(AC_ aCode, INT2 mouse, string data)
-{
-	//console command received - process it and return
-
-	if (aCode == AC_CONSOLECOMMAND || aCode == AC_CONSOLEENTRY || aCode == AC_CONSOLECOMMAND_ENTRY || aCode == AC_CONSOLECOMMAND_NOPARAMS_ENTRY) {
-
-		//data has the command with any parameters
-		//if there are no parameters then there are no spaces in data, since commands do not include spaces
-		//if there are spaces then there must be parameters
-		//first entry before any space is the command id number (entry in CMD_ enum) but as a string - convert it
-		//all other fields after first space are command parameters, so pass them in as a string
-
-		auto convert_data = [&](string& data) -> string {
-
-			string command_with_parameters;
-
-			vector<string> fields = split(data, " ");
-
-			if (fields.size() > 1) {
-
-				int command_index = ToNum(fields[0]);
-				command_with_parameters = commands.get_key_from_index(command_index) + " " + combine(subvec(fields, 1), " ");
-			}
-			else {
-
-				int command_index = ToNum(data);
-				command_with_parameters = commands.get_key_from_index(command_index);
-			}
-
-			return command_with_parameters;
-		};
-
-		switch (aCode) {
-
-		case AC_CONSOLEENTRY:
-		{
-			single_call_launch<string>(&Simulation::SetConsoleEntryLineText, data, THREAD_HANDLEMESSAGE2);
-		}
-		break;
-
-		case AC_CONSOLECOMMAND_ENTRY:
-		case AC_CONSOLECOMMAND:
-		{
-			string command_with_parameters = convert_data(data);
-
-			set_blocking_thread(THREAD_HANDLEMESSAGE);
-			single_call_launch<string>(&Simulation::HandleCommand, command_with_parameters, THREAD_HANDLEMESSAGE);
-		}
-		break;
-
-		case AC_CONSOLECOMMAND_NOPARAMS_ENTRY:
-		{
-			string command_with_parameters = convert_data(data);
-
-			vector<string> fields = split(command_with_parameters, " ");
-
-			set_blocking_thread(THREAD_HANDLEMESSAGE);
-			single_call_launch<string>(&Simulation::HandleCommand, fields[0], THREAD_HANDLEMESSAGE);
-		}
-		break;
-
-		}
-		
-		if (aCode == AC_CONSOLECOMMAND_ENTRY || aCode == AC_CONSOLECOMMAND_NOPARAMS_ENTRY) {
-
-			single_call_launch<string>(&Simulation::SetConsoleEntryLineText, convert_data(data) + " ", THREAD_HANDLEMESSAGE2);
-		}
-
-		return;
-	}
-
-	//not a console command
-
-	//Dispatch message and check if anything needs to be done here as a result (e.g. a console command entered)
-	ActionOutcome result = BD.NewMessage_ThreadSafe(aCode, mouse, data);
-
-	//Check for special action outcomes which must be handled by the top object (Simulation)
-
-	//dispatch command to command handler - call it on its own unique thread - will not get called if that thread is already active (i.e. still processing previous command
-	if (result.IsCodeSet(AO_MESSAGERETURNED)) {
-
-		//full command formed (enter key pressed)
-		single_call_launch<string>(&Simulation::HandleCommand, result.text, THREAD_HANDLEMESSAGE);
-	}
-
-	//focus mesh but keep camera orientation
-	else if (result.IsCodeSet(AO_MESHFOCUS2)) {
-
-		single_call_launch<string>(&Simulation::HandleCommand, commands.get_key_from_index(CMD_MESHFOCUS2) + " " + result.text, THREAD_HANDLEMESSAGE);
-	}
-	
-	//text entered in console
-	else if (result.IsCodeSet(AO_TEXTRETURNED)) {
-		
-		//try to autocomplete after a key press (and do not allow incorrect commands)
-
-		//only try to autocomplete the command word (not the parameters): as soon as a space is entered then command word is considered formed.
-		if (result.text.find(" ") != string::npos) return;
-
-		//get all commands which contain the returned text at the start
-		string consoleLineText;
-		//if first character is '?' don't include it in autocomplete
-		if (result.text[0] == '?') { result.text = result.text.substr(1); consoleLineText = "?"; }
-
-		vector<int> indexes = commands.find_keystart(result.text);
-
-		//if no matches found then delete last character (e.g. wrong character entered) as long as it results in a correct partial command word
-		if (!indexes.size()) {
-
-			string newText = result.text.substr(0, result.text.length() - 1);
-
-			indexes = commands.find_keystart(newText);
-			if (indexes.size()) {
-
-				consoleLineText += newText;
-				SetConsoleEntryLineText(consoleLineText);
-			}
-		}
-		else {
-
-			//if only one match then autocomplete
-			if (indexes.size() == 1) {
-
-				consoleLineText += commands.get_key_from_index(indexes[0]);
-				SetConsoleEntryLineText(consoleLineText);
-			}
-		}
-	}
-
-	//must update screen
-	else if (result.IsCodeSet(AO_RECALCULATEMESHDISPLAY)) {
-
-		single_call_launch<string>(&Simulation::HandleCommand, commands.get_key_from_index(CMD_UPDATESCREEN), THREAD_HANDLEMESSAGE);
-	}
-
-	//load simulation file
-	else if (result.IsCodeSet(AO_FILEDROPPEDINCONSOLE)) {
-		
-		string command = commands.get_key_from_index(CMD_LOADSIM) + " " + result.text;
-
-		single_call_launch<string>(&Simulation::HandleCommand, command, THREAD_HANDLEMESSAGE);
-	}
-
-	//load mask file
-	else if (result.IsCodeSet(AO_FILEDROPPEDINMESH)) {
-
-		string command = commands.get_key_from_index(CMD_LOADMASKFILE) + " " + result.text;
-
-		single_call_launch<string>(&Simulation::HandleCommand, command, THREAD_HANDLEMESSAGE);
-	}
-}
-#else
-
-void Simulation::NewMessage(string message)
-{
-	//full command formed (enter key pressed)
-	single_call_launch<string>(&Simulation::HandleCommand, message, THREAD_HANDLEMESSAGE);
-}
-
-#endif

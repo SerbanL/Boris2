@@ -7,27 +7,100 @@ vector<PhysQ> SuperMesh::FetchOnScreenPhysicalQuantity(double detail_level)
 {
 	vector<PhysQ> physQ;
 
+	bool cudaSupermesh = false;
+
 #if COMPILECUDA == 1
 	if (pSMeshCUDA) {
 
 		//if super-mesh display quantities are set with CUDA enabled then get them from PSMeshCUDA
 		physQ = pSMeshCUDA->FetchOnScreenPhysicalQuantity(detail_level);
-		if (physQ.size()) return physQ;
+		cudaSupermesh = true;
 	}
 #endif
+
+	//get anything displayed on super-mesh
+	if (!cudaSupermesh) {
+
+		switch (displayedPhysicalQuantity) {
+
+		case MESHDISPLAY_NONE:
+			break;
+
+		case MESHDISPLAY_SM_DEMAG:
+
+			if (IsSuperMeshModuleSet(MODS_SDEMAG)) {
+
+				physQ.push_back(PhysQ(&(reinterpret_cast<SDemag*>(pSMod(MODS_SDEMAG))->GetDemagField()), displayedPhysicalQuantity, (VEC3REP_)vec3rep).set_focus(true, superMeshHandle));
+			}
+			break;
+
+		case MESHDISPLAY_SM_OERSTED:
+
+			if (IsSuperMeshModuleSet(MODS_OERSTED)) {
+
+				physQ.push_back(PhysQ(&(reinterpret_cast<Oersted*>(pSMod(MODS_OERSTED))->GetOerstedField()), displayedPhysicalQuantity, (VEC3REP_)vec3rep).set_focus(true, superMeshHandle));
+			}
+			break;
+
+		case MESHDISPLAY_SM_STRAYH:
+
+			if (IsSuperMeshModuleSet(MODS_STRAYFIELD)) {
+
+				physQ.push_back(PhysQ(&(reinterpret_cast<StrayField*>(pSMod(MODS_STRAYFIELD))->GetStrayField()), displayedPhysicalQuantity, (VEC3REP_)vec3rep).set_focus(true, superMeshHandle));
+			}
+			break;
+		}
+	}
+
+	bool supermeshDisplay = physQ.size();
+	//allow dual display with supermesh display as the foreground - need to check if any individual meshes have a background display enabled.
+	if (supermeshDisplay) physQ.back().set_display_props(displayTransparency.i, displayThresholds, displayThresholdTrigger);
+
+	//get anything displayed in individual meshes
+	for (int idx = 0; idx < (int)pMesh.size(); idx++) {
+
+		if (pMesh[idx]->IsDisplayBackgroundEnabled()) {
+
+			//get foreground and set required transparency and thresholds : not applicable if supermesh quantity is in the foreground
+			if (!supermeshDisplay) physQ.push_back(pMesh[idx]->FetchOnScreenPhysicalQuantity(detail_level).set_focus(pMesh.get_key_from_index(idx) == activeMeshName, pMesh.get_key_from_index(idx)).set_display_props(displayTransparency.i, displayThresholds, displayThresholdTrigger));
+
+			//get background and set required transparency (thresholds do not apply)
+			physQ.push_back(pMesh[idx]->FetchOnScreenPhysicalQuantity(detail_level, true).set_focus(false, pMesh.get_key_from_index(idx)).set_transparency(displayTransparency.j));
+		}
+		else if (!supermeshDisplay) {
+
+			//get quantity and set thresholds (transparency does not apply) : not applicable if supermesh quantity is in the foreground
+			physQ.push_back(pMesh[idx]->FetchOnScreenPhysicalQuantity(detail_level).set_focus(pMesh.get_key_from_index(idx) == activeMeshName, pMesh.get_key_from_index(idx)).set_thresholds(displayThresholds, displayThresholdTrigger));
+		}
+	}
+
+	return physQ;
+}
+
+//save the quantity currently displayed on screen in an ovf2 file using the specified format
+BError SuperMesh::SaveOnScreenPhysicalQuantity(string fileName, string ovf2_dataType)
+{
+#if COMPILECUDA == 1
+	if (pSMeshCUDA) { return pSMeshCUDA->SaveOnScreenPhysicalQuantity(fileName, ovf2_dataType); }
+#endif
+
+	BError error(__FUNCTION__);
+
+	OVF2 ovf2;
 
 	//get anything displayed on super-mesh
 	switch (displayedPhysicalQuantity) {
 
 	case MESHDISPLAY_NONE:
+		//get anything displayed in active mesh
+		error = active_mesh()->SaveOnScreenPhysicalQuantity(fileName, ovf2_dataType);
 		break;
 
 	case MESHDISPLAY_SM_DEMAG:
 
 		if (IsSuperMeshModuleSet(MODS_SDEMAG)) {
 
-			physQ.push_back(PhysQ(&(reinterpret_cast<SDemag*>(pSMod(MODS_SDEMAG))->GetDemagField()), displayedPhysicalQuantity, (VEC3REP_)vec3rep).set_focus(true, superMeshHandle));
-			return physQ;
+			error = ovf2.Write_OVF2_VEC(fileName, reinterpret_cast<SDemag*>(pSMod(MODS_SDEMAG))->GetDemagField(), ovf2_dataType);
 		}
 		break;
 
@@ -35,8 +108,7 @@ vector<PhysQ> SuperMesh::FetchOnScreenPhysicalQuantity(double detail_level)
 
 		if (IsSuperMeshModuleSet(MODS_OERSTED)) {
 
-			physQ.push_back(PhysQ(&(reinterpret_cast<Oersted*>(pSMod(MODS_OERSTED))->GetOerstedField()), displayedPhysicalQuantity, (VEC3REP_)vec3rep).set_focus(true, superMeshHandle));
-			return physQ;
+			error = ovf2.Write_OVF2_VEC(fileName, reinterpret_cast<Oersted*>(pSMod(MODS_OERSTED))->GetOerstedField(), ovf2_dataType);
 		}
 		break;
 
@@ -44,19 +116,164 @@ vector<PhysQ> SuperMesh::FetchOnScreenPhysicalQuantity(double detail_level)
 
 		if (IsSuperMeshModuleSet(MODS_STRAYFIELD)) {
 
-			physQ.push_back(PhysQ(&(reinterpret_cast<StrayField*>(pSMod(MODS_STRAYFIELD))->GetStrayField()), displayedPhysicalQuantity, (VEC3REP_)vec3rep).set_focus(true, superMeshHandle));
-			return physQ;
+			error = ovf2.Write_OVF2_VEC(fileName, reinterpret_cast<StrayField*>(pSMod(MODS_STRAYFIELD))->GetStrayField(), ovf2_dataType);
 		}
 		break;
 	}
 
-	//get anything displayed in individual meshes
-	for (int idx = 0; idx < (int)pMesh.size(); idx++) {
+	return error;
+}
 
-		physQ.push_back(pMesh[idx]->FetchOnScreenPhysicalQuantity(detail_level).set_focus(pMesh.get_key_from_index(idx) == activeMeshName, pMesh.get_key_from_index(idx)));
+//Before calling a run of GetDisplayedMeshValue, make sure to call PrepareDisplayedMeshValue : this calculates and stores in displayVEC storage and quantities which don't have memory allocated directly, but require computation and temporary storage.
+void SuperMesh::PrepareDisplayedMeshValue(void)
+{
+	switch (displayedPhysicalQuantity) {
+
+		////////////////
+		//no quantity displayed on the supermesh, so use individual mesh displayed quantities
+		////////////////
+
+	case MESHDISPLAY_NONE:
+	{
+		for (int idx = 0; idx < pMesh.size(); idx++) {
+
+			pMesh[idx]->PrepareDisplayedMeshValue();
+		}
+	}
+	break;
+
+	default:
+
+		////////////////
+		//use a quantity displayed on the supermesh
+		////////////////
+
+#if COMPILECUDA == 1
+		if (pSMeshCUDA) {
+
+			pSMeshCUDA->PrepareDisplayedMeshValue();
+		}
+#endif
+		break;
+	}
+}
+
+//return value of currently displayed mesh quantity at the given absolute position; the value is read directly from the storage VEC, not from the displayed PhysQ.
+//Return an Any as the displayed quantity could be either a scalar or a vector.
+Any SuperMesh::GetDisplayedMeshValue(DBL3 abs_pos)
+{
+#if COMPILECUDA == 1
+	if (pSMeshCUDA) {
+
+		//if super-mesh display quantities are set with CUDA enabled then get value from pSMeshCUDA
+		return pSMeshCUDA->GetDisplayedMeshValue(abs_pos);
+	}
+#endif
+	
+	//get anything displayed on super-mesh
+	switch (displayedPhysicalQuantity) {
+
+		////////////////
+		//no quantity displayed on the supermesh, so use individual mesh displayed quantities
+		////////////////
+
+	case MESHDISPLAY_NONE:
+	{
+		//find which mesh holds abs_pos, if any, and return value displayed for that mesh
+		for (int idx = 0; idx < pMesh.size(); idx++) {
+
+			if (pMesh[idx]->meshRect.contains(abs_pos)) return pMesh[idx]->GetDisplayedMeshValue(abs_pos);
+		}
+	}
+		break;
+
+		////////////////
+		//use a quantity displayed on the supermesh
+		////////////////
+
+	case MESHDISPLAY_SM_DEMAG:
+
+		if (IsSuperMeshModuleSet(MODS_SDEMAG)) {
+
+			return reinterpret_cast<SDemag*>(pSMod(MODS_SDEMAG))->GetDemagField()[abs_pos - sMeshRect_fm.s];
+		}
+		break;
+
+	case MESHDISPLAY_SM_OERSTED:
+
+		if (IsSuperMeshModuleSet(MODS_OERSTED)) {
+
+			return reinterpret_cast<Oersted*>(pSMod(MODS_OERSTED))->GetOerstedField()[abs_pos - sMeshRect_e.s];
+		}
+		break;
+
+	case MESHDISPLAY_SM_STRAYH:
+
+		if (IsSuperMeshModuleSet(MODS_STRAYFIELD)) {
+
+			return reinterpret_cast<StrayField*>(pSMod(MODS_STRAYFIELD))->GetStrayField()[abs_pos - sMeshRect_fm.s];
+		}
+		break;
 	}
 
-	return physQ;
+	return Any();
+}
+
+//return average value for currently displayed mesh quantity in the given relative rectangle
+Any  SuperMesh::GetAverageDisplayedMeshValue(Rect rel_rect)
+{
+#if COMPILECUDA == 1
+	if (pSMeshCUDA) {
+
+		//if super-mesh display quantities are set with CUDA enabled then get value from pSMeshCUDA
+		return pSMeshCUDA->GetAverageDisplayedMeshValue(rel_rect);
+	}
+#endif
+
+	//get anything displayed on super-mesh
+	switch (displayedPhysicalQuantity) {
+
+		////////////////
+		//no quantity displayed on the supermesh, so use individual mesh displayed quantities
+		////////////////
+
+	case MESHDISPLAY_NONE:
+	{
+		//get average value from currently focused mesh instead
+		return active_mesh()->GetAverageDisplayedMeshValue(rel_rect);
+	}
+	break;
+
+	////////////////
+	//use a quantity displayed on the supermesh
+	////////////////
+
+	case MESHDISPLAY_SM_DEMAG:
+
+		if (IsSuperMeshModuleSet(MODS_SDEMAG)) {
+
+			return reinterpret_cast<SDemag*>(pSMod(MODS_SDEMAG))->GetDemagField().average_nonempty_omp(rel_rect);
+		}
+		break;
+
+	case MESHDISPLAY_SM_OERSTED:
+
+		if (IsSuperMeshModuleSet(MODS_OERSTED)) {
+
+			return reinterpret_cast<Oersted*>(pSMod(MODS_OERSTED))->GetOerstedField().average_nonempty_omp(rel_rect);
+		}
+		break;
+
+	case MESHDISPLAY_SM_STRAYH:
+
+		if (IsSuperMeshModuleSet(MODS_STRAYFIELD)) {
+
+			return reinterpret_cast<StrayField*>(pSMod(MODS_STRAYFIELD))->GetStrayField().average_nonempty_omp(rel_rect);
+		}
+		break;
+	}
+
+	return Any();
 }
 
 BError SuperMesh::SetDisplayedPhysicalQuantity(string meshName, int displayedPhysicalQuantity_)
@@ -80,6 +297,22 @@ BError SuperMesh::SetDisplayedPhysicalQuantity(string meshName, int displayedPhy
 
 			displayedPhysicalQuantity = displayedPhysicalQuantity_;
 		}
+	}
+
+	return error;
+}
+
+BError SuperMesh::SetDisplayedBackgroundPhysicalQuantity(string meshName, int displayedBackgroundPhysicalQuantity_)
+{
+	BError error(__FUNCTION__);
+
+	if (!contains(meshName)) return error(BERROR_INCORRECTNAME);
+
+	MESH_ meshType = pMesh[meshName]->GetMeshType();
+
+	if (displayedBackgroundPhysicalQuantity_ >= MESHDISPLAY_NONE && vector_contains(meshAllowedDisplay(meshType), (MESHDISPLAY_)displayedBackgroundPhysicalQuantity_)) {
+
+		pMesh[meshName]->SetDisplayedBackgroundPhysicalQuantity(displayedBackgroundPhysicalQuantity_);
 	}
 
 	return error;

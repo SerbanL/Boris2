@@ -23,7 +23,7 @@ private:
 	//VEC or VEC_VC quantity : vtype specifies the exact type we need to cast this to
 	void *pVEC = nullptr;
 
-	//second vec to display if in dual display mode : must be same type as pVEC and same dimensions
+	//second quantity when in dual mode display (e.g. antiferromagnetic meshes M12)
 	void *pVEC2 = nullptr;
 
 	//representation of type of *pVEC
@@ -33,6 +33,15 @@ private:
 
 	//what is the displayed quantity? (this will be a value from MESHDISPLAY_ enum)
 	unsigned displayedType;
+
+	//can ask for transparency to be applied when computing display
+	double displayTransparency = 1.0;
+
+	//only display elements with physical magnitude values in this minimum maximum range; thresholds disabled if both zero.
+	DBL2 displayThresholds = DBL2();
+
+	//set which component to trigger display thresholds on when using vector quantities (x, y, z, or magnitude)
+	int displayThresholdTrigger = (int)VEC3REP_Z;
 
 	//Rectangle of physical quantity (VEC) : dimensions * cellsize. Still keep this in case both pvecQ and pscaQ are null but we want to display a mesh frame.
 	Rect rect;
@@ -108,10 +117,38 @@ public:
 	DBL3 get_vec_point(DBL3 coordinate);
 	double get_sca_point(DBL3 coordinate);
 
-	//------------------------------------------- Properties
+	//------------------------------------------- Setters
 
 	//set meshInFocus flag as well as mesh name
 	PhysQ& set_focus(bool status, string meshName_) { meshInFocus = status; meshName = meshName_; return *this; }
+
+	//set display transparency
+	PhysQ& set_transparency(double displayTransparency_) { displayTransparency = displayTransparency_; return *this; }
+
+	//set display thresholds
+	PhysQ& set_thresholds(DBL2 displayThresholds_, int displayThresholdTrigger_) 
+	{ 
+		displayThresholds = displayThresholds_;
+		displayThresholdTrigger = displayThresholdTrigger_;
+		return *this; 
+	}
+
+	//set both transparency and thresholds
+	PhysQ& set_display_props(double displayTransparency_, DBL2 displayThresholds_, int displayThresholdTrigger_)
+	{ 
+		displayTransparency = displayTransparency_;
+		displayThresholds = displayThresholds_; 
+		displayThresholdTrigger = displayThresholdTrigger_;
+		return *this; 
+	}
+
+	//------------------------------------------- Properties
+
+	double get_transparency(void) { return displayTransparency; }
+
+	DBL2 get_thresholds(void) { return displayThresholds; }
+	int get_thresholdtrigger(void) { return displayThresholdTrigger; }
+
 	bool is_focused(void) { return meshInFocus; }
 
 	string get_name(void) { return meshName; }

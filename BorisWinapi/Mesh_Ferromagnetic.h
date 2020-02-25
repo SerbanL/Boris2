@@ -20,15 +20,27 @@ class FMesh :
 	public Mesh,
 	public ProgramState<FMesh,
 	//Mesh members
-	tuple<int, int, int, int, int, int, Rect, SZ3, DBL3, SZ3, DBL3, SZ3, DBL3, VEC_VC<DBL3>, VEC_VC<double>, VEC_VC<DBL3>, VEC_VC<double>, VEC_VC<double>, vector_lut<Modules*>,
+	tuple<int, int, int, int, int, int, int, Rect, SZ3, DBL3, SZ3, DBL3, SZ3, DBL3, SZ3, DBL3, VEC_VC<DBL3>, VEC_VC<double>, VEC_VC<DBL3>, VEC_VC<double>, VEC_VC<double>, VEC_VC<DBL3>, VEC_VC<DBL3>, VEC_VC<DBL3>, vector_lut<Modules*>,
 	//Members in this derived class
 	bool, SkyrmionTrack, bool,
 	//Material Parameters
 	MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<DBL2, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<DBL3, DBL3>, MatP<DBL3, DBL3>, MatP<double, double>, MatP<double, double>, MatP<double, double>,
 	MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<DBL2, double>, MatP<DBL2, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>,
-	MatP<double, double>, MatP<double, double>, double, TEquation<double>, double, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>>,
+	MatP<double, double>, MatP<double, double>, double, TEquation<double>, double, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<DBL2, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>,
+	
+	//OBSOLETE
+	//must keep to allow some older simulation files to load if they have these defined
+	//Since these are complex types (i.e. they inherit from ProgramState), taking them out is problematic as ProgramState will encounter the "end type" string corresponding to them and return from LoadObjectState method
+	//If these data member names are no longer defined then ProgramState will have skipped over them and thus not issued a new call to LoadObjectState as required for a complex type: thus returning on encountering "end type" means returning from the wrong LoadObjectState method call.
+	//This can potentially cause a whole host of unwanted side effects and even crash the program.
+	//This is really due to my bad initial design of ProgramState : I should have signalled when a complex type starts ("start type") so it can identify matching "start type" and "end type" strings, and if data member name not found simply jump over that block.
+	//I can fix this now, and still keep files saved with the older ProgramState version compatible, but there's nothing I can do to make simulation files with these OBSOLETE types defined load properly now, short of keeping them defined here even though not used anymore.
+	//Note this is only a problem for complex types for the reasons outlined above.
+	//Date ProgramState fixed : 14/02/2020. Any new data members introduced after this date, and later made obsolete, doesn't have to be added to this list.
+	MatP<double, double>, MatP<double, double>, MatP<DBL3, DBL3>
+	>,
 	//Module Implementations
-	tuple<Demag_N, Demag, SDemag_Demag, Exch_6ngbr_Neu, DMExchange, iDMExchange, SurfExchange, Zeeman, Anisotropy_Uniaxial, Anisotropy_Cubic, Transport, Heat, SOTField, Roughness> >
+	tuple<Demag_N, Demag, SDemag_Demag, Exch_6ngbr_Neu, DMExchange, iDMExchange, SurfExchange, Zeeman, Anisotropy_Uniaxial, Anisotropy_Cubic, MElastic, Transport, Heat, SOTField, Roughness> >
 {
 #if COMPILECUDA == 1
 	friend FMeshCUDA;
@@ -138,7 +150,7 @@ public:
 	DBL2 Get_skyshift(Rect skyRect) 
 	{ 
 #if COMPILECUDA == 1
-		if(pMeshCUDA) return skyShift.Get_skyshiftCUDA(n.dim(), h, pMeshCUDA->M, skyRect);
+		if(pMeshCUDA) return skyShift.Get_skyshiftCUDA(n.dim(), h, meshRect, pMeshCUDA->M, skyRect);
 #endif
 		return skyShift.Get_skyshift(M, skyRect); 
 	}

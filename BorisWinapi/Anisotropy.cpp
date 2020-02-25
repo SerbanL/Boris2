@@ -175,7 +175,7 @@ double Anisotropy_Uniaxial::UpdateField(void)
 
 	this->energy = energy;
 
-	return energy;
+	return this->energy;
 }
 
 #endif

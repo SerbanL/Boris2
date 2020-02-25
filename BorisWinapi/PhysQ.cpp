@@ -185,6 +185,10 @@ PhysQ& PhysQ::operator=(const PhysQ& copyThis)
 	vstype = copyThis.vstype;
 
 	displayedType = copyThis.displayedType;
+	displayTransparency = copyThis.displayTransparency;
+	displayThresholds = copyThis.displayThresholds;
+	displayThresholdTrigger = copyThis.displayThresholdTrigger;
+
 	rect = copyThis.rect;
 	h = copyThis.h;
 	n = copyThis.n;

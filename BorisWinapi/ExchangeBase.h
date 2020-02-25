@@ -24,7 +24,7 @@ private:
 	//pointer to mesh object holding this effective field module
 	Mesh *pMesh;
 
-	//CMBND contacts between this mesh and other ferromagnetic meshes (we do not require other ferromagnetic meshes to have an exchange module enabled, just this one).
+	//CMBND contacts between this mesh and other (anti)ferromagnetic meshes (we do not require other ferromagnetic meshes to have an exchange module enabled, just this one).
 	vector<CMBNDInfo> CMBNDcontacts;
 
 	//vector of pointers to all M - CMBNDInfo has a data member INT2 mesh_idx; mesh_idx.secondary is an index in pM for a mesh in contact with this one

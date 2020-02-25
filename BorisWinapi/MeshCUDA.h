@@ -34,6 +34,7 @@ using namespace std;
 
 class Mesh;
 class PhysQ;
+class Any;
 
 //Store Mesh quantities as cu_obj managed cuda VECs
 class MeshCUDA :
@@ -117,6 +118,22 @@ public:
 
 	//-----Elastic properties
 
+	//number of cells for mechanical properties
+	SZ3& n_m;
+
+	//cellsize for mechanical properties
+	DBL3& h_m;
+
+	//mechanical displacement vectors - on n_m, h_m mesh
+	cu_obj<cuVEC_VC<cuReal3>> u_disp;
+
+	//strain tensor (symmetric):
+	//diagonal and off-diagonal components - on n_m, h_m mesh
+	//xx, yy, zz
+	cu_obj<cuVEC_VC<cuReal3>> strain_diag;
+	//yz, xz, xy
+	cu_obj<cuVEC_VC<cuReal3>> strain_odiag;
+
 public:
 
 	//make this object by copying data from the Mesh holding this object
@@ -143,7 +160,20 @@ public:
 
 	//----------------------------------- DISPLAY-ASSOCIATED GET/SET METHODS
 
-	PhysQ FetchOnScreenPhysicalQuantity(double detail_level);
+	PhysQ FetchOnScreenPhysicalQuantity(double detail_level, bool getBackground);
+
+	//save the quantity currently displayed on screen in an ovf2 file using the specified format
+	BError SaveOnScreenPhysicalQuantity(string fileName, string ovf2_dataType);
+
+	//Before calling a run of GetDisplayedMeshValue, make sure to call PrepareDisplayedMeshValue : this calculates and stores in displayVEC storage and quantities which don't have memory allocated directly, but require computation and temporary storage.
+	void PrepareDisplayedMeshValue(void);
+
+	//return value of currently displayed mesh quantity at the given absolute position; the value is read directly from the storage VEC, not from the displayed PhysQ.
+	//Return an Any as the displayed quantity could be either a scalar or a vector.
+	Any GetDisplayedMeshValue(DBL3 abs_pos);
+
+	//return average value for currently displayed mesh quantity in the given relative rectangle
+	Any GetAverageDisplayedMeshValue(Rect rel_rect);
 
 	//----------------------------------- MESH INFO GET/SET METHODS
 
@@ -161,6 +191,9 @@ public:
 
 	//thermal conduction computation enabled
 	bool TComputation_Enabled(void);
+
+	//mechanical computation enabled
+	bool MechComputation_Enabled(void);
 
 	//check if interface conductance is enabled (for spin transport solver)
 	bool GInterface_Enabled(void);

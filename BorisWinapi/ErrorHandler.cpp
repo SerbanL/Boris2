@@ -20,7 +20,7 @@ void Simulation::restore_state(void)
 	if (error) {
 
 		//restore.bsm failed : go back to default
-		error.reset() = LoadSimulation(GetUserDocumentsPath() + "Boris Data\\Simulations\\" + "default");
+		error.reset() = LoadSimulation(GetUserDocumentsPath() + boris_data_directory + "Simulations\\" + "default");
 
 		if (!error) {
 
@@ -37,9 +37,19 @@ void Simulation::restore_state(void)
 }
 
 //show the error
-void Simulation::show_error(BError berror, string error_message) 
+void Simulation::show_error(BError berror, string error_message, bool verbose)
 { 
-	BD.DisplayConsoleError("ERROR : " + error_message + ". Info : " + berror.info());
+	string err_text = error_message + " Info : " + berror.info();
+
+	if (verbose) BD.DisplayConsoleError("ERROR : " + err_text);
+
+	if (log_errors) {
+
+		ofstream bdout;
+		bdout.open(errorlog_fileName.c_str(), ios::out | ios::app);
+		bdout << Get_Date_Time() + err_text << endl;
+		bdout.close();
+	}
 
 	UpdateScreen();
 }

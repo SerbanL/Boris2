@@ -8,7 +8,7 @@
 #include "BorisCUDALib.h"
 #include "ModulesCUDA.h"
 
-class FMeshCUDA;
+class MeshCUDA;
 class SurfExchange;
 class ManagedMeshCUDA;
 
@@ -19,7 +19,7 @@ class SurfExchangeCUDA :
 private:
 
 	//pointer to CUDA version of mesh object holding the effective field module holding this CUDA module
-	FMeshCUDA* pMeshCUDA;
+	MeshCUDA* pMeshCUDA;
 
 	//pointer to cpu version of SurfExchange
 	SurfExchange* pSurfExch;
@@ -33,7 +33,7 @@ private:
 
 public:
 
-	SurfExchangeCUDA(FMeshCUDA* pMeshCUDA_, SurfExchange* pSurfExch_);
+	SurfExchangeCUDA(MeshCUDA* pMeshCUDA_, SurfExchange* pSurfExch_);
 	~SurfExchangeCUDA();
 
 	//-------------------Abstract base class method implementations

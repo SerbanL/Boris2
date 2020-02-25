@@ -271,6 +271,11 @@ private:
 			return RunThisMethod<RType, INT2>(param);
 		}
 
+		else if (type_name == typeid(FLT2).name()) {
+
+			return RunThisMethod<RType, FLT2>(param);
+		}
+
 		else if (type_name == typeid(DBL2).name()) {
 
 			return RunThisMethod<RType, DBL2>(param);
@@ -281,6 +286,11 @@ private:
 			return RunThisMethod<RType, INT3>(param);
 		}
 
+		else if (type_name == typeid(FLT3).name()) {
+
+			return RunThisMethod<RType, FLT3>(param);
+		}
+
 		else if (type_name == typeid(DBL3).name()) {
 
 			return RunThisMethod<RType, DBL3>(param);
@@ -289,6 +299,11 @@ private:
 		else if (type_name == typeid(INT4).name()) {
 
 			return RunThisMethod<RType, INT4>(param);
+		}
+
+		else if (type_name == typeid(FLT4).name()) {
+
+			return RunThisMethod<RType, FLT4>(param);
 		}
 
 		else if (type_name == typeid(DBL4).name()) {
@@ -354,6 +369,16 @@ private:
 		else if (type_name == typeid(StringSequence).name()) {
 
 			return RunThisMethod<RType, StringSequence>(param);
+		}
+
+		else if (type_name == typeid(FILESEQ).name()) {
+
+			return RunThisMethod<RType, FILESEQ>(param);
+		}
+
+		else if (type_name == typeid(FILESEQ3).name()) {
+
+			return RunThisMethod<RType, FILESEQ3>(param);
 		}
 
 		return RType();

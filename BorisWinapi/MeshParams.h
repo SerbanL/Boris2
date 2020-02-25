@@ -194,11 +194,26 @@ public:
 	//specific heat capacity (J/kgK) - default for permalloy
 	MatP<double, double> shc = 430;
 
+	//Magneto-elastic coefficients (J/m^3) - default for Ni
+	MatP<DBL2, double> MEc = DBL2(8e6);
+
+	//Young's modulus (Pa) - default for permalloy
+	MatP<double, double> Ym = 113e9;
+	
+	//Poisson's ratio (unitless) - default for permalloy
+	MatP<double, double> Pr = 0.3;
+
 	//set temperature spatial variation coefficient (unitless) - used with temperature settings in a simulation schedule only, not with console command directly
 	MatP<double, double> cT = 1.0;
 
 	//Heat source stimulus in heat equation. Ideally used with a spatial variation. (W//m3)
 	MatP<double, double> Q = 0.0;
+
+
+	//OBSOLETE - not used anywhere; keep them to be able to load simulation files which might have these defined
+	MatP<double, double> lambda = 1e-5;
+	MatP<double, double> cTsig = 1.0;
+	MatP<DBL3, DBL3> dTsig = DBL3(1, 0, 0);
 
 private:
 
@@ -292,6 +307,9 @@ public:
 	//use void* since the scaling is templated. Caller must recast it correctly - see is_paramvar_scalar method
 	void* get_meshparam_s_scaling(PARAM_ paramID);
 
+	//get value of mesh parameter spatial scaling coefficient at given position (and time)
+	Any get_meshparam_s_scaling_value(PARAM_ paramID, DBL3 rel_pos, double stime);
+
 	//calculate spatial variation into the provided VECs - intended to be used when the spatial variation is set using a text equation
 	void calculate_meshparam_s_scaling(PARAM_ paramID, VEC<double>& displayVEC_SCA, double stime);
 	void calculate_meshparam_s_scaling(PARAM_ paramID, VEC<DBL3>& displayVEC_VEC, double stime);
@@ -314,6 +332,9 @@ public:
 
 	//set mesh parameter array scaling
 	bool set_meshparam_tscaling_array(PARAM_ paramID, vector<double>& temp, vector<double>& scaling);
+
+	//set temperature dependence info string for console display purposes
+	void set_meshparam_tscaling_info(PARAM_ paramID, string info_text);
 
 	//-------------------------Setters : spatial variation
 
@@ -518,6 +539,18 @@ RType MeshParams::run_on_param(PARAM_ paramID, Lambda& run_this, PType& ... run_
 
 	case PARAM_DENSITY:
 		return run_this(density, run_this_args...);
+		break;
+
+	case PARAM_MECOEFF:
+		return run_this(MEc, run_this_args...);
+		break;
+
+	case PARAM_YOUNGSMOD:
+		return run_this(Ym, run_this_args...);
+		break;
+
+	case PARAM_POISSONRATIO:
+		return run_this(Pr, run_this_args...);
 		break;
 
 	case PARAM_SHC:

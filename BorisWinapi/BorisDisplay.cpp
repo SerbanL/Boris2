@@ -140,7 +140,7 @@ void BorisDisplay::MakeIOIPopupTextBox(INT2 parent_winId, INT2 mouse)
 	//the popup data box was created with a mouse left click, so transmit that to it
 	pnewPopUpBox->NewMessage(AC_MOUSELEFTDOWN, mouse);
 
-	Refresh();
+	Draw();
 }
 
 //make a popup edit box. After editing the text send it back to the original interactive object to use.
@@ -188,7 +188,7 @@ void BorisDisplay::MakeIOIPopupEditBox(INT2 parent_winId, INT2 mouse)
 	//the popup data box was created with a mouse left click, so transmit that to it
 	pnewPopUpBox->NewMessage(AC_MOUSELEFTDOWN, mouse);
 
-	Refresh();
+	Draw();
 }
 
 //Make a text box which displays some fixed info. The window is deleted as soon as the mouse leaves it.
@@ -230,7 +230,7 @@ void BorisDisplay::MakeHoverInfoTextBox(INT2 mouse, string formatted_text_info_s
 
 	BringWindowToFront(pnewHoverInfoTextBox->GetwinId());
 
-	Refresh();
+	Draw();
 }
 
 void BorisDisplay::PopupTextBoxInteraction(INT2 popupId, INT2 mouse) 
@@ -494,7 +494,7 @@ void BorisDisplay::BringWindowToFront(int currPos)
 }
 
 //refresh display, including recalculating interactive objects
-void BorisDisplay::Refresh(int winIdMajor) 
+void BorisDisplay::Refresh(int winIdMajor)
 {
 	if (!bWin.size()) return;
 
@@ -505,7 +505,7 @@ void BorisDisplay::Refresh(int winIdMajor)
 	//reset tranformation
 	pBG->ResetTransformation();
 
-	if (winIdMajor < 0) {
+	if (winIdMajor == WIN_ALL) {
 
 		//Draw all windows : call takes the form Refresh();
 
@@ -543,7 +543,7 @@ void BorisDisplay::Draw(int winIdMajor)
 	//reset tranformation
 	pBG->ResetTransformation();
 
-	if (winIdMajor < 0) {
+	if (winIdMajor == WIN_ALL) {
 
 		//Draw all windows : call takes the form Refresh();
 
@@ -600,7 +600,7 @@ ActionOutcome BorisDisplay::NewMessage(AC_ aCode, INT2 mouse, string data)
 				bWin[i]->WindowLeft();
 
 			SetCursor(LoadCursor(nullptr, IDC_ARROW));
-			Refresh();
+			Draw();
 		}
 
 		//check for returned action code

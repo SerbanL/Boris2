@@ -6,12 +6,13 @@
 
 #if COMPILECUDA == 1
 
-DBL2 SkyrmionTrack::Get_skyshiftCUDA(size_t size, DBL3 h, cu_obj<cuVEC_VC<cuReal3>>& M, Rect skyRect)
+DBL2 SkyrmionTrack::Get_skyshiftCUDA(size_t size, DBL3 h, Rect M_rect, cu_obj<cuVEC_VC<cuReal3>>& M, Rect skyRect)
 {
 	//must have a set rectangle
 	if (skyRect.IsNull()) return DBL2();
 
-	int skyTrack_idx = Get_skyTrack_index(skyRect);
+	int skyTrack_idx = Get_skyTrack_index(skyRect, M_rect);
+	if (skyTrack_idx < 0) return DBL2();
 
 	//shift the skyrmion rectangle to current tracking position
 	skyRect += DBL3(skyTrack_ShiftLast[skyTrack_idx].x, skyTrack_ShiftLast[skyTrack_idx].y, 0.0);
@@ -59,7 +60,8 @@ DBL4 SkyrmionTrack::Get_skypos_diametersCUDA(size_t size, DBL3 h, Rect M_rect, c
 	//must have a set rectangle
 	if (skyRect.IsNull()) return DBL4();
 
-	int skyTrack_idx = Get_skyTrack_index(skyRect);
+	int skyTrack_idx = Get_skyTrack_index(skyRect, M_rect);
+	if (skyTrack_idx < 0) return DBL4();
 
 	CurveFitting fit;
 
@@ -68,20 +70,34 @@ DBL4 SkyrmionTrack::Get_skypos_diametersCUDA(size_t size, DBL3 h, Rect M_rect, c
 	//skyRect was the original skyrmion rectangle, used to identify it. We now want to work with the updated skyrmion rectangle.
 	skyRect = skyTrack_rect[skyTrack_idx];
 
+	/*
+
+	//OLD METHOD : NOT RESILIENT ENOUGH
+
+	//maximum number of points along any dimension in the skyrmion tracking window; multiply by 2 since the skyrmion window is adjusted to be 2 times the skyrmion diameter so in the extreme it could be two times the mesh size.
+	int max_points = maximum((M_rect.e.x - M_rect.s.x) / h.x, (M_rect.e.y - M_rect.s.y) / h.y) * 2;
+	if (max_points <= 0) return DBL4();
+
 	//get x axis data then fit to find skyrmion diameter and center position
 	auto fit_x_axis = [&](void) -> DBL2 {
 
 		int points_x = (skyRect.e.x - skyRect.s.x) / h.x;
+		
+		//skyrmion too large for current mesh size so fail the fitting
+		if (points_x > max_points) return DBL2(-1);
 
 		//to improve fitting accuracy extended the number of points either side by filling in start / end values.
 		int end_points = 100;
 
-		if (xy_data.size() < points_x + 2 * end_points) xy_data.resize(points_x + 2 * end_points);
-		if (data_gpu.size() < points_x) data_gpu.resize(points_x);
-		if (data_cpu.size() < points_x) data_cpu.resize(points_x);
-		
+		//keep working arrays to maximum possible size (memory use is not significant and this avoids allocating memory often).
+		if (xy_data.size() < max_points + 2 * end_points) xy_data.resize(max_points + 2 * end_points);
+		if (data_gpu.size() < max_points) data_gpu.resize(max_points);
+		if (data_cpu.size() != data_gpu.size()) data_cpu.resize(data_gpu.size());
+
 		//Extract profile from M (gpu to gpu)
-		M()->extract_profile_component_x(points_x, data_gpu, cuReal3(skyRect.s.x, (skyRect.e.y + skyRect.s.y) / 2, h.z / 2), cuReal3(h.x, 0, 0));
+		if (data_gpu.size() >= points_x) M()->extract_profile_component_x(points_x, data_gpu, cuReal3(skyRect.s.x, (skyRect.e.y + skyRect.s.y) / 2, h.z / 2), cuReal3(h.x, 0, 0));
+		//just in case
+		else return DBL2(-1);
 
 		//Transfer extracted profile from gpu to cpu
 		data_gpu.copy_to_cpuvector(data_cpu);
@@ -118,16 +134,19 @@ DBL4 SkyrmionTrack::Get_skypos_diametersCUDA(size_t size, DBL3 h, Rect M_rect, c
 	auto fit_y_axis = [&](void) -> DBL2 {
 
 		int points_y = (skyRect.e.y - skyRect.s.y) / h.y;
+		if (points_y > max_points) return DBL2(-1);
 
 		//to improve fitting accuracy extended the number of points either side by filling in start / end values.
 		int end_points = 100;
 
-		if (xy_data.size() < points_y + 2 * end_points) xy_data.resize(points_y + 2 * end_points);
-		if (data_gpu.size() < points_y) data_gpu.resize(points_y);
-		if (data_cpu.size() < points_y) data_cpu.resize(points_y);
+		//keep working arrays to maximum possible size (memory use is not significant and this avoids allocating memory often).
+		if (xy_data.size() < max_points + 2 * end_points) xy_data.resize(max_points + 2 * end_points);
+		if (data_gpu.size() < max_points) data_gpu.resize(max_points);
+		if (data_cpu.size() != data_gpu.size()) data_cpu.resize(data_gpu.size());
 
 		//Extract profile from M (gpu to gpu)
-		M()->extract_profile_component_y(points_y, data_gpu, cuReal3((skyRect.e.x + skyRect.s.x) / 2, skyRect.s.y, h.z / 2), cuReal3(0, h.y, 0));
+		if (data_gpu.size() >= points_y) M()->extract_profile_component_y(points_y, data_gpu, cuReal3((skyRect.e.x + skyRect.s.x) / 2, skyRect.s.y, h.z / 2), cuReal3(0, h.y, 0));
+		else return DBL2(-1);
 
 		//Transfer extracted profile from gpu to cpu
 		data_gpu.copy_to_cpuvector(data_cpu);
@@ -160,12 +179,197 @@ DBL4 SkyrmionTrack::Get_skypos_diametersCUDA(size_t size, DBL3 h, Rect M_rect, c
 		return DBL2(params[0] * 2, params[1]);
 	};
 
+	*/
+
+	//maximum number of points along any dimension in the skyrmion tracking window; multiply by 2 since the skyrmion window is adjusted to be 2 times the skyrmion diameter so in the extreme it could be two times the mesh size.
+	int max_points = maximum((M_rect.e.x - M_rect.s.x) / h.x, (M_rect.e.y - M_rect.s.y) / h.y) * 2;
+	if (max_points <= 0) return DBL4();
+
+	auto fit_x_axis_zerocrossing = [&](void) -> DBL2 {
+
+		auto search_line = [&](double pos_y) -> DBL2 {
+
+			int points_x = (skyRect.e.x - skyRect.s.x) / h.x;
+
+			//skyrmion too large for current mesh size so fail the fitting
+			if (points_x > max_points) return DBL2(-1);
+
+			//keep working arrays to maximum possible size (memory use is not significant and this avoids allocating memory often).
+			if (data_gpu.size() < max_points) data_gpu.resize(max_points);
+			if (data_cpu.size() != data_gpu.size()) data_cpu.resize(data_gpu.size());
+
+			//Extract profile from M (gpu to gpu)
+			if (data_gpu.size() >= points_x) M()->extract_profile_component_z(points_x, data_gpu, cuReal3(skyRect.s.x, pos_y, h.z / 2), cuReal3(h.x, 0, 0));
+			//just in case
+			else return DBL2(-1);
+
+			//Transfer extracted profile from gpu to cpu
+			data_gpu.copy_to_cpuvector(data_cpu);
+
+			bool plus_sign = data_cpu[0] > 0;
+			double first_crossing = 0.0, second_crossing = 0.0;
+
+			for (int idx = 0; idx < (skyRect.e.x - skyRect.s.x) / h.x; idx++) {
+
+				double position = skyRect.s.x + idx * h.x;
+				double value = data_cpu[idx];
+
+				if ((plus_sign && value <= 0) || (!plus_sign && value > 0)) {
+
+					plus_sign = !plus_sign;
+
+					if (!first_crossing) {
+
+						if (idx + 1 < (skyRect.e.x - skyRect.s.x) / h.x) first_crossing = interpolate(DBL2(data_cpu[idx - 1], position - h.x), DBL2(data_cpu[idx + 1], position + h.x), value);
+						else first_crossing = position;
+					}
+					else {
+
+						if (idx + 1 < (skyRect.e.x - skyRect.s.x) / h.x) second_crossing = interpolate(DBL2(data_cpu[idx - 1], position - h.x), DBL2(data_cpu[idx + 1], position + h.x), value);
+						else second_crossing = position;
+						break;
+					}
+				}
+			}
+
+			if (first_crossing && second_crossing) return DBL2(second_crossing - first_crossing, (first_crossing + second_crossing) / 2);
+			else return DBL2(-1);
+		};
+
+		//initially search through the center of the tracker rectangle
+		DBL2 dia_pos = search_line((skyRect.e.y + skyRect.s.y) / 2);
+
+		if (dia_pos >= 0) return dia_pos;
+		else {
+
+			DBL2 max_dia_pos = DBL2(-1);
+
+			//bounds couldn't be found, so search line by line for the largest bounds distance
+			for (int idx_y = 0; idx_y < (skyRect.e.y - skyRect.s.y) / h.y; idx_y++) {
+
+				dia_pos = search_line(skyRect.s.y + idx_y * h.y);
+				if (dia_pos >= 0) {
+
+					if (dia_pos.i > max_dia_pos.i) max_dia_pos = dia_pos;
+				}
+			}
+
+			if (max_dia_pos >= 0) return max_dia_pos;
+
+			//searched everything and still couldn't find bounds : no skyrmion present in current rectangle, or skyrmion too small for current cellsize
+			//finally try to set the tracker rectangle to the entire mesh and search again
+
+			//set tracker rectangle to entire mesh, remembering we need a relative rect
+			skyRect = M_rect - M_rect.s;
+
+			for (int idx_y = 0; idx_y < (skyRect.e.y - skyRect.s.y) / h.y; idx_y++) {
+
+				dia_pos = search_line(skyRect.s.y + idx_y * h.y);
+				if (dia_pos >= 0) {
+
+					if (dia_pos.i > max_dia_pos.i) max_dia_pos = dia_pos;
+				}
+			}
+
+			return max_dia_pos;
+		}
+	};
+
+	auto fit_y_axis_zerocrossing = [&](void) -> DBL2 {
+
+		auto search_line = [&](double pos_x) -> DBL2 {
+
+			int points_y = (skyRect.e.y - skyRect.s.y) / h.y;
+
+			//skyrmion too large for current mesh size so fail the fitting
+			if (points_y > max_points) return DBL2(-1);
+
+			//keep working arrays to maximum possible size (memory use is not significant and this avoids allocating memory often).
+			if (data_gpu.size() < max_points) data_gpu.resize(max_points);
+			if (data_cpu.size() != data_gpu.size()) data_cpu.resize(data_gpu.size());
+
+			//Extract profile from M (gpu to gpu)
+			if (data_gpu.size() >= points_y) M()->extract_profile_component_z(points_y, data_gpu, cuReal3(pos_x, skyRect.s.y, h.z / 2), cuReal3(0, h.y, 0));
+			else return DBL2(-1);
+
+			//Transfer extracted profile from gpu to cpu
+			data_gpu.copy_to_cpuvector(data_cpu);
+
+			bool plus_sign = data_cpu[0] > 0;
+			double first_crossing = 0.0, second_crossing = 0.0;
+
+			for (int idx = 0; idx < (skyRect.e.y - skyRect.s.y) / h.y; idx++) {
+
+				double position = skyRect.s.y + idx * h.y;
+				double value = data_cpu[idx];
+
+				if ((plus_sign && value <= 0) || (!plus_sign && value > 0)) {
+
+					plus_sign = !plus_sign;
+
+					if (!first_crossing) {
+
+						if (idx + 1 < (skyRect.e.y - skyRect.s.y) / h.y) first_crossing = interpolate(DBL2(data_cpu[idx - 1], position - h.y), DBL2(data_cpu[idx + 1], position + h.y), value);
+						else first_crossing = position;
+					}
+					else {
+
+						if (idx + 1 < (skyRect.e.y - skyRect.s.y) / h.y) second_crossing = interpolate(DBL2(data_cpu[idx - 1], position - h.y), DBL2(data_cpu[idx + 1], position + h.y), value);
+						else second_crossing = position;
+						break;
+					}
+				}
+			}
+
+			if (first_crossing && second_crossing) return DBL2(second_crossing - first_crossing, (first_crossing + second_crossing) / 2);
+			else return DBL2(-1);
+		};
+
+		//initially search through the center of the tracker rectangle
+		DBL2 dia_pos = search_line((skyRect.e.x + skyRect.s.x) / 2);
+
+		if (dia_pos >= 0) return dia_pos;
+		else {
+
+			DBL2 max_dia_pos = DBL2(-1);
+
+			//bounds couldn't be found, so search line by line for the largest bounds distance
+			for (int idx_x = 0; idx_x < (skyRect.e.x - skyRect.s.x) / h.x; idx_x++) {
+
+				dia_pos = search_line(skyRect.s.x + idx_x * h.x);
+				if (dia_pos >= 0) {
+
+					if (dia_pos.i > max_dia_pos.i) max_dia_pos = dia_pos;
+				}
+			}
+
+			if (max_dia_pos >= 0) return max_dia_pos;
+
+			//searched everything and still couldn't find bounds : no skyrmion present in current rectangle, or skyrmion too small for current cellsize
+			//finally try to set the tracker rectangle to the entire mesh and search again
+
+			//set tracker rectangle to entire mesh, remembering we need a relative rect
+			skyRect = M_rect - M_rect.s;
+
+			for (int idx_x = 0; idx_x < (skyRect.e.x - skyRect.s.x) / h.x; idx_x++) {
+
+				dia_pos = search_line(skyRect.s.x + idx_x * h.x);
+				if (dia_pos >= 0) {
+
+					if (dia_pos.i > max_dia_pos.i) max_dia_pos = dia_pos;
+				}
+			}
+
+			return max_dia_pos;
+		}
+	};
+
 	//1. Fitting along x direction
 
-	DBL2 dia_pos = fit_x_axis();
+	DBL2 dia_pos = fit_x_axis_zerocrossing();
 
-	//need these checks just in case the fitting fails : otherwise we can crash the program
-	if (isnan(dia_pos.i) || isnan(dia_pos.j) || dia_pos.i < 0 || dia_pos.j < 0) return DBL4();
+	//need these checks just in case the fitting fails
+	if (dia_pos < 0) return DBL4();
 
 	double diameter_x = dia_pos.i;
 	double position_x = dia_pos.j;
@@ -173,40 +377,39 @@ DBL4 SkyrmionTrack::Get_skypos_diametersCUDA(size_t size, DBL3 h, Rect M_rect, c
 	//center rectangle along x
 	skyRect += DBL3(dia_pos.j - (skyRect.e.x + skyRect.s.x) / 2, 0.0, 0.0);
 
-	//make sure the rectangle doesn't go out of bounds
-	if (skyRect.s.x < 0.0) skyRect.s.x = 0.0;
-	if (skyRect.e.x > M_rect.e.x) skyRect.e.x = M_rect.e.x;
-
 	//2. Fit along y direction - this gives us the correct y axis diameter and y center position, and also allows us to center the rectangle along y
 
-	dia_pos = fit_y_axis();
+	dia_pos = fit_y_axis_zerocrossing();
 
-	//need these checks just in case the fitting fails : otherwise we can crash the program
-	if (isnan(dia_pos.i) || isnan(dia_pos.j) || dia_pos.i < 0 || dia_pos.j < 0) return DBL4();
+	//need these checks just in case the fitting fails
+	if (dia_pos < 0) return DBL4();
 
 	double diameter_y = dia_pos.i;
 	double position_y = dia_pos.j;
 
 	//center rectangle along y
 	skyRect += DBL3(0.0, dia_pos.j - (skyRect.e.y + skyRect.s.y) / 2, 0.0);
-
-	//make sure the rectangle doesn't go out of bounds
-	if (skyRect.s.y < 0.0) skyRect.s.y = 0.0;
-	if (skyRect.e.y > M_rect.e.y) skyRect.e.y = M_rect.e.y;
 	
+	//3. Fitting along x direction again
+
+	dia_pos = fit_x_axis_zerocrossing();
+
+	//need these checks just in case the fitting fails
+	if (dia_pos < 0) return DBL4();
+
+	diameter_x = dia_pos.i;
+	position_x = dia_pos.j;
+
+	//center rectangle along x
+	skyRect += DBL3(dia_pos.j - (skyRect.e.x + skyRect.s.x) / 2, 0.0, 0.0);
+
 	//Update the skyrmion rectangle for next time - center it on the skyrmion with dimensions 2 times larger than the diameter.
-	//Also make sure to cap the rectangle to the mesh dimensions so we don't attempt to read data outside of M
+	//It doesn't matter if the rectangle gets out of bounds, as we make bounds checks when reading values
+	//actually you shouldn't cap the rectangle size to mesh size since we fit for x and y positions through the center of the rectangle, so this could lead the problems for large skyrmions or when close to the mesh edges.
 	double start_x = position_x - diameter_x;
-	if (start_x < 0.0) start_x = 0.0;
-
 	double start_y = position_y - diameter_y;
-	if (start_y < 0.0) start_y = 0.0;
-
 	double end_x = position_x + diameter_x;
-	if (end_x > M_rect.e.x) end_x = M_rect.e.x;
-
 	double end_y = position_y + diameter_y;
-	if (end_y > M_rect.e.y) end_y = M_rect.e.y;
 
 	//Update the skyrmion rectangle for next time - center it on the skyrmion with dimensions 2 times larger than the diameter.
 	skyTrack_rect[skyTrack_idx] = Rect(DBL3(start_x, start_y, 0.0), DBL3(end_x, end_y, h.z));

@@ -12,6 +12,8 @@ void Simulation::CheckUpdate(void)
 
 	string console_update_message = "[tc0,0.5,0,1/tc]Program version update status : "  + MakeIO(IOI_PROGRAMUPDATESTATUS);
 
+	console_update_message += "</c>[tc0,0.5,0,1/tc] Check for updates on startup : " + MakeIO(IOI_UPDATESTATUSCHECKSTARTUP, start_check_updates);
+
 	BD.DisplayFormattedConsoleMessage(console_update_message);
 
 	//trying to connect
@@ -83,7 +85,8 @@ string Simulation::Build_Mesh_ListLine(int meshIndex)
 		"</c> [sa0/sa]with rectangle " + MakeIO(IOI_MESHRECTANGLE, meshIndex) +
 		"</c> [sa1/sa]Magnetic cell " + MakeIO(IOI_MESHCELLSIZE, meshIndex) +
 		"</c> [sa2/sa]Electric cell " + MakeIO(IOI_MESHECELLSIZE, meshIndex) +
-		"</c> [sa3/sa]Thermal cell " + MakeIO(IOI_MESHTCELLSIZE, meshIndex);
+		"</c> [sa3/sa]Thermal cell " + MakeIO(IOI_MESHTCELLSIZE, meshIndex) +
+		"</c> [sa4/sa]Mechanical cell " + MakeIO(IOI_MESHMCELLSIZE, meshIndex);
 
 	return mesh_line;
 }
@@ -92,7 +95,10 @@ string Simulation::Build_Mesh_ListLine(int meshIndex)
 
 void Simulation::Print_MeshDisplay_List(void)
 {
-	string mesh_display_list = "[tc1,1,1,1/tc]<b>" + SMesh.superMeshHandle + "</b> [a0/a]display options ";
+	string mesh_display_list = "[tc1,1,1,1/tc]Mesh display thresholds (minimum, maximum) : " + MakeIO(IOI_MESHDISPLAYTHRESHOLDS, ToString(displayThresholds)) + "</c>[tc1,1,1,1/tc] For vectors trigger on: " + MakeIO(IOI_MESHDISPLAYTHRESHOLDTRIG) + "</c>\n";
+	mesh_display_list += "[tc1,1,1,1/tc]Dual mesh display transparency (foreground, background) : " + MakeIO(IOI_MESHDISPLAYTRANSPARENCY, ToString(displayTransparency)) + "</c>\n";
+	
+	mesh_display_list += "[tc1,1,1,1/tc]<b>" + SMesh.superMeshHandle + "</b> [a0/a]display options ";
 
 	//super-mesh
 	for (int idx = 0; idx < (int)meshAllowedDisplay(MESH_SUPERMESH).size(); idx++) {
@@ -323,7 +329,7 @@ void Simulation::Print_SetStages_List(void)
 
 	for (int idx = 0; idx < stageDescriptors.size(); idx++) {
 
-		showStageTypes += MakeIO(IOI_STAGE, stageDescriptors.get_ID_from_index(idx)) + "</c> ";
+		if (!stageDescriptors[idx].invisible) showStageTypes += MakeIO(IOI_STAGE, stageDescriptors.get_ID_from_index(idx)) + "</c> ";
 	}
 	
 	BD.DisplayFormattedConsoleMessage(simStagesList + showStageTypes);
@@ -792,6 +798,39 @@ void Simulation::Print_CoupledToDipoles_Settings(void)
 	string coupled_to_dipoles_info = "[tc1,1,1,1/tc]Exchange coupling to dipoles : " + MakeIO(IOI_COUPLEDTODIPOLESSTATUS, SMesh.Get_Coupled_To_Dipoles());
 
 	BD.DisplayFormattedConsoleMessage(coupled_to_dipoles_info);
+}
+
+//---------------------------------------------------- ERROR LOG STATUS and other STARTUP OPTIONS
+
+void Simulation::Print_ErrorLogStatus(void)
+{
+	string error_log_info = "[tc1,1,1,1/tc]Error log status : " + MakeIO(IOI_ERRORLOGSTATUS, log_errors);
+
+	BD.DisplayFormattedConsoleMessage(error_log_info);
+}
+
+void Simulation::Print_StartupUpdateCheckStatus(void)
+{
+	string startup_info = "[tc1,1,1,1/tc]Check for updates on startup : " + MakeIO(IOI_UPDATESTATUSCHECKSTARTUP, start_check_updates);
+
+	BD.DisplayFormattedConsoleMessage(startup_info);
+}
+
+void Simulation::Print_StartupScriptServerStatus(void)
+{
+	string startup_info = "[tc1,1,1,1/tc]Start script server on startup : " + MakeIO(IOI_SCRIPTSERVERSTARTUP, start_scriptserver);
+
+	BD.DisplayFormattedConsoleMessage(startup_info);
+}
+
+//print all startup options
+void Simulation::Print_StartupOptions(void)
+{
+	string startup_info = "[tc1,1,1,1/tc]Check for updates on startup : [sa0/sa]" + MakeIO(IOI_UPDATESTATUSCHECKSTARTUP, start_check_updates);
+	startup_info += "</c>\n[tc1,1,1,1/tc]Start script server on startup : [sa0/sa]" + MakeIO(IOI_SCRIPTSERVERSTARTUP, start_scriptserver);
+	startup_info += "</c>\n[tc1,1,1,1/tc]Error log status : [sa0/sa]" + MakeIO(IOI_ERRORLOGSTATUS, log_errors);
+
+	BD.DisplayFormattedConsoleMessage(startup_info);
 }
 
 //---------------------------------------------------- NEIGHBORING MESHES EXCHANGE COUPLING

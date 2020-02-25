@@ -59,7 +59,7 @@ void FMesh::SetInvertedMagnetisation(void)
 #endif
 }
 
-//Set random magentisation distribution in given mesh (must be ferromagnetic)
+//Set random magnetisation distribution in given mesh (must be ferromagnetic)
 void FMesh::SetRandomMagnetisation(void)
 {
 #if COMPILECUDA == 1

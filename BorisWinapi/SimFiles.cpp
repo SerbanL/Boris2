@@ -82,7 +82,7 @@ BError Simulation::LoadSimulation(string fileName)
 				//close original stream so we can load default state
 				bdin.close();
 
-				string default_file = GetUserDocumentsPath() + "Boris Data\\Simulations\\" + string("default.bsm");
+				string default_file = GetUserDocumentsPath() + boris_data_directory + "Simulations\\" + string("default.bsm");
 				bdin.open(default_file.c_str(), ios::in | ios::binary);
 
 				if (cudaAvailable && cudaEnabled) error = SMesh.SwitchCUDAState(false);

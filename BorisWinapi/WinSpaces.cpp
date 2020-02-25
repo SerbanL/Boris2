@@ -370,7 +370,7 @@ bool TextDisplay::DrawTextLines(bool doDraw)
 }
 
 //Faster version of Draw where we don't refresh any interactive objects but draw them in their current state. Also doesn't re-check for re-alignment of text objects, assumes everything is correct.
-//Thus this method purely draws the screen from current state, which is assumed to be in the correct.
+//Thus this method purely draws the screen from current state, which is assumed to be in the correct state.
 //use this whenever you know there cannot be any changes to interactive objects or any other settings (e.g. window dimensions)
 //when there are alot of interactive objects on screen the refresh rate can drop significantly making the interface sluggish, so use the full Draw method sparingly)
 void TextDisplay::DrawTextLines_Quick(void)

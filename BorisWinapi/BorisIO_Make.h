@@ -36,6 +36,7 @@ void Simulation::MakeIOInfo(void)
 	ioInfo.set(modulegeneric_info + string("<i><b>Applied field term"), INT2(IOI_MODULE, MOD_ZEEMAN));
 	ioInfo.set(modulegeneric_info + string("<i><b>Magnetocrystalline anisotropy: uniaxial"), INT2(IOI_MODULE, MOD_ANIUNI));
 	ioInfo.set(modulegeneric_info + string("<i><b>Magnetocrystalline anisotropy: cubic"), INT2(IOI_MODULE, MOD_ANICUBI));
+	ioInfo.set(modulegeneric_info + string("<i><b>Magneto-elastic term"), INT2(IOI_MODULE, MOD_MELASTIC));
 	ioInfo.set(modulegeneric_info + string("<i><b>Charge and spin transport"), INT2(IOI_MODULE, MOD_TRANSPORT));
 	ioInfo.set(modulegeneric_info + string("<i><b>Heat equation solver"), INT2(IOI_MODULE, MOD_HEAT));
 	ioInfo.set(modulegeneric_info + string("<i><b>Spin-orbit torque field\n<i><b>Results in Slonczewski-like torques"), INT2(IOI_MODULE, MOD_SOTFIELD));
@@ -191,6 +192,16 @@ void Simulation::MakeIOInfo(void)
 
 	ioInfo.push_back(tmeshcell_info, IOI_MESHTCELLSIZE);
 
+	//Shows mesh cellsize (units m) : minorId is the unique mesh id number, auxId is enabled/disabled status, textId is the mesh cellsize
+	//IOI_MESHMCELLSIZE:
+
+	string mechmeshcell_info =
+		string("[tc1,1,0,1/tc]<b>Mechanical solver cellsize</b>") +
+		string("\n[tc1,1,0,1/tc]<i>Discretization cellsize</i>") +
+		string("\n[tc1,1,0,1/tc]dbl-click: edit");
+
+	ioInfo.push_back(mechmeshcell_info, IOI_MESHMCELLSIZE);
+
 	//Simulation output data, specifically used for showing values in console : minorId is the DATA_ id, textId is the data handle
 	//IOI_SHOWDATA
 	//Simulation output data, specifically used to construct output data list : minorId is the DATA_ id, textId is the data handle
@@ -227,6 +238,7 @@ void Simulation::MakeIOInfo(void)
 	ioInfo.set(showdata_info_generic + string("<i><b>Energy density: exchange</i>"), INT2(IOI_SHOWDATA, DATA_E_EXCH));
 	ioInfo.set(showdata_info_generic + string("<i><b>Energy density: surface exchange</i>"), INT2(IOI_SHOWDATA, DATA_E_SURFEXCH));
 	ioInfo.set(showdata_info_generic + string("<i><b>Energy density: applied H field</i>"), INT2(IOI_SHOWDATA, DATA_E_ZEE));
+	ioInfo.set(showdata_info_generic + string("<i><b>Energy density: applied mechanical stress</i>"), INT2(IOI_SHOWDATA, DATA_E_MELASTIC));
 	ioInfo.set(showdata_info_generic + string("<i><b>Energy density: anisotropy</i>"), INT2(IOI_SHOWDATA, DATA_E_ANIS));
 	ioInfo.set(showdata_info_generic + string("<i><b>Energy density: roughness</i>"), INT2(IOI_SHOWDATA, DATA_E_ROUGH));
 	ioInfo.set(showdata_info_generic + string("<i><b>Energy density: Total</i>"), INT2(IOI_SHOWDATA, DATA_E_TOTAL));
@@ -270,6 +282,7 @@ void Simulation::MakeIOInfo(void)
 	ioInfo.set(data_info_generic + string("<i><b>Energy density: exchange</i>"), INT2(IOI_DATA, DATA_E_EXCH));
 	ioInfo.set(data_info_generic + string("<i><b>Energy density: surface exchange</i>"), INT2(IOI_DATA, DATA_E_SURFEXCH));
 	ioInfo.set(data_info_generic + string("<i><b>Energy density: applied H field</i>"), INT2(IOI_DATA, DATA_E_ZEE));
+	ioInfo.set(data_info_generic + string("<i><b>Energy density: applied mechanical stress</i>"), INT2(IOI_DATA, DATA_E_MELASTIC));
 	ioInfo.set(data_info_generic + string("<i><b>Energy density: anisotropy</i>"), INT2(IOI_DATA, DATA_E_ANIS));
 	ioInfo.set(data_info_generic + string("<i><b>Energy density: roughness</i>"), INT2(IOI_DATA, DATA_E_ROUGH));
 	ioInfo.set(data_info_generic + string("<i><b>Energy density: Total</i>"), INT2(IOI_DATA, DATA_E_TOTAL));
@@ -352,28 +365,34 @@ void Simulation::MakeIOInfo(void)
 	ioInfo.set(stage_generic_info + string("<i><b>Set H field sequence in Cartesian coordinates\n<i><b>Start to stop H values in a number of steps"), INT2(IOI_STAGE, SS_HFIELDXYZSEQ));
 	ioInfo.set(stage_generic_info + string("<i><b>Set H field sequence in Polar coordinates\n<i><b>Start to stop H values in a number of steps"), INT2(IOI_STAGE, SS_HPOLARSEQ));
 	ioInfo.set(stage_generic_info + string("<i><b>Set FMR H field sequence in Cartesian coordinates\n<i><b>Bias field, rf field, rf field steps, rf field cycles"), INT2(IOI_STAGE, SS_HFMR));
-	ioInfo.set(stage_generic_info + string("<i><b>Set field using custom equation"), INT2(IOI_SETSTAGEVALUE, SS_HFIELDEQUATION));
-	ioInfo.set(stage_generic_info + string("<i><b>Set field sequence using custom equation"), INT2(IOI_SETSTAGEVALUE, SS_HFIELDEQUATIONSEQ));
+	ioInfo.set(stage_generic_info + string("<i><b>Set field using custom equation"), INT2(IOI_STAGE, SS_HFIELDEQUATION));
+	ioInfo.set(stage_generic_info + string("<i><b>Set field sequence using custom equation"), INT2(IOI_STAGE, SS_HFIELDEQUATIONSEQ));
+	ioInfo.set(stage_generic_info + string("<i><b>Set from file in current directory\n<i><b>File must have tab-spaced columns as:\n<i><b>time and value all in S.I. units.\n<i><b>Time resolution set by stage time condition."), INT2(IOI_STAGE, SS_HFIELDFILE));
 	ioInfo.set(stage_generic_info + string("<i><b>Set fixed voltage drop between electrodes"), INT2(IOI_STAGE, SS_V));
 	ioInfo.set(stage_generic_info + string("<i><b>Set fixed voltage sequence\n<i><b>Start to stop V values in a number of steps"), INT2(IOI_STAGE, SS_VSEQ));
 	ioInfo.set(stage_generic_info + string("<i><b>Set a sinusoidal voltage sequence\n<i><b>Amplitude, steps per cycle, cycles"), INT2(IOI_STAGE, SS_VSIN));
 	ioInfo.set(stage_generic_info + string("<i><b>Set a cosine voltage sequence\n<i><b>Amplitude, steps per cycle, cycles"), INT2(IOI_STAGE, SS_VCOS));
-	ioInfo.set(stage_generic_info + string("<i><b>Set potential using custom equation"), INT2(IOI_SETSTAGEVALUE, SS_VEQUATION));
-	ioInfo.set(stage_generic_info + string("<i><b>Set potential sequence using custom equation"), INT2(IOI_SETSTAGEVALUE, SS_VEQUATIONSEQ));
+	ioInfo.set(stage_generic_info + string("<i><b>Set potential using custom equation"), INT2(IOI_STAGE, SS_VEQUATION));
+	ioInfo.set(stage_generic_info + string("<i><b>Set potential sequence using custom equation"), INT2(IOI_STAGE, SS_VEQUATIONSEQ));
+	ioInfo.set(stage_generic_info + string("<i><b>Set from file in current directory\n<i><b>File must have tab-spaced columns as:\n<i><b>time and value all in S.I. units.\n<i><b>Time resolution set by stage time condition."), INT2(IOI_STAGE, SS_VFILE));
 	ioInfo.set(stage_generic_info + string("<i><b>Set fixed current into ground electrode"), INT2(IOI_STAGE, SS_I));
 	ioInfo.set(stage_generic_info + string("<i><b>Set fixed current sequence\n<i><b>Start to stop I values in a number of steps"), INT2(IOI_STAGE, SS_ISEQ));
 	ioInfo.set(stage_generic_info + string("<i><b>Set a sinusoidal current sequence\n<i><b>Amplitude, steps per cycle, cycles"), INT2(IOI_STAGE, SS_ISIN));
 	ioInfo.set(stage_generic_info + string("<i><b>Set a cosine current sequence\n<i><b>Amplitude, steps per cycle, cycles"), INT2(IOI_STAGE, SS_ICOS));
-	ioInfo.set(stage_generic_info + string("<i><b>Set current using custom equation"), INT2(IOI_SETSTAGEVALUE, SS_IEQUATION));
-	ioInfo.set(stage_generic_info + string("<i><b>Set current sequence using custom equation"), INT2(IOI_SETSTAGEVALUE, SS_IEQUATIONSEQ));
+	ioInfo.set(stage_generic_info + string("<i><b>Set current using custom equation"), INT2(IOI_STAGE, SS_IEQUATION));
+	ioInfo.set(stage_generic_info + string("<i><b>Set current sequence using custom equation"), INT2(IOI_STAGE, SS_IEQUATIONSEQ));
+	ioInfo.set(stage_generic_info + string("<i><b>Set from file in current directory\n<i><b>File must have tab-spaced columns as:\n<i><b>time and value all in S.I. units.\n<i><b>Time resolution set by stage time condition."), INT2(IOI_STAGE, SS_IFILE));
 	ioInfo.set(stage_generic_info + string("<i><b>Set base temperature value"), INT2(IOI_STAGE, SS_T));
 	ioInfo.set(stage_generic_info + string("<i><b>Set base temperature sequence\n<i><b>Start to stop T values in a number of steps"), INT2(IOI_STAGE, SS_TSEQ));
-	ioInfo.set(stage_generic_info + string("<i><b>Set base temperature using custom equation"), INT2(IOI_SETSTAGEVALUE, SS_TEQUATION));
-	ioInfo.set(stage_generic_info + string("<i><b>Set base temperature sequence using custom equation"), INT2(IOI_SETSTAGEVALUE, SS_TEQUATIONSEQ));
+	ioInfo.set(stage_generic_info + string("<i><b>Set base temperature using custom equation"), INT2(IOI_STAGE, SS_TEQUATION));
+	ioInfo.set(stage_generic_info + string("<i><b>Set base temperature sequence using custom equation"), INT2(IOI_STAGE, SS_TEQUATIONSEQ));
+	ioInfo.set(stage_generic_info + string("<i><b>Set from file in current directory\n<i><b>File must have tab-spaced columns as:\n<i><b>time and value all in S.I. units.\n<i><b>Time resolution set by stage time condition."), INT2(IOI_STAGE, SS_TFILE));
 	ioInfo.set(stage_generic_info + string("<i><b>Set heat source value"), INT2(IOI_STAGE, SS_Q));
 	ioInfo.set(stage_generic_info + string("<i><b>Set heat source sequence\n<i><b>Start to stop Q values in a number of steps"), INT2(IOI_STAGE, SS_QSEQ));
-	ioInfo.set(stage_generic_info + string("<i><b>Set heat source using custom equation"), INT2(IOI_SETSTAGEVALUE, SS_QEQUATION));
-	ioInfo.set(stage_generic_info + string("<i><b>Set heat source sequence using custom equation"), INT2(IOI_SETSTAGEVALUE, SS_QEQUATIONSEQ));
+	ioInfo.set(stage_generic_info + string("<i><b>Set heat source using custom equation"), INT2(IOI_STAGE, SS_QEQUATION));
+	ioInfo.set(stage_generic_info + string("<i><b>Set heat source sequence using custom equation"), INT2(IOI_STAGE, SS_QEQUATIONSEQ));
+	ioInfo.set(stage_generic_info + string("<i><b>Set from file in current directory\n<i><b>File must have tab-spaced columns as:\n<i><b>time and value all in S.I. units.\n<i><b>Time resolution set by stage time condition."), INT2(IOI_STAGE, SS_QFILE));
+	ioInfo.set(stage_generic_info + string("<i><b>Set uniform stress in polar coordinates"), INT2(IOI_STAGE, SS_TSIGPOLAR));
 
 	//Shows a stage added to the simulation schedule : minorId is the minor id of elements in Simulation::simStages (major id there is always 0), auxId is the number of the interactive object in the list, textId is the configured stage text
 	//Note this entry must always represent the entry in Simulation::simStages with the index in auxId.
@@ -401,26 +420,32 @@ void Simulation::MakeIOInfo(void)
 	ioInfo.set(stagevalue_generic_info + string("<i><b>Hbias; Hrf; rf steps; rf cycles\n<i><b>rf steps is the rf cycle discretization\n<i><b>rf cycles is the number of periods"), INT2(IOI_SETSTAGEVALUE, SS_HFMR));
 	ioInfo.set(stagevalue_generic_info + string("<i><b>Text vector equation"), INT2(IOI_SETSTAGEVALUE, SS_HFIELDEQUATION));
 	ioInfo.set(stagevalue_generic_info + string("<i><b>Steps: Text vector equation"), INT2(IOI_SETSTAGEVALUE, SS_HFIELDEQUATIONSEQ));
+	ioInfo.set(stagevalue_generic_info + string("<i><b>Set values from file."), INT2(IOI_SETSTAGEVALUE, SS_HFIELDFILE));
 	ioInfo.set(stagevalue_generic_info + string("<i><b>Fixed voltage drop between electrodes"), INT2(IOI_SETSTAGEVALUE, SS_V));
 	ioInfo.set(stagevalue_generic_info + string("<i><b>Vstart; Vstop; Steps: Vstep = (Vstop - Vstart) / Steps"), INT2(IOI_SETSTAGEVALUE, SS_VSEQ));
-	ioInfo.set(stage_generic_info + string("<i><b>Amplitude, steps per cycle, cycles"), INT2(IOI_SETSTAGEVALUE, SS_VSIN));
-	ioInfo.set(stage_generic_info + string("<i><b>Amplitude, steps per cycle, cycles"), INT2(IOI_SETSTAGEVALUE, SS_VCOS));
+	ioInfo.set(stagevalue_generic_info + string("<i><b>Amplitude, steps per cycle, cycles"), INT2(IOI_SETSTAGEVALUE, SS_VSIN));
+	ioInfo.set(stagevalue_generic_info + string("<i><b>Amplitude, steps per cycle, cycles"), INT2(IOI_SETSTAGEVALUE, SS_VCOS));
 	ioInfo.set(stagevalue_generic_info + string("<i><b>Text equation"), INT2(IOI_SETSTAGEVALUE, SS_VEQUATION));
 	ioInfo.set(stagevalue_generic_info + string("<i><b>Steps: Text equation"), INT2(IOI_SETSTAGEVALUE, SS_VEQUATIONSEQ));
+	ioInfo.set(stagevalue_generic_info + string("<i><b>Set values from file."), INT2(IOI_SETSTAGEVALUE, SS_VFILE));
 	ioInfo.set(stagevalue_generic_info + string("<i><b>Fixed current into ground electrode"), INT2(IOI_SETSTAGEVALUE, SS_I));
 	ioInfo.set(stagevalue_generic_info + string("<i><b>Istart; Istop; Steps: Istep = (Istop - Istart) / Steps"), INT2(IOI_SETSTAGEVALUE, SS_ISEQ));
-	ioInfo.set(stage_generic_info + string("<i><b>Amplitude, steps per cycle, cycles"), INT2(IOI_SETSTAGEVALUE, SS_ISIN));
-	ioInfo.set(stage_generic_info + string("<i><b>Amplitude, steps per cycle, cycles"), INT2(IOI_SETSTAGEVALUE, SS_ICOS));
+	ioInfo.set(stagevalue_generic_info + string("<i><b>Amplitude, steps per cycle, cycles"), INT2(IOI_SETSTAGEVALUE, SS_ISIN));
+	ioInfo.set(stagevalue_generic_info + string("<i><b>Amplitude, steps per cycle, cycles"), INT2(IOI_SETSTAGEVALUE, SS_ICOS));
 	ioInfo.set(stagevalue_generic_info + string("<i><b>Text equation"), INT2(IOI_SETSTAGEVALUE, SS_IEQUATION));
 	ioInfo.set(stagevalue_generic_info + string("<i><b>Steps: Text equation"), INT2(IOI_SETSTAGEVALUE, SS_IEQUATIONSEQ));
+	ioInfo.set(stagevalue_generic_info + string("<i><b>Set values from file."), INT2(IOI_SETSTAGEVALUE, SS_IFILE));
 	ioInfo.set(stagevalue_generic_info + string("<i><b>Base temperature value"), INT2(IOI_SETSTAGEVALUE, SS_T));
 	ioInfo.set(stagevalue_generic_info + string("<i><b>Tstart; Tstop; Steps: Tstep = (Tstop - Tstart) / Steps"), INT2(IOI_SETSTAGEVALUE, SS_TSEQ));
 	ioInfo.set(stagevalue_generic_info + string("<i><b>Text equation"), INT2(IOI_SETSTAGEVALUE, SS_TEQUATION));
 	ioInfo.set(stagevalue_generic_info + string("<i><b>Steps: Text equation"), INT2(IOI_SETSTAGEVALUE, SS_TEQUATIONSEQ));
+	ioInfo.set(stagevalue_generic_info + string("<i><b>Set values from file."), INT2(IOI_SETSTAGEVALUE, SS_TFILE));
 	ioInfo.set(stagevalue_generic_info + string("<i><b>Heat source value"), INT2(IOI_SETSTAGEVALUE, SS_Q));
 	ioInfo.set(stagevalue_generic_info + string("<i><b>Qstart; Qstop; Steps: Qstep = (Qstop - Qstart) / Steps"), INT2(IOI_SETSTAGEVALUE, SS_QSEQ));
 	ioInfo.set(stagevalue_generic_info + string("<i><b>Text equation"), INT2(IOI_SETSTAGEVALUE, SS_QEQUATION));
 	ioInfo.set(stagevalue_generic_info + string("<i><b>Steps: Text equation"), INT2(IOI_SETSTAGEVALUE, SS_QEQUATIONSEQ));
+	ioInfo.set(stagevalue_generic_info + string("<i><b>Set values from file."), INT2(IOI_SETSTAGEVALUE, SS_QFILE));
+	ioInfo.set(stagevalue_generic_info + string("<i><b>magnitude, theta, polar"), INT2(IOI_SETSTAGEVALUE, SS_TSIGPOLAR));
 
 	//Shows the stop condition for the simulation schedule stage : minorId is the minor id of elements in Simulation::simStages (major id there is always 0), auxId is the number of the interactive object in the list, textId is the stop type and value as a string
 	//IOI_STAGESTOPCONDITION
@@ -528,6 +553,9 @@ void Simulation::MakeIOInfo(void)
 	ioInfo.set(param_generic_info + string("<i><b>Carrier density"), INT2(IOI_MESHPARAM, PARAM_NDENSITY));
 	ioInfo.set(param_generic_info + string("<i><b>Thermal conductivity"), INT2(IOI_MESHPARAM, PARAM_THERMCOND));
 	ioInfo.set(param_generic_info + string("<i><b>Mass density"), INT2(IOI_MESHPARAM, PARAM_DENSITY));
+	ioInfo.set(param_generic_info + string("<i><b>Magnetoelastic coefficients (B1, B2)"), INT2(IOI_MESHPARAM, PARAM_MECOEFF));
+	ioInfo.set(param_generic_info + string("<i><b>Young's modulus"), INT2(IOI_MESHPARAM, PARAM_YOUNGSMOD));
+	ioInfo.set(param_generic_info + string("<i><b>Poisson's ratio"), INT2(IOI_MESHPARAM, PARAM_POISSONRATIO));
 	ioInfo.set(param_generic_info + string("<i><b>Specific heat capacity"), INT2(IOI_MESHPARAM, PARAM_SHC));
 
 	//Shows parameter temperature dependence for a given mesh : minorId is the major id of elements in SimParams::simParams (i.e. an entry from PARAM_ enum), auxId is the unique mesh id number, textId is the parameter temperature dependence setting
@@ -590,8 +618,10 @@ void Simulation::MakeIOInfo(void)
 
 	string meshdisplay_generic_info =
 		string("[tc1,1,0,1/tc]<b>Mesh quantity to display") +
-		string("\n[tc1,1,0,1/tc]<i>green: on, red: off</i>") +
-		string("\n[tc1,1,0,1/tc]click: change state\n");
+		string("\n[tc1,1,0,1/tc]<i>green (foreground): on, red: off</i>") +
+		string("\n[tc1,1,0,1/tc]<i>orange (background): on, red: off</i>") +
+		string("\n[tc1,1,0,1/tc]left-click: change foreground state\n") +
+		string("\n[tc1,1,0,1/tc]right-click: change background state\n");
 
 	ioInfo.set(meshdisplay_generic_info + string("<i><b>Nothing displayed"), INT2(IOI_MESHDISPLAY, MESHDISPLAY_NONE));
 	ioInfo.set(meshdisplay_generic_info + string("<i><b>Magnetisation"), INT2(IOI_MESHDISPLAY, MESHDISPLAY_MAGNETIZATION));
@@ -610,10 +640,47 @@ void Simulation::MakeIOInfo(void)
 	ioInfo.set(meshdisplay_generic_info + string("<i><b>Bulk spin torque"), INT2(IOI_MESHDISPLAY, MESHDISPLAY_TS));
 	ioInfo.set(meshdisplay_generic_info + string("<i><b>Interfacial spin torque"), INT2(IOI_MESHDISPLAY, MESHDISPLAY_TSI));
 	ioInfo.set(meshdisplay_generic_info + string("<i><b>Temperature"), INT2(IOI_MESHDISPLAY, MESHDISPLAY_TEMPERATURE));
+	ioInfo.set(meshdisplay_generic_info + string("<i><b>Mechanical Displacement"), INT2(IOI_MESHDISPLAY, MESHDISPLAY_UDISP));
+	ioInfo.set(meshdisplay_generic_info + string("<i><b>Strain : xx, yy, zz"), INT2(IOI_MESHDISPLAY, MESHDISPLAY_STRAINDIAG));
+	ioInfo.set(meshdisplay_generic_info + string("<i><b>Strain : yz, xz, xy"), INT2(IOI_MESHDISPLAY, MESHDISPLAY_STRAINODIAG));
 	ioInfo.set(meshdisplay_generic_info + string("<i><b>Mesh parameter spatial variation"), INT2(IOI_MESHDISPLAY, MESHDISPLAY_PARAMVAR));
 	ioInfo.set(meshdisplay_generic_info + string("<i><b>Roughness"), INT2(IOI_MESHDISPLAY, MESHDISPLAY_ROUGHNESS));
 	ioInfo.set(meshdisplay_generic_info + string("<i><b>Custom, Vectorial"), INT2(IOI_MESHDISPLAY, MESHDISPLAY_CUSTOM_VEC));
 	ioInfo.set(meshdisplay_generic_info + string("<i><b>Custom, Scalar"), INT2(IOI_MESHDISPLAY, MESHDISPLAY_CUSTOM_SCA));
+
+	//Shows dual mesh display transparency values : textId is the DBL2 value as a string
+	//IOI_MESHDISPLAYTRANSPARENCY,
+
+	string meshdisplay_transparency_info =
+		string("[tc1,1,0,1/tc]<b>Transparency values for dual mesh display") +
+		string("\n[tc1,1,0,1/tc]<i>Foreground, Background</i>") +
+		string("\n[tc1,1,0,1/tc]<i>0: transparent, 1: opaque</i>") +
+		string("\n[tc1,1,0,1/tc]double-click: edit\n");
+
+	ioInfo.push_back(meshdisplay_transparency_info, IOI_MESHDISPLAYTRANSPARENCY);
+
+	//Shows mesh display threshold values : textId is the DBL2 value as a string
+	//IOI_MESHDISPLAYTHRESHOLDS,
+
+	string meshdisplay_thresholds_info =
+		string("[tc1,1,0,1/tc]<b>Threshold values for display") +
+		string("\n[tc1,1,0,1/tc]<i>Minimum, Maximum</i>") +
+		string("\n[tc1,1,0,1/tc]<i>Set both to 0 to disable.</i>") +
+		string("\n[tc1,1,0,1/tc]double-click: edit\n") +
+		string("\n[tc1,1,0,1/tc]right-click: clear\n");
+
+	ioInfo.push_back(meshdisplay_thresholds_info, IOI_MESHDISPLAYTHRESHOLDS);
+
+	//Shows mesh display threshold trigger type : auxId is the trigger option
+	//IOI_MESHDISPLAYTHRESHOLDTRIG
+
+	string meshdisplay_thresholdtrig_info =
+		string("[tc1,1,0,1/tc]<b>Threshold trigger component") +
+		string("\n[tc1,1,0,1/tc]<i>X, Y, Z, magnitude</i>") +
+		string("\n[tc1,1,0,1/tc]left-click: change state forward") +
+		string("\n[tc1,1,0,1/tc]right-click: change state backward\n");
+
+	ioInfo.push_back(meshdisplay_thresholdtrig_info, IOI_MESHDISPLAYTHRESHOLDTRIG);
 
 	//Shows super-mesh display option : minorId is the MESHDISPLAY_ value, textId is the MESHDISPLAY_ handle
 	//IOI_SMESHDISPLAY
@@ -636,7 +703,7 @@ void Simulation::MakeIOInfo(void)
 
 	string meshdisplay_option_info =
 		string("[tc1,1,0,1/tc]<b>Vectorial quantity display option") +
-		string("\n[tc1,1,0,1/tc]<i>full, X, Y, Z, direction</i>") +
+		string("\n[tc1,1,0,1/tc]<i>full, X, Y, Z, direction, magnitude</i>") +
 		string("\n[tc1,1,0,1/tc]left-click: change state forward") +
 		string("\n[tc1,1,0,1/tc]right-click: change state backward\n");
 
@@ -928,6 +995,36 @@ void Simulation::MakeIOInfo(void)
 
 	ioInfo.push_back(dipolecouple_info, IOI_COUPLEDTODIPOLESSTATUS);
 
+	//Shows log_errors enabled/disabled state. auxId is enabled (1)/disabled(0) status.
+	//IOI_ERRORLOGSTATUS:
+
+	string logerrors_info =
+		string("[tc1,1,0,1/tc]<b>Log errors status") +
+		string("\n[tc1,1,0,1/tc]<i>green: set, red: not set</i>") +
+		string("\n[tc1,1,0,1/tc]click: change status\n");
+
+	ioInfo.push_back(logerrors_info, IOI_ERRORLOGSTATUS);
+
+	//Shows start_check_updates enabled/disabled state. auxId is enabled (1)/disabled(0) status.
+	//IOI_UPDATESTATUSCHECKSTARTUP
+
+	string start_check_updates_info =
+		string("[tc1,1,0,1/tc]<b>Check for updates on startup") +
+		string("\n[tc1,1,0,1/tc]<i>green: set, red: not set</i>") +
+		string("\n[tc1,1,0,1/tc]click: change status\n");
+
+	ioInfo.push_back(start_check_updates_info, IOI_UPDATESTATUSCHECKSTARTUP);
+
+	//Shows start_scriptserver enabled/disabled state. auxId is enabled (1)/disabled(0) status.
+	//IOI_SCRIPTSERVERSTARTUP
+
+	string start_scriptserver_info =
+		string("[tc1,1,0,1/tc]<b>Start script server on startup") +
+		string("\n[tc1,1,0,1/tc]<i>green: set, red: not set</i>") +
+		string("\n[tc1,1,0,1/tc]click: change status\n");
+
+	ioInfo.push_back(start_scriptserver_info, IOI_SCRIPTSERVERSTARTUP);
+
 	//IOI_MESHEXCHCOUPLING
 
 	string ec_info =
@@ -1205,6 +1302,18 @@ string Simulation::MakeIO(IOI_ identifier, PType ... params)
 				return MakeInteractiveObject("N/A", IOI_MESHTCELLSIZE, SMesh[meshIndex]->get_id(), 0, "N/A", OFFCOLOR);
 		}
 		break;
+		
+	case IOI_MESHMCELLSIZE:
+		if (params_str.size() == 1) {
+
+			int meshIndex = ToNum(params_str[0]);
+
+			if (SMesh[meshIndex]->MechComputation_Enabled())
+				return MakeInteractiveObject(ToString(SMesh[meshIndex]->GetMeshMCellsize(), "m"), IOI_MESHMCELLSIZE, SMesh[meshIndex]->get_id(), 1, ToString(SMesh[meshIndex]->GetMeshMCellsize(), "m"), ONCOLOR);
+			else
+				return MakeInteractiveObject("N/A", IOI_MESHMCELLSIZE, SMesh[meshIndex]->get_id(), 0, "N/A", OFFCOLOR);
+		}
+		break;
 
 	case IOI_SMESHDISPLAY:
 		if (params_str.size() == 1) {
@@ -1223,6 +1332,24 @@ string Simulation::MakeIO(IOI_ identifier, PType ... params)
 
 			return MakeInteractiveObject(displayHandles(displayOption), IOI_MESHDISPLAY, displayOption, SMesh[meshIndex]->get_id(), displayHandles(displayOption));
 		}
+		break;
+
+	case IOI_MESHDISPLAYTRANSPARENCY:
+		if (params_str.size() == 1) {
+
+			return MakeInteractiveObject(params_str[0], IOI_MESHDISPLAYTRANSPARENCY, -1, -1, params_str[0]);
+		}
+		break;
+
+	case IOI_MESHDISPLAYTHRESHOLDS:
+		if (params_str.size() == 1) {
+
+			return MakeInteractiveObject(params_str[0], IOI_MESHDISPLAYTHRESHOLDS, -1, -1, params_str[0]);
+		}
+		break;
+
+	case IOI_MESHDISPLAYTHRESHOLDTRIG:
+		return MakeInteractiveObject("Z", IOI_MESHDISPLAYTHRESHOLDTRIG, -1, (int)VEC3REP_Z);
 		break;
 
 	case IOI_MESHVECREP:
@@ -1854,6 +1981,39 @@ string Simulation::MakeIO(IOI_ identifier, PType ... params)
 
 			if (status == 0) return MakeInteractiveObject("Off", IOI_COUPLEDTODIPOLESSTATUS, -1, 0, "", OFFCOLOR);
 			else return MakeInteractiveObject("On", IOI_COUPLEDTODIPOLESSTATUS, -1, 1, "", ONCOLOR);
+		}
+		break;
+
+	//Shows log_errors enabled/disabled state. auxId is enabled (1)/disabled(0) status.
+	case IOI_ERRORLOGSTATUS:
+		if (params_str.size() == 1) {
+
+			int status = ToNum(params_str[0]);
+
+			if (status == 0) return MakeInteractiveObject("Off", IOI_ERRORLOGSTATUS, -1, 0, "", OFFCOLOR);
+			else return MakeInteractiveObject("On", IOI_ERRORLOGSTATUS, -1, 1, "", ONCOLOR);
+		}
+		break;
+
+	//Shows start_check_updates enabled/disabled state. auxId is enabled (1)/disabled(0) status.
+	case IOI_UPDATESTATUSCHECKSTARTUP:
+		if (params_str.size() == 1) {
+
+			int status = ToNum(params_str[0]);
+
+			if (status == 0) return MakeInteractiveObject("Off", IOI_UPDATESTATUSCHECKSTARTUP, -1, 0, "", OFFCOLOR);
+			else return MakeInteractiveObject("On", IOI_UPDATESTATUSCHECKSTARTUP, -1, 1, "", ONCOLOR);
+		}
+		break;
+
+	//Shows start_scriptserver enabled/disabled state. auxId is enabled (1)/disabled(0) status.
+	case IOI_SCRIPTSERVERSTARTUP:
+		if (params_str.size() == 1) {
+
+			int status = ToNum(params_str[0]);
+
+			if (status == 0) return MakeInteractiveObject("Off", IOI_SCRIPTSERVERSTARTUP, -1, 0, "", OFFCOLOR);
+			else return MakeInteractiveObject("On", IOI_SCRIPTSERVERSTARTUP, -1, 1, "", ONCOLOR);
 		}
 		break;
 

@@ -20,18 +20,41 @@ public:
 
 	OVF2(void);
 
-	//read an OOMMF OVF2 file containing uniform vector data, and set the data VEC from it
-	BError Read_OVF2_VEC(std::string fileName, VEC<DBL3>& data);
-
 	//read an OOMMF OVF2 file containing uniform scalar data, and set the data VEC from it
-	BError Read_OVF2_VEC(std::string fileName, VEC<double>& data);
+	template <typename VECType>
+	BError Read_OVF2_SCA(std::string fileName, VECType& data);
+
+	//read an OOMMF OVF2 file containing uniform vector data, and set the data VEC from it
+	template <typename VECType>
+	BError Read_OVF2_VEC(std::string fileName, VECType& data);
+
+	//read on OVF2 file into a VEC, which can store either a scalar or vector type : the ovf file stored data must match
+	template <typename VECType>
+	BError Read_OVF2(std::string fileName, VECType& data)
+	{
+		typedef std::remove_reference<VECType>::type VType;
+		typedef contained_type<VType>::type SType;
+
+		if (std::is_fundamental<SType>::value) {
+
+			//scalar
+			return Read_OVF2_SCA(fileName, data);
+		}
+		else {
+
+			//vector
+			return Read_OVF2_VEC(fileName, data);
+		}
+	}
+
+	//write an OOMMF OVF2 file containing uniform scalar data
+	//you can also choose the type of data output : data_type = bin4 for single precision binary, data_type = bin8 for double precision binary, or data_type = text
+	template <typename VECType>
+	BError Write_OVF2_SCA(std::string fileName, VECType& data, std::string data_type = "bin8");
 
 	//write an OOMMF OVF2 file containing uniform vector data
 	//you can write normalized data to norm (divide by it, no normalization by default)
 	//you can also choose the type of data output : data_type = bin4 for single precision binary, data_type = bin8 for double precision binary, or data_type = text
-	BError Write_OVF2_VEC(std::string fileName, VEC<DBL3>& data, double norm = 1.0, std::string data_type = "bin8");
-
-	//write an OOMMF OVF2 file containing uniform scalar data
-	//you can also choose the type of data output : data_type = bin4 for single precision binary, data_type = bin8 for double precision binary, or data_type = text
-	BError Write_OVF2_VEC(std::string fileName, VEC<double>& data, std::string data_type = "bin8");
+	template <typename VECType>
+	BError Write_OVF2_VEC(std::string fileName, VECType& data, std::string data_type = "bin8", double norm = 1.0);
 };

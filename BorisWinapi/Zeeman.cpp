@@ -125,6 +125,8 @@ double Zeeman::UpdateField(void)
 	// Fixed set field
 	/////////////////////////////////////////
 
+	double energy = 0;
+
 	if (!H_equation.is_set()) {
 
 		if (IsZ(Ha.norm())) {
@@ -132,8 +134,6 @@ double Zeeman::UpdateField(void)
 			this->energy = 0;
 			return 0.0;
 		}
-
-		double energy = 0;
 
 		if (pMesh->GetMeshType() == MESH_FERROMAGNETIC) {
 
@@ -169,8 +169,6 @@ double Zeeman::UpdateField(void)
 	/////////////////////////////////////////
 
 	else {
-
-		double energy = 0;
 
 		double time = pSMesh->GetStageTime();
 		double Temperature = pMesh->base_temperature;
@@ -229,7 +227,7 @@ double Zeeman::UpdateField(void)
 
 	this->energy = energy;
 
-	return energy;
+	return this->energy;
 }
 
 //----------------------------------------------- Others
@@ -280,7 +278,7 @@ BError Zeeman::SetFieldEquation(string equation_string, int step)
 		//important to set user constants first : if these are required then the make_from_string call will fail. This may mean the user constants are not set when we expect them to.
 		UpdateTEquationUserConstants(false);
 
-		if (!H_equation.make_from_string(equation_string, { {"Lx", meshDim.x}, {"Ly", meshDim.y}, {"Lz", meshDim.z}, {"Tb", pMesh->base_temperature}, {"Ss", 0} })) return error(BERROR_INCORRECTSTRING);
+		if (!H_equation.make_from_string(equation_string, { {"Lx", meshDim.x}, {"Ly", meshDim.y}, {"Lz", meshDim.z}, {"Tb", pMesh->base_temperature}, {"Ss", step} })) return error(BERROR_INCORRECTSTRING);
 	}
 	else {
 

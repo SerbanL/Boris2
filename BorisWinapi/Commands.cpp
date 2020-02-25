@@ -5,6 +5,24 @@
 //
 // Scripted communication
 
+//disable / enable script server
+void Simulation::Script_Server_Control(bool status)
+{
+	if (status && !is_thread_running(THREAD_NETWORK)) {
+
+		//start window sockets thread to listen for incoming messages
+		infinite_loop_launch(&Simulation::Listen_Incoming_Message, THREAD_NETWORK);
+
+		BD.DisplayConsoleMessage("Script server running.");
+	}
+	else if (!status && is_thread_running(THREAD_NETWORK)) {
+
+		stop_thread(THREAD_NETWORK);
+
+		BD.DisplayConsoleMessage("Script server stopped.");
+	}
+}
+
 void Simulation::Listen_Incoming_Message(void) {
 
 	//Listen for incoming messages - non-blocking call, but this method runs on a thread with an infinite loop which keeps calling Simulation::Listen_Incoming_Message
@@ -46,7 +64,7 @@ void Simulation::HandleCommand(string command_string) {
 
 	if (!command_name.length()) {
 
-		if (verbose) BD.DisplayConsoleError("ERROR: command not recognized.");
+		err_hndl.show_error(BERROR_COMMAND_NOTRECOGNIZED, verbose);
 		return;
 	}
 
@@ -66,7 +84,7 @@ void Simulation::HandleCommand(string command_string) {
 
 		if (commands.has_key(command_name))
 			PrintCommandUsage(command_name);
-		else if (verbose) BD.DisplayConsoleError("ERROR: command not recognized.");
+		else err_hndl.show_error(BERROR_COMMAND_NOTRECOGNIZED, verbose);
 
 		return;
 	}
@@ -160,6 +178,8 @@ void Simulation::HandleCommand(string command_string) {
 
 					//update rectangles in saveDataList for the named mesh
 					UpdateSaveDataEntries(meshRect_old, SMesh[meshName]->GetMeshRect(), meshName);
+					//update rectangles in dataBoxList for the named mesh
+					UpdateDataBoxEntries(meshRect_old, SMesh[meshName]->GetMeshRect(), meshName);
 				};
 
 				if (!err_hndl.call(&SuperMesh::SetMeshRect, &SMesh, SMesh.GetMeshFocus(), meshRect, save_data_updater)) {
@@ -254,6 +274,26 @@ void Simulation::HandleCommand(string command_string) {
 			else if (verbose) PrintCommandUsage(command_name);
 
 			if (script_client_connected) commSocket.SetSendData(commandSpec.PrepareReturnParameters(SMesh.active_mesh()->GetMeshTCellsize()));
+		}
+		break;
+
+		case CMD_MCELLSIZE:
+		{
+			DBL3 h_m;
+			error = commandSpec.GetParameters(command_fields, h_m);
+
+			if (!error) {
+
+				StopSimulation();
+
+				if (!err_hndl.call(&Mesh::SetMeshMCellsize, SMesh.active_mesh(), h_m)) {
+
+					UpdateScreen();
+				}
+			}
+			else if (verbose) PrintCommandUsage(command_name);
+
+			if (script_client_connected) commSocket.SetSendData(commandSpec.PrepareReturnParameters(SMesh.active_mesh()->GetMeshMCellsize()));
 		}
 		break;
 
@@ -794,7 +834,7 @@ void Simulation::HandleCommand(string command_string) {
 						SMesh.active_mesh()->SetMagnetisationFromData(data, rect);
 						UpdateScreen();
 					}
-					else if (verbose) BD.DisplayConsoleError("ERROR: Focused mesh must be ferromagnetic.");
+					else err_hndl.show_error(BERROR_NOTFERROMAGNETIC, verbose);
 				}
 			}
 			else if (verbose) PrintCommandUsage(command_name);
@@ -882,6 +922,27 @@ void Simulation::HandleCommand(string command_string) {
 			else if (verbose) PrintCommandUsage(command_name);
 
 			if (script_client_connected) commSocket.SetSendData(commandSpec.PrepareReturnParameters(SMesh.active_mesh()->CallModuleMethod(&Zeeman::GetField)));
+		}
+		break;
+
+		case CMD_SETSTRESS:
+		{
+			DBL3 stress_polar;
+			string meshName = "";
+
+			error = commandSpec.GetParameters(command_fields, stress_polar, meshName);
+			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, stress_polar); meshName = ""; }
+
+			if (!error) {
+
+				if (!err_hndl.qcall(&SuperMesh::SetUniformStress, &SMesh, meshName, Polar_to_Cartesian(stress_polar))) {
+
+					UpdateScreen();
+				}
+			}
+			else if (verbose) PrintCommandUsage(command_name);
+
+			if (script_client_connected) commSocket.SetSendData(commandSpec.PrepareReturnParameters(SMesh.active_mesh()->CallModuleMethod(&MElastic::GetUniformStress)));
 		}
 		break;
 
@@ -1227,16 +1288,22 @@ void Simulation::HandleCommand(string command_string) {
 		case CMD_ADDPINNEDDATA:
 		{
 			string dataName, meshName = SMesh.GetMeshFocus();
+			Rect dataRect;
 
-			error = commandSpec.GetParameters(command_fields, dataName, meshName);
+			error = commandSpec.GetParameters(command_fields, dataName, meshName, dataRect);
+			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, dataName, meshName); dataRect = Rect(); }
 			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, dataName); meshName = SMesh.GetMeshFocus(); }
 
 			if (!error && dataDescriptor.has_key(dataName) && SMesh.contains(meshName)) {
 
-				if (dataDescriptor[dataName].meshless)
+				if (dataDescriptor[dataName].meshless) {
+
 					NewDataBoxField(DatumConfig((DATA_)dataDescriptor.get_ID_from_key(dataName)));
-				else
-					NewDataBoxField(DatumConfig((DATA_)dataDescriptor.get_ID_from_key(dataName), meshName));
+				}
+				else {
+
+					NewDataBoxField(DatumConfig((DATA_)dataDescriptor.get_ID_from_key(dataName), meshName, dataRect));
+				}
 
 				RefreshScreen();
 			}
@@ -1652,7 +1719,7 @@ void Simulation::HandleCommand(string command_string) {
 					vector<vector<double>> load_arrays;
 					if (ReadDataColumns(fileName, "\t", load_arrays, { 0, 1 })) {
 
-						error = SMesh.set_meshparam_tscaling_array(meshName, paramName, load_arrays[0], load_arrays[1]);
+						error = SMesh.set_meshparam_tscaling_array(meshName, paramName, load_arrays[0], load_arrays[1], fileName);
 
 						UpdateScreen();
 					}
@@ -1911,7 +1978,7 @@ void Simulation::HandleCommand(string command_string) {
 
 		case CMD_DEFAULT:
 		{
-			LoadSimulation(GetUserDocumentsPath() + "Boris Data\\Simulations\\" + "default");
+			LoadSimulation(GetUserDocumentsPath() + boris_data_directory + "Simulations\\" + "default");
 		}
 		break;
 
@@ -1935,6 +2002,26 @@ void Simulation::HandleCommand(string command_string) {
 		}
 		break;
 
+		case CMD_DISPLAYBACKGROUND:
+		{
+			string name, meshName;
+
+			error = commandSpec.GetParameters(command_fields, name, meshName);
+			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, name); meshName = SMesh.GetMeshFocus(); }
+
+			if (!error) {
+
+				MESHDISPLAY_ display = (MESHDISPLAY_)displayHandles.get_ID_from_value(name);
+
+				if (!err_hndl.qcall(&SuperMesh::SetDisplayedBackgroundPhysicalQuantity, &SMesh, meshName, (int)display)) {
+
+					UpdateScreen();
+				}
+			}
+			else if (verbose) Print_MeshDisplay_List();
+		}
+		break;
+
 		case CMD_VECREP:
 		{
 			string meshName;
@@ -1948,6 +2035,54 @@ void Simulation::HandleCommand(string command_string) {
 
 					UpdateScreen();
 				}
+			}
+			else if (verbose) Print_MeshDisplay_List();
+		}
+		break;
+
+		case CMD_DISPLAYTRANSPARENCY:
+		{
+			double foreground, background;
+
+			error = commandSpec.GetParameters(command_fields, foreground, background);
+
+			if (!error) {
+
+				displayTransparency = DBL2(foreground, background);
+
+				UpdateScreen();
+			}
+			else if (verbose) Print_MeshDisplay_List();
+		}
+		break;
+
+		case CMD_DISPLAYTHRESHOLDS:
+		{
+			double minimum, maximum;
+
+			error = commandSpec.GetParameters(command_fields, minimum, maximum);
+
+			if (!error) {
+
+				displayThresholds = DBL2(minimum, maximum);
+
+				UpdateScreen();
+			}
+			else if (verbose) Print_MeshDisplay_List();
+		}
+		break;
+
+		case CMD_DISPLAYTHRESHOLDTRIGGER:
+		{
+			int trigtype;
+
+			error = commandSpec.GetParameters(command_fields, trigtype);
+
+			if (!error) {
+
+				displayThresholdTrigger = trigtype;
+
+				UpdateScreen();
 			}
 			else if (verbose) Print_MeshDisplay_List();
 		}
@@ -2750,7 +2885,7 @@ void Simulation::HandleCommand(string command_string) {
 
 		case CMD_OPENMANUAL:
 		{
-			string directory = GetUserDocumentsPath() + "Boris Data\\";
+			string directory = GetUserDocumentsPath() + boris_data_directory;
 			string fileName = "BorisManual-v" + ToString(Program_Version) + ".pdf";
 
 			open_file(directory + fileName);
@@ -2937,7 +3072,7 @@ void Simulation::HandleCommand(string command_string) {
 
 					if (!error) BD.DisplayConsoleMessage("Material added to local database.");
 				}
-				else BD.DisplayConsoleError("ERROR: Mesh name doesn't exist.");
+				else err_hndl.show_error(BERROR_MESHNAMEINEXISTENT, verbose);
 
 				UpdateScreen();
 
@@ -3109,7 +3244,7 @@ void Simulation::HandleCommand(string command_string) {
 
 					BD.DisplayConsoleMessage("l_ex = " + l_ex + ", l_Bloch = " + l_Bloch + ", l_sky = " + l_sky);
 				}
-				else BD.DisplayConsoleError("ERROR: Focused mesh is not a ferromagnetic mesh.");
+				else err_hndl.show_error(BERROR_NOTFERROMAGNETIC, verbose);
 			}
 		}
 		break;
@@ -3122,7 +3257,7 @@ void Simulation::HandleCommand(string command_string) {
 
 				if (script_client_connected) commSocket.SetSendData(commandSpec.PrepareReturnParameters(SMesh.active_mesh()->n));
 			}
-			else if (verbose) BD.DisplayConsoleError("ERROR: Focused mesh is not a ferromagnetic mesh.");
+			else err_hndl.show_error(BERROR_NOTFERROMAGNETIC, verbose);
 		}
 		break;
 
@@ -3232,7 +3367,7 @@ void Simulation::HandleCommand(string command_string) {
 						SMesh.active_mesh()->SetMagnetisationFromData(data);
 						UpdateScreen();
 					}
-					else if (verbose) BD.DisplayConsoleError("ERROR: Focused mesh must be ferromagnetic.");
+					else err_hndl.show_error(BERROR_NOTFERROMAGNETIC, verbose);
 				}
 			}
 			else if (verbose) PrintCommandUsage(command_name);
@@ -3282,9 +3417,47 @@ void Simulation::HandleCommand(string command_string) {
 					if (!normalize) Ms0 = 1.0;
 
 					OVF2 ovf2;
-					error = ovf2.Write_OVF2_VEC(fileName, SMesh.active_mesh()->M, Ms0, data_type);
+					error = ovf2.Write_OVF2_VEC(fileName, SMesh.active_mesh()->M, data_type, Ms0);
 				}
-				else if (verbose) BD.DisplayConsoleError("ERROR: Focused mesh must be ferromagnetic.");
+				else err_hndl.show_error(BERROR_NOTFERROMAGNETIC, verbose);
+			}
+			else if (verbose) PrintCommandUsage(command_name);
+		}
+		break;
+
+		case CMD_SAVEOVF2:
+		{
+			string parameters;
+
+			error = commandSpec.GetParameters(command_fields, parameters);
+
+			if (!error) {
+				
+				string data_type = "bin8";
+
+				vector<string> fields = split(parameters, " ");
+
+				int oparams = 0;
+
+				if (fields[0] == "bin4" || fields[0] == "bin8" || fields[0] == "text") {
+
+					oparams++;
+					data_type = fields[0];
+				}
+				
+				if (fields.size() > oparams) {
+
+					//get filename
+					string fileName = combine(subvec(fields, oparams), " ");
+
+					if (GetFileTermination(fileName) != ".ovf") fileName += ".ovf";
+					if (!GetFilenameDirectory(fileName).length()) fileName = directory + fileName;
+
+					if (!err_hndl.call(&SuperMesh::SaveOnScreenPhysicalQuantity, &SMesh, fileName, data_type)) {
+
+						BD.DisplayConsoleMessage("Data saved : " + fileName);
+					}
+				}
 			}
 			else if (verbose) PrintCommandUsage(command_name);
 		}
@@ -3335,7 +3508,7 @@ void Simulation::HandleCommand(string command_string) {
 
 					if (!SMesh[meshname]->contains_param(paramname)) {
 
-						if (verbose) BD.DisplayConsoleError("ERROR: incorrect meshname and/or paramname.");
+						err_hndl.show_error(BERROR_INCORRECTNAME, verbose);
 						break;
 					}
 
@@ -3345,7 +3518,7 @@ void Simulation::HandleCommand(string command_string) {
 				//something wrong : not enough parameters specified
 				else {
 
-					if (verbose) BD.DisplayConsoleError("ERROR: not enough parameters provided.");
+					err_hndl.show_error(BERROR_PARAMMISMATCH_SHOW, verbose);
 					break;
 				}
 
@@ -3364,23 +3537,88 @@ void Simulation::HandleCommand(string command_string) {
 						VEC<double> s_scaling(SMesh[meshname]->get_paramtype_cellsize(paramID), SMesh[meshname]->meshRect);
 						SMesh[meshname]->calculate_meshparam_s_scaling(paramID, s_scaling, SMesh.GetStageTime());
 
-						error = ovf2.Write_OVF2_VEC(fileName, s_scaling, data_type);
+						error = ovf2.Write_OVF2_SCA(fileName, s_scaling, data_type);
 					}
 					else {
 
 						VEC<DBL3> s_scaling(SMesh[meshname]->get_paramtype_cellsize(paramID), SMesh[meshname]->meshRect);
 						SMesh[meshname]->calculate_meshparam_s_scaling(paramID, s_scaling, SMesh.GetStageTime());
 
-						error = ovf2.Write_OVF2_VEC(fileName, s_scaling, 1.0, data_type);
+						error = ovf2.Write_OVF2_VEC(fileName, s_scaling, data_type);
 					}
 				}
 				else {
 
 					void* s_scaling = SMesh[meshname]->get_meshparam_s_scaling(paramID);
 
-					if (SMesh[meshname]->is_paramvar_scalar(paramID)) error = ovf2.Write_OVF2_VEC(fileName, *reinterpret_cast<VEC<double>*>(s_scaling), data_type);
-					else error = ovf2.Write_OVF2_VEC(fileName, *reinterpret_cast<VEC<DBL3>*>(s_scaling), 1.0, data_type);
+					if (SMesh[meshname]->is_paramvar_scalar(paramID)) error = ovf2.Write_OVF2_SCA(fileName, *reinterpret_cast<VEC<double>*>(s_scaling), data_type);
+					else error = ovf2.Write_OVF2_VEC(fileName, *reinterpret_cast<VEC<DBL3>*>(s_scaling), data_type);
 				}
+			}
+			else if (verbose) PrintCommandUsage(command_name);
+		}
+		break;
+
+		case CMD_LOADOVF2DISP:
+		{
+			string fileName;
+
+			error = commandSpec.GetParameters(command_fields, fileName);
+			if (!error) {
+
+				StopSimulation();
+
+				if (SMesh.active_mesh()->Magnetisation_Enabled() && SMesh.active_mesh()->IsModuleSet(MOD_MELASTIC)) {
+
+					if (GetFileTermination(fileName) != ".ovf")
+						fileName += ".ovf";
+
+					if (!GetFilenameDirectory(fileName).length()) fileName = directory + fileName;
+
+					if (!error) {
+
+						error = SMesh.active_mesh()->CallModuleMethod(&MElastic::Load_Displacement_OVF2, fileName);
+						UpdateScreen();
+					}
+				}
+				else err_hndl.show_error(BERROR_NOTFERROMAGNETIC, verbose);
+			}
+			else if (verbose) PrintCommandUsage(command_name);
+		}
+		break;
+
+		case CMD_LOADOVF2STRAIN:
+		{
+			string parameters;
+
+			error = commandSpec.GetParameters(command_fields, parameters);
+			if (!error) {
+
+				StopSimulation();
+
+				if (SMesh.active_mesh()->Magnetisation_Enabled() && SMesh.active_mesh()->IsModuleSet(MOD_MELASTIC)) {
+
+					vector<string> fields = split(parameters, ".ovf");
+
+					if (fields.size() >= 2) {
+
+						string fileName_diag, fileName_odiag;
+
+						fileName_diag = fields[0] + ".ovf";
+						fileName_odiag = fields[1] + ".ovf";
+
+						if (!GetFilenameDirectory(fileName_diag).length()) fileName_diag = directory + fileName_diag;
+						if (!GetFilenameDirectory(fileName_odiag).length()) fileName_odiag = directory + fileName_odiag;
+
+						if (!error) {
+
+							error = SMesh.active_mesh()->CallModuleMethod(&MElastic::Load_Strain_OVF2, fileName_diag, fileName_odiag);
+							UpdateScreen();
+						}
+					}
+					else err_hndl.show_error(BERROR_COULDNOTOPENFILE, verbose);
+				}
+				else err_hndl.show_error(BERROR_NOTFERROMAGNETIC, verbose);
 			}
 			else if (verbose) PrintCommandUsage(command_name);
 		}
@@ -3394,19 +3632,7 @@ void Simulation::HandleCommand(string command_string) {
 
 			if (!error) {
 
-				if (status && !is_thread_running(THREAD_NETWORK)) {
-
-					//start window sockets thread to listen for incoming messages
-					infinite_loop_launch(&Simulation::Listen_Incoming_Message, THREAD_NETWORK);
-
-					if (verbose) BD.DisplayConsoleMessage("Script server running.");
-				}
-				else if (!status && is_thread_running(THREAD_NETWORK)) {
-
-					stop_thread(THREAD_NETWORK);
-
-					if (verbose) BD.DisplayConsoleMessage("Script server stopped.");
-				}
+				Script_Server_Control(status);
 			}
 			else if (verbose) PrintCommandUsage(command_name);
 		}
@@ -3434,7 +3660,7 @@ void Simulation::HandleCommand(string command_string) {
 
 					if (userConstants.has_key(userconstant_name))
 						BD.DisplayConsoleListing(userconstant_name + " = " + ToString(userConstants[userconstant_name]));
-					else BD.DisplayConsoleError("ERROR : constant not defined.");
+					else err_hndl.show_error(BERROR_NOTDEFINED, verbose);
 				}
 				else if (verbose) Print_EquationConstants();
 			}
@@ -3484,6 +3710,59 @@ void Simulation::HandleCommand(string command_string) {
 			SMesh.UpdateConfiguration_Values(UPDATECONFIG_TEQUATION_CONSTANTS);
 
 			UpdateScreen();
+		}
+		break;
+
+		case CMD_FLUSHERRORLOG:
+		{
+			ofstream bdout;
+			bdout.open(errorlog_fileName.c_str(), ios::out);
+			bdout.close();
+		}
+		break;
+
+		case CMD_ERRORLOG:
+		{
+			bool status;
+
+			error = commandSpec.GetParameters(command_fields, status);
+
+			if (!error) {
+
+				log_errors = status;
+				Save_Startup_Flags();
+			}
+			else if (verbose) Print_ErrorLogStatus();
+		}
+		break;
+
+		case CMD_STARTUPUPDATECHECK:
+		{
+			bool status;
+
+			error = commandSpec.GetParameters(command_fields, status);
+
+			if (!error) {
+
+				start_check_updates = status;
+				Save_Startup_Flags();
+			}
+			else if (verbose) Print_StartupUpdateCheckStatus();
+		}
+		break;
+
+		case CMD_STARTUPSCRIPTSERVER:
+		{
+			bool status;
+
+			error = commandSpec.GetParameters(command_fields, status);
+
+			if (!error) {
+
+				start_scriptserver = status;
+				Save_Startup_Flags();
+			}
+			else if (verbose) Print_StartupScriptServerStatus();
 		}
 		break;
 
@@ -3646,6 +3925,70 @@ void Simulation::HandleCommand(string command_string) {
 		}
 		break;
 
+		case CMD_DP_GETPATH:
+		{
+			int arr_idx_path, arr_idx_data;
+
+			error = commandSpec.GetParameters(command_fields, arr_idx_path, arr_idx_data);
+
+			if (!error) {
+
+				vector<double> x, y, z;
+				x = dpArr[arr_idx_path];
+				y = dpArr[arr_idx_path + 1];
+				z = dpArr[arr_idx_path + 2];
+
+				int pathsize = minimum(x.size(), y.size(), z.size());
+
+				vector<double> data_x(pathsize), data_y(pathsize), data_z(pathsize);
+
+				//prepare data displayed on screen ready to be read out below
+				SMesh.PrepareDisplayedMeshValue();
+
+				#pragma omp parallel for
+				for (int idx = 0; idx < pathsize; idx++) {
+
+					DBL3 value = (DBL3)SMesh.GetDisplayedMeshValue(DBL3(x[idx], y[idx], z[idx]));
+
+					data_x[idx] = value.x;
+					data_y[idx] = value.y;
+					data_z[idx] = value.z;
+				}
+
+				dpArr.set_array(arr_idx_data, data_x);
+				dpArr.set_array(arr_idx_data + 1, data_y);
+				dpArr.set_array(arr_idx_data + 2, data_z);
+
+				if (verbose) BD.DisplayConsoleMessage("Path extracted.");
+			}
+			else if (verbose) PrintCommandUsage(command_name);
+		}
+		break;
+
+		case CMD_GETVALUE:
+		{
+			DBL3 abs_pos;
+
+			error = commandSpec.GetParameters(command_fields, abs_pos);
+
+			if (!error) {
+
+				//prepare data displayed on screen ready to be read out below
+				SMesh.PrepareDisplayedMeshValue();
+				Any value = SMesh.GetDisplayedMeshValue(abs_pos);
+				if (verbose) BD.DisplayConsoleMessage(value.convert_to_string());
+
+				if (script_client_connected) {
+
+					if (value.is_type(typeid(double))) commSocket.SetSendData(commandSpec.PrepareReturnParameters((double)value));
+					else if (value.is_type(typeid(DBL2))) commSocket.SetSendData(commandSpec.PrepareReturnParameters((DBL2)value));
+					else if (value.is_type(typeid(DBL3))) commSocket.SetSendData(commandSpec.PrepareReturnParameters((DBL3)value));
+				}
+			}
+			else if (verbose) PrintCommandUsage(command_name);
+		}
+		break;
+
 		case CMD_DP_APPEND:
 		{
 			int dp_original, dp_new;
@@ -3719,16 +4062,24 @@ void Simulation::HandleCommand(string command_string) {
 		}
 		break;
 
-		case CMD_DP_AVERAGEMESHRECT:
+		case CMD_AVERAGEMESHRECT:
 		{
 			Rect rect;
 
 			error = commandSpec.GetParameters(command_fields, rect);
-			if (error == BERROR_PARAMMISMATCH) { error.reset(); rect = SMesh.active_mesh()->GetMeshRect(); }
+			if (error == BERROR_PARAMMISMATCH) { error.reset(); rect = Rect(); }
 
 			if (!error) {
 				
-				if (verbose) BD.DisplayConsoleMessage("Average value = " + dpArr.get_meshaverage(&SMesh, SMesh.GetMeshFocus(), rect));
+				Any value = SMesh.GetAverageDisplayedMeshValue(rect);
+				if (verbose) BD.DisplayConsoleMessage("Average value = " + value.convert_to_string());
+
+				if (script_client_connected) {
+
+					if (value.is_type(typeid(double))) commSocket.SetSendData(commandSpec.PrepareReturnParameters((double)value));
+					else if (value.is_type(typeid(DBL2))) commSocket.SetSendData(commandSpec.PrepareReturnParameters((DBL2)value));
+					else if (value.is_type(typeid(DBL3))) commSocket.SetSendData(commandSpec.PrepareReturnParameters((DBL3)value));
+				}
 			}
 			else if (verbose) PrintCommandUsage(command_name);
 		}
@@ -3763,10 +4114,7 @@ void Simulation::HandleCommand(string command_string) {
 							commSocket.SetSendData(commandSpec.PrepareReturnParameters(Q));
 					}
 				}
-				else {
-
-					if (verbose) BD.DisplayConsoleError("ERROR: Focused mesh is not a ferromagnetic mesh.");
-				}
+				else err_hndl.show_error(BERROR_NOTFERROMAGNETIC, verbose);
 			}
 			else if (verbose) PrintCommandUsage(command_name);
 		}
@@ -4160,7 +4508,7 @@ void Simulation::HandleCommand(string command_string) {
 
 						if (!T.linear_size()) {
 
-							if (verbose) BD.DisplayConsoleError("ERROR: Tsi not computed.");
+							err_hndl.show_error(BERROR_NOTCOMPUTED, verbose);
 							break;
 						}
 					}
@@ -4171,7 +4519,7 @@ void Simulation::HandleCommand(string command_string) {
 
 						if (!T.linear_size()) {
 
-							if (verbose) BD.DisplayConsoleError("ERROR: Ts not computed.");
+							err_hndl.show_error(BERROR_NOTCOMPUTED, verbose);
 							break;
 						}
 					}
@@ -4182,7 +4530,7 @@ void Simulation::HandleCommand(string command_string) {
 
 						if (!T.linear_size()) {
 
-							if (verbose) BD.DisplayConsoleError("ERROR: Tsi not computed.");
+							err_hndl.show_error(BERROR_NOTCOMPUTED, verbose);
 							break;
 						}
 
@@ -4203,7 +4551,7 @@ void Simulation::HandleCommand(string command_string) {
 
 					if (script_client_connected) commSocket.SetSendData(commandSpec.PrepareReturnParameters(P.major, beta.major, P.minor, beta.minor, Rsq));
 				}
-				else if (verbose) BD.DisplayConsoleError("ERROR: Must be ferromagnetic mesh with transport module added and spin transport solver enabled. Must also have either Ts or Tsi computed.");
+				else err_hndl.show_error(BERROR_SPINSOLVER_FIT, verbose);
 			}
 			else if (verbose) PrintCommandUsage(command_name);
 		}
@@ -4236,7 +4584,7 @@ void Simulation::HandleCommand(string command_string) {
 
 					if (!T.linear_size()) {
 
-						if (verbose) BD.DisplayConsoleError("ERROR: Tsi not computed.");
+						err_hndl.show_error(BERROR_NOTCOMPUTED, verbose);
 						break;
 					}
 				}
@@ -4247,7 +4595,7 @@ void Simulation::HandleCommand(string command_string) {
 
 					if (!T.linear_size()) {
 
-						if (verbose) BD.DisplayConsoleError("ERROR: Ts not computed.");
+						err_hndl.show_error(BERROR_NOTCOMPUTED, verbose);
 						break;
 					}
 				}
@@ -4258,7 +4606,7 @@ void Simulation::HandleCommand(string command_string) {
 
 					if (!T.linear_size()) {
 
-						if (verbose) BD.DisplayConsoleError("ERROR: Tsi not computed.");
+						err_hndl.show_error(BERROR_NOTCOMPUTED, verbose);
 						break;
 					}
 
@@ -4290,7 +4638,7 @@ void Simulation::HandleCommand(string command_string) {
 					UpdateScreen();
 				}
 			}
-			else if (verbose) BD.DisplayConsoleError("ERROR: Must be ferromagnetic mesh with transport module added and spin transport solver enabled.");
+			else err_hndl.show_error(BERROR_SPINSOLVER_FIT2, verbose);
 		}
 		break;
 
@@ -4327,7 +4675,7 @@ void Simulation::HandleCommand(string command_string) {
 
 					if (script_client_connected) commSocket.SetSendData(commandSpec.PrepareReturnParameters(SHAeff.major, flST.major, SHAeff.minor, flST.minor, Rsq));
 				}
-				else if (verbose) BD.DisplayConsoleError("ERROR: Must be ferromagnetic mesh with transport module added and spin transport solver enabled. hm_mesh must be a metal mesh with transport module added.");
+				else err_hndl.show_error(BERROR_SPINSOLVER_FIT3, verbose);
 			}
 			else if (verbose) PrintCommandUsage(command_name);
 		}
@@ -4360,7 +4708,7 @@ void Simulation::HandleCommand(string command_string) {
 
 						if (!T.linear_size()) {
 
-							if (verbose) BD.DisplayConsoleError("ERROR: Tsi not computed.");
+							err_hndl.show_error(BERROR_NOTCOMPUTED, verbose);
 							break;
 						}
 					}
@@ -4371,7 +4719,7 @@ void Simulation::HandleCommand(string command_string) {
 
 						if (!T.linear_size()) {
 
-							if (verbose) BD.DisplayConsoleError("ERROR: Ts not computed.");
+							err_hndl.show_error(BERROR_NOTCOMPUTED, verbose);
 							break;
 						}
 					}
@@ -4382,7 +4730,7 @@ void Simulation::HandleCommand(string command_string) {
 
 						if (!T.linear_size()) {
 
-							if (verbose) BD.DisplayConsoleError("ERROR: Tsi not computed.");
+							err_hndl.show_error(BERROR_NOTCOMPUTED, verbose);
 							break;
 						}
 
@@ -4405,7 +4753,7 @@ void Simulation::HandleCommand(string command_string) {
 
 					if (script_client_connected) commSocket.SetSendData(commandSpec.PrepareReturnParameters(SHAeff.major, flST.major, P.major, beta.major, SHAeff.minor, flST.minor, P.minor, beta.minor, Rsq));
 				}
-				else if (verbose) BD.DisplayConsoleError("ERROR: Must be ferromagnetic mesh with transport module added and spin transport solver enabled. hm_mesh must be a metal mesh with transport module added.");
+				else err_hndl.show_error(BERROR_SPINSOLVER_FIT3, verbose);
 			}
 			else if (verbose) PrintCommandUsage(command_name);
 		}
@@ -4456,7 +4804,7 @@ void Simulation::HandleCommand(string command_string) {
 
 					if (script_client_connected) commSocket.SetSendData(commandSpec.PrepareReturnParameters(SHAeff, flST));
 				}
-				else if (verbose) BD.DisplayConsoleError("ERROR: Must give metal and ferromagnetic meshes in this order.");
+				else err_hndl.show_error(BERROR_SPINSOLVER_FIT4, verbose);
 			}
 			else if (verbose) PrintCommandUsage(command_name);
 		}
@@ -4555,7 +4903,6 @@ void Simulation::HandleCommand(string command_string) {
 
 			quicksort(commands_output);
 
-			
 			string commands_description;
 
 			for (int idx = 0; idx < commands.size(); idx++) {
@@ -4588,7 +4935,7 @@ void Simulation::HandleCommand(string command_string) {
 			break;
 		}
 
-		if(error) err_hndl.handle_error(error);
+		if (error) err_hndl.show_error(error, verbose);
 	}
-	else if (verbose) BD.DisplayConsoleError("ERROR : command not recognized.");
+	else err_hndl.show_error(BERROR_COMMAND_NOTRECOGNIZED, verbose);
 }

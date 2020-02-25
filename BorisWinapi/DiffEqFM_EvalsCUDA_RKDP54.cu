@@ -2,7 +2,7 @@
 #include "MeshParamsControlCUDA.h"
 
 #if COMPILECUDA == 1
-#ifdef ODE_EVAL_RKF
+#ifdef ODE_EVAL_RKDP
 
 //defines evaluation methods kernel launchers
 

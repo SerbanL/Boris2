@@ -101,7 +101,6 @@ double Anisotropy_Cubic::UpdateField(void)
 				double K2 = pMesh->K2;
 				DBL3 mcanis_ea1 = pMesh->mcanis_ea1;
 				DBL3 mcanis_ea2 = pMesh->mcanis_ea2;
-
 				pMesh->update_parameters_mcoarse(idx, pMesh->Ms, Ms, pMesh->K1, K1, pMesh->K2, K2, pMesh->mcanis_ea1, mcanis_ea1, pMesh->mcanis_ea2, mcanis_ea2);
 
 				//vector product of ea1 and ea2 : the third orthogonal axis
@@ -235,7 +234,7 @@ double Anisotropy_Cubic::UpdateField(void)
 
 	this->energy = energy;
 
-	return energy;
+	return this->energy;
 }
 
 #endif

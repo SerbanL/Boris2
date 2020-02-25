@@ -336,7 +336,11 @@ public:
 	//Set Bloch skyrmion in given mesh with chirality, diameter and relative x-y plane position
 	BError SetSkyrmionBloch(string meshName, int orientation, int chirality, double diameter, DBL2 position);
 
+	//Set applied magnetic field
 	BError SetField(string meshName, DBL3 field_cartesian);
+
+	//Set uniform applied mechanical stress
+	BError SetUniformStress(string meshName, DBL3 stress_cartesian);
 
 	//fully prepare moving mesh algorithm on named mesh (must be ferromagnetic) - transverse wall
 	BError PrepareMovingMesh(string meshName);
@@ -375,7 +379,7 @@ public:
 
 	BError set_meshparam_t_equation(string meshName, string paramHandle, string equationText);
 	
-	BError set_meshparam_tscaling_array(string meshName, string paramHandle, vector<double>& temp, vector<double>& scaling);
+	BError set_meshparam_tscaling_array(string meshName, string paramHandle, vector<double>& temp, vector<double>& scaling, string fileName_info = "");
 
 	//clear parameters temperature dependence in given mesh (all meshes if empty string)
 	BError clear_meshparam_temp(string meshName, string paramHandle);
@@ -501,10 +505,24 @@ public:
 	//----------------------------------- DISPLAY-ASSOCIATED GET/SET METHODS : SuperMeshDisplay.cpp
 
 	vector<PhysQ> FetchOnScreenPhysicalQuantity(double detail_level = 0.0);
+	
+	//save the quantity currently displayed on screen in an ovf2 file using the specified format
+	BError SaveOnScreenPhysicalQuantity(string fileName, string ovf2_dataType);
+
+	//Before calling a run of GetDisplayedMeshValue, make sure to call PrepareDisplayedMeshValue : this calculates and stores in displayVEC storage and quantities which don't have memory allocated directly, but require computation and temporary storage.
+	void PrepareDisplayedMeshValue(void);
+
+	//return value of currently displayed mesh quantity at the given absolute position; the value is read directly from the storage VEC, not from the displayed PhysQ.
+	//Return an Any as the displayed quantity could be either a scalar or a vector.
+	Any GetDisplayedMeshValue(DBL3 abs_pos);
+
+	//return average value for currently displayed mesh quantity in the given relative rectangle
+	Any GetAverageDisplayedMeshValue(Rect rel_rect);
 
 	int GetDisplayedPhysicalQuantity(void) { return displayedPhysicalQuantity; }
 
 	BError SetDisplayedPhysicalQuantity(string meshName, int displayedPhysicalQuantity_);
+	BError SetDisplayedBackgroundPhysicalQuantity(string meshName, int displayedBackgroundPhysicalQuantity_);
 
 	//Get/Set vectorial quantity representation options in named mesh (which could be the supermesh)
 	BError SetVEC3Rep(string meshName, int vec3rep_);

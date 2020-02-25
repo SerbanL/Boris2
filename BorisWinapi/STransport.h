@@ -159,7 +159,7 @@ public:
 
 	//-------------------Display Calculation Methods
 
-		//return interfacial spin torque in given mesh with matching transport module
+	//return interfacial spin torque in given mesh with matching transport module
 	VEC<DBL3>& GetInterfacialSpinTorque(Transport* pMeshTrans);
 
 #if COMPILECUDA == 1

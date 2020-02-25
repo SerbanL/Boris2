@@ -160,6 +160,7 @@ namespace ucfg {
 #define MAXSIMSPACE		2.0							//Maximum side length of simulation space (m)
 #define MINMESHSPACE	4e-11						//Minimum mesh side length (m)
 #define MAXFIELD		1e8							//Maximum field strength (A/m)
+#define MAXSTRESS		1e15						//Maximum mechanical stress (Pa)
 #define MINODERELERROR		1e-12					//Minimum relative error for ode solver that can be entered
 #define MAXODERELERROR		1e-2					//Maximum relative error for ode solver that can be entered
 #define MINTIMESTEP		1e-18						//Minimum time step that can be entered (s)

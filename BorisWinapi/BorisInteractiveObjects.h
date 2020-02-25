@@ -8,7 +8,14 @@ enum IOI_
 	//Shows program version update status : auxIdis the status as -1: attempting to connect, 0: connection failure, 1: program up to date, 2: update available
 	IOI_PROGRAMUPDATESTATUS,
 
-	//Data box entry, showing the label of a given entry in Simulation::dataBoxList : minorId is the minor id of elements in Simulation::dataBoxList (major id there is always 0), auxId is the number of the interactive object in the list (i.e. entry number as it appears in data box in order). textId is the mesh name (if associated with this data type)
+	//Shows start_check_updates enabled/disabled state. auxId is enabled (1)/disabled(0) status.
+	IOI_UPDATESTATUSCHECKSTARTUP,
+
+	//Shows start_scriptserver enabled/disabled state. auxId is enabled (1)/disabled(0) status.
+	IOI_SCRIPTSERVERSTARTUP,
+
+	//Data box entry, showing the label of a given entry in Simulation::dataBoxList : minorId is the minor id of elements in Simulation::dataBoxList (major id there is always 0), auxId is the number of the interactive object in the list (i.e. entry number as it appears in data box in order). 
+	//textId is the mesh name (if associated with this data type)
 	//Note this entry must always represent the entry in Simulation::dataBoxList with the index in auxId.
 	IOI_DATABOXFIELDLABEL,
 
@@ -63,6 +70,8 @@ enum IOI_
 	IOI_MESHECELLSIZE,
 	//Shows thermal mesh cellsize (units m) : minorId is the unique mesh id number, auxId is enabled/disabled status, textId is the mesh cellsize
 	IOI_MESHTCELLSIZE,
+	//Shows mechanical mesh cellsize (units m) : minorId is the unique mesh id number, auxId is enabled/disabled status, textId is the mesh cellsize
+	IOI_MESHMCELLSIZE,
 
 	//Simulation output data, specifically used for showing values in console : minorId is the DATA_ id, textId is the data handle
 	IOI_SHOWDATA,
@@ -128,6 +137,15 @@ enum IOI_
 	IOI_MESHDISPLAY,
 	//Shows super-mesh display option : minorId is the MESHDISPLAY_ value, textId is the MESHDISPLAY_ handle
 	IOI_SMESHDISPLAY,
+
+	//Shows dual mesh display transparency values : textId is the DBL2 value as a string
+	IOI_MESHDISPLAYTRANSPARENCY,
+	
+	//Shows mesh display threshold values : textId is the DBL2 value as a string
+	IOI_MESHDISPLAYTHRESHOLDS,
+
+	//Shows mesh display threshold trigger type : auxId is the trigger option
+	IOI_MESHDISPLAYTHRESHOLDTRIG,
 
 	//Shows mesh vectorial quantity display option : minorId is the unique mesh id number, auxId is the display option
 	IOI_MESHVECREP,
@@ -211,6 +229,9 @@ enum IOI_
 		
 	//Shows coupled_to_dipoles enabled/disabled state. auxId is enabled (1)/disabled(0) status.
 	IOI_COUPLEDTODIPOLESSTATUS,
+
+	//Shows log_errors enabled/disabled state. auxId is enabled (1)/disabled(0) status.
+	IOI_ERRORLOGSTATUS,
 
 	//Shows neighboring meshes exchange coupling setting for this mesh. minorId is the unique mesh id number, auxId is the status (1/0 : on/off, -1 : not available: must be ferromagnetic mesh)
 	IOI_MESHEXCHCOUPLING,

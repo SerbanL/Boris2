@@ -83,7 +83,7 @@ public:
 	cu_obj<MatPCUDA<cuBReal, cuBReal>> De;
 
 	//electron carrier density (1/m^3)
-	cu_obj<MatPCUDA<cuBReal, cuBReal>> n_density = 1.8e29;
+	cu_obj<MatPCUDA<cuBReal, cuBReal>> n_density;
 
 	//diffusion spin polarisation (unitless)
 	cu_obj<MatPCUDA<cuBReal, cuBReal>> betaD;
@@ -122,10 +122,10 @@ public:
 	cu_obj<MatPCUDA<cuBReal, cuBReal>> pump_eff;
 
 	//charge pumping efficiency (unitless, varies from 0 : no charge pumping, up to 1 : full strength)
-	cu_obj<MatPCUDA<cuBReal, cuBReal>> cpump_eff = 1;
+	cu_obj<MatPCUDA<cuBReal, cuBReal>> cpump_eff;
 
 	//topological Hall effect efficiency (unitless, varies from 0 : none, up to 1 : full strength)
-	cu_obj<MatPCUDA<cuBReal, cuBReal>> the_eff = 1;
+	cu_obj<MatPCUDA<cuBReal, cuBReal>> the_eff;
 
 	//the mesh base temperature (K)
 	cu_obj<cuBReal> base_temperature;
@@ -133,13 +133,22 @@ public:
 	//Curie temperture (K)
 	cu_obj<cuBReal> T_Curie;
 
-	//thermal conductivity (W/mK) - default for permalloy
+	//thermal conductivity (W/mK)
 	cu_obj<MatPCUDA<cuBReal, cuBReal>> thermCond;
 
-	//mass density (kg/m^3) - default for permalloy
+	//mass density (kg/m^3)
 	cu_obj<MatPCUDA<cuBReal, cuBReal>> density;
 
-	//specific heat capacity (J/kgK) - default for permalloy
+	//Magneto-elastic coefficients (J/m^3)
+	cu_obj<MatPCUDA<cuReal2, cuBReal>> MEc;
+
+	//Young's modulus (Pa)
+	cu_obj<MatPCUDA<cuBReal, cuBReal>> Ym;
+
+	//Poisson's ratio (unitless)
+	cu_obj<MatPCUDA<cuBReal, cuBReal>> Pr;
+
+	//specific heat capacity (J/kgK)
 	cu_obj<MatPCUDA<cuBReal, cuBReal>> shc;
 
 	//set temperature spatial variation coefficient (unitless) - used with temperature settings in a simulation schedule only, not with console command directly

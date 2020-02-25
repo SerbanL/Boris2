@@ -19,7 +19,8 @@ enum DATA_
 	DATA_TEMP, DATA_HEATDT,
 	DATA_E_TOTAL,
 	DATA_DMDT, DATA_SKYPOS,
-	DATA_AVM2
+	DATA_AVM2,
+	DATA_E_MELASTIC
 };
 
 //Specifier for available output data : this is stored in a vector with lut indexing, where DATA_ values are used for the major id - the DatumSpecifier corresponds to it
@@ -66,7 +67,7 @@ struct DatumConfig :
 	//mesh name this configured datum is associated with. If blank then mesh name is not applicable. For super-mesh use SuperMesh:superMeshHandle (i.e. "supermesh")
 	string meshName;
 
-	//for same data a Box may be applicable : e.g. obtain average value in given mesh only in this box (subset of mesh size)
+	//for some data a Box may be applicable : e.g. obtain average value in given mesh only in this box (subset of mesh size)
 	Rect rectangle;
 
 	DatumConfig(int datumId_, string meshName_, Rect rectangle_) : ProgramStateNames(this, { VINFO(datumId), VINFO(meshName), VINFO(rectangle) }, {})

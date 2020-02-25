@@ -24,6 +24,7 @@
 #include "Zeeman.h"
 #include "Anisotropy.h"
 #include "AnisotropyCubi.h"
+#include "MElastic.h"
 #include "Transport.h"
 #include "Heat.h"
 #include "SOTField.h"
@@ -47,9 +48,6 @@ class Mesh :
 {
 #if COMPILECUDA == 1
 	friend MeshCUDA;
-
-	//friend TransportCUDA;
-	//friend HeatCUDA;
 #endif
 
 protected:
@@ -70,6 +68,10 @@ protected:
 	   
 	//current quantity displayed on screen
 	int displayedPhysicalQuantity;
+
+	//we can also display, for the same mesh, a secondary physical quantity, at the same time as the primary one.
+	//in this case we'll want to use transparency for one or both so we can see them at the same time
+	int displayedBackgroundPhysicalQuantity = MESHDISPLAY_NONE;
 
 	//type of representation to use for vectorial quantities (see VEC3REP_ enum in PhysQDefs.h)
 	int vec3rep = (int)VEC3REP_FULL;
@@ -149,13 +151,23 @@ public:
 	//temperature calculated by Heat module
 	VEC_VC<double> Temp;
 
-	//-----Mechanical properties (TO DO)
+	//-----Mechanical properties
 
 	//number of cells for mechanical properties
 	SZ3 n_m = SZ3(1);
 
 	//cellsize for mechanical properties
 	DBL3 h_m = DBL3(5e-9);
+
+	//mechanical displacement vectors - on n_m, h_m mesh
+	VEC_VC<DBL3> u_disp;
+
+	//strain tensor (symmetric):
+	//diagonal and off-diagonal components - on n_m, h_m mesh
+	//xx, yy, zz
+	VEC_VC<DBL3> strain_diag;
+	//yz, xz, xy
+	VEC_VC<DBL3> strain_odiag;
 
 private:
 
@@ -407,18 +419,47 @@ public:
 	//Return quantity currently set to display on screen.
 	//Detail_level : the number of displayed elements in each mesh is obtained by dividing its rectangle by this cubic cell (to the nearest integer in each dimension).
 	//detail_level is only needed here when CUDA is enabled so we can fetch data from gpu memory to a coarser array.
-	PhysQ FetchOnScreenPhysicalQuantity(double detail_level = 0.0);
+	//getBackground : if true then use displayedBackgroundPhysicalQuantity instead of displayedPhysicalQuantity
+	PhysQ FetchOnScreenPhysicalQuantity(double detail_level = 0.0, bool getBackground = false);
+
+	//save the quantity currently displayed on screen in an ovf2 file using the specified format
+	BError SaveOnScreenPhysicalQuantity(string fileName, string ovf2_dataType);
+
+	//Before calling a run of GetDisplayedMeshValue, make sure to call PrepareDisplayedMeshValue : this calculates and stores in displayVEC storage and quantities which don't have memory allocated directly, but require computation and temporary storage.
+	void PrepareDisplayedMeshValue(void);
+
+	//return value of currently displayed mesh quantity at the given absolute position; the value is read directly from the storage VEC, not from the displayed PhysQ.
+	//Return an Any as the displayed quantity could be either a scalar or a vector.
+	Any GetDisplayedMeshValue(DBL3 abs_pos);
+
+	//return average value for currently displayed mesh quantity in the given relative rectangle
+	Any GetAverageDisplayedMeshValue(Rect rel_rect);
 
 	int GetDisplayedPhysicalQuantity(void) { return displayedPhysicalQuantity; }
+	int GetDisplayedBackgroundPhysicalQuantity(void) { return displayedBackgroundPhysicalQuantity; }
 
 	int GetDisplayedParamVar(void) { return displayedParamVar; }
 
-	void SetDisplayedPhysicalQuantity(int displayedPhysicalQuantity_) { displayedPhysicalQuantity = displayedPhysicalQuantity_; }
+	void SetDisplayedPhysicalQuantity(int displayedPhysicalQuantity_) 
+	{ 
+		if (displayedPhysicalQuantity_ != displayedBackgroundPhysicalQuantity || displayedPhysicalQuantity_ == MESHDISPLAY_NONE) displayedPhysicalQuantity = displayedPhysicalQuantity_; 
+	}
+	
+	void SetDisplayedBackgroundPhysicalQuantity(int displayedBackgroundPhysicalQuantity_) 
+	{ 
+		if (displayedBackgroundPhysicalQuantity_ != displayedPhysicalQuantity || displayedBackgroundPhysicalQuantity_ == MESHDISPLAY_NONE) {
+
+			if (displayedBackgroundPhysicalQuantity_ == displayedBackgroundPhysicalQuantity) displayedBackgroundPhysicalQuantity = MESHDISPLAY_NONE;
+			else displayedBackgroundPhysicalQuantity = displayedBackgroundPhysicalQuantity_;
+		}
+	}
 
 	void SetDisplayedParamVar(int displayedParamVar_) { displayedParamVar = displayedParamVar_; }
 
 	void SetVEC3Rep(int vec3rep_) { vec3rep = vec3rep_; }
 	int GetVEC3Rep(void) { return vec3rep; }
+
+	bool IsDisplayBackgroundEnabled(void) { return displayedBackgroundPhysicalQuantity != MESHDISPLAY_NONE; }
 
 	//----------------------------------- MESH INFO AND SIZE GET/SET METHODS : Mesh.cpp
 
@@ -451,6 +492,10 @@ public:
 	BError SetMeshTCellsize(DBL3 h_t_);
 	DBL3 GetMeshTCellsize(void) { return h_t; }
 
+	//mechanical properties
+	BError SetMeshMCellsize(DBL3 h_m_);
+	DBL3 GetMeshMCellsize(void) { return h_m; }
+
 	//----------------------------------- ENABLED MESH PROPERTIES CHECKERS
 
 	//magnetization dynamics computation enabled (check Heff not M - M is not empty for dipole meshes)
@@ -464,6 +509,9 @@ public:
 
 	//thermal conduction computation enabled
 	bool TComputation_Enabled(void) { return Temp.linear_size(); }
+
+	//mechanical computation enabled
+	bool MechComputation_Enabled(void) { return strain_diag.linear_size(); }
 
 	//check if interface conductance is enabled (for spin transport solver)
 	bool GInterface_Enabled(void) { return (DBL2(Gmix.get0()).norm() > 0); }
@@ -674,10 +722,11 @@ BError Mesh::change_mesh_shape(Lambda& run_this, PType& ... params)
 	//When changing the mesh shape then some of the primary VEC_VC quantities held in Mesh need to be shaped (NF_EMPTY flags set inside VEC_VC)
 	//Which quantities are shaped and in which order is decided in this method. All public methods which change shape must define code in a lambda (run_this) then invoke this method with any required parameters for the lambda
 
-	//Primary quantities are : M, elC, Temp
+	//Primary quantities are : M, elC, Temp, u_disp
 
 	BError error(__FUNCTION__);
 
+	//Magnetisation
 	if (!shape_change_individual || 
 		(shape_change_individual && (displayedPhysicalQuantity == MESHDISPLAY_MAGNETIZATION || displayedPhysicalQuantity == MESHDISPLAY_MAGNETIZATION2 || displayedPhysicalQuantity == MESHDISPLAY_MAGNETIZATION12)))
 	{
@@ -701,16 +750,25 @@ BError Mesh::change_mesh_shape(Lambda& run_this, PType& ... params)
 		}
 	}
 	
+	//Electrical Conductivity
 	if (!shape_change_individual || (shape_change_individual && displayedPhysicalQuantity == MESHDISPLAY_ELCOND)) {
 
 		//2. shape electrical conductivity
 		if (elC.linear_size()) error = run_this(elC, elecCond, params...);
 	}
 	
+	//Temperature
 	if (!shape_change_individual || (shape_change_individual && displayedPhysicalQuantity == MESHDISPLAY_TEMPERATURE)) {
 
 		//3. shape temperature
 		if (Temp.linear_size()) error = run_this(Temp, base_temperature, params...);
+	}
+
+	//Mechanical Displacement
+	if (!shape_change_individual || (shape_change_individual && displayedPhysicalQuantity == MESHDISPLAY_UDISP)) {
+
+		//4. shape mechanical displacement
+		if (u_disp.linear_size()) error = run_this(u_disp, DBL3(), params...);
 	}
 
 #if COMPILECUDA == 1
@@ -728,3 +786,4 @@ BError Mesh::change_mesh_shape(Lambda& run_this, PType& ... params)
 	
 	return error;
 }
+

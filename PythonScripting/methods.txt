@@ -1,0 +1,624 @@
+def 2dmulticonvolution(self, status = ''):
+	return self.SendCommand("2dmulticonvolution", [status])
+
+def addafmesh(self, name = '', rectangle = ''):
+	return self.SendCommand("addafmesh", [name, rectangle])
+
+def addconductor(self, name = '', rectangle = ''):
+	return self.SendCommand("addconductor", [name, rectangle])
+
+def adddata(self, dataname = '', meshname = '', rectangle = ''):
+	return self.SendCommand("adddata", [dataname, meshname, rectangle])
+
+def adddipole(self, name = '', rectangle = ''):
+	return self.SendCommand("adddipole", [name, rectangle])
+
+def addelectrode(self, electrode_rect = ''):
+	return self.SendCommand("addelectrode", [electrode_rect])
+
+def addinsulator(self, name = '', rectangle = ''):
+	return self.SendCommand("addinsulator", [name, rectangle])
+
+def addmaterial(self, name = '', rectangle = ''):
+	return self.SendCommand("addmaterial", [name, rectangle])
+
+def addmdbentry(self, meshname = '', materialname = ''):
+	return self.SendCommand("addmdbentry", [meshname, materialname])
+
+def addmesh(self, name = '', rectangle = ''):
+	return self.SendCommand("addmesh", [name, rectangle])
+
+def addmodule(self, meshname = '', handle = ''):
+	return self.SendCommand("addmodule", [meshname, handle])
+
+def addpinneddata(self, dataname = '', meshname = ''):
+	return self.SendCommand("addpinneddata", [dataname, meshname])
+
+def addrect(self, rectangle = '', meshname = ''):
+	return self.SendCommand("addrect", [rectangle, meshname])
+
+def addstage(self, stagetype = '', meshname = ''):
+	return self.SendCommand("addstage", [stagetype, meshname])
+
+def ambient(self, ambient_temperature = '', meshname = ''):
+	return self.SendCommand("ambient", [ambient_temperature, meshname])
+
+def astepctrl(self, err_fail = '', err_high = '', err_low = '', dT_incr = '', dT_min = '', dT_max = ''):
+	return self.SendCommand("astepctrl", [err_fail, err_high, err_low, dT_incr, dT_min, dT_max])
+
+def atomicmoment(self, ub_multiple = '', meshname = ''):
+	return self.SendCommand("atomicmoment", [ub_multiple, meshname])
+
+def benchtime(self):
+	return self.SendCommand("benchtime")
+
+def blochpreparemovingmesh(self, meshname = ''):
+	return self.SendCommand("blochpreparemovingmesh", [meshname])
+
+def cellsize(self, value = ''):
+	return self.SendCommand("cellsize", [value])
+
+def center(self):
+	return self.SendCommand("center")
+
+def chdir(self, directory = ''):
+	return self.SendCommand("chdir", [directory])
+
+def checkupdates(self):
+	return self.SendCommand("checkupdates")
+
+def clearelectrodes(self):
+	return self.SendCommand("clearelectrodes")
+
+def clearequationconstants(self):
+	return self.SendCommand("clearequationconstants")
+
+def clearmovingmesh(self):
+	return self.SendCommand("clearmovingmesh")
+
+def clearparamstemp(self, meshname = '', paramname = ''):
+	return self.SendCommand("clearparamstemp", [meshname, paramname])
+
+def clearparamsvar(self, meshname = ''):
+	return self.SendCommand("clearparamsvar", [meshname])
+
+def clearparamvar(self, meshname = '', paramname = ''):
+	return self.SendCommand("clearparamvar", [meshname, paramname])
+
+def clearroughness(self, meshname = ''):
+	return self.SendCommand("clearroughness", [meshname])
+
+def clearscreen(self):
+	return self.SendCommand("clearscreen")
+
+def computefields(self):
+	return self.SendCommand("computefields")
+
+def copymeshdata(self, meshname_from = '', meshname_to = ''):
+	return self.SendCommand("copymeshdata", [meshname_from, meshname_to])
+
+def copyparams(self, meshname_from = '', meshname_to = ''):
+	return self.SendCommand("copyparams", [meshname_from, meshname_to])
+
+def coupletodipoles(self, status = ''):
+	return self.SendCommand("coupletodipoles", [status])
+
+def cuda(self, status = ''):
+	return self.SendCommand("cuda", [status])
+
+def curietemperature(self, curie_temperature = '', meshname = ''):
+	return self.SendCommand("curietemperature", [curie_temperature, meshname])
+
+def data(self):
+	return self.SendCommand("data")
+
+def default(self):
+	return self.SendCommand("default")
+
+def deldata(self, index = ''):
+	return self.SendCommand("deldata", [index])
+
+def delelectrode(self, index = ''):
+	return self.SendCommand("delelectrode", [index])
+
+def delequationconstant(self, name = ''):
+	return self.SendCommand("delequationconstant", [name])
+
+def delmdbentry(self, materialname = ''):
+	return self.SendCommand("delmdbentry", [materialname])
+
+def delmesh(self, name = ''):
+	return self.SendCommand("delmesh", [name])
+
+def delmodule(self, meshname = '', handle = ''):
+	return self.SendCommand("delmodule", [meshname, handle])
+
+def delpinneddata(self, index = ''):
+	return self.SendCommand("delpinneddata", [index])
+
+def delrect(self, rectangle = '', meshname = ''):
+	return self.SendCommand("delrect", [rectangle, meshname])
+
+def delstage(self, index = ''):
+	return self.SendCommand("delstage", [index])
+
+def designateground(self, electrode_index = ''):
+	return self.SendCommand("designateground", [electrode_index])
+
+def display(self, name = '', meshname = ''):
+	return self.SendCommand("display", [name, meshname])
+
+def dp_add(self, dp_source = '', value = '', dp_dest = ''):
+	return self.SendCommand("dp_add", [dp_source, value, dp_dest])
+
+def dp_adddp(self, dp_x1 = '', dp_x2 = '', dp_dest = ''):
+	return self.SendCommand("dp_adddp", [dp_x1, dp_x2, dp_dest])
+
+def dp_append(self, dp_original = '', dp_new = ''):
+	return self.SendCommand("dp_append", [dp_original, dp_new])
+
+def dp_averagemeshrect(self, rectangle = ''):
+	return self.SendCommand("dp_averagemeshrect", [rectangle])
+
+def dp_calcsot(self, hm_mesh = '', fm_mesh = ''):
+	return self.SendCommand("dp_calcsot", [hm_mesh, fm_mesh])
+
+def dp_cartesiantopolar(self, dp_in_x = '', dp_in_y = '', dp_out_r = '', dp_out_theta = ''):
+	return self.SendCommand("dp_cartesiantopolar", [dp_in_x, dp_in_y, dp_out_r, dp_out_theta])
+
+def dp_clear(self, indexes = ''):
+	return self.SendCommand("dp_clear", [indexes])
+
+def dp_clearall(self):
+	return self.SendCommand("dp_clearall")
+
+def dp_coercivity(self, dp_index_x = '', dp_index_y = ''):
+	return self.SendCommand("dp_coercivity", [dp_index_x, dp_index_y])
+
+def dp_completehysteresis(self, dp_index_x = '', dp_index_y = ''):
+	return self.SendCommand("dp_completehysteresis", [dp_index_x, dp_index_y])
+
+def dp_div(self, dp_source = '', value = '', dp_dest = ''):
+	return self.SendCommand("dp_div", [dp_source, value, dp_dest])
+
+def dp_divdp(self, dp_x1 = '', dp_x2 = '', dp_dest = ''):
+	return self.SendCommand("dp_divdp", [dp_x1, dp_x2, dp_dest])
+
+def dp_dotprod(self, dp_vector = '', ux = '', uy = '', uz = '', dp_out = ''):
+	return self.SendCommand("dp_dotprod", [dp_vector, ux, uy, uz, dp_out])
+
+def dp_dotproddp(self, dp_x1 = '', dp_x2 = ''):
+	return self.SendCommand("dp_dotproddp", [dp_x1, dp_x2])
+
+def dp_dumptdep(self, meshname = '', paramname = '', max_temperature = '', dp_index = ''):
+	return self.SendCommand("dp_dumptdep", [meshname, paramname, max_temperature, dp_index])
+
+def dp_erase(self, dp_index = '', start_index = '', length = ''):
+	return self.SendCommand("dp_erase", [dp_index, start_index, length])
+
+def dp_extract(self, dp_in = '', dp_out = '', start_index = '', length = ''):
+	return self.SendCommand("dp_extract", [dp_in, dp_out, start_index, length])
+
+def dp_fitadiabatic(self, abs_err = '', Rsq = '', T_ratio = '', stencil = ''):
+	return self.SendCommand("dp_fitadiabatic", [abs_err, Rsq, T_ratio, stencil])
+
+def dp_fitlorentz(self, dp_x = '', dp_y = ''):
+	return self.SendCommand("dp_fitlorentz", [dp_x, dp_y])
+
+def dp_fitnonadiabatic(self, abs_err = '', Rsq = '', T_ratio = '', stencil = ''):
+	return self.SendCommand("dp_fitnonadiabatic", [abs_err, Rsq, T_ratio, stencil])
+
+def dp_fitskyrmion(self, dp_x = '', dp_y = ''):
+	return self.SendCommand("dp_fitskyrmion", [dp_x, dp_y])
+
+def dp_fitsot(self, hm_mesh = '', rectangle = ''):
+	return self.SendCommand("dp_fitsot", [hm_mesh, rectangle])
+
+def dp_fitsotstt(self, hm_mesh = '', rectangle = ''):
+	return self.SendCommand("dp_fitsotstt", [hm_mesh, rectangle])
+
+def dp_fitstt(self, rectangle = ''):
+	return self.SendCommand("dp_fitstt", [rectangle])
+
+def dp_get(self, dp_arr = '', index = ''):
+	return self.SendCommand("dp_get", [dp_arr, index])
+
+def dp_getampli(self, dp_source = '', pointsPeriod = ''):
+	return self.SendCommand("dp_getampli", [dp_source, pointsPeriod])
+
+def dp_getpath(self, dp_index_in = '', dp_index_out = ''):
+	return self.SendCommand("dp_getpath", [dp_index_in, dp_index_out])
+
+def dp_getprofile(self, start = '', end = '', dp_index = ''):
+	return self.SendCommand("dp_getprofile", [start, end, dp_index])
+
+def dp_linreg(self, dp_index_x = '', dp_index_y = '', dp_index_z = '', dp_index_out = ''):
+	return self.SendCommand("dp_linreg", [dp_index_x, dp_index_y, dp_index_z, dp_index_out])
+
+def dp_load(self, filename = '', file_indexes = '', dp_indexes = ''):
+	return self.SendCommand("dp_load", [filename, file_indexes, dp_indexes])
+
+def dp_mean(self, dp_index = ''):
+	return self.SendCommand("dp_mean", [dp_index])
+
+def dp_minmax(self, dp_index = ''):
+	return self.SendCommand("dp_minmax", [dp_index])
+
+def dp_monotonic(self, dp_in_x = '', dp_in_y = '', dp_out_x = '', dp_out_y = ''):
+	return self.SendCommand("dp_monotonic", [dp_in_x, dp_in_y, dp_out_x, dp_out_y])
+
+def dp_mul(self, dp_source = '', value = '', dp_dest = ''):
+	return self.SendCommand("dp_mul", [dp_source, value, dp_dest])
+
+def dp_muldp(self, dp_x1 = '', dp_x2 = '', dp_dest = ''):
+	return self.SendCommand("dp_muldp", [dp_x1, dp_x2, dp_dest])
+
+def dp_rarefy(self, dp_in = '', dp_out = '', skip = ''):
+	return self.SendCommand("dp_rarefy", [dp_in, dp_out, skip])
+
+def dp_remanence(self, dp_index_x = '', dp_index_y = ''):
+	return self.SendCommand("dp_remanence", [dp_index_x, dp_index_y])
+
+def dp_removeoffset(self, dp_index = '', dp_index_out = ''):
+	return self.SendCommand("dp_removeoffset", [dp_index, dp_index_out])
+
+def dp_replacerepeats(self, dp_index = '', dp_index_out = ''):
+	return self.SendCommand("dp_replacerepeats", [dp_index, dp_index_out])
+
+def dp_save(self, filename = '', dp_indexes = ''):
+	return self.SendCommand("dp_save", [filename, dp_indexes])
+
+def dp_sequence(self, dp_index = '', start_value = '', increment = '', points = ''):
+	return self.SendCommand("dp_sequence", [dp_index, start_value, increment, points])
+
+def dp_set(self, dp_arr = '', index = '', value = ''):
+	return self.SendCommand("dp_set", [dp_arr, index, value])
+
+def dp_showsizes(self, dp_arr = ''):
+	return self.SendCommand("dp_showsizes", [dp_arr])
+
+def dp_smooth(self, dp_in = '', dp_out = '', window_size = ''):
+	return self.SendCommand("dp_smooth", [dp_in, dp_out, window_size])
+
+def dp_sub(self, dp_source = '', value = '', dp_dest = ''):
+	return self.SendCommand("dp_sub", [dp_source, value, dp_dest])
+
+def dp_subdp(self, dp_x1 = '', dp_x2 = '', dp_dest = ''):
+	return self.SendCommand("dp_subdp", [dp_x1, dp_x2, dp_dest])
+
+def dp_topocharge(self, x = '', y = '', radius = ''):
+	return self.SendCommand("dp_topocharge", [x, y, radius])
+
+def dwall(self, longitudinal = '', transverse = '', width = '', position = '', meshname = ''):
+	return self.SendCommand("dwall", [longitudinal, transverse, width, position, meshname])
+
+def ecellsize(self, value = ''):
+	return self.SendCommand("ecellsize", [value])
+
+def editdata(self, index = '', dataname = '', meshname = '', rectangle = ''):
+	return self.SendCommand("editdata", [index, dataname, meshname, rectangle])
+
+def editdatasave(self, index = '', savetype = '', savevalue = ''):
+	return self.SendCommand("editdatasave", [index, savetype, savevalue])
+
+def editstage(self, index = '', stagetype = '', meshname = ''):
+	return self.SendCommand("editstage", [index, stagetype, meshname])
+
+def editstagestop(self, index = '', stoptype = '', stopvalue = ''):
+	return self.SendCommand("editstagestop", [index, stoptype, stopvalue])
+
+def editstagevalue(self, index = '', value = ''):
+	return self.SendCommand("editstagevalue", [index, value])
+
+def electrodes(self):
+	return self.SendCommand("electrodes")
+
+def equationconstants(self, name = '', value = ''):
+	return self.SendCommand("equationconstants", [name, value])
+
+def errorlog(self, status = ''):
+	return self.SendCommand("errorlog", [status])
+
+def escellsize(self, value = ''):
+	return self.SendCommand("escellsize", [value])
+
+def evalspeedup(self, status = ''):
+	return self.SendCommand("evalspeedup", [status])
+
+def exchangecoupledmeshes(self, status = '', meshname = ''):
+	return self.SendCommand("exchangecoupledmeshes", [status, meshname])
+
+def flusherrorlog(self):
+	return self.SendCommand("flusherrorlog")
+
+def fmscellsize(self, value = ''):
+	return self.SendCommand("fmscellsize", [value])
+
+def generate2dgrains(self, spacing = '', seed = ''):
+	return self.SendCommand("generate2dgrains", [spacing, seed])
+
+def generate3dgrains(self, spacing = '', seed = ''):
+	return self.SendCommand("generate3dgrains", [spacing, seed])
+
+def getvalue(self, abspos = ''):
+	return self.SendCommand("getvalue", [abspos])
+
+def imagecropping(self, left = '', bottom = '', right = '', top = ''):
+	return self.SendCommand("imagecropping", [left, bottom, right, top])
+
+def individualmaskshape(self, status = ''):
+	return self.SendCommand("individualmaskshape", [status])
+
+def insulatingside(self, side_literal = '', status = '', meshname = ''):
+	return self.SendCommand("insulatingside", [side_literal, status, meshname])
+
+def invertmag(self, meshname = ''):
+	return self.SendCommand("invertmag", [meshname])
+
+def isrunning(self):
+	return self.SendCommand("isrunning")
+
+def iterupdate(self, iterations = ''):
+	return self.SendCommand("iterupdate", [iterations])
+
+def loadmaskfile(self, z-depth = '', filename = ''):
+	return self.SendCommand("loadmaskfile", [z-depth, filename])
+
+def loadovf2mag(self, renormalize_value = '', filename = ''):
+	return self.SendCommand("loadovf2mag", [renormalize_value, filename])
+
+def loadovf2mesh(self, renormalize_value = '', filename = ''):
+	return self.SendCommand("loadovf2mesh", [renormalize_value, filename])
+
+def loadsim(self, filename = ''):
+	return self.SendCommand("loadsim", [filename])
+
+def makevideo(self, filebase = '', fps = '', quality = ''):
+	return self.SendCommand("makevideo", [filebase, fps, quality])
+
+def manual(self):
+	return self.SendCommand("manual")
+
+def matcurietemperature(self, curie_temperature = '', meshname = ''):
+	return self.SendCommand("matcurietemperature", [curie_temperature, meshname])
+
+def materialsdatabase(self, mdbname = ''):
+	return self.SendCommand("materialsdatabase", [mdbname])
+
+def memory(self):
+	return self.SendCommand("memory")
+
+def mesh(self):
+	return self.SendCommand("mesh")
+
+def meshfocus(self, meshname = ''):
+	return self.SendCommand("meshfocus", [meshname])
+
+def meshfocus2(self, meshname = ''):
+	return self.SendCommand("meshfocus2", [meshname])
+
+def meshrect(self, rectangle = ''):
+	return self.SendCommand("meshrect", [rectangle])
+
+def modules(self):
+	return self.SendCommand("modules")
+
+def movingmesh(self, status_or_meshname = ''):
+	return self.SendCommand("movingmesh", [status_or_meshname])
+
+def movingmeshasym(self, status = ''):
+	return self.SendCommand("movingmeshasym", [status])
+
+def movingmeshthresh(self, value = ''):
+	return self.SendCommand("movingmeshthresh", [value])
+
+def multiconvolution(self, status = ''):
+	return self.SendCommand("multiconvolution", [status])
+
+def ncommon(self, sizes = ''):
+	return self.SendCommand("ncommon", [sizes])
+
+def ncommonstatus(self, status = ''):
+	return self.SendCommand("ncommonstatus", [status])
+
+def neelpreparemovingmesh(self, meshname = ''):
+	return self.SendCommand("neelpreparemovingmesh", [meshname])
+
+def ode(self):
+	return self.SendCommand("ode")
+
+def params(self, meshname = ''):
+	return self.SendCommand("params", [meshname])
+
+def paramstemp(self, meshname = ''):
+	return self.SendCommand("paramstemp", [meshname])
+
+def paramsvar(self, meshname = ''):
+	return self.SendCommand("paramsvar", [meshname])
+
+def pbc(self, meshname = '', flag = '', images = ''):
+	return self.SendCommand("pbc", [meshname, flag, images])
+
+def preparemovingmesh(self, meshname = ''):
+	return self.SendCommand("preparemovingmesh", [meshname])
+
+def random(self, meshname = ''):
+	return self.SendCommand("random", [meshname])
+
+def refineroughness(self, value = '', meshname = ''):
+	return self.SendCommand("refineroughness", [value, meshname])
+
+def refreshmdb(self):
+	return self.SendCommand("refreshmdb")
+
+def refreshscreen(self):
+	return self.SendCommand("refreshscreen")
+
+def renamemesh(self, old_name = '', new_name = ''):
+	return self.SendCommand("renamemesh", [old_name, new_name])
+
+def requestmdbsync(self, materialname = '', email = ''):
+	return self.SendCommand("requestmdbsync", [materialname, email])
+
+def reset(self):
+	return self.SendCommand("reset")
+
+def resetmesh(self, meshname = ''):
+	return self.SendCommand("resetmesh", [meshname])
+
+def robinalpha(self, robin_alpha = '', meshname = ''):
+	return self.SendCommand("robinalpha", [robin_alpha, meshname])
+
+def roughenmesh(self, depth = '', axis = '', seed = ''):
+	return self.SendCommand("roughenmesh", [depth, axis, seed])
+
+def run(self):
+	return self.SendCommand("run")
+
+def savecomment(self, filename = '', comment = ''):
+	return self.SendCommand("savecomment", [filename, comment])
+
+def savedatafile(self, filename = ''):
+	return self.SendCommand("savedatafile", [filename])
+
+def savedataflag(self, status = ''):
+	return self.SendCommand("savedataflag", [status])
+
+def saveimagefile(self, filename = ''):
+	return self.SendCommand("saveimagefile", [filename])
+
+def saveimageflag(self, status = ''):
+	return self.SendCommand("saveimageflag", [status])
+
+def savemeshimage(self, filename = ''):
+	return self.SendCommand("savemeshimage", [filename])
+
+def saveovf2mag(self, n = '', data_type = '', filename = ''):
+	return self.SendCommand("saveovf2mag", [n, data_type, filename])
+
+def saveovf2param(self, data_type = '', meshname = '', paramname = '', filename = ''):
+	return self.SendCommand("saveovf2param", [data_type, meshname, paramname, filename])
+
+def savesim(self, filename = ''):
+	return self.SendCommand("savesim", [filename])
+
+def scalemeshrects(self, status = ''):
+	return self.SendCommand("scalemeshrects", [status])
+
+def scriptserver(self, status = ''):
+	return self.SendCommand("scriptserver", [status])
+
+def setangle(self, polar = '', azimuthal = '', meshname = ''):
+	return self.SendCommand("setangle", [polar, azimuthal, meshname])
+
+def setcurrent(self, current = ''):
+	return self.SendCommand("setcurrent", [current])
+
+def setdefaultelectrodes(self):
+	return self.SendCommand("setdefaultelectrodes")
+
+def setdisplayedparamsvar(self, meshname = '', paramname = ''):
+	return self.SendCommand("setdisplayedparamsvar", [meshname, paramname])
+
+def setdt(self, value = ''):
+	return self.SendCommand("setdt", [value])
+
+def setelectrodepotential(self, electrode_index = '', potential = ''):
+	return self.SendCommand("setelectrodepotential", [electrode_index, potential])
+
+def setelectroderect(self, electrode_index = '', electrode_rect = ''):
+	return self.SendCommand("setelectroderect", [electrode_index, electrode_rect])
+
+def setfield(self, magnitude = '', polar = '', azimuthal = '', meshname = ''):
+	return self.SendCommand("setfield", [magnitude, polar, azimuthal, meshname])
+
+def setheatdt(self, value = ''):
+	return self.SendCommand("setheatdt", [value])
+
+def setmaterial(self, name = ''):
+	return self.SendCommand("setmaterial", [name])
+
+def setode(self, equation = '', evaluation = ''):
+	return self.SendCommand("setode", [equation, evaluation])
+
+def setparam(self, meshname = '', paramname = '', value = ''):
+	return self.SendCommand("setparam", [meshname, paramname, value])
+
+def setparamtemparray(self, meshname = '', paramname = '', filename = ''):
+	return self.SendCommand("setparamtemparray", [meshname, paramname, filename])
+
+def setparamtempequation(self, meshname = '', paramname = '', text_equation = ''):
+	return self.SendCommand("setparamtempequation", [meshname, paramname, text_equation])
+
+def setparamvar(self, meshname = '', paramname = '', generatorname = '', arguments = ''):
+	return self.SendCommand("setparamvar", [meshname, paramname, generatorname, arguments])
+
+def setpotential(self, potential = ''):
+	return self.SendCommand("setpotential", [potential])
+
+def setrect(self, polar = '', azimuthal = '', rectangle = '', meshname = ''):
+	return self.SendCommand("setrect", [polar, azimuthal, rectangle, meshname])
+
+def setsordamping(self, damping_v = '', damping_s = ''):
+	return self.SendCommand("setsordamping", [damping_v, damping_s])
+
+def showdata(self, dataname = '', meshname = '', rectangle = ''):
+	return self.SendCommand("showdata", [dataname, meshname, rectangle])
+
+def showlengths(self):
+	return self.SendCommand("showlengths")
+
+def showmcells(self):
+	return self.SendCommand("showmcells")
+
+def skyrmion(self, core = '', chirality = '', diameter = '', position = '', meshname = ''):
+	return self.SendCommand("skyrmion", [core, chirality, diameter, position, meshname])
+
+def skyrmionbloch(self, core = '', chirality = '', diameter = '', position = '', meshname = ''):
+	return self.SendCommand("skyrmionbloch", [core, chirality, diameter, position, meshname])
+
+def skyrmionpreparemovingmesh(self, meshname = ''):
+	return self.SendCommand("skyrmionpreparemovingmesh", [meshname])
+
+def ssolverconfig(self, s_convergence_error = '', s_iters_timeout = ''):
+	return self.SendCommand("ssolverconfig", [s_convergence_error, s_iters_timeout])
+
+def stages(self):
+	return self.SendCommand("stages")
+
+def startupscriptserver(self, status = ''):
+	return self.SendCommand("startupscriptserver", [status])
+
+def startupupdatecheck(self, status = ''):
+	return self.SendCommand("startupupdatecheck", [status])
+
+def statictransportsolver(self, status = ''):
+	return self.SendCommand("statictransportsolver", [status])
+
+def stop(self):
+	return self.SendCommand("stop")
+
+def surfroughenjagged(self, depth = '', spacing = '', seed = '', sides = ''):
+	return self.SendCommand("surfroughenjagged", [depth, spacing, seed, sides])
+
+def tcellsize(self, value = ''):
+	return self.SendCommand("tcellsize", [value])
+
+def temperature(self, value = '', meshname = ''):
+	return self.SendCommand("temperature", [value, meshname])
+
+def tsolverconfig(self, convergence_error = '', iters_timeout = ''):
+	return self.SendCommand("tsolverconfig", [convergence_error, iters_timeout])
+
+def updatemdb(self):
+	return self.SendCommand("updatemdb")
+
+def updatescreen(self):
+	return self.SendCommand("updatescreen")
+
+def vecrep(self, meshname = '', vecreptype = ''):
+	return self.SendCommand("vecrep", [meshname, vecreptype])
+
+def vortex(self, longitudinal = '', rotation = '', core = '', rectangle = '', meshname = ''):
+	return self.SendCommand("vortex", [longitudinal, rotation, core, rectangle, meshname])
+

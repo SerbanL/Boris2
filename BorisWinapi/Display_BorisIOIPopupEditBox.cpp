@@ -345,7 +345,7 @@ ActionOutcome BorisIOIPopupEditBox::NewMessage(AC_ aCode, INT2 mouse, string dat
 		if (windowEntered) {
 
 			//AddCode not SetCode as we need to keep the AO_SETTOPMOST code set by NewMessage_CommonResponses
-			actionResult.AddCode(winId, mouse, AO_REFRESH);
+			//actionResult.AddCode(winId, mouse, AO_REFRESH);
 
 			bool doubleClick = IsDoubleClick(aCode);
 			if (doubleClick) aCode = AC_DOUBLECLICK;

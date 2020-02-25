@@ -192,14 +192,14 @@ void PhysQRep::CalculateRepresentation(vector<PhysQ> physQ)
 
 				//VEC_VC. Single or double precision used?
 				if (physQ[idx].is_double_precision()) {
-
-					if (physQ[idx].is_dual()) minmax = CalculateRepresentation_VEC(physQ[idx].get_vec_vc_dbl3(), physQ[idx].get2_vec_vc_dbl3(), physQRep[idx]);
-					else minmax = CalculateRepresentation_VEC(physQ[idx].get_vec_vc_dbl3(), physQRep[idx]);
+					
+					if (physQ[idx].is_dual()) minmax = CalculateRepresentation_VEC(physQ[idx].get_vec_vc_dbl3(), physQ[idx].get2_vec_vc_dbl3(), physQRep[idx], physQ[idx].get_transparency(), physQ[idx].get_thresholds(), physQ[idx].get_thresholdtrigger());
+					else minmax = CalculateRepresentation_VEC(physQ[idx].get_vec_vc_dbl3(), physQRep[idx], physQ[idx].get_transparency(), physQ[idx].get_thresholds(), physQ[idx].get_thresholdtrigger());
 				}
 				else {
 
-					if (physQ[idx].is_dual()) minmax = CalculateRepresentation_VEC(physQ[idx].get_vec_vc_flt3(), physQ[idx].get2_vec_vc_flt3(), physQRep[idx]);
-					else minmax = CalculateRepresentation_VEC(physQ[idx].get_vec_vc_flt3(), physQRep[idx]);
+					if (physQ[idx].is_dual()) minmax = CalculateRepresentation_VEC(physQ[idx].get_vec_vc_flt3(), physQ[idx].get2_vec_vc_flt3(), physQRep[idx], physQ[idx].get_transparency(), physQ[idx].get_thresholds(), physQ[idx].get_thresholdtrigger());
+					else minmax = CalculateRepresentation_VEC(physQ[idx].get_vec_vc_flt3(), physQRep[idx], physQ[idx].get_transparency(), physQ[idx].get_thresholds(), physQ[idx].get_thresholdtrigger());
 				}
 			}
 			else {
@@ -207,13 +207,13 @@ void PhysQRep::CalculateRepresentation(vector<PhysQ> physQ)
 				//just a VEC
 				if (physQ[idx].is_double_precision()) {
 
-					if (physQ[idx].is_dual()) minmax = CalculateRepresentation_VEC(physQ[idx].get_vec_dbl3(), physQ[idx].get2_vec_dbl3(), physQRep[idx]);
-					else minmax = CalculateRepresentation_VEC(physQ[idx].get_vec_dbl3(), physQRep[idx]);
+					if (physQ[idx].is_dual()) minmax = CalculateRepresentation_VEC(physQ[idx].get_vec_dbl3(), physQ[idx].get2_vec_dbl3(), physQRep[idx], physQ[idx].get_transparency(), physQ[idx].get_thresholds(), physQ[idx].get_thresholdtrigger());
+					else minmax = CalculateRepresentation_VEC(physQ[idx].get_vec_dbl3(), physQRep[idx], physQ[idx].get_transparency(), physQ[idx].get_thresholds(), physQ[idx].get_thresholdtrigger());
 				}
 				else {
 
-					if (physQ[idx].is_dual()) minmax = CalculateRepresentation_VEC(physQ[idx].get_vec_flt3(), physQ[idx].get2_vec_flt3(), physQRep[idx]);
-					else minmax = CalculateRepresentation_VEC(physQ[idx].get_vec_flt3(), physQRep[idx]);
+					if (physQ[idx].is_dual()) minmax = CalculateRepresentation_VEC(physQ[idx].get_vec_flt3(), physQ[idx].get2_vec_flt3(), physQRep[idx], physQ[idx].get_transparency(), physQ[idx].get_thresholds(), physQ[idx].get_thresholdtrigger());
+					else minmax = CalculateRepresentation_VEC(physQ[idx].get_vec_flt3(), physQRep[idx], physQ[idx].get_transparency(), physQ[idx].get_thresholds(), physQ[idx].get_thresholdtrigger());
 				}
 			}
 		}
@@ -225,11 +225,11 @@ void PhysQRep::CalculateRepresentation(vector<PhysQ> physQ)
 				//VEC_VC. Single or double precision used?
 				if (physQ[idx].is_double_precision()) {
 
-					minmax = CalculateRepresentation_SCA(physQ[idx].get_vec_vc_double(), physQRep[idx]);
+					minmax = CalculateRepresentation_SCA(physQ[idx].get_vec_vc_double(), physQRep[idx], physQ[idx].get_transparency(), physQ[idx].get_thresholds());
 				}
 				else {
 
-					minmax = CalculateRepresentation_SCA(physQ[idx].get_vec_vc_float(), physQRep[idx]);
+					minmax = CalculateRepresentation_SCA(physQ[idx].get_vec_vc_float(), physQRep[idx], physQ[idx].get_transparency(), physQ[idx].get_thresholds());
 				}
 			}
 			else {
@@ -237,11 +237,11 @@ void PhysQRep::CalculateRepresentation(vector<PhysQ> physQ)
 				//just a VEC
 				if (physQ[idx].is_double_precision()) {
 
-					minmax = CalculateRepresentation_SCA(physQ[idx].get_vec_double(), physQRep[idx]);
+					minmax = CalculateRepresentation_SCA(physQ[idx].get_vec_double(), physQRep[idx], physQ[idx].get_transparency(), physQ[idx].get_thresholds());
 				}
 				else {
 
-					minmax = CalculateRepresentation_SCA(physQ[idx].get_vec_float(), physQRep[idx]);
+					minmax = CalculateRepresentation_SCA(physQ[idx].get_vec_float(), physQRep[idx], physQ[idx].get_transparency(), physQ[idx].get_thresholds());
 				}
 			}
 		}
@@ -281,13 +281,13 @@ void PhysQRep::CalculateRepresentation(vector<PhysQ> physQ)
 
 //////////////////// SINGLE VEC DISPLAY
 
-template DBL2 PhysQRep::CalculateRepresentation_VEC<VEC<DBL3>>(VEC<DBL3>* pQ, PhysQRepComponent& physQRepComponent);
-template DBL2 PhysQRep::CalculateRepresentation_VEC<VEC_VC<DBL3>>(VEC_VC<DBL3>* pQ, PhysQRepComponent& physQRepComponent);
-template DBL2 PhysQRep::CalculateRepresentation_VEC<VEC<FLT3>>(VEC<FLT3>* pQ, PhysQRepComponent& physQRepComponent);
-template DBL2 PhysQRep::CalculateRepresentation_VEC<VEC_VC<FLT3>>(VEC_VC<FLT3>* pQ, PhysQRepComponent& physQRepComponent);
+template DBL2 PhysQRep::CalculateRepresentation_VEC<VEC<DBL3>>(VEC<DBL3>* pQ, PhysQRepComponent& physQRepComponent, double maxTransparency, DBL2 displayThresholds, int displayThresholdTrigger);
+template DBL2 PhysQRep::CalculateRepresentation_VEC<VEC_VC<DBL3>>(VEC_VC<DBL3>* pQ, PhysQRepComponent& physQRepComponent, double maxTransparency, DBL2 displayThresholds, int displayThresholdTrigger);
+template DBL2 PhysQRep::CalculateRepresentation_VEC<VEC<FLT3>>(VEC<FLT3>* pQ, PhysQRepComponent& physQRepComponent, double maxTransparency, DBL2 displayThresholds, int displayThresholdTrigger);
+template DBL2 PhysQRep::CalculateRepresentation_VEC<VEC_VC<FLT3>>(VEC_VC<FLT3>* pQ, PhysQRepComponent& physQRepComponent, double maxTransparency, DBL2 displayThresholds, int displayThresholdTrigger);
 
 template <typename VECType>
-DBL2 PhysQRep::CalculateRepresentation_VEC(VECType* pQ, PhysQRepComponent& physQRepComponent)
+DBL2 PhysQRep::CalculateRepresentation_VEC(VECType* pQ, PhysQRepComponent& physQRepComponent, double maxTransparency, DBL2 displayThresholds, int displayThresholdTrigger)
 {	
 	Rect meshRect = pQ->rect;
 	DBL3 h = pQ->h;
@@ -381,7 +381,7 @@ DBL2 PhysQRep::CalculateRepresentation_VEC(VECType* pQ, PhysQRepComponent& physQ
 
 				XMFLOAT4 Color;
 
-				float alpha = get_alpha_value(translation);
+				float alpha = minimum(get_alpha_value(translation), (float)maxTransparency);
 
 				if (physQRepComponent.vec3rep == VEC3REP_FULL || physQRepComponent.vec3rep == VEC3REP_DIRECTION) {
 
@@ -444,10 +444,36 @@ DBL2 PhysQRep::CalculateRepresentation_VEC(VECType* pQ, PhysQRepComponent& physQ
 				else {
 
 					//for VEC3REP_X, VEC3REP_Y and VEC3REP_Z, VEC3REP_MAGNITUDE, use color coding based on min-max values, i.e. calculated the same as for a scalar quantity : done in AdjustMagnitude_VEC
-					Color = XMFLOAT4(0.0f, 0.0f, 1.0f, get_alpha_value(translation));
+					Color = XMFLOAT4(0.0f, 0.0f, 1.0f, minimum(get_alpha_value(translation), (float)maxTransparency));
 				}
 
-				
+				//if thresholds enabled, then check if we should skip adding cell to rendering queue.
+				bool skip = false;
+				if (!displayThresholds.IsNull()) {
+
+					switch (displayThresholdTrigger) {
+
+					case (int)VEC3REP_MAGNITUDE:
+						skip = (value_mag <= displayThresholds.i || value_mag >= displayThresholds.j);
+						break;
+					case (int)VEC3REP_X:
+						skip = (value.x <= displayThresholds.i || value.x >= displayThresholds.j);
+						break;
+					case (int)VEC3REP_Y:
+						skip = (value.y <= displayThresholds.i || value.y >= displayThresholds.j);
+						break;
+					case (int)VEC3REP_Z:
+						skip = (value.z <= displayThresholds.i || value.z >= displayThresholds.j);
+						break;
+					}
+				}
+
+				//skip this cell
+				if (skip) {
+
+					physQRepComponent.transformBatch[i + j * ndisp.x + k * ndisp.x*ndisp.y] = CBObjectTransform();
+					physQRepComponent.emptyCell[i + j * ndisp.x + k * ndisp.x*ndisp.y] = true;
+				}
 
 				switch (physQRepComponent.vec3rep)
 				{
@@ -455,33 +481,35 @@ DBL2 PhysQRep::CalculateRepresentation_VEC(VECType* pQ, PhysQRepComponent& physQ
 				case VEC3REP_DIRECTION:
 					//reduce magnitude values
 					omp_reduction.reduce_minmax(value_mag);
-					physQRepComponent.transformBatch[i + j * ndisp.x + k * ndisp.x*ndisp.y] = CBObjectTransform(Rotation, Scale, Translation, Color, translation, value_mag);
+					if (!skip) physQRepComponent.transformBatch[i + j * ndisp.x + k * ndisp.x*ndisp.y] = CBObjectTransform(Rotation, Scale, Translation, Color, maxTransparency, translation, value_mag);
 					break;
 
 				case VEC3REP_MAGNITUDE:
 					//reduce magnitude values
 					omp_reduction.reduce_minmax(value_mag);
-					physQRepComponent.transformBatch[i + j * ndisp.x + k * ndisp.x*ndisp.y] = CBObjectTransform(Rotation, Scale, Translation, Color, translation, value_mag);
+					if (!skip) physQRepComponent.transformBatch[i + j * ndisp.x + k * ndisp.x*ndisp.y] = CBObjectTransform(Rotation, Scale, Translation, Color, maxTransparency, translation, value_mag);
 					break;
 
 				case VEC3REP_X:
 					//reduce x values
 					omp_reduction.reduce_minmax(value.x);
-					physQRepComponent.transformBatch[i + j * ndisp.x + k * ndisp.x*ndisp.y] = CBObjectTransform(Rotation, Scale, Translation, Color, translation, value.x);
+					if (!skip) physQRepComponent.transformBatch[i + j * ndisp.x + k * ndisp.x*ndisp.y] = CBObjectTransform(Rotation, Scale, Translation, Color, maxTransparency, translation, value.x);
 					break;
 
 				case VEC3REP_Y:
 					//reduce y values
 					omp_reduction.reduce_minmax(value.y);
-					physQRepComponent.transformBatch[i + j * ndisp.x + k * ndisp.x*ndisp.y] = CBObjectTransform(Rotation, Scale, Translation, Color, translation, value.y);
+					if (!skip) physQRepComponent.transformBatch[i + j * ndisp.x + k * ndisp.x*ndisp.y] = CBObjectTransform(Rotation, Scale, Translation, Color, maxTransparency, translation, value.y);
 					break;
 
 				case VEC3REP_Z:
 					//reduce z values
 					omp_reduction.reduce_minmax(value.z);
-					physQRepComponent.transformBatch[i + j * ndisp.x + k * ndisp.x*ndisp.y] = CBObjectTransform(Rotation, Scale, Translation, Color, translation, value.z);
+					if (!skip) physQRepComponent.transformBatch[i + j * ndisp.x + k * ndisp.x*ndisp.y] = CBObjectTransform(Rotation, Scale, Translation, Color, maxTransparency, translation, value.z);
 					break;
 				}
+
+				physQRepComponent.transformBatch[i + j * ndisp.x + k * ndisp.x*ndisp.y].maxTransparency = maxTransparency;
 			}
 		}
 	}
@@ -492,13 +520,13 @@ DBL2 PhysQRep::CalculateRepresentation_VEC(VECType* pQ, PhysQRepComponent& physQ
 
 //////////////////// DUAL VEC DISPLAY
 
-template DBL2 PhysQRep::CalculateRepresentation_VEC<VEC<DBL3>>(VEC<DBL3>* pQ, VEC<DBL3>* pQ2, PhysQRepComponent& physQRepComponent);
-template DBL2 PhysQRep::CalculateRepresentation_VEC<VEC_VC<DBL3>>(VEC_VC<DBL3>* pQ, VEC_VC<DBL3>* pQ2, PhysQRepComponent& physQRepComponent);
-template DBL2 PhysQRep::CalculateRepresentation_VEC<VEC<FLT3>>(VEC<FLT3>* pQ, VEC<FLT3>* pQ2, PhysQRepComponent& physQRepComponent);
-template DBL2 PhysQRep::CalculateRepresentation_VEC<VEC_VC<FLT3>>(VEC_VC<FLT3>* pQ, VEC_VC<FLT3>* pQ2, PhysQRepComponent& physQRepComponent);
+template DBL2 PhysQRep::CalculateRepresentation_VEC<VEC<DBL3>>(VEC<DBL3>* pQ, VEC<DBL3>* pQ2, PhysQRepComponent& physQRepComponent, double maxTransparency, DBL2 displayThresholds, int displayThresholdTrigger);
+template DBL2 PhysQRep::CalculateRepresentation_VEC<VEC_VC<DBL3>>(VEC_VC<DBL3>* pQ, VEC_VC<DBL3>* pQ2, PhysQRepComponent& physQRepComponent, double maxTransparency, DBL2 displayThresholds, int displayThresholdTrigger);
+template DBL2 PhysQRep::CalculateRepresentation_VEC<VEC<FLT3>>(VEC<FLT3>* pQ, VEC<FLT3>* pQ2, PhysQRepComponent& physQRepComponent, double maxTransparency, DBL2 displayThresholds, int displayThresholdTrigger);
+template DBL2 PhysQRep::CalculateRepresentation_VEC<VEC_VC<FLT3>>(VEC_VC<FLT3>* pQ, VEC_VC<FLT3>* pQ2, PhysQRepComponent& physQRepComponent, double maxTransparency, DBL2 displayThresholds, int displayThresholdTrigger);
 
 template <typename VECType>
-DBL2 PhysQRep::CalculateRepresentation_VEC(VECType* pQ, VECType* pQ2, PhysQRepComponent& physQRepComponent)
+DBL2 PhysQRep::CalculateRepresentation_VEC(VECType* pQ, VECType* pQ2, PhysQRepComponent& physQRepComponent, double maxTransparency, DBL2 displayThresholds, int displayThresholdTrigger)
 {
 	Rect meshRect = pQ->rect;
 	DBL3 h = pQ->h;
@@ -637,7 +665,7 @@ DBL2 PhysQRep::CalculateRepresentation_VEC(VECType* pQ, VECType* pQ2, PhysQRepCo
 				
 				XMFLOAT4 Color, Color2;
 
-				float alpha = get_alpha_value(translation);
+				float alpha = minimum(get_alpha_value(translation), (float)maxTransparency);
 
 				auto get_color = [](DBL3 value, double value_mag, float alpha) ->XMFLOAT4 {
 
@@ -710,8 +738,38 @@ DBL2 PhysQRep::CalculateRepresentation_VEC(VECType* pQ, VECType* pQ2, PhysQRepCo
 				else {
 
 					//for VEC3REP_X, VEC3REP_Y, VEC3REP_Z, VEC3REP_MAGNITUDE use color coding based on min-max values, i.e. calculated the same as for a scalar quantity : done in AdjustMagnitude_VEC
-					Color = XMFLOAT4(0.0f, 0.0f, 1.0f, get_alpha_value(translation));
-					Color2 = XMFLOAT4(0.0f, 0.0f, 1.0f, get_alpha_value(translation));
+					Color = XMFLOAT4(0.0f, 0.0f, 1.0f, minimum(get_alpha_value(translation), (float)maxTransparency));
+					Color2 = XMFLOAT4(0.0f, 0.0f, 1.0f, minimum(get_alpha_value(translation), (float)maxTransparency));
+				}
+
+				//if thresholds enabled, then check if we should skip adding cell to rendering queue.
+				bool skip = false;
+				if (!displayThresholds.IsNull()) {
+
+					switch (displayThresholdTrigger) {
+
+					case (int)VEC3REP_MAGNITUDE:
+						skip = (value_mag <= displayThresholds.i || value_mag >= displayThresholds.j);
+						break;
+					case (int)VEC3REP_X:
+						skip = (value.x <= displayThresholds.i || value.x >= displayThresholds.j);
+						break;
+					case (int)VEC3REP_Y:
+						skip = (value.y <= displayThresholds.i || value.y >= displayThresholds.j);
+						break;
+					case (int)VEC3REP_Z:
+						skip = (value.z <= displayThresholds.i || value.z >= displayThresholds.j);
+						break;
+					}
+				}
+
+				//skip this cell
+				if (skip) {
+
+					physQRepComponent.transformBatch[i + j * ndisp.x + 2 * k * ndisp.x*ndisp.y] = CBObjectTransform();
+					physQRepComponent.transformBatch[i + j * ndisp.x + (2 * k + 1) * ndisp.x*ndisp.y] = CBObjectTransform();
+					physQRepComponent.emptyCell[i + j * ndisp.x + 2 * k * ndisp.x*ndisp.y] = true;
+					physQRepComponent.emptyCell[i + j * ndisp.x + (2 * k + 1) * ndisp.x*ndisp.y] = true;
 				}
 
 				switch (physQRepComponent.vec3rep)
@@ -721,42 +779,59 @@ DBL2 PhysQRep::CalculateRepresentation_VEC(VECType* pQ, VECType* pQ2, PhysQRepCo
 					//reduce magnitude values
 					omp_reduction.reduce_minmax(value_mag);
 					omp_reduction.reduce_minmax(value_mag2);
-					physQRepComponent.transformBatch[i + j * ndisp.x + 2 * k * ndisp.x*ndisp.y] = CBObjectTransform(Rotation, Scale, Translation, Color, translation, value_mag);
-					physQRepComponent.transformBatch[i + j * ndisp.x + (2 * k + 1) * ndisp.x*ndisp.y] = CBObjectTransform(Rotation2, Scale, Translation, Color2, translation, value_mag2);
+					if (!skip) {
+
+						physQRepComponent.transformBatch[i + j * ndisp.x + 2 * k * ndisp.x*ndisp.y] = CBObjectTransform(Rotation, Scale, Translation, Color, maxTransparency, translation, value_mag);
+						physQRepComponent.transformBatch[i + j * ndisp.x + (2 * k + 1) * ndisp.x*ndisp.y] = CBObjectTransform(Rotation2, Scale, Translation, Color2, maxTransparency, translation, value_mag2);
+					}
 					break;
 
 				case VEC3REP_MAGNITUDE:
 					//reduce magnitude values
 					omp_reduction.reduce_minmax(value_mag);
 					omp_reduction.reduce_minmax(value_mag2);
-					physQRepComponent.transformBatch[i + j * ndisp.x + 2 * k * ndisp.x*ndisp.y] = CBObjectTransform(Rotation, Scale, Translation, Color, translation, value_mag);
-					physQRepComponent.transformBatch[i + j * ndisp.x + (2 * k + 1) * ndisp.x*ndisp.y] = CBObjectTransform(Rotation2, Scale, Translation, Color2, translation, value_mag2);
+					if (!skip) {
+
+						physQRepComponent.transformBatch[i + j * ndisp.x + 2 * k * ndisp.x*ndisp.y] = CBObjectTransform(Rotation, Scale, Translation, Color, maxTransparency, translation, value_mag);
+						physQRepComponent.transformBatch[i + j * ndisp.x + (2 * k + 1) * ndisp.x*ndisp.y] = CBObjectTransform(Rotation2, Scale, Translation, Color2, maxTransparency, translation, value_mag2);
+					}
 					break;
 
 				case VEC3REP_X:
 					//reduce x values
 					omp_reduction.reduce_minmax(value.x);
 					omp_reduction.reduce_minmax(value2.x);
-					physQRepComponent.transformBatch[i + j * ndisp.x + 2 * k * ndisp.x*ndisp.y] = CBObjectTransform(Rotation, Scale, Translation, Color, translation, value.x);
-					physQRepComponent.transformBatch[i + j * ndisp.x + (2 * k + 1) * ndisp.x*ndisp.y] = CBObjectTransform(Rotation2, Scale, Translation, Color2, translation, value2.x);
+					if (!skip) {
+
+						physQRepComponent.transformBatch[i + j * ndisp.x + 2 * k * ndisp.x*ndisp.y] = CBObjectTransform(Rotation, Scale, Translation, Color, maxTransparency, translation, value.x);
+						physQRepComponent.transformBatch[i + j * ndisp.x + (2 * k + 1) * ndisp.x*ndisp.y] = CBObjectTransform(Rotation2, Scale, Translation, Color2, maxTransparency, translation, value2.x);
+					}
 					break;
 
 				case VEC3REP_Y:
 					//reduce y values
 					omp_reduction.reduce_minmax(value.y);
 					omp_reduction.reduce_minmax(value2.y);
-					physQRepComponent.transformBatch[i + j * ndisp.x + 2 * k * ndisp.x*ndisp.y] = CBObjectTransform(Rotation, Scale, Translation, Color, translation, value.y);
-					physQRepComponent.transformBatch[i + j * ndisp.x + (2 * k + 1) * ndisp.x*ndisp.y] = CBObjectTransform(Rotation2, Scale, Translation, Color2, translation, value2.y);
+					if (!skip) {
+
+						physQRepComponent.transformBatch[i + j * ndisp.x + 2 * k * ndisp.x*ndisp.y] = CBObjectTransform(Rotation, Scale, Translation, Color, maxTransparency, translation, value.y);
+						physQRepComponent.transformBatch[i + j * ndisp.x + (2 * k + 1) * ndisp.x*ndisp.y] = CBObjectTransform(Rotation2, Scale, Translation, Color2, maxTransparency, translation, value2.y);
+					}
 					break;
 
 				case VEC3REP_Z:
 					//reduce z values
 					omp_reduction.reduce_minmax(value.z);
 					omp_reduction.reduce_minmax(value2.z);
-					physQRepComponent.transformBatch[i + j * ndisp.x + 2 * k * ndisp.x*ndisp.y] = CBObjectTransform(Rotation, Scale, Translation, Color, translation, value.z);
-					physQRepComponent.transformBatch[i + j * ndisp.x + (2 * k + 1) * ndisp.x*ndisp.y] = CBObjectTransform(Rotation2, Scale, Translation, Color2, translation, value2.z);
+					if (!skip) {
+
+						physQRepComponent.transformBatch[i + j * ndisp.x + 2 * k * ndisp.x*ndisp.y] = CBObjectTransform(Rotation, Scale, Translation, Color, maxTransparency, translation, value.z);
+						physQRepComponent.transformBatch[i + j * ndisp.x + (2 * k + 1) * ndisp.x*ndisp.y] = CBObjectTransform(Rotation2, Scale, Translation, Color2, maxTransparency, translation, value2.z);
+					}
 					break;
 				}
+
+				physQRepComponent.transformBatch[i + j * ndisp.x + k * ndisp.x*ndisp.y].maxTransparency = maxTransparency;
 			}
 		}
 	}
@@ -792,13 +867,13 @@ void PhysQRep::AdjustMagnitude_VEC(PhysQRepComponent& physQRepComponent, DBL2 mi
 
 //------------------------------------------------------------------------------ SCALAR QUANTITIES ------------------------------------------------------------------------------//
 
-template DBL2 PhysQRep::CalculateRepresentation_SCA<VEC<double>>(VEC<double>* pQ, PhysQRepComponent& physQRepComponent);
-template DBL2 PhysQRep::CalculateRepresentation_SCA<VEC_VC<double>>(VEC_VC<double>* pQ, PhysQRepComponent& physQRepComponent);
-template DBL2 PhysQRep::CalculateRepresentation_SCA<VEC<float>>(VEC<float>* pQ, PhysQRepComponent& physQRepComponent);
-template DBL2 PhysQRep::CalculateRepresentation_SCA<VEC_VC<float>>(VEC_VC<float>* pQ, PhysQRepComponent& physQRepComponent);
+template DBL2 PhysQRep::CalculateRepresentation_SCA<VEC<double>>(VEC<double>* pQ, PhysQRepComponent& physQRepComponent, double maxTransparency, DBL2 displayThresholds);
+template DBL2 PhysQRep::CalculateRepresentation_SCA<VEC_VC<double>>(VEC_VC<double>* pQ, PhysQRepComponent& physQRepComponent, double maxTransparency, DBL2 displayThresholds);
+template DBL2 PhysQRep::CalculateRepresentation_SCA<VEC<float>>(VEC<float>* pQ, PhysQRepComponent& physQRepComponent, double maxTransparency, DBL2 displayThresholds);
+template DBL2 PhysQRep::CalculateRepresentation_SCA<VEC_VC<float>>(VEC_VC<float>* pQ, PhysQRepComponent& physQRepComponent, double maxTransparency, DBL2 displayThresholds);
 
 template <typename VECType>
-DBL2 PhysQRep::CalculateRepresentation_SCA(VECType* pQ, PhysQRepComponent& physQRepComponent)
+DBL2 PhysQRep::CalculateRepresentation_SCA(VECType* pQ, PhysQRepComponent& physQRepComponent, double maxTransparency, DBL2 displayThresholds)
 {
 	Rect meshRect = pQ->rect;
 	DBL3 h = pQ->h;
@@ -820,7 +895,7 @@ DBL2 PhysQRep::CalculateRepresentation_SCA(VECType* pQ, PhysQRepComponent& physQ
 	if (physQRepComponent.transformBatch.size() != ndisp) physQRepComponent.transformBatch.assign(hdisp, meshRect, CBObjectTransform());
 	if (physQRepComponent.emptyCell.size() != ndisp.dim()) physQRepComponent.emptyCell.assign(physQRepComponent.transformBatch.linear_size(), false);
 	
-	physQRepComponent.obSelector = CDO_DODECA;
+	physQRepComponent.obSelector = CDO_CUBE;
 
 	//Scalar quantity - we need to compute color coding
 
@@ -871,9 +946,16 @@ DBL2 PhysQRep::CalculateRepresentation_SCA(VECType* pQ, PhysQRepComponent& physQ
 				DBL3 translation = (DBL3(i + 0.5, j + 0.5, k + 0.5) & hdisp) * m_to_l * 2 + (meshRect.s - focusRect.s) * m_to_l * 2 - (focusRect.size() * m_to_l);
 				XMMATRIX Translation = XMMatrixTranslation(translation.x, translation.y, translation.z);
 
-				XMFLOAT4 Color = XMFLOAT4(0.0f, 0.0f, 1.0f, get_alpha_value(translation));
+				XMFLOAT4 Color = XMFLOAT4(0.0f, 0.0f, 1.0f, minimum(get_alpha_value(translation), (float)maxTransparency));
 
-				physQRepComponent.transformBatch[i + j * ndisp.x + k * ndisp.x*ndisp.y] = CBObjectTransform(Rotation, Scale, Translation, Color, translation, value);
+				if (!displayThresholds.IsNull() && (value <= displayThresholds.i || value >= displayThresholds.j)) {
+
+					physQRepComponent.transformBatch[i + j * ndisp.x + k * ndisp.x*ndisp.y] = CBObjectTransform();
+					physQRepComponent.emptyCell[i + j * ndisp.x + k * ndisp.x*ndisp.y] = true;
+				}
+				else physQRepComponent.transformBatch[i + j * ndisp.x + k * ndisp.x*ndisp.y] = CBObjectTransform(Rotation, Scale, Translation, Color, maxTransparency, translation, value);
+
+				physQRepComponent.transformBatch[i + j * ndisp.x + k * ndisp.x*ndisp.y].maxTransparency = maxTransparency;
 			}
 		}
 	}
@@ -932,7 +1014,7 @@ void PhysQRep::SetAlphaBlend(void)
 		#pragma omp parallel for
 		for (int cidx = 0; cidx < physQRep[idx].transformBatch.linear_size(); cidx++) {
 
-			physQRep[idx].transformBatch[cidx].Color.w = get_alpha_value(physQRep[idx].transformBatch[cidx].position);
+			physQRep[idx].transformBatch[cidx].Color.w = minimum(get_alpha_value(physQRep[idx].transformBatch[cidx].position), (float)physQRep[idx].transformBatch[cidx].maxTransparency);
 		}
 	}
 }

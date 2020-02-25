@@ -9,7 +9,9 @@ InsulatorMesh::InsulatorMesh(SuperMesh *pSMesh_) :
 	ProgramStateNames(this,
 		{
 			//Mesh members
-			VINFO(meshType), VINFO(meshIdCounter), VINFO(meshId), VINFO(displayedPhysicalQuantity), VINFO(vec3rep), VINFO(displayedParamVar), VINFO(meshRect), VINFO(n_t), VINFO(h_t), VINFO(Temp), VINFO(pMod),
+			VINFO(meshType), VINFO(meshIdCounter), VINFO(meshId), 
+			VINFO(displayedPhysicalQuantity), VINFO(displayedBackgroundPhysicalQuantity), VINFO(vec3rep), VINFO(displayedParamVar), 
+			VINFO(meshRect), VINFO(n_t), VINFO(h_t), VINFO(n_m), VINFO(h_m), VINFO(Temp), VINFO(pMod),
 			//Members in this derived class
 
 			//Material Parameters
@@ -26,7 +28,9 @@ InsulatorMesh::InsulatorMesh(Rect meshRect_, DBL3 h_, SuperMesh *pSMesh_) :
 	ProgramStateNames(this,
 		{
 			//Mesh members
-			VINFO(meshType), VINFO(meshIdCounter), VINFO(meshId), VINFO(displayedPhysicalQuantity), VINFO(vec3rep), VINFO(displayedParamVar), VINFO(meshRect), VINFO(n_t), VINFO(h_t), VINFO(Temp), VINFO(pMod),
+			VINFO(meshType), VINFO(meshIdCounter), VINFO(meshId), 
+			VINFO(displayedPhysicalQuantity), VINFO(displayedBackgroundPhysicalQuantity), VINFO(vec3rep), VINFO(displayedParamVar), 
+			VINFO(meshRect), VINFO(n_t), VINFO(h_t), VINFO(n_m), VINFO(h_m), VINFO(Temp), VINFO(pMod),
 			//Members in this derived class
 
 			//Material Parameters
@@ -43,6 +47,7 @@ InsulatorMesh::InsulatorMesh(Rect meshRect_, DBL3 h_, SuperMesh *pSMesh_) :
 	meshRect = meshRect_;
 
 	h_t = h_;
+	h_m = h_;
 
 	error_on_create = UpdateConfiguration(UPDATECONFIG_FORCEUPDATE);
 

@@ -213,6 +213,7 @@ BError Mesh::SetMeshRect(Rect meshRect_)
 	adjust_default_cellsize(meshRect, h);
 	adjust_default_cellsize(meshRect, h_e);
 	adjust_default_cellsize(meshRect, h_t);
+	adjust_default_cellsize(meshRect, h_m);
 
 	error = pSMesh->UpdateConfiguration(UPDATECONFIG_MESHCHANGE);
 
@@ -247,6 +248,17 @@ BError Mesh::SetMeshTCellsize(DBL3 h_t_)
 	BError error(__FUNCTION__);
 
 	h_t = h_t_;
+	error = pSMesh->UpdateConfiguration(UPDATECONFIG_MESHCHANGE);
+
+	return error;
+}
+
+//Mechanical properties
+BError Mesh::SetMeshMCellsize(DBL3 h_m_)
+{
+	BError error(__FUNCTION__);
+
+	h_m = h_m_;
 	error = pSMesh->UpdateConfiguration(UPDATECONFIG_MESHCHANGE);
 
 	return error;

@@ -629,6 +629,60 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 	}
 	break;
 
+	//Shows mesh cellsize (units m) : minorId is the unique mesh id number, auxId is enabled/disabled status, textId is the mesh cellsize
+	case IOI_MESHMCELLSIZE:
+	{
+		//parameters from iop
+		int meshId = iop.minorId;
+		bool enabled = (bool)iop.auxId;
+		string cellsizeValue = iop.textId;
+
+		int meshIdx = SMesh.contains_id(meshId);
+		if (meshIdx >= 0) {
+
+			if (enabled) {
+
+				if (!SMesh[meshIdx]->MechComputation_Enabled()) {
+
+					iop.textId = "N/A";
+					iop.auxId = 0;
+					pTO->set(" " + iop.textId + " ");
+					pTO->SetBackgroundColor(OFFCOLOR);
+					stateChanged = true;
+				}
+				else {
+					//update mesh cellsize if not matching
+					DBL3 meshCellsize = SMesh[meshIdx]->GetMeshMCellsize();
+					if (ToString(meshCellsize, "m") != cellsizeValue) {
+
+						iop.textId = ToString(meshCellsize, "m");
+						pTO->set(" " + iop.textId + " ");
+						stateChanged = true;
+					}
+				}
+			}
+			else {
+
+				if (SMesh[meshIdx]->MechComputation_Enabled()) {
+
+					DBL3 meshCellsize = SMesh[meshIdx]->GetMeshMCellsize();
+					iop.textId = ToString(meshCellsize, "m");
+					iop.auxId = 1;
+					pTO->set(" " + iop.textId + " ");
+					pTO->SetBackgroundColor(ONCOLOR);
+					stateChanged = true;
+				}
+			}
+		}
+		else {
+
+			//mesh no longer exists : delete the entire paragraph containing this object
+			stateChanged = true;
+			iop.state = IOS_DELETINGPARAGRAPH;
+		}
+	}
+	break;
+
 	//Shows ferromagnetic super-mesh cellsize (units m) : textId is the mesh cellsize for the ferromagnetic super-mesh
 	case IOI_FMSMESHCELLSIZE:
 	{
@@ -1038,9 +1092,78 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 			}
 			else {
 
-				//this display option disabled
-				pTO->SetBackgroundColor(OFFCOLOR);
+				if (SMesh[meshIdx]->GetDisplayedBackgroundPhysicalQuantity() == displayOption && displayOption != MESHDISPLAY_NONE) {
+
+					//this display option enabled
+					pTO->SetBackgroundColor(ALTONCOLOR);
+				}
+				else {
+
+					//this display option disabled
+					pTO->SetBackgroundColor(OFFCOLOR);
+				}
 			}
+		}
+	}
+	break;
+
+	//Shows dual mesh display transparency values : textId is the DBL2 value as a string
+	case IOI_MESHDISPLAYTRANSPARENCY:
+	{
+		//parameters from iop
+		string value = iop.textId;
+
+		if (value != ToString(displayTransparency)) {
+
+			iop.textId = ToString(displayTransparency);
+			pTO->set(" " + iop.textId + " ");
+			stateChanged = true;
+		}
+	}
+	break;
+
+	//Shows mesh display threshold values : textId is the DBL2 value as a string
+	case IOI_MESHDISPLAYTHRESHOLDS:
+	{
+		//parameters from iop
+		string value = iop.textId;
+
+		if (value != ToString(displayThresholds)) {
+
+			iop.textId = ToString(displayThresholds);
+			pTO->set(" " + iop.textId + " ");
+			stateChanged = true;
+		}
+	}
+	break;
+
+	//Shows mesh display threshold trigger type : auxId is the trigger option
+	case IOI_MESHDISPLAYTHRESHOLDTRIG:
+	{
+		//parameters from iop
+		int option = iop.auxId;
+		
+		if (option != displayThresholdTrigger) {
+
+			iop.auxId = displayThresholdTrigger;
+
+			switch (iop.auxId) {
+
+			case 1:
+				pTO->set(" X ");
+				break;
+			case 2:
+				pTO->set(" Y ");
+				break;
+			case 3:
+				pTO->set(" Z ");
+				break;
+			case 5:
+				pTO->set(" magnitude ");
+				break;
+			}
+
+			stateChanged = true;
 		}
 	}
 	break;
@@ -1764,6 +1887,81 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 		if (status != SMesh.Get_Coupled_To_Dipoles()) {
 
 			iop.auxId = SMesh.Get_Coupled_To_Dipoles();
+
+			if (iop.auxId) {
+
+				pTO->SetBackgroundColor(ONCOLOR);
+				pTO->set(" On ");
+			}
+			else {
+
+				pTO->SetBackgroundColor(OFFCOLOR);
+				pTO->set(" Off ");
+			}
+
+			stateChanged = true;
+		}
+	}
+	break;
+
+	//Shows log_errors enabled/disabled state. auxId is enabled (1)/disabled(0) status.
+	case IOI_ERRORLOGSTATUS:
+	{
+		bool status = iop.auxId;
+
+		if (status != log_errors) {
+
+			iop.auxId = log_errors;
+
+			if (iop.auxId) {
+
+				pTO->SetBackgroundColor(ONCOLOR);
+				pTO->set(" On ");
+			}
+			else {
+
+				pTO->SetBackgroundColor(OFFCOLOR);
+				pTO->set(" Off ");
+			}
+
+			stateChanged = true;
+		}
+	}
+	break;
+
+	//Shows start_check_updates enabled/disabled state. auxId is enabled (1)/disabled(0) status.
+	case IOI_UPDATESTATUSCHECKSTARTUP:
+	{
+		bool status = iop.auxId;
+
+		if (status != start_check_updates) {
+
+			iop.auxId = start_check_updates;
+
+			if (iop.auxId) {
+
+				pTO->SetBackgroundColor(ONCOLOR);
+				pTO->set(" On ");
+			}
+			else {
+
+				pTO->SetBackgroundColor(OFFCOLOR);
+				pTO->set(" Off ");
+			}
+
+			stateChanged = true;
+		}
+	}
+	break;
+
+	//Shows start_scriptserver enabled/disabled state. auxId is enabled (1)/disabled(0) status.
+	case IOI_SCRIPTSERVERSTARTUP:
+	{
+		bool status = iop.auxId;
+
+		if (status != start_scriptserver) {
+
+			iop.auxId = start_scriptserver;
 
 			if (iop.auxId) {
 

@@ -50,7 +50,7 @@ BError SuperMesh::set_meshparam_t_equation(string meshName, string paramHandle, 
 	return error;
 }
 
-BError SuperMesh::set_meshparam_tscaling_array(string meshName, string paramHandle, vector<double>& temp, vector<double>& scaling)
+BError SuperMesh::set_meshparam_tscaling_array(string meshName, string paramHandle, vector<double>& temp, vector<double>& scaling, string fileName_info)
 {
 	BError error(__FUNCTION__);
 
@@ -59,6 +59,11 @@ BError SuperMesh::set_meshparam_tscaling_array(string meshName, string paramHand
 	PARAM_ paramID = (PARAM_)pMesh[meshName]->get_meshparam_id(paramHandle);
 
 	if (pMesh[meshName]->set_meshparam_tscaling_array(paramID, temp, scaling)) {
+
+		//set fileName as the temperature scaling info for console displayuu purposes
+		ExtractFilenameDirectory(fileName_info);
+		ExtractFilenameTermination(fileName_info);
+		pMesh[meshName]->set_meshparam_tscaling_info(paramID, fileName_info);
 
 		error = UpdateConfiguration(UPDATECONFIG_PARAMCHANGED);
 

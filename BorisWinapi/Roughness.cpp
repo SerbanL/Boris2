@@ -84,7 +84,7 @@ void Roughness::Calculate_Mshape_fine(void)
 				}
 
 				//value ranges from 0 to 1
-				value = (double)cells_thick / (n.z - half);
+				value = (double)cells_thick / half;
 
 				//set value in top half
 				for (int k = half; k < n.z; k++) {
@@ -392,7 +392,7 @@ double Roughness::UpdateField(void)
 
 	this->energy = energy;
 
-	return energy;
+	return this->energy;
 }
 
 #endif

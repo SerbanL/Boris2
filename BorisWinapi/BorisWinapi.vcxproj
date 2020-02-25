@@ -291,6 +291,8 @@
     </CudaCompile>
     <ClInclude Include="MaterialParameterCUDA.h" />
     <ClInclude Include="MaterialsDataBase.h" />
+    <ClInclude Include="MElastic.h" />
+    <ClInclude Include="MElasticCUDA.h" />
     <ClInclude Include="MeshCUDA.h" />
     <ClInclude Include="MeshDefs.h" />
     <ClInclude Include="MeshDisplayCUDA.h" />
@@ -463,6 +465,8 @@
     <ClCompile Include="ManagedMeshCUDA.cpp" />
     <ClCompile Include="MaterialParameter.cpp" />
     <ClCompile Include="MaterialsDataBase.cpp" />
+    <ClCompile Include="MElastic.cpp" />
+    <ClCompile Include="MElasticCUDA.cpp" />
     <ClCompile Include="Mesh.cpp" />
     <ClCompile Include="MeshControl.cpp" />
     <ClCompile Include="MeshCUDA.cpp" />
@@ -503,9 +507,12 @@
     <ClCompile Include="SDemag_Demag.cpp" />
     <ClCompile Include="SHeat.cpp" />
     <ClCompile Include="SHeatCUDA.cpp" />
+    <ClCompile Include="SimControl.cpp" />
     <ClCompile Include="SimFiles.cpp" />
+    <ClCompile Include="SimMessages.cpp" />
     <ClCompile Include="SimSchedule.cpp" />
     <ClCompile Include="SimSharedData.cpp" />
+    <ClCompile Include="SimStartup.cpp" />
     <ClCompile Include="SimulationData.cpp" />
     <ClCompile Include="SkyrmionTrack.cpp" />
     <ClCompile Include="SkyrmionTrackCUDA.cpp" />
@@ -639,6 +646,7 @@
     <CudaCompile Include="HeatCUDA.cu" />
     <CudaCompile Include="iDMExchangeCoupling_CUDA.cu" />
     <CudaCompile Include="iDMExchangeCUDA.cu" />
+    <CudaCompile Include="MElasticCUDA.cu" />
     <CudaCompile Include="ModulesCUDA.cu" />
     <CudaCompile Include="OerstedKernelCUDA.cu" />
     <CudaCompile Include="RoughnessCUDA.cu" />

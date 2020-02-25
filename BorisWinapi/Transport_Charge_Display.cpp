@@ -50,7 +50,7 @@ VEC_VC<DBL3>& Transport::GetChargeCurrent(void)
 		//calculate current density using Jc = -sigma * grad V
 #pragma omp parallel for
 		for (int idx = 0; idx < displayVEC_VC.linear_size(); idx++) {
-
+			
 			//only calculate current on non-empty cells - empty cells have already been assigned 0 at UpdateConfiguration
 			if (pMesh->V.is_not_empty(idx)) {
 

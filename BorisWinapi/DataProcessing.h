@@ -81,6 +81,8 @@ public:
 		dpA[arr_idx + 2].push_back(value.z);
 	}
 
+	void set_array(int arr_idx, vector<double>& data) { if (arr_idx < max_arrays) dpA[arr_idx] = data; }
+
 	//
 	//Various data processing methods accessible externally (corresponding to console commands for data processing)
 	//	
@@ -129,9 +131,6 @@ public:
 	//Extract profile of physical quantity displayed on screen along the line specified with given start and end coordinates(unit m).
 	//Place profile in given dp arrays: 4 consecutive dp arrays are used, first for distance along line, the next 3 for physical quantity so allow space for these starting at dparray_index.
 	BError get_profile(DBL3 start, DBL3 end, SuperMesh *pSMesh, int arr_idx);
-
-	//obtain average value in the given relative rect from the displayed quantity in the named mesh
-	string get_meshaverage(SuperMesh *pSMesh, string meshName, Rect rect);
 
 	//calculate topological charge in M and given rect, using equation Q = Integral(m.(dm/dx x dm/dy) dxdy) / 4PI
 	BError get_topological_charge(VEC_VC<DBL3>& M, double x, double y, double radius, double* pQ);

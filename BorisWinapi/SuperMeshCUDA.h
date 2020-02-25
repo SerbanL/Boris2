@@ -17,6 +17,7 @@
 
 class SuperMesh;
 class PhysQ;
+class Any;
 
 class SuperMeshCUDA :
 	public MeshDisplayCUDA
@@ -58,6 +59,19 @@ public:
 	//----------------------------------- DISPLAY-ASSOCIATED GET/SET METHODS
 
 	vector<PhysQ> FetchOnScreenPhysicalQuantity(double detail_level);
+
+	//save the quantity currently displayed on screen in an ovf2 file using the specified format
+	BError SaveOnScreenPhysicalQuantity(string fileName, string ovf2_dataType);
+
+	//Before calling a run of GetDisplayedMeshValue, make sure to call PrepareDisplayedMeshValue : this calculates and stores in displayVEC storage and quantities which don't have memory allocated directly, but require computation and temporary storage.
+	void PrepareDisplayedMeshValue(void);
+
+	//return value of currently displayed mesh quantity at the given absolute position; the value is read directly from the storage VEC, not from the displayed PhysQ.
+	//Return an Any as the displayed quantity could be either a scalar or a vector.
+	Any GetDisplayedMeshValue(DBL3 abs_pos);
+
+	//return average value for currently displayed mesh quantity in the given relative rectangle
+	Any GetAverageDisplayedMeshValue(Rect rel_rect);
 
 	//----------------------------------- Getters
 

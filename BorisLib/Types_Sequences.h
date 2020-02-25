@@ -604,6 +604,252 @@ public:
 	int number_of_steps(void) { return steps; }
 };
 
+////////////////////////////////////////////////////////////////////////////////////////////////// File-loaded Sequence
+//
+// Data for the sequence is loaded from a file. The file must have columns as follows:
+// First column : time (s). Following columns must contain the actual data : one column for scalar quantities, 3 columns for vector data.
+//
+
+template <typename Type>
+class FileSequence
+{
+
+private:
+
+	//the directory location of fileName
+	std::string directory;
+
+	//the file name, but not including a directory, as this could change.
+	//the directory must be provided externally when creating or reloading the object.
+	std::string fileName;
+
+	//the time resolution at which to load data from file
+	double time_resolution;
+
+	//output values : number of values here is the number of steps, and these are loaded form the file at the given time resolution
+	std::vector<Type> values;
+
+private:
+
+	bool load_values_from_file(void)
+	{
+		if (!time_resolution) return false;
+
+		std::vector<std::vector<double>> load_arrays;
+
+		if (std::is_same<Type, double>::value) {
+
+			if (ReadDataColumns(directory + fileName, "\t", load_arrays, { 0, 1 })) {
+
+				//all required file columns must have same number of entries
+				if (load_arrays[0].size() != load_arrays[1].size()) return false;
+
+				double time_duration = load_arrays[0].back() - load_arrays[0].front();
+
+				int steps = time_duration / time_resolution;
+				if (steps <= 0) return false;
+
+				if (!malloc_vector(values, steps)) return false;
+
+				int file_array_index = 0;
+
+				for (int step = 0; step < steps; step++) {
+
+					double time = load_arrays[0].front() + step * time_resolution;
+
+					//set file_array_index so the current time is between points at file_array_index and file_array_index + 1
+					if (file_array_index + 1 < load_arrays[0].size()) {
+
+						while (time >= load_arrays[0][file_array_index + 1]) {
+
+							file_array_index++;
+							if (file_array_index + 1 >= load_arrays[0].size()) break;
+						}
+					}
+
+					if (file_array_index + 1 < load_arrays[0].size()) {
+
+						//use interpolation if possible
+						double dT = load_arrays[0][file_array_index + 1] - load_arrays[0][file_array_index];
+						if (dT) {
+
+							double parameter = (time - load_arrays[0][file_array_index]) / dT;
+							double start = load_arrays[1][file_array_index];
+							double end = load_arrays[1][file_array_index + 1];
+							double value = parametric_interpolation(start, end, parameter);
+							values[step] = *reinterpret_cast<Type*>(&value);
+						}
+						else values[step] = *reinterpret_cast<Type*>(&load_arrays[1][file_array_index]);
+					}
+					else {
+
+						values[step] = *reinterpret_cast<Type*>(&load_arrays[1].back());
+					}
+				}
+			}
+		}
+		else if (std::is_same<Type, DBL3>::value) {
+		
+			if (ReadDataColumns(directory + fileName, "\t", load_arrays, { 0, 1, 2, 3 })) {
+
+				//all required file columns must have same number of entries
+				if (load_arrays[0].size() != load_arrays[1].size() ||
+					load_arrays[0].size() != load_arrays[2].size() ||
+					load_arrays[0].size() != load_arrays[3].size()) return false;
+
+				double time_duration = load_arrays[0].back() - load_arrays[0].front();
+
+				int steps = time_duration / time_resolution;
+				if (steps <= 0) return false;
+
+				if (!malloc_vector(values, steps)) return false;
+
+				int file_array_index = 0;
+
+				for (int step = 0; step < steps; step++) {
+
+					double time = load_arrays[0].front() + step * time_resolution;
+
+					//set file_array_index so the current time is between points at file_array_index and file_array_index + 1
+					if (file_array_index + 1 < load_arrays[0].size()) {
+
+						while (time >= load_arrays[0][file_array_index + 1]) {
+
+							file_array_index++;
+							if (file_array_index + 1 >= load_arrays[0].size()) break;
+						}
+					}
+
+					if (file_array_index + 1 < load_arrays[0].size()) {
+
+						//use interpolation if possible
+						double dT = load_arrays[0][file_array_index + 1] - load_arrays[0][file_array_index];
+						if (dT) {
+						
+							double parameter = (time - load_arrays[0][file_array_index]) / dT;
+							DBL3 start = DBL3(load_arrays[1][file_array_index], load_arrays[2][file_array_index], load_arrays[3][file_array_index]);
+							DBL3 end = DBL3(load_arrays[1][file_array_index + 1], load_arrays[2][file_array_index + 1], load_arrays[3][file_array_index + 1]);
+							values[step] = *reinterpret_cast<Type*>(&parametric_interpolation(start, end, parameter));
+						}
+						else values[step] = *reinterpret_cast<Type*>(&DBL3(load_arrays[1][file_array_index], load_arrays[2][file_array_index], load_arrays[3][file_array_index]));
+					}
+					else {
+
+						values[step] = *reinterpret_cast<Type*>(&DBL3(load_arrays[1].back(), load_arrays[2].back(), load_arrays[3].back()));
+					}
+				}
+			}
+		}
+
+		return true;
+	}
+
+public:
+
+
+	//----------------------------- VALUE CONSTRUCTORS
+
+	FileSequence(void) {}
+
+	FileSequence(std::string directory, std::string fileName, double time_resolution)
+	{
+		this->directory = directory;
+		this->fileName = fileName;
+		this->time_resolution = time_resolution;
+
+		//now attempt to load values
+		load_values_from_file();
+	}
+
+	//----------------------------- CONVERTING CONSTRUCTORS
+
+	//copy constructor
+	FileSequence(const FileSequence &copyThis) { *this = copyThis; }
+
+	//assignment operator
+	FileSequence& operator=(const FileSequence &rhs)
+	{
+		fileName = rhs.fileName;
+		time_resolution = rhs.time_resolution;
+		values = rhs.values;
+
+		return *this;
+	}
+
+	//----------------------------- STREAM OPERATORS
+
+	//allows conversion to std::string and other functionality (e.g. saving to file, or output to text console - stream types derived from std::ostream)
+	friend std::ostream& operator<<(std::ostream &os, const FileSequence &rhs)
+	{
+		os << rhs.fileName;
+		return os;
+	}
+
+	//this also does conversion to std::string, but allows further functionality through the stringconversion object, e.g. units.
+	friend Conversion::tostringconversion& operator<<(Conversion::tostringconversion &lhs, const FileSequence &rhs)
+	{
+		lhs << rhs.fileName;
+		return lhs;
+	}
+
+	//allows conversions from std::string to Sequence
+	friend FileSequence& operator>>(const std::stringstream &ss, FileSequence &rhs)
+	{
+		//time step and directory are not set here. instead these should either already be set, or else to set values you must set them later with a dedicated call.
+		rhs.fileName = ss.str();
+		rhs.load_values_from_file();
+
+		return rhs;
+	}
+
+	//----------------------------- SETTERS
+
+	bool set_filename(std::string directory, std::string fileName)
+	{
+		this->directory = directory;
+		this->fileName = fileName;
+
+		//now attempt to load values
+		return load_values_from_file();
+	}
+
+	bool set_time_resolution(double time_resolution)
+	{
+		this->time_resolution = time_resolution;
+
+		//now attempt to load values
+		return load_values_from_file();
+	}
+
+	bool set_filename_and_time_resolution(std::string directory, std::string fileName, double time_resolution)
+	{
+		this->directory = directory;
+		this->fileName = fileName;
+		this->time_resolution = time_resolution;
+
+		//now attempt to load values
+		return load_values_from_file();
+	}
+
+	//----------------------------- GETTERS
+
+	std::string get_fileName(void) { return fileName; }
+
+	//----------------------------- OTHERS
+
+	//return value for given step index (ranges from 0 to steps)
+	Type value(int stepIdx) 
+	{ 
+		if (stepIdx < values.size()) return values[stepIdx];
+		else return Type();
+	}
+
+	int number_of_steps(void) { return values.size() - 1; }
+};
+
+typedef FileSequence<double> FILESEQ;
+typedef FileSequence<DBL3> FILESEQ3;
+
 ////////////////////////////////////////////////////////////////////////////////////////////////// exclusions
 //
 //

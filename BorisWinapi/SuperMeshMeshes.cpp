@@ -427,6 +427,28 @@ BError SuperMesh::SetField(string meshName, DBL3 field_cartesian)
 	return error;
 }
 
+//Set uniform applied mechanical stress
+BError SuperMesh::SetUniformStress(string meshName, DBL3 stress_cartesian)
+{
+	BError error(__FUNCTION__);
+
+	if (meshName.length() && !contains(meshName)) return error(BERROR_INCORRECTNAME);
+
+	if (meshName.length()) {
+
+		pMesh[meshName]->CallModuleMethod(&MElastic::SetUniformStress, stress_cartesian);
+	}
+	else {
+
+		for (int idx = 0; idx < pMesh.size(); idx++) {
+
+			pMesh[idx]->CallModuleMethod(&MElastic::SetUniformStress, stress_cartesian);
+		}
+	}
+
+	return error;
+}
+
 //fully prepare moving mesh algorithm on named mesh (must be ferromagnetic) - transverse wall
 BError SuperMesh::PrepareMovingMesh(string meshName)
 {

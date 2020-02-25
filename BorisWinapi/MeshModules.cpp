@@ -60,6 +60,10 @@ BError Mesh::AddModule(MOD_ moduleID, bool force_add)
 	case MOD_ANICUBI:
 		pMod.push_back(new Anisotropy_Cubic(this), MOD_ANICUBI);
 		break;
+	
+	case MOD_MELASTIC:
+		pMod.push_back(new MElastic(this), MOD_MELASTIC);
+		break;
 
 	case MOD_TRANSPORT:
 		pMod.push_back(new Transport(this), MOD_TRANSPORT);

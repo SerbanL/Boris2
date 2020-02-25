@@ -11,7 +11,7 @@ class Mesh;
 
 #include "ExchangeBase.h"
 
-//Exchange modules can only be used in a ferromagnetic mesh
+//Exchange modules can only be used in a magnetic mesh
 
 class Exch_6ngbr_Neu :
 	public Modules,

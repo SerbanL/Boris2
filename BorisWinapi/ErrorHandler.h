@@ -9,6 +9,8 @@ using namespace std;
 enum BERROR_ 
 { 
 	BERROR_NONE = 0, 
+	BERROR_COMMAND_NOTRECOGNIZED,			//command not recognized
+	BERROR_BUSY,							//An action could not be completed: program busy
 	BERROR_OUTOFMEMORY_CRIT,				//Out of memory : critical, must restore program
 	BERROR_OUTOFMEMORY_NCRIT,				//Out of memory : not critical, don't need restore
 	BERROR_OUTOFGPUMEMORY_CRIT,				//Out of gpu memory : critical, must restore program
@@ -20,6 +22,7 @@ enum BERROR_
 	BERROR_INCORRECTVALUE,					//Incorrect value used
 	BERROR_INCORRECTSTRING,					//Incorrect string used
 	BERROR_PARAMMISMATCH,					//Getting parameters from console command : parameters entered do not match expected parameters
+	BERROR_PARAMMISMATCH_SHOW,				//not silent
 	BERROR_PARAMOUTOFBOUNDS,				//Getting parameters from console command : a parameter is out of specified bounds
 	BERROR_INCORRECTNAME,					//An incorrect name was given (e.g. a mesh name)
 	BERROR_INCORRECTACTION,					//The action of a command is incorrect for the current state and was not executed
@@ -31,6 +34,14 @@ enum BERROR_
 	BERROR_COULDNOTSAVEFILE,				//A file couldn't be saved
 	BERROR_COULDNOTCONNECT,					//Could not connect to a server
 	BERROR_NOTAVAILABLE,					//Requested configuration not available for this program version / workstation (e.g. no cuda-enabled gpu)
+	BERROR_NOTFERROMAGNETIC,				//Focused mesh must be ferromagnetic.
+	BERROR_MESHNAMEINEXISTENT,				//Mesh name doesn't exist.
+	BERROR_NOTCOMPUTED,						//Not computed.
+	BERROR_SPINSOLVER_FIT,					//Must be ferromagnetic mesh with transport module added and spin transport solver enabled.Must also have either Ts or Tsi computed.
+	BERROR_SPINSOLVER_FIT2,					//Must be ferromagnetic mesh with transport module added and spin transport solver enabled.
+	BERROR_SPINSOLVER_FIT3,					//Must be ferromagnetic mesh with transport module added and spin transport solver enabled.hm_mesh must be a metal mesh with transport module added.
+	BERROR_SPINSOLVER_FIT4,					//Must give metal and ferromagnetic meshes in this order.
+	BERROR_NOTDEFINED,						//Name not defined
 	BERROR_ENUMSIZE
 };
 
@@ -80,6 +91,17 @@ class BError {
 public:
 
 	BError(void) {}
+
+	BError(BERROR_ err_code_) 
+	{
+		err_code = err_code_;
+	}
+
+	BError(BERROR_ err_code_, string local_info)
+	{
+		err_code = err_code_;
+		err_info.push_back(local_info);
+	}
 
 	//make error object with local info - further info gets added later from functions returning errors
 	BError(string local_info)
@@ -168,9 +190,9 @@ public:
 
 	ErrorHandler(Owner* pOwner_);
 
-	void handle_error(BError error)
+	void show_error(BError error, bool verbose = true)
 	{
-		if (!is_silent_error(error)) pOwner->show_error(error, get_error_string(error));
+		if (!is_silent_error(error)) pOwner->show_error(error, get_error_string(error), verbose);
 	}
 
 	//full call, no parameters
@@ -185,7 +207,7 @@ public:
 
 			if (is_critical_error(error)) pOwner->restore_state();
 
-			if (!is_silent_error(error)) pOwner->show_error(error, get_error_string(error));
+			if (!is_silent_error(error)) pOwner->show_error(error, get_error_string(error), true);
 
 			//error occured
 			return true;
@@ -207,7 +229,7 @@ public:
 
 			if (is_critical_error(error)) pOwner->restore_state();
 
-			if (!is_silent_error(error)) pOwner->show_error(error, get_error_string(error));
+			if (!is_silent_error(error)) pOwner->show_error(error, get_error_string(error), true);
 
 			//error occured
 			return true;
@@ -225,7 +247,7 @@ public:
 
 		if (error) {
 
-			if (!is_silent_error(error)) pOwner->show_error(error, get_error_string(error));
+			if (!is_silent_error(error)) pOwner->show_error(error, get_error_string(error), true);
 
 			//error occured
 			return true;
@@ -243,7 +265,7 @@ public:
 
 		if (error) {
 
-			if (!is_silent_error(error)) pOwner->show_error(error, get_error_string(error));
+			if (!is_silent_error(error)) pOwner->show_error(error, get_error_string(error), true);
 
 			//error occured
 			return true;
@@ -262,26 +284,37 @@ ErrorHandler<Owner>::ErrorHandler(Owner* pOwner_) :
 	errors.resize(BERROR_ENUMSIZE);
 
 	errors[BERROR_NONE] = pair<string, ERRLEV_>( "", ERRLEV_SILENT );
-	errors[BERROR_OUTOFMEMORY_CRIT] = pair<string, ERRLEV_>( "Out of memory", ERRLEV_CRIT );
-	errors[BERROR_OUTOFMEMORY_NCRIT] = pair<string, ERRLEV_>( "Out of memory", ERRLEV_NCRIT );
-	errors[BERROR_OUTOFGPUMEMORY_CRIT] = pair<string, ERRLEV_>( "Out of GPU memory", ERRLEV_CRIT );
-	errors[BERROR_OUTOFGPUMEMORY_NCRIT] = pair<string, ERRLEV_>("Out of GPU memory", ERRLEV_NCRIT);
-	errors[BERROR_GPUERROR_CRIT] = pair<string, ERRLEV_>("GPU error", ERRLEV_CRIT);
-	errors[BERROR_INCORRECTMODCONFIG] = pair<string, ERRLEV_>( "Incorrect modules configuration", ERRLEV_NCRIT );
-	errors[BERROR_INCORRECTCONFIG] = pair<string, ERRLEV_>( "Incorrect configuration", ERRLEV_NCRIT );
-	errors[BERROR_INCORRECTARRAYS] = pair<string, ERRLEV_>( "Incorrect arrays", ERRLEV_NCRIT );
-	errors[BERROR_INCORRECTVALUE] = pair<string, ERRLEV_>( "Incorrect value", ERRLEV_NCRIT );
-	errors[BERROR_INCORRECTSTRING] = pair<string, ERRLEV_>("Incorrect string", ERRLEV_NCRIT);
-	errors[BERROR_PARAMMISMATCH] = pair<string, ERRLEV_>( "Parameters mismatch", ERRLEV_SILENT );
-	errors[BERROR_PARAMOUTOFBOUNDS] = pair<string, ERRLEV_>( "Parameter out of bounds", ERRLEV_NCRIT );
-	errors[BERROR_INCORRECTNAME] = pair<string, ERRLEV_>( "Incorrect name", ERRLEV_NCRIT );
-	errors[BERROR_INCORRECTACTION] = pair<string, ERRLEV_>( "Incorrect action for current program state", ERRLEV_NCRIT );
-	errors[BERROR_INCORRECTACTION_SILENT] = pair<string, ERRLEV_>( "Incorrect action for current program state", ERRLEV_SILENT );
-	errors[BERROR_COULDNOTOPENFILE] = pair<string, ERRLEV_>("Could not open file", ERRLEV_NCRIT);
-	errors[BERROR_COULDNOTLOADFILE] = pair<string, ERRLEV_>( "Could not load file", ERRLEV_NCRIT );
-	errors[BERROR_COULDNOTLOADFILE_VERSIONMISMATCH] = pair<string, ERRLEV_>("Could not load file : version mismatch", ERRLEV_NCRIT);
-	errors[BERROR_COULDNOTLOADFILE_CRIT] = pair<string, ERRLEV_>( "Could not load file", ERRLEV_CRIT );
-	errors[BERROR_COULDNOTSAVEFILE] = pair<string, ERRLEV_>( "Could not save file", ERRLEV_NCRIT );
-	errors[BERROR_NOTAVAILABLE] = pair<string, ERRLEV_>( "Hardware not available or not enabled.", ERRLEV_NCRIT );
+	errors[BERROR_COMMAND_NOTRECOGNIZED] = pair<string, ERRLEV_>("Command not recognized.", ERRLEV_NCRIT);
+	errors[BERROR_BUSY] = pair<string, ERRLEV_>("Busy... please wait.", ERRLEV_NCRIT);
+	errors[BERROR_OUTOFMEMORY_CRIT] = pair<string, ERRLEV_>( "Out of memory.", ERRLEV_CRIT);
+	errors[BERROR_OUTOFMEMORY_NCRIT] = pair<string, ERRLEV_>( "Out of memory.", ERRLEV_NCRIT);
+	errors[BERROR_OUTOFGPUMEMORY_CRIT] = pair<string, ERRLEV_>( "Out of GPU memory.", ERRLEV_CRIT);
+	errors[BERROR_OUTOFGPUMEMORY_NCRIT] = pair<string, ERRLEV_>("Out of GPU memory.", ERRLEV_NCRIT);
+	errors[BERROR_GPUERROR_CRIT] = pair<string, ERRLEV_>("GPU error.", ERRLEV_CRIT);
+	errors[BERROR_INCORRECTMODCONFIG] = pair<string, ERRLEV_>( "Incorrect modules configuration.", ERRLEV_NCRIT);
+	errors[BERROR_INCORRECTCONFIG] = pair<string, ERRLEV_>( "Incorrect configuration.", ERRLEV_NCRIT);
+	errors[BERROR_INCORRECTARRAYS] = pair<string, ERRLEV_>( "Incorrect arrays.", ERRLEV_NCRIT);
+	errors[BERROR_INCORRECTVALUE] = pair<string, ERRLEV_>( "Incorrect value.", ERRLEV_NCRIT);
+	errors[BERROR_INCORRECTSTRING] = pair<string, ERRLEV_>("Incorrect string.", ERRLEV_NCRIT);
+	errors[BERROR_PARAMMISMATCH] = pair<string, ERRLEV_>( "Parameters mismatch.", ERRLEV_SILENT);
+	errors[BERROR_PARAMMISMATCH_SHOW] = pair<string, ERRLEV_>("Parameters mismatch.", ERRLEV_NCRIT);
+	errors[BERROR_PARAMOUTOFBOUNDS] = pair<string, ERRLEV_>( "Parameter out of bounds.", ERRLEV_NCRIT);
+	errors[BERROR_INCORRECTNAME] = pair<string, ERRLEV_>( "Incorrect name.", ERRLEV_NCRIT);
+	errors[BERROR_INCORRECTACTION] = pair<string, ERRLEV_>( "Incorrect action for current program state.", ERRLEV_NCRIT);
+	errors[BERROR_INCORRECTACTION_SILENT] = pair<string, ERRLEV_>( "Incorrect action for current program state.", ERRLEV_SILENT);
+	errors[BERROR_COULDNOTOPENFILE] = pair<string, ERRLEV_>("Could not open file.", ERRLEV_NCRIT);
+	errors[BERROR_COULDNOTLOADFILE] = pair<string, ERRLEV_>( "Could not load file.", ERRLEV_NCRIT);
+	errors[BERROR_COULDNOTLOADFILE_VERSIONMISMATCH] = pair<string, ERRLEV_>("Could not load file : version mismatch.", ERRLEV_NCRIT);
+	errors[BERROR_COULDNOTLOADFILE_CRIT] = pair<string, ERRLEV_>( "Could not load file.", ERRLEV_CRIT);
+	errors[BERROR_COULDNOTSAVEFILE] = pair<string, ERRLEV_>( "Could not save file.", ERRLEV_NCRIT);
+	errors[BERROR_NOTAVAILABLE] = pair<string, ERRLEV_>( "Hardware not available or not enabled.", ERRLEV_NCRIT);
 	errors[BERROR_COULDNOTCONNECT] = pair<string, ERRLEV_>("Couldn't connect.", ERRLEV_NCRIT);
+	errors[BERROR_NOTFERROMAGNETIC] = pair<string, ERRLEV_>("Focused mesh must be ferromagnetic.", ERRLEV_NCRIT);
+	errors[BERROR_MESHNAMEINEXISTENT] = pair<string, ERRLEV_>("Mesh name doesn't exist.", ERRLEV_NCRIT);
+	errors[BERROR_NOTCOMPUTED] = pair<string, ERRLEV_>("Not computed.", ERRLEV_NCRIT);
+	errors[BERROR_SPINSOLVER_FIT] = pair<string, ERRLEV_>("Must be ferromagnetic mesh with transport module added and spin transport solver enabled. Must also have either Ts or Tsi computed.", ERRLEV_NCRIT);
+	errors[BERROR_SPINSOLVER_FIT2] = pair<string, ERRLEV_>("Must be ferromagnetic mesh with transport module added and spin transport solver enabled.", ERRLEV_NCRIT);
+	errors[BERROR_SPINSOLVER_FIT3] = pair<string, ERRLEV_>("Must be ferromagnetic mesh with transport module added and spin transport solver enabled. hm_mesh must be a metal mesh with transport module added.", ERRLEV_NCRIT);
+	errors[BERROR_SPINSOLVER_FIT4] = pair<string, ERRLEV_>("Must give metal and ferromagnetic meshes in this order.", ERRLEV_NCRIT);
+	errors[BERROR_NOTDEFINED] = pair<string, ERRLEV_>("Name not defined.", ERRLEV_NCRIT);
 }

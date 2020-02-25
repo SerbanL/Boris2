@@ -75,6 +75,9 @@ BError ManagedMeshCUDA::set_pointers(MeshCUDA* pMeshCUDA)
 
 	if (set_gpu_value(pthermCond, pMeshCUDA->thermCond.get_managed_object()) != cudaSuccess) error(BERROR_GPUERROR_CRIT);
 	if (set_gpu_value(pdensity, pMeshCUDA->density.get_managed_object()) != cudaSuccess) error(BERROR_GPUERROR_CRIT);
+	if (set_gpu_value(pMEc, pMeshCUDA->MEc.get_managed_object()) != cudaSuccess) error(BERROR_GPUERROR_CRIT);
+	if (set_gpu_value(pYm, pMeshCUDA->Ym.get_managed_object()) != cudaSuccess) error(BERROR_GPUERROR_CRIT);
+	if (set_gpu_value(pPr, pMeshCUDA->Pr.get_managed_object()) != cudaSuccess) error(BERROR_GPUERROR_CRIT);
 	if (set_gpu_value(pshc, pMeshCUDA->shc.get_managed_object()) != cudaSuccess) error(BERROR_GPUERROR_CRIT);
 
 	if (set_gpu_value(pcT, pMeshCUDA->cT.get_managed_object()) != cudaSuccess) error(BERROR_GPUERROR_CRIT);
@@ -94,6 +97,10 @@ BError ManagedMeshCUDA::set_pointers(MeshCUDA* pMeshCUDA)
 	if (set_gpu_value(pS, pMeshCUDA->S.get_managed_object()) != cudaSuccess) error(BERROR_GPUERROR_CRIT);
 	
 	if (set_gpu_value(pTemp, pMeshCUDA->Temp.get_managed_object()) != cudaSuccess) error(BERROR_GPUERROR_CRIT);
+
+	if (set_gpu_value(pu_disp, pMeshCUDA->u_disp.get_managed_object()) != cudaSuccess) error(BERROR_GPUERROR_CRIT);
+	if (set_gpu_value(pstrain_diag, pMeshCUDA->strain_diag.get_managed_object()) != cudaSuccess) error(BERROR_GPUERROR_CRIT);
+	if (set_gpu_value(pstrain_odiag, pMeshCUDA->strain_odiag.get_managed_object()) != cudaSuccess) error(BERROR_GPUERROR_CRIT);
 	
 	//Managed DiffEq_CommonCUDA pointer so all common diffeq data can be accessed in device code
 	if (set_gpu_value(pcuDiffEq, pMeshCUDA->Get_ManagedDiffEq_CommonCUDA().get_managed_object()) != cudaSuccess) error(BERROR_GPUERROR_CRIT);

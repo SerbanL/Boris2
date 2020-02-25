@@ -18,7 +18,7 @@ void Simulation::AddGenericStage(SS_ stageType, string meshName)
 	{
 		//zero field with STOP_MXH
 		StageConfig stageConfig = StageConfig(stageDescriptors(stageType), stageStopDescriptors(STOP_MXH), meshName);
-		stageConfig.set_value( DBL3(0, 0, 0) );
+		stageConfig.set_value(DBL3(0, 0, 0));
 		stageConfig.set_stopvalue(1e-4);
 
 		simStages.push_back(stageConfig);
@@ -29,7 +29,7 @@ void Simulation::AddGenericStage(SS_ stageType, string meshName)
 	{
 		//zero field with STOP_MXH
 		StageConfig stageConfig = StageConfig(stageDescriptors(stageType), stageStopDescriptors(STOP_MXH), meshName);
-		stageConfig.set_value( SEQ3(DBL3(-1e5, 0, 0), DBL3(1e5, 0, 0), 100) );
+		stageConfig.set_value(SEQ3(DBL3(-1e5, 0, 0), DBL3(1e5, 0, 0), 100));
 		stageConfig.set_stopvalue(1e-4);
 
 		simStages.push_back(stageConfig);
@@ -80,6 +80,17 @@ void Simulation::AddGenericStage(SS_ stageType, string meshName)
 	}
 	break;
 
+	case SS_HFIELDFILE:
+	{
+		//zero field with STOP_TIME
+		StageConfig stageConfig = StageConfig(stageDescriptors(stageType), stageStopDescriptors(STOP_TIME), meshName);
+		stageConfig.set_value(FILESEQ3(directory, "file.txt", 1e-9));
+		stageConfig.set_stopvalue(1e-9);
+
+		simStages.push_back(stageConfig);
+	}
+	break;
+
 	case SS_V:
 	{
 		//zero potential with STOP_MXH
@@ -102,6 +113,7 @@ void Simulation::AddGenericStage(SS_ stageType, string meshName)
 	}
 	break;
 
+	/*
 	case SS_VSIN:
 	{
 		//10 mV oscillation 1 GHz for 100 cycles
@@ -123,6 +135,7 @@ void Simulation::AddGenericStage(SS_ stageType, string meshName)
 		simStages.push_back(stageConfig);
 	}
 	break;
+	*/
 
 	case SS_VEQUATION:
 	{
@@ -141,6 +154,17 @@ void Simulation::AddGenericStage(SS_ stageType, string meshName)
 		StageConfig stageConfig = StageConfig(stageDescriptors(stageType), stageStopDescriptors(STOP_MXH));
 		stageConfig.set_value(StringSequence(std::string("1: 0")));
 		stageConfig.set_stopvalue(1e-4);
+
+		simStages.push_back(stageConfig);
+	}
+	break;
+
+	case SS_VFILE:
+	{
+		//zero field with STOP_TIME
+		StageConfig stageConfig = StageConfig(stageDescriptors(stageType), stageStopDescriptors(STOP_TIME), meshName);
+		stageConfig.set_value(FILESEQ(directory, "file.txt", 1e-9));
+		stageConfig.set_stopvalue(1e-9);
 
 		simStages.push_back(stageConfig);
 	}
@@ -168,6 +192,7 @@ void Simulation::AddGenericStage(SS_ stageType, string meshName)
 	}
 	break;
 
+	/*
 	case SS_ISIN:
 	{
 		//1 mA oscillation 1 GHz for 100 cycles
@@ -189,6 +214,7 @@ void Simulation::AddGenericStage(SS_ stageType, string meshName)
 		simStages.push_back(stageConfig);
 	}
 	break;
+	*/
 
 	case SS_IEQUATION:
 	{
@@ -207,6 +233,17 @@ void Simulation::AddGenericStage(SS_ stageType, string meshName)
 		StageConfig stageConfig = StageConfig(stageDescriptors(stageType), stageStopDescriptors(STOP_MXH));
 		stageConfig.set_value(StringSequence(std::string("1: 0")));
 		stageConfig.set_stopvalue(1e-4);
+
+		simStages.push_back(stageConfig);
+	}
+	break;
+
+	case SS_IFILE:
+	{
+		//zero field with STOP_TIME
+		StageConfig stageConfig = StageConfig(stageDescriptors(stageType), stageStopDescriptors(STOP_TIME), meshName);
+		stageConfig.set_value(FILESEQ(directory, "file.txt", 1e-9));
+		stageConfig.set_stopvalue(1e-9);
 
 		simStages.push_back(stageConfig);
 	}
@@ -256,6 +293,17 @@ void Simulation::AddGenericStage(SS_ stageType, string meshName)
 	}
 	break;
 
+	case SS_TFILE:
+	{
+		//zero field with STOP_TIME
+		StageConfig stageConfig = StageConfig(stageDescriptors(stageType), stageStopDescriptors(STOP_TIME), meshName);
+		stageConfig.set_value(FILESEQ(directory, "file.txt", 1e-9));
+		stageConfig.set_stopvalue(1e-9);
+
+		simStages.push_back(stageConfig);
+	}
+	break;
+
 	case SS_Q:
 	{
 		//1e19 W/m3 heat source with STOP_TIME of 10ns
@@ -294,6 +342,28 @@ void Simulation::AddGenericStage(SS_ stageType, string meshName)
 		//zero Q with STOP_MXH
 		StageConfig stageConfig = StageConfig(stageDescriptors(stageType), stageStopDescriptors(STOP_MXH), meshName);
 		stageConfig.set_value(StringSequence(std::string("1: 0")));
+		stageConfig.set_stopvalue(1e-4);
+
+		simStages.push_back(stageConfig);
+	}
+	break;
+
+	case SS_QFILE:
+	{
+		//zero field with STOP_TIME
+		StageConfig stageConfig = StageConfig(stageDescriptors(stageType), stageStopDescriptors(STOP_TIME), meshName);
+		stageConfig.set_value(FILESEQ(directory, "file.txt", 1e-9));
+		stageConfig.set_stopvalue(1e-9);
+
+		simStages.push_back(stageConfig);
+	}
+	break;
+
+	case SS_TSIGPOLAR:
+	{
+		//zero stress with STOP_MXH
+		StageConfig stageConfig = StageConfig(stageDescriptors(stageType), stageStopDescriptors(STOP_MXH), meshName);
+		stageConfig.set_value(DBL3(0, 0, 0));
 		stageConfig.set_stopvalue(1e-4);
 
 		simStages.push_back(stageConfig);
@@ -377,7 +447,6 @@ void Simulation::EditStageType(int index, SS_ stageType, string meshName)
 	if(GoodIdx(simStages.last(), index) && simStages[index].stage_type() == stageType) {
 		
 		simStages[index].set_meshname(meshName);
-
 	}
 	else {
 
@@ -390,7 +459,121 @@ void Simulation::EditStageType(int index, SS_ stageType, string meshName)
 
 void Simulation::EditStageValue(int stageIndex, string value_string) 
 {
-	simStages[stageIndex].set_stagevalue_fromstring(value_string);
+	bool adjust_special = false;
+
+	//in some special cases, changing the stage value can result in a stage type change
+	if (simStages[stageIndex].stage_type() == SS_HFIELDEQUATION || simStages[stageIndex].stage_type() == SS_HFIELDEQUATIONSEQ) {
+
+		size_t pos = value_string.find(":");
+		//change from equation to equation sequence
+		if (pos != std::string::npos && simStages[stageIndex].stage_type() == SS_HFIELDEQUATION) {
+
+			adjust_special = true;
+
+			AddGenericStage(SS_HFIELDEQUATIONSEQ, simStages[stageIndex].meshname());
+		}
+		//change from equation sequence to equation
+		else if (pos == std::string::npos && simStages[stageIndex].stage_type() == SS_HFIELDEQUATIONSEQ) {
+
+			adjust_special = true;
+
+			AddGenericStage(SS_HFIELDEQUATION, simStages[stageIndex].meshname());
+		}
+	}
+
+	else if (simStages[stageIndex].stage_type() == SS_VEQUATION || simStages[stageIndex].stage_type() == SS_VEQUATIONSEQ) {
+
+		size_t pos = value_string.find(":");
+		//change from equation to equation sequence
+		if (pos != std::string::npos && simStages[stageIndex].stage_type() == SS_VEQUATION) {
+
+			adjust_special = true;
+
+			AddGenericStage(SS_VEQUATIONSEQ, simStages[stageIndex].meshname());
+		}
+		//change from equation sequence to equation
+		else if (pos == std::string::npos && simStages[stageIndex].stage_type() == SS_VEQUATIONSEQ) {
+
+			adjust_special = true;
+
+			AddGenericStage(SS_VEQUATION, simStages[stageIndex].meshname());
+		}
+	}
+
+	else if (simStages[stageIndex].stage_type() == SS_IEQUATION || simStages[stageIndex].stage_type() == SS_IEQUATIONSEQ) {
+
+		size_t pos = value_string.find(":");
+		//change from equation to equation sequence
+		if (pos != std::string::npos && simStages[stageIndex].stage_type() == SS_IEQUATION) {
+
+			adjust_special = true;
+
+			AddGenericStage(SS_IEQUATIONSEQ, simStages[stageIndex].meshname());
+		}
+		//change from equation sequence to equation
+		else if (pos == std::string::npos && simStages[stageIndex].stage_type() == SS_IEQUATIONSEQ) {
+
+			adjust_special = true;
+
+			AddGenericStage(SS_IEQUATION, simStages[stageIndex].meshname());
+		}
+	}
+
+	else if (simStages[stageIndex].stage_type() == SS_TEQUATION || simStages[stageIndex].stage_type() == SS_TEQUATIONSEQ) {
+
+		size_t pos = value_string.find(":");
+		//change from equation to equation sequence
+		if (pos != std::string::npos && simStages[stageIndex].stage_type() == SS_TEQUATION) {
+
+			adjust_special = true;
+
+			AddGenericStage(SS_TEQUATIONSEQ, simStages[stageIndex].meshname());
+		}
+		//change from equation sequence to equation
+		else if (pos == std::string::npos && simStages[stageIndex].stage_type() == SS_TEQUATIONSEQ) {
+
+			adjust_special = true;
+
+			AddGenericStage(SS_TEQUATION, simStages[stageIndex].meshname());
+		}
+	}
+
+	else if (simStages[stageIndex].stage_type() == SS_QEQUATION || simStages[stageIndex].stage_type() == SS_QEQUATIONSEQ) {
+
+		size_t pos = value_string.find(":");
+		//change from equation to equation sequence
+		if (pos != std::string::npos && simStages[stageIndex].stage_type() == SS_QEQUATION) {
+
+			adjust_special = true;
+
+			AddGenericStage(SS_QEQUATIONSEQ, simStages[stageIndex].meshname());
+		}
+		//change from equation sequence to equation
+		else if (pos == std::string::npos && simStages[stageIndex].stage_type() == SS_QEQUATIONSEQ) {
+
+			adjust_special = true;
+
+			AddGenericStage(SS_QEQUATION, simStages[stageIndex].meshname());
+		}
+	}
+
+	if (!adjust_special) {
+
+		//edit current stage
+		simStages[stageIndex].set_stagevalue_fromstring(value_string);
+	}
+	else {
+
+		//current stage type has been changed : we have a new generic stage of the required type at the end
+
+		//set required value and copy current generate stage data
+		simStages[simStages.last()].set_stagevalue_fromstring(value_string);
+		simStages[simStages.last()].copy_stage_general_data(simStages[stageIndex]);
+
+		//replace current stage
+		simStages.move(simStages.last(), stageIndex);
+		simStages.erase(stageIndex + 1);
+	}
 }
 
 void Simulation::EditStageStopCondition(int index, STOP_ stopType, string stopValueString) 
@@ -594,6 +777,7 @@ void Simulation::SetSimulationStageValue(void)
 	case SS_HFIELDXYZSEQ:
 	case SS_HPOLARSEQ:
 	case SS_HFMR:
+	case SS_HFIELDFILE:
 	{
 		string meshName = simStages[stage_step.major].meshname();
 
@@ -604,6 +788,22 @@ void Simulation::SetSimulationStageValue(void)
 
 			for (int idx = 0; idx < SMesh.size(); idx++) {
 				SMesh[idx]->CallModuleMethod(&Zeeman::SetField, appliedField);
+			}
+		}
+	}
+	break;
+
+	case SS_TSIGPOLAR:
+	{
+		string meshName = simStages[stage_step.major].meshname();
+
+		DBL3 appliedStress = simStages[stage_step.major].get_value<DBL3>(stage_step.minor);
+
+		if (SMesh.contains(meshName)) SMesh[meshName]->CallModuleMethod(&MElastic::SetUniformStress, appliedStress);
+		else if (meshName == SMesh.superMeshHandle) {
+
+			for (int idx = 0; idx < SMesh.size(); idx++) {
+				SMesh[idx]->CallModuleMethod(&MElastic::SetUniformStress, appliedStress);
 			}
 		}
 	}
@@ -664,8 +864,9 @@ void Simulation::SetSimulationStageValue(void)
 
 	case SS_V:
 	case SS_VSEQ:
-	case SS_VSIN:
-	case SS_VCOS:
+	//case SS_VSIN:
+	//case SS_VCOS:
+	case SS_VFILE:
 	{
 		double potential = simStages[stage_step.major].get_value<double>(stage_step.minor);
 
@@ -675,8 +876,9 @@ void Simulation::SetSimulationStageValue(void)
 
 	case SS_I:
 	case SS_ISEQ:
-	case SS_ISIN:
-	case SS_ICOS:
+	//case SS_ISIN:
+	//case SS_ICOS:
+	case SS_IFILE:
 	{
 		double current = simStages[stage_step.major].get_value<double>(stage_step.minor);
 
@@ -705,6 +907,7 @@ void Simulation::SetSimulationStageValue(void)
 
 	case SS_T:
 	case SS_TSEQ:
+	case SS_TFILE:
 	{
 		string meshName = simStages[stage_step.major].meshname();
 
@@ -763,6 +966,7 @@ void Simulation::SetSimulationStageValue(void)
 
 	case SS_Q:
 	case SS_QSEQ:
+	case SS_QFILE:
 	{
 		string meshName = simStages[stage_step.major].meshname();
 

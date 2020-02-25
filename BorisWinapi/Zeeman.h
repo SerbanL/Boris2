@@ -9,7 +9,7 @@ class Mesh;
 
 #ifdef MODULE_ZEEMAN
 
-//Zeeman module can only be used in a ferromagnetic mesh
+//Zeeman module can only be used in a magnetic mesh
 
 class SuperMesh;
 

@@ -200,6 +200,18 @@ MeshParams::MeshParams(vector<PARAM_>& enabledParams) :
 			meshParams.push_back("density", MeshParamDescriptor(PARAMTYPE_MECHANICAL, "kg/m3"), PARAM_DENSITY);
 			break;
 
+		case PARAM_MECOEFF:
+			meshParams.push_back("MEc", MeshParamDescriptor(PARAMTYPE_MECHANICAL, "J/m3"), PARAM_MECOEFF);
+			break;
+
+		case PARAM_YOUNGSMOD:
+			meshParams.push_back("Ym", MeshParamDescriptor(PARAMTYPE_MECHANICAL, "Pa"), PARAM_YOUNGSMOD);
+			break;
+
+		case PARAM_POISSONRATIO:
+			meshParams.push_back("Pr", MeshParamDescriptor(PARAMTYPE_MECHANICAL), PARAM_POISSONRATIO);
+			break;
+
 		case PARAM_SHC:
 			meshParams.push_back("shc", MeshParamDescriptor(PARAMTYPE_THERMAL, "J/kgK"), PARAM_SHC);
 			break;
@@ -395,6 +407,17 @@ void* MeshParams::get_meshparam_s_scaling(PARAM_ paramID)
 	return run_on_param<void*>(paramID, code);
 }
 
+//get value of mesh parameter spatial scaling coefficient at given position (and time)
+Any MeshParams::get_meshparam_s_scaling_value(PARAM_ paramID, DBL3 rel_pos, double stime)
+{
+	auto code = [](auto& MatP_object, DBL3 rel_pos, double stime) -> Any {
+
+		return (Any)MatP_object.get_s_scaling_value(rel_pos, stime);
+	};
+
+	return run_on_param<Any>(paramID, code, rel_pos, stime);
+}
+
 //calculate spatial variation into the provided VECs - intended to be used when the spatial variation is set using a text equation
 void MeshParams::calculate_meshparam_s_scaling(PARAM_ paramID, VEC<double>& displayVEC_SCA, double stime)
 {
@@ -500,6 +523,17 @@ bool MeshParams::set_meshparam_tscaling_array(PARAM_ paramID, vector<double>& te
 	};
 
 	return run_on_param<bool>(paramID, code, temp, scaling);
+}
+
+//set temperature dependence info string for console display purposes
+void MeshParams::set_meshparam_tscaling_info(PARAM_ paramID, string info_text)
+{
+	auto code = [](auto& MatP_object, string info_text) -> void {
+
+		MatP_object.set_t_scaling_info(info_text);
+	};
+
+	run_on_param<void>(paramID, code, info_text);
 }
 
 //-------------------------Setters : spatial variation
