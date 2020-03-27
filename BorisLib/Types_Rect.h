@@ -44,7 +44,7 @@ struct __Box {
 	friend __Box& operator>>(const std::stringstream &ss, __Box &rhs)
 	{ 
 		//normally the values in std::string representation are as: "sx, sy, sz; ex, ey, ez"
-		std::vector<std::string> components = split(ss.str(), ", ", "; ");
+		std::vector<std::string> components = split(ss.str(), ",", ";");
 		//it could be they are also given as: "sx sy sz ex ey ez"
 		if(components.size() == 1) components = split(ss.str(), " ");
 
@@ -52,26 +52,26 @@ struct __Box {
 		switch (components.size()) {
 
 		case 1:			//Box(INT3 e) ctor
-			rhs.e = ToNum(components[0], "");
+			rhs.e = ToNum(trimspaces(components[0]), "");
 			rhs.s = INT3();
 			break;
 		case 2:			//Box(INT3 s, INT3 e) ctor
-			rhs.s = ToNum(components[0], "");
-			rhs.e = ToNum(components[1], "");
+			rhs.s = ToNum(trimspaces(components[0]), "");
+			rhs.e = ToNum(trimspaces(components[1]), "");
 			break;
 		case 3:			//Box(int ex, int ey, int ez) ctor
-			rhs.e.x = ToNum(components[0], "");
-			rhs.e.y = ToNum(components[1], "");
-			rhs.e.z = ToNum(components[2], "");
+			rhs.e.x = ToNum(trimspaces(components[0]), "");
+			rhs.e.y = ToNum(trimspaces(components[1]), "");
+			rhs.e.z = ToNum(trimspaces(components[2]), "");
 			rhs.s = INT3();
 			break;
 		case 6:			//Box(int sx, int sy, int sz, int ex, int ey, int ez) ctor
-			rhs.s.x = ToNum(components[0], "");
-			rhs.s.y = ToNum(components[1], "");
-			rhs.s.z = ToNum(components[2], "");
-			rhs.e.x = ToNum(components[3], "");
-			rhs.e.y = ToNum(components[4], "");
-			rhs.e.z = ToNum(components[5], "");
+			rhs.s.x = ToNum(trimspaces(components[0]), "");
+			rhs.s.y = ToNum(trimspaces(components[1]), "");
+			rhs.s.z = ToNum(trimspaces(components[2]), "");
+			rhs.e.x = ToNum(trimspaces(components[3]), "");
+			rhs.e.y = ToNum(trimspaces(components[4]), "");
+			rhs.e.z = ToNum(trimspaces(components[5]), "");
 			break;
 		}
 
@@ -229,7 +229,7 @@ struct __Rect {
 	friend __Rect& operator>>(const std::stringstream &ss, __Rect &rhs)
 	{ 
 		//normally the values in std::string representation are as: "sx, sy, sz; ex, ey, ez"
-		std::vector<std::string> components = split(ss.str(), ", ", "; ");
+		std::vector<std::string> components = split(ss.str(), ",", ";");
 		//it could be they are also given as: "sx sy sz ex ey ez"
 		if(components.size() == 1) components = split(ss.str(), " ");
 
@@ -237,26 +237,26 @@ struct __Rect {
 		switch (components.size()) {
 
 		case 1:			//Rect(INT3 e) ctor
-			rhs.e = ToNum(components[0], "");
+			rhs.e = ToNum(trimspaces(components[0]), "");
 			rhs.s = DBL3();
 			break;
 		case 2:			//Rect(INT3 s, INT3 e) ctor
-			rhs.s = ToNum(components[0], "");
-			rhs.e = ToNum(components[1], "");
+			rhs.s = ToNum(trimspaces(components[0]), "");
+			rhs.e = ToNum(trimspaces(components[1]), "");
 			break;
 		case 3:			//Rect(int ex, int ey, int ez) ctor
-			rhs.e.x = ToNum(components[0], "");
-			rhs.e.y = ToNum(components[1], "");
-			rhs.e.z = ToNum(components[2], "");
+			rhs.e.x = ToNum(trimspaces(components[0]), "");
+			rhs.e.y = ToNum(trimspaces(components[1]), "");
+			rhs.e.z = ToNum(trimspaces(components[2]), "");
 			rhs.s = DBL3();
 			break;
 		case 6:			//Rect(int sx, int sy, int sz, int ex, int ey, int ez) ctor
-			rhs.s.x = ToNum(components[0], "");
-			rhs.s.y = ToNum(components[1], "");
-			rhs.s.z = ToNum(components[2], "");
-			rhs.e.x = ToNum(components[3], "");
-			rhs.e.y = ToNum(components[4], "");
-			rhs.e.z = ToNum(components[5], "");
+			rhs.s.x = ToNum(trimspaces(components[0]), "");
+			rhs.s.y = ToNum(trimspaces(components[1]), "");
+			rhs.s.z = ToNum(trimspaces(components[2]), "");
+			rhs.e.x = ToNum(trimspaces(components[3]), "");
+			rhs.e.y = ToNum(trimspaces(components[4]), "");
+			rhs.e.z = ToNum(trimspaces(components[5]), "");
 			break;
 		}
 

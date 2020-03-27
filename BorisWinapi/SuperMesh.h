@@ -6,6 +6,7 @@
 
 #include "Mesh_Ferromagnetic.h"
 #include "Mesh_AntiFerromagnetic.h"
+#include "Mesh_Diamagnetic.h"
 #include "Mesh_Dipole.h"
 #include "Mesh_Metal.h"
 #include "Mesh_Insulator.h"
@@ -30,7 +31,7 @@ class SuperMesh :
 	public SimulationSharedData, 
 	public ProgramState<SuperMesh,
 	tuple<int, int, SZ3, DBL3, Rect, SZ3, DBL3, Rect, ODECommon, vector_key<Mesh*>, vector_lut<Modules*>, string, string, bool, bool>,
-	tuple<FMesh, DipoleMesh, MetalMesh, InsulatorMesh, AFMesh,
+	tuple<FMesh, DipoleMesh, MetalMesh, InsulatorMesh, AFMesh, DiaMesh,
 		  SDemag, StrayField, STransport, Oersted, SHeat> >
 {
 	//all supermesh modules are friends
@@ -367,6 +368,12 @@ public:
 	//set exchange coupling to neighboring meshes - an exchange-type module (i.e. inherit from ExchangeBase) must be enabled in the named mesh
 	BError Set_ExchangeCoupledMeshes(bool status, string meshName);
 
+	//Set/Get multilayered demag exclusion : will need to call UpdateConfiguration when the flag is changed, so the correct SDemag_Demag modules and related settings are set from the SDemag module.
+	BError Set_Demag_Exclusion(bool exclude_from_multiconvdemag, string meshName);
+
+	//set link_stochastic flag in named mesh, or all meshes if supermesh handle given
+	BError SetLinkStochastic(bool link_stochastic, string meshName);
+
 	//--------------------------------------------------------- MESH PARAMETERS : SuperMeshParams.cpp
 
 	//these set parameter values and temperature dependence in the indicated mesh - call through these since it's important to call UpdateConfiguration also
@@ -379,7 +386,7 @@ public:
 
 	BError set_meshparam_t_equation(string meshName, string paramHandle, string equationText);
 	
-	BError set_meshparam_tscaling_array(string meshName, string paramHandle, vector<double>& temp, vector<double>& scaling, string fileName_info = "");
+	BError set_meshparam_tscaling_array(string meshName, string paramHandle, vector<double>& temp, vector<double>& scaling_x, vector<double>& scaling_y, vector<double>& scaling_z, string fileName_info = "");
 
 	//clear parameters temperature dependence in given mesh (all meshes if empty string)
 	BError clear_meshparam_temp(string meshName, string paramHandle);
@@ -400,7 +407,10 @@ public:
 	//set parameter spatial variation using a given generator and arguments (arguments passed as a string to be interpreted and converted using ToNum)
 	BError set_meshparam_var(string meshName, string paramHandle, string generatorHandle, string generatorArgs, function<vector<BYTE>(string, INT2)>& bitmap_loader);
 
-	//others
+	//copy all parameters from another Mesh
+	BError copy_mesh_parameters(string meshName_from, string meshName_to);
+
+	//--------------------------------------------------------- TEMPERATURE / HEAT SOLVER CONTROL : SuperMeshTemperature.cpp
 
 	//set mesh base temperature. If spatial variation set and Heat module enabled then non-uniform base temperature will be set
 	BError SetBaseTemperature(string meshName, double Temperature);
@@ -408,18 +418,25 @@ public:
 	//ambient and alpha boundary coefficient for Robin boundary conditions - set in Heat module if active
 	BError SetAmbientTemperature(string meshName, double T_ambient);
 	BError SetAlphaHeatBoundary(string meshName, double alpha_boundary);
+	
 	//insulating mesh sides for heat equation (Neumann boundary conditions). literal can be "x", "-x", "y", "-y", "z", "-z"
 	BError SetInsulatingSides(string meshName, string literal, bool status);
 
 	//set Curie temperature/atomic moment as Bohr magneton multiple for named mesh or all meshes (if meshName is the supermesh handle)
 	//this is for the actually set Tc value
 	BError SetCurieTemperature(string meshName, double T_Curie);
+	
 	//this is for the indicative material Tc value
 	BError SetCurieTemperatureMaterial(string meshName, double T_Curie_material);
-	BError SetAtomicMagneticMoment(string meshName, double atomic_moment);
+	BError SetAtomicMagneticMoment(string meshName, DBL2 atomic_moment);
 
-	//copy all parameters from another Mesh
-	BError copy_mesh_parameters(string meshName_from, string meshName_to);
+	//set Tc (critical temperature) coupling terms for 2-sublattice model
+	BError SetTcCoupling(string meshName, DBL2 tau_ii, DBL2 tau_ij);
+	BError SetTcCoupling_Intra(string meshName, DBL2 tau_ii);
+	BError SetTcCoupling_Inter(string meshName, DBL2 tau_ij);
+
+	//Set temperature model
+	BError SetTemperatureModel(string meshName, int tmtype);
 
 	//----------------------------------- MODULES CONTROL : SuperMeshModules.cpp
 

@@ -9,6 +9,7 @@
 
 #include "BorisCUDALib.h"
 
+#include "CompileFlags.h"
 #include "ErrorHandler.h"
 
 #include "MeshParamsCUDA.h"
@@ -113,8 +114,22 @@ public:
 	//cellsize for thermal properties
 	DBL3& h_t;
 
-	//temperature calculated by Heat module
+	//temperature calculated by Heat module (primary temperature, always used for 1-temperature model; for multi-temperature models in metals this is the itinerant electron temperature)
 	cu_obj<cuVEC_VC<cuBReal>> Temp;
+
+	//lattice temperature used in many-T models
+	cu_obj<cuVEC_VC<cuBReal>> Temp_l;
+
+	//-----Stochastic cellsize (VECs held in DiffEq)
+
+	//number of cells for stochastic VECs
+	SZ3& n_s;
+
+	//cellsize for stochastic VECs
+	DBL3& h_s;
+
+	//link stochastic cellsize to magnetic cellsize by default (set this to false if you want to control h_s independently)
+	bool& link_stochastic;
 
 	//-----Elastic properties
 
@@ -220,6 +235,7 @@ public:
 	cuBReal GetAverageElectricalConductivity(cuRect rectangle);
 
 	cuBReal GetAverageTemperature(cuRect rectangle);
+	cuBReal GetAverageLatticeTemperature(cuRect rectangle);
 
 	cuBReal GetStageTime(void);
 	int GetStageStep(void);

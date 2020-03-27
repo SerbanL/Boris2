@@ -6,7 +6,6 @@
 using namespace std;
 
 class Mesh;
-class FMesh;
 
 #ifdef MODULE_SOTFIELD
 
@@ -20,7 +19,7 @@ class SOTField :
 private:
 
 	//pointer to mesh object holding this effective field module
-	FMesh * pMesh;
+	Mesh * pMesh;
 
 public:
 

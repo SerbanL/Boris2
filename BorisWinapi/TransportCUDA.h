@@ -12,6 +12,8 @@
 #include "TransportCUDA_Poisson_Spin_V.h"
 #include "TransportCUDA_Poisson_Spin_S.h"
 
+#include "Transport_Defs.h"
+
 class MeshCUDA;
 class Mesh;
 class SuperMeshCUDA;
@@ -30,6 +32,9 @@ class TransportCUDA :
 	friend TransportCUDA_Spin_S_Funcs;
 
 private:
+
+	//spin transport solver type (see Transport_Defs.h)
+	int stsolve;
 
 	//pointer to CUDA version of mesh object holding the effective field module holding this CUDA module
 	MeshCUDA* pMeshCUDA;
@@ -66,6 +71,11 @@ private:
 	cu_obj<cuVEC_VC<cuReal3>> displayVEC_VC;
 
 private:
+
+	//-------------------Auxiliary
+
+	//set the stsolve indicator depending on current configuration
+	void Set_STSolveType(void);
 
 	//------------------Others
 

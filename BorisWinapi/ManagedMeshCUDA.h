@@ -39,17 +39,33 @@ public:
 	//Exchange stiffness (J/m)
 	MatPCUDA<cuBReal, cuBReal>* pA;
 	MatPCUDA<cuReal2, cuBReal>* pA_AFM;
-	//AFM coupling (J/m^3)
-	MatPCUDA<cuBReal, cuBReal>* pA12;
+	
+	//Homogeneous AFM coupling between sub-lattices A and B, defined as A / a*a (J/m^3), where A is the homogeneous antiferromagnetic exchange stifness (negative), and a is the lattice constant.
+	//e.g. a = 0.3nm, A = -1pJ/m gives Ah as -1e7 J/m^3 to order of magnitude.
+	MatPCUDA<cuReal2, cuBReal>* pAh;
+
+	//Nonhomogeneous AFM coupling between sub-lattices A and B (J/m)
+	MatPCUDA<cuReal2, cuBReal>* pAnh;
 
 	//Dzyaloshinskii-Moriya exchange constant (J/m2)
 	MatPCUDA<cuBReal, cuBReal>* pD;
 	MatPCUDA<cuReal2, cuBReal>* pD_AFM;
 
+	//Coupling between exchange integral and critical temperature (Neel or Curie temperature) for 2-sublattice model : intra-lattice term, 0.5 for ideal antiferromagnet
+	//J = 3 * tau * kB * Tc
+	MatPCUDA<cuReal2, cuBReal>* ptau_ii;
+
+	//Coupling between exchange integral and critical temperature (Neel or Curie temperature) for 2-sublattice model : inter-lattice, or cross-lattice term, 0.5 for ideal antiferromagnet.
+	//J = 3 * tau * kB * Tc
+	MatPCUDA<cuReal2, cuBReal>* ptau_ij;
+
 	//bilinear surface exchange coupling (J/m^2) : J1, bottom and top layer values
 	//biquadratic surface exchange coupling (J/m^2) : J2, bottom and top layer values
 	MatPCUDA<cuBReal, cuBReal>* pJ1;
 	MatPCUDA<cuBReal, cuBReal>* pJ2;
+
+	//surface exchange coupling per magnetisation from a diamagnet (J/Am) - EXPERIMENTAL : Hse = neta * sus * Hext / mu0 * Ms * tF
+	MatPCUDA<cuBReal, cuBReal>* pneta_dia;
 
 	//Magneto-crystalline anisotropy K1 and K2 constants (J/m^3) and easy axes directions. For uniaxial anisotropy only ea1 is needed, for cubic ea1 and ea2 should be orthogonal.
 	MatPCUDA<cuBReal, cuBReal>* pK1;
@@ -57,8 +73,15 @@ public:
 	MatPCUDA<cuReal3, cuReal3>* pmcanis_ea1;
 	MatPCUDA<cuReal3, cuReal3>* pmcanis_ea2;
 
+	//Anisotropy values for 2-sublattice model
+	MatPCUDA<cuReal2, cuBReal>* pK1_AFM;
+	MatPCUDA<cuReal2, cuBReal>* pK2_AFM;
+
 	//longitudinal (parallel) susceptibility relative to mu0*Ms0, i.e. divided by mu0*Ms0, Ms0 is the 0K Ms value - for use with LLB equation. Units As^2/kg
 	MatPCUDA<cuBReal, cuBReal>* psusrel;
+
+	//longitudinal (parallel) susceptibility relative to mu0*Ms0, i.e. divided by mu0*Ms0, Ms0 is the 0K Ms value - for use with LLB equation 2-sublattice model. Units As^2/kg
+	MatPCUDA<cuReal2, cuBReal>* psusrel_AFM;
 
 	//perpendicular (transverse) susceptibility relative to mu0*Ms0, i.e. divided by mu0*Ms0, Ms0 is the 0K Ms value - for use with LLB equation. Units As^2/kg
 	MatPCUDA<cuBReal, cuBReal>* psusprel;
@@ -106,6 +129,12 @@ public:
 	//Curie temperature (K)
 	cuBReal* pT_Curie;
 
+	//The atomic magnetic moment as a multiple of the Bohr magneton - default 1 ub for permalloy.
+	MatPCUDA<cuBReal, cuBReal>* patomic_moment;
+
+	//atomic moments for 2-sublattice model (again multiples of the Bohr magneton)
+	MatPCUDA<cuReal2, cuBReal>* patomic_moment_AFM;
+
 	//thermal conductivity (W/mK) - default for permalloy
 	MatPCUDA<cuBReal, cuBReal>* pthermCond;
 
@@ -123,6 +152,12 @@ public:
 
 	//specific heat capacity (J/kgK) - default for permalloy
 	MatPCUDA<cuBReal, cuBReal>* pshc;
+
+	//electron specific heat capacity at room temperature used in many-temperature models (J/kgK); Note, if used you should assign a temperature dependence to it, e.g. linear with temperature for the free electron approximation; none assigned by default.
+	MatPCUDA<cuBReal, cuBReal>* pshc_e;
+
+	//electron-lattice coupling constant (W/m^3K) used in two-temperature model.
+	MatPCUDA<cuBReal, cuBReal>* pG_e;
 
 	//set temperature spatial variation coefficient (unitless) - used with temperature settings in a simulation schedule only, not with console command directly
 	MatPCUDA<cuBReal, cuBReal>* pcT;
@@ -156,8 +191,11 @@ public:
 
 	//-----Thermal conduction properties
 
-	//temperature calculated by Heat module
+	//temperature calculated by Heat module (primary temperature, always used for 1-temperature model; for multi-temperature models in metals this is the itinerant electron temperature)
 	cuVEC_VC<cuBReal>* pTemp;
+
+	//lattice temperature used in many-T models
+	cuVEC_VC<cuBReal>* pTemp_l;
 
 	//mechanical displacement vectors - on n_m, h_m mesh
 	cuVEC_VC<cuReal3>* pu_disp;

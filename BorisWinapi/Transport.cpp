@@ -15,6 +15,8 @@ Transport::Transport(Mesh *pMesh_) :
 
 	pSMesh = pMesh->pSMesh;
 
+	Set_STSolveType();
+
 	error_on_create = UpdateConfiguration(UPDATECONFIG_FORCEUPDATE);
 
 	//-------------------------- Is CUDA currently enabled?
@@ -36,6 +38,46 @@ Transport::~Transport()
 	pMesh->E.clear();
 
 	pMesh->S.clear();
+}
+
+//set the stsolve indicator depending on current configuration
+void Transport::Set_STSolveType(void)
+{
+	if (!pSMesh->SolveSpinCurrent()) {
+
+		//no spin transport required
+		stsolve = STSOLVE_NONE;
+	}
+	else {
+
+		switch (pMesh->GetMeshType()) {
+
+		case MESH_FERROMAGNETIC:
+		case MESH_DIPOLE:
+			stsolve = STSOLVE_FERROMAGNETIC;
+			break;
+
+		case MESH_ANTIFERROMAGNETIC:
+			//to be implemented
+			stsolve = STSOLVE_NONE;
+			break;
+
+		case MESH_METAL:
+		case MESH_DIAMAGNETIC:
+			stsolve = STSOLVE_NORMALMETAL;
+			break;
+
+		case MESH_INSULATOR:
+			//to be implemented - currently insulator meshes do not even allow a Transport module
+			stsolve = STSOLVE_TUNNELING;
+			break;
+		}
+	}
+
+#if COMPILECUDA == 1
+	//copy over to TransportCUDA module - need to use it in .cu files
+	if (pModuleCUDA) reinterpret_cast<TransportCUDA*>(pModuleCUDA)->Set_STSolveType();
+#endif
 }
 
 bool Transport::SetFixedPotentialCells(Rect rectangle, double potential)
@@ -63,7 +105,8 @@ void Transport::ClearFixedPotentialCells(void)
 //check if dM_dt Calculation should be enabled
 bool Transport::Need_dM_dt_Calculation(void)
 {
-	if (pMesh->M.linear_size()) {
+	//enabled for ferromagnetic st solver only
+	if (stsolve == STSOLVE_FERROMAGNETIC) {
 
 		//enabled for charge pumping (for spin pumping we can just read it cell by cell, don't need vector calculus in this case).
 		if (IsNZ((double)pMesh->cpump_eff.get0())) return true;
@@ -76,14 +119,17 @@ bool Transport::Need_dM_dt_Calculation(void)
 bool Transport::Need_delsq_V_fixed_Precalculation(void)
 {
 	//precalculation only needed in magnetic meshes if CPP-GMR or charge pumping are enabled
-	return (pMesh->M.linear_size() && (IsNZ(pMesh->betaD.get0()) || IsNZ(pMesh->cpump_eff.get0())));
+	return (stsolve == STSOLVE_FERROMAGNETIC && (IsNZ(pMesh->betaD.get0()) || IsNZ(pMesh->cpump_eff.get0())));
 }
 
 //check if the delsq_S_fixed VEC is needed
 bool Transport::Need_delsq_S_fixed_Precalculation(void)
 {
-	//precalculation only needed in magnetic meshes
-	return (pMesh->M.linear_size() || (!pMesh->M.linear_size() && IsNZ(pMesh->SHA.get0())));
+	//precalculation only needed in magnetic meshes, or in normal metal meshes with SHE enabled
+	return (
+		stsolve == STSOLVE_FERROMAGNETIC || 
+		(stsolve == STSOLVE_NORMALMETAL && IsNZ(pMesh->SHA.get0()))
+		);
 }
 
 //-------------------Abstract base class method implementations
@@ -138,6 +184,8 @@ BError Transport::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 
 	bool success = true;
 
+	Set_STSolveType();
+
 	if (ucfg::check_cfgflags(cfgMessage, UPDATECONFIG_MESHSHAPECHANGE, UPDATECONFIG_MESHCHANGE)) {
 
 		//make sure the cellsize divides the mesh rectangle
@@ -152,7 +200,7 @@ BError Transport::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 		//electrical conductivity
 		if (pMesh->M.linear_size()) {
 
-			//for ferromagnetic meshes set empty cells using information in M (empty cells have zero electrical conductivity) only on initialization. If already initialized then shape already set.
+			//for magnetic meshes set empty cells using information in M (empty cells have zero electrical conductivity) only on initialization. If already initialized then shape already set.
 			if (pMesh->elC.linear_size() && cfgMessage != UPDATECONFIG_MESHSHAPECHANGE) {
 
 				success = pMesh->elC.resize(pMesh->h_e, pMesh->meshRect);
@@ -200,7 +248,7 @@ BError Transport::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 	if (ucfg::check_cfgflags(cfgMessage, UPDATECONFIG_MESHSHAPECHANGE, UPDATECONFIG_MESHCHANGE, UPDATECONFIG_ODE_SOLVER)) {
 
 		//spin accumulation if needed - set empty cells using information in elC (empty cells have zero electrical conductivity)
-		if (success && pSMesh->SolveSpinCurrent()) {
+		if (success && stsolve != STSOLVE_NONE) {
 
 			if (pMesh->S.linear_size() && cfgMessage != UPDATECONFIG_MESHSHAPECHANGE) {
 
@@ -273,7 +321,7 @@ double Transport::UpdateField(void)
 //VERIFIED - CORRECT
 void Transport::CalculateElectricField(void)
 {
-	if (!pSMesh->SolveSpinCurrent()) {
+	if (stsolve == STSOLVE_NONE || stsolve == STSOLVE_FERROMAGNETIC) {
 
 		//calculate electric field using E = - grad V
 #pragma omp parallel for
@@ -289,6 +337,8 @@ void Transport::CalculateElectricField(void)
 	}
 	else {
 
+		bool ishe_enabled = IsNZ(pMesh->iSHA.get0()) && (stsolve == STSOLVE_NORMALMETAL);
+
 		//calculate electric field using E = - grad V, but using non-homogeneous Neumann boundary conditions
 #pragma omp parallel for
 		for (int idx = 0; idx < pMesh->E.linear_size(); idx++) {
@@ -296,12 +346,7 @@ void Transport::CalculateElectricField(void)
 			//only calculate current on non-empty cells - empty cells have already been assigned 0 at UpdateConfiguration
 			if (pMesh->V.is_not_empty(idx)) {
 
-				if (IsZ(pMesh->iSHA.get0()) || pMesh->M.linear_size()) {
-
-					//use homogeneous Neumann boundary conditions - no ISHE
-					pMesh->E[idx] = -1.0 * pMesh->V.grad_diri(idx);
-				}
-				else {
+				if (ishe_enabled) {
 
 					//ISHE enabled - use nonhomogeneous Neumann boundary conditions
 					double iSHA = pMesh->iSHA;
@@ -309,6 +354,11 @@ void Transport::CalculateElectricField(void)
 					pMesh->update_parameters_ecoarse(idx, pMesh->iSHA, iSHA, pMesh->De, De);
 
 					pMesh->E[idx] = -1.0 * pMesh->V.grad_diri_nneu(idx, (iSHA * De / (MUB_E * pMesh->elC[idx])) * pMesh->S.curl_neu(idx));
+				}
+				else {
+
+					//use homogeneous Neumann boundary conditions - no ISHE
+					pMesh->E[idx] = -1.0 * pMesh->V.grad_diri(idx);
 				}
 			}
 			else pMesh->E[idx] = DBL3(0);
@@ -417,7 +467,8 @@ void Transport::CalculateElectricalConductivity(bool force_recalculate)
 	}
 #endif
 
-	if (pMesh->M.linear_size() && (IsNZ((double)pMesh->amrPercentage))) {
+	//Include AMR?
+	if (stsolve == STSOLVE_FERROMAGNETIC && (IsNZ((double)pMesh->amrPercentage))) {
 
 		//with amr
 		#pragma omp parallel for

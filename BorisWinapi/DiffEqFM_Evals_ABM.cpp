@@ -1,10 +1,12 @@
 #include "stdafx.h"
 #include "DiffEqFM.h"
+
+#ifdef MESH_COMPILATION_FERROMAGNETIC
+#ifdef ODE_EVAL_ABM
+
 #include "Mesh_Ferromagnetic.h"
 #include "SuperMesh.h"
 #include "MeshParamsControl.h"
-
-#ifdef ODE_EVAL_ABM
 
 //--------------------------------------------- ADAMS-BASHFORTH-MOULTON
 
@@ -241,4 +243,5 @@ void DifferentialEquationFM::RunABM_TEuler1(void)
 	}
 }
 
+#endif
 #endif

@@ -46,6 +46,7 @@ BError StrayFieldCUDA::Initialize(void)
 		if (!strayField()->resize(pSMesh->h_fm, pSMesh->sMeshRect_fm)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
 		strayField_size = strayField()->size_cpu().dim();
 
+		//need to collect cpu versions to initialize the mesh transfer object, before transferring it to the gpu
 		vector< VEC<DBL3>* > meshes_out_cpu;
 
 		//array of pointers to oputput meshes (Heff) to transfer to
@@ -59,7 +60,15 @@ BError StrayFieldCUDA::Initialize(void)
 
 				meshes_out.push_back((cuVEC<cuReal3>*&)(*pSMesh)[idx]->pMeshCUDA->Heff.get_managed_object());
 				
-				meshes_out_cpu.push_back(&(reinterpret_cast<FMesh*>((*pSMesh)[idx])->Heff));
+				meshes_out_cpu.push_back(&((*pSMesh)[idx]->Heff));
+
+				//for antiferromagnetic meshes we also need to add the stray field to the second sub-lattice
+				if ((*pSMesh)[idx]->GetMeshType() == MESH_ANTIFERROMAGNETIC) {
+
+					meshes_out.push_back((cuVEC<cuReal3>*&)(*pSMesh)[idx]->pMeshCUDA->Heff2.get_managed_object());
+
+					meshes_out_cpu.push_back(&((*pSMesh)[idx]->Heff2));
+				}
 			}
 
 			//collect cuda M pointers in Mdipoles cu_arr

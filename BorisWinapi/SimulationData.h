@@ -20,7 +20,8 @@ enum DATA_
 	DATA_E_TOTAL,
 	DATA_DMDT, DATA_SKYPOS,
 	DATA_AVM2,
-	DATA_E_MELASTIC
+	DATA_E_MELASTIC,
+	DATA_TEMP_L
 };
 
 //Specifier for available output data : this is stored in a vector with lut indexing, where DATA_ values are used for the major id - the DatumSpecifier corresponds to it

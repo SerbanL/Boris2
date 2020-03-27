@@ -1,8 +1,10 @@
 #include "DiffEqAFMCUDA.h"
-#include "MeshParamsControlCUDA.h"
 
 #if COMPILECUDA == 1
 #ifdef ODE_EVAL_SD
+#ifdef MESH_COMPILATION_ANTIFERROMAGNETIC
+
+#include "MeshParamsControlCUDA.h"
 
 //defines evaluation methods kernel launchers
 
@@ -505,5 +507,6 @@ void DifferentialEquationAFMCUDA::RunSD_Advance(bool calculate_mxh, bool calcula
 	}
 }
 
+#endif
 #endif
 #endif

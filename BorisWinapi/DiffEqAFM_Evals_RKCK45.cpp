@@ -1,10 +1,12 @@
 #include "stdafx.h"
 #include "DiffEqAFM.h"
+
+#ifdef MESH_COMPILATION_ANTIFERROMAGNETIC
+#ifdef ODE_EVAL_RKCK
+
 #include "Mesh_AntiFerromagnetic.h"
 #include "SuperMesh.h"
 #include "MeshParamsControl.h"
-
-#ifdef ODE_EVAL_RKCK
 
 //--------------------------------------------- RUNGE KUTTA CASH-KARP (4th order solution, 5th order error)
 
@@ -256,4 +258,5 @@ void DifferentialEquationAFM::RunRKCK45_Step5(void)
 	lte_reduction.maximum();
 }
 
+#endif
 #endif

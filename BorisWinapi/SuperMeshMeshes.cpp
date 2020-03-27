@@ -35,6 +35,10 @@ BError SuperMesh::AddMesh(string meshName, MESH_ meshType, Rect meshRect)
 		pMesh.push_back(new AFMesh(meshRect, cellsize, this), meshName);
 		break;
 
+	case MESH_DIAMAGNETIC:
+		pMesh.push_back(new DiaMesh(meshRect, cellsize, this), meshName);
+		break;
+
 	case MESH_DIPOLE:
 		pMesh.push_back(new DipoleMesh(meshRect, cellsize, this), meshName);
 		break;
@@ -156,7 +160,7 @@ BError SuperMesh::SetMeshRect(string meshName, Rect meshRect, std::function<void
 			else return error;
 		}
 	}
-	
+
 	return error;
 }
 
@@ -818,6 +822,44 @@ BError SuperMesh::Set_ExchangeCoupledMeshes(bool status, string meshName)
 	if (!contains(meshName) || !pMesh[meshName]->MComputation_Enabled()) return error(BERROR_INCORRECTNAME);
 
 	pMesh[meshName]->SetMeshExchangeCoupling(status);
+
+	return error;
+}
+
+//Set/Get multilayered demag exclusion : will need to call UpdateConfiguration when the flag is changed, so the correct SDemag_Demag modules and related settings are set from the SDemag module.
+BError SuperMesh::Set_Demag_Exclusion(bool exclude_from_multiconvdemag, string meshName)
+{
+	BError error(__FUNCTION__);
+
+	if (!contains(meshName) || !pMesh[meshName]->MComputation_Enabled()) return error(BERROR_INCORRECTNAME);
+
+	pMesh[meshName]->Set_Demag_Exclusion(exclude_from_multiconvdemag);
+
+	error = UpdateConfiguration(UPDATECONFIG_DEMAG_CONVCHANGE);
+
+	return error;
+}
+
+//set link_stochastic flag in named mesh, or all meshes if supermesh handle given
+BError SuperMesh::SetLinkStochastic(bool link_stochastic, string meshName)
+{
+	BError error(__FUNCTION__);
+
+	if (!contains(meshName) && meshName != superMeshHandle) return error(BERROR_INCORRECTNAME);
+
+	if (meshName != superMeshHandle) {
+
+		if (!pMesh[meshName]->MComputation_Enabled()) return error(BERROR_INCORRECTNAME);
+
+		error = pMesh[meshName]->SetLinkStochastic(link_stochastic);
+	}
+	else {
+
+		for (int idx = 0; idx < pMesh.size(); idx++) {
+
+			if (pMesh[idx]->MComputation_Enabled()) error = pMesh[idx]->SetLinkStochastic(link_stochastic);
+		}
+	}
 
 	return error;
 }

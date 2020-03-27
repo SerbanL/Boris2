@@ -16,7 +16,7 @@ void STransport::solve_spin_transport_sor(void)
 	//Prime the spin solver for the charge part
 	for (int idx = 0; idx < (int)pTransport.size(); idx++) {
 
-		pTransport[idx]->PrimeSpinSolver_Charge();
+		if (pTransport[idx]->stsolve != STSOLVE_NONE) pTransport[idx]->PrimeSpinSolver_Charge();
 	}
 	
 	//1. Solve V everywhere for current S until convergence criteria hit
@@ -31,7 +31,8 @@ void STransport::solve_spin_transport_sor(void)
 
 			DBL2 error;
 
-			error = pTransport[idx]->IterateSpinSolver_Charge_SOR(SOR_damping.i);
+			if (pTransport[idx]->stsolve != STSOLVE_NONE) error = pTransport[idx]->IterateSpinSolver_Charge_SOR(SOR_damping.i);
+			else error = pTransport[idx]->IterateChargeSolver_SOR(SOR_damping.i);
 
 			if (error.first > max_error.first) max_error.first = error.first;
 			if (error.second > max_error.second) max_error.second = error.second;
@@ -62,7 +63,7 @@ void STransport::solve_spin_transport_sor(void)
 	//Prime the spin solver for the spin part
 	for (int idx = 0; idx < (int)pTransport.size(); idx++) {
 
-		pTransport[idx]->PrimeSpinSolver_Spin();
+		if (pTransport[idx]->stsolve != STSOLVE_NONE) pTransport[idx]->PrimeSpinSolver_Spin();
 	}
 
 	do {
@@ -75,7 +76,7 @@ void STransport::solve_spin_transport_sor(void)
 
 			DBL2 error;
 
-			error = pTransport[idx]->IterateSpinSolver_Spin_SOR(SOR_damping.j);
+			if (pTransport[idx]->stsolve != STSOLVE_NONE) error = pTransport[idx]->IterateSpinSolver_Spin_SOR(SOR_damping.j);
 
 			if (error.first > max_error.first) max_error.first = error.first;
 			if (error.second > max_error.second) max_error.second = error.second;
@@ -114,8 +115,8 @@ void STransport::set_cmbnd_spin_transport_V(void)
 			//use continuity of Jc and V across interface unless the interface is N-F type (normal metal - ferromagnetic) and the spin mixing conductance is not zero (i.e. continuous method disabled).
 
 			//Is it an N-F contact?
-			if ((pTransport[idx_pri]->pMesh->MComputation_Enabled() && !pTransport[idx_sec]->pMesh->Magnetisation_Enabled()) ||
-				(pTransport[idx_sec]->pMesh->MComputation_Enabled() && !pTransport[idx_pri]->pMesh->Magnetisation_Enabled())) {
+			if ((pTransport[idx_pri]->stsolve == STSOLVE_NORMALMETAL && pTransport[idx_sec]->stsolve == STSOLVE_FERROMAGNETIC) ||
+				(pTransport[idx_sec]->stsolve == STSOLVE_NORMALMETAL && pTransport[idx_pri]->stsolve == STSOLVE_FERROMAGNETIC)) {
 
 				//Yes we have an N-F contact. Is G interface enabled for this contact ? (remember top mesh sets G interface values)
 
@@ -162,11 +163,13 @@ void STransport::set_cmbnd_spin_transport_S(void)
 			int idx_sec = CMBNDcontacts[idx1][idx2].mesh_idx.i;
 			int idx_pri = CMBNDcontacts[idx1][idx2].mesh_idx.j;
 
+			if (pTransport[idx_pri]->stsolve == STSOLVE_NONE || pTransport[idx_sec]->stsolve == STSOLVE_NONE) continue;
+
 			//use continuity of Js and S across interface unless the interface is N-F type (normal metal - ferromagnetic) and the spin mixing conductance is not zero (i.e. continuous method disabled).
 
 			//Is it an N-F contact?
-			if ((pTransport[idx_pri]->pMesh->MComputation_Enabled() && !pTransport[idx_sec]->pMesh->Magnetisation_Enabled()) ||
-				(pTransport[idx_sec]->pMesh->MComputation_Enabled() && !pTransport[idx_pri]->pMesh->Magnetisation_Enabled())) {
+			if ((pTransport[idx_pri]->stsolve == STSOLVE_NORMALMETAL && pTransport[idx_sec]->stsolve == STSOLVE_FERROMAGNETIC) ||
+				(pTransport[idx_sec]->stsolve == STSOLVE_NORMALMETAL && pTransport[idx_pri]->stsolve == STSOLVE_FERROMAGNETIC)) {
 
 				//Yes we have an N-F contact. Is G interface enabled for this contact ? (remember top mesh sets G interface values)
 
@@ -176,7 +179,7 @@ void STransport::set_cmbnd_spin_transport_S(void)
 
 					//G interface method
 
-					if (pTransport[idx_pri]->pMesh->MComputation_Enabled()) {
+					if (pTransport[idx_pri]->stsolve == STSOLVE_FERROMAGNETIC) {
 
 						//interface conductance method with F being the primary mesh
 

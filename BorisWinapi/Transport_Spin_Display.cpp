@@ -57,7 +57,7 @@ VEC<DBL3>& Transport::GetSpinCurrent(int component)
 
 		if (pMesh->S.is_not_empty(idx)) {
 
-			if (pMesh->M.linear_size()) {
+			if (stsolve == STSOLVE_FERROMAGNETIC) {
 
 				//magnetic mesh terms
 
@@ -103,7 +103,7 @@ VEC<DBL3>& Transport::GetSpinCurrent(int component)
 					}
 				}
 			}
-			else {
+			else if (stsolve != STSOLVE_NONE) {
 
 				//non-magnetic mesh terms
 
@@ -174,6 +174,8 @@ VEC<DBL3>& Transport::GetSpinTorque(void)
 	}
 #endif
 
+	if (stsolve != STSOLVE_FERROMAGNETIC) return displayVEC;
+
 #pragma omp parallel for
 	for (int idx = 0; idx < pMesh->M.linear_size(); idx++) {
 
@@ -219,9 +221,9 @@ void Transport::CalculateDisplaySAInterfaceTorque(Transport* ptrans_sec, CMBNDIn
 	//the top contacting mesh sets G values
 	bool GInterface_Enabled = ((contact.IsPrimaryTop() && pMesh->GInterface_Enabled()) || (!contact.IsPrimaryTop() && ptrans_sec->pMesh->GInterface_Enabled()));
 
-	if (pMesh->MComputation_Enabled() && !ptrans_sec->pMesh->Magnetisation_Enabled() && GInterface_Enabled) {
+	if (GInterface_Enabled && stsolve == STSOLVE_FERROMAGNETIC && ptrans_sec->stsolve == STSOLVE_NORMALMETAL) {
 
-		//interface conductance method with F being the primary mesh : calculate and set spin torque
+		//interface conductance method with F being the primary mesh (N-F contact): calculate and set spin torque
 
 		//convert the cells box from S mesh to M mesh
 		INT3 mbox_start = pMesh->M.cellidx_from_position(pMesh->S.cellidx_to_position(contact.cells_box.s) + pMesh->meshRect.s);

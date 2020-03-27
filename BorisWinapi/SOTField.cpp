@@ -3,7 +3,7 @@
 
 #ifdef MODULE_SOTFIELD
 
-#include "Mesh_Ferromagnetic.h"
+#include "Mesh.h"
 #include "MeshParamsControl.h"
 
 #if COMPILECUDA == 1
@@ -14,7 +14,7 @@ SOTField::SOTField(Mesh *pMesh_) :
 	Modules(),
 	ProgramStateNames(this, {}, {})
 {
-	pMesh = dynamic_cast<FMesh*>(pMesh_);
+	pMesh = pMesh_;
 
 	error_on_create = UpdateConfiguration(UPDATECONFIG_FORCEUPDATE);
 
@@ -70,7 +70,7 @@ BError SOTField::MakeCUDAModule(void)
 
 		//Note : it is posible pMeshCUDA has not been allocated yet, but this module has been created whilst cuda is switched on. This will happen when a new mesh is being made which adds this module by default.
 		//In this case, after the mesh has been fully made, it will call SwitchCUDAState on the mesh, which in turn will call this SwitchCUDAState method; then pMeshCUDA will not be nullptr and we can make the cuda module version
-		pModuleCUDA = new SOTFieldCUDA(dynamic_cast<FMeshCUDA*>(pMesh->pMeshCUDA), this);
+		pModuleCUDA = new SOTFieldCUDA(pMesh->pMeshCUDA, this);
 		error = pModuleCUDA->Error_On_Create();
 	}
 
@@ -83,23 +83,62 @@ double SOTField::UpdateField(void)
 {
 	if (!pMesh->E.linear_size()) return 0.0;
 
+	///////////////////////////////////////////////////////////////////////////////////////////////
+	////////////////////////////////////// FERROMAGNETIC MESH /////////////////////////////////////
+	///////////////////////////////////////////////////////////////////////////////////////////////
+
+	if (pMesh->GetMeshType() == MESH_FERROMAGNETIC) {
+
 #pragma omp parallel for
-	for (int idx = 0; idx < pMesh->n.dim(); idx++) {
+		for (int idx = 0; idx < pMesh->n.dim(); idx++) {
 
-		double grel = pMesh->grel;
-		double Ms = pMesh->Ms;
-		double SHA = pMesh->SHA;
-		double flSOT = pMesh->flSOT;
-		pMesh->update_parameters_mcoarse(idx, pMesh->grel, grel, pMesh->Ms, Ms, pMesh->SHA, SHA, pMesh->flSOT, flSOT);
+			double grel = pMesh->grel;
+			double Ms = pMesh->Ms;
+			double SHA = pMesh->SHA;
+			double flSOT = pMesh->flSOT;
+			pMesh->update_parameters_mcoarse(idx, pMesh->grel, grel, pMesh->Ms, Ms, pMesh->SHA, SHA, pMesh->flSOT, flSOT);
 
-		if (IsNZ(grel)) {
+			if (IsNZ(grel)) {
 
-			double a_const = -(SHA * MUB_E / (GAMMA * grel)) / (Ms * Ms * pMesh->GetMeshDimensions().z);
+				double a_const = -(SHA * MUB_E / (GAMMA * grel)) / (Ms * Ms * pMesh->GetMeshDimensions().z);
 
-			int idx_E = pMesh->E.position_to_cellidx(pMesh->M.cellidx_to_position(idx));
-			DBL3 p_vec = (DBL3(0, 0, 1) ^ pMesh->E[idx_E]) * pMesh->elC[idx_E];
+				int idx_E = pMesh->E.position_to_cellidx(pMesh->M.cellidx_to_position(idx));
+				DBL3 p_vec = (DBL3(0, 0, 1) ^ pMesh->E[idx_E]) * pMesh->elC[idx_E];
 
-			pMesh->Heff[idx] += a_const * ((pMesh->M[idx] ^ p_vec) + flSOT * Ms * p_vec);
+				pMesh->Heff[idx] += a_const * ((pMesh->M[idx] ^ p_vec) + flSOT * Ms * p_vec);
+			}
+		}
+	}
+
+	///////////////////////////////////////////////////////////////////////////////////////////////
+	//////////////////////////////////// ANTIFERROMAGNETIC MESH ///////////////////////////////////
+	///////////////////////////////////////////////////////////////////////////////////////////////
+
+	else if (pMesh->GetMeshType() == MESH_ANTIFERROMAGNETIC) {
+
+#pragma omp parallel for
+		for (int idx = 0; idx < pMesh->n.dim(); idx++) {
+
+			DBL2 grel_AFM = pMesh->grel_AFM;
+			DBL2 Ms_AFM = pMesh->Ms_AFM;
+			double SHA = pMesh->SHA;
+			double flSOT = pMesh->flSOT;
+			pMesh->update_parameters_mcoarse(idx, pMesh->grel_AFM, grel_AFM, pMesh->Ms_AFM, Ms_AFM, pMesh->SHA, SHA, pMesh->flSOT, flSOT);
+
+			if (IsNZ(grel_AFM.i + grel_AFM.j)) {
+
+				double a_const_A = -(SHA * MUB_E / (GAMMA * grel_AFM.i)) / (Ms_AFM.i * Ms_AFM.i * pMesh->GetMeshDimensions().z);
+				double a_const_B = -(SHA * MUB_E / (GAMMA * grel_AFM.j)) / (Ms_AFM.j * Ms_AFM.j * pMesh->GetMeshDimensions().z);
+
+				int idx_E = pMesh->E.position_to_cellidx(pMesh->M.cellidx_to_position(idx));
+				DBL3 p_vec = (DBL3(0, 0, 1) ^ pMesh->E[idx_E]) * pMesh->elC[idx_E];
+
+				DBL3 SOTField_A = a_const_A * ((pMesh->M[idx] ^ p_vec) + flSOT * Ms_AFM.i * p_vec);
+				DBL3 SOTField_B = a_const_B * ((pMesh->M2[idx] ^ p_vec) + flSOT * Ms_AFM.j * p_vec);
+
+				pMesh->Heff[idx] += SOTField_A;
+				pMesh->Heff2[idx] += SOTField_B;
+			}
 		}
 	}
 

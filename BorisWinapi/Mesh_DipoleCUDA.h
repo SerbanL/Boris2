@@ -1,13 +1,14 @@
 #pragma once
 
-#include "Boris_Enums_Defs.h"
+#include "CompileFlags.h"
 #if COMPILECUDA == 1
 
-#include "BorisCUDALib.h"
-
 #include "ErrorHandler.h"
-
 #include "MeshCUDA.h"
+
+#ifdef MESH_COMPILATION_DIPOLE
+
+#include "BorisCUDALib.h"
 
 class DipoleMesh;
 
@@ -55,5 +56,45 @@ public:
 	bool Check_recalculateStrayField(void);
 };
 
+#else
+
+class DipoleMeshCUDA :
+	public MeshCUDA
+{
+
+private:
+
+public:
+
+
+public:
+
+	//make this object by copying data from the Mesh holding this object
+	DipoleMeshCUDA(Mesh* pMesh) :
+		MeshCUDA(pMesh)
+	{}
+
+	~DipoleMeshCUDA() {}
+
+	//----------------------------------- OTHER IMPORTANT CONTROL METHODS
+
+	//call when the mesh dimensions have changed - sets every quantity to the right dimensions
+	BError UpdateConfiguration(UPDATECONFIG_ cfgMessage) { return BError(); }
+	void UpdateConfiguration_Values(UPDATECONFIG_ cfgMessage) {}
+
+	//----------------------------------- VARIOUS SET METHODS
+
+	//set magnitude for Mdipole
+	void Reset_Mdipole(void) {}
+
+	void Reset_recalculateStrayField(void) {}
+
+	//----------------------------------- VARIOUS GET METHODS
+
+	//check if stray field needs to be recalculated depending on current settings, and prepare Mdipole for stray field recalculation (set to required value)
+	bool Check_recalculateStrayField(void) { return false; }
+};
+
+#endif
 #endif
 

@@ -1,5 +1,8 @@
 #include "stdafx.h"
 #include "DiffEqFM.h"
+
+#ifdef MESH_COMPILATION_FERROMAGNETIC
+
 #include "Mesh_Ferromagnetic.h"
 
 DifferentialEquationFM::DifferentialEquationFM(FMesh *pMesh):
@@ -97,14 +100,14 @@ BError DifferentialEquationFM::AllocateMemory(void)
 	case ODE_SLLG:
 	case ODE_SLLGSTT:
 	case ODE_SLLGSA:
-		if (!H_Thermal.resize(pMesh->n)) return error(BERROR_OUTOFMEMORY_CRIT);
+		if (!H_Thermal.resize(pMesh->h_s, pMesh->meshRect)) return error(BERROR_OUTOFMEMORY_CRIT);
 		break;
 
 	case ODE_SLLB:
 	case ODE_SLLBSTT:
 	case ODE_SLLBSA:
-		if (!H_Thermal.resize(pMesh->n)) return error(BERROR_OUTOFMEMORY_CRIT);
-		if (!Torque_Thermal.resize(pMesh->n)) return error(BERROR_OUTOFMEMORY_CRIT);
+		if (!H_Thermal.resize(pMesh->h_s, pMesh->meshRect)) return error(BERROR_OUTOFMEMORY_CRIT);
+		if (!Torque_Thermal.resize(pMesh->h_s, pMesh->meshRect)) return error(BERROR_OUTOFMEMORY_CRIT);
 		break;
 	}
 
@@ -199,10 +202,24 @@ BError DifferentialEquationFM::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 {
 	BError error(CLASS_STR(DifferentialEquationFM));
 
-	if (ucfg::check_cfgflags(cfgMessage, UPDATECONFIG_MESHCHANGE, UPDATECONFIG_ODE_SOLVER)) {
+	//if (ucfg::check_cfgflags(cfgMessage, UPDATECONFIG_MESHCHANGE, UPDATECONFIG_ODE_SOLVER)) {
+
+		if (pMesh->link_stochastic) {
+
+			pMesh->h_s = pMesh->h;
+			pMesh->n_s = pMesh->n;
+		}
+		else {
+
+			pMesh->n_s = round(pMesh->meshRect / pMesh->h_s);
+			if (pMesh->n_s.x == 0) pMesh->n_s.x = 1;
+			if (pMesh->n_s.y == 0) pMesh->n_s.y = 1;
+			if (pMesh->n_s.z == 0) pMesh->n_s.z = 1;
+			pMesh->h_s = pMesh->meshRect / pMesh->n_s;
+		}
 
 		error = AllocateMemory();
-	}
+	//}
 
 	if (ucfg::check_cfgflags(cfgMessage, UPDATECONFIG_ODE_MOVEMESH)) {
 
@@ -254,11 +271,6 @@ BError DifferentialEquationFM::SwitchCUDAState(bool cudaState)
 
 			pmeshODECUDA = new DifferentialEquationFMCUDA(this);
 			error = pmeshODECUDA->Error_On_Create();
-			//setup the managed cuDiffEq object with pointers to all required data for differential equations calculations
-			if (!error) error = (reinterpret_cast<DifferentialEquationFMCUDA*>(pmeshODECUDA)->Get_ManagedDiffEqCUDA())()->set_pointers(reinterpret_cast<DifferentialEquationFMCUDA*>(pmeshODECUDA));
-
-			//based on setODE value, setup device method pointers in cuDiffEq held in each DifferentialEquationCUDA object
-			if (!error) pmeshODECUDA->SetODEMethodPointers();
 		}
 	}
 	else {
@@ -280,3 +292,5 @@ DBL3 DifferentialEquationFM::dMdt(int idx)
 {
 	return (pMesh->M[idx] - sM1[idx]) / dT_last;
 }
+
+#endif

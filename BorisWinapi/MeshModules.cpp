@@ -30,7 +30,8 @@ BError Mesh::AddModule(MOD_ moduleID, bool force_add)
 
 	//individual mesh demag module used by SDemag super-mesh module - not available in the console, but added when SDemag module is enabled
 	case MOD_SDEMAG_DEMAG:
-		pMod.push_back(new SDemag_Demag(this), MOD_SDEMAG_DEMAG);
+		//there's the option of excluding this mesh from multilayered demag convolution
+		if (!exclude_from_multiconvdemag) pMod.push_back(new SDemag_Demag(this), MOD_SDEMAG_DEMAG);
 		break;
 
 	case MOD_EXCHANGE6NGBR:

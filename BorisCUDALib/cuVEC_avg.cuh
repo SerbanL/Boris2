@@ -92,7 +92,8 @@ __global__ void average_nonempty_kernel(cuSZ3& n, VType*& quantity, VType& avera
 {
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
 
-	reduction_avg(idx, n.dim(), quantity, average_value, points_count, cuIsNZ(cu_GetMagnitude(quantity[idx])));
+	//need the idx < n.dim() check before quantity[idx] to avoid bad memory access
+	reduction_avg(idx, n.dim(), quantity, average_value, points_count, idx < n.dim() && cuIsNZ(cu_GetMagnitude(quantity[idx])));
 }
 
 template <typename VType>
@@ -102,7 +103,8 @@ __global__ void average_nonempty_kernel(cuSZ3& n, cuBox box, VType*& quantity, V
 
 	cuINT3 ijk = cuINT3(idx % n.x, (idx / n.x) % n.y, idx / (n.x*n.y));
 
-	reduction_avg(idx, n.dim(), quantity, average_value, points_count, box.Contains(ijk) && cuIsNZ(cu_GetMagnitude(quantity[idx])));
+	//need the idx < n.dim() check before quantity[idx] to avoid bad memory access
+	reduction_avg(idx, n.dim(), quantity, average_value, points_count, idx < n.dim() && box.Contains(ijk) && cuIsNZ(cu_GetMagnitude(quantity[idx])));
 }
 
 template float cuVEC<float>::average_nonempty(size_t arr_size, cuBox box);

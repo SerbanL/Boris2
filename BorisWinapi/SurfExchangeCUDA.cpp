@@ -26,6 +26,8 @@ BError SurfExchangeCUDA::Initialize(void)
 	//clear cu_arrs then rebuild them from information in SurfExchange module
 	pMesh_Bot.clear();
 	pMesh_Top.clear();
+	pMeshDia_Bot.clear();
+	pMeshDia_Top.clear();
 
 	//make sure information in SurfExchange module is up to date
 	error = pSurfExch->Initialize();
@@ -34,12 +36,26 @@ BError SurfExchangeCUDA::Initialize(void)
 
 		for (int idx = 0; idx < pSurfExch->pMesh_Bot.size(); idx++) {
 
-			pMesh_Bot.push_back(pSurfExch->pMesh_Bot[idx]->pMeshCUDA->cuMesh.get_managed_object());
+			if (pSurfExch->pMesh_Bot[idx]->GetMeshType() != MESH_DIAMAGNETIC) {
+
+				pMesh_Bot.push_back(pSurfExch->pMesh_Bot[idx]->pMeshCUDA->cuMesh.get_managed_object());
+			}
+			else {
+
+				pMeshDia_Bot.push_back(pSurfExch->pMesh_Bot[idx]->pMeshCUDA->cuMesh.get_managed_object());
+			}
 		}
 
 		for (int idx = 0; idx < pSurfExch->pMesh_Top.size(); idx++) {
 
-			pMesh_Top.push_back(pSurfExch->pMesh_Top[idx]->pMeshCUDA->cuMesh.get_managed_object());
+			if (pSurfExch->pMesh_Top[idx]->GetMeshType() != MESH_DIAMAGNETIC) {
+
+				pMesh_Top.push_back(pSurfExch->pMesh_Top[idx]->pMeshCUDA->cuMesh.get_managed_object());
+			}
+			else {
+
+				pMeshDia_Top.push_back(pSurfExch->pMesh_Top[idx]->pMeshCUDA->cuMesh.get_managed_object());
+			}
 		}
 
 		//copy number of coupled cells to gpu memory : SurfExchange has been initialized so the count is correct

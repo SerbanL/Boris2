@@ -48,8 +48,10 @@ enum IOI_
 	IOI_MESH_FORTEMPERATURE,
 	IOI_MESH_FORHEATBOUNDARIES,
 	IOI_MESH_FORCURIEANDMOMENT,
+	IOI_MESH_FORTMODEL,
 	IOI_MESH_FORPBC,
-	IOI_MESH_FOREXCHCOUPLING,
+	IOI_MESH_FOREXCHCOUPLING, 
+	IOI_MESH_FORSTOCHASTICITY,
 
 	//Shows ferromagnetic super-mesh rectangle (unit m) : textId is the mesh rectangle for the ferromagnetic super-mesh
 	IOI_FMSMESHRECTANGLE,
@@ -72,6 +74,10 @@ enum IOI_
 	IOI_MESHTCELLSIZE,
 	//Shows mechanical mesh cellsize (units m) : minorId is the unique mesh id number, auxId is enabled/disabled status, textId is the mesh cellsize
 	IOI_MESHMCELLSIZE,
+	//Shows stochastic cellsize (units m) : minorId is the unique mesh id number, auxId is enabled/disabled status, textId is the mesh cellsize
+	IOI_MESHSCELLSIZE,
+	//Shows link stochastic flag : minorId is the unique mesh id number, auxId is the value off (0), on (1), N/A (-1)
+	IOI_LINKSTOCHASTIC,
 
 	//Simulation output data, specifically used for showing values in console : minorId is the DATA_ id, textId is the data handle
 	IOI_SHOWDATA,
@@ -208,6 +214,15 @@ enum IOI_
 
 	//Shows atomic moment multiple of Bohr magneton. minorId is the unique mesh id number, auxId is available/not available status (must be ferromagnetic mesh), textId is the value
 	IOI_ATOMICMOMENT,
+
+	//Shows atomic moment multiple of Bohr magneton for AF meshes. minorId is the unique mesh id number, auxId is available/not available status (must be antiferromagnetic mesh), textId is the value
+	IOI_ATOMICMOMENT_AFM,
+
+	//Shows Tc tau couplings. minorId is the unique mesh id number, auxId is available/not available status (must be antiferromagnetic mesh), textId is the value
+	IOI_TAU,
+
+	//Shows temperature model type for mesh. minorId is the unique mesh id number, auxId is the model identifier (entry from TMTYPE_ enum)
+	IOI_TMODEL,
 
 	//Shows cuda enabled/disabled or n/a state. auxId is enabled (1)/disabled(0)/not available(-1) status.
 	IOI_CUDASTATE,

@@ -51,6 +51,20 @@ private:
 	//list of all mesh parameters storing the units, handles and parameter type : used for console info display
 	vector_key_lut<MeshParamDescriptor> meshParams;
 
+protected:
+
+	//Special functions to be set in material parameters text equations when needed
+
+	//resolution of 10000 means e.g. for Tc = 1000 the Curie-Weiss function will be available with a resolution of 0.1 K
+	shared_ptr<Funcs_Special> pCurieWeiss = nullptr;
+	shared_ptr<Funcs_Special> pLongRelSus = nullptr;
+	shared_ptr<Funcs_Special> pCurieWeiss1 = nullptr;
+	shared_ptr<Funcs_Special> pCurieWeiss2 = nullptr;
+	shared_ptr<Funcs_Special> pLongRelSus1 = nullptr;
+	shared_ptr<Funcs_Special> pLongRelSus2 = nullptr;
+	shared_ptr<Funcs_Special> pAlpha1 = nullptr;
+	shared_ptr<Funcs_Special> pAlpha2 = nullptr;
+
 public:
 
 	//-------------------------------- LIST ALL MESH PARAMETERS HERE
@@ -76,12 +90,24 @@ public:
 	MatP<double, double> A = 1.3e-11;
 	MatP<DBL2, double> A_AFM = DBL2(1.3e-11);
 
-	//AFM coupling between sub-lattices A and B, defined as A / a*a (J/m^3), where A is the antiferromagnetic exchange stifness (negative), and a is the lattice constant.
-	MatP<double, double> A12 = -1e+6;
+	//Homogeneous AFM coupling between sub-lattices A and B, defined as A / a*a (J/m^3), where A is the homogeneous antiferromagnetic exchange stifness (negative), and a is the lattice constant.
+	//e.g. a = 0.3nm, A = -1pJ/m gives Ah as -1e7 J/m^3 to order of magnitude.
+	MatP<DBL2, double> Ah = DBL2(-1e+7);
+
+	//Nonhomogeneous AFM coupling between sub-lattices A and B (J/m)
+	MatP<DBL2, double> Anh = DBL2(-10e-12);
 
 	//Dzyaloshinskii-Moriya exchange constant (J/m^2)
 	MatP<double, double> D = 3e-3;
 	MatP<DBL2, double> D_AFM = 3e-3;
+
+	//Coupling between exchange integral and critical temperature (Neel or Curie temperature) for 2-sublattice model : intra-lattice term, 0.5 for ideal antiferromagnet
+	//J = 3 * tau * kB * Tc
+	MatP<DBL2, double> tau_ii = DBL2(0.5);
+
+	//Coupling between exchange integral and critical temperature (Neel or Curie temperature) for 2-sublattice model : inter-lattice, or cross-lattice term, 0.5 for ideal antiferromagnet.
+	//J = 3 * tau * kB * Tc
+	MatP<DBL2, double> tau_ij = DBL2(0.5);
 
 	//bilinear surface exchange coupling (J/m^2) : J1
 	//biquadratic surface exchange coupling (J/m^2) : J2
@@ -89,14 +115,24 @@ public:
 	MatP<double, double> J1 = -1e-3;
 	MatP<double, double> J2 = 0;
 
+	//surface exchange coupling per magnetisation from a diamagnet (J/Am) - EXPERIMENTAL : Hse = neta * sus * Hext / mu0 * Ms * tF
+	MatP<double, double> neta_dia = 2e-5;
+
 	//Magneto-crystalline anisotropy K1 and K2 constants (J/m^3) and easy axes directions. For uniaxial anisotropy only ea1 is needed, for cubic ea1 and ea2 should be orthogonal.
 	MatP<double, double> K1 = 1e4;
 	MatP<double, double> K2 = 0;
 	MatP<DBL3, DBL3> mcanis_ea1 = DBL3(1, 0, 0);
 	MatP<DBL3, DBL3> mcanis_ea2 = DBL3(0, 1, 0);
 
+	//Anisotropy values for 2-sublattice model
+	MatP<DBL2, double> K1_AFM = DBL2(1e5);
+	MatP<DBL2, double> K2_AFM = 0;
+
 	//longitudinal (parallel) susceptibility relative to mu0*Ms0, i.e. divided by mu0*Ms0, Ms0 is the 0K Ms value - for use with LLB equation. Units As^2/kg
 	MatP<double, double> susrel = 1.0;
+
+	//longitudinal (parallel) susceptibility relative to mu0*Ms0, i.e. divided by mu0*Ms0, Ms0 is the 0K Ms value - for use with LLB equation 2-sublattice model. Units As^2/kg
+	MatP<DBL2, double> susrel_AFM = DBL2(1.0);
 
 	//perpendicular (transverse) susceptibility relative to mu0*Ms0, i.e. divided by mu0*Ms0, Ms0 is the 0K Ms value - for use with LLB equation. Units As^2/kg
 	MatP<double, double> susprel = 1.0;
@@ -176,6 +212,7 @@ public:
 
 	//Curie temperature - 870K for permalloy but turn it off by default. If LLG is the default equation we don't want temperature dependencies to be updated every time the applied field changes.
 	//This is the actually set value
+	//Can also be used for anti-ferromagnetic meshes (as the Neel temperature), but still calling it T_Curie (I suppose the variable name should be changed to T_critical, but too late now as need to maintain backward compatibility with older simulation files)
 	double T_Curie = 0.0;
 
 	//This is the indicative Curie temperature of the material, but not used in any calculations.
@@ -185,6 +222,9 @@ public:
 	//The atomic magnetic moment as a multiple of the Bohr magneton - default 1 ub for permalloy.
 	MatP<double, double> atomic_moment = 1.0;
 
+	//atomic moments for 2-sublattice model (again multiples of the Bohr magneton)
+	MatP<DBL2, double> atomic_moment_AFM = DBL2(1.0);
+
 	//thermal conductivity (W/mK) - default for permalloy
 	MatP<double, double> thermCond = 46.4;
 
@@ -193,6 +233,12 @@ public:
 
 	//specific heat capacity (J/kgK) - default for permalloy
 	MatP<double, double> shc = 430;
+
+	//electron specific heat capacity at room temperature used in many-temperature models (J/kgK); Note, if used you should assign a temperature dependence to it, e.g. linear with temperature for the free electron approximation; none assigned by default.
+	MatP<double, double> shc_e = 100;
+
+	//electron-lattice coupling constant (W/m^3K) used in two-temperature model.
+	MatP<double, double> G_e = 1e18;
 
 	//Magneto-elastic coefficients (J/m^3) - default for Ni
 	MatP<DBL2, double> MEc = DBL2(8e6);
@@ -208,7 +254,6 @@ public:
 
 	//Heat source stimulus in heat equation. Ideally used with a spatial variation. (W//m3)
 	MatP<double, double> Q = 0.0;
-
 
 	//OBSOLETE - not used anywhere; keep them to be able to load simulation files which might have these defined
 	MatP<double, double> lambda = 1e-5;
@@ -229,6 +274,9 @@ protected:
 
 	//call this to update given parameter output value to current base_temperature
 	void update_parameters(PARAM_ paramID = PARAM_ALL);
+
+	//set pre-calculated Funcs_Special objects in material parameters
+	void set_special_functions(PARAM_ paramID = PARAM_ALL);
 
 public:
 
@@ -296,7 +344,7 @@ public:
 	bool is_param_nonconst(PARAM_ paramID);
 
 	//get mesh parameter temperature scaling up to max_temperature : return a vector from 0K up to and including max_temperature with scaling coefficients
-	vector<double> get_meshparam_tempscaling(PARAM_ paramID, double max_temperature);
+	bool get_meshparam_tempscaling(PARAM_ paramID, double max_temperature, vector<double>& x, vector<double>& y, vector<double>& z);
 
 	//is this param hidden or can we display it?
 	bool is_param_hidden(PARAM_ paramID) { return meshParams(paramID).hidden; }
@@ -331,7 +379,7 @@ public:
 	void clear_meshparam_temp(PARAM_ paramID);
 
 	//set mesh parameter array scaling
-	bool set_meshparam_tscaling_array(PARAM_ paramID, vector<double>& temp, vector<double>& scaling);
+	bool set_meshparam_tscaling_array(PARAM_ paramID, vector<double>& temp, vector<double>& scaling_x, vector<double>& scaling_y, vector<double>& scaling_z);
 
 	//set temperature dependence info string for console display purposes
 	void set_meshparam_tscaling_info(PARAM_ paramID, string info_text);
@@ -397,8 +445,20 @@ RType MeshParams::run_on_param(PARAM_ paramID, Lambda& run_this, PType& ... run_
 		return run_this(A_AFM, run_this_args...);
 		break;
 
-	case PARAM_A12:
-		return run_this(A12, run_this_args...);
+	case PARAM_A_AFH:
+		return run_this(Ah, run_this_args...);
+		break;
+
+	case PARAM_AFTAU:
+		return run_this(tau_ii, run_this_args...);
+		break;
+
+	case PARAM_AFTAUCROSS:
+		return run_this(tau_ij, run_this_args...);
+		break;
+
+	case PARAM_A_AFNH:
+		return run_this(Anh, run_this_args...);
 		break;
 
 	case PARAM_D:
@@ -417,12 +477,24 @@ RType MeshParams::run_on_param(PARAM_ paramID, Lambda& run_this, PType& ... run_
 		return run_this(J2, run_this_args...);
 		break;
 
+	case PARAM_NETADIA:
+		return run_this(neta_dia, run_this_args...);
+		break;
+
 	case PARAM_K1:
 		return run_this(K1, run_this_args...);
 		break;
 
 	case PARAM_K2:
 		return run_this(K2, run_this_args...);
+		break;
+
+	case PARAM_K1_AFM:
+		return run_this(K1_AFM, run_this_args...);
+		break;
+
+	case PARAM_K2_AFM:
+		return run_this(K2_AFM, run_this_args...);
 		break;
 
 	case PARAM_EA1:
@@ -441,8 +513,16 @@ RType MeshParams::run_on_param(PARAM_ paramID, Lambda& run_this, PType& ... run_
 		return run_this(atomic_moment, run_this_args...);
 		break;
 
+	case PARAM_MUB_AFM:
+		return run_this(atomic_moment_AFM, run_this_args...);
+		break;
+
 	case PARAM_SUSREL:
 		return run_this(susrel, run_this_args...);
+		break;
+
+	case PARAM_SUSREL_AFM:
+		return run_this(susrel_AFM, run_this_args...);
 		break;
 
 	case PARAM_SUSPREL:
@@ -555,6 +635,14 @@ RType MeshParams::run_on_param(PARAM_ paramID, Lambda& run_this, PType& ... run_
 
 	case PARAM_SHC:
 		return run_this(shc, run_this_args...);
+		break;
+
+	case PARAM_SHC_E:
+		return run_this(shc_e, run_this_args...);
+		break;
+
+	case PARAM_G_E:
+		return run_this(G_e, run_this_args...);
 		break;
 
 	case PARAM_T:

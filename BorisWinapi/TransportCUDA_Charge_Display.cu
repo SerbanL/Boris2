@@ -66,7 +66,7 @@ __global__ void CalculateCurrentDensity_Spin_Kernel(cuVEC_VC<cuReal3>& Jc, Manag
 			bool cpump_enabled = cuIsNZ(cuMesh.pcpump_eff->get0());
 			bool the_enabled = cuIsNZ(cuMesh.pthe_eff->get0());
 
-			if (!M.linear_size()) {
+			if (poisson_Spin_V.stsolve == STSOLVE_NORMALMETAL) {
 
 				//non-magnetic mesh
 
@@ -159,13 +159,13 @@ cu_obj<cuVEC_VC<cuReal3>>& TransportCUDA::GetChargeCurrent(void)
 {
 	if (!PrepareDisplayVEC_VC(pMeshCUDA->h_e)) return displayVEC_VC;
 
-	if (!pSMeshCUDA->SolveSpinCurrent()) {
+	if (stsolve == STSOLVE_NONE) {
 
-		CalculateCurrentDensity_Charge_Kernel << < (pMeshCUDA->n_e.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >> > (displayVEC_VC, pMeshCUDA->V, pMeshCUDA->elC);
+		CalculateCurrentDensity_Charge_Kernel <<< (pMeshCUDA->n_e.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (displayVEC_VC, pMeshCUDA->V, pMeshCUDA->elC);
 	}
 	else {
 
-		CalculateCurrentDensity_Spin_Kernel << < (pMeshCUDA->n_e.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >> > (displayVEC_VC, pMeshCUDA->cuMesh, poisson_Spin_V);
+		CalculateCurrentDensity_Spin_Kernel <<< (pMeshCUDA->n_e.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (displayVEC_VC, pMeshCUDA->cuMesh, poisson_Spin_V);
 	}
 
 	return displayVEC_VC;

@@ -65,7 +65,7 @@ public:
 	friend Sequence& operator>>(const std::stringstream &ss, Sequence &rhs)
 	{
 		//normally the values in std::string representation are as: "start; end; steps"
-		std::vector<std::string> components = split(ss.str(), ", ", "; ");
+		std::vector<std::string> components = split(ss.str(), ",", ";");
 		//it could be they are also given as: "start end steps"
 		if (components.size() == 1) components = split(ss.str(), " ");
 
@@ -73,14 +73,14 @@ public:
 		switch (components.size()) {
 
 		case 3:			//Type is e.g. a double
-			rhs.start = ToNum(components[0], "");
-			rhs.end = ToNum(components[1], "");
-			rhs.steps = ToNum(components[2], "");
+			rhs.start = ToNum(trimspaces(components[0]), "");
+			rhs.end = ToNum(trimspaces(components[1]), "");
+			rhs.steps = ToNum(trimspaces(components[2]), "");
 			break;
 		case 7:			//Type is a 3-component value
-			rhs.start = ToNum(components[0] + ", " + components[1] + ", " + components[2], "");
-			rhs.end = ToNum(components[3] + ", " + components[4] + ", " + components[5], "");
-			rhs.steps = ToNum(components[6], "");
+			rhs.start = ToNum(trimspaces(components[0]) + ", " + trimspaces(components[1]) + ", " + trimspaces(components[2]), "");
+			rhs.end = ToNum(trimspaces(components[3]) + ", " + trimspaces(components[4]) + ", " + trimspaces(components[5]), "");
+			rhs.steps = ToNum(trimspaces(components[6]), "");
 			break;
 		}
 
@@ -159,7 +159,7 @@ public:
 	friend SequencePolar& operator>>(const std::stringstream &ss, SequencePolar &rhs)
 	{
 		//normally the values in std::string representation are as: "start; end; steps"
-		std::vector<std::string> components = split(ss.str(), ", ", "; ");
+		std::vector<std::string> components = split(ss.str(), ",", ";");
 		//it could be they are also given as: "start end steps"
 		if (components.size() == 1) components = split(ss.str(), " ");
 
@@ -167,14 +167,14 @@ public:
 		switch (components.size()) {
 
 		case 3:			//Type is e.g. a double
-			rhs.start = ToNum(components[0], "");
-			rhs.end = ToNum(components[1], "");
-			rhs.steps = ToNum(components[2], "");
+			rhs.start = ToNum(trimspaces(components[0]), "");
+			rhs.end = ToNum(trimspaces(components[1]), "");
+			rhs.steps = ToNum(trimspaces(components[2]), "");
 			break;
 		case 7:			//Type is a 3-component value
-			rhs.start = ToNum(components[0] + ", " + components[1] + ", " + components[2], "");
-			rhs.end = ToNum(components[3] + ", " + components[4] + ", " + components[5], "");
-			rhs.steps = ToNum(components[6], "");
+			rhs.start = ToNum(trimspaces(components[0]) + ", " + trimspaces(components[1]) + ", " + trimspaces(components[2]), "");
+			rhs.end = ToNum(trimspaces(components[3]) + ", " + trimspaces(components[4]) + ", " + trimspaces(components[5]), "");
+			rhs.steps = ToNum(trimspaces(components[6]), "");
 			break;
 		}
 
@@ -260,7 +260,7 @@ public:
 	friend CosOscillation& operator>>(const std::stringstream &ss, CosOscillation &rhs)
 	{
 		//normally the values in std::string representation are as: "oscillation; steps_per_cycle; cycles"
-		std::vector<std::string> components = split(ss.str(), ", ", "; ");
+		std::vector<std::string> components = split(ss.str(), ",", ";");
 		//it could be they are also given as: "oscillation steps_per_cycle cycles"
 		if (components.size() == 1) components = split(ss.str(), " ");
 
@@ -268,14 +268,14 @@ public:
 		switch (components.size()) {
 
 		case 3:			//Type is e.g. a double
-			rhs.oscillation = ToNum(components[0], "");
-			rhs.steps_per_cycle = ToNum(components[1], "");
-			rhs.cycles = ToNum(components[2], "");
+			rhs.oscillation = ToNum(trimspaces(components[0]), "");
+			rhs.steps_per_cycle = ToNum(trimspaces(components[1]), "");
+			rhs.cycles = ToNum(trimspaces(components[2]), "");
 			break;
 		case 5:			//Type is e.g. a DBL3
-			rhs.oscillation = ToNum(components[0] + ", " + components[1] + ", " + components[2], "");
-			rhs.steps_per_cycle = ToNum(components[3], "");
-			rhs.cycles = ToNum(components[4], "");
+			rhs.oscillation = ToNum(trimspaces(components[0]) + ", " + trimspaces(components[1]) + ", " + trimspaces(components[2]), "");
+			rhs.steps_per_cycle = ToNum(trimspaces(components[3]), "");
+			rhs.cycles = ToNum(trimspaces(components[4]), "");
 			break;
 		}
 
@@ -360,7 +360,7 @@ public:
 	friend SinOscillation& operator>>(const std::stringstream &ss, SinOscillation &rhs)
 	{
 		//normally the values in std::string representation are as: "oscillation; steps_per_cycle; cycles"
-		std::vector<std::string> components = split(ss.str(), ", ", "; ");
+		std::vector<std::string> components = split(ss.str(), ",", ";");
 		//it could be they are also given as: "oscillation steps_per_cycle cycles"
 		if (components.size() == 1) components = split(ss.str(), " ");
 
@@ -368,14 +368,14 @@ public:
 		switch (components.size()) {
 
 		case 3:			//Type is e.g. a double
-			rhs.oscillation = ToNum(components[0], "");
-			rhs.steps_per_cycle = ToNum(components[1], "");
-			rhs.cycles = ToNum(components[2], "");
+			rhs.oscillation = ToNum(trimspaces(components[0]), "");
+			rhs.steps_per_cycle = ToNum(trimspaces(components[1]), "");
+			rhs.cycles = ToNum(trimspaces(components[2]), "");
 			break;
 		case 5:			//Type is e.g. a DBL3
-			rhs.oscillation = ToNum(components[0] + ", " + components[1] + ", " + components[2], "");
-			rhs.steps_per_cycle = ToNum(components[3], "");
-			rhs.cycles = ToNum(components[4], "");
+			rhs.oscillation = ToNum(trimspaces(components[0]) + ", " + trimspaces(components[1]) + ", " + trimspaces(components[2]), "");
+			rhs.steps_per_cycle = ToNum(trimspaces(components[3]), "");
+			rhs.cycles = ToNum(trimspaces(components[4]), "");
 			break;
 		}
 
@@ -463,7 +463,7 @@ public:
 	friend CosSequence& operator>>(const std::stringstream &ss, CosSequence &rhs)
 	{
 		//normally the values in std::string representation are as: "bias; oscillation; steps_per_cycle; cycles"
-		std::vector<std::string> components = split(ss.str(), ", ", "; ");
+		std::vector<std::string> components = split(ss.str(), ",", ";");
 		//it could be they are also given as: "bias oscillation steps_per_cycle cycles"
 		if (components.size() == 1) components = split(ss.str(), " ");
 
@@ -471,16 +471,16 @@ public:
 		switch (components.size()) {
 
 		case 4:			//Type is e.g. a double
-			rhs.bias = ToNum(components[0], "");
-			rhs.oscillation = ToNum(components[1], "");
-			rhs.steps_per_cycle = ToNum(components[2], "");
-			rhs.cycles = ToNum(components[3], "");
+			rhs.bias = ToNum(trimspaces(components[0]), "");
+			rhs.oscillation = ToNum(trimspaces(components[1]), "");
+			rhs.steps_per_cycle = ToNum(trimspaces(components[2]), "");
+			rhs.cycles = ToNum(trimspaces(components[3]), "");
 			break;
 		case 8:			//Type is e.g. a DBL3
-			rhs.bias = ToNum(components[0] + ", " + components[1] + ", " + components[2], "");
-			rhs.oscillation = ToNum(components[3] + ", " + components[4] + ", " + components[5], "");
-			rhs.steps_per_cycle = ToNum(components[6], "");
-			rhs.cycles = ToNum(components[7], "");
+			rhs.bias = ToNum(trimspaces(components[0]) + ", " + trimspaces(components[1]) + ", " + trimspaces(components[2]), "");
+			rhs.oscillation = ToNum(trimspaces(components[3]) + ", " + trimspaces(components[4]) + ", " + trimspaces(components[5]), "");
+			rhs.steps_per_cycle = ToNum(trimspaces(components[6]), "");
+			rhs.cycles = ToNum(trimspaces(components[7]), "");
 			break;
 		}
 

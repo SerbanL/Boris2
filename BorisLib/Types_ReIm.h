@@ -39,7 +39,7 @@ struct __ReIm {
 	friend __ReIm& operator>>(const std::stringstream &ss, __ReIm &rhs)
 	{ 
 		//normally std::string representation is given as: "Re, Im"
-		std::vector<std::string> components = split(ss.str(), ", ");
+		std::vector<std::string> components = split(ss.str(), ",");
 		//it could also be given as: "Re Im"
 		if(components.size() == 1) components = split(ss.str(), " ");
 
@@ -47,8 +47,8 @@ struct __ReIm {
 		switch (components.size()) {
 
 		case 2:
-			rhs.Re = ToNum(components[0], "");
-			rhs.Im = ToNum(components[1], "");
+			rhs.Re = ToNum(trimspaces(components[0]), "");
+			rhs.Im = ToNum(trimspaces(components[1]), "");
 			break;
 		}
 

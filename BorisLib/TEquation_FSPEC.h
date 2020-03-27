@@ -38,6 +38,17 @@ namespace EqComp {
 		//power functions where either the exponent or base is a constant (initially create FUNC_POW, then optimize later to one of these if possible)
 		FUNC_POWER_EXPCONST, FUNC_POWER_EXPCONST_PMUL, FUNC_POWER_BASECONST, FUNC_POWER_BASECONST_PMUL,
 
+		//SPECIAL FUNCTIONS
+
+		//Curie-Weiss law
+		FUNC_CURIEWEISS,
+		FUNC_LONGRELSUS,
+
+		//Curie-Weiss law for 2-sublattice model
+		FUNC_CURIEWEISS1, FUNC_CURIEWEISS2,
+		FUNC_LONGRELSUS1, FUNC_LONGRELSUS2,
+		FUNC_ALPHA1, FUNC_ALPHA2,
+
 		//BINARY OPERATORS (order here is deliberate : lower position in enum means higher order of operation precedence)
 
 		FUNC_POW, FUNC_POW_PMUL, FUNC_DIV, FUNC_DIV_PMUL, FUNC_MUL, FUNC_MUL_PMUL, FUNC_SUB, FUNC_SUB_PMUL, FUNC_ADD, FUNC_ADD_PMUL,

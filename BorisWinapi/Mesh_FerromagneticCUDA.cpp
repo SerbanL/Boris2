@@ -1,8 +1,10 @@
 #include "stdafx.h"
 #include "Mesh_FerromagneticCUDA.h"
-#include "Mesh_Ferromagnetic.h"
 
 #if COMPILECUDA == 1
+#ifdef MESH_COMPILATION_FERROMAGNETIC
+
+#include "Mesh_Ferromagnetic.h"
 
 FMeshCUDA::FMeshCUDA(FMesh* pMesh) :
 	MeshCUDA(pMesh)
@@ -76,4 +78,5 @@ bool FMeshCUDA::GetMeshExchangeCoupling(void)
 	return pFMesh->GetMeshExchangeCoupling();
 }
 
+#endif
 #endif

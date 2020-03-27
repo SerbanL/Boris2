@@ -95,13 +95,12 @@ __global__ void CalculateElectricField_Charge_Kernel(cuVEC<cuReal3>& E, cuVEC_VC
 	}
 }
 
-__global__ void CalculateElectricField_Spin_Kernel(ManagedMeshCUDA& cuMesh, TransportCUDA_Spin_V_Funcs& poisson_Spin_V, TransportCUDA_Spin_S_Funcs& poisson_Spin_S)
+__global__ void CalculateElectricField_Spin_withISHE_Kernel(ManagedMeshCUDA& cuMesh, TransportCUDA_Spin_V_Funcs& poisson_Spin_V, TransportCUDA_Spin_S_Funcs& poisson_Spin_S)
 {
 	cuVEC<cuReal3>& E = *cuMesh.pE;
 	cuVEC_VC<cuBReal>& V = *cuMesh.pV;
 	cuVEC_VC<cuBReal>& elC = *cuMesh.pelC;
 	cuVEC_VC<cuReal3>& S = *cuMesh.pS;
-	cuVEC_VC<cuReal3>& M = *cuMesh.pM;
 
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
 
@@ -110,12 +109,7 @@ __global__ void CalculateElectricField_Spin_Kernel(ManagedMeshCUDA& cuMesh, Tran
 		//only calculate current on non-empty cells - empty cells have already been assigned 0 at UpdateConfiguration
 		if (V.is_not_empty(idx)) {
 
-			if (cuIsZ(cuMesh.piSHA->get0()) || M.linear_size()) {
-
-				//use homogeneous Neumann boundary conditions - no ISHE
-				E[idx] = -1.0 * V.grad_diri(idx);
-			}
-			else {
+			if (cuIsNZ(cuMesh.piSHA->get0())) {
 
 				//ISHE enabled - use nonhomogeneous Neumann boundary conditions
 				cuBReal iSHA = *cuMesh.piSHA;
@@ -123,6 +117,11 @@ __global__ void CalculateElectricField_Spin_Kernel(ManagedMeshCUDA& cuMesh, Tran
 				cuMesh.update_parameters_ecoarse(idx, *cuMesh.piSHA, iSHA, *cuMesh.pDe, De);
 
 				E[idx] = -1.0 * V.grad_diri_nneu(idx, (iSHA * De / ((cuBReal)MUB_E * elC[idx])) * S.curl_neu(idx));
+			}
+			else {
+
+				//iSHA is zero so don't need to calculate ISHE
+				E[idx] = -1.0 * V.grad_diri(idx);
 			}
 		}
 		else E[idx] = cuReal3(0);
@@ -134,13 +133,13 @@ __global__ void CalculateElectricField_Spin_Kernel(ManagedMeshCUDA& cuMesh, Tran
 //calculate electric field as the negative gradient of V
 void TransportCUDA::CalculateElectricField(void)
 {
-	if (!pSMeshCUDA->SolveSpinCurrent()) {
+	if (stsolve == STSOLVE_NONE || stsolve == STSOLVE_FERROMAGNETIC) {
 
 		CalculateElectricField_Charge_Kernel << < (pMeshCUDA->n_e.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (pMeshCUDA->E, pMeshCUDA->V);
 	}
 	else {
 
-		CalculateElectricField_Spin_Kernel <<< (pMeshCUDA->n_e.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (pMeshCUDA->cuMesh, poisson_Spin_V, poisson_Spin_S);
+		CalculateElectricField_Spin_withISHE_Kernel << < (pMeshCUDA->n_e.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >> > (pMeshCUDA->cuMesh, poisson_Spin_V, poisson_Spin_S);
 	}
 }
 

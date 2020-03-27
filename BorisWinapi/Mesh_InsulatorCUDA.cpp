@@ -1,5 +1,8 @@
 #include "stdafx.h"
 #include "Mesh_InsulatorCUDA.h"
+
+#ifdef MESH_COMPILATION_INSULATOR
+
 #include "Mesh_Insulator.h"
 
 #if COMPILECUDA == 1
@@ -25,4 +28,5 @@ BError InsulatorMeshCUDA::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 	return error;
 }
 
+#endif
 #endif

@@ -1,5 +1,8 @@
 #include "stdafx.h"
 #include "Mesh_MetalCUDA.h"
+
+#ifdef MESH_COMPILATION_METAL
+
 #include "Mesh_Metal.h"
 
 #if COMPILECUDA == 1
@@ -25,4 +28,5 @@ BError MetalMeshCUDA::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 	return error;
 }
 
+#endif
 #endif

@@ -254,6 +254,10 @@
     <ClInclude Include="DiffEqAFM_EquationsCUDA.h" />
     <ClInclude Include="DiffEqAFM_SEquationsCUDA.h" />
     <ClInclude Include="DiffEqCUDA.h" />
+    <ClInclude Include="DiffEqDM.h" />
+    <ClInclude Include="DiffEqDMCUDA.h" />
+    <ClInclude Include="DiffEqDM_EquationsCUDA.h" />
+    <ClInclude Include="DiffEqDM_SEquationsCUDA.h" />
     <ClInclude Include="DiffEqFM.h" />
     <ClInclude Include="DiffEqFMCUDA.h" />
     <ClInclude Include="DiffEq_Common.h" />
@@ -279,13 +283,28 @@
     <ClInclude Include="Heat.h" />
     <ClInclude Include="HeatCUDA.h" />
     <ClInclude Include="HeatCUDA_CMBND.h" />
+    <ClInclude Include="Heat_Defs.h" />
     <ClInclude Include="iDMExchange.h" />
     <ClInclude Include="iDMExchangeCUDA.h" />
     <ClInclude Include="ManagedDiffEqAFMCUDA.h" />
+    <ClInclude Include="ManagedDiffEqDMCUDA.h" />
     <ClInclude Include="ManagedDiffEqFMCUDA.h" />
     <ClInclude Include="ManagedDiffEq_CommonCUDA.h" />
     <ClInclude Include="ManagedMeshCUDA.h" />
     <ClInclude Include="MaterialParameter.h" />
+    <CudaCompile Include="DiffEqDMCUDA.cu" />
+    <CudaCompile Include="DiffEqDM_EvalsCUDA.cu" />
+    <CudaCompile Include="DiffEqDM_EvalsCUDA_ABM.cu" />
+    <CudaCompile Include="DiffEqDM_EvalsCUDA_AHeun.cu" />
+    <CudaCompile Include="DiffEqDM_EvalsCUDA_Euler.cu" />
+    <CudaCompile Include="DiffEqDM_EvalsCUDA_RK23.cu" />
+    <CudaCompile Include="DiffEqDM_EvalsCUDA_RK4.cu" />
+    <CudaCompile Include="DiffEqDM_EvalsCUDA_RKCK45.cu" />
+    <CudaCompile Include="DiffEqDM_EvalsCUDA_RKDP54.cu" />
+    <CudaCompile Include="DiffEqDM_EvalsCUDA_RKF.cu" />
+    <CudaCompile Include="DiffEqDM_EvalsCUDA_SD.cu" />
+    <CudaCompile Include="DiffEqDM_EvalsCUDA_TEuler.cu" />
+    <CudaCompile Include="DiffEqDM_EvalsLLGCUDA.cu" />
     <CudaCompile Include="MaterialParameterCUDA.cu">
       <FileType>Document</FileType>
     </CudaCompile>
@@ -301,6 +320,8 @@
     <ClInclude Include="MeshParamsCUDA.h" />
     <ClInclude Include="Mesh_AntiFerromagnetic.h" />
     <ClInclude Include="Mesh_AntiFerromagneticCUDA.h" />
+    <ClInclude Include="Mesh_Diamagnetic.h" />
+    <ClInclude Include="Mesh_DiamagneticCUDA.h" />
     <ClInclude Include="Mesh_Dipole.h" />
     <ClInclude Include="Mesh_DipoleCUDA.h" />
     <ClInclude Include="Mesh_Ferromagnetic.h" />
@@ -358,6 +379,7 @@
     <ClInclude Include="TransportCUDA_Poisson.h" />
     <ClInclude Include="TransportCUDA_Poisson_Spin_S.h" />
     <ClInclude Include="TransportCUDA_Poisson_Spin_V.h" />
+    <ClInclude Include="Transport_Defs.h" />
     <ClInclude Include="WinSpaces.h" />
     <ClInclude Include="BorisDisplay.h" />
     <ClInclude Include="BorisGraphics.h" />
@@ -421,6 +443,20 @@
     <ClCompile Include="DiffEqAFM_Evals_SD.cpp" />
     <ClCompile Include="DiffEqAFM_Evals_TEuler.cpp" />
     <ClCompile Include="DiffEqAFM_SEquations.cpp" />
+    <ClCompile Include="DiffEqDM.cpp" />
+    <ClCompile Include="DiffEqDMCUDA.cpp" />
+    <ClCompile Include="DiffEqDM_Equations.cpp" />
+    <ClCompile Include="DiffEqDM_Evals_ABM.cpp" />
+    <ClCompile Include="DiffEqDM_Evals_AHeun.cpp" />
+    <ClCompile Include="DiffEqDM_Evals_Euler.cpp" />
+    <ClCompile Include="DiffEqDM_Evals_RK23.cpp" />
+    <ClCompile Include="DiffEqDM_Evals_RK4.cpp" />
+    <ClCompile Include="DiffEqDM_Evals_RKCK45.cpp" />
+    <ClCompile Include="DiffEqDM_Evals_RKDP54.cpp" />
+    <ClCompile Include="DiffEqDM_Evals_RKF.cpp" />
+    <ClCompile Include="DiffEqDM_Evals_SD.cpp" />
+    <ClCompile Include="DiffEqDM_Evals_TEuler.cpp" />
+    <ClCompile Include="DiffEqDM_SEquations.cpp" />
     <ClCompile Include="DiffEqFM.cpp" />
     <ClCompile Include="DiffEqFMCUDA.cpp" />
     <ClCompile Include="DiffEq_Common.cpp" />
@@ -457,9 +493,12 @@
     <ClCompile Include="Heat.cpp" />
     <ClCompile Include="HeatCUDA.cpp" />
     <ClCompile Include="HeatCUDA_CMBND.cpp" />
+    <ClCompile Include="Heat_Auxiliary.cpp" />
+    <ClCompile Include="Heat_Solve.cpp" />
     <ClCompile Include="iDMExchange.cpp" />
     <ClCompile Include="iDMExchangeCUDA.cpp" />
     <ClCompile Include="ManagedDiffEqAFMCUDA.cpp" />
+    <ClCompile Include="ManagedDiffEqDMCUDA.cpp" />
     <ClCompile Include="ManagedDiffEqFMCUDA.cpp" />
     <ClCompile Include="ManagedDiffEq_CommonCUDA.cpp" />
     <ClCompile Include="ManagedMeshCUDA.cpp" />
@@ -479,6 +518,8 @@
     <ClCompile Include="Mesh_AntiFerromagnetic.cpp" />
     <ClCompile Include="Mesh_AntiFerromagnetic_Control.cpp" />
     <ClCompile Include="Mesh_AntiFerromagnetic_ODEControl.cpp" />
+    <ClCompile Include="Mesh_Diamagnetic.cpp" />
+    <ClCompile Include="Mesh_DiamagneticCUDA.cpp" />
     <ClCompile Include="Mesh_Dipole.cpp" />
     <ClCompile Include="Mesh_DipoleCUDA.cpp" />
     <ClCompile Include="Mesh_Ferromagnetic.cpp" />
@@ -539,6 +580,7 @@
     <ClCompile Include="SuperMeshModules.cpp" />
     <ClCompile Include="SuperMeshParams.cpp" />
     <ClCompile Include="SuperMeshSimulation.cpp" />
+    <ClCompile Include="SuperMeshTemperature.cpp" />
     <ClCompile Include="SurfExchange.cpp" />
     <ClCompile Include="SurfExchangeCUDA.cpp" />
     <ClCompile Include="Transport.cpp" />

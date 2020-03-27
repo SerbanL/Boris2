@@ -1,10 +1,12 @@
 #include "stdafx.h"
 #include "DiffEqFM.h"
+
+#ifdef MESH_COMPILATION_FERROMAGNETIC
+#ifdef ODE_EVAL_RK23
+
 #include "Mesh_Ferromagnetic.h"
 #include "SuperMesh.h"
 #include "MeshParamsControl.h"
-
-#ifdef ODE_EVAL_RK23
 
 //--------------------------------------------- RUNGE KUTTA 23 (Bogacki-Shampine) (2nd order adaptive step with FSAL, 3rd order evaluation)
 
@@ -201,4 +203,5 @@ void DifferentialEquationFM::RunRK23_Step2(void)
 	}
 }
 
+#endif
 #endif

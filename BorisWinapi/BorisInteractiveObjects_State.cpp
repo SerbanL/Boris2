@@ -198,7 +198,20 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 			stateChanged = true;
 			iop.state = IOS_DELETING;
 		}
-		else pTO->SetBackgroundColor(OFFCOLOR);		//the mesh is contained but module not active : OFF color
+		else {
+
+			//the mesh is contained but module not active : OFF color
+			pTO->SetBackgroundColor(OFFCOLOR);
+
+			//special treatment of MOD_DEMAG to show if excluded from multilayered demag convolution
+			if (module == MOD_DEMAG) {
+
+				if (SMesh.IsSuperMeshModuleSet(MODS_SDEMAG)) {
+
+					if (SMesh[meshIdx]->Get_Demag_Exclusion()) pTO->SetBackgroundColor(ALTONCOLOR);
+				}
+			}
+		}
 	}
 	break;
 
@@ -377,6 +390,12 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 	}
 	break;
 
+	case IOI_MESH_FORTMODEL:
+	{
+		display_meshIO(&Simulation::Build_TemperatureModel_ListLine);
+	}
+	break;
+
 	case IOI_MESH_FORPBC:
 	{
 		display_meshIO(&Simulation::Build_PBC_ListLine);
@@ -386,6 +405,12 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 	case IOI_MESH_FOREXCHCOUPLING:
 	{
 		display_meshIO(&Simulation::Build_ExchangeCoupledMeshes_ListLine);
+	}
+	break;
+
+	case IOI_MESH_FORSTOCHASTICITY:
+	{
+		display_meshIO(&Simulation::Build_Stochasticity_ListLine);
 	}
 	break;
 
@@ -670,6 +695,100 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 					iop.auxId = 1;
 					pTO->set(" " + iop.textId + " ");
 					pTO->SetBackgroundColor(ONCOLOR);
+					stateChanged = true;
+				}
+			}
+		}
+		else {
+
+			//mesh no longer exists : delete the entire paragraph containing this object
+			stateChanged = true;
+			iop.state = IOS_DELETINGPARAGRAPH;
+		}
+	}
+	break;
+
+	//Shows stochastic cellsize (units m) : minorId is the unique mesh id number, auxId is enabled/disabled status, textId is the mesh cellsize
+	case IOI_MESHSCELLSIZE:
+	{
+		//parameters from iop
+		int meshId = iop.minorId;
+		bool enabled = (bool)iop.auxId;
+		string cellsizeValue = iop.textId;
+
+		int meshIdx = SMesh.contains_id(meshId);
+		if (meshIdx >= 0) {
+
+			if (enabled) {
+
+				if (!SMesh[meshIdx]->MComputation_Enabled()) {
+
+					iop.textId = "N/A";
+					iop.auxId = 0;
+					pTO->set(" " + iop.textId + " ");
+					pTO->SetBackgroundColor(OFFCOLOR);
+					stateChanged = true;
+				}
+				else {
+					//update mesh cellsize if not matching
+					DBL3 meshCellsize = SMesh[meshIdx]->GetMeshSCellsize();
+					if (ToString(meshCellsize, "m") != cellsizeValue) {
+
+						iop.textId = ToString(meshCellsize, "m");
+						pTO->set(" " + iop.textId + " ");
+						stateChanged = true;
+					}
+				}
+			}
+			else {
+
+				if (SMesh[meshIdx]->MComputation_Enabled()) {
+
+					DBL3 meshCellsize = SMesh[meshIdx]->GetMeshSCellsize();
+					iop.textId = ToString(meshCellsize, "m");
+					iop.auxId = 1;
+					pTO->set(" " + iop.textId + " ");
+					pTO->SetBackgroundColor(ONCOLOR);
+					stateChanged = true;
+				}
+			}
+		}
+		else {
+
+			//mesh no longer exists : delete the entire paragraph containing this object
+			stateChanged = true;
+			iop.state = IOS_DELETINGPARAGRAPH;
+		}
+	}
+	break;
+
+	//Shows link stochastic flag : minorId is the unique mesh id number, auxId is the value off (0), on (1), N/A (-1)
+	case IOI_LINKSTOCHASTIC:
+	{
+		//parameters from iop
+		int meshId = iop.minorId;
+		int status = iop.auxId;
+
+		int meshIdx = SMesh.contains_id(meshId);
+		if (meshIdx >= 0) {
+
+			if (status >= 0) {
+
+				if (status != (int)SMesh[meshIdx]->GetLinkStochastic()) {
+
+					iop.auxId = SMesh[meshIdx]->GetLinkStochastic();
+
+					if (iop.auxId == 0) {
+
+						pTO->set(" Off ");
+						pTO->SetBackgroundColor(OFFCOLOR);
+					}
+					else {
+
+						pTO->set(" On ");
+						pTO->SetBackgroundColor(ONCOLOR);
+					}
+
 					stateChanged = true;
 				}
 			}
@@ -1054,13 +1173,13 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 		int meshIdx = SMesh.contains_id(meshId);
 		if (meshIdx >= 0) {
 
-			if (SMesh[meshIdx]->GetDisplayedParamVar() == paramId) pTO->SetBackgroundColor(ONCOLOR);
-			else pTO->SetBackgroundColor(OFFCOLOR);
-
 			if (paramText != SMesh[meshIdx]->get_paramvarinfo_string(paramId)) {
 
 				iop.textId = SMesh[meshIdx]->get_paramvarinfo_string(paramId);
 				pTO->set(" " + iop.textId + " ");
+
+				if (SMesh[meshIdx]->is_paramvar_set(paramId)) pTO->SetBackgroundColor(ONCOLOR);
+				else pTO->SetBackgroundColor(OFFCOLOR);
 
 				stateChanged = true;
 			}
@@ -1817,6 +1936,124 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 
 					pTO->SetBackgroundColor(UNAVAILABLECOLOR);
 					pTO->set(" N/A ");
+				}
+
+				stateChanged = true;
+			}
+		}
+	}
+	break;
+
+	//Shows atomic moment multiple of Bohr magneton for AF meshes. minorId is the unique mesh id number, auxId is available/not available status (must be antiferromagnetic mesh), textId is the value
+	case IOI_ATOMICMOMENT_AFM:
+	{
+		int meshId = iop.minorId;
+		string amoment_string = iop.textId;
+		bool status = iop.auxId;
+
+		int meshIdx = SMesh.contains_id(meshId);
+
+		if (meshIdx >= 0) {
+
+			if (ToString(SMesh[meshIdx]->GetAtomicMoment_AFM(), "uB") != amoment_string) {
+
+				iop.textId = ToString(SMesh[meshIdx]->GetAtomicMoment_AFM(), "uB");
+				pTO->set(" " + iop.textId + " ");
+
+				stateChanged = true;
+			}
+
+			if ((SMesh[meshIdx]->GetMeshType() == MESH_ANTIFERROMAGNETIC) != status) {
+
+				iop.auxId = (SMesh[meshIdx]->GetMeshType() == MESH_ANTIFERROMAGNETIC);
+
+				if (iop.auxId == 1) {
+
+					pTO->SetBackgroundColor(ONCOLOR);
+					pTO->set(" " + iop.textId + " ");
+				}
+				else {
+
+					pTO->SetBackgroundColor(UNAVAILABLECOLOR);
+					pTO->set(" N/A ");
+				}
+
+				stateChanged = true;
+			}
+		}
+	}
+	break;
+
+	//Shows Tc tau couplings. minorId is the unique mesh id number, auxId is available/not available status (must be antiferromagnetic mesh), textId is the value
+	case IOI_TAU:
+	{
+		int meshId = iop.minorId;
+		string amoment_string = iop.textId;
+		bool status = iop.auxId;
+
+		int meshIdx = SMesh.contains_id(meshId);
+
+		if (meshIdx >= 0) {
+
+			if (ToString(SMesh[meshIdx]->GetTcCoupling()) != amoment_string) {
+
+				iop.textId = ToString(SMesh[meshIdx]->GetTcCoupling());
+				pTO->set(" " + iop.textId + " ");
+
+				stateChanged = true;
+			}
+
+			if ((SMesh[meshIdx]->GetMeshType() == MESH_ANTIFERROMAGNETIC) != status) {
+
+				iop.auxId = (SMesh[meshIdx]->GetMeshType() == MESH_ANTIFERROMAGNETIC);
+
+				if (iop.auxId == 1) {
+
+					pTO->SetBackgroundColor(ONCOLOR);
+					pTO->set(" " + iop.textId + " ");
+				}
+				else {
+
+					pTO->SetBackgroundColor(UNAVAILABLECOLOR);
+					pTO->set(" N/A ");
+				}
+
+				stateChanged = true;
+			}
+		}
+	}
+	break;
+
+	//Shows temperature model type for mesh. minorId is the unique mesh id number, auxId is the model identifier (entry from TMTYPE_ enum)
+	case IOI_TMODEL:
+	{
+		int meshId = iop.minorId;
+		int tmodel = iop.auxId;
+
+		int meshIdx = SMesh.contains_id(meshId);
+
+		if (meshIdx >= 0) {
+
+			if (SMesh[meshIdx]->CallModuleMethod(&Heat::Get_TMType) != tmodel) {
+
+				iop.auxId = SMesh[meshIdx]->CallModuleMethod(&Heat::Get_TMType);
+
+				switch (iop.auxId) {
+
+				case TMTYPE_NONE:
+					pTO->SetBackgroundColor(UNAVAILABLECOLOR);
+					pTO->set(" N/A ");
+					break;
+
+				case TMTYPE_1TM:
+					pTO->SetBackgroundColor(ONCOLOR);
+					pTO->set(" 1TM ");
+					break;
+
+				case TMTYPE_2TM:
+					pTO->SetBackgroundColor(ONCOLOR);
+					pTO->set(" 2TM ");
+					break;
 				}
 
 				stateChanged = true;

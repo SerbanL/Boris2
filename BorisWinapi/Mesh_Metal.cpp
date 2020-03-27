@@ -1,5 +1,8 @@
 #include "stdafx.h"
 #include "Mesh_Metal.h"
+
+#ifdef MESH_COMPILATION_METAL
+
 #include "SuperMesh.h"
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -12,12 +15,12 @@ MetalMesh::MetalMesh(SuperMesh *pSMesh_) :
 			VINFO(meshType), VINFO(meshIdCounter), VINFO(meshId), 
 			VINFO(displayedPhysicalQuantity), VINFO(displayedBackgroundPhysicalQuantity), 
 			VINFO(vec3rep), VINFO(displayedParamVar), 
-			VINFO(meshRect), VINFO(n_e), VINFO(h_e), VINFO(n_t), VINFO(h_t), VINFO(n_m), VINFO(h_m),VINFO(V), VINFO(S), VINFO(elC), VINFO(Temp), VINFO(pMod),
+			VINFO(meshRect), VINFO(n_e), VINFO(h_e), VINFO(n_t), VINFO(h_t), VINFO(n_m), VINFO(h_m),VINFO(V), VINFO(S), VINFO(elC), VINFO(Temp), VINFO(Temp_l), VINFO(pMod),
 			//Members in this derived class
 
 			//Material Parameters
 			VINFO(elecCond), VINFO(De), VINFO(n_density), VINFO(SHA), VINFO(iSHA), VINFO(l_sf), VINFO(Gi), VINFO(Gmix), 
-			VINFO(base_temperature), VINFO(T_equation), VINFO(thermCond), VINFO(density), VINFO(shc), VINFO(cT), VINFO(Q)
+			VINFO(base_temperature), VINFO(T_equation), VINFO(thermCond), VINFO(density), VINFO(shc), VINFO(shc_e), VINFO(G_e), VINFO(cT), VINFO(Q)
 		},
 		{
 			//Modules Implementations
@@ -33,12 +36,12 @@ MetalMesh::MetalMesh(Rect meshRect_, DBL3 h_, SuperMesh *pSMesh_) :
 			VINFO(meshType), VINFO(meshIdCounter), VINFO(meshId), 
 			VINFO(displayedPhysicalQuantity), VINFO(displayedBackgroundPhysicalQuantity), 
 			VINFO(vec3rep), VINFO(displayedParamVar), 
-			VINFO(meshRect), VINFO(n_e), VINFO(h_e), VINFO(n_t), VINFO(h_t), VINFO(n_m), VINFO(h_m), VINFO(V), VINFO(S), VINFO(elC), VINFO(Temp), VINFO(pMod),
+			VINFO(meshRect), VINFO(n_e), VINFO(h_e), VINFO(n_t), VINFO(h_t), VINFO(n_m), VINFO(h_m), VINFO(V), VINFO(S), VINFO(elC), VINFO(Temp), VINFO(Temp_l), VINFO(pMod),
 			//Members in this derived class
 
 			//Material Parameters
 			VINFO(elecCond), VINFO(De), VINFO(n_density), VINFO(SHA), VINFO(iSHA), VINFO(l_sf), VINFO(Gi), VINFO(Gmix), 
-			VINFO(base_temperature), VINFO(T_equation), VINFO(thermCond), VINFO(density), VINFO(shc), VINFO(cT), VINFO(Q)
+			VINFO(base_temperature), VINFO(T_equation), VINFO(thermCond), VINFO(density), VINFO(shc), VINFO(shc_e), VINFO(G_e), VINFO(cT), VINFO(Q)
 		},
 		{
 			//Modules Implementations
@@ -195,3 +198,5 @@ BError MetalMesh::SwitchCUDAState(bool cudaState)
 }
 
 //----------------------------------- VARIOUS GET/SET METHODS
+
+#endif

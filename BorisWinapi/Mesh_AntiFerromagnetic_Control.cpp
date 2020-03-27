@@ -1,6 +1,8 @@
 #include "stdafx.h"
 #include "Mesh_AntiFerromagnetic.h"
 
+#ifdef MESH_COMPILATION_ANTIFERROMAGNETIC
+
 //----------------------------------- FERROMAGNETIC MESH QUANTITIES CONTROL 
 
 void AFMesh::SetMagnetisationAngle(double polar, double azim, Rect rectangle)
@@ -11,13 +13,13 @@ void AFMesh::SetMagnetisationAngle(double polar, double azim, Rect rectangle)
 
 		if (rectangle.IsNull()) {
 
-			pMeshCUDA->M()->setnonempty(Polar_to_Cartesian(cuReal3(Ms, polar, azim)));
-			pMeshCUDA->M2()->setnonempty(Polar_to_Cartesian(cuReal3(-1.0 * Ms, polar, azim)));
+			pMeshCUDA->M()->setnonempty(Polar_to_Cartesian(cuReal3(Ms_AFM.get().i, polar, azim)));
+			pMeshCUDA->M2()->setnonempty(Polar_to_Cartesian(cuReal3(-1 * Ms_AFM.get().j, polar, azim)));
 		}
 		else {
 
-			pMeshCUDA->M()->setrectnonempty((cuRect)rectangle, Polar_to_Cartesian(cuReal3(Ms, polar, azim)));
-			pMeshCUDA->M2()->setrectnonempty((cuRect)rectangle, Polar_to_Cartesian(cuReal3(-1.0 * Ms, polar, azim)));
+			pMeshCUDA->M()->setrectnonempty((cuRect)rectangle, Polar_to_Cartesian(cuReal3(Ms_AFM.get().i, polar, azim)));
+			pMeshCUDA->M2()->setrectnonempty((cuRect)rectangle, Polar_to_Cartesian(cuReal3(-1.0 * Ms_AFM.get().j, polar, azim)));
 		}
 
 		return;
@@ -29,13 +31,13 @@ void AFMesh::SetMagnetisationAngle(double polar, double azim, Rect rectangle)
 
 		if (rectangle.IsNull()) {
 
-			M.setnonempty(Polar_to_Cartesian(DBL3(Ms, polar, azim)));
-			M2.setnonempty(Polar_to_Cartesian(DBL3(-1.0 * Ms, polar, azim)));
+			M.setnonempty(Polar_to_Cartesian(DBL3(Ms_AFM.get().i, polar, azim)));
+			M2.setnonempty(Polar_to_Cartesian(DBL3(-1.0 * Ms_AFM.get().j, polar, azim)));
 		}
 		else {
 
-			M.setrectnonempty(rectangle, Polar_to_Cartesian(DBL3(Ms, polar, azim)));
-			M2.setrectnonempty(rectangle, Polar_to_Cartesian(DBL3(-1.0 * Ms, polar, azim)));
+			M.setrectnonempty(rectangle, Polar_to_Cartesian(DBL3(Ms_AFM.get().i, polar, azim)));
+			M2.setrectnonempty(rectangle, Polar_to_Cartesian(DBL3(-1.0 * Ms_AFM.get().j, polar, azim)));
 		}
 	}
 }
@@ -420,3 +422,5 @@ BError AFMesh::Set_PBC_Z(int pbc_z)
 	
 	return error;
 }
+
+#endif

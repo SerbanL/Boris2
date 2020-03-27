@@ -32,7 +32,7 @@ public:
 
 	BError set_pointers(MeshCUDA* pMeshCUDA);
 
-	//For V only : V and Jc are continuous; Jc = -sigma * grad V = a + b * grad V -> a = 0 and b = -sigma taken at the interface	
+	//heat flux, f(T) = -K * grad T = a + b * grad T -> a = 0, b = -K
 	__device__ cuBReal a_func_pri(int cell1_idx, int cell2_idx, cuReal3 shift)
 	{
 		return 0.0;
@@ -43,7 +43,7 @@ public:
 		return 0.0;
 	}
 
-	//For V only : V and Jc are continuous; Jc = -sigma * grad V = a + b * grad V -> a = 0 and b = -sigma taken at the interface	
+	//heat flux, f(T) = -K * grad T = a + b * grad T -> a = 0, b = -K
 	__device__ cuBReal b_func_pri(int cell1_idx, int cell2_idx)
 	{
 		cuBReal thermCond = *pcuMesh->pthermCond;
@@ -60,10 +60,12 @@ public:
 		return -1.0 * thermCond;
 	}
 
-	//second order differential of V at cells either side of the boundary; delsq V = -grad V * grad elC / elC
+	//second order differential of T at cells either side of the boundary; delsq T = -Jc^2 / K * elC - Q / K - many-temperature model coupling terms / K
 	__device__ cuBReal diff2_pri(int cell1_idx, cuReal3 shift)
 	{
 		cuVEC_VC<cuBReal>& Temp = *pcuMesh->pTemp;
+		cuVEC_VC<cuBReal>& Temp_l = *pcuMesh->pTemp_l;
+
 		cuVEC_VC<cuReal3>& E = *pcuMesh->pE;
 		cuVEC_VC<cuBReal>& elC = *pcuMesh->pelC;
 
@@ -93,11 +95,22 @@ public:
 			value -= Q / thermCond;
 		}
 
+		if (Temp_l.linear_size()) {
+
+			cuBReal G_el = *pcuMesh->pG_e;
+			pcuMesh->update_parameters_tcoarse(cell1_idx, *pcuMesh->pG_e, G_el);
+
+			value += G_el * (Temp[cell1_idx] - Temp_l[cell1_idx]) / thermCond;
+		}
+
 		return value;
 	}
 
 	__device__ cuBReal diff2_sec(cuReal3 relpos_m1, cuReal3 stencil, cuReal3 shift)
 	{
+		cuVEC_VC<cuBReal>& Temp = *pcuMesh->pTemp;
+		cuVEC_VC<cuBReal>& Temp_l = *pcuMesh->pTemp_l;
+
 		cuVEC_VC<cuReal3>& E = *pcuMesh->pE;
 		cuVEC_VC<cuBReal>& elC = *pcuMesh->pelC;
 
@@ -125,6 +138,14 @@ public:
 			pcuMesh->update_parameters_atposition(relpos_m1, *pcuMesh->pQ, Q);
 
 			value -= Q / thermCond;
+		}
+
+		if (Temp_l.linear_size()) {
+
+			cuBReal G_el = *pcuMesh->pG_e;
+			pcuMesh->update_parameters_atposition(relpos_m1, *pcuMesh->pG_e, G_el);
+
+			value += G_el * (Temp.weighted_average(relpos_m1, stencil) - Temp_l.weighted_average(relpos_m1, stencil)) / thermCond;
 		}
 
 		return value;

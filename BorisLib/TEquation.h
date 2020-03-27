@@ -111,7 +111,15 @@ private:
 		{"abs(", EqComp::FSPEC(EqComp::FUNC_ABS)},
 		{"step(", EqComp::FSPEC(EqComp::FUNC_STEP)},
 		{"swav(", EqComp::FSPEC(EqComp::FUNC_SWAV)},
-		{"twav(", EqComp::FSPEC(EqComp::FUNC_TWAV)}
+		{"twav(", EqComp::FSPEC(EqComp::FUNC_TWAV)},
+		{"me(", EqComp::FSPEC(EqComp::FUNC_CURIEWEISS)},
+		{"chi(", EqComp::FSPEC(EqComp::FUNC_LONGRELSUS)},
+		{"me1(", EqComp::FSPEC(EqComp::FUNC_CURIEWEISS1)},
+		{"me2(", EqComp::FSPEC(EqComp::FUNC_CURIEWEISS2)},
+		{"chi1(", EqComp::FSPEC(EqComp::FUNC_LONGRELSUS1)},
+		{"chi2(", EqComp::FSPEC(EqComp::FUNC_LONGRELSUS2)},
+		{"alpha1(", EqComp::FSPEC(EqComp::FUNC_ALPHA1)},
+		{"alpha2(", EqComp::FSPEC(EqComp::FUNC_ALPHA2)}
 	};
 
 	///////////////////////////////////////////////////////////
@@ -142,11 +150,44 @@ private:
 
 	///////////////////////////////////////////////////////////
 
+	//Special Functions (set in TEquation_Function when remaking equation)
+
+	std::shared_ptr<Funcs_Special> pCurieWeiss = nullptr;
+	std::shared_ptr<Funcs_Special> pLongRelSus = nullptr;
+	std::shared_ptr<Funcs_Special> pCurieWeiss1 = nullptr;
+	std::shared_ptr<Funcs_Special> pCurieWeiss2 = nullptr;
+	std::shared_ptr<Funcs_Special> pLongRelSus1 = nullptr;
+	std::shared_ptr<Funcs_Special> pLongRelSus2 = nullptr;
+	std::shared_ptr<Funcs_Special> pAlpha1 = nullptr;
+	std::shared_ptr<Funcs_Special> pAlpha2 = nullptr;
+
 private:
 
 	/////////////////////////////////////////////////////////
 	//
 	// AUXILIARY
+
+	void Set_StoredSpecialFunctions(void)
+	{
+		auto set = [&](EqComp::FUNC_ type, std::shared_ptr<Funcs_Special> pSpecialFunction) -> void {
+
+			if (pSpecialFunction) {
+
+				eq_component_1.Set_SpecialFunction(type, pSpecialFunction);
+				eq_component_2.Set_SpecialFunction(type, pSpecialFunction);
+				eq_component_3.Set_SpecialFunction(type, pSpecialFunction);
+			}
+		};
+
+		set(EqComp::FUNC_CURIEWEISS, pCurieWeiss);
+		set(EqComp::FUNC_LONGRELSUS, pLongRelSus);
+		set(EqComp::FUNC_CURIEWEISS1, pCurieWeiss1);
+		set(EqComp::FUNC_CURIEWEISS2, pCurieWeiss2);
+		set(EqComp::FUNC_LONGRELSUS1, pLongRelSus1);
+		set(EqComp::FUNC_LONGRELSUS2, pLongRelSus2);
+		set(EqComp::FUNC_ALPHA1, pAlpha1);
+		set(EqComp::FUNC_ALPHA2, pAlpha2);
+	}
 
 	//clear allocated Function objects
 	void clear_Funcs(void)
@@ -432,7 +473,7 @@ private:
 						std::string eq_substr = eq_str.substr(1, idx - 1);
 
 						//start new branch
-						return make_branch(eq_substr, fspec,  fspec_branch);
+						return make_branch(eq_substr, fspec, fspec_branch);
 					}
 				}
 			}
@@ -517,6 +558,12 @@ public:
 		else error_on_create = true;
 	}
 
+	TEquation(const TEquation& copy_this) :
+		ProgramStateNames(this, { VINFO(text_equation), VINFO(variables), VINFO(userconstants), VINFO(userconstants_values) }, {})
+	{
+		*this = copy_this;
+	}
+
 	~TEquation() { clear_Funcs(); }
 
 	//---------Assignment operator
@@ -530,6 +577,15 @@ public:
 		userconstants = copy_this.userconstants;
 		userconstants_values = copy_this.userconstants_values;
 
+		pCurieWeiss = copy_this.pCurieWeiss;
+		pLongRelSus = copy_this.pLongRelSus;
+		pCurieWeiss1 = copy_this.pCurieWeiss1;
+		pCurieWeiss2 = copy_this.pCurieWeiss2;
+		pLongRelSus1 = copy_this.pLongRelSus1;
+		pLongRelSus2 = copy_this.pLongRelSus2;
+		pAlpha1 = copy_this.pAlpha1;
+		pAlpha2 = copy_this.pAlpha2;
+
 		remake_equation();
 
 		return *this;
@@ -537,7 +593,7 @@ public:
 
 	//-------------------Implement ProgramState method
 
-	void RepairObjectState(void) 
+	void RepairObjectState(void)
 	{
 		//remake the TEquation object from reloaded text equation string
 		clear_Funcs();
@@ -591,7 +647,7 @@ public:
 	{
 		//if constants already defined then the following call onyl sets values
 		create_constants(constants);
-		
+
 		if (remake_equation) {
 
 			//remake equation
@@ -699,14 +755,14 @@ public:
 
 		success &= make_equation_component(eq_str_components[0], eq_component_1);
 
-		if (eq_str_components.size() == 3) {
-
-			success &= make_equation_component(eq_str_components[1], eq_component_2);
-			success &= make_equation_component(eq_str_components[2], eq_component_3);
-		}
+		if (eq_str_components.size() >= 2) success &= make_equation_component(eq_str_components[1], eq_component_2);
+		if (eq_str_components.size() >= 3) success &= make_equation_component(eq_str_components[2], eq_component_3);
 
 		//if equation string was not correct then need to clear Functions otherwise the structure is probably unstable and will crash the program if executed.
 		if (!success) clear_Funcs();
+
+		//Set Special functions if available
+		Set_StoredSpecialFunctions();
 
 		return success;
 	}
@@ -715,15 +771,21 @@ public:
 	//
 	// DESTROY EQUATION
 
-	void clear(void) 
-	{ 
+	void clear(void)
+	{
 		clear_Funcs();
 		text_equation = "";
 		userconstants.clear();
 		userconstants_values.clear();
 	}
 
+	/////////////////////////////////////////////////////////
+	//
+	// EQUATION TYPE CHECKING
+
 	bool is_set(void) const { return eq_component_1.is_set(); }
+	bool is_set_dual(void) const { return eq_component_1.is_set() && eq_component_2.is_set(); }
+	bool is_set_vector(void) const { return eq_component_1.is_set() && eq_component_2.is_set() && eq_component_3.is_set(); }
 
 	/////////////////////////////////////////////////////////
 	//
@@ -770,10 +832,61 @@ public:
 	// LOGICAL EQUATION GETTERS
 
 	std::vector< std::vector<EqComp::FSPEC> >& get_scalar_fspec(void) { return eq_component_1.get_fspec(); }
-	
+
+	std::vector<std::vector< std::vector<EqComp::FSPEC> >> get_dual_fspec(void)
+	{
+		return { eq_component_1.get_fspec(), eq_component_2.get_fspec() };
+	}
+
 	std::vector<std::vector< std::vector<EqComp::FSPEC> >> get_vector_fspec(void)
-	{ 
+	{
 		return { eq_component_1.get_fspec(), eq_component_2.get_fspec(), eq_component_3.get_fspec() };
+	}
+
+	/////////////////////////////////////////////////////////
+	//
+	// SET SPECIAL FUNCTIONS
+
+	void Set_SpecialFunction(EqComp::FUNC_ type, std::shared_ptr<Funcs_Special> pSpecialFunc)
+	{
+		switch (type) {
+
+		case EqComp::FUNC_CURIEWEISS:
+			pCurieWeiss = pSpecialFunc;
+			break;
+
+		case EqComp::FUNC_CURIEWEISS1:
+			pCurieWeiss1 = pSpecialFunc;
+			break;
+
+		case EqComp::FUNC_CURIEWEISS2:
+			pCurieWeiss2 = pSpecialFunc;
+			break;
+
+		case EqComp::FUNC_LONGRELSUS:
+			pLongRelSus = pSpecialFunc;
+			break;
+
+		case EqComp::FUNC_LONGRELSUS1:
+			pLongRelSus1 = pSpecialFunc;
+			break;
+
+		case EqComp::FUNC_LONGRELSUS2:
+			pLongRelSus2 = pSpecialFunc;
+			break;
+
+		case EqComp::FUNC_ALPHA1:
+			pAlpha1 = pSpecialFunc;
+			break;
+
+		case EqComp::FUNC_ALPHA2:
+			pAlpha2 = pSpecialFunc;
+			break;
+		}
+
+		eq_component_1.Set_SpecialFunction(type, pSpecialFunc);
+		eq_component_2.Set_SpecialFunction(type, pSpecialFunc);
+		eq_component_3.Set_SpecialFunction(type, pSpecialFunc);
 	}
 
 	/////////////////////////////////////////////////////////
@@ -784,6 +897,17 @@ public:
 	double evaluate(BVarType... bvars) const
 	{
 		return eq_component_1.evaluate(bvars...);
+	}
+
+	//evaluate dual equation
+	DBL2 evaluate_dual(BVarType... bvars)
+	{
+		DBL2 value = DBL2(
+			eq_component_1.evaluate(bvars...),
+			eq_component_2.evaluate(bvars...)
+		);
+
+		return value;
 	}
 
 	//evaluate vector equation

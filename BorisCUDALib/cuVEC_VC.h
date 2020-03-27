@@ -375,14 +375,19 @@ public:
 
 	__device__ bool is_not_cmbnd(int index) const { return !(ngbrFlags[index] & NF_CMBND); }
 	__device__ bool is_not_cmbnd(const cuINT3& ijk) const { return !(ngbrFlags[ijk.i + ijk.j*n.x + ijk.k*n.x*n.y] & NF_CMBND); }
+	__device__ bool is_not_cmbnd(const cuReal3& rel_pos) const { return !(ngbrFlags[int(rel_pos.x / h.x) + int(rel_pos.y / h.y) * n.x + int(rel_pos.z / h.z) * n.x * n.y] & NF_CMBND); }
 
 	__device__ bool is_cmbnd(int index) const { return (ngbrFlags[index] & NF_CMBND); }
 	__device__ bool is_cmbnd(const cuINT3& ijk) const { return (ngbrFlags[ijk.i + ijk.j*n.x + ijk.k*n.x*n.y] & NF_CMBND); }
+	__device__ bool is_cmbnd(const cuReal3& rel_pos) const { return (ngbrFlags[int(rel_pos.x / h.x) + int(rel_pos.y / h.y) * n.x + int(rel_pos.z / h.z) * n.x * n.y] & NF_CMBND); }
 
 	__device__ bool is_skipcell(int index) const { return (ngbrFlags[index] & NF_SKIPCELL); }
+	__device__ bool is_skipcell(const cuINT3& ijk) const { return (ngbrFlags[ijk.i + ijk.j*n.x + ijk.k*n.x*n.y] & NF_SKIPCELL); }
+	__device__ bool is_skipcell(const cuReal3& rel_pos) const { return (ngbrFlags[int(rel_pos.x / h.x) + int(rel_pos.y / h.y) * n.x + int(rel_pos.z / h.z) * n.x * n.y] & NF_SKIPCELL); }
 
 	//are all neighbors available? (for 2D don't check the z neighbors)
 	__device__ bool is_interior(int index) const { return (((ngbrFlags[index] & NF_BOTHX) == NF_BOTHX) && ((ngbrFlags[index] & NF_BOTHY) == NF_BOTHY) && (n.z == 1 || ((ngbrFlags[index] & NF_BOTHZ) == NF_BOTHZ))); }
+	
 	//are all neighbors in the xy plane available?
 	__device__ bool is_plane_interior(int index) const { return (((ngbrFlags[index] & NF_BOTHX) == NF_BOTHX) && ((ngbrFlags[index] & NF_BOTHY) == NF_BOTHY)); }
 

@@ -1,8 +1,10 @@
 #include "stdafx.h"
 #include "ManagedDiffEqFMCUDA.h"
-#include "DiffEqFMCUDA.h"
 
 #if COMPILECUDA == 1
+#ifdef MESH_COMPILATION_FERROMAGNETIC
+
+#include "DiffEqFMCUDA.h"
 
 BError ManagedDiffEqFMCUDA::set_pointers(DifferentialEquationFMCUDA* pDiffEqCUDA)
 {
@@ -56,5 +58,6 @@ BError ManagedDiffEqFMCUDA::set_pointers(DifferentialEquationFMCUDA* pDiffEqCUDA
 	return error;
 }
 
+#endif
 #endif
 

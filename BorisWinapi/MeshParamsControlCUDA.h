@@ -95,7 +95,7 @@ __device__ void ManagedMeshCUDA::update_parameters_mcoarse_full(int mcell_idx, M
 		cuReal3 position = pM->cellidx_to_position(mcell_idx);
 		cuBReal Temperature = (*pTemp)[position];
 
-		matp_value = matp.get(Temperature, *pcuDiffEq->pstagetime);
+		matp_value = matp.get(Temperature);
 		update_parameters_full(position, Temperature, params...);
 	}
 	else {

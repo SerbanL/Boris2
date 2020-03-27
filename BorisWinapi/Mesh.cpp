@@ -152,6 +152,16 @@ double Mesh::GetAverageTemperature(Rect rectangle)
 	else return base_temperature; 
 }
 
+double Mesh::GetAverageLatticeTemperature(Rect rectangle)
+{
+#if COMPILECUDA == 1
+	if (pMeshCUDA) return pMeshCUDA->GetAverageLatticeTemperature(rectangle);
+#endif
+
+	if (Temp_l.linear_size()) return Temp_l.average_nonempty_omp(rectangle);
+	else return base_temperature;
+}
+
 //----------------------------------- QUANTITY GETTERS
 
 //returns M on the cpu, thus transfers M from gpu to cpu before returning if cuda enabled
@@ -196,24 +206,42 @@ BError Mesh::SetMeshRect(Rect meshRect_)
 
 	meshRect = meshRect_;
 
-	auto adjust_default_cellsize = [](Rect meshRect, DBL3& cellsize) {
+	auto adjust_default_cellsize = [](Rect meshRect, DBL3& cellsize, SZ3& cells, bool min2 = false) {
 
 		if (!cellsize.dim()) cellsize = DBL3(DEFAULTCELLSIZE);
-		INT3 cells = round(meshRect / cellsize);
+		cells = round(meshRect / cellsize);
 
 		if (cells.x > MAXSTARTINGCELLS_X) cells.x = MAXSTARTINGCELLS_X;
 		if (cells.y > MAXSTARTINGCELLS_Y) cells.y = MAXSTARTINGCELLS_Y;
 		if (cells.z > MAXSTARTINGCELLS_Z) cells.z = MAXSTARTINGCELLS_Z;
+		if (cells.x == 0) cells.x = 1;
+		if (cells.y == 0) cells.y = 1;
+		if (cells.z == 0) cells.z = 1;
+
+		//minimum number of 2 cells in each dimension
+		if (min2) {
+
+			if (cells.x < 2) cells.x = 2;
+			if (cells.y < 2) cells.y = 2;
+			if (cells.z < 2) cells.z = 2;
+		}
 
 		//adjusted cellsize which will result in an integer number of cells with upper limits set
 		cellsize = meshRect / cells;
 	};
 
 	//adjust cellsizes from their current values so they result in an integer number of cells with upper limits on number of cells in each dimension. The cellsizes can be manually adjusted later if needed.
-	adjust_default_cellsize(meshRect, h);
-	adjust_default_cellsize(meshRect, h_e);
-	adjust_default_cellsize(meshRect, h_t);
-	adjust_default_cellsize(meshRect, h_m);
+	adjust_default_cellsize(meshRect, h, n);
+	adjust_default_cellsize(meshRect, h_e, n_e, true);
+	adjust_default_cellsize(meshRect, h_t, n_t, true);
+	adjust_default_cellsize(meshRect, h_m, n_m, true);
+
+	if (link_stochastic) {
+
+		h_s = h;
+		n_s = n;
+	}
+	else adjust_default_cellsize(meshRect, h_s, n_s);
 
 	error = pSMesh->UpdateConfiguration(UPDATECONFIG_MESHCHANGE);
 
@@ -226,7 +254,10 @@ BError Mesh::SetMeshCellsize(DBL3 h_)
 	BError error(__FUNCTION__);
 
 	h = h_;
-	error = pSMesh->UpdateConfiguration(UPDATECONFIG_MESHCHANGE);
+	if (link_stochastic) h_s = h;
+
+	//this sets the correct number of cells
+	error = SetMeshRect(meshRect);
 
 	return error;
 }
@@ -237,7 +268,9 @@ BError Mesh::SetMeshECellsize(DBL3 h_e_)
 	BError error(__FUNCTION__);
 
 	h_e = h_e_;
-	error = pSMesh->UpdateConfiguration(UPDATECONFIG_MESHCHANGE);
+
+	//this sets the correct number of cells
+	error = SetMeshRect(meshRect);
 
 	return error;
 }
@@ -248,7 +281,49 @@ BError Mesh::SetMeshTCellsize(DBL3 h_t_)
 	BError error(__FUNCTION__);
 
 	h_t = h_t_;
-	error = pSMesh->UpdateConfiguration(UPDATECONFIG_MESHCHANGE);
+
+	//this sets the correct number of cells
+	error = SetMeshRect(meshRect);
+
+	return error;
+}
+
+BError Mesh::SetLinkStochastic(bool link_stochastic_)
+{ 
+	BError error(__FUNCTION__);
+
+	link_stochastic = link_stochastic_;
+
+	if (link_stochastic) {
+
+		h_s = h;
+		n_s = n;
+
+		//this sets the correct number of cells
+		error = SetMeshRect(meshRect);
+	}
+
+	return error;
+}
+
+BError Mesh::SetMeshSCellsize(DBL3 h_s_, bool link_stochastic_)
+{
+	BError error(__FUNCTION__);
+
+	link_stochastic = link_stochastic_;
+
+	if (!link_stochastic) {
+
+		h_s = h_s_;
+	}
+	else {
+
+		h_s = h;
+		n_s = n;
+	}
+
+	//this sets the correct number of cells
+	error = SetMeshRect(meshRect);
 
 	return error;
 }
@@ -259,7 +334,9 @@ BError Mesh::SetMeshMCellsize(DBL3 h_m_)
 	BError error(__FUNCTION__);
 
 	h_m = h_m_;
-	error = pSMesh->UpdateConfiguration(UPDATECONFIG_MESHCHANGE);
+	
+	//this sets the correct number of cells
+	error = SetMeshRect(meshRect);
 
 	return error;
 }

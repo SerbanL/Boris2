@@ -2,6 +2,7 @@
 
 #include <omp.h>
 
+#include "CompileFlags.h"
 #include "ErrorHandler.h"
 
 #include "PhysQRep.h"
@@ -82,6 +83,9 @@ protected:
 	//effective field modules currently assigned to this mesh
 	vector_lut<Modules*> pMod;
 
+	//if this mesh can participate in multilayered demag convolution, you have the option of excluding it (e.g. antiferromagnetic mesh) - by default all meshes with magnetic computation enabled are included.
+	bool exclude_from_multiconvdemag = false;
+
 public:
 
 #if COMPILECUDA == 1
@@ -148,8 +152,22 @@ public:
 	//cellsize for thermal properties
 	DBL3 h_t = DBL3(5e-9);
 
-	//temperature calculated by Heat module
+	//temperature calculated by Heat module (primary temperature, always used for 1-temperature model; for multi-temperature models in metals this is the itinerant electron temperature)
 	VEC_VC<double> Temp;
+
+	//lattice temperature used in many-T models
+	VEC_VC<double> Temp_l;
+
+	//-----Stochastic cellsize (VECs held in DiffEq)
+
+	//number of cells for stochastic VECs
+	SZ3 n_s = SZ3(1);
+
+	//cellsize for stochastic VECs
+	DBL3 h_s = DBL3(5e-9);
+
+	//link stochastic cellsize to magnetic cellsize by default (set this to false if you want to control h_s independently)
+	bool link_stochastic = true;
 
 	//-----Mechanical properties
 
@@ -492,9 +510,21 @@ public:
 	BError SetMeshTCellsize(DBL3 h_t_);
 	DBL3 GetMeshTCellsize(void) { return h_t; }
 
+	//stochastic properties
+	BError SetLinkStochastic(bool link_stochastic_);
+	bool GetLinkStochastic(void) { return link_stochastic; }
+	
+	BError SetMeshSCellsize(DBL3 h_s_, bool link_stochastic_ = true);
+	DBL3 GetMeshSCellsize(void) { return h_s; }
+
 	//mechanical properties
 	BError SetMeshMCellsize(DBL3 h_m_);
 	DBL3 GetMeshMCellsize(void) { return h_m; }
+
+	//Set/Get multilayered demag exclusion : will need to call UpdateConfiguration from the supermesh when the flag is changed, so the correct SDemag_Demag modules and related settings are set from the SDemag module.
+	//Thus only call Set_Demag_Exclusion directly from SMesh.
+	void Set_Demag_Exclusion(bool exclude_from_multiconvdemag_) { exclude_from_multiconvdemag = exclude_from_multiconvdemag_; }
+	bool Get_Demag_Exclusion(void) { return exclude_from_multiconvdemag; }
 
 	//----------------------------------- ENABLED MESH PROPERTIES CHECKERS
 
@@ -543,6 +573,7 @@ public:
 
 	//get base temperature or average temperature (if Temp enabled)
 	double GetAverageTemperature(Rect rectangle = Rect());
+	double GetAverageLatticeTemperature(Rect rectangle = Rect());
 
 	//get Curie temperature (the set value)
 	double GetCurieTemperature(void) { return T_Curie; }
@@ -551,6 +582,9 @@ public:
 	double GetCurieTemperatureMaterial(void) { return T_Curie_material; }
 
 	double GetAtomicMoment(void) { return atomic_moment; }
+	DBL2 GetAtomicMoment_AFM(void) { return atomic_moment_AFM; }
+
+	DBL4 GetTcCoupling(void) { DBL2 tau_intra = tau_ii; DBL2 tau_inter = tau_ij; return DBL4(tau_intra.i, tau_intra.j, tau_inter.i, tau_inter.j); }
 
 	//----------------------------------- QUANTITY GETTERS
 
@@ -600,17 +634,19 @@ public:
 	virtual void SetMoveMeshTrigger(bool status) {}
 
 	//Curie temperature for ferromagnetic meshes. Calling this forces recalculation of affected material parameters temperature dependence - any custom dependence set will be overwritten.
-	virtual void SetCurieTemperature(double Tc) {}
+	virtual void SetCurieTemperature(double Tc, bool set_default_dependences) {}
 
 	//this just sets the indicative material Tc value
-	void SetCurieTemperatureMaterial(double Tc_material) 
-	{ 
-		T_Curie_material = Tc_material;
-		update_meshparam_equations(); //material Curie temperature is a constant in mesh parameter equations, so update them
-	}
+	void SetCurieTemperatureMaterial(double Tc_material) { T_Curie_material = Tc_material; }
 
 	//atomic moment (as multiple of Bohr magneton) for ferromagnetic meshes. Calling this forces recalculation of affected material parameters temperature dependence - any custom dependence set will be overwritten.
-	virtual void SetAtomicMoment(double atomic_moment_ub) {}
+	//Use DBL2 to allow 2-sublattice model as well. For single lattice just get the first component of the DBL2.
+	virtual void SetAtomicMoment(DBL2 atomic_moment_ub) {}
+
+	//set tau_ii and tau_ij values (applicable for 2-sublattice model only)
+	virtual void SetTcCoupling(DBL2 tau_intra, DBL2 tau_inter) {}
+	virtual void SetTcCoupling_Intra(DBL2 tau) {}
+	virtual void SetTcCoupling_Inter(DBL2 tau) {}
 
 	//get skyrmion shift for a skyrmion initially in the given rectangle (works only with data in output data, not with ShowData or with data box)
 	virtual DBL2 Get_skyshift(Rect skyRect) { return DBL2(); }

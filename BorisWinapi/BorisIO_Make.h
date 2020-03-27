@@ -95,6 +95,10 @@ void Simulation::MakeIOInfo(void)
 	//IOI_MESH_FORTEMPERATURE
 	//IOI_MESH_FORHEATBOUNDARIES
 	//IOI_MESH_FORCURIEANDMOMENT
+	//IOI_MESH_FORTMODEL
+	//IOI_MESH_FORPBC
+	//IOI_MESH_FOREXCHCOUPLING
+	//IOI_MESH_FORSTOCHASTICITY
 
 	string mesh_info =
 		string("[tc1,1,0,1/tc]<b>mesh name</b>") +
@@ -112,8 +116,10 @@ void Simulation::MakeIOInfo(void)
 	ioInfo.push_back(mesh_info, IOI_MESH_FORTEMPERATURE);
 	ioInfo.push_back(mesh_info, IOI_MESH_FORHEATBOUNDARIES);
 	ioInfo.push_back(mesh_info, IOI_MESH_FORCURIEANDMOMENT);
+	ioInfo.push_back(mesh_info, IOI_MESH_FORTMODEL);
 	ioInfo.push_back(mesh_info, IOI_MESH_FORPBC);
 	ioInfo.push_back(mesh_info, IOI_MESH_FOREXCHCOUPLING);
+	ioInfo.push_back(mesh_info, IOI_MESH_FORSTOCHASTICITY);
 
 	//Shows ferromagnetic super-mesh rectangle (unit m) : textId is the mesh rectangle for the ferromagnetic super-mesh
 	//IOI_FMSMESHRECTANGLE
@@ -202,6 +208,26 @@ void Simulation::MakeIOInfo(void)
 
 	ioInfo.push_back(mechmeshcell_info, IOI_MESHMCELLSIZE);
 
+	//Shows stochastic cellsize (units m) : minorId is the unique mesh id number, auxId is enabled/disabled status, textId is the mesh cellsize
+	//IOI_MESHSCELLSIZE:
+
+	string stochmeshcell_info =
+		string("[tc1,1,0,1/tc]<b>Stochasticity cellsize</b>") +
+		string("\n[tc1,1,0,1/tc]<i>Stochastic fields discretization</i>") +
+		string("\n[tc1,1,0,1/tc]dbl-click: edit");
+
+	ioInfo.push_back(stochmeshcell_info, IOI_MESHSCELLSIZE);
+
+	//Shows link stochastic flag : minorId is the unique mesh id number, auxId is the value off (0), on (1), N/A (-1)
+	//IOI_LINKSTOCHASTIC
+
+	string linkstoch_info =
+		string("[tc1,1,0,1/tc]<b>Stochasticity cellsize flag</b>") +
+		string("\n[tc1,1,0,1/tc]<i>Link to magnetic cellsize</i>") +
+		string("\n[tc1,1,0,1/tc]click: change");
+
+	ioInfo.push_back(linkstoch_info, IOI_LINKSTOCHASTIC);
+
 	//Simulation output data, specifically used for showing values in console : minorId is the DATA_ id, textId is the data handle
 	//IOI_SHOWDATA
 	//Simulation output data, specifically used to construct output data list : minorId is the DATA_ id, textId is the data handle
@@ -249,6 +275,7 @@ void Simulation::MakeIOInfo(void)
 	ioInfo.set(showdata_info_generic + string("<i><b>Transport solver:\n<i><b>S iterations to convergence</i>"), INT2(IOI_SHOWDATA, DATA_TRANSPORT_SITERSTOCONV));
 	ioInfo.set(showdata_info_generic + string("<i><b>Transport solver:\n<i><b>achieved convergence error</i>"), INT2(IOI_SHOWDATA, DATA_TRANSPORT_CONVERROR));
 	ioInfo.set(showdata_info_generic + string("<i><b>Average temperature</i>"), INT2(IOI_SHOWDATA, DATA_TEMP));
+	ioInfo.set(showdata_info_generic + string("<i><b>Average lattice temperature</i>"), INT2(IOI_SHOWDATA, DATA_TEMP_L));
 	ioInfo.set(showdata_info_generic + string("<i><b>Heat solver time step</i>"), INT2(IOI_SHOWDATA, DATA_HEATDT));
 
 	string data_info_generic =
@@ -293,6 +320,7 @@ void Simulation::MakeIOInfo(void)
 	ioInfo.set(data_info_generic + string("<i><b>Transport solver:\n<i><b>S iterations to convergence</i>"), INT2(IOI_DATA, DATA_TRANSPORT_SITERSTOCONV));
 	ioInfo.set(data_info_generic + string("<i><b>Transport solver:\n<i><b>achieved convergence error</i>"), INT2(IOI_DATA, DATA_TRANSPORT_CONVERROR));
 	ioInfo.set(data_info_generic + string("<i><b>Average temperature</i>"), INT2(IOI_DATA, DATA_TEMP));
+	ioInfo.set(data_info_generic + string("<i><b>Average lattice temperature</i>"), INT2(IOI_DATA, DATA_TEMP_L));
 	ioInfo.set(data_info_generic + string("<i><b>Heat solver time step</i>"), INT2(IOI_DATA, DATA_HEATDT));
 
 	//Show currently set directory : textId is the directory
@@ -517,16 +545,23 @@ void Simulation::MakeIOInfo(void)
 	ioInfo.set(param_generic_info + string("<i><b>Demag factors Nx, Ny"), INT2(IOI_MESHPARAM, PARAM_DEMAGXY));
 	ioInfo.set(param_generic_info + string("<i><b>Exchange stiffness"), INT2(IOI_MESHPARAM, PARAM_A));
 	ioInfo.set(param_generic_info + string("<i><b>Exchange stiffness"), INT2(IOI_MESHPARAM, PARAM_A_AFM));
-	ioInfo.set(param_generic_info + string("<i><b>AFM coupling"), INT2(IOI_MESHPARAM, PARAM_A12));
+	ioInfo.set(param_generic_info + string("<i><b>Homogeneous AFM coupling"), INT2(IOI_MESHPARAM, PARAM_A_AFH));
+	ioInfo.set(param_generic_info + string("<i><b>Nonhomogeneous AFM coupling"), INT2(IOI_MESHPARAM, PARAM_A_AFNH));
+	ioInfo.set(param_generic_info + string("<i><b>Exchange parameter to critical temperature ratio\n<i><b>Used with 2-sublattice model."), INT2(IOI_MESHPARAM, PARAM_AFTAU));
+	ioInfo.set(param_generic_info + string("<i><b>Exchange parameter to critical temperature ratio\n<i><b>Used with 2-sublattice model, cross-coupling"), INT2(IOI_MESHPARAM, PARAM_AFTAUCROSS));
 	ioInfo.set(param_generic_info + string("<i><b>Dzyaloshinskii-Moriya exchange"), INT2(IOI_MESHPARAM, PARAM_D));
 	ioInfo.set(param_generic_info + string("<i><b>Dzyaloshinskii-Moriya exchange"), INT2(IOI_MESHPARAM, PARAM_D_AFM));
 	ioInfo.set(param_generic_info + string("<i><b>Bilinear surface exchange\n<i><b>Top mesh sets value"), INT2(IOI_MESHPARAM, PARAM_J1));
 	ioInfo.set(param_generic_info + string("<i><b>Biquadratic surface exchange\n<i><b>Top mesh sets value"), INT2(IOI_MESHPARAM, PARAM_J2));
+	ioInfo.set(param_generic_info + string("<i><b>Surface exchange from diamagnet\n<i><b>Diamagnetic mesh sets value"), INT2(IOI_MESHPARAM, PARAM_NETADIA));
 	ioInfo.set(param_generic_info + string("<i><b>Magnetocrystalline anisotropy"), INT2(IOI_MESHPARAM, PARAM_K1));
 	ioInfo.set(param_generic_info + string("<i><b>Magnetocrystalline anisotropy (2nd order)"), INT2(IOI_MESHPARAM, PARAM_K2));
+	ioInfo.set(param_generic_info + string("<i><b>Magnetocrystalline anisotropy 2-sublattice"), INT2(IOI_MESHPARAM, PARAM_K1_AFM));
+	ioInfo.set(param_generic_info + string("<i><b>Magnetocrystalline anisotropy (2nd order) 2-sublattice"), INT2(IOI_MESHPARAM, PARAM_K2_AFM));
 	ioInfo.set(param_generic_info + string("<i><b>Anisotropy symmetry axis - uniaxial\n<i><b>Cartesian unit vector"), INT2(IOI_MESHPARAM, PARAM_EA1));
 	ioInfo.set(param_generic_info + string("<i><b>Anisotropy symmetry axis - cubic\n<i><b>Cartesian unit vector"), INT2(IOI_MESHPARAM, PARAM_EA2));
 	ioInfo.set(param_generic_info + string("<i><b>Relative longitudinal\n<i><b>susceptibility for LLB"), INT2(IOI_MESHPARAM, PARAM_SUSREL));
+	ioInfo.set(param_generic_info + string("<i><b>Relative longitudinal\n<i><b>susceptibility for LLB 2-sublattice"), INT2(IOI_MESHPARAM, PARAM_SUSREL_AFM));
 	ioInfo.set(param_generic_info + string("<i><b>Relative transverse\n<i><b>susceptibility for LLB"), INT2(IOI_MESHPARAM, PARAM_SUSPREL));
 	ioInfo.set(param_generic_info + string("<i><b>Applied field coefficient"), INT2(IOI_MESHPARAM, PARAM_HA));
 	ioInfo.set(param_generic_info + string("<i><b>Set temperature coefficient"), INT2(IOI_MESHPARAM, PARAM_T));
@@ -557,6 +592,9 @@ void Simulation::MakeIOInfo(void)
 	ioInfo.set(param_generic_info + string("<i><b>Young's modulus"), INT2(IOI_MESHPARAM, PARAM_YOUNGSMOD));
 	ioInfo.set(param_generic_info + string("<i><b>Poisson's ratio"), INT2(IOI_MESHPARAM, PARAM_POISSONRATIO));
 	ioInfo.set(param_generic_info + string("<i><b>Specific heat capacity"), INT2(IOI_MESHPARAM, PARAM_SHC));
+	ioInfo.set(param_generic_info + string("<i><b>Electronic specific heat capacity"), INT2(IOI_MESHPARAM, PARAM_SHC_E));
+	ioInfo.set(param_generic_info + string("<i><b>Electron coupling constant\n<i><b>2TM : electron-lattice"), INT2(IOI_MESHPARAM, PARAM_G_E));
+
 
 	//Shows parameter temperature dependence for a given mesh : minorId is the major id of elements in SimParams::simParams (i.e. an entry from PARAM_ enum), auxId is the unique mesh id number, textId is the parameter temperature dependence setting
 	//IOI_MESHPARAMTEMP
@@ -926,6 +964,38 @@ void Simulation::MakeIOInfo(void)
 		string("\n[tc1,1,0,1/tc]dbl-click: edit\n");
 
 	ioInfo.push_back(atomicmoment_info, IOI_ATOMICMOMENT);
+
+	//Shows atomic moment multiple of Bohr magneton for AF meshes. minorId is the unique mesh id number, auxId is available/not available status (must be antiferromagnetic mesh), textId is the value
+	//IOI_ATOMICMOMENT_AFM
+
+	string atomicmoment_afm_info =
+		string("[tc1,1,0,1/tc]<b>Magnetic moment in Bohr magnetons") +
+		string("\n[tc1,1,0,1/tc]<i>Used to calculate parameter</i>") +
+		string("\n[tc1,1,0,1/tc]<i>temperature dependencies when T_Neel > 0</i>") +
+		string("\n[tc1,1,0,1/tc]<i>In particular field-dependence is introduced</i>") +
+		string("\n[tc1,1,0,1/tc]dbl-click: edit\n");
+
+	ioInfo.push_back(atomicmoment_afm_info, IOI_ATOMICMOMENT_AFM);
+
+	//Shows Tc tau couplings. minorId is the unique mesh id number, auxId is available/not available status (must be antiferromagnetic mesh), textId is the value
+	//IOI_TAU
+
+	string tau_info =
+		string("[tc1,1,0,1/tc]<b>Tc tau couplings") +
+		string("\n[tc1,1,0,1/tc]<i>Used to calculate parameter</i>") +
+		string("\n[tc1,1,0,1/tc]<i>temperature dependencies when T_Neel > 0</i>") +
+		string("\n[tc1,1,0,1/tc]dbl-click: edit\n");
+
+	ioInfo.push_back(tau_info, IOI_TAU);
+
+	//Shows temperature model type for mesh. minorId is the unique mesh id number, auxId is the model identifier (entry from TMTYPE_ enum)
+	//IOI_TMODEL
+
+	string tmodel_info =
+		string("[tc1,1,0,1/tc]<b>Temperature model type") +
+		string("\n[tc1,1,0,1/tc]click: change\n");
+
+	ioInfo.push_back(tmodel_info, IOI_TMODEL);
 
 	//Shows cuda enabled/disabled or n/a state. auxId is enabled (1)/disabled(0)/not available(-1) status.
 	//IOI_CUDASTATE
@@ -1315,6 +1385,31 @@ string Simulation::MakeIO(IOI_ identifier, PType ... params)
 		}
 		break;
 
+	case IOI_MESHSCELLSIZE:
+		if (params_str.size() == 1) {
+
+			int meshIndex = ToNum(params_str[0]);
+
+			if (SMesh[meshIndex]->MComputation_Enabled())
+				return MakeInteractiveObject(ToString(SMesh[meshIndex]->GetMeshSCellsize(), "m"), IOI_MESHSCELLSIZE, SMesh[meshIndex]->get_id(), 1, ToString(SMesh[meshIndex]->GetMeshSCellsize(), "m"), ONCOLOR);
+			else
+				return MakeInteractiveObject("N/A", IOI_MESHSCELLSIZE, SMesh[meshIndex]->get_id(), 0, "N/A", OFFCOLOR);
+		}
+		break;
+
+	//Shows link stochastic flag : minorId is the unique mesh id number, auxId is the value off (0), on (1), N/A (-1)
+	case IOI_LINKSTOCHASTIC:
+		if (params_str.size() == 1) {
+
+			int meshIndex = ToNum(params_str[0]);
+
+			if (SMesh[meshIndex]->MComputation_Enabled())
+				return MakeInteractiveObject("On", IOI_LINKSTOCHASTIC, SMesh[meshIndex]->get_id(), 1);
+			else
+				return MakeInteractiveObject("N/A", IOI_LINKSTOCHASTIC, SMesh[meshIndex]->get_id(), -1, "N/A", OFFCOLOR);
+		}
+		break;
+
 	case IOI_SMESHDISPLAY:
 		if (params_str.size() == 1) {
 
@@ -1697,6 +1792,16 @@ string Simulation::MakeIO(IOI_ identifier, PType ... params)
 		}
 		break;
 
+	case IOI_MESH_FORTMODEL:
+		if (params_str.size() == 1) {
+
+			int meshIndex = ToNum(params_str[0]);
+			string meshName = SMesh().get_key_from_index(meshIndex);
+
+			return MakeInteractiveObject(meshName, IOI_MESH_FORTMODEL, SMesh[meshName]->get_id(), 1, meshName);
+		}
+		break;
+
 	case IOI_MESH_FORPBC:
 		if (params_str.size() == 1) {
 
@@ -1714,6 +1819,16 @@ string Simulation::MakeIO(IOI_ identifier, PType ... params)
 			string meshName = SMesh().get_key_from_index(meshIndex);
 
 			return MakeInteractiveObject(meshName, IOI_MESH_FOREXCHCOUPLING, SMesh[meshName]->get_id(), 1, meshName);
+		}
+		break;
+
+	case IOI_MESH_FORSTOCHASTICITY:
+		if (params_str.size() == 1) {
+
+			int meshIndex = ToNum(params_str[0]);
+			string meshName = SMesh().get_key_from_index(meshIndex);
+
+			return MakeInteractiveObject(meshName, IOI_MESH_FORSTOCHASTICITY, SMesh[meshName]->get_id(), 1, meshName);
 		}
 		break;
 
@@ -1904,6 +2019,33 @@ string Simulation::MakeIO(IOI_ identifier, PType ... params)
 			int meshIndex = ToNum(params_str[0]);
 
 			return MakeInteractiveObject(ToString(SMesh[meshIndex]->GetAtomicMoment(), "uB"), IOI_ATOMICMOMENT, SMesh[meshIndex]->get_id(), 1, ToString(SMesh[meshIndex]->GetAtomicMoment(), "uB"));
+		}
+		break;
+
+	case IOI_ATOMICMOMENT_AFM:
+		if (params_str.size() == 1) {
+
+			int meshIndex = ToNum(params_str[0]);
+
+			return MakeInteractiveObject(ToString(SMesh[meshIndex]->GetAtomicMoment_AFM(), "uB"), IOI_ATOMICMOMENT_AFM, SMesh[meshIndex]->get_id(), 1, ToString(SMesh[meshIndex]->GetAtomicMoment_AFM(), "uB"));
+		}
+		break;
+
+	case IOI_TAU:
+		if (params_str.size() == 1) {
+
+			int meshIndex = ToNum(params_str[0]);
+
+			return MakeInteractiveObject(ToString(SMesh[meshIndex]->GetTcCoupling()), IOI_TAU, SMesh[meshIndex]->get_id(), 1, ToString(SMesh[meshIndex]->GetTcCoupling()));
+		}
+		break;
+
+	case IOI_TMODEL:
+		if (params_str.size() == 1) {
+
+			int meshIndex = ToNum(params_str[0]);
+
+			return MakeInteractiveObject(" 1TM ", IOI_TMODEL, SMesh[meshIndex]->get_id(), 1);
 		}
 		break;
 

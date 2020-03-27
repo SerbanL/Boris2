@@ -8,7 +8,7 @@
 #include "BorisCUDALib.h"
 #include "ModulesCUDA.h"
 
-class FMeshCUDA;
+class MeshCUDA;
 class SOTField;
 
 
@@ -17,11 +17,11 @@ class SOTFieldCUDA :
 {
 
 	//pointer to CUDA version of mesh object holding the effective field module holding this CUDA module
-	FMeshCUDA* pMeshCUDA;
+	MeshCUDA* pMeshCUDA;
 
 public:
 
-	SOTFieldCUDA(FMeshCUDA* pMeshCUDA_, SOTField* pHolderModule);
+	SOTFieldCUDA(MeshCUDA* pMeshCUDA_, SOTField* pHolderModule);
 	~SOTFieldCUDA();
 
 	//-------------------Abstract base class method implementations

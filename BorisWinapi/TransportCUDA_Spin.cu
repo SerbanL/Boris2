@@ -14,15 +14,15 @@
 
 void TransportCUDA::IterateSpinSolver_Charge_SOR(cu_obj<cuBReal>& damping, cu_obj<cuBReal>& max_error, cu_obj<cuBReal>& max_value, bool use_NNeu)
 {
-	if (use_NNeu) {
-
-		//iSHE enabled, must use non-homogeneous Neumann boundary condition for grad V -> Note homogeneous Neumann boundary conditions apply when calculating S differentials here (due to Jc.n = 0 at boundaries)
-		pMeshCUDA->V()->IteratePoisson_NNeu_SOR(pMeshCUDA->n_e.dim(), (TransportCUDA_Spin_V_Funcs&)poisson_Spin_V, damping, max_error, max_value);
-	}
-	else {
+	if (!use_NNeu || stsolve == STSOLVE_FERROMAGNETIC || stsolve == STSOLVE_NONE) {
 
 		//no iSHE contribution. Note, iSHE is not included in magnetic meshes.
 		pMeshCUDA->V()->IteratePoisson_SOR(pMeshCUDA->n_e.dim(), (TransportCUDA_Spin_V_Funcs&)poisson_Spin_V, damping, max_error, max_value);
+	}
+	else {
+
+		//iSHE enabled, must use non-homogeneous Neumann boundary condition for grad V -> Note homogeneous Neumann boundary conditions apply when calculating S differentials here (due to Jc.n = 0 at boundaries)
+		pMeshCUDA->V()->IteratePoisson_NNeu_SOR(pMeshCUDA->n_e.dim(), (TransportCUDA_Spin_V_Funcs&)poisson_Spin_V, damping, max_error, max_value);
 	}
 }
 
@@ -130,15 +130,15 @@ void TransportCUDA::PrimeSpinSolver_Charge(void)
 //solve for spin accumulation using Poisson equation for delsq_S, solved using SOR algorithm
 void TransportCUDA::IterateSpinSolver_Spin_SOR(cu_obj<cuBReal>& damping, cu_obj<cuBReal>& max_error, cu_obj<cuBReal>& max_value, bool use_NNeu)
 {
-	if (use_NNeu) {
-
-		//SHE enabled, must use non-homogeneous Neumann boundary condition for grad S
-		pMeshCUDA->S()->IteratePoisson_NNeu_SOR(pMeshCUDA->n_e.dim(), (TransportCUDA_Spin_S_Funcs&)poisson_Spin_S, damping, max_error, max_value);
-	}
-	else {
+	if (!use_NNeu || stsolve == STSOLVE_FERROMAGNETIC) {
 
 		//no SHE contribution. Note, SHE is not included in magnetic meshes.
 		pMeshCUDA->S()->IteratePoisson_SOR(pMeshCUDA->n_e.dim(), (TransportCUDA_Spin_S_Funcs&)poisson_Spin_S, damping, max_error, max_value);
+	}
+	else {
+
+		//SHE enabled, must use non-homogeneous Neumann boundary condition for grad S
+		pMeshCUDA->S()->IteratePoisson_NNeu_SOR(pMeshCUDA->n_e.dim(), (TransportCUDA_Spin_S_Funcs&)poisson_Spin_S, damping, max_error, max_value);
 	}
 }
 
@@ -167,7 +167,7 @@ __global__ void PrimeSpinSolver_Spin_Kernel(ManagedMeshCUDA& cuMesh, TransportCU
 			bool the_enabled = cuIsNZ(cuMesh.pthe_eff->get0());
 			bool she_enabled = cuIsNZ(cuMesh.pSHA->get0());
 
-			if (M.linear_size()) {
+			if (poisson_Spin_S.stsolve == STSOLVE_FERROMAGNETIC) {
 
 				//magnetic mesh
 
@@ -277,7 +277,10 @@ __global__ void CalculateSAField_Kernel(ManagedMeshCUDA& cuMesh)
 //Spin accumulation field
 void TransportCUDA::CalculateSAField(void)
 {
-	CalculateSAField_Kernel <<< (pMeshCUDA->n.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (pMeshCUDA->cuMesh);
+	if (stsolve == STSOLVE_FERROMAGNETIC) {
+
+		CalculateSAField_Kernel <<< (pMeshCUDA->n.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (pMeshCUDA->cuMesh);
+	}
 }
 
 //--------------------------------------------------------------- Effective field from interface spin accumulation drop
@@ -378,7 +381,7 @@ void TransportCUDA::CalculateSAInterfaceField(TransportCUDA* ptrans_sec, CMBNDIn
 	//the top contacting mesh sets G values
 	bool GInterface_Enabled = ((primary_top && pMeshCUDA->GInterface_Enabled()) || (!primary_top && ptrans_sec->pMeshCUDA->GInterface_Enabled()));
 	
-	if (pMeshCUDA->MComputation_Enabled() && !ptrans_sec->pMeshCUDA->Magnetisation_Enabled() && GInterface_Enabled) {
+	if (stsolve == STSOLVE_FERROMAGNETIC && ptrans_sec->stsolve == STSOLVE_NORMALMETAL && GInterface_Enabled) {
 
 		CalculateSAInterfaceField_Kernel <<< (pMeshCUDA->n.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (contactCUDA, ptrans_sec->poisson_Spin_S, poisson_Spin_S);
 	}

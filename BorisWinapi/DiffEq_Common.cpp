@@ -90,10 +90,6 @@ ODECommon::ODECommon(bool called_from_derived) :
 
 ODECommon::~ODECommon()
 {
-#if COMPILECUDA == 1
-	if (pODECUDA) delete pODECUDA;
-	pODECUDA = nullptr;
-#endif
 }
 
 void ODECommon::RepairObjectState(void)
@@ -147,8 +143,6 @@ BError ODECommon::SwitchCUDAState(bool cudaState)
 		if (!pODECUDA) {
 
 			pODECUDA = new ODECommonCUDA(this);
-			//setup the managed cuDiffEq object with pointers to all required data for differential equations calculations
-			if (!error) error = (pODECUDA->Get_ManagedDiffEq_CommonCUDA())()->set_pointers(pODECUDA);
 		}
 	}
 	else {

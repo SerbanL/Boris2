@@ -752,12 +752,74 @@ void Simulation::Print_CurieandMoment_List(void)
 
 string Simulation::Build_CurieandMoment_ListLine(int meshIndex)
 {
-	string curie_and_moment_line = MakeIO(IOI_MESH_FORCURIEANDMOMENT, meshIndex) +
-		"</c>[tc1,1,1,1/tc] [sa0/sa]Set Curie temperature : " + MakeIO(IOI_CURIETEMP, meshIndex) +
-		"</c>[tc1,1,1,1/tc] [sa1/sa]Indicative material Curie temperature : " + MakeIO(IOI_CURIETEMPMATERIAL, meshIndex) +
-		"</c>[tc1,1,1,1/tc] [sa2/sa]Atomic moment (multiple of Bohr magneton) : " + MakeIO(IOI_ATOMICMOMENT, meshIndex);
+	if (meshIndex < SMesh.size()) {
 
-	return curie_and_moment_line;
+		if (SMesh[meshIndex]->GetMeshType() != MESH_ANTIFERROMAGNETIC) {
+
+			string curie_and_moment_line = MakeIO(IOI_MESH_FORCURIEANDMOMENT, meshIndex) +
+				"</c>[tc1,1,1,1/tc] [sa0/sa]Set Curie temperature : [sa1/sa]" + MakeIO(IOI_CURIETEMP, meshIndex) +
+				"</c>[tc1,1,1,1/tc] [sa2/sa]Indicative material Curie temperature : [sa3/sa]" + MakeIO(IOI_CURIETEMPMATERIAL, meshIndex) +
+				"</c>[tc1,1,1,1/tc] [sa4/sa]Atomic moment (multiple of Bohr magneton) : [sa5/sa]" + MakeIO(IOI_ATOMICMOMENT, meshIndex);
+
+			return curie_and_moment_line;
+		}
+		else {
+
+			string curie_and_moment_line = MakeIO(IOI_MESH_FORCURIEANDMOMENT, meshIndex) +
+				"</c>[tc1,1,1,1/tc] [sa0/sa]Set Neel temperature : [sa1/sa]" + MakeIO(IOI_CURIETEMP, meshIndex) +
+				"</c>[tc1,1,1,1/tc] [sa2/sa]Indicative material Neel temperature : [sa3/sa]" + MakeIO(IOI_CURIETEMPMATERIAL, meshIndex) +
+				"</c>[tc1,1,1,1/tc] [sa4/sa]Atomic moments (multiples of Bohr magneton) : [sa5/sa]" + MakeIO(IOI_ATOMICMOMENT_AFM, meshIndex) +
+				"</c>[tc1,1,1,1/tc] [sa6/sa]Tc coupling tau11, tau22, tau12, tau21 : [sa7/sa]" + MakeIO(IOI_TAU, meshIndex);
+
+			return curie_and_moment_line;
+		}
+	}
+
+	return "";
+}
+
+//---------------------------------------------------- TEMPERATURE MODEL TYPE
+
+void Simulation::Print_TemperatureModel_List(void)
+{
+	string tmodel_list;
+
+	for (int idxMesh = 0; idxMesh < (int)SMesh().size(); idxMesh++) {
+
+		tmodel_list += Build_TemperatureModel_ListLine(idxMesh) + "\n";
+	}
+
+	BD.DisplayFormattedConsoleMessage(tmodel_list);
+}
+
+string Simulation::Build_TemperatureModel_ListLine(int meshIndex)
+{
+	string tmodel_line = MakeIO(IOI_MESH_FORTMODEL, meshIndex) +
+		"</c>[tc1,1,1,1/tc] [sa0/sa]Temperature model type : " + MakeIO(IOI_TMODEL, meshIndex);
+
+	return tmodel_line;
+}
+
+//---------------------------------------------------- STOCHASTICITY SETIINGS
+
+void Simulation::Print_Stochasticity_List(void)
+{
+	string stochasticity_list;
+
+	for (int idxMesh = 0; idxMesh < (int)SMesh().size(); idxMesh++) {
+
+		stochasticity_list += Build_Stochasticity_ListLine(idxMesh) + "\n";
+	}
+
+	BD.DisplayFormattedConsoleMessage(stochasticity_list);
+}
+
+string Simulation::Build_Stochasticity_ListLine(int meshIndex)
+{
+	string stochasticity_line = MakeIO(IOI_MESH_FORSTOCHASTICITY, meshIndex) +
+		"</c>[tc1,1,1,1/tc] [sa0/sa]Stochastic cellsize : " + MakeIO(IOI_MESHSCELLSIZE, meshIndex) + "</c>[tc1,1,1,1/tc] [sa1/sa] Link to magnetic cellize : " + MakeIO(IOI_LINKSTOCHASTIC, meshIndex);
+
+	return stochasticity_line;
 }
 
 //---------------------------------------------------- CUDA and MEMORY INFO

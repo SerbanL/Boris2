@@ -142,6 +142,18 @@
     <Filter Include="DIFF EQUATIONS AFM - CUDA">
       <UniqueIdentifier>{5f26914b-0f43-49a2-a4ee-2e5155e418cb}</UniqueIdentifier>
     </Filter>
+    <Filter Include="DIFF EQUATIONS DM">
+      <UniqueIdentifier>{7dcbeaf1-ca11-4f2a-8b86-34656e6fd5f3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="DIFF EQUATIONS DM - CUDA">
+      <UniqueIdentifier>{16d1ff18-3d5a-418c-8b75-c5429b403693}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="HEAT SOLVER">
+      <UniqueIdentifier>{d5e3c993-59b5-4857-817d-3e893d17b84c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="HEAT SOLVER - CUDA">
+      <UniqueIdentifier>{73452263-87d4-48e5-a27b-2db1c1424af8}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <Text Include="ReadMe.txt" />
@@ -187,9 +199,6 @@
       <Filter>MODULES</Filter>
     </ClInclude>
     <ClInclude Include="Demag.h">
-      <Filter>MODULES</Filter>
-    </ClInclude>
-    <ClInclude Include="Heat.h">
       <Filter>MODULES</Filter>
     </ClInclude>
     <ClInclude Include="SurfExchange.h">
@@ -282,9 +291,6 @@
     <ClInclude Include="Oersted.h">
       <Filter>MODULES - SUPERMESH</Filter>
     </ClInclude>
-    <ClInclude Include="SHeat.h">
-      <Filter>MODULES - SUPERMESH</Filter>
-    </ClInclude>
     <ClInclude Include="StrayField.h">
       <Filter>MODULES - SUPERMESH</Filter>
     </ClInclude>
@@ -354,16 +360,7 @@
     <ClInclude Include="OerstedKernelCUDA.h">
       <Filter>CONVOLUTION - CUDA</Filter>
     </ClInclude>
-    <ClInclude Include="HeatCUDA.h">
-      <Filter>MODULES - CUDA</Filter>
-    </ClInclude>
-    <ClInclude Include="SHeatCUDA.h">
-      <Filter>MODULES - SUPERMESH - CUDA</Filter>
-    </ClInclude>
     <ClInclude Include="SurfExchangeCUDA.h">
-      <Filter>MODULES - CUDA</Filter>
-    </ClInclude>
-    <ClInclude Include="HeatCUDA_CMBND.h">
       <Filter>MODULES - CUDA</Filter>
     </ClInclude>
     <ClInclude Include="Transport.h">
@@ -585,6 +582,48 @@
     <ClInclude Include="MElasticCUDA.h">
       <Filter>MODULES - CUDA</Filter>
     </ClInclude>
+    <ClInclude Include="Mesh_Diamagnetic.h">
+      <Filter>MESHES</Filter>
+    </ClInclude>
+    <ClInclude Include="DiffEqDM.h">
+      <Filter>DIFF EQUATIONS DM</Filter>
+    </ClInclude>
+    <ClInclude Include="Mesh_DiamagneticCUDA.h">
+      <Filter>MESHES - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="DiffEqDM_EquationsCUDA.h">
+      <Filter>DIFF EQUATIONS DM - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="DiffEqDM_SEquationsCUDA.h">
+      <Filter>DIFF EQUATIONS DM - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="ManagedDiffEqDMCUDA.h">
+      <Filter>DIFF EQUATIONS DM - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="DiffEqDMCUDA.h">
+      <Filter>DIFF EQUATIONS DM - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="Transport_Defs.h">
+      <Filter>TRANSPORT SOLVER</Filter>
+    </ClInclude>
+    <ClInclude Include="Heat.h">
+      <Filter>HEAT SOLVER</Filter>
+    </ClInclude>
+    <ClInclude Include="SHeat.h">
+      <Filter>HEAT SOLVER</Filter>
+    </ClInclude>
+    <ClInclude Include="HeatCUDA.h">
+      <Filter>HEAT SOLVER - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="HeatCUDA_CMBND.h">
+      <Filter>HEAT SOLVER - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="SHeatCUDA.h">
+      <Filter>HEAT SOLVER - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="Heat_Defs.h">
+      <Filter>HEAT SOLVER</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="BorisGraphics.cpp">
@@ -627,9 +666,6 @@
       <Filter>MODULES</Filter>
     </ClCompile>
     <ClCompile Include="Zeeman.cpp">
-      <Filter>MODULES</Filter>
-    </ClCompile>
-    <ClCompile Include="Heat.cpp">
       <Filter>MODULES</Filter>
     </ClCompile>
     <ClCompile Include="PhysQRep.cpp">
@@ -696,9 +732,6 @@
       <Filter>MODULES</Filter>
     </ClCompile>
     <ClCompile Include="Oersted.cpp">
-      <Filter>MODULES - SUPERMESH</Filter>
-    </ClCompile>
-    <ClCompile Include="SHeat.cpp">
       <Filter>MODULES - SUPERMESH</Filter>
     </ClCompile>
     <ClCompile Include="StrayField.cpp">
@@ -791,16 +824,7 @@
     <ClCompile Include="OerstedKernelCUDA.cpp">
       <Filter>CONVOLUTION - CUDA</Filter>
     </ClCompile>
-    <ClCompile Include="SHeatCUDA.cpp">
-      <Filter>MODULES - SUPERMESH - CUDA</Filter>
-    </ClCompile>
-    <ClCompile Include="HeatCUDA.cpp">
-      <Filter>MODULES - CUDA</Filter>
-    </ClCompile>
     <ClCompile Include="SurfExchangeCUDA.cpp">
-      <Filter>MODULES - CUDA</Filter>
-    </ClCompile>
-    <ClCompile Include="HeatCUDA_CMBND.cpp">
       <Filter>MODULES - CUDA</Filter>
     </ClCompile>
     <ClCompile Include="Transport.cpp">
@@ -1148,6 +1172,81 @@
     <ClCompile Include="MElasticCUDA.cpp">
       <Filter>MODULES - CUDA</Filter>
     </ClCompile>
+    <ClCompile Include="Mesh_Diamagnetic.cpp">
+      <Filter>MESHES</Filter>
+    </ClCompile>
+    <ClCompile Include="DiffEqDM_Evals_AHeun.cpp">
+      <Filter>DIFF EQUATIONS DM</Filter>
+    </ClCompile>
+    <ClCompile Include="DiffEqDM_Evals_Euler.cpp">
+      <Filter>DIFF EQUATIONS DM</Filter>
+    </ClCompile>
+    <ClCompile Include="DiffEqDM_Evals_RK4.cpp">
+      <Filter>DIFF EQUATIONS DM</Filter>
+    </ClCompile>
+    <ClCompile Include="DiffEqDM_Evals_RK23.cpp">
+      <Filter>DIFF EQUATIONS DM</Filter>
+    </ClCompile>
+    <ClCompile Include="DiffEqDM_Evals_RKCK45.cpp">
+      <Filter>DIFF EQUATIONS DM</Filter>
+    </ClCompile>
+    <ClCompile Include="DiffEqDM_Evals_RKDP54.cpp">
+      <Filter>DIFF EQUATIONS DM</Filter>
+    </ClCompile>
+    <ClCompile Include="DiffEqDM_Evals_RKF.cpp">
+      <Filter>DIFF EQUATIONS DM</Filter>
+    </ClCompile>
+    <ClCompile Include="DiffEqDM_Evals_SD.cpp">
+      <Filter>DIFF EQUATIONS DM</Filter>
+    </ClCompile>
+    <ClCompile Include="DiffEqDM_Evals_TEuler.cpp">
+      <Filter>DIFF EQUATIONS DM</Filter>
+    </ClCompile>
+    <ClCompile Include="DiffEqDM_SEquations.cpp">
+      <Filter>DIFF EQUATIONS DM</Filter>
+    </ClCompile>
+    <ClCompile Include="DiffEqDM.cpp">
+      <Filter>DIFF EQUATIONS DM</Filter>
+    </ClCompile>
+    <ClCompile Include="DiffEqDM_Equations.cpp">
+      <Filter>DIFF EQUATIONS DM</Filter>
+    </ClCompile>
+    <ClCompile Include="DiffEqDM_Evals_ABM.cpp">
+      <Filter>DIFF EQUATIONS DM</Filter>
+    </ClCompile>
+    <ClCompile Include="Mesh_DiamagneticCUDA.cpp">
+      <Filter>MESHES - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="ManagedDiffEqDMCUDA.cpp">
+      <Filter>DIFF EQUATIONS DM - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="DiffEqDMCUDA.cpp">
+      <Filter>DIFF EQUATIONS DM - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="Heat.cpp">
+      <Filter>HEAT SOLVER</Filter>
+    </ClCompile>
+    <ClCompile Include="SHeat.cpp">
+      <Filter>HEAT SOLVER</Filter>
+    </ClCompile>
+    <ClCompile Include="HeatCUDA.cpp">
+      <Filter>HEAT SOLVER - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="HeatCUDA_CMBND.cpp">
+      <Filter>HEAT SOLVER - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="SHeatCUDA.cpp">
+      <Filter>HEAT SOLVER - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="Heat_Solve.cpp">
+      <Filter>HEAT SOLVER</Filter>
+    </ClCompile>
+    <ClCompile Include="Heat_Auxiliary.cpp">
+      <Filter>HEAT SOLVER</Filter>
+    </ClCompile>
+    <ClCompile Include="SuperMeshTemperature.cpp">
+      <Filter>SUPERMESH</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="BorisWinapi.rc">
@@ -1200,12 +1299,6 @@
     </CudaCompile>
     <CudaCompile Include="OerstedKernelCUDA.cu">
       <Filter>CONVOLUTION - CUDA</Filter>
-    </CudaCompile>
-    <CudaCompile Include="SHeatCUDA.cu">
-      <Filter>MODULES - SUPERMESH - CUDA</Filter>
-    </CudaCompile>
-    <CudaCompile Include="HeatCUDA.cu">
-      <Filter>MODULES - CUDA</Filter>
     </CudaCompile>
     <CudaCompile Include="SurfExchangeCUDA.cu">
       <Filter>MODULES - CUDA</Filter>
@@ -1356,6 +1449,51 @@
     </CudaCompile>
     <CudaCompile Include="MElasticCUDA.cu">
       <Filter>MODULES - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="DiffEqDM_EvalsCUDA_RK23.cu">
+      <Filter>DIFF EQUATIONS DM - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="DiffEqDM_EvalsCUDA_RKCK45.cu">
+      <Filter>DIFF EQUATIONS DM - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="DiffEqDM_EvalsCUDA_RKDP54.cu">
+      <Filter>DIFF EQUATIONS DM - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="DiffEqDM_EvalsCUDA_RKF.cu">
+      <Filter>DIFF EQUATIONS DM - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="DiffEqDM_EvalsCUDA_SD.cu">
+      <Filter>DIFF EQUATIONS DM - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="DiffEqDM_EvalsCUDA_TEuler.cu">
+      <Filter>DIFF EQUATIONS DM - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="DiffEqDM_EvalsLLGCUDA.cu">
+      <Filter>DIFF EQUATIONS DM - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="DiffEqDM_EvalsCUDA.cu">
+      <Filter>DIFF EQUATIONS DM - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="DiffEqDM_EvalsCUDA_ABM.cu">
+      <Filter>DIFF EQUATIONS DM - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="DiffEqDM_EvalsCUDA_AHeun.cu">
+      <Filter>DIFF EQUATIONS DM - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="DiffEqDM_EvalsCUDA_Euler.cu">
+      <Filter>DIFF EQUATIONS DM - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="DiffEqDM_EvalsCUDA_RK4.cu">
+      <Filter>DIFF EQUATIONS DM - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="DiffEqDMCUDA.cu">
+      <Filter>DIFF EQUATIONS DM - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="HeatCUDA.cu">
+      <Filter>HEAT SOLVER - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="SHeatCUDA.cu">
+      <Filter>HEAT SOLVER - CUDA</Filter>
     </CudaCompile>
   </ItemGroup>
 </Project>

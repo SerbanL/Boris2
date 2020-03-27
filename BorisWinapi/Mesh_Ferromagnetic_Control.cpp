@@ -1,6 +1,8 @@
 #include "stdafx.h"
 #include "Mesh_Ferromagnetic.h"
 
+#ifdef MESH_COMPILATION_FERROMAGNETIC
+
 //----------------------------------- FERROMAGNETIC MESH QUANTITIES CONTROL 
 
 void FMesh::SetMagnetisationAngle(double polar, double azim, Rect rectangle)
@@ -355,3 +357,5 @@ BError FMesh::Set_PBC_Z(int pbc_z)
 
 	return error;
 }
+
+#endif

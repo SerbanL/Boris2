@@ -1,10 +1,12 @@
 #include "stdafx.h"
 #include "DiffEqAFM.h"
+
+#ifdef MESH_COMPILATION_ANTIFERROMAGNETIC
+#ifdef ODE_EVAL_RKDP
+
 #include "Mesh_AntiFerromagnetic.h"
 #include "SuperMesh.h"
 #include "MeshParamsControl.h"
-
-#ifdef ODE_EVAL_RKDP
 
 //--------------------------------------------- RUNGE KUTTA DORMAND-PRINCE (4th order solution, 5th order error)
 
@@ -270,4 +272,5 @@ void DifferentialEquationAFM::RunRKDP54_Step5(void)
 	}
 }
 
+#endif
 #endif

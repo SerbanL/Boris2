@@ -151,12 +151,12 @@ double Anisotropy_Cubic::UpdateField(void)
 			if (pMesh->M.is_not_empty(idx)) {
 
 				DBL2 Ms_AFM = pMesh->Ms_AFM;
-				double K1 = pMesh->K1;
-				double K2 = pMesh->K2;
+				DBL2 K1_AFM = pMesh->K1_AFM;
+				DBL2 K2_AFM = pMesh->K2_AFM;
 				DBL3 mcanis_ea1 = pMesh->mcanis_ea1;
 				DBL3 mcanis_ea2 = pMesh->mcanis_ea2;
 
-				pMesh->update_parameters_mcoarse(idx, pMesh->Ms_AFM, Ms_AFM, pMesh->K1, K1, pMesh->K2, K2, pMesh->mcanis_ea1, mcanis_ea1, pMesh->mcanis_ea2, mcanis_ea2);
+				pMesh->update_parameters_mcoarse(idx, pMesh->Ms_AFM, Ms_AFM, pMesh->K1_AFM, K1_AFM, pMesh->K2_AFM, K2_AFM, pMesh->mcanis_ea1, mcanis_ea1, pMesh->mcanis_ea2, mcanis_ea2);
 
 				//vector product of ea1 and ea2 : the third orthogonal axis
 				DBL3 mcanis_ea3 = mcanis_ea1 ^ mcanis_ea2;
@@ -196,14 +196,14 @@ double Anisotropy_Cubic::UpdateField(void)
 
 				//update effective field with the anisotropy field
 				DBL3 Heff_value = DBL3(
-					(-2 * K1 / (MU0*Ms_AFM.i)) * (mcanis_ea1.i * a1 + mcanis_ea2.i * a2 + mcanis_ea3.i * a3)
-					+ (-2 * K2 / (MU0*Ms_AFM.i)) * (mcanis_ea1.i * b1 + mcanis_ea2.i * b2 + mcanis_ea3.i * b3),
+					(-2 * K1_AFM.i / (MU0*Ms_AFM.i)) * (mcanis_ea1.i * a1 + mcanis_ea2.i * a2 + mcanis_ea3.i * a3)
+					+ (-2 * K2_AFM.i / (MU0*Ms_AFM.i)) * (mcanis_ea1.i * b1 + mcanis_ea2.i * b2 + mcanis_ea3.i * b3),
 
-					(-2 * K1 / (MU0*Ms_AFM.i)) * (mcanis_ea1.j * a1 + mcanis_ea2.j * a2 + mcanis_ea3.j * a3)
-					+ (-2 * K2 / (MU0*Ms_AFM.i)) * (mcanis_ea1.j * b1 + mcanis_ea2.j * b2 + mcanis_ea3.j * b3),
+					(-2 * K1_AFM.i / (MU0*Ms_AFM.i)) * (mcanis_ea1.j * a1 + mcanis_ea2.j * a2 + mcanis_ea3.j * a3)
+					+ (-2 * K2_AFM.i / (MU0*Ms_AFM.i)) * (mcanis_ea1.j * b1 + mcanis_ea2.j * b2 + mcanis_ea3.j * b3),
 
-					(-2 * K1 / (MU0*Ms_AFM.i)) * (mcanis_ea1.k * a1 + mcanis_ea2.k * a2 + mcanis_ea3.k * a3)
-					+ (-2 * K2 / (MU0*Ms_AFM.i)) * (mcanis_ea1.k * b1 + mcanis_ea2.k * b2 + mcanis_ea3.k * b3)
+					(-2 * K1_AFM.i / (MU0*Ms_AFM.i)) * (mcanis_ea1.k * a1 + mcanis_ea2.k * a2 + mcanis_ea3.k * a3)
+					+ (-2 * K2_AFM.i / (MU0*Ms_AFM.i)) * (mcanis_ea1.k * b1 + mcanis_ea2.k * b2 + mcanis_ea3.k * b3)
 				);
 
 				pMesh->Heff[idx] += Heff_value;
@@ -211,20 +211,20 @@ double Anisotropy_Cubic::UpdateField(void)
 				//same thing for sub-lattice B
 
 				DBL3 Heff_value2 = DBL3(
-					(-2 * K1 / (MU0*Ms_AFM.j)) * (mcanis_ea1.i * a1B + mcanis_ea2.i * a2B + mcanis_ea3.i * a3B)
-					+ (-2 * K2 / (MU0*Ms_AFM.j)) * (mcanis_ea1.i * b1B + mcanis_ea2.i * b2B + mcanis_ea3.i * b3B),
+					(-2 * K1_AFM.j / (MU0*Ms_AFM.j)) * (mcanis_ea1.i * a1B + mcanis_ea2.i * a2B + mcanis_ea3.i * a3B)
+					+ (-2 * K2_AFM.j / (MU0*Ms_AFM.j)) * (mcanis_ea1.i * b1B + mcanis_ea2.i * b2B + mcanis_ea3.i * b3B),
 
-					(-2 * K1 / (MU0*Ms_AFM.j)) * (mcanis_ea1.j * a1B + mcanis_ea2.j * a2B + mcanis_ea3.j * a3B)
-					+ (-2 * K2 / (MU0*Ms_AFM.j)) * (mcanis_ea1.j * b1B + mcanis_ea2.j * b2B + mcanis_ea3.j * b3B),
+					(-2 * K1_AFM.j / (MU0*Ms_AFM.j)) * (mcanis_ea1.j * a1B + mcanis_ea2.j * a2B + mcanis_ea3.j * a3B)
+					+ (-2 * K2_AFM.j / (MU0*Ms_AFM.j)) * (mcanis_ea1.j * b1B + mcanis_ea2.j * b2B + mcanis_ea3.j * b3B),
 
-					(-2 * K1 / (MU0*Ms_AFM.j)) * (mcanis_ea1.k * a1B + mcanis_ea2.k * a2B + mcanis_ea3.k * a3B)
-					+ (-2 * K2 / (MU0*Ms_AFM.j)) * (mcanis_ea1.k * b1B + mcanis_ea2.k * b2B + mcanis_ea3.k * b3B)
+					(-2 * K1_AFM.j / (MU0*Ms_AFM.j)) * (mcanis_ea1.k * a1B + mcanis_ea2.k * a2B + mcanis_ea3.k * a3B)
+					+ (-2 * K2_AFM.j / (MU0*Ms_AFM.j)) * (mcanis_ea1.k * b1B + mcanis_ea2.k * b2B + mcanis_ea3.k * b3B)
 				);
 
 				pMesh->Heff2[idx] += Heff_value2;
 
 				//update energy (E/V)
-				energy += (K1 * (d1*d1*d2*d2 + d1*d1*d3*d3 + d2*d2*d3*d3) + K2 * d123*d123 + K1 * (d1B*d1B*d2B*d2B + d1B*d1B*d3B*d3B + d2B*d2B*d3B*d3B) + K2 * d123B*d123B) / 2;
+				energy += (K1_AFM.i * (d1*d1*d2*d2 + d1*d1*d3*d3 + d2*d2*d3*d3) + K2_AFM.i * d123*d123 + K1_AFM.j * (d1B*d1B*d2B*d2B + d1B*d1B*d3B*d3B + d2B*d2B*d3B*d3B) + K2_AFM.j * d123B*d123B) / 2;
 			}
 		}
 	}

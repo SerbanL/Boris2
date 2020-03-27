@@ -29,8 +29,7 @@ VEC<DBL3>& STransport::GetInterfacialSpinTorque(Transport* pMeshTrans)
 			int idx_sec = CMBNDcontacts[idx1][idx2].mesh_idx.i;
 			int idx_pri = CMBNDcontacts[idx1][idx2].mesh_idx.j;
 
-			if (pTransport[idx_pri] == pMeshTrans)
-				pTransport[idx_pri]->CalculateDisplaySAInterfaceTorque(pTransport[idx_sec], CMBNDcontacts[idx1][idx2]);
+			if (pTransport[idx_pri] == pMeshTrans) pTransport[idx_pri]->CalculateDisplaySAInterfaceTorque(pTransport[idx_sec], CMBNDcontacts[idx1][idx2]);
 		}
 	}
 

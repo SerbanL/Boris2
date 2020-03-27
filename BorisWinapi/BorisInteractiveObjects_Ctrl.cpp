@@ -104,7 +104,7 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 		single_call_launch<string>(&Simulation::HandleCommand, command, THREAD_HANDLEMESSAGE);
 	};
 
-	//SEND COMMAND TO COMMAND HANDLER (verbose, but erase console line entry) : makes code neater using this quick lambda
+	//SEND COMMAND TO COMMAND HANDLER (verbose) : makes code neater using this quick lambda
 	auto sendCommand_verbose = [&](CMD_ commandCode, auto ...params) {
 
 		string command = commands.get_key_from_index(commandCode);
@@ -114,7 +114,6 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 
 		//launch command
 		single_call_launch<string>(&Simulation::HandleCommand, command, THREAD_HANDLEMESSAGE);
-		single_call_launch<string>(&Simulation::SetConsoleEntryLineText, "", THREAD_HANDLEMESSAGE2);
 	};
 
 	//SET CONSOLE ENTRY LINE : form a command syntax and set it as the console entry line for further editing by user
@@ -184,7 +183,19 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 		if (actionCode == AC_MOUSELEFTDOWN) sendCommand_verbose(CMD_ADDMODULE, SMesh.key_from_meshId(meshId), moduleHandles(module));
 
 		//try to remove module
-		else if (actionCode == AC_MOUSERIGHTDOWN) sendCommand_verbose(CMD_DELMODULE, SMesh.key_from_meshId(meshId), moduleHandles(module));
+		else if (actionCode == AC_MOUSERIGHTDOWN) {
+
+			//special treatment of MOD_DEMAG to control if excluded from multilayered demag convolution
+			if (module == MOD_DEMAG && SMesh.IsSuperMeshModuleSet(MODS_SDEMAG)) {
+
+				int meshIdx = SMesh.contains_id(meshId);
+				if (meshIdx >= 0) {
+
+					sendCommand_verbose(CMD_EXCLUDEMULTICONVDEMAG, !SMesh[meshIdx]->Get_Demag_Exclusion(), SMesh.key_from_meshId(meshId));
+				}
+			}
+			else sendCommand_verbose(CMD_DELMODULE, SMesh.key_from_meshId(meshId), moduleHandles(module));
+		}
 	}
 	break;
 
@@ -275,8 +286,10 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 	case IOI_MESH_FORTEMPERATURE:
 	case IOI_MESH_FORHEATBOUNDARIES:
 	case IOI_MESH_FORCURIEANDMOMENT:
+	case IOI_MESH_FORTMODEL:
 	case IOI_MESH_FORPBC:
 	case IOI_MESH_FOREXCHCOUPLING:
+	case IOI_MESH_FORSTOCHASTICITY:
 	{
 		//parameters from iop
 		string meshName = iop.textId;
@@ -422,6 +435,44 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 			string to_text = pTO->GetText();
 			sendCommand_verbose(CMD_MCELLSIZE, combine(split(trimspaces(to_text), ",", ";"), " "));
 		};
+	}
+	break;
+
+	//Shows stochastic cellsize (units m) : minorId is the unique mesh id number, auxId is enabled/disabled status, textId is the mesh cellsize
+	case IOI_MESHSCELLSIZE:
+	{
+		//parameters from iop
+		int meshId = iop.minorId;
+		bool enabled = (bool)iop.auxId;
+		string cellsize_string = iop.textId;
+
+		//on double-click make popup edit box to edit the currently displayed value
+		if (actionCode == AC_DOUBLECLICK && enabled) {
+
+			sendCommand_verbose(CMD_MESHFOCUS, SMesh.key_from_meshId(meshId));
+			actionOutcome = AO_STARTPOPUPEDITBOX;
+		}
+
+		//popup edit box has returned some text - try to set value from it
+		if (actionCode == AC_POPUPEDITTEXTBOXRETURNEDTEXT) {
+
+			//the actual text returned by the popup edit box
+			string to_text = pTO->GetText();
+			sendCommand_verbose(CMD_SCELLSIZE, combine(split(trimspaces(to_text), ",", ";"), " "));
+		};
+	}
+	break;
+
+	//Shows link stochastic flag : minorId is the unique mesh id number, auxId is the value off (0), on (1), N/A (-1)
+	case IOI_LINKSTOCHASTIC:
+	{
+		int meshId = iop.minorId;
+		int status = iop.auxId;
+
+		if (status >= 0) {
+
+			if (actionCode == AC_MOUSELEFTDOWN) sendCommand_verbose(CMD_LINKSTOCHASTIC, (status + 1) % 2, SMesh.key_from_meshId(meshId));
+		}
 	}
 	break;
 
@@ -597,8 +648,6 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 		int outDataId = iop.minorId;
 		int io_index = iop.auxId;
 
-		string dataHandle = dataDescriptor.get_key_from_ID(saveDataList[INT2(0, outDataId)].datumId);
-
 		if (actionCode == AC_MOUSERIGHTDOWN) sendCommand_verbose(CMD_DELDATA, io_index);
 
 		//on double-click make popup edit box to edit the currently displayed value
@@ -641,7 +690,11 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 
 			if (iop.interactingObjectId == INT2(WIN_DATABOX, 0)) {
 
-				sendCommand_verbose(CMD_ADDPINNEDDATA, dataHandle, saveDataList[io_index].meshName, saveDataList[io_index].rectangle);
+				if (saveDataList.is_id_set(INT2(0, outDataId))) {
+
+					string dataHandle = dataDescriptor.get_key_from_ID(saveDataList[INT2(0, outDataId)].datumId);
+					sendCommand_verbose(CMD_ADDPINNEDDATA, dataHandle, saveDataList[io_index].meshName, saveDataList[io_index].rectangle);
+				}
 
 				//call for interaction to end as purpose achieved
 				actionOutcome = AO_ENDINTERACTION;
@@ -842,7 +895,7 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 		if (actionCode == AC_DOUBLECLICK) { 
 			
 			//only allow editing of value if this is a text equation or an  array (i.e. if it has a temperature dependence set)
-			if (SMesh[meshName]->is_paramtemp_set(paramId)) actionOutcome = AO_STARTPOPUPEDITBOX;
+			if (SMesh[meshName]->is_paramtemp_set(paramId) || SMesh[meshName]->is_paramtempequation_set(paramId)) actionOutcome = AO_STARTPOPUPEDITBOX;
 		}
 
 		//popup edit box has returned some text - try to set value from it (only applicable if the parameter has a equation temperature dependence
@@ -1411,8 +1464,6 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 
 			sendCommand_verbose(CMD_CURIETEMPERATURE, to_text, SMesh.key_from_meshId(meshId));
 		}
-
-		if (actionCode == AC_MOUSERIGHTDOWN) sendCommand_verbose(CMD_CURIETEMPERATURE, temp_string, SMesh.key_from_meshId(meshId));
 	}
 	break;
 
@@ -1433,8 +1484,6 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 
 			sendCommand_verbose(CMD_CURIETEMPERATUREMATERIAL, to_text, SMesh.key_from_meshId(meshId));
 		}
-
-		if (actionCode == AC_MOUSERIGHTDOWN) sendCommand_verbose(CMD_CURIETEMPERATUREMATERIAL, temp_string, SMesh.key_from_meshId(meshId));
 	}
 	break;
 
@@ -1455,8 +1504,63 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 
 			sendCommand_verbose(CMD_ATOMICMOMENT, to_text, SMesh.key_from_meshId(meshId));
 		}
+	}
+	break;
 
-		if (actionCode == AC_MOUSERIGHTDOWN) sendCommand_verbose(CMD_ATOMICMOMENT, amoment_string, SMesh.key_from_meshId(meshId));
+	//Shows atomic moment multiple of Bohr magneton for AF meshes. minorId is the unique mesh id number, auxId is available/not available status (must be antiferromagnetic mesh), textId is the value
+	case IOI_ATOMICMOMENT_AFM:
+	{
+		int meshId = iop.minorId;
+		string amoment_string = iop.textId;
+
+		//on double-click make popup edit box to edit the currently displayed value
+		if (actionCode == AC_DOUBLECLICK) { actionOutcome = AO_STARTPOPUPEDITBOX; }
+
+		//popup edit box has returned some text - try to set value from it
+		else if (actionCode == AC_POPUPEDITTEXTBOXRETURNEDTEXT) {
+
+			//the actual text returned by the popup edit box
+			string to_text = trimendspaces(pTO->GetText());
+
+			sendCommand_verbose(CMD_ATOMICMOMENT, to_text, SMesh.key_from_meshId(meshId));
+		}
+	}
+	break;
+
+	//Shows atomic moment multiple of Bohr magneton for AF meshes. minorId is the unique mesh id number, auxId is available/not available status (must be antiferromagnetic mesh), textId is the value
+	case IOI_TAU:
+	{
+		int meshId = iop.minorId;
+		string tau_string = iop.textId;
+
+		//on double-click make popup edit box to edit the currently displayed value
+		if (actionCode == AC_DOUBLECLICK) { actionOutcome = AO_STARTPOPUPEDITBOX; }
+
+		//popup edit box has returned some text - try to set value from it
+		else if (actionCode == AC_POPUPEDITTEXTBOXRETURNEDTEXT) {
+
+			//the actual text returned by the popup edit box
+			string to_text = trimendspaces(pTO->GetText());
+
+			sendCommand_verbose(CMD_TAU, to_text, SMesh.key_from_meshId(meshId));
+		}
+	}
+	break;
+
+	//Shows temperature model type for mesh. minorId is the unique mesh id number, auxId is the model identifier (entry from TMTYPE_ enum)
+	case IOI_TMODEL:
+	{
+		int meshId = iop.minorId;
+		int tmodel = iop.auxId;
+
+		if (actionCode == AC_MOUSELEFTDOWN) sendCommand_verbose(CMD_TMODEL, tmodel % ((int)TMTYPE_NUMMODELS - 1) + 1, SMesh.key_from_meshId(meshId));
+		else if (actionCode == AC_MOUSERIGHTDOWN) {
+
+			if (tmodel > 1) tmodel--;
+			else tmodel = (int)TMTYPE_NUMMODELS - 1;
+
+			sendCommand_verbose(CMD_TMODEL, tmodel, SMesh.key_from_meshId(meshId));
+		}
 	}
 	break;
 

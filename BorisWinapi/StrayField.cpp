@@ -40,7 +40,13 @@ BError StrayField::Initialize(void)
 
 			if ((*pSMesh)[idx]->MComputation_Enabled()) {
 
-				meshes_out.push_back(&(reinterpret_cast<FMesh*>((*pSMesh)[idx])->Heff));
+				meshes_out.push_back(&((*pSMesh)[idx]->Heff));
+
+				//for antiferromagnetic meshes we also need to add the stray field to the second sub-lattice
+				if ((*pSMesh)[idx]->GetMeshType() == MESH_ANTIFERROMAGNETIC) {
+
+					meshes_out.push_back(&((*pSMesh)[idx]->Heff2));
+				}
 			}
 
 			if ((*pSMesh)[idx]->GetMeshType() == MESH_DIPOLE) {

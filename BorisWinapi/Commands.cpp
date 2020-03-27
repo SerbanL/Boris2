@@ -23,8 +23,8 @@ void Simulation::Script_Server_Control(bool status)
 	}
 }
 
-void Simulation::Listen_Incoming_Message(void) {
-
+void Simulation::Listen_Incoming_Message(void) 
+{
 	//Listen for incoming messages - non-blocking call, but this method runs on a thread with an infinite loop which keeps calling Simulation::Listen_Incoming_Message
 	string message = commSocket.Listen();
 
@@ -46,11 +46,20 @@ void Simulation::Listen_Incoming_Message(void) {
 //
 // Command handler
 
-void Simulation::HandleCommand(string command_string) {
-
+void Simulation::HandleCommand(string command_string) 
+{
 	//cannot change simulation parameters in the middle of an interation. simulationMutex also used by Simulate() method, but there it is non-blocking
 	simulationMutex.lock();
 	lock_guard<mutex> simlock(simulationMutex, adopt_lock);
+
+	//ensure we do not handle a command during a display refresh
+	//This method locks and unlocks the display mutex (cannot leave it locked and unlock it at the end of HandleCommand, since HandleCommand can call other BD methods)
+	//It is important to do this since HandleCommand can cause changes to data which are used during a display refresh and could result in a crash.
+	//It is theoretically possible a BD method is called right after WaitForDisplayEnd but before HandleCommand returns - this could happen in response to a user action only.
+	//This is virtually impossible however, as the user would have to issue commands quicker than it takes for the program to make changes to critical data.
+	//Not ideal solution, the only foolproof solution is to lock the display mutex and unlock it before calling any BD methods here (or before returning), but after changes to data have been made.
+	//This is messy so I'd rather not go down that route since it only guards against an extremely unlikely scenario.
+	BD.WaitForDisplayEnd();
 
 	//display messages in console only if this is true. Note, some important messages are displayed regardless (e.g. simulation stopped or simulation started messages.)
 	bool verbose = true;
@@ -277,6 +286,26 @@ void Simulation::HandleCommand(string command_string) {
 		}
 		break;
 
+		case CMD_SCELLSIZE:
+		{
+			DBL3 h_s;
+			error = commandSpec.GetParameters(command_fields, h_s);
+
+			if (!error) {
+
+				StopSimulation();
+
+				if (!err_hndl.call(&Mesh::SetMeshSCellsize, SMesh.active_mesh(), h_s, false)) {
+
+					UpdateScreen();
+				}
+			}
+			else if (verbose) PrintCommandUsage(command_name);
+
+			if (script_client_connected) commSocket.SetSendData(commandSpec.PrepareReturnParameters(SMesh.active_mesh()->GetMeshSCellsize()));
+		}
+		break;
+
 		case CMD_MCELLSIZE:
 		{
 			DBL3 h_m;
@@ -434,6 +463,27 @@ void Simulation::HandleCommand(string command_string) {
 				StopSimulation();
 
 				if (!err_hndl.call(&SuperMesh::AddMesh, &SMesh, meshName, MESH_DIPOLE, meshRect)) {
+
+					UpdateScreen();
+				}
+			}
+			else if (verbose) PrintCommandUsage(command_name);
+		}
+		break;
+
+		case CMD_ADDDIAMAGNETICMESH:
+		{
+			string meshName;
+			Rect meshRect;
+
+			//note, mesh name is not allowed to have any spaces - needs to be a single word
+			error = commandSpec.GetParameters(command_fields, meshName, meshRect);
+
+			if (!error) {
+
+				StopSimulation();
+
+				if (!err_hndl.call(&SuperMesh::AddMesh, &SMesh, meshName, MESH_DIAMAGNETIC, meshRect)) {
 
 					UpdateScreen();
 				}
@@ -1059,6 +1109,25 @@ void Simulation::HandleCommand(string command_string) {
 				StopSimulation();
 
 				error = SMesh.CallModuleMethod(&SDemag::Set_n_common, (SZ3)n_common);
+
+				RefreshScreen();
+			}
+			else if (verbose) PrintCommandUsage(command_name);
+		}
+		break;
+
+		case CMD_EXCLUDEMULTICONVDEMAG:
+		{
+			bool status;
+			string meshName;
+
+			error = commandSpec.GetParameters(command_fields, status, meshName);
+
+			if (!error) {
+
+				StopSimulation();
+
+				error = SMesh.Set_Demag_Exclusion(status, meshName);
 
 				RefreshScreen();
 			}
@@ -1717,22 +1786,27 @@ void Simulation::HandleCommand(string command_string) {
 						fileName += ".txt";
 
 					vector<vector<double>> load_arrays;
-					if (ReadDataColumns(fileName, "\t", load_arrays, { 0, 1 })) {
+					if (ReadDataColumns(fileName, "\t", load_arrays, { 0, 1, 2, 3 })) {
 
-						error = SMesh.set_meshparam_tscaling_array(meshName, paramName, load_arrays[0], load_arrays[1], fileName);
+						vector<double> empty;
+
+						if (load_arrays.size() == 4 && load_arrays[3].size()) error = SMesh.set_meshparam_tscaling_array(meshName, paramName, load_arrays[0], load_arrays[1], load_arrays[2], load_arrays[3], fileName);
+						else if (load_arrays.size() == 3 && load_arrays[2].size()) error = SMesh.set_meshparam_tscaling_array(meshName, paramName, load_arrays[0], load_arrays[1], load_arrays[2], empty, fileName);
+						else if (load_arrays.size() == 2 && load_arrays[1].size()) error = SMesh.set_meshparam_tscaling_array(meshName, paramName, load_arrays[0], load_arrays[1], empty, empty, fileName);
+						else error(BERROR_COULDNOTLOADFILE);
 
 						UpdateScreen();
 					}
 					else error(BERROR_COULDNOTLOADFILE);
 				}
 				else {
-
+					
 					//default array
-					vector<double> temp(2), scaling(2);
+					vector<double> temp(2), scaling(2), empty;
 					temp = { 0.0, 1.0 };
 					scaling = { 1.0, 1.0 };
-					error = SMesh.set_meshparam_tscaling_array(meshName, paramName, temp, scaling);
-
+					error = SMesh.set_meshparam_tscaling_array(meshName, paramName, temp, scaling, empty, empty);
+					
 					UpdateScreen();
 				}
 			}
@@ -1740,17 +1814,23 @@ void Simulation::HandleCommand(string command_string) {
 			//if the above failed then try to load array from dp_arrays
 			if(error == BERROR_COULDNOTLOADFILE) {
 
-				int dp_T_idx, dp_c_ix;
+				int dp_T_idx, dp_c_ix, dp_c_iy, dp_c_iz;
 
-				error.reset() = commandSpec.GetParameters(command_fields, paramName, dp_T_idx, dp_c_ix);
+				error.reset() = commandSpec.GetParameters(command_fields, paramName, dp_T_idx, dp_c_ix, dp_c_iy, dp_c_iz);
+				if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, dp_T_idx, dp_c_ix, dp_c_iy); dp_c_iz = -1; }
+				if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, dp_T_idx, dp_c_ix); dp_c_iy = -1; }
 
 				if (!error && GoodIdx(dpArr.size(), dp_T_idx, dp_c_ix)) {
 
 					//load from dp arrays
 					StopSimulation();
 
-					error = SMesh.set_meshparam_tscaling_array(SMesh.GetMeshFocus(), paramName, dpArr[dp_T_idx], dpArr[dp_c_ix]);
-					
+					vector<double> empty;
+
+					if (GoodIdx(dpArr.size(), dp_c_iy, dp_c_iz)) error = SMesh.set_meshparam_tscaling_array(SMesh.GetMeshFocus(), paramName, dpArr[dp_T_idx], dpArr[dp_c_ix], dpArr[dp_c_iy], dpArr[dp_c_iz]);
+					else if (GoodIdx(dpArr.size(), dp_c_iy)) error = SMesh.set_meshparam_tscaling_array(SMesh.GetMeshFocus(), paramName, dpArr[dp_T_idx], dpArr[dp_c_ix], dpArr[dp_c_iy], empty);
+					else error = SMesh.set_meshparam_tscaling_array(SMesh.GetMeshFocus(), paramName, dpArr[dp_T_idx], dpArr[dp_c_ix], empty, empty);
+
 					UpdateScreen();
 				}
 			}
@@ -2819,7 +2899,7 @@ void Simulation::HandleCommand(string command_string) {
 
 		case CMD_ATOMICMOMENT:
 		{
-			double atomic_moment;
+			DBL2 atomic_moment;
 			string meshName;
 
 			error = commandSpec.GetParameters(command_fields, atomic_moment, meshName);
@@ -2836,8 +2916,116 @@ void Simulation::HandleCommand(string command_string) {
 			}
 			else if (verbose) Print_CurieandMoment_List();
 
-			if (script_client_connected)
-				commSocket.SetSendData(commandSpec.PrepareReturnParameters(SMesh.active_mesh()->GetAtomicMoment()));
+			if (script_client_connected) {
+
+				if (SMesh.active_mesh()->GetMeshType() == MESH_ANTIFERROMAGNETIC) commSocket.SetSendData(commandSpec.PrepareReturnParameters(SMesh.active_mesh()->GetAtomicMoment_AFM()));
+				else commSocket.SetSendData(commandSpec.PrepareReturnParameters(SMesh.active_mesh()->GetAtomicMoment()));
+			}
+		}
+		break;
+
+		case CMD_TAU:
+		{
+			DBL2 tau_ii;
+			string entry;
+			DBL2 tau_ij;
+			string meshName;
+
+			error = commandSpec.GetParameters(command_fields, tau_ii, entry);
+			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, tau_ii); meshName = SMesh.superMeshHandle; tau_ij = DBL2(-1.0); }
+
+			if (!error) {
+
+				vector<string> fields = split(entry, " ");
+
+				if (fields.size() == 3) {
+
+					//both tau_ij and meshname specified (at least can assume to be attempted)
+					meshName = fields[2];
+					tau_ij = ToNum(fields[0] + " " + fields[1]);
+				}
+				else if (fields.size() == 2) {
+
+					//only attempted tau_ij entry
+					meshName = SMesh.superMeshHandle;
+					tau_ij = ToNum(fields[0] + " " + fields[1]);
+				}
+				else if (fields.size() == 1) {
+
+					//only attempted meshName entry
+					meshName = fields[0];
+					tau_ij = DBL2(-1.0);
+				}
+
+				StopSimulation();
+
+				if (tau_ij >= DBL2(0.0)) {
+
+					//set both intra and inter terms
+					if (!err_hndl.qcall(&SuperMesh::SetTcCoupling, &SMesh, meshName, tau_ii, tau_ij)) {
+
+						UpdateScreen();
+					}
+				}
+
+				//only intra terms
+				else if (!err_hndl.qcall(&SuperMesh::SetTcCoupling_Intra, &SMesh, meshName, tau_ii)) {
+
+					UpdateScreen();
+				}
+			}
+			else if (verbose) Print_CurieandMoment_List();
+
+			if (script_client_connected) {
+
+				commSocket.SetSendData(commandSpec.PrepareReturnParameters(SMesh.active_mesh()->GetTcCoupling()));
+			}
+		}
+		break;
+
+		case CMD_TMODEL:
+		{
+			int tmodeltype;
+			string meshName;
+
+			error = commandSpec.GetParameters(command_fields, tmodeltype, meshName);
+			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, tmodeltype); meshName = SMesh.GetMeshFocus(); }
+
+			if (!error) {
+
+				StopSimulation();
+
+				SMesh.SetTemperatureModel(meshName, tmodeltype);
+				
+				UpdateScreen();
+			}
+			else if (verbose) Print_TemperatureModel_List();
+		}
+		break;
+
+		case CMD_STOCHASTIC:
+		{
+			if (verbose) Print_Stochasticity_List();
+		}
+		break;
+
+		case CMD_LINKSTOCHASTIC:
+		{
+			bool flag;
+			string meshName;
+
+			error = commandSpec.GetParameters(command_fields, flag, meshName);
+			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, flag); meshName = SMesh.superMeshHandle; }
+
+			if (!error) {
+
+				StopSimulation();
+
+				SMesh.SetLinkStochastic(flag, meshName);
+
+				UpdateScreen();
+			}
+			else if (verbose) Print_Stochasticity_List();
 		}
 		break;
 
@@ -4120,6 +4308,31 @@ void Simulation::HandleCommand(string command_string) {
 		}
 		break;
 
+		case CMD_DP_HISTOGRAM:
+		{
+			double bin = 0.0, min = 0.0, max = 0.0;
+			int dp_x, dp_y;
+
+			error = commandSpec.GetParameters(command_fields, dp_x, dp_y, bin, min, max);
+			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, dp_x, dp_y); bin = 0.0; min = 0.0; max = 0.0; }
+
+			if (!error) {
+
+				if (SMesh.active_mesh()->Magnetisation_Enabled()) {
+
+					error = dpArr.calculate_histogram(SMesh.active_mesh()->Get_M(), dp_x, dp_y, bin, min, max);
+
+					if (!error) {
+
+						if (verbose) BD.DisplayConsoleMessage("Histogram calculated.");
+					}
+				}
+				else err_hndl.show_error(BERROR_NOTFERROMAGNETIC, verbose);
+			}
+			else if (verbose) PrintCommandUsage(command_name);
+		}
+		break;
+
 		case CMD_DP_ADD:
 		{
 			int dp_source, dp_dest;
@@ -4928,6 +5141,8 @@ void Simulation::HandleCommand(string command_string) {
 
 			SaveTextToFile("c:/commands.txt", commands_description);
 			*/
+
+			BD.DisplayConsoleMessage(ToString(SMesh.active_mesh()->GetMeshSCellsize()));
 		}
 		break;
 

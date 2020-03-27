@@ -1,8 +1,10 @@
 #include "DiffEqFMCUDA.h"
-#include "MeshParamsControlCUDA.h"
 
 #if COMPILECUDA == 1
 #ifdef ODE_EVAL_EULER
+#ifdef MESH_COMPILATION_FERROMAGNETIC
+
+#include "MeshParamsControlCUDA.h"
 
 //defines evaluation methods kernel launchers
 
@@ -30,12 +32,7 @@ __global__ void RunEuler_Kernel_withReductions(ManagedDiffEqFMCUDA& cuDiffEq, Ma
 
 				//obtain average normalized torque term
 				cuBReal Mnorm = (*cuMesh.pM)[idx].norm();
-				
-				if (cuDiffEq.pH_Thermal->linear_size()) {
-
-					mxh = ((*cuMesh.pM)[idx] ^ ((*cuMesh.pHeff)[idx] + (*cuDiffEq.pH_Thermal)[idx])) / (Mnorm * Mnorm);
-				}
-				else mxh = ((*cuMesh.pM)[idx] ^ (*cuMesh.pHeff)[idx]) / (Mnorm * Mnorm);
+				mxh = ((*cuMesh.pM)[idx] ^ (*cuMesh.pHeff)[idx]) / (Mnorm * Mnorm);
 
 				//First evaluate RHS of set equation at the current time step
 				cuReal3 rhs = (cuDiffEq.*(cuDiffEq.pODEFunc))(idx);
@@ -124,5 +121,6 @@ void DifferentialEquationFMCUDA::RunEuler(bool calculate_mxh, bool calculate_dmd
 	}
 }
 
+#endif
 #endif
 #endif

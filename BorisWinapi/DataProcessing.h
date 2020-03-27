@@ -135,6 +135,9 @@ public:
 	//calculate topological charge in M and given rect, using equation Q = Integral(m.(dm/dx x dm/dy) dxdy) / 4PI
 	BError get_topological_charge(VEC_VC<DBL3>& M, double x, double y, double radius, double* pQ);
 
+	//calculate histogram for |M| using given parameters
+	BError calculate_histogram(VEC_VC<DBL3>& M, int dp_x, int dp_y, double bin, double min, double max);
+
 	//--------------------- dp array manipulation
 
 	//append data in dp_new at the end of dp_original

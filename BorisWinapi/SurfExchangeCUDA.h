@@ -24,9 +24,13 @@ private:
 	//pointer to cpu version of SurfExchange
 	SurfExchange* pSurfExch;
 
-	//cu arrays with pointers to other meshes in surface exchange coupling with the mesh holding this module, top and bottom
+	//cu arrays with pointers to other meshes in surface exchange coupling with the mesh holding this module, top and bottom, but excluding diamagnetic meshes
 	cu_arr<ManagedMeshCUDA> pMesh_Bot;
 	cu_arr<ManagedMeshCUDA> pMesh_Top;
+
+	//cu arrays with pointers to diamagnetic meshes in surface exchange coupling with the mesh holding this module
+	cu_arr<ManagedMeshCUDA> pMeshDia_Bot;
+	cu_arr<ManagedMeshCUDA> pMeshDia_Top;
 
 	//coupled cells in gpu memory
 	cu_obj<int> coupled_cells;

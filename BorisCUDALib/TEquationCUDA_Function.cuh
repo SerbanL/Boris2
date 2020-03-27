@@ -229,6 +229,38 @@ __global__ void set_ManagedFunctionCUDA_Unary(ManagedFunctionCUDA<BVarType...>& 
 		case EqComp::FUNC_POWER_BASECONST_PMUL:
 			cuFunc.func = &ManagedFunctionCUDA<BVarType...>::F_pow_baseconst_pmul;
 			break;
+
+		case EqComp::FUNC_CURIEWEISS:
+			cuFunc.func = &ManagedFunctionCUDA<BVarType...>::F_CurieWeiss;
+			break;
+
+		case EqComp::FUNC_CURIEWEISS1:
+			cuFunc.func = &ManagedFunctionCUDA<BVarType...>::F_CurieWeiss1;
+			break;
+
+		case EqComp::FUNC_CURIEWEISS2:
+			cuFunc.func = &ManagedFunctionCUDA<BVarType...>::F_CurieWeiss2;
+			break;
+
+		case EqComp::FUNC_LONGRELSUS:
+			cuFunc.func = &ManagedFunctionCUDA<BVarType...>::F_LongRelSus;
+			break;
+
+		case EqComp::FUNC_LONGRELSUS1:
+			cuFunc.func = &ManagedFunctionCUDA<BVarType...>::F_LongRelSus1;
+			break;
+
+		case EqComp::FUNC_LONGRELSUS2:
+			cuFunc.func = &ManagedFunctionCUDA<BVarType...>::F_LongRelSus2;
+			break;
+
+		case EqComp::FUNC_ALPHA1:
+			cuFunc.func = &ManagedFunctionCUDA<BVarType...>::F_Alpha1;
+			break;
+
+		case EqComp::FUNC_ALPHA2:
+			cuFunc.func = &ManagedFunctionCUDA<BVarType...>::F_Alpha2;
+			break;
 		}
 	}
 }
@@ -239,7 +271,7 @@ __host__ void ManagedFunctionCUDA<BVarType...>::Function_Unary(EqComp::FSPEC fsp
 	set_gpu_value(param, (cuBReal)fspec.param);
 	set_gpu_value(base_or_exponent, (cuBReal)fspec.base_or_exponent);
 
-	set_ManagedFunctionCUDA_Unary<BVarType...> << <1, 1 >> > (*this, cuFunc1, fspec.type);
+	set_ManagedFunctionCUDA_Unary<BVarType...> <<<1, 1>>> (*this, cuFunc1, fspec.type);
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////

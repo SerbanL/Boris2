@@ -65,12 +65,17 @@ __global__ void ExchangeCUDA_AFM_UpdateField(ManagedMeshCUDA& cuMesh, cuBReal& e
 
 			cuReal2 Ms_AFM = *cuMesh.pMs_AFM;
 			cuReal2 A_AFM = *cuMesh.pA_AFM;
-			cuBReal A12 = *cuMesh.pA12;
+			cuReal2 Ah = *cuMesh.pAh;
+			cuReal2 Anh = *cuMesh.pAnh;
+			cuMesh.update_parameters_mcoarse(idx, *cuMesh.pMs_AFM, Ms_AFM, *cuMesh.pA_AFM, A_AFM, *cuMesh.pAh, Ah, *cuMesh.pAnh, Anh);
 
-			cuMesh.update_parameters_mcoarse(idx, *cuMesh.pMs_AFM, Ms_AFM, *cuMesh.pA_AFM, A_AFM, *cuMesh.pA12, A12);
+			cuReal3 delsq_M_A = M.delsq_neu(idx);
+			cuReal3 delsq_M_B = M2.delsq_neu(idx);
 
-			Hexch = 2 * A_AFM.i * M.delsq_neu(idx) / ((cuBReal)MU0 * Ms_AFM.i * Ms_AFM.i) + (4 * A12 / (MU0*Ms_AFM.i*Ms_AFM.j)) * M2[idx];
-			Hexch2 = 2 * A_AFM.j * M2.delsq_neu(idx) / ((cuBReal)MU0 * Ms_AFM.j * Ms_AFM.j) + (4 * A12 / (MU0*Ms_AFM.i*Ms_AFM.j)) * M[idx];
+			cuReal2 Mmag = cuReal2(M[idx].norm(), M2[idx].norm());
+
+			Hexch = (2 * A_AFM.i / ((cuBReal)MU0*Ms_AFM.i*Ms_AFM.i)) * delsq_M_A + (-4 * Ah.i * (M[idx] ^ (M[idx] ^ M2[idx])) / (Mmag.i*Mmag.i) + Anh.i * delsq_M_B) / ((cuBReal)MU0*Ms_AFM.i*Ms_AFM.j);
+			Hexch2 = (2 * A_AFM.j / ((cuBReal)MU0*Ms_AFM.j*Ms_AFM.j)) * delsq_M_B + (-4 * Ah.j * (M2[idx] ^ (M2[idx] ^ M[idx])) / (Mmag.j*Mmag.j) + Anh.j * delsq_M_A) / ((cuBReal)MU0*Ms_AFM.i*Ms_AFM.j);
 
 			if (do_reduction) {
 

@@ -46,8 +46,22 @@ MeshParams::MeshParams(vector<PARAM_>& enabledParams) :
 			meshParams.push_back("A_AFM", MeshParamDescriptor(PARAMTYPE_MAGNETIC, "J/m"), PARAM_A_AFM);
 			break;
 
-		case PARAM_A12:
-			meshParams.push_back("A12", MeshParamDescriptor(PARAMTYPE_MAGNETIC, "J/m3"), PARAM_A12);
+		case PARAM_A_AFH:
+			meshParams.push_back("Ah", MeshParamDescriptor(PARAMTYPE_MAGNETIC, "J/m3"), PARAM_A_AFH);
+			break;
+
+		case PARAM_AFTAU:
+			//add it to mesh but mark it as hidden
+			meshParams.push_back("tau_ii", MeshParamDescriptor(PARAMTYPE_MAGNETIC, "", true), PARAM_AFTAU);
+			break;
+
+		case PARAM_AFTAUCROSS:
+			//add it to mesh but mark it as hidden
+			meshParams.push_back("tau_ij", MeshParamDescriptor(PARAMTYPE_MAGNETIC, "", true), PARAM_AFTAUCROSS);
+			break;
+
+		case PARAM_A_AFNH:
+			meshParams.push_back("Anh", MeshParamDescriptor(PARAMTYPE_MAGNETIC, "J/m"), PARAM_A_AFNH);
 			break;
 
 		case PARAM_D:
@@ -66,12 +80,24 @@ MeshParams::MeshParams(vector<PARAM_>& enabledParams) :
 			meshParams.push_back("J2", MeshParamDescriptor(PARAMTYPE_MAGNETIC, "J/m2"), PARAM_J2);
 			break;
 
+		case PARAM_NETADIA:
+			meshParams.push_back("neta", MeshParamDescriptor(PARAMTYPE_MAGNETIC, "J/Am"), PARAM_NETADIA);
+			break;
+
 		case PARAM_K1:
 			meshParams.push_back("K1", MeshParamDescriptor(PARAMTYPE_MAGNETIC, "J/m3"), PARAM_K1);
 			break;
 
 		case PARAM_K2:
 			meshParams.push_back("K2", MeshParamDescriptor(PARAMTYPE_MAGNETIC, "J/m3"), PARAM_K2);
+			break;
+
+		case PARAM_K1_AFM:
+			meshParams.push_back("K1_AFM", MeshParamDescriptor(PARAMTYPE_MAGNETIC, "J/m3"), PARAM_K1_AFM);
+			break;
+
+		case PARAM_K2_AFM:
+			meshParams.push_back("K2_AFM", MeshParamDescriptor(PARAMTYPE_MAGNETIC, "J/m3"), PARAM_K2_AFM);
 			break;
 
 		case PARAM_TC:
@@ -81,7 +107,12 @@ MeshParams::MeshParams(vector<PARAM_>& enabledParams) :
 
 		case PARAM_MUB:
 			//add it to mesh but mark it as hidden
-			meshParams.push_back("muB", MeshParamDescriptor(PARAMTYPE_MAGNETIC, "K", true), PARAM_MUB);
+			meshParams.push_back("muB", MeshParamDescriptor(PARAMTYPE_MAGNETIC, "uB", true), PARAM_MUB);
+			break;
+
+		case PARAM_MUB_AFM:
+			//add it to mesh but mark it as hidden
+			meshParams.push_back("muB_AFM", MeshParamDescriptor(PARAMTYPE_MAGNETIC, "uB", true), PARAM_MUB_AFM);
 			break;
 
 		case PARAM_EA1:
@@ -94,6 +125,10 @@ MeshParams::MeshParams(vector<PARAM_>& enabledParams) :
 
 		case PARAM_SUSREL:
 			meshParams.push_back("susrel", MeshParamDescriptor(PARAMTYPE_MAGNETIC, "As2/kg"), PARAM_SUSREL);
+			break;
+
+		case PARAM_SUSREL_AFM:
+			meshParams.push_back("susrel_AFM", MeshParamDescriptor(PARAMTYPE_MAGNETIC, "As2/kg"), PARAM_SUSREL_AFM);
 			break;
 
 		case PARAM_SUSPREL:
@@ -215,11 +250,62 @@ MeshParams::MeshParams(vector<PARAM_>& enabledParams) :
 		case PARAM_SHC:
 			meshParams.push_back("shc", MeshParamDescriptor(PARAMTYPE_THERMAL, "J/kgK"), PARAM_SHC);
 			break;
+
+		case PARAM_SHC_E:
+			meshParams.push_back("shc_e", MeshParamDescriptor(PARAMTYPE_THERMAL, "J/kgK"), PARAM_SHC_E);
+			break;
+
+		case PARAM_G_E:
+			meshParams.push_back("G_e", MeshParamDescriptor(PARAMTYPE_THERMAL, "W/m3K"), PARAM_G_E);
+			break;
 		}
 	}
+
+	/// Special Functions
+
+	//resolution of 10000 means e.g. for Tc = 1000 the Curie-Weiss function will be available with a resolution of 0.1 K
+	pCurieWeiss = shared_ptr<Funcs_Special>(new Funcs_Special(EqComp::FUNC_CURIEWEISS, 0.0, 10000));
+	pLongRelSus = shared_ptr<Funcs_Special>(new Funcs_Special(EqComp::FUNC_LONGRELSUS, 0.0, 10000));
+	pLongRelSus->Initialize_LongitudinalRelSusceptibility(pCurieWeiss->get_data(), atomic_moment, T_Curie_material);
+
+	pCurieWeiss1 = shared_ptr<Funcs_Special>(new Funcs_Special(EqComp::FUNC_CURIEWEISS1, 0.0, 10000));
+	pCurieWeiss2 = shared_ptr<Funcs_Special>(new Funcs_Special(EqComp::FUNC_CURIEWEISS2, 0.0, 10000));
+	pLongRelSus1 = shared_ptr<Funcs_Special>(new Funcs_Special(EqComp::FUNC_LONGRELSUS1, 0.0, 10000));
+	pLongRelSus2 = shared_ptr<Funcs_Special>(new Funcs_Special(EqComp::FUNC_LONGRELSUS2, 0.0, 10000));
+	pLongRelSus1->Initialize_LongitudinalRelSusceptibility1(pCurieWeiss1->get_data(), pCurieWeiss2->get_data(), tau_ii, tau_ij, atomic_moment_AFM, T_Curie_material);
+	pLongRelSus2->Initialize_LongitudinalRelSusceptibility2(pCurieWeiss1->get_data(), pCurieWeiss2->get_data(), tau_ii, tau_ij, atomic_moment_AFM, T_Curie_material);
+
+	pAlpha1 = shared_ptr<Funcs_Special>(new Funcs_Special(EqComp::FUNC_ALPHA1, 0.0, 10000));
+	pAlpha2 = shared_ptr<Funcs_Special>(new Funcs_Special(EqComp::FUNC_ALPHA2, 0.0, 10000));
+
+	//make sure special functions are set by default for all material parameters text equations
+	set_special_functions();
 }
 
 //-------------------------Parameter control
+
+//set pre-calculated Funcs_Special objects in material parameters
+void MeshParams::set_special_functions(PARAM_ paramID)
+{
+	auto set_param_special_functions = [&](PARAM_ update_paramID) {
+
+		auto code = [&](auto& MatP_object) -> void {
+
+			MatP_object.set_t_scaling_special_functions(pCurieWeiss, pLongRelSus, pCurieWeiss1, pCurieWeiss2, pLongRelSus1, pLongRelSus2, pAlpha1, pAlpha2);
+		};
+
+		run_on_param<void>(update_paramID, code);
+	};
+
+	if (paramID == PARAM_ALL) {
+
+		for (int index = 0; index < meshParams.size(); index++) {
+
+			set_param_special_functions((PARAM_)meshParams.get_ID_from_index(index));
+		}
+	}
+	else set_param_special_functions(paramID);
+}
 
 void MeshParams::update_parameters(PARAM_ paramID)
 {
@@ -386,14 +472,14 @@ bool MeshParams::is_param_nonconst(PARAM_ paramID)
 	return run_on_param<bool>(paramID, code);
 }
 
-vector<double> MeshParams::get_meshparam_tempscaling(PARAM_ paramID, double max_temperature)
+bool MeshParams::get_meshparam_tempscaling(PARAM_ paramID, double max_temperature, vector<double>& x, vector<double>& y, vector<double>& z)
 {
-	auto code = [](auto& MatP_object, double max_temperature) -> vector<double> {
+	auto code = [](auto& MatP_object, double max_temperature, vector<double>& x, vector<double>& y, vector<double>& z) -> bool {
 
-		return MatP_object.get_temperature_scaling(max_temperature);
+		return MatP_object.get_temperature_scaling(max_temperature, x, y, z);
 	};
 
-	return run_on_param<vector<double>>(paramID, code, max_temperature);
+	return run_on_param<bool>(paramID, code, max_temperature, x, y, z);
 }
 
 //get reference to mesh parameter spatial scaling VEC
@@ -481,19 +567,19 @@ void MeshParams::set_meshparam_value(PARAM_ paramID, string value_text)
 //set the mesh parameter equation with given user constants
 void MeshParams::set_meshparam_t_equation(PARAM_ paramID, string& equationText, vector_key<double>& userConstants)
 {
-	auto code = [](auto& MatP_object, string& equationText, vector_key<double>& userConstants, double T_Curie_material, double base_temperature) -> void {
+	auto code = [](auto& MatP_object, string& equationText, vector_key<double>& userConstants, double T_Curie, double base_temperature) -> void {
 
-		MatP_object.set_t_scaling_equation(equationText, userConstants, T_Curie_material, base_temperature);
+		MatP_object.set_t_scaling_equation(equationText, userConstants, T_Curie, base_temperature);
 	};
 
 	if (paramID == PARAM_ALL) {
 
 		for (int index = 0; index < meshParams.size(); index++) {
 
-			run_on_param<void>((PARAM_)meshParams.get_ID_from_index(index), code, equationText, userConstants, T_Curie_material, base_temperature);
+			run_on_param<void>((PARAM_)meshParams.get_ID_from_index(index), code, equationText, userConstants, T_Curie, base_temperature);
 		}
 	}
-	else run_on_param<void>(paramID, code, equationText, userConstants, T_Curie_material, base_temperature);
+	else run_on_param<void>(paramID, code, equationText, userConstants, T_Curie, base_temperature);
 }
 
 //clear mesh parameter temperature dependence
@@ -515,14 +601,14 @@ void MeshParams::clear_meshparam_temp(PARAM_ paramID)
 }
 
 //set mesh parameter array scaling
-bool MeshParams::set_meshparam_tscaling_array(PARAM_ paramID, vector<double>& temp, vector<double>& scaling)
+bool MeshParams::set_meshparam_tscaling_array(PARAM_ paramID, vector<double>& temp, vector<double>& scaling_x, vector<double>& scaling_y, vector<double>& scaling_z)
 {
-	auto code = [](auto& MatP_object, vector<double>& temp, vector<double>& scaling) -> bool {
+	auto code = [](auto& MatP_object, vector<double>& temp, vector<double>& scaling_x, vector<double>& scaling_y, vector<double>& scaling_z) -> bool {
 
-		return MatP_object.set_t_scaling_array(temp, scaling);
+		return MatP_object.set_t_scaling_array(temp, scaling_x, scaling_y, scaling_z);
 	};
 
-	return run_on_param<bool>(paramID, code, temp, scaling);
+	return run_on_param<bool>(paramID, code, temp, scaling_x, scaling_y, scaling_z);
 }
 
 //set temperature dependence info string for console display purposes
@@ -588,12 +674,12 @@ bool MeshParams::update_meshparam_var(PARAM_ paramID, DBL3 h, Rect rect)
 //update text equations for mesh parameters with user constants, mesh dimensions, Curie temperature, base temperature
 bool MeshParams::update_meshparam_equations(PARAM_ paramID, vector_key<double>& userConstants, DBL3 meshDimensions)
 {
-	auto code = [](auto& MatP_object, vector_key<double>& userConstants, DBL3 meshDimensions, double T_Curie_material, double base_temperature) -> bool {
+	auto code = [](auto& MatP_object, vector_key<double>& userConstants, DBL3 meshDimensions, double T_Curie, double base_temperature) -> bool {
 
-		return MatP_object.update_equations(userConstants, meshDimensions, T_Curie_material, base_temperature);
+		return MatP_object.update_equations(userConstants, meshDimensions, T_Curie, base_temperature);
 	};
 
-	return run_on_param<bool>(paramID, code, userConstants, meshDimensions, T_Curie_material, base_temperature);
+	return run_on_param<bool>(paramID, code, userConstants, meshDimensions, T_Curie, base_temperature);
 }
 
 //set parameter spatial variation using a given generator and arguments (arguments passed as a string to be interpreted and converted using ToNum)

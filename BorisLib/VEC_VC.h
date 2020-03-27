@@ -340,15 +340,20 @@ public:
 	bool is_not_empty(const Rect& rectangle) const;
 
 	bool is_not_cmbnd(int index) const { return !(ngbrFlags[index] & NF_CMBND); }
+	bool is_not_cmbnd(const DBL3& ijk) const { return !(ngbrFlags[int(rel_pos.x / h.x) + int(rel_pos.y / h.y) * n.x + int(rel_pos.z / h.z) * n.x * n.y] & NF_CMBND); }
 	bool is_not_cmbnd(const INT3& ijk) const { return !(ngbrFlags[ijk.i + ijk.j*n.x + ijk.k*n.x*n.y] & NF_CMBND); }
 
 	bool is_cmbnd(int index) const { return (ngbrFlags[index] & NF_CMBND); }
+	bool is_cmbnd(const DBL3& rel_pos) const { return (ngbrFlags[int(rel_pos.x / h.x) + int(rel_pos.y / h.y) * n.x + int(rel_pos.z / h.z) * n.x * n.y] & NF_CMBND); }
 	bool is_cmbnd(const INT3& ijk) const { return (ngbrFlags[ijk.i + ijk.j*n.x + ijk.k*n.x*n.y] & NF_CMBND); }
 
 	bool is_skipcell(int index) const { return (ngbrFlags[index] & NF_SKIPCELL); }
+	bool is_skipcell(const DBL3& rel_pos) const { return (ngbrFlags[int(rel_pos.x / h.x) + int(rel_pos.y / h.y) * n.x + int(rel_pos.z / h.z) * n.x * n.y] & NF_SKIPCELL); }
+	bool is_skipcell(const INT3& ijk) const { return (ngbrFlags[ijk.i + ijk.j*n.x + ijk.k*n.x*n.y] & NF_SKIPCELL); }
 
 	//are all neighbors available? (for 2D don't check the z neighbors)
 	bool is_interior(int index) const { return (((ngbrFlags[index] & NF_BOTHX) == NF_BOTHX) && ((ngbrFlags[index] & NF_BOTHY) == NF_BOTHY) && (n.z == 1 || ((ngbrFlags[index] & NF_BOTHZ) == NF_BOTHZ))); }
+	
 	//are all neighbors in the xy plane available?
 	bool is_plane_interior(int index) const { return (((ngbrFlags[index] & NF_BOTHX) == NF_BOTHX) && ((ngbrFlags[index] & NF_BOTHY) == NF_BOTHY)); }
 

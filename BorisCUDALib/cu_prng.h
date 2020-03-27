@@ -98,4 +98,7 @@ public:
 	
 	//floating point value out in interval [0, 1]
 	__device__ float rand(void);
+
+	//Box-Muller transform to generate Gaussian distribution from uniform distribution
+	__device__ float rand_gauss(float mean, float std);
 };

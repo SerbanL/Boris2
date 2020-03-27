@@ -62,7 +62,7 @@ public:
 			trans_sec.pcuMesh->update_parameters_atposition(relpos_m1, *(trans_sec.pcuMesh->pGi), Gi);
 		}
 
-		if (M_pri.linear_size()) {
+		if (trans_pri.stsolve == STSOLVE_FERROMAGNETIC) {
 
 			//F is on the primary side
 

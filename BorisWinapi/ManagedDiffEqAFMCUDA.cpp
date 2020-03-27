@@ -1,13 +1,15 @@
 #include "stdafx.h"
-#include "ManagedDiffEqAFMCUDA.h"
 #include "DiffEqAFMCUDA.h"
 
 #if COMPILECUDA == 1
+#ifdef MESH_COMPILATION_ANTIFERROMAGNETIC
+
+#include "ManagedDiffEqAFMCUDA.h"
 
 BError ManagedDiffEqAFMCUDA::set_pointers(DifferentialEquationAFMCUDA* pDiffEqCUDA)
 {
 	BError error(__FUNCTION__);
-	
+
 	//Pointers to data in ODECommonCUDA
 
 	if (set_gpu_value(pdT, pDiffEqCUDA->pdT->get_managed_object()) != cudaSuccess) error(BERROR_GPUERROR_CRIT);
@@ -60,6 +62,9 @@ BError ManagedDiffEqAFMCUDA::set_pointers(DifferentialEquationAFMCUDA* pDiffEqCU
 
 	if (set_gpu_value(pH_Thermal, pDiffEqCUDA->H_Thermal.get_managed_object()) != cudaSuccess) error(BERROR_GPUERROR_CRIT);
 	if (set_gpu_value(pTorque_Thermal, pDiffEqCUDA->Torque_Thermal.get_managed_object()) != cudaSuccess) error(BERROR_GPUERROR_CRIT);
+
+	if (set_gpu_value(pH_Thermal_2, pDiffEqCUDA->H_Thermal_2.get_managed_object()) != cudaSuccess) error(BERROR_GPUERROR_CRIT);
+	if (set_gpu_value(pTorque_Thermal_2, pDiffEqCUDA->Torque_Thermal_2.get_managed_object()) != cudaSuccess) error(BERROR_GPUERROR_CRIT);
 	
 	//Managed cuda mesh pointer so all mesh data can be accessed in device code
 
@@ -68,5 +73,6 @@ BError ManagedDiffEqAFMCUDA::set_pointers(DifferentialEquationAFMCUDA* pDiffEqCU
 	return error;
 }
 
+#endif
 #endif
 

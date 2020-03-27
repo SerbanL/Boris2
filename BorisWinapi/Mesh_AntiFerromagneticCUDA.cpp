@@ -1,8 +1,10 @@
 #include "stdafx.h"
 #include "Mesh_AntiFerromagneticCUDA.h"
-#include "Mesh_AntiFerromagnetic.h"
 
 #if COMPILECUDA == 1
+#ifdef MESH_COMPILATION_ANTIFERROMAGNETIC
+
+#include "Mesh_AntiFerromagnetic.h"
 
 AFMeshCUDA::AFMeshCUDA(AFMesh* pMesh) :
 	MeshCUDA(pMesh)
@@ -82,4 +84,5 @@ bool AFMeshCUDA::GetMeshExchangeCoupling(void)
 	return pAFMesh->GetMeshExchangeCoupling();
 }
 
+#endif
 #endif

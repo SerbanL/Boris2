@@ -67,7 +67,7 @@ struct VAL2 {
 	friend VAL2& operator>>(const std::stringstream &ss, VAL2 &rhs) 
 	{
 		//normally std::string representation is given as: "x, y"
-		std::vector<std::string> components = split(ss.str(), ", ");
+		std::vector<std::string> components = split(ss.str(), ",");
 		//it could also be given as: "x y"
 		if(components.size() == 1) components = split(ss.str(), " ");
 
@@ -75,13 +75,13 @@ struct VAL2 {
 		switch (components.size()) {
 
 		case 1:
-			rhs.x = ToNum(components[0], "");
+			rhs.x = ToNum(trimspaces(components[0]), "");
 			rhs.y = rhs.x;
 			break;
 
 		case 2:
-			rhs.x = ToNum(components[0], "");
-			rhs.y = ToNum(components[1], "");
+			rhs.x = ToNum(trimspaces(components[0]), "");
+			rhs.y = ToNum(trimspaces(components[1]), "");
 			break;
 		}
 
@@ -285,23 +285,47 @@ struct VAL3 {
 	friend VAL3& operator>>(const std::stringstream &ss, VAL3 &rhs)
 	{ 
 		//normally std::string representation is given as: "x, y, z"
-		std::vector<std::string> components = split(ss.str(), ", ");
+		std::vector<std::string> components = split(ss.str(), ",");
+		
 		//it could also be given as: "x y z"
-		if(components.size() == 1) components = split(ss.str(), " ");
+		if (components.size() == 1) components = split(ss.str(), " ");
+
+		//another possibility is to have it in polar form: 
+		//the normal specification as x, y, z is in Cartesian form, but instead we can have r; t, p (r is the magnitude, t is theta - polar angle - p is phi - azimuthal angle)
+		//in this case components.size() is two, and we should be able to split components[0] using ";"
 
 		//now set values from strings as would be done in the available constructors if the values were passed directly
 		switch (components.size()) {
 
+		//all components are the same
 		case 1:
-			rhs.x = ToNum(components[0], "");
+			rhs.x = ToNum(trimspaces(components[0]), "");
 			rhs.y = rhs.x;
 			rhs.z = rhs.x;
 			break;
 
+		//string in Polar form - convert to Cartesian
+		case 2:
+		{
+			std::vector<std::string> r_theta = split(components[0], ";");
+			if (r_theta.size() != 2) return rhs;
+
+			double r = ToNum(trimspaces(r_theta[0]), "");
+			double pol = ToNum(trimspaces(r_theta[1]), "");
+			double azim = ToNum(trimspaces(components[1]), "");
+
+			//Convert to Cartesian, angles in degrees
+			rhs.x = r * sin(pol*PI / 180) * cos(azim*PI / 180);
+			rhs.y = r * sin(pol*PI / 180) * sin(azim*PI / 180);
+			rhs.z = r * cos(pol*PI / 180);
+		}
+			break;
+
+		//string in Cartesian form
 		case 3:
-			rhs.x = ToNum(components[0], "");
-			rhs.y = ToNum(components[1], "");
-			rhs.z = ToNum(components[2], "");
+			rhs.x = ToNum(trimspaces(components[0]), "");
+			rhs.y = ToNum(trimspaces(components[1]), "");
+			rhs.z = ToNum(trimspaces(components[2]), "");
 			break;
 		}
 
@@ -577,7 +601,7 @@ struct VAL4 {
 	friend VAL4& operator>>(const std::stringstream &ss, VAL4 &rhs)
 	{
 		//normally std::string representation is given as: "x, y, z, t"
-		std::vector<std::string> components = split(ss.str(), ", ");
+		std::vector<std::string> components = split(ss.str(), ",");
 		//it could also be given as: "x y z t"
 		if (components.size() == 1) components = split(ss.str(), " ");
 
@@ -585,17 +609,17 @@ struct VAL4 {
 		switch (components.size()) {
 
 		case 1:
-			rhs.x = ToNum(components[0], "");
+			rhs.x = ToNum(trimspaces(components[0]), "");
 			rhs.y = rhs.x;
 			rhs.z = rhs.x;
 			rhs.t = rhs.x;
 			break;
 
 		case 4:
-			rhs.x = ToNum(components[0], "");
-			rhs.y = ToNum(components[1], "");
-			rhs.z = ToNum(components[2], "");
-			rhs.t = ToNum(components[3], "");
+			rhs.x = ToNum(trimspaces(components[0]), "");
+			rhs.y = ToNum(trimspaces(components[1]), "");
+			rhs.z = ToNum(trimspaces(components[2]), "");
+			rhs.t = ToNum(trimspaces(components[3]), "");
 			break;
 		}
 

@@ -130,7 +130,8 @@ __global__ void CalculateExchangeCoupling_AFM_kernel(
 
 			cuReal2 Ms_AFM = *mesh_pri.pMs_AFM;
 			cuReal2 A_AFM = *mesh_pri.pA_AFM;
-			mesh_pri.update_parameters_mcoarse(cell1_idx, *mesh_pri.pA_AFM, A_AFM, *mesh_pri.pMs_AFM, Ms_AFM);
+			cuReal2 Anh = *mesh_pri.pAnh;
+			mesh_pri.update_parameters_mcoarse(cell1_idx, *mesh_pri.pA_AFM, A_AFM, *mesh_pri.pMs_AFM, Ms_AFM, *mesh_pri.pAnh, Anh);
 
 			cuReal3 Hexch, Hexch_B;
 
@@ -141,22 +142,26 @@ __global__ void CalculateExchangeCoupling_AFM_kernel(
 			cuReal3 M_1_B = M2_pri[cell1_idx];
 			cuReal3 M_m1_B = M2_sec.weighted_average(relpos_m1, stencil);
 
+			cuReal3 delsq_M_A, delsq_M_B;
+
 			if (cell2_idx < M_pri.n.dim() && M_pri.is_not_empty(cell2_idx)) {
 
 				//cell2_idx is valid and M is not empty there
 				cuReal3 M_2 = M_pri[cell2_idx];
 				cuReal3 M_2_B = M2_pri[cell2_idx];
 
-				//set effective field value contribution at cell 1 : direct exchange coupling
-				Hexch = (2 * A_AFM.i / (MU0*Ms_AFM.i*Ms_AFM.i)) * (M_2 + M_m1 - 2 * M_1) / hRsq;
-				Hexch_B = (2 * A_AFM.j / (MU0*Ms_AFM.j*Ms_AFM.j)) * (M_2_B + M_m1_B - 2 * M_1_B) / hRsq;
+				delsq_M_A = (M_2 + M_m1 - 2 * M_1) / hRsq;
+				delsq_M_B = (M_2_B + M_m1_B - 2 * M_1_B) / hRsq;
 			}
 			else {
 
-				//set effective field value contribution at cell 1 : direct exchange coupling
-				Hexch = (2 * A_AFM.i / (MU0*Ms_AFM.i*Ms_AFM.i)) * (M_m1 - M_1) / hRsq;
-				Hexch_B = (2 * A_AFM.j / (MU0*Ms_AFM.j*Ms_AFM.j)) * (M_m1_B - M_1_B) / hRsq;
+				delsq_M_A = (M_m1 - M_1) / hRsq;
+				delsq_M_B = (M_m1_B - M_1_B) / hRsq;
 			}
+
+			//set effective field value contribution at cell 1 : direct exchange coupling
+			Hexch = (2 * A_AFM.i / ((cuBReal)MU0*Ms_AFM.i*Ms_AFM.i)) * delsq_M_A + (Anh.i / ((cuBReal)MU0*Ms_AFM.i*Ms_AFM.j)) * delsq_M_B;
+			Hexch_B = (2 * A_AFM.j / ((cuBReal)MU0*Ms_AFM.j*Ms_AFM.j)) * delsq_M_B + (Anh.j / ((cuBReal)MU0*Ms_AFM.i*Ms_AFM.j)) * delsq_M_A;
 
 			Heff_pri[cell1_idx] += Hexch;
 			Heff2_pri[cell1_idx] += Hexch_B;

@@ -15,7 +15,9 @@ MeshCUDA::MeshCUDA(Mesh* pMesh) :
 	n(pMesh->n), h(pMesh->h),
 	n_e(pMesh->n_e), h_e(pMesh->h_e),
 	n_t(pMesh->n_t), h_t(pMesh->h_t),
-	n_m(pMesh->n_m), h_m(pMesh->h_m)
+	n_m(pMesh->n_m), h_m(pMesh->h_m),
+	n_s(pMesh->n_s), h_s(pMesh->h_s),
+	link_stochastic(pMesh->link_stochastic)
 {
 	this->pMesh = pMesh;
 
@@ -49,6 +51,7 @@ MeshCUDA::MeshCUDA(Mesh* pMesh) :
 
 	//temperature calculated by Heat module
 	if(!Temp()->set_from_cpuvec(pMesh->Temp)) error_on_create(BERROR_OUTOFGPUMEMORY_CRIT);
+	if (!Temp_l()->set_from_cpuvec(pMesh->Temp_l)) error_on_create(BERROR_OUTOFGPUMEMORY_CRIT);
 
 	//-----Mechanical properties
 
@@ -92,6 +95,7 @@ MeshCUDA::~MeshCUDA()
 
 		//temperature calculated by Heat module
 		Temp()->copy_to_cpuvec(pMesh->Temp);
+		Temp_l()->copy_to_cpuvec(pMesh->Temp_l);
 
 		//-----Mechanical properties
 
@@ -1067,6 +1071,12 @@ cuBReal MeshCUDA::GetAverageElectricalConductivity(cuRect rectangle)
 cuBReal MeshCUDA::GetAverageTemperature(cuRect rectangle)
 {
 	if (pMesh->Temp.linear_size()) return Temp()->average_nonempty(n_t.dim(), rectangle);
+	else return pMesh->base_temperature;
+}
+
+cuBReal MeshCUDA::GetAverageLatticeTemperature(cuRect rectangle)
+{
+	if (pMesh->Temp_l.linear_size()) return Temp_l()->average_nonempty(n_t.dim(), rectangle);
 	else return pMesh->base_temperature;
 }
 

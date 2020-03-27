@@ -4,11 +4,13 @@
 #if COMPILECUDA == 1
 
 #include "BorisCUDALib.h"
-#include "Mesh_AntiFerromagneticCUDA.h"
-
 #include "ErrorHandler.h"
 
 class DifferentialEquationAFMCUDA;
+
+#ifdef MESH_COMPILATION_ANTIFERROMAGNETIC
+
+#include "Mesh_AntiFerromagneticCUDA.h"
 
 //This holds pointers to managed objects in DiffEqCUDA : set and forget. They are available for use in cuda kernels by passing a cu_obj-managed object ManagedDiffEqAFMCUDA
 
@@ -89,8 +91,8 @@ public:
 	cuVEC<cuReal3>* psEval5_2;
 
 	//Thermal field and torques, enabled only for the stochastic equations
-	cuVEC<cuReal3>* pH_Thermal;
-	cuVEC<cuReal3>* pTorque_Thermal;
+	cuVEC<cuReal3> *pH_Thermal, *pH_Thermal_2;
+	cuVEC<cuReal3> *pTorque_Thermal, *pTorque_Thermal_2;
 
 	//Managed cuda mesh pointer so all mesh data can be accessed in device code
 	ManagedMeshCUDA* pcuMesh;
@@ -143,4 +145,22 @@ public:
 	__device__ cuReal3 dMdt(int idx) { return ((*(pcuMesh->pM))[idx] - (*psM1)[idx]) / *pdT_last; }
 };
 
+#else
+
+class ManagedDiffEqAFMCUDA {
+
+public:
+
+public:
+
+	//---------------------------------------- CONSTRUCTION
+
+	__host__ void construct_cu_obj(void) {}
+
+	__host__ void destruct_cu_obj(void) {}
+
+	__host__ BError set_pointers(DifferentialEquationAFMCUDA* pDiffEqCUDA) { return BError(); }
+};
+
+#endif
 #endif

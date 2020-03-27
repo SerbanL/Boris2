@@ -29,10 +29,12 @@ HeatCUDA::~HeatCUDA()
 	if (Holder_Module_Available()) {
 
 		pMeshCUDA->Temp()->copy_to_cpuvec(pMesh->Temp);
+		pMeshCUDA->Temp_l()->copy_to_cpuvec(pMesh->Temp_l);
 	}
 
 	//clear mesh quantities as they're not used any more
 	pMeshCUDA->Temp()->clear();
+	pMeshCUDA->Temp_l()->clear();
 }
 
 
@@ -63,7 +65,7 @@ BError HeatCUDA::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 	//need this when we switch cuda mode
 	if (!Q_equation.is_set() && pHeat->Q_equation.is_set()) error = SetQEquation(pHeat->Q_equation.get_scalar_fspec());
 
-	if (ucfg::check_cfgflags(cfgMessage, UPDATECONFIG_MESHSHAPECHANGE, UPDATECONFIG_MESHCHANGE, UPDATECONFIG_MODULEADDED, UPDATECONFIG_MODULEDELETED)) {
+	if (ucfg::check_cfgflags(cfgMessage, UPDATECONFIG_MESHSHAPECHANGE, UPDATECONFIG_MESHCHANGE, UPDATECONFIG_MODULEADDED, UPDATECONFIG_MODULEDELETED, UPDATECONFIG_HEAT_MODELTYPE)) {
 
 		//update mesh dimensions in equation constants
 		if (Q_equation.is_set()) {
@@ -71,16 +73,38 @@ BError HeatCUDA::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 			error = SetQEquation(pHeat->Q_equation.get_scalar_fspec());
 		}
 
+		//first clear any VECs which are not needed
+		switch (pHeat->tmtype) {
+
+		case TMTYPE_1TM:
+			//single temperature only
+			pMeshCUDA->Temp_l()->clear();
+			break;
+
+		case TMTYPE_2TM:
+			//itinerant electrons temperature <-> lattice temperature
+			break;
+		}
+
+		//if we've just changed the model type, make sure any new temperature VECs start from a reasonable setting - same as the primary Temp VEC.
+		bool initialize_Temp_l = !(pMeshCUDA->Temp_l()->linear_size_cpu());
+
 		if (pMeshCUDA->M()->size_cpu().dim()) {
 
 			//in a ferromagnet the magnetization sets the shape only on initialization. If already initialized then shape already set.
 			if (pMeshCUDA->Temp()->size_cpu().dim()) {
 
 				success = pMeshCUDA->Temp()->resize(pMesh->h_t, pMesh->meshRect);
+
+				//lattice temperature for many-temperature models
+				if (pHeat->tmtype == TMTYPE_2TM) success &= pMeshCUDA->Temp_l()->resize(pMesh->h_t, pMesh->meshRect);
 			}
 			else {
 
 				success = pMeshCUDA->Temp()->set_from_cpuvec(pMesh->Temp);
+
+				//lattice temperature for many-temperature models
+				if (pHeat->tmtype == TMTYPE_2TM) success &= pMeshCUDA->Temp_l()->set_from_cpuvec(pMesh->Temp_l);
 			}
 		}
 		else if (pMeshCUDA->elC()->size_cpu().dim()) {
@@ -100,10 +124,16 @@ BError HeatCUDA::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 				if (pMeshCUDA->Temp()->size_cpu().dim()) {
 
 					success = pMeshCUDA->Temp()->resize(pMesh->h_t, pMesh->meshRect, (cuVEC_VC<cuBReal>&)pMeshCUDA->elC);
+
+					//lattice temperature for many-temperature models
+					if (pHeat->tmtype == TMTYPE_2TM) success &= pMeshCUDA->Temp_l()->resize(pMesh->h_t, pMesh->meshRect, (cuVEC_VC<cuBReal>&)pMeshCUDA->Temp);
 				}
 				else {
 
 					success = pMeshCUDA->Temp()->set_from_cpuvec(pMesh->Temp);
+
+					//lattice temperature for many-temperature models
+					if (pHeat->tmtype == TMTYPE_2TM) success &= pMeshCUDA->Temp_l()->set_from_cpuvec(pMesh->Temp_l);
 				}
 			}
 		}
@@ -113,12 +143,21 @@ BError HeatCUDA::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 			if (pMeshCUDA->Temp()->size_cpu().dim()) {
 
 				success = pMeshCUDA->Temp()->resize(pMesh->h_t, pMesh->meshRect);
+
+				//lattice temperature for many-temperature models
+				if (pHeat->tmtype == TMTYPE_2TM) success &= pMeshCUDA->Temp_l()->resize(pMesh->h_t, pMesh->meshRect);
 			}
 			else {
 
 				success = pMeshCUDA->Temp()->set_from_cpuvec(pMesh->Temp);
+
+				//lattice temperature for many-temperature models
+				if (pHeat->tmtype == TMTYPE_2TM) success &= pMeshCUDA->Temp_l()->set_from_cpuvec(pMesh->Temp_l);
 			}
 		}
+
+		//if we've just changed the model type, make sure any new temperature VECs start from a reasonable setting - same as the primary Temp VEC.
+		if (initialize_Temp_l && pMeshCUDA->Temp_l()->linear_size_cpu()) pMeshCUDA->Temp_l()->set_from_cpuvec(pMesh->Temp_l);
 
 		//allocate memory for the heatEq_RHS auxiliary vector
 		if (success) {

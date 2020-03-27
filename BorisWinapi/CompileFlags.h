@@ -1,5 +1,15 @@
 #pragma once
 
+//Compilation Flags
+
+//Most of these are used to disable various parts of the program when needed.
+
+//This is useful for debugging and testing, but most importantly for reducing compilation time when developing new modules.
+//A full compilation now takes up to half an hour and rising. A bare bones compilation just for a new module can be done in under a minute.
+
+//First develop new module in CPU code only with COMPILECUDA 0 - CUDA compilation is by far the most costly as it cannot be done using multiple cores.
+//Making CUDA versions of modules should be mostly a cut-and-paste job after the cpu version is done.
+
 //----------------------------------------------------------------- OPERATING SYSTEM
 
 //These flags not currently used - will port to Linux eventually
@@ -19,6 +29,37 @@
 #define COMPILECUDA	1
 
 //To change precision of floating point variables modify value cuBLib_FLags.h (BorisCUDALib)
+
+//----------------------------------------------------------------- MESHES
+
+#define MESH_COMPILATION_ALL	1
+#define MESH_COMPILATION_TEST	2
+#define MESH_COMPILATION_CUST	3
+
+//Set this
+#define MESH_COMPILATION	MESH_COMPILATION_CUST
+
+//full
+#if MESH_COMPILATION == MESH_COMPILATION_ALL
+
+#define MESH_COMPILATION_FERROMAGNETIC
+#define MESH_COMPILATION_ANTIFERROMAGNETIC
+#define MESH_COMPILATION_DIAMAGNETIC
+#define MESH_COMPILATION_DIPOLE
+#define MESH_COMPILATION_METAL
+#define MESH_COMPILATION_INSULATOR
+
+#elif MESH_COMPILATION == MESH_COMPILATION_TEST
+
+#define MESH_COMPILATION_FERROMAGNETIC
+
+#elif MESH_COMPILATION == MESH_COMPILATION_CUST
+
+#define MESH_COMPILATION_FERROMAGNETIC
+#define MESH_COMPILATION_ANTIFERROMAGNETIC
+//#define MESH_COMPILATION_INSULATOR
+
+#endif
 
 //----------------------------------------------------------------- ODE EVALS
 
@@ -50,8 +91,10 @@
 #elif ODE_EVAL_COMPILATION == ODE_EVAL_TEST
 
 #define ODE_EVAL_RK4
-#define ODE_EVAL_SD
+//#define ODE_EVAL_SD
 #define ODE_EVAL_RKF
+#define ODE_EVAL_AHEUN
+#define ODE_EVAL_TEULER
 
 #elif ODE_EVAL_COMPILATION == ODE_EVAL_CUST
 
@@ -76,7 +119,7 @@
 #define COMPILE_MODULES_CUST	4
 
 //Set this
-#define MODULE_COMPILATION	COMPILE_MODULES_ALL
+#define MODULE_COMPILATION	COMPILE_MODULES_CUST
 
 //full
 #if MODULE_COMPILATION == COMPILE_MODULES_ALL
@@ -117,16 +160,13 @@
 #elif MODULE_COMPILATION == COMPILE_MODULES_CUST
 
 #define MODULE_DEMAG
+#define MODULE_DMEXCHANGE
 #define MODULE_EXCHANGE
 #define MODULE_IDMEXCHANGE
-#define MODULE_ZEEMAN
 #define MODULE_ANIUNI
 #define MODULE_ANICUBI
-#define MODULE_TRANSPORT
-#define MODULE_MELASTIC
-#define MODULE_ROUGHNESS
-#define MODULE_SOTFIELD
-#define MODULE_SDEMAG
+#define MODULE_ZEEMAN
+#define MODULE_HEAT
 
 #endif
 

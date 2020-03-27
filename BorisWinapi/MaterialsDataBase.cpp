@@ -34,6 +34,7 @@ MaterialsDB::MaterialsDB(vector<PARAM_>& enabledParams) :
 	meshTypeHandles.push_back("supermesh", MESH_SUPERMESH);
 	meshTypeHandles.push_back("ferromagnetic", MESH_FERROMAGNETIC);
 	meshTypeHandles.push_back("antiferromagnetic", MESH_ANTIFERROMAGNETIC);
+	meshTypeHandles.push_back("diamagnetic", MESH_DIAMAGNETIC);
 	meshTypeHandles.push_back("dipole", MESH_DIPOLE);
 	meshTypeHandles.push_back("metal", MESH_METAL);
 	meshTypeHandles.push_back("insulator", MESH_INSULATOR);

@@ -45,7 +45,7 @@ VEC_VC<DBL3>& Transport::GetChargeCurrent(void)
 
 	//compute charge current and store result in displayVEC_VC
 
-	if (!pSMesh->SolveSpinCurrent()) {
+	if (stsolve == STSOLVE_NONE) {
 
 		//calculate current density using Jc = -sigma * grad V
 #pragma omp parallel for
@@ -72,7 +72,7 @@ VEC_VC<DBL3>& Transport::GetChargeCurrent(void)
 			//only calculate current on non-empty cells - empty cells have already been assigned 0 at UpdateConfiguration
 			if (pMesh->V.is_not_empty(idx)) {
 
-				if (!pMesh->M.linear_size()) {
+				if (stsolve == STSOLVE_NORMALMETAL) {
 
 					//non-magnetic mesh
 

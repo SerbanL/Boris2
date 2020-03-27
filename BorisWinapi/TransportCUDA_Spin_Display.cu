@@ -33,8 +33,8 @@ __global__ void GetSpinCurrent_Kernel(int component, cuVEC<cuReal3>& displayVEC,
 		cuReal33 Js = cuReal33();
 
 		if (S.is_not_empty(idx)) {
-
-			if (M.linear_size()) {
+			
+			if (poisson_Spin_S.stsolve == STSOLVE_FERROMAGNETIC) {
 
 				//magnetic mesh terms
 
@@ -250,7 +250,10 @@ cu_obj<cuVEC<cuReal3>>& TransportCUDA::GetSpinCurrent(int component)
 {
 	if (!PrepareDisplayVEC(pMeshCUDA->h_e)) return displayVEC;
 
-	GetSpinCurrent_Kernel << < (pMeshCUDA->n_e.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >> > (component, displayVEC, pMeshCUDA->cuMesh, poisson_Spin_S);
+	if (stsolve != STSOLVE_NONE) {
+
+		GetSpinCurrent_Kernel <<< (pMeshCUDA->n_e.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (component, displayVEC, pMeshCUDA->cuMesh, poisson_Spin_S);
+	}
 
 	return displayVEC;
 }
@@ -259,8 +262,11 @@ cu_obj<cuVEC<cuReal3>>& TransportCUDA::GetSpinCurrent(int component)
 cu_obj<cuVEC<cuReal3>>& TransportCUDA::GetSpinTorque(void)
 {
 	if (!PrepareDisplayVEC(pMeshCUDA->h)) return displayVEC;
+	
+	if (stsolve == STSOLVE_FERROMAGNETIC) {
 
-	GetSpinTorque_Kernel << < (pMeshCUDA->n.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >> > (displayVEC, pMeshCUDA->cuMesh);
+		GetSpinTorque_Kernel <<< (pMeshCUDA->n.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (displayVEC, pMeshCUDA->cuMesh);
+	}
 
 	return displayVEC;
 }
@@ -271,7 +277,7 @@ void TransportCUDA::CalculateDisplaySAInterfaceTorque(TransportCUDA* ptrans_sec,
 	//the top contacting mesh sets G values
 	bool GInterface_Enabled = ((primary_top && pMeshCUDA->GInterface_Enabled()) || (!primary_top && ptrans_sec->pMeshCUDA->GInterface_Enabled()));
 
-	if (pMeshCUDA->MComputation_Enabled() && !ptrans_sec->pMeshCUDA->Magnetisation_Enabled() && GInterface_Enabled) {
+	if (stsolve == STSOLVE_FERROMAGNETIC && ptrans_sec->stsolve == STSOLVE_NORMALMETAL && GInterface_Enabled) {
 
 		CalculateDisplaySAInterfaceTorque_Kernel << < (pMeshCUDA->n.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >> > (contactCUDA, ptrans_sec->poisson_Spin_S, poisson_Spin_S, displayVEC);
 	}

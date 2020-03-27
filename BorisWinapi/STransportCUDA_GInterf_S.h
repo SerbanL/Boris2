@@ -61,7 +61,7 @@ public:
 		//on the N side must include spin pumping current : subtract it from the A value.
 		cuReal3 Js_pump = cuReal3();
 
-		if (M_pri.linear_size()) {
+		if (trans_pri.stsolve == STSOLVE_FERROMAGNETIC) {
 
 			//F is on the primary side
 
@@ -118,7 +118,7 @@ public:
 
 		cuReal3 m;
 
-		if (M_pri.linear_size()) {
+		if (trans_pri.stsolve == STSOLVE_FERROMAGNETIC) {
 
 			//F is on the primary side
 
@@ -170,7 +170,7 @@ public:
 
 		cuReal3 m;
 
-		if (M_pri.linear_size()) {
+		if (trans_pri.stsolve == STSOLVE_FERROMAGNETIC) {
 
 			//F is on the primary side
 
@@ -219,7 +219,7 @@ public:
 
 		cuReal3 m;
 
-		if (M_pri.linear_size()) {
+		if (trans_pri.stsolve == STSOLVE_FERROMAGNETIC) {
 
 			//F is on the primary side
 
@@ -283,8 +283,8 @@ public:
 
 		//on the N side must include spin pumping current : subtract it from the A value.
 		cuReal3 Js_pump = cuReal3();
-
-		if (M_sec.linear_size()) {
+		
+		if (trans_sec.stsolve == STSOLVE_FERROMAGNETIC) {
 
 			//F is on the secondary side (this function must only be used for NF interfaces, so exactly one of the contacting meshes will be magnetic)
 
@@ -342,7 +342,7 @@ public:
 
 		cuReal3 m;
 
-		if (M_sec.linear_size()) {
+		if (trans_sec.stsolve == STSOLVE_FERROMAGNETIC) {
 
 			//F is on the secondary side (this function must only be used for NF interfaces, so exactly one of the contacting meshes will be magnetic)
 
@@ -390,7 +390,7 @@ public:
 
 		cuReal3 m;
 
-		if (M_sec.linear_size()) {
+		if (trans_sec.stsolve == STSOLVE_FERROMAGNETIC) {
 
 			//F is on the secondary side (this function must only be used for NF interfaces, so exactly one of the contacting meshes will be magnetic)
 
@@ -435,7 +435,7 @@ public:
 
 		cuReal3 m;
 
-		if (M_sec.linear_size()) {
+		if (trans_sec.stsolve == STSOLVE_FERROMAGNETIC) {
 
 			//F is on the secondary side (this function must only be used for NF interfaces, so exactly one of the contacting meshes will be magnetic)
 

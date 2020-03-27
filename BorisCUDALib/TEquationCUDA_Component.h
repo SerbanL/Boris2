@@ -63,6 +63,21 @@ public:
 		return true;
 	}
 
-	bool is_set(void) { return Funcs.size(); }
+	bool is_set(void) const { return Funcs.size(); }
+
+	/////////////////////////////////////////////////////////
+	//
+	// SET SPECIAL FUNCTIONS
+
+	void Set_SpecialFunction(EqComp::FUNC_ type, cu_obj<ManagedFuncs_Special_CUDA>* pSpecialFunc)
+	{
+		for (int idx = 0; idx < Funcs.size(); idx++) {
+
+			for (int idx_tree = 0; idx_tree < Funcs[idx].size(); idx_tree++) {
+
+				(*(Funcs[idx][idx_tree]))()->Set_SpecialFunction(type, pSpecialFunc);
+			}
+		}
+	}
 
 };

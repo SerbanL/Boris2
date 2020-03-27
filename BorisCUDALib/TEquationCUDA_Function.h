@@ -6,6 +6,9 @@
 
 #include "TEquation_FSPEC.h"
 
+#include "cuObj_Math_Special.h"
+#include "cuObject.h"
+
 template <typename ... BVarType>
 class ManagedFunctionCUDA {
 
@@ -26,6 +29,25 @@ public:
 	ManagedFunctionCUDA<BVarType...>* pFunc1;
 	ManagedFunctionCUDA<BVarType...>* pFunc2;
 
+	//Special Functions
+
+	ManagedFuncs_Special_CUDA* pCurieWeiss;
+	ManagedFuncs_Special_CUDA* pLongRelSus;
+	ManagedFuncs_Special_CUDA* pCurieWeiss1;
+	ManagedFuncs_Special_CUDA* pCurieWeiss2;
+	ManagedFuncs_Special_CUDA* pLongRelSus1;
+	ManagedFuncs_Special_CUDA* pLongRelSus2;
+	ManagedFuncs_Special_CUDA* pAlpha1;
+	ManagedFuncs_Special_CUDA* pAlpha2;
+
+	//the actual function evaluated here
+	//IMPORTANT : this has to be at the end, after all other data members have been declared.
+	//If you declare this at the start for example the function evaluations will not work as expected.
+	//The reason for this, ManagedFunctionCUDA is never actually constructed using a conventional constructor, instead it is "constructed" by a cu_obj through the construct_cu_obj "constructor"
+	//It only ever exists as a pointer and space is allocated for this pointer in GPU memory when created. 
+	//This means all data members have to have a pre-determined, and fixed, amount of memory required to hold them, so when ManagedFunctionCUDA pointer is made it can allocate memory for all data members (including pointers).
+	//e.g. an int requires 4 bytes throughout the program lifetime, a pointer to an int requires 8 bytes, etc. (don't confuse this with dynamic memory allocation - when we allocate memory the pointer points to allocated memory but the pointer itself is still stored in the same place).
+	//Function pointers are different: 
 	pFunc func;
 
 public:
@@ -485,6 +507,104 @@ public:
 		return param * pow(base_or_exponent, (cuFunc1.*(cuFunc1.func))(bvars...));
 	}
 
+	//SPECIAL FUNCTIONS
+
+	//me : Curie-Weiss law
+	__device__ cuBReal F_CurieWeiss(BVarType... bvars)
+	{
+		if (pCurieWeiss) {
+
+			ManagedFunctionCUDA<BVarType...>& cuFunc1 = *pFunc1;
+			
+			return param * pCurieWeiss->evaluate((cuFunc1.*(cuFunc1.func))(bvars...));
+		}
+		else return 1.0;
+	}
+
+	//me1 : Curie-Weiss law, 2-sublattice model component 1
+	__device__ cuBReal F_CurieWeiss1(BVarType... bvars)
+	{
+		if (pCurieWeiss1) {
+
+			ManagedFunctionCUDA<BVarType...>& cuFunc1 = *pFunc1;
+
+			return param * pCurieWeiss1->evaluate((cuFunc1.*(cuFunc1.func))(bvars...));
+		}
+		else return 1.0;
+	}
+
+	//me2 : Curie-Weiss law, 2-sublattice model component 2
+	__device__ cuBReal F_CurieWeiss2(BVarType... bvars)
+	{
+		if (pCurieWeiss2) {
+
+			ManagedFunctionCUDA<BVarType...>& cuFunc1 = *pFunc1;
+
+			return param * pCurieWeiss2->evaluate((cuFunc1.*(cuFunc1.func))(bvars...));
+		}
+		else return 1.0;
+	}
+
+	//chi : longitudinal relative susceptibility
+	__device__ cuBReal F_LongRelSus(BVarType... bvars)
+	{
+		if (pLongRelSus) {
+
+			ManagedFunctionCUDA<BVarType...>& cuFunc1 = *pFunc1;
+
+			return param * pLongRelSus->evaluate((cuFunc1.*(cuFunc1.func))(bvars...));
+		}
+		else return 0.0;
+	}
+
+	//chi1 : longitudinal relative susceptibility, 2-sublattice model component 1
+	__device__ cuBReal F_LongRelSus1(BVarType... bvars)
+	{
+		if (pLongRelSus1) {
+
+			ManagedFunctionCUDA<BVarType...>& cuFunc1 = *pFunc1;
+
+			return param * pLongRelSus1->evaluate((cuFunc1.*(cuFunc1.func))(bvars...));
+		}
+		else return 0.0;
+	}
+
+	//chi2 : longitudinal relative susceptibility, 2-sublattice model component 2
+	__device__ cuBReal F_LongRelSus2(BVarType... bvars)
+	{
+		if (pLongRelSus2) {
+
+			ManagedFunctionCUDA<BVarType...>& cuFunc1 = *pFunc1;
+
+			return param * pLongRelSus2->evaluate((cuFunc1.*(cuFunc1.func))(bvars...));
+		}
+		else return 0.0;
+	}
+
+	//alpha1 : damping scaling in 2-sublattice model
+	__device__ cuBReal F_Alpha1(BVarType... bvars)
+	{
+		if (pAlpha1) {
+
+			ManagedFunctionCUDA<BVarType...>& cuFunc1 = *pFunc1;
+
+			return param * pAlpha1->evaluate((cuFunc1.*(cuFunc1.func))(bvars...));
+		}
+		else return 1.0;
+	}
+
+	//alpha2 : damping scaling in 2-sublattice model
+	__device__ cuBReal F_Alpha2(BVarType... bvars)
+	{
+		if (pAlpha2) {
+
+			ManagedFunctionCUDA<BVarType...>& cuFunc1 = *pFunc1;
+
+			return param * pAlpha2->evaluate((cuFunc1.*(cuFunc1.func))(bvars...));
+		}
+		else return 1.0;
+	}
+
 	//BINARY FUNCTIONS
 	__device__ cuBReal F_add(BVarType... bvars)
 	{
@@ -577,6 +697,15 @@ public:
 		set_gpu_value(param, (cuBReal)1.0);
 		set_gpu_value(varlevel, (int)0);
 		set_gpu_value(base_or_exponent, (cuBReal)0);
+
+		nullgpuptr(pCurieWeiss);
+		nullgpuptr(pLongRelSus);
+		nullgpuptr(pCurieWeiss1);
+		nullgpuptr(pCurieWeiss2);
+		nullgpuptr(pLongRelSus1);
+		nullgpuptr(pLongRelSus2);
+		nullgpuptr(pAlpha1);
+		nullgpuptr(pAlpha2);
 	}
 
 	__host__ void destruct_cu_obj(void)
@@ -605,5 +734,48 @@ public:
 
 		return (cuFunc.*(cuFunc.func))(bvar...);
 	}
+
+	//Set special functions
+
+	__host__ bool Set_SpecialFunction(EqComp::FUNC_ type, cu_obj<ManagedFuncs_Special_CUDA>* pSpecialFunc)
+	{
+		switch (type) {
+
+		case EqComp::FUNC_CURIEWEISS:
+			if (set_gpu_value(pCurieWeiss, pSpecialFunc->get_managed_object()) != cudaSuccess) return false;
+			break;
+
+		case EqComp::FUNC_CURIEWEISS1:
+			if (set_gpu_value(pCurieWeiss1, pSpecialFunc->get_managed_object()) != cudaSuccess) return false;
+			break;
+
+		case EqComp::FUNC_CURIEWEISS2:
+			if (set_gpu_value(pCurieWeiss2, pSpecialFunc->get_managed_object()) != cudaSuccess) return false;
+			break;
+
+		case EqComp::FUNC_LONGRELSUS:
+			if (set_gpu_value(pLongRelSus, pSpecialFunc->get_managed_object()) != cudaSuccess) return false;
+			break;
+
+		case EqComp::FUNC_LONGRELSUS1:
+			if (set_gpu_value(pLongRelSus1, pSpecialFunc->get_managed_object()) != cudaSuccess) return false;
+			break;
+
+		case EqComp::FUNC_LONGRELSUS2:
+			if (set_gpu_value(pLongRelSus2, pSpecialFunc->get_managed_object()) != cudaSuccess) return false;
+			break;
+
+		case EqComp::FUNC_ALPHA1:
+			if (set_gpu_value(pAlpha1, pSpecialFunc->get_managed_object()) != cudaSuccess) return false;
+			break;
+
+		case EqComp::FUNC_ALPHA2:
+			if (set_gpu_value(pAlpha2, pSpecialFunc->get_managed_object()) != cudaSuccess) return false;
+			break;
+		}
+
+		return true;
+	}
 };
+
 

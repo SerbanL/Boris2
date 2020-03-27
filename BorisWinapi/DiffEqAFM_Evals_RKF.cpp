@@ -1,10 +1,12 @@
 #include "stdafx.h"
 #include "DiffEqAFM.h"
+
+#ifdef MESH_COMPILATION_ANTIFERROMAGNETIC
+#ifdef ODE_EVAL_RKF
+
 #include "Mesh_AntiFerromagnetic.h"
 #include "SuperMesh.h"
 #include "MeshParamsControl.h"
-
-#ifdef ODE_EVAL_RKF
 
 //--------------------------------------------- RUNGE KUTTA FEHLBERG (4th order solution, 5th order error)
 
@@ -257,4 +259,5 @@ void DifferentialEquationAFM::RunRKF45_Step5(void)
 	lte_reduction.maximum();
 }
 
+#endif
 #endif

@@ -1,5 +1,8 @@
 #include "stdafx.h"
 #include "Mesh_Insulator.h"
+
+#ifdef MESH_COMPILATION_INSULATOR
+
 #include "SuperMesh.h"
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -190,3 +193,5 @@ BError InsulatorMesh::SwitchCUDAState(bool cudaState)
 }
 
 //----------------------------------- VARIOUS GET/SET METHODS
+
+#endif

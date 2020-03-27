@@ -1,6 +1,7 @@
 #include "DiffEqFMCUDA.h"
 
 #if COMPILECUDA == 1
+#ifdef MESH_COMPILATION_FERROMAGNETIC
 
 //defines evaluation methods kernel launchers
 
@@ -8,7 +9,7 @@
 
 //-----------------------------------------
 
-__global__ void RestoreMagnetisation_kernel(cuVEC_VC<cuReal3>& M, cuVEC<cuReal3>& sM1)
+__global__ void RestoreMagnetisation_FM_kernel(cuVEC_VC<cuReal3>& M, cuVEC<cuReal3>& sM1)
 {
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
 
@@ -21,9 +22,10 @@ __global__ void RestoreMagnetisation_kernel(cuVEC_VC<cuReal3>& M, cuVEC<cuReal3>
 //Restore magnetisation after a failed step for adaptive time-step methods
 void DifferentialEquationFMCUDA::RestoreMagnetisation(void)
 {
-	RestoreMagnetisation_kernel <<< (pMeshCUDA->n.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (pMeshCUDA->M, sM1);
+	RestoreMagnetisation_FM_kernel <<< (pMeshCUDA->n.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (pMeshCUDA->M, sM1);
 }
 
 //-----------------------------------------
 
+#endif
 #endif

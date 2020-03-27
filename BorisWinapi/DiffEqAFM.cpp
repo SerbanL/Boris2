@@ -1,5 +1,8 @@
 #include "stdafx.h"
 #include "DiffEqAFM.h"
+
+#ifdef MESH_COMPILATION_ANTIFERROMAGNETIC
+
 #include "Mesh_AntiFerromagnetic.h"
 
 DifferentialEquationAFM::DifferentialEquationAFM(AFMesh *pMesh) :
@@ -130,14 +133,17 @@ BError DifferentialEquationAFM::AllocateMemory(void)
 	case ODE_SLLG:
 	case ODE_SLLGSTT:
 	case ODE_SLLGSA:
-		if (!H_Thermal.resize(pMesh->n)) return error(BERROR_OUTOFMEMORY_CRIT);
+		if (!H_Thermal.resize(pMesh->h_s, pMesh->meshRect)) return error(BERROR_OUTOFMEMORY_CRIT);
+		if (!H_Thermal_2.resize(pMesh->h_s, pMesh->meshRect)) return error(BERROR_OUTOFMEMORY_CRIT);
 		break;
 
 	case ODE_SLLB:
 	case ODE_SLLBSTT:
 	case ODE_SLLBSA:
-		if (!H_Thermal.resize(pMesh->n)) return error(BERROR_OUTOFMEMORY_CRIT);
-		if (!Torque_Thermal.resize(pMesh->n)) return error(BERROR_OUTOFMEMORY_CRIT);
+		if (!H_Thermal.resize(pMesh->h_s, pMesh->meshRect)) return error(BERROR_OUTOFMEMORY_CRIT);
+		if (!H_Thermal_2.resize(pMesh->h_s, pMesh->meshRect)) return error(BERROR_OUTOFMEMORY_CRIT);
+		if (!Torque_Thermal.resize(pMesh->h_s, pMesh->meshRect)) return error(BERROR_OUTOFMEMORY_CRIT);
+		if (!Torque_Thermal_2.resize(pMesh->h_s, pMesh->meshRect)) return error(BERROR_OUTOFMEMORY_CRIT);
 		break;
 	}
 
@@ -218,6 +224,7 @@ void DifferentialEquationAFM::CleanupMemory(void)
 		setODE != ODE_SLLBSA) {
 
 		H_Thermal.clear();
+		H_Thermal_2.clear();
 	}
 
 	if (setODE != ODE_SLLB &&
@@ -225,6 +232,7 @@ void DifferentialEquationAFM::CleanupMemory(void)
 		setODE != ODE_SLLBSA) {
 
 		Torque_Thermal.clear();
+		Torque_Thermal_2.clear();
 	}
 
 	//----------------------- CUDA mirroring
@@ -240,6 +248,20 @@ BError DifferentialEquationAFM::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 	BError error(CLASS_STR(DifferentialEquationAFM));
 
 	if (ucfg::check_cfgflags(cfgMessage, UPDATECONFIG_MESHCHANGE, UPDATECONFIG_ODE_SOLVER)) {
+
+		if (pMesh->link_stochastic) {
+
+			pMesh->h_s = pMesh->h;
+			pMesh->n_s = pMesh->n;
+		}
+		else {
+
+			pMesh->n_s = round(pMesh->meshRect / pMesh->h_s);
+			if (pMesh->n_s.x == 0) pMesh->n_s.x = 1;
+			if (pMesh->n_s.y == 0) pMesh->n_s.y = 1;
+			if (pMesh->n_s.z == 0) pMesh->n_s.z = 1;
+			pMesh->h_s = pMesh->meshRect / pMesh->n_s;
+		}
 
 		error = AllocateMemory();
 	}
@@ -297,11 +319,6 @@ BError DifferentialEquationAFM::SwitchCUDAState(bool cudaState)
 
 			pmeshODECUDA = new DifferentialEquationAFMCUDA(this);
 			error = pmeshODECUDA->Error_On_Create();
-			//setup the managed cuDiffEq object with pointers to all required data for differential equations calculations
-			if (!error) error = (reinterpret_cast<DifferentialEquationAFMCUDA*>(pmeshODECUDA)->Get_ManagedDiffEqCUDA())()->set_pointers(reinterpret_cast<DifferentialEquationAFMCUDA*>(pmeshODECUDA));
-
-			//based on setODE value, setup device method pointers in cuDiffEq held in each DifferentialEquationCUDA object
-			if (!error) pmeshODECUDA->SetODEMethodPointers();
 		}
 	}
 	else {
@@ -323,3 +340,5 @@ DBL3 DifferentialEquationAFM::dMdt(int idx)
 {
 	return (pMesh->M[idx] - sM1[idx]) / dT_last;
 }
+
+#endif

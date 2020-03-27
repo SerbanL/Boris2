@@ -115,6 +115,12 @@ public:
 		return *managed_cuda_object;
 	}
 
+	//as above but with function call
+	MType& get_dereferenced()
+	{
+		return *managed_cuda_object;
+	}
+
 	//get reference to managed object pointer : remember this is still in gpu memory; useful if we used with a gpu_to_... method from alloc_cpy.h to store in a cu_arr
 	MType*& get_managed_object(void)
 	{

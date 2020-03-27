@@ -402,6 +402,16 @@ private:
 
 	void Print_CurieandMoment_List(void);
 	string Build_CurieandMoment_ListLine(int meshIndex);
+	
+	//---------------------------------------------------- TEMPERATURE MODEL TYPE
+
+	void Print_TemperatureModel_List(void);
+	string Build_TemperatureModel_ListLine(int meshIndex);
+
+	//---------------------------------------------------- STOCHASTICITY SETIINGS
+
+	void Print_Stochasticity_List(void);
+	string Build_Stochasticity_ListLine(int meshIndex);
 
 	//---------------------------------------------------- CUDA and MEMORY INFO
 

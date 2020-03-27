@@ -308,6 +308,21 @@ public:
 
 	/////////////////////////////////////////////////////////
 	//
+	// SET SPECIAL FUNCTIONS
+
+	void Set_SpecialFunction(EqComp::FUNC_ type, std::shared_ptr<Funcs_Special> pSpecialFunc)
+	{
+		for (int idx = 0; idx < Funcs.size(); idx++) {
+
+			for (int idx_tree = 0; idx_tree < Funcs[idx].size(); idx_tree++) {
+
+				Funcs[idx][idx_tree]->Set_SpecialFunction(type, pSpecialFunc);
+			}
+		}
+	}
+
+	/////////////////////////////////////////////////////////
+	//
 	// EVALUATE EQUATION
 
 	//evaluate scalar equation

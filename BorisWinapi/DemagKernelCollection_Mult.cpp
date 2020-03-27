@@ -419,10 +419,8 @@ void DemagKernelCollection::KernelMultiplication_2D(std::vector<VEC<ReIm3>*>& In
 
 	for (int mesh_index = 0; mesh_index < Incol.size(); mesh_index++) {
 
-		if (mesh_index == self_contribution_index) continue;
-
 		//z-shifted : use symmetries
-		else if (kernels[mesh_index]->zshifted) {
+		if (kernels[mesh_index]->zshifted) {
 
 			//inverse : adjust signs
 			if (inverse_shifted[mesh_index]) {
@@ -437,7 +435,7 @@ void DemagKernelCollection::KernelMultiplication_2D(std::vector<VEC<ReIm3>*>& In
 		}
 
 		//now compute the other contributions by adding to Out : general kernel multiplication without any symmetries used
-		else {
+		else if (!kernels[mesh_index]->internal_demag) {
 
 #pragma omp parallel for
 			for (int index = 0; index < (N.x / 2 + 1)*N.y; index++) {
@@ -460,16 +458,14 @@ void DemagKernelCollection::KernelMultiplication_3D(std::vector<VEC<ReIm3>*>& In
 	//now compute the other contribution by adding to Out
 	for (int mesh_index = 0; mesh_index < Incol.size(); mesh_index++) {
 
-		if (mesh_index == self_contribution_index) continue;
-
 		//z-shifted : use symmetries
-		else if (kernels[mesh_index]->zshifted) {
+		if (kernels[mesh_index]->zshifted) {
 
 			KernelMultiplication_3D_zShifted(*Incol[mesh_index], Out, kernels[mesh_index]->Kdiag_cmpl, kernels[mesh_index]->Kodiag_cmpl);
 		}
 
 		//now compute the other contributions by adding to Out : general kernel multiplication without any symmetries used
-		else {
+		else if (!kernels[mesh_index]->internal_demag) {
 
 #pragma omp parallel for
 			for (int index = 0; index < (N.x / 2 + 1)*N.y*N.z; index++) {

@@ -56,6 +56,18 @@ BError SuperMesh::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 	if (!sMeshRect_e.IsNull()) h_e = sMeshRect_e / n_e;
 	
 	///////////////////////////////////////////////////////
+	//Update configuration for ODECommon
+	///////////////////////////////////////////////////////
+
+	//important this is called on ODECommon instance before any Mesh UpdateConfiguration, as this in turn will call UpdateConfiguration on DifferentialEquation objects which inherit from ODECommon
+	//Any important changes must first be established in ODECommon, as some DifferentialEquation data depends on data in ODECommon
+	//There is one important example of this : deleting a mesh when CUDA is enabled can result in deletion of static data in ODECommonCUDA (must do this to prevent GPU memory leaks)
+	//Remaining meshes will need these static data, so the UpdateConfiguration method will remake it in ODECommonCUDA
+	//However there are GPU pointers to these static data held in instances which inherit from ODECommonCUDA (e.g. DifferentialEquationFMCUDA has a ManagedDiffEqFMCUDA object which holds pointers to these static data to be used in kernel calls).
+	//Thus these objects must also be remade so the pointers are set correctly (call ManagedDiffEqFMCUDA set_pointers method); We can only do this if the static data has been re-allocated first, which happens in ODECommonCUDA, hence the priority.
+	if (!error) error = odeSolver.UpdateConfiguration(cfgMessage);
+
+	///////////////////////////////////////////////////////
 	//Update configuration for meshes and their modules
 	///////////////////////////////////////////////////////
 
@@ -72,13 +84,9 @@ BError SuperMesh::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 
 		if (!error) error = pSMod[idx]->UpdateConfiguration(cfgMessage);
 	}
-
-	///////////////////////////////////////////////////////
-	//Update configuration for ODECommon
-	///////////////////////////////////////////////////////
-
-	if (!error) error = odeSolver.UpdateConfiguration(cfgMessage);
 	
+	if (!error) error = odeSolver.UpdateConfiguration(cfgMessage);
+
 	if (ucfg::check_cfgflags(cfgMessage, UPDATECONFIG_MESHSHAPECHANGE, UPDATECONFIG_MESHCHANGE, UPDATECONFIG_MESHADDED, UPDATECONFIG_MESHDELETED, UPDATECONFIG_SWITCHCUDASTATE)) {
 
 		//Check if we need to couple ferromagnetic meshes to dipoles
@@ -181,7 +189,8 @@ BError SuperMesh::SwitchCUDAState(bool cudaState)
 	//make sure configuration is updated for the new mode
 	error = UpdateConfiguration(UPDATECONFIG_SWITCHCUDASTATE);
 
-	if (!cudaState) cudaDeviceReset();
+	//This can cause problems when switching CUDA off then on again. Reason unknown.
+	//if (!cudaState) cudaDeviceReset();
 
 #endif
 

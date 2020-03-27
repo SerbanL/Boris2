@@ -480,10 +480,8 @@ void DemagKernelCollectionCUDA::KernelMultiplication_2D(
 	//the rest add to Out
 	for (int mesh_index = 0; mesh_index < Incol_x.size(); mesh_index++) {
 
-		if (mesh_index == self_contribution_index) continue;
-
 		//z-shifted : use symmetries
-		else if (zshifted[mesh_index]) {
+		if (zshifted[mesh_index]) {
 
 			//inverse : adjust signs
 			if (inverse_shifted[mesh_index]) {
@@ -524,7 +522,7 @@ void DemagKernelCollectionCUDA::KernelMultiplication_2D(
 		}
 
 		//now compute the other contributions by adding to Out : general kernel multiplication without any symmetries used
-		else {
+		else if (Rect_collection[mesh_index] != this_rect) {
 			
 			cu_KernelMultiplication_2D_Regular <<< ((N.x / 2 + 1)*N.y + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (
 				*kernels[mesh_index],
@@ -549,10 +547,8 @@ void DemagKernelCollectionCUDA::KernelMultiplication_3D(
 	//now compute the other contribution by adding to Out
 	for (int mesh_index = 0; mesh_index < Incol_x.size(); mesh_index++) {
 
-		if (mesh_index == self_contribution_index) continue;
-
 		//z-shifted : use symmetries
-		else if (zshifted[mesh_index]) {
+		if (zshifted[mesh_index]) {
 			
 			cu_KernelMultiplication_3D_zShifted_transpose_xy <<< ((N.x / 2 + 1)*N.y*N.z + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (
 				*kernels[mesh_index],
@@ -561,7 +557,7 @@ void DemagKernelCollectionCUDA::KernelMultiplication_3D(
 		}
 
 		//now compute the other contributions by adding to Out : general kernel multiplication without any symmetries used
-		else {
+		else if (Rect_collection[mesh_index] != this_rect) {
 			
 			cu_KernelMultiplication_3D_Regular <<< ((N.x / 2 + 1)*N.y*N.z + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (
 				*kernels[mesh_index],

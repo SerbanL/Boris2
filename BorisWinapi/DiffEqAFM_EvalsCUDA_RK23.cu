@@ -1,8 +1,10 @@
 #include "DiffEqAFMCUDA.h"
-#include "MeshParamsControlCUDA.h"
 
 #if COMPILECUDA == 1
 #ifdef ODE_EVAL_RK23
+#ifdef MESH_COMPILATION_ANTIFERROMAGNETIC
+
+#include "MeshParamsControlCUDA.h"
 
 //defines evaluation methods kernel launchers
 
@@ -268,5 +270,6 @@ void DifferentialEquationAFMCUDA::RunRK23(int step, bool calculate_mxh, bool cal
 	}
 }
 
+#endif
 #endif
 #endif

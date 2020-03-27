@@ -1,5 +1,8 @@
 #include "stdafx.h"
 #include "Mesh_Dipole.h"
+
+#ifdef MESH_COMPILATION_DIPOLE
+
 #include "SuperMesh.h"
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -61,6 +64,20 @@ DipoleMesh::DipoleMesh(Rect meshRect_, DBL3 h_, SuperMesh *pSMesh_) :
 	if (cudaEnabled) {
 
 		if (!error_on_create) error_on_create = SwitchCUDAState(true);
+	}
+}
+
+void DipoleMesh::RepairObjectState(void)
+{
+	//calculate scaling function (Curie Weiss law)
+	if (T_Curie > 0) {
+
+		pCurieWeiss->Initialize_CurieWeiss(0.0, T_Curie);
+	}
+	else {
+
+		pCurieWeiss->Initialize_CurieWeiss(0.0, 1.0);
+		pLongRelSus->Initialize_LongitudinalRelSusceptibility(pCurieWeiss->get_data(), atomic_moment, 1.0);
 	}
 }
 
@@ -231,60 +248,34 @@ void DipoleMesh::SetMagnetisationAngle(double polar, double azim, Rect rectangle
 	recalculateStrayField = true;
 }
 
-void DipoleMesh::SetCurieTemperature(double Tc)
+void DipoleMesh::SetCurieTemperature(double Tc, bool set_default_dependences)
 {
-	if (Tc >= 1) {
+	//Curie temperature is a constant in mesh parameter equations, so update them
+	if (Tc != T_Curie) update_meshparam_equations();
+
+	if (Tc > 0) {
 
 		T_Curie = Tc;
 
-		std::vector<double> t_scaling_me;
+		if (set_default_dependences) {
 
-		t_scaling_me.assign(MAX_TEMPERATURE + 1, 1.0);
+			//set default temperature dependences
+			Ms.set_t_scaling_equation(string("me(T/Tc)"), userConstants, T_Curie, base_temperature);
 
-		int chunk = (int)floor_epsilon(MAX_TEMPERATURE / OmpThreads);
-
-		#pragma omp parallel for
-		for (int thread = 0; thread < OmpThreads; thread++) {
-
-			double me = 1.0;
-
-			for (int t_value = 1 + thread * chunk; t_value <= (thread != OmpThreads - 1 ? (thread + 1) * chunk : (int)MAX_TEMPERATURE); t_value++) {
-
-				double c = 3 * Tc / t_value;
-
-				//This is F(x) = B(cx + d) - x
-				std::function<double(double)> F = [&](double x) -> double {
-
-					double arg = c * x;
-					return ((1 + exp(-2 * arg)) / (1 - exp(-2 * arg))) - 1 / arg - x;
-				};
-
-				//This is F'(x) = B'(cx + d) * c - 1
-				std::function<double(double)> Fdiff = [&](double x) -> double {
-
-					double arg = c * x;
-					double coth = (1 + exp(-2 * arg)) / (1 - exp(-2 * arg));
-					return (((1 - coth * coth) + 1 / (arg*arg)) * c - 1);
-				};
-
-				//solve for me at temperature = t_value : Ms0 scaling
-				//next starting value for the root finder is me - this makes the NewtonRaphson algorithm extremely efficient (typically a single iteration is required to keep within 1e-6 accuracy!)
-				me = Root_NewtonRaphson(F, Fdiff, me, 1e-6);
-
-				//Ms scaling
-				t_scaling_me[t_value] = me;
-			}
+			//make sure to also update them - this method can be called during a simulation, e.g. if field changes.
+			Ms.update(base_temperature);
 		}
-
-		Ms.set_precalculated_t_scaling_array(t_scaling_me);
-		Ms.update(base_temperature);
 	}
 	else {
 
 		//turn it off
+		T_Curie = 0.0;
 
-		//reset temperature dependencies for affected parameters
-		Ms.clear_t_scaling();
+		if (set_default_dependences) {
+
+			//reset temperature dependencies for affected parameters
+			Ms.clear_t_scaling();
+		}
 	}
 
 	Reset_Mdipole();
@@ -314,3 +305,5 @@ bool DipoleMesh::Check_recalculateStrayField(void)
 
 	return recalculateStrayField;
 }
+
+#endif

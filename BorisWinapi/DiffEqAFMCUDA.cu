@@ -1,9 +1,11 @@
 #include "DiffEqAFMCUDA.h"
+
+#if COMPILECUDA == 1
+#ifdef MESH_COMPILATION_ANTIFERROMAGNETIC
+
 #include "DiffEqAFM_EquationsCUDA.h"
 #include "DiffEqAFM_SEquationsCUDA.h"
 #include "DiffEq_Defs.h"
-
-#if COMPILECUDA == 1
 
 #include "BorisCUDALib.cuh"
 
@@ -79,4 +81,5 @@ void DifferentialEquationAFMCUDA::SetODEMethodPointers(void)
 	set_ODEFunc_pointers <<<1, 1>>> (cuDiffEq);
 }
 
+#endif
 #endif

@@ -1,5 +1,8 @@
 #include "stdafx.h"
 #include "Mesh_AntiFerromagnetic.h"
+
+#ifdef MESH_COMPILATION_ANTIFERROMAGNETIC
+
 #include "SuperMesh.h"
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -11,19 +14,29 @@ AFMesh::AFMesh(SuperMesh *pSMesh_) :
 			//Mesh members
 			VINFO(meshType), VINFO(meshIdCounter), VINFO(meshId),
 			VINFO(displayedPhysicalQuantity), VINFO(displayedBackgroundPhysicalQuantity), VINFO(vec3rep), VINFO(displayedParamVar),
-			VINFO(meshRect), VINFO(n), VINFO(h), VINFO(n_e), VINFO(h_e), VINFO(n_t), VINFO(h_t), VINFO(n_m), VINFO(h_m),
-			VINFO(M), VINFO(M2), VINFO(pMod),
+			VINFO(meshRect), VINFO(n), VINFO(h), VINFO(n_e), VINFO(h_e), VINFO(n_t), VINFO(h_t), VINFO(n_m), VINFO(h_m), VINFO(n_s), VINFO(h_s), VINFO(link_stochastic),
+			VINFO(M), VINFO(M2), VINFO(V), VINFO(elC), VINFO(Temp), VINFO(Temp_l), 
+			VINFO(pMod), 
+			VINFO(exclude_from_multiconvdemag),
 			//Members in this derived class
 			VINFO(move_mesh_trigger), VINFO(skyShift), VINFO(exchange_couple_to_meshes),
 			//Material Parameters
-			VINFO(grel_AFM), VINFO(alpha_AFM), VINFO(Ms_AFM), VINFO(Nxy), VINFO(A_AFM), VINFO(A12), VINFO(D_AFM), VINFO(K1), VINFO(K2), VINFO(mcanis_ea1), VINFO(mcanis_ea2), VINFO(cHA),
-			VINFO(base_temperature), VINFO(T_equation), VINFO(thermCond), VINFO(density), VINFO(shc), VINFO(cT), VINFO(Q)
+			VINFO(grel_AFM), VINFO(alpha_AFM), VINFO(Ms_AFM), VINFO(Nxy), 
+			VINFO(A_AFM), VINFO(Ah), VINFO(Anh), VINFO(D_AFM), VINFO(tau_ii), VINFO(tau_ij),
+			VINFO(K1_AFM), VINFO(K2_AFM), VINFO(mcanis_ea1), VINFO(mcanis_ea2),
+			VINFO(susrel_AFM), VINFO(cHA),
+			VINFO(elecCond), VINFO(P), VINFO(beta), VINFO(SHA), VINFO(flSOT),
+			VINFO(base_temperature), VINFO(T_equation), VINFO(T_Curie), VINFO(T_Curie_material), VINFO(atomic_moment_AFM), 
+			VINFO(density),
+			VINFO(thermCond), VINFO(shc), VINFO(shc_e), VINFO(G_e), VINFO(cT), VINFO(Q)
 		},
 		{
-			IINFO(Demag_N), IINFO(Demag), IINFO(SDemag_Demag), IINFO(Exch_6ngbr_Neu), IINFO(DMExchange), IINFO(iDMExchange), IINFO(SurfExchange),
+			IINFO(Demag_N), IINFO(Demag), IINFO(SDemag_Demag), 
+			IINFO(Exch_6ngbr_Neu), IINFO(DMExchange), IINFO(iDMExchange), IINFO(SurfExchange),
 			IINFO(Zeeman),
-			IINFO(Anisotropy_Uniaxial), IINFO(Anisotropy_Cubic),
-			IINFO(Roughness)
+			IINFO(Anisotropy_Uniaxial), IINFO(Anisotropy_Cubic), 
+			IINFO(Transport), IINFO(Heat),
+			IINFO(SOTField), IINFO(Roughness)
 		}),
 	meshODE(this)
 {}
@@ -35,19 +48,29 @@ AFMesh::AFMesh(Rect meshRect_, DBL3 h_, SuperMesh *pSMesh_) :
 			//Mesh members
 			VINFO(meshType), VINFO(meshIdCounter), VINFO(meshId),
 			VINFO(displayedPhysicalQuantity), VINFO(displayedBackgroundPhysicalQuantity), VINFO(vec3rep), VINFO(displayedParamVar),
-			VINFO(meshRect), VINFO(n), VINFO(h), VINFO(n_e), VINFO(h_e), VINFO(n_t), VINFO(h_t), VINFO(n_m), VINFO(h_m),
-			VINFO(M), VINFO(M2), VINFO(pMod),
+			VINFO(meshRect), VINFO(n), VINFO(h), VINFO(n_e), VINFO(h_e), VINFO(n_t), VINFO(h_t), VINFO(n_m), VINFO(h_m), VINFO(n_s), VINFO(h_s), VINFO(link_stochastic),
+			VINFO(M), VINFO(M2), VINFO(V), VINFO(elC), VINFO(Temp), VINFO(Temp_l),
+			VINFO(pMod),
+			VINFO(exclude_from_multiconvdemag),
 			//Members in this derived class
 			VINFO(move_mesh_trigger), VINFO(skyShift), VINFO(exchange_couple_to_meshes),
 			//Material Parameters
-			VINFO(grel_AFM), VINFO(alpha_AFM), VINFO(Ms_AFM), VINFO(Nxy), VINFO(A_AFM), VINFO(A12), VINFO(D_AFM), VINFO(K1), VINFO(K2), VINFO(mcanis_ea1), VINFO(mcanis_ea2), VINFO(cHA),
-			VINFO(base_temperature), VINFO(T_equation), VINFO(thermCond), VINFO(density), VINFO(shc), VINFO(cT), VINFO(Q)
+			VINFO(grel_AFM), VINFO(alpha_AFM), VINFO(Ms_AFM), VINFO(Nxy),
+			VINFO(A_AFM), VINFO(Ah), VINFO(Anh), VINFO(D_AFM), VINFO(tau_ii), VINFO(tau_ij),
+			VINFO(K1_AFM), VINFO(K2_AFM), VINFO(mcanis_ea1), VINFO(mcanis_ea2),
+			VINFO(susrel_AFM), VINFO(cHA),
+			VINFO(elecCond), VINFO(P), VINFO(beta), VINFO(SHA), VINFO(flSOT),
+			VINFO(base_temperature), VINFO(T_equation), VINFO(T_Curie), VINFO(T_Curie_material), VINFO(atomic_moment_AFM),
+			VINFO(density),
+			VINFO(thermCond), VINFO(shc), VINFO(shc_e), VINFO(G_e), VINFO(cT), VINFO(Q)
 		},
 		{
-			IINFO(Demag_N), IINFO(Demag), IINFO(SDemag_Demag), IINFO(Exch_6ngbr_Neu), IINFO(DMExchange), IINFO(iDMExchange), IINFO(SurfExchange),
+			IINFO(Demag_N), IINFO(Demag), IINFO(SDemag_Demag),
+			IINFO(Exch_6ngbr_Neu), IINFO(DMExchange), IINFO(iDMExchange), IINFO(SurfExchange),
 			IINFO(Zeeman),
 			IINFO(Anisotropy_Uniaxial), IINFO(Anisotropy_Cubic),
-			IINFO(Roughness)
+			IINFO(Transport), IINFO(Heat),
+			IINFO(SOTField), IINFO(Roughness)
 		}),
 	meshODE(this)
 {
@@ -60,10 +83,14 @@ AFMesh::AFMesh(Rect meshRect_, DBL3 h_, SuperMesh *pSMesh_) :
 	h_e = h_;
 	h_t = h_;
 	h_m = h_;
+	h_s = h_;
 
 	error_on_create = UpdateConfiguration(UPDATECONFIG_FORCEUPDATE);
 
 	//default modules configuration
+	if (!error_on_create) error_on_create = AddModule(MOD_EXCHANGE6NGBR);
+	if (!error_on_create) error_on_create = AddModule(MOD_ANIUNI);
+	if (!error_on_create) error_on_create = AddModule(MOD_ZEEMAN);
 
 	//--------------------------
 
@@ -83,6 +110,33 @@ void AFMesh::RepairObjectState(void)
 	//at this point Heff is empty and must not be since MComputation_Enabled will report wrong
 	Heff.assign(h, meshRect, DBL3(0, 0, 0));
 	Heff2.assign(h, meshRect, DBL3(0, 0, 0));
+
+	//also need to re-calculate special functions used in text formulas as they might not correspond to the loaded parameters now
+
+	//calculate scaling function (Curie Weiss law)
+	if (T_Curie > 0) {
+
+		DBL3 Ha = CallModuleMethod(&Zeeman::GetField);
+		pCurieWeiss1->Initialize_CurieWeiss1(tau_ii, tau_ij, MU0 * (MUB / BOLTZMANN) * atomic_moment_AFM * Ha.norm(), T_Curie);
+		pCurieWeiss2->Initialize_CurieWeiss2(tau_ii, tau_ij, MU0 * (MUB / BOLTZMANN) * atomic_moment_AFM * Ha.norm(), T_Curie);
+
+		pLongRelSus1->Initialize_LongitudinalRelSusceptibility1(pCurieWeiss1->get_data(), pCurieWeiss2->get_data(), tau_ii, tau_ij, atomic_moment_AFM, T_Curie);
+		pLongRelSus2->Initialize_LongitudinalRelSusceptibility2(pCurieWeiss1->get_data(), pCurieWeiss2->get_data(), tau_ii, tau_ij, atomic_moment_AFM, T_Curie);
+
+		pAlpha1->Initialize_Alpha1(pCurieWeiss1->get_data(), pCurieWeiss2->get_data(), tau_ii.get0().i, tau_ij.get0().i);
+		pAlpha2->Initialize_Alpha2(pCurieWeiss1->get_data(), pCurieWeiss2->get_data(), tau_ii.get0().j, tau_ij.get0().j);
+	}
+	else {
+
+		pCurieWeiss1->Initialize_CurieWeiss1(tau_ii, tau_ij, DBL2(0.0), 1.0);
+		pCurieWeiss2->Initialize_CurieWeiss2(tau_ii, tau_ij, DBL2(0.0), 1.0);
+
+		pLongRelSus1->Initialize_LongitudinalRelSusceptibility1(pCurieWeiss1->get_data(), pCurieWeiss2->get_data(), tau_ii, tau_ij, atomic_moment_AFM, 1.0);
+		pLongRelSus2->Initialize_LongitudinalRelSusceptibility2(pCurieWeiss1->get_data(), pCurieWeiss2->get_data(), tau_ii, tau_ij, atomic_moment_AFM, 1.0);
+
+		pAlpha1->Initialize_Alpha1(pCurieWeiss1->get_data(), pCurieWeiss2->get_data(), tau_ii.get0().i, tau_ij.get0().i);
+		pAlpha2->Initialize_Alpha2(pCurieWeiss1->get_data(), pCurieWeiss2->get_data(), tau_ii.get0().j, tau_ij.get0().j);
+	}
 }
 
 //----------------------------------- IMPORTANT CONTROL METHODS
@@ -97,8 +151,6 @@ BError AFMesh::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 	///////////////////////////////////////////////////////
 
 	if (ucfg::check_cfgflags(cfgMessage, UPDATECONFIG_MESHCHANGE)) {
-
-		//get number of cells in each dimension : first divide the mesh rectangle with rounding to get an integer number of cells, then adjust cellsize so h * n gives the rectangle dimensions
 
 		n = round(meshRect / h);
 		if (n.x == 0) n.x = 1;
@@ -256,7 +308,6 @@ BError AFMesh::SwitchCUDAState(bool cudaState)
 
 double AFMesh::CheckMoveMesh(void)
 {
-
 #if COMPILECUDA == 1
 	if (pMeshCUDA) return reinterpret_cast<AFMeshCUDA*>(pMeshCUDA)->CheckMoveMesh(meshODE.MoveMeshAntisymmetric(), meshODE.MoveMeshThreshold());
 #endif
@@ -287,157 +338,76 @@ double AFMesh::CheckMoveMesh(void)
 		if (Mratio < -meshODE.MoveMeshThreshold()) return h.x * direction;
 	}
 	
-	return 0;
+	return 0.0;
 }
 
 //----------------------------------- OVERLOAD MESH VIRTUAL METHODS
 
 //In AF meshes Tc actually means the Neel temperature (but I'm stuck with the naming T_Curie to keep older simulation files compatible)
-void AFMesh::SetCurieTemperature(double Tc)
+void AFMesh::SetCurieTemperature(double Tc, bool set_default_dependences)
 {
-	//TO DO
+	//Curie temperature is a constant in mesh parameter equations, so update them
+	if (Tc != T_Curie) update_meshparam_equations();
 
-	/*
-	if (Tc >= 1) {
+	if (Tc > 0) {
 
 		T_Curie = Tc;
 
-		//also recalculate parameters which have a default temperature dependence based on Tc. Note, if these have been assigned a custom temperature dependence it will be overwritten.
-
-		//1. damping
-		//2. Ms -> me
-		//3. A -> me^2, D -> me^2
-		//4. susrel
-		//5. K1 and K2 anisotropy constants -> me^3
-		//6. P -> me^2
-
-		//1. alpha = alpha0 * (1 - T/3Tc) up to Tc then 2 * alpha0 * T / 3 Tc above Tc -> for this reason use an array, not a equation
-
-		//-------------------------------
-
-		//2. me = B(me * 3Tc/T + mu*mu0*Ha/kBT), where B(x) = coth(x) - 1/x, Ha applied field, mu is the atomic moment, Tc Curie temperature, kB Boltzmann constant, T temperature
-		//Solve me by finding root of equation F(x) = B(cx + d) - x, where x = me, c = 3Tc/T, d = mu*mu0*Ha/kBT - Newton Raphson works very well
-		//Note me is the scaling for Ms0 (0 temperature Ms value)
-
-		//3. Scaling for A is me^2
-
-		//4. suspar (parallel susceptiblity) is given by dMe/dHa, where Me = me * Ms0, Ms0 being the zero temperature saturation magnetization
-		//Thus suspar = mu0 Ms0 d0 B'(c me + d) / (1 - cB'(c me + d)), where d0 = mu/kBT, so d = d0 * mu0 * Ha
-		//
-		//We don't want a Ms0 dependence (what happens when Ms0 value is changed??), so we define susrel = suspar / mu0*Ms0 - this is the MatP we'll calculate here. In the LLB equation convert back to suspar to use for the longitudinal relaxation term.
-
-		//5. K1 and K2 scale as me^3
-
-		//6. P scales as me
-
-		//This is B'(x) = 1 - coth^2(x) + 1/x^2
-		auto Bdiff = [](double x) -> double {
-
-			double coth = (1 + exp(-2 * x)) / (1 - exp(-2 * x));
-			return ((1 - coth * coth) + 1 / (x*x));
-		};
-
+		//calculate scaling function (Curie Weiss law)
 		DBL3 Ha = CallModuleMethod(&Zeeman::GetField);
+		pCurieWeiss1->Initialize_CurieWeiss1(tau_ii, tau_ij, MU0 * (MUB / BOLTZMANN) * atomic_moment_AFM * Ha.norm(), T_Curie);
+		pCurieWeiss2->Initialize_CurieWeiss2(tau_ii, tau_ij, MU0 * (MUB / BOLTZMANN) * atomic_moment_AFM * Ha.norm(), T_Curie);
+		
+		pLongRelSus1->Initialize_LongitudinalRelSusceptibility1(pCurieWeiss1->get_data(), pCurieWeiss2->get_data(), tau_ii, tau_ij, atomic_moment_AFM, T_Curie);
+		pLongRelSus2->Initialize_LongitudinalRelSusceptibility2(pCurieWeiss1->get_data(), pCurieWeiss2->get_data(), tau_ii, tau_ij, atomic_moment_AFM, T_Curie);
 
-		std::vector<double> t_scaling_me, t_scaling_me2, t_scaling_me3, t_scaling_sus, t_scaling_dam;
+		pAlpha1->Initialize_Alpha1(pCurieWeiss1->get_data(), pCurieWeiss2->get_data(), tau_ii.get0().i, tau_ij.get0().i);
+		pAlpha2->Initialize_Alpha2(pCurieWeiss1->get_data(), pCurieWeiss2->get_data(), tau_ii.get0().j, tau_ij.get0().j);
 
-		t_scaling_me.assign(MAX_TEMPERATURE + 1, 1.0);
-		t_scaling_me2.assign(MAX_TEMPERATURE + 1, 1.0);
-		t_scaling_me3.assign(MAX_TEMPERATURE + 1, 1.0);
-		t_scaling_sus.assign(MAX_TEMPERATURE + 1, 0.0);
-		t_scaling_dam.assign(MAX_TEMPERATURE + 1, 1.0);
+		if (set_default_dependences) {
 
-		int chunk = (int)floor_epsilon(MAX_TEMPERATURE / OmpThreads);
+			//set default temperature dependences
+			Ms_AFM.set_t_scaling_equation(string("me1(T/Tc), me2(T/Tc)"), userConstants, T_Curie, base_temperature);
+			A_AFM.set_t_scaling_equation(string("me1(T/Tc)^2, me2(T/Tc)^2"), userConstants, T_Curie, base_temperature);
+			Ah.set_t_scaling_equation(string("me1(T/Tc)*me2(T/Tc)"), userConstants, T_Curie, base_temperature);
+			Anh.set_t_scaling_equation(string("me1(T/Tc)*me2(T/Tc)"), userConstants, T_Curie, base_temperature);
+			D_AFM.set_t_scaling_equation(string("me1(T/Tc)^2, me2(T/Tc)^2"), userConstants, T_Curie, base_temperature);
+			K1_AFM.set_t_scaling_equation(string("me1(T/Tc)^3, me2(T/Tc)^3"), userConstants, T_Curie, base_temperature);
+			K2_AFM.set_t_scaling_equation(string("me1(T/Tc)^3, me2(T/Tc)^3"), userConstants, T_Curie, base_temperature);
 
-#pragma omp parallel for
-		for (int thread = 0; thread < OmpThreads; thread++) {
+			susrel_AFM.set_t_scaling_equation(string("chi1(T/Tc), chi2(T/Tc)"), userConstants, T_Curie, base_temperature);
+			alpha_AFM.set_t_scaling_equation(string("alpha1(T/Tc), alpha2(T/Tc)"), userConstants, T_Curie, base_temperature);
 
-			double me = 1.0;
-
-			for (int t_value = 1 + thread * chunk; t_value <= (thread != OmpThreads - 1 ? (thread + 1) * chunk : (int)MAX_TEMPERATURE); t_value++) {
-
-				double c = 3 * T_Curie / t_value;
-				double d0 = (MUB / BOLTZMANN) * atomic_moment / t_value;
-				double d = MU0 * d0 * Ha.norm();
-
-				//This is F(x) = B(cx + d) - x
-				std::function<double(double)> F = [&](double x) -> double {
-
-					double arg = c * x + d;
-					return ((1 + exp(-2 * arg)) / (1 - exp(-2 * arg))) - 1 / arg - x;
-				};
-
-				//This is F'(x) = B'(cx + d) * c - 1
-				std::function<double(double)> Fdiff = [&](double x) -> double {
-
-					double arg = c * x + d;
-					double coth = (1 + exp(-2 * arg)) / (1 - exp(-2 * arg));
-					return (((1 - coth * coth) + 1 / (arg*arg)) * c - 1);
-				};
-
-				//solve for me at temperature = t_value : Ms0 scaling
-				//next starting value for the root finder is me - this makes the NewtonRaphson algorithm extremely efficient (typically a single iteration is required to keep within 1e-6 accuracy!)
-				me = Root_NewtonRaphson(F, Fdiff, me, 1e-6);
-
-				//Ms and P scaling
-				t_scaling_me[t_value] = me;
-
-				//A scaling
-				t_scaling_me2[t_value] = me * me;
-
-				//K1 and K2 scaling
-				t_scaling_me3[t_value] = me * me * me;
-
-				//susrel scaling
-				t_scaling_sus[t_value] = d0 * Bdiff(c * me + d) / (1.0 - c * Bdiff(c * me + d));
-
-				//alpha scaling
-				if (t_value < T_Curie) {
-
-					t_scaling_dam[t_value] = 1.0 - (double)t_value / (3.0 * T_Curie);
-				}
-				else {
-
-					t_scaling_dam[t_value] = 2.0 * (double)t_value / (3.0 * T_Curie);
-				}
-			}
+			//make sure to also update them - this method can be called during a simulation, e.g. if field changes.
+			Ms_AFM.update(base_temperature);
+			A_AFM.update(base_temperature);
+			Ah.update(base_temperature);
+			Anh.update(base_temperature);
+			D_AFM.update(base_temperature);
+			K1_AFM.update(base_temperature);
+			K2_AFM.update(base_temperature);
+			susrel_AFM.update(base_temperature);
+			alpha_AFM.update(base_temperature);
 		}
-
-		//set scaling arrays now
-		Ms.set_precalculated_t_scaling_array(t_scaling_me);
-		P.set_precalculated_t_scaling_array(t_scaling_me);
-		A.set_precalculated_t_scaling_array(t_scaling_me2);
-		D.set_precalculated_t_scaling_array(t_scaling_me2);
-		K1.set_precalculated_t_scaling_array(t_scaling_me3);
-		K2.set_precalculated_t_scaling_array(t_scaling_me3);
-		susrel.set_precalculated_t_scaling_array(t_scaling_sus);
-		alpha.set_precalculated_t_scaling_array(t_scaling_dam);
-
-		//make sure to also update them - this method can be called during a simulation, e.g. if field changes.
-		Ms.update(base_temperature);
-		P.update(base_temperature);
-		A.update(base_temperature);
-		D.update(base_temperature);
-		K1.update(base_temperature);
-		K2.update(base_temperature);
-		susrel.update(base_temperature);
-		alpha.update(base_temperature);
 	}
 	else {
 
 		//turn it off
-
 		T_Curie = 0.0;
 
-		//reset temperature dependencies for affected parameters
-		Ms.clear_t_scaling();
-		P.clear_t_scaling();
-		A.clear_t_scaling();
-		D.clear_t_scaling();
-		K1.clear_t_scaling();
-		K2.clear_t_scaling();
-		susrel.clear_t_scaling();
-		alpha.clear_t_scaling();
+		if (set_default_dependences) {
+
+			//reset temperature dependencies for affected parameters
+			Ms_AFM.clear_t_scaling();
+			A_AFM.clear_t_scaling();
+			Ah.clear_t_scaling();
+			Anh.clear_t_scaling();
+			D_AFM.clear_t_scaling();
+			K1_AFM.clear_t_scaling();
+			K2_AFM.clear_t_scaling();
+			susrel_AFM.clear_t_scaling();
+			alpha_AFM.clear_t_scaling();
+		}
 	}
 
 #if COMPILECUDA == 1
@@ -445,17 +415,42 @@ void AFMesh::SetCurieTemperature(double Tc)
 
 		//T_Curie changed : sync with cuda version
 		pMeshCUDA->T_Curie.from_cpu((cuBReal)T_Curie);
+
+		pMeshCUDA->set_special_functions_data();
 	}
-#endif
-*/
+#endif	
 }
 
-void AFMesh::SetAtomicMoment(double atomic_moment_ub)
+void AFMesh::SetAtomicMoment(DBL2 atomic_moment_ub)
 {
-	//TO DO
-
-	atomic_moment = atomic_moment_ub;
+	atomic_moment_AFM = atomic_moment_ub;
 
 	//setting atomic_moment will affect the temperature dependence of me (normalised equilibrium magnetisation), so some parameter temperature dependencies must change - calling SetCurieTemperature with the current Curie temperature will do this
-	SetCurieTemperature(T_Curie);
+	SetCurieTemperature(T_Curie, false);
 }
+
+//set tau_ii and tau_ij values
+void AFMesh::SetTcCoupling(DBL2 tau_intra, DBL2 tau_inter)
+{
+	tau_ii = tau_intra;
+	tau_ij = tau_inter;
+
+	SetCurieTemperature(T_Curie, false);
+}
+
+void AFMesh::SetTcCoupling_Intra(DBL2 tau)
+{
+	tau_ii = tau;
+
+	SetCurieTemperature(T_Curie, false);
+}
+
+void AFMesh::SetTcCoupling_Inter(DBL2 tau)
+{
+	tau_ij = tau;
+
+	SetCurieTemperature(T_Curie, false);
+}
+
+
+#endif

@@ -37,3 +37,20 @@ __device__ inline float cuBorisRand::rand(void)
 
 	return (float)atomicLCG(prn + idx) / (unsigned)4294967295;
 }
+
+//Box-Muller transform to generate Gaussian distribution from uniform distribution
+__device__ inline float cuBorisRand::rand_gauss(float mean, float std)
+{
+	//Not exactly the usual Box-Muller transform : generate a value every time, still Gaussian distribution.
+	//This saves having to allocate extra spaces
+	float u1, u2;
+	do {
+		u1 = this->rand();
+		u2 = this->rand();
+	} while (u1 <= 1e-10);
+
+	float z0;
+	z0 = sqrt(-2.0 * log(u1)) * cos((float)TWO_PI * u2);
+
+	return z0 * std + mean;
+}

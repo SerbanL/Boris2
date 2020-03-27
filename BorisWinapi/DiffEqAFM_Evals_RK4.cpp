@@ -1,10 +1,12 @@
 #include "stdafx.h"
 #include "DiffEqAFM.h"
+
+#ifdef MESH_COMPILATION_ANTIFERROMAGNETIC
+#ifdef ODE_EVAL_RK4
+
 #include "Mesh_AntiFerromagnetic.h"
 #include "SuperMesh.h"
 #include "MeshParamsControl.h"
-
-#ifdef ODE_EVAL_RK4
 
 //--------------------------------------------- RK4
 
@@ -200,4 +202,5 @@ void DifferentialEquationAFM::RunRK4_Step3(void)
 	}
 }
 
+#endif
 #endif

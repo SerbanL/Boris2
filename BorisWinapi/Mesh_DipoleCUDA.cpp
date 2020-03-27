@@ -1,5 +1,8 @@
 #include "stdafx.h"
 #include "Mesh_DipoleCUDA.h"
+
+#ifdef MESH_COMPILATION_DIPOLE
+
 #include "Mesh_Dipole.h"
 
 #if COMPILECUDA == 1
@@ -88,4 +91,5 @@ bool DipoleMeshCUDA::Check_recalculateStrayField(void)
 	return recalculateStrayField;
 }
 
+#endif
 #endif

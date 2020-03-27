@@ -37,48 +37,22 @@ cu_obj<cuBReal>* ODECommonCUDA::pdelta_M2_dot_delta_G2 = nullptr;
 
 ODECommon* ODECommonCUDA::pODE = nullptr;
 
+cu_obj<ManagedDiffEq_CommonCUDA>* ODECommonCUDA::pcuDiffEq = nullptr;
+
 ODECommonCUDA::ODECommonCUDA(ODECommon *pODE_)
 {
-	pODE = pODE_;
+	if (!pODE) pODE = pODE_;
 
-	if (!ptime) ptime = new cu_obj<cuBReal>();
-	if (!pstagetime) pstagetime = new cu_obj<cuBReal>();
-
-	if (!pdT) pdT = new cu_obj<cuBReal>();
-	if (!pdT_last) pdT_last = new cu_obj<cuBReal>();
-
-	if (!pmxh) pmxh = new cu_obj<cuBReal>();
-	if (!pmxh_av) pmxh_av = new cu_obj<cuReal3>();
-	if (!pavpoints) pavpoints = new cu_obj<size_t>();
-
-	if (!pdmdt) pdmdt = new cu_obj<cuBReal>();
-	if (!pdmdt_av) pdmdt_av = new cu_obj<cuReal3>();
-	if (!pavpoints2) pavpoints2 = new cu_obj<size_t>();
-
-	if (!plte) plte = new cu_obj<cuBReal>();
-
-	if (!prenormalize) prenormalize = new cu_obj<bool>();
-
-	if (!psolve_spin_current) psolve_spin_current = new cu_obj<bool>();
-
-	if (!psetODE) psetODE = new cu_obj<int>();
-
-	if (!palternator) palternator = new cu_obj<bool>();
-
-	if (!pdelta_M_sq) pdelta_M_sq = new cu_obj<cuBReal>();
-	if (!pdelta_G_sq) pdelta_G_sq = new cu_obj<cuBReal>();
-	if (!pdelta_M_dot_delta_G) pdelta_M_dot_delta_G = new cu_obj<cuBReal>();
-
-	if (!pdelta_M2_sq) pdelta_M2_sq = new cu_obj<cuBReal>();
-	if (!pdelta_G2_sq) pdelta_G2_sq = new cu_obj<cuBReal>();
-	if (!pdelta_M2_dot_delta_G2) pdelta_M2_dot_delta_G2 = new cu_obj<cuBReal>();
-
-	SyncODEValues();
+	AllocateStaticData();
 }
 
 ODECommonCUDA::~ODECommonCUDA()
 {
 	if (pODE) {
+
+		//delete these to prevent memory leaks
+		//Note since all these are static, they will be deleted in all meshes holding a ODECommonCUDA
+		//Thus if you delete a mesh, you'll need to remake these and also set pointers in cuDiffEq : do it in UpdateConfiguration
 
 		if (ptime) {
 
@@ -144,13 +118,65 @@ ODECommonCUDA::~ODECommonCUDA()
 		if (pdelta_M2_sq) { delete pdelta_M2_sq; pdelta_M2_sq = nullptr; }
 		if (pdelta_G2_sq) { delete pdelta_G2_sq; pdelta_G2_sq = nullptr; }
 		if (pdelta_M2_dot_delta_G2) { delete pdelta_M2_dot_delta_G2; pdelta_M2_dot_delta_G2 = nullptr; }
+
+		if (pcuDiffEq) { delete pcuDiffEq; pcuDiffEq = nullptr; }
 	}
+}
+
+//Allocate memory for all static data; deletion only happens in the destructor, however allocation can also be triggered by UpdateConfiguration since the static data can be deleted by another instance which inherits same static data
+void ODECommonCUDA::AllocateStaticData(void)
+{
+	if (!ptime) ptime = new cu_obj<cuBReal>();
+	if (!pstagetime) pstagetime = new cu_obj<cuBReal>();
+
+	if (!pdT) pdT = new cu_obj<cuBReal>();
+	if (!pdT_last) pdT_last = new cu_obj<cuBReal>();
+
+	if (!pmxh) pmxh = new cu_obj<cuBReal>();
+	if (!pmxh_av) pmxh_av = new cu_obj<cuReal3>();
+	if (!pavpoints) pavpoints = new cu_obj<size_t>();
+
+	if (!pdmdt) pdmdt = new cu_obj<cuBReal>();
+	if (!pdmdt_av) pdmdt_av = new cu_obj<cuReal3>();
+	if (!pavpoints2) pavpoints2 = new cu_obj<size_t>();
+
+	if (!plte) plte = new cu_obj<cuBReal>();
+
+	if (!prenormalize) prenormalize = new cu_obj<bool>();
+
+	if (!psolve_spin_current) psolve_spin_current = new cu_obj<bool>();
+
+	if (!psetODE) psetODE = new cu_obj<int>();
+
+	if (!palternator) palternator = new cu_obj<bool>();
+
+	if (!pdelta_M_sq) pdelta_M_sq = new cu_obj<cuBReal>();
+	if (!pdelta_G_sq) pdelta_G_sq = new cu_obj<cuBReal>();
+	if (!pdelta_M_dot_delta_G) pdelta_M_dot_delta_G = new cu_obj<cuBReal>();
+
+	if (!pdelta_M2_sq) pdelta_M2_sq = new cu_obj<cuBReal>();
+	if (!pdelta_G2_sq) pdelta_G2_sq = new cu_obj<cuBReal>();
+	if (!pdelta_M2_dot_delta_G2) pdelta_M2_dot_delta_G2 = new cu_obj<cuBReal>();
+
+	if (!pcuDiffEq) pcuDiffEq = new cu_obj<ManagedDiffEq_CommonCUDA>();
+
+	//setup the managed cuDiffEq object with pointers to all required data for differential equations calculations
+	(*pcuDiffEq)()->set_pointers(this);
+
+	SyncODEValues();
 }
 
 BError ODECommonCUDA::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 {
 	BError error(__FUNCTION__);
 
+	//this could have been deleted by a destructor in another instance which inherits from ODECommonCUDA : try to remake it.
+	//this will only happen when a mesh is deleted
+	if (ucfg::check_cfgflags(cfgMessage, UPDATECONFIG_MESHDELETED)) {
+
+		AllocateStaticData();
+	}
+	
 	return error;
 }
 

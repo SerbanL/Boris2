@@ -1,10 +1,12 @@
 #include "stdafx.h"
 #include "DiffEqFM.h"
+
+#ifdef MESH_COMPILATION_FERROMAGNETIC
+#ifdef ODE_EVAL_SD
+
 #include "Mesh_Ferromagnetic.h"
 #include "SuperMesh.h"
 #include "MeshParamsControl.h"
-
-#ifdef ODE_EVAL_SD
 
 //Steepest-Descent solver with Barzilai-Borwein stepsizes (Journal of Numerical Analysis (1988) 8, 141-148).
 //Use alternating stepsize selection. 
@@ -284,4 +286,5 @@ void DifferentialEquationFM::RunSD_Advance(void)
 	}
 }
 
+#endif
 #endif

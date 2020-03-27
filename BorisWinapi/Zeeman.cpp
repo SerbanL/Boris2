@@ -5,6 +5,7 @@
 
 #include "Mesh_Ferromagnetic.h"
 #include "Mesh_AntiFerromagnetic.h"
+#include "Mesh_Diamagnetic.h"
 
 #include "SuperMesh.h"
 
@@ -135,20 +136,7 @@ double Zeeman::UpdateField(void)
 			return 0.0;
 		}
 
-		if (pMesh->GetMeshType() == MESH_FERROMAGNETIC) {
-
-#pragma omp parallel for reduction(+:energy)
-			for (int idx = 0; idx < pMesh->n.dim(); idx++) {
-
-				double cHA = pMesh->cHA;
-				pMesh->update_parameters_mcoarse(idx, pMesh->cHA, cHA);
-
-				pMesh->Heff[idx] += (cHA * Ha);
-
-				energy += pMesh->M[idx] * (cHA * Ha);
-			}
-		}
-		else if (pMesh->GetMeshType() == MESH_ANTIFERROMAGNETIC) {
+		if (pMesh->GetMeshType() == MESH_ANTIFERROMAGNETIC) {
 
 #pragma omp parallel for reduction(+:energy)
 			for (int idx = 0; idx < pMesh->n.dim(); idx++) {
@@ -162,6 +150,20 @@ double Zeeman::UpdateField(void)
 				energy += (pMesh->M[idx] + pMesh->M2[idx]) * (cHA * Ha) / 2;
 			}
 		}
+
+		else {
+
+#pragma omp parallel for reduction(+:energy)
+			for (int idx = 0; idx < pMesh->n.dim(); idx++) {
+
+				double cHA = pMesh->cHA;
+				pMesh->update_parameters_mcoarse(idx, pMesh->cHA, cHA);
+
+				pMesh->Heff[idx] += (cHA * Ha);
+
+				energy += pMesh->M[idx] * (cHA * Ha);
+			}
+		}
 	}
 
 	/////////////////////////////////////////
@@ -173,30 +175,7 @@ double Zeeman::UpdateField(void)
 		double time = pSMesh->GetStageTime();
 		double Temperature = pMesh->base_temperature;
 
-		if (pMesh->GetMeshType() == MESH_FERROMAGNETIC) {
-
-#pragma omp parallel for reduction(+:energy)
-			for (int j = 0; j < pMesh->n.y; j++) {
-				for (int k = 0; k < pMesh->n.z; k++) {
-					for (int i = 0; i < pMesh->n.x; i++) {
-
-						int idx = i + j * pMesh->n.x + k * pMesh->n.x*pMesh->n.y;
-
-						//on top of spatial dependence specified through an equation, also allow spatial dependence through the cHA parameter
-						double cHA = pMesh->cHA;
-						pMesh->update_parameters_mcoarse(idx, pMesh->cHA, cHA);
-
-						DBL3 relpos = DBL3(i + 0.5, j + 0.5, k + 0.5) & pMesh->h;
-						DBL3 H = H_equation.evaluate_vector(relpos.x, relpos.y, relpos.z, time);
-
-						pMesh->Heff[idx] += (cHA * H);
-
-						energy += pMesh->M[idx] * (cHA * H);
-					}
-				}
-			}
-		}
-		else if (pMesh->GetMeshType() == MESH_ANTIFERROMAGNETIC) {
+		if (pMesh->GetMeshType() == MESH_ANTIFERROMAGNETIC) {
 
 #pragma omp parallel for reduction(+:energy)
 			for (int j = 0; j < pMesh->n.y; j++) {
@@ -216,6 +195,30 @@ double Zeeman::UpdateField(void)
 						pMesh->Heff2[idx] += (cHA * H);
 
 						energy += (pMesh->M[idx] + pMesh->M2[idx]) * (cHA * H) / 2;
+					}
+				}
+			}
+		}
+
+		else {
+
+#pragma omp parallel for reduction(+:energy)
+			for (int j = 0; j < pMesh->n.y; j++) {
+				for (int k = 0; k < pMesh->n.z; k++) {
+					for (int i = 0; i < pMesh->n.x; i++) {
+
+						int idx = i + j * pMesh->n.x + k * pMesh->n.x*pMesh->n.y;
+
+						//on top of spatial dependence specified through an equation, also allow spatial dependence through the cHA parameter
+						double cHA = pMesh->cHA;
+						pMesh->update_parameters_mcoarse(idx, pMesh->cHA, cHA);
+
+						DBL3 relpos = DBL3(i + 0.5, j + 0.5, k + 0.5) & pMesh->h;
+						DBL3 H = H_equation.evaluate_vector(relpos.x, relpos.y, relpos.z, time);
+
+						pMesh->Heff[idx] += (cHA * H);
+
+						energy += pMesh->M[idx] * (cHA * H);
 					}
 				}
 			}
@@ -242,12 +245,14 @@ void Zeeman::SetField(DBL3 Hxyz)
 	//if atomic_moment is not zero then changing the applied field also changes the temperature dependence of me (normalised equilibrium magnetisation). This in turn affects a number of material parameters.
 	//Note, if only using LLG then set atomic_moment= 0 as calling SetCurieTemperature every time the applied field changes can be costly (if the field changes very often)
 
-	double atomic_moment_ub = pMesh->GetAtomicMoment();
+	bool atomic_moment_zero = false;
+	if (pMesh->GetMeshType() == MESH_ANTIFERROMAGNETIC) atomic_moment_zero = IsZ(pMesh->GetAtomicMoment_AFM().i + pMesh->GetAtomicMoment_AFM().j);
+	else if (pMesh->GetMeshType() == MESH_FERROMAGNETIC) atomic_moment_zero = IsZ(pMesh->GetAtomicMoment());
 
-	if (IsNZ(atomic_moment_ub) && IsNZ(pMesh->GetCurieTemperature())) {
+	if (!atomic_moment_zero && IsNZ(pMesh->GetCurieTemperature())) {
 
 		//calling SetCurieTemperature forces recalculation of affected material parameters temperature dependence - any custom dependence set will be overwritten
-		pMesh->SetCurieTemperature(pMesh->GetCurieTemperature());
+		pMesh->SetCurieTemperature(pMesh->GetCurieTemperature(), false);
 	}
 
 	//-------------------------- CUDA mirroring

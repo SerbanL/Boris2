@@ -3,6 +3,7 @@
 #include "TEquation_FSPEC.h"
 
 #include "Funcs_Math.h"
+#include "Obj_Math_Special.h"
 
 namespace EqComp {
 
@@ -27,6 +28,17 @@ namespace EqComp {
 		//for FUNC_POWER_EXPCONST or FUNC_POWER_BASECONST functions this is the base or exponent value.
 		//cannot set it in param since that could be used with FUNC_POWER_EXPCONST_PMUL or FUNC_POWER_BASECONST_PMUL
 		double base_or_exponent = 0;
+
+		//Special Functions
+
+		std::shared_ptr<Funcs_Special> pCurieWeiss = nullptr;
+		std::shared_ptr<Funcs_Special> pLongRelSus = nullptr;
+		std::shared_ptr<Funcs_Special> pCurieWeiss1 = nullptr;
+		std::shared_ptr<Funcs_Special> pCurieWeiss2 = nullptr;
+		std::shared_ptr<Funcs_Special> pLongRelSus1 = nullptr;
+		std::shared_ptr<Funcs_Special> pLongRelSus2 = nullptr;
+		std::shared_ptr<Funcs_Special> pAlpha1 = nullptr;
+		std::shared_ptr<Funcs_Special> pAlpha2 = nullptr;
 
 	private:
 
@@ -439,6 +451,88 @@ namespace EqComp {
 			return param * pow(base_or_exponent, pFunc1->func(*pFunc1, bvars...));
 		}
 
+		//SPECIAL FUNCTIONS
+
+		//me : Curie-Weiss law
+		double F_CurieWeiss(BVarType... bvars) const
+		{
+			if (pCurieWeiss) {
+
+				return param * pCurieWeiss->evaluate(pFunc1->func(*pFunc1, bvars...));
+			}
+			else return 1.0;
+		}
+
+		//me1 : Curie-Weiss law 2-sublattice model component 1
+		double F_CurieWeiss1(BVarType... bvars) const
+		{
+			if (pCurieWeiss1) {
+
+				return param * pCurieWeiss1->evaluate(pFunc1->func(*pFunc1, bvars...));
+			}
+			else return 1.0;
+		}
+
+		//me2 : Curie-Weiss law 2-sublattice model component 2
+		double F_CurieWeiss2(BVarType... bvars) const
+		{
+			if (pCurieWeiss2) {
+
+				return param * pCurieWeiss2->evaluate(pFunc1->func(*pFunc1, bvars...));
+			}
+			else return 1.0;
+		}
+
+		//chi : longitudinal relative susceptibility
+		double F_LongRelSus(BVarType... bvars) const
+		{
+			if (pLongRelSus) {
+
+				return param * pLongRelSus->evaluate(pFunc1->func(*pFunc1, bvars...));
+			}
+			else return 0.0;
+		}
+
+		//chi1 : longitudinal relative susceptibility, 2-sublattice model component 1
+		double F_LongRelSus1(BVarType... bvars) const
+		{
+			if (pLongRelSus1) {
+
+				return param * pLongRelSus1->evaluate(pFunc1->func(*pFunc1, bvars...));
+			}
+			else return 0.0;
+		}
+
+		//chi2 : longitudinal relative susceptibility, 2-sublattice model component 2
+		double F_LongRelSus2(BVarType... bvars) const
+		{
+			if (pLongRelSus2) {
+
+				return param * pLongRelSus2->evaluate(pFunc1->func(*pFunc1, bvars...));
+			}
+			else return 0.0;
+		}
+
+		//alpha1 : damping scaling in 2-sublattice model
+		double F_Alpha1(BVarType... bvars) const
+		{
+			if (pAlpha1) {
+
+				return param * pAlpha1->evaluate(pFunc1->func(*pFunc1, bvars...));
+			}
+			else return 1.0;
+		}
+
+		//alpha2 : damping scaling in 2-sublattice model
+		double F_Alpha2(BVarType... bvars) const
+		{
+			if (pAlpha2) {
+
+				return param * pAlpha2->evaluate(pFunc1->func(*pFunc1, bvars...));
+			}
+			else return 1.0;
+		}
+
 		//BINARY FUNCTIONS
 		double F_add(BVarType... bvars) const
 		{
@@ -514,7 +608,7 @@ namespace EqComp {
 			}
 		}
 
-		//UNARY FUNCTIONS
+		//UNARY FUNCTIONS or SPECIAL FUNCTIONS
 		Function(FSPEC fspec, Function& Func)
 		{
 			pFunc1 = &Func;
@@ -699,6 +793,38 @@ namespace EqComp {
 			case FUNC_POWER_BASECONST_PMUL:
 				func = &Function::F_pow_baseconst_pmul;
 				break;
+
+			case FUNC_CURIEWEISS:
+				func = &Function::F_CurieWeiss;
+				break;
+
+			case FUNC_CURIEWEISS1:
+				func = &Function::F_CurieWeiss1;
+				break;
+
+			case FUNC_CURIEWEISS2:
+				func = &Function::F_CurieWeiss2;
+				break;
+
+			case FUNC_LONGRELSUS:
+				func = &Function::F_LongRelSus;
+				break;
+
+			case FUNC_LONGRELSUS1:
+				func = &Function::F_LongRelSus1;
+				break;
+
+			case FUNC_LONGRELSUS2:
+				func = &Function::F_LongRelSus2;
+				break;
+
+			case FUNC_ALPHA1:
+				func = &Function::F_Alpha1;
+				break;
+
+			case FUNC_ALPHA2:
+				func = &Function::F_Alpha2;
+				break;
 			}
 		}
 
@@ -760,6 +886,46 @@ namespace EqComp {
 		double evaluate(BVarType... bvars) const
 		{
 			return this->func(*this, bvars...);
+		}
+
+		//Set special functions
+
+		void Set_SpecialFunction(EqComp::FUNC_ type, std::shared_ptr<Funcs_Special> pSpecialFunc)
+		{
+			switch (type) {
+
+			case EqComp::FUNC_CURIEWEISS:
+				pCurieWeiss = pSpecialFunc;
+				break;
+
+			case EqComp::FUNC_CURIEWEISS1:
+				pCurieWeiss1 = pSpecialFunc;
+				break;
+
+			case EqComp::FUNC_CURIEWEISS2:
+				pCurieWeiss2 = pSpecialFunc;
+				break;
+
+			case EqComp::FUNC_LONGRELSUS:
+				pLongRelSus = pSpecialFunc;
+				break;
+
+			case EqComp::FUNC_LONGRELSUS1:
+				pLongRelSus1 = pSpecialFunc;
+				break;
+
+			case EqComp::FUNC_LONGRELSUS2:
+				pLongRelSus2 = pSpecialFunc;
+				break;
+
+			case EqComp::FUNC_ALPHA1:
+				pAlpha1 = pSpecialFunc;
+				break;
+
+			case EqComp::FUNC_ALPHA2:
+				pAlpha2 = pSpecialFunc;
+				break;
+			}
 		}
 	};
 };

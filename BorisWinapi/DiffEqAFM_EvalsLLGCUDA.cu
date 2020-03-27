@@ -1,7 +1,9 @@
 #include "DiffEqAFMCUDA.h"
-#include "MeshParamsControlCUDA.h"
 
 #if COMPILECUDA == 1
+#ifdef MESH_COMPILATION_ANTIFERROMAGNETIC
+
+#include "MeshParamsControlCUDA.h"
 
 //defines evaluation methods kernel launchers. LLG equation in-lined for faster evaluation
 
@@ -1653,4 +1655,4 @@ void DifferentialEquationAFMCUDA::RunRKF45_LLG(int step, bool calculate_mxh, boo
 }
 
 #endif
-
+#endif

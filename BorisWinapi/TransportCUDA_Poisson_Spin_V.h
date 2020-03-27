@@ -13,6 +13,8 @@
 
 #include "MeshParamsControlCUDA.h"
 
+#include "Transport_Defs.h"
+
 class MeshCUDA;
 class TransportCUDA;
 
@@ -25,6 +27,9 @@ class TransportCUDA;
 class TransportCUDA_Spin_V_Funcs {
 
 public:
+
+	//spin transport solver type (see Transport_Defs.h) : copy of stsolve in TransportCUDA, but on the gpu so we can use it in device code
+	int stsolve;
 
 	//managed mesh for access to all required mesh VECs and material parameters
 	ManagedMeshCUDA* pcuMesh;
@@ -44,6 +49,8 @@ public:
 
 	BError set_pointers(MeshCUDA* pMeshCUDA, TransportCUDA* pTransportCUDA);
 
+	__host__ void set_stsolve(int stsolve_) { set_gpu_value(stsolve, stsolve_); }
+
 	//this evaluates the Poisson RHS when solving the Poisson equation on V (in the context of full spin solver)
 	__device__ cuBReal Poisson_RHS(int idx)
 	{
@@ -55,11 +62,11 @@ public:
 		//The Poisson solver calls this method to evaluate the RHS of this equation
 		cuBReal value = 0.0;
 
-		if (!M.linear_size()) {
+		if (stsolve == STSOLVE_NORMALMETAL || stsolve == STSOLVE_NONE) {
 
 			//non-magnetic mesh
 
-			if (cuIsZ(pcuMesh->piSHA->get0())) {
+			if (cuIsZ(pcuMesh->piSHA->get0()) || stsolve == STSOLVE_NONE) {
 
 				//1. no iSHE contribution.
 				value = -(V.grad_diri(idx) * elC.grad_sided(idx)) / elC[idx];
@@ -120,11 +127,10 @@ public:
 	//boundary differential of V for non-homogeneous Neumann boundary conditions
 	__device__ cuVAL3<cuBReal> bdiff(int idx)
 	{
-		cuVEC_VC<cuReal3>& M = *pcuMesh->pM;
+		if (stsolve == STSOLVE_FERROMAGNETIC) return cuReal3();
+
 		cuVEC_VC<cuBReal>& elC = *pcuMesh->pelC;
 		cuVEC_VC<cuReal3>& S = *pcuMesh->pS;
-
-		if (M.linear_size()) return cuReal3();
 
 		cuBReal De = *pcuMesh->pDe;
 		cuBReal iSHA = *pcuMesh->piSHA;
@@ -156,7 +162,7 @@ public:
 		bool cpump_enabled = cuIsNZ(pcuMesh->pcpump_eff->get0()) && cuIsZ(shift.z);
 		bool the_enabled = cuIsNZ(pcuMesh->pthe_eff->get0()) && cuIsZ(shift.z);
 
-		if (M.linear_size() && (cppgmr_enabled || cpump_enabled || the_enabled)) {
+		if (stsolve == STSOLVE_FERROMAGNETIC && (cppgmr_enabled || cpump_enabled || the_enabled)) {
 
 			//magnetic mesh
 
@@ -244,7 +250,7 @@ public:
 			//non-magnetic mesh
 
 			//1. ISHE contribution
-			if (cuIsNZ(pcuMesh->piSHA->get0())) {
+			if (cuIsNZ(pcuMesh->piSHA->get0()) && stsolve == STSOLVE_NORMALMETAL) {
 
 				cuBReal iSHA = *pcuMesh->piSHA;
 				cuBReal SHA = *pcuMesh->pSHA;
@@ -292,7 +298,7 @@ public:
 		bool cpump_enabled = cuIsNZ(pcuMesh->pcpump_eff->get0()) && cuIsZ(shift.z);
 		bool the_enabled = cuIsNZ(pcuMesh->pthe_eff->get0()) && cuIsZ(shift.z);
 
-		if (M.linear_size() && (cppgmr_enabled || cpump_enabled || the_enabled)) {
+		if (stsolve == STSOLVE_FERROMAGNETIC && (cppgmr_enabled || cpump_enabled || the_enabled)) {
 
 			//magnetic mesh
 
@@ -386,7 +392,7 @@ public:
 			//non-magnetic mesh
 
 			//1. ISHE contribution
-			if (cuIsNZ(pcuMesh->piSHA->get0())) {
+			if (cuIsNZ(pcuMesh->piSHA->get0()) && stsolve == STSOLVE_NORMALMETAL) {
 
 				cuBReal iSHA = *pcuMesh->piSHA;
 				cuBReal SHA = *pcuMesh->pSHA;

@@ -15,9 +15,13 @@ class SHeat;
 #include "HeatCUDA.h"
 #endif
 
+#include "Heat_Defs.h"
+
+enum HTM_ { };
+
 class Heat :
 	public Modules,
-	public ProgramState<Heat, tuple<double, double, bool, bool, bool, bool, bool, bool, TEquation<double, double, double, double>>, tuple<>>
+	public ProgramState<Heat, tuple<int, double, double, bool, bool, bool, bool, bool, bool, TEquation<double, double, double, double>>, tuple<>>
 {
 	friend SHeat;
 
@@ -26,6 +30,9 @@ class Heat :
 #endif
 
 private:
+
+	//temperature model type
+	int tmtype;
 
 	//pointer to mesh object holding this effective field module
 	Mesh * pMesh;
@@ -57,7 +64,11 @@ private:
 
 	//-------------------Calculation Methods
 
-	void IterateHeatEquation(double dT);
+	//1-temperature model
+	void IterateHeatEquation_1TM(double dT);
+	
+	//2-temperature model : itinerant electrons <-> lattice
+	void IterateHeatEquation_2TM(double dT);
 
 	//------------------Others
 
@@ -99,7 +110,7 @@ public:
 	double bfunc_sec(DBL3 relpos_m1, DBL3 shift, DBL3 stencil) const;
 	double bfunc_pri(int cell1_idx, int cell2_idx) const;
 
-	//second order differential of T at cells either side of the boundary; delsq T = -Jc^2 / K * elC
+	//second order differential of T at cells either side of the boundary; delsq T = -Jc^2 / K * elC - Q / K - many-temperature model coupling terms / K
 	double diff2_sec(DBL3 relpos_m1, DBL3 stencil, DBL3 shift) const;
 	double diff2_pri(int cell1_idx, DBL3 shift) const;
 
@@ -118,6 +129,9 @@ public:
 	//Set Q_equation text equation object
 	BError SetQEquation(string equation_string, int step);
 
+	//set temperature solver type
+	BError Set_TMType(TMTYPE_ tmtype_ = TMTYPE_DEFAULT);
+
 	//-------------------Getters
 
 	double GetAmbientTemperature(void) { return T_ambient; }
@@ -128,6 +142,9 @@ public:
 	bool GetInsulatingSide(string literal);
 	//get all at once
 	vector<bool> GetInsulatingSides(void) { return { insulate_px, insulate_nx, insulate_py, insulate_ny, insulate_pz, insulate_nz }; }
+
+	//get the set temperature model type
+	int Get_TMType(void) { return tmtype; }
 
 	//-------------------Others
 

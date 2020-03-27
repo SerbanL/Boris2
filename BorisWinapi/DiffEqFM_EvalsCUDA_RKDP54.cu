@@ -1,8 +1,10 @@
 #include "DiffEqFMCUDA.h"
-#include "MeshParamsControlCUDA.h"
 
 #if COMPILECUDA == 1
 #ifdef ODE_EVAL_RKDP
+#ifdef MESH_COMPILATION_FERROMAGNETIC
+
+#include "MeshParamsControlCUDA.h"
 
 //defines evaluation methods kernel launchers
 
@@ -330,5 +332,6 @@ void DifferentialEquationFMCUDA::RunRKDP54(int step, bool calculate_mxh, bool ca
 	}
 }
 
+#endif
 #endif
 #endif

@@ -249,6 +249,7 @@ public:
 
 	__device__ cuSZ3 size(void)  const { return n; }
 	__device__ size_t linear_size(void)  const { return n.dim(); }
+	__device__ size_t linear_size_cpu(void)  const { return get_gpu_value(n).dim(); }
 
 	__host__ cuSZ3 size_cpu(void) { return get_gpu_value(n); }
 	__host__ cuReal3 cellsize_cpu(void) { return get_gpu_value(h); }

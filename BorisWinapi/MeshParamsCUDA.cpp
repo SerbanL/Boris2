@@ -30,18 +30,28 @@ MeshParamsCUDA::MeshParamsCUDA(MeshParams *pmeshParams)
 	pmeshParams->A.set_p_cu_obj_mpcuda(&A);
 	A_AFM()->set_from_cpu(pmeshParams->A_AFM);
 	pmeshParams->A_AFM.set_p_cu_obj_mpcuda(&A_AFM);
-	A12()->set_from_cpu(pmeshParams->A12);
-	pmeshParams->A12.set_p_cu_obj_mpcuda(&A12);
+	
+	Ah()->set_from_cpu(pmeshParams->Ah);
+	pmeshParams->Ah.set_p_cu_obj_mpcuda(&Ah);
+	Anh()->set_from_cpu(pmeshParams->Anh);
+	pmeshParams->Anh.set_p_cu_obj_mpcuda(&Anh);
 
 	D()->set_from_cpu(pmeshParams->D);
 	pmeshParams->D.set_p_cu_obj_mpcuda(&D);
 	D_AFM()->set_from_cpu(pmeshParams->D_AFM);
 	pmeshParams->D_AFM.set_p_cu_obj_mpcuda(&D_AFM);
 
+	tau_ii()->set_from_cpu(pmeshParams->tau_ii);
+	pmeshParams->tau_ii.set_p_cu_obj_mpcuda(&tau_ii);
+	tau_ij()->set_from_cpu(pmeshParams->tau_ij);
+	pmeshParams->tau_ij.set_p_cu_obj_mpcuda(&tau_ij);
+
 	J1()->set_from_cpu(pmeshParams->J1);
 	pmeshParams->J1.set_p_cu_obj_mpcuda(&J1);
 	J2()->set_from_cpu(pmeshParams->J2);
 	pmeshParams->J2.set_p_cu_obj_mpcuda(&J2);
+	neta_dia()->set_from_cpu(pmeshParams->neta_dia);
+	pmeshParams->neta_dia.set_p_cu_obj_mpcuda(&neta_dia);
 
 	K1()->set_from_cpu(pmeshParams->K1);
 	pmeshParams->K1.set_p_cu_obj_mpcuda(&K1);
@@ -52,8 +62,15 @@ MeshParamsCUDA::MeshParamsCUDA(MeshParams *pmeshParams)
 	mcanis_ea2()->set_from_cpu(pmeshParams->mcanis_ea2);
 	pmeshParams->mcanis_ea2.set_p_cu_obj_mpcuda(&mcanis_ea2);
 
+	K1_AFM()->set_from_cpu(pmeshParams->K1_AFM);
+	pmeshParams->K1_AFM.set_p_cu_obj_mpcuda(&K1_AFM);
+	K2_AFM()->set_from_cpu(pmeshParams->K2_AFM);
+	pmeshParams->K2_AFM.set_p_cu_obj_mpcuda(&K2_AFM);
+
 	susrel()->set_from_cpu(pmeshParams->susrel);
 	pmeshParams->susrel.set_p_cu_obj_mpcuda(&susrel);
+	susrel_AFM()->set_from_cpu(pmeshParams->susrel_AFM);
+	pmeshParams->susrel_AFM.set_p_cu_obj_mpcuda(&susrel_AFM);
 	susprel()->set_from_cpu(pmeshParams->susprel);
 	pmeshParams->susprel.set_p_cu_obj_mpcuda(&susprel);
 
@@ -115,24 +132,78 @@ MeshParamsCUDA::MeshParamsCUDA(MeshParams *pmeshParams)
 	base_temperature.from_cpu(pmeshParams->base_temperature);
 	T_Curie.from_cpu(pmeshParams->T_Curie);
 
+	atomic_moment()->set_from_cpu(pmeshParams->atomic_moment);
+	pmeshParams->atomic_moment.set_p_cu_obj_mpcuda(&atomic_moment);
+	atomic_moment_AFM()->set_from_cpu(pmeshParams->atomic_moment_AFM);
+	pmeshParams->atomic_moment_AFM.set_p_cu_obj_mpcuda(&atomic_moment_AFM);
+
 	thermCond()->set_from_cpu(pmeshParams->thermCond);
 	pmeshParams->thermCond.set_p_cu_obj_mpcuda(&thermCond);
 	density()->set_from_cpu(pmeshParams->density);
 	pmeshParams->density.set_p_cu_obj_mpcuda(&density);
 	
+	shc()->set_from_cpu(pmeshParams->shc);
+	pmeshParams->shc.set_p_cu_obj_mpcuda(&shc);
+	shc_e()->set_from_cpu(pmeshParams->shc_e);
+	pmeshParams->shc_e.set_p_cu_obj_mpcuda(&shc_e);
+	G_e()->set_from_cpu(pmeshParams->G_e);
+	pmeshParams->G_e.set_p_cu_obj_mpcuda(&G_e);
+
+	cT()->set_from_cpu(pmeshParams->cT);
+	pmeshParams->cT.set_p_cu_obj_mpcuda(&cT);
+	Q()->set_from_cpu(pmeshParams->Q);
+	pmeshParams->Q.set_p_cu_obj_mpcuda(&Q);
+
 	MEc()->set_from_cpu(pmeshParams->MEc);
 	pmeshParams->MEc.set_p_cu_obj_mpcuda(&MEc);
 	Ym()->set_from_cpu(pmeshParams->Ym);
 	pmeshParams->Ym.set_p_cu_obj_mpcuda(&Ym);
 	Pr()->set_from_cpu(pmeshParams->Pr);
 	pmeshParams->Pr.set_p_cu_obj_mpcuda(&Pr);
-	
-	shc()->set_from_cpu(pmeshParams->shc);
-	pmeshParams->shc.set_p_cu_obj_mpcuda(&shc);
-	cT()->set_from_cpu(pmeshParams->cT);
-	pmeshParams->cT.set_p_cu_obj_mpcuda(&cT);
-	Q()->set_from_cpu(pmeshParams->Q);
-	pmeshParams->Q.set_p_cu_obj_mpcuda(&Q);
+
+	//setup CUDA special functions to corresponding data held in the cpu objects
+	set_special_functions_data();
+
+	//make sure special functions are set by default for all material parameters text equations
+	set_special_functions();
+}
+
+//set pre-calculated Funcs_Special objects in material parameters
+void MeshParamsCUDA::set_special_functions(PARAM_ paramID)
+{
+	auto set_param_special_functions = [&](PARAM_ update_paramID) {
+
+		auto code = [&](auto& MatP_object) -> void {
+
+			MatP_object.set_t_scaling_special_functions_CUDA(&CurieWeiss_CUDA, &LongRelSus_CUDA, &CurieWeiss1_CUDA, &CurieWeiss2_CUDA, &LongRelSus1_CUDA, &LongRelSus2_CUDA, &Alpha1_CUDA, &Alpha2_CUDA);
+		};
+
+		pmeshParams->run_on_param<void>(update_paramID, code);
+	};
+
+	if (paramID == PARAM_ALL) {
+
+		for (int index = 0; index < pmeshParams->meshParams.size(); index++) {
+
+			set_param_special_functions((PARAM_)pmeshParams->meshParams.get_ID_from_index(index));
+		}
+	}
+	else set_param_special_functions(paramID);
+}
+
+void MeshParamsCUDA::set_special_functions_data(void)
+{
+	//setup CUDA special functions to corresponding data held in the cpu objects
+	CurieWeiss_CUDA()->set_data(pmeshParams->pCurieWeiss->get_data(), pmeshParams->pCurieWeiss->get_start(), pmeshParams->pCurieWeiss->get_resolution());
+	LongRelSus_CUDA()->set_data(pmeshParams->pLongRelSus->get_data(), pmeshParams->pLongRelSus->get_start(), pmeshParams->pLongRelSus->get_resolution());
+
+	CurieWeiss1_CUDA()->set_data(pmeshParams->pCurieWeiss1->get_data(), pmeshParams->pCurieWeiss1->get_start(), pmeshParams->pCurieWeiss1->get_resolution());
+	CurieWeiss2_CUDA()->set_data(pmeshParams->pCurieWeiss2->get_data(), pmeshParams->pCurieWeiss2->get_start(), pmeshParams->pCurieWeiss2->get_resolution());
+	LongRelSus1_CUDA()->set_data(pmeshParams->pLongRelSus1->get_data(), pmeshParams->pLongRelSus1->get_start(), pmeshParams->pLongRelSus1->get_resolution());
+	LongRelSus2_CUDA()->set_data(pmeshParams->pLongRelSus2->get_data(), pmeshParams->pLongRelSus2->get_start(), pmeshParams->pLongRelSus2->get_resolution());
+
+	Alpha1_CUDA()->set_data(pmeshParams->pAlpha1->get_data(), pmeshParams->pAlpha1->get_start(), pmeshParams->pAlpha1->get_resolution());
+	Alpha2_CUDA()->set_data(pmeshParams->pAlpha2->get_data(), pmeshParams->pAlpha2->get_start(), pmeshParams->pAlpha2->get_resolution());
 }
 
 MeshParamsCUDA::~MeshParamsCUDA()
@@ -153,20 +224,30 @@ MeshParamsCUDA::~MeshParamsCUDA()
 
 	pmeshParams->A.null_p_cu_obj_mpcuda();
 	pmeshParams->A_AFM.null_p_cu_obj_mpcuda();
-	pmeshParams->A12.null_p_cu_obj_mpcuda();
+	
+	pmeshParams->Ah.null_p_cu_obj_mpcuda();
+	pmeshParams->Anh.null_p_cu_obj_mpcuda();
 
 	pmeshParams->D.null_p_cu_obj_mpcuda();
 	pmeshParams->D_AFM.null_p_cu_obj_mpcuda();
 
+	pmeshParams->tau_ii.null_p_cu_obj_mpcuda();
+	pmeshParams->tau_ij.null_p_cu_obj_mpcuda();
+
 	pmeshParams->J1.null_p_cu_obj_mpcuda();
 	pmeshParams->J2.null_p_cu_obj_mpcuda();
+	pmeshParams->neta_dia.null_p_cu_obj_mpcuda();
 
 	pmeshParams->K1.null_p_cu_obj_mpcuda();
 	pmeshParams->K2.null_p_cu_obj_mpcuda();
 	pmeshParams->mcanis_ea1.null_p_cu_obj_mpcuda();
 	pmeshParams->mcanis_ea2.null_p_cu_obj_mpcuda();
 
+	pmeshParams->K1_AFM.null_p_cu_obj_mpcuda();
+	pmeshParams->K2_AFM.null_p_cu_obj_mpcuda();
+
 	pmeshParams->susrel.null_p_cu_obj_mpcuda();
+	pmeshParams->susrel_AFM.null_p_cu_obj_mpcuda();
 	pmeshParams->susprel.null_p_cu_obj_mpcuda();
 
 	pmeshParams->cHA.null_p_cu_obj_mpcuda();
@@ -199,16 +280,22 @@ MeshParamsCUDA::~MeshParamsCUDA()
 	pmeshParams->cpump_eff.null_p_cu_obj_mpcuda();
 	pmeshParams->the_eff.null_p_cu_obj_mpcuda();
 
+	pmeshParams->atomic_moment.null_p_cu_obj_mpcuda();
+	pmeshParams->atomic_moment_AFM.null_p_cu_obj_mpcuda();
+
 	pmeshParams->thermCond.null_p_cu_obj_mpcuda();
 	pmeshParams->density.null_p_cu_obj_mpcuda();
 	
+	pmeshParams->shc.null_p_cu_obj_mpcuda();
+	pmeshParams->shc_e.null_p_cu_obj_mpcuda();
+	pmeshParams->G_e.null_p_cu_obj_mpcuda();
+
+	pmeshParams->cT.null_p_cu_obj_mpcuda();
+	pmeshParams->Q.null_p_cu_obj_mpcuda();
+
 	pmeshParams->MEc.null_p_cu_obj_mpcuda();
 	pmeshParams->Ym.null_p_cu_obj_mpcuda();
 	pmeshParams->Pr.null_p_cu_obj_mpcuda();
-	
-	pmeshParams->shc.null_p_cu_obj_mpcuda();
-	pmeshParams->cT.null_p_cu_obj_mpcuda();
-	pmeshParams->Q.null_p_cu_obj_mpcuda();
 }
 
 #endif

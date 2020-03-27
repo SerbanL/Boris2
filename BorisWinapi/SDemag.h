@@ -129,7 +129,7 @@ private:
 	//get convolution rectangle for the given SDemag_Demag module (remember this might not be the rectangle of M in that mesh, but an adjusted rectangle to make the convolution work)
 	Rect get_convolution_rect(SDemag_Demag* demag_demag);
 
-	//initialize transfer object
+	//initialize transfer object for supermesh convolution
 	BError Initialize_Mesh_Transfer(void);
 
 	//Set PBC settings for M in all meshes

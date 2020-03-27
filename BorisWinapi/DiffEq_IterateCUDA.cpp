@@ -1,7 +1,5 @@
 #include "stdafx.h"
 #include "DiffEq.h"
-#include "Mesh_Ferromagnetic.h"
-#include "SuperMesh.h"
 
 #if COMPILECUDA == 1
 
@@ -534,7 +532,7 @@ void ODECommon::IterateCUDA(void)
 
 			for (int idx = 0; idx < (int)pODE.size(); idx++) {
 
-				if (setODE == ODE_LLG) pODE[idx]->pmeshODECUDA->RunRKF45(0, calculate_mxh, calculate_dmdt);
+				if (setODE == ODE_LLG) pODE[idx]->pmeshODECUDA->RunRKF45_LLG(0, calculate_mxh, calculate_dmdt);
 				else pODE[idx]->pmeshODECUDA->RunRKF45(0, calculate_mxh, calculate_dmdt);
 			}
 

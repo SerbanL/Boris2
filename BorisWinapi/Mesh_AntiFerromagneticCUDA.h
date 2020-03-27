@@ -3,11 +3,12 @@
 #include "Boris_Enums_Defs.h"
 #if COMPILECUDA == 1
 
-#include "BorisCUDALib.h"
-
 #include "ErrorHandler.h"
-
 #include "MeshCUDA.h"
+
+#ifdef MESH_COMPILATION_ANTIFERROMAGNETIC
+
+#include "BorisCUDALib.h"
 
 class AFMesh;
 
@@ -45,4 +46,34 @@ public:
 	bool GetMeshExchangeCoupling(void);
 };
 
+#else
+
+class AFMeshCUDA :
+	public MeshCUDA
+{
+
+private:
+
+public:
+
+	//make this object by copying data from the Mesh holding this object
+	AFMeshCUDA(Mesh* pMesh) :
+		MeshCUDA(pMesh)
+	{}
+
+	~AFMeshCUDA() {}
+
+	//----------------------------------- IMPORTANT CONTROL METHODS
+
+	//call when the mesh dimensions have changed - sets every quantity to the right dimensions
+	BError UpdateConfiguration(UPDATECONFIG_ cfgMessage) { return BError(); }
+	void UpdateConfiguration_Values(UPDATECONFIG_ cfgMessage) {}
+
+	//----------------------------------- OTHER IMPORTANT CONTROL METHODS
+
+	//Check if mesh needs to be moved (using the MoveMesh method) - return amount of movement required (i.e. parameter to use when calling MoveMesh).
+	cuBReal CheckMoveMesh(bool antisymmetric, double threshold) { return 0.0; }
+};
+
+#endif
 #endif

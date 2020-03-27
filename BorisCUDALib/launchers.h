@@ -1,4 +1,4 @@
 #pragma once
 
 //maximum number of cuda threads per block
-#define CUDATHREADS	256
+#define CUDATHREADS	128

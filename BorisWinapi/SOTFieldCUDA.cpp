@@ -6,9 +6,9 @@
 #ifdef MODULE_SOTFIELD
 
 #include "SOTField.h"
-#include "Mesh_FerromagneticCUDA.h"
+#include "MeshCUDA.h"
 
-SOTFieldCUDA::SOTFieldCUDA(FMeshCUDA* pMeshCUDA_, SOTField* pHolderModule)
+SOTFieldCUDA::SOTFieldCUDA(MeshCUDA* pMeshCUDA_, SOTField* pHolderModule)
 	: ModulesCUDA()
 {
 	pMeshCUDA = pMeshCUDA_;

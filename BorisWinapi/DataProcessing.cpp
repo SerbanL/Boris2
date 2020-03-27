@@ -62,11 +62,11 @@ BError DPArrays::dump_tdep(SuperMesh *pSMesh, string meshName, string paramName,
 
 	if(!pSMesh->contains(meshName) || !(*pSMesh)[meshName]->contains_param(paramName)) return error(BERROR_INCORRECTNAME);
 
-	if (!GoodArrays(dp_arr)) return error(BERROR_INCORRECTARRAYS);
+	if (!GoodArrays(dp_arr + 2)) return error(BERROR_INCORRECTARRAYS);
 
 	PARAM_ paramID = (PARAM_)(*pSMesh)[meshName]->get_meshparam_id(paramName);
 
-	dpA[dp_arr] = (*pSMesh)[meshName]->get_meshparam_tempscaling(paramID, max_temperature);
+	if (!(*pSMesh)[meshName]->get_meshparam_tempscaling(paramID, max_temperature, dpA[dp_arr], dpA[dp_arr + 1], dpA[dp_arr + 2])) return error(BERROR_OPERATIONFAILED);
 
 	return error;
 }
@@ -204,6 +204,59 @@ BError DPArrays::get_topological_charge(VEC_VC<DBL3>& M, double x, double y, dou
 	}
 
 	*pQ = Q / (4 * PI);
+
+	return error;
+}
+
+//calculate histogram for |M| using given parameters
+BError DPArrays::calculate_histogram(VEC_VC<DBL3>& M, int dp_x, int dp_y, double bin, double min, double max)
+{
+	BError error(__FUNCTION__);
+
+	if (!GoodArrays_Unique(dp_x, dp_y)) return error(BERROR_INCORRECTARRAYS);
+
+	if (IsZ(bin)) {
+
+		OmpReduction<double> omp_reduction;
+		omp_reduction.new_minmax_reduction();
+
+#pragma omp parallel for
+		for (int idx = 0; idx < M.linear_size(); idx++) {
+
+			omp_reduction.reduce_minmax(M[idx].norm());
+		}
+
+		DBL2 minmax = omp_reduction.minmax();
+
+		min = minmax.i;
+		max = minmax.j;
+		bin = (max - min) / 100;
+	}
+
+	int num_bins = (max - min) / bin;
+	if (num_bins <= 0) return error(BERROR_OPERATIONFAILED);
+
+	resize(dp_x, num_bins);
+	resize(dp_y, num_bins);
+
+#pragma omp parallel for
+	for (int idx = 0; idx < num_bins; idx++) {
+
+		dpA[dp_x][idx] = min + (idx + 0.5) * bin;
+		dpA[dp_y][idx] = 0;
+	}
+
+	for (int idx = 0; idx < M.linear_size(); idx++) {
+
+		if (M.is_not_empty(idx)) {
+
+			double value = M[idx].norm();
+
+			int bin_idx = floor((value - min) / bin);
+
+			if (bin_idx >= 0 && bin_idx < num_bins) dpA[dp_y][bin_idx] += 1.0 / M.get_nonempty_cells();
+		}
+	}
 
 	return error;
 }

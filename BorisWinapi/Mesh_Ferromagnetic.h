@@ -2,9 +2,11 @@
 
 #include "Mesh.h"
 
-#include "SkyrmionTrack.h"
-
 #include "DiffEqFM.h"
+
+#ifdef MESH_COMPILATION_FERROMAGNETIC
+
+#include "SkyrmionTrack.h"
 
 #if COMPILECUDA == 1
 #include "Mesh_FerromagneticCUDA.h"
@@ -19,14 +21,26 @@ class SuperMesh;
 class FMesh :
 	public Mesh,
 	public ProgramState<FMesh,
+	tuple<
 	//Mesh members
-	tuple<int, int, int, int, int, int, int, Rect, SZ3, DBL3, SZ3, DBL3, SZ3, DBL3, SZ3, DBL3, VEC_VC<DBL3>, VEC_VC<double>, VEC_VC<DBL3>, VEC_VC<double>, VEC_VC<double>, VEC_VC<DBL3>, VEC_VC<DBL3>, VEC_VC<DBL3>, vector_lut<Modules*>,
+	int, int, int, 
+	int, int, int, int, 
+	Rect, SZ3, DBL3, SZ3, DBL3, SZ3, DBL3, SZ3, DBL3, SZ3, DBL3, bool,
+	VEC_VC<DBL3>, VEC_VC<double>, VEC_VC<DBL3>, VEC_VC<double>, VEC_VC<double>, VEC_VC<double>, VEC_VC<DBL3>, VEC_VC<DBL3>, VEC_VC<DBL3>, 
+	vector_lut<Modules*>, 
+	bool,
 	//Members in this derived class
 	bool, SkyrmionTrack, bool,
 	//Material Parameters
-	MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<DBL2, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<DBL3, DBL3>, MatP<DBL3, DBL3>, MatP<double, double>, MatP<double, double>, MatP<double, double>,
-	MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<DBL2, double>, MatP<DBL2, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>,
-	MatP<double, double>, MatP<double, double>, double, TEquation<double>, double, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<DBL2, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>,
+	MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<DBL2, double>, 
+	MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, 
+	MatP<double, double>, MatP<double, double>, MatP<DBL3, DBL3>, MatP<DBL3, DBL3>, 
+	MatP<double, double>, MatP<double, double>, MatP<double, double>,
+	MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<DBL2, double>, MatP<DBL2, double>, 
+	MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, 
+	double, TEquation<double>, double, MatP<double, double>, MatP<double, double>, 
+	MatP<double, double>, MatP<DBL2, double>, MatP<double, double>, MatP<double, double>,
+	MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>,
 	
 	//OBSOLETE
 	//must keep to allow some older simulation files to load if they have these defined
@@ -140,10 +154,10 @@ public:
 	//----------------------------------- OVERLOAD MESH VIRTUAL METHODS
 
 	//Curie temperature for ferromagnetic meshes. Calling this forces recalculation of affected material parameters temperature dependence - any custom dependence set will be overwritten.
-	void SetCurieTemperature(double Tc);
+	void SetCurieTemperature(double Tc, bool set_default_dependences);
 
 	//atomic moment (as multiple of Bohr magneton) for ferromagnetic meshes. Calling this forces recalculation of affected material parameters temperature dependence - any custom dependence set will be overwritten.
-	void SetAtomicMoment(double atomic_moment_ub);
+	void SetAtomicMoment(DBL2 atomic_moment_ub);
 	
 	//get skyrmion shift for a skyrmion initially in the given rectangle (works only with data in data box or output data, not with ShowData)
 	//the rectangle must use relative coordinates
@@ -175,3 +189,59 @@ public:
 	DifferentialEquationFM& Get_DifferentialEquation(void) { return meshODE; }
 #endif
 };
+
+#else
+
+class FMesh :
+	public Mesh
+{
+
+private:
+
+	//The set ODE, associated with this ferromagnetic mesh (the ODE type and evaluation method is controlled from SuperMesh)
+	DifferentialEquationFM meshODE;
+
+public:
+
+	//constructor taking only a SuperMesh pointer (SuperMesh is the owner) only needed for loading : all required values will be set by LoadObjectState method in ProgramState
+	FMesh(SuperMesh *pSMesh_) :
+		Mesh(MESH_FERROMAGNETIC, pSMesh_),
+		meshODE(this)
+	{}
+
+	FMesh(Rect meshRect_, DBL3 h_, SuperMesh *pSMesh_) :
+		Mesh(MESH_FERROMAGNETIC, pSMesh_),
+		meshODE(this)
+	{}
+
+	~FMesh() {}
+
+	//----------------------------------- INITIALIZATION
+
+	//----------------------------------- IMPORTANT CONTROL METHODS
+
+	//call when the mesh dimensions have changed - sets every quantity to the right dimensions
+	BError UpdateConfiguration(UPDATECONFIG_ cfgMessage) { return BError(); }
+	void UpdateConfiguration_Values(UPDATECONFIG_ cfgMessage) {}
+
+	BError SwitchCUDAState(bool cudaState) { return BError(); }
+
+	//called at the start of each iteration
+	void PrepareNewIteration(void) {}
+
+#if COMPILECUDA == 1
+	void PrepareNewIterationCUDA(void) {}
+#endif
+
+	//Check if mesh needs to be moved (using the MoveMesh method) - return amount of movement required (i.e. parameter to use when calling MoveMesh).
+	double CheckMoveMesh(void) { return 0.0; }
+
+	//----------------------------------- GETTERS
+
+#if COMPILECUDA == 1
+	//get reference to stored differential equation object (meshODE)
+	DifferentialEquationFM& Get_DifferentialEquation(void) { return meshODE; }
+#endif
+};
+
+#endif

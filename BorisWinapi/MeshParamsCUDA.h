@@ -6,6 +6,7 @@
 #include "BorisCUDALib.h"
 
 #include "MaterialParameterCUDA.h"
+#include "ParametersDefs.h"
 
 class MeshParams;
 
@@ -14,6 +15,22 @@ class MeshParamsCUDA {
 private:
 
 	MeshParams *pmeshParams;
+
+protected:
+
+	//Special functions to be set in material parameters text equations when needed
+
+	//resolution of 10000 means e.g. for Tc = 1000 the Curie-Weiss function will be available with a resolution of 0.1 K
+	cu_obj<ManagedFuncs_Special_CUDA> CurieWeiss_CUDA;
+	cu_obj<ManagedFuncs_Special_CUDA> LongRelSus_CUDA;
+
+	cu_obj<ManagedFuncs_Special_CUDA> CurieWeiss1_CUDA;
+	cu_obj<ManagedFuncs_Special_CUDA> CurieWeiss2_CUDA;
+	cu_obj<ManagedFuncs_Special_CUDA> LongRelSus1_CUDA;
+	cu_obj<ManagedFuncs_Special_CUDA> LongRelSus2_CUDA;
+
+	cu_obj<ManagedFuncs_Special_CUDA> Alpha1_CUDA;
+	cu_obj<ManagedFuncs_Special_CUDA> Alpha2_CUDA;
 
 public:
 
@@ -38,17 +55,32 @@ public:
 	cu_obj<MatPCUDA<cuBReal, cuBReal>> A;
 	cu_obj<MatPCUDA<cuReal2, cuBReal>> A_AFM;
 
-	//AFM coupling between sub-lattices A and B (J/m^3)
-	cu_obj<MatPCUDA<cuBReal, cuBReal>> A12;
+	//Homogeneous AFM coupling between sub-lattices A and B, defined as A / a*a (J/m^3), where A is the homogeneous antiferromagnetic exchange stifness (negative), and a is the lattice constant.
+	//e.g. a = 0.3nm, A = -1pJ/m gives Ah as -1e7 J/m^3 to order of magnitude.
+	cu_obj<MatPCUDA<cuReal2, cuBReal>> Ah;
+
+	//Nonhomogeneous AFM coupling between sub-lattices A and B (J/m)
+	cu_obj<MatPCUDA<cuReal2, cuBReal>> Anh;
 
 	//Dzyaloshinskii-Moriya exchange constant (J/m^2)
 	cu_obj<MatPCUDA<cuBReal, cuBReal>> D;
 	cu_obj<MatPCUDA<cuReal2, cuBReal>> D_AFM;
 
+	//Coupling between exchange integral and critical temperature (Neel or Curie temperature) for 2-sublattice model : intra-lattice term, 0.5 for ideal antiferromagnet
+	//J = 3 * tau * kB * Tc
+	cu_obj<MatPCUDA<cuReal2, cuBReal>> tau_ii;
+
+	//Coupling between exchange integral and critical temperature (Neel or Curie temperature) for 2-sublattice model : inter-lattice, or cross-lattice term, 0.5 for ideal antiferromagnet.
+	//J = 3 * tau * kB * Tc
+	cu_obj<MatPCUDA<cuReal2, cuBReal>> tau_ij;
+
 	//bilinear surface exchange coupling (J/m^2) : J1, bottom and top layer values
 	//biquadratic surface exchange coupling (J/m^2) : J2, bottom and top layer values
 	cu_obj<MatPCUDA<cuBReal, cuBReal>> J1;
 	cu_obj<MatPCUDA<cuBReal, cuBReal>> J2;
+
+	//surface exchange coupling per magnetisation from a diamagnet (J/Am) - EXPERIMENTAL : Hse = neta * sus * Hext / mu0 * Ms * tF
+	cu_obj<MatPCUDA<cuBReal, cuBReal>> neta_dia;
 
 	//Magneto-crystalline anisotropy K1 and K2 constants (J/m^3) and easy axes directions. For uniaxial anisotropy only ea1 is needed, for cubic ea1 and ea2 should be orthogonal.
 	cu_obj<MatPCUDA<cuBReal, cuBReal>> K1;
@@ -56,8 +88,15 @@ public:
 	cu_obj<MatPCUDA<cuReal3, cuReal3>> mcanis_ea1;
 	cu_obj<MatPCUDA<cuReal3, cuReal3>> mcanis_ea2;
 
+	//Anisotropy values for 2-sublattice model
+	cu_obj<MatPCUDA<cuReal2, cuBReal>> K1_AFM;
+	cu_obj<MatPCUDA<cuReal2, cuBReal>> K2_AFM;
+
 	//longitudinal (parallel) susceptibility relative to mu0*Ms0, i.e. divided by mu0*Ms0, Ms0 is the 0K Ms value - for use with LLB equation. Units As^2/kg
 	cu_obj<MatPCUDA<cuBReal, cuBReal>> susrel;
+
+	//longitudinal (parallel) susceptibility relative to mu0*Ms0, i.e. divided by mu0*Ms0, Ms0 is the 0K Ms value - for use with LLB equation 2-sublattice model. Units As^2/kg
+	cu_obj<MatPCUDA<cuReal2, cuBReal>> susrel_AFM;
 
 	//perpendicular (transverse) susceptibility relative to mu0*Ms0, i.e. divided by mu0*Ms0, Ms0 is the 0K Ms value - for use with LLB equation. Units As^2/kg
 	cu_obj<MatPCUDA<cuBReal, cuBReal>> susprel;
@@ -133,6 +172,12 @@ public:
 	//Curie temperture (K)
 	cu_obj<cuBReal> T_Curie;
 
+	//The atomic magnetic moment as a multiple of the Bohr magneton - default 1 ub for permalloy.
+	cu_obj<MatPCUDA<cuBReal, cuBReal>> atomic_moment;
+
+	//atomic moments for 2-sublattice model (again multiples of the Bohr magneton)
+	cu_obj<MatPCUDA<cuReal2, cuBReal>> atomic_moment_AFM;
+
 	//thermal conductivity (W/mK)
 	cu_obj<MatPCUDA<cuBReal, cuBReal>> thermCond;
 
@@ -151,16 +196,29 @@ public:
 	//specific heat capacity (J/kgK)
 	cu_obj<MatPCUDA<cuBReal, cuBReal>> shc;
 
+	//electron specific heat capacity at room temperature used in many-temperature models (J/kgK); Note, if used you should assign a temperature dependence to it, e.g. linear with temperature for the free electron approximation; none assigned by default.
+	cu_obj<MatPCUDA<cuBReal, cuBReal>> shc_e;
+
+	//electron-lattice coupling constant (W/m^3K) used in two-temperature model.
+	cu_obj<MatPCUDA<cuBReal, cuBReal>> G_e;
+
 	//set temperature spatial variation coefficient (unitless) - used with temperature settings in a simulation schedule only, not with console command directly
 	cu_obj<MatPCUDA<cuBReal, cuBReal>> cT;
 
 	//Heat source stimulus in heat equation. Ideally used with a spatial variation. (W//m3)
 	cu_obj<MatPCUDA<cuBReal, cuBReal>> Q;
 
+private:
+
+	//set pre-calculated Funcs_Special objects in material parameters
+	void set_special_functions(PARAM_ paramID = PARAM_ALL);
+
 public:
 
 	MeshParamsCUDA(MeshParams *pmeshParams);
 	virtual ~MeshParamsCUDA();
+
+	void set_special_functions_data(void);
 };
 
 #endif

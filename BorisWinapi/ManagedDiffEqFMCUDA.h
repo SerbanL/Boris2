@@ -4,11 +4,13 @@
 #if COMPILECUDA == 1
 
 #include "BorisCUDALib.h"
-#include "Mesh_FerromagneticCUDA.h"
-
 #include "ErrorHandler.h"
 
 class DifferentialEquationFMCUDA;
+
+#ifdef MESH_COMPILATION_FERROMAGNETIC
+
+#include "Mesh_FerromagneticCUDA.h"
 
 //This holds pointers to managed objects in DiffEqCUDA : set and forget. They are available for use in cuda kernels by passing a cu_obj-managed object ManagedDiffEqFMCUDA
 
@@ -131,4 +133,22 @@ public:
 	__device__ cuReal3 dMdt(int idx) { return ((*(pcuMesh->pM))[idx] - (*psM1)[idx]) / *pdT_last; }
 };
 
+#else
+
+class ManagedDiffEqFMCUDA {
+
+public:
+
+public:
+
+	//---------------------------------------- CONSTRUCTION
+
+	__host__ void construct_cu_obj(void) {}
+
+	__host__ void destruct_cu_obj(void) {}
+
+	__host__ BError set_pointers(DifferentialEquationFMCUDA* pDiffEqCUDA) { return BError(); }
+};
+
+#endif
 #endif

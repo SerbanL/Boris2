@@ -134,6 +134,12 @@ Simulation::Simulation(int Program_Version) :
 	commands[CMD_ADDINSULATORMESH].descr = "[tc0,0.5,0.5,1/tc]Add an insulator mesh with given name and rectangle (m). The rectangle can be specified as: <i>sx sy sz ex ey ez</i> for the start and end points in Cartesian coordinates, or as: <i>ex ey ez</i> with the start point as the origin.";
 	commands[CMD_ADDINSULATORMESH].unit = "m";
 
+	commands.insert(CMD_ADDDIAMAGNETICMESH, CommandSpecifier(CMD_ADDDIAMAGNETICMESH), "adddiamagnet");
+	commands[CMD_ADDDIAMAGNETICMESH].usage = "[tc0,0.5,0,1/tc]USAGE : <b>adddiamagnet</b> <i>name rectangle</i>";
+	commands[CMD_ADDDIAMAGNETICMESH].limits = { { Any(), Any() },{ Rect(DBL3(-MAXSIMSPACE / 2), DBL3(-MAXSIMSPACE / 2) + DBL3(MINMESHSPACE)), Rect(DBL3(-MAXSIMSPACE / 2), DBL3(MAXSIMSPACE / 2)) } };
+	commands[CMD_ADDDIAMAGNETICMESH].descr = "[tc0,0.5,0.5,1/tc]Add a diamagnetic mesh with given name and rectangle (m). The rectangle can be specified as: <i>sx sy sz ex ey ez</i> for the start and end points in Cartesian coordinates, or as: <i>ex ey ez</i> with the start point as the origin.";
+	commands[CMD_ADDDIAMAGNETICMESH].unit = "m";
+
 	commands.insert(CMD_DELMESH, CommandSpecifier(CMD_DELMESH), "delmesh");
 	commands[CMD_DELMESH].usage = "[tc0,0.5,0,1/tc]USAGE : <b>delmesh</b> <i>name</i>";
 	commands[CMD_DELMESH].descr = "[tc0,0.5,0.5,1/tc]Delete mesh with given name.";
@@ -188,6 +194,13 @@ Simulation::Simulation(int Program_Version) :
 	commands[CMD_TCELLSIZE].descr = "[tc0,0.5,0.5,1/tc]Change cellsize of mesh in focus for thermal conduction (m). The cellsize can be specified as: <i>hx hy hz</i>, or as: <i>hxyz</i>";
 	commands[CMD_TCELLSIZE].unit = "m";
 	commands[CMD_TCELLSIZE].return_descr = "[tc0,0.5,0,1/tc]Script return values: <i>cellsize</i> - return thermal conduction cellsize of mesh in focus.";
+
+	commands.insert(CMD_SCELLSIZE, CommandSpecifier(CMD_SCELLSIZE), "scellsize");
+	commands[CMD_SCELLSIZE].usage = "[tc0,0.5,0,1/tc]USAGE : <b>scellsize</b> <i>value</i>";
+	commands[CMD_SCELLSIZE].limits = { { DBL3(MINMESHSPACE / 2), Any() } };
+	commands[CMD_SCELLSIZE].descr = "[tc0,0.5,0.5,1/tc]Change cellsize of mesh in focus for stochastic properties (m). The cellsize can be specified as: <i>hx hy hz</i>, or as: <i>hxyz</i>";
+	commands[CMD_SCELLSIZE].unit = "m";
+	commands[CMD_SCELLSIZE].return_descr = "[tc0,0.5,0,1/tc]Script return values: <i>cellsize</i> - return stochastic properties cellsize of mesh in focus.";
 
 	commands.insert(CMD_MCELLSIZE, CommandSpecifier(CMD_MCELLSIZE), "mcellsize");
 	commands[CMD_MCELLSIZE].usage = "[tc0,0.5,0,1/tc]USAGE : <b>mcellsize</b> <i>value</i>";
@@ -330,6 +343,11 @@ Simulation::Simulation(int Program_Version) :
 	commands[CMD_NCOMMON].usage = "[tc0,0.5,0,1/tc]USAGE : <b>ncommon</b> <i>sizes</i>";
 	commands[CMD_NCOMMON].descr = "[tc0,0.5,0.5,1/tc]Switch to multi-layered convolution and force it to user-defined discretisation, specifying sizes as nx ny nz.";
 	commands[CMD_NCOMMON].limits = { { INT3(1), Any() } };
+
+	commands.insert(CMD_EXCLUDEMULTICONVDEMAG, CommandSpecifier(CMD_EXCLUDEMULTICONVDEMAG), "excludemulticonvdemag");
+	commands[CMD_EXCLUDEMULTICONVDEMAG].usage = "[tc0,0.5,0,1/tc]USAGE : <b>excludemulticonvdemag</b> <i>status meshname</i>";
+	commands[CMD_EXCLUDEMULTICONVDEMAG].descr = "[tc0,0.5,0.5,1/tc]Set exclusion status (0 or 1) of named mesh from multi-layered demag convolution.";
+	commands[CMD_EXCLUDEMULTICONVDEMAG].return_descr = "[tc0,0.5,0,1/tc]Script return values: <i>status</i>";
 
 	commands.insert(CMD_ODE, CommandSpecifier(CMD_ODE), "ode");
 	commands[CMD_ODE].usage = "[tc0,0.5,0,1/tc]USAGE : <b>ode</b>";
@@ -725,7 +743,7 @@ Simulation::Simulation(int Program_Version) :
 	commands.insert(CMD_CURIETEMPERATURE, CommandSpecifier(CMD_CURIETEMPERATURE), "curietemperature");
 	commands[CMD_CURIETEMPERATURE].usage = "[tc0,0.5,0,1/tc]USAGE : <b>curietemperature</b> <i>curie_temperature (meshname)</i>";
 	commands[CMD_CURIETEMPERATURE].limits = { { double(0.0), double(MAX_TEMPERATURE) }, { Any(), Any() } };
-	commands[CMD_CURIETEMPERATURE].descr = "[tc0,0.5,0.5,1/tc]Set Curie temperature (all ferromagnetic meshes if meshname not given) for ferromagnetic mesh. This will set default temperature dependencies as: Ms = Ms0*me, A = A0*me^2, D = D0*me^2, K = K0*me^3 (K1 and K2), damping = damping0*(1-T/3Tc) T < Tc, damping = damping0*2T/3Tc T >= Tc, susrel = dme/d(mu0Hext). Setting the Curie temperature to zero will disable temperature dependence for these parameters.";
+	commands[CMD_CURIETEMPERATURE].descr = "[tc0,0.5,0.5,1/tc]Set Curie temperature (all ferromagnetic meshes if meshname not given) for ferromagnetic mesh. This will set default temperature dependencies as: Ms = Ms0*me, A = Ah*me^2, D = D0*me^2, K = K0*me^3 (K1 and K2), damping = damping0*(1-T/3Tc) T < Tc, damping = damping0*2T/3Tc T >= Tc, susrel = dme/d(mu0Hext). Setting the Curie temperature to zero will disable temperature dependence for these parameters.";
 	commands[CMD_CURIETEMPERATURE].unit = "K";
 	commands[CMD_CURIETEMPERATURE].return_descr = "[tc0,0.5,0,1/tc]Script return values: <i>curie_temperature</i> - Curie temperature for mesh in focus.";
 
@@ -739,9 +757,29 @@ Simulation::Simulation(int Program_Version) :
 	commands.insert(CMD_ATOMICMOMENT, CommandSpecifier(CMD_ATOMICMOMENT), "atomicmoment");
 	commands[CMD_ATOMICMOMENT].usage = "[tc0,0.5,0,1/tc]USAGE : <b>atomicmoment</b> <i>ub_multiple (meshname)</i>";
 	commands[CMD_ATOMICMOMENT].limits = { { double(0.0), Any() },{ Any(), Any() } };
-	commands[CMD_ATOMICMOMENT].descr = "[tc0,0.5,0.5,1/tc]Set atomic moment as a multiple of Bohr magnetons (all ferromagnetic meshes if meshname not given) for ferromagnetic mesh. This affects the temperature dependence of 'me' (see curietemperature command). A non-zero value will result in me(T) being dependent on the applied field.";
+	commands[CMD_ATOMICMOMENT].descr = "[tc0,0.5,0.5,1/tc]Set atomic moment as a multiple of Bohr magnetons (all applicable meshes if meshname not given) for given mesh. This affects the temperature dependence of 'me' (see curietemperature command). A non-zero value will result in me(T) being dependent on the applied field.";
 	commands[CMD_ATOMICMOMENT].unit = "uB";
 	commands[CMD_ATOMICMOMENT].return_descr = "[tc0,0.5,0,1/tc]Script return values: <i>ub_multiple</i> - atomic moment multiple of Bohr magneton for mesh in focus.";
+
+	commands.insert(CMD_TAU, CommandSpecifier(CMD_TAU), "tau");
+	commands[CMD_TAU].usage = "[tc0,0.5,0,1/tc]USAGE : <b>tau</b> <i>tau_11 tau_22 (tau_12 tau_22) (meshname)</i>";
+	commands[CMD_TAU].limits = { { double(0.0),  Any() }, { double(0.0),  Any() }, { double(0.0),  Any() }, { double(0.0),  Any() } };
+	commands[CMD_TAU].descr = "[tc0,0.5,0.5,1/tc]Set ratio of exchange parameters to critical temperature (Neel) (all antiferromagnetic meshes if meshname not given) for antiferromagnetic mesh. tau_11 and tau_22 are the intra-lattice contributions, tau_12 and tau_21 are the inter-lattice contributions.";
+	commands[CMD_TAU].return_descr = "[tc0,0.5,0,1/tc]Script return values: <i>tau_11 tau_22 tau_12 tau_21</i>";
+
+	commands.insert(CMD_TMODEL, CommandSpecifier(CMD_TMODEL), "tmodel");
+	commands[CMD_TMODEL].usage = "[tc0,0.5,0,1/tc]USAGE : <b>tmodel</b> <i>num_temperatures (meshname)</i>";
+	commands[CMD_TMODEL].limits = { { int(1), Any() } };
+	commands[CMD_TMODEL].descr = "[tc0,0.5,0.5,1/tc]Set temperature model (determined by number of temperatures) in given meshname (focused mesh if meshname not given). Note insulating meshes only allow a 1-temperature model.";
+
+	commands.insert(CMD_STOCHASTIC, CommandSpecifier(CMD_STOCHASTIC), "stochastic");
+	commands[CMD_STOCHASTIC].usage = "[tc0,0.5,0,1/tc]USAGE : <b>stochastic</b>";
+	commands[CMD_STOCHASTIC].descr = "[tc0,0.5,0.5,1/tc]Shows stochasticity settings : stochastic cellsize for each mesh and related settings.";
+
+	commands.insert(CMD_LINKSTOCHASTIC, CommandSpecifier(CMD_LINKSTOCHASTIC), "linkstochastic");
+	commands[CMD_LINKSTOCHASTIC].usage = "[tc0,0.5,0,1/tc]USAGE : <b>linkstochastic</b> <i>flag (meshname)</i>";
+	commands[CMD_TMODEL].limits = { { int(0), int(1) },{ Any(), Any() } };
+	commands[CMD_LINKSTOCHASTIC].descr = "[tc0,0.5,0.5,1/tc]Links stochastic cellsize to magnetic cellsize if flag set to 1 for given mesh, else stochastic cellsize is independently controlled. If meshname not given set for all meshes.";
 
 	commands.insert(CMD_CUDA, CommandSpecifier(CMD_CUDA), "cuda");
 	commands[CMD_CUDA].usage = "[tc0,0.5,0,1/tc]USAGE : <b>cuda</b> <i>status</i>";
@@ -968,10 +1006,16 @@ Simulation::Simulation(int Program_Version) :
 
 	commands.insert(CMD_DP_TOPOCHARGE, CommandSpecifier(CMD_DP_TOPOCHARGE), "dp_topocharge");
 	commands[CMD_DP_TOPOCHARGE].usage = "[tc0,0.5,0,1/tc]USAGE : <b>dp_topocharge</b> <i>(x y radius)</i>";
-	commands[CMD_DP_TOPOCHARGE].descr = "[tc0,0.5,0.5,1/tc]Calculate the topological charge for focused mesh (must be ferromagnetic), optionally in the given circle with radius and centered at x y (relative values). Q = Integral(m.(dm/dx x dm/dy) dxdy) / 4PI.";
+	commands[CMD_DP_TOPOCHARGE].descr = "[tc0,0.5,0.5,1/tc]Calculate the topological charge for focused mesh (must be magnetic), optionally in the given circle with radius and centered at x y (relative values). Q = Integral(m.(dm/dx x dm/dy) dxdy) / 4PI.";
 	commands[CMD_DP_TOPOCHARGE].return_descr = "[tc0,0.5,0,1/tc]Script return values: <i>Q</i> - the calculated topological charge.";
 	commands[CMD_DP_TOPOCHARGE].limits = { {double(0), Any()}, {double(0), Any()}, {double(0), Any()} };
 	commands[CMD_DP_TOPOCHARGE].unit = "m";
+
+	commands.insert(CMD_DP_HISTOGRAM, CommandSpecifier(CMD_DP_HISTOGRAM), "dp_histogram");
+	commands[CMD_DP_HISTOGRAM].usage = "[tc0,0.5,0,1/tc]USAGE : <b>dp_histogram</b> <i>dp_x dp_y (bin min max)</i>";
+	commands[CMD_DP_HISTOGRAM].descr = "[tc0,0.5,0.5,1/tc]Calculate a histogram with given bin, minimum and maximum values, from the magnetisation magnitude of the focused mesh (must be magnetic). Save histogram in dp arrays at dp_x, dp_y. If histogram parameters not given use a bin with 100 steps between minimum and maximum magnetisation magnitude.";
+	commands[CMD_DP_HISTOGRAM].limits = { { int(0), int(MAX_ARRAYS - 1) }, { int(0), int(MAX_ARRAYS - 1) }, {double(0), Any()}, {double(0), Any()}, {double(0), Any()} };
+	commands[CMD_DP_HISTOGRAM].unit = "A/m";
 
 	commands.insert(CMD_DP_APPEND, CommandSpecifier(CMD_DP_APPEND), "dp_append");
 	commands[CMD_DP_APPEND].usage = "[tc0,0.5,0,1/tc]USAGE : <b>dp_append</b> <i>dp_original dp_new</i>";
@@ -1195,6 +1239,7 @@ Simulation::Simulation(int Program_Version) :
 	dataDescriptor.push_back("<S>", DatumSpecifier("<S> : ", 3, "A/m", false, false), DATA_S);
 	dataDescriptor.push_back("<elC>", DatumSpecifier("<elC> : ", 1, "S/m", false, false), DATA_ELC);
 	dataDescriptor.push_back("<T>", DatumSpecifier("<Temperature> : ", 1, "K", false, false), DATA_TEMP);
+	dataDescriptor.push_back("<T_l>", DatumSpecifier("<Temperature_l> : ", 1, "K", false, false), DATA_TEMP_L);
 	dataDescriptor.push_back("V", DatumSpecifier("Potential : ", 1, "V"), DATA_POTENTIAL);
 	dataDescriptor.push_back("I", DatumSpecifier("I, Net I : ", 2, "A"), DATA_CURRENT);
 	dataDescriptor.push_back("R", DatumSpecifier("Resistance : ", 1, "Ohm"), DATA_RESISTANCE);
@@ -1282,19 +1327,19 @@ Simulation::Simulation(int Program_Version) :
 	odeAllowedEvals.push_back(make_vector(EVAL_EULER, EVAL_TEULER, EVAL_AHEUN), ODE_SLLGSA);
 	odeAllowedEvals.push_back(make_vector(EVAL_EULER, EVAL_TEULER, EVAL_AHEUN), ODE_SLLBSA);
 
-	odeDefaultEval.push_back(EVAL_RK4, ODE_LLG);
+	odeDefaultEval.push_back(EVAL_RKF, ODE_LLG);
 	odeDefaultEval.push_back(EVAL_SD, ODE_LLGSTATIC);
-	odeDefaultEval.push_back(EVAL_RK4, ODE_LLGSTT);
-	odeDefaultEval.push_back(EVAL_RK4, ODE_LLB);
-	odeDefaultEval.push_back(EVAL_RK4, ODE_LLBSTT);
-	odeDefaultEval.push_back(EVAL_RK4, ODE_LLGSA);
-	odeDefaultEval.push_back(EVAL_RK4, ODE_LLBSA);
-	odeDefaultEval.push_back(EVAL_TEULER, ODE_SLLG);
-	odeDefaultEval.push_back(EVAL_TEULER, ODE_SLLGSTT);
-	odeDefaultEval.push_back(EVAL_TEULER, ODE_SLLB);
-	odeDefaultEval.push_back(EVAL_TEULER, ODE_SLLBSTT);
-	odeDefaultEval.push_back(EVAL_TEULER, ODE_SLLGSA);
-	odeDefaultEval.push_back(EVAL_TEULER, ODE_SLLBSA);
+	odeDefaultEval.push_back(EVAL_RKF, ODE_LLGSTT);
+	odeDefaultEval.push_back(EVAL_RKF, ODE_LLB);
+	odeDefaultEval.push_back(EVAL_RKF, ODE_LLBSTT);
+	odeDefaultEval.push_back(EVAL_RKF, ODE_LLGSA);
+	odeDefaultEval.push_back(EVAL_RKF, ODE_LLBSA);
+	odeDefaultEval.push_back(EVAL_AHEUN, ODE_SLLG);
+	odeDefaultEval.push_back(EVAL_AHEUN, ODE_SLLGSTT);
+	odeDefaultEval.push_back(EVAL_AHEUN, ODE_SLLB);
+	odeDefaultEval.push_back(EVAL_AHEUN, ODE_SLLBSTT);
+	odeDefaultEval.push_back(EVAL_AHEUN, ODE_SLLGSA);
+	odeDefaultEval.push_back(EVAL_AHEUN, ODE_SLLBSA);
 
 	//---------------------------------------------------------------- SIMULATION SCHEDULE
 

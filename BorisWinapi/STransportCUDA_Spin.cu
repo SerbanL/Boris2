@@ -24,8 +24,8 @@ void STransportCUDA::set_cmbnd_spin_transport_V(void)
 			//use continuity of Jc and V across interface unless the interface is N-F type (normal metal - ferromagnetic) and the spin mixing conductance is not zero (i.e. continuous method disabled).
 
 			//Is it an N-F contact?
-			if ((pTransport[idx_pri]->pMeshCUDA->MComputation_Enabled() && !pTransport[idx_sec]->pMeshCUDA->Magnetisation_Enabled()) ||
-				(pTransport[idx_sec]->pMeshCUDA->MComputation_Enabled() && !pTransport[idx_pri]->pMeshCUDA->Magnetisation_Enabled())) {
+			if ((pTransport[idx_pri]->stsolve == STSOLVE_FERROMAGNETIC && pTransport[idx_sec]->stsolve == STSOLVE_NORMALMETAL) ||
+				(pTransport[idx_sec]->stsolve == STSOLVE_FERROMAGNETIC && pTransport[idx_pri]->stsolve == STSOLVE_NORMALMETAL)) {
 
 				//Yes we have an N-F contact. Is G interface enabled for this contact ? (remember top mesh sets G interface values)
 
@@ -66,11 +66,13 @@ void STransportCUDA::set_cmbnd_spin_transport_S(void)
 			int idx_pri = CMBNDcontacts[idx1][idx2].mesh_idx.j;
 			size_t size = CMBNDcontacts[idx1][idx2].cells_box.size().dim();
 
+			if (pTransport[idx_pri]->stsolve == STSOLVE_NONE || pTransport[idx_sec]->stsolve == STSOLVE_NONE) continue;
+
 			//use continuity of Js and S across interface unless the interface is N-F type (normal metal - ferromagnetic) and the spin mixing conductance is not zero (i.e. continuous method disabled).
 
 			//Is it an N-F contact?
-			if ((pTransport[idx_pri]->pMeshCUDA->MComputation_Enabled() && !pTransport[idx_sec]->pMeshCUDA->Magnetisation_Enabled()) ||
-				(pTransport[idx_sec]->pMeshCUDA->MComputation_Enabled() && !pTransport[idx_pri]->pMeshCUDA->Magnetisation_Enabled())) {
+			if ((pTransport[idx_pri]->stsolve == STSOLVE_FERROMAGNETIC && pTransport[idx_sec]->stsolve == STSOLVE_NORMALMETAL) ||
+				(pTransport[idx_sec]->stsolve == STSOLVE_FERROMAGNETIC && pTransport[idx_pri]->stsolve == STSOLVE_NORMALMETAL)) {
 
 				//Yes we have an N-F contact. Is G interface enabled for this contact ? (remember top mesh sets G interface values)
 
@@ -80,7 +82,7 @@ void STransportCUDA::set_cmbnd_spin_transport_S(void)
 
 					//G interface method
 
-					if (pTransport[idx_pri]->pMeshCUDA->MComputation_Enabled()) {
+					if (pTransport[idx_pri]->stsolve == STSOLVE_FERROMAGNETIC) {
 
 						//interface conductance method with F being the primary mesh
 

@@ -66,6 +66,12 @@ BError OerstedCUDA::Initialize(void)
 			pVal_to_cpu.push_back(&((*pSMesh)[idx]->Heff));
 			pVal_to.push_back((cuVEC<cuReal3>*&)(*pSMesh)[idx]->pMeshCUDA->Heff.get_managed_object());
 		}
+
+		if ((*pSMesh)[idx]->GetMeshType() == MESH_ANTIFERROMAGNETIC) {
+
+			pVal_to_cpu.push_back(&((*pSMesh)[idx]->Heff2));
+			pVal_to.push_back((cuVEC<cuReal3>*&)(*pSMesh)[idx]->pMeshCUDA->Heff2.get_managed_object());
+		}
 	}
 
 	//Initialize the mesh transfer object.

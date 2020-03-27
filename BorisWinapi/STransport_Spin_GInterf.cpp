@@ -38,7 +38,7 @@ double STransport::Afunc_V(int cell1_idx, int cell2_idx, DBL3 relpos_m1, DBL3 sh
 		pMesh_sec->update_parameters_atposition(relpos_m1, pMesh_sec->Gi, Gi);
 	}
 
-	if (pMesh_pri->M.linear_size()) {
+	if (trans_pri.stsolve == STSOLVE_FERROMAGNETIC) {
 
 		//F is on the primary side
 
@@ -136,7 +136,7 @@ DBL3 STransport::Afunc_N_S(int cell1_idx, int cell2_idx, DBL3 relpos_m1, DBL3 sh
 	//on the N side must include spin pumping current : subtract it from the A value.
 	DBL3 Js_pump = DBL3();
 
-	if (pMesh_pri->M.linear_size()) {
+	if (trans_pri.stsolve == STSOLVE_FERROMAGNETIC) {
 
 		//F is on the primary side
 
@@ -212,7 +212,7 @@ DBL3 STransport::Afunc_F_S(int cell1_idx, int cell2_idx, DBL3 relpos_m1, DBL3 sh
 
 	DBL3 m;
 
-	if (pMesh_pri->M.linear_size()) {
+	if (trans_pri.stsolve == STSOLVE_FERROMAGNETIC) {
 		
 		//F is on the primary side
 
@@ -272,7 +272,7 @@ DBL33 STransport::Bfunc_N_S(int cell1_idx, int cell2_idx, DBL3 relpos_m1, DBL3 s
 
 	DBL3 m;
 
-	if (pMesh_pri->M.linear_size()) {
+	if (trans_pri.stsolve == STSOLVE_FERROMAGNETIC) {
 
 		//F is on the primary side
 
@@ -330,7 +330,7 @@ DBL33 STransport::Bfunc_F_S(int cell1_idx, int cell2_idx, DBL3 relpos_m1, DBL3 s
 
 	DBL3 m;
 
-	if (pMesh_pri->M.linear_size()) {
+	if (trans_pri.stsolve == STSOLVE_FERROMAGNETIC) {
 
 		//F is on the primary side
 

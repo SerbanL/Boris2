@@ -11,6 +11,7 @@ enum BERROR_
 	BERROR_NONE = 0, 
 	BERROR_COMMAND_NOTRECOGNIZED,			//command not recognized
 	BERROR_BUSY,							//An action could not be completed: program busy
+	BERROR_OPERATIONFAILED,					//Failed in an unspecified way
 	BERROR_OUTOFMEMORY_CRIT,				//Out of memory : critical, must restore program
 	BERROR_OUTOFMEMORY_NCRIT,				//Out of memory : not critical, don't need restore
 	BERROR_OUTOFGPUMEMORY_CRIT,				//Out of gpu memory : critical, must restore program
@@ -286,6 +287,7 @@ ErrorHandler<Owner>::ErrorHandler(Owner* pOwner_) :
 	errors[BERROR_NONE] = pair<string, ERRLEV_>( "", ERRLEV_SILENT );
 	errors[BERROR_COMMAND_NOTRECOGNIZED] = pair<string, ERRLEV_>("Command not recognized.", ERRLEV_NCRIT);
 	errors[BERROR_BUSY] = pair<string, ERRLEV_>("Busy... please wait.", ERRLEV_NCRIT);
+	errors[BERROR_OPERATIONFAILED] = pair<string, ERRLEV_>("Operation failed.", ERRLEV_NCRIT);
 	errors[BERROR_OUTOFMEMORY_CRIT] = pair<string, ERRLEV_>( "Out of memory.", ERRLEV_CRIT);
 	errors[BERROR_OUTOFMEMORY_NCRIT] = pair<string, ERRLEV_>( "Out of memory.", ERRLEV_NCRIT);
 	errors[BERROR_OUTOFGPUMEMORY_CRIT] = pair<string, ERRLEV_>( "Out of GPU memory.", ERRLEV_CRIT);

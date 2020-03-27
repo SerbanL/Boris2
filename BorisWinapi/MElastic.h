@@ -85,20 +85,7 @@ class MElastic :
 	public Modules
 {
 
-#if COMPILECUDA == 1
-	friend class MElasticCUDA;
-#endif
-
 private:
-
-	//pointer to mesh object holding this effective field module
-	Mesh *pMesh;
-
-	//Applied uniform stress vector
-	DBL3 Tsig;
-
-	//pointer to supermesh
-	SuperMesh* pSMesh;
 
 private:
 

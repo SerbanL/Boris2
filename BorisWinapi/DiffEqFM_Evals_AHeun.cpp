@@ -1,10 +1,12 @@
 #include "stdafx.h"
 #include "DiffEqFM.h"
+
+#ifdef MESH_COMPILATION_FERROMAGNETIC
+#ifdef ODE_EVAL_AHEUN
+
 #include "Mesh_Ferromagnetic.h"
 #include "SuperMesh.h"
 #include "MeshParamsControl.h"
-
-#ifdef ODE_EVAL_TEULER
 
 //--------------------------------------------- TRAPEZOIDAL EULER
 
@@ -28,11 +30,7 @@ void DifferentialEquationFM::RunAHeun_Step0_withReductions(void)
 
 				//obtained average normalized torque term
 				double Mnorm = pMesh->M[idx].norm();
-				if (H_Thermal.linear_size()) {
-
-					mxh_av_reduction.reduce_average((pMesh->M[idx] ^ (pMesh->Heff[idx] + H_Thermal[idx])) / (Mnorm * Mnorm));
-				}
-				else mxh_av_reduction.reduce_average((pMesh->M[idx] ^ pMesh->Heff[idx]) / (Mnorm * Mnorm));
+				mxh_av_reduction.reduce_average((pMesh->M[idx] ^ pMesh->Heff[idx]) / (Mnorm * Mnorm));
 
 				//First evaluate RHS of set equation at the current time step
 				DBL3 rhs = CALLFP(this, equation)(idx);
@@ -179,4 +177,5 @@ void DifferentialEquationFM::RunAHeun_Step1(void)
 	lte_reduction.maximum();
 }
 
+#endif
 #endif

@@ -11,6 +11,8 @@ class STransport;
 
 #ifdef MODULE_TRANSPORT
 
+#include "Transport_Defs.h"
+
 #if COMPILECUDA == 1
 #include "TransportCUDA.h"
 #endif
@@ -27,6 +29,9 @@ class Transport :
 #endif
 
 private:
+
+	//spin transport solver type (see Transport_Defs.h)
+	STSOLVE_ stsolve;
 
 	//pointer to mesh object holding this effective field module
 	Mesh* pMesh;
@@ -48,6 +53,11 @@ private:
 	mutable VEC<DBL3> delsq_S_fixed;
 
 private:
+
+	//-------------------Auxiliary
+
+	//set the stsolve indicator depending on current configuration
+	void Set_STSolveType(void);
 
 	//-------------------Calculation Methods
 

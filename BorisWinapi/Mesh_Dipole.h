@@ -2,6 +2,8 @@
 
 #include "Mesh.h"
 
+#ifdef MESH_COMPILATION_DIPOLE
+
 #if COMPILECUDA == 1
 #include "Mesh_DipoleCUDA.h"
 #endif
@@ -45,7 +47,7 @@ public:
 	~DipoleMesh() {}
 
 	//implement pure virtual method from ProgramState
-	void RepairObjectState(void) {}
+	void RepairObjectState(void);
 
 	//----------------------------------- INITIALIZATION
 
@@ -76,10 +78,65 @@ public:
 	void Reset_recalculateStrayField(void) { recalculateStrayField = false; }
 
 	//also need to set magnetisation temperature dependence in this mesh when a Curie temperature is set - don't need to store Curie temperature here, just set temperature dependence for Ms
-	void SetCurieTemperature(double Tc);
+	void SetCurieTemperature(double Tc, bool set_default_dependences);
 
 	//----------------------------------- VARIOUS GET METHODS
 
 	//check if stray field needs to be recalculated depending on current settings, and prepare Mdipole for stray field recalculation (set to required value)
 	bool Check_recalculateStrayField(void);
 };
+
+#else
+
+class DipoleMesh :
+	public Mesh
+{
+
+private:
+
+public:
+
+	//constructor taking only a SuperMesh pointer (SuperMesh is the owner) only needed for loading : all required values will be set by LoadObjectState method in ProgramState
+	DipoleMesh(SuperMesh *pSMesh_) :
+		Mesh(MESH_DIPOLE, pSMesh_)
+	{}
+
+	DipoleMesh(Rect meshRect_, DBL3 h_, SuperMesh *pSMesh_) :
+		Mesh(MESH_DIPOLE, pSMesh_)
+	{}
+
+	~DipoleMesh() {}
+
+	//----------------------------------- INITIALIZATION
+
+	//----------------------------------- IMPORTANT CONTROL METHODS
+
+	//call when the mesh dimensions have changed - sets every quantity to the right dimensions
+	BError UpdateConfiguration(UPDATECONFIG_ cfgMessage) { return BError(); }
+	void UpdateConfiguration_Values(UPDATECONFIG_ cfgMessage) {}
+
+	BError SwitchCUDAState(bool cudaState) { return BError(); }
+
+	//called at the start of each iteration
+	void PrepareNewIteration(void) {}
+
+#if COMPILECUDA == 1
+	void PrepareNewIterationCUDA(void) {}
+#endif
+
+	double CheckMoveMesh(void) { return 0.0; }
+
+	//----------------------------------- VARIOUS SET METHODS
+
+	//set magnitude for Mdipole (also setting recalculateStrayField flag)
+	void Reset_Mdipole(void) {}
+
+	void Reset_recalculateStrayField(void) {}
+
+	//----------------------------------- VARIOUS GET METHODS
+
+	//check if stray field needs to be recalculated depending on current settings, and prepare Mdipole for stray field recalculation (set to required value)
+	bool Check_recalculateStrayField(void) { return false; }
+};
+
+#endif

@@ -19,7 +19,7 @@ class ODECommonCUDA
 {
 	friend ODECommon;
 	friend ManagedDiffEq_CommonCUDA;
-
+	
 private:
 
 	static ODECommon *pODE;
@@ -27,7 +27,7 @@ private:
 	//ManagedDiffEq_CommonCUDA holds pointers to data in ODECommonCUDA in an object in gpu memory.
 	//pass cuDiffEq to a cuda kernel then all gpu data held here in cu_obj objects can be accessed in device code.
 	//Initialize ManagedDiffEq_CommonCUDA with all the pointers you need then forget about it - no book-keeping required.
-	cu_obj<ManagedDiffEq_CommonCUDA> cuDiffEq;
+	static cu_obj<ManagedDiffEq_CommonCUDA>* pcuDiffEq;
 
 protected:
 
@@ -88,6 +88,9 @@ private:
 
 	//---------------------------------------- SET-UP METHODS : DiffEqCUDA.cpp, DiffEq_EvalsCUDA.cu
 
+	//Allocate memory for all static data; deletion only happens in the destructor, however allocation can also be triggered by UpdateConfiguration since the static data can be deleted by another instance which inherits same static data
+	void AllocateStaticData(void);
+
 	BError UpdateConfiguration(UPDATECONFIG_ cfgMessage);
 	void UpdateConfiguration_Values(UPDATECONFIG_ cfgMessage) {}
 
@@ -141,7 +144,7 @@ public:
 	//----------------------------------- GETTERS
 
 	//get reference to stored managed cuda differential equation object (cuDiffEq)
-	cu_obj<ManagedDiffEq_CommonCUDA>& Get_ManagedDiffEq_CommonCUDA(void) { return cuDiffEq; }
+	cu_obj<ManagedDiffEq_CommonCUDA>& Get_ManagedDiffEq_CommonCUDA(void) { return *pcuDiffEq; }
 
 };
 

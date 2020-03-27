@@ -9,6 +9,8 @@
 #include "ModulesCUDA.h"
 #include "HeatCUDA_CMBND.h"
 
+#include "Heat_Defs.h"
+
 class MeshCUDA;
 class Mesh;
 class SuperMesh;
@@ -50,7 +52,11 @@ private:
 
 	//-------------------Calculation Methods
 
-	void IterateHeatEquation(cuBReal dT);
+	//1-temperature model
+	void IterateHeatEquation_1TM(cuBReal dT);
+
+	//2-temperature model
+	void IterateHeatEquation_2TM(cuBReal dT);
 
 public:
 

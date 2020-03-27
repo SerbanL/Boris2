@@ -178,13 +178,13 @@ double Demag::UpdateField(void)
 				//calculate field and save it for next time : we'll need to use it (expecting update_type = EVALSPEEDUPSTEP_SKIP next time)
 
 				//convolute and get "energy" value
-				if (pMesh->GetMeshType() == MESH_FERROMAGNETIC) {
-
-					energy = Convolute(pMesh->M, Hdemag, true);
-				}
-				else if (pMesh->GetMeshType() == MESH_ANTIFERROMAGNETIC) {
+				if (pMesh->GetMeshType() == MESH_ANTIFERROMAGNETIC) {
 
 					energy = Convolute_AveragedInputs(pMesh->M, pMesh->M2, Hdemag, true);
+				}
+				else {
+
+					energy = Convolute(pMesh->M, Hdemag, true);
 				}
 
 				Hdemag_calculated = true;
@@ -198,13 +198,13 @@ double Demag::UpdateField(void)
 				//calculate field but do not save it for next time : we'll need to recalculate it again (expecting update_type != EVALSPEEDUPSTEP_SKIP again next time : EVALSPEEDUPSTEP_COMPUTE_NO_SAVE or EVALSPEEDUPSTEP_COMPUTE_AND_SAVE)
 
 				//convolute and get "energy" value
-				if (pMesh->GetMeshType() == MESH_FERROMAGNETIC) {
-
-					energy = Convolute(pMesh->M, pMesh->Heff, false);
-				}
-				else if (pMesh->GetMeshType() == MESH_ANTIFERROMAGNETIC) {
+				if (pMesh->GetMeshType() == MESH_ANTIFERROMAGNETIC) {
 
 					energy = Convolute_AveragedInputs_DuplicatedOutputs(pMesh->M, pMesh->M2, pMesh->Heff, pMesh->Heff2, false);
+				}
+				else {
+
+					energy = Convolute(pMesh->M, pMesh->Heff, false);
 				}
 
 				//good practice to set this to false
@@ -219,17 +219,7 @@ double Demag::UpdateField(void)
 			}
 		}
 
-		if (pMesh->GetMeshType() == MESH_FERROMAGNETIC) {
-
-			//add contribution to Heff
-#pragma omp parallel for
-			for (int idx = 0; idx < Hdemag.linear_size(); idx++) {
-
-				pMesh->Heff[idx] += Hdemag[idx];
-			}
-		}
-
-		else if (pMesh->GetMeshType() == MESH_ANTIFERROMAGNETIC) {
+		if (pMesh->GetMeshType() == MESH_ANTIFERROMAGNETIC) {
 
 			//add contribution to Heff and Heff2
 #pragma omp parallel for
@@ -237,6 +227,16 @@ double Demag::UpdateField(void)
 
 				pMesh->Heff[idx] += Hdemag[idx];
 				pMesh->Heff2[idx] += Hdemag[idx];
+			}
+		}
+
+		else {
+
+			//add contribution to Heff
+#pragma omp parallel for
+			for (int idx = 0; idx < Hdemag.linear_size(); idx++) {
+
+				pMesh->Heff[idx] += Hdemag[idx];
 			}
 		}
 	}
@@ -250,13 +250,13 @@ double Demag::UpdateField(void)
 		//don't use evaluation speedup, so no need to use Hdemag (this won't have memory allocated anyway)
 
 		//convolute and get "energy" value
-		if (pMesh->GetMeshType() == MESH_FERROMAGNETIC) {
-
-			energy = Convolute(pMesh->M, pMesh->Heff, false);
-		}
-		else if (pMesh->GetMeshType() == MESH_ANTIFERROMAGNETIC) {
+		if (pMesh->GetMeshType() == MESH_ANTIFERROMAGNETIC) {
 
 			energy = Convolute_AveragedInputs_DuplicatedOutputs(pMesh->M, pMesh->M2, pMesh->Heff, pMesh->Heff2, false);
+		}
+		else {
+
+			energy = Convolute(pMesh->M, pMesh->Heff, false);
 		}
 
 		//finish off energy value

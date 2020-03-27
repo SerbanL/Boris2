@@ -15,6 +15,8 @@
 
 #include "TransportCUDA_Poisson_Spin_V.h"
 
+#include "Transport_Defs.h"
+
 class MeshCUDA;
 class ManagedDiffEqFMCUDA;
 class DifferentialEquationFMCUDA;
@@ -29,6 +31,9 @@ class TransportCUDA;
 class TransportCUDA_Spin_S_Funcs {
 
 public:
+
+	//spin transport solver type (see Transport_Defs.h) : copy of stsolve in TransportCUDA, but on the gpu so we can use it in device code
+	int stsolve;
 
 	//managed mesh for access to all required mesh VECs and material parameters
 	ManagedMeshCUDA* pcuMesh;
@@ -55,6 +60,8 @@ public:
 
 	BError set_pointers(MeshCUDA* pMeshCUDA, DifferentialEquationFMCUDA* pdiffEqCUDA, TransportCUDA* pTransportCUDA);
 
+	__host__ void set_stsolve(int stsolve_) { set_gpu_value(stsolve, stsolve_); }
+
 	//this evaluates the Poisson RHS when solving the Poisson equation on S
 	__device__ cuReal3 Poisson_RHS(int idx)
 	{
@@ -72,7 +79,7 @@ public:
 		delsq_S_RHS = (S[idx] / (l_sf * l_sf));
 
 		//Terms occuring only in magnetic meshes
-		if (M.linear_size()) {
+		if (stsolve == STSOLVE_FERROMAGNETIC) {
 
 			cuBReal Ms = *pcuMesh->pMs;
 			cuBReal l_ex = *pcuMesh->pl_ex;
@@ -96,11 +103,10 @@ public:
 	//boundary differential of S for non-homogeneous Neumann boundary conditions
 	__device__ cuVAL3<cuReal3> bdiff(int idx)
 	{
-		cuVEC_VC<cuReal3>& M = *pcuMesh->pM;
+		if (stsolve == STSOLVE_FERROMAGNETIC) return cuReal33();
+
 		cuVEC_VC<cuReal3>& E = *pcuMesh->pE;
 		cuVEC_VC<cuBReal>& elC = *pcuMesh->pelC;
-
-		if (M.linear_size()) return cuReal33();
 
 		cuBReal De = *pcuMesh->pDe;
 		cuBReal SHA = *pcuMesh->pSHA;
@@ -126,7 +132,7 @@ public:
 		cuReal3 u = shift.normalized() * -1;
 
 		//values on secondary side
-		if (M.linear_size()) {
+		if (stsolve == STSOLVE_FERROMAGNETIC) {
 
 			cuBReal Ms = *pcuMesh->pMs;
 			cuBReal De = *pcuMesh->pDe;
@@ -216,7 +222,7 @@ public:
 		cuReal3 u = shift.normalized() * -1;
 
 		//values on secondary side
-		if (M.linear_size()) {
+		if (stsolve == STSOLVE_FERROMAGNETIC) {
 
 			cuBReal Ms = *pcuMesh->pMs;
 			cuBReal De = *pcuMesh->pDe;

@@ -72,25 +72,25 @@ __global__ void Anisotropy_UniaxialCUDA_AFM_UpdateField(ManagedMeshCUDA& cuMesh,
 		if (M.is_not_empty(idx)) {
 
 			cuReal2 Ms_AFM = *cuMesh.pMs_AFM;
-			cuBReal K1 = *cuMesh.pK1;
-			cuBReal K2 = *cuMesh.pK2;
+			cuReal2 K1_AFM = *cuMesh.pK1_AFM;
+			cuReal2 K2_AFM = *cuMesh.pK2_AFM;
 			cuReal3 mcanis_ea1 = *cuMesh.pmcanis_ea1;
 
-			cuMesh.update_parameters_mcoarse(idx, *cuMesh.pMs_AFM, Ms_AFM, *cuMesh.pK1, K1, *cuMesh.pK2, K2, *cuMesh.pmcanis_ea1, mcanis_ea1);
+			cuMesh.update_parameters_mcoarse(idx, *cuMesh.pMs_AFM, Ms_AFM, *cuMesh.pK1_AFM, K1_AFM, *cuMesh.pK2_AFM, K2_AFM, *cuMesh.pmcanis_ea1, mcanis_ea1);
 
 			//calculate m.ea dot product
 			cuBReal dotprod = (M[idx] * mcanis_ea1) / Ms_AFM.i;
 			cuBReal dotprod2 = (M2[idx] * mcanis_ea1) / Ms_AFM.j;
 
 			//update effective field with the anisotropy field
-			Heff_value = (2 / ((cuBReal)MU0 * Ms_AFM.i)) * dotprod * (K1 + 2 * K2 * (1 - dotprod * dotprod)) * mcanis_ea1;
-			Heff2_value = (2 / ((cuBReal)MU0 * Ms_AFM.j)) * dotprod2 * (K1 + 2 * K2 * (1 - dotprod2 * dotprod2)) * mcanis_ea1;
+			Heff_value = (2 / ((cuBReal)MU0 * Ms_AFM.i)) * dotprod * (K1_AFM.i + 2 * K2_AFM.i * (1 - dotprod * dotprod)) * mcanis_ea1;
+			Heff2_value = (2 / ((cuBReal)MU0 * Ms_AFM.j)) * dotprod2 * (K1_AFM.j + 2 * K2_AFM.j * (1 - dotprod2 * dotprod2)) * mcanis_ea1;
 
 			if (do_reduction) {
 
 				//update energy (E/V) = K1 * sin^2(theta) + K2 * sin^4(theta) = K1 * [ 1 - dotprod*dotprod ] + K2 * [1 - dotprod * dotprod]^2
 				int non_empty_cells = M.get_nonempty_cells();
-				if (non_empty_cells) energy_ = ((K1 + K2 * (1 - dotprod * dotprod)) * (1 - dotprod * dotprod) + (K1 + K2 * (1 - dotprod2 * dotprod2)) * (1 - dotprod2 * dotprod2)) / (2 * non_empty_cells);
+				if (non_empty_cells) energy_ = ((K1_AFM.i + K2_AFM.i * (1 - dotprod * dotprod)) * (1 - dotprod * dotprod) + (K1_AFM.j + K2_AFM.j * (1 - dotprod2 * dotprod2)) * (1 - dotprod2 * dotprod2)) / (2 * non_empty_cells);
 			}
 		}
 

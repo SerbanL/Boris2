@@ -31,7 +31,7 @@ using namespace std;
 template <typename PType, typename SType>
 class MatP :
 	public SimulationSharedData,
-	public ProgramState<MatP<PType, SType>, tuple<PType, PType, vector<double>, VEC<SType>, string, int, string, TEquation<double>, TEquation<double, double, double, double>>, tuple<>>
+	public ProgramState<MatP<PType, SType>, tuple<PType, PType, vector<double>, vector<double>, vector<double>, VEC<SType>, string, int, string, TEquation<double>, TEquation<double, double, double, double>>, tuple<>>
 {
 
 private:
@@ -52,13 +52,37 @@ private:
 	//array describing temperature scaling of value_at_0K. The index in this vector is the temperature value in K, i.e. values are set at 1K increments starting at 0K
 	vector<double> t_scaling;
 
+	//additional components for dual or vector quantities if set
+	vector<double> t_scaling_y;
+	vector<double> t_scaling_z;
+
 	//temperature scaling equation, if set : takes only the parameter T (temperature); Tc constant : Curie temperature, Tb constant : base temperature
 	TEquation<double> Tscaling_eq;
+
+	//pointers to special functions, calculated elsewhere
+	shared_ptr<Funcs_Special> pCurieWeiss = nullptr;
+	shared_ptr<Funcs_Special> pLongRelSus = nullptr;
+	shared_ptr<Funcs_Special> pCurieWeiss1 = nullptr;
+	shared_ptr<Funcs_Special> pCurieWeiss2 = nullptr;
+	shared_ptr<Funcs_Special> pLongRelSus1 = nullptr;
+	shared_ptr<Funcs_Special> pLongRelSus2 = nullptr;
+	shared_ptr<Funcs_Special> pAlpha1 = nullptr;
+	shared_ptr<Funcs_Special> pAlpha2 = nullptr;
 
 #if COMPILECUDA == 1
 	//as above but CUDA version : need to keep this here not in MatPCUDA since MatPCUDA is cu_obj managed and TEquationCUDA is meant to be held in cpu memory
 	//instead you need to obtain the top-level ManagedFunctionCUDA from TEquationCUDA and store that in MatPCUDA using a pointer; then it can be used in device functions.
 	TEquationCUDA<cuBReal> Tscaling_CUDAeq;
+
+	//CUDA versions of special functions, calculated elsewhere
+	cu_obj<ManagedFuncs_Special_CUDA>* pCurieWeiss_CUDA = nullptr;
+	cu_obj<ManagedFuncs_Special_CUDA>* pLongRelSus_CUDA = nullptr;
+	cu_obj<ManagedFuncs_Special_CUDA>* pCurieWeiss1_CUDA = nullptr;
+	cu_obj<ManagedFuncs_Special_CUDA>* pCurieWeiss2_CUDA = nullptr;
+	cu_obj<ManagedFuncs_Special_CUDA>* pLongRelSus1_CUDA = nullptr;
+	cu_obj<ManagedFuncs_Special_CUDA>* pLongRelSus2_CUDA = nullptr;
+	cu_obj<ManagedFuncs_Special_CUDA>* pAlpha1_CUDA = nullptr;
+	cu_obj<ManagedFuncs_Special_CUDA>* pAlpha2_CUDA = nullptr;
 #endif
 
 	//VEC with spatial dependence scaling of value_at_0K. The VEC rect must match the rect of the mesh to which this MatP applies.
@@ -140,7 +164,7 @@ public:
 		SimulationSharedData(),
 		Tscaling_eq({"T"}),
 		Sscaling_eq({"x", "y", "z", "t"}),
-		ProgramStateNames(this, { VINFO(value_at_0K), VINFO(current_value), VINFO(t_scaling), VINFO(s_scaling), VINFO(t_scaling_info), VINFO(s_scaling_type), VINFO(s_scaling_info), VINFO(Tscaling_eq), VINFO(Sscaling_eq) }, {})
+		ProgramStateNames(this, { VINFO(value_at_0K), VINFO(current_value), VINFO(t_scaling), VINFO(t_scaling_y), VINFO(t_scaling_z), VINFO(s_scaling), VINFO(t_scaling_info), VINFO(s_scaling_type), VINFO(s_scaling_info), VINFO(Tscaling_eq), VINFO(Sscaling_eq) }, {})
 	{
 		value_at_0K = PType();
 		current_value = value_at_0K;
@@ -151,7 +175,7 @@ public:
 		Tscaling_eq({ "T" }),
 		Sscaling_eq({ "x", "y", "z", "t" }),
 		value_at_0K(value),
-		ProgramStateNames(this, { VINFO(value_at_0K), VINFO(current_value), VINFO(t_scaling), VINFO(s_scaling), VINFO(t_scaling_info), VINFO(s_scaling_type), VINFO(s_scaling_info), VINFO(Tscaling_eq), VINFO(Sscaling_eq) }, {})
+		ProgramStateNames(this, { VINFO(value_at_0K), VINFO(current_value), VINFO(t_scaling), VINFO(t_scaling_y), VINFO(t_scaling_z), VINFO(s_scaling), VINFO(t_scaling_info), VINFO(s_scaling_type), VINFO(s_scaling_info), VINFO(Tscaling_eq), VINFO(Sscaling_eq) }, {})
 	{
 		current_value = value_at_0K;	//default to 0K value
 	}
@@ -211,10 +235,28 @@ public:
 	//---------Set scaling equation (temperature)
 
 	//set scaling text equation
-	void set_t_scaling_equation(string& equationText, vector_key<double>& userConstants, double T_Curie_material, double base_temperature);
+	void set_t_scaling_equation(string& equationText, vector_key<double>& userConstants, double T_Curie, double base_temperature);
 
 	//update set equations with user constants, mesh dimensions (where applicable), material Curie temperature and base temperature (where applicable)
-	bool update_equations(vector_key<double>& userConstants, DBL3 meshDimensions, double T_Curie_material, double base_temperature);
+	bool update_equations(vector_key<double>& userConstants, DBL3 meshDimensions, double T_Curie, double base_temperature);
+
+	//set special functions in text equation, also increasing ref count locally if passed in : the Funcs_Special objects are computed externally.
+	void set_t_scaling_special_functions(
+		shared_ptr<Funcs_Special> pCurieWeiss_ = nullptr,
+		shared_ptr<Funcs_Special> pLongRelSus_ = nullptr,
+		shared_ptr<Funcs_Special> pCurieWeiss1_ = nullptr, shared_ptr<Funcs_Special> pCurieWeiss2_ = nullptr,
+		shared_ptr<Funcs_Special> pLongRelSus1_ = nullptr, shared_ptr<Funcs_Special> pLongRelSus2_ = nullptr,
+		shared_ptr<Funcs_Special> pAlpha1_ = nullptr, shared_ptr<Funcs_Special> pAlpha2_ = nullptr);
+
+#if COMPILECUDA == 1
+	//set special functions in text equation, also increasing ref count locally if passed in : the Funcs_Special objects are computed externally.
+	void set_t_scaling_special_functions_CUDA(
+		cu_obj<ManagedFuncs_Special_CUDA>* pCurieWeiss_CUDA_,
+		cu_obj<ManagedFuncs_Special_CUDA>* pLongRelSus_CUDA_,
+		cu_obj<ManagedFuncs_Special_CUDA>* pCurieWeiss1_CUDA_, cu_obj<ManagedFuncs_Special_CUDA>* pCurieWeiss2_CUDA_,
+		cu_obj<ManagedFuncs_Special_CUDA>* pLongRelSus1_CUDA_, cu_obj<ManagedFuncs_Special_CUDA>* pLongRelSus2_CUDA_,
+		cu_obj<ManagedFuncs_Special_CUDA>* pAlpha1_CUDA_, cu_obj<ManagedFuncs_Special_CUDA>* pAlpha2_CUDA_);
+#endif
 
 	//---------Set scaling array (temperature)
 
@@ -222,10 +264,10 @@ public:
 	void clear_t_scaling(void);
 
 	//calculate t_scaling from given temperature dependence of scaling coefficients
-	bool set_t_scaling_array(vector<double>& temp_arr, vector<double>& scaling_arr);
+	bool set_t_scaling_array(vector<double>& temp_arr, vector<double>& scaling_arr, vector<double>& scaling_arr_y, vector<double>& scaling_arr_z);
 
 	//set scaling array directly, where the value indexes must correspond to temperature values (e.g. t_scaling[0] is for temperature 0 K, etc.).
-	void set_precalculated_t_scaling_array(vector<double>& scaling_arr);
+	void set_precalculated_t_scaling_array(vector<double>& scaling_arr, vector<double>& scaling_arr_y, vector<double>& scaling_arr_z);
 
 	//---------Set scaling info (temperature)
 
@@ -248,7 +290,7 @@ public:
 	//---------Get temperature dependence
 
 	//get temperature scaling coefficients as an array from 0K up to and including max_temperature
-	vector<double> get_temperature_scaling(double max_temperature) const;
+	bool get_temperature_scaling(double max_temperature, vector<double>& get_scaling_x, vector<double>& get_scaling_y, vector<double>& get_scaling_z);
 
 	//---------Get spatial variation
 
@@ -280,7 +322,7 @@ public:
 	bool is_t_equation_set(void) const { return Tscaling_eq.show_equation().length(); }
 
 	//does it have a spatial dependence?
-	bool is_sdep(void) const { return (s_scaling_type != MATPVAR_NONE); }
+	bool is_sdep(void) const { return (Sscaling_eq.is_set() || s_scaling.linear_size()); }
 
 	//does it have a spatial dependence specified using a text equation?
 	bool is_s_equation_set(void) const { return Sscaling_eq.is_set(); }
@@ -391,6 +433,8 @@ public:
 	//---------Special access methods
 
 	vector<double>& t_scaling_ref(void) { return t_scaling; }
+	vector<double>& t_scaling_y_ref(void) { return t_scaling_y; }
+	vector<double>& t_scaling_z_ref(void) { return t_scaling_z; }
 
 	VEC<SType>& s_scaling_ref(void) { return s_scaling; }
 
@@ -419,6 +463,10 @@ MatP<PType, SType>& MatP<PType, SType>::operator=(const MatP<PType, SType>& copy
 	//copy temperature scaling array:
 	clear_vector(t_scaling);
 	t_scaling = copy_this.t_scaling;
+	clear_vector(t_scaling_y);
+	t_scaling_y = copy_this.t_scaling_y;
+	clear_vector(t_scaling_z);
+	t_scaling_z = copy_this.t_scaling_z;
 
 	//now copy scaling equation
 	Tscaling_eq = copy_this.Tscaling_eq;
@@ -436,6 +484,16 @@ MatP<PType, SType>& MatP<PType, SType>::operator=(const MatP<PType, SType>& copy
 	s_scaling_type = copy_this.s_scaling_type;
 	s_scaling_info = copy_this.s_scaling_info;
 
+	//pointers to special functions, calculated elsewhere
+	pCurieWeiss = copy_this.pCurieWeiss;
+	pLongRelSus = copy_this.pLongRelSus;
+	pCurieWeiss1 = copy_this.pCurieWeiss1;
+	pCurieWeiss2 = copy_this.pCurieWeiss2;
+	pLongRelSus1 = copy_this.pLongRelSus1;
+	pLongRelSus2 = copy_this.pLongRelSus2;
+	pAlpha1 = copy_this.pAlpha1;
+	pAlpha2 = copy_this.pAlpha2;
+
 	//update cuda object also if set
 #if COMPILECUDA == 1
 	if (p_cu_obj_mpcuda) update_cuda_object();
@@ -448,8 +506,8 @@ MatP<PType, SType>& MatP<PType, SType>::operator=(const MatP<PType, SType>& copy
 
 //get value at given temperature and no spatial scaling, but do not update output (meant for use with non-uniform temperature; for uniform temperature it's faster to just read the value through the conversion operator)
 //Use with temperature dependence : YES, spatial variation : NO
-template <typename PType, typename SType>
-PType MatP<PType, SType>::get(double Temperature)
+template <>
+inline double MatP<double, double>::get(double Temperature)
 {
 	if (Tscaling_eq.is_set()) {
 
@@ -467,6 +525,115 @@ PType MatP<PType, SType>::get(double Temperature)
 		}
 		//for temperatures higher than the loaded array just use the last scaling value
 		else return (value_at_0K * t_scaling.back());
+	}
+	//no temperature dependence set
+	else return value_at_0K;
+}
+
+template <>
+inline DBL2 MatP<DBL2, double>::get(double Temperature)
+{
+	if (Tscaling_eq.is_set()) {
+
+		//use pre-set equation
+
+		//component-by-component product if dual equation
+		if (Tscaling_eq.is_set_dual()) return (value_at_0K & Tscaling_eq.evaluate_dual(Temperature));
+		
+		//just constant multiplication for a scalar equation
+		else return value_at_0K * Tscaling_eq.evaluate(Temperature);
+	}
+	else if (t_scaling.size()) {
+
+		//use custom temperature scaling
+		int index = (int)floor_epsilon(Temperature);
+		
+		if (index + 1 < (int)t_scaling.size() && index >= 0) {
+
+			//use linear interpolation for temperature in range index to index + 1
+
+			//component-by-component product if dual equation
+			if (t_scaling_y.size()) return (value_at_0K & (DBL2(t_scaling[index], t_scaling_y[index]) * (double(index + 1) - Temperature) + DBL2(t_scaling[index + 1], t_scaling_y[index + 1]) * (Temperature - double(index))));
+
+			//just constant multiplication for a scalar equation
+			else return (value_at_0K * (t_scaling[index] * (double(index + 1) - Temperature) + t_scaling[index + 1] * (Temperature - double(index))));
+		}
+		//for temperatures higher than the loaded array just use the last scaling value
+		else {
+
+			if (t_scaling_y.size()) return (value_at_0K & DBL2(t_scaling.back(), t_scaling_y.back()));
+			else return (value_at_0K * t_scaling.back());
+		}
+	}
+	//no temperature dependence set
+	else return value_at_0K;
+}
+
+template <>
+inline DBL3 MatP<DBL3, double>::get(double Temperature)
+{
+	if (Tscaling_eq.is_set()) {
+
+		//component-by-component product if vector equation
+		if (Tscaling_eq.is_set_vector()) return (value_at_0K & Tscaling_eq.evaluate_vector(Temperature));
+		
+		//just constant multiplication for a scalar equation
+		else return value_at_0K * Tscaling_eq.evaluate(Temperature);
+	}
+	else if (t_scaling.size()) {
+
+		//use custom temperature scaling
+		int index = (int)floor_epsilon(Temperature);
+		if (index + 1 < (int)t_scaling.size() && index >= 0) {
+
+			//component-by-component product if vector equation
+			if (t_scaling_z.size()) return (value_at_0K & (DBL3(t_scaling[index], t_scaling_y[index], t_scaling_z[index]) * (double(index + 1) - Temperature) + DBL3(t_scaling[index + 1], t_scaling_y[index + 1], t_scaling_z[index + 1]) * (Temperature - double(index))));
+
+			//just constant multiplication for a scalar equation
+			else return (value_at_0K * (t_scaling[index] * (double(index + 1) - Temperature) + t_scaling[index + 1] * (Temperature - double(index))));
+		}
+		//for temperatures higher than the loaded array just use the last scaling value
+		else {
+
+			if (t_scaling_z.size()) return (value_at_0K & DBL3(t_scaling.back(), t_scaling_y.back(), t_scaling_z.back()));
+			else return (value_at_0K * t_scaling.back());
+		}
+	}
+	//no temperature dependence set
+	else return value_at_0K;
+}
+
+template <>
+inline DBL3 MatP<DBL3, DBL3>::get(double Temperature)
+{
+	if (Tscaling_eq.is_set()) {
+
+		//use pre-set equation
+
+		//component-by-component product if vector equation
+		if (Tscaling_eq.is_set_vector()) return (value_at_0K & Tscaling_eq.evaluate_vector(Temperature));
+
+		//just constant multiplication for a scalar equation
+		else return value_at_0K * Tscaling_eq.evaluate(Temperature);
+	}
+	else if (t_scaling.size()) {
+
+		//use custom temperature scaling
+		int index = (int)floor_epsilon(Temperature);
+		if (index + 1 < (int)t_scaling.size() && index >= 0) {
+
+			//component-by-component product if vector equation
+			if (t_scaling_z.size()) return (value_at_0K & (DBL3(t_scaling[index], t_scaling_y[index], t_scaling_z[index]) * (double(index + 1) - Temperature) + DBL3(t_scaling[index + 1], t_scaling_y[index + 1], t_scaling_z[index + 1]) * (Temperature - double(index))));
+
+			//just constant multiplication for a scalar equation
+			else return (value_at_0K * (t_scaling[index] * (double(index + 1) - Temperature) + t_scaling[index + 1] * (Temperature - double(index))));
+		}
+		//for temperatures higher than the loaded array just use the last scaling value
+		else {
+
+			if (t_scaling_z.size()) return (value_at_0K & DBL3(t_scaling.back(), t_scaling_y.back(), t_scaling_z.back()));
+			else return (value_at_0K * t_scaling.back());
+		}
 	}
 	//no temperature dependence set
 	else return value_at_0K;
@@ -550,8 +717,14 @@ inline double MatP<double, double>::get(const DBL3& position, double stime, doub
 	if (Tscaling_eq.is_set()) {
 
 		//use pre-set equation
-		if (s_scaling_type == MATPVAR_EQUATION) return (value_at_0K * Tscaling_eq.evaluate(Temperature)) * Sscaling_eq.evaluate(position.x, position.y, position.z, stime);
-		else return (value_at_0K * Tscaling_eq.evaluate(Temperature)) * s_scaling[position];
+		if (s_scaling_type == MATPVAR_EQUATION) {
+
+			return (value_at_0K * Tscaling_eq.evaluate(Temperature)) * Sscaling_eq.evaluate(position.x, position.y, position.z, stime);
+		}
+		else {
+
+			return (value_at_0K * Tscaling_eq.evaluate(Temperature)) * s_scaling[position];
+		}
 	}
 	else if (t_scaling.size()) {
 
@@ -584,24 +757,36 @@ inline DBL2 MatP<DBL2, double>::get(const DBL3& position, double stime, double T
 	if (Tscaling_eq.is_set()) {
 
 		//use pre-set equation
-		if (s_scaling_type == MATPVAR_EQUATION) return (value_at_0K * Tscaling_eq.evaluate(Temperature)) * Sscaling_eq.evaluate(position.x, position.y, position.z, stime);
-		else return (value_at_0K * Tscaling_eq.evaluate(Temperature)) * s_scaling[position];
+
+		double s = (s_scaling_type == MATPVAR_EQUATION ? Sscaling_eq.evaluate(position.x, position.y, position.z, stime) : s_scaling[position]);
+
+		//component-by-component product if dual equation
+		if (Tscaling_eq.is_set_dual()) return (value_at_0K & Tscaling_eq.evaluate_dual(Temperature)) * s;
+
+		//just constant multiplication for a scalar equation
+		else return value_at_0K * Tscaling_eq.evaluate(Temperature) * s;
 	}
 	else if (t_scaling.size()) {
+
+		double s = (s_scaling_type == MATPVAR_EQUATION ? Sscaling_eq.evaluate(position.x, position.y, position.z, stime) : s_scaling[position]);
 
 		//use custom temperature scaling
 		int index = (int)floor_epsilon(Temperature);
 		if (index + 1 < (int)t_scaling.size() && index >= 0) {
 
 			//use linear interpolation for temperature in range index to index + 1
-			if (s_scaling_type == MATPVAR_EQUATION) return (value_at_0K * (t_scaling[index] * (double(index + 1) - Temperature) + t_scaling[index + 1] * (Temperature - double(index)))) * Sscaling_eq.evaluate(position.x, position.y, position.z, stime);
-			else return (value_at_0K * (t_scaling[index] * (double(index + 1) - Temperature) + t_scaling[index + 1] * (Temperature - double(index)))) * s_scaling[position];
+
+			//component-by-component product if dual equation
+			if (t_scaling_y.size()) return (value_at_0K & (DBL2(t_scaling[index], t_scaling_y[index]) * (double(index + 1) - Temperature) + DBL2(t_scaling[index + 1], t_scaling_y[index + 1]) * (Temperature - double(index)))) * s;
+
+			//just constant multiplication for a scalar equation
+			else return (value_at_0K * (t_scaling[index] * (double(index + 1) - Temperature) + t_scaling[index + 1] * (Temperature - double(index)))) * s;
 		}
 		//for temperatures higher than the loaded array just use the last scaling value
 		else {
 
-			if (s_scaling_type == MATPVAR_EQUATION) return (value_at_0K * t_scaling.back()) * Sscaling_eq.evaluate(position.x, position.y, position.z, stime);
-			else return (value_at_0K * t_scaling.back()) * s_scaling[position];
+			if (t_scaling_y.size()) return (value_at_0K & DBL2(t_scaling.back(), t_scaling_y.back())) * s;
+			else return (value_at_0K * t_scaling.back()) * s;
 		}
 	}
 	//no temperature dependence set
@@ -617,25 +802,35 @@ inline DBL3 MatP<DBL3, double>::get(const DBL3& position, double stime, double T
 {
 	if (Tscaling_eq.is_set()) {
 
-		//use pre-set equation
-		if (s_scaling_type == MATPVAR_EQUATION) return (value_at_0K * Tscaling_eq.evaluate(Temperature)) * Sscaling_eq.evaluate(position.x, position.y, position.z, stime);
-		else return (value_at_0K * Tscaling_eq.evaluate(Temperature)) * s_scaling[position];
+		double s = (s_scaling_type == MATPVAR_EQUATION ? Sscaling_eq.evaluate(position.x, position.y, position.z, stime) : s_scaling[position]);
+
+		//component-by-component product if dual equation
+		if (Tscaling_eq.is_set_vector()) return (value_at_0K & Tscaling_eq.evaluate_vector(Temperature)) * s;
+
+		//just constant multiplication for a scalar equation
+		else return value_at_0K * Tscaling_eq.evaluate(Temperature) * s;
 	}
 	else if (t_scaling.size()) {
+
+		double s = (s_scaling_type == MATPVAR_EQUATION ? Sscaling_eq.evaluate(position.x, position.y, position.z, stime) : s_scaling[position]);
 
 		//use custom temperature scaling
 		int index = (int)floor_epsilon(Temperature);
 		if (index + 1 < (int)t_scaling.size() && index >= 0) {
 
 			//use linear interpolation for temperature in range index to index + 1
-			if (s_scaling_type == MATPVAR_EQUATION) return (value_at_0K * (t_scaling[index] * (double(index + 1) - Temperature) + t_scaling[index + 1] * (Temperature - double(index)))) * Sscaling_eq.evaluate(position.x, position.y, position.z, stime);
-			else return (value_at_0K * (t_scaling[index] * (double(index + 1) - Temperature) + t_scaling[index + 1] * (Temperature - double(index)))) * s_scaling[position];
+			
+			//component-by-component product if vector equation
+			if (t_scaling_z.size()) return (value_at_0K & (DBL3(t_scaling[index], t_scaling_y[index], t_scaling_z[index]) * (double(index + 1) - Temperature) + DBL3(t_scaling[index + 1], t_scaling_y[index + 1], t_scaling_z[index + 1]) * (Temperature - double(index)))) * s;
+
+			//just constant multiplication for a scalar equation
+			else return (value_at_0K * (t_scaling[index] * (double(index + 1) - Temperature) + t_scaling[index + 1] * (Temperature - double(index)))) * s;
 		}
 		//for temperatures higher than the loaded array just use the last scaling value
 		else {
 
-			if (s_scaling_type == MATPVAR_EQUATION) return (value_at_0K * t_scaling.back()) * Sscaling_eq.evaluate(position.x, position.y, position.z, stime);
-			else return (value_at_0K * t_scaling.back()) * s_scaling[position];
+			if (t_scaling_z.size()) return (value_at_0K & DBL3(t_scaling.back(), t_scaling_y.back(), t_scaling_z.back())) * s;
+			else return (value_at_0K * t_scaling.back()) * s;
 		}
 	}
 	//no temperature dependence set
@@ -652,24 +847,36 @@ inline DBL3 MatP<DBL3, DBL3>::get(const DBL3& position, double stime, double Tem
 	if (Tscaling_eq.is_set()) {
 
 		//use pre-set equation
-		if (s_scaling_type == MATPVAR_EQUATION) return rotate_polar(value_at_0K * Tscaling_eq.evaluate(Temperature), Sscaling_eq.evaluate_vector(position.x, position.y, position.z, stime));
-		else return rotate_polar(value_at_0K * Tscaling_eq.evaluate(Temperature), s_scaling[position]);
+
+		DBL3 s = (s_scaling_type == MATPVAR_EQUATION ? Sscaling_eq.evaluate_vector(position.x, position.y, position.z, stime) : s_scaling[position]);
+
+		//component-by-component product if dual equation
+		if (Tscaling_eq.is_set_vector()) return rotate_polar(value_at_0K & Tscaling_eq.evaluate_vector(Temperature), s);
+
+		//just constant multiplication for a scalar equation
+		else return rotate_polar(value_at_0K * Tscaling_eq.evaluate(Temperature), s);
 	}
 	else if (t_scaling.size()) {
+
+		DBL3 s = (s_scaling_type == MATPVAR_EQUATION ? Sscaling_eq.evaluate_vector(position.x, position.y, position.z, stime) : s_scaling[position]);
 
 		//use custom temperature scaling
 		int index = (int)floor_epsilon(Temperature);
 		if (index + 1 < (int)t_scaling.size() && index >= 0) {
 
 			//use linear interpolation for temperature in range index to index + 1
-			if (s_scaling_type == MATPVAR_EQUATION) return rotate_polar(value_at_0K * (t_scaling[index] * (double(index + 1) - Temperature) + t_scaling[index + 1] * (Temperature - double(index))), Sscaling_eq.evaluate_vector(position.x, position.y, position.z, stime));
-			else return rotate_polar(value_at_0K * (t_scaling[index] * (double(index + 1) - Temperature) + t_scaling[index + 1] * (Temperature - double(index))), s_scaling[position]);
+
+			//component-by-component product if vector equation
+			if (t_scaling_z.size()) return rotate_polar(value_at_0K & (DBL3(t_scaling[index], t_scaling_y[index], t_scaling_z[index]) * (double(index + 1) - Temperature) + DBL3(t_scaling[index + 1], t_scaling_y[index + 1], t_scaling_z[index + 1]) * (Temperature - double(index))), s);
+
+			//just constant multiplication for a scalar equation
+			else return rotate_polar(value_at_0K * (t_scaling[index] * (double(index + 1) - Temperature) + t_scaling[index + 1] * (Temperature - double(index))), s);
 		}
 		//for temperatures higher than the loaded array just use the last scaling value
 		else {
 
-			if (s_scaling_type == MATPVAR_EQUATION) return rotate_polar(value_at_0K * t_scaling.back(), Sscaling_eq.evaluate_vector(position.x, position.y, position.z, stime));
-			else return rotate_polar(value_at_0K * t_scaling.back(), s_scaling[position]);
+			if (t_scaling_z.size()) return rotate_polar(value_at_0K & DBL3(t_scaling.back(), t_scaling_y.back(), t_scaling_z.back()), s);
+			else return rotate_polar(value_at_0K * t_scaling.back(), s);
 		}
 	}
 	//no temperature dependence set
@@ -696,25 +903,7 @@ void MatP<PType, SType>::update(double Temperature)
 template <typename PType, typename SType>
 void MatP<PType, SType>::set_current(double Temperature)
 {
-	if (Tscaling_eq.is_set()) {
-
-		//use pre-set equation
-		current_value = value_at_0K * Tscaling_eq.evaluate(Temperature);
-	}
-	else if (t_scaling.size()) {
-
-		//use custom temperature scaling
-		int index = (int)floor_epsilon(Temperature);
-		if (index + 1 < (int)t_scaling.size() && index >= 0) {
-
-			//use linear interpolation for temperature in range index to index + 1
-			current_value = (value_at_0K * (t_scaling[index] * (double(index + 1) - Temperature) + t_scaling[index + 1] * (Temperature - double(index))));
-		}
-		//for temperatures higher than the loaded array just use the last scaling value
-		else current_value = (value_at_0K * t_scaling.back());
-	}
-	//no temperature dependence set
-	else current_value = value_at_0K;
+	current_value = get(Temperature);
 }
 
 //---------Set value
@@ -736,7 +925,7 @@ MatP<PType, SType>& MatP<PType, SType>::operator=(PType set_value)
 
 //set scaling text equation
 template <typename PType, typename SType>
-void MatP<PType, SType>::set_t_scaling_equation(string& equationText, vector_key<double>& userConstants, double T_Curie_material, double base_temperature)
+void MatP<PType, SType>::set_t_scaling_equation(string& equationText, vector_key<double>& userConstants, double T_Curie, double base_temperature)
 {
 	vector<pair<string, double>> constants(userConstants.size());
 	for (int idx = 0; idx < constants.size(); idx++) {
@@ -745,10 +934,15 @@ void MatP<PType, SType>::set_t_scaling_equation(string& equationText, vector_key
 	}
 
 	Tscaling_eq.set_constants(constants, false);
-	Tscaling_eq.make_from_string(equationText, { {"Tc", T_Curie_material}, {"Tb", base_temperature} });
+	Tscaling_eq.make_from_string(equationText, { {"Tc", T_Curie}, {"Tb", base_temperature} });
 
+	//set special function in Text equation (pre-calculated)
+	set_t_scaling_special_functions();
+	   	  
 	//clear scaling array - you either use scaling array method, or equation - or none - not both
 	t_scaling.clear();
+	t_scaling_y.clear();
+	t_scaling_z.clear();
 
 	//set temperature scaling info
 	t_scaling_info = Tscaling_eq.show_equation();
@@ -762,7 +956,7 @@ void MatP<PType, SType>::set_t_scaling_equation(string& equationText, vector_key
 
 //update set equtions with user constants, mesh dimensions (where applicable), material Curie temperature and base temperature (where applicable)
 template <typename PType, typename SType>
-bool MatP<PType, SType>::update_equations(vector_key<double>& userConstants, DBL3 meshDimensions, double T_Curie_material, double base_temperature)
+bool MatP<PType, SType>::update_equations(vector_key<double>& userConstants, DBL3 meshDimensions, double T_Curie, double base_temperature)
 {
 	bool success = true;
 
@@ -773,9 +967,12 @@ bool MatP<PType, SType>::update_equations(vector_key<double>& userConstants, DBL
 	}
 
 	Tscaling_eq.set_constants(constants, false);
-	Tscaling_eq.set_constant("Tc", T_Curie_material, false);
+	Tscaling_eq.set_constant("Tc", T_Curie, false);
 	Tscaling_eq.set_constant("Tb", base_temperature, false);
 	success = Tscaling_eq.remake_equation();
+
+	//set special functions in Text equation (pre-calculated)
+	if (success) set_t_scaling_special_functions();
 
 	Sscaling_eq.set_constants(constants, false);
 	Sscaling_eq.set_constants({ {"Lx", meshDimensions.x}, {"Ly", meshDimensions.y}, {"Lz", meshDimensions.z} }, false);
@@ -788,6 +985,132 @@ bool MatP<PType, SType>::update_equations(vector_key<double>& userConstants, DBL
 	return success;
 }
 
+//set special functions in text equation, also increasing ref count locally if passed in : the Funcs_Special objects are computed externally.
+template <typename PType, typename SType>
+void MatP<PType, SType>::set_t_scaling_special_functions(
+	shared_ptr<Funcs_Special> pCurieWeiss_,
+	shared_ptr<Funcs_Special> pLongRelSus_,
+	shared_ptr<Funcs_Special> pCurieWeiss1_, shared_ptr<Funcs_Special> pCurieWeiss2_,
+	shared_ptr<Funcs_Special> pLongRelSus1_, shared_ptr<Funcs_Special> pLongRelSus2_,
+	shared_ptr<Funcs_Special> pAlpha1_, shared_ptr<Funcs_Special> pAlpha2_)
+{
+	//increase reference count locally if passed in
+	if (pCurieWeiss_) pCurieWeiss = pCurieWeiss_;
+	if (pLongRelSus_) pLongRelSus = pLongRelSus_;
+	if (pCurieWeiss1_) pCurieWeiss1 = pCurieWeiss1_;
+	if (pCurieWeiss2_) pCurieWeiss2 = pCurieWeiss2_;
+	if (pLongRelSus1_) pLongRelSus1 = pLongRelSus1_;
+	if (pLongRelSus2_) pLongRelSus2 = pLongRelSus2_;
+	if (pAlpha1_) pAlpha1 = pAlpha1_;
+	if (pAlpha2_) pAlpha2 = pAlpha2_;
+
+	//set them in text equation if available
+	if (Tscaling_eq.is_set()) {
+
+		if (pCurieWeiss) {
+
+			Tscaling_eq.Set_SpecialFunction(EqComp::FUNC_CURIEWEISS, pCurieWeiss);
+
+#if COMPILECUDA == 1
+			//Update CUDA text equation also : set calculated special function in GPU memory, then make sure it's also set in the CUDA text equation
+			if (pCurieWeiss_CUDA) Tscaling_CUDAeq.Set_SpecialFunction(EqComp::FUNC_CURIEWEISS, pCurieWeiss_CUDA);
+#endif
+		}
+
+		if (pCurieWeiss1 && pCurieWeiss2) {
+
+			Tscaling_eq.Set_SpecialFunction(EqComp::FUNC_CURIEWEISS1, pCurieWeiss1);
+			Tscaling_eq.Set_SpecialFunction(EqComp::FUNC_CURIEWEISS2, pCurieWeiss2);
+
+#if COMPILECUDA == 1
+			//Update CUDA text equation also : set calculated special function in GPU memory, then make sure it's also set in the CUDA text equation
+			if (pCurieWeiss1_CUDA && pCurieWeiss2_CUDA) {
+
+				Tscaling_CUDAeq.Set_SpecialFunction(EqComp::FUNC_CURIEWEISS1, pCurieWeiss1_CUDA);
+				Tscaling_CUDAeq.Set_SpecialFunction(EqComp::FUNC_CURIEWEISS2, pCurieWeiss2_CUDA);
+			}
+#endif
+		}
+
+		if (pLongRelSus) {
+
+			Tscaling_eq.Set_SpecialFunction(EqComp::FUNC_LONGRELSUS, pLongRelSus);
+
+#if COMPILECUDA == 1
+			//Update CUDA text equation also : set calculated special function in GPU memory, then make sure it's also set in the CUDA text equation
+			if (pLongRelSus_CUDA) Tscaling_CUDAeq.Set_SpecialFunction(EqComp::FUNC_LONGRELSUS, pLongRelSus_CUDA);
+#endif
+		}
+
+		if (pLongRelSus1 && pLongRelSus2) {
+			
+			Tscaling_eq.Set_SpecialFunction(EqComp::FUNC_LONGRELSUS1, pLongRelSus1);
+			Tscaling_eq.Set_SpecialFunction(EqComp::FUNC_LONGRELSUS2, pLongRelSus2);
+
+#if COMPILECUDA == 1
+			//Update CUDA text equation also : set calculated special function in GPU memory, then make sure it's also set in the CUDA text equation
+			if (pLongRelSus1_CUDA && pLongRelSus2_CUDA) {
+
+				Tscaling_CUDAeq.Set_SpecialFunction(EqComp::FUNC_LONGRELSUS1, pLongRelSus1_CUDA);
+				Tscaling_CUDAeq.Set_SpecialFunction(EqComp::FUNC_LONGRELSUS2, pLongRelSus2_CUDA);
+			}
+#endif
+		}
+
+		if (pAlpha1 && pAlpha2) {
+
+			Tscaling_eq.Set_SpecialFunction(EqComp::FUNC_ALPHA1, pAlpha1);
+			Tscaling_eq.Set_SpecialFunction(EqComp::FUNC_ALPHA2, pAlpha2);
+
+#if COMPILECUDA == 1
+			//Update CUDA text equation also : set calculated special function in GPU memory, then make sure it's also set in the CUDA text equation
+			if (pAlpha1_CUDA && pAlpha2_CUDA) {
+
+				Tscaling_CUDAeq.Set_SpecialFunction(EqComp::FUNC_ALPHA1, pAlpha1_CUDA);
+				Tscaling_CUDAeq.Set_SpecialFunction(EqComp::FUNC_ALPHA1, pAlpha2_CUDA);
+			}
+#endif
+		}
+	}
+
+#if COMPILECUDA == 1
+	if (p_cu_obj_mpcuda) update_cuda_object();
+#endif
+}
+
+#if COMPILECUDA == 1
+//set special functions in text equation, also increasing ref count locally if passed in : the Funcs_Special objects are computed externally.
+template <typename PType, typename SType>
+void MatP<PType, SType>::set_t_scaling_special_functions_CUDA(
+	cu_obj<ManagedFuncs_Special_CUDA>* pCurieWeiss_CUDA_,
+	cu_obj<ManagedFuncs_Special_CUDA>* pLongRelSus_CUDA_,
+	cu_obj<ManagedFuncs_Special_CUDA>* pCurieWeiss1_CUDA_, cu_obj<ManagedFuncs_Special_CUDA>* pCurieWeiss2_CUDA_,
+	cu_obj<ManagedFuncs_Special_CUDA>* pLongRelSus1_CUDA_, cu_obj<ManagedFuncs_Special_CUDA>* pLongRelSus2_CUDA_,
+	cu_obj<ManagedFuncs_Special_CUDA>* pAlpha1_CUDA_, cu_obj<ManagedFuncs_Special_CUDA>* pAlpha2_CUDA_)
+{
+	pCurieWeiss_CUDA = pCurieWeiss_CUDA_;
+	pLongRelSus_CUDA = pLongRelSus_CUDA_;
+	pCurieWeiss1_CUDA = pCurieWeiss1_CUDA_;
+	pCurieWeiss2_CUDA = pCurieWeiss2_CUDA_;
+	pLongRelSus1_CUDA = pLongRelSus1_CUDA_;
+	pLongRelSus2_CUDA = pLongRelSus2_CUDA_;
+	pAlpha1_CUDA = pAlpha1_CUDA_;
+	pAlpha2_CUDA = pAlpha2_CUDA_;
+
+	if (Tscaling_eq.is_set()) {
+
+		Tscaling_CUDAeq.Set_SpecialFunction(EqComp::FUNC_CURIEWEISS, pCurieWeiss_CUDA);
+		Tscaling_CUDAeq.Set_SpecialFunction(EqComp::FUNC_LONGRELSUS, pLongRelSus_CUDA);
+		Tscaling_CUDAeq.Set_SpecialFunction(EqComp::FUNC_CURIEWEISS1, pCurieWeiss1_CUDA);
+		Tscaling_CUDAeq.Set_SpecialFunction(EqComp::FUNC_CURIEWEISS2, pCurieWeiss2_CUDA);
+		Tscaling_CUDAeq.Set_SpecialFunction(EqComp::FUNC_LONGRELSUS1, pLongRelSus1_CUDA);
+		Tscaling_CUDAeq.Set_SpecialFunction(EqComp::FUNC_LONGRELSUS2, pLongRelSus2_CUDA);
+		Tscaling_CUDAeq.Set_SpecialFunction(EqComp::FUNC_ALPHA1, pAlpha1_CUDA);
+		Tscaling_CUDAeq.Set_SpecialFunction(EqComp::FUNC_ALPHA2, pAlpha2_CUDA);
+	}
+}
+#endif
+
 //---------Set scaling array
 
 //clear any temperature dependence
@@ -799,6 +1122,8 @@ void MatP<PType, SType>::clear_t_scaling(void)
 
 	//clear scaling array
 	t_scaling.clear();
+	t_scaling_y.clear();
+	t_scaling_z.clear();
 
 	//temperature scaling info
 	t_scaling_info = temperature_dependence_type(MATPTDEP_NONE);
@@ -813,64 +1138,78 @@ void MatP<PType, SType>::clear_t_scaling(void)
 
 //calculate t_scaling from given temperature dependence of scaling coefficients
 template <typename PType, typename SType>
-bool MatP<PType, SType>::set_t_scaling_array(vector<double>& temp_arr, vector<double>& scaling_arr)
+bool MatP<PType, SType>::set_t_scaling_array(vector<double>& temp_arr, vector<double>& scaling_arr, vector<double>& scaling_arr_y, vector<double>& scaling_arr_z)
 {
 	//vectors must have same size and must have at least 2 points
 	if (temp_arr.size() < 2 || temp_arr.size() != scaling_arr.size()) return false;
+	if (scaling_arr_y.size() && temp_arr.size() != scaling_arr_y.size()) return false;
+	if (scaling_arr_z.size() && temp_arr.size() != scaling_arr_z.size()) return false;
+	if (scaling_arr_z.size() && !scaling_arr_y.size()) return false;
 
-	//make sure the temperature values are in increasing order
-	quicksort(temp_arr, scaling_arr);
+	auto calculate_t_scaling = [](vector<double>& temp_arr, vector<double>& scaling_arr, vector<double>& t_scaling) -> bool {
 
-	//temperature values cannot be negative
-	if (temp_arr[0] < 0) return false;
+		//make sure the temperature values are in increasing order
+		quicksort(temp_arr, scaling_arr);
 
-	//make sure temperature values are not repeated - values must be strictly increasing
-	delete_repeats(temp_arr, scaling_arr);
+		//temperature values cannot be negative
+		if (temp_arr[0] < 0) return false;
 
-	//set tscaling size : covers temperature from 0K up to maximum possible temperature in 1K increments.
-	double max_temp = minimum(temp_arr.back(), MAX_TEMPERATURE);
-	t_scaling.resize((size_t)(floor_epsilon(max_temp) + 1));
+		//make sure temperature values are not repeated - values must be strictly increasing
+		delete_repeats(temp_arr, scaling_arr);
 
-	int temp_arr_idx = 0;
+		//set tscaling size : covers temperature from 0K up to maximum possible temperature in 1K increments.
+		double max_temp = minimum(temp_arr.back(), MAX_TEMPERATURE);
+		t_scaling.resize((size_t)(floor_epsilon(max_temp) + 1));
 
-	//first temperature point : 0K
-	double temp_a = 0;
-	//next temperature point - will use interpolation to fill in any integer temperature values in between; this may coincide with temp_a
-	double temp_b = temp_arr[0];
+		int temp_arr_idx = 0;
 
-	//first scaling coefficient (at 0K) : extrapolate from first 2 points in the arrays
-	double scaling_a = interpolate(DBL2(temp_arr[0], scaling_arr[0]), DBL2(temp_arr[1], scaling_arr[1]), 0);
-	//next scaling coefficient
-	double scaling_b = scaling_arr[0];
+		//first temperature point : 0K
+		double temp_a = 0;
+		//next temperature point - will use interpolation to fill in any integer temperature values in between; this may coincide with temp_a
+		double temp_b = temp_arr[0];
 
-	//we know what the first value must be:
-	t_scaling[temp_a] = scaling_a;
+		//first scaling coefficient (at 0K) : extrapolate from first 2 points in the arrays
+		double scaling_a = interpolate(DBL2(temp_arr[0], scaling_arr[0]), DBL2(temp_arr[1], scaling_arr[1]), 0);
+		//next scaling coefficient
+		double scaling_b = scaling_arr[0];
 
-	for (int t_value = 1; t_value < (int)t_scaling.size(); t_value++) {
+		//we know what the first value must be:
+		t_scaling[temp_a] = scaling_a;
 
-		//have we finished this [Ta, Tb) interval? Use a while since the temperature points in temp_arr may be finely spaced (less than 1K intervals)
-		while ((double)t_value >= temp_b) {
-		
-			temp_arr_idx++;
+		for (int t_value = 1; t_value < (int)t_scaling.size(); t_value++) {
 
-			//have we reached the end? i.e. was temp_b the last temperature value in temp_arr? This can only happen if temp_b is an integer value, in which case t_value = temp_b now.
-			if (temp_arr_idx >= (int)temp_arr.size()) {
+			//have we finished this [Ta, Tb) interval? Use a while since the temperature points in temp_arr may be finely spaced (less than 1K intervals)
+			while ((double)t_value >= temp_b) {
 
-				t_scaling[t_value] = scaling_arr.back();
-				break;
+				temp_arr_idx++;
+
+				//have we reached the end? i.e. was temp_b the last temperature value in temp_arr? This can only happen if temp_b is an integer value, in which case t_value = temp_b now.
+				if (temp_arr_idx >= (int)temp_arr.size()) {
+
+					t_scaling[t_value] = scaling_arr.back();
+					break;
+				}
+
+				//next [Ta, Tb) interval
+				temp_a = temp_b;
+				temp_b = temp_arr[temp_arr_idx];
+
+				scaling_a = scaling_b;
+				scaling_b = scaling_arr[temp_arr_idx];
 			}
 
-			//next [Ta, Tb) interval
-			temp_a = temp_b;
-			temp_b = temp_arr[temp_arr_idx];
-
-			scaling_a = scaling_b;
-			scaling_b = scaling_arr[temp_arr_idx];
+			//t_value is now in the interval [temp_a, temp_b). Set t_scaling value at t_value index using interpolation
+			t_scaling[t_value] = interpolate(DBL2(temp_a, scaling_a), DBL2(temp_b, scaling_b), t_value);
 		}
 
-		//t_value is now in the interval [temp_a, temp_b). Set t_scaling value at t_value index using interpolation
-		t_scaling[t_value] = interpolate(DBL2(temp_a, scaling_a), DBL2(temp_b, scaling_b), t_value);
-	}
+		return true;
+	};
+
+	if (!calculate_t_scaling(temp_arr, scaling_arr, t_scaling)) return false;
+
+	//further components if required
+	if (scaling_arr_y.size()) if (!calculate_t_scaling(temp_arr, scaling_arr_y, t_scaling_y)) return false;
+	if (scaling_arr_z.size()) if (!calculate_t_scaling(temp_arr, scaling_arr_z, t_scaling_z)) return false;
 
 	//no scaling equation - using array instead
 	Tscaling_eq.clear();
@@ -888,9 +1227,12 @@ bool MatP<PType, SType>::set_t_scaling_array(vector<double>& temp_arr, vector<do
 }
 
 template <typename PType, typename SType>
-void MatP<PType, SType>::set_precalculated_t_scaling_array(vector<double>& scaling_arr)
+void MatP<PType, SType>::set_precalculated_t_scaling_array(vector<double>& scaling_arr, vector<double>& scaling_arr_y, vector<double>& scaling_arr_z)
 {
 	t_scaling = scaling_arr;
+
+	if (scaling_arr_y.size() && scaling_arr_y.size() == scaling_arr.size()) t_scaling_y = scaling_arr_y;
+	if (scaling_arr_z.size() && scaling_arr_z.size() == scaling_arr.size()) t_scaling_z = scaling_arr_z;
 
 	//no scaling equation - using array instead
 	Tscaling_eq.clear();
@@ -1476,33 +1818,55 @@ bool MatP<PType, SType>::set_s_voronoirotation3d(DBL3 h, Rect rect, DBL2 theta, 
 
 //get temperature scaling coefficients as an array from 0K up to and including max_temperature
 template <typename PType, typename SType>
-vector<double> MatP<PType, SType>::get_temperature_scaling(double max_temperature) const
+bool MatP<PType, SType>::get_temperature_scaling(double max_temperature, vector<double>& get_scaling_x, vector<double>& get_scaling_y, vector<double>& get_scaling_z)
 {
-	vector<double> get_scaling;
+	if (max_temperature < 0 || max_temperature > MAX_TEMPERATURE) return false;
 
-	if (max_temperature < 0 || max_temperature > MAX_TEMPERATURE) return get_scaling;
+	if (!malloc_vector(get_scaling_x, (int)floor_epsilon(max_temperature) + 1)) return false;
 
-	get_scaling.resize((int)floor_epsilon(max_temperature) + 1);
+	if (Tscaling_eq.is_set_dual() || t_scaling_y.size()) if (!malloc_vector(get_scaling_y, (int)floor_epsilon(max_temperature) + 1)) return false;
+	if (Tscaling_eq.is_set_vector() || t_scaling_z.size()) if (!malloc_vector(get_scaling_z, (int)floor_epsilon(max_temperature) + 1)) return false;
 
 	for (int t_value = 0; t_value <= max_temperature; t_value++) {
 
 		if (Tscaling_eq.is_set()) {
 
 			//use pre-set equation
-			get_scaling[t_value] = Tscaling_eq.evaluate((double)t_value);
+			if (Tscaling_eq.is_set_vector()) {
+
+				DBL3 value = Tscaling_eq.evaluate_vector((double)t_value);
+
+				get_scaling_x[t_value] = value.x;
+				get_scaling_y[t_value] = value.y;
+				get_scaling_z[t_value] = value.z;
+			}
+			else if (Tscaling_eq.is_set_dual()) {
+
+				DBL2 value = Tscaling_eq.evaluate_dual((double)t_value);
+
+				get_scaling_x[t_value] = value.x;
+				get_scaling_y[t_value] = value.y;
+			}
+			else get_scaling_x[t_value] = Tscaling_eq.evaluate((double)t_value);
 		}
 		else if (t_value < t_scaling.size()) {
 
-			get_scaling[t_value] = t_scaling[t_value];
+			get_scaling_x[t_value] = t_scaling[t_value];
+
+			if (t_scaling_y.size()) get_scaling_y[t_value] = t_scaling_y[t_value];
+			if (t_scaling_z.size()) get_scaling_z[t_value] = t_scaling_z[t_value];
 		}
 		else if (t_scaling.size()) {
 
-			get_scaling[t_value] = t_scaling.back();
+			get_scaling_x[t_value] = t_scaling.back();
+
+			if (t_scaling_y.size()) get_scaling_y[t_value] = t_scaling_y.back();
+			if (t_scaling_z.size()) get_scaling_z[t_value] = t_scaling_z.back();
 		}
-		else get_scaling[t_value] = 1.0;
+		else get_scaling_x[t_value] = 1.0;
 	}
 
-	return get_scaling;
+	return true;
 }
 
 //---------Get spatial variation

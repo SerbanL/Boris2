@@ -2,6 +2,7 @@
 #include "DiffEqAFMCUDA.h"
 
 #if COMPILECUDA == 1
+#ifdef MESH_COMPILATION_ANTIFERROMAGNETIC
 
 #include "DiffEqAFM.h"
 
@@ -12,6 +13,9 @@ DifferentialEquationAFMCUDA::DifferentialEquationAFMCUDA(DifferentialEquation *p
 	DifferentialEquationCUDA(pmeshODE)
 {
 	error_on_create = AllocateMemory();
+
+	cuDiffEq()->set_pointers(this);
+	SetODEMethodPointers();
 }
 
 DifferentialEquationAFMCUDA::~DifferentialEquationAFMCUDA()
@@ -222,19 +226,25 @@ BError DifferentialEquationAFMCUDA::AllocateMemory(void)
 	case ODE_SLLG:
 	case ODE_SLLGSTT:
 	case ODE_SLLGSA:
-		if (!H_Thermal()->resize((cuSZ3)pMesh->n)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
+		if (!H_Thermal()->resize((cuReal3)pMesh->h_s, (cuRect)pMesh->meshRect)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
 		else H_Thermal()->copy_from_cpuvec(pmeshODE->H_Thermal);
+		if (!H_Thermal_2()->resize((cuReal3)pMesh->h_s, (cuRect)pMesh->meshRect)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
+		else H_Thermal_2()->copy_from_cpuvec(reinterpret_cast<DifferentialEquationAFM*>(pmeshODE)->H_Thermal_2);
 		prng_used = true;
 		break;
 
 	case ODE_SLLB:
 	case ODE_SLLBSTT:
 	case ODE_SLLBSA:
-		if (!H_Thermal()->resize((cuSZ3)pMesh->n)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
+		if (!H_Thermal()->resize((cuReal3)pMesh->h_s, (cuRect)pMesh->meshRect)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
 		else H_Thermal()->copy_from_cpuvec(pmeshODE->H_Thermal);
+		if (!H_Thermal_2()->resize((cuReal3)pMesh->h_s, (cuRect)pMesh->meshRect)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
+		else H_Thermal_2()->copy_from_cpuvec(reinterpret_cast<DifferentialEquationAFM*>(pmeshODE)->H_Thermal_2);
 
-		if (!Torque_Thermal()->resize((cuSZ3)pMesh->n)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
+		if (!Torque_Thermal()->resize((cuReal3)pMesh->h_s, (cuRect)pMesh->meshRect)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
 		else Torque_Thermal()->copy_from_cpuvec(pmeshODE->Torque_Thermal);
+		if (!Torque_Thermal_2()->resize((cuReal3)pMesh->h_s, (cuRect)pMesh->meshRect)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
+		else Torque_Thermal_2()->copy_from_cpuvec(reinterpret_cast<DifferentialEquationAFM*>(pmeshODE)->Torque_Thermal_2);
 		prng_used = true;
 		break;
 	}
@@ -242,7 +252,7 @@ BError DifferentialEquationAFMCUDA::AllocateMemory(void)
 	if (prng_used) {
 
 		//initialize the pseudo-random number generator with a seed and memory size - recommended use kernel size divided by 128
-		if (prng()->initialize(GetTickCount(), pMesh->n.dim() / 128) != cudaSuccess) error(BERROR_OUTOFGPUMEMORY_NCRIT);
+		if (prng()->initialize(GetTickCount(), pMesh->n_s.dim() / 128) != cudaSuccess) error(BERROR_OUTOFGPUMEMORY_NCRIT);
 	}
 
 	return error;
@@ -340,9 +350,11 @@ void DifferentialEquationAFMCUDA::CleanupMemory(void)
 		pmeshODE->setODE != ODE_SLLBSTT &&
 		pmeshODE->setODE != ODE_SLLGSA &&
 		pmeshODE->setODE != ODE_SLLBSA) {
-
+		
 		if (H_Thermal()->size_cpu() == pmeshODE->H_Thermal.size()) H_Thermal()->copy_to_cpuvec(pmeshODE->H_Thermal);
 		H_Thermal()->clear();
+		if (H_Thermal_2()->size_cpu() == reinterpret_cast<DifferentialEquationAFM*>(pmeshODE)->H_Thermal_2.size()) H_Thermal_2()->copy_to_cpuvec(reinterpret_cast<DifferentialEquationAFM*>(pmeshODE)->H_Thermal_2);
+		H_Thermal_2()->clear();
 	}
 
 	if (pmeshODE->setODE != ODE_SLLB &&
@@ -351,6 +363,9 @@ void DifferentialEquationAFMCUDA::CleanupMemory(void)
 
 		if (Torque_Thermal()->size_cpu() == pmeshODE->Torque_Thermal.size()) Torque_Thermal()->copy_to_cpuvec(pmeshODE->Torque_Thermal);
 		Torque_Thermal()->clear();
+
+		if (Torque_Thermal_2()->size_cpu() == reinterpret_cast<DifferentialEquationAFM*>(pmeshODE)->Torque_Thermal_2.size()) Torque_Thermal_2()->copy_to_cpuvec(reinterpret_cast<DifferentialEquationAFM*>(pmeshODE)->Torque_Thermal_2);
+		Torque_Thermal_2()->clear();
 	}
 
 	prng()->clear();
@@ -360,6 +375,14 @@ void DifferentialEquationAFMCUDA::CleanupMemory(void)
 BError DifferentialEquationAFMCUDA::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 {
 	BError error(CLASS_STR(DifferentialEquationFMCUDA));
+	
+	if (ucfg::check_cfgflags(cfgMessage, UPDATECONFIG_MESHDELETED)) {
+
+		//if a mesh is deleted then a DifferentialEquationCUDA object can be deleted
+		//this results in deletion of static data in ODECommonCUDA
+		//whilst the static data is remade by UpdateConfiguration in ODECommonCUDA following this, our ManagedDiffEqAFMCUDA object now has pointers which are not linked correctly, so need to update them
+		cuDiffEq()->set_pointers(this);
+	}
 
 	if (ucfg::check_cfgflags(cfgMessage, UPDATECONFIG_MESHCHANGE, UPDATECONFIG_ODE_SOLVER)) {
 
@@ -397,4 +420,5 @@ BError DifferentialEquationAFMCUDA::UpdateConfiguration(UPDATECONFIG_ cfgMessage
 	return error;
 }
 
+#endif
 #endif

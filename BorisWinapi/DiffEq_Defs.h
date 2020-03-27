@@ -114,6 +114,9 @@
 //default dT -> for the SD solver this acts as the starting timestep and the value it resets to when needed
 #define SD_DEFAULT_DT	1e-15
 
+//difficult to simulate when temperature is very close to the Curie temperature due to numerical instability, especially with stochastic equations. instead use an epsilon approach (units of Kelvin).
+#define TCURIE_EPSILON	0.5
+
 //Available equations to solve enum - to keep bsm files backward compatible add new entries at the end
 enum ODE_ { ODE_ERROR = -1, ODE_LLG, ODE_LLGSTT, ODE_LLB, ODE_LLBSTT, ODE_SLLG, ODE_SLLGSTT, ODE_SLLB, ODE_SLLBSTT, ODE_LLGSA, ODE_SLLGSA, ODE_LLBSA, ODE_SLLBSA, ODE_LLGSTATIC };
 

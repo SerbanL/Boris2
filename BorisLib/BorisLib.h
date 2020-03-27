@@ -38,6 +38,7 @@
 
 #include "Funcs_Aux.h"			//Types.h
 #include "Funcs_Math.h"			//Types.h, Funcs_Algorithms.h
+#include "Obj_Math_Special.h"	//Types.h, Funcs_Algorithms.h
 #include "FFT.h"				//Types.h
 #include "FFT_mng.h"			//extends FFT (don't count it as higher order)
 #include "FFT_shuf.h"			//extends FFT (don't count it as higher order)

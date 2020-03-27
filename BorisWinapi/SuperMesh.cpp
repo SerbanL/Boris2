@@ -14,7 +14,7 @@ SuperMesh::SuperMesh(void) :
 		}, 
 		{
 			//Mesh implementations
-			IINFO(FMesh), IINFO(DipoleMesh), IINFO(MetalMesh), IINFO(InsulatorMesh), IINFO(AFMesh),
+			IINFO(FMesh), IINFO(DipoleMesh), IINFO(MetalMesh), IINFO(InsulatorMesh), IINFO(AFMesh), IINFO(DiaMesh),
 			//Super-mesh modules implementations (for pSMod)
 			IINFO(SDemag), IINFO(StrayField), IINFO(STransport), IINFO(Oersted), IINFO(SHeat)
 		})

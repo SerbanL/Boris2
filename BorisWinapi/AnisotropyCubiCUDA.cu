@@ -99,12 +99,12 @@ __global__ void Anisotropy_CubicCUDA_AFM_UpdateField(ManagedMeshCUDA& cuMesh, cu
 		if (M.is_not_empty(idx)) {
 
 			cuReal2 Ms_AFM = *cuMesh.pMs_AFM;
-			cuBReal K1 = *cuMesh.pK1;
-			cuBReal K2 = *cuMesh.pK2;
+			cuReal2 K1_AFM = *cuMesh.pK1_AFM;
+			cuReal2 K2_AFM = *cuMesh.pK2_AFM;
 			cuReal3 mcanis_ea1 = *cuMesh.pmcanis_ea1;
 			cuReal3 mcanis_ea2 = *cuMesh.pmcanis_ea2;
 
-			cuMesh.update_parameters_mcoarse(idx, *cuMesh.pMs_AFM, Ms_AFM, *cuMesh.pK1, K1, *cuMesh.pK2, K2, *cuMesh.pmcanis_ea1, mcanis_ea1, *cuMesh.pmcanis_ea2, mcanis_ea2);
+			cuMesh.update_parameters_mcoarse(idx, *cuMesh.pMs_AFM, Ms_AFM, *cuMesh.pK1_AFM, K1_AFM, *cuMesh.pK2_AFM, K2_AFM, *cuMesh.pmcanis_ea1, mcanis_ea1, *cuMesh.pmcanis_ea2, mcanis_ea2);
 
 			//vector product of ea1 and ea2 : the third orthogonal axis
 			cuReal3 mcanis_ea3 = mcanis_ea1 ^ mcanis_ea2;
@@ -128,14 +128,14 @@ __global__ void Anisotropy_CubicCUDA_AFM_UpdateField(ManagedMeshCUDA& cuMesh, cu
 
 			//update effective field with the anisotropy field
 			Heff_value = cuReal3(
-				(-2 * K1 / ((cuBReal)MU0*Ms_AFM.i)) * (mcanis_ea1.i * a1 + mcanis_ea2.i * a2 + mcanis_ea3.i * a3)
-				+ (-2 * K2 / ((cuBReal)MU0*Ms_AFM.i)) * (mcanis_ea1.i * b1 + mcanis_ea2.i * b2 + mcanis_ea3.i * b3),
+				(-2 * K1_AFM.i / ((cuBReal)MU0*Ms_AFM.i)) * (mcanis_ea1.i * a1 + mcanis_ea2.i * a2 + mcanis_ea3.i * a3)
+				+ (-2 * K2_AFM.i / ((cuBReal)MU0*Ms_AFM.i)) * (mcanis_ea1.i * b1 + mcanis_ea2.i * b2 + mcanis_ea3.i * b3),
 
-				(-2 * K1 / ((cuBReal)MU0*Ms_AFM.i)) * (mcanis_ea1.j * a1 + mcanis_ea2.j * a2 + mcanis_ea3.j * a3)
-				+ (-2 * K2 / ((cuBReal)MU0*Ms_AFM.i)) * (mcanis_ea1.j * b1 + mcanis_ea2.j * b2 + mcanis_ea3.j * b3),
+				(-2 * K1_AFM.i / ((cuBReal)MU0*Ms_AFM.i)) * (mcanis_ea1.j * a1 + mcanis_ea2.j * a2 + mcanis_ea3.j * a3)
+				+ (-2 * K2_AFM.i / ((cuBReal)MU0*Ms_AFM.i)) * (mcanis_ea1.j * b1 + mcanis_ea2.j * b2 + mcanis_ea3.j * b3),
 
-				(-2 * K1 / ((cuBReal)MU0*Ms_AFM.i)) * (mcanis_ea1.k * a1 + mcanis_ea2.k * a2 + mcanis_ea3.k * a3)
-				+ (-2 * K2 / ((cuBReal)MU0*Ms_AFM.i)) * (mcanis_ea1.k * b1 + mcanis_ea2.k * b2 + mcanis_ea3.k * b3)
+				(-2 * K1_AFM.i / ((cuBReal)MU0*Ms_AFM.i)) * (mcanis_ea1.k * a1 + mcanis_ea2.k * a2 + mcanis_ea3.k * a3)
+				+ (-2 * K2_AFM.i / ((cuBReal)MU0*Ms_AFM.i)) * (mcanis_ea1.k * b1 + mcanis_ea2.k * b2 + mcanis_ea3.k * b3)
 			);
 
 			//same thing for sub-lattice B
@@ -155,21 +155,21 @@ __global__ void Anisotropy_CubicCUDA_AFM_UpdateField(ManagedMeshCUDA& cuMesh, cu
 			cuBReal b3B = d123B*d1B*d2B;
 
 			Heff2_value = cuReal3(
-				(-2 * K1 / ((cuBReal)MU0*Ms_AFM.j)) * (mcanis_ea1.i * a1B + mcanis_ea2.i * a2B + mcanis_ea3.i * a3B)
-				+ (-2 * K2 / ((cuBReal)MU0*Ms_AFM.j)) * (mcanis_ea1.i * b1B + mcanis_ea2.i * b2B + mcanis_ea3.i * b3B),
+				(-2 * K1_AFM.j / ((cuBReal)MU0*Ms_AFM.j)) * (mcanis_ea1.i * a1B + mcanis_ea2.i * a2B + mcanis_ea3.i * a3B)
+				+ (-2 * K2_AFM.j / ((cuBReal)MU0*Ms_AFM.j)) * (mcanis_ea1.i * b1B + mcanis_ea2.i * b2B + mcanis_ea3.i * b3B),
 
-				(-2 * K1 / ((cuBReal)MU0*Ms_AFM.j)) * (mcanis_ea1.j * a1B + mcanis_ea2.j * a2B + mcanis_ea3.j * a3B)
-				+ (-2 * K2 / ((cuBReal)MU0*Ms_AFM.j)) * (mcanis_ea1.j * b1B + mcanis_ea2.j * b2B + mcanis_ea3.j * b3B),
+				(-2 * K1_AFM.j / ((cuBReal)MU0*Ms_AFM.j)) * (mcanis_ea1.j * a1B + mcanis_ea2.j * a2B + mcanis_ea3.j * a3B)
+				+ (-2 * K2_AFM.j / ((cuBReal)MU0*Ms_AFM.j)) * (mcanis_ea1.j * b1B + mcanis_ea2.j * b2B + mcanis_ea3.j * b3B),
 
-				(-2 * K1 / ((cuBReal)MU0*Ms_AFM.j)) * (mcanis_ea1.k * a1B + mcanis_ea2.k * a2B + mcanis_ea3.k * a3B)
-				+ (-2 * K2 / ((cuBReal)MU0*Ms_AFM.j)) * (mcanis_ea1.k * b1B + mcanis_ea2.k * b2B + mcanis_ea3.k * b3B)
+				(-2 * K1_AFM.j / ((cuBReal)MU0*Ms_AFM.j)) * (mcanis_ea1.k * a1B + mcanis_ea2.k * a2B + mcanis_ea3.k * a3B)
+				+ (-2 * K2_AFM.j / ((cuBReal)MU0*Ms_AFM.j)) * (mcanis_ea1.k * b1B + mcanis_ea2.k * b2B + mcanis_ea3.k * b3B)
 			);
 
 			if (do_reduction) {
 
 				//update energy (E/V)		
 				int non_empty_cells = M.get_nonempty_cells();
-				if (non_empty_cells) energy_ = ((K1 * (d1*d1*d2*d2 + d1*d1*d3*d3 + d2*d2*d3*d3) + K2 * d123*d123) + (K1 * (d1B*d1B*d2B*d2B + d1B*d1B*d3B*d3B + d2B*d2B*d3B*d3B) + K2 * d123B*d123B)) / (2*non_empty_cells);
+				if (non_empty_cells) energy_ = ((K1_AFM.i * (d1*d1*d2*d2 + d1*d1*d3*d3 + d2*d2*d3*d3) + K2_AFM.i * d123*d123) + (K1_AFM.j * (d1B*d1B*d2B*d2B + d1B*d1B*d3B*d3B + d2B*d2B*d3B*d3B) + K2_AFM.j * d123B*d123B)) / (2*non_empty_cells);
 			}
 		}
 

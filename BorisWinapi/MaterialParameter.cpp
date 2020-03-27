@@ -80,7 +80,7 @@ void MatP<double, double>::update_cuda_object(void)
 void MatP<FLT2, double>::update_cuda_object(void)
 {
 	//temperature equation
-	if (Tscaling_eq.is_set()) reinterpret_cast<cu_obj<MatPCUDA<cuReal2, cuBReal>>*>(p_cu_obj_mpcuda)->get_managed_object()->set_t_equation_from_cpu(Tscaling_CUDAeq, Tscaling_eq.get_scalar_fspec());
+	if (Tscaling_eq.is_set()) reinterpret_cast<cu_obj<MatPCUDA<cuReal2, cuBReal>>*>(p_cu_obj_mpcuda)->get_managed_object()->set_t_equation_from_cpu(Tscaling_CUDAeq, Tscaling_eq.get_dual_fspec());
 	else Tscaling_CUDAeq.clear();
 
 	//spatial variation equation
@@ -93,7 +93,7 @@ void MatP<FLT2, double>::update_cuda_object(void)
 void MatP<DBL2, double>::update_cuda_object(void)
 {
 	//temperature equation
-	if (Tscaling_eq.is_set()) reinterpret_cast<cu_obj<MatPCUDA<cuReal2, cuBReal>>*>(p_cu_obj_mpcuda)->get_managed_object()->set_t_equation_from_cpu(Tscaling_CUDAeq, Tscaling_eq.get_scalar_fspec());
+	if (Tscaling_eq.is_set()) reinterpret_cast<cu_obj<MatPCUDA<cuReal2, cuBReal>>*>(p_cu_obj_mpcuda)->get_managed_object()->set_t_equation_from_cpu(Tscaling_CUDAeq, Tscaling_eq.get_dual_fspec());
 	else Tscaling_CUDAeq.clear();
 
 	//spatial variation equation
@@ -106,7 +106,7 @@ void MatP<DBL2, double>::update_cuda_object(void)
 void MatP<FLT3, double>::update_cuda_object(void)
 {
 	//temperature equation
-	if (Tscaling_eq.is_set()) reinterpret_cast<cu_obj<MatPCUDA<cuReal3, cuBReal>>*>(p_cu_obj_mpcuda)->get_managed_object()->set_t_equation_from_cpu(Tscaling_CUDAeq, Tscaling_eq.get_scalar_fspec());
+	if (Tscaling_eq.is_set()) reinterpret_cast<cu_obj<MatPCUDA<cuReal3, cuBReal>>*>(p_cu_obj_mpcuda)->get_managed_object()->set_t_equation_from_cpu(Tscaling_CUDAeq, Tscaling_eq.get_vector_fspec());
 	else Tscaling_CUDAeq.clear();
 
 	//spatial variation equation
@@ -119,7 +119,7 @@ void MatP<FLT3, double>::update_cuda_object(void)
 void MatP<DBL3, double>::update_cuda_object(void)
 {
 	//temperature equation
-	if (Tscaling_eq.is_set()) reinterpret_cast<cu_obj<MatPCUDA<cuReal3, cuBReal>>*>(p_cu_obj_mpcuda)->get_managed_object()->set_t_equation_from_cpu(Tscaling_CUDAeq, Tscaling_eq.get_scalar_fspec());
+	if (Tscaling_eq.is_set()) reinterpret_cast<cu_obj<MatPCUDA<cuReal3, cuBReal>>*>(p_cu_obj_mpcuda)->get_managed_object()->set_t_equation_from_cpu(Tscaling_CUDAeq, Tscaling_eq.get_vector_fspec());
 	else Tscaling_CUDAeq.clear();
 
 	//spatial variation equation
@@ -132,7 +132,7 @@ void MatP<DBL3, double>::update_cuda_object(void)
 void MatP<FLT3, FLT3>::update_cuda_object(void)
 {
 	//temperature equation
-	if (Tscaling_eq.is_set()) reinterpret_cast<cu_obj<MatPCUDA<cuReal3, cuReal3>>*>(p_cu_obj_mpcuda)->get_managed_object()->set_t_equation_from_cpu(Tscaling_CUDAeq, Tscaling_eq.get_scalar_fspec());
+	if (Tscaling_eq.is_set()) reinterpret_cast<cu_obj<MatPCUDA<cuReal3, cuReal3>>*>(p_cu_obj_mpcuda)->get_managed_object()->set_t_equation_from_cpu(Tscaling_CUDAeq, Tscaling_eq.get_vector_fspec());
 	else Tscaling_CUDAeq.clear();
 
 	//spatial variation equation
@@ -145,7 +145,7 @@ void MatP<FLT3, FLT3>::update_cuda_object(void)
 void MatP<DBL3, DBL3>::update_cuda_object(void)
 {
 	//temperature equation
-	if (Tscaling_eq.is_set()) reinterpret_cast<cu_obj<MatPCUDA<cuReal3, cuReal3>>*>(p_cu_obj_mpcuda)->get_managed_object()->set_t_equation_from_cpu(Tscaling_CUDAeq, Tscaling_eq.get_scalar_fspec());
+	if (Tscaling_eq.is_set()) reinterpret_cast<cu_obj<MatPCUDA<cuReal3, cuReal3>>*>(p_cu_obj_mpcuda)->get_managed_object()->set_t_equation_from_cpu(Tscaling_CUDAeq, Tscaling_eq.get_vector_fspec());
 	else Tscaling_CUDAeq.clear();
 
 	//spatial variation equation

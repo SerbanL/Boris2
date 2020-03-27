@@ -93,6 +93,9 @@ enum UPDATECONFIG_ {
 	//Transport module electrode changed
 	UPDATECONFIG_TRANSPORT_ELECTRODE,
 
+	//Heat solver temperature model type changed
+	UPDATECONFIG_HEAT_MODELTYPE,
+
 	////////////////////////////
 	//UpdateConfiguration_Values MESSAGES
 	////////////////////////////

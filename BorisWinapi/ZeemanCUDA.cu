@@ -12,7 +12,7 @@
 #include "Mesh_AntiFerromagneticCUDA.h"
 #include "MeshParamsControlCUDA.h"
 
-__global__ void ZeemanCUDA_UpdateField_FM(ManagedMeshCUDA& cuMesh, cuReal3& Ha, cuBReal& energy, bool do_reduction)
+__global__ void ZeemanCUDA_UpdateField_FMDM(ManagedMeshCUDA& cuMesh, cuReal3& Ha, cuBReal& energy, bool do_reduction)
 {
 	cuVEC_VC<cuReal3>& M = *cuMesh.pM;
 	cuVEC<cuReal3>& Heff = *cuMesh.pHeff;
@@ -38,7 +38,7 @@ __global__ void ZeemanCUDA_UpdateField_FM(ManagedMeshCUDA& cuMesh, cuReal3& Ha, 
 	if(do_reduction) reduction_sum(0, 1, &energy_, energy);
 }
 
-__global__ void ZeemanCUDA_UpdateField_Equation_FM(
+__global__ void ZeemanCUDA_UpdateField_Equation_FMDM(
 	ManagedMeshCUDA& cuMesh, 
 	ManagedFunctionCUDA<cuBReal, cuBReal, cuBReal, cuBReal>& H_equation_x,
 	ManagedFunctionCUDA<cuBReal, cuBReal, cuBReal, cuBReal>& H_equation_y,
@@ -156,18 +156,7 @@ void ZeemanCUDA::UpdateField(void)
 
 	if (!H_equation.is_set()) {
 
-		if (pMeshCUDA->GetMeshType() == MESH_FERROMAGNETIC) {
-
-			if (pMeshCUDA->CurrentTimeStepSolved()) {
-
-				ZeroEnergy();
-
-				ZeemanCUDA_UpdateField_FM << < (pMeshCUDA->n.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >> > (pMeshCUDA->cuMesh, Ha, energy, true);
-			}
-			else ZeemanCUDA_UpdateField_FM << < (pMeshCUDA->n.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >> > (pMeshCUDA->cuMesh, Ha, energy, false);
-		}
-
-		else if (pMeshCUDA->GetMeshType() == MESH_ANTIFERROMAGNETIC) {
+		if (pMeshCUDA->GetMeshType() == MESH_ANTIFERROMAGNETIC) {
 
 			if (pMeshCUDA->CurrentTimeStepSolved()) {
 
@@ -177,6 +166,17 @@ void ZeemanCUDA::UpdateField(void)
 			}
 			else ZeemanCUDA_UpdateField_AFM << < (pMeshCUDA->n.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >> > (pMeshCUDA->cuMesh, Ha, energy, false);
 		}
+
+		else {
+
+			if (pMeshCUDA->CurrentTimeStepSolved()) {
+
+				ZeroEnergy();
+
+				ZeemanCUDA_UpdateField_FMDM << < (pMeshCUDA->n.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >> > (pMeshCUDA->cuMesh, Ha, energy, true);
+			}
+			else ZeemanCUDA_UpdateField_FMDM << < (pMeshCUDA->n.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >> > (pMeshCUDA->cuMesh, Ha, energy, false);
+		}
 	}
 
 	/////////////////////////////////////////
@@ -185,26 +185,7 @@ void ZeemanCUDA::UpdateField(void)
 
 	else {
 
-		if (pMeshCUDA->GetMeshType() == MESH_FERROMAGNETIC) {
-
-			if (pMeshCUDA->CurrentTimeStepSolved()) {
-
-				ZeroEnergy();
-
-				ZeemanCUDA_UpdateField_Equation_FM << < (pMeshCUDA->n.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >> > (
-					pMeshCUDA->cuMesh, 
-					H_equation.get_x(), H_equation.get_y(), H_equation.get_z(), 
-					pMeshCUDA->GetStageTime(),
-					energy, true);
-			}
-			else ZeemanCUDA_UpdateField_Equation_FM << < (pMeshCUDA->n.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >> > (
-				pMeshCUDA->cuMesh,
-				H_equation.get_x(), H_equation.get_y(), H_equation.get_z(),
-				pMeshCUDA->GetStageTime(),
-				energy, false);
-		}
-
-		else if (pMeshCUDA->GetMeshType() == MESH_ANTIFERROMAGNETIC) {
+		if (pMeshCUDA->GetMeshType() == MESH_ANTIFERROMAGNETIC) {
 
 			if (pMeshCUDA->CurrentTimeStepSolved()) {
 
@@ -217,6 +198,25 @@ void ZeemanCUDA::UpdateField(void)
 					energy, true);
 			}
 			else ZeemanCUDA_UpdateField_Equation_AFM << < (pMeshCUDA->n.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >> > (
+				pMeshCUDA->cuMesh,
+				H_equation.get_x(), H_equation.get_y(), H_equation.get_z(),
+				pMeshCUDA->GetStageTime(),
+				energy, false);
+		}
+
+		else {
+
+			if (pMeshCUDA->CurrentTimeStepSolved()) {
+
+				ZeroEnergy();
+
+				ZeemanCUDA_UpdateField_Equation_FMDM << < (pMeshCUDA->n.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >> > (
+					pMeshCUDA->cuMesh,
+					H_equation.get_x(), H_equation.get_y(), H_equation.get_z(),
+					pMeshCUDA->GetStageTime(),
+					energy, true);
+			}
+			else ZeemanCUDA_UpdateField_Equation_FMDM << < (pMeshCUDA->n.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >> > (
 				pMeshCUDA->cuMesh,
 				H_equation.get_x(), H_equation.get_y(), H_equation.get_z(),
 				pMeshCUDA->GetStageTime(),

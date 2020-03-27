@@ -1,8 +1,10 @@
 #include "DiffEqAFMCUDA.h"
-#include "MeshParamsControlCUDA.h"
 
 #if COMPILECUDA == 1
 #ifdef ODE_EVAL_TEULER
+#ifdef MESH_COMPILATION_ANTIFERROMAGNETIC
+
+#include "MeshParamsControlCUDA.h"
 
 //defines evaluation methods kernel launchers
 
@@ -24,12 +26,7 @@ __global__ void RunTEuler_Step0_withReductions_Kernel(ManagedDiffEqAFMCUDA& cuDi
 
 			//obtain average normalized torque term
 			cuBReal Mnorm = (*cuMesh.pM)[idx].norm();
-
-			if (cuDiffEq.pH_Thermal->linear_size()) {
-
-				mxh = ((*cuMesh.pM)[idx] ^ ((*cuMesh.pHeff)[idx] + (*cuDiffEq.pH_Thermal)[idx])) / (Mnorm * Mnorm);
-			}
-			else mxh = ((*cuMesh.pM)[idx] ^ (*cuMesh.pHeff)[idx]) / (Mnorm * Mnorm);
+			mxh = ((*cuMesh.pM)[idx] ^ (*cuMesh.pHeff)[idx]) / (Mnorm * Mnorm);
 
 			//Save current magnetization for the next step
 			(*cuDiffEq.psM1)[idx] = (*cuMesh.pM)[idx];
@@ -203,5 +200,6 @@ void DifferentialEquationAFMCUDA::RunTEuler(int step, bool calculate_mxh, bool c
 	}
 }
 
+#endif
 #endif
 #endif

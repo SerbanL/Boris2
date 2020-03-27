@@ -329,6 +329,12 @@ Any Simulation::GetDataValue(DatumConfig dConfig)
 	}
 	break;
 
+	case DATA_TEMP_L:
+	{
+		return Any(SMesh[dConfig.meshName]->GetAverageLatticeTemperature(dConfig.rectangle));
+	}
+	break;
+
 	case DATA_HEATDT:
 	{
 		return Any(SMesh.CallModuleMethod(&SHeat::get_heat_dT));

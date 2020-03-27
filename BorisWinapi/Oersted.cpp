@@ -51,6 +51,11 @@ BError Oersted::Initialize(void)
 
 			pVal_to.push_back(&((*pSMesh)[idx]->Heff));
 		}
+
+		if ((*pSMesh)[idx]->GetMeshType() == MESH_ANTIFERROMAGNETIC) {
+
+			pVal_to.push_back(&((*pSMesh)[idx]->Heff2));
+		}
 	}
 
 	//Initialize the mesh transfer object.

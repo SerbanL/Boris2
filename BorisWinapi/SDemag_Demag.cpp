@@ -73,32 +73,10 @@ BError SDemag_Demag::Initialize_Mesh_Transfer(void)
 	//initialize transfer object
 
 	///////////////////////////////////////////////////////////////////////////////////////////////
-	////////////////////////////////////// FERROMAGNETIC MESH /////////////////////////////////////
-	///////////////////////////////////////////////////////////////////////////////////////////////
-
-	if (pMesh->GetMeshType() == MESH_FERROMAGNETIC) {
-
-		if (!transfer.Initialize_MeshTransfer({ &pMesh->M }, { &pMesh->Heff }, MESHTRANSFERTYPE_WEIGHTED)) return error(BERROR_OUTOFMEMORY_CRIT);
-
-		//the Hdemag.size() check is needed : if in CUDA mode, this method will be called to initialize mesh transfer in transfer so the transfer info can be copied over to the gpu
-		//In this case it's possible Hdemag does not have the correct memory allocated; if not in CUDA mode we first pass through Initialization method before calling this, in which case Hdemag will be sized correctly.
-		if (pMesh->pSMesh->EvaluationSpeedup() && Hdemag.size() == transfer.size()) {
-
-			//initialize mesh transfer for Hdemag as well if we are using evaluation speedup
-			if (!Hdemag.Initialize_MeshTransfer({ &pMesh->M }, { &pMesh->Heff }, MESHTRANSFERTYPE_WEIGHTED)) return error(BERROR_OUTOFMEMORY_CRIT);
-		}
-
-		//transfer values from M - we need this to get number of non-empty cells
-		transfer.transfer_in();
-
-		non_empty_cells = transfer.get_nonempty_cells();
-	}
-
-	///////////////////////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////// ANTIFERROMAGNETIC MESH ///////////////////////////////////
 	///////////////////////////////////////////////////////////////////////////////////////////////
 
-	else if (pMesh->GetMeshType() == MESH_ANTIFERROMAGNETIC) {
+	if (pMesh->GetMeshType() == MESH_ANTIFERROMAGNETIC) {
 
 		if (!transfer.Initialize_MeshTransfer_AveragedInputs_DuplicatedOutputs(
 			{ &pMesh->M }, { &pMesh->M2 }, { &pMesh->Heff }, { &pMesh->Heff2 },
@@ -116,6 +94,28 @@ BError SDemag_Demag::Initialize_Mesh_Transfer(void)
 
 		//transfer values from M - we need this to get number of non-empty cells
 		//NOTE : do not use transfer_in_averaged here as for antiferromagnetic meshes in the ground state this will result in zero values everywhere, looking like there are no non-empty cells
+		transfer.transfer_in();
+
+		non_empty_cells = transfer.get_nonempty_cells();
+	}
+
+	///////////////////////////////////////////////////////////////////////////////////////////////
+	///////////////////////////////////// OTHER MAGNETIC MESH /////////////////////////////////////
+	///////////////////////////////////////////////////////////////////////////////////////////////
+
+	else {
+
+		if (!transfer.Initialize_MeshTransfer({ &pMesh->M }, { &pMesh->Heff }, MESHTRANSFERTYPE_WEIGHTED)) return error(BERROR_OUTOFMEMORY_CRIT);
+
+		//the Hdemag.size() check is needed : if in CUDA mode, this method will be called to initialize mesh transfer in transfer so the transfer info can be copied over to the gpu
+		//In this case it's possible Hdemag does not have the correct memory allocated; if not in CUDA mode we first pass through Initialization method before calling this, in which case Hdemag will be sized correctly.
+		if (pMesh->pSMesh->EvaluationSpeedup() && Hdemag.size() == transfer.size()) {
+
+			//initialize mesh transfer for Hdemag as well if we are using evaluation speedup
+			if (!Hdemag.Initialize_MeshTransfer({ &pMesh->M }, { &pMesh->Heff }, MESHTRANSFERTYPE_WEIGHTED)) return error(BERROR_OUTOFMEMORY_CRIT);
+		}
+
+		//transfer values from M - we need this to get number of non-empty cells
 		transfer.transfer_in();
 
 		non_empty_cells = transfer.get_nonempty_cells();

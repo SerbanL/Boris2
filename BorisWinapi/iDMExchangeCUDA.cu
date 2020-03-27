@@ -98,17 +98,23 @@ __global__ void iDMExchangeCUDA_AFM_UpdateField(ManagedMeshCUDA& cuMesh, cuBReal
 
 			cuReal2 Ms_AFM = *cuMesh.pMs_AFM;
 			cuReal2 A_AFM = *cuMesh.pA_AFM;
-			cuBReal A12 = *cuMesh.pA12;
+			cuReal2 Ah = *cuMesh.pAh;
+			cuReal2 Anh = *cuMesh.pAnh;
 			cuReal2 D_AFM = *cuMesh.pD_AFM;
-			cuMesh.update_parameters_mcoarse(idx, *cuMesh.pMs_AFM, Ms_AFM, *cuMesh.pA_AFM, A_AFM, *cuMesh.pA12, A12, *cuMesh.pD_AFM, D_AFM);
+			cuMesh.update_parameters_mcoarse(idx, *cuMesh.pMs_AFM, Ms_AFM, *cuMesh.pA_AFM, A_AFM, *cuMesh.pAh, Ah, *cuMesh.pAnh, Anh, *cuMesh.pD_AFM, D_AFM);
 
 			if (M.is_plane_interior(idx)) {
 
 				//interior point : can use cheaper neu versions
 
-				//direct exchange contribution
-				Hexch = 2 * A_AFM.i * M.delsq_neu(idx) / ((cuBReal)MU0 * Ms_AFM.i * Ms_AFM.i) + (4 * A12 / (MU0*Ms_AFM.i*Ms_AFM.j)) * M2[idx];
-				Hexch2 = 2 * A_AFM.j * M2.delsq_neu(idx) / ((cuBReal)MU0 * Ms_AFM.j * Ms_AFM.j) + (4 * A12 / (MU0*Ms_AFM.i*Ms_AFM.j)) * M[idx];
+				//1. direct exchange contribution + AFM contribution
+				cuReal3 delsq_M_A = M.delsq_neu(idx);
+				cuReal3 delsq_M_B = M2.delsq_neu(idx);
+
+				cuReal2 Mmag = cuReal2(M[idx].norm(), M2[idx].norm());
+
+				Hexch = 2 * A_AFM.i * delsq_M_A / ((cuBReal)MU0 * Ms_AFM.i * Ms_AFM.i) + (-4 * Ah.i * (M[idx] ^ (M[idx] ^ M2[idx])) / (Mmag.i*Mmag.i) + Anh.i * delsq_M_B) / ((cuBReal)MU0*Ms_AFM.i*Ms_AFM.j);
+				Hexch2 = 2 * A_AFM.j * delsq_M_B / ((cuBReal)MU0 * Ms_AFM.j * Ms_AFM.j) + (-4 * Ah.j * (M2[idx] ^ (M2[idx] ^ M[idx])) / (Mmag.j*Mmag.j) + Anh.j * delsq_M_A) / ((cuBReal)MU0*Ms_AFM.i*Ms_AFM.j);
 
 				//Dzyaloshinskii-Moriya interfacial exchange contribution
 
@@ -125,32 +131,62 @@ __global__ void iDMExchangeCUDA_AFM_UpdateField(ManagedMeshCUDA& cuMesh, cuBReal
 			}
 			else {
 
-				//Non-homogeneous Neumann boundary conditions apply when using DMI. Required to ensure Brown's condition is fulfilled, i.e. m x h -> 0 when relaxing.
-				cuReal3 bnd_dm_dx = (D_AFM.i / (2 * A_AFM.i)) * cuReal3(M[idx].z, 0, -M[idx].x);
-				cuReal3 bnd_dm_dy = (D_AFM.i / (2 * A_AFM.i)) * cuReal3(0, M[idx].z, -M[idx].y);
-				cuReal33 bnd_nneu = cuReal33(bnd_dm_dx, bnd_dm_dy, cuReal3());
+				cuReal33 bndA_nneu, bndB_nneu;
 
-				//direct exchange contribution
-				Hexch = 2 * A_AFM.i * M.delsq_nneu(idx, bnd_nneu) / ((cuBReal)MU0 * Ms_AFM.i * Ms_AFM.i) + (4 * A12 / (MU0*Ms_AFM.i*Ms_AFM.j)) * M2[idx];
+				cuReal2 nhconst = Anh / (2 * A_AFM);
 
-				//Dzyaloshinskii-Moriya interfacial exchange contribution
+				if (fabs(nhconst.i) != 1.0) {
+
+					//Non-homogeneous Neumann boundary conditions apply when using DMI. Required to ensure Brown's condition is fulfilled, i.e. m x h -> 0 when relaxing.
+					cuReal3 bnd_dm_dx = (D_AFM.i / (2 * A_AFM.i * (1 - nhconst.i * nhconst.i))) * cuReal3(M[idx].z - nhconst.i * M2[idx].z, 0, -M[idx].x + nhconst.i * M2[idx].x);
+					cuReal3 bnd_dm_dy = (D_AFM.i / (2 * A_AFM.i * (1 - nhconst.i * nhconst.i))) * cuReal3(0, M[idx].z - nhconst.i * M2[idx].z, -M[idx].y + nhconst.i * M2[idx].y);
+
+					bndA_nneu = cuReal33(bnd_dm_dx, bnd_dm_dy, cuReal3());
+				}
+				else {
+
+					cuReal3 bnd_dm_dx = (D_AFM.i / (4 * A_AFM.i)) * cuReal3(M[idx].z, 0, -M[idx].x);
+					cuReal3 bnd_dm_dy = (D_AFM.i / (4 * A_AFM.i)) * cuReal3(0, M[idx].z, -M[idx].y);
+
+					bndA_nneu = cuReal33(bnd_dm_dx, bnd_dm_dy, cuReal3());
+				}
+
+				if (fabs(nhconst.j) != 1.0) {
+
+					cuReal3 bnd_dm_dx = (D_AFM.j / (2 * A_AFM.j * (1 - nhconst.j * nhconst.j))) * cuReal3(M2[idx].z - nhconst.j * M[idx].z, 0, -M2[idx].x + nhconst.j * M[idx].x);
+					cuReal3 bnd_dm_dy = (D_AFM.j / (2 * A_AFM.j * (1 - nhconst.j * nhconst.j))) * cuReal3(0, M2[idx].z - nhconst.j * M[idx].z, -M2[idx].y + nhconst.j * M[idx].y);
+
+					bndB_nneu = cuReal33(bnd_dm_dx, bnd_dm_dy, cuReal3());
+				}
+				else {
+
+					cuReal3 bnd_dm_dx = (D_AFM.j / (4 * A_AFM.j)) * cuReal3(M2[idx].z, 0, -M2[idx].x);
+					cuReal3 bnd_dm_dy = (D_AFM.j / (4 * A_AFM.j)) * cuReal3(0, M2[idx].z, -M2[idx].y);
+
+					bndB_nneu = cuReal33(bnd_dm_dx, bnd_dm_dy, cuReal3());
+				}
+
+				cuReal3 delsq_M_A = M.delsq_nneu(idx, bndA_nneu);
+				cuReal3 delsq_M_B = M2.delsq_nneu(idx, bndB_nneu);
+
+				cuReal2 Mmag = cuReal2(M[idx].norm(), M2[idx].norm());
+
+				//1. direct exchange contribution + AFM contribution
+
+				//cells marked with cmbnd are calculated using exchange coupling to other ferromagnetic meshes - see below; the delsq_nneu evaluates to zero in the CMBND coupling direction.
+				Hexch = 2 * A_AFM.i * delsq_M_A / ((cuBReal)MU0 * Ms_AFM.i * Ms_AFM.i) + (-4 * Ah.i * (M[idx] ^ (M[idx] ^ M2[idx])) / (Mmag.i*Mmag.i) + Anh.i * delsq_M_B) / ((cuBReal)MU0*Ms_AFM.i*Ms_AFM.j);
+				Hexch2 = 2 * A_AFM.j * delsq_M_B / ((cuBReal)MU0 * Ms_AFM.j * Ms_AFM.j) + (-4 * Ah.j * (M2[idx] ^ (M2[idx] ^ M[idx])) / (Mmag.j*Mmag.j) + Anh.j * delsq_M_A) / ((cuBReal)MU0*Ms_AFM.i*Ms_AFM.j);
+
+				//2. Dzyaloshinskii-Moriya interfacial exchange contribution
 
 				//Differentials of M components (we only need 4, not all 9 so this could be optimised). First index is the differential direction, second index is the M component
-				cuReal33 Mdiff = M.grad_nneu(idx, bnd_nneu);
+				//For cmbnd cells grad_nneu does not evaluate to zero in the CMBND coupling direction, but sided differentials are used - when setting values at CMBND cells for exchange coupled meshes must correct for this.
+				cuReal33 Mdiff_A = M.grad_nneu(idx, bndA_nneu);
+				cuReal33 Mdiff_B = M2.grad_nneu(idx, bndB_nneu);
 
 				//Hdm, ex = -2D / (mu0*Ms) * (dmz / dx, dmz / dy, -dmx / dx - dmy / dy)
-				Hexch += -2 * D_AFM.i * cuReal3(Mdiff.x.z, Mdiff.y.z, -Mdiff.x.x - Mdiff.y.y) / ((cuBReal)MU0 * Ms_AFM.i * Ms_AFM.i);
-
-				//same thing on sub-lattice B (2)
-
-				bnd_dm_dx = (D_AFM.j / (2 * A_AFM.j)) * cuReal3(M2[idx].z, 0, -M2[idx].x);
-				bnd_dm_dy = (D_AFM.j / (2 * A_AFM.j)) * cuReal3(0, M2[idx].z, -M2[idx].y);
-				bnd_nneu = cuReal33(bnd_dm_dx, bnd_dm_dy, cuReal3());
-
-				Hexch2 = 2 * A_AFM.j * M2.delsq_nneu(idx, bnd_nneu) / ((cuBReal)MU0 * Ms_AFM.j * Ms_AFM.j) + (4 * A12 / (MU0*Ms_AFM.i*Ms_AFM.j)) * M[idx];
-
-				Mdiff = M2.grad_nneu(idx, bnd_nneu);
-				Hexch2 += -2 * D_AFM.j * cuReal3(Mdiff.x.z, Mdiff.y.z, -Mdiff.x.x - Mdiff.y.y) / ((cuBReal)MU0 * Ms_AFM.j * Ms_AFM.j);
+				Hexch += -2 * D_AFM.i * cuReal3(Mdiff_A.x.z, Mdiff_A.y.z, -Mdiff_A.x.x - Mdiff_A.y.y) / ((cuBReal)MU0 * Ms_AFM.i * Ms_AFM.i);
+				Hexch2 += -2 * D_AFM.j * cuReal3(Mdiff_B.x.z, Mdiff_B.y.z, -Mdiff_B.x.x - Mdiff_B.y.y) / ((cuBReal)MU0 * Ms_AFM.j * Ms_AFM.j);
 			}
 
 			if (do_reduction) {

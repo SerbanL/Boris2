@@ -141,7 +141,8 @@ void SHeatCUDA::UpdateField(void)
 		//1. solve Temp in each mesh separately (1 iteration each) - CMBND cells not set yet
 		for (int idx = 0; idx < (int)pHeat.size(); idx++) {
 
-			pHeat[idx]->IterateHeatEquation(dT);
+			if (pSHeat->pHeat[idx]->Get_TMType() == TMTYPE_1TM) pHeat[idx]->IterateHeatEquation_1TM(dT);
+			else if (pSHeat->pHeat[idx]->Get_TMType() == TMTYPE_2TM) pHeat[idx]->IterateHeatEquation_2TM(dT);
 		}
 
 		//2. calculate boundary conditions (i.e. temperature values at CMBND cells)

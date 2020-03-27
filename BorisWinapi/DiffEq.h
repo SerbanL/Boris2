@@ -14,6 +14,7 @@
 #if COMPILECUDA == 1
 #include "DiffEqFMCUDA.h"
 #include "DiffEqAFMCUDA.h"
+#include "DiffEqDMCUDA.h"
 #endif
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -29,6 +30,7 @@ class DifferentialEquation :
 	friend DifferentialEquationCUDA;
 	friend DifferentialEquationFMCUDA;
 	friend DifferentialEquationAFMCUDA;
+	friend DifferentialEquationDMCUDA;
 #endif
 
 protected:
@@ -218,6 +220,11 @@ protected:
 	virtual DBL3 SLLBSTT(int idx) = 0;
 
 public:  //public methods
+
+	DifferentialEquation(void) :
+		ODECommon(true),
+		prng(GetTickCount())
+	{}
 
 	DifferentialEquation(Mesh *pMesh);
 	virtual ~DifferentialEquation();

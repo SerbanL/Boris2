@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Boris_Enums_Defs.h"
+#include "CompileFlags.h"
 #if COMPILECUDA == 1
 
 #include "BorisCUDALib.h"
@@ -17,8 +17,10 @@ class ODECommon;
 class DifferentialEquation;
 class DifferentialEquationFM;
 class DifferentialEquationAFM;
+class DifferentialEquationDM;
 class ManagedDiffEqFMCUDA;
 class ManagedDiffEqAFMCUDA;
+class ManagedDiffEqDMCUDA;
 class Mesh;
 class MeshCUDA;
 
@@ -28,8 +30,10 @@ class DifferentialEquationCUDA :
 	friend ODECommon;
 	friend DifferentialEquationFM;
 	friend DifferentialEquationAFM;
+	friend DifferentialEquationDM;
 	friend ManagedDiffEqFMCUDA;
 	friend ManagedDiffEqAFMCUDA;
+	friend ManagedDiffEqDMCUDA;
 
 protected:
 
@@ -165,6 +169,10 @@ protected:
 	virtual void GenerateThermalField_and_Torque(void) = 0;
 
 public:
+
+	DifferentialEquationCUDA(void) :
+		ODECommonCUDA()
+	{}
 
 	DifferentialEquationCUDA(DifferentialEquation *pmeshODE);
 

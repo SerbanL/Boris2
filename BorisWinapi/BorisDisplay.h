@@ -61,8 +61,6 @@ private:
 	//need thread-safe access to BorisDisplay - guard all external points of access (public methods)
 	mutex displayMutex;
 
-public:
-
 private:
 
 	//Bring the window space currently at currPos in bWin vector to the top.
@@ -172,6 +170,9 @@ public:
 
 	//allows access to Boris Graphics public methods.
 	BorisGraphics* BGMethods(void) { return pBG; }
+
+	//Lock and unlock the display mutex : calling this to ensure that any code that follows is not executed during a display refresh or before any other public BorisDisplay method has finished.
+	void WaitForDisplayEnd(void) { displayMutex.lock(); displayMutex.unlock(); }
 };
 
 #endif

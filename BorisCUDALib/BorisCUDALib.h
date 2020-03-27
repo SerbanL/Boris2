@@ -8,7 +8,6 @@
 //base headers (do not include other BorisLib headers)
 #include "launchers.h"
 #include "cuFuncs_Aux.h"
-#include "cuFuncs_Math.h"
 #include "CUDAError.h"
 #include "alloc_cpy.h"
 
@@ -27,6 +26,9 @@
 //second order
 
 #include "TEquationCUDA.h"
+#include "cuObj_Math_Special.h"
+
+#include "cuFuncs_Math.h"
 
 #include "cuVEC.h"
 #include "cuVEC_mng.h"

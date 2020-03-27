@@ -147,25 +147,25 @@ double Anisotropy_Uniaxial::UpdateField(void)
 			if (pMesh->M.is_not_empty(idx)) {
 
 				DBL2 Ms_AFM = pMesh->Ms_AFM;
-				double K1 = pMesh->K1;
-				double K2 = pMesh->K2;
+				DBL2 K1_AFM = pMesh->K1_AFM;
+				DBL2 K2_AFM = pMesh->K2_AFM;
 				DBL3 mcanis_ea1 = pMesh->mcanis_ea1;
 
-				pMesh->update_parameters_mcoarse(idx, pMesh->Ms_AFM, Ms_AFM, pMesh->K1, K1, pMesh->K2, K2, pMesh->mcanis_ea1, mcanis_ea1);
+				pMesh->update_parameters_mcoarse(idx, pMesh->Ms_AFM, Ms_AFM, pMesh->K1_AFM, K1_AFM, pMesh->K2_AFM, K2_AFM, pMesh->mcanis_ea1, mcanis_ea1);
 
 				//calculate m.ea dot product
 				double dotprod = (pMesh->M[idx] * mcanis_ea1) / Ms_AFM.i;
 				double dotprod2 = (pMesh->M2[idx] * mcanis_ea1) / Ms_AFM.j;
 
 				//update effective field with the anisotropy field
-				DBL3 Heff_value = (2 / (MU0*Ms_AFM.i)) * dotprod * (K1 + 2 * K2 * (1 - dotprod * dotprod)) * mcanis_ea1;
-				DBL3 Heff_value2 = (2 / (MU0*Ms_AFM.j)) * dotprod2 * (K1 + 2 * K2 * (1 - dotprod2 * dotprod2)) * mcanis_ea1;
+				DBL3 Heff_value = (2 / (MU0*Ms_AFM.i)) * dotprod * (K1_AFM.i + 2 * K2_AFM.i * (1 - dotprod * dotprod)) * mcanis_ea1;
+				DBL3 Heff_value2 = (2 / (MU0*Ms_AFM.j)) * dotprod2 * (K1_AFM.j + 2 * K2_AFM.j * (1 - dotprod2 * dotprod2)) * mcanis_ea1;
 
 				pMesh->Heff[idx] += Heff_value;
 				pMesh->Heff2[idx] += Heff_value2;
 
 				//update energy (E/V) = K1 * sin^2(theta) + K2 * sin^4(theta) = K1 * [ 1 - dotprod*dotprod ] + K2 * [1 - dotprod * dotprod]^2
-				energy += ((K1 + K2 * (1 - dotprod * dotprod)) * (1 - dotprod * dotprod) + (K1 + K2 * (1 - dotprod2 * dotprod2)) * (1 - dotprod2 * dotprod2)) / 2;
+				energy += ((K1_AFM.i + K2_AFM.i * (1 - dotprod * dotprod)) * (1 - dotprod * dotprod) + (K1_AFM.j + K2_AFM.j * (1 - dotprod2 * dotprod2)) * (1 - dotprod2 * dotprod2)) / 2;
 			}
 		}
 	}

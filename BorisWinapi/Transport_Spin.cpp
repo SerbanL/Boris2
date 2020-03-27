@@ -17,7 +17,7 @@
 
 DBL2 Transport::IterateSpinSolver_Charge_SOR(double damping)
 {
-	if (IsZ((double)pMesh->iSHA) || pMesh->M.linear_size()) {
+	if (IsZ((double)pMesh->iSHA) || stsolve == STSOLVE_FERROMAGNETIC || stsolve == STSOLVE_NONE) {
 
 		//no iSHE contribution. Note, iSHE is not included in magnetic meshes.
 		return pMesh->V.IteratePoisson_SOR<Transport>(&Transport::Evaluate_SpinSolver_delsqV_RHS, *this, damping);
@@ -109,11 +109,11 @@ double Transport::Evaluate_SpinSolver_delsqV_RHS(int idx) const
 	//The Poisson solver calls this method to evaluate the RHS of this equation
 	double value = 0.0;
 
-	if (!pMesh->M.linear_size()) {
+	if (stsolve == STSOLVE_NORMALMETAL || stsolve == STSOLVE_NONE) {
 
 		//non-magnetic mesh
 
-		if (IsZ(pMesh->iSHA.get0())) {
+		if (IsZ(pMesh->iSHA.get0()) || stsolve == STSOLVE_NONE) {
 
 			//1. no iSHE contribution.
 			value = -(pMesh->V.grad_diri(idx) * pMesh->elC.grad_sided(idx)) / pMesh->elC[idx];
@@ -176,7 +176,7 @@ double Transport::Evaluate_SpinSolver_delsqV_RHS(int idx) const
 //solve for spin accumulation using Poisson equation for delsq_S, solved using SOR algorithm
 DBL2 Transport::IterateSpinSolver_Spin_SOR(double damping)
 {
-	if (IsZ((double)pMesh->SHA) || pMesh->M.linear_size()) {
+	if (IsZ((double)pMesh->SHA) || stsolve == STSOLVE_FERROMAGNETIC) {
 
 		//no SHE contribution. Note, SHE is not included in magnetic meshes.
 		return pMesh->S.IteratePoisson_SOR<Transport>(&Transport::Evaluate_SpinSolver_delsqS_RHS, *this, damping);
@@ -205,7 +205,7 @@ void Transport::PrimeSpinSolver_Spin(void)
 
 		if (pMesh->V.is_not_empty(idx)) {
 
-			if (pMesh->M.linear_size()) {
+			if (stsolve == STSOLVE_FERROMAGNETIC) {
 
 				//magnetic mesh
 
@@ -285,7 +285,7 @@ DBL3 Transport::Evaluate_SpinSolver_delsqS_RHS(int idx) const
 	delsq_S_RHS = (pMesh->S[idx] / (l_sf * l_sf));
 
 	//Terms occuring only in magnetic meshes
-	if (pMesh->M.linear_size()) {
+	if (stsolve == STSOLVE_FERROMAGNETIC) {
 
 		double Ms = pMesh->Ms;
 		double l_ex = pMesh->l_ex;
@@ -312,7 +312,7 @@ DBL3 Transport::Evaluate_SpinSolver_delsqS_RHS(int idx) const
 //VERIFIED - CORRECT
 DBL3 Transport::NHNeumann_Vdiff(int idx) const
 {
-	if (pMesh->M.linear_size() || IsZ(pMesh->iSHA.get0())) return DBL3();
+	if (stsolve == STSOLVE_FERROMAGNETIC || IsZ(pMesh->iSHA.get0())) return DBL3();
 
 	double iSHA = pMesh->iSHA;
 	double De = pMesh->De;
@@ -325,7 +325,7 @@ DBL3 Transport::NHNeumann_Vdiff(int idx) const
 //VERIFIED - CORRECT
 DBL33 Transport::NHNeumann_Sdiff(int idx) const
 {
-	if (pMesh->M.linear_size() || IsZ(pMesh->SHA.get0())) return DBL33();
+	if (stsolve == STSOLVE_FERROMAGNETIC || IsZ(pMesh->SHA.get0())) return DBL33();
 
 	double SHA = pMesh->SHA;
 	double De = pMesh->De;
@@ -354,7 +354,7 @@ double Transport::afunc_st_V_sec(DBL3 relpos_m1, DBL3 shift, DBL3 stencil) const
 	bool cpump_enabled = IsNZ(pMesh->cpump_eff.get0()) && IsZ(shift.z);
 	bool the_enabled = IsNZ(pMesh->the_eff.get0()) && IsZ(shift.z);
 
-	if (pMesh->M.linear_size() && (cppgmr_enabled || cpump_enabled || the_enabled)) {
+	if (stsolve == STSOLVE_FERROMAGNETIC && (cppgmr_enabled || cpump_enabled || the_enabled)) {
 
 		//magnetic mesh
 
@@ -448,7 +448,7 @@ double Transport::afunc_st_V_sec(DBL3 relpos_m1, DBL3 shift, DBL3 stencil) const
 		//non-magnetic mesh
 
 		//1. ISHE contribution
-		if (IsNZ(pMesh->iSHA.get0())) {
+		if (IsNZ(pMesh->iSHA.get0()) && stsolve != STSOLVE_NONE) {
 
 			double iSHA = pMesh->iSHA;
 			double SHA = pMesh->SHA;
@@ -495,7 +495,7 @@ double Transport::afunc_st_V_pri(int cell1_idx, int cell2_idx, DBL3 shift) const
 	bool cpump_enabled = IsNZ(pMesh->cpump_eff.get0()) && IsZ(shift.z);
 	bool the_enabled = IsNZ(pMesh->the_eff.get0()) && IsZ(shift.z);
 
-	if (pMesh->M.linear_size() && (cppgmr_enabled || cpump_enabled || the_enabled)) {
+	if (stsolve == STSOLVE_FERROMAGNETIC && (cppgmr_enabled || cpump_enabled || the_enabled)) {
 
 		//magnetic mesh
 
@@ -583,7 +583,7 @@ double Transport::afunc_st_V_pri(int cell1_idx, int cell2_idx, DBL3 shift) const
 		//non-magnetic mesh
 
 		//1. ISHE contribution
-		if (IsNZ(pMesh->iSHA.get0())) {
+		if (IsNZ(pMesh->iSHA.get0()) && stsolve != STSOLVE_NONE) {
 
 			double iSHA = pMesh->iSHA;
 			double SHA = pMesh->SHA;
@@ -651,7 +651,7 @@ DBL3 Transport::afunc_st_S_sec(DBL3 relpos_m1, DBL3 shift, DBL3 stencil) const
 	DBL3 u = shift.normalized() * -1;
 
 	//values on secondary side
-	if (pMesh->M.linear_size()) {
+	if (stsolve == STSOLVE_FERROMAGNETIC) {
 
 		double Ms = pMesh->Ms;
 		double De = pMesh->De;
@@ -739,7 +739,7 @@ DBL3 Transport::afunc_st_S_pri(int cell1_idx, int cell2_idx, DBL3 shift) const
 	DBL3 u = shift.normalized() * -1;
 
 	//values on secondary side
-	if (pMesh->M.linear_size()) {
+	if (stsolve == STSOLVE_FERROMAGNETIC) {
 
 		double Ms = pMesh->Ms;
 		double De = pMesh->De;
@@ -879,6 +879,8 @@ double Transport::cfunc_pri(int cell_idx) const
 //VERIFIED - CORRECT
 void Transport::CalculateSAField(void)
 {
+	if (stsolve != STSOLVE_FERROMAGNETIC) return;
+
 #pragma omp parallel for
 	for (int idx = 0; idx < pMesh->M.linear_size(); idx++) {
 
@@ -909,9 +911,9 @@ void Transport::CalculateSAInterfaceField(Transport* ptrans_sec, CMBNDInfo& cont
 	//the top contacting mesh sets G values
 	bool GInterface_Enabled = ((contact.IsPrimaryTop() && pMesh->GInterface_Enabled()) || (!contact.IsPrimaryTop() && ptrans_sec->pMesh->GInterface_Enabled()));
 
-	if (pMesh->MComputation_Enabled() && !ptrans_sec->pMesh->Magnetisation_Enabled() && GInterface_Enabled) {
+	if (GInterface_Enabled && stsolve == STSOLVE_FERROMAGNETIC && ptrans_sec->stsolve == STSOLVE_NORMALMETAL) {
 
-		//interface conductance method with F being the primary mesh : calculate and set spin torque
+		//interface conductance method with F being the primary mesh (N-F) contact : calculate and set spin torque
 
 		//convert the cells box from S mesh to M mesh
 		INT3 mbox_start = pMesh->M.cellidx_from_position(pMesh->S.cellidx_to_position(contact.cells_box.s) + pMesh->meshRect.s);

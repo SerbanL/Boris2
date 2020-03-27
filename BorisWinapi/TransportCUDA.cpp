@@ -21,13 +21,15 @@ TransportCUDA::TransportCUDA(Mesh* pMesh_, SuperMesh* pSMesh_, Transport* pTrans
 
 	pTransport = pTransport_;
 
+	pTransport->Set_STSolveType();
+
 	error_on_create = UpdateConfiguration(UPDATECONFIG_FORCEUPDATE);
 
 	//setup objects with methods used for Poisson equation solvers
 	if (!error_on_create) error_on_create = poisson_V()->set_pointers(pMeshCUDA);
 	if (!error_on_create) {
 
-		if (pMesh->MComputation_Enabled()) {
+		if (stsolve == STSOLVE_FERROMAGNETIC) {
 
 			error_on_create = poisson_Spin_S()->set_pointers(
 				pMeshCUDA,
@@ -55,6 +57,17 @@ TransportCUDA::~TransportCUDA()
 	pMeshCUDA->V()->clear();
 	pMeshCUDA->E()->clear();
 	pMeshCUDA->S()->clear();
+}
+
+//-------------------Auxiliary
+
+	//set the stsolve indicator depending on current configuration
+void TransportCUDA::Set_STSolveType(void)
+{
+	stsolve = pTransport->stsolve;
+
+	poisson_Spin_V()->set_stsolve(stsolve);
+	poisson_Spin_S()->set_stsolve(stsolve);
 }
 
 //------------------Others
@@ -143,6 +156,8 @@ BError TransportCUDA::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 
 	bool success = true;
 
+	pTransport->Set_STSolveType();
+
 	//make sure correct memory is assigned for electrical quantities
 	
 	if (ucfg::check_cfgflags(cfgMessage, UPDATECONFIG_MESHSHAPECHANGE, UPDATECONFIG_MESHCHANGE)) {
@@ -181,7 +196,7 @@ BError TransportCUDA::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 	if (ucfg::check_cfgflags(cfgMessage, UPDATECONFIG_MESHSHAPECHANGE, UPDATECONFIG_MESHCHANGE, UPDATECONFIG_ODE_SOLVER)) {
 
 		//spin accumulation if needed - set empty cells using information in elC (empty cells have zero electrical conductivity)
-		if (success && pSMesh->SolveSpinCurrent()) {
+		if (success && stsolve != STSOLVE_NONE) {
 
 			if (pMeshCUDA->S()->size_cpu().dim() && cfgMessage != UPDATECONFIG_MESHSHAPECHANGE) {
 
@@ -219,7 +234,8 @@ void TransportCUDA::UpdateField(void)
 
 void TransportCUDA::CalculateElectricalConductivity(bool force_recalculate)
 {
-	if (pMesh->M.linear_size() && (IsNZ((double)pMesh->amrPercentage))) {
+	//Include AMR?
+	if (stsolve == STSOLVE_FERROMAGNETIC && (IsNZ((double)pMesh->amrPercentage))) {
 
 		CalculateElectricalConductivity_AMR();
 

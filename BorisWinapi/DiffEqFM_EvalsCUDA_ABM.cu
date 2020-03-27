@@ -1,8 +1,10 @@
 #include "DiffEqFMCUDA.h"
-#include "MeshParamsControlCUDA.h"
 
 #if COMPILECUDA == 1
 #ifdef ODE_EVAL_ABM
+#ifdef MESH_COMPILATION_FERROMAGNETIC
+
+#include "MeshParamsControlCUDA.h"
 
 //defines evaluation methods kernel launchers
 
@@ -309,5 +311,6 @@ void DifferentialEquationFMCUDA::RunABMTEuler(int step)
 	}
 }
 
+#endif
 #endif
 #endif
