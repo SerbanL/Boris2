@@ -9,7 +9,7 @@ void Simulation::Simulate(void)
 	if (simulationMutex.try_lock()) {
 
 		//Check conditions for saving data
-		CheckSaveDataCondtions();
+		CheckSaveDataConditions();
 
 		//advance time for this iteration
 #if COMPILECUDA == 1

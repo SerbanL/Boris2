@@ -35,6 +35,8 @@ private:
 
 protected:
 
+protected:
+
 	//this is overloaded by inheriting Exchange-type modules. Need this to be virtual so if for any reason a base pointer is used, the overloaded method is called instead.
 	BError Initialize(void);
 

@@ -17,7 +17,7 @@ public:
 
 	//Pointers to data in ODECommonCUDA
 
-	//-----------------------------------Time and Stage Time
+	//-----------------------------------Primary Data
 
 	cuBReal* ptime;
 	cuBReal* pstagetime;
@@ -27,7 +27,11 @@ public:
 	cuBReal* pdT;
 	cuBReal* pdT_last;
 
-	//-----------------------------------Primary data
+	//-----------------------------------Equation
+
+	int* psetODE;
+
+	//-----------------------------------mxh and dmdt
 
 	cuBReal* pmxh;
 	cuReal3* pmxh_av;
@@ -37,23 +41,21 @@ public:
 	cuReal3* pdmdt_av;
 	size_t* pavpoints2;
 
+	//----------------------------------Adaptive time step control
+
 	cuBReal* plte;
+
+	//-----------------------------------Special evaluation values
+
+	bool* palternator;
 
 	//-----------------------------------Evaluation method modifiers
 
 	bool* prenormalize;
 
-	//-----------------------------------Properties flags
+	//-----------------------------------Special Properties
 
 	bool* psolve_spin_current;
-
-	//-----------------------------------Equation and Evaluation method values
-
-	int* psetODE;
-
-	//-----------------------------------Special values
-
-	bool* palternator;
 
 	//-----------------------------------Steepest Descent Solver
 

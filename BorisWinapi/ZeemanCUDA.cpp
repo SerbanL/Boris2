@@ -6,8 +6,6 @@
 #ifdef MODULE_ZEEMAN
 
 #include "Zeeman.h"
-#include "Mesh_FerromagneticCUDA.h"
-#include "Mesh_AntiFerromagneticCUDA.h"
 
 ZeemanCUDA::ZeemanCUDA(MeshCUDA* pMeshCUDA_, Zeeman* pZeeman_) :
 	ModulesCUDA()

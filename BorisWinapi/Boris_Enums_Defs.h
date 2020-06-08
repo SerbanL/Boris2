@@ -177,6 +177,9 @@ namespace ucfg {
 //the default cellsize when creating a mesh (cubic) up to given number of maximum number of cells
 #define DEFAULTCELLSIZE	5e-9
 
+//the default atomistic cellsize when creating an atomistic mesh
+#define DEFAULTATOMCELLSIZE 2e-10
+
 //minimum and maximum damping values for fixed SOR damping algorithm
 #define MINSORDAMPING	0.1
 #define MAXSORDAMPING	2.0

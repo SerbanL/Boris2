@@ -125,8 +125,8 @@ public:
 
 enum AO_;
 
-typedef InteractiveObjectActionOutcome (HandlerObject::*SimAH)(int actionCode, InteractiveObjectProperties iop, TextObject *pTO);
-typedef InteractiveObjectStateChange (HandlerObject::*SimSH)(InteractiveObjectProperties &iop, TextObject *pTO);
+typedef InteractiveObjectActionOutcome (HandlerObject::*SimAH)(int actionCode, InteractiveObjectProperties& iop, TextObject *pTO);
+typedef InteractiveObjectStateChange (HandlerObject::*SimSH)(InteractiveObjectProperties& iop, TextObject *pTO);
 
 class SimTOFunct {
 

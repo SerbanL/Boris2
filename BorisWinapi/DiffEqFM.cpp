@@ -13,7 +13,6 @@ DifferentialEquationFM::DifferentialEquationFM(FMesh *pMesh):
 
 DifferentialEquationFM::~DifferentialEquationFM()
 {
-
 }
 
 //---------------------------------------- OTHERS
@@ -202,7 +201,7 @@ BError DifferentialEquationFM::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 {
 	BError error(CLASS_STR(DifferentialEquationFM));
 
-	//if (ucfg::check_cfgflags(cfgMessage, UPDATECONFIG_MESHCHANGE, UPDATECONFIG_ODE_SOLVER)) {
+	if (ucfg::check_cfgflags(cfgMessage, UPDATECONFIG_MESHCHANGE, UPDATECONFIG_ODE_SOLVER)) {
 
 		if (pMesh->link_stochastic) {
 
@@ -219,7 +218,7 @@ BError DifferentialEquationFM::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 		}
 
 		error = AllocateMemory();
-	//}
+	}
 
 	if (ucfg::check_cfgflags(cfgMessage, UPDATECONFIG_ODE_MOVEMESH)) {
 

@@ -3,6 +3,8 @@
 #include "BorisLib.h"
 #include "Modules.h"
 
+#include "ZeemanBase.h"
+
 using namespace std;
 
 class Mesh;
@@ -15,6 +17,7 @@ class SuperMesh;
 
 class Zeeman : 
 	public Modules,
+	public ZeemanBase,
 	public ProgramState<Zeeman, tuple<DBL3, TEquation<double, double, double, double>>, tuple<>>
 {
 
@@ -29,13 +32,6 @@ private:
 
 	//pointer to supermesh
 	SuperMesh* pSMesh;
-
-	//Applied field
-	DBL3 Ha;
-
-	//Applied field using user equation, thus allowing simultaneous spatial (x, y, z), stage time (t); base temperature (Tb) and stage step (Ss) are introduced as user constants.
-	//A number of constants are always present : mesh dimensions in m (Lx, Ly, Lz)
-	TEquation<double, double, double, double> H_equation;
 
 private:
 
@@ -64,10 +60,14 @@ public:
 
 	double UpdateField(void);
 
+	//-------------------Energy density methods
+
+	double GetEnergyDensity(Rect& avRect);
+
 	//-------------------
 
 	void SetField(DBL3 Hxyz);
-	DBL3 GetField(void);
+	DBL3 GetField(void) { return Ha; }
 
 	BError SetFieldEquation(string equation_string, int step);
 
@@ -78,7 +78,8 @@ public:
 #else
 
 class Zeeman :
-	public Modules
+	public Modules,
+	public ZeemanBase
 {
 
 private:
@@ -100,6 +101,10 @@ public:
 	BError MakeCUDAModule(void) { return BError(); }
 
 	double UpdateField(void) { return 0.0; }
+
+	//-------------------Energy density methods
+
+	double GetEnergyDensity(Rect& avRect) { return 0.0; }
 
 	//-------------------
 

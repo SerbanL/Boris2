@@ -403,6 +403,8 @@ BError SDemag::Set_PBC(INT3 demag_pbc_images_)
 
 	error = Set_M_PBC();
 
+	UninitializeAll();
+
 	//update will be needed if pbc settings have changed
 	error = UpdateConfiguration(UPDATECONFIG_DEMAG_CONVCHANGE);
 
@@ -421,25 +423,7 @@ BError SDemag::Set_M_PBC(void)
 		//Set PBC irrespective of demag exclusion setting
 		if ((*pSMesh)[idx]->MComputation_Enabled()) {
 
-			(*pSMesh)[idx]->M.set_pbc(demag_pbc_images.x, demag_pbc_images.y, demag_pbc_images.z);
-			
-			if ((*pSMesh)[idx]->GetMeshType() == MESH_ANTIFERROMAGNETIC) {
-
-				(*pSMesh)[idx]->M2.set_pbc(demag_pbc_images.x, demag_pbc_images.y, demag_pbc_images.z);
-			}
-
-			//same for the CUDA version if we are in cuda mode
-#if COMPILECUDA == 1
-			if (pModuleCUDA) {
-
-				if (!(*pSMesh)[idx]->pMeshCUDA->M()->copyflags_from_cpuvec((*pSMesh)[idx]->M)) return error(BERROR_GPUERROR_CRIT);
-				
-				if ((*pSMesh)[idx]->GetMeshType() == MESH_ANTIFERROMAGNETIC) {
-
-					if (!(*pSMesh)[idx]->pMeshCUDA->M2()->copyflags_from_cpuvec((*pSMesh)[idx]->M2)) return error(BERROR_GPUERROR_CRIT);
-				}
-			}
-#endif
+			(*pSMesh)[idx]->Set_Magnetic_PBC(demag_pbc_images);
 		}
 	}
 
@@ -520,7 +504,7 @@ BError SDemag::Initialize(void)
 
 			if ((*pSMesh)[idx]->MComputation_Enabled() && !(*pSMesh)[idx]->Get_Demag_Exclusion()) {
 
-				total_nonempty_volume += (double)pSMesh->pMesh[idx]->M.get_nonempty_cells() * pSMesh->pMesh[idx]->M.h.dim();
+				total_nonempty_volume += pSMesh->pMesh[idx]->Get_NonEmpty_Magnetic_Volume();
 			}
 		}
 	}
@@ -542,13 +526,13 @@ BError SDemag::Initialize_Mesh_Transfer(void)
 	//identify all existing (anti)ferrommagnetic meshes (magnetic computation enabled)
 	for (int idx = 0; idx < (int)pSMesh->pMesh.size(); idx++) {
 
-		if ((*pSMesh)[idx]->MComputation_Enabled()) {
+		if ((*pSMesh)[idx]->MComputation_Enabled() && !(*pSMesh)[idx]->is_atomistic()) {
 
-			pVal_from.push_back(&((*pSMesh)[idx]->M));
-			pVal_to.push_back(&((*pSMesh)[idx]->Heff));
+			pVal_from.push_back(&(reinterpret_cast<Mesh*>((*pSMesh)[idx])->M));
+			pVal_to.push_back(&(reinterpret_cast<Mesh*>((*pSMesh)[idx])->Heff));
 
-			pVal_from2.push_back(&((*pSMesh)[idx]->M2));
-			pVal_to2.push_back(&((*pSMesh)[idx]->Heff2));
+			pVal_from2.push_back(&(reinterpret_cast<Mesh*>((*pSMesh)[idx])->M2));
+			pVal_to2.push_back(&(reinterpret_cast<Mesh*>((*pSMesh)[idx])->Heff2));
 
 			if ((*pSMesh)[idx]->GetMeshType() == MESH_ANTIFERROMAGNETIC) antiferromagnetic_meshes_present = true;
 		}

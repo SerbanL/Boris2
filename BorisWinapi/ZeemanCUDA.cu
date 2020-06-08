@@ -8,8 +8,7 @@
 
 #include "MeshDefs.h"
 
-#include "Mesh_FerromagneticCUDA.h"
-#include "Mesh_AntiFerromagneticCUDA.h"
+#include "MeshCUDA.h"
 #include "MeshParamsControlCUDA.h"
 
 __global__ void ZeemanCUDA_UpdateField_FMDM(ManagedMeshCUDA& cuMesh, cuReal3& Ha, cuBReal& energy, bool do_reduction)
@@ -224,6 +223,188 @@ void ZeemanCUDA::UpdateField(void)
 		}
 	}
 }
+
+//-------------------Energy density methods
+
+__global__ void ZeemanCUDA_GetEnergy_FMDM(ManagedMeshCUDA& cuMesh, cuReal3& Ha, cuBReal& energy, size_t& points_count, cuRect avRect)
+{
+	cuVEC_VC<cuReal3>& M = *cuMesh.pM;
+
+	int idx = blockIdx.x * blockDim.x + threadIdx.x;
+
+	cuBReal energy_ = 0.0;
+
+	bool include_in_reduction = false;
+
+	if (idx < M.linear_size()) {
+
+		if (M.is_not_empty(idx) && avRect.contains(M.cellidx_to_position(idx))) {
+
+			cuBReal cHA = *cuMesh.pcHA;
+			cuMesh.update_parameters_mcoarse(idx, *cuMesh.pcHA, cHA);
+
+			energy_ = -(cuBReal)MU0 * M[idx] * (cHA * Ha);
+			include_in_reduction = true;
+		}
+	}
+
+	reduction_avg(0, 1, &energy_, energy, points_count, include_in_reduction);
+}
+
+__global__ void ZeemanCUDA_GetEnergy_Equation_FMDM(
+	ManagedMeshCUDA& cuMesh,
+	ManagedFunctionCUDA<cuBReal, cuBReal, cuBReal, cuBReal>& H_equation_x,
+	ManagedFunctionCUDA<cuBReal, cuBReal, cuBReal, cuBReal>& H_equation_y,
+	ManagedFunctionCUDA<cuBReal, cuBReal, cuBReal, cuBReal>& H_equation_z,
+	cuBReal time,
+	cuBReal& energy, size_t& points_count, cuRect avRect)
+{
+	cuVEC_VC<cuReal3>& M = *cuMesh.pM;
+
+	int idx = blockIdx.x * blockDim.x + threadIdx.x;
+
+	cuBReal energy_ = 0.0;
+
+	bool include_in_reduction = false;
+
+	if (idx < M.linear_size()) {
+
+		if (M.is_not_empty(idx) && avRect.contains(M.cellidx_to_position(idx))) {
+
+			cuBReal cHA = *cuMesh.pcHA;
+			cuMesh.update_parameters_mcoarse(idx, *cuMesh.pcHA, cHA);
+
+			cuReal3 relpos = M.cellidx_to_position(idx);
+			cuReal3 H = cuReal3(
+				H_equation_x.evaluate(relpos.x, relpos.y, relpos.z, time),
+				H_equation_y.evaluate(relpos.x, relpos.y, relpos.z, time),
+				H_equation_z.evaluate(relpos.x, relpos.y, relpos.z, time));
+
+			energy_ = -(cuBReal)MU0 * M[idx] * (cHA * H);
+			include_in_reduction = true;
+		}
+	}
+
+	reduction_avg(0, 1, &energy_, energy, points_count, include_in_reduction);
+}
+
+__global__ void ZeemanCUDA_GetEnergy_AFM(ManagedMeshCUDA& cuMesh, cuReal3& Ha, cuBReal& energy, size_t& points_count, cuRect avRect)
+{
+	cuVEC_VC<cuReal3>& M = *cuMesh.pM;
+	cuVEC_VC<cuReal3>& M2 = *cuMesh.pM2;
+
+	int idx = blockIdx.x * blockDim.x + threadIdx.x;
+
+	cuBReal energy_ = 0.0;
+
+	bool include_in_reduction = false;
+
+	if (idx < M.linear_size()) {
+
+		if (M.is_not_empty(idx) && avRect.contains(M.cellidx_to_position(idx))) {
+
+			cuBReal cHA = *cuMesh.pcHA;
+			cuMesh.update_parameters_mcoarse(idx, *cuMesh.pcHA, cHA);
+
+			energy_ = -(cuBReal)MU0 * (M[idx] + M2[idx]) * (cHA * Ha) / 2;
+			include_in_reduction = true;
+		}
+	}
+
+	reduction_avg(0, 1, &energy_, energy, points_count, include_in_reduction);
+}
+
+__global__ void ZeemanCUDA_GetEnergy_Equation_AFM(
+	ManagedMeshCUDA& cuMesh,
+	ManagedFunctionCUDA<cuBReal, cuBReal, cuBReal, cuBReal>& H_equation_x,
+	ManagedFunctionCUDA<cuBReal, cuBReal, cuBReal, cuBReal>& H_equation_y,
+	ManagedFunctionCUDA<cuBReal, cuBReal, cuBReal, cuBReal>& H_equation_z,
+	cuBReal time,
+	cuBReal& energy, size_t& points_count, cuRect avRect)
+{
+	cuVEC_VC<cuReal3>& M = *cuMesh.pM;
+	cuVEC_VC<cuReal3>& M2 = *cuMesh.pM2;
+
+	int idx = blockIdx.x * blockDim.x + threadIdx.x;
+
+	cuBReal energy_ = 0.0;
+
+	bool include_in_reduction = false;
+
+	if (idx < M.linear_size()) {
+
+		if (M.is_not_empty(idx) && avRect.contains(M.cellidx_to_position(idx))) {
+
+			cuBReal cHA = *cuMesh.pcHA;
+			cuMesh.update_parameters_mcoarse(idx, *cuMesh.pcHA, cHA);
+
+			cuReal3 relpos = M.cellidx_to_position(idx);
+			cuReal3 H = cuReal3(
+				H_equation_x.evaluate(relpos.x, relpos.y, relpos.z, time),
+				H_equation_y.evaluate(relpos.x, relpos.y, relpos.z, time),
+				H_equation_z.evaluate(relpos.x, relpos.y, relpos.z, time));
+
+			energy_ = -(cuBReal)MU0 * (M[idx] + M2[idx]) * (cHA * H) / 2;
+			include_in_reduction = true;
+		}
+	}
+
+	reduction_avg(0, 1, &energy_, energy, points_count, include_in_reduction);
+}
+
+cuBReal ZeemanCUDA::GetEnergyDensity(cuRect avRect)
+{
+	ZeroEnergy();
+
+	/////////////////////////////////////////
+	// Fixed set field
+	/////////////////////////////////////////
+
+	if (!H_equation.is_set()) {
+
+		if (pMeshCUDA->GetMeshType() == MESH_ANTIFERROMAGNETIC) {
+
+			ZeemanCUDA_GetEnergy_AFM <<< (pMeshCUDA->n.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (pMeshCUDA->cuMesh, Ha, energy, points_count, avRect);
+		}
+
+		else {
+
+			ZeemanCUDA_GetEnergy_FMDM <<< (pMeshCUDA->n.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (pMeshCUDA->cuMesh, Ha, energy, points_count, avRect);
+		}
+	}
+
+	/////////////////////////////////////////
+	// Field set from user equation
+	/////////////////////////////////////////
+
+	else {
+
+		if (pMeshCUDA->GetMeshType() == MESH_ANTIFERROMAGNETIC) {
+
+			ZeemanCUDA_GetEnergy_Equation_AFM <<< (pMeshCUDA->n.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (
+				pMeshCUDA->cuMesh,
+				H_equation.get_x(), H_equation.get_y(), H_equation.get_z(),
+				pMeshCUDA->GetStageTime(),
+				energy, points_count, avRect);
+		}
+
+		else {
+
+			ZeemanCUDA_GetEnergy_Equation_FMDM <<< (pMeshCUDA->n.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (
+				pMeshCUDA->cuMesh,
+				H_equation.get_x(), H_equation.get_y(), H_equation.get_z(),
+				pMeshCUDA->GetStageTime(),
+				energy, points_count, avRect);
+		}
+	}
+
+	size_t points_count_cpu = points_count.to_cpu();
+
+	if (points_count_cpu) return energy.to_cpu() / points_count_cpu;
+	else return 0.0;
+}
+
+//-------------------Others
 
 BError ZeemanCUDA::SetFieldEquation(const std::vector<std::vector< std::vector<EqComp::FSPEC> >>& fspec)
 {

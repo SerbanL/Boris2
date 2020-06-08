@@ -11,6 +11,8 @@
 #include "Mesh_Metal.h"
 #include "Mesh_Insulator.h"
 
+#include "Atom_Mesh_Cubic.h"
+
 #include "SDemag.h"
 #include "StrayField.h"
 #include "STransport.h"
@@ -23,16 +25,32 @@
 
 using namespace std;
 
-//This is a container of simulation meshes.
-//Coordinates the simulation flow between the different meshes.
-//Performs calculations which cannot be done at individual mesh level (e.g. demag field over multiple ferromagnetic meshes).
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//	
+//	This is a container of simulation meshes and modules which span two or more meshes (supermesh modules).
+//	Coordinates the simulation flow between the different meshes.
+//	Performs calculations which cannot be done at individual mesh level (e.g. demag field over multiple ferromagnetic meshes).
+//
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 class SuperMesh : 
 	public SimulationSharedData, 
 	public ProgramState<SuperMesh,
-	tuple<int, int, SZ3, DBL3, Rect, SZ3, DBL3, Rect, ODECommon, vector_key<Mesh*>, vector_lut<Modules*>, string, string, bool, bool>,
-	tuple<FMesh, DipoleMesh, MetalMesh, InsulatorMesh, AFMesh, DiaMesh,
-		  SDemag, StrayField, STransport, Oersted, SHeat> >
+	tuple<
+	int, int, 
+	SZ3, DBL3, Rect, SZ3, DBL3, Rect, 
+	ODECommon, Atom_ODECommon,
+	vector_key<MeshBase*>, 
+	vector_lut<Modules*>, 
+	string, string, 
+	bool, bool>,
+	tuple<
+	//Micromagnetic Meshes
+	FMesh, DipoleMesh, MetalMesh, InsulatorMesh, AFMesh, DiaMesh,
+	//Atomistic Meshes
+	Atom_Mesh_Cubic,
+	//supermesh modules
+	SDemag, StrayField, STransport, Oersted, SHeat> >
 {
 	//all supermesh modules are friends
 	friend SDemag;
@@ -61,8 +79,12 @@ public:
 
 private:
 
+	//-----
+
 	//if the object couldn't be created properly in the constructor an error is set here
 	BError error_on_create;
+
+	//-----Display data
 
 	//current quantity displayed on screen for super-mesh
 	int displayedPhysicalQuantity = MESHDISPLAY_NONE;
@@ -70,8 +92,15 @@ private:
 	//type of representation to use for vectorial quantities (see VEC3REP_ enum in PhysQDefs.h)
 	int vec3rep = (int)VEC3REP_FULL;
 
+	//name of currently active mesh in the pMesh vector (used for quicker data inputting in the console)
+	string activeMeshName = "permalloy";
+
+	//-----Supermesh dimensions
+
 	//the entire super-mesh rectangle (rectangle containing all meshes)
 	Rect sMeshRect;
+
+	//-----Supermesh dimensions : magnetic
 
 	//ferromagnetic super-mesh dimensions (this is the super-mesh that encompasses all ferromagnetic meshes)
 	SZ3 n_fm;
@@ -82,6 +111,8 @@ private:
 	//ferromagnetic super-mesh rectangle
 	Rect sMeshRect_fm;
 
+	//-----Supermesh dimensions : electric
+
 	//electric super-mesh dimensions (this is the super-mesh that encompasses all meshes with electrical computations enabled)
 	SZ3 n_e;
 
@@ -91,19 +122,31 @@ private:
 	//electric super-mesh rectangle
 	Rect sMeshRect_e;
 
+	//-----Micromagnetics ODE
+
 	//the micromagnetics equation to solve, together with its evaluation method is common to all meshes.
 	//This is the "static" base class (i.e. contains a bunch of properties which are shared by all particular ODE solvers in the different ferromagnetic meshes, together with methods to manage them)
 	//There are particular ODE objects in the ferromagnetic meshes, derived from ODECommon, since they differ in dimensions.
 	ODECommon odeSolver;
 
+	//-----Atomistic ODE
+
+	//the atomistic equation to solve (in atomistic meshes), together with its evaluation method is common to all atomistic meshes.
+	//This is the "static" base class (i.e. contains a bunch of properties which are shared by all particular atomistic ODE solvers in the different atomistic meshes, together with methods to manage them)
+	//There are particular ODE objects in the atomistic meshes, derived from Atom_ODECommon, since they differ in dimensions.
+	Atom_ODECommon atom_odeSolver;
+
+	//-----Meshes
+
 	//individual simulation meshes (key is the mesh name)
-	vector_key<Mesh*> pMesh;
+	vector_key<MeshBase*> pMesh;
+
+	//-----Supermesh Modules
 
 	//super-mesh effective field modules (used for long range interactions)
 	vector_lut<Modules*> pSMod;
 
-	//name of currently active mesh in the pMesh vector (used for quicker data inputting in the console)
-	string activeMeshName = "permalloy";
+	//-----Options
 
 	//when changing a mesh rectangle, scale all other rectangles in proportion
 	bool scale_rects = false;
@@ -127,6 +170,8 @@ private:
 
 public:
 
+	//--------------------------------------------------------- CTOR/DTOR
+
 	SuperMesh(void);
 	~SuperMesh();
 
@@ -139,21 +184,21 @@ public:
 	//--------------------------------------------------------- MESH INDEXING and related methods
 
 	//index the super-mesh using mesh name to return a mesh pointer (assumes the referenced mesh is contained in the pMesh vector).
-	Mesh* operator[](const string &key) { return pMesh[key]; }
-	Mesh* operator[](const int &meshIdx) { return pMesh[meshIdx]; }
+	MeshBase* operator[](const string &key) { return pMesh[key]; }
+	MeshBase* operator[](const int &meshIdx) { return pMesh[meshIdx]; }
 
 	//obtain mesh which contains the given coordinate (units m)
-	Mesh* operator[](DBL3 coordinate)
+	MeshBase* operator[](DBL3 coordinate)
 	{
 		for (int idx = 0; idx < pMesh.size(); idx++)
 			if (pMesh[idx]->GetMeshRect().contains(coordinate)) return pMesh[idx];
 		return nullptr;
 	}
 
-	Mesh* active_mesh(void) { return pMesh[activeMeshName]; }
+	MeshBase* active_mesh(void) { return pMesh[activeMeshName]; }
 
 	//return entire pMesh vector (used to access methods in vector_key on pMesh)
-	vector_key<Mesh*>& operator()(void) { return pMesh; }
+	vector_key<MeshBase*>& operator()(void) { return pMesh; }
 
 	//check if SMesh contains the given mesh : identify it by its key, or by its unique mesh id - for the latter return the index in pMesh (-1 if not found)
 	bool contains(string &key) { return pMesh.has_key(key); }
@@ -168,14 +213,20 @@ public:
 	//---------------------------------------------------------IMPORTANT CONTROL METHODS : SuperMeshControl.cpp
 
 	//call whenever changes are made to meshes (e.g. dimensions, cellsize, modules added/deleted)
+	//This is the master UpdateConfiguration method, which then cascades to meshes, modules and ODE solvers
 	BError UpdateConfiguration(UPDATECONFIG_ cfgMessage);
+	
+	//This is a "softer" version of UpdateConfiguration, which can be used any time and doesn't require any simulation objects to be Uninitialized
+	//this will typically involve changing a value across multiple objects, thus better to call this method rather than try to remember which objects need the value changed.
 	void UpdateConfiguration_Values(UPDATECONFIG_ cfgMessage);
-
-	//couple ferromagnetic meshes to any touching dipole meshes, setting interface cell values and flags
-	void CoupleToDipoles(void);
 
 	//switch CUDA state on/off
 	BError SwitchCUDAState(bool cudaState);
+
+	//---------------------------------------------------------MULTI-MESH CONTROL METHODS : SuperMeshControl.cpp
+
+	//couple ferromagnetic meshes to any touching dipole meshes, setting interface cell values and flags
+	void CoupleToDipoles(void);
 
 	//--------------------------------------------------------- SIMULATION CONTROL : SuperMeshSimulation.cpp
 
@@ -201,75 +252,83 @@ public:
 	void UpdateTransportSolverCUDA(void);
 #endif
 
-	//----------------------------------- ODE SOLVER CONTROL  : SuperMesh.cpp
+	//----------------------------------- ODE SOLVER CONTROL  : SuperMeshODE.cpp
 
-	//Reset all ODE solvers in meshes with on ODE (e.g. ferromagnetic meshes with LLG)
-	void ResetODE(void) { odeSolver.Reset(); }
+	//Reset all ODE solvers in meshes with on ODE
+	void ResetODE(void);
 
-	//set new stage for ODE solvers in the ferromagnetic meshes
-	void NewStageODE(void) 
-	{ 
-		//if setting new stage first clear all text equation objects - if this stage uses a text equation then it will be set elsewhere after this call
-		UpdateConfiguration_Values(UPDATECONFIG_TEQUATION_CLEAR);
-		//new stage in ode
-		odeSolver.NewStage(); 
-	}
+	//set new stage for ODE solvers
+	void NewStageODE(void);
 
-	//set the ode and evaluation method. Any new ODE in a ferromagnetic mesh will use these settings.
+	//set the ode and evaluation method. Any new ODE in a magnetic mesh will use these settings. Currently Micromagnetic and Atomistic ODEs use the same evaluation method.
 	BError SetODE(ODE_ setOde, EVAL_ evalMethod);
+	//same for the atomistic ODE. Currently Micromagnetic and Atomistic ODEs use the same evaluation method.
+	BError SetAtomisticODE(ODE_ setOde, EVAL_ evalMethod);
 
-	void SetEvaluationSpeedup(int status) { odeSolver.SetEvaluationSpeedup(status); UpdateConfiguration(UPDATECONFIG_ODE_SOLVER); }
+	void SetEvaluationSpeedup(int status);
 
 	//set the time step for the magnetisation solver
-	void SetTimeStep(double dT) { odeSolver.SetdT(dT); }
+	void SetTimeStep(double dT);
 
 	//set parameters for adaptive time step control
-	void SetAdaptiveTimeStepCtrl(double err_fail, double err_high, double err_low, double dT_incr, double dT_min, double dT_max) { odeSolver.SetAdaptiveTimeStepCtrl(err_fail, err_high, err_low, dT_incr, dT_min, dT_max); }
+	void SetAdaptiveTimeStepCtrl(double err_fail, double err_high, double err_low, double dT_incr, double dT_min, double dT_max);
+
+	void SetStochTimeStep(double dTstoch);
+	double GetStochTimeStep(void);
+	void SetLinkdTStochastic(bool flag);
+	bool GetLink_dTstoch(void);
 
 	//is the current time step fully finished? - most evaluation schemes need multiple sub-steps
-	bool CurrentTimeStepSolved(void) { return odeSolver.TimeStepSolved(); }
+	bool CurrentTimeStepSolved(void);
 	
 	//check evaluation speedup settings in ode solver
-	int EvaluationSpeedup(void) { return odeSolver.EvaluationSpeedup(); }
+	int EvaluationSpeedup(void);
 
 	//check in ODECommon the type of field update we need to do depending on the ODE evaluation step
-	int Check_Step_Update(void) { return odeSolver.Check_Step_Update(); }
+	int Check_Step_Update(void);
 
 	//check if ODE solver needs spin accumulation solved
-	bool SolveSpinCurrent(void) { return odeSolver.SolveSpinCurrent(); }
+	bool SolveSpinCurrent(void);
+
+	void SetMoveMeshAntisymmetric(bool antisymmetric);
+	void SetMoveMeshThreshold(double threshold);
 
 	void SetMoveMeshTrigger(bool status, string meshName = "");
 
-	void SetMoveMeshAntisymmetric(bool antisymmetric) { odeSolver.SetMoveMeshAntisymmetric(antisymmetric); }
-	void SetMoveMeshThreshold(double threshold) { odeSolver.SetMoveMeshThreshold(threshold); }
-
-	//---ODE Getters
+	//---Other ODE Getters
 
 	//get set ODE and evaluation method
-	void QueryODE(ODE_ &setODE, EVAL_ &evalMethod) { odeSolver.QueryODE(setODE, evalMethod); }
-	void QueryODE(ODE_ &setODE) { odeSolver.QueryODE(setODE); }
+	void QueryODE(ODE_ &setODE, EVAL_ &evalMethod);
+	void QueryODE(ODE_ &setODE);
 
-	int GetIteration(void) { return odeSolver.GetIteration(); }
-	int GetStageIteration(void) { return odeSolver.GetStageIteration(); }
+	//get set atomistic ODE and evaluation method
+	void QueryAtomODE(ODE_ &setODE, EVAL_ &evalMethod);
+	void QueryAtomODE(ODE_ &setODE);
 
-	double GetTime(void) { return odeSolver.GetTime(); }
-	double GetStageTime(void) { return odeSolver.GetStageTime(); }
-	double GetTimeStep(void) { return odeSolver.GetTimeStep(); }
-	double Get_mxh(void) { return odeSolver.Get_mxh(); }
-	double Get_dmdt(void) { return odeSolver.Get_dmdt(); }
+	int GetIteration(void);
+	int GetStageIteration(void);
 
-	DBL3 Get_AStepRelErrCtrl(void) { return odeSolver.Get_AStepRelErrCtrl(); }
-	DBL3 Get_AStepdTCtrl(void) { return odeSolver.Get_AStepdTCtrl(); }
+	double GetTime(void);
+	double GetStageTime(void);
+	
+	double GetTimeStep(void);
+	
+	double Get_mxh(void);
+	double Get_dmdt(void);
 
-	bool IsMovingMeshSet(void) { return odeSolver.IsMovingMeshSet(); }
-	int GetId_of_MoveMeshTrigger(void) { return odeSolver.GetId_of_MoveMeshTrigger(); }
-	double Get_dwshift(void) { return odeSolver.Get_dwshift(); }
+	DBL3 Get_AStepRelErrCtrl(void);
+	DBL3 Get_AStepdTCtrl(void);
 
-	bool MoveMeshAntisymmetric(void) { return odeSolver.MoveMeshAntisymmetric(); }
-	double MoveMeshThreshold(void) { return odeSolver.MoveMeshThreshold(); }
+	bool IsMovingMeshSet(void);
+	int GetId_of_MoveMeshTrigger(void);
+	double Get_dwshift(void);
+
+	bool MoveMeshAntisymmetric(void);
+	double MoveMeshThreshold(void);
 
 #if COMPILECUDA == 1
 	cu_obj<ManagedDiffEq_CommonCUDA>& Get_ManagedDiffEq_CommonCUDA(void) { return odeSolver.Get_pODECUDA()->Get_ManagedDiffEq_CommonCUDA(); }
+	cu_obj<ManagedAtom_DiffEq_CommonCUDA>& Get_ManagedAtom_DiffEq_CommonCUDA(void) { return atom_odeSolver.Get_pODECUDA()->Get_ManagedAtom_DiffEq_CommonCUDA(); }
 #endif
 
 	//--------------------------------------------------------- MESH HANDLING - COMPONENTS : SuperMeshMeshes.cpp
@@ -288,10 +347,10 @@ public:
 	//get name of mesh in focus
 	string GetMeshFocus(void) { return activeMeshName; }
 
+	//--------------------------------------------------------- MESH HANDLING - SHAPES : SuperMeshMeshes_Shapes.cpp
+
 	//set mesh rect for named mesh (any if applicable any other dependent meshes) and update dependent save data rects by calling the provided function.
 	BError SetMeshRect(string meshName, Rect meshRect, std::function<void(string, Rect)> save_data_updater);
-
-	//--------------------------------------------------------- MESH HANDLING - SHAPES : SuperMeshMeshes.cpp
 
 	//copy all primary mesh data (magnetisation, elC, Temp, etc.) but do not change dimensions or discretisation
 	BError copy_mesh_data(string meshName_from, string meshName_to);
@@ -317,19 +376,25 @@ public:
 	//Generate Voronoi 3D grains (boundaries between Voronoi cells set to empty) at given average spacing with prng instantiated with given seed.
 	BError GenerateGrains3D(string meshName, double spacing, int seed);
 
-	//--------------------------------------------------------- MESH HANDLING - SETTINGS : SuperMeshMeshes.cpp
+	//--------------------------------------------------------- MESH HANDLING - SETTINGS : SuperMeshMeshes_Settings.cpp
 
-	BError SetMagnetisationAngle(string meshName, double polar, double azim);
-	BError SetMagnetisationAngle_Rect(string meshName, double polar, double azim, Rect rectangle);
+	//set magnetisation angle in given mesh (all if meshName not given)
+	BError SetMagAngle(string meshName, double polar, double azim);
 
-	//Invert magnetisation direction in given mesh (must be ferromagnetic)
-	BError SetInvertedMagnetisation(string meshName);
+	//set magnetisation angle in given mesh (must be specified), and only in given rectangle of meshName (relative coordinates)
+	BError SetMagAngle_Rect(string meshName, double polar, double azim, Rect rectangle);
 
-	//Set random magentisation distribution in given mesh (must be ferromagnetic)
-	BError SetRandomMagnetisation(string meshName);
+	//Invert magnetisation direction in given mesh (must be magnetic)
+	BError SetInvertedMag(string meshName, bool x = true, bool y = true, bool z = true);
+
+	//Mirror magnetisation in given axis (literal x, y, or z) in given mesh (must be magnetic)
+	BError SetMirroredMag(string meshName, string axis);
+
+	//Set random magentisation distribution in given mesh (must be magnetic)
+	BError SetRandomMag(string meshName);
 
 	//longitudinal and transverse are the components specified as string literals : "-z", "-y", "-x", "x", "y", "z"
-	BError SetMagnetisationDomainWall(string meshName, string longitudinal, string transverse, double width, double position);
+	BError SetMagDomainWall(string meshName, string longitudinal, string transverse, double width, double position);
 
 	//Set Neel skyrmion in given mesh with chirality, diameter and relative x-y plane position
 	BError SetSkyrmion(string meshName, int orientation, int chirality, double diameter, DBL2 position);
@@ -424,13 +489,16 @@ public:
 
 	//set Curie temperature/atomic moment as Bohr magneton multiple for named mesh or all meshes (if meshName is the supermesh handle)
 	//this is for the actually set Tc value
+	//applicable for micromagnetic meshes only
 	BError SetCurieTemperature(string meshName, double T_Curie);
 	
 	//this is for the indicative material Tc value
+	//applicable for micromagnetic meshes only
 	BError SetCurieTemperatureMaterial(string meshName, double T_Curie_material);
 	BError SetAtomicMagneticMoment(string meshName, DBL2 atomic_moment);
 
 	//set Tc (critical temperature) coupling terms for 2-sublattice model
+	//applicable for micromagnetic meshes only
 	BError SetTcCoupling(string meshName, DBL2 tau_ii, DBL2 tau_ij);
 	BError SetTcCoupling_Intra(string meshName, DBL2 tau_ii);
 	BError SetTcCoupling_Inter(string meshName, DBL2 tau_ij);
@@ -447,9 +515,12 @@ public:
 	BError DelModule(string meshName, MOD_ moduleId);
 
 	bool IsSuperMeshModuleSet(MOD_ moduleId) { return pSMod.is_ID_set(moduleId); }
+
 	Modules* GetSuperMeshModule(MOD_ moduleId) { if (IsSuperMeshModuleSet(moduleId)) return pSMod(moduleId); else return nullptr; }
 
-	//--------------------------------------------------------- GET PROPERTIES / VALUES
+	//--------------------------------------------------------- GET/SET PROPERTIES / VALUES at SuperMesh level : SuperMesh_Settings.cpp
+
+	//--------Getters
 
 	Rect GetSMeshRect(void) { return sMeshRect; }
 
@@ -466,51 +537,23 @@ public:
 	bool Get_Coupled_To_Dipoles(void) { return coupled_dipoles; }
 
 	//get total volume energy density
-	double GetTotalEnergy(void);
+	double GetTotalEnergyDensity(void);
 
-	//--------------------------------------------------------- GET MODULE SPECIFIC PROPERTIES
+	//--------Getters for supermesh modules specific properties
 
 	//status for multi-layered convolution (-1 : N/A, 0 : off, 1 : on)
-	int Get_Multilayered_Convolution_Status(void)
-	{
-		if (IsSuperMeshModuleSet(MODS_SDEMAG)) {
-
-			return CallModuleMethod(&SDemag::Get_Multilayered_Convolution_Status);
-		}
-		else return -1;
-	}
+	int Get_Multilayered_Convolution_Status(void);
 
 	//status for force 2d multi-layered convolution (-1 : N/A, 0 : off, 1 : on)
-	int Get_2D_Multilayered_Convolution_Status(void)
-	{
-		if (IsSuperMeshModuleSet(MODS_SDEMAG)) {
-
-			return CallModuleMethod(&SDemag::Get_2D_Multilayered_Convolution_Status);
-		}
-		else return -1;
-	}
+	int Get_2D_Multilayered_Convolution_Status(void);
 
 	//status for use default n_common for multi-layered convolution (-1 : N/A, 0 : off, 1 : on)
-	int Use_Default_n_Status(void)
-	{
-		if (IsSuperMeshModuleSet(MODS_SDEMAG)) {
-
-			return CallModuleMethod(&SDemag::Use_Default_n_Status);
-		}
-		else return -1;
-	}
+	int Use_Default_n_Status(void);
 
 	//get n_common for multilayerd convolution (if return = SZ3() : N/A)
-	SZ3 Get_n_common(void)
-	{
-		if (IsSuperMeshModuleSet(MODS_SDEMAG)) {
+	SZ3 Get_n_common(void);
 
-			return CallModuleMethod(&SDemag::Get_n_common);
-		}
-		else return SZ3();
-	}
-
-	//--------------------------------------------------------- VALUE SETTERS : SuperMesh.cpp
+	//--------Setters
 
 	BError SetFMSMeshCellsize(DBL3 h_fm_);
 	BError SetESMeshCellsize(DBL3 h_e_);
@@ -548,9 +591,9 @@ public:
 	//--------------------------------------------------------- MODULE METHODS TEMPLATED CALLERS
 
 	//IMPORTANT NOTE: These templated callers work by trying to cast the Modules* (Module is the abstract base class) to a derived implementation type (i.e. to Owner*) - dynamic_cast results in nullptr if couldn't cast.
-	//				  Thus it is important that Owner is actually the implementation and not the base class Modules. If runThisMethod points to a method in Modules, e.g. GetEnergy, don't use the template deduction mechanism!
-	//				  e.g. if you use CallModuleMethod(&STransport::GetEnergy), then Owner will not be STransport but Modules, so dynamic_cast will succeed on first attempt which may not be the right module!
-	//				  In this case explicitly specify the template parameters as : CallModuleMethod<double, STransport>(&STransport::GetEnergy)
+	//				  Thus it is important that Owner is actually the implementation and not the base class Modules. If runThisMethod points to a method in Modules, e.g. GetEnergyDensity, don't use the template deduction mechanism!
+	//				  e.g. if you use CallModuleMethod(&STransport::GetEnergyDensity), then Owner will not be STransport but Modules, so dynamic_cast will succeed on first attempt which may not be the right module!
+	//				  In this case explicitly specify the template parameters as : CallModuleMethod<double, STransport>(&STransport::GetEnergyDensity)
 
 	//Call a method on a supermesh module (if module available)
 	template <typename RType, typename Owner>

@@ -63,6 +63,9 @@ double GetMagnitude(std::vector<VType>& V)
 	return sqrt(mag);
 }
 
+//SFINAE sink-hole
+inline double GetMagnitude(...) { return 0.0; }
+
 //obtain distance between two Cartesian coordinates specified as a VAL2
 template <typename VAL2Type, std::enable_if_t<std::is_convertible<INT2, VAL2Type>::value>* = nullptr>
 auto get_distance(const VAL2Type& coord1, const VAL2Type& coord2) -> decltype(std::declval<VAL2Type>().y)

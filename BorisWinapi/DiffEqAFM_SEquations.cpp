@@ -9,50 +9,28 @@
 
 //------------------------------------------------------------------------------------------------------ THERMAL VECs GENERATIONS
 
-//
-// Thermal field given as :
-//
-// Hth_magnitude = rand * SQRT( 2*alpha* kb*T / (MU0*|gamma_e|*V*MU0*Ms0*dT)) / alpha   (A/m) -> the thermal field is added only to the damping torque in LLG or in the LLB transverse damping torque.
-// 
-// For LLB thermal damping field, it is rand * SQRT( 2*(alpha_per - alpha_par)* kb*T / (MU0*|gamma_e|*V*MU0*Ms0*dT)) / alpha_per -> reduces to  the LLG version at T = 0K
-// For LLB longitudinal thermal torque, its magnitude is rand * SQRT(2*|gamma_e|*Ms0* kb*T * alpha_par / V * dT) -> this is the sLLB-II version from PRB 85, 014433 (2012)
-//
-// Note : alpha_per = alpha0*(1 - T/3Tc) for T < Tc, 2*alpha0*T/3Tc for T>=Tc
-//		  alpha_par = 2*alpha0*T/3Tc for T < Tc, alpha_par = alpha_per for T >= Tc
-//
-// So : alpha_per - alpha_par = alpha0 * (1 - T/Tc) for T < Tc, then 0 for T >= Tc
-//
-// kB has units of m^2kg / s^2K
-// gamma_e has units of As/kg
-// mu0 has units of N/A^2
-//
-// V is the volume of the mesh cell
-//
-// rand is a random factor between 0 and 1
-//
-
 void DifferentialEquationAFM::GenerateThermalField(void)
 {
-	//NOTE !!! Do not use separate distributions for theta and phi. I tried first for the polar angle a distribution from 0 to pi, and for azimuthal 0 to 2pi - It doesn't work, the resulting field tends to be polarized towards the left. I don't understand!!!!
+	//if not in linked dTstoch mode, then only generate stochastic field at a minimum of dTstoch spacing
+	if (!link_dTstoch && GetTime() < time_stoch + dTstoch) return;
+
+	double deltaT = (link_dTstoch ? dT : GetTime() - time_stoch);
+	time_stoch = GetTime();
 
 	DBL2 grel = pMesh->grel_AFM.get0();
 
 	if (IsNZ(grel.i + grel.j)) {
 
+		double Temperature = pMesh->GetBaseTemperature();
+
 #pragma omp parallel for
 		for (int idx = 0; idx < pMesh->n_s.dim(); idx++) {
 
-			double Temperature;
-
-			if (pMesh->Temp.linear_size()) {
-
-				Temperature = pMesh->Temp[H_Thermal.cellidx_to_position(idx)];
-			}
-			else Temperature = pMesh->GetBaseTemperature();
+			if (pMesh->Temp.linear_size()) Temperature = pMesh->Temp[H_Thermal.cellidx_to_position(idx)];
 
 			//do not include any damping here - this will be included in the stochastic equations
-			double Hth_const = sqrt(2 * BOLTZMANN * Temperature / (GAMMA * grel.i * pMesh->h_s.dim() * MU0 * pMesh->Ms_AFM.get0().i * dT));
-			double Hth_const_2 = sqrt(2 * BOLTZMANN * Temperature / (GAMMA * grel.j * pMesh->h_s.dim() * MU0 * pMesh->Ms_AFM.get0().j * dT));
+			double Hth_const = sqrt(2 * BOLTZMANN * Temperature / (GAMMA * grel.i * pMesh->h_s.dim() * MU0 * pMesh->Ms_AFM.get0().i * deltaT));
+			double Hth_const_2 = sqrt(2 * BOLTZMANN * Temperature / (GAMMA * grel.j * pMesh->h_s.dim() * MU0 * pMesh->Ms_AFM.get0().j * deltaT));
 
 			H_Thermal[idx] = Hth_const * DBL3(prng.rand_gauss(0, 1), prng.rand_gauss(0, 1), prng.rand_gauss(0, 1));
 			H_Thermal_2[idx] = Hth_const_2 * DBL3(prng.rand_gauss(0, 1), prng.rand_gauss(0, 1), prng.rand_gauss(0, 1));
@@ -62,26 +40,28 @@ void DifferentialEquationAFM::GenerateThermalField(void)
 
 void DifferentialEquationAFM::GenerateThermalField_and_Torque(void)
 {
+	//if not in linked dTstoch mode, then only generate stochastic field at a minimum of dTstoch spacing
+	if (!link_dTstoch && GetTime() < time_stoch + dTstoch) return;
+
+	double deltaT = (link_dTstoch ? dT : GetTime() - time_stoch);
+	time_stoch = GetTime();
+
 	DBL2 grel = pMesh->grel_AFM.get0();
 
 	if (IsNZ(grel.i + grel.j)) {
 
+		double Temperature = pMesh->GetBaseTemperature();
+
 #pragma omp parallel for
 		for (int idx = 0; idx < pMesh->n_s.dim(); idx++) {
 
-			double Temperature;
-
-			if (pMesh->Temp.linear_size()) {
-
-				Temperature = pMesh->Temp[H_Thermal.cellidx_to_position(idx)];
-			}
-			else Temperature = pMesh->GetBaseTemperature();
+			if (pMesh->Temp.linear_size()) Temperature = pMesh->Temp[H_Thermal.cellidx_to_position(idx)];
 
 			//1. Thermal Field
 
 			//do not include any damping here - this will be included in the stochastic equations
-			double Hth_const = sqrt(2 * BOLTZMANN * Temperature / (GAMMA * grel.i * pMesh->h_s.dim() * MU0 * pMesh->Ms_AFM.get0().i * dT));
-			double Hth_const_2 = sqrt(2 * BOLTZMANN * Temperature / (GAMMA * grel.j * pMesh->h_s.dim() * MU0 * pMesh->Ms_AFM.get0().j * dT));
+			double Hth_const = sqrt(2 * BOLTZMANN * Temperature / (GAMMA * grel.i * pMesh->h_s.dim() * MU0 * pMesh->Ms_AFM.get0().i * deltaT));
+			double Hth_const_2 = sqrt(2 * BOLTZMANN * Temperature / (GAMMA * grel.j * pMesh->h_s.dim() * MU0 * pMesh->Ms_AFM.get0().j * deltaT));
 
 			H_Thermal[idx] = Hth_const * DBL3(prng.rand_gauss(0, 1), prng.rand_gauss(0, 1), prng.rand_gauss(0, 1));
 			H_Thermal_2[idx] = Hth_const_2 * DBL3(prng.rand_gauss(0, 1), prng.rand_gauss(0, 1), prng.rand_gauss(0, 1));
@@ -89,8 +69,8 @@ void DifferentialEquationAFM::GenerateThermalField_and_Torque(void)
 			//2. Thermal Torque
 
 			//do not include any damping here - this will be included in the stochastic equations
-			double Tth_const = sqrt(2 * BOLTZMANN * Temperature * GAMMA * grel.i * pMesh->Ms_AFM.get0().i / (MU0 * pMesh->h_s.dim() * dT));
-			double Tth_const_2 = sqrt(2 * BOLTZMANN * Temperature * GAMMA * grel.j * pMesh->Ms_AFM.get0().j / (MU0 * pMesh->h_s.dim() * dT));
+			double Tth_const = sqrt(2 * BOLTZMANN * Temperature * GAMMA * grel.i * pMesh->Ms_AFM.get0().i / (MU0 * pMesh->h_s.dim() * deltaT));
+			double Tth_const_2 = sqrt(2 * BOLTZMANN * Temperature * GAMMA * grel.j * pMesh->Ms_AFM.get0().j / (MU0 * pMesh->h_s.dim() * deltaT));
 
 			Torque_Thermal[idx] = Tth_const * DBL3(prng.rand_gauss(0, 1), prng.rand_gauss(0, 1), prng.rand_gauss(0, 1));
 			Torque_Thermal_2[idx] = Tth_const_2 * DBL3(prng.rand_gauss(0, 1), prng.rand_gauss(0, 1), prng.rand_gauss(0, 1));
@@ -111,14 +91,16 @@ DBL3 DifferentialEquationAFM::SLLG(int idx)
 	int tn = omp_get_thread_num();
 
 	DBL3 position = pMesh->M.cellidx_to_position(idx);
-	DBL3 H_Thermal_Value = H_Thermal[position] / sqrt(alpha_AFM.i);
-	DBL3 H_Thermal_Value_2 = H_Thermal_2[position] / sqrt(alpha_AFM.j);
+	DBL3 H_Thermal_Value = H_Thermal[position] * sqrt(alpha_AFM.i);
+	DBL3 H_Thermal_Value_2 = H_Thermal_2[position] * sqrt(alpha_AFM.j);
 
 	//sub-lattice B value so we can read it after
-	Equation_Eval_2[tn] = (-GAMMA * grel_AFM.j / (1 + alpha_AFM.j*alpha_AFM.j)) * ((pMesh->M2[idx] ^ pMesh->Heff2[idx]) + alpha_AFM.j * ((pMesh->M2[idx] / Ms_AFM.j) ^ (pMesh->M2[idx] ^ (pMesh->Heff2[idx] + H_Thermal_Value_2))));
+	Equation_Eval_2[tn] = (-GAMMA * grel_AFM.j / (1 + alpha_AFM.j*alpha_AFM.j)) * 
+		((pMesh->M2[idx] ^ (pMesh->Heff2[idx] + H_Thermal_Value_2)) + alpha_AFM.j * ((pMesh->M2[idx] / Ms_AFM.j) ^ (pMesh->M2[idx] ^ (pMesh->Heff2[idx] + H_Thermal_Value_2))));
 
 	//return the sub-lattice A value as normal
-	return (-GAMMA * grel_AFM.i / (1 + alpha_AFM.i*alpha_AFM.i)) * ((pMesh->M[idx] ^ pMesh->Heff[idx]) + alpha_AFM.i * ((pMesh->M[idx] / Ms_AFM.i) ^ (pMesh->M[idx] ^ (pMesh->Heff[idx] + H_Thermal_Value))));
+	return (-GAMMA * grel_AFM.i / (1 + alpha_AFM.i*alpha_AFM.i)) * 
+		((pMesh->M[idx] ^ (pMesh->Heff[idx] + H_Thermal_Value)) + alpha_AFM.i * ((pMesh->M[idx] / Ms_AFM.i) ^ (pMesh->M[idx] ^ (pMesh->Heff[idx] + H_Thermal_Value))));
 }
 
 //------------------------------------------------------------------------------------------------------
@@ -135,11 +117,14 @@ DBL3 DifferentialEquationAFM::SLLGSTT(int idx)
 	int tn = omp_get_thread_num();
 
 	DBL3 position = pMesh->M.cellidx_to_position(idx);
-	DBL3 H_Thermal_Value = H_Thermal[position] / sqrt(alpha_AFM.i);
-	DBL3 H_Thermal_Value_2 = H_Thermal_2[position] / sqrt(alpha_AFM.j);
+	DBL3 H_Thermal_Value = H_Thermal[position] * sqrt(alpha_AFM.i);
+	DBL3 H_Thermal_Value_2 = H_Thermal_2[position] * sqrt(alpha_AFM.j);
 
-	DBL3 LLGSTT_Eval_A = (-GAMMA * grel_AFM.i / (1 + alpha_AFM.i * alpha_AFM.i)) * ((pMesh->M[idx] ^ pMesh->Heff[idx]) + alpha_AFM.i * ((pMesh->M[idx] / Ms_AFM.i) ^ (pMesh->M[idx] ^ (pMesh->Heff[idx] + H_Thermal_Value))));
-	DBL3 LLGSTT_Eval_B = (-GAMMA * grel_AFM.j / (1 + alpha_AFM.j * alpha_AFM.j)) * ((pMesh->M2[idx] ^ pMesh->Heff2[idx]) + alpha_AFM.j * ((pMesh->M2[idx] / Ms_AFM.j) ^ (pMesh->M2[idx] ^ (pMesh->Heff2[idx] + H_Thermal_Value_2))));
+	DBL3 LLGSTT_Eval_A = (-GAMMA * grel_AFM.i / (1 + alpha_AFM.i * alpha_AFM.i)) * 
+		((pMesh->M[idx] ^ (pMesh->Heff[idx] + H_Thermal_Value)) + alpha_AFM.i * ((pMesh->M[idx] / Ms_AFM.i) ^ (pMesh->M[idx] ^ (pMesh->Heff[idx] + H_Thermal_Value))));
+	
+	DBL3 LLGSTT_Eval_B = (-GAMMA * grel_AFM.j / (1 + alpha_AFM.j * alpha_AFM.j)) * 
+		((pMesh->M2[idx] ^ (pMesh->Heff2[idx] + H_Thermal_Value_2)) + alpha_AFM.j * ((pMesh->M2[idx] / Ms_AFM.j) ^ (pMesh->M2[idx] ^ (pMesh->Heff2[idx] + H_Thermal_Value_2))));
 
 	if (pMesh->E.linear_size()) {
 

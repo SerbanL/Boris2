@@ -387,7 +387,7 @@ double Roughness::UpdateField(void)
 	}
 
 	//average energy density
-	if (pMesh->M.get_nonempty_cells()) energy *= -MU0 / (2 * (pMesh->M.get_nonempty_cells()));
+	if (pMesh->M.get_nonempty_cells()) energy *= -MU0 / (2 * pMesh->M.get_nonempty_cells());
 	else energy = 0;
 
 	this->energy = energy;

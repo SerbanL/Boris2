@@ -14,6 +14,7 @@
 //NOTES : renormalize at last step for all equations except all LLB versions
 
 class ODECommon;
+class ODECommon_Base;
 class DifferentialEquation;
 class DifferentialEquationFM;
 class DifferentialEquationAFM;
@@ -28,6 +29,7 @@ class DifferentialEquationCUDA :
 	public ODECommonCUDA
 {
 	friend ODECommon;
+	friend ODECommon_Base;
 	friend DifferentialEquationFM;
 	friend DifferentialEquationAFM;
 	friend DifferentialEquationDM;
@@ -52,6 +54,9 @@ protected:
 	//pseudo-random number generator for use in cuda kernels
 	cu_obj<cuBorisRand> prng;
 
+	//deltaT to use for stochastic field generation : set before generating stochastic fields if not linked to dT
+	cu_obj<cuBReal> deltaTstoch;
+
 	//pointer to mesh with this ODE set
 	Mesh *pMesh;
 
@@ -66,10 +71,10 @@ protected:
 	//---------------------------------------- SET-UP METHODS
 
 	//allocate memory depending on set evaluation method - also cleans up previously allocated memory by calling CleanupMemory();
-	virtual BError AllocateMemory(void) = 0;
+	virtual BError AllocateMemory(bool copy_from_cpu = false) = 0;
 
 	//deallocate memory before re-allocating it (depending on evaluation method previously allocated memory might not be used again, so need clean-up before)
-	virtual void CleanupMemory(void) = 0;
+	virtual void CleanupMemory(bool copy_to_cpu = false) = 0;
 
 	virtual void SetODEMethodPointers(void) = 0;
 
@@ -165,8 +170,12 @@ protected:
 	//---------------------------------------- OTHER CALCULATION METHODS : DiffEq_SEquationsCUDA.cu
 
 	//called when using stochastic equations
-	virtual void GenerateThermalField(void) = 0;
-	virtual void GenerateThermalField_and_Torque(void) = 0;
+	void GenerateThermalField(void);
+	void GenerateThermalField_and_Torque(void);
+
+	//called when using stochastic equations : these hold kernel launchers
+	virtual void GenerateThermalField_CUDA(cu_obj<cuBReal>& deltaT) = 0;
+	virtual void GenerateThermalField_and_Torque_CUDA(cu_obj<cuBReal>& deltaT) = 0;
 
 public:
 

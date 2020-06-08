@@ -1,90 +1,33 @@
 #pragma once
 
-#include <omp.h>
+#include "MeshBase.h"
 
-#include "CompileFlags.h"
-#include "ErrorHandler.h"
-
-#include "PhysQRep.h"
-
-#include "SimSharedData.h"
-
-#include "MeshDefs.h"
 #include "MeshParams.h"
-
 #include "DiffEq.h"
-
-#include "ExchangeBase.h"
-#include "Exchange.h"
-#include "DMExchange.h"
-#include "iDMExchange.h"
-#include "SurfExchange.h"
-#include "Demag.h"
-#include "Demag_N.h"
-#include "SDemag_Demag.h"
-#include "Zeeman.h"
-#include "Anisotropy.h"
-#include "AnisotropyCubi.h"
-#include "MElastic.h"
-#include "Transport.h"
-#include "Heat.h"
-#include "SOTField.h"
-#include "Roughness.h"
 
 #if COMPILECUDA == 1
 #include "MeshCUDA.h"
 #endif
 
-using namespace std;
-
 class SuperMesh;
 
 /////////////////////////////////////////////////////////////////////
 //
-//abstract base Mesh class - implement various types of meshes using this base
+// abstract base Mesh class for micromagnetic meshes
+// implement various types of micromagnetic meshes using this base
 
 class Mesh : 
-	public SimulationSharedData,
+	public MeshBase,
 	public MeshParams
 {
+
 #if COMPILECUDA == 1
 	friend MeshCUDA;
 #endif
 
+private:
+
 protected:
-
-	int OmpThreads;
-
-	//if the object couldn't be created properly in the constructor an error is set here
-	BError error_on_create;
-
-	//the type of mesh
-	int meshType;
-
-	//unique mesh id generated when the object is created (meshIdCounter simply increments every time a new mesh is created and sets a new meshId)
-	static int meshIdCounter;
-
-	//a unique mesh id number generated when the object is created, using meshIdCounter.
-	int meshId = ++meshIdCounter;
-	   
-	//current quantity displayed on screen
-	int displayedPhysicalQuantity;
-
-	//we can also display, for the same mesh, a secondary physical quantity, at the same time as the primary one.
-	//in this case we'll want to use transparency for one or both so we can see them at the same time
-	int displayedBackgroundPhysicalQuantity = MESHDISPLAY_NONE;
-
-	//type of representation to use for vectorial quantities (see VEC3REP_ enum in PhysQDefs.h)
-	int vec3rep = (int)VEC3REP_FULL;
-
-	//if displaying a parameter spatial variation, this value will say which parameter (a value from PARAM_ enum)
-	int displayedParamVar = PARAM_GREL;
-
-	//effective field modules currently assigned to this mesh
-	vector_lut<Modules*> pMod;
-
-	//if this mesh can participate in multilayered demag convolution, you have the option of excluding it (e.g. antiferromagnetic mesh) - by default all meshes with magnetic computation enabled are included.
-	bool exclude_from_multiconvdemag = false;
 
 public:
 
@@ -93,24 +36,7 @@ public:
 	MeshCUDA* pMeshCUDA = nullptr;
 #endif
 
-	//pointer to the supermesh holding this mesh (some modules in this mesh will need to see other meshes).
-	SuperMesh* pSMesh;
-
-	//the mesh rectangle in meters : this defines the mesh position in the world (in the super-mesh). cellsizes must divide the mesh rectangle, giving the number of cells in each dimension
-	Rect meshRect;
-
-	//-----Custom Mesh Display
-	
-	VEC<DBL3> displayVEC_VEC;
-	VEC<double> displayVEC_SCA;
-
 	//-----Ferromagnetic properties
-
-	//number of cells (n.x, n.y, n.z)
-	SZ3 n = SZ3(1);
-
-	//cellsizes (h.x, h.y, h.z)
-	DBL3 h = DBL3(5e-9);
 
 	//Magnetization using double floating point precision
 	VEC_VC<DBL3> M;
@@ -126,37 +52,11 @@ public:
 
 	//-----Electric conduction properties (Electron charge and spin Transport)
 
-	//number of cells for electrical properties
-	SZ3 n_e = SZ3(1);
-
-	//cellsize for electrical properties
-	DBL3 h_e = DBL3(5e-9);
-
-	//electrical potential - on n_e, h_e mesh
-	VEC_VC<double> V;
-	
-	//electrical conductivity - on n_e, h_e mesh
-	VEC_VC<double> elC;
-
-	//electric field - on n_e, h_e mesh
-	VEC_VC<DBL3> E;
-
-	//spin accumulation - on n_e, h_e mesh
-	VEC_VC<DBL3> S;
+	//In Meshbase
 
 	//-----Thermal conduction properties
 
-	//number of cells for thermal properties
-	SZ3 n_t = SZ3(1);
-
-	//cellsize for thermal properties
-	DBL3 h_t = DBL3(5e-9);
-
-	//temperature calculated by Heat module (primary temperature, always used for 1-temperature model; for multi-temperature models in metals this is the itinerant electron temperature)
-	VEC_VC<double> Temp;
-
-	//lattice temperature used in many-T models
-	VEC_VC<double> Temp_l;
+	//In Meshbase
 
 	//-----Stochastic cellsize (VECs held in DiffEq)
 
@@ -171,21 +71,7 @@ public:
 
 	//-----Mechanical properties
 
-	//number of cells for mechanical properties
-	SZ3 n_m = SZ3(1);
-
-	//cellsize for mechanical properties
-	DBL3 h_m = DBL3(5e-9);
-
-	//mechanical displacement vectors - on n_m, h_m mesh
-	VEC_VC<DBL3> u_disp;
-
-	//strain tensor (symmetric):
-	//diagonal and off-diagonal components - on n_m, h_m mesh
-	//xx, yy, zz
-	VEC_VC<DBL3> strain_diag;
-	//yz, xz, xy
-	VEC_VC<DBL3> strain_odiag;
+	//In Meshbase
 
 private:
 
@@ -284,69 +170,32 @@ private:
 
 public:
 	
+	//------------------------CTOR/DTOR
+
 	Mesh(MESH_ meshType, SuperMesh *pSMesh_);
 
 	virtual ~Mesh();
 
-	//obtain error_on_create from this mesh, as well as any set modules - return first error found
-	BError Error_On_Create(void);
+	//----------------------------------- OTHER CONTROL METHODS : MeshControl.cpp
 
-	//----------------------------------- MODULES indexing
+	//used by move mesh algorithm : shift mesh quantities (e.g. magnetisation) by the given shift (metric units) value within this mesh. The shift is along the x-axis direction only (+ve or -ve).
+	void MoveMesh(double x_shift);
 
-	//index by actual index in pMod
-	Modules* operator[](const int &modIdx) { return pMod[modIdx]; }
+	//set PBC for required VECs : should only be called from a demag module
+	BError Set_Magnetic_PBC(INT3 pbc_images);
 
-	//index by module ID
-	Modules* operator()(const int &modID) { return pMod(modID); }
-
-	//return entire pMod vector (used to access methods in vector_lut on pMod)
-	vector_lut<Modules*>& operator()(void) { return pMod; }
-
-	//----------------------------------- MODULES CONTROL : MeshModules.cpp
+	//----------------------------------- MODULES CONTROL (implement MeshBase) : MeshModules.cpp
 
 	//Add module to list of set modules, also deleting any exclusive modules to this one
 	//If you set force_add = true then duplicate modules are allowed : in this case you must keep track of them
 	BError AddModule(MOD_ moduleID, bool force_add = false);
-	
-	//delete all modules with given id
-	void DelModule(MOD_ moduleID);
-
-	//Delete this particular module, if found.
-	//This method is intended to be called from within the module itself, asking for it to be deleted - a call to its dtor will be issued.
-	//When using this method in this way, the calling module should immediately return as any further data access there will result in bad memory access.
-	//The return addess is still valid as it will be stored on the stack.
-	void DelModule(Modules* pModule);
-
-	bool IsModuleSet(MOD_ moduleID) { return pMod.is_ID_set(moduleID); }
-	
-	//get number of active modules with given ID
-	int GetNumModules(MOD_ moduleID) { return pMod.get_num_IDs(moduleID); }
-
-	Modules* GetModule(MOD_ moduleID, int module_number = 0) { if (pMod.is_id_set(INT2(moduleID, module_number))) return pMod[INT2(moduleID, module_number)]; else return nullptr; }
-
-#if COMPILECUDA == 1
-	ModulesCUDA* GetCUDAModule(MOD_ moduleId) { if (IsModuleSet(moduleId)) return pMod(moduleId)->GetCUDAModule(); else return nullptr; }
-#endif
-
-	//---- INITIALIZE MODULES -> Call Modules::Initialize
-
-	//initialize all modules prior to computations starting
-	BError InitializeAllModules(void);
-
-#if COMPILECUDA == 1
-	BError InitializeAllModulesCUDA(void);
-#endif
 
 	//---- UPDATE MODULES -> Call Modules::UpdateField
-
-	//update computational state of all modules in this mesh; return total volume energy density -> each module will have a contribution, so sum it
-	double UpdateModules(void);
 
 	//update MOD_TRANSPORT module only if set
 	void UpdateTransportSolver(void);
 
 #if COMPILECUDA == 1
-	void UpdateModulesCUDA(void);
 	void UpdateTransportSolverCUDA(void);
 #endif
 
@@ -354,30 +203,14 @@ public:
 
 	//set/get mesh base temperature; by default any text equation dependence will be cleared unless indicated specifically not to (e.g. called when setting base temperature value after evaluating the text equation)
 	void SetBaseTemperature(double Temperature, bool clear_equation = true);
-	double GetBaseTemperature(void) { return base_temperature; }
-
-	//set text equation for base temperature : when iterating, the base temperature will be evaluated and set using the text equation
-	BError SetBaseTemperatureEquation(string equation_string, int step);
-	void UpdateTEquationUserConstants(void);
-
-	//parameters spatial variation setters
-	
-	//update all mesh parameters spatial variation (if needed)
-	bool update_meshparam_var(void);
-
-	//update text equations for mesh parameters with user constants, mesh dimensions, Curie temperature, base temperature
-	bool update_meshparam_equations(void);
-
-	//set parameter spatial variation using a given generator and arguments (arguments passed as a string to be interpreted and converted using ToNum)
-	BError set_meshparam_var(PARAM_ paramID, MATPVAR_ generatorID, string generatorArgs, function<vector<BYTE>(string, INT2)>& bitmap_loader);
 
 	//others	
 
 	//copy all parameters from another Mesh
-	BError copy_mesh_parameters(Mesh& copy_this);
+	BError copy_mesh_parameters(MeshBase& copy_this);
 
-	//each parameter has a certain type (PARAMTYPE_) - return cellsize in this mesh associated with this parameter type (e.g. ferromagnetic, electric, thermal, elastic)
-	DBL3 get_paramtype_cellsize(PARAM_ paramID);
+	//this just sets the indicative material Tc value
+	void SetCurieTemperatureMaterial(double Tc_material) { T_Curie_material = Tc_material; }
 
 	//----------------------------------- RUNTIME PARAMETER UPDATERS (MeshParamsControl.h)
 
@@ -405,33 +238,6 @@ public:
 	template <typename ... MeshParam_List>
 	void update_parameters_atposition(const DBL3& position, MeshParam_List& ... params);
 
-	//----------------------------------- OTHER IMPORTANT CONTROL METHODS : MeshControl.cpp
-
-	//call when the mesh dimensions have changed - sets every quantity to the right dimensions
-	virtual BError UpdateConfiguration(UPDATECONFIG_ cfgMessage) = 0;
-
-	//This is a "softer" version of UpdateConfiguration, which can be used any time and doesn't require the object to be Uninitialized; 
-	//this will typically involve changing a value across multiple objects, thus better to call this method rather than try to remember which objects need the value changed.
-	virtual void UpdateConfiguration_Values(UPDATECONFIG_ cfgMessage) = 0;
-
-	//at the start of each iteration the mesh might have to be prepared (e.g. state flags set)
-	virtual void PrepareNewIteration(void) = 0;
-
-#if COMPILECUDA == 1
-	virtual void PrepareNewIterationCUDA(void) = 0;
-#endif
-
-	//used by move mesh algorithm : shift mesh quantities (e.g. magnetisation) by the given shift (metric units) value within this mesh. The shift is along the x-axis direction only (+ve or -ve).
-	void MoveMesh(double x_shift);
-
-	//Check if mesh needs to be moved (using the MoveMesh method) - return amount of movement required (i.e. parameter to use when calling MoveMesh).
-	virtual double CheckMoveMesh(void) = 0;
-
-	//---- CUDA SWITCH
-
-	//switch CUDA state on/off
-	virtual BError SwitchCUDAState(bool cudaState) = 0;
-
 	//----------------------------------- DISPLAY-ASSOCIATED GET/SET METHODS : MeshDisplay.cpp
 
 	//Return quantity currently set to display on screen.
@@ -453,62 +259,19 @@ public:
 	//return average value for currently displayed mesh quantity in the given relative rectangle
 	Any GetAverageDisplayedMeshValue(Rect rel_rect);
 
-	int GetDisplayedPhysicalQuantity(void) { return displayedPhysicalQuantity; }
-	int GetDisplayedBackgroundPhysicalQuantity(void) { return displayedBackgroundPhysicalQuantity; }
-
-	int GetDisplayedParamVar(void) { return displayedParamVar; }
-
-	void SetDisplayedPhysicalQuantity(int displayedPhysicalQuantity_) 
-	{ 
-		if (displayedPhysicalQuantity_ != displayedBackgroundPhysicalQuantity || displayedPhysicalQuantity_ == MESHDISPLAY_NONE) displayedPhysicalQuantity = displayedPhysicalQuantity_; 
-	}
-	
-	void SetDisplayedBackgroundPhysicalQuantity(int displayedBackgroundPhysicalQuantity_) 
-	{ 
-		if (displayedBackgroundPhysicalQuantity_ != displayedPhysicalQuantity || displayedBackgroundPhysicalQuantity_ == MESHDISPLAY_NONE) {
-
-			if (displayedBackgroundPhysicalQuantity_ == displayedBackgroundPhysicalQuantity) displayedBackgroundPhysicalQuantity = MESHDISPLAY_NONE;
-			else displayedBackgroundPhysicalQuantity = displayedBackgroundPhysicalQuantity_;
-		}
-	}
-
-	void SetDisplayedParamVar(int displayedParamVar_) { displayedParamVar = displayedParamVar_; }
-
-	void SetVEC3Rep(int vec3rep_) { vec3rep = vec3rep_; }
-	int GetVEC3Rep(void) { return vec3rep; }
-
-	bool IsDisplayBackgroundEnabled(void) { return displayedBackgroundPhysicalQuantity != MESHDISPLAY_NONE; }
-
-	//----------------------------------- MESH INFO AND SIZE GET/SET METHODS : Mesh.cpp
-
-	int get_id(void) { return meshId; }
-	MESH_ GetMeshType(void) { return (MESH_)meshType; }
+	//----------------------------------- MESH INFO AND SIZE GET/SET METHODS : MeshDimensions.cpp
 
 	//set new mesh rectangle and adjust cellsizes to default values if needed - the cellsizes can be manually set after changing the mesh rectangle
 	BError SetMeshRect(Rect meshRect_);
 
-	Rect GetMeshRect(void) { return meshRect; }
-	DBL3 GetMeshDimensions(void) { return meshRect.size(); }
-	DBL3 GetOrigin(void) { return meshRect.s; }
-
-	//ferromagnetic properties
-	SZ3 GetMeshSize(void) { return n; }
-	//electrical conduction properties
-	SZ3 GetMeshESize(void) { return n_e; }
-	//thermal conduction properties
-	SZ3 GetMeshTSize(void) { return n_t; }
-
 	//ferromagnetic properties
 	BError SetMeshCellsize(DBL3 h_);
-	DBL3 GetMeshCellsize(void) { return h; }
 
 	//electrical conduction properties
 	BError SetMeshECellsize(DBL3 h_e_);
-	DBL3 GetMeshECellsize(void) { return h_e; }
 
 	//thermal conduction properties
 	BError SetMeshTCellsize(DBL3 h_t_);
-	DBL3 GetMeshTCellsize(void) { return h_t; }
 
 	//stochastic properties
 	BError SetLinkStochastic(bool link_stochastic_);
@@ -519,20 +282,16 @@ public:
 
 	//mechanical properties
 	BError SetMeshMCellsize(DBL3 h_m_);
-	DBL3 GetMeshMCellsize(void) { return h_m; }
 
-	//Set/Get multilayered demag exclusion : will need to call UpdateConfiguration from the supermesh when the flag is changed, so the correct SDemag_Demag modules and related settings are set from the SDemag module.
-	//Thus only call Set_Demag_Exclusion directly from SMesh.
-	void Set_Demag_Exclusion(bool exclude_from_multiconvdemag_) { exclude_from_multiconvdemag = exclude_from_multiconvdemag_; }
-	bool Get_Demag_Exclusion(void) { return exclude_from_multiconvdemag; }
+	double Get_NonEmpty_Magnetic_Volume(void) { return M.get_nonempty_cells() * M.h.dim(); }
 
 	//----------------------------------- ENABLED MESH PROPERTIES CHECKERS
 
 	//magnetization dynamics computation enabled (check Heff not M - M is not empty for dipole meshes)
 	bool MComputation_Enabled(void) { return Heff.linear_size(); }
 
-	//slighly more general than MComputation_Enabled - this means the mesh can have magnetic properties but doesn't have an ODE set, e.g. dipole mesh
-	bool Magnetisation_Enabled(void) { return M.linear_size(); }
+	//slighly more general than MComputation_Enabled - this means the mesh can have magnetic properties but doesn't necessarily have an ODE set, e.g. dipole mesh
+	bool Magnetism_Enabled(void) { return M.linear_size(); }
 
 	//electrical conduction computation enabled
 	bool EComputation_Enabled(void) { return V.linear_size(); }
@@ -550,15 +309,43 @@ public:
 	bool Is_PBC_x(void) { return M.is_pbc_x(); }
 	bool Is_PBC_y(void) { return M.is_pbc_y(); }
 	bool Is_PBC_z(void) { return M.is_pbc_z(); }
+	
+	//check if this mesh has an exchange module enabled (surf exchange doesn't count)
+	bool ExchangeComputation_Enabled(void) { return IsModuleSet(MOD_EXCHANGE6NGBR) || IsModuleSet(MOD_DMEXCHANGE) || IsModuleSet(MOD_IDMEXCHANGE); }
 
-	//----------------------------------- VALUE GETTERS
+	//----------------------------------- VALUE GETTERS : MeshGetData.cpp
 
-	//get energy value for given module or one of its exclusive modules (if none active return 0); call it with MOD_ALL to return total energy density in this mesh.
-	double GetEnergy(MOD_ moduleType);
+	//------Specific to Mesh
 
 	//get average magnetisation in given rectangle (entire mesh if none specified)
+	//1: ferromagnetic or antiferromagnetic sub-lattice A
+	//2: antiferromagnetic only, sub-lattice B
 	DBL3 GetAverageMagnetisation(Rect rectangle = Rect());
 	DBL3 GetAverageMagnetisation2(Rect rectangle = Rect());
+
+	//get magnetisation magnitude min-max in given rectangle (entire mesh if none specified)
+	DBL2 GetMagnetisationMinMax(Rect rectangle = Rect());
+
+	//get magnetisation component min-max in given rectangle (entire mesh if none specified)
+	DBL2 GetMagnetisationXMinMax(Rect rectangle = Rect());
+	DBL2 GetMagnetisationYMinMax(Rect rectangle = Rect());
+	DBL2 GetMagnetisationZMinMax(Rect rectangle = Rect());
+
+	//get Curie temperature (the set value)
+	double GetCurieTemperature(void) { return T_Curie; }
+
+	//get Curie temperature for the material (the indicative value)
+	double GetCurieTemperatureMaterial(void) { return T_Curie_material; }
+
+	double GetAtomicMoment(void) { return atomic_moment; }
+	DBL2 GetAtomicMoment_AFM(void) { return atomic_moment_AFM; }
+
+	DBL4 GetTcCoupling(void) { DBL2 tau_intra = tau_ii; DBL2 tau_inter = tau_ij; return DBL4(tau_intra.i, tau_intra.j, tau_inter.i, tau_inter.j); }
+
+	//------Implementing MeshBase
+
+	//get topological charge using formula Q = Integral(m.(dm/dx x dm/dy) dxdy) / 4PI
+	double GetTopologicalCharge(Rect rectangle = Rect());
 
 	DBL3 GetAverageChargeCurrentDensity(Rect rectangle = Rect());
 
@@ -575,18 +362,7 @@ public:
 	double GetAverageTemperature(Rect rectangle = Rect());
 	double GetAverageLatticeTemperature(Rect rectangle = Rect());
 
-	//get Curie temperature (the set value)
-	double GetCurieTemperature(void) { return T_Curie; }
-
-	//get Curie temperature for the material (the indicative value)
-	double GetCurieTemperatureMaterial(void) { return T_Curie_material; }
-
-	double GetAtomicMoment(void) { return atomic_moment; }
-	DBL2 GetAtomicMoment_AFM(void) { return atomic_moment_AFM; }
-
-	DBL4 GetTcCoupling(void) { DBL2 tau_intra = tau_ii; DBL2 tau_inter = tau_ij; return DBL4(tau_intra.i, tau_intra.j, tau_inter.i, tau_inter.j); }
-
-	//----------------------------------- QUANTITY GETTERS
+	//----------------------------------- QUANTITY GETTERS : MeshGetQuantities.cpp
 
 	//returns M on the cpu, thus transfers M from gpu to cpu before returning if cuda enabled
 	VEC_VC<DBL3>& Get_M(void);
@@ -600,9 +376,29 @@ public:
 	//returns interfacial self-consistent spin torque on the cpu, assuming transport module is enabled and spin solver is enabled
 	VEC<DBL3>& Get_InterfacialSpinTorque(void);
 
-	//----------------------------------- OTHER MESH SHAPE CONTROL
+	//----------------------------------- VALUE GETTERS : MeshCompute.cpp
 
-	BError copy_mesh_data(Mesh& copy_this);
+	//get exchange energy density over entire mesh
+	double Get_Exchange_EnergyDensity(void);
+
+	//get exchange energy density over specified rectangle only
+	double Get_Exchange_EnergyDensity(Rect& rectangle);
+
+	//get maximum exchange energy density modulus over specified rectangle
+	double Get_Max_Exchange_EnergyDensity(Rect& rectangle);
+
+	//----------------------------------- OTHER CALCULATION METHODS : MeshCompute.cpp
+
+	//compute exchange energy density spatial variation and have it available to display in Cust_S
+	void Compute_Exchange(void);
+
+	//compute topological charge density spatial dependence and have it available to display in Cust_S
+	//Use formula Qdensity = m.(dm/dx x dm/dy) / 4PI
+	void Compute_TopoChargeDensity(void);
+
+	//----------------------------------- OTHER MESH SHAPE CONTROL : MeshShape.cpp
+
+	BError copy_mesh_data(MeshBase& copy_this);
 
 	//mask cells using bitmap image : white -> empty cells. black -> keep values. Apply mask up to given z depth number of cells depending on grayscale value (zDepth, all if 0).
 	BError applymask(double zDepth_m, string fileName, function<vector<BYTE>(string, INT2)>& bitmap_loader);
@@ -630,14 +426,8 @@ public:
 
 	//use virtual to allow calling using base pointer - if called on "incorrect" mesh then nothing happens (the versions defined here used instead)
 
-	virtual bool GetMoveMeshTrigger(void) { return false; }
-	virtual void SetMoveMeshTrigger(bool status) {}
-
 	//Curie temperature for ferromagnetic meshes. Calling this forces recalculation of affected material parameters temperature dependence - any custom dependence set will be overwritten.
 	virtual void SetCurieTemperature(double Tc, bool set_default_dependences) {}
-
-	//this just sets the indicative material Tc value
-	void SetCurieTemperatureMaterial(double Tc_material) { T_Curie_material = Tc_material; }
 
 	//atomic moment (as multiple of Bohr magneton) for ferromagnetic meshes. Calling this forces recalculation of affected material parameters temperature dependence - any custom dependence set will be overwritten.
 	//Use DBL2 to allow 2-sublattice model as well. For single lattice just get the first component of the DBL2.
@@ -648,102 +438,10 @@ public:
 	virtual void SetTcCoupling_Intra(DBL2 tau) {}
 	virtual void SetTcCoupling_Inter(DBL2 tau) {}
 
-	//get skyrmion shift for a skyrmion initially in the given rectangle (works only with data in output data, not with ShowData or with data box)
-	virtual DBL2 Get_skyshift(Rect skyRect) { return DBL2(); }
-
-	//get skyrmion shift for a skyrmion initially in the given rectangle (works only with data in output data, not with ShowData or with data box), as well as diameters along x and y directions.
-	virtual DBL4 Get_skypos_diameters(Rect skyRect) { return DBL4(); }
-
 	//----------------------------------- ODE METHODS IN (ANTI)FERROMAGNETIC MESH : Mesh_..._ODEControl.cpp
 
 	//get rate of change of magnetization (overloaded by Ferromagnetic meshes)
 	virtual DBL3 dMdt(int idx) { return DBL3(); }
-
-	//----------------------------------- (ANTI)FERROMAGNETIC MESH QUANTITIES CONTROL : Mesh_..._Control.cpp
-
-	//this method is also used by the dipole mesh where it does something else - sets the dipole direction
-	virtual void SetMagnetisationAngle(double polar, double azim, Rect rectangle = Rect()) {}
-
-	//Invert magnetisation direction in given mesh (must be ferromagnetic)
-	virtual void SetInvertedMagnetisation(void) {}
-
-	//Set random magentisation distribution in given mesh (must be ferromagnetic)
-	virtual void SetRandomMagnetisation(void) {}
-
-	//set a domain wall with given width (metric units) at position within mesh (metric units). 
-	//Longitudinal and transverse are magnetisation componets as: 1: x, 2: y, 3: z, 1: -x, 2: -y, 3: -z
-	virtual void SetMagnetisationDomainWall(int longitudinal, int transverse, double width, double position) {}
-
-	//set Neel skyrmion with given orientation (core is up: 1, core is down: -1), chirality (1 for towards centre, -1 away from it) in given rectangle (relative to mesh), calculated in the x-y plane
-	virtual void SetSkyrmion(int orientation, int chirality, Rect skyrmion_rect) {}
-
-	//set Bloch skyrmion with given chirality (outside is up: 1, outside is down: -1) in given rectangle (relative to mesh), calculated in the x-y plane
-	virtual void SetSkyrmionBloch(int orientation, int chirality, Rect skyrmion_rect) {}
-
-	//set M from given data VEC (0 values mean empty points) -> stretch data to M dimensions if needed.
-	virtual void SetMagnetisationFromData(VEC<DBL3>& data, const Rect& dstRect = Rect()) {}
-
-	//set periodic boundary conditions for magnetization
-	virtual BError Set_PBC_X(int pbc_x) { return BError(); }
-	virtual BError Set_PBC_Y(int pbc_y) { return BError(); }
-	virtual BError Set_PBC_Z(int pbc_z) { return BError(); }
-
-	virtual void SetMeshExchangeCoupling(bool status) {}
-	virtual bool GetMeshExchangeCoupling(void) { return false; }
-
-	//----------------------------------- MODULE METHODS TEMPLATED CALLERS
-
-	//IMPORTANT NOTE: read note for CallModuleMethod in SuperMesh, repeated here:
-	//IMPORTANT NOTE: These templated callers work by trying to cast the Modules* (Module is the abstract base class) to a derived implementation type (i.e. to Owner*) - dynamic_cast results in nullptr if couldn't cast.
-	//				  Thus it is important that Owner is actually the implementation and not the base class Modules. If runThisMethod points to a method in Modules, e.g. GetEnergy, don't use the template deduction mechanism!
-	//				  e.g. if you use CallModuleMethod(&STransport::GetEnergy), then Owner will not be STransport but Modules, so dynamic_cast will succeed on first attempt which may not be the right module!
-	//				  In this case explicitly specify the template parameters as : CallModuleMethod<double, STransport>(&STransport::GetEnergy)
-
-	//Call a method on a mesh module (if module available, which is automatically determined here)
-	template <typename RType, typename Owner>
-	RType CallModuleMethod(RType(Owner::*runThisMethod)())
-	{
-		for (int idx = 0; idx < pMod.size(); idx++) {
-
-			Owner* pOwner = dynamic_cast<Owner*>(pMod[idx]);
-			if (pOwner) return CALLFP(pOwner, runThisMethod)();
-		}
-
-		return RType();
-	}
-
-	template <typename RType, typename Owner, typename ... PType>
-	RType CallModuleMethod(RType(Owner::*runThisMethod)(PType ...), PType ... params)
-	{
-		for (int idx = 0; idx < pMod.size(); idx++) {
-
-			Owner* pOwner = dynamic_cast<Owner*>(pMod[idx]);
-			if (pOwner) return CALLFP(pOwner, runThisMethod)(params...);
-		}
-
-		return RType();
-	}
-
-	//similar to CallModuleMethod, but instead of calling just the first module found, call all matching modules in this mesh. No return value possible.
-	template <typename Owner>
-	void CallAllModulesMethod(void(Owner::*runThisMethod)())
-	{
-		for (int idx = 0; idx < pMod.size(); idx++) {
-
-			Owner* pOwner = dynamic_cast<Owner*>(pMod[idx]);
-			if (pOwner) CALLFP(pOwner, runThisMethod)();
-		}
-	}
-
-	template <typename Owner, typename ... PType>
-	void CallAllModulesMethod(void(Owner::*runThisMethod)(PType ...), PType ... params)
-	{
-		for (int idx = 0; idx < pMod.size(); idx++) {
-
-			Owner* pOwner = dynamic_cast<Owner*>(pMod[idx]);
-			if (pOwner) CALLFP(pOwner, runThisMethod)(params...);
-		}
-	}
 };
 
 //!!!NOTES!!!

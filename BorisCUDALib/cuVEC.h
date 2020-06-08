@@ -34,7 +34,7 @@ protected:
 
 	//pre-allocated memory used for calculations
 	VType aux_value, aux_value2, aux_value3;
-	cuBReal aux_real;
+	cuBReal aux_real, aux_real2;
 	size_t aux_integer;
 
 	//pre-allocate array used for reductions : this array has size (n.dim() + CUDATHREADS) / CUDATHREADS), i.e. one entry per block used
@@ -290,6 +290,14 @@ public:
 	//after using the above method, call this to get the number of non-empty points : e.g. count them just before launching a kernel, then inside the kernel it is available in aux_integer
 	__device__ size_t get_aux_integer(void) const { return aux_integer; }
 
+	//--------------------------------------------ARITHMETIC OPERATIONS ON ENTIRE VEC : cuVEC_arith.cuh
+
+	//add to this vec the values in add_this : must have same size : size
+	__host__ void add_values(size_t size, cu_obj<cuVEC<VType>>& add_this);
+
+	//subtract from this vec the values in sub_this : must have same size : size
+	__host__ void sub_values(size_t size, cu_obj<cuVEC<VType>>& sub_this);
+
 	//--------------------------------------------AVERAGING OPERATIONS : cuVEC_avg.h (and cuVEC_avg.cuh)
 
 	//average in a box (which should be contained in the cuVEC dimensions)
@@ -313,13 +321,27 @@ public:
 	//ijk is the cell index in a mesh with cellsize cs and same rect as this cuVEC; if cs is same as h then just read the value at ijk - much faster! If not then get the usual weighted average.
 	__device__ VType weighted_average(const cuINT3& ijk, const cuReal3& cs);
 
-	//--------------------------------------------ARITHMETIC OPERATIONS ON ENTIRE VEC : cuVEC_arith.cuh
+	//--------------------------------------------NUMERICAL PROPERTIES : cuVEC_nprops.cuhj
 
-	//add to this vec the values in add_this : must have same size : size
-	__host__ void add_values(size_t size, cu_obj<cuVEC<VType>>& add_this);
+	template <typename PType = decltype(cu_GetMagnitude(std::declval<VType>()))>
+	__host__ cuVAL2<PType> get_minmax(size_t arr_size, cuBox box);
+	template <typename PType = decltype(cu_GetMagnitude(std::declval<VType>()))>
+	__host__ cuVAL2<PType> get_minmax(size_t arr_size, cuRect rectangle = cuRect());
 
-	//subtract from this vec the values in sub_this : must have same size : size
-	__host__ void sub_values(size_t size, cu_obj<cuVEC<VType>>& sub_this);
+	template <typename PType = decltype(cu_GetMagnitude(std::declval<VType>()))>
+	__host__ cuVAL2<PType> get_minmax_component_x(size_t arr_size, cuBox box);
+	template <typename PType = decltype(cu_GetMagnitude(std::declval<VType>()))>
+	__host__ cuVAL2<PType> get_minmax_component_x(size_t arr_size, cuRect rectangle = cuRect());
+
+	template <typename PType = decltype(cu_GetMagnitude(std::declval<VType>()))>
+	__host__ cuVAL2<PType> get_minmax_component_y(size_t arr_size, cuBox box);
+	template <typename PType = decltype(cu_GetMagnitude(std::declval<VType>()))>
+	__host__ cuVAL2<PType> get_minmax_component_y(size_t arr_size, cuRect rectangle = cuRect());
+
+	template <typename PType = decltype(cu_GetMagnitude(std::declval<VType>()))>
+	__host__ cuVAL2<PType> get_minmax_component_z(size_t arr_size, cuBox box);
+	template <typename PType = decltype(cu_GetMagnitude(std::declval<VType>()))>
+	__host__ cuVAL2<PType> get_minmax_component_z(size_t arr_size, cuRect rectangle = cuRect());
 
 	//--------------------------------------------MESH TRANSFER : cuVEC_MeshTransfer.h
 

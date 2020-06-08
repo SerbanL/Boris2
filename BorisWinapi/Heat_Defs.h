@@ -1,9 +1,5 @@
 #pragma once
 
-#include "Boris_Enums_Defs.h"
-
-#ifdef MODULE_HEAT
-
 //heat-flow temperature model : 
 
 //1-temperature model, 2-temperature model
@@ -18,5 +14,3 @@ enum TMTYPE_ {
 	TMTYPE_2TM,
 	TMTYPE_NUMMODELS
 };
-
-#endif

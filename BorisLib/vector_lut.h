@@ -628,6 +628,15 @@ public:
 	Type* data(void) { return &storedObjects[0]; }
 	Type* end(void) { return &storedObjects[size()]; }
 
+	//------------------------------------ CONTROL OF ENTRIES
+
+	//move element from source to destination index (i.e. ordering in std::vector changes)
+	void move(int srcIdx, int dstIdx = 0)
+	{
+		iter_swap(storedObjects.begin() + srcIdx, storedObjects.begin() + dstIdx);
+		iter_swap(storedObjects_keys.begin() + srcIdx, storedObjects_keys.begin() + dstIdx);
+	}
+
 	//------------------------------------ SIZE MODIFICATION METHODS
 
 	void push_back(Type newObject, std::string key);
@@ -878,6 +887,15 @@ public:
 
 	//indexing via key std::string
 	Type& operator[](const std::string &key);
+
+	//------------------------------------ CONTROL OF ENTRIES
+
+	//move element from source to destination index (i.e. ordering in std::vector changes)
+	void move(int srcIdx, int dstIdx = 0)
+	{
+		vector_lut<Type>::move(srcIdx, dstIdx);
+		iter_swap(storedObjects_keys.begin() + srcIdx, storedObjects_keys.begin() + dstIdx);
+	}
 
 	//------------------------------------ CHECKERS
 	

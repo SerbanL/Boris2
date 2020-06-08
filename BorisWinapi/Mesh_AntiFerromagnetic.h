@@ -4,13 +4,29 @@
 
 #include "DiffEqAFM.h"
 
+#if COMPILECUDA == 1
+#include "Mesh_AntiFerromagneticCUDA.h"
+#endif
+
 #ifdef MESH_COMPILATION_ANTIFERROMAGNETIC
 
 #include "SkyrmionTrack.h"
 
-#if COMPILECUDA == 1
-#include "Mesh_AntiFerromagneticCUDA.h"
-#endif
+#include "Exchange.h"
+#include "DMExchange.h"
+#include "iDMExchange.h"
+#include "SurfExchange.h"
+#include "Demag.h"
+#include "Demag_N.h"
+#include "SDemag_Demag.h"
+#include "Zeeman.h"
+#include "MOptical.h"
+#include "Anisotropy.h"
+#include "AnisotropyCubi.h"
+#include "Transport.h"
+#include "Heat.h"
+#include "SOTField.h"
+#include "Roughness.h"
 
 /////////////////////////////////////////////////////////////////////
 //
@@ -35,13 +51,13 @@ class AFMesh :
 	MatP<DBL2, double>, MatP<DBL2, double>, MatP<DBL2, double>, MatP<DBL2, double>, 
 	MatP<DBL2, double>, MatP<DBL2, double>, MatP<DBL2, double>, MatP<DBL2, double>, MatP<DBL2, double>, MatP<DBL2, double>,
 	MatP<DBL2, double>, MatP<DBL2, double>, MatP<DBL3, DBL3>, MatP<DBL3, DBL3>,
-	MatP<DBL2, double>, MatP<double, double>,
+	MatP<DBL2, double>, MatP<double, double>, MatP<double, double>,
 	MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>,
 	double, TEquation<double>, double, MatP<double, double>, MatP<DBL2, double>, 
 	MatP<double, double>, 
 	MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>>,
 	//Module Implementations
-	tuple<Demag_N, Demag, SDemag_Demag, Exch_6ngbr_Neu, DMExchange, iDMExchange, SurfExchange, Zeeman, Anisotropy_Uniaxial, Anisotropy_Cubic, Transport, Heat, SOTField, Roughness> >
+	tuple<Demag_N, Demag, SDemag_Demag, Exch_6ngbr_Neu, DMExchange, iDMExchange, SurfExchange, Zeeman, MOptical, Anisotropy_Uniaxial, Anisotropy_Cubic, Transport, Heat, SOTField, Roughness> >
 {
 #if COMPILECUDA == 1
 	friend AFMeshCUDA;
@@ -80,7 +96,7 @@ public:
 
 	//----------------------------------- IMPORTANT CONTROL METHODS
 
-	//call when the mesh dimensions have changed - sets every quantity to the right dimensions
+	//call when a configuration change has occurred - some objects might need to be updated accordingly
 	BError UpdateConfiguration(UPDATECONFIG_ cfgMessage);
 	void UpdateConfiguration_Values(UPDATECONFIG_ cfgMessage);
 
@@ -103,6 +119,9 @@ public:
 	//Check if mesh needs to be moved (using the MoveMesh method) - return amount of movement required (i.e. parameter to use when calling MoveMesh).
 	double CheckMoveMesh(void);
 
+	//couple this mesh to touching dipoles by setting skip cells as required : used for domain wall moving mesh algorithms
+	void CoupleToDipoles(bool status);
+
 	//----------------------------------- MOVING MESH TRIGGER FLAG
 
 	bool GetMoveMeshTrigger(void) { return move_mesh_trigger; }
@@ -118,17 +137,20 @@ public:
 	//The following methods are very similar to the ones in the ferromagnetic mesh, but set M and M2 anti-parallel
 
 	//this method is also used by the dipole mesh where it does something else - sets the dipole direction
-	void SetMagnetisationAngle(double polar, double azim, Rect rectangle = Rect());
+	void SetMagAngle(double polar, double azim, Rect rectangle = Rect());
 
 	//Invert magnetisation direction in given mesh
-	void SetInvertedMagnetisation(void);
+	void SetInvertedMag(bool x, bool y, bool z);
+
+	//Mirror magnetisation in given axis (literal x, y, or z) in given mesh (must be magnetic)
+	void SetMirroredMag(string axis);
 
 	//Set random magentisation distribution in given mesh
-	void SetRandomMagnetisation(void);
+	void SetRandomMag(void);
 
 	//set a domain wall with given width (metric units) at position within mesh (metric units). 
 	//Longitudinal and transverse are magnetisation componets as: 1: x, 2: y, 3: z, 1: -x, 2: -y, 3: -z
-	void SetMagnetisationDomainWall(int longitudinal, int transverse, double width, double position);
+	void SetMagDomainWall(int longitudinal, int transverse, double width, double position);
 
 	//set Neel skyrmion with given orientation (core is up: 1, core is down: -1), chirality (1 for towards centre, -1 away from it) in given rectangle (relative to mesh), calculated in the x-y plane
 	void SetSkyrmion(int orientation, int chirality, Rect skyrmion_rect);
@@ -137,12 +159,7 @@ public:
 	void SetSkyrmionBloch(int orientation, int chirality, Rect skyrmion_rect);
 
 	//set M from given data VEC (0 values mean empty points) -> stretch data to M dimensions if needed.
-	void SetMagnetisationFromData(VEC<DBL3>& data, const Rect& dstRect = Rect());
-
-	//set periodic boundary conditions for magnetization
-	BError Set_PBC_X(int pbc_x);
-	BError Set_PBC_Y(int pbc_y);
-	BError Set_PBC_Z(int pbc_z);
+	void SetMagFromData(VEC<DBL3>& data, const Rect& dstRect = Rect());
 
 	//----------------------------------- OVERLOAD MESH VIRTUAL METHODS
 
@@ -218,7 +235,7 @@ public:
 
 	//----------------------------------- IMPORTANT CONTROL METHODS
 
-	//call when the mesh dimensions have changed - sets every quantity to the right dimensions
+	//call when a configuration change has occurred - some objects might need to be updated accordingly
 	BError UpdateConfiguration(UPDATECONFIG_ cfgMessage) { return BError(); }
 	void UpdateConfiguration_Values(UPDATECONFIG_ cfgMessage) {}
 

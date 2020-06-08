@@ -319,8 +319,18 @@ public:
 			double d0 = (MUB / BOLTZMANN) * atomic_moment / (t_value * Tc);
 
 			//susrel scaling
-			//Take modulus : numerical noise can make it negative, but should be positive.
-			values[t_idx] = fabs(d0 * Bdiff(c * me_values[t_idx]) / (1.0 - c * Bdiff(c * me_values[t_idx])));
+			if (t_idx <= resolution) {
+
+				values[t_idx] = d0 * Bdiff(c * me_values[t_idx]) / (1.0 - c * Bdiff(c * me_values[t_idx]));
+			}
+			else {
+
+				//Above Tc numerical noise is a problem : susrel must be positive and not increasing so use this info
+				double value = d0 * Bdiff(c * me_values[t_idx]) / (1.0 - c * Bdiff(c * me_values[t_idx]));
+				
+				if (value > 0 && value <= values[t_idx - 1]) values[t_idx] = value;
+				else values[t_idx] = values[t_idx - 1];
+			}
 		}
 
 		//don't set it to zero at T = 0 to avoid NaNs when used in simulations
@@ -375,7 +385,19 @@ public:
 
 			DBL2 me = DBL2(me1_values[t_idx], me2_values[t_idx]);
 
-			values[t_idx] = fabs((d1 * B1diff(me) * (1 - c * tau2*B2diff(me)) + d2 * c*tau12*B1diff(me)*B2diff(me)) / ((1 - c * tau1*B1diff(me)) * (1 - c * tau2*B2diff(me)) - c * c*tau12*tau21*B1diff(me)*B2diff(me)));
+			//susrel scaling
+			if (t_idx <= resolution) {
+
+				values[t_idx] = (d1 * B1diff(me) * (1 - c * tau2*B2diff(me)) + d2 * c*tau12*B1diff(me)*B2diff(me)) / ((1 - c * tau1*B1diff(me)) * (1 - c * tau2*B2diff(me)) - c * c*tau12*tau21*B1diff(me)*B2diff(me));
+			}
+			else {
+
+				//Above Tc numerical noise is a problem : susrel must be positive and not increasing so use this info
+				double value = (d1 * B1diff(me) * (1 - c * tau2*B2diff(me)) + d2 * c*tau12*B1diff(me)*B2diff(me)) / ((1 - c * tau1*B1diff(me)) * (1 - c * tau2*B2diff(me)) - c * c*tau12*tau21*B1diff(me)*B2diff(me));
+
+				if (value > 0 && value <= values[t_idx - 1]) values[t_idx] = value;
+				else values[t_idx] = values[t_idx - 1];
+			}
 		}
 
 		//don't set it to zero at T = 0 to avoid NaNs when used in simulations
@@ -420,7 +442,19 @@ public:
 
 			DBL2 me = DBL2(me1_values[t_idx], me2_values[t_idx]);
 
-			values[t_idx] = fabs((d2 * B2diff(me) * (1 - c * tau1*B1diff(me)) + d1 * c*tau21*B1diff(me)*B2diff(me)) / ((1 - c * tau1*B1diff(me)) * (1 - c * tau2*B2diff(me)) - c * c*tau12*tau21*B1diff(me)*B2diff(me)));
+			//susrel scaling
+			if (t_idx <= resolution) {
+
+				values[t_idx] = (d2 * B2diff(me) * (1 - c * tau1*B1diff(me)) + d1 * c*tau21*B1diff(me)*B2diff(me)) / ((1 - c * tau1*B1diff(me)) * (1 - c * tau2*B2diff(me)) - c * c*tau12*tau21*B1diff(me)*B2diff(me));
+			}
+			else {
+
+				//Above Tc numerical noise is a problem : susrel must be positive and not increasing so use this info
+				double value = (d2 * B2diff(me) * (1 - c * tau1*B1diff(me)) + d1 * c*tau21*B1diff(me)*B2diff(me)) / ((1 - c * tau1*B1diff(me)) * (1 - c * tau2*B2diff(me)) - c * c*tau12*tau21*B1diff(me)*B2diff(me));
+
+				if (value > 0 && value <= values[t_idx - 1]) values[t_idx] = value;
+				else values[t_idx] = values[t_idx - 1];
+			}
 		}
 
 		//don't set it to zero at T = 0 to avoid NaNs when used in simulations
@@ -431,57 +465,85 @@ public:
 	// TRANSVERSE DAMPING SCALING FOR 2-SUBLATTICE MODEL
 
 	//1st component, Tc normalized to 1.
-	void Initialize_Alpha1(std::vector<double>& me1_values, std::vector<double>& me2_values, double tau1, double tau12)
+	void Initialize_Alpha1(std::vector<double>& me1_values, std::vector<double>& me2_values, DBL2 tau_ii, DBL2 tau_ij)
 	{
 		if (values.size() != resolution * 2 + 1) values.resize(resolution * 2 + 1);
+
+		double tau1 = tau_ii.i;
+		double tau2 = tau_ii.j;
+		double tau12 = tau_ij.i;
+		double tau21 = tau_ij.j;
+
+		double Tc_renorm = (tau1 + tau2 + sqrt(pow(tau1 - tau2, 2) + 4 * tau12 * tau21)) / 2;
 
 		for (int t_idx = 0; t_idx <= resolution * 2; t_idx++) {
 
 			double T = (double)t_idx / resolution;
 
-			if (T < 1.0) values[t_idx] = 1.0 - T / (3 * (tau1 + tau12 * me2_values[t_idx] / me1_values[t_idx]));
+			if (T < 1.0) values[t_idx] = 1.0 - T * Tc_renorm / (3 * (tau1 + tau12 * me2_values[t_idx] / me1_values[t_idx]));
 			else values[t_idx] = 2 * T / 3;
 		}
 	}
 
 	//version where me1 and me2 are the same
-	void Initialize_Alpha1(double tau1, double tau12)
+	void Initialize_Alpha1(DBL2 tau_ii, DBL2 tau_ij)
 	{
 		if (values.size() != resolution * 2 + 1) values.resize(resolution * 2 + 1);
+
+		double tau1 = tau_ii.i;
+		double tau2 = tau_ii.j;
+		double tau12 = tau_ij.i;
+		double tau21 = tau_ij.j;
+
+		double Tc_renorm = (tau1 + tau2 + sqrt(pow(tau1 - tau2, 2) + 4 * tau12 * tau21)) / 2;
 
 		for (int t_idx = 0; t_idx <= resolution * 2; t_idx++) {
 
 			double T = (double)t_idx / resolution;
 
-			if (T < 1.0) values[t_idx] = 1.0 - T / (3 * (tau1 + tau12));
+			if (T < 1.0) values[t_idx] = 1.0 - T * Tc_renorm / (3 * (tau1 + tau12));
 			else values[t_idx] = 2 * T / 3;
 		}
 	}
 
 	//2nd component, Tc normalized to 1.
-	void Initialize_Alpha2(std::vector<double>& me1_values, std::vector<double>& me2_values, double tau2, double tau21)
+	void Initialize_Alpha2(std::vector<double>& me1_values, std::vector<double>& me2_values, DBL2 tau_ii, DBL2 tau_ij)
 	{
 		if (values.size() != resolution * 2 + 1) values.resize(resolution * 2 + 1);
+
+		double tau1 = tau_ii.i;
+		double tau2 = tau_ii.j;
+		double tau12 = tau_ij.i;
+		double tau21 = tau_ij.j;
+
+		double Tc_renorm = (tau1 + tau2 + sqrt(pow(tau1 - tau2, 2) + 4 * tau12 * tau21)) / 2;
 
 		for (int t_idx = 0; t_idx <= resolution * 2; t_idx++) {
 
 			double T = (double)t_idx / resolution;
 
-			if (T < 1.0) values[t_idx] = 1.0 - T / (3 * (tau2 + tau21 * me1_values[t_idx] / me2_values[t_idx]));
+			if (T < 1.0) values[t_idx] = 1.0 - T * Tc_renorm / (3 * (tau2 + tau21 * me1_values[t_idx] / me2_values[t_idx]));
 			else values[t_idx] = 2 * T / 3 ;
 		}
 	}
 
 	//version where me1 and me2 are the same
-	void Initialize_Alpha2(double tau2, double tau21)
+	void Initialize_Alpha2(DBL2 tau_ii, DBL2 tau_ij)
 	{
 		if (values.size() != resolution * 2 + 1) values.resize(resolution * 2 + 1);
+
+		double tau1 = tau_ii.i;
+		double tau2 = tau_ii.j;
+		double tau12 = tau_ij.i;
+		double tau21 = tau_ij.j;
+
+		double Tc_renorm = (tau1 + tau2 + sqrt(pow(tau1 - tau2, 2) + 4 * tau12 * tau21)) / 2;
 
 		for (int t_idx = 0; t_idx <= resolution * 2; t_idx++) {
 
 			double T = (double)t_idx / resolution;
 
-			if (T < 1.0) values[t_idx] = 1.0 - T / (3 * (tau2 + tau21));
+			if (T < 1.0) values[t_idx] = 1.0 - T * Tc_renorm / (3 * (tau2 + tau21));
 			else values[t_idx] = 2 * T / 3;
 		}
 	}

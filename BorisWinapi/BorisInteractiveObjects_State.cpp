@@ -79,11 +79,15 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 			//mismatch found : either the mesh name has changed or entry has been deleted.
 			if (meshIdx >= 0) {
 
-				//mesh still exists, it's just the name that has changed
+				//mesh still exists, it's just the name that has changed (possibly)
 				meshName = SMesh().get_key_from_index(meshIdx);
 				iop.textId = meshName;
-
 				pTO->set(" " + meshName + " ");
+				
+				//another possibility is the mesh order has been changed, which will also result in a mismatch in the actual mesh name and that stored in iop.textId
+				//in this case also want to rebuild the current mesh entry line as different meshes can have different types of entry lines (e.g. afm and fm meshes have different modules, display options, etc.)
+				iop.state = IOS_REPLACINGPARAGRAPH;
+				stateChanged.textMessage = CALLFP(this, simMethod_Build_Mesh_ListLine)(meshIdx) + "\n";
 				stateChanged = true;
 			}
 			else {
@@ -244,6 +248,23 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 	}
 	break;
 
+	//Available/set ode for atomistic meshes: minorId is an entry from ODE_ (the equation)
+	case IOI_ATOMODE:
+	{
+		//parameters from iop
+		ODE_ odeID = (ODE_)iop.minorId;
+
+		ODE_ actual_odeID;
+		SMesh.QueryAtomODE(actual_odeID);
+
+		if (actual_odeID != odeID) {
+
+			pTO->SetBackgroundColor(OFFCOLOR);
+		}
+		else pTO->SetBackgroundColor(ONCOLOR);
+	}
+	break;
+
 	//Set ODE time step: textId is the value
 	case IOI_ODEDT:
 	{
@@ -255,6 +276,48 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 			iop.textId = ToString(SMesh.GetTimeStep(), "s");
 
 			pTO->set(" " + iop.textId + " ");
+			stateChanged = true;
+		}
+	}
+	break;
+
+	//Set stochastic time-step: textId is the value
+	case IOI_STOCHDT:
+	{
+		//parameters from iop
+		string dT_string = iop.textId;
+
+		if (dT_string != ToString(SMesh.GetStochTimeStep(), "s")) {
+
+			iop.textId = ToString(SMesh.GetStochTimeStep(), "s");
+
+			pTO->set(" " + iop.textId + " ");
+			stateChanged = true;
+		}
+	}
+	break;
+
+	//Link stochastic time-step to ODE dT flag : auxId is the value
+	case IOI_LINKSTOCHDT:
+	{
+		//parameters from iop
+		bool state = (bool)iop.auxId;
+
+		if (state != SMesh.GetLink_dTstoch()) {
+
+			iop.auxId = SMesh.GetLink_dTstoch();
+
+			if (iop.auxId) {
+
+				pTO->set(" On ");
+				pTO->SetBackgroundColor(ONCOLOR);
+			}
+			else {
+
+				pTO->set(" Off ");
+				pTO->SetBackgroundColor(OFFCOLOR);
+			}
+			
 			stateChanged = true;
 		}
 	}
@@ -334,21 +397,60 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 	//Shows a mesh name : minorId is the unique mesh id number, textId is the mesh name (below are similar objects but used in different lists, so these lists need updating differently)
 	case IOI_MESH_FORPARAMS:
 	{
-		display_meshIO(&Simulation::Build_MeshParams_Line);
+		int meshId = iop.minorId;
+		int meshIdx = SMesh.contains_id(meshId);
+		string meshName = iop.textId;
+		
+		if (meshIdx >= 0 && meshName != SMesh().get_key_from_index(meshIdx)) {
+
+			//if meshName is mismatched then best to delete this object : mesh positions in list could have been changed and it's problematic to reconstruct the display here
+			stateChanged = true;
+			iop.state = IOS_DELETINGPARAGRAPH;
+		}
+		else {
+
+			display_meshIO(&Simulation::Build_MeshParams_Line);
+		}
 	}
 	break;
 
 	//Shows a mesh name : minorId is the unique mesh id number, textId is the mesh name (below are similar objects but used in different lists, so these lists need updating differently)
 	case IOI_MESH_FORPARAMSTEMP:
 	{
-		display_meshIO(&Simulation::Build_MeshParamsTemp_Text);
+		int meshId = iop.minorId;
+		int meshIdx = SMesh.contains_id(meshId);
+		string meshName = iop.textId;
+
+		if (meshIdx >= 0 && meshName != SMesh().get_key_from_index(meshIdx)) {
+
+			//if meshName is mismatched then best to delete this object : mesh positions in list could have been changed and it's problematic to reconstruct the display here
+			stateChanged = true;
+			iop.state = IOS_DELETINGPARAGRAPH;
+		}
+		else {
+
+			display_meshIO(&Simulation::Build_MeshParamsTemp_Text);
+		}
 	}
 	break;
 
 	//Shows a mesh name : minorId is the unique mesh id number, textId is the mesh name (below are similar objects but used in different lists, so these lists need updating differently)
 	case IOI_MESH_FORPARAMSVAR:
 	{
-		display_meshIO(&Simulation::Build_MeshParamsVariation_Text);
+		int meshId = iop.minorId;
+		int meshIdx = SMesh.contains_id(meshId);
+		string meshName = iop.textId;
+
+		if (meshIdx >= 0 && meshName != SMesh().get_key_from_index(meshIdx)) {
+
+			//if meshName is mismatched then best to delete this object : mesh positions in list could have been changed and it's problematic to reconstruct the display here
+			stateChanged = true;
+			iop.state = IOS_DELETINGPARAGRAPH;
+		}
+		else {
+
+			display_meshIO(&Simulation::Build_MeshParamsVariation_Text);
+		}
 	}
 	break;
 
@@ -709,6 +811,7 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 	break;
 
 	//Shows stochastic cellsize (units m) : minorId is the unique mesh id number, auxId is enabled/disabled status, textId is the mesh cellsize
+	//This is applicable for micromagnetic meshes only
 	case IOI_MESHSCELLSIZE:
 	{
 		//parameters from iop
@@ -719,9 +822,9 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 		int meshIdx = SMesh.contains_id(meshId);
 		if (meshIdx >= 0) {
 
-			if (enabled) {
+			if (enabled || SMesh[meshIdx]->is_atomistic()) {
 
-				if (!SMesh[meshIdx]->MComputation_Enabled()) {
+				if (!SMesh[meshIdx]->MComputation_Enabled() || SMesh[meshIdx]->is_atomistic()) {
 
 					iop.textId = "N/A";
 					iop.auxId = 0;
@@ -731,7 +834,7 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 				}
 				else {
 					//update mesh cellsize if not matching
-					DBL3 meshCellsize = SMesh[meshIdx]->GetMeshSCellsize();
+					DBL3 meshCellsize = reinterpret_cast<Mesh*>(SMesh[meshIdx])->GetMeshSCellsize();
 					if (ToString(meshCellsize, "m") != cellsizeValue) {
 
 						iop.textId = ToString(meshCellsize, "m");
@@ -744,7 +847,7 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 
 				if (SMesh[meshIdx]->MComputation_Enabled()) {
 
-					DBL3 meshCellsize = SMesh[meshIdx]->GetMeshSCellsize();
+					DBL3 meshCellsize = reinterpret_cast<Mesh*>(SMesh[meshIdx])->GetMeshSCellsize();
 					iop.textId = ToString(meshCellsize, "m");
 					iop.auxId = 1;
 					pTO->set(" " + iop.textId + " ");
@@ -763,6 +866,7 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 	break;
 
 	//Shows link stochastic flag : minorId is the unique mesh id number, auxId is the value off (0), on (1), N/A (-1)
+	//This is applicable for micromagnetic meshes only
 	case IOI_LINKSTOCHASTIC:
 	{
 		//parameters from iop
@@ -772,11 +876,11 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 		int meshIdx = SMesh.contains_id(meshId);
 		if (meshIdx >= 0) {
 
-			if (status >= 0) {
+			if (status >= 0 && !SMesh[meshIdx]->is_atomistic()) {
 
-				if (status != (int)SMesh[meshIdx]->GetLinkStochastic()) {
+				if (status != (int)reinterpret_cast<Mesh*>(SMesh[meshIdx])->GetLinkStochastic()) {
 
-					iop.auxId = SMesh[meshIdx]->GetLinkStochastic();
+					iop.auxId = reinterpret_cast<Mesh*>(SMesh[meshIdx])->GetLinkStochastic();
 
 					if (iop.auxId == 0) {
 
@@ -1050,44 +1154,47 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 		DSAVE_ dSaveType = (DSAVE_)iop.auxId;
 		string saveConditionText = iop.textId;
 
-		//this is the actual save type set
-		DSAVE_ dsaveTypeSet = simStages[INT2(0, stageId_minor)].dsave_type();
+		if (simStages.is_id_set(INT2(0, stageId_minor))) {
 
-		//set on or off color
-		if (dsaveTypeSet != dSaveType) {
+			//this is the actual save type set
+			DSAVE_ dsaveTypeSet = simStages[INT2(0, stageId_minor)].dsave_type();
 
-			if (iop.state == IOS_ON) {
+			//set on or off color
+			if (dsaveTypeSet != dSaveType) {
 
-				//this data save type not enabled anymore - reset background color and text
-				pTO->SetBackgroundColor(OFFCOLOR);
-				iop.textId = dataSaveDescriptors.get_key_from_ID(dSaveType);
-				pTO->set(" " + iop.textId + " ");
+				if (iop.state == IOS_ON) {
 
-				iop.state = IOS_OFF;
-				stateChanged = true;
+					//this data save type not enabled anymore - reset background color and text
+					pTO->SetBackgroundColor(OFFCOLOR);
+					iop.textId = dataSaveDescriptors.get_key_from_ID(dSaveType);
+					pTO->set(" " + iop.textId + " ");
+
+					iop.state = IOS_OFF;
+					stateChanged = true;
+				}
 			}
-		}
-		else {
+			else {
 
-			//this save type is active
-			if (iop.state == IOS_OFF) {
+				//this save type is active
+				if (iop.state == IOS_OFF) {
 
-				//show it as enabled now
-				pTO->SetBackgroundColor(ONCOLOR);
-				iop.state = IOS_ON;
+					//show it as enabled now
+					pTO->SetBackgroundColor(ONCOLOR);
+					iop.state = IOS_ON;
 
-				stateChanged = true;
-			}
+					stateChanged = true;
+				}
 
-			//check if object text matches actual data save condition including value
-			int io_index = simStages.get_index_from_id(INT2(0, stageId_minor));
-			int saveType_index = dataSaveDescriptors.get_index_from_ID(dSaveType);
+				//check if object text matches actual data save condition including value
+				int io_index = simStages.get_index_from_id(INT2(0, stageId_minor));
+				int saveType_index = dataSaveDescriptors.get_index_from_ID(dSaveType);
 
-			if (saveConditionText != Build_SetStages_SaveConditionText(io_index, saveType_index)) {
+				if (saveConditionText != Build_SetStages_SaveConditionText(io_index, saveType_index)) {
 
-				iop.textId = Build_SetStages_SaveConditionText(io_index, saveType_index);
-				pTO->set(" " + iop.textId + " ");
-				stateChanged = true;
+					iop.textId = Build_SetStages_SaveConditionText(io_index, saveType_index);
+					pTO->set(" " + iop.textId + " ");
+					stateChanged = true;
+				}
 			}
 		}
 	}
@@ -1099,21 +1206,26 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 		//parameters from iop
 		PARAM_ paramId = (PARAM_)iop.minorId;
 		int meshId = iop.auxId;
-		string paramText = iop.textId;
+		
+		string paramText = get_after_match(iop.textId, string("\t"));
+		string meshName = get_before_match(iop.textId, string("\t"));
 
 		int meshIdx = SMesh.contains_id(meshId);
-		if (meshIdx >= 0) {
+		if (meshIdx >= 0 && meshName == SMesh().get_key_from_index(meshIdx)) {
 
 			if (paramText != Build_MeshParams_Text(meshIdx, paramId)) {
 
-				iop.textId = Build_MeshParams_Text(meshIdx, paramId);
-				pTO->set(" " + iop.textId + " ");
+				string meshParam_text = Build_MeshParams_Text(meshIdx, paramId);
+				iop.textId = SMesh().get_key_from_index(meshIdx) + string("\t") + meshParam_text;
+
+				pTO->set(" " + meshParam_text + " ");
 				stateChanged = true;
 			}
 		}
 		else {
 
 			//this mesh no longer exists, so delete all associated interactive object parameters
+			//another possibility is the mesh name has changed; this could mean the mesh positions were swapped in the mesh list, and this is problematic in this case so best to delete this object from console.
 			iop.state = IOS_DELETINGPARAGRAPH;
 			stateChanged = true;
 		}
@@ -1126,15 +1238,19 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 		//parameters from iop
 		PARAM_ paramId = (PARAM_)iop.minorId;
 		int meshId = iop.auxId;
-		string paramText = iop.textId;
+		
+		string paramText = get_after_match(iop.textId, string("\t"));
+		string meshName = get_before_match(iop.textId, string("\t"));
 
 		int meshIdx = SMesh.contains_id(meshId);
-		if (meshIdx >= 0) {
+		if (meshIdx >= 0 && meshName == SMesh().get_key_from_index(meshIdx)) {
 
 			if (paramText != SMesh[meshIdx]->get_paraminfo_string(paramId)) {
 
-				iop.textId = SMesh[meshIdx]->get_paraminfo_string(paramId);
-				pTO->set(" " + iop.textId + " ");
+				string meshParam_text = SMesh[meshIdx]->get_paraminfo_string(paramId);
+				iop.textId = SMesh().get_key_from_index(meshIdx) + string("\t") + meshParam_text;
+
+				pTO->set(" " + meshParam_text + " ");
 
 				if (SMesh[meshIdx]->is_paramtemp_set(paramId)) pTO->SetBackgroundColor(ONCOLOR);
 				else pTO->SetBackgroundColor(OFFCOLOR);
@@ -1156,6 +1272,7 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 		else {
 
 			//this mesh no longer exists, so delete all associated interactive object parameters
+			//another possibility is the mesh name has changed; this could mean the mesh positions were swapped in the mesh list, and this is problematic in this case so best to delete this object from console.
 			iop.state = IOS_DELETINGPARAGRAPH;
 			stateChanged = true;
 		}
@@ -1168,15 +1285,19 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 		//parameters from iop
 		PARAM_ paramId = (PARAM_)iop.minorId;
 		int meshId = iop.auxId;
-		string paramText = iop.textId;
+		
+		string paramText = get_after_match(iop.textId, string("\t"));
+		string meshName = get_before_match(iop.textId, string("\t"));
 
 		int meshIdx = SMesh.contains_id(meshId);
-		if (meshIdx >= 0) {
+		if (meshIdx >= 0 && meshName == SMesh().get_key_from_index(meshIdx)) {
 
 			if (paramText != SMesh[meshIdx]->get_paramvarinfo_string(paramId)) {
 
-				iop.textId = SMesh[meshIdx]->get_paramvarinfo_string(paramId);
-				pTO->set(" " + iop.textId + " ");
+				string meshParam_text = SMesh[meshIdx]->get_paramvarinfo_string(paramId);
+				iop.textId = SMesh().get_key_from_index(meshIdx) + string("\t") + meshParam_text;
+
+				pTO->set(" " + meshParam_text + " ");
 
 				if (SMesh[meshIdx]->is_paramvar_set(paramId)) pTO->SetBackgroundColor(ONCOLOR);
 				else pTO->SetBackgroundColor(OFFCOLOR);
@@ -1187,6 +1308,7 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 		else {
 
 			//this mesh no longer exists, so delete all associated interactive object parameters
+			//another possibility is the mesh name has changed; this could mean the mesh positions were swapped in the mesh list, and this is problematic in this case so best to delete this object from console.
 			iop.state = IOS_DELETINGPARAGRAPH;
 			stateChanged = true;
 		}
@@ -1825,6 +1947,7 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 	break;
 
 	//Shows mesh Curie temperature. minorId is the unique mesh id number, auxId is available/not available status (must be ferromagnetic mesh), textId is the temperature value
+	//This is applicable for micromagnetic meshes only
 	case IOI_CURIETEMP:
 	{
 		int meshId = iop.minorId;
@@ -1833,19 +1956,19 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 
 		int meshIdx = SMesh.contains_id(meshId);
 
-		if (meshIdx >= 0) {
+		if (meshIdx >= 0 && !SMesh[meshIdx]->is_atomistic()) {
 
-			if (ToString(SMesh[meshIdx]->GetCurieTemperature(), "K") != temp_string) {
+			if (ToString(reinterpret_cast<Mesh*>(SMesh[meshIdx])->GetCurieTemperature(), "K") != temp_string) {
 
-				iop.textId = ToString(SMesh[meshIdx]->GetCurieTemperature(), "K");
+				iop.textId = ToString(reinterpret_cast<Mesh*>(SMesh[meshIdx])->GetCurieTemperature(), "K");
 				pTO->set(" " + iop.textId + " ");
 
 				stateChanged = true;
 			}
 
-			if ((SMesh[meshIdx]->Magnetisation_Enabled()) != status) {
+			if ((SMesh[meshIdx]->Magnetism_Enabled()) != status) {
 
-				iop.auxId = (SMesh[meshIdx]->Magnetisation_Enabled());
+				iop.auxId = (SMesh[meshIdx]->Magnetism_Enabled());
 
 				if (iop.auxId == 1) {
 
@@ -1865,6 +1988,7 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 	break;
 
 	//Shows indicative material Curie temperature. minorId is the unique mesh id number, auxId is available/not available status (must be ferromagnetic mesh), textId is the temperature value
+	//This is applicable for micromagnetic meshes only
 	case IOI_CURIETEMPMATERIAL:
 	{
 		int meshId = iop.minorId;
@@ -1873,19 +1997,19 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 
 		int meshIdx = SMesh.contains_id(meshId);
 
-		if (meshIdx >= 0) {
+		if (meshIdx >= 0 && !SMesh[meshIdx]->is_atomistic()) {
 
-			if (ToString(SMesh[meshIdx]->GetCurieTemperatureMaterial(), "K") != temp_string) {
+			if (ToString(reinterpret_cast<Mesh*>(SMesh[meshIdx])->GetCurieTemperatureMaterial(), "K") != temp_string) {
 
-				iop.textId = ToString(SMesh[meshIdx]->GetCurieTemperatureMaterial(), "K");
+				iop.textId = ToString(reinterpret_cast<Mesh*>(SMesh[meshIdx])->GetCurieTemperatureMaterial(), "K");
 				pTO->set(" " + iop.textId + " ");
 
 				stateChanged = true;
 			}
 
-			if ((SMesh[meshIdx]->Magnetisation_Enabled()) != status) {
+			if ((SMesh[meshIdx]->Magnetism_Enabled()) != status) {
 
-				iop.auxId = (SMesh[meshIdx]->Magnetisation_Enabled());
+				iop.auxId = (SMesh[meshIdx]->Magnetism_Enabled());
 
 				if (iop.auxId == 1) {
 
@@ -1905,6 +2029,7 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 	break;
 
 	//Shows atomic moment multiple of Bohr magneton. minorId is the unique mesh id number, auxId is available/not available status (must be ferromagnetic mesh), textId is the value
+	//This is applicable for micromagnetic meshes only
 	case IOI_ATOMICMOMENT:
 	{
 		int meshId = iop.minorId;
@@ -1913,11 +2038,11 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 
 		int meshIdx = SMesh.contains_id(meshId);
 
-		if (meshIdx >= 0) {
+		if (meshIdx >= 0 && !SMesh[meshIdx]->is_atomistic()) {
 
-			if (ToString(SMesh[meshIdx]->GetAtomicMoment(), "uB") != amoment_string) {
+			if (ToString(reinterpret_cast<Mesh*>(SMesh[meshIdx])->GetAtomicMoment(), "uB") != amoment_string) {
 
-				iop.textId = ToString(SMesh[meshIdx]->GetAtomicMoment(), "uB");
+				iop.textId = ToString(reinterpret_cast<Mesh*>(SMesh[meshIdx])->GetAtomicMoment(), "uB");
 				pTO->set(" " + iop.textId + " ");
 
 				stateChanged = true;
@@ -1945,6 +2070,7 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 	break;
 
 	//Shows atomic moment multiple of Bohr magneton for AF meshes. minorId is the unique mesh id number, auxId is available/not available status (must be antiferromagnetic mesh), textId is the value
+	//This is applicable for micromagnetic meshes only
 	case IOI_ATOMICMOMENT_AFM:
 	{
 		int meshId = iop.minorId;
@@ -1953,11 +2079,11 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 
 		int meshIdx = SMesh.contains_id(meshId);
 
-		if (meshIdx >= 0) {
+		if (meshIdx >= 0 && !SMesh[meshIdx]->is_atomistic()) {
 
-			if (ToString(SMesh[meshIdx]->GetAtomicMoment_AFM(), "uB") != amoment_string) {
+			if (ToString(reinterpret_cast<Mesh*>(SMesh[meshIdx])->GetAtomicMoment_AFM(), "uB") != amoment_string) {
 
-				iop.textId = ToString(SMesh[meshIdx]->GetAtomicMoment_AFM(), "uB");
+				iop.textId = ToString(reinterpret_cast<Mesh*>(SMesh[meshIdx])->GetAtomicMoment_AFM(), "uB");
 				pTO->set(" " + iop.textId + " ");
 
 				stateChanged = true;
@@ -1985,6 +2111,7 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 	break;
 
 	//Shows Tc tau couplings. minorId is the unique mesh id number, auxId is available/not available status (must be antiferromagnetic mesh), textId is the value
+	//This is applicable for micromagnetic meshes only
 	case IOI_TAU:
 	{
 		int meshId = iop.minorId;
@@ -1993,11 +2120,11 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 
 		int meshIdx = SMesh.contains_id(meshId);
 
-		if (meshIdx >= 0) {
+		if (meshIdx >= 0 && !SMesh[meshIdx]->is_atomistic()) {
 
-			if (ToString(SMesh[meshIdx]->GetTcCoupling()) != amoment_string) {
+			if (ToString(reinterpret_cast<Mesh*>(SMesh[meshIdx])->GetTcCoupling()) != amoment_string) {
 
-				iop.textId = ToString(SMesh[meshIdx]->GetTcCoupling());
+				iop.textId = ToString(reinterpret_cast<Mesh*>(SMesh[meshIdx])->GetTcCoupling());
 				pTO->set(" " + iop.textId + " ");
 
 				stateChanged = true;
@@ -2599,7 +2726,7 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 
 		if (meshIdx >= 0) {
 
-			if (images >= 0 && (!SMesh[meshIdx]->Magnetisation_Enabled() || !SMesh[meshIdx]->IsModuleSet(MOD_DEMAG))) {
+			if (images >= 0 && (!SMesh[meshIdx]->Magnetism_Enabled() || !SMesh[meshIdx]->IsModuleSet(MOD_DEMAG))) {
 
 				pTO->SetBackgroundColor(UNAVAILABLECOLOR);
 				pTO->set(" N/A ");
@@ -2636,7 +2763,7 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 
 		if (meshIdx >= 0) {
 
-			if (images >= 0 && (!SMesh[meshIdx]->Magnetisation_Enabled() || !SMesh[meshIdx]->IsModuleSet(MOD_DEMAG))) {
+			if (images >= 0 && (!SMesh[meshIdx]->Magnetism_Enabled() || !SMesh[meshIdx]->IsModuleSet(MOD_DEMAG))) {
 
 				pTO->SetBackgroundColor(UNAVAILABLECOLOR);
 				pTO->set(" N/A ");
@@ -2673,7 +2800,7 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 
 		if (meshIdx >= 0) {
 
-			if (images >= 0 && (!SMesh[meshIdx]->Magnetisation_Enabled() || !SMesh[meshIdx]->IsModuleSet(MOD_DEMAG))) {
+			if (images >= 0 && (!SMesh[meshIdx]->Magnetism_Enabled() || !SMesh[meshIdx]->IsModuleSet(MOD_DEMAG))) {
 
 				pTO->SetBackgroundColor(UNAVAILABLECOLOR);
 				pTO->set(" N/A ");

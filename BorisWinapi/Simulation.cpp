@@ -140,6 +140,12 @@ Simulation::Simulation(int Program_Version) :
 	commands[CMD_ADDDIAMAGNETICMESH].descr = "[tc0,0.5,0.5,1/tc]Add a diamagnetic mesh with given name and rectangle (m). The rectangle can be specified as: <i>sx sy sz ex ey ez</i> for the start and end points in Cartesian coordinates, or as: <i>ex ey ez</i> with the start point as the origin.";
 	commands[CMD_ADDDIAMAGNETICMESH].unit = "m";
 
+	commands.insert(CMD_ADDAMESHCUBIC, CommandSpecifier(CMD_ADDAMESHCUBIC), "addameshcubic");
+	commands[CMD_ADDAMESHCUBIC].usage = "[tc0,0.5,0,1/tc]USAGE : <b>addameshcubic</b> <i>name rectangle</i>";
+	commands[CMD_ADDAMESHCUBIC].limits = { { Any(), Any() }, { Rect(DBL3(-MAXSIMSPACE / 2), DBL3(-MAXSIMSPACE / 2) + DBL3(MINMESHSPACE)), Rect(DBL3(-MAXSIMSPACE / 2), DBL3(MAXSIMSPACE / 2)) } };
+	commands[CMD_ADDAMESHCUBIC].descr = "[tc0,0.5,0.5,1/tc]Add an atomistic mesh with simple cubic strructure, with given name and rectangle (m). The rectangle can be specified as: <i>sx sy sz ex ey ez</i> for the start and end points in Cartesian coordinates, or as: <i>ex ey ez</i> with the start point as the origin.";
+	commands[CMD_ADDAMESHCUBIC].unit = "m";
+
 	commands.insert(CMD_DELMESH, CommandSpecifier(CMD_DELMESH), "delmesh");
 	commands[CMD_DELMESH].usage = "[tc0,0.5,0,1/tc]USAGE : <b>delmesh</b> <i>name</i>";
 	commands[CMD_DELMESH].descr = "[tc0,0.5,0.5,1/tc]Delete mesh with given name.";
@@ -223,6 +229,13 @@ Simulation::Simulation(int Program_Version) :
 	commands[CMD_ESCELLSIZE].unit = "m";
 	commands[CMD_ESCELLSIZE].return_descr = "[tc0,0.5,0,1/tc]Script return values: <i>cellsize</i> - return cellsize for electric super-mesh.";
 
+	commands.insert(CMD_ATOMDMCELLSIZE, CommandSpecifier(CMD_ATOMDMCELLSIZE), "dmcellsize");
+	commands[CMD_ATOMDMCELLSIZE].usage = "[tc0,0.5,0,1/tc]USAGE : <b>dmcellsize</b> <i>value</i>";
+	commands[CMD_ATOMDMCELLSIZE].limits = { { DBL3(MINMESHSPACE / 2), Any() } };
+	commands[CMD_ATOMDMCELLSIZE].descr = "[tc0,0.5,0.5,1/tc]Change demagnetizing field macrocell size of mesh in focus, for atomistic meshes (m). The cellsize can be specified as: <i>hx hy hz</i>, or as: <i>hxyz</i>";
+	commands[CMD_ATOMDMCELLSIZE].unit = "m";
+	commands[CMD_ATOMDMCELLSIZE].return_descr = "[tc0,0.5,0,1/tc]Script return values: <i>cellsize</i> - return demagnetizing field macrocell size.";
+
 	commands.insert(CMD_DELRECT, CommandSpecifier(CMD_DELRECT), "delrect");
 	commands[CMD_DELRECT].usage = "[tc0,0.5,0,1/tc]USAGE : <b>delrect</b> <i>rectangle (meshname)</i>";
 	commands[CMD_DELRECT].limits = { { Rect(), Any() }, { Any(), Any() } };
@@ -266,9 +279,14 @@ Simulation::Simulation(int Program_Version) :
 	commands[CMD_SETRECT].unit = "m";
 
 	commands.insert(CMD_INVERTMAG, CommandSpecifier(CMD_INVERTMAG), "invertmag");
-	commands[CMD_INVERTMAG].usage = "[tc0,0.5,0,1/tc]USAGE : <b>invertmag</b> <i>(meshname)</i>";
+	commands[CMD_INVERTMAG].usage = "[tc0,0.5,0,1/tc]USAGE : <b>invertmag</b> <i>(components) (meshname)</i>";
 	commands[CMD_INVERTMAG].limits = { { Any(), Any() } };
-	commands[CMD_INVERTMAG].descr = "[tc0,0.5,0.5,1/tc]Invert magnetisation direction. If mesh name not specified, the active mesh is used.";
+	commands[CMD_INVERTMAG].descr = "[tc0,0.5,0.5,1/tc]Invert magnetisation direction. If mesh name not specified, the active mesh is used. You can choose to invert just one or two components instead of the entire vector: specify components as x y z, e.g. invertmag x";
+
+	commands.insert(CMD_MIRRORMAG, CommandSpecifier(CMD_MIRRORMAG), "mirrormag");
+	commands[CMD_MIRRORMAG].usage = "[tc0,0.5,0,1/tc]USAGE : <b>mirrormag</b> <i>axis (meshname)</i>";
+	commands[CMD_MIRRORMAG].limits = { { Any(), Any() } };
+	commands[CMD_MIRRORMAG].descr = "[tc0,0.5,0.5,1/tc]Mirror magnetisation in a given axis, specified as x, y, z, e.g. mirrormag x. If mesh name not specified, the active mesh is used";
 
 	commands.insert(CMD_DWALL, CommandSpecifier(CMD_DWALL), "dwall");
 	commands[CMD_DWALL].usage = "[tc0,0.5,0,1/tc]USAGE : <b>dwall</b> <i>longitudinal transverse width position (meshname)</i>";
@@ -360,7 +378,11 @@ Simulation::Simulation(int Program_Version) :
 
 	commands.insert(CMD_SETODE, CommandSpecifier(CMD_SETODE), "setode");
 	commands[CMD_SETODE].usage = "[tc0,0.5,0,1/tc]USAGE : <b>setode</b> <i>equation evaluation</i>";
-	commands[CMD_SETODE].descr = "[tc0,0.5,0.5,1/tc]Set differential equation to solve, and method used to solve it.";
+	commands[CMD_SETODE].descr = "[tc0,0.5,0.5,1/tc]Set differential equation to solve in micromagnetic meshes, and method used to solve it (same method is applied to micromagnetic and atomistic meshes).";
+
+	commands.insert(CMD_SETATOMODE, CommandSpecifier(CMD_SETATOMODE), "setatomode");
+	commands[CMD_SETATOMODE].usage = "[tc0,0.5,0,1/tc]USAGE : <b>setatomode</b> <i>equation evaluation</i>";
+	commands[CMD_SETATOMODE].descr = "[tc0,0.5,0.5,1/tc]Set differential equation to solve in atomistic meshes, and method used to solve it (same method is applied to micromagnetic and atomistic meshes).";
 	
 	commands.insert(CMD_SETDT, CommandSpecifier(CMD_SETDT), "setdt");
 	commands[CMD_SETDT].usage = "[tc0,0.5,0,1/tc]USAGE : <b>setdt</b> <i>value</i>";
@@ -778,8 +800,20 @@ Simulation::Simulation(int Program_Version) :
 
 	commands.insert(CMD_LINKSTOCHASTIC, CommandSpecifier(CMD_LINKSTOCHASTIC), "linkstochastic");
 	commands[CMD_LINKSTOCHASTIC].usage = "[tc0,0.5,0,1/tc]USAGE : <b>linkstochastic</b> <i>flag (meshname)</i>";
-	commands[CMD_TMODEL].limits = { { int(0), int(1) },{ Any(), Any() } };
+	commands[CMD_LINKSTOCHASTIC].limits = { { int(0), int(1) },{ Any(), Any() } };
 	commands[CMD_LINKSTOCHASTIC].descr = "[tc0,0.5,0.5,1/tc]Links stochastic cellsize to magnetic cellsize if flag set to 1 for given mesh, else stochastic cellsize is independently controlled. If meshname not given set for all meshes.";
+
+	commands.insert(CMD_SETDTSTOCH, CommandSpecifier(CMD_SETDTSTOCH), "setdtstoch");
+	commands[CMD_SETDTSTOCH].usage = "[tc0,0.5,0,1/tc]USAGE : <b>setdtstoch</b> <i>value</i>";
+	commands[CMD_SETDTSTOCH].limits = { { double(MINTIMESTEP), double(MAXTIMESTEP) } };
+	commands[CMD_SETDTSTOCH].descr = "[tc0,0.5,0.5,1/tc]Set time step for stochastic field generation.";
+	commands[CMD_SETDTSTOCH].unit = "s";
+	commands[CMD_SETDTSTOCH].return_descr = "[tc0,0.5,0,1/tc]Script return values: <i>dTstoch</i>";
+
+	commands.insert(CMD_LINKDTSTOCHASTIC, CommandSpecifier(CMD_LINKDTSTOCHASTIC), "linkdtstochastic");
+	commands[CMD_LINKDTSTOCHASTIC].usage = "[tc0,0.5,0,1/tc]USAGE : <b>linkdtstochastic</b> <i>flag</i>";
+	commands[CMD_LINKDTSTOCHASTIC].limits = { { int(0), int(1) } };
+	commands[CMD_LINKDTSTOCHASTIC].descr = "[tc0,0.5,0.5,1/tc]Links stochastic time-step to ODE time-step if set, else stochastic time-step is independently controlled.";
 
 	commands.insert(CMD_CUDA, CommandSpecifier(CMD_CUDA), "cuda");
 	commands[CMD_CUDA].usage = "[tc0,0.5,0,1/tc]USAGE : <b>cuda</b> <i>status</i>";
@@ -1011,6 +1045,13 @@ Simulation::Simulation(int Program_Version) :
 	commands[CMD_DP_TOPOCHARGE].limits = { {double(0), Any()}, {double(0), Any()}, {double(0), Any()} };
 	commands[CMD_DP_TOPOCHARGE].unit = "m";
 
+	commands.insert(CMD_DP_COUNTSKYRMIONS, CommandSpecifier(CMD_DP_COUNTSKYRMIONS), "dp_countskyrmions");
+	commands[CMD_DP_COUNTSKYRMIONS].usage = "[tc0,0.5,0,1/tc]USAGE : <b>dp_countskyrmions</b> <i>(x y radius)</i>";
+	commands[CMD_DP_COUNTSKYRMIONS].descr = "[tc0,0.5,0.5,1/tc]Calculate the number of skyrmions for focused mesh (must be magnetic), optionally in the given circle with radius and centered at x y (relative values). Use Qmag = Integral(|m.(dm/dx x dm/dy)| dxdy) / 4PI.";
+	commands[CMD_DP_COUNTSKYRMIONS].return_descr = "[tc0,0.5,0,1/tc]Script return values: <i>Q</i> - the calculated topological charge.";
+	commands[CMD_DP_COUNTSKYRMIONS].limits = { {double(0), Any()}, {double(0), Any()}, {double(0), Any()} };
+	commands[CMD_DP_COUNTSKYRMIONS].unit = "m";
+
 	commands.insert(CMD_DP_HISTOGRAM, CommandSpecifier(CMD_DP_HISTOGRAM), "dp_histogram");
 	commands[CMD_DP_HISTOGRAM].usage = "[tc0,0.5,0,1/tc]USAGE : <b>dp_histogram</b> <i>dp_x dp_y (bin min max)</i>";
 	commands[CMD_DP_HISTOGRAM].descr = "[tc0,0.5,0.5,1/tc]Calculate a histogram with given bin, minimum and maximum values, from the magnetisation magnitude of the focused mesh (must be magnetic). Save histogram in dp arrays at dp_x, dp_y. If histogram parameters not given use a bin with 100 steps between minimum and maximum magnetisation magnitude.";
@@ -1180,12 +1221,20 @@ Simulation::Simulation(int Program_Version) :
 	commands.insert(CMD_DP_FITNONADIABATIC, CommandSpecifier(CMD_DP_FITNONADIABATIC), "dp_fitnonadiabatic");
 	commands[CMD_DP_FITNONADIABATIC].usage = "[tc0,0.5,0,1/tc]USAGE : <b>dp_fitnonadiabatic</b> <i>(abs_err Rsq T_ratio (stencil))</i>";
 	commands[CMD_DP_FITNONADIABATIC].limits = { {double(0.0), Any()}, {double(0.0), Any()}, {double(0.0), Any()}, {int(3), Any()} };
-	commands[CMD_DP_FITNONADIABATIC].descr = "[tc0,0.5,0.5,1/tc]Fit the computed self-consistent spin torque (see below) using Zhang-Li STT with fitting parameters P and beta (non-adiabaticity) using a given square in-plane stencil (default size 3) in order to extract the spatial variation of beta. Cut-off values for absolute fitting error (default 0.1), Rsq measure (default 0.9), and normalized torque magnitude (default 0.1) can be set - value of zero disables cutoff. The focused mesh must be ferromagnetic, have the transport module set with spin solver enabled, and we also require Jc and either Ts or Tsi to have been computed. The fitting is done on Ts, Tsi, or on their sum depending if they’ve been enabled or not.";
+	commands[CMD_DP_FITNONADIABATIC].descr = "[tc0,0.5,0.5,1/tc]Fit the computed self-consistent spin torque (see below) using Zhang-Li STT with fitting parameters P and beta (non-adiabaticity) using a given square in-plane stencil (default size 3) in order to extract the spatial variation of beta. Cut-off values for absolute fitting error (default 0.1), Rsq measure (default 0.9), and normalized torque magnitude (default 0.1) can be set - value of zero disables cutoff. The focused mesh must be ferromagnetic, have the transport module set with spin solver enabled, and we also require Jc and either Ts or Tsi to have been computed. The fitting is done on Ts, Tsi, or on their sum depending if they’ve been enabled or not. Output available in Cust_S.";
 
 	commands.insert(CMD_DP_FITADIABATIC, CommandSpecifier(CMD_DP_FITADIABATIC), "dp_fitadiabatic");
 	commands[CMD_DP_FITADIABATIC].usage = "[tc0,0.5,0,1/tc]USAGE : <b>dp_fitadiabatic</b> <i>(abs_err Rsq T_ratio (stencil))</i>";
 	commands[CMD_DP_FITADIABATIC].limits = { {double(0.0), Any()}, {double(0.0), Any()}, {double(0.0), Any()}, {int(3), Any()} };
-	commands[CMD_DP_FITADIABATIC].descr = "[tc0,0.5,0.5,1/tc]Fit the computed self-consistent spin torque (see below) using Zhang-Li STT with fitting parameters P and beta (non-adiabaticity) using a given square in-plane stencil (default size 3) in order to extract the spatial variation of P. Cut-off values for absolute fitting error (default 0.1), Rsq measure (default 0.9), and normalized torque magnitude (default 0.1) can be set - value of zero disables cutoff. The focused mesh must be ferromagnetic, have the transport module set with spin solver enabled, and we also require Jc and either Ts or Tsi to have been computed. The fitting is done on Ts, Tsi, or on their sum depending if they’ve been enabled or not.";
+	commands[CMD_DP_FITADIABATIC].descr = "[tc0,0.5,0.5,1/tc]Fit the computed self-consistent spin torque (see below) using Zhang-Li STT with fitting parameters P and beta (non-adiabaticity) using a given square in-plane stencil (default size 3) in order to extract the spatial variation of P. Cut-off values for absolute fitting error (default 0.1), Rsq measure (default 0.9), and normalized torque magnitude (default 0.1) can be set - value of zero disables cutoff. The focused mesh must be ferromagnetic, have the transport module set with spin solver enabled, and we also require Jc and either Ts or Tsi to have been computed. The fitting is done on Ts, Tsi, or on their sum depending if they’ve been enabled or not. Output available in Cust_S.";
+
+	commands.insert(CMD_DP_CALCEXCHANGE, CommandSpecifier(CMD_DP_CALCEXCHANGE), "dp_calcexchange");
+	commands[CMD_DP_CALCEXCHANGE].usage = "[tc0,0.5,0,1/tc]USAGE : <b>dp_calcexchange</b>";
+	commands[CMD_DP_CALCEXCHANGE].descr = "[tc0,0.5,0.5,1/tc]Calculate spatial dependence of exchange energy density for the focused mesh (must be magnetic and have an exchange module enabled). Output available in Cust_S.";
+
+	commands.insert(CMD_DP_CALCTOPOCHARGEDENSITY, CommandSpecifier(CMD_DP_CALCTOPOCHARGEDENSITY), "dp_calctopochargedensity");
+	commands[CMD_DP_CALCTOPOCHARGEDENSITY].usage = "[tc0,0.5,0,1/tc]USAGE : <b>dp_calctopochargedensity</b>";
+	commands[CMD_DP_CALCTOPOCHARGEDENSITY].descr = "[tc0,0.5,0.5,1/tc]Calculate topological charge density spatial dependence for the focused mesh (must be magnetic). Output available in Cust_S.";
 
 	commands.insert(CMD_DP_REPLACEREPEATS, CommandSpecifier(CMD_DP_REPLACEREPEATS), "dp_replacerepeats");
 	commands[CMD_DP_REPLACEREPEATS].usage = "[tc0,0.5,0,1/tc]USAGE : <b>dp_replacerepeats</b> <i>dp_index (dp_index_out)</i>";
@@ -1212,6 +1261,21 @@ Simulation::Simulation(int Program_Version) :
 	commands[CMD_DP_MONOTONIC].limits = { { int(0), int(MAX_ARRAYS - 1) },{ int(0), int(MAX_ARRAYS - 1) }, { int(0), int(MAX_ARRAYS - 1) }, { int(0), int(MAX_ARRAYS - 1) } };
 	commands[CMD_DP_MONOTONIC].descr = "[tc0,0.5,0.5,1/tc]From input x-y data extract monotonic sequence and place it in output x y arrays.";
 
+	commands.insert(CMD_DP_CROSSINGSHISTOGRAM, CommandSpecifier(CMD_DP_CROSSINGSHISTOGRAM), "dp_crossingshistogram");
+	commands[CMD_DP_CROSSINGSHISTOGRAM].usage = "[tc0,0.5,0,1/tc]USAGE : <b>dp_crossingshistogram</b> <i>dp_in_x dp_in_y dp_level dp_counts (steps)</i>";
+	commands[CMD_DP_CROSSINGSHISTOGRAM].limits = { { int(0), int(MAX_ARRAYS - 1) },{ int(0), int(MAX_ARRAYS - 1) }, { int(0), int(MAX_ARRAYS - 1) }, { int(0), int(MAX_ARRAYS - 1) }, { int(1), Any() } };
+	commands[CMD_DP_CROSSINGSHISTOGRAM].descr = "[tc0,0.5,0.5,1/tc]From input x-y data build a histogram of number of times x-y data crosses a given line (up or down). The line varies between minimum and maximum of y data in given number of steps (100 by default). Output the line values in dp_level with corresponding number of crossings in dp_counts.";
+
+	commands.insert(CMD_DP_CROSSINGSFREQUENCY, CommandSpecifier(CMD_DP_CROSSINGSFREQUENCY), "dp_crossingsfrequency");
+	commands[CMD_DP_CROSSINGSFREQUENCY].usage = "[tc0,0.5,0,1/tc]USAGE : <b>dp_crossingsfrequency</b> <i>dp_in_x dp_in_y dp_level dp_freq_up dp_freq_dn (steps)</i>";
+	commands[CMD_DP_CROSSINGSFREQUENCY].limits = { { int(0), int(MAX_ARRAYS - 1) },{ int(0), int(MAX_ARRAYS - 1) }, { int(0), int(MAX_ARRAYS - 1) }, { int(0), int(MAX_ARRAYS - 1) }, { int(1), Any() } };
+	commands[CMD_DP_CROSSINGSFREQUENCY].descr = "[tc0,0.5,0.5,1/tc]From input x-y data build a histogram of average frequency the x-y data crosses a given line (up and down, separated). The line varies between minimum and maximum of y data in given number of steps (100 by default). Output the line values in dp_level with corresponding crossings frequencies in dp_freq_up and dp_freq_dn.";
+
+	commands.insert(CMD_DP_PEAKSFREQUENCY, CommandSpecifier(CMD_DP_PEAKSFREQUENCY), "dp_peaksfrequency");
+	commands[CMD_DP_PEAKSFREQUENCY].usage = "[tc0,0.5,0,1/tc]USAGE : <b>dp_peaksfrequency</b> <i>dp_in_x dp_in_y dp_level dp_freq (steps)</i>";
+	commands[CMD_DP_PEAKSFREQUENCY].limits = { { int(0), int(MAX_ARRAYS - 1) },{ int(0), int(MAX_ARRAYS - 1) }, { int(0), int(MAX_ARRAYS - 1) }, { int(0), int(MAX_ARRAYS - 1) }, { int(1), Any() } };
+	commands[CMD_DP_PEAKSFREQUENCY].descr = "[tc0,0.5,0.5,1/tc]From input x-y data build a histogram of average frequency of peaks in the x-y data in bands given by the number of steps. The bands vary between minimum and maximum of y data in given number of steps (100 by default). Output the line values in dp_level with corresponding peak frequencies in dp_freq.";
+
 	commands.insert(CMD_TEST, CommandSpecifier(CMD_TEST), "test");
 	commands[CMD_TEST].usage = "[tc0,0.5,0,1/tc]USAGE : ";
 	commands[CMD_TEST].descr = "[tc0,0.5,0.5,1/tc].";
@@ -1231,6 +1295,10 @@ Simulation::Simulation(int Program_Version) :
 	dataDescriptor.push_back("Ha", DatumSpecifier("Applied Field : ", 3, "A/m", false), DATA_HA);
 	dataDescriptor.push_back("<M>", DatumSpecifier("<M> : ", 3, "A/m", false, false), DATA_AVM);
 	dataDescriptor.push_back("<M2>", DatumSpecifier("<M2> : ", 3, "A/m", false, false), DATA_AVM2);
+	dataDescriptor.push_back("|M|mm", DatumSpecifier("|M|mm : ", 2, "A/m", false, false), DATA_M_MINMAX);
+	dataDescriptor.push_back("Mx_mm", DatumSpecifier("Mx_mm : ", 2, "A/m", false, false), DATA_MX_MINMAX);
+	dataDescriptor.push_back("My_mm", DatumSpecifier("My_mm : ", 2, "A/m", false, false), DATA_MY_MINMAX);
+	dataDescriptor.push_back("Mz_mm", DatumSpecifier("Mz_mm : ", 2, "A/m", false, false), DATA_MZ_MINMAX);
 	dataDescriptor.push_back("<Jc>", DatumSpecifier("<Jc> : ", 3, "A/m^2", false, false), DATA_JC);
 	dataDescriptor.push_back("<Jsx>", DatumSpecifier("<Jsx> : ", 3, "A/s", false, false), DATA_JSX);
 	dataDescriptor.push_back("<Jsy>", DatumSpecifier("<Jsy> : ", 3, "A/s", false, false), DATA_JSY);
@@ -1244,16 +1312,18 @@ Simulation::Simulation(int Program_Version) :
 	dataDescriptor.push_back("I", DatumSpecifier("I, Net I : ", 2, "A"), DATA_CURRENT);
 	dataDescriptor.push_back("R", DatumSpecifier("Resistance : ", 1, "Ohm"), DATA_RESISTANCE);
 	dataDescriptor.push_back("e_demag", DatumSpecifier("Demag e : ", 1, "J/m3", false), DATA_E_DEMAG);
-	dataDescriptor.push_back("e_exch", DatumSpecifier("Exchange e : ", 1, "J/m3", false), DATA_E_EXCH);
+	dataDescriptor.push_back("e_exch", DatumSpecifier("Exchange e : ", 1, "J/m3", false, false), DATA_E_EXCH);
+	dataDescriptor.push_back("e_exch_max", DatumSpecifier("Exchange Maximum e : ", 1, "J/m3", false, false), DATA_E_EXCH_MAX);
 	dataDescriptor.push_back("e_surfexch", DatumSpecifier("Surface exchange e : ", 1, "J/m3", false), DATA_E_SURFEXCH);
-	dataDescriptor.push_back("e_zee", DatumSpecifier("Zeeman e : ", 1, "J/m3", false), DATA_E_ZEE);
+	dataDescriptor.push_back("e_zee", DatumSpecifier("Zeeman e : ", 1, "J/m3", false, false), DATA_E_ZEE);
 	dataDescriptor.push_back("e_mel", DatumSpecifier("Magnetoelastic e : ", 1, "J/m3", false), DATA_E_MELASTIC);
-	dataDescriptor.push_back("e_anis", DatumSpecifier("Anisotropy e : ", 1, "J/m3", false), DATA_E_ANIS);
+	dataDescriptor.push_back("e_anis", DatumSpecifier("Anisotropy e : ", 1, "J/m3", false, false), DATA_E_ANIS);
 	dataDescriptor.push_back("e_rough", DatumSpecifier("Roughness e : ", 1, "J/m3", false), DATA_E_ROUGH);
 	dataDescriptor.push_back("e_total", DatumSpecifier("Total e : ", 1, "J/m3", true), DATA_E_TOTAL);
 	dataDescriptor.push_back("dwshift", DatumSpecifier("DW shift : ", 1, "m"), DATA_DWSHIFT);
 	dataDescriptor.push_back("skyshift", DatumSpecifier("Skyrmion shift : ", 2, "m", false, false), DATA_SKYSHIFT);
 	dataDescriptor.push_back("skypos", DatumSpecifier("Skyrmion (pos, dia) : ", 4, "m", false, false), DATA_SKYPOS);
+	dataDescriptor.push_back("Q_topo", DatumSpecifier("Topological Charge : ", 1, "", false, false), DATA_Q_TOPO);
 	dataDescriptor.push_back("v_iter", DatumSpecifier("V Solver Iterations : ", 1), DATA_TRANSPORT_ITERSTOCONV);
 	dataDescriptor.push_back("s_iter", DatumSpecifier("S Solver Iterations : ", 1), DATA_TRANSPORT_SITERSTOCONV);
 	dataDescriptor.push_back("ts_err", DatumSpecifier("Transport Solver Error : ", 1), DATA_TRANSPORT_CONVERROR);
@@ -1267,7 +1337,8 @@ Simulation::Simulation(int Program_Version) :
 	moduleHandles.push_back("DMexchange", MOD_DMEXCHANGE);
 	moduleHandles.push_back("iDMexchange", MOD_IDMEXCHANGE);
 	moduleHandles.push_back("surfexchange", MOD_SURFEXCHANGE);
-	moduleHandles.push_back("zeeman", MOD_ZEEMAN);
+	moduleHandles.push_back("Zeeman", MOD_ZEEMAN);
+	moduleHandles.push_back("moptical", MOD_MOPTICAL);
 	moduleHandles.push_back("aniuni", MOD_ANIUNI);
 	moduleHandles.push_back("anicubi", MOD_ANICUBI);
 	moduleHandles.push_back("melastic", MOD_MELASTIC);
@@ -1275,7 +1346,8 @@ Simulation::Simulation(int Program_Version) :
 	moduleHandles.push_back("heat", MOD_HEAT);
 	moduleHandles.push_back("SOTfield", MOD_SOTFIELD);
 	moduleHandles.push_back("roughness", MOD_ROUGHNESS);
-
+	moduleHandles.push_back("Hexchange", MOD_ATOM_EXCHANGE);
+	
 	//super-mesh modules
 	moduleHandles.push_back("sdemag", MODS_SDEMAG);
 	moduleHandles.push_back("strayfield", MODS_STRAYFIELD);
@@ -1285,7 +1357,7 @@ Simulation::Simulation(int Program_Version) :
 
 	//---------------------------------------------------------------- ODEs
 
-	//ODEs
+	//ODEs : all (micromagnetic meshes)
 	odeHandles.push_back("LLG", ODE_LLG);
 	odeHandles.push_back("LLGStatic", ODE_LLGSTATIC);
 	odeHandles.push_back("LLG-STT", ODE_LLGSTT);
@@ -1299,6 +1371,15 @@ Simulation::Simulation(int Program_Version) :
 	odeHandles.push_back("sLLG-SA", ODE_SLLGSA);
 	odeHandles.push_back("LLB-SA", ODE_LLBSA);
 	odeHandles.push_back("sLLB-SA", ODE_SLLBSA);
+
+	//ODEs : atomistic meshes only
+	atom_odeHandles.push_back("LLG", ODE_LLG);
+	atom_odeHandles.push_back("LLGStatic", ODE_LLGSTATIC);
+	atom_odeHandles.push_back("LLG-STT", ODE_LLGSTT);
+	atom_odeHandles.push_back("sLLG", ODE_SLLG);
+	atom_odeHandles.push_back("sLLG-STT", ODE_SLLGSTT);
+	atom_odeHandles.push_back("LLG-SA", ODE_LLGSA);
+	atom_odeHandles.push_back("sLLG-SA", ODE_SLLGSA);
 
 	//Evaluation methods
 	odeEvalHandles.push_back("Euler", EVAL_EULER);

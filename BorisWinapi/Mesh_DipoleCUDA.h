@@ -37,7 +37,7 @@ public:
 
 	//----------------------------------- OTHER IMPORTANT CONTROL METHODS
 
-	//call when the mesh dimensions have changed - sets every quantity to the right dimensions
+	//call when a configuration change has occurred - some objects might need to be updated accordingly
 	BError UpdateConfiguration(UPDATECONFIG_ cfgMessage);
 	void UpdateConfiguration_Values(UPDATECONFIG_ cfgMessage) {}
 
@@ -46,7 +46,7 @@ public:
 	//set magnitude for Mdipole
 	void Reset_Mdipole(void);
 
-	void SetMagnetisationAngle(cuBReal polar, cuBReal azim);
+	void SetMagAngle(cuBReal polar, cuBReal azim);
 
 	void Reset_recalculateStrayField(void) { recalculateStrayField = false; }
 
@@ -78,7 +78,7 @@ public:
 
 	//----------------------------------- OTHER IMPORTANT CONTROL METHODS
 
-	//call when the mesh dimensions have changed - sets every quantity to the right dimensions
+	//call when a configuration change has occurred - some objects might need to be updated accordingly
 	BError UpdateConfiguration(UPDATECONFIG_ cfgMessage) { return BError(); }
 	void UpdateConfiguration_Values(UPDATECONFIG_ cfgMessage) {}
 

@@ -9,7 +9,7 @@ class Mesh;
 
 #ifdef MODULE_SOTFIELD
 
-//SOTField module can only be used in a ferromagnetic mesh
+//SOTField module can only be used in a magnetic mesh
 
 class SOTField :
 	public Modules,

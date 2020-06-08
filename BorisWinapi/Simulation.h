@@ -1,10 +1,12 @@
 //Defines the top level object
 
-//!!! IMPORTANT !!!:
+//IMPORTANT NOTES
+
+//1.
 //Stop DiagTrack and DPS (Diagnostic Policy Service) from Windows services. These sometime insert a hook into the executable which slows down the program very significantly. Also causes unexplained crashes (!!!).
 
+//2.
 //If using Visual Studio 2017 with CUDA 9.2:
-
 //CUDA 9.2 only officially suports VS2017 up to _MSC_VER = 1913 (Visual Studio 2017 version 15.6)
 //If you work with higher versions of VS2017 (e.g. 15.9 where _MSV_VER = 1916) then you won't be able to compile.
 //To keep using 9.2 you can manually modify the check in host_config.h file located at:
@@ -14,9 +16,25 @@
 //#if _MSC_VER < 1600 || _MSC_VER > 1916
 //
 //Did this and didn't cause any problems, but need to be aware this isn't officially supported and could potentially cause problems.
-//I believe this is may be due to CUDA 9.2 nvcc not supporting C++14 standards (only C++11). 
-//I got around this by keeping all compilation units in .cu files with C++11 code only, which didn't interfere with program design as I didn't really need any C++14 features there (but very useful in many other compilation units!).
 //I understand CUDA 10 officially supports all VS2017 versions but didn't try it yet (maybe I should!). VS2019 also available but no need to upgrade yet.
+
+//3.
+//Cannot import BorisLib.h in .cu files. I believe this is may be due to CUDA 9.2 nvcc not supporting C++14 standards (only C++11). Tried CUDA 10.2 - same story.
+//I got around this by keeping all compilation units in .cu files with C++11 code only, which didn't interfere with program design as I didn't really need any C++14 features there (but very useful in many other compilation units!).
+
+//4.
+//On Windows 10 it's possible CUDA nvcc will keep coming up with "exit error code 1", including when you simply try to clean the project.
+//This is a generic error, and if you enable maximum verbosity in VS (Tools > Options > Projects & Solutions > Build and Run) you'll see this is because of "Access is denied." for a process which writes some temporary data.
+//In particular when the process is trying to write temporary data to "C:\Users\<UserName>\AppData\Local" it won't be able to because of denied access.
+//I got around this by giving full control for this folder in Security settings. This problem appeared out of the blue and I don't really know why, I suspect it's something to do with a Windows Defender update or something similar.
+
+//5.
+//Don't set the number of CUDA threads per block too large. Currently using 128.
+//If the amount of code that is included in a CUDA kernel is too large (through inlining of various functions, etc. etc.) the program will start to exhibit very strange bugs with no apparent solution, and completely defying logic.
+//I've struggled with this for some time, until I realised it's because of too many threads per block used when launching kernels. Transport solver kernels are particularly notorious.
+//As soon as I reduced them - hey presto! - logic restored and everything works again. 
+//Used to be 512 threads per block, then reduced to 256. When some kernels got too big again, same type of bugs appeared. This time I knew not to waste time and reduced to the current value of 128 - good again!
+//Tested this on CUDA 5 and CUDA 6 architectures and didn't find any variation in this behaviour.
 
 //BUGS
 
@@ -52,6 +70,7 @@
 #include "MaterialsDataBase.h"
 
 #include "Mesh.h"
+#include "Atom_Mesh.h"
 #include "SuperMesh.h"
 
 
@@ -150,8 +169,10 @@ private:
 	vector_lut< vector<EVAL_> > odeAllowedEvals;
 	//The default evaluation method for each ODE : this is the evaluation method set when changing ODEs
 	vector_lut<EVAL_> odeDefaultEval;
-	//Link ODE_ entries with text handles (ODE_ is the major id)
+	//Link ODE_ entries with text handles (ODE_ is the major id) : micromagnetic meshes
 	vector_lut<string> odeHandles;
+	//Link ODE_ entries with text handles (ODE_ is the major id) : atomistic meshes (smaller subset of ODEs allowed, but same evaluation methods)
+	vector_lut<string> atom_odeHandles;
 	//Link EVAL_ entries with text handles (EVAL_ is the major id)
 	vector_lut<string> odeEvalHandles;
 
@@ -219,7 +240,7 @@ private:
 
 	//Interactive objects in the console can generate messages, which must be handled here. This handler is passed using a functionoid (made in the constructor) to the BorisConsole object	 
 	//Iteractive objects are constructed using the passed functionoid. On user interaction this handler is called with their properties and interaction actionCode (thus specifying the action requested).
-	InteractiveObjectActionOutcome ConsoleActionHandler(int actionCode, InteractiveObjectProperties iop, TextObject *pTO);
+	InteractiveObjectActionOutcome ConsoleActionHandler(int actionCode, InteractiveObjectProperties& iop, TextObject *pTO);
 
 	//called by TextObject when it draws itself: check if the textobject needs to change. return true if any changes made so the caller knows to recalculate things (e.g. text placements, etc.)
 	InteractiveObjectStateChange ConsoleInteractiveObjectState(InteractiveObjectProperties &iop, TextObject *pTO);
@@ -285,7 +306,7 @@ private:
 	void SetSimulationStageValue(void);
 
 	//check if conditions for saving data have been met for curent stage
-	void CheckSaveDataCondtions();
+	void CheckSaveDataConditions();
 
 	//-------------------------------------Console messages helper methods
 

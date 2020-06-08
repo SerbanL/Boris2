@@ -11,7 +11,7 @@
 
 #include "Simulation.h"
 
-InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, InteractiveObjectProperties iop, TextObject *pTO)
+InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, InteractiveObjectProperties& iop, TextObject *pTO)
 {
 	//!!!IMPORTANT!!! Do not access BorisDisplay through thread-safe entry points from here. This method was called from within BorisDisplay (through a function pointer), which was thread-safe accessed so the mutex is now locked.
 	//In fact it's better not to make any calls to BorisDisplay here at all (e.g. DisplayConsoleMessage). There should always be a better way. e.g. an interactive object will typically require a console
@@ -114,6 +114,7 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 
 		//launch command
 		single_call_launch<string>(&Simulation::HandleCommand, command, THREAD_HANDLEMESSAGE);
+		single_call_launch<string>(&Simulation::SetConsoleEntryLineText, "", THREAD_HANDLEMESSAGE2);
 	};
 
 	//SET CONSOLE ENTRY LINE : form a command syntax and set it as the console entry line for further editing by user
@@ -164,10 +165,16 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 		//moveable pop-up window is trying to interact with this object : interact them if the interacting object is also a IOI_DATABOXFIELDLABEL
 		else if (actionCode == AC_INTERACTOBJECTS && iop.interactingObjectId.major == IOI_DATABOXFIELDLABEL) {
 
-			interaction(dataBoxList, iop.interactingObjectId.minor, dataBoxList_idminor);
+			if (iop.interactingObjectId.minor != dataBoxList_idminor) {
 
-			//need to update values as well as labels (values must correspond to labels)
-			single_call_launch(&Simulation::UpdateDataBox_Refresh, THREAD_HANDLEMESSAGE);
+				interaction(dataBoxList, iop.interactingObjectId.minor, dataBoxList_idminor);
+
+				//need to update values as well as labels (values must correspond to labels)
+				single_call_launch(&Simulation::UpdateDataBox_Refresh, THREAD_HANDLEMESSAGE);
+
+				//call for interaction to end as purpose achieved
+				actionOutcome = AO_ENDINTERACTION;
+			}
 		}
 	}
 	break;
@@ -224,6 +231,17 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 	}
 	break;
 
+	//Available/set ode for atomistic meshes: minorId is an entry from ODE_ (the equation)
+	case IOI_ATOMODE:
+	{
+		//parameters from iop
+		ODE_ odeID = (ODE_)iop.minorId;
+
+		//try to set ODE and its default evaluation method
+		if (actionCode == AC_MOUSELEFTDOWN) sendCommand_verbose(CMD_SETATOMODE, odeHandles(odeID), odeEvalHandles(odeDefaultEval(odeID)));
+	}
+	break;
+
 	//Set ODE time step: textId is the value
 	case IOI_ODEDT:
 	{
@@ -241,6 +259,37 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 			string to_text = pTO->GetText();
 			sendCommand_verbose(CMD_SETDT, trimspaces(to_text));
 		}
+	}
+	break;
+
+	//Set stochastic time-step: textId is the value
+	case IOI_STOCHDT:
+	{
+		//parameters from iop
+		string dT_string = ToNum(iop.textId);
+
+		//try to set ODE time step
+		//on double-click make popup edit box to edit the currently displayed value
+		if (actionCode == AC_DOUBLECLICK) { actionOutcome = AO_STARTPOPUPEDITBOX; }
+
+		//popup edit box has returned some text - try to set value from it
+		if (actionCode == AC_POPUPEDITTEXTBOXRETURNEDTEXT) {
+
+			//the actual text returned by the popup edit box
+			string to_text = pTO->GetText();
+			sendCommand_verbose(CMD_SETDTSTOCH, trimspaces(to_text));
+		}
+	}
+	break;
+
+	//Link stochastic time-step to ODE dT flag : auxId is the value
+	case IOI_LINKSTOCHDT:
+	{
+		//parameters from iop
+		bool state = (bool)iop.auxId;
+
+		//try to set ODE and its default evaluation method
+		if (actionCode == AC_MOUSELEFTDOWN) sendCommand_verbose(CMD_LINKDTSTOCHASTIC, !state);
 	}
 	break;
 
@@ -280,16 +329,6 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 	case IOI_MESH_FORPARAMS:
 	case IOI_MESH_FORPARAMSTEMP:
 	case IOI_MESH_FORPARAMSVAR:
-	case IOI_MESH_FORMODULES:
-	case IOI_MESH_FORMESHLIST:
-	case IOI_MESH_FORDISPLAYOPTIONS:
-	case IOI_MESH_FORTEMPERATURE:
-	case IOI_MESH_FORHEATBOUNDARIES:
-	case IOI_MESH_FORCURIEANDMOMENT:
-	case IOI_MESH_FORTMODEL:
-	case IOI_MESH_FORPBC:
-	case IOI_MESH_FOREXCHCOUPLING:
-	case IOI_MESH_FORSTOCHASTICITY:
 	{
 		//parameters from iop
 		string meshName = iop.textId;
@@ -311,6 +350,68 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 			string to_text = pTO->GetText();
 			sendCommand_verbose(CMD_RENAMEMESH, trimspaces(to_text));
 		};
+	}
+	break;
+
+	case IOI_MESH_FORSTOCHASTICITY:
+	case IOI_MESH_FORCURIEANDMOMENT:
+	case IOI_MESH_FORPBC:
+	case IOI_MESH_FOREXCHCOUPLING:
+	case IOI_MESH_FORTMODEL:
+	case IOI_MESH_FORHEATBOUNDARIES:
+	case IOI_MESH_FORTEMPERATURE:
+	case IOI_MESH_FORDISPLAYOPTIONS:
+	case IOI_MESH_FORMODULES:
+	case IOI_MESH_FORMESHLIST:
+	{
+		//parameters from iop
+		string meshName = iop.textId;
+		int meshId = iop.minorId;
+
+		//try to change mesh focus
+		if (actionCode == AC_MOUSELEFTDOWN) {
+
+			sendCommand_verbose(CMD_MESHFOCUS, meshName);
+	
+			actionOutcome = AO_STARTINTERACTION;
+		}
+
+		//try to delete mesh
+		else if (actionCode == AC_MOUSERIGHTDOWN) sendCommand_verbose(CMD_DELMESH, meshName);
+
+		//rename mesh : bring up console command
+		//on double-click make popup edit box to edit the currently displayed value
+		else if (actionCode == AC_DOUBLECLICK) { actionOutcome = AO_STARTPOPUPEDITBOX; }
+
+		//popup edit box has returned some text - try to set value from it
+		else if (actionCode == AC_POPUPEDITTEXTBOXRETURNEDTEXT) {
+
+			//the actual text returned by the popup edit box
+			string to_text = pTO->GetText();
+			sendCommand_verbose(CMD_RENAMEMESH, trimspaces(to_text));
+		}
+
+		//moveable pop-up window is trying to interact with this object : interact them if the interacting object is also a IOI_MESH_FORMESHLIST
+		else if (actionCode == AC_INTERACTOBJECTS && iop.interactingObjectId.major == iop.majorId) {
+
+			//swapping mesh positions in mesh list
+			if (iop.interactingObjectId.minor != meshId) {
+
+				int idxSrc = SMesh.contains_id(iop.interactingObjectId.minor);
+				int idxDst = SMesh.contains_id(meshId);
+
+				if (idxSrc >= 0 && idxDst >= 0) {
+
+					//swap mesh positions in SMesh.pMesh list, and also swap their ids.
+					//swapping the ids is easier, otherwise we have to do some book keeping. 
+					SMesh[idxSrc]->swap_ids(SMesh[idxDst]);
+					SMesh().move(idxSrc, idxDst);
+				}
+
+				//call for interaction to end as purpose achieved
+				actionOutcome = AO_ENDINTERACTION;
+			}
+		}
 	}
 	break;
 
@@ -684,7 +785,16 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 		else if (actionCode == AC_MOUSELEFTDOWN) actionOutcome = AO_STARTINTERACTION;
 
 		//moveable pop-up window is trying to interact with this object : interact them if the interacting object is also a IOI_OUTDATA
-		else if (actionCode == AC_INTERACTOBJECTS && iop.interactingObjectId.major == IOI_OUTDATA) interaction(saveDataList, iop.interactingObjectId.minor, outDataId);
+		else if (actionCode == AC_INTERACTOBJECTS && iop.interactingObjectId.major == IOI_OUTDATA) {
+
+			if (iop.interactingObjectId.minor != outDataId) {
+
+				interaction(saveDataList, iop.interactingObjectId.minor, outDataId);
+				
+				//call for interaction to end as purpose achieved
+				actionOutcome = AO_ENDINTERACTION;
+			}
+		}
 
 		else if (actionCode == AC_INTERACTOBJECTWITHWINDOW) {
 
@@ -751,7 +861,16 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 		else if (actionCode == AC_MOUSELEFTDOWN) actionOutcome = AO_STARTINTERACTION;
 
 		//moveable pop-up window is trying to interact with this object : interact them if the interacting object is also a IOI_SETSTAGE
-		else if (actionCode == AC_INTERACTOBJECTS && iop.interactingObjectId.major == IOI_SETSTAGE) interaction(simStages, iop.interactingObjectId.minor, stageId_minor);
+		else if (actionCode == AC_INTERACTOBJECTS && iop.interactingObjectId.major == IOI_SETSTAGE) {
+
+			if (iop.interactingObjectId.minor != stageId_minor) {
+
+				interaction(simStages, iop.interactingObjectId.minor, stageId_minor);
+
+				//call for interaction to end as purpose achieved
+				actionOutcome = AO_ENDINTERACTION;
+			}
+		}
 	}
 	break;
 

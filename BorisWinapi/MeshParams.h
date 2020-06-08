@@ -6,6 +6,8 @@
 #include "ErrorHandler.h"
 #include "Boris_Enums_Defs.h"
 
+#include "MeshParamsBase.h"
+
 #if COMPILECUDA == 1
 #include "MeshParamsCUDA.h"
 #endif
@@ -13,43 +15,20 @@
 using namespace std;
 
 /////////////////////////////////////////////////////////////////////////////////////////////////
-//MeshParamDescriptor used for console display / control of mesh material parameters
+//	
+//	The Mesh material parameters : micromagnetic meshes only
 //
 
-struct MeshParamDescriptor {
-
-	//the unit used when converting from a string containing units to a numerical value and conversely
-	string unit;
-
-	PARAMTYPE_ paramType = PARAMTYPE_NONE;
-
-	//display or hide this parameter?
-	//e.g. we may enable a parameter for a mesh type, but may want to hide it so it doesn't appear in the usual lists of parameters (params, paramstemp, paramsvar commands).
-	bool hidden;
-
-	MeshParamDescriptor(PARAMTYPE_ paramType_, string unit_ = "", bool hidden_ = false) :
-		unit(unit_), paramType(paramType_), hidden(hidden_)
-	{}
-
-	//what parameter is this?
-	PARAMTYPE_ get_type(void) { return paramType; }
-};
-
-/////////////////////////////////////////////////////////////////////////////////////////////////
-//The Mesh material parameters
-//
-
-class MeshParams
+class MeshParams :
+	virtual public MeshParamsBase			//need virtual inheritance : see MeshParamsBase.h comments
 {
+	friend MeshParamsBase;					//so we can access run_on_param from it
 
 #if COMPILECUDA == 1
 	friend MeshParamsCUDA;
 #endif
 
 private:
-
-	//list of all mesh parameters storing the units, handles and parameter type : used for console info display
-	vector_key_lut<MeshParamDescriptor> meshParams;
 
 protected:
 
@@ -140,6 +119,9 @@ public:
 	//applied field spatial variation coefficient (unitless)
 	MatP<double, double> cHA = 1.0;
 
+	//Magneto-Optical field strength (A/m)
+	MatP<double, double> cHmo = 0.0;
+
 	//electrical conductivity (units S/m).
 	//this is the value at RT for Ni80Fe20.
 	MatP<double, double> elecCond = 7e6;
@@ -204,12 +186,6 @@ public:
 	//disabled by default
 	MatP<double, double> the_eff = 0;
 
-	//the mesh base temperature (K)
-	double base_temperature = 0.0;
-
-	//text equation for base temperature dependence, allowing time dependence; stage step (Ss) is introduced as user constant.
-	TEquation<double> T_equation;
-
 	//Curie temperature - 870K for permalloy but turn it off by default. If LLG is the default equation we don't want temperature dependencies to be updated every time the applied field changes.
 	//This is the actually set value
 	//Can also be used for anti-ferromagnetic meshes (as the Neel temperature), but still calling it T_Curie (I suppose the variable name should be changed to T_critical, but too late now as need to maintain backward compatibility with older simulation files)
@@ -235,7 +211,7 @@ public:
 	MatP<double, double> shc = 430;
 
 	//electron specific heat capacity at room temperature used in many-temperature models (J/kgK); Note, if used you should assign a temperature dependence to it, e.g. linear with temperature for the free electron approximation; none assigned by default.
-	MatP<double, double> shc_e = 100;
+	MatP<double, double> shc_e = 40;
 
 	//electron-lattice coupling constant (W/m^3K) used in two-temperature model.
 	MatP<double, double> G_e = 1e18;
@@ -252,10 +228,8 @@ public:
 	//set temperature spatial variation coefficient (unitless) - used with temperature settings in a simulation schedule only, not with console command directly
 	MatP<double, double> cT = 1.0;
 
-	//Heat source stimulus in heat equation. Ideally used with a spatial variation. (W//m3)
-	MatP<double, double> Q = 0.0;
-
 	//OBSOLETE - not used anywhere; keep them to be able to load simulation files which might have these defined
+	//There was an oversight in ProgramState code design, fixed now but the price is I have to keep these to maintain compatibility.
 	MatP<double, double> lambda = 1e-5;
 	MatP<double, double> cTsig = 1.0;
 	MatP<DBL3, DBL3> dTsig = DBL3(1, 0, 0);
@@ -270,11 +244,6 @@ private:
 
 protected:
 
-	//-------------------------Setters
-
-	//call this to update given parameter output value to current base_temperature
-	void update_parameters(PARAM_ paramID = PARAM_ALL);
-
 	//set pre-calculated Funcs_Special objects in material parameters
 	void set_special_functions(PARAM_ paramID = PARAM_ALL);
 
@@ -284,122 +253,21 @@ public:
 
 	//inherited by Mesh implementations
 	MeshParams(vector<PARAM_>& enabledParams);
+	
 	virtual ~MeshParams() {}
-
-	//-------------------------Getters
-
-	//return number of mesh parameters
-	int get_num_meshparams(void) { return meshParams.size(); }
-
-	//get a reference to the mesh param
-	template <typename RType>
-	RType* get_meshparam_pointer(PARAM_ paramID) 
-	{ 
-		auto code = [](auto& MatP_object) -> RType* { return reinterpret_cast<RType*>(&MatP_object); };
-		return run_on_param<RType*>(paramID, code);
-	}
-
-	//get id of indexed mesh parameter (this is the value from PARAM_ enum)
-	int get_meshparam_id(int index) { return meshParams.get_ID_from_index(index); }
-	int get_meshparam_id(string paramHandle) { return meshParams.get_ID_from_key(paramHandle); }
-
-	//get handle of indexed mesh parameter
-	string get_meshparam_handle(int index) { return meshParams.get_key_from_index(index); }
-	string get_meshparam_handle(PARAM_ paramID) { return meshParams.get_key_from_ID(paramID); }
-
-	//get unit of indexed mesh parameter
-	string get_meshparam_unit(int index) { return meshParams[index].unit; }
-	string get_meshparam_unit(PARAM_ paramID) { return meshParams(paramID).unit; }
-
-	bool contains_param(PARAM_ paramID) { return meshParams.is_ID_set(paramID); }
-	bool contains_param(string paramHandle) { return meshParams.has_key(paramHandle); }
-
-	//get value of indexed mesh parameter as a string (with unit)
-	string get_meshparam_value(int index);
-	string get_meshparam_value(PARAM_ paramID);
-
-	//get value of indexed mesh parameter as a string (without unit)
-	string get_meshparam_value_sci(int index);
-	string get_meshparam_value_sci(PARAM_ paramID);
-
-	PARAMTYPE_ get_meshparam_type(PARAM_ paramID) { return meshParams(paramID).get_type(); }
-
-	//returns a string describing the set temperature dependence ("none", "array" or set equation : "name parameters...") 
-	string get_paraminfo_string(PARAM_ paramID);
-
-	//returns a string describing the set spatial dependence with any parameters
-	string get_paramvarinfo_string(PARAM_ paramID);
-
-	//check if the given parameter has a temperature dependence set
-	bool is_paramtemp_set(PARAM_ paramID);
-	//check if the given parameters has a temperature dependence specified using a text equation
-	bool is_paramtempequation_set(PARAM_ paramID);
-	//check if the given parameter has a  spatial variation set
-	bool is_paramvar_set(PARAM_ paramID);
-	//check if the spatial dependence is set using a text equation
-	bool is_paramvarequation_set(PARAM_ paramID);
-	//check if scaling array is scalar (or else vectorial)
-	bool is_paramvar_scalar(PARAM_ paramID);
-	//check if the given parameter has a  temperature dependence or a spatial variation set
-	bool is_param_nonconst(PARAM_ paramID);
-
-	//get mesh parameter temperature scaling up to max_temperature : return a vector from 0K up to and including max_temperature with scaling coefficients
-	bool get_meshparam_tempscaling(PARAM_ paramID, double max_temperature, vector<double>& x, vector<double>& y, vector<double>& z);
-
-	//is this param hidden or can we display it?
-	bool is_param_hidden(PARAM_ paramID) { return meshParams(paramID).hidden; }
-
-	//-------------------------Spatial scaling VEC get / calculate methods
-
-	//get reference to mesh parameter spatial scaling VEC
-	//use void* since the scaling is templated. Caller must recast it correctly - see is_paramvar_scalar method
-	void* get_meshparam_s_scaling(PARAM_ paramID);
-
-	//get value of mesh parameter spatial scaling coefficient at given position (and time)
-	Any get_meshparam_s_scaling_value(PARAM_ paramID, DBL3 rel_pos, double stime);
-
-	//calculate spatial variation into the provided VECs - intended to be used when the spatial variation is set using a text equation
-	void calculate_meshparam_s_scaling(PARAM_ paramID, VEC<double>& displayVEC_SCA, double stime);
-	void calculate_meshparam_s_scaling(PARAM_ paramID, VEC<DBL3>& displayVEC_VEC, double stime);
 
 	//-------------------------Setters
 
 	//copy all parameters from another Mesh
 	void copy_parameters(MeshParams& copy_this);
 
-	//-------------------------Setters : value and temperature dependence
-
-	//set value from string for named parameter (units allowed in string)
-	void set_meshparam_value(PARAM_ paramID, string value_text);
+	//-------------------------Setters/Updaters : text equations
 
 	//set the mesh parameter temperature equation with given user constants
 	void set_meshparam_t_equation(PARAM_ paramID, string& equationText, vector_key<double>& userConstants);
 
-	//clear mesh parameter temperature dependence
-	void clear_meshparam_temp(PARAM_ paramID);
-
-	//set mesh parameter array scaling
-	bool set_meshparam_tscaling_array(PARAM_ paramID, vector<double>& temp, vector<double>& scaling_x, vector<double>& scaling_y, vector<double>& scaling_z);
-
-	//set temperature dependence info string for console display purposes
-	void set_meshparam_tscaling_info(PARAM_ paramID, string info_text);
-
-	//-------------------------Setters : spatial variation
-
-	//set the mesh parameter spatial variation equation with given user constants
-	void set_meshparam_s_equation(PARAM_ paramID, string& equationText, vector_key<double>& userConstants, DBL3 meshDimensions);
-
-	//clear mesh parameter spatial variation (all if paramID == PARAM_ALL)
-	void clear_meshparam_variation(PARAM_ paramID);
-
-	//update mesh parameter spatial variation (e.g. cellsize or rectangle could have changed)
-	bool update_meshparam_var(PARAM_ paramID, DBL3 h, Rect rect);
-
 	//update text equations for mesh parameters with user constants, mesh dimensions, Curie temperature, base temperature
 	bool update_meshparam_equations(PARAM_ paramID, vector_key<double>& userConstants, DBL3 meshDimensions);
-
-	//set parameter spatial variation using a given generator and arguments (arguments passed as a string to be interpreted and converted using ToNum)
-	BError set_meshparam_var(PARAM_ paramID, MATPVAR_ generatorID, DBL3 h, Rect rect, string generatorArgs, function<vector<BYTE>(string, INT2)>& bitmap_loader);
 };
 
 //-------------------------Parameter control
@@ -531,6 +399,10 @@ RType MeshParams::run_on_param(PARAM_ paramID, Lambda& run_this, PType& ... run_
 
 	case PARAM_HA:
 		return run_this(cHA, run_this_args...);
+		break;
+
+	case PARAM_HMO:
+		return run_this(cHmo, run_this_args...);
 		break;
 
 	case PARAM_ELC:

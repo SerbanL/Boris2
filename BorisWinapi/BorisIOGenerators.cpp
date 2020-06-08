@@ -194,13 +194,22 @@ void Simulation::Print_ODEs(void)
 {
 	string odes_eval_list = "[tc1,1,1,1/tc]Available ODEs and associated evaluation methods ([tc0,0.5,0,1/tc]green [tc1,1,1,1/tc]set, [tc1,0,0,1/tc]red [tc1,1,1,1/tc]not set, [tc0.5,0.5,0.5,1/tc]gray [tc1,1,1,1/tc]not available) : \n";
 
-	odes_eval_list += "[tc1,1,1,1/tc]Set Equation: ";
+	odes_eval_list += "[tc1,1,1,1/tc]Set Micromagnetic Equation: ";
 
 	for (int odeIdx = 0; odeIdx < (int)odeHandles.size(); odeIdx++) {
 
 		ODE_ odeId = (ODE_)odeHandles.get_ID_from_index(odeIdx);
 
-		odes_eval_list += "[tc1,1,1,1/tc]" + MakeIO(IOI_ODE, odeId) + "</c> ";
+		odes_eval_list += "[tc1,1,1,1/tc][sa" + ToString(odeIdx) + "/sa]" + MakeIO(IOI_ODE, odeId) + "</c> ";
+	}
+
+	odes_eval_list += "\n[tc1,1,1,1/tc]Set Atomistic Equation: ";
+
+	for (int odeIdx = 0; odeIdx < (int)atom_odeHandles.size(); odeIdx++) {
+
+		ODE_ odeId = (ODE_)atom_odeHandles.get_ID_from_index(odeIdx);
+
+		odes_eval_list += "[tc1,1,1,1/tc][sa" + ToString(odeIdx) + "/sa]" + MakeIO(IOI_ATOMODE, odeId) + "</c> ";
 	}
 
 	odes_eval_list += "\n";
@@ -507,7 +516,9 @@ string Simulation::Build_MeshParamsTemp_Text(int meshIndex)
 		PARAM_ paramId = (PARAM_)SMesh[meshIndex]->get_meshparam_id(paramIdx);
 		PARAMTYPE_ paramType = (PARAMTYPE_)SMesh[meshIndex]->get_meshparam_type(paramId);
 
-		if (!SMesh[meshIndex]->is_param_hidden(paramId)) {
+		bool temperature_dependence_enabled = params_enabled_props(paramId).first;
+
+		if (!SMesh[meshIndex]->is_param_hidden(paramId) && temperature_dependence_enabled) {
 
 			switch (paramType) {
 
@@ -584,7 +595,9 @@ string Simulation::Build_MeshParamsVariation_Text(int meshIndex)
 		PARAM_ paramId = (PARAM_)SMesh[meshIndex]->get_meshparam_id(paramIdx);
 		PARAMTYPE_ paramType = (PARAMTYPE_)SMesh[meshIndex]->get_meshparam_type(paramId);
 
-		if (!SMesh[meshIndex]->is_param_hidden(paramId)) {
+		bool spatial_variation_enabled = params_enabled_props(paramId).second;
+
+		if (!SMesh[meshIndex]->is_param_hidden(paramId) && spatial_variation_enabled) {
 
 			switch (paramType) {
 
@@ -804,7 +817,7 @@ string Simulation::Build_TemperatureModel_ListLine(int meshIndex)
 
 void Simulation::Print_Stochasticity_List(void)
 {
-	string stochasticity_list;
+	string stochasticity_list = "[tc1,1,1,1/tc]Stochastic time-step : " + MakeIO(IOI_STOCHDT) + "</c> Linked to ODE dT : " + MakeIO(IOI_LINKSTOCHDT) + "</c>\n";
 
 	for (int idxMesh = 0; idxMesh < (int)SMesh().size(); idxMesh++) {
 
@@ -817,7 +830,7 @@ void Simulation::Print_Stochasticity_List(void)
 string Simulation::Build_Stochasticity_ListLine(int meshIndex)
 {
 	string stochasticity_line = MakeIO(IOI_MESH_FORSTOCHASTICITY, meshIndex) +
-		"</c>[tc1,1,1,1/tc] [sa0/sa]Stochastic cellsize : " + MakeIO(IOI_MESHSCELLSIZE, meshIndex) + "</c>[tc1,1,1,1/tc] [sa1/sa] Link to magnetic cellize : " + MakeIO(IOI_LINKSTOCHASTIC, meshIndex);
+		"</c>[tc1,1,1,1/tc] [sa0/sa]Stochastic cellsize : " + MakeIO(IOI_MESHSCELLSIZE, meshIndex) + "</c>[tc1,1,1,1/tc] [sa1/sa] Linked to magnetic cellize : " + MakeIO(IOI_LINKSTOCHASTIC, meshIndex);
 
 	return stochasticity_line;
 }

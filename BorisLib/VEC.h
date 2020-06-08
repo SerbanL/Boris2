@@ -25,6 +25,9 @@ protected:
 	//used for min, max and average reduction : stuck with OMP2.0 currently!
 	mutable OmpReduction<VType> reduction;
 
+	//used for reductions by magnitude : i.e. for a value of VType reduce (e.g. maximum) for GetMagnitude(value)
+	mutable OmpReduction<decltype(GetMagnitude(std::declval<VType>()))> magnitude_reduction, magnitude_reduction2;
+
 	//the actual mesh quantity
 	std::vector<VType> quantity;
 
@@ -366,14 +369,37 @@ public:
 	//ijk is the cell index in a mesh with cellsize cs and same rect as this VEC; if cs is same as h then just read the value at ijk - much faster! If not then get the usual weighted average.
 	VType weighted_average(const INT3& ijk, const DBL3& cs) const;
 
+	//--------------------------------------------NUMERICAL PROPERTIES : VEC_nprops.h
+
+	template <typename PType = decltype(GetMagnitude(std::declval<VType>()))>
+	VAL2<PType> get_minmax(const Box& box) const;
+	template <typename PType = decltype(GetMagnitude(std::declval<VType>()))>
+	VAL2<PType> get_minmax(const Rect& rectangle = Rect()) const;
+
+	template <typename PType = decltype(GetMagnitude(std::declval<VType>()))>
+	VAL2<PType> get_minmax_component_x(const Box& box) const;
+	template <typename PType = decltype(GetMagnitude(std::declval<VType>()))>
+	VAL2<PType> get_minmax_component_x(const Rect& rectangle = Rect()) const;
+
+	template <typename PType = decltype(GetMagnitude(std::declval<VType>()))>
+	VAL2<PType> get_minmax_component_y(const Box& box) const;
+	template <typename PType = decltype(GetMagnitude(std::declval<VType>()))>
+	VAL2<PType> get_minmax_component_y(const Rect& rectangle = Rect()) const;
+
+	template <typename PType = decltype(GetMagnitude(std::declval<VType>()))>
+	VAL2<PType> get_minmax_component_z(const Box& box) const;
+	template <typename PType = decltype(GetMagnitude(std::declval<VType>()))>
+	VAL2<PType> get_minmax_component_z(const Rect& rectangle = Rect()) const;
+
 	//--------------------------------------------MESH TRANSFER : VEC_MeshTransfer.h
 
 	//SINGLE INPUT, SINGLE OUTPUT
 
 	//set-up mesh transfers, ready to use - return false if failed (not enough memory)
-	bool Initialize_MeshTransfer(const std::vector< VEC<VType>* >& mesh_in, const std::vector< VEC<VType>* >& mesh_out, int correction_type) 
+	//can set a multiplier value to apply to all contributions (1.0 by default, so no effect)
+	bool Initialize_MeshTransfer(const std::vector< VEC<VType>* >& mesh_in, const std::vector< VEC<VType>* >& mesh_out, int correction_type, double multiplier = 1.0) 
 	{ 
-		return transfer.initialize_transfer(mesh_in, mesh_out, correction_type); 
+		return transfer.initialize_transfer(mesh_in, mesh_out, correction_type, multiplier); 
 	}
 
 	//MULTIPLE INPUTS, SINGLE OUTPUT
@@ -381,15 +407,17 @@ public:
 	//mesh_in and mesh_in2 vectors must have same sizes
 	//All VECs in mesh_in should be non-empty
 	//Some VECs in mesh_in2 allowed to be non-empty (in this case single input is used), but otherwise should have exactly same dimensions as the corresponding VECs in mesh_in
-	bool Initialize_MeshTransfer_AveragedInputs(const std::vector< VEC<VType>* >& mesh_in, const std::vector< VEC<VType>* >& mesh_in2, const std::vector< VEC<VType>* >& mesh_out, int correction_type) 
+	//can set a multiplier value to apply to all contributions (1.0 by default, so no effect)
+	bool Initialize_MeshTransfer_AveragedInputs(const std::vector< VEC<VType>* >& mesh_in, const std::vector< VEC<VType>* >& mesh_in2, const std::vector< VEC<VType>* >& mesh_out, int correction_type, double multiplier = 1.0)
 	{ 
-		return transfer.initialize_transfer_averagedinputs(mesh_in, mesh_in2, mesh_out, correction_type);
+		return transfer.initialize_transfer_averagedinputs(mesh_in, mesh_in2, mesh_out, correction_type, multiplier);
 	}
 
 	//mesh_in2 must be a vector of VEC<double> inputs
-	bool Initialize_MeshTransfer_MultipliedInputs(const std::vector< VEC<VType>* >& mesh_in, const std::vector< VEC<double>* >& mesh_in2_double, const std::vector< VEC<VType>* >& mesh_out, int correction_type)
+	//can set a multiplier value to apply to all contributions (1.0 by default, so no effect)
+	bool Initialize_MeshTransfer_MultipliedInputs(const std::vector< VEC<VType>* >& mesh_in, const std::vector< VEC<double>* >& mesh_in2_double, const std::vector< VEC<VType>* >& mesh_out, int correction_type, double multiplier = 1.0)
 	{
-		return transfer.initialize_transfer_multipliedinputs(mesh_in, mesh_in2_double, mesh_out, correction_type);
+		return transfer.initialize_transfer_multipliedinputs(mesh_in, mesh_in2_double, mesh_out, correction_type, multiplier);
 	}
 
 	//MULTIPLE INPUT, MULTIPLE OUTPUT
@@ -398,9 +426,10 @@ public:
 	//All VECs in mesh_in and mesh_out should be non-empty
 	//Some VECs in mesh_in2 and mesh_out2 allowed to be non-empty (in this case single input/output is used), but otherwise should have exactly same dimensions as the corresponding VECs in mesh_in, mesh_out
 	//Also if a VEC in mesh_in2 is non-empty the corresponding VEC in mesh_out2 should also be non-empty.
-	bool Initialize_MeshTransfer_AveragedInputs_DuplicatedOutputs(const std::vector< VEC<VType>* >& mesh_in, const std::vector< VEC<VType>* >& mesh_in2, const std::vector< VEC<VType>* >& mesh_out, const std::vector< VEC<VType>* >& mesh_out2, int correction_type)
+	//can set a multiplier value to apply to all contributions (1.0 by default, so no effect)
+	bool Initialize_MeshTransfer_AveragedInputs_DuplicatedOutputs(const std::vector< VEC<VType>* >& mesh_in, const std::vector< VEC<VType>* >& mesh_in2, const std::vector< VEC<VType>* >& mesh_out, const std::vector< VEC<VType>* >& mesh_out2, int correction_type, double multiplier = 1.0)
 	{ 
-		return transfer.initialize_transfer_averagedinputs_duplicatedoutputs(mesh_in, mesh_in2, mesh_out, mesh_out2, correction_type);
+		return transfer.initialize_transfer_averagedinputs_duplicatedoutputs(mesh_in, mesh_in2, mesh_out, mesh_out2, correction_type, multiplier);
 	}
 
 	//SINGLE INPUT, SINGLE OUTPUT

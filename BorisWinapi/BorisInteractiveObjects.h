@@ -28,11 +28,20 @@ enum IOI_
 	//Available/set ode : minorId is an entry from ODE_ (the equation)
 	IOI_ODE,
 
+	//Available/set ode for atomistic meshes: minorId is an entry from ODE_ (the equation)
+	IOI_ATOMODE,
+
 	//Set ODE time step: textId is the value
 	IOI_ODEDT,
 
 	//Set heat equation time step: textId is the value
 	IOI_HEATDT,
+
+	//Set stochastic time-step: textId is the value
+	IOI_STOCHDT,
+
+	//Link stochastic time-step to ODE dT flag : auxId is the value
+	IOI_LINKSTOCHDT,
 
 	//Available/set evaluation method for ode : minorId is an entry from ODE_ (the equation), auxId is the EVAL_ entry (the evaluation method), textId is the name of the evaluation method
 	IOI_ODE_EVAL,

@@ -19,7 +19,7 @@ AFMeshCUDA::~AFMeshCUDA()
 
 //----------------------------------- IMPORTANT CONTROL METHODS
 
-//call when the mesh dimensions have changed - sets every quantity to the right dimensions
+//call when a configuration change has occurred - some objects might need to be updated accordingly
 BError AFMeshCUDA::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 {
 	BError error(CLASS_STR(AFMeshCUDA));

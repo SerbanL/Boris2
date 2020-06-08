@@ -1,7 +1,6 @@
 #include "stdafx.h"
 #include "ManagedMeshCUDA.h"
 #include "MeshCUDA.h"
-#include "Mesh_FerromagneticCUDA.h"
 
 #if COMPILECUDA == 1
 
@@ -53,6 +52,7 @@ BError ManagedMeshCUDA::set_pointers(MeshCUDA* pMeshCUDA)
 	if (set_gpu_value(psusprel, pMeshCUDA->susprel.get_managed_object()) != cudaSuccess) error(BERROR_GPUERROR_CRIT);
 
 	if (set_gpu_value(pcHA, pMeshCUDA->cHA.get_managed_object()) != cudaSuccess) error(BERROR_GPUERROR_CRIT);
+	if (set_gpu_value(pcHmo, pMeshCUDA->cHmo.get_managed_object()) != cudaSuccess) error(BERROR_GPUERROR_CRIT);
 
 	if (set_gpu_value(pelecCond, pMeshCUDA->elecCond.get_managed_object()) != cudaSuccess) error(BERROR_GPUERROR_CRIT);
 	if (set_gpu_value(pamrPercentage, pMeshCUDA->amrPercentage.get_managed_object()) != cudaSuccess) error(BERROR_GPUERROR_CRIT);

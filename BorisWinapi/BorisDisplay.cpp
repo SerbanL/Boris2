@@ -291,8 +291,11 @@ void BorisDisplay::PopupTextBoxInteraction(INT2 popupId, INT2 mouse)
 
 			//set interactive object identifier which spawned this popup after being iteracted with
 			toRef.set_iop_interactingObjectId(bpupSpace->IO_Id);
+
+			TextObject& toInteracting = pWindow->GetTextObjectRef(bpupSpace->spawningObject_index);
+
 			//now call action handler with code - implementation of any interaction done there. If handler says interaction has finished then delete this popup.
-			if (toRef.ObjectInteraction(AC_INTERACTOBJECTS) == AO_ENDINTERACTION)
+			if (toRef.ObjectInteraction(AC_INTERACTOBJECTS, &toInteracting) == AO_ENDINTERACTION)
 				DelWinSpace(bpupSpace->GetwinId());
 		}
 	}

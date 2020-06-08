@@ -2,16 +2,17 @@
 
 #include "cuVEC.h"
 
-//------------------------------------------------------------------- ZERO AUX VALUES
+//------------------------------------------------------------------- ZERO/SET AUX VALUES
 
 template <typename VType>
-__global__ void zero_aux_values(VType& aux_value, VType& aux_value2, VType& aux_value3, cuBReal& aux_real, size_t& aux_integer)
+__global__ void zero_aux_values(VType& aux_value, VType& aux_value2, VType& aux_value3, cuBReal& aux_real, cuBReal& aux_real2, size_t& aux_integer)
 {
 	if (threadIdx.x == 0) aux_value = VType();
 	if (threadIdx.x == 1) aux_value2 = VType();
 	if (threadIdx.x == 2) aux_value3 = VType();
 	if (threadIdx.x == 3) aux_real = 0.0;
-	if (threadIdx.x == 4) aux_integer = 0;
+	if (threadIdx.x == 4) aux_real2 = 0.0;
+	if (threadIdx.x == 5) aux_integer = 0;
 }
 
 //------------------------------------------------------------------- COUNT NON-EMPTY CELLS
@@ -48,7 +49,7 @@ template void cuVEC<cuDBL3>::count_nonempty_cells(size_t arr_size);
 template <typename VType>
 __host__ void cuVEC<VType>::count_nonempty_cells(size_t arr_size)
 {
-	zero_aux_values <<<1, CUDATHREADS >>> (aux_value, aux_value2, aux_value3, aux_real, aux_integer);
+	zero_aux_values <<<1, CUDATHREADS >>> (aux_value, aux_value2, aux_value3, aux_real, aux_real2, aux_integer);
 
 	count_nonempty_cells_kernel <<< (arr_size + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (n, quantity, aux_integer);
 }

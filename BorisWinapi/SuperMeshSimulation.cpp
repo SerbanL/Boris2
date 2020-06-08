@@ -16,7 +16,7 @@ BError SuperMesh::InitializeAllModules(void)
 
 		if (!error) error = pMesh[idx]->InitializeAllModules();
 
-		total_nonempty_volume += (double)pMesh[idx]->M.get_nonempty_cells() * pMesh[idx]->M.h.dim();
+		total_nonempty_volume += pMesh[idx]->Get_NonEmpty_Magnetic_Volume();
 	}
 
 	//2. initialize super-mesh modules
@@ -30,7 +30,7 @@ BError SuperMesh::InitializeAllModules(void)
 
 		for (int idx = 0; idx < (int)pMesh.size(); idx++) {
 
-			energy_density_weights[idx] = (double)pMesh[idx]->M.get_nonempty_cells() * pMesh[idx]->M.h.dim() / total_nonempty_volume;
+			energy_density_weights[idx] = pMesh[idx]->Get_NonEmpty_Magnetic_Volume() / total_nonempty_volume;
 		}
 	}
 
@@ -51,7 +51,7 @@ BError SuperMesh::InitializeAllModulesCUDA(void)
 
 		if (!error) error = pMesh[idx]->InitializeAllModulesCUDA();
 
-		total_nonempty_volume += (double)pMesh[idx]->M.get_nonempty_cells() * pMesh[idx]->M.h.dim();
+		total_nonempty_volume += pMesh[idx]->Get_NonEmpty_Magnetic_Volume();
 	}
 
 	//2. initialize super-mesh modules
@@ -65,7 +65,7 @@ BError SuperMesh::InitializeAllModulesCUDA(void)
 
 		for (int idx = 0; idx < (int)pMesh.size(); idx++) {
 
-			energy_density_weights[idx] = (double)pMesh[idx]->M.get_nonempty_cells() * pMesh[idx]->M.h.dim() / total_nonempty_volume;
+			energy_density_weights[idx] = pMesh[idx]->Get_NonEmpty_Magnetic_Volume() / total_nonempty_volume;
 		}
 	}
 
@@ -75,8 +75,11 @@ BError SuperMesh::InitializeAllModulesCUDA(void)
 
 void SuperMesh::AdvanceTime(void)
 {
+	//Currently micromagnetic and atomistic meshes must have the same ODE evaluation method set, with the same time-step.
+	//In the future this will be changed to allow better performance, as it's possible in a multiscale simulation some micromagnetics meshes can be evaluated with a larger time-step compared to atomistic ones.
+
 	//moving mesh algorithm, if enabled
-	if (odeSolver.IsMovingMeshSet()) odeSolver.MovingMeshAlgorithm(this);
+	odeSolver.MovingMeshAlgorithm(this);
 
 	do {
 
@@ -101,7 +104,7 @@ void SuperMesh::AdvanceTime(void)
 			total_energy_density += pSMod[idx]->UpdateField();
 		}
 
-		//advance time using the ODE evaluation method - ODE solvers are called separately in the ferromagnetic meshes. This is why the same evaluation method must be used in all the ferromagnetic meshes, with the same time step.
+		//iterate ODE evaluation method - ODE solvers are called separately in the magnetic meshes. This is why the same evaluation method must be used in all the magnetic meshes, with the same time step.
 		odeSolver.Iterate();
 
 	} while (!odeSolver.TimeStepSolved());
@@ -111,7 +114,7 @@ void SuperMesh::AdvanceTime(void)
 void SuperMesh::AdvanceTimeCUDA(void)
 {
 	//moving mesh algorithm, if enabled
-	if (odeSolver.IsMovingMeshSet()) odeSolver.MovingMeshAlgorithm(this);
+	odeSolver.MovingMeshAlgorithm(this);
 
 	do {
 
@@ -133,7 +136,7 @@ void SuperMesh::AdvanceTimeCUDA(void)
 			pSMod[idx]->UpdateFieldCUDA();
 		}
 
-		//advance time using the ODE evaluation method - ODE solvers are called separately in the ferromagnetic meshes. This is why the same evaluation method must be used in all the ferromagnetic meshes, with the same time step.
+		//advance time using the ODE evaluation method - ODE solvers are called separately in the magnetic meshes. This is why the same evaluation method must be used in all the magnetic meshes, with the same time step.
 		odeSolver.IterateCUDA();
 
 	} while (!odeSolver.TimeStepSolved());

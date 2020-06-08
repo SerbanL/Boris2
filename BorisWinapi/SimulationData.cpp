@@ -152,19 +152,83 @@ Any Simulation::GetDataValue(DatumConfig dConfig)
 
 	case DATA_AVM:
 	{
-		return Any(SMesh[dConfig.meshName]->GetAverageMagnetisation(dConfig.rectangle));
+		if (!SMesh[dConfig.meshName]->is_atomistic()) {
+
+			return Any(reinterpret_cast<Mesh*>(SMesh[dConfig.meshName])->GetAverageMagnetisation(dConfig.rectangle));
+		}
+		else {
+
+			//return average magnetisation in the atomistic cell also : average atomistic moment (averaged over all participating unit cells), divided by unit cell volume
+			return Any(reinterpret_cast<Atom_Mesh*>(SMesh[dConfig.meshName])->GetAverageMoment(dConfig.rectangle) / SMesh[dConfig.meshName]->h.dim());
+		}
 	}
 	break;
 
 	case DATA_AVM2:
 	{
-		return Any(SMesh[dConfig.meshName]->GetAverageMagnetisation2(dConfig.rectangle));
+		if (!SMesh[dConfig.meshName]->is_atomistic()) {
+
+			return Any(reinterpret_cast<Mesh*>(SMesh[dConfig.meshName])->GetAverageMagnetisation2(dConfig.rectangle));
+		}
+		else return Any(DBL3());
+	}
+	break;
+
+	case DATA_MX_MINMAX:
+	{
+		if (!SMesh[dConfig.meshName]->is_atomistic()) {
+
+			return Any(reinterpret_cast<Mesh*>(SMesh[dConfig.meshName])->GetMagnetisationXMinMax(dConfig.rectangle));
+		}
+		else {
+
+			return Any(reinterpret_cast<Atom_Mesh*>(SMesh[dConfig.meshName])->GetMomentXMinMax(dConfig.rectangle) / SMesh[dConfig.meshName]->h.dim());
+		}
+	}
+	break;
+
+	case DATA_MY_MINMAX:
+	{
+		if (!SMesh[dConfig.meshName]->is_atomistic()) {
+
+			return Any(reinterpret_cast<Mesh*>(SMesh[dConfig.meshName])->GetMagnetisationYMinMax(dConfig.rectangle));
+		}
+		else {
+
+			return Any(reinterpret_cast<Atom_Mesh*>(SMesh[dConfig.meshName])->GetMomentYMinMax(dConfig.rectangle) / SMesh[dConfig.meshName]->h.dim());
+		}
+	}
+	break;
+
+	case DATA_MZ_MINMAX:
+	{
+		if (!SMesh[dConfig.meshName]->is_atomistic()) {
+
+			return Any(reinterpret_cast<Mesh*>(SMesh[dConfig.meshName])->GetMagnetisationZMinMax(dConfig.rectangle));
+		}
+		else {
+
+			return Any(reinterpret_cast<Atom_Mesh*>(SMesh[dConfig.meshName])->GetMomentZMinMax(dConfig.rectangle) / SMesh[dConfig.meshName]->h.dim());
+		}
+	}
+	break;
+
+	case DATA_M_MINMAX:
+	{
+		if (!SMesh[dConfig.meshName]->is_atomistic()) {
+
+			return Any(reinterpret_cast<Mesh*>(SMesh[dConfig.meshName])->GetMagnetisationMinMax(dConfig.rectangle));
+		}
+		else {
+
+			return Any(reinterpret_cast<Atom_Mesh*>(SMesh[dConfig.meshName])->GetMomentMinMax(dConfig.rectangle) / SMesh[dConfig.meshName]->h.dim());
+		}
 	}
 	break;
 
 	case DATA_HA:
 	{
-		return Any(SMesh[dConfig.meshName]->CallModuleMethod(&Zeeman::GetField));
+		return Any(SMesh[dConfig.meshName]->CallModuleMethod(&ZeemanBase::GetField));
 	}
 	break;
 
@@ -233,57 +297,96 @@ Any Simulation::GetDataValue(DatumConfig dConfig)
 		if (!SMesh.IsSuperMeshModuleSet(MODS_SDEMAG)) {
 
 			//read demag energy from named mesh if supermesh demag module not set
-			return Any(SMesh[dConfig.meshName]->GetEnergy(MOD_DEMAG));
+			return Any(SMesh[dConfig.meshName]->GetEnergyDensity(MOD_DEMAG));
 		}
 		else {
 
 			//get energy value from set supermesh demag module
-			return SMesh.CallModuleMethod<double, SDemag>(&SDemag::GetEnergy);
+			return SMesh.CallModuleMethod<double, SDemag>(&SDemag::GetEnergyDensity);
 		}
 	}
 	break;
 
 	case DATA_E_EXCH:
 	{
-		if (SMesh[dConfig.meshName]->IsModuleSet(MOD_EXCHANGE6NGBR)) return Any(SMesh[dConfig.meshName]->GetEnergy(MOD_EXCHANGE6NGBR));
-		else if (SMesh[dConfig.meshName]->IsModuleSet(MOD_DMEXCHANGE)) return Any(SMesh[dConfig.meshName]->GetEnergy(MOD_DMEXCHANGE));
-		else return Any(SMesh[dConfig.meshName]->GetEnergy(MOD_IDMEXCHANGE));
+		if (dConfig.rectangle.IsNull() || dConfig.rectangle == SMesh[dConfig.meshName]->meshRect) {
+
+			//get exchange energy density over entire mesh
+			return Any(SMesh[dConfig.meshName]->Get_Exchange_EnergyDensity());
+		}
+		else {
+
+			//calculate energy density as average in given rect only
+			return Any(SMesh[dConfig.meshName]->Get_Exchange_EnergyDensity(dConfig.rectangle));
+		}
+	}
+	break;
+
+	case DATA_E_EXCH_MAX:
+	{
+		return Any(SMesh[dConfig.meshName]->Get_Max_Exchange_EnergyDensity(dConfig.rectangle));
+	}
+	break;
+
+	case DATA_Q_TOPO:
+	{
+		return Any(SMesh[dConfig.meshName]->GetTopologicalCharge(dConfig.rectangle));
 	}
 	break;
 
 	case DATA_E_SURFEXCH:
 	{
-		return Any(SMesh[dConfig.meshName]->GetEnergy(MOD_SURFEXCHANGE));
+		return Any(SMesh[dConfig.meshName]->GetEnergyDensity(MOD_SURFEXCHANGE));
 	}
 	break;
 
 	case DATA_E_ZEE:
 	{
-		return Any(SMesh[dConfig.meshName]->GetEnergy(MOD_ZEEMAN));
+		if (dConfig.rectangle.IsNull() || dConfig.rectangle == SMesh[dConfig.meshName]->meshRect) {
+
+			//get already calculated energy density, averaged over the entire mesh
+			return Any(SMesh[dConfig.meshName]->GetEnergyDensity(MOD_ZEEMAN));
+		}
+		else {
+
+			//calculate energy density as average in given rect only
+			return Any(SMesh[dConfig.meshName]->GetEnergyDensity(MOD_ZEEMAN, dConfig.rectangle));
+		}
 	}
 	break;
 
 	case DATA_E_MELASTIC:
 	{
-		return Any(SMesh[dConfig.meshName]->GetEnergy(MOD_MELASTIC));
+		return Any(SMesh[dConfig.meshName]->GetEnergyDensity(MOD_MELASTIC));
 	}
 	break;
 
 	case DATA_E_ANIS:
 	{
-		return Any(SMesh[dConfig.meshName]->GetEnergy(MOD_ANIUNI));
+		if (dConfig.rectangle.IsNull() || dConfig.rectangle == SMesh[dConfig.meshName]->meshRect) {
+
+			//get already calculated energy density, averaged over the entire mesh
+			if (SMesh[dConfig.meshName]->IsModuleSet(MOD_ANICUBI)) return Any(SMesh[dConfig.meshName]->GetEnergyDensity(MOD_ANICUBI));
+			else return Any(SMesh[dConfig.meshName]->GetEnergyDensity(MOD_ANIUNI));
+		}
+		else {
+
+			//calculate energy density as average in given rect only
+			if (SMesh[dConfig.meshName]->IsModuleSet(MOD_ANICUBI)) return Any(SMesh[dConfig.meshName]->GetEnergyDensity(MOD_ANICUBI, dConfig.rectangle));
+			else return Any(SMesh[dConfig.meshName]->GetEnergyDensity(MOD_ANIUNI, dConfig.rectangle));
+		}
 	}
 	break;
 
 	case DATA_E_ROUGH:
 	{
-		return Any(SMesh[dConfig.meshName]->GetEnergy(MOD_ROUGHNESS));
+		return Any(SMesh[dConfig.meshName]->GetEnergyDensity(MOD_ROUGHNESS));
 	}
 	break;
 
 	case DATA_E_TOTAL:
 	{
-		return Any(SMesh.GetTotalEnergy());
+		return Any(SMesh.GetTotalEnergyDensity());
 	}
 	break;
 
@@ -319,7 +422,7 @@ Any Simulation::GetDataValue(DatumConfig dConfig)
 
 	case DATA_TRANSPORT_CONVERROR:
 	{
-		return Any(SMesh.CallModuleMethod<double, STransport>(&STransport::GetEnergy));
+		return Any(SMesh.CallModuleMethod<double, STransport>(&STransport::GetEnergyDensity));
 	}
 	break;
 
@@ -507,6 +610,6 @@ void Simulation::SaveData(void)
 		RefreshScreen();
 
 		string imageFile = directory + imageSaveFileBase + ToString(SMesh.GetIteration()) + ".png";
-		BD.SaveMeshImage(imageFile);
+		BD.SaveMeshImage(imageFile, image_cropping);
 	}
 }

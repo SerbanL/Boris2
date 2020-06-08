@@ -51,4 +51,11 @@ BError ExchangeBaseCUDA::Initialize(void)
 	return error;
 }
 
+void ExchangeBaseCUDA::Compute_Exchange(VEC<double>& displayVEC)
+{
+	Compute_ExchangeCUDA();
+
+	exchange_displayVEC()->copy_to_cpuvec(displayVEC);
+}
+
 #endif

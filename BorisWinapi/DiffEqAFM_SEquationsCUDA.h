@@ -33,14 +33,16 @@ __device__ cuReal3 ManagedDiffEqAFMCUDA::SLLG(int idx, cuReal3& value_B)
 	pcuMesh->update_parameters_mcoarse(idx, *pcuMesh->pMs_AFM, Ms_AFM, *pcuMesh->palpha_AFM, alpha_AFM, *pcuMesh->pgrel_AFM, grel_AFM);
 
 	cuReal3 position = M.cellidx_to_position(idx);
-	cuReal3 H_Thermal_Value = (*pH_Thermal)[position] / sqrt(alpha_AFM.i);
-	cuReal3 H_Thermal_Value_2 = (*pH_Thermal_2)[position] / sqrt(alpha_AFM.j);
+	cuReal3 H_Thermal_Value = (*pH_Thermal)[position] * sqrt(alpha_AFM.i);
+	cuReal3 H_Thermal_Value_2 = (*pH_Thermal_2)[position] * sqrt(alpha_AFM.j);
 
 	//sub-lattice B value so we can read it after
-	value_B = (-(cuBReal)GAMMA * grel_AFM.j / (1 + alpha_AFM.j * alpha_AFM.j)) * ((M2[idx] ^ Heff2[idx]) + alpha_AFM.j * ((M2[idx] / Ms_AFM.j) ^ (M2[idx] ^ (Heff2[idx] + H_Thermal_Value_2))));
+	value_B = (-(cuBReal)GAMMA * grel_AFM.j / (1 + alpha_AFM.j * alpha_AFM.j)) * 
+		((M2[idx] ^ (Heff2[idx] + H_Thermal_Value_2)) + alpha_AFM.j * ((M2[idx] / Ms_AFM.j) ^ (M2[idx] ^ (Heff2[idx] + H_Thermal_Value_2))));
 
 	//return the sub-lattice A value as normal
-	return (-(cuBReal)GAMMA * grel_AFM.i / (1 + alpha_AFM.i * alpha_AFM.i)) * ((M[idx] ^ Heff[idx]) + alpha_AFM.i * ((M[idx] / Ms_AFM.i) ^ (M[idx] ^ (Heff[idx] + H_Thermal_Value))));
+	return (-(cuBReal)GAMMA * grel_AFM.i / (1 + alpha_AFM.i * alpha_AFM.i)) * 
+		((M[idx] ^ (Heff[idx] + H_Thermal_Value)) + alpha_AFM.i * ((M[idx] / Ms_AFM.i) ^ (M[idx] ^ (Heff[idx] + H_Thermal_Value))));
 }
 
 //------------------------------------------------------------------------------------------------------
@@ -62,11 +64,14 @@ __device__ cuReal3 ManagedDiffEqAFMCUDA::SLLGSTT(int idx, cuReal3& value_B)
 	pcuMesh->update_parameters_mcoarse(idx, *pcuMesh->pMs_AFM, Ms_AFM, *pcuMesh->palpha_AFM, alpha_AFM, *pcuMesh->pgrel_AFM, grel_AFM, *pcuMesh->pP, P, *pcuMesh->pbeta, beta);
 
 	cuReal3 position = M.cellidx_to_position(idx);
-	cuReal3 H_Thermal_Value = (*pH_Thermal)[position] / sqrt(alpha_AFM.i);
-	cuReal3 H_Thermal_Value_2 = (*pH_Thermal_2)[position] / sqrt(alpha_AFM.j);
+	cuReal3 H_Thermal_Value = (*pH_Thermal)[position] * sqrt(alpha_AFM.i);
+	cuReal3 H_Thermal_Value_2 = (*pH_Thermal_2)[position] * sqrt(alpha_AFM.j);
 
-	cuReal3 LLGSTT_Eval_A = (-(cuBReal)GAMMA * grel_AFM.i / (1 + alpha_AFM.i * alpha_AFM.i)) * ((M[idx] ^ Heff[idx]) + alpha_AFM.i * ((M[idx] / Ms_AFM.i) ^ (M[idx] ^ (Heff[idx] + H_Thermal_Value))));
-	cuReal3 LLGSTT_Eval_B = (-(cuBReal)GAMMA * grel_AFM.j / (1 + alpha_AFM.j * alpha_AFM.j)) * ((M2[idx] ^ Heff2[idx]) + alpha_AFM.j * ((M2[idx] / Ms_AFM.j) ^ (M2[idx] ^ (Heff2[idx] + H_Thermal_Value_2))));
+	cuReal3 LLGSTT_Eval_A = (-(cuBReal)GAMMA * grel_AFM.i / (1 + alpha_AFM.i * alpha_AFM.i)) * 
+		((M[idx] ^ (Heff[idx] + H_Thermal_Value)) + alpha_AFM.i * ((M[idx] / Ms_AFM.i) ^ (M[idx] ^ (Heff[idx] + H_Thermal_Value))));
+	
+	cuReal3 LLGSTT_Eval_B = (-(cuBReal)GAMMA * grel_AFM.j / (1 + alpha_AFM.j * alpha_AFM.j)) * 
+		((M2[idx] ^ (Heff2[idx] + H_Thermal_Value_2)) + alpha_AFM.j * ((M2[idx] / Ms_AFM.j) ^ (M2[idx] ^ (Heff2[idx] + H_Thermal_Value_2))));
 
 	if (E.linear_size()) {
 

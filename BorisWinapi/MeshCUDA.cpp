@@ -492,7 +492,7 @@ BError MeshCUDA::SaveOnScreenPhysicalQuantity(string fileName, string ovf2_dataT
 
 	case MESHDISPLAY_TS:
 
-		//pdisplay_vec_vec at maixmum resolution
+		//pdisplay_vec_vec at maximumresolution
 		if (pMesh->IsModuleSet(MOD_TRANSPORT)) {
 
 			prepare_display(n, meshRect, h.mindim(), reinterpret_cast<Transport*>(pMesh->pMod(MOD_TRANSPORT))->GetSpinTorqueCUDA());
@@ -502,7 +502,7 @@ BError MeshCUDA::SaveOnScreenPhysicalQuantity(string fileName, string ovf2_dataT
 
 	case MESHDISPLAY_TSI:
 
-		//pdisplay_vec_vec at maixmum resolution
+		//pdisplay_vec_vec at maximumresolution
 		if (pMesh->pSMesh->IsSuperMeshModuleSet(MODS_STRANSPORT) && pMesh->IsModuleSet(MOD_TRANSPORT)) {
 
 			prepare_display(n, meshRect, h.mindim(), reinterpret_cast<STransport*>(pMesh->pSMesh->pSMod(MODS_STRANSPORT))->GetInterfacialSpinTorqueCUDA(reinterpret_cast<Transport*>(pMesh->pMod(MOD_TRANSPORT))));
@@ -654,7 +654,7 @@ void MeshCUDA::PrepareDisplayedMeshValue(void)
 
 	case MESHDISPLAY_TS:
 
-		//pdisplay_vec_vec at maixmum resolution
+		//pdisplay_vec_vec at maximumresolution
 		if (pMesh->IsModuleSet(MOD_TRANSPORT)) {
 
 			prepare_display(n, meshRect, h.mindim(), reinterpret_cast<Transport*>(pMesh->pMod(MOD_TRANSPORT))->GetSpinTorqueCUDA());
@@ -663,7 +663,7 @@ void MeshCUDA::PrepareDisplayedMeshValue(void)
 
 	case MESHDISPLAY_TSI:
 
-		//pdisplay_vec_vec at maixmum resolution
+		//pdisplay_vec_vec at maximumresolution
 		if (pMesh->pSMesh->IsSuperMeshModuleSet(MODS_STRANSPORT) && pMesh->IsModuleSet(MOD_TRANSPORT)) {
 
 			prepare_display(n, meshRect, h.mindim(), reinterpret_cast<STransport*>(pMesh->pSMesh->pSMod(MODS_STRANSPORT))->GetInterfacialSpinTorqueCUDA(reinterpret_cast<Transport*>(pMesh->pMod(MOD_TRANSPORT))));
@@ -908,7 +908,7 @@ Any MeshCUDA::GetAverageDisplayedMeshValue(Rect rel_rect)
 
 	case MESHDISPLAY_TS:
 
-		//pdisplay_vec_vec at maixmum resolution
+		//pdisplay_vec_vec at maximumresolution
 		if (pMesh->IsModuleSet(MOD_TRANSPORT)) {
 
 			prepare_display(n, meshRect, h.mindim(), reinterpret_cast<Transport*>(pMesh->pMod(MOD_TRANSPORT))->GetSpinTorqueCUDA());
@@ -918,7 +918,7 @@ Any MeshCUDA::GetAverageDisplayedMeshValue(Rect rel_rect)
 
 	case MESHDISPLAY_TSI:
 
-		//pdisplay_vec_vec at maixmum resolution
+		//pdisplay_vec_vec at maximumresolution
 		if (pMesh->pSMesh->IsSuperMeshModuleSet(MODS_STRANSPORT) && pMesh->IsModuleSet(MOD_TRANSPORT)) {
 
 			prepare_display(n, meshRect, h.mindim(), reinterpret_cast<STransport*>(pMesh->pSMesh->pSMod(MODS_STRANSPORT))->GetInterfacialSpinTorqueCUDA(reinterpret_cast<Transport*>(pMesh->pMod(MOD_TRANSPORT))));
@@ -973,6 +973,12 @@ Any MeshCUDA::GetAverageDisplayedMeshValue(Rect rel_rect)
 	return (double)0.0;
 }
 
+//copy aux_vec_sca in GPU memory to displayVEC in CPU memory
+void MeshCUDA::copy_aux_vec_sca(VEC<double>& displayVEC)
+{
+	aux_vec_sca()->copy_to_cpuvec(displayVEC);
+}
+
 //----------------------------------- MESH INFO GET/SET METHODS
 
 int MeshCUDA::GetMeshType(void)
@@ -988,7 +994,7 @@ bool MeshCUDA::MComputation_Enabled(void)
 	return pMesh->Heff.linear_size();
 }
 
-bool MeshCUDA::Magnetisation_Enabled(void)
+bool MeshCUDA::Magnetism_Enabled(void)
 { 
 	return pMesh->M.linear_size();
 }
@@ -1035,50 +1041,6 @@ int MeshCUDA::Check_Step_Update(void)
 }
 
 //----------------------------------- VALUE GETTERS
-
-//get average magnetisation in given box (entire mesh if none specified)
-cuReal3 MeshCUDA::GetAverageMagnetisation(cuRect rectangle)
-{
-	if (pMesh->M.linear_size()) return M()->average_nonempty(n.dim(), rectangle);
-	else return cuReal3(0.0);
-}
-
-//get average magnetisation in given box (entire mesh if none specified); sub-lattice B
-cuReal3 MeshCUDA::GetAverageMagnetisation2(cuRect rectangle)
-{
-	if (pMesh->M2.linear_size()) return M2()->average_nonempty(n.dim(), rectangle);
-	else return cuReal3(0.0);
-}
-
-cuBReal MeshCUDA::GetAverageElectricalPotential(cuRect rectangle)
-{
-	if (pMesh->V.linear_size()) return V()->average_nonempty(n_e.dim(), rectangle);
-	else return 0.0;
-}
-
-cuReal3 MeshCUDA::GetAverageSpinAccumulation(cuRect rectangle)
-{
-	if (pMesh->S.linear_size()) return S()->average_nonempty(n_e.dim(), rectangle);
-	else return cuReal3(0.0);
-}
-
-cuBReal MeshCUDA::GetAverageElectricalConductivity(cuRect rectangle)
-{
-	if (pMesh->elC.linear_size()) return elC()->average_nonempty(n_e.dim(), rectangle);
-	else return 0.0;
-}
-
-cuBReal MeshCUDA::GetAverageTemperature(cuRect rectangle)
-{
-	if (pMesh->Temp.linear_size()) return Temp()->average_nonempty(n_t.dim(), rectangle);
-	else return pMesh->base_temperature;
-}
-
-cuBReal MeshCUDA::GetAverageLatticeTemperature(cuRect rectangle)
-{
-	if (pMesh->Temp_l.linear_size()) return Temp_l()->average_nonempty(n_t.dim(), rectangle);
-	else return pMesh->base_temperature;
-}
 
 cuBReal MeshCUDA::GetStageTime(void)
 {

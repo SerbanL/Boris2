@@ -36,6 +36,10 @@ public:
 
 	void UpdateField(void);
 
+	//-------------------Energy density methods
+
+	cuBReal GetEnergyDensity(cuRect avRect);
+
 	//-------------------
 
 };

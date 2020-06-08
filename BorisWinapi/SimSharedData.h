@@ -41,6 +41,9 @@ protected:
 	//available material parameters for each mesh type
 	static vector_lut< vector<PARAM_> > params_for_meshtype;
 
+	//entries from PARAM_, specifying if temperature dependence (first) and spatial variation (second) are enabled.
+	static vector_lut<std::pair<bool, bool>> params_enabled_props;
+
 	//modules which cannot be available simultaneously : exclusive modules.
 	static exclusions<MOD_> exclusiveModules;
 

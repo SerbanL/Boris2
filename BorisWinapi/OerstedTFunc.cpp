@@ -100,7 +100,7 @@ void OeFunc::CalcOerstedTensors(VEC<DBL3>& DOe, INT3 n, INT3 N, DBL3 h)
 	//Kxz : even in x, z, odd in y
 	//Kyz : odd in x, even in y, z
 
-	//NOTE (TO DO) : computation can be made more efficient by calculating the G1 values once then re-using them in the I2 function.
+	//NOTE : computation can be made more efficient by calculating the G1 values once then re-using them in the I2 function.
 
 #pragma omp parallel for
 	for (int j = 0; j < n.y; j++) {

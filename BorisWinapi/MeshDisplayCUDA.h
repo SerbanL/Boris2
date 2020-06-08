@@ -74,7 +74,6 @@ protected:
 	//extract from mesh display (in gpu memory) a coarser mesh display (still in gpu memory), then copy the coarse display to cpu memory ready to use further.
 	//n_quantity and meshRect are the same as those in cu_obj_quantity : pass in values in cpu memory to speed up function execution
 	bool prepare_display(SZ3 n_quantity, Rect meshRect, double detail_level, cu_obj<cuVEC_VC<cuReal3>>& cu_obj_quantity);
-	
 	bool prepare_display(SZ3 n_quantity, Rect meshRect, double detail_level, cu_obj<cuVEC_VC<cuReal3>>& cu_obj_quantity, cu_obj<cuVEC_VC<cuReal3>>& cu_obj_quantity2);
 	
 	bool prepare_display(SZ3 n_quantity, Rect meshRect, double detail_level, cu_obj<cuVEC_VC<cuBReal>>& cu_obj_quantity);

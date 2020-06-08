@@ -1,3 +1,5 @@
+#WinSocks Module Updated on : 19/04/2020
+
 import socket
 import time
 import matplotlib.pyplot as plt
@@ -97,6 +99,35 @@ class WSClient:
                 return [row[column_indexes] for row in rows]
             else:
                 return rows
+        
+    #Save data columns in file name, tab separated
+    def Save_Data_Columns(self, fileName, data_columns):
+        
+        f = open(fileName, 'w')
+        
+        max_len = 0
+        
+        for column in data_columns:
+            max_len = max_len if len(column) < max_len else len(column)
+            
+        for row_idx in range(max_len):
+            
+            line = ''
+            
+            for col_idx in range(len(data_columns)):
+                
+                if row_idx < len(data_columns[col_idx]): 
+                    line += str(data_columns[col_idx][row_idx])
+                else: 
+                    line += ' '
+                
+                if col_idx < len(data_columns) - 1:
+                    line += '\t'
+            
+            f.write(line + '\n')
+        
+        f.close()
+        
         
     #Simple plot of y vs x : helps if you just want to see a simple simulation output plot
     #you can get data from simulation output file and plot it in just 2 lines of code in your Python script (can be done in 1 line with 2 calls to Get_Data_Columns instead)

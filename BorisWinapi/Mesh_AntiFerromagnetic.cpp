@@ -24,7 +24,7 @@ AFMesh::AFMesh(SuperMesh *pSMesh_) :
 			VINFO(grel_AFM), VINFO(alpha_AFM), VINFO(Ms_AFM), VINFO(Nxy), 
 			VINFO(A_AFM), VINFO(Ah), VINFO(Anh), VINFO(D_AFM), VINFO(tau_ii), VINFO(tau_ij),
 			VINFO(K1_AFM), VINFO(K2_AFM), VINFO(mcanis_ea1), VINFO(mcanis_ea2),
-			VINFO(susrel_AFM), VINFO(cHA),
+			VINFO(susrel_AFM), VINFO(cHA), VINFO(cHmo),
 			VINFO(elecCond), VINFO(P), VINFO(beta), VINFO(SHA), VINFO(flSOT),
 			VINFO(base_temperature), VINFO(T_equation), VINFO(T_Curie), VINFO(T_Curie_material), VINFO(atomic_moment_AFM), 
 			VINFO(density),
@@ -33,7 +33,7 @@ AFMesh::AFMesh(SuperMesh *pSMesh_) :
 		{
 			IINFO(Demag_N), IINFO(Demag), IINFO(SDemag_Demag), 
 			IINFO(Exch_6ngbr_Neu), IINFO(DMExchange), IINFO(iDMExchange), IINFO(SurfExchange),
-			IINFO(Zeeman),
+			IINFO(Zeeman), IINFO(MOptical),
 			IINFO(Anisotropy_Uniaxial), IINFO(Anisotropy_Cubic), 
 			IINFO(Transport), IINFO(Heat),
 			IINFO(SOTField), IINFO(Roughness)
@@ -58,7 +58,7 @@ AFMesh::AFMesh(Rect meshRect_, DBL3 h_, SuperMesh *pSMesh_) :
 			VINFO(grel_AFM), VINFO(alpha_AFM), VINFO(Ms_AFM), VINFO(Nxy),
 			VINFO(A_AFM), VINFO(Ah), VINFO(Anh), VINFO(D_AFM), VINFO(tau_ii), VINFO(tau_ij),
 			VINFO(K1_AFM), VINFO(K2_AFM), VINFO(mcanis_ea1), VINFO(mcanis_ea2),
-			VINFO(susrel_AFM), VINFO(cHA),
+			VINFO(susrel_AFM), VINFO(cHA), VINFO(cHmo),
 			VINFO(elecCond), VINFO(P), VINFO(beta), VINFO(SHA), VINFO(flSOT),
 			VINFO(base_temperature), VINFO(T_equation), VINFO(T_Curie), VINFO(T_Curie_material), VINFO(atomic_moment_AFM),
 			VINFO(density),
@@ -67,7 +67,7 @@ AFMesh::AFMesh(Rect meshRect_, DBL3 h_, SuperMesh *pSMesh_) :
 		{
 			IINFO(Demag_N), IINFO(Demag), IINFO(SDemag_Demag),
 			IINFO(Exch_6ngbr_Neu), IINFO(DMExchange), IINFO(iDMExchange), IINFO(SurfExchange),
-			IINFO(Zeeman),
+			IINFO(Zeeman), IINFO(MOptical),
 			IINFO(Anisotropy_Uniaxial), IINFO(Anisotropy_Cubic),
 			IINFO(Transport), IINFO(Heat),
 			IINFO(SOTField), IINFO(Roughness)
@@ -123,8 +123,8 @@ void AFMesh::RepairObjectState(void)
 		pLongRelSus1->Initialize_LongitudinalRelSusceptibility1(pCurieWeiss1->get_data(), pCurieWeiss2->get_data(), tau_ii, tau_ij, atomic_moment_AFM, T_Curie);
 		pLongRelSus2->Initialize_LongitudinalRelSusceptibility2(pCurieWeiss1->get_data(), pCurieWeiss2->get_data(), tau_ii, tau_ij, atomic_moment_AFM, T_Curie);
 
-		pAlpha1->Initialize_Alpha1(pCurieWeiss1->get_data(), pCurieWeiss2->get_data(), tau_ii.get0().i, tau_ij.get0().i);
-		pAlpha2->Initialize_Alpha2(pCurieWeiss1->get_data(), pCurieWeiss2->get_data(), tau_ii.get0().j, tau_ij.get0().j);
+		pAlpha1->Initialize_Alpha1(pCurieWeiss1->get_data(), pCurieWeiss2->get_data(), tau_ii.get0(), tau_ij.get0());
+		pAlpha2->Initialize_Alpha2(pCurieWeiss1->get_data(), pCurieWeiss2->get_data(), tau_ii.get0(), tau_ij.get0());
 	}
 	else {
 
@@ -134,14 +134,14 @@ void AFMesh::RepairObjectState(void)
 		pLongRelSus1->Initialize_LongitudinalRelSusceptibility1(pCurieWeiss1->get_data(), pCurieWeiss2->get_data(), tau_ii, tau_ij, atomic_moment_AFM, 1.0);
 		pLongRelSus2->Initialize_LongitudinalRelSusceptibility2(pCurieWeiss1->get_data(), pCurieWeiss2->get_data(), tau_ii, tau_ij, atomic_moment_AFM, 1.0);
 
-		pAlpha1->Initialize_Alpha1(pCurieWeiss1->get_data(), pCurieWeiss2->get_data(), tau_ii.get0().i, tau_ij.get0().i);
-		pAlpha2->Initialize_Alpha2(pCurieWeiss1->get_data(), pCurieWeiss2->get_data(), tau_ii.get0().j, tau_ij.get0().j);
+		pAlpha1->Initialize_Alpha1(pCurieWeiss1->get_data(), pCurieWeiss2->get_data(), tau_ii.get0(), tau_ij.get0());
+		pAlpha2->Initialize_Alpha2(pCurieWeiss1->get_data(), pCurieWeiss2->get_data(), tau_ii.get0(), tau_ij.get0());
 	}
 }
 
 //----------------------------------- IMPORTANT CONTROL METHODS
 
-//call when the mesh dimensions have changed - sets every quantity to the right dimensions
+//call when a configuration change has occurred - some objects might need to be updated accordingly
 BError AFMesh::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 {
 	BError error(string(CLASS_STR(AFMesh)) + "(" + (*pSMesh).key_from_meshId(meshId) + ")");
@@ -177,7 +177,7 @@ BError AFMesh::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 		if (!error && !update_meshparam_var()) error(BERROR_OUTOFMEMORY_NCRIT);
 
 		//update any text equations used in mesh parameters (dependence on mesh dimensions possible)
-		if (!error) update_meshparam_equations();
+		if (!error) update_all_meshparam_equations();
 	}
 
 	//erase any unused skyrmion trackers in this mesh
@@ -227,7 +227,7 @@ void AFMesh::UpdateConfiguration_Values(UPDATECONFIG_ cfgMessage)
 		UpdateTEquationUserConstants();
 
 		//update any text equations used in mesh parameters
-		update_meshparam_equations();
+		update_all_meshparam_equations();
 	}
 	else if (cfgMessage == UPDATECONFIG_TEQUATION_CLEAR) {
 
@@ -306,6 +306,102 @@ BError AFMesh::SwitchCUDAState(bool cudaState)
 	return error;
 }
 
+//couple this mesh to touching dipoles by setting skip cells as required : used for domain wall moving mesh algorithms
+void AFMesh::CoupleToDipoles(bool status)
+{
+#if COMPILECUDA == 1
+	if (pMeshCUDA) {
+
+		pMeshCUDA->M()->copy_to_cpuvec(M);
+		pMeshCUDA->M2()->copy_to_cpuvec(M2);
+	}
+#endif
+
+	//check all meshes to see if there are any dipole meshes touching this mesh
+	for (int idx = 0; idx < pSMesh->size(); idx++) {
+
+		if ((*pSMesh)[idx]->GetMeshType() == MESH_DIPOLE) {
+
+			Rect mesh_intersection = (*pSMesh)[idx]->meshRect.get_intersection(meshRect);
+
+			//for this dipole to "touch" this mesh, the rects intersection must be exactly a plane
+			if (mesh_intersection.IsPlane()) {
+
+				//y-z plane : x is the perpendicular direction
+				if (IsZ(mesh_intersection.s.x - mesh_intersection.e.x)) {
+
+					//is the selected mesh on the positive or negative side of the boundary? Set flag to use. Also adjust mesh_intersection so it contains all the cells to set flags for.
+					if (IsZ(meshRect.s.x - mesh_intersection.s.x)) {
+
+						mesh_intersection.e.x += h.x;
+					}
+					else {
+
+						mesh_intersection.s.x -= h.x;
+					}
+				}
+				//x-z plane : y is the perpendicular direction
+				else if (IsZ(mesh_intersection.s.y - mesh_intersection.e.y)) {
+
+					//is the selected mesh on the positive or negative side of the boundary? Set flag to use. Also adjust mesh_intersection so it contains all the cells to set flags for.
+					if (IsZ(meshRect.s.y - mesh_intersection.s.y)) {
+
+						mesh_intersection.e.y += h.y;
+					}
+					else {
+
+						mesh_intersection.s.y -= h.y;
+					}
+				}
+				//x-y plane : z is the perpendicular direction
+				else if (IsZ(mesh_intersection.s.z - mesh_intersection.e.z)) {
+
+					//is the selected mesh on the positive or negative side of the boundary? Set flag to use. Also adjust mesh_intersection so it contains all the cells to set flags for.
+					if (IsZ(meshRect.s.z - mesh_intersection.s.z)) {
+
+						mesh_intersection.e.z += h.z;
+					}
+					else {
+
+						mesh_intersection.s.z -= h.z;
+					}
+				}
+
+				//found a touching dipole - mark all cells in the intersection as skip cells
+				M.set_skipcells(mesh_intersection, status);
+				M2.set_skipcells(mesh_intersection, status);
+
+				if (status) {
+
+					//set interface cells to have magnetisation direction along the touching dipole direction
+					DBL3 Mdipole_direction = reinterpret_cast<Mesh*>((*pSMesh)[idx])->GetAverageMagnetisation().normalized();
+
+					Box box = M.box_from_rect_max(mesh_intersection);
+
+					for (int i = box.s.i; i < box.e.i; i++) {
+						for (int j = box.s.j; j < box.e.j; j++) {
+							for (int k = box.s.k; k < box.e.k; k++) {
+
+								double Mag = M[INT3(i, j, k)].norm();
+								M[INT3(i, j, k)] = Mag * Mdipole_direction;
+								M2[INT3(i, j, k)] = -Mag * Mdipole_direction;
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+#if COMPILECUDA == 1
+	if (pMeshCUDA) {
+
+		pMeshCUDA->M()->copy_from_cpuvec(M);
+		pMeshCUDA->M2()->copy_from_cpuvec(M2);
+	}
+#endif
+}
+
 double AFMesh::CheckMoveMesh(void)
 {
 #if COMPILECUDA == 1
@@ -347,7 +443,7 @@ double AFMesh::CheckMoveMesh(void)
 void AFMesh::SetCurieTemperature(double Tc, bool set_default_dependences)
 {
 	//Curie temperature is a constant in mesh parameter equations, so update them
-	if (Tc != T_Curie) update_meshparam_equations();
+	if (Tc != T_Curie) update_all_meshparam_equations();
 
 	if (Tc > 0) {
 
@@ -361,8 +457,8 @@ void AFMesh::SetCurieTemperature(double Tc, bool set_default_dependences)
 		pLongRelSus1->Initialize_LongitudinalRelSusceptibility1(pCurieWeiss1->get_data(), pCurieWeiss2->get_data(), tau_ii, tau_ij, atomic_moment_AFM, T_Curie);
 		pLongRelSus2->Initialize_LongitudinalRelSusceptibility2(pCurieWeiss1->get_data(), pCurieWeiss2->get_data(), tau_ii, tau_ij, atomic_moment_AFM, T_Curie);
 
-		pAlpha1->Initialize_Alpha1(pCurieWeiss1->get_data(), pCurieWeiss2->get_data(), tau_ii.get0().i, tau_ij.get0().i);
-		pAlpha2->Initialize_Alpha2(pCurieWeiss1->get_data(), pCurieWeiss2->get_data(), tau_ii.get0().j, tau_ij.get0().j);
+		pAlpha1->Initialize_Alpha1(pCurieWeiss1->get_data(), pCurieWeiss2->get_data(), tau_ii.get0(), tau_ij.get0());
+		pAlpha2->Initialize_Alpha2(pCurieWeiss1->get_data(), pCurieWeiss2->get_data(), tau_ii.get0(), tau_ij.get0());
 
 		if (set_default_dependences) {
 
@@ -377,18 +473,18 @@ void AFMesh::SetCurieTemperature(double Tc, bool set_default_dependences)
 
 			susrel_AFM.set_t_scaling_equation(string("chi1(T/Tc), chi2(T/Tc)"), userConstants, T_Curie, base_temperature);
 			alpha_AFM.set_t_scaling_equation(string("alpha1(T/Tc), alpha2(T/Tc)"), userConstants, T_Curie, base_temperature);
-
-			//make sure to also update them - this method can be called during a simulation, e.g. if field changes.
-			Ms_AFM.update(base_temperature);
-			A_AFM.update(base_temperature);
-			Ah.update(base_temperature);
-			Anh.update(base_temperature);
-			D_AFM.update(base_temperature);
-			K1_AFM.update(base_temperature);
-			K2_AFM.update(base_temperature);
-			susrel_AFM.update(base_temperature);
-			alpha_AFM.update(base_temperature);
 		}
+
+		//make sure to also update them - this method can be called during a simulation, e.g. if field changes.
+		Ms_AFM.update(base_temperature);
+		A_AFM.update(base_temperature);
+		Ah.update(base_temperature);
+		Anh.update(base_temperature);
+		D_AFM.update(base_temperature);
+		K1_AFM.update(base_temperature);
+		K2_AFM.update(base_temperature);
+		susrel_AFM.update(base_temperature);
+		alpha_AFM.update(base_temperature);
 	}
 	else {
 

@@ -24,7 +24,7 @@ FMesh::FMesh(SuperMesh *pSMesh_) :
 			VINFO(grel), VINFO(alpha), VINFO(Ms), VINFO(Nxy), 
 			VINFO(A), VINFO(D), VINFO(J1), VINFO(J2), 
 			VINFO(K1), VINFO(K2), VINFO(mcanis_ea1), VINFO(mcanis_ea2), 
-			VINFO(susrel), VINFO(susprel), VINFO(cHA),
+			VINFO(susrel), VINFO(susprel), VINFO(cHA), VINFO(cHmo),
 			VINFO(elecCond), VINFO(amrPercentage), VINFO(P), VINFO(beta), VINFO(De), VINFO(n_density), VINFO(SHA), VINFO(flSOT), VINFO(betaD), VINFO(l_sf), VINFO(l_ex), VINFO(l_ph), VINFO(Gi), VINFO(Gmix), 
 			VINFO(ts_eff), VINFO(tsi_eff), VINFO(pump_eff), VINFO(cpump_eff), VINFO(the_eff),
 			VINFO(base_temperature), VINFO(T_equation), VINFO(T_Curie), VINFO(T_Curie_material), VINFO(atomic_moment), 
@@ -38,7 +38,7 @@ FMesh::FMesh(SuperMesh *pSMesh_) :
 			//Modules Implementations
 			IINFO(Demag_N), IINFO(Demag), IINFO(SDemag_Demag),
 			IINFO(Exch_6ngbr_Neu), IINFO(DMExchange), IINFO(iDMExchange), IINFO(SurfExchange),
-			IINFO(Zeeman),
+			IINFO(Zeeman), IINFO(MOptical),
 			IINFO(Anisotropy_Uniaxial), IINFO(Anisotropy_Cubic), IINFO(MElastic),
 			IINFO(Transport), IINFO(Heat),
 			IINFO(SOTField), 
@@ -64,7 +64,7 @@ FMesh::FMesh(Rect meshRect_, DBL3 h_, SuperMesh *pSMesh_) :
 			VINFO(grel), VINFO(alpha), VINFO(Ms), VINFO(Nxy),
 			VINFO(A), VINFO(D), VINFO(J1), VINFO(J2),
 			VINFO(K1), VINFO(K2), VINFO(mcanis_ea1), VINFO(mcanis_ea2),
-			VINFO(susrel), VINFO(susprel), VINFO(cHA),
+			VINFO(susrel), VINFO(susprel), VINFO(cHA), VINFO(cHmo),
 			VINFO(elecCond), VINFO(amrPercentage), VINFO(P), VINFO(beta), VINFO(De), VINFO(n_density), VINFO(SHA), VINFO(flSOT), VINFO(betaD), VINFO(l_sf), VINFO(l_ex), VINFO(l_ph), VINFO(Gi), VINFO(Gmix),
 			VINFO(ts_eff), VINFO(tsi_eff), VINFO(pump_eff), VINFO(cpump_eff), VINFO(the_eff),
 			VINFO(base_temperature), VINFO(T_equation), VINFO(T_Curie), VINFO(T_Curie_material), VINFO(atomic_moment),
@@ -78,7 +78,7 @@ FMesh::FMesh(Rect meshRect_, DBL3 h_, SuperMesh *pSMesh_) :
 			//Modules Implementations
 			IINFO(Demag_N), IINFO(Demag), IINFO(SDemag_Demag),
 			IINFO(Exch_6ngbr_Neu), IINFO(DMExchange), IINFO(iDMExchange), IINFO(SurfExchange),
-			IINFO(Zeeman),
+			IINFO(Zeeman), IINFO(MOptical),
 			IINFO(Anisotropy_Uniaxial), IINFO(Anisotropy_Cubic), IINFO(MElastic),
 			IINFO(Transport), IINFO(Heat),
 			IINFO(SOTField),
@@ -130,19 +130,19 @@ void FMesh::RepairObjectState(void)
 		DBL3 Ha = CallModuleMethod(&Zeeman::GetField);
 		pCurieWeiss->Initialize_CurieWeiss(MU0 * (MUB / BOLTZMANN) * atomic_moment * Ha.norm(), T_Curie);
 		pLongRelSus->Initialize_LongitudinalRelSusceptibility(pCurieWeiss->get_data(), atomic_moment, T_Curie);
-		pAlpha1->Initialize_Alpha1(1.0, 0.0);
+		pAlpha1->Initialize_Alpha1(DBL2(1.0, 0.0), 0.0);
 	}
 	else {
 
 		pCurieWeiss->Initialize_CurieWeiss(0.0, 1.0);
 		pLongRelSus->Initialize_LongitudinalRelSusceptibility(pCurieWeiss->get_data(), atomic_moment, 1.0);
-		pAlpha1->Initialize_Alpha1(1.0, 0.0);
+		pAlpha1->Initialize_Alpha1(DBL2(1.0, 0.0), 0.0);
 	}
 }
 
 //----------------------------------- IMPORTANT CONTROL METHODS
 
-//call when the mesh dimensions have changed - sets every quantity to the right dimensions
+//call when a configuration change has occurred - some objects might need to be updated accordingly
 BError FMesh::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 {
 	BError error(string(CLASS_STR(FMesh)) + "(" + (*pSMesh).key_from_meshId(meshId) + ")");
@@ -172,7 +172,7 @@ BError FMesh::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 		if (!error && !update_meshparam_var()) error(BERROR_OUTOFMEMORY_NCRIT);
 
 		//update any text equations used in mesh parameters (dependence on mesh dimensions possible)
-		if (!error) update_meshparam_equations();
+		if (!error) update_all_meshparam_equations();
 	}
 
 	//erase any unused skyrmion trackers in this mesh
@@ -222,7 +222,7 @@ void FMesh::UpdateConfiguration_Values(UPDATECONFIG_ cfgMessage)
 		UpdateTEquationUserConstants();
 
 		//update any text equations used in mesh parameters
-		update_meshparam_equations();
+		update_all_meshparam_equations();
 	}
 	else if (cfgMessage == UPDATECONFIG_TEQUATION_CLEAR) {
 
@@ -254,91 +254,6 @@ void FMesh::UpdateConfiguration_Values(UPDATECONFIG_ cfgMessage)
 
 		pMeshCUDA->UpdateConfiguration_Values(cfgMessage);
 	}
-#endif
-}
-
-void FMesh::CoupleToDipoles(bool status)
-{
-#if COMPILECUDA == 1
-	if(pMeshCUDA) pMeshCUDA->M()->copy_to_cpuvec(M);
-#endif
-
-	//check all meshes to see if there are any dipole meshes touching this mesh
-	for (int idx = 0; idx < pSMesh->size(); idx++) {
-
-		if ((*pSMesh)[idx]->GetMeshType() == MESH_DIPOLE) {
-
-			Rect mesh_intersection = (*pSMesh)[idx]->meshRect.get_intersection(meshRect);
-
-			//for this dipole to "touch" this mesh, the rects intersection must be exactly a plane
-			if (mesh_intersection.IsPlane()) {
-
-				//y-z plane : x is the perpendicular direction
-				if (IsZ(mesh_intersection.s.x - mesh_intersection.e.x)) {
-
-					//is the selected mesh on the positive or negative side of the boundary? Set flag to use. Also adjust mesh_intersection so it contains all the cells to set flags for.
-					if (IsZ(meshRect.s.x - mesh_intersection.s.x)) {
-						
-						mesh_intersection.e.x += h.x;
-					}
-					else {
-
-						mesh_intersection.s.x -= h.x;
-					}
-				}
-				//x-z plane : y is the perpendicular direction
-				else if (IsZ(mesh_intersection.s.y - mesh_intersection.e.y)) {
-
-					//is the selected mesh on the positive or negative side of the boundary? Set flag to use. Also adjust mesh_intersection so it contains all the cells to set flags for.
-					if (IsZ(meshRect.s.y - mesh_intersection.s.y)) {
-
-						mesh_intersection.e.y += h.y;
-					}
-					else {
-
-						mesh_intersection.s.y -= h.y;
-					}
-				}
-				//x-y plane : z is the perpendicular direction
-				else if (IsZ(mesh_intersection.s.z - mesh_intersection.e.z)) {
-
-					//is the selected mesh on the positive or negative side of the boundary? Set flag to use. Also adjust mesh_intersection so it contains all the cells to set flags for.
-					if (IsZ(meshRect.s.z - mesh_intersection.s.z)) {
-
-						mesh_intersection.e.z += h.z;
-					}
-					else {
-
-						mesh_intersection.s.z -= h.z;
-					}
-				}
-
-				//found a touching dipole - mark all cells in the intersection as skip cells
-				M.set_skipcells(mesh_intersection, status);
-
-				if (status) {
-
-					//set interface cells to have magnetisation direction along the touching dipole direction
-					DBL3 Mdipole_direction = (*pSMesh)[idx]->GetAverageMagnetisation().normalized();
-
-					Box box = M.box_from_rect_max(mesh_intersection);
-
-					for (int i = box.s.i; i < box.e.i; i++) {
-						for (int j = box.s.j; j < box.e.j; j++) {
-							for (int k = box.s.k; k < box.e.k; k++) {
-
-								double Mag = M[INT3(i, j, k)].norm();
-								M[INT3(i, j, k)] = Mag * Mdipole_direction;
-							}
-						}
-					}
-				}
-			}
-		}
-	}
-
-#if COMPILECUDA == 1
-	if (pMeshCUDA) pMeshCUDA->M()->copy_from_cpuvec(M);
 #endif
 }
 
@@ -386,6 +301,92 @@ BError FMesh::SwitchCUDAState(bool cudaState)
 	return error;
 }
 
+//couple this mesh to touching dipoles by setting skip cells as required : used for domain wall moving mesh algorithms
+void FMesh::CoupleToDipoles(bool status)
+{
+#if COMPILECUDA == 1
+	if (pMeshCUDA) pMeshCUDA->M()->copy_to_cpuvec(M);
+#endif
+
+	//check all meshes to see if there are any dipole meshes touching this mesh
+	for (int idx = 0; idx < pSMesh->size(); idx++) {
+
+		if ((*pSMesh)[idx]->GetMeshType() == MESH_DIPOLE) {
+
+			Rect mesh_intersection = (*pSMesh)[idx]->meshRect.get_intersection(meshRect);
+
+			//for this dipole to "touch" this mesh, the rects intersection must be exactly a plane
+			if (mesh_intersection.IsPlane()) {
+
+				//y-z plane : x is the perpendicular direction
+				if (IsZ(mesh_intersection.s.x - mesh_intersection.e.x)) {
+
+					//is the selected mesh on the positive or negative side of the boundary? Set flag to use. Also adjust mesh_intersection so it contains all the cells to set flags for.
+					if (IsZ(meshRect.s.x - mesh_intersection.s.x)) {
+
+						mesh_intersection.e.x += h.x;
+					}
+					else {
+
+						mesh_intersection.s.x -= h.x;
+					}
+				}
+				//x-z plane : y is the perpendicular direction
+				else if (IsZ(mesh_intersection.s.y - mesh_intersection.e.y)) {
+
+					//is the selected mesh on the positive or negative side of the boundary? Set flag to use. Also adjust mesh_intersection so it contains all the cells to set flags for.
+					if (IsZ(meshRect.s.y - mesh_intersection.s.y)) {
+
+						mesh_intersection.e.y += h.y;
+					}
+					else {
+
+						mesh_intersection.s.y -= h.y;
+					}
+				}
+				//x-y plane : z is the perpendicular direction
+				else if (IsZ(mesh_intersection.s.z - mesh_intersection.e.z)) {
+
+					//is the selected mesh on the positive or negative side of the boundary? Set flag to use. Also adjust mesh_intersection so it contains all the cells to set flags for.
+					if (IsZ(meshRect.s.z - mesh_intersection.s.z)) {
+
+						mesh_intersection.e.z += h.z;
+					}
+					else {
+
+						mesh_intersection.s.z -= h.z;
+					}
+				}
+
+				//found a touching dipole - mark all cells in the intersection as skip cells
+				M.set_skipcells(mesh_intersection, status);
+
+				if (status) {
+
+					//set interface cells to have magnetisation direction along the touching dipole direction
+					DBL3 Mdipole_direction = reinterpret_cast<Mesh*>((*pSMesh)[idx])->GetAverageMagnetisation().normalized();
+
+					Box box = M.box_from_rect_max(mesh_intersection);
+
+					for (int i = box.s.i; i < box.e.i; i++) {
+						for (int j = box.s.j; j < box.e.j; j++) {
+							for (int k = box.s.k; k < box.e.k; k++) {
+
+								double Mag = M[INT3(i, j, k)].norm();
+								M[INT3(i, j, k)] = Mag * Mdipole_direction;
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+#if COMPILECUDA == 1
+	if (pMeshCUDA) pMeshCUDA->M()->copy_from_cpuvec(M);
+#endif
+}
+
 double FMesh::CheckMoveMesh(void)
 {
 
@@ -427,7 +428,7 @@ double FMesh::CheckMoveMesh(void)
 void FMesh::SetCurieTemperature(double Tc, bool set_default_dependences)
 {
 	//Curie temperature is a constant in mesh parameter equations, so update them
-	if (Tc != T_Curie) update_meshparam_equations();
+	if (Tc != T_Curie) update_all_meshparam_equations();
 
 	if (Tc > 0) {
 
@@ -438,7 +439,7 @@ void FMesh::SetCurieTemperature(double Tc, bool set_default_dependences)
 		pCurieWeiss->Initialize_CurieWeiss(MU0 * (MUB / BOLTZMANN) * atomic_moment * Ha.norm(), T_Curie);
 		pLongRelSus->Initialize_LongitudinalRelSusceptibility(pCurieWeiss->get_data(), atomic_moment, T_Curie);
 
-		pAlpha1->Initialize_Alpha1(1.0, 0.0);
+		pAlpha1->Initialize_Alpha1(DBL2(1.0, 0.0), 0.0);
 
 		if (set_default_dependences) {
 
@@ -453,17 +454,17 @@ void FMesh::SetCurieTemperature(double Tc, bool set_default_dependences)
 			susrel.set_t_scaling_equation(string("chi(T/Tc)"), userConstants, T_Curie, base_temperature);
 
 			alpha.set_t_scaling_equation(string("alpha1(T/Tc)"), userConstants, T_Curie, base_temperature);
-
-			//make sure to also update them - this method can be called during a simulation, e.g. if field changes.
-			Ms.update(base_temperature);
-			P.update(base_temperature);
-			A.update(base_temperature);
-			D.update(base_temperature);
-			K1.update(base_temperature);
-			K2.update(base_temperature);
-			susrel.update(base_temperature);
-			alpha.update(base_temperature);
 		}
+
+		//make sure to also update them - this method can be called during a simulation, e.g. if field changes.
+		Ms.update(base_temperature);
+		P.update(base_temperature);
+		A.update(base_temperature);
+		D.update(base_temperature);
+		K1.update(base_temperature);
+		K2.update(base_temperature);
+		susrel.update(base_temperature);
+		alpha.update(base_temperature);
 	}
 	else {
 

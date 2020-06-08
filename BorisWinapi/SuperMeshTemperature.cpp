@@ -96,18 +96,27 @@ BError SuperMesh::SetCurieTemperature(string meshName, double T_Curie)
 
 	if (!contains(meshName) && meshName != superMeshHandle) return error(BERROR_INCORRECTNAME);
 
+	//applicable for micromagnetic meshes only
+
 	if (meshName == superMeshHandle) {
 
 		//all meshes
 		for (int idx = 0; idx < pMesh.size(); idx++) {
 
-			pMesh[idx]->SetCurieTemperature(T_Curie, true);
+			if (!pMesh[idx]->is_atomistic()) {
+
+				reinterpret_cast<Mesh*>(pMesh[idx])->SetCurieTemperature(T_Curie, true);
+			}
 		}
 	}
 	else {
 
 		//named mesh only
-		pMesh[meshName]->SetCurieTemperature(T_Curie, true);
+		if (!pMesh[meshName]->is_atomistic()) {
+
+			reinterpret_cast<Mesh*>(pMesh[meshName])->SetCurieTemperature(T_Curie, true);
+		}
+		else return error(BERROR_INCORRECTNAME);
 	}
 
 	return error;
@@ -119,7 +128,11 @@ BError SuperMesh::SetCurieTemperatureMaterial(string meshName, double T_Curie_ma
 
 	if (!contains(meshName)) return error(BERROR_INCORRECTNAME);
 
-	pMesh[meshName]->SetCurieTemperatureMaterial(T_Curie_material);
+	if (!pMesh[meshName]->is_atomistic()) {
+
+		reinterpret_cast<Mesh*>(pMesh[meshName])->SetCurieTemperatureMaterial(T_Curie_material);
+	}
+	else return error(BERROR_INCORRECTNAME);
 
 	return error;
 }
@@ -135,13 +148,20 @@ BError SuperMesh::SetAtomicMagneticMoment(string meshName, DBL2 atomic_moment)
 		//all meshes
 		for (int idx = 0; idx < pMesh.size(); idx++) {
 
-			pMesh[idx]->SetAtomicMoment(atomic_moment);
+			if (!pMesh[idx]->is_atomistic()) {
+
+				reinterpret_cast<Mesh*>(pMesh[idx])->SetAtomicMoment(atomic_moment);
+			}
 		}
 	}
 	else {
 
 		//named mesh only
-		pMesh[meshName]->SetAtomicMoment(atomic_moment);
+		if (!pMesh[meshName]->is_atomistic()) {
+
+			reinterpret_cast<Mesh*>(pMesh[meshName])->SetAtomicMoment(atomic_moment);
+		}
+		else return error(BERROR_INCORRECTNAME);
 	}
 
 	return error;
@@ -159,13 +179,20 @@ BError SuperMesh::SetTcCoupling(string meshName, DBL2 tau_ii, DBL2 tau_ij)
 		//all meshes
 		for (int idx = 0; idx < pMesh.size(); idx++) {
 
-			pMesh[idx]->SetTcCoupling(tau_ii, tau_ij);
+			if (!pMesh[idx]->is_atomistic()) {
+
+				reinterpret_cast<Mesh*>(pMesh[idx])->SetTcCoupling(tau_ii, tau_ij);
+			}
 		}
 	}
 	else {
 
 		//named mesh only
-		pMesh[meshName]->SetTcCoupling(tau_ii, tau_ij);
+		if (!pMesh[meshName]->is_atomistic()) {
+
+			reinterpret_cast<Mesh*>(pMesh[meshName])->SetTcCoupling(tau_ii, tau_ij);
+		}
+		else return error(BERROR_INCORRECTNAME);
 	}
 
 	return error;
@@ -182,13 +209,20 @@ BError SuperMesh::SetTcCoupling_Intra(string meshName, DBL2 tau_ii)
 		//all meshes
 		for (int idx = 0; idx < pMesh.size(); idx++) {
 
-			pMesh[idx]->SetTcCoupling_Intra(tau_ii);
+			if (!pMesh[idx]->is_atomistic()) {
+
+				reinterpret_cast<Mesh*>(pMesh[idx])->SetTcCoupling_Intra(tau_ii);
+			}
 		}
 	}
 	else {
 
 		//named mesh only
-		pMesh[meshName]->SetTcCoupling_Intra(tau_ii);
+		if (!pMesh[meshName]->is_atomistic()) {
+
+			reinterpret_cast<Mesh*>(pMesh[meshName])->SetTcCoupling_Intra(tau_ii);
+		}
+		else return error(BERROR_INCORRECTNAME);
 	}
 
 	return error;
@@ -205,13 +239,20 @@ BError SuperMesh::SetTcCoupling_Inter(string meshName, DBL2 tau_ij)
 		//all meshes
 		for (int idx = 0; idx < pMesh.size(); idx++) {
 
-			pMesh[idx]->SetTcCoupling_Inter(tau_ij);
+			if (!pMesh[idx]->is_atomistic()) {
+
+				reinterpret_cast<Mesh*>(pMesh[idx])->SetTcCoupling_Inter(tau_ij);
+			}
 		}
 	}
 	else {
 
 		//named mesh only
-		pMesh[meshName]->SetTcCoupling_Inter(tau_ij);
+		if (!pMesh[meshName]->is_atomistic()) {
+
+			reinterpret_cast<Mesh*>(pMesh[meshName])->SetTcCoupling_Inter(tau_ij);
+		}
+		else return error(BERROR_INCORRECTNAME);
 	}
 
 	return error;

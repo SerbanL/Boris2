@@ -381,6 +381,30 @@ inline bool ShiftSubstring_L2R(std::string &leftString, std::string &rightString
 	return false;
 }
 
+//return string before match string, excluding the match (return empty if not match)
+inline std::string get_before_match(const std::string& text, const std::string& match)
+{
+	size_t pos_match = text.find(match);
+
+	if (pos_match != std::string::npos) {
+
+		return text.substr(0, pos_match);
+	}
+	else return "";
+}
+
+//return string after match string, excluding the match (return empty if not match)
+inline std::string get_after_match(const std::string& text, const std::string& match)
+{
+	size_t pos_match = text.find(match);
+
+	if (pos_match != std::string::npos && pos_match + match.length() <= text.length()) {
+
+		return text.substr(pos_match + match.length());
+	}
+	else return "";
+}
+
 //get first substring contained between start and end substrings
 inline std::string get_first_contained_substring(const std::string& text, const std::string& start, const std::string& end) 
 {

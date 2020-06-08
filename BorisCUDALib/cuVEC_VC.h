@@ -456,14 +456,36 @@ public:
 	__host__ void scale_values(size_t size, cuBReal constant);
 	__host__ void scale_values(cuBReal constant) { scale_values(get_gpu_value(n).dim(), constant); }
 
-	//--------------------------------------------OPERATIONS : cuVEC_VC_avg.h and cuVEC_VC_avg.cuh
+	//--------------------------------------------OPERATIONS : cuVEC_VC_avg.cuh
 
 	//overload VEC method : use NF_NOTEMPTY flags instead here
 	//Launch it with arr_size = n.dim() : quicker to pass in this value rather than get it internally using get_gpu_value(n).dim()
 	__host__ VType average_nonempty(size_t arr_size, cuBox box);
 	//average over non-empty cells over given rectangle (relative to this VEC's rect)
 	__host__ VType average_nonempty(size_t arr_size, cuRect rectangle = cuRect());
+
+	//--------------------------------------------NUMERICAL PROPERTIES : cuVEC_VC_nprops.cuh
 	
+	template <typename PType = decltype(cu_GetMagnitude(std::declval<VType>()))>
+	__host__ cuVAL2<PType> get_minmax(size_t arr_size, cuBox box);
+	template <typename PType = decltype(cu_GetMagnitude(std::declval<VType>()))>
+	__host__ cuVAL2<PType> get_minmax(size_t arr_size, cuRect rectangle = cuRect());
+
+	template <typename PType = decltype(cu_GetMagnitude(std::declval<VType>()))>
+	__host__ cuVAL2<PType> get_minmax_component_x(size_t arr_size, cuBox box);
+	template <typename PType = decltype(cu_GetMagnitude(std::declval<VType>()))>
+	__host__ cuVAL2<PType> get_minmax_component_x(size_t arr_size, cuRect rectangle = cuRect());
+
+	template <typename PType = decltype(cu_GetMagnitude(std::declval<VType>()))>
+	__host__ cuVAL2<PType> get_minmax_component_y(size_t arr_size, cuBox box);
+	template <typename PType = decltype(cu_GetMagnitude(std::declval<VType>()))>
+	__host__ cuVAL2<PType> get_minmax_component_y(size_t arr_size, cuRect rectangle = cuRect());
+
+	template <typename PType = decltype(cu_GetMagnitude(std::declval<VType>()))>
+	__host__ cuVAL2<PType> get_minmax_component_z(size_t arr_size, cuBox box);
+	template <typename PType = decltype(cu_GetMagnitude(std::declval<VType>()))>
+	__host__ cuVAL2<PType> get_minmax_component_z(size_t arr_size, cuRect rectangle = cuRect());
+
 	//--------------------------------------------CALCULATE COMPOSITE MEDIA BOUNDARY VALUES : cuVEC_VC_cmbnd.h
 
 	//calculate and set values at composite media boundary cells in this mesh for a given contacting mesh (the "secondary" V_sec) and given contact description (previously calculated using set_cmbnd_flags)
@@ -714,6 +736,12 @@ public:
 
 	//dyz same as dzy
 	__device__ VType dyz_neu(int idx) const;
+
+	//----NEIGHBOR SUM : cuVEC_VC_ngbrsum.h
+
+	//calculate 6-point neighbor sum at given index
+	//missing neighbors not added, including at boundaries, but taking into account pbc
+	__device__ VType ngbr_sum(int idx) const;
 
 	//----LAPLACE / POISSON EQUATION : cuVEC_VC_solve.cuh
 	

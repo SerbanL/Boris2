@@ -12,7 +12,7 @@
 DifferentialEquationFMCUDA::DifferentialEquationFMCUDA(DifferentialEquation *pmeshODE) :
 	DifferentialEquationCUDA(pmeshODE)
 {
-	error_on_create = AllocateMemory();
+	error_on_create = AllocateMemory(true);
 
 	cuDiffEq()->set_pointers(this);
 	SetODEMethodPointers();
@@ -20,14 +20,17 @@ DifferentialEquationFMCUDA::DifferentialEquationFMCUDA(DifferentialEquation *pme
 
 DifferentialEquationFMCUDA::~DifferentialEquationFMCUDA()
 {
-	CleanupMemory();
+	//If called_from_destructor is true then do not attempt to transfer data to cpu where this is held in the derived class of DifferentialEquation
+	//This derived class will have already destructed so attempting to copy over data to it is an invalid action and can crash the program.
+	//This can happen when a mesh is deleted with CUDA switched on
+	//It's also possible this destructor was called simply due to switching CUDA off, in which case called_from_destructor should be false
+	CleanupMemory(!pmeshODE->called_from_destructor);
 }
 
 //---------------------------------------- SET-UP METHODS  : DiffEqCUDA.cpp and DiffEqCUDA.cu
 
 //allocate memory depending on set evaluation method - also cleans up previously allocated memory by calling CleanupMemory();
-//allocate memory depending on set evaluation method - also cleans up previously allocated memory by calling CleanupMemory();
-BError DifferentialEquationFMCUDA::AllocateMemory(void)
+BError DifferentialEquationFMCUDA::AllocateMemory(bool copy_from_cpu)
 {
 	BError error(CLASS_STR(DifferentialEquationFMCUDA));
 
@@ -37,7 +40,7 @@ BError DifferentialEquationFMCUDA::AllocateMemory(void)
 	if (!sM1()->resize((cuSZ3)pMesh->n)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
 	//copy values from cpu : it's possible the user switches to CUDA during a simulation and expects it to continue as normal
 	//some evaluation methods need saved data (sM1, sEval... etc.) to carry over.
-	else sM1()->copy_from_cpuvec(pmeshODE->sM1);
+	else if (copy_from_cpu) sM1()->copy_from_cpuvec(pmeshODE->sM1);
 
 	switch (pmeshODE->evalMethod) {
 
@@ -50,91 +53,91 @@ BError DifferentialEquationFMCUDA::AllocateMemory(void)
 
 	case EVAL_RK4:
 		if (!sEval0()->resize((cuSZ3)pMesh->n)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
-		else sEval0()->copy_from_cpuvec(pmeshODE->sEval0);
+		else if (copy_from_cpu) sEval0()->copy_from_cpuvec(pmeshODE->sEval0);
 
 		if (!sEval1()->resize((cuSZ3)pMesh->n)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
-		else sEval1()->copy_from_cpuvec(pmeshODE->sEval1);
+		else if (copy_from_cpu) sEval1()->copy_from_cpuvec(pmeshODE->sEval1);
 
 		if (!sEval2()->resize((cuSZ3)pMesh->n)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
-		else sEval2()->copy_from_cpuvec(pmeshODE->sEval2);
+		else if (copy_from_cpu) sEval2()->copy_from_cpuvec(pmeshODE->sEval2);
 		break;
 
 	case EVAL_ABM:
 		if (!sEval0()->resize((cuSZ3)pMesh->n)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
-		else sEval0()->copy_from_cpuvec(pmeshODE->sEval0);
+		else if (copy_from_cpu) sEval0()->copy_from_cpuvec(pmeshODE->sEval0);
 
 		if (!sEval1()->resize((cuSZ3)pMesh->n)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
-		else sEval1()->copy_from_cpuvec(pmeshODE->sEval1);
+		else if (copy_from_cpu) sEval1()->copy_from_cpuvec(pmeshODE->sEval1);
 		break;
 
 	case EVAL_RK23:
 		if (!sEval0()->resize((cuSZ3)pMesh->n)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
-		else sEval0()->copy_from_cpuvec(pmeshODE->sEval0);
+		else if (copy_from_cpu) sEval0()->copy_from_cpuvec(pmeshODE->sEval0);
 
 		if (!sEval1()->resize((cuSZ3)pMesh->n)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
-		else sEval1()->copy_from_cpuvec(pmeshODE->sEval1);
+		else if (copy_from_cpu) sEval1()->copy_from_cpuvec(pmeshODE->sEval1);
 
 		if (!sEval2()->resize((cuSZ3)pMesh->n)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
-		else sEval2()->copy_from_cpuvec(pmeshODE->sEval2);
+		else if (copy_from_cpu) sEval2()->copy_from_cpuvec(pmeshODE->sEval2);
 		break;
 
 	case EVAL_RKF:
 		if (!sEval0()->resize((cuSZ3)pMesh->n)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
-		else sEval0()->copy_from_cpuvec(pmeshODE->sEval0);
+		else if(copy_from_cpu) sEval0()->copy_from_cpuvec(pmeshODE->sEval0);
 
 		if (!sEval1()->resize((cuSZ3)pMesh->n)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
-		else sEval1()->copy_from_cpuvec(pmeshODE->sEval1);
+		else if (copy_from_cpu) sEval1()->copy_from_cpuvec(pmeshODE->sEval1);
 
 		if (!sEval2()->resize((cuSZ3)pMesh->n)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
-		else sEval2()->copy_from_cpuvec(pmeshODE->sEval2);
+		else if (copy_from_cpu) sEval2()->copy_from_cpuvec(pmeshODE->sEval2);
 
 		if (!sEval3()->resize((cuSZ3)pMesh->n)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
-		else sEval3()->copy_from_cpuvec(pmeshODE->sEval3);
+		else if (copy_from_cpu) sEval3()->copy_from_cpuvec(pmeshODE->sEval3);
 
 		if (!sEval4()->resize((cuSZ3)pMesh->n)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
-		else sEval4()->copy_from_cpuvec(pmeshODE->sEval4);
+		else if (copy_from_cpu) sEval4()->copy_from_cpuvec(pmeshODE->sEval4);
 		break;
 
 	case EVAL_RKCK:
 		if (!sEval0()->resize((cuSZ3)pMesh->n)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
-		else sEval0()->copy_from_cpuvec(pmeshODE->sEval0);
+		else if (copy_from_cpu) sEval0()->copy_from_cpuvec(pmeshODE->sEval0);
 
 		if (!sEval1()->resize((cuSZ3)pMesh->n)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
-		else sEval1()->copy_from_cpuvec(pmeshODE->sEval1);
+		else if (copy_from_cpu) sEval1()->copy_from_cpuvec(pmeshODE->sEval1);
 
 		if (!sEval2()->resize((cuSZ3)pMesh->n)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
-		else sEval2()->copy_from_cpuvec(pmeshODE->sEval2);
+		else if (copy_from_cpu) sEval2()->copy_from_cpuvec(pmeshODE->sEval2);
 
 		if (!sEval3()->resize((cuSZ3)pMesh->n)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
-		else sEval3()->copy_from_cpuvec(pmeshODE->sEval3);
+		else if (copy_from_cpu) sEval3()->copy_from_cpuvec(pmeshODE->sEval3);
 
 		if (!sEval4()->resize((cuSZ3)pMesh->n)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
-		else sEval4()->copy_from_cpuvec(pmeshODE->sEval4);
+		else if (copy_from_cpu) sEval4()->copy_from_cpuvec(pmeshODE->sEval4);
 		break;
 
 	case EVAL_RKDP:
 		if (!sEval0()->resize((cuSZ3)pMesh->n)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
-		else sEval0()->copy_from_cpuvec(pmeshODE->sEval0);
+		else if (copy_from_cpu) sEval0()->copy_from_cpuvec(pmeshODE->sEval0);
 
 		if (!sEval1()->resize((cuSZ3)pMesh->n)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
-		else sEval1()->copy_from_cpuvec(pmeshODE->sEval1);
+		else if (copy_from_cpu) sEval1()->copy_from_cpuvec(pmeshODE->sEval1);
 
 		if (!sEval2()->resize((cuSZ3)pMesh->n)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
-		else sEval2()->copy_from_cpuvec(pmeshODE->sEval2);
+		else if (copy_from_cpu) sEval2()->copy_from_cpuvec(pmeshODE->sEval2);
 
 		if (!sEval3()->resize((cuSZ3)pMesh->n)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
-		else sEval3()->copy_from_cpuvec(pmeshODE->sEval3);
+		else if (copy_from_cpu) sEval3()->copy_from_cpuvec(pmeshODE->sEval3);
 
 		if (!sEval4()->resize((cuSZ3)pMesh->n)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
-		else sEval4()->copy_from_cpuvec(pmeshODE->sEval4);
+		else if (copy_from_cpu) sEval4()->copy_from_cpuvec(pmeshODE->sEval4);
 
 		if (!sEval5()->resize((cuSZ3)pMesh->n)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
-		else sEval5()->copy_from_cpuvec(pmeshODE->sEval5);
+		else if (copy_from_cpu) sEval5()->copy_from_cpuvec(pmeshODE->sEval5);
 		break;
 
 	case EVAL_SD:
 		if (!sEval0()->resize((cuSZ3)pMesh->n)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
-		else sEval0()->copy_from_cpuvec(pmeshODE->sEval0);
+		else if (copy_from_cpu) sEval0()->copy_from_cpuvec(pmeshODE->sEval0);
 		break;
 	}
 
@@ -148,7 +151,7 @@ BError DifferentialEquationFMCUDA::AllocateMemory(void)
 	case ODE_SLLGSTT:
 	case ODE_SLLGSA:
 		if (!H_Thermal()->resize((cuReal3)pMesh->h_s, (cuRect)pMesh->meshRect)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
-		else H_Thermal()->copy_from_cpuvec(pmeshODE->H_Thermal);
+		else if (copy_from_cpu) H_Thermal()->copy_from_cpuvec(pmeshODE->H_Thermal);
 		prng_used = true;
 		break;
 
@@ -156,10 +159,10 @@ BError DifferentialEquationFMCUDA::AllocateMemory(void)
 	case ODE_SLLBSTT:
 	case ODE_SLLBSA:
 		if (!H_Thermal()->resize((cuReal3)pMesh->h_s, (cuRect)pMesh->meshRect)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
-		else H_Thermal()->copy_from_cpuvec(pmeshODE->H_Thermal);
+		else if (copy_from_cpu) H_Thermal()->copy_from_cpuvec(pmeshODE->H_Thermal);
 
 		if (!Torque_Thermal()->resize((cuReal3)pMesh->h_s, (cuRect)pMesh->meshRect)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
-		else Torque_Thermal()->copy_from_cpuvec(pmeshODE->Torque_Thermal);
+		else if (copy_from_cpu) Torque_Thermal()->copy_from_cpuvec(pmeshODE->Torque_Thermal);
 		prng_used = true;
 		break;
 	}
@@ -174,7 +177,7 @@ BError DifferentialEquationFMCUDA::AllocateMemory(void)
 }
 
 //deallocate memory before re-allocating it (depending on evaluation method previously allocated memory might not be used again, so need clean-up before)
-void DifferentialEquationFMCUDA::CleanupMemory(void)
+void DifferentialEquationFMCUDA::CleanupMemory(bool copy_to_cpu)
 {
 	//copy values to cpu before erasing : it's possible the user switches CUDA off during a simulation and expects it to continue as normal
 	//some evaluation methods need saved data (sM1, sEval... etc.) to carry over.
@@ -182,7 +185,7 @@ void DifferentialEquationFMCUDA::CleanupMemory(void)
 	//CleanupMemory may also be called in other circumstances, in particular from the cpu version of CleanupMemory, after having cleaned cpu vecs, thus in this case the copy methods will not run.
 
 	//Only clear vectors not used for current evaluation method
-	if (sM1()->size_cpu() == pmeshODE->sM1.size()) sM1()->copy_to_cpuvec(pmeshODE->sM1);
+	if (copy_to_cpu && sM1()->size_cpu() == pmeshODE->sM1.size()) sM1()->copy_to_cpuvec(pmeshODE->sM1);
 	sM1()->clear();
 
 	if (
@@ -194,7 +197,7 @@ void DifferentialEquationFMCUDA::CleanupMemory(void)
 		pmeshODE->evalMethod != EVAL_RKDP &&
 		pmeshODE->evalMethod != EVAL_SD) {
 
-		if (sEval0()->size_cpu() == pmeshODE->sEval0.size()) sEval0()->copy_to_cpuvec(pmeshODE->sEval0);
+		if (copy_to_cpu && sEval0()->size_cpu() == pmeshODE->sEval0.size()) sEval0()->copy_to_cpuvec(pmeshODE->sEval0);
 		sEval0()->clear();
 	}
 
@@ -205,7 +208,7 @@ void DifferentialEquationFMCUDA::CleanupMemory(void)
 		pmeshODE->evalMethod != EVAL_RKCK &&
 		pmeshODE->evalMethod != EVAL_RKDP) {
 
-		if (sEval1()->size_cpu() == pmeshODE->sEval1.size()) sEval1()->copy_to_cpuvec(pmeshODE->sEval1);
+		if (copy_to_cpu && sEval1()->size_cpu() == pmeshODE->sEval1.size()) sEval1()->copy_to_cpuvec(pmeshODE->sEval1);
 		sEval1()->clear();
 	}
 
@@ -215,7 +218,7 @@ void DifferentialEquationFMCUDA::CleanupMemory(void)
 		pmeshODE->evalMethod != EVAL_RKCK &&
 		pmeshODE->evalMethod != EVAL_RKDP) {
 
-		if (sEval2()->size_cpu() == pmeshODE->sEval2.size()) sEval2()->copy_to_cpuvec(pmeshODE->sEval2);
+		if (copy_to_cpu && sEval2()->size_cpu() == pmeshODE->sEval2.size()) sEval2()->copy_to_cpuvec(pmeshODE->sEval2);
 		sEval2()->clear();
 	}
 
@@ -224,16 +227,16 @@ void DifferentialEquationFMCUDA::CleanupMemory(void)
 		pmeshODE->evalMethod != EVAL_RKCK &&
 		pmeshODE->evalMethod != EVAL_RKDP) {
 
-		if (sEval3()->size_cpu() == pmeshODE->sEval3.size()) sEval3()->copy_to_cpuvec(pmeshODE->sEval3);
+		if (copy_to_cpu && sEval3()->size_cpu() == pmeshODE->sEval3.size()) sEval3()->copy_to_cpuvec(pmeshODE->sEval3);
 		sEval3()->clear();
 
-		if (sEval4()->size_cpu() == pmeshODE->sEval4.size()) sEval4()->copy_to_cpuvec(pmeshODE->sEval4);
+		if (copy_to_cpu && sEval4()->size_cpu() == pmeshODE->sEval4.size()) sEval4()->copy_to_cpuvec(pmeshODE->sEval4);
 		sEval4()->clear();
 	}
 
 	if (pmeshODE->evalMethod != EVAL_RKDP) {
 
-		if (sEval5()->size_cpu() == pmeshODE->sEval5.size()) sEval5()->copy_to_cpuvec(pmeshODE->sEval5);
+		if (copy_to_cpu && sEval5()->size_cpu() == pmeshODE->sEval5.size()) sEval5()->copy_to_cpuvec(pmeshODE->sEval5);
 		sEval5()->clear();
 	}
 
@@ -245,7 +248,7 @@ void DifferentialEquationFMCUDA::CleanupMemory(void)
 		pmeshODE->setODE != ODE_SLLGSA &&
 		pmeshODE->setODE != ODE_SLLBSA) {
 
-		if (H_Thermal()->size_cpu() == pmeshODE->H_Thermal.size()) H_Thermal()->copy_to_cpuvec(pmeshODE->H_Thermal);
+		if (copy_to_cpu && H_Thermal()->size_cpu() == pmeshODE->H_Thermal.size()) H_Thermal()->copy_to_cpuvec(pmeshODE->H_Thermal);
 		H_Thermal()->clear();
 	}
 
@@ -253,7 +256,7 @@ void DifferentialEquationFMCUDA::CleanupMemory(void)
 		pmeshODE->setODE != ODE_SLLBSTT &&
 		pmeshODE->setODE != ODE_SLLBSA) {
 
-		if (Torque_Thermal()->size_cpu() == pmeshODE->Torque_Thermal.size()) Torque_Thermal()->copy_to_cpuvec(pmeshODE->Torque_Thermal);
+		if (copy_to_cpu && Torque_Thermal()->size_cpu() == pmeshODE->Torque_Thermal.size()) Torque_Thermal()->copy_to_cpuvec(pmeshODE->Torque_Thermal);
 		Torque_Thermal()->clear();
 	}
 

@@ -24,7 +24,11 @@ DifferentialEquation::~DifferentialEquation()
 	if (pMesh->GetMoveMeshTrigger()) moving_mesh = false;
 
 #if COMPILECUDA == 1
-	if (pmeshODECUDA) delete pmeshODECUDA;
+	if (pmeshODECUDA) {
+
+		called_from_destructor = true;
+		delete pmeshODECUDA;
+	}
 	pmeshODECUDA = nullptr;
 #endif
 }

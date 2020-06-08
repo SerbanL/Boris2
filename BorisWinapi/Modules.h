@@ -15,7 +15,7 @@ using namespace std;
 
 //Modules (MODS_ entries are super-mesh versions and not available as normal module handles
 //Add new entries at the end to keep older simulation files compatible
-//If you need to take something out you'll need to figure a way to keep older simulation files compatible
+//If you need to delete a module in the future you'll need to keep a dummy entry for it in this enum (can mark it as such, e.g. MOD_OBSOLETE1) although I can't see that occuring.
 enum MOD_ {
 	MOD_ALL = -1,
 	MOD_ERROR = 0,
@@ -29,10 +29,12 @@ enum MOD_ {
 	MOD_SOTFIELD,
 	MOD_ROUGHNESS,
 	MOD_SDEMAG_DEMAG,
-	MOD_MELASTIC
-};
+	MOD_MELASTIC,
+	MOD_MOPTICAL,
 
-class Mesh;
+	//Atomistic
+	MOD_ATOM_EXCHANGE, MOD_ATOM_DMEXCHANGE, MOD_ATOM_IDMEXCHANGE
+};
 
 class Modules {
 
@@ -149,10 +151,21 @@ public:
 		return initialized;
 	}
 
-	double GetEnergy(void) 
+	//Get energy density averaged over the entire mesh during the UpdateField call
+	double GetEnergyDensity(void) 
 	{ 
 #if COMPILECUDA == 1
-		if (pModuleCUDA) return pModuleCUDA->GetEnergy();
+		if (pModuleCUDA) return pModuleCUDA->GetEnergyDensity();
+#endif
+		return energy;
+	}
+
+	//Callculate the energy density in the given rect only
+	//by default this is the same as the above method, but if modules can return the energy density in a given rect this method will be overloaded
+	virtual double GetEnergyDensity(Rect& avRect)
+	{
+#if COMPILECUDA == 1
+		if (pModuleCUDA) return pModuleCUDA->GetEnergyDensity();
 #endif
 		return energy;
 	}

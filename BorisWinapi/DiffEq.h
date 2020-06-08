@@ -25,6 +25,7 @@ class DifferentialEquation :
 	public ODECommon 
 {
 	friend ODECommon;
+	friend ODECommon_Base;
 
 #if COMPILECUDA == 1
 	friend DifferentialEquationCUDA;
@@ -63,6 +64,11 @@ protected:
 	INT2 odeId;
 
 #if COMPILECUDA == 1
+	//When deleting DifferentialEquation object (e.g. deleting mesh) with CUDA switched on, we still need to cleanup by deleting pmeshODECUDA.
+	//This will invoke the DifferentialEquationCUDA destructor which attempts to transfer data to cpu
+	//The problem is, some of this data can be held in a derived class of DifferentialEquation, whose destructor was already executed - so we shouldn't attempt to copy data there if called_from_destructor flag is true
+	//called_from_destructor is false by default; it will only be set to true in the destructor, and thereafter the object is gone, thus called_from_destructor is false during the lifetime of this object
+	bool called_from_destructor = false;
 	DifferentialEquationCUDA *pmeshODECUDA = nullptr;
 #endif
 

@@ -9,15 +9,13 @@ class Mesh;
 class SuperMesh;
 class SHeat;
 
+#include "Heat_Defs.h"
+
 #ifdef MODULE_HEAT
 
 #if COMPILECUDA == 1
 #include "HeatCUDA.h"
 #endif
-
-#include "Heat_Defs.h"
-
-enum HTM_ { };
 
 class Heat :
 	public Modules,
@@ -196,6 +194,9 @@ public:
 	//Set Q_equation text equation object
 	BError SetQEquation(string equation_string, int step) { return BError(); }
 
+	//set temperature solver type
+	BError Set_TMType(TMTYPE_ tmtype_ = TMTYPE_DEFAULT) { return BError(); }
+
 	//-------------------Getters
 
 	double GetAmbientTemperature(void) { return 0.0; }
@@ -206,6 +207,9 @@ public:
 	bool GetInsulatingSide(string literal) { return true; }
 	//get all at once
 	vector<bool> GetInsulatingSides(void) { return {}; }
+
+	//get the set temperature model type
+	int Get_TMType(void) { return 0; }
 
 	//-------------------Others
 

@@ -7,14 +7,14 @@ BError SuperMesh::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 {
 	BError error(CLASS_STR(SuperMesh));
 	
-	//1. Ferromagnetic super-mesh - also construct the entire super-mesh rectangle
+	//1. Magnetic super-mesh - also construct the entire super-mesh rectangle
 
-	//calculate ferromagnetic super-mesh from currently set meshes and super-mesh cellsize
+	//calculate magnetic super-mesh from currently set meshes and super-mesh cellsize
 	sMeshRect_fm = Rect();
 
 	sMeshRect = Rect();
 
-	//identify all existing ferrommagnetic meshes
+	//identify all existing magnetic meshes with magnetic dynamics computations enabled (thus both micromagnetic and atomistic meshes)
 	for (int idx = 0; idx < (int)pMesh.size(); idx++) {
 
 		if (pMesh[idx]->MComputation_Enabled()) {
@@ -56,7 +56,7 @@ BError SuperMesh::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 	if (!sMeshRect_e.IsNull()) h_e = sMeshRect_e / n_e;
 	
 	///////////////////////////////////////////////////////
-	//Update configuration for ODECommon
+	//Update configuration for ODE Solvers
 	///////////////////////////////////////////////////////
 
 	//important this is called on ODECommon instance before any Mesh UpdateConfiguration, as this in turn will call UpdateConfiguration on DifferentialEquation objects which inherit from ODECommon
@@ -66,6 +66,9 @@ BError SuperMesh::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 	//However there are GPU pointers to these static data held in instances which inherit from ODECommonCUDA (e.g. DifferentialEquationFMCUDA has a ManagedDiffEqFMCUDA object which holds pointers to these static data to be used in kernel calls).
 	//Thus these objects must also be remade so the pointers are set correctly (call ManagedDiffEqFMCUDA set_pointers method); We can only do this if the static data has been re-allocated first, which happens in ODECommonCUDA, hence the priority.
 	if (!error) error = odeSolver.UpdateConfiguration(cfgMessage);
+	
+	//same thing for atomistic ODE
+	if (!error) error = atom_odeSolver.UpdateConfiguration(cfgMessage);
 
 	///////////////////////////////////////////////////////
 	//Update configuration for meshes and their modules
@@ -84,8 +87,6 @@ BError SuperMesh::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 
 		if (!error) error = pSMod[idx]->UpdateConfiguration(cfgMessage);
 	}
-	
-	if (!error) error = odeSolver.UpdateConfiguration(cfgMessage);
 
 	if (ucfg::check_cfgflags(cfgMessage, UPDATECONFIG_MESHSHAPECHANGE, UPDATECONFIG_MESHCHANGE, UPDATECONFIG_MESHADDED, UPDATECONFIG_MESHDELETED, UPDATECONFIG_SWITCHCUDASTATE)) {
 
@@ -125,22 +126,12 @@ void SuperMesh::UpdateConfiguration_Values(UPDATECONFIG_ cfgMessage)
 	}
 
 	///////////////////////////////////////////////////////
-	//Update configuration for ODECommon
+	//Update configuration for ODE Solvers
 	///////////////////////////////////////////////////////
 
 	odeSolver.UpdateConfiguration_Values(cfgMessage);
-}
 
-//couple ferromagnetic meshes to any touching dipole meshes, setting interface cell values and flags
-void SuperMesh::CoupleToDipoles(void)
-{
-	for (int idx = 0; idx < (int)pMesh.size(); idx++) {
-
-		if (pMesh[idx]->GetMeshType() == MESH_FERROMAGNETIC) {
-
-			reinterpret_cast<FMesh*>(pMesh[idx])->CoupleToDipoles(coupled_dipoles);
-		}
-	}
+	atom_odeSolver.UpdateConfiguration_Values(cfgMessage);
 }
 
 //switch CUDA state on/off
@@ -168,6 +159,9 @@ BError SuperMesh::SwitchCUDAState(bool cudaState)
 	//Switch for ODECommon
 	if (!error) error = odeSolver.SwitchCUDAState(cudaState);
 
+	//Switch for Atom_ODECommon
+	if (!error) error = atom_odeSolver.SwitchCUDAState(cudaState);
+
 	//Switch for Meshes and their modules
 	for (int idx = 0; idx < (int)pMesh.size(); idx++) {
 
@@ -189,10 +183,23 @@ BError SuperMesh::SwitchCUDAState(bool cudaState)
 	//make sure configuration is updated for the new mode
 	error = UpdateConfiguration(UPDATECONFIG_SWITCHCUDASTATE);
 
-	//This can cause problems when switching CUDA off then on again. Reason unknown.
+	//This can cause problems when switching CUDA off then on again. Reason unknown, should investigate.
+	//I had this command in to solve a CUDA bug where memory allocation failed sometimes, as a quick and dirty fix.
+	//Later it turned out this was due to a routine in cuVEC_VC with bad memory access (really subtle and hard to spot!), solved now.
 	//if (!cudaState) cudaDeviceReset();
 
 #endif
 
 	return error;
+}
+
+//couple magnetic meshes to any touching dipole meshes, setting interface cell values and flags
+//this is used for moving mesh algorithm, in particular for domain wall simulations, where effectively an infinite wire is achieved by removing end magnetic charges, and setting exchange coupling to dipole magnetisation direction.
+//Magnetic charges remove using stray field from dipoles; "exchange coupling" achieved by setting skip cells at the ends of the wire: i.e. cells which are not updated by the ODE solver, and have magnetisation direction along the dipole direction 
+void SuperMesh::CoupleToDipoles(void)
+{
+	for (int idx = 0; idx < (int)pMesh.size(); idx++) {
+
+		pMesh[idx]->CoupleToDipoles(coupled_dipoles); 
+	}
 }

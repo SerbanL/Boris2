@@ -36,9 +36,9 @@ __device__ cuReal3 ManagedDiffEqFMCUDA::SLLG(int idx)
 	pcuMesh->update_parameters_mcoarse(idx, *pcuMesh->pMs, Ms, *pcuMesh->palpha, alpha, *pcuMesh->pgrel, grel);
 
 	cuReal3 position = M.cellidx_to_position(idx);
-	cuReal3 H_Thermal_Value = (*pH_Thermal)[position] / sqrt(alpha);
+	cuReal3 H_Thermal_Value = (*pH_Thermal)[position] * sqrt(alpha);
 
-	return (-(cuBReal)GAMMA * grel / (1 + alpha * alpha)) * ((M[idx] ^ Heff[idx]) +
+	return (-(cuBReal)GAMMA * grel / (1 + alpha * alpha)) * ((M[idx] ^ (Heff[idx] + H_Thermal_Value)) +
 		alpha * ((M[idx] / Ms) ^ (M[idx] ^ (Heff[idx] + H_Thermal_Value))));
 }
 
@@ -68,9 +68,9 @@ __device__ cuReal3 ManagedDiffEqFMCUDA::SLLGSTT(int idx)
 	pcuMesh->update_parameters_mcoarse(idx, *pcuMesh->pMs, Ms, *pcuMesh->palpha, alpha, *pcuMesh->pgrel, grel, *pcuMesh->pP, P, *pcuMesh->pbeta, beta);
 
 	cuReal3 position = M.cellidx_to_position(idx);
-	cuReal3 H_Thermal_Value = (*pH_Thermal)[position] / sqrt(alpha);
+	cuReal3 H_Thermal_Value = (*pH_Thermal)[position] * sqrt(alpha);
 
-	cuReal3 LLGSTT_Eval = (-(cuBReal)GAMMA * grel / (1 + alpha * alpha)) * ((M[idx] ^ Heff[idx]) +
+	cuReal3 LLGSTT_Eval = (-(cuBReal)GAMMA * grel / (1 + alpha * alpha)) * ((M[idx] ^ (Heff[idx] + H_Thermal_Value)) +
 		alpha * ((M[idx] / Ms) ^ (M[idx] ^ (Heff[idx] + H_Thermal_Value))));
 
 	if (E.linear_size()) {

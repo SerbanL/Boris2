@@ -36,6 +36,14 @@ public:
 
 	void UpdateField(void);
 
+	//-------------------Energy density methods
+
+	cuBReal GetEnergyDensity(cuRect avRect);
+	cuBReal GetEnergy_Max(cuRect rectangle);
+
+	//compute exchange energy density in exchange_displayVEC
+	void Compute_ExchangeCUDA(void);
+
 	//-------------------
 
 	//calculate exchange field at coupled cells in this mesh; accumulate energy density contribution in energy

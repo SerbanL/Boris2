@@ -17,7 +17,6 @@ DifferentialEquationAFM::DifferentialEquationAFM(AFMesh *pMesh) :
 
 DifferentialEquationAFM::~DifferentialEquationAFM()
 {
-
 }
 
 //---------------------------------------- OTHERS

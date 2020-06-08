@@ -28,7 +28,7 @@ DipoleMeshCUDA::~DipoleMeshCUDA()
 
 //----------------------------------- IMPORTANT CONTROL METHODS
 
-//call when the mesh dimensions have changed - sets every quantity to the right dimensions
+//call when a configuration change has occurred - some objects might need to be updated accordingly
 BError DipoleMeshCUDA::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 {
 	BError error(CLASS_STR(DipoleMeshCUDA));
@@ -64,7 +64,7 @@ void DipoleMeshCUDA::Reset_Mdipole(void)
 	recalculateStrayField = true;
 }
 
-void DipoleMeshCUDA::SetMagnetisationAngle(cuBReal polar, cuBReal azim)
+void DipoleMeshCUDA::SetMagAngle(cuBReal polar, cuBReal azim)
 {
 	pDipoleMesh->M[0] = Polar_to_Cartesian(cuReal3(pDipoleMesh->Ms, polar, azim));
 	

@@ -52,25 +52,25 @@ BError OerstedCUDA::Initialize(void)
 	//identify all existing ferrommagnetic meshes (magnetic computation enabled)
 	for (int idx = 0; idx < (int)pSMesh->pMesh.size(); idx++) {
 
-		if ((*pSMesh)[idx]->EComputation_Enabled()) {
+		if ((*pSMesh)[idx]->EComputation_Enabled() && !(*pSMesh)[idx]->is_atomistic()) {
 
 			pVal_from_cpu_E.push_back(&((*pSMesh)[idx]->E));
-			pVal_from_E.push_back((cuVEC<cuReal3>*&)(*pSMesh)[idx]->pMeshCUDA->E.get_managed_object());
+			pVal_from_E.push_back((cuVEC<cuReal3>*&)reinterpret_cast<Mesh*>((*pSMesh)[idx])->pMeshCUDA->E.get_managed_object());
 
 			pVal_from_cpu_elC.push_back(&((*pSMesh)[idx]->elC));
-			pVal_from_elC.push_back((cuVEC<cuBReal>*&)(*pSMesh)[idx]->pMeshCUDA->elC.get_managed_object());
+			pVal_from_elC.push_back((cuVEC<cuBReal>*&)reinterpret_cast<Mesh*>((*pSMesh)[idx])->pMeshCUDA->elC.get_managed_object());
 		}
 
 		if ((*pSMesh)[idx]->MComputation_Enabled()) {
 
-			pVal_to_cpu.push_back(&((*pSMesh)[idx]->Heff));
-			pVal_to.push_back((cuVEC<cuReal3>*&)(*pSMesh)[idx]->pMeshCUDA->Heff.get_managed_object());
+			pVal_to_cpu.push_back(&(reinterpret_cast<Mesh*>((*pSMesh)[idx])->Heff));
+			pVal_to.push_back((cuVEC<cuReal3>*&)reinterpret_cast<Mesh*>((*pSMesh)[idx])->pMeshCUDA->Heff.get_managed_object());
 		}
 
 		if ((*pSMesh)[idx]->GetMeshType() == MESH_ANTIFERROMAGNETIC) {
 
-			pVal_to_cpu.push_back(&((*pSMesh)[idx]->Heff2));
-			pVal_to.push_back((cuVEC<cuReal3>*&)(*pSMesh)[idx]->pMeshCUDA->Heff2.get_managed_object());
+			pVal_to_cpu.push_back(&(reinterpret_cast<Mesh*>((*pSMesh)[idx])->Heff2));
+			pVal_to.push_back((cuVEC<cuReal3>*&)reinterpret_cast<Mesh*>((*pSMesh)[idx])->pMeshCUDA->Heff2.get_managed_object());
 		}
 	}
 

@@ -38,6 +38,10 @@ class OmpReduction {
 	std::vector<Type> minimum_reduction;
 	std::vector<Type> maximum_reduction;
 	
+	//recorded indexes where maxima and minima occur if required
+	std::vector<int> min_index;
+	std::vector<int> max_index;
+
 	//int not bool : don't use vector<bool> as it's not a real bool array and you'll have some very unpleasant bugs (e.g. #pragma omp parallel for doesn't work with it!!!!)
 	std::vector<int> reduction_value_not_set;
 
@@ -50,6 +54,8 @@ public:
 	//values available after reduction
 	Type min, max, av;
 
+	int min_idx, max_idx;
+
 public:
 
 	OmpReduction(void)
@@ -59,6 +65,9 @@ public:
 		minimum_reduction.assign(OmpThreads, Type());
 		maximum_reduction.assign(OmpThreads, Type());
 
+		min_index.assign(OmpThreads, 0);
+		max_index.assign(OmpThreads, 0);
+
 		reduction_value_not_set.assign(OmpThreads, true);
 
 		average_reduction.assign(OmpThreads, Type());
@@ -67,6 +76,9 @@ public:
 		min = Type();
 		max = Type();
 		av = Type();
+
+		min_idx = 0;
+		max_idx = 0;
 	}
 	
 	//--------------------- MINIMUM and MAXIMUM
@@ -97,6 +109,27 @@ public:
 		}
 	}
 
+	//within the parallel loop reduce values by calling this : minimum only; also track at which index this occurs
+	void reduce_min(Type value, int idx)
+	{
+		int tn = omp_get_thread_num();
+
+		if (reduction_value_not_set[tn]) {
+
+			reduction_value_not_set[tn] = false;
+			minimum_reduction[tn] = value;
+			min_index[tn] = idx;
+		}
+		else {
+
+			if (value < minimum_reduction[tn]) {
+
+				minimum_reduction[tn] = value;
+				min_index[tn] = idx;
+			}
+		}
+	}
+
 	//within the parallel loop reduce values by calling this : maximum only
 	void reduce_max(Type value)
 	{
@@ -110,6 +143,27 @@ public:
 		else {
 
 			if (value > maximum_reduction[tn]) maximum_reduction[tn] = value;
+		}
+	}
+
+	//within the parallel loop reduce values by calling this : maximum only; also track at which index this occurs
+	void reduce_max(Type value, int idx)
+	{
+		int tn = omp_get_thread_num();
+
+		if (reduction_value_not_set[tn]) {
+
+			reduction_value_not_set[tn] = false;
+			maximum_reduction[tn] = value;
+			max_index[tn] = idx;
+		}
+		else {
+
+			if (value > maximum_reduction[tn]) {
+
+				maximum_reduction[tn] = value;
+				max_index[tn] = idx;
+			}
 		}
 	}
 
@@ -128,6 +182,36 @@ public:
 
 			if (value > maximum_reduction[tn]) maximum_reduction[tn] = value;
 			if (value < minimum_reduction[tn]) minimum_reduction[tn] = value;
+		}
+	}
+
+	//within the parallel loop reduce values by calling this : both minimum and maximum; also track at which index this occurs
+	void reduce_minmax(Type value, int idx)
+	{
+		int tn = omp_get_thread_num();
+
+		if (reduction_value_not_set[tn]) {
+
+			reduction_value_not_set[tn] = false;
+			minimum_reduction[tn] = value;
+			maximum_reduction[tn] = value;
+
+			min_index[tn] = idx;
+			max_index[tn] = idx;
+		}
+		else {
+
+			if (value > maximum_reduction[tn]) {
+
+				maximum_reduction[tn] = value;
+				max_index[tn] = idx;
+			}
+
+			if (value < minimum_reduction[tn]) {
+
+				minimum_reduction[tn] = value;
+				min_index[tn] = idx;
+			}
 		}
 	}
 
@@ -159,6 +243,39 @@ public:
 		return min;
 	}
 
+	//after reduction call this to find reduced value : index of minimum only
+	int minimum_index(void)
+	{
+		int idx;
+
+		for (idx = 0; idx < OmpThreads; idx++) {
+
+			//it's possible not all threads have collected a reduced value
+			if (reduction_value_not_set[idx]) continue;
+
+			//found a starting value
+			min = minimum_reduction[idx];
+			min_idx = min_index[idx];
+
+			break;
+		}
+
+		//reduce remaining threads
+		for (++idx; idx < OmpThreads; idx++) {
+
+			if (!reduction_value_not_set[idx]) {
+
+				if (minimum_reduction[idx] < min) {
+
+					min = minimum_reduction[idx];
+					min_idx = min_index[idx];
+				}
+			}
+		}
+
+		return min_idx;
+	}
+
 	//after reduction call this to find reduced value : maximum only
 	Type maximum(void)
 	{
@@ -185,6 +302,39 @@ public:
 		}
 
 		return max;
+	}
+
+	//after reduction call this to find reduced value : index of maximum only
+	int maximum_index(void)
+	{
+		int idx;
+
+		for (idx = 0; idx < OmpThreads; idx++) {
+
+			//it's possible not all threads have collected a reduced value
+			if (reduction_value_not_set[idx]) continue;
+
+			//found a starting value
+			max = maximum_reduction[idx];
+			max_idx = max_index[idx];
+
+			break;
+		}
+
+		//reduce remaining threads
+		for (++idx; idx < OmpThreads; idx++) {
+
+			if (!reduction_value_not_set[idx]) {
+
+				if (maximum_reduction[idx] > max) {
+
+					max = maximum_reduction[idx];
+					max_idx = max_index[idx];
+				}
+			}
+		}
+
+		return max_idx;
 	}
 
 	//after reduction call this to find reduced value : both minimum and maximum stored in a VAL2 in this order
@@ -215,6 +365,48 @@ public:
 		}
 
 		return VAL2<Type>(min, max);
+	}
+
+	//after reduction call this to find reduced value : both minimum and maximum indexes stored in a VAL2 in this order
+	VAL2<int> minmax_index(void)
+	{
+		int idx;
+
+		for (idx = 0; idx < OmpThreads; idx++) {
+
+			//it's possible not all threads have collected a reduced value
+			if (reduction_value_not_set[idx]) continue;
+
+			//found a starting value
+			min = minimum_reduction[idx];
+			max = maximum_reduction[idx];
+
+			min_idx = min_index[idx];
+			max_idx = max_index[idx];
+
+			break;
+		}
+
+		//reduce remaining threads
+		for (++idx; idx < OmpThreads; idx++) {
+
+			if (!reduction_value_not_set[idx]) {
+
+				if (minimum_reduction[idx] < min) {
+
+					min = minimum_reduction[idx];
+					min_idx = min_index[idx];
+				}
+
+				if (maximum_reduction[idx] > max) {
+
+					max = maximum_reduction[idx];
+					max_idx = max_index[idx];
+				}
+			}
+		}
+
+		return VAL2<Type>(min_idx, max_idx);
 	}
 
 	//--------------------- AVERAGE

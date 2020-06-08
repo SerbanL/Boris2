@@ -135,6 +135,9 @@ public:
 	//calculate topological charge in M and given rect, using equation Q = Integral(m.(dm/dx x dm/dy) dxdy) / 4PI
 	BError get_topological_charge(VEC_VC<DBL3>& M, double x, double y, double radius, double* pQ);
 
+	//count skyrmions in M and given rect, using equation Q = Integral(|m.(dm/dx x dm/dy)| dxdy) / 4PI
+	BError count_skyrmions(VEC_VC<DBL3>& M, double x, double y, double radius, double* pQ);
+
 	//calculate histogram for |M| using given parameters
 	BError calculate_histogram(VEC_VC<DBL3>& M, int dp_x, int dp_y, double bin, double min, double max);
 
@@ -201,6 +204,23 @@ public:
 
 	//For a hysteresis loop with only one branch continue it by constructing the other direction branch (invert both x and y data and add it in continuation)
 	BError complete_hysteresis(int dp_x, int dp_y);
+
+	//--------------------- histograms
+	
+	//From input x - y data build a histogram of number of times x - y data crosses a given line (up or down). 
+	//The line varies between minimum and maximum of y data in given number of steps. 
+	//Output the line values in dp_lev with corresponding number of crossings in dp_counts.
+	BError crossings_histogram(int dp_x, int dp_y, int dp_lev, int dp_counts, int steps);
+
+	//From input x-y data build a histogram of average frequency the x-y data crosses a given line (up and down, separated). 
+	//The line varies between minimum and maximum of y data in given number of steps (100 by default). 
+	//Output the line values in dp_level with corresponding crossgins frequencies in dp_freq_up and dp_freq_dn.
+	BError crossings_frequencies(int dp_x, int dp_y, int dp_lev, int dp_freq_up, int dp_freq_dn, int steps);
+
+	//From input x-y data build a histogram of average frequency of peaks in the x-y data in bands given by the number of steps. 
+	//The bands vary between minimum and maximum of y data in given number of steps (100 by default). 
+	//Output the line values in dp_level with corresponding peak frequencies in dp_freq.
+	BError peaks_frequencies(int dp_x, int dp_y, int dp_lev, int dp_freq, int steps);
 
 	//--------------------- curve fitting
 

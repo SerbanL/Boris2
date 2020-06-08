@@ -503,7 +503,7 @@ private: //--------------------------------------------------- METHODS
 	template <typename Type>
 	void save_tuple_entry_vector_key(std::ofstream& bdout, Type& vec, int idx, std::false_type) {} //need to keep compiler happy
 
-																								   //std::vector has Id indexing
+	//std::vector has Id indexing
 	template <typename Type>
 	void save_tuple_entry_vector_Id(std::ofstream& bdout, Type& vec, int idx, std::true_type)
 	{
@@ -858,7 +858,7 @@ public:
 					complex_type_just_started = true;
 					continue;
 				}
-
+				
 				if (std::string(line) == binaryData) {
 
 					//not expecting to see this here, must be an older version save file (older than program version) : jump over the binary block (next line gives the number of BYTEs in the block)
@@ -880,18 +880,18 @@ public:
 				//check for end of type - if found, return true to attempt further loading
 				if (std::string(line) == endType) {
 
+					std::streampos curpos = bdin.tellg();
+					if (bdin.getline(line, FILEROWCHARS)) {
+
+						if (std::string(line) != endComplexType) bdin.seekg(curpos);
+					}
+
 					RepairObjectState();
 					return true;
 				}
 
-				if (std::string(line) == endComplexType) {
-
-					complex_type_just_started = false;
-					continue;
-				}
-
 				if (!parse_load_tuple(bdin, std::string(line), objects, std::make_index_sequence<sizeof...(PType)>{})) {
-
+					
 					//name not found, or something else went wrong
 					if (complex_type_just_started) {
 
@@ -946,6 +946,12 @@ public:
 		while (bdin.getline(line, FILEROWCHARS)) {
 
 			if (std::string(line) == endType) {
+
+				std::streampos curpos = bdin.tellg();
+				if (bdin.getline(line, FILEROWCHARS)) {
+
+					if (std::string(line) != endComplexType) bdin.seekg(curpos);
+				}
 
 				RepairObjectState();
 				return true;

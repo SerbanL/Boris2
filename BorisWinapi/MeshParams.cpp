@@ -1,9 +1,11 @@
 #include "stdafx.h"
 #include "MeshParams.h"
 
-MeshParams::MeshParams(vector<PARAM_>& enabledParams) :
-	T_equation({ "t" })
+MeshParams::MeshParams(vector<PARAM_>& enabledParams)
 {
+	//see comment in MeshParamsBase
+	set_meshparamsbase_implementation(this, MESHTYPE_MICROMAGNETIC);
+
 	//store all simulation parameters in meshParams : allows easy handling in the console, as well as saving and loading. In the computational routines use the parmeters directly, not through simParams
 	for (int idx = 0; idx < (int)enabledParams.size(); idx++) {
 
@@ -137,6 +139,10 @@ MeshParams::MeshParams(vector<PARAM_>& enabledParams) :
 
 		case PARAM_HA:
 			meshParams.push_back("cHa", MeshParamDescriptor(PARAMTYPE_MAGNETIC), PARAM_HA);
+			break;
+
+		case PARAM_HMO:
+			meshParams.push_back("Hmo", MeshParamDescriptor(PARAMTYPE_MAGNETIC, "A/m"), PARAM_HMO);
 			break;
 
 		case PARAM_T:
@@ -307,28 +313,6 @@ void MeshParams::set_special_functions(PARAM_ paramID)
 	else set_param_special_functions(paramID);
 }
 
-void MeshParams::update_parameters(PARAM_ paramID)
-{
-	auto update_param = [&](PARAM_ update_paramID) {
-
-		auto code = [&](auto& MatP_object) -> void {
-
-			MatP_object.update(base_temperature);
-		};
-
-		run_on_param<void>(update_paramID, code);
-	};
-
-	if (paramID == PARAM_ALL) {
-
-		for (int index = 0; index < meshParams.size(); index++) {
-
-			update_param((PARAM_)meshParams.get_ID_from_index(index));
-		}
-	}
-	else update_param(paramID);
-}
-
 //copy all parameters from another Mesh
 void MeshParams::copy_parameters(MeshParams& copy_this)
 {
@@ -360,209 +344,7 @@ void MeshParams::copy_parameters(MeshParams& copy_this)
 	T_Curie = copy_this.T_Curie;
 }
 
-//-------------------------Getters
-
-//get value of indexed mesh parameter as a string (with unit)
-string MeshParams::get_meshparam_value(int index)
-{
-	PARAM_ paramID = (PARAM_)get_meshparam_id(index);
-
-	auto code = [&](auto& MatP_object, string unit) -> string {
-
-		return ToString(MatP_object.get0(), unit);
-	};
-
-	return run_on_param<string>(paramID, code, meshParams(paramID).unit);
-}
-
-string MeshParams::get_meshparam_value(PARAM_ paramID)
-{
-	auto code = [&](auto& MatP_object, string unit) -> string {
-
-		return ToString(MatP_object.get0(), unit);
-	};
-
-	return run_on_param<string>(paramID, code, meshParams(paramID).unit);
-}
-
-//get value of indexed mesh parameter as a string (without unit)
-string MeshParams::get_meshparam_value_sci(int index)
-{
-	PARAM_ paramID = (PARAM_)get_meshparam_id(index);
-
-	auto code = [&](auto& MatP_object) -> string {
-
-		return ToString(MatP_object.get0());
-	};
-
-	return run_on_param<string>(paramID, code);
-}
-
-string MeshParams::get_meshparam_value_sci(PARAM_ paramID)
-{
-	auto code = [&](auto& MatP_object) -> string {
-
-		return ToString(MatP_object.get0());
-	};
-
-	return run_on_param<string>(paramID, code);
-}
-
-string MeshParams::get_paraminfo_string(PARAM_ paramID)
-{
-	auto code = [&](auto& MatP_object, PARAM_ paramID) -> string {
-
-		return get_meshparam_handle(paramID) + ": " + MatP_object.get_info_string();
-	};
-
-	return run_on_param<string>(paramID, code, paramID);
-}
-
-//returns a string describing the set spatial dependence with any parameters
-string MeshParams::get_paramvarinfo_string(PARAM_ paramID)
-{
-	auto code = [&](auto& MatP_object, PARAM_ paramID) -> string {
-
-		return get_meshparam_handle(paramID) + ": " + MatP_object.get_varinfo_string();
-	};
-
-	return run_on_param<string>(paramID, code, paramID);
-}
-
-bool MeshParams::is_paramtemp_set(PARAM_ paramID)
-{
-	auto code = [](auto& MatP_object) -> bool {
-
-		return MatP_object.is_tdep();
-	};
-
-	return run_on_param<bool>(paramID, code);
-}
-
-//check if the given parameters has a temperature dependence specified using a text equation (equation may still not be set due to missing constants)
-bool MeshParams::is_paramtempequation_set(PARAM_ paramID)
-{
-	auto code = [](auto& MatP_object) -> bool {
-
-		return MatP_object.is_t_equation_set();
-	};
-
-	return run_on_param<bool>(paramID, code);
-}
-
-//check if the given parameter has a  spatial variation set
-bool MeshParams::is_paramvar_set(PARAM_ paramID)
-{
-	auto code = [](auto& MatP_object) -> bool {
-
-		return MatP_object.is_sdep();
-	};
-
-	return run_on_param<bool>(paramID, code);
-}
-
-//check if the given parameter has a  temperature dependence or a spatial variation set
-bool MeshParams::is_param_nonconst(PARAM_ paramID)
-{
-	auto code = [](auto& MatP_object) -> bool {
-
-		return (MatP_object.is_tdep() || MatP_object.is_sdep());
-	};
-
-	return run_on_param<bool>(paramID, code);
-}
-
-bool MeshParams::get_meshparam_tempscaling(PARAM_ paramID, double max_temperature, vector<double>& x, vector<double>& y, vector<double>& z)
-{
-	auto code = [](auto& MatP_object, double max_temperature, vector<double>& x, vector<double>& y, vector<double>& z) -> bool {
-
-		return MatP_object.get_temperature_scaling(max_temperature, x, y, z);
-	};
-
-	return run_on_param<bool>(paramID, code, max_temperature, x, y, z);
-}
-
-//get reference to mesh parameter spatial scaling VEC
-void* MeshParams::get_meshparam_s_scaling(PARAM_ paramID)
-{
-	auto code = [](auto& MatP_object) -> void* {
-
-		return &(MatP_object.s_scaling_ref());
-	};
-
-	return run_on_param<void*>(paramID, code);
-}
-
-//get value of mesh parameter spatial scaling coefficient at given position (and time)
-Any MeshParams::get_meshparam_s_scaling_value(PARAM_ paramID, DBL3 rel_pos, double stime)
-{
-	auto code = [](auto& MatP_object, DBL3 rel_pos, double stime) -> Any {
-
-		return (Any)MatP_object.get_s_scaling_value(rel_pos, stime);
-	};
-
-	return run_on_param<Any>(paramID, code, rel_pos, stime);
-}
-
-//calculate spatial variation into the provided VECs - intended to be used when the spatial variation is set using a text equation
-void MeshParams::calculate_meshparam_s_scaling(PARAM_ paramID, VEC<double>& displayVEC_SCA, double stime)
-{
-	auto code = [](auto& MatP_object, VEC<double>& displayVEC_SCA, double stime) -> void {
-
-		MatP_object.calculate_s_scaling(displayVEC_SCA, stime);
-	};
-
-	run_on_param<void>(paramID, code, displayVEC_SCA, stime);
-}
-
-void MeshParams::calculate_meshparam_s_scaling(PARAM_ paramID, VEC<DBL3>& displayVEC_VEC, double stime)
-{
-	auto code = [](auto& MatP_object, VEC<DBL3>& displayVEC_VEC, double stime) -> void {
-
-		MatP_object.calculate_s_scaling(displayVEC_VEC, stime);
-	};
-
-	run_on_param<void>(paramID, code, displayVEC_VEC, stime);
-}
-
-//check if scaling array is scalar (or else vectorial)
-bool MeshParams::is_paramvar_scalar(PARAM_ paramID)
-{
-	auto code = [](auto& MatP_object) -> bool {
-
-		typedef contained_type<decltype(MatP_object.s_scaling_ref())>::type SType;
-
-		return std::is_same<SType, double>::value;
-	};
-
-	return run_on_param<bool>(paramID, code);
-}
-
-//check if the spatial dependence is set using a text equation
-bool MeshParams::is_paramvarequation_set(PARAM_ paramID)
-{
-	auto code = [](auto& MatP_object) -> bool {
-
-		return MatP_object.is_s_equation_set();
-	};
-
-	return run_on_param<bool>(paramID, code);
-}
-
-//-------------------------Setters
-
-//set value from string for named parameter (units allowed in string)
-void MeshParams::set_meshparam_value(PARAM_ paramID, string value_text)
-{
-	auto code = [](auto& MatP_object, string value_text, string unit) -> void {
-
-		MatP_object = (decltype(MatP_object.get0()))ToNum(value_text, unit);
-	};
-
-	run_on_param<void>(paramID, code, value_text, meshParams(paramID).unit);
-
-	update_parameters(paramID);
-}
+//-------------------------Setters/Updaters : text equations
 
 //set the mesh parameter equation with given user constants
 void MeshParams::set_meshparam_t_equation(PARAM_ paramID, string& equationText, vector_key<double>& userConstants)
@@ -582,95 +364,6 @@ void MeshParams::set_meshparam_t_equation(PARAM_ paramID, string& equationText, 
 	else run_on_param<void>(paramID, code, equationText, userConstants, T_Curie, base_temperature);
 }
 
-//clear mesh parameter temperature dependence
-void MeshParams::clear_meshparam_temp(PARAM_ paramID)
-{
-	auto code = [](auto& MatP_object) -> void {
-
-		MatP_object.clear_t_scaling();
-	};
-
-	if (paramID == PARAM_ALL) {
-
-		for (int index = 0; index < meshParams.size(); index++) {
-
-			run_on_param<void>((PARAM_)meshParams.get_ID_from_index(index), code);
-		}
-	}
-	else run_on_param<void>(paramID, code);
-}
-
-//set mesh parameter array scaling
-bool MeshParams::set_meshparam_tscaling_array(PARAM_ paramID, vector<double>& temp, vector<double>& scaling_x, vector<double>& scaling_y, vector<double>& scaling_z)
-{
-	auto code = [](auto& MatP_object, vector<double>& temp, vector<double>& scaling_x, vector<double>& scaling_y, vector<double>& scaling_z) -> bool {
-
-		return MatP_object.set_t_scaling_array(temp, scaling_x, scaling_y, scaling_z);
-	};
-
-	return run_on_param<bool>(paramID, code, temp, scaling_x, scaling_y, scaling_z);
-}
-
-//set temperature dependence info string for console display purposes
-void MeshParams::set_meshparam_tscaling_info(PARAM_ paramID, string info_text)
-{
-	auto code = [](auto& MatP_object, string info_text) -> void {
-
-		MatP_object.set_t_scaling_info(info_text);
-	};
-
-	run_on_param<void>(paramID, code, info_text);
-}
-
-//-------------------------Setters : spatial variation
-
-//set the mesh parameter spatial variation equation with given user constants
-void MeshParams::set_meshparam_s_equation(PARAM_ paramID, string& equationText, vector_key<double>& userConstants, DBL3 meshDimensions)
-{
-	auto code = [](auto& MatP_object, string& equationText, vector_key<double>& userConstants, DBL3 meshDimensions) -> void {
-
-		MatP_object.set_s_scaling_equation(equationText, userConstants, meshDimensions);
-	};
-
-	if (paramID == PARAM_ALL) {
-
-		for (int index = 0; index < meshParams.size(); index++) {
-
-			run_on_param<void>((PARAM_)meshParams.get_ID_from_index(index), code, equationText, userConstants, meshDimensions);
-		}
-	}
-	else run_on_param<void>(paramID, code, equationText, userConstants, meshDimensions);
-}
-
-//clear mesh parameter spatial variation (all if paramID == PARAM_ALL)
-void MeshParams::clear_meshparam_variation(PARAM_ paramID)
-{
-	auto code = [](auto& MatP_object) -> void {
-
-		MatP_object.clear_s_scaling();
-	};
-
-	if (paramID == PARAM_ALL) {
-
-		for (int index = 0; index < meshParams.size(); index++) {
-
-			run_on_param<void>((PARAM_)meshParams.get_ID_from_index(index), code);
-		}
-	}
-	else run_on_param<void>(paramID, code);
-}
-
-//update mesh parameter spatial variation (e.g. cellsize or rectangle could have changed)
-bool MeshParams::update_meshparam_var(PARAM_ paramID, DBL3 h, Rect rect)
-{
-	auto code = [](auto& MatP_object, DBL3 h, Rect rect) -> bool {
-
-		return MatP_object.update_s_scaling(h, rect);
-	};
-
-	return run_on_param<bool>(paramID, code, h, rect);
-}
-
 //update text equations for mesh parameters with user constants, mesh dimensions, Curie temperature, base temperature
 bool MeshParams::update_meshparam_equations(PARAM_ paramID, vector_key<double>& userConstants, DBL3 meshDimensions)
 {
@@ -680,19 +373,4 @@ bool MeshParams::update_meshparam_equations(PARAM_ paramID, vector_key<double>& 
 	};
 
 	return run_on_param<bool>(paramID, code, userConstants, meshDimensions, T_Curie, base_temperature);
-}
-
-//set parameter spatial variation using a given generator and arguments (arguments passed as a string to be interpreted and converted using ToNum)
-BError MeshParams::set_meshparam_var(PARAM_ paramID, MATPVAR_ generatorID, DBL3 h, Rect rect, string generatorArgs, function<vector<BYTE>(string, INT2)>& bitmap_loader)
-{
-	BError error(__FUNCTION__);
-
-	auto code = [](auto& MatP_object, DBL3 h, Rect rect, MATPVAR_ generatorID, string generatorArgs, function<vector<BYTE>(string, INT2)>& bitmap_loader) -> BError {
-
-		return MatP_object.set_s_scaling(h, rect, generatorID, generatorArgs, bitmap_loader);
-	};
-
-	error = run_on_param<BError>(paramID, code, h, rect, generatorID, generatorArgs, bitmap_loader);
-
-	return error;
 }

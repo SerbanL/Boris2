@@ -3,9 +3,8 @@
 
 #ifdef MODULE_ZEEMAN
 
-#include "Mesh_Ferromagnetic.h"
-#include "Mesh_AntiFerromagnetic.h"
-#include "Mesh_Diamagnetic.h"
+#include "Mesh.h"
+#include "MeshParamsControl.h"
 
 #include "SuperMesh.h"
 
@@ -15,14 +14,12 @@
 
 Zeeman::Zeeman(Mesh *pMesh_) : 
 	Modules(),
-	H_equation({ "x", "y", "z", "t" }),
+	ZeemanBase(),
 	ProgramStateNames(this, { VINFO(Ha), VINFO(H_equation) }, {})
 {
 	pMesh = pMesh_;
 
 	pSMesh = pMesh->pSMesh;
-
-	Ha = DBL3(0,0,0);
 
 	error_on_create = UpdateConfiguration(UPDATECONFIG_FORCEUPDATE);
 
@@ -233,6 +230,125 @@ double Zeeman::UpdateField(void)
 	return this->energy;
 }
 
+//-------------------Energy density methods
+
+double Zeeman::GetEnergyDensity(Rect& avRect)
+{
+#if COMPILECUDA == 1
+	if (pModuleCUDA) return reinterpret_cast<ZeemanCUDA*>(pModuleCUDA)->GetEnergyDensity(avRect);
+#endif
+
+	/////////////////////////////////////////
+	// Fixed set field
+	/////////////////////////////////////////
+
+	double energy = 0;
+
+	int num_points = 0;
+
+	if (!H_equation.is_set()) {
+
+		if (IsZ(Ha.norm())) {
+
+			this->energy = 0;
+			return 0.0;
+		}
+
+		if (pMesh->GetMeshType() == MESH_ANTIFERROMAGNETIC) {
+
+#pragma omp parallel for reduction(+:energy, num_points)
+			for (int idx = 0; idx < pMesh->n.dim(); idx++) {
+
+				//only average over values in given rectangle
+				if (!avRect.contains(pMesh->M.cellidx_to_position(idx))) continue;
+
+				double cHA = pMesh->cHA;
+				pMesh->update_parameters_mcoarse(idx, pMesh->cHA, cHA);
+
+				energy += (pMesh->M[idx] + pMesh->M2[idx]) * (cHA * Ha) / 2;
+				num_points++;
+			}
+		}
+
+		else {
+
+#pragma omp parallel for reduction(+:energy, num_points)
+			for (int idx = 0; idx < pMesh->n.dim(); idx++) {
+
+				//only average over values in given rectangle
+				if (!avRect.contains(pMesh->M.cellidx_to_position(idx))) continue;
+
+				double cHA = pMesh->cHA;
+				pMesh->update_parameters_mcoarse(idx, pMesh->cHA, cHA);
+
+				energy += pMesh->M[idx] * (cHA * Ha);
+				num_points++;
+			}
+		}
+	}
+
+	/////////////////////////////////////////
+	// Field set from user equation
+	/////////////////////////////////////////
+
+	else {
+
+		double time = pSMesh->GetStageTime();
+		double Temperature = pMesh->base_temperature;
+
+		if (pMesh->GetMeshType() == MESH_ANTIFERROMAGNETIC) {
+
+#pragma omp parallel for reduction(+:energy, num_points)
+			for (int j = 0; j < pMesh->n.y; j++) {
+				for (int k = 0; k < pMesh->n.z; k++) {
+					for (int i = 0; i < pMesh->n.x; i++) {
+
+						int idx = i + j * pMesh->n.x + k * pMesh->n.x*pMesh->n.y;
+
+						//on top of spatial dependence specified through an equation, also allow spatial dependence through the cHA parameter
+						double cHA = pMesh->cHA;
+						pMesh->update_parameters_mcoarse(idx, pMesh->cHA, cHA);
+
+						DBL3 relpos = DBL3(i + 0.5, j + 0.5, k + 0.5) & pMesh->h;
+						DBL3 H = H_equation.evaluate_vector(relpos.x, relpos.y, relpos.z, time);
+
+						energy += (pMesh->M[idx] + pMesh->M2[idx]) * (cHA * H) / 2;
+						num_points++;
+					}
+				}
+			}
+		}
+
+		else {
+
+#pragma omp parallel for reduction(+:energy, num_points)
+			for (int j = 0; j < pMesh->n.y; j++) {
+				for (int k = 0; k < pMesh->n.z; k++) {
+					for (int i = 0; i < pMesh->n.x; i++) {
+
+						int idx = i + j * pMesh->n.x + k * pMesh->n.x*pMesh->n.y;
+
+						//on top of spatial dependence specified through an equation, also allow spatial dependence through the cHA parameter
+						double cHA = pMesh->cHA;
+						pMesh->update_parameters_mcoarse(idx, pMesh->cHA, cHA);
+
+						DBL3 relpos = DBL3(i + 0.5, j + 0.5, k + 0.5) & pMesh->h;
+						DBL3 H = H_equation.evaluate_vector(relpos.x, relpos.y, relpos.z, time);
+
+						energy += pMesh->M[idx] * (cHA * H);
+						num_points++;
+					}
+				}
+			}
+		}
+	}
+
+	if (num_points) energy *= -MU0 / num_points;
+	else energy = 0;
+
+	return energy;
+}
+
 //----------------------------------------------- Others
 
 void Zeeman::SetField(DBL3 Hxyz)
@@ -260,15 +376,6 @@ void Zeeman::SetField(DBL3 Hxyz)
 #if COMPILECUDA == 1
 	if (pModuleCUDA) reinterpret_cast<ZeemanCUDA*>(pModuleCUDA)->SetField(Ha);
 #endif
-}
-
-DBL3 Zeeman::GetField(void)
-{ 
-#if COMPILECUDA == 1
-	if (pModuleCUDA) return reinterpret_cast<ZeemanCUDA*>(pModuleCUDA)->GetField();
-#endif
-
-	return Ha;
 }
 
 BError Zeeman::SetFieldEquation(string equation_string, int step)

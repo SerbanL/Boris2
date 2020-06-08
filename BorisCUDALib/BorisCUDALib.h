@@ -48,4 +48,5 @@
 #include "cuVEC_VC_grad.h"
 #include "cuVEC_VC_div.h"
 #include "cuVEC_VC_curl.h"
+#include "cuVEC_VC_ngbrsum.h"
 

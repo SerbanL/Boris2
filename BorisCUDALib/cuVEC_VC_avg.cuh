@@ -13,7 +13,7 @@ __global__ void cuvec_vc_average_nonempty_kernel(cuSZ3& n, int*& ngbrFlags, VTyp
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
 
 	//need the idx < n.dim() check before ngbrFlags[idx] to avoid bad memory access
-	reduction_avg(idx, n.dim(), quantity, average_value, points_count, idx < n.dim() && ngbrFlags[idx] & NF_NOTEMPTY);
+	reduction_avg(idx, n.dim(), quantity, average_value, points_count, idx < n.dim() && (ngbrFlags[idx] & NF_NOTEMPTY));
 }
 
 template <typename VType>
@@ -36,7 +36,7 @@ template cuDBL3 cuVEC_VC<cuDBL3>::average_nonempty(size_t arr_size, cuBox box);
 template <typename VType>
 __host__ VType cuVEC_VC<VType>::average_nonempty(size_t arr_size, cuBox box)
 {
-	zero_aux_values << <1, CUDATHREADS >> > (aux_value, aux_value2, aux_value3, aux_real, aux_integer);
+	zero_aux_values << <1, CUDATHREADS >> > (aux_value, aux_value2, aux_value3, aux_real, aux_real2, aux_integer);
 
 	if (box.IsNull()) {
 
@@ -60,7 +60,8 @@ __global__ void average_nonempty_kernel(cuSZ3& n, cuRect rectangle, cuVEC_VC<VTy
 
 	cuINT3 ijk = cuINT3(idx % n.x, (idx / n.x) % n.y, idx / (n.x*n.y));
 
-	reduction_avg(idx, n.dim(), cuvec.data(), average_value, points_count, cuvec.box_from_rect_max(rectangle + cuvec.rect.s).Contains(ijk) && cuvec.is_not_empty(ijk));
+	//need the idx < n.dim() check before cuvec.is_not_empty(ijk) to avoid bad memory access
+	reduction_avg(idx, n.dim(), cuvec.data(), average_value, points_count, idx < n.dim() && cuvec.box_from_rect_max(rectangle + cuvec.rect.s).Contains(ijk) && cuvec.is_not_empty(ijk));
 }
 
 template float cuVEC_VC<float>::average_nonempty(size_t arr_size, cuRect rectangle);
@@ -75,7 +76,7 @@ __host__ VType cuVEC_VC<VType>::average_nonempty(size_t arr_size, cuRect rectang
 	//if empty rectangle then average ove the entire mesh
 	if (rectangle.IsNull()) return average_nonempty(arr_size, cuBox());
 
-	zero_aux_values << <1, CUDATHREADS >> > (aux_value, aux_value2, aux_value3, aux_real, aux_integer);
+	zero_aux_values << <1, CUDATHREADS >> > (aux_value, aux_value2, aux_value3, aux_real, aux_real2, aux_integer);
 
 	average_nonempty_kernel << < (arr_size + CUDATHREADS) / CUDATHREADS, CUDATHREADS >> > (n, rectangle, *this, aux_value, aux_integer);
 

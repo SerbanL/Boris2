@@ -92,7 +92,7 @@ BError SurfExchange::Initialize(void)
 	for (int idx = 0; idx < pSMesh->size(); idx++) {
 
 		//consider all meshes in turn - condition 1 first
-		if ((*pSMesh)[idx]->MComputation_Enabled() && (*pSMesh)[idx]->IsModuleSet(MOD_SURFEXCHANGE)) {
+		if ((*pSMesh)[idx]->MComputation_Enabled() && (*pSMesh)[idx]->IsModuleSet(MOD_SURFEXCHANGE) && !(*pSMesh)[idx]->is_atomistic()) {
 
 			Rect candidate_meshRect = (*pSMesh)[idx]->GetMeshRect();
 
@@ -113,7 +113,7 @@ BError SurfExchange::Initialize(void)
 
 						if (check_idx < 0) {
 
-							pMesh_Top.push_back((*pSMesh)[coupledmesh_idx]);
+							pMesh_Top.push_back(reinterpret_cast<Mesh*>((*pSMesh)[coupledmesh_idx]));
 							
 							break;
 						}
@@ -145,7 +145,7 @@ BError SurfExchange::Initialize(void)
 
 						if (check_idx < 0) {
 
-							pMesh_Bot.push_back((*pSMesh)[coupledmesh_idx]);
+							pMesh_Bot.push_back(reinterpret_cast<Mesh*>((*pSMesh)[coupledmesh_idx]));
 							
 							break;
 						}

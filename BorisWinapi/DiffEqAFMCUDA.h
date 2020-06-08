@@ -27,6 +27,14 @@ private:
 	//Thermal field and torques, enabled only for the stochastic equations
 	cu_obj<cuVEC<cuReal3>> H_Thermal_2, Torque_Thermal_2;
 
+private:
+
+	//---------------------------------------- Stochastic fields calculation methods
+
+	//called when using stochastic equations from GenerateThermalField / GenerateThermalField_and_Torque
+	void GenerateThermalField_CUDA(cu_obj<cuBReal>& deltaT);
+	void GenerateThermalField_and_Torque_CUDA(cu_obj<cuBReal>& deltaT);
+
 public:
 
 	DifferentialEquationAFMCUDA(DifferentialEquation *pmeshODE);
@@ -119,10 +127,10 @@ public:
 	//---------------------------------------- SET-UP METHODS
 
 	//allocate memory depending on set evaluation method - also cleans up previously allocated memory by calling CleanupMemory();
-	BError AllocateMemory(void);
+	BError AllocateMemory(bool copy_from_cpu = false);
 
 	//deallocate memory before re-allocating it (depending on evaluation method previously allocated memory might not be used again, so need clean-up before)
-	void CleanupMemory(void);
+	void CleanupMemory(bool copy_to_cpu = false);
 
 	void SetODEMethodPointers(void);
 
@@ -133,12 +141,6 @@ public:
 
 	//Restore magnetisation after a failed step for adaptive time-step methods
 	void RestoreMagnetisation(void);
-
-	//---------------------------------------- OTHER CALCULATION METHODS
-
-	//called when using stochastic equations
-	void GenerateThermalField(void);
-	void GenerateThermalField_and_Torque(void);
 
 	//----------------------------------- GETTERS
 
@@ -155,6 +157,14 @@ class DifferentialEquationAFMCUDA :
 private:
 
 	cu_obj<ManagedDiffEqAFMCUDA> cuDiffEq;
+
+private:
+
+	//---------------------------------------- Stochastic fields calculation methods
+
+	//called when using stochastic equations from GenerateThermalField / GenerateThermalField_and_Torque
+	void GenerateThermalField_CUDA(cu_obj<cuBReal>& deltaT);
+	void GenerateThermalField_and_Torque_CUDA(cu_obj<cuBReal>& deltaT);
 
 public:
 
@@ -248,10 +258,10 @@ public:
 	//---------------------------------------- SET-UP METHODS
 
 	//allocate memory depending on set evaluation method - also cleans up previously allocated memory by calling CleanupMemory();
-	BError AllocateMemory(void) { return BError(); }
+	BError AllocateMemory(bool copy_from_cpu = false) { return BError(); }
 
 	//deallocate memory before re-allocating it (depending on evaluation method previously allocated memory might not be used again, so need clean-up before)
-	void CleanupMemory(void) {}
+	void CleanupMemory(bool copy_to_cpu = false) {}
 
 	void SetODEMethodPointers(void) {}
 
@@ -262,12 +272,6 @@ public:
 
 	//Restore magnetisation after a failed step for adaptive time-step methods
 	void RestoreMagnetisation(void) {}
-
-	//---------------------------------------- OTHER CALCULATION METHODS
-
-	//called when using stochastic equations
-	void GenerateThermalField(void) {}
-	void GenerateThermalField_and_Torque(void) {}
 
 	//----------------------------------- GETTERS
 

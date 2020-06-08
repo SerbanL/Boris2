@@ -2,14 +2,24 @@
 
 #include "VEC.h"
 
-//mesh transfer type to use for transfer in direction : 
-//for fully covered super-mesh cells always use weighted average.
-//for partially covered super-mesh cells you can use:
-//MESHTRANSFERTYPE_WEIGHTED : partially covered cells are weighted by the covered volume ratio (applicable to transfer in only)
-//MESHTRANSFERTYPE_CLIPPED : ignore partially covered super-mesh cells.
-//MESHTRANSFERTYPE_ENLARGED : as with MESHTRANSFERTYPE_WEIGHTED except the value is not multiplied by the covered volume ratio, so effectively the mesh appears as enlarged.
-//for the transfer out direction always use weighted average
-enum MESHTRANSFERTYPE_ { MESHTRANSFERTYPE_WEIGHTED = 0, MESHTRANSFERTYPE_CLIPPED, MESHTRANSFERTYPE_ENLARGED };
+//mesh transfer type to use for the transfer in direction : 
+
+//mesh transfer in means if we have 1 or more (non-overlapping) contributing meshes, each with their own discretisation, we want to transfer their values to a single mesh (called supermesh for this purpose)
+//The supermesh may intersect some of the contributing meshes, and also has its own discretization
+//Thus the problem is how do we obtain the supermesh values to be a desired representation of thee input values.
+//There are different methods available, which should be chosen depending on the required result:
+
+//MESHTRANSFERTYPE_WEIGHTED : use a weighted average for all contributing cells (these are cells which interest with the supermesh cell), further weight them by the covered volume ratio, i.e. ratio of contributing volume to supermesh cell volume.
+//MESHTRANSFERTYPE_CLIPPED : as for MESHTRANSFERTYPE_WEIGHTED, but ignore partially covered super-mesh cells, and do not apply a covered volume ratio weight.
+//MESHTRANSFERTYPE_ENLARGED : as for MESHTRANSFERTYPE_WEIGHTED except the value is not multiplied by the covered volume ratio (but all intersecting cells can contribute, even those which are only partially covered).
+//MESHTRANSFERTYPE_SUM : simple sum of all contributions from all intersecting cells
+//MESHTRANSFERTYPE_DENSITY : as for MESHTRANSFERTYPE_SUM, but divide by the total contributing volume
+//MESHTRANSFERTYPE_WDENSITY : as for MESHTRANSFERTYPE_DENSITY, but multiply value by the covered volume ratio
+
+//mesh transfer out means the opposite operation, i.e. there is one source mesh, and multiple output meshes which may intersect the source mesh
+//for the transfer out direction always use MESHTRANSFERTYPE_ENLARGED type of transfer
+
+enum MESHTRANSFERTYPE_ { MESHTRANSFERTYPE_WEIGHTED = 0, MESHTRANSFERTYPE_CLIPPED, MESHTRANSFERTYPE_ENLARGED, MESHTRANSFERTYPE_SUM, MESHTRANSFERTYPE_DENSITY, MESHTRANSFERTYPE_WDENSITY };
 
 //list of input mesh cells with pre-calculated weights
 //these cells will contribute to some super-mesh cell, and are all the contributions to that cell
@@ -183,18 +193,32 @@ private:
 	//Return total reciprocal distance
 	double build_meshcells_weights(InMeshCellsWeights &cellsWeights, Rect rect_c, int mesh_idx);
 
+	//build InMeshCellsWeights, used to transfer values from mesh_in cells to a super-mesh cell with rectangle rect_c. This calculates the contribution from cells in mesh_in[mesh_idx]
+	//all contributing cells receive equal weights of 1.0, so the resulting mesh transfer operation is a sum.
+	//return total contributing volume, including from empty cells
+	double build_meshcells_sum(InMeshCellsWeights &cellsWeights, Rect rect_c, int mesh_idx);
+
 	double build_supermeshcells_weights(SuperMeshCellsWeights &cellsWeights, Rect rect_mc);
 
 	//before calling the helpers below you must make sure mesh_in, mesh_in2, mesh_out, mesh_out2 are set correctly as required
 
 	//MESHTRANSFERTYPE_WEIGHTED
-	bool initialize_transfer_in_weighted(void);
+	bool initialize_transfer_in_weighted(double multiplier);
 
 	//MESHTRANSFERTYPE_CLIPPED
-	bool initialize_transfer_in_clipped(void);
+	bool initialize_transfer_in_clipped(double multiplier);
 
 	//MESHTRANSFERTYPE_ENLARGED
-	bool initialize_transfer_in_enlarged(void);
+	bool initialize_transfer_in_enlarged(double multiplier);
+
+	//MESHTRANSFERTYPE_SUM
+	bool initialize_transfer_in_sum(double multiplier);
+
+	//MESHTRANSFERTYPE_DENSITY
+	bool initialize_transfer_in_density(double multiplier);
+
+	//MESHTRANSFERTYPE_WDENSITY
+	bool initialize_transfer_in_weighted_density(double multiplier);
 
 	bool initialize_transfer_out(void);
 
@@ -242,24 +266,24 @@ public:
 
 	bool initialize_transfer(
 		const std::vector< VEC<VType>* >& mesh_in_, const std::vector< VEC<VType>* >& mesh_out_, 
-		int correction_type);
+		int correction_type, double multiplier);
 
 	//MULTIPLE INPUTS, SINGLE OUTPUT
 
 	bool initialize_transfer_averagedinputs(
 		const std::vector< VEC<VType>* >& mesh_in_, const std::vector< VEC<VType>* >& mesh_in2_, 
-		const std::vector< VEC<VType>* >& mesh_out_, int correction_type);
+		const std::vector< VEC<VType>* >& mesh_out_, int correction_type, double multiplier);
 
 	bool initialize_transfer_multipliedinputs(
 		const std::vector< VEC<VType>* >& mesh_in_, const std::vector< VEC<double>* >& mesh_in2_,
-		const std::vector< VEC<VType>* >& mesh_out_, int correction_type);
+		const std::vector< VEC<VType>* >& mesh_out_, int correction_type, double multiplier);
 
 	//MULTIPLE INPUTS, MULTIPLE OUTPUTS
 
 	bool initialize_transfer_averagedinputs_duplicatedoutputs(
 		const std::vector< VEC<VType>* >& mesh_in_, const std::vector< VEC<VType>* >& mesh_in2_, 
 		const std::vector< VEC<VType>* >& mesh_out_, const std::vector< VEC<VType>* >& mesh_out2_, 
-		int correction_type);
+		int correction_type, double multiplier);
 	
 	//----------------------------------- INFO
 
@@ -321,6 +345,51 @@ double Transfer<VType>::build_meshcells_weights(InMeshCellsWeights &cellsWeights
 	}
 
 	return d_recip_total;
+}
+
+//build InMeshCellsWeights, used to transfer values from mesh_in cells to a super-mesh cell with rectangle rect_c. This calculates the contribution from cells in mesh_in[mesh_idx]
+//all contributing cells receive equal weights of 1.0, so the resulting mesh transfer operation is a sum.
+template <typename VType>
+double Transfer<VType>::build_meshcells_sum(InMeshCellsWeights &cellsWeights, Rect rect_c, int mesh_idx)
+{
+	//use mesh_in : this cannot be empty
+	VEC<VType>& mesh = *mesh_in[mesh_idx];
+
+	//mesh cellsize
+	DBL3 h = mesh.h;
+	//mesh size
+	INT3 n = mesh.n;
+
+	//center of rect_c relative to mesh
+	DBL3 coord = (rect_c.e + rect_c.s) / 2 - mesh.rect.s;
+
+	//positions of lower-left and uper-right corners of cell relative to containing mesh
+	DBL3 pos_ll = rect_c.s - mesh.rect.s;
+	DBL3 pos_ur = rect_c.e - mesh.rect.s;
+
+	//indexes of cells containing the lower-left and uper-right coordinates
+	INT3 idx_ll = floor(pos_ll / h);
+	INT3 idx_ur = ceil(pos_ur / h);
+
+	double volume = 0.0;
+	double contributing_cell_volume = h.dim();
+
+	for (int ii = (idx_ll.i >= 0 ? idx_ll.i : 0); ii < (idx_ur.i < n.x ? idx_ur.i : n.x); ii++) {
+		for (int jj = (idx_ll.j >= 0 ? idx_ll.j : 0); jj < (idx_ur.j < n.y ? idx_ur.j : n.y); jj++) {
+			for (int kk = (idx_ll.k >= 0 ? idx_ll.k : 0); kk < (idx_ur.k < n.z ? idx_ur.k : n.z); kk++) {
+
+				//the mesh cell index
+				int cell_idx = ii + jj * n.x + kk * n.x*n.y;
+
+				//store indexes and reciprocal distances. Will need to divided later by total reciprocal distance, thus accumulate it and return (d_recip_total).
+				cellsWeights.push_back(std::pair<INT2, double>(INT2(mesh_idx, cell_idx), 1.0));
+
+				volume += contributing_cell_volume;
+			}
+		}
+	}
+
+	return volume;
 }
 
 template <typename VType>
@@ -627,7 +696,7 @@ void Transfer<VType>::clear(void)
 template <typename VType>
 bool Transfer<VType>::initialize_transfer(
 	const std::vector< VEC<VType>* >& mesh_in_, const std::vector< VEC<VType>* >& mesh_out_, 
-	int correction_type)
+	int correction_type, double multiplier)
 {
 	//-------------------------------------------------------------- Build transfer_in_info
 
@@ -638,15 +707,27 @@ bool Transfer<VType>::initialize_transfer(
 	switch (correction_type) {
 
 	case MESHTRANSFERTYPE_WEIGHTED:
-		if (!initialize_transfer_in_weighted()) return false;
+		if (!initialize_transfer_in_weighted(multiplier)) return false;
 		break;
 
 	case MESHTRANSFERTYPE_CLIPPED:
-		if (!initialize_transfer_in_clipped()) return false;
+		if (!initialize_transfer_in_clipped(multiplier)) return false;
 		break;
 
 	case MESHTRANSFERTYPE_ENLARGED:
-		if (!initialize_transfer_in_enlarged()) return false;
+		if (!initialize_transfer_in_enlarged(multiplier)) return false;
+		break;
+
+	case MESHTRANSFERTYPE_SUM:
+		if (!initialize_transfer_in_sum(multiplier)) return false;
+		break;
+
+	case MESHTRANSFERTYPE_DENSITY:
+		if (!initialize_transfer_in_density(multiplier)) return false;
+		break;
+
+	case MESHTRANSFERTYPE_WDENSITY:
+		if (!initialize_transfer_in_weighted_density(multiplier)) return false;
 		break;
 	};
 
@@ -665,7 +746,7 @@ bool Transfer<VType>::initialize_transfer(
 template <typename VType>
 bool Transfer<VType>::initialize_transfer_averagedinputs(
 	const std::vector< VEC<VType>* >& mesh_in_, const std::vector< VEC<VType>* >& mesh_in2_,
-	const std::vector< VEC<VType>* >& mesh_out_, int correction_type)
+	const std::vector< VEC<VType>* >& mesh_out_, int correction_type, double multiplier)
 {
 	if (mesh_in_.size() != mesh_in2_.size()) return false;
 
@@ -678,15 +759,27 @@ bool Transfer<VType>::initialize_transfer_averagedinputs(
 	switch (correction_type) {
 
 	case MESHTRANSFERTYPE_WEIGHTED:
-		if (!initialize_transfer_in_weighted()) return false;
+		if (!initialize_transfer_in_weighted(multiplier)) return false;
 		break;
 
 	case MESHTRANSFERTYPE_CLIPPED:
-		if (!initialize_transfer_in_clipped()) return false;
+		if (!initialize_transfer_in_clipped(multiplier)) return false;
 		break;
 
 	case MESHTRANSFERTYPE_ENLARGED:
-		if (!initialize_transfer_in_enlarged()) return false;
+		if (!initialize_transfer_in_enlarged(multiplier)) return false;
+		break;
+
+	case MESHTRANSFERTYPE_SUM:
+		if (!initialize_transfer_in_sum(multiplier)) return false;
+		break;
+
+	case MESHTRANSFERTYPE_DENSITY:
+		if (!initialize_transfer_in_density(multiplier)) return false;
+		break;
+
+	case MESHTRANSFERTYPE_WDENSITY:
+		if (!initialize_transfer_in_weighted_density(multiplier)) return false;
 		break;
 	};
 
@@ -703,7 +796,7 @@ bool Transfer<VType>::initialize_transfer_averagedinputs(
 template <typename VType>
 bool Transfer<VType>::initialize_transfer_multipliedinputs(
 	const std::vector< VEC<VType>* >& mesh_in_, const std::vector< VEC<double>* >& mesh_in2_,
-	const std::vector< VEC<VType>* >& mesh_out_, int correction_type)
+	const std::vector< VEC<VType>* >& mesh_out_, int correction_type, double multiplier)
 {
 	if (mesh_in_.size() != mesh_in2_.size()) return false;
 
@@ -716,15 +809,27 @@ bool Transfer<VType>::initialize_transfer_multipliedinputs(
 	switch (correction_type) {
 
 	case MESHTRANSFERTYPE_WEIGHTED:
-		if (!initialize_transfer_in_weighted()) return false;
+		if (!initialize_transfer_in_weighted(multiplier)) return false;
 		break;
 
 	case MESHTRANSFERTYPE_CLIPPED:
-		if (!initialize_transfer_in_clipped()) return false;
+		if (!initialize_transfer_in_clipped(multiplier)) return false;
 		break;
 
 	case MESHTRANSFERTYPE_ENLARGED:
-		if (!initialize_transfer_in_enlarged()) return false;
+		if (!initialize_transfer_in_enlarged(multiplier)) return false;
+		break;
+
+	case MESHTRANSFERTYPE_SUM:
+		if (!initialize_transfer_in_sum(multiplier)) return false;
+		break;
+
+	case MESHTRANSFERTYPE_DENSITY:
+		if (!initialize_transfer_in_density(multiplier)) return false;
+		break;
+
+	case MESHTRANSFERTYPE_WDENSITY:
+		if (!initialize_transfer_in_weighted_density(multiplier)) return false;
 		break;
 	};
 
@@ -744,7 +849,7 @@ template <typename VType>
 bool Transfer<VType>::initialize_transfer_averagedinputs_duplicatedoutputs(
 	const std::vector< VEC<VType>* >& mesh_in_, const std::vector< VEC<VType>* >& mesh_in2_,
 	const std::vector< VEC<VType>* >& mesh_out_, const std::vector< VEC<VType>* >& mesh_out2_,
-	int correction_type)
+	int correction_type, double multiplier)
 {
 	if (mesh_in_.size() != mesh_in2_.size() || mesh_out_.size() != mesh_out2_.size()) return false;
 
@@ -757,15 +862,27 @@ bool Transfer<VType>::initialize_transfer_averagedinputs_duplicatedoutputs(
 	switch (correction_type) {
 
 	case MESHTRANSFERTYPE_WEIGHTED:
-		if (!initialize_transfer_in_weighted()) return false;
+		if (!initialize_transfer_in_weighted(multiplier)) return false;
 		break;
 
 	case MESHTRANSFERTYPE_CLIPPED:
-		if (!initialize_transfer_in_clipped()) return false;
+		if (!initialize_transfer_in_clipped(multiplier)) return false;
 		break;
 
 	case MESHTRANSFERTYPE_ENLARGED:
-		if (!initialize_transfer_in_enlarged()) return false;
+		if (!initialize_transfer_in_enlarged(multiplier)) return false;
+		break;
+
+	case MESHTRANSFERTYPE_SUM:
+		if (!initialize_transfer_in_sum(multiplier)) return false;
+		break;
+
+	case MESHTRANSFERTYPE_DENSITY:
+		if (!initialize_transfer_in_density(multiplier)) return false;
+		break;
+
+	case MESHTRANSFERTYPE_WDENSITY:
+		if (!initialize_transfer_in_weighted_density(multiplier)) return false;
 		break;
 	};
 
@@ -781,7 +898,7 @@ bool Transfer<VType>::initialize_transfer_averagedinputs_duplicatedoutputs(
 
 //MESHTRANSFERTYPE_WEIGHTED
 template <typename VType>
-bool Transfer<VType>::initialize_transfer_in_weighted(void)
+bool Transfer<VType>::initialize_transfer_in_weighted(double multiplier)
 {
 
 	//-------------------------------------------------------------- Build transfer_in_info
@@ -825,7 +942,7 @@ bool Transfer<VType>::initialize_transfer_in_weighted(void)
 		}
 
 		//cellsWeights now contains info about all mesh cells intersecting with rect_c. Divide by total reciprocal distance to obtain proper weights.
-		if (d_recip_total > 0) mesh_cellsWeights.multiply_weights(covered_volume_ratio / d_recip_total);
+		if (d_recip_total > 0) mesh_cellsWeights.multiply_weights(covered_volume_ratio * multiplier / d_recip_total);
 
 		//store calculated contributions for this super-mesh cell.
 		transfer_in_info[idx] = mesh_cellsWeights;
@@ -839,7 +956,7 @@ bool Transfer<VType>::initialize_transfer_in_weighted(void)
 
 //MESHTRANSFERTYPE_CLIPPED
 template <typename VType>
-bool Transfer<VType>::initialize_transfer_in_clipped(void)
+bool Transfer<VType>::initialize_transfer_in_clipped(double multiplier)
 {
 
 	//-------------------------------------------------------------- Build transfer_in_info
@@ -882,7 +999,7 @@ bool Transfer<VType>::initialize_transfer_in_clipped(void)
 		}
 
 		//cellsWeights now contains info about all mesh cells intersecting with rect_c. Divide by total reciprocal distance to obtain proper weights.
-		if (d_recip_total > 0) mesh_cellsWeights.multiply_weights(1.0 / d_recip_total);
+		if (d_recip_total > 0) mesh_cellsWeights.multiply_weights(multiplier / d_recip_total);
 
 		//store calculated contributions for this super-mesh cell.
 		transfer_in_info[idx] = mesh_cellsWeights;
@@ -896,7 +1013,7 @@ bool Transfer<VType>::initialize_transfer_in_clipped(void)
 
 //MESHTRANSFERTYPE_ENLARGED
 template <typename VType>
-bool Transfer<VType>::initialize_transfer_in_enlarged(void)
+bool Transfer<VType>::initialize_transfer_in_enlarged(double multiplier)
 {
 
 	//-------------------------------------------------------------- Build transfer_in_info
@@ -935,7 +1052,160 @@ bool Transfer<VType>::initialize_transfer_in_enlarged(void)
 		}
 
 		//cellsWeights now contains info about all mesh cells intersecting with rect_c. Divide by total reciprocal distance to obtain proper weights.
-		if (d_recip_total > 0) mesh_cellsWeights.multiply_weights(1.0 / d_recip_total);
+		if (d_recip_total > 0) mesh_cellsWeights.multiply_weights(multiplier / d_recip_total);
+
+		//store calculated contributions for this super-mesh cell.
+		transfer_in_info[idx] = mesh_cellsWeights;
+
+		//calculate the total number of contributing cell transfers : sum of all in meshes transfers to each super-mesh cell. This is the flattened total number of transfers.
+		transfer_in_info_size += transfer_in_info[idx].size();
+	}
+
+	return true;
+}
+
+//MESHTRANSFERTYPE_SUM
+template <typename VType>
+bool Transfer<VType>::initialize_transfer_in_sum(double multiplier)
+{
+	//-------------------------------------------------------------- Build transfer_in_info
+
+	//set size for transfer_in_info : number of cells in the super-mesh
+	if (!malloc_vector(transfer_in_info, pVEC->linear_size())) return false;
+
+	transfer_in_info_size = 0;
+
+	//go through all super-mesh cells
+	for (int idx = 0; idx < pVEC->linear_size(); idx++) {
+
+		//super-mesh cell rectangle (absolute)
+		Rect rect_c = pVEC->get_cellrect(idx);
+
+		//list of contributions generated from considering intersection of this super-mesh cell with in meshes;
+		InMeshCellsWeights mesh_cellsWeights;
+
+		//check all input meshes
+		for (int mesh_idx = 0; mesh_idx < mesh_in.size(); mesh_idx++) {
+
+			//mesh rectangle
+			Rect rect_mesh = mesh_in[mesh_idx]->rect;
+
+			//does this mesh intersect with the supermesh cell, such that the intersection has a non-zero volume?
+			//Don't check the volume directly!! Cells can be on the nm (or even smaller) scale, which means the volume will be tiny, making floating point comparisons tricky.
+			//Best to check if it intersects, and the intersection is neither a plane nor a point.
+			if (rect_mesh.intersects(rect_c) && !rect_mesh.get_intersection(rect_c).IsPlane() && !rect_mesh.get_intersection(rect_c).IsPoint()) {
+
+				//yes it does. Find all intersecting cells and add them to the summation.
+				build_meshcells_sum(mesh_cellsWeights, rect_c, mesh_idx);
+			}
+		}
+
+		mesh_cellsWeights.multiply_weights(multiplier);
+
+		//store calculated contributions for this super-mesh cell.
+		transfer_in_info[idx] = mesh_cellsWeights;
+
+		//calculate the total number of contributing cell transfers : sum of all in meshes transfers to each super-mesh cell. This is the flattened total number of transfers.
+		transfer_in_info_size += transfer_in_info[idx].size();
+	}
+
+	return true;
+}
+
+//MESHTRANSFERTYPE_DENSITY
+template <typename VType>
+bool Transfer<VType>::initialize_transfer_in_density(double multiplier)
+{
+	//-------------------------------------------------------------- Build transfer_in_info
+
+	//set size for transfer_in_info : number of cells in the super-mesh
+	if (!malloc_vector(transfer_in_info, pVEC->linear_size())) return false;
+
+	transfer_in_info_size = 0;
+
+	//go through all super-mesh cells
+	for (int idx = 0; idx < pVEC->linear_size(); idx++) {
+
+		//super-mesh cell rectangle (absolute)
+		Rect rect_c = pVEC->get_cellrect(idx);
+
+		//list of contributions generated from considering intersection of this super-mesh cell with in meshes;
+		InMeshCellsWeights mesh_cellsWeights;
+
+		double volume = 0.0;
+
+		//check all input meshes
+		for (int mesh_idx = 0; mesh_idx < mesh_in.size(); mesh_idx++) {
+
+			//mesh rectangle
+			Rect rect_mesh = mesh_in[mesh_idx]->rect;
+
+			//does this mesh intersect with the supermesh cell, such that the intersection has a non-zero volume?
+			//Don't check the volume directly!! Cells can be on the nm (or even smaller) scale, which means the volume will be tiny, making floating point comparisons tricky.
+			//Best to check if it intersects, and the intersection is neither a plane nor a point.
+			if (rect_mesh.intersects(rect_c) && !rect_mesh.get_intersection(rect_c).IsPlane() && !rect_mesh.get_intersection(rect_c).IsPoint()) {
+
+				//yes it does. Find all intersecting cells and add them to the summation. Get total contributing volume, including from empty cells (total volume may be larger than the super-mesh cell if not all contributing cells are strictly included).
+				volume += build_meshcells_sum(mesh_cellsWeights, rect_c, mesh_idx);
+			}
+		}
+
+		if (volume > 0) mesh_cellsWeights.multiply_weights(multiplier / volume);
+
+		//store calculated contributions for this super-mesh cell.
+		transfer_in_info[idx] = mesh_cellsWeights;
+
+		//calculate the total number of contributing cell transfers : sum of all in meshes transfers to each super-mesh cell. This is the flattened total number of transfers.
+		transfer_in_info_size += transfer_in_info[idx].size();
+	}
+
+	return true;
+}
+
+//MESHTRANSFERTYPE_WDENSITY
+template <typename VType>
+bool Transfer<VType>::initialize_transfer_in_weighted_density(double multiplier)
+{
+	//-------------------------------------------------------------- Build transfer_in_info
+
+	//set size for transfer_in_info : number of cells in the super-mesh
+	if (!malloc_vector(transfer_in_info, pVEC->linear_size())) return false;
+
+	transfer_in_info_size = 0;
+
+	//go through all super-mesh cells
+	for (int idx = 0; idx < pVEC->linear_size(); idx++) {
+
+		//super-mesh cell rectangle (absolute)
+		Rect rect_c = pVEC->get_cellrect(idx);
+
+		//list of contributions generated from considering intersection of this super-mesh cell with in meshes;
+		InMeshCellsWeights mesh_cellsWeights;
+
+		double volume = 0.0;
+		double covered_volume_ratio = 0.0;
+
+		//check all input meshes
+		for (int mesh_idx = 0; mesh_idx < mesh_in.size(); mesh_idx++) {
+
+			//mesh rectangle
+			Rect rect_mesh = mesh_in[mesh_idx]->rect;
+
+			Rect rect_i = rect_mesh.get_intersection(rect_c);
+
+			//does this mesh intersect with the supermesh cell, such that the intersection has a non-zero volume?
+			//Don't check the volume directly!! Cells can be on the nm (or even smaller) scale, which means the volume will be tiny, making floating point comparisons tricky.
+			//Best to check if it intersects, and the intersection is neither a plane nor a point.
+			if (rect_mesh.intersects(rect_c) && !rect_mesh.get_intersection(rect_c).IsPlane() && !rect_mesh.get_intersection(rect_c).IsPoint()) {
+
+				covered_volume_ratio += (rect_i.size().x / rect_c.size().x) * (rect_i.size().y / rect_c.size().y) * (rect_i.size().z / rect_c.size().z);
+
+				//yes it does. Find all intersecting cells and add them to the summation. Get total contributing volume, including from empty cells (total volume may be larger than the super-mesh cell if not all contributing cells are strictly included).
+				volume += build_meshcells_sum(mesh_cellsWeights, rect_c, mesh_idx);
+			}
+		}
+
+		if (volume > 0) mesh_cellsWeights.multiply_weights(multiplier * covered_volume_ratio / volume);
 
 		//store calculated contributions for this super-mesh cell.
 		transfer_in_info[idx] = mesh_cellsWeights;

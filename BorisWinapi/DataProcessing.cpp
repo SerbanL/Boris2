@@ -119,7 +119,7 @@ BError DPArrays::get_profile(DBL3 start, DBL3 end, SuperMesh *pSMesh, int arr_id
 			//get mesh containing this point, if any, unless super-mesh display is enabled
 			if (pSMesh->GetDisplayedPhysicalQuantity() == MESHDISPLAY_NONE) {
 
-				Mesh* pcurrMesh = (*pSMesh)[point];
+				MeshBase* pcurrMesh = (*pSMesh)[point];
 				if (pcurrMesh) {
 
 					//found a mesh. Update pcurrPhysQ.
@@ -199,6 +199,39 @@ BError DPArrays::get_topological_charge(VEC_VC<DBL3>& M, double x, double y, dou
 				DBL3 dm_dy = M_grad.y / M_mag;
 
 				Q += (M[idx] / M_mag) * (dm_dx ^ dm_dy) * M.h.x * M.h.y;
+			}
+		}
+	}
+
+	*pQ = Q / (4 * PI);
+
+	return error;
+}
+
+//count skyrmions in M and given rect, using equation Q = Integral(|m.(dm/dx x dm/dy)| dxdy) / 4PI
+BError DPArrays::count_skyrmions(VEC_VC<DBL3>& M, double x, double y, double radius, double* pQ)
+{
+	BError error(__FUNCTION__);
+
+	double Q = 0.0;
+
+#pragma omp parallel for reduction(+:Q)
+	for (int idx = 0; idx < M.linear_size(); idx++) {
+
+		if (M.is_not_empty(idx)) {
+
+			DBL3 pos = M.cellidx_to_position(idx);
+
+			if (get_distance(DBL2(pos.x, pos.y), DBL2(x, y)) < radius) {
+
+				double M_mag = M[idx].norm();
+
+				DBL33 M_grad = M.grad_neu(idx);
+
+				DBL3 dm_dx = M_grad.x / M_mag;
+				DBL3 dm_dy = M_grad.y / M_mag;
+
+				Q += fabs((M[idx] / M_mag) * (dm_dx ^ dm_dy) * M.h.x * M.h.y);
 			}
 		}
 	}
@@ -813,6 +846,192 @@ BError DPArrays::complete_hysteresis(int dp_x, int dp_y)
 
 	JoinToVector(dpA[dp_x], dp_x_new);
 	JoinToVector(dpA[dp_y], dp_y_new);
+
+	return error;
+}
+
+
+//--------------------- histograms
+
+//From input x - y data build a histogram of number of times x - y data crosses a given line (up or down). 
+//The line varies between minimum and maximum of y data in given number of steps. 
+//Output the line values in dp_lev with corresponding number of crossings in dp_counts.
+BError DPArrays::crossings_histogram(int dp_x, int dp_y, int dp_lev, int dp_counts, int steps)
+{
+	BError error(__FUNCTION__);
+
+	if (!GoodArrays_Unique(dp_x, dp_y, dp_lev, dp_counts) || !dpA[dp_y].size() || dpA[dp_x].size() != dpA[dp_y].size() || steps < 1) return error(BERROR_INCORRECTARRAYS);
+
+	resize(dp_lev, steps + 1);
+	resize(dp_counts, steps + 1);
+
+	auto count_crossings = [&](double level) -> int {
+
+		double last_value = dpA[dp_y][0];
+
+		int num_crossings = 0;
+
+		for (int idx = 1; idx < dpA[dp_x].size(); idx++) {
+
+			double current_value = dpA[dp_y][idx];
+
+			if ((last_value <= level && current_value >= level) ||
+				(last_value >= level && current_value <= level)) num_crossings++;
+
+			last_value = current_value;
+		}
+
+		return num_crossings;
+	};
+
+	DBL2 minmax;
+	get_min_max(dp_y, &minmax);
+
+#pragma omp parallel for
+	for (int idx = 0; idx <= steps; idx++) {
+
+		dpA[dp_lev][idx] = minmax.i + idx * (minmax.j - minmax.i) / steps;
+		dpA[dp_counts][idx] = count_crossings(dpA[dp_lev][idx]);
+	}
+
+	return error;
+}
+
+//From input x-y data build a histogram of average frequency the x-y data crosses a given line (up and down, separated). 
+//The line varies between minimum and maximum of y data in given number of steps (100 by default). 
+//Output the line values in dp_lev with corresponding crossgins frequencies in dp_freq_up and dp_freq_dn.
+BError DPArrays::crossings_frequencies(int dp_x, int dp_y, int dp_lev, int dp_freq_up, int dp_freq_dn, int steps)
+{
+	BError error(__FUNCTION__);
+
+	if (!GoodArrays_Unique(dp_x, dp_y, dp_lev, dp_freq_up, dp_freq_dn) || !dpA[dp_y].size() || dpA[dp_x].size() != dpA[dp_y].size() || steps < 1) return error(BERROR_INCORRECTARRAYS);
+
+	resize(dp_lev, steps + 1);
+	resize(dp_freq_up, steps + 1);
+	resize(dp_freq_dn, steps + 1);
+
+	auto crossings_frequencies = [&](double level) -> DBL2 {
+
+		double last_value = dpA[dp_y][0];
+		
+		double last_crossing_up = dpA[dp_x][0];
+		double last_crossing_dn = dpA[dp_x][0];
+
+		double average_period_up = 0.0;
+		double average_period_dn = 0.0;
+
+		int num_crossings_up = 0;
+		int num_crossings_dn = 0;
+
+		for (int idx = 1; idx < dpA[dp_x].size(); idx++) {
+
+			double current_value = dpA[dp_y][idx];
+
+			if (last_value <= level && current_value >= level) {
+
+				//crossing up
+				double current_crossing_up = dpA[dp_x][idx];
+
+				average_period_up += (current_crossing_up - last_crossing_up);
+				num_crossings_up++;
+
+				last_crossing_up = current_crossing_up;
+			}
+
+			if (last_value >= level && current_value <= level) {
+
+				//crossing down
+				double current_crossing_dn = dpA[dp_x][idx];
+
+				average_period_dn += (current_crossing_dn - last_crossing_dn);
+				num_crossings_dn++;
+
+				last_crossing_dn = current_crossing_dn;
+			}
+
+			last_value = current_value;
+		}
+
+		DBL2 frequencies;
+
+		if (num_crossings_up && average_period_up) frequencies.i = 1.0 / (average_period_up / num_crossings_up);
+		if (num_crossings_dn && average_period_dn) frequencies.j = 1.0 / (average_period_dn / num_crossings_dn);
+
+		return frequencies;
+	};
+
+	DBL2 minmax;
+	get_min_max(dp_y, &minmax);
+
+#pragma omp parallel for
+	for (int idx = 0; idx <= steps; idx++) {
+
+		dpA[dp_lev][idx] = minmax.i + idx * (minmax.j - minmax.i) / steps;
+		DBL2 frequencies = crossings_frequencies(dpA[dp_lev][idx]);
+
+		dpA[dp_freq_up][idx] = frequencies.i;
+		dpA[dp_freq_dn][idx] = frequencies.j;
+	}
+
+	return error;
+}
+
+//From input x-y data build a histogram of average frequency of peaks in the x-y data in bands given by the number of steps. 
+//The bands vary between minimum and maximum of y data in given number of steps (100 by default). 
+//Output the line values in dp_level with corresponding peak frequencies in dp_freq.
+BError  DPArrays::peaks_frequencies(int dp_x, int dp_y, int dp_lev, int dp_freq, int steps)
+{
+	BError error(__FUNCTION__);
+
+	if (!GoodArrays_Unique(dp_x, dp_y, dp_lev, dp_freq) || !dpA[dp_y].size() || dpA[dp_x].size() != dpA[dp_y].size() || steps < 1) return error(BERROR_INCORRECTARRAYS);
+
+	resize(dp_lev, steps);
+	resize(dp_freq, steps);
+
+	auto peaks_frequency = [&](double band_start, double band_end) -> double {
+
+		double last_value = dpA[dp_y][0];
+
+		double last_peak = dpA[dp_x][0];
+
+		double average_period = 0.0;
+
+		int num_peaks = 0;
+
+		for (int idx = 1; idx < dpA[dp_x].size() - 1; idx++) {
+
+			double current_value = dpA[dp_y][idx];
+			double next_value = dpA[dp_y][idx + 1];
+
+			if (band_start <= current_value && current_value <= band_end) {
+
+				if (last_value < current_value && next_value < current_value) {
+
+					double current_peak = dpA[dp_x][idx];
+
+					average_period += (current_peak - last_peak);
+					num_peaks++;
+
+					last_peak = current_peak;
+				}
+			}
+
+			last_value = current_value;
+		}
+
+		if (num_peaks && average_period) return 1.0 / (average_period / num_peaks);
+		else return 0.0;
+	};
+
+	DBL2 minmax;
+	get_min_max(dp_y, &minmax);
+
+#pragma omp parallel for
+	for (int idx = 0; idx < steps; idx++) {
+
+		dpA[dp_lev][idx] = minmax.i + (idx + 1) * (minmax.j - minmax.i) / steps;
+		dpA[dp_freq][idx] = peaks_frequency(dpA[dp_lev][idx] - (minmax.j - minmax.i) / steps, dpA[dp_lev][idx]);
+	}
 
 	return error;
 }

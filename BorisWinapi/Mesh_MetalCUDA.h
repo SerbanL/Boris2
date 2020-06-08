@@ -31,7 +31,7 @@ public:
 
 	//----------------------------------- IMPORTANT CONTROL METHODS
 
-	//call when the mesh dimensions have changed - sets every quantity to the right dimensions
+	//call when a configuration change has occurred - some objects might need to be updated accordingly
 	BError UpdateConfiguration(UPDATECONFIG_ cfgMessage);
 	void UpdateConfiguration_Values(UPDATECONFIG_ cfgMessage) {}
 };
@@ -55,7 +55,7 @@ public:
 
 	//----------------------------------- IMPORTANT CONTROL METHODS
 
-	//call when the mesh dimensions have changed - sets every quantity to the right dimensions
+	//call when a configuration change has occurred - some objects might need to be updated accordingly
 	BError UpdateConfiguration(UPDATECONFIG_ cfgMessage) { return BError(); }
 	void UpdateConfiguration_Values(UPDATECONFIG_ cfgMessage) {}
 };

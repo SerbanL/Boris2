@@ -13,7 +13,6 @@ DifferentialEquationDM::DifferentialEquationDM(DiaMesh *pMesh):
 
 DifferentialEquationDM::~DifferentialEquationDM()
 {
-
 }
 
 //---------------------------------------- OTHERS

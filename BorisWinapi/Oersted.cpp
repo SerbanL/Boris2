@@ -41,20 +41,25 @@ BError Oersted::Initialize(void)
 	//identify all existing electric computation meshes to get Jc from and magnetic computation meshes to transfer Heff to
 	for (int idx = 0; idx < (int)pSMesh->pMesh.size(); idx++) {
 
-		if ((*pSMesh)[idx]->EComputation_Enabled()) {
+		if (!(*pSMesh)[idx]->is_atomistic()) {
 
-			pVal_from_elC.push_back(&((*pSMesh)[idx]->elC));
-			pVal_from_E.push_back(&((*pSMesh)[idx]->E));
-		}
+			//not handling atomistic meshes for now : TO DO
 
-		if ((*pSMesh)[idx]->MComputation_Enabled()) {
+			if ((*pSMesh)[idx]->EComputation_Enabled()) {
 
-			pVal_to.push_back(&((*pSMesh)[idx]->Heff));
-		}
+				pVal_from_elC.push_back(&(reinterpret_cast<Mesh*>((*pSMesh)[idx])->elC));
+				pVal_from_E.push_back(&(reinterpret_cast<Mesh*>((*pSMesh)[idx])->E));
+			}
 
-		if ((*pSMesh)[idx]->GetMeshType() == MESH_ANTIFERROMAGNETIC) {
+			if ((*pSMesh)[idx]->MComputation_Enabled()) {
 
-			pVal_to.push_back(&((*pSMesh)[idx]->Heff2));
+				pVal_to.push_back(&(reinterpret_cast<Mesh*>((*pSMesh)[idx])->Heff));
+			}
+
+			if ((*pSMesh)[idx]->GetMeshType() == MESH_ANTIFERROMAGNETIC) {
+
+				pVal_to.push_back(&(reinterpret_cast<Mesh*>((*pSMesh)[idx])->Heff2));
+			}
 		}
 	}
 

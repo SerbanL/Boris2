@@ -75,7 +75,7 @@ void MetalMesh::RepairObjectState(void)
 
 //----------------------------------- IMPORTANT CONTROL METHODS
 
-//call when the mesh dimensions have changed - sets every quantity to the right dimensions
+//call when a configuration change has occurred - some objects might need to be updated accordingly
 BError MetalMesh::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 {
 	BError error(string(CLASS_STR(MetalMesh)) + "(" + (*pSMesh).key_from_meshId(meshId) + ")");
@@ -90,7 +90,7 @@ BError MetalMesh::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 		if (!error && !update_meshparam_var()) error(BERROR_OUTOFMEMORY_NCRIT);
 
 		//update any text equations used in mesh parameters (dependence on mesh dimensions possible)
-		if (!error) update_meshparam_equations();
+		if (!error) update_all_meshparam_equations();
 	}
 
 	//------------------------ CUDA UpdateConfiguration if set
@@ -129,7 +129,7 @@ void MetalMesh::UpdateConfiguration_Values(UPDATECONFIG_ cfgMessage)
 		UpdateTEquationUserConstants();
 
 		//update any text equations used in mesh parameters
-		update_meshparam_equations();
+		update_all_meshparam_equations();
 	}
 	else if (cfgMessage == UPDATECONFIG_TEQUATION_CLEAR) {
 

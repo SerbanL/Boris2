@@ -2,13 +2,13 @@
 
 #include "Mesh.h"
 
-#ifdef MESH_COMPILATION_DIAMAGNETIC
-
-#include "DiffEqDM.h"
-
 #if COMPILECUDA == 1
 #include "Mesh_DiamagneticCUDA.h"
 #endif
+
+#ifdef MESH_COMPILATION_DIAMAGNETIC
+
+#include "DiffEqDM.h"
 
 /////////////////////////////////////////////////////////////////////
 //
@@ -25,11 +25,12 @@ class DiaMesh :
 	int, int, int, int, int, int, int, Rect, SZ3, DBL3, SZ3, DBL3, SZ3, DBL3, SZ3, DBL3, VEC_VC<DBL3>, VEC_VC<double>, VEC_VC<DBL3>, VEC_VC<double>, VEC_VC<double>, VEC_VC<double>, VEC_VC<DBL3>, VEC_VC<DBL3>, VEC_VC<DBL3>, vector_lut<Modules*>, bool,
 	//Members in this derived class
 	//Material Parameters
-	MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>,
-	MatP<double, double>, MatP<double, double>, MatP<DBL2, double>, MatP<DBL2, double>, double, TEquation<double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>
+	MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, 
+	MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<DBL2, double>, MatP<DBL2, double>,
+	double, TEquation<double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>
 	>,
 	//Module Implementations
-	tuple<Demag, SDemag_Demag, SurfExchange, Zeeman, Transport, Heat> >
+	tuple<Demag, SDemag_Demag, SurfExchange, Zeeman, MOptical, Transport, Heat> >
 {
 
 #if COMPILECUDA == 1
@@ -57,7 +58,7 @@ public:
 
 	//----------------------------------- IMPORTANT CONTROL METHODS
 
-	//call when the mesh dimensions have changed - sets every quantity to the right dimensions
+	//call when a configuration change has occurred - some objects might need to be updated accordingly
 	BError UpdateConfiguration(UPDATECONFIG_ cfgMessage);
 	void UpdateConfiguration_Values(UPDATECONFIG_ cfgMessage);
 
@@ -98,7 +99,7 @@ public:
 
 	//----------------------------------- IMPORTANT CONTROL METHODS
 
-	//call when the mesh dimensions have changed - sets every quantity to the right dimensions
+	//call when a configuration change has occurred - some objects might need to be updated accordingly
 	BError UpdateConfiguration(UPDATECONFIG_ cfgMessage) { return BError(); }
 	void UpdateConfiguration_Values(UPDATECONFIG_ cfgMessage) {}
 

@@ -248,6 +248,9 @@ public:  //public methods
 	//get/set iop state
 	IOS_ get_iop_state(void) { if (pActionHandler) return pActionHandler->iop.state; else return IOS_ON; }
 	void set_iop_state(IOS_ state) { if (pActionHandler) pActionHandler->iop.state = state; }
+
+	//get pointer InteractiveObjectProperties
+	InteractiveObjectProperties* get_iop_pointer(void) { if (pActionHandler) return &(pActionHandler->iop); else return nullptr; }
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////TEXT LINE

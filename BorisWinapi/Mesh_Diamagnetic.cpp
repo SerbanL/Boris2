@@ -18,14 +18,14 @@ DiaMesh::DiaMesh(SuperMesh *pSMesh_) :
 			VINFO(M), VINFO(V), VINFO(S), VINFO(elC), VINFO(Temp), VINFO(Temp_l), VINFO(u_disp), VINFO(strain_diag), VINFO(strain_odiag), VINFO(pMod), VINFO(exclude_from_multiconvdemag),
 			//Members in this derived class
 			//Material Parameters
-			VINFO(neta_dia), VINFO(susrel), VINFO(cHA),
+			VINFO(neta_dia), VINFO(susrel), VINFO(cHA), VINFO(cHmo),
 			VINFO(elecCond), VINFO(De), VINFO(n_density), VINFO(SHA), VINFO(iSHA), VINFO(l_sf), VINFO(Gi), VINFO(Gmix),
 			VINFO(base_temperature), VINFO(T_equation), VINFO(thermCond), VINFO(density), VINFO(shc), VINFO(shc_e), VINFO(G_e), VINFO(cT), VINFO(Q)
 		},
 		{
 			//Modules Implementations
 			IINFO(Demag), IINFO(SDemag_Demag), IINFO(SurfExchange),
-			IINFO(Zeeman),
+			IINFO(Zeeman), IINFO(MOptical),
 			IINFO(Transport), IINFO(Heat)
 		}),
 	meshODE(this)
@@ -46,14 +46,14 @@ DiaMesh::DiaMesh(Rect meshRect_, DBL3 h_, SuperMesh *pSMesh_) :
 			VINFO(M), VINFO(V), VINFO(S), VINFO(elC), VINFO(Temp), VINFO(Temp_l), VINFO(u_disp), VINFO(strain_diag), VINFO(strain_odiag), VINFO(pMod), VINFO(exclude_from_multiconvdemag),
 			//Members in this derived class
 			//Material Parameters
-			VINFO(neta_dia), VINFO(susrel), VINFO(cHA),
+			VINFO(neta_dia), VINFO(susrel), VINFO(cHA), VINFO(cHmo),
 			VINFO(elecCond), VINFO(De), VINFO(n_density), VINFO(SHA), VINFO(iSHA), VINFO(l_sf), VINFO(Gi), VINFO(Gmix),
 			VINFO(base_temperature), VINFO(T_equation), VINFO(thermCond), VINFO(density), VINFO(shc), VINFO(shc_e), VINFO(G_e), VINFO(cT), VINFO(Q)
 		},
 		{
 			//Modules Implementations
 			IINFO(Demag), IINFO(SDemag_Demag), IINFO(SurfExchange),
-			IINFO(Zeeman),
+			IINFO(Zeeman), IINFO(MOptical),
 			IINFO(Transport), IINFO(Heat)
 		}),
 	meshODE(this)
@@ -98,7 +98,7 @@ void DiaMesh::RepairObjectState(void)
 
 //----------------------------------- IMPORTANT CONTROL METHODS
 
-//call when the mesh dimensions have changed - sets every quantity to the right dimensions
+//call when a configuration change has occurred - some objects might need to be updated accordingly
 BError DiaMesh::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 {
 	BError error(string(CLASS_STR(DiaMesh)) + "(" + (*pSMesh).key_from_meshId(meshId) + ")");
@@ -122,7 +122,7 @@ BError DiaMesh::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 		if (!error && !update_meshparam_var()) error(BERROR_OUTOFMEMORY_NCRIT);
 
 		//update any text equations used in mesh parameters (dependence on mesh dimensions possible)
-		if (!error) update_meshparam_equations();
+		if (!error) update_all_meshparam_equations();
 	}
 
 	//------------------------ CUDA UpdateConfiguration if set
@@ -169,7 +169,7 @@ void DiaMesh::UpdateConfiguration_Values(UPDATECONFIG_ cfgMessage)
 		UpdateTEquationUserConstants();
 
 		//update any text equations used in mesh parameters
-		update_meshparam_equations();
+		update_all_meshparam_equations();
 	}
 	else if (cfgMessage == UPDATECONFIG_TEQUATION_CLEAR) {
 

@@ -88,11 +88,11 @@ BError STransportCUDA::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 		//now build pTransport (and pV)
 		for (int idx = 0; idx < pSMesh->size(); idx++) {
 
-			if ((*pSMesh)[idx]->IsModuleSet(MOD_TRANSPORT)) {
+			if ((*pSMesh)[idx]->IsModuleSet(MOD_TRANSPORT) && !(*pSMesh)[idx]->is_atomistic()) {
 
 				pTransport.push_back(dynamic_cast<TransportCUDA*>((*pSMesh)[idx]->GetCUDAModule(MOD_TRANSPORT)));
-				pV.push_back(&(*pSMesh)[idx]->pMeshCUDA->V);
-				pS.push_back(&(*pSMesh)[idx]->pMeshCUDA->S);
+				pV.push_back(&reinterpret_cast<Mesh*>((*pSMesh)[idx])->pMeshCUDA->V);
+				pS.push_back(&reinterpret_cast<Mesh*>((*pSMesh)[idx])->pMeshCUDA->S);
 			}
 		}
 		

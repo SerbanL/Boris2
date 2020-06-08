@@ -7,6 +7,7 @@
 
 #include "MeshCUDA.h"
 #include "Mesh.h"
+#include "Demag.h"
 
 DemagCUDA::DemagCUDA(MeshCUDA* pMeshCUDA_, Demag *pDemag_) :
 	ModulesCUDA(), 

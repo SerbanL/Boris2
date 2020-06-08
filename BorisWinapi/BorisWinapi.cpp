@@ -44,7 +44,7 @@ enum IDM_ {
 	//PARAMETERS
 	IDM_PARAM_SHOW, IDM_PARAM_TDEP, IDM_PARAM_SDEP, IDM_PARAM_COPY,
 	//MAGNETISATION
-	IDM_MAG_SET, IDM_MAG_FIELD, IDM_MAG_DWALL, IDM_MAG_VORTEX, IDM_MAG_SKYRMION, IDM_MAG_BLOCHSKYRMION, IDM_MAG_RANDOM, IDM_MAG_2DGRAINS, IDM_MAG_3DGRAINS, IDM_MAG_LOADOVF2MAG, IDM_MAG_SAVEOVF2MAG, IDM_MAG_ADDRECT, IDM_MAG_DELRECT, IDM_MAG_SETRECT, IDM_MAG_INVERT,
+	IDM_MAG_SET, IDM_MAG_FIELD, IDM_MAG_DWALL, IDM_MAG_VORTEX, IDM_MAG_SKYRMION, IDM_MAG_BLOCHSKYRMION, IDM_MAG_RANDOM, IDM_MAG_2DGRAINS, IDM_MAG_3DGRAINS, IDM_MAG_LOADOVF2MAG, IDM_MAG_SAVEOVF2MAG, IDM_MAG_ADDRECT, IDM_MAG_DELRECT, IDM_MAG_SETRECT, IDM_MAG_INVERT, IDM_MAG_MIRROR,
 	//ROUGHNESS
 	IDM_ROUGH_SHOW, IDM_ROUGH_EDIT, IDM_ROUGH_ROUGHEN, IDM_ROUGH_SURFROUGHEN, IDM_ROUGH_LOAD, IDM_ROUGH_CLEARROUGH,
 	//TEMPERATURE
@@ -56,7 +56,7 @@ enum IDM_ {
 	//ALGORITHMS
 	IDM_ALGO_MOVINGMESH, IDM_ALGO_BLOCHMOVINGMESH, IDM_ALGO_NEELMOVINGMESH, IDM_ALGO_SKYMOVINGMESH, IDM_ALGO_CLEARMOVINGMESH, IDM_ALGO_MOVINGMESHENABLED,
 	//DATA PROCESSING
-	IDM_DP_CLEARALL, IDM_DP_SHOWSIZES, IDM_DP_LOAD, IDM_DP_SAVE, IDM_DP_GETPROFILE, IDM_AVERAGEMESHRECT, IDM_DP_TOPOCHARGE, IDM_DP_MUL, IDM_DP_DOTPROD, IDM_DP_ADDDP, IDM_DP_SUBDP, IDM_DP_MINMAX, IDM_DP_MEAN, IDM_DP_LINREG, IDM_DP_COERCIVITY, IDM_DP_REMANENCE, IDM_DP_COMPLETEHYSTER, IDM_DP_DUMPTDEP,
+	IDM_DP_CLEARALL, IDM_DP_SHOWSIZES, IDM_DP_LOAD, IDM_DP_SAVE, IDM_DP_GETPROFILE, IDM_AVERAGEMESHRECT, IDM_DP_TOPOCHARGE, IDM_DP_SKYRMIONCOUNT, IDM_DP_MUL, IDM_DP_DOTPROD, IDM_DP_ADDDP, IDM_DP_SUBDP, IDM_DP_MINMAX, IDM_DP_MEAN, IDM_DP_LINREG, IDM_DP_COERCIVITY, IDM_DP_REMANENCE, IDM_DP_COMPLETEHYSTER, IDM_DP_DUMPTDEP,
 	IDM_DP_FITLORENTZ, IDM_DP_FITSKYRMION, IDM_DP_FITSTT, IDM_DP_FITSOT, IDM_DP_FITSOTSTT, IDM_DP_FITADIA, IDM_DP_FITNONADIA, IDM_DP_REMOVEOFFSET, IDM_DP_CARTESIANTOPOLAR, IDM_DP_SMOOTH,
 	//ABOUT
 	IDM_ABOUT_MANUAL, IDM_ABOUT_MDB, IDM_ABOUT_UPDATEMDB, IDM_ABOUT_CHECKUPDATES, IDM_ABOUT_STARTUPOPTIONS, IDM_ABOUT_ABOUT
@@ -175,6 +175,7 @@ void AddMenus(HWND hwnd)
 	AppendMenuW(hMenu_Mag, MF_STRING, IDM_MAG_BLOCHSKYRMION, L"&Bloch Skyrmion");
 	AppendMenuW(hMenu_Mag, MF_STRING, IDM_MAG_RANDOM, L"&Random");
 	AppendMenuW(hMenu_Mag, MF_STRING, IDM_MAG_INVERT, L"&Invert");
+	AppendMenuW(hMenu_Mag, MF_STRING, IDM_MAG_MIRROR, L"&Mirror");
 	AppendMenuW(hMenu_Mag, MF_STRING, IDM_MAG_SETRECT, L"&Set Rectangle");
 	AppendMenuW(hMenu_Mag, MF_SEPARATOR, 0, NULL);
 	AppendMenuW(hMenu_Mag, MF_STRING, IDM_MAG_LOADOVF2MAG, L"&Load OVF2 File");
@@ -275,6 +276,7 @@ void AddMenus(HWND hwnd)
 	AppendMenuW(hMenu_DP, MF_STRING, IDM_AVERAGEMESHRECT, L"&Average Mesh");
 	AppendMenuW(hMenu_DP, MF_STRING, IDM_DP_DUMPTDEP, L"&Get Temperature Dependence");
 	AppendMenuW(hMenu_DP, MF_STRING, IDM_DP_TOPOCHARGE, L"&Topological Charge");
+	AppendMenuW(hMenu_DP, MF_STRING, IDM_DP_SKYRMIONCOUNT, L"&Count skyrmions");
 	AppendMenuW(hMenu_DP, MF_SEPARATOR, 0, NULL);
 	AppendMenuW(hMenu_DP, MF_STRING, IDM_DP_MINMAX, L"&Find Min-Max");
 	AppendMenuW(hMenu_DP, MF_STRING, IDM_DP_MEAN, L"&Find Mean");
@@ -335,9 +337,9 @@ int APIENTRY _tWinMain(_In_ HINSTANCE hInstance,
 	//Bizarre bug here : if you convert to (float) instead of (double) the program crashes!!!
 	//If however you declare a stringstream variable before (just declare, you don't have to use it!) then program doesn't crash!
 	//Gets better : it used to work with (float) but for an unknown reason it suddenly started crashing and I don't know what's changed.
-	//Without a doubt the strangest bug I have ever seen - but as usual it will make sense when investigated properly, but I suspect it won't be easy. TO DO if you have time.
+	//Without a doubt the strangest bug I have ever seen - but as usual it will make sense when investigated properly, but I suspect it won't be easy.
 	//string sTitle = string("Boris v") + ToString((double)Program_Version / 100) + string(" (v2.6gamma)");
-	string sTitle = string("Boris v2.6gamma");
+	string sTitle = string("Boris v2.7");
 	copy(sTitle.begin(), sTitle.end(), szTitle);
 	szTitle[sTitle.size()] = 0;
 
@@ -974,6 +976,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			if (pSim) pSim->NewMessage(AC_CONSOLECOMMAND, INT2(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam)), ToString(CMD_INVERTMAG));
 			break;
 
+		case IDM_MAG_MIRROR:
+			if (pSim) pSim->NewMessage(AC_CONSOLECOMMAND_ENTRY, INT2(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam)), ToString(CMD_MIRRORMAG));
+			break;
+
 		case IDM_ROUGH_SHOW:
 			if (pSim) pSim->NewMessage(AC_CONSOLECOMMAND, INT2(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam)), ToString(CMD_DISPLAY) + " Roughness");
 			break;
@@ -1146,7 +1152,11 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		case IDM_DP_TOPOCHARGE:
 			if (pSim) pSim->NewMessage(AC_CONSOLECOMMAND, INT2(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam)), ToString(CMD_DP_TOPOCHARGE));
 			break;
-
+		
+		case IDM_DP_SKYRMIONCOUNT:
+			if (pSim) pSim->NewMessage(AC_CONSOLECOMMAND, INT2(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam)), ToString(CMD_DP_COUNTSKYRMIONS));
+			break;
+		
 		case IDM_DP_MUL:
 			if (pSim) pSim->NewMessage(AC_CONSOLECOMMAND_ENTRY, INT2(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam)), ToString(CMD_DP_MUL));
 			break;

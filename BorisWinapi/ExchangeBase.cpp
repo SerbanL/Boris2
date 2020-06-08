@@ -29,10 +29,10 @@ BError ExchangeBase::Initialize(void)
 			//use MComputation_Enabled check, not Magnetisation_Enabled check as we only want to couple to other (anti)ferromagnetic meshes, not dipole meshes.
 			//additionally only couple like meshes, e.g. FM to FM, AFM to AFM, but not FM to AFM - for the latter the coupling should be through the exchange bias mechanism (surface exchange coupling).
 			//here we only make a list of all possible meshes which could be exchange coupled; the actual coupling is done, where applicable, in the respective exchange modules.
-			if ((*pSMesh)[idx]->MComputation_Enabled() && (*pSMesh)[idx]->GetMeshExchangeCoupling()) {
+			if ((*pSMesh)[idx]->MComputation_Enabled() && (*pSMesh)[idx]->GetMeshExchangeCoupling() && !(*pSMesh)[idx]->is_atomistic()) {
 
-				pMeshes.push_back((*pSMesh)[idx]);
-				pM.push_back(&(*pSMesh)[idx]->M);
+				pMeshes.push_back(reinterpret_cast<Mesh*>((*pSMesh)[idx]));
+				pM.push_back(&reinterpret_cast<Mesh*>((*pSMesh)[idx])->M);
 			}
 		}
 

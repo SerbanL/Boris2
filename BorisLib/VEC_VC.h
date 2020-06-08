@@ -171,9 +171,6 @@ class VEC_VC :
 #define NF2_DIRICHLET (NF2_DIRICHLETX + NF2_DIRICHLETY + NF2_DIRICHLETZ)
 
 private:
-	
-	//used for reductions by magnitude : i.e. for a value of VType reduce (e.g. maximum) for GetMagnitude(value)
-	OmpReduction<decltype(GetMagnitude(std::declval<VType>()))> magnitude_reduction, magnitude_reduction2;
 
 	//mark cells with various flags to indicate properties of neighboring cells
 	//ngbrFlags2 defines additional flags. Only allocate memory if these additional flags are enabled - this is more memory efficient + I need to do it this way to keep older save files backward compatible.
@@ -530,6 +527,28 @@ public:
 	VType average_nonempty_omp(const Box& box) const;
 	VType average_nonempty_omp(const Rect& rectangle = Rect()) const;
 
+	//--------------------------------------------NUMERICAL PROPERTIES : VEC_VC_nprops.h
+
+	template <typename PType = decltype(GetMagnitude(std::declval<VType>()))>
+	VAL2<PType> get_minmax(const Box& box) const;
+	template <typename PType = decltype(GetMagnitude(std::declval<VType>()))>
+	VAL2<PType> get_minmax(const Rect& rectangle = Rect()) const;
+
+	template <typename PType = decltype(GetMagnitude(std::declval<VType>()))>
+	VAL2<PType> get_minmax_component_x(const Box& box) const;
+	template <typename PType = decltype(GetMagnitude(std::declval<VType>()))>
+	VAL2<PType> get_minmax_component_x(const Rect& rectangle = Rect()) const;
+
+	template <typename PType = decltype(GetMagnitude(std::declval<VType>()))>
+	VAL2<PType> get_minmax_component_y(const Box& box) const;
+	template <typename PType = decltype(GetMagnitude(std::declval<VType>()))>
+	VAL2<PType> get_minmax_component_y(const Rect& rectangle = Rect()) const;
+
+	template <typename PType = decltype(GetMagnitude(std::declval<VType>()))>
+	VAL2<PType> get_minmax_component_z(const Box& box) const;
+	template <typename PType = decltype(GetMagnitude(std::declval<VType>()))>
+	VAL2<PType> get_minmax_component_z(const Rect& rectangle = Rect()) const;
+
 	//--------------------------------------------OPERATORS and ALGORITHMS
 
 	//----LAPLACE OPERATOR : VEC_VC_del.h
@@ -698,6 +717,12 @@ public:
 
 	//dyz same as dzy
 	VType dyz_neu(int idx) const;
+
+	//----NEIGHBOR SUM : VEC_VC_ngbrsum.h
+
+	//calculate 6-point neighbor sum at given index
+	//missing neighbors not added, including at boundaries, but taking into account pbc
+	VType ngbr_sum(int idx) const;
 
 	//----LAPLACE / POISSON EQUATION : VEC_VC_solve.h
 

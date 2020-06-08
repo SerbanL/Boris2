@@ -16,21 +16,6 @@
 #include "MeshDisplayCUDA.h"
 #include "ManagedMeshCUDA.h"
 
-#include "ZeemanCUDA.h"
-#include "ExchangeCUDA.h"
-#include "DMExchangeCUDA.h"
-#include "iDMExchangeCUDA.h"
-#include "AnisotropyCUDA.h"
-#include "AnisotropyCubiCUDA.h"
-#include "Demag_NCUDA.h"
-#include "DemagCUDA.h"
-#include "SDemagCUDA_Demag.h"
-#include "TransportCUDA.h"
-#include "HeatCUDA.h"
-#include "SurfExchangeCUDA.h"
-#include "SOTFieldCUDA.h"
-#include "RoughnessCUDA.h"
-
 using namespace std;
 
 class Mesh;
@@ -42,7 +27,6 @@ class MeshCUDA :
 	public MeshParamsCUDA,
 	public MeshDisplayCUDA
 {
-
 private:
 
 	//pointer to cpu version of this mesh (base) - need it in the destructor. 
@@ -50,6 +34,12 @@ private:
 	Mesh *pMesh;
 
 	bool holder_mesh_destroyed = false;
+
+	//auxiliary for computations
+	cu_obj<cuBReal> aux_real;
+
+	//auxiliary cuVEC for computations
+	cu_obj<cuVEC<cuBReal>> aux_vec_sca;
 
 protected:
 
@@ -151,6 +141,8 @@ public:
 
 public:
 
+	//------------------------CTOR/DTOR
+
 	//make this object by copying data from the Mesh holding this object
 	MeshCUDA(Mesh* pMesh);
 
@@ -164,9 +156,9 @@ public:
 	void Holder_Mesh_Destroyed(void) { holder_mesh_destroyed = true; }
 	bool Holder_Mesh_Available(void) { return !holder_mesh_destroyed; }
 
-	//----------------------------------- OTHER IMPORTANT CONTROL METHODS
+	//----------------------------------- IMPORTANT CONTROL METHODS
 
-	//call when the mesh dimensions have changed - sets every quantity to the right dimensions
+	//call when a configuration change has occurred - some objects might need to be updated accordingly
 	virtual BError UpdateConfiguration(UPDATECONFIG_ cfgMessage) = 0;
 	
 	//This is a "softer" version of UpdateConfiguration, which can be used any time and doesn't require the object to be Uninitialized; 
@@ -190,7 +182,14 @@ public:
 	//return average value for currently displayed mesh quantity in the given relative rectangle
 	Any GetAverageDisplayedMeshValue(Rect rel_rect);
 
+	//copy aux_vec_sca in GPU memory to displayVEC in CPU memory
+	void copy_aux_vec_sca(VEC<double>& displayVEC);
+
 	//----------------------------------- MESH INFO GET/SET METHODS
+
+	//NOTE : these type of methods are required here so we can access these properties in .cu files, where we cannot use a Mesh pointer
+	//Using a Mesh pointer means having to include Mesh.h, thus also BorisLib.h -> this won't compile since nvcc doesn't recognise C++14 code in BorisLib
+	//A future version of nvcc will make this practice redundant
 
 	int GetMeshType(void);
 
@@ -199,7 +198,7 @@ public:
 	//magnetization dynamics computation enabled
 	bool MComputation_Enabled(void);
 
-	bool Magnetisation_Enabled(void);
+	bool Magnetism_Enabled(void);
 
 	//electrical conduction computation enabled
 	bool EComputation_Enabled(void);
@@ -226,16 +225,12 @@ public:
 
 	//----------------------------------- VALUE GETTERS
 
-	//get average magnetisation in given rectangle (entire mesh if none specified)
-	cuReal3 GetAverageMagnetisation(cuRect rectangle);
-	cuReal3 GetAverageMagnetisation2(cuRect rectangle);
+	//get topological charge using formula Q = Integral(m.(dm/dx x dm/dy) dxdy) / 4PI
+	cuBReal GetTopologicalCharge(cuRect rectangle);
 
-	cuBReal GetAverageElectricalPotential(cuRect rectangle);
-	cuReal3 GetAverageSpinAccumulation(cuRect rectangle);
-	cuBReal GetAverageElectricalConductivity(cuRect rectangle);
-
-	cuBReal GetAverageTemperature(cuRect rectangle);
-	cuBReal GetAverageLatticeTemperature(cuRect rectangle);
+	//compute topological charge density spatial dependence and have it available in aux_vec_sca
+	//Use formula Qdensity = m.(dm/dx x dm/dy) / 4PI
+	void Compute_TopoChargeDensity(void);
 
 	cuBReal GetStageTime(void);
 	int GetStageStep(void);

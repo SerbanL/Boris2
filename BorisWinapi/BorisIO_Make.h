@@ -34,6 +34,7 @@ void Simulation::MakeIOInfo(void)
 	ioInfo.set(modulegeneric_info + string("<i><b>Dzyaloshinskii-Moriya interaction - interfacial"), INT2(IOI_MODULE, MOD_IDMEXCHANGE));
 	ioInfo.set(modulegeneric_info + string("<i><b>Surface exchange interaction\n<i><b>Couple to adjacent meshes along z\n<i><b>with surfexchange module enabled"), INT2(IOI_MODULE, MOD_SURFEXCHANGE));
 	ioInfo.set(modulegeneric_info + string("<i><b>Applied field term"), INT2(IOI_MODULE, MOD_ZEEMAN));
+	ioInfo.set(modulegeneric_info + string("<i><b>Magneto-Optical term"), INT2(IOI_MODULE, MOD_MOPTICAL));
 	ioInfo.set(modulegeneric_info + string("<i><b>Magnetocrystalline anisotropy: uniaxial"), INT2(IOI_MODULE, MOD_ANIUNI));
 	ioInfo.set(modulegeneric_info + string("<i><b>Magnetocrystalline anisotropy: cubic"), INT2(IOI_MODULE, MOD_ANICUBI));
 	ioInfo.set(modulegeneric_info + string("<i><b>Magneto-elastic term"), INT2(IOI_MODULE, MOD_MELASTIC));
@@ -41,6 +42,8 @@ void Simulation::MakeIOInfo(void)
 	ioInfo.set(modulegeneric_info + string("<i><b>Heat equation solver"), INT2(IOI_MODULE, MOD_HEAT));
 	ioInfo.set(modulegeneric_info + string("<i><b>Spin-orbit torque field\n<i><b>Results in Slonczewski-like torques"), INT2(IOI_MODULE, MOD_SOTFIELD));
 	ioInfo.set(modulegeneric_info + string("<i><b>Physical roughness\n<i><b>Demag term corrections when approximating shapes\n<i><b>from a fine mesh with a coarse mesh."), INT2(IOI_MODULE, MOD_ROUGHNESS));
+
+	ioInfo.set(modulegeneric_info + string("<i><b>Heisenberg exchange interaction"), INT2(IOI_MODULE, MOD_ATOM_EXCHANGE));
 
 	ioInfo.set(modulegeneric_info + string("<i><b>Supermesh demag field"), INT2(IOI_SMODULE, MODS_SDEMAG));
 	ioInfo.set(modulegeneric_info + string("<i><b>Oersted field in electric supermesh"), INT2(IOI_SMODULE, MODS_OERSTED));
@@ -55,6 +58,16 @@ void Simulation::MakeIOInfo(void)
 		string("\n[tc1,1,0,1/tc]click: change state\n");
 
 	ioInfo.push_back(ode_info, IOI_ODE);
+
+	//Available/set ode in atomistic meshes: minorId is an entry from ODE_ (the equation)
+	//IOI_ATOMODE
+
+	string atomode_info =
+		string("[tc1,1,0,1/tc]<b>dM/dt atomistic equation</b>") +
+		string("\n[tc1,1,0,1/tc]<i>green: on, red: off</i>") +
+		string("\n[tc1,1,0,1/tc]click: change state\n");
+
+	ioInfo.push_back(atomode_info, IOI_ATOMODE);
 
 	//Set ODE time step: textId is the value
 	//IOI_ODEDT
@@ -73,6 +86,24 @@ void Simulation::MakeIOInfo(void)
 		string("\n[tc1,1,0,1/tc]double-click: edit\n");
 
 	ioInfo.push_back(odeheatdt_info, IOI_HEATDT);
+
+	//Set stochastic time-step: textId is the value
+	//IOI_STOCHDT
+
+	string stochdt_info =
+		string("[tc1,1,0,1/tc]<b>Stochastic Time Step</b>") +
+		string("\n[tc1,1,0,1/tc]double-click: edit\n");
+
+	ioInfo.push_back(stochdt_info, IOI_STOCHDT);
+
+	//Link stochastic time-step to ODE dT flag : auxId is the value
+	//IOI_LINKSTOCHDT
+
+	string linkstochdt_info =
+		string("[tc1,1,0,1/tc]<b>Link dTstoch to ODE dT</b>") +
+		string("\n[tc1,1,0,1/tc]click: change\n");
+
+	ioInfo.push_back(linkstochdt_info, IOI_LINKSTOCHDT);
 
 	//Available/set ode evaluation method for ode : minorId is an entry from ODE_ (the equation), auxId is the EVAL_ entry (the evaluation method), textId is the name of the evaluation method
 	//IOI_ODE_EVAL
@@ -249,6 +280,10 @@ void Simulation::MakeIOInfo(void)
 	ioInfo.set(showdata_info_generic + string("<i><b>Magnetisation relaxation |dm/dt|</i>"), INT2(IOI_SHOWDATA, DATA_DMDT));
 	ioInfo.set(showdata_info_generic + string("<i><b>Average magnetisation</i>"), INT2(IOI_SHOWDATA, DATA_AVM));
 	ioInfo.set(showdata_info_generic + string("<i><b>Average magnetisation sub-lattice B</i>"), INT2(IOI_SHOWDATA, DATA_AVM2));
+	ioInfo.set(showdata_info_generic + string("<i><b>Magnetization magnitude min-max</i>"), INT2(IOI_SHOWDATA, DATA_M_MINMAX));
+	ioInfo.set(showdata_info_generic + string("<i><b>Magnetization component x min-max</i>"), INT2(IOI_SHOWDATA, DATA_MX_MINMAX));
+	ioInfo.set(showdata_info_generic + string("<i><b>Magnetization component y min-max</i>"), INT2(IOI_SHOWDATA, DATA_MY_MINMAX));
+	ioInfo.set(showdata_info_generic + string("<i><b>Magnetization component z min-max</i>"), INT2(IOI_SHOWDATA, DATA_MZ_MINMAX));
 	ioInfo.set(showdata_info_generic + string("<i><b>Applied magnetic field</i>"), INT2(IOI_SHOWDATA, DATA_HA));
 	ioInfo.set(showdata_info_generic + string("<i><b>Average charge current density</i>"), INT2(IOI_SHOWDATA, DATA_JC));
 	ioInfo.set(showdata_info_generic + string("<i><b>Average spin x-current density</i>"), INT2(IOI_SHOWDATA, DATA_JSX));
@@ -262,6 +297,7 @@ void Simulation::MakeIOInfo(void)
 	ioInfo.set(showdata_info_generic + string("<i><b>Total resistance (V/I)</i>"), INT2(IOI_SHOWDATA, DATA_RESISTANCE));
 	ioInfo.set(showdata_info_generic + string("<i><b>Energy density: demag</i>"), INT2(IOI_SHOWDATA, DATA_E_DEMAG));
 	ioInfo.set(showdata_info_generic + string("<i><b>Energy density: exchange</i>"), INT2(IOI_SHOWDATA, DATA_E_EXCH));
+	ioInfo.set(showdata_info_generic + string("<i><b>Energy density maximum: exchange</i>"), INT2(IOI_SHOWDATA, DATA_E_EXCH_MAX));
 	ioInfo.set(showdata_info_generic + string("<i><b>Energy density: surface exchange</i>"), INT2(IOI_SHOWDATA, DATA_E_SURFEXCH));
 	ioInfo.set(showdata_info_generic + string("<i><b>Energy density: applied H field</i>"), INT2(IOI_SHOWDATA, DATA_E_ZEE));
 	ioInfo.set(showdata_info_generic + string("<i><b>Energy density: applied mechanical stress</i>"), INT2(IOI_SHOWDATA, DATA_E_MELASTIC));
@@ -271,6 +307,7 @@ void Simulation::MakeIOInfo(void)
 	ioInfo.set(showdata_info_generic + string("<i><b>Domain wall shift\n<i><b>for moving mesh</i>"), INT2(IOI_SHOWDATA, DATA_DWSHIFT));
 	ioInfo.set(showdata_info_generic + string("<i><b>Skyrmion shift in the xy plane\n<i><b>Only use with output save data</i>"), INT2(IOI_SHOWDATA, DATA_SKYSHIFT));
 	ioInfo.set(showdata_info_generic + string("<i><b>Skyrmion shift in the xy plane\n<i><b>Additional saving of x and y axis diameters\n<i><b>Only use with output save data</i>"), INT2(IOI_SHOWDATA, DATA_SKYPOS));
+	ioInfo.set(showdata_info_generic + string("<i><b>Topological Charge"), INT2(IOI_SHOWDATA, DATA_Q_TOPO));
 	ioInfo.set(showdata_info_generic + string("<i><b>Transport solver:\n<i><b>V iterations to convergence</i>"), INT2(IOI_SHOWDATA, DATA_TRANSPORT_ITERSTOCONV));
 	ioInfo.set(showdata_info_generic + string("<i><b>Transport solver:\n<i><b>S iterations to convergence</i>"), INT2(IOI_SHOWDATA, DATA_TRANSPORT_SITERSTOCONV));
 	ioInfo.set(showdata_info_generic + string("<i><b>Transport solver:\n<i><b>achieved convergence error</i>"), INT2(IOI_SHOWDATA, DATA_TRANSPORT_CONVERROR));
@@ -294,6 +331,10 @@ void Simulation::MakeIOInfo(void)
 	ioInfo.set(data_info_generic + string("<i><b>Magnetisation relaxation |dm/dt|</i>"), INT2(IOI_DATA, DATA_DMDT));
 	ioInfo.set(data_info_generic + string("<i><b>Average magnetisation</i>"), INT2(IOI_DATA, DATA_AVM));
 	ioInfo.set(data_info_generic + string("<i><b>Average magnetisation sub-lattice B</i>"), INT2(IOI_DATA, DATA_AVM2));
+	ioInfo.set(data_info_generic + string("<i><b>Magnetization magnitude min-max</i>"), INT2(IOI_DATA, DATA_M_MINMAX));
+	ioInfo.set(data_info_generic + string("<i><b>Magnetization component x min-max</i>"), INT2(IOI_DATA, DATA_MX_MINMAX));
+	ioInfo.set(data_info_generic + string("<i><b>Magnetization component y min-max</i>"), INT2(IOI_DATA, DATA_MY_MINMAX));
+	ioInfo.set(data_info_generic + string("<i><b>Magnetization component z min-max</i>"), INT2(IOI_DATA, DATA_MZ_MINMAX));
 	ioInfo.set(data_info_generic + string("<i><b>Applied magnetic field</i>"), INT2(IOI_DATA, DATA_HA));
 	ioInfo.set(data_info_generic + string("<i><b>Average charge current density</i>"), INT2(IOI_DATA, DATA_JC));
 	ioInfo.set(data_info_generic + string("<i><b>Average spin x-current density</i>"), INT2(IOI_DATA, DATA_JSX));
@@ -307,6 +348,7 @@ void Simulation::MakeIOInfo(void)
 	ioInfo.set(data_info_generic + string("<i><b>Total resistance (V/I)</i>"), INT2(IOI_DATA, DATA_RESISTANCE));
 	ioInfo.set(data_info_generic + string("<i><b>Energy density: demag</i>"), INT2(IOI_DATA, DATA_E_DEMAG));
 	ioInfo.set(data_info_generic + string("<i><b>Energy density: exchange</i>"), INT2(IOI_DATA, DATA_E_EXCH));
+	ioInfo.set(data_info_generic + string("<i><b>Energy density maximum: exchange</i>"), INT2(IOI_DATA, DATA_E_EXCH_MAX));
 	ioInfo.set(data_info_generic + string("<i><b>Energy density: surface exchange</i>"), INT2(IOI_DATA, DATA_E_SURFEXCH));
 	ioInfo.set(data_info_generic + string("<i><b>Energy density: applied H field</i>"), INT2(IOI_DATA, DATA_E_ZEE));
 	ioInfo.set(data_info_generic + string("<i><b>Energy density: applied mechanical stress</i>"), INT2(IOI_DATA, DATA_E_MELASTIC));
@@ -316,6 +358,7 @@ void Simulation::MakeIOInfo(void)
 	ioInfo.set(data_info_generic + string("<i><b>Domain wall shift\n<i><b>for moving mesh</i>"), INT2(IOI_DATA, DATA_DWSHIFT));
 	ioInfo.set(data_info_generic + string("<i><b>Skyrmion shift in the xy plane\n<i><b>Rectangle must circumscribe skyrmion</i>"), INT2(IOI_DATA, DATA_SKYSHIFT));
 	ioInfo.set(data_info_generic + string("<i><b>Skyrmion shift in the xy plane\n<i><b>Also save x and y axis diameters\n<i><b>Rectangle must circumscribe skyrmion</i>"), INT2(IOI_DATA, DATA_SKYPOS));
+	ioInfo.set(data_info_generic + string("<i><b>Topological Charge</i>"), INT2(IOI_DATA, DATA_Q_TOPO));
 	ioInfo.set(data_info_generic + string("<i><b>Transport solver:\n<i><b>V iterations to convergence</i>"), INT2(IOI_DATA, DATA_TRANSPORT_ITERSTOCONV));
 	ioInfo.set(data_info_generic + string("<i><b>Transport solver:\n<i><b>S iterations to convergence</i>"), INT2(IOI_DATA, DATA_TRANSPORT_SITERSTOCONV));
 	ioInfo.set(data_info_generic + string("<i><b>Transport solver:\n<i><b>achieved convergence error</i>"), INT2(IOI_DATA, DATA_TRANSPORT_CONVERROR));
@@ -564,6 +607,7 @@ void Simulation::MakeIOInfo(void)
 	ioInfo.set(param_generic_info + string("<i><b>Relative longitudinal\n<i><b>susceptibility for LLB 2-sublattice"), INT2(IOI_MESHPARAM, PARAM_SUSREL_AFM));
 	ioInfo.set(param_generic_info + string("<i><b>Relative transverse\n<i><b>susceptibility for LLB"), INT2(IOI_MESHPARAM, PARAM_SUSPREL));
 	ioInfo.set(param_generic_info + string("<i><b>Applied field coefficient"), INT2(IOI_MESHPARAM, PARAM_HA));
+	ioInfo.set(param_generic_info + string("<i><b>Magneto-optical field coefficient"), INT2(IOI_MESHPARAM, PARAM_HMO));
 	ioInfo.set(param_generic_info + string("<i><b>Set temperature coefficient"), INT2(IOI_MESHPARAM, PARAM_T));
 	ioInfo.set(param_generic_info + string("<i><b>Heat source"), INT2(IOI_MESHPARAM, PARAM_Q));
 	ioInfo.set(param_generic_info + string("<i><b>Base electrical conductivity"), INT2(IOI_MESHPARAM, PARAM_ELC));
@@ -595,6 +639,11 @@ void Simulation::MakeIOInfo(void)
 	ioInfo.set(param_generic_info + string("<i><b>Electronic specific heat capacity"), INT2(IOI_MESHPARAM, PARAM_SHC_E));
 	ioInfo.set(param_generic_info + string("<i><b>Electron coupling constant\n<i><b>2TM : electron-lattice"), INT2(IOI_MESHPARAM, PARAM_G_E));
 
+	ioInfo.set(param_generic_info + string("<i><b>Intrinsic damping - SC"), INT2(IOI_MESHPARAM, PARAM_ATOM_SC_DAMPING));
+	ioInfo.set(param_generic_info + string("<i><b>Atomistic magnetic moment - SC"), INT2(IOI_MESHPARAM, PARAM_ATOM_SC_MUS));
+	ioInfo.set(param_generic_info + string("<i><b>Heisenberg exchange energy - SC"), INT2(IOI_MESHPARAM, PARAM_ATOM_SC_J));
+	ioInfo.set(param_generic_info + string("<i><b>Atomistic anisotropy - SC"), INT2(IOI_MESHPARAM, PARAM_ATOM_SC_K));
+	ioInfo.set(param_generic_info + string("<i><b>Anisotropy easy axis 1"), INT2(IOI_MESHPARAM, PARAM_ATOM_EA1));
 
 	//Shows parameter temperature dependence for a given mesh : minorId is the major id of elements in SimParams::simParams (i.e. an entry from PARAM_ enum), auxId is the unique mesh id number, textId is the parameter temperature dependence setting
 	//IOI_MESHPARAMTEMP
@@ -663,6 +712,7 @@ void Simulation::MakeIOInfo(void)
 
 	ioInfo.set(meshdisplay_generic_info + string("<i><b>Nothing displayed"), INT2(IOI_MESHDISPLAY, MESHDISPLAY_NONE));
 	ioInfo.set(meshdisplay_generic_info + string("<i><b>Magnetisation"), INT2(IOI_MESHDISPLAY, MESHDISPLAY_MAGNETIZATION));
+	ioInfo.set(meshdisplay_generic_info + string("<i><b>Atomic Moments"), INT2(IOI_MESHDISPLAY, MESHDISPLAY_MOMENT));
 	ioInfo.set(meshdisplay_generic_info + string("<i><b>Magnetisation sub-lattice 2"), INT2(IOI_MESHDISPLAY, MESHDISPLAY_MAGNETIZATION2));
 	ioInfo.set(meshdisplay_generic_info + string("<i><b>AF Magnetisation"), INT2(IOI_MESHDISPLAY, MESHDISPLAY_MAGNETIZATION12));
 	ioInfo.set(meshdisplay_generic_info + string("<i><b>Total effective H field"), INT2(IOI_MESHDISPLAY, MESHDISPLAY_EFFECTIVEFIELD));
@@ -1276,8 +1326,8 @@ string Simulation::MakeIO(IOI_ identifier, PType ... params)
 
 #if GRAPHICS == 1
 	//string objectText, IOI_ majorId, int minorId = -1, int auxId = -1, string textId = "", D2D1_COLOR_F bgrndCol = MESSAGECOLOR
-	auto MakeInteractiveObject = [&](string objectText, IOI_ majorId, int minorId = -1, int auxId = -1, string textId = "", D2D1_COLOR_F bgrndCol = MESSAGECOLOR) -> string {
-
+	auto MakeInteractiveObject = [&](string objectText, IOI_ majorId, int minorId = -1, int auxId = -1, string textId = "", D2D1_COLOR_F bgrndCol = MESSAGECOLOR) -> string 
+	{
 		if (!textId.length()) textId = objectText;
 
 		string newObject;
@@ -1290,8 +1340,8 @@ string Simulation::MakeIO(IOI_ identifier, PType ... params)
 	};
 #else
 	//string objectText, IOI_ majorId, int minorId = -1, int auxId = -1, string textId = "", D2D1_COLOR_F bgrndCol = MESSAGECOLOR
-	auto MakeInteractiveObject = [&](string objectText, IOI_ majorId, int minorId = -1, int auxId = -1, string textId = "", int bgrndCol = MESSAGECOLOR) -> string {
-
+	auto MakeInteractiveObject = [&](string objectText, IOI_ majorId, int minorId = -1, int auxId = -1, string textId = "", int bgrndCol = MESSAGECOLOR) -> string 
+	{
 		return objectText;
 	};
 #endif
@@ -1390,10 +1440,14 @@ string Simulation::MakeIO(IOI_ identifier, PType ... params)
 
 			int meshIndex = ToNum(params_str[0]);
 
-			if (SMesh[meshIndex]->MComputation_Enabled())
-				return MakeInteractiveObject(ToString(SMesh[meshIndex]->GetMeshSCellsize(), "m"), IOI_MESHSCELLSIZE, SMesh[meshIndex]->get_id(), 1, ToString(SMesh[meshIndex]->GetMeshSCellsize(), "m"), ONCOLOR);
-			else
+			if (SMesh[meshIndex]->MComputation_Enabled() && !SMesh[meshIndex]->is_atomistic()) {
+
+				return MakeInteractiveObject(ToString(reinterpret_cast<Mesh*>(SMesh[meshIndex])->GetMeshSCellsize(), "m"), IOI_MESHSCELLSIZE, SMesh[meshIndex]->get_id(), 1, ToString(reinterpret_cast<Mesh*>(SMesh[meshIndex])->GetMeshSCellsize(), "m"), ONCOLOR);
+			}
+			else {
+
 				return MakeInteractiveObject("N/A", IOI_MESHSCELLSIZE, SMesh[meshIndex]->get_id(), 0, "N/A", OFFCOLOR);
+			}
 		}
 		break;
 
@@ -1403,10 +1457,14 @@ string Simulation::MakeIO(IOI_ identifier, PType ... params)
 
 			int meshIndex = ToNum(params_str[0]);
 
-			if (SMesh[meshIndex]->MComputation_Enabled())
+			if (SMesh[meshIndex]->MComputation_Enabled() && !SMesh[meshIndex]->is_atomistic()) {
+
 				return MakeInteractiveObject("On", IOI_LINKSTOCHASTIC, SMesh[meshIndex]->get_id(), 1);
-			else
+			}
+			else {
+
 				return MakeInteractiveObject("N/A", IOI_LINKSTOCHASTIC, SMesh[meshIndex]->get_id(), -1, "N/A", OFFCOLOR);
+			}
 		}
 		break;
 
@@ -1514,12 +1572,31 @@ string Simulation::MakeIO(IOI_ identifier, PType ... params)
 		}
 		break;
 
+	case IOI_ATOMODE:
+		if (params_str.size() == 1) {
+
+			int odeId = ToNum(params_str[0]);
+
+			string atom_odeHandle = atom_odeHandles(odeId);
+
+			return MakeInteractiveObject(atom_odeHandle, IOI_ATOMODE, odeId);
+		}
+		break;
+
 	case IOI_ODEDT:
 		return MakeInteractiveObject("0", IOI_ODEDT, 0, 0, "0");
 		break;
 
 	case IOI_HEATDT:
 		return MakeInteractiveObject("0", IOI_HEATDT, 0, 0, "0");
+		break;
+
+	case IOI_STOCHDT:
+		return MakeInteractiveObject("0", IOI_STOCHDT, 0, 0, "0");
+		break;
+
+	case IOI_LINKSTOCHDT:
+		return MakeInteractiveObject("On", IOI_LINKSTOCHDT, 0, 1);
 		break;
 
 	case IOI_ODE_EVAL:
@@ -1653,7 +1730,8 @@ string Simulation::MakeIO(IOI_ identifier, PType ... params)
 			int dataSaveID = ToNum(params_str[1]);
 
 			int dsaveIdx = dataSaveDescriptors.get_index_from_ID(dataSaveID);
-			string savecondition_text = Build_SetStages_SaveConditionText(index_in_list, dsaveIdx);
+			//string savecondition_text = Build_SetStages_SaveConditionText(index_in_list, dsaveIdx);
+			string savecondition_text = dataSaveDescriptors.get_key_from_ID(dataSaveID);
 
 			return MakeInteractiveObject(savecondition_text, IOI_DSAVETYPE, simStages.get_id_from_index(index_in_list).minor, dataSaveID, savecondition_text);
 		}
@@ -1689,7 +1767,7 @@ string Simulation::MakeIO(IOI_ identifier, PType ... params)
 
 			string meshParam_text = Build_MeshParams_Text(meshIndex, (PARAM_)paramId);
 
-			return MakeInteractiveObject(meshParam_text, IOI_MESHPARAM, paramId, SMesh[meshIndex]->get_id(), meshParam_text);
+			return MakeInteractiveObject(meshParam_text, IOI_MESHPARAM, paramId, SMesh[meshIndex]->get_id(), SMesh().get_key_from_index(meshIndex) + string("\t") + meshParam_text);
 		}
 		break;
 
@@ -1712,7 +1790,7 @@ string Simulation::MakeIO(IOI_ identifier, PType ... params)
 
 			string tempDescriptor_text = SMesh[meshIndex]->get_paraminfo_string((PARAM_)paramId);
 
-			return MakeInteractiveObject(tempDescriptor_text, IOI_MESHPARAMTEMP, paramId, SMesh[meshIndex]->get_id(), " ");
+			return MakeInteractiveObject(tempDescriptor_text, IOI_MESHPARAMTEMP, paramId, SMesh[meshIndex]->get_id(), SMesh().get_key_from_index(meshIndex) + string("\t") + tempDescriptor_text, (SMesh[meshIndex]->is_paramtemp_set((PARAM_)paramId) ? ONCOLOR : OFFCOLOR));
 		}
 		break;
 
@@ -1724,7 +1802,7 @@ string Simulation::MakeIO(IOI_ identifier, PType ... params)
 
 			string varDescriptor_text = SMesh[meshIndex]->get_paramvarinfo_string((PARAM_)paramId);
 
-			return MakeInteractiveObject(varDescriptor_text, IOI_MESHPARAMVAR, paramId, SMesh[meshIndex]->get_id(), " ");
+			return MakeInteractiveObject(varDescriptor_text, IOI_MESHPARAMVAR, paramId, SMesh[meshIndex]->get_id(), SMesh().get_key_from_index(meshIndex) + string("\t") + varDescriptor_text, (SMesh[meshIndex]->is_paramvar_set((PARAM_)paramId) ? ONCOLOR : OFFCOLOR));
 		}
 		break;
 
@@ -2000,7 +2078,14 @@ string Simulation::MakeIO(IOI_ identifier, PType ... params)
 
 			int meshIndex = ToNum(params_str[0]);
 
-			return MakeInteractiveObject(ToString(SMesh[meshIndex]->GetCurieTemperature(), "K"), IOI_CURIETEMP, SMesh[meshIndex]->get_id(), 1, ToString(SMesh[meshIndex]->GetCurieTemperature(), "K"));
+			if (!SMesh[meshIndex]->is_atomistic()) {
+
+				return MakeInteractiveObject(ToString(reinterpret_cast<Mesh*>(SMesh[meshIndex])->GetCurieTemperature(), "K"), IOI_CURIETEMP, SMesh[meshIndex]->get_id(), 1, ToString(reinterpret_cast<Mesh*>(SMesh[meshIndex])->GetCurieTemperature(), "K"));
+			}
+			else {
+
+				return MakeInteractiveObject("N/A", IOI_CURIETEMP, SMesh[meshIndex]->get_id(), 0, "N/A", OFFCOLOR);
+			}
 		}
 		break;
 
@@ -2009,7 +2094,14 @@ string Simulation::MakeIO(IOI_ identifier, PType ... params)
 
 			int meshIndex = ToNum(params_str[0]);
 
-			return MakeInteractiveObject(ToString(SMesh[meshIndex]->GetCurieTemperatureMaterial(), "K"), IOI_CURIETEMPMATERIAL, SMesh[meshIndex]->get_id(), 1, ToString(SMesh[meshIndex]->GetCurieTemperatureMaterial(), "K"));
+			if (!SMesh[meshIndex]->is_atomistic()) {
+
+				return MakeInteractiveObject(ToString(reinterpret_cast<Mesh*>(SMesh[meshIndex])->GetCurieTemperatureMaterial(), "K"), IOI_CURIETEMPMATERIAL, SMesh[meshIndex]->get_id(), 1, ToString(reinterpret_cast<Mesh*>(SMesh[meshIndex])->GetCurieTemperatureMaterial(), "K"));
+			}
+			else {
+
+				return MakeInteractiveObject("N/A", IOI_CURIETEMPMATERIAL, SMesh[meshIndex]->get_id(), 0, "N/A", OFFCOLOR);
+			}
 		}
 		break;
 
@@ -2018,7 +2110,14 @@ string Simulation::MakeIO(IOI_ identifier, PType ... params)
 
 			int meshIndex = ToNum(params_str[0]);
 
-			return MakeInteractiveObject(ToString(SMesh[meshIndex]->GetAtomicMoment(), "uB"), IOI_ATOMICMOMENT, SMesh[meshIndex]->get_id(), 1, ToString(SMesh[meshIndex]->GetAtomicMoment(), "uB"));
+			if (!SMesh[meshIndex]->is_atomistic()) {
+
+				return MakeInteractiveObject(ToString(reinterpret_cast<Mesh*>(SMesh[meshIndex])->GetAtomicMoment(), "uB"), IOI_ATOMICMOMENT, SMesh[meshIndex]->get_id(), 1, ToString(reinterpret_cast<Mesh*>(SMesh[meshIndex])->GetAtomicMoment(), "uB"));
+			}
+			else {
+
+				return MakeInteractiveObject("N/A", IOI_ATOMICMOMENT, SMesh[meshIndex]->get_id(), 0, "N/A", OFFCOLOR);
+			}
 		}
 		break;
 
@@ -2027,7 +2126,14 @@ string Simulation::MakeIO(IOI_ identifier, PType ... params)
 
 			int meshIndex = ToNum(params_str[0]);
 
-			return MakeInteractiveObject(ToString(SMesh[meshIndex]->GetAtomicMoment_AFM(), "uB"), IOI_ATOMICMOMENT_AFM, SMesh[meshIndex]->get_id(), 1, ToString(SMesh[meshIndex]->GetAtomicMoment_AFM(), "uB"));
+			if (!SMesh[meshIndex]->is_atomistic()) {
+
+				return MakeInteractiveObject(ToString(reinterpret_cast<Mesh*>(SMesh[meshIndex])->GetAtomicMoment_AFM(), "uB"), IOI_ATOMICMOMENT_AFM, SMesh[meshIndex]->get_id(), 1, ToString(reinterpret_cast<Mesh*>(SMesh[meshIndex])->GetAtomicMoment_AFM(), "uB"));
+			}
+			else {
+
+				return MakeInteractiveObject("N/A", IOI_ATOMICMOMENT_AFM, SMesh[meshIndex]->get_id(), 0, "N/A", OFFCOLOR);
+			}
 		}
 		break;
 
@@ -2036,7 +2142,14 @@ string Simulation::MakeIO(IOI_ identifier, PType ... params)
 
 			int meshIndex = ToNum(params_str[0]);
 
-			return MakeInteractiveObject(ToString(SMesh[meshIndex]->GetTcCoupling()), IOI_TAU, SMesh[meshIndex]->get_id(), 1, ToString(SMesh[meshIndex]->GetTcCoupling()));
+			if (!SMesh[meshIndex]->is_atomistic()) {
+
+				return MakeInteractiveObject(ToString(reinterpret_cast<Mesh*>(SMesh[meshIndex])->GetTcCoupling()), IOI_TAU, SMesh[meshIndex]->get_id(), 1, ToString(reinterpret_cast<Mesh*>(SMesh[meshIndex])->GetTcCoupling()));
+			}
+			else {
+
+				return MakeInteractiveObject("N/A", IOI_TAU, SMesh[meshIndex]->get_id(), 0, "N/A", OFFCOLOR);
+			}
 		}
 		break;
 

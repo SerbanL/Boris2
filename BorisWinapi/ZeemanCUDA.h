@@ -44,10 +44,13 @@ public:
 
 	void UpdateField(void);
 
+	//-------------------Energy density methods
+
+	cuBReal GetEnergyDensity(cuRect avRect);
+
 	//-------------------
 
 	void SetField(cuReal3 Hxyz);
-	cuReal3 GetField(void) { return Ha.to_cpu(); }
 
 	BError SetFieldEquation(const std::vector<std::vector< std::vector<EqComp::FSPEC> >>& fspec);
 };

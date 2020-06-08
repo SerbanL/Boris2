@@ -83,13 +83,13 @@ BError SDemagCUDA::Initialize(void)
 			//identify all existing ferrommagnetic meshes (magnetic computation enabled)
 			for (int idx = 0; idx < (int)pSMesh->pMesh.size(); idx++) {
 
-				if ((*pSMesh)[idx]->MComputation_Enabled()) {
+				if ((*pSMesh)[idx]->MComputation_Enabled() && !(*pSMesh)[idx]->is_atomistic()) {
 
-					pVal_from.push_back((cuVEC<cuReal3>*&)(*pSMesh)[idx]->pMeshCUDA->M.get_managed_object());
-					pVal_to.push_back((cuVEC<cuReal3>*&)(*pSMesh)[idx]->pMeshCUDA->Heff.get_managed_object());
+					pVal_from.push_back((cuVEC<cuReal3>*&)reinterpret_cast<Mesh*>((*pSMesh)[idx])->pMeshCUDA->M.get_managed_object());
+					pVal_to.push_back((cuVEC<cuReal3>*&)reinterpret_cast<Mesh*>((*pSMesh)[idx])->pMeshCUDA->Heff.get_managed_object());
 
-					pVal_from2.push_back((cuVEC<cuReal3>*&)(*pSMesh)[idx]->pMeshCUDA->M2.get_managed_object());
-					pVal_to2.push_back((cuVEC<cuReal3>*&)(*pSMesh)[idx]->pMeshCUDA->Heff2.get_managed_object());
+					pVal_from2.push_back((cuVEC<cuReal3>*&)reinterpret_cast<Mesh*>((*pSMesh)[idx])->pMeshCUDA->M2.get_managed_object());
+					pVal_to2.push_back((cuVEC<cuReal3>*&)reinterpret_cast<Mesh*>((*pSMesh)[idx])->pMeshCUDA->Heff2.get_managed_object());
 				}
 			}
 
@@ -180,8 +180,8 @@ BError SDemagCUDA::Initialize(void)
 		for (int idx = 0; idx < (int)pSMesh->pMesh.size(); idx++) {
 
 			if ((*pSMesh)[idx]->MComputation_Enabled() && !(*pSMesh)[idx]->Get_Demag_Exclusion()) {
-
-				total_nonempty_volume += (double)pSMesh->pMesh[idx]->M.get_nonempty_cells() * pSMesh->pMesh[idx]->M.h.dim();
+				
+				total_nonempty_volume += pSMesh->pMesh[idx]->Get_NonEmpty_Magnetic_Volume();
 			}
 		}
 	}

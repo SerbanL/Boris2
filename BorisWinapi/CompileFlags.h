@@ -26,9 +26,15 @@
 //----------------------------------------------------------------- CUDA
 
 //include cuda code in compilation. If set to 0 then only C++ CPU code is compiled so the executable will not need any cuda dlls.
+//Much faster compilation as well, so turn this off when developing new modules.
 #define COMPILECUDA	1
 
 //To change precision of floating point variables modify value cuBLib_FLags.h (BorisCUDALib)
+
+//----------------------------------------------------------------- MULTISCALE
+
+//set to 0 to disable all atomistic computations
+#define ATOMISTIC	1
 
 //----------------------------------------------------------------- MESHES
 
@@ -37,7 +43,7 @@
 #define MESH_COMPILATION_CUST	3
 
 //Set this
-#define MESH_COMPILATION	MESH_COMPILATION_CUST
+#define MESH_COMPILATION	MESH_COMPILATION_TEST
 
 //full
 #if MESH_COMPILATION == MESH_COMPILATION_ALL
@@ -49,15 +55,24 @@
 #define MESH_COMPILATION_METAL
 #define MESH_COMPILATION_INSULATOR
 
+#if ATOMISTIC == 1
+#define MESH_COMPILATION_ATOM_CUBIC
+#endif
+
 #elif MESH_COMPILATION == MESH_COMPILATION_TEST
 
 #define MESH_COMPILATION_FERROMAGNETIC
+
+#if ATOMISTIC == 1
+#define MESH_COMPILATION_ATOM_CUBIC
+#endif
 
 #elif MESH_COMPILATION == MESH_COMPILATION_CUST
 
 #define MESH_COMPILATION_FERROMAGNETIC
 #define MESH_COMPILATION_ANTIFERROMAGNETIC
-//#define MESH_COMPILATION_INSULATOR
+#define MESH_COMPILATION_INSULATOR
+#define MESH_COMPILATION_METAL
 
 #endif
 
@@ -72,7 +87,7 @@
 #define ODE_EVAL_CUST	3
 
 //Set this
-#define ODE_EVAL_COMPILATION	ODE_EVAL_TEST
+#define ODE_EVAL_COMPILATION	ODE_EVAL_ALL
 
 //full
 #if ODE_EVAL_COMPILATION == ODE_EVAL_ALL
@@ -90,19 +105,20 @@
 
 #elif ODE_EVAL_COMPILATION == ODE_EVAL_TEST
 
-#define ODE_EVAL_RK4
-//#define ODE_EVAL_SD
-#define ODE_EVAL_RKF
-#define ODE_EVAL_AHEUN
-#define ODE_EVAL_TEULER
+#define ODE_EVAL_EULER
 
 #elif ODE_EVAL_COMPILATION == ODE_EVAL_CUST
 
-#define ODE_EVAL_RK4
-#define ODE_EVAL_RK23
-#define ODE_EVAL_RKF
+#define ODE_EVAL_EULER
+#define ODE_EVAL_TEULER
+#define ODE_EVAL_AHEUN
 #define ODE_EVAL_ABM
-#define ODE_EVAL_SD
+//#define ODE_EVAL_RK23
+#define ODE_EVAL_RK4
+#define ODE_EVAL_RKF
+#define ODE_EVAL_RKCK
+//#define ODE_EVAL_RKDP
+//#define ODE_EVAL_SD
 
 #endif
 
@@ -141,6 +157,11 @@
 #define MODULE_SURFEXCHANGE
 #define MODULE_TRANSPORT
 #define MODULE_ZEEMAN
+#define MODULE_MOPTICAL
+
+#if ATOMISTIC == 1
+#define MODULE_ATOM_EXCHANGE
+#endif
 
 #define MODULE_OERSTED
 #define MODULE_STRAYFIELD
@@ -160,13 +181,14 @@
 #elif MODULE_COMPILATION == COMPILE_MODULES_CUST
 
 #define MODULE_DEMAG
-#define MODULE_DMEXCHANGE
 #define MODULE_EXCHANGE
 #define MODULE_IDMEXCHANGE
 #define MODULE_ANIUNI
-#define MODULE_ANICUBI
 #define MODULE_ZEEMAN
-#define MODULE_HEAT
+
+#if ATOMISTIC == 1
+#define MODULE_ATOM_EXCHANGE
+#endif
 
 #endif
 

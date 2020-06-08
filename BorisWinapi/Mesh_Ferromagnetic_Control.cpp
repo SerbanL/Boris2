@@ -5,7 +5,7 @@
 
 //----------------------------------- FERROMAGNETIC MESH QUANTITIES CONTROL 
 
-void FMesh::SetMagnetisationAngle(double polar, double azim, Rect rectangle)
+void FMesh::SetMagAngle(double polar, double azim, Rect rectangle)
 {
 #if COMPILECUDA == 1
 
@@ -39,7 +39,7 @@ void FMesh::SetMagnetisationAngle(double polar, double azim, Rect rectangle)
 }
 
 //Invert magnetisation direction in given mesh (must be ferromagnetic)
-void FMesh::SetInvertedMagnetisation(void)
+void FMesh::SetInvertedMag(bool x, bool y, bool z)
 {
 #if COMPILECUDA == 1
 	//refresh M from gpu memory
@@ -51,7 +51,78 @@ void FMesh::SetInvertedMagnetisation(void)
 
 		if (M.is_not_empty(idx)) {
 
-			M[idx] *= -1;
+			M[idx] = M[idx] & INT3(-2 * x + 1, -2 * y + 1, -2 * z + 1);
+		}
+	}
+
+#if COMPILECUDA == 1
+	//refresh gpu memory
+	if (pMeshCUDA) pMeshCUDA->M()->copy_from_cpuvec(M);
+#endif
+}
+
+//Mirror magnetisation in given axis (literal x, y, or z) in given mesh (must be magnetic)
+void FMesh::SetMirroredMag(string axis)
+{
+#if COMPILECUDA == 1
+	//refresh M from gpu memory
+	if (pMeshCUDA) pMeshCUDA->M()->copy_to_cpuvec(M);
+#endif
+
+	if (axis == "x") {
+
+		for (int i = 0; i < n.x / 2; i++) {
+
+#pragma omp parallel for
+			for (int j = 0; j < n.y; j++) {
+				for (int k = 0; k < n.z; k++) {
+
+					int idx_l = i + j * n.x + k * n.x*n.y;
+					int idx_r = n.x - 1 - i + j * n.x + k * n.x*n.y;
+
+					DBL3 temp = M[idx_l];
+					M[idx_l] = M[idx_r];
+					M[idx_r] = temp;
+				}
+			}
+		}
+	}
+
+	else if (axis == "y") {
+
+		for (int j = 0; j < n.y / 2; j++) {
+
+#pragma omp parallel for
+			for (int i = 0; i < n.x; i++) {
+				for (int k = 0; k < n.z; k++) {
+
+					int idx_l = i + j * n.x + k * n.x*n.y;
+					int idx_r = i + (n.y - 1 - j) * n.x + k * n.x*n.y;
+
+					DBL3 temp = M[idx_l];
+					M[idx_l] = M[idx_r];
+					M[idx_r] = temp;
+				}
+			}
+		}
+	}
+
+	else if (axis == "z") {
+
+		for (int k = 0; k < n.z / 2; k++) {
+
+#pragma omp parallel for
+			for (int i = 0; i < n.x; i++) {
+				for (int j = 0; j < n.y; j++) {
+
+					int idx_l = i + j * n.x + k * n.x*n.y;
+					int idx_r = i + j * n.x + (n.z - 1 - k) * n.x*n.y;
+
+					DBL3 temp = M[idx_l];
+					M[idx_l] = M[idx_r];
+					M[idx_r] = temp;
+				}
+			}
 		}
 	}
 
@@ -62,7 +133,7 @@ void FMesh::SetInvertedMagnetisation(void)
 }
 
 //Set random magnetisation distribution in given mesh (must be ferromagnetic)
-void FMesh::SetRandomMagnetisation(void)
+void FMesh::SetRandomMag(void)
 {
 #if COMPILECUDA == 1
 	//refresh M from gpu memory
@@ -89,7 +160,7 @@ void FMesh::SetRandomMagnetisation(void)
 #endif
 }
 
-void FMesh::SetMagnetisationDomainWall(int longitudinal, int transverse, double width, double position)
+void FMesh::SetMagDomainWall(int longitudinal, int transverse, double width, double position)
 {
 #if COMPILECUDA == 1
 	//refresh M from gpu memory
@@ -280,7 +351,7 @@ void FMesh::SetSkyrmionBloch(int orientation, int chirality, Rect skyrmion_rect)
 }
 
 //set M from given data VEC (0 values mean empty points) -> stretch data to M dimensions if needed.
-void FMesh::SetMagnetisationFromData(VEC<DBL3>& data, const Rect& dstRect)
+void FMesh::SetMagFromData(VEC<DBL3>& data, const Rect& dstRect)
 {
 #if COMPILECUDA == 1
 	//refresh M from gpu memory
@@ -299,63 +370,6 @@ void FMesh::SetMagnetisationFromData(VEC<DBL3>& data, const Rect& dstRect)
 	//refresh gpu memory
 	if (pMeshCUDA) pMeshCUDA->M()->copy_from_cpuvec(M);
 #endif
-}
-
-//set periodic boundary conditions for magnetization
-BError FMesh::Set_PBC_X(int pbc_x)
-{
-	BError error(__FUNCTION__);
-
-	//set pbc conditions for demag module if available
-	if (IsModuleSet(MOD_DEMAG)) {
-
-		INT3 pbc_images = reinterpret_cast<Demag*>(pMod(MOD_DEMAG))->Get_PBC();
-
-		pbc_images.x = pbc_x;
-		
-		error = reinterpret_cast<Demag*>(pMod(MOD_DEMAG))->Set_PBC(pbc_images);
-	}
-	else return error(BERROR_GPUERROR_CRIT);
-
-	return error;
-}
-
-//set periodic boundary conditions for magnetization
-BError FMesh::Set_PBC_Y(int pbc_y)
-{
-	BError error(__FUNCTION__);
-
-	//set pbc conditions for demag module if available
-	if (IsModuleSet(MOD_DEMAG)) {
-
-		INT3 pbc_images = reinterpret_cast<Demag*>(pMod(MOD_DEMAG))->Get_PBC();
-		
-		pbc_images.y = pbc_y;
-		
-		error = reinterpret_cast<Demag*>(pMod(MOD_DEMAG))->Set_PBC(pbc_images);
-	}
-	else return error(BERROR_GPUERROR_CRIT);
-
-	return error;
-}
-
-//set periodic boundary conditions for magnetization
-BError FMesh::Set_PBC_Z(int pbc_z)
-{
-	BError error(__FUNCTION__);
-
-	//set pbc conditions for demag module if available
-	if (IsModuleSet(MOD_DEMAG)) {
-
-		INT3 pbc_images = reinterpret_cast<Demag*>(pMod(MOD_DEMAG))->Get_PBC();
-		
-		pbc_images.z = pbc_z;
-		
-		error = reinterpret_cast<Demag*>(pMod(MOD_DEMAG))->Set_PBC(pbc_images);
-	}
-	else return error(BERROR_GPUERROR_CRIT);
-
-	return error;
 }
 
 #endif

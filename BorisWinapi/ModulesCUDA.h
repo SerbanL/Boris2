@@ -21,6 +21,9 @@ protected:
 	//energy value for this effective field term
 	cu_obj<cuBReal> energy;
 
+	//auxiliary for obtaining average energy in a custom rectangle : count non-zero points for average.
+	cu_obj<size_t> points_count;
+
 private:
 
 	bool holder_module_destroyed = false;
@@ -82,7 +85,7 @@ public:
 
 	bool IsInitialized(void) { return initialized; }
 
-	cuBReal GetEnergy(void) { return energy.to_cpu(); }
+	cuBReal GetEnergyDensity(void) { return energy.to_cpu(); }
 };
 
 #endif

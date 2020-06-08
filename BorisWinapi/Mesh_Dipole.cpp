@@ -83,7 +83,7 @@ void DipoleMesh::RepairObjectState(void)
 
 //----------------------------------- IMPORTANT CONTROL METHODS
 
-//call when the mesh dimensions have changed - sets every quantity to the right dimensions
+//call when a configuration change has occurred - some objects might need to be updated accordingly
 BError DipoleMesh::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 {
 	BError error(string(CLASS_STR(DipoleMesh)) + "(" + (*pSMesh).key_from_meshId(meshId) + ")");
@@ -102,7 +102,7 @@ BError DipoleMesh::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 	if (!error && !update_meshparam_var()) error(BERROR_OUTOFMEMORY_NCRIT);
 
 	//update any text equations used in mesh parameters (dependence on mesh dimensions possible)
-	if (!error) update_meshparam_equations();
+	if (!error) update_all_meshparam_equations();
 
 	//set dipole value from Ms - this could have changed
 	Reset_Mdipole();
@@ -144,7 +144,7 @@ void DipoleMesh::UpdateConfiguration_Values(UPDATECONFIG_ cfgMessage)
 		UpdateTEquationUserConstants();
 
 		//update any text equations used in mesh parameters
-		update_meshparam_equations();
+		update_all_meshparam_equations();
 	}
 	else if (cfgMessage == UPDATECONFIG_TEQUATION_CLEAR) {
 
@@ -234,12 +234,12 @@ void DipoleMesh::Reset_Mdipole(void)
 #endif
 }
 
-void DipoleMesh::SetMagnetisationAngle(double polar, double azim, Rect rectangle)
+void DipoleMesh::SetMagAngle(double polar, double azim, Rect rectangle)
 {
 #if COMPILECUDA
 	if (pMeshCUDA) {
 
-		reinterpret_cast<DipoleMeshCUDA*>(pMeshCUDA)->SetMagnetisationAngle(polar, azim);
+		reinterpret_cast<DipoleMeshCUDA*>(pMeshCUDA)->SetMagAngle(polar, azim);
 		return;
 	}
 #endif
@@ -251,7 +251,7 @@ void DipoleMesh::SetMagnetisationAngle(double polar, double azim, Rect rectangle
 void DipoleMesh::SetCurieTemperature(double Tc, bool set_default_dependences)
 {
 	//Curie temperature is a constant in mesh parameter equations, so update them
-	if (Tc != T_Curie) update_meshparam_equations();
+	if (Tc != T_Curie) update_all_meshparam_equations();
 
 	if (Tc > 0) {
 

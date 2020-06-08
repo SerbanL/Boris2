@@ -53,7 +53,7 @@ BError Demag::Initialize(void)
 {	
 	BError error(CLASS_STR(Demag));
 
-	if(!initialized) {
+	if (!initialized) {
 		
 		error = Calculate_Demag_Kernels();
 
@@ -71,7 +71,7 @@ BError Demag::Initialize(void)
 	}
 
 	Hdemag_calculated = false;
-	
+
 	return error;
 }
 
@@ -111,26 +111,7 @@ BError Demag::Set_PBC(INT3 demag_pbc_images_)
 
 	demag_pbc_images = demag_pbc_images_;
 
-	//set pbc conditions in M : if any are zero then pbc is disabled in that dimension
-	pMesh->M.set_pbc(demag_pbc_images.x, demag_pbc_images.y, demag_pbc_images.z);
-
-	if (pMesh->GetMeshType() == MESH_ANTIFERROMAGNETIC) {
-
-		pMesh->M2.set_pbc(demag_pbc_images.x, demag_pbc_images.y, demag_pbc_images.z);
-	}
-
-	//same for the CUDA version if we are in cuda mode
-#if COMPILECUDA == 1
-	if (pModuleCUDA) {
-
-		if (!pMesh->pMeshCUDA->M()->copyflags_from_cpuvec(pMesh->M)) return error(BERROR_GPUERROR_CRIT);
-		
-		if (pMesh->GetMeshType() == MESH_ANTIFERROMAGNETIC) {
-
-			if (!pMesh->pMeshCUDA->M2()->copyflags_from_cpuvec(pMesh->M2)) return error(BERROR_GPUERROR_CRIT);
-		}
-	}
-#endif
+	pMesh->Set_Magnetic_PBC(demag_pbc_images);
 
 	//update will be needed if pbc settings have changed
 	error = UpdateConfiguration(UPDATECONFIG_DEMAG_CONVCHANGE);

@@ -138,7 +138,6 @@ BError DemagKernelCollectionCUDA::Calculate_Demag_Kernels(vector<DemagKernelColl
 
 		//transfer bool value from cpu to gpu memory in a cu_obj, so we can then place it in the cu_arr
 		//the push_back method in cu_arr is meant to take a pointer in gpu memory
-		//TO DO : make a push_back_from_cpu method that places in cu_arr a value directly from cpu memory
 		cu_obj<bool> gpu_value;
 		gpu_value.from_cpu(inverse_shifted[idx]);
 		inverse_shifted_gpu.push_back((bool*&)gpu_value.get_managed_object());

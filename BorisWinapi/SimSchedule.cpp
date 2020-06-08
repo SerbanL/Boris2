@@ -658,7 +658,7 @@ void Simulation::CheckSimulationSchedule(void)
 	}
 }
 
-void Simulation::CheckSaveDataCondtions() 
+void Simulation::CheckSaveDataConditions() 
 {
 	switch (simStages[stage_step.major].dsave_type()) {
 

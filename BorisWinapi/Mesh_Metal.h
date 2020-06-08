@@ -2,11 +2,14 @@
 
 #include "Mesh.h"
 
-#ifdef MESH_COMPILATION_METAL
-
 #if COMPILECUDA == 1
 #include "Mesh_MetalCUDA.h"
 #endif
+
+#ifdef MESH_COMPILATION_METAL
+
+#include "Transport.h"
+#include "Heat.h"
 
 /////////////////////////////////////////////////////////////////////
 //
@@ -49,7 +52,7 @@ public:
 
 	//----------------------------------- IMPORTANT CONTROL METHODS
 
-	//call when the mesh dimensions have changed - sets every quantity to the right dimensions
+	//call when a configuration change has occurred - some objects might need to be updated accordingly
 	BError UpdateConfiguration(UPDATECONFIG_ cfgMessage);
 	void UpdateConfiguration_Values(UPDATECONFIG_ cfgMessage);
 
@@ -89,7 +92,7 @@ public:
 
 	//----------------------------------- IMPORTANT CONTROL METHODS
 
-	//call when the mesh dimensions have changed - sets every quantity to the right dimensions
+	//call when a configuration change has occurred - some objects might need to be updated accordingly
 	BError UpdateConfiguration(UPDATECONFIG_ cfgMessage) { return BError(); }
 	void UpdateConfiguration_Values(UPDATECONFIG_ cfgMessage) {}
 

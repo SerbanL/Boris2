@@ -38,14 +38,14 @@ BError StrayField::Initialize(void)
 		//identify all existing dipole meshes and output Heff meshes
 		for (int idx = 0; idx < (int)pSMesh->size(); idx++) {
 
-			if ((*pSMesh)[idx]->MComputation_Enabled()) {
+			if ((*pSMesh)[idx]->MComputation_Enabled() && !(*pSMesh)[idx]->is_atomistic()) {
 
-				meshes_out.push_back(&((*pSMesh)[idx]->Heff));
+				meshes_out.push_back(&(reinterpret_cast<Mesh*>((*pSMesh)[idx])->Heff));
 
 				//for antiferromagnetic meshes we also need to add the stray field to the second sub-lattice
 				if ((*pSMesh)[idx]->GetMeshType() == MESH_ANTIFERROMAGNETIC) {
 
-					meshes_out.push_back(&((*pSMesh)[idx]->Heff2));
+					meshes_out.push_back(&(reinterpret_cast<Mesh*>((*pSMesh)[idx])->Heff2));
 				}
 			}
 
