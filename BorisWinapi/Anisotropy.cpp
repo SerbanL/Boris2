@@ -185,7 +185,7 @@ double Anisotropy_Uniaxial::UpdateField(void)
 double Anisotropy_Uniaxial::GetEnergyDensity(Rect& avRect)
 {
 #if COMPILECUDA == 1
-	if (pModuleCUDA) return reinterpret_cast<Anisotropy_UniaxialCUDA*>(pModuleCUDA)->GetEnergyDensity(avRect);
+	if (pModuleCUDA) return dynamic_cast<Anisotropy_UniaxialCUDA*>(pModuleCUDA)->GetEnergyDensity(avRect);
 #endif
 
 	double energy = 0;

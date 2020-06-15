@@ -295,15 +295,17 @@ void Simulation::HandleCommand(string command_string)
 
 				StopSimulation();
 
-				if (!err_hndl.call(&Mesh::SetMeshSCellsize, reinterpret_cast<Mesh*>(SMesh.active_mesh()), h_s, false)) {
+				if (!err_hndl.call(&Mesh::SetMeshSCellsize, dynamic_cast<Mesh*>(SMesh.active_mesh()), h_s, false)) {
 
 					UpdateScreen();
 				}
 			}
 			else if (verbose) PrintCommandUsage(command_name);
 
-			if (script_client_connected && !SMesh.active_mesh()->is_atomistic()) 
-				commSocket.SetSendData(commandSpec.PrepareReturnParameters(reinterpret_cast<Mesh*>(SMesh.active_mesh())->GetMeshSCellsize()));
+			if (script_client_connected && !SMesh.active_mesh()->is_atomistic()) {
+
+				commSocket.SetSendData(commandSpec.PrepareReturnParameters(dynamic_cast<Mesh*>(SMesh.active_mesh())->GetMeshSCellsize()));
+			}
 		}
 		break;
 
@@ -385,9 +387,9 @@ void Simulation::HandleCommand(string command_string)
 						UpdateScreen();
 					}
 				}
-				else if (verbose) error(BERROR_INCORRECTNAME);
+				else if (verbose) error(BERROR_NOTATOMISTIC);
 			}
-			else if (verbose)  PrintCommandUsage(command_name);
+			else if (verbose) Print_Speedup_List();
 
 			if (script_client_connected) {
 
@@ -987,11 +989,11 @@ void Simulation::HandleCommand(string command_string)
 					//data loaded correctly, so resize currently focused mesh (if ferromagnetic) then copy magnetisation data to it.
 					if (SMesh.active_mesh()->is_atomistic()) {
 
-						data.renormalize(reinterpret_cast<Atom_Mesh*>(SMesh.active_mesh())->mu_s.get0());
+						data.renormalize(dynamic_cast<Atom_Mesh*>(SMesh.active_mesh())->mu_s.get0());
 					}
 					else {
 
-						data.renormalize(reinterpret_cast<Mesh*>(SMesh.active_mesh())->Ms.get0());
+						data.renormalize(dynamic_cast<Mesh*>(SMesh.active_mesh())->Ms.get0());
 					}
 
 					if (invertMag) data *= -1.0;
@@ -1088,7 +1090,7 @@ void Simulation::HandleCommand(string command_string)
 			}
 			else if (verbose) PrintCommandUsage(command_name);
 
-			if (script_client_connected) commSocket.SetSendData(commandSpec.PrepareReturnParameters(SMesh.active_mesh()->CallModuleMethod(&Zeeman::GetField)));
+			if (script_client_connected) commSocket.SetSendData(commandSpec.PrepareReturnParameters(SMesh.active_mesh()->CallModuleMethod(&ZeemanBase::GetField)));
 		}
 		break;
 
@@ -1271,7 +1273,10 @@ void Simulation::HandleCommand(string command_string)
 				ODE_ setOde = (ODE_)odeHandles.get_ID_from_value(odeHandle);
 				EVAL_ odeEval = (EVAL_)odeEvalHandles.get_ID_from_value(odeEvalHandle);
 
-				if (vector_contains(odeAllowedEvals(setOde), odeEval)) {
+				ODE_ atom_odeID;
+				SMesh.QueryAtomODE(atom_odeID);
+
+				if (setOde != ODE_ERROR && odeEval != EVAL_ERROR && vector_contains(odeAllowedEvals(setOde), odeEval) && vector_contains(odeAllowedEvals(atom_odeID), odeEval)) {
 
 					if (!err_hndl.call(&SuperMesh::SetODE, &SMesh, setOde, odeEval)) {
 
@@ -1294,20 +1299,47 @@ void Simulation::HandleCommand(string command_string)
 
 				StopSimulation();
 
-				ODE_ setOde = (ODE_)atom_odeHandles.get_ID_from_value(odeHandle);
+				ODE_ setatom_Ode = (ODE_)atom_odeHandles.get_ID_from_value(odeHandle);
+				EVAL_ odeEval = (EVAL_)odeEvalHandles.get_ID_from_value(odeEvalHandle);
 
-				if (setOde != ODE_ERROR) {
+				ODE_ odeID;
+				SMesh.QueryODE(odeID);
 
-					EVAL_ odeEval = (EVAL_)odeEvalHandles.get_ID_from_value(odeEvalHandle);
+				if (setatom_Ode != ODE_ERROR && odeEval != EVAL_ERROR && vector_contains(odeAllowedEvals(setatom_Ode), odeEval) && vector_contains(odeAllowedEvals(odeID), odeEval)) {
 
-					if (vector_contains(odeAllowedEvals(setOde), odeEval)) {
+					if (!err_hndl.call(&SuperMesh::SetAtomisticODE, &SMesh, setatom_Ode, odeEval)) {
 
-						if (!err_hndl.call(&SuperMesh::SetAtomisticODE, &SMesh, setOde, odeEval)) {
-
-							UpdateScreen();
-						}
+						UpdateScreen();
 					}
-					else if (verbose) error(BERROR_INCORRECTCONFIG);
+				}
+				else if (verbose) error(BERROR_INCORRECTCONFIG);
+			}
+			else if (verbose) PrintCommandUsage(command_name);
+		}
+		break;
+
+		case CMD_SETODEEVAL:
+		{
+			string odeEvalHandle;
+
+			error = commandSpec.GetParameters(command_fields, odeEvalHandle);
+
+			if (!error) {
+
+				StopSimulation();
+
+				EVAL_ odeEval = (EVAL_)odeEvalHandles.get_ID_from_value(odeEvalHandle);
+
+				ODE_ odeID, atom_odeID;
+				SMesh.QueryODE(odeID);
+				SMesh.QueryAtomODE(atom_odeID);
+
+				if (odeEval != EVAL_ERROR && vector_contains(odeAllowedEvals(odeID), odeEval) && vector_contains(odeAllowedEvals(atom_odeID), odeEval)) {
+
+					if (!err_hndl.call(&SuperMesh::SetODEEval, &SMesh, odeEval)) {
+
+						UpdateScreen();
+					}
 				}
 				else if (verbose) error(BERROR_INCORRECTCONFIG);
 			}
@@ -1329,7 +1361,7 @@ void Simulation::HandleCommand(string command_string)
 
 				UpdateScreen();
 			}
-			else if (verbose) PrintCommandUsage(command_name);
+			else if (verbose) Print_Speedup_List();
 		}
 		break;
 
@@ -2939,7 +2971,7 @@ void Simulation::HandleCommand(string command_string)
 			else if (verbose) Print_HeatBoundaries_List();
 
 			if (script_client_connected)
-				commSocket.SetSendData(commandSpec.PrepareReturnParameters(SMesh.active_mesh()->CallModuleMethod(&Heat::GetAmbientTemperature)));
+				commSocket.SetSendData(commandSpec.PrepareReturnParameters(SMesh.active_mesh()->CallModuleMethod(&HeatBase::GetAmbientTemperature)));
 		}
 		break;
 
@@ -2963,7 +2995,7 @@ void Simulation::HandleCommand(string command_string)
 			else if (verbose) Print_HeatBoundaries_List();
 
 			if (script_client_connected)
-				commSocket.SetSendData(commandSpec.PrepareReturnParameters(SMesh.active_mesh()->CallModuleMethod(&Heat::GetAlphaBoundary)));
+				commSocket.SetSendData(commandSpec.PrepareReturnParameters(SMesh.active_mesh()->CallModuleMethod(&HeatBase::GetAlphaBoundary)));
 		}
 		break;
 
@@ -2990,7 +3022,7 @@ void Simulation::HandleCommand(string command_string)
 			if (script_client_connected) {
 				if (SMesh.active_mesh()->IsModuleSet(MOD_HEAT)) {
 
-					vector<bool> insulating = SMesh.active_mesh()->CallModuleMethod(&Heat::GetInsulatingSides);
+					vector<bool> insulating = SMesh.active_mesh()->CallModuleMethod(&HeatBase::GetInsulatingSides);
 					commSocket.SetSendData(commandSpec.PrepareReturnParameters(insulating[0], insulating[1], insulating[2], insulating[3], insulating[4], insulating[5]));
 				}
 			}
@@ -3017,7 +3049,7 @@ void Simulation::HandleCommand(string command_string)
 			else if (verbose) Print_CurieandMoment_List();
 
 			if (script_client_connected && !SMesh.active_mesh()->is_atomistic())
-				commSocket.SetSendData(commandSpec.PrepareReturnParameters(reinterpret_cast<Mesh*>(SMesh.active_mesh())->GetCurieTemperature()));
+				commSocket.SetSendData(commandSpec.PrepareReturnParameters(dynamic_cast<Mesh*>(SMesh.active_mesh())->GetCurieTemperature()));
 		}
 		break;
 
@@ -3041,7 +3073,7 @@ void Simulation::HandleCommand(string command_string)
 			else if (verbose) Print_CurieandMoment_List();
 
 			if (script_client_connected && !SMesh.active_mesh()->is_atomistic())
-				commSocket.SetSendData(commandSpec.PrepareReturnParameters(reinterpret_cast<Mesh*>(SMesh.active_mesh())->GetCurieTemperatureMaterial()));
+				commSocket.SetSendData(commandSpec.PrepareReturnParameters(dynamic_cast<Mesh*>(SMesh.active_mesh())->GetCurieTemperatureMaterial()));
 		}
 		break;
 
@@ -3069,9 +3101,9 @@ void Simulation::HandleCommand(string command_string)
 			if (script_client_connected) {
 
 				if (SMesh.active_mesh()->GetMeshType() == MESH_ANTIFERROMAGNETIC) 
-					commSocket.SetSendData(commandSpec.PrepareReturnParameters(reinterpret_cast<Mesh*>(SMesh.active_mesh())->GetAtomicMoment_AFM()));
+					commSocket.SetSendData(commandSpec.PrepareReturnParameters(dynamic_cast<Mesh*>(SMesh.active_mesh())->GetAtomicMoment_AFM()));
 				else if (!SMesh.active_mesh()->is_atomistic()) 
-					commSocket.SetSendData(commandSpec.PrepareReturnParameters(reinterpret_cast<Mesh*>(SMesh.active_mesh())->GetAtomicMoment()));
+					commSocket.SetSendData(commandSpec.PrepareReturnParameters(dynamic_cast<Mesh*>(SMesh.active_mesh())->GetAtomicMoment()));
 			}
 		}
 		break;
@@ -3130,7 +3162,7 @@ void Simulation::HandleCommand(string command_string)
 
 			if (script_client_connected && !SMesh.active_mesh()->is_atomistic()) {
 
-				commSocket.SetSendData(commandSpec.PrepareReturnParameters(reinterpret_cast<Mesh*>(SMesh.active_mesh())->GetTcCoupling()));
+				commSocket.SetSendData(commandSpec.PrepareReturnParameters(dynamic_cast<Mesh*>(SMesh.active_mesh())->GetTcCoupling()));
 			}
 		}
 		break;
@@ -3210,10 +3242,46 @@ void Simulation::HandleCommand(string command_string)
 
 				StopSimulation();
 
-				SMesh.SetLinkdTStochastic(flag);
+				SMesh.SetLink_dTstoch(flag);
 				UpdateScreen();
 			}
 			else if (verbose) Print_Stochasticity_List();
+		}
+		break;
+
+		case CMD_SETDTSPEEDUP:
+		{
+			double dTspeedup;
+
+			error = commandSpec.GetParameters(command_fields, dTspeedup);
+
+			if (!error) {
+
+				StopSimulation();
+
+				SMesh.SetSpeedupTimeStep(dTspeedup);
+				UpdateScreen();
+			}
+			else if (verbose) Print_Speedup_List();
+
+			if (script_client_connected) commSocket.SetSendData(commandSpec.PrepareReturnParameters(SMesh.GetSpeedupTimeStep()));
+		}
+		break;
+			
+		case CMD_LINKDTSPEEDUP:
+		{
+			bool flag;
+
+			error = commandSpec.GetParameters(command_fields, flag);
+
+			if (!error) {
+
+				StopSimulation();
+
+				SMesh.SetLink_dTspeedup(flag);
+				UpdateScreen();
+			}
+			else if (verbose) Print_Speedup_List();
 		}
 		break;
 
@@ -3444,7 +3512,7 @@ void Simulation::HandleCommand(string command_string)
 
 				if (SMesh.contains(meshName) && !SMesh[meshName]->is_atomistic()) {
 
-					error = mdb.AddMDBEntry(materialName, *reinterpret_cast<Mesh*>(SMesh[meshName]), SMesh[meshName]->GetMeshType());
+					error = mdb.AddMDBEntry(materialName, *dynamic_cast<Mesh*>(SMesh[meshName]), SMesh[meshName]->GetMeshType());
 
 					if (!error) BD.DisplayConsoleMessage("Material added to local database.");
 				}
@@ -3531,7 +3599,7 @@ void Simulation::HandleCommand(string command_string)
 					if (!err_hndl.call(&SuperMesh::AddMesh, &SMesh, meshName, (MESH_)meshType, meshRect)) {
 
 						//mesh created, now copy parameter values
-						mdb.copy_parameters(*reinterpret_cast<Mesh*>(SMesh[meshName]));
+						mdb.copy_parameters(*dynamic_cast<Mesh*>(SMesh[meshName]));
 					}
 
 					if (script_client_connected)
@@ -3561,7 +3629,7 @@ void Simulation::HandleCommand(string command_string)
 
 						//now copy parameter values - this is done even if mesh types are not the same. e.g. you might want to copy from a ferromagnetic mesh to a dipole mesh
 						//this only works for micromagnetics meshes
-						mdb.copy_parameters(*reinterpret_cast<Mesh*>(SMesh.active_mesh()));
+						mdb.copy_parameters(*dynamic_cast<Mesh*>(SMesh.active_mesh()));
 					}
 				}
 
@@ -3614,10 +3682,10 @@ void Simulation::HandleCommand(string command_string)
 
 				if (SMesh.active_mesh()->Magnetism_Enabled() && !SMesh.active_mesh()->is_atomistic()) {
 					
-					double A = reinterpret_cast<Mesh*>(SMesh.active_mesh())->A;
-					double Ms = reinterpret_cast<Mesh*>(SMesh.active_mesh())->Ms;
-					double Ku = reinterpret_cast<Mesh*>(SMesh.active_mesh())->K1;
-					double D = reinterpret_cast<Mesh*>(SMesh.active_mesh())->D;
+					double A = dynamic_cast<Mesh*>(SMesh.active_mesh())->A;
+					double Ms = dynamic_cast<Mesh*>(SMesh.active_mesh())->Ms;
+					double Ku = dynamic_cast<Mesh*>(SMesh.active_mesh())->K1;
+					double D = dynamic_cast<Mesh*>(SMesh.active_mesh())->D;
 
 					string l_ex, l_Bloch("N/A"), l_sky("N/A");
 
@@ -3797,11 +3865,11 @@ void Simulation::HandleCommand(string command_string)
 
 					if (!GetFilenameDirectory(fileName).length()) fileName = directory + fileName;
 
-					double Ms0 = reinterpret_cast<Mesh*>(SMesh.active_mesh())->Ms.get0();
+					double Ms0 = dynamic_cast<Mesh*>(SMesh.active_mesh())->Ms.get0();
 					if (!normalize) Ms0 = 1.0;
 
 					OVF2 ovf2;
-					error = ovf2.Write_OVF2_VEC(fileName, reinterpret_cast<Mesh*>(SMesh.active_mesh())->M, data_type, Ms0);
+					error = ovf2.Write_OVF2_VEC(fileName, dynamic_cast<Mesh*>(SMesh.active_mesh())->M, data_type, Ms0);
 				}
 				else err_hndl.show_error(BERROR_NOTMAGNETIC, verbose);
 			}
@@ -4150,6 +4218,62 @@ void Simulation::HandleCommand(string command_string)
 		}
 		break;
 
+		case CMD_SHOWTC:
+		{
+			if (SMesh.active_mesh()->Magnetism_Enabled() && SMesh.active_mesh()->is_atomistic()) {
+
+				double Tc = dynamic_cast<Atom_Mesh*>(SMesh.active_mesh())->Show_Transition_Temperature();
+
+				if (verbose) BD.DisplayConsoleMessage("Tc = " + ToString(Tc));
+
+				if (script_client_connected) commSocket.SetSendData(commandSpec.PrepareReturnParameters(Tc));
+			}
+			else err_hndl.show_error(BERROR_NOTATOMISTIC, verbose);
+		}
+		break;
+
+		case CMD_SHOWMS:
+		{
+			if (SMesh.active_mesh()->Magnetism_Enabled() && SMesh.active_mesh()->is_atomistic()) {
+
+				double Ms = dynamic_cast<Atom_Mesh*>(SMesh.active_mesh())->Show_Ms();
+
+				if (verbose) BD.DisplayConsoleMessage("Ms = " + ToString(Ms));
+
+				if (script_client_connected) commSocket.SetSendData(commandSpec.PrepareReturnParameters(Ms));
+			}
+			else err_hndl.show_error(BERROR_NOTATOMISTIC, verbose);
+		}
+		break;
+
+		case CMD_SHOWA:
+		{
+			if (SMesh.active_mesh()->Magnetism_Enabled() && SMesh.active_mesh()->is_atomistic()) {
+
+				double A = dynamic_cast<Atom_Mesh*>(SMesh.active_mesh())->Show_A();
+
+				if (verbose) BD.DisplayConsoleMessage("A = " + ToString(A));
+
+				if (script_client_connected) commSocket.SetSendData(commandSpec.PrepareReturnParameters(A));
+			}
+			else err_hndl.show_error(BERROR_NOTATOMISTIC, verbose);
+		}
+		break;
+
+		case CMD_SHOWK:
+		{
+			if (SMesh.active_mesh()->Magnetism_Enabled() && SMesh.active_mesh()->is_atomistic()) {
+
+				double Ku = dynamic_cast<Atom_Mesh*>(SMesh.active_mesh())->Show_Ku();
+
+				if (verbose) BD.DisplayConsoleMessage("Ku = " + ToString(Ku));
+
+				if (script_client_connected) commSocket.SetSendData(commandSpec.PrepareReturnParameters(Ku));
+			}
+			else err_hndl.show_error(BERROR_NOTATOMISTIC, verbose);
+		}
+		break;
+
 		//---------------- CMD_DP_ commands here
 
 		case CMD_DP_CLEARALL:
@@ -4484,11 +4608,18 @@ void Simulation::HandleCommand(string command_string)
 
 			if (!error) {
 
-				if (SMesh.active_mesh()->Magnetism_Enabled() && !SMesh.active_mesh()->is_atomistic()) {
+				if (SMesh.active_mesh()->Magnetism_Enabled()) {
 
 					double Q = 0.0;
 
-					error = dpArr.get_topological_charge(reinterpret_cast<Mesh*>(SMesh.active_mesh())->Get_M(), x, y, radius, &Q);
+					if (!SMesh.active_mesh()->is_atomistic()) {
+
+						error = dpArr.get_topological_charge(dynamic_cast<Mesh*>(SMesh.active_mesh())->Get_M(), x, y, radius, &Q);
+					}
+					else {
+
+						error = dpArr.get_topological_charge(dynamic_cast<Atom_Mesh*>(SMesh.active_mesh())->Get_M1(), x, y, radius, &Q);
+					}
 
 					if (!error) {
 
@@ -4519,11 +4650,18 @@ void Simulation::HandleCommand(string command_string)
 
 			if (!error) {
 
-				if (SMesh.active_mesh()->Magnetism_Enabled() && !SMesh.active_mesh()->is_atomistic()) {
+				if (SMesh.active_mesh()->Magnetism_Enabled()) {
 
 					double Q = 0.0;
 
-					error = dpArr.count_skyrmions(reinterpret_cast<Mesh*>(SMesh.active_mesh())->Get_M(), x, y, radius, &Q);
+					if (!SMesh.active_mesh()->is_atomistic()) {
+
+						error = dpArr.count_skyrmions(dynamic_cast<Mesh*>(SMesh.active_mesh())->Get_M(), x, y, radius, &Q);
+					}
+					else {
+
+						error = dpArr.count_skyrmions(dynamic_cast<Atom_Mesh*>(SMesh.active_mesh())->Get_M1(), x, y, radius, &Q);
+					}
 
 					if (!error) {
 
@@ -4551,7 +4689,7 @@ void Simulation::HandleCommand(string command_string)
 
 				if (SMesh.active_mesh()->Magnetism_Enabled() && !SMesh.active_mesh()->is_atomistic()) {
 
-					error = dpArr.calculate_histogram(reinterpret_cast<Mesh*>(SMesh.active_mesh())->Get_M(), dp_x, dp_y, bin, min, max);
+					error = dpArr.calculate_histogram(dynamic_cast<Mesh*>(SMesh.active_mesh())->Get_M(), dp_x, dp_y, bin, min, max);
 
 					if (!error) {
 
@@ -4939,16 +5077,16 @@ void Simulation::HandleCommand(string command_string)
 				string meshName = SMesh.GetMeshFocus();
 
 				if (SMesh[meshName]->GetMeshType() == MESH_FERROMAGNETIC && SMesh[meshName]->IsModuleSet(MOD_TRANSPORT) && SMesh.SolveSpinCurrent() && 
-					(IsNZ(reinterpret_cast<Mesh*>(SMesh[meshName])->ts_eff.get0()) || IsNZ(reinterpret_cast<Mesh*>(SMesh[meshName])->tsi_eff.get0()))) {
+					(IsNZ(dynamic_cast<Mesh*>(SMesh[meshName])->ts_eff.get0()) || IsNZ(dynamic_cast<Mesh*>(SMesh[meshName])->tsi_eff.get0()))) {
 
-					VEC_VC<DBL3>& M = reinterpret_cast<Mesh*>(SMesh[meshName])->Get_M();
-					VEC_VC<DBL3>& J = reinterpret_cast<Mesh*>(SMesh[meshName])->Get_Jc();
+					VEC_VC<DBL3>& M = dynamic_cast<Mesh*>(SMesh[meshName])->Get_M();
+					VEC_VC<DBL3>& J = dynamic_cast<Mesh*>(SMesh[meshName])->Get_Jc();
 					VEC<DBL3> T(M.h, M.rect);
 
-					if (IsZ(reinterpret_cast<Mesh*>(SMesh[meshName])->ts_eff.get0())) {
+					if (IsZ(dynamic_cast<Mesh*>(SMesh[meshName])->ts_eff.get0())) {
 
 						//interfacial spin torque only
-						T.copy_values(reinterpret_cast<Mesh*>(SMesh[meshName])->Get_InterfacialSpinTorque());
+						T.copy_values(dynamic_cast<Mesh*>(SMesh[meshName])->Get_InterfacialSpinTorque());
 
 						if (!T.linear_size()) {
 
@@ -4956,10 +5094,10 @@ void Simulation::HandleCommand(string command_string)
 							break;
 						}
 					}
-					else if (IsZ(reinterpret_cast<Mesh*>(SMesh[meshName])->tsi_eff.get0())) {
+					else if (IsZ(dynamic_cast<Mesh*>(SMesh[meshName])->tsi_eff.get0())) {
 
 						//bulk spin torque only
-						T.copy_values(reinterpret_cast<Mesh*>(SMesh[meshName])->Get_SpinTorque());
+						T.copy_values(dynamic_cast<Mesh*>(SMesh[meshName])->Get_SpinTorque());
 
 						if (!T.linear_size()) {
 
@@ -4970,7 +5108,7 @@ void Simulation::HandleCommand(string command_string)
 					else {
 
 						//both bulk and interfacial spin torque
-						T.copy_values(reinterpret_cast<Mesh*>(SMesh[meshName])->Get_InterfacialSpinTorque());
+						T.copy_values(dynamic_cast<Mesh*>(SMesh[meshName])->Get_InterfacialSpinTorque());
 
 						if (!T.linear_size()) {
 
@@ -4978,7 +5116,7 @@ void Simulation::HandleCommand(string command_string)
 							break;
 						}
 
-						T.add_values(reinterpret_cast<Mesh*>(SMesh[meshName])->Get_SpinTorque());
+						T.add_values(dynamic_cast<Mesh*>(SMesh[meshName])->Get_SpinTorque());
 					}		
 
 					DBL2 P, beta;
@@ -5015,16 +5153,16 @@ void Simulation::HandleCommand(string command_string)
 			if (error == BERROR_PARAMMISMATCH) { error.reset(); user_thresholds = false; }
 
 			if (SMesh[meshName]->GetMeshType() == MESH_FERROMAGNETIC && SMesh[meshName]->IsModuleSet(MOD_TRANSPORT) && SMesh.SolveSpinCurrent() &&
-				(IsNZ(reinterpret_cast<Mesh*>(SMesh[meshName])->ts_eff.get0()) || IsNZ(reinterpret_cast<Mesh*>(SMesh[meshName])->tsi_eff.get0()))) {
+				(IsNZ(dynamic_cast<Mesh*>(SMesh[meshName])->ts_eff.get0()) || IsNZ(dynamic_cast<Mesh*>(SMesh[meshName])->tsi_eff.get0()))) {
 
-				VEC_VC<DBL3>& M = reinterpret_cast<Mesh*>(SMesh[meshName])->Get_M();
-				VEC_VC<DBL3>& J = reinterpret_cast<Mesh*>(SMesh[meshName])->Get_Jc();
+				VEC_VC<DBL3>& M = dynamic_cast<Mesh*>(SMesh[meshName])->Get_M();
+				VEC_VC<DBL3>& J = dynamic_cast<Mesh*>(SMesh[meshName])->Get_Jc();
 				VEC<DBL3> T(M.h, M.rect);
 
-				if (IsZ(reinterpret_cast<Mesh*>(SMesh[meshName])->ts_eff.get0())) {
+				if (IsZ(dynamic_cast<Mesh*>(SMesh[meshName])->ts_eff.get0())) {
 
 					//interfacial spin torque only
-					T.copy_values(reinterpret_cast<Mesh*>(SMesh[meshName])->Get_InterfacialSpinTorque());
+					T.copy_values(dynamic_cast<Mesh*>(SMesh[meshName])->Get_InterfacialSpinTorque());
 
 					if (!T.linear_size()) {
 
@@ -5032,10 +5170,10 @@ void Simulation::HandleCommand(string command_string)
 						break;
 					}
 				}
-				else if (IsZ(reinterpret_cast<Mesh*>(SMesh[meshName])->tsi_eff.get0())) {
+				else if (IsZ(dynamic_cast<Mesh*>(SMesh[meshName])->tsi_eff.get0())) {
 
 					//bulk spin torque only
-					T.copy_values(reinterpret_cast<Mesh*>(SMesh[meshName])->Get_SpinTorque());
+					T.copy_values(dynamic_cast<Mesh*>(SMesh[meshName])->Get_SpinTorque());
 
 					if (!T.linear_size()) {
 
@@ -5046,7 +5184,7 @@ void Simulation::HandleCommand(string command_string)
 				else {
 
 					//both bulk and interfacial spin torque
-					T.copy_values(reinterpret_cast<Mesh*>(SMesh[meshName])->Get_InterfacialSpinTorque());
+					T.copy_values(dynamic_cast<Mesh*>(SMesh[meshName])->Get_InterfacialSpinTorque());
 
 					if (!T.linear_size()) {
 
@@ -5054,7 +5192,7 @@ void Simulation::HandleCommand(string command_string)
 						break;
 					}
 
-					T.add_values(reinterpret_cast<Mesh*>(SMesh[meshName])->Get_SpinTorque());
+					T.add_values(dynamic_cast<Mesh*>(SMesh[meshName])->Get_SpinTorque());
 				}
 
 				if (verbose) BD.DisplayConsoleMessage("Fitting... Please wait.");
@@ -5101,9 +5239,9 @@ void Simulation::HandleCommand(string command_string)
 				if (SMesh[meshName]->GetMeshType() == MESH_FERROMAGNETIC && SMesh[meshName]->IsModuleSet(MOD_TRANSPORT) && SMesh.SolveSpinCurrent()
 					&& SMesh.contains(hm_mesh) && SMesh[hm_mesh]->GetMeshType() == MESH_METAL && SMesh[hm_mesh]->IsModuleSet(MOD_TRANSPORT)) {
 
-					VEC<DBL3>& T = reinterpret_cast<Mesh*>(SMesh[meshName])->Get_InterfacialSpinTorque();
-					VEC_VC<DBL3>& M = reinterpret_cast<Mesh*>(SMesh[meshName])->Get_M();
-					VEC_VC<DBL3>& J = reinterpret_cast<Mesh*>(SMesh[hm_mesh])->Get_Jc();
+					VEC<DBL3>& T = dynamic_cast<Mesh*>(SMesh[meshName])->Get_InterfacialSpinTorque();
+					VEC_VC<DBL3>& M = dynamic_cast<Mesh*>(SMesh[meshName])->Get_M();
+					VEC_VC<DBL3>& J = dynamic_cast<Mesh*>(SMesh[hm_mesh])->Get_Jc();
 
 					DBL2 SHAeff, flST;
 					double Rsq = 0.0;
@@ -5140,15 +5278,15 @@ void Simulation::HandleCommand(string command_string)
 				if (SMesh[meshName]->GetMeshType() == MESH_FERROMAGNETIC && SMesh[meshName]->IsModuleSet(MOD_TRANSPORT) && SMesh.SolveSpinCurrent()
 					&& SMesh.contains(hm_mesh) && SMesh[hm_mesh]->GetMeshType() == MESH_METAL && SMesh[hm_mesh]->IsModuleSet(MOD_TRANSPORT)) {
 
-					VEC_VC<DBL3>& M = reinterpret_cast<Mesh*>(SMesh[meshName])->Get_M();
-					VEC_VC<DBL3>& J_hm = reinterpret_cast<Mesh*>(SMesh[hm_mesh])->Get_Jc();
-					VEC_VC<DBL3>& J_fm = reinterpret_cast<Mesh*>(SMesh[meshName])->Get_Jc();
+					VEC_VC<DBL3>& M = dynamic_cast<Mesh*>(SMesh[meshName])->Get_M();
+					VEC_VC<DBL3>& J_hm = dynamic_cast<Mesh*>(SMesh[hm_mesh])->Get_Jc();
+					VEC_VC<DBL3>& J_fm = dynamic_cast<Mesh*>(SMesh[meshName])->Get_Jc();
 					VEC<DBL3> T(M.h, M.rect);
 
-					if (IsZ(reinterpret_cast<Mesh*>(SMesh[meshName])->ts_eff.get0())) {
+					if (IsZ(dynamic_cast<Mesh*>(SMesh[meshName])->ts_eff.get0())) {
 
 						//interfacial spin torque only
-						T.copy_values(reinterpret_cast<Mesh*>(SMesh[meshName])->Get_InterfacialSpinTorque());
+						T.copy_values(dynamic_cast<Mesh*>(SMesh[meshName])->Get_InterfacialSpinTorque());
 
 						if (!T.linear_size()) {
 
@@ -5156,10 +5294,10 @@ void Simulation::HandleCommand(string command_string)
 							break;
 						}
 					}
-					else if (IsZ(reinterpret_cast<Mesh*>(SMesh[meshName])->tsi_eff.get0())) {
+					else if (IsZ(dynamic_cast<Mesh*>(SMesh[meshName])->tsi_eff.get0())) {
 
 						//bulk spin torque only
-						T.copy_values(reinterpret_cast<Mesh*>(SMesh[meshName])->Get_SpinTorque());
+						T.copy_values(dynamic_cast<Mesh*>(SMesh[meshName])->Get_SpinTorque());
 
 						if (!T.linear_size()) {
 
@@ -5170,7 +5308,7 @@ void Simulation::HandleCommand(string command_string)
 					else {
 
 						//both bulk and interfacial spin torque
-						T.copy_values(reinterpret_cast<Mesh*>(SMesh[meshName])->Get_InterfacialSpinTorque());
+						T.copy_values(dynamic_cast<Mesh*>(SMesh[meshName])->Get_InterfacialSpinTorque());
 
 						if (!T.linear_size()) {
 
@@ -5178,7 +5316,7 @@ void Simulation::HandleCommand(string command_string)
 							break;
 						}
 
-						T.add_values(reinterpret_cast<Mesh*>(SMesh[meshName])->Get_SpinTorque());
+						T.add_values(dynamic_cast<Mesh*>(SMesh[meshName])->Get_SpinTorque());
 					}
 
 					DBL2 SHAeff, flST, P, beta;
@@ -5216,21 +5354,21 @@ void Simulation::HandleCommand(string command_string)
 
 					double SHAeff, flST;
 
-					double SHA = reinterpret_cast<Mesh*>(SMesh[hm_mesh])->SHA.get0();
-					double d_N = reinterpret_cast<Mesh*>(SMesh[hm_mesh])->GetMeshDimensions().z;
-					double lsf_N = reinterpret_cast<Mesh*>(SMesh[hm_mesh])->l_sf.get0();
-					double sigma_N = reinterpret_cast<Mesh*>(SMesh[hm_mesh])->elecCond.get0();
+					double SHA = dynamic_cast<Mesh*>(SMesh[hm_mesh])->SHA.get0();
+					double d_N = dynamic_cast<Mesh*>(SMesh[hm_mesh])->GetMeshDimensions().z;
+					double lsf_N = dynamic_cast<Mesh*>(SMesh[hm_mesh])->l_sf.get0();
+					double sigma_N = dynamic_cast<Mesh*>(SMesh[hm_mesh])->elecCond.get0();
 					DBL2 G;
 
 					if (SMesh[hm_mesh]->GetOrigin().z > SMesh[fm_mesh]->GetOrigin().z) {
 
 						//hm mesh on top of fm mesh : hm mesh sets Gmix
-						G = reinterpret_cast<Mesh*>(SMesh[hm_mesh])->Gmix.get0();
+						G = dynamic_cast<Mesh*>(SMesh[hm_mesh])->Gmix.get0();
 					}
 					else {
 
 						//fm mesh on top of hm mesh : fm mesh sets Gmix
-						G = reinterpret_cast<Mesh*>(SMesh[fm_mesh])->Gmix.get0();
+						G = dynamic_cast<Mesh*>(SMesh[fm_mesh])->Gmix.get0();
 					}
 
 					//this is G tilda

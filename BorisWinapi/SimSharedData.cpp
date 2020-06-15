@@ -155,7 +155,7 @@ SimulationSharedData::SimulationSharedData(bool called_from_Simulation)
 		//specify forbidden module combinations - each set is an exclusive modules set, i.e. only one of each can be active at any one time
 		//also specify non-exclusive modules (i.e. entries in exclusiveModules with only one entry per set)
 		exclusiveModules.storeset(MOD_DEMAG_N, MOD_DEMAG, MOD_SDEMAG_DEMAG);
-		exclusiveModules.storeset(MOD_EXCHANGE6NGBR, MOD_DMEXCHANGE, MOD_IDMEXCHANGE);
+		exclusiveModules.storeset(MOD_EXCHANGE, MOD_DMEXCHANGE, MOD_IDMEXCHANGE);
 		exclusiveModules.storeset(MOD_SURFEXCHANGE);
 		exclusiveModules.storeset(MOD_ANIUNI, MOD_ANICUBI);
 		exclusiveModules.storeset(MOD_MELASTIC);
@@ -165,8 +165,6 @@ SimulationSharedData::SimulationSharedData(bool called_from_Simulation)
 		exclusiveModules.storeset(MOD_HEAT);
 		exclusiveModules.storeset(MOD_SOTFIELD);
 		exclusiveModules.storeset(MOD_ROUGHNESS);
-
-		exclusiveModules.storeset(MOD_ATOM_EXCHANGE, MOD_ATOM_DMEXCHANGE, MOD_ATOM_IDMEXCHANGE);
 
 		//--------------
 
@@ -184,7 +182,7 @@ SimulationSharedData::SimulationSharedData(bool called_from_Simulation)
 
 		modules_for_meshtype.push_back(make_vector(
 			MOD_DEMAG_N, MOD_DEMAG, MOD_SDEMAG_DEMAG,
-			MOD_EXCHANGE6NGBR, MOD_DMEXCHANGE, MOD_IDMEXCHANGE, MOD_SURFEXCHANGE, 
+			MOD_EXCHANGE, MOD_DMEXCHANGE, MOD_IDMEXCHANGE, MOD_SURFEXCHANGE, 
 			MOD_ZEEMAN, MOD_MOPTICAL,
 			MOD_ANIUNI, MOD_ANICUBI, MOD_MELASTIC,
 			MOD_TRANSPORT,
@@ -193,7 +191,7 @@ SimulationSharedData::SimulationSharedData(bool called_from_Simulation)
 
 		modules_for_meshtype.push_back(make_vector(
 			MOD_DEMAG_N, MOD_DEMAG, MOD_SDEMAG_DEMAG,
-			MOD_EXCHANGE6NGBR, MOD_DMEXCHANGE, MOD_IDMEXCHANGE, MOD_SURFEXCHANGE,
+			MOD_EXCHANGE, MOD_DMEXCHANGE, MOD_IDMEXCHANGE, MOD_SURFEXCHANGE,
 			MOD_ZEEMAN, MOD_MOPTICAL,
 			MOD_ANIUNI, MOD_ANICUBI,
 			MOD_TRANSPORT,
@@ -215,9 +213,10 @@ SimulationSharedData::SimulationSharedData(bool called_from_Simulation)
 
 		modules_for_meshtype.push_back(make_vector(
 			MOD_DEMAG,
-			MOD_ATOM_EXCHANGE,
-			MOD_ZEEMAN, 
-			MOD_ANIUNI, MOD_ANICUBI), MESH_ATOM_CUBIC);
+			MOD_EXCHANGE, MOD_DMEXCHANGE, MOD_IDMEXCHANGE,
+			MOD_ZEEMAN, MOD_MOPTICAL,
+			MOD_ANIUNI, MOD_ANICUBI,
+			MOD_HEAT), MESH_ATOM_CUBIC);
 
 		//----------------
 
@@ -294,9 +293,9 @@ SimulationSharedData::SimulationSharedData(bool called_from_Simulation)
 
 		params_for_meshtype.push_back(make_vector(
 			PARAM_ATOM_SC_DAMPING, PARAM_ATOM_SC_MUS, 
-			PARAM_ATOM_SC_J, 
-			PARAM_ATOM_SC_K, PARAM_ATOM_EA1,
-			PARAM_HA,
+			PARAM_ATOM_SC_J, PARAM_ATOM_SC_D,
+			PARAM_ATOM_SC_K, PARAM_ATOM_EA1, PARAM_ATOM_EA2,
+			PARAM_HA, PARAM_HMO,
 			PARAM_ELC,
 			PARAM_THERMCOND, PARAM_DENSITY,
 			PARAM_SHC, PARAM_SHC_E, PARAM_G_E, PARAM_T, PARAM_Q), MESH_ATOM_CUBIC);
@@ -373,7 +372,9 @@ SimulationSharedData::SimulationSharedData(bool called_from_Simulation)
 		params_enabled_props.push_back({ false, true }, PARAM_ATOM_SC_DAMPING);
 		params_enabled_props.push_back({ false, true }, PARAM_ATOM_SC_MUS);
 		params_enabled_props.push_back({ false, true }, PARAM_ATOM_SC_J);
+		params_enabled_props.push_back({ false, true }, PARAM_ATOM_SC_D);
 		params_enabled_props.push_back({ false, true }, PARAM_ATOM_SC_K);
 		params_enabled_props.push_back({ false, true }, PARAM_ATOM_EA1);
+		params_enabled_props.push_back({ false, true }, PARAM_ATOM_EA2);
 	}
 }

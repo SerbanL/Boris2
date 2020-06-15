@@ -227,7 +227,16 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 		ODE_ odeID = (ODE_)iop.minorId;
 
 		//try to set ODE and its default evaluation method
-		if (actionCode == AC_MOUSELEFTDOWN) sendCommand_verbose(CMD_SETODE, odeHandles(odeID), odeEvalHandles(odeDefaultEval(odeID)));
+		if (actionCode == AC_MOUSELEFTDOWN) {
+
+			//choose a default eval applicable for both atomistic and micromagnetic solvers
+			EVAL_ defaultEval = odeDefaultEval(odeID);
+			ODE_ atom_odeID;
+			SMesh.QueryAtomODE(atom_odeID);
+			if (!vector_contains(odeAllowedEvals(atom_odeID), defaultEval)) defaultEval = EVAL_AHEUN;
+
+			sendCommand_verbose(CMD_SETODE, odeHandles(odeID), odeEvalHandles(defaultEval));
+		}
 	}
 	break;
 
@@ -235,10 +244,19 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 	case IOI_ATOMODE:
 	{
 		//parameters from iop
-		ODE_ odeID = (ODE_)iop.minorId;
+		ODE_ atom_odeID = (ODE_)iop.minorId;
 
 		//try to set ODE and its default evaluation method
-		if (actionCode == AC_MOUSELEFTDOWN) sendCommand_verbose(CMD_SETATOMODE, odeHandles(odeID), odeEvalHandles(odeDefaultEval(odeID)));
+		if (actionCode == AC_MOUSELEFTDOWN) {
+
+			//choose a default eval applicable for both atomistic and micromagnetic solvers
+			EVAL_ defaultEval = odeDefaultEval(atom_odeID);
+			ODE_ odeID;
+			SMesh.QueryODE(odeID);
+			if (!vector_contains(odeAllowedEvals(odeID), defaultEval)) defaultEval = EVAL_AHEUN;
+
+			sendCommand_verbose(CMD_SETATOMODE, odeHandles(atom_odeID), odeEvalHandles(defaultEval));
+		}
 	}
 	break;
 
@@ -293,6 +311,37 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 	}
 	break;
 
+	//Set evaluation speedup time-step: textId is the value
+	case IOI_SPEEDUPDT:
+	{
+		//parameters from iop
+		string dT_string = ToNum(iop.textId);
+
+		//try to set ODE time step
+		//on double-click make popup edit box to edit the currently displayed value
+		if (actionCode == AC_DOUBLECLICK) { actionOutcome = AO_STARTPOPUPEDITBOX; }
+
+		//popup edit box has returned some text - try to set value from it
+		if (actionCode == AC_POPUPEDITTEXTBOXRETURNEDTEXT) {
+
+			//the actual text returned by the popup edit box
+			string to_text = pTO->GetText();
+			sendCommand_verbose(CMD_SETDTSPEEDUP, trimspaces(to_text));
+		}
+	}
+	break;
+
+	//Link evaluation speedup time-step to ODE dT flag : auxId is the value
+	case IOI_LINKSPEEDUPDT:
+	{
+		//parameters from iop
+		bool state = (bool)iop.auxId;
+
+		//try to set ODE and its default evaluation method
+		if (actionCode == AC_MOUSELEFTDOWN) sendCommand_verbose(CMD_LINKDTSPEEDUP, !state);
+	}
+	break;
+
 	//Set heat equation time step: textId is the value
 	case IOI_HEATDT:
 	{
@@ -313,15 +362,14 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 	}
 	break;
 
-	//Available/set evaluation method for ode : minorId is an entry from ODE_ (the equation), auxId is the EVAL_ entry (the evaluation method), textId is the name of the evaluation method
+	//Available/set evaluation method for ode : minorId is an entry from ODE_ as : micromagnetic equation value + 100 * atomistic equation value, auxId is the EVAL_ entry (the evaluation method), textId is the name of the evaluation method
 	case IOI_ODE_EVAL:
 	{
 		//parameters from iop
-		ODE_ odeID = (ODE_)iop.minorId;
 		string evalHandle = iop.textId;
 
 		//try to set ODE and its evaluation method
-		if (actionCode == AC_MOUSELEFTDOWN) sendCommand_verbose(CMD_SETODE, odeHandles(odeID), evalHandle);
+		if (actionCode == AC_MOUSELEFTDOWN) sendCommand_verbose(CMD_SETODEEVAL, evalHandle);
 	}
 	break;
 
@@ -353,7 +401,6 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 	}
 	break;
 
-	case IOI_MESH_FORSTOCHASTICITY:
 	case IOI_MESH_FORCURIEANDMOMENT:
 	case IOI_MESH_FORPBC:
 	case IOI_MESH_FOREXCHCOUPLING:
@@ -363,6 +410,8 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 	case IOI_MESH_FORDISPLAYOPTIONS:
 	case IOI_MESH_FORMODULES:
 	case IOI_MESH_FORMESHLIST:
+	case IOI_MESH_FORSTOCHASTICITY:
+	case IOI_MESH_FORSPEEDUP:
 	{
 		//parameters from iop
 		string meshName = iop.textId;
@@ -574,6 +623,42 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 
 			if (actionCode == AC_MOUSELEFTDOWN) sendCommand_verbose(CMD_LINKSTOCHASTIC, (status + 1) % 2, SMesh.key_from_meshId(meshId));
 		}
+	}
+	break;
+
+	//Shows macrocell size (units m) for atomistic meshes: minorId is the unique mesh id number, auxId is enabled/disabled status, textId is the mesh cellsize
+	case IOI_MESHDMCELLSIZE:
+	{
+		//parameters from iop
+		int meshId = iop.minorId;
+		bool enabled = (bool)iop.auxId;
+		string cellsize_string = iop.textId;
+
+		//on double-click make popup edit box to edit the currently displayed value
+		if (actionCode == AC_DOUBLECLICK && enabled) {
+
+			sendCommand_verbose(CMD_MESHFOCUS, SMesh.key_from_meshId(meshId));
+			actionOutcome = AO_STARTPOPUPEDITBOX;
+		}
+
+		//popup edit box has returned some text - try to set value from it
+		if (actionCode == AC_POPUPEDITTEXTBOXRETURNEDTEXT) {
+
+			//the actual text returned by the popup edit box
+			string to_text = pTO->GetText();
+			sendCommand_verbose(CMD_ATOMDMCELLSIZE, combine(split(trimspaces(to_text), ",", ";"), " "));
+		};
+	}
+	break;
+
+	//Shows evaluation speedup type: auxId is the type value.
+	case IOI_SPEEDUPMODE:
+	{
+		//parameters from iop
+		int option = iop.auxId;
+
+		if (actionCode == AC_MOUSELEFTDOWN) sendCommand_verbose(CMD_EVALSPEEDUP, (option + 1) % EVALSPEEDUP_NUMENTRIES);
+		if (actionCode == AC_MOUSERIGHTDOWN) sendCommand_verbose(CMD_EVALSPEEDUP, (option + EVALSPEEDUP_NUMENTRIES - 1) % EVALSPEEDUP_NUMENTRIES);
 	}
 	break;
 

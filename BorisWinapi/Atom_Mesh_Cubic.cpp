@@ -22,9 +22,9 @@ Atom_Mesh_Cubic::Atom_Mesh_Cubic(SuperMesh *pSMesh_) :
 			VINFO(move_mesh_trigger), VINFO(exchange_couple_to_meshes),
 			//Material Parameters
 			VINFO(alpha), VINFO(mu_s), 
-			VINFO(J),
-			VINFO(K), VINFO(mcanis_ea1),
-			VINFO(cHA),
+			VINFO(J), VINFO(D),
+			VINFO(K), VINFO(mcanis_ea1), VINFO(mcanis_ea2),
+			VINFO(cHA), VINFO(cHmo),
 			VINFO(elecCond),
 			VINFO(base_temperature), VINFO(T_equation), 
 			VINFO(density),
@@ -32,7 +32,7 @@ Atom_Mesh_Cubic::Atom_Mesh_Cubic(SuperMesh *pSMesh_) :
 		},
 		{
 			//Modules Implementations
-			IINFO(Atom_Demag), IINFO(Atom_Zeeman), IINFO(Atom_Exchange), IINFO(Atom_Anisotropy_Uniaxial)
+			IINFO(Atom_Demag), IINFO(Atom_Zeeman), IINFO(Atom_Exchange), IINFO(Atom_DMExchange), IINFO(Atom_iDMExchange), IINFO(Atom_MOptical), IINFO(Atom_Anisotropy_Uniaxial), IINFO(Atom_Anisotropy_Cubic), IINFO(Atom_Heat)
 		}),
 	meshODE(this)
 {}
@@ -52,9 +52,9 @@ Atom_Mesh_Cubic::Atom_Mesh_Cubic(Rect meshRect_, DBL3 h_, SuperMesh *pSMesh_) :
 			VINFO(move_mesh_trigger), VINFO(exchange_couple_to_meshes),
 			//Material Parameters
 			VINFO(alpha), VINFO(mu_s),
-			VINFO(J),
-			VINFO(K), VINFO(mcanis_ea1),
-			VINFO(cHA),
+			VINFO(J), VINFO(D),
+			VINFO(K), VINFO(mcanis_ea1), VINFO(mcanis_ea2),
+			VINFO(cHA), VINFO(cHmo),
 			VINFO(elecCond),
 			VINFO(base_temperature), VINFO(T_equation),
 			VINFO(density),
@@ -62,7 +62,7 @@ Atom_Mesh_Cubic::Atom_Mesh_Cubic(Rect meshRect_, DBL3 h_, SuperMesh *pSMesh_) :
 		},
 		{
 			//Modules Implementations
-			IINFO(Atom_Demag), IINFO(Atom_Zeeman), IINFO(Atom_Exchange), IINFO(Atom_Anisotropy_Uniaxial)
+			IINFO(Atom_Demag), IINFO(Atom_Zeeman), IINFO(Atom_Exchange), IINFO(Atom_DMExchange), IINFO(Atom_iDMExchange), IINFO(Atom_MOptical), IINFO(Atom_Anisotropy_Uniaxial), IINFO(Atom_Anisotropy_Cubic), IINFO(Atom_Heat)
 		}),
 	meshODE(this)
 {
@@ -80,7 +80,7 @@ Atom_Mesh_Cubic::Atom_Mesh_Cubic(Rect meshRect_, DBL3 h_, SuperMesh *pSMesh_) :
 
 	//default modules configuration
 	if (!error_on_create) error_on_create = AddModule(MOD_DEMAG);
-	if (!error_on_create) error_on_create = AddModule(MOD_ATOM_EXCHANGE);
+	if (!error_on_create) error_on_create = AddModule(MOD_EXCHANGE);
 	if (!error_on_create) error_on_create = AddModule(MOD_ZEEMAN);
 
 	//--------------------------
@@ -233,18 +233,21 @@ BError Atom_Mesh_Cubic::SwitchCUDAState(bool cudaState)
 	//are we switching to cuda?
 	if (cudaState) {
 
-		if (!paMeshCUDA) {
+		if (!pMeshBaseCUDA) {
 
 			//then make MeshCUDA object, copying over currently held cpu data
-			paMeshCUDA = new Atom_Mesh_CubicCUDA(this);
-			error = paMeshCUDA->Error_On_Create();
+			pMeshBaseCUDA = new Atom_Mesh_CubicCUDA(this);
+			paMeshCUDA = dynamic_cast<Atom_MeshCUDA*>(pMeshBaseCUDA);
+
+			error = pMeshBaseCUDA->Error_On_Create();
 			if (!error) error = paMeshCUDA->cuaMesh()->set_pointers(paMeshCUDA);
 		}
 	}
 	else {
 
 		//delete MeshCUDA object and null
-		if (paMeshCUDA) delete paMeshCUDA;
+		if (pMeshBaseCUDA) delete pMeshBaseCUDA;
+		pMeshBaseCUDA = nullptr;
 		paMeshCUDA = nullptr;
 	}
 
@@ -329,7 +332,7 @@ void Atom_Mesh_Cubic::CoupleToDipoles(bool status)
 				if (status) {
 
 					//set interface cells to have magnetisation direction along the touching dipole direction
-					DBL3 Mdipole_direction = reinterpret_cast<Atom_Mesh*>((*pSMesh)[idx])->GetAverageMoment().normalized();
+					DBL3 Mdipole_direction = dynamic_cast<Atom_Mesh*>((*pSMesh)[idx])->GetAverageMoment().normalized();
 
 					Box box = M1.box_from_rect_max(mesh_intersection);
 
@@ -355,7 +358,7 @@ void Atom_Mesh_Cubic::CoupleToDipoles(bool status)
 double Atom_Mesh_Cubic::CheckMoveMesh(void)
 {
 #if COMPILECUDA == 1
-	if (paMeshCUDA) return reinterpret_cast<Atom_Mesh_CubicCUDA*>(paMeshCUDA)->CheckMoveMesh(meshODE.MoveMeshAntisymmetric(), meshODE.MoveMeshThreshold());
+	if (paMeshCUDA) return paMeshCUDA->CheckMoveMesh(meshODE.MoveMeshAntisymmetric(), meshODE.MoveMeshThreshold());
 #endif
 
 	//move mesh algorithm applied to systems containing domain walls in order to simulate domain wall movement.

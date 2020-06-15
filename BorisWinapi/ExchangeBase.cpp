@@ -31,8 +31,8 @@ BError ExchangeBase::Initialize(void)
 			//here we only make a list of all possible meshes which could be exchange coupled; the actual coupling is done, where applicable, in the respective exchange modules.
 			if ((*pSMesh)[idx]->MComputation_Enabled() && (*pSMesh)[idx]->GetMeshExchangeCoupling() && !(*pSMesh)[idx]->is_atomistic()) {
 
-				pMeshes.push_back(reinterpret_cast<Mesh*>((*pSMesh)[idx]));
-				pM.push_back(&reinterpret_cast<Mesh*>((*pSMesh)[idx])->M);
+				pMeshes.push_back(dynamic_cast<Mesh*>((*pSMesh)[idx]));
+				pM.push_back(&dynamic_cast<Mesh*>((*pSMesh)[idx])->M);
 			}
 		}
 

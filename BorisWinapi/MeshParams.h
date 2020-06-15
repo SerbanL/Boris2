@@ -225,9 +225,6 @@ public:
 	//Poisson's ratio (unitless) - default for permalloy
 	MatP<double, double> Pr = 0.3;
 
-	//set temperature spatial variation coefficient (unitless) - used with temperature settings in a simulation schedule only, not with console command directly
-	MatP<double, double> cT = 1.0;
-
 	//OBSOLETE - not used anywhere; keep them to be able to load simulation files which might have these defined
 	//There was an oversight in ProgramState code design, fixed now but the price is I have to keep these to maintain compatibility.
 	MatP<double, double> lambda = 1e-5;

@@ -70,6 +70,14 @@ protected:
 	//if set to true, dT is used instead of dT (default)
 	static bool link_dTstoch;
 
+	//used by the Check_Step_Update method to recommend if required effective field should be updated (in particular demag field) when in extreme mode (use_evaluation_speedup == EVALSPEEDUP_EXTREME):
+	//in this mode only recommend update at this step value
+	static double dTspeedup;
+	//last time the effective field update recommended by Check_Step_Update was done
+	static double time_speedup;
+	//by default dTspeedup = dT, but if this flag is set to false dTspeedup can be independently set
+	static bool link_dTspeedup;
+
 	//-----------------------------------Evaluation Method Data
 
 	//flag to indicate if evaluation method has completed a full iteration
@@ -220,8 +228,11 @@ public:
 
 	void SetdT(double dT);
 
-	void SetdTstoch(double dTstoch);
+	void SetStochTimeStep(double dTstoch);
 	void SetLink_dTstoch(bool link_dTstoch);
+
+	void SetSpeedupTimeStep(double dTspeedup_);
+	void SetLink_dTspeedup(bool link_dTspeedup_);
 
 	void SetAdaptiveTimeStepCtrl(double err_high_fail, double err_high, double err_low, double dT_increase, double dT_min, double dT_max);
 
@@ -256,6 +267,9 @@ public:
 	double GetStochTimeStep(void) { return (link_dTstoch ? dT : dTstoch); }
 	bool GetLink_dTstoch(void) { return link_dTstoch; }
 
+	double GetSpeedupTimeStep(void) { return (link_dTspeedup ? dT : dTspeedup); }
+	bool GetLink_dTspeedup(void) { return link_dTspeedup; }
+
 	DBL3 Get_AStepRelErrCtrl(void) { return DBL3(err_high_fail, err_high, err_low); }
 	DBL3 Get_AStepdTCtrl(void) { return DBL3(dT_increase, dT_min, dT_max); }
 
@@ -265,7 +279,7 @@ public:
 
 	bool SolveSpinCurrent(void) { return solve_spin_current; }
 
-	int EvaluationSpeedup(void) { return use_evaluation_speedup; }
+	int GetEvaluationSpeedup(void) { return use_evaluation_speedup; }
 
 	//----------------------------------- Value Getters
 

@@ -439,7 +439,7 @@ BError SDemag::Initialize(void)
 	if (!use_multilayered_convolution) {
 
 		//make sure to allocate memory for Hdemag if we need it
-		if (pSMesh->EvaluationSpeedup()) Hdemag.resize(pSMesh->h_fm, pSMesh->sMeshRect_fm);
+		if (pSMesh->GetEvaluationSpeedup()) Hdemag.resize(pSMesh->h_fm, pSMesh->sMeshRect_fm);
 		else Hdemag.clear();
 	}
 
@@ -528,11 +528,11 @@ BError SDemag::Initialize_Mesh_Transfer(void)
 
 		if ((*pSMesh)[idx]->MComputation_Enabled() && !(*pSMesh)[idx]->is_atomistic()) {
 
-			pVal_from.push_back(&(reinterpret_cast<Mesh*>((*pSMesh)[idx])->M));
-			pVal_to.push_back(&(reinterpret_cast<Mesh*>((*pSMesh)[idx])->Heff));
+			pVal_from.push_back(&(dynamic_cast<Mesh*>((*pSMesh)[idx])->M));
+			pVal_to.push_back(&(dynamic_cast<Mesh*>((*pSMesh)[idx])->Heff));
 
-			pVal_from2.push_back(&(reinterpret_cast<Mesh*>((*pSMesh)[idx])->M2));
-			pVal_to2.push_back(&(reinterpret_cast<Mesh*>((*pSMesh)[idx])->Heff2));
+			pVal_from2.push_back(&(dynamic_cast<Mesh*>((*pSMesh)[idx])->M2));
+			pVal_to2.push_back(&(dynamic_cast<Mesh*>((*pSMesh)[idx])->Heff2));
 
 			if ((*pSMesh)[idx]->GetMeshType() == MESH_ANTIFERROMAGNETIC) antiferromagnetic_meshes_present = true;
 		}
@@ -551,7 +551,7 @@ BError SDemag::Initialize_Mesh_Transfer(void)
 
 		//the Hdemag.size() check is needed : if in CUDA mode, this method will be called to initialize mesh transfer in sm_Vals so the transfer info can be copied over to the gpu
 		//In this case it's possible Hdemag does not have the correct memory allocated; if not in CUDA mode we first pass through Initialization method before calling this, in which case Hdemag will be sized correctly.
-		if (pSMesh->EvaluationSpeedup() && Hdemag.size() == sm_Vals.size()) {
+		if (pSMesh->GetEvaluationSpeedup() && Hdemag.size() == sm_Vals.size()) {
 
 			//initialize mesh transfer for Hdemag as well if we are using evaluation speedup
 			if (!Hdemag.Initialize_MeshTransfer(pVal_from, pVal_to, MESHTRANSFERTYPE_WEIGHTED)) return error(BERROR_OUTOFMEMORY_CRIT);
@@ -576,7 +576,7 @@ BError SDemag::Initialize_Mesh_Transfer(void)
 
 		//the Hdemag.size() check is needed : if in CUDA mode, this method will be called to initialize mesh transfer in sm_Vals so the transfer info can be copied over to the gpu
 		//In this case it's possible Hdemag does not have the correct memory allocated; if not in CUDA mode we first pass through Initialization method before calling this, in which case Hdemag will be sized correctly.
-		if (pSMesh->EvaluationSpeedup() && Hdemag.size() == sm_Vals.size()) {
+		if (pSMesh->GetEvaluationSpeedup() && Hdemag.size() == sm_Vals.size()) {
 
 			//initialize mesh transfer for Hdemag as well if we are using evaluation speedup
 			if (!Hdemag.Initialize_MeshTransfer_AveragedInputs_DuplicatedOutputs(pVal_from, pVal_from2, pVal_to, pVal_to2, MESHTRANSFERTYPE_WEIGHTED)) return error(BERROR_OUTOFMEMORY_CRIT);
@@ -613,7 +613,7 @@ void SDemag::UninitializeAll(void)
 	if (pModuleCUDA) {
 
 		//Must have called UpdateConfiguration before - in turn it will have called the CUDA version of UpdateConfiguration, which makes sure the pSDemagCUDA_Demag vector is correct
-		reinterpret_cast<SDemagCUDA*>(pModuleCUDA)->UninitializeAll();
+		dynamic_cast<SDemagCUDA*>(pModuleCUDA)->UninitializeAll();
 	}
 #endif
 }
@@ -714,7 +714,7 @@ double SDemag::UpdateField(void)
 		////////////////////////////////// EVAL SPEEDUP - SUPERMESH ///////////////////////////////////
 		///////////////////////////////////////////////////////////////////////////////////////////////
 
-		if (pSMesh->EvaluationSpeedup()) {
+		if (pSMesh->GetEvaluationSpeedup()) {
 
 			//use evaluation speedup method (Hdemag will have memory allocated - this was done in the Initialize method)
 
@@ -852,7 +852,7 @@ double SDemag::UpdateField(void)
 		////////////////////////////////// EVAL SPEEDUP - MULTILAYERED ////////////////////////////////
 		///////////////////////////////////////////////////////////////////////////////////////////////
 
-		if (pSMesh->EvaluationSpeedup()) {
+		if (pSMesh->GetEvaluationSpeedup()) {
 
 			//use evaluation speedup method (Hdemag will have memory allocated - this was done in the Initialize method)
 

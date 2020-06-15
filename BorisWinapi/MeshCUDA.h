@@ -3,27 +3,16 @@
 #include "Boris_Enums_Defs.h"
 #if COMPILECUDA == 1
 
-#include <vector>
-#include <functional>
-#include <string>
-
-#include "BorisCUDALib.h"
-
-#include "CompileFlags.h"
-#include "ErrorHandler.h"
+#include "MeshBaseCUDA.h"
 
 #include "MeshParamsCUDA.h"
-#include "MeshDisplayCUDA.h"
 #include "ManagedMeshCUDA.h"
 
-using namespace std;
-
 class Mesh;
-class PhysQ;
-class Any;
 
 //Store Mesh quantities as cu_obj managed cuda VECs
 class MeshCUDA :
+	public MeshBaseCUDA,
 	public MeshParamsCUDA,
 	public MeshDisplayCUDA
 {
@@ -33,36 +22,12 @@ private:
 	//Still keep references to some Mesh data members here as we cannot use pMesh in .cu files (cannot have BorisLib.h in those compilation units - real headache, will need to fix this at some point somehow: problem is the nvcc compiler throws errors due to C++14 code in BorisLib)
 	Mesh *pMesh;
 
-	bool holder_mesh_destroyed = false;
-
-	//auxiliary for computations
-	cu_obj<cuBReal> aux_real;
-
-	//auxiliary cuVEC for computations
-	cu_obj<cuVEC<cuBReal>> aux_vec_sca;
-
-protected:
-
-	//if the object couldn't be created properly in the constructor an error is set here
-	BError error_on_create;
-
 public:
 
 	//Managed Mesh
 	cu_obj<ManagedMeshCUDA> cuMesh;
 
-	//-----Mesh properties
-
-	//the mesh rectangle in meters : this defines the mesh position in the world (in the super-mesh). cellsizes must divide the mesh rectangle, giving the number of cells in each dimension
-	Rect& meshRect;
-
-	//-----Ferromagnetic properties
-
-	//number of cells (n.x, n.y, n.z)
-	SZ3& n;
-
-	//cellsizes (h.x, h.y, h.z)
-	DBL3& h;
+	//-----Magnetic properties
 
 	//Magnetization
 	cu_obj<cuVEC_VC<cuReal3>> M;
@@ -78,37 +43,11 @@ public:
 
 	//-----Electric conduction properties (Electron charge and spin Transport)
 
-	//number of cells for electrical properties
-	SZ3& n_e;
-
-	//cellsize for electrical properties
-	DBL3& h_e;
-
-	//electrical potential - on n_e, h_e mesh
-	cu_obj<cuVEC_VC<cuBReal>> V;
-
-	//electrical conductivity - on n_e, h_e mesh
-	cu_obj<cuVEC_VC<cuBReal>> elC;
-
-	//electric field - on n_e, h_e mesh
-	cu_obj<cuVEC_VC<cuReal3>> E;
-
-	//spin accumulation - on n_e, h_e mesh
-	cu_obj<cuVEC_VC<cuReal3>> S;
+	//In MeshBaseCUDA
 
 	//-----Thermal conduction properties
 
-	//number of cells for thermal properties
-	SZ3& n_t;
-
-	//cellsize for thermal properties
-	DBL3& h_t;
-
-	//temperature calculated by Heat module (primary temperature, always used for 1-temperature model; for multi-temperature models in metals this is the itinerant electron temperature)
-	cu_obj<cuVEC_VC<cuBReal>> Temp;
-
-	//lattice temperature used in many-T models
-	cu_obj<cuVEC_VC<cuBReal>> Temp_l;
+	//In MeshBaseCUDA
 
 	//-----Stochastic cellsize (VECs held in DiffEq)
 
@@ -123,21 +62,7 @@ public:
 
 	//-----Elastic properties
 
-	//number of cells for mechanical properties
-	SZ3& n_m;
-
-	//cellsize for mechanical properties
-	DBL3& h_m;
-
-	//mechanical displacement vectors - on n_m, h_m mesh
-	cu_obj<cuVEC_VC<cuReal3>> u_disp;
-
-	//strain tensor (symmetric):
-	//diagonal and off-diagonal components - on n_m, h_m mesh
-	//xx, yy, zz
-	cu_obj<cuVEC_VC<cuReal3>> strain_diag;
-	//yz, xz, xy
-	cu_obj<cuVEC_VC<cuReal3>> strain_odiag;
+	//In MeshBaseCUDA
 
 public:
 
@@ -147,23 +72,6 @@ public:
 	MeshCUDA(Mesh* pMesh);
 
 	virtual ~MeshCUDA();
-
-	//-------------------------- Error report / Management
-
-	//obtain error_on_create from this mesh, as well as any set modules - return first error found
-	BError Error_On_Create(void) { return error_on_create; }
-
-	void Holder_Mesh_Destroyed(void) { holder_mesh_destroyed = true; }
-	bool Holder_Mesh_Available(void) { return !holder_mesh_destroyed; }
-
-	//----------------------------------- IMPORTANT CONTROL METHODS
-
-	//call when a configuration change has occurred - some objects might need to be updated accordingly
-	virtual BError UpdateConfiguration(UPDATECONFIG_ cfgMessage) = 0;
-	
-	//This is a "softer" version of UpdateConfiguration, which can be used any time and doesn't require the object to be Uninitialized; 
-	//this will typically involve changing a value across multiple objects, thus better to call this method rather than try to remember which objects need the value changed.
-	virtual void UpdateConfiguration_Values(UPDATECONFIG_ cfgMessage) = 0;
 
 	//----------------------------------- DISPLAY-ASSOCIATED GET/SET METHODS
 
@@ -185,14 +93,6 @@ public:
 	//copy aux_vec_sca in GPU memory to displayVEC in CPU memory
 	void copy_aux_vec_sca(VEC<double>& displayVEC);
 
-	//----------------------------------- MESH INFO GET/SET METHODS
-
-	//NOTE : these type of methods are required here so we can access these properties in .cu files, where we cannot use a Mesh pointer
-	//Using a Mesh pointer means having to include Mesh.h, thus also BorisLib.h -> this won't compile since nvcc doesn't recognise C++14 code in BorisLib
-	//A future version of nvcc will make this practice redundant
-
-	int GetMeshType(void);
-
 	//----------------------------------- ENABLED MESH PROPERTIES CHECKERS
 
 	//magnetization dynamics computation enabled
@@ -212,15 +112,6 @@ public:
 	//check if interface conductance is enabled (for spin transport solver)
 	bool GInterface_Enabled(void);
 
-	//check if the ODECommon::available flag is true (ode step solved)
-	bool CurrentTimeStepSolved(void);
-	
-	//check evaluation speedup flag in ODECommon
-	int EvaluationSpeedup(void);
-
-	//check in ODECommon the type of field update we need to do depending on the ODE evaluation step
-	int Check_Step_Update(void);
-
 	virtual bool GetMeshExchangeCoupling(void) { return false; }
 
 	//----------------------------------- VALUE GETTERS
@@ -231,9 +122,6 @@ public:
 	//compute topological charge density spatial dependence and have it available in aux_vec_sca
 	//Use formula Qdensity = m.(dm/dx x dm/dy) / 4PI
 	void Compute_TopoChargeDensity(void);
-
-	cuBReal GetStageTime(void);
-	int GetStageStep(void);
 
 	//----------------------------------- MESH SHAPE CONTROL
 

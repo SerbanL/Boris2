@@ -10,6 +10,14 @@
 
 #include "DiffEqDM.h"
 
+#include "SurfExchange.h"
+#include "Demag.h"
+#include "SDemag_Demag.h"
+#include "Zeeman.h"
+#include "MOptical.h"
+#include "Transport.h"
+#include "Heat.h"
+
 /////////////////////////////////////////////////////////////////////
 //
 //A diamagnetic mesh : a small negative temperature-independent susceptibility

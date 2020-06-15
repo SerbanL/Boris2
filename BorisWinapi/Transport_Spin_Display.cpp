@@ -145,7 +145,7 @@ DBL3 Transport::GetAverageSpinCurrent(int component, Rect rectangle)
 		GetSpinCurrentCUDA(component);
 
 		//average spin current in displayVEC in TransportCUDA
-		if (pSMesh->SolveSpinCurrent()) return cuReal3(reinterpret_cast<TransportCUDA*>(pModuleCUDA)->displayVEC()->average_nonempty(pMesh->n_e.dim(), rectangle));
+		if (pSMesh->SolveSpinCurrent()) return cuReal3(pTransportCUDA->displayVEC()->average_nonempty(pMesh->n_e.dim(), rectangle));
 		else return cuReal3(0.0);
 	}
 #endif
@@ -205,12 +205,12 @@ VEC<DBL3>& Transport::GetSpinTorque(void)
 #if COMPILECUDA == 1
 cu_obj<cuVEC<cuReal3>>& Transport::GetSpinCurrentCUDA(int component)
 {
-	return reinterpret_cast<TransportCUDA*>(pModuleCUDA)->GetSpinCurrent(component);
+	return pTransportCUDA->GetSpinCurrent(component);
 }
 
 cu_obj<cuVEC<cuReal3>>& Transport::GetSpinTorqueCUDA(void)
 {
-	return reinterpret_cast<TransportCUDA*>(pModuleCUDA)->GetSpinTorque();
+	return pTransportCUDA->GetSpinTorque();
 }
 #endif
 

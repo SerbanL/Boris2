@@ -17,7 +17,7 @@ BError SuperMesh::SetBaseTemperature(string meshName, double Temperature)
 			pMesh[idx]->SetBaseTemperature(Temperature);
 
 			//also set ambient temperature (for heat equation Robin boundary conditions) if heat module set
-			pMesh[idx]->CallModuleMethod(&Heat::SetAmbientTemperature, Temperature);
+			pMesh[idx]->CallModuleMethod(&HeatBase::SetAmbientTemperature, Temperature);
 		}
 	}
 	else {
@@ -26,7 +26,7 @@ BError SuperMesh::SetBaseTemperature(string meshName, double Temperature)
 		pMesh[meshName]->SetBaseTemperature(Temperature);
 
 		//also set ambient temperature (for heat equation Robin boundary conditions) if heat module set
-		pMesh[meshName]->CallModuleMethod(&Heat::SetAmbientTemperature, Temperature);
+		pMesh[meshName]->CallModuleMethod(&HeatBase::SetAmbientTemperature, Temperature);
 	}
 
 	return error;
@@ -44,13 +44,13 @@ BError SuperMesh::SetAmbientTemperature(string meshName, double T_ambient)
 		//all meshes
 		for (int idx = 0; idx < pMesh.size(); idx++) {
 
-			pMesh[idx]->CallModuleMethod(&Heat::SetAmbientTemperature, T_ambient);
+			pMesh[idx]->CallModuleMethod(&HeatBase::SetAmbientTemperature, T_ambient);
 		}
 	}
 	else {
 
 		//named mesh only
-		pMesh[meshName]->CallModuleMethod(&Heat::SetAmbientTemperature, T_ambient);
+		pMesh[meshName]->CallModuleMethod(&HeatBase::SetAmbientTemperature, T_ambient);
 	}
 
 	return error;
@@ -67,13 +67,13 @@ BError SuperMesh::SetAlphaHeatBoundary(string meshName, double alpha_boundary)
 		//all meshes
 		for (int idx = 0; idx < pMesh.size(); idx++) {
 
-			pMesh[idx]->CallModuleMethod(&Heat::SetAlphaBoundary, alpha_boundary);
+			pMesh[idx]->CallModuleMethod(&HeatBase::SetAlphaBoundary, alpha_boundary);
 		}
 	}
 	else {
 
 		//named mesh only
-		pMesh[meshName]->CallModuleMethod(&Heat::SetAlphaBoundary, alpha_boundary);
+		pMesh[meshName]->CallModuleMethod(&HeatBase::SetAlphaBoundary, alpha_boundary);
 	}
 
 	return error;
@@ -85,7 +85,7 @@ BError SuperMesh::SetInsulatingSides(string meshName, string literal, bool statu
 
 	if (!contains(meshName)) return error(BERROR_INCORRECTNAME);
 
-	pMesh[meshName]->CallModuleMethod(&Heat::SetInsulatingSides, literal, status);
+	pMesh[meshName]->CallModuleMethod(&HeatBase::SetInsulatingSides, literal, status);
 
 	return error;
 }
@@ -105,7 +105,7 @@ BError SuperMesh::SetCurieTemperature(string meshName, double T_Curie)
 
 			if (!pMesh[idx]->is_atomistic()) {
 
-				reinterpret_cast<Mesh*>(pMesh[idx])->SetCurieTemperature(T_Curie, true);
+				dynamic_cast<Mesh*>(pMesh[idx])->SetCurieTemperature(T_Curie, true);
 			}
 		}
 	}
@@ -114,7 +114,7 @@ BError SuperMesh::SetCurieTemperature(string meshName, double T_Curie)
 		//named mesh only
 		if (!pMesh[meshName]->is_atomistic()) {
 
-			reinterpret_cast<Mesh*>(pMesh[meshName])->SetCurieTemperature(T_Curie, true);
+			dynamic_cast<Mesh*>(pMesh[meshName])->SetCurieTemperature(T_Curie, true);
 		}
 		else return error(BERROR_INCORRECTNAME);
 	}
@@ -130,7 +130,7 @@ BError SuperMesh::SetCurieTemperatureMaterial(string meshName, double T_Curie_ma
 
 	if (!pMesh[meshName]->is_atomistic()) {
 
-		reinterpret_cast<Mesh*>(pMesh[meshName])->SetCurieTemperatureMaterial(T_Curie_material);
+		dynamic_cast<Mesh*>(pMesh[meshName])->SetCurieTemperatureMaterial(T_Curie_material);
 	}
 	else return error(BERROR_INCORRECTNAME);
 
@@ -150,7 +150,7 @@ BError SuperMesh::SetAtomicMagneticMoment(string meshName, DBL2 atomic_moment)
 
 			if (!pMesh[idx]->is_atomistic()) {
 
-				reinterpret_cast<Mesh*>(pMesh[idx])->SetAtomicMoment(atomic_moment);
+				dynamic_cast<Mesh*>(pMesh[idx])->SetAtomicMoment(atomic_moment);
 			}
 		}
 	}
@@ -159,7 +159,7 @@ BError SuperMesh::SetAtomicMagneticMoment(string meshName, DBL2 atomic_moment)
 		//named mesh only
 		if (!pMesh[meshName]->is_atomistic()) {
 
-			reinterpret_cast<Mesh*>(pMesh[meshName])->SetAtomicMoment(atomic_moment);
+			dynamic_cast<Mesh*>(pMesh[meshName])->SetAtomicMoment(atomic_moment);
 		}
 		else return error(BERROR_INCORRECTNAME);
 	}
@@ -181,7 +181,7 @@ BError SuperMesh::SetTcCoupling(string meshName, DBL2 tau_ii, DBL2 tau_ij)
 
 			if (!pMesh[idx]->is_atomistic()) {
 
-				reinterpret_cast<Mesh*>(pMesh[idx])->SetTcCoupling(tau_ii, tau_ij);
+				dynamic_cast<Mesh*>(pMesh[idx])->SetTcCoupling(tau_ii, tau_ij);
 			}
 		}
 	}
@@ -190,7 +190,7 @@ BError SuperMesh::SetTcCoupling(string meshName, DBL2 tau_ii, DBL2 tau_ij)
 		//named mesh only
 		if (!pMesh[meshName]->is_atomistic()) {
 
-			reinterpret_cast<Mesh*>(pMesh[meshName])->SetTcCoupling(tau_ii, tau_ij);
+			dynamic_cast<Mesh*>(pMesh[meshName])->SetTcCoupling(tau_ii, tau_ij);
 		}
 		else return error(BERROR_INCORRECTNAME);
 	}
@@ -211,7 +211,7 @@ BError SuperMesh::SetTcCoupling_Intra(string meshName, DBL2 tau_ii)
 
 			if (!pMesh[idx]->is_atomistic()) {
 
-				reinterpret_cast<Mesh*>(pMesh[idx])->SetTcCoupling_Intra(tau_ii);
+				dynamic_cast<Mesh*>(pMesh[idx])->SetTcCoupling_Intra(tau_ii);
 			}
 		}
 	}
@@ -220,7 +220,7 @@ BError SuperMesh::SetTcCoupling_Intra(string meshName, DBL2 tau_ii)
 		//named mesh only
 		if (!pMesh[meshName]->is_atomistic()) {
 
-			reinterpret_cast<Mesh*>(pMesh[meshName])->SetTcCoupling_Intra(tau_ii);
+			dynamic_cast<Mesh*>(pMesh[meshName])->SetTcCoupling_Intra(tau_ii);
 		}
 		else return error(BERROR_INCORRECTNAME);
 	}
@@ -241,7 +241,7 @@ BError SuperMesh::SetTcCoupling_Inter(string meshName, DBL2 tau_ij)
 
 			if (!pMesh[idx]->is_atomistic()) {
 
-				reinterpret_cast<Mesh*>(pMesh[idx])->SetTcCoupling_Inter(tau_ij);
+				dynamic_cast<Mesh*>(pMesh[idx])->SetTcCoupling_Inter(tau_ij);
 			}
 		}
 	}
@@ -250,7 +250,7 @@ BError SuperMesh::SetTcCoupling_Inter(string meshName, DBL2 tau_ij)
 		//named mesh only
 		if (!pMesh[meshName]->is_atomistic()) {
 
-			reinterpret_cast<Mesh*>(pMesh[meshName])->SetTcCoupling_Inter(tau_ij);
+			dynamic_cast<Mesh*>(pMesh[meshName])->SetTcCoupling_Inter(tau_ij);
 		}
 		else return error(BERROR_INCORRECTNAME);
 	}
@@ -270,13 +270,13 @@ BError SuperMesh::SetTemperatureModel(string meshName, int tmtype)
 		//all meshes
 		for (int idx = 0; idx < pMesh.size(); idx++) {
 
-			pMesh[meshName]->CallModuleMethod(&Heat::Set_TMType, (TMTYPE_)tmtype);
+			pMesh[meshName]->CallModuleMethod(&HeatBase::Set_TMType, (TMTYPE_)tmtype);
 		}
 	}
 	else {
 
 		//named mesh only
-		pMesh[meshName]->CallModuleMethod(&Heat::Set_TMType, (TMTYPE_)tmtype);
+		pMesh[meshName]->CallModuleMethod(&HeatBase::Set_TMType, (TMTYPE_)tmtype);
 	}
 
 	return error;

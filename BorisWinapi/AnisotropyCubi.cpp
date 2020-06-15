@@ -242,7 +242,7 @@ double Anisotropy_Cubic::UpdateField(void)
 double Anisotropy_Cubic::GetEnergyDensity(Rect& avRect)
 {
 #if COMPILECUDA == 1
-	if (pModuleCUDA) return reinterpret_cast<Anisotropy_CubicCUDA*>(pModuleCUDA)->GetEnergyDensity(avRect);
+	if (pModuleCUDA) return dynamic_cast<Anisotropy_CubicCUDA*>(pModuleCUDA)->GetEnergyDensity(avRect);
 #endif
 
 	double energy = 0;
@@ -274,20 +274,15 @@ double Anisotropy_Cubic::GetEnergyDensity(Rect& avRect)
 				double d2 = (pMesh->M[idx] * mcanis_ea2) / Ms;
 				double d3 = (pMesh->M[idx] * mcanis_ea3) / Ms;
 
-				//terms for K1 contribution
-				double a1 = d1 * (d2*d2 + d3 * d3);
-				double a2 = d2 * (d1*d1 + d3 * d3);
-				double a3 = d3 * (d1*d1 + d2 * d2);
-
 				//terms for K2 contribution
-				double d123 = d1 * d2*d3;
+				double d123 = d1*d2*d3;
 
 				double b1 = d123 * d2*d3;
 				double b2 = d123 * d1*d3;
 				double b3 = d123 * d1*d2;
 
 				//update energy (E/V)
-				energy += K1 * (d1*d1*d2*d2 + d1 * d1*d3*d3 + d2 * d2*d3*d3) + K2 * d123*d123;
+				energy += K1 * (d1*d1*d2*d2 + d1*d1*d3*d3 + d2*d2*d3*d3) + K2 * d123*d123;
 				num_points++;
 			}
 		}
@@ -319,13 +314,8 @@ double Anisotropy_Cubic::GetEnergyDensity(Rect& avRect)
 				double d2 = (pMesh->M[idx] * mcanis_ea2) / Ms_AFM.i;
 				double d3 = (pMesh->M[idx] * mcanis_ea3) / Ms_AFM.i;
 
-				//terms for K1 contribution
-				double a1 = d1 * (d2 * d2 + d3 * d3);
-				double a2 = d2 * (d1 * d1 + d3 * d3);
-				double a3 = d3 * (d1 * d1 + d2 * d2);
-
 				//terms for K2 contribution
-				double d123 = d1 * d2*d3;
+				double d123 = d1*d2*d3;
 
 				double b1 = d123 * d2*d3;
 				double b2 = d123 * d1*d3;
@@ -337,18 +327,14 @@ double Anisotropy_Cubic::GetEnergyDensity(Rect& avRect)
 				double d2B = (pMesh->M2[idx] * mcanis_ea2) / Ms_AFM.j;
 				double d3B = (pMesh->M2[idx] * mcanis_ea3) / Ms_AFM.j;
 
-				double a1B = d1B * (d2B * d2B + d3B * d3B);
-				double a2B = d2B * (d1B * d1B + d3B * d3B);
-				double a3B = d3B * (d1B * d1B + d2B * d2B);
-
-				double d123B = d1B * d2B*d3B;
+				double d123B = d1B*d2B*d3B;
 
 				double b1B = d123B * d2B*d3B;
 				double b2B = d123B * d1B*d3B;
 				double b3B = d123B * d1B*d2B;
 
 				//update energy (E/V)
-				energy += (K1_AFM.i * (d1*d1*d2*d2 + d1 * d1*d3*d3 + d2 * d2*d3*d3) + K2_AFM.i * d123*d123 + K1_AFM.j * (d1B*d1B*d2B*d2B + d1B * d1B*d3B*d3B + d2B * d2B*d3B*d3B) + K2_AFM.j * d123B*d123B) / 2;
+				energy += (K1_AFM.i * (d1*d1*d2*d2 + d1*d1*d3*d3 + d2*d2*d3*d3) + K2_AFM.i * d123*d123 + K1_AFM.j * (d1B*d1B*d2B*d2B + d1B*d1B*d3B*d3B + d2B*d2B*d3B*d3B) + K2_AFM.j * d123B*d123B) / 2;
 				num_points++;
 			}
 		}

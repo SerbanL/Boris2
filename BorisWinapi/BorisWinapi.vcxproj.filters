@@ -70,9 +70,6 @@
     <Filter Include="02. MESHES">
       <UniqueIdentifier>{36acb436-4478-4d1f-9a2e-ad20299e57e8}</UniqueIdentifier>
     </Filter>
-    <Filter Include="02. MESHES\MESHES BASE">
-      <UniqueIdentifier>{72ab5aa5-258e-47bf-a1cc-ce4c7cc576a6}</UniqueIdentifier>
-    </Filter>
     <Filter Include="02. MESHES\__ATOMISTIC">
       <UniqueIdentifier>{61c3c0d1-2d0b-45e5-b6a5-26229cd9bbf1}</UniqueIdentifier>
     </Filter>
@@ -220,12 +217,6 @@
     <Filter Include="11. HEAT SOLVER">
       <UniqueIdentifier>{3b1e967f-860e-4a94-97b4-3c9d4d41a271}</UniqueIdentifier>
     </Filter>
-    <Filter Include="11. HEAT SOLVER\HEAT SOLVER - CPU">
-      <UniqueIdentifier>{d5e3c993-59b5-4857-817d-3e893d17b84c}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="11. HEAT SOLVER\HEAT SOLVER - CUDA">
-      <UniqueIdentifier>{73452263-87d4-48e5-a27b-2db1c1424af8}</UniqueIdentifier>
-    </Filter>
     <Filter Include="00. SIMULATION">
       <UniqueIdentifier>{8168bf67-9e8a-4c8b-97cc-7f030cc7ce88}</UniqueIdentifier>
     </Filter>
@@ -281,6 +272,42 @@
     </Filter>
     <Filter Include="07. EXCHANGE\__ATOMISTIC\ATOM EXCHANGE - CUDA">
       <UniqueIdentifier>{b995fc29-0b77-4528-a36c-b12a46eea80a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="02. MESHES\MESHES BASE - CPU">
+      <UniqueIdentifier>{72ab5aa5-258e-47bf-a1cc-ce4c7cc576a6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="02. MESHES\MESHES BASE - CUDA">
+      <UniqueIdentifier>{fe7033b7-d910-459b-9d3d-a94b5e8321b2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="11. HEAT SOLVER\HEAT BASE - CPU">
+      <UniqueIdentifier>{765804d8-ed4f-42e6-ba0b-16bf9cb14611}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="11. HEAT SOLVER\HEAT BASE - CUDA">
+      <UniqueIdentifier>{b4236f0c-3db6-4b35-8930-0ab88a7692e4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="11. HEAT SOLVER\HEAT SUPERMESH - CPU">
+      <UniqueIdentifier>{4dac5f5b-6317-48fb-ae7e-254b715a9710}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="11. HEAT SOLVER\HEAT SUPERMESH - CUDA">
+      <UniqueIdentifier>{9d4d86af-bfe4-47f0-b81f-0b4e30d9f503}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="11. HEAT SOLVER\__MICROMAGNETIC">
+      <UniqueIdentifier>{3d1e1544-2af0-40e3-8ed9-0ceebadf4bbb}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="11. HEAT SOLVER\__ATOMISTIC">
+      <UniqueIdentifier>{af460a14-e2c3-46de-93e6-bb6438afac13}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="11. HEAT SOLVER\__MICROMAGNETIC\MM HEAT SOLVER - CPU">
+      <UniqueIdentifier>{d5e3c993-59b5-4857-817d-3e893d17b84c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="11. HEAT SOLVER\__MICROMAGNETIC\MM HEAT SOLVER - CUDA">
+      <UniqueIdentifier>{73452263-87d4-48e5-a27b-2db1c1424af8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="11. HEAT SOLVER\__ATOMISTIC\ATOM HEAT SOLVER - CPU">
+      <UniqueIdentifier>{78b20e63-fae5-4cfd-8035-9e00bfd52281}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="11. HEAT SOLVER\__ATOMISTIC\ATOM HEAT SOLVER - CUDA">
+      <UniqueIdentifier>{cc80f438-d22b-4528-9cac-b20198648c69}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -633,22 +660,13 @@
       <Filter>01. DIFFERENTIAL EQUATIONS\__MICROMAGNETIC\CUDA\DIFF EQUATIONS DM - CUDA</Filter>
     </ClInclude>
     <ClInclude Include="Heat.h">
-      <Filter>11. HEAT SOLVER\HEAT SOLVER - CPU</Filter>
-    </ClInclude>
-    <ClInclude Include="SHeat.h">
-      <Filter>11. HEAT SOLVER\HEAT SOLVER - CPU</Filter>
+      <Filter>11. HEAT SOLVER\__MICROMAGNETIC\MM HEAT SOLVER - CPU</Filter>
     </ClInclude>
     <ClInclude Include="HeatCUDA.h">
-      <Filter>11. HEAT SOLVER\HEAT SOLVER - CUDA</Filter>
-    </ClInclude>
-    <ClInclude Include="HeatCUDA_CMBND.h">
-      <Filter>11. HEAT SOLVER\HEAT SOLVER - CUDA</Filter>
-    </ClInclude>
-    <ClInclude Include="SHeatCUDA.h">
-      <Filter>11. HEAT SOLVER\HEAT SOLVER - CUDA</Filter>
+      <Filter>11. HEAT SOLVER\__MICROMAGNETIC\MM HEAT SOLVER - CUDA</Filter>
     </ClInclude>
     <ClInclude Include="Heat_Defs.h">
-      <Filter>11. HEAT SOLVER\HEAT SOLVER - CPU</Filter>
+      <Filter>11. HEAT SOLVER\__MICROMAGNETIC\MM HEAT SOLVER - CPU</Filter>
     </ClInclude>
     <ClInclude Include="MOpticalCUDA.h">
       <Filter>03. MODULES\__MICROMAGNETIC\MM MODULES - CUDA</Filter>
@@ -681,10 +699,10 @@
       <Filter>02. MESHES\__MICROMAGNETIC\CPU\MM MESHES INTERFACE - CPU</Filter>
     </ClInclude>
     <ClInclude Include="MeshBase.h">
-      <Filter>02. MESHES\MESHES BASE</Filter>
+      <Filter>02. MESHES\MESHES BASE - CPU</Filter>
     </ClInclude>
     <ClInclude Include="MeshDefs.h">
-      <Filter>02. MESHES\MESHES BASE</Filter>
+      <Filter>02. MESHES\MESHES BASE - CPU</Filter>
     </ClInclude>
     <ClInclude Include="MaterialParameter.h">
       <Filter>02. MESHES\MAT PARAMS - CPU</Filter>
@@ -702,7 +720,7 @@
       <Filter>02. MESHES\__MICROMAGNETIC\CPU\MM MESHES INTERFACE - CPU</Filter>
     </ClInclude>
     <ClInclude Include="MeshParamsBase.h">
-      <Filter>02. MESHES\MESHES BASE</Filter>
+      <Filter>02. MESHES\MESHES BASE - CPU</Filter>
     </ClInclude>
     <ClInclude Include="DiffEq_CommonBase.h">
       <Filter>01. DIFFERENTIAL EQUATIONS\DIFF EQUATIONS BASE - CPU</Filter>
@@ -852,6 +870,57 @@
       <Filter>03. MODULES\__ATOMISTIC\ATOM MODULES - CPU</Filter>
     </ClInclude>
     <ClInclude Include="Atom_DemagCUDA.h">
+      <Filter>03. MODULES\__ATOMISTIC\ATOM MODULES - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="Atom_DMExchange.h">
+      <Filter>07. EXCHANGE\__ATOMISTIC\ATOM EXCHANGE - CPU</Filter>
+    </ClInclude>
+    <ClInclude Include="Atom_iDMExchange.h">
+      <Filter>07. EXCHANGE\__ATOMISTIC\ATOM EXCHANGE - CPU</Filter>
+    </ClInclude>
+    <ClInclude Include="Atom_DMExchangeCUDA.h">
+      <Filter>07. EXCHANGE\__ATOMISTIC\ATOM EXCHANGE - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="Atom_iDMExchangeCUDA.h">
+      <Filter>07. EXCHANGE\__ATOMISTIC\ATOM EXCHANGE - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="DemagBase.h">
+      <Filter>03. MODULES\__MICROMAGNETIC\MM MODULES - CPU</Filter>
+    </ClInclude>
+    <ClInclude Include="HeatBase.h">
+      <Filter>11. HEAT SOLVER\HEAT BASE - CPU</Filter>
+    </ClInclude>
+    <ClInclude Include="MeshBaseCUDA.h">
+      <Filter>02. MESHES\MESHES BASE - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="HeatBaseCUDA.h">
+      <Filter>11. HEAT SOLVER\HEAT BASE - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="SHeat.h">
+      <Filter>11. HEAT SOLVER\HEAT SUPERMESH - CPU</Filter>
+    </ClInclude>
+    <ClInclude Include="SHeatCUDA.h">
+      <Filter>11. HEAT SOLVER\HEAT SUPERMESH - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="Atom_Heat.h">
+      <Filter>11. HEAT SOLVER\__ATOMISTIC\ATOM HEAT SOLVER - CPU</Filter>
+    </ClInclude>
+    <ClInclude Include="Atom_HeatCUDA.h">
+      <Filter>11. HEAT SOLVER\__ATOMISTIC\ATOM HEAT SOLVER - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="HeatCUDA_CMBND.h">
+      <Filter>11. HEAT SOLVER\HEAT SUPERMESH - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="Atom_MOptical.h">
+      <Filter>03. MODULES\__ATOMISTIC\ATOM MODULES - CPU</Filter>
+    </ClInclude>
+    <ClInclude Include="Atom_MOpticalCUDA.h">
+      <Filter>03. MODULES\__ATOMISTIC\ATOM MODULES - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="Atom_AnisotropyCubi.h">
+      <Filter>03. MODULES\__ATOMISTIC\ATOM MODULES - CPU</Filter>
+    </ClInclude>
+    <ClInclude Include="Atom_AnisotropyCubiCUDA.h">
       <Filter>03. MODULES\__ATOMISTIC\ATOM MODULES - CUDA</Filter>
     </ClInclude>
   </ItemGroup>
@@ -1283,25 +1352,16 @@
       <Filter>01. DIFFERENTIAL EQUATIONS\__MICROMAGNETIC\CUDA\DIFF EQUATIONS DM - CUDA</Filter>
     </ClCompile>
     <ClCompile Include="Heat.cpp">
-      <Filter>11. HEAT SOLVER\HEAT SOLVER - CPU</Filter>
-    </ClCompile>
-    <ClCompile Include="SHeat.cpp">
-      <Filter>11. HEAT SOLVER\HEAT SOLVER - CPU</Filter>
+      <Filter>11. HEAT SOLVER\__MICROMAGNETIC\MM HEAT SOLVER - CPU</Filter>
     </ClCompile>
     <ClCompile Include="HeatCUDA.cpp">
-      <Filter>11. HEAT SOLVER\HEAT SOLVER - CUDA</Filter>
-    </ClCompile>
-    <ClCompile Include="HeatCUDA_CMBND.cpp">
-      <Filter>11. HEAT SOLVER\HEAT SOLVER - CUDA</Filter>
-    </ClCompile>
-    <ClCompile Include="SHeatCUDA.cpp">
-      <Filter>11. HEAT SOLVER\HEAT SOLVER - CUDA</Filter>
+      <Filter>11. HEAT SOLVER\__MICROMAGNETIC\MM HEAT SOLVER - CUDA</Filter>
     </ClCompile>
     <ClCompile Include="Heat_Solve.cpp">
-      <Filter>11. HEAT SOLVER\HEAT SOLVER - CPU</Filter>
+      <Filter>11. HEAT SOLVER\__MICROMAGNETIC\MM HEAT SOLVER - CPU</Filter>
     </ClCompile>
     <ClCompile Include="Heat_Auxiliary.cpp">
-      <Filter>11. HEAT SOLVER\HEAT SOLVER - CPU</Filter>
+      <Filter>11. HEAT SOLVER\__MICROMAGNETIC\MM HEAT SOLVER - CPU</Filter>
     </ClCompile>
     <ClCompile Include="MOpticalCUDA.cpp">
       <Filter>03. MODULES\__MICROMAGNETIC\MM MODULES - CUDA</Filter>
@@ -1394,10 +1454,10 @@
       <Filter>02. MESHES\__MICROMAGNETIC\CPU\MM MESHES INTERFACE - CPU</Filter>
     </ClCompile>
     <ClCompile Include="MeshBase.cpp">
-      <Filter>02. MESHES\MESHES BASE</Filter>
+      <Filter>02. MESHES\MESHES BASE - CPU</Filter>
     </ClCompile>
     <ClCompile Include="MeshBaseModules.cpp">
-      <Filter>02. MESHES\MESHES BASE</Filter>
+      <Filter>02. MESHES\MESHES BASE - CPU</Filter>
     </ClCompile>
     <ClCompile Include="MeshGetData.cpp">
       <Filter>02. MESHES\__MICROMAGNETIC\CPU\MM MESHES INTERFACE - CPU</Filter>
@@ -1424,10 +1484,10 @@
       <Filter>02. MESHES\__MICROMAGNETIC\CPU\MM MESHES INTERFACE - CPU</Filter>
     </ClCompile>
     <ClCompile Include="MeshParamsBase.cpp">
-      <Filter>02. MESHES\MESHES BASE</Filter>
+      <Filter>02. MESHES\MESHES BASE - CPU</Filter>
     </ClCompile>
     <ClCompile Include="MeshBaseParamsControl.cpp">
-      <Filter>02. MESHES\MESHES BASE</Filter>
+      <Filter>02. MESHES\MESHES BASE - CPU</Filter>
     </ClCompile>
     <ClCompile Include="MeshCompute.cpp">
       <Filter>02. MESHES\__MICROMAGNETIC\CPU\MM MESHES INTERFACE - CPU</Filter>
@@ -1690,6 +1750,60 @@
     <ClCompile Include="Atom_DemagCUDA.cpp">
       <Filter>03. MODULES\__ATOMISTIC\ATOM MODULES - CUDA</Filter>
     </ClCompile>
+    <ClCompile Include="Atom_DMExchange.cpp">
+      <Filter>07. EXCHANGE\__ATOMISTIC\ATOM EXCHANGE - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="Atom_iDMExchange.cpp">
+      <Filter>07. EXCHANGE\__ATOMISTIC\ATOM EXCHANGE - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="Atom_DMExchangeCUDA.cpp">
+      <Filter>07. EXCHANGE\__ATOMISTIC\ATOM EXCHANGE - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="Atom_iDMExchangeCUDA.cpp">
+      <Filter>07. EXCHANGE\__ATOMISTIC\ATOM EXCHANGE - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="MeshBaseCUDA.cpp">
+      <Filter>02. MESHES\MESHES BASE - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="HeatBase.cpp">
+      <Filter>11. HEAT SOLVER\HEAT BASE - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="HeatBaseCUDA.cpp">
+      <Filter>11. HEAT SOLVER\HEAT BASE - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="SHeat.cpp">
+      <Filter>11. HEAT SOLVER\HEAT SUPERMESH - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="SHeatCUDA.cpp">
+      <Filter>11. HEAT SOLVER\HEAT SUPERMESH - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="Atom_Heat.cpp">
+      <Filter>11. HEAT SOLVER\__ATOMISTIC\ATOM HEAT SOLVER - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="Atom_Heat_Auxiliary.cpp">
+      <Filter>11. HEAT SOLVER\__ATOMISTIC\ATOM HEAT SOLVER - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="Atom_Heat_Solve.cpp">
+      <Filter>11. HEAT SOLVER\__ATOMISTIC\ATOM HEAT SOLVER - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="HeatCUDA_CMBND.cpp">
+      <Filter>11. HEAT SOLVER\HEAT SUPERMESH - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="Atom_HeatCUDA.cpp">
+      <Filter>11. HEAT SOLVER\__ATOMISTIC\ATOM HEAT SOLVER - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="Atom_MOptical.cpp">
+      <Filter>03. MODULES\__ATOMISTIC\ATOM MODULES - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="Atom_MOpticalCUDA.cpp">
+      <Filter>03. MODULES\__ATOMISTIC\ATOM MODULES - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="Atom_AnisotropyCubi.cpp">
+      <Filter>03. MODULES\__ATOMISTIC\ATOM MODULES - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="Atom_AnisotropyCubiCUDA.cpp">
+      <Filter>03. MODULES\__ATOMISTIC\ATOM MODULES - CUDA</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="BorisWinapi.rc">
@@ -1933,10 +2047,7 @@
       <Filter>01. DIFFERENTIAL EQUATIONS\__MICROMAGNETIC\CUDA\DIFF EQUATIONS DM - CUDA</Filter>
     </CudaCompile>
     <CudaCompile Include="HeatCUDA.cu">
-      <Filter>11. HEAT SOLVER\HEAT SOLVER - CUDA</Filter>
-    </CudaCompile>
-    <CudaCompile Include="SHeatCUDA.cu">
-      <Filter>11. HEAT SOLVER\HEAT SOLVER - CUDA</Filter>
+      <Filter>11. HEAT SOLVER\__MICROMAGNETIC\MM HEAT SOLVER - CUDA</Filter>
     </CudaCompile>
     <CudaCompile Include="MeshCUDA.cu">
       <Filter>02. MESHES\__MICROMAGNETIC\CUDA\MM MESHES INTERFACE - CUDA</Filter>
@@ -2006,6 +2117,27 @@
     </CudaCompile>
     <CudaCompile Include="Atom_Mesh_CubicCUDA_Compute.cu">
       <Filter>02. MESHES\__ATOMISTIC\CUDA\ATOM MESHES - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="Atom_DMExchangeCUDA.cu">
+      <Filter>07. EXCHANGE\__ATOMISTIC\ATOM EXCHANGE - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="Atom_iDMExchangeCUDA.cu">
+      <Filter>07. EXCHANGE\__ATOMISTIC\ATOM EXCHANGE - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="HeatBaseCUDA.cu">
+      <Filter>11. HEAT SOLVER\HEAT BASE - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="SHeatCUDA.cu">
+      <Filter>11. HEAT SOLVER\HEAT SUPERMESH - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="Atom_HeatCUDA.cu">
+      <Filter>11. HEAT SOLVER\__ATOMISTIC\ATOM HEAT SOLVER - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="Atom_MOpticalCUDA.cu">
+      <Filter>03. MODULES\__ATOMISTIC\ATOM MODULES - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="Atom_AnisotropyCubiCUDA.cu">
+      <Filter>03. MODULES\__ATOMISTIC\ATOM MODULES - CUDA</Filter>
     </CudaCompile>
   </ItemGroup>
 </Project>

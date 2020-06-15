@@ -6,11 +6,9 @@
 using namespace std;
 
 class SuperMesh;
-class Heat;
+class HeatBase;
 
 #ifdef MODULE_HEAT
-
-#include "MeshParams.h"
 
 #if COMPILECUDA == 1
 #include "SHeatCUDA.h"
@@ -37,7 +35,7 @@ private:
 	vector< vector<CMBNDInfo> > CMBNDcontacts;
 
 	//list of all Heat modules in meshes (same ordering as first vector in CMBNDcontacts)
-	vector<Heat*> pHeat;
+	vector<HeatBase*> pHeat;
 
 	//vector of pointers to all Temp - need this to set cmbnd flags (same ordering as first vector in CMBNDcontacts)
 	vector<VEC_VC<double>*> pTemp;

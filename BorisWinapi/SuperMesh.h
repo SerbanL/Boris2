@@ -265,7 +265,8 @@ public:
 	//same for the atomistic ODE. Currently Micromagnetic and Atomistic ODEs use the same evaluation method.
 	BError SetAtomisticODE(ODE_ setOde, EVAL_ evalMethod);
 
-	void SetEvaluationSpeedup(int status);
+	//set ODE evaluation method, applicable to both micromagnetic and atomistic solvers
+	BError SetODEEval(EVAL_ evalMethod);
 
 	//set the time step for the magnetisation solver
 	void SetTimeStep(double dT);
@@ -275,14 +276,21 @@ public:
 
 	void SetStochTimeStep(double dTstoch);
 	double GetStochTimeStep(void);
-	void SetLinkdTStochastic(bool flag);
+	void SetLink_dTstoch(bool flag);
 	bool GetLink_dTstoch(void);
+
+	void SetSpeedupTimeStep(double dTspeedup);
+	double GetSpeedupTimeStep(void);
+	void SetLink_dTspeedup(bool flag);
+	bool GetLink_dTspeedup(void);
+	
+	//set evaluation speedup type in ode solver
+	void SetEvaluationSpeedup(int status);
+	//check evaluation speedup settings in ode solver
+	int GetEvaluationSpeedup(void);
 
 	//is the current time step fully finished? - most evaluation schemes need multiple sub-steps
 	bool CurrentTimeStepSolved(void);
-	
-	//check evaluation speedup settings in ode solver
-	int EvaluationSpeedup(void);
 
 	//check in ODECommon the type of field update we need to do depending on the ODE evaluation step
 	int Check_Step_Update(void);

@@ -24,12 +24,11 @@ void Atom_Mesh::SetBaseTemperature(double Temperature, bool clear_equation)
 	//update parameter current values : if they have a temperature dependence set the base temperature will change their values
 	update_parameters();
 
-	//TO DO
 	//1a. reset Temp VEC to base temperature
-	//CallModuleMethod(&Heat::SetBaseTemperature, Temperature);
+	CallModuleMethod(&HeatBase::SetBaseTemperature, Temperature);
 
 	//1b. Zeeman module might set field using a custom user equation where the base temperature is a parameter
-	CallModuleMethod(&Atom_Zeeman::SetBaseTemperature, Temperature);
+	CallModuleMethod(&ZeemanBase::SetBaseTemperature, Temperature);
 
 	//NOTE : do not call UpdateConfiguration here - this is to allow Temperature sequences in simulation stages
 	//Instead deal with any adjustments required on a module by module basis (e.g. StrayField)

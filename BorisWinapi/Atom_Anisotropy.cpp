@@ -99,8 +99,8 @@ double Atom_Anisotropy_Uniaxial::UpdateField(void)
 
 			paMesh->Heff1[idx] += Heff_value;
 
-			//update energy E = -K*dotprod*dotprod 
-			energy += -K*dotprod*dotprod;
+			//update energy E = K * (1 - dotprod*dotprod)
+			energy += K * (1 - dotprod*dotprod);
 		}
 	}
 	
@@ -116,7 +116,7 @@ double Atom_Anisotropy_Uniaxial::UpdateField(void)
 double Atom_Anisotropy_Uniaxial::GetEnergyDensity(Rect& avRect)
 {
 #if COMPILECUDA == 1
-	if (pModuleCUDA) return reinterpret_cast<Atom_Anisotropy_UniaxialCUDA*>(pModuleCUDA)->GetEnergyDensity(avRect);
+	if (pModuleCUDA) return dynamic_cast<Atom_Anisotropy_UniaxialCUDA*>(pModuleCUDA)->GetEnergyDensity(avRect);
 #endif
 
 	double energy = 0;
@@ -139,8 +139,8 @@ double Atom_Anisotropy_Uniaxial::GetEnergyDensity(Rect& avRect)
 			//calculate m.ea dot product
 			double dotprod = (paMesh->M1[idx] * mcanis_ea1) / mu_s;
 
-			//update energy E = -K*dotprod*dotprod 
-			energy += -K * dotprod*dotprod;
+			//update energy E = K * (1 - dotprod*dotprod)
+			energy += K * (1 - dotprod * dotprod);
 			num_points++;
 		}
 	}

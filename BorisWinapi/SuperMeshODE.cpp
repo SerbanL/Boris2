@@ -28,10 +28,6 @@ BError SuperMesh::SetODE(ODE_ setOde, EVAL_ evalMethod)
 
 	error = odeSolver.SetODE(setOde, evalMethod);
 
-	//now get currently set atomistic equation, so we can change its evaluation method to the one used by the micromagnetics ODE
-	atom_odeSolver.QueryODE(setOde);
-	error = atom_odeSolver.SetODE(setOde, evalMethod);
-
 	error = UpdateConfiguration(UPDATECONFIG_ODE_SOLVER);
 
 	return error;
@@ -46,20 +42,23 @@ BError SuperMesh::SetAtomisticODE(ODE_ setOde, EVAL_ evalMethod)
 
 	error = atom_odeSolver.SetODE(setOde, evalMethod);
 
-	//now get currently set micromagnetics equation, so we can change its evaluation method to the one used by the atomistic ODE
-	odeSolver.QueryODE(setOde);
-	error = odeSolver.SetODE(setOde, evalMethod);
-
 	error = UpdateConfiguration(UPDATECONFIG_ODE_SOLVER);
 
 	return error;
 }
 
-void SuperMesh::SetEvaluationSpeedup(int status) 
-{ 
-	odeSolver.SetEvaluationSpeedup(status); 
-	
-	UpdateConfiguration(UPDATECONFIG_ODE_SOLVER); 
+//set ODE evaluation method, applicable to both micromagnetic and atomistic solvers
+BError SuperMesh::SetODEEval(EVAL_ evalMethod)
+{
+	BError error(__FUNCTION__);
+
+	if (evalMethod <= EVAL_ERROR) return error(BERROR_INCORRECTNAME);
+
+	error = odeSolver.SetEvaluationMethod(evalMethod);
+
+	error = UpdateConfiguration(UPDATECONFIG_ODE_SOLVER);
+
+	return error;
 }
 
 //set the time step for the magnetisation solver
@@ -76,7 +75,7 @@ void SuperMesh::SetAdaptiveTimeStepCtrl(double err_fail, double err_high, double
 
 void SuperMesh::SetStochTimeStep(double dTstoch) 
 { 
-	odeSolver.SetdTstoch(dTstoch); 
+	odeSolver.SetStochTimeStep(dTstoch);
 }
 
 double SuperMesh::GetStochTimeStep(void) 
@@ -84,9 +83,9 @@ double SuperMesh::GetStochTimeStep(void)
 	return odeSolver.GetStochTimeStep(); 
 }
 
-void SuperMesh::SetLinkdTStochastic(bool flag) 
+void SuperMesh::SetLink_dTstoch(bool flag) 
 { 
-	odeSolver.SetLink_dTstoch(flag);;
+	odeSolver.SetLink_dTstoch(flag);
 }
 
 bool SuperMesh::GetLink_dTstoch(void) 
@@ -94,17 +93,44 @@ bool SuperMesh::GetLink_dTstoch(void)
 	return odeSolver.GetLink_dTstoch(); 
 }
 
-//is the current time step fully finished? - most evaluation schemes need multiple sub-steps
-bool SuperMesh::CurrentTimeStepSolved(void) 
-{ 
-	return odeSolver.TimeStepSolved(); 
+void SuperMesh::SetSpeedupTimeStep(double dTspeedup)
+{
+	odeSolver.SetSpeedupTimeStep(dTspeedup);
+}
+
+double SuperMesh::GetSpeedupTimeStep(void)
+{
+	return odeSolver.GetSpeedupTimeStep();
+}
+
+void SuperMesh::SetLink_dTspeedup(bool flag)
+{
+	odeSolver.SetLink_dTspeedup(flag);
+}
+
+bool SuperMesh::GetLink_dTspeedup(void)
+{
+	return odeSolver.GetLink_dTspeedup();
+}
+
+//set evaluation speedup type in ode solver
+void SuperMesh::SetEvaluationSpeedup(int status)
+{
+	odeSolver.SetEvaluationSpeedup(status);
+
+	UpdateConfiguration(UPDATECONFIG_ODE_SOLVER);
 }
 
 //check evaluation speedup settings in ode solver
-int SuperMesh::EvaluationSpeedup(void) 
+int SuperMesh::GetEvaluationSpeedup(void) 
 { 
-	//assumed to be the same for the atomistic one
-	return odeSolver.EvaluationSpeedup();
+	return odeSolver.GetEvaluationSpeedup();
+}
+
+//is the current time step fully finished? - most evaluation schemes need multiple sub-steps
+bool SuperMesh::CurrentTimeStepSolved(void)
+{
+	return odeSolver.TimeStepSolved();
 }
 
 //check in ODECommon the type of field update we need to do depending on the ODE evaluation step

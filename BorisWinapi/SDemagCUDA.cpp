@@ -58,7 +58,7 @@ BError SDemagCUDA::Initialize(void)
 	if (!pSDemag->use_multilayered_convolution) {
 
 		//make sure to allocate memory for Hdemag if we need it
-		if (pSMesh->EvaluationSpeedup()) Hdemag()->resize(pSMesh->h_fm, pSMesh->sMeshRect_fm);
+		if (pSMesh->GetEvaluationSpeedup()) Hdemag()->resize(pSMesh->h_fm, pSMesh->sMeshRect_fm);
 		else Hdemag()->clear();
 	}
 
@@ -85,11 +85,11 @@ BError SDemagCUDA::Initialize(void)
 
 				if ((*pSMesh)[idx]->MComputation_Enabled() && !(*pSMesh)[idx]->is_atomistic()) {
 
-					pVal_from.push_back((cuVEC<cuReal3>*&)reinterpret_cast<Mesh*>((*pSMesh)[idx])->pMeshCUDA->M.get_managed_object());
-					pVal_to.push_back((cuVEC<cuReal3>*&)reinterpret_cast<Mesh*>((*pSMesh)[idx])->pMeshCUDA->Heff.get_managed_object());
+					pVal_from.push_back((cuVEC<cuReal3>*&)dynamic_cast<Mesh*>((*pSMesh)[idx])->pMeshCUDA->M.get_managed_object());
+					pVal_to.push_back((cuVEC<cuReal3>*&)dynamic_cast<Mesh*>((*pSMesh)[idx])->pMeshCUDA->Heff.get_managed_object());
 
-					pVal_from2.push_back((cuVEC<cuReal3>*&)reinterpret_cast<Mesh*>((*pSMesh)[idx])->pMeshCUDA->M2.get_managed_object());
-					pVal_to2.push_back((cuVEC<cuReal3>*&)reinterpret_cast<Mesh*>((*pSMesh)[idx])->pMeshCUDA->Heff2.get_managed_object());
+					pVal_from2.push_back((cuVEC<cuReal3>*&)dynamic_cast<Mesh*>((*pSMesh)[idx])->pMeshCUDA->M2.get_managed_object());
+					pVal_to2.push_back((cuVEC<cuReal3>*&)dynamic_cast<Mesh*>((*pSMesh)[idx])->pMeshCUDA->Heff2.get_managed_object());
 				}
 			}
 
@@ -102,7 +102,7 @@ BError SDemagCUDA::Initialize(void)
 				//Now copy mesh transfer object to cuda version
 				if (!sm_Vals()->copy_transfer_info(pVal_from, pVal_to, pSDemag->sm_Vals)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
 
-				if (pSMesh->EvaluationSpeedup()) {
+				if (pSMesh->GetEvaluationSpeedup()) {
 
 					//initialize mesh transfer for Hdemag as well if we are using evaluation speedup
 					if (!Hdemag()->copy_transfer_info(pVal_from, pVal_to, pSDemag->sm_Vals)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
@@ -113,7 +113,7 @@ BError SDemagCUDA::Initialize(void)
 				//Now copy mesh transfer object to cuda version
 				if (!sm_Vals()->copy_transfer_info_averagedinputs_duplicatedoutputs(pVal_from, pVal_from2, pVal_to, pVal_to2, pSDemag->sm_Vals)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
 
-				if (pSMesh->EvaluationSpeedup()) {
+				if (pSMesh->GetEvaluationSpeedup()) {
 
 					//initialize mesh transfer for Hdemag as well if we are using evaluation speedup
 					if (!Hdemag()->copy_transfer_info_averagedinputs_duplicatedoutputs(pVal_from, pVal_from2, pVal_to, pVal_to2, pSDemag->sm_Vals)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
@@ -227,7 +227,7 @@ BError SDemagCUDA::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 
 				kernel_collection[idx] = dynamic_cast<DemagKernelCollectionCUDA*>(pSDemag->pSDemag_Demag[idx]->pModuleCUDA);
 
-				pSDemagCUDA_Demag[idx] = reinterpret_cast<SDemagCUDA_Demag*>(pSDemag->pSDemag_Demag[idx]->pModuleCUDA);
+				pSDemagCUDA_Demag[idx] = dynamic_cast<SDemagCUDA_Demag*>(pSDemag->pSDemag_Demag[idx]->pModuleCUDA);
 
 				FFT_Spaces_x_Input[idx] = pSDemagCUDA_Demag[idx]->Get_Input_Scratch_Space_x();
 				FFT_Spaces_y_Input[idx] = pSDemagCUDA_Demag[idx]->Get_Input_Scratch_Space_y();
@@ -262,7 +262,7 @@ void SDemagCUDA::UpdateField(void)
 		////////////////////////////////// EVAL SPEEDUP - SUPERMESH ///////////////////////////////////
 		///////////////////////////////////////////////////////////////////////////////////////////////
 
-		if (pSMesh->EvaluationSpeedup()) {
+		if (pSMesh->GetEvaluationSpeedup()) {
 
 			//use evaluation speedup method (Hdemag will have memory allocated - this was done in the Initialize method)
 
@@ -390,7 +390,7 @@ void SDemagCUDA::UpdateField(void)
 		////////////////////////////////// EVAL SPEEDUP - MULTILAYERED ////////////////////////////////
 		///////////////////////////////////////////////////////////////////////////////////////////////
 
-		if (pSMesh->EvaluationSpeedup()) {
+		if (pSMesh->GetEvaluationSpeedup()) {
 
 			//use evaluation speedup method (Hdemag will have memory allocated - this was done in the Initialize method)
 

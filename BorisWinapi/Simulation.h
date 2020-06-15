@@ -434,6 +434,11 @@ private:
 	void Print_Stochasticity_List(void);
 	string Build_Stochasticity_ListLine(int meshIndex);
 
+	//---------------------------------------------------- EVALUATION SPEEDUP SETIINGS
+
+	void Print_Speedup_List(void);
+	string Build_Speedup_ListLine(int meshIndex);
+
 	//---------------------------------------------------- CUDA and MEMORY INFO
 
 	void Print_CUDAStatus(void);

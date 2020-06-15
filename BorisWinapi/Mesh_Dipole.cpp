@@ -184,18 +184,22 @@ BError DipoleMesh::SwitchCUDAState(bool cudaState)
 	//are we switching to cuda?
 	if (cudaState) {
 
-		if (!pMeshCUDA) {
+		if (!pMeshBaseCUDA) {
 
 			//then make MeshCUDA object, copying over currently held cpu data
-			pMeshCUDA = new DipoleMeshCUDA(this);
-			error = pMeshCUDA->Error_On_Create();
+			pMeshBaseCUDA = new DipoleMeshCUDA(this);
+			pMeshCUDA = dynamic_cast<MeshCUDA*>(pMeshBaseCUDA);
+
+			error = pMeshBaseCUDA->Error_On_Create();
 			if (!error) error = pMeshCUDA->cuMesh()->set_pointers(pMeshCUDA);
 		}
 	}
 	else {
 
 		//delete MeshCUDA object and null
-		if (pMeshCUDA) delete pMeshCUDA;
+		if (pMeshBaseCUDA) delete pMeshBaseCUDA;
+
+		pMeshBaseCUDA = nullptr;
 		pMeshCUDA = nullptr;
 	}
 
@@ -230,7 +234,7 @@ void DipoleMesh::Reset_Mdipole(void)
 	recalculateStrayField = true;
 
 #if COMPILECUDA == 1
-	if (pMeshCUDA) reinterpret_cast<DipoleMeshCUDA*>(pMeshCUDA)->Reset_Mdipole();
+	if (pMeshCUDA) dynamic_cast<DipoleMeshCUDA*>(pMeshCUDA)->Reset_Mdipole();
 #endif
 }
 
@@ -239,7 +243,7 @@ void DipoleMesh::SetMagAngle(double polar, double azim, Rect rectangle)
 #if COMPILECUDA
 	if (pMeshCUDA) {
 
-		reinterpret_cast<DipoleMeshCUDA*>(pMeshCUDA)->SetMagAngle(polar, azim);
+		dynamic_cast<DipoleMeshCUDA*>(pMeshCUDA)->SetMagAngle(polar, azim);
 		return;
 	}
 #endif

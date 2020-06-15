@@ -4,6 +4,7 @@
 #ifdef MODULE_HEAT
 
 #include "SuperMesh.h"
+#include "HeatBase.h"
 
 SHeat::SHeat(SuperMesh *pSMesh_) :
 	Modules(),
@@ -43,7 +44,7 @@ BError SHeat::Initialize(void)
 
 		if ((*pSMesh)[idx]->IsModuleSet(MOD_HEAT)) {
 
-			pHeat.push_back(dynamic_cast<Heat*>((*pSMesh)[idx]->GetModule(MOD_HEAT)));
+			pHeat.push_back(dynamic_cast<HeatBase*>((*pSMesh)[idx]->GetModule(MOD_HEAT)));
 			pTemp.push_back(&(*pSMesh)[idx]->Temp);
 		}
 	}
@@ -77,7 +78,7 @@ BError SHeat::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 
 			if ((*pSMesh)[idx]->IsModuleSet(MOD_HEAT)) {
 
-				pHeat.push_back(dynamic_cast<Heat*>((*pSMesh)[idx]->GetModule(MOD_HEAT)));
+				pHeat.push_back(dynamic_cast<HeatBase*>((*pSMesh)[idx]->GetModule(MOD_HEAT)));
 				pTemp.push_back(&(*pSMesh)[idx]->Temp);
 			}
 		}
@@ -160,11 +161,11 @@ void SHeat::set_cmbnd_values(void)
 			int idx_sec = CMBNDcontacts[idx1][idx2].mesh_idx.i;
 			int idx_pri = CMBNDcontacts[idx1][idx2].mesh_idx.j;
 
-			pTemp[idx_pri]->set_cmbnd_continuous<Heat>(
+			pTemp[idx_pri]->set_cmbnd_continuous<HeatBase>(
 				*pTemp[idx_sec], CMBNDcontacts[idx1][idx2],
-				&Heat::afunc_sec, &Heat::afunc_pri,
-				&Heat::bfunc_sec, &Heat::bfunc_pri,
-				&Heat::diff2_sec, &Heat::diff2_pri,
+				&HeatBase::afunc_sec, &HeatBase::afunc_pri,
+				&HeatBase::bfunc_sec, &HeatBase::bfunc_pri,
+				&HeatBase::diff2_sec, &HeatBase::diff2_pri,
 				*pHeat[idx_sec], *pHeat[idx_pri]);
 		}
 	}

@@ -41,7 +41,6 @@ protected:
 	//The reason is really to do with maintainability, not so much code reuse per se : if you need to add new params manipulation methods, or tweak an old one, you can simply do it just once here, not twice in MeshParams, and in Atom_MeshParams. 
 	//Also what if in the future you might decide to add a different base type of mesh apart from micromagnetic or atomistic ones? The code wouldn't grow gracefuly and would become a nightmare to maintain.
 	//In some ways it's even safer : what if you forget to make the same change everywhere? 
-	//Maintainability becomes the dominant design criterion as the code base grows, especially for a long life project, swamping all other competing concerns eventually.
 	MESHTYPE_ meshBaseType;
 	void* pImplementation;
 
@@ -60,6 +59,9 @@ public:
 
 	//Heat source stimulus in heat equation. Ideally used with a spatial variation. (W//m3)
 	MatP<double, double> Q = 0.0;
+
+	//set temperature spatial variation coefficient (unitless) - used with temperature settings in a simulation schedule only, not with console command directly
+	MatP<double, double> cT = 1.0;
 
 private:
 

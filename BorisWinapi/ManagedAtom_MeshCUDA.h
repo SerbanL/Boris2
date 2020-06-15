@@ -32,11 +32,15 @@ public:
 	//Exchange constant : (units of J) - default for bcc Fe
 	MatPCUDA<cuBReal, cuBReal>* pJ;
 
+	//DMI exchange constant : (units of J)
+	MatPCUDA<cuBReal, cuBReal>* pD;
+
 	//Magneto-crystalline anisotropy constants (J) and easy axes directions. For uniaxial anisotropy only ea1 is needed.
 	MatPCUDA<cuBReal, cuBReal>* pK;
 
 	//Magneto-crystalline anisotropy easy axes directions
 	MatPCUDA<cuReal3, cuReal3>* pmcanis_ea1;
+	MatPCUDA<cuReal3, cuReal3>* pmcanis_ea2;
 
 	//-----------BCC (2 per unit cell)
 
@@ -48,6 +52,9 @@ public:
 
 	//applied field spatial variation coefficient (unitless)
 	MatPCUDA<cuBReal, cuBReal>* pcHA;
+
+	//Magneto-Optical field strength (A/m)
+	MatPCUDA<cuBReal, cuBReal>* pcHmo;
 
 	//electrical conductivity (units S/m).
 	//this is the value at RT for Ni80Fe20.

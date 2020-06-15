@@ -113,7 +113,7 @@ BError SurfExchange::Initialize(void)
 
 						if (check_idx < 0) {
 
-							pMesh_Top.push_back(reinterpret_cast<Mesh*>((*pSMesh)[coupledmesh_idx]));
+							pMesh_Top.push_back(dynamic_cast<Mesh*>((*pSMesh)[coupledmesh_idx]));
 							
 							break;
 						}
@@ -145,7 +145,7 @@ BError SurfExchange::Initialize(void)
 
 						if (check_idx < 0) {
 
-							pMesh_Bot.push_back(reinterpret_cast<Mesh*>((*pSMesh)[coupledmesh_idx]));
+							pMesh_Bot.push_back(dynamic_cast<Mesh*>((*pSMesh)[coupledmesh_idx]));
 							
 							break;
 						}

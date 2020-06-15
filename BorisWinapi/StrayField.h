@@ -69,7 +69,7 @@ public:
 	VEC<DBL3>& GetStrayField(void) { return strayField; }
 
 #if COMPILECUDA == 1
-	cu_obj<cuVEC<cuReal3>>& GetStrayFieldCUDA(void) { return reinterpret_cast<StrayFieldCUDA*>(pModuleCUDA)->GetStrayField(); }
+	cu_obj<cuVEC<cuReal3>>& GetStrayFieldCUDA(void) { return dynamic_cast<StrayFieldCUDA*>(pModuleCUDA)->GetStrayField(); }
 #endif
 };
 

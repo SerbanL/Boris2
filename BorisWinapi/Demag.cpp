@@ -61,7 +61,7 @@ BError Demag::Initialize(void)
 	}
 
 	//make sure to allocate memory for Hdemag if we need it
-	if (pMesh->pSMesh->EvaluationSpeedup()) {
+	if (pMesh->pSMesh->GetEvaluationSpeedup()) {
 
 		Hdemag.resize(pMesh->h, pMesh->meshRect);
 	}
@@ -144,7 +144,7 @@ double Demag::UpdateField(void)
 	//////////////////////////////////////// EVAL SPEEDUP /////////////////////////////////////////
 	///////////////////////////////////////////////////////////////////////////////////////////////
 
-	if (pMesh->pSMesh->EvaluationSpeedup()) {
+	if (pMesh->pSMesh->GetEvaluationSpeedup()) {
 
 		//use evaluation speedup method (Hdemag will have memory allocated - this was done in the Initialize method)
 

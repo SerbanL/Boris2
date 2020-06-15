@@ -5,10 +5,6 @@
 #include "MeshParams.h"
 #include "DiffEq.h"
 
-#if COMPILECUDA == 1
-#include "MeshCUDA.h"
-#endif
-
 class SuperMesh;
 
 /////////////////////////////////////////////////////////////////////
@@ -309,9 +305,6 @@ public:
 	bool Is_PBC_x(void) { return M.is_pbc_x(); }
 	bool Is_PBC_y(void) { return M.is_pbc_y(); }
 	bool Is_PBC_z(void) { return M.is_pbc_z(); }
-	
-	//check if this mesh has an exchange module enabled (surf exchange doesn't count)
-	bool ExchangeComputation_Enabled(void) { return IsModuleSet(MOD_EXCHANGE6NGBR) || IsModuleSet(MOD_DMEXCHANGE) || IsModuleSet(MOD_IDMEXCHANGE); }
 
 	//----------------------------------- VALUE GETTERS : MeshGetData.cpp
 
@@ -446,7 +439,7 @@ public:
 
 //!!!NOTES!!!
 //When adding new VECs to the list here remember to also modify : 1) Mesh::copy_mesh_data and 2) MeshCUDA::copy_shapes_from_cpu
-//Ideally there would be only one function where the VECs are explicitly listed to make maintainence and updates easier, but the 2 cases above are not so easy.
+//Ideally there would be only one function where the VECs are explicitly listed to make maintenance and updates easier, but the 2 cases above are not so easy.
 //It's possible for them to make use of change_mesh_shape using nested lambdas but you need a procedure to check if a VEC from one mesh is the same as the VEC from another (e.g. elC and copy_this.elC)
 //When you have time you could do this, it will probably need an additional enum and a vector to check their types, don't think it's possible to do it without some sort of additional info (e.g. checking template type is not enough).
 //e.g. see MeshParams::copy_parameters
@@ -470,7 +463,7 @@ BError Mesh::change_mesh_shape(Lambda& run_this, PType& ... params)
 			//if Roughness module is enabled then apply shape via the Roughness module instead
 			if (IsModuleSet(MOD_ROUGHNESS)) {
 
-				error = reinterpret_cast<Roughness*>(pMod(MOD_ROUGHNESS))->change_mesh_shape(run_this, params...);
+				error = dynamic_cast<Roughness*>(pMod(MOD_ROUGHNESS))->change_mesh_shape(run_this, params...);
 			}
 			else {
 

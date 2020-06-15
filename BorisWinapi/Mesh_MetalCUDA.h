@@ -34,6 +34,10 @@ public:
 	//call when a configuration change has occurred - some objects might need to be updated accordingly
 	BError UpdateConfiguration(UPDATECONFIG_ cfgMessage);
 	void UpdateConfiguration_Values(UPDATECONFIG_ cfgMessage) {}
+
+	//----------------------------------- OTHER IMPORTANT CONTROL METHODS
+
+	cuBReal CheckMoveMesh(bool antisymmetric, double threshold) { return 0.0; }
 };
 
 #else

@@ -48,11 +48,15 @@ public:
 	//Exchange constant : (units of J) - default for bcc Fe
 	MatP<double, double> J = 7.05e-21;
 
+	//DMI exchange constant : (units of J)
+	MatP<double, double> D = 5e-23;
+
 	//Magneto-crystalline anisotropy constants (J) and easy axes directions. For uniaxial anisotropy only ea1 is needed.
 	MatP<double, double> K = 5.65e-25;
 
 	//Magneto-crystalline anisotropy easy axes directions
 	MatP<DBL3, DBL3> mcanis_ea1 = DBL3(1, 0, 0);
+	MatP<DBL3, DBL3> mcanis_ea2 = DBL3(0, 1, 0);
 
 	//-----------BCC (2 per unit cell)
 
@@ -64,6 +68,9 @@ public:
 
 	//applied field spatial variation coefficient (unitless)
 	MatP<double, double> cHA = 1.0;
+
+	//Magneto-Optical field strength (A/m)
+	MatP<double, double> cHmo = 0.0;
 
 	//electrical conductivity (units S/m).
 	//this is the value at RT for Ni80Fe20.
@@ -83,9 +90,6 @@ public:
 
 	//electron-lattice coupling constant (W/m^3K) used in two-temperature model.
 	MatP<double, double> G_e = 1e18;
-
-	//set temperature spatial variation coefficient (unitless) - used with temperature settings in a simulation schedule only, not with console command directly
-	MatP<double, double> cT = 1.0;
 
 private:
 
@@ -139,6 +143,10 @@ RType Atom_MeshParams::run_on_param(PARAM_ paramID, Lambda& run_this, PType& ...
 		return run_this(J, run_this_args...);
 		break;
 
+	case PARAM_ATOM_SC_D:
+		return run_this(D, run_this_args...);
+		break;
+
 	case PARAM_ATOM_SC_K:
 		return run_this(K, run_this_args...);
 		break;
@@ -147,8 +155,16 @@ RType Atom_MeshParams::run_on_param(PARAM_ paramID, Lambda& run_this, PType& ...
 		return run_this(mcanis_ea1, run_this_args...);
 		break;
 
+	case PARAM_ATOM_EA2:
+		return run_this(mcanis_ea2, run_this_args...);
+		break;
+
 	case PARAM_HA:
 		return run_this(cHA, run_this_args...);
+		break;
+
+	case PARAM_HMO:
+		return run_this(cHmo, run_this_args...);
 		break;
 
 	case PARAM_ELC:

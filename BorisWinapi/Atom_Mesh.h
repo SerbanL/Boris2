@@ -305,9 +305,6 @@ public:
 	bool Is_PBC_y(void) { return M1.is_pbc_y(); }
 	bool Is_PBC_z(void) { return M1.is_pbc_z(); }
 
-	//check if this mesh has an exchange module enabled (surf exchange doesn't count)
-	bool ExchangeComputation_Enabled(void) { return IsModuleSet(MOD_ATOM_EXCHANGE) || IsModuleSet(MOD_ATOM_DMEXCHANGE) || IsModuleSet(MOD_ATOM_IDMEXCHANGE); }
-
 	//----------------------------------- VALUE GETTERS : Atom_MeshGetData.cpp
 
 	//------Specific to Atom_Mesh
@@ -356,6 +353,18 @@ public:
 	//get maximum exchange energy density modulus over specified rectangle
 	double Get_Max_Exchange_EnergyDensity(Rect& rectangle);
 
+	//return phase transition temperature (K) based on formula Tc = J*e*z/3kB
+	virtual double Show_Transition_Temperature(void) = 0;
+
+	//return saturation magnetisation (A/m) based on formula Ms = mu_s*n/a^3
+	virtual double Show_Ms(void) = 0;
+
+	//return exchange stiffness (J/m) based on formula A = J*n/2a
+	virtual double Show_A(void) = 0;
+
+	//return uniaxial anisotropy constant (J/m^3) based on formula K = k*n/a^3
+	virtual double Show_Ku(void) = 0;
+
 	//----------------------------------- OTHER CALCULATION METHODS : Atom_MeshCompute.cpp
 
 	//compute exchange energy spatial variation and have it available to display in Cust_S
@@ -392,7 +401,7 @@ public:
 
 //!!!NOTES!!!
 //When adding new VECs to the list here remember to also modify : 1) Atom_Mesh::copy_mesh_data and 2) Atom_MeshCUDA::copy_shapes_from_cpu
-//Ideally there would be only one function where the VECs are explicitly listed to make maintainence and updates easier, but the 2 cases above are not so easy.
+//Ideally there would be only one function where the VECs are explicitly listed to make maintenance and updates easier, but the 2 cases above are not so easy.
 //It's possible for them to make use of change_mesh_shape using nested lambdas but you need a procedure to check if a VEC from one mesh is the same as the VEC from another (e.g. elC and copy_this.elC)
 //When you have time you could do this, it will probably need an additional enum and a vector to check their types, don't think it's possible to do it without some sort of additional info (e.g. checking template type is not enough).
 //e.g. see Atom_MeshParams::copy_parameters

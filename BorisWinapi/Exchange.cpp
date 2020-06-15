@@ -282,7 +282,7 @@ double Exch_6ngbr_Neu::UpdateField(void)
 double Exch_6ngbr_Neu::GetEnergyDensity(Rect& avRect)
 {
 #if COMPILECUDA == 1
-	if (pModuleCUDA) return reinterpret_cast<Exch_6ngbr_NeuCUDA*>(pModuleCUDA)->GetEnergyDensity(avRect);
+	if (pModuleCUDA) return dynamic_cast<Exch_6ngbr_NeuCUDA*>(pModuleCUDA)->GetEnergyDensity(avRect);
 #endif
 
 	double energy = 0;
@@ -367,7 +367,7 @@ double Exch_6ngbr_Neu::GetEnergyDensity(Rect& avRect)
 double Exch_6ngbr_Neu::GetEnergy_Max(Rect& rectangle)
 {
 #if COMPILECUDA == 1
-	if (pModuleCUDA) return reinterpret_cast<Exch_6ngbr_NeuCUDA*>(pModuleCUDA)->GetEnergy_Max(rectangle);
+	if (pModuleCUDA) return dynamic_cast<Exch_6ngbr_NeuCUDA*>(pModuleCUDA)->GetEnergy_Max(rectangle);
 #endif
 
 	INT3 n = pMesh->n;
@@ -452,7 +452,7 @@ void Exch_6ngbr_Neu::Compute_Exchange(VEC<double>& displayVEC)
 #if COMPILECUDA == 1
 	if (pModuleCUDA) {
 
-		reinterpret_cast<Exch_6ngbr_NeuCUDA*>(pModuleCUDA)->Compute_Exchange(displayVEC);
+		dynamic_cast<Exch_6ngbr_NeuCUDA*>(pModuleCUDA)->Compute_Exchange(displayVEC);
 		return;
 	}
 #endif

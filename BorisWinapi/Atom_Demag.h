@@ -2,6 +2,7 @@
 
 #include "BorisLib.h"
 #include "Modules.h"
+#include "DemagBase.h"
 
 using namespace std;
 
@@ -18,6 +19,7 @@ class Atom_Mesh;
 
 class Atom_Demag :
 	public Modules,
+	public DemagBase,
 	public Convolution<DemagKernel>,
 	public ProgramState<Atom_Demag, tuple<INT3>, tuple<>>
 {
@@ -30,11 +32,6 @@ private:
 
 	//pointer to mesh object holding this effective field module
 	Atom_Mesh *paMesh;
-
-	//number of pbc images in each dimension (set to zero to disable).
-	//There is also a copy of this in ConvolutionData inherited from Convolution - we need another copy here to detect changes
-	//these pbc images are applicable in individual demag modules only
-	INT3 demag_pbc_images = INT3();
 
 	//need to calculate non-empty cells here so we don't waste time during computations (M is a VEC, not a VEC_VC, which means non-empty cells need to be calculated on every call)
 	//obtained at initialization
@@ -78,27 +75,23 @@ public:
 
 	//Set PBC
 	BError Set_PBC(INT3 demag_pbc_images_);
-
-	//-------------------Getters
-
-	//Get PBC images
-	INT3 Get_PBC(void) const { return demag_pbc_images; }
 };
 
 #else
 
 class Atom_Demag :
-	public Modules
+	public Modules,
+	public DemagBase
 {
 
 private:
 
 	//pointer to mesh object holding this effective field module
-	Atom_DemagMesh * paMesh;
+	Atom_Mesh* paMesh;
 
 public:
 
-	Atom_Demag(Atom_DemagMesh *paMesh_) {}
+	Atom_Demag(Atom_Mesh *paMesh_) {}
 	~Atom_Demag() {}
 
 	//-------------------Implement ProgramState method
@@ -122,11 +115,6 @@ public:
 
 	//Set PBC
 	BError Set_PBC(INT3 demag_pbc_images_) { return BError(); }
-
-	//-------------------Getters
-
-	//Get PBC images
-	INT3 Get_PBC(void) { return INT3(); }
 };
 
 #endif

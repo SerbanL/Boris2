@@ -26,7 +26,7 @@ BError Mesh::copy_mesh_data(MeshBase& copy_this)
 		//if Roughness module is enabled then apply shape via the Roughness module instead
 		if (IsModuleSet(MOD_ROUGHNESS) && pcopy_this->IsModuleSet(MOD_ROUGHNESS)) {
 
-			error = reinterpret_cast<Roughness*>(pMod(MOD_ROUGHNESS))->copy_roughness(reinterpret_cast<Roughness*>(pcopy_this->pMod(MOD_ROUGHNESS)));
+			error = dynamic_cast<Roughness*>(pMod(MOD_ROUGHNESS))->copy_roughness(dynamic_cast<Roughness*>(pcopy_this->pMod(MOD_ROUGHNESS)));
 
 			if (error) return error;
 		}

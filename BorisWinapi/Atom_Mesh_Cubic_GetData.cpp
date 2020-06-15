@@ -38,7 +38,7 @@ double Atom_Mesh_Cubic::GetTopologicalCharge(Rect rectangle)
 			}
 		}
 
-		return Q / (4 * PI);
+		return Q / (4 * PI * M1.n.z);
 	}
 	else return 0.0;
 }

@@ -6,8 +6,7 @@
 #ifdef MODULE_MOPTICAL
 
 #include "MOptical.h"
-#include "Mesh_FerromagneticCUDA.h"
-#include "Mesh_AntiFerromagneticCUDA.h"
+#include "MeshCUDA.h"
 
 MOpticalCUDA::MOpticalCUDA(MeshCUDA* pMeshCUDA_) :
 	ModulesCUDA()

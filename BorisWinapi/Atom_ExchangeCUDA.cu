@@ -2,7 +2,7 @@
 
 #if COMPILECUDA == 1
 
-#ifdef MODULE_ATOM_EXCHANGE
+#if defined(MODULE_EXCHANGE) && ATOMISTIC == 1
 
 #include "BorisCUDALib.cuh"
 

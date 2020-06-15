@@ -3,9 +3,7 @@
 
 #ifdef MODULE_MOPTICAL
 
-#include "Mesh_Ferromagnetic.h"
-#include "Mesh_AntiFerromagnetic.h"
-#include "Mesh_Diamagnetic.h"
+#include "Mesh.h"
 
 #if COMPILECUDA == 1
 #include "MOpticalCUDA.h"

@@ -69,7 +69,7 @@ public:
 	VEC<DBL3>& GetOerstedField(void) { return sm_Vals; }
 
 #if COMPILECUDA == 1
-	cu_obj<cuVEC<cuReal3>>& GetOerstedFieldCUDA(void) { return reinterpret_cast<OerstedCUDA*>(pModuleCUDA)->GetOerstedField(); }
+	cu_obj<cuVEC<cuReal3>>& GetOerstedFieldCUDA(void) { return dynamic_cast<OerstedCUDA*>(pModuleCUDA)->GetOerstedField(); }
 #endif
 };
 

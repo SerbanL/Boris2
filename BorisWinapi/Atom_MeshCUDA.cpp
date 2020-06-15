@@ -9,14 +9,10 @@
 #if COMPILECUDA == 1
 
 Atom_MeshCUDA::Atom_MeshCUDA(Atom_Mesh* paMesh) :
+	MeshBaseCUDA(paMesh),
 	Atom_MeshParamsCUDA(dynamic_cast<Atom_MeshParams*>(paMesh)),
 	MeshDisplayCUDA(),
-	meshRect(paMesh->meshRect),
-	n(paMesh->n), h(paMesh->h),
-	n_dm(paMesh->n_dm), h_dm(paMesh->h_dm),
-	n_e(paMesh->n_e), h_e(paMesh->h_e),
-	n_t(paMesh->n_t), h_t(paMesh->h_t),
-	n_m(paMesh->n_m), h_m(paMesh->h_m)
+	n_dm(paMesh->n_dm), h_dm(paMesh->h_dm)
 {
 	this->paMesh = paMesh;
 
@@ -357,13 +353,6 @@ void Atom_MeshCUDA::copy_aux_vec_sca(VEC<double>& displayVEC)
 	aux_vec_sca()->copy_to_cpuvec(displayVEC);
 }
 
-//----------------------------------- MESH INFO GET/SET METHODS
-
-int Atom_MeshCUDA::GetMeshType(void)
-{
-	return (int)paMesh->GetMeshType();
-}
-
 //----------------------------------- ENABLED MESH PROPERTIES CHECKERS
 
 //magnetization dynamics computation enabled
@@ -400,36 +389,6 @@ bool Atom_MeshCUDA::GInterface_Enabled(void)
 	//TO DO
 	return false;
 	//return (DBL2(paMesh->Gmix.get0()).norm() > 0);
-}
-
-//check if the ODECommon::available flag is true (ode step solved)
-bool Atom_MeshCUDA::CurrentTimeStepSolved(void)
-{
-	return paMesh->pSMesh->CurrentTimeStepSolved();
-}
-
-//check evaluation speedup flag in ODECommon
-int Atom_MeshCUDA::EvaluationSpeedup(void)
-{
-	return paMesh->pSMesh->EvaluationSpeedup();
-}
-
-//check in ODECommon the type of field update we need to do depending on the ODE evaluation step
-int Atom_MeshCUDA::Check_Step_Update(void)
-{
-	return paMesh->pSMesh->Check_Step_Update();
-}
-
-//----------------------------------- VALUE GETTERS
-
-cuBReal Atom_MeshCUDA::GetStageTime(void)
-{
-	return paMesh->pSMesh->GetStageTime();
-}
-
-int Atom_MeshCUDA::GetStageStep(void)
-{
-	return paMesh->pSMesh->stage_step.minor;
 }
 
 //----------------------------------- OTHER MESH SHAPE CONTROL

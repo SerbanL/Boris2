@@ -128,7 +128,7 @@ double Mesh::GetTopologicalCharge(Rect rectangle)
 			}
 		}
 
-		return Q / (4 * PI);
+		return Q / (4 * PI * M.n.z);
 	}
 	else return 0.0;
 }

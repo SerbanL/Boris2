@@ -170,7 +170,7 @@ DBL3 Transport::GetAverageChargeCurrent(Rect rectangle)
 		GetChargeCurrentCUDA();
 
 		//average charge current in displayVEC_VC in TransportCUDA
-		return cuReal3(reinterpret_cast<TransportCUDA*>(pModuleCUDA)->displayVEC_VC()->average_nonempty(pMesh->n_e.dim(), rectangle));
+		return cuReal3(pTransportCUDA->displayVEC_VC()->average_nonempty(pMesh->n_e.dim(), rectangle));
 	}
 #endif
 
@@ -184,7 +184,7 @@ DBL3 Transport::GetAverageChargeCurrent(Rect rectangle)
 #if COMPILECUDA == 1
 cu_obj<cuVEC_VC<cuReal3>>& Transport::GetChargeCurrentCUDA(void)
 {
-	return reinterpret_cast<TransportCUDA*>(pModuleCUDA)->GetChargeCurrent();
+	return pTransportCUDA->GetChargeCurrent();
 }
 #endif
 

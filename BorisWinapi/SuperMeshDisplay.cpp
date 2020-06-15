@@ -30,7 +30,7 @@ vector<PhysQ> SuperMesh::FetchOnScreenPhysicalQuantity(double detail_level)
 
 			if (IsSuperMeshModuleSet(MODS_SDEMAG)) {
 
-				physQ.push_back(PhysQ(&(reinterpret_cast<SDemag*>(pSMod(MODS_SDEMAG))->GetDemagField()), displayedPhysicalQuantity, (VEC3REP_)vec3rep).set_focus(true, superMeshHandle));
+				physQ.push_back(PhysQ(&(dynamic_cast<SDemag*>(pSMod(MODS_SDEMAG))->GetDemagField()), displayedPhysicalQuantity, (VEC3REP_)vec3rep).set_focus(true, superMeshHandle));
 			}
 			break;
 
@@ -38,7 +38,7 @@ vector<PhysQ> SuperMesh::FetchOnScreenPhysicalQuantity(double detail_level)
 
 			if (IsSuperMeshModuleSet(MODS_OERSTED)) {
 
-				physQ.push_back(PhysQ(&(reinterpret_cast<Oersted*>(pSMod(MODS_OERSTED))->GetOerstedField()), displayedPhysicalQuantity, (VEC3REP_)vec3rep).set_focus(true, superMeshHandle));
+				physQ.push_back(PhysQ(&(dynamic_cast<Oersted*>(pSMod(MODS_OERSTED))->GetOerstedField()), displayedPhysicalQuantity, (VEC3REP_)vec3rep).set_focus(true, superMeshHandle));
 			}
 			break;
 
@@ -46,7 +46,7 @@ vector<PhysQ> SuperMesh::FetchOnScreenPhysicalQuantity(double detail_level)
 
 			if (IsSuperMeshModuleSet(MODS_STRAYFIELD)) {
 
-				physQ.push_back(PhysQ(&(reinterpret_cast<StrayField*>(pSMod(MODS_STRAYFIELD))->GetStrayField()), displayedPhysicalQuantity, (VEC3REP_)vec3rep).set_focus(true, superMeshHandle));
+				physQ.push_back(PhysQ(&(dynamic_cast<StrayField*>(pSMod(MODS_STRAYFIELD))->GetStrayField()), displayedPhysicalQuantity, (VEC3REP_)vec3rep).set_focus(true, superMeshHandle));
 			}
 			break;
 		}
@@ -100,7 +100,7 @@ BError SuperMesh::SaveOnScreenPhysicalQuantity(string fileName, string ovf2_data
 
 		if (IsSuperMeshModuleSet(MODS_SDEMAG)) {
 
-			error = ovf2.Write_OVF2_VEC(fileName, reinterpret_cast<SDemag*>(pSMod(MODS_SDEMAG))->GetDemagField(), ovf2_dataType);
+			error = ovf2.Write_OVF2_VEC(fileName, dynamic_cast<SDemag*>(pSMod(MODS_SDEMAG))->GetDemagField(), ovf2_dataType);
 		}
 		break;
 
@@ -108,7 +108,7 @@ BError SuperMesh::SaveOnScreenPhysicalQuantity(string fileName, string ovf2_data
 
 		if (IsSuperMeshModuleSet(MODS_OERSTED)) {
 
-			error = ovf2.Write_OVF2_VEC(fileName, reinterpret_cast<Oersted*>(pSMod(MODS_OERSTED))->GetOerstedField(), ovf2_dataType);
+			error = ovf2.Write_OVF2_VEC(fileName, dynamic_cast<Oersted*>(pSMod(MODS_OERSTED))->GetOerstedField(), ovf2_dataType);
 		}
 		break;
 
@@ -116,7 +116,7 @@ BError SuperMesh::SaveOnScreenPhysicalQuantity(string fileName, string ovf2_data
 
 		if (IsSuperMeshModuleSet(MODS_STRAYFIELD)) {
 
-			error = ovf2.Write_OVF2_VEC(fileName, reinterpret_cast<StrayField*>(pSMod(MODS_STRAYFIELD))->GetStrayField(), ovf2_dataType);
+			error = ovf2.Write_OVF2_VEC(fileName, dynamic_cast<StrayField*>(pSMod(MODS_STRAYFIELD))->GetStrayField(), ovf2_dataType);
 		}
 		break;
 	}
@@ -195,7 +195,7 @@ Any SuperMesh::GetDisplayedMeshValue(DBL3 abs_pos)
 
 		if (IsSuperMeshModuleSet(MODS_SDEMAG)) {
 
-			return reinterpret_cast<SDemag*>(pSMod(MODS_SDEMAG))->GetDemagField()[abs_pos - sMeshRect_fm.s];
+			return dynamic_cast<SDemag*>(pSMod(MODS_SDEMAG))->GetDemagField()[abs_pos - sMeshRect_fm.s];
 		}
 		break;
 
@@ -203,7 +203,7 @@ Any SuperMesh::GetDisplayedMeshValue(DBL3 abs_pos)
 
 		if (IsSuperMeshModuleSet(MODS_OERSTED)) {
 
-			return reinterpret_cast<Oersted*>(pSMod(MODS_OERSTED))->GetOerstedField()[abs_pos - sMeshRect_e.s];
+			return dynamic_cast<Oersted*>(pSMod(MODS_OERSTED))->GetOerstedField()[abs_pos - sMeshRect_e.s];
 		}
 		break;
 
@@ -211,7 +211,7 @@ Any SuperMesh::GetDisplayedMeshValue(DBL3 abs_pos)
 
 		if (IsSuperMeshModuleSet(MODS_STRAYFIELD)) {
 
-			return reinterpret_cast<StrayField*>(pSMod(MODS_STRAYFIELD))->GetStrayField()[abs_pos - sMeshRect_fm.s];
+			return dynamic_cast<StrayField*>(pSMod(MODS_STRAYFIELD))->GetStrayField()[abs_pos - sMeshRect_fm.s];
 		}
 		break;
 	}
@@ -252,7 +252,7 @@ Any  SuperMesh::GetAverageDisplayedMeshValue(Rect rel_rect)
 
 		if (IsSuperMeshModuleSet(MODS_SDEMAG)) {
 
-			return reinterpret_cast<SDemag*>(pSMod(MODS_SDEMAG))->GetDemagField().average_nonempty_omp(rel_rect);
+			return dynamic_cast<SDemag*>(pSMod(MODS_SDEMAG))->GetDemagField().average_nonempty_omp(rel_rect);
 		}
 		break;
 
@@ -260,7 +260,7 @@ Any  SuperMesh::GetAverageDisplayedMeshValue(Rect rel_rect)
 
 		if (IsSuperMeshModuleSet(MODS_OERSTED)) {
 
-			return reinterpret_cast<Oersted*>(pSMod(MODS_OERSTED))->GetOerstedField().average_nonempty_omp(rel_rect);
+			return dynamic_cast<Oersted*>(pSMod(MODS_OERSTED))->GetOerstedField().average_nonempty_omp(rel_rect);
 		}
 		break;
 
@@ -268,7 +268,7 @@ Any  SuperMesh::GetAverageDisplayedMeshValue(Rect rel_rect)
 
 		if (IsSuperMeshModuleSet(MODS_STRAYFIELD)) {
 
-			return reinterpret_cast<StrayField*>(pSMod(MODS_STRAYFIELD))->GetStrayField().average_nonempty_omp(rel_rect);
+			return dynamic_cast<StrayField*>(pSMod(MODS_STRAYFIELD))->GetStrayField().average_nonempty_omp(rel_rect);
 		}
 		break;
 	}

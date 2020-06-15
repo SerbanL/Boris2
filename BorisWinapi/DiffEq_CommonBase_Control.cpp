@@ -135,6 +135,8 @@ BError ODECommon_Base::SetEvaluationMethod(EVAL_ evalMethod_)
 	calculate_mxh = true;
 	calculate_dmdt = true;
 
+	if (link_dTspeedup) dTspeedup = dT;
+
 #if COMPILECUDA == 1
 	if (podeSolver->pODECUDA) podeSolver->pODECUDA->SyncODEValues();
 	if (patom_odeSolver->pODECUDA) patom_odeSolver->pODECUDA->SyncODEValues();
@@ -147,13 +149,15 @@ void ODECommon_Base::Reset(void)
 {
 	iteration = 0;
 	stageiteration = 0;
-	time = 0;
-	stagetime = 0;
+	time = 0.0;
+	stagetime = 0.0;
 
-	time_stoch = 0;
+	time_stoch = 0.0;
 
-	mxh = 1;
-	dmdt = 1;
+	time_speedup = 0.0;
+
+	mxh = 1.0;
+	dmdt = 1.0;
 
 	available = true;
 	evalStep = 0;
@@ -199,13 +203,15 @@ void ODECommon_Base::SetdT(double dT)
 {
 	this->dT = dT;
 
+	if (link_dTspeedup) dTspeedup = dT;
+
 #if COMPILECUDA == 1
 	if (podeSolver->pODECUDA) podeSolver->pODECUDA->SyncODEValues();
 	if (patom_odeSolver->pODECUDA) patom_odeSolver->pODECUDA->SyncODEValues();
 #endif
 }
 
-void ODECommon_Base::SetdTstoch(double dTstoch_)
+void ODECommon_Base::SetStochTimeStep(double dTstoch_)
 {
 	link_dTstoch = false;
 
@@ -219,6 +225,22 @@ void ODECommon_Base::SetLink_dTstoch(bool link_dTstoch_)
 
 	if (!link_dTstoch) time_stoch = time;
 	else dTstoch = dT;
+}
+
+void ODECommon_Base::SetSpeedupTimeStep(double dTspeedup_)
+{
+	link_dTspeedup = false;
+
+	time_speedup = time;
+	dTspeedup = dTspeedup_;
+}
+
+void ODECommon_Base::SetLink_dTspeedup(bool link_dTspeedup_)
+{
+	link_dTspeedup = link_dTspeedup_;
+
+	if (!link_dTspeedup) time_speedup = time;
+	else dTspeedup = dT;
 }
 
 void ODECommon_Base::SetAdaptiveTimeStepCtrl(double err_high_fail, double err_high, double err_low, double dT_increase, double dT_min, double dT_max)

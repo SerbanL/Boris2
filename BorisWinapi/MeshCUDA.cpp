@@ -9,13 +9,9 @@
 #if COMPILECUDA == 1
 
 MeshCUDA::MeshCUDA(Mesh* pMesh) :
+	MeshBaseCUDA(pMesh),
 	MeshParamsCUDA(dynamic_cast<MeshParams*>(pMesh)),
 	MeshDisplayCUDA(),
-	meshRect(pMesh->meshRect),
-	n(pMesh->n), h(pMesh->h),
-	n_e(pMesh->n_e), h_e(pMesh->h_e),
-	n_t(pMesh->n_t), h_t(pMesh->h_t),
-	n_m(pMesh->n_m), h_m(pMesh->h_m),
 	n_s(pMesh->n_s), h_s(pMesh->h_s),
 	link_stochastic(pMesh->link_stochastic)
 {
@@ -176,7 +172,7 @@ PhysQ MeshCUDA::FetchOnScreenPhysicalQuantity(double detail_level, bool getBackg
 
 		if (pMesh->IsModuleSet(MOD_TRANSPORT)) {
 
-			if (prepare_display(n_e, meshRect, detail_level, reinterpret_cast<Transport*>(pMesh->pMod(MOD_TRANSPORT))->GetChargeCurrentCUDA())) {
+			if (prepare_display(n_e, meshRect, detail_level, dynamic_cast<Transport*>(pMesh->pMod(MOD_TRANSPORT))->GetChargeCurrentCUDA())) {
 
 				//return PhysQ made from the cpu version of coarse mesh display.
 				return PhysQ(pdisplay_vec_vc_vec, physicalQuantity, (VEC3REP_)pMesh->vec3rep);
@@ -215,7 +211,7 @@ PhysQ MeshCUDA::FetchOnScreenPhysicalQuantity(double detail_level, bool getBackg
 		
 		if (pMesh->IsModuleSet(MOD_TRANSPORT)) {
 
-			if (prepare_display(n_e, meshRect, detail_level, reinterpret_cast<Transport*>(pMesh->pMod(MOD_TRANSPORT))->GetSpinCurrentCUDA(0))) {
+			if (prepare_display(n_e, meshRect, detail_level, dynamic_cast<Transport*>(pMesh->pMod(MOD_TRANSPORT))->GetSpinCurrentCUDA(0))) {
 
 				//return PhysQ made from the cpu version of coarse mesh display.
 				return PhysQ(pdisplay_vec_vec, physicalQuantity, (VEC3REP_)pMesh->vec3rep);
@@ -227,7 +223,7 @@ PhysQ MeshCUDA::FetchOnScreenPhysicalQuantity(double detail_level, bool getBackg
 
 		if (pMesh->IsModuleSet(MOD_TRANSPORT)) {
 
-			if (prepare_display(n_e, meshRect, detail_level, reinterpret_cast<Transport*>(pMesh->pMod(MOD_TRANSPORT))->GetSpinCurrentCUDA(1))) {
+			if (prepare_display(n_e, meshRect, detail_level, dynamic_cast<Transport*>(pMesh->pMod(MOD_TRANSPORT))->GetSpinCurrentCUDA(1))) {
 
 				//return PhysQ made from the cpu version of coarse mesh display.
 				return PhysQ(pdisplay_vec_vec, physicalQuantity, (VEC3REP_)pMesh->vec3rep);
@@ -239,7 +235,7 @@ PhysQ MeshCUDA::FetchOnScreenPhysicalQuantity(double detail_level, bool getBackg
 
 		if (pMesh->IsModuleSet(MOD_TRANSPORT)) {
 
-			if (prepare_display(n_e, meshRect, detail_level, reinterpret_cast<Transport*>(pMesh->pMod(MOD_TRANSPORT))->GetSpinCurrentCUDA(2))) {
+			if (prepare_display(n_e, meshRect, detail_level, dynamic_cast<Transport*>(pMesh->pMod(MOD_TRANSPORT))->GetSpinCurrentCUDA(2))) {
 
 				//return PhysQ made from the cpu version of coarse mesh display.
 				return PhysQ(pdisplay_vec_vec, physicalQuantity, (VEC3REP_)pMesh->vec3rep);
@@ -251,7 +247,7 @@ PhysQ MeshCUDA::FetchOnScreenPhysicalQuantity(double detail_level, bool getBackg
 
 		if (pMesh->IsModuleSet(MOD_TRANSPORT)) {
 
-			if (prepare_display(n, meshRect, detail_level, reinterpret_cast<Transport*>(pMesh->pMod(MOD_TRANSPORT))->GetSpinTorqueCUDA())) {
+			if (prepare_display(n, meshRect, detail_level, dynamic_cast<Transport*>(pMesh->pMod(MOD_TRANSPORT))->GetSpinTorqueCUDA())) {
 
 				//return PhysQ made from the cpu version of coarse mesh display.
 				return PhysQ(pdisplay_vec_vec, physicalQuantity, (VEC3REP_)pMesh->vec3rep);
@@ -264,7 +260,7 @@ PhysQ MeshCUDA::FetchOnScreenPhysicalQuantity(double detail_level, bool getBackg
 		if (pMesh->pSMesh->IsSuperMeshModuleSet(MODS_STRANSPORT) && pMesh->IsModuleSet(MOD_TRANSPORT)) {
 
 			if (prepare_display(n, meshRect, detail_level, 
-				reinterpret_cast<STransport*>(pMesh->pSMesh->pSMod(MODS_STRANSPORT))->GetInterfacialSpinTorqueCUDA(reinterpret_cast<Transport*>(pMesh->pMod(MOD_TRANSPORT))))) {
+				dynamic_cast<STransport*>(pMesh->pSMesh->pSMod(MODS_STRANSPORT))->GetInterfacialSpinTorqueCUDA(dynamic_cast<Transport*>(pMesh->pMod(MOD_TRANSPORT))))) {
 
 				//return PhysQ made from the cpu version of coarse mesh display.
 				return PhysQ(pdisplay_vec_vec, physicalQuantity, (VEC3REP_)pMesh->vec3rep);
@@ -358,7 +354,7 @@ PhysQ MeshCUDA::FetchOnScreenPhysicalQuantity(double detail_level, bool getBackg
 	case MESHDISPLAY_ROUGHNESS:
 		if (pMesh->IsModuleSet(MOD_ROUGHNESS)) {
 
-			return PhysQ(&reinterpret_cast<Roughness*>(pMesh->pMod(MOD_ROUGHNESS))->GetRoughness(), physicalQuantity);
+			return PhysQ(&dynamic_cast<Roughness*>(pMesh->pMod(MOD_ROUGHNESS))->GetRoughness(), physicalQuantity);
 		}
 		break;
 
@@ -434,7 +430,7 @@ BError MeshCUDA::SaveOnScreenPhysicalQuantity(string fileName, string ovf2_dataT
 		//pdisplay_vec_vc_vec at maximum resolution
 		if (pMesh->IsModuleSet(MOD_TRANSPORT)) {
 
-			prepare_display(n_e, meshRect, h_e.mindim(), reinterpret_cast<Transport*>(pMesh->pMod(MOD_TRANSPORT))->GetChargeCurrentCUDA());
+			prepare_display(n_e, meshRect, h_e.mindim(), dynamic_cast<Transport*>(pMesh->pMod(MOD_TRANSPORT))->GetChargeCurrentCUDA());
 			error = ovf2.Write_OVF2_VEC(fileName, *pdisplay_vec_vc_vec, ovf2_dataType);
 		}
 		break;
@@ -465,7 +461,7 @@ BError MeshCUDA::SaveOnScreenPhysicalQuantity(string fileName, string ovf2_dataT
 		//pdisplay_vec_vec at maximum resolution
 		if (pMesh->IsModuleSet(MOD_TRANSPORT)) {
 
-			prepare_display(n_e, meshRect, h_e.mindim(), reinterpret_cast<Transport*>(pMesh->pMod(MOD_TRANSPORT))->GetSpinCurrentCUDA(0));
+			prepare_display(n_e, meshRect, h_e.mindim(), dynamic_cast<Transport*>(pMesh->pMod(MOD_TRANSPORT))->GetSpinCurrentCUDA(0));
 			error = ovf2.Write_OVF2_VEC(fileName, *pdisplay_vec_vec, ovf2_dataType);
 		}
 		break;
@@ -475,7 +471,7 @@ BError MeshCUDA::SaveOnScreenPhysicalQuantity(string fileName, string ovf2_dataT
 		//pdisplay_vec_vec at maximum resolution
 		if (pMesh->IsModuleSet(MOD_TRANSPORT)) {
 
-			prepare_display(n_e, meshRect, h_e.mindim(), reinterpret_cast<Transport*>(pMesh->pMod(MOD_TRANSPORT))->GetSpinCurrentCUDA(1));
+			prepare_display(n_e, meshRect, h_e.mindim(), dynamic_cast<Transport*>(pMesh->pMod(MOD_TRANSPORT))->GetSpinCurrentCUDA(1));
 			error = ovf2.Write_OVF2_VEC(fileName, *pdisplay_vec_vec, ovf2_dataType);
 		}
 		break;
@@ -485,7 +481,7 @@ BError MeshCUDA::SaveOnScreenPhysicalQuantity(string fileName, string ovf2_dataT
 		//pdisplay_vec_vec at maximum resolution
 		if (pMesh->IsModuleSet(MOD_TRANSPORT)) {
 
-			prepare_display(n_e, meshRect, h_e.mindim(), reinterpret_cast<Transport*>(pMesh->pMod(MOD_TRANSPORT))->GetSpinCurrentCUDA(2));
+			prepare_display(n_e, meshRect, h_e.mindim(), dynamic_cast<Transport*>(pMesh->pMod(MOD_TRANSPORT))->GetSpinCurrentCUDA(2));
 			error = ovf2.Write_OVF2_VEC(fileName, *pdisplay_vec_vec, ovf2_dataType);
 		}
 		break;
@@ -495,7 +491,7 @@ BError MeshCUDA::SaveOnScreenPhysicalQuantity(string fileName, string ovf2_dataT
 		//pdisplay_vec_vec at maximumresolution
 		if (pMesh->IsModuleSet(MOD_TRANSPORT)) {
 
-			prepare_display(n, meshRect, h.mindim(), reinterpret_cast<Transport*>(pMesh->pMod(MOD_TRANSPORT))->GetSpinTorqueCUDA());
+			prepare_display(n, meshRect, h.mindim(), dynamic_cast<Transport*>(pMesh->pMod(MOD_TRANSPORT))->GetSpinTorqueCUDA());
 			error = ovf2.Write_OVF2_VEC(fileName, *pdisplay_vec_vec, ovf2_dataType);
 		}
 		break;
@@ -505,7 +501,7 @@ BError MeshCUDA::SaveOnScreenPhysicalQuantity(string fileName, string ovf2_dataT
 		//pdisplay_vec_vec at maximumresolution
 		if (pMesh->pSMesh->IsSuperMeshModuleSet(MODS_STRANSPORT) && pMesh->IsModuleSet(MOD_TRANSPORT)) {
 
-			prepare_display(n, meshRect, h.mindim(), reinterpret_cast<STransport*>(pMesh->pSMesh->pSMod(MODS_STRANSPORT))->GetInterfacialSpinTorqueCUDA(reinterpret_cast<Transport*>(pMesh->pMod(MOD_TRANSPORT))));
+			prepare_display(n, meshRect, h.mindim(), dynamic_cast<STransport*>(pMesh->pSMesh->pSMod(MODS_STRANSPORT))->GetInterfacialSpinTorqueCUDA(dynamic_cast<Transport*>(pMesh->pMod(MOD_TRANSPORT))));
 			error = ovf2.Write_OVF2_VEC(fileName, *pdisplay_vec_vec, ovf2_dataType);
 		}
 		break;
@@ -541,7 +537,7 @@ BError MeshCUDA::SaveOnScreenPhysicalQuantity(string fileName, string ovf2_dataT
 	case MESHDISPLAY_ROUGHNESS:
 		if (pMesh->IsModuleSet(MOD_ROUGHNESS)) {
 
-			error = ovf2.Write_OVF2_SCA(fileName, reinterpret_cast<Roughness*>(pMesh->pMod(MOD_ROUGHNESS))->GetRoughness(), ovf2_dataType);
+			error = ovf2.Write_OVF2_SCA(fileName, dynamic_cast<Roughness*>(pMesh->pMod(MOD_ROUGHNESS))->GetRoughness(), ovf2_dataType);
 		}
 		break;
 
@@ -603,7 +599,7 @@ void MeshCUDA::PrepareDisplayedMeshValue(void)
 		//pdisplay_vec_vc_vec at maximum resolution
 		if (pMesh->IsModuleSet(MOD_TRANSPORT)) {
 
-			prepare_display(n_e, meshRect, h_e.mindim(), reinterpret_cast<Transport*>(pMesh->pMod(MOD_TRANSPORT))->GetChargeCurrentCUDA());
+			prepare_display(n_e, meshRect, h_e.mindim(), dynamic_cast<Transport*>(pMesh->pMod(MOD_TRANSPORT))->GetChargeCurrentCUDA());
 		}
 		break;
 
@@ -630,7 +626,7 @@ void MeshCUDA::PrepareDisplayedMeshValue(void)
 		//pdisplay_vec_vec at maximum resolution
 		if (pMesh->IsModuleSet(MOD_TRANSPORT)) {
 
-			prepare_display(n_e, meshRect, h_e.mindim(), reinterpret_cast<Transport*>(pMesh->pMod(MOD_TRANSPORT))->GetSpinCurrentCUDA(0));
+			prepare_display(n_e, meshRect, h_e.mindim(), dynamic_cast<Transport*>(pMesh->pMod(MOD_TRANSPORT))->GetSpinCurrentCUDA(0));
 		}
 		break;
 
@@ -639,7 +635,7 @@ void MeshCUDA::PrepareDisplayedMeshValue(void)
 		//pdisplay_vec_vec at maximum resolution
 		if (pMesh->IsModuleSet(MOD_TRANSPORT)) {
 
-			prepare_display(n_e, meshRect, h_e.mindim(), reinterpret_cast<Transport*>(pMesh->pMod(MOD_TRANSPORT))->GetSpinCurrentCUDA(1));
+			prepare_display(n_e, meshRect, h_e.mindim(), dynamic_cast<Transport*>(pMesh->pMod(MOD_TRANSPORT))->GetSpinCurrentCUDA(1));
 		}
 		break;
 
@@ -648,7 +644,7 @@ void MeshCUDA::PrepareDisplayedMeshValue(void)
 		//pdisplay_vec_vec at maximum resolution
 		if (pMesh->IsModuleSet(MOD_TRANSPORT)) {
 
-			prepare_display(n_e, meshRect, h_e.mindim(), reinterpret_cast<Transport*>(pMesh->pMod(MOD_TRANSPORT))->GetSpinCurrentCUDA(2));
+			prepare_display(n_e, meshRect, h_e.mindim(), dynamic_cast<Transport*>(pMesh->pMod(MOD_TRANSPORT))->GetSpinCurrentCUDA(2));
 		}
 		break;
 
@@ -657,7 +653,7 @@ void MeshCUDA::PrepareDisplayedMeshValue(void)
 		//pdisplay_vec_vec at maximumresolution
 		if (pMesh->IsModuleSet(MOD_TRANSPORT)) {
 
-			prepare_display(n, meshRect, h.mindim(), reinterpret_cast<Transport*>(pMesh->pMod(MOD_TRANSPORT))->GetSpinTorqueCUDA());
+			prepare_display(n, meshRect, h.mindim(), dynamic_cast<Transport*>(pMesh->pMod(MOD_TRANSPORT))->GetSpinTorqueCUDA());
 		}
 		break;
 
@@ -666,7 +662,7 @@ void MeshCUDA::PrepareDisplayedMeshValue(void)
 		//pdisplay_vec_vec at maximumresolution
 		if (pMesh->pSMesh->IsSuperMeshModuleSet(MODS_STRANSPORT) && pMesh->IsModuleSet(MOD_TRANSPORT)) {
 
-			prepare_display(n, meshRect, h.mindim(), reinterpret_cast<STransport*>(pMesh->pSMesh->pSMod(MODS_STRANSPORT))->GetInterfacialSpinTorqueCUDA(reinterpret_cast<Transport*>(pMesh->pMod(MOD_TRANSPORT))));
+			prepare_display(n, meshRect, h.mindim(), dynamic_cast<STransport*>(pMesh->pSMesh->pSMod(MODS_STRANSPORT))->GetInterfacialSpinTorqueCUDA(dynamic_cast<Transport*>(pMesh->pMod(MOD_TRANSPORT))));
 		}
 		break;
 
@@ -780,7 +776,7 @@ Any MeshCUDA::GetDisplayedMeshValue(DBL3 abs_pos)
 		break;
 
 	case MESHDISPLAY_ROUGHNESS:
-		return reinterpret_cast<Roughness*>(pMesh->pMod(MOD_ROUGHNESS))->GetRoughness()[rel_pos];
+		return dynamic_cast<Roughness*>(pMesh->pMod(MOD_ROUGHNESS))->GetRoughness()[rel_pos];
 		break;
 
 	case MESHDISPLAY_CUSTOM_VEC:
@@ -850,7 +846,7 @@ Any MeshCUDA::GetAverageDisplayedMeshValue(Rect rel_rect)
 		//pdisplay_vec_vc_vec at maximum resolution
 		if (pMesh->IsModuleSet(MOD_TRANSPORT)) {
 
-			prepare_display(n_e, meshRect, h_e.mindim(), reinterpret_cast<Transport*>(pMesh->pMod(MOD_TRANSPORT))->GetChargeCurrentCUDA());
+			prepare_display(n_e, meshRect, h_e.mindim(), dynamic_cast<Transport*>(pMesh->pMod(MOD_TRANSPORT))->GetChargeCurrentCUDA());
 			return pdisplay_vec_vc_vec->average_nonempty_omp(rel_rect);
 		}
 		break;
@@ -881,7 +877,7 @@ Any MeshCUDA::GetAverageDisplayedMeshValue(Rect rel_rect)
 		//pdisplay_vec_vec at maximum resolution
 		if (pMesh->IsModuleSet(MOD_TRANSPORT)) {
 
-			prepare_display(n_e, meshRect, h_e.mindim(), reinterpret_cast<Transport*>(pMesh->pMod(MOD_TRANSPORT))->GetSpinCurrentCUDA(0));
+			prepare_display(n_e, meshRect, h_e.mindim(), dynamic_cast<Transport*>(pMesh->pMod(MOD_TRANSPORT))->GetSpinCurrentCUDA(0));
 			return pdisplay_vec_vec->average_nonempty_omp(rel_rect);
 		}
 		break;
@@ -891,7 +887,7 @@ Any MeshCUDA::GetAverageDisplayedMeshValue(Rect rel_rect)
 		//pdisplay_vec_vec at maximum resolution
 		if (pMesh->IsModuleSet(MOD_TRANSPORT)) {
 
-			prepare_display(n_e, meshRect, h_e.mindim(), reinterpret_cast<Transport*>(pMesh->pMod(MOD_TRANSPORT))->GetSpinCurrentCUDA(1));
+			prepare_display(n_e, meshRect, h_e.mindim(), dynamic_cast<Transport*>(pMesh->pMod(MOD_TRANSPORT))->GetSpinCurrentCUDA(1));
 			return pdisplay_vec_vec->average_nonempty_omp(rel_rect);
 		}
 		break;
@@ -901,7 +897,7 @@ Any MeshCUDA::GetAverageDisplayedMeshValue(Rect rel_rect)
 		//pdisplay_vec_vec at maximum resolution
 		if (pMesh->IsModuleSet(MOD_TRANSPORT)) {
 
-			prepare_display(n_e, meshRect, h_e.mindim(), reinterpret_cast<Transport*>(pMesh->pMod(MOD_TRANSPORT))->GetSpinCurrentCUDA(2));
+			prepare_display(n_e, meshRect, h_e.mindim(), dynamic_cast<Transport*>(pMesh->pMod(MOD_TRANSPORT))->GetSpinCurrentCUDA(2));
 			return pdisplay_vec_vec->average_nonempty_omp(rel_rect);
 		}
 		break;
@@ -911,7 +907,7 @@ Any MeshCUDA::GetAverageDisplayedMeshValue(Rect rel_rect)
 		//pdisplay_vec_vec at maximumresolution
 		if (pMesh->IsModuleSet(MOD_TRANSPORT)) {
 
-			prepare_display(n, meshRect, h.mindim(), reinterpret_cast<Transport*>(pMesh->pMod(MOD_TRANSPORT))->GetSpinTorqueCUDA());
+			prepare_display(n, meshRect, h.mindim(), dynamic_cast<Transport*>(pMesh->pMod(MOD_TRANSPORT))->GetSpinTorqueCUDA());
 			return pdisplay_vec_vec->average_nonempty_omp(rel_rect);
 		}
 		break;
@@ -921,7 +917,7 @@ Any MeshCUDA::GetAverageDisplayedMeshValue(Rect rel_rect)
 		//pdisplay_vec_vec at maximumresolution
 		if (pMesh->pSMesh->IsSuperMeshModuleSet(MODS_STRANSPORT) && pMesh->IsModuleSet(MOD_TRANSPORT)) {
 
-			prepare_display(n, meshRect, h.mindim(), reinterpret_cast<STransport*>(pMesh->pSMesh->pSMod(MODS_STRANSPORT))->GetInterfacialSpinTorqueCUDA(reinterpret_cast<Transport*>(pMesh->pMod(MOD_TRANSPORT))));
+			prepare_display(n, meshRect, h.mindim(), dynamic_cast<STransport*>(pMesh->pSMesh->pSMod(MODS_STRANSPORT))->GetInterfacialSpinTorqueCUDA(dynamic_cast<Transport*>(pMesh->pMod(MOD_TRANSPORT))));
 			return pdisplay_vec_vec->average_nonempty_omp(rel_rect);
 		}
 		break;
@@ -957,7 +953,7 @@ Any MeshCUDA::GetAverageDisplayedMeshValue(Rect rel_rect)
 	case MESHDISPLAY_ROUGHNESS:
 		if (pMesh->IsModuleSet(MOD_ROUGHNESS)) {
 
-			return reinterpret_cast<Roughness*>(pMesh->pMod(MOD_ROUGHNESS))->GetRoughness().average_nonempty_omp(rel_rect);
+			return dynamic_cast<Roughness*>(pMesh->pMod(MOD_ROUGHNESS))->GetRoughness().average_nonempty_omp(rel_rect);
 		}
 		break;
 
@@ -977,13 +973,6 @@ Any MeshCUDA::GetAverageDisplayedMeshValue(Rect rel_rect)
 void MeshCUDA::copy_aux_vec_sca(VEC<double>& displayVEC)
 {
 	aux_vec_sca()->copy_to_cpuvec(displayVEC);
-}
-
-//----------------------------------- MESH INFO GET/SET METHODS
-
-int MeshCUDA::GetMeshType(void)
-{
-	return (int)pMesh->GetMeshType();
 }
 
 //----------------------------------- ENABLED MESH PROPERTIES CHECKERS
@@ -1020,36 +1009,6 @@ bool MeshCUDA::MechComputation_Enabled(void)
 bool MeshCUDA::GInterface_Enabled(void)
 {
 	return (DBL2(pMesh->Gmix.get0()).norm() > 0);
-}
-
-//check if the ODECommon::available flag is true (ode step solved)
-bool MeshCUDA::CurrentTimeStepSolved(void)
-{
-	return pMesh->pSMesh->CurrentTimeStepSolved();
-}
-
-//check evaluation speedup flag in ODECommon
-int MeshCUDA::EvaluationSpeedup(void)
-{
-	return pMesh->pSMesh->EvaluationSpeedup();
-}
-
-//check in ODECommon the type of field update we need to do depending on the ODE evaluation step
-int MeshCUDA::Check_Step_Update(void)
-{
-	return pMesh->pSMesh->Check_Step_Update();
-}
-
-//----------------------------------- VALUE GETTERS
-
-cuBReal MeshCUDA::GetStageTime(void)
-{
-	return pMesh->pSMesh->GetStageTime();
-}
-
-int MeshCUDA::GetStageStep(void)
-{
-	return pMesh->pSMesh->stage_step.minor;
 }
 
 //----------------------------------- OTHER MESH SHAPE CONTROL

@@ -11,7 +11,7 @@
 #include "BorisCUDALib.h"
 #include "ModulesCUDA.h"
 
-#include "HeatCUDA.h"
+#include "HeatBaseCUDA.h"
 #include "MeshParamsCUDA.h"
 
 using namespace std;
@@ -42,7 +42,7 @@ private:
 	vector< vector<CMBNDInfoCUDA> > CMBNDcontacts;
 
 	//list of all transport modules in transport meshes (same ordering as first vector in CMBNDcontacts)
-	vector<HeatCUDA*> pHeat;
+	vector<HeatBaseCUDA*> pHeat;
 
 	//vector of pointers to all V - need this to set cmbnd flags (same ordering as first vector in CMBNDcontacts)
 	vector<cu_obj<cuVEC_VC<cuBReal>>*> pTemp;

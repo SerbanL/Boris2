@@ -45,7 +45,7 @@ BError DifferentialEquationAFMCUDA::AllocateMemory(bool copy_from_cpu)
 	if (!sM1_2()->resize((cuSZ3)pMesh->n)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
 	//copy values from cpu : it's possible the user switches to CUDA during a simulation and expects it to continue as normal
 	//some evaluation methods need saved data (sM1, sEval... etc.) to carry over.
-	else if (copy_from_cpu) sM1_2()->copy_from_cpuvec(reinterpret_cast<DifferentialEquationAFM*>(pmeshODE)->sM1_2);
+	else if (copy_from_cpu) sM1_2()->copy_from_cpuvec(dynamic_cast<DifferentialEquationAFM*>(pmeshODE)->sM1_2);
 
 	switch (pmeshODE->evalMethod) {
 
@@ -67,13 +67,13 @@ BError DifferentialEquationAFMCUDA::AllocateMemory(bool copy_from_cpu)
 		else if (copy_from_cpu) sEval2()->copy_from_cpuvec(pmeshODE->sEval2);
 
 		if (!sEval0_2()->resize((cuSZ3)pMesh->n)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
-		else if (copy_from_cpu) sEval0_2()->copy_from_cpuvec(reinterpret_cast<DifferentialEquationAFM*>(pmeshODE)->sEval0_2);
+		else if (copy_from_cpu) sEval0_2()->copy_from_cpuvec(dynamic_cast<DifferentialEquationAFM*>(pmeshODE)->sEval0_2);
 
 		if (!sEval1_2()->resize((cuSZ3)pMesh->n)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
-		else if (copy_from_cpu) sEval1_2()->copy_from_cpuvec(reinterpret_cast<DifferentialEquationAFM*>(pmeshODE)->sEval1_2);
+		else if (copy_from_cpu) sEval1_2()->copy_from_cpuvec(dynamic_cast<DifferentialEquationAFM*>(pmeshODE)->sEval1_2);
 
 		if (!sEval2_2()->resize((cuSZ3)pMesh->n)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
-		else if (copy_from_cpu) sEval2_2()->copy_from_cpuvec(reinterpret_cast<DifferentialEquationAFM*>(pmeshODE)->sEval2_2);
+		else if (copy_from_cpu) sEval2_2()->copy_from_cpuvec(dynamic_cast<DifferentialEquationAFM*>(pmeshODE)->sEval2_2);
 		break;
 
 	case EVAL_ABM:
@@ -84,10 +84,10 @@ BError DifferentialEquationAFMCUDA::AllocateMemory(bool copy_from_cpu)
 		else if (copy_from_cpu) sEval1()->copy_from_cpuvec(pmeshODE->sEval1);
 
 		if (!sEval0_2()->resize((cuSZ3)pMesh->n)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
-		else if (copy_from_cpu) sEval0_2()->copy_from_cpuvec(reinterpret_cast<DifferentialEquationAFM*>(pmeshODE)->sEval0_2);
+		else if (copy_from_cpu) sEval0_2()->copy_from_cpuvec(dynamic_cast<DifferentialEquationAFM*>(pmeshODE)->sEval0_2);
 
 		if (!sEval1_2()->resize((cuSZ3)pMesh->n)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
-		else if (copy_from_cpu) sEval1_2()->copy_from_cpuvec(reinterpret_cast<DifferentialEquationAFM*>(pmeshODE)->sEval1_2);
+		else if (copy_from_cpu) sEval1_2()->copy_from_cpuvec(dynamic_cast<DifferentialEquationAFM*>(pmeshODE)->sEval1_2);
 		break;
 
 	case EVAL_RK23:
@@ -101,13 +101,13 @@ BError DifferentialEquationAFMCUDA::AllocateMemory(bool copy_from_cpu)
 		else if (copy_from_cpu) sEval2()->copy_from_cpuvec(pmeshODE->sEval2);
 
 		if (!sEval0_2()->resize((cuSZ3)pMesh->n)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
-		else if (copy_from_cpu) sEval0_2()->copy_from_cpuvec(reinterpret_cast<DifferentialEquationAFM*>(pmeshODE)->sEval0_2);
+		else if (copy_from_cpu) sEval0_2()->copy_from_cpuvec(dynamic_cast<DifferentialEquationAFM*>(pmeshODE)->sEval0_2);
 
 		if (!sEval1_2()->resize((cuSZ3)pMesh->n)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
-		else if (copy_from_cpu) sEval1_2()->copy_from_cpuvec(reinterpret_cast<DifferentialEquationAFM*>(pmeshODE)->sEval1_2);
+		else if (copy_from_cpu) sEval1_2()->copy_from_cpuvec(dynamic_cast<DifferentialEquationAFM*>(pmeshODE)->sEval1_2);
 
 		if (!sEval2_2()->resize((cuSZ3)pMesh->n)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
-		else if (copy_from_cpu) sEval2_2()->copy_from_cpuvec(reinterpret_cast<DifferentialEquationAFM*>(pmeshODE)->sEval2_2);
+		else if (copy_from_cpu) sEval2_2()->copy_from_cpuvec(dynamic_cast<DifferentialEquationAFM*>(pmeshODE)->sEval2_2);
 		break;
 
 	case EVAL_RKF:
@@ -127,19 +127,19 @@ BError DifferentialEquationAFMCUDA::AllocateMemory(bool copy_from_cpu)
 		else if (copy_from_cpu) sEval4()->copy_from_cpuvec(pmeshODE->sEval4);
 
 		if (!sEval0_2()->resize((cuSZ3)pMesh->n)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
-		else if (copy_from_cpu) sEval0_2()->copy_from_cpuvec(reinterpret_cast<DifferentialEquationAFM*>(pmeshODE)->sEval0_2);
+		else if (copy_from_cpu) sEval0_2()->copy_from_cpuvec(dynamic_cast<DifferentialEquationAFM*>(pmeshODE)->sEval0_2);
 
 		if (!sEval1_2()->resize((cuSZ3)pMesh->n)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
-		else if (copy_from_cpu) sEval1_2()->copy_from_cpuvec(reinterpret_cast<DifferentialEquationAFM*>(pmeshODE)->sEval1_2);
+		else if (copy_from_cpu) sEval1_2()->copy_from_cpuvec(dynamic_cast<DifferentialEquationAFM*>(pmeshODE)->sEval1_2);
 
 		if (!sEval2_2()->resize((cuSZ3)pMesh->n)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
-		else if (copy_from_cpu) sEval2_2()->copy_from_cpuvec(reinterpret_cast<DifferentialEquationAFM*>(pmeshODE)->sEval2_2);
+		else if (copy_from_cpu) sEval2_2()->copy_from_cpuvec(dynamic_cast<DifferentialEquationAFM*>(pmeshODE)->sEval2_2);
 
 		if (!sEval3_2()->resize((cuSZ3)pMesh->n)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
-		else if (copy_from_cpu) sEval3_2()->copy_from_cpuvec(reinterpret_cast<DifferentialEquationAFM*>(pmeshODE)->sEval3_2);
+		else if (copy_from_cpu) sEval3_2()->copy_from_cpuvec(dynamic_cast<DifferentialEquationAFM*>(pmeshODE)->sEval3_2);
 
 		if (!sEval4_2()->resize((cuSZ3)pMesh->n)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
-		else if (copy_from_cpu) sEval4_2()->copy_from_cpuvec(reinterpret_cast<DifferentialEquationAFM*>(pmeshODE)->sEval4_2);
+		else if (copy_from_cpu) sEval4_2()->copy_from_cpuvec(dynamic_cast<DifferentialEquationAFM*>(pmeshODE)->sEval4_2);
 		break;
 
 	case EVAL_RKCK:
@@ -159,19 +159,19 @@ BError DifferentialEquationAFMCUDA::AllocateMemory(bool copy_from_cpu)
 		else if (copy_from_cpu) sEval4()->copy_from_cpuvec(pmeshODE->sEval4);
 
 		if (!sEval0_2()->resize((cuSZ3)pMesh->n)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
-		else if (copy_from_cpu) sEval0_2()->copy_from_cpuvec(reinterpret_cast<DifferentialEquationAFM*>(pmeshODE)->sEval0_2);
+		else if (copy_from_cpu) sEval0_2()->copy_from_cpuvec(dynamic_cast<DifferentialEquationAFM*>(pmeshODE)->sEval0_2);
 
 		if (!sEval1_2()->resize((cuSZ3)pMesh->n)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
-		else if (copy_from_cpu) sEval1_2()->copy_from_cpuvec(reinterpret_cast<DifferentialEquationAFM*>(pmeshODE)->sEval1_2);
+		else if (copy_from_cpu) sEval1_2()->copy_from_cpuvec(dynamic_cast<DifferentialEquationAFM*>(pmeshODE)->sEval1_2);
 
 		if (!sEval2_2()->resize((cuSZ3)pMesh->n)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
-		else if (copy_from_cpu) sEval2_2()->copy_from_cpuvec(reinterpret_cast<DifferentialEquationAFM*>(pmeshODE)->sEval2_2);
+		else if (copy_from_cpu) sEval2_2()->copy_from_cpuvec(dynamic_cast<DifferentialEquationAFM*>(pmeshODE)->sEval2_2);
 
 		if (!sEval3_2()->resize((cuSZ3)pMesh->n)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
-		else if (copy_from_cpu) sEval3_2()->copy_from_cpuvec(reinterpret_cast<DifferentialEquationAFM*>(pmeshODE)->sEval3_2);
+		else if (copy_from_cpu) sEval3_2()->copy_from_cpuvec(dynamic_cast<DifferentialEquationAFM*>(pmeshODE)->sEval3_2);
 
 		if (!sEval4_2()->resize((cuSZ3)pMesh->n)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
-		else if (copy_from_cpu) sEval4_2()->copy_from_cpuvec(reinterpret_cast<DifferentialEquationAFM*>(pmeshODE)->sEval4_2);
+		else if (copy_from_cpu) sEval4_2()->copy_from_cpuvec(dynamic_cast<DifferentialEquationAFM*>(pmeshODE)->sEval4_2);
 		break;
 
 	case EVAL_RKDP:
@@ -194,22 +194,22 @@ BError DifferentialEquationAFMCUDA::AllocateMemory(bool copy_from_cpu)
 		else if (copy_from_cpu) sEval5()->copy_from_cpuvec(pmeshODE->sEval5);
 
 		if (!sEval0_2()->resize((cuSZ3)pMesh->n)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
-		else if (copy_from_cpu) sEval0_2()->copy_from_cpuvec(reinterpret_cast<DifferentialEquationAFM*>(pmeshODE)->sEval0_2);
+		else if (copy_from_cpu) sEval0_2()->copy_from_cpuvec(dynamic_cast<DifferentialEquationAFM*>(pmeshODE)->sEval0_2);
 
 		if (!sEval1_2()->resize((cuSZ3)pMesh->n)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
-		else if (copy_from_cpu) sEval1_2()->copy_from_cpuvec(reinterpret_cast<DifferentialEquationAFM*>(pmeshODE)->sEval1_2);
+		else if (copy_from_cpu) sEval1_2()->copy_from_cpuvec(dynamic_cast<DifferentialEquationAFM*>(pmeshODE)->sEval1_2);
 
 		if (!sEval2_2()->resize((cuSZ3)pMesh->n)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
-		else if (copy_from_cpu) sEval2_2()->copy_from_cpuvec(reinterpret_cast<DifferentialEquationAFM*>(pmeshODE)->sEval2_2);
+		else if (copy_from_cpu) sEval2_2()->copy_from_cpuvec(dynamic_cast<DifferentialEquationAFM*>(pmeshODE)->sEval2_2);
 
 		if (!sEval3_2()->resize((cuSZ3)pMesh->n)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
-		else if (copy_from_cpu) sEval3_2()->copy_from_cpuvec(reinterpret_cast<DifferentialEquationAFM*>(pmeshODE)->sEval3_2);
+		else if (copy_from_cpu) sEval3_2()->copy_from_cpuvec(dynamic_cast<DifferentialEquationAFM*>(pmeshODE)->sEval3_2);
 
 		if (!sEval4_2()->resize((cuSZ3)pMesh->n)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
-		else if (copy_from_cpu) sEval4_2()->copy_from_cpuvec(reinterpret_cast<DifferentialEquationAFM*>(pmeshODE)->sEval4_2);
+		else if (copy_from_cpu) sEval4_2()->copy_from_cpuvec(dynamic_cast<DifferentialEquationAFM*>(pmeshODE)->sEval4_2);
 
 		if (!sEval5_2()->resize((cuSZ3)pMesh->n)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
-		else if (copy_from_cpu) sEval5_2()->copy_from_cpuvec(reinterpret_cast<DifferentialEquationAFM*>(pmeshODE)->sEval5_2);
+		else if (copy_from_cpu) sEval5_2()->copy_from_cpuvec(dynamic_cast<DifferentialEquationAFM*>(pmeshODE)->sEval5_2);
 		break;
 
 	case EVAL_SD:
@@ -217,7 +217,7 @@ BError DifferentialEquationAFMCUDA::AllocateMemory(bool copy_from_cpu)
 		else if (copy_from_cpu) sEval0()->copy_from_cpuvec(pmeshODE->sEval0);
 
 		if (!sEval0_2()->resize((cuSZ3)pMesh->n)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
-		else if (copy_from_cpu) sEval0_2()->copy_from_cpuvec(reinterpret_cast<DifferentialEquationAFM*>(pmeshODE)->sEval0_2);
+		else if (copy_from_cpu) sEval0_2()->copy_from_cpuvec(dynamic_cast<DifferentialEquationAFM*>(pmeshODE)->sEval0_2);
 		break;
 	}
 
@@ -233,7 +233,7 @@ BError DifferentialEquationAFMCUDA::AllocateMemory(bool copy_from_cpu)
 		if (!H_Thermal()->resize((cuReal3)pMesh->h_s, (cuRect)pMesh->meshRect)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
 		else if (copy_from_cpu) H_Thermal()->copy_from_cpuvec(pmeshODE->H_Thermal);
 		if (!H_Thermal_2()->resize((cuReal3)pMesh->h_s, (cuRect)pMesh->meshRect)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
-		else if (copy_from_cpu) H_Thermal_2()->copy_from_cpuvec(reinterpret_cast<DifferentialEquationAFM*>(pmeshODE)->H_Thermal_2);
+		else if (copy_from_cpu) H_Thermal_2()->copy_from_cpuvec(dynamic_cast<DifferentialEquationAFM*>(pmeshODE)->H_Thermal_2);
 		prng_used = true;
 		break;
 
@@ -243,12 +243,12 @@ BError DifferentialEquationAFMCUDA::AllocateMemory(bool copy_from_cpu)
 		if (!H_Thermal()->resize((cuReal3)pMesh->h_s, (cuRect)pMesh->meshRect)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
 		else if (copy_from_cpu) H_Thermal()->copy_from_cpuvec(pmeshODE->H_Thermal);
 		if (!H_Thermal_2()->resize((cuReal3)pMesh->h_s, (cuRect)pMesh->meshRect)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
-		else if (copy_from_cpu) H_Thermal_2()->copy_from_cpuvec(reinterpret_cast<DifferentialEquationAFM*>(pmeshODE)->H_Thermal_2);
+		else if (copy_from_cpu) H_Thermal_2()->copy_from_cpuvec(dynamic_cast<DifferentialEquationAFM*>(pmeshODE)->H_Thermal_2);
 
 		if (!Torque_Thermal()->resize((cuReal3)pMesh->h_s, (cuRect)pMesh->meshRect)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
 		else if (copy_from_cpu) Torque_Thermal()->copy_from_cpuvec(pmeshODE->Torque_Thermal);
 		if (!Torque_Thermal_2()->resize((cuReal3)pMesh->h_s, (cuRect)pMesh->meshRect)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
-		else if (copy_from_cpu) Torque_Thermal_2()->copy_from_cpuvec(reinterpret_cast<DifferentialEquationAFM*>(pmeshODE)->Torque_Thermal_2);
+		else if (copy_from_cpu) Torque_Thermal_2()->copy_from_cpuvec(dynamic_cast<DifferentialEquationAFM*>(pmeshODE)->Torque_Thermal_2);
 		prng_used = true;
 		break;
 	}
@@ -274,7 +274,7 @@ void DifferentialEquationAFMCUDA::CleanupMemory(bool copy_to_cpu)
 	if (copy_to_cpu && sM1()->size_cpu() == pmeshODE->sM1.size()) sM1()->copy_to_cpuvec(pmeshODE->sM1);
 	sM1()->clear();
 
-	if (copy_to_cpu && sM1_2()->size_cpu() == reinterpret_cast<DifferentialEquationAFM*>(pmeshODE)->sM1_2.size()) sM1_2()->copy_to_cpuvec(reinterpret_cast<DifferentialEquationAFM*>(pmeshODE)->sM1_2);
+	if (copy_to_cpu && sM1_2()->size_cpu() == dynamic_cast<DifferentialEquationAFM*>(pmeshODE)->sM1_2.size()) sM1_2()->copy_to_cpuvec(dynamic_cast<DifferentialEquationAFM*>(pmeshODE)->sM1_2);
 	sM1_2()->clear();
 
 	if (
@@ -289,7 +289,7 @@ void DifferentialEquationAFMCUDA::CleanupMemory(bool copy_to_cpu)
 		if (copy_to_cpu && sEval0()->size_cpu() == pmeshODE->sEval0.size()) sEval0()->copy_to_cpuvec(pmeshODE->sEval0);
 		sEval0()->clear();
 
-		if (copy_to_cpu && sEval0_2()->size_cpu() == reinterpret_cast<DifferentialEquationAFM*>(pmeshODE)->sEval0_2.size()) sEval0_2()->copy_to_cpuvec(reinterpret_cast<DifferentialEquationAFM*>(pmeshODE)->sEval0_2);
+		if (copy_to_cpu && sEval0_2()->size_cpu() == dynamic_cast<DifferentialEquationAFM*>(pmeshODE)->sEval0_2.size()) sEval0_2()->copy_to_cpuvec(dynamic_cast<DifferentialEquationAFM*>(pmeshODE)->sEval0_2);
 		sEval0_2()->clear();
 	}
 
@@ -303,7 +303,7 @@ void DifferentialEquationAFMCUDA::CleanupMemory(bool copy_to_cpu)
 		if (copy_to_cpu && sEval1()->size_cpu() == pmeshODE->sEval1.size()) sEval1()->copy_to_cpuvec(pmeshODE->sEval1);
 		sEval1()->clear();
 
-		if (copy_to_cpu && sEval1_2()->size_cpu() == reinterpret_cast<DifferentialEquationAFM*>(pmeshODE)->sEval1_2.size()) sEval1_2()->copy_to_cpuvec(reinterpret_cast<DifferentialEquationAFM*>(pmeshODE)->sEval1_2);
+		if (copy_to_cpu && sEval1_2()->size_cpu() == dynamic_cast<DifferentialEquationAFM*>(pmeshODE)->sEval1_2.size()) sEval1_2()->copy_to_cpuvec(dynamic_cast<DifferentialEquationAFM*>(pmeshODE)->sEval1_2);
 		sEval1_2()->clear();
 	}
 
@@ -316,7 +316,7 @@ void DifferentialEquationAFMCUDA::CleanupMemory(bool copy_to_cpu)
 		if (copy_to_cpu && sEval2()->size_cpu() == pmeshODE->sEval2.size()) sEval2()->copy_to_cpuvec(pmeshODE->sEval2);
 		sEval2()->clear();
 
-		if (copy_to_cpu && sEval2_2()->size_cpu() == reinterpret_cast<DifferentialEquationAFM*>(pmeshODE)->sEval2_2.size()) sEval2_2()->copy_to_cpuvec(reinterpret_cast<DifferentialEquationAFM*>(pmeshODE)->sEval2_2);
+		if (copy_to_cpu && sEval2_2()->size_cpu() == dynamic_cast<DifferentialEquationAFM*>(pmeshODE)->sEval2_2.size()) sEval2_2()->copy_to_cpuvec(dynamic_cast<DifferentialEquationAFM*>(pmeshODE)->sEval2_2);
 		sEval2_2()->clear();
 	}
 
@@ -331,10 +331,10 @@ void DifferentialEquationAFMCUDA::CleanupMemory(bool copy_to_cpu)
 		if (copy_to_cpu && sEval4()->size_cpu() == pmeshODE->sEval4.size()) sEval4()->copy_to_cpuvec(pmeshODE->sEval4);
 		sEval4()->clear();
 
-		if (copy_to_cpu && sEval3_2()->size_cpu() == reinterpret_cast<DifferentialEquationAFM*>(pmeshODE)->sEval3_2.size()) sEval3_2()->copy_to_cpuvec(reinterpret_cast<DifferentialEquationAFM*>(pmeshODE)->sEval3_2);
+		if (copy_to_cpu && sEval3_2()->size_cpu() == dynamic_cast<DifferentialEquationAFM*>(pmeshODE)->sEval3_2.size()) sEval3_2()->copy_to_cpuvec(dynamic_cast<DifferentialEquationAFM*>(pmeshODE)->sEval3_2);
 		sEval3_2()->clear();
 
-		if (copy_to_cpu && sEval4_2()->size_cpu() == reinterpret_cast<DifferentialEquationAFM*>(pmeshODE)->sEval4_2.size()) sEval4_2()->copy_to_cpuvec(reinterpret_cast<DifferentialEquationAFM*>(pmeshODE)->sEval4_2);
+		if (copy_to_cpu && sEval4_2()->size_cpu() == dynamic_cast<DifferentialEquationAFM*>(pmeshODE)->sEval4_2.size()) sEval4_2()->copy_to_cpuvec(dynamic_cast<DifferentialEquationAFM*>(pmeshODE)->sEval4_2);
 		sEval4_2()->clear();
 	}
 
@@ -343,7 +343,7 @@ void DifferentialEquationAFMCUDA::CleanupMemory(bool copy_to_cpu)
 		if (copy_to_cpu && sEval5()->size_cpu() == pmeshODE->sEval5.size()) sEval5()->copy_to_cpuvec(pmeshODE->sEval5);
 		sEval5()->clear();
 
-		if (copy_to_cpu && sEval5_2()->size_cpu() == reinterpret_cast<DifferentialEquationAFM*>(pmeshODE)->sEval5_2.size()) sEval5_2()->copy_to_cpuvec(reinterpret_cast<DifferentialEquationAFM*>(pmeshODE)->sEval5_2);
+		if (copy_to_cpu && sEval5_2()->size_cpu() == dynamic_cast<DifferentialEquationAFM*>(pmeshODE)->sEval5_2.size()) sEval5_2()->copy_to_cpuvec(dynamic_cast<DifferentialEquationAFM*>(pmeshODE)->sEval5_2);
 		sEval5_2()->clear();
 	}
 
@@ -357,7 +357,7 @@ void DifferentialEquationAFMCUDA::CleanupMemory(bool copy_to_cpu)
 		
 		if (copy_to_cpu && H_Thermal()->size_cpu() == pmeshODE->H_Thermal.size()) H_Thermal()->copy_to_cpuvec(pmeshODE->H_Thermal);
 		H_Thermal()->clear();
-		if (copy_to_cpu && H_Thermal_2()->size_cpu() == reinterpret_cast<DifferentialEquationAFM*>(pmeshODE)->H_Thermal_2.size()) H_Thermal_2()->copy_to_cpuvec(reinterpret_cast<DifferentialEquationAFM*>(pmeshODE)->H_Thermal_2);
+		if (copy_to_cpu && H_Thermal_2()->size_cpu() == dynamic_cast<DifferentialEquationAFM*>(pmeshODE)->H_Thermal_2.size()) H_Thermal_2()->copy_to_cpuvec(dynamic_cast<DifferentialEquationAFM*>(pmeshODE)->H_Thermal_2);
 		H_Thermal_2()->clear();
 	}
 
@@ -368,7 +368,7 @@ void DifferentialEquationAFMCUDA::CleanupMemory(bool copy_to_cpu)
 		if (copy_to_cpu && Torque_Thermal()->size_cpu() == pmeshODE->Torque_Thermal.size()) Torque_Thermal()->copy_to_cpuvec(pmeshODE->Torque_Thermal);
 		Torque_Thermal()->clear();
 
-		if (copy_to_cpu && Torque_Thermal_2()->size_cpu() == reinterpret_cast<DifferentialEquationAFM*>(pmeshODE)->Torque_Thermal_2.size()) Torque_Thermal_2()->copy_to_cpuvec(reinterpret_cast<DifferentialEquationAFM*>(pmeshODE)->Torque_Thermal_2);
+		if (copy_to_cpu && Torque_Thermal_2()->size_cpu() == dynamic_cast<DifferentialEquationAFM*>(pmeshODE)->Torque_Thermal_2.size()) Torque_Thermal_2()->copy_to_cpuvec(dynamic_cast<DifferentialEquationAFM*>(pmeshODE)->Torque_Thermal_2);
 		Torque_Thermal_2()->clear();
 	}
 

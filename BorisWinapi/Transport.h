@@ -26,6 +26,11 @@ class Transport :
 
 #if COMPILECUDA == 1
 	friend TransportCUDA;
+
+	//dynamic cast pModuleCUDA to this after new operator, so we don't have to cast it again later
+	//do not check this for nullptr, but check pModuleCUDA instead; this is only to replace repeated use of dynamic_cast
+	//thus if you check pModuleCUDA first, you can safely use pTransportCUDA since this is cast from pModuleCUDA only after pModuleCUDA allocated
+	TransportCUDA* pTransportCUDA = nullptr;
 #endif
 
 private:

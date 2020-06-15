@@ -18,13 +18,14 @@ Mesh::~Mesh()
 	clear_vector(pMod);
 
 #if COMPILECUDA == 1
-	//free cuda memory by deleting allocated pMeshCUDA
-	if (pMeshCUDA) {
+	//free cuda memory by deleting allocated pMeshBaseCUDA
+	if (pMeshBaseCUDA) {
 		
 		//mark implementation of Mesh as destroyed so the CUDA mesh version doesn't attempt to use its data in destructor
-		pMeshCUDA->Holder_Mesh_Destroyed();
+		pMeshBaseCUDA->Holder_Mesh_Destroyed();
 
-		delete pMeshCUDA;
+		delete pMeshBaseCUDA;
+		pMeshBaseCUDA = nullptr;
 		pMeshCUDA = nullptr;
 	}
 #endif

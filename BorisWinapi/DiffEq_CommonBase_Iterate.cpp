@@ -1380,6 +1380,21 @@ int ODECommon_Base::Check_Step_Update(void)
 	//must enable by setting use_evaluation_speedup != EVALSPEEDUP_NONE
 	if (use_evaluation_speedup == EVALSPEEDUP_NONE) return EVALSPEEDUPSTEP_COMPUTE_NO_SAVE;
 
+	if (use_evaluation_speedup == EVALSPEEDUP_EXTREME && !link_dTspeedup) {
+
+		//extreme mode with time step not linked to dT (the intention is for the updating time step to be larger than dT, but in any case in this mode the updating will be done at most once per dT time step)
+		//Note, in this mode the update will be done at the first evaluation step, whereas in extreme mode with link_dTspeedup true, it will be done as indicated below for each method (not necessarily at the first evaluation)
+		
+		//recommend skipping (and re-using previous value) if time step from previous evaluation is too small
+		if (time < time_speedup + dTspeedup) return EVALSPEEDUPSTEP_SKIP;
+		else {
+
+			//update evaluation time and recommend updating
+			time_speedup = time;
+			return EVALSPEEDUPSTEP_COMPUTE_AND_SAVE;
+		}
+	}
+
 	//it is possible to indicate skipping on step 0, but the caller will have to ensure a previous field evaluation exists which can be used instead - we do not keep track of that here.
 
 	//TEuler

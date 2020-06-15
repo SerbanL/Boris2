@@ -340,15 +340,6 @@ void HeatCUDA::SetBaseTemperature(cuBReal Temperature)
 	pMeshCUDA->Temp_l()->setnonempty(Temperature);
 }
 
-BError HeatCUDA::SetQEquation(const std::vector< std::vector<EqComp::FSPEC> >& fspec)
-{
-	BError error(CLASS_STR(HeatCUDA));
-
-	if (!Q_equation.make_scalar(fspec)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
-
-	return error;
-}
-
 #endif
 
 #endif

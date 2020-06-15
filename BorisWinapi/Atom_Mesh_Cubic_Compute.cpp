@@ -35,11 +35,39 @@ void Atom_Mesh_Cubic::Compute_TopoChargeDensity(void)
 				DBL3 dm_dx = M_grad.x / Mnorm;
 				DBL3 dm_dy = M_grad.y / Mnorm;
 
-				displayVEC_SCA[idx] = (M1[idx] / Mnorm) * (dm_dx ^ dm_dy) * M1.h.x * M1.h.y / (4 * PI);
+				//divide by number of z cells (this is intended for 2D layers)
+				displayVEC_SCA[idx] = (M1[idx] / Mnorm) * (dm_dx ^ dm_dy) * M1.h.x * M1.h.y / (4 * PI * M1.n.z);
 			}
 			else displayVEC_SCA[idx] = 0.0;
 		}
 	}
+}
+
+//return phase transition temperature (K) based on formula Tc = J*e*z/3kB
+double Atom_Mesh_Cubic::Show_Transition_Temperature(void)
+{
+	return J * spinwave_factor * coordination_number / (3 * BOLTZMANN);
+}
+
+//return saturation magnetisation (A/m) based on formula Ms = mu_s*n/a^3
+double Atom_Mesh_Cubic::Show_Ms(void)
+{
+	return mu_s * (MUB / h.dim()) * atoms_per_cell;
+}
+
+//return exchange stiffness (J/m) based on formula A = J*n/2a
+double Atom_Mesh_Cubic::Show_A(void)
+{
+	//formula applicable for a cubic cell
+	double h_av = (h.x + h.y + h.z) / 3;
+
+	return J * atoms_per_cell / (2 * h_av);
+}
+
+//return uniaxial anisotropy constant (J/m^3) based on formula K = k*n/a^3
+double Atom_Mesh_Cubic::Show_Ku(void)
+{
+	return K * atoms_per_cell / h.dim();
 }
 
 #endif

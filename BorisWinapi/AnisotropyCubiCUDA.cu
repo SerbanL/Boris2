@@ -120,7 +120,7 @@ __global__ void Anisotropy_CubicCUDA_AFM_UpdateField(ManagedMeshCUDA& cuMesh, cu
 			cuBReal a3 = d3 * (d1*d1 + d2 * d2);
 
 			//terms for K2 contribution
-			cuBReal d123 = d1 * d2*d3;
+			cuBReal d123 = d1*d2*d3;
 
 			cuBReal b1 = d123 * d2*d3;
 			cuBReal b2 = d123 * d1*d3;
@@ -248,11 +248,10 @@ __global__ void Anisotropy_CubicCUDA_FM_GetEnergy(ManagedMeshCUDA& cuMesh, cuBRe
 			cuBReal d2 = (M[idx] * mcanis_ea2) / Ms;
 			cuBReal d3 = (M[idx] * mcanis_ea3) / Ms;
 
-			//terms for K1 contribution
 			//terms for K2 contribution
-			cuBReal d123 = d1 * d2*d3;
+			cuBReal d123 = d1*d2*d3;
 
-			energy_ = (K1 * (d1*d1*d2*d2 + d1 * d1*d3*d3 + d2 * d2*d3*d3) + K2 * d123*d123);
+			energy_ = (K1 * (d1*d1*d2*d2 + d1*d1*d3*d3 + d2*d2*d3*d3) + K2 * d123*d123);
 			include_in_reduction = true;
 		}
 	}
@@ -291,9 +290,8 @@ __global__ void Anisotropy_CubicCUDA_AFM_GetEnergy(ManagedMeshCUDA& cuMesh, cuBR
 			cuBReal d2 = (M[idx] * mcanis_ea2) / Ms_AFM.i;
 			cuBReal d3 = (M[idx] * mcanis_ea3) / Ms_AFM.i;
 
-			//terms for K1 contribution
 			//terms for K2 contribution
-			cuBReal d123 = d1 * d2*d3;
+			cuBReal d123 = d1*d2*d3;
 
 			//same thing for sub-lattice B
 
@@ -301,9 +299,9 @@ __global__ void Anisotropy_CubicCUDA_AFM_GetEnergy(ManagedMeshCUDA& cuMesh, cuBR
 			cuBReal d2B = (M2[idx] * mcanis_ea2) / Ms_AFM.j;
 			cuBReal d3B = (M2[idx] * mcanis_ea3) / Ms_AFM.j;
 
-			cuBReal d123B = d1B * d2B*d3B;
+			cuBReal d123B = d1B*d2B*d3B;
 
-			energy_ = ((K1_AFM.i * (d1*d1*d2*d2 + d1 * d1*d3*d3 + d2 * d2*d3*d3) + K2_AFM.i * d123*d123) + (K1_AFM.j * (d1B*d1B*d2B*d2B + d1B * d1B*d3B*d3B + d2B * d2B*d3B*d3B) + K2_AFM.j * d123B*d123B)) / 2;
+			energy_ = ((K1_AFM.i * (d1*d1*d2*d2 + d1*d1*d3*d3 + d2*d2*d3*d3) + K2_AFM.i * d123*d123) + (K1_AFM.j * (d1B*d1B*d2B*d2B + d1B * d1B*d3B*d3B + d2B * d2B*d3B*d3B) + K2_AFM.j * d123B*d123B)) / 2;
 			include_in_reduction = true;
 		}
 	}

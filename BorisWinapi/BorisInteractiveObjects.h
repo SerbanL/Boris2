@@ -43,7 +43,13 @@ enum IOI_
 	//Link stochastic time-step to ODE dT flag : auxId is the value
 	IOI_LINKSTOCHDT,
 
-	//Available/set evaluation method for ode : minorId is an entry from ODE_ (the equation), auxId is the EVAL_ entry (the evaluation method), textId is the name of the evaluation method
+	//Set evaluation speedup time-step: textId is the value
+	IOI_SPEEDUPDT,
+
+	//Link evaluation speedup time-step to ODE dT flag : auxId is the value
+	IOI_LINKSPEEDUPDT,
+
+	//Available/set evaluation method for ode : minorId is an entry from ODE_ as : micromagnetic equation value + 100 * atomistic equation value, auxId is the EVAL_ entry (the evaluation method), textId is the name of the evaluation method
 	IOI_ODE_EVAL,
 
 	//Shows a mesh name : minorId is the unique mesh id number, textId is the mesh name (below are similar objects but used in different lists, so these lists need updating differently).
@@ -61,6 +67,7 @@ enum IOI_
 	IOI_MESH_FORPBC,
 	IOI_MESH_FOREXCHCOUPLING, 
 	IOI_MESH_FORSTOCHASTICITY,
+	IOI_MESH_FORSPEEDUP,
 
 	//Shows ferromagnetic super-mesh rectangle (unit m) : textId is the mesh rectangle for the ferromagnetic super-mesh
 	IOI_FMSMESHRECTANGLE,
@@ -87,6 +94,12 @@ enum IOI_
 	IOI_MESHSCELLSIZE,
 	//Shows link stochastic flag : minorId is the unique mesh id number, auxId is the value off (0), on (1), N/A (-1)
 	IOI_LINKSTOCHASTIC,
+
+	//Shows macrocell size (units m) for atomistic meshes: minorId is the unique mesh id number, auxId is enabled/disabled status, textId is the mesh cellsize
+	IOI_MESHDMCELLSIZE,
+
+	//Shows evaluation speedup type: auxId is the type value.
+	IOI_SPEEDUPMODE,
 
 	//Simulation output data, specifically used for showing values in console : minorId is the DATA_ id, textId is the data handle
 	IOI_SHOWDATA,

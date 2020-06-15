@@ -323,6 +323,48 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 	}
 	break;
 
+	//Set evaluation speedup time-step: textId is the value
+	case IOI_SPEEDUPDT:
+	{
+		//parameters from iop
+		string dT_string = iop.textId;
+
+		if (dT_string != ToString(SMesh.GetSpeedupTimeStep(), "s")) {
+
+			iop.textId = ToString(SMesh.GetSpeedupTimeStep(), "s");
+
+			pTO->set(" " + iop.textId + " ");
+			stateChanged = true;
+		}
+	}
+	break;
+
+	//Link evaluation speedup time-step to ODE dT flag : auxId is the value
+	case IOI_LINKSPEEDUPDT:
+	{
+		//parameters from iop
+		bool state = (bool)iop.auxId;
+
+		if (state != SMesh.GetLink_dTspeedup()) {
+
+			iop.auxId = SMesh.GetLink_dTspeedup();
+
+			if (iop.auxId) {
+
+				pTO->set(" On ");
+				pTO->SetBackgroundColor(ONCOLOR);
+			}
+			else {
+
+				pTO->set(" Off ");
+				pTO->SetBackgroundColor(OFFCOLOR);
+			}
+
+			stateChanged = true;
+		}
+	}
+	break;
+
 	//Set heat equation time step: textId is the value
 	case IOI_HEATDT:
 	{
@@ -356,25 +398,26 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 	}
 	break;
 
-	//Available/set evaluation method for ode : minorId is an entry from ODE_ (the equation), auxId is the EVAL_ entry (the evaluation method), textId is the name of the evaluation method
+	//Available/set evaluation method for ode : minorId is an entry from ODE_ as : micromagnetic equation value + 100 * atomistic equation value, auxId is the EVAL_ entry (the evaluation method), textId is the name of the evaluation method
 	case IOI_ODE_EVAL:
 	{
-		ODE_ actual_odeID;
+		ODE_ actual_odeID, actual_atom_odeID;
 		EVAL_ actual_evalID;
 		SMesh.QueryODE(actual_odeID, actual_evalID);
+		SMesh.QueryAtomODE(actual_atom_odeID);
 
 		//parameters from iop
-		ODE_ odeID = (ODE_)iop.minorId;
+		int odeCombinedID = iop.minorId;
 		EVAL_ evalID = (EVAL_)iop.auxId;
 
 		//check if set ode has changed - if it has we need to update the state of this console object to reflect the set ode properties (e.g. evaluation method might not be available for the set ode)
-		if (actual_odeID != odeID) {
+		if ((int)actual_odeID + 100 * (int)actual_atom_odeID != odeCombinedID) {
 
 			//mismatch in set ODE : update
-			iop.minorId = actual_odeID;
+			iop.minorId = (int)actual_odeID + 100 * (int)actual_atom_odeID;
 
 			//if the newly set ode doesn't have this evaluation method as available then display UNAVAILABLE color
-			if (search_vector(odeAllowedEvals(actual_odeID), evalID) < 0) {
+			if (search_vector(odeAllowedEvals(actual_odeID), evalID) < 0 || search_vector(odeAllowedEvals(actual_atom_odeID), evalID) < 0) {
 
 				pTO->SetBackgroundColor(UNAVAILABLECOLOR);
 				iop.state = IOS_OFF;
@@ -513,6 +556,12 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 	case IOI_MESH_FORSTOCHASTICITY:
 	{
 		display_meshIO(&Simulation::Build_Stochasticity_ListLine);
+	}
+	break;
+
+	case IOI_MESH_FORSPEEDUP:
+	{
+		display_meshIO(&Simulation::Build_Speedup_ListLine);
 	}
 	break;
 
@@ -834,7 +883,7 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 				}
 				else {
 					//update mesh cellsize if not matching
-					DBL3 meshCellsize = reinterpret_cast<Mesh*>(SMesh[meshIdx])->GetMeshSCellsize();
+					DBL3 meshCellsize = dynamic_cast<Mesh*>(SMesh[meshIdx])->GetMeshSCellsize();
 					if (ToString(meshCellsize, "m") != cellsizeValue) {
 
 						iop.textId = ToString(meshCellsize, "m");
@@ -847,7 +896,7 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 
 				if (SMesh[meshIdx]->MComputation_Enabled()) {
 
-					DBL3 meshCellsize = reinterpret_cast<Mesh*>(SMesh[meshIdx])->GetMeshSCellsize();
+					DBL3 meshCellsize = dynamic_cast<Mesh*>(SMesh[meshIdx])->GetMeshSCellsize();
 					iop.textId = ToString(meshCellsize, "m");
 					iop.auxId = 1;
 					pTO->set(" " + iop.textId + " ");
@@ -878,9 +927,9 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 
 			if (status >= 0 && !SMesh[meshIdx]->is_atomistic()) {
 
-				if (status != (int)reinterpret_cast<Mesh*>(SMesh[meshIdx])->GetLinkStochastic()) {
+				if (status != (int)dynamic_cast<Mesh*>(SMesh[meshIdx])->GetLinkStochastic()) {
 
-					iop.auxId = reinterpret_cast<Mesh*>(SMesh[meshIdx])->GetLinkStochastic();
+					iop.auxId = dynamic_cast<Mesh*>(SMesh[meshIdx])->GetLinkStochastic();
 
 					if (iop.auxId == 0) {
 
@@ -902,6 +951,91 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 			//mesh no longer exists : delete the entire paragraph containing this object
 			stateChanged = true;
 			iop.state = IOS_DELETINGPARAGRAPH;
+		}
+	}
+	break;
+
+	//Shows macrocell size (units m) for atomistic meshes: minorId is the unique mesh id number, auxId is enabled/disabled status, textId is the mesh cellsize
+	case IOI_MESHDMCELLSIZE:
+	{
+		//parameters from iop
+		int meshId = iop.minorId;
+		bool enabled = (bool)iop.auxId;
+		string cellsizeValue = iop.textId;
+
+		int meshIdx = SMesh.contains_id(meshId);
+		if (meshIdx >= 0) {
+
+			if (enabled || !SMesh[meshIdx]->is_atomistic()) {
+
+				if (!SMesh[meshIdx]->MComputation_Enabled() || !SMesh[meshIdx]->is_atomistic()) {
+
+					iop.textId = "N/A";
+					iop.auxId = 0;
+					pTO->set(" " + iop.textId + " ");
+					pTO->SetBackgroundColor(OFFCOLOR);
+					stateChanged = true;
+				}
+				else {
+					//update mesh cellsize if not matching
+					DBL3 meshCellsize = dynamic_cast<Atom_Mesh*>(SMesh[meshIdx])->Get_Demag_Cellsize();
+					if (ToString(meshCellsize, "m") != cellsizeValue) {
+
+						iop.textId = ToString(meshCellsize, "m");
+						pTO->set(" " + iop.textId + " ");
+						stateChanged = true;
+					}
+				}
+			}
+			else {
+
+				if (SMesh[meshIdx]->MComputation_Enabled()) {
+
+					DBL3 meshCellsize = dynamic_cast<Atom_Mesh*>(SMesh[meshIdx])->Get_Demag_Cellsize();
+					iop.textId = ToString(meshCellsize, "m");
+					iop.auxId = 1;
+					pTO->set(" " + iop.textId + " ");
+					pTO->SetBackgroundColor(ONCOLOR);
+					stateChanged = true;
+				}
+			}
+		}
+		else {
+
+			//mesh no longer exists : delete the entire paragraph containing this object
+			stateChanged = true;
+			iop.state = IOS_DELETINGPARAGRAPH;
+		}
+	}
+	break;
+
+	//Shows evaluation speedup type: auxId is the type value.
+	case IOI_SPEEDUPMODE:
+	{
+		//parameters from iop
+		int option = iop.auxId;
+
+		if (option != SMesh.GetEvaluationSpeedup()) {
+
+			iop.auxId = SMesh.GetEvaluationSpeedup();
+
+			switch (iop.auxId) {
+
+			case 0:
+				pTO->set(" None ");
+				break;
+			case 1:
+				pTO->set(" Accurate ");
+				break;
+			case 2:
+				pTO->set(" Aggressive ");
+				break;
+			case 3:
+				pTO->set(" Extreme ");
+				break;
+			}
+
+			stateChanged = true;
 		}
 	}
 	break;
@@ -1824,7 +1958,7 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 				if (iop.auxId) {
 
 					pTO->SetBackgroundColor(ONCOLOR);
-					iop.textId = ToString(SMesh[meshIdx]->CallModuleMethod(&Heat::GetAmbientTemperature), "K");
+					iop.textId = ToString(SMesh[meshIdx]->CallModuleMethod(&HeatBase::GetAmbientTemperature), "K");
 					pTO->set(" " + iop.textId + " ");
 				}
 				else {
@@ -1835,9 +1969,9 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 
 				stateChanged = true;
 			}
-			else if (status && ToString(SMesh[meshIdx]->CallModuleMethod(&Heat::GetAmbientTemperature), "K") != temp_string) {
+			else if (status && ToString(SMesh[meshIdx]->CallModuleMethod(&HeatBase::GetAmbientTemperature), "K") != temp_string) {
 
-				iop.textId = ToString(SMesh[meshIdx]->CallModuleMethod(&Heat::GetAmbientTemperature), "K");
+				iop.textId = ToString(SMesh[meshIdx]->CallModuleMethod(&HeatBase::GetAmbientTemperature), "K");
 				pTO->set(" " + iop.textId + " ");
 
 				stateChanged = true;
@@ -1864,7 +1998,7 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 				if (iop.auxId) {
 
 					pTO->SetBackgroundColor(ONCOLOR);
-					iop.textId = ToString(SMesh[meshIdx]->CallModuleMethod(&Heat::GetAlphaBoundary), "W/m2K");
+					iop.textId = ToString(SMesh[meshIdx]->CallModuleMethod(&HeatBase::GetAlphaBoundary), "W/m2K");
 					pTO->set(" " + iop.textId + " ");
 				}
 				else {
@@ -1875,9 +2009,9 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 
 				stateChanged = true;
 			}
-			else if (status && ToString(SMesh[meshIdx]->CallModuleMethod(&Heat::GetAlphaBoundary), "W/m2K") != alpha_string) {
+			else if (status && ToString(SMesh[meshIdx]->CallModuleMethod(&HeatBase::GetAlphaBoundary), "W/m2K") != alpha_string) {
 
-				iop.textId = ToString(SMesh[meshIdx]->CallModuleMethod(&Heat::GetAlphaBoundary), "W/m2K");
+				iop.textId = ToString(SMesh[meshIdx]->CallModuleMethod(&HeatBase::GetAlphaBoundary), "W/m2K");
 				pTO->set(" " + iop.textId + " ");
 
 				stateChanged = true;
@@ -1901,7 +2035,7 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 
 				bool heat_set = SMesh[meshIdx]->IsModuleSet(MOD_HEAT);
 				if (!heat_set) iop.auxId = -1;
-				else iop.auxId = SMesh[meshIdx]->CallModuleMethod(&Heat::GetInsulatingSide, literal);
+				else iop.auxId = SMesh[meshIdx]->CallModuleMethod(&HeatBase::GetInsulatingSide, literal);
 
 				if (heat_set) {
 
@@ -1924,9 +2058,9 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 
 				stateChanged = true;
 			}
-			else if (status >= 0 && SMesh[meshIdx]->CallModuleMethod(&Heat::GetInsulatingSide, literal) != (bool)status) {
+			else if (status >= 0 && SMesh[meshIdx]->CallModuleMethod(&HeatBase::GetInsulatingSide, literal) != (bool)status) {
 
-				iop.auxId = SMesh[meshIdx]->CallModuleMethod(&Heat::GetInsulatingSide, literal);
+				iop.auxId = SMesh[meshIdx]->CallModuleMethod(&HeatBase::GetInsulatingSide, literal);
 				pTO->set(" " + iop.textId + " ");
 
 				if (iop.auxId == 0) {
@@ -1958,9 +2092,9 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 
 		if (meshIdx >= 0 && !SMesh[meshIdx]->is_atomistic()) {
 
-			if (ToString(reinterpret_cast<Mesh*>(SMesh[meshIdx])->GetCurieTemperature(), "K") != temp_string) {
+			if (ToString(dynamic_cast<Mesh*>(SMesh[meshIdx])->GetCurieTemperature(), "K") != temp_string) {
 
-				iop.textId = ToString(reinterpret_cast<Mesh*>(SMesh[meshIdx])->GetCurieTemperature(), "K");
+				iop.textId = ToString(dynamic_cast<Mesh*>(SMesh[meshIdx])->GetCurieTemperature(), "K");
 				pTO->set(" " + iop.textId + " ");
 
 				stateChanged = true;
@@ -1999,9 +2133,9 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 
 		if (meshIdx >= 0 && !SMesh[meshIdx]->is_atomistic()) {
 
-			if (ToString(reinterpret_cast<Mesh*>(SMesh[meshIdx])->GetCurieTemperatureMaterial(), "K") != temp_string) {
+			if (ToString(dynamic_cast<Mesh*>(SMesh[meshIdx])->GetCurieTemperatureMaterial(), "K") != temp_string) {
 
-				iop.textId = ToString(reinterpret_cast<Mesh*>(SMesh[meshIdx])->GetCurieTemperatureMaterial(), "K");
+				iop.textId = ToString(dynamic_cast<Mesh*>(SMesh[meshIdx])->GetCurieTemperatureMaterial(), "K");
 				pTO->set(" " + iop.textId + " ");
 
 				stateChanged = true;
@@ -2040,9 +2174,9 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 
 		if (meshIdx >= 0 && !SMesh[meshIdx]->is_atomistic()) {
 
-			if (ToString(reinterpret_cast<Mesh*>(SMesh[meshIdx])->GetAtomicMoment(), "uB") != amoment_string) {
+			if (ToString(dynamic_cast<Mesh*>(SMesh[meshIdx])->GetAtomicMoment(), "uB") != amoment_string) {
 
-				iop.textId = ToString(reinterpret_cast<Mesh*>(SMesh[meshIdx])->GetAtomicMoment(), "uB");
+				iop.textId = ToString(dynamic_cast<Mesh*>(SMesh[meshIdx])->GetAtomicMoment(), "uB");
 				pTO->set(" " + iop.textId + " ");
 
 				stateChanged = true;
@@ -2081,9 +2215,9 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 
 		if (meshIdx >= 0 && !SMesh[meshIdx]->is_atomistic()) {
 
-			if (ToString(reinterpret_cast<Mesh*>(SMesh[meshIdx])->GetAtomicMoment_AFM(), "uB") != amoment_string) {
+			if (ToString(dynamic_cast<Mesh*>(SMesh[meshIdx])->GetAtomicMoment_AFM(), "uB") != amoment_string) {
 
-				iop.textId = ToString(reinterpret_cast<Mesh*>(SMesh[meshIdx])->GetAtomicMoment_AFM(), "uB");
+				iop.textId = ToString(dynamic_cast<Mesh*>(SMesh[meshIdx])->GetAtomicMoment_AFM(), "uB");
 				pTO->set(" " + iop.textId + " ");
 
 				stateChanged = true;
@@ -2122,9 +2256,9 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 
 		if (meshIdx >= 0 && !SMesh[meshIdx]->is_atomistic()) {
 
-			if (ToString(reinterpret_cast<Mesh*>(SMesh[meshIdx])->GetTcCoupling()) != amoment_string) {
+			if (ToString(dynamic_cast<Mesh*>(SMesh[meshIdx])->GetTcCoupling()) != amoment_string) {
 
-				iop.textId = ToString(reinterpret_cast<Mesh*>(SMesh[meshIdx])->GetTcCoupling());
+				iop.textId = ToString(dynamic_cast<Mesh*>(SMesh[meshIdx])->GetTcCoupling());
 				pTO->set(" " + iop.textId + " ");
 
 				stateChanged = true;
@@ -2161,9 +2295,9 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 
 		if (meshIdx >= 0) {
 
-			if (SMesh[meshIdx]->CallModuleMethod(&Heat::Get_TMType) != tmodel) {
+			if (SMesh[meshIdx]->CallModuleMethod(&HeatBase::Get_TMType) != tmodel) {
 
-				iop.auxId = SMesh[meshIdx]->CallModuleMethod(&Heat::Get_TMType);
+				iop.auxId = SMesh[meshIdx]->CallModuleMethod(&HeatBase::Get_TMType);
 
 				switch (iop.auxId) {
 
@@ -2733,9 +2867,9 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 				stateChanged = true;
 				iop.auxId = -1;
 			}
-			else if (SMesh[meshIdx]->IsModuleSet(MOD_DEMAG) && reinterpret_cast<Demag*>(SMesh[meshIdx]->GetModule(MOD_DEMAG))->Get_PBC().x != images) {
+			else if (SMesh[meshIdx]->IsModuleSet(MOD_DEMAG) && SMesh[meshIdx]->CallModuleMethod(&DemagBase::Get_PBC).x != images) {
 
-				iop.auxId = SMesh[meshIdx]->CallModuleMethod(&Demag::Get_PBC).x;
+				iop.auxId = SMesh[meshIdx]->CallModuleMethod(&DemagBase::Get_PBC).x;
 
 				if (iop.auxId > 0) {
 
@@ -2770,9 +2904,9 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 				stateChanged = true;
 				iop.auxId = -1;
 			}
-			else if (SMesh[meshIdx]->IsModuleSet(MOD_DEMAG) && reinterpret_cast<Demag*>(SMesh[meshIdx]->GetModule(MOD_DEMAG))->Get_PBC().y != images) {
+			else if (SMesh[meshIdx]->IsModuleSet(MOD_DEMAG) && SMesh[meshIdx]->CallModuleMethod(&DemagBase::Get_PBC).y != images) {
 
-				iop.auxId = SMesh[meshIdx]->CallModuleMethod(&Demag::Get_PBC).y;
+				iop.auxId = SMesh[meshIdx]->CallModuleMethod(&DemagBase::Get_PBC).y;
 
 				if (iop.auxId > 0) {
 
@@ -2807,9 +2941,9 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 				stateChanged = true;
 				iop.auxId = -1;
 			}
-			else if (SMesh[meshIdx]->IsModuleSet(MOD_DEMAG) && reinterpret_cast<Demag*>(SMesh[meshIdx]->GetModule(MOD_DEMAG))->Get_PBC().z != images) {
+			else if (SMesh[meshIdx]->IsModuleSet(MOD_DEMAG) && SMesh[meshIdx]->CallModuleMethod(&DemagBase::Get_PBC).z != images) {
 
-				iop.auxId = SMesh[meshIdx]->CallModuleMethod(&Demag::Get_PBC).z;
+				iop.auxId = SMesh[meshIdx]->CallModuleMethod(&DemagBase::Get_PBC).z;
 
 				if (iop.auxId > 0) {
 
@@ -2839,7 +2973,7 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 			stateChanged = true;
 			iop.auxId = -1;
 		}
-		else if (SMesh.IsSuperMeshModuleSet(MODS_SDEMAG) && reinterpret_cast<SDemag*>(SMesh.GetSuperMeshModule(MODS_SDEMAG))->Get_PBC().x != images) {
+		else if (SMesh.IsSuperMeshModuleSet(MODS_SDEMAG) && dynamic_cast<SDemag*>(SMesh.GetSuperMeshModule(MODS_SDEMAG))->Get_PBC().x != images) {
 
 			iop.auxId = SMesh.CallModuleMethod(&SDemag::Get_PBC).x;
 
@@ -2870,7 +3004,7 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 			stateChanged = true;
 			iop.auxId = -1;
 		}
-		else if (SMesh.IsSuperMeshModuleSet(MODS_SDEMAG) && reinterpret_cast<SDemag*>(SMesh.GetSuperMeshModule(MODS_SDEMAG))->Get_PBC().y != images) {
+		else if (SMesh.IsSuperMeshModuleSet(MODS_SDEMAG) && dynamic_cast<SDemag*>(SMesh.GetSuperMeshModule(MODS_SDEMAG))->Get_PBC().y != images) {
 
 			iop.auxId = SMesh.CallModuleMethod(&SDemag::Get_PBC).y;
 
@@ -2901,7 +3035,7 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 			stateChanged = true;
 			iop.auxId = -1;
 		}
-		else if (SMesh.IsSuperMeshModuleSet(MODS_SDEMAG) && reinterpret_cast<SDemag*>(SMesh.GetSuperMeshModule(MODS_SDEMAG))->Get_PBC().z != images) {
+		else if (SMesh.IsSuperMeshModuleSet(MODS_SDEMAG) && dynamic_cast<SDemag*>(SMesh.GetSuperMeshModule(MODS_SDEMAG))->Get_PBC().z != images) {
 
 			iop.auxId = SMesh.CallModuleMethod(&SDemag::Get_PBC).z;
 

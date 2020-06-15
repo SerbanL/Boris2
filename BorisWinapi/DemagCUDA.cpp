@@ -36,7 +36,7 @@ BError DemagCUDA::Initialize(void)
 	}
 
 	//make sure to allocate memory for Hdemag if we need it
-	if (pMeshCUDA->EvaluationSpeedup()) {
+	if (pMeshCUDA->GetEvaluationSpeedup()) {
 
 		Hdemag()->resize(pMeshCUDA->h, pMeshCUDA->meshRect);
 	}
@@ -72,7 +72,7 @@ BError DemagCUDA::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 
 void DemagCUDA::UpdateField(void)
 {
-	if (pMeshCUDA->EvaluationSpeedup()) {
+	if (pMeshCUDA->GetEvaluationSpeedup()) {
 
 		//use evaluation speedup method (Hdemag will have memory allocated - this was done in the Initialize method)
 

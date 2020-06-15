@@ -24,10 +24,10 @@ void Mesh::SetBaseTemperature(double Temperature, bool clear_equation)
 	update_parameters();
 
 	//1a. reset Temp VEC to base temperature
-	CallModuleMethod(&Heat::SetBaseTemperature, Temperature);
+	CallModuleMethod(&HeatBase::SetBaseTemperature, Temperature);
 
 	//1b. Zeeman module might set field using a custom user equation where the base temperature is a parameter
-	CallModuleMethod(&Zeeman::SetBaseTemperature, Temperature);
+	CallModuleMethod(&ZeemanBase::SetBaseTemperature, Temperature);
 
 	//NOTE : do not call UpdateConfiguration here - this is to allow Temperature sequences in simulation stages
 	//Instead deal with any adjustments required on a module by module basis (e.g. StrayField)

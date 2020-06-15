@@ -29,12 +29,32 @@ BError Atom_Mesh::AddModule(MOD_ moduleID, bool force_add)
 		pMod.push_back(new Atom_Zeeman(this), MOD_ZEEMAN);
 		break;
 
-	case MOD_ATOM_EXCHANGE:
-		pMod.push_back(new Atom_Exchange(this), MOD_ATOM_EXCHANGE);
+	case MOD_EXCHANGE:
+		pMod.push_back(new Atom_Exchange(this), MOD_EXCHANGE);
+		break;
+
+	case MOD_DMEXCHANGE:
+		pMod.push_back(new Atom_DMExchange(this), MOD_DMEXCHANGE);
+		break;
+
+	case MOD_IDMEXCHANGE:
+		pMod.push_back(new Atom_iDMExchange(this), MOD_IDMEXCHANGE);
+		break;
+
+	case MOD_MOPTICAL:
+		pMod.push_back(new Atom_MOptical(this), MOD_MOPTICAL);
 		break;
 
 	case MOD_ANIUNI:
 		pMod.push_back(new Atom_Anisotropy_Uniaxial(this), MOD_ANIUNI);
+		break;
+
+	case MOD_ANICUBI:
+		pMod.push_back(new Atom_Anisotropy_Cubic(this), MOD_ANICUBI);
+		break;
+
+	case MOD_HEAT:
+		pMod.push_back(new Atom_Heat(this), MOD_HEAT);
 		break;
 	}
 

@@ -58,23 +58,23 @@ BError StrayFieldCUDA::Initialize(void)
 			//collect cuda Heff pointers in pVal_to cu_arr
 			if ((*pSMesh)[idx]->MComputation_Enabled() && !(*pSMesh)[idx]->is_atomistic()) {
 
-				meshes_out.push_back((cuVEC<cuReal3>*&)reinterpret_cast<Mesh*>((*pSMesh)[idx])->pMeshCUDA->Heff.get_managed_object());
+				meshes_out.push_back((cuVEC<cuReal3>*&)dynamic_cast<Mesh*>((*pSMesh)[idx])->pMeshCUDA->Heff.get_managed_object());
 				
-				meshes_out_cpu.push_back(&(reinterpret_cast<Mesh*>((*pSMesh)[idx])->Heff));
+				meshes_out_cpu.push_back(&(dynamic_cast<Mesh*>((*pSMesh)[idx])->Heff));
 
 				//for antiferromagnetic meshes we also need to add the stray field to the second sub-lattice
 				if ((*pSMesh)[idx]->GetMeshType() == MESH_ANTIFERROMAGNETIC) {
 
-					meshes_out.push_back((cuVEC<cuReal3>*&)reinterpret_cast<Mesh*>((*pSMesh)[idx])->pMeshCUDA->Heff2.get_managed_object());
+					meshes_out.push_back((cuVEC<cuReal3>*&)dynamic_cast<Mesh*>((*pSMesh)[idx])->pMeshCUDA->Heff2.get_managed_object());
 
-					meshes_out_cpu.push_back(&(reinterpret_cast<Mesh*>((*pSMesh)[idx])->Heff2));
+					meshes_out_cpu.push_back(&(dynamic_cast<Mesh*>((*pSMesh)[idx])->Heff2));
 				}
 			}
 
 			//collect cuda M pointers in Mdipoles cu_arr
 			if ((*pSMesh)[idx]->GetMeshType() == MESH_DIPOLE) {
 
-				DipoleMeshCUDA *pDipoleCUDA = reinterpret_cast<DipoleMeshCUDA*>(reinterpret_cast<Mesh*>((*pSMesh)[idx])->pMeshCUDA);
+				DipoleMeshCUDA *pDipoleCUDA = dynamic_cast<DipoleMeshCUDA*>(dynamic_cast<Mesh*>((*pSMesh)[idx])->pMeshCUDA);
 
 				//save pointer to cuda M in cu_arr
 				Mdipoles.push_back((cuVEC_VC<cuReal3>*&)pDipoleCUDA->M.get_managed_object());

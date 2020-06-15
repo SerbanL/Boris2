@@ -424,7 +424,7 @@ double iDMExchange::UpdateField(void)
 double iDMExchange::GetEnergyDensity(Rect& avRect)
 {
 #if COMPILECUDA == 1
-	if (pModuleCUDA) return reinterpret_cast<iDMExchangeCUDA*>(pModuleCUDA)->GetEnergyDensity(avRect);
+	if (pModuleCUDA) return dynamic_cast<iDMExchangeCUDA*>(pModuleCUDA)->GetEnergyDensity(avRect);
 #endif
 
 	double energy = 0;
@@ -627,7 +627,7 @@ double iDMExchange::GetEnergyDensity(Rect& avRect)
 double iDMExchange::GetEnergy_Max(Rect& rectangle)
 {
 #if COMPILECUDA == 1
-	if (pModuleCUDA) return reinterpret_cast<iDMExchangeCUDA*>(pModuleCUDA)->GetEnergy_Max(rectangle);
+	if (pModuleCUDA) return dynamic_cast<iDMExchangeCUDA*>(pModuleCUDA)->GetEnergy_Max(rectangle);
 #endif
 
 	INT3 n = pMesh->n;
@@ -829,7 +829,7 @@ void iDMExchange::Compute_Exchange(VEC<double>& displayVEC)
 #if COMPILECUDA == 1
 	if (pModuleCUDA) {
 
-		reinterpret_cast<iDMExchangeCUDA*>(pModuleCUDA)->Compute_Exchange(displayVEC);
+		dynamic_cast<iDMExchangeCUDA*>(pModuleCUDA)->Compute_Exchange(displayVEC);
 		return;
 	}
 #endif

@@ -152,6 +152,7 @@ BError STransport::MakeCUDAModule(void)
 #if COMPILECUDA == 1
 
 	pModuleCUDA = new STransportCUDA(pSMesh, this);
+	pSTransportCUDA = dynamic_cast<STransportCUDA*>(pModuleCUDA);
 	error = pModuleCUDA->Error_On_Create();
 
 #endif
@@ -241,8 +242,8 @@ void STransport::SetSORDamping(DBL2 _SOR_damping)
 #if COMPILECUDA == 1
 	if (pModuleCUDA) {
 
-		reinterpret_cast<STransportCUDA*>(pModuleCUDA)->SOR_damping_V.from_cpu(SOR_damping.i);
-		reinterpret_cast<STransportCUDA*>(pModuleCUDA)->SOR_damping_S.from_cpu(SOR_damping.j);
+		pSTransportCUDA->SOR_damping_V.from_cpu(SOR_damping.i);
+		pSTransportCUDA->SOR_damping_S.from_cpu(SOR_damping.j);
 	}
 #endif
 }
@@ -421,9 +422,9 @@ void STransport::adjust_potential(double potential_)
 
 		if (IsNZ(potential_)) {
 
-			reinterpret_cast<STransportCUDA*>(pModuleCUDA)->scale_potential_values(potential / potential_);
+			pSTransportCUDA->scale_potential_values(potential / potential_);
 		}
-		else reinterpret_cast<STransportCUDA*>(pModuleCUDA)->initialize_potential_values();
+		else pSTransportCUDA->initialize_potential_values();
 
 		return;
 	}

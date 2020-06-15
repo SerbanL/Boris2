@@ -33,7 +33,7 @@ TransportCUDA::TransportCUDA(Mesh* pMesh_, SuperMesh* pSMesh_, Transport* pTrans
 
 			error_on_create = poisson_Spin_S()->set_pointers(
 				pMeshCUDA,
-				reinterpret_cast<DifferentialEquationFMCUDA*>(reinterpret_cast<FMesh*>(pMesh)->Get_DifferentialEquation().Get_DifferentialEquationCUDA_ptr()),
+				dynamic_cast<DifferentialEquationFMCUDA*>(dynamic_cast<FMesh*>(pMesh)->Get_DifferentialEquation().Get_DifferentialEquationCUDA_ptr()),
 				this);
 		}
 		else error_on_create = poisson_Spin_S()->set_pointers(pMeshCUDA, nullptr, this);

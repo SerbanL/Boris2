@@ -91,8 +91,8 @@ BError STransportCUDA::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 			if ((*pSMesh)[idx]->IsModuleSet(MOD_TRANSPORT) && !(*pSMesh)[idx]->is_atomistic()) {
 
 				pTransport.push_back(dynamic_cast<TransportCUDA*>((*pSMesh)[idx]->GetCUDAModule(MOD_TRANSPORT)));
-				pV.push_back(&reinterpret_cast<Mesh*>((*pSMesh)[idx])->pMeshCUDA->V);
-				pS.push_back(&reinterpret_cast<Mesh*>((*pSMesh)[idx])->pMeshCUDA->S);
+				pV.push_back(&dynamic_cast<Mesh*>((*pSMesh)[idx])->pMeshCUDA->V);
+				pS.push_back(&dynamic_cast<Mesh*>((*pSMesh)[idx])->pMeshCUDA->S);
 			}
 		}
 		

@@ -1,7 +1,7 @@
 #include "stdafx.h"
 #include "Atom_ExchangeCUDA.h"
 
-#ifdef MODULE_ATOM_EXCHANGE
+#if defined(MODULE_EXCHANGE) && ATOMISTIC == 1
 
 #include "Atom_MeshCUDA.h"
 

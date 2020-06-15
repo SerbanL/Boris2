@@ -40,7 +40,7 @@ VEC<DBL3>& STransport::GetInterfacialSpinTorque(Transport* pMeshTrans)
 //return interfacial spin torque in given mesh with matching transport module
 cu_obj<cuVEC<cuReal3>>& STransport::GetInterfacialSpinTorqueCUDA(Transport* pMeshTrans)
 {
-	return reinterpret_cast<STransportCUDA*>(pModuleCUDA)->GetInterfacialSpinTorque(reinterpret_cast<TransportCUDA*>(pMeshTrans->pModuleCUDA));
+	return dynamic_cast<STransportCUDA*>(pModuleCUDA)->GetInterfacialSpinTorque(dynamic_cast<TransportCUDA*>(pMeshTrans->pModuleCUDA));
 }
 #endif
 

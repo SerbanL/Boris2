@@ -743,6 +743,16 @@ public:
 	//missing neighbors not added, including at boundaries, but taking into account pbc
 	__device__ VType ngbr_sum(int idx) const;
 
+	//calculate 6-point anisotropic neighbor sum at given index as rij x Vj over j points neighboring the point i at this index.
+	//missing neighbors not added, including at boundaries, but taking into account pbc
+	//only used if VType is a cuVAL3
+	__device__ VType anisotropic_ngbr_sum(int idx) const;
+
+	//calculate 6-point anisotropic neighbor sum at given index as (rij x z) x Vj over j points neighboring the point i at this index.
+	//missing neighbors not added, including at boundaries, but taking into account pbc
+	//only used if VType is a cuVAL3
+	__device__ VType zanisotropic_ngbr_sum(int idx) const;
+
 	//----LAPLACE / POISSON EQUATION : cuVEC_VC_solve.cuh
 	
 	//LAPLACE

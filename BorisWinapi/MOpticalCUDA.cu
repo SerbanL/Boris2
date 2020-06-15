@@ -7,9 +7,7 @@
 #include "BorisCUDALib.cuh"
 
 #include "MeshDefs.h"
-
-#include "Mesh_FerromagneticCUDA.h"
-#include "Mesh_AntiFerromagneticCUDA.h"
+#include "MeshCUDA.h"
 #include "MeshParamsControlCUDA.h"
 
 __global__ void MOpticalCUDA_UpdateField_FMDM(ManagedMeshCUDA& cuMesh)

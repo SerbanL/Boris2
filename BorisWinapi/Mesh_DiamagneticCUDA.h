@@ -36,6 +36,8 @@ public:
 	void UpdateConfiguration_Values(UPDATECONFIG_ cfgMessage) {}
 
 	//----------------------------------- OTHER IMPORTANT CONTROL METHODS
+
+	cuBReal CheckMoveMesh(bool antisymmetric, double threshold) { return 0.0; }
 };
 
 #else

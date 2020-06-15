@@ -24,6 +24,10 @@ Atom_MeshParams::Atom_MeshParams(vector<PARAM_>& enabledParams)
 			meshParams.push_back("J", MeshParamDescriptor(PARAMTYPE_MAGNETIC, "J"), PARAM_ATOM_SC_J);
 			break;
 
+		case PARAM_ATOM_SC_D:
+			meshParams.push_back("D", MeshParamDescriptor(PARAMTYPE_MAGNETIC, "J"), PARAM_ATOM_SC_D);
+			break;
+
 		case PARAM_ATOM_SC_K:
 			meshParams.push_back("K", MeshParamDescriptor(PARAMTYPE_MAGNETIC, "J"), PARAM_ATOM_SC_K);
 			break;
@@ -32,8 +36,16 @@ Atom_MeshParams::Atom_MeshParams(vector<PARAM_>& enabledParams)
 			meshParams.push_back("ea1", MeshParamDescriptor(PARAMTYPE_MAGNETIC), PARAM_ATOM_EA1);
 			break;
 
+		case PARAM_ATOM_EA2:
+			meshParams.push_back("ea2", MeshParamDescriptor(PARAMTYPE_MAGNETIC), PARAM_ATOM_EA2);
+			break;
+
 		case PARAM_HA:
 			meshParams.push_back("cHa", MeshParamDescriptor(PARAMTYPE_MAGNETIC), PARAM_HA);
+			break;
+
+		case PARAM_HMO:
+			meshParams.push_back("cHmo", MeshParamDescriptor(PARAMTYPE_MAGNETIC), PARAM_HMO);
 			break;
 
 		case PARAM_ELC:

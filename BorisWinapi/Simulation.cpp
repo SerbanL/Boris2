@@ -374,11 +374,15 @@ Simulation::Simulation(int Program_Version) :
 	commands.insert(CMD_EVALSPEEDUP, CommandSpecifier(CMD_EVALSPEEDUP), "evalspeedup");
 	commands[CMD_EVALSPEEDUP].usage = "[tc0,0.5,0,1/tc]USAGE : <b>evalspeedup</b> <i>status</i>";
 	commands[CMD_EVALSPEEDUP].limits = { { int(EVALSPEEDUP_NONE), int(EVALSPEEDUP_NUMENTRIES) - 1 } };
-	commands[CMD_EVALSPEEDUP].descr = "[tc0,0.5,0.5,1/tc]<b>!!!Experimental!!!</b> Do not use until fully tested and documented (publication pending), unless you know what you're doing. Status levels: 0 (no speedup), 1 (accurate), 2 (aggressive), 3 (extreme). Note: use RK4 with status = 2; RKF with status = 2.";
+	commands[CMD_EVALSPEEDUP].descr = "[tc0,0.5,0.5,1/tc]<b>!!!Experimental!!!</b>Status levels: 0 (no speedup), 1 (accurate), 2 (aggressive), 3 (extreme).";
 
 	commands.insert(CMD_SETODE, CommandSpecifier(CMD_SETODE), "setode");
 	commands[CMD_SETODE].usage = "[tc0,0.5,0,1/tc]USAGE : <b>setode</b> <i>equation evaluation</i>";
 	commands[CMD_SETODE].descr = "[tc0,0.5,0.5,1/tc]Set differential equation to solve in micromagnetic meshes, and method used to solve it (same method is applied to micromagnetic and atomistic meshes).";
+
+	commands.insert(CMD_SETODEEVAL, CommandSpecifier(CMD_SETODEEVAL), "setodeeval");
+	commands[CMD_SETODEEVAL].usage = "[tc0,0.5,0,1/tc]USAGE : <b>setodeeval</b> <i>evaluation</i>";
+	commands[CMD_SETODEEVAL].descr = "[tc0,0.5,0.5,1/tc]Set differential equation method used to solve it (same method is applied to micromagnetic and atomistic meshes).";
 
 	commands.insert(CMD_SETATOMODE, CommandSpecifier(CMD_SETATOMODE), "setatomode");
 	commands[CMD_SETATOMODE].usage = "[tc0,0.5,0,1/tc]USAGE : <b>setatomode</b> <i>equation evaluation</i>";
@@ -815,6 +819,18 @@ Simulation::Simulation(int Program_Version) :
 	commands[CMD_LINKDTSTOCHASTIC].limits = { { int(0), int(1) } };
 	commands[CMD_LINKDTSTOCHASTIC].descr = "[tc0,0.5,0.5,1/tc]Links stochastic time-step to ODE time-step if set, else stochastic time-step is independently controlled.";
 
+	commands.insert(CMD_SETDTSPEEDUP, CommandSpecifier(CMD_SETDTSPEEDUP), "setdtspeedup");
+	commands[CMD_SETDTSPEEDUP].usage = "[tc0,0.5,0,1/tc]USAGE : <b>setdtspeedup</b> <i>value</i>";
+	commands[CMD_SETDTSPEEDUP].limits = { { double(MINTIMESTEP), double(MAXTIMESTEP) } };
+	commands[CMD_SETDTSPEEDUP].descr = "[tc0,0.5,0.5,1/tc]Set time step for evaluation speedup, to be used in when in extreme mode.";
+	commands[CMD_SETDTSPEEDUP].unit = "s";
+	commands[CMD_SETDTSPEEDUP].return_descr = "[tc0,0.5,0,1/tc]Script return values: <i>dTspeedup</i>";
+
+	commands.insert(CMD_LINKDTSPEEDUP, CommandSpecifier(CMD_LINKDTSPEEDUP), "linkdtspeedup");
+	commands[CMD_LINKDTSPEEDUP].usage = "[tc0,0.5,0,1/tc]USAGE : <b>linkdtspeedup</b> <i>flag</i>";
+	commands[CMD_LINKDTSPEEDUP].limits = { { int(0), int(1) } };
+	commands[CMD_LINKDTSPEEDUP].descr = "[tc0,0.5,0.5,1/tc]Links speedup time-step to ODE time-step if set, else speedup time-step is independently controlled. Applicable in extreme mode only.";
+
 	commands.insert(CMD_CUDA, CommandSpecifier(CMD_CUDA), "cuda");
 	commands[CMD_CUDA].usage = "[tc0,0.5,0,1/tc]USAGE : <b>cuda</b> <i>status</i>";
 	commands[CMD_CUDA].descr = "[tc0,0.5,0.5,1/tc]Switch CUDA GPU computations on/off.";
@@ -976,6 +992,26 @@ Simulation::Simulation(int Program_Version) :
 	commands.insert(CMD_STARTUPSCRIPTSERVER, CommandSpecifier(CMD_STARTUPSCRIPTSERVER), "startupscriptserver");
 	commands[CMD_STARTUPSCRIPTSERVER].usage = "[tc0,0.5,0,1/tc]USAGE : <b>startupscriptserver</b> <i>status</i>";
 	commands[CMD_STARTUPSCRIPTSERVER].descr = "[tc0,0.5,0.5,1/tc]Set startup script server flag.";
+
+	commands.insert(CMD_SHOWTC, CommandSpecifier(CMD_SHOWTC), "showtc");
+	commands[CMD_SHOWTC].usage = "[tc0,0.5,0,1/tc]USAGE : <b>showtc</b>";
+	commands[CMD_SHOWTC].descr = "[tc0,0.5,0.5,1/tc]Show predicted Tc value (K) for current mesh in focus (must be atomistic), using formula Tc = J*e*z/3kB, where e is the spin-wave correction factor, and z is the coordination number.";
+	commands[CMD_SHOWTC].return_descr = "[tc0,0.5,0,1/tc]Script return values: <i>Tc</i>";
+
+	commands.insert(CMD_SHOWMS, CommandSpecifier(CMD_SHOWMS), "showms");
+	commands[CMD_SHOWMS].usage = "[tc0,0.5,0,1/tc]USAGE : <b>showms</b>";
+	commands[CMD_SHOWMS].descr = "[tc0,0.5,0.5,1/tc]Show predicted saturation magnetisation (A/m) value for current mesh in focus (must be atomistic), using formula Ms = mu_s*n/a^3, where n is the number of atomic moments per unit cell, and a is the atomic cell size.";
+	commands[CMD_SHOWMS].return_descr = "[tc0,0.5,0,1/tc]Script return values: <i>Ms</i>";
+
+	commands.insert(CMD_SHOWA, CommandSpecifier(CMD_SHOWA), "showa");
+	commands[CMD_SHOWA].usage = "[tc0,0.5,0,1/tc]USAGE : <b>showa</b>";
+	commands[CMD_SHOWA].descr = "[tc0,0.5,0.5,1/tc]Show predicted exchange stiffness (J/m) value for current mesh in focus (must be atomistic), using formula A = J*n/2a, where n is the number of atomic moments per unit cell, and a is the atomic cell size.";
+	commands[CMD_SHOWA].return_descr = "[tc0,0.5,0,1/tc]Script return values: <i>A</i>";
+
+	commands.insert(CMD_SHOWK, CommandSpecifier(CMD_SHOWK), "showk");
+	commands[CMD_SHOWK].usage = "[tc0,0.5,0,1/tc]USAGE : <b>showk</b>";
+	commands[CMD_SHOWK].descr = "[tc0,0.5,0.5,1/tc]Show predicted uniaxial anisotropy (J/m^3) constant value for current mesh in focus (must be atomistic), using formula K = k*n/a^3, where n is the number of atomic moments per unit cell, and a is the atomic cell size.";
+	commands[CMD_SHOWK].return_descr = "[tc0,0.5,0,1/tc]Script return values: <i>A</i>";
 
 	commands.insert(CMD_DP_CLEARALL, CommandSpecifier(CMD_DP_CLEARALL), "dp_clearall");
 	commands[CMD_DP_CLEARALL].usage = "[tc0,0.5,0,1/tc]USAGE : <b>dp_clearall</b>";
@@ -1333,7 +1369,7 @@ Simulation::Simulation(int Program_Version) :
 	//Modules
 	moduleHandles.push_back("demag_N", MOD_DEMAG_N);
 	moduleHandles.push_back("demag", MOD_DEMAG);
-	moduleHandles.push_back("exchange", MOD_EXCHANGE6NGBR);
+	moduleHandles.push_back("exchange", MOD_EXCHANGE);
 	moduleHandles.push_back("DMexchange", MOD_DMEXCHANGE);
 	moduleHandles.push_back("iDMexchange", MOD_IDMEXCHANGE);
 	moduleHandles.push_back("surfexchange", MOD_SURFEXCHANGE);
@@ -1346,7 +1382,6 @@ Simulation::Simulation(int Program_Version) :
 	moduleHandles.push_back("heat", MOD_HEAT);
 	moduleHandles.push_back("SOTfield", MOD_SOTFIELD);
 	moduleHandles.push_back("roughness", MOD_ROUGHNESS);
-	moduleHandles.push_back("Hexchange", MOD_ATOM_EXCHANGE);
 	
 	//super-mesh modules
 	moduleHandles.push_back("sdemag", MODS_SDEMAG);

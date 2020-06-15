@@ -196,7 +196,7 @@ public:
 	INT3 Get_PBC(void) { return demag_pbc_images; }
 
 #if COMPILECUDA == 1
-	cu_obj<cuVEC<cuReal3>>& GetDemagFieldCUDA(void) { return reinterpret_cast<SDemagCUDA*>(pModuleCUDA)->GetDemagField(); }
+	cu_obj<cuVEC<cuReal3>>& GetDemagFieldCUDA(void) { return dynamic_cast<SDemagCUDA*>(pModuleCUDA)->GetDemagField(); }
 #endif
 
 	//getters for multi-layered convolution

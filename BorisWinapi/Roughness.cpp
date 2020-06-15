@@ -280,7 +280,7 @@ BError Roughness::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 
 	if (pMesh->IsModuleSet(MOD_DEMAG)) {
 
-		pbc_images = pMesh->CallModuleMethod(&Demag::Get_PBC);
+		pbc_images = pMesh->CallModuleMethod(&DemagBase::Get_PBC);
 	}
 	else if (pMesh->pSMesh->IsSuperMeshModuleSet(MODS_SDEMAG)) {
 

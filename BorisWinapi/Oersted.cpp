@@ -47,18 +47,18 @@ BError Oersted::Initialize(void)
 
 			if ((*pSMesh)[idx]->EComputation_Enabled()) {
 
-				pVal_from_elC.push_back(&(reinterpret_cast<Mesh*>((*pSMesh)[idx])->elC));
-				pVal_from_E.push_back(&(reinterpret_cast<Mesh*>((*pSMesh)[idx])->E));
+				pVal_from_elC.push_back(&(dynamic_cast<Mesh*>((*pSMesh)[idx])->elC));
+				pVal_from_E.push_back(&(dynamic_cast<Mesh*>((*pSMesh)[idx])->E));
 			}
 
 			if ((*pSMesh)[idx]->MComputation_Enabled()) {
 
-				pVal_to.push_back(&(reinterpret_cast<Mesh*>((*pSMesh)[idx])->Heff));
+				pVal_to.push_back(&(dynamic_cast<Mesh*>((*pSMesh)[idx])->Heff));
 			}
 
 			if ((*pSMesh)[idx]->GetMeshType() == MESH_ANTIFERROMAGNETIC) {
 
-				pVal_to.push_back(&(reinterpret_cast<Mesh*>((*pSMesh)[idx])->Heff2));
+				pVal_to.push_back(&(dynamic_cast<Mesh*>((*pSMesh)[idx])->Heff2));
 			}
 		}
 	}

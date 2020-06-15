@@ -35,7 +35,8 @@ enum BERROR_
 	BERROR_COULDNOTSAVEFILE,				//A file couldn't be saved
 	BERROR_COULDNOTCONNECT,					//Could not connect to a server
 	BERROR_NOTAVAILABLE,					//Requested configuration not available for this program version / workstation (e.g. no cuda-enabled gpu)
-	BERROR_NOTMAGNETIC,				//Focused mesh must be magnetic.
+	BERROR_NOTMAGNETIC,						//Focused mesh must be magnetic.
+	BERROR_NOTATOMISTIC,					//Focused mesh must be atomistic.
 	BERROR_MESHNAMEINEXISTENT,				//Mesh name doesn't exist.
 	BERROR_NOTCOMPUTED,						//Not computed.
 	BERROR_SPINSOLVER_FIT,					//Must be ferromagnetic mesh with transport module added and spin transport solver enabled.Must also have either Ts or Tsi computed.
@@ -311,7 +312,8 @@ ErrorHandler<Owner>::ErrorHandler(Owner* pOwner_) :
 	errors[BERROR_COULDNOTSAVEFILE] = pair<string, ERRLEV_>( "Could not save file.", ERRLEV_NCRIT);
 	errors[BERROR_NOTAVAILABLE] = pair<string, ERRLEV_>( "Hardware not available or not enabled.", ERRLEV_NCRIT);
 	errors[BERROR_COULDNOTCONNECT] = pair<string, ERRLEV_>("Couldn't connect.", ERRLEV_NCRIT);
-	errors[BERROR_NOTMAGNETIC] = pair<string, ERRLEV_>("Focused mesh must be ferromagnetic.", ERRLEV_NCRIT);
+	errors[BERROR_NOTMAGNETIC] = pair<string, ERRLEV_>("Focused mesh must be magnetic.", ERRLEV_NCRIT);
+	errors[BERROR_NOTATOMISTIC] = pair<string, ERRLEV_>("Focused mesh must be atomistic.", ERRLEV_NCRIT);
 	errors[BERROR_MESHNAMEINEXISTENT] = pair<string, ERRLEV_>("Mesh name doesn't exist.", ERRLEV_NCRIT);
 	errors[BERROR_NOTCOMPUTED] = pair<string, ERRLEV_>("Not computed.", ERRLEV_NCRIT);
 	errors[BERROR_SPINSOLVER_FIT] = pair<string, ERRLEV_>("Must be ferromagnetic mesh with transport module added and spin transport solver enabled. Must also have either Ts or Tsi computed.", ERRLEV_NCRIT);

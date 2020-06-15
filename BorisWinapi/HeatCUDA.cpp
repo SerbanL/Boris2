@@ -10,8 +10,9 @@
 #include "Mesh.h"
 #include "SuperMesh.h"
 
-HeatCUDA::HeatCUDA(Mesh* pMesh_, SuperMesh* pSMesh_, Heat* pHeat_)
-	: ModulesCUDA()
+HeatCUDA::HeatCUDA(Mesh* pMesh_, SuperMesh* pSMesh_, Heat* pHeat_) : 
+	ModulesCUDA(),
+	HeatBaseCUDA()
 {
 	pMesh = pMesh_;
 	pMeshCUDA = pMesh->pMeshCUDA;

@@ -724,6 +724,16 @@ public:
 	//missing neighbors not added, including at boundaries, but taking into account pbc
 	VType ngbr_sum(int idx) const;
 
+	//calculate 6-point anisotropic neighbor sum at given index as rij x Vj over j points neighboring the point i at this index.
+	//missing neighbors not added, including at boundaries, but taking into account pbc
+	//only used if VType is a VAL3
+	VType anisotropic_ngbr_sum(int idx) const;
+
+	//calculate 6-point anisotropic neighbor sum at given index as (rij x z) x Vj over j points neighboring the point i at this index.
+	//missing neighbors not added, including at boundaries, but taking into account pbc
+	//only used if VType is a VAL3
+	VType zanisotropic_ngbr_sum(int idx) const;
+
 	//----LAPLACE / POISSON EQUATION : VEC_VC_solve.h
 
 	//Take one SOR iteration for Laplace equation on this VEC. Return error (maximum change in quantity from one iteration to the next)

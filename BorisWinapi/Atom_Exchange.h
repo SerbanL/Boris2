@@ -7,7 +7,7 @@ using namespace std;
 
 class Atom_Mesh;
 
-#ifdef MODULE_ATOM_EXCHANGE
+#if defined(MODULE_EXCHANGE) && ATOMISTIC == 1
 
 //Anisotropy modules can only be used in a magnetic mesh
 

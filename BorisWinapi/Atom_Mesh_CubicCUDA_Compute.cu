@@ -2,6 +2,8 @@
 
 #if COMPILECUDA == 1
 
+#ifdef MESH_COMPILATION_ATOM_CUBIC
+
 #include "BorisCUDALib.cuh"
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -38,7 +40,7 @@ __global__ void GetTopologicalCharge_Cubic_Kernel(ManagedAtom_MeshCUDA& cuaMesh,
 			cuReal3 dm_dx = M_grad.x / Mnorm;
 			cuReal3 dm_dy = M_grad.y / Mnorm;
 
-			Q_ = (M1[idx] / Mnorm) * (dm_dx ^ dm_dy) * M1.h.x * M1.h.y / (4 * (cuBReal)PI);
+			Q_ = (M1[idx] / Mnorm) * (dm_dx ^ dm_dy) * M1.h.x * M1.h.y / (4 * (cuBReal)PI * M1.n.z);
 		}
 	}
 
@@ -77,7 +79,7 @@ __global__ void Compute_TopoChargeDensity_Cubic_Kernel(ManagedAtom_MeshCUDA& cua
 			cuReal3 dm_dx = M_grad.x / Mnorm;
 			cuReal3 dm_dy = M_grad.y / Mnorm;
 
-			aux_vec_sca[idx] = (M1[idx] / Mnorm) * (dm_dx ^ dm_dy) * M1.h.x * M1.h.y / (4 * (cuBReal)PI);
+			aux_vec_sca[idx] = (M1[idx] / Mnorm) * (dm_dx ^ dm_dy) * M1.h.x * M1.h.y / (4 * (cuBReal)PI * M1.n.z);
 		}
 		else aux_vec_sca[idx] = 0.0;
 	}
@@ -91,5 +93,7 @@ void Atom_Mesh_CubicCUDA::Compute_TopoChargeDensity(void)
 
 	Compute_TopoChargeDensity_Cubic_Kernel <<< (n.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (cuaMesh, aux_vec_sca);
 }
+
+#endif
 
 #endif

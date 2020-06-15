@@ -76,7 +76,7 @@ void Transport::Set_STSolveType(void)
 
 #if COMPILECUDA == 1
 	//copy over to TransportCUDA module - need to use it in .cu files
-	if (pModuleCUDA) reinterpret_cast<TransportCUDA*>(pModuleCUDA)->Set_STSolveType();
+	if (pModuleCUDA) pTransportCUDA->Set_STSolveType();
 #endif
 }
 
@@ -85,7 +85,7 @@ bool Transport::SetFixedPotentialCells(Rect rectangle, double potential)
 	bool success = true;
 
 #if COMPILECUDA == 1
-	if (pModuleCUDA) success &= reinterpret_cast<TransportCUDA*>(pModuleCUDA)->SetFixedPotentialCells(rectangle, potential);
+	if (pModuleCUDA) success &= pTransportCUDA->SetFixedPotentialCells(rectangle, potential);
 #endif
 
 	success &= pMesh->V.set_dirichlet_conditions(rectangle, potential);
@@ -98,7 +98,7 @@ void Transport::ClearFixedPotentialCells(void)
 	pMesh->V.clear_dirichlet_flags();
 
 #if COMPILECUDA == 1
-	if (pModuleCUDA) reinterpret_cast<TransportCUDA*>(pModuleCUDA)->ClearFixedPotentialCells();
+	if (pModuleCUDA) pTransportCUDA->ClearFixedPotentialCells();
 #endif
 }
 
@@ -293,6 +293,7 @@ BError Transport::MakeCUDAModule(void)
 		//Note : it is posible pMeshCUDA has not been allocated yet, but this module has been created whilst cuda is switched on. This will happen when a new mesh is being made which adds this module by default.
 		//In this case, after the mesh has been fully made, it will call SwitchCUDAState on the mesh, which in turn will call this SwitchCUDAState method; then pMeshCUDA will not be nullptr and we can make the cuda module version
 		pModuleCUDA = new TransportCUDA(pMesh, pSMesh, this);
+		pTransportCUDA = dynamic_cast<TransportCUDA*>(pModuleCUDA);
 		error = pModuleCUDA->Error_On_Create();
 	}
 
@@ -373,7 +374,7 @@ double Transport::CalculateElectrodeCurrent(Rect &electrode_rect)
 	Box electrode_box = pMesh->V.box_from_rect_max(electrode_rect);
 
 #if COMPILECUDA == 1
-	if (pModuleCUDA) return reinterpret_cast<TransportCUDA*>(pModuleCUDA)->CalculateElectrodeCurrent(electrode_box);
+	if (pModuleCUDA) return pTransportCUDA->CalculateElectrodeCurrent(electrode_box);
 #endif
 
 	//look at all cells surrounding the electrode
@@ -462,7 +463,7 @@ void Transport::CalculateElectricalConductivity(bool force_recalculate)
 #if COMPILECUDA == 1
 	if (pModuleCUDA) {
 
-		reinterpret_cast<TransportCUDA*>(pModuleCUDA)->CalculateElectricalConductivity(force_recalculate);
+		pTransportCUDA->CalculateElectricalConductivity(force_recalculate);
 		return;
 	}
 #endif

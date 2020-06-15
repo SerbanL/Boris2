@@ -32,6 +32,10 @@ double ODECommon_Base::dTstoch = 0.0;
 double ODECommon_Base::time_stoch = 0.0;
 bool ODECommon_Base::link_dTstoch = true;
 
+double ODECommon_Base::dTspeedup = 0.0;
+double ODECommon_Base::time_speedup = 0.0;
+bool ODECommon_Base::link_dTspeedup = true;
+
 //-----------------------------------Evaluation Method Data
 
 bool ODECommon_Base::available = true;

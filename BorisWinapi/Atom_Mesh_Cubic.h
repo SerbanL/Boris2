@@ -4,16 +4,21 @@
 
 #include "Atom_DiffEqCubic.h"
 
+#include "Atom_Demag.h"
+#include "Atom_Zeeman.h"
+#include "Atom_Exchange.h"
+#include "Atom_DMExchange.h"
+#include "Atom_iDMExchange.h"
+#include "Atom_MOptical.h"
+#include "Atom_Anisotropy.h"
+#include "Atom_AnisotropyCubi.h"
+#include "Atom_Heat.h"
+
 #if COMPILECUDA == 1
 #include "Atom_Mesh_CubicCUDA.h"
 #endif
 
 #ifdef MESH_COMPILATION_ATOM_CUBIC
-
-#include "Atom_Demag.h"
-#include "Atom_Zeeman.h"
-#include "Atom_Exchange.h"
-#include "Atom_Anisotropy.h"
 
 /////////////////////////////////////////////////////////////////////
 //
@@ -36,16 +41,16 @@ class Atom_Mesh_Cubic :
 	bool, bool,
 	//Material Parameters
 	MatP<double, double>, MatP<double, double>,
-	MatP<double, double>,
-	MatP<double, double>, MatP<DBL3, DBL3>,
-	MatP<double, double>,
+	MatP<double, double>, MatP<double, double>,
+	MatP<double, double>, MatP<DBL3, DBL3>, MatP<DBL3, DBL3>,
+	MatP<double, double>, MatP<double, double>,
 	MatP<double, double>,
 	double, TEquation<double>,
 	MatP<double, double>,
 	MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>
 	>,
 	//Module Implementations
-	tuple<Atom_Demag, Atom_Zeeman, Atom_Exchange, Atom_Anisotropy_Uniaxial> >
+	tuple<Atom_Demag, Atom_Zeeman, Atom_Exchange, Atom_DMExchange, Atom_iDMExchange, Atom_MOptical, Atom_Anisotropy_Uniaxial, Atom_Anisotropy_Cubic, Atom_Heat> >
 {
 #if COMPILECUDA == 1
 	friend Atom_Mesh_CubicCUDA;
@@ -62,6 +67,15 @@ private:
 	//direct exchange coupling to neighboring meshes?
 	//If true this is applicable for this mesh only for cells at contacts with other magnetic meshes 
 	bool exchange_couple_to_meshes = false;
+
+	//spin-wave factor for Tc estimation
+	const double spinwave_factor = 0.71;
+	
+	//number of nearest neighbors
+	const int coordination_number = 6;
+
+	//number of atomic moments per cell
+	const int atoms_per_cell = 1;
 
 public:
 
@@ -147,6 +161,18 @@ public:
 	//compute topological charge density spatial dependence and have it available to display in Cust_S
 	//Use formula Qdensity = m.(dm/dx x dm/dy) / 4PI
 	void Compute_TopoChargeDensity(void);
+
+	//return phase transition temperature (K) based on formula Tc = J*e*z/3kB
+	double Show_Transition_Temperature(void);
+
+	//return saturation magnetisation (A/m) based on formula Ms = mu_s*n/a^3
+	double Show_Ms(void);
+
+	//return exchange stiffness (J/m) based on formula A = J*n/2a
+	double Show_A(void);
+
+	//return uniaxial anisotropy constant (J/m^3) based on formula K = k*n/a^3
+	double Show_Ku(void);
 
 	//----------------------------------- GETTERS : Atom_Mesh_Cubic_GetData.cpp
 
@@ -256,6 +282,20 @@ public:
 	DBL2 GetMomentXMinMax(Rect rectangle = Rect()) { return DBL2(); }
 	DBL2 GetMomentYMinMax(Rect rectangle = Rect()) { return DBL2(); }
 	DBL2 GetMomentZMinMax(Rect rectangle = Rect()) { return DBL2(); }
+
+	//----------------------------------- VALUE GETTERS
+
+	//return phase transition temperature (K) based on formula Tc = J*e*z/3kB
+	double Show_Transition_Temperature(void) { return 0.0; }
+
+	//return saturation magnetisation (A/m) based on formula Ms = mu_s*n/a^3
+	double Show_Ms(void) { return 0.0; }
+
+	//return exchange stiffness (J/m) based on formula A = J*n/2a
+	double Show_A(void) { return 0.0; }
+
+	//return uniaxial anisotropy constant (J/m^3) based on formula K = k*n/a^3
+	double Show_Ku(void) { return 0.0; }
 
 #if COMPILECUDA == 1
 	//get reference to stored differential equation object (meshODE)

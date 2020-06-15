@@ -159,10 +159,6 @@
 #define MODULE_ZEEMAN
 #define MODULE_MOPTICAL
 
-#if ATOMISTIC == 1
-#define MODULE_ATOM_EXCHANGE
-#endif
-
 #define MODULE_OERSTED
 #define MODULE_STRAYFIELD
 #define MODULE_SDEMAG
@@ -184,11 +180,10 @@
 #define MODULE_EXCHANGE
 #define MODULE_IDMEXCHANGE
 #define MODULE_ANIUNI
+#define MODULE_ANICUBI
 #define MODULE_ZEEMAN
-
-#if ATOMISTIC == 1
-#define MODULE_ATOM_EXCHANGE
-#endif
+#define MODULE_HEAT
+#define MODULE_MOPTICAL
 
 #endif
 

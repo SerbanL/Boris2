@@ -8,7 +8,9 @@
 
 Heat::Heat(Mesh *pMesh_) :
 	Modules(),
-	Q_equation({ "x", "y", "z", "t" }),
+	pMesh(pMesh_),
+	pSMesh(pMesh_->pSMesh),
+	HeatBase(pMesh_),
 	ProgramStateNames(this, 
 		{ 
 			VINFO(tmtype),
@@ -17,11 +19,7 @@ Heat::Heat(Mesh *pMesh_) :
 			VINFO(Q_equation)
 		}, {})
 {
-	pMesh = pMesh_;
-	pSMesh = pMesh->pSMesh;
-
-	//error_on_create = UpdateConfiguration(UPDATECONFIG_FORCEUPDATE);
-	//setting the temperature model type will call UpdateConfiguration so no need to do it twice
+	//this needs to go here, not in HeatBase, as it calls UpdateConfiguration before all pointers have been set
 	error_on_create = Set_TMType();
 
 	//-------------------------- Is CUDA currently enabled?
@@ -117,6 +115,7 @@ BError Heat::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 				//lattice temperature for many-temperature models
 				if (tmtype == TMTYPE_2TM) success &= pMesh->Temp_l.assign(pMesh->h_t, pMesh->meshRect, pMesh->base_temperature, pMesh->Temp);
 			}
+
 		}
 		else if (pMesh->elC.linear_size()) {
 
@@ -126,7 +125,7 @@ BError Heat::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 			//Transport module is guaranteed to be set otherwise elC would have zero size - it does mean Transport has UpdateConfiguration called twice but it doesn't matter.
 			if (pMesh->IsModuleSet(MOD_TRANSPORT)) {
 
-				error = (*pMesh)(MOD_TRANSPORT)->UpdateConfiguration(cfgMessage);
+				error = pMesh->CallModuleMethod(&Transport::UpdateConfiguration, cfgMessage);
 				if (error) return error;
 			}
 
@@ -219,36 +218,6 @@ BError Heat::MakeCUDAModule(void)
 	}
 
 #endif
-
-	return error;
-}
-
-//set temperature solver type
-BError Heat::Set_TMType(TMTYPE_ tmtype_)
-{
-	BError error(CLASS_STR(Heat));
-
-	if (tmtype_ == TMTYPE_DEFAULT) {
-
-		tmtype = TMTYPE_1TM;
-	}
-	else {
-
-		tmtype = tmtype_;
-	}
-
-	//Some temperature models are only appropriate for certain types of meshes
-	switch (pMesh->GetMeshType()) {
-
-	case MESH_INSULATOR:
-	case MESH_DIPOLE:
-		tmtype = TMTYPE_1TM;
-		break;
-
-	//Currently all other types of meshes can support the 2TM and 3TM models
-	}
-
-	error = UpdateConfiguration(UPDATECONFIG_HEAT_MODELTYPE);
 
 	return error;
 }

@@ -33,7 +33,7 @@ vector<PhysQ> SuperMeshCUDA::FetchOnScreenPhysicalQuantity(double detail_level)
 
 		if (pSMesh->IsSuperMeshModuleSet(MODS_SDEMAG)) {
 			
-			if (prepare_display(n_fm, sMeshRect_fm, detail_level, reinterpret_cast<SDemag*>(pSMesh->pSMod(MODS_SDEMAG))->GetDemagFieldCUDA())) {
+			if (prepare_display(n_fm, sMeshRect_fm, detail_level, dynamic_cast<SDemag*>(pSMesh->pSMod(MODS_SDEMAG))->GetDemagFieldCUDA())) {
 
 				//return PhysQ made from the cpu version of coarse mesh display.
 				physQ.push_back(PhysQ(pdisplay_vec_vec, pSMesh->displayedPhysicalQuantity, (VEC3REP_)pSMesh->vec3rep).set_focus(true, pSMesh->superMeshHandle));
@@ -45,7 +45,7 @@ vector<PhysQ> SuperMeshCUDA::FetchOnScreenPhysicalQuantity(double detail_level)
 
 		if (pSMesh->IsSuperMeshModuleSet(MODS_OERSTED)) {
 
-			if (prepare_display(n_e, sMeshRect_e, detail_level, reinterpret_cast<Oersted*>(pSMesh->pSMod(MODS_OERSTED))->GetOerstedFieldCUDA())) {
+			if (prepare_display(n_e, sMeshRect_e, detail_level, dynamic_cast<Oersted*>(pSMesh->pSMod(MODS_OERSTED))->GetOerstedFieldCUDA())) {
 
 				//return PhysQ made from the cpu version of coarse mesh display.
 				physQ.push_back(PhysQ(pdisplay_vec_vec, pSMesh->displayedPhysicalQuantity, (VEC3REP_)pSMesh->vec3rep).set_focus(true, pSMesh->superMeshHandle));
@@ -57,7 +57,7 @@ vector<PhysQ> SuperMeshCUDA::FetchOnScreenPhysicalQuantity(double detail_level)
 
 		if (pSMesh->IsSuperMeshModuleSet(MODS_STRAYFIELD)) {
 
-			if (prepare_display(n_fm, sMeshRect_fm, detail_level, reinterpret_cast<StrayField*>(pSMesh->pSMod(MODS_STRAYFIELD))->GetStrayFieldCUDA())) {
+			if (prepare_display(n_fm, sMeshRect_fm, detail_level, dynamic_cast<StrayField*>(pSMesh->pSMod(MODS_STRAYFIELD))->GetStrayFieldCUDA())) {
 
 				//return PhysQ made from the cpu version of coarse mesh display.
 				physQ.push_back(PhysQ(pdisplay_vec_vec, pSMesh->displayedPhysicalQuantity, (VEC3REP_)pSMesh->vec3rep).set_focus(true, pSMesh->superMeshHandle));
@@ -88,7 +88,7 @@ BError SuperMeshCUDA::SaveOnScreenPhysicalQuantity(string fileName, string ovf2_
 		//pdisplay_vec_vec at maximum resolution
 		if (pSMesh->IsSuperMeshModuleSet(MODS_SDEMAG)) {
 
-			prepare_display(n_fm, sMeshRect_fm, h_fm.mindim(), reinterpret_cast<SDemag*>(pSMesh->pSMod(MODS_SDEMAG))->GetDemagFieldCUDA());
+			prepare_display(n_fm, sMeshRect_fm, h_fm.mindim(), dynamic_cast<SDemag*>(pSMesh->pSMod(MODS_SDEMAG))->GetDemagFieldCUDA());
 			error = ovf2.Write_OVF2_VEC(fileName, *pdisplay_vec_vec, ovf2_dataType);
 		}
 		break;
@@ -98,7 +98,7 @@ BError SuperMeshCUDA::SaveOnScreenPhysicalQuantity(string fileName, string ovf2_
 		//pdisplay_vec_vec at maximum resolution
 		if (pSMesh->IsSuperMeshModuleSet(MODS_OERSTED)) {
 
-			prepare_display(n_e, sMeshRect_e, h_e.mindim(), reinterpret_cast<Oersted*>(pSMesh->pSMod(MODS_OERSTED))->GetOerstedFieldCUDA());
+			prepare_display(n_e, sMeshRect_e, h_e.mindim(), dynamic_cast<Oersted*>(pSMesh->pSMod(MODS_OERSTED))->GetOerstedFieldCUDA());
 			error = ovf2.Write_OVF2_VEC(fileName, *pdisplay_vec_vec, ovf2_dataType);
 		}
 		break;
@@ -108,7 +108,7 @@ BError SuperMeshCUDA::SaveOnScreenPhysicalQuantity(string fileName, string ovf2_
 		//pdisplay_vec_vec at maximum resolution
 		if (pSMesh->IsSuperMeshModuleSet(MODS_STRAYFIELD)) {
 
-			prepare_display(n_fm, sMeshRect_fm, h_fm.mindim(), reinterpret_cast<StrayField*>(pSMesh->pSMod(MODS_STRAYFIELD))->GetStrayFieldCUDA());
+			prepare_display(n_fm, sMeshRect_fm, h_fm.mindim(), dynamic_cast<StrayField*>(pSMesh->pSMod(MODS_STRAYFIELD))->GetStrayFieldCUDA());
 			error = ovf2.Write_OVF2_VEC(fileName, *pdisplay_vec_vec, ovf2_dataType);
 		}
 		break;
@@ -127,7 +127,7 @@ void SuperMeshCUDA::PrepareDisplayedMeshValue(void)
 		//pdisplay_vec_vec at maximum resolution
 		if (pSMesh->IsSuperMeshModuleSet(MODS_SDEMAG)) {
 
-			prepare_display(n_fm, sMeshRect_fm, h_fm.mindim(), reinterpret_cast<SDemag*>(pSMesh->pSMod(MODS_SDEMAG))->GetDemagFieldCUDA());
+			prepare_display(n_fm, sMeshRect_fm, h_fm.mindim(), dynamic_cast<SDemag*>(pSMesh->pSMod(MODS_SDEMAG))->GetDemagFieldCUDA());
 		}
 		break;
 
@@ -136,7 +136,7 @@ void SuperMeshCUDA::PrepareDisplayedMeshValue(void)
 		//pdisplay_vec_vec at maximum resolution
 		if (pSMesh->IsSuperMeshModuleSet(MODS_OERSTED)) {
 
-			prepare_display(n_e, sMeshRect_e, h_e.mindim(), reinterpret_cast<Oersted*>(pSMesh->pSMod(MODS_OERSTED))->GetOerstedFieldCUDA());
+			prepare_display(n_e, sMeshRect_e, h_e.mindim(), dynamic_cast<Oersted*>(pSMesh->pSMod(MODS_OERSTED))->GetOerstedFieldCUDA());
 		}
 		break;
 
@@ -145,7 +145,7 @@ void SuperMeshCUDA::PrepareDisplayedMeshValue(void)
 		//pdisplay_vec_vec at maximum resolution
 		if (pSMesh->IsSuperMeshModuleSet(MODS_STRAYFIELD)) {
 
-			prepare_display(n_fm, sMeshRect_fm, h_fm.mindim(), reinterpret_cast<StrayField*>(pSMesh->pSMod(MODS_STRAYFIELD))->GetStrayFieldCUDA());
+			prepare_display(n_fm, sMeshRect_fm, h_fm.mindim(), dynamic_cast<StrayField*>(pSMesh->pSMod(MODS_STRAYFIELD))->GetStrayFieldCUDA());
 		}
 		break;
 	}
@@ -218,7 +218,7 @@ Any SuperMeshCUDA::GetAverageDisplayedMeshValue(Rect rel_rect)
 		//pdisplay_vec_vec at maximum resolution
 		if (pSMesh->IsSuperMeshModuleSet(MODS_SDEMAG)) {
 
-			prepare_display(n_fm, sMeshRect_fm, h_fm.mindim(), reinterpret_cast<SDemag*>(pSMesh->pSMod(MODS_SDEMAG))->GetDemagFieldCUDA());
+			prepare_display(n_fm, sMeshRect_fm, h_fm.mindim(), dynamic_cast<SDemag*>(pSMesh->pSMod(MODS_SDEMAG))->GetDemagFieldCUDA());
 			return pdisplay_vec_vec->average_nonempty_omp(rel_rect);
 		}
 		break;
@@ -228,7 +228,7 @@ Any SuperMeshCUDA::GetAverageDisplayedMeshValue(Rect rel_rect)
 		//pdisplay_vec_vec at maximum resolution
 		if (pSMesh->IsSuperMeshModuleSet(MODS_OERSTED)) {
 
-			prepare_display(n_e, sMeshRect_e, h_e.mindim(), reinterpret_cast<Oersted*>(pSMesh->pSMod(MODS_OERSTED))->GetOerstedFieldCUDA());
+			prepare_display(n_e, sMeshRect_e, h_e.mindim(), dynamic_cast<Oersted*>(pSMesh->pSMod(MODS_OERSTED))->GetOerstedFieldCUDA());
 			return pdisplay_vec_vec->average_nonempty_omp(rel_rect);
 		}
 		break;
@@ -238,7 +238,7 @@ Any SuperMeshCUDA::GetAverageDisplayedMeshValue(Rect rel_rect)
 		//pdisplay_vec_vec at maximum resolution
 		if (pSMesh->IsSuperMeshModuleSet(MODS_STRAYFIELD)) {
 
-			prepare_display(n_fm, sMeshRect_fm, h_fm.mindim(), reinterpret_cast<StrayField*>(pSMesh->pSMod(MODS_STRAYFIELD))->GetStrayFieldCUDA());
+			prepare_display(n_fm, sMeshRect_fm, h_fm.mindim(), dynamic_cast<StrayField*>(pSMesh->pSMod(MODS_STRAYFIELD))->GetStrayFieldCUDA());
 			return pdisplay_vec_vec->average_nonempty_omp(rel_rect);
 		}
 		break;

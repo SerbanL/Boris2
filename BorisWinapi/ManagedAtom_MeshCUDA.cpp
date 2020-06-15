@@ -19,13 +19,16 @@ BError ManagedAtom_MeshCUDA::set_pointers(Atom_MeshCUDA* paMeshCUDA)
 	if (set_gpu_value(pmu_s, paMeshCUDA->mu_s.get_managed_object()) != cudaSuccess) error(BERROR_GPUERROR_CRIT);
 
 	if (set_gpu_value(pJ, paMeshCUDA->J.get_managed_object()) != cudaSuccess) error(BERROR_GPUERROR_CRIT);
+	if (set_gpu_value(pD, paMeshCUDA->D.get_managed_object()) != cudaSuccess) error(BERROR_GPUERROR_CRIT);
 
 	if (set_gpu_value(pK, paMeshCUDA->K.get_managed_object()) != cudaSuccess) error(BERROR_GPUERROR_CRIT);
 	if (set_gpu_value(pmcanis_ea1, paMeshCUDA->mcanis_ea1.get_managed_object()) != cudaSuccess) error(BERROR_GPUERROR_CRIT);
+	if (set_gpu_value(pmcanis_ea2, paMeshCUDA->mcanis_ea2.get_managed_object()) != cudaSuccess) error(BERROR_GPUERROR_CRIT);
 
 	//-----------Others
 
 	if (set_gpu_value(pcHA, paMeshCUDA->cHA.get_managed_object()) != cudaSuccess) error(BERROR_GPUERROR_CRIT);
+	if (set_gpu_value(pcHmo, paMeshCUDA->cHmo.get_managed_object()) != cudaSuccess) error(BERROR_GPUERROR_CRIT);
 
 	if (set_gpu_value(pelecCond, paMeshCUDA->elecCond.get_managed_object()) != cudaSuccess) error(BERROR_GPUERROR_CRIT);
 

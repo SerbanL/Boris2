@@ -101,7 +101,7 @@ FMesh::FMesh(Rect meshRect_, DBL3 h_, SuperMesh *pSMesh_) :
 
 	//default modules configuration
 	if (!error_on_create) error_on_create = AddModule(MOD_DEMAG);
-	if (!error_on_create) error_on_create = AddModule(MOD_EXCHANGE6NGBR);
+	if (!error_on_create) error_on_create = AddModule(MOD_EXCHANGE);
 	if (!error_on_create) error_on_create = AddModule(MOD_ZEEMAN);
 
 	//--------------------------
@@ -127,7 +127,7 @@ void FMesh::RepairObjectState(void)
 	//calculate scaling function (Curie Weiss law)
 	if (T_Curie > 0) {
 
-		DBL3 Ha = CallModuleMethod(&Zeeman::GetField);
+		DBL3 Ha = CallModuleMethod(&ZeemanBase::GetField);
 		pCurieWeiss->Initialize_CurieWeiss(MU0 * (MUB / BOLTZMANN) * atomic_moment * Ha.norm(), T_Curie);
 		pLongRelSus->Initialize_LongitudinalRelSusceptibility(pCurieWeiss->get_data(), atomic_moment, T_Curie);
 		pAlpha1->Initialize_Alpha1(DBL2(1.0, 0.0), 0.0);
@@ -268,18 +268,21 @@ BError FMesh::SwitchCUDAState(bool cudaState)
 	//are we switching to cuda?
 	if (cudaState) {
 
-		if (!pMeshCUDA) {
+		if (!pMeshBaseCUDA) {
 
 			//then make MeshCUDA object, copying over currently held cpu data
-			pMeshCUDA = new FMeshCUDA(this);
-			error = pMeshCUDA->Error_On_Create();
+			pMeshBaseCUDA = new FMeshCUDA(this);
+			pMeshCUDA = dynamic_cast<MeshCUDA*>(pMeshBaseCUDA);
+
+			error = pMeshBaseCUDA->Error_On_Create();
 			if (!error) error = pMeshCUDA->cuMesh()->set_pointers(pMeshCUDA);
 		}
 	}
 	else {
 
 		//delete MeshCUDA object and null
-		if (pMeshCUDA) delete pMeshCUDA;
+		if (pMeshBaseCUDA) delete pMeshBaseCUDA;
+		pMeshBaseCUDA = nullptr;
 		pMeshCUDA = nullptr;
 	}
 
@@ -364,7 +367,7 @@ void FMesh::CoupleToDipoles(bool status)
 				if (status) {
 
 					//set interface cells to have magnetisation direction along the touching dipole direction
-					DBL3 Mdipole_direction = reinterpret_cast<Mesh*>((*pSMesh)[idx])->GetAverageMagnetisation().normalized();
+					DBL3 Mdipole_direction = dynamic_cast<Mesh*>((*pSMesh)[idx])->GetAverageMagnetisation().normalized();
 
 					Box box = M.box_from_rect_max(mesh_intersection);
 
@@ -391,7 +394,7 @@ double FMesh::CheckMoveMesh(void)
 {
 
 #if COMPILECUDA == 1
-	if (pMeshCUDA) return reinterpret_cast<FMeshCUDA*>(pMeshCUDA)->CheckMoveMesh(meshODE.MoveMeshAntisymmetric(), meshODE.MoveMeshThreshold());
+	if (pMeshCUDA) return pMeshCUDA->CheckMoveMesh(meshODE.MoveMeshAntisymmetric(), meshODE.MoveMeshThreshold());
 #endif
 
 	//move mesh algorithm applied to systems containing domain walls in order to simulate domain wall movement.
@@ -435,7 +438,7 @@ void FMesh::SetCurieTemperature(double Tc, bool set_default_dependences)
 		T_Curie = Tc;
 
 		//calculate scaling function (Curie Weiss law)
-		DBL3 Ha = CallModuleMethod(&Zeeman::GetField);
+		DBL3 Ha = CallModuleMethod(&ZeemanBase::GetField);
 		pCurieWeiss->Initialize_CurieWeiss(MU0 * (MUB / BOLTZMANN) * atomic_moment * Ha.norm(), T_Curie);
 		pLongRelSus->Initialize_LongitudinalRelSusceptibility(pCurieWeiss->get_data(), atomic_moment, T_Curie);
 

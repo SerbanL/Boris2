@@ -835,6 +835,27 @@ string Simulation::Build_Stochasticity_ListLine(int meshIndex)
 	return stochasticity_line;
 }
 
+//---------------------------------------------------- EVALUATION SPEEDUP SETIINGS
+
+void Simulation::Print_Speedup_List(void)
+{
+	string speedup_list = "[tc1,1,1,1/tc]Evaluation speedup mode : " + MakeIO(IOI_SPEEDUPMODE) + "</c> Speedup time-step (for extreme mode only): " + MakeIO(IOI_SPEEDUPDT) + "</c> Linked to ODE dT : " + MakeIO(IOI_LINKSPEEDUPDT) + "</c>\n";
+
+	for (int idxMesh = 0; idxMesh < (int)SMesh().size(); idxMesh++) {
+
+		speedup_list += Build_Speedup_ListLine(idxMesh) + "\n";
+	}
+
+	BD.DisplayFormattedConsoleMessage(speedup_list);
+}
+
+string Simulation::Build_Speedup_ListLine(int meshIndex)
+{
+	string speedup_line = MakeIO(IOI_MESH_FORSPEEDUP, meshIndex) + "</c>[tc1,1,1,1/tc] Macrocell size : " + MakeIO(IOI_MESHDMCELLSIZE, meshIndex);
+
+	return speedup_line;
+}
+
 //---------------------------------------------------- CUDA and MEMORY INFO
 
 void Simulation::Print_CUDAStatus(void)

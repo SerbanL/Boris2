@@ -34,8 +34,8 @@ BError Mesh::AddModule(MOD_ moduleID, bool force_add)
 		if (!exclude_from_multiconvdemag) pMod.push_back(new SDemag_Demag(this), MOD_SDEMAG_DEMAG);
 		break;
 
-	case MOD_EXCHANGE6NGBR:
-		pMod.push_back(new Exch_6ngbr_Neu(this), MOD_EXCHANGE6NGBR);
+	case MOD_EXCHANGE:
+		pMod.push_back(new Exch_6ngbr_Neu(this), MOD_EXCHANGE);
 		break;
 
 	case MOD_DMEXCHANGE:

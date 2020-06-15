@@ -154,12 +154,12 @@ Any Simulation::GetDataValue(DatumConfig dConfig)
 	{
 		if (!SMesh[dConfig.meshName]->is_atomistic()) {
 
-			return Any(reinterpret_cast<Mesh*>(SMesh[dConfig.meshName])->GetAverageMagnetisation(dConfig.rectangle));
+			return Any(dynamic_cast<Mesh*>(SMesh[dConfig.meshName])->GetAverageMagnetisation(dConfig.rectangle));
 		}
 		else {
 
 			//return average magnetisation in the atomistic cell also : average atomistic moment (averaged over all participating unit cells), divided by unit cell volume
-			return Any(reinterpret_cast<Atom_Mesh*>(SMesh[dConfig.meshName])->GetAverageMoment(dConfig.rectangle) / SMesh[dConfig.meshName]->h.dim());
+			return Any(dynamic_cast<Atom_Mesh*>(SMesh[dConfig.meshName])->GetAverageMoment(dConfig.rectangle) / SMesh[dConfig.meshName]->h.dim());
 		}
 	}
 	break;
@@ -168,7 +168,7 @@ Any Simulation::GetDataValue(DatumConfig dConfig)
 	{
 		if (!SMesh[dConfig.meshName]->is_atomistic()) {
 
-			return Any(reinterpret_cast<Mesh*>(SMesh[dConfig.meshName])->GetAverageMagnetisation2(dConfig.rectangle));
+			return Any(dynamic_cast<Mesh*>(SMesh[dConfig.meshName])->GetAverageMagnetisation2(dConfig.rectangle));
 		}
 		else return Any(DBL3());
 	}
@@ -178,11 +178,11 @@ Any Simulation::GetDataValue(DatumConfig dConfig)
 	{
 		if (!SMesh[dConfig.meshName]->is_atomistic()) {
 
-			return Any(reinterpret_cast<Mesh*>(SMesh[dConfig.meshName])->GetMagnetisationXMinMax(dConfig.rectangle));
+			return Any(dynamic_cast<Mesh*>(SMesh[dConfig.meshName])->GetMagnetisationXMinMax(dConfig.rectangle));
 		}
 		else {
 
-			return Any(reinterpret_cast<Atom_Mesh*>(SMesh[dConfig.meshName])->GetMomentXMinMax(dConfig.rectangle) / SMesh[dConfig.meshName]->h.dim());
+			return Any(dynamic_cast<Atom_Mesh*>(SMesh[dConfig.meshName])->GetMomentXMinMax(dConfig.rectangle) / SMesh[dConfig.meshName]->h.dim());
 		}
 	}
 	break;
@@ -191,11 +191,11 @@ Any Simulation::GetDataValue(DatumConfig dConfig)
 	{
 		if (!SMesh[dConfig.meshName]->is_atomistic()) {
 
-			return Any(reinterpret_cast<Mesh*>(SMesh[dConfig.meshName])->GetMagnetisationYMinMax(dConfig.rectangle));
+			return Any(dynamic_cast<Mesh*>(SMesh[dConfig.meshName])->GetMagnetisationYMinMax(dConfig.rectangle));
 		}
 		else {
 
-			return Any(reinterpret_cast<Atom_Mesh*>(SMesh[dConfig.meshName])->GetMomentYMinMax(dConfig.rectangle) / SMesh[dConfig.meshName]->h.dim());
+			return Any(dynamic_cast<Atom_Mesh*>(SMesh[dConfig.meshName])->GetMomentYMinMax(dConfig.rectangle) / SMesh[dConfig.meshName]->h.dim());
 		}
 	}
 	break;
@@ -204,11 +204,11 @@ Any Simulation::GetDataValue(DatumConfig dConfig)
 	{
 		if (!SMesh[dConfig.meshName]->is_atomistic()) {
 
-			return Any(reinterpret_cast<Mesh*>(SMesh[dConfig.meshName])->GetMagnetisationZMinMax(dConfig.rectangle));
+			return Any(dynamic_cast<Mesh*>(SMesh[dConfig.meshName])->GetMagnetisationZMinMax(dConfig.rectangle));
 		}
 		else {
 
-			return Any(reinterpret_cast<Atom_Mesh*>(SMesh[dConfig.meshName])->GetMomentZMinMax(dConfig.rectangle) / SMesh[dConfig.meshName]->h.dim());
+			return Any(dynamic_cast<Atom_Mesh*>(SMesh[dConfig.meshName])->GetMomentZMinMax(dConfig.rectangle) / SMesh[dConfig.meshName]->h.dim());
 		}
 	}
 	break;
@@ -217,11 +217,11 @@ Any Simulation::GetDataValue(DatumConfig dConfig)
 	{
 		if (!SMesh[dConfig.meshName]->is_atomistic()) {
 
-			return Any(reinterpret_cast<Mesh*>(SMesh[dConfig.meshName])->GetMagnetisationMinMax(dConfig.rectangle));
+			return Any(dynamic_cast<Mesh*>(SMesh[dConfig.meshName])->GetMagnetisationMinMax(dConfig.rectangle));
 		}
 		else {
 
-			return Any(reinterpret_cast<Atom_Mesh*>(SMesh[dConfig.meshName])->GetMomentMinMax(dConfig.rectangle) / SMesh[dConfig.meshName]->h.dim());
+			return Any(dynamic_cast<Atom_Mesh*>(SMesh[dConfig.meshName])->GetMomentMinMax(dConfig.rectangle) / SMesh[dConfig.meshName]->h.dim());
 		}
 	}
 	break;

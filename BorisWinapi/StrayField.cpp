@@ -40,18 +40,18 @@ BError StrayField::Initialize(void)
 
 			if ((*pSMesh)[idx]->MComputation_Enabled() && !(*pSMesh)[idx]->is_atomistic()) {
 
-				meshes_out.push_back(&(reinterpret_cast<Mesh*>((*pSMesh)[idx])->Heff));
+				meshes_out.push_back(&(dynamic_cast<Mesh*>((*pSMesh)[idx])->Heff));
 
 				//for antiferromagnetic meshes we also need to add the stray field to the second sub-lattice
 				if ((*pSMesh)[idx]->GetMeshType() == MESH_ANTIFERROMAGNETIC) {
 
-					meshes_out.push_back(&(reinterpret_cast<Mesh*>((*pSMesh)[idx])->Heff2));
+					meshes_out.push_back(&(dynamic_cast<Mesh*>((*pSMesh)[idx])->Heff2));
 				}
 			}
 
 			if ((*pSMesh)[idx]->GetMeshType() == MESH_DIPOLE) {
 
-				DipoleMesh *pDipole = reinterpret_cast<DipoleMesh*>((*pSMesh)[idx]);
+				DipoleMesh *pDipole = dynamic_cast<DipoleMesh*>((*pSMesh)[idx]);
 
 				//save pointer to dipole mesh
 				dipoles.push_back(pDipole);

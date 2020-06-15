@@ -169,18 +169,21 @@ BError MetalMesh::SwitchCUDAState(bool cudaState)
 	//are we switching to cuda?
 	if (cudaState) {
 
-		if (!pMeshCUDA) {
+		if (!pMeshBaseCUDA) {
 
 			//then make MeshCUDA object, copying over currently held cpu data
-			pMeshCUDA = new MetalMeshCUDA(this);
-			error = pMeshCUDA->Error_On_Create();
+			pMeshBaseCUDA = new MetalMeshCUDA(this);
+			pMeshCUDA = dynamic_cast<MeshCUDA*>(pMeshBaseCUDA);
+
+			error = pMeshBaseCUDA->Error_On_Create();
 			if (!error) error = pMeshCUDA->cuMesh()->set_pointers(pMeshCUDA);
 		}
 	}
 	else {
 
 		//delete MeshCUDA object and null
-		if (pMeshCUDA) delete pMeshCUDA;
+		if (pMeshBaseCUDA) delete pMeshBaseCUDA;
+		pMeshBaseCUDA = nullptr;
 		pMeshCUDA = nullptr;
 	}
 

@@ -152,16 +152,12 @@ BError SuperMesh::SetField(string meshName, DBL3 field_cartesian)
 	if (meshName.length()) {
 
 		pMesh[meshName]->CallModuleMethod(&ZeemanBase::SetField, field_cartesian);
-		//if (pMesh[meshName]->is_atomistic()) pMesh[meshName]->CallModuleMethod(&Atom_Zeeman::SetField, field_cartesian);
-		//else pMesh[meshName]->CallModuleMethod(&Zeeman::SetField, field_cartesian);
 	}
 	else {
 
 		for (int idx = 0; idx < pMesh.size(); idx++) {
 
 			pMesh[idx]->CallModuleMethod(&ZeemanBase::SetField, field_cartesian);
-			//if (pMesh[meshName]->is_atomistic()) pMesh[idx]->CallModuleMethod(&Atom_Zeeman::SetField, field_cartesian);
-			//else pMesh[idx]->CallModuleMethod(&Zeeman::SetField, field_cartesian);
 		}
 	}
 
@@ -528,14 +524,14 @@ BError SuperMesh::Set_PBC(string meshName, string flag, int images)
 
 		if (pMesh[meshName]->IsModuleSet(MOD_DEMAG)) {
 
-			INT3 pbc_images = pMesh[meshName]->CallModuleMethod(&Demag::Get_PBC);
+			INT3 pbc_images = pMesh[meshName]->CallModuleMethod(&DemagBase::Get_PBC);
 
 			if (flag == "x") pbc_images.x = images;
 			else if (flag == "y") pbc_images.y = images;
 			else if (flag == "z") pbc_images.z = images;
 			else return error(BERROR_INCORRECTVALUE);
 
-			pMesh[meshName]->CallModuleMethod(&Demag::Set_PBC, pbc_images);
+			pMesh[meshName]->CallModuleMethod(&DemagBase::Set_PBC, pbc_images);
 		}
 		else return error(BERROR_INCORRECTNAME);
 	}
@@ -544,14 +540,14 @@ BError SuperMesh::Set_PBC(string meshName, string flag, int images)
 		//pbc setting for supermesh demag module
 		if (IsSuperMeshModuleSet(MODS_SDEMAG)) {
 
-			INT3 pbc_images = reinterpret_cast<SDemag*>(pSMod(MODS_SDEMAG))->Get_PBC();
+			INT3 pbc_images = dynamic_cast<SDemag*>(pSMod(MODS_SDEMAG))->Get_PBC();
 
 			if (flag == "x") pbc_images.x = images;
 			else if (flag == "y") pbc_images.y = images;
 			else if (flag == "z") pbc_images.z = images;
 			else return error(BERROR_INCORRECTVALUE);
 
-			error = reinterpret_cast<SDemag*>(pSMod(MODS_SDEMAG))->Set_PBC(pbc_images);
+			error = dynamic_cast<SDemag*>(pSMod(MODS_SDEMAG))->Set_PBC(pbc_images);
 		}
 		else return error(BERROR_INCORRECTNAME);
 	}
@@ -597,13 +593,13 @@ BError SuperMesh::SetLinkStochastic(bool link_stochastic, string meshName)
 		if (!pMesh[meshName]->MComputation_Enabled() || pMesh[meshName]->is_atomistic()) return error(BERROR_INCORRECTNAME);
 
 		//only applicable for micromagnetic meshes; for atomistic meshes stochasticity is applied at the individual atomic moment level
-		error = reinterpret_cast<Mesh*>(pMesh[meshName])->SetLinkStochastic(link_stochastic);
+		error = dynamic_cast<Mesh*>(pMesh[meshName])->SetLinkStochastic(link_stochastic);
 	}
 	else {
 
 		for (int idx = 0; idx < pMesh.size(); idx++) {
 
-			if (pMesh[idx]->MComputation_Enabled() && !pMesh[meshName]->is_atomistic()) error = reinterpret_cast<Mesh*>(pMesh[idx])->SetLinkStochastic(link_stochastic);
+			if (pMesh[idx]->MComputation_Enabled() && !pMesh[meshName]->is_atomistic()) error = dynamic_cast<Mesh*>(pMesh[idx])->SetLinkStochastic(link_stochastic);
 		}
 	}
 

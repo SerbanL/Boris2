@@ -783,11 +783,11 @@ void Simulation::SetSimulationStageValue(void)
 
 		DBL3 appliedField = simStages[stage_step.major].get_value<DBL3>(stage_step.minor);
 
-		if (SMesh.contains(meshName)) SMesh[meshName]->CallModuleMethod(&Zeeman::SetField, appliedField);
+		if (SMesh.contains(meshName)) SMesh[meshName]->CallModuleMethod(&ZeemanBase::SetField, appliedField);
 		else if (meshName == SMesh.superMeshHandle) {
 
 			for (int idx = 0; idx < SMesh.size(); idx++) {
-				SMesh[idx]->CallModuleMethod(&Zeeman::SetField, appliedField);
+				SMesh[idx]->CallModuleMethod(&ZeemanBase::SetField, appliedField);
 			}
 		}
 	}
@@ -815,11 +815,11 @@ void Simulation::SetSimulationStageValue(void)
 
 		std::string equation_text = simStages[stage_step.major].get_value<std::string>(stage_step.minor);
 
-		if (SMesh.contains(meshName)) SMesh[meshName]->CallModuleMethod(&Zeeman::SetFieldEquation, equation_text, 0);
+		if (SMesh.contains(meshName)) SMesh[meshName]->CallModuleMethod(&ZeemanBase::SetFieldEquation, equation_text, 0);
 		else if (meshName == SMesh.superMeshHandle) {
 
 			for (int idx = 0; idx < SMesh.size(); idx++) {
-				SMesh[idx]->CallModuleMethod(&Zeeman::SetFieldEquation, equation_text, 0);
+				SMesh[idx]->CallModuleMethod(&ZeemanBase::SetFieldEquation, equation_text, 0);
 			}
 		}
 	}
@@ -833,11 +833,11 @@ void Simulation::SetSimulationStageValue(void)
 		//for a equation sequence we have "n: actual equation", where n is the number of steps
 		std::string equation_equation_text = equation_text.substr(equation_text.find_first_of(':') + 1);
 
-		if (SMesh.contains(meshName)) SMesh[meshName]->CallModuleMethod(&Zeeman::SetFieldEquation, equation_equation_text, stage_step.minor);
+		if (SMesh.contains(meshName)) SMesh[meshName]->CallModuleMethod(&ZeemanBase::SetFieldEquation, equation_equation_text, stage_step.minor);
 		else if (meshName == SMesh.superMeshHandle) {
 
 			for (int idx = 0; idx < SMesh.size(); idx++) {
-				SMesh[idx]->CallModuleMethod(&Zeeman::SetFieldEquation, equation_equation_text, stage_step.minor);
+				SMesh[idx]->CallModuleMethod(&ZeemanBase::SetFieldEquation, equation_equation_text, stage_step.minor);
 			}
 		}
 	}
@@ -990,11 +990,11 @@ void Simulation::SetSimulationStageValue(void)
 
 		std::string equation_text = simStages[stage_step.major].get_value<std::string>(stage_step.minor);
 
-		if (SMesh.contains(meshName)) SMesh[meshName]->CallModuleMethod(&Heat::SetQEquation, equation_text, 0);
+		if (SMesh.contains(meshName)) SMesh[meshName]->CallModuleMethod(&HeatBase::SetQEquation, equation_text, 0);
 		else if (meshName == SMesh.superMeshHandle) {
 
 			for (int idx = 0; idx < SMesh.size(); idx++) {
-				SMesh[idx]->CallModuleMethod(&Heat::SetQEquation, equation_text, 0);
+				SMesh[idx]->CallModuleMethod(&HeatBase::SetQEquation, equation_text, 0);
 			}
 		}
 	}
@@ -1009,11 +1009,11 @@ void Simulation::SetSimulationStageValue(void)
 		//for a equation sequence we have "n: actual equation", where n is the number of steps
 		std::string equation_equation_text = equation_text.substr(equation_text.find_first_of(':') + 1);
 
-		if (SMesh.contains(meshName)) SMesh[meshName]->CallModuleMethod(&Heat::SetQEquation, equation_text, stage_step.minor);
+		if (SMesh.contains(meshName)) SMesh[meshName]->CallModuleMethod(&HeatBase::SetQEquation, equation_text, stage_step.minor);
 		else if (meshName == SMesh.superMeshHandle) {
 
 			for (int idx = 0; idx < SMesh.size(); idx++) {
-				SMesh[idx]->CallModuleMethod(&Heat::SetQEquation, equation_text, stage_step.minor);
+				SMesh[idx]->CallModuleMethod(&HeatBase::SetQEquation, equation_text, stage_step.minor);
 			}
 		}
 	}

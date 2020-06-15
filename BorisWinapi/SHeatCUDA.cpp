@@ -45,10 +45,10 @@ BError SHeatCUDA::Initialize(void)
 	//now build pHeat (and pTemp)
 	for (int idx = 0; idx < pSMesh->size(); idx++) {
 
-		if ((*pSMesh)[idx]->IsModuleSet(MOD_HEAT) && !(*pSMesh)[idx]->is_atomistic()) {
+		if ((*pSMesh)[idx]->IsModuleSet(MOD_HEAT)) {
 
-			pHeat.push_back(dynamic_cast<HeatCUDA*>((*pSMesh)[idx]->GetCUDAModule(MOD_HEAT)));
-			pTemp.push_back(&reinterpret_cast<Mesh*>((*pSMesh)[idx])->pMeshCUDA->Temp);
+			pHeat.push_back(dynamic_cast<HeatBaseCUDA*>((*pSMesh)[idx]->GetCUDAModule(MOD_HEAT)));
+			pTemp.push_back(&(*pSMesh)[idx]->pMeshBaseCUDA->Temp);
 		}
 	}
 
@@ -104,10 +104,10 @@ BError SHeatCUDA::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 		//now build pHeat (and pTemp)
 		for (int idx = 0; idx < pSMesh->size(); idx++) {
 
-			if ((*pSMesh)[idx]->IsModuleSet(MOD_HEAT) && !(*pSMesh)[idx]->is_atomistic()) {
+			if ((*pSMesh)[idx]->IsModuleSet(MOD_HEAT)) {
 
-				pHeat.push_back(dynamic_cast<HeatCUDA*>((*pSMesh)[idx]->GetCUDAModule(MOD_HEAT)));
-				pTemp.push_back(&reinterpret_cast<Mesh*>((*pSMesh)[idx])->pMeshCUDA->Temp);
+				pHeat.push_back(dynamic_cast<HeatBaseCUDA*>((*pSMesh)[idx]->GetCUDAModule(MOD_HEAT)));
+				pTemp.push_back(&(*pSMesh)[idx]->pMeshBaseCUDA->Temp);
 			}
 		}
 	}

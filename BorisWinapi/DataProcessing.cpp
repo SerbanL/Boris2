@@ -203,7 +203,8 @@ BError DPArrays::get_topological_charge(VEC_VC<DBL3>& M, double x, double y, dou
 		}
 	}
 
-	*pQ = Q / (4 * PI);
+	//divide by number of z cells (this is intended for 2D layers)
+	*pQ = Q / (4 * PI * M.n.z);
 
 	return error;
 }
@@ -236,7 +237,8 @@ BError DPArrays::count_skyrmions(VEC_VC<DBL3>& M, double x, double y, double rad
 		}
 	}
 
-	*pQ = Q / (4 * PI);
+	//divide by number of z cells (this is intended for 2D layers)
+	*pQ = Q / (4 * PI * M.n.z);
 
 	return error;
 }

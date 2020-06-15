@@ -83,7 +83,7 @@ BError Atom_DemagCUDA::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 
 void Atom_DemagCUDA::UpdateField(void)
 {
-	if (paMeshCUDA->EvaluationSpeedup()) {
+	if (paMeshCUDA->GetEvaluationSpeedup()) {
 
 		//use evaluation speedup method (calculate Hdemag only when required, otherwise just update effective field with previously calculated Hdemag)
 

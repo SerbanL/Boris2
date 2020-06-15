@@ -190,7 +190,7 @@ double Atom_Zeeman::UpdateField(void)
 double Atom_Zeeman::GetEnergyDensity(Rect& avRect)
 {
 #if COMPILECUDA == 1
-	if (pModuleCUDA) return reinterpret_cast<Atom_ZeemanCUDA*>(pModuleCUDA)->GetEnergyDensity(avRect);
+	if (pModuleCUDA) return dynamic_cast<Atom_ZeemanCUDA*>(pModuleCUDA)->GetEnergyDensity(avRect);
 #endif
 
 	/////////////////////////////////////////
@@ -275,7 +275,7 @@ void Atom_Zeeman::SetField(DBL3 Hxyz)
 	//-------------------------- CUDA mirroring
 
 #if COMPILECUDA == 1
-	if (pModuleCUDA) reinterpret_cast<Atom_ZeemanCUDA*>(pModuleCUDA)->SetField(Ha);
+	if (pModuleCUDA) dynamic_cast<Atom_ZeemanCUDA*>(pModuleCUDA)->SetField(Ha);
 #endif
 }
 
@@ -303,7 +303,7 @@ BError Atom_Zeeman::SetFieldEquation(string equation_string, int step)
 	//-------------------------- CUDA mirroring
 
 #if COMPILECUDA == 1
-	if (pModuleCUDA) error = reinterpret_cast<Atom_ZeemanCUDA*>(pModuleCUDA)->SetFieldEquation(H_equation.get_vector_fspec());
+	if (pModuleCUDA) error = dynamic_cast<Atom_ZeemanCUDA*>(pModuleCUDA)->SetFieldEquation(H_equation.get_vector_fspec());
 #endif
 
 	return error;
@@ -325,7 +325,7 @@ void Atom_Zeeman::UpdateTEquationUserConstants(bool makeCuda)
 		//-------------------------- CUDA mirroring
 
 #if COMPILECUDA == 1
-		if (pModuleCUDA && makeCuda) reinterpret_cast<Atom_ZeemanCUDA*>(pModuleCUDA)->SetFieldEquation(H_equation.get_vector_fspec());
+		if (pModuleCUDA && makeCuda) dynamic_cast<Atom_ZeemanCUDA*>(pModuleCUDA)->SetFieldEquation(H_equation.get_vector_fspec());
 #endif
 	}
 }
@@ -341,7 +341,7 @@ void Atom_Zeeman::SetBaseTemperature(double Temperature)
 	//-------------------------- CUDA mirroring
 
 #if COMPILECUDA == 1
-	if (pModuleCUDA) reinterpret_cast<Atom_ZeemanCUDA*>(pModuleCUDA)->SetFieldEquation(H_equation.get_vector_fspec());
+	if (pModuleCUDA) dynamic_cast<Atom_ZeemanCUDA*>(pModuleCUDA)->SetFieldEquation(H_equation.get_vector_fspec());
 #endif
 }
 

@@ -277,7 +277,7 @@ void MElastic::SetUniformStress(DBL3 Tsig_xyz)
 	//-------------------------- CUDA mirroring
 
 #if COMPILECUDA == 1
-	if (pModuleCUDA) reinterpret_cast<MElasticCUDA*>(pModuleCUDA)->copy_VECs_to_GPU();
+	if (pModuleCUDA) dynamic_cast<MElasticCUDA*>(pModuleCUDA)->copy_VECs_to_GPU();
 #endif
 }
 
@@ -298,7 +298,7 @@ BError MElastic::Load_Displacement_OVF2(string fileName)
 	//-------------------------- CUDA mirroring
 
 #if COMPILECUDA == 1
-	if (pModuleCUDA) return reinterpret_cast<MElasticCUDA*>(pModuleCUDA)->copy_VECs_to_GPU();
+	if (pModuleCUDA) return dynamic_cast<MElasticCUDA*>(pModuleCUDA)->copy_VECs_to_GPU();
 #endif
 
 	return error;
@@ -327,7 +327,7 @@ BError MElastic::Load_Strain_OVF2(string fileName_Diag, string fileName_ODiag)
 	//-------------------------- CUDA mirroring
 
 #if COMPILECUDA == 1
-	if (pModuleCUDA) return reinterpret_cast<MElasticCUDA*>(pModuleCUDA)->copy_VECs_to_GPU();
+	if (pModuleCUDA) return dynamic_cast<MElasticCUDA*>(pModuleCUDA)->copy_VECs_to_GPU();
 #endif
 
 	return error;

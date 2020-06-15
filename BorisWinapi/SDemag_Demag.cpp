@@ -84,7 +84,7 @@ BError SDemag_Demag::Initialize_Mesh_Transfer(void)
 
 		//the Hdemag.size() check is needed : if in CUDA mode, this method will be called to initialize mesh transfer in transfer so the transfer info can be copied over to the gpu
 		//In this case it's possible Hdemag does not have the correct memory allocated; if not in CUDA mode we first pass through Initialization method before calling this, in which case Hdemag will be sized correctly.
-		if (pMesh->pSMesh->EvaluationSpeedup() && Hdemag.size() == transfer.size()) {
+		if (pMesh->pSMesh->GetEvaluationSpeedup() && Hdemag.size() == transfer.size()) {
 
 			//initialize mesh transfer for Hdemag as well if we are using evaluation speedup
 			if (!Hdemag.Initialize_MeshTransfer_AveragedInputs_DuplicatedOutputs(
@@ -109,7 +109,7 @@ BError SDemag_Demag::Initialize_Mesh_Transfer(void)
 
 		//the Hdemag.size() check is needed : if in CUDA mode, this method will be called to initialize mesh transfer in transfer so the transfer info can be copied over to the gpu
 		//In this case it's possible Hdemag does not have the correct memory allocated; if not in CUDA mode we first pass through Initialization method before calling this, in which case Hdemag will be sized correctly.
-		if (pMesh->pSMesh->EvaluationSpeedup() && Hdemag.size() == transfer.size()) {
+		if (pMesh->pSMesh->GetEvaluationSpeedup() && Hdemag.size() == transfer.size()) {
 
 			//initialize mesh transfer for Hdemag as well if we are using evaluation speedup
 			if (!Hdemag.Initialize_MeshTransfer({ &pMesh->M }, { &pMesh->Heff }, MESHTRANSFERTYPE_WEIGHTED)) return error(BERROR_OUTOFMEMORY_CRIT);
@@ -135,7 +135,7 @@ BError SDemag_Demag::Initialize(void)
 	if (error) return error;
 	
 	//make sure to allocate memory for Hdemag if we need it
-	if (pMesh->pSMesh->EvaluationSpeedup()) Hdemag.resize(pSDemag->get_convolution_rect(this) / pSDemag->n_common, pSDemag->get_convolution_rect(this));
+	if (pMesh->pSMesh->GetEvaluationSpeedup()) Hdemag.resize(pSDemag->get_convolution_rect(this) / pSDemag->n_common, pSDemag->get_convolution_rect(this));
 	else Hdemag.clear();
 
 	pSDemag->Hdemag_calculated = false;

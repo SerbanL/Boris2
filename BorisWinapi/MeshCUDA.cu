@@ -38,7 +38,7 @@ __global__ void GetTopologicalCharge_Kernel(ManagedMeshCUDA& cuMesh, cuRect rect
 			cuReal3 dm_dx = M_grad.x / M_mag;
 			cuReal3 dm_dy = M_grad.y / M_mag;
 
-			Q_ = (M[idx] / M_mag) * (dm_dx ^ dm_dy) * M.h.x * M.h.y / (4 * (cuBReal)PI);
+			Q_ = (M[idx] / M_mag) * (dm_dx ^ dm_dy) * M.h.x * M.h.y / (4 * (cuBReal)PI * M.n.z);
 		}
 	}
 
@@ -77,7 +77,7 @@ __global__ void Compute_TopoChargeDensity_Kernel(ManagedMeshCUDA& cuMesh, cuVEC<
 			cuReal3 dm_dx = M_grad.x / M_mag;
 			cuReal3 dm_dy = M_grad.y / M_mag;
 
-			aux_vec_sca[idx] = (M[idx] / M_mag) * (dm_dx ^ dm_dy) * M.h.x * M.h.y / (4 * (cuBReal)PI);
+			aux_vec_sca[idx] = (M[idx] / M_mag) * (dm_dx ^ dm_dy) * M.h.x * M.h.y / (4 * (cuBReal)PI * M.n.z);
 		}
 		else aux_vec_sca[idx] = 0.0;
 	}

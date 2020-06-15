@@ -36,13 +36,13 @@ BError SDemagCUDA_Demag::Initialize(void)
 	SDemag* pSDemag = pSDemag_Demag->pSDemag;
 
 	//pointer to gpu SDemagCUDA object
-	SDemagCUDA* pSDemagCUDA = reinterpret_cast<SDemagCUDA*>(pSDemag->pModuleCUDA);
+	SDemagCUDA* pSDemagCUDA = dynamic_cast<SDemagCUDA*>(pSDemag->pModuleCUDA);
 
 	if (!pSDemagCUDA->IsInitialized()) error = pSDemagCUDA->Initialize();
 	if (error) return error;
 
 	//make sure to allocate memory for Hdemag if we need it
-	if (pMeshCUDA->EvaluationSpeedup()) Hdemag()->resize((cuRect)pSDemag->get_convolution_rect(pSDemag_Demag) / (cuSZ3)pSDemag->n_common, (cuRect)pSDemag->get_convolution_rect(pSDemag_Demag));
+	if (pMeshCUDA->GetEvaluationSpeedup()) Hdemag()->resize((cuRect)pSDemag->get_convolution_rect(pSDemag_Demag) / (cuSZ3)pSDemag->n_common, (cuRect)pSDemag->get_convolution_rect(pSDemag_Demag));
 	else Hdemag()->clear();
 
 	if (!initialized) {
@@ -98,7 +98,7 @@ BError SDemagCUDA_Demag::Initialize(void)
 
 				if (!transfer()->copy_transfer_info(pVal_from, pVal_to, pSDemag_Demag->transfer)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
 
-				if (pMeshCUDA->EvaluationSpeedup()) {
+				if (pMeshCUDA->GetEvaluationSpeedup()) {
 
 					//initialize mesh transfer for Hdemag as well if we are using evaluation speedup
 					if (!Hdemag()->copy_transfer_info(pVal_from, pVal_to, pSDemag_Demag->transfer)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
@@ -113,7 +113,7 @@ BError SDemagCUDA_Demag::Initialize(void)
 
 				if (!transfer()->copy_transfer_info_averagedinputs_duplicatedoutputs(pVal_from, pVal_from2, pVal_to, pVal_to2, pSDemag_Demag->transfer)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
 
-				if (pMeshCUDA->EvaluationSpeedup()) {
+				if (pMeshCUDA->GetEvaluationSpeedup()) {
 
 					//initialize mesh transfer for Hdemag as well if we are using evaluation speedup
 					if (!Hdemag()->copy_transfer_info_averagedinputs_duplicatedoutputs(pVal_from, pVal_from2, pVal_to, pVal_to2, pSDemag_Demag->transfer)) return error(BERROR_OUTOFGPUMEMORY_CRIT);

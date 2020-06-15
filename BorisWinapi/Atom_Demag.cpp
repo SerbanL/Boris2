@@ -156,7 +156,7 @@ double Atom_Demag::UpdateField(void)
 	//////////////////////////////////////// EVAL SPEEDUP /////////////////////////////////////////
 	///////////////////////////////////////////////////////////////////////////////////////////////
 	
-	if (paMesh->pSMesh->EvaluationSpeedup()) {
+	if (paMesh->pSMesh->GetEvaluationSpeedup()) {
 
 		//use evaluation speedup method (calculate Hdemag only when required, otherwise just update effective field with previously calculated Hdemag)
 

@@ -20,17 +20,17 @@ VEC_VC<DBL3>& Mesh::Get_M(void)
 //returns charge current on the cpu, assuming transport module is enabled
 VEC_VC<DBL3>& Mesh::Get_Jc(void)
 {
-	return reinterpret_cast<Transport*>(pMod(MOD_TRANSPORT))->GetChargeCurrent();
+	return dynamic_cast<Transport*>(pMod(MOD_TRANSPORT))->GetChargeCurrent();
 }
 
 //returns bulk self-consistent spin torque on the cpu, assuming transport module is enabled and spin solver is enabled
 VEC<DBL3>& Mesh::Get_SpinTorque(void)
 {
-	return reinterpret_cast<Transport*>(pMod(MOD_TRANSPORT))->GetSpinTorque();
+	return dynamic_cast<Transport*>(pMod(MOD_TRANSPORT))->GetSpinTorque();
 }
 
 //returns interfacial self-consistent spin torque on the cpu, assuming transport module is enabled and spin solver is enabled
 VEC<DBL3>& Mesh::Get_InterfacialSpinTorque(void)
 {
-	return reinterpret_cast<STransport*>(pSMesh->GetSuperMeshModule(MODS_STRANSPORT))->GetInterfacialSpinTorque(reinterpret_cast<Transport*>(pMod(MOD_TRANSPORT)));
+	return dynamic_cast<STransport*>(pSMesh->GetSuperMeshModule(MODS_STRANSPORT))->GetInterfacialSpinTorque(dynamic_cast<Transport*>(pMod(MOD_TRANSPORT)));
 }

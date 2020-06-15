@@ -14,6 +14,10 @@
 
 #include "MeshParamsBase.h"
 
+#if COMPILECUDA == 1
+#include "MeshBaseCUDA.h"
+#endif
+
 using namespace std;
 
 class SuperMesh;
@@ -84,6 +88,11 @@ protected:
 	bool exclude_from_multiconvdemag = false;
 
 public:
+
+#if COMPILECUDA == 1
+	//the CUDA version of this Mesh
+	MeshBaseCUDA* pMeshBaseCUDA = nullptr;
+#endif
 
 	//--------Auxiliary
 
@@ -414,7 +423,7 @@ public:
 	virtual bool Is_PBC_z(void) = 0;
 
 	//check if this mesh has an exchange module enabled (surf exchange doesn't count)
-	virtual bool ExchangeComputation_Enabled(void) = 0;
+	bool ExchangeComputation_Enabled(void) { return IsModuleSet(MOD_EXCHANGE) || IsModuleSet(MOD_DMEXCHANGE) || IsModuleSet(MOD_IDMEXCHANGE); }
 
 	//----------------------------------- VALUE GETTERS
 
@@ -540,6 +549,9 @@ public:
 	//				  Thus it is important that Owner is actually the implementation and not the base class Modules. If runThisMethod points to a method in Modules, e.g. GetEnergyDensity, don't use the template deduction mechanism!
 	//				  e.g. if you use CallModuleMethod(&STransport::GetEnergyDensity), then Owner will not be STransport but Modules, so dynamic_cast will succeed on first attempt which may not be the right module!
 	//				  In this case explicitly specify the template parameters as : CallModuleMethod<double, STransport>(&STransport::GetEnergyDensity)
+	//FURTHER NOTE:   Some modules have an additional ABC, in addition to Modules, e.g. ZeemanBase ABC used by Zeeman and Atom_Zeeman implementations which result in polymorphic behaviour of micromagnetic and atomistic meshes
+	//				  CallModuleMethod also works in this case by calling a method defined in the secondary base class, e.g. &ZeemanBase::SetField:
+	//				  In this case dynamic cast will be attempted from Modules* to ZeemanBase*, and this only succeeds if the Modules ABC implementation is also an implementation of the additional ABC (ZeemanBase in this example).
 
 	//Call a method on a mesh module (if module available, which is automatically determined here)
 	template <typename RType, typename Owner>

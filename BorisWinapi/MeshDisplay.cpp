@@ -47,7 +47,7 @@ PhysQ Mesh::FetchOnScreenPhysicalQuantity(double detail_level, bool getBackgroun
 	case MESHDISPLAY_CURRDENSITY:
 		if (IsModuleSet(MOD_TRANSPORT)) {
 
-			return PhysQ(&reinterpret_cast<Transport*>(pMod(MOD_TRANSPORT))->GetChargeCurrent(), physicalQuantity, (VEC3REP_)vec3rep);
+			return PhysQ(&dynamic_cast<Transport*>(pMod(MOD_TRANSPORT))->GetChargeCurrent(), physicalQuantity, (VEC3REP_)vec3rep);
 		}
 		break;
 
@@ -66,28 +66,28 @@ PhysQ Mesh::FetchOnScreenPhysicalQuantity(double detail_level, bool getBackgroun
 	case MESHDISPLAY_JSX:
 		if (IsModuleSet(MOD_TRANSPORT)) {
 
-			return PhysQ(&reinterpret_cast<Transport*>(pMod(MOD_TRANSPORT))->GetSpinCurrent(0), physicalQuantity, (VEC3REP_)vec3rep);
+			return PhysQ(&dynamic_cast<Transport*>(pMod(MOD_TRANSPORT))->GetSpinCurrent(0), physicalQuantity, (VEC3REP_)vec3rep);
 		}
 		break;
 
 	case MESHDISPLAY_JSY:
 		if (IsModuleSet(MOD_TRANSPORT)) {
 
-			return PhysQ(&reinterpret_cast<Transport*>(pMod(MOD_TRANSPORT))->GetSpinCurrent(1), physicalQuantity, (VEC3REP_)vec3rep);
+			return PhysQ(&dynamic_cast<Transport*>(pMod(MOD_TRANSPORT))->GetSpinCurrent(1), physicalQuantity, (VEC3REP_)vec3rep);
 		}
 		break;
 
 	case MESHDISPLAY_JSZ:
 		if (IsModuleSet(MOD_TRANSPORT)) {
 
-			return PhysQ(&reinterpret_cast<Transport*>(pMod(MOD_TRANSPORT))->GetSpinCurrent(2), physicalQuantity, (VEC3REP_)vec3rep);
+			return PhysQ(&dynamic_cast<Transport*>(pMod(MOD_TRANSPORT))->GetSpinCurrent(2), physicalQuantity, (VEC3REP_)vec3rep);
 		}
 		break;
 
 	case MESHDISPLAY_TS:
 		if (IsModuleSet(MOD_TRANSPORT)) {
 
-			return PhysQ(&reinterpret_cast<Transport*>(pMod(MOD_TRANSPORT))->GetSpinTorque(), physicalQuantity, (VEC3REP_)vec3rep);
+			return PhysQ(&dynamic_cast<Transport*>(pMod(MOD_TRANSPORT))->GetSpinTorque(), physicalQuantity, (VEC3REP_)vec3rep);
 		}
 		break;
 
@@ -95,7 +95,7 @@ PhysQ Mesh::FetchOnScreenPhysicalQuantity(double detail_level, bool getBackgroun
 		if (pSMesh->IsSuperMeshModuleSet(MODS_STRANSPORT) && IsModuleSet(MOD_TRANSPORT)) {
 
 			return PhysQ(
-				&reinterpret_cast<STransport*>(pSMesh->pSMod(MODS_STRANSPORT))->GetInterfacialSpinTorque(reinterpret_cast<Transport*>(pMod(MOD_TRANSPORT))),
+				&dynamic_cast<STransport*>(pSMesh->pSMod(MODS_STRANSPORT))->GetInterfacialSpinTorque(dynamic_cast<Transport*>(pMod(MOD_TRANSPORT))),
 				physicalQuantity, (VEC3REP_)vec3rep);
 		}
 		break;
@@ -166,7 +166,7 @@ PhysQ Mesh::FetchOnScreenPhysicalQuantity(double detail_level, bool getBackgroun
 	case MESHDISPLAY_ROUGHNESS:
 		if (IsModuleSet(MOD_ROUGHNESS)) {
 
-			return PhysQ(&reinterpret_cast<Roughness*>(pMod(MOD_ROUGHNESS))->GetRoughness(), physicalQuantity);
+			return PhysQ(&dynamic_cast<Roughness*>(pMod(MOD_ROUGHNESS))->GetRoughness(), physicalQuantity);
 		}
 		break;
 
@@ -226,7 +226,7 @@ BError Mesh::SaveOnScreenPhysicalQuantity(string fileName, string ovf2_dataType)
 	case MESHDISPLAY_CURRDENSITY:
 		if (IsModuleSet(MOD_TRANSPORT)) {
 
-			error = ovf2.Write_OVF2_VEC(fileName, reinterpret_cast<Transport*>(pMod(MOD_TRANSPORT))->GetChargeCurrent(), ovf2_dataType);
+			error = ovf2.Write_OVF2_VEC(fileName, dynamic_cast<Transport*>(pMod(MOD_TRANSPORT))->GetChargeCurrent(), ovf2_dataType);
 		}
 		break;
 
@@ -245,35 +245,35 @@ BError Mesh::SaveOnScreenPhysicalQuantity(string fileName, string ovf2_dataType)
 	case MESHDISPLAY_JSX:
 		if (IsModuleSet(MOD_TRANSPORT)) {
 
-			error = ovf2.Write_OVF2_VEC(fileName, reinterpret_cast<Transport*>(pMod(MOD_TRANSPORT))->GetSpinCurrent(0), ovf2_dataType);
+			error = ovf2.Write_OVF2_VEC(fileName, dynamic_cast<Transport*>(pMod(MOD_TRANSPORT))->GetSpinCurrent(0), ovf2_dataType);
 		}
 		break;
 
 	case MESHDISPLAY_JSY:
 		if (IsModuleSet(MOD_TRANSPORT)) {
 
-			error = ovf2.Write_OVF2_VEC(fileName, reinterpret_cast<Transport*>(pMod(MOD_TRANSPORT))->GetSpinCurrent(1), ovf2_dataType);
+			error = ovf2.Write_OVF2_VEC(fileName, dynamic_cast<Transport*>(pMod(MOD_TRANSPORT))->GetSpinCurrent(1), ovf2_dataType);
 		}
 		break;
 
 	case MESHDISPLAY_JSZ:
 		if (IsModuleSet(MOD_TRANSPORT)) {
 
-			error = ovf2.Write_OVF2_VEC(fileName, reinterpret_cast<Transport*>(pMod(MOD_TRANSPORT))->GetSpinCurrent(2), ovf2_dataType);
+			error = ovf2.Write_OVF2_VEC(fileName, dynamic_cast<Transport*>(pMod(MOD_TRANSPORT))->GetSpinCurrent(2), ovf2_dataType);
 		}
 		break;
 
 	case MESHDISPLAY_TS:
 		if (IsModuleSet(MOD_TRANSPORT)) {
 
-			error = ovf2.Write_OVF2_VEC(fileName, reinterpret_cast<Transport*>(pMod(MOD_TRANSPORT))->GetSpinTorque(), ovf2_dataType);
+			error = ovf2.Write_OVF2_VEC(fileName, dynamic_cast<Transport*>(pMod(MOD_TRANSPORT))->GetSpinTorque(), ovf2_dataType);
 		}
 		break;
 
 	case MESHDISPLAY_TSI:
 		if (pSMesh->IsSuperMeshModuleSet(MODS_STRANSPORT) && IsModuleSet(MOD_TRANSPORT)) {
 
-			error = ovf2.Write_OVF2_VEC(fileName, reinterpret_cast<STransport*>(pSMesh->pSMod(MODS_STRANSPORT))->GetInterfacialSpinTorque(reinterpret_cast<Transport*>(pMod(MOD_TRANSPORT))), ovf2_dataType);
+			error = ovf2.Write_OVF2_VEC(fileName, dynamic_cast<STransport*>(pSMesh->pSMod(MODS_STRANSPORT))->GetInterfacialSpinTorque(dynamic_cast<Transport*>(pMod(MOD_TRANSPORT))), ovf2_dataType);
 		}
 		break;
 
@@ -343,7 +343,7 @@ BError Mesh::SaveOnScreenPhysicalQuantity(string fileName, string ovf2_dataType)
 	case MESHDISPLAY_ROUGHNESS:
 		if (IsModuleSet(MOD_ROUGHNESS)) {
 
-			error = ovf2.Write_OVF2_SCA(fileName, reinterpret_cast<Roughness*>(pMod(MOD_ROUGHNESS))->GetRoughness(), ovf2_dataType);
+			error = ovf2.Write_OVF2_SCA(fileName, dynamic_cast<Roughness*>(pMod(MOD_ROUGHNESS))->GetRoughness(), ovf2_dataType);
 		}
 		break;
 
@@ -376,7 +376,7 @@ void Mesh::PrepareDisplayedMeshValue(void)
 		if (IsModuleSet(MOD_TRANSPORT)) {
 
 			//charge current calculated internally in the Transport module, ready to be read out when needed
-			reinterpret_cast<Transport*>(pMod(MOD_TRANSPORT))->GetChargeCurrent();
+			dynamic_cast<Transport*>(pMod(MOD_TRANSPORT))->GetChargeCurrent();
 		}
 		break;
 
@@ -384,7 +384,7 @@ void Mesh::PrepareDisplayedMeshValue(void)
 		if (IsModuleSet(MOD_TRANSPORT)) {
 
 			//spin current calculated internally in the Transport module, ready to be read out when needed
-			reinterpret_cast<Transport*>(pMod(MOD_TRANSPORT))->GetSpinCurrent(0);
+			dynamic_cast<Transport*>(pMod(MOD_TRANSPORT))->GetSpinCurrent(0);
 		}
 		break;
 
@@ -392,7 +392,7 @@ void Mesh::PrepareDisplayedMeshValue(void)
 		if (IsModuleSet(MOD_TRANSPORT)) {
 
 			//spin current calculated internally in the Transport module, ready to be read out when needed
-			reinterpret_cast<Transport*>(pMod(MOD_TRANSPORT))->GetSpinCurrent(1);
+			dynamic_cast<Transport*>(pMod(MOD_TRANSPORT))->GetSpinCurrent(1);
 		}
 		break;
 
@@ -400,7 +400,7 @@ void Mesh::PrepareDisplayedMeshValue(void)
 		if (IsModuleSet(MOD_TRANSPORT)) {
 
 			//spin current calculated internally in the Transport module, ready to be read out when needed
-			reinterpret_cast<Transport*>(pMod(MOD_TRANSPORT))->GetSpinCurrent(2);
+			dynamic_cast<Transport*>(pMod(MOD_TRANSPORT))->GetSpinCurrent(2);
 		}
 		break;
 
@@ -408,7 +408,7 @@ void Mesh::PrepareDisplayedMeshValue(void)
 		if (IsModuleSet(MOD_TRANSPORT)) {
 
 			//spin torque calculated internally in the Transport module, ready to be read out when needed
-			reinterpret_cast<Transport*>(pMod(MOD_TRANSPORT))->GetSpinTorque();
+			dynamic_cast<Transport*>(pMod(MOD_TRANSPORT))->GetSpinTorque();
 		}
 		break;
 
@@ -416,7 +416,7 @@ void Mesh::PrepareDisplayedMeshValue(void)
 		if (pSMesh->IsSuperMeshModuleSet(MODS_STRANSPORT) && IsModuleSet(MOD_TRANSPORT)) {
 
 			//spin torque calculated internally in the Transport module, ready to be read out when needed
-			reinterpret_cast<STransport*>(pSMesh->pSMod(MODS_STRANSPORT))->GetInterfacialSpinTorque(reinterpret_cast<Transport*>(pMod(MOD_TRANSPORT)));
+			dynamic_cast<STransport*>(pSMesh->pSMod(MODS_STRANSPORT))->GetInterfacialSpinTorque(dynamic_cast<Transport*>(pMod(MOD_TRANSPORT)));
 		}
 		break;
 
@@ -470,7 +470,7 @@ Any Mesh::GetDisplayedMeshValue(DBL3 abs_pos)
 	case MESHDISPLAY_CURRDENSITY:
 		if (IsModuleSet(MOD_TRANSPORT)) {
 
-			return reinterpret_cast<Transport*>(pMod(MOD_TRANSPORT))->GetCalculatedChargeCurrentValue(rel_pos);
+			return dynamic_cast<Transport*>(pMod(MOD_TRANSPORT))->GetCalculatedChargeCurrentValue(rel_pos);
 		}
 		break;
 
@@ -491,21 +491,21 @@ Any Mesh::GetDisplayedMeshValue(DBL3 abs_pos)
 	case MESHDISPLAY_JSZ:
 		if (IsModuleSet(MOD_TRANSPORT)) {
 
-			return reinterpret_cast<Transport*>(pMod(MOD_TRANSPORT))->GetCalculatedSpinCurrentValue(rel_pos);
+			return dynamic_cast<Transport*>(pMod(MOD_TRANSPORT))->GetCalculatedSpinCurrentValue(rel_pos);
 		}
 		break;
 
 	case MESHDISPLAY_TS:
 		if (IsModuleSet(MOD_TRANSPORT)) {
 
-			return reinterpret_cast<Transport*>(pMod(MOD_TRANSPORT))->GetCalculatedSpinTorqueValue(rel_pos);
+			return dynamic_cast<Transport*>(pMod(MOD_TRANSPORT))->GetCalculatedSpinTorqueValue(rel_pos);
 		}
 		break;
 
 	case MESHDISPLAY_TSI:
 		if (pSMesh->IsSuperMeshModuleSet(MODS_STRANSPORT) && IsModuleSet(MOD_TRANSPORT)) {
 
-			return reinterpret_cast<Transport*>(pMod(MOD_TRANSPORT))->GetCalculatedSpinTorqueValue(rel_pos);
+			return dynamic_cast<Transport*>(pMod(MOD_TRANSPORT))->GetCalculatedSpinTorqueValue(rel_pos);
 		}
 		break;
 
@@ -532,7 +532,7 @@ Any Mesh::GetDisplayedMeshValue(DBL3 abs_pos)
 	break;
 
 	case MESHDISPLAY_ROUGHNESS:
-		return reinterpret_cast<Roughness*>(pMod(MOD_ROUGHNESS))->GetRoughness()[rel_pos];
+		return dynamic_cast<Roughness*>(pMod(MOD_ROUGHNESS))->GetRoughness()[rel_pos];
 		break;
 
 	case MESHDISPLAY_CUSTOM_VEC:
@@ -587,7 +587,7 @@ Any Mesh::GetAverageDisplayedMeshValue(Rect rel_rect)
 	case MESHDISPLAY_CURRDENSITY:
 		if (IsModuleSet(MOD_TRANSPORT)) {
 
-			return reinterpret_cast<Transport*>(pMod(MOD_TRANSPORT))->GetAverageChargeCurrent(rel_rect);
+			return dynamic_cast<Transport*>(pMod(MOD_TRANSPORT))->GetAverageChargeCurrent(rel_rect);
 		}
 		break;
 
@@ -606,28 +606,28 @@ Any Mesh::GetAverageDisplayedMeshValue(Rect rel_rect)
 	case MESHDISPLAY_JSX:
 		if (IsModuleSet(MOD_TRANSPORT)) {
 
-			return reinterpret_cast<Transport*>(pMod(MOD_TRANSPORT))->GetAverageSpinCurrent(0, rel_rect);
+			return dynamic_cast<Transport*>(pMod(MOD_TRANSPORT))->GetAverageSpinCurrent(0, rel_rect);
 		}
 		break;
 
 	case MESHDISPLAY_JSY:
 		if (IsModuleSet(MOD_TRANSPORT)) {
 
-			return reinterpret_cast<Transport*>(pMod(MOD_TRANSPORT))->GetAverageSpinCurrent(1, rel_rect);
+			return dynamic_cast<Transport*>(pMod(MOD_TRANSPORT))->GetAverageSpinCurrent(1, rel_rect);
 		}
 		break;
 
 	case MESHDISPLAY_JSZ:
 		if (IsModuleSet(MOD_TRANSPORT)) {
 
-			return reinterpret_cast<Transport*>(pMod(MOD_TRANSPORT))->GetAverageSpinCurrent(2, rel_rect);
+			return dynamic_cast<Transport*>(pMod(MOD_TRANSPORT))->GetAverageSpinCurrent(2, rel_rect);
 		}
 		break;
 
 	case MESHDISPLAY_TS:
 		if (IsModuleSet(MOD_TRANSPORT)) {
 
-			return reinterpret_cast<Transport*>(pMod(MOD_TRANSPORT))->GetAverageSpinTorque(rel_rect);
+			return dynamic_cast<Transport*>(pMod(MOD_TRANSPORT))->GetAverageSpinTorque(rel_rect);
 		}
 		break;
 
@@ -635,8 +635,8 @@ Any Mesh::GetAverageDisplayedMeshValue(Rect rel_rect)
 		if (pSMesh->IsSuperMeshModuleSet(MODS_STRANSPORT) && IsModuleSet(MOD_TRANSPORT)) {
 
 			//spin torque calculated internally in the Transport module, ready to be read out when needed
-			reinterpret_cast<STransport*>(pSMesh->pSMod(MODS_STRANSPORT))->GetInterfacialSpinTorque(reinterpret_cast<Transport*>(pMod(MOD_TRANSPORT)));
-			return reinterpret_cast<Transport*>(pMod(MOD_TRANSPORT))->GetAverageInterfacialSpinTorque(rel_rect);
+			dynamic_cast<STransport*>(pSMesh->pSMod(MODS_STRANSPORT))->GetInterfacialSpinTorque(dynamic_cast<Transport*>(pMod(MOD_TRANSPORT)));
+			return dynamic_cast<Transport*>(pMod(MOD_TRANSPORT))->GetAverageInterfacialSpinTorque(rel_rect);
 		}
 		break;
 
@@ -704,7 +704,7 @@ Any Mesh::GetAverageDisplayedMeshValue(Rect rel_rect)
 	break;
 
 	case MESHDISPLAY_ROUGHNESS:
-		return reinterpret_cast<Roughness*>(pMod(MOD_ROUGHNESS))->GetRoughness().average_nonempty_omp(rel_rect);
+		return dynamic_cast<Roughness*>(pMod(MOD_ROUGHNESS))->GetRoughness().average_nonempty_omp(rel_rect);
 		break;
 
 	case MESHDISPLAY_CUSTOM_VEC:

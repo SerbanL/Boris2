@@ -29,7 +29,7 @@ void Simulation::MakeIOInfo(void)
 
 	ioInfo.set(modulegeneric_info + string("<i><b>Stoner-Wohlfarth demag"), INT2(IOI_MODULE, MOD_DEMAG_N));
 	ioInfo.set(modulegeneric_info + string("<i><b>Full demag field"), INT2(IOI_MODULE, MOD_DEMAG));
-	ioInfo.set(modulegeneric_info + string("<i><b>Direct exchange interaction"), INT2(IOI_MODULE, MOD_EXCHANGE6NGBR));
+	ioInfo.set(modulegeneric_info + string("<i><b>Direct exchange interaction"), INT2(IOI_MODULE, MOD_EXCHANGE));
 	ioInfo.set(modulegeneric_info + string("<i><b>Dzyaloshinskii-Moriya interaction - bulk"), INT2(IOI_MODULE, MOD_DMEXCHANGE));
 	ioInfo.set(modulegeneric_info + string("<i><b>Dzyaloshinskii-Moriya interaction - interfacial"), INT2(IOI_MODULE, MOD_IDMEXCHANGE));
 	ioInfo.set(modulegeneric_info + string("<i><b>Surface exchange interaction\n<i><b>Couple to adjacent meshes along z\n<i><b>with surfexchange module enabled"), INT2(IOI_MODULE, MOD_SURFEXCHANGE));
@@ -42,8 +42,6 @@ void Simulation::MakeIOInfo(void)
 	ioInfo.set(modulegeneric_info + string("<i><b>Heat equation solver"), INT2(IOI_MODULE, MOD_HEAT));
 	ioInfo.set(modulegeneric_info + string("<i><b>Spin-orbit torque field\n<i><b>Results in Slonczewski-like torques"), INT2(IOI_MODULE, MOD_SOTFIELD));
 	ioInfo.set(modulegeneric_info + string("<i><b>Physical roughness\n<i><b>Demag term corrections when approximating shapes\n<i><b>from a fine mesh with a coarse mesh."), INT2(IOI_MODULE, MOD_ROUGHNESS));
-
-	ioInfo.set(modulegeneric_info + string("<i><b>Heisenberg exchange interaction"), INT2(IOI_MODULE, MOD_ATOM_EXCHANGE));
 
 	ioInfo.set(modulegeneric_info + string("<i><b>Supermesh demag field"), INT2(IOI_SMODULE, MODS_SDEMAG));
 	ioInfo.set(modulegeneric_info + string("<i><b>Oersted field in electric supermesh"), INT2(IOI_SMODULE, MODS_OERSTED));
@@ -105,7 +103,25 @@ void Simulation::MakeIOInfo(void)
 
 	ioInfo.push_back(linkstochdt_info, IOI_LINKSTOCHDT);
 
-	//Available/set ode evaluation method for ode : minorId is an entry from ODE_ (the equation), auxId is the EVAL_ entry (the evaluation method), textId is the name of the evaluation method
+	//Set evaluation speedup time-step: textId is the value
+	//IOI_SPEEDUPDT
+
+	string speedupdt_info =
+		string("[tc1,1,0,1/tc]<b>Evaluation Speedup Time Step</b>") +
+		string("\n[tc1,1,0,1/tc]double-click: edit\n");
+
+	ioInfo.push_back(speedupdt_info, IOI_SPEEDUPDT);
+
+	//Link evaluation speedup time-step to ODE dT flag : auxId is the value
+	//IOI_LINKSPEEDUPDT
+
+	string linkspeedupdt_info =
+		string("[tc1,1,0,1/tc]<b>Link dTspeedup to ODE dT</b>") +
+		string("\n[tc1,1,0,1/tc]click: change\n");
+
+	ioInfo.push_back(linkspeedupdt_info, IOI_LINKSPEEDUPDT);
+
+	//Available/set evaluation method for ode : minorId is an entry from ODE_ as : micromagnetic equation value + 100 * atomistic equation value, auxId is the EVAL_ entry (the evaluation method), textId is the name of the evaluation method
 	//IOI_ODE_EVAL
 
 	string ode_eval_info =
@@ -130,6 +146,7 @@ void Simulation::MakeIOInfo(void)
 	//IOI_MESH_FORPBC
 	//IOI_MESH_FOREXCHCOUPLING
 	//IOI_MESH_FORSTOCHASTICITY
+	//IOI_MESH_FORSPEEDUP
 
 	string mesh_info =
 		string("[tc1,1,0,1/tc]<b>mesh name</b>") +
@@ -151,6 +168,7 @@ void Simulation::MakeIOInfo(void)
 	ioInfo.push_back(mesh_info, IOI_MESH_FORPBC);
 	ioInfo.push_back(mesh_info, IOI_MESH_FOREXCHCOUPLING);
 	ioInfo.push_back(mesh_info, IOI_MESH_FORSTOCHASTICITY);
+	ioInfo.push_back(mesh_info, IOI_MESH_FORSPEEDUP);
 
 	//Shows ferromagnetic super-mesh rectangle (unit m) : textId is the mesh rectangle for the ferromagnetic super-mesh
 	//IOI_FMSMESHRECTANGLE
@@ -258,6 +276,26 @@ void Simulation::MakeIOInfo(void)
 		string("\n[tc1,1,0,1/tc]click: change");
 
 	ioInfo.push_back(linkstoch_info, IOI_LINKSTOCHASTIC);
+
+	//Shows macrocell size (units m) for atomistic meshes: minorId is the unique mesh id number, auxId is enabled/disabled status, textId is the mesh cellsize
+	//IOI_MESHDMCELLSIZE
+
+	string dmmeshcell_info =
+		string("[tc1,1,0,1/tc]<b>Atomistic macrocell size</b>") +
+		string("\n[tc1,1,0,1/tc]<i>Used for demagnetising/dipole-dipole field</i>") +
+		string("\n[tc1,1,0,1/tc]dbl-click: edit");
+
+	ioInfo.push_back(dmmeshcell_info, IOI_MESHDMCELLSIZE);
+
+	//Shows evaluation speedup type: auxId is the type value.
+	//IOI_SPEEDUPMODE
+
+	string speedup_info =
+		string("[tc1,1,0,1/tc]<b>Evaluation speedup settings</b>") +
+		string("\n[tc1,1,0,1/tc]<i>Used to reduce number of demag field evaluations</i>") +
+		string("\n[tc1,1,0,1/tc]dbl-click: edit");
+
+	ioInfo.push_back(speedup_info, IOI_SPEEDUPMODE);
 
 	//Simulation output data, specifically used for showing values in console : minorId is the DATA_ id, textId is the data handle
 	//IOI_SHOWDATA
@@ -642,8 +680,10 @@ void Simulation::MakeIOInfo(void)
 	ioInfo.set(param_generic_info + string("<i><b>Intrinsic damping - SC"), INT2(IOI_MESHPARAM, PARAM_ATOM_SC_DAMPING));
 	ioInfo.set(param_generic_info + string("<i><b>Atomistic magnetic moment - SC"), INT2(IOI_MESHPARAM, PARAM_ATOM_SC_MUS));
 	ioInfo.set(param_generic_info + string("<i><b>Heisenberg exchange energy - SC"), INT2(IOI_MESHPARAM, PARAM_ATOM_SC_J));
+	ioInfo.set(param_generic_info + string("<i><b>Atomistic DMI exchange energy - SC"), INT2(IOI_MESHPARAM, PARAM_ATOM_SC_D));
 	ioInfo.set(param_generic_info + string("<i><b>Atomistic anisotropy - SC"), INT2(IOI_MESHPARAM, PARAM_ATOM_SC_K));
 	ioInfo.set(param_generic_info + string("<i><b>Anisotropy easy axis 1"), INT2(IOI_MESHPARAM, PARAM_ATOM_EA1));
+	ioInfo.set(param_generic_info + string("<i><b>Anisotropy easy axis 2"), INT2(IOI_MESHPARAM, PARAM_ATOM_EA2));
 
 	//Shows parameter temperature dependence for a given mesh : minorId is the major id of elements in SimParams::simParams (i.e. an entry from PARAM_ enum), auxId is the unique mesh id number, textId is the parameter temperature dependence setting
 	//IOI_MESHPARAMTEMP
@@ -1442,7 +1482,7 @@ string Simulation::MakeIO(IOI_ identifier, PType ... params)
 
 			if (SMesh[meshIndex]->MComputation_Enabled() && !SMesh[meshIndex]->is_atomistic()) {
 
-				return MakeInteractiveObject(ToString(reinterpret_cast<Mesh*>(SMesh[meshIndex])->GetMeshSCellsize(), "m"), IOI_MESHSCELLSIZE, SMesh[meshIndex]->get_id(), 1, ToString(reinterpret_cast<Mesh*>(SMesh[meshIndex])->GetMeshSCellsize(), "m"), ONCOLOR);
+				return MakeInteractiveObject(ToString(dynamic_cast<Mesh*>(SMesh[meshIndex])->GetMeshSCellsize(), "m"), IOI_MESHSCELLSIZE, SMesh[meshIndex]->get_id(), 1, ToString(dynamic_cast<Mesh*>(SMesh[meshIndex])->GetMeshSCellsize(), "m"), ONCOLOR);
 			}
 			else {
 
@@ -1466,6 +1506,27 @@ string Simulation::MakeIO(IOI_ identifier, PType ... params)
 				return MakeInteractiveObject("N/A", IOI_LINKSTOCHASTIC, SMesh[meshIndex]->get_id(), -1, "N/A", OFFCOLOR);
 			}
 		}
+		break;
+
+	case IOI_MESHDMCELLSIZE:
+		if (params_str.size() == 1) {
+
+			int meshIndex = ToNum(params_str[0]);
+
+			if (SMesh[meshIndex]->MComputation_Enabled() && SMesh[meshIndex]->is_atomistic()) {
+
+				return MakeInteractiveObject(ToString(dynamic_cast<Atom_Mesh*>(SMesh[meshIndex])->Get_Demag_Cellsize(), "m"), IOI_MESHDMCELLSIZE, SMesh[meshIndex]->get_id(), 1, ToString(dynamic_cast<Atom_Mesh*>(SMesh[meshIndex])->Get_Demag_Cellsize(), "m"), ONCOLOR);
+			}
+			else {
+
+				return MakeInteractiveObject("N/A", IOI_MESHDMCELLSIZE, SMesh[meshIndex]->get_id(), 0, "N/A", OFFCOLOR);
+			}
+		}
+		break;
+
+	//Shows evaluation speedup type: auxId is the type value.
+	case IOI_SPEEDUPMODE:
+		return MakeInteractiveObject(" None ", IOI_SPEEDUPMODE, 0, 0);
 		break;
 
 	case IOI_SMESHDISPLAY:
@@ -1597,6 +1658,14 @@ string Simulation::MakeIO(IOI_ identifier, PType ... params)
 
 	case IOI_LINKSTOCHDT:
 		return MakeInteractiveObject("On", IOI_LINKSTOCHDT, 0, 1);
+		break;
+
+	case IOI_SPEEDUPDT:
+		return MakeInteractiveObject("0", IOI_SPEEDUPDT, 0, 0, "0");
+		break;
+
+	case IOI_LINKSPEEDUPDT:
+		return MakeInteractiveObject("On", IOI_LINKSPEEDUPDT, 0, 1);
 		break;
 
 	case IOI_ODE_EVAL:
@@ -1910,6 +1979,16 @@ string Simulation::MakeIO(IOI_ identifier, PType ... params)
 		}
 		break;
 
+	case IOI_MESH_FORSPEEDUP:
+		if (params_str.size() == 1) {
+
+			int meshIndex = ToNum(params_str[0]);
+			string meshName = SMesh().get_key_from_index(meshIndex);
+
+			return MakeInteractiveObject(meshName, IOI_MESH_FORSPEEDUP, SMesh[meshName]->get_id(), 1, meshName);
+		}
+		break;
+
 	case IOI_MOVINGMESH:
 		if (SMesh.IsMovingMeshSet()) {
 
@@ -2036,7 +2115,7 @@ string Simulation::MakeIO(IOI_ identifier, PType ... params)
 
 			int meshIndex = ToNum(params_str[0]);
 
-			double T_ambient = SMesh[meshIndex]->CallModuleMethod(&Heat::GetAmbientTemperature);
+			double T_ambient = SMesh[meshIndex]->CallModuleMethod(&HeatBase::GetAmbientTemperature);
 
 			return MakeInteractiveObject(ToString(T_ambient, "K"), IOI_AMBIENT_TEMPERATURE, SMesh[meshIndex]->get_id(), 1, ToString(T_ambient, "K"));
 		}
@@ -2047,7 +2126,7 @@ string Simulation::MakeIO(IOI_ identifier, PType ... params)
 
 			int meshIndex = ToNum(params_str[0]);
 
-			double alpha_boundary = SMesh[meshIndex]->CallModuleMethod(&Heat::GetAlphaBoundary);
+			double alpha_boundary = SMesh[meshIndex]->CallModuleMethod(&HeatBase::GetAlphaBoundary);
 
 			return MakeInteractiveObject(ToString(alpha_boundary, "W/m2K"), IOI_ROBIN_ALPHA, SMesh[meshIndex]->get_id(), 1, ToString(alpha_boundary, "W/m2K"));
 		}
@@ -2080,7 +2159,7 @@ string Simulation::MakeIO(IOI_ identifier, PType ... params)
 
 			if (!SMesh[meshIndex]->is_atomistic()) {
 
-				return MakeInteractiveObject(ToString(reinterpret_cast<Mesh*>(SMesh[meshIndex])->GetCurieTemperature(), "K"), IOI_CURIETEMP, SMesh[meshIndex]->get_id(), 1, ToString(reinterpret_cast<Mesh*>(SMesh[meshIndex])->GetCurieTemperature(), "K"));
+				return MakeInteractiveObject(ToString(dynamic_cast<Mesh*>(SMesh[meshIndex])->GetCurieTemperature(), "K"), IOI_CURIETEMP, SMesh[meshIndex]->get_id(), 1, ToString(dynamic_cast<Mesh*>(SMesh[meshIndex])->GetCurieTemperature(), "K"));
 			}
 			else {
 
@@ -2096,7 +2175,7 @@ string Simulation::MakeIO(IOI_ identifier, PType ... params)
 
 			if (!SMesh[meshIndex]->is_atomistic()) {
 
-				return MakeInteractiveObject(ToString(reinterpret_cast<Mesh*>(SMesh[meshIndex])->GetCurieTemperatureMaterial(), "K"), IOI_CURIETEMPMATERIAL, SMesh[meshIndex]->get_id(), 1, ToString(reinterpret_cast<Mesh*>(SMesh[meshIndex])->GetCurieTemperatureMaterial(), "K"));
+				return MakeInteractiveObject(ToString(dynamic_cast<Mesh*>(SMesh[meshIndex])->GetCurieTemperatureMaterial(), "K"), IOI_CURIETEMPMATERIAL, SMesh[meshIndex]->get_id(), 1, ToString(dynamic_cast<Mesh*>(SMesh[meshIndex])->GetCurieTemperatureMaterial(), "K"));
 			}
 			else {
 
@@ -2112,7 +2191,7 @@ string Simulation::MakeIO(IOI_ identifier, PType ... params)
 
 			if (!SMesh[meshIndex]->is_atomistic()) {
 
-				return MakeInteractiveObject(ToString(reinterpret_cast<Mesh*>(SMesh[meshIndex])->GetAtomicMoment(), "uB"), IOI_ATOMICMOMENT, SMesh[meshIndex]->get_id(), 1, ToString(reinterpret_cast<Mesh*>(SMesh[meshIndex])->GetAtomicMoment(), "uB"));
+				return MakeInteractiveObject(ToString(dynamic_cast<Mesh*>(SMesh[meshIndex])->GetAtomicMoment(), "uB"), IOI_ATOMICMOMENT, SMesh[meshIndex]->get_id(), 1, ToString(dynamic_cast<Mesh*>(SMesh[meshIndex])->GetAtomicMoment(), "uB"));
 			}
 			else {
 
@@ -2128,7 +2207,7 @@ string Simulation::MakeIO(IOI_ identifier, PType ... params)
 
 			if (!SMesh[meshIndex]->is_atomistic()) {
 
-				return MakeInteractiveObject(ToString(reinterpret_cast<Mesh*>(SMesh[meshIndex])->GetAtomicMoment_AFM(), "uB"), IOI_ATOMICMOMENT_AFM, SMesh[meshIndex]->get_id(), 1, ToString(reinterpret_cast<Mesh*>(SMesh[meshIndex])->GetAtomicMoment_AFM(), "uB"));
+				return MakeInteractiveObject(ToString(dynamic_cast<Mesh*>(SMesh[meshIndex])->GetAtomicMoment_AFM(), "uB"), IOI_ATOMICMOMENT_AFM, SMesh[meshIndex]->get_id(), 1, ToString(dynamic_cast<Mesh*>(SMesh[meshIndex])->GetAtomicMoment_AFM(), "uB"));
 			}
 			else {
 
@@ -2144,7 +2223,7 @@ string Simulation::MakeIO(IOI_ identifier, PType ... params)
 
 			if (!SMesh[meshIndex]->is_atomistic()) {
 
-				return MakeInteractiveObject(ToString(reinterpret_cast<Mesh*>(SMesh[meshIndex])->GetTcCoupling()), IOI_TAU, SMesh[meshIndex]->get_id(), 1, ToString(reinterpret_cast<Mesh*>(SMesh[meshIndex])->GetTcCoupling()));
+				return MakeInteractiveObject(ToString(dynamic_cast<Mesh*>(SMesh[meshIndex])->GetTcCoupling()), IOI_TAU, SMesh[meshIndex]->get_id(), 1, ToString(dynamic_cast<Mesh*>(SMesh[meshIndex])->GetTcCoupling()));
 			}
 			else {
 
