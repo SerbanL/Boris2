@@ -21,7 +21,7 @@ Atom_Mesh_Cubic::Atom_Mesh_Cubic(SuperMesh *pSMesh_) :
 			//Members in this derived class
 			VINFO(move_mesh_trigger), VINFO(exchange_couple_to_meshes),
 			//Material Parameters
-			VINFO(alpha), VINFO(mu_s), 
+			VINFO(alpha), VINFO(mu_s), VINFO(Nxy),
 			VINFO(J), VINFO(D),
 			VINFO(K), VINFO(mcanis_ea1), VINFO(mcanis_ea2),
 			VINFO(cHA), VINFO(cHmo),
@@ -32,7 +32,7 @@ Atom_Mesh_Cubic::Atom_Mesh_Cubic(SuperMesh *pSMesh_) :
 		},
 		{
 			//Modules Implementations
-			IINFO(Atom_Demag), IINFO(Atom_Zeeman), IINFO(Atom_Exchange), IINFO(Atom_DMExchange), IINFO(Atom_iDMExchange), IINFO(Atom_MOptical), IINFO(Atom_Anisotropy_Uniaxial), IINFO(Atom_Anisotropy_Cubic), IINFO(Atom_Heat)
+			IINFO(Atom_Demag_N), IINFO(Atom_Demag), IINFO(Atom_DipoleDipole), IINFO(Atom_Zeeman), IINFO(Atom_Exchange), IINFO(Atom_DMExchange), IINFO(Atom_iDMExchange), IINFO(Atom_MOptical), IINFO(Atom_Anisotropy_Uniaxial), IINFO(Atom_Anisotropy_Cubic), IINFO(Atom_Heat)
 		}),
 	meshODE(this)
 {}
@@ -51,7 +51,7 @@ Atom_Mesh_Cubic::Atom_Mesh_Cubic(Rect meshRect_, DBL3 h_, SuperMesh *pSMesh_) :
 			//Members in this derived class
 			VINFO(move_mesh_trigger), VINFO(exchange_couple_to_meshes),
 			//Material Parameters
-			VINFO(alpha), VINFO(mu_s),
+			VINFO(alpha), VINFO(mu_s), VINFO(Nxy),
 			VINFO(J), VINFO(D),
 			VINFO(K), VINFO(mcanis_ea1), VINFO(mcanis_ea2),
 			VINFO(cHA), VINFO(cHmo),
@@ -62,7 +62,7 @@ Atom_Mesh_Cubic::Atom_Mesh_Cubic(Rect meshRect_, DBL3 h_, SuperMesh *pSMesh_) :
 		},
 		{
 			//Modules Implementations
-			IINFO(Atom_Demag), IINFO(Atom_Zeeman), IINFO(Atom_Exchange), IINFO(Atom_DMExchange), IINFO(Atom_iDMExchange), IINFO(Atom_MOptical), IINFO(Atom_Anisotropy_Uniaxial), IINFO(Atom_Anisotropy_Cubic), IINFO(Atom_Heat)
+			IINFO(Atom_Demag_N), IINFO(Atom_Demag), IINFO(Atom_DipoleDipole), IINFO(Atom_Zeeman), IINFO(Atom_Exchange), IINFO(Atom_DMExchange), IINFO(Atom_iDMExchange), IINFO(Atom_MOptical), IINFO(Atom_Anisotropy_Uniaxial), IINFO(Atom_Anisotropy_Cubic), IINFO(Atom_Heat)
 		}),
 	meshODE(this)
 {

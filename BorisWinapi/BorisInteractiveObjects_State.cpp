@@ -2860,14 +2860,14 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 
 		if (meshIdx >= 0) {
 
-			if (images >= 0 && (!SMesh[meshIdx]->Magnetism_Enabled() || !SMesh[meshIdx]->IsModuleSet(MOD_DEMAG))) {
+			if (images >= 0 && !SMesh[meshIdx]->Is_Demag_Enabled()) {
 
 				pTO->SetBackgroundColor(UNAVAILABLECOLOR);
 				pTO->set(" N/A ");
 				stateChanged = true;
 				iop.auxId = -1;
 			}
-			else if (SMesh[meshIdx]->IsModuleSet(MOD_DEMAG) && SMesh[meshIdx]->CallModuleMethod(&DemagBase::Get_PBC).x != images) {
+			else if (SMesh[meshIdx]->Is_Demag_Enabled() && SMesh[meshIdx]->CallModuleMethod(&DemagBase::Get_PBC).x != images) {
 
 				iop.auxId = SMesh[meshIdx]->CallModuleMethod(&DemagBase::Get_PBC).x;
 
@@ -2897,14 +2897,14 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 
 		if (meshIdx >= 0) {
 
-			if (images >= 0 && (!SMesh[meshIdx]->Magnetism_Enabled() || !SMesh[meshIdx]->IsModuleSet(MOD_DEMAG))) {
+			if (images >= 0 && !SMesh[meshIdx]->Is_Demag_Enabled()) {
 
 				pTO->SetBackgroundColor(UNAVAILABLECOLOR);
 				pTO->set(" N/A ");
 				stateChanged = true;
 				iop.auxId = -1;
 			}
-			else if (SMesh[meshIdx]->IsModuleSet(MOD_DEMAG) && SMesh[meshIdx]->CallModuleMethod(&DemagBase::Get_PBC).y != images) {
+			else if (SMesh[meshIdx]->Is_Demag_Enabled() && SMesh[meshIdx]->CallModuleMethod(&DemagBase::Get_PBC).y != images) {
 
 				iop.auxId = SMesh[meshIdx]->CallModuleMethod(&DemagBase::Get_PBC).y;
 
@@ -2934,14 +2934,14 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 
 		if (meshIdx >= 0) {
 
-			if (images >= 0 && (!SMesh[meshIdx]->Magnetism_Enabled() || !SMesh[meshIdx]->IsModuleSet(MOD_DEMAG))) {
+			if (images >= 0 && !SMesh[meshIdx]->Is_Demag_Enabled()) {
 
 				pTO->SetBackgroundColor(UNAVAILABLECOLOR);
 				pTO->set(" N/A ");
 				stateChanged = true;
 				iop.auxId = -1;
 			}
-			else if (SMesh[meshIdx]->IsModuleSet(MOD_DEMAG) && SMesh[meshIdx]->CallModuleMethod(&DemagBase::Get_PBC).z != images) {
+			else if (SMesh[meshIdx]->Is_Demag_Enabled() && SMesh[meshIdx]->CallModuleMethod(&DemagBase::Get_PBC).z != images) {
 
 				iop.auxId = SMesh[meshIdx]->CallModuleMethod(&DemagBase::Get_PBC).z;
 

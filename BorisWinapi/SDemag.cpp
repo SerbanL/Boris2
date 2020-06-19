@@ -31,7 +31,7 @@ SDemag::~SDemag()
 	//thus must clear pbc flags in all M
 
 	demag_pbc_images = INT3();
-	Set_M_PBC();
+	Set_Magnetic_PBC();
 
 	//RAII : SDemag_Demag module were created in the constructor, so delete them here in any remaining ferromagnetic meshes 
 	//(some could have been deleted already if any ferromagnetic mesh was deleted in the mean-time)
@@ -401,7 +401,7 @@ BError SDemag::Set_PBC(INT3 demag_pbc_images_)
 
 	demag_pbc_images = demag_pbc_images_;
 
-	error = Set_M_PBC();
+	error = Set_Magnetic_PBC();
 
 	UninitializeAll();
 
@@ -412,7 +412,7 @@ BError SDemag::Set_PBC(INT3 demag_pbc_images_)
 }
 
 //Set PBC settings for M in all meshes
-BError SDemag::Set_M_PBC(void)
+BError SDemag::Set_Magnetic_PBC(void)
 {
 	BError error(__FUNCTION__);
 
@@ -668,7 +668,7 @@ BError SDemag::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 		}
 
 		//if a new mesh has been added we must also set any possible pbc conditions for M
-		error = Set_M_PBC();
+		error = Set_Magnetic_PBC();
 	}
 
 	//------------------------ CUDA UpdateConfiguration if set

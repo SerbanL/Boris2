@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "Atom_Mesh.h"
+#include "HeatBase.h"
 
 //----------------------------------- MESH QUANTITIES CONTROL
 
@@ -23,7 +24,7 @@ void Atom_Mesh::MoveMesh(double x_shift)
 		//if (elC.linear_size()) CallModuleMethod(&Transport::MoveMesh_Transport, x_shift);
 
 		//3. shift Temp
-		//if (Temp.linear_size()) CallModuleMethod(&HeatBase::MoveMesh_Heat, x_shift);
+		if (Temp.linear_size()) CallModuleMethod(&HeatBase::MoveMesh_Heat, x_shift);
 
 		return;
 	}
@@ -39,7 +40,7 @@ void Atom_Mesh::MoveMesh(double x_shift)
 	//if (elC.linear_size()) CallModuleMethod(&Transport::MoveMesh_Transport, x_shift);
 
 	//3. shift Temp
-	//if (Temp.linear_size()) CallModuleMethod(&HeatBase::MoveMesh_Heat, x_shift);
+	if (Temp.linear_size()) CallModuleMethod(&HeatBase::MoveMesh_Heat, x_shift);
 }
 
 //set PBC for required VECs : should only be called from a demag module

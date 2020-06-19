@@ -232,6 +232,8 @@
     <ClInclude Include="Atom_AnisotropyCUDA.h" />
     <ClInclude Include="Atom_Demag.h" />
     <ClInclude Include="Atom_DemagCUDA.h" />
+    <ClInclude Include="Atom_Demag_N.h" />
+    <ClInclude Include="Atom_Demag_NCUDA.h" />
     <ClInclude Include="Atom_DiffEq.h" />
     <ClInclude Include="Atom_DiffEqCubic.h" />
     <ClInclude Include="Atom_DiffEqCUDA.h" />
@@ -240,6 +242,8 @@
     <ClInclude Include="Atom_DiffEqCubic_SEquationsCUDA.h" />
     <ClInclude Include="Atom_DiffEq_Common.h" />
     <ClInclude Include="Atom_DiffEq_CommonCUDA.h" />
+    <ClInclude Include="Atom_DipoleDipole.h" />
+    <ClInclude Include="Atom_DipoleDipoleCUDA.h" />
     <ClInclude Include="Atom_DMExchange.h" />
     <ClInclude Include="Atom_DMExchangeCUDA.h" />
     <ClInclude Include="Atom_Exchange.h" />
@@ -251,7 +255,11 @@
     <ClInclude Include="Atom_MOptical.h" />
     <ClInclude Include="Atom_MOpticalCUDA.h" />
     <ClInclude Include="DemagBase.h" />
+    <ClInclude Include="DemagTFunc_Defs.h" />
     <ClInclude Include="DiffEq_CommonBaseCUDA.h" />
+    <ClInclude Include="DipoleDipoleKernel.h" />
+    <ClInclude Include="DipoleDipoleKernelCUDA.h" />
+    <ClInclude Include="DipoleDipoleTFunc.h" />
     <ClInclude Include="HeatBase.h" />
     <ClInclude Include="HeatBaseCUDA.h" />
     <ClInclude Include="ManagedAtom_DiffEqCubicCUDA.h" />
@@ -337,6 +345,7 @@
     <ClInclude Include="MaterialParameter.h" />
     <CudaCompile Include="Atom_AnisotropyCubiCUDA.cu" />
     <CudaCompile Include="Atom_AnisotropyUniCUDA.cu" />
+    <CudaCompile Include="Atom_Demag_NCUDA.cu" />
     <CudaCompile Include="Atom_DiffEqCubicCUDA.cu" />
     <CudaCompile Include="Atom_DiffEqCubic_EvalsCUDA.cu" />
     <CudaCompile Include="Atom_DiffEqCubic_EvalsCUDA_ABM.cu" />
@@ -352,6 +361,7 @@
     <CudaCompile Include="Atom_DiffEqCubic_EvalsLLGCUDA.cu" />
     <CudaCompile Include="Atom_DiffEqCubic_SEquationsCUDA.cu" />
     <CudaCompile Include="Atom_DiffEq_CommonCUDA.cu" />
+    <CudaCompile Include="Atom_DipoleDipoleCUDA.cu" />
     <CudaCompile Include="Atom_DMExchangeCUDA.cu" />
     <CudaCompile Include="Atom_ExchangeCUDA.cu" />
     <CudaCompile Include="Atom_HeatCUDA.cu" />
@@ -374,6 +384,7 @@
     <CudaCompile Include="DiffEqDM_EvalsCUDA_TEuler.cu" />
     <CudaCompile Include="DiffEqDM_EvalsLLGCUDA.cu" />
     <CudaCompile Include="DiffEq_CommonBaseCUDA.cu" />
+    <CudaCompile Include="DipoleDipoleKernelCUDA.cu" />
     <CudaCompile Include="HeatBaseCUDA.cu" />
     <CudaCompile Include="MaterialParameterCUDA.cu">
       <FileType>Document</FileType>
@@ -480,6 +491,8 @@
     <ClCompile Include="Atom_AnisotropyCUDA.cpp" />
     <ClCompile Include="Atom_Demag.cpp" />
     <ClCompile Include="Atom_DemagCUDA.cpp" />
+    <ClCompile Include="Atom_Demag_N.cpp" />
+    <ClCompile Include="Atom_Demag_NCUDA.cpp" />
     <ClCompile Include="Atom_DiffEq.cpp" />
     <ClCompile Include="Atom_DiffEqCubic.cpp" />
     <ClCompile Include="Atom_DiffEqCubic_Equations.cpp" />
@@ -500,6 +513,8 @@
     <ClCompile Include="Atom_DiffEq_CommonCUDA.cpp" />
     <ClCompile Include="Atom_DiffEq_Iterate.cpp" />
     <ClCompile Include="Atom_DiffEq_IterateCUDA.cpp" />
+    <ClCompile Include="Atom_DipoleDipole.cpp" />
+    <ClCompile Include="Atom_DipoleDipoleCUDA.cpp" />
     <ClCompile Include="Atom_DMExchange.cpp" />
     <ClCompile Include="Atom_DMExchangeCUDA.cpp" />
     <ClCompile Include="Atom_Exchange.cpp" />
@@ -514,6 +529,11 @@
     <ClCompile Include="Atom_MOptical.cpp" />
     <ClCompile Include="Atom_MOpticalCUDA.cpp" />
     <ClCompile Include="DiffEq_CommonBaseCUDA.cpp" />
+    <ClCompile Include="DipoleDipoleKernel.cpp" />
+    <ClCompile Include="DipoleDipoleKernelCUDA.cpp" />
+    <ClCompile Include="DipoleDipoleTFunc.cpp" />
+    <ClCompile Include="DipoleDipoleTFunc_PBC.cpp" />
+    <ClCompile Include="DipoleDipoleTFunc_Self.cpp" />
     <ClCompile Include="HeatBase.cpp" />
     <ClCompile Include="HeatBaseCUDA.cpp" />
     <ClCompile Include="ManagedAtom_DiffEqCubicCUDA.cpp" />

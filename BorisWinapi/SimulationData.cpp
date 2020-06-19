@@ -296,7 +296,7 @@ Any Simulation::GetDataValue(DatumConfig dConfig)
 	{
 		if (!SMesh.IsSuperMeshModuleSet(MODS_SDEMAG)) {
 
-			//read demag energy from named mesh if supermesh demag module not set
+			//read demag energy from named mesh if supermesh demag module not set (also works for MOD_ATOM_DIPOLEDIPOLE since it's exclusive with MOD_DEMAG)
 			return Any(SMesh[dConfig.meshName]->GetEnergyDensity(MOD_DEMAG));
 		}
 		else {
@@ -311,13 +311,13 @@ Any Simulation::GetDataValue(DatumConfig dConfig)
 	{
 		if (dConfig.rectangle.IsNull() || dConfig.rectangle == SMesh[dConfig.meshName]->meshRect) {
 
-			//get exchange energy density over entire mesh
-			return Any(SMesh[dConfig.meshName]->Get_Exchange_EnergyDensity());
+			//read exchange energy density from named mesh (use MOD_EXCHANGE; works for all exclusive exchange modules )
+			return Any(SMesh[dConfig.meshName]->GetEnergyDensity(MOD_EXCHANGE));
 		}
 		else {
 
 			//calculate energy density as average in given rect only
-			return Any(SMesh[dConfig.meshName]->Get_Exchange_EnergyDensity(dConfig.rectangle));
+			return Any(SMesh[dConfig.meshName]->GetEnergyDensity(MOD_EXCHANGE, dConfig.rectangle));
 		}
 	}
 	break;

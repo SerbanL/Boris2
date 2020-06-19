@@ -2,7 +2,7 @@
 
 #if COMPILECUDA == 1
 
-#ifdef MODULE_HEAT
+#if defined(MODULE_HEAT) && ATOMISTIC == 1
 
 #include "BorisCUDALib.cuh"
 

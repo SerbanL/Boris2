@@ -4,10 +4,9 @@
 
 #include <math.h>
 
-/////////////////////////////////////////// ASYMPTOTIC EXPANSION APPROXIMATIONS FOR LONGER DISTANCES
+#include "DemagTFunc_Defs.h"
 
-//-1 to disable
-#define ASYMPTOTIC_DISTANCE 40
+/////////////////////////////////////////// ASYMPTOTIC EXPANSION APPROXIMATIONS FOR LONGER DISTANCES
 
 class DemagAsymptoticDiag
 {

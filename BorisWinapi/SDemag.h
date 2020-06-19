@@ -23,7 +23,7 @@ class SuperMesh;
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 //
-// Full demag on super-mesh, involving interpolating to/from multiple ferromagnetic meshes
+// Full demag on super-mesh, involving interpolating to/from multiple magnetic meshes
 
 class SDemag :
 	public Modules,
@@ -133,7 +133,7 @@ private:
 	BError Initialize_Mesh_Transfer(void);
 
 	//Set PBC settings for M in all meshes
-	BError Set_M_PBC(void);
+	BError Set_Magnetic_PBC(void);
 
 public:
 

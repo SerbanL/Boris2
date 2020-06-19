@@ -91,17 +91,20 @@ double Atom_Exchange::UpdateField(void)
 			paMesh->update_parameters_mcoarse(idx, paMesh->mu_s, mu_s, paMesh->J, J);
 		
 			//update effective field with the Heisenberg exchange field
-			DBL3 Heff_value = (J / (MUB_MU0*mu_s*mu_s)) * paMesh->M1.ngbr_sum(idx);
+			DBL3 Heff_value = (J / (MUB_MU0*mu_s)) * paMesh->M1.ngbr_dirsum(idx);
 
 			paMesh->Heff1[idx] += Heff_value;
 
-			//update energy E = -mu_s * Bex
-			energy -= MUB_MU0 * paMesh->M1[idx] * Heff_value;
+			//update energy E = -mu_s * Bex. Will finish off at the end with prefactors.
+			energy += paMesh->M1[idx] * Heff_value;
 		}
 	}
 
-	//convert to energy density and return
-	if (non_empty_volume) this->energy = energy / non_empty_volume;
+	//convert to energy density and return. Divide by two since in the Hamiltonian the sum is performed only once for every pair of spins, but if you use the M.H expression each sum appears twice.
+	//Also note, this energy density is not the same as the micromagnetic one, due to different zero-energy points.
+	//To obtain the micromagnetic energy density you also have to subtract the energy density obtained at saturation from the Heisenberg Hamiltonian.
+	//Could be done here easily, but decided not to (add J * number of neigbhors to energy, then convert t).
+	if (non_empty_volume) this->energy = -MUB_MU0 * energy / (2*non_empty_volume);
 	else this->energy = 0.0;
 
 	return this->energy;
@@ -132,16 +135,16 @@ double Atom_Exchange::GetEnergyDensity(Rect& avRect)
 			paMesh->update_parameters_mcoarse(idx, paMesh->mu_s, mu_s, paMesh->J, J);
 
 			//update effective field with the Heisenberg exchange field
-			DBL3 Heff_value = (J / (MUB_MU0*mu_s*mu_s)) * paMesh->M1.ngbr_sum(idx);
+			DBL3 Heff_value = (J / (MUB_MU0*mu_s)) * paMesh->M1.ngbr_dirsum(idx);
 
 			//update energy E = -mu_s * Bex
-			energy -= MUB_MU0 * paMesh->M1[idx] * Heff_value;
+			energy += paMesh->M1[idx] * Heff_value;
 			num_points++;
 		}
 	}
 
 	//convert to energy density and return
-	if (num_points) energy = energy / (num_points * paMesh->M1.h.dim());
+	if (num_points) energy = -MUB_MU0 * energy / (2 * num_points * paMesh->M1.h.dim());
 	else energy = 0.0;
 
 	return energy;
@@ -171,10 +174,10 @@ double Atom_Exchange::GetEnergy_Max(Rect& rectangle)
 			paMesh->update_parameters_mcoarse(idx, paMesh->mu_s, mu_s, paMesh->J, J);
 
 			//effective field with the Heisenberg exchange field
-			DBL3 Heff_value = (J / (MUB_MU0*mu_s*mu_s)) * paMesh->M1.ngbr_sum(idx);
+			DBL3 Heff_value = (J / (MUB_MU0*mu_s)) * paMesh->M1.ngbr_dirsum(idx);
 
 			//update energy E = -mu_s * Bex
-			energy = -MUB_MU0 * paMesh->M1[idx] * Heff_value;
+			energy = -MUB_MU0 * paMesh->M1[idx] * Heff_value / 2;
 
 			emax.reduce_max(fabs(energy));
 		}
@@ -207,9 +210,9 @@ void Atom_Exchange::Compute_Exchange(VEC<double>& displayVEC)
 			paMesh->update_parameters_mcoarse(idx, paMesh->mu_s, mu_s, paMesh->J, J);
 
 			//effective field with the Heisenberg exchange field
-			DBL3 Heff_value = (J / (MUB_MU0*mu_s*mu_s)) * paMesh->M1.ngbr_sum(idx);
+			DBL3 Heff_value = (J / (MUB_MU0*mu_s)) * paMesh->M1.ngbr_dirsum(idx);
 
-			displayVEC[idx] = -MUB_MU0 * paMesh->M1[idx] * Heff_value / paMesh->M1.h.dim();
+			displayVEC[idx] = -MUB_MU0 * paMesh->M1[idx] * Heff_value / (2 * paMesh->M1.h.dim());
 		}
 		else displayVEC[idx] = 0.0;
 	}

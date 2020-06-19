@@ -391,6 +391,9 @@ public:
 	//are all neighbors in the xy plane available?
 	__device__ bool is_plane_interior(int index) const { return (((ngbrFlags[index] & NF_BOTHX) == NF_BOTHX) && ((ngbrFlags[index] & NF_BOTHY) == NF_BOTHY)); }
 
+	//return number of neighbors present (pbcs not taken into consideration)
+	__device__ int ngbr_count(int index) const { return ((ngbrFlags[index] & NF_NPX) == NF_NPX) + ((ngbrFlags[index] & NF_NNX) == NF_NNX) + ((ngbrFlags[index] & NF_NPY) == NF_NPY) + ((ngbrFlags[index] & NF_NNY) == NF_NNY) + ((ngbrFlags[index] & NF_NPZ) == NF_NPZ) + ((ngbrFlags[index] & NF_NNZ) == NF_NNZ); }
+
 	//--------------------------------------------SET CELL FLAGS - EXTERNAL USE : cuVEC_VC_flags.h and cuVEC_VC_flags.cuh
 	
 	//set dirichlet boundary conditions from surface_rect (must be a rectangle intersecting with one of the surfaces of this mesh) and value
@@ -743,15 +746,24 @@ public:
 	//missing neighbors not added, including at boundaries, but taking into account pbc
 	__device__ VType ngbr_sum(int idx) const;
 
+	//same as ngbr_sum but sum normalised values only; for scalar values this is a trivial operation, but for vectors it's not.
+	__device__ VType ngbr_dirsum(int idx) const;
+
 	//calculate 6-point anisotropic neighbor sum at given index as rij x Vj over j points neighboring the point i at this index.
 	//missing neighbors not added, including at boundaries, but taking into account pbc
 	//only used if VType is a cuVAL3
 	__device__ VType anisotropic_ngbr_sum(int idx) const;
 
+	//same as anisotropic_ngbr_sum but sum normalised values only; for scalar values this is a trivial operation, but for vectors it's not.
+	__device__ VType anisotropic_ngbr_dirsum(int idx) const;
+
 	//calculate 6-point anisotropic neighbor sum at given index as (rij x z) x Vj over j points neighboring the point i at this index.
 	//missing neighbors not added, including at boundaries, but taking into account pbc
 	//only used if VType is a cuVAL3
 	__device__ VType zanisotropic_ngbr_sum(int idx) const;
+
+	//same as zanisotropic_ngbr_sum but sum normalised values only; for scalar values this is a trivial operation, but for vectors it's not.
+	__device__ VType zanisotropic_ngbr_dirsum(int idx) const;
 
 	//----LAPLACE / POISSON EQUATION : cuVEC_VC_solve.cuh
 	

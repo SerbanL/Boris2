@@ -1,7 +1,7 @@
 #include "stdafx.h"
 #include "Atom_Heat.h"
 
-#ifdef MODULE_HEAT
+#if defined(MODULE_HEAT) && ATOMISTIC == 1
 
 #include "Atom_Mesh.h"
 #include "Atom_MeshParamsControl.h"

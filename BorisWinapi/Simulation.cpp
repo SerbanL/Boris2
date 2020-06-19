@@ -788,7 +788,7 @@ Simulation::Simulation(int Program_Version) :
 	commands[CMD_ATOMICMOMENT].return_descr = "[tc0,0.5,0,1/tc]Script return values: <i>ub_multiple</i> - atomic moment multiple of Bohr magneton for mesh in focus.";
 
 	commands.insert(CMD_TAU, CommandSpecifier(CMD_TAU), "tau");
-	commands[CMD_TAU].usage = "[tc0,0.5,0,1/tc]USAGE : <b>tau</b> <i>tau_11 tau_22 (tau_12 tau_22) (meshname)</i>";
+	commands[CMD_TAU].usage = "[tc0,0.5,0,1/tc]USAGE : <b>tau</b> <i>tau_11 tau_22 (tau_12 tau_21) (meshname)</i>";
 	commands[CMD_TAU].limits = { { double(0.0),  Any() }, { double(0.0),  Any() }, { double(0.0),  Any() }, { double(0.0),  Any() } };
 	commands[CMD_TAU].descr = "[tc0,0.5,0.5,1/tc]Set ratio of exchange parameters to critical temperature (Neel) (all antiferromagnetic meshes if meshname not given) for antiferromagnetic mesh. tau_11 and tau_22 are the intra-lattice contributions, tau_12 and tau_21 are the inter-lattice contributions.";
 	commands[CMD_TAU].return_descr = "[tc0,0.5,0,1/tc]Script return values: <i>tau_11 tau_22 tau_12 tau_21</i>";
@@ -1382,6 +1382,7 @@ Simulation::Simulation(int Program_Version) :
 	moduleHandles.push_back("heat", MOD_HEAT);
 	moduleHandles.push_back("SOTfield", MOD_SOTFIELD);
 	moduleHandles.push_back("roughness", MOD_ROUGHNESS);
+	moduleHandles.push_back("dipoledipole", MOD_ATOM_DIPOLEDIPOLE);
 	
 	//super-mesh modules
 	moduleHandles.push_back("sdemag", MODS_SDEMAG);

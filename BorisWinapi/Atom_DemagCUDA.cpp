@@ -97,6 +97,7 @@ void Atom_DemagCUDA::UpdateField(void)
 			M()->transfer_in(paDemag->M.linear_size(), paDemag->M.size_transfer_in());
 
 			//convolute and get energy density value
+			ZeroEnergy();
 			Convolute(M, Hdemag, energy, paMeshCUDA->CurrentTimeStepSolved(), true);
 
 			Hdemag_calculated = true;

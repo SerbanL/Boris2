@@ -19,7 +19,7 @@
 //I understand CUDA 10 officially supports all VS2017 versions but didn't try it yet (maybe I should!). VS2019 also available but no need to upgrade yet.
 
 //3.
-//Cannot import BorisLib.h in .cu files. I believe this is may be due to CUDA 9.2 nvcc not supporting C++14 standards (only C++11). Tried CUDA 10.2 - same story.
+//Cannot import BorisLib.h in .cu files. I believe this may be due to CUDA 9.2 nvcc not supporting C++14 standards (only C++11). Tried CUDA 10.2 - same story.
 //I got around this by keeping all compilation units in .cu files with C++11 code only, which didn't interfere with program design as I didn't really need any C++14 features there (but very useful in many other compilation units!).
 
 //4.

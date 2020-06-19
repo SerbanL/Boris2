@@ -3,7 +3,7 @@
 
 #if COMPILECUDA == 1
 
-#ifdef MODULE_HEAT
+#if defined(MODULE_HEAT) && ATOMISTIC == 1
 
 #include "Atom_Heat.h"
 #include "Atom_MeshCUDA.h"

@@ -13,24 +13,6 @@ void Mesh::Compute_Exchange(void)
 	else if (IsModuleSet(MOD_IDMEXCHANGE)) dynamic_cast<iDMExchange*>(pMod(MOD_IDMEXCHANGE))->Compute_Exchange(displayVEC_SCA);
 }
 
-//get exchange energy density over entire mesh
-double Mesh::Get_Exchange_EnergyDensity(void)
-{
-	if (IsModuleSet(MOD_EXCHANGE)) return pMod(MOD_EXCHANGE)->GetEnergyDensity();
-	else if (IsModuleSet(MOD_DMEXCHANGE)) return pMod(MOD_DMEXCHANGE)->GetEnergyDensity();
-	else if (IsModuleSet(MOD_IDMEXCHANGE)) return pMod(MOD_IDMEXCHANGE)->GetEnergyDensity();
-	else return 0.0;
-}
-
-//get exchange energy density over specified rectangle only
-double Mesh::Get_Exchange_EnergyDensity(Rect& rectangle)
-{
-	if (IsModuleSet(MOD_EXCHANGE)) return dynamic_cast<Exch_6ngbr_Neu*>(pMod(MOD_EXCHANGE))->GetEnergyDensity(rectangle);
-	else if (IsModuleSet(MOD_DMEXCHANGE)) return dynamic_cast<DMExchange*>(pMod(MOD_DMEXCHANGE))->GetEnergyDensity(rectangle);
-	else if (IsModuleSet(MOD_IDMEXCHANGE)) return dynamic_cast<iDMExchange*>(pMod(MOD_IDMEXCHANGE))->GetEnergyDensity(rectangle);
-	else return 0.0;
-}
-
 //get maximum exchange energy density modulus over specified rectangle
 double Mesh::Get_Max_Exchange_EnergyDensity(Rect& rectangle)
 {

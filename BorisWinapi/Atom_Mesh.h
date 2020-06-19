@@ -305,6 +305,9 @@ public:
 	bool Is_PBC_y(void) { return M1.is_pbc_y(); }
 	bool Is_PBC_z(void) { return M1.is_pbc_z(); }
 
+	//is there a demag-type module set for this mesh? (SDemag not included as this is a SuperMesh module)
+	bool Is_Demag_Enabled(void) { return IsModuleSet(MOD_DEMAG) || IsModuleSet(MOD_ATOM_DIPOLEDIPOLE); }
+
 	//----------------------------------- VALUE GETTERS : Atom_MeshGetData.cpp
 
 	//------Specific to Atom_Mesh
@@ -343,12 +346,6 @@ public:
 	VEC_VC<DBL3>& Get_M1(void);
 
 	//----------------------------------- VALUE GETTERS : Atom_MeshCompute.cpp
-
-	//get exchange energy density over entire mesh
-	double Get_Exchange_EnergyDensity(void);
-
-	//get exchange energy density over specified rectangle only
-	double Get_Exchange_EnergyDensity(Rect& rectangle);
 
 	//get maximum exchange energy density modulus over specified rectangle
 	double Get_Max_Exchange_EnergyDensity(Rect& rectangle);

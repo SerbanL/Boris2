@@ -5,6 +5,8 @@
 #include "Atom_DiffEqCubic.h"
 
 #include "Atom_Demag.h"
+#include "Atom_Demag_N.h"
+#include "Atom_DipoleDipole.h"
 #include "Atom_Zeeman.h"
 #include "Atom_Exchange.h"
 #include "Atom_DMExchange.h"
@@ -40,7 +42,7 @@ class Atom_Mesh_Cubic :
 	//Members in this derived class
 	bool, bool,
 	//Material Parameters
-	MatP<double, double>, MatP<double, double>,
+	MatP<double, double>, MatP<double, double>, MatP<DBL2, double>,
 	MatP<double, double>, MatP<double, double>,
 	MatP<double, double>, MatP<DBL3, DBL3>, MatP<DBL3, DBL3>,
 	MatP<double, double>, MatP<double, double>,
@@ -50,7 +52,7 @@ class Atom_Mesh_Cubic :
 	MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>
 	>,
 	//Module Implementations
-	tuple<Atom_Demag, Atom_Zeeman, Atom_Exchange, Atom_DMExchange, Atom_iDMExchange, Atom_MOptical, Atom_Anisotropy_Uniaxial, Atom_Anisotropy_Cubic, Atom_Heat> >
+	tuple<Atom_Demag_N, Atom_Demag, Atom_DipoleDipole, Atom_Zeeman, Atom_Exchange, Atom_DMExchange, Atom_iDMExchange, Atom_MOptical, Atom_Anisotropy_Uniaxial, Atom_Anisotropy_Cubic, Atom_Heat> >
 {
 #if COMPILECUDA == 1
 	friend Atom_Mesh_CubicCUDA;

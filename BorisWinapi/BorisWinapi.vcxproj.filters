@@ -202,12 +202,6 @@
     <Filter Include="09. FUNCS">
       <UniqueIdentifier>{7b22956b-af24-4fc0-a133-b3405ef9b4a5}</UniqueIdentifier>
     </Filter>
-    <Filter Include="09. FUNCS\FUNCS - CPU">
-      <UniqueIdentifier>{f344a117-59ba-46c2-abc4-53a42a9dcf9f}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="09. FUNCS\FUNCS - CUDA">
-      <UniqueIdentifier>{6b5f9432-fdc3-4d13-be73-e28d706f40e5}</UniqueIdentifier>
-    </Filter>
     <Filter Include="10. TRANSPORT SOLVER\TRANSPORT SOLVER - CPU">
       <UniqueIdentifier>{796a1bcc-c359-4ec8-ab9d-e25000a3cdbe}</UniqueIdentifier>
     </Filter>
@@ -308,6 +302,42 @@
     </Filter>
     <Filter Include="11. HEAT SOLVER\__ATOMISTIC\ATOM HEAT SOLVER - CUDA">
       <UniqueIdentifier>{cc80f438-d22b-4528-9cac-b20198648c69}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="09. FUNCS\DEMAG FUNCS - CPU">
+      <UniqueIdentifier>{624d9760-3e75-4819-b2d6-10b69d2ddc8d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="09. FUNCS\OERSTED FUNCS - CPU">
+      <UniqueIdentifier>{8676b4b1-993b-41b9-bee0-e2af9cc6b6ef}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="09. FUNCS\SINGLE DIPOLE FUNCS - CPU">
+      <UniqueIdentifier>{f344a117-59ba-46c2-abc4-53a42a9dcf9f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="09. FUNCS\SINGLE DIPOLE FUNCS - CUDA">
+      <UniqueIdentifier>{6b5f9432-fdc3-4d13-be73-e28d706f40e5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="09. FUNCS\DIPOLE DIPOLE FUNCS - CPU">
+      <UniqueIdentifier>{0608f42c-70bb-4a93-9771-8bcb7f8498b8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="08. CONVOLUTION\DEMAG KERNEL - CPU">
+      <UniqueIdentifier>{a3188dbd-e19c-48ff-ae89-6e09b073f7ae}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="08. CONVOLUTION\DEMAG KERNEL - CUDA">
+      <UniqueIdentifier>{23df0ae5-d226-4776-bef0-a1bb41543cd2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="08. CONVOLUTION\ROUGHNESS KERNEL - CPU">
+      <UniqueIdentifier>{3b788d35-8443-4d82-8e8e-7948f0d8c7a1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="08. CONVOLUTION\OERSTED KERNEL - CPU">
+      <UniqueIdentifier>{81d5d615-902e-4d79-b0a1-7d4c7599b8a8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="08. CONVOLUTION\OERSTED KERNEL - CUDA">
+      <UniqueIdentifier>{75236ac0-1700-49cf-af8f-f4dcb7c78149}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="08. CONVOLUTION\DIPOLE DIPOLE KERNEL - CPU">
+      <UniqueIdentifier>{265e41d7-64c7-447f-b1d9-c0296b42a83f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="08. CONVOLUTION\DIPOLE DIPOLE KERNEL - CUDA">
+      <UniqueIdentifier>{79866724-dc81-4d23-9e85-9a9d257e697b}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -422,9 +452,6 @@
     <ClInclude Include="DemagCUDA.h">
       <Filter>03. MODULES\__MICROMAGNETIC\MM MODULES - CUDA</Filter>
     </ClInclude>
-    <ClInclude Include="DemagKernelCUDA.h">
-      <Filter>08. CONVOLUTION\CONVOLUTION - CUDA</Filter>
-    </ClInclude>
     <ClInclude Include="ConvolutionCUDA.h">
       <Filter>08. CONVOLUTION\CONVOLUTION - CUDA</Filter>
     </ClInclude>
@@ -444,7 +471,7 @@
       <Filter>02. MESHES\__MICROMAGNETIC\CUDA\MM MESHES INTERFACE - CUDA</Filter>
     </ClInclude>
     <ClInclude Include="DipoleTFuncCUDA.h">
-      <Filter>09. FUNCS\FUNCS - CUDA</Filter>
+      <Filter>09. FUNCS\SINGLE DIPOLE FUNCS - CUDA</Filter>
     </ClInclude>
     <ClInclude Include="MeshDisplayCUDA.h">
       <Filter>02. MESHES\__MICROMAGNETIC\CUDA\MM MESHES INTERFACE - CUDA</Filter>
@@ -460,9 +487,6 @@
     </ClInclude>
     <ClInclude Include="OerstedCUDA.h">
       <Filter>05. SUPERMESH MODULES\MODULES - SUPERMESH - CUDA</Filter>
-    </ClInclude>
-    <ClInclude Include="OerstedKernelCUDA.h">
-      <Filter>08. CONVOLUTION\CONVOLUTION - CUDA</Filter>
     </ClInclude>
     <ClInclude Include="SurfExchangeCUDA.h">
       <Filter>03. MODULES\__MICROMAGNETIC\MM MODULES - CUDA</Filter>
@@ -520,12 +544,6 @@
     </ClInclude>
     <ClInclude Include="AnisotropyCubiCUDA.h">
       <Filter>03. MODULES\__MICROMAGNETIC\MM MODULES - CUDA</Filter>
-    </ClInclude>
-    <ClInclude Include="DemagKernelCollectionCUDA.h">
-      <Filter>08. CONVOLUTION\CONVOLUTION - CUDA</Filter>
-    </ClInclude>
-    <ClInclude Include="DemagKernelCollectionCUDA_KerType.h">
-      <Filter>08. CONVOLUTION\CONVOLUTION - CUDA</Filter>
     </ClInclude>
     <ClInclude Include="ColorDefs.h">
       <Filter>15. GRAPHICS\INTERFACE</Filter>
@@ -827,29 +845,8 @@
     <ClInclude Include="ConvolutionData.h">
       <Filter>08. CONVOLUTION\CONVOLUTION - CPU</Filter>
     </ClInclude>
-    <ClInclude Include="DemagKernel.h">
-      <Filter>08. CONVOLUTION\CONVOLUTION - CPU</Filter>
-    </ClInclude>
-    <ClInclude Include="DemagKernelCollection.h">
-      <Filter>08. CONVOLUTION\CONVOLUTION - CPU</Filter>
-    </ClInclude>
-    <ClInclude Include="OerstedKernel.h">
-      <Filter>08. CONVOLUTION\CONVOLUTION - CPU</Filter>
-    </ClInclude>
-    <ClInclude Include="RoughnessKernel.h">
-      <Filter>08. CONVOLUTION\CONVOLUTION - CPU</Filter>
-    </ClInclude>
-    <ClInclude Include="DemagTFunc.h">
-      <Filter>09. FUNCS\FUNCS - CPU</Filter>
-    </ClInclude>
-    <ClInclude Include="DemagTFunc_Asympt.h">
-      <Filter>09. FUNCS\FUNCS - CPU</Filter>
-    </ClInclude>
     <ClInclude Include="DipoleTFunc.h">
-      <Filter>09. FUNCS\FUNCS - CPU</Filter>
-    </ClInclude>
-    <ClInclude Include="OerstedTFunc.h">
-      <Filter>09. FUNCS\FUNCS - CPU</Filter>
+      <Filter>09. FUNCS\SINGLE DIPOLE FUNCS - CPU</Filter>
     </ClInclude>
     <ClInclude Include="STransport.h">
       <Filter>10. TRANSPORT SOLVER\TRANSPORT SOLVER - CPU</Filter>
@@ -922,6 +919,63 @@
     </ClInclude>
     <ClInclude Include="Atom_AnisotropyCubiCUDA.h">
       <Filter>03. MODULES\__ATOMISTIC\ATOM MODULES - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="Atom_DipoleDipole.h">
+      <Filter>03. MODULES\__ATOMISTIC\ATOM MODULES - CPU</Filter>
+    </ClInclude>
+    <ClInclude Include="Atom_Demag_N.h">
+      <Filter>03. MODULES\__ATOMISTIC\ATOM MODULES - CPU</Filter>
+    </ClInclude>
+    <ClInclude Include="Atom_Demag_NCUDA.h">
+      <Filter>03. MODULES\__ATOMISTIC\ATOM MODULES - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="Atom_DipoleDipoleCUDA.h">
+      <Filter>03. MODULES\__ATOMISTIC\ATOM MODULES - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="DemagTFunc.h">
+      <Filter>09. FUNCS\DEMAG FUNCS - CPU</Filter>
+    </ClInclude>
+    <ClInclude Include="DemagTFunc_Asympt.h">
+      <Filter>09. FUNCS\DEMAG FUNCS - CPU</Filter>
+    </ClInclude>
+    <ClInclude Include="OerstedTFunc.h">
+      <Filter>09. FUNCS\OERSTED FUNCS - CPU</Filter>
+    </ClInclude>
+    <ClInclude Include="DemagKernel.h">
+      <Filter>08. CONVOLUTION\DEMAG KERNEL - CPU</Filter>
+    </ClInclude>
+    <ClInclude Include="DemagKernelCollection.h">
+      <Filter>08. CONVOLUTION\DEMAG KERNEL - CPU</Filter>
+    </ClInclude>
+    <ClInclude Include="OerstedKernel.h">
+      <Filter>08. CONVOLUTION\OERSTED KERNEL - CPU</Filter>
+    </ClInclude>
+    <ClInclude Include="RoughnessKernel.h">
+      <Filter>08. CONVOLUTION\ROUGHNESS KERNEL - CPU</Filter>
+    </ClInclude>
+    <ClInclude Include="DemagKernelCollectionCUDA.h">
+      <Filter>08. CONVOLUTION\DEMAG KERNEL - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="DemagKernelCollectionCUDA_KerType.h">
+      <Filter>08. CONVOLUTION\DEMAG KERNEL - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="DemagKernelCUDA.h">
+      <Filter>08. CONVOLUTION\DEMAG KERNEL - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="OerstedKernelCUDA.h">
+      <Filter>08. CONVOLUTION\OERSTED KERNEL - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="DipoleDipoleKernel.h">
+      <Filter>08. CONVOLUTION\DIPOLE DIPOLE KERNEL - CPU</Filter>
+    </ClInclude>
+    <ClInclude Include="DipoleDipoleTFunc.h">
+      <Filter>09. FUNCS\DIPOLE DIPOLE FUNCS - CPU</Filter>
+    </ClInclude>
+    <ClInclude Include="DemagTFunc_Defs.h">
+      <Filter>09. FUNCS\DEMAG FUNCS - CPU</Filter>
+    </ClInclude>
+    <ClInclude Include="DipoleDipoleKernelCUDA.h">
+      <Filter>08. CONVOLUTION\DIPOLE DIPOLE KERNEL - CUDA</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -1018,9 +1072,6 @@
     <ClCompile Include="ConvolutionDataCUDA.cpp">
       <Filter>08. CONVOLUTION\CONVOLUTION - CUDA</Filter>
     </ClCompile>
-    <ClCompile Include="DemagKernelCUDA.cpp">
-      <Filter>08. CONVOLUTION\CONVOLUTION - CUDA</Filter>
-    </ClCompile>
     <ClCompile Include="SuperMeshCUDA.cpp">
       <Filter>04. SUPERMESH\SUPERMESH - CUDA</Filter>
     </ClCompile>
@@ -1047,9 +1098,6 @@
     </ClCompile>
     <ClCompile Include="OerstedCUDA.cpp">
       <Filter>05. SUPERMESH MODULES\MODULES - SUPERMESH - CUDA</Filter>
-    </ClCompile>
-    <ClCompile Include="OerstedKernelCUDA.cpp">
-      <Filter>08. CONVOLUTION\CONVOLUTION - CUDA</Filter>
     </ClCompile>
     <ClCompile Include="SurfExchangeCUDA.cpp">
       <Filter>03. MODULES\__MICROMAGNETIC\MM MODULES - CUDA</Filter>
@@ -1101,12 +1149,6 @@
     </ClCompile>
     <ClCompile Include="AnisotropyCubiCUDA.cpp">
       <Filter>03. MODULES\__MICROMAGNETIC\MM MODULES - CUDA</Filter>
-    </ClCompile>
-    <ClCompile Include="DemagKernelCollectionCUDA.cpp">
-      <Filter>08. CONVOLUTION\CONVOLUTION - CUDA</Filter>
-    </ClCompile>
-    <ClCompile Include="DemagKernelCollectionCUDA_Calc.cpp">
-      <Filter>08. CONVOLUTION\CONVOLUTION - CUDA</Filter>
     </ClCompile>
     <ClCompile Include="BorisConsole.cpp">
       <Filter>18. MAIN</Filter>
@@ -1651,59 +1693,8 @@
     <ClCompile Include="ConvolutionData.cpp">
       <Filter>08. CONVOLUTION\CONVOLUTION - CPU</Filter>
     </ClCompile>
-    <ClCompile Include="DemagKernel.cpp">
-      <Filter>08. CONVOLUTION\CONVOLUTION - CPU</Filter>
-    </ClCompile>
-    <ClCompile Include="DemagKernelCollection.cpp">
-      <Filter>08. CONVOLUTION\CONVOLUTION - CPU</Filter>
-    </ClCompile>
-    <ClCompile Include="DemagKernelCollection_Calc.cpp">
-      <Filter>08. CONVOLUTION\CONVOLUTION - CPU</Filter>
-    </ClCompile>
-    <ClCompile Include="DemagKernelCollection_Mult.cpp">
-      <Filter>08. CONVOLUTION\CONVOLUTION - CPU</Filter>
-    </ClCompile>
-    <ClCompile Include="OerstedKernel.cpp">
-      <Filter>08. CONVOLUTION\CONVOLUTION - CPU</Filter>
-    </ClCompile>
-    <ClCompile Include="RoughnessKernel.cpp">
-      <Filter>08. CONVOLUTION\CONVOLUTION - CPU</Filter>
-    </ClCompile>
-    <ClCompile Include="DemagTFunc.cpp">
-      <Filter>09. FUNCS\FUNCS - CPU</Filter>
-    </ClCompile>
-    <ClCompile Include="DemagTFunc_Asympt.cpp">
-      <Filter>09. FUNCS\FUNCS - CPU</Filter>
-    </ClCompile>
-    <ClCompile Include="DemagTFunc_fg.cpp">
-      <Filter>09. FUNCS\FUNCS - CPU</Filter>
-    </ClCompile>
-    <ClCompile Include="DemagTFunc_Irregular.cpp">
-      <Filter>09. FUNCS\FUNCS - CPU</Filter>
-    </ClCompile>
-    <ClCompile Include="DemagTFunc_Irregular_PBC.cpp">
-      <Filter>09. FUNCS\FUNCS - CPU</Filter>
-    </ClCompile>
-    <ClCompile Include="DemagTFunc_L.cpp">
-      <Filter>09. FUNCS\FUNCS - CPU</Filter>
-    </ClCompile>
-    <ClCompile Include="DemagTFunc_PBC.cpp">
-      <Filter>09. FUNCS\FUNCS - CPU</Filter>
-    </ClCompile>
-    <ClCompile Include="DemagTFunc_Shifted.cpp">
-      <Filter>09. FUNCS\FUNCS - CPU</Filter>
-    </ClCompile>
-    <ClCompile Include="DemagTFunc_Shifted_PBC.cpp">
-      <Filter>09. FUNCS\FUNCS - CPU</Filter>
-    </ClCompile>
-    <ClCompile Include="DemagTFunc_Test.cpp">
-      <Filter>09. FUNCS\FUNCS - CPU</Filter>
-    </ClCompile>
     <ClCompile Include="DipoleTFunc.cpp">
-      <Filter>09. FUNCS\FUNCS - CPU</Filter>
-    </ClCompile>
-    <ClCompile Include="OerstedTFunc.cpp">
-      <Filter>09. FUNCS\FUNCS - CPU</Filter>
+      <Filter>09. FUNCS\SINGLE DIPOLE FUNCS - CPU</Filter>
     </ClCompile>
     <ClCompile Include="STransport.cpp">
       <Filter>10. TRANSPORT SOLVER\TRANSPORT SOLVER - CPU</Filter>
@@ -1804,6 +1795,96 @@
     <ClCompile Include="Atom_AnisotropyCubiCUDA.cpp">
       <Filter>03. MODULES\__ATOMISTIC\ATOM MODULES - CUDA</Filter>
     </ClCompile>
+    <ClCompile Include="Atom_DipoleDipole.cpp">
+      <Filter>03. MODULES\__ATOMISTIC\ATOM MODULES - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="Atom_Demag_N.cpp">
+      <Filter>03. MODULES\__ATOMISTIC\ATOM MODULES - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="Atom_Demag_NCUDA.cpp">
+      <Filter>03. MODULES\__ATOMISTIC\ATOM MODULES - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="Atom_DipoleDipoleCUDA.cpp">
+      <Filter>03. MODULES\__ATOMISTIC\ATOM MODULES - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="DemagTFunc.cpp">
+      <Filter>09. FUNCS\DEMAG FUNCS - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="DemagTFunc_Asympt.cpp">
+      <Filter>09. FUNCS\DEMAG FUNCS - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="DemagTFunc_fg.cpp">
+      <Filter>09. FUNCS\DEMAG FUNCS - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="DemagTFunc_Irregular.cpp">
+      <Filter>09. FUNCS\DEMAG FUNCS - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="DemagTFunc_Irregular_PBC.cpp">
+      <Filter>09. FUNCS\DEMAG FUNCS - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="DemagTFunc_L.cpp">
+      <Filter>09. FUNCS\DEMAG FUNCS - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="DemagTFunc_PBC.cpp">
+      <Filter>09. FUNCS\DEMAG FUNCS - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="DemagTFunc_Shifted.cpp">
+      <Filter>09. FUNCS\DEMAG FUNCS - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="DemagTFunc_Shifted_PBC.cpp">
+      <Filter>09. FUNCS\DEMAG FUNCS - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="DemagTFunc_Test.cpp">
+      <Filter>09. FUNCS\DEMAG FUNCS - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="OerstedTFunc.cpp">
+      <Filter>09. FUNCS\OERSTED FUNCS - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="DemagKernel.cpp">
+      <Filter>08. CONVOLUTION\DEMAG KERNEL - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="DemagKernelCollection.cpp">
+      <Filter>08. CONVOLUTION\DEMAG KERNEL - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="DemagKernelCollection_Calc.cpp">
+      <Filter>08. CONVOLUTION\DEMAG KERNEL - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="DemagKernelCollection_Mult.cpp">
+      <Filter>08. CONVOLUTION\DEMAG KERNEL - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="OerstedKernel.cpp">
+      <Filter>08. CONVOLUTION\OERSTED KERNEL - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="RoughnessKernel.cpp">
+      <Filter>08. CONVOLUTION\ROUGHNESS KERNEL - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="DemagKernelCollectionCUDA.cpp">
+      <Filter>08. CONVOLUTION\DEMAG KERNEL - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="DemagKernelCollectionCUDA_Calc.cpp">
+      <Filter>08. CONVOLUTION\DEMAG KERNEL - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="DemagKernelCUDA.cpp">
+      <Filter>08. CONVOLUTION\DEMAG KERNEL - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="OerstedKernelCUDA.cpp">
+      <Filter>08. CONVOLUTION\OERSTED KERNEL - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="DipoleDipoleKernel.cpp">
+      <Filter>08. CONVOLUTION\DIPOLE DIPOLE KERNEL - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="DipoleDipoleTFunc.cpp">
+      <Filter>09. FUNCS\DIPOLE DIPOLE FUNCS - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="DipoleDipoleTFunc_PBC.cpp">
+      <Filter>09. FUNCS\DIPOLE DIPOLE FUNCS - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="DipoleDipoleTFunc_Self.cpp">
+      <Filter>09. FUNCS\DIPOLE DIPOLE FUNCS - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="DipoleDipoleKernelCUDA.cpp">
+      <Filter>08. CONVOLUTION\DIPOLE DIPOLE KERNEL - CUDA</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="BorisWinapi.rc">
@@ -1845,17 +1926,11 @@
     <CudaCompile Include="Demag_NCUDA.cu">
       <Filter>03. MODULES\__MICROMAGNETIC\MM MODULES - CUDA</Filter>
     </CudaCompile>
-    <CudaCompile Include="DemagKernelCUDA.cu">
-      <Filter>08. CONVOLUTION\CONVOLUTION - CUDA</Filter>
-    </CudaCompile>
     <CudaCompile Include="ConvolutionDataCUDA.cu">
       <Filter>08. CONVOLUTION\CONVOLUTION - CUDA</Filter>
     </CudaCompile>
     <CudaCompile Include="StrayFieldCUDA.cu">
       <Filter>05. SUPERMESH MODULES\MODULES - SUPERMESH - CUDA</Filter>
-    </CudaCompile>
-    <CudaCompile Include="OerstedKernelCUDA.cu">
-      <Filter>08. CONVOLUTION\CONVOLUTION - CUDA</Filter>
     </CudaCompile>
     <CudaCompile Include="SurfExchangeCUDA.cu">
       <Filter>03. MODULES\__MICROMAGNETIC\MM MODULES - CUDA</Filter>
@@ -1886,9 +1961,6 @@
     </CudaCompile>
     <CudaCompile Include="STransportCUDA.cu">
       <Filter>10. TRANSPORT SOLVER\TRANSPORT SOLVER - CUDA</Filter>
-    </CudaCompile>
-    <CudaCompile Include="DemagKernelCollectionCUDA_Mult.cu">
-      <Filter>08. CONVOLUTION\CONVOLUTION - CUDA</Filter>
     </CudaCompile>
     <CudaCompile Include="DMExchangeCUDA.cu">
       <Filter>07. EXCHANGE\__MICROMAGNETIC\EXCHANGE - CUDA</Filter>
@@ -2137,6 +2209,24 @@
       <Filter>03. MODULES\__ATOMISTIC\ATOM MODULES - CUDA</Filter>
     </CudaCompile>
     <CudaCompile Include="Atom_AnisotropyCubiCUDA.cu">
+      <Filter>03. MODULES\__ATOMISTIC\ATOM MODULES - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="Atom_Demag_NCUDA.cu">
+      <Filter>03. MODULES\__ATOMISTIC\ATOM MODULES - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="DemagKernelCollectionCUDA_Mult.cu">
+      <Filter>08. CONVOLUTION\DEMAG KERNEL - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="DemagKernelCUDA.cu">
+      <Filter>08. CONVOLUTION\DEMAG KERNEL - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="OerstedKernelCUDA.cu">
+      <Filter>08. CONVOLUTION\OERSTED KERNEL - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="DipoleDipoleKernelCUDA.cu">
+      <Filter>08. CONVOLUTION\DIPOLE DIPOLE KERNEL - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="Atom_DipoleDipoleCUDA.cu">
       <Filter>03. MODULES\__ATOMISTIC\ATOM MODULES - CUDA</Filter>
     </CudaCompile>
   </ItemGroup>

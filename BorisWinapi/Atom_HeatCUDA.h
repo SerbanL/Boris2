@@ -3,7 +3,7 @@
 #include "Boris_Enums_Defs.h"
 #if COMPILECUDA == 1
 
-#ifdef MODULE_HEAT
+#if defined(MODULE_HEAT) && ATOMISTIC == 1
 
 #include "BorisCUDALib.h"
 #include "ModulesCUDA.h"

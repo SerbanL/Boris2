@@ -33,14 +33,14 @@ __global__ void Atom_DMExchangeCUDA_Cubic_UpdateField(ManagedAtom_MeshCUDA& cuaM
 			cuaMesh.update_parameters_mcoarse(idx, *cuaMesh.pmu_s, mu_s, *cuaMesh.pJ, J, *cuaMesh.pD, D);
 
 			//update effective field with the Heisenberg and DMI exchange field
-			Hexch = (J * M1.ngbr_sum(idx) + D * M1.anisotropic_ngbr_sum(idx)) / (MUB_MU0*mu_s*mu_s);
+			Hexch = (J * M1.ngbr_dirsum(idx) + D * M1.anisotropic_ngbr_dirsum(idx)) / (MUB_MU0*mu_s);
 
 			if (do_reduction) {
 
 				//energy E = -mu_s * Bex
 				//update energy density
-				int non_empty_volume = M1.get_nonempty_cells() * M1.h.dim();
-				if (non_empty_volume) energy_ = -(cuBReal)MUB_MU0 * M1[idx] * Hexch / non_empty_volume;
+				cuBReal non_empty_volume = M1.get_nonempty_cells() * M1.h.dim();
+				if (non_empty_volume) energy_ = -(cuBReal)MUB_MU0 * M1[idx] * Hexch / (2*non_empty_volume);
 			}
 		}
 
@@ -95,10 +95,10 @@ __global__ void Atom_DMExchangeCUDA_Cubic_GetEnergy(ManagedAtom_MeshCUDA& cuaMes
 			cuaMesh.update_parameters_mcoarse(idx, *cuaMesh.pmu_s, mu_s, *cuaMesh.pJ, J, *cuaMesh.pD, D);
 
 			//update effective field with the Heisenberg and DMI exchange field
-			Hexch = (J * M1.ngbr_sum(idx) + D * M1.anisotropic_ngbr_sum(idx)) / (MUB_MU0*mu_s*mu_s);
+			Hexch = (J * M1.ngbr_dirsum(idx) + D * M1.anisotropic_ngbr_dirsum(idx)) / (MUB_MU0*mu_s);
 
 			//energy at this point
-			energy_ = -(cuBReal)MUB_MU0 * M1[idx] * Hexch;
+			energy_ = -(cuBReal)MUB_MU0 * M1[idx] * Hexch / 2;
 			include_in_reduction = true;
 		}
 	}
@@ -128,10 +128,10 @@ __global__ void Atom_DMExchangeCUDA_Cubic_GetEnergy_Max(ManagedAtom_MeshCUDA& cu
 			cuaMesh.update_parameters_mcoarse(idx, *cuaMesh.pmu_s, mu_s, *cuaMesh.pJ, J, *cuaMesh.pD, D);
 
 			//update effective field with the Heisenberg and DMI exchange field
-			Hexch = (J * M1.ngbr_sum(idx) + D * M1.anisotropic_ngbr_sum(idx)) / (MUB_MU0*mu_s*mu_s);
+			Hexch = (J * M1.ngbr_dirsum(idx) + D * M1.anisotropic_ngbr_dirsum(idx)) / (MUB_MU0*mu_s);
 
 			//energy modulus at this point
-			energy_ = fabs((cuBReal)MUB_MU0 * M1[idx] * Hexch);
+			energy_ = fabs((cuBReal)MUB_MU0 * M1[idx] * Hexch / 2);
 			include_in_reduction = true;
 		}
 	}
@@ -192,11 +192,11 @@ __global__ void Atom_DMExchangeCUDA_Cubic_Compute_Exchange(ManagedAtom_MeshCUDA&
 			cuaMesh.update_parameters_mcoarse(idx, *cuaMesh.pmu_s, mu_s, *cuaMesh.pJ, J, *cuaMesh.pD, D);
 
 			//update effective field with the Heisenberg and DMI exchange field
-			Hexch = (J * M1.ngbr_sum(idx) + D * M1.anisotropic_ngbr_sum(idx)) / (MUB_MU0*mu_s*mu_s);
+			Hexch = (J * M1.ngbr_dirsum(idx) + D * M1.anisotropic_ngbr_dirsum(idx)) / (MUB_MU0*mu_s);
 		}
 
 		//energy density at this point
-		exchange_displayVEC[idx] = -(cuBReal)MUB_MU0 * M1[idx] * Hexch / M1.h.dim();
+		exchange_displayVEC[idx] = -(cuBReal)MUB_MU0 * M1[idx] * Hexch / (2*M1.h.dim());
 	}
 }
 

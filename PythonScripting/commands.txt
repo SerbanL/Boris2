@@ -1,3 +1,9 @@
+
+
+
+
+
+
 2dmulticonvolution
 
 USAGE : 2dmulticonvolution status
@@ -10,6 +16,12 @@ USAGE : addafmesh name rectangle
 
 Add antiferromagnetic mesh with given name and rectangle (m). The rectangle can be specified as: sx sy sz ex ey ez for the start and end points in Cartesian coordinates, or as: ex ey ez with the start point as the origin.
 
+addameshcubic
+
+USAGE : addameshcubic name rectangle
+
+Add an atomistic mesh with simple cubic strructure, with given name and rectangle (m). The rectangle can be specified as: sx sy sz ex ey ez for the start and end points in Cartesian coordinates, or as: ex ey ez with the start point as the origin.
+
 addconductor
 
 USAGE : addconductor name rectangle
@@ -21,6 +33,12 @@ adddata
 USAGE : adddata dataname (meshname, (rectangle))
 
 Add dataname to list of output data. If applicable specify meshname and rectangle (m) in mesh. If not specified and required, active mesh is used with entire mesh rectangle.
+
+adddiamagnet
+
+USAGE : adddiamagnet name rectangle
+
+Add a diamagnetic mesh with given name and rectangle (m). The rectangle can be specified as: sx sy sz ex ey ez for the start and end points in Cartesian coordinates, or as: ex ey ez with the start point as the origin.
 
 adddipole
 
@@ -67,9 +85,9 @@ Add module with given handle to named mesh.
 
 addpinneddata
 
-USAGE : addpinneddata dataname (meshname)
+USAGE : addpinneddata dataname (meshname, (rectangle))
 
-Add new entry in data box (at the end) with given dataname and meshname if applicable.
+Add new entry in data box (at the end) with given dataname and meshname if applicable. A rectangle may also be specified if applicable, however this will not be shown in the data box.
 
 addrect
 
@@ -100,8 +118,15 @@ atomicmoment
 
 USAGE : atomicmoment ub_multiple (meshname)
 
-Set atomic moment as a multiple of Bohr magnetons (all ferromagnetic meshes if meshname not given) for ferromagnetic mesh. This affects the temperature dependence of 'me' (see curietemperature command). A non-zero value will result in me(T) being dependent on the applied field.
+Set atomic moment as a multiple of Bohr magnetons (all applicable meshes if meshname not given) for given mesh. This affects the temperature dependence of 'me' (see curietemperature command). A non-zero value will result in me(T) being dependent on the applied field.
 Script return values: ub_multiple - atomic moment multiple of Bohr magneton for mesh in focus.
+
+averagemeshrect
+
+USAGE : averagemeshrect (rectangle)
+
+Calculate the average value depending on currently displayed quantities. The rectangle is specified in relative coordinates to the currently focused mesh; if not specified average the entire focused mesh.
+Script return values: value
 
 benchtime
 
@@ -225,7 +250,7 @@ curietemperature
 
 USAGE : curietemperature curie_temperature (meshname)
 
-Set Curie temperature (all ferromagnetic meshes if meshname not given) for ferromagnetic mesh. This will set default temperature dependencies as: Ms = Ms0*me, A = A0*me^2, D = D0*me^2, K = K0*me^3 (K1 and K2), damping = damping0*(1-T/3Tc) T < Tc, damping = damping0*2T/3Tc T >= Tc, susrel = dme/d(mu0Hext). Setting the Curie temperature to zero will disable temperature dependence for these parameters.
+Set Curie temperature (all ferromagnetic meshes if meshname not given) for ferromagnetic mesh. This will set default temperature dependencies as: Ms = Ms0*me, A = Ah*me^2, D = D0*me^2, K = K0*me^3 (K1 and K2), damping = damping0*(1-T/3Tc) T < Tc, damping = damping0*2T/3Tc T >= Tc, susrel = dme/d(mu0Hext). Setting the Curie temperature to zero will disable temperature dependence for these parameters.
 Script return values: curie_temperature - Curie temperature for mesh in focus.
 
 data
@@ -307,6 +332,37 @@ USAGE : display name (meshname)
 
 Change quantity to display for given mesh (active mesh if name not given).
 
+displaybackground
+
+USAGE : displaybackground name (meshname)
+
+Change background quantity to display for given mesh (active mesh if name not given).
+
+displaythresholds
+
+USAGE : displaythresholds minimum maximum
+
+Set thresholds for foreground mesh display : magnitude values outside this range are not rendered. If both set to 0 then thresholds are ignored.
+
+displaythresholdtrigger
+
+USAGE : displaythresholdtrigger trigtype
+
+For vector quantities, set component to trigger thresholds on. trigtype = 1 (x component), trigtype = 2 (y component), trigtype = 3 (z component), trigtype = 5 (magnitude only)
+
+displaytransparency
+
+USAGE : displaytransparency foreground background
+
+Set alpha transparency for display. Values range from 0 (fully transparent) to 1 (opaque). This is applicable in dual display mode when we have a background and foreground for the same mesh.
+
+dmcellsize
+
+USAGE : dmcellsize value
+
+Change demagnetizing field macrocell size of mesh in focus, for atomistic meshes (m). The cellsize can be specified as: hx hy hz, or as: hxyz
+Script return values: cellsize - return demagnetizing field macrocell size.
+
 dp_add
 
 USAGE : dp_add dp_source value (dp_dest)
@@ -325,11 +381,11 @@ USAGE : dp_append dp_original dp_new
 
 Append data from dp_new to the end of dp_original.
 
-dp_averagemeshrect
+dp_calcexchange
 
-USAGE : dp_averagemeshrect (rectangle)
+USAGE : dp_calcexchange
 
-Calculate the average value for the quantity displayed in the focused mesh. If specified the rectangle is relative to the focused mesh, otherwise average the entire focused mesh.
+Calculate spatial dependence of exchange energy density for the focused mesh (must be magnetic and have an exchange module enabled). Output available in Cust_S.
 
 dp_calcsot
 
@@ -337,6 +393,12 @@ USAGE : dp_calcsot hm_mesh fm_mesh
 
 . For the given heavy metal and ferromagnetic meshes calculate the expected effective spin Hall angle and field-like torque coefficient according to analytical equations (see manual).
 Script return values: SHAeff, flST.
+
+dp_calctopochargedensity
+
+USAGE : dp_calctopochargedensity
+
+Calculate topological charge density spatial dependence for the focused mesh (must be magnetic). Output available in Cust_S.
 
 dp_cartesiantopolar
 
@@ -368,6 +430,25 @@ dp_completehysteresis
 USAGE : dp_completehysteresis dp_index_x dp_index_y
 
 For a hysteresis loop with only one branch continue it by constructing the other direction branch (invert both x and y data and add it in continuation) - use only with hysteresis loops which are expected to be symmetric.
+
+dp_countskyrmions
+
+USAGE : dp_countskyrmions (x y radius)
+
+Calculate the number of skyrmions for focused mesh (must be magnetic), optionally in the given circle with radius and centered at x y (relative values). Use Qmag = Integral(|m.(dm/dx x dm/dy)| dxdy) / 4PI.
+Script return values: Q - the calculated topological charge.
+
+dp_crossingsfrequency
+
+USAGE : dp_crossingsfrequency dp_in_x dp_in_y dp_level dp_freq_up dp_freq_dn (steps)
+
+From input x-y data build a histogram of average frequency the x-y data crosses a given line (up and down, separated). The line varies between minimum and maximum of y data in given number of steps (100 by default). Output the line values in dp_level with corresponding crossings frequencies in dp_freq_up and dp_freq_dn.
+
+dp_crossingshistogram
+
+USAGE : dp_crossingshistogram dp_in_x dp_in_y dp_level dp_counts (steps)
+
+From input x-y data build a histogram of number of times x-y data crosses a given line (up or down). The line varies between minimum and maximum of y data in given number of steps (100 by default). Output the line values in dp_level with corresponding number of crossings in dp_counts.
 
 dp_div
 
@@ -415,7 +496,7 @@ dp_fitadiabatic
 
 USAGE : dp_fitadiabatic (abs_err Rsq T_ratio (stencil))
 
-Fit the computed self-consistent spin torque (see below) using Zhang-Li STT with fitting parameters P and beta (non-adiabaticity) using a given square in-plane stencil (default size 3) in order to extract the spatial variation of P. Cut-off values for absolute fitting error (default 0.1), Rsq measure (default 0.9), and normalized torque magnitude (default 0.1) can be set - value of zero disables cutoff. The focused mesh must be ferromagnetic, have the transport module set with spin solver enabled, and we also require Jc and either Ts or Tsi to have been computed. The fitting is done on Ts, Tsi, or on their sum depending if they’ve been enabled or not.
+Fit the computed self-consistent spin torque (see below) using Zhang-Li STT with fitting parameters P and beta (non-adiabaticity) using a given square in-plane stencil (default size 3) in order to extract the spatial variation of P. Cut-off values for absolute fitting error (default 0.1), Rsq measure (default 0.9), and normalized torque magnitude (default 0.1) can be set - value of zero disables cutoff. The focused mesh must be ferromagnetic, have the transport module set with spin solver enabled, and we also require Jc and either Ts or Tsi to have been computed. The fitting is done on Ts, Tsi, or on their sum depending if they’ve been enabled or not. Output available in Cust_S.
 
 dp_fitlorentz
 
@@ -428,7 +509,7 @@ dp_fitnonadiabatic
 
 USAGE : dp_fitnonadiabatic (abs_err Rsq T_ratio (stencil))
 
-Fit the computed self-consistent spin torque (see below) using Zhang-Li STT with fitting parameters P and beta (non-adiabaticity) using a given square in-plane stencil (default size 3) in order to extract the spatial variation of beta. Cut-off values for absolute fitting error (default 0.1), Rsq measure (default 0.9), and normalized torque magnitude (default 0.1) can be set - value of zero disables cutoff. The focused mesh must be ferromagnetic, have the transport module set with spin solver enabled, and we also require Jc and either Ts or Tsi to have been computed. The fitting is done on Ts, Tsi, or on their sum depending if they’ve been enabled or not.
+Fit the computed self-consistent spin torque (see below) using Zhang-Li STT with fitting parameters P and beta (non-adiabaticity) using a given square in-plane stencil (default size 3) in order to extract the spatial variation of beta. Cut-off values for absolute fitting error (default 0.1), Rsq measure (default 0.9), and normalized torque magnitude (default 0.1) can be set - value of zero disables cutoff. The focused mesh must be ferromagnetic, have the transport module set with spin solver enabled, and we also require Jc and either Ts or Tsi to have been computed. The fitting is done on Ts, Tsi, or on their sum depending if they’ve been enabled or not. Output available in Cust_S.
 
 dp_fitskyrmion
 
@@ -484,6 +565,12 @@ USAGE : dp_getprofile start end dp_index
 
 Extract profile of physical quantity displayed on screen, at the current display resolution, along the line specified with given start and end cartesian absolute coordinates (m). Place profile in given dp arrays: 4 consecutive dp arrays are used, first for distance along line, the next 3 for physical quantity so allow space for these starting at dp_index.
 
+dp_histogram
+
+USAGE : dp_histogram dp_x dp_y (bin min max)
+
+Calculate a histogram with given bin, minimum and maximum values, from the magnetisation magnitude of the focused mesh (must be magnetic). Save histogram in dp arrays at dp_x, dp_y. If histogram parameters not given use a bin with 100 steps between minimum and maximum magnetisation magnitude.
+
 dp_linreg
 
 USAGE : dp_linreg dp_index_x dp_index_y (dp_index_z dp_index_out)
@@ -528,6 +615,12 @@ dp_muldp
 USAGE : dp_muldp dp_x1 dp_x2 dp_dest
 
 Multiply dp arrays : dp_dest = dp_x1 * dp_x2
+
+dp_peaksfrequency
+
+USAGE : dp_peaksfrequency dp_in_x dp_in_y dp_level dp_freq (steps)
+
+From input x-y data build a histogram of average frequency of peaks in the x-y data in bands given by the number of steps. The bands vary between minimum and maximum of y data in given number of steps (100 by default). Output the line values in dp_level with corresponding peak frequencies in dp_freq.
 
 dp_rarefy
 
@@ -601,7 +694,7 @@ dp_topocharge
 
 USAGE : dp_topocharge (x y radius)
 
-Calculate the topological charge for focused mesh (must be ferromagnetic), optionally in the given circle with radius and centered at x y (relative values). Q = Integral(m.(dm/dx x dm/dy) dxdy) / 4PI.
+Calculate the topological charge for focused mesh (must be magnetic), optionally in the given circle with radius and centered at x y (relative values). Q = Integral(m.(dm/dx x dm/dy) dxdy) / 4PI.
 Script return values: Q - the calculated topological charge.
 
 dwall
@@ -676,13 +769,20 @@ evalspeedup
 
 USAGE : evalspeedup status
 
-!!!Experimental!!! Do not use until fully tested and documented (publication pending), unless you know what you're doing. Status levels: 0 (no speedup), 1 (accurate), 2 (aggressive), 3 (extreme). Note: use RK4 with status = 2; RKF with status = 2.
+!!!Experimental!!!Status levels: 0 (no speedup), 1 (accurate), 2 (aggressive), 3 (extreme).
 
 exchangecoupledmeshes
 
 USAGE : exchangecoupledmeshes status (meshname)
 
 Set/unset direct exchange coupling to neighboring meshes : if neighboring ferromagnetic meshes touch the named mesh (set for focused mesh if meshname not given) then interface magnetic cells are direct exchange coupled to them.
+Script return values: status
+
+excludemulticonvdemag
+
+USAGE : excludemulticonvdemag status meshname
+
+Set exclusion status (0 or 1) of named mesh from multi-layered demag convolution.
 Script return values: status
 
 flusherrorlog
@@ -739,9 +839,9 @@ Script return values: status_x status_-x status_y status_-y status_z status_-z -
 
 invertmag
 
-USAGE : invertmag (meshname)
+USAGE : invertmag (components) (meshname)
 
-Invert magnetisation direction. If mesh name not specified, the active mesh is used.
+Invert magnetisation direction. If mesh name not specified, the active mesh is used. You can choose to invert just one or two components instead of the entire vector: specify components as x y z, e.g. invertmag x
 
 isrunning
 
@@ -757,11 +857,35 @@ USAGE : iterupdate iterations
 Update mesh display every given number of iterations during a simulation.
 Script return values: iterations - return number of iterations for display update.
 
+linkdtspeedup
+
+USAGE : linkdtspeedup flag
+
+Links speedup time-step to ODE time-step if set, else speedup time-step is independently controlled. Applicable in extreme mode only.
+
+linkdtstochastic
+
+USAGE : linkdtstochastic flag
+
+Links stochastic time-step to ODE time-step if set, else stochastic time-step is independently controlled.
+
+linkstochastic
+
+USAGE : linkstochastic flag (meshname)
+
+Links stochastic cellsize to magnetic cellsize if flag set to 1 for given mesh, else stochastic cellsize is independently controlled. If meshname not given set for all meshes.
+
 loadmaskfile
 
-USAGE : loadmaskfile (z-depth) (directory\)filename
+USAGE : loadmaskfile (z_depth) (directory\)filename
 
-Apply .png mask file to magnetization in active mesh (i.e. transfer shape from .png file to mesh - white means empty cells). If image is in grayscale then void cells up to given depth top down (z-depth > 0) or down up (z-depth < 0). If z-depth = 0 then void top down up to all z cells.
+Apply .png mask file to magnetization in active mesh (i.e. transfer shape from .png file to mesh - white means empty cells). If image is in grayscale then void cells up to given depth top down (z_depth > 0) or down up (z_depth < 0). If z-depth = 0 then void top down up to all z cells.
+
+loadovf2disp
+
+USAGE : loadovf2disp (directory\)filename
+
+Load an OOMMF-style OVF 2.0 file containing mechanical displacement data, into the currently focused mesh (which must be ferromagnetic and have the melastic module enabled), mapping the data to the current mesh dimensions. From the mechanical displacement the strain tensor is calculated.
 
 loadovf2mag
 
@@ -774,6 +898,12 @@ loadovf2mesh
 USAGE : loadovf2mesh (renormalize_value) (directory\)filename
 
 Load an OOMMF-style OVF 2.0 file containing 3-component vector data. This will create a new permalloy ferromagnetic mesh with dimensions and magnetization data obtained from the OVF 2.0 file. By default the loaded data will not be renormalized: renormalize_value = 0. If a value is specified for renormalize_value, the loaded data will be renormalized to it (e.g. this would be an Ms value).
+
+loadovf2strain
+
+USAGE : loadovf2strain (directory\)filename_diag filename_odiag
+
+Load an OOMMF-style OVF 2.0 file containing strain tensor data, into the currently focused mesh (which must be ferromagnetic and have the melastic module enabled), mapping the data to the current mesh dimensions. The symmetric strain tensor is applicable for a cubic crystal, and has 3 diagonal component (specified in filename_diag with vector data as xx, yy, zz), and 3 off-diagonal components (specified in filename_odiag with vector data as yz, xz, xy).
 
 loadsim
 
@@ -805,6 +935,13 @@ materialsdatabase
 USAGE : materialsdatabase (mdbname)
 
 Switch materials database in use. This setting is not saved by savesim, so using loadsim doesn't affect this setting; default mdb set on program start.
+
+mcellsize
+
+USAGE : mcellsize value
+
+Change cellsize of mesh in focus for mechanical solver (m). The cellsize can be specified as: hx hy hz, or as: hxyz
+Script return values: cellsize - return mechanical cellsize of mesh in focus.
 
 memory
 
@@ -838,6 +975,12 @@ USAGE : meshrect rectangle
 
 Change rectangle of mesh in focus (m). The rectangle can be specified as: sx sy sz ex ey ez for the start and end points in Cartesian coordinates, or as: ex ey ez with the start point as the origin.
 Script return values: rectangle - return rectangle of mesh in focus.
+
+mirrormag
+
+USAGE : mirrormag axis (meshname)
+
+Mirror magnetisation in a given axis, specified as x, y, z, e.g. mirrormag x. If mesh name not specified, the active mesh is used
 
 modules
 
@@ -1033,6 +1176,12 @@ USAGE : savemeshimage ((directory\)filename)
 
 Save currently displayed mesh image to given file (as .png). If directory not specified then default directory is used. If filename not specified then default image save file name is used.
 
+saveovf2
+
+USAGE : saveovf2 (data_type) (directory\)filename
+
+Save an OOMMF-style OVF 2.0 file containing data from the currently focused mesh. You can specify the data type as data_type = bin4 (single precision 4 bytes per float), data_type = bin8 (double precision 8 bytes per float), or data_type = text. By default bin8 is used.
+
 saveovf2mag
 
 USAGE : saveovf2mag (n) (data_type) (directory\)filename
@@ -1058,6 +1207,13 @@ USAGE : scalemeshrects status
 When changing a mesh rectangle scale and shift all other mesh rectangles in proportion if status set.
 Script return values: status
 
+scellsize
+
+USAGE : scellsize value
+
+Change cellsize of mesh in focus for stochastic properties (m). The cellsize can be specified as: hx hy hz, or as: hxyz
+Script return values: cellsize - return stochastic properties cellsize of mesh in focus.
+
 scriptserver
 
 USAGE : scriptserver status
@@ -1069,6 +1225,12 @@ setangle
 USAGE : setangle polar azimuthal (meshname)
 
 Set magnetisation angle in mesh uniformly using polar coordinates. If mesh name not specified, this is set for all ferromagnetic meshes.
+
+setatomode
+
+USAGE : setatomode equation evaluation
+
+Set differential equation to solve in atomistic meshes, and method used to solve it (same method is applied to micromagnetic and atomistic meshes).
 
 setcurrent
 
@@ -1096,6 +1258,20 @@ USAGE : setdt value
 Set differential equation time-step (only applicable to fixed time-step methods).
 Script return values: dT
 
+setdtspeedup
+
+USAGE : setdtspeedup value
+
+Set time step for evaluation speedup, to be used in when in extreme mode.
+Script return values: dTspeedup
+
+setdtstoch
+
+USAGE : setdtstoch value
+
+Set time step for stochastic field generation.
+Script return values: dTstoch
+
 setelectrodepotential
 
 USAGE : setelectrodepotential electrode_index potential
@@ -1113,7 +1289,7 @@ setfield
 
 USAGE : setfield magnitude polar azimuthal (meshname)
 
-Set uniform magnetic field (A/m) using polar coordinates. If mesh name not specified, this is set for all ferromagnetic meshes - must have Zeeman module added.
+Set uniform magnetic field (A/m) using polar coordinates. If mesh name not specified, this is set for all magnetic meshes - must have Zeeman module added.
 Script return values: <Ha_x, Ha_y, Ha_z> - applied field in Cartesian coordinates for mesh in focus.
 
 setheatdt
@@ -1133,7 +1309,13 @@ setode
 
 USAGE : setode equation evaluation
 
-Set differential equation to solve, and method used to solve it.
+Set differential equation to solve in micromagnetic meshes, and method used to solve it (same method is applied to micromagnetic and atomistic meshes).
+
+setodeeval
+
+USAGE : setodeeval evaluation
+
+Set differential equation method used to solve it (same method is applied to micromagnetic and atomistic meshes).
 
 setparam
 
@@ -1180,12 +1362,33 @@ USAGE : setsordamping damping_v damping_s
 Set fixed damping values for SOR algorithm used to solve the Poisson equation for V (electrical potential) and S (spin accumulation) respectively.
 Script return values: damping_v damping_s
 
+setstress
+
+USAGE : setstress magnitude polar azimuthal (meshname)
+
+Set uniform mechanical stress (Pa) using polar coordinates. If mesh name not specified, this is set for all magnetic meshes - must have MElastic module added.
+Script return values: <Tsig_x, Tsig_y, Tsig_z> - applied mechanical stress in Cartesian coordinates for mesh in focus.
+
+showa
+
+USAGE : showa
+
+Show predicted exchange stiffness (J/m) value for current mesh in focus (must be atomistic), using formula A = J*n/2a, where n is the number of atomic moments per unit cell, and a is the atomic cell size.
+Script return values: A
+
 showdata
 
 USAGE : showdata dataname (meshname, (rectangle))
 
 Show value(s) for dataname. If applicable specify meshname and rectangle (m) in mesh. If not specified and required, active mesh is used with entire mesh rectangle.
 Script return values: varies
+
+showk
+
+USAGE : showk
+
+Show predicted uniaxial anisotropy (J/m^3) constant value for current mesh in focus (must be atomistic), using formula K = k*n/a^3, where n is the number of atomic moments per unit cell, and a is the atomic cell size.
+Script return values: A
 
 showlengths
 
@@ -1199,6 +1402,20 @@ USAGE : showmcells
 
 Show number of discretisation cells for magnetisation for focused mesh (must be ferromagnetic).
 Script return values: n
+
+showms
+
+USAGE : showms
+
+Show predicted saturation magnetisation (A/m) value for current mesh in focus (must be atomistic), using formula Ms = mu_s*n/a^3, where n is the number of atomic moments per unit cell, and a is the atomic cell size.
+Script return values: Ms
+
+showtc
+
+USAGE : showtc
+
+Show predicted Tc value (K) for current mesh in focus (must be atomistic), using formula Tc = J*e*z/3kB, where e is the spin-wave correction factor, and z is the coordination number.
+Script return values: Tc
 
 skyrmion
 
@@ -1251,6 +1468,12 @@ USAGE : statictransportsolver status
 If static transport solver is set, the transport solver is only iterated at the end of a stage or step. You should set a high iterations timeout if using this mode.
 Script return values: status
 
+stochastic
+
+USAGE : stochastic
+
+Shows stochasticity settings : stochastic cellsize for each mesh and related settings.
+
 stop
 
 USAGE : stop
@@ -1262,6 +1485,13 @@ surfroughenjagged
 USAGE : surfroughenjagged depth spacing (seed, (sides))
 
 Roughen active mesh surfaces using a jagged pattern to given depth (m) and peak spacing (m). Roughen both sides by default, unless sides is specified as -z or z (string literal). The seed is used for the pseudo-random number generator, 1 by default.
+
+tau
+
+USAGE : tau tau_11 tau_22 (tau_12 tau_22) (meshname)
+
+Set ratio of exchange parameters to critical temperature (Neel) (all antiferromagnetic meshes if meshname not given) for antiferromagnetic mesh. tau_11 and tau_22 are the intra-lattice contributions, tau_12 and tau_21 are the inter-lattice contributions.
+Script return values: tau_11 tau_22 tau_12 tau_21
 
 tcellsize
 
@@ -1282,6 +1512,12 @@ test
 USAGE : 
 
 .
+
+tmodel
+
+USAGE : tmodel num_temperatures (meshname)
+
+Set temperature model (determined by number of temperatures) in given meshname (focused mesh if meshname not given). Note insulating meshes only allow a 1-temperature model.
 
 tsolverconfig
 

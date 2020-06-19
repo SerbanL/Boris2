@@ -522,7 +522,7 @@ BError SuperMesh::Set_PBC(string meshName, string flag, int images)
 
 		//pbc setting for individual mesh demag module
 
-		if (pMesh[meshName]->IsModuleSet(MOD_DEMAG)) {
+		if (pMesh[meshName]->Is_Demag_Enabled()) {
 
 			INT3 pbc_images = pMesh[meshName]->CallModuleMethod(&DemagBase::Get_PBC);
 

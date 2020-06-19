@@ -49,6 +49,9 @@ public:
 
 	//-----------Others
 
+	//in-plane demagnetizing factors (used for Atom_Demag_N module)
+	cu_obj<MatPCUDA<cuReal2, cuBReal>> Nxy;
+
 	//applied field spatial variation coefficient (unitless)
 	cu_obj<MatPCUDA<cuBReal, cuBReal>> cHA;
 

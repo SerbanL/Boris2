@@ -1,4 +1,5 @@
-#WinSocks Module Updated on : 19/04/2020
+#WinSocks Module Updated on : 19/06/2020
+#Boris version : 2.7
 
 import socket
 import time
@@ -252,16 +253,22 @@ class WSClient:
     #   return self.SendCommand("name", [param1, param2, ...]) 
     
     def _2dmulticonvolution(self, status = ''):
-    	return self.SendCommand("2dmulticonvolution", [status])
-    
+        return self.SendCommand("2dmulticonvolution", [status])
+
     def addafmesh(self, name = '', rectangle = ''):
     	return self.SendCommand("addafmesh", [name, rectangle])
+    
+    def addameshcubic(self, name = '', rectangle = ''):
+    	return self.SendCommand("addameshcubic", [name, rectangle])
     
     def addconductor(self, name = '', rectangle = ''):
     	return self.SendCommand("addconductor", [name, rectangle])
     
     def adddata(self, dataname = '', meshname = '', rectangle = ''):
     	return self.SendCommand("adddata", [dataname, meshname, rectangle])
+    
+    def adddiamagnet(self, name = '', rectangle = ''):
+    	return self.SendCommand("adddiamagnet", [name, rectangle])
     
     def adddipole(self, name = '', rectangle = ''):
     	return self.SendCommand("adddipole", [name, rectangle])
@@ -284,8 +291,8 @@ class WSClient:
     def addmodule(self, meshname = '', handle = ''):
     	return self.SendCommand("addmodule", [meshname, handle])
     
-    def addpinneddata(self, dataname = '', meshname = ''):
-    	return self.SendCommand("addpinneddata", [dataname, meshname])
+    def addpinneddata(self, dataname = '', meshname = '', rectangle = ''):
+    	return self.SendCommand("addpinneddata", [dataname, meshname, rectangle])
     
     def addrect(self, rectangle = '', meshname = ''):
     	return self.SendCommand("addrect", [rectangle, meshname])
@@ -301,6 +308,9 @@ class WSClient:
     
     def atomicmoment(self, ub_multiple = '', meshname = ''):
     	return self.SendCommand("atomicmoment", [ub_multiple, meshname])
+    
+    def averagemeshrect(self, rectangle = ''):
+    	return self.SendCommand("averagemeshrect", [rectangle])
     
     def benchtime(self):
     	return self.SendCommand("benchtime")
@@ -401,6 +411,21 @@ class WSClient:
     def display(self, name = '', meshname = ''):
     	return self.SendCommand("display", [name, meshname])
     
+    def displaybackground(self, name = '', meshname = ''):
+    	return self.SendCommand("displaybackground", [name, meshname])
+    
+    def displaythresholds(self, minimum = '', maximum = ''):
+    	return self.SendCommand("displaythresholds", [minimum, maximum])
+    
+    def displaythresholdtrigger(self, trigtype = ''):
+    	return self.SendCommand("displaythresholdtrigger", [trigtype])
+    
+    def displaytransparency(self, foreground = '', background = ''):
+    	return self.SendCommand("displaytransparency", [foreground, background])
+    
+    def dmcellsize(self, value = ''):
+    	return self.SendCommand("dmcellsize", [value])
+    
     def dp_add(self, dp_source = '', value = '', dp_dest = ''):
     	return self.SendCommand("dp_add", [dp_source, value, dp_dest])
     
@@ -410,11 +435,14 @@ class WSClient:
     def dp_append(self, dp_original = '', dp_new = ''):
     	return self.SendCommand("dp_append", [dp_original, dp_new])
     
-    def dp_averagemeshrect(self, rectangle = ''):
-    	return self.SendCommand("dp_averagemeshrect", [rectangle])
+    def dp_calcexchange(self):
+    	return self.SendCommand("dp_calcexchange")
     
     def dp_calcsot(self, hm_mesh = '', fm_mesh = ''):
     	return self.SendCommand("dp_calcsot", [hm_mesh, fm_mesh])
+    
+    def dp_calctopochargedensity(self):
+    	return self.SendCommand("dp_calctopochargedensity")
     
     def dp_cartesiantopolar(self, dp_in_x = '', dp_in_y = '', dp_out_r = '', dp_out_theta = ''):
     	return self.SendCommand("dp_cartesiantopolar", [dp_in_x, dp_in_y, dp_out_r, dp_out_theta])
@@ -430,6 +458,15 @@ class WSClient:
     
     def dp_completehysteresis(self, dp_index_x = '', dp_index_y = ''):
     	return self.SendCommand("dp_completehysteresis", [dp_index_x, dp_index_y])
+    
+    def dp_countskyrmions(self, x = '', y = '', radius = ''):
+    	return self.SendCommand("dp_countskyrmions", [x, y, radius])
+    
+    def dp_crossingsfrequency(self, dp_in_x = '', dp_in_y = '', dp_level = '', dp_freq_up = '', dp_freq_dn = '', steps = ''):
+    	return self.SendCommand("dp_crossingsfrequency", [dp_in_x, dp_in_y, dp_level, dp_freq_up, dp_freq_dn, steps])
+    
+    def dp_crossingshistogram(self, dp_in_x = '', dp_in_y = '', dp_level = '', dp_counts = '', steps = ''):
+    	return self.SendCommand("dp_crossingshistogram", [dp_in_x, dp_in_y, dp_level, dp_counts, steps])
     
     def dp_div(self, dp_source = '', value = '', dp_dest = ''):
     	return self.SendCommand("dp_div", [dp_source, value, dp_dest])
@@ -485,6 +522,9 @@ class WSClient:
     def dp_getprofile(self, start = '', end = '', dp_index = ''):
     	return self.SendCommand("dp_getprofile", [start, end, dp_index])
     
+    def dp_histogram(self, dp_x = '', dp_y = '', bin = '', min = '', max = ''):
+    	return self.SendCommand("dp_histogram", [dp_x, dp_y, bin, min, max])
+    
     def dp_linreg(self, dp_index_x = '', dp_index_y = '', dp_index_z = '', dp_index_out = ''):
     	return self.SendCommand("dp_linreg", [dp_index_x, dp_index_y, dp_index_z, dp_index_out])
     
@@ -505,6 +545,9 @@ class WSClient:
     
     def dp_muldp(self, dp_x1 = '', dp_x2 = '', dp_dest = ''):
     	return self.SendCommand("dp_muldp", [dp_x1, dp_x2, dp_dest])
+    
+    def dp_peaksfrequency(self, dp_in_x = '', dp_in_y = '', dp_level = '', dp_freq = '', steps = ''):
+    	return self.SendCommand("dp_peaksfrequency", [dp_in_x, dp_in_y, dp_level, dp_freq, steps])
     
     def dp_rarefy(self, dp_in = '', dp_out = '', skip = ''):
     	return self.SendCommand("dp_rarefy", [dp_in, dp_out, skip])
@@ -581,6 +624,9 @@ class WSClient:
     def exchangecoupledmeshes(self, status = '', meshname = ''):
     	return self.SendCommand("exchangecoupledmeshes", [status, meshname])
     
+    def excludemulticonvdemag(self, status = '', meshname = ''):
+    	return self.SendCommand("excludemulticonvdemag", [status, meshname])
+    
     def flusherrorlog(self):
     	return self.SendCommand("flusherrorlog")
     
@@ -605,8 +651,8 @@ class WSClient:
     def insulatingside(self, side_literal = '', status = '', meshname = ''):
     	return self.SendCommand("insulatingside", [side_literal, status, meshname])
     
-    def invertmag(self, meshname = ''):
-    	return self.SendCommand("invertmag", [meshname])
+    def invertmag(self, components = '', meshname = ''):
+    	return self.SendCommand("invertmag", [components, meshname])
     
     def isrunning(self):
     	return self.SendCommand("isrunning")
@@ -614,14 +660,29 @@ class WSClient:
     def iterupdate(self, iterations = ''):
     	return self.SendCommand("iterupdate", [iterations])
     
+    def linkdtspeedup(self, flag = ''):
+    	return self.SendCommand("linkdtspeedup", [flag])
+    
+    def linkdtstochastic(self, flag = ''):
+    	return self.SendCommand("linkdtstochastic", [flag])
+    
+    def linkstochastic(self, flag = '', meshname = ''):
+    	return self.SendCommand("linkstochastic", [flag, meshname])
+    
     def loadmaskfile(self, z_depth = '', filename = ''):
     	return self.SendCommand("loadmaskfile", [z_depth, filename])
+    
+    def loadovf2disp(self, filename = ''):
+    	return self.SendCommand("loadovf2disp", [filename])
     
     def loadovf2mag(self, renormalize_value = '', filename = ''):
     	return self.SendCommand("loadovf2mag", [renormalize_value, filename])
     
     def loadovf2mesh(self, renormalize_value = '', filename = ''):
     	return self.SendCommand("loadovf2mesh", [renormalize_value, filename])
+    
+    def loadovf2strain(self, filename_diag = '', filename_odiag = ''):
+    	return self.SendCommand("loadovf2strain", [filename_diag, filename_odiag])
     
     def loadsim(self, filename = ''):
     	return self.SendCommand("loadsim", [filename])
@@ -638,6 +699,9 @@ class WSClient:
     def materialsdatabase(self, mdbname = ''):
     	return self.SendCommand("materialsdatabase", [mdbname])
     
+    def mcellsize(self, value = ''):
+    	return self.SendCommand("mcellsize", [value])
+    
     def memory(self):
     	return self.SendCommand("memory")
     
@@ -652,6 +716,9 @@ class WSClient:
     
     def meshrect(self, rectangle = ''):
     	return self.SendCommand("meshrect", [rectangle])
+    
+    def mirrormag(self, axis = '', meshname = ''):
+    	return self.SendCommand("mirrormag", [axis, meshname])
     
     def modules(self):
     	return self.SendCommand("modules")
@@ -743,6 +810,9 @@ class WSClient:
     def savemeshimage(self, filename = ''):
     	return self.SendCommand("savemeshimage", [filename])
     
+    def saveovf2(self, data_type = '', filename = ''):
+    	return self.SendCommand("saveovf2", [data_type, filename])
+    
     def saveovf2mag(self, n = '', data_type = '', filename = ''):
     	return self.SendCommand("saveovf2mag", [n, data_type, filename])
     
@@ -755,11 +825,17 @@ class WSClient:
     def scalemeshrects(self, status = ''):
     	return self.SendCommand("scalemeshrects", [status])
     
+    def scellsize(self, value = ''):
+    	return self.SendCommand("scellsize", [value])
+    
     def scriptserver(self, status = ''):
     	return self.SendCommand("scriptserver", [status])
     
     def setangle(self, polar = '', azimuthal = '', meshname = ''):
     	return self.SendCommand("setangle", [polar, azimuthal, meshname])
+    
+    def setatomode(self, equation = '', evaluation = ''):
+    	return self.SendCommand("setatomode", [equation, evaluation])
     
     def setcurrent(self, current = ''):
     	return self.SendCommand("setcurrent", [current])
@@ -772,6 +848,12 @@ class WSClient:
     
     def setdt(self, value = ''):
     	return self.SendCommand("setdt", [value])
+    
+    def setdtspeedup(self, value = ''):
+    	return self.SendCommand("setdtspeedup", [value])
+    
+    def setdtstoch(self, value = ''):
+    	return self.SendCommand("setdtstoch", [value])
     
     def setelectrodepotential(self, electrode_index = '', potential = ''):
     	return self.SendCommand("setelectrodepotential", [electrode_index, potential])
@@ -790,6 +872,9 @@ class WSClient:
     
     def setode(self, equation = '', evaluation = ''):
     	return self.SendCommand("setode", [equation, evaluation])
+    
+    def setodeeval(self, evaluation = ''):
+    	return self.SendCommand("setodeeval", [evaluation])
     
     def setparam(self, meshname = '', paramname = '', value = ''):
     	return self.SendCommand("setparam", [meshname, paramname, value])
@@ -812,14 +897,29 @@ class WSClient:
     def setsordamping(self, damping_v = '', damping_s = ''):
     	return self.SendCommand("setsordamping", [damping_v, damping_s])
     
+    def setstress(self, magnitude = '', polar = '', azimuthal = '', meshname = ''):
+    	return self.SendCommand("setstress", [magnitude, polar, azimuthal, meshname])
+    
+    def showa(self):
+    	return self.SendCommand("showa")
+    
     def showdata(self, dataname = '', meshname = '', rectangle = ''):
     	return self.SendCommand("showdata", [dataname, meshname, rectangle])
+    
+    def showk(self):
+    	return self.SendCommand("showk")
     
     def showlengths(self):
     	return self.SendCommand("showlengths")
     
     def showmcells(self):
     	return self.SendCommand("showmcells")
+    
+    def showms(self):
+    	return self.SendCommand("showms")
+    
+    def showtc(self):
+    	return self.SendCommand("showtc")
     
     def skyrmion(self, core = '', chirality = '', diameter = '', position = '', meshname = ''):
     	return self.SendCommand("skyrmion", [core, chirality, diameter, position, meshname])
@@ -845,17 +945,26 @@ class WSClient:
     def statictransportsolver(self, status = ''):
     	return self.SendCommand("statictransportsolver", [status])
     
+    def stochastic(self):
+    	return self.SendCommand("stochastic")
+    
     def stop(self):
     	return self.SendCommand("stop")
     
     def surfroughenjagged(self, depth = '', spacing = '', seed = '', sides = ''):
     	return self.SendCommand("surfroughenjagged", [depth, spacing, seed, sides])
     
+    def tau(self, tau_11 = '', tau_22 = '', tau_12 = '', tau_21 = '', meshname = ''):
+    	return self.SendCommand("tau", [tau_11, tau_22, tau_12, tau_21, meshname])
+    
     def tcellsize(self, value = ''):
     	return self.SendCommand("tcellsize", [value])
     
     def temperature(self, value = '', meshname = ''):
     	return self.SendCommand("temperature", [value, meshname])
+    
+    def tmodel(self, num_temperatures = '', meshname = ''):
+    	return self.SendCommand("tmodel", [num_temperatures, meshname])
     
     def tsolverconfig(self, convergence_error = '', iters_timeout = ''):
     	return self.SendCommand("tsolverconfig", [convergence_error, iters_timeout])

@@ -425,6 +425,9 @@ public:
 	//check if this mesh has an exchange module enabled (surf exchange doesn't count)
 	bool ExchangeComputation_Enabled(void) { return IsModuleSet(MOD_EXCHANGE) || IsModuleSet(MOD_DMEXCHANGE) || IsModuleSet(MOD_IDMEXCHANGE); }
 
+	//is there a demag-type module set for this mesh? (SDemag not included as this is a SuperMesh module)
+	virtual bool Is_Demag_Enabled(void) = 0;
+
 	//----------------------------------- VALUE GETTERS
 
 	//get energy value for given module or one of its exclusive modules (if none active return 0); call it with MOD_ALL to return total energy density in this mesh; 
@@ -432,12 +435,6 @@ public:
 
 	//As above, but get energy in specified rectangle only, where applicable
 	double GetEnergyDensity(MOD_ moduleType, Rect& avRect);
-
-	//get exchange energy density over entire mesh (as above but specifically for exchange for efficiency)
-	virtual double Get_Exchange_EnergyDensity(void) = 0;
-
-	//get exchange energy density over specified rectangle only (as above but specifically for exchange for efficiency)
-	virtual double Get_Exchange_EnergyDensity(Rect& rectangle) = 0;
 
 	//get maximum exchange energy density modulus over specified rectangle
 	virtual double Get_Max_Exchange_EnergyDensity(Rect& rectangle) = 0;

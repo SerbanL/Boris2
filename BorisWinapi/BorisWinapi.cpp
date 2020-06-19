@@ -38,7 +38,7 @@ enum IDM_ {
 	//SIMULATION
 	IDM_SIM_RUN, IDM_SIM_COMPUTEFIELDS, IDM_SIM_STOP, IDM_SIM_RESET, IDM_SIM_CUDA, IDM_SIM_SERVER, IDM_SIM_SCHEDULE, IDM_SIM_DATA, IDM_SIM_SHOWDATA, IDM_SIM_BENCHTIME,
 	//MESH
-	IDM_MESH_SHOW, IDM_MESH_LOADMASK, IDM_MESH_MASKALL, IDM_MESH_SCALERECTS, IDM_MESH_RESET, IDM_MESH_ADDMATERIAL, IDM_MESH_ADDFERROMAGNET, IDM_MESH_ADDANTIFERROMAGNET, IDM_MESH_ADDMETAL, IDM_MESH_ADDINSULATOR, IDM_MESH_ADDDIPOLE, IDM_MESH_EXCHANGECOUPLED, IDM_MESH_COUPLETODIPOLES, IDM_MESH_COPY,
+	IDM_MESH_SHOW, IDM_MESH_LOADMASK, IDM_MESH_MASKALL, IDM_MESH_SCALERECTS, IDM_MESH_RESET, IDM_MESH_ADDMATERIAL, IDM_MESH_ADDFERROMAGNET, IDM_MESH_ADDANTIFERROMAGNET, IDM_MESH_ADDMETAL, IDM_MESH_ADDINSULATOR, IDM_MESH_ADDDIPOLE, IDM_MESH_DIAMAGNET, IDM_MESH_ATOMSIMPLECUBIC, IDM_MESH_EXCHANGECOUPLED, IDM_MESH_COUPLETODIPOLES, IDM_MESH_COPY,
 	//CONFIGURATION
 	IDM_CFG_MODULES, IDM_CFG_ODE, IDM_CFG_TIMESTEP, IDM_CFG_ASTEP, IDM_CFG_MULTICONV, IDM_CFG_PBC,
 	//PARAMETERS
@@ -132,6 +132,8 @@ void AddMenus(HWND hwnd)
 	AppendMenuW(hMenu_Mesh, MF_STRING, IDM_MESH_ADDDIPOLE, L"&Add Dipole");
 	AppendMenuW(hMenu_Mesh, MF_STRING, IDM_MESH_ADDMETAL, L"&Add Metal");
 	AppendMenuW(hMenu_Mesh, MF_STRING, IDM_MESH_ADDINSULATOR, L"&Add Insulator");
+	AppendMenuW(hMenu_Mesh, MF_STRING, IDM_MESH_DIAMAGNET, L"&Add Diamagnet");
+	AppendMenuW(hMenu_Mesh, MF_STRING, IDM_MESH_ATOMSIMPLECUBIC, L"&Add Atomistic Simple Cubic");
 	AppendMenuW(hMenu_Mesh, MF_SEPARATOR, 0, NULL);
 	AppendMenuW(hMenu_Mesh, MF_STRING, IDM_MESH_EXCHANGECOUPLED, L"&Exchange Coupling");
 	AppendMenuW(hMenu_Mesh, MF_STRING, IDM_MESH_COUPLETODIPOLES, L"&Couple to Dipoles");
@@ -338,8 +340,7 @@ int APIENTRY _tWinMain(_In_ HINSTANCE hInstance,
 	//If however you declare a stringstream variable before (just declare, you don't have to use it!) then program doesn't crash!
 	//Gets better : it used to work with (float) but for an unknown reason it suddenly started crashing and I don't know what's changed.
 	//Without a doubt the strangest bug I have ever seen - but as usual it will make sense when investigated properly, but I suspect it won't be easy.
-	//string sTitle = string("Boris v") + ToString((double)Program_Version / 100) + string(" (v2.6gamma)");
-	string sTitle = string("Boris v2.7");
+	string sTitle = string("Boris v") + ToString((double)Program_Version / 100);
 	copy(sTitle.begin(), sTitle.end(), szTitle);
 	szTitle[sTitle.size()] = 0;
 
@@ -751,6 +752,14 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 		case IDM_MESH_ADDDIPOLE:
 			if (pSim) pSim->NewMessage(AC_CONSOLECOMMAND_ENTRY, INT2(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam)), ToString(CMD_ADDDIPOLEMESH));
+			break;
+
+		case IDM_MESH_DIAMAGNET:
+			if (pSim) pSim->NewMessage(AC_CONSOLECOMMAND_ENTRY, INT2(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam)), ToString(CMD_ADDDIAMAGNETICMESH));
+			break;
+
+		case IDM_MESH_ATOMSIMPLECUBIC:
+			if (pSim) pSim->NewMessage(AC_CONSOLECOMMAND_ENTRY, INT2(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam)), ToString(CMD_ADDAMESHCUBIC));
 			break;
 
 		case IDM_MESH_EXCHANGECOUPLED:

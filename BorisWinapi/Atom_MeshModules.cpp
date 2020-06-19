@@ -21,8 +21,16 @@ BError Atom_Mesh::AddModule(MOD_ moduleID, bool force_add)
 	//now set the module
 	switch (moduleID) {
 
+	case MOD_DEMAG_N:
+		pMod.push_back(new Atom_Demag_N(this), MOD_DEMAG_N);
+		break;
+
 	case MOD_DEMAG:
 		pMod.push_back(new Atom_Demag(this), MOD_DEMAG);
+		break;
+
+	case MOD_ATOM_DIPOLEDIPOLE:
+		pMod.push_back(new Atom_DipoleDipole(this), MOD_ATOM_DIPOLEDIPOLE);
 		break;
 
 	case MOD_ZEEMAN:

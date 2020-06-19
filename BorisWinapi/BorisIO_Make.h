@@ -29,6 +29,7 @@ void Simulation::MakeIOInfo(void)
 
 	ioInfo.set(modulegeneric_info + string("<i><b>Stoner-Wohlfarth demag"), INT2(IOI_MODULE, MOD_DEMAG_N));
 	ioInfo.set(modulegeneric_info + string("<i><b>Full demag field"), INT2(IOI_MODULE, MOD_DEMAG));
+	ioInfo.set(modulegeneric_info + string("<i><b>Dipole-dipole interaction"), INT2(IOI_MODULE, MOD_ATOM_DIPOLEDIPOLE));
 	ioInfo.set(modulegeneric_info + string("<i><b>Direct exchange interaction"), INT2(IOI_MODULE, MOD_EXCHANGE));
 	ioInfo.set(modulegeneric_info + string("<i><b>Dzyaloshinskii-Moriya interaction - bulk"), INT2(IOI_MODULE, MOD_DMEXCHANGE));
 	ioInfo.set(modulegeneric_info + string("<i><b>Dzyaloshinskii-Moriya interaction - interfacial"), INT2(IOI_MODULE, MOD_IDMEXCHANGE));

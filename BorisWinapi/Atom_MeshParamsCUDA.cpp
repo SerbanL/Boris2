@@ -31,6 +31,9 @@ Atom_MeshParamsCUDA::Atom_MeshParamsCUDA(Atom_MeshParams *pameshParams)
 
 	//-----------Others
 
+	Nxy()->set_from_cpu(pameshParams->Nxy);
+	pameshParams->Nxy.set_p_cu_obj_mpcuda(&Nxy);
+
 	cHA()->set_from_cpu(pameshParams->cHA);
 	pameshParams->cHA.set_p_cu_obj_mpcuda(&cHA);
 	cHmo()->set_from_cpu(pameshParams->cHmo);
@@ -80,6 +83,8 @@ Atom_MeshParamsCUDA::~Atom_MeshParamsCUDA()
 	pameshParams->mcanis_ea2.null_p_cu_obj_mpcuda();
 
 	//-----------Others
+
+	pameshParams->Nxy.null_p_cu_obj_mpcuda();
 
 	pameshParams->cHA.null_p_cu_obj_mpcuda();
 	pameshParams->cHmo.null_p_cu_obj_mpcuda();

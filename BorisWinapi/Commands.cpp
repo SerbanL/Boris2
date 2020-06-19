@@ -5551,7 +5551,6 @@ void Simulation::HandleCommand(string command_string)
 
 		case CMD_TEST:
 		{
-			/*
 			vector<string> commands_output;
 			commands_output.resize(commands.size());
 
@@ -5586,7 +5585,6 @@ void Simulation::HandleCommand(string command_string)
 			commands_description = trim(commands_description, "</i>");
 
 			SaveTextToFile("c:/commands.txt", commands_description);
-			*/
 		}
 		break;
 

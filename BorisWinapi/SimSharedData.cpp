@@ -154,7 +154,7 @@ SimulationSharedData::SimulationSharedData(bool called_from_Simulation)
 
 		//specify forbidden module combinations - each set is an exclusive modules set, i.e. only one of each can be active at any one time
 		//also specify non-exclusive modules (i.e. entries in exclusiveModules with only one entry per set)
-		exclusiveModules.storeset(MOD_DEMAG_N, MOD_DEMAG, MOD_SDEMAG_DEMAG);
+		exclusiveModules.storeset(MOD_DEMAG_N, MOD_DEMAG, MOD_SDEMAG_DEMAG, MOD_ATOM_DIPOLEDIPOLE);
 		exclusiveModules.storeset(MOD_EXCHANGE, MOD_DMEXCHANGE, MOD_IDMEXCHANGE);
 		exclusiveModules.storeset(MOD_SURFEXCHANGE);
 		exclusiveModules.storeset(MOD_ANIUNI, MOD_ANICUBI);
@@ -212,7 +212,7 @@ SimulationSharedData::SimulationSharedData(bool called_from_Simulation)
 		modules_for_meshtype.push_back(make_vector(MOD_HEAT), MESH_INSULATOR);
 
 		modules_for_meshtype.push_back(make_vector(
-			MOD_DEMAG,
+			MOD_DEMAG_N, MOD_DEMAG, MOD_ATOM_DIPOLEDIPOLE,
 			MOD_EXCHANGE, MOD_DMEXCHANGE, MOD_IDMEXCHANGE,
 			MOD_ZEEMAN, MOD_MOPTICAL,
 			MOD_ANIUNI, MOD_ANICUBI,
@@ -292,7 +292,7 @@ SimulationSharedData::SimulationSharedData(bool called_from_Simulation)
 		params_for_meshtype.push_back(make_vector(PARAM_THERMCOND, PARAM_DENSITY, PARAM_SHC), MESH_INSULATOR);
 
 		params_for_meshtype.push_back(make_vector(
-			PARAM_ATOM_SC_DAMPING, PARAM_ATOM_SC_MUS, 
+			PARAM_ATOM_SC_DAMPING, PARAM_ATOM_SC_MUS, PARAM_DEMAGXY,
 			PARAM_ATOM_SC_J, PARAM_ATOM_SC_D,
 			PARAM_ATOM_SC_K, PARAM_ATOM_EA1, PARAM_ATOM_EA2,
 			PARAM_HA, PARAM_HMO,
@@ -310,7 +310,7 @@ SimulationSharedData::SimulationSharedData(bool called_from_Simulation)
 		params_enabled_props.push_back({ true, true }, PARAM_GREL);
 		params_enabled_props.push_back({ true, true }, PARAM_GDAMPING);
 		params_enabled_props.push_back({ true, true }, PARAM_MS);
-		params_enabled_props.push_back({ false, true }, PARAM_DEMAGXY);
+		params_enabled_props.push_back({ false, false }, PARAM_DEMAGXY);
 		params_enabled_props.push_back({ true, true }, PARAM_A);
 		params_enabled_props.push_back({ true, true }, PARAM_D);
 		params_enabled_props.push_back({ true, true }, PARAM_J1);

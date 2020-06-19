@@ -40,6 +40,10 @@ Atom_MeshParams::Atom_MeshParams(vector<PARAM_>& enabledParams)
 			meshParams.push_back("ea2", MeshParamDescriptor(PARAMTYPE_MAGNETIC), PARAM_ATOM_EA2);
 			break;
 
+		case PARAM_DEMAGXY:
+			meshParams.push_back("Nxy", MeshParamDescriptor(PARAMTYPE_MAGNETIC), PARAM_DEMAGXY);
+			break;
+
 		case PARAM_HA:
 			meshParams.push_back("cHa", MeshParamDescriptor(PARAMTYPE_MAGNETIC), PARAM_HA);
 			break;

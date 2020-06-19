@@ -66,6 +66,9 @@ public:
 
 	//-----------Others
 
+	//in-plane demagnetizing factors (used for Atom_Demag_N module)
+	MatP<DBL2, double> Nxy = DBL2(0);
+
 	//applied field spatial variation coefficient (unitless)
 	MatP<double, double> cHA = 1.0;
 
@@ -157,6 +160,10 @@ RType Atom_MeshParams::run_on_param(PARAM_ paramID, Lambda& run_this, PType& ...
 
 	case PARAM_ATOM_EA2:
 		return run_this(mcanis_ea2, run_this_args...);
+		break;
+
+	case PARAM_DEMAGXY:
+		return run_this(Nxy, run_this_args...);
 		break;
 
 	case PARAM_HA:

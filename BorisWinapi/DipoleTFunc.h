@@ -4,6 +4,8 @@
 
 #include <math.h>
 
+//NOTE : formulas for N factors here are equivalent to those obtained from Newell formulas, and also applicable for non-cubic cells
+
 namespace DipoleTFunc {
 
 	//Functions for calculating demag tensor for a general rectangular prism. 

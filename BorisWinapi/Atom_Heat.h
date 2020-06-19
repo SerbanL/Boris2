@@ -8,7 +8,7 @@
 class Atom_Mesh;
 class SuperMesh;
 
-#ifdef MODULE_HEAT
+#if defined(MODULE_HEAT) && ATOMISTIC == 1
 
 #if COMPILECUDA == 1
 #include "Atom_HeatCUDA.h"

@@ -128,7 +128,7 @@ bool DemagTFunc::CalcOffDiagTens2D_PBC(std::vector<double> &Dodiag, INT3 N, DBL3
 
 						int i = i_img * N.x + i0;
 						int j = j_img * N.y + j0;
-						int k = k_img * N.z;
+						int k = k_img;
 
 						//use modulus of indexes and adjust for tensor element signs based on symmetries
 						int sign_i = get_sign(i);

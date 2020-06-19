@@ -54,7 +54,7 @@ __global__ void Atom_Anisotropy_CubiCUDA_Cubic_UpdateField(ManagedAtom_MeshCUDA&
 			if (do_reduction) {
 
 				//update energy density
-				int non_empty_volume = M1.get_nonempty_cells() * M1.h.dim();
+				cuBReal non_empty_volume = M1.get_nonempty_cells() * M1.h.dim();
 				if (non_empty_volume) energy_ = K * (d1*d1*d2*d2 + d1*d1*d3*d3 + d2*d2*d3*d3) / non_empty_volume;
 			}
 		}
@@ -117,7 +117,7 @@ __global__ void Atom_Anisotropy_CubiCUDA_Cubic_GetEnergy(ManagedAtom_MeshCUDA& c
 			cuBReal d3 = (M1[idx] * mcanis_ea3) / mu_s;
 
 			//update energy density
-			int non_empty_volume = M1.get_nonempty_cells() * M1.h.dim();
+			cuBReal non_empty_volume = M1.get_nonempty_cells() * M1.h.dim();
 			if (non_empty_volume) energy_ = K * (d1*d1*d2*d2 + d1*d1*d3*d3 + d2*d2*d3*d3) / non_empty_volume;
 			include_in_reduction = true;
 		}
