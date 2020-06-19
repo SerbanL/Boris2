@@ -1,7 +1,7 @@
 # Boris2
 Boris Computational Spintronics.
 
-C++14 used. As a rough idea of codebase size, at the last count there were 212636 lines of code in 750 files.
+C++14 used. As a rough idea of codebase size, at the last count there were 128594 source lines of code (comments and trivial lines excluded) in 770 files.
 
 # Download
 Latest compiled version with installer found here : https://boris-spintronics.uk/download
