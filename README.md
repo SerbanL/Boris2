@@ -33,25 +33,41 @@ Windows:
 Linux (tested on Ubuntu 20.04):
 1. Clone the project.
 2. Make sure you have all the updates required and external dependencies:
+
 2a. Get latest g++ compiler: $ sudo apt install build-essential
+
 2b. Get OpenMP: $ sudo apt-get install libomp-dev
+
 2c. Get CUDA: Instructions at https://linuxconfig.org/how-to-install-cuda-on-ubuntu-20-04-focal-fossa-linux
+
 2d. Get SFML: sudo apt-get install libsfml-dev
+
 2e. Get FFTW3: Instructions at http://www.fftw.org/fftw2_doc/fftw_6.html
+
 3. Navigate to cloned directory and use the makefile to compile from source:
 
 $ make compile -j N
+
 (replace N with the number of logical cores on your CPU for multi-processor compilation, e.g. make compile -j 16)
+
 $ make
+
 $ ./BorisLin
 
 Notes: before compiling on Linux-based OS you need to have the correct compilation flags in the source code:
+
 i) Find CompileFlags.h file in Boris directory.
+
 i.i) Set #define OPERATING_SYSTEM	OS_LIN
+
 i.ii) Set #define GRAPHICS	0
+
 Graphics not currently supported on Linux, so only a basic text console is available, which is really just the graphical console text output but with all the text formatting specifiers stripped out. A portable graphical interface is on the to-do list. Simulations can still be run using Python scripts.
+
 i.iii) Set #define COMPILECUDA	0
+
 CUDA code not yet ported but this shouldn't be long now (a week or two probably).
+
 ii) Find BorisLib_Config.h file in BorisLib directory.
 ii.i) Set #define OPERATING_SYSTEM	OS_LIN
 
