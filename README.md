@@ -42,29 +42,29 @@ Linux (tested on Ubuntu 20.04):
 
 3. Navigate to cloned directory and use the makefile to compile from source:
   
-  $ make compile -j N
+    $ make compile -j N
   
-  (replace N with the number of logical cores on your CPU for multi-processor compilation, e.g. make compile -j 16)
+    (replace N with the number of logical cores on your CPU for multi-processor compilation, e.g. make compile -j 16)
 
-  $ make
-  $ ./BorisLin
+    $ make
+    $ ./BorisLin
 
-  Notes: before compiling on Linux-based OS you need to have the correct compilation flags in the source code:
+    Notes: before compiling on Linux-based OS you need to have the correct compilation flags in the source code:
 
-  i) Find CompileFlags.h file in Boris directory.
+    i) Find CompileFlags.h file in Boris directory.
 
-  i.i) Set #define OPERATING_SYSTEM	OS_LIN
+    i.i) Set #define OPERATING_SYSTEM	OS_LIN
 
-  i.ii) Set #define GRAPHICS	0
+    i.ii) Set #define GRAPHICS	0
   
-  Graphics not currently supported on Linux, so only a basic text console is available, which is really just the graphical console text output but with all the text formatting specifiers stripped out. A portable graphical interface is on the to-do list. Simulations can still be run using Python scripts.
+      Graphics not currently supported on Linux, so only a basic text console is available, which is really just the graphical console text output but with all the text formatting specifiers stripped out. A portable graphical interface is on the to-do list. Simulations can still be run using Python scripts.
 
-  i.iii) Set #define COMPILECUDA	0
+    i.iii) Set #define COMPILECUDA	0
 
-  CUDA code not yet ported but this shouldn't be long now (a week or two probably).
+      CUDA code not yet ported but this shouldn't be long now (a week or two probably).
 
-  ii) Find BorisLib_Config.h file in BorisLib directory.
-  ii.i) Set #define OPERATING_SYSTEM	OS_LIN
+    ii) Find BorisLib_Config.h file in BorisLib directory.
+    ii.i) Set #define OPERATING_SYSTEM	OS_LIN
 
 # Publication
 A technical peer-reviewed publication on Boris to follow soon.
