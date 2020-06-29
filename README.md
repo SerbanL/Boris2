@@ -51,6 +51,7 @@ The code has also been ported to Linux (I've tested on Ubuntu 20.04) and compile
     (replace N with the number of logical cores on your CPU for multi-processor compilation, e.g. make compile -j 16)
 
     <i>$ make</i>
+    
     <i>$ ./BorisLin</i>
 
     Notes: before compiling on Linux-based OS you need to have the correct compilation flags in the source code:
