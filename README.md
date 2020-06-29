@@ -23,24 +23,24 @@ The code has also been ported to Linux (I've tested on Ubuntu 20.04) and compile
 2) I'm currently working to port the CUDA part of the code to Linux, but this will take another week time permitting, so for now the COMPILECUDA 0 flag needs to be set.
 
 # Building From Source
-Windows:
+<u>Windows:</u>
 1. Clone the project.
 2. Open the Visual Studio solution file (I use Visual Studio 2017).
 3. Make sure all external dependencies are updated - see above.
 4. Configure the compilation as needed - see CompileFlags.h, BorisLib_Config.h, and cuBLib_Flags.h, should be self explanatory.
 5. Compile!
 
-Linux (tested on Ubuntu 20.04):
+<u>Linux (tested on Ubuntu 20.04):</u>
 1. Clone the project.
 2. Make sure you have all the updates required and external dependencies:
 
-    Get latest g++ compiler: $ sudo apt install build-essential
+    Get latest g++ compiler: <i>$ sudo apt install build-essential</i>
     
-    Get OpenMP: $ sudo apt-get install libomp-dev
+    Get OpenMP: <i>$ sudo apt-get install libomp-dev</i>
     
     Get CUDA: Instructions at https://linuxconfig.org/how-to-install-cuda-on-ubuntu-20-04-focal-fossa-linux
     
-    Get SFML: sudo apt-get install libsfml-dev
+    Get SFML: <i>$ sudo apt-get install libsfml-dev</i>
     
     Get FFTW3: Instructions at http://www.fftw.org/fftw2_doc/fftw_6.html
 
@@ -68,6 +68,7 @@ Linux (tested on Ubuntu 20.04):
       CUDA code not yet ported but this shouldn't be long now (a week or two probably).
 
     ii) Find BorisLib_Config.h file in BorisLib directory.
+    
     ii.i) Set <i>#define OPERATING_SYSTEM	OS_LIN</i>
 
 # Publication
