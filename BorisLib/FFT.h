@@ -2,7 +2,7 @@
 
 #include <omp.h>
 
-#include "Types.h"
+#include "BLib_Types.h"
 
 #define MAXFFT 32768								//Maximum length of FFT - used to initialize the cos and sin look-up tables
 

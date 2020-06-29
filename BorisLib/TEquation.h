@@ -211,20 +211,6 @@ private:
 		return false;
 	}
 
-	bool is_variable(std::string text, int *pidx = nullptr)
-	{
-		for (int idx = 0; idx < variables.size(); idx++) {
-
-			if (text == variables[idx].first) {
-
-				if (pidx) *pidx = idx;
-				return true;
-			}
-		}
-
-		return false;
-	}
-
 	bool is_binary_operator(std::string text, int *pidx = nullptr)
 	{
 		for (int idx = 0; idx < binop.size(); idx++) {
@@ -307,7 +293,7 @@ private:
 	// CREATE fspec FROM TEXT EQUATION BRANCH BY BRANCH
 
 	//make equation branch, either by continuing an existing branch (EqComp::FSPEC_branch) or by starting a new one. In the end add the branch to EqComp::FSPEC.
-	bool make_branch(std::string eq_str, std::vector< std::vector<EqComp::FSPEC> >& fspec, std::vector<EqComp::FSPEC>& fspec_branch = std::vector<EqComp::FSPEC>())
+	bool make_branch(std::string eq_str, std::vector< std::vector<EqComp::FSPEC> >& fspec, std::vector<EqComp::FSPEC>& fspec_branch)
 	{
 		//first identify binary operators which join branches at this level, i.e. which have only matched pairs of brackets to the left
 		//a binary operator defines a node which join two branches, thus if we identify binary operators we have to start new branches
@@ -361,7 +347,8 @@ private:
 			for (int idx = 0; idx < eq_branches.size(); idx++) {
 
 				//make branch
-				if (!make_branch(eq_branches[idx], fspec)) return false;
+				std::vector<EqComp::FSPEC> fspec_new_branch;
+				if (!make_branch(eq_branches[idx], fspec, fspec_new_branch)) return false;
 
 				//set branch joining indexes in operators
 				if (idx < eq_branches.size() - 1) eq_binops[idx].bin_idx1 = fspec.size() - 1;
@@ -544,12 +531,14 @@ public:
 	// CONSTRUCTOR
 
 	TEquation(void) :
-		ProgramStateNames(this, { VINFO(text_equation), VINFO(variables), VINFO(userconstants), VINFO(userconstants_values) }, {})
+		ProgramState<TEquation<BVarType...>, std::tuple<std::string, std::vector<std::string>, std::vector<std::string>, std::vector<double>>, std::tuple<>>
+		(this, { VINFO(text_equation), VINFO(variables), VINFO(userconstants), VINFO(userconstants_values) }, {})
 	{}
 
 	//make equation object with names of user variables
 	TEquation(const std::vector<std::string>& bvar_names) :
-		ProgramStateNames(this, { VINFO(text_equation), VINFO(variables), VINFO(userconstants), VINFO(userconstants_values) }, {})
+		ProgramState<TEquation<BVarType...>, std::tuple<std::string, std::vector<std::string>, std::vector<std::string>, std::vector<double>>, std::tuple<>>
+		(this, { VINFO(text_equation), VINFO(variables), VINFO(userconstants), VINFO(userconstants_values) }, {})
 	{
 		if (sizeof...(BVarType) == bvar_names.size()) {
 
@@ -559,7 +548,8 @@ public:
 	}
 
 	TEquation(const TEquation& copy_this) :
-		ProgramStateNames(this, { VINFO(text_equation), VINFO(variables), VINFO(userconstants), VINFO(userconstants_values) }, {})
+		ProgramState<TEquation<BVarType...>, std::tuple<std::string, std::vector<std::string>, std::vector<std::string>, std::vector<double>>, std::tuple<>>
+		(this, { VINFO(text_equation), VINFO(variables), VINFO(userconstants), VINFO(userconstants_values) }, {})
 	{
 		*this = copy_this;
 	}
@@ -738,8 +728,10 @@ public:
 
 			auto& fspec = eq_component.get_fspec();
 
+			std::vector<EqComp::FSPEC> fspec_branch;
+
 			//now translate text to EqComp::FSPEC
-			bool success = make_branch(eq_str_component, fspec);
+			bool success = make_branch(eq_str_component, fspec, fspec_branch);
 
 			//finally make the equation with Function objects
 			if (success) success &= eq_component.make();

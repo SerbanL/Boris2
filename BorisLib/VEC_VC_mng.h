@@ -7,72 +7,96 @@
 
 template <typename VType>
 VEC_VC<VType>::VEC_VC(void) :
-	VEC(),
-	ProgramStateNames(this, { VINFO(n), VINFO(h), VINFO(rect), VINFO(quantity), VINFO(ngbrFlags), VINFO(ngbrFlags2), VINFO(nonempty_cells),
-		VINFO(dirichlet_nx), VINFO(dirichlet_px), VINFO(dirichlet_ny), VINFO(dirichlet_py), VINFO(dirichlet_nz), VINFO(dirichlet_pz),
-		VINFO(robin_px), VINFO(robin_nx), VINFO(robin_py), VINFO(robin_ny), VINFO(robin_pz), VINFO(robin_nz), VINFO(robin_v), VINFO(shift_debt),
-		VINFO(pbc_x), VINFO(pbc_y), VINFO(pbc_z) }, {})
+	VEC<VType>(),
+	ProgramState<VEC_VC<VType>, 
+	std::tuple<SZ3, DBL3, Rect, std::vector<VType>, std::vector<int>, std::vector<int>, int,
+	std::vector<VType>, std::vector<VType>, std::vector<VType>, std::vector<VType>, std::vector<VType>, std::vector<VType>,
+	DBL2, DBL2, DBL2, DBL2, DBL2, DBL2, DBL2, DBL3, int, int, int>,
+	std::tuple<>>
+	(this, 
+	{ VINFO(VEC<VType>::n), VINFO(VEC<VType>::h), VINFO(VEC<VType>::rect), VINFO(VEC<VType>::quantity), VINFO(ngbrFlags), VINFO(ngbrFlags2), VINFO(nonempty_cells),
+	  VINFO(dirichlet_nx), VINFO(dirichlet_px), VINFO(dirichlet_ny), VINFO(dirichlet_py), VINFO(dirichlet_nz), VINFO(dirichlet_pz),
+	  VINFO(robin_px), VINFO(robin_nx), VINFO(robin_py), VINFO(robin_ny), VINFO(robin_pz), VINFO(robin_nz), VINFO(robin_v), VINFO(shift_debt),
+	  VINFO(pbc_x), VINFO(pbc_y), VINFO(pbc_z) }, {})
 {
 }
 
 template <typename VType>
 VEC_VC<VType>::VEC_VC(const SZ3& n_) :
-	VEC(n_),
-	ProgramStateNames(this, { VINFO(n), VINFO(h), VINFO(rect), VINFO(quantity), VINFO(ngbrFlags), VINFO(ngbrFlags2), VINFO(nonempty_cells),
-		VINFO(dirichlet_nx), VINFO(dirichlet_px), VINFO(dirichlet_ny), VINFO(dirichlet_py), VINFO(dirichlet_nz), VINFO(dirichlet_pz),
-		VINFO(robin_px), VINFO(robin_nx), VINFO(robin_py), VINFO(robin_ny), VINFO(robin_pz), VINFO(robin_nz), VINFO(robin_v), VINFO(shift_debt),
-		VINFO(pbc_x), VINFO(pbc_y), VINFO(pbc_z) }, {})
+	VEC<VType>(n_),
+	ProgramState<VEC_VC<VType>,
+	std::tuple<SZ3, DBL3, Rect, std::vector<VType>, std::vector<int>, std::vector<int>, int,
+	std::vector<VType>, std::vector<VType>, std::vector<VType>, std::vector<VType>, std::vector<VType>, std::vector<VType>,
+	DBL2, DBL2, DBL2, DBL2, DBL2, DBL2, DBL2, DBL3, int, int, int>,
+	std::tuple<>>
+	(this,
+		{ VINFO(VEC<VType>::n), VINFO(VEC<VType>::h), VINFO(VEC<VType>::rect), VINFO(VEC<VType>::quantity), VINFO(ngbrFlags), VINFO(ngbrFlags2), VINFO(nonempty_cells),
+		  VINFO(dirichlet_nx), VINFO(dirichlet_px), VINFO(dirichlet_ny), VINFO(dirichlet_py), VINFO(dirichlet_nz), VINFO(dirichlet_pz),
+		  VINFO(robin_px), VINFO(robin_nx), VINFO(robin_py), VINFO(robin_ny), VINFO(robin_pz), VINFO(robin_nz), VINFO(robin_v), VINFO(shift_debt),
+		  VINFO(pbc_x), VINFO(pbc_y), VINFO(pbc_z) }, {})
 {
-	if (!mreserve_vector(ngbrFlags, n_.dim()) || quantity.size() != n_.dim()) {
+	if (!mreserve_vector(ngbrFlags, n_.dim()) || VEC<VType>::quantity.size() != n_.dim()) {
 
 		clear();
 	}
 	else {
 
-		resize_ngbrFlags(n);
+		resize_ngbrFlags(VEC<VType>::n);
 	}
 }
 
 template <typename VType>
 VEC_VC<VType>::VEC_VC(const DBL3& h_, const Rect& rect_) :
-	VEC(h_, rect_),
-	ProgramStateNames(this, { VINFO(n), VINFO(h), VINFO(rect), VINFO(quantity), VINFO(ngbrFlags), VINFO(ngbrFlags2), VINFO(nonempty_cells),
-		VINFO(dirichlet_nx), VINFO(dirichlet_px), VINFO(dirichlet_ny), VINFO(dirichlet_py), VINFO(dirichlet_nz), VINFO(dirichlet_pz),
-		VINFO(robin_px), VINFO(robin_nx), VINFO(robin_py), VINFO(robin_ny), VINFO(robin_pz), VINFO(robin_nz), VINFO(robin_v), VINFO(shift_debt),
-		VINFO(pbc_x), VINFO(pbc_y), VINFO(pbc_z) }, {})
+	VEC<VType>(h_, rect_),
+	ProgramState<VEC_VC<VType>,
+	std::tuple<SZ3, DBL3, Rect, std::vector<VType>, std::vector<int>, std::vector<int>, int,
+	std::vector<VType>, std::vector<VType>, std::vector<VType>, std::vector<VType>, std::vector<VType>, std::vector<VType>,
+	DBL2, DBL2, DBL2, DBL2, DBL2, DBL2, DBL2, DBL3, int, int, int>,
+	std::tuple<>>
+	(this,
+		{ VINFO(VEC<VType>::n), VINFO(VEC<VType>::h), VINFO(VEC<VType>::rect), VINFO(VEC<VType>::quantity), VINFO(ngbrFlags), VINFO(ngbrFlags2), VINFO(nonempty_cells),
+		  VINFO(dirichlet_nx), VINFO(dirichlet_px), VINFO(dirichlet_ny), VINFO(dirichlet_py), VINFO(dirichlet_nz), VINFO(dirichlet_pz),
+		  VINFO(robin_px), VINFO(robin_nx), VINFO(robin_py), VINFO(robin_ny), VINFO(robin_pz), VINFO(robin_nz), VINFO(robin_v), VINFO(shift_debt),
+		  VINFO(pbc_x), VINFO(pbc_y), VINFO(pbc_z) }, {})
 {
-	//new_n : the size we should have if everything succeeds - n will take on this value if so
-	SZ3 new_n = get_n_from_h_and_rect(h_, rect_);
+	//new_n : the size we should have if everything succeeds - VEC<VType>::n will take on this value if so
+	SZ3 new_n = VEC<VType>::get_n_from_h_and_rect(h_, rect_);
 
-	if (!mreserve_vector(ngbrFlags, new_n.dim()) || quantity.size() != new_n.dim()) {
+	if (!mreserve_vector(ngbrFlags, new_n.dim()) || VEC<VType>::quantity.size() != new_n.dim()) {
 
 		clear();
 	}
 	else {
 
-		resize_ngbrFlags(n);
+		resize_ngbrFlags(VEC<VType>::n);
 		set_ngbrFlags();
 	}
 }
 
 template <typename VType>
 VEC_VC<VType>::VEC_VC(const DBL3& h_, const Rect& rect_, VType value) :
-	VEC(h_, rect_, value),
-	ProgramStateNames(this, { VINFO(n), VINFO(h), VINFO(rect), VINFO(quantity), VINFO(ngbrFlags), VINFO(ngbrFlags2), VINFO(nonempty_cells),
-		VINFO(dirichlet_nx), VINFO(dirichlet_px), VINFO(dirichlet_ny), VINFO(dirichlet_py), VINFO(dirichlet_nz), VINFO(dirichlet_pz),
-		VINFO(robin_px), VINFO(robin_nx), VINFO(robin_py), VINFO(robin_ny), VINFO(robin_pz), VINFO(robin_nz), VINFO(robin_v), VINFO(shift_debt),
-		VINFO(pbc_x), VINFO(pbc_y), VINFO(pbc_z) }, {})
+	VEC<VType>(h_, rect_, value),
+	ProgramState<VEC_VC<VType>,
+	std::tuple<SZ3, DBL3, Rect, std::vector<VType>, std::vector<int>, std::vector<int>, int,
+	std::vector<VType>, std::vector<VType>, std::vector<VType>, std::vector<VType>, std::vector<VType>, std::vector<VType>,
+	DBL2, DBL2, DBL2, DBL2, DBL2, DBL2, DBL2, DBL3, int, int, int>,
+	std::tuple<>>
+	(this,
+		{ VINFO(VEC<VType>::n), VINFO(VEC<VType>::h), VINFO(VEC<VType>::rect), VINFO(VEC<VType>::quantity), VINFO(ngbrFlags), VINFO(ngbrFlags2), VINFO(nonempty_cells),
+		  VINFO(dirichlet_nx), VINFO(dirichlet_px), VINFO(dirichlet_ny), VINFO(dirichlet_py), VINFO(dirichlet_nz), VINFO(dirichlet_pz),
+		  VINFO(robin_px), VINFO(robin_nx), VINFO(robin_py), VINFO(robin_ny), VINFO(robin_pz), VINFO(robin_nz), VINFO(robin_v), VINFO(shift_debt),
+		  VINFO(pbc_x), VINFO(pbc_y), VINFO(pbc_z) }, {})
 {
-	//new_n : the size we should have if everything succeeds - n will take on this value if so
-	SZ3 new_n = get_n_from_h_and_rect(h_, rect_);
+	//new_n : the size we should have if everything succeeds - VEC<VType>::n will take on this value if so
+	SZ3 new_n = VEC<VType>::get_n_from_h_and_rect(h_, rect_);
 
-	if (!mreserve_vector(ngbrFlags, new_n.dim()) || quantity.size() != new_n.dim()) {
+	if (!mreserve_vector(ngbrFlags, new_n.dim()) || VEC<VType>::quantity.size() != new_n.dim()) {
 
 		clear();
 	}
 	else {
 
-		resize_ngbrFlags(n);
+		resize_ngbrFlags(VEC<VType>::n);
 		set_ngbrFlags();
 	}
 }
@@ -82,9 +106,9 @@ VEC_VC<VType>::VEC_VC(const DBL3& h_, const Rect& rect_, VType value) :
 //resize and set shape using linked vec
 template <typename VType>
 template <typename LVType>
-bool VEC_VC<VType>::resize(const SZ3& new_n, VEC_VC<LVType> &linked_vec)
+bool VEC_VC<VType>::resize(const SZ3& new_n, const VEC_VC<LVType> &linked_vec)
 {
-	if (new_n != n) {
+	if (new_n != VEC<VType>::n) {
 
 		//reserve memory for ngbrFlags at the new size
 		if (!mreserve_vector(ngbrFlags, new_n.dim())) return false;
@@ -95,10 +119,10 @@ bool VEC_VC<VType>::resize(const SZ3& new_n, VEC_VC<LVType> &linked_vec)
 			if (!mreserve_vector(ngbrFlags2, new_n.dim())) return false;
 		}
 
-		//memory reserved so map flags to new size before changing the n value
+		//memory reserved so map flags to new size before changing the VEC<VType>::n value
 		resize_ngbrFlags(new_n);
 
-		if (!VEC::resize(new_n)) return false;
+		if (!VEC<VType>::resize(new_n)) return false;
 	}
 
 	//all good, finish off by setting flags.
@@ -111,7 +135,7 @@ bool VEC_VC<VType>::resize(const SZ3& new_n, VEC_VC<LVType> &linked_vec)
 template <typename VType>
 bool VEC_VC<VType>::resize(const SZ3& new_n)
 {
-	if (new_n != n) {
+	if (new_n != VEC<VType>::n) {
 
 		//reserve memory for ngbrFlags at the new size
 		if (!mreserve_vector(ngbrFlags, new_n.dim())) return false;
@@ -122,10 +146,10 @@ bool VEC_VC<VType>::resize(const SZ3& new_n)
 			if (!mreserve_vector(ngbrFlags2, new_n.dim())) return false;
 		}
 
-		//memory reserved so map flags to new size before changing the n value
+		//memory reserved so map flags to new size before changing the VEC<VType>::n value
 		resize_ngbrFlags(new_n);
 
-		if (!VEC::resize(new_n)) return false;
+		if (!VEC<VType>::resize(new_n)) return false;
 
 		//all good, finish off by setting flags.
 		set_ngbrFlags();
@@ -137,11 +161,11 @@ bool VEC_VC<VType>::resize(const SZ3& new_n)
 //resize and set shape using linked vec
 template <typename VType>
 template <typename LVType>
-bool VEC_VC<VType>::resize(const DBL3& new_h, const Rect& new_rect, VEC_VC<LVType> &linked_vec)
+bool VEC_VC<VType>::resize(const DBL3& new_h, const Rect& new_rect, const VEC_VC<LVType> &linked_vec)
 {
-	if (new_h != h || new_rect != rect) {
+	if (new_h != VEC<VType>::h || new_rect != VEC<VType>::rect) {
 
-		SZ3 new_n = get_n_from_h_and_rect(new_h, new_rect);
+		SZ3 new_n = VEC<VType>::get_n_from_h_and_rect(new_h, new_rect);
 
 		//reserve memory for ngbrFlags at the new size
 		if (!mreserve_vector(ngbrFlags, new_n.dim())) return false;
@@ -152,10 +176,10 @@ bool VEC_VC<VType>::resize(const DBL3& new_h, const Rect& new_rect, VEC_VC<LVTyp
 			if (!mreserve_vector(ngbrFlags2, new_n.dim())) return false;
 		}
 
-		//memory reserved so map flags to new size before changing the n value
+		//memory reserved so map flags to new size before changing the VEC<VType>::n value
 		resize_ngbrFlags(new_n);
 
-		if (!VEC::resize(new_h, new_rect)) return false;
+		if (!VEC<VType>::resize(new_h, new_rect)) return false;
 	}
 
 	//all good, finish off by setting flags.
@@ -168,9 +192,9 @@ bool VEC_VC<VType>::resize(const DBL3& new_h, const Rect& new_rect, VEC_VC<LVTyp
 template <typename VType>
 bool VEC_VC<VType>::resize(const DBL3& new_h, const Rect& new_rect)
 {
-	if (new_h != h || new_rect != rect) {
+	if (new_h != VEC<VType>::h || new_rect != VEC<VType>::rect) {
 
-		SZ3 new_n = get_n_from_h_and_rect(new_h, new_rect);
+		SZ3 new_n = VEC<VType>::get_n_from_h_and_rect(new_h, new_rect);
 
 		//reserve memory for ngbrFlags at the new size
 		if (!mreserve_vector(ngbrFlags, new_n.dim())) return false;
@@ -181,10 +205,10 @@ bool VEC_VC<VType>::resize(const DBL3& new_h, const Rect& new_rect)
 			if (!mreserve_vector(ngbrFlags2, new_n.dim())) return false;
 		}
 
-		//memory reserved so map flags to new size before changing the n value
+		//memory reserved so map flags to new size before changing the VEC<VType>::n value
 		resize_ngbrFlags(new_n);
 
-		if (!VEC::resize(new_h, new_rect)) return false;
+		if (!VEC<VType>::resize(new_h, new_rect)) return false;
 
 		//all good, finish off by setting flags.
 		set_ngbrFlags();
@@ -196,9 +220,9 @@ bool VEC_VC<VType>::resize(const DBL3& new_h, const Rect& new_rect)
 //set value and shape from linked vec
 template <typename VType>
 template <typename LVType>
-bool VEC_VC<VType>::assign(const SZ3& new_n, VType value, VEC_VC<LVType> &linked_vec)
+bool VEC_VC<VType>::assign(const SZ3& new_n, VType value, const VEC_VC<LVType> &linked_vec)
 {
-	if (new_n != n) {
+	if (new_n != VEC<VType>::n) {
 
 		//reserve memory for ngbrFlags at the new size
 		if (!mreserve_vector(ngbrFlags, new_n.dim())) return false;
@@ -209,11 +233,11 @@ bool VEC_VC<VType>::assign(const SZ3& new_n, VType value, VEC_VC<LVType> &linked
 			if (!mreserve_vector(ngbrFlags2, new_n.dim())) return false;
 		}
 
-		//memory reserved so map flags to new size before changing the n value
+		//memory reserved so map flags to new size before changing the VEC<VType>::n value
 		resize_ngbrFlags(new_n);
 	}
 
-	if (!VEC::assign(new_n, value)) return false;
+	if (!VEC<VType>::assign(new_n, value)) return false;
 
 	//all good, finish off by setting flags.
 	set_ngbrFlags(linked_vec);
@@ -225,7 +249,7 @@ bool VEC_VC<VType>::assign(const SZ3& new_n, VType value, VEC_VC<LVType> &linked
 template <typename VType>
 bool VEC_VC<VType>::assign(const SZ3& new_n, VType value)
 {
-	if (new_n != n) {
+	if (new_n != VEC<VType>::n) {
 
 		//reserve memory for ngbrFlags at the new size
 		if (!mreserve_vector(ngbrFlags, new_n.dim())) return false;
@@ -236,11 +260,11 @@ bool VEC_VC<VType>::assign(const SZ3& new_n, VType value)
 			if (!mreserve_vector(ngbrFlags2, new_n.dim())) return false;
 		}
 
-		//memory reserved so map flags to new size before changing the n value
+		//memory reserved so map flags to new size before changing the VEC<VType>::n value
 		resize_ngbrFlags(new_n);
 	}
 
-	if (!VEC::assign(new_n, value)) return false;
+	if (!VEC<VType>::assign(new_n, value)) return false;
 
 	//all good, finish off by setting flags (noting that empty cells are set back to zero)
 	set_ngbrFlags();
@@ -251,11 +275,11 @@ bool VEC_VC<VType>::assign(const SZ3& new_n, VType value)
 //set value and shape from linked vec
 template <typename VType>
 template <typename LVType>
-bool VEC_VC<VType>::assign(const DBL3& new_h, const Rect& new_rect, VType value, VEC_VC<LVType> &linked_vec)
+bool VEC_VC<VType>::assign(const DBL3& new_h, const Rect& new_rect, VType value, const VEC_VC<LVType> &linked_vec)
 {
-	if (new_h != h || new_rect != rect) {
+	if (new_h != VEC<VType>::h || new_rect != VEC<VType>::rect) {
 
-		SZ3 new_n = get_n_from_h_and_rect(new_h, new_rect);
+		SZ3 new_n = VEC<VType>::get_n_from_h_and_rect(new_h, new_rect);
 
 		//reserve memory for ngbrFlags at the new size
 		if (!mreserve_vector(ngbrFlags, new_n.dim())) return false;
@@ -266,11 +290,11 @@ bool VEC_VC<VType>::assign(const DBL3& new_h, const Rect& new_rect, VType value,
 			if (!mreserve_vector(ngbrFlags2, new_n.dim())) return false;
 		}
 
-		//memory reserved so map flags to new size before changing the n value
+		//memory reserved so map flags to new size before changing the VEC<VType>::n value
 		resize_ngbrFlags(new_n);
 	}
 
-	if (!VEC::assign(new_h, new_rect, value)) return false;
+	if (!VEC<VType>::assign(new_h, new_rect, value)) return false;
 
 	//all good, finish off by setting flags.
 	set_ngbrFlags(linked_vec);
@@ -282,9 +306,9 @@ bool VEC_VC<VType>::assign(const DBL3& new_h, const Rect& new_rect, VType value,
 template <typename VType>
 bool VEC_VC<VType>::assign(const DBL3& new_h, const Rect& new_rect, VType value)
 {
-	if (new_h != h || new_rect != rect) {
+	if (new_h != VEC<VType>::h || new_rect != VEC<VType>::rect) {
 
-		SZ3 new_n = get_n_from_h_and_rect(new_h, new_rect);
+		SZ3 new_n = VEC<VType>::get_n_from_h_and_rect(new_h, new_rect);
 
 		//reserve memory for ngbrFlags at the new size
 		if (!mreserve_vector(ngbrFlags, new_n.dim())) return false;
@@ -295,11 +319,11 @@ bool VEC_VC<VType>::assign(const DBL3& new_h, const Rect& new_rect, VType value)
 			if (!mreserve_vector(ngbrFlags2, new_n.dim())) return false;
 		}
 
-		//memory reserved so map flags to new size before changing the n value
+		//memory reserved so map flags to new size before changing the VEC<VType>::n value
 		resize_ngbrFlags(new_n);
 	}
 
-	if (!VEC::assign(new_h, new_rect, value)) return false;
+	if (!VEC<VType>::assign(new_h, new_rect, value)) return false;
 
 	//all good, finish off by setting flags.
 	set_ngbrFlags();
@@ -310,7 +334,7 @@ bool VEC_VC<VType>::assign(const DBL3& new_h, const Rect& new_rect, VType value)
 template <typename VType>
 void VEC_VC<VType>::clear(void)
 {
-	VEC::clear();
+	VEC<VType>::clear();
 
 	ngbrFlags.clear();
 	ngbrFlags.shrink_to_fit();
@@ -328,7 +352,7 @@ void VEC_VC<VType>::clear(void)
 template <typename VType>
 void VEC_VC<VType>::shrink_to_fit(void)
 {
-	VEC::shrink_to_fit();
+	VEC<VType>::shrink_to_fit();
 	ngbrFlags.shrink_to_fit();
 	ngbrFlags2.shrink_to_fit();
 

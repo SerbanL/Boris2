@@ -5,7 +5,6 @@
 #include <fstream>
 
 #include "Introspection_base.h"
-#include "Funcs_Aux_base.h"
 #include "Funcs_Math_base.h"
 
 ////////////////////////////////////////////////////////////////////////////////////////////////// CONVERSIONS - used for converting types to/from strings, allowing units to be used
@@ -144,6 +143,16 @@ namespace Conversion {
 
 			//if unit specified (do not leave space between number of unit) then replace it accordingly. Note, str may contain multiple numbers, hence multiple conversions required (e.g. a DBL3)
 			if (unit.length()) {
+
+				auto replaceall = [](std::string& text, const std::string& match, const std::string& replace) -> void {
+
+					size_t pos = 0;
+					while ((pos = text.find(match, pos)) != std::string::npos) {
+
+						text.replace(pos, match.length(), replace);
+						pos += replace.length();
+					}
+				};
 
 				replaceall(text, "a" + unit, "e-18");
 				replaceall(text, "f" + unit, "e-15");

@@ -1,14 +1,14 @@
 #pragma once
 
 #include "VEC.h"
-#include "prng.h"
+#include "BLib_prng.h"
 
 //--------------------------------------------VEC GENERATORS
 
 //generate custom values from grayscale bitmap : black = 0, white = 1. Apply scaling and offset also.
 //bitmap size must match n.x * n.y obtained from new_h and new_rect
 template <>
-bool VEC<double>::generate_custom_2D(SZ3 new_n, Rect new_rect, double offset, double scale, std::vector<BYTE>& bitmap)
+inline bool VEC<double>::generate_custom_2D(SZ3 new_n, Rect new_rect, double offset, double scale, const std::vector<unsigned char>& bitmap)
 {
 	DBL3 new_h = new_rect / new_n;
 
@@ -37,7 +37,7 @@ bool VEC<double>::generate_custom_2D(SZ3 new_n, Rect new_rect, double offset, do
 }
 
 template <>
-void VEC<double>::set_linear(DBL3 position1, double value1, DBL3 position2, double value2)
+inline void VEC<double>::set_linear(DBL3 position1, double value1, DBL3 position2, double value2)
 {
 	if (position1 == position2) return;
 
@@ -60,7 +60,7 @@ void VEC<double>::set_linear(DBL3 position1, double value1, DBL3 position2, doub
 
 //linear : use interpolation to set values in this VEC based on projected distance between position1 and position2 and given fixed end values.
 template <>
-bool VEC<double>::generate_linear(DBL3 new_h, Rect new_rect, DBL3 position1, double value1, DBL3 position2, double value2)
+inline bool VEC<double>::generate_linear(DBL3 new_h, Rect new_rect, DBL3 position1, double value1, DBL3 position2, double value2)
 {
 	if (!resize(new_h, new_rect)) return false;
 
@@ -89,7 +89,7 @@ bool VEC<VType>::generate_random(DBL3 new_h, Rect new_rect, DBL2 range, unsigned
 //jagged: set VEC dimensions (force 2D in xy plane) and generate random values in given range (prng instantiated with given seed) at a given spacing. 
 //In between these random values use bi-linear interpolation. The random values are spaced in the xy plane at equal distances along x or y using the spacing value (same units as the VEC rect)
 template <>
-bool VEC<double>::generate_jagged(DBL3 new_h, Rect new_rect, DBL2 range, double spacing, unsigned seed)
+inline bool VEC<double>::generate_jagged(DBL3 new_h, Rect new_rect, DBL2 range, double spacing, unsigned seed)
 {
 	//force 2D in xy plane
 	new_h.k = new_rect.size().k;
@@ -167,7 +167,7 @@ bool VEC<double>::generate_jagged(DBL3 new_h, Rect new_rect, DBL2 range, double 
 
 //defects: generate circular defects with a tanh radial profile with values in the given range, diameter range and average spacing (prng instantiated with given seed). The defect positioning is random. 
 template <>
-bool VEC<double>::generate_defects(DBL3 new_h, Rect new_rect, DBL2 range, double base_value, DBL2 diameter_range, double spacing, unsigned seed)
+inline bool VEC<double>::generate_defects(DBL3 new_h, Rect new_rect, DBL2 range, double base_value, DBL2 diameter_range, double spacing, unsigned seed)
 {
 	//force 2D in xy plane
 	new_h.k = new_rect.size().k;
@@ -228,7 +228,7 @@ bool VEC<double>::generate_defects(DBL3 new_h, Rect new_rect, DBL2 range, double
 
 //faults: set VEC dimensions (force 2D in xy plane) and generate line faults in the given range length, orientation length (degrees azimuthal) and average spacing (prng instantiated with given seed).
 template <>
-bool VEC<double>::generate_faults(DBL3 new_h, Rect new_rect, DBL2 range, double base_value, DBL2 length_range, DBL2 orientation_range, double spacing, unsigned seed)
+inline bool VEC<double>::generate_faults(DBL3 new_h, Rect new_rect, DBL2 range, double base_value, DBL2 length_range, DBL2 orientation_range, double spacing, unsigned seed)
 {
 	//force 2D in xy plane
 	new_h.k = new_rect.size().k;

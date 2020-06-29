@@ -6,13 +6,10 @@
 #include <sstream>
 #include <fstream>
 #include <vector>
-#include <atlstr.h>
-#include <strsafe.h>
-#include <shellapi.h>
 
 #include "Funcs_Conv.h"
-#include "Funcs_Vectors.h"
-#include "VEC.h"
+#include "Funcs_Strings.h"
+#include "Introspection.h"
 
 #define FILEROWCHARS	5000	//maximum number of characters per input file row
 
@@ -24,30 +21,9 @@ inline std::string GetFileTermination(const std::string& fileName)
 {
 	size_t found = fileName.find_last_of(".");
 
-	if(found == std::string::npos) return "";
+	if (found == std::string::npos) return "";
 
 	return fileName.substr(found);
-}
-
-//Get current directory (initially this will be the executable directory but can change if you load/save files through a windows dialog)
-inline std::string GetDirectory(void)
-{
-	TCHAR path[FILEROWCHARS];
-	GetCurrentDirectory(FILEROWCHARS, path);
-	std::string directory = std::string(CW2A(path)) + "\\";
-
-	return directory;
-}
-
-//Get executable file directory
-inline std::string GetExeDirectory(void)
-{
-	TCHAR path[FILEROWCHARS];
-	GetModuleFileName(NULL, path, FILEROWCHARS);
-	std::string fullPath = std::string(CW2A(path));
-	std::string directory = fullPath.substr(0, fullPath.find_last_of("\\/")) + "\\";
-
-	return directory;
 }
 
 //get directory from fileName, if any
@@ -87,84 +63,6 @@ inline std::string ExtractFilenameTermination(std::string& fileName)
 	}
 }
 
-//return all files sharing the given base (in specified directory) and termination. Return them ordered (including full path) by creation time
-inline std::vector<std::string> GetFilesInDirectory(std::string directory, std::string baseFileName, std::string termination)
-{
-	std::vector<std::string> fileNames;
-	std::vector<double> creationTimes;
-
-	WIN32_FIND_DATA ffd;
-	TCHAR szDir[MAX_PATH];
-	HANDLE hFind = INVALID_HANDLE_VALUE;
-
-	std::wstring wstr_directory = StringtoWideString(directory);
-
-	StringCchCopy(szDir, MAX_PATH, wstr_directory.c_str());
-	StringCchCat(szDir, MAX_PATH, TEXT("\\*"));
-
-	// Find the first file in the directory.
-	hFind = FindFirstFile(szDir, &ffd);
-
-	if (INVALID_HANDLE_VALUE == hFind) return fileNames;
-
-	// Get all the files in the directory.
-	do {
-
-		//only get file names, not directories
-		if (!(ffd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)) {
-
-			//creation time : form a double as uli.QuadPart
-			ULARGE_INTEGER uli;
-			uli.LowPart = ffd.ftCreationTime.dwLowDateTime;
-			uli.HighPart = ffd.ftCreationTime.dwHighDateTime;
-
-			//get the file name
-			std::string fileName = WideStringtoString(std::wstring(ffd.cFileName));
-
-			//if filename including termination is too short then skip it
-			if (fileName.length() < termination.length()) continue;
-
-			if (!baseFileName.length()) {
-
-				if (!termination.length()) {
-
-					//if no basefile name or termination is specified then just get the file
-					fileNames.push_back(directory + fileName);
-					creationTimes.push_back((double)uli.QuadPart);
-				}
-				else if (fileName.substr(fileName.length() - termination.length()).compare(termination) == 0) {
-
-					//if no basefile name is specified but the termination is, then it must match that of the file (the ending of the file name)
-					fileNames.push_back(directory + fileName);
-					creationTimes.push_back((double)uli.QuadPart);
-				}
-			}
-			else if (fileName.substr(0, baseFileName.length()).compare(baseFileName) == 0) {
-
-				//if basefile name is specified then it must match that of the file (the beggining of the file name)
-				if (!termination.length()) {
-
-					fileNames.push_back(directory + fileName);
-					creationTimes.push_back((double)uli.QuadPart);
-				}
-				else if (fileName.substr(fileName.length() - termination.length()).compare(termination) == 0) {
-
-					fileNames.push_back(directory + fileName);
-					creationTimes.push_back((double)uli.QuadPart);
-				}
-			}
-		}
-	} while (FindNextFile(hFind, &ffd) != 0);			//get next file in directory
-
-														//finish
-	FindClose(hFind);
-
-	//sort by creation time order
-	quicksort(creationTimes, fileNames);
-
-	return fileNames;
-}
-
 ///////////////////////////////////////////////////////////////////////////////
 // READING
 
@@ -181,22 +79,22 @@ int ReadBlockData(std::string filename, std::string separator, VType &data, int 
 	std::ifstream bdin;
 	bdin.open(filename.c_str(), std::ios::in);
 
-	if(bdin.is_open()) {
+	if (bdin.is_open()) {
 
 		char line[FILEROWCHARS];
 		std::vector<std::string> stringsVector;
 		data.resize(0);
 
-		while(bdin.getline(line, FILEROWCHARS)) {
+		while (bdin.getline(line, FILEROWCHARS)) {
 
-			if(std::string(line).length()) {
+			if (std::string(line).length()) {
 
 				stringsVector.resize(0);
 				stringsVector = split(std::string(line), separator);
 
-				if(stringsVector.size() && (stringsVector.size() == ncols || !ncols)) {
+				if (stringsVector.size() && (stringsVector.size() == ncols || !ncols)) {
 
-					for(int i = 0; i < stringsVector.size(); i++) {
+					for (int i = 0; i < stringsVector.size(); i++) {
 
 						double dval = ToNum(stringsVector[i]);
 
@@ -216,7 +114,7 @@ int ReadBlockData(std::string filename, std::string separator, VType &data, int 
 
 //From given file read specified data columns only and load them in data_cols. Return maximum number of rows read.
 template <typename ... PType, typename VType, std::enable_if_t<is_vector<VType>::value>* = nullptr>
-int ReadDataColumns(std::string filename, std::string separator, std::vector< VType > &data_cols, std::vector<int> cols)
+int ReadDataColumns(const std::string& filename, const std::string& separator, std::vector< VType > &data_cols, const std::vector<int>& cols)
 {
 	//stored element type
 	using SType = typename contained_type<VType>::type;
@@ -297,7 +195,7 @@ template <typename VType, std::enable_if_t<is_vector<VType>::value>* = nullptr>
 int ReadBinaryVector(std::string filename, VType &data)
 {
 	std::ifstream bdin;
-	bdin.open(filename.c_str(), std::ios::in + std::ios::binary);
+	bdin.open(filename.c_str(), std::ios::in | std::ios::binary);
 
 	int elements_read = 0;
 
@@ -323,7 +221,7 @@ int ReadBinaryVector(std::string filename, VType &data)
 ///////////////////////////////////////////////////////////////////////////////
 // WRITING
 
-inline bool SaveTextToFile(std::string filename, std::string text) 
+inline bool SaveTextToFile(std::string filename, std::string text)
 {
 	bool success = false;
 
@@ -331,7 +229,7 @@ inline bool SaveTextToFile(std::string filename, std::string text)
 
 	bdout.open(filename.c_str(), std::ios::out);
 
-	if(bdout.is_open()) {
+	if (bdout.is_open()) {
 
 		bdout << text;
 		bdout.close();
@@ -344,20 +242,20 @@ inline bool SaveTextToFile(std::string filename, std::string text)
 
 //Save data by arranging it with specified number of columns - this method is for a vector type (e.g. std::vector, VEC, VEC_VC - the important thing here it has to be indexable and have a size method)
 template <typename VType, std::enable_if_t<is_vector<VType>::value>* = nullptr>
-bool SaveBlockData(std::string filename, char separator, VType &data, int ncols) 
+bool SaveBlockData(std::string filename, char separator, VType &data, int ncols)
 {
 	std::ofstream bdout;
 	bdout.open(filename.c_str(), std::ios::out);
 
-	if(bdout.is_open()) {
+	if (bdout.is_open()) {
 
-		for(int idx = 0; idx < (int)data.size(); idx++) {
+		for (int idx = 0; idx < (int)data.size(); idx++) {
 
 			bdout << data[idx];
 
-			if(idx != (int)data.size() - 1) {
+			if (idx != (int)data.size() - 1) {
 
-				if(idx % ncols < ncols - 1) bdout << separator;
+				if (idx % ncols < ncols - 1) bdout << separator;
 				else bdout << "\n";
 			}
 		}
@@ -369,44 +267,9 @@ bool SaveBlockData(std::string filename, char separator, VType &data, int ncols)
 	return true;
 }
 
-//Save VEC to file arranged as : x labels columns, y labels rows. Save all planes consecutively.
-template <typename VType>
-bool SaveVEC(std::string filename, char separator, VEC<VType>& vec)
-{
-	std::ofstream bdout;
-	bdout.open(filename.c_str(), std::ios::out);
-
-	if (bdout.is_open()) {
-
-		for (int k = 0; k < vec.n.k; k++) {
-			for (int j = 0; j < vec.n.j; j++) {
-				for (int i = 0; i < vec.n.i; i++) {
-
-					int idx = i + j * vec.n.x + k * vec.n.x * vec.n.y;
-
-					bdout << vec[idx];
-
-					if (i != vec.n.i - 1) bdout << separator;
-				}
-
-				//finished row - separate planes with extra newline
-				bdout << "\n";
-			}
-
-			//finished plane
-			if (k != vec.n.k - 1) bdout << "\n";
-		}
-	}
-	else return false;
-
-	bdout.close();
-
-	return true;
-}
-
 //Save specified columns from the 2D vector
 template <typename VType, std::enable_if_t<is_vector<VType>::value>* = nullptr>
-bool SaveDataColumns(std::string filename, char separator, std::vector< VType > &data_cols, std::vector<int> col_idx)
+bool SaveDataColumns(const std::string& filename, char separator, std::vector< VType > &data_cols, std::vector<int> col_idx)
 {
 	auto is_valid_row = [](std::vector< VType > &data_cols, std::vector<int>& col_idx, int row_idx) -> bool {
 
@@ -471,7 +334,7 @@ bool SaveDataColumns(std::string filename, char separator, std::vector< VType > 
 template <typename VType, std::enable_if_t<is_vector<VType>::value>* = nullptr>
 bool SaveDataColumns(std::string filename, char separator, std::vector< VType > &data_cols)
 {
-	vector<int> col_idx;
+	std::vector<int> col_idx;
 
 	for (int idx = 0; idx < (int)data_cols.size(); idx++)
 		col_idx.push_back(idx);
@@ -512,7 +375,7 @@ template <typename VType, std::enable_if_t<is_vector<VType>::value>* = nullptr>
 int WriteBinaryVector(std::string filename, VType &data)
 {
 	std::ofstream bdout;
-	bdout.open(filename.c_str(), std::ios::out + std::ios::binary);
+	bdout.open(filename.c_str(), std::ios::out | std::ios::binary);
 
 	int elements_written = 0;
 
@@ -531,12 +394,4 @@ int WriteBinaryVector(std::string filename, VType &data)
 	}
 
 	return elements_written;
-}
-
-//open a file programatically : the file name includes a path
-inline void open_file(std::string fileName)
-{
-	std::string command = "open";
-
-	ShellExecute(GetDesktopWindow(), StringtoWCHARPointer(command), StringtoWCHARPointer(fileName), NULL, NULL, SW_SHOWNORMAL);
 }

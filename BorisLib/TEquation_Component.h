@@ -1,7 +1,6 @@
 #pragma once
 
 #include "TEquation_Function.h"
-
 #include "Funcs_Strings.h"
 
 template <typename ... BVarType>

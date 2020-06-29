@@ -5,6 +5,8 @@
 #include "Funcs_Math.h"
 #include "Obj_Math_Special.h"
 
+#include <memory>
+
 namespace EqComp {
 
 	template <typename ... BVarType>

@@ -19,7 +19,7 @@ void VEC<VType>::add_values(const VEC<VType>& add_this)
 		int _y = (int)floor(((idx / n.x) % n.y) * sourceIdx.y);
 		int _z = (int)floor((idx / (n.x*n.y)) * sourceIdx.z);
 
-		quantity[idx] += add_this.quantity[_x + _y * source_n.x + _z * (source_n.x*source_n.y)];
+		quantity[idx] += add_this[_x + _y * source_n.x + _z * (source_n.x*source_n.y)];
 	}
 }
 
@@ -40,7 +40,7 @@ void VEC<VType>::sub_values(const VEC<VType>& sub_this)
 		int _y = (int)floor(((idx / n.x) % n.y) * sourceIdx.y);
 		int _z = (int)floor((idx / (n.x*n.y)) * sourceIdx.z);
 
-		quantity[idx] -= sub_this.quantity[_x + _y * source_n.x + _z * (source_n.x*source_n.y)];
+		quantity[idx] -= sub_this[_x + _y * source_n.x + _z * (source_n.x*source_n.y)];
 	}
 }
 

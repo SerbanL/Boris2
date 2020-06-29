@@ -182,7 +182,7 @@ private:
 	//these vectors are of sizes equal to 1 cell deep at each respective side. dirichlet_nx are the dirichlet values at the -x side of the mesh, etc.
 	std::vector<VType> dirichlet_nx, dirichlet_px, dirichlet_ny, dirichlet_py, dirichlet_nz, dirichlet_pz;
 
-	//Robin boundary conditions values : diff_norm(u) = alpha * (u - h), where diff_norm means differential along surface normal (e.g. positive sign at +x boundary, negative sign at -x boundary).
+	//Robin boundary conditions values : diff_norm(u) = alpha * (u - VEC<VType>::h), where diff_norm means differential along surface normal (e.g. positive sign at +x boundary, negative sign at -x boundary).
 	//alpha is a positive constant : robins_nx.i. Note, if this is zero then homogeneous Neumann boundary condition results.
 	//h is a value (e.g. ambient temperature for heat equation): robins_nx.j
 	//nx, px, etc... for mesh boundaries - use these when flagged with NF2_ROBINNX etc. and not flagged with NF2_ROBINV
@@ -205,15 +205,15 @@ private:
 
 	//--------------------------------------------IMPORTANT FLAG MANIPULATION METHODS : VEC_VC_flags.h
 
-	//set size of ngbrFlags to new_n also mapping shape from current size to new size (if current zero size set solid shape). Memory must be reserved in ngbrFlags to guarantee success. Also n should still have the old value : call this before changing it.
+	//set size of ngbrFlags to new_n also mapping shape from current size to new size (if current zero size set solid shape). Memory must be reserved in ngbrFlags to guarantee success. Also VEC<VType>::n should still have the old value : call this before changing it.
 	void resize_ngbrFlags(SZ3 new_n);
 
-	//initialization method for neighbor flags : set flags at size n, counting neighbors etc.
+	//initialization method for neighbor flags : set flags at size VEC<VType>::n, counting neighbors etc.
 	//Set empty cell values using information in linked_vec (keep same shape) - this must have same rectangle
 	template <typename LVType>
-	void set_ngbrFlags(VEC_VC<LVType> &linked_vec);
+	void set_ngbrFlags(const VEC_VC<LVType> &linked_vec);
 
-	//initialization method for neighbor flags : set flags at size n, counting neighbors etc. Use current shape in ngbrFlags
+	//initialization method for neighbor flags : set flags at size VEC<VType>::n, counting neighbors etc. Use current shape in ngbrFlags
 	void set_ngbrFlags(void);
 
 	//from NF2_DIRICHLET type flag and cell_idx return boundary value from one of the dirichlet vectors
@@ -227,7 +227,7 @@ private:
 
 	//mark cell as not empty / empty : internal use only; routines that use these must finish with recalculating ngbrflags as neighbours will have changed
 	void mark_not_empty(int index) { ngbrFlags[index] |= NF_NOTEMPTY; }
-	void mark_empty(int index) { ngbrFlags[index] &= ~NF_NOTEMPTY; quantity[index] = VType(); }
+	void mark_empty(int index) { ngbrFlags[index] &= ~NF_NOTEMPTY; VEC<VType>::quantity[index] = VType(); }
 
 	//check if we need to use ngbrFlags2 (allocate memory etc.)
 	bool use_extended_flags(void);
@@ -249,8 +249,8 @@ public:
 	//implement ProgramState method
 	void RepairObjectState() 
 	{ 
-		//any mesh transfer info will have to be remade
-		transfer.clear(); 
+		//any mesh VEC<VType>::transfer info will have to be remade
+		VEC<VType>::transfer.clear(); 
 	}
 
 	//--------------------------------------------SPECIAL DATA ACCESS (typically used for copy to/from cuVECs)
@@ -287,25 +287,25 @@ public:
 
 	//resize and set shape using linked vec
 	template <typename LVType>
-	bool resize(const SZ3& new_n, VEC_VC<LVType> &linked_vec);
+	bool resize(const SZ3& new_n, const VEC_VC<LVType> &linked_vec);
 	//resize but keep shape
 	bool resize(const SZ3& new_n);
 
 	//resize and set shape using linked vec
 	template <typename LVType>
-	bool resize(const DBL3& new_h, const Rect& new_rect, VEC_VC<LVType> &linked_vec);
+	bool resize(const DBL3& new_h, const Rect& new_rect, const VEC_VC<LVType> &linked_vec);
 	//resize but keep shape
 	bool resize(const DBL3& new_h, const Rect& new_rect);
 
 	//set value and shape from linked vec
 	template <typename LVType>
-	bool assign(const SZ3& new_n, VType value, VEC_VC<LVType> &linked_vec);
+	bool assign(const SZ3& new_n, VType value, const VEC_VC<LVType> &linked_vec);
 	//set value but keep shape - empty cells will retain zero value : i.e. set value everywhere but in empty cells
 	bool assign(const SZ3& new_n, VType value);
 
 	//set value and shape from linked vec
 	template <typename LVType>
-	bool assign(const DBL3& new_h, const Rect& new_rect, VType value, VEC_VC<LVType> &linked_vec);
+	bool assign(const DBL3& new_h, const Rect& new_rect, VType value, const VEC_VC<LVType> &linked_vec);
 	//set value but keep shape - empty cells will retain zero value : i.e. set value everywhere but in empty cells
 	bool assign(const DBL3& new_h, const Rect& new_rect, VType value);
 
@@ -315,21 +315,21 @@ public:
 
 	//--------------------------------------------PROPERTY CHECHING
 
-	bool is_pbc_x(void) { return pbc_x; }
-	bool is_pbc_y(void) { return pbc_y; }
-	bool is_pbc_z(void) { return pbc_z; }
+	bool is_pbc_x(void) const { return pbc_x; }
+	bool is_pbc_y(void) const { return pbc_y; }
+	bool is_pbc_z(void) const { return pbc_z; }
 
 	//--------------------------------------------FLAG CHECKING : VEC_VC_flags.h
 
 	int get_nonempty_cells(void) const { return nonempty_cells; }
 
 	bool is_not_empty(int index) const { return (ngbrFlags[index] & NF_NOTEMPTY); }
-	bool is_not_empty(const INT3& ijk) const { return (ngbrFlags[ijk.i + ijk.j*n.x + ijk.k*n.x*n.y] & NF_NOTEMPTY); }
-	bool is_not_empty(const DBL3& rel_pos) const { return (ngbrFlags[int(rel_pos.x / h.x) + int(rel_pos.y / h.y) * n.x + int(rel_pos.z / h.z) * n.x * n.y] & NF_NOTEMPTY); }
+	bool is_not_empty(const INT3& ijk) const { return (ngbrFlags[ijk.i + ijk.j*VEC<VType>::n.x + ijk.k*VEC<VType>::n.x*VEC<VType>::n.y] & NF_NOTEMPTY); }
+	bool is_not_empty(const DBL3& rel_pos) const { return (ngbrFlags[int(rel_pos.x / VEC<VType>::h.x) + int(rel_pos.y / VEC<VType>::h.y) * VEC<VType>::n.x + int(rel_pos.z / VEC<VType>::h.z) * VEC<VType>::n.x * VEC<VType>::n.y] & NF_NOTEMPTY); }
 
 	bool is_empty(int index) const { return !(ngbrFlags[index] & NF_NOTEMPTY); }
-	bool is_empty(const INT3& ijk) const { return !(ngbrFlags[ijk.i + ijk.j*n.x + ijk.k*n.x*n.y] & NF_NOTEMPTY); }
-	bool is_empty(const DBL3& rel_pos) const { return !(ngbrFlags[int(rel_pos.x / h.x) + int(rel_pos.y / h.y) * n.x + int(rel_pos.z / h.z) * n.x * n.y] & NF_NOTEMPTY); }
+	bool is_empty(const INT3& ijk) const { return !(ngbrFlags[ijk.i + ijk.j*VEC<VType>::n.x + ijk.k*VEC<VType>::n.x*VEC<VType>::n.y] & NF_NOTEMPTY); }
+	bool is_empty(const DBL3& rel_pos) const { return !(ngbrFlags[int(rel_pos.x / VEC<VType>::h.x) + int(rel_pos.y / VEC<VType>::h.y) * VEC<VType>::n.x + int(rel_pos.z / VEC<VType>::h.z) * VEC<VType>::n.x * VEC<VType>::n.y] & NF_NOTEMPTY); }
 
 	//check if all cells intersecting the rectangle (absolute coordinates) are empty
 	bool is_empty(const Rect& rectangle) const;
@@ -337,19 +337,19 @@ public:
 	bool is_not_empty(const Rect& rectangle) const;
 
 	bool is_not_cmbnd(int index) const { return !(ngbrFlags[index] & NF_CMBND); }
-	bool is_not_cmbnd(const DBL3& ijk) const { return !(ngbrFlags[int(rel_pos.x / h.x) + int(rel_pos.y / h.y) * n.x + int(rel_pos.z / h.z) * n.x * n.y] & NF_CMBND); }
-	bool is_not_cmbnd(const INT3& ijk) const { return !(ngbrFlags[ijk.i + ijk.j*n.x + ijk.k*n.x*n.y] & NF_CMBND); }
+	bool is_not_cmbnd(const DBL3& rel_pos) const { return !(ngbrFlags[int(rel_pos.x / VEC<VType>::h.x) + int(rel_pos.y / VEC<VType>::h.y) * VEC<VType>::n.x + int(rel_pos.z / VEC<VType>::h.z) * VEC<VType>::n.x * VEC<VType>::n.y] & NF_CMBND); }
+	bool is_not_cmbnd(const INT3& ijk) const { return !(ngbrFlags[ijk.i + ijk.j*VEC<VType>::n.x + ijk.k*VEC<VType>::n.x*VEC<VType>::n.y] & NF_CMBND); }
 
 	bool is_cmbnd(int index) const { return (ngbrFlags[index] & NF_CMBND); }
-	bool is_cmbnd(const DBL3& rel_pos) const { return (ngbrFlags[int(rel_pos.x / h.x) + int(rel_pos.y / h.y) * n.x + int(rel_pos.z / h.z) * n.x * n.y] & NF_CMBND); }
-	bool is_cmbnd(const INT3& ijk) const { return (ngbrFlags[ijk.i + ijk.j*n.x + ijk.k*n.x*n.y] & NF_CMBND); }
+	bool is_cmbnd(const DBL3& rel_pos) const { return (ngbrFlags[int(rel_pos.x / VEC<VType>::h.x) + int(rel_pos.y / VEC<VType>::h.y) * VEC<VType>::n.x + int(rel_pos.z / VEC<VType>::h.z) * VEC<VType>::n.x * VEC<VType>::n.y] & NF_CMBND); }
+	bool is_cmbnd(const INT3& ijk) const { return (ngbrFlags[ijk.i + ijk.j*VEC<VType>::n.x + ijk.k*VEC<VType>::n.x*VEC<VType>::n.y] & NF_CMBND); }
 
 	bool is_skipcell(int index) const { return (ngbrFlags[index] & NF_SKIPCELL); }
-	bool is_skipcell(const DBL3& rel_pos) const { return (ngbrFlags[int(rel_pos.x / h.x) + int(rel_pos.y / h.y) * n.x + int(rel_pos.z / h.z) * n.x * n.y] & NF_SKIPCELL); }
-	bool is_skipcell(const INT3& ijk) const { return (ngbrFlags[ijk.i + ijk.j*n.x + ijk.k*n.x*n.y] & NF_SKIPCELL); }
+	bool is_skipcell(const DBL3& rel_pos) const { return (ngbrFlags[int(rel_pos.x / VEC<VType>::h.x) + int(rel_pos.y / VEC<VType>::h.y) * VEC<VType>::n.x + int(rel_pos.z / VEC<VType>::h.z) * VEC<VType>::n.x * VEC<VType>::n.y] & NF_SKIPCELL); }
+	bool is_skipcell(const INT3& ijk) const { return (ngbrFlags[ijk.i + ijk.j*VEC<VType>::n.x + ijk.k*VEC<VType>::n.x*VEC<VType>::n.y] & NF_SKIPCELL); }
 
 	//are all neighbors available? (for 2D don't check the z neighbors)
-	bool is_interior(int index) const { return (((ngbrFlags[index] & NF_BOTHX) == NF_BOTHX) && ((ngbrFlags[index] & NF_BOTHY) == NF_BOTHY) && (n.z == 1 || ((ngbrFlags[index] & NF_BOTHZ) == NF_BOTHZ))); }
+	bool is_interior(int index) const { return (((ngbrFlags[index] & NF_BOTHX) == NF_BOTHX) && ((ngbrFlags[index] & NF_BOTHY) == NF_BOTHY) && (VEC<VType>::n.z == 1 || ((ngbrFlags[index] & NF_BOTHZ) == NF_BOTHZ))); }
 	
 	//are all neighbors in the xy plane available?
 	bool is_plane_interior(int index) const { return (((ngbrFlags[index] & NF_BOTHX) == NF_BOTHX) && ((ngbrFlags[index] & NF_BOTHY) == NF_BOTHY)); }
@@ -453,14 +453,14 @@ public:
 	void delrect(const Rect& rectangle);
 
 	//mask values in cells using bitmap image : white -> empty cells. black -> keep values. Apply mask up to given z depth depending on grayscale value (all if default 0 value).
-	bool apply_bitmap_mask(std::vector<BYTE>& bitmap, double zDepth = 0.0);
+	bool apply_bitmap_mask(const std::vector<unsigned char>& bitmap, double zDepth = 0.0);
 
 	//--------------------------------------------MULTIPLE ENTRIES SETTERS - SHAPE GENERATORS : VEC_VC_genshape.h, VEC_VC_Voronoi.h
 
-	//roughen a mesh side (side = "-x", "x", "-y", "y", "-z", "z") to given depth (same units as h) with prng instantiated with given seed
+	//roughen a mesh side (side = "-x", "x", "-y", "y", "-z", "z") to given depth (same units as VEC<VType>::h) with prng instantiated with given seed
 	bool generate_roughside(std::string side, double depth, unsigned seed);
 
-	//Roughen mesh top and bottom surfaces using a jagged pattern to given depth and peak spacing (same units as h) with prng instantiated with given seed.
+	//Roughen mesh top and bottom surfaces using a jagged pattern to given depth and peak spacing (same units as VEC<VType>::h) with prng instantiated with given seed.
 	//Rough both top and bottom if sides is empty, else it should be either -z or z.
 	bool generate_jagged_surfaces(double depth, double spacing, unsigned seed, std::string sides);
 
@@ -488,7 +488,7 @@ public:
 	//copy values from copy_this but keep current dimensions - if necessary map values from copy_this to local dimensions; from flags only copy the shape but not the boundary condition values or anything else - these are reset
 	void copy_values(const VEC_VC<VType>& copy_this, Rect dstRect = Rect(), Rect srcRect = Rect());
 
-	//shift all the values in this VEC by the given delta (units same as h). Shift values in given shift_rect (absolute coordinates). Not optimised, not parallel code.
+	//shift all the values in this VEC by the given delta (units same as VEC<VType>::h). Shift values in given shift_rect (absolute coordinates). Not optimised, not parallel code.
 	void shift(const DBL3& delta, const Rect& shift_rect);
 	
 	//shift along an axis - use this for moving mesh algorithms. Fast parallel code.
@@ -497,7 +497,7 @@ public:
 	//shift along an axis - use this for moving mesh algorithms. Fast parallel code.
 	void shift_y(double delta, const Rect& shift_rect);
 
-	//shift all the values in this VEC by the given delta (units same as h). Shift values in given shift_rect (absolute coordinates).
+	//shift all the values in this VEC by the given delta (units same as VEC<VType>::h). Shift values in given shift_rect (absolute coordinates).
 	//Also keep magnitude in each cell (e.g. use for vectorial quantities, such as magnetization, to shift only the direction). Not optimised, not parallel code.
 	void shift_keepmag(const DBL3& delta, const Rect& shift_rect);
 
@@ -523,7 +523,7 @@ public:
 
 	//overload VEC method : use NF_NOTEMPTY flags instead here
 	VType average_nonempty(const Box& box) const;
-	//average over non-empty cells over given rectangle (relative to this VEC's rect)
+	//average over non-empty cells over given rectangle (relative to this VEC's VEC<VType>::rect)
 	VType average_nonempty(const Rect& rectangle = Rect()) const;
 
 	//parallel processing versions - do not call from parallel code!!!
@@ -563,7 +563,7 @@ public:
 	//calculate Laplace operator at cell with given index. Use non-homogeneous Neumann boundary conditions with the specified boundary differential.
 	//NOTE : the boundary differential is specified with 3 components, one for each of +x, +y, +z surface normal directions
 	//Returns zero at composite media boundary cells.
-	VType delsq_nneu(int idx, VAL3<VType>& bdiff) const;
+	VType delsq_nneu(int idx, const VAL3<VType>& bdiff) const;
 
 	//calculate Laplace operator at cell with given index. Use Dirichlet conditions if set, else Neumann boundary conditions (homogeneous).
 	//Returns zero at composite media boundary cells.
@@ -572,7 +572,7 @@ public:
 	//calculate Laplace operator at cell with given index. Use Dirichlet conditions if set, else non-homogeneous Neumann boundary conditions.
 	//NOTE : the boundary differential is specified with 3 components, one for each of +x, +y, +z surface normal directions
 	//Returns zero at composite media boundary cells.
-	VType delsq_diri_nneu(int idx, VAL3<VType>& bdiff) const;
+	VType delsq_diri_nneu(int idx, const VAL3<VType>& bdiff) const;
 
 	//calculate Laplace operator at cell with given index. Use Robin boundary conditions (defaulting to Neumann if not set).
 	//Returns zero at composite media boundary cells.
@@ -588,7 +588,7 @@ public:
 	//gradient operator. Use non-homogeneous Neumann boundary conditions.
 	//Can be used at composite media boundaries where sided differentials will be used instead.
 	//NOTE : the boundary differential is specified with 3 components, one for each of +x, +y, +z surface normal directions
-	VAL3<VType> grad_nneu(int idx, VAL3<VType>& bdiff) const;
+	VAL3<VType> grad_nneu(int idx, const VAL3<VType>& bdiff) const;
 
 	//gradient operator. Use Dirichlet conditions if set, else Neumann boundary conditions (homogeneous).
 	//Can be used at composite media boundaries where sided differentials will be used instead.
@@ -597,7 +597,7 @@ public:
 	//gradient operator. Use Dirichlet conditions if set, else non-homogeneous Neumann boundary conditions.
 	//NOTE : the boundary differential is specified with 3 components, one for each of +x, +y, +z surface normal directions
 	//Can be used at composite media boundaries where sided differentials will be used instead.
-	VAL3<VType> grad_diri_nneu(int idx, VAL3<VType>& bdiff) const;
+	VAL3<VType> grad_diri_nneu(int idx, const VAL3<VType>& bdiff) const;
 
 	//gradient operator. Use sided differentials at boundaries (including at composite media boundaries)
 	VAL3<VType> grad_sided(int idx) const;
@@ -613,7 +613,7 @@ public:
 	//NOTE : the boundary differential is specified with 3 components, one for each of +x, +y, +z surface normal directions
 	//Can be used at composite media boundaries where sided differentials will be used instead.
 	//div operator can be applied if VType is a VAL3<Type>, returning Type
-	double div_nneu(int idx, VAL3<VType>& bdiff) const;
+	double div_nneu(int idx, const VAL3<VType>& bdiff) const;
 
 	//divergence operator. Use Dirichlet conditions if set, else Neumann boundary conditions (homogeneous).
 	//Can be used at composite media boundaries where sided differentials will be used instead.
@@ -624,23 +624,23 @@ public:
 	//NOTE : the boundary differential is specified with 3 components, one for each of +x, +y, +z surface normal directions
 	//Can be used at composite media boundaries where sided differentials will be used instead.
 	//div operator can be applied if VType is a VAL3<Type>, returning Type
-	double div_diri_nneu(int idx, VAL3<VType>& bdiff) const;
+	double div_diri_nneu(int idx, const VAL3<VType>& bdiff) const;
 
 	//divergence operator. Use sided differentials (also at composite media boundaries)
 	//div operator can be applied if VType is a VAL3<Type>, returning Type
 	double div_sided(int idx) const;
 	
-	//divergence operator of epsilon3(quantity[idx]), i.e. multiply this VEC_VC by the unit antisymmetric tensor of rank3 before taking divergence. 
+	//divergence operator of epsilon3(VEC<VType>::quantity[idx]), i.e. multiply this VEC_VC by the unit antisymmetric tensor of rank3 before taking divergence. 
 	//Use Neumann boundary conditions (homogeneous).
 	//Can be used at composite media boundaries where sided differentials will be used instead.
 	VType diveps3_neu(int idx) const;
 
-	//divergence operator of epsilon3(quantity[idx]), i.e. multiply this VEC_VC by the unit antisymmetric tensor of rank3 before taking divergence. 
+	//divergence operator of epsilon3(VEC<VType>::quantity[idx]), i.e. multiply this VEC_VC by the unit antisymmetric tensor of rank3 before taking divergence. 
 	//Use Dirichlet conditions if set, else Neumann boundary conditions(homogeneous).
 	//Can be used at composite media boundaries where sided differentials will be used instead.
 	VType diveps3_diri(int idx) const;
 
-	//divergence operator of epsilon3(quantity[idx]), i.e. multiply this VEC_VC by the unit antisymmetric tensor of rank3 before taking divergence. 
+	//divergence operator of epsilon3(VEC<VType>::quantity[idx]), i.e. multiply this VEC_VC by the unit antisymmetric tensor of rank3 before taking divergence. 
 	//Use sided differentials (also at composite media boundaries)
 	VType diveps3_sided(int idx) const;
 
@@ -655,7 +655,7 @@ public:
 	//Can be used at composite media boundaries where sided differentials will be used instead.
 	//NOTE : the boundary differential is specified with 3 components, one for each of +x, +y, +z surface normal directions
 	//can only be applied if VType is a VAL3
-	VType curl_nneu(int idx, VAL3<VType>& bdiff) const;
+	VType curl_nneu(int idx, const VAL3<VType>& bdiff) const;
 
 	//curl operator. Use Dirichlet conditions if set, else Neumann boundary conditions (homogeneous).
 	//Can be used at composite media boundaries where sided differentials will be used instead.
@@ -666,7 +666,7 @@ public:
 	//NOTE : the boundary differential is specified with 3 components, one for each of +x, +y, +z surface normal directions
 	//Can be used at composite media boundaries where sided differentials will be used instead.
 	//can only be applied if VType is a VAL3
-	VType curl_diri_nneu(int idx, VAL3<VType>& bdiff) const;
+	VType curl_diri_nneu(int idx, const VAL3<VType>& bdiff) const;
 
 	//curl operator. Use sided differentials at boundaries (including at composite media boundaries)
 	//can only be applied if VType is a VAL3
@@ -684,9 +684,9 @@ public:
 	//Use non-homogeneous Neumann boundary conditions.
 	//Returns zero at composite media boundary cells
 	//NOTE : the boundary differential is specified with 3 components, one for each of +x, +y, +z surface normal directions
-	VType dxx_nneu(int idx, VAL3<VType>& bdiff) const;
-	VType dyy_nneu(int idx, VAL3<VType>& bdiff) const;
-	VType dzz_nneu(int idx, VAL3<VType>& bdiff) const;
+	VType dxx_nneu(int idx, const VAL3<VType>& bdiff) const;
+	VType dyy_nneu(int idx, const VAL3<VType>& bdiff) const;
+	VType dzz_nneu(int idx, const VAL3<VType>& bdiff) const;
 
 	//Use Dirichlet boundary conditions, else Neumann boundary conditions (homogeneous).
 	//Returns zero at composite media boundary cells.
@@ -697,9 +697,9 @@ public:
 	//Use Dirichlet boundary conditions, else non-homogeneous Neumann boundary conditions.
 	//Returns zero at composite media boundary cells.
 	//NOTE : the boundary differential is specified with 3 components, one for each of +x, +y, +z surface normal directions
-	VType dxx_diri_nneu(int idx, VAL3<VType>& bdiff) const;
-	VType dyy_diri_nneu(int idx, VAL3<VType>& bdiff) const;
-	VType dzz_diri_nneu(int idx, VAL3<VType>& bdiff) const;
+	VType dxx_diri_nneu(int idx, const VAL3<VType>& bdiff) const;
+	VType dyy_diri_nneu(int idx, const VAL3<VType>& bdiff) const;
+	VType dzz_diri_nneu(int idx, const VAL3<VType>& bdiff) const;
 
 	//Use Robin boundary conditions (defaulting to Neumann if not set).
 	//Returns zero at composite media boundary cells.
@@ -748,14 +748,14 @@ public:
 
 	//----LAPLACE / POISSON EQUATION : VEC_VC_solve.h
 
-	//Take one SOR iteration for Laplace equation on this VEC. Return error (maximum change in quantity from one iteration to the next)
+	//Take one SOR iteration for Laplace equation on this VEC. Return error (maximum change in VEC<VType>::quantity from one iteration to the next)
 	//Dirichlet boundary conditions used, defaulting to Neumann boundary conditions where not set, and composite media boundary cells skipped (use boundary conditions to set cmbnd cells after calling this)
-	//Return un-normalized error (maximum change in quantity from one iteration to the next) - first - and maximum value  -second - divide them to obtain normalized error
+	//Return un-normalized error (maximum change in VEC<VType>::quantity from one iteration to the next) - first - and maximum value  -second - divide them to obtain normalized error
 	DBL2 IterateLaplace_SOR(double relaxation_param = 1.9);
 
 	//For Poisson equation we need a function to specify the RHS of the equation delsq V = F : use Poisson_RHS
 	//F must be a member const method of Owner taking an index value (the index ranges over this VEC) and returning a double value : F(index) evaluated at the index-th cell.
-	//Return un-normalized error (maximum change in quantity from one iteration to the next) - first - and maximum value  -second - divide them to obtain normalized error
+	//Return un-normalized error (maximum change in VEC<VType>::quantity from one iteration to the next) - first - and maximum value  -second - divide them to obtain normalized error
 	//Dirichlet boundary conditions used, defaulting to Neumann boundary conditions where not set, and composite media boundary cells skipped (use boundary conditions to set cmbnd cells after calling this)
 	template <typename Owner>
 	DBL2 IteratePoisson_SOR(std::function<VType(const Owner&, int)> Poisson_RHS, Owner& instance, double relaxation_param = 1.9);
@@ -763,21 +763,21 @@ public:
 	//This solves delsq V = F + M * V : For M use Tensor_RHS (For VType double M returns type double, For VType DBL3 M returns DBL33)
 	//For Poisson equation we need a function to specify the RHS of the equation delsq V = F : use Poisson_RHS
 	//F must be a member const method of Owner taking an index value (the index ranges over this VEC) and returning a double value : F(index) evaluated at the index-th cell.
-	//Return un-normalized error (maximum change in quantity from one iteration to the next) - first - and maximum value  -second - divide them to obtain normalized error
+	//Return un-normalized error (maximum change in VEC<VType>::quantity from one iteration to the next) - first - and maximum value  -second - divide them to obtain normalized error
 	//Dirichlet boundary conditions used, defaulting to Neumann boundary conditions where not set, and composite media boundary cells skipped (use boundary conditions to set cmbnd cells after calling this)
 	template <typename Owner, typename MType>
 	DBL2 IteratePoisson_SOR(std::function<VType(const Owner&, int)> Poisson_RHS, std::function<MType(const Owner&, int)> Tensor_RHS, Owner& instance, double relaxation_param = 1.9);
 
 	//Poisson equation solved using SOR, but using non-homogeneous Neumann boundary condition - this is evaluated using the bdiff call-back method.
 	//NOTE : the boundary differential is specified with 3 components, one for each of +x, +y, +z surface normal directions
-	//Return un-normalized error (maximum change in quantity from one iteration to the next) - first - and maximum value  -second - divide them to obtain normalized error
+	//Return un-normalized error (maximum change in VEC<VType>::quantity from one iteration to the next) - first - and maximum value  -second - divide them to obtain normalized error
 	template <typename Owner>
 	DBL2 IteratePoisson_SOR(std::function<VType(const Owner&, int)> Poisson_RHS, std::function<VAL3<VType>(const Owner&, int)> bdiff, Owner& instance, double relaxation_param = 1.9);
 
 	//This solves delsq V = F + M * V : For M use Tensor_RHS (For VType double M returns type double, For VType DBL3 M returns DBL33)
 	//Poisson equation solved using SOR, but using non-homogeneous Neumann boundary condition - this is evaluated using the bdiff call-back method.
 	//NOTE : the boundary differential is specified with 3 components, one for each of +x, +y, +z surface normal directions
-	//Return un-normalized error (maximum change in quantity from one iteration to the next) - first - and maximum value  -second - divide them to obtain normalized error
+	//Return un-normalized error (maximum change in VEC<VType>::quantity from one iteration to the next) - first - and maximum value  -second - divide them to obtain normalized error
 	template <typename Owner, typename MType>
 	DBL2 IteratePoisson_SOR(std::function<VType(const Owner&, int)> Poisson_RHS, std::function<MType(const Owner&, int)> Tensor_RHS, std::function<VAL3<VType>(const Owner&, int)> bdiff, Owner& instance, double relaxation_param = 1.9);
 };

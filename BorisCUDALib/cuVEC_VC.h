@@ -435,7 +435,7 @@ public:
 	__host__ void delrect(cuRect rectangle);
 
 	//mask values in cells using bitmap image : white -> empty cells. black -> keep values. Apply mask up to given z depth number of cells depending on grayscale value (zDepth, all if 0).
-	__host__ bool apply_bitmap_mask(std::vector<BYTE>& bitmap, int zDepth = 0);
+	__host__ bool apply_bitmap_mask(std::vector<unsigned char>& bitmap, int zDepth = 0);
 	
 	//--------------------------------------------MULTIPLE ENTRIES SETTERS - OTHERS : cuVEC_oper.h and cuVEC_oper.cuh
 

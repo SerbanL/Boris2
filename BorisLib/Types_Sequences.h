@@ -1,6 +1,9 @@
 #pragma once
 
 #include "Types_VAL.h"
+#include "Funcs_Math.h"
+#include "Funcs_Vectors.h"
+#include "Funcs_Files.h"
 
 ////////////////////////////////////////////////////////////////////////////////////////////////// Sequence
 //
@@ -34,7 +37,7 @@ public:
 	{}
 
 	//For the case of SEQ3 (i.e. Sequence<DBL3>) we also want to have a 7 parameter constructor as below, but this will not be available for any other types
-	template <class = typename std::enable_if<std::is_same<Type, DBL3>::value>::type>
+	template <typename Type_ = Type, std::enable_if_t<std::is_same<Type_, DBL3>::value>* = nullptr>
 	Sequence(double sx, double sy, double sz, double ex, double ey, double ez, int steps_) :
 		start(DBL3(sx, sy, sz)), end(DBL3(ex, ey, ez)), steps(steps_)
 	{}
@@ -230,9 +233,9 @@ public:
 	{}
 
 	//For the case of COSOSC3 (i.e. CosOscillation<DBL3>) we also want to have a 5 parameter constructor as below, but this will not be available for any other types
-	template <class = typename std::enable_if<std::is_same<Type, DBL3>::value>::type>
+	template <typename Type_ = Type, std::enable_if_t<std::is_same<Type_, DBL3>::value>* = nullptr>
 	CosOscillation(double ox, double oy, double oz, int steps_per_cycle_, int cycles_) :
-		oscillation(DBL3(ox, oy, oz)), steps_per_cycle(steps_), cycles(cycles_)
+		oscillation(DBL3(ox, oy, oz)), steps_per_cycle(steps_per_cycle_), cycles(cycles_)
 	{}
 
 	//----------------------------- CONVERTING CONSTRUCTORS
@@ -330,9 +333,9 @@ public:
 	{}
 
 	//For the case of COSOSC3 (i.e. SinOscillation<DBL3>) we also want to have a 5 parameter constructor as below, but this will not be available for any other types
-	template <class = typename std::enable_if<std::is_same<Type, DBL3>::value>::type>
+	template <typename Type_ = Type, std::enable_if_t<std::is_same<Type_, DBL3>::value>* = nullptr>
 	SinOscillation(double ox, double oy, double oz, int steps_per_cycle_, int cycles_) :
-		oscillation(DBL3(ox, oy, oz)), steps_per_cycle(steps_), cycles(cycles_)
+		oscillation(DBL3(ox, oy, oz)), steps_per_cycle(steps_per_cycle_), cycles(cycles_)
 	{}
 
 	//----------------------------- CONVERTING CONSTRUCTORS
@@ -433,9 +436,9 @@ public:
 	{}
 
 	//For the case of COSSEQ3 (i.e. CosSequence<DBL3>) we also want to have a 8 parameter constructor as below, but this will not be available for any other types
-	template <class = typename std::enable_if<std::is_same<Type, DBL3>::value>::type>
+	template <typename Type_ = Type, std::enable_if_t<std::is_same<Type_, DBL3>::value>* = nullptr>
 	CosSequence(double bx, double by, double bz, double ox, double oy, double oz, int steps_per_cycle_, int cycles_) :
-		bias(DBL3(bx, by, bz)), oscillation(DBL3(ox, oy, oz)), steps_per_cycle(steps_), cycles(cycles_)
+		bias(DBL3(bx, by, bz)), oscillation(DBL3(ox, oy, oz)), steps_per_cycle(steps_per_cycle_), cycles(cycles_)
 	{}
 
 	//----------------------------- CONVERTING CONSTRUCTORS
@@ -679,11 +682,14 @@ private:
 							double value = parametric_interpolation(start, end, parameter);
 							values[step] = *reinterpret_cast<Type*>(&value);
 						}
-						else values[step] = *reinterpret_cast<Type*>(&load_arrays[1][file_array_index]);
+						else {
+							double value = load_arrays[1][file_array_index];
+							values[step] = *reinterpret_cast<Type*>(&value);
+						}
 					}
 					else {
-
-						values[step] = *reinterpret_cast<Type*>(&load_arrays[1].back());
+						double value = load_arrays[1].back();
+						values[step] = *reinterpret_cast<Type*>(&value);
 					}
 				}
 			}
@@ -729,13 +735,18 @@ private:
 							double parameter = (time - load_arrays[0][file_array_index]) / dT;
 							DBL3 start = DBL3(load_arrays[1][file_array_index], load_arrays[2][file_array_index], load_arrays[3][file_array_index]);
 							DBL3 end = DBL3(load_arrays[1][file_array_index + 1], load_arrays[2][file_array_index + 1], load_arrays[3][file_array_index + 1]);
-							values[step] = *reinterpret_cast<Type*>(&parametric_interpolation(start, end, parameter));
+							DBL3 value = parametric_interpolation(start, end, parameter);
+							values[step] = *reinterpret_cast<Type*>(&value);
 						}
-						else values[step] = *reinterpret_cast<Type*>(&DBL3(load_arrays[1][file_array_index], load_arrays[2][file_array_index], load_arrays[3][file_array_index]));
+						else {
+
+							DBL3 value = DBL3(load_arrays[1][file_array_index], load_arrays[2][file_array_index], load_arrays[3][file_array_index]);
+							values[step] = *reinterpret_cast<Type*>(&value);
+						}
 					}
 					else {
-
-						values[step] = *reinterpret_cast<Type*>(&DBL3(load_arrays[1].back(), load_arrays[2].back(), load_arrays[3].back()));
+						DBL3 value = DBL3(load_arrays[1].back(), load_arrays[2].back(), load_arrays[3].back());
+						values[step] = *reinterpret_cast<Type*>(&value);
 					}
 				}
 			}
@@ -879,6 +890,6 @@ public:
 
 	void clear(void) { sets.resize(0); }
 
-	void storeset(std::vector<Type> new_set) { sets.push_back(newSet); }
+	void storeset(std::vector<Type> new_set) { sets.push_back(new_set); }
 	template <typename ... VType> void storeset(VType ... values) { sets.push_back(make_vector(values...)); }
 };

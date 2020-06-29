@@ -1,7 +1,7 @@
 #pragma once
 
 #include "VEC.h"
-#include "prng.h"
+#include "BLib_prng.h"
 
 //simple brute-force Voronoi diagram generation.
 //when you have time use a proper algorithm:
@@ -399,7 +399,7 @@ bool VEC<VType>::generate_voronoiboundary3d(DBL3 new_h, Rect new_rect, DBL2 rang
 //voronoi rotations 2D: set VEC dimensions (force 2D in xy plane) and generate voronoi 2d tessellation with average spacing. This method is applicable only to DBL3 PType, where a rotation operation is applied, fixed in each Voronoi cell. 
 //The rotation uses the values for polar (theta) and azimuthal (phi) angles specified in given ranges. prng instantiated with given seed.
 template <>
-bool VEC<DBL3>::generate_voronoirotation2d(DBL3 new_h, Rect new_rect, DBL2 theta, DBL2 phi, double spacing, int seed)
+inline bool VEC<DBL3>::generate_voronoirotation2d(DBL3 new_h, Rect new_rect, DBL2 theta, DBL2 phi, double spacing, int seed)
 {
 	//force 2D in xy plane
 	new_h.k = new_rect.size().k;
@@ -426,7 +426,7 @@ bool VEC<DBL3>::generate_voronoirotation2d(DBL3 new_h, Rect new_rect, DBL2 theta
 //voronoi rotations 3D: set VEC dimensions and generate voronoi 3d tessellation with average spacing. This method is applicable only to DBL3 PType, where a rotation operation is applied, fixed in each Voronoi cell. 
 //The rotation uses the values for polar (theta) and azimuthal (phi) angles specified in given ranges in degrees. prng instantiated with given seed.
 template <>
-bool VEC<DBL3>::generate_voronoirotation3d(DBL3 new_h, Rect new_rect, DBL2 theta, DBL2 phi, double spacing, int seed)
+inline bool VEC<DBL3>::generate_voronoirotation3d(DBL3 new_h, Rect new_rect, DBL2 theta, DBL2 phi, double spacing, int seed)
 {
 	if (!resize(new_h, new_rect) || !spacing) return false;
 

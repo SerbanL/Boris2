@@ -1,18 +1,31 @@
 #pragma once
 
+#include "BorisLib_Config.h"
+#if OPERATING_SYSTEM == OS_WIN
+
 #include <Windows.h>
 #include <Winsock2.h>
 #include <ws2tcpip.h>
 #include <string>
 #include <vector>
+#include <thread>
+#include <chrono>
 
 #pragma comment (lib, "Ws2_32.lib")
 
 #define DEFAULT_BUFLEN 1024
 #define DEFAULT_PORT "1542"
 
-#define RECVSLEEPMS		100				//Used for non-blocking calls to recv : after each call sleep this number of ms to avoid hogging too much CPU time 
-										//Calling recv too often, or using blocking sockets i.e. blocking recv, will put a slight load on one of the CPU cores which can really degrade parallelized computations, irrespective of which thread what
+//Used for non-blocking calls to recv : after each call sleep this number of ms to avoid hogging too much CPU time 
+//Calling recv too often will put a slight load on one of the CPU cores which can affect parallelized computations
+
+//receive commands from client sleep
+#define RECVSLEEPMS		5
+//error - make listen socket sleep
+#define SERRSLEEPMS		500
+//accept new client sleep
+#define ACPTSLEEPMS		200
+										
 
 //see https://msdn.microsoft.com/en-us/library/windows/desktop/ms737889(v=vs.85).aspx
 
@@ -22,7 +35,7 @@
 
 //SERVER
 
-class WinSocks {
+class NetSocks {
 
 private:
 
@@ -50,8 +63,8 @@ private:
 
 public:
 
-	WinSocks(int buffer_size = DEFAULT_BUFLEN);
-	~WinSocks();
+	NetSocks(int buffer_size = DEFAULT_BUFLEN);
+	~NetSocks();
 
 	//Non-blocking call to Listen for incoming messages - return message when received
 	std::string Listen(void);
@@ -71,7 +84,7 @@ public:
 
 //SERVER------------------------------------------------------------------------
 
-inline WinSocks::WinSocks(int buffer_size) 
+inline NetSocks::NetSocks(int buffer_size)
 {
 	recvbuflen = buffer_size;
 	recvbuf = new char[recvbuflen];
@@ -79,20 +92,12 @@ inline WinSocks::WinSocks(int buffer_size)
 	MakeListenSocket();
 }
 
-inline WinSocks::~WinSocks() {
-
+inline NetSocks::~NetSocks() 
+{
 	if (clientConnected) {
 
 		// shutdown the connection since we're done
-		int iResult = shutdown(ClientSocket, SD_SEND);
-		if (iResult == SOCKET_ERROR) {
-
-			//error
-			closesocket(ClientSocket);
-			WSACleanup();
-		}
-
-		// cleanup
+		shutdown(ClientSocket, SD_SEND);
 		closesocket(ClientSocket);
 	}
 
@@ -106,15 +111,13 @@ inline WinSocks::~WinSocks() {
 	delete recvbuf;
 }
 
-inline void WinSocks::MakeListenSocket(void) {
-
+inline void NetSocks::MakeListenSocket(void) 
+{
 	clientConnected = false;
 	listenSocketActive = false;
 
 	ListenSocket = INVALID_SOCKET;
 	ClientSocket = INVALID_SOCKET;
-
-	recvbuflen = DEFAULT_BUFLEN;
 
 	// Initialize Winsock
 	WSADATA wsaData;
@@ -139,6 +142,7 @@ inline void WinSocks::MakeListenSocket(void) {
 	if (iResult != 0) {
 
 		//error
+		freeaddrinfo(result);
 		WSACleanup();
 		return;
 	}
@@ -166,6 +170,8 @@ inline void WinSocks::MakeListenSocket(void) {
 
 	freeaddrinfo(result);
 
+	//set socket to listen for incoming connections
+	//call to accept later will accept any incoming connections
 	iResult = listen(ListenSocket, SOMAXCONN);
 	if (iResult == SOCKET_ERROR) {
 
@@ -182,9 +188,14 @@ inline void WinSocks::MakeListenSocket(void) {
 	listenSocketActive = true;
 }
 
-inline std::string WinSocks::Listen(void) {
-
-	if (!listenSocketActive) { Sleep(RECVSLEEPMS); MakeListenSocket(); return ""; }
+inline std::string NetSocks::Listen(void) 
+{	
+	if (!listenSocketActive) { 
+		
+		std::this_thread::sleep_for(std::chrono::milliseconds(SERRSLEEPMS)); 
+		MakeListenSocket(); 
+		return ""; 
+	}
 
 	// Accept a client socket if one not available already. Asynchronous since ListenSocket was made non-blocking.
 	if (!clientConnected) {
@@ -202,7 +213,7 @@ inline std::string WinSocks::Listen(void) {
 		}
 		else {
 
-			Sleep(RECVSLEEPMS);
+			std::this_thread::sleep_for(std::chrono::milliseconds(ACPTSLEEPMS));
 			return "";
 		}
 	}
@@ -240,23 +251,23 @@ inline std::string WinSocks::Listen(void) {
 	}
 
 	//sleep before calling the non-blocking recv function (client socket is not blocking)
-	Sleep(RECVSLEEPMS);
+	std::this_thread::sleep_for(std::chrono::milliseconds(RECVSLEEPMS));
 
 	return "";
 }
 
-inline void WinSocks::SetSendData(const std::vector<std::string>& newdataParams) {
-
+inline void NetSocks::SetSendData(const std::vector<std::string>& newdataParams) 
+{
 	dataParams = newdataParams;
 }
 
-inline void WinSocks::SetSendData(std::vector<std::string>&& newdataParams) {
-
+inline void NetSocks::SetSendData(std::vector<std::string>&& newdataParams) 
+{
 	dataParams = move(newdataParams);
 }
 
-inline void WinSocks::SendDataParams(void) {
-
+inline void NetSocks::SendDataParams(void) 
+{
 	if (clientConnected) {
 
 		//form message std::string : tab value tab value tab value etc. If no values then just a tab
@@ -272,6 +283,7 @@ inline void WinSocks::SendDataParams(void) {
 		//message client
 		int iSendResult = send(ClientSocket, ss.str().c_str(), (int)ss.str().length(), 0);
 		if (iSendResult == SOCKET_ERROR) {
+			
 			//error
 			return;
 		}
@@ -281,8 +293,8 @@ inline void WinSocks::SendDataParams(void) {
 	dataParams.resize(0);
 }
 
-inline void WinSocks::SignalClientError(std::string message) {
-
+inline void NetSocks::SignalClientError(std::string message) 
+{
 	dataParams.resize(0);
 	dataParams.push_back("!");
 	dataParams.push_back(message);
@@ -294,7 +306,9 @@ inline void WinSocks::SignalClientError(std::string message) {
 
 //CLIENT
 
-class WinSocksClient {
+class NetSocksClient {
+
+private:
 
 	WSADATA wsaData;
 	SOCKET ConnectSocket;
@@ -309,8 +323,8 @@ public:
 
 public:
 
-	WinSocksClient(std::string serverAddress = "", std::string port = DEFAULT_PORT, int buffer_size = DEFAULT_BUFLEN);
-	~WinSocksClient();
+	NetSocksClient(std::string serverAddress = "", std::string port = DEFAULT_PORT, int buffer_size = DEFAULT_BUFLEN);
+	~NetSocksClient();
 
 	//Send message to server then wait for response
 	std::string SendMessage_GetResponse(std::string message);
@@ -319,7 +333,7 @@ public:
 	void SendSimpleMessage(std::string message);
 };
 
-inline WinSocksClient::WinSocksClient(std::string serverAddress, std::string port, int buffer_size)
+inline NetSocksClient::NetSocksClient(std::string serverAddress, std::string port, int buffer_size)
 {
 	//for local host use serverAddress = "localhost", or just leave it blank
 
@@ -351,6 +365,7 @@ inline WinSocksClient::WinSocksClient(std::string serverAddress, std::string por
 	if (iResult != 0) {
 		
 		WSACleanup();
+		freeaddrinfo(result);
 		return;
 	}
 
@@ -388,7 +403,7 @@ inline WinSocksClient::WinSocksClient(std::string serverAddress, std::string por
 	connected = true;
 }
 
-inline WinSocksClient::~WinSocksClient()
+inline NetSocksClient::~NetSocksClient()
 {
 	// shutdown the connection since no more data will be sent
 	int iResult = shutdown(ConnectSocket, SD_SEND);
@@ -405,7 +420,7 @@ inline WinSocksClient::~WinSocksClient()
 	delete recvbuf;
 }
 
-inline std::string WinSocksClient::SendMessage_GetResponse(std::string message)
+inline std::string NetSocksClient::SendMessage_GetResponse(std::string message)
 {
 	if (!connected) return "";
 
@@ -435,7 +450,7 @@ inline std::string WinSocksClient::SendMessage_GetResponse(std::string message)
 	return "";
 }
 
-inline void WinSocksClient::SendSimpleMessage(std::string message)
+inline void NetSocksClient::SendSimpleMessage(std::string message)
 {
 	// Send simple message
 
@@ -448,3 +463,5 @@ inline void WinSocksClient::SendSimpleMessage(std::string message)
 		return;
 	}
 }
+
+#endif

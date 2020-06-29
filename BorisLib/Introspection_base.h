@@ -73,8 +73,20 @@ struct VarInfo {
 	bool keep_ptr = false;
 
 	VarInfo(Type& value_, const std::string& name_, bool keep_ptr_ = false)
-		: value(value_), name(name_), keep_ptr(keep_ptr_)
-	{}
+		: value(value_), keep_ptr(keep_ptr_)
+	{
+		//When used with ProgramState it's possible the variable scope is specified using "this->" or "basename<...>::"
+		//In this case we only want the actual variable name, not the scope name as well
+		//This happens if ProgramState is used on a templated class derived from a templated base, which requires specifying the templated base scope.
+		size_t pos = name_.find("::");
+		if (pos != std::string::npos) name = name_.substr(pos + 2);
+		else {
+
+			pos = name_.find("->");
+			if (pos != std::string::npos) name = name_.substr(pos + 2);
+			else name = name_;
+		}
+	}
 };
 
 template <typename Type>
@@ -292,10 +304,10 @@ struct __is_template_base_of {
 
 private:
 
-	template <template <typename...> class TemplateBase, typename... TemplateParams>
-	static std::true_type test(const TemplateBase<TemplateParams...>*);
+	template <template <typename...> class __TemplateBase, typename... TemplateParams>
+	static std::true_type test(const __TemplateBase<TemplateParams...>*);
 
-	template <template <typename...> class TemplateBase>
+	template <template <typename...> class __TemplateBase>
 	static std::false_type test(...);
 
 public:
@@ -341,14 +353,14 @@ struct __accepts_N_parameters {
 private:
 
 	template <typename Type_, int... I>
-	static auto test(std::index_sequence<I...>) -> decltype(Type_(I...), std::true_type());
+	static auto test(std::integer_sequence<int, I...>) -> decltype(Type_(I...), std::true_type());
 
 	template <typename>
 	static auto test(...) -> std::false_type;
 
 public:
 
-	static const bool value = decltype(test<Type>(std::make_index_sequence<N>{}))::value;
+	static const bool value = decltype(test<Type>(std::make_integer_sequence<int, N>{}))::value;
 };
 
 //use this

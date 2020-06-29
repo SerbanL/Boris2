@@ -1,13 +1,9 @@
 #pragma once
 
-#define _CRT_SECURE_NO_WARNINGS
-
-#include <d2d1_1.h>
 #include <string>
 #include <vector>
 #include <sstream>
 #include <time.h>
-#include <windows.h>
 
 //If a floating point value is between epsilon negative and positive then it is considered to be zero (used for comparisons when we need to know if a value is zero or not)
 #define EPSILON_POSITIVE 1e-12F						
@@ -18,27 +14,6 @@
 
 //Fixed epsilon value used for floor and ceil functions with fixed precision. Also acts as a limit on variable epsilon use (FLOOR_CEIL_RATIO).
 #define EPSILON_ROUNDING	1e-4
-
-///////////////////////////////////////////////////////////////////////////////
-//MEMORY
-
-inline size_t MemGetFree(void)
-{
-	MEMORYSTATUSEX statex;
-	statex.dwLength = sizeof(statex);
-	GlobalMemoryStatusEx(&statex);
-
-	return statex.ullAvailPhys;
-}
-
-inline size_t MemGetTotal(void)
-{
-	MEMORYSTATUSEX statex;
-	statex.dwLength = sizeof(statex);
-	GlobalMemoryStatusEx(&statex);
-
-	return statex.ullTotalPhys;
-}
 
 ///////////////////////////////////////////////////////////////////////////////
 //TIME
@@ -120,5 +95,3 @@ inline bool GoodIdx(int upperLimit, int idx) { return (idx >= 0 && idx <= upperL
 inline bool GoodIdx(int upperLimit, int idx1, int idx2) { return (idx1 >= 0 && idx1 <= upperLimit && idx2 >= 0 && idx2 <= upperLimit); }
 inline bool GoodIdx(int upperLimit, int idx1, int idx2, int idx3) { return (idx1 >= 0 && idx1 <= upperLimit && idx2 >= 0 && idx2 <= upperLimit && idx3 >= 0 && idx3 <= upperLimit); }
 inline bool GoodIdx(int upperLimit, int idx1, int idx2, int idx3, int idx4) { return (idx1 >= 0 && idx1 <= upperLimit && idx2 >= 0 && idx2 <= upperLimit && idx3 >= 0 && idx3 <= upperLimit && idx4 >= 0 && idx4 <= upperLimit); }
-
-inline bool SameColor(D2D1_COLOR_F color1, D2D1_COLOR_F color2) { return (IsE(color1.r, color2.r) && IsE(color1.g, color2.g) && IsE(color1.b, color2.b) && IsE(color1.a, color2.a)); }

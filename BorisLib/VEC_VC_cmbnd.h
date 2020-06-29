@@ -45,7 +45,7 @@ std::vector<CMBNDInfo> VEC_VC<VType>::set_cmbnd_flags(int primary_mesh_idx, std:
 
 		Rect check_rect = pVECs[check_mesh]->rect;
 
-		Rect mesh_intersection = rect.get_intersection(check_rect);
+		Rect mesh_intersection = VEC<VType>::rect.get_intersection(check_rect);
 
 		//intersection must be exactly a plane
 		if (mesh_intersection.IsPlane()) {
@@ -59,73 +59,73 @@ std::vector<CMBNDInfo> VEC_VC<VType>::set_cmbnd_flags(int primary_mesh_idx, std:
 			if (IsZ(mesh_intersection.s.x - mesh_intersection.e.x)) {
 
 				//is the selected mesh on the positive or negative side of the boundary? Set flag to use. Also adjust mesh_intersection so it contains all the cells to set flags for.
-				if (IsZ(rect.s.x - mesh_intersection.s.x)) {
+				if (IsZ(VEC<VType>::rect.s.x - mesh_intersection.s.x)) {
 
 					flag_value = NF_CMBNDPX;
-					mesh_intersection.e.x += h.x;
-					contact.hshift_primary = DBL3(-h.x, 0, 0);
+					mesh_intersection.e.x += VEC<VType>::h.x;
+					contact.hshift_primary = DBL3(-VEC<VType>::h.x, 0, 0);
 					contact.hshift_secondary = DBL3(-pVECs[check_mesh]->h.x, 0, 0);
 					contact.cell_shift = INT3(1, 0, 0);
 				}
 				else {
 
 					flag_value = NF_CMBNDNX;
-					mesh_intersection.s.x -= h.x;
-					contact.hshift_primary = DBL3(+h.x, 0, 0);
+					mesh_intersection.s.x -= VEC<VType>::h.x;
+					contact.hshift_primary = DBL3(+VEC<VType>::h.x, 0, 0);
 					contact.hshift_secondary = DBL3(+pVECs[check_mesh]->h.x, 0, 0);
 					contact.cell_shift = INT3(-1, 0, 0);
 				}
 
-				contact.weights.i = (h.x > pVECs[check_mesh]->h.x ? h.x : pVECs[check_mesh]->h.x) / pVECs[check_mesh]->h.x;		//L or secondary mesh weight
-				contact.weights.j = (h.x > pVECs[check_mesh]->h.x ? h.x : pVECs[check_mesh]->h.x) / h.x;						//R or primary mesh weight
+				contact.weights.i = (VEC<VType>::h.x > pVECs[check_mesh]->h.x ? VEC<VType>::h.x : pVECs[check_mesh]->h.x) / pVECs[check_mesh]->h.x;		//L or secondary mesh weight
+				contact.weights.j = (VEC<VType>::h.x > pVECs[check_mesh]->h.x ? VEC<VType>::h.x : pVECs[check_mesh]->h.x) / VEC<VType>::h.x;			//R or primary mesh weight
 			}
 			//x-z plane : y is the perpendicular direction
 			else if (IsZ(mesh_intersection.s.y - mesh_intersection.e.y)) {
 
 				//is the selected mesh on the positive or negative side of the boundary? Set flag to use. Also adjust mesh_intersection so it contains all the cells to set flags for.
-				if (IsZ(rect.s.y - mesh_intersection.s.y)) {
+				if (IsZ(VEC<VType>::rect.s.y - mesh_intersection.s.y)) {
 
 					flag_value = NF_CMBNDPY;
-					mesh_intersection.e.y += h.y;
-					contact.hshift_primary = DBL3(0, -h.y, 0);
+					mesh_intersection.e.y += VEC<VType>::h.y;
+					contact.hshift_primary = DBL3(0, -VEC<VType>::h.y, 0);
 					contact.hshift_secondary = DBL3(0, -pVECs[check_mesh]->h.y, 0);
 					contact.cell_shift = INT3(0, 1, 0);
 				}
 				else {
 
 					flag_value = NF_CMBNDNY;
-					mesh_intersection.s.y -= h.y;
-					contact.hshift_primary = DBL3(0, +h.y, 0);
+					mesh_intersection.s.y -= VEC<VType>::h.y;
+					contact.hshift_primary = DBL3(0, +VEC<VType>::h.y, 0);
 					contact.hshift_secondary = DBL3(0, +pVECs[check_mesh]->h.y, 0);
 					contact.cell_shift = INT3(0, -1, 0);
 				}
 
-				contact.weights.i = (h.y > pVECs[check_mesh]->h.y ? h.y : pVECs[check_mesh]->h.y) / pVECs[check_mesh]->h.y;
-				contact.weights.j = (h.y > pVECs[check_mesh]->h.y ? h.y : pVECs[check_mesh]->h.y) / h.y;
+				contact.weights.i = (VEC<VType>::h.y > pVECs[check_mesh]->h.y ? VEC<VType>::h.y : pVECs[check_mesh]->h.y) / pVECs[check_mesh]->h.y;
+				contact.weights.j = (VEC<VType>::h.y > pVECs[check_mesh]->h.y ? VEC<VType>::h.y : pVECs[check_mesh]->h.y) / VEC<VType>::h.y;
 			}
 			//x-y plane : z is the perpendicular direction
 			else if (IsZ(mesh_intersection.s.z - mesh_intersection.e.z)) {
 
 				//is the selected mesh on the positive or negative side of the boundary? Set flag to use. Also adjust mesh_intersection so it contains all the cells to set flags for.
-				if (IsZ(rect.s.z - mesh_intersection.s.z)) {
+				if (IsZ(VEC<VType>::rect.s.z - mesh_intersection.s.z)) {
 
 					flag_value = NF_CMBNDPZ;
-					mesh_intersection.e.z += h.z;
-					contact.hshift_primary = DBL3(0, 0, -h.z);
+					mesh_intersection.e.z += VEC<VType>::h.z;
+					contact.hshift_primary = DBL3(0, 0, -VEC<VType>::h.z);
 					contact.hshift_secondary = DBL3(0, 0, -pVECs[check_mesh]->h.z);
 					contact.cell_shift = INT3(0, 0, 1);
 				}
 				else {
 
 					flag_value = NF_CMBNDNZ;
-					mesh_intersection.s.z -= h.z;
-					contact.hshift_primary = DBL3(0, 0, +h.z);
+					mesh_intersection.s.z -= VEC<VType>::h.z;
+					contact.hshift_primary = DBL3(0, 0, +VEC<VType>::h.z);
 					contact.hshift_secondary = DBL3(0, 0, +pVECs[check_mesh]->h.z);
 					contact.cell_shift = INT3(0, 0, -1);
 				}
 
-				contact.weights.i = (h.z > pVECs[check_mesh]->h.z ? h.z : pVECs[check_mesh]->h.z) / pVECs[check_mesh]->h.z;
-				contact.weights.j = (h.z > pVECs[check_mesh]->h.z ? h.z : pVECs[check_mesh]->h.z) / h.z;
+				contact.weights.i = (VEC<VType>::h.z > pVECs[check_mesh]->h.z ? VEC<VType>::h.z : pVECs[check_mesh]->h.z) / pVECs[check_mesh]->h.z;
+				contact.weights.j = (VEC<VType>::h.z > pVECs[check_mesh]->h.z ? VEC<VType>::h.z : pVECs[check_mesh]->h.z) / VEC<VType>::h.z;
 			}
 
 			//box of cells in this primary mesh completely included in the intersection - not all will be marked as CMBND cells, only marked if:
@@ -135,7 +135,7 @@ std::vector<CMBNDInfo> VEC_VC<VType>::set_cmbnd_flags(int primary_mesh_idx, std:
 			// "space for cell" is the rectangle with same footprint on the boundary as h, but thickness (i.e. along boundary normal) given by cell thickness from secondary mesh
 			// 4. same as in 3. for space for cell one further cell thickness along the boundary normal (unless check_neighbors = false)
 
-			contact.cells_box = box_from_rect_min(mesh_intersection);
+			contact.cells_box = VEC<VType>::box_from_rect_min(mesh_intersection);
 
 			//new contact done
 			contacts.push_back(contact);
@@ -148,7 +148,7 @@ std::vector<CMBNDInfo> VEC_VC<VType>::set_cmbnd_flags(int primary_mesh_idx, std:
 				for (int j = ijk_start.j; j < ijk_end.j; j++) {
 					for (int k = ijk_start.k; k < ijk_end.k; k++) {
 
-						int idx = i + j * n.x + k * n.x*n.y;
+						int idx = i + j * VEC<VType>::n.x + k * VEC<VType>::n.x*VEC<VType>::n.y;
 
 						//check cell 1 on primary
 						if (!(ngbrFlags[idx] & NF_NOTEMPTY)) continue;
@@ -156,14 +156,14 @@ std::vector<CMBNDInfo> VEC_VC<VType>::set_cmbnd_flags(int primary_mesh_idx, std:
 						//check cell 2 on primary (just next to cell 1 along interface perpendicular)
 						if (check_neighbors) {
 
-							int idx2 = idx + contact.cell_shift.x + contact.cell_shift.y*n.x + contact.cell_shift.z*n.x*n.y;
-							if (idx2 >= n.dim() || !(ngbrFlags[idx2] & NF_NOTEMPTY)) continue;
+							int idx2 = idx + contact.cell_shift.x + contact.cell_shift.y*VEC<VType>::n.x + contact.cell_shift.z*VEC<VType>::n.x*VEC<VType>::n.y;
+							if (idx2 >= VEC<VType>::n.dim() || !(ngbrFlags[idx2] & NF_NOTEMPTY)) continue;
 						}
 
 						//check cell 1 space on secondary
-						DBL3 abspos = cellidx_to_position(idx) + rect.s + (contact.hshift_primary + contact.hshift_secondary) / 2;
+						DBL3 abspos = VEC<VType>::cellidx_to_position(idx) + VEC<VType>::rect.s + (contact.hshift_primary + contact.hshift_secondary) / 2;
 						//imageStencil has the footprint of h but thickness set by the secondary mesh
-						DBL3 imageStencil = h - mod(contact.hshift_primary) + mod(contact.hshift_secondary);
+						DBL3 imageStencil = VEC<VType>::h - mod(contact.hshift_primary) + mod(contact.hshift_secondary);
 						//abscellRect is the space for cell 1 on secondary mesh (first cell space from the boundary)
 						Rect abscellRect = Rect(abspos - imageStencil / 2, abspos + imageStencil / 2);
 						if (!pVECs[check_mesh]->rect.contains(abscellRect) || !(pVECs[check_mesh]->is_not_empty(abscellRect))) continue;
@@ -211,25 +211,25 @@ void VEC_VC<VType>::set_cmbnd_continuous(
 		int j = ((box_idx / box_sizes.x) % box_sizes.y) + contact.cells_box.s.j;
 		int k = (box_idx / (box_sizes.x * box_sizes.y)) + contact.cells_box.s.k;
 
-		int cell1_idx = i + j * n.x + k * n.x*n.y;
+		int cell1_idx = i + j * VEC<VType>::n.x + k * VEC<VType>::n.x*VEC<VType>::n.y;
 
 		if (is_empty(cell1_idx) || is_not_cmbnd(cell1_idx)) continue;
 
 		//calculate second primary cell index
-		int cell2_idx = (i + contact.cell_shift.i) + (j + contact.cell_shift.j) * n.x + (k + contact.cell_shift.k) * n.x*n.y;
+		int cell2_idx = (i + contact.cell_shift.i) + (j + contact.cell_shift.j) * VEC<VType>::n.x + (k + contact.cell_shift.k) * VEC<VType>::n.x*VEC<VType>::n.y;
 
 		//cell values either side of the boundary: V_m2 V_m1 | V_1 V_2; positions as : -2 -1 | 1 2
 		//V_m2 and V_2 are known. We need to set values V_m1 and V_1. Here we only set V_1. For this primary, secondary mesh pair there will be another one with order reversed, and there our V_m1 value will be set - so don't worry about it here!
 		//NOTE : meshes at composite media boundaries must always be at least 2 non-empty cells thick in directions perpendicular to interface !!! -> this is actually checked when the list of contacts is made
 
 		//relative position of cell -1 in secondary mesh
-		DBL3 relpos_m1 = rect.s - V_sec.rect.s + ((DBL3(i, j, k) + DBL3(0.5)) & h) + (contact.hshift_primary + contact.hshift_secondary) / 2;
+		DBL3 relpos_m1 = VEC<VType>::rect.s - V_sec.rect.s + ((DBL3(i, j, k) + DBL3(0.5)) & VEC<VType>::h) + (contact.hshift_primary + contact.hshift_secondary) / 2;
 
 		//stencil is used for weighted_average to obtain values in the secondary mesh : has size equal to primary cellsize area on interface with thickness set by secondary cellsize thickness
-		DBL3 stencil = h - mod(contact.hshift_primary) + mod(contact.hshift_secondary);
+		DBL3 stencil = VEC<VType>::h - mod(contact.hshift_primary) + mod(contact.hshift_secondary);
 
 		//potential values at cells -2 and 2
-		VType V_2 = quantity[cell2_idx];
+		VType V_2 = VEC<VType>::quantity[cell2_idx];
 		VType V_m2 = V_sec.weighted_average(relpos_m1 + contact.hshift_secondary, stencil);
 
 		//obtain a and b values used to define the flux as f(V) = a + b V', both on primary and secondary
@@ -246,7 +246,7 @@ void VEC_VC<VType>::set_cmbnd_continuous(
 		VType Vdiff2_pri = diff2_pri(instance_pri, cell1_idx, contact.hshift_secondary);
 
 		//Formula for V1
-		quantity[cell1_idx] = (V_m2 * 2 * b_val_sec / 3 + V_2 * (b_val_pri + b_val_sec / 3)
+		VEC<VType>::quantity[cell1_idx] = (V_m2 * 2 * b_val_sec / 3 + V_2 * (b_val_pri + b_val_sec / 3)
 			- Vdiff2_sec * b_val_sec * hL * hL - Vdiff2_pri * b_val_pri * hR * hR
 			+ (a_val_pri - a_val_sec) * hmax) / (b_val_sec + b_val_pri);
 	}
@@ -281,25 +281,25 @@ void VEC_VC<VType>::set_cmbnd_continuousflux(VEC_VC<VType> &V_sec, CMBNDInfo& co
 		int j = ((box_idx / box_sizes.x) % box_sizes.y) + contact.cells_box.s.j;
 		int k = (box_idx / (box_sizes.x * box_sizes.y)) + contact.cells_box.s.k;
 
-		int cell1_idx = i + j * n.x + k * n.x*n.y;
+		int cell1_idx = i + j * VEC<VType>::n.x + k * VEC<VType>::n.x*VEC<VType>::n.y;
 
 		if (is_empty(cell1_idx) || is_not_cmbnd(cell1_idx)) continue;
 
 		//calculate second primary cell index
-		int cell2_idx = (i + contact.cell_shift.i) + (j + contact.cell_shift.j) * n.x + (k + contact.cell_shift.k) * n.x*n.y;
+		int cell2_idx = (i + contact.cell_shift.i) + (j + contact.cell_shift.j) * VEC<VType>::n.x + (k + contact.cell_shift.k) * VEC<VType>::n.x*VEC<VType>::n.y;
 
 		//cell values either side of the boundary: V_m2 V_m1 | V_1 V_2; positions as : -2 -1 | 1 2
 		//V_m2 and V_2 are known. We need to set values V_m1 and V_1. Here we only set V_1. For this primary, secondary mesh pair there will be another one with order reversed, and there our V_m1 value will be set - so don't worry about it here!
 		//NOTE : meshes at composite media boundaries must always be at least 2 non-empty cells thick in directions perpendicular to interface !!! -> this is actually checked when the list of contacts is made
 
 		//relative position of cell -1 in secondary mesh
-		DBL3 relpos_m1 = rect.s - V_sec.rect.s + ((DBL3(i, j, k) + DBL3(0.5)) & h) + (contact.hshift_primary + contact.hshift_secondary) / 2;
+		DBL3 relpos_m1 = VEC<VType>::rect.s - V_sec.rect.s + ((DBL3(i, j, k) + DBL3(0.5)) & VEC<VType>::h) + (contact.hshift_primary + contact.hshift_secondary) / 2;
 
 		//stencil is used for weighted_average to obtain values in the secondary mesh : has size equal to primary cellsize area on interface with thickness set by secondary cellsize thickness
-		DBL3 stencil = h - mod(contact.hshift_primary) + mod(contact.hshift_secondary);
+		DBL3 stencil = VEC<VType>::h - mod(contact.hshift_primary) + mod(contact.hshift_secondary);
 
 		//potential values at cells -2 and 2
-		VType V_2 = quantity[cell2_idx];
+		VType V_2 = VEC<VType>::quantity[cell2_idx];
 		VType V_m2 = V_sec.weighted_average(relpos_m1 + contact.hshift_secondary, stencil);
 
 		//obtain a and b values used to define the flux as f(V) = a + b V', both on primary and secondary
@@ -325,7 +325,7 @@ void VEC_VC<VType>::set_cmbnd_continuousflux(VEC_VC<VType> &V_sec, CMBNDInfo& co
 		if (B_val) G_val = 2 * b_val_pri * b_val_sec / (3 * B_val * hmax);
 
 		//Formula for V1 - note, this reduces to the continuous case for G_val = 0 (or B_val tends to infinity) and A_val = VType(0)
-		quantity[cell1_idx] = (V_m2 * 2 * b_val_sec / 3 + V_2 * (b_val_pri + b_val_sec / 3 + G_val)
+		VEC<VType>::quantity[cell1_idx] = (V_m2 * 2 * b_val_sec / 3 + V_2 * (b_val_pri + b_val_sec / 3 + G_val)
 			- Vdiff2_sec * b_val_sec * hL * hL - Vdiff2_pri * (b_val_pri + G_val) * hR * hR
 			+ (a_val_pri * (1 + G_val / b_val_pri) - a_val_sec) * hmax
 			- (G_val / b_val_pri) * A_val * hmax) / (b_val_sec + b_val_pri + G_val);
@@ -368,25 +368,25 @@ void VEC_VC<VType>::set_cmbnd_discontinuous(
 		int j = ((box_idx / box_sizes.x) % box_sizes.y) + contact.cells_box.s.j;
 		int k = (box_idx / (box_sizes.x * box_sizes.y)) + contact.cells_box.s.k;
 
-		int cell1_idx = i + j * n.x + k * n.x*n.y;
+		int cell1_idx = i + j * VEC<VType>::n.x + k * VEC<VType>::n.x*VEC<VType>::n.y;
 
 		if (is_empty(cell1_idx) || is_not_cmbnd(cell1_idx)) continue;
 
 		//calculate second primary cell index
-		int cell2_idx = (i + contact.cell_shift.i) + (j + contact.cell_shift.j) * n.x + (k + contact.cell_shift.k) * n.x*n.y;
+		int cell2_idx = (i + contact.cell_shift.i) + (j + contact.cell_shift.j) * VEC<VType>::n.x + (k + contact.cell_shift.k) * VEC<VType>::n.x*VEC<VType>::n.y;
 
 		//cell values either side of the boundary: V_m2 V_m1 | V_1 V_2; positions as : -2 -1 | 1 2
 		//V_m2 and V_2 are known. We need to set values V_m1 and V_1. Here we only set V_1. For this primary, secondary mesh pair there will be another one with order reversed, and there our V_m1 value will be set - so don't worry about it here!
 		//NOTE : meshes at composite media boundaries must always be at least 2 non-empty cells thick in directions perpendicular to interface !!! -> this is actually checked when the list of contacts is made
 
 		//relative position of cell -1 in secondary mesh
-		DBL3 relpos_m1 = rect.s - V_sec.rect.s + ((DBL3(i, j, k) + DBL3(0.5)) & h) + (contact.hshift_primary + contact.hshift_secondary) / 2;
+		DBL3 relpos_m1 = VEC<VType>::rect.s - V_sec.rect.s + ((DBL3(i, j, k) + DBL3(0.5)) & VEC<VType>::h) + (contact.hshift_primary + contact.hshift_secondary) / 2;
 
 		//stencil is used for weighted_average to obtain values in the secondary mesh : has size equal to primary cellsize area on interface with thickness set by secondary cellsize thickness
-		DBL3 stencil = h - mod(contact.hshift_primary) + mod(contact.hshift_secondary);
+		DBL3 stencil = VEC<VType>::h - mod(contact.hshift_primary) + mod(contact.hshift_secondary);
 
 		//potential values at cells -2 and 2
-		VType V_2 = quantity[cell2_idx];
+		VType V_2 = VEC<VType>::quantity[cell2_idx];
 		VType V_m2 = V_sec.weighted_average(relpos_m1 + contact.hshift_secondary, stencil);
 
 		//obtain a and b values used to define the flux as f(V) = a + b V', both on primary and secondary
@@ -427,7 +427,7 @@ void VEC_VC<VType>::set_cmbnd_discontinuous(
 		BType D_inv = inverse<BType>(9.0 * hmax * c_m1 * c_1 * G * B_val_sec - 3.0 * hmax * c_1 * B_val_pri - 2.0 * b_val_pri * ident<BType>());
 
 		//Formula for V1
-		quantity[cell1_idx] = D_inv *
+		VEC<VType>::quantity[cell1_idx] = D_inv *
 			((hmax * c_m2 * B_val_pri - 3.0 * c_m1 * G * N) * V_m2
 			+ (3.0 * hmax * c_m1 * c_2 * G * B_val_sec - hmax * c_2 * B_val_pri - 2.0 * b_val_pri * ident<BType>()) * V_2
 			+ 6.0 * c_m1 * b_val_sec * hL * hL * G * Vdiff2_sec + 2.0 * b_val_pri * hR * hR * Vdiff2_pri

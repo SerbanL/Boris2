@@ -283,7 +283,7 @@ public:
 	//params[0] is R, params[1] is x0, params[2] is Ms, params[3] is w
 	int FitSkyrmion_LMA(std::vector<DBL2> &xy, std::vector<double> &params, std::vector<double> &stdParams, int points = -1, bool find_start = true)
 	{
-		std::vector<CurveFitting_LMA::f_eval> evalFunc;
+		std::vector<typename CurveFitting_LMA::f_eval> evalFunc;
 
 		//Build vector of function evaluations to be used in LMA algorithm
 		//These functions are defined here but will be available in the derived class
@@ -312,7 +312,7 @@ public:
 
 	int FitSkyrmion_LMA(std::vector<DBL2> &xy, std::vector<double> &params, int points = -1, bool find_start = true)
 	{
-		std::vector<CurveFitting_LMA::f_eval> evalFunc;
+		std::vector<typename CurveFitting_LMA::f_eval> evalFunc;
 
 		//Build vector of function evaluations to be used in LMA algorithm
 		//These functions are defined here but will be available in the derived class
@@ -341,7 +341,7 @@ public:
 	//params[0] is R, params[1] is x0
 	int FitSkyrmion_FixedConstants_LMA(std::vector<DBL2> &xy, std::vector<double> &params, std::vector<double> &stdParams, double D, double Ku, double Ms, int points = -1, bool find_start = true)
 	{
-		std::vector<CurveFitting_LMA::f_eval> evalFunc;
+		std::vector<typename CurveFitting_LMA::f_eval> evalFunc;
 
 		//Build vector of function evaluations to be used in LMA algorithm
 		//These functions are defined here but will be available in the derived class
@@ -375,7 +375,7 @@ public:
 
 	int FitSkyrmion_FixedConstants_LMA(std::vector<DBL2> &xy, std::vector<double> &params, double D, double Ku, double Ms, int points = -1, bool find_start = true)
 	{
-		std::vector<CurveFitting_LMA::f_eval> evalFunc;
+		std::vector<typename CurveFitting_LMA::f_eval> evalFunc;
 
 		//Build vector of function evaluations to be used in LMA algorithm
 		//These functions are defined here but will be available in the derived class
@@ -411,7 +411,7 @@ public:
 	//params[0] is R, params[1] is x0, params[2] is Ms, params[3] is w
 	int FitSkyrmion_Longitudinal_LMA(std::vector<DBL2> &xy, std::vector<double> &params, std::vector<double> &stdParams, int points = -1, bool find_start = true)
 	{
-		std::vector<CurveFitting_LMA::f_eval> evalFunc;
+		std::vector<typename CurveFitting_LMA::f_eval> evalFunc;
 
 		//Build vector of function evaluations to be used in LMA algorithm
 		//These functions are defined here but will be available in the derived class
@@ -440,7 +440,7 @@ public:
 
 	int FitSkyrmion_Longitudinal_LMA(std::vector<DBL2> &xy, std::vector<double> &params, int points = -1, bool find_start = true)
 	{
-		std::vector<CurveFitting_LMA::f_eval> evalFunc;
+		std::vector<typename CurveFitting_LMA::f_eval> evalFunc;
 
 		//Build vector of function evaluations to be used in LMA algorithm
 		//These functions are defined here but will be available in the derived class

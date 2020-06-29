@@ -78,7 +78,7 @@ __host__ void cuVEC_VC<VType>::delrect(cuRect rectangle)
 //--------------------------------------------MULTIPLE ENTRIES SETTERS - SHAPE CHANGERS
 
 template <typename VType>
-__global__ void apply_bitmap_mask_kernel(const cuSZ3& n, int*& ngbrFlags, VType*& quantity, BYTE* bitmap, int zDepth)
+__global__ void apply_bitmap_mask_kernel(const cuSZ3& n, int*& ngbrFlags, VType*& quantity, unsigned char* bitmap, int zDepth)
 {
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
 
@@ -130,24 +130,24 @@ __global__ void apply_bitmap_mask_kernel(const cuSZ3& n, int*& ngbrFlags, VType*
 	}
 }
 
-template bool cuVEC_VC<float>::apply_bitmap_mask(std::vector<BYTE>& bitmap, int zDepth);
-template bool cuVEC_VC<double>::apply_bitmap_mask(std::vector<BYTE>& bitmap, int zDepth);
+template bool cuVEC_VC<float>::apply_bitmap_mask(std::vector<unsigned char>& bitmap, int zDepth);
+template bool cuVEC_VC<double>::apply_bitmap_mask(std::vector<unsigned char>& bitmap, int zDepth);
 
-template bool cuVEC_VC<cuFLT3>::apply_bitmap_mask(std::vector<BYTE>& bitmap, int zDepth);
-template bool cuVEC_VC<cuDBL3>::apply_bitmap_mask(std::vector<BYTE>& bitmap, int zDepth);
+template bool cuVEC_VC<cuFLT3>::apply_bitmap_mask(std::vector<unsigned char>& bitmap, int zDepth);
+template bool cuVEC_VC<cuDBL3>::apply_bitmap_mask(std::vector<unsigned char>& bitmap, int zDepth);
 
-template bool cuVEC_VC<cuFLT33>::apply_bitmap_mask(std::vector<BYTE>& bitmap, int zDepth);
-template bool cuVEC_VC<cuDBL33>::apply_bitmap_mask(std::vector<BYTE>& bitmap, int zDepth);
+template bool cuVEC_VC<cuFLT33>::apply_bitmap_mask(std::vector<unsigned char>& bitmap, int zDepth);
+template bool cuVEC_VC<cuDBL33>::apply_bitmap_mask(std::vector<unsigned char>& bitmap, int zDepth);
 
 template <typename VType>
-bool cuVEC_VC<VType>::apply_bitmap_mask(std::vector<BYTE>& bitmap, int zDepth)
+bool cuVEC_VC<VType>::apply_bitmap_mask(std::vector<unsigned char>& bitmap, int zDepth)
 {
 	cuSZ3 n_ = get_gpu_value(n);
 
 	//bitmap must have the right size (i.e. have n.x * n.y pixels, remembering each pixel has 4 bytes as B-G-R-A)
 	if (bitmap.size() != n_.x*n_.y * 4) return false;
 
-	BYTE* bitmap_gpu = nullptr;
+	unsigned char* bitmap_gpu = nullptr;
 	if (gpu_alloc(bitmap_gpu, bitmap.size()) != cudaSuccess) return false;
 
 	cpu_to_gpu(bitmap_gpu, bitmap.data(), bitmap.size());

@@ -14,7 +14,7 @@
 #include <algorithm>
 #include <utility>
 
-#include "Types.h"
+#include "Types_VAL.h"
 
 template <typename Type> 
 class vector_lut {
@@ -56,27 +56,27 @@ public:
 
 	//overloaded copy constructor for rvalues using move semantics
 	vector_lut(vector_lut<Type>&& moveThis) :
-		storedObjects(move(moveThis.storedObjects)),
-		LUT_byIndex(move(moveThis.LUT_byIndex)),
-		LUT_byId(move(moveThis.LUT_byId))
+		storedObjects(std::move(moveThis.storedObjects)),
+		LUT_byIndex(std::move(moveThis.LUT_byIndex)),
+		LUT_byId(std::move(moveThis.LUT_byId))
 	{}
 
 	//assignment operator for lvalues
-	vector_lut<Type>& operator=(const vector_lut<Type>& copyThis) {
-
-		storedObjects(copyThis.storedObjects);
-		LUT_byIndex(copyThis.LUT_byIndex);
-		LUT_byId(copyThis.LUT_byId);
+	vector_lut<Type>& operator=(const vector_lut<Type>& copyThis) 
+	{
+		storedObjects = copyThis.storedObjects;
+		LUT_byIndex = copyThis.LUT_byIndex;
+		LUT_byId = copyThis.LUT_byId;
 
 		return *this;
 	}
 
 	//overloaded assignment operator for rvalues using move semantics
-	vector_lut<Type>& operator=(vector_lut<Type>&& moveThis) {
-
-		storedObjects(move(moveThis.storedObjects));
-		LUT_byIndex(move(moveThis.LUT_byIndex));
-		LUT_byId(move(moveThis.LUT_byId));
+	vector_lut<Type>& operator=(vector_lut<Type>&& moveThis) 
+	{
+		storedObjects = std::move(moveThis.storedObjects);
+		LUT_byIndex = std::move(moveThis.LUT_byIndex);
+		LUT_byId = std::move(moveThis.LUT_byId);
 
 		return *this;
 	}
@@ -85,12 +85,15 @@ public:
 
 	//usual std::vector indexing
 	Type& operator[](const int &index) { return storedObjects[index]; }
+	const Type& operator[](const int &index) const { return storedObjects[index]; }
 
 	//indexing via look-up table with INT2(majorId, minorId). Note, can also call it with INT2(majorId) : this means minorId = 0, and is used when majorId is known to be unique.
 	Type& operator[](const INT2 &id) { return storedObjects[LUT_byId[id.i][id.j]]; }
+	const Type& operator[](const INT2 &id) const { return storedObjects[LUT_byId[id.i][id.j]]; }
 
 	//indexing via major id only, where minorId is assumed to be zero (this is used for vector_lut objects which are guaranteed to have unique majorId entries)
 	Type& operator()(const int &majorId) { return storedObjects[LUT_byId[majorId][0]]; }
+	const Type& operator()(const int &majorId) const { return storedObjects[LUT_byId[majorId][0]]; }
 
 	Type& front(void) { return storedObjects[0]; }
 	Type& back(void) { return storedObjects[last()]; }
@@ -132,18 +135,18 @@ public:
 	//------------------------------------ GET PROPERTIES
 
 	//dimension of internal std::vector
-	int size(void) { return (int)storedObjects.size(); }
+	int size(void) const { return (int)storedObjects.size(); }
 
 	//index of last element
-	int last(void) { if (size()) return ((int)size() - 1); else return -1; }
+	int last(void) const { if (size()) return ((int)size() - 1); else return -1; }
 
 	//------------------------------------ MULTIPLE ENTRIES WITH SAME MAJOR ID
 
 	//get number of elements with given major ID
-	int get_num_IDs(int majorID);
+	int get_num_IDs(int majorID) const;
 
 	//get a minor id for element with majorID; return -1 if none found
-	int get_next_minor_id(int majorID);
+	int get_next_minor_id(int majorID) const;
 
 	//make all minor ids for elements with given major ID start from 0 and be numbered in steps of 1
 	//use this e.g. when you want to ensure there's always a minor if of 0 if major id exists
@@ -153,39 +156,39 @@ public:
 	//------------------------------------ CHECKERS
 
 	//is the given id currently set? (i.e. is there a stored element with this id?)
-	bool is_id_set(INT2 id) { return (id.i < (int)LUT_byId.size() && id.j < (int)LUT_byId[id.i].size() && LUT_byId[id.i][id.j] >= 0); }
+	bool is_id_set(INT2 id) const { return (id.i < (int)LUT_byId.size() && id.j < (int)LUT_byId[id.i].size() && LUT_byId[id.i][id.j] >= 0); }
 
 	//is the major id set ? (assume minor id = 0)
-	bool is_ID_set(int majorID) { return (majorID < (int)LUT_byId.size() && LUT_byId[majorID][0] >= 0); }
+	bool is_ID_set(int majorID) const { return (majorID < (int)LUT_byId.size() && LUT_byId[majorID][0] >= 0); }
 
 	//does this std::vector contain the given value?
-	bool has_value(Type value) { for (int idx = 0; idx < (int)storedObjects.size(); idx++) if (storedObjects[idx] == value) return true; return false; }
+	bool has_value(Type value) const { for (int idx = 0; idx < (int)storedObjects.size(); idx++) if (storedObjects[idx] == value) return true; return false; }
 
 	//------------------------------------ ID <--> INDEX GETTERS
 
 	//--- from value
 
 	//return Id of found value ((-1,-1) if not found)
-	INT2 get_id_from_value(Type value) { for (int idx = 0; idx < (int)storedObjects.size(); idx++) if (storedObjects[idx] == value) return get_id_from_index(idx); return INT2(-1, -1); }
+	INT2 get_id_from_value(Type value) const { for (int idx = 0; idx < (int)storedObjects.size(); idx++) if (storedObjects[idx] == value) return get_id_from_index(idx); return INT2(-1, -1); }
 
 	//return major ID of found value (-1 if not found)
-	int get_ID_from_value(Type value) { for (int idx = 0; idx < (int)storedObjects.size(); idx++) if (storedObjects[idx] == value) return get_ID_from_index(idx); return -1; }
+	int get_ID_from_value(Type value) const { for (int idx = 0; idx < (int)storedObjects.size(); idx++) if (storedObjects[idx] == value) return get_ID_from_index(idx); return -1; }
 
 	//--- from Id
 
 	//return index of element with given id - this assumes the id exists
-	int get_index_from_id(INT2 id) { if (id.i < (int)LUT_byId.size() && id.j < (int)LUT_byId[id.i].size()) return LUT_byId[id.i][id.j]; else return -1; }
+	int get_index_from_id(INT2 id) const { if (id.i < (int)LUT_byId.size() && id.j < (int)LUT_byId[id.i].size()) return LUT_byId[id.i][id.j]; else return -1; }
 
 	//return index of element with given major id (assume minor id = 0) - this further assumes the id exists
-	int get_index_from_ID(int majorID) { if (majorID < (int)LUT_byId.size()) return LUT_byId[majorID][0]; else return -1; }
+	int get_index_from_ID(int majorID) const { if (majorID < (int)LUT_byId.size()) return LUT_byId[majorID][0]; else return -1; }
 
 	//--- from index
 
 	//return id of element with given index - this assumes the index is valid
-	INT2 get_id_from_index(int idx) { if (idx < (int)LUT_byIndex.size()) return LUT_byIndex[idx]; else return INT2(-1, -1); }
+	INT2 get_id_from_index(int idx) const { if (idx < (int)LUT_byIndex.size()) return LUT_byIndex[idx]; else return INT2(-1, -1); }
 
 	//return major ID of element with given index - this assumes the index is valid
-	int get_ID_from_index(int idx) { if (idx < (int)LUT_byIndex.size()) return LUT_byIndex[idx].major; else return -1; }
+	int get_ID_from_index(int idx) const { if (idx < (int)LUT_byIndex.size()) return LUT_byIndex[idx].major; else return -1; }
 
 	//------------------------------------ ID SETTERS
 
@@ -477,7 +480,7 @@ void vector_lut<Type>::move(int srcIdx, int dstIdx)
 
 //get number of elements with given major ID
 template <typename Type>
-int vector_lut<Type>::get_num_IDs(int majorID)
+int vector_lut<Type>::get_num_IDs(int majorID) const
 {
 	if (majorID < (int)LUT_byId.size()) {
 
@@ -495,7 +498,7 @@ int vector_lut<Type>::get_num_IDs(int majorID)
 
 //get a minor id for element with majorID; return -1 if none found
 template <typename Type>
-int vector_lut<Type>::get_next_minor_id(int majorID)
+int vector_lut<Type>::get_next_minor_id(int majorID) const
 {
 	if (get_num_IDs(majorID) > 0) {
 
@@ -590,15 +593,15 @@ public:
 
 	//overloaded copy constructor for rvalues using move semantics
 	vector_key(vector_key<Type>&& moveThis) :
-		storedObjects(move(moveThis.storedObjects)),
-		storedObjects_keys(move(moveThis.storedObjects_keys))
+		storedObjects(std::move(moveThis.storedObjects)),
+		storedObjects_keys(std::move(moveThis.storedObjects_keys))
 	{}
 
 	//assignment operator for lvalues
 	vector_key<Type>& operator=(const vector_key<Type>& copyThis)
 	{
-		storedObjects(copyThis.storedObjects);
-		storedObjects_keys(copyThis.storedObjects_keys);
+		storedObjects = copyThis.storedObjects;
+		storedObjects_keys = copyThis.storedObjects_keys;
 
 		return *this;
 	}
@@ -606,8 +609,8 @@ public:
 	//overloaded assignment operator for rvalues using move semantics
 	vector_key<Type>& operator=(vector_key<Type>&& moveThis)
 	{
-		storedObjects(move(moveThis.storedObjects));
-		storedObjects_keys(move(moveThis.storedObjects_keys));
+		storedObjects = std::move(moveThis.storedObjects);
+		storedObjects_keys = std::move(moveThis.storedObjects_keys);
 
 		return *this;
 	}
@@ -616,8 +619,10 @@ public:
 
 	//usual std::vector indexing
 	Type& operator[](const int &index) { return storedObjects[index]; }
+	const Type& operator[](const int &index) const { return storedObjects[index]; }
 
 	Type& operator[](const std::string &key);
+	const Type& operator[](const std::string &key) const;
 
 	Type& front(void) { return storedObjects[0]; }
 	Type& back(void) { return storedObjects[last()]; }
@@ -639,16 +644,16 @@ public:
 
 	//------------------------------------ SIZE MODIFICATION METHODS
 
-	void push_back(Type newObject, std::string key);
+	void push_back(Type newObject, const std::string& key);
 
 	void pop_back(void);
 
 	//make new entry at given index (if it exceeds size then resize, otherwise replace entry at the index)
-	void insert(int index, Type newObject, std::string key);
+	void insert(int index, Type newObject, const std::string& key);
 
 	void erase(int index);
 
-	void erase(std::string key);
+	void erase(const std::string& key);
 
 	void clear(void);
 
@@ -659,32 +664,32 @@ public:
 	//------------------------------------ GET PROPERTIES
 
 	//dimension of internal std::vector
-	int size(void) { return (int)storedObjects.size(); }
+	int size(void) const { return (int)storedObjects.size(); }
 
 	//index of last element
-	int last(void) { if (size()) return ((int)size() - 1); else return 0; }
+	int last(void) const { if (size()) return ((int)size() - 1); else return 0; }
 
 	//------------------------------------ CHECKERS
 
-	bool has_key(std::string key);
+	bool has_key(const std::string& key) const;
 
 	//------------------------------------ KEY <--> INDEX GETTERS
 
-	int index_from_key(std::string key);
+	int index_from_key(const std::string& key) const;
 
-	std::string get_key_from_index(int idx) { if (idx >= 0 && idx < (int)storedObjects.size()) return storedObjects_keys[idx]; else return ""; }
+	std::string get_key_from_index(int idx) const { if (idx >= 0 && idx < (int)storedObjects.size()) return storedObjects_keys[idx]; else return ""; }
 
 	//------------------------------------ KEY MODIFICATION
 
 	//change key of entry in std::vector to new key - return true if succesful (i.e. old key exists)
-	bool change_key(std::string old_key, std::string new_key);
+	bool change_key(const std::string& old_key, const std::string& new_key);
 
-	void set_key_at_index(std::string new_key, int index) { storedObjects_keys[index] = new_key; }
+	void set_key_at_index(const std::string& new_key, int index) { storedObjects_keys[index] = new_key; }
 
 	//------------------------------------ ADVANCED PROPERTIES
 
 	//find matches for a partial key start : return std::vector of indexes with keys containing keystart at the beginning
-	std::vector<int> find_keystart(std::string keystart);
+	std::vector<int> find_keystart(const std::string& keystart) const;
 };
 
 //------------------------------------ INDEXING
@@ -700,10 +705,22 @@ Type& vector_key<Type>::operator[](const std::string &key)
 	return storedObjects[0];
 }
 
+template <typename Type>
+const Type& vector_key<Type>::operator[](const std::string &key) const
+{
+	for (int idx = 0; idx < (int)storedObjects_keys.size(); idx++) {
+
+		if (storedObjects_keys[idx] == key) return storedObjects[idx];
+	}
+
+	return storedObjects[0];
+}
+
+
 //------------------------------------ SIZE MODIFICATION METHODS
 
 template <typename Type>
-void vector_key<Type>::push_back(Type newObject, std::string key)
+void vector_key<Type>::push_back(Type newObject, const std::string& key)
 {
 	storedObjects.push_back(newObject);
 	storedObjects_keys.push_back(key);
@@ -718,7 +735,7 @@ void vector_key<Type>::pop_back(void)
 
 //make new entry at given index (if it exceeds size then resize, otherwise replace entry at the index)
 template <typename Type>
-void vector_key<Type>::insert(int index, Type newObject, std::string key)
+void vector_key<Type>::insert(int index, Type newObject, const std::string& key)
 {
 	//resize if needed
 	if (index >= (int)storedObjects.size()) {
@@ -739,7 +756,7 @@ void vector_key<Type>::erase(int index)
 }
 
 template <typename Type>
-void vector_key<Type>::erase(std::string key)
+void vector_key<Type>::erase(const std::string& key)
 {
 	int index = index_from_key(key);
 	if (index >= 0) erase(index);
@@ -770,7 +787,7 @@ void vector_key<Type>::resize(int new_size, Type newObject)
 //------------------------------------ CHECKERS
 
 template <typename Type>
-bool vector_key<Type>::has_key(std::string key)
+bool vector_key<Type>::has_key(const std::string& key) const
 {
 	for (int idx = 0; idx < (int)storedObjects_keys.size(); idx++) {
 
@@ -783,7 +800,7 @@ bool vector_key<Type>::has_key(std::string key)
 //------------------------------------ KEY <--> INDEX GETTERS
 
 template <typename Type>
-int vector_key<Type>::index_from_key(std::string key)
+int vector_key<Type>::index_from_key(const std::string& key) const
 {
 	for (int idx = 0; idx < (int)storedObjects_keys.size(); idx++) {
 
@@ -797,7 +814,7 @@ int vector_key<Type>::index_from_key(std::string key)
 
 //change key of entry in std::vector to new key - return true if succesful (i.e. old key exists)
 template <typename Type>
-bool vector_key<Type>::change_key(std::string old_key, std::string new_key)
+bool vector_key<Type>::change_key(const std::string& old_key, const std::string& new_key)
 {
 	for (int idx = 0; idx < (int)storedObjects_keys.size(); idx++) {
 
@@ -815,7 +832,7 @@ bool vector_key<Type>::change_key(std::string old_key, std::string new_key)
 
 //find matches for a partial key start : return std::vector of indexes with keys containing keystart at the beginning
 template <typename Type>
-std::vector<int> vector_key<Type>::find_keystart(std::string keystart)
+std::vector<int> vector_key<Type>::find_keystart(const std::string& keystart) const
 {
 	std::vector<int> indexes;
 
@@ -835,7 +852,10 @@ std::vector<int> vector_key<Type>::find_keystart(std::string keystart)
 // vector_key_lut : vector_key_lut can be indexed as a vector_lut, and in addition can be indexed by the std::string key.
 
 template <typename Type> 
-class vector_key_lut : public vector_lut<Type> {		//most of the code needed is in vector_lut. Don't need to also inherit from public_key as that complicates handling of storedObjects.
+class vector_key_lut : 
+	public vector_lut<Type> 
+	//most of the code needed is in vector_lut. Don't need to also inherit from public_key as that complicates handling of storedObjects.
+{		
 
 private:
 
@@ -845,31 +865,36 @@ public:
 
 	//------------------------------------ CONSTRUCTORS
 
-	vector_key_lut(void) : vector_lut() {}
+	vector_key_lut(void) : vector_lut<Type>() {}
 
 	//copy constructor for lvalues
 	vector_key_lut(const vector_key_lut<Type>& copyThis) 
-		: vector_lut(copyThis), storedObjects_keys(copyThis.storedObjects_keys)
+		: vector_lut<Type>(copyThis), storedObjects_keys(copyThis.storedObjects_keys)
 	{}
 
 	//overloaded copy constructor for rvalues using move semantics
 	vector_key_lut(vector_key_lut<Type>&& moveThis)
-		: vector_lut(move(moveThis)), storedObjects_keys(move(moveThis.storedObjects_keys))
+		: vector_lut<Type>(std::move(moveThis)), storedObjects_keys(std::move(moveThis.storedObjects_keys))
 	{}
 
 	//assignment operator for lvalues
 	vector_key_lut<Type>& operator=(const vector_key_lut<Type>& copyThis) 
 	{ 
-		*this = copyThis; 
-		storedObjects_keys(copyThis.storedObjects_keys);
+		vector_lut<Type>::storedObjects = copyThis.storedObjects;
+		vector_lut<Type>::LUT_byIndex = copyThis.LUT_byIndex;
+		vector_lut<Type>::LUT_byId = copyThis.LUT_byId;
+		storedObjects_keys = copyThis.storedObjects_keys;
+
 		return *this;
 	}
 
 	//overloaded assignment operator for rvalues using move semantics
 	vector_key_lut<Type>& operator=(vector_key_lut<Type>&& moveThis)
 	{ 
-		*this = move(moveThis);
-		storedObjects_keys(move(moveThis.storedObjects_keys));
+		vector_lut<Type>::storedObjects = std::move(moveThis.storedObjects);
+		vector_lut<Type>::LUT_byIndex = std::move(moveThis.LUT_byIndex);
+		vector_lut<Type>::LUT_byId = std::move(moveThis.LUT_byId);
+		storedObjects_keys = std::move(moveThis.storedObjects_keys);
 
 		return *this; 
 	}
@@ -878,15 +903,18 @@ public:
 	//NOTE: since we have an [] operator in this derived class (the one with const std::string& parameter below), then no [] base operators are inherited, so must redefine them here.
 
 	//usual std::vector indexing
-	Type& operator[](const int &index) { return storedObjects[index]; }
+	Type& operator[](const int &index) { return vector_lut<Type>::storedObjects[index]; }
+	const Type& operator[](const int &index) const { return vector_lut<Type>::storedObjects[index]; }
 
 	//indexing via look-up table with INT2(majorId, minorId). Note, can also call it with INT2(majorId) : this means minorId = 0, and is used when majorId is known to be unique.
-	Type& operator[](const INT2 &id) { return storedObjects[LUT_byId[id.i][id.j]]; }
+	Type& operator[](const INT2 &id) { return vector_lut<Type>::storedObjects[vector_lut<Type>::LUT_byId[id.i][id.j]]; }
+	const Type& operator[](const INT2 &id) const { return vector_lut<Type>::storedObjects[vector_lut<Type>::LUT_byId[id.i][id.j]]; }
 
 	//------------------------------------ INDEXING with key
 
 	//indexing via key std::string
 	Type& operator[](const std::string &key);
+	const Type& operator[](const std::string &key) const;
 
 	//------------------------------------ CONTROL OF ENTRIES
 
@@ -899,39 +927,39 @@ public:
 
 	//------------------------------------ CHECKERS
 	
-	bool has_key(std::string key);
+	bool has_key(const std::string& key) const;
 	
 	//------------------------------------ ID <--> KEY <--> INDEX GETTERS (all involving keys, others are inherited from vector_lut)
 
 	//return index of first element with key std::string. -1 if not found
-	int get_index_from_key(std::string key);
+	int get_index_from_key(const std::string& key) const;
 
 	//get major ID of first element with key std::string. -1 if not found
-	int get_ID_from_key(std::string key);
+	int get_ID_from_key(const std::string& key) const;
 
 	//get full id of first element with key std::string. -1 if not found
-	INT2 get_id_from_key(std::string key);
+	INT2 get_id_from_key(const std::string& key) const;
 
 	//get key from index in std::vector
-	std::string get_key_from_index(int index);
+	std::string get_key_from_index(int index) const;
 
 	//get key from major ID
-	std::string get_key_from_ID(int majorID);
+	std::string get_key_from_ID(int majorID) const;
 
 	//------------------------------------ KEY MODIFICATION
 
 	//change key of entry in std::vector to new key - return true if succesful (i.e. old key exists)
-	bool change_key(std::string old_key, std::string new_key);
+	bool change_key(const std::string& old_key, const std::string& new_key);
 
-	void set_key_at_index(std::string new_key, int index) { storedObjects_keys[index] = new_key; }
+	void set_key_at_index(const std::string& new_key, int index) { storedObjects_keys[index] = new_key; }
 
 	//------------------------------------ SIZE MODIFICATION METHODS (overloaded vector_lut methods)
 
-	int push_back(std::string key, Type newObject, int majorId = 0);
+	int push_back(const std::string&, Type newObject, int majorId = 0);
 
 	void pop_back(void);
 
-	int insert(std::string key, int index, Type newObject, int majorId = 0);
+	int insert(const std::string&, int index, Type newObject, int majorId = 0);
 
 	//set new size. Any new entries beyond the old size will be assigned a majorId of 0 and empty key.
 	void resize(int new_size, Type value = Type());
@@ -951,15 +979,24 @@ template <typename Type>
 Type& vector_key_lut<Type>::operator[](const std::string &key)
 {
 	for (int idx = 0; idx < (int)storedObjects_keys.size(); idx++)
-		if (storedObjects_keys[idx] == key) return storedObjects[idx];
+		if (storedObjects_keys[idx] == key) return vector_lut<Type>::storedObjects[idx];
 
-	return storedObjects[0];
+	return vector_lut<Type>::storedObjects[0];
+}
+
+template <typename Type>
+const Type& vector_key_lut<Type>::operator[](const std::string &key) const
+{
+	for (int idx = 0; idx < (int)storedObjects_keys.size(); idx++)
+		if (storedObjects_keys[idx] == key) return vector_lut<Type>::storedObjects[idx];
+
+	return vector_lut<Type>::storedObjects[0];
 }
 
 //------------------------------------ CHECKERS
 
 template <typename Type>
-bool vector_key_lut<Type>::has_key(std::string key)
+bool vector_key_lut<Type>::has_key(const std::string& key) const
 {
 	for (int idx = 0; idx < (int)storedObjects_keys.size(); idx++)
 		if (storedObjects_keys[idx] == key) return true;
@@ -971,7 +1008,7 @@ bool vector_key_lut<Type>::has_key(std::string key)
 
 //return index of first element with key std::string. -1 if not found
 template <typename Type>
-int vector_key_lut<Type>::get_index_from_key(std::string key)
+int vector_key_lut<Type>::get_index_from_key(const std::string& key) const
 {
 	for (int idx = 0; idx < (int)storedObjects_keys.size(); idx++)
 		if (storedObjects_keys[idx] == key) return idx;
@@ -981,38 +1018,38 @@ int vector_key_lut<Type>::get_index_from_key(std::string key)
 
 //get major ID of first element with key std::string. -1 if not found
 template <typename Type>
-int vector_key_lut<Type>::get_ID_from_key(std::string key)
+int vector_key_lut<Type>::get_ID_from_key(const std::string& key) const
 {
 	for (int idx = 0; idx < (int)storedObjects_keys.size(); idx++)
-		if (storedObjects_keys[idx] == key) return get_ID_from_index(idx);
+		if (storedObjects_keys[idx] == key) return vector_lut<Type>::get_ID_from_index(idx);
 
 	return -1;
 }
 
 //get full id of first element with key std::string. -1 if not found
 template <typename Type>
-INT2 vector_key_lut<Type>::get_id_from_key(std::string key)
+INT2 vector_key_lut<Type>::get_id_from_key(const std::string& key) const
 {
 	for (int idx = 0; idx < (int)storedObjects_keys.size(); idx++)
-		if (storedObjects_keys[idx] == key) return get_id_from_index(idx);
+		if (storedObjects_keys[idx] == key) return vector_lut<Type>::get_id_from_index(idx);
 
 	return INT2(-1);
 }
 
 //get key from index in std::vector
 template <typename Type>
-std::string vector_key_lut<Type>::get_key_from_index(int index)
+std::string vector_key_lut<Type>::get_key_from_index(int index) const
 {
-	if (GoodIdx((int)size(), index)) return storedObjects_keys[index];
+	if (GoodIdx(vector_lut<Type>::size(), index)) return storedObjects_keys[index];
 
 	return "";
 }
 
 //get key from major ID
 template <typename Type>
-std::string vector_key_lut<Type>::get_key_from_ID(int majorID)
+std::string vector_key_lut<Type>::get_key_from_ID(int majorID) const
 {
-	if (is_ID_set(majorID)) return storedObjects_keys[LUT_byId[majorID][0]];
+	if (vector_lut<Type>::is_ID_set(majorID)) return storedObjects_keys[vector_lut<Type>::LUT_byId[majorID][0]];
 
 	return "";
 }
@@ -1021,7 +1058,7 @@ std::string vector_key_lut<Type>::get_key_from_ID(int majorID)
 
 //change key of entry in std::vector to new key - return true if succesful (i.e. old key exists)
 template <typename Type>
-bool vector_key_lut<Type>::change_key(std::string old_key, std::string new_key)
+bool vector_key_lut<Type>::change_key(const std::string& old_key, const std::string& new_key)
 {
 	for (int idx = 0; idx < (int)storedObjects_keys.size(); idx++) {
 
@@ -1039,7 +1076,7 @@ bool vector_key_lut<Type>::change_key(std::string old_key, std::string new_key)
 //------------------------------------ SIZE MODIFICATION METHODS (overloaded vector_lut methods)
 
 template <typename Type>
-int vector_key_lut<Type>::push_back(std::string key, Type newObject, int majorId)
+int vector_key_lut<Type>::push_back(const std::string& key, Type newObject, int majorId)
 {
 	//store the key (last element)
 	storedObjects_keys.push_back(key);
@@ -1056,9 +1093,11 @@ void vector_key_lut<Type>::pop_back(void)
 }
 
 template <typename Type>
-int vector_key_lut<Type>::insert(std::string key, int index, Type newObject, int majorId)
+int vector_key_lut<Type>::insert(const std::string& key, int index, Type newObject, int majorId)
 {
-	storedObjects_keys.insert(storedObjects_keys.begin() + index, newObject);
+	//store the key
+	storedObjects_keys.insert(storedObjects_keys.begin() + index, key);
+	//store the value
 	return vector_lut<Type>::insert(index, newObject, majorId);
 }
 
@@ -1073,7 +1112,7 @@ void vector_key_lut<Type>::resize(int new_size, Type value)
 template <typename Type>
 void vector_key_lut<Type>::erase(INT2 id)
 {
-	int index = LUT_byId[id.i][id.j];
+	int index = vector_lut<Type>::LUT_byId[id.i][id.j];
 	erase(index);
 }
 

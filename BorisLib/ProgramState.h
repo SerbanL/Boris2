@@ -20,8 +20,7 @@
 #include <tuple>
 #include <cassert>
 
-#include "Types.h"
-#include "Types_Any.h"
+#include "Types_VAL.h"
 #include "Introspection.h"
 #include "Funcs_Vectors.h"
 
@@ -98,8 +97,8 @@ private: //--------------------------------------------------- DATA
 			return (test == true ? test_number : tag);
 		}
 
-		template <typename TType, typename... PType>
-		static constexpr int get_value(int tag, int test_number, TType test, PType ... tests)
+		template <typename TType, typename... __PType>
+		static constexpr int get_value(int tag, int test_number, TType test, __PType ... tests)
 		{
 			tag = get_value(tag, test_number, test);
 			return get_value(tag, ++test_number, tests...);
@@ -134,8 +133,8 @@ private: //--------------------------------------------------- DATA
 			return (test == true ? test_number : tag);
 		}
 
-		template <typename TType, typename... PType>
-		static constexpr int get_value(int tag, int test_number, TType test, PType ... tests)
+		template <typename TType, typename... __PType>
+		static constexpr int get_value(int tag, int test_number, TType test, __PType ... tests)
 		{
 			tag = get_value(tag, test_number, test);
 			return get_value(tag, ++test_number, tests...);
@@ -211,13 +210,13 @@ private: //--------------------------------------------------- METHODS
 
 	//Start
 	template <typename PointerType, typename Tuple, int... I>
-	bool parse_implementations_save(std::ofstream &bdout, PointerType& pBase, Tuple& tup, std::index_sequence<I...> is)
+	bool parse_implementations_save(std::ofstream &bdout, PointerType& pBase, Tuple& tup, std::integer_sequence<int, I...> is)
 	{
 		return parse_implementations_save(bdout, pBase, tup, is, std::bool_constant< (bool)std::tuple_size<Tuple>::value >());
 	}
 
 	template <typename PointerType, typename Tuple, int... I>
-	bool parse_implementations_save(std::ofstream &bdout, PointerType& pBase, Tuple& tup, std::index_sequence<I...>, std::true_type)
+	bool parse_implementations_save(std::ofstream &bdout, PointerType& pBase, Tuple& tup, std::integer_sequence<int, I...>, std::true_type)
 	{
 		if (!parse_implementations_save(bdout, pBase, std::get<I>(tup)...)) {
 
@@ -231,7 +230,7 @@ private: //--------------------------------------------------- METHODS
 	}
 
 	template <typename PointerType, typename Tuple, int... I>
-	bool parse_implementations_save(std::ofstream &bdout, PointerType& pBase, Tuple& tup, std::index_sequence<I...>, std::false_type)
+	bool parse_implementations_save(std::ofstream &bdout, PointerType& pBase, Tuple& tup, std::integer_sequence<int, I...>, std::false_type)
 	{
 		//zero length index sequence (empty std::tuple) - nothing to parse
 		//complex or non-complex type?
@@ -258,8 +257,8 @@ private: //--------------------------------------------------- METHODS
 		return false;
 	}
 
-	template <typename PointerType, typename Type, typename ... PType>
-	bool parse_implementations_save(std::ofstream &bdout, PointerType& pBase, Type& entry, PType& ... further_entries)
+	template <typename PointerType, typename Type, typename ... __PType>
+	bool parse_implementations_save(std::ofstream &bdout, PointerType& pBase, Type& entry, __PType& ... further_entries)
 	{
 		if (parse_implementations_save(bdout, pBase, entry)) return true;
 		else return parse_implementations_save(bdout, pBase, further_entries...);
@@ -286,13 +285,13 @@ private: //--------------------------------------------------- METHODS
 
 	//Start
 	template <typename PointerType, typename Tuple, int... I>
-	bool parse_implementations_load(std::ifstream &bdin, PointerType& pointer, std::string implementation_name, Tuple& tup, std::index_sequence<I...> is)
+	bool parse_implementations_load(std::ifstream &bdin, PointerType& pointer, std::string implementation_name, Tuple& tup, std::integer_sequence<int, I...> is)
 	{
 		return parse_implementations_load(bdin, pointer, implementation_name, tup, is, std::bool_constant< (bool)std::tuple_size<Tuple>::value >());
 	}
 
 	template <typename PointerType, typename Tuple, int... I>
-	bool parse_implementations_load(std::ifstream &bdin, PointerType& pointer, std::string implementation_name, Tuple& tup, std::index_sequence<I...>, std::true_type)
+	bool parse_implementations_load(std::ifstream &bdin, PointerType& pointer, std::string implementation_name, Tuple& tup, std::integer_sequence<int, I...>, std::true_type)
 	{
 		if (!parse_implementations_load(bdin, pointer, implementation_name, std::get<I>(tup)...)) {
 
@@ -312,7 +311,7 @@ private: //--------------------------------------------------- METHODS
 	}
 
 	template <typename PointerType, typename Tuple, int... I>
-	bool parse_implementations_load(std::ifstream &bdin, PointerType& pointer, std::string implementation_name, Tuple& tup, std::index_sequence<I...>, std::false_type)
+	bool parse_implementations_load(std::ifstream &bdin, PointerType& pointer, std::string implementation_name, Tuple& tup, std::integer_sequence<int, I...>, std::false_type)
 	{
 		//zero length index sequence (empty std::tuple) - nothing to do
 		//complex or non-complex type?
@@ -345,8 +344,8 @@ private: //--------------------------------------------------- METHODS
 		else return false;		//implementation not found
 	}
 
-	template <typename PointerType, typename Type, typename ... PType>
-	bool parse_implementations_load(std::ifstream &bdin, PointerType& pBase, std::string implementation_name, Type& entry, PType& ... further_entries)
+	template <typename PointerType, typename Type, typename ... __PType>
+	bool parse_implementations_load(std::ifstream &bdin, PointerType& pBase, std::string implementation_name, Type& entry, __PType& ... further_entries)
 	{
 		if (entry.name == implementation_name) {
 
@@ -377,7 +376,7 @@ private: //--------------------------------------------------- METHODS
 	//--------------
 	//Parse
 	template <typename Tuple, int... I>
-	void parse_save_tuple(std::ofstream &bdout, Tuple& tup, std::index_sequence<I...> is)
+	void parse_save_tuple_start(std::ofstream &bdout, Tuple& tup, std::integer_sequence<int, I...> is)
 	{
 		//it is possible the objects std::tuple is empty 
 		//(e.g. you have a std::vector containing pointers to abstract base classes with particular implementations.
@@ -387,13 +386,13 @@ private: //--------------------------------------------------- METHODS
 	}
 
 	template <typename Tuple, int... I>
-	void parse_save_tuple(std::ofstream &bdout, Tuple& tup, std::index_sequence<I...>, std::true_type)
+	void parse_save_tuple(std::ofstream &bdout, Tuple& tup, std::integer_sequence<int, I...>, std::true_type)
 	{
 		parse_save_tuple(bdout, std::get<I>(tup)...);
 	}
 
 	template <typename Tuple, int... I>
-	void parse_save_tuple(std::ofstream &bdout, Tuple& tup, std::index_sequence<I...>, std::false_type)
+	void parse_save_tuple(std::ofstream &bdout, Tuple& tup, std::integer_sequence<int, I...>, std::false_type)
 	{
 		//zero length index sequence (empty std::tuple) - nothing to do
 	}
@@ -409,8 +408,8 @@ private: //--------------------------------------------------- METHODS
 		save_tuple_entry(bdout, entry.value, int_tag<int_tag_select<decltype(entry.value)>::value>());
 	}
 
-	template <typename Type, typename ... PType>
-	void parse_save_tuple(std::ofstream &bdout, Type& entry, PType& ... further_entries)
+	template <typename Type, typename ... __PType>
+	void parse_save_tuple(std::ofstream &bdout, Type& entry, __PType& ... further_entries)
 	{
 		parse_save_tuple(bdout, entry);
 		parse_save_tuple(bdout, further_entries...);
@@ -447,8 +446,8 @@ private: //--------------------------------------------------- METHODS
 	template <typename Type>
 	void save_tuple_entry(std::ofstream& bdout, Type& value, int_tag<3>, bool vector_entry = false)
 	{
-		typedef std::remove_reference<Type>::type VType;
-		typedef contained_type<VType>::type SType;
+		typedef typename std::remove_reference<Type>::type VType;
+		typedef typename contained_type<VType>::type SType;
 
 		VType vec = value;
 
@@ -556,7 +555,7 @@ private: //--------------------------------------------------- METHODS
 	template <typename Type>
 	void save_tuple_entry_pointer(std::ofstream& bdout, Type& value, std::false_type pcomplexType)
 	{
-		parse_implementations_save(bdout, value, implementations, std::make_index_sequence<sizeof ...(IPType)>{});
+		parse_implementations_save(bdout, value, implementations, std::make_integer_sequence<int, sizeof ...(IPType)>{});
 	}
 
 	//---
@@ -568,20 +567,20 @@ private: //--------------------------------------------------- METHODS
 	//--------------------------------------------------- TUPLE PARSING FOR LOADING : FIND VARIABLE NAME
 
 	template <typename Tuple, int... I>
-	bool parse_load_tuple(std::ifstream& bdin, const std::string& var_name, Tuple& tup, std::index_sequence<I...> is)
+	bool parse_load_tuple_start(std::ifstream& bdin, const std::string& var_name, Tuple& tup, std::integer_sequence<int, I...> is)
 	{
 		//see comments on parse_save_tuple for why this check is needed
 		return parse_load_tuple(bdin, var_name, tup, is, std::bool_constant< (bool)std::tuple_size<Tuple>::value >());
 	}
 
 	template <typename Tuple, int... I>
-	bool parse_load_tuple(std::ifstream& bdin, const std::string& var_name, Tuple& tup, std::index_sequence<I...>, std::true_type)
+	bool parse_load_tuple(std::ifstream& bdin, const std::string& var_name, Tuple& tup, std::integer_sequence<int, I...>, std::true_type)
 	{
 		return parse_load_tuple(bdin, var_name, std::get<I>(tup)...);
 	}
 
 	template <typename Tuple, int... I>
-	bool parse_load_tuple(std::ifstream& bdin, const std::string& var_name, Tuple& tup, std::index_sequence<I...>, std::false_type)
+	bool parse_load_tuple(std::ifstream& bdin, const std::string& var_name, Tuple& tup, std::integer_sequence<int, I...>, std::false_type)
 	{
 		//zero length index sequence (empty std::tuple) - nothing to do
 		return true;
@@ -600,8 +599,8 @@ private: //--------------------------------------------------- METHODS
 		else return false;
 	}
 
-	template <typename Type, typename ... PType>
-	bool parse_load_tuple(std::ifstream& bdin, const std::string& var_name, Type& entry, PType& ... further_entries)
+	template <typename Type, typename ... __PType>
+	bool parse_load_tuple(std::ifstream& bdin, const std::string& var_name, Type& entry, __PType& ... further_entries)
 	{
 		if (var_name == entry.name) return parse_load_tuple(bdin, var_name, entry);
 		else return parse_load_tuple(bdin, var_name, further_entries...);
@@ -634,8 +633,9 @@ private: //--------------------------------------------------- METHODS
 
 				char line[FILEROWCHARS];
 				if (bdin.getline(line, FILEROWCHARS)) {
-					
-					value = (Type)ToNum(std::string(line));
+
+					Type converted_value = ToNum(std::string(line));
+					value = converted_value;
 				}
 				else return false;
 			}
@@ -818,7 +818,7 @@ private: //--------------------------------------------------- METHODS
 	template <typename Type>
 	bool load_pointer(std::ifstream& bdin, Type& pointer, std::string implementation_name, std::false_type pcomplexType, bool keep_ptr = false)
 	{
-		return parse_implementations_load(bdin, pointer, implementation_name, implementations, std::make_index_sequence<sizeof ...(IPType)>{});
+		return parse_implementations_load(bdin, pointer, implementation_name, implementations, std::make_integer_sequence<int, sizeof ...(IPType)>{});
 	}
 
 	//sink-hole
@@ -836,7 +836,7 @@ public:
 	void SaveObjectState(std::ofstream &bdout)
 	{
 		//name was saved before this was called. don't signal startType here since we want it to appear before the object name.
-		parse_save_tuple(bdout, objects, std::make_index_sequence<sizeof...(PType)>{});
+		parse_save_tuple_start(bdout, objects, std::make_integer_sequence<int, sizeof...(PType)>{});
 		bdout << endType << std::endl;
 	}
 
@@ -890,7 +890,7 @@ public:
 					return true;
 				}
 
-				if (!parse_load_tuple(bdin, std::string(line), objects, std::make_index_sequence<sizeof...(PType)>{})) {
+				if (!parse_load_tuple_start(bdin, std::string(line), objects, std::make_integer_sequence<int, sizeof...(PType)>{})) {
 					
 					//name not found, or something else went wrong
 					if (complex_type_just_started) {

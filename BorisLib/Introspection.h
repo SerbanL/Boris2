@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Introspection_base.h"
-#include "Types.h"
+#include "Types_VAL.h"
 
 //--------------------------------------------------
 //check if type is Id indexable (has [] operator which can take an INT2 as the index)

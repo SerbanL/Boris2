@@ -1,8 +1,8 @@
 #pragma once
 
-#include "Types_Conversion.h"
 #include "Funcs_Conv.h"
 #include "Funcs_Strings.h"
+#include "Funcs_Aux_base.h"
 
 ////////////////////////////////////////////////////////////////////////////////////////////////// VAL2 and special cases INT2, PAIR
 //
@@ -95,14 +95,14 @@ struct VAL2 {
 	//SUM
 	template <
 		typename VType_,
-		typename RType = std::conditional<std::is_floating_point<VType_>::value && std::is_integral<VType>::value, VType_, VType>::type
+		typename RType = typename std::conditional<std::is_floating_point<VType_>::value && std::is_integral<VType>::value, VType_, VType>::type
 	>
 	VAL2<RType> operator+(const VAL2<VType_> &rhs) const { return VAL2<RType>(x + rhs.x, y + rhs.y); }
 
 	//DIFFERENCE
 	template <
 		typename VType_,
-		typename RType = std::conditional<std::is_floating_point<VType_>::value && std::is_integral<VType>::value, VType_, VType>::type
+		typename RType = typename std::conditional<std::is_floating_point<VType_>::value && std::is_integral<VType>::value, VType_, VType>::type
 	>
 	VAL2<RType> operator-(const VAL2<VType_> &rhs) const { return VAL2<RType>(x - rhs.x, y - rhs.y); }
 
@@ -116,7 +116,7 @@ struct VAL2 {
 	//SIMPLE PRODUCT (component by component)
 	template <
 		typename VType_,
-		typename RType = std::conditional<std::is_floating_point<VType_>::value && std::is_integral<VType>::value, VType_, VType>::type
+		typename RType = typename std::conditional<std::is_floating_point<VType_>::value && std::is_integral<VType>::value, VType_, VType>::type
 	>
 	VAL2<RType> operator&(const VAL2<VType_> &rhs) const { return VAL2<RType>(x * rhs.x, y * rhs.y); }
 
@@ -125,7 +125,7 @@ struct VAL2 {
 	//product with a constant (must be fundamental type) on the RHS
 	template <
 		typename MVType,
-		typename RType = std::conditional<std::is_floating_point<MVType>::value && std::is_integral<VType>::value, MVType, VType>::type,
+		typename RType = typename std::conditional<std::is_floating_point<MVType>::value && std::is_integral<VType>::value, MVType, VType>::type,
 		std::enable_if_t<std::is_fundamental<MVType>::value>* = nullptr
 	>
 	VAL2<RType> operator*(const MVType &mult) const { return VAL2<RType>(x * mult, y * mult); }
@@ -147,14 +147,14 @@ struct VAL2 {
 	//SIMPLE DIVISION (component by component)
 	template <
 		typename VType_,
-		typename RType = std::conditional<std::is_floating_point<VType_>::value && std::is_integral<VType>::value, VType_, VType>::type
+		typename RType = typename std::conditional<std::is_floating_point<VType_>::value && std::is_integral<VType>::value, VType_, VType>::type
 	>
 	VAL2<RType> operator/(const VAL2<VType_> &rhs) const { return VAL2<RType>(x / rhs.x, y / rhs.y); }
 
 	//DIVISION BY A CONSTANT (must be fundamental type)
 	template <
 		class DVType,
-		typename RType = std::conditional<std::is_floating_point<DVType>::value && std::is_integral<VType>::value, DVType, VType>::type,
+		typename RType = typename std::conditional<std::is_floating_point<DVType>::value && std::is_integral<VType>::value, DVType, VType>::type,
 		std::enable_if_t<std::is_fundamental<DVType>::value>* = nullptr
 	>
 	VAL2<RType> operator/(const DVType &divisor) const { return VAL2<RType>(x / divisor, y / divisor); }
@@ -339,14 +339,14 @@ struct VAL3 {
 	//SUM
 	template <
 		typename VType_, 
-		typename RType = std::conditional<std::is_floating_point<VType_>::value && std::is_integral<VType>::value, VType_, VType>::type
+		typename RType = typename std::conditional<std::is_floating_point<VType_>::value && std::is_integral<VType>::value, VType_, VType>::type
 	>
 	VAL3<RType> operator+(const VAL3<VType_> &rhs) const { return VAL3<RType>(x + rhs.x, y + rhs.y, z + rhs.z); }
 	
 	//DIFFERENCE
 	template <
 		typename VType_, 
-		typename RType = std::conditional<std::is_floating_point<VType_>::value && std::is_integral<VType>::value, VType_, VType>::type
+		typename RType = typename std::conditional<std::is_floating_point<VType_>::value && std::is_integral<VType>::value, VType_, VType>::type
 	>
 	VAL3<RType> operator-(const VAL3<VType_> &rhs) const { return VAL3<RType>(x - rhs.x, y - rhs.y, z - rhs.z); }
 
@@ -380,14 +380,14 @@ struct VAL3 {
 	//VECTOR PRODUCT (DBL3 ^ DBL3 -> DBL3)
 	template <
 		typename VType_,
-		typename RType = std::conditional<std::is_floating_point<VType_>::value && std::is_integral<VType>::value, VType_, VType>::type
+		typename RType = typename std::conditional<std::is_floating_point<VType_>::value && std::is_integral<VType>::value, VType_, VType>::type
 	>
 	VAL3<RType> operator^(const VAL3<VType_> &rhs) const { return VAL3<RType>(y*rhs.z - z * rhs.y, z*rhs.x - x * rhs.z, x*rhs.y - y * rhs.x); }
 
 	//OUTER VECTOR PRODUCT : (both types are fundamental, e.g. DBL3 | DBL3 -> DBL33
 	template <
 		typename VType_,
-		typename RType = std::conditional<std::is_floating_point<VType_>::value && std::is_integral<VType>::value, VType_, VType>::type,
+		typename RType = typename std::conditional<std::is_floating_point<VType_>::value && std::is_integral<VType>::value, VType_, VType>::type,
 		std::enable_if_t<std::is_fundamental<VType_>::value && std::is_fundamental<VType>::value>* = nullptr
 	>
 	VAL3<VAL3<RType>> operator|(const VAL3<VType_> &rhs) const { return VAL3<VAL3<RType>>(VAL3<RType>(x * rhs.x, x * rhs.y, x * rhs.z), VAL3<RType>(y * rhs.x, y * rhs.y, y * rhs.z), VAL3<RType>(z * rhs.x, z * rhs.y, z * rhs.z)); }
@@ -402,7 +402,7 @@ struct VAL3 {
 	//SIMPLE PRODUCT (component by component)
 	template <
 		typename VType_,
-		typename RType = std::conditional<std::is_floating_point<VType_>::value && std::is_integral<VType>::value, VType_, VType>::type
+		typename RType = typename std::conditional<std::is_floating_point<VType_>::value && std::is_integral<VType>::value, VType_, VType>::type
 	>
 	VAL3<RType> operator&(const VAL3<VType_> &rhs) const { return VAL3<RType>(x * rhs.x, y * rhs.y, z * rhs.z); }
 
@@ -425,7 +425,7 @@ struct VAL3 {
 	//SIMPLE DIVISION (component by component)
 	template <
 		typename VType_,
-		typename RType = std::conditional<std::is_floating_point<VType_>::value && std::is_integral<VType>::value, VType_, VType>::type
+		typename RType = typename std::conditional<std::is_floating_point<VType_>::value && std::is_integral<VType>::value, VType_, VType>::type
 	>
 	VAL3<RType> operator/(const VAL3<VType_> &rhs) const { return VAL3<RType>(x / rhs.x, y / rhs.y, z / rhs.z); }
 
@@ -633,14 +633,14 @@ struct VAL4 {
 	//SUM
 	template <
 		typename VType_,
-		typename RType = std::conditional<std::is_floating_point<VType_>::value && std::is_integral<VType>::value, VType_, VType>::type
+		typename RType = typename std::conditional<std::is_floating_point<VType_>::value && std::is_integral<VType>::value, VType_, VType>::type
 	>
 		VAL4<RType> operator+(const VAL4<VType_> &rhs) const { return VAL4<RType>(x + rhs.x, y + rhs.y, z + rhs.z, t + rhs.t); }
 
 	//DIFFERENCE
 	template <
 		typename VType_,
-		typename RType = std::conditional<std::is_floating_point<VType_>::value && std::is_integral<VType>::value, VType_, VType>::type
+		typename RType = typename std::conditional<std::is_floating_point<VType_>::value && std::is_integral<VType>::value, VType_, VType>::type
 	>
 		VAL4<RType> operator-(const VAL4<VType_> &rhs) const { return VAL4<RType>(x - rhs.x, y - rhs.y, z - rhs.z, t - rhs.t); }
 
@@ -670,7 +670,7 @@ struct VAL4 {
 	//SIMPLE DIVISION (component by component)
 	template <
 		typename VType_,
-		typename RType = std::conditional<std::is_floating_point<VType_>::value && std::is_integral<VType>::value, VType_, VType>::type
+		typename RType = typename std::conditional<std::is_floating_point<VType_>::value && std::is_integral<VType>::value, VType_, VType>::type
 	>
 		VAL4<RType> operator/(const VAL4<VType_> &rhs) const { return VAL4<RType>(x / rhs.x, y / rhs.y, z / rhs.z, t / rhs.t); }
 

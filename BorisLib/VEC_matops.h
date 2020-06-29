@@ -7,7 +7,7 @@
 //matrix multiplication using naive algorithm
 //multiply xy planes of lvec and rvec considered as 2D matrices and place result in this VEC. Require lvec.n.x = rvec.n.y and lvec.n.z = rvec.n.z. Output matrix (this) sized as required.
 template <>
-void VEC<double>::matrix_mul(VEC<double>& lvec, VEC<double>& rvec)
+inline void VEC<double>::matrix_mul(const VEC<double>& lvec, const VEC<double>& rvec)
 {
 	//check if we have correct dimensions for matrix multiplication
 	if (lvec.n.x != rvec.n.y || lvec.n.z != rvec.n.z) return;
@@ -71,7 +71,7 @@ void VEC<VType>::matrix_muldiag(double value)
 
 //add matadd into this matrix point by point - sizes must match
 template <typename VType>
-void VEC<VType>::matrix_add(VEC<VType>& matadd)
+void VEC<VType>::matrix_add(const VEC<VType>& matadd)
 {
 	//sizes must match
 	if (n != matadd.n) assign(matadd.n, VType());
@@ -85,7 +85,7 @@ void VEC<VType>::matrix_add(VEC<VType>& matadd)
 
 //add lvec and rvec (sizes must match) point by point, setting output in this matrix
 template <typename VType>
-void VEC<VType>::matrix_add(VEC<VType>& lvec, VEC<VType>& rvec)
+void VEC<VType>::matrix_add(const VEC<VType>& lvec, const VEC<VType>& rvec)
 {
 	//sizes must match
 	if (lvec.n != rvec.n) return;
@@ -101,7 +101,7 @@ void VEC<VType>::matrix_add(VEC<VType>& lvec, VEC<VType>& rvec)
 
 //subtract matadd from this matrix point by point - sizes must match
 template <typename VType>
-void VEC<VType>::matrix_sub(VEC<VType>& matadd)
+void VEC<VType>::matrix_sub(const VEC<VType>& matadd)
 {
 	//sizes must match
 	if (n != matadd.n) assign(matadd.n, VType());
@@ -115,7 +115,7 @@ void VEC<VType>::matrix_sub(VEC<VType>& matadd)
 
 //subtract rvec from lvec (sizes must match) point by point, setting output in this matrix
 template <typename VType>
-void VEC<VType>::matrix_sub(VEC<VType>& lvec, VEC<VType>& rvec)
+void VEC<VType>::matrix_sub(const VEC<VType>& lvec, const VEC<VType>& rvec)
 {
 	//sizes must match
 	if (lvec.n != rvec.n) return;
@@ -133,7 +133,7 @@ void VEC<VType>::matrix_sub(VEC<VType>& lvec, VEC<VType>& rvec)
 
 //Invert each plane of this VEC considered as a matrix (must be square in xy plane) and return determinant of first matrix (first xy plane) - using algorithm from : A. Farooq, K. Hamid, "An Efficient and Simple Algorithm for Matrix Inversion" IJTD, 1, 20 (2010)
 template <>
-double VEC<double>::matrix_inverse(void)
+inline double VEC<double>::matrix_inverse(void)
 {
 	//must be a square input matrix
 	if (n.x != n.y) return 0.0;

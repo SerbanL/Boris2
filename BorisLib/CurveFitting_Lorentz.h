@@ -99,7 +99,7 @@ public:
 	//params[0] is S, params[1] is H0, params[2] is dH, params[3] is y0
 	int FitLorentz_LMA(std::vector<DBL2> &xy, std::vector<double> &params, std::vector<double> &stdParams, int points = -1, bool find_start = true)
 	{
-		std::vector<CurveFitting_LMA::f_eval> evalFunc;
+		std::vector<typename CurveFitting_LMA::f_eval> evalFunc;
 
 		//Build vector of function evaluations to be used in LMA algorithm
 		//These functions are defined here but will be available in the derived class
@@ -128,7 +128,7 @@ public:
 
 	int FitLorentz_LMA(std::vector<DBL2> &xy, std::vector<double> &params, int points = -1, bool find_start = true)
 	{
-		std::vector<CurveFitting_LMA::f_eval> evalFunc;
+		std::vector<typename CurveFitting_LMA::f_eval> evalFunc;
 
 		//Build vector of function evaluations to be used in LMA algorithm
 		//These functions are defined here but will be available in the derived class

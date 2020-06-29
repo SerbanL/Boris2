@@ -82,7 +82,7 @@ public:
 		pdampinglike_x = &dampinglike_x;
 		pfieldlike_x = &fieldlike_x;
 
-		std::vector<CurveFitting_LMA::f_eval> evalFunc;
+		std::vector<typename CurveFitting_LMA::f_eval> evalFunc;
 
 		//Build vector of function evaluations to be used in LMA algorithm
 		//These functions are defined here but will be available in the derived class
@@ -140,7 +140,7 @@ public:
 		pdampinglike_x = &dampinglike_x;
 		pfieldlike_x = &fieldlike_x;
 
-		std::vector<CurveFitting_LMA::f_eval> evalFunc;
+		std::vector<typename CurveFitting_LMA::f_eval> evalFunc;
 
 		//Build vector of function evaluations to be used in LMA algorithm
 		//These functions are defined here but will be available in the derived class
@@ -157,7 +157,6 @@ public:
 		fitting_algorithm.FitNonLinearFunction_LMA(dampinglike_y, params, evalFunc, &CurveFitting_LMA::SOT_SHAeff_SetFittingStart, dampinglike_y.size());
 
 		SHAeff = params[0];
-		std_SHAeff = stdParams[0];
 
 		//find flST next
 

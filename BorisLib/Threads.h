@@ -3,32 +3,46 @@
 #include <thread>
 #include <functional>
 #include <mutex>
+#include <chrono>
+#include <atomic>
 
-#include "Types.h"
+#include "Introspection_base.h"
 
 //To use this in another class, use CRTP : derive that class (the Owner) from Threads as public Threads<Owner>
 //The methods in Threads then become available in the Owner, and std::function pointers can be used in Threads without having to pass the this pointer every time.
 
-template <class Owner> 
-class Threads 
+template <class Owner>
+class Threads
 {
 
 private:
+
+	//Maximum number of concurrent threads possible
+	//It's possible to redesign this class so number of maximum threads is dynamically adjusted, but currently not worth the extra complication.
+	//The problem is if std::atomic is stored in a vector, since std::atomic is not copy-constructable the std::vector cannot be resized dynamically.
+	//It's possible however to have a wrapper for std::atomic which defines a copy constructor and assignment operator, and have this stored in the vector instead
+	//You still have the problem of ensuring any resizing is done atomically. 
+	//The much simpler solution is to define a maximum number of threads.
+	//In the future this could be redesigned, but for now this is fine, the maximum number of threads below is extremely unlikely to be exceeded in any reasonable use case and doesn't take up any significant memory.
+	//Also we cannot use a std::vector which is statically sized to THREAD_MAXIMUM, since this is a templated class. 
+	//Instead just use good-old pointers and new/delete operators : use RAII, pretty straight-forward to avoid bugs or memory leaks.
+	const int THREAD_MAXIMUM = 100;
 
 	Owner *owner;
 
 	//threads are launched as non-blocking by default. For the next thread launch set this to true for blocking. 
 	//You must know the threadId, and flag is reset back to default after that threadId is launched.
-	std::vector<bool> blocking_call;
+	bool* blocking_call = nullptr;
 
-	std::vector<long> thread_active, thread_running;
+	std::atomic<bool>* thread_active = nullptr;
+	std::atomic<bool>* thread_running = nullptr;
 
 	std::mutex thread_mutex;
 
 protected:
 
 	//reserved unique thread ids for various uses
-	enum THREAD_ { THREAD_GENERATENEW = 0, THREAD_LOOP, THREAD_GETINPUT, THREAD_HANDLEMESSAGE, THREAD_HANDLEMESSAGE2, THREAD_HANDLEMESSAGE3, THREAD_HANDLECLIENT, THREAD_NETWORK, THREAD_TIMEDCHECK, THREAD_TIMEDREFRESH };
+	enum THREAD_ { THREAD_ERROR = -1, THREAD_GENERATENEW = 0, THREAD_LOOP, THREAD_GETINPUT, THREAD_HANDLEMESSAGE, THREAD_HANDLEMESSAGE2, THREAD_HANDLEMESSAGE3, THREAD_HANDLECLIENT, THREAD_NETWORK, THREAD_TIMEDCHECK, THREAD_TIMEDREFRESH };
 
 private:
 
@@ -40,40 +54,49 @@ private:
 protected:	//all methods usable by other objects are set as protected to force usage of Threads only through CRTP
 
 	Threads(void);
-	virtual ~Threads() { Stop_All_Threads(); }
+	virtual ~Threads();
 
-	void Stop_All_Threads() { for (int i = 1; i < (int)thread_active.size(); i++) stop_thread(i); }
+	//Note THREAD_GENERATENEW = 0 is reserved and never used to run any threads
+	void Stop_All_Threads() { for (int i = 1; i < THREAD_MAXIMUM; i++) stop_thread(i); }
 
 	void stop_thread(int threadId);
 
 	int set_blocking_thread(int threadId = THREAD_GENERATENEW);
 
-	bool is_thread_running(int threadId) { if (threadId < (int)thread_active.size()) return (thread_active[threadId] != THREAD_GENERATENEW); else return false; }
+	bool is_thread_running(int threadId) const { if (threadId < THREAD_MAXIMUM) return thread_active[threadId]; else return false; }
 
 	//--------------------INFINITE LOOP THREAD
 	//infinite while loop thread : launch it with an Owner method, this thread will call the method without delay in a while loop
 
 	//launch new thread (either using a reserved thread id, or generate a new one) and return thread id
-	int infinite_loop_launch(void (Owner::*runThisMethod)(), int threadId = THREAD_GENERATENEW);
-	template <typename ... PType> int infinite_loop_launch(void (Owner::*runThisMethod)(PType...), PType... param, int threadId = THREAD_GENERATENEW);
+	int infinite_loop_launch(void(Owner::*runThisMethod)(), int threadId = THREAD_GENERATENEW);
+
+	template <typename ... PType>
+	int infinite_loop_launch(void(Owner::*runThisMethod)(PType...), PType... param, int threadId = THREAD_GENERATENEW);
 
 	//--------------------DELAYED CALL THREAD
 	//delayed call thread : run the Owner method a single time after a fixed time delay
 
-	int delayed_call_launch(void (Owner::*runThisMethod)(), int delay_ms, int threadId = THREAD_GENERATENEW);
-	template <typename ... PType> int delayed_call_launch(void (Owner::*runThisMethod)(PType...), PType... param, int delay_ms, int threadId = THREAD_GENERATENEW);
+	int delayed_call_launch(void(Owner::*runThisMethod)(), int delay_ms, int threadId = THREAD_GENERATENEW);
+
+	template <typename ... PType>
+	int delayed_call_launch(void(Owner::*runThisMethod)(PType...), PType... param, int delay_ms, int threadId = THREAD_GENERATENEW);
 
 	//--------------------SINGLE CALL THREAD
 	//single call thread : run the Owner method a single time without any delay
 
-	int single_call_launch(void (Owner::*runThisMethod)(), int threadId = THREAD_GENERATENEW);
-	template <typename ... PType> int single_call_launch(void (Owner::*runThisMethod)(PType...), PType... param, int threadId = THREAD_GENERATENEW);
+	int single_call_launch(void(Owner::*runThisMethod)(), int threadId = THREAD_GENERATENEW);
+
+	template <typename ... PType>
+	int single_call_launch(void(Owner::*runThisMethod)(PType...), PType... param, int threadId = THREAD_GENERATENEW);
 
 	//--------------------TIMED CALL THREAD
 	//timed call thread : run the Owner method at fixed time intervals for a given amount of time (or indefinitely if time set to zero)
 
-	int timed_call_launch(void (Owner::*runThisMethod)(), int refresh_ms, int total_ms = 0, int threadId = THREAD_GENERATENEW);
-	template <typename ... PType> int timed_call_launch(void (Owner::*runThisMethod)(PType...), PType... param, int refresh_ms, int total_ms = 0, int threadId = THREAD_GENERATENEW);
+	int timed_call_launch(void(Owner::*runThisMethod)(), int refresh_ms, int total_ms = 0, int threadId = THREAD_GENERATENEW);
+
+	template <typename ... PType>
+	int timed_call_launch(void(Owner::*runThisMethod)(PType...), PType... param, int refresh_ms, int total_ms = 0, int threadId = THREAD_GENERATENEW);
 };
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -83,40 +106,50 @@ protected:	//all methods usable by other objects are set as protected to force u
 //Yet another way is to move this code to Threads.cpp, exclude it from the build and #include it here - i.e. effectively achieving same effect as first method.
 //Since this file is not large, I prefer the former method as there are less includes to worry about.
 
-template <class Owner> Threads<Owner>::Threads(void) 
+template <class Owner>
+Threads<Owner>::Threads(void)
 {
 	//use CRTP to get pointer to derived class (Owner)
 	owner = static_cast<Owner*>(this);
 
-	blocking_call.push_back(false);
-	thread_active.push_back(THREAD_GENERATENEW);
-	thread_running.push_back(THREAD_GENERATENEW);
+	blocking_call = new bool[THREAD_MAXIMUM];
+	thread_active = new std::atomic<bool>[THREAD_MAXIMUM];
+	thread_running = new std::atomic<bool>[THREAD_MAXIMUM];
+
+	for (int idx = 0; idx < THREAD_MAXIMUM; idx++) {
+
+		blocking_call[idx] = false;
+		thread_active[idx] = false;
+		thread_running[idx] = false;
+	}
 }
 
-template <class Owner> int Threads<Owner>::configure_threadId(int threadId)
+template <class Owner>
+Threads<Owner>::~Threads()
 {
-	// if this threadId has not been used before, make space for its flags
-	if (threadId >= (int)thread_active.size()) {
+	Stop_All_Threads();
 
-		thread_active.resize(threadId + 1, 0);
-		thread_running.resize(threadId + 1, 0);
-		blocking_call.resize(threadId + 1, false);
-	}
+	delete[] blocking_call;
+	delete[] thread_active;
+	delete[] thread_running;
+}
+
+template <class Owner>
+int Threads<Owner>::configure_threadId(int threadId)
+{
+	if (threadId >= THREAD_MAXIMUM) return THREAD_ERROR;
 
 	else if (threadId == THREAD_GENERATENEW) {
 
-		//generate a new thread id : find the first entry in thread_active which is not being used, or extend the std::vector
+		//find the first non-active thread
 		int idx = 1;
-		for (; idx < (int)thread_active.size(); idx++)
-			if (thread_active[idx] == 0) break;
+		for (; idx < THREAD_MAXIMUM; idx++) {
 
-		//no free entries found : generate new one
-		if (idx == (int)thread_active.size()) {
-
-			thread_active.push_back(0);
-			thread_running.push_back(0);
-			blocking_call.push_back(false);
+			if (!thread_active[idx]) break;
 		}
+
+		//no free entries found : problem! Will just have to wait until something becomes available, but highly unlikely this will ever happen in practice.
+		if (idx == THREAD_MAXIMUM) return THREAD_ERROR;
 
 		//new thread id generated
 		threadId = idx;
@@ -125,48 +158,51 @@ template <class Owner> int Threads<Owner>::configure_threadId(int threadId)
 	return threadId;
 }
 
-template <class Owner> void Threads<Owner>::stop_thread(int threadId)
+template <class Owner>
+void Threads<Owner>::stop_thread(int threadId)
 {
 	//if not running (or not a valid threadId) then return
 	if (!is_thread_running(threadId)) return;
 
 	//stop the thread
-	InterlockedDecrement(&thread_running[threadId]);
+	std::atomic_store(&thread_running[threadId], false);
 
-	//wait for the loop to actually stop - the Sleep is needed to give it a chance to write the value.
-	while (thread_active[threadId]) { Sleep(1); }
+	//wait for the loop to actually stop - the sleep is needed to give it a chance to write the value.
+	while (thread_active[threadId]) { std::this_thread::sleep_for(std::chrono::milliseconds(1)); }
 }
 
-template <class Owner> int Threads<Owner>::set_blocking_thread(int threadId)
+template <class Owner>
+int Threads<Owner>::set_blocking_thread(int threadId)
 {
 	thread_mutex.lock();
 
 	threadId = configure_threadId(threadId);
 
-	blocking_call[threadId] = true;
+	if (threadId != THREAD_ERROR) blocking_call[threadId] = true;
 
 	thread_mutex.unlock();
 
 	return threadId;
 }
 
-template <class Owner> int Threads<Owner>::run_on_thread(std::function<void()> runThis, int threadId) 
+template <class Owner>
+int Threads<Owner>::run_on_thread(std::function<void()> runThis, int threadId)
 {
 	//std::mutex must be locked before calling this std::function
 
 	//don't start another thread of this type - return false, i.e. couldn't start
-	if (thread_active[threadId]) { thread_mutex.unlock(); return THREAD_GENERATENEW; }
+	if (threadId == THREAD_ERROR || thread_active[threadId]) { thread_mutex.unlock(); return THREAD_GENERATENEW; }
 
 	//mark thread_active
-	InterlockedIncrement(&thread_active[threadId]);
+	while (!std::atomic_exchange(&thread_active[threadId], true));
 
 	//thread will shortly be running
-	InterlockedIncrement(&thread_running[threadId]);
+	while (!std::atomic_exchange(&thread_running[threadId], true));
 
 	//release the lock now as the call may be blocking, or take a long time to execute - don't want to stop other threads from being created.
 	thread_mutex.unlock();
 
-	thread threaded_call(runThis);
+	std::thread threaded_call(runThis);
 
 	//now launch the infinite loop thread
 	if (blocking_call[threadId]) threaded_call.join();
@@ -198,7 +234,7 @@ int Threads<Owner>::infinite_loop_launch(void (Owner::*runThisMethod)(), int thr
 		}
 
 		//infinite_loop_thread_active was incremented by the launcher
-		InterlockedDecrement(&this->thread_active[threadId]);
+		std::atomic_store(&this->thread_active[threadId], false);
 	};
 
 	//the std::mutex will be unlocked before this std::function returns
@@ -214,7 +250,7 @@ int Threads<Owner>::infinite_loop_launch(void (Owner::*runThisMethod)(PType...),
 
 	threadId = configure_threadId(threadId);
 
-	std::function<void()> calling_method = [this, param..., threadId, runThisMethod] {
+	std::function<void()> calling_method = [this, param..., threadId, runThisMethod]{
 
 		//infinite_loop_running was incremented by the launcher
 		while (this->thread_running[threadId]) {
@@ -223,7 +259,7 @@ int Threads<Owner>::infinite_loop_launch(void (Owner::*runThisMethod)(PType...),
 		}
 
 		//infinite_loop_thread_active was incremented by the launcher
-		InterlockedDecrement(&this->thread_active[threadId]);
+		std::atomic_store(&this->thread_active[threadId], false);
 	};
 
 	return run_on_thread(calling_method, threadId);
@@ -242,12 +278,12 @@ int Threads<Owner>::delayed_call_launch(void (Owner::*runThisMethod)(), int dela
 
 	std::function<void()> calling_method = [this, delay_ms, threadId, runThisMethod] {
 
-		Sleep(delay_ms);
+		std::this_thread::sleep_for(std::chrono::milliseconds(delay_ms));
 
 		CALLFP(this->owner, runThisMethod)();
 
 		//this was set to 1 by the launcher
-		InterlockedDecrement(&this->thread_active[threadId]);
+		std::atomic_store(&this->thread_active[threadId], false);
 	};
 
 	return run_on_thread(calling_method, threadId);
@@ -262,14 +298,14 @@ int Threads<Owner>::delayed_call_launch(void (Owner::*runThisMethod)(PType...), 
 
 	threadId = configure_threadId(threadId);
 
-	std::function<void()> calling_method = [this, param..., delay_ms, threadId, runThisMethod] {
+	std::function<void()> calling_method = [this, param..., delay_ms, threadId, runThisMethod]{
 
-		Sleep(delay_ms);
+		std::this_thread::sleep_for(std::chrono::milliseconds(delay_ms));
 
 		CALLFP(this->owner, runThisMethod)(param...);
 
 		//this was set to 1 by the launcher
-		InterlockedDecrement(&this->thread_active[threadId]);
+		std::atomic_store(&this->thread_active[threadId], false);
 	};
 
 	return run_on_thread(calling_method, threadId);
@@ -293,13 +329,13 @@ int Threads<Owner>::single_call_launch(void (Owner::*runThisMethod)(), int threa
 		CALLFP(this->owner, runThisMethod)();
 
 		//this was set to 1 by the launcher
-		InterlockedDecrement(&this->thread_active[threadId]);
+		std::atomic_store(&this->thread_active[threadId], false);
 	};
 
 	return run_on_thread(calling_method, threadId);
 }
 
-template <class Owner> 
+template <class Owner>
 template <typename ... PType>
 int Threads<Owner>::single_call_launch(void (Owner::*runThisMethod)(PType...), PType... param, int threadId)
 {
@@ -308,12 +344,12 @@ int Threads<Owner>::single_call_launch(void (Owner::*runThisMethod)(PType...), P
 
 	threadId = configure_threadId(threadId);
 
-	std::function<void()> calling_method = [this, param..., threadId, runThisMethod] {
+	std::function<void()> calling_method = [this, param..., threadId, runThisMethod]{
 
 		CALLFP(this->owner, runThisMethod)(param...);
 
 		//this was set to 1 by the launcher
-		InterlockedDecrement(&this->thread_active[threadId]);
+		std::atomic_store(&this->thread_active[threadId], false);
 	};
 
 	return run_on_thread(calling_method, threadId);
@@ -332,21 +368,19 @@ int Threads<Owner>::timed_call_launch(void (Owner::*runThisMethod)(), int refres
 
 	std::function<void()> calling_method = [this, refresh_ms, total_ms, threadId, runThisMethod] {
 
-		DWORD time_elapsed_ms = 0;
+		int time_elapsed_ms = 0;
 
-		DWORD start_time_ms = GetTickCount();
+		while (time_elapsed_ms < total_ms || total_ms == 0) {
 
-		while (time_elapsed_ms < (DWORD)total_ms || total_ms == 0) {
-
-			Sleep(refresh_ms);
+			std::this_thread::sleep_for(std::chrono::milliseconds(refresh_ms));
 
 			CALLFP(this->owner, runThisMethod)();
 
-			time_elapsed_ms = GetTickCount() - start_time_ms;
+			time_elapsed_ms += refresh_ms;
 		}
 
 		//this was set to 1 by the launcher
-		InterlockedDecrement(&this->thread_active[threadId]);
+		std::atomic_store(&this->thread_active[threadId], false);
 	};
 
 	return run_on_thread(calling_method, threadId);
@@ -361,23 +395,21 @@ int Threads<Owner>::timed_call_launch(void (Owner::*runThisMethod)(PType...), PT
 
 	threadId = configure_threadId(threadId);
 
-	std::function<void()> calling_method = [this, param..., refresh_ms, total_ms, threadId, runThisMethod] {
+	std::function<void()> calling_method = [this, param..., refresh_ms, total_ms, threadId, runThisMethod]{
 
-		DWORD time_elapsed_ms = 0;
+		int time_elapsed_ms = 0;
 
-		DWORD start_time_ms = GetTickCount();
+	while (time_elapsed_ms < total_ms || total_ms == 0) {
 
-		while (time_elapsed_ms < (DWORD)total_ms || total_ms == 0) {
-
-			Sleep(refresh_ms);
+			std::this_thread::sleep_for(std::chrono::milliseconds(refresh_ms));
 
 			CALLFP(this->owner, runThisMethod)(param...);
 
-			time_elapsed_ms = GetTickCount() - start_time_ms;
+			time_elapsed_ms += refresh_ms;
 		}
 
 		//this was set to 1 by the launcher
-		InterlockedDecrement(&this->thread_active[threadId]);
+		std::atomic_store(&this->thread_active[threadId], false);
 	};
 
 	return run_on_thread(calling_method, threadId);

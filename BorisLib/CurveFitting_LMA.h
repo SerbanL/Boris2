@@ -2,7 +2,7 @@
 
 #include <algorithm>
 
-#include "VEC.h"
+#include "BLib_VEC.h"
 
 #include "CurveFitting_Lorentz.h"
 #include "CurveFitting_Skyrmion.h"

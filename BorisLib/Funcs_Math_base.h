@@ -20,6 +20,12 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
+template <typename RType>
+RType maximum(RType param1, RType param2)
+{
+	return (param1 > param2 ? param1 : param2);
+}
+
 template <typename RType, typename ... PType>
 RType maximum(RType param, PType ... params)
 {
@@ -28,9 +34,9 @@ RType maximum(RType param, PType ... params)
 }
 
 template <typename RType>
-RType maximum(RType param1, RType param2)
+RType minimum(RType param1, RType param2)
 {
-	return (param1 > param2 ? param1 : param2);
+	return (param1 < param2 ? param1 : param2);
 }
 
 template <typename RType, typename ... PType>
@@ -38,12 +44,6 @@ RType minimum(RType param, PType ... params)
 {
 	RType value = minimum(params...);
 	return (param < value ? param : value);
-}
-
-template <typename RType>
-RType minimum(RType param1, RType param2)
-{
-	return (param1 < param2 ? param1 : param2);
 }
 
 ///////////////////////////////////////////////////////////////////////////////

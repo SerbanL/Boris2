@@ -188,7 +188,7 @@ public:
 		pfieldlike_fit_adiabatic_x = &fieldlike_fit_adiabatic_x;
 		pfieldlike_fit_nonadiabatic_x = &fieldlike_fit_nonadiabatic_x;
 
-		std::vector<CurveFitting_LMA::f_eval> evalFunc;
+		std::vector<typename CurveFitting_LMA::f_eval> evalFunc;
 
 		//Use CRTP!
 		CurveFitting_LMA& fitting_algorithm = static_cast<CurveFitting_LMA&>(*this);
@@ -313,7 +313,7 @@ public:
 		pfieldlike_fit_adiabatic_x = &fieldlike_fit_adiabatic_x;
 		pfieldlike_fit_nonadiabatic_x = &fieldlike_fit_nonadiabatic_x;
 
-		std::vector<CurveFitting_LMA::f_eval> evalFunc;
+		std::vector<typename CurveFitting_LMA::f_eval> evalFunc;
 
 		//Use CRTP!
 		CurveFitting_LMA& fitting_algorithm = static_cast<CurveFitting_LMA&>(*this);

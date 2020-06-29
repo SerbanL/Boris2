@@ -3,7 +3,6 @@
 #include <vector>
 #include <string>
 
-#include "Introspection_base.h"
 #include "Funcs_Conv.h"
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -30,11 +29,17 @@ void JoinToVector(std::vector<VType> &lhsVector, const std::vector<Type> &rhsVec
 //----------------------------------------
 
 //make a std::vector using parameter pack - the first parameter determines the std::vector stored type
-template <typename VType> std::vector<VType> make_vector(const VType& value) { return { value }; }
-template <typename VType, typename... PType> std::vector<VType> make_vector(const VType& value, const PType&... values) { return { value, (VType)values... }; }
-template <typename VType> std::vector<VType> make_vector(void) { return std::vector<VType>(); }
+template <typename VType> 
+std::vector<VType> make_vector(const VType& value) { return { value }; }
 
-template <typename... PType> std::vector<std::string> make_strings_vector(const PType&... values) { return { ToString(values)... }; }
+template <typename VType, typename... PType> 
+std::vector<VType> make_vector(const VType& value, const PType&... values) { return { value, (VType)values... }; }
+
+template <typename VType> 
+std::vector<VType> make_vector(void) { return std::vector<VType>(); }
+
+template <typename... PType> 
+std::vector<std::string> make_strings_vector(const PType&... values) { return { ToString(values)... }; }
 
 //----------------------------------------
 
@@ -109,30 +114,18 @@ void swap(int j, int k, std::vector<VType>& vec, std::vector<PType>&... further_
 template <typename VType>
 void erase_vectors_entry(int index, std::vector<VType>& vec)
 {
-	if (GoodIdx((int)vec.size(), index))
-		vec.erase(vec.begin() + index);
+	if (index >= 0 && index < vec.size()) vec.erase(vec.begin() + index);
 }
 
 template <typename VType, typename ... PType>
 void erase_vectors_entry(int index, std::vector<VType>& vec, std::vector<PType>&... further_vec)
 {
-	if (GoodIdx((int)vec.size(), index))
-		vec.erase(vec.begin() + index);
+	if (index >= 0 && index < vec.size()) vec.erase(vec.begin() + index);
 
 	erase_vectors_entry(index, further_vec...);
 }
 
 //----------------------------------------
-
-//deep clear a vector - if it contains pointers then delete them all before clearing the vector
-template <typename Vector>
-void clear_vector(Vector& vec)
-{
-	//stored element type
-	using SType = typename contained_type<Vector>::type;
-	
-	clear_vector(vec, std::is_pointer<SType>());
-}
 
 template <typename Vector>
 void clear_vector(Vector& vec, std::true_type pointers)
@@ -158,11 +151,21 @@ void clear_vector(Vector& vec, std::false_type pointers)
 	vec.shrink_to_fit();
 }
 
+//deep clear a vector - if it contains pointers then delete them all before clearing the vector
+template <typename Vector>
+void clear_vector(Vector& vec)
+{
+	//stored element type
+	using SType = typename contained_type<Vector>::type;
+	
+	clear_vector(vec, std::is_pointer<SType>());
+}
+
 //----------------------------------------
 
 //convert input vector to output vector element by element
 template <typename OType, typename IType>
-std::vector<OType> vec_convert(std::vector<IType> &in_vec)
+std::vector<OType> vec_convert(const std::vector<IType> &in_vec)
 {
 	std::vector<OType> out_vec;
 	out_vec.resize(in_vec.size());
@@ -178,7 +181,7 @@ std::vector<OType> vec_convert(std::vector<IType> &in_vec)
 
 //convert input vector to output vector element by element.
 template <typename OType, typename IType>
-bool vec_convert(std::vector<IType> &in_vec, std::vector<OType>& out_vec)
+bool vec_convert(const std::vector<IType> &in_vec, std::vector<OType>& out_vec)
 {
 	if (!malloc_vector(out_vec, in_vec.size())) return false;
 

@@ -3,11 +3,12 @@
 #include <omp.h>
 #include <tuple>
 
-#include "Types.h"
-#include "Funcs_Aux.h"
+#include "BLib_Types.h"
+#include "Funcs_Aux_base.h"
 #include "Funcs_Math.h"
 #include "Funcs_Vectors.h"
-#include "OmpReduction.h"
+#include "BLib_prng.h"
+#include "BLib_OmpReduction.h"
 
 ////////////////////////////////////////////////////////////////////////////////////////////////// VEC<VType>
 //
@@ -32,6 +33,7 @@ protected:
 	std::vector<VType> quantity;
 
 	//mesh transfer object : handled using the MESH TRANSFER methods below. Not saved by ProgramState, so needs to be remade if reloading this VEC.
+	//Defined in VEC_MeshTransfer.h
 	Transfer<VType> transfer;
 
 public:
@@ -94,12 +96,16 @@ public:
 
 	//Index using a single combined index (use e.g. when more convenient to use a single for loop to iterate over the quantity's elements)
 	VType& operator[](int idx) { return quantity[idx]; }
+	//const version to allow passing in a const VEC& to functions which need to read the VEC
+	const VType& operator[](int idx) const { return quantity[idx]; }
 
 	//index using a VAL3, integral type (e.g. use with nested loops)
 	VType& operator[](const INT3& idx) { return quantity[idx.i + idx.j*n.x + idx.k*n.x*n.y]; }
+	const VType& operator[](const INT3& idx) const { return quantity[idx.i + idx.j*n.x + idx.k*n.x*n.y]; }
 
 	//index by position relative to VEC rect
 	VType& operator[](const DBL3& rel_pos) { return quantity[int(rel_pos.x / h.x) + int(rel_pos.y / h.y) * n.x + int(rel_pos.z / h.z) * n.x * n.y]; }
+	const VType& operator[](const DBL3& rel_pos) const { return quantity[int(rel_pos.x / h.x) + int(rel_pos.y / h.y) * n.x + int(rel_pos.z / h.z) * n.x * n.y]; }
 
 	//get the managed std::vector by reference
 	std::vector<VType>& get_vector(void) { return quantity; }
@@ -189,7 +195,7 @@ public:
 
 	//generate custom values from grayscale bitmap : black = 0, white = 1. Apply scaling and offset also.
 	//bitmap size must match new_n.x * new_n.y
-	bool generate_custom_2D(SZ3 new_n, Rect new_rect, double offset, double scale, std::vector<BYTE>& bitmap) { return true; }
+	bool generate_custom_2D(SZ3 new_n, Rect new_rect, double offset, double scale, const std::vector<unsigned char>& bitmap) { return true; }
 
 	//similar to generate_linear except new dimensions not set
 	void set_linear(DBL3 position1, VType value1, DBL3 position2, VType value2) {}
@@ -269,6 +275,9 @@ public:
 
 	//extract profile to a vector : extract size points starting at (start + step * 0.5) in the direction step; use weighted average to extract profile with stencil given by h
 	//e.g. if you have a start and end point with given step, then setting size = |end - start| / |step| means the profile must be extracted between (start + 0.5*step) and (end - 0.5*step). e.g.: |.|.|.|.|
+	//NOTE : chose not to return the std::vector but instead take it by reference so it can be modified, where the function expects the vector to have the correct size already
+	//the former is much slower in the context these functions are likely to be used, even with move semantics, since a vector has to be allocated every time. 
+	//Instead the vector is already allocated before these functions are called, so they can be used repeatedly without having to allocate memory every time.
 	void extract_profile(size_t size, std::vector<VType>& profile, DBL3 start, DBL3 step);
 
 	//these specifically apply for VType == cuReal3, allowing extraction of the x, y, z components separately
@@ -310,7 +319,7 @@ public:
 
 	//multiply xy planes of lvec and rvec considered as 2D matrices and place result in this VEC. Require lvec.n.x = rvec.n.y and lvec.n.z = rvec.n.z. Output matrix (this) sized as required.
 	//specialised for double only
-	void matrix_mul(VEC<double>& lvec, VEC<double>& rvec) {}
+	void matrix_mul(const VEC<double>& lvec, const VEC<double>& rvec) {}
 
 	//multiply matrix by floating point constant
 	void matrix_mul(double constant);
@@ -320,20 +329,20 @@ public:
 	void matrix_muldiag(double value);
 
 	//add matadd into this matrix point by point - sizes must match
-	void matrix_add(VEC<VType>& matadd);
+	void matrix_add(const VEC<VType>& matadd);
 
 	//add lvec and rvec (sizes must match) point by point, setting output in this matrix
-	void matrix_add(VEC<VType>& lvec, VEC<VType>& rvec);
+	void matrix_add(const VEC<VType>& lvec, const VEC<VType>& rvec);
 
 	//subtract matadd from this matrix point by point - sizes must match
-	void matrix_sub(VEC<VType>& matadd);
+	void matrix_sub(const VEC<VType>& matadd);
 
 	//subtract rvec from lvec (sizes must match) point by point, setting output in this matrix
-	void matrix_sub(VEC<VType>& lvec, VEC<VType>& rvec);
+	void matrix_sub(const VEC<VType>& lvec, const VEC<VType>& rvec);
 
 	//Invert each plane of this VEC considered as a matrix (must be square in xy plane) and return determinant of first matrix (first xy plane) - using algorithm from : A. Farooq, K. Hamid, "An Efficient and Simple Algorithm for Matrix Inversion" IJTD, 1, 20 (2010)
 	//specialised for double only
-	double matrix_inverse(void) {}
+	double matrix_inverse(void) { return 0.0; }
 
 	//extract values from given xy plane (plane ranges from 0 to n.z - 1) diagonal into a std::vector
 	//If not square in the xy plane the "diagonal" starts at (0,0) and has min(n.x, n.y) points
@@ -397,10 +406,7 @@ public:
 
 	//set-up mesh transfers, ready to use - return false if failed (not enough memory)
 	//can set a multiplier value to apply to all contributions (1.0 by default, so no effect)
-	bool Initialize_MeshTransfer(const std::vector< VEC<VType>* >& mesh_in, const std::vector< VEC<VType>* >& mesh_out, int correction_type, double multiplier = 1.0) 
-	{ 
-		return transfer.initialize_transfer(mesh_in, mesh_out, correction_type, multiplier); 
-	}
+	bool Initialize_MeshTransfer(const std::vector< VEC<VType>* >& mesh_in, const std::vector< VEC<VType>* >& mesh_out, int correction_type, double multiplier = 1.0);
 
 	//MULTIPLE INPUTS, SINGLE OUTPUT
 	
@@ -408,17 +414,11 @@ public:
 	//All VECs in mesh_in should be non-empty
 	//Some VECs in mesh_in2 allowed to be non-empty (in this case single input is used), but otherwise should have exactly same dimensions as the corresponding VECs in mesh_in
 	//can set a multiplier value to apply to all contributions (1.0 by default, so no effect)
-	bool Initialize_MeshTransfer_AveragedInputs(const std::vector< VEC<VType>* >& mesh_in, const std::vector< VEC<VType>* >& mesh_in2, const std::vector< VEC<VType>* >& mesh_out, int correction_type, double multiplier = 1.0)
-	{ 
-		return transfer.initialize_transfer_averagedinputs(mesh_in, mesh_in2, mesh_out, correction_type, multiplier);
-	}
+	bool Initialize_MeshTransfer_AveragedInputs(const std::vector< VEC<VType>* >& mesh_in, const std::vector< VEC<VType>* >& mesh_in2, const std::vector< VEC<VType>* >& mesh_out, int correction_type, double multiplier = 1.0);
 
 	//mesh_in2 must be a vector of VEC<double> inputs
 	//can set a multiplier value to apply to all contributions (1.0 by default, so no effect)
-	bool Initialize_MeshTransfer_MultipliedInputs(const std::vector< VEC<VType>* >& mesh_in, const std::vector< VEC<double>* >& mesh_in2_double, const std::vector< VEC<VType>* >& mesh_out, int correction_type, double multiplier = 1.0)
-	{
-		return transfer.initialize_transfer_multipliedinputs(mesh_in, mesh_in2_double, mesh_out, correction_type, multiplier);
-	}
+	bool Initialize_MeshTransfer_MultipliedInputs(const std::vector< VEC<VType>* >& mesh_in, const std::vector< VEC<double>* >& mesh_in2_double, const std::vector< VEC<VType>* >& mesh_out, int correction_type, double multiplier = 1.0);
 
 	//MULTIPLE INPUT, MULTIPLE OUTPUT
 
@@ -427,40 +427,37 @@ public:
 	//Some VECs in mesh_in2 and mesh_out2 allowed to be non-empty (in this case single input/output is used), but otherwise should have exactly same dimensions as the corresponding VECs in mesh_in, mesh_out
 	//Also if a VEC in mesh_in2 is non-empty the corresponding VEC in mesh_out2 should also be non-empty.
 	//can set a multiplier value to apply to all contributions (1.0 by default, so no effect)
-	bool Initialize_MeshTransfer_AveragedInputs_DuplicatedOutputs(const std::vector< VEC<VType>* >& mesh_in, const std::vector< VEC<VType>* >& mesh_in2, const std::vector< VEC<VType>* >& mesh_out, const std::vector< VEC<VType>* >& mesh_out2, int correction_type, double multiplier = 1.0)
-	{ 
-		return transfer.initialize_transfer_averagedinputs_duplicatedoutputs(mesh_in, mesh_in2, mesh_out, mesh_out2, correction_type, multiplier);
-	}
+	bool Initialize_MeshTransfer_AveragedInputs_DuplicatedOutputs(const std::vector< VEC<VType>* >& mesh_in, const std::vector< VEC<VType>* >& mesh_in2, const std::vector< VEC<VType>* >& mesh_out, const std::vector< VEC<VType>* >& mesh_out2, int correction_type, double multiplier = 1.0);
 
 	//SINGLE INPUT, SINGLE OUTPUT
 
 	//do the actual transfer of values to and from this mesh using these
-	void transfer_in(void) { transfer.transfer_from_external_meshes(); }
+	void transfer_in(void);
 	
-	void transfer_out(bool setOutput = false) { transfer.transfer_to_external_meshes(setOutput); }
+	void transfer_out(bool setOutput = false);
 
 	//AVERAGED INPUTS
 
-	void transfer_in_averaged(void) { transfer.transfer_from_external_meshes_averaged(); }
+	void transfer_in_averaged(void);
 
 	//MULTIPLIED INPUTS
 
 	//only use this if mesh_in2 was initialized as a vector of VEC<double> inputs : see corresponding Initialize_MeshTransfer_MultipliedInputs
-	void transfer_in_multiplied(void) { transfer.transfer_from_external_meshes_multiplied(); }
+	void transfer_in_multiplied(void);
 
 	//DUPLICATED OUTPUTS
 
-	void transfer_out_duplicated(bool setOutput = false) { transfer.transfer_to_external_meshes_duplicated(setOutput); }
+	void transfer_out_duplicated(bool setOutput = false);
 
 	//flattened in and out transfer sizes (i.e. total number of cell contributions
-	size_t size_transfer_in(void) { return transfer.size_transfer_in(); }
-	size_t size_transfer_out(void) { return transfer.size_transfer_out(); }
+	size_t size_transfer_in(void);
+	size_t size_transfer_out(void);
 
 	//this is used to pass transfer information to a cuVEC for copying to gpu memory : for gpu computations we use "flattened" transfers so it can be parallelized better
 	//return type: vector of transfers, where INT3 contains : i - input mesh index, j - input mesh cell index, k - super-mesh cell index. the double entry is the weight for the value contribution
-	std::vector<std::pair<INT3, double>> get_flattened_transfer_in_info(void) { return transfer.get_flattened_transfer_in_info(); }
+	std::vector<std::pair<INT3, double>> get_flattened_transfer_in_info(void);
 
 	//this is used to pass transfer information to a cuVEC for copying to gpu memory : for gpu computations we use "flattened" transfers so it can be parallelized better
 	//return type: vector of transfers, where INT3 contains : i - output mesh index, j - output mesh cell index, k - super-mesh cell index. the double entry is the weight for the value contribution
-	std::vector<std::pair<INT3, double>> get_flattened_transfer_out_info(void) { return transfer.get_flattened_transfer_out_info(); }
+	std::vector<std::pair<INT3, double>> get_flattened_transfer_out_info(void);
 };

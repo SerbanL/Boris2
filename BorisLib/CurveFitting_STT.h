@@ -82,7 +82,7 @@ public:
 		padiabatic_x = &adiabatic_x;
 		pnonadiabatic_x = &nonadiabatic_x;
 
-		std::vector<CurveFitting_LMA::f_eval> evalFunc;
+		std::vector<typename CurveFitting_LMA::f_eval> evalFunc;
 
 		//Build vector of function evaluations to be used in LMA algorithm
 		//These functions are defined here but will be available in the derived class
@@ -144,7 +144,7 @@ public:
 		padiabatic_x = &adiabatic_x;
 		pnonadiabatic_x = &nonadiabatic_x;
 
-		std::vector<CurveFitting_LMA::f_eval> evalFunc;
+		std::vector<typename CurveFitting_LMA::f_eval> evalFunc;
 
 		//Build vector of function evaluations to be used in LMA algorithm
 		//These functions are defined here but will be available in the derived class

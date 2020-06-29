@@ -1,8 +1,9 @@
 #pragma once
 
 #include "Funcs_Math_base.h"
-#include "Types.h"
-#include "Funcs_Algorithms.h"
+#include "Types_VAL.h"
+#include "Funcs_Algorithms_base.h"
+#include "Funcs_Aux_base.h"
 
 ///////////////////////////////////////////////////////////////////////////////
 

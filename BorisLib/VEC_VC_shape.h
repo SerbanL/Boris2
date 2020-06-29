@@ -9,13 +9,13 @@ template <typename VType>
 void VEC_VC<VType>::setbox(const Box& box, VType value)
 {
 #pragma omp parallel for
-	for (int j = (box.s.y >= 0 ? box.s.y : 0); j < (box.e.y <= n.y ? box.e.y : n.y); j++) {
-		for (int k = (box.s.z >= 0 ? box.s.z : 0); k < (box.e.z <= n.z ? box.e.z : n.z); k++) {
-			for (int i = (box.s.x >= 0 ? box.s.x : 0); i < (box.e.x <= n.x ? box.e.x : n.x); i++) {
+	for (int j = (box.s.y >= 0 ? box.s.y : 0); j < (box.e.y <= VEC<VType>::n.y ? box.e.y : VEC<VType>::n.y); j++) {
+		for (int k = (box.s.z >= 0 ? box.s.z : 0); k < (box.e.z <= VEC<VType>::n.z ? box.e.z : VEC<VType>::n.z); k++) {
+			for (int i = (box.s.x >= 0 ? box.s.x : 0); i < (box.e.x <= VEC<VType>::n.x ? box.e.x : VEC<VType>::n.x); i++) {
 
-				int idx = i + j * n.x + k * n.x*n.y;
+				int idx = i + j * VEC<VType>::n.x + k * VEC<VType>::n.x*VEC<VType>::n.y;
 
-				quantity[idx] = value;
+				VEC<VType>::quantity[idx] = value;
 				mark_not_empty(idx);
 			}
 		}
@@ -28,9 +28,9 @@ void VEC_VC<VType>::setbox(const Box& box, VType value)
 template <typename VType>
 void VEC_VC<VType>::setrect(const Rect& rectangle, VType value)
 {
-	if (!rect.intersects(rectangle + rect.s)) return;
+	if (!VEC<VType>::rect.intersects(rectangle + VEC<VType>::rect.s)) return;
 
-	Box cells_box = box_from_rect_max(rectangle + rect.s);
+	Box cells_box = VEC<VType>::box_from_rect_max(rectangle + VEC<VType>::rect.s);
 
 	setbox(cells_box, value);
 }
@@ -39,14 +39,14 @@ void VEC_VC<VType>::setrect(const Rect& rectangle, VType value)
 template <typename VType>
 void VEC_VC<VType>::delrect(const Rect& rectangle)
 {
-	Box box = box_from_rect_max(rectangle + rect.s);
+	Box box = VEC<VType>::box_from_rect_max(rectangle + VEC<VType>::rect.s);
 
 #pragma omp parallel for
-	for (int j = (box.s.y >= 0 ? box.s.y : 0); j < (box.e.y <= n.y ? box.e.y : n.y); j++) {
-		for (int k = (box.s.z >= 0 ? box.s.z : 0); k < (box.e.z <= n.z ? box.e.z : n.z); k++) {
-			for (int i = (box.s.x >= 0 ? box.s.x : 0); i < (box.e.x <= n.x ? box.e.x : n.x); i++) {
+	for (int j = (box.s.y >= 0 ? box.s.y : 0); j < (box.e.y <= VEC<VType>::n.y ? box.e.y : VEC<VType>::n.y); j++) {
+		for (int k = (box.s.z >= 0 ? box.s.z : 0); k < (box.e.z <= VEC<VType>::n.z ? box.e.z : VEC<VType>::n.z); k++) {
+			for (int i = (box.s.x >= 0 ? box.s.x : 0); i < (box.e.x <= VEC<VType>::n.x ? box.e.x : VEC<VType>::n.x); i++) {
 
-				int idx = i + j * n.x + k * n.x*n.y;
+				int idx = i + j * VEC<VType>::n.x + k * VEC<VType>::n.x*VEC<VType>::n.y;
 
 				mark_empty(idx);
 			}
@@ -57,18 +57,18 @@ void VEC_VC<VType>::delrect(const Rect& rectangle)
 }
 
 template <typename VType>
-bool VEC_VC<VType>::apply_bitmap_mask(std::vector<BYTE>& bitmap, double zDepth)
+bool VEC_VC<VType>::apply_bitmap_mask(const std::vector<unsigned char>& bitmap, double zDepth)
 {
-	//bitmap must have the right size (i.e. have n.x * n.y pixels, remembering each pixel has 4 bytes as B-G-R-A)
-	if (bitmap.size() != n.x*n.y * 4) return false;
+	//bitmap must have the right size (i.e. have VEC<VType>::n.x * VEC<VType>::n.y pixels, remembering each pixel has 4 bytes as B-G-R-A)
+	if (bitmap.size() != VEC<VType>::n.x*VEC<VType>::n.y * 4) return false;
 
 #pragma omp parallel for
-	for (int j = 0; j < n.y; j++) {
-		for (int i = 0; i < n.x; i++) {
+	for (int j = 0; j < VEC<VType>::n.y; j++) {
+		for (int i = 0; i < VEC<VType>::n.x; i++) {
 
 			//In the file the 0, 0 point is in the left-top corner, but in the mesh the 0, 0 point is in the left-bottom corner
-			int indexBitMap = i + (n.y - 1 - j)*n.x;
-			int indexMesh = i + j * n.x;
+			int indexBitMap = i + (VEC<VType>::n.y - 1 - j)*VEC<VType>::n.x;
+			int indexMesh = i + j * VEC<VType>::n.x;
 
 			double B = (double)bitmap[indexBitMap * 4] / 255;
 			//double G = (double)bitmap[indexBitMap * 4 + 1] / 255;
@@ -76,7 +76,7 @@ bool VEC_VC<VType>::apply_bitmap_mask(std::vector<BYTE>& bitmap, double zDepth)
 			
 			int depthCut = 0;
 			
-			int zCellsDepth = round(zDepth / h.z);
+			int zCellsDepth = round(zDepth / VEC<VType>::h.z);
 			
 			if (zCellsDepth) {
 
@@ -88,16 +88,16 @@ bool VEC_VC<VType>::apply_bitmap_mask(std::vector<BYTE>& bitmap, double zDepth)
 			}
 			else {
 
-				if (B > 0.5) depthCut = n.z;
+				if (B > 0.5) depthCut = VEC<VType>::n.z;
 			}
 
 			if (zCellsDepth > 0) {
 				//void magnetization to given depth
-				for (int k = n.z - 1; k > (int)n.z - 1 - depthCut; k--) {
+				for (int k = VEC<VType>::n.z - 1; k > (int)VEC<VType>::n.z - 1 - depthCut; k--) {
 
 					if (k >= 0) {
 
-						mark_empty(indexMesh + k * n.x*n.y);
+						mark_empty(indexMesh + k * VEC<VType>::n.x*VEC<VType>::n.y);
 					}
 				}
 			}
@@ -107,9 +107,9 @@ bool VEC_VC<VType>::apply_bitmap_mask(std::vector<BYTE>& bitmap, double zDepth)
 				//void magnetization to given height
 				for (int k = 0; k < depthCut; k++) {
 
-					if (k < n.z) {
+					if (k < VEC<VType>::n.z) {
 
-						mark_empty(indexMesh + k * n.x*n.y);
+						mark_empty(indexMesh + k * VEC<VType>::n.x*VEC<VType>::n.y);
 					}
 				}
 			}
