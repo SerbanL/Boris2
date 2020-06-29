@@ -1,0 +1,2236 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="10. TRANSPORT SOLVER">
+      <UniqueIdentifier>{08808d1b-837e-4661-ab59-3c7faefd14bf}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="01. DIFFERENTIAL EQUATIONS">
+      <UniqueIdentifier>{37383fdc-18f5-45f2-8129-0565133bc269}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="01. DIFFERENTIAL EQUATIONS\__ATOMISTIC">
+      <UniqueIdentifier>{3eff26bc-03a1-440c-9613-b9f4d9358f90}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="01. DIFFERENTIAL EQUATIONS\__ATOMISTIC\CPU">
+      <UniqueIdentifier>{287c4cc9-0078-43c7-9d6b-948efa7e6e41}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="01. DIFFERENTIAL EQUATIONS\__ATOMISTIC\CPU\ATOM DIFF EQUATIONS CUBIC - CPU">
+      <UniqueIdentifier>{175b9a57-5c28-4db4-8883-7ea38af91aea}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="01. DIFFERENTIAL EQUATIONS\__ATOMISTIC\CPU\ATOM DIFF EQUATIONS INTERFACE - CPU">
+      <UniqueIdentifier>{545e59ea-75ac-4b96-881a-1e3873764acd}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="01. DIFFERENTIAL EQUATIONS\__ATOMISTIC\CUDA">
+      <UniqueIdentifier>{b5a282d3-e2f0-4f97-bf2f-77f5e09e6541}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="01. DIFFERENTIAL EQUATIONS\__ATOMISTIC\CUDA\ATOM DIFF EQUATIONS CUBIC - CUDA">
+      <UniqueIdentifier>{9752d83f-5bff-4045-b061-e719a8d1fe3c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="01. DIFFERENTIAL EQUATIONS\__ATOMISTIC\CUDA\ATOM DIFF EQUATIONS INTERFACE - CUDA">
+      <UniqueIdentifier>{e2221aad-f901-4683-be60-91b54b0f0fba}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="01. DIFFERENTIAL EQUATIONS\__MICROMAGNETIC">
+      <UniqueIdentifier>{3ce2fa19-d839-49ac-9f42-26952f00ebd7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="01. DIFFERENTIAL EQUATIONS\__MICROMAGNETIC\CPU">
+      <UniqueIdentifier>{27525806-1295-466a-8628-0d7d724ad886}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="01. DIFFERENTIAL EQUATIONS\__MICROMAGNETIC\CPU\DIFF EQUATIONS AFM - CPU">
+      <UniqueIdentifier>{71107f28-a016-4372-bc08-c83e77bf0135}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="01. DIFFERENTIAL EQUATIONS\__MICROMAGNETIC\CPU\DIFF EQUATIONS DM - CPU">
+      <UniqueIdentifier>{7dcbeaf1-ca11-4f2a-8b86-34656e6fd5f3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="01. DIFFERENTIAL EQUATIONS\__MICROMAGNETIC\CPU\DIFF EQUATIONS FM - CPU">
+      <UniqueIdentifier>{21acb381-2343-4d11-ac9d-4dbe490bba1b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="01. DIFFERENTIAL EQUATIONS\__MICROMAGNETIC\CPU\DIFF EQUATIONS INTERFACE - CPU">
+      <UniqueIdentifier>{dc12c84a-9be4-44e8-863b-85fe624c335e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="01. DIFFERENTIAL EQUATIONS\__MICROMAGNETIC\CUDA">
+      <UniqueIdentifier>{91dd93b1-91e6-474f-99a1-9b7d55e4ccdf}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="01. DIFFERENTIAL EQUATIONS\__MICROMAGNETIC\CUDA\DIFF EQUATIONS AFM - CUDA">
+      <UniqueIdentifier>{5f26914b-0f43-49a2-a4ee-2e5155e418cb}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="01. DIFFERENTIAL EQUATIONS\__MICROMAGNETIC\CUDA\DIFF EQUATIONS DM - CUDA">
+      <UniqueIdentifier>{16d1ff18-3d5a-418c-8b75-c5429b403693}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="01. DIFFERENTIAL EQUATIONS\__MICROMAGNETIC\CUDA\DIFF EQUATIONS FM - CUDA">
+      <UniqueIdentifier>{71d9802d-cc16-4e0b-ab33-b186772c35cc}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="01. DIFFERENTIAL EQUATIONS\__MICROMAGNETIC\CUDA\DIFF EQUATIONS INTERFACE - CUDA">
+      <UniqueIdentifier>{64b693fb-8582-44f3-819c-9aa8e5e2e37e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="01. DIFFERENTIAL EQUATIONS\DIFF EQUATIONS BASE - CPU">
+      <UniqueIdentifier>{77ae2ffc-f8de-4b77-90b4-fda9e4cf9a23}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="01. DIFFERENTIAL EQUATIONS\DIFF EQUATIONS BASE - CUDA">
+      <UniqueIdentifier>{62e37842-8430-445d-9b55-0967b39ddfe1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="02. MESHES">
+      <UniqueIdentifier>{36acb436-4478-4d1f-9a2e-ad20299e57e8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="02. MESHES\__ATOMISTIC">
+      <UniqueIdentifier>{61c3c0d1-2d0b-45e5-b6a5-26229cd9bbf1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="02. MESHES\__ATOMISTIC\CPU">
+      <UniqueIdentifier>{397c159e-c59a-4e4e-8b1d-f56850882791}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="02. MESHES\__ATOMISTIC\CPU\ATOM MESHES - CPU">
+      <UniqueIdentifier>{19106eff-b2e6-459a-b4af-5ba80a499355}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="02. MESHES\__ATOMISTIC\CPU\ATOM MESHES INTERFACE - CPU">
+      <UniqueIdentifier>{af58f71b-c777-4c4d-8267-88ae9258ed72}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="02. MESHES\__ATOMISTIC\CUDA">
+      <UniqueIdentifier>{7867ae8b-de09-4847-ace9-d958ad9bf5a2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="02. MESHES\__ATOMISTIC\CUDA\ATOM MESHES - CUDA">
+      <UniqueIdentifier>{23ae4bac-f27e-4042-a06f-6c475d8ba9a1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="02. MESHES\__ATOMISTIC\CUDA\ATOM MESHES INTERFACE - CUDA">
+      <UniqueIdentifier>{e37313b8-d0ff-4ce6-85ed-69a77f3d0ab9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="02. MESHES\__MICROMAGNETIC">
+      <UniqueIdentifier>{196b9f8f-e434-438f-b3f5-d1260517403c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="02. MESHES\__MICROMAGNETIC\CPU">
+      <UniqueIdentifier>{9b3c465b-c236-42e7-b4bc-2520df2fbca4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="02. MESHES\__MICROMAGNETIC\CPU\MM MESHES - CPU">
+      <UniqueIdentifier>{4ccf9e52-7cd9-42a2-ae43-72ad7c83f74e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="02. MESHES\__MICROMAGNETIC\CPU\MM MESHES INTERFACE - CPU">
+      <UniqueIdentifier>{4aaa1a33-1437-4473-aa06-8991d3270a91}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="02. MESHES\__MICROMAGNETIC\CUDA">
+      <UniqueIdentifier>{51dafb6d-f5d4-4247-9ae6-865e6644f4be}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="02. MESHES\__MICROMAGNETIC\CUDA\MM MESHES - CUDA">
+      <UniqueIdentifier>{4d189181-7e2e-4da6-b816-3f04e369b1d8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="02. MESHES\__MICROMAGNETIC\CUDA\MM MESHES INTERFACE - CUDA">
+      <UniqueIdentifier>{9ffcbf4a-c53b-4160-8ba1-65b13e5cdb47}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="02. MESHES\MAT PARAMS - CPU">
+      <UniqueIdentifier>{b9de79a7-80f1-421d-84ee-08bda2398140}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="02. MESHES\MAT PARAMS - CUDA">
+      <UniqueIdentifier>{ba5ff47b-df1d-4045-b288-f3e2ae365ff3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="03. MODULES">
+      <UniqueIdentifier>{302406a6-9404-429d-b6a9-cbbe1a205b7d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="03. MODULES\__ATOMISTIC">
+      <UniqueIdentifier>{b33b23d8-749d-4634-b2e0-968ed2939d26}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="03. MODULES\__ATOMISTIC\ATOM MODULES - CPU">
+      <UniqueIdentifier>{8eb6a9dd-e690-448a-92bc-dc9d66e19cab}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="03. MODULES\__ATOMISTIC\ATOM MODULES - CUDA">
+      <UniqueIdentifier>{cd339e26-390b-4235-8a56-aeaf3c52d210}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="03. MODULES\MODULES INTERFACE">
+      <UniqueIdentifier>{30504806-4a06-4194-8a9c-ade8d40fe01b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="03. MODULES\MODULES INTERFACE - CUDA">
+      <UniqueIdentifier>{3aae4196-c4ac-42e6-bb4b-73b0734f3db6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="03. MODULES\__MICROMAGNETIC">
+      <UniqueIdentifier>{ccd15ca5-0bfa-4169-b1e0-5fe056d7fd0c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="03. MODULES\__MICROMAGNETIC\MM MODULES - CPU">
+      <UniqueIdentifier>{b4532a5f-23f4-4b60-b1f7-97c60046b858}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="03. MODULES\__MICROMAGNETIC\MM MODULES - CUDA">
+      <UniqueIdentifier>{5a532d8f-2fcd-4409-86f0-060659e28228}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="04. SUPERMESH">
+      <UniqueIdentifier>{e2b76851-3f31-441f-974b-e3ab61defbf9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="04. SUPERMESH\SUPERMESH - CPU">
+      <UniqueIdentifier>{a9dd236b-b071-4c1d-9fa3-37eec2c663f2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="04. SUPERMESH\SUPERMESH - CUDA">
+      <UniqueIdentifier>{10aeb9f0-e79c-4d94-b624-3a2646a59410}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="05. SUPERMESH MODULES">
+      <UniqueIdentifier>{fb49c2c9-34bb-4599-a4a3-e917d2b112d8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="05. SUPERMESH MODULES\MODULES - SUPERMESH - CPU">
+      <UniqueIdentifier>{0eea9f70-561c-4a9d-9414-56f0369d0a34}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="05. SUPERMESH MODULES\MODULES - SUPERMESH - CUDA">
+      <UniqueIdentifier>{4585c276-e6ac-4470-bd77-5501b83b97f0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="06. SUPERMESH DEMAG">
+      <UniqueIdentifier>{9aa0f390-6b7d-479e-84b6-9b2d83b15032}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="06. SUPERMESH DEMAG\DEMAG - SUPERMESH - CPU">
+      <UniqueIdentifier>{79f543a1-b42b-476f-b372-32e620d3715e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="06. SUPERMESH DEMAG\DEMAG - SUPERMESH - CUDA">
+      <UniqueIdentifier>{f7eda04a-1b48-4731-9b8a-1d07d3d38ce2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="07. EXCHANGE">
+      <UniqueIdentifier>{444dfac6-8679-4ca8-b57e-055d6bf467c4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="07. EXCHANGE\__ATOMISTIC">
+      <UniqueIdentifier>{1a9bc7ec-9833-44db-a2be-5d5c01526233}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="07. EXCHANGE\__ATOMISTIC\ATOM EXCHANGE - CPU">
+      <UniqueIdentifier>{2094afea-5dfc-4bbc-af47-b9a627592077}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="07. EXCHANGE\__MICROMAGNETIC">
+      <UniqueIdentifier>{cb3ecd96-c7e2-4560-8f6c-7af963c9f470}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="07. EXCHANGE\__MICROMAGNETIC\EXCHANGE - CPU">
+      <UniqueIdentifier>{f7684773-7f0b-4374-b52d-627f6e179f03}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="07. EXCHANGE\__MICROMAGNETIC\EXCHANGE - CUDA">
+      <UniqueIdentifier>{8bed687c-fe34-444d-9fd5-70d936b4dce2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="08. CONVOLUTION">
+      <UniqueIdentifier>{e6db390f-5960-4a65-be4e-eec792e9d179}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="08. CONVOLUTION\CONVOLUTION - CPU">
+      <UniqueIdentifier>{b7035773-14b3-4b99-a5f6-333a1812497e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="08. CONVOLUTION\CONVOLUTION - CUDA">
+      <UniqueIdentifier>{2baf5cef-382f-45a0-a40e-d9fb58928a95}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="09. FUNCS">
+      <UniqueIdentifier>{7b22956b-af24-4fc0-a133-b3405ef9b4a5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="10. TRANSPORT SOLVER\TRANSPORT SOLVER - CPU">
+      <UniqueIdentifier>{796a1bcc-c359-4ec8-ab9d-e25000a3cdbe}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="10. TRANSPORT SOLVER\TRANSPORT SOLVER - CUDA">
+      <UniqueIdentifier>{290cb31c-6d3d-4421-a200-d10dd39b5e9d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="11. HEAT SOLVER">
+      <UniqueIdentifier>{3b1e967f-860e-4a94-97b4-3c9d4d41a271}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="00. SIMULATION">
+      <UniqueIdentifier>{8168bf67-9e8a-4c8b-97cc-7f030cc7ce88}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="RESOURCES">
+      <UniqueIdentifier>{2ef21388-609e-4c5d-9ff0-9424db398af2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="RESOURCES\Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="RESOURCES\Shaders">
+      <UniqueIdentifier>{a3b40781-eab9-4598-b738-83c968d4aba7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="12. COMMANDS">
+      <UniqueIdentifier>{a85f3c82-83d5-45a0-8c03-09663855462e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="13. AUXILIARY">
+      <UniqueIdentifier>{c3b28997-ade9-48a5-97a1-eddab94966a5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="14. ERROR HANDLER">
+      <UniqueIdentifier>{d4132933-59f9-435a-bd85-57d5a4f3e86f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="15. GRAPHICS">
+      <UniqueIdentifier>{e5f5cfd6-6b2e-4bb1-b4ad-e52334f8e4cd}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="15. GRAPHICS\GRAPHICS_D3D">
+      <UniqueIdentifier>{fb91c83f-fdcb-45dc-90c6-770f221986d3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="15. GRAPHICS\GRAPHICS_SFML">
+      <UniqueIdentifier>{8c2bebca-0d01-4cde-bb02-e881c26dbcc6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="15. GRAPHICS\INTERACTIVE OBJ">
+      <UniqueIdentifier>{d7c3a65b-96a9-46d5-b64f-fd87a2a0426c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="15. GRAPHICS\INTERFACE">
+      <UniqueIdentifier>{57dbe11c-6842-40e3-a013-01cf62769742}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="15. GRAPHICS\INTERFACE_CONSOLEONLY">
+      <UniqueIdentifier>{1c907210-696e-4f5b-8616-20aabec84860}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="RESOURCES\Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="16. DATA PROC">
+      <UniqueIdentifier>{6f5dd0b6-ffc1-494c-9d8d-e2c68336a8d0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="17. MATERIALS DB">
+      <UniqueIdentifier>{15c6ac17-c957-40e5-836a-a253dc2733b8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="18. MAIN">
+      <UniqueIdentifier>{9106dcb4-2f4b-45f5-a9e2-77dc7ccbbbb4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="07. EXCHANGE\__ATOMISTIC\ATOM EXCHANGE - CUDA">
+      <UniqueIdentifier>{b995fc29-0b77-4528-a36c-b12a46eea80a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="02. MESHES\MESHES BASE - CPU">
+      <UniqueIdentifier>{72ab5aa5-258e-47bf-a1cc-ce4c7cc576a6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="02. MESHES\MESHES BASE - CUDA">
+      <UniqueIdentifier>{fe7033b7-d910-459b-9d3d-a94b5e8321b2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="11. HEAT SOLVER\HEAT BASE - CPU">
+      <UniqueIdentifier>{765804d8-ed4f-42e6-ba0b-16bf9cb14611}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="11. HEAT SOLVER\HEAT BASE - CUDA">
+      <UniqueIdentifier>{b4236f0c-3db6-4b35-8930-0ab88a7692e4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="11. HEAT SOLVER\HEAT SUPERMESH - CPU">
+      <UniqueIdentifier>{4dac5f5b-6317-48fb-ae7e-254b715a9710}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="11. HEAT SOLVER\HEAT SUPERMESH - CUDA">
+      <UniqueIdentifier>{9d4d86af-bfe4-47f0-b81f-0b4e30d9f503}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="11. HEAT SOLVER\__MICROMAGNETIC">
+      <UniqueIdentifier>{3d1e1544-2af0-40e3-8ed9-0ceebadf4bbb}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="11. HEAT SOLVER\__ATOMISTIC">
+      <UniqueIdentifier>{af460a14-e2c3-46de-93e6-bb6438afac13}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="11. HEAT SOLVER\__MICROMAGNETIC\MM HEAT SOLVER - CPU">
+      <UniqueIdentifier>{d5e3c993-59b5-4857-817d-3e893d17b84c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="11. HEAT SOLVER\__MICROMAGNETIC\MM HEAT SOLVER - CUDA">
+      <UniqueIdentifier>{73452263-87d4-48e5-a27b-2db1c1424af8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="11. HEAT SOLVER\__ATOMISTIC\ATOM HEAT SOLVER - CPU">
+      <UniqueIdentifier>{78b20e63-fae5-4cfd-8035-9e00bfd52281}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="11. HEAT SOLVER\__ATOMISTIC\ATOM HEAT SOLVER - CUDA">
+      <UniqueIdentifier>{cc80f438-d22b-4528-9cac-b20198648c69}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="09. FUNCS\DEMAG FUNCS - CPU">
+      <UniqueIdentifier>{624d9760-3e75-4819-b2d6-10b69d2ddc8d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="09. FUNCS\OERSTED FUNCS - CPU">
+      <UniqueIdentifier>{8676b4b1-993b-41b9-bee0-e2af9cc6b6ef}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="09. FUNCS\SINGLE DIPOLE FUNCS - CPU">
+      <UniqueIdentifier>{f344a117-59ba-46c2-abc4-53a42a9dcf9f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="09. FUNCS\SINGLE DIPOLE FUNCS - CUDA">
+      <UniqueIdentifier>{6b5f9432-fdc3-4d13-be73-e28d706f40e5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="09. FUNCS\DIPOLE DIPOLE FUNCS - CPU">
+      <UniqueIdentifier>{0608f42c-70bb-4a93-9771-8bcb7f8498b8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="08. CONVOLUTION\DEMAG KERNEL - CPU">
+      <UniqueIdentifier>{a3188dbd-e19c-48ff-ae89-6e09b073f7ae}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="08. CONVOLUTION\DEMAG KERNEL - CUDA">
+      <UniqueIdentifier>{23df0ae5-d226-4776-bef0-a1bb41543cd2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="08. CONVOLUTION\ROUGHNESS KERNEL - CPU">
+      <UniqueIdentifier>{3b788d35-8443-4d82-8e8e-7948f0d8c7a1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="08. CONVOLUTION\OERSTED KERNEL - CPU">
+      <UniqueIdentifier>{81d5d615-902e-4d79-b0a1-7d4c7599b8a8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="08. CONVOLUTION\OERSTED KERNEL - CUDA">
+      <UniqueIdentifier>{75236ac0-1700-49cf-af8f-f4dcb7c78149}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="08. CONVOLUTION\DIPOLE DIPOLE KERNEL - CPU">
+      <UniqueIdentifier>{265e41d7-64c7-447f-b1d9-c0296b42a83f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="08. CONVOLUTION\DIPOLE DIPOLE KERNEL - CUDA">
+      <UniqueIdentifier>{79866724-dc81-4d23-9e85-9a9d257e697b}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="ReadMe.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="BorisGraphics.h">
+      <Filter>15. GRAPHICS\GRAPHICS_D3D</Filter>
+    </ClInclude>
+    <ClInclude Include="D3D.h">
+      <Filter>15. GRAPHICS\GRAPHICS_D3D</Filter>
+    </ClInclude>
+    <ClInclude Include="BorisDisplay.h">
+      <Filter>15. GRAPHICS\INTERFACE</Filter>
+    </ClInclude>
+    <ClInclude Include="BorisInteractiveObjects.h">
+      <Filter>15. GRAPHICS\INTERACTIVE OBJ</Filter>
+    </ClInclude>
+    <ClInclude Include="BorisIO_Make.h">
+      <Filter>15. GRAPHICS\INTERACTIVE OBJ</Filter>
+    </ClInclude>
+    <ClInclude Include="WinSpaces.h">
+      <Filter>15. GRAPHICS\INTERFACE</Filter>
+    </ClInclude>
+    <ClInclude Include="TextObject.h">
+      <Filter>15. GRAPHICS\INTERFACE</Filter>
+    </ClInclude>
+    <ClInclude Include="Mesh_Dipole.h">
+      <Filter>02. MESHES\__MICROMAGNETIC\CPU\MM MESHES - CPU</Filter>
+    </ClInclude>
+    <ClInclude Include="Mesh_Ferromagnetic.h">
+      <Filter>02. MESHES\__MICROMAGNETIC\CPU\MM MESHES - CPU</Filter>
+    </ClInclude>
+    <ClInclude Include="Mesh_Insulator.h">
+      <Filter>02. MESHES\__MICROMAGNETIC\CPU\MM MESHES - CPU</Filter>
+    </ClInclude>
+    <ClInclude Include="Mesh_Metal.h">
+      <Filter>02. MESHES\__MICROMAGNETIC\CPU\MM MESHES - CPU</Filter>
+    </ClInclude>
+    <ClInclude Include="Mesh_FerromagneticCUDA.h">
+      <Filter>02. MESHES\__MICROMAGNETIC\CUDA\MM MESHES - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="PhysQRep.h">
+      <Filter>15. GRAPHICS\GRAPHICS_D3D</Filter>
+    </ClInclude>
+    <ClInclude Include="ZeemanCUDA.h">
+      <Filter>03. MODULES\__MICROMAGNETIC\MM MODULES - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="DataProcessing.h">
+      <Filter>16. DATA PROC</Filter>
+    </ClInclude>
+    <ClInclude Include="ErrorHandler.h">
+      <Filter>14. ERROR HANDLER</Filter>
+    </ClInclude>
+    <ClInclude Include="Commands.h">
+      <Filter>12. COMMANDS</Filter>
+    </ClInclude>
+    <ClInclude Include="ScreenGrab.h">
+      <Filter>13. AUXILIARY</Filter>
+    </ClInclude>
+    <ClInclude Include="Boris_Enums_Defs.h">
+      <Filter>13. AUXILIARY</Filter>
+    </ClInclude>
+    <ClInclude Include="stdafx.h">
+      <Filter>13. AUXILIARY</Filter>
+    </ClInclude>
+    <ClInclude Include="targetver.h">
+      <Filter>13. AUXILIARY</Filter>
+    </ClInclude>
+    <ClInclude Include="SimSchedule.h">
+      <Filter>00. SIMULATION</Filter>
+    </ClInclude>
+    <ClInclude Include="SimSharedData.h">
+      <Filter>00. SIMULATION</Filter>
+    </ClInclude>
+    <ClInclude Include="Simulation.h">
+      <Filter>00. SIMULATION</Filter>
+    </ClInclude>
+    <ClInclude Include="SimulationData.h">
+      <Filter>00. SIMULATION</Filter>
+    </ClInclude>
+    <ClInclude Include="MaterialParameterCUDA.h">
+      <Filter>02. MESHES\MAT PARAMS - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="PhysQ.h">
+      <Filter>15. GRAPHICS\GRAPHICS_D3D</Filter>
+    </ClInclude>
+    <ClInclude Include="Modules.h">
+      <Filter>03. MODULES\MODULES INTERFACE</Filter>
+    </ClInclude>
+    <ClInclude Include="ModulesCUDA.h">
+      <Filter>03. MODULES\MODULES INTERFACE - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="PhysQDefs.h">
+      <Filter>15. GRAPHICS\GRAPHICS_D3D</Filter>
+    </ClInclude>
+    <ClInclude Include="AnisotropyCUDA.h">
+      <Filter>03. MODULES\__MICROMAGNETIC\MM MODULES - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="Oersted.h">
+      <Filter>05. SUPERMESH MODULES\MODULES - SUPERMESH - CPU</Filter>
+    </ClInclude>
+    <ClInclude Include="StrayField.h">
+      <Filter>05. SUPERMESH MODULES\MODULES - SUPERMESH - CPU</Filter>
+    </ClInclude>
+    <ClInclude Include="Demag_NCUDA.h">
+      <Filter>03. MODULES\__MICROMAGNETIC\MM MODULES - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="DemagCUDA.h">
+      <Filter>03. MODULES\__MICROMAGNETIC\MM MODULES - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="ConvolutionCUDA.h">
+      <Filter>08. CONVOLUTION\CONVOLUTION - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="ConvolutionDataCUDA.h">
+      <Filter>08. CONVOLUTION\CONVOLUTION - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="SuperMeshCUDA.h">
+      <Filter>04. SUPERMESH\SUPERMESH - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="StrayFieldCUDA.h">
+      <Filter>05. SUPERMESH MODULES\MODULES - SUPERMESH - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="Mesh_DipoleCUDA.h">
+      <Filter>02. MESHES\__MICROMAGNETIC\CUDA\MM MESHES - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="MeshCUDA.h">
+      <Filter>02. MESHES\__MICROMAGNETIC\CUDA\MM MESHES INTERFACE - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="DipoleTFuncCUDA.h">
+      <Filter>09. FUNCS\SINGLE DIPOLE FUNCS - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="MeshDisplayCUDA.h">
+      <Filter>02. MESHES\__MICROMAGNETIC\CUDA\MM MESHES INTERFACE - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="ManagedMeshCUDA.h">
+      <Filter>02. MESHES\__MICROMAGNETIC\CUDA\MM MESHES INTERFACE - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="Mesh_InsulatorCUDA.h">
+      <Filter>02. MESHES\__MICROMAGNETIC\CUDA\MM MESHES - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="Mesh_MetalCUDA.h">
+      <Filter>02. MESHES\__MICROMAGNETIC\CUDA\MM MESHES - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="OerstedCUDA.h">
+      <Filter>05. SUPERMESH MODULES\MODULES - SUPERMESH - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="SurfExchangeCUDA.h">
+      <Filter>03. MODULES\__MICROMAGNETIC\MM MODULES - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="TransportCUDA.h">
+      <Filter>10. TRANSPORT SOLVER\TRANSPORT SOLVER - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="TransportCUDA_Poisson.h">
+      <Filter>10. TRANSPORT SOLVER\TRANSPORT SOLVER - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="STransportCUDA.h">
+      <Filter>10. TRANSPORT SOLVER\TRANSPORT SOLVER - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="TransportCUDA_Poisson_Spin_V.h">
+      <Filter>10. TRANSPORT SOLVER\TRANSPORT SOLVER - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="TransportCUDA_Poisson_Spin_S.h">
+      <Filter>10. TRANSPORT SOLVER\TRANSPORT SOLVER - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="STransportCUDA_GInterf_V.h">
+      <Filter>10. TRANSPORT SOLVER\TRANSPORT SOLVER - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="STransportCUDA_GInterf_S.h">
+      <Filter>10. TRANSPORT SOLVER\TRANSPORT SOLVER - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="InteractiveObject.h">
+      <Filter>15. GRAPHICS\INTERACTIVE OBJ</Filter>
+    </ClInclude>
+    <ClInclude Include="SkyrmionTrack.h">
+      <Filter>02. MESHES\__MICROMAGNETIC\CPU\MM MESHES - CPU</Filter>
+    </ClInclude>
+    <ClInclude Include="SOTFieldCUDA.h">
+      <Filter>03. MODULES\__MICROMAGNETIC\MM MODULES - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="MeshParamsControlCUDA.h">
+      <Filter>02. MESHES\__MICROMAGNETIC\CUDA\MM MESHES INTERFACE - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="RoughnessCUDA.h">
+      <Filter>03. MODULES\__MICROMAGNETIC\MM MODULES - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="SDemag.h">
+      <Filter>06. SUPERMESH DEMAG\DEMAG - SUPERMESH - CPU</Filter>
+    </ClInclude>
+    <ClInclude Include="SDemag_Demag.h">
+      <Filter>06. SUPERMESH DEMAG\DEMAG - SUPERMESH - CPU</Filter>
+    </ClInclude>
+    <ClInclude Include="SDemagCUDA.h">
+      <Filter>06. SUPERMESH DEMAG\DEMAG - SUPERMESH - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="SDemagCUDA_Demag.h">
+      <Filter>06. SUPERMESH DEMAG\DEMAG - SUPERMESH - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="CompileFlags.h">
+      <Filter>13. AUXILIARY</Filter>
+    </ClInclude>
+    <ClInclude Include="AnisotropyCubiCUDA.h">
+      <Filter>03. MODULES\__MICROMAGNETIC\MM MODULES - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="ColorDefs.h">
+      <Filter>15. GRAPHICS\INTERFACE</Filter>
+    </ClInclude>
+    <ClInclude Include="TextFormatting.h">
+      <Filter>15. GRAPHICS\INTERFACE</Filter>
+    </ClInclude>
+    <ClInclude Include="BorisGraphicsSFML.h">
+      <Filter>15. GRAPHICS\GRAPHICS_SFML</Filter>
+    </ClInclude>
+    <ClInclude Include="BorisDisplayNonGraphical.h">
+      <Filter>15. GRAPHICS\INTERFACE_CONSOLEONLY</Filter>
+    </ClInclude>
+    <ClInclude Include="MaterialsDataBase.h">
+      <Filter>17. MATERIALS DB</Filter>
+    </ClInclude>
+    <ClInclude Include="OVF2_Handlers.h">
+      <Filter>00. SIMULATION</Filter>
+    </ClInclude>
+    <ClInclude Include="DMExchangeCUDA.h">
+      <Filter>07. EXCHANGE\__MICROMAGNETIC\EXCHANGE - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="ExchangeCUDA.h">
+      <Filter>07. EXCHANGE\__MICROMAGNETIC\EXCHANGE - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="iDMExchangeCUDA.h">
+      <Filter>07. EXCHANGE\__MICROMAGNETIC\EXCHANGE - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="ExchangeBaseCUDA.h">
+      <Filter>07. EXCHANGE\__MICROMAGNETIC\EXCHANGE - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="resource.h">
+      <Filter>RESOURCES\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Mesh_AntiFerromagnetic.h">
+      <Filter>02. MESHES\__MICROMAGNETIC\CPU\MM MESHES - CPU</Filter>
+    </ClInclude>
+    <ClInclude Include="Mesh_AntiFerromagneticCUDA.h">
+      <Filter>02. MESHES\__MICROMAGNETIC\CUDA\MM MESHES - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="DiffEqFM.h">
+      <Filter>01. DIFFERENTIAL EQUATIONS\__MICROMAGNETIC\CPU\DIFF EQUATIONS FM - CPU</Filter>
+    </ClInclude>
+    <ClInclude Include="DiffEqFMCUDA.h">
+      <Filter>01. DIFFERENTIAL EQUATIONS\__MICROMAGNETIC\CUDA\DIFF EQUATIONS FM - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="ManagedDiffEqFMCUDA.h">
+      <Filter>01. DIFFERENTIAL EQUATIONS\__MICROMAGNETIC\CUDA\DIFF EQUATIONS FM - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="DiffEqFM_EquationsCUDA.h">
+      <Filter>01. DIFFERENTIAL EQUATIONS\__MICROMAGNETIC\CUDA\DIFF EQUATIONS FM - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="DiffEqFM_SEquationsCUDA.h">
+      <Filter>01. DIFFERENTIAL EQUATIONS\__MICROMAGNETIC\CUDA\DIFF EQUATIONS FM - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="DiffEq.h">
+      <Filter>01. DIFFERENTIAL EQUATIONS\__MICROMAGNETIC\CPU\DIFF EQUATIONS INTERFACE - CPU</Filter>
+    </ClInclude>
+    <ClInclude Include="DiffEq_Common.h">
+      <Filter>01. DIFFERENTIAL EQUATIONS\__MICROMAGNETIC\CPU\DIFF EQUATIONS INTERFACE - CPU</Filter>
+    </ClInclude>
+    <ClInclude Include="DiffEq_Defs.h">
+      <Filter>01. DIFFERENTIAL EQUATIONS\__MICROMAGNETIC\CPU\DIFF EQUATIONS INTERFACE - CPU</Filter>
+    </ClInclude>
+    <ClInclude Include="DiffEq_CommonCUDA.h">
+      <Filter>01. DIFFERENTIAL EQUATIONS\__MICROMAGNETIC\CUDA\DIFF EQUATIONS INTERFACE - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="DiffEqCUDA.h">
+      <Filter>01. DIFFERENTIAL EQUATIONS\__MICROMAGNETIC\CUDA\DIFF EQUATIONS INTERFACE - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="DiffEqAFM.h">
+      <Filter>01. DIFFERENTIAL EQUATIONS\__MICROMAGNETIC\CPU\DIFF EQUATIONS AFM - CPU</Filter>
+    </ClInclude>
+    <ClInclude Include="DiffEqAFM_SEquationsCUDA.h">
+      <Filter>01. DIFFERENTIAL EQUATIONS\__MICROMAGNETIC\CUDA\DIFF EQUATIONS AFM - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="DiffEqAFMCUDA.h">
+      <Filter>01. DIFFERENTIAL EQUATIONS\__MICROMAGNETIC\CUDA\DIFF EQUATIONS AFM - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="ManagedDiffEqAFMCUDA.h">
+      <Filter>01. DIFFERENTIAL EQUATIONS\__MICROMAGNETIC\CUDA\DIFF EQUATIONS AFM - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="DiffEqAFM_EquationsCUDA.h">
+      <Filter>01. DIFFERENTIAL EQUATIONS\__MICROMAGNETIC\CUDA\DIFF EQUATIONS AFM - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="Display_BorisConsole.h">
+      <Filter>15. GRAPHICS\INTERFACE</Filter>
+    </ClInclude>
+    <ClInclude Include="Display_BorisTextBox.h">
+      <Filter>15. GRAPHICS\INTERFACE</Filter>
+    </ClInclude>
+    <ClInclude Include="Display_BorisIOIPopupTextBox.h">
+      <Filter>15. GRAPHICS\INTERFACE</Filter>
+    </ClInclude>
+    <ClInclude Include="Display_BorisIOIPopupEditBox.h">
+      <Filter>15. GRAPHICS\INTERFACE</Filter>
+    </ClInclude>
+    <ClInclude Include="Display_BorisHoverInfoTextBox.h">
+      <Filter>15. GRAPHICS\INTERFACE</Filter>
+    </ClInclude>
+    <ClInclude Include="Display_BorisMeshWindow.h">
+      <Filter>15. GRAPHICS\INTERFACE</Filter>
+    </ClInclude>
+    <ClInclude Include="Display_Defs.h">
+      <Filter>15. GRAPHICS\INTERFACE</Filter>
+    </ClInclude>
+    <ClInclude Include="ManagedDiffEq_CommonCUDA.h">
+      <Filter>01. DIFFERENTIAL EQUATIONS\__MICROMAGNETIC\CUDA\DIFF EQUATIONS INTERFACE - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="MElasticCUDA.h">
+      <Filter>03. MODULES\__MICROMAGNETIC\MM MODULES - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="Mesh_Diamagnetic.h">
+      <Filter>02. MESHES\__MICROMAGNETIC\CPU\MM MESHES - CPU</Filter>
+    </ClInclude>
+    <ClInclude Include="DiffEqDM.h">
+      <Filter>01. DIFFERENTIAL EQUATIONS\__MICROMAGNETIC\CPU\DIFF EQUATIONS DM - CPU</Filter>
+    </ClInclude>
+    <ClInclude Include="Mesh_DiamagneticCUDA.h">
+      <Filter>02. MESHES\__MICROMAGNETIC\CUDA\MM MESHES - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="DiffEqDM_EquationsCUDA.h">
+      <Filter>01. DIFFERENTIAL EQUATIONS\__MICROMAGNETIC\CUDA\DIFF EQUATIONS DM - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="DiffEqDM_SEquationsCUDA.h">
+      <Filter>01. DIFFERENTIAL EQUATIONS\__MICROMAGNETIC\CUDA\DIFF EQUATIONS DM - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="ManagedDiffEqDMCUDA.h">
+      <Filter>01. DIFFERENTIAL EQUATIONS\__MICROMAGNETIC\CUDA\DIFF EQUATIONS DM - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="DiffEqDMCUDA.h">
+      <Filter>01. DIFFERENTIAL EQUATIONS\__MICROMAGNETIC\CUDA\DIFF EQUATIONS DM - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="Heat.h">
+      <Filter>11. HEAT SOLVER\__MICROMAGNETIC\MM HEAT SOLVER - CPU</Filter>
+    </ClInclude>
+    <ClInclude Include="HeatCUDA.h">
+      <Filter>11. HEAT SOLVER\__MICROMAGNETIC\MM HEAT SOLVER - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="Heat_Defs.h">
+      <Filter>11. HEAT SOLVER\__MICROMAGNETIC\MM HEAT SOLVER - CPU</Filter>
+    </ClInclude>
+    <ClInclude Include="MOpticalCUDA.h">
+      <Filter>03. MODULES\__MICROMAGNETIC\MM MODULES - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="Atom_Mesh.h">
+      <Filter>02. MESHES\__ATOMISTIC\CPU\ATOM MESHES INTERFACE - CPU</Filter>
+    </ClInclude>
+    <ClInclude Include="Atom_MeshParamsControl.h">
+      <Filter>02. MESHES\__ATOMISTIC\CPU\ATOM MESHES INTERFACE - CPU</Filter>
+    </ClInclude>
+    <ClInclude Include="Atom_Zeeman.h">
+      <Filter>03. MODULES\__ATOMISTIC\ATOM MODULES - CPU</Filter>
+    </ClInclude>
+    <ClInclude Include="Atom_Mesh_Cubic.h">
+      <Filter>02. MESHES\__ATOMISTIC\CPU\ATOM MESHES - CPU</Filter>
+    </ClInclude>
+    <ClInclude Include="Atom_DiffEq_Common.h">
+      <Filter>01. DIFFERENTIAL EQUATIONS\__ATOMISTIC\CPU\ATOM DIFF EQUATIONS INTERFACE - CPU</Filter>
+    </ClInclude>
+    <ClInclude Include="Atom_DiffEq.h">
+      <Filter>01. DIFFERENTIAL EQUATIONS\__ATOMISTIC\CPU\ATOM DIFF EQUATIONS INTERFACE - CPU</Filter>
+    </ClInclude>
+    <ClInclude Include="Atom_DiffEqCubic.h">
+      <Filter>01. DIFFERENTIAL EQUATIONS\__ATOMISTIC\CPU\ATOM DIFF EQUATIONS CUBIC - CPU</Filter>
+    </ClInclude>
+    <ClInclude Include="Mesh.h">
+      <Filter>02. MESHES\__MICROMAGNETIC\CPU\MM MESHES INTERFACE - CPU</Filter>
+    </ClInclude>
+    <ClInclude Include="MeshParamsControl.h">
+      <Filter>02. MESHES\__MICROMAGNETIC\CPU\MM MESHES INTERFACE - CPU</Filter>
+    </ClInclude>
+    <ClInclude Include="MeshBase.h">
+      <Filter>02. MESHES\MESHES BASE - CPU</Filter>
+    </ClInclude>
+    <ClInclude Include="MeshDefs.h">
+      <Filter>02. MESHES\MESHES BASE - CPU</Filter>
+    </ClInclude>
+    <ClInclude Include="MaterialParameter.h">
+      <Filter>02. MESHES\MAT PARAMS - CPU</Filter>
+    </ClInclude>
+    <ClInclude Include="ParametersDefs.h">
+      <Filter>02. MESHES\MAT PARAMS - CPU</Filter>
+    </ClInclude>
+    <ClInclude Include="Atom_MeshParams.h">
+      <Filter>02. MESHES\__ATOMISTIC\CPU\ATOM MESHES INTERFACE - CPU</Filter>
+    </ClInclude>
+    <ClInclude Include="MeshParamsCUDA.h">
+      <Filter>02. MESHES\__MICROMAGNETIC\CUDA\MM MESHES INTERFACE - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="MeshParams.h">
+      <Filter>02. MESHES\__MICROMAGNETIC\CPU\MM MESHES INTERFACE - CPU</Filter>
+    </ClInclude>
+    <ClInclude Include="MeshParamsBase.h">
+      <Filter>02. MESHES\MESHES BASE - CPU</Filter>
+    </ClInclude>
+    <ClInclude Include="DiffEq_CommonBase.h">
+      <Filter>01. DIFFERENTIAL EQUATIONS\DIFF EQUATIONS BASE - CPU</Filter>
+    </ClInclude>
+    <ClInclude Include="Atom_Anisotropy.h">
+      <Filter>03. MODULES\__ATOMISTIC\ATOM MODULES - CPU</Filter>
+    </ClInclude>
+    <ClInclude Include="Atom_Exchange.h">
+      <Filter>07. EXCHANGE\__ATOMISTIC\ATOM EXCHANGE - CPU</Filter>
+    </ClInclude>
+    <ClInclude Include="Atom_MeshCUDA.h">
+      <Filter>02. MESHES\__ATOMISTIC\CUDA\ATOM MESHES INTERFACE - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="Atom_MeshParamsCUDA.h">
+      <Filter>02. MESHES\__ATOMISTIC\CUDA\ATOM MESHES INTERFACE - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="Atom_MeshParamsControlCUDA.h">
+      <Filter>02. MESHES\__ATOMISTIC\CUDA\ATOM MESHES INTERFACE - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="Atom_Mesh_CubicCUDA.h">
+      <Filter>02. MESHES\__ATOMISTIC\CUDA\ATOM MESHES - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="Atom_ZeemanCUDA.h">
+      <Filter>03. MODULES\__ATOMISTIC\ATOM MODULES - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="Atom_DiffEq_CommonCUDA.h">
+      <Filter>01. DIFFERENTIAL EQUATIONS\__ATOMISTIC\CUDA\ATOM DIFF EQUATIONS INTERFACE - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="Atom_DiffEqCUDA.h">
+      <Filter>01. DIFFERENTIAL EQUATIONS\__ATOMISTIC\CUDA\ATOM DIFF EQUATIONS INTERFACE - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="ManagedAtom_DiffEq_CommonCUDA.h">
+      <Filter>01. DIFFERENTIAL EQUATIONS\__ATOMISTIC\CUDA\ATOM DIFF EQUATIONS INTERFACE - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="Atom_DiffEqCubic_EquationsCUDA.h">
+      <Filter>01. DIFFERENTIAL EQUATIONS\__ATOMISTIC\CUDA\ATOM DIFF EQUATIONS CUBIC - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="Atom_DiffEqCubic_SEquationsCUDA.h">
+      <Filter>01. DIFFERENTIAL EQUATIONS\__ATOMISTIC\CUDA\ATOM DIFF EQUATIONS CUBIC - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="Atom_DiffEqCubicCUDA.h">
+      <Filter>01. DIFFERENTIAL EQUATIONS\__ATOMISTIC\CUDA\ATOM DIFF EQUATIONS CUBIC - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="ManagedAtom_DiffEqCubicCUDA.h">
+      <Filter>01. DIFFERENTIAL EQUATIONS\__ATOMISTIC\CUDA\ATOM DIFF EQUATIONS CUBIC - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="ManagedAtom_MeshCUDA.h">
+      <Filter>02. MESHES\__ATOMISTIC\CUDA\ATOM MESHES INTERFACE - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="DiffEq_CommonBaseCUDA.h">
+      <Filter>01. DIFFERENTIAL EQUATIONS\DIFF EQUATIONS BASE - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="Anisotropy.h">
+      <Filter>03. MODULES\__MICROMAGNETIC\MM MODULES - CPU</Filter>
+    </ClInclude>
+    <ClInclude Include="AnisotropyCubi.h">
+      <Filter>03. MODULES\__MICROMAGNETIC\MM MODULES - CPU</Filter>
+    </ClInclude>
+    <ClInclude Include="Demag.h">
+      <Filter>03. MODULES\__MICROMAGNETIC\MM MODULES - CPU</Filter>
+    </ClInclude>
+    <ClInclude Include="Demag_N.h">
+      <Filter>03. MODULES\__MICROMAGNETIC\MM MODULES - CPU</Filter>
+    </ClInclude>
+    <ClInclude Include="MElastic.h">
+      <Filter>03. MODULES\__MICROMAGNETIC\MM MODULES - CPU</Filter>
+    </ClInclude>
+    <ClInclude Include="MOptical.h">
+      <Filter>03. MODULES\__MICROMAGNETIC\MM MODULES - CPU</Filter>
+    </ClInclude>
+    <ClInclude Include="Roughness.h">
+      <Filter>03. MODULES\__MICROMAGNETIC\MM MODULES - CPU</Filter>
+    </ClInclude>
+    <ClInclude Include="SOTField.h">
+      <Filter>03. MODULES\__MICROMAGNETIC\MM MODULES - CPU</Filter>
+    </ClInclude>
+    <ClInclude Include="SurfExchange.h">
+      <Filter>03. MODULES\__MICROMAGNETIC\MM MODULES - CPU</Filter>
+    </ClInclude>
+    <ClInclude Include="Zeeman.h">
+      <Filter>03. MODULES\__MICROMAGNETIC\MM MODULES - CPU</Filter>
+    </ClInclude>
+    <ClInclude Include="ZeemanBase.h">
+      <Filter>03. MODULES\__MICROMAGNETIC\MM MODULES - CPU</Filter>
+    </ClInclude>
+    <ClInclude Include="SuperMesh.h">
+      <Filter>04. SUPERMESH\SUPERMESH - CPU</Filter>
+    </ClInclude>
+    <ClInclude Include="DMExchange.h">
+      <Filter>07. EXCHANGE\__MICROMAGNETIC\EXCHANGE - CPU</Filter>
+    </ClInclude>
+    <ClInclude Include="Exchange.h">
+      <Filter>07. EXCHANGE\__MICROMAGNETIC\EXCHANGE - CPU</Filter>
+    </ClInclude>
+    <ClInclude Include="ExchangeBase.h">
+      <Filter>07. EXCHANGE\__MICROMAGNETIC\EXCHANGE - CPU</Filter>
+    </ClInclude>
+    <ClInclude Include="iDMExchange.h">
+      <Filter>07. EXCHANGE\__MICROMAGNETIC\EXCHANGE - CPU</Filter>
+    </ClInclude>
+    <ClInclude Include="Convolution.h">
+      <Filter>08. CONVOLUTION\CONVOLUTION - CPU</Filter>
+    </ClInclude>
+    <ClInclude Include="ConvolutionData.h">
+      <Filter>08. CONVOLUTION\CONVOLUTION - CPU</Filter>
+    </ClInclude>
+    <ClInclude Include="DipoleTFunc.h">
+      <Filter>09. FUNCS\SINGLE DIPOLE FUNCS - CPU</Filter>
+    </ClInclude>
+    <ClInclude Include="STransport.h">
+      <Filter>10. TRANSPORT SOLVER\TRANSPORT SOLVER - CPU</Filter>
+    </ClInclude>
+    <ClInclude Include="Transport.h">
+      <Filter>10. TRANSPORT SOLVER\TRANSPORT SOLVER - CPU</Filter>
+    </ClInclude>
+    <ClInclude Include="Transport_Defs.h">
+      <Filter>10. TRANSPORT SOLVER\TRANSPORT SOLVER - CPU</Filter>
+    </ClInclude>
+    <ClInclude Include="Atom_AnisotropyCUDA.h">
+      <Filter>03. MODULES\__ATOMISTIC\ATOM MODULES - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="Atom_ExchangeCUDA.h">
+      <Filter>07. EXCHANGE\__ATOMISTIC\ATOM EXCHANGE - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="Atom_Demag.h">
+      <Filter>03. MODULES\__ATOMISTIC\ATOM MODULES - CPU</Filter>
+    </ClInclude>
+    <ClInclude Include="Atom_DemagCUDA.h">
+      <Filter>03. MODULES\__ATOMISTIC\ATOM MODULES - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="Atom_DMExchange.h">
+      <Filter>07. EXCHANGE\__ATOMISTIC\ATOM EXCHANGE - CPU</Filter>
+    </ClInclude>
+    <ClInclude Include="Atom_iDMExchange.h">
+      <Filter>07. EXCHANGE\__ATOMISTIC\ATOM EXCHANGE - CPU</Filter>
+    </ClInclude>
+    <ClInclude Include="Atom_DMExchangeCUDA.h">
+      <Filter>07. EXCHANGE\__ATOMISTIC\ATOM EXCHANGE - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="Atom_iDMExchangeCUDA.h">
+      <Filter>07. EXCHANGE\__ATOMISTIC\ATOM EXCHANGE - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="DemagBase.h">
+      <Filter>03. MODULES\__MICROMAGNETIC\MM MODULES - CPU</Filter>
+    </ClInclude>
+    <ClInclude Include="HeatBase.h">
+      <Filter>11. HEAT SOLVER\HEAT BASE - CPU</Filter>
+    </ClInclude>
+    <ClInclude Include="MeshBaseCUDA.h">
+      <Filter>02. MESHES\MESHES BASE - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="HeatBaseCUDA.h">
+      <Filter>11. HEAT SOLVER\HEAT BASE - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="SHeat.h">
+      <Filter>11. HEAT SOLVER\HEAT SUPERMESH - CPU</Filter>
+    </ClInclude>
+    <ClInclude Include="SHeatCUDA.h">
+      <Filter>11. HEAT SOLVER\HEAT SUPERMESH - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="Atom_Heat.h">
+      <Filter>11. HEAT SOLVER\__ATOMISTIC\ATOM HEAT SOLVER - CPU</Filter>
+    </ClInclude>
+    <ClInclude Include="Atom_HeatCUDA.h">
+      <Filter>11. HEAT SOLVER\__ATOMISTIC\ATOM HEAT SOLVER - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="HeatCUDA_CMBND.h">
+      <Filter>11. HEAT SOLVER\HEAT SUPERMESH - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="Atom_MOptical.h">
+      <Filter>03. MODULES\__ATOMISTIC\ATOM MODULES - CPU</Filter>
+    </ClInclude>
+    <ClInclude Include="Atom_MOpticalCUDA.h">
+      <Filter>03. MODULES\__ATOMISTIC\ATOM MODULES - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="Atom_AnisotropyCubi.h">
+      <Filter>03. MODULES\__ATOMISTIC\ATOM MODULES - CPU</Filter>
+    </ClInclude>
+    <ClInclude Include="Atom_AnisotropyCubiCUDA.h">
+      <Filter>03. MODULES\__ATOMISTIC\ATOM MODULES - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="Atom_DipoleDipole.h">
+      <Filter>03. MODULES\__ATOMISTIC\ATOM MODULES - CPU</Filter>
+    </ClInclude>
+    <ClInclude Include="Atom_Demag_N.h">
+      <Filter>03. MODULES\__ATOMISTIC\ATOM MODULES - CPU</Filter>
+    </ClInclude>
+    <ClInclude Include="Atom_Demag_NCUDA.h">
+      <Filter>03. MODULES\__ATOMISTIC\ATOM MODULES - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="Atom_DipoleDipoleCUDA.h">
+      <Filter>03. MODULES\__ATOMISTIC\ATOM MODULES - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="DemagTFunc.h">
+      <Filter>09. FUNCS\DEMAG FUNCS - CPU</Filter>
+    </ClInclude>
+    <ClInclude Include="DemagTFunc_Asympt.h">
+      <Filter>09. FUNCS\DEMAG FUNCS - CPU</Filter>
+    </ClInclude>
+    <ClInclude Include="OerstedTFunc.h">
+      <Filter>09. FUNCS\OERSTED FUNCS - CPU</Filter>
+    </ClInclude>
+    <ClInclude Include="DemagKernel.h">
+      <Filter>08. CONVOLUTION\DEMAG KERNEL - CPU</Filter>
+    </ClInclude>
+    <ClInclude Include="DemagKernelCollection.h">
+      <Filter>08. CONVOLUTION\DEMAG KERNEL - CPU</Filter>
+    </ClInclude>
+    <ClInclude Include="OerstedKernel.h">
+      <Filter>08. CONVOLUTION\OERSTED KERNEL - CPU</Filter>
+    </ClInclude>
+    <ClInclude Include="RoughnessKernel.h">
+      <Filter>08. CONVOLUTION\ROUGHNESS KERNEL - CPU</Filter>
+    </ClInclude>
+    <ClInclude Include="DemagKernelCollectionCUDA.h">
+      <Filter>08. CONVOLUTION\DEMAG KERNEL - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="DemagKernelCollectionCUDA_KerType.h">
+      <Filter>08. CONVOLUTION\DEMAG KERNEL - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="DemagKernelCUDA.h">
+      <Filter>08. CONVOLUTION\DEMAG KERNEL - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="OerstedKernelCUDA.h">
+      <Filter>08. CONVOLUTION\OERSTED KERNEL - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="DipoleDipoleKernel.h">
+      <Filter>08. CONVOLUTION\DIPOLE DIPOLE KERNEL - CPU</Filter>
+    </ClInclude>
+    <ClInclude Include="DipoleDipoleTFunc.h">
+      <Filter>09. FUNCS\DIPOLE DIPOLE FUNCS - CPU</Filter>
+    </ClInclude>
+    <ClInclude Include="DemagTFunc_Defs.h">
+      <Filter>09. FUNCS\DEMAG FUNCS - CPU</Filter>
+    </ClInclude>
+    <ClInclude Include="DipoleDipoleKernelCUDA.h">
+      <Filter>08. CONVOLUTION\DIPOLE DIPOLE KERNEL - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="ModulesDefs.h">
+      <Filter>03. MODULES\MODULES INTERFACE</Filter>
+    </ClInclude>
+    <ClInclude Include="Boris.h">
+      <Filter>18. MAIN</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="BorisGraphics.cpp">
+      <Filter>15. GRAPHICS\GRAPHICS_D3D</Filter>
+    </ClCompile>
+    <ClCompile Include="D3D.cpp">
+      <Filter>15. GRAPHICS\GRAPHICS_D3D</Filter>
+    </ClCompile>
+    <ClCompile Include="BorisDisplay.cpp">
+      <Filter>15. GRAPHICS\INTERFACE</Filter>
+    </ClCompile>
+    <ClCompile Include="BorisIOGenerators.cpp">
+      <Filter>15. GRAPHICS\INTERACTIVE OBJ</Filter>
+    </ClCompile>
+    <ClCompile Include="WinSpaces.cpp">
+      <Filter>15. GRAPHICS\INTERFACE</Filter>
+    </ClCompile>
+    <ClCompile Include="TextObject.cpp">
+      <Filter>15. GRAPHICS\INTERFACE</Filter>
+    </ClCompile>
+    <ClCompile Include="Mesh_Dipole.cpp">
+      <Filter>02. MESHES\__MICROMAGNETIC\CPU\MM MESHES - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="Mesh_Ferromagnetic.cpp">
+      <Filter>02. MESHES\__MICROMAGNETIC\CPU\MM MESHES - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="Mesh_Insulator.cpp">
+      <Filter>02. MESHES\__MICROMAGNETIC\CPU\MM MESHES - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="Mesh_Metal.cpp">
+      <Filter>02. MESHES\__MICROMAGNETIC\CPU\MM MESHES - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="Mesh_FerromagneticCUDA.cpp">
+      <Filter>02. MESHES\__MICROMAGNETIC\CUDA\MM MESHES - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="PhysQRep.cpp">
+      <Filter>15. GRAPHICS\GRAPHICS_D3D</Filter>
+    </ClCompile>
+    <ClCompile Include="ZeemanCUDA.cpp">
+      <Filter>03. MODULES\__MICROMAGNETIC\MM MODULES - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="DataProcessing.cpp">
+      <Filter>16. DATA PROC</Filter>
+    </ClCompile>
+    <ClCompile Include="ErrorHandler.cpp">
+      <Filter>14. ERROR HANDLER</Filter>
+    </ClCompile>
+    <ClCompile Include="BorisWinapi.cpp">
+      <Filter>18. MAIN</Filter>
+    </ClCompile>
+    <ClCompile Include="Commands.cpp">
+      <Filter>12. COMMANDS</Filter>
+    </ClCompile>
+    <ClCompile Include="stdafx.cpp">
+      <Filter>13. AUXILIARY</Filter>
+    </ClCompile>
+    <ClCompile Include="SimFiles.cpp">
+      <Filter>00. SIMULATION</Filter>
+    </ClCompile>
+    <ClCompile Include="SimSchedule.cpp">
+      <Filter>00. SIMULATION</Filter>
+    </ClCompile>
+    <ClCompile Include="SimSharedData.cpp">
+      <Filter>00. SIMULATION</Filter>
+    </ClCompile>
+    <ClCompile Include="Simulation.cpp">
+      <Filter>00. SIMULATION</Filter>
+    </ClCompile>
+    <ClCompile Include="SimulationData.cpp">
+      <Filter>00. SIMULATION</Filter>
+    </ClCompile>
+    <ClCompile Include="Modules.cpp">
+      <Filter>03. MODULES\MODULES INTERFACE</Filter>
+    </ClCompile>
+    <ClCompile Include="AnisotropyCUDA.cpp">
+      <Filter>03. MODULES\__MICROMAGNETIC\MM MODULES - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="Oersted.cpp">
+      <Filter>05. SUPERMESH MODULES\MODULES - SUPERMESH - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="StrayField.cpp">
+      <Filter>05. SUPERMESH MODULES\MODULES - SUPERMESH - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="Demag_NCUDA.cpp">
+      <Filter>03. MODULES\__MICROMAGNETIC\MM MODULES - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="DemagCUDA.cpp">
+      <Filter>03. MODULES\__MICROMAGNETIC\MM MODULES - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="PhysQ.cpp">
+      <Filter>15. GRAPHICS\GRAPHICS_D3D</Filter>
+    </ClCompile>
+    <ClCompile Include="ConvolutionDataCUDA.cpp">
+      <Filter>08. CONVOLUTION\CONVOLUTION - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="SuperMeshCUDA.cpp">
+      <Filter>04. SUPERMESH\SUPERMESH - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="Mesh_DipoleCUDA.cpp">
+      <Filter>02. MESHES\__MICROMAGNETIC\CUDA\MM MESHES - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="StrayFieldCUDA.cpp">
+      <Filter>05. SUPERMESH MODULES\MODULES - SUPERMESH - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="MeshCUDA.cpp">
+      <Filter>02. MESHES\__MICROMAGNETIC\CUDA\MM MESHES INTERFACE - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="MeshDisplayCUDA.cpp">
+      <Filter>02. MESHES\__MICROMAGNETIC\CUDA\MM MESHES INTERFACE - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="ManagedMeshCUDA.cpp">
+      <Filter>02. MESHES\__MICROMAGNETIC\CUDA\MM MESHES INTERFACE - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="Mesh_InsulatorCUDA.cpp">
+      <Filter>02. MESHES\__MICROMAGNETIC\CUDA\MM MESHES - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="Mesh_MetalCUDA.cpp">
+      <Filter>02. MESHES\__MICROMAGNETIC\CUDA\MM MESHES - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="OerstedCUDA.cpp">
+      <Filter>05. SUPERMESH MODULES\MODULES - SUPERMESH - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="SurfExchangeCUDA.cpp">
+      <Filter>03. MODULES\__MICROMAGNETIC\MM MODULES - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="TransportCUDA.cpp">
+      <Filter>10. TRANSPORT SOLVER\TRANSPORT SOLVER - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="TransportCUDA_Poisson.cpp">
+      <Filter>10. TRANSPORT SOLVER\TRANSPORT SOLVER - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="STransportCUDA.cpp">
+      <Filter>10. TRANSPORT SOLVER\TRANSPORT SOLVER - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="STransportCUDA_Charge.cpp">
+      <Filter>10. TRANSPORT SOLVER\TRANSPORT SOLVER - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="STransportCUDA_Spin.cpp">
+      <Filter>10. TRANSPORT SOLVER\TRANSPORT SOLVER - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="TransportCUDA_Poisson_Spin_V.cpp">
+      <Filter>10. TRANSPORT SOLVER\TRANSPORT SOLVER - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="TransportCUDA_Poisson_Spin_S.cpp">
+      <Filter>10. TRANSPORT SOLVER\TRANSPORT SOLVER - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="SkyrmionTrack.cpp">
+      <Filter>02. MESHES\__MICROMAGNETIC\CPU\MM MESHES - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="SOTFieldCUDA.cpp">
+      <Filter>03. MODULES\__MICROMAGNETIC\MM MODULES - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="RoughnessCUDA.cpp">
+      <Filter>03. MODULES\__MICROMAGNETIC\MM MODULES - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="Mesh_Ferromagnetic_Control.cpp">
+      <Filter>02. MESHES\__MICROMAGNETIC\CPU\MM MESHES - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="SDemag.cpp">
+      <Filter>06. SUPERMESH DEMAG\DEMAG - SUPERMESH - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="SDemag_Demag.cpp">
+      <Filter>06. SUPERMESH DEMAG\DEMAG - SUPERMESH - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="SDemagCUDA.cpp">
+      <Filter>06. SUPERMESH DEMAG\DEMAG - SUPERMESH - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="SDemagCUDA_Demag.cpp">
+      <Filter>06. SUPERMESH DEMAG\DEMAG - SUPERMESH - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="AnisotropyCubiCUDA.cpp">
+      <Filter>03. MODULES\__MICROMAGNETIC\MM MODULES - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="BorisConsole.cpp">
+      <Filter>18. MAIN</Filter>
+    </ClCompile>
+    <ClCompile Include="BorisDisplayNonGraphical.cpp">
+      <Filter>15. GRAPHICS\INTERFACE_CONSOLEONLY</Filter>
+    </ClCompile>
+    <ClCompile Include="MaterialsDataBase.cpp">
+      <Filter>17. MATERIALS DB</Filter>
+    </ClCompile>
+    <ClCompile Include="OVF2_Handlers.cpp">
+      <Filter>00. SIMULATION</Filter>
+    </ClCompile>
+    <ClCompile Include="BorisInteractiveObjects_Ctrl.cpp">
+      <Filter>15. GRAPHICS\INTERACTIVE OBJ</Filter>
+    </ClCompile>
+    <ClCompile Include="BorisInteractiveObjects_State.cpp">
+      <Filter>15. GRAPHICS\INTERACTIVE OBJ</Filter>
+    </ClCompile>
+    <ClCompile Include="DMExchangeCUDA.cpp">
+      <Filter>07. EXCHANGE\__MICROMAGNETIC\EXCHANGE - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="ExchangeCUDA.cpp">
+      <Filter>07. EXCHANGE\__MICROMAGNETIC\EXCHANGE - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="iDMExchangeCUDA.cpp">
+      <Filter>07. EXCHANGE\__MICROMAGNETIC\EXCHANGE - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="ExchangeBaseCUDA.cpp">
+      <Filter>07. EXCHANGE\__MICROMAGNETIC\EXCHANGE - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="SkyrmionTrackCUDA.cpp">
+      <Filter>02. MESHES\__MICROMAGNETIC\CPU\MM MESHES - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="Mesh_AntiFerromagnetic.cpp">
+      <Filter>02. MESHES\__MICROMAGNETIC\CPU\MM MESHES - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="Mesh_AntiFerromagnetic_Control.cpp">
+      <Filter>02. MESHES\__MICROMAGNETIC\CPU\MM MESHES - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="Mesh_AntiFerromagneticCUDA.cpp">
+      <Filter>02. MESHES\__MICROMAGNETIC\CUDA\MM MESHES - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="DiffEqFM.cpp">
+      <Filter>01. DIFFERENTIAL EQUATIONS\__MICROMAGNETIC\CPU\DIFF EQUATIONS FM - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="DiffEqFM_Equations.cpp">
+      <Filter>01. DIFFERENTIAL EQUATIONS\__MICROMAGNETIC\CPU\DIFF EQUATIONS FM - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="DiffEqFM_Evals_ABM.cpp">
+      <Filter>01. DIFFERENTIAL EQUATIONS\__MICROMAGNETIC\CPU\DIFF EQUATIONS FM - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="DiffEqFM_Evals_AHeun.cpp">
+      <Filter>01. DIFFERENTIAL EQUATIONS\__MICROMAGNETIC\CPU\DIFF EQUATIONS FM - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="DiffEqFM_Evals_Euler.cpp">
+      <Filter>01. DIFFERENTIAL EQUATIONS\__MICROMAGNETIC\CPU\DIFF EQUATIONS FM - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="DiffEqFM_Evals_RK4.cpp">
+      <Filter>01. DIFFERENTIAL EQUATIONS\__MICROMAGNETIC\CPU\DIFF EQUATIONS FM - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="DiffEqFM_Evals_RK23.cpp">
+      <Filter>01. DIFFERENTIAL EQUATIONS\__MICROMAGNETIC\CPU\DIFF EQUATIONS FM - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="DiffEqFM_Evals_RKCK45.cpp">
+      <Filter>01. DIFFERENTIAL EQUATIONS\__MICROMAGNETIC\CPU\DIFF EQUATIONS FM - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="DiffEqFM_Evals_RKDP54.cpp">
+      <Filter>01. DIFFERENTIAL EQUATIONS\__MICROMAGNETIC\CPU\DIFF EQUATIONS FM - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="DiffEqFM_Evals_RKF.cpp">
+      <Filter>01. DIFFERENTIAL EQUATIONS\__MICROMAGNETIC\CPU\DIFF EQUATIONS FM - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="DiffEqFM_Evals_SD.cpp">
+      <Filter>01. DIFFERENTIAL EQUATIONS\__MICROMAGNETIC\CPU\DIFF EQUATIONS FM - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="DiffEqFM_Evals_TEuler.cpp">
+      <Filter>01. DIFFERENTIAL EQUATIONS\__MICROMAGNETIC\CPU\DIFF EQUATIONS FM - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="DiffEqFM_SEquations.cpp">
+      <Filter>01. DIFFERENTIAL EQUATIONS\__MICROMAGNETIC\CPU\DIFF EQUATIONS FM - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="DiffEqFMCUDA.cpp">
+      <Filter>01. DIFFERENTIAL EQUATIONS\__MICROMAGNETIC\CUDA\DIFF EQUATIONS FM - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="ManagedDiffEqFMCUDA.cpp">
+      <Filter>01. DIFFERENTIAL EQUATIONS\__MICROMAGNETIC\CUDA\DIFF EQUATIONS FM - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="DiffEq.cpp">
+      <Filter>01. DIFFERENTIAL EQUATIONS\__MICROMAGNETIC\CPU\DIFF EQUATIONS INTERFACE - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="DiffEq_Common.cpp">
+      <Filter>01. DIFFERENTIAL EQUATIONS\__MICROMAGNETIC\CPU\DIFF EQUATIONS INTERFACE - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="DiffEq_Iterate.cpp">
+      <Filter>01. DIFFERENTIAL EQUATIONS\__MICROMAGNETIC\CPU\DIFF EQUATIONS INTERFACE - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="DiffEq_CommonCUDA.cpp">
+      <Filter>01. DIFFERENTIAL EQUATIONS\__MICROMAGNETIC\CUDA\DIFF EQUATIONS INTERFACE - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="DiffEq_IterateCUDA.cpp">
+      <Filter>01. DIFFERENTIAL EQUATIONS\__MICROMAGNETIC\CUDA\DIFF EQUATIONS INTERFACE - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="DiffEqCUDA.cpp">
+      <Filter>01. DIFFERENTIAL EQUATIONS\__MICROMAGNETIC\CUDA\DIFF EQUATIONS INTERFACE - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="DiffEqAFM.cpp">
+      <Filter>01. DIFFERENTIAL EQUATIONS\__MICROMAGNETIC\CPU\DIFF EQUATIONS AFM - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="DiffEqAFM_Equations.cpp">
+      <Filter>01. DIFFERENTIAL EQUATIONS\__MICROMAGNETIC\CPU\DIFF EQUATIONS AFM - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="DiffEqAFM_Evals_ABM.cpp">
+      <Filter>01. DIFFERENTIAL EQUATIONS\__MICROMAGNETIC\CPU\DIFF EQUATIONS AFM - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="DiffEqAFM_Evals_AHeun.cpp">
+      <Filter>01. DIFFERENTIAL EQUATIONS\__MICROMAGNETIC\CPU\DIFF EQUATIONS AFM - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="DiffEqAFM_Evals_Euler.cpp">
+      <Filter>01. DIFFERENTIAL EQUATIONS\__MICROMAGNETIC\CPU\DIFF EQUATIONS AFM - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="DiffEqAFM_Evals_RK4.cpp">
+      <Filter>01. DIFFERENTIAL EQUATIONS\__MICROMAGNETIC\CPU\DIFF EQUATIONS AFM - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="DiffEqAFM_Evals_RK23.cpp">
+      <Filter>01. DIFFERENTIAL EQUATIONS\__MICROMAGNETIC\CPU\DIFF EQUATIONS AFM - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="DiffEqAFM_Evals_RKCK45.cpp">
+      <Filter>01. DIFFERENTIAL EQUATIONS\__MICROMAGNETIC\CPU\DIFF EQUATIONS AFM - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="DiffEqAFM_Evals_RKDP54.cpp">
+      <Filter>01. DIFFERENTIAL EQUATIONS\__MICROMAGNETIC\CPU\DIFF EQUATIONS AFM - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="DiffEqAFM_Evals_RKF.cpp">
+      <Filter>01. DIFFERENTIAL EQUATIONS\__MICROMAGNETIC\CPU\DIFF EQUATIONS AFM - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="DiffEqAFM_Evals_SD.cpp">
+      <Filter>01. DIFFERENTIAL EQUATIONS\__MICROMAGNETIC\CPU\DIFF EQUATIONS AFM - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="DiffEqAFM_Evals_TEuler.cpp">
+      <Filter>01. DIFFERENTIAL EQUATIONS\__MICROMAGNETIC\CPU\DIFF EQUATIONS AFM - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="DiffEqAFM_SEquations.cpp">
+      <Filter>01. DIFFERENTIAL EQUATIONS\__MICROMAGNETIC\CPU\DIFF EQUATIONS AFM - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="DiffEqAFMCUDA.cpp">
+      <Filter>01. DIFFERENTIAL EQUATIONS\__MICROMAGNETIC\CUDA\DIFF EQUATIONS AFM - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="ManagedDiffEqAFMCUDA.cpp">
+      <Filter>01. DIFFERENTIAL EQUATIONS\__MICROMAGNETIC\CUDA\DIFF EQUATIONS AFM - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="Mesh_Ferromagnetic_ODEControl.cpp">
+      <Filter>02. MESHES\__MICROMAGNETIC\CPU\MM MESHES - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="Mesh_AntiFerromagnetic_ODEControl.cpp">
+      <Filter>02. MESHES\__MICROMAGNETIC\CPU\MM MESHES - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="STransportCUDA_Spin_Display.cpp">
+      <Filter>10. TRANSPORT SOLVER\TRANSPORT SOLVER - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="Display_BorisConsole.cpp">
+      <Filter>15. GRAPHICS\INTERFACE</Filter>
+    </ClCompile>
+    <ClCompile Include="Display_BorisTextBox.cpp">
+      <Filter>15. GRAPHICS\INTERFACE</Filter>
+    </ClCompile>
+    <ClCompile Include="Display_BorisIOIPopupTextBox.cpp">
+      <Filter>15. GRAPHICS\INTERFACE</Filter>
+    </ClCompile>
+    <ClCompile Include="Display_BorisIOIPopupEditBox.cpp">
+      <Filter>15. GRAPHICS\INTERFACE</Filter>
+    </ClCompile>
+    <ClCompile Include="Display_BorisHoverInfoTextBox.cpp">
+      <Filter>15. GRAPHICS\INTERFACE</Filter>
+    </ClCompile>
+    <ClCompile Include="Display_BorisMeshWindow.cpp">
+      <Filter>15. GRAPHICS\INTERFACE</Filter>
+    </ClCompile>
+    <ClCompile Include="ManagedDiffEq_CommonCUDA.cpp">
+      <Filter>01. DIFFERENTIAL EQUATIONS\__MICROMAGNETIC\CUDA\DIFF EQUATIONS INTERFACE - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="SimStartup.cpp">
+      <Filter>00. SIMULATION</Filter>
+    </ClCompile>
+    <ClCompile Include="SimControl.cpp">
+      <Filter>00. SIMULATION</Filter>
+    </ClCompile>
+    <ClCompile Include="SimMessages.cpp">
+      <Filter>00. SIMULATION</Filter>
+    </ClCompile>
+    <ClCompile Include="MElasticCUDA.cpp">
+      <Filter>03. MODULES\__MICROMAGNETIC\MM MODULES - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="Mesh_Diamagnetic.cpp">
+      <Filter>02. MESHES\__MICROMAGNETIC\CPU\MM MESHES - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="DiffEqDM_Evals_AHeun.cpp">
+      <Filter>01. DIFFERENTIAL EQUATIONS\__MICROMAGNETIC\CPU\DIFF EQUATIONS DM - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="DiffEqDM_Evals_Euler.cpp">
+      <Filter>01. DIFFERENTIAL EQUATIONS\__MICROMAGNETIC\CPU\DIFF EQUATIONS DM - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="DiffEqDM_Evals_RK4.cpp">
+      <Filter>01. DIFFERENTIAL EQUATIONS\__MICROMAGNETIC\CPU\DIFF EQUATIONS DM - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="DiffEqDM_Evals_RK23.cpp">
+      <Filter>01. DIFFERENTIAL EQUATIONS\__MICROMAGNETIC\CPU\DIFF EQUATIONS DM - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="DiffEqDM_Evals_RKCK45.cpp">
+      <Filter>01. DIFFERENTIAL EQUATIONS\__MICROMAGNETIC\CPU\DIFF EQUATIONS DM - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="DiffEqDM_Evals_RKDP54.cpp">
+      <Filter>01. DIFFERENTIAL EQUATIONS\__MICROMAGNETIC\CPU\DIFF EQUATIONS DM - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="DiffEqDM_Evals_RKF.cpp">
+      <Filter>01. DIFFERENTIAL EQUATIONS\__MICROMAGNETIC\CPU\DIFF EQUATIONS DM - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="DiffEqDM_Evals_SD.cpp">
+      <Filter>01. DIFFERENTIAL EQUATIONS\__MICROMAGNETIC\CPU\DIFF EQUATIONS DM - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="DiffEqDM_Evals_TEuler.cpp">
+      <Filter>01. DIFFERENTIAL EQUATIONS\__MICROMAGNETIC\CPU\DIFF EQUATIONS DM - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="DiffEqDM_SEquations.cpp">
+      <Filter>01. DIFFERENTIAL EQUATIONS\__MICROMAGNETIC\CPU\DIFF EQUATIONS DM - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="DiffEqDM.cpp">
+      <Filter>01. DIFFERENTIAL EQUATIONS\__MICROMAGNETIC\CPU\DIFF EQUATIONS DM - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="DiffEqDM_Equations.cpp">
+      <Filter>01. DIFFERENTIAL EQUATIONS\__MICROMAGNETIC\CPU\DIFF EQUATIONS DM - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="DiffEqDM_Evals_ABM.cpp">
+      <Filter>01. DIFFERENTIAL EQUATIONS\__MICROMAGNETIC\CPU\DIFF EQUATIONS DM - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="Mesh_DiamagneticCUDA.cpp">
+      <Filter>02. MESHES\__MICROMAGNETIC\CUDA\MM MESHES - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="ManagedDiffEqDMCUDA.cpp">
+      <Filter>01. DIFFERENTIAL EQUATIONS\__MICROMAGNETIC\CUDA\DIFF EQUATIONS DM - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="DiffEqDMCUDA.cpp">
+      <Filter>01. DIFFERENTIAL EQUATIONS\__MICROMAGNETIC\CUDA\DIFF EQUATIONS DM - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="Heat.cpp">
+      <Filter>11. HEAT SOLVER\__MICROMAGNETIC\MM HEAT SOLVER - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="HeatCUDA.cpp">
+      <Filter>11. HEAT SOLVER\__MICROMAGNETIC\MM HEAT SOLVER - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="Heat_Solve.cpp">
+      <Filter>11. HEAT SOLVER\__MICROMAGNETIC\MM HEAT SOLVER - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="Heat_Auxiliary.cpp">
+      <Filter>11. HEAT SOLVER\__MICROMAGNETIC\MM HEAT SOLVER - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="MOpticalCUDA.cpp">
+      <Filter>03. MODULES\__MICROMAGNETIC\MM MODULES - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="Atom_Mesh.cpp">
+      <Filter>02. MESHES\__ATOMISTIC\CPU\ATOM MESHES INTERFACE - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="Atom_MeshControl.cpp">
+      <Filter>02. MESHES\__ATOMISTIC\CPU\ATOM MESHES INTERFACE - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="Atom_MeshDisplay.cpp">
+      <Filter>02. MESHES\__ATOMISTIC\CPU\ATOM MESHES INTERFACE - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="Atom_MeshParamsControl.cpp">
+      <Filter>02. MESHES\__ATOMISTIC\CPU\ATOM MESHES INTERFACE - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="Atom_MeshModules.cpp">
+      <Filter>02. MESHES\__ATOMISTIC\CPU\ATOM MESHES INTERFACE - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="Atom_Zeeman.cpp">
+      <Filter>03. MODULES\__ATOMISTIC\ATOM MODULES - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="Atom_Mesh_Cubic.cpp">
+      <Filter>02. MESHES\__ATOMISTIC\CPU\ATOM MESHES - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="Atom_Mesh_Cubic_Control.cpp">
+      <Filter>02. MESHES\__ATOMISTIC\CPU\ATOM MESHES - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="Atom_DiffEq_Iterate.cpp">
+      <Filter>01. DIFFERENTIAL EQUATIONS\__ATOMISTIC\CPU\ATOM DIFF EQUATIONS INTERFACE - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="Atom_DiffEq.cpp">
+      <Filter>01. DIFFERENTIAL EQUATIONS\__ATOMISTIC\CPU\ATOM DIFF EQUATIONS INTERFACE - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="Atom_DiffEq_Common.cpp">
+      <Filter>01. DIFFERENTIAL EQUATIONS\__ATOMISTIC\CPU\ATOM DIFF EQUATIONS INTERFACE - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="Atom_DiffEqCubic_Evals_RK4.cpp">
+      <Filter>01. DIFFERENTIAL EQUATIONS\__ATOMISTIC\CPU\ATOM DIFF EQUATIONS CUBIC - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="Atom_DiffEqCubic_Evals_RK23.cpp">
+      <Filter>01. DIFFERENTIAL EQUATIONS\__ATOMISTIC\CPU\ATOM DIFF EQUATIONS CUBIC - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="Atom_DiffEqCubic_Evals_RKCK45.cpp">
+      <Filter>01. DIFFERENTIAL EQUATIONS\__ATOMISTIC\CPU\ATOM DIFF EQUATIONS CUBIC - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="Atom_DiffEqCubic_Evals_RKDP54.cpp">
+      <Filter>01. DIFFERENTIAL EQUATIONS\__ATOMISTIC\CPU\ATOM DIFF EQUATIONS CUBIC - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="Atom_DiffEqCubic_Evals_RKF.cpp">
+      <Filter>01. DIFFERENTIAL EQUATIONS\__ATOMISTIC\CPU\ATOM DIFF EQUATIONS CUBIC - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="Atom_DiffEqCubic_Evals_SD.cpp">
+      <Filter>01. DIFFERENTIAL EQUATIONS\__ATOMISTIC\CPU\ATOM DIFF EQUATIONS CUBIC - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="Atom_DiffEqCubic_Evals_TEuler.cpp">
+      <Filter>01. DIFFERENTIAL EQUATIONS\__ATOMISTIC\CPU\ATOM DIFF EQUATIONS CUBIC - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="Atom_DiffEqCubic_SEquations.cpp">
+      <Filter>01. DIFFERENTIAL EQUATIONS\__ATOMISTIC\CPU\ATOM DIFF EQUATIONS CUBIC - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="Atom_DiffEqCubic.cpp">
+      <Filter>01. DIFFERENTIAL EQUATIONS\__ATOMISTIC\CPU\ATOM DIFF EQUATIONS CUBIC - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="Atom_DiffEqCubic_Equations.cpp">
+      <Filter>01. DIFFERENTIAL EQUATIONS\__ATOMISTIC\CPU\ATOM DIFF EQUATIONS CUBIC - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="Atom_DiffEqCubic_Evals_ABM.cpp">
+      <Filter>01. DIFFERENTIAL EQUATIONS\__ATOMISTIC\CPU\ATOM DIFF EQUATIONS CUBIC - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="Atom_DiffEqCubic_Evals_AHeun.cpp">
+      <Filter>01. DIFFERENTIAL EQUATIONS\__ATOMISTIC\CPU\ATOM DIFF EQUATIONS CUBIC - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="Atom_DiffEqCubic_Evals_Euler.cpp">
+      <Filter>01. DIFFERENTIAL EQUATIONS\__ATOMISTIC\CPU\ATOM DIFF EQUATIONS CUBIC - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="Mesh.cpp">
+      <Filter>02. MESHES\__MICROMAGNETIC\CPU\MM MESHES INTERFACE - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="MeshControl.cpp">
+      <Filter>02. MESHES\__MICROMAGNETIC\CPU\MM MESHES INTERFACE - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="MeshDisplay.cpp">
+      <Filter>02. MESHES\__MICROMAGNETIC\CPU\MM MESHES INTERFACE - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="MeshModules.cpp">
+      <Filter>02. MESHES\__MICROMAGNETIC\CPU\MM MESHES INTERFACE - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="MeshParamsControl.cpp">
+      <Filter>02. MESHES\__MICROMAGNETIC\CPU\MM MESHES INTERFACE - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="MeshBase.cpp">
+      <Filter>02. MESHES\MESHES BASE - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="MeshBaseModules.cpp">
+      <Filter>02. MESHES\MESHES BASE - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="MeshGetData.cpp">
+      <Filter>02. MESHES\__MICROMAGNETIC\CPU\MM MESHES INTERFACE - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="MeshGetQuantities.cpp">
+      <Filter>02. MESHES\__MICROMAGNETIC\CPU\MM MESHES INTERFACE - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="MeshDimensions.cpp">
+      <Filter>02. MESHES\__MICROMAGNETIC\CPU\MM MESHES INTERFACE - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="MeshShape.cpp">
+      <Filter>02. MESHES\__MICROMAGNETIC\CPU\MM MESHES INTERFACE - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="MaterialParameter.cpp">
+      <Filter>02. MESHES\MAT PARAMS - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="Atom_MeshParams.cpp">
+      <Filter>02. MESHES\__ATOMISTIC\CPU\ATOM MESHES INTERFACE - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="MeshParamsCUDA.cpp">
+      <Filter>02. MESHES\__MICROMAGNETIC\CUDA\MM MESHES INTERFACE - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="MeshParams.cpp">
+      <Filter>02. MESHES\__MICROMAGNETIC\CPU\MM MESHES INTERFACE - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="MeshParamsBase.cpp">
+      <Filter>02. MESHES\MESHES BASE - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="MeshBaseParamsControl.cpp">
+      <Filter>02. MESHES\MESHES BASE - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="MeshCompute.cpp">
+      <Filter>02. MESHES\__MICROMAGNETIC\CPU\MM MESHES INTERFACE - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="Atom_MeshCompute.cpp">
+      <Filter>02. MESHES\__ATOMISTIC\CPU\ATOM MESHES INTERFACE - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="Atom_MeshDimensions.cpp">
+      <Filter>02. MESHES\__ATOMISTIC\CPU\ATOM MESHES INTERFACE - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="Atom_MeshGetData.cpp">
+      <Filter>02. MESHES\__ATOMISTIC\CPU\ATOM MESHES INTERFACE - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="Atom_MeshGetQuantities.cpp">
+      <Filter>02. MESHES\__ATOMISTIC\CPU\ATOM MESHES INTERFACE - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="Atom_MeshShape.cpp">
+      <Filter>02. MESHES\__ATOMISTIC\CPU\ATOM MESHES INTERFACE - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="Atom_Mesh_Cubic_GetData.cpp">
+      <Filter>02. MESHES\__ATOMISTIC\CPU\ATOM MESHES - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="DiffEq_CommonBase.cpp">
+      <Filter>01. DIFFERENTIAL EQUATIONS\DIFF EQUATIONS BASE - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="DiffEq_CommonBase_Iterate.cpp">
+      <Filter>01. DIFFERENTIAL EQUATIONS\DIFF EQUATIONS BASE - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="DiffEq_CommonBase_IterateCUDA.cpp">
+      <Filter>01. DIFFERENTIAL EQUATIONS\DIFF EQUATIONS BASE - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="DiffEq_CommonBase_Control.cpp">
+      <Filter>01. DIFFERENTIAL EQUATIONS\DIFF EQUATIONS BASE - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="DiffEq_CommonBase_MovingMesh.cpp">
+      <Filter>01. DIFFERENTIAL EQUATIONS\DIFF EQUATIONS BASE - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="DiffEq_CommonBase_Get.cpp">
+      <Filter>01. DIFFERENTIAL EQUATIONS\DIFF EQUATIONS BASE - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="Atom_Anisotropy.cpp">
+      <Filter>03. MODULES\__ATOMISTIC\ATOM MODULES - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="Atom_Exchange.cpp">
+      <Filter>07. EXCHANGE\__ATOMISTIC\ATOM EXCHANGE - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="Atom_MeshCUDA.cpp">
+      <Filter>02. MESHES\__ATOMISTIC\CUDA\ATOM MESHES INTERFACE - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="Atom_MeshParamsCUDA.cpp">
+      <Filter>02. MESHES\__ATOMISTIC\CUDA\ATOM MESHES INTERFACE - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="Atom_Mesh_CubicCUDA.cpp">
+      <Filter>02. MESHES\__ATOMISTIC\CUDA\ATOM MESHES - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="Atom_ZeemanCUDA.cpp">
+      <Filter>03. MODULES\__ATOMISTIC\ATOM MODULES - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="Atom_DiffEq_IterateCUDA.cpp">
+      <Filter>01. DIFFERENTIAL EQUATIONS\__ATOMISTIC\CUDA\ATOM DIFF EQUATIONS INTERFACE - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="Atom_DiffEqCUDA.cpp">
+      <Filter>01. DIFFERENTIAL EQUATIONS\__ATOMISTIC\CUDA\ATOM DIFF EQUATIONS INTERFACE - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="ManagedAtom_DiffEq_CommonCUDA.cpp">
+      <Filter>01. DIFFERENTIAL EQUATIONS\__ATOMISTIC\CUDA\ATOM DIFF EQUATIONS INTERFACE - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="Atom_DiffEq_CommonCUDA.cpp">
+      <Filter>01. DIFFERENTIAL EQUATIONS\__ATOMISTIC\CUDA\ATOM DIFF EQUATIONS INTERFACE - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="Atom_DiffEqCubicCUDA.cpp">
+      <Filter>01. DIFFERENTIAL EQUATIONS\__ATOMISTIC\CUDA\ATOM DIFF EQUATIONS CUBIC - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="ManagedAtom_DiffEqCubicCUDA.cpp">
+      <Filter>01. DIFFERENTIAL EQUATIONS\__ATOMISTIC\CUDA\ATOM DIFF EQUATIONS CUBIC - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="ManagedAtom_MeshCUDA.cpp">
+      <Filter>02. MESHES\__ATOMISTIC\CUDA\ATOM MESHES INTERFACE - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="DiffEq_CommonBaseCUDA.cpp">
+      <Filter>01. DIFFERENTIAL EQUATIONS\DIFF EQUATIONS BASE - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="Anisotropy.cpp">
+      <Filter>03. MODULES\__MICROMAGNETIC\MM MODULES - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="AnisotropyCubi.cpp">
+      <Filter>03. MODULES\__MICROMAGNETIC\MM MODULES - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="Demag.cpp">
+      <Filter>03. MODULES\__MICROMAGNETIC\MM MODULES - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="Demag_N.cpp">
+      <Filter>03. MODULES\__MICROMAGNETIC\MM MODULES - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="MElastic.cpp">
+      <Filter>03. MODULES\__MICROMAGNETIC\MM MODULES - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="MOptical.cpp">
+      <Filter>03. MODULES\__MICROMAGNETIC\MM MODULES - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="Roughness.cpp">
+      <Filter>03. MODULES\__MICROMAGNETIC\MM MODULES - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="SOTField.cpp">
+      <Filter>03. MODULES\__MICROMAGNETIC\MM MODULES - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="SurfExchange.cpp">
+      <Filter>03. MODULES\__MICROMAGNETIC\MM MODULES - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="Zeeman.cpp">
+      <Filter>03. MODULES\__MICROMAGNETIC\MM MODULES - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="SuperMesh.cpp">
+      <Filter>04. SUPERMESH\SUPERMESH - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="SuperMeshControl.cpp">
+      <Filter>04. SUPERMESH\SUPERMESH - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="SuperMeshDisplay.cpp">
+      <Filter>04. SUPERMESH\SUPERMESH - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="SuperMeshMeshes.cpp">
+      <Filter>04. SUPERMESH\SUPERMESH - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="SuperMeshMeshes_Settings.cpp">
+      <Filter>04. SUPERMESH\SUPERMESH - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="SuperMeshMeshes_Shapes.cpp">
+      <Filter>04. SUPERMESH\SUPERMESH - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="SuperMeshModules.cpp">
+      <Filter>04. SUPERMESH\SUPERMESH - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="SuperMeshODE.cpp">
+      <Filter>04. SUPERMESH\SUPERMESH - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="SuperMeshParams.cpp">
+      <Filter>04. SUPERMESH\SUPERMESH - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="SuperMeshSettings.cpp">
+      <Filter>04. SUPERMESH\SUPERMESH - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="SuperMeshSimulation.cpp">
+      <Filter>04. SUPERMESH\SUPERMESH - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="SuperMeshTemperature.cpp">
+      <Filter>04. SUPERMESH\SUPERMESH - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="DMExchange.cpp">
+      <Filter>07. EXCHANGE\__MICROMAGNETIC\EXCHANGE - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="Exchange.cpp">
+      <Filter>07. EXCHANGE\__MICROMAGNETIC\EXCHANGE - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="ExchangeBase.cpp">
+      <Filter>07. EXCHANGE\__MICROMAGNETIC\EXCHANGE - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="iDMExchange.cpp">
+      <Filter>07. EXCHANGE\__MICROMAGNETIC\EXCHANGE - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="ConvolutionData.cpp">
+      <Filter>08. CONVOLUTION\CONVOLUTION - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="DipoleTFunc.cpp">
+      <Filter>09. FUNCS\SINGLE DIPOLE FUNCS - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="STransport.cpp">
+      <Filter>10. TRANSPORT SOLVER\TRANSPORT SOLVER - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="STransport_Charge.cpp">
+      <Filter>10. TRANSPORT SOLVER\TRANSPORT SOLVER - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="STransport_Spin.cpp">
+      <Filter>10. TRANSPORT SOLVER\TRANSPORT SOLVER - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="STransport_Spin_Display.cpp">
+      <Filter>10. TRANSPORT SOLVER\TRANSPORT SOLVER - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="STransport_Spin_GInterf.cpp">
+      <Filter>10. TRANSPORT SOLVER\TRANSPORT SOLVER - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="Transport.cpp">
+      <Filter>10. TRANSPORT SOLVER\TRANSPORT SOLVER - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="Transport_Charge.cpp">
+      <Filter>10. TRANSPORT SOLVER\TRANSPORT SOLVER - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="Transport_Charge_Display.cpp">
+      <Filter>10. TRANSPORT SOLVER\TRANSPORT SOLVER - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="Transport_Spin.cpp">
+      <Filter>10. TRANSPORT SOLVER\TRANSPORT SOLVER - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="Transport_Spin_Display.cpp">
+      <Filter>10. TRANSPORT SOLVER\TRANSPORT SOLVER - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="Atom_AnisotropyCUDA.cpp">
+      <Filter>03. MODULES\__ATOMISTIC\ATOM MODULES - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="Atom_ExchangeCUDA.cpp">
+      <Filter>07. EXCHANGE\__ATOMISTIC\ATOM EXCHANGE - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="Atom_Mesh_Cubic_Compute.cpp">
+      <Filter>02. MESHES\__ATOMISTIC\CPU\ATOM MESHES - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="Atom_Demag.cpp">
+      <Filter>03. MODULES\__ATOMISTIC\ATOM MODULES - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="Atom_DemagCUDA.cpp">
+      <Filter>03. MODULES\__ATOMISTIC\ATOM MODULES - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="Atom_DMExchange.cpp">
+      <Filter>07. EXCHANGE\__ATOMISTIC\ATOM EXCHANGE - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="Atom_iDMExchange.cpp">
+      <Filter>07. EXCHANGE\__ATOMISTIC\ATOM EXCHANGE - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="Atom_DMExchangeCUDA.cpp">
+      <Filter>07. EXCHANGE\__ATOMISTIC\ATOM EXCHANGE - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="Atom_iDMExchangeCUDA.cpp">
+      <Filter>07. EXCHANGE\__ATOMISTIC\ATOM EXCHANGE - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="MeshBaseCUDA.cpp">
+      <Filter>02. MESHES\MESHES BASE - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="HeatBase.cpp">
+      <Filter>11. HEAT SOLVER\HEAT BASE - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="HeatBaseCUDA.cpp">
+      <Filter>11. HEAT SOLVER\HEAT BASE - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="SHeat.cpp">
+      <Filter>11. HEAT SOLVER\HEAT SUPERMESH - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="SHeatCUDA.cpp">
+      <Filter>11. HEAT SOLVER\HEAT SUPERMESH - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="Atom_Heat.cpp">
+      <Filter>11. HEAT SOLVER\__ATOMISTIC\ATOM HEAT SOLVER - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="Atom_Heat_Auxiliary.cpp">
+      <Filter>11. HEAT SOLVER\__ATOMISTIC\ATOM HEAT SOLVER - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="Atom_Heat_Solve.cpp">
+      <Filter>11. HEAT SOLVER\__ATOMISTIC\ATOM HEAT SOLVER - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="HeatCUDA_CMBND.cpp">
+      <Filter>11. HEAT SOLVER\HEAT SUPERMESH - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="Atom_HeatCUDA.cpp">
+      <Filter>11. HEAT SOLVER\__ATOMISTIC\ATOM HEAT SOLVER - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="Atom_MOptical.cpp">
+      <Filter>03. MODULES\__ATOMISTIC\ATOM MODULES - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="Atom_MOpticalCUDA.cpp">
+      <Filter>03. MODULES\__ATOMISTIC\ATOM MODULES - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="Atom_AnisotropyCubi.cpp">
+      <Filter>03. MODULES\__ATOMISTIC\ATOM MODULES - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="Atom_AnisotropyCubiCUDA.cpp">
+      <Filter>03. MODULES\__ATOMISTIC\ATOM MODULES - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="Atom_DipoleDipole.cpp">
+      <Filter>03. MODULES\__ATOMISTIC\ATOM MODULES - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="Atom_Demag_N.cpp">
+      <Filter>03. MODULES\__ATOMISTIC\ATOM MODULES - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="Atom_Demag_NCUDA.cpp">
+      <Filter>03. MODULES\__ATOMISTIC\ATOM MODULES - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="Atom_DipoleDipoleCUDA.cpp">
+      <Filter>03. MODULES\__ATOMISTIC\ATOM MODULES - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="DemagTFunc.cpp">
+      <Filter>09. FUNCS\DEMAG FUNCS - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="DemagTFunc_Asympt.cpp">
+      <Filter>09. FUNCS\DEMAG FUNCS - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="DemagTFunc_fg.cpp">
+      <Filter>09. FUNCS\DEMAG FUNCS - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="DemagTFunc_Irregular.cpp">
+      <Filter>09. FUNCS\DEMAG FUNCS - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="DemagTFunc_Irregular_PBC.cpp">
+      <Filter>09. FUNCS\DEMAG FUNCS - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="DemagTFunc_L.cpp">
+      <Filter>09. FUNCS\DEMAG FUNCS - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="DemagTFunc_PBC.cpp">
+      <Filter>09. FUNCS\DEMAG FUNCS - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="DemagTFunc_Shifted.cpp">
+      <Filter>09. FUNCS\DEMAG FUNCS - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="DemagTFunc_Shifted_PBC.cpp">
+      <Filter>09. FUNCS\DEMAG FUNCS - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="DemagTFunc_Test.cpp">
+      <Filter>09. FUNCS\DEMAG FUNCS - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="OerstedTFunc.cpp">
+      <Filter>09. FUNCS\OERSTED FUNCS - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="DemagKernel.cpp">
+      <Filter>08. CONVOLUTION\DEMAG KERNEL - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="DemagKernelCollection.cpp">
+      <Filter>08. CONVOLUTION\DEMAG KERNEL - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="DemagKernelCollection_Calc.cpp">
+      <Filter>08. CONVOLUTION\DEMAG KERNEL - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="DemagKernelCollection_Mult.cpp">
+      <Filter>08. CONVOLUTION\DEMAG KERNEL - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="OerstedKernel.cpp">
+      <Filter>08. CONVOLUTION\OERSTED KERNEL - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="RoughnessKernel.cpp">
+      <Filter>08. CONVOLUTION\ROUGHNESS KERNEL - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="DemagKernelCollectionCUDA.cpp">
+      <Filter>08. CONVOLUTION\DEMAG KERNEL - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="DemagKernelCollectionCUDA_Calc.cpp">
+      <Filter>08. CONVOLUTION\DEMAG KERNEL - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="DemagKernelCUDA.cpp">
+      <Filter>08. CONVOLUTION\DEMAG KERNEL - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="OerstedKernelCUDA.cpp">
+      <Filter>08. CONVOLUTION\OERSTED KERNEL - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="DipoleDipoleKernel.cpp">
+      <Filter>08. CONVOLUTION\DIPOLE DIPOLE KERNEL - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="DipoleDipoleTFunc.cpp">
+      <Filter>09. FUNCS\DIPOLE DIPOLE FUNCS - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="DipoleDipoleTFunc_PBC.cpp">
+      <Filter>09. FUNCS\DIPOLE DIPOLE FUNCS - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="DipoleDipoleTFunc_Self.cpp">
+      <Filter>09. FUNCS\DIPOLE DIPOLE FUNCS - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="DipoleDipoleKernelCUDA.cpp">
+      <Filter>08. CONVOLUTION\DIPOLE DIPOLE KERNEL - CUDA</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="BorisWinapi.rc">
+      <Filter>RESOURCES\Resource Files</Filter>
+    </ResourceCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="small.ico">
+      <Filter>RESOURCES\Resource Files</Filter>
+    </Image>
+    <Image Include="BorisWinapi.ico">
+      <Filter>RESOURCES\Resource Files</Filter>
+    </Image>
+  </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="ShaderFile.fx">
+      <Filter>RESOURCES\Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="ShaderFile_PS.hlsl">
+      <Filter>RESOURCES\Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="ShaderFile_VS.hlsl">
+      <Filter>RESOURCES\Shaders</Filter>
+    </FxCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <CudaCompile Include="ZeemanCUDA.cu">
+      <Filter>03. MODULES\__MICROMAGNETIC\MM MODULES - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="ModulesCUDA.cu">
+      <Filter>03. MODULES\MODULES INTERFACE - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="AnisotropyCubiCUDA.cu">
+      <Filter>03. MODULES\__MICROMAGNETIC\MM MODULES - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="AnisotropyUniCUDA.cu">
+      <Filter>03. MODULES\__MICROMAGNETIC\MM MODULES - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="Demag_NCUDA.cu">
+      <Filter>03. MODULES\__MICROMAGNETIC\MM MODULES - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="ConvolutionDataCUDA.cu">
+      <Filter>08. CONVOLUTION\CONVOLUTION - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="StrayFieldCUDA.cu">
+      <Filter>05. SUPERMESH MODULES\MODULES - SUPERMESH - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="SurfExchangeCUDA.cu">
+      <Filter>03. MODULES\__MICROMAGNETIC\MM MODULES - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="TransportCUDA.cu">
+      <Filter>10. TRANSPORT SOLVER\TRANSPORT SOLVER - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="STransportCUDA_Charge.cu">
+      <Filter>10. TRANSPORT SOLVER\TRANSPORT SOLVER - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="STransportCUDA_Spin.cu">
+      <Filter>10. TRANSPORT SOLVER\TRANSPORT SOLVER - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="TransportCUDA_Charge.cu">
+      <Filter>10. TRANSPORT SOLVER\TRANSPORT SOLVER - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="TransportCUDA_Spin.cu">
+      <Filter>10. TRANSPORT SOLVER\TRANSPORT SOLVER - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="SOTFieldCUDA.cu">
+      <Filter>03. MODULES\__MICROMAGNETIC\MM MODULES - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="RoughnessCUDA.cu">
+      <Filter>03. MODULES\__MICROMAGNETIC\MM MODULES - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="SDemagCUDA_Demag.cu">
+      <Filter>06. SUPERMESH DEMAG\DEMAG - SUPERMESH - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="STransportCUDA.cu">
+      <Filter>10. TRANSPORT SOLVER\TRANSPORT SOLVER - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="DMExchangeCUDA.cu">
+      <Filter>07. EXCHANGE\__MICROMAGNETIC\EXCHANGE - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="ExchangeCUDA.cu">
+      <Filter>07. EXCHANGE\__MICROMAGNETIC\EXCHANGE - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="iDMExchangeCUDA.cu">
+      <Filter>07. EXCHANGE\__MICROMAGNETIC\EXCHANGE - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="DiffEqFM_SEquationsCUDA.cu">
+      <Filter>01. DIFFERENTIAL EQUATIONS\__MICROMAGNETIC\CUDA\DIFF EQUATIONS FM - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="DiffEqFMCUDA.cu">
+      <Filter>01. DIFFERENTIAL EQUATIONS\__MICROMAGNETIC\CUDA\DIFF EQUATIONS FM - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="DiffEqFM_EvalsCUDA.cu">
+      <Filter>01. DIFFERENTIAL EQUATIONS\__MICROMAGNETIC\CUDA\DIFF EQUATIONS FM - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="DiffEqFM_EvalsCUDA_ABM.cu">
+      <Filter>01. DIFFERENTIAL EQUATIONS\__MICROMAGNETIC\CUDA\DIFF EQUATIONS FM - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="DiffEqFM_EvalsCUDA_AHeun.cu">
+      <Filter>01. DIFFERENTIAL EQUATIONS\__MICROMAGNETIC\CUDA\DIFF EQUATIONS FM - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="DiffEqFM_EvalsCUDA_Euler.cu">
+      <Filter>01. DIFFERENTIAL EQUATIONS\__MICROMAGNETIC\CUDA\DIFF EQUATIONS FM - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="DiffEqFM_EvalsCUDA_RK4.cu">
+      <Filter>01. DIFFERENTIAL EQUATIONS\__MICROMAGNETIC\CUDA\DIFF EQUATIONS FM - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="DiffEqFM_EvalsCUDA_RK23.cu">
+      <Filter>01. DIFFERENTIAL EQUATIONS\__MICROMAGNETIC\CUDA\DIFF EQUATIONS FM - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="DiffEqFM_EvalsCUDA_RKCK45.cu">
+      <Filter>01. DIFFERENTIAL EQUATIONS\__MICROMAGNETIC\CUDA\DIFF EQUATIONS FM - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="DiffEqFM_EvalsCUDA_RKDP54.cu">
+      <Filter>01. DIFFERENTIAL EQUATIONS\__MICROMAGNETIC\CUDA\DIFF EQUATIONS FM - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="DiffEqFM_EvalsCUDA_RKF.cu">
+      <Filter>01. DIFFERENTIAL EQUATIONS\__MICROMAGNETIC\CUDA\DIFF EQUATIONS FM - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="DiffEqFM_EvalsCUDA_SD.cu">
+      <Filter>01. DIFFERENTIAL EQUATIONS\__MICROMAGNETIC\CUDA\DIFF EQUATIONS FM - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="DiffEqFM_EvalsCUDA_TEuler.cu">
+      <Filter>01. DIFFERENTIAL EQUATIONS\__MICROMAGNETIC\CUDA\DIFF EQUATIONS FM - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="DiffEqFM_EvalsLLGCUDA.cu">
+      <Filter>01. DIFFERENTIAL EQUATIONS\__MICROMAGNETIC\CUDA\DIFF EQUATIONS FM - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="DiffEqAFM_EvalsCUDA_RK23.cu">
+      <Filter>01. DIFFERENTIAL EQUATIONS\__MICROMAGNETIC\CUDA\DIFF EQUATIONS AFM - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="DiffEqAFM_EvalsCUDA_RKCK45.cu">
+      <Filter>01. DIFFERENTIAL EQUATIONS\__MICROMAGNETIC\CUDA\DIFF EQUATIONS AFM - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="DiffEqAFM_EvalsCUDA_RKDP54.cu">
+      <Filter>01. DIFFERENTIAL EQUATIONS\__MICROMAGNETIC\CUDA\DIFF EQUATIONS AFM - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="DiffEqAFM_EvalsCUDA_RKF.cu">
+      <Filter>01. DIFFERENTIAL EQUATIONS\__MICROMAGNETIC\CUDA\DIFF EQUATIONS AFM - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="DiffEqAFM_EvalsCUDA_SD.cu">
+      <Filter>01. DIFFERENTIAL EQUATIONS\__MICROMAGNETIC\CUDA\DIFF EQUATIONS AFM - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="DiffEqAFM_EvalsCUDA_TEuler.cu">
+      <Filter>01. DIFFERENTIAL EQUATIONS\__MICROMAGNETIC\CUDA\DIFF EQUATIONS AFM - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="DiffEqAFM_EvalsLLGCUDA.cu">
+      <Filter>01. DIFFERENTIAL EQUATIONS\__MICROMAGNETIC\CUDA\DIFF EQUATIONS AFM - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="DiffEqAFM_SEquationsCUDA.cu">
+      <Filter>01. DIFFERENTIAL EQUATIONS\__MICROMAGNETIC\CUDA\DIFF EQUATIONS AFM - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="DiffEqAFMCUDA.cu">
+      <Filter>01. DIFFERENTIAL EQUATIONS\__MICROMAGNETIC\CUDA\DIFF EQUATIONS AFM - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="DiffEqAFM_EvalsCUDA.cu">
+      <Filter>01. DIFFERENTIAL EQUATIONS\__MICROMAGNETIC\CUDA\DIFF EQUATIONS AFM - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="DiffEqAFM_EvalsCUDA_ABM.cu">
+      <Filter>01. DIFFERENTIAL EQUATIONS\__MICROMAGNETIC\CUDA\DIFF EQUATIONS AFM - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="DiffEqAFM_EvalsCUDA_AHeun.cu">
+      <Filter>01. DIFFERENTIAL EQUATIONS\__MICROMAGNETIC\CUDA\DIFF EQUATIONS AFM - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="DiffEqAFM_EvalsCUDA_Euler.cu">
+      <Filter>01. DIFFERENTIAL EQUATIONS\__MICROMAGNETIC\CUDA\DIFF EQUATIONS AFM - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="DiffEqAFM_EvalsCUDA_RK4.cu">
+      <Filter>01. DIFFERENTIAL EQUATIONS\__MICROMAGNETIC\CUDA\DIFF EQUATIONS AFM - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="DiffEq_CommonCUDA.cu">
+      <Filter>01. DIFFERENTIAL EQUATIONS\__MICROMAGNETIC\CUDA\DIFF EQUATIONS INTERFACE - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="ExchangeCoupling_CUDA.cu">
+      <Filter>07. EXCHANGE\__MICROMAGNETIC\EXCHANGE - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="DMExchangeCoupling_CUDA.cu">
+      <Filter>07. EXCHANGE\__MICROMAGNETIC\EXCHANGE - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="iDMExchangeCoupling_CUDA.cu">
+      <Filter>07. EXCHANGE\__MICROMAGNETIC\EXCHANGE - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="TransportCUDA_Spin_Display.cu">
+      <Filter>10. TRANSPORT SOLVER\TRANSPORT SOLVER - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="TransportCUDA_Charge_Display.cu">
+      <Filter>10. TRANSPORT SOLVER\TRANSPORT SOLVER - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="MaterialParameterCUDA.cu">
+      <Filter>02. MESHES\MAT PARAMS - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="MElasticCUDA.cu">
+      <Filter>03. MODULES\__MICROMAGNETIC\MM MODULES - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="DiffEqDM_EvalsCUDA_RK23.cu">
+      <Filter>01. DIFFERENTIAL EQUATIONS\__MICROMAGNETIC\CUDA\DIFF EQUATIONS DM - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="DiffEqDM_EvalsCUDA_RKCK45.cu">
+      <Filter>01. DIFFERENTIAL EQUATIONS\__MICROMAGNETIC\CUDA\DIFF EQUATIONS DM - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="DiffEqDM_EvalsCUDA_RKDP54.cu">
+      <Filter>01. DIFFERENTIAL EQUATIONS\__MICROMAGNETIC\CUDA\DIFF EQUATIONS DM - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="DiffEqDM_EvalsCUDA_RKF.cu">
+      <Filter>01. DIFFERENTIAL EQUATIONS\__MICROMAGNETIC\CUDA\DIFF EQUATIONS DM - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="DiffEqDM_EvalsCUDA_SD.cu">
+      <Filter>01. DIFFERENTIAL EQUATIONS\__MICROMAGNETIC\CUDA\DIFF EQUATIONS DM - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="DiffEqDM_EvalsCUDA_TEuler.cu">
+      <Filter>01. DIFFERENTIAL EQUATIONS\__MICROMAGNETIC\CUDA\DIFF EQUATIONS DM - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="DiffEqDM_EvalsLLGCUDA.cu">
+      <Filter>01. DIFFERENTIAL EQUATIONS\__MICROMAGNETIC\CUDA\DIFF EQUATIONS DM - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="DiffEqDM_EvalsCUDA.cu">
+      <Filter>01. DIFFERENTIAL EQUATIONS\__MICROMAGNETIC\CUDA\DIFF EQUATIONS DM - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="DiffEqDM_EvalsCUDA_ABM.cu">
+      <Filter>01. DIFFERENTIAL EQUATIONS\__MICROMAGNETIC\CUDA\DIFF EQUATIONS DM - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="DiffEqDM_EvalsCUDA_AHeun.cu">
+      <Filter>01. DIFFERENTIAL EQUATIONS\__MICROMAGNETIC\CUDA\DIFF EQUATIONS DM - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="DiffEqDM_EvalsCUDA_Euler.cu">
+      <Filter>01. DIFFERENTIAL EQUATIONS\__MICROMAGNETIC\CUDA\DIFF EQUATIONS DM - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="DiffEqDM_EvalsCUDA_RK4.cu">
+      <Filter>01. DIFFERENTIAL EQUATIONS\__MICROMAGNETIC\CUDA\DIFF EQUATIONS DM - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="DiffEqDMCUDA.cu">
+      <Filter>01. DIFFERENTIAL EQUATIONS\__MICROMAGNETIC\CUDA\DIFF EQUATIONS DM - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="HeatCUDA.cu">
+      <Filter>11. HEAT SOLVER\__MICROMAGNETIC\MM HEAT SOLVER - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="MeshCUDA.cu">
+      <Filter>02. MESHES\__MICROMAGNETIC\CUDA\MM MESHES INTERFACE - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="MOpticalCUDA.cu">
+      <Filter>03. MODULES\__MICROMAGNETIC\MM MODULES - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="Atom_MeshCUDA.cu">
+      <Filter>02. MESHES\__ATOMISTIC\CUDA\ATOM MESHES INTERFACE - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="Atom_ZeemanCUDA.cu">
+      <Filter>03. MODULES\__ATOMISTIC\ATOM MODULES - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="Atom_DiffEq_CommonCUDA.cu">
+      <Filter>01. DIFFERENTIAL EQUATIONS\__ATOMISTIC\CUDA\ATOM DIFF EQUATIONS INTERFACE - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="Atom_DiffEqCubic_EvalsCUDA.cu">
+      <Filter>01. DIFFERENTIAL EQUATIONS\__ATOMISTIC\CUDA\ATOM DIFF EQUATIONS CUBIC - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="Atom_DiffEqCubic_EvalsCUDA_ABM.cu">
+      <Filter>01. DIFFERENTIAL EQUATIONS\__ATOMISTIC\CUDA\ATOM DIFF EQUATIONS CUBIC - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="Atom_DiffEqCubic_EvalsCUDA_AHeun.cu">
+      <Filter>01. DIFFERENTIAL EQUATIONS\__ATOMISTIC\CUDA\ATOM DIFF EQUATIONS CUBIC - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="Atom_DiffEqCubic_EvalsCUDA_Euler.cu">
+      <Filter>01. DIFFERENTIAL EQUATIONS\__ATOMISTIC\CUDA\ATOM DIFF EQUATIONS CUBIC - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="Atom_DiffEqCubic_EvalsCUDA_RK4.cu">
+      <Filter>01. DIFFERENTIAL EQUATIONS\__ATOMISTIC\CUDA\ATOM DIFF EQUATIONS CUBIC - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="Atom_DiffEqCubic_EvalsCUDA_RK23.cu">
+      <Filter>01. DIFFERENTIAL EQUATIONS\__ATOMISTIC\CUDA\ATOM DIFF EQUATIONS CUBIC - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="Atom_DiffEqCubic_EvalsCUDA_RKCK45.cu">
+      <Filter>01. DIFFERENTIAL EQUATIONS\__ATOMISTIC\CUDA\ATOM DIFF EQUATIONS CUBIC - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="Atom_DiffEqCubic_EvalsCUDA_RKDP54.cu">
+      <Filter>01. DIFFERENTIAL EQUATIONS\__ATOMISTIC\CUDA\ATOM DIFF EQUATIONS CUBIC - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="Atom_DiffEqCubic_EvalsCUDA_RKF.cu">
+      <Filter>01. DIFFERENTIAL EQUATIONS\__ATOMISTIC\CUDA\ATOM DIFF EQUATIONS CUBIC - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="Atom_DiffEqCubic_EvalsCUDA_SD.cu">
+      <Filter>01. DIFFERENTIAL EQUATIONS\__ATOMISTIC\CUDA\ATOM DIFF EQUATIONS CUBIC - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="Atom_DiffEqCubic_EvalsCUDA_TEuler.cu">
+      <Filter>01. DIFFERENTIAL EQUATIONS\__ATOMISTIC\CUDA\ATOM DIFF EQUATIONS CUBIC - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="Atom_DiffEqCubic_EvalsLLGCUDA.cu">
+      <Filter>01. DIFFERENTIAL EQUATIONS\__ATOMISTIC\CUDA\ATOM DIFF EQUATIONS CUBIC - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="Atom_DiffEqCubic_SEquationsCUDA.cu">
+      <Filter>01. DIFFERENTIAL EQUATIONS\__ATOMISTIC\CUDA\ATOM DIFF EQUATIONS CUBIC - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="Atom_DiffEqCubicCUDA.cu">
+      <Filter>01. DIFFERENTIAL EQUATIONS\__ATOMISTIC\CUDA\ATOM DIFF EQUATIONS CUBIC - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="DiffEq_CommonBaseCUDA.cu">
+      <Filter>01. DIFFERENTIAL EQUATIONS\DIFF EQUATIONS BASE - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="Atom_AnisotropyUniCUDA.cu">
+      <Filter>03. MODULES\__ATOMISTIC\ATOM MODULES - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="Atom_ExchangeCUDA.cu">
+      <Filter>07. EXCHANGE\__ATOMISTIC\ATOM EXCHANGE - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="Atom_Mesh_CubicCUDA_Compute.cu">
+      <Filter>02. MESHES\__ATOMISTIC\CUDA\ATOM MESHES - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="Atom_DMExchangeCUDA.cu">
+      <Filter>07. EXCHANGE\__ATOMISTIC\ATOM EXCHANGE - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="Atom_iDMExchangeCUDA.cu">
+      <Filter>07. EXCHANGE\__ATOMISTIC\ATOM EXCHANGE - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="HeatBaseCUDA.cu">
+      <Filter>11. HEAT SOLVER\HEAT BASE - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="SHeatCUDA.cu">
+      <Filter>11. HEAT SOLVER\HEAT SUPERMESH - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="Atom_HeatCUDA.cu">
+      <Filter>11. HEAT SOLVER\__ATOMISTIC\ATOM HEAT SOLVER - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="Atom_MOpticalCUDA.cu">
+      <Filter>03. MODULES\__ATOMISTIC\ATOM MODULES - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="Atom_AnisotropyCubiCUDA.cu">
+      <Filter>03. MODULES\__ATOMISTIC\ATOM MODULES - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="Atom_Demag_NCUDA.cu">
+      <Filter>03. MODULES\__ATOMISTIC\ATOM MODULES - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="DemagKernelCollectionCUDA_Mult.cu">
+      <Filter>08. CONVOLUTION\DEMAG KERNEL - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="DemagKernelCUDA.cu">
+      <Filter>08. CONVOLUTION\DEMAG KERNEL - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="OerstedKernelCUDA.cu">
+      <Filter>08. CONVOLUTION\OERSTED KERNEL - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="DipoleDipoleKernelCUDA.cu">
+      <Filter>08. CONVOLUTION\DIPOLE DIPOLE KERNEL - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="Atom_DipoleDipoleCUDA.cu">
+      <Filter>03. MODULES\__ATOMISTIC\ATOM MODULES - CUDA</Filter>
+    </CudaCompile>
+  </ItemGroup>
+</Project>
