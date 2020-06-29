@@ -33,16 +33,16 @@ Windows:
 Linux (tested on Ubuntu 20.04):
 1. Clone the project.
 2. Make sure you have all the updates required and external dependencies:
-  
-  Get latest g++ compiler: $ sudo apt install build-essential
-  Get OpenMP: $ sudo apt-get install libomp-dev
-  Get CUDA: Instructions at https://linuxconfig.org/how-to-install-cuda-on-ubuntu-20-04-focal-fossa-linux
-  Get SFML: sudo apt-get install libsfml-dev
-  Get FFTW3: Instructions at http://www.fftw.org/fftw2_doc/fftw_6.html
+
+    Get latest g++ compiler: $ sudo apt install build-essential
+    Get OpenMP: $ sudo apt-get install libomp-dev
+    Get CUDA: Instructions at https://linuxconfig.org/how-to-install-cuda-on-ubuntu-20-04-focal-fossa-linux
+    Get SFML: sudo apt-get install libsfml-dev
+    Get FFTW3: Instructions at http://www.fftw.org/fftw2_doc/fftw_6.html
 
 3. Navigate to cloned directory and use the makefile to compile from source:
   
-    $ make compile -j N
+    <i>$ make compile -j N</i>
   
     (replace N with the number of logical cores on your CPU for multi-processor compilation, e.g. make compile -j 16)
 
