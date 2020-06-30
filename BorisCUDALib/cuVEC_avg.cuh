@@ -4,6 +4,7 @@
 #include "cuFuncs_Math.h"
 #include "launchers.h"
 #include "Reduction.cuh"
+#include "cuVEC_avg.h"
 
 //------------------------------------------------------------------- AVERAGE
 

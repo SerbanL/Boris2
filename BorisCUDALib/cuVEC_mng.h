@@ -1,6 +1,7 @@
 #pragma once
 
 #include "cuVEC.h"
+#include "launchers.h"
 
 //--------------------------------------------MEMORY MANAGEMENT HELPER METHODS
 

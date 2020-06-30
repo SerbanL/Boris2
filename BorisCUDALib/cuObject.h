@@ -43,7 +43,7 @@ public:
 		gpu_alloc(managed_cuda_object);
 
 		//call "managed" constructor - managed object has to implement this, where it will allocate gpu memory for its stored types
-		call_constructor(std::bool_constant< std::is_fundamental<MType>::value >());
+		call_constructor(std::integral_constant<bool, std::is_fundamental<MType>::value >());
 	}
 
 	//parameters to pass to managed constructor
@@ -54,7 +54,7 @@ public:
 		gpu_alloc(managed_cuda_object);
 
 		//call "managed" constructor - managed object has to implement this, where it will allocate gpu memory for its stored types
-		call_constructor(std::bool_constant< std::is_fundamental<MType>::value >(), params...);
+		call_constructor(std::integral_constant<bool, std::is_fundamental<MType>::value >(), params...);
 	}
 
 	//------------------------------------------- DESTRUCTOR
@@ -66,7 +66,7 @@ public:
 		if (managed_cuda_object) {
 
 			//call "managed" destructor - managed object has to implement this, where it will free gpu memory for its stored types
-			call_destructor(std::bool_constant< std::is_fundamental<MType>::value >());
+			call_destructor(std::integral_constant<bool, std::is_fundamental<MType>::value >());
 
 			//free object itself before destructing the cu_obj
 			gpu_free(managed_cuda_object);
@@ -82,7 +82,7 @@ public:
 		gpu_alloc(managed_cuda_object);
 
 		//call "managed" copy constructor - managed object has to implement this
-		call_constructor_ref(std::bool_constant< std::is_fundamental<MType>::value >(), *(copyThis.managed_cuda_object));
+		call_constructor_ref(std::integral_constant<bool, std::is_fundamental<MType>::value >(), *(copyThis.managed_cuda_object));
 	}
 
 	//this makes an identical but independent managed cuda object : (implement void MType::assign_cu_obj(const MType& copyThis); in managed object)
@@ -92,7 +92,7 @@ public:
 		if (managed_cuda_object) {
 
 			//call "managed" destructor - managed object has to implement this, where it will free gpu memory for its stored types
-			call_destructor(std::bool_constant< std::is_fundamental<MType>::value >());
+			call_destructor(std::integral_constant<bool, std::is_fundamental<MType>::value >());
 
 			//free object itself before destructing the cu_obj
 			gpu_free(managed_cuda_object);
@@ -102,7 +102,7 @@ public:
 		gpu_alloc(managed_cuda_object);
 
 		//call assignment operator on managed object - managed object has to implement this (implement void MType::assign_cu_obj(const MType& copyThis); in managed object)
-		call_assignment(std::bool_constant< std::is_fundamental<MType>::value >(), *(copyThis.managed_cuda_object));
+		call_assignment(std::integral_constant<bool, std::is_fundamental<MType>::value >(), *(copyThis.managed_cuda_object));
 
 		return *this;
 	}

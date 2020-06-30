@@ -2,7 +2,7 @@
 
 #include <cuda_runtime.h>
 
-#include "alloc_cpy.h"
+#include "launchers.h"
 #include "cuTypes.h"
 
 //------------------------------------------------------------------- SET

@@ -34,7 +34,7 @@ template void cuVEC_VC<cuDBL33>::setbox(cuBox box, cuDBL33 value);
 template <typename VType>
 __host__ void cuVEC_VC<VType>::setbox(cuBox box, VType value)
 {
-	cuvec_vc_setbox_kernel <<< (get_gpu_value(n).dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (n, ngbrFlags, quantity, box, value);
+	cuvec_vc_setbox_kernel <<< (get_gpu_value(cuVEC<VType>::n).dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (cuVEC<VType>::n, ngbrFlags, cuVEC<VType>::quantity, box, value);
 
 	set_ngbrFlags();
 }
@@ -68,9 +68,9 @@ template void cuVEC_VC<cuDBL33>::delrect(cuRect rectangle);
 template <typename VType>
 __host__ void cuVEC_VC<VType>::delrect(cuRect rectangle)
 {
-	cuBox box = box_from_rect_max_cpu(rectangle + get_gpu_value(rect).s);
+	cuBox box = cuVEC<VType>::box_from_rect_max_cpu(rectangle + get_gpu_value(cuVEC<VType>::rect).s);
 
-	delrect_kernel <<< (get_gpu_value(n).dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (n, ngbrFlags, quantity, box);
+	delrect_kernel <<< (get_gpu_value(cuVEC<VType>::n).dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (cuVEC<VType>::n, ngbrFlags, cuVEC<VType>::quantity, box);
 
 	set_ngbrFlags();
 }
@@ -142,7 +142,7 @@ template bool cuVEC_VC<cuDBL33>::apply_bitmap_mask(std::vector<unsigned char>& b
 template <typename VType>
 bool cuVEC_VC<VType>::apply_bitmap_mask(std::vector<unsigned char>& bitmap, int zDepth)
 {
-	cuSZ3 n_ = get_gpu_value(n);
+	cuSZ3 n_ = get_gpu_value(cuVEC<VType>::n);
 
 	//bitmap must have the right size (i.e. have n.x * n.y pixels, remembering each pixel has 4 bytes as B-G-R-A)
 	if (bitmap.size() != n_.x*n_.y * 4) return false;
@@ -152,7 +152,7 @@ bool cuVEC_VC<VType>::apply_bitmap_mask(std::vector<unsigned char>& bitmap, int 
 
 	cpu_to_gpu(bitmap_gpu, bitmap.data(), bitmap.size());
 
-	apply_bitmap_mask_kernel <<< (n_.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (n, ngbrFlags, quantity, bitmap_gpu, zDepth);
+	apply_bitmap_mask_kernel <<< (n_.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (cuVEC<VType>::n, ngbrFlags, cuVEC<VType>::quantity, bitmap_gpu, zDepth);
 
 	gpu_free(bitmap_gpu);
 

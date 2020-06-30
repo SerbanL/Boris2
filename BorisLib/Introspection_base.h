@@ -4,6 +4,7 @@
 #include <string>
 #include <sstream>
 #include <type_traits>
+#include <utility>
 
 ////////////////////////////////////////////////////////////////////////////////////////////////// GENERALLY USEFUL CONSTRUCTS
 //
@@ -168,8 +169,8 @@ namespace Introspection {
 
 template <typename Type>
 struct is_string :
-	std::bool_constant
-	<
+	std::integral_constant
+	<bool,
 	std::is_same<typename std::remove_cv<Type>::type, std::string>::value ||
 	std::is_same<Type, std::string&>::value ||
 	std::is_same<Type, const std::string&>::value ||
@@ -200,7 +201,7 @@ public:
 
 //use this, e.g. is_streamable_out<std::string, double>() has base std::true_type(), etc.
 template <typename stream, typename Type>
-struct is_streamable_out : std::bool_constant< __is_streamable_out<stream, Type>::value > {};
+struct is_streamable_out : std::integral_constant<bool, __is_streamable_out<stream, Type>::value > {};
 
 //---------
 
@@ -223,7 +224,7 @@ public:
 
 //use this
 template <typename stream, typename Type>
-struct is_streamable_in : std::bool_constant< __is_streamable_in<stream, Type>::value > {};
+struct is_streamable_in : std::integral_constant<bool, __is_streamable_in<stream, Type>::value > {};
 
 //--------------------------------------------------
 //check if type is indexable (has [] operator which can take an integer)
@@ -247,7 +248,7 @@ public:
 
 //use this
 template <typename Type>
-struct is_indexable : std::bool_constant< __is_indexable<Type>::value > {};
+struct is_indexable : std::integral_constant<bool, __is_indexable<Type>::value > {};
 
 //--------------------------------------------------
 // check if type is a VarInfo type. Done as follows:
@@ -276,7 +277,7 @@ public:
 
 //use this
 template <typename Type>
-struct is_varinfo : std::bool_constant< __is_varinfo<Type>::value > {};
+struct is_varinfo : std::integral_constant<bool, __is_varinfo<Type>::value > {};
 
 //--------------------------------------------------
 //get the type of stored elements in a mono container (here a container means anything that can be integer indexed : [index], i.e. is_indexable<VType>). Mono means all contained elements have the same type (e.g. std::string or std::vector etc.)
@@ -317,7 +318,7 @@ public:
 
 //use this
 template <template <typename...> class TemplateBase, typename Derived>
-struct is_template_base_of : std::bool_constant< __is_template_base_of<TemplateBase, Derived>::value > {};
+struct is_template_base_of : std::integral_constant<bool, __is_template_base_of<TemplateBase, Derived>::value > {};
 
 //--------------------------------------------------
 //Check if Type has a constructor that takes the parameter types listed
@@ -341,7 +342,7 @@ public:
 
 //use this
 template <typename Type, typename... PType>
-struct accepts_parameters : std::bool_constant< __accepts_parameters<Type, PType...>::value > {};
+struct accepts_parameters : std::integral_constant<bool, __accepts_parameters<Type, PType...>::value > {};
 
 //--------------------------------------------------
 //Check if Type has a constructor that takes N simple parameters, convertible to from an integer (so includes all fundamental types, std::strings)
@@ -365,7 +366,7 @@ public:
 
 //use this
 template <typename Type, int N>
-struct accepts_N_parameters : std::bool_constant< __accepts_N_parameters<Type, N>::value > {};
+struct accepts_N_parameters : std::integral_constant<bool, __accepts_N_parameters<Type, N>::value > {};
 
 //--------------------------------------------------
 //Get maximum number of parameters a Type constructor can take, where each parameter can be converted to from an integer
@@ -433,7 +434,7 @@ public:
 
 //use this
 template <typename BaseType, typename DerivedType, typename Param>
-struct can_instantiate_with_param : std::bool_constant< __can_instantiate_with_param<BaseType, DerivedType, Param>::value > {};
+struct can_instantiate_with_param : std::integral_constant<bool, __can_instantiate_with_param<BaseType, DerivedType, Param>::value > {};
 
 template <typename BaseType, typename DerivedType>
 struct __can_instantiate {
@@ -453,4 +454,4 @@ public:
 
 //use this
 template <typename BaseType, typename DerivedType>
-struct can_instantiate : std::bool_constant< __can_instantiate<BaseType, DerivedType>::value > {};
+struct can_instantiate : std::integral_constant<bool, __can_instantiate<BaseType, DerivedType>::value > {};

@@ -55,5 +55,5 @@ template void cuVEC_VC<cuDBL33>::extract_cuvec(size_t size, cuVEC_VC<cuDBL33>& c
 template <typename VType>
 __host__ void cuVEC_VC<VType>::extract_cuvec(size_t size, cuVEC_VC<VType>& cuvec)
 {
-	strided_copy_3d <<< (size + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (quantity, ngbrFlags, n, cuvec.quantity, cuvec.ngbrFlags, cuvec.n);
+	strided_copy_3d <<< (size + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (cuVEC<VType>::quantity, ngbrFlags, cuVEC<VType>::n, cuvec.quantity, cuvec.ngbrFlags, cuvec.n);
 }

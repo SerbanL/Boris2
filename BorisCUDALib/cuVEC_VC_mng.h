@@ -227,7 +227,7 @@ __host__ size_t cuVEC_VC<VType>::get_dirichlet_size(int dirichlet_id) const
 template <typename VType>
 __host__ void cuVEC_VC<VType>::construct_cu_obj(void)
 {
-	cuVEC::construct_cu_obj();
+	cuVEC<VType>::construct_cu_obj();
 
 	alloc_initialize_data();
 }
@@ -236,15 +236,15 @@ __host__ void cuVEC_VC<VType>::construct_cu_obj(void)
 template <typename VType>
 __host__ void cuVEC_VC<VType>::construct_cu_obj(const cuSZ3& n_)
 {
-	cuVEC::construct_cu_obj(n_);
+	cuVEC<VType>::construct_cu_obj(n_);
 
 	alloc_initialize_data();
 
-	if (get_gpu_value(n).dim()) {
+	if (get_gpu_value(cuVEC<VType>::n).dim()) {
 
-		cudaError_t error = set_ngbrFlags_size(get_gpu_value(n).dim());
-		if (error != cudaSuccess) set_n(cuSZ3());
-		else gpu_set_managed(ngbrFlags, NF_NOTEMPTY, get_gpu_value(n).dim());
+		cudaError_t error = set_ngbrFlags_size(get_gpu_value(cuVEC<VType>::n).dim());
+		if (error != cudaSuccess) cuVEC<VType>::set_n(cuSZ3());
+		else gpu_set_managed(ngbrFlags, NF_NOTEMPTY, get_gpu_value(cuVEC<VType>::n).dim());
 	}
 }
 
@@ -252,17 +252,17 @@ __host__ void cuVEC_VC<VType>::construct_cu_obj(const cuSZ3& n_)
 template <typename VType>
 __host__ void cuVEC_VC<VType>::construct_cu_obj(const cuReal3& h_, const cuRect& rect_)
 {
-	cuVEC::construct_cu_obj(h_, rect_);
+	cuVEC<VType>::construct_cu_obj(h_, rect_);
 
 	alloc_initialize_data();
 
-	if (get_gpu_value(n).dim()) {
+	if (get_gpu_value(cuVEC<VType>::n).dim()) {
 
-		cudaError_t error = set_ngbrFlags_size(get_gpu_value(n).dim());
-		if (error != cudaSuccess) set_n(cuSZ3());
+		cudaError_t error = set_ngbrFlags_size(get_gpu_value(cuVEC<VType>::n).dim());
+		if (error != cudaSuccess) cuVEC<VType>::set_n(cuSZ3());
 		else {
 
-			gpu_set_managed(ngbrFlags, NF_NOTEMPTY, get_gpu_value(n).dim());
+			gpu_set_managed(ngbrFlags, NF_NOTEMPTY, get_gpu_value(cuVEC<VType>::n).dim());
 			set_ngbrFlags();
 		}
 	}
@@ -272,17 +272,17 @@ __host__ void cuVEC_VC<VType>::construct_cu_obj(const cuReal3& h_, const cuRect&
 template <typename VType>
 __host__ void cuVEC_VC<VType>::construct_cu_obj(const cuReal3& h_, const cuRect& rect_, VType value)
 {
-	cuVEC::construct_cu_obj(h_, rect_, value);
+	cuVEC<VType>::construct_cu_obj(h_, rect_, value);
 
 	alloc_initialize_data();
 
-	if (get_gpu_value(n).dim()) {
+	if (get_gpu_value(cuVEC<VType>::n).dim()) {
 
-		cudaError_t error = set_ngbrFlags_size(get_gpu_value(n).dim());
-		if (error != cudaSuccess) set_n(cuSZ3());
+		cudaError_t error = set_ngbrFlags_size(get_gpu_value(cuVEC<VType>::n).dim());
+		if (error != cudaSuccess) cuVEC<VType>::set_n(cuSZ3());
 		else {
 
-			gpu_set_managed(ngbrFlags, NF_NOTEMPTY, get_gpu_value(n).dim());
+			gpu_set_managed(ngbrFlags, NF_NOTEMPTY, get_gpu_value(cuVEC<VType>::n).dim());
 			set_ngbrFlags();
 		}
 	}
@@ -292,7 +292,7 @@ __host__ void cuVEC_VC<VType>::construct_cu_obj(const cuReal3& h_, const cuRect&
 template <typename VType>
 __host__ void cuVEC_VC<VType>::construct_cu_obj(const cuVEC_VC<VType>& copyThis)
 {
-	cuVEC::construct_cu_obj();
+	cuVEC<VType>::construct_cu_obj();
 	
 	alloc_initialize_data();
 
@@ -304,32 +304,32 @@ template <typename VType>
 __host__ void cuVEC_VC<VType>::assign_cu_obj(const cuVEC_VC<VType>& copyThis)
 {
 	//copy n
-	gpu_to_gpu(n, copyThis.n);
+	gpu_to_gpu(cuVEC<VType>::n, copyThis.n);
 	//copy h
-	gpu_to_gpu(h, copyThis.h);
+	gpu_to_gpu(cuVEC<VType>::h, copyThis.h);
 	//copy rect
-	gpu_to_gpu(rect, copyThis.rect);
+	gpu_to_gpu(cuVEC<VType>::rect, copyThis.rect);
 
 	//allocate memory and copy array
-	cudaError_t error = allocate_quantity(get_gpu_value(n));
+	cudaError_t error = allocate_quantity(get_gpu_value(cuVEC<VType>::n));
 	if (error == cudaSuccess) {
 
-		gpu_to_gpu_managed(quantity, copyThis.quantity, get_gpu_value(n).dim());
+		gpu_to_gpu_managed(cuVEC<VType>::quantity, copyThis.quantity, get_gpu_value(cuVEC<VType>::n).dim());
 	}
 	else {
 
-		set_h(cuReal3());
-		set_rect(cuRect());
+		cuVEC<VType>::set_h(cuReal3());
+		cuVEC<VType>::set_rect(cuRect());
 	}
 
 	//transfer info might not be valid any more
-	transfer.clear_transfer_data();
+	cuVEC<VType>::transfer.clear_transfer_data();
 
 	//copy ngbrFlags_size
 	gpu_to_gpu(ngbrFlags_size, copyThis.ngbrFlags_size);
 
 	//allocate memory and copy ngbrFlags
-	error = set_ngbrFlags_size(get_gpu_value(n).dim());
+	error = set_ngbrFlags_size(get_gpu_value(cuVEC<VType>::n).dim());
 	if (error == cudaSuccess) {
 
 		gpu_to_gpu_managed(ngbrFlags, copyThis.ngbrFlags, get_ngbrFlags_size());
@@ -444,9 +444,9 @@ __host__ void cuVEC_VC<VType>::assign_cu_obj(const cuVEC_VC<VType>& copyThis)
 	}
 
 	//copy pbc settings
-	gpu_go_gpu(pbc_x, copyThis.pbc_x);
-	gpu_go_gpu(pbc_y, copyThis.pbc_y);
-	gpu_go_gpu(pbc_z, copyThis.pbc_z);
+	gpu_to_gpu(pbc_x, copyThis.pbc_x);
+	gpu_to_gpu(pbc_y, copyThis.pbc_y);
+	gpu_to_gpu(pbc_z, copyThis.pbc_z);
 }
 
 //destructor
@@ -465,7 +465,7 @@ __host__ void cuVEC_VC<VType>::destruct_cu_obj(void)
 	gpu_free_managed(dirichlet_pz);
 	gpu_free_managed(dirichlet_nz);
 
-	cuVEC::destruct_cu_obj();
+	cuVEC<VType>::destruct_cu_obj();
 }
 
 //--------------------------------------------COPY FROM VEC_VC
@@ -494,7 +494,7 @@ __host__ bool cuVEC_VC<VType>::set_from_cpuvec(cpuVEC_VC& vec_vc)
 
 	//-----------
 
-	cuVEC::set_from_cpuvec(vec_vc);
+	cuVEC<VType>::set_from_cpuvec(vec_vc);
 
 	//----------- VEC part now done, onto the VEC_VC part
 
@@ -681,13 +681,13 @@ __host__ bool cuVEC_VC<VType>::set_cpuvec(cpuVEC_VC& vec_vc)
 
 	//----------- copy to VEC part (n, h, rect, quantity)
 
-	cuVEC::set_cpuvec(vec_vc);
+	cuVEC<VType>::set_cpuvec(vec_vc);
 
 	//-----------
 
-	SZ3 cpu_n = get_gpu_value(n);
-	DBL3 cpu_h = get_gpu_value(h);
-	Rect cpu_rect = get_gpu_value(rect);
+	SZ3 cpu_n = get_gpu_value(cuVEC<VType>::n);
+	DBL3 cpu_h = get_gpu_value(cuVEC<VType>::h);
+	Rect cpu_rect = get_gpu_value(cuVEC<VType>::rect);
 
 	//-----------
 
@@ -804,7 +804,7 @@ template <typename cpuVEC_VC>
 __host__ bool cuVEC_VC<VType>::copy_from_cpuvec(cpuVEC_VC& vec_vc)
 {
 	//copy quantity
-	if (!cuVEC::copy_from_cpuvec(vec_vc)) return false;
+	if (!cuVEC<VType>::copy_from_cpuvec(vec_vc)) return false;
 
 	//copy shift debt
 	set_gpu_value(shift_debt, (cuReal3)vec_vc.shift_debt_ref());
@@ -846,7 +846,7 @@ template <typename cpuVEC_VC>
 __host__ bool cuVEC_VC<VType>::copy_to_cpuvec(cpuVEC_VC& vec_vc)
 {
 	//copy quantity
-	if (!cuVEC::copy_to_cpuvec(vec_vc)) return false;
+	if (!cuVEC<VType>::copy_to_cpuvec(vec_vc)) return false;
 
 	//copy shift debt
 	vec_vc.shift_debt_ref() = get_gpu_value(shift_debt);

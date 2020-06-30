@@ -23,6 +23,19 @@ inline size_t cudaMemGetTotal(void)
 
 //------------------------------------------------- GPU MEMORY MANAGEMENT using POINTERS STORED IN CPU MEMORY
 
+//free gpu memory pointed to by cu_pointer, where cu_pointer itself is stored in cpu memory
+template <typename Type>
+cudaError_t gpu_free(Type*& cu_pointer)
+{
+	cudaError_t error = cudaSuccess;
+
+	//free if memory allocated, then nullptr
+	if (cu_pointer) error = cudaFree(cu_pointer);
+	cu_pointer = nullptr;
+
+	return error;
+}
+
 //allocate gpu memory (size elements) at location pointed to by cu_pointer, where cu_pointer itself is stored in cpu memory
 template <typename Type>
 cudaError_t gpu_alloc(Type*& cu_pointer, size_t size = 1)
@@ -39,19 +52,6 @@ cudaError_t gpu_alloc(Type*& cu_pointer, size_t size = 1)
 	//allocate new memory - cudaMalloc always needs a cpu memory address for the first parameter
 	error = cudaMalloc((void**)&cu_pointer, sizeof(Type) * size);
 	if (error != cudaSuccess) cu_pointer = nullptr;
-
-	return error;
-}
-
-//free gpu memory pointed to by cu_pointer, where cu_pointer itself is stored in cpu memory
-template <typename Type>
-cudaError_t gpu_free(Type*& cu_pointer)
-{
-	cudaError_t error = cudaSuccess;
-
-	//free if memory allocated, then nullptr
-	if (cu_pointer) error = cudaFree(cu_pointer);
-	cu_pointer = nullptr;
 
 	return error;
 }
@@ -284,6 +284,29 @@ bool isnullgpuptr(Type*& cu_pointer)
 
 //------------------------------------------------- GPU MEMORY MANAGEMENT for COMPLEX OBJECTS
 
+//free gpu memory pointed to by cu_pointer, where cu_pointer itself is stored in gpu memory (is managed)
+template <typename Type>
+cudaError_t gpu_free_managed(Type*& cu_pointer)
+{
+	cudaError_t error = cudaSuccess;
+
+	//only attempt to free if memory allocated
+	if (isnullgpuptr(cu_pointer)) return error;
+
+	//1. get handle to managed object
+	Type* cu_pointer_handle = nullptr;
+
+	error = cudaMemcpy(&cu_pointer_handle, &cu_pointer, sizeof(Type*), cudaMemcpyDeviceToHost);
+	if (error != cudaSuccess) return error;
+
+	//2. free memory using handle
+	error = gpu_free(cu_pointer_handle);
+	if (error != cudaSuccess) return error;
+
+	//3. marked managed pointer as nullptr
+	return nullgpuptr(cu_pointer);
+}
+
 //allocate gpu memory (size elements) at location pointed to by cu_pointer, where cu_pointer itself is stored in gpu memory (is managed)
 template <typename Type>
 cudaError_t gpu_alloc_managed(Type*& cu_pointer, size_t size = 1)
@@ -307,29 +330,6 @@ cudaError_t gpu_alloc_managed(Type*& cu_pointer, size_t size = 1)
 	if (error != cudaSuccess) nullgpuptr(cu_pointer);
 
 	return error;
-}
-
-//free gpu memory pointed to by cu_pointer, where cu_pointer itself is stored in gpu memory (is managed)
-template <typename Type>
-cudaError_t gpu_free_managed(Type*& cu_pointer)
-{
-	cudaError_t error = cudaSuccess;
-
-	//only attempt to free if memory allocated
-	if (isnullgpuptr(cu_pointer)) return error;
-
-	//1. get handle to managed object
-	Type* cu_pointer_handle = nullptr;
-
-	error = cudaMemcpy(&cu_pointer_handle, &cu_pointer, sizeof(Type*), cudaMemcpyDeviceToHost);
-	if (error != cudaSuccess) return error;
-
-	//2. free memory using handle
-	error = gpu_free(cu_pointer_handle);
-	if (error != cudaSuccess) return error;
-
-	//3. marked managed pointer as nullptr
-	return nullgpuptr(cu_pointer);
 }
 
 //swap pointers where first parameter is for a managed array and the second is not. After this the first pointer will point to location of second array and vice-versa.

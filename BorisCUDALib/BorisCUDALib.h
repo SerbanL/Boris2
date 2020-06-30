@@ -5,13 +5,11 @@
 
 //Can include BorisCUDALib.h in both C++ code and CUDA C code files
 
-//base headers (do not include other BorisLib headers)
 #include "launchers.h"
 #include "cuFuncs_Aux.h"
 #include "CUDAError.h"
 #include "alloc_cpy.h"
 
-//first order - include at least one base header
 #include "cuObject.h"
 #include "cu_prng.h"
 #include "cuTypes.h"
@@ -23,7 +21,6 @@
 #include "cuArray_sizing.h"
 #include "cuArray_transfer.h"
 
-//second order
 
 #include "TEquationCUDA.h"
 #include "cuObj_Math_Special.h"
@@ -36,6 +33,7 @@
 #include "cuVEC_oper.h"
 #include "cuVEC_avg.h"
 #include "cuVEC_MeshTransfer.h"
+
 #include "cuVEC_VC.h"
 #include "cuVEC_VC_mng.h"
 #include "cuVEC_VC_aux.h"
@@ -49,4 +47,3 @@
 #include "cuVEC_VC_div.h"
 #include "cuVEC_VC_curl.h"
 #include "cuVEC_VC_ngbrsum.h"
-

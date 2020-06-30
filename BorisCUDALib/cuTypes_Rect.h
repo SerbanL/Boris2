@@ -3,11 +3,12 @@
 #include <cuda_runtime.h>
 
 #include "cuFuncs_Aux.h"
+#include "cuFuncs_Math.h"
 #include "cuTypes_VAL.h"
 
 #include "alloc_cpy.h"
 
-#include "Types_Rect.h"
+#include "../BorisLib/Types_Rect.h"
 
 ////////////////////////////////////////////////////////////////////////////////////////////////// cuBox
 //

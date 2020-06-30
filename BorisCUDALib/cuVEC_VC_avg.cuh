@@ -36,16 +36,16 @@ template cuDBL3 cuVEC_VC<cuDBL3>::average_nonempty(size_t arr_size, cuBox box);
 template <typename VType>
 __host__ VType cuVEC_VC<VType>::average_nonempty(size_t arr_size, cuBox box)
 {
-	zero_aux_values << <1, CUDATHREADS >> > (aux_value, aux_value2, aux_value3, aux_real, aux_real2, aux_integer);
+	zero_aux_values <<<1, CUDATHREADS >>> (cuVEC<VType>::aux_value, cuVEC<VType>::aux_value2, cuVEC<VType>::aux_value3, cuVEC<VType>::aux_real, cuVEC<VType>::aux_real2, cuVEC<VType>::aux_integer);
 
 	if (box.IsNull()) {
 
-		cuvec_vc_average_nonempty_kernel << < (arr_size + CUDATHREADS) / CUDATHREADS, CUDATHREADS >> > (n, ngbrFlags, quantity, aux_value, aux_integer);
+		cuvec_vc_average_nonempty_kernel <<< (arr_size + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (cuVEC<VType>::n, ngbrFlags, cuVEC<VType>::quantity, cuVEC<VType>::aux_value, cuVEC<VType>::aux_integer);
 	}
-	else cuvec_vc_average_nonempty_kernel << < (arr_size + CUDATHREADS) / CUDATHREADS, CUDATHREADS >> > (n, box, ngbrFlags, quantity, aux_value, aux_integer);
+	else cuvec_vc_average_nonempty_kernel <<< (arr_size + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (cuVEC<VType>::n, box, ngbrFlags, cuVEC<VType>::quantity, cuVEC<VType>::aux_value, cuVEC<VType>::aux_integer);
 
-	VType av = get_gpu_value(aux_value);
-	size_t points = get_gpu_value(aux_integer);
+	VType av = get_gpu_value(cuVEC<VType>::aux_value);
+	size_t points = get_gpu_value(cuVEC<VType>::aux_integer);
 
 	if (points) return av / points;
 	else return VType();
@@ -76,12 +76,12 @@ __host__ VType cuVEC_VC<VType>::average_nonempty(size_t arr_size, cuRect rectang
 	//if empty rectangle then average ove the entire mesh
 	if (rectangle.IsNull()) return average_nonempty(arr_size, cuBox());
 
-	zero_aux_values << <1, CUDATHREADS >> > (aux_value, aux_value2, aux_value3, aux_real, aux_real2, aux_integer);
+	zero_aux_values <<<1, CUDATHREADS >>> (cuVEC<VType>::aux_value, cuVEC<VType>::aux_value2, cuVEC<VType>::aux_value3, cuVEC<VType>::aux_real, cuVEC<VType>::aux_real2, cuVEC<VType>::aux_integer);
 
-	average_nonempty_kernel << < (arr_size + CUDATHREADS) / CUDATHREADS, CUDATHREADS >> > (n, rectangle, *this, aux_value, aux_integer);
+	average_nonempty_kernel << < (arr_size + CUDATHREADS) / CUDATHREADS, CUDATHREADS >> > (cuVEC<VType>::n, rectangle, *this, cuVEC<VType>::aux_value, cuVEC<VType>::aux_integer);
 
-	VType av = get_gpu_value(aux_value);
-	size_t points = get_gpu_value(aux_integer);
+	VType av = get_gpu_value(cuVEC<VType>::aux_value);
+	size_t points = get_gpu_value(cuVEC<VType>::aux_integer);
 
 	if (points) return av / points;
 	else return VType();

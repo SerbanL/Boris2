@@ -2,8 +2,6 @@
 
 #include "alloc_cpy.h"
 
-#include <type_traits>
-
 //cu_arr is used to manage an array in gpu memory. cu_arr can reside on the cpu, or it can be cu_obj managed, in which case it resides on the gpu and can be passed into a cuda kernel where it can be used almost like a std::vector
 
 //NOTE : currently only using cu_arr NOT cu_obj managed (this latter part of the code not done as I never had to use it -> could be useful/make some code neater but in practice you can get by without)

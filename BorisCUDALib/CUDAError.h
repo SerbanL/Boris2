@@ -2,6 +2,7 @@
 
 #include <string>
 #include <sstream>
+#include <cuda_runtime.h>
 
 //Example use:
 //

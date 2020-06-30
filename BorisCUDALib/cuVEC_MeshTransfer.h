@@ -30,7 +30,7 @@ private:
 	
 	//auxiliary : does the actual transfer info copy after in and out cuVEC have been set
 	template <typename cpuVEC>
-	__host__ bool copy_transfer_info(cpuVEC& cpuVEC);
+	__host__ bool copy_transfer_info(cpuVEC& vec);
 
 	//set and allocate memory for transfer_in_info array
 	__host__ bool set_transfer_in_info_size(size_t size);
@@ -79,7 +79,7 @@ public:
 	//SINGLE INPUT, SINGLE OUTPUT
 
 	template <typename cpuVEC>
-	__host__ bool copy_transfer_info(cu_arr<cuVEC<VType>>& mesh_in_arr, cu_arr<cuVEC<VType>>& mesh_out_arr, cpuVEC& cpuVEC);
+	__host__ bool copy_transfer_info(cu_arr<cuVEC<VType>>& mesh_in_arr, cu_arr<cuVEC<VType>>& mesh_out_arr, cpuVEC& vec);
 
 	//MULTIPLE INPUTS, SINGLE OUTPUT
 
@@ -87,13 +87,13 @@ public:
 	__host__ bool copy_transfer_info_averagedinputs(
 		cu_arr<cuVEC<VType>>& mesh_in_arr1, cu_arr<cuVEC<VType>>& mesh_in_arr2, 
 		cu_arr<cuVEC<VType>>& mesh_out_arr, 
-		cpuVEC& cpuVEC);
+		cpuVEC& vec);
 
 	template <typename cpuVEC>
 	__host__ bool copy_transfer_info_multipliedinputs(
 		cu_arr<cuVEC<VType>>& mesh_in_arr1, cu_arr<cuVEC<cuBReal>>& mesh_in_arr2_real,
 		cu_arr<cuVEC<VType>>& mesh_out_arr,
-		cpuVEC& cpuVEC);
+		cpuVEC& vec);
 
 	//MULTIPLE INPUT, MULTIPLE OUTPUT
 
@@ -101,7 +101,7 @@ public:
 	__host__ bool copy_transfer_info_averagedinputs_duplicatedoutputs(
 		cu_arr<cuVEC<VType>>& mesh_in_arr1, cu_arr<cuVEC<VType>>& mesh_in_arr2, 
 		cu_arr<cuVEC<VType>>& mesh_out_arr1, cu_arr<cuVEC<VType>>& mesh_out_arr2, 
-		cpuVEC& cpuVEC);
+		cpuVEC& vec);
 
 	//--------------------------------------------MESH TRANSFER
 
@@ -207,27 +207,27 @@ __host__ bool cuTransfer<VType>::set_transfer_out_info_size(size_t size)
 //auxiliary : does the actual transfer info copy after in and out cuVEC have been set
 template <typename VType>
 template <typename cpuVEC>
-__host__ bool cuTransfer<VType>::copy_transfer_info(cpuVEC& cpuVEC)
+__host__ bool cuTransfer<VType>::copy_transfer_info(cpuVEC& vec)
 {
 	//copy transfer_in_info_cpu to transfer_in_info : convert it first
 	std::vector<std::pair<cuINT3, cuBReal>> transfer_in_info_cpu;
 
 	//set size
-	if (!malloc_vector(transfer_in_info_cpu, cpuVEC.size_transfer_in())) return false;
+	if (!malloc_vector(transfer_in_info_cpu, vec.size_transfer_in())) return false;
 
-	std::vector<std::pair<INT3, double>> cpuVEC_transfer_in_info = cpuVEC.get_flattened_transfer_in_info();
-	if (cpuVEC_transfer_in_info.size() != cpuVEC.size_transfer_in()) return false;
+	std::vector<std::pair<INT3, double>> cpuVEC_transfer_in_info = vec.get_flattened_transfer_in_info();
+	if (cpuVEC_transfer_in_info.size() != vec.size_transfer_in()) return false;
 
 	//now copy and convert
 #pragma omp parallel for
-	for (int idx = 0; idx < cpuVEC.size_transfer_in(); idx++) {
+	for (int idx = 0; idx < vec.size_transfer_in(); idx++) {
 
 		transfer_in_info_cpu[idx].first = cpuVEC_transfer_in_info[idx].first;
 		transfer_in_info_cpu[idx].second = cpuVEC_transfer_in_info[idx].second;
 	}
 
 	//allocate gpu memory for transfer_out_info
-	if (!set_transfer_in_info_size(cpuVEC.size_transfer_in())) return false;
+	if (!set_transfer_in_info_size(vec.size_transfer_in())) return false;
 
 	//copy to transfer_in_info
 	cpu_to_gpu_managed(transfer_in_info, transfer_in_info_cpu.data(), transfer_in_info_cpu.size());
@@ -238,21 +238,21 @@ __host__ bool cuTransfer<VType>::copy_transfer_info(cpuVEC& cpuVEC)
 	std::vector<std::pair<cuINT3, cuBReal>> transfer_out_info_cpu;
 
 	//set size
-	if (!malloc_vector(transfer_out_info_cpu, cpuVEC.size_transfer_out())) return false;
+	if (!malloc_vector(transfer_out_info_cpu, vec.size_transfer_out())) return false;
 
-	std::vector<std::pair<INT3, double>> cpuVEC_transfer_out_info = cpuVEC.get_flattened_transfer_out_info();
-	if (cpuVEC_transfer_out_info.size() != cpuVEC.size_transfer_out()) return false;
+	std::vector<std::pair<INT3, double>> cpuVEC_transfer_out_info = vec.get_flattened_transfer_out_info();
+	if (cpuVEC_transfer_out_info.size() != vec.size_transfer_out()) return false;
 
 	//now copy and convert
 #pragma omp parallel for
-	for (int idx = 0; idx < cpuVEC.size_transfer_out(); idx++) {
+	for (int idx = 0; idx < vec.size_transfer_out(); idx++) {
 
 		transfer_out_info_cpu[idx].first = cpuVEC_transfer_out_info[idx].first;
 		transfer_out_info_cpu[idx].second = cpuVEC_transfer_out_info[idx].second;
 	}
 
 	//allocate gpu memory for transfer_out_info
-	if (!set_transfer_out_info_size(cpuVEC.size_transfer_out())) return false;
+	if (!set_transfer_out_info_size(vec.size_transfer_out())) return false;
 
 	//copy to transfer_in_info
 	cpu_to_gpu_managed(transfer_out_info, transfer_out_info_cpu.data(), transfer_out_info_cpu.size());
@@ -266,7 +266,7 @@ __host__ bool cuTransfer<VType>::copy_transfer_info(cpuVEC& cpuVEC)
 //copy precalculated transfer info from cpu memory
 template <typename VType>
 template <typename cpuVEC>
-__host__ bool cuTransfer<VType>::copy_transfer_info(cu_arr<cuVEC<VType>>& mesh_in_arr, cu_arr<cuVEC<VType>>& mesh_out_arr, cpuVEC& cpuVEC)
+__host__ bool cuTransfer<VType>::copy_transfer_info(cu_arr<cuVEC<VType>>& mesh_in_arr, cu_arr<cuVEC<VType>>& mesh_out_arr, cpuVEC& vec)
 {
 	clear_transfer_data();
 
@@ -292,7 +292,7 @@ __host__ bool cuTransfer<VType>::copy_transfer_info(cu_arr<cuVEC<VType>>& mesh_i
 
 	//------
 
-	return copy_transfer_info(cpuVEC);
+	return copy_transfer_info(vec);
 }
 
 //MULTIPLE INPUTS, SINGLE OUTPUT
@@ -303,7 +303,7 @@ template <typename cpuVEC>
 __host__ bool cuTransfer<VType>::copy_transfer_info_averagedinputs(
 	cu_arr<cuVEC<VType>>& mesh_in_arr1, cu_arr<cuVEC<VType>>& mesh_in_arr2, 
 	cu_arr<cuVEC<VType>>& mesh_out_arr,
-	cpuVEC& cpuVEC)
+	cpuVEC& vec)
 {
 	clear_transfer_data();
 
@@ -335,7 +335,7 @@ __host__ bool cuTransfer<VType>::copy_transfer_info_averagedinputs(
 
 	//------
 
-	return copy_transfer_info(cpuVEC);
+	return copy_transfer_info(vec);
 }
 
 //copy precalculated transfer info from cpu memory
@@ -344,7 +344,7 @@ template <typename cpuVEC>
 __host__ bool cuTransfer<VType>::copy_transfer_info_multipliedinputs(
 	cu_arr<cuVEC<VType>>& mesh_in_arr1, cu_arr<cuVEC<cuBReal>>& mesh_in_arr2_real,
 	cu_arr<cuVEC<VType>>& mesh_out_arr,
-	cpuVEC& cpuVEC)
+	cpuVEC& vec)
 {
 	clear_transfer_data();
 
@@ -376,7 +376,7 @@ __host__ bool cuTransfer<VType>::copy_transfer_info_multipliedinputs(
 
 	//------
 
-	return copy_transfer_info(cpuVEC);
+	return copy_transfer_info(vec);
 }
 
 //MULTIPLE INPUTS, MULTIPLE OUTPUTS
@@ -387,7 +387,7 @@ template <typename cpuVEC>
 __host__ bool cuTransfer<VType>::copy_transfer_info_averagedinputs_duplicatedoutputs(
 	cu_arr<cuVEC<VType>>& mesh_in_arr1, cu_arr<cuVEC<VType>>& mesh_in_arr2, 
 	cu_arr<cuVEC<VType>>& mesh_out_arr1, cu_arr<cuVEC<VType>>& mesh_out_arr2, 
-	cpuVEC& cpuVEC)
+	cpuVEC& vec)
 {
 	clear_transfer_data();
 
@@ -424,5 +424,5 @@ __host__ bool cuTransfer<VType>::copy_transfer_info_averagedinputs_duplicatedout
 
 	//------
 
-	return copy_transfer_info(cpuVEC);
+	return copy_transfer_info(vec);
 }

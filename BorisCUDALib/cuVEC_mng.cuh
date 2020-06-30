@@ -4,6 +4,8 @@
 
 #include "cuVEC.h"
 #include "launchers.h"
+#include "cuVEC_mng.h"
+#include "cuVEC_MeshTransfer.h"
 
 //------------------------------------------------------------------- MAPMESH_NEWDIMS
 

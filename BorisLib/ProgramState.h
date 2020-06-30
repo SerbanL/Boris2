@@ -35,7 +35,7 @@ class ProgramState {};
 //a simple type is defined as anything that is std::stringstream streamable in and out, is not a vector-like type and is not a pointer type.
 //e.g. all fundamental types, strings and custom non-vector types with >> and << defined for std::stringstream
 template <typename Type>
-struct is_simple_type : std::bool_constant<
+struct is_simple_type : std::integral_constant<bool,
 	is_streamable_in<std::stringstream, Type>::value &&
 	is_streamable_out<std::stringstream, Type>::value &&
 	!is_vector<Type>::value &&
@@ -43,7 +43,7 @@ struct is_simple_type : std::bool_constant<
 
 //a complex type is any class that inherits from ProgramState
 template <typename Type>
-struct is_complex_type : std::bool_constant< is_template_base_of<::ProgramState, Type>::value > {};
+struct is_complex_type : std::integral_constant<bool, is_template_base_of<::ProgramState, Type>::value > {};
 
 //---------------------------------------------------
 
@@ -212,7 +212,7 @@ private: //--------------------------------------------------- METHODS
 	template <typename PointerType, typename Tuple, int... I>
 	bool parse_implementations_save(std::ofstream &bdout, PointerType& pBase, Tuple& tup, std::integer_sequence<int, I...> is)
 	{
-		return parse_implementations_save(bdout, pBase, tup, is, std::bool_constant< (bool)std::tuple_size<Tuple>::value >());
+		return parse_implementations_save(bdout, pBase, tup, is, std::integral_constant<bool, (bool)std::tuple_size<Tuple>::value >());
 	}
 
 	template <typename PointerType, typename Tuple, int... I>
@@ -287,7 +287,7 @@ private: //--------------------------------------------------- METHODS
 	template <typename PointerType, typename Tuple, int... I>
 	bool parse_implementations_load(std::ifstream &bdin, PointerType& pointer, std::string implementation_name, Tuple& tup, std::integer_sequence<int, I...> is)
 	{
-		return parse_implementations_load(bdin, pointer, implementation_name, tup, is, std::bool_constant< (bool)std::tuple_size<Tuple>::value >());
+		return parse_implementations_load(bdin, pointer, implementation_name, tup, is, std::integral_constant<bool, (bool)std::tuple_size<Tuple>::value >());
 	}
 
 	template <typename PointerType, typename Tuple, int... I>
@@ -382,7 +382,7 @@ private: //--------------------------------------------------- METHODS
 		//(e.g. you have a std::vector containing pointers to abstract base classes with particular implementations.
 		//It could be there's nothing to save in some or all of the implementations, but you still want this std::vector structure to be remade, so all implementations need to inherit from ProgramState.
 		//Those that have nothing to save simply inherit as : public ProgramState< std::tuple<>, std::tuple<> >
-		parse_save_tuple(bdout, tup, is, std::bool_constant< (bool)std::tuple_size<Tuple>::value >());
+		parse_save_tuple(bdout, tup, is, std::integral_constant<bool, (bool)std::tuple_size<Tuple>::value >());
 	}
 
 	template <typename Tuple, int... I>
@@ -570,7 +570,7 @@ private: //--------------------------------------------------- METHODS
 	bool parse_load_tuple_start(std::ifstream& bdin, const std::string& var_name, Tuple& tup, std::integer_sequence<int, I...> is)
 	{
 		//see comments on parse_save_tuple for why this check is needed
-		return parse_load_tuple(bdin, var_name, tup, is, std::bool_constant< (bool)std::tuple_size<Tuple>::value >());
+		return parse_load_tuple(bdin, var_name, tup, is, std::integral_constant<bool, (bool)std::tuple_size<Tuple>::value >());
 	}
 
 	template <typename Tuple, int... I>

@@ -1,14 +1,23 @@
-src := Boris/*.cpp
+src_cpu := Boris/*.cpp
+src_gpu := Boris/*.cu
  
-obj := $(patsubst %.cpp,%.o,$(wildcard $(src)))
+cpu := $(patsubst %.cpp,%.o,$(wildcard $(src_cpu)))
+gpu := $(patsubst %.cu,%.co,$(wildcard $(src_gpu)))
  
-all: 
-	g++ Boris/*.o -fopenmp -lsfml-graphics -lsfml-window -lsfml-system -lfftw3 -lX11 -o BorisLin
+.PHONY: clean
+clean: 
+	rm -f $(cpu) $(gpu) BorisLin
  
-compile: $(obj)
+install: 
+	g++ Boris/*.o Boris/*.co -fopenmp -lsfml-graphics -lsfml-window -lsfml-system -lfftw3 -lX11 -lcudart -lcufft -o BorisLin
+	rm -f $(cpu) $(gpu)
+ 
+compile: $(cpu) $(gpu)
+
+cuda: $(gpu)
  
 %.o: %.cpp
 	g++ -c -Ofast -std=c++17 -IBorisLib -IBorisCUDALib -fopenmp $< -o $@
- 
-clean: 
-	rm -f $(obj) BorisLin
+
+%.co: %.cu
+	nvcc -c -std=c++14 -IBorisLib -IBorisCUDALib -w -arch=sm_50 $< -o $@

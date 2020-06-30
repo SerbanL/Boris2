@@ -61,17 +61,17 @@ __host__ cudaError_t cuVEC_VC<VType>::resize_ngbrFlags(cuSZ3 new_n)
 	}
 	else {
 
-		if (new_n != get_gpu_value(n)) {
+		if (new_n != get_gpu_value(cuVEC<VType>::n)) {
 
 			//VEC is being resized from non-zero size : map current shape to new size
 
 			//save old flags
 			int* old_ngbrFlags = nullptr;
 
-			error = gpu_alloc(old_ngbrFlags, get_gpu_value(n).dim());
+			error = gpu_alloc(old_ngbrFlags, get_gpu_value(cuVEC<VType>::n).dim());
 			if (error != cudaSuccess) return error;
 
-			error = gpu_to_gpu_managed2nd(old_ngbrFlags, ngbrFlags, get_gpu_value(n).dim());
+			error = gpu_to_gpu_managed2nd(old_ngbrFlags, ngbrFlags, get_gpu_value(cuVEC<VType>::n).dim());
 			if (error != cudaSuccess) {
 
 				gpu_free(old_ngbrFlags);
@@ -88,7 +88,7 @@ __host__ cudaError_t cuVEC_VC<VType>::resize_ngbrFlags(cuSZ3 new_n)
 			}
 
 			//now map shape from ngbrFlags_swapspace to ngbrFlags
-			resize_ngbrFlags_newsize_kernel <<< (new_n.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (new_n, get_gpu_value(n), ngbrFlags, old_ngbrFlags);
+			resize_ngbrFlags_newsize_kernel <<< (new_n.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (new_n, get_gpu_value(cuVEC<VType>::n), ngbrFlags, old_ngbrFlags);
 
 			//free temporary
 			gpu_free(old_ngbrFlags);
@@ -273,7 +273,7 @@ template void cuVEC_VC<cuDBL33>::set_ngbrFlags(void);
 template <typename VType>
 __host__ void cuVEC_VC<VType>::set_ngbrFlags(void)
 {
-	if (get_gpu_value(rect).IsNull() || get_gpu_value(h) == cuReal3()) return;
+	if (get_gpu_value(cuVEC<VType>::rect).IsNull() || get_gpu_value(cuVEC<VType>::h) == cuReal3()) return;
 
 	//clear any shift debt as mesh has been resized so not valid anymore
 	set_gpu_value(shift_debt, cuReal3());
@@ -283,7 +283,7 @@ __host__ void cuVEC_VC<VType>::set_ngbrFlags(void)
 
 	//1. Count all the neighbors
 	set_gpu_value(nonempty_cells, (int)0);
-	set_ngbrFlags_kernel <<< (get_ngbrFlags_size() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (n, ngbrFlags, quantity, nonempty_cells);
+	set_ngbrFlags_kernel <<< (get_ngbrFlags_size() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (cuVEC<VType>::n, ngbrFlags, cuVEC<VType>::quantity, nonempty_cells);
 
 	//2. set Robin flags depending on set conditions
 	set_robin_flags();
@@ -399,10 +399,10 @@ template void cuVEC_VC<cuDBL33>::set_ngbrFlags(const cuSZ3& linked_n, const cuRe
 template <typename VType>
 __host__ void cuVEC_VC<VType>::set_ngbrFlags(const cuSZ3& linked_n, const cuReal3& linked_h, const cuRect& linked_rect, int*& linked_ngbrFlags)
 {
-	if (get_gpu_value(rect).IsNull() || get_gpu_value(h) == cuReal3()) return;
+	if (get_gpu_value(cuVEC<VType>::rect).IsNull() || get_gpu_value(cuVEC<VType>::h) == cuReal3()) return;
 
 	//copy shape from linked vec (linked_ngbrFlags)
-	set_ngbrFlags_copylinkedshape_kernel<VType> <<< (get_ngbrFlags_size() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (n, h, rect, ngbrFlags, linked_n, linked_h, linked_rect, linked_ngbrFlags);
+	set_ngbrFlags_copylinkedshape_kernel<VType> <<< (get_ngbrFlags_size() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (cuVEC<VType>::n, cuVEC<VType>::h, cuVEC<VType>::rect, ngbrFlags, linked_n, linked_h, linked_rect, linked_ngbrFlags);
 
 	//now continue with set_ngbrFlags as normal
 	set_ngbrFlags();
@@ -473,9 +473,9 @@ template bool cuVEC_VC<cuDBL33>::set_dirichlet_conditions(cuRect surface_rect, c
 template <typename VType>
 __host__ bool cuVEC_VC<VType>::set_dirichlet_conditions(cuRect surface_rect, VType value)
 {
-	cuReal3 n_ = get_gpu_value(n);
-	cuReal3 h_ = get_gpu_value(h);
-	cuRect rect_ = get_gpu_value(rect);
+	cuReal3 n_ = get_gpu_value(cuVEC<VType>::n);
+	cuReal3 h_ = get_gpu_value(cuVEC<VType>::h);
+	cuRect rect_ = get_gpu_value(cuVEC<VType>::rect);
 
 	if (!rect_.intersects(surface_rect)) return true;
 
@@ -497,9 +497,9 @@ __host__ bool cuVEC_VC<VType>::set_dirichlet_conditions(cuRect surface_rect, VTy
 			}
 
 			intersection.e.x += h_.x;
-			cuBox flags_box = cuBox(box_from_rect_max_cpu(intersection).s, box_from_rect_max_cpu(intersection).e);
+			cuBox flags_box = cuBox(cuVEC<VType>::box_from_rect_max_cpu(intersection).s, cuVEC<VType>::box_from_rect_max_cpu(intersection).e);
 			set_dirichlet_conditions_kernel <<< (n_.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> 
-				(n, ngbrFlags, ngbrFlags2, dirichlet_px, dirichlet_nx, dirichlet_py, dirichlet_ny, dirichlet_pz, dirichlet_nz, NF2_DIRICHLETPX, flags_box, value);
+				(cuVEC<VType>::n, ngbrFlags, ngbrFlags2, dirichlet_px, dirichlet_nx, dirichlet_py, dirichlet_ny, dirichlet_pz, dirichlet_nz, NF2_DIRICHLETPX, flags_box, value);
 		}
 		//on upper x side
 		else if (cuIsZ(rect_.e.x - intersection.s.x)) {
@@ -513,9 +513,9 @@ __host__ bool cuVEC_VC<VType>::set_dirichlet_conditions(cuRect surface_rect, VTy
 			}
 
 			intersection.s.x -= h_.x;
-			cuBox flags_box = cuBox(box_from_rect_max_cpu(intersection).s, box_from_rect_max_cpu(intersection).e);
+			cuBox flags_box = cuBox(cuVEC<VType>::box_from_rect_max_cpu(intersection).s, cuVEC<VType>::box_from_rect_max_cpu(intersection).e);
 			set_dirichlet_conditions_kernel <<< (n_.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>>
-				(n, ngbrFlags, ngbrFlags2, dirichlet_px, dirichlet_nx, dirichlet_py, dirichlet_ny, dirichlet_pz, dirichlet_nz, NF2_DIRICHLETNX, flags_box, value);
+				(cuVEC<VType>::n, ngbrFlags, ngbrFlags2, dirichlet_px, dirichlet_nx, dirichlet_py, dirichlet_ny, dirichlet_pz, dirichlet_nz, NF2_DIRICHLETNX, flags_box, value);
 		}
 	}
 	//x-z plane
@@ -533,9 +533,9 @@ __host__ bool cuVEC_VC<VType>::set_dirichlet_conditions(cuRect surface_rect, VTy
 			}
 			
 			intersection.e.y += h_.y;
-			cuBox flags_box = cuBox(box_from_rect_max_cpu(intersection).s, box_from_rect_max_cpu(intersection).e);
+			cuBox flags_box = cuBox(cuVEC<VType>::box_from_rect_max_cpu(intersection).s, cuVEC<VType>::box_from_rect_max_cpu(intersection).e);
 			set_dirichlet_conditions_kernel <<< (n_.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> 
-				(n, ngbrFlags, ngbrFlags2, dirichlet_px, dirichlet_nx, dirichlet_py, dirichlet_ny, dirichlet_pz, dirichlet_nz, NF2_DIRICHLETPY, flags_box, value);
+				(cuVEC<VType>::n, ngbrFlags, ngbrFlags2, dirichlet_px, dirichlet_nx, dirichlet_py, dirichlet_ny, dirichlet_pz, dirichlet_nz, NF2_DIRICHLETPY, flags_box, value);
 		}
 		//on upper y side
 		else if (cuIsZ(rect_.e.y - intersection.s.y)) {
@@ -549,9 +549,9 @@ __host__ bool cuVEC_VC<VType>::set_dirichlet_conditions(cuRect surface_rect, VTy
 			}
 			
 			intersection.s.y -= h_.y;
-			cuBox flags_box = cuBox(box_from_rect_max_cpu(intersection).s, box_from_rect_max_cpu(intersection).e);
+			cuBox flags_box = cuBox(cuVEC<VType>::box_from_rect_max_cpu(intersection).s, cuVEC<VType>::box_from_rect_max_cpu(intersection).e);
 			set_dirichlet_conditions_kernel <<< (n_.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> 
-				(n, ngbrFlags, ngbrFlags2, dirichlet_px, dirichlet_nx, dirichlet_py, dirichlet_ny, dirichlet_pz, dirichlet_nz, NF2_DIRICHLETNY, flags_box, value);
+				(cuVEC<VType>::n, ngbrFlags, ngbrFlags2, dirichlet_px, dirichlet_nx, dirichlet_py, dirichlet_ny, dirichlet_pz, dirichlet_nz, NF2_DIRICHLETNY, flags_box, value);
 		}
 	}
 	//x-y plane
@@ -569,9 +569,9 @@ __host__ bool cuVEC_VC<VType>::set_dirichlet_conditions(cuRect surface_rect, VTy
 			}
 			
 			intersection.e.z += h_.z;
-			cuBox flags_box = cuBox(box_from_rect_max_cpu(intersection).s, box_from_rect_max_cpu(intersection).e);
+			cuBox flags_box = cuBox(cuVEC<VType>::box_from_rect_max_cpu(intersection).s, cuVEC<VType>::box_from_rect_max_cpu(intersection).e);
 			set_dirichlet_conditions_kernel <<< (n_.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> 
-				(n, ngbrFlags, ngbrFlags2, dirichlet_px, dirichlet_nx, dirichlet_py, dirichlet_ny, dirichlet_pz, dirichlet_nz, NF2_DIRICHLETPZ, flags_box, value);
+				(cuVEC<VType>::n, ngbrFlags, ngbrFlags2, dirichlet_px, dirichlet_nx, dirichlet_py, dirichlet_ny, dirichlet_pz, dirichlet_nz, NF2_DIRICHLETPZ, flags_box, value);
 		}
 		//on upper z side
 		else if (cuIsZ(rect_.e.z - intersection.s.z)) {
@@ -585,9 +585,9 @@ __host__ bool cuVEC_VC<VType>::set_dirichlet_conditions(cuRect surface_rect, VTy
 			}
 			
 			intersection.s.z -= h_.z;
-			cuBox flags_box = cuBox(box_from_rect_max_cpu(intersection).s, box_from_rect_max_cpu(intersection).e);
+			cuBox flags_box = cuBox(cuVEC<VType>::box_from_rect_max_cpu(intersection).s, cuVEC<VType>::box_from_rect_max_cpu(intersection).e);
 			set_dirichlet_conditions_kernel <<< (n_.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> 
-				(n, ngbrFlags, ngbrFlags2, dirichlet_px, dirichlet_nx, dirichlet_py, dirichlet_ny, dirichlet_pz, dirichlet_nz, NF2_DIRICHLETNZ, flags_box, value);
+				(cuVEC<VType>::n, ngbrFlags, ngbrFlags2, dirichlet_px, dirichlet_nx, dirichlet_py, dirichlet_ny, dirichlet_pz, dirichlet_nz, NF2_DIRICHLETNZ, flags_box, value);
 		}
 	}
 
@@ -677,7 +677,7 @@ __host__ void cuVEC_VC<VType>::set_robin_flags(void)
 {
 	if (use_extended_flags()) {
 
-		set_robin_flags_kernel << < (get_gpu_value(n).dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >> > (n, ngbrFlags, ngbrFlags2, robin_px, robin_nx, robin_py, robin_ny, robin_pz, robin_nz, robin_v);
+		set_robin_flags_kernel << < (get_gpu_value(cuVEC<VType>::n).dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >> > (cuVEC<VType>::n, ngbrFlags, ngbrFlags2, robin_px, robin_nx, robin_py, robin_ny, robin_pz, robin_nz, robin_v);
 	}
 }
 
@@ -741,7 +741,7 @@ template void cuVEC_VC<cuDBL33>::set_pbc_flags(void);
 template <typename VType>
 __host__ void cuVEC_VC<VType>::set_pbc_flags(void)
 {
-	set_pbc_flags_kernel <<< (get_gpu_value(n).dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (n, ngbrFlags, pbc_x, pbc_y, pbc_z);
+	set_pbc_flags_kernel <<< (get_gpu_value(cuVEC<VType>::n).dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (cuVEC<VType>::n, ngbrFlags, pbc_x, pbc_y, pbc_z);
 }
 
 //------------------------------------------------------------------- SET SKIP CELLS FLAGS
@@ -772,7 +772,7 @@ template void cuVEC_VC<cuDBL33>::set_skipcells(cuRect rectangle, bool status);
 template <typename VType>
 __host__ void cuVEC_VC<VType>::set_skipcells(cuRect rectangle, bool status)
 {
-	cuBox cells = box_from_rect_max_cpu(rectangle);
+	cuBox cells = cuVEC<VType>::box_from_rect_max_cpu(rectangle);
 
-	set_skipcells_kernel <<< (get_gpu_value(n).dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (n, ngbrFlags, cells, status);
+	set_skipcells_kernel <<< (get_gpu_value(cuVEC<VType>::n).dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (cuVEC<VType>::n, ngbrFlags, cells, status);
 }

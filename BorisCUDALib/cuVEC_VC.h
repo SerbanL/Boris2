@@ -197,9 +197,9 @@ private:
 	size_t dirichlet_pz_size;
 	size_t dirichlet_nz_size;
 
-	//Robin boundary conditions values : diff_norm(u) = alpha * (u - h), where diff_norm means differential along surface normal (e.g. positive sign at +x boundary, negative sign at -x boundary).
+	//Robin boundary conditions values : diff_norm(u) = alpha * (u - cuVEC<VType>::h), where diff_norm means differential along surface normal (e.g. positive sign at +x boundary, negative sign at -x boundary).
 	//alpha is a positive constant : robins_nx.i. Note, if this is zero then homogeneous Neumann boundary condition results.
-	//h is a value (e.g. ambient temperature for heat equation): robins_nx.j
+	//cuVEC<VType>::h is a value (e.g. ambient temperature for heat equation): robins_nx.j
 	//nx, px, etc... for mesh boundaries - use these when flagged with NF2_ROBINNX etc. and not flagged with NF2_ROBINV
 	cuReal2 robin_px, robin_nx;
 	cuReal2 robin_py, robin_ny;
@@ -245,14 +245,14 @@ private:
 
 	//--------------------------------------------IMPORTANT FLAG MANIPULATION METHODS : in cuVEC_VC_flags.cuh and cuVEC_VC_flags.h
 	
-	//set size of ngbrFlags to new_n also mapping shape from current size to new size (if current zero size set solid shape). Memory must be reserved in ngbrFlags to guarantee success. Also n should still have the old value : call this before changing it.
+	//set size of ngbrFlags to new_n also mapping shape from current size to new size (if current zero size set solid shape). Memory must be reserved in ngbrFlags to guarantee success. Also cuVEC<VType>::n should still have the old value : call this before changing it.
 	__host__ cudaError_t resize_ngbrFlags(cuSZ3 new_n);
 
-	//initialization method for neighbor flags : set flags at size n, counting neighbors etc.
+	//initialization method for neighbor flags : set flags at size cuVEC<VType>::n, counting neighbors etc.
 	//Set empty cell values using information in linked_vec (keep same shape) - this must have same rectangle
 	__host__ void set_ngbrFlags(const cuSZ3& linked_n, const cuReal3& linked_h, const cuRect& linked_rect, int*& linked_ngbrFlags);
 
-	//initialization method for neighbor flags : set flags at size n, counting neighbors etc. Use current shape in ngbrFlags
+	//initialization method for neighbor flags : set flags at size cuVEC<VType>::n, counting neighbors etc. Use current shape in ngbrFlags
 	__host__ void set_ngbrFlags(void);
 	
 	//from NF2_DIRICHLET type flag and cell_idx return boundary value from one of the dirichlet vectors
@@ -267,7 +267,7 @@ private:
 
 	//mark cell as not empty / empty : internal use only; routines that use these must finish with recalculating ngbrflags as neighbours will have changed
 	__device__ void mark_not_empty(int index) { ngbrFlags[index] |= NF_NOTEMPTY; }
-	__device__ void mark_empty(int index) { ngbrFlags[index] &= ~NF_NOTEMPTY; quantity[index] = VType(); }
+	__device__ void mark_empty(int index) { ngbrFlags[index] &= ~NF_NOTEMPTY; cuVEC<VType>::quantity[index] = VType(); }
 
 	//check if we need to use ngbrFlags2 (allocate memory etc.)
 	__host__ bool use_extended_flags(void);
@@ -325,7 +325,7 @@ public:
 
 	//--------------------------------------------COPY TO ANOTHER cuVEC :  cuVEC_VC_mng.cuh
 
-	//extract values from this and place them in cuvec : both must have same rectangle, but can differ in h - cuvec.h <= this->h needed (and hence n, where cuvec.n.dim() = size); e.g. this method allows extraction of a coarser cuvec.
+	//extract values from this and place them in cuvec : both must have same rectangle, but can differ in cuVEC<VType>::h - cuvec.h <= this->cuVEC<VType>::h needed (and hence cuVEC<VType>::n, where cuvec.cuVEC<VType>::n.dim() = size); e.g. this method allows extraction of a coarser cuvec.
 	__host__ void extract_cuvec(size_t size, cuVEC_VC<VType>& cuvec);
 
 	//--------------------------------------------SIZING : cuVEC_VC_shape.h and cuVEC_VC_shape.cuh
@@ -364,29 +364,29 @@ public:
 	__host__ int get_nonempty_cells_cpu(void);
 	
 	__device__ bool is_not_empty(int index) const { return (ngbrFlags[index] & NF_NOTEMPTY); }
-	__device__ bool is_not_empty(const cuINT3& ijk) const { return (ngbrFlags[ijk.i + ijk.j*n.x + ijk.k*n.x*n.y] & NF_NOTEMPTY); }
-	__device__ bool is_not_empty(const cuReal3& rel_pos) const { return (ngbrFlags[int(rel_pos.x / h.x) + int(rel_pos.y / h.y) * n.x + int(rel_pos.z / h.z) * n.x * n.y] & NF_NOTEMPTY); }
+	__device__ bool is_not_empty(const cuINT3& ijk) const { return (ngbrFlags[ijk.i + ijk.j*cuVEC<VType>::n.x + ijk.k*cuVEC<VType>::n.x*cuVEC<VType>::n.y] & NF_NOTEMPTY); }
+	__device__ bool is_not_empty(const cuReal3& rel_pos) const { return (ngbrFlags[int(rel_pos.x / cuVEC<VType>::h.x) + int(rel_pos.y / cuVEC<VType>::h.y) * cuVEC<VType>::n.x + int(rel_pos.z / cuVEC<VType>::h.z) * cuVEC<VType>::n.x * cuVEC<VType>::n.y] & NF_NOTEMPTY); }
 
 	__device__ bool is_empty(int index) const { return !(ngbrFlags[index] & NF_NOTEMPTY); }
-	__device__ bool is_empty(const cuINT3& ijk) const { return !(ngbrFlags[ijk.i + ijk.j*n.x + ijk.k*n.x*n.y] & NF_NOTEMPTY); }
-	__device__ bool is_empty(const cuReal3& rel_pos) const { return !(ngbrFlags[int(rel_pos.x / h.x) + int(rel_pos.y / h.y) * n.x + int(rel_pos.z / h.z) * n.x * n.y] & NF_NOTEMPTY); }
+	__device__ bool is_empty(const cuINT3& ijk) const { return !(ngbrFlags[ijk.i + ijk.j*cuVEC<VType>::n.x + ijk.k*cuVEC<VType>::n.x*cuVEC<VType>::n.y] & NF_NOTEMPTY); }
+	__device__ bool is_empty(const cuReal3& rel_pos) const { return !(ngbrFlags[int(rel_pos.x / cuVEC<VType>::h.x) + int(rel_pos.y / cuVEC<VType>::h.y) * cuVEC<VType>::n.x + int(rel_pos.z / cuVEC<VType>::h.z) * cuVEC<VType>::n.x * cuVEC<VType>::n.y] & NF_NOTEMPTY); }
 
 	__device__ bool is_empty(const cuRect& rectangle) const;
 
 	__device__ bool is_not_cmbnd(int index) const { return !(ngbrFlags[index] & NF_CMBND); }
-	__device__ bool is_not_cmbnd(const cuINT3& ijk) const { return !(ngbrFlags[ijk.i + ijk.j*n.x + ijk.k*n.x*n.y] & NF_CMBND); }
-	__device__ bool is_not_cmbnd(const cuReal3& rel_pos) const { return !(ngbrFlags[int(rel_pos.x / h.x) + int(rel_pos.y / h.y) * n.x + int(rel_pos.z / h.z) * n.x * n.y] & NF_CMBND); }
+	__device__ bool is_not_cmbnd(const cuINT3& ijk) const { return !(ngbrFlags[ijk.i + ijk.j*cuVEC<VType>::n.x + ijk.k*cuVEC<VType>::n.x*cuVEC<VType>::n.y] & NF_CMBND); }
+	__device__ bool is_not_cmbnd(const cuReal3& rel_pos) const { return !(ngbrFlags[int(rel_pos.x / cuVEC<VType>::h.x) + int(rel_pos.y / cuVEC<VType>::h.y) * cuVEC<VType>::n.x + int(rel_pos.z / cuVEC<VType>::h.z) * cuVEC<VType>::n.x * cuVEC<VType>::n.y] & NF_CMBND); }
 
 	__device__ bool is_cmbnd(int index) const { return (ngbrFlags[index] & NF_CMBND); }
-	__device__ bool is_cmbnd(const cuINT3& ijk) const { return (ngbrFlags[ijk.i + ijk.j*n.x + ijk.k*n.x*n.y] & NF_CMBND); }
-	__device__ bool is_cmbnd(const cuReal3& rel_pos) const { return (ngbrFlags[int(rel_pos.x / h.x) + int(rel_pos.y / h.y) * n.x + int(rel_pos.z / h.z) * n.x * n.y] & NF_CMBND); }
+	__device__ bool is_cmbnd(const cuINT3& ijk) const { return (ngbrFlags[ijk.i + ijk.j*cuVEC<VType>::n.x + ijk.k*cuVEC<VType>::n.x*cuVEC<VType>::n.y] & NF_CMBND); }
+	__device__ bool is_cmbnd(const cuReal3& rel_pos) const { return (ngbrFlags[int(rel_pos.x / cuVEC<VType>::h.x) + int(rel_pos.y / cuVEC<VType>::h.y) * cuVEC<VType>::n.x + int(rel_pos.z / cuVEC<VType>::h.z) * cuVEC<VType>::n.x * cuVEC<VType>::n.y] & NF_CMBND); }
 
 	__device__ bool is_skipcell(int index) const { return (ngbrFlags[index] & NF_SKIPCELL); }
-	__device__ bool is_skipcell(const cuINT3& ijk) const { return (ngbrFlags[ijk.i + ijk.j*n.x + ijk.k*n.x*n.y] & NF_SKIPCELL); }
-	__device__ bool is_skipcell(const cuReal3& rel_pos) const { return (ngbrFlags[int(rel_pos.x / h.x) + int(rel_pos.y / h.y) * n.x + int(rel_pos.z / h.z) * n.x * n.y] & NF_SKIPCELL); }
+	__device__ bool is_skipcell(const cuINT3& ijk) const { return (ngbrFlags[ijk.i + ijk.j*cuVEC<VType>::n.x + ijk.k*cuVEC<VType>::n.x*cuVEC<VType>::n.y] & NF_SKIPCELL); }
+	__device__ bool is_skipcell(const cuReal3& rel_pos) const { return (ngbrFlags[int(rel_pos.x / cuVEC<VType>::h.x) + int(rel_pos.y / cuVEC<VType>::h.y) * cuVEC<VType>::n.x + int(rel_pos.z / cuVEC<VType>::h.z) * cuVEC<VType>::n.x * cuVEC<VType>::n.y] & NF_SKIPCELL); }
 
 	//are all neighbors available? (for 2D don't check the z neighbors)
-	__device__ bool is_interior(int index) const { return (((ngbrFlags[index] & NF_BOTHX) == NF_BOTHX) && ((ngbrFlags[index] & NF_BOTHY) == NF_BOTHY) && (n.z == 1 || ((ngbrFlags[index] & NF_BOTHZ) == NF_BOTHZ))); }
+	__device__ bool is_interior(int index) const { return (((ngbrFlags[index] & NF_BOTHX) == NF_BOTHX) && ((ngbrFlags[index] & NF_BOTHY) == NF_BOTHY) && (cuVEC<VType>::n.z == 1 || ((ngbrFlags[index] & NF_BOTHZ) == NF_BOTHZ))); }
 	
 	//are all neighbors in the xy plane available?
 	__device__ bool is_plane_interior(int index) const { return (((ngbrFlags[index] & NF_BOTHX) == NF_BOTHX) && ((ngbrFlags[index] & NF_BOTHY) == NF_BOTHY)); }
@@ -446,23 +446,23 @@ public:
 	__host__ void setrectnonempty(const cuRect& rectangle, VType value = VType());
 
 	//re-normalize all non-zero values to have the new magnitude (multiply by new_norm and divide by current magnitude)
-	//Launch it with arr_size = n.dim() : quicker to pass in this value rather than get it internally using get_gpu_value(n).dim()
+	//Launch it with arr_size = cuVEC<VType>::n.dim() : quicker to pass in this value rather than get it internally using get_gpu_value(cuVEC<VType>::n).dim()
 	template <typename PType = decltype(cu_GetMagnitude(std::declval<VType>()))>
 	__host__ void renormalize(size_t arr_size, PType new_norm);
 
-	//shift all the values in this cuVEC by the given delta (units same as h). Shift values in given shift_rect (absolute coordinates).
+	//shift all the values in this cuVEC by the given delta (units same as cuVEC<VType>::h). Shift values in given shift_rect (absolute coordinates).
 	__host__ void shift_x(size_t size, cuBReal delta, cuRect shift_rect);
 
 	//--------------------------------------------ARITHMETIC OPERATIONS ON ENTIRE VEC : cuVEC_VC_arith.cuh
 
 		//scale all stored values by the given constant
 	__host__ void scale_values(size_t size, cuBReal constant);
-	__host__ void scale_values(cuBReal constant) { scale_values(get_gpu_value(n).dim(), constant); }
+	__host__ void scale_values(cuBReal constant) { scale_values(get_gpu_value(cuVEC<VType>::n).dim(), constant); }
 
 	//--------------------------------------------OPERATIONS : cuVEC_VC_avg.cuh
 
 	//overload VEC method : use NF_NOTEMPTY flags instead here
-	//Launch it with arr_size = n.dim() : quicker to pass in this value rather than get it internally using get_gpu_value(n).dim()
+	//Launch it with arr_size = cuVEC<VType>::n.dim() : quicker to pass in this value rather than get it internally using get_gpu_value(cuVEC<VType>::n).dim()
 	__host__ VType average_nonempty(size_t arr_size, cuBox box);
 	//average over non-empty cells over given rectangle (relative to this VEC's rect)
 	__host__ VType average_nonempty(size_t arr_size, cuRect rectangle = cuRect());
@@ -533,10 +533,10 @@ public:
 	//NOTE : the boundary differential is specified with 3 components, one for each of +x, +y, +z surface normal directions - the class Class_BDiff must define a method bdiff returning a cuVAL3<VType> and taking an int (the cell index)
 	//Returns zero at composite media boundary cells.
 	template <typename Class_BDiff>
-	__device__ VType delsq_nneu(int idx, Class_BDiff& bdiff_class) const;
+	__device__ VType delsq_nneu(int idx, const Class_BDiff& bdiff_class) const;
 
 	//Same as above but boundary conditions specified using a constant
-	__device__ VType delsq_nneu(int idx, cuVAL3<VType>& bdiff) const;
+	__device__ VType delsq_nneu(int idx, const cuVAL3<VType>& bdiff) const;
 
 	//calculate Laplace operator at cell with given index. Use Dirichlet conditions if set, else Neumann boundary conditions (homogeneous).
 	//Returns zero at composite media boundary cells.
@@ -546,10 +546,10 @@ public:
 	//NOTE : the boundary differential is specified with 3 components, one for each of +x, +y, +z surface normal directions - the class Class_BDiff must define a method bdiff returning a cuVAL3<VType> and taking an int (the cell index)
 	//Returns zero at composite media boundary cells.
 	template <typename Class_BDiff>
-	__device__ VType delsq_diri_nneu(int idx, Class_BDiff& bdiff_class) const;
+	__device__ VType delsq_diri_nneu(int idx, const Class_BDiff& bdiff_class) const;
 
 	//Same as above but boundary conditions specified using a constant
-	__device__ VType delsq_diri_nneu(int idx, cuVAL3<VType>& bdiff) const;
+	__device__ VType delsq_diri_nneu(int idx, const cuVAL3<VType>& bdiff) const;
 
 	//calculate Laplace operator at cell with given index. Use Robin boundary conditions (defaulting to Neumann if not set).
 	//Returns zero at composite media boundary cells.
@@ -566,10 +566,10 @@ public:
 	//Can be used at composite media boundaries where sided differentials will be used instead.
 	//NOTE : the boundary differential is specified with 3 components, one for each of +x, +y, +z surface normal directions - the class Class_BDiff must define a method bdiff returning a cuVAL3<VType> and taking an int (the cell index)
 	template <typename Class_BDiff>
-	__device__ cuVAL3<VType> grad_nneu(int idx, Class_BDiff& bdiff_class) const;
+	__device__ cuVAL3<VType> grad_nneu(int idx, const Class_BDiff& bdiff_class) const;
 
 	//Same as above but boundary conditions specified using a constant
-	__device__ cuVAL3<VType> grad_nneu(int idx, cuVAL3<VType>& bdiff) const;
+	__device__ cuVAL3<VType> grad_nneu(int idx, const cuVAL3<VType>& bdiff) const;
 
 	//gradient operator. Use Dirichlet conditions if set, else Neumann boundary conditions (homogeneous).
 	//Can be used at composite media boundaries where sided differentials will be used instead.
@@ -579,10 +579,10 @@ public:
 	//NOTE : the boundary differential is specified with 3 components, one for each of +x, +y, +z surface normal directions - the class Class_BDiff must define a method bdiff returning a cuVAL3<VType> and taking an int (the cell index)
 	//Can be used at composite media boundaries where sided differentials will be used instead.
 	template <typename Class_BDiff>
-	__device__ cuVAL3<VType> grad_diri_nneu(int idx, Class_BDiff& bdiff_class) const;
+	__device__ cuVAL3<VType> grad_diri_nneu(int idx, const Class_BDiff& bdiff_class) const;
 
 	//Same as above but boundary conditions specified using a constant
-	__device__ cuVAL3<VType> grad_diri_nneu(int idx, cuVAL3<VType>& bdiff) const;
+	__device__ cuVAL3<VType> grad_diri_nneu(int idx, const cuVAL3<VType>& bdiff) const;
 
 	//gradient operator. Use sided differentials at boundaries (including at composite media boundaries)
 	__device__ cuVAL3<VType> grad_sided(int idx) const;
@@ -599,10 +599,10 @@ public:
 	//Can be used at composite media boundaries where sided differentials will be used instead.
 	//div operator can be applied if VType is a VAL3<Type>, returning Type
 	template <typename Class_BDiff>
-	__device__ cuBReal div_nneu(int idx, Class_BDiff& bdiff_class) const;
+	__device__ cuBReal div_nneu(int idx, const Class_BDiff& bdiff_class) const;
 
 	//Same as above but boundary conditions specified using a constant
-	__device__ cuBReal div_nneu(int idx, cuVAL3<VType>& bdiff) const;
+	__device__ cuBReal div_nneu(int idx, const cuVAL3<VType>& bdiff) const;
 
 	//divergence operator. Use Dirichlet conditions if set, else Neumann boundary conditions (homogeneous).
 	//Can be used at composite media boundaries where sided differentials will be used instead.
@@ -614,10 +614,10 @@ public:
 	//Can be used at composite media boundaries where sided differentials will be used instead.
 	//div operator can be applied if VType is a VAL3<Type>, returning Type
 	template <typename Class_BDiff>
-	__device__ cuBReal div_diri_nneu(int idx, Class_BDiff& bdiff_class) const;
+	__device__ cuBReal div_diri_nneu(int idx, const Class_BDiff& bdiff_class) const;
 
 	//Same as above but boundary conditions specified using a constant
-	__device__ cuBReal div_diri_nneu(int idx, cuVAL3<VType>& bdiff) const;
+	__device__ cuBReal div_diri_nneu(int idx, const cuVAL3<VType>& bdiff) const;
 
 	//divergence operator. Use sided differentials (also at composite media boundaries)
 	//div operator can be applied if VType is a VAL3<Type>, returning Type
@@ -649,10 +649,10 @@ public:
 	//NOTE : the boundary differential is specified with 3 components, one for each of +x, +y, +z surface normal directions - the class Class_BDiff must define a method bdiff returning a cuVAL3<VType> and taking an int (the cell index)
 	//can only be applied if VType is a VAL3
 	template <typename Class_BDiff>
-	__device__ VType curl_nneu(int idx, Class_BDiff& bdiff_class) const;
+	__device__ VType curl_nneu(int idx, const Class_BDiff& bdiff_class) const;
 
 	//Same as above but boundary conditions specified using a constant
-	__device__ VType curl_nneu(int idx, cuVAL3<VType>& bdiff) const;
+	__device__ VType curl_nneu(int idx, const cuVAL3<VType>& bdiff) const;
 
 	//curl operator. Use Dirichlet conditions if set, else Neumann boundary conditions (homogeneous).
 	//Can be used at composite media boundaries where sided differentials will be used instead.
@@ -664,10 +664,10 @@ public:
 	//Can be used at composite media boundaries where sided differentials will be used instead.
 	//can only be applied if VType is a VAL3
 	template <typename Class_BDiff>
-	__device__ VType curl_diri_nneu(int idx, Class_BDiff& bdiff_class) const;
+	__device__ VType curl_diri_nneu(int idx, const Class_BDiff& bdiff_class) const;
 
 	//Same as above but boundary conditions specified using a constant
-	__device__ VType curl_diri_nneu(int idx, cuVAL3<VType>& bdiff) const;
+	__device__ VType curl_diri_nneu(int idx, const cuVAL3<VType>& bdiff) const;
 
 	//curl operator. Use sided differentials at boundaries (including at composite media boundaries)
 	//can only be applied if VType is a VAL3
@@ -686,17 +686,17 @@ public:
 	//Returns zero at composite media boundary cells
 	//NOTE : the boundary differential is specified with 3 components, one for each of +x, +y, +z surface normal directions
 	template <typename Class_BDiff>
-	__device__ VType dxx_nneu(int idx, Class_BDiff& bdiff_class) const;
+	__device__ VType dxx_nneu(int idx, const Class_BDiff& bdiff_class) const;
 
 	template <typename Class_BDiff>
-	__device__ VType dyy_nneu(int idx, Class_BDiff& bdiff_class) const;
+	__device__ VType dyy_nneu(int idx, const Class_BDiff& bdiff_class) const;
 
 	template <typename Class_BDiff>
-	__device__ VType dzz_nneu(int idx, Class_BDiff& bdiff_class) const;
+	__device__ VType dzz_nneu(int idx, const Class_BDiff& bdiff_class) const;
 
-	__device__ VType dxx_nneu(int idx, cuVAL3<VType>& bdiff) const;
-	__device__ VType dyy_nneu(int idx, cuVAL3<VType>& bdiff) const;
-	__device__ VType dzz_nneu(int idx, cuVAL3<VType>& bdiff) const;
+	__device__ VType dxx_nneu(int idx, const cuVAL3<VType>& bdiff) const;
+	__device__ VType dyy_nneu(int idx, const cuVAL3<VType>& bdiff) const;
+	__device__ VType dzz_nneu(int idx, const cuVAL3<VType>& bdiff) const;
 
 	//Use Dirichlet boundary conditions, else Neumann boundary conditions (homogeneous).
 	//Returns zero at composite media boundary cells.
@@ -708,17 +708,17 @@ public:
 	//Returns zero at composite media boundary cells.
 	//NOTE : the boundary differential is specified with 3 components, one for each of +x, +y, +z surface normal directions
 	template <typename Class_BDiff>
-	__device__ VType dxx_diri_nneu(int idx, Class_BDiff& bdiff_class) const;
+	__device__ VType dxx_diri_nneu(int idx, const Class_BDiff& bdiff_class) const;
 	
 	template <typename Class_BDiff>
-	__device__ VType dyy_diri_nneu(int idx, Class_BDiff& bdiff_class) const;
+	__device__ VType dyy_diri_nneu(int idx, const Class_BDiff& bdiff_class) const;
 	
 	template <typename Class_BDiff>
-	__device__ VType dzz_diri_nneu(int idx, Class_BDiff& bdiff_class) const;
+	__device__ VType dzz_diri_nneu(int idx, const Class_BDiff& bdiff_class) const;
 
-	__device__ VType dxx_diri_nneu(int idx, cuVAL3<VType>& bdiff) const;
-	__device__ VType dyy_diri_nneu(int idx, cuVAL3<VType>& bdiff) const;
-	__device__ VType dzz_diri_nneu(int idx, cuVAL3<VType>& bdiff) const;
+	__device__ VType dxx_diri_nneu(int idx, const cuVAL3<VType>& bdiff) const;
+	__device__ VType dyy_diri_nneu(int idx, const cuVAL3<VType>& bdiff) const;
+	__device__ VType dzz_diri_nneu(int idx, const cuVAL3<VType>& bdiff) const;
 
 	//Use Robin boundary conditions (defaulting to Neumann if not set).
 	//Returns zero at composite media boundary cells.
@@ -771,7 +771,7 @@ public:
 
 	//Take one SOR iteration for Laplace equation on this VEC. Return error (maximum change in quantity from one iteration to the next) by reference, where max_error is already allocated on the gpu - pass in a cu_obj managed cuBReal.
 	//Dirichlet boundary conditions used, defaulting to Neumann boundary conditions where not set, and composite media boundary cells skipped (use boundary conditions to set cmbnd cells after calling this)
-	//Launch it with arr_size = n.dim() : quicker to pass in this value rather than get it internally using get_gpu_value(n).dim()
+	//Launch it with arr_size = cuVEC<VType>::n.dim() : quicker to pass in this value rather than get it internally using get_gpu_value(cuVEC<VType>::n).dim()
 	__host__ void IterateLaplace_SOR(size_t arr_size, cuBReal& damping, cuBReal& max_error, cuBReal& max_val);
 
 	//red and black SOR passes launched from kernels : the flow is : 

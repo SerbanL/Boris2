@@ -22,7 +22,7 @@ __host__ bool cu_arr<VType>::resize(size_t size_)
 		return true;
 	}
 	else {
-
+		
 		clear();
 
 		return false;

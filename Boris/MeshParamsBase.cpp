@@ -221,7 +221,10 @@ void MeshParamsBase::set_meshparam_value(PARAM_ paramID, string value_text)
 {
 	auto code = [](auto& MatP_object, string value_text, string unit) -> void {
 
-		MatP_object = (decltype(MatP_object.get0()))ToNum(value_text, unit);
+		decltype(MatP_object.get0()) value = ToNum(value_text, unit);
+		MatP_object = value;
+		//C++17:
+		//MatP_object = (decltype(MatP_object.get0()))ToNum(value_text, unit);
 	};
 
 	run_on_param_switch<void>(paramID, code, value_text, meshParams(paramID).unit);

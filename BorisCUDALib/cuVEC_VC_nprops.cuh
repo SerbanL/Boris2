@@ -76,16 +76,16 @@ template <typename VType>
 template <typename PType>
 __host__ cuVAL2<PType> cuVEC_VC<VType>::get_minmax(size_t arr_size, cuBox box)
 {
-	zero_aux_values <<<1, CUDATHREADS >>> (aux_value, aux_value2, aux_value3, aux_real, aux_real2, aux_integer);
+	zero_aux_values <<<1, CUDATHREADS >>> (cuVEC<VType>::aux_value, cuVEC<VType>::aux_value2, cuVEC<VType>::aux_value3, cuVEC<VType>::aux_real, cuVEC<VType>::aux_real2, cuVEC<VType>::aux_integer);
 
 	if (box.IsNull()) {
 
-		cuvec_vc_minmax_nonempty_kernel <<< (arr_size + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (n, ngbrFlags, quantity, aux_real, aux_real2);
+		cuvec_vc_minmax_nonempty_kernel <<< (arr_size + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (cuVEC<VType>::n, ngbrFlags, cuVEC<VType>::quantity, cuVEC<VType>::aux_real, cuVEC<VType>::aux_real2);
 	}
-	else cuvec_vc_minmax_nonempty_kernel <<< (arr_size + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (n, box, ngbrFlags, quantity, aux_real, aux_real2);
+	else cuvec_vc_minmax_nonempty_kernel <<< (arr_size + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (cuVEC<VType>::n, box, ngbrFlags, cuVEC<VType>::quantity, cuVEC<VType>::aux_real, cuVEC<VType>::aux_real2);
 
-	cuBReal min = get_gpu_value(aux_real);
-	cuBReal max = get_gpu_value(aux_real2);
+	cuBReal min = get_gpu_value(cuVEC<VType>::aux_real);
+	cuBReal max = get_gpu_value(cuVEC<VType>::aux_real2);
 
 	return cuVAL2<PType>(min, max);
 }
@@ -124,12 +124,12 @@ __host__ cuVAL2<PType> cuVEC_VC<VType>::get_minmax(size_t arr_size, cuRect recta
 	//if empty rectangle then average ove the entire mesh
 	if (rectangle.IsNull()) return get_minmax(arr_size, cuBox());
 
-	zero_aux_values <<<1, CUDATHREADS >>> (aux_value, aux_value2, aux_value3, aux_real, aux_real2, aux_integer);
+	zero_aux_values << <1, CUDATHREADS >> > (cuVEC<VType>::aux_value, cuVEC<VType>::aux_value2, cuVEC<VType>::aux_value3, cuVEC<VType>::aux_real, cuVEC<VType>::aux_real2, cuVEC<VType>::aux_integer);
 
-	cuvec_vc_minmax_nonempty_kernel <<< (arr_size + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (n, rectangle, *this, aux_real, aux_real2);
+	cuvec_vc_minmax_nonempty_kernel <<< (arr_size + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (cuVEC<VType>::n, rectangle, *this, cuVEC<VType>::aux_real, cuVEC<VType>::aux_real2);
 
-	cuBReal min = get_gpu_value(aux_real);
-	cuBReal max = get_gpu_value(aux_real2);
+	cuBReal min = get_gpu_value(cuVEC<VType>::aux_real);
+	cuBReal max = get_gpu_value(cuVEC<VType>::aux_real2);
 
 	return cuVAL2<PType>(min, max);
 }
@@ -179,16 +179,16 @@ template <typename VType>
 template <typename PType>
 __host__ cuVAL2<PType> cuVEC_VC<VType>::get_minmax_component_x(size_t arr_size, cuBox box)
 {
-	set_aux_values_vc_x <<<1, CUDATHREADS >>> (quantity, aux_real, aux_real2);
+	set_aux_values_vc_x <<<1, CUDATHREADS >>> (cuVEC<VType>::quantity, cuVEC<VType>::aux_real, cuVEC<VType>::aux_real2);
 
 	if (box.IsNull()) {
 
-		cuvec_vc_minmax_component_x_nonempty_kernel <<< (arr_size + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (n, ngbrFlags, quantity, aux_real, aux_real2);
+		cuvec_vc_minmax_component_x_nonempty_kernel <<< (arr_size + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (cuVEC<VType>::n, ngbrFlags, cuVEC<VType>::quantity, cuVEC<VType>::aux_real, cuVEC<VType>::aux_real2);
 	}
-	else cuvec_vc_minmax_component_x_nonempty_kernel <<< (arr_size + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (n, box, ngbrFlags, quantity, aux_real, aux_real2);
+	else cuvec_vc_minmax_component_x_nonempty_kernel <<< (arr_size + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (cuVEC<VType>::n, box, ngbrFlags, cuVEC<VType>::quantity, cuVEC<VType>::aux_real, cuVEC<VType>::aux_real2);
 
-	cuBReal min = get_gpu_value(aux_real);
-	cuBReal max = get_gpu_value(aux_real2);
+	cuBReal min = get_gpu_value(cuVEC<VType>::aux_real);
+	cuBReal max = get_gpu_value(cuVEC<VType>::aux_real2);
 
 	return cuVAL2<PType>(min, max);
 }
@@ -224,12 +224,12 @@ __host__ cuVAL2<PType> cuVEC_VC<VType>::get_minmax_component_x(size_t arr_size, 
 	//if empty rectangle then average ove the entire mesh
 	if (rectangle.IsNull()) return get_minmax_component_x(arr_size, cuBox());
 
-	set_aux_values_vc_x <<<1, CUDATHREADS >>> (quantity, aux_real, aux_real2);
+	set_aux_values_vc_x <<<1, CUDATHREADS >>> (cuVEC<VType>::quantity, cuVEC<VType>::aux_real, cuVEC<VType>::aux_real2);
 
-	cuvec_vc_minmax_component_x_nonempty_kernel <<< (arr_size + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (n, rectangle, *this, aux_real, aux_real2);
+	cuvec_vc_minmax_component_x_nonempty_kernel <<< (arr_size + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (cuVEC<VType>::n, rectangle, *this, cuVEC<VType>::aux_real, cuVEC<VType>::aux_real2);
 
-	cuBReal min = get_gpu_value(aux_real);
-	cuBReal max = get_gpu_value(aux_real2);
+	cuBReal min = get_gpu_value(cuVEC<VType>::aux_real);
+	cuBReal max = get_gpu_value(cuVEC<VType>::aux_real2);
 
 	return cuVAL2<PType>(min, max);
 }
@@ -279,16 +279,16 @@ template <typename VType>
 template <typename PType>
 __host__ cuVAL2<PType> cuVEC_VC<VType>::get_minmax_component_y(size_t arr_size, cuBox box)
 {
-	set_aux_values_vc_y <<<1, CUDATHREADS >>> (quantity, aux_real, aux_real2);
+	set_aux_values_vc_y <<<1, CUDATHREADS >>> (cuVEC<VType>::quantity, cuVEC<VType>::aux_real, cuVEC<VType>::aux_real2);
 
 	if (box.IsNull()) {
 
-		cuvec_vc_minmax_component_y_nonempty_kernel <<< (arr_size + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (n, ngbrFlags, quantity, aux_real, aux_real2);
+		cuvec_vc_minmax_component_y_nonempty_kernel <<< (arr_size + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (cuVEC<VType>::n, ngbrFlags, cuVEC<VType>::quantity, cuVEC<VType>::aux_real, cuVEC<VType>::aux_real2);
 	}
-	else cuvec_vc_minmax_component_y_nonempty_kernel <<< (arr_size + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (n, box, ngbrFlags, quantity, aux_real, aux_real2);
+	else cuvec_vc_minmax_component_y_nonempty_kernel <<< (arr_size + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (cuVEC<VType>::n, box, ngbrFlags, cuVEC<VType>::quantity, cuVEC<VType>::aux_real, cuVEC<VType>::aux_real2);
 
-	cuBReal min = get_gpu_value(aux_real);
-	cuBReal max = get_gpu_value(aux_real2);
+	cuBReal min = get_gpu_value(cuVEC<VType>::aux_real);
+	cuBReal max = get_gpu_value(cuVEC<VType>::aux_real2);
 
 	return cuVAL2<PType>(min, max);
 }
@@ -324,12 +324,12 @@ __host__ cuVAL2<PType> cuVEC_VC<VType>::get_minmax_component_y(size_t arr_size, 
 	//if empty rectangle then average ove the entire mesh
 	if (rectangle.IsNull()) return get_minmax_component_y(arr_size, cuBox());
 
-	set_aux_values_vc_y <<<1, CUDATHREADS >>> (quantity, aux_real, aux_real2);
+	set_aux_values_vc_y <<<1, CUDATHREADS >>> (cuVEC<VType>::quantity, cuVEC<VType>::aux_real, cuVEC<VType>::aux_real2);
 
-	cuvec_vc_minmax_component_y_nonempty_kernel <<< (arr_size + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (n, rectangle, *this, aux_real, aux_real2);
+	cuvec_vc_minmax_component_y_nonempty_kernel <<< (arr_size + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (cuVEC<VType>::n, rectangle, *this, cuVEC<VType>::aux_real, cuVEC<VType>::aux_real2);
 
-	cuBReal min = get_gpu_value(aux_real);
-	cuBReal max = get_gpu_value(aux_real2);
+	cuBReal min = get_gpu_value(cuVEC<VType>::aux_real);
+	cuBReal max = get_gpu_value(cuVEC<VType>::aux_real2);
 
 	return cuVAL2<PType>(min, max);
 }
@@ -379,16 +379,16 @@ template <typename VType>
 template <typename PType>
 __host__ cuVAL2<PType> cuVEC_VC<VType>::get_minmax_component_z(size_t arr_size, cuBox box)
 {
-	set_aux_values_vc_z <<<1, CUDATHREADS >>> (quantity, aux_real, aux_real2);
+	set_aux_values_vc_z <<<1, CUDATHREADS >>> (cuVEC<VType>::quantity, cuVEC<VType>::aux_real, cuVEC<VType>::aux_real2);
 
 	if (box.IsNull()) {
 
-		cuvec_vc_minmax_component_z_nonempty_kernel <<< (arr_size + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (n, ngbrFlags, quantity, aux_real, aux_real2);
+		cuvec_vc_minmax_component_z_nonempty_kernel <<< (arr_size + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (cuVEC<VType>::n, ngbrFlags, cuVEC<VType>::quantity, cuVEC<VType>::aux_real, cuVEC<VType>::aux_real2);
 	}
-	else cuvec_vc_minmax_component_z_nonempty_kernel <<< (arr_size + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (n, box, ngbrFlags, quantity, aux_real, aux_real2);
+	else cuvec_vc_minmax_component_z_nonempty_kernel <<< (arr_size + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (cuVEC<VType>::n, box, ngbrFlags, cuVEC<VType>::quantity, cuVEC<VType>::aux_real, cuVEC<VType>::aux_real2);
 
-	cuBReal min = get_gpu_value(aux_real);
-	cuBReal max = get_gpu_value(aux_real2);
+	cuBReal min = get_gpu_value(cuVEC<VType>::aux_real);
+	cuBReal max = get_gpu_value(cuVEC<VType>::aux_real2);
 
 	return cuVAL2<PType>(min, max);
 }
@@ -424,12 +424,12 @@ __host__ cuVAL2<PType> cuVEC_VC<VType>::get_minmax_component_z(size_t arr_size, 
 	//if empty rectangle then average ove the entire mesh
 	if (rectangle.IsNull()) return get_minmax_component_z(arr_size, cuBox());
 
-	set_aux_values_vc_z <<<1, CUDATHREADS >>> (quantity, aux_real, aux_real2);
+	set_aux_values_vc_z <<<1, CUDATHREADS >>> (cuVEC<VType>::quantity, cuVEC<VType>::aux_real, cuVEC<VType>::aux_real2);
 
-	cuvec_vc_minmax_component_z_nonempty_kernel <<< (arr_size + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (n, rectangle, *this, aux_real, aux_real2);
+	cuvec_vc_minmax_component_z_nonempty_kernel <<< (arr_size + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (cuVEC<VType>::n, rectangle, *this, cuVEC<VType>::aux_real, cuVEC<VType>::aux_real2);
 
-	cuBReal min = get_gpu_value(aux_real);
-	cuBReal max = get_gpu_value(aux_real2);
+	cuBReal min = get_gpu_value(cuVEC<VType>::aux_real);
+	cuBReal max = get_gpu_value(cuVEC<VType>::aux_real2);
 
 	return cuVAL2<PType>(min, max);
 }

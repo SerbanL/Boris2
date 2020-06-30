@@ -34,5 +34,5 @@ template void cuVEC_VC<cuDBL33>::scale_values(size_t size, cuBReal constant);
 template <typename VType>
 void cuVEC_VC<VType>::scale_values(size_t size, cuBReal constant)
 {
-	scale_values_kernel <<< (size + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (n, ngbrFlags, quantity, constant);
+	scale_values_kernel <<< (size + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (cuVEC<VType>::n, ngbrFlags, cuVEC<VType>::quantity, constant);
 }

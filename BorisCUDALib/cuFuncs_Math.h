@@ -4,7 +4,7 @@
 
 #include <math.h>
 
-#include "cuTypes.h"
+#include "cuTypes_VAL.h"
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -36,6 +36,24 @@ __host__ __device__ auto cu_GetMagnitude(const cuVAL3Type& V) -> decltype(std::d
 	return sqrt(V.x*V.x + V.y*V.y + V.z*V.z);
 }
 
+template <typename Type, std::enable_if_t<std::is_same<Type, cuBComplex>::value>* = nullptr>
+__host__ __device__ cuBReal cu_GetMagnitude(const Type& V)
+{
+	return sqrt(V.x*V.x + V.y*V.y);
+}
+
+template <typename Type, std::enable_if_t<std::is_same<Type, cuReIm>::value>* = nullptr>
+__host__ __device__ cuBReal cu_GetMagnitude(const Type& V)
+{
+	return sqrt(V.Re*V.Re + V.Im*V.Im);
+}
+
+template <typename Type, std::enable_if_t<std::is_same<Type, cuReIm3>::value>* = nullptr>
+__host__ __device__ cuReal3 cu_GetMagnitude(const Type& V)
+{
+	return cuReal3(cu_GetMagnitude(V.x), cu_GetMagnitude(V.y), cu_GetMagnitude(V.z));
+}
+
 //obtain distance between two Cartesian coordinates specified as a cuVAL3
 template <typename cuVAL3Type, std::enable_if_t<std::is_convertible<cuINT3, cuVAL3Type>::value>* = nullptr>
 __host__ __device__ auto cu_get_distance(const cuVAL3Type& coord1, const cuVAL3Type& coord2) -> decltype(std::declval<cuVAL3Type>().z)
@@ -60,6 +78,12 @@ __host__ __device__ void cu_NormalizeVector(Type &Vx, Type &Vy, Type &Vz)
 
 ///////////////////////////////////////////////////////////////////////////////
 
+template <typename RType>
+__device__ RType cu_maximum(RType param1, RType param2)
+{
+	return (param1 > param2 ? param1 : param2);
+}
+
 template <typename RType, typename ... PType>
 __device__ RType cu_maximum(RType param, PType ... params)
 {
@@ -68,9 +92,9 @@ __device__ RType cu_maximum(RType param, PType ... params)
 }
 
 template <typename RType>
-__device__ RType cu_maximum(RType param1, RType param2)
+__device__ RType cu_minimum(RType param1, RType param2)
 {
-	return (param1 > param2 ? param1 : param2);
+	return (param1 < param2 ? param1 : param2);
 }
 
 template <typename RType, typename ... PType>
@@ -78,12 +102,6 @@ __device__ RType cu_minimum(RType param, PType ... params)
 {
 	RType value = cu_minimum(params...);
 	return (param < value ? param : value);
-}
-
-template <typename RType>
-__device__ RType cu_minimum(RType param1, RType param2)
-{
-	return (param1 < param2 ? param1 : param2);
 }
 
 ///////////////////////////////////////////////////////////////////////////////

@@ -90,14 +90,16 @@ struct cuVAL2 {
 	template <typename SType>
 	__host__ cuVAL2<VType>& operator=(const VAL2<SType> &rhs)
 	{
-		x = (VType)rhs.x; y = (VType)rhs.y;
+		x = (VType)rhs.x; 
+		y = (VType)rhs.y;
 		return *this;
 	}
 
 	template <typename SType>
 	__host__ cuVAL2(const VAL2<SType> &rhs)
 	{
-		x = (VType)rhs.x; y = (VType)rhs.y;
+		x = (VType)rhs.x; 
+		y = (VType)rhs.y;
 	}
 
 	//----------------------------- ARITHMETIC OPERATORS
@@ -107,14 +109,14 @@ struct cuVAL2 {
 	//SUM
 	template <
 		typename VType_,
-		typename RType = std::conditional<std::is_floating_point<VType_>::value && std::is_integral<VType>::value, VType_, VType>::type
+		typename RType = typename std::conditional<std::is_floating_point<VType_>::value && std::is_integral<VType>::value, VType_, VType>::type
 	>
 	__host__ __device__ cuVAL2<RType> operator+(const cuVAL2<VType_> &rhs) const { return cuVAL2<RType>(x + rhs.x, y + rhs.y); }
 
 	//DIFFERENCE
 	template <
 		typename VType_,
-		typename RType = std::conditional<std::is_floating_point<VType_>::value && std::is_integral<VType>::value, VType_, VType>::type
+		typename RType = typename std::conditional<std::is_floating_point<VType_>::value && std::is_integral<VType>::value, VType_, VType>::type
 	>
 	__host__ __device__ cuVAL2<RType> operator-(const cuVAL2<VType_> &rhs) const { return cuVAL2<RType>(x - rhs.x, y - rhs.y); }
 
@@ -128,7 +130,7 @@ struct cuVAL2 {
 	//SIMPLE PRODUCT (component by component)
 	template <
 		typename VType_,
-		typename RType = std::conditional<std::is_floating_point<VType_>::value && std::is_integral<VType>::value, VType_, VType>::type
+		typename RType = typename std::conditional<std::is_floating_point<VType_>::value && std::is_integral<VType>::value, VType_, VType>::type
 	>
 	__host__ __device__ cuVAL2<RType> operator&(const cuVAL2<VType_> &rhs) const { return cuVAL2<RType>(x * rhs.x, y * rhs.y); }
 
@@ -137,7 +139,7 @@ struct cuVAL2 {
 	//product with a constant (must be fundamental type) on the RHS
 	template <
 		typename MVType,
-		typename RType = std::conditional<std::is_floating_point<MVType>::value && std::is_integral<VType>::value, MVType, VType>::type,
+		typename RType = typename std::conditional<std::is_floating_point<MVType>::value && std::is_integral<VType>::value, MVType, VType>::type,
 		std::enable_if_t<std::is_fundamental<MVType>::value>* = nullptr
 	>
 	__host__ __device__ cuVAL2<RType> operator*(const MVType &mult) const { return cuVAL2<RType>(x * mult, y * mult); }
@@ -159,14 +161,14 @@ struct cuVAL2 {
 	//SIMPLE DIVISION (component by component)
 	template <
 		typename VType_,
-		typename RType = std::conditional<std::is_floating_point<VType_>::value && std::is_integral<VType>::value, VType_, VType>::type
+		typename RType = typename std::conditional<std::is_floating_point<VType_>::value && std::is_integral<VType>::value, VType_, VType>::type
 	>
 	__host__ __device__ cuVAL2<RType> operator/(const cuVAL2<VType_> &rhs) const { return cuVAL2<RType>(x / rhs.x, y / rhs.y); }
 
 	//DIVISION BY A CONSTANT (must be fundamental type)
 	template <
 		class DVType,
-		typename RType = std::conditional<std::is_floating_point<DVType>::value && std::is_integral<VType>::value, DVType, VType>::type,
+		typename RType = typename std::conditional<std::is_floating_point<DVType>::value && std::is_integral<VType>::value, DVType, VType>::type,
 		std::enable_if_t<std::is_fundamental<DVType>::value>* = nullptr
 	>
 	__host__ __device__ cuVAL2<RType> operator/(const DVType &divisor) const { return cuVAL2<RType>(x / divisor, y / divisor); }
@@ -307,14 +309,18 @@ struct cuVAL3 {
 	template <typename SType>
 	__host__ cuVAL3<VType>& operator=(const VAL3<SType> &rhs)
 	{
-		x = (VType)rhs.x; y = (VType)rhs.y; z = (VType)rhs.z;
+		x = (VType)rhs.x; 
+		y = (VType)rhs.y; 
+		z = (VType)rhs.z;
 		return *this;
 	}
 
 	template <typename SType>
 	__host__ cuVAL3(const VAL3<SType> &rhs)
 	{
-		x = (VType)rhs.x; y = (VType)rhs.y; z = (VType)rhs.z;
+		x = (VType)rhs.x; 
+		y = (VType)rhs.y; 
+		z = (VType)rhs.z;
 	}
 
 	//----------------------------- ARITHMETIC OPERATORS
@@ -324,14 +330,14 @@ struct cuVAL3 {
 	//SUM
 	template <
 		typename VType_,
-		typename RType = std::conditional<std::is_floating_point<VType_>::value && std::is_integral<VType>::value, VType_, VType>::type
+		typename RType = typename std::conditional<std::is_floating_point<VType_>::value && std::is_integral<VType>::value, VType_, VType>::type
 	>
 	__host__ __device__ cuVAL3<RType> operator+(const cuVAL3<VType_> &rhs) const { return cuVAL3<RType>(x + rhs.x, y + rhs.y, z + rhs.z); }
 
 	//DIFFERENCE
 	template <
 		typename VType_,
-		typename RType = std::conditional<std::is_floating_point<VType_>::value && std::is_integral<VType>::value, VType_, VType>::type
+		typename RType = typename std::conditional<std::is_floating_point<VType_>::value && std::is_integral<VType>::value, VType_, VType>::type
 	>
 	__host__ __device__ cuVAL3<RType> operator-(const cuVAL3<VType_> &rhs) const { return cuVAL3<RType>(x - rhs.x, y - rhs.y, z - rhs.z); }
 
@@ -365,14 +371,14 @@ struct cuVAL3 {
 	//VECTOR PRODUCT
 	template <
 		typename VType_,
-		typename RType = std::conditional<std::is_floating_point<VType_>::value && std::is_integral<VType>::value, VType_, VType>::type
+		typename RType = typename std::conditional<std::is_floating_point<VType_>::value && std::is_integral<VType>::value, VType_, VType>::type
 	>
 	__host__ __device__ cuVAL3<RType> operator^(const cuVAL3<VType_> &rhs) const { return cuVAL3<RType>(y*rhs.z - z * rhs.y, z*rhs.x - x * rhs.z, x*rhs.y - y * rhs.x); }
 
 	//OUTER VECTOR PRODUCT
 	template <
 		typename VType_,
-		typename RType = std::conditional<std::is_floating_point<VType_>::value && std::is_integral<VType>::value, VType_, VType>::type,
+		typename RType = typename std::conditional<std::is_floating_point<VType_>::value && std::is_integral<VType>::value, VType_, VType>::type,
 		std::enable_if_t<std::is_fundamental<VType_>::value && std::is_fundamental<VType>::value>* = nullptr
 	>
 	__host__ __device__ cuVAL3<cuVAL3<RType>> operator|(const cuVAL3<VType_> &rhs) const { return cuVAL3<cuVAL3<RType>>(cuVAL3<RType>(x * rhs.x, x * rhs.y, x * rhs.z), cuVAL3<RType>(y * rhs.x, y * rhs.y, y * rhs.z), cuVAL3<RType>(z * rhs.x, z * rhs.y, z * rhs.z)); }
@@ -387,7 +393,7 @@ struct cuVAL3 {
 	//SIMPLE PRODUCT (component by component)
 	template <
 		typename VType_,
-		typename RType = std::conditional<std::is_floating_point<VType_>::value && std::is_integral<VType>::value, VType_, VType>::type
+		typename RType = typename std::conditional<std::is_floating_point<VType_>::value && std::is_integral<VType>::value, VType_, VType>::type
 	>
 	__host__ __device__ cuVAL3<RType> operator&(const cuVAL3<VType_> &rhs) const { return cuVAL3<RType>(x * rhs.x, y * rhs.y, z * rhs.z); }
 
@@ -410,7 +416,7 @@ struct cuVAL3 {
 	//SIMPLE DIVISION (component by component)
 	template <
 		typename VType_,
-		typename RType = std::conditional<std::is_floating_point<VType_>::value && std::is_integral<VType>::value, VType_, VType>::type
+		typename RType = typename std::conditional<std::is_floating_point<VType_>::value && std::is_integral<VType>::value, VType_, VType>::type
 	>
 	__host__ __device__ cuVAL3<RType> operator/(const cuVAL3<VType_> &rhs) const { return cuVAL3<RType>(x / rhs.x, y / rhs.y, z / rhs.z); }
 
@@ -588,14 +594,14 @@ struct cuVAL4 {
 	//SUM
 	template <
 		typename VType_,
-		typename RType = std::conditional<std::is_floating_point<VType_>::value && std::is_integral<VType>::value, VType_, VType>::type
+		typename RType = typename std::conditional<std::is_floating_point<VType_>::value && std::is_integral<VType>::value, VType_, VType>::type
 	>
 		__host__ __device__ cuVAL4<RType> operator+(const cuVAL4<VType_> &rhs) const { return cuVAL4<RType>(x + rhs.x, y + rhs.y, z + rhs.z, t + rhs.t); }
 
 	//DIFFERENCE
 	template <
 		typename VType_,
-		typename RType = std::conditional<std::is_floating_point<VType_>::value && std::is_integral<VType>::value, VType_, VType>::type
+		typename RType = typename std::conditional<std::is_floating_point<VType_>::value && std::is_integral<VType>::value, VType_, VType>::type
 	>
 		__host__ __device__ cuVAL4<RType> operator-(const cuVAL4<VType_> &rhs) const { return cuVAL4<RType>(x - rhs.x, y - rhs.y, z - rhs.z, t - rhs.t); }
 
@@ -625,7 +631,7 @@ struct cuVAL4 {
 	//SIMPLE DIVISION (component by component)
 	template <
 		typename VType_,
-		typename RType = std::conditional<std::is_floating_point<VType_>::value && std::is_integral<VType>::value, VType_, VType>::type
+		typename RType = typename std::conditional<std::is_floating_point<VType_>::value && std::is_integral<VType>::value, VType_, VType>::type
 	>
 		__host__ __device__ cuVAL4<RType> operator/(const cuVAL4<VType_> &rhs) const { return cuVAL4<RType>(x / rhs.x, y / rhs.y, z / rhs.z, t / rhs.t); }
 

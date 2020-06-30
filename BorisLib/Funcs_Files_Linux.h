@@ -76,7 +76,10 @@ inline std::string GetUserDocumentsPath(void)
 inline bool MakeDirectory(std::string directory)
 {
 	//available in C++17
-	return std::filesystem::create_directories(directory);
+	std::filesystem::create_directories(directory);
+
+	//TO DO: check if directory already exists and return true; for all other errors return false
+	return true;
 }
 
 //This function has been adapted from : https://stackoverflow.com/questions/27378318/c-get-string-from-clipboard-on-linux

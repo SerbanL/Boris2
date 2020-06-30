@@ -349,9 +349,9 @@ public:
 
 	//copy pre-calculated transfer info from cpu memory. return false if not enough memory to copy
 	template <typename cpuVEC>
-	__host__ bool copy_transfer_info(cu_arr<cuVEC<VType>>& mesh_in_arr, cu_arr<cuVEC<VType>>& mesh_out_arr, cpuVEC& cpuVEC) 
+	__host__ bool copy_transfer_info(cu_arr<cuVEC<VType>>& mesh_in_arr, cu_arr<cuVEC<VType>>& mesh_out_arr, cpuVEC& vec) 
 	{ 
-		return transfer.copy_transfer_info(mesh_in_arr, mesh_out_arr, cpuVEC); 
+		return transfer.copy_transfer_info(mesh_in_arr, mesh_out_arr, vec); 
 	}
 
 	//MULTIPLE INPUTS, SINGLE OUTPUT
@@ -361,15 +361,15 @@ public:
 	//All VECs in mesh_in should be non-empty
 	//Some VECs in mesh_in2 allowed to be non-empty (in this case single input is used), but otherwise should have exactly same dimensions as the corresponding VECs in mesh_in
 	template <typename cpuVEC>
-	__host__ bool copy_transfer_info_averagedinputs(cu_arr<cuVEC<VType>>& mesh_in_arr1, cu_arr<cuVEC<VType>>& mesh_in_arr2, cu_arr<cuVEC<VType>>& mesh_out_arr, cpuVEC& cpuVEC) 
+	__host__ bool copy_transfer_info_averagedinputs(cu_arr<cuVEC<VType>>& mesh_in_arr1, cu_arr<cuVEC<VType>>& mesh_in_arr2, cu_arr<cuVEC<VType>>& mesh_out_arr, cpuVEC& vec) 
 	{ 
-		return transfer.copy_transfer_info_averagedinputs(mesh_in_arr1, mesh_in_arr2, mesh_out_arr, cpuVEC);
+		return transfer.copy_transfer_info_averagedinputs(mesh_in_arr1, mesh_in_arr2, mesh_out_arr, vec);
 	}
 
 	template <typename cpuVEC>
-	__host__ bool copy_transfer_info_multipliedinputs(cu_arr<cuVEC<VType>>& mesh_in_arr1, cu_arr<cuVEC<cuBReal>>& mesh_in_arr2_real, cu_arr<cuVEC<VType>>& mesh_out_arr, cpuVEC& cpuVEC)
+	__host__ bool copy_transfer_info_multipliedinputs(cu_arr<cuVEC<VType>>& mesh_in_arr1, cu_arr<cuVEC<cuBReal>>& mesh_in_arr2_real, cu_arr<cuVEC<VType>>& mesh_out_arr, cpuVEC& vec)
 	{
-		return transfer.copy_transfer_info_multipliedinputs(mesh_in_arr1, mesh_in_arr2_real, mesh_out_arr, cpuVEC);
+		return transfer.copy_transfer_info_multipliedinputs(mesh_in_arr1, mesh_in_arr2_real, mesh_out_arr, vec);
 	}
 
 	//MULTIPLE INPUTS, MULTIPLE OUTPUT
@@ -380,9 +380,9 @@ public:
 	//Some VECs in mesh_in2 and mesh_out2 allowed to be non-empty (in this single input/output is used), but otherwise should have exactly same dimensions as the corresponding VECs in mesh_in, mesh_out
 	//Also if a VEC in mesh_in2 is non-empty the corresponding VEC in mesh_out2 should also be non-empty.
 	template <typename cpuVEC>
-	__host__ bool copy_transfer_info_averagedinputs_duplicatedoutputs(cu_arr<cuVEC<VType>>& mesh_in_arr1, cu_arr<cuVEC<VType>>& mesh_in_arr2, cu_arr<cuVEC<VType>>& mesh_out_arr1, cu_arr<cuVEC<VType>>& mesh_out_arr2, cpuVEC& cpuVEC)
+	__host__ bool copy_transfer_info_averagedinputs_duplicatedoutputs(cu_arr<cuVEC<VType>>& mesh_in_arr1, cu_arr<cuVEC<VType>>& mesh_in_arr2, cu_arr<cuVEC<VType>>& mesh_out_arr1, cu_arr<cuVEC<VType>>& mesh_out_arr2, cpuVEC& vec)
 	{
-		return transfer.copy_transfer_info_averagedinputs_duplicatedoutputs(mesh_in_arr1, mesh_in_arr2, mesh_out_arr1, mesh_out_arr2, cpuVEC);
+		return transfer.copy_transfer_info_averagedinputs_duplicatedoutputs(mesh_in_arr1, mesh_in_arr2, mesh_out_arr1, mesh_out_arr2, vec);
 	}
 
 	//SINGLE INPUT, SINGLE OUTPUT

@@ -25,7 +25,7 @@ public:
 
 //use this
 template <typename Type>
-struct is_indexable_byId : std::bool_constant< __is_indexable_byId<Type>::value > {};
+struct is_indexable_byId : std::integral_constant<bool, __is_indexable_byId<Type>::value > {};
 
 //--------------------------------------------------
 //check if type is key indexable (has [] operator which can a std::string as parameter)
@@ -49,7 +49,7 @@ public:
 
 //use this
 template <typename Type>
-struct is_indexable_bykey : std::bool_constant< __is_indexable_bykey<Type>::value > {};
+struct is_indexable_bykey : std::integral_constant<bool, __is_indexable_bykey<Type>::value > {};
 
 //--------------------------------------------------
 //check if type is a std::vector-like type : duck-typing test to allow for custom std::vector-like types. For a type to be considered a vector it must have the following:
@@ -88,17 +88,17 @@ public:
 
 //use this
 template <typename Type>
-struct is_vector : std::bool_constant< __is_vector<Type>::value > {};
+struct is_vector : std::integral_constant<bool, __is_vector<Type>::value > {};
 
 //--------------------------------------------------
 //check if type is a std::vector-like type with Id indexing: is_vector and is_indexable_byId
 
 template <typename Type>
-struct is_vector_withId : std::bool_constant< is_vector<Type>::value && is_indexable_byId<Type>::value > {};
+struct is_vector_withId : std::integral_constant<bool, is_vector<Type>::value && is_indexable_byId<Type>::value > {};
 
 //--------------------------------------------------
 //check if type is a std::vector-like type with key indexing: is_vector and is_indexable_bykey
 
 template <typename Type>
-struct is_vector_withkey : std::bool_constant< is_vector<Type>::value && is_indexable_bykey<Type>::value > {};
+struct is_vector_withkey : std::integral_constant<bool, is_vector<Type>::value && is_indexable_bykey<Type>::value > {};
 

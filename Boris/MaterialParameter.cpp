@@ -6,41 +6,49 @@
 //-------------- UPDATE CUDA VALUE ONLY
 
 //update just the value at 0K and current value in the corresponding MatPCUDA
+template <>
 void MatP<float, double>::update_cuda_value(void)
 {
 	reinterpret_cast<cu_obj<MatPCUDA<cuBReal, cuBReal>>*>(p_cu_obj_mpcuda)->get_managed_object()->set_from_cpu_value(*this);
 }
 
+template <>
 void MatP<double, double>::update_cuda_value(void)
 {
 	reinterpret_cast<cu_obj<MatPCUDA<cuBReal, cuBReal>>*>(p_cu_obj_mpcuda)->get_managed_object()->set_from_cpu_value(*this);
 }
 
+template <>
 void MatP<FLT2, double>::update_cuda_value(void)
 {
 	reinterpret_cast<cu_obj<MatPCUDA<cuReal2, cuBReal>>*>(p_cu_obj_mpcuda)->get_managed_object()->set_from_cpu_value(*this);
 }
 
+template <>
 void MatP<DBL2, double>::update_cuda_value(void)
 {
 	reinterpret_cast<cu_obj<MatPCUDA<cuReal2, cuBReal>>*>(p_cu_obj_mpcuda)->get_managed_object()->set_from_cpu_value(*this);
 }
 
+template <>
 void MatP<FLT3, double>::update_cuda_value(void)
 {
 	reinterpret_cast<cu_obj<MatPCUDA<cuReal3, cuBReal>>*>(p_cu_obj_mpcuda)->get_managed_object()->set_from_cpu_value(*this);
 }
 
+template <>
 void MatP<DBL3, double>::update_cuda_value(void)
 {
 	reinterpret_cast<cu_obj<MatPCUDA<cuReal3, cuBReal>>*>(p_cu_obj_mpcuda)->get_managed_object()->set_from_cpu_value(*this);
 }
 
+template <>
 void MatP<FLT3, FLT3>::update_cuda_value(void)
 {
 	reinterpret_cast<cu_obj<MatPCUDA<cuReal3, cuReal3>>*>(p_cu_obj_mpcuda)->get_managed_object()->set_from_cpu_value(*this);
 }
 
+template <>
 void MatP<DBL3, DBL3>::update_cuda_value(void)
 {
 	reinterpret_cast<cu_obj<MatPCUDA<cuReal3, cuReal3>>*>(p_cu_obj_mpcuda)->get_managed_object()->set_from_cpu_value(*this);
@@ -49,6 +57,7 @@ void MatP<DBL3, DBL3>::update_cuda_value(void)
 //-------------- UPDATE FULL CUDA OBJECT
 
 //fully update the corresponding MatPCUDA
+template <>
 void MatP<float, double>::update_cuda_object(void)
 {
 	//temperature equation
@@ -64,6 +73,7 @@ void MatP<float, double>::update_cuda_object(void)
 	reinterpret_cast<cu_obj<MatPCUDA<cuBReal, cuBReal>>*>(p_cu_obj_mpcuda)->get_managed_object()->set_from_cpu(*this);
 }
 
+template <>
 void MatP<double, double>::update_cuda_object(void)
 {
 	//temperature equation
@@ -77,6 +87,7 @@ void MatP<double, double>::update_cuda_object(void)
 	reinterpret_cast<cu_obj<MatPCUDA<cuBReal, cuBReal>>*>(p_cu_obj_mpcuda)->get_managed_object()->set_from_cpu(*this);
 }
 
+template <>
 void MatP<FLT2, double>::update_cuda_object(void)
 {
 	//temperature equation
@@ -90,6 +101,7 @@ void MatP<FLT2, double>::update_cuda_object(void)
 	reinterpret_cast<cu_obj<MatPCUDA<cuReal2, cuBReal>>*>(p_cu_obj_mpcuda)->get_managed_object()->set_from_cpu(*this);
 }
 
+template <>
 void MatP<DBL2, double>::update_cuda_object(void)
 {
 	//temperature equation
@@ -103,6 +115,7 @@ void MatP<DBL2, double>::update_cuda_object(void)
 	reinterpret_cast<cu_obj<MatPCUDA<cuReal2, cuBReal>>*>(p_cu_obj_mpcuda)->get_managed_object()->set_from_cpu(*this);
 }
 
+template <>
 void MatP<FLT3, double>::update_cuda_object(void)
 {
 	//temperature equation
@@ -116,6 +129,7 @@ void MatP<FLT3, double>::update_cuda_object(void)
 	reinterpret_cast<cu_obj<MatPCUDA<cuReal3, cuBReal>>*>(p_cu_obj_mpcuda)->get_managed_object()->set_from_cpu(*this);
 }
 
+template <>
 void MatP<DBL3, double>::update_cuda_object(void)
 {
 	//temperature equation
@@ -129,6 +143,7 @@ void MatP<DBL3, double>::update_cuda_object(void)
 	reinterpret_cast<cu_obj<MatPCUDA<cuReal3, cuBReal>>*>(p_cu_obj_mpcuda)->get_managed_object()->set_from_cpu(*this);
 }
 
+template <>
 void MatP<FLT3, FLT3>::update_cuda_object(void)
 {
 	//temperature equation
@@ -142,6 +157,7 @@ void MatP<FLT3, FLT3>::update_cuda_object(void)
 	reinterpret_cast<cu_obj<MatPCUDA<cuReal3, cuReal3>>*>(p_cu_obj_mpcuda)->get_managed_object()->set_from_cpu(*this);
 }
 
+template <>
 void MatP<DBL3, DBL3>::update_cuda_object(void)
 {
 	//temperature equation

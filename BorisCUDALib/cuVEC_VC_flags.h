@@ -53,22 +53,22 @@ __device__ VType cuVEC_VC<VType>::get_dirichlet_value(int dirichlet_flag, int ce
 	switch (dirichlet_flag) {
 
 	case NF2_DIRICHLETPX:
-		return dirichlet_nx[((cell_idx / n.x) % n.y) + (cell_idx / (n.x*n.y))*n.y];
+		return dirichlet_nx[((cell_idx / cuVEC<VType>::n.x) % cuVEC<VType>::n.y) + (cell_idx / (cuVEC<VType>::n.x*cuVEC<VType>::n.y))*cuVEC<VType>::n.y];
 
 	case NF2_DIRICHLETNX:
-		return dirichlet_px[((cell_idx / n.x) % n.y) + (cell_idx / (n.x*n.y))*n.y];
+		return dirichlet_px[((cell_idx / cuVEC<VType>::n.x) % cuVEC<VType>::n.y) + (cell_idx / (cuVEC<VType>::n.x*cuVEC<VType>::n.y))*cuVEC<VType>::n.y];
 
 	case NF2_DIRICHLETPY:
-		return dirichlet_ny[(cell_idx % n.x) + (cell_idx / (n.x*n.y))*n.x];
+		return dirichlet_ny[(cell_idx % cuVEC<VType>::n.x) + (cell_idx / (cuVEC<VType>::n.x*cuVEC<VType>::n.y))*cuVEC<VType>::n.x];
 
 	case NF2_DIRICHLETNY:
-		return dirichlet_py[(cell_idx % n.x) + (cell_idx / (n.x*n.y))*n.x];
+		return dirichlet_py[(cell_idx % cuVEC<VType>::n.x) + (cell_idx / (cuVEC<VType>::n.x*cuVEC<VType>::n.y))*cuVEC<VType>::n.x];
 
 	case NF2_DIRICHLETPZ:
-		return dirichlet_nz[(cell_idx % n.x) + ((cell_idx / n.x) % n.y)*n.x];
+		return dirichlet_nz[(cell_idx % cuVEC<VType>::n.x) + ((cell_idx / cuVEC<VType>::n.x) % cuVEC<VType>::n.y)*cuVEC<VType>::n.x];
 
 	case NF2_DIRICHLETNZ:
-		return dirichlet_pz[(cell_idx % n.x) + ((cell_idx / n.x) % n.y)*n.x];
+		return dirichlet_pz[(cell_idx % cuVEC<VType>::n.x) + ((cell_idx / cuVEC<VType>::n.x) % cuVEC<VType>::n.y)*cuVEC<VType>::n.x];
 	}
 
 	return VType();
@@ -80,22 +80,22 @@ __device__ VType cuVEC_VC<VType>::get_dirichlet_value(int dirichlet_flag, const 
 	switch (dirichlet_flag) {
 
 	case NF2_DIRICHLETPX:
-		return dirichlet_nx[ijk.j + ijk.k * n.y];
+		return dirichlet_nx[ijk.j + ijk.k * cuVEC<VType>::n.y];
 
 	case NF2_DIRICHLETNX:
-		return dirichlet_px[ijk.j + ijk.k * n.y];
+		return dirichlet_px[ijk.j + ijk.k * cuVEC<VType>::n.y];
 
 	case NF2_DIRICHLETPY:
-		return dirichlet_ny[ijk.i + ijk.k * n.x];
+		return dirichlet_ny[ijk.i + ijk.k * cuVEC<VType>::n.x];
 
 	case NF2_DIRICHLETNY:
-		return dirichlet_py[ijk.i + ijk.k * n.x];
+		return dirichlet_py[ijk.i + ijk.k * cuVEC<VType>::n.x];
 
 	case NF2_DIRICHLETPZ:
-		return dirichlet_nz[ijk.i + ijk.j * n.x];
+		return dirichlet_nz[ijk.i + ijk.j * cuVEC<VType>::n.x];
 
 	case NF2_DIRICHLETNZ:
-		return dirichlet_pz[ijk.i + ijk.j * n.x];
+		return dirichlet_pz[ijk.i + ijk.j * cuVEC<VType>::n.x];
 	}
 
 	return VType();
@@ -113,13 +113,13 @@ __host__ int cuVEC_VC<VType>::get_nonempty_cells_cpu(void)
 template <typename VType>
 __device__ bool cuVEC_VC<VType>::is_empty(const cuRect& rectangle) const
 {
-	cuBox cells = box_from_rect_max(rectangle);
+	cuBox cells = cuVEC<VType>::box_from_rect_max(rectangle);
 
-	for (int i = (cells.s.x >= 0 ? cells.s.x : 0); i < (cells.e.x <= n.x ? cells.e.x : n.x); i++) {
+	for (int i = (cells.s.x >= 0 ? cells.s.x : 0); i < (cells.e.x <= cuVEC<VType>::n.x ? cells.e.x : cuVEC<VType>::n.x); i++) {
 
-		for (int j = (cells.s.y >= 0 ? cells.s.y : 0); j < (cells.e.y <= n.y ? cells.e.y : n.y); j++) {
+		for (int j = (cells.s.y >= 0 ? cells.s.y : 0); j < (cells.e.y <= cuVEC<VType>::n.y ? cells.e.y : cuVEC<VType>::n.y); j++) {
 			
-			for (int k = (cells.s.z >= 0 ? cells.s.z : 0); k < (cells.e.z <= n.z ? cells.e.z : n.z); k++) {
+			for (int k = (cells.s.z >= 0 ? cells.s.z : 0); k < (cells.e.z <= cuVEC<VType>::n.z ? cells.e.z : cuVEC<VType>::n.z); k++) {
 
 				if (is_not_empty(cuINT3(i, j, k))) return false;
 			}

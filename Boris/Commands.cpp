@@ -4457,7 +4457,7 @@ void Simulation::HandleCommand(string command_string)
 				#pragma omp parallel for
 				for (int idx = 0; idx < pathsize; idx++) {
 
-					DBL3 value = (DBL3)SMesh.GetDisplayedMeshValue(DBL3(x[idx], y[idx], z[idx]));
+					DBL3 value = SMesh.GetDisplayedMeshValue(DBL3(x[idx], y[idx], z[idx]));
 
 					data_x[idx] = value.x;
 					data_y[idx] = value.y;
@@ -4489,9 +4489,22 @@ void Simulation::HandleCommand(string command_string)
 
 				if (script_client_connected) {
 
-					if (value.is_type(btype_info<double>())) commSocket.SetSendData(commandSpec.PrepareReturnParameters(double(value)));
-					else if (value.is_type(btype_info<DBL2>())) commSocket.SetSendData(commandSpec.PrepareReturnParameters(DBL2(value)));
-					else if (value.is_type(btype_info<DBL3>())) commSocket.SetSendData(commandSpec.PrepareReturnParameters(DBL3(value)));
+					//Longer version so it compiles with C++14
+					if (value.is_type(btype_info<double>())) {
+						
+						double value_converted = value;
+						commSocket.SetSendData(commandSpec.PrepareReturnParameters(value_converted));
+					}
+					else if (value.is_type(btype_info<DBL2>())) {
+						
+						DBL2 value_converted = value;
+						commSocket.SetSendData(commandSpec.PrepareReturnParameters(value_converted));
+					}
+					else if (value.is_type(btype_info<DBL3>())) {
+						
+						DBL3 value_converted = value;
+						commSocket.SetSendData(commandSpec.PrepareReturnParameters(value_converted));
+					}
 				}
 			}
 			else if (verbose) PrintCommandUsage(command_name);
@@ -4585,9 +4598,22 @@ void Simulation::HandleCommand(string command_string)
 
 				if (script_client_connected) {
 
-					if (value.is_type(btype_info<double>())) commSocket.SetSendData(commandSpec.PrepareReturnParameters(double(value)));
-					else if (value.is_type(btype_info<DBL2>())) commSocket.SetSendData(commandSpec.PrepareReturnParameters(DBL2(value)));
-					else if (value.is_type(btype_info<DBL3>())) commSocket.SetSendData(commandSpec.PrepareReturnParameters(DBL3(value)));
+					//Longer version so it compiles with C++14
+					if (value.is_type(btype_info<double>())) {
+						
+						double value_converted = value;
+						commSocket.SetSendData(commandSpec.PrepareReturnParameters(value_converted));
+					}
+					else if (value.is_type(btype_info<DBL2>())) {
+						
+						DBL2 value_converted = value;
+						commSocket.SetSendData(commandSpec.PrepareReturnParameters(value_converted));
+					}
+					else if (value.is_type(btype_info<DBL3>())) {
+						
+						DBL3 value_converted = value;
+						commSocket.SetSendData(commandSpec.PrepareReturnParameters(value_converted));
+					}
 				}
 			}
 			else if (verbose) PrintCommandUsage(command_name);

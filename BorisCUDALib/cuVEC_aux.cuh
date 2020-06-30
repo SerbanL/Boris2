@@ -1,6 +1,8 @@
 #pragma once
 
 #include "cuVEC.h"
+#include "cuVEC_MeshTransfer.h"
+#include "cuVEC_aux.h"
 
 //------------------------------------------------------------------- ZERO/SET AUX VALUES
 

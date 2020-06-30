@@ -9,13 +9,13 @@ template <typename VType>
 template <typename LVType>
 __host__ bool cuVEC_VC<VType>::resize(cuSZ3 new_n, cuVEC_VC<LVType>& linked_vec)
 {
-	if (new_n != get_gpu_value(n)) {
+	if (new_n != get_gpu_value(cuVEC<VType>::n)) {
 
 		//memory reserved so map flags to new size before changing the n value
 		cudaError_t error = resize_ngbrFlags(new_n);
 		if (error != cudaSuccess) return false;
 
-		if (!cuVEC::resize(new_n)) return false;
+		if (!cuVEC<VType>::resize(new_n)) return false;
 	}
 
 	//all good, finish off by setting flags.
@@ -28,13 +28,13 @@ __host__ bool cuVEC_VC<VType>::resize(cuSZ3 new_n, cuVEC_VC<LVType>& linked_vec)
 template <typename VType>
 __host__ bool cuVEC_VC<VType>::resize(cuSZ3 new_n)
 {
-	if (new_n != get_gpu_value(n)) {
+	if (new_n != get_gpu_value(cuVEC<VType>::n)) {
 
 		//memory reserved so map flags to new size before changing the n value
 		cudaError_t error = resize_ngbrFlags(new_n);
 		if (error != cudaSuccess) return false;
 
-		if (!cuVEC::resize(new_n)) return false;
+		if (!cuVEC<VType>::resize(new_n)) return false;
 
 		//all good, finish off by setting flags.
 		set_ngbrFlags();
@@ -48,15 +48,15 @@ template <typename VType>
 template <typename LVType>
 __host__ bool cuVEC_VC<VType>::resize(cuReal3 new_h, cuRect new_rect, cuVEC_VC<LVType>& linked_vec)
 {
-	if (new_h != get_gpu_value(h) || new_rect != get_gpu_value(rect)) {
+	if (new_h != get_gpu_value(cuVEC<VType>::h) || new_rect != get_gpu_value(cuVEC<VType>::rect)) {
 
-		cuSZ3 new_n = get_n_from_h_and_rect(new_h, new_rect);
+		cuSZ3 new_n = cuVEC<VType>::get_n_from_h_and_rect(new_h, new_rect);
 
 		//memory reserved so map flags to new size before changing the n value
 		cudaError_t error = resize_ngbrFlags(new_n);
 		if (error != cudaSuccess) return false;
 
-		if (!cuVEC::resize(new_h, new_rect)) return false;
+		if (!cuVEC<VType>::resize(new_h, new_rect)) return false;
 	}
 
 	//all good, finish off by setting flags.
@@ -69,15 +69,15 @@ __host__ bool cuVEC_VC<VType>::resize(cuReal3 new_h, cuRect new_rect, cuVEC_VC<L
 template <typename VType>
 __host__ bool cuVEC_VC<VType>::resize(cuReal3 new_h, cuRect new_rect)
 {
-	if (new_h != get_gpu_value(h) || new_rect != get_gpu_value(rect)) {
+	if (new_h != get_gpu_value(cuVEC<VType>::h) || new_rect != get_gpu_value(cuVEC<VType>::rect)) {
 
-		cuSZ3 new_n = get_n_from_h_and_rect(new_h, new_rect);
+		cuSZ3 new_n = cuVEC<VType>::get_n_from_h_and_rect(new_h, new_rect);
 
 		//memory reserved so map flags to new size before changing the n value
 		cudaError_t error = resize_ngbrFlags(new_n);
 		if (error != cudaSuccess) return false;
 
-		if (!cuVEC::resize(new_h, new_rect)) return false;
+		if (!cuVEC<VType>::resize(new_h, new_rect)) return false;
 
 		//all good, finish off by setting flags.
 		set_ngbrFlags();
@@ -91,14 +91,14 @@ template <typename VType>
 template <typename LVType>
 __host__ bool cuVEC_VC<VType>::assign(cuSZ3 new_n, VType value, cuVEC_VC<LVType>& linked_vec)
 {
-	if (new_h != get_gpu_value(h) || new_rect != get_gpu_value(rect)) {
+	if (new_n != get_gpu_value(cuVEC<VType>::n)) {
 
 		//memory reserved so map flags to new size before changing the n value
 		cudaError_t error = resize_ngbrFlags(new_n);
 		if (error != cudaSuccess) return false;
 	}
 	
-	if (!cuVEC::assign(new_n, value)) return false;
+	if (!cuVEC<VType>::assign(new_n, value)) return false;
 
 	//all good, finish off by setting flags.
 	set_ngbrFlags(linked_vec.n, linked_vec.h, linked_vec.rect, linked_vec.ngbrFlags);
@@ -110,7 +110,7 @@ __host__ bool cuVEC_VC<VType>::assign(cuSZ3 new_n, VType value, cuVEC_VC<LVType>
 template <typename VType>
 __host__ bool cuVEC_VC<VType>::assign(cuSZ3 new_n, VType value)
 {
-	if (new_n != get_gpu_value(n)) {
+	if (new_n != get_gpu_value(cuVEC<VType>::n)) {
 
 		//memory reserved so map flags to new size before changing the n value
 		cudaError_t error = resize_ngbrFlags(new_n);
@@ -118,7 +118,7 @@ __host__ bool cuVEC_VC<VType>::assign(cuSZ3 new_n, VType value)
 
 	}
 
-	if (!cuVEC::assign(new_n, value)) return false;
+	if (!cuVEC<VType>::assign(new_n, value)) return false;
 
 	//all good, finish off by setting flags.
 	set_ngbrFlags();
@@ -131,16 +131,16 @@ template <typename VType>
 template <typename LVType>
 __host__ bool cuVEC_VC<VType>::assign(cuReal3 new_h, cuRect new_rect, VType value, cuVEC_VC<LVType>& linked_vec)
 {
-	if (new_h != get_gpu_value(h) || new_rect != get_gpu_value(rect)) {
+	if (new_h != get_gpu_value(cuVEC<VType>::h) || new_rect != get_gpu_value(cuVEC<VType>::rect)) {
 
-		cuSZ3 new_n = get_n_from_h_and_rect(new_h, new_rect);
+		cuSZ3 new_n = cuVEC<VType>::get_n_from_h_and_rect(new_h, new_rect);
 
 		//memory reserved so map flags to new size before changing the n value
 		cudaError_t error = resize_ngbrFlags(new_n);
 		if (error != cudaSuccess) return false;
 	}
 
-	if (!cuVEC::assign(new_h, new_rect, value)) return false;
+	if (!cuVEC<VType>::assign(new_h, new_rect, value)) return false;
 
 	//all good, finish off by setting flags.
 	set_ngbrFlags(linked_vec.n, linked_vec.h, linked_vec.rect, linked_vec.ngbrFlags_ref());
@@ -152,16 +152,16 @@ __host__ bool cuVEC_VC<VType>::assign(cuReal3 new_h, cuRect new_rect, VType valu
 template <typename VType>
 __host__ bool cuVEC_VC<VType>::assign(cuReal3 new_h, cuRect new_rect, VType value)
 {
-	if (new_h != get_gpu_value(h) || new_rect != get_gpu_value(rect)) {
+	if (new_h != get_gpu_value(cuVEC<VType>::h) || new_rect != get_gpu_value(cuVEC<VType>::rect)) {
 
-		cuSZ3 new_n = get_n_from_h_and_rect(new_h, new_rect);
+		cuSZ3 new_n = cuVEC<VType>::get_n_from_h_and_rect(new_h, new_rect);
 
 		//memory reserved so map flags to new size before changing the n value
 		cudaError_t error = resize_ngbrFlags(new_n);
 		if (error != cudaSuccess) return false;
 	}
 
-	if (!cuVEC::assign(new_h, new_rect, value)) return false;
+	if (!cuVEC<VType>::assign(new_h, new_rect, value)) return false;
 
 	//all good, finish off by setting flags.
 	set_ngbrFlags();
@@ -172,7 +172,7 @@ __host__ bool cuVEC_VC<VType>::assign(cuReal3 new_h, cuRect new_rect, VType valu
 template <typename VType>
 __host__ void cuVEC_VC<VType>::clear(void)
 {
-	cuVEC::clear();
+	cuVEC<VType>::clear();
 	set_ngbrFlags_size(0);
 
 	gpu_free_managed(ngbrFlags2);
@@ -193,9 +193,9 @@ __host__ void cuVEC_VC<VType>::clear(void)
 template <typename VType>
 __host__ void cuVEC_VC<VType>::setrect(cuRect rectangle, VType value)
 {
-	if (!get_gpu_value(rect).intersects(rectangle + get_gpu_value(rect).s)) return;
+	if (!get_gpu_value(cuVEC<VType>::rect).intersects(rectangle + get_gpu_value(cuVEC<VType>::rect).s)) return;
 
-	cuBox cells_box = box_from_rect_max_cpu(rectangle + get_gpu_value(rect).s);
+	cuBox cells_box = cuVEC<VType>::box_from_rect_max_cpu(rectangle + get_gpu_value(cuVEC<VType>::rect).s);
 
 	setbox(cells_box, value);
 }

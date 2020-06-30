@@ -35,7 +35,7 @@ template void cuVEC_VC<cuDBL33>::setnonempty(cuDBL33 value);
 template <typename VType>
 __host__ void cuVEC_VC<VType>::setnonempty(VType value)
 {
-	setnonempty_kernel <<< (get_gpu_value(n).dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >> > (n, ngbrFlags, quantity, value);
+	setnonempty_kernel <<< (get_gpu_value(cuVEC<VType>::n).dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >> > (cuVEC<VType>::n, ngbrFlags, cuVEC<VType>::quantity, value);
 }
 
 //------------------------------------------------------------------- SETRECTNONEMPTY
@@ -69,9 +69,9 @@ template void cuVEC_VC<cuDBL33>::setrectnonempty(const cuRect& rectangle, cuDBL3
 template <typename VType>
 __host__ void cuVEC_VC<VType>::setrectnonempty(const cuRect& rectangle, VType value)
 {
-	cuBox box = box_from_rect_max_cpu(rectangle + get_gpu_value(rect).s);
+	cuBox box = cuVEC<VType>::box_from_rect_max_cpu(rectangle + get_gpu_value(cuVEC<VType>::rect).s);
 
-	setrectnonempty_kernel <<< (get_gpu_value(n).dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (n, ngbrFlags, quantity, box, value);
+	setrectnonempty_kernel <<< (get_gpu_value(cuVEC<VType>::n).dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (cuVEC<VType>::n, ngbrFlags, cuVEC<VType>::quantity, box, value);
 }
 
 //------------------------------------------------------------------- RENORMALIZE (cuVEC_VC)
@@ -103,7 +103,7 @@ template <typename VType>
 template <typename PType>
 __host__ void cuVEC_VC<VType>::renormalize(size_t arr_size, PType new_norm)
 {
-	cuvec_vc_renormalize_kernel <<< (arr_size + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (n, ngbrFlags, quantity, new_norm);
+	cuvec_vc_renormalize_kernel <<< (arr_size + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (cuVEC<VType>::n, ngbrFlags, cuVEC<VType>::quantity, new_norm);
 }
 
 //------------------------------------------------------------------- SHIFT : x
@@ -238,7 +238,7 @@ template <typename VType>
 __host__ void cuVEC_VC<VType>::shift_x(size_t size, cuBReal delta, cuRect shift_rect)
 {
 	cuReal3 shift_debt_cpu = get_gpu_value(shift_debt);
-	cuReal3 h_cpu = get_gpu_value(h);
+	cuReal3 h_cpu = get_gpu_value(cuVEC<VType>::h);
 
 	if (fabs(shift_debt_cpu.x + delta) < h_cpu.x) {
 
@@ -259,10 +259,10 @@ __host__ void cuVEC_VC<VType>::shift_x(size_t size, cuBReal delta, cuRect shift_
 		//one-call shift routines for cells_shift > 1 are not straight-forward so not worth implementing for now
 		while (cells_shift < 0) {
 
-			shift_x_left1_kernel << < (size + CUDATHREADS) / CUDATHREADS, CUDATHREADS >> > (shift_rect, *this, aux_block_values);
+			shift_x_left1_kernel <<< (size + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (shift_rect, *this, cuVEC<VType>::aux_block_values);
 
 			size_t stitch_size = (size + CUDATHREADS) / CUDATHREADS;
-			shift_x_left1_stitch_kernel << < (stitch_size + CUDATHREADS) / CUDATHREADS, CUDATHREADS >> > (shift_rect, *this, aux_block_values);
+			shift_x_left1_stitch_kernel <<< (stitch_size + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (shift_rect, *this, cuVEC<VType>::aux_block_values);
 			
 			cells_shift++;
 		}
@@ -271,10 +271,10 @@ __host__ void cuVEC_VC<VType>::shift_x(size_t size, cuBReal delta, cuRect shift_
 
 		while (cells_shift > 0) {
 
-			shift_x_right1_kernel << < (size + CUDATHREADS) / CUDATHREADS, CUDATHREADS >> > (shift_rect, *this, aux_block_values);
+			shift_x_right1_kernel <<< (size + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (shift_rect, *this, cuVEC<VType>::aux_block_values);
 
 			size_t stitch_size = (size + CUDATHREADS) / CUDATHREADS;
-			shift_x_right1_stitch_kernel << < (stitch_size + CUDATHREADS) / CUDATHREADS, CUDATHREADS >> > (shift_rect, *this, aux_block_values);
+			shift_x_right1_stitch_kernel <<< (stitch_size + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (shift_rect, *this, cuVEC<VType>::aux_block_values);
 
 			cells_shift--;
 		}

@@ -136,24 +136,9 @@ __device__ void atomicMin(cuVAL3<Type>* result, const cuVAL3<Type>& value)
 
 //----------------------------------------- Add
 
-template <typename Type>
-__device__ void atomicAdd(cuVAL2<Type>* result, const cuVAL2<Type>& value)
-{
-	atomicAdd(&(result->x), value.x);
-	atomicAdd(&(result->y), value.y);
-}
-
-template <typename Type>
-__device__ void atomicAdd(cuVAL3<Type>* result, const cuVAL3<Type>& value)
-{
-	atomicAdd(&(result->x), value.x);
-	atomicAdd(&(result->y), value.y);
-	atomicAdd(&(result->z), value.z);
-}
-
 #if __CUDA_ARCH__ < 600
 template <typename Type_ = double>
-__device__ void atomicAdd(Type_* address, Type_ val)
+inline __device__ void atomicAdd(Type_* address, Type_ val)
 {
 #if __CUDA_ARCH__ >= 200
 
@@ -174,3 +159,30 @@ __device__ void atomicAdd(Type_* address, Type_ val)
 #endif
 }
 #endif
+
+#if __CUDA_ARCH__ <= 700
+//atomicAdd is not defined for unsigned long at least up to and including compute_70, so using atomicAdd for unsigned long long instead
+//it's worse than this though, size_t is unsigned long long on Windows, and unsigned long on Linux, so without this on Linux, compilation throws an error (undefined for size_t)
+inline __device__ void atomicAdd(unsigned long* address, unsigned long val)
+{
+	unsigned long long int* address_as_ull = (unsigned long long int*)address;
+	unsigned long long ull_val = val;
+
+	atomicAdd(address_as_ull, ull_val);
+}
+#endif
+
+template <typename Type>
+__device__ void atomicAdd(cuVAL2<Type>* result, const cuVAL2<Type>& value)
+{
+	atomicAdd(&(result->x), value.x);
+	atomicAdd(&(result->y), value.y);
+}
+
+template <typename Type>
+__device__ void atomicAdd(cuVAL3<Type>* result, const cuVAL3<Type>& value)
+{
+	atomicAdd(&(result->x), value.x);
+	atomicAdd(&(result->y), value.y);
+	atomicAdd(&(result->z), value.z);
+}
