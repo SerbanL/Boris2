@@ -70,11 +70,11 @@ The code has also been ported to Linux (I've tested on Ubuntu 20.04) and compile
     
     iii) If compiling CUDA code (COMPILECUDA 1 in CompileFlags.h) find cuBLib_Flags.h file in BorisCUDALib directory.
     
-    ii.i) Set <i>#define '__CUDA_ARCH__'	xxx</i> to the correct value. This also has to match the nvcc compilation flag in makefile.
+    ii.i) Set CUDA_ARCH to the correct value. This also has to match the nvcc compilation flag in makefile.
     
     See https://docs.nvidia.com/cuda/cuda-compiler-driver-nvcc/index.html, in particular table in section 5.2. GPU Feature List.
     
-    You will need to identify the GPU architecture of your card and set the correct compilation flag for nvcc, which must match the setting in cuBLib_Flags.h. e.g. for -arch=sm_50 you need to set '__CUDA_ARCH__' to 500, etc.
+    You will need to identify the GPU architecture of your card and set the correct compilation flag for nvcc, which must match the setting in cuBLib_Flags.h. e.g. for -arch=sm_50 you need to set CUDA_ARCH to 500, etc.
     
     You can also compile in single or double floating point precision by setting the #define SINGLEPRECISION value (1 for single precision, 0 for double precision).
 
