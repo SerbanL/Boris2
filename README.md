@@ -38,7 +38,7 @@ The code has also been ported to Linux (I've tested on Ubuntu 20.04) and compile
     
     Get OpenMP: <i>$ sudo apt-get install libomp-dev</i>
     
-    Get CUDA: Instructions at https://linuxconfig.org/how-to-install-cuda-on-ubuntu-20-04-focal-fossa-linux
+    Get CUDA: $ sudo apt install nvidia-cuda-toolkit
     
     Get SFML: <i>$ sudo apt-get install libsfml-dev</i>
     
