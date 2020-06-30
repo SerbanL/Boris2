@@ -18,9 +18,9 @@ SFML : https://www.sfml-dev.org/download.php
 
 # OS
 The full code can be compiled on Windows 7 or Windows 10 using the MSVC compiler.
-The code has also been ported to Linux (I've tested on Ubuntu 20.04) and compiled with g++, however currently there are some restrictions:
+The code has also been ported to Linux (I've tested on Ubuntu 20.04) and compiled with g++, but with restrictions:
+
 1) The graphical interface was originally written using DirectX11 so when compiling on Linux the GRAPHICS 0 flag needs to be set (see below). In the near future I plan to re-write the graphical interface in SFML.
-2) I'm currently working to port the CUDA part of the code to Linux, but this will take another week time permitting, so for now the COMPILECUDA 0 flag needs to be set.
 
 # Building From Source
 <u>Windows:</u>
@@ -50,7 +50,7 @@ The code has also been ported to Linux (I've tested on Ubuntu 20.04) and compile
   
     (replace N with the number of logical cores on your CPU for multi-processor compilation, e.g. make compile -j 16)
 
-    <i>$ make</i>
+    <i>$ make install</i>
     
     <i>$ ./BorisLin</i>
 
@@ -64,13 +64,19 @@ The code has also been ported to Linux (I've tested on Ubuntu 20.04) and compile
   
       Graphics not currently supported on Linux, so only a basic text console is available, which is really just the graphical console text output but with all the text formatting specifiers stripped out. A portable graphical interface is on the to-do list. Simulations can still be run using Python scripts.
 
-    i.iii) Set <i>#define COMPILECUDA	0</i>
-
-      CUDA code not yet ported but this shouldn't be long now (a week or two probably).
-
     ii) Find BorisLib_Config.h file in BorisLib directory.
     
     ii.i) Set <i>#define OPERATING_SYSTEM	OS_LIN</i>
+    
+    iii) If compiling CUDA code (COMPILECUDA 1 in CompileFlags.h) find cuBLib_Flags.h file in BorisCUDALib directory.
+    
+    ii.i) Set <i>#define __CUDA_ARCH__	xxx</i> to the correct value. This also has to match the nvcc compilation flag in makefile.
+    
+    See https://docs.nvidia.com/cuda/cuda-compiler-driver-nvcc/index.html, in particular table in section 5.2. GPU Feature List.
+    
+    You will need to identify the GPU architecture of your card and set the correct compilation flag for nvcc, which must match the setting in cuBLib_Flags.h. e.g. for -arch=sm_50 you need to set __CUDA_ARCH__ to 500, etc.
+    
+    You can also compile in single or double floating point precision by setting the #define SINGLEPRECISION value (1 for single precision, 0 for double precision).
 
 # Publication
 A technical peer-reviewed publication on Boris to follow soon.
