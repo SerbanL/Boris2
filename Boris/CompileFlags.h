@@ -25,7 +25,7 @@
 
 //include cuda code in compilation. If set to 0 then only C++ CPU code is compiled so the executable will not need any cuda dlls.
 //Much faster compilation as well, so turn this off when developing new modules.
-#define COMPILECUDA	0
+#define COMPILECUDA	1
 
 //To change precision of floating point variables modify value cuBLib_Flags.h (BorisCUDALib)
 
