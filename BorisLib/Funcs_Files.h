@@ -242,7 +242,7 @@ inline bool SaveTextToFile(std::string filename, std::string text)
 
 //Save data by arranging it with specified number of columns - this method is for a vector type (e.g. std::vector, VEC, VEC_VC - the important thing here it has to be indexable and have a size method)
 template <typename VType, std::enable_if_t<is_vector<VType>::value>* = nullptr>
-bool SaveBlockData(std::string filename, char separator, VType &data, int ncols)
+bool SaveBlockData(std::string filename, char separator, const VType &data, int ncols)
 {
 	std::ofstream bdout;
 	bdout.open(filename.c_str(), std::ios::out);
@@ -269,9 +269,9 @@ bool SaveBlockData(std::string filename, char separator, VType &data, int ncols)
 
 //Save specified columns from the 2D vector
 template <typename VType, std::enable_if_t<is_vector<VType>::value>* = nullptr>
-bool SaveDataColumns(const std::string& filename, char separator, std::vector< VType > &data_cols, std::vector<int> col_idx)
+bool SaveDataColumns(const std::string& filename, char separator, const std::vector< VType > &data_cols, std::vector<int> col_idx, bool append = false)
 {
-	auto is_valid_row = [](std::vector< VType > &data_cols, std::vector<int>& col_idx, int row_idx) -> bool {
+	auto is_valid_row = [](const std::vector< VType > &data_cols, std::vector<int>& col_idx, int row_idx) -> bool {
 
 		bool valid = false;
 
@@ -285,7 +285,8 @@ bool SaveDataColumns(const std::string& filename, char separator, std::vector< V
 	};
 
 	std::ofstream bdout;
-	bdout.open(filename.c_str(), std::ios::out);
+	if (!append) bdout.open(filename.c_str(), std::ios::out);
+	else bdout.open(filename.c_str(), std::ios::out | std::ios::app);
 
 	if (bdout.is_open()) {
 
@@ -332,7 +333,7 @@ bool SaveDataColumns(const std::string& filename, char separator, std::vector< V
 
 //Save all columns from the 2D vector
 template <typename VType, std::enable_if_t<is_vector<VType>::value>* = nullptr>
-bool SaveDataColumns(std::string filename, char separator, std::vector< VType > &data_cols)
+bool SaveDataColumns(std::string filename, char separator, const std::vector< VType > &data_cols)
 {
 	std::vector<int> col_idx;
 
@@ -345,14 +346,14 @@ bool SaveDataColumns(std::string filename, char separator, std::vector< VType > 
 
 //Save vector as a single column
 template <typename VType, std::enable_if_t<is_vector<VType>::value>* = nullptr>
-bool SaveDataColumn(std::string filename, VType &data)
+bool SaveDataColumn(std::string filename, const VType &data)
 {
 	return SaveBlockData(filename, ' ', data, 1);
 }
 
 //In given file write specified data columns separated using separator, and rows separated using newline. 
 //Rows may have different sizes.
-inline bool SaveData(std::string filename, std::string separator, std::vector< std::vector<std::string> > &data)
+inline bool SaveData(std::string filename, std::string separator, const std::vector< std::vector<std::string> > &data)
 {
 	std::ofstream bdout;
 	bdout.open(filename.c_str(), std::ios::out);
@@ -367,6 +368,30 @@ inline bool SaveData(std::string filename, std::string separator, std::vector< s
 	else return false;
 
 	bdout.close();
+	return true;
+}
+
+//Save specified columns from the 2D vector
+template <typename VType>
+bool SaveDataRow(const std::string& filename, char separator, const std::vector<VType> &data, bool append = false)
+{
+	std::ofstream bdout;
+	if (!append) bdout.open(filename.c_str(), std::ios::out);
+	else bdout.open(filename.c_str(), std::ios::out | std::ios::app);
+
+	if (bdout.is_open()) {
+
+		for (auto value : data) {
+
+			bdout << value << separator;
+		}
+
+		bdout << '\n';
+	}
+	else return false;
+
+	bdout.close();
+
 	return true;
 }
 

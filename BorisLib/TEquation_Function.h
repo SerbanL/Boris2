@@ -224,6 +224,22 @@ namespace EqComp {
 			return param * sin(pFunc1->func(*pFunc1, bvars...));
 		}
 
+		double F_sinc(BVarType... bvars) const
+		{
+			double arg = pFunc1->func(*pFunc1, bvars...);
+
+			if (arg) return sin(arg) / arg;
+			else return 1.0;
+		}
+
+		double F_sinc_pmul(BVarType... bvars) const
+		{
+			double arg = pFunc1->func(*pFunc1, bvars...);
+
+			if (arg) return param * sin(arg) / arg;
+			else return param;
+		}
+
 		double F_cos(BVarType... bvars) const
 		{
 			return cos(pFunc1->func(*pFunc1, bvars...));
@@ -626,6 +642,14 @@ namespace EqComp {
 
 			case FUNC_SIN_PMUL:
 				func = &Function::F_sin_pmul;
+				break;
+
+			case FUNC_SINC:
+				func = &Function::F_sinc;
+				break;
+
+			case FUNC_SINC_PMUL:
+				func = &Function::F_sinc_pmul;
 				break;
 
 			case FUNC_COS:

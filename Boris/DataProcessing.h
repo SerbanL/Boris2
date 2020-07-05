@@ -124,7 +124,10 @@ public:
 	BError load_arrays(string fileName, vector<int> all_indexes, int* prows_read);
 
 	//save dp arrays with given indexes to file
-	BError save_arrays(string fileName, vector<int> all_indexes);
+	BError save_arrays(string fileName, vector<int> all_indexes, bool append = false);
+
+	//save dp array as a single tab-spaced row
+	BError save_array_transposed(string fileName, int dp_index, bool append = false);
 
 	//--------------------- data extraction from meshes
 

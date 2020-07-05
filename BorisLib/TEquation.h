@@ -93,6 +93,7 @@ private:
 	std::vector<std::pair<std::string, EqComp::FSPEC>> unary_funcs =
 	{
 		{"sin(", EqComp::FSPEC(EqComp::FUNC_SIN)},
+		{"sinc(", EqComp::FSPEC(EqComp::FUNC_SINC)},
 		{"cos(", EqComp::FSPEC(EqComp::FUNC_COS)},
 		{"tan(", EqComp::FSPEC(EqComp::FUNC_TAN)},
 		{"sinh(", EqComp::FSPEC(EqComp::FUNC_SINH)},
@@ -120,6 +121,14 @@ private:
 		{"chi2(", EqComp::FSPEC(EqComp::FUNC_LONGRELSUS2)},
 		{"alpha1(", EqComp::FSPEC(EqComp::FUNC_ALPHA1)},
 		{"alpha2(", EqComp::FSPEC(EqComp::FUNC_ALPHA2)}
+	};
+
+	///////////////////////////////////////////////////////////
+
+	//used to expand the equation before processing it
+	std::vector<std::pair<std::string, EqComp::FUNC_>> equation_expanders =
+	{
+		{"sum(", EqComp::FUNC_SUM}
 	};
 
 	///////////////////////////////////////////////////////////
@@ -166,6 +175,85 @@ private:
 	/////////////////////////////////////////////////////////
 	//
 	// AUXILIARY
+
+	//expand equation if any terms in equation_expanders appear; return true if expansion done, false otherwise (including if there was an equation error - this will be caught later anyway)
+	bool expand_equation_string(std::string& eq_str)
+	{
+		for (auto entry : equation_expanders) {
+
+			switch (entry.second) {
+
+			case EqComp::FUNC_SUM:
+			{
+				std::string sum_str = entry.first;
+
+				size_t sum_pos = eq_str.find(sum_str);
+				if (sum_pos == std::string::npos) return false;
+
+				size_t pos_sc1 = eq_str.find(";");
+				if (pos_sc1 == std::string::npos) return false;
+
+				size_t pos_sc2 = eq_str.find(";", pos_sc1 + 1);
+				if (pos_sc2 == std::string::npos) return false;
+
+				size_t pos_sc3 = eq_str.find(";", pos_sc2 + 1);
+				if (pos_sc3 == std::string::npos) return false;
+
+				std::string var = std::string("<") + eq_str.substr(sum_pos + sum_str.length(), pos_sc1 - sum_str.length() - sum_pos) + std::string(">");
+				int lo = ToNum(eq_str.substr(pos_sc1 + 1, pos_sc2 - pos_sc1 - 1));
+				int hi = ToNum(eq_str.substr(pos_sc2 + 1, pos_sc3 - pos_sc2 - 1));
+				if (lo >= hi) return false;
+
+				int num_open = 1;
+				int idx_start = pos_sc3 + 1;
+
+				for (int idx_str = idx_start; idx_str < eq_str.length(); idx_str++) {
+
+					if (eq_str[idx_str] == '(') { num_open++; continue; }
+					if (eq_str[idx_str] == ')') {
+
+						num_open--;
+
+						if (!num_open) {
+
+							//found substring between brackets : work on this by going a level deeper to build branch
+							std::string eq_substr = std::string("(") + eq_str.substr(idx_start, idx_str - idx_start) + std::string(")");
+
+							//now expand eq_substr as a sum, by replacing occurences of <var> by numerical values
+							std::string eq_expanded = std::string("(");
+
+							for (int idx = lo; idx <= hi; idx++) {
+
+								std::string sum_term = eq_substr;
+								replaceall(sum_term, var, ToString(idx));
+
+								if (idx != lo) eq_expanded += std::string("+") + sum_term;
+								else eq_expanded += sum_term;
+							}
+
+							eq_expanded += std::string(")");
+
+							eq_str.replace(sum_pos, idx_str - sum_pos + 1, eq_expanded);
+							//replacement done : there may be more so return true
+							return true;
+						}
+					}
+				}
+
+				//If we are here then number of brackets didn't match, so equation is wrong
+				return false;
+			}
+			break;
+
+			//other cases here if any needed in the future
+			default:
+				return false;
+				break;
+			}
+		}
+
+		return false;
+	}
 
 	void Set_StoredSpecialFunctions(void)
 	{
@@ -259,16 +347,16 @@ private:
 			//cannot clash with any other specifiers (function names and user variables)
 
 			//alphanumeric and must start with letter
-			success &= (find_if(constants_names[idx].begin(), constants_names[idx].end(), [](const char& c) { return !isalnum(c); }) == constants_names[idx].end()) && constants_names[idx].length() && isalpha(constants_names[idx][0]);
+			success &= (std::find_if(constants_names[idx].begin(), constants_names[idx].end(), [](const char& c) { return !isalnum(c); }) == constants_names[idx].end()) && constants_names[idx].length() && isalpha(constants_names[idx][0]);
 
 			//cannot clash with named variables
-			success &= (find_if(variables.begin(), variables.end(), [&](const std::string& entry) { return (entry == constants_names[idx]); }) == variables.end());
+			success &= (std::find_if(variables.begin(), variables.end(), [&](const std::string& entry) { return (entry == constants_names[idx]); }) == variables.end());
 
 			//cannot clash with reserved constants names
-			success &= (find_if(reserved_constants.begin(), reserved_constants.end(), [&](const std::pair<std::string, double>& entry) { return (entry.first == constants_names[idx]); }) == reserved_constants.end());
+			success &= (std::find_if(reserved_constants.begin(), reserved_constants.end(), [&](const std::pair<std::string, double>& entry) { return (entry.first == constants_names[idx]); }) == reserved_constants.end());
 
 			//cannot clash with reserved function names
-			success &= (find_if(unary_funcs.begin(), unary_funcs.end(), [&](const std::pair<std::string, EqComp::FSPEC>& entry) { return (entry.first.substr(0, entry.first.length() - 1) == constants_names[idx]); }) == unary_funcs.end());
+			success &= (std::find_if(unary_funcs.begin(), unary_funcs.end(), [&](const std::pair<std::string, EqComp::FSPEC>& entry) { return (entry.first.substr(0, entry.first.length() - 1) == constants_names[idx]); }) == unary_funcs.end());
 
 			//add entry if not already present, else modify value
 			if (success) {
@@ -418,7 +506,6 @@ private:
 				fspec_branch.insert(fspec_branch.begin(), unary_funcs[idx_ufunc].second);
 
 				//find closing bracket ")" so we can get substring between brackets
-
 				//number of open ( brackets : when this reaches zero we found last closing bracket
 				int num_open = 1;
 				int idx_start = unary_funcs[idx_ufunc].first.length();
@@ -440,6 +527,9 @@ private:
 						}
 					}
 				}
+
+				//If we are here then number of brackets didn't match, so equation is wrong
+				return false;
 			}
 		}
 
@@ -725,6 +815,9 @@ public:
 		auto make_equation_component = [&](std::string eq_str_component, Equation_Component<BVarType...>& eq_component) -> bool {
 
 			//each entry in EqComp::FSPEC specifies a branch as a cascade of EqComp::FSPEC objects from bottom up.
+
+			//expand string if needed according to entries in equation_expanders
+			while (expand_equation_string(eq_str_component));
 
 			auto& fspec = eq_component.get_fspec();
 

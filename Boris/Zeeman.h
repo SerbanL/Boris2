@@ -67,7 +67,9 @@ public:
 	//-------------------
 
 	void SetField(DBL3 Hxyz);
-	DBL3 GetField(void) { return Ha; }
+	
+	//Get currently set field : if a field equation is set then evaluate it at the centre of the mesh
+	DBL3 GetField(void);
 
 	BError SetFieldEquation(string equation_string, int step);
 

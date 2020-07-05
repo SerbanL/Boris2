@@ -62,6 +62,14 @@ __global__ void set_ManagedFunctionCUDA_Unary(ManagedFunctionCUDA<BVarType...>& 
 			cuFunc.func = &ManagedFunctionCUDA<BVarType...>::F_sin_pmul;
 			break;
 
+		case EqComp::FUNC_SINC:
+			cuFunc.func = &ManagedFunctionCUDA<BVarType...>::F_sinc;
+			break;
+
+		case EqComp::FUNC_SINC_PMUL:
+			cuFunc.func = &ManagedFunctionCUDA<BVarType...>::F_sinc_pmul;
+			break;
+
 		case EqComp::FUNC_COS:
 			cuFunc.func = &ManagedFunctionCUDA<BVarType...>::F_cos;
 			break;

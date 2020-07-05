@@ -15,7 +15,7 @@ namespace EqComp {
 		//UNARY FUNCTIONS
 
 		//sin(...), cos(...), tan(...)
-		FUNC_SIN, FUNC_SIN_PMUL, FUNC_COS, FUNC_COS_PMUL, FUNC_TAN, FUNC_TAN_PMUL,
+		FUNC_SIN, FUNC_SIN_PMUL, FUNC_SINC, FUNC_SINC_PMUL, FUNC_COS, FUNC_COS_PMUL, FUNC_TAN, FUNC_TAN_PMUL,
 		//sinh(...), cosh(...), tanh(...)
 		FUNC_SINH, FUNC_SINH_PMUL, FUNC_COSH, FUNC_COSH_PMUL, FUNC_TANH, FUNC_TANH_PMUL,
 		//sqrt(...), exp(...)
@@ -37,6 +37,9 @@ namespace EqComp {
 
 		//power functions where either the exponent or base is a constant (initially create FUNC_POW, then optimize later to one of these if possible)
 		FUNC_POWER_EXPCONST, FUNC_POWER_EXPCONST_PMUL, FUNC_POWER_BASECONST, FUNC_POWER_BASECONST_PMUL,
+
+		//Definite sum function : not actually evaluated, but used to expand the input string
+		FUNC_SUM,
 
 		//SPECIAL FUNCTIONS
 

@@ -279,6 +279,17 @@ void Atom_Zeeman::SetField(DBL3 Hxyz)
 #endif
 }
 
+DBL3 Atom_Zeeman::GetField(void)
+{
+	if (H_equation.is_set()) {
+
+		DBL3 meshDim = paMesh->GetMeshDimensions();
+
+		return H_equation.evaluate_vector(meshDim.x / 2, meshDim.y / 2, meshDim.z / 2, pSMesh->GetStageTime());
+	}
+	else return Ha;
+}
+
 BError Atom_Zeeman::SetFieldEquation(string equation_string, int step)
 {
 	BError error(CLASS_STR(Atom_Zeeman));

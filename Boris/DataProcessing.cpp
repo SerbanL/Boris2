@@ -42,14 +42,27 @@ BError DPArrays::load_arrays(string fileName, vector<int> all_indexes, int* prow
 
 //------------------------------------------------------------------------------------------ save_arrays
 
-BError DPArrays::save_arrays(string fileName, vector<int> all_indexes)
+BError DPArrays::save_arrays(string fileName, vector<int> all_indexes, bool append)
 {
 	BError error(__FUNCTION__);
 
 	//check all indexes are valid
 	if (!GoodArrays(all_indexes)) return error(BERROR_INCORRECTARRAYS);
 
-	if (!SaveDataColumns(fileName, '\t', dpA, all_indexes)) return error(BERROR_COULDNOTSAVEFILE);
+	if (!SaveDataColumns(fileName, '\t', dpA, all_indexes, append)) return error(BERROR_COULDNOTSAVEFILE);
+
+	return error;
+}
+
+//save dp array as a single tab-spaced row
+BError DPArrays::save_array_transposed(string fileName, int dp_index, bool append)
+{
+	BError error(__FUNCTION__);
+
+	//check all indexes are valid
+	if (!GoodArrays(dp_index)) return error(BERROR_INCORRECTARRAYS);
+
+	if (!SaveDataRow(fileName, '\t', dpA[dp_index], append)) return error(BERROR_COULDNOTSAVEFILE);
 
 	return error;
 }

@@ -426,6 +426,12 @@ Simulation::Simulation(int Program_Version) :
 	commands[CMD_ADDDATA].descr = "[tc0,0.5,0.5,1/tc]Add dataname to list of output data. If applicable specify meshname and rectangle (m) in mesh. If not specified and required, active mesh is used with entire mesh rectangle.";
 	commands[CMD_ADDDATA].unit = "m";
 
+	commands.insert(CMD_SETDATA, CommandSpecifier(CMD_SETDATA), "setdata");
+	commands[CMD_SETDATA].usage = "[tc0,0.5,0,1/tc]USAGE : <b>setdata</b> <i>dataname (meshname, (rectangle))</i>";
+	commands[CMD_SETDATA].limits = { { Any(), Any() }, { Any(), Any() }, { Rect(), Any() } };
+	commands[CMD_SETDATA].descr = "[tc0,0.5,0.5,1/tc]Delete all currently set output data and set dataname to list of output data. If applicable specify meshname and rectangle (m) in mesh. If not specified and required, active mesh is used with entire mesh rectangle.";
+	commands[CMD_SETDATA].unit = "m";
+
 	commands.insert(CMD_DELDATA, CommandSpecifier(CMD_DELDATA), "deldata");
 	commands[CMD_DELDATA].usage = "[tc0,0.5,0,1/tc]USAGE : <b>deldata</b> <i>index</i>";
 	commands[CMD_DELDATA].limits = { { int(-1), Any() } };
@@ -483,6 +489,10 @@ Simulation::Simulation(int Program_Version) :
 	commands.insert(CMD_ADDSTAGE, CommandSpecifier(CMD_ADDSTAGE), "addstage");
 	commands[CMD_ADDSTAGE].usage = "[tc0,0.5,0,1/tc]USAGE : <b>addstage</b> <i>stagetype (meshname)</i>";
 	commands[CMD_ADDSTAGE].descr = "[tc0,0.5,0.5,1/tc]Add a generic stage type to the simulation schedule with name stagetype, specifying a meshname if needed (if not specified and required, active mesh is used).";
+
+	commands.insert(CMD_SETSTAGE, CommandSpecifier(CMD_SETSTAGE), "setstage");
+	commands[CMD_SETSTAGE].usage = "[tc0,0.5,0,1/tc]USAGE : <b>setstage</b> <i>stagetype (meshname)</i>";
+	commands[CMD_SETSTAGE].descr = "[tc0,0.5,0.5,1/tc]Delete all currently set stages, and set a new generic stage type to the simulation schedule with name stagetype, specifying a meshname if needed (if not specified and required, active mesh is used).";
 
 	commands.insert(CMD_DELSTAGE, CommandSpecifier(CMD_DELSTAGE), "delstage");
 	commands[CMD_DELSTAGE].usage = "[tc0,0.5,0,1/tc]USAGE : <b>delstage</b> <i>index</i>";
@@ -1052,11 +1062,37 @@ Simulation::Simulation(int Program_Version) :
 	commands[CMD_DP_SAVE].limits = { { Any(), Any() },{ int(0), int(MAX_ARRAYS - 1) } };
 	commands[CMD_DP_SAVE].descr = "[tc0,0.5,0.5,1/tc]Save specified dp arrays in filename (.txt termination by default). If directory not specified, the default one is used. dp_indexes are used for the dp arrays; count from 0.";
 
+	commands.insert(CMD_DP_SAVEAPPEND, CommandSpecifier(CMD_DP_SAVEAPPEND), "dp_saveappend");
+	commands[CMD_DP_SAVEAPPEND].usage = "[tc0,0.5,0,1/tc]USAGE : <b>dp_saveappend</b> <i>(directory/)filename dp_indexes...</i>";
+	commands[CMD_DP_SAVEAPPEND].limits = { { Any(), Any() },{ int(0), int(MAX_ARRAYS - 1) } };
+	commands[CMD_DP_SAVEAPPEND].descr = "[tc0,0.5,0.5,1/tc]Save specified dp arrays in filename (.txt termination by default) by appending at the end. If directory not specified, the default one is used. dp_indexes are used for the dp arrays; count from 0.";
+
+	commands.insert(CMD_DP_SAVEASROW, CommandSpecifier(CMD_DP_SAVEASROW), "dp_saveasrow");
+	commands[CMD_DP_SAVEASROW].usage = "[tc0,0.5,0,1/tc]USAGE : <b>dp_saveasrow</b> <i>(directory/)filename dp_index</i>";
+	commands[CMD_DP_SAVEASROW].limits = { { Any(), Any() },{ int(0), int(MAX_ARRAYS - 1) } };
+	commands[CMD_DP_SAVEASROW].descr = "[tc0,0.5,0.5,1/tc]Save specified dp array in filename (.txt termination by default) as a single row with tab-spaced values. If directory not specified, the default one is used.";
+
+	commands.insert(CMD_DP_SAVEAPPENDASROW, CommandSpecifier(CMD_DP_SAVEAPPENDASROW), "dp_saveappendasrow");
+	commands[CMD_DP_SAVEAPPENDASROW].usage = "[tc0,0.5,0,1/tc]USAGE : <b>dp_saveappendasrow</b> <i>(directory/)filename dp_index</i>";
+	commands[CMD_DP_SAVEAPPENDASROW].limits = { { Any(), Any() },{ int(0), int(MAX_ARRAYS - 1) } };
+	commands[CMD_DP_SAVEAPPENDASROW].descr = "[tc0,0.5,0.5,1/tc]Save specified dp array in filename (.txt termination by default) as a single row with tab-spaced values, appending to end of file. If directory not specified, the default one is used.";
+
+	commands.insert(CMD_DP_NEWFILE, CommandSpecifier(CMD_DP_NEWFILE), "dp_newfile");
+	commands[CMD_DP_NEWFILE].usage = "[tc0,0.5,0,1/tc]USAGE : <b>dp_newfile</b> <i>(directory/)filename</i>";
+	commands[CMD_DP_NEWFILE].limits = { { Any(), Any() },{ int(0), int(MAX_ARRAYS - 1) } };
+	commands[CMD_DP_NEWFILE].descr = "[tc0,0.5,0.5,1/tc]Make new file, erasing any existing file with given name. If directory not specified, the default one is used.";
+
 	commands.insert(CMD_DP_GETPROFILE, CommandSpecifier(CMD_DP_GETPROFILE), "dp_getprofile");
 	commands[CMD_DP_GETPROFILE].usage = "[tc0,0.5,0,1/tc]USAGE : <b>dp_getprofile</b> <i>start end dp_index</i>";
 	commands[CMD_DP_GETPROFILE].limits = { { DBL3(-MAXSIMSPACE), DBL3(MAXSIMSPACE) }, { DBL3(-MAXSIMSPACE), DBL3(MAXSIMSPACE) }, { int(0), int(MAX_ARRAYS - 1) } };
 	commands[CMD_DP_GETPROFILE].descr = "[tc0,0.5,0.5,1/tc]Extract profile of physical quantity displayed on screen, at the current display resolution, along the line specified with given start and end cartesian absolute coordinates (m). Place profile in given dp arrays: 4 consecutive dp arrays are used, first for distance along line, the next 3 for physical quantity so allow space for these starting at dp_index.";
 	commands[CMD_DP_GETPROFILE].unit = "m";
+
+	commands.insert(CMD_DP_GETEXACTPROFILE, CommandSpecifier(CMD_DP_GETEXACTPROFILE), "dp_getexactprofile");
+	commands[CMD_DP_GETEXACTPROFILE].usage = "[tc0,0.5,0,1/tc]USAGE : <b>dp_getexactprofile</b> <i>start end step dp_index</i>";
+	commands[CMD_DP_GETEXACTPROFILE].limits = { { DBL3(-MAXSIMSPACE), DBL3(MAXSIMSPACE) }, { DBL3(-MAXSIMSPACE), DBL3(MAXSIMSPACE) }, { MINMESHSPACE, Any() }, { int(0), int(MAX_ARRAYS - 1) } };
+	commands[CMD_DP_GETEXACTPROFILE].descr = "[tc0,0.5,0.5,1/tc]Extract profile of physical quantity displayed on screen, directly from the mesh so using the exact mesh resolution not the displayed resolution, along the line specified with given start and end cartesian absolute coordinates (m), and with the given step size (m). Place profile in given dp arrays: 4 consecutive dp arrays are used, first for distance along line, the next 3 for physical quantity so allow space for these starting at dp_index.";
+	commands[CMD_DP_GETEXACTPROFILE].unit = "m";
 
 	commands.insert(CMD_DP_GETPATH, CommandSpecifier(CMD_DP_GETPATH), "dp_getpath");
 	commands[CMD_DP_GETPATH].usage = "[tc0,0.5,0,1/tc]USAGE : <b>dp_getpath</b> <i>dp_index_in dp_index_out</i>";

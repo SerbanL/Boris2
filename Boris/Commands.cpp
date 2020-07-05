@@ -1504,6 +1504,36 @@ void Simulation::HandleCommand(string command_string)
 		}
 		break;
 
+		case CMD_SETDATA:
+		{
+			string dataName;
+			string meshName = SMesh.GetMeshFocus();
+			Rect dataRect;
+
+			error = commandSpec.GetParameters(command_fields, dataName, meshName, dataRect);
+			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, dataName, meshName); dataRect = Rect(); }
+			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, dataName); meshName = SMesh.GetMeshFocus(); dataRect = Rect(); }
+
+			if (!error && dataDescriptor.has_key(dataName) && SMesh.contains(meshName)) {
+
+				//add new save data entry if meshname is correct and box is correct
+				Rect meshRect_rel = Rect(SMesh[meshName]->GetMeshDimensions());
+				if (meshRect_rel.contains(dataRect)) {
+
+					//edit first data entry (there's always at least one)
+					EditSaveDataEntry(0, (DATA_)dataDescriptor.get_ID_from_key(dataName), meshName, dataRect);
+					//get rid of all other data entries
+					while(saveDataList.size() > 1) saveDataList.erase(1);
+
+					RefreshScreen();
+				}
+				else if (verbose) error(BERROR_PARAMOUTOFBOUNDS);
+			}
+			else if (verbose) PrintCommandUsage(command_name);
+		}
+		break;
+
+
 		case CMD_EDITDATA:
 		{
 			int index = 0;
@@ -1731,6 +1761,27 @@ void Simulation::HandleCommand(string command_string)
 
 				//add new simulation stage to the schedule with default settings for this stage type (can be edited separately)
 				AddGenericStage((SS_)stageDescriptors.get_ID_from_key(stageTypeName), meshName);
+				RefreshScreen();
+			}
+			else if (verbose) PrintCommandUsage(command_name);
+		}
+		break;
+
+		case CMD_SETSTAGE:
+		{
+			string stageTypeName;
+			string meshName = SMesh.GetMeshFocus();
+
+			error = commandSpec.GetParameters(command_fields, stageTypeName, meshName);
+			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, stageTypeName); meshName = SMesh.GetMeshFocus(); }
+
+			if (!error && stageDescriptors.has_key(stageTypeName) && (SMesh.contains(meshName) || meshName == SMesh.superMeshHandle)) {
+
+				//edit stage 0 to new settings (there's always at least one stage)
+				EditStageType(0, (SS_)stageDescriptors.get_ID_from_key(stageTypeName), meshName);
+				//get rid of all other stages
+				while(simStages.size() > 1) DeleteStage(1);
+
 				RefreshScreen();
 			}
 			else if (verbose) PrintCommandUsage(command_name);
@@ -4417,6 +4468,115 @@ void Simulation::HandleCommand(string command_string)
 		}
 		break;
 
+		case CMD_DP_SAVEASROW:
+		{
+			string fileName_indexes_string;
+
+			error = commandSpec.GetParameters(command_fields, fileName_indexes_string);
+
+			//using split_numeric approach since the file name path can contain spaces. If parameters correct then we'll have first a non-numeric string (the file path and file name) then a numeric string.
+			vector<string> entries = split_numeric(fileName_indexes_string);
+			if (entries.size() < 2) error(BERROR_PARAMMISMATCH);
+
+			if (!error) {
+
+				string fileName = combine(subvec(entries, 0, entries.size() - 1), " ");
+				string index_string = entries.back();
+
+				int dp_index = ToNum(index_string);
+
+				if (!GetFilenameDirectory(fileName).length()) fileName = directory + fileName;
+
+				if (GetFileTermination(fileName) != ".txt")
+					fileName += ".txt";
+
+				error = dpArr.save_array_transposed(fileName, dp_index);
+
+				if (verbose && !error) BD.DisplayConsoleMessage("Data saved in : " + fileName);
+			}
+			else if (verbose) PrintCommandUsage(command_name);
+		}
+		break;
+
+		case CMD_DP_SAVEAPPENDASROW:
+		{
+			string fileName_indexes_string;
+
+			error = commandSpec.GetParameters(command_fields, fileName_indexes_string);
+
+			//using split_numeric approach since the file name path can contain spaces. If parameters correct then we'll have first a non-numeric string (the file path and file name) then a numeric string.
+			vector<string> entries = split_numeric(fileName_indexes_string);
+			if (entries.size() < 2) error(BERROR_PARAMMISMATCH);
+
+			if (!error) {
+
+				string fileName = combine(subvec(entries, 0, entries.size() - 1), " ");
+				string index_string = entries.back();
+
+				int dp_index = ToNum(index_string);
+
+				if (!GetFilenameDirectory(fileName).length()) fileName = directory + fileName;
+
+				if (GetFileTermination(fileName) != ".txt")
+					fileName += ".txt";
+
+				error = dpArr.save_array_transposed(fileName, dp_index, true);
+
+				if (verbose && !error) BD.DisplayConsoleMessage("Data saved in : " + fileName);
+			}
+			else if (verbose) PrintCommandUsage(command_name);
+		}
+		break;
+
+		case CMD_DP_NEWFILE:
+		{
+			string fileName;
+
+			error = commandSpec.GetParameters(command_fields, fileName);
+
+			if (!error) {
+
+				if (!GetFilenameDirectory(fileName).length()) fileName = directory + fileName;
+
+				if (GetFileTermination(fileName) != ".txt")
+					fileName += ".txt";
+
+				std::ofstream bdout;
+				bdout.open(fileName, std::ios::out);
+				bdout.close();
+			}
+			else if (verbose) PrintCommandUsage(command_name);
+		}
+		break;
+
+		case CMD_DP_SAVEAPPEND:
+		{
+			string fileName_indexes_string;
+
+			error = commandSpec.GetParameters(command_fields, fileName_indexes_string);
+
+			//using split_numeric approach since the file name path can contain spaces. If parameters correct then we'll have first a non-numeric string (the file path and file name) then a numeric string.
+			vector<string> entries = split_numeric(fileName_indexes_string);
+			if (entries.size() < 2) error(BERROR_PARAMMISMATCH);
+
+			if (!error) {
+
+				string fileName = combine(subvec(entries, 0, entries.size() - 1), " ");
+				string indexes_string = entries.back();
+
+				if (!GetFilenameDirectory(fileName).length()) fileName = directory + fileName;
+
+				if (GetFileTermination(fileName) != ".txt")
+					fileName += ".txt";
+
+				error = dpArr.save_arrays(fileName, vec_convert<int, string>(split(indexes_string)), true);
+
+				if (verbose && !error) BD.DisplayConsoleMessage("Data saved in : " + fileName);
+			}
+			else if (verbose) PrintCommandUsage(command_name);
+		}
+		break;
+
 		case CMD_DP_GETPROFILE:
 		{
 			DBL3 start, end;
@@ -4429,6 +4589,45 @@ void Simulation::HandleCommand(string command_string)
 				error = dpArr.get_profile(start, end, &SMesh, arr_idx);
 
 				if (verbose && !error) BD.DisplayConsoleMessage("Extracted profile between : " + ToString(start, "m") + " and " + ToString(end, "m") + ".");
+			}
+			else if (verbose) PrintCommandUsage(command_name);
+		}
+		break;
+
+		case CMD_DP_GETEXACTPROFILE:
+		{
+			DBL3 start, end;
+			double step;
+			int arr_idx;
+
+			error = commandSpec.GetParameters(command_fields, start, end, step, arr_idx);
+
+			if (!error) {
+
+				//prepare data displayed on screen ready to be read out below
+				SMesh.PrepareDisplayedMeshValue();
+
+				int num_points = round((end - start).norm() / step) + 1;
+
+				vector<double> data_x(num_points), data_y(num_points), data_z(num_points);
+
+				#pragma omp parallel for
+				for (int idx = 0; idx < num_points; idx++) {
+
+					DBL3 pos = start + idx * (end - start) / (num_points - 1);
+
+					DBL3 value = SMesh.GetDisplayedMeshValue(pos);
+
+					data_x[idx] = value.x;
+					data_y[idx] = value.y;
+					data_z[idx] = value.z;
+				}
+
+				dpArr.set_array(arr_idx, data_x);
+				dpArr.set_array(arr_idx + 1, data_y);
+				dpArr.set_array(arr_idx + 2, data_z);
+
+				if (verbose) BD.DisplayConsoleMessage("Path extracted.");
 			}
 			else if (verbose) PrintCommandUsage(command_name);
 		}

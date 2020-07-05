@@ -3,7 +3,7 @@
 #define OS_WIN	1
 #define OS_LIN	2
 
-#define OPERATING_SYSTEM	OS_WIN
+#define OPERATING_SYSTEM	OS_LIN
 
 
 

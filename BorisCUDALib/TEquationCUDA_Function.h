@@ -234,6 +234,26 @@ public:
 		return param * sin((cuFunc1.*(cuFunc1.func))(bvars...));
 	}
 
+	__device__ cuBReal F_sinc(BVarType... bvars)
+	{
+		ManagedFunctionCUDA<BVarType...>& cuFunc1 = *pFunc1;
+
+		cuBReal arg = (cuFunc1.*(cuFunc1.func))(bvars...);
+
+		if (arg) return sin(arg) / arg;
+		else return 1.0;
+	}
+
+	__device__ cuBReal F_sinc_pmul(BVarType... bvars)
+	{
+		ManagedFunctionCUDA<BVarType...>& cuFunc1 = *pFunc1;
+
+		cuBReal arg = (cuFunc1.*(cuFunc1.func))(bvars...);
+
+		if (arg) return param * sin(arg) / arg;
+		else return param;
+	}
+
 	__device__ cuBReal F_cos(BVarType... bvars)
 	{
 		ManagedFunctionCUDA<BVarType...>& cuFunc1 = *pFunc1;

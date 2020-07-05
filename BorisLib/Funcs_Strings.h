@@ -587,7 +587,7 @@ inline bool has_numbers_only(const std::string& text, std::string separators)
 
 	std::string allowed_characters = separators + "0123456789eE-+.";
 
-	return (find_if(text.begin(), text.end(), [&](const char& c) { return (allowed_characters.find(c) == std::string::npos); }) == text.end());
+	return (std::find_if(text.begin(), text.end(), [&](const char& c) { return (allowed_characters.find(c) == std::string::npos); }) == text.end());
 }
 
 //check the input string contains only digits
@@ -595,5 +595,5 @@ inline bool has_digits_only(const std::string& text)
 {
 	if (!text.length()) return false;
 
-	return (find_if(text.begin(), text.end(), [&](const char& c) { return !isdigit(c); }) == text.end());
+	return (std::find_if(text.begin(), text.end(), [&](const char& c) { return !isdigit(c); }) == text.end());
 }

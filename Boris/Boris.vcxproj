@@ -191,6 +191,7 @@
       <GenerateRelocatableDeviceCode>true</GenerateRelocatableDeviceCode>
       <TargetMachinePlatform>64</TargetMachinePlatform>
       <Warning>W0</Warning>
+      <AdditionalOptions>-w %(AdditionalOptions)</AdditionalOptions>
     </CudaCompile>
     <CudaLink>
       <AdditionalLibraryDirectories>cudart_static.lib; cufft.lib</AdditionalLibraryDirectories>

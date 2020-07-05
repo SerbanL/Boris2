@@ -1,5 +1,5 @@
-#NetSocks Module Updated on : 19/06/2020
-#Boris version : 2.7
+#NetSocks Module Updated on : 03/07/2020
+#Boris version : 2.8
 
 import socket
 import time
@@ -516,6 +516,9 @@ class NSClient:
     def dp_getampli(self, dp_source = '', pointsPeriod = ''):
     	return self.SendCommand("dp_getampli", [dp_source, pointsPeriod])
     
+    def dp_getexactprofile(self, start = '', end = '', step = '', dp_index = ''):
+    	return self.SendCommand("dp_getexactprofile", [start, end, step, dp_index])
+    
     def dp_getpath(self, dp_index_in = '', dp_index_out = ''):
     	return self.SendCommand("dp_getpath", [dp_index_in, dp_index_out])
     
@@ -546,6 +549,9 @@ class NSClient:
     def dp_muldp(self, dp_x1 = '', dp_x2 = '', dp_dest = ''):
     	return self.SendCommand("dp_muldp", [dp_x1, dp_x2, dp_dest])
     
+    def dp_newfile(self, filename = ''):
+    	return self.SendCommand("dp_newfile", [filename])
+    
     def dp_peaksfrequency(self, dp_in_x = '', dp_in_y = '', dp_level = '', dp_freq = '', steps = ''):
     	return self.SendCommand("dp_peaksfrequency", [dp_in_x, dp_in_y, dp_level, dp_freq, steps])
     
@@ -563,6 +569,15 @@ class NSClient:
     
     def dp_save(self, filename = '', dp_indexes = ''):
     	return self.SendCommand("dp_save", [filename, dp_indexes])
+    
+    def dp_saveappend(self, filename = '', dp_indexes = ''):
+    	return self.SendCommand("dp_saveappend", [filename, dp_indexes])
+    
+    def dp_saveasrow(self, filename = '', dp_index = ''):
+    	return self.SendCommand("dp_saveasrow", [filename, dp_index])
+    
+    def dp_saveappendasrow(self, filename = '', dp_index = ''):
+    	return self.SendCommand("dp_saveappendasrow", [filename, dp_index])
     
     def dp_sequence(self, dp_index = '', start_value = '', increment = '', points = ''):
     	return self.SendCommand("dp_sequence", [dp_index, start_value, increment, points])
@@ -840,6 +855,9 @@ class NSClient:
     def setcurrent(self, current = ''):
     	return self.SendCommand("setcurrent", [current])
     
+    def setdata(self, dataname = '', meshname = '', rectangle = ''):
+    	return self.SendCommand("data", [dataname, meshname, rectangle])
+    
     def setdefaultelectrodes(self):
     	return self.SendCommand("setdefaultelectrodes")
     
@@ -896,6 +914,9 @@ class NSClient:
     
     def setsordamping(self, damping_v = '', damping_s = ''):
     	return self.SendCommand("setsordamping", [damping_v, damping_s])
+    
+    def setstage(self, stagetype = '', meshname = ''):
+    	return self.SendCommand("setstage", [stagetype, meshname])
     
     def setstress(self, magnitude = '', polar = '', azimuthal = '', meshname = ''):
     	return self.SendCommand("setstress", [magnitude, polar, azimuthal, meshname])

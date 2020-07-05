@@ -14,18 +14,18 @@
 #define OS_WIN	1
 #define OS_LIN	2
 
-#define OPERATING_SYSTEM	OS_WIN
+#define OPERATING_SYSTEM	OS_LIN
 
 //----------------------------------------------------------------- INTERFACE
 
 //turn graphical interface on or off. If turned off then only use a basic text console.
-#define GRAPHICS	1
+#define GRAPHICS	0
 
 //----------------------------------------------------------------- CUDA
 
 //include cuda code in compilation. If set to 0 then only C++ CPU code is compiled so the executable will not need any cuda dlls.
 //Much faster compilation as well, so turn this off when developing new modules.
-#define COMPILECUDA	1
+#define COMPILECUDA	0
 
 //To change precision of floating point variables modify value cuBLib_Flags.h (BorisCUDALib)
 
