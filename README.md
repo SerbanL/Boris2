@@ -46,19 +46,19 @@ The code has also been ported to Linux (I've tested on Ubuntu 20.04) and compile
 
 3. Navigate to cloned directory and use the makefile to compile from source:
   
-  <b>Notes</b>: before compiling on Linux-based OS you need to have the correct compilation flags in the source code:
+  <b>Notes</b>: before compiling on Linux-based OS you need to have the correct compilation flags in the source code (if not already set as below):
 
     i) Find CompileFlags.h file in Boris directory.
 
-    i.i) Set <i>#define OPERATING_SYSTEM	OS_LIN</i>
+    i.i) Set #define OPERATING_SYSTEM	OS_LIN
 
-    i.ii) Set <i>#define GRAPHICS	0</i>
+    i.ii) Set #define GRAPHICS	0
   
       Graphics not currently supported on Linux, so only a basic text console is available, which is really just the graphical console text output but with all the text formatting specifiers stripped out. A portable graphical interface is on the to-do list. Simulations can still be run using Python scripts.
 
     ii) Find BorisLib_Config.h file in BorisLib directory.
     
-    ii.i) Set <i>#define OPERATING_SYSTEM	OS_LIN</i>
+    ii.i) Set #define OPERATING_SYSTEM	OS_LIN
     
     iii) If compiling CUDA code (COMPILECUDA 1 in CompileFlags.h) find cuBLib_Flags.h file in BorisCUDALib directory.
     
@@ -72,13 +72,13 @@ The code has also been ported to Linux (I've tested on Ubuntu 20.04) and compile
   
   <b>Compile:</b>
   
-    <i>$ make compile -j N</i>
+    $ make compile -j N
   
     (replace N with the number of logical cores on your CPU for multi-processor compilation, e.g. make compile -j 16)
 
-    <i>$ make install</i>
+    $ make install
     
-    <i>$ ./BorisLin</i>
+    $ ./BorisLin
 
 # Publication
 A technical peer-reviewed publication on Boris to follow soon.
