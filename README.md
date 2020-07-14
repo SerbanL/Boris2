@@ -45,7 +45,7 @@ Updates:
 
 Open terminal and go to extracted BorisLin directory.
 
-<b>p 1: Configuration.</b>
+<b>Step 1: Configuration.</b>
 
 $ make configure (arch=xx) (sprec=0/1)
 
@@ -64,17 +64,17 @@ Example: $ make configure arch=70
 If arch is not specified a default value of 50 is used.
 You can also compile CUDA code with single or double precision floating point. The default value, if not specified, is sprec=0 (single precision – recommended for most users). If you have a GPU capable of handling double precision floating point efficiently you can configure with sprec=1.
 
-<bStep 2: Compilation.</b>
+<b>Step 2: Compilation.</b>
 
 $ make compile -j N
 
 (replace N with the number of logical cores on your CPU for multi-processor compilation, e.g. $ make compile -j 16)
 
-<bStep 3: Installation.</b>
+<b>Step 3: Installation.</b>
 
 $ make install
 
-<bRun</b>
+<b>Run</b>
 
 $ ./BorisLin
 
