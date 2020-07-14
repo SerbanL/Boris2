@@ -424,6 +424,48 @@ void Simulation::HandleCommand(string command_string)
 		}
 		break;
 
+		case CMD_SETFMESH:
+		{
+			string new_meshName;
+			Rect meshRect;
+
+			//note, mesh name is not allowed to have any spaces - needs to be a single word
+			error = commandSpec.GetParameters(command_fields, new_meshName, meshRect);
+
+			if (!error) {
+
+				StopSimulation();
+
+				if (!err_hndl.call(&SuperMesh::AddMesh, &SMesh, new_meshName, MESH_FERROMAGNETIC, meshRect)) {
+
+					SMesh.SetMeshFocus(new_meshName);
+					UpdateScreen_AutoSet_KeepOrientation();
+
+					std::vector<string> meshNames;
+					for (int idx = 0; idx < SMesh.size(); idx++) {
+
+						meshNames.push_back(SMesh.key_from_meshIdx(idx));
+					}
+
+					for (auto& meshName : meshNames) {
+
+						if (meshName != new_meshName) {
+
+							SMesh.DelMesh(meshName);
+							//delete any affected entries in data box
+							DeleteDataBoxFields(meshName);
+							//delete any affected entries in saveDataList
+							DeleteSaveDataEntries(meshName);
+						}
+					}
+
+					UpdateScreen_AutoSet();
+				}
+			}
+			else if (verbose) PrintCommandUsage(command_name);
+		}
+		break;
+
 		case CMD_ADDAFMESH:
 		{
 			string meshName;
@@ -439,6 +481,48 @@ void Simulation::HandleCommand(string command_string)
 				if (!err_hndl.call(&SuperMesh::AddMesh, &SMesh, meshName, MESH_ANTIFERROMAGNETIC, meshRect)) {
 
 					UpdateScreen();
+				}
+			}
+			else if (verbose) PrintCommandUsage(command_name);
+		}
+		break;
+
+		case CMD_SETAFMESH:
+		{
+			string new_meshName;
+			Rect meshRect;
+
+			//note, mesh name is not allowed to have any spaces - needs to be a single word
+			error = commandSpec.GetParameters(command_fields, new_meshName, meshRect);
+
+			if (!error) {
+
+				StopSimulation();
+
+				if (!err_hndl.call(&SuperMesh::AddMesh, &SMesh, new_meshName, MESH_ANTIFERROMAGNETIC, meshRect)) {
+
+					SMesh.SetMeshFocus(new_meshName);
+					UpdateScreen_AutoSet_KeepOrientation();
+
+					std::vector<string> meshNames;
+					for (int idx = 0; idx < SMesh.size(); idx++) {
+
+						meshNames.push_back(SMesh.key_from_meshIdx(idx));
+					}
+
+					for (auto& meshName : meshNames) {
+
+						if (meshName != new_meshName) {
+
+							SMesh.DelMesh(meshName);
+							//delete any affected entries in data box
+							DeleteDataBoxFields(meshName);
+							//delete any affected entries in saveDataList
+							DeleteSaveDataEntries(meshName);
+						}
+					}
+
+					UpdateScreen_AutoSet();
 				}
 			}
 			else if (verbose) PrintCommandUsage(command_name);
@@ -544,6 +628,48 @@ void Simulation::HandleCommand(string command_string)
 				if (!err_hndl.call(&SuperMesh::AddMesh, &SMesh, meshName, MESH_ATOM_CUBIC, meshRect)) {
 
 					UpdateScreen();
+				}
+			}
+			else if (verbose) PrintCommandUsage(command_name);
+		}
+		break;
+
+		case CMD_SETAMESHCUBIC:
+		{
+			string new_meshName;
+			Rect meshRect;
+
+			//note, mesh name is not allowed to have any spaces - needs to be a single word
+			error = commandSpec.GetParameters(command_fields, new_meshName, meshRect);
+
+			if (!error) {
+
+				StopSimulation();
+
+				if (!err_hndl.call(&SuperMesh::AddMesh, &SMesh, new_meshName, MESH_ATOM_CUBIC, meshRect)) {
+
+					SMesh.SetMeshFocus(new_meshName);
+					UpdateScreen_AutoSet_KeepOrientation();
+
+					std::vector<string> meshNames;
+					for (int idx = 0; idx < SMesh.size(); idx++) {
+
+						meshNames.push_back(SMesh.key_from_meshIdx(idx));
+					}
+
+					for (auto& meshName : meshNames) {
+
+						if (meshName != new_meshName) {
+
+							SMesh.DelMesh(meshName);
+							//delete any affected entries in data box
+							DeleteDataBoxFields(meshName);
+							//delete any affected entries in saveDataList
+							DeleteSaveDataEntries(meshName);
+						}
+					}
+
+					UpdateScreen_AutoSet();
 				}
 			}
 			else if (verbose) PrintCommandUsage(command_name);
@@ -1276,7 +1402,7 @@ void Simulation::HandleCommand(string command_string)
 				ODE_ atom_odeID;
 				SMesh.QueryAtomODE(atom_odeID);
 
-				if (setOde != ODE_ERROR && odeEval != EVAL_ERROR && vector_contains(odeAllowedEvals(setOde), odeEval) && vector_contains(odeAllowedEvals(atom_odeID), odeEval)) {
+				if (setOde != ODE_ERROR && odeEval != EVAL_ERROR && vector_contains(odeAllowedEvals(setOde), odeEval)) {
 
 					if (!err_hndl.call(&SuperMesh::SetODE, &SMesh, setOde, odeEval)) {
 
@@ -3668,25 +3794,83 @@ void Simulation::HandleCommand(string command_string)
 		case CMD_SETMATERIAL:
 		{
 			string materialName;
+			Rect meshRect;
 
-			error = commandSpec.GetParameters(command_fields, materialName);
+			error = commandSpec.GetParameters(command_fields, materialName, meshRect);
 
 			if (!error) {
 
-				if (!err_hndl.call(&MaterialsDB::LoadMaterial, &mdb, materialName, (int*)nullptr)) {
+				int meshType;
 
-					//material loaded in mdb available.
-	
-					if (!SMesh.active_mesh()->is_atomistic()) {
+				StopSimulation();
 
-						//now copy parameter values - this is done even if mesh types are not the same. e.g. you might want to copy from a ferromagnetic mesh to a dipole mesh
-						//this only works for micromagnetics meshes
-						mdb.copy_parameters(*dynamic_cast<Mesh*>(SMesh.active_mesh()));
+				if (!err_hndl.call(&MaterialsDB::LoadMaterial, &mdb, materialName, &meshType)) {
+
+					//material loaded in mdb and meshType available.
+
+					string new_meshName = materialName;
+
+					//does this mesh name already exist?
+					while (SMesh.contains(new_meshName)) {
+
+						//if meshName exists then add _#, where # = 1 to start
+						//if meshName already contains a termination of the form _# then increase # until meshName available
+						size_t pos = new_meshName.find_last_of('_');
+
+						if (pos == std::string::npos) {
+
+							new_meshName += string("_1");
+						}
+						else {
+
+							string termination = new_meshName.substr(pos + 1);
+							if (has_digits_only(termination)) {
+
+								int number = ToNum(termination);
+								number++;
+								termination = ToString(number);
+
+								new_meshName = new_meshName.substr(0, pos + 1) + termination;
+							}
+							else new_meshName += string("_1");
+						}
+					}
+
+					//first make the mesh with the correct rectangle and mesh type
+					if (!err_hndl.call(&SuperMesh::AddMesh, &SMesh, new_meshName, (MESH_)meshType, meshRect)) {
+
+						//mesh created, now copy parameter values
+						mdb.copy_parameters(*dynamic_cast<Mesh*>(SMesh[new_meshName]));
+
+						SMesh.SetMeshFocus(new_meshName);
+						UpdateScreen_AutoSet_KeepOrientation();
+
+						std::vector<string> meshNames;
+						for (int idx = 0; idx < SMesh.size(); idx++) {
+
+							meshNames.push_back(SMesh.key_from_meshIdx(idx));
+						}
+
+						for (auto& meshName : meshNames) {
+
+							if (meshName != new_meshName) {
+
+								SMesh.DelMesh(meshName);
+								//delete any affected entries in data box
+								DeleteDataBoxFields(meshName);
+								//delete any affected entries in saveDataList
+								DeleteSaveDataEntries(meshName);
+							}
+						}
+
+						UpdateScreen_AutoSet();
+
+						if (script_client_connected)
+							commSocket.SetSendData({ new_meshName });
 					}
 				}
 
 				UpdateScreen();
-
 			}
 			else if (verbose) PrintCommandUsage(command_name);
 		}
@@ -4596,11 +4780,12 @@ void Simulation::HandleCommand(string command_string)
 
 		case CMD_DP_GETEXACTPROFILE:
 		{
-			DBL3 start, end;
+			DBL3 start, end, stencil;
 			double step;
 			int arr_idx;
 
-			error = commandSpec.GetParameters(command_fields, start, end, step, arr_idx);
+			error = commandSpec.GetParameters(command_fields, start, end, step, arr_idx, stencil);
+			if (error) { error.reset() = commandSpec.GetParameters(command_fields, start, end, step, arr_idx); stencil = DBL3(); }
 
 			if (!error) {
 
@@ -4611,12 +4796,22 @@ void Simulation::HandleCommand(string command_string)
 
 				vector<double> data_x(num_points), data_y(num_points), data_z(num_points);
 
+				bool average = !stencil.IsNull();
+
 				#pragma omp parallel for
 				for (int idx = 0; idx < num_points; idx++) {
 
 					DBL3 pos = start + idx * (end - start) / (num_points - 1);
 
-					DBL3 value = SMesh.GetDisplayedMeshValue(pos);
+					DBL3 value;
+					if (average) {
+
+						value = SMesh.GetAverageDisplayedMeshValue(Rect(DBL3(pos - stencil/2), DBL3(pos + stencil / 2)));
+					}
+					else {
+
+						value = SMesh.GetDisplayedMeshValue(pos);
+					}
 
 					data_x[idx] = value.x;
 					data_y[idx] = value.y;
@@ -4916,6 +5111,48 @@ void Simulation::HandleCommand(string command_string)
 				if (SMesh.active_mesh()->Magnetism_Enabled() && !SMesh.active_mesh()->is_atomistic()) {
 
 					error = dpArr.calculate_histogram(dynamic_cast<Mesh*>(SMesh.active_mesh())->Get_M(), dp_x, dp_y, bin, min, max);
+
+					if (!error) {
+
+						if (verbose) BD.DisplayConsoleMessage("Histogram calculated.");
+					}
+				}
+				else err_hndl.show_error(BERROR_NOTMAGNETIC, verbose);
+			}
+			else if (verbose) PrintCommandUsage(command_name);
+		}
+		break;
+
+		case CMD_DP_HISTOGRAM2:
+		{
+			double bin = 0.0, min = 0.0, max = 0.0;
+			double M2 = 0.0, deltaM2 = 0.0;
+			int dp_x, dp_y;
+
+			error = commandSpec.GetParameters(command_fields, dp_x, dp_y, bin, min, max, M2, deltaM2);
+			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, dp_x, dp_y); bin = 0.0; min = 0.0; max = 0.0; M2 = 0.0; deltaM2 = 0.0; }
+
+			if (!error) {
+				
+				if (SMesh.active_mesh()->GetMeshType() == MESH_ANTIFERROMAGNETIC && !SMesh.active_mesh()->is_atomistic()) {
+
+					if (IsZ(M2) && IsZ(deltaM2)) {
+
+						Mesh* pMesh = dynamic_cast<Mesh*>(SMesh.active_mesh());
+						if (pMesh) {
+
+							DBL2 Ms_AFM = pMesh->Ms_AFM;
+							//equilibrium magnetisation on sub-lattice B at set mesh base temperature
+							M2 = Ms_AFM.j;
+							deltaM2 = M2 * 0.01;
+						}
+					}
+
+					error = dpArr.calculate_histogram2(
+						dynamic_cast<Mesh*>(SMesh.active_mesh())->Get_M(), 
+						dynamic_cast<Mesh*>(SMesh.active_mesh())->Get_M2(),
+						dp_x, dp_y, 
+						bin, min, max, M2, deltaM2);
 
 					if (!error) {
 
@@ -5258,6 +5495,35 @@ void Simulation::HandleCommand(string command_string)
 				}
 
 				if (script_client_connected) commSocket.SetSendData(commandSpec.PrepareReturnParameters(S.major, H0.major, dH.major, y0.major, S.minor, H0.minor, dH.minor, y0.minor));
+			}
+			else if (verbose) PrintCommandUsage(command_name);
+		}
+		break;
+
+		case CMD_DP_FITLORENTZ2:
+		{
+			int dp_x, dp_y;
+
+			error = commandSpec.GetParameters(command_fields, dp_x, dp_y);
+
+			if (!error) {
+
+				DBL2 S, A, H0, dH, y0;
+
+				error = dpArr.fit_lorentz2(dp_x, dp_y, &S, &A, &H0, &dH, &y0);
+
+				if (verbose && !error) {
+
+					BD.DisplayConsoleMessage(
+						"S = " + ToString(S.major) + " +/- " + ToString(S.minor) + ", " +
+						"A = " + ToString(A.major) + " +/- " + ToString(A.minor) + ", " +
+						"H0 = " + ToString(H0.major) + " +/- " + ToString(H0.minor) + ", " +
+						"dH = " + ToString(dH.major) + " +/- " + ToString(dH.minor) + ", " +
+						"y0 = " + ToString(y0.major) + " +/- " + ToString(y0.minor)
+					);
+				}
+
+				if (script_client_connected) commSocket.SetSendData(commandSpec.PrepareReturnParameters(S.major, A.major, H0.major, dH.major, y0.major, S.minor, A.minor, H0.minor, dH.minor, y0.minor));
 			}
 			else if (verbose) PrintCommandUsage(command_name);
 		}

@@ -10,6 +10,8 @@ ns = NSClient('localhost')
 
 #the working directory : same as this script file, typically expecting simulation file to be in same directory as this script file
 directory = os.path.dirname(sys.argv[0]) + "/"
+#restore program to default state
+ns.default()
 ns.chdir(directory)
 
 ########################################

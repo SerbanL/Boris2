@@ -1,106 +1,92 @@
+"""
+This script is part of Boris Computational Spintronics v2.8
+
+@author: Serban Lepadatu, 2020
+"""
+
 import os
-from WinSocks import *
+import sys
+from NetSocks import NSClient
+import matplotlib.pyplot as plt
+import numpy as np
 
-#setup communication with server. By default sent messages are not displayed in console. 
-#To enable verbose mode use e.g.: WSClient('localhost', True)
-ws = WSClient('localhost')
+#setup communication with server
+ns = NSClient('localhost')
 
-#the working directory : same as the simulation file
-directory = os.path.dirname(sys.argv[0]) + "\\"
+########################################
 
-#the simulation file
-filename = 'cidwm'
+#the working directory : same as this script file
+directory = os.path.dirname(sys.argv[0]) + "/"
+#restore program to default state
+ns.default()
+ns.chdir(directory)
 
-#the final output data will be saved here
-outputdata_file = 'dwvelocity_vs_Jc.txt'
+########################################
 
-ws.SendCommand('loadsim', [directory + filename])
+#This is based on Exercise 5.1, done entirely using a Python script
 
-#set 2 stages : the first will achieve steady state motion but not save data, the second will save data
-#Note : addstage simply adds a generic stage; we will need to edit the stop and save conditions, as well as the set stage values
-ws.SendCommand('addstage V')
-ws.SendCommand('addstage V')
+ns.meshrect([320e-9, 80e-9, 10e-9])
+ns.cellsize([5e-9, 5e-9, 5e-9])
 
-#delete the first stage : the loaded simulation file has 1 stage set which we don't need
-ws.SendCommand('delstage 0')
+#set spin polarization and STT non-adiabaticity
+ns.setparam('permalloy', 'P', 0.4)
+ns.setparam('permalloy', 'beta', 0.04)
 
-#configure the stop conditions for the 2 stages
-ws.SendCommand('editstagestop', [0, 'time', 3e-9])
-ws.SendCommand('editstagestop', [1, 'time', 3e-9])
+#setup the moving mesh algorithm for a transverse domain wall along the x axis: 
+#1. remove end magnetic charges using two dipole meshes (enables strayfield module)
+#2. freeze x-axis ends spins
+#3. set a transverse domain wall
+#4. enable moving mesh algorithm which keeps the dw centered
+ns.preparemovingmesh()
 
-#set a save condition of every 50ps for the second V stage only
-ws.SendCommand('editdatasave', [1, 'time', 50e-12])
+#relax dw in zero field to |mxh| < 10^-5
+ns.editstagestop(0, 'mxh', 1e-5)
+ns.Run()
 
-#we'll save data to this file so we can perform linear regression on it
-rawdata_file = 'dwvelocity_rawdata'
-ws.SendCommand('savedatafile', [rawdata_file])
+ns.setstage('V')
+ns.editstagestop(0, 'time', 5e-9)
+ns.addstage('V')
+ns.editstagestop(1, 'time', 5e-9)
+ns.editdatasave(1, 'time', 10e-12)
 
-vstart = 2.28e-3
-vend = 22.8e-3
-steps = 10
+#save time (s) and dw shift (m) data
+ns.setdata('stime')
+ns.adddata('dwshift')
+ns.savedatafile('cidwmovement_temp.txt')
 
-for step in range(0, steps + 1):
+#set fixed time-step RK4 method with 500fs time step, enabling STT (LLG-STT equation)
+ns.setode('LLG-STT', 'RK4')
+ns.setdt(500e-15)
 
-    #the voltage value to set for this step
-    voltage = vstart + (vend-vstart) * step / steps
+ns.addmodule('permalloy', 'transport')
+ns.setdefaultelectrodes()
 
-    #set the voltage values for the 2 stages
-    ws.SendCommand('editstagevalue', [0, voltage])
-    ws.SendCommand('editstagevalue', [1, voltage])
+#save setup simulation file (next time you can just load it using ns.loadsim('dwmovement'))
+ns.savesim('cidwm')
 
-    #make sure to reset before simulating with this voltage value
-    ws.SendCommand('reset')
+Vrange = np.arange(-4.57e-3, -46e-3, -4.113e-3)
+Jcrange = np.array([])
+dwvelocity = np.array([])
 
-    #wait for the 2 stages to finish
-    ws.Run()
+for V in Vrange:
 
-    #load time vs dwshift raw data : the simulation file is configured so these are in the first 2 columns
-    ws.SendCommand('dp_load', [rawdata_file, 0, 1, 0, 1])
-
-    #linear regression on shift vs time data : linregdata will contain in this order : g, g_err, c, c_err
-    linregdata = ws.SendCommand('dp_linreg', [0,1])
-    #we need the gradient (g)
-    dwvelocity = Get(linregdata, 0)
-    #uncertainty
-    dwvel_err = Get(linregdata, 1)
-
-    #get the current density
-    Jc = ws.SendCommand('showdata <Jc>')
-
-    #append new entry to output data : current density (along x) and domain wall velocity
-    ws.SaveDataToFile(outputdata_file, [Get(Jc, 0), dwvelocity, dwvel_err])
-
+    ns.reset()
+    #first stage achieves steady state movement
+    ns.editstagevalue(0, V)
+    #second stage captures data
+    ns.editstagevalue(1, V)
+    ns.Run()
     
+    #process data to extract domain wall velocity
+    ns.dp_load('cidwmovement_temp.txt', [0, 1, 0, 1])
+    ns.dp_replacerepeats(1)
+    dwdata = ns.dp_linreg(0, 1)
+    dwvelocity = np.append(dwvelocity, dwdata[0])
+    Jc = ns.showdata('<Jc>')
+    Jcrange = np.append(Jcrange, Jc[0])
     
-
+    print('Jc (A/m3) = %f, DW velocity (m/s) = %0.4f' % (Jc[0], dwdata[0]))
     
-
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+plt.axes(xlabel = 'Jc (A/m^2)', ylabel = 'DW Velocity (m/s)', title = 'DW Velocity')
+plt.plot(Jcrange, dwvelocity, 'o-')
+plt.show()

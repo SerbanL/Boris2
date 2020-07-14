@@ -387,13 +387,13 @@ void ODECommon_Base::IterateCUDA(void)
 				for (int idx = 0; idx < podeSolver->pODE.size(); idx++) {
 
 					if (podeSolver->setODE == ODE_LLG) podeSolver->pODE[idx]->pmeshODECUDA->RunABMTEuler_LLG(0);
-					podeSolver->pODE[idx]->pmeshODECUDA->RunABMTEuler(0);
+					else podeSolver->pODE[idx]->pmeshODECUDA->RunABMTEuler(0);
 				}
 
 				for (int idx = 0; idx < patom_odeSolver->pODE.size(); idx++) {
 
 					if (patom_odeSolver->setODE == ODE_LLG) patom_odeSolver->pODE[idx]->pameshODECUDA->RunABMTEuler_LLG(0);
-					patom_odeSolver->pODE[idx]->pameshODECUDA->RunABMTEuler(0);
+					else patom_odeSolver->pODE[idx]->pameshODECUDA->RunABMTEuler(0);
 				}
 
 				evalStep = 1;
@@ -404,13 +404,13 @@ void ODECommon_Base::IterateCUDA(void)
 				for (int idx = 0; idx < podeSolver->pODE.size(); idx++) {
 
 					if (podeSolver->setODE == ODE_LLG) podeSolver->pODE[idx]->pmeshODECUDA->RunABMTEuler_LLG(1);
-					podeSolver->pODE[idx]->pmeshODECUDA->RunABMTEuler(1);
+					else podeSolver->pODE[idx]->pmeshODECUDA->RunABMTEuler(1);
 				}
 
 				for (int idx = 0; idx < patom_odeSolver->pODE.size(); idx++) {
 
 					if (patom_odeSolver->setODE == ODE_LLG) patom_odeSolver->pODE[idx]->pameshODECUDA->RunABMTEuler_LLG(1);
-					patom_odeSolver->pODE[idx]->pameshODECUDA->RunABMTEuler(1);
+					else patom_odeSolver->pODE[idx]->pameshODECUDA->RunABMTEuler(1);
 				}
 
 				evalStep = 0;

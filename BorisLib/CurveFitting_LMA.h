@@ -5,6 +5,7 @@
 #include "BLib_VEC.h"
 
 #include "CurveFitting_Lorentz.h"
+#include "CurveFitting_Lorentz2.h"
 #include "CurveFitting_Skyrmion.h"
 #include "CurveFitting_STT.h"
 #include "CurveFitting_SOT.h"
@@ -15,6 +16,7 @@ class CurveFitting_LMA :
 	//To use a particular fitting function just call one of the public functions in the classes below
 	//These classes use CRTP to access CurveFitting_LMA data and methods, hence the template parameter
 	public CurveFitting_Lorentz<CurveFitting_LMA>,
+	public CurveFitting_LorentzSA<CurveFitting_LMA>,
 	public CurveFitting_Skyrmion<CurveFitting_LMA>,
 	public CurveFitting_STT<CurveFitting_LMA>,
 	public CurveFitting_SOT<CurveFitting_LMA>,
@@ -22,6 +24,7 @@ class CurveFitting_LMA :
 {
 	//use friend declaration so I don't have to make the data members below public
 	friend CurveFitting_Lorentz;
+	friend CurveFitting_LorentzSA;
 	friend CurveFitting_Skyrmion;
 	friend CurveFitting_STT;
 	friend CurveFitting_SOT;

@@ -1,46 +1,60 @@
+"""
+This script is part of Boris Computational Spintronics v2.8
+
+@author: Serban Lepadatu, 2020
+"""
+
 import os
-from WinSocks import *
-ws = WSClient('localhost')
+import sys
+from NetSocks import NSClient
+import matplotlib.pyplot as plt
+import numpy as np
 
-#this script simulates a field-swept FMR peak with bias field along -y direction and r.f. field along x direction
+#setup communication with server
+ns = NSClient('localhost')
 
+########################################
 
-#################################################################################################
+#the working directory : same as this script file
+directory = os.path.dirname(sys.argv[0]) + "/"
+ns.default()
+ns.chdir(directory)
+
+########################################
+
+def func_lorentz(x, y0, S, w, x0):
+    return y0 + S * w / (4*(x-x0)**2 + w**2)
+
+########################################
 
 #Prepare FMR simulation for given simulation file and ferromagnetic mesh name
 #Geometry, parameters and correct modules must be prepared already in the simulation file
 #This only changes required stages, output data and data file
 def PrepareFMRSimulation(simulationFile_withPath, ferromagnetic_meshName):
 
-    ws.SendCommand('loadsim', [simulationFile_withPath])
+    ns.loadsim(simulationFile_withPath)
 
     #temporary data file
-    ws.SendCommand('savedatafile', ['fmrcycle.txt'])
+    ns.savedatafile('fmrcycle.txt')
     
-    #delete all stages : only one will be left
-    ws.SendCommand('delstage -1')
-    #set it to be an fmr stage
-    ws.SendCommand('editstage', [0, 'Hfmr', ferromagnetic_meshName])
+    #set a single fmr stage
+    ns.setstage('Hfmr', ferromagnetic_meshName)
     
     #add a second fmr stage (this will be the one that save to the temporary output data file)
-    ws.SendCommand('addstage', ['Hfmr', ferromagnetic_meshName])
-    ws.SendCommand('editdatasave', [1, 'step'])
-
-    #prepare required output data
-    #first get rid of everything, leaving just a default time stage : column 0
-    ws.SendCommand('deldata -1')
+    ns.addstage('Hfmr', ferromagnetic_meshName)
+    ns.editdatasave(1, 'step')
 
     #applied field : columns 1, 2, 3
-    ws.SendCommand('adddata', ['Ha', ferromagnetic_meshName])
+    ns.setdata('Ha', ferromagnetic_meshName)
 
     #average magnetisation : columns 4, 5, 6
-    ws.SendCommand('adddata', ['<M>', ferromagnetic_meshName])
+    ns.adddata('<M>', ferromagnetic_meshName)
 
     #FMR bias field is along -y direction so set starting angle for magnetisation
-    ws.SendCommand('setangle', [90, 270])
+    ns.setangle(90, 270)
 
     #save file
-    ws.SendCommand('savesim', [simulationFile_withPath])
+    ns.savesim(simulationFile_withPath)
 
 #################################################################################################
 
@@ -63,57 +77,53 @@ def RunFMRStep(biasH, rfFreq, ferromagnetic_meshName, fileName):
     steps_per_cycle = 20
 
     #threshold for accepting amplitude
-    threshold = 0.005
+    threshold = 0.001
 
     #the stopping time per step required to result in the required fmr frequency (s)
-    stopping_time = (1/rfFreq) / 20
+    stopping_time = (1/rfFreq) / steps_per_cycle
 
     #setup stage values - assume simulation already prepared correctly (e.g. use PrepareFMRSimulation)
-    ws.SendCommand('editstagevalue', [0, 0, biasH, 0, rfH, 0, 0, steps_per_cycle, cyclesChunk])
-    ws.SendCommand('editstagestop', [0, 'time', stopping_time])
+    ns.editstagevalue(0, [0, biasH, 0, rfH, 0, 0, steps_per_cycle, cyclesChunk])
+    ns.editstagestop(0, 'time', stopping_time)
 
-    ws.SendCommand('editstagevalue', [1, 0, biasH, 0, rfH, 0, 0, steps_per_cycle, 1])
-    ws.SendCommand('editstagestop', [1, 'time', stopping_time])
+    ns.editstagevalue(1, [0, biasH, 0, rfH, 0, 0, steps_per_cycle, 1])
+    ns.editstagestop(1, 'time', stopping_time)
 
     #determine stable oscillation amplitude for the given bias field
     previous_amplitude = 0.0
     cyclesSimulated = 0
 
-    while True:
+    while cyclesSimulated < cyclesMax:
 
-        ws.SendCommand('reset')
-        ws.SendCommand('dp_clearall')
+        ns.reset()
+        ns.dp_clearall()
 
         #run a chunk of cycles to get starting oscillation value
-        ws.Run()
+        ns.Run()
 
-        ws.SendCommand('dp_load', ['fmrcycle.txt', 4, 0])
-        new_amplitude = ws.SendCommand('dp_getampli', [0, steps_per_cycle])
+        ns.dp_load('fmrcycle.txt', [3, 0])
+        new_amplitude = ns.dp_getampli(0, steps_per_cycle)
 
         cyclesSimulated += cyclesChunk
    
         if new_amplitude:
             
-            change = abs( (new_amplitude - previous_amplitude) / new_amplitude )
+            change = np.abs( (new_amplitude - previous_amplitude) / new_amplitude )
 
-            if change < threshold or cyclesSimulated >= cyclesMax:
+            if change < threshold:
                 break
 
         previous_amplitude = new_amplitude
     
     #save it to file - append bias field and amplitude pair of points
-    ws.SaveDataToFile(fileName, [abs(biasH), previous_amplitude])
+    ns.SaveDataToFile(fileName, [np.abs(biasH), new_amplitude])
                          
 ##################################################################################################
-
-#the directory for the simulation file
-import os 
-directory = os.path.dirname(sys.argv[0]) + "\\"
 
 #the simulation file correctly prepared for fmr simulations
 simulation_file = 'fmr'
 
-output_file = simulation_file + '_fieldsweepFMR_data'
+output_file = simulation_file + '_fieldsweepFMR_data.txt'
 
 #the meshname in which you want to apply the fmr fields
 ferromagnetic_meshName = 'permalloy'
@@ -133,9 +143,30 @@ PrepareFMRSimulation(directory + simulation_file, ferromagnetic_meshName)
 for step in range(int((Hend-Hstart)/Hstep) + 1):
 
     Hbias = Hstart + step * Hstep
-
+    print("Bias field = ", Hbias)
     RunFMRStep(-Hbias, rfFreq, ferromagnetic_meshName, output_file)
-    
+
+##################################################################################################
+
+data = ns.Get_Data_Columns(output_file, [0, 1])
+Hrange = [H for H in data[0]]
+fmr_signal = [amplitude**2 for amplitude in data[1]]
+
+ns.dp_load(output_file, [0, 1, 0, 1])
+ns.dp_muldp(1, 1, 1)
+lorentz_params = ns.dp_fitlorentz(0, 1)
+lorentz = [func_lorentz(H, lorentz_params[3], lorentz_params[0], lorentz_params[2], lorentz_params[1]) for H in Hrange]
+
+data = ns.Get_Data_Columns(output_file, [0, 1])
+fmr_signal = [amplitude**2 for amplitude in data[1]]
+
+plt.axes(xlabel = 'H (A/m)', ylabel = 'FMR Signal (a.u.)', title = 'Field-swept FMR')
+plt.plot(Hrange, fmr_signal, 'o', label = 'simulated FMR')
+plt.plot(Hrange, lorentz, '--', label = 'Lorentz fit')
+plt.legend()
+plt.show()
+
+
 
 
 

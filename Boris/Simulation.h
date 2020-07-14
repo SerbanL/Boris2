@@ -19,8 +19,8 @@
 //I understand CUDA 10 officially supports all VS2017 versions but didn't try it yet (maybe I should!). VS2019 also available but no need to upgrade yet.
 
 //3.
-//Cannot import BorisLib.h in .cu files. I believe this may be due to CUDA 9.2 nvcc not supporting C++14 standards (only C++11). Tried CUDA 10.2 - same story.
-//I got around this by keeping all compilation units in .cu files with C++11 code only, which didn't interfere with program design as I didn't really need any C++14 features there (but very useful in many other compilation units!).
+//Cannot import BorisLib.h in .cu files. This is due to nvcc not supporting C++17 standards at the time of writing (only C++14).
+//I got around this by keeping all compilation units in .cu files with C++14 code only, which didn't interfere with program design as I didn't really need any C++17 features there (but very useful in many other compilation units!).
 
 //4.
 //On Windows 10 it's possible CUDA nvcc will keep coming up with "exit error code 1", including when you simply try to clean the project.
@@ -105,7 +105,11 @@ private:
 	string mdb_lastupdate = "mdbtime.php";
 
 	//directory name with Boris Data (e.g. error log output, default.bsm, and other important folders
+#if OPERATING_SYSTEM == OS_WIN
 	string boris_data_directory = "Boris Data/";
+#elif OPERATING_SYSTEM == OS_LIN
+	string boris_data_directory = "Boris_Data/";
+#endif
 	//Default simulations directory folder, located within boris_data_directory
 	string boris_simulations_directory = "Simulations/";
 

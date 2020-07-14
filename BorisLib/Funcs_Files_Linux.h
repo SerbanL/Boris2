@@ -64,11 +64,11 @@ inline std::string GetUserDocumentsPath(void)
     uid_t uid;
     int c;
 
-    uid = geteuid ();
-    pw = getpwuid (uid);
+    uid = geteuid();
+    pw = getpwuid(uid);
 	if (pw) {
 		
-		return std::string("/home/") + std::string(pw->pw_name) + std::string("/Documents/");;
+		return std::string("/home/") + std::string(pw->pw_name) + std::string("/Documents/");
 	}
 	else return "";
 }

@@ -652,8 +652,16 @@ void Simulation::CheckSimulationSchedule(void)
 		break;
 
 	case STOP_TIME:
+	{
+		//See comments for DSAVE_TIME below in Simulation::CheckSaveDataConditions() - same thing applies here.
 
-		if( SMesh.GetStageTime() >= (double)simStages[ stage_step.major ].get_stopvalue() ) AdvanceSimulationSchedule();
+		double time = SMesh.GetTime();
+		double tstop = (double)simStages[stage_step.major].get_stopvalue();
+		double dT = SMesh.GetTimeStep();
+
+		double delta = time - floor_fixedepsilon(time / tstop) * tstop;
+		if (delta < dT * 0.99) AdvanceSimulationSchedule();
+	}
 		break;
 	}
 }
@@ -756,8 +764,9 @@ void Simulation::AdvanceSimulationSchedule(void)
 			//schedule reached end: stop simulation. Note, since this routine is called from Simulate routine, which runs on the THREAD_LOOP thread, cannot stop THREAD_LOOP from within it: stop it from another thread.
 			single_call_launch(&Simulation::StopSimulation, THREAD_HANDLEMESSAGE);
 
-			//back to 0, 0
-			stage_step = INT2();
+			//set stage step to start of last stage but without resetting anything : the idea is user can edit the stopping value for the last stage, e.g. add more time to it, then run simulation some more
+			//if you want a complete reset then reset command must be issued in console
+			stage_step = INT2(stage_step.major - 1, 0);
 		}
 	}
 }

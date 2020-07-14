@@ -70,15 +70,16 @@ Atom_MeshCUDA::~Atom_MeshCUDA()
 
 		//-----Electric conduction properties (Electron charge and spin Transport)
 
-		//copying to cpuvec done in Transport module (if enabled; if not, copying not needed)
+		//Transport module not currently used for atomistic meshes : TO DO
 
 		//-----Thermal conduction properties
 
-		//copying to cpuvec done in Heat module (if enabled; if not, copying not needed)
+		Temp()->copy_to_cpuvec(paMesh->Temp);
+		Temp_l()->copy_to_cpuvec(paMesh->Temp_l);
 
 		//-----Mechanical properties
 
-		//copying to cpuvec done in MElastic module (if enabled; if not, copying not needed)
+		//MElastic module not currently used for atomistic meshes : TO DO
 	}
 }
 

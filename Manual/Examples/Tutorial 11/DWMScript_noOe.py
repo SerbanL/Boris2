@@ -1,35 +1,45 @@
-import os
-from WinSocks import *
+"""
+This script is part of Boris Computational Spintronics v2.8
 
-#setup communication with server. By default sent messages are not displayed in console. 
-#To enable verbose mode use e.g.: WSClient('localhost', True)
-ws = WSClient('localhost')
+@author: Serban Lepadatu, 2020
+"""
+
+import os
+import sys
+from NetSocks import NSClient
+import matplotlib.pyplot as plt
+import numpy as np
+
+#setup communication with server
+ns = NSClient('localhost')
+
+########################################
+
+#the working directory : same as this script file
+directory = os.path.dirname(sys.argv[0]) + "/"
+ns.chdir(directory)
+
+########################################
 
 def load_and_prepare_sim(filename_with_path, rawdata_file):
     
-    ws.SendCommand('loadsim', [filename_with_path])
+    ns.loadsim(filename_with_path)
 
     #set 2 stages : the first will achieve steady state motion but not save data, the second will save data
     #Note : addstage simply adds a generic stage; we will need to edit the stop and save conditions, as well as the set stage values
-    ws.SendCommand('addstage V')
-    ws.SendCommand('addstage V')
-
-    #delete the first stage : the loaded simulation file has 1 stage set which we don't need
-    ws.SendCommand('delstage 0')
+    ns.setstage('V')
+    ns.addstage('V')
 
     #configure the stop conditions for the 2 stages
-    ws.SendCommand('editstagestop', [0, 'time', 4e-9])
-    ws.SendCommand('editstagestop', [1, 'time', 4e-9])
+    ns.editstagestop(0, 'time', 5e-9)
+    ns.editstagestop(1, 'time', 5e-9)
 
-    #set a save condition of every 50ps for the second V stage only
-    ws.SendCommand('editdatasave', [1, 'time', 50e-12])
+    #set a save condition of every 10ps for the second V stage only
+    ns.editdatasave(1, 'time', 10e-12)
 
-    ws.SendCommand('savedatafile', [rawdata_file])
+    ns.savedatafile(rawdata_file)
 
 ######################################
-
-#the working directory : same as the simulation file
-directory = os.path.dirname(sys.argv[0]) + "\\"
 
 #the simulation file
 filename = 'cidwm_noOe'
@@ -40,8 +50,8 @@ outputdata_file = 'dwvelocity_vs_Jc_noOe.txt'
 #we'll save temporary data to this file so we can perform linear regression on it
 rawdata_file = 'dwvelocity_rawdata'
 
-vstart = 2.28e-3
-vend = 22.8e-3
+vstart = -4.57e-3
+vend = -45.7e-3
 steps = 10
 
 for polarity in range(-1, 2, 2):
@@ -57,30 +67,60 @@ for polarity in range(-1, 2, 2):
         voltage = voltage * polarity
 
         #set the voltage values for the 2 stages
-        ws.SendCommand('editstagevalue', [0, voltage])
-        ws.SendCommand('editstagevalue', [1, voltage])
+        ns.editstagevalue(0, voltage)
+        ns.editstagevalue(1, voltage)
 
         #make sure to reset before simulating with this voltage value
-        ws.SendCommand('reset')
+        ns.reset()
 
         #wait for the 2 stages to finish
-        ws.Run()
+        ns.Run()
 
         #load time vs dwshift raw data : the simulation file is configured so these are in the first 2 columns
-        ws.SendCommand('dp_load', [rawdata_file, 0, 1, 0, 1])
+        ns.dp_load(rawdata_file, [0, 1, 0, 1])
 
         #linear regression on shift vs time data : linregdata will contain in this order : g, g_err, c, c_err
-        linregdata = ws.SendCommand('dp_linreg', [0,1])
+        linregdata = ns.dp_linreg(0,1)
         #we need the gradient (g)
-        dwvelocity = Get(linregdata, 0)
+        dwvelocity = linregdata[0]
         #uncertainty
-        dwvel_err = Get(linregdata, 1)
+        dwvel_err = linregdata[1]
 
         #get the current density
-        Jc = ws.SendCommand('showdata <Jc>')
+        Jc = ns.showdata('<Jc>')
+        
+        print('Jc (A/m2) = %f, dw velocity (m/s) = %.2f +/- %0.2f' % (Jc[0], dwvelocity, dwvel_err))
 
         #append new entry to output data : current density (along x) and domain wall velocity
-        ws.SaveDataToFile(outputdata_file, [Get(Jc, 0), dwvelocity, dwvel_err])
+        ns.SaveDataToFile(outputdata_file, [Jc[0], dwvelocity, dwvel_err])
+       
+data_noOe = ns.Get_Data_Columns(outputdata_file, [0, 1, 2])
+
+#u = |J|*P*muB/(e*Ms*(1+beta^2))
+P = ns.setparam('permalloy', 'P')
+Ms = ns.setparam('permalloy', 'Ms')
+beta = ns.setparam('permalloy', 'beta')
+muB = 9.274009994e-24
+e = 1.60217662e-19
+u_data = [-J*P*muB/(2*e*Ms*(1 + beta**2)) for J in data_noOe[0]]
+
+plt.axes(xlabel = 'u (m/s)', ylabel = 'DW Velocity (m/s)', title = 'no Oe')
+plt.plot(u_data, data_noOe[1], 'o')
+plt.show()
+
+umag = []
+vdiff = []
+err = []
+
+for i in range(int(len(u_data)/2)):
+    
+    vdiff.append(np.abs(data_noOe[1][i+int(len(u_data)/2)]) - np.abs(data_noOe[1][i]))
+    umag.append(np.abs(u_data[i]))
+    err.append(np.sqrt(data_noOe[2][i]**2 + data_noOe[2][int(len(u_data)/2)]**2))
+
+plt.axes(xlabel = 'u (m/s)', ylabel = 'DW Velocity asymmetry (m/s)')
+plt.errorbar(umag, vdiff, yerr = err, fmt = 'o')
+plt.show()
 
     
     

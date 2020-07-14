@@ -17,6 +17,18 @@ VEC_VC<DBL3>& Mesh::Get_M(void)
 	return M;
 }
 
+VEC_VC<DBL3>& Mesh::Get_M2(void)
+{
+#if COMPILECUDA == 1
+	if (pMeshCUDA) {
+
+		pMeshCUDA->M2()->copy_to_cpuvec(M2);
+	}
+#endif
+
+	return M2;
+}
+
 //returns charge current on the cpu, assuming transport module is enabled
 VEC_VC<DBL3>& Mesh::Get_Jc(void)
 {

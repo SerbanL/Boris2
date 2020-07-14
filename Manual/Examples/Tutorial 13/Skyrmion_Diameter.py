@@ -1,12 +1,25 @@
+"""
+This script is part of Boris Computational Spintronics v2.8
+
+@author: Serban Lepadatu, 2020
+"""
+
 import os
-from WinSocks import *
+import sys
+from NetSocks import NSClient
+import matplotlib.pyplot as plt
 
-#setup communication with server. By default sent messages are not displayed in console. 
-#To enable verbose mode use e.g.: WSClient('localhost', True)
-ws = WSClient('localhost', True)
+#setup communication with server
+ns = NSClient('localhost')
 
-#the working directory : same as the simulation file
-directory = os.path.dirname(sys.argv[0]) + "\\"
+########################################
+
+#the working directory : same as this script file
+directory = os.path.dirname(sys.argv[0]) + "/"
+ns.default()
+ns.chdir(directory)
+
+########################################
 
 #the simulation file
 simfile = 'skyrmion_diameter'
@@ -19,12 +32,12 @@ start_field = 2e3
 end_field = 20e3
 field_step = 1e3
 
-ws.SendCommand('loadsim', [directory + simfile])
+ns.loadsim(directory + simfile)
 
-meshrect = ws.SendCommand('meshrect')
-length = Get(meshrect, 3) - Get(meshrect, 0)
-width = Get(meshrect, 4) - Get(meshrect, 1)
-thickness = Get(meshrect, 5) - Get(meshrect, 2)
+meshrect = ns.meshrect()
+length = meshrect[3] - meshrect[0]
+width = meshrect[4] - meshrect[1]
+thickness = meshrect[5] - meshrect[2]
 
 steps = int((end_field - start_field) / field_step)
 
@@ -32,20 +45,22 @@ for i in range(0, steps + 1):
 
     field = start_field + i * field_step
 
-    ws.SendCommand('setfield', [field, 0, 0])
+    ns.setfield([field, 0, 0])
 
-    ws.Run()
+    ns.Run()
 
-    ws.SendCommand('dp_getprofile', [0, width/2, thickness/2, length, width/2, thickness/2, 0])
+    ns.dp_getprofile([0, width/2, thickness/2], [length, width/2, thickness/2], 0)
 
-    skyrmion = ws.SendCommand('dp_fitskyrmion', [0, 3])
-    diameter = Get(skyrmion, 0) * 2
-    diameter_std = Get(skyrmion, 4) * 2
+    skyrmion = ns.dp_fitskyrmion(0, 3)
+    diameter = skyrmion[0] * 2
+    diameter_std = skyrmion[4] * 2
 
-    if diameter == 0.0:
-        break
+    ns.SaveDataToFile(outputfile, [field, diameter, diameter_std])
 
-    ws.SaveDataToFile(outputfile, [field, diameter, diameter_std])
+data = ns.Get_Data_Columns(outputfile, [0, 1])
+plt.axes(xlabel = 'H (A/m)', ylabel = 'diameter (m)', title = 'skyrmion diameter vs H')
+plt.plot(data[0], data[1], 'o-')
+plt.show()
 
     
 

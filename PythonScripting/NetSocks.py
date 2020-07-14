@@ -1,4 +1,4 @@
-#NetSocks Module Updated on : 03/07/2020
+#NetSocks Module Updated on : 12/07/2020
 #Boris version : 2.8
 
 import socket
@@ -495,6 +495,9 @@ class NSClient:
     def dp_fitlorentz(self, dp_x = '', dp_y = ''):
     	return self.SendCommand("dp_fitlorentz", [dp_x, dp_y])
     
+    def dp_fitlorentz2(self, dp_x = '', dp_y = ''):
+    	return self.SendCommand("dp_fitlorentz2", [dp_x, dp_y])
+    
     def dp_fitnonadiabatic(self, abs_err = '', Rsq = '', T_ratio = '', stencil = ''):
     	return self.SendCommand("dp_fitnonadiabatic", [abs_err, Rsq, T_ratio, stencil])
     
@@ -516,8 +519,8 @@ class NSClient:
     def dp_getampli(self, dp_source = '', pointsPeriod = ''):
     	return self.SendCommand("dp_getampli", [dp_source, pointsPeriod])
     
-    def dp_getexactprofile(self, start = '', end = '', step = '', dp_index = ''):
-    	return self.SendCommand("dp_getexactprofile", [start, end, step, dp_index])
+    def dp_getexactprofile(self, start = '', end = '', step = '', dp_index = '', stencil = ''):
+    	return self.SendCommand("dp_getexactprofile", [start, end, step, dp_index, stencil])
     
     def dp_getpath(self, dp_index_in = '', dp_index_out = ''):
     	return self.SendCommand("dp_getpath", [dp_index_in, dp_index_out])
@@ -527,6 +530,9 @@ class NSClient:
     
     def dp_histogram(self, dp_x = '', dp_y = '', bin = '', min = '', max = ''):
     	return self.SendCommand("dp_histogram", [dp_x, dp_y, bin, min, max])
+    
+    def dp_histogram2(self, dp_x = '', dp_y = '', bin = '', min = '', max = '', M2 = '', deltaM2 = ''):
+    	return self.SendCommand("dp_histogram2", [dp_x, dp_y, bin, min, max, M2, deltaM2])
     
     def dp_linreg(self, dp_index_x = '', dp_index_y = '', dp_index_z = '', dp_index_out = ''):
     	return self.SendCommand("dp_linreg", [dp_index_x, dp_index_y, dp_index_z, dp_index_out])
@@ -846,6 +852,12 @@ class NSClient:
     def scriptserver(self, status = ''):
     	return self.SendCommand("scriptserver", [status])
     
+    def setafmesh(self, name = '', rectangle = ''):
+    	return self.SendCommand("setafmesh", [name, rectangle])
+    
+    def setameshcubic(self, name = '', rectangle = ''):
+    	return self.SendCommand("setameshcubic", [name, rectangle])
+    
     def setangle(self, polar = '', azimuthal = '', meshname = ''):
     	return self.SendCommand("setangle", [polar, azimuthal, meshname])
     
@@ -856,7 +868,7 @@ class NSClient:
     	return self.SendCommand("setcurrent", [current])
     
     def setdata(self, dataname = '', meshname = '', rectangle = ''):
-    	return self.SendCommand("data", [dataname, meshname, rectangle])
+    	return self.SendCommand("setdata", [dataname, meshname, rectangle])
     
     def setdefaultelectrodes(self):
     	return self.SendCommand("setdefaultelectrodes")
@@ -885,8 +897,11 @@ class NSClient:
     def setheatdt(self, value = ''):
     	return self.SendCommand("setheatdt", [value])
     
-    def setmaterial(self, name = ''):
-    	return self.SendCommand("setmaterial", [name])
+    def setmaterial(self, name = '', rectangle = ''):
+    	return self.SendCommand("setmaterial", [name, rectangle])
+    
+    def setmesh(self, name = '', rectangle = ''):
+    	return self.SendCommand("setmesh", [name, rectangle])
     
     def setode(self, equation = '', evaluation = ''):
     	return self.SendCommand("setode", [equation, evaluation])

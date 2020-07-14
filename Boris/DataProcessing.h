@@ -144,6 +144,9 @@ public:
 	//calculate histogram for |M| using given parameters
 	BError calculate_histogram(VEC_VC<DBL3>& M, int dp_x, int dp_y, double bin, double min, double max);
 
+	//calculate histogram for |M1| using given parameters if the corresponding value on |M2| is within specified bounds of [M2val - deltaM2val, M2val + deltaM2val]
+	BError calculate_histogram2(VEC_VC<DBL3>& M1, VEC_VC<DBL3>& M2, int dp_x, int dp_y, double bin, double min, double max, double M2val, double deltaM2val);
+
 	//--------------------- dp array manipulation
 
 	//append data in dp_new at the end of dp_original
@@ -229,6 +232,9 @@ public:
 
 	//fit f(x) = y0 + S dH / (4(x-H0)^2 + dH^2). Return fitting parameters with their standard deviations.
 	BError fit_lorentz(int dp_x, int dp_y, DBL2 *pS, DBL2 *pH0, DBL2 *pdH, DBL2 *py0);
+
+	//fit f(x) = y0 + S (dH + A*(x-H0)) / (4(x-H0)^2 + dH^2). Return fitting parameters with their standard deviations.
+	BError fit_lorentz2(int dp_x, int dp_y, DBL2 *pS, DBL2 *pA, DBL2 *pH0, DBL2 *pdH, DBL2 *py0);
 
 	//fit Mz(x) = Ms * cos(2*arctan(sinh(R/w)/sinh((x-x0)/w))). Return fitting parameters with their standard deviations.
 	BError fit_skyrmion(int dp_x, int dp_y, DBL2 *pR, DBL2 *px0, DBL2 *pMs, DBL2 *pw);

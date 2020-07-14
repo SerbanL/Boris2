@@ -32,8 +32,7 @@ HeatCUDA::~HeatCUDA()
 		//If holder module still available, this means the cpu version of this module has not been deleted.
 		//The only way this could happen is if CUDA is being switched off. 
 		//In this case we want to copy over to cpu vecs, but no need to clear memory explicitly, as this will be done in the cu-obj managed destructor when these cuVECs go out of scope.
-		pMeshCUDA->Temp()->copy_to_cpuvec(pMesh->Temp);
-		pMeshCUDA->Temp_l()->copy_to_cpuvec(pMesh->Temp_l);
+		//This is done in the CUDA version of Mesh where these quantities are held.
 	}
 	else {
 

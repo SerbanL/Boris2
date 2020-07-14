@@ -368,6 +368,7 @@ public:
 
 	//returns M on the cpu, thus transfers M from gpu to cpu before returning if cuda enabled
 	VEC_VC<DBL3>& Get_M(void);
+	VEC_VC<DBL3>& Get_M2(void);
 
 	//returns charge current on the cpu, assuming transport module is enabled
 	VEC_VC<DBL3>& Get_Jc(void);

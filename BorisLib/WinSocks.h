@@ -172,7 +172,7 @@ inline void NetSocks::MakeListenSocket(void)
 
 	//set socket to listen for incoming connections
 	//call to accept later will accept any incoming connections
-	iResult = listen(ListenSocket, SOMAXCONN);
+	iResult = listen(ListenSocket, 5);
 	if (iResult == SOCKET_ERROR) {
 
 		//error
@@ -428,26 +428,18 @@ inline std::string NetSocksClient::SendMessage_GetResponse(std::string message)
 	SendSimpleMessage(std::string(message));
 
 	//now wait for message to be received
-	int iResult = recv(ConnectSocket, recvbuf, recvbuflen, 0);
-	if (iResult > 0) {
+	std::string receivedString = "";
+	int iResult = 0;
+	do {
 
-		std::string receivedString = std::string(recvbuf).substr(0, iResult);
+		iResult = recv(ConnectSocket, recvbuf, recvbuflen, 0);
 
-		return receivedString;
-	}
-	else if (iResult == 0) {
-		
-		connected = false;
-		return "";
-	}
-	else {
+		receivedString += std::string(recvbuf).substr(0, iResult);
 
-		connected = false;
-		return "";
-	}
+	} while (iResult > 0);
 
 	connected = false;
-	return "";
+	return receivedString;
 }
 
 inline void NetSocksClient::SendSimpleMessage(std::string message)

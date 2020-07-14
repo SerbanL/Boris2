@@ -113,11 +113,23 @@ Simulation::Simulation(int Program_Version) :
 	commands[CMD_ADDFMESH].descr = "[tc0,0.5,0.5,1/tc]Add a ferromagnetic mesh with given name and rectangle (m). The rectangle can be specified as: <i>sx sy sz ex ey ez</i> for the start and end points in Cartesian coordinates, or as: <i>ex ey ez</i> with the start point as the origin.";
 	commands[CMD_ADDFMESH].unit = "m";
 
+	commands.insert(CMD_SETFMESH, CommandSpecifier(CMD_SETFMESH), "setmesh");
+	commands[CMD_SETFMESH].usage = "[tc0,0.5,0,1/tc]USAGE : <b>setmesh</b> <i>name rectangle</i>";
+	commands[CMD_SETFMESH].limits = { { Any(), Any() }, { Rect(DBL3(-MAXSIMSPACE / 2), DBL3(-MAXSIMSPACE / 2) + DBL3(MINMESHSPACE)), Rect(DBL3(-MAXSIMSPACE / 2), DBL3(MAXSIMSPACE / 2)) } };
+	commands[CMD_SETFMESH].descr = "[tc0,0.5,0.5,1/tc]Set a single ferromagnetic mesh (deleting all other meshes) with given name and rectangle (m). The rectangle can be specified as: <i>sx sy sz ex ey ez</i> for the start and end points in Cartesian coordinates, or as: <i>ex ey ez</i> with the start point as the origin.";
+	commands[CMD_SETFMESH].unit = "m";
+
 	commands.insert(CMD_ADDAFMESH, CommandSpecifier(CMD_ADDAFMESH), "addafmesh");
 	commands[CMD_ADDAFMESH].usage = "[tc0,0.5,0,1/tc]USAGE : <b>addafmesh</b> <i>name rectangle</i>";
 	commands[CMD_ADDAFMESH].limits = { { Any(), Any() }, { Rect(DBL3(-MAXSIMSPACE / 2), DBL3(-MAXSIMSPACE / 2) + DBL3(MINMESHSPACE)), Rect(DBL3(-MAXSIMSPACE / 2), DBL3(MAXSIMSPACE / 2)) } };
 	commands[CMD_ADDAFMESH].descr = "[tc0,0.5,0.5,1/tc]Add antiferromagnetic mesh with given name and rectangle (m). The rectangle can be specified as: <i>sx sy sz ex ey ez</i> for the start and end points in Cartesian coordinates, or as: <i>ex ey ez</i> with the start point as the origin.";
 	commands[CMD_ADDAFMESH].unit = "m";
+
+	commands.insert(CMD_SETAFMESH, CommandSpecifier(CMD_SETAFMESH), "setafmesh");
+	commands[CMD_SETAFMESH].usage = "[tc0,0.5,0,1/tc]USAGE : <b>setafmesh</b> <i>name rectangle</i>";
+	commands[CMD_SETAFMESH].limits = { { Any(), Any() }, { Rect(DBL3(-MAXSIMSPACE / 2), DBL3(-MAXSIMSPACE / 2) + DBL3(MINMESHSPACE)), Rect(DBL3(-MAXSIMSPACE / 2), DBL3(MAXSIMSPACE / 2)) } };
+	commands[CMD_SETAFMESH].descr = "[tc0,0.5,0.5,1/tc]Set a single antiferromagnetic mesh (deleting all other meshes) with given name and rectangle (m). The rectangle can be specified as: <i>sx sy sz ex ey ez</i> for the start and end points in Cartesian coordinates, or as: <i>ex ey ez</i> with the start point as the origin.";
+	commands[CMD_SETAFMESH].unit = "m";
 
 	commands.insert(CMD_ADDMETALMESH, CommandSpecifier(CMD_ADDMETALMESH), "addconductor");
 	commands[CMD_ADDMETALMESH].usage = "[tc0,0.5,0,1/tc]USAGE : <b>addconductor</b> <i>name rectangle</i>";
@@ -146,8 +158,14 @@ Simulation::Simulation(int Program_Version) :
 	commands.insert(CMD_ADDAMESHCUBIC, CommandSpecifier(CMD_ADDAMESHCUBIC), "addameshcubic");
 	commands[CMD_ADDAMESHCUBIC].usage = "[tc0,0.5,0,1/tc]USAGE : <b>addameshcubic</b> <i>name rectangle</i>";
 	commands[CMD_ADDAMESHCUBIC].limits = { { Any(), Any() }, { Rect(DBL3(-MAXSIMSPACE / 2), DBL3(-MAXSIMSPACE / 2) + DBL3(MINMESHSPACE)), Rect(DBL3(-MAXSIMSPACE / 2), DBL3(MAXSIMSPACE / 2)) } };
-	commands[CMD_ADDAMESHCUBIC].descr = "[tc0,0.5,0.5,1/tc]Add an atomistic mesh with simple cubic strructure, with given name and rectangle (m). The rectangle can be specified as: <i>sx sy sz ex ey ez</i> for the start and end points in Cartesian coordinates, or as: <i>ex ey ez</i> with the start point as the origin.";
+	commands[CMD_ADDAMESHCUBIC].descr = "[tc0,0.5,0.5,1/tc]Add an atomistic mesh with simple cubic structure, with given name and rectangle (m). The rectangle can be specified as: <i>sx sy sz ex ey ez</i> for the start and end points in Cartesian coordinates, or as: <i>ex ey ez</i> with the start point as the origin.";
 	commands[CMD_ADDAMESHCUBIC].unit = "m";
+
+	commands.insert(CMD_SETAMESHCUBIC, CommandSpecifier(CMD_SETAMESHCUBIC), "setameshcubic");
+	commands[CMD_SETAMESHCUBIC].usage = "[tc0,0.5,0,1/tc]USAGE : <b>setameshcubic</b> <i>name rectangle</i>";
+	commands[CMD_SETAMESHCUBIC].limits = { { Any(), Any() }, { Rect(DBL3(-MAXSIMSPACE / 2), DBL3(-MAXSIMSPACE / 2) + DBL3(MINMESHSPACE)), Rect(DBL3(-MAXSIMSPACE / 2), DBL3(MAXSIMSPACE / 2)) } };
+	commands[CMD_SETAMESHCUBIC].descr = "[tc0,0.5,0.5,1/tc]Set a single atomistic mesh (deleting all other meshes) with simple cubic structure, with given name and rectangle (m). The rectangle can be specified as: <i>sx sy sz ex ey ez</i> for the start and end points in Cartesian coordinates, or as: <i>ex ey ez</i> with the start point as the origin.";
+	commands[CMD_SETAMESHCUBIC].unit = "m";
 
 	commands.insert(CMD_DELMESH, CommandSpecifier(CMD_DELMESH), "delmesh");
 	commands[CMD_DELMESH].usage = "[tc0,0.5,0,1/tc]USAGE : <b>delmesh</b> <i>name</i>";
@@ -909,8 +927,11 @@ Simulation::Simulation(int Program_Version) :
 	commands[CMD_ADDMATERIAL].return_descr = "[tc0,0.5,0,1/tc]Script return values: <i>meshname</i> - return name of mesh just added (can differ from the material name).";
 
 	commands.insert(CMD_SETMATERIAL, CommandSpecifier(CMD_SETMATERIAL), "setmaterial");
-	commands[CMD_SETMATERIAL].usage = "[tc0,0.5,0,1/tc]USAGE : <b>setmaterial<b> <i>name</i>";
-	commands[CMD_SETMATERIAL].descr = "[tc0,0.5,0.5,1/tc]Copy material parameter values to the focused mesh, from the materials database entry with given name (see materialsdatabase command). This works even if there is a mismatch between the material types.";
+	commands[CMD_SETMATERIAL].usage = "[tc0,0.5,0,1/tc]USAGE : <b>setmaterial<b> <i>name rectangle</i>";
+	commands[CMD_SETMATERIAL].limits = { { Any(), Any() },{ Rect(DBL3(-MAXSIMSPACE / 2), DBL3(-MAXSIMSPACE / 2) + DBL3(MINMESHSPACE)), Rect(DBL3(-MAXSIMSPACE / 2), DBL3(MAXSIMSPACE / 2)) } };
+	commands[CMD_SETMATERIAL].unit = "m";
+	commands[CMD_SETMATERIAL].descr = "[tc0,0.5,0.5,1/tc]Set a single mesh with material parameters loaded from the materials database (deleting all other meshes). The name is the material name as found in the mdb file (see materialsdatabase command); this also determines the type of mesh to create, as well as the created mesh name. The rectangle (m) can be specified as: <i>sx sy sz ex ey ez</i> for the start and end points in Cartesian coordinates, or as: <i>ex ey ez</i> with the start point as the origin.";
+	commands[CMD_SETMATERIAL].return_descr = "[tc0,0.5,0,1/tc]Script return values: <i>meshname</i> - return name of mesh just added (can differ from the material name).";
 
 	commands.insert(CMD_ADDMDBENTRY, CommandSpecifier(CMD_ADDMDBENTRY), "addmdbentry");
 	commands[CMD_ADDMDBENTRY].usage = "[tc0,0.5,0,1/tc]USAGE : <b>addmdbentry</b> <i>meshname (materialname)</i>";
@@ -1089,9 +1110,9 @@ Simulation::Simulation(int Program_Version) :
 	commands[CMD_DP_GETPROFILE].unit = "m";
 
 	commands.insert(CMD_DP_GETEXACTPROFILE, CommandSpecifier(CMD_DP_GETEXACTPROFILE), "dp_getexactprofile");
-	commands[CMD_DP_GETEXACTPROFILE].usage = "[tc0,0.5,0,1/tc]USAGE : <b>dp_getexactprofile</b> <i>start end step dp_index</i>";
-	commands[CMD_DP_GETEXACTPROFILE].limits = { { DBL3(-MAXSIMSPACE), DBL3(MAXSIMSPACE) }, { DBL3(-MAXSIMSPACE), DBL3(MAXSIMSPACE) }, { MINMESHSPACE, Any() }, { int(0), int(MAX_ARRAYS - 1) } };
-	commands[CMD_DP_GETEXACTPROFILE].descr = "[tc0,0.5,0.5,1/tc]Extract profile of physical quantity displayed on screen, directly from the mesh so using the exact mesh resolution not the displayed resolution, along the line specified with given start and end cartesian absolute coordinates (m), and with the given step size (m). Place profile in given dp arrays: 4 consecutive dp arrays are used, first for distance along line, the next 3 for physical quantity so allow space for these starting at dp_index.";
+	commands[CMD_DP_GETEXACTPROFILE].usage = "[tc0,0.5,0,1/tc]USAGE : <b>dp_getexactprofile</b> <i>start end step dp_index (stencil)</i>";
+	commands[CMD_DP_GETEXACTPROFILE].limits = { { DBL3(-MAXSIMSPACE), DBL3(MAXSIMSPACE) }, { DBL3(-MAXSIMSPACE), DBL3(MAXSIMSPACE) }, { MINMESHSPACE, Any() }, { int(0), int(MAX_ARRAYS - 1) }, { DBL3(MINMESHSPACE), Any() } };
+	commands[CMD_DP_GETEXACTPROFILE].descr = "[tc0,0.5,0.5,1/tc]Extract profile of physical quantity displayed on screen, directly from the mesh so using the exact mesh resolution not the displayed resolution, along the line specified with given start and end cartesian absolute coordinates (m), and with the given step size (m). If stencil specified - as x y z (m) - then obtain profile values using weighted averaging with stencil centered on profile point. Place profile in given dp arrays: 4 consecutive dp arrays are used, first for distance along line, the next 3 for physical quantity so allow space for these starting at dp_index.";
 	commands[CMD_DP_GETEXACTPROFILE].unit = "m";
 
 	commands.insert(CMD_DP_GETPATH, CommandSpecifier(CMD_DP_GETPATH), "dp_getpath");
@@ -1132,6 +1153,12 @@ Simulation::Simulation(int Program_Version) :
 	commands[CMD_DP_HISTOGRAM].descr = "[tc0,0.5,0.5,1/tc]Calculate a histogram with given bin, minimum and maximum values, from the magnetisation magnitude of the focused mesh (must be magnetic). Save histogram in dp arrays at dp_x, dp_y. If histogram parameters not given use a bin with 100 steps between minimum and maximum magnetisation magnitude.";
 	commands[CMD_DP_HISTOGRAM].limits = { { int(0), int(MAX_ARRAYS - 1) }, { int(0), int(MAX_ARRAYS - 1) }, {double(0), Any()}, {double(0), Any()}, {double(0), Any()} };
 	commands[CMD_DP_HISTOGRAM].unit = "A/m";
+
+	commands.insert(CMD_DP_HISTOGRAM2, CommandSpecifier(CMD_DP_HISTOGRAM2), "dp_histogram2");
+	commands[CMD_DP_HISTOGRAM2].usage = "[tc0,0.5,0,1/tc]USAGE : <b>dp_histogram2</b> <i>dp_x dp_y (bin min max M2 deltaM2)</i>";
+	commands[CMD_DP_HISTOGRAM2].descr = "[tc0,0.5,0.5,1/tc]Calculate a histogram for a 2-sublattice mesh with given bin, minimum and maximum values for sub-lattice A, if the corresponding magnetisation magnitude in sub-lattice B equals M2 within the given deltaM2. Save histogram in dp arrays at dp_x, dp_y. If histogram parameters not given use a bin with 100 steps between minimum and maximum magnetisation magnitude, with M2 set to MeB and deltaM2 set 0.01*MeB respectively.";
+	commands[CMD_DP_HISTOGRAM2].limits = { { int(0), int(MAX_ARRAYS - 1) }, { int(0), int(MAX_ARRAYS - 1) }, {double(0), Any()}, {double(0), Any()}, {double(0), Any()}, {double(0), Any()}, {double(0), Any()} };
+	commands[CMD_DP_HISTOGRAM2].unit = "A/m";
 
 	commands.insert(CMD_DP_APPEND, CommandSpecifier(CMD_DP_APPEND), "dp_append");
 	commands[CMD_DP_APPEND].usage = "[tc0,0.5,0,1/tc]USAGE : <b>dp_append</b> <i>dp_original dp_new</i>";
@@ -1259,6 +1286,12 @@ Simulation::Simulation(int Program_Version) :
 	commands[CMD_DP_FITLORENTZ].limits = { { int(0), int(MAX_ARRAYS - 1) }, { int(0), int(MAX_ARRAYS - 1) } };
 	commands[CMD_DP_FITLORENTZ].descr = "[tc0,0.5,0.5,1/tc]Fit Lorentz peak function to x y data : f(x) = y0 + S dH / (4(x-H0)^2 + dH^2).";
 	commands[CMD_DP_FITLORENTZ].return_descr = "[tc0,0.5,0,1/tc]Script return values: <i>S, H0, dH, y0, std_S, std_H0, std_dH, std_y0</i>.";
+
+	commands.insert(CMD_DP_FITLORENTZ2, CommandSpecifier(CMD_DP_FITLORENTZ2), "dp_fitlorentz2");
+	commands[CMD_DP_FITLORENTZ2].usage = "[tc0,0.5,0,1/tc]USAGE : <b>dp_fitlorentz2</b> <i>dp_x dp_y</i>";
+	commands[CMD_DP_FITLORENTZ2].limits = { { int(0), int(MAX_ARRAYS - 1) }, { int(0), int(MAX_ARRAYS - 1) } };
+	commands[CMD_DP_FITLORENTZ2].descr = "[tc0,0.5,0.5,1/tc]Fit Lorentz peak function with both symmetric and asymmetric parts to x y data : f(x) = y0 + S (dH + A * (x - H0)) / (4(x-H0)^2 + dH^2).";
+	commands[CMD_DP_FITLORENTZ2].return_descr = "[tc0,0.5,0,1/tc]Script return values: <i>S, A, H0, dH, y0, std_S, std_A, std_H0, std_dH, std_y0</i>.";
 
 	commands.insert(CMD_DP_FITSKYRMION, CommandSpecifier(CMD_DP_FITSKYRMION), "dp_fitskyrmion");
 	commands[CMD_DP_FITSKYRMION].usage = "[tc0,0.5,0,1/tc]USAGE : <b>dp_fitskyrmion</b> <i>dp_x dp_y</i>";

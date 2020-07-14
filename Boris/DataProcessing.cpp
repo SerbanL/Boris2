@@ -309,6 +309,66 @@ BError DPArrays::calculate_histogram(VEC_VC<DBL3>& M, int dp_x, int dp_y, double
 	return error;
 }
 
+//calculate histogram for |M1| using given parameters if the corresponding value on |M2| is within specified bounds of [M2val - deltaM2val, M2val + deltaM2val]
+BError DPArrays::calculate_histogram2(VEC_VC<DBL3>& M1, VEC_VC<DBL3>& M2, int dp_x, int dp_y, double bin, double min, double max, double M2val, double deltaM2val)
+{
+	BError error(__FUNCTION__);
+
+	if (!GoodArrays_Unique(dp_x, dp_y)) return error(BERROR_INCORRECTARRAYS);
+	if (M1.size() != M2.size()) return error(BERROR_INCORRECTARRAYS);
+
+	if (IsZ(bin)) {
+
+		OmpReduction<double> omp_reduction;
+		omp_reduction.new_minmax_reduction();
+
+#pragma omp parallel for
+		for (int idx = 0; idx < M1.linear_size(); idx++) {
+
+			omp_reduction.reduce_minmax(M1[idx].norm());
+		}
+
+		DBL2 minmax = omp_reduction.minmax();
+
+		min = minmax.i;
+		max = minmax.j;
+		bin = (max - min) / 100;
+	}
+
+	int num_bins = (max - min) / bin;
+	if (num_bins <= 0) return error(BERROR_OPERATIONFAILED);
+
+	resize(dp_x, num_bins);
+	resize(dp_y, num_bins);
+
+#pragma omp parallel for
+	for (int idx = 0; idx < num_bins; idx++) {
+
+		dpA[dp_x][idx] = min + (idx + 0.5) * bin;
+		dpA[dp_y][idx] = 0;
+	}
+
+	for (int idx = 0; idx < M1.linear_size(); idx++) {
+
+		if (M1.is_not_empty(idx) && M2.is_not_empty(idx)) {
+
+			double M2norm = M2[idx].norm();
+			if (M2norm < M2val - deltaM2val || M2norm > M2val + deltaM2val) continue;
+
+			double value = M1[idx].norm();
+
+			int bin_idx = floor((value - min) / bin);
+
+			if (bin_idx >= 0 && bin_idx < num_bins) {
+
+				dpA[dp_y][bin_idx] += 1.0 / M1.get_nonempty_cells();
+			}
+		}
+	}
+
+	return error;
+}
+
 //--------------------- dp array manipulation
 
 //append data in dp_new at the end of dp_original
@@ -1082,6 +1142,42 @@ BError DPArrays::fit_lorentz(int dp_x, int dp_y, DBL2 *pS, DBL2 *pH0, DBL2 *pdH,
 		*pH0 = DBL2(params[1], params_std[1]);
 		*pdH = DBL2(params[2], params_std[2]);
 		*py0 = DBL2(params[3], params_std[3]);
+	}
+	else return error(BERROR_INCORRECTARRAYS);
+
+	return error;
+}
+
+//fit f(x) = y0 + S (dH + A*(x-H0)) / (4(x-H0)^2 + dH^2). Return fitting parameters with their standard deviations.
+BError DPArrays::fit_lorentz2(int dp_x, int dp_y, DBL2 *pS, DBL2 *pA, DBL2 *pH0, DBL2 *pdH, DBL2 *py0)
+{
+	BError error(__FUNCTION__);
+
+	if (!GoodArrays_Unique(dp_x, dp_y) || dpA[dp_x].size() != dpA[dp_y].size()) return error(BERROR_INCORRECTARRAYS);
+
+	CurveFitting curve_fit;
+
+	vector<double> params, params_std;
+
+	vector<DBL2> xy_data;
+
+	xy_data.resize(dpA[dp_x].size());
+
+#pragma omp parallel for
+	for (int idx = 0; idx < xy_data.size(); idx++) {
+
+		xy_data[idx] = DBL2(dpA[dp_x][idx], dpA[dp_y][idx]);
+	}
+
+	curve_fit.FitLorentzSA_LMA(xy_data, params, params_std);
+
+	if (params.size() >= 5 && params_std.size() >= 5) {
+
+		*pS = DBL2(params[0], params_std[0]);
+		*pA = DBL2(params[1], params_std[1]);
+		*pH0 = DBL2(params[2], params_std[2]);
+		*pdH = DBL2(params[3], params_std[3]);
+		*py0 = DBL2(params[4], params_std[4]);
 	}
 	else return error(BERROR_INCORRECTARRAYS);
 

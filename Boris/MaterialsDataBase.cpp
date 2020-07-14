@@ -7,7 +7,12 @@ MaterialsDB::MaterialsDB(vector<PARAM_>& enabledParams) :
 	dbEntry(enabledParams)
 {
 	//default database
+#if OPERATING_SYSTEM == OS_WIN
 	databaseName_withpath = GetUserDocumentsPath() + std::string("Boris Data/") + default_databaseName;
+#elif OPERATING_SYSTEM == OS_LIN
+	databaseName_withpath = GetUserDocumentsPath() + std::string("Boris_Data/") + default_databaseName;
+#endif
+
 
 	//if BorisMDB.txt doesn't exist, make it
 

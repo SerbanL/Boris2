@@ -75,15 +75,21 @@ MeshCUDA::~MeshCUDA()
 
 		//-----Electric conduction properties (Electron charge and spin Transport)
 
-		//copying to cpuvec done in Transport module (if enabled; if not, copying not needed)
+		elC()->copy_to_cpuvec(pMesh->elC);
+		V()->copy_to_cpuvec(pMesh->V);
+		E()->copy_to_cpuvec(pMesh->E);
+		S()->copy_to_cpuvec(pMesh->S);
 
 		//-----Thermal conduction properties
 
-		//copying to cpuvec done in Heat module (if enabled; if not, copying not needed)
+		Temp()->copy_to_cpuvec(pMesh->Temp);
+		Temp_l()->copy_to_cpuvec(pMesh->Temp_l);
 
 		//-----Mechanical properties
 
-		//copying to cpuvec done in MElastic module (if enabled; if not, copying not needed)
+		u_disp()->copy_to_cpuvec(pMesh->u_disp);
+		strain_diag()->copy_to_cpuvec(pMesh->strain_diag);
+		strain_odiag()->copy_to_cpuvec(pMesh->strain_odiag);
 	}
 }
 
