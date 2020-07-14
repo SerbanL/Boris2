@@ -4,7 +4,7 @@ Boris Computational Spintronics.
 C++17 used. The codebase is contained in 781 files (.h, .cpp, .cu, .cuh, .py) and can be compiled on Windows or Linux-based OS with MSVC compiler or g++ compiler respectively.
 
 # Download
-Latest compiled version with installer found here : https://boris-spintronics.uk/download
+Latest compiled version with installer, including source code with makefile for Linux-based OS, found here : https://boris-spintronics.uk/download
 
 # Manual
 Latest manual rolled in with installer, also found here in the Manual directory together with examples.
@@ -23,62 +23,44 @@ The code has also been ported to Linux (I've tested on Ubuntu 20.04) and compile
 1) The graphical interface was originally written using DirectX11 so when compiling on Linux the GRAPHICS 0 flag needs to be set (see below). In the near future I plan to re-write the graphical interface in SFML.
 
 # Building From Source
-<u>Windows:</u>
-1. Clone the project.
-2. Open the Visual Studio solution file (I use Visual Studio 2017).
-3. Make sure all external dependencies are updated - see above.
-4. Configure the compilation as needed - see CompileFlags.h, BorisLib_Config.h, and cuBLib_Flags.h, should be self explanatory.
-5. Compile!
+Windows:\
+1. Clone the project.\
+2. Open the Visual Studio solution file (I use Visual Studio 2017).\
+3. Make sure all external dependencies are updated - see above.\
+4. Configure the compilation as needed - see CompileFlags.h, BorisLib_Config.h, and cuBLib_Flags.h, should be self explanatory.\
+5. Compile!\
 
-<u>Linux (tested on Ubuntu 20.04):</u>
-1. Clone the project.
-2. Make sure you have all the updates required and external dependencies:
+Linux (tested on Ubuntu 20.04):\
+Make sure you have all the required updates and dependencies:\
+Updates:\
+1.	Get latest g++ compiler: $ sudo apt install build-essential\
+2.	Get OpenMP: $ sudo apt-get install libomp-dev\
+3.	Get CUDA: $ sudo apt install nvidia-cuda-toolkit\
+4.	Get SFML: $ sudo apt-get install libsfml-dev\
+5.	Get FFTW3: Instructions at http://www.fftw.org/fftw2_doc/fftw_6.html\
 
-    Get latest g++ compiler: <i>$ sudo apt install build-essential</i>
-    
-    Get OpenMP: <i>$ sudo apt-get install libomp-dev</i>
-    
-    Get CUDA: $ sudo apt install nvidia-cuda-toolkit
-    
-    Get SFML: <i>$ sudo apt-get install libsfml-dev</i>
-    
-    Get FFTW3: Instructions at http://www.fftw.org/fftw2_doc/fftw_6.html
+Open terminal and go to extracted BorisLin directory.\
+Step 1: Configuration.\
+$ make configure (arch=xx) (sprec=0/1)\
+Before compiling you need to set the correct CUDA architecture for your NVidia GPU. \
+For a list of architectures and more details see: https://en.wikipedia.org/wiki/CUDA.\
+Possible values for arch are:\
+•	arch=50 is required for Maxwell architecture; translates to                              -arch=sm_50 in nvcc compilation.\
+•	arch=60 is required for Pascal architecture; translates to                                 -arch=sm_60 in nvcc compilation.\
+•	arch=70 is required for Volta (and Turing) architecture; translates to                 -arch=sm_70 in nvcc compilation.\
+Example: $ make configure arch=70\
+If arch is not specified a default value of 50 is used.\
+You can also compile CUDA code with single or double precision floating point. The default value, if not specified, is sprec=0 (single precision – recommended for most users). If you have a GPU capable of handling double precision floating point efficiently you can configure with sprec=1.\
 
-3. Navigate to cloned directory and use the makefile to compile from source:
-  
-  <b>Notes</b>: before compiling on Linux-based OS you need to have the correct compilation flags in the source code (if not already set as below):
+Step 2: Compilation.\
+$ make compile -j N\
+(replace N with the number of logical cores on your CPU for multi-processor compilation, e.g. $ make compile -j 16)\
 
-    i) Find CompileFlags.h file in Boris directory.
+Step 3: Installation.\
+$ make install\
 
-    i.i) Set #define OPERATING_SYSTEM	OS_LIN
-
-    i.ii) Set #define GRAPHICS	0
-  
-      Graphics not currently supported on Linux, so only a basic text console is available, which is really just the graphical console text output but with all the text formatting specifiers stripped out. A portable graphical interface is on the to-do list. Simulations can still be run using Python scripts.
-
-    ii) Find BorisLib_Config.h file in BorisLib directory.
-    
-    ii.i) Set #define OPERATING_SYSTEM	OS_LIN
-    
-    iii) If compiling CUDA code (COMPILECUDA 1 in CompileFlags.h) find cuBLib_Flags.h file in BorisCUDALib directory.
-    
-    iii.i) Set CUDA_ARCH to the correct value. This also has to match the nvcc compilation flag in makefile.
-    
-    See https://docs.nvidia.com/cuda/cuda-compiler-driver-nvcc/index.html, in particular table in section 5.2. GPU Feature List.
-    
-    You will need to identify the GPU architecture of your card and set the correct compilation flag for nvcc, which must match the setting in cuBLib_Flags.h. e.g. for -arch=sm_50 you need to set CUDA_ARCH to 500, etc.
-    
-    You can also compile in single or double floating point precision by setting the #define SINGLEPRECISION value (1 for single precision, 0 for double precision).
-  
-  <b>Compile:</b>
-  
-    $ make compile -j N
-  
-    (replace N with the number of logical cores on your CPU for multi-processor compilation, e.g. make compile -j 16)
-
-    $ make install
-    
-    $ ./BorisLin
+Run:\
+$ ./BorisLin\
 
 # Publication
 A technical peer-reviewed publication on Boris to follow soon.
