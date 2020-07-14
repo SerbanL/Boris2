@@ -55,9 +55,10 @@ For a list of architectures and more details see: https://en.wikipedia.org/wiki/
 
 Possible values for arch are:
 
-<li>•	arch=50 is required for Maxwell architecture; translates to                              -arch=sm_50 in nvcc compilation.</li>
-<li>•	arch=60 is required for Pascal architecture; translates to                                 -arch=sm_60 in nvcc compilation.</li>
-<li>•	arch=70 is required for Volta (and Turing) architecture; translates to                 -arch=sm_70 in nvcc compilation.</li>
+<li>arch=50 is required for Maxwell architecture; translates to                              -arch=sm_50 in nvcc compilation.</li>
+<li>arch=60 is required for Pascal architecture; translates to                                 -arch=sm_60 in nvcc compilation.</li>
+<li>arch=70 is required for Volta (and Turing) architecture; translates to                 -arch=sm_70 in nvcc compilation.</li>
+
 
 Example: $ make configure arch=70
 
