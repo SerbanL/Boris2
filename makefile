@@ -5,7 +5,7 @@
 #arch=70 for Volta (and Turing)
 #example: $ make configure arch=70
 ifndef arch
-	arch = 50
+	arch = $(file < arch.txt)
 endif
 
 #if you want to compile cuda code in double precision then $ make configure sprec=0
@@ -50,6 +50,9 @@ configure:
 	$(file >> BorisCUDALib/cuBLib_Flags.h,)
 	$(file >> BorisCUDALib/cuBLib_Flags.h,//compile with cuda single precision (float types) or double precision (double types). Set SINGLEPRECISION to 1 for single, otherwise (0) for double.)
 	$(file >> BorisCUDALib/cuBLib_Flags.h,#define SINGLEPRECISION $(sprec))
+	$(file > arch.txt,$(arch))
+	mkdir -p $(OBJ_DIR)
+	mkdir -p $(CUOBJ_DIR)
 	@echo Configured for -arch=sm_$(arch) and SINGLEPRECISION = $(sprec)
 	
 #compile both cpp and cu files
