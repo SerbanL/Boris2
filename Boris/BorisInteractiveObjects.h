@@ -68,6 +68,7 @@ enum IOI_
 	IOI_MESH_FOREXCHCOUPLING, 
 	IOI_MESH_FORSTOCHASTICITY,
 	IOI_MESH_FORSPEEDUP,
+	IOI_MESH_FORSKYPOSDMUL,
 
 	//Shows ferromagnetic super-mesh rectangle (unit m) : textId is the mesh rectangle for the ferromagnetic super-mesh
 	IOI_FMSMESHRECTANGLE,
@@ -330,5 +331,8 @@ enum IOI_
 
 	//Show user constant for text equations : minorId is the index in Simulation::userConstants, auxId is the number of the interactive object in the list as it appears in the console, textId is the constant name and value string 
 	//Note this entry must always represent the entry in Simulation::userConstants with the index in auxId.
-	IOI_USERCONSTANT
+	IOI_USERCONSTANT,
+
+	//Show skypos diameter multiplier : minorId is the unique mesh id number, textId is the multiplier as a string
+	IOI_SKYPOSDMUL
 };

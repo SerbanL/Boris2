@@ -41,7 +41,8 @@ void Simulation::MakeIOInfo(void)
 	ioInfo.set(modulegeneric_info + string("<i><b>Magneto-elastic term"), INT2(IOI_MODULE, MOD_MELASTIC));
 	ioInfo.set(modulegeneric_info + string("<i><b>Charge and spin transport"), INT2(IOI_MODULE, MOD_TRANSPORT));
 	ioInfo.set(modulegeneric_info + string("<i><b>Heat equation solver"), INT2(IOI_MODULE, MOD_HEAT));
-	ioInfo.set(modulegeneric_info + string("<i><b>Spin-orbit torque field\n<i><b>Results in Slonczewski-like torques"), INT2(IOI_MODULE, MOD_SOTFIELD));
+	ioInfo.set(modulegeneric_info + string("<i><b>Spin-orbit torque field\n<i><b>Results in DL and FL spin-orbit torques"), INT2(IOI_MODULE, MOD_SOTFIELD));
+	ioInfo.set(modulegeneric_info + string("<i><b>Spin-orbit torque field\n<i><b>Results in DL and FL Slonczewski torques"), INT2(IOI_MODULE, MOD_STFIELD));
 	ioInfo.set(modulegeneric_info + string("<i><b>Physical roughness\n<i><b>Demag term corrections when approximating shapes\n<i><b>from a fine mesh with a coarse mesh."), INT2(IOI_MODULE, MOD_ROUGHNESS));
 
 	ioInfo.set(modulegeneric_info + string("<i><b>Supermesh demag field"), INT2(IOI_SMODULE, MODS_SDEMAG));
@@ -170,6 +171,7 @@ void Simulation::MakeIOInfo(void)
 	ioInfo.push_back(mesh_info, IOI_MESH_FOREXCHCOUPLING);
 	ioInfo.push_back(mesh_info, IOI_MESH_FORSTOCHASTICITY);
 	ioInfo.push_back(mesh_info, IOI_MESH_FORSPEEDUP);
+	ioInfo.push_back(mesh_info, IOI_MESH_FORSKYPOSDMUL);
 
 	//Shows ferromagnetic super-mesh rectangle (unit m) : textId is the mesh rectangle for the ferromagnetic super-mesh
 	//IOI_FMSMESHRECTANGLE
@@ -656,7 +658,10 @@ void Simulation::MakeIOInfo(void)
 	ioInfo.set(param_generic_info + string("<i><b>Electron diffusion"), INT2(IOI_MESHPARAM, PARAM_DE));
 	ioInfo.set(param_generic_info + string("<i><b>Diffusion spin polarisation"), INT2(IOI_MESHPARAM, PARAM_BETAD));
 	ioInfo.set(param_generic_info + string("<i><b>Spin-Hall angle\n<i><b>In FM meshes used for SOTField module"), INT2(IOI_MESHPARAM, PARAM_SHA));
-	ioInfo.set(param_generic_info + string("<i><b>Field-like spin torque coefficient\n<i><b>Used for SOTField module in FM meshes"), INT2(IOI_MESHPARAM, PARAM_FLSOT));
+	ioInfo.set(param_generic_info + string("<i><b>Field-like spin torque coefficient\n<i><b>Used for SOTField and STField modules in FM meshes"), INT2(IOI_MESHPARAM, PARAM_FLSOT));
+	ioInfo.set(param_generic_info + string("<i><b>Slonczewski macrospin torques parameters."), INT2(IOI_MESHPARAM, PARAM_STQ));
+	ioInfo.set(param_generic_info + string("<i><b>Slonczewski macrospin torques parameters."), INT2(IOI_MESHPARAM, PARAM_STA));
+	ioInfo.set(param_generic_info + string("<i><b>Slonczewski macrospin torques polarization vector."), INT2(IOI_MESHPARAM, PARAM_STP));
 	ioInfo.set(param_generic_info + string("<i><b>Inverse spin-Hall angle"), INT2(IOI_MESHPARAM, PARAM_ISHA));
 	ioInfo.set(param_generic_info + string("<i><b>Spin-flip length"), INT2(IOI_MESHPARAM, PARAM_LSF));
 	ioInfo.set(param_generic_info + string("<i><b>Exchange rotation length"), INT2(IOI_MESHPARAM, PARAM_LEX));
@@ -1356,6 +1361,15 @@ void Simulation::MakeIOInfo(void)
 		string("\n[tc1,1,0,1/tc]right-click: delete entry\n");
 
 	ioInfo.push_back(showuserconstant_info, IOI_USERCONSTANT);
+
+	//Show skypos diameter multiplier : minorId is the unique mesh id number, textId is the multiplier as a string
+	//IOI_SKYPOSDMUL
+
+	string IOI_SKYPOSDMUL_info =
+		string("[tc1,1,0,1/tc]<b>Skypos diameter multiplier.</b>") +
+		string("\n[tc1,1,0,1/tc]dbl-click: edit entry");
+
+	ioInfo.push_back(IOI_SKYPOSDMUL_info, IOI_SKYPOSDMUL);
 }
 
 //---------------------------------------------------- MAKE INTERACTIVE OBJECT : Auxiliary method
@@ -1990,6 +2004,16 @@ string Simulation::MakeIO(IOI_ identifier, PType ... params)
 		}
 		break;
 
+	case IOI_MESH_FORSKYPOSDMUL:
+		if (params_str.size() == 1) {
+
+			int meshIndex = ToNum(params_str[0]);
+			string meshName = SMesh().get_key_from_index(meshIndex);
+
+			return MakeInteractiveObject(meshName, IOI_MESH_FORSKYPOSDMUL, SMesh[meshName]->get_id(), 1, meshName);
+		}
+		break;
+
 	case IOI_MOVINGMESH:
 		if (SMesh.IsMovingMeshSet()) {
 
@@ -2548,6 +2572,16 @@ string Simulation::MakeIO(IOI_ identifier, PType ... params)
 		}
 		break;
 
+	case IOI_SKYPOSDMUL:
+		if (params_str.size() == 1) {
+
+			int meshIndex = ToNum(params_str[0]);
+			double multiplier = SMesh[meshIndex]->Get_skypos_dmul();
+
+			return MakeInteractiveObject(ToString(multiplier), IOI_SKYPOSDMUL, SMesh[meshIndex]->get_id(), -1, ToString(multiplier), ONCOLOR);
+		}
+		break;
+	
 	}
 
 	return "";

@@ -109,6 +109,8 @@ bool Transport::Need_dM_dt_Calculation(void)
 		if (IsNZ((double)pMesh->cpump_eff.get0())) return true;
 	}
 
+	if (IsNZ((double)pMesh->cpump_eff.get0())) return true;
+
 	return false;
 }
 
@@ -182,6 +184,17 @@ BError Transport::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 	bool success = true;
 
 	Set_STSolveType();
+
+	//do we need to enable dM_dt calculation?
+	if (Need_dM_dt_Calculation()) {
+
+		if (!dM_dt.assign(pMesh->h, pMesh->meshRect, DBL3(), pMesh->M)) return error(BERROR_OUTOFMEMORY_CRIT);
+	}
+	else {
+
+		//disabled
+		if (!dM_dt.linear_size()) dM_dt.clear();
+	}
 
 	if (ucfg::check_cfgflags(cfgMessage, UPDATECONFIG_MESHSHAPECHANGE, UPDATECONFIG_MESHCHANGE)) {
 

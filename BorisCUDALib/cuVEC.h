@@ -156,6 +156,8 @@ public:
 
 	//--------------------------------------------EXTRACT A LINE PROFILE : cuVEC_extract.cuh
 
+	//for all these methods use wrap-around when extracting profiles if points on profile exceed mesh boundaries
+
 	//extract profile to a cu_arr : extract size points starting at (start + step * 0.5) in the direction step; use weighted average to extract profile with stencil given by h
 	//e.g. if you have a start and end point with given step, then setting size = |end - start| / |step| means the profile must be extracted between (start + 0.5*step) and (end - 0.5*step). e.g.: |.|.|.|.|
 	__host__ void extract_profile(size_t size, cu_arr<VType>& profile_gpu, cuReal3 start, cuReal3 step);

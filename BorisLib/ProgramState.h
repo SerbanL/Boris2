@@ -24,7 +24,7 @@
 #include "Introspection.h"
 #include "Funcs_Vectors.h"
 
-#define FILEROWCHARS	5000	//maximum number of characters per input file row
+#define FILEROWCHARS	50000	//maximum number of characters per input file row
 
 //need this so ProgramState can be specialized with 2 parameter packs ... also need it for the is_complex_type struct below.
 template <typename ... >

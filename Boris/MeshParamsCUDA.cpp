@@ -105,6 +105,13 @@ MeshParamsCUDA::MeshParamsCUDA(MeshParams *pmeshParams)
 	pmeshParams->iSHA.set_p_cu_obj_mpcuda(&iSHA);
 	flSOT()->set_from_cpu(pmeshParams->flSOT);
 	pmeshParams->flSOT.set_p_cu_obj_mpcuda(&flSOT);
+
+	STq()->set_from_cpu(pmeshParams->STq);
+	pmeshParams->STq.set_p_cu_obj_mpcuda(&STq);
+	STa()->set_from_cpu(pmeshParams->STa);
+	pmeshParams->STa.set_p_cu_obj_mpcuda(&STa);
+	STp()->set_from_cpu(pmeshParams->STp);
+	pmeshParams->STp.set_p_cu_obj_mpcuda(&STp);
 	
 	l_sf()->set_from_cpu(pmeshParams->l_sf);
 	pmeshParams->l_sf.set_p_cu_obj_mpcuda(&l_sf);
@@ -269,6 +276,10 @@ MeshParamsCUDA::~MeshParamsCUDA()
 	pmeshParams->SHA.null_p_cu_obj_mpcuda();
 	pmeshParams->iSHA.null_p_cu_obj_mpcuda();
 	pmeshParams->flSOT.null_p_cu_obj_mpcuda();
+
+	pmeshParams->STq.null_p_cu_obj_mpcuda();
+	pmeshParams->STa.null_p_cu_obj_mpcuda();
+	pmeshParams->STp.null_p_cu_obj_mpcuda();
 	
 	pmeshParams->l_sf.null_p_cu_obj_mpcuda();
 	pmeshParams->l_ex.null_p_cu_obj_mpcuda();

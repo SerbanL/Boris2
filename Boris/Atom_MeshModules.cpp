@@ -82,6 +82,13 @@ BError Atom_Mesh::AddModule(MOD_ moduleID, bool force_add)
 		}
 	}
 
+	//Make sure Zeeman module is always the first one in the list : Zeeman module sets Heff (if Zeeman module disabled then PrepareIteration clears Heff)
+	if (IsModuleSet(MOD_ZEEMAN)) {
+
+		int idxZeeman = pMod.get_index_from_ID(MOD_ZEEMAN);
+		if (idxZeeman != 0) pMod.move(idxZeeman);
+	}
+
 	return error;
 }
 

@@ -13,7 +13,7 @@ class Mesh;
 
 #ifdef MODULE_COMPILATION_SURFEXCHANGE
 
-//Exchange modules can only be used in a magnetic mesh
+//This SurfExchange module is only used in a ferromagnetic mesh; there is a SurfExchange_AFM module used in a two-sublattice model mesh
 
 class SurfExchange :
 	public Modules,

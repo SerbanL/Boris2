@@ -244,4 +244,10 @@ void BorisMeshWindow::ZoomNotchDn(void)
 	physQRep.adjust_detail_level(DETAILNOTCHDN);
 }
 
+//rather than changing detail level using mouse wheel, set it directly using this
+void BorisMeshWindow::SetDetailLevel(double detail_level)
+{
+	physQRep.set_detail_level(detail_level);
+}
+
 #endif

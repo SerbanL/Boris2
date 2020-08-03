@@ -9,42 +9,7 @@
 
 FMesh::FMesh(SuperMesh *pSMesh_) :
 	Mesh(MESH_FERROMAGNETIC, pSMesh_),
-	ProgramState < FMesh,
-	tuple<
-	//Mesh members
-	int, int, int,
-	int, int, int, int,
-	Rect, SZ3, DBL3, SZ3, DBL3, SZ3, DBL3, SZ3, DBL3, SZ3, DBL3, bool,
-	VEC_VC<DBL3>, VEC_VC<double>, VEC_VC<DBL3>, VEC_VC<double>, VEC_VC<double>, VEC_VC<double>, VEC_VC<DBL3>, VEC_VC<DBL3>, VEC_VC<DBL3>,
-	vector_lut<Modules*>,
-	bool,
-	//Members in this derived class
-	bool, SkyrmionTrack, bool,
-	//Material Parameters
-	MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<DBL2, double>,
-	MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>,
-	MatP<double, double>, MatP<double, double>, MatP<DBL3, DBL3>, MatP<DBL3, DBL3>,
-	MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>,
-	MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<DBL2, double>, MatP<DBL2, double>,
-	MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>,
-	double, TEquation<double>, double, MatP<double, double>, MatP<double, double>,
-	MatP<double, double>, MatP<DBL2, double>, MatP<double, double>, MatP<double, double>,
-	MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>,
-
-	//OBSOLETE
-	//must keep to allow some older simulation files to load if they have these defined
-	//Since these are complex types (i.e. they inherit from ProgramState), taking them out is problematic as ProgramState will encounter the "end type" string corresponding to them and return from LoadObjectState method
-	//If these data member names are no longer defined then ProgramState will have skipped over them and thus not issued a new call to LoadObjectState as required for a complex type: thus returning on encountering "end type" means returning from the wrong LoadObjectState method call.
-	//This can potentially cause a whole host of unwanted side effects and even crash the program.
-	//This is really due to my bad initial design of ProgramState : I should have signalled when a complex type starts ("start type") so it can identify matching "start type" and "end type" strings, and if data member name not found simply jump over that block.
-	//I can fix this now, and still keep files saved with the older ProgramState version compatible, but there's nothing I can do to make simulation files with these OBSOLETE types defined load properly now, short of keeping them defined here even though not used anymore.
-	//Note this is only a problem for complex types for the reasons outlined above.
-	//Date ProgramState fixed : 14/02/2020. Any new data members introduced after this date, and later made obsolete, doesn't have to be added to this list.
-	MatP<double, double>, MatP<double, double>, MatP<DBL3, DBL3>
-	> ,
-	//Module Implementations
-	tuple<Demag_N, Demag, SDemag_Demag, Exch_6ngbr_Neu, DMExchange, iDMExchange, SurfExchange, Zeeman, MOptical, Anisotropy_Uniaxial, Anisotropy_Cubic, MElastic, Transport, Heat, SOTField, Roughness> >
-	(this,
+	ProgramStateNames(this,
 		{
 			//Mesh members
 			VINFO(meshType), VINFO(meshIdCounter), VINFO(meshId), 
@@ -60,7 +25,9 @@ FMesh::FMesh(SuperMesh *pSMesh_) :
 			VINFO(A), VINFO(D), VINFO(J1), VINFO(J2), 
 			VINFO(K1), VINFO(K2), VINFO(mcanis_ea1), VINFO(mcanis_ea2), 
 			VINFO(susrel), VINFO(susprel), VINFO(cHA), VINFO(cHmo),
-			VINFO(elecCond), VINFO(amrPercentage), VINFO(P), VINFO(beta), VINFO(De), VINFO(n_density), VINFO(SHA), VINFO(flSOT), VINFO(betaD), VINFO(l_sf), VINFO(l_ex), VINFO(l_ph), VINFO(Gi), VINFO(Gmix), 
+			VINFO(elecCond), VINFO(amrPercentage), VINFO(P), VINFO(beta), VINFO(De), VINFO(n_density), 
+			VINFO(SHA), VINFO(flSOT), VINFO(STq), VINFO(STa), VINFO(STp), 
+			VINFO(betaD), VINFO(l_sf), VINFO(l_ex), VINFO(l_ph), VINFO(Gi), VINFO(Gmix),
 			VINFO(ts_eff), VINFO(tsi_eff), VINFO(pump_eff), VINFO(cpump_eff), VINFO(the_eff),
 			VINFO(base_temperature), VINFO(T_equation), VINFO(T_Curie), VINFO(T_Curie_material), VINFO(atomic_moment), 
 			VINFO(density), VINFO(MEc), VINFO(Ym), VINFO(Pr),
@@ -76,7 +43,7 @@ FMesh::FMesh(SuperMesh *pSMesh_) :
 			IINFO(Zeeman), IINFO(MOptical),
 			IINFO(Anisotropy_Uniaxial), IINFO(Anisotropy_Cubic), IINFO(MElastic),
 			IINFO(Transport), IINFO(Heat),
-			IINFO(SOTField), 
+			IINFO(SOTField), IINFO(STField),
 			IINFO(Roughness)
 		}),
 	meshODE(this)
@@ -84,42 +51,7 @@ FMesh::FMesh(SuperMesh *pSMesh_) :
 
 FMesh::FMesh(Rect meshRect_, DBL3 h_, SuperMesh *pSMesh_) :
 	Mesh(MESH_FERROMAGNETIC, pSMesh_),
-	ProgramState < FMesh,
-	tuple<
-	//Mesh members
-	int, int, int,
-	int, int, int, int,
-	Rect, SZ3, DBL3, SZ3, DBL3, SZ3, DBL3, SZ3, DBL3, SZ3, DBL3, bool,
-	VEC_VC<DBL3>, VEC_VC<double>, VEC_VC<DBL3>, VEC_VC<double>, VEC_VC<double>, VEC_VC<double>, VEC_VC<DBL3>, VEC_VC<DBL3>, VEC_VC<DBL3>,
-	vector_lut<Modules*>,
-	bool,
-	//Members in this derived class
-	bool, SkyrmionTrack, bool,
-	//Material Parameters
-	MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<DBL2, double>,
-	MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>,
-	MatP<double, double>, MatP<double, double>, MatP<DBL3, DBL3>, MatP<DBL3, DBL3>,
-	MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>,
-	MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<DBL2, double>, MatP<DBL2, double>,
-	MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>,
-	double, TEquation<double>, double, MatP<double, double>, MatP<double, double>,
-	MatP<double, double>, MatP<DBL2, double>, MatP<double, double>, MatP<double, double>,
-	MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>,
-
-	//OBSOLETE
-	//must keep to allow some older simulation files to load if they have these defined
-	//Since these are complex types (i.e. they inherit from ProgramState), taking them out is problematic as ProgramState will encounter the "end type" string corresponding to them and return from LoadObjectState method
-	//If these data member names are no longer defined then ProgramState will have skipped over them and thus not issued a new call to LoadObjectState as required for a complex type: thus returning on encountering "end type" means returning from the wrong LoadObjectState method call.
-	//This can potentially cause a whole host of unwanted side effects and even crash the program.
-	//This is really due to my bad initial design of ProgramState : I should have signalled when a complex type starts ("start type") so it can identify matching "start type" and "end type" strings, and if data member name not found simply jump over that block.
-	//I can fix this now, and still keep files saved with the older ProgramState version compatible, but there's nothing I can do to make simulation files with these OBSOLETE types defined load properly now, short of keeping them defined here even though not used anymore.
-	//Note this is only a problem for complex types for the reasons outlined above.
-	//Date ProgramState fixed : 14/02/2020. Any new data members introduced after this date, and later made obsolete, doesn't have to be added to this list.
-	MatP<double, double>, MatP<double, double>, MatP<DBL3, DBL3>
-	> ,
-	//Module Implementations
-	tuple<Demag_N, Demag, SDemag_Demag, Exch_6ngbr_Neu, DMExchange, iDMExchange, SurfExchange, Zeeman, MOptical, Anisotropy_Uniaxial, Anisotropy_Cubic, MElastic, Transport, Heat, SOTField, Roughness> >
-	(this,
+	ProgramStateNames(this,
 		{
 			//Mesh members
 			VINFO(meshType), VINFO(meshIdCounter), VINFO(meshId),
@@ -135,7 +67,9 @@ FMesh::FMesh(Rect meshRect_, DBL3 h_, SuperMesh *pSMesh_) :
 			VINFO(A), VINFO(D), VINFO(J1), VINFO(J2),
 			VINFO(K1), VINFO(K2), VINFO(mcanis_ea1), VINFO(mcanis_ea2),
 			VINFO(susrel), VINFO(susprel), VINFO(cHA), VINFO(cHmo),
-			VINFO(elecCond), VINFO(amrPercentage), VINFO(P), VINFO(beta), VINFO(De), VINFO(n_density), VINFO(SHA), VINFO(flSOT), VINFO(betaD), VINFO(l_sf), VINFO(l_ex), VINFO(l_ph), VINFO(Gi), VINFO(Gmix),
+			VINFO(elecCond), VINFO(amrPercentage), VINFO(P), VINFO(beta), VINFO(De), VINFO(n_density), 
+			VINFO(SHA), VINFO(flSOT), VINFO(STq), VINFO(STa), VINFO(STp), 
+			VINFO(betaD), VINFO(l_sf), VINFO(l_ex), VINFO(l_ph), VINFO(Gi), VINFO(Gmix),
 			VINFO(ts_eff), VINFO(tsi_eff), VINFO(pump_eff), VINFO(cpump_eff), VINFO(the_eff),
 			VINFO(base_temperature), VINFO(T_equation), VINFO(T_Curie), VINFO(T_Curie_material), VINFO(atomic_moment),
 			VINFO(density), VINFO(MEc), VINFO(Ym), VINFO(Pr),
@@ -151,7 +85,7 @@ FMesh::FMesh(Rect meshRect_, DBL3 h_, SuperMesh *pSMesh_) :
 			IINFO(Zeeman), IINFO(MOptical),
 			IINFO(Anisotropy_Uniaxial), IINFO(Anisotropy_Cubic), IINFO(MElastic),
 			IINFO(Transport), IINFO(Heat),
-			IINFO(SOTField),
+			IINFO(SOTField), IINFO(STField),
 			IINFO(Roughness)
 		}),
 	meshODE(this)
@@ -207,6 +141,13 @@ void FMesh::RepairObjectState(void)
 		pCurieWeiss->Initialize_CurieWeiss(0.0, 1.0);
 		pLongRelSus->Initialize_LongitudinalRelSusceptibility(pCurieWeiss->get_data(), atomic_moment, 1.0);
 		pAlpha1->Initialize_Alpha1(DBL2(1.0, 0.0), 0.0);
+	}
+
+	//Make sure Zeeman module is always the first one in the list : Zeeman module sets Heff (if Zeeman module disabled then PrepareIteration clears Heff)
+	if (IsModuleSet(MOD_ZEEMAN)) {
+
+		int idxZeeman = pMod.get_index_from_ID(MOD_ZEEMAN);
+		if (idxZeeman != 0) pMod.move(idxZeeman);
 	}
 }
 

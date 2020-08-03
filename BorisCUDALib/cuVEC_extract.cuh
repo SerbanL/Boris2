@@ -14,6 +14,12 @@ __global__ void extract_profile_kernel(size_t size, cuVEC<VType>& cuvec, VType* 
 
 		cuReal3 position = start + ((cuBReal)idx + 0.5) * step;
 
+		//if position is outside mesh then wrap around
+		cuReal3 meshDim = cuReal3(cuvec.rect.e.x - cuvec.rect.s.x, cuvec.rect.e.y - cuvec.rect.s.y, cuvec.rect.e.z - cuvec.rect.s.z);
+		position.x -= cu_floor_epsilon(position.x / meshDim.x) * meshDim.x;
+		position.y -= cu_floor_epsilon(position.y / meshDim.y) * meshDim.y;
+		position.z -= cu_floor_epsilon(position.z / meshDim.z) * meshDim.z;
+
 		VType value = cuvec.weighted_average(position, cuvec.h);
 		profile_gpu[idx] = value;
 	}
@@ -50,6 +56,12 @@ __global__ void extract_profile_component_x_kernel(size_t size, cuVEC<VType>& cu
 
 		cuReal3 position = start + ((cuBReal)idx + 0.5) * step;
 
+		//if position is outside mesh then wrap around
+		cuReal3 meshDim = cuReal3(cuvec.rect.e.x - cuvec.rect.s.x, cuvec.rect.e.y - cuvec.rect.s.y, cuvec.rect.e.z - cuvec.rect.s.z);
+		position.x -= cu_floor_epsilon(position.x / meshDim.x) * meshDim.x;
+		position.y -= cu_floor_epsilon(position.y / meshDim.y) * meshDim.y;
+		position.z -= cu_floor_epsilon(position.z / meshDim.z) * meshDim.z;
+
 		VType value = cuvec.weighted_average(position, cuvec.h);
 		profile_gpu[idx] = value.x;
 	}
@@ -78,6 +90,12 @@ __global__ void extract_profile_component_y_kernel(size_t size, cuVEC<VType>& cu
 
 		cuReal3 position = start + ((cuBReal)idx + 0.5) * step;
 
+		//if position is outside mesh then wrap around
+		cuReal3 meshDim = cuReal3(cuvec.rect.e.x - cuvec.rect.s.x, cuvec.rect.e.y - cuvec.rect.s.y, cuvec.rect.e.z - cuvec.rect.s.z);
+		position.x -= cu_floor_epsilon(position.x / meshDim.x) * meshDim.x;
+		position.y -= cu_floor_epsilon(position.y / meshDim.y) * meshDim.y;
+		position.z -= cu_floor_epsilon(position.z / meshDim.z) * meshDim.z;
+
 		VType value = cuvec.weighted_average(position, cuvec.h);
 		profile_gpu[idx] = value.y;
 	}
@@ -104,6 +122,12 @@ __global__ void extract_profile_component_z_kernel(size_t size, cuVEC<VType>& cu
 	if (idx < size) {
 
 		cuReal3 position = start + ((cuBReal)idx + 0.5) * step;
+
+		//if position is outside mesh then wrap around
+		cuReal3 meshDim = cuReal3(cuvec.rect.e.x - cuvec.rect.s.x, cuvec.rect.e.y - cuvec.rect.s.y, cuvec.rect.e.z - cuvec.rect.s.z);
+		position.x -= cu_floor_epsilon(position.x / meshDim.x) * meshDim.x;
+		position.y -= cu_floor_epsilon(position.y / meshDim.y) * meshDim.y;
+		position.z -= cu_floor_epsilon(position.z / meshDim.z) * meshDim.z;
 
 		VType value = cuvec.weighted_average(position, cuvec.h);
 		profile_gpu[idx] = value.z;
@@ -133,6 +157,12 @@ __global__ void extract_profilepoints_kernel(size_t size, cuVEC<VType>& cuvec, V
 	if (idx < size) {
 
 		cuReal3 position = start + ((cuBReal)idx + 0.5) * step;
+
+		//if position is outside mesh then wrap around
+		cuReal3 meshDim = cuReal3(cuvec.rect.e.x - cuvec.rect.s.x, cuvec.rect.e.y - cuvec.rect.s.y, cuvec.rect.e.z - cuvec.rect.s.z);
+		position.x -= cu_floor_epsilon(position.x / meshDim.x) * meshDim.x;
+		position.y -= cu_floor_epsilon(position.y / meshDim.y) * meshDim.y;
+		position.z -= cu_floor_epsilon(position.z / meshDim.z) * meshDim.z;
 
 		VType value = cuvec[position];
 		profile_gpu[idx] = value;
@@ -170,6 +200,12 @@ __global__ void extract_profilepoints_component_x_kernel(size_t size, cuVEC<VTyp
 
 		cuReal3 position = start + ((cuBReal)idx + 0.5) * step;
 
+		//if position is outside mesh then wrap around
+		cuReal3 meshDim = cuReal3(cuvec.rect.e.x - cuvec.rect.s.x, cuvec.rect.e.y - cuvec.rect.s.y, cuvec.rect.e.z - cuvec.rect.s.z);
+		position.x -= cu_floor_epsilon(position.x / meshDim.x) * meshDim.x;
+		position.y -= cu_floor_epsilon(position.y / meshDim.y) * meshDim.y;
+		position.z -= cu_floor_epsilon(position.z / meshDim.z) * meshDim.z;
+
 		VType value = cuvec[position];
 		profile_gpu[idx] = value.x;
 	}
@@ -198,6 +234,12 @@ __global__ void extract_profilepoints_component_y_kernel(size_t size, cuVEC<VTyp
 
 		cuReal3 position = start + ((cuBReal)idx + 0.5) * step;
 
+		//if position is outside mesh then wrap around
+		cuReal3 meshDim = cuReal3(cuvec.rect.e.x - cuvec.rect.s.x, cuvec.rect.e.y - cuvec.rect.s.y, cuvec.rect.e.z - cuvec.rect.s.z);
+		position.x -= cu_floor_epsilon(position.x / meshDim.x) * meshDim.x;
+		position.y -= cu_floor_epsilon(position.y / meshDim.y) * meshDim.y;
+		position.z -= cu_floor_epsilon(position.z / meshDim.z) * meshDim.z;
+
 		VType value = cuvec[position];
 		profile_gpu[idx] = value.y;
 	}
@@ -224,6 +266,12 @@ __global__ void extract_profilepoints_component_z_kernel(size_t size, cuVEC<VTyp
 	if (idx < size) {
 
 		cuReal3 position = start + ((cuBReal)idx + 0.5) * step;
+
+		//if position is outside mesh then wrap around
+		cuReal3 meshDim = cuReal3(cuvec.rect.e.x - cuvec.rect.s.x, cuvec.rect.e.y - cuvec.rect.s.y, cuvec.rect.e.z - cuvec.rect.s.z);
+		position.x -= cu_floor_epsilon(position.x / meshDim.x) * meshDim.x;
+		position.y -= cu_floor_epsilon(position.y / meshDim.y) * meshDim.y;
+		position.z -= cu_floor_epsilon(position.z / meshDim.z) * meshDim.z;
 
 		VType value = cuvec[position];
 		profile_gpu[idx] = value.z;

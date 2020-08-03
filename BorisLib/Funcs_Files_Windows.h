@@ -17,7 +17,7 @@
 #include "Funcs_Conv_Windows.h"
 
 #ifndef FILEROWCHARS
-#define FILEROWCHARS	5000	//maximum number of characters per input file row
+#define FILEROWCHARS	50000	//maximum number of characters per input file row
 #endif
 
 //Get current directory (initially this will be the executable directory but can change if you load/save files through a windows dialog)

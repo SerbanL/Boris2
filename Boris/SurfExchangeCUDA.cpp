@@ -24,8 +24,10 @@ BError SurfExchangeCUDA::Initialize(void)
 	BError error(CLASS_STR(SurfExchangeCUDA));
 
 	//clear cu_arrs then rebuild them from information in SurfExchange module
-	pMesh_Bot.clear();
-	pMesh_Top.clear();
+	pMeshFM_Bot.clear();
+	pMeshFM_Top.clear();
+	pMeshAFM_Bot.clear();
+	pMeshAFM_Top.clear();
 	pMeshDia_Bot.clear();
 	pMeshDia_Top.clear();
 
@@ -36,25 +38,33 @@ BError SurfExchangeCUDA::Initialize(void)
 
 		for (int idx = 0; idx < pSurfExch->pMesh_Bot.size(); idx++) {
 
-			if (pSurfExch->pMesh_Bot[idx]->GetMeshType() != MESH_DIAMAGNETIC) {
-
-				pMesh_Bot.push_back(pSurfExch->pMesh_Bot[idx]->pMeshCUDA->cuMesh.get_managed_object());
-			}
-			else {
+			if (pSurfExch->pMesh_Bot[idx]->GetMeshType() == MESH_DIAMAGNETIC) {
 
 				pMeshDia_Bot.push_back(pSurfExch->pMesh_Bot[idx]->pMeshCUDA->cuMesh.get_managed_object());
+			}
+			else if (pSurfExch->pMesh_Bot[idx]->GetMeshType() == MESH_FERROMAGNETIC) {
+
+				pMeshFM_Bot.push_back(pSurfExch->pMesh_Bot[idx]->pMeshCUDA->cuMesh.get_managed_object());
+			}
+			else if (pSurfExch->pMesh_Bot[idx]->GetMeshType() == MESH_ANTIFERROMAGNETIC) {
+
+				pMeshAFM_Bot.push_back(pSurfExch->pMesh_Bot[idx]->pMeshCUDA->cuMesh.get_managed_object());
 			}
 		}
 
 		for (int idx = 0; idx < pSurfExch->pMesh_Top.size(); idx++) {
 
-			if (pSurfExch->pMesh_Top[idx]->GetMeshType() != MESH_DIAMAGNETIC) {
-
-				pMesh_Top.push_back(pSurfExch->pMesh_Top[idx]->pMeshCUDA->cuMesh.get_managed_object());
-			}
-			else {
+			if (pSurfExch->pMesh_Top[idx]->GetMeshType() == MESH_DIAMAGNETIC) {
 
 				pMeshDia_Top.push_back(pSurfExch->pMesh_Top[idx]->pMeshCUDA->cuMesh.get_managed_object());
+			}
+			else if (pSurfExch->pMesh_Top[idx]->GetMeshType() == MESH_FERROMAGNETIC) {
+
+				pMeshFM_Top.push_back(pSurfExch->pMesh_Top[idx]->pMeshCUDA->cuMesh.get_managed_object());
+			}
+			else if (pSurfExch->pMesh_Top[idx]->GetMeshType() == MESH_ANTIFERROMAGNETIC) {
+
+				pMeshAFM_Top.push_back(pSurfExch->pMesh_Top[idx]->pMeshCUDA->cuMesh.get_managed_object());
 			}
 		}
 

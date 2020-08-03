@@ -15,7 +15,7 @@
 #include "Exchange.h"
 #include "DMExchange.h"
 #include "iDMExchange.h"
-#include "SurfExchange.h"
+#include "SurfExchange_AFM.h"
 #include "Demag.h"
 #include "Demag_N.h"
 #include "SDemag_Demag.h"
@@ -57,7 +57,7 @@ class AFMesh :
 	MatP<double, double>, 
 	MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>>,
 	//Module Implementations
-	tuple<Demag_N, Demag, SDemag_Demag, Exch_6ngbr_Neu, DMExchange, iDMExchange, SurfExchange, Zeeman, MOptical, Anisotropy_Uniaxial, Anisotropy_Cubic, Transport, Heat, SOTField, Roughness> >
+	tuple<Demag_N, Demag, SDemag_Demag, Exch_6ngbr_Neu, DMExchange, iDMExchange, SurfExchange_AFM, Zeeman, MOptical, Anisotropy_Uniaxial, Anisotropy_Cubic, Transport, Heat, SOTField, Roughness> >
 {
 #if COMPILECUDA == 1
 	friend AFMeshCUDA;
@@ -103,12 +103,12 @@ public:
 	BError SwitchCUDAState(bool cudaState);
 
 	//called at the start of each iteration
-	void PrepareNewIteration(void) { Heff.set(DBL3(0)); Heff2.set(DBL3(0)); }
+	void PrepareNewIteration(void) { if (!pMod.is_ID_set(MOD_ZEEMAN)) { Heff.set(DBL3(0)); Heff2.set(DBL3(0)); } }
 
 #if COMPILECUDA == 1
 	void PrepareNewIterationCUDA(void) 
 	{ 
-		if (pMeshCUDA) {
+		if (pMeshCUDA && !pMod.is_ID_set(MOD_ZEEMAN)) {
 
 			pMeshCUDA->Heff()->set(n.dim(), cuReal3());
 			pMeshCUDA->Heff2()->set(n.dim(), cuReal3());
@@ -192,6 +192,10 @@ public:
 #endif
 		return skyShift.Get_skypos_diameters(M, skyRect);
 	}
+
+	//set/get skypos tracker rect size diameter multiplier
+	double Get_skypos_dmul(void) { return skyShift.Get_skypos_dmul(); }
+	void Set_skypos_dmul(double dia_mul_) { skyShift.Set_skypos_dmul(dia_mul_); }
 
 	//set/get exchange_couple_to_meshes status flag
 	void SetMeshExchangeCoupling(bool status) { exchange_couple_to_meshes = status; }

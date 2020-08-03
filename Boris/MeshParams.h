@@ -153,6 +153,15 @@ public:
 	//field-like spin torque coefficient (unitless)
 	MatP<double, double> flSOT = 0.0;
 
+	//Slonczewski macrospin torques q+, q- parameters as in PRB 72, 014446 (2005) (unitless)
+	MatP<DBL2, double> STq = DBL2(1.0, 0.0);
+
+	//Slonczewski macrospin torques A, B parameters as in PRB 72, 014446 (2005) (unitless)
+	MatP<DBL2, double> STa = DBL2(0.6, 0.4);
+
+	//Slonczewski macrospin torques spin polarization unit vector as in PRB 72, 014446 (2005) (unitless)
+	MatP<DBL3, double> STp = DBL3(-1.0, 0.0, 0.0);
+
 	//spin-flip length (m)
 	MatP<double, double> l_sf = 10e-9;
 
@@ -432,6 +441,18 @@ RType MeshParams::run_on_param(PARAM_ paramID, Lambda& run_this, PType& ... run_
 
 	case PARAM_FLSOT:
 		return run_this(flSOT, run_this_args...);
+		break;
+
+	case PARAM_STQ:
+		return run_this(STq, run_this_args...);
+		break;
+
+	case PARAM_STA:
+		return run_this(STa, run_this_args...);
+		break;
+
+	case PARAM_STP:
+		return run_this(STp, run_this_args...);
 		break;
 
 	case PARAM_ISHA:

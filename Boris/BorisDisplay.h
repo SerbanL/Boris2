@@ -168,6 +168,9 @@ public:
 	//image_cropping specify normalized cropping within the mesh image, as left, bottom, right, top : 0, 0 point is left, bottom of screen as far as user is concerned.
 	bool SaveMeshImage(string fileName, DBL4 image_cropping = DBL4(0, 0, 1, 1)) { displayMutex.lock(); bool success = pbMeshWin->SaveMeshImage(fileName, image_cropping); displayMutex.unlock(); return success; }
 
+	//Set mesh display detail level directly
+	void SetDetailLevel(double detail_level) { if (displayMutex.try_lock()) { pbMeshWin->SetDetailLevel(detail_level); displayMutex.unlock(); } }
+
 	//allows access to Boris Graphics public methods.
 	BorisGraphics* BGMethods(void) { return pBG; }
 

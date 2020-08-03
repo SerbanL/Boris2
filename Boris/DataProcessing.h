@@ -7,7 +7,7 @@
 
 #include <numeric>
 
-#define MAX_ARRAYS	100
+#define MAX_ARRAYS	10000
 
 using namespace std;
 

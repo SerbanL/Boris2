@@ -1064,3 +1064,26 @@ string Simulation::Build_EquationConstants_Text(int index_in_list)
 
 	return name + ": " + ToString(value);
 }
+
+//---------------------------------------------------- SKYPOS SETTINGS
+
+//Print skypos multiplier value
+void Simulation::Print_skypos_dmul(void)
+{
+	string skypos_info;
+
+	for (int idxMesh = 0; idxMesh < (int)SMesh().size(); idxMesh++) {
+
+		skypos_info += Build_skypos_dmul_ListLine(idxMesh) + "\n";
+	}
+
+	BD.DisplayFormattedConsoleMessage(skypos_info);
+}
+
+string Simulation::Build_skypos_dmul_ListLine(int meshIndex)
+{
+	string skypos_line = MakeIO(IOI_MESH_FORSKYPOSDMUL, meshIndex) +
+		"</c>[tc1,1,1,1/tc] [sa0/sa] skypos multiplier: " + MakeIO(IOI_SKYPOSDMUL, meshIndex);
+
+	return skypos_line;
+}

@@ -139,6 +139,15 @@ public:
 	//field-like spin torque coefficient (unitless)
 	cu_obj<MatPCUDA<cuBReal, cuBReal>> flSOT;
 
+	//Slonczewski macrospin torques q+, q- parameters as in PRB 72, 014446 (2005) (unitless)
+	cu_obj<MatPCUDA<cuReal2, cuBReal>> STq;
+
+	//Slonczewski macrospin torques A, B parameters as in PRB 72, 014446 (2005) (unitless)
+	cu_obj<MatPCUDA<cuReal2, cuBReal>> STa;
+
+	//Slonczewski macrospin torques spin polarization unit vector as in PRB 72, 014446 (2005) (unitless)
+	cu_obj<MatPCUDA<cuReal3, cuBReal>> STp;
+
 	//spin-flip length (m)
 	cu_obj<MatPCUDA<cuBReal, cuBReal>> l_sf;
 

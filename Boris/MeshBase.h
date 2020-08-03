@@ -506,6 +506,10 @@ public:
 	//get skyrmion shift for a skyrmion initially in the given rectangle (works only with data in output data, not with ShowData or with data box), as well as diameters along x and y directions.
 	virtual DBL4 Get_skypos_diameters(Rect skyRect) { return DBL4(); }
 
+	//set/get skypos tracker rect size diameter multiplier
+	virtual double Get_skypos_dmul(void) { return 0.0; }
+	virtual void Set_skypos_dmul(double dia_mul_) {}
+
 	//couple this mesh to touching dipoles by setting skip cells as required : used for domain wall moving mesh algorithms
 	virtual void CoupleToDipoles(bool status) {}
 

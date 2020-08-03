@@ -11,7 +11,7 @@
 #include "Funcs_Strings.h"
 #include "Introspection.h"
 
-#define FILEROWCHARS	5000	//maximum number of characters per input file row
+#define FILEROWCHARS	50000	//maximum number of characters per input file row
 
 ///////////////////////////////////////////////////////////////////////////////
 // GENERAL

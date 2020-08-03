@@ -266,6 +266,14 @@ public:
 		if (detail_level > DETAILVALUEMAX) detail_level = DETAILVALUEMAX;
 	}
 
+	void set_detail_level(double detail_level_)
+	{
+		detail_level = detail_level_;
+
+		if (detail_level < DETAILVALUEMIN) detail_level = DETAILVALUEMIN;
+		if (detail_level > DETAILVALUEMAX) detail_level = DETAILVALUEMAX;
+	}
+
 	//get current display settings
 	PhysQRepSettings get_current_settings(void);
 

@@ -47,7 +47,8 @@ BError Mesh::AddModule(MOD_ moduleID, bool force_add)
 		break;
 
 	case MOD_SURFEXCHANGE:
-		pMod.push_back(new SurfExchange(this), MOD_SURFEXCHANGE);
+		if (meshType == MESH_FERROMAGNETIC) pMod.push_back(new SurfExchange(this), MOD_SURFEXCHANGE);
+		else if (meshType == MESH_ANTIFERROMAGNETIC) pMod.push_back(new SurfExchange_AFM(this), MOD_SURFEXCHANGE);
 		break;
 
 	case MOD_ZEEMAN:
@@ -82,6 +83,10 @@ BError Mesh::AddModule(MOD_ moduleID, bool force_add)
 		pMod.push_back(new SOTField(this), MOD_SOTFIELD);
 		break;
 
+	case MOD_STFIELD:
+		pMod.push_back(new STField(this), MOD_STFIELD);
+		break;
+
 	case MOD_ROUGHNESS:
 		pMod.push_back(new Roughness(this), MOD_ROUGHNESS);
 		break;
@@ -101,6 +106,13 @@ BError Mesh::AddModule(MOD_ moduleID, bool force_add)
 
 			if (IsModuleSet(module)) { delete pMod[pMod.get_index_from_ID(module)]; pMod.erase(INT2(module, 0)); }
 		}
+	}
+
+	//Make sure Zeeman module is always the first one in the list : Zeeman module sets Heff (if Zeeman module disabled then PrepareIteration clears Heff)
+	if (IsModuleSet(MOD_ZEEMAN)) {
+
+		int idxZeeman = pMod.get_index_from_ID(MOD_ZEEMAN);
+		if (idxZeeman != 0) pMod.move(idxZeeman);
 	}
 
 	return error;

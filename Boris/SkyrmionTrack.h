@@ -14,11 +14,14 @@
 //Class used to track one or more skyrmions in a given ferromagnetic mesh
 class SkyrmionTrack :
 	public ProgramState<SkyrmionTrack,
-	tuple<std::vector<DBL2>, std::vector<DBL2>, std::vector<DBL2>, std::vector<Rect>>,
+	tuple<double, std::vector<DBL2>, std::vector<DBL2>, std::vector<DBL2>, std::vector<Rect>>,
 	tuple<> >
 {
 
 private:
+
+	//set skypos tracking rectangle to skyrmion diameter times dia_mul
+	double dia_mul = 2.0;
 
 	//identify skyrmion tracker by bottom-left Rect coordinates
 	vector<DBL2> skyTrack_Id;
@@ -52,7 +55,7 @@ public:
 
 	SkyrmionTrack(void) :
 		ProgramStateNames(this,
-			{ VINFO(skyTrack_Id), VINFO(skyTrack_Shift), VINFO(skyTrack_ShiftLast), VINFO(skyTrack_rect) }, {})
+			{ VINFO(dia_mul), VINFO(skyTrack_Id), VINFO(skyTrack_Shift), VINFO(skyTrack_ShiftLast), VINFO(skyTrack_rect) }, {})
 	{}
 
 	~SkyrmionTrack() {}
@@ -76,6 +79,9 @@ public:
 
 	//additionally return the x and y diameters
 	DBL4 Get_skypos_diameters(VEC_VC<DBL3>& M, Rect skyRect);
+
+	double Get_skypos_dmul(void) { return dia_mul; }
+	void Set_skypos_dmul(double dia_mul_) { dia_mul = dia_mul_; }
 
 #if COMPILECUDA == 1
 	//as for the non-CUDA version but also pass in M.n.dim() and M.h so we don't have to get them from gpu memory

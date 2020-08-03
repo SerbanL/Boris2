@@ -129,19 +129,13 @@ double Atom_Zeeman::UpdateField(void)
 
 	if (!H_equation.is_set()) {
 
-		if (IsZ(Ha.norm())) {
-
-			this->energy = 0;
-			return 0.0;
-		}
-
 #pragma omp parallel for reduction(+:energy)
 		for (int idx = 0; idx < paMesh->n.dim(); idx++) {
 
 			double cHA = paMesh->cHA;
 			paMesh->update_parameters_mcoarse(idx, paMesh->cHA, cHA);
 
-			paMesh->Heff1[idx] += cHA * Ha;
+			paMesh->Heff1[idx] = cHA * Ha;
 
 			energy -= MUB * paMesh->M1[idx] * MU0 * (cHA * Ha);
 		}
@@ -170,7 +164,7 @@ double Atom_Zeeman::UpdateField(void)
 					DBL3 relpos = DBL3(i + 0.5, j + 0.5, k + 0.5) & paMesh->h;
 					DBL3 H = H_equation.evaluate_vector(relpos.x, relpos.y, relpos.z, time);
 
-					paMesh->Heff1[idx] += cHA * H;
+					paMesh->Heff1[idx] = cHA * H;
 
 					energy -= MUB * paMesh->M1[idx] * MU0 * (cHA * H);
 				}

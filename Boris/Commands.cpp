@@ -2440,6 +2440,21 @@ void Simulation::HandleCommand(string command_string)
 		}
 		break;
 
+		case CMD_DISPLAYDETAILLEVEL:
+		{
+			double detail_level;
+
+			error = commandSpec.GetParameters(command_fields, detail_level);
+
+			if (!error) {
+
+				BD.SetDetailLevel(detail_level);
+				UpdateScreen();
+			}
+			else if (verbose) PrintCommandUsage(command_name);
+		}
+		break;
+
 		case CMD_DISPLAYBACKGROUND:
 		{
 			string name, meshName;
@@ -4510,6 +4525,25 @@ void Simulation::HandleCommand(string command_string)
 		}
 		break;
 
+		case CMD_SKYPOSDMUL:
+		{
+			double multiplier;
+			string meshName;
+
+			error = commandSpec.GetParameters(command_fields, multiplier, meshName);
+			if (error) { error.reset() = commandSpec.GetParameters(command_fields, multiplier); meshName = SMesh.GetMeshFocus(); }
+
+			if (!error) {
+
+				SMesh[meshName]->Set_skypos_dmul(multiplier);
+
+			}
+			else if (verbose) Print_skypos_dmul();
+
+			if (script_client_connected) commSocket.SetSendData(commandSpec.PrepareReturnParameters(SMesh[meshName]->Get_skypos_dmul()));
+		}
+		break;
+
 		//---------------- CMD_DP_ commands here
 
 		case CMD_DP_CLEARALL:
@@ -4993,17 +5027,17 @@ void Simulation::HandleCommand(string command_string)
 				if (script_client_connected) {
 
 					//Longer version so it compiles with C++14
-					if (value.is_type(btype_info<double>())) {
+					if (value.is_type(btype_info<double>()) || value.is_type(btype_info<float>())) {
 						
 						double value_converted = value;
 						commSocket.SetSendData(commandSpec.PrepareReturnParameters(value_converted));
 					}
-					else if (value.is_type(btype_info<DBL2>())) {
+					else if (value.is_type(btype_info<DBL2>()) || value.is_type(btype_info<FLT2>())) {
 						
 						DBL2 value_converted = value;
 						commSocket.SetSendData(commandSpec.PrepareReturnParameters(value_converted));
 					}
-					else if (value.is_type(btype_info<DBL3>())) {
+					else if (value.is_type(btype_info<DBL3>()) || value.is_type(btype_info<FLT3>())) {
 						
 						DBL3 value_converted = value;
 						commSocket.SetSendData(commandSpec.PrepareReturnParameters(value_converted));

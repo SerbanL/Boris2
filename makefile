@@ -14,7 +14,7 @@ ifndef sprec
 endif
 
 #Boris program version
-BVERSION := 280
+BVERSION := 281
 
 #Working directories
 BORIS_DATA_DIR := Boris_Data

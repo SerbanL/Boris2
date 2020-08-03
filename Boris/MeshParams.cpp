@@ -185,6 +185,18 @@ MeshParams::MeshParams(vector<PARAM_>& enabledParams)
 			meshParams.push_back("flST", MeshParamDescriptor(PARAMTYPE_ELECTRIC), PARAM_FLSOT);
 			break;
 
+		case PARAM_STQ:
+			meshParams.push_back("STq", MeshParamDescriptor(PARAMTYPE_ELECTRIC), PARAM_STQ);
+			break;
+
+		case PARAM_STA:
+			meshParams.push_back("STa", MeshParamDescriptor(PARAMTYPE_ELECTRIC), PARAM_STA);
+			break;
+
+		case PARAM_STP:
+			meshParams.push_back("STp", MeshParamDescriptor(PARAMTYPE_ELECTRIC), PARAM_STP);
+			break;
+
 		case PARAM_ISHA:
 			meshParams.push_back("iSHA", MeshParamDescriptor(PARAMTYPE_ELECTRIC), PARAM_ISHA);
 			break;

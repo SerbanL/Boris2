@@ -73,10 +73,10 @@ public:
 	BError SwitchCUDAState(bool cudaState);
 
 	//called at the start of each iteration
-	void PrepareNewIteration(void) { Heff.set(DBL3(0)); }
+	void PrepareNewIteration(void) { if (!pMod.is_ID_set(MOD_ZEEMAN)) Heff.set(DBL3(0)); }
 
 #if COMPILECUDA == 1
-	void PrepareNewIterationCUDA(void) { if (pMeshCUDA) pMeshCUDA->Heff()->set(n.dim(), cuReal3()); }
+	void PrepareNewIterationCUDA(void) { if (pMeshCUDA && !pMod.is_ID_set(MOD_ZEEMAN)) pMeshCUDA->Heff()->set(n.dim(), cuReal3()); }
 #endif
 
 	double CheckMoveMesh(void) { return 0.0; }

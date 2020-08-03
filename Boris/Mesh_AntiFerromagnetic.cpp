@@ -32,7 +32,7 @@ AFMesh::AFMesh(SuperMesh *pSMesh_) :
 		},
 		{
 			IINFO(Demag_N), IINFO(Demag), IINFO(SDemag_Demag), 
-			IINFO(Exch_6ngbr_Neu), IINFO(DMExchange), IINFO(iDMExchange), IINFO(SurfExchange),
+			IINFO(Exch_6ngbr_Neu), IINFO(DMExchange), IINFO(iDMExchange), IINFO(SurfExchange_AFM),
 			IINFO(Zeeman), IINFO(MOptical),
 			IINFO(Anisotropy_Uniaxial), IINFO(Anisotropy_Cubic), 
 			IINFO(Transport), IINFO(Heat),
@@ -66,7 +66,7 @@ AFMesh::AFMesh(Rect meshRect_, DBL3 h_, SuperMesh *pSMesh_) :
 		},
 		{
 			IINFO(Demag_N), IINFO(Demag), IINFO(SDemag_Demag),
-			IINFO(Exch_6ngbr_Neu), IINFO(DMExchange), IINFO(iDMExchange), IINFO(SurfExchange),
+			IINFO(Exch_6ngbr_Neu), IINFO(DMExchange), IINFO(iDMExchange), IINFO(SurfExchange_AFM),
 			IINFO(Zeeman), IINFO(MOptical),
 			IINFO(Anisotropy_Uniaxial), IINFO(Anisotropy_Cubic),
 			IINFO(Transport), IINFO(Heat),
@@ -136,6 +136,13 @@ void AFMesh::RepairObjectState(void)
 
 		pAlpha1->Initialize_Alpha1(pCurieWeiss1->get_data(), pCurieWeiss2->get_data(), tau_ii.get0(), tau_ij.get0());
 		pAlpha2->Initialize_Alpha2(pCurieWeiss1->get_data(), pCurieWeiss2->get_data(), tau_ii.get0(), tau_ij.get0());
+	}
+
+	//Make sure Zeeman module is always the first one in the list : Zeeman module sets Heff (if Zeeman module disabled then PrepareIteration clears Heff)
+	if (IsModuleSet(MOD_ZEEMAN)) {
+
+		int idxZeeman = pMod.get_index_from_ID(MOD_ZEEMAN);
+		if (idxZeeman != 0) pMod.move(idxZeeman);
 	}
 }
 

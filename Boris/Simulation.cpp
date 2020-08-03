@@ -425,7 +425,7 @@ Simulation::Simulation(int Program_Version) :
 		{double(1.0), double(2.0)},
 		{double(MINTIMESTEP), double(MAXTIMESTEP)},
 		{double(MINTIMESTEP), double(MAXTIMESTEP)} };
-	commands[CMD_ASTEPCTRL].descr = "[tc0,0.5,0.5,1/tc]Set parameters for adaptive time step control: err_fail - repeat step above this, err_high - decrease dT abnove this, err_low - increase dT below this, dT_incr - increase dT using fixed multiplier, dT_min, dT_max - dT bounds.";
+	commands[CMD_ASTEPCTRL].descr = "[tc0,0.5,0.5,1/tc]Set parameters for adaptive time step control: err_fail - repeat step above this, err_high - decrease dT above this, err_low - increase dT below this, dT_incr - increase dT using fixed multiplier, dT_min, dT_max - dT bounds.";
 
 	commands.insert(CMD_SHOWDATA, CommandSpecifier(CMD_SHOWDATA), "showdata");
 	commands[CMD_SHOWDATA].usage = "[tc0,0.5,0,1/tc]USAGE : <b>showdata</b> <i>dataname (meshname, (rectangle))</i>";
@@ -608,6 +608,11 @@ Simulation::Simulation(int Program_Version) :
 	commands.insert(CMD_DISPLAY, CommandSpecifier(CMD_DISPLAY), "display");
 	commands[CMD_DISPLAY].usage = "[tc0,0.5,0,1/tc]USAGE : <b>display</b> <i>name (meshname)</i>";
 	commands[CMD_DISPLAY].descr = "[tc0,0.5,0.5,1/tc]Change quantity to display for given mesh (active mesh if name not given).";
+
+	commands.insert(CMD_DISPLAYDETAILLEVEL, CommandSpecifier(CMD_DISPLAYDETAILLEVEL), "displaydetail");
+	commands[CMD_DISPLAYDETAILLEVEL].usage = "[tc0,0.5,0,1/tc]USAGE : <b>displaydetail</b> <i>size</i>";
+	commands[CMD_DISPLAYDETAILLEVEL].descr = "[tc0,0.5,0.5,1/tc]Change displayed detail level to given displayed cell size (m).";
+	commands[CMD_DISPLAYDETAILLEVEL].unit = "m";
 
 	commands.insert(CMD_DISPLAYBACKGROUND, CommandSpecifier(CMD_DISPLAYBACKGROUND), "displaybackground");
 	commands[CMD_DISPLAYBACKGROUND].usage = "[tc0,0.5,0,1/tc]USAGE : <b>displaybackground</b> <i>name (meshname)</i>";
@@ -1047,6 +1052,12 @@ Simulation::Simulation(int Program_Version) :
 	commands[CMD_SHOWK].descr = "[tc0,0.5,0.5,1/tc]Show predicted uniaxial anisotropy (J/m^3) constant value for current mesh in focus (must be atomistic), using formula K = k*n/a^3, where n is the number of atomic moments per unit cell, and a is the atomic cell size.";
 	commands[CMD_SHOWK].return_descr = "[tc0,0.5,0,1/tc]Script return values: <i>A</i>";
 
+	commands.insert(CMD_SKYPOSDMUL, CommandSpecifier(CMD_SKYPOSDMUL), "skyposdmul");
+	commands[CMD_SKYPOSDMUL].usage = "[tc0,0.5,0,1/tc]USAGE : <b>skyposdmul</b> <i>multiplier (meshname)</i>";
+	commands[CMD_SKYPOSDMUL].descr = "[tc0,0.5,0.5,1/tc]Set skyrmion diameter multiplier for given meshname (focused mesh if not given) which determines skypos tracking rectangle size. Default is 2.0, i.e. tracking rectangle side is twice the diameter along each axis. Reduce if skyrmion density is too large, but at the risk of losing skyrmion tracking (recommended to keep above 1.2).";
+	commands[CMD_SKYPOSDMUL].limits = { { double(1.0), double(10.0) }, {Any(), Any()} };
+	commands[CMD_SKYPOSDMUL].return_descr = "[tc0,0.5,0,1/tc]Script return values: <i>multiplier</i>";
+
 	commands.insert(CMD_DP_CLEARALL, CommandSpecifier(CMD_DP_CLEARALL), "dp_clearall");
 	commands[CMD_DP_CLEARALL].usage = "[tc0,0.5,0,1/tc]USAGE : <b>dp_clearall</b>";
 	commands[CMD_DP_CLEARALL].descr = "[tc0,0.5,0.5,1/tc]Clear all dp arrays.";
@@ -1453,6 +1464,7 @@ Simulation::Simulation(int Program_Version) :
 	moduleHandles.push_back("transport", MOD_TRANSPORT);
 	moduleHandles.push_back("heat", MOD_HEAT);
 	moduleHandles.push_back("SOTfield", MOD_SOTFIELD);
+	moduleHandles.push_back("STfield", MOD_STFIELD);
 	moduleHandles.push_back("roughness", MOD_ROUGHNESS);
 	moduleHandles.push_back("dipoledipole", MOD_ATOM_DIPOLEDIPOLE);
 	

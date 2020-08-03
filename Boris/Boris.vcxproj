@@ -455,6 +455,8 @@
     <ClInclude Include="SkyrmionTrack.h" />
     <ClInclude Include="SOTField.h" />
     <ClInclude Include="SOTFieldCUDA.h" />
+    <ClInclude Include="STField.h" />
+    <ClInclude Include="STFieldCUDA.h" />
     <ClInclude Include="STransport.h" />
     <ClInclude Include="STransportCUDA.h" />
     <ClInclude Include="STransportCUDA_GInterf_S.h" />
@@ -465,6 +467,8 @@
     <ClInclude Include="SuperMeshCUDA.h" />
     <ClInclude Include="SurfExchange.h" />
     <ClInclude Include="SurfExchangeCUDA.h" />
+    <ClInclude Include="SurfExchangeCUDA_AFM.h" />
+    <ClInclude Include="SurfExchange_AFM.h" />
     <ClInclude Include="TextFormatting.h" />
     <ClInclude Include="Transport.h" />
     <ClInclude Include="TransportCUDA.h" />
@@ -745,6 +749,8 @@
     <ClCompile Include="SOTFieldCUDA.cpp" />
     <ClCompile Include="DemagTFunc_fg.cpp" />
     <ClCompile Include="Mesh_AntiFerromagneticCUDA.cpp" />
+    <ClCompile Include="STField.cpp" />
+    <ClCompile Include="STFieldCUDA.cpp" />
     <ClCompile Include="STransport.cpp" />
     <ClCompile Include="STransportCUDA.cpp" />
     <ClCompile Include="STransportCUDA_Charge.cpp" />
@@ -771,6 +777,8 @@
     <ClCompile Include="SuperMeshTemperature.cpp" />
     <ClCompile Include="SurfExchange.cpp" />
     <ClCompile Include="SurfExchangeCUDA.cpp" />
+    <ClCompile Include="SurfExchangeCUDA_AFM.cpp" />
+    <ClCompile Include="SurfExchange_AFM.cpp" />
     <ClCompile Include="Transport.cpp" />
     <ClCompile Include="TransportCUDA_Poisson_Spin_S.cpp" />
     <ClCompile Include="TransportCUDA_Poisson_Spin_V.cpp" />
@@ -885,11 +893,13 @@
     <CudaCompile Include="SDemagCUDA_Demag.cu" />
     <CudaCompile Include="SHeatCUDA.cu" />
     <CudaCompile Include="SOTFieldCUDA.cu" />
+    <CudaCompile Include="STFieldCUDA.cu" />
     <CudaCompile Include="STransportCUDA.cu" />
     <CudaCompile Include="STransportCUDA_Charge.cu" />
     <CudaCompile Include="STransportCUDA_Spin.cu" />
     <CudaCompile Include="StrayFieldCUDA.cu" />
     <CudaCompile Include="SurfExchangeCUDA.cu" />
+    <CudaCompile Include="SurfExchangeCUDA_AFM.cu" />
     <CudaCompile Include="TransportCUDA.cu" />
     <CudaCompile Include="TransportCUDA_Charge.cu" />
     <CudaCompile Include="TransportCUDA_Charge_Display.cu" />

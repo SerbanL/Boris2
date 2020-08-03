@@ -112,9 +112,9 @@ ns.setparam('permalloy', 'grel', gamma / 2.212761569e5)
 #make sure output file is wiped clean
 ns.dp_newfile(output_file)
 
-#set fixed time-step RK4 method with a small enough time step (5 fs is sufficient - small value due to 1 nm cellsize)
+#set fixed time-step RK4 method with a small enough time step (50 fs is sufficient - small value due to 1 nm cellsize)
 ns.setode('LLG', 'RK4')
-ns.setdt(5e-15)
+ns.setdt(50e-15)
 
 ########################################
 

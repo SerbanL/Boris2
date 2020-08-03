@@ -124,6 +124,8 @@ def RunFMRStep(biasH, rfFreq, ferromagnetic_meshName, fileName):
 simulation_file = 'fmr'
 
 output_file = simulation_file + '_fieldsweepFMR_data.txt'
+#wipe output file clean
+ns.dp_newfile(output_file)
 
 #the meshname in which you want to apply the fmr fields
 ferromagnetic_meshName = 'permalloy'

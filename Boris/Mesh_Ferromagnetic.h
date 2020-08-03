@@ -27,6 +27,7 @@
 #include "Transport.h"
 #include "Heat.h"
 #include "SOTField.h"
+#include "STField.h"
 #include "Roughness.h"
 
 /////////////////////////////////////////////////////////////////////
@@ -53,7 +54,9 @@ class FMesh :
 	MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, 
 	MatP<double, double>, MatP<double, double>, MatP<DBL3, DBL3>, MatP<DBL3, DBL3>, 
 	MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>,
-	MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<DBL2, double>, MatP<DBL2, double>, 
+	MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, 
+	MatP<double, double>, MatP<double, double>, MatP<DBL2, double>, MatP<DBL2, double>, MatP<DBL3, double>, 
+	MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<DBL2, double>, MatP<DBL2, double>,
 	MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, 
 	double, TEquation<double>, double, MatP<double, double>, MatP<double, double>, 
 	MatP<double, double>, MatP<DBL2, double>, MatP<double, double>, MatP<double, double>,
@@ -71,7 +74,7 @@ class FMesh :
 	MatP<double, double>, MatP<double, double>, MatP<DBL3, DBL3>
 	>,
 	//Module Implementations
-	tuple<Demag_N, Demag, SDemag_Demag, Exch_6ngbr_Neu, DMExchange, iDMExchange, SurfExchange, Zeeman, MOptical, Anisotropy_Uniaxial, Anisotropy_Cubic, MElastic, Transport, Heat, SOTField, Roughness> >
+	tuple<Demag_N, Demag, SDemag_Demag, Exch_6ngbr_Neu, DMExchange, iDMExchange, SurfExchange, Zeeman, MOptical, Anisotropy_Uniaxial, Anisotropy_Cubic, MElastic, Transport, Heat, SOTField, STField, Roughness> >
 {
 #if COMPILECUDA == 1
 	friend FMeshCUDA;
@@ -117,10 +120,10 @@ public:
 	BError SwitchCUDAState(bool cudaState);
 
 	//called at the start of each iteration
-	void PrepareNewIteration(void) { Heff.set(DBL3(0)); }
+	void PrepareNewIteration(void) { if (!pMod.is_ID_set(MOD_ZEEMAN)) Heff.set(DBL3(0)); }
 
 #if COMPILECUDA == 1
-	void PrepareNewIterationCUDA(void) { if (pMeshCUDA) pMeshCUDA->Heff()->set(n.dim(), cuReal3()); }
+	void PrepareNewIterationCUDA(void) { if (pMeshCUDA && !pMod.is_ID_set(MOD_ZEEMAN)) pMeshCUDA->Heff()->set(n.dim(), cuReal3()); }
 #endif
 
 	//Check if mesh needs to be moved (using the MoveMesh method) - return amount of movement required (i.e. parameter to use when calling MoveMesh).
@@ -192,6 +195,10 @@ public:
 #endif
 		return skyShift.Get_skypos_diameters(M, skyRect);
 	}
+
+	//set/get skypos tracker rect size diameter multiplier
+	double Get_skypos_dmul(void) { return skyShift.Get_skypos_dmul(); }
+	void Set_skypos_dmul(double dia_mul_) { skyShift.Set_skypos_dmul(dia_mul_); }
 
 	//set/get exchange_couple_to_meshes status flag
 	void SetMeshExchangeCoupling(bool status) { exchange_couple_to_meshes = status; }

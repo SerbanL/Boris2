@@ -4,7 +4,6 @@
 #ifdef MODULE_COMPILATION_SURFEXCHANGE
 
 #include "Mesh_Ferromagnetic.h"
-#include "Mesh_AntiFerromagnetic.h"
 #include "SuperMesh.h"
 #include "MeshParamsControl.h"
 
@@ -50,13 +49,10 @@ BError SurfExchange::Initialize(void)
 	//---
 
 	//lambda used to check condition 3
-	auto check_candidate = [&](Rect xy_intersection, double z1, double z2) -> int {
-
-		//xy_intersection must have z coordinates set to zero, but set them here to be sure
-		xy_intersection.s.z = 0; xy_intersection.e.z = 0;
+	auto check_candidate = [&](Rect xy_intersection, double z1, double z2) -> bool {
 
 		//check all meshes to find a magnetic mesh with SurfExchange modules set, which intersects in the xy plane with xy_intersection, and has z coordinates between z1 and z2.
-		//return index of found mesh, else return -1 (-1 return means candidate being checked - which generated this call - is valid, else a new, better candidate has been found.
+		//if found then current candidate not good
 		for (int idx = 0; idx < pSMesh->size(); idx++) {
 
 			//consider all meshes in turn - condition 1 first
@@ -72,20 +68,20 @@ BError SurfExchange::Initialize(void)
 					if (IsGE((*pSMesh)[idx]->GetMeshRect().s.z, z1) && IsSE((*pSMesh)[idx]->GetMeshRect().e.z, z2)) {
 
 						//new candidate found - note, new candidate cannot be the mesh being checked or the current candidate, so this is guranteed to be a better candidate
-						return idx;
+						return false;
 					}
 				}
 			}
 		}
 
 		//no new candidate found - current candidate has been validated as the best one of its type (with given intersection)
-		return -1;
+		return true;
 	};
 
 	//---
 
 	Rect meshRect = pMesh->GetMeshRect();
-	
+
 	Rect xy_meshRect = meshRect;
 	xy_meshRect.s.z = 0; xy_meshRect.e.z = 0;
 
@@ -102,29 +98,14 @@ BError SurfExchange::Initialize(void)
 				double z1 = meshRect.e.z;				//start z
 				double z2 = candidate_meshRect.s.z;		//end z
 				candidate_meshRect.s.z = 0; candidate_meshRect.e.z = 0;		//leave just the xy plane rect
-
+				
 				if (candidate_meshRect.intersects(xy_meshRect)) {
 
 					//passes condition 2 - identified a candidate mesh at idx index. Does it pass condition 3?
-					int coupledmesh_idx = idx;
-					while (true) {
+					if (check_candidate(candidate_meshRect.get_intersection(xy_meshRect), z1, z2)) {
 
-						int check_idx = check_candidate(candidate_meshRect.get_intersection(xy_meshRect), z1, z2);
-
-						if (check_idx < 0) {
-
-							pMesh_Top.push_back(dynamic_cast<Mesh*>((*pSMesh)[coupledmesh_idx]));
-							
-							break;
-						}
-						else {
-
-							coupledmesh_idx = check_idx;
-							candidate_meshRect = (*pSMesh)[check_idx]->GetMeshRect();
-							z2 = candidate_meshRect.s.z;
-							candidate_meshRect.s.z = 0; candidate_meshRect.e.z = 0;
-						}
-					};
+						pMesh_Top.push_back(dynamic_cast<Mesh*>((*pSMesh)[idx]));
+					}
 				}
 			}
 
@@ -138,34 +119,19 @@ BError SurfExchange::Initialize(void)
 				if (candidate_meshRect.intersects(xy_meshRect)) {
 
 					//passes condition 2 - identified a candidate mesh at idx index. Does it pass condition 3?
-					int coupledmesh_idx = idx;
-					while (true) {
+					if (check_candidate(candidate_meshRect.get_intersection(xy_meshRect), z1, z2)) {
 
-						int check_idx = check_candidate(candidate_meshRect.get_intersection(xy_meshRect), z1, z2);
-
-						if (check_idx < 0) {
-
-							pMesh_Bot.push_back(dynamic_cast<Mesh*>((*pSMesh)[coupledmesh_idx]));
-							
-							break;
-						}
-						else {
-
-							coupledmesh_idx = check_idx;
-							candidate_meshRect = (*pSMesh)[check_idx]->GetMeshRect();
-							z1 = candidate_meshRect.e.z;
-							candidate_meshRect.s.z = 0; candidate_meshRect.e.z = 0;
-						}
-					};
+						pMesh_Bot.push_back(dynamic_cast<Mesh*>((*pSMesh)[idx]));
+					}
 				}
 			}
 		}
 	}
-
+	
 	//count number of coupled cells (either top or bottom) in this mesh
 
 	INT3 n = pMesh->n;
-
+	
 	if (pMesh_Top.size()) {
 
 		//surface exchange coupling at the top
@@ -180,11 +146,16 @@ BError SurfExchange::Initialize(void)
 				//check all meshes for coupling
 				for (int mesh_idx = 0; mesh_idx < (int)pMesh_Top.size(); mesh_idx++) {
 
-					//relative coordinates to read value from top mesh (the one we're coupling to here)
-					DBL3 cell_rel_pos = DBL3((i + 0.5) * pMesh->h.x, (j + 0.5) * pMesh->h.y, pMesh_Top[mesh_idx]->h.z / 2);
+					Rect tmeshRect = pMesh_Top[mesh_idx]->GetMeshRect();
+
+					//relative coordinates to read value from top mesh (the one we're coupling to here) - relative to top mesh
+					DBL3 cell_rel_pos = DBL3(
+						(i + 0.5) * pMesh->h.x + meshRect.s.x - tmeshRect.s.x, 
+						(j + 0.5) * pMesh->h.y + meshRect.s.y - tmeshRect.s.y, 
+						pMesh_Top[mesh_idx]->h.z / 2);
 
 					//can't couple to an empty cell
-					if (IsZ(pMesh_Top[mesh_idx]->M[cell_rel_pos].norm())) continue;
+					if (!tmeshRect.contains(cell_rel_pos) || pMesh_Top[mesh_idx]->M.is_empty(cell_rel_pos)) continue;
 
 					//if we are here then the cell in this mesh at cell_idx has something to couple to so count it : it will contribute to the surface exchange energy density
 					coupled_cells++;
@@ -207,11 +178,16 @@ BError SurfExchange::Initialize(void)
 				//check all meshes for coupling
 				for (int mesh_idx = 0; mesh_idx < (int)pMesh_Bot.size(); mesh_idx++) {
 
-					//relative coordinates to read value from bottom mesh (the one we're coupling to here)
-					DBL3 cell_rel_pos = DBL3((i + 0.5) * pMesh->h.x, (j + 0.5) * pMesh->h.y, pMesh_Bot[mesh_idx]->meshRect.e.z - (pMesh_Bot[mesh_idx]->h.z / 2));
+					Rect bmeshRect = pMesh_Bot[mesh_idx]->GetMeshRect();
+
+					//relative coordinates to read value from bottom mesh (the one we're coupling to here) - relative to bottom mesh
+					DBL3 cell_rel_pos = DBL3(
+						(i + 0.5) * pMesh->h.x + meshRect.s.x - bmeshRect.s.x,
+						(j + 0.5) * pMesh->h.y + meshRect.s.y - bmeshRect.s.y,
+						pMesh_Bot[mesh_idx]->meshRect.e.z - pMesh_Bot[mesh_idx]->meshRect.s.z - (pMesh_Bot[mesh_idx]->h.z / 2));
 
 					//can't couple to an empty cell
-					if (IsZ(pMesh_Bot[mesh_idx]->M[cell_rel_pos].norm())) continue;
+					if (!bmeshRect.contains(cell_rel_pos) || pMesh_Bot[mesh_idx]->M.is_empty(cell_rel_pos)) continue;
 
 					//if we are here then the cell in this mesh at cell_idx has something to couple to so count it : it will contribute to the surface exchange energy density
 					coupled_cells++;
@@ -219,7 +195,7 @@ BError SurfExchange::Initialize(void)
 			}
 		}
 	}
-
+	
 	initialized = true;
 
 	return error;
@@ -265,7 +241,7 @@ BError SurfExchange::MakeCUDAModule(void)
 double SurfExchange::UpdateField(void)
 {
 	if (pMesh->GetMeshType() == MESH_DIAMAGNETIC) return 0.0;
-
+	
 	double energy = 0;
 
 	INT3 n = pMesh->n;
@@ -273,7 +249,6 @@ double SurfExchange::UpdateField(void)
 	//thickness of layer - SurfExchange applies for layers in the xy plane
 	double thickness = pMesh->meshRect.e.z - pMesh->meshRect.s.z;
 
-	//FM to FM coupling at the top
 	if (pMesh_Top.size()) {
 
 		//surface exchange coupling at the top
@@ -292,11 +267,16 @@ double SurfExchange::UpdateField(void)
 				//check all meshes for coupling
 				for (int mesh_idx = 0; mesh_idx < (int)pMesh_Top.size(); mesh_idx++) {
 
-					//relative coordinates to read value from top mesh (the one we're coupling to here)
-					DBL3 cell_rel_pos = DBL3((i + 0.5) * pMesh->h.x, (j + 0.5) * pMesh->h.y, pMesh_Top[mesh_idx]->h.z / 2);
+					Rect tmeshRect = pMesh_Top[mesh_idx]->GetMeshRect();
+
+					//relative coordinates to read value from top mesh (the one we're coupling to here) - relative to top mesh
+					DBL3 cell_rel_pos = DBL3(
+						(i + 0.5) * pMesh->h.x + pMesh->meshRect.s.x - tmeshRect.s.x,
+						(j + 0.5) * pMesh->h.y + pMesh->meshRect.s.y - tmeshRect.s.y,
+						pMesh_Top[mesh_idx]->h.z / 2);
 
 					//can't couple to an empty cell
-					if (IsZ(pMesh_Top[mesh_idx]->M[cell_rel_pos].norm())) continue;
+					if (!tmeshRect.contains(cell_rel_pos) || pMesh_Top[mesh_idx]->M.is_empty(cell_rel_pos)) continue;
 
 					DBL3 Hsurfexh;
 
@@ -317,9 +297,9 @@ double SurfExchange::UpdateField(void)
 						Hsurfexh = neta_dia * Mdia / (MU0 * Ms * thickness);
 						energy += -neta_dia * (Mdia*m_i) / thickness;
 					}
-					else {
+					else if (pMesh_Top[mesh_idx]->GetMeshType() == MESH_FERROMAGNETIC) {
 
-						//Surface exchange field from a ferromagnetic (RKKY) or an an antiferromagnetic mesh (exchange bias)
+						//Surface exchange field from a ferromagnetic mesh (RKKY)
 
 						//Top mesh sets J1 and J2 values
 						double J1 = pMesh_Top[mesh_idx]->J1;
@@ -336,6 +316,25 @@ double SurfExchange::UpdateField(void)
 						Hsurfexh = (m_j / (MU0 * Ms * thickness)) * (J1 + 2 * J2 * dot_prod);
 						energy += (-1 * J1 - 2 * J2 * dot_prod) * dot_prod / thickness;
 					}
+					else if (pMesh_Top[mesh_idx]->GetMeshType() == MESH_ANTIFERROMAGNETIC) {
+
+						//Surface exchange field from an antiferromagnetic mesh (exchange bias)
+
+						//Top mesh sets J1 and J2 values
+						double J1 = pMesh_Top[mesh_idx]->J1;
+						double J2 = pMesh_Top[mesh_idx]->J2;
+						pMesh_Top[mesh_idx]->update_parameters_atposition(cell_rel_pos, pMesh_Top[mesh_idx]->J1, J1, pMesh_Top[mesh_idx]->J2, J2);
+
+						//get magnetization values in top mesh cell to couple with
+						DBL3 m_j1 = pMesh_Top[mesh_idx]->M[cell_rel_pos].normalized();
+						DBL3 m_j2 = pMesh_Top[mesh_idx]->M2[cell_rel_pos].normalized();
+						DBL3 m_i = pMesh->M[cell_idx] / Ms;
+
+						//total surface exchange field in coupling cells, including contributions from both sub-lattices
+						Hsurfexh = (m_j1 / (MU0 * Ms * thickness)) * J1;
+						Hsurfexh += (m_j2 / (MU0 * Ms * thickness)) * J2;
+						energy += (-J1 * (m_i * m_j1) - J2 * (m_i * m_j2)) / thickness;
+					}
 
 					//couple all cells through the layer thickness : the surface exchange field is applicable for effectively 2D layers, but the simulation allows 3D meshes.
 					for (int k = 0; k < n.z; k++) pMesh->Heff[i + j * n.x + k * n.x*n.y] += Hsurfexh;
@@ -344,7 +343,6 @@ double SurfExchange::UpdateField(void)
 		}
 	}
 
-	//FM to FM coupling at the bottom
 	if (pMesh_Bot.size()) {
 
 		//surface exchange coupling at the bottom
@@ -365,11 +363,16 @@ double SurfExchange::UpdateField(void)
 				//check all meshes for coupling
 				for (int mesh_idx = 0; mesh_idx < (int)pMesh_Bot.size(); mesh_idx++) {
 
-					//relative coordinates to read value from bottom mesh (the one we're coupling to here)
-					DBL3 cell_rel_pos = DBL3((i + 0.5) * pMesh->h.x, (j + 0.5) * pMesh->h.y, pMesh_Bot[mesh_idx]->meshRect.e.z - (pMesh_Bot[mesh_idx]->h.z / 2));
+					Rect bmeshRect = pMesh_Bot[mesh_idx]->GetMeshRect();
+
+					//relative coordinates to read value from bottom mesh (the one we're coupling to here) - relative to bottom mesh
+					DBL3 cell_rel_pos = DBL3(
+						(i + 0.5) * pMesh->h.x + pMesh->meshRect.s.x - bmeshRect.s.x,
+						(j + 0.5) * pMesh->h.y + pMesh->meshRect.s.y - bmeshRect.s.y,
+						pMesh_Bot[mesh_idx]->meshRect.e.z - pMesh_Bot[mesh_idx]->meshRect.s.z - (pMesh_Bot[mesh_idx]->h.z / 2));
 
 					//can't couple to an empty cell
-					if (IsZ(pMesh_Bot[mesh_idx]->M[cell_rel_pos].norm())) continue;
+					if (!bmeshRect.contains(cell_rel_pos) || pMesh_Bot[mesh_idx]->M.is_empty(cell_rel_pos)) continue;
 
 					DBL3 Hsurfexh;
 
@@ -390,9 +393,9 @@ double SurfExchange::UpdateField(void)
 						Hsurfexh = neta_dia * Mdia / (MU0 * Ms * thickness);
 						energy += -neta_dia * (Mdia*m_i) / thickness;
 					}
-					else {
+					else if (pMesh_Bot[mesh_idx]->GetMeshType() == MESH_FERROMAGNETIC) {
 
-						//Surface exchange field from a ferromagnetic (RKKY) or an an antiferromagnetic mesh (exchange bias)
+						//Surface exchange field from a ferromagnetic mesh (RKKY)
 
 						//get magnetization value in top mesh cell to couple with
 						DBL3 m_j = pMesh_Bot[mesh_idx]->M[cell_rel_pos].normalized();
@@ -403,6 +406,20 @@ double SurfExchange::UpdateField(void)
 						//total surface exchange field in coupling cells, including bilinear and biquadratic terms
 						Hsurfexh = (m_j / (MU0 * Ms * thickness)) * (J1 + 2 * J2 * dot_prod);
 						energy += (-1 * J1 - 2 * J2 * dot_prod) * dot_prod / thickness;
+					}
+					else if (pMesh_Bot[mesh_idx]->GetMeshType() == MESH_ANTIFERROMAGNETIC) {
+
+						//Surface exchange field from an antiferromagnetic mesh (exchange bias)
+
+						//get magnetization value in top mesh cell to couple with
+						DBL3 m_j1 = pMesh_Bot[mesh_idx]->M[cell_rel_pos].normalized();
+						DBL3 m_j2 = pMesh_Bot[mesh_idx]->M2[cell_rel_pos].normalized();
+						DBL3 m_i = pMesh->M[cell_idx] / Ms;
+
+						//total surface exchange field in coupling cells, including contributions from both sub-lattices
+						Hsurfexh = (m_j1 / (MU0 * Ms * thickness)) * J1;
+						Hsurfexh += (m_j2 / (MU0 * Ms * thickness)) * J2;
+						energy += (-J1 * (m_i * m_j1) - J2 * (m_i * m_j2)) / thickness;
 					}
 
 					//couple all cells through the layer thickness : the surface exchange field is applicable for effectively 2D layers, but the simulation allows 3D meshes.

@@ -94,6 +94,13 @@ void DiaMesh::RepairObjectState(void)
 {
 	//at this point Heff is empty and must not be since MComputation_Enabled will report wrong
 	Heff.assign(h, meshRect, DBL3(0, 0, 0));
+
+	//Make sure Zeeman module is always the first one in the list : Zeeman module sets Heff (if Zeeman module disabled then PrepareIteration clears Heff)
+	if (IsModuleSet(MOD_ZEEMAN)) {
+
+		int idxZeeman = pMod.get_index_from_ID(MOD_ZEEMAN);
+		if (idxZeeman != 0) pMod.move(idxZeeman);
+	}
 }
 
 //----------------------------------- IMPORTANT CONTROL METHODS

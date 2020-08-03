@@ -980,6 +980,18 @@
     <ClInclude Include="Boris.h">
       <Filter>18. MAIN</Filter>
     </ClInclude>
+    <ClInclude Include="STField.h">
+      <Filter>03. MODULES\__MICROMAGNETIC\MM MODULES - CPU</Filter>
+    </ClInclude>
+    <ClInclude Include="STFieldCUDA.h">
+      <Filter>03. MODULES\__MICROMAGNETIC\MM MODULES - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="SurfExchange_AFM.h">
+      <Filter>03. MODULES\__MICROMAGNETIC\MM MODULES - CPU</Filter>
+    </ClInclude>
+    <ClInclude Include="SurfExchangeCUDA_AFM.h">
+      <Filter>03. MODULES\__MICROMAGNETIC\MM MODULES - CUDA</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="BorisGraphics.cpp">
@@ -1888,6 +1900,18 @@
     <ClCompile Include="DipoleDipoleKernelCUDA.cpp">
       <Filter>08. CONVOLUTION\DIPOLE DIPOLE KERNEL - CUDA</Filter>
     </ClCompile>
+    <ClCompile Include="STField.cpp">
+      <Filter>03. MODULES\__MICROMAGNETIC\MM MODULES - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="STFieldCUDA.cpp">
+      <Filter>03. MODULES\__MICROMAGNETIC\MM MODULES - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="SurfExchange_AFM.cpp">
+      <Filter>03. MODULES\__MICROMAGNETIC\MM MODULES - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="SurfExchangeCUDA_AFM.cpp">
+      <Filter>03. MODULES\__MICROMAGNETIC\MM MODULES - CUDA</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="BorisWinapi.rc">
@@ -2231,6 +2255,12 @@
     </CudaCompile>
     <CudaCompile Include="Atom_DipoleDipoleCUDA.cu">
       <Filter>03. MODULES\__ATOMISTIC\ATOM MODULES - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="STFieldCUDA.cu">
+      <Filter>03. MODULES\__MICROMAGNETIC\MM MODULES - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="SurfExchangeCUDA_AFM.cu">
+      <Filter>03. MODULES\__MICROMAGNETIC\MM MODULES - CUDA</Filter>
     </CudaCompile>
   </ItemGroup>
 </Project>

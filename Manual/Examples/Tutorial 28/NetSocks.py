@@ -1,10 +1,12 @@
-#NetSocks Module Updated on : 12/07/2020
-#Boris version : 2.8
+#NetSocks Module Updated on : 30/07/2020
+#Boris version : 2.81
 
 import socket
 import time
 import matplotlib.pyplot as plt
 import numpy as np
+from itertools import product
+import struct
 
 ###############################################################################################################################
 
@@ -69,9 +71,9 @@ class NSClient:
     #SendCommand also serves as auxiliary method
     
     #check if we can convert the row text to list of numbers; expecting tab-spaced data
-    def can_convert(self, row_text):
+    def can_convert(self, row_text, separator = '\t'):
         
-        for entry in row_text.rstrip().split('\t'):
+        for entry in row_text.rstrip().split(separator):
             try:    float(entry)
             except: return False
 
@@ -80,11 +82,11 @@ class NSClient:
     #################### PLOTTING HELPERS #######################
     
     #load columns from tab-spaced data file, e.g. as outputted by a Boris simulation
-    def Get_Data_Columns(self, fileName, column_indexes = ''):
+    def Get_Data_Columns(self, fileName, column_indexes = '', separator = '\t'):
         
         #Get data locally
         f = open(fileName, 'r')
-        rows = [[float(number) for number in row.rstrip().split('\t')] for row in f.readlines() if self.can_convert(row)]
+        rows = [[float(number) for number in row.rstrip().split(separator)] for row in f.readlines() if self.can_convert(row, separator)]
         f.close()
         
         if isinstance(column_indexes, list):
@@ -157,7 +159,7 @@ class NSClient:
     #################### OVF2 HELPERS #######################
 
     #write an OVF2 file for a mesh with given rectangle (m), number of nodes and values in vec list ordered by x, then y, finally z.
-    #rect_m must be a lsit with 6 elements : [xmin, ymin, zmin, xmax, ymax, zmax]
+    #rect_m must be a list with 6 elements : [xmin, ymin, zmin, xmax, ymax, zmax]
     #nodes must be a list with 3 integers : [xnodes, ynodes, znodes]; the cellsize is determined from rect_m and nodes
     #vec can be a scalar quantity (list of floats), or a vector quantity (list of 3-element lists)
     def Write_OVF2(self, fileName, vec, nodes, rect_m):
@@ -225,6 +227,178 @@ class NSClient:
             return True
         
         return False
+    
+    def Read_OVF2(self, fileName):
+        
+        vec = []
+        
+        meshtype_rectangular = False
+        meshunit = 1.0
+        valuedim = 0
+        data_bytes = 0
+        meshRect = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+        n = [0, 0, 0]
+        h = [0.0, 0.0, 0.0]
+        
+        #return 0 if something went wrong : abort loading OVF file
+    	#return 1 if everything fine, continue
+    	#return 2 if start of data header found
+        def scan_line(line):
+            
+            nonlocal meshtype_rectangular
+            nonlocal meshunit
+            nonlocal valuedim
+            nonlocal data_bytes
+            nonlocal meshRect
+            nonlocal n
+            nonlocal h
+            
+            if line.find('# meshtype: ') != -1:
+                value = line[len('# meshtype: '):]
+                if value != "rectangular": return 0
+                meshtype_rectangular = True
+                
+            elif line.find('# meshunit: ') != -1:
+                value = line[len('# meshunit: '):]
+                if value == "m": meshunit = 1.0
+                elif value == "nm": meshunit = 1e-9
+                else: return 0
+            
+            elif line.find('# valuedim: ') != -1:
+                value = line[len('# valuedim: '):]
+                if value == "1": valuedim = 1
+                elif value == "3": valuedim = 3
+                else: return 0
+                
+            elif line.find('# xmin: ') != -1:
+                value = line[len('# xmin: '):]
+                meshRect[0] = float(value) * meshunit
+                
+            elif line.find('# ymin: ') != -1:
+                value = line[len('# ymin: '):]
+                meshRect[1] = float(value) * meshunit
+                
+            elif line.find('# zmin: ') != -1:
+                value = line[len('# zmin: '):]
+                meshRect[2] = float(value) * meshunit
+                
+            elif line.find('# xmax: ') != -1:
+                value = line[len('# xmax: '):]
+                meshRect[3] = float(value) * meshunit
+                
+            elif line.find('# ymax: ') != -1:
+                value = line[len('# ymax: '):]
+                meshRect[4] = float(value) * meshunit
+                
+            elif line.find('# zmax: ') != -1:
+                value = line[len('# zmax: '):]
+                meshRect[5] = float(value) * meshunit
+                
+            elif line.find('# xnodes: ') != -1:
+                value = line[len('# xnodes: '):]
+                n[0] = int(value)
+                
+            elif line.find('# ynodes: ') != -1:
+                value = line[len('# ynodes: '):]
+                n[1] = int(value)
+                
+            elif line.find('# znodes: ') != -1:
+                value = line[len('# znodes: '):]
+                n[2] = int(value)
+                
+            elif line.find('# xstepsize: ') != -1:
+                value = line[len('# xstepsize: '):]
+                h[0] = float(value) * meshunit
+                
+            elif line.find('# ystepsize: ') != -1:
+                value = line[len('# ystepsize: '):]
+                h[1] = float(value) * meshunit
+                
+            elif line.find('# zstepsize: ') != -1:
+                value = line[len('# zstepsize: '):]
+                h[2] = float(value) * meshunit
+                
+            elif line.lower().find('# begin: data ') != -1:
+                value = line.lower()[len('# begin: data '):]
+                                  
+                if value == 'binary 4': 
+                    data_bytes = 4
+                    return 2
+                
+                if value == 'binary 8': 
+                    data_bytes = 8
+                    return 2
+
+                if value == 'text': 
+                    data_bytes = 1
+                    return 2
+            
+            return 1
+        
+        with open(fileName, 'rb') as f:
+            
+            lineidx = 0
+            for rawline in f:
+            
+                line = str(rawline.rstrip()).strip("b'")
+                
+                if lineidx == 0: 
+                    if line != "# OOMMF OVF 2.0": return vec, n, meshRect
+                else:
+                    check = scan_line(line)
+                    if check == 0: return vec, n, meshRect
+                    elif check == 2:
+                        
+                        if not meshtype_rectangular or meshRect == [0.0, 0.0, 0.0, 0.0, 0.0, 0.0] or n == [0, 0, 0] or h == [0.0, 0.0, 0.0] or data_bytes == 0:
+                            return vec, n, meshRect
+                        
+                        if data_bytes == 4:
+                            value = struct.unpack('f', f.read(4))
+                            if value[0] != 1234567.0: return vec, n, meshRect
+                        elif data_bytes == 8:
+                            value = struct.unpack('d', f.read(8))
+                            if value[0] != 123456789012345.0: return vec, n, meshRect
+                        elif data_bytes == 1:
+                            pass
+                        else:
+                            return vec, n, meshRect
+                        
+                        if valuedim == 1:
+                            vec = [0.0] * n[0]*n[1]*n[2]
+                            
+                            for i, j, k in product(range(n[0]), range(n[1]), range(n[2])):
+                                if data_bytes == 4:
+                                    value = struct.unpack('f', f.read(4))
+                                    vec[i + j*n[0] + k*n[0]*n[1]] = value[0]
+                                elif data_bytes == 8:
+                                    value = struct.unpack('d', f.read(8))
+                                    vec[i + j*n[0] + k*n[0]*n[1]] = value[0] 
+                                elif data_bytes == 1:
+                                    rawline = f.readline()
+                                    line = str(rawline.rstrip()).strip("b'")
+                                    vec[i + j*n[0] + k*n[0]*n[1]] = float(line)
+                            
+                        elif valuedim == 3:
+                            vec = [[0.0, 0.0, 0.0]] * n[0]*n[1]*n[2]
+                            
+                            for i, j, k in product(range(n[0]), range(n[1]), range(n[2])):
+                                if data_bytes == 4:
+                                    value = struct.unpack('3f', f.read(4*3))
+                                    vec[i + j*n[0] + k*n[0]*n[1]] = [value[0], value[1], value[2]]
+                                elif data_bytes == 8:
+                                    value = struct.unpack('3d', f.read(8*3))
+                                    vec[i + j*n[0] + k*n[0]*n[1]] = [value[0], value[1], value[2]] 
+                                elif data_bytes == 1:
+                                    rawline = f.readline()
+                                    line = str(rawline.rstrip()).strip("b'").replace("\t", " ").split(" ")
+                                    vec[i + j*n[0] + k*n[0]*n[1]] = [float(line[0]), float(line[1]), float(line[2])]
+                                
+                        return vec, n, meshRect
+                
+                lineidx += 1
+        
+        return vec, n, meshRect
+        
 
     #################### SPECIAL COMMANDS #######################
 
@@ -413,6 +587,9 @@ class NSClient:
     
     def displaybackground(self, name = '', meshname = ''):
     	return self.SendCommand("displaybackground", [name, meshname])
+    
+    def displaydetail(self, size = ''):
+    	return self.SendCommand("displaydetail", [size])
     
     def displaythresholds(self, minimum = '', maximum = ''):
     	return self.SendCommand("displaythresholds", [minimum, maximum])
@@ -956,6 +1133,9 @@ class NSClient:
     
     def showtc(self):
     	return self.SendCommand("showtc")
+    
+    def skyposdmul(self, multiplier = '', meshname = ''):
+    	return self.SendCommand("skyposdmul", [multiplier, meshname])
     
     def skyrmion(self, core = '', chirality = '', diameter = '', position = '', meshname = ''):
     	return self.SendCommand("skyrmion", [core, chirality, diameter, position, meshname])

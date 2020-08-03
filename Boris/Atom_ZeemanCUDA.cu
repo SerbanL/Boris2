@@ -25,7 +25,7 @@ __global__ void Atom_ZeemanCUDA_UpdateField_Cubic(ManagedAtom_MeshCUDA& cuMesh, 
 		cuBReal cHA = *cuMesh.pcHA;
 		cuMesh.update_parameters_mcoarse(idx, *cuMesh.pcHA, cHA);
 
-		Heff1[idx] += (cHA * Ha);
+		Heff1[idx] = (cHA * Ha);
 
 		if (do_reduction) {
 
@@ -64,7 +64,7 @@ __global__ void Atom_ZeemanCUDA_UpdateField_Equation_Cubic(
 			H_equation_y.evaluate(relpos.x, relpos.y, relpos.z, time),
 			H_equation_z.evaluate(relpos.x, relpos.y, relpos.z, time));
 
-		Heff1[idx] += (cHA * H);
+		Heff1[idx] = (cHA * H);
 
 		if (do_reduction) {
 

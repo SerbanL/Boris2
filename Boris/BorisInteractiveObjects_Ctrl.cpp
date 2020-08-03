@@ -412,6 +412,7 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 	case IOI_MESH_FORMESHLIST:
 	case IOI_MESH_FORSTOCHASTICITY:
 	case IOI_MESH_FORSPEEDUP:
+	case IOI_MESH_FORSKYPOSDMUL:
 	{
 		//parameters from iop
 		string meshName = iop.textId;
@@ -2244,6 +2245,26 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 				if (new_constant_name != constant_name) userConstants.change_key(constant_name, new_constant_name);
 				sendCommand_verbose(CMD_EQUATIONCONSTANTS, new_constant_name, value);
 			}
+		}
+	}
+	break;
+
+	//Show skypos diameter multiplier : minorId is the unique mesh id number, textId is the multiplier as a string
+	case IOI_SKYPOSDMUL:
+	{
+		int meshId = iop.minorId;
+		double multiplier = ToNum(iop.textId);
+
+		//on double-click make popup edit box to edit the currently displayed value
+		if (actionCode == AC_DOUBLECLICK && multiplier > 0.0) { actionOutcome = AO_STARTPOPUPEDITBOX; }
+
+		//popup edit box has returned some text - try to set value from it
+		else if (actionCode == AC_POPUPEDITTEXTBOXRETURNEDTEXT) {
+
+			//the actual text returned by the popup edit box
+			string to_text = trimendspaces(pTO->GetText());
+
+			sendCommand_verbose(CMD_SKYPOSDMUL, to_text, SMesh.key_from_meshId(meshId));
 		}
 	}
 	break;

@@ -655,12 +655,12 @@ void Simulation::CheckSimulationSchedule(void)
 	{
 		//See comments for DSAVE_TIME below in Simulation::CheckSaveDataConditions() - same thing applies here.
 
-		double time = SMesh.GetTime();
+		double stime = SMesh.GetStageTime();
 		double tstop = (double)simStages[stage_step.major].get_stopvalue();
 		double dT = SMesh.GetTimeStep();
 
-		double delta = time - floor_fixedepsilon(time / tstop) * tstop;
-		if (delta < dT * 0.99) AdvanceSimulationSchedule();
+		double delta = stime - floor_fixedepsilon(stime / tstop) * tstop;
+		if (abs(delta) < dT * 0.99 || stime >= tstop) AdvanceSimulationSchedule();
 	}
 		break;
 	}
@@ -683,22 +683,22 @@ void Simulation::CheckSaveDataConditions()
 	case DSAVE_TIME:
 	{
 		
-		double time = SMesh.GetTime();
+		double stime = SMesh.GetStageTime();
 		double tsave = (double)simStages[stage_step.major].get_dsavevalue();
 		double dT = SMesh.GetTimeStep();
 
 		//the floor_fixedepsilon is important - don't use floor!
-		//the reason for this, if time / tsave ends up being very close, but slightly less, than an integer, e.g. 1.999 due to a floating point error, then floor will round it down, whereas really it should be rounded up.
+		//the reason for this, if time / tsave ends up being very close, but slightly less, than an integer, e.g. 1.9999999999 due to a floating point error, then floor will round it down, whereas really we want it rounded up.
 		//thus with floor only you can end up not saving data points where you should be.
 		//Also delta < dT * 0.99 check below is important : if using just delta < dT check, delta can be slightly smaller than dT but within a floating point error close to it - thus we end up double-saving some data points!
 		//this happens especially if tsave / dT is an integer -> thus most of the time.
-
-		//Also use floor_epsilon instead of floor_fixedepsilon:
+		
+		//Also use floor_fixedepsilon instead of floor_epsilon:
 		//the epsilon value used in floor_epsilon for small time/tsave values is too small, meaning the time/tsave will again round down when it should be rounding up -> SaveData() will never be called
 		//for large time/tsave value the floor_epsilon value is too coarse, meaning you can save data when you don't want to
 		//The epsilon in floor_fixedepsilon is coarse, but not too coarse, which results in correct behaviour over a wide range of time/tsave values -> covers the relevant range.
 
-		double delta = time - floor_fixedepsilon(time / tsave) * tsave;
+		double delta = stime - floor_fixedepsilon(stime / tsave) * tsave;
 		if (delta < dT * 0.99) SaveData();
 	}
 		break;

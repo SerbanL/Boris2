@@ -161,6 +161,7 @@ SimulationSharedData::SimulationSharedData(bool called_from_Simulation)
 		exclusiveModules.storeset(MOD_TRANSPORT);
 		exclusiveModules.storeset(MOD_HEAT);
 		exclusiveModules.storeset(MOD_SOTFIELD);
+		exclusiveModules.storeset(MOD_STFIELD);
 		exclusiveModules.storeset(MOD_ROUGHNESS);
 
 		//--------------
@@ -184,7 +185,7 @@ SimulationSharedData::SimulationSharedData(bool called_from_Simulation)
 			MOD_ANIUNI, MOD_ANICUBI, MOD_MELASTIC,
 			MOD_TRANSPORT,
 			MOD_HEAT, 
-			MOD_SOTFIELD, MOD_ROUGHNESS), MESH_FERROMAGNETIC);
+			MOD_SOTFIELD, MOD_STFIELD, MOD_ROUGHNESS), MESH_FERROMAGNETIC);
 
 		modules_for_meshtype.push_back(make_vector(
 			MOD_DEMAG_N, MOD_DEMAG, MOD_SDEMAG_DEMAG,
@@ -260,7 +261,7 @@ SimulationSharedData::SimulationSharedData(bool called_from_Simulation)
 			PARAM_K1, PARAM_K2, PARAM_EA1, PARAM_EA2, 
 			PARAM_TC, PARAM_MUB, PARAM_SUSREL,
 			PARAM_HA, PARAM_HMO,
-			PARAM_ELC, PARAM_AMR, PARAM_P, PARAM_BETA, PARAM_DE, PARAM_NDENSITY, PARAM_SHA, PARAM_FLSOT, PARAM_BETAD, PARAM_LSF, PARAM_LEX, PARAM_LPH, PARAM_GI, PARAM_GMIX, PARAM_PUMPEFF, PARAM_CPUMP_EFF, PARAM_THE_EFF, PARAM_TSEFF, PARAM_TSIEFF,
+			PARAM_ELC, PARAM_AMR, PARAM_P, PARAM_BETA, PARAM_DE, PARAM_NDENSITY, PARAM_SHA, PARAM_FLSOT, PARAM_STQ, PARAM_STA, PARAM_STP, PARAM_BETAD, PARAM_LSF, PARAM_LEX, PARAM_LPH, PARAM_GI, PARAM_GMIX, PARAM_PUMPEFF, PARAM_CPUMP_EFF, PARAM_THE_EFF, PARAM_TSEFF, PARAM_TSIEFF,
 			PARAM_THERMCOND, PARAM_DENSITY, PARAM_MECOEFF, PARAM_YOUNGSMOD, PARAM_POISSONRATIO, 
 			PARAM_SHC, PARAM_SHC_E, PARAM_G_E, PARAM_T, PARAM_Q), MESH_FERROMAGNETIC);
 
@@ -304,6 +305,7 @@ SimulationSharedData::SimulationSharedData(bool called_from_Simulation)
 
 		//----------------
 
+		//entries from PARAM_, specifying if temperature dependence (first) and spatial variation (second) are enabled.
 		params_enabled_props.push_back({ true, true }, PARAM_GREL);
 		params_enabled_props.push_back({ true, true }, PARAM_GDAMPING);
 		params_enabled_props.push_back({ true, true }, PARAM_MS);
@@ -338,6 +340,9 @@ SimulationSharedData::SimulationSharedData(bool called_from_Simulation)
 		params_enabled_props.push_back({ true, true }, PARAM_DENSITY);
 		params_enabled_props.push_back({ true, true }, PARAM_SHC);
 		params_enabled_props.push_back({ true, true }, PARAM_FLSOT);
+		params_enabled_props.push_back({ true, false }, PARAM_STQ);
+		params_enabled_props.push_back({ true, false }, PARAM_STA);
+		params_enabled_props.push_back({ true, false }, PARAM_STP);
 		params_enabled_props.push_back({ true, true }, PARAM_HA);
 		params_enabled_props.push_back({ false, true }, PARAM_TC);
 		params_enabled_props.push_back({ false, true }, PARAM_MUB);

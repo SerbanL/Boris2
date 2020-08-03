@@ -102,10 +102,10 @@ public:
 	BError SwitchCUDAState(bool cudaState);
 
 	//called at the start of each iteration
-	void PrepareNewIteration(void) { Heff1.set(DBL3(0)); }
+	void PrepareNewIteration(void) { if (!pMod.is_ID_set(MOD_ZEEMAN)) Heff1.set(DBL3(0)); }
 
 #if COMPILECUDA == 1
-	void PrepareNewIterationCUDA(void) { if (paMeshCUDA) paMeshCUDA->Heff1()->set(n.dim(), cuReal3()); }
+	void PrepareNewIterationCUDA(void) { if (paMeshCUDA && !pMod.is_ID_set(MOD_ZEEMAN)) paMeshCUDA->Heff1()->set(n.dim(), cuReal3()); }
 #endif
 
 	//Check if mesh needs to be moved (using the MoveMesh method) - return amount of movement required (i.e. parameter to use when calling MoveMesh).

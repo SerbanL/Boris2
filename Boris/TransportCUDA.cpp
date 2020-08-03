@@ -162,6 +162,17 @@ BError TransportCUDA::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 	
 	//make sure correct memory is assigned for electrical quantities
 	
+	//do we need to enable dM_dt calculation?
+	if (Need_dM_dt_Calculation()) {
+
+		if (!dM_dt()->assign(pMeshCUDA->h, pMeshCUDA->meshRect, cuReal3(), (cuVEC_VC<cuReal3>&)pMeshCUDA->M)) return error(BERROR_OUTOFMEMORY_CRIT);
+	}
+	else {
+
+		//disabled
+		if (!pTransport->dM_dt.linear_size()) dM_dt()->clear();
+	}
+
 	if (ucfg::check_cfgflags(cfgMessage, UPDATECONFIG_MESHSHAPECHANGE, UPDATECONFIG_MESHCHANGE)) {
 
 		if (pMeshCUDA->elC()->size_cpu().dim() && cfgMessage != UPDATECONFIG_MESHSHAPECHANGE) {

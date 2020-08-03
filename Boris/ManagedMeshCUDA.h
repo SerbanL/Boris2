@@ -112,6 +112,15 @@ public:
 	MatPCUDA<cuBReal, cuBReal>* piSHA;
 	MatPCUDA<cuBReal, cuBReal>* pflSOT;
 
+	//Slonczewski macrospin torques q+, q- parameters as in PRB 72, 014446 (2005) (unitless)
+	MatPCUDA<cuReal2, cuBReal>* pSTq;
+
+	//Slonczewski macrospin torques A, B parameters as in PRB 72, 014446 (2005) (unitless)
+	MatPCUDA<cuReal2, cuBReal>* pSTa;
+
+	//Slonczewski macrospin torques spin polarization unit vector as in PRB 72, 014446 (2005) (unitless)
+	MatPCUDA<cuReal3, cuBReal>* pSTp;
+
 	MatPCUDA<cuBReal, cuBReal>* pl_sf;
 	MatPCUDA<cuBReal, cuBReal>* pl_ex;
 	MatPCUDA<cuBReal, cuBReal>* pl_ph;

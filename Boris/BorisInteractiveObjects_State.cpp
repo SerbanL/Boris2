@@ -565,6 +565,12 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 	}
 	break;
 
+	case IOI_MESH_FORSKYPOSDMUL:
+	{
+		display_meshIO(&Simulation::Build_skypos_dmul_ListLine);
+	}
+	break;
+
 	//Shows mesh rectangle (units m) : minorId is the unique mesh id number, textId is the mesh rectangle
 	case IOI_MESHRECTANGLE:
 	{
@@ -3116,6 +3122,36 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 
 		//this object is part of a list : make sure this list is updated
 		updateList(io_index, userConstants.size() - 1, &Simulation::Build_EquationConstants_ListLine);
+	}
+	break;
+
+	//Show skypos diameter multiplier : minorId is the unique mesh id number, textId is the multiplier as a string
+	case IOI_SKYPOSDMUL:
+	{
+		int meshId = iop.minorId;
+		double multiplier = ToNum(iop.textId);
+
+		int meshIdx = SMesh.contains_id(meshId);
+
+		if (meshIdx >= 0) {
+
+			double set_multiplier = SMesh[meshIdx]->Get_skypos_dmul();
+
+			if (set_multiplier == 0.0) {
+
+				pTO->SetBackgroundColor(UNAVAILABLECOLOR);
+				pTO->set(" N/A ");
+				stateChanged = true;
+				iop.auxId = -1;
+			}
+			else if (multiplier != set_multiplier) {
+
+				iop.textId = ToString(set_multiplier);
+
+				pTO->set(" " + iop.textId + " ");
+				stateChanged = true;
+			}
+		}
 	}
 	break;
 

@@ -25,7 +25,7 @@ __global__ void ZeemanCUDA_UpdateField_FMDM(ManagedMeshCUDA& cuMesh, cuReal3& Ha
 		cuBReal cHA = *cuMesh.pcHA;
 		cuMesh.update_parameters_mcoarse(idx, *cuMesh.pcHA, cHA);
 
-		Heff[idx] += (cHA * Ha);
+		Heff[idx] = (cHA * Ha);
 
 		if (do_reduction) {
 
@@ -63,7 +63,7 @@ __global__ void ZeemanCUDA_UpdateField_Equation_FMDM(
 			H_equation_y.evaluate(relpos.x, relpos.y, relpos.z, time),
 			H_equation_z.evaluate(relpos.x, relpos.y, relpos.z, time));
 
-		Heff[idx] += (cHA * H);
+		Heff[idx] = (cHA * H);
 
 		if (do_reduction) {
 
@@ -91,8 +91,8 @@ __global__ void ZeemanCUDA_UpdateField_AFM(ManagedMeshCUDA& cuMesh, cuReal3& Ha,
 		cuBReal cHA = *cuMesh.pcHA;
 		cuMesh.update_parameters_mcoarse(idx, *cuMesh.pcHA, cHA);
 
-		Heff[idx] += (cHA * Ha);
-		Heff2[idx] += (cHA * Ha);
+		Heff[idx] = (cHA * Ha);
+		Heff2[idx] = (cHA * Ha);
 
 		if (do_reduction) {
 
@@ -132,8 +132,8 @@ __global__ void ZeemanCUDA_UpdateField_Equation_AFM(
 			H_equation_y.evaluate(relpos.x, relpos.y, relpos.z, time),
 			H_equation_z.evaluate(relpos.x, relpos.y, relpos.z, time));
 
-		Heff[idx] += (cHA * H);
-		Heff2[idx] += (cHA * H);
+		Heff[idx] = (cHA * H);
+		Heff2[idx] = (cHA * H);
 
 		if (do_reduction) {
 
@@ -161,9 +161,9 @@ void ZeemanCUDA::UpdateField(void)
 
 				ZeroEnergy();
 
-				ZeemanCUDA_UpdateField_AFM << < (pMeshCUDA->n.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >> > (pMeshCUDA->cuMesh, Ha, energy, true);
+				ZeemanCUDA_UpdateField_AFM <<< (pMeshCUDA->n.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (pMeshCUDA->cuMesh, Ha, energy, true);
 			}
-			else ZeemanCUDA_UpdateField_AFM << < (pMeshCUDA->n.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >> > (pMeshCUDA->cuMesh, Ha, energy, false);
+			else ZeemanCUDA_UpdateField_AFM <<< (pMeshCUDA->n.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (pMeshCUDA->cuMesh, Ha, energy, false);
 		}
 
 		else {
@@ -172,9 +172,9 @@ void ZeemanCUDA::UpdateField(void)
 
 				ZeroEnergy();
 
-				ZeemanCUDA_UpdateField_FMDM << < (pMeshCUDA->n.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >> > (pMeshCUDA->cuMesh, Ha, energy, true);
+				ZeemanCUDA_UpdateField_FMDM <<< (pMeshCUDA->n.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (pMeshCUDA->cuMesh, Ha, energy, true);
 			}
-			else ZeemanCUDA_UpdateField_FMDM << < (pMeshCUDA->n.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >> > (pMeshCUDA->cuMesh, Ha, energy, false);
+			else ZeemanCUDA_UpdateField_FMDM <<< (pMeshCUDA->n.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (pMeshCUDA->cuMesh, Ha, energy, false);
 		}
 	}
 
@@ -190,13 +190,13 @@ void ZeemanCUDA::UpdateField(void)
 
 				ZeroEnergy();
 
-				ZeemanCUDA_UpdateField_Equation_AFM << < (pMeshCUDA->n.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >> > (
+				ZeemanCUDA_UpdateField_Equation_AFM <<< (pMeshCUDA->n.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (
 					pMeshCUDA->cuMesh,
 					H_equation.get_x(), H_equation.get_y(), H_equation.get_z(),
 					pMeshCUDA->GetStageTime(),
 					energy, true);
 			}
-			else ZeemanCUDA_UpdateField_Equation_AFM << < (pMeshCUDA->n.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >> > (
+			else ZeemanCUDA_UpdateField_Equation_AFM <<< (pMeshCUDA->n.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (
 				pMeshCUDA->cuMesh,
 				H_equation.get_x(), H_equation.get_y(), H_equation.get_z(),
 				pMeshCUDA->GetStageTime(),
@@ -209,13 +209,13 @@ void ZeemanCUDA::UpdateField(void)
 
 				ZeroEnergy();
 
-				ZeemanCUDA_UpdateField_Equation_FMDM << < (pMeshCUDA->n.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >> > (
+				ZeemanCUDA_UpdateField_Equation_FMDM <<< (pMeshCUDA->n.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (
 					pMeshCUDA->cuMesh,
 					H_equation.get_x(), H_equation.get_y(), H_equation.get_z(),
 					pMeshCUDA->GetStageTime(),
 					energy, true);
 			}
-			else ZeemanCUDA_UpdateField_Equation_FMDM << < (pMeshCUDA->n.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >> > (
+			else ZeemanCUDA_UpdateField_Equation_FMDM <<< (pMeshCUDA->n.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (
 				pMeshCUDA->cuMesh,
 				H_equation.get_x(), H_equation.get_y(), H_equation.get_z(),
 				pMeshCUDA->GetStageTime(),

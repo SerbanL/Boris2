@@ -508,6 +508,12 @@ private:
 	string Build_EquationConstants_ListLine(int index_in_list);
 	string Build_EquationConstants_Text(int index_in_list);
 
+	//---------------------------------------------------- SKYPOS SETTINGS
+	
+	//Print skypos multiplier value
+	void Print_skypos_dmul(void);
+	string Build_skypos_dmul_ListLine(int meshIndex);
+
 	//---------------------------------------------------- MAKE INTERACTIVE OBJECT : Auxiliary method
 
 	//Generate a formatted string depending on the interactive object identifier

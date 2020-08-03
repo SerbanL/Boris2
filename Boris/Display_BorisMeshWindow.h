@@ -40,6 +40,8 @@ private:
 
 	void ZoomNotchUp(void);
 	void ZoomNotchDn(void);
+	//rather than changing detail level using mouse wheel, set it directly using this
+	void SetDetailLevel(double detail_level);
 
 protected:
 

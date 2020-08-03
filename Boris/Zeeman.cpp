@@ -127,12 +127,6 @@ double Zeeman::UpdateField(void)
 
 	if (!H_equation.is_set()) {
 
-		if (IsZ(Ha.norm())) {
-
-			this->energy = 0;
-			return 0.0;
-		}
-
 		if (pMesh->GetMeshType() == MESH_ANTIFERROMAGNETIC) {
 
 #pragma omp parallel for reduction(+:energy)
@@ -141,8 +135,8 @@ double Zeeman::UpdateField(void)
 				double cHA = pMesh->cHA;
 				pMesh->update_parameters_mcoarse(idx, pMesh->cHA, cHA);
 
-				pMesh->Heff[idx] += (cHA * Ha);
-				pMesh->Heff2[idx] += (cHA * Ha);
+				pMesh->Heff[idx] = (cHA * Ha);
+				pMesh->Heff2[idx] = (cHA * Ha);
 
 				energy += (pMesh->M[idx] + pMesh->M2[idx]) * (cHA * Ha) / 2;
 			}
@@ -156,7 +150,7 @@ double Zeeman::UpdateField(void)
 				double cHA = pMesh->cHA;
 				pMesh->update_parameters_mcoarse(idx, pMesh->cHA, cHA);
 
-				pMesh->Heff[idx] += (cHA * Ha);
+				pMesh->Heff[idx] = (cHA * Ha);
 
 				energy += pMesh->M[idx] * (cHA * Ha);
 			}
@@ -188,8 +182,8 @@ double Zeeman::UpdateField(void)
 						DBL3 relpos = DBL3(i + 0.5, j + 0.5, k + 0.5) & pMesh->h;
 						DBL3 H = H_equation.evaluate_vector(relpos.x, relpos.y, relpos.z, time);
 
-						pMesh->Heff[idx] += (cHA * H);
-						pMesh->Heff2[idx] += (cHA * H);
+						pMesh->Heff[idx] = (cHA * H);
+						pMesh->Heff2[idx] = (cHA * H);
 
 						energy += (pMesh->M[idx] + pMesh->M2[idx]) * (cHA * H) / 2;
 					}
@@ -213,7 +207,7 @@ double Zeeman::UpdateField(void)
 						DBL3 relpos = DBL3(i + 0.5, j + 0.5, k + 0.5) & pMesh->h;
 						DBL3 H = H_equation.evaluate_vector(relpos.x, relpos.y, relpos.z, time);
 
-						pMesh->Heff[idx] += (cHA * H);
+						pMesh->Heff[idx] = (cHA * H);
 
 						energy += pMesh->M[idx] * (cHA * H);
 					}

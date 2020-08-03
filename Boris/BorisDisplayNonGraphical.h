@@ -196,6 +196,9 @@ public:
 		return false;
 	}
 
+	//Set mesh display detail level directly (N/A in non-graphics mode)
+	void SetDetailLevel(double detail_level) {}
+
 	//allows access to Boris Graphics public methods.
 	BorisGraphics* BGMethods(void) { return pBG; }
 
