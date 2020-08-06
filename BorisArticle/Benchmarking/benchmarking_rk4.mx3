@@ -1,0 +1,45 @@
+msat  = 800e3
+aex   = 13e-12
+alpha = 0.02
+c := 4e-9
+setcellsize(c, c, c)
+setsolver(4)
+FixDt = 100e-15
+
+Nx0 := 64
+Ny0 := 512
+iters0 := 25600
+
+for z:=0; z<7; z++{
+
+	Nz := pow(2,z)
+	Ny := Ny0 / Nz
+	
+	for x:=0; x<9; x++{
+	
+		Nx := Nx0 * pow(2,x)
+		iters := iters0 / pow(2,x)
+
+		setgridsize(nx, ny, nz)
+		print(nx, ny, nz)
+
+		steps(1) // warm-up kernel
+
+		b_ext = vector(0, 0.01, 0)
+		m=uniform(1, 0, 0) // warm-up dt
+		steps(3)
+
+		m=uniform(1, 0, 0) // start!
+		t = 0
+		start := now()
+		neval0 := Neval.get()
+
+		steps(iters)
+
+		wall := since(start).Seconds() 
+		nevl := Neval.get() - neval0
+
+		fprintln("Mumax3_benchmark_RK4_GTX980Ti.txt", nx, ny, nz, nx*ny*nz, nevl, wall*1000, wall*1000/nevl)
+	}
+}
+
