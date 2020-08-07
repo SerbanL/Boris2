@@ -80,4 +80,8 @@ $ make install
 $ ./BorisLin
 
 # Publication
-A technical peer-reviewed publication on Boris to follow soon.
+
+A technical paper on Boris has now been submitted for publication. Preprint available at:
+https://arxiv.org/ftp/arxiv/papers/2008/2008.02478.pdf
+
+If using Boris for published works please use this as a reference.
