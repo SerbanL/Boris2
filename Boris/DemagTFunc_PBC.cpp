@@ -40,10 +40,8 @@ bool DemagTFunc::CalcDiagTens2D_PBC(VEC<DBL3> &Ddiag, INT3 N, DBL3 hRatios, bool
 						int j = mod(j_img * N.y + j0);
 						int k = mod(k_img);
 
-						int cells_radius_sq = i * i + j * j + k * k;
-
 						//apply asymptotic equations?
-						if (cells_radius_sq >= asymptotic_distance * asymptotic_distance) {
+						if (asymptotic_distance > 0 && (i >= asymptotic_distance || j >= asymptotic_distance || k >= asymptotic_distance || i * i + j * j + k * k >= asymptotic_distance * asymptotic_distance)) {
 
 							//D12, D13, D23
 							val += DBL3(
@@ -138,10 +136,8 @@ bool DemagTFunc::CalcOffDiagTens2D_PBC(std::vector<double> &Dodiag, INT3 N, DBL3
 						j = mod(j);
 						k = mod(k);
 
-						int cells_radius_sq = i * i + j * j + k * k;
-
 						//apply asymptotic equations?
-						if (cells_radius_sq >= asymptotic_distance * asymptotic_distance) {
+						if (asymptotic_distance > 0 && (i >= asymptotic_distance || j >= asymptotic_distance || k >= asymptotic_distance || i * i + j * j + k * k >= asymptotic_distance * asymptotic_distance)) {
 
 							//D12, D13, D23
 							val += demagAsymptoticOffDiag_xy.AsymptoticLodia(i * hRatios.x, j * hRatios.y, k * hRatios.z) * sign * sign_i * sign_j;
@@ -220,10 +216,8 @@ bool DemagTFunc::CalcDiagTens3D_PBC(VEC<DBL3> &Ddiag, INT3 N, DBL3 hRatios, bool
 							int j = mod(j_img * N.y + j0);
 							int k = mod(k_img * N.z + k0);
 
-							int cells_radius_sq = i * i + j * j + k * k;
-
 							//apply asymptotic equations?
-							if (cells_radius_sq >= asymptotic_distance * asymptotic_distance) {
+							if (asymptotic_distance > 0 && (i >= asymptotic_distance || j >= asymptotic_distance || k >= asymptotic_distance || i * i + j * j + k * k >= asymptotic_distance * asymptotic_distance)) {
 
 								//D12, D13, D23
 								val += DBL3(
@@ -336,10 +330,8 @@ bool DemagTFunc::CalcOffDiagTens3D_PBC(VEC<DBL3> &Dodiag, INT3 N, DBL3 hRatios, 
 							j = mod(j);
 							k = mod(k);
 
-							int cells_radius_sq = i * i + j * j + k * k;
-
 							//apply asymptotic equations?
-							if (cells_radius_sq >= asymptotic_distance * asymptotic_distance) {
+							if (asymptotic_distance > 0 && (i >= asymptotic_distance || j >= asymptotic_distance || k >= asymptotic_distance || i * i + j * j + k * k >= asymptotic_distance * asymptotic_distance)) {
 
 								//D12, D13, D23
 								val += DBL3(

@@ -4120,7 +4120,7 @@ void Simulation::HandleCommand(string command_string)
 					if (!normalize) Ms0 = 1.0;
 
 					OVF2 ovf2;
-					error = ovf2.Write_OVF2_VEC(fileName, dynamic_cast<Mesh*>(SMesh.active_mesh())->M, data_type, Ms0);
+					error = ovf2.Write_OVF2_VEC(fileName, dynamic_cast<Mesh*>(SMesh.active_mesh())->Get_M(), data_type, Ms0);
 				}
 				else err_hndl.show_error(BERROR_NOTMAGNETIC, verbose);
 			}

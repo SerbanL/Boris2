@@ -131,19 +131,16 @@ __global__ void set_ngbrFlags_kernel(const cuSZ3& n, int*& ngbrFlags, VType*& qu
 
 				//on-axis
 				if (ngbrFlags[idx + 1] & NF_NOTEMPTY) { ngbrFlags[idx] |= NF_NPX; }
-				else { ngbrFlags[idx] &= ~NF_NPX; }
 
 				//off-axis (z slice : xy)
 				if (ijk.j < n.y - 1) {
 
 					if (ngbrFlags[idx + 1 + n.x] & NF_NOTEMPTY) { ngbrFlags[idx] |= NF_XY_PXPY; }
-					else { ngbrFlags[idx] &= ~NF_XY_PXPY; }
 				}
 
 				if (ijk.j > 0) {
 
 					if (ngbrFlags[idx + 1 - n.x] & NF_NOTEMPTY) { ngbrFlags[idx] |= NF_XY_PXNY; }
-					else { ngbrFlags[idx] &= ~NF_XY_PXNY; }
 				}
 			}
 
@@ -151,19 +148,16 @@ __global__ void set_ngbrFlags_kernel(const cuSZ3& n, int*& ngbrFlags, VType*& qu
 
 				//on-axis
 				if (ngbrFlags[idx - 1] & NF_NOTEMPTY) { ngbrFlags[idx] |= NF_NNX; }
-				else { ngbrFlags[idx] &= ~NF_NNX; }
 
 				//off-axis (z slice : xy)
 				if (ijk.j < n.y - 1) {
 
 					if (ngbrFlags[idx - 1 + n.x] & NF_NOTEMPTY) { ngbrFlags[idx] |= NF_XY_NXPY; }
-					else { ngbrFlags[idx] &= ~NF_XY_NXPY; }
 				}
 
 				if (ijk.j > 0) {
 
 					if (ngbrFlags[idx - 1 - n.x] & NF_NOTEMPTY) { ngbrFlags[idx] |= NF_XY_NXNY; }
-					else { ngbrFlags[idx] &= ~NF_XY_NXNY; }
 				}
 			}
 
@@ -171,19 +165,16 @@ __global__ void set_ngbrFlags_kernel(const cuSZ3& n, int*& ngbrFlags, VType*& qu
 
 				//on-axis
 				if (ngbrFlags[idx + n.x] & NF_NOTEMPTY) { ngbrFlags[idx] |= NF_NPY; }
-				else { ngbrFlags[idx] &= ~NF_NPY; }
 
 				//off-axis (x slice : yz)
 				if (ijk.k < n.z - 1) {
 
 					if (ngbrFlags[idx + n.x + n.x*n.y] & NF_NOTEMPTY) { ngbrFlags[idx] |= NF_YZ_PYPZ; }
-					else { ngbrFlags[idx] &= ~NF_YZ_PYPZ; }
 				}
 
 				if (ijk.k > 0) {
 
 					if (ngbrFlags[idx + n.x - n.x*n.y] & NF_NOTEMPTY) { ngbrFlags[idx] |= NF_YZ_PYNZ; }
-					else { ngbrFlags[idx] &= ~NF_YZ_PYNZ; }
 				}
 			}
 
@@ -191,19 +182,16 @@ __global__ void set_ngbrFlags_kernel(const cuSZ3& n, int*& ngbrFlags, VType*& qu
 
 				//on-axis
 				if (ngbrFlags[idx - n.x] & NF_NOTEMPTY) { ngbrFlags[idx] |= NF_NNY; }
-				else { ngbrFlags[idx] &= ~NF_NNY; }
 
 				//off-axis (x slice : yz)
 				if (ijk.k < n.z - 1) {
 
 					if (ngbrFlags[idx - n.x + n.x*n.y] & NF_NOTEMPTY) { ngbrFlags[idx] |= NF_YZ_NYPZ; }
-					else { ngbrFlags[idx] &= ~NF_YZ_NYPZ; }
 				}
 
 				if (ijk.k > 0) {
 
 					if (ngbrFlags[idx - n.x - n.x*n.y] & NF_NOTEMPTY) { ngbrFlags[idx] |= NF_YZ_NYNZ; }
-					else { ngbrFlags[idx] &= ~NF_YZ_NYNZ; }
 				}
 			}
 
@@ -211,19 +199,16 @@ __global__ void set_ngbrFlags_kernel(const cuSZ3& n, int*& ngbrFlags, VType*& qu
 
 				//on-axis
 				if (ngbrFlags[idx + n.x*n.y] & NF_NOTEMPTY) { ngbrFlags[idx] |= NF_NPZ; }
-				else { ngbrFlags[idx] &= ~NF_NPZ; }
 
 				//off-axis (y slice : xz)
 				if (ijk.i < n.x - 1) {
 
 					if (ngbrFlags[idx + 1 + n.x*n.y] & NF_NOTEMPTY) { ngbrFlags[idx] |= NF_XZ_PXPZ; }
-					else { ngbrFlags[idx] &= ~NF_XZ_PXPZ; }
 				}
 
 				if (ijk.i > 0) {
 
 					if (ngbrFlags[idx - 1 + n.x*n.y] & NF_NOTEMPTY) { ngbrFlags[idx] |= NF_XZ_NXPZ; }
-					else { ngbrFlags[idx] &= ~NF_XZ_NXPZ; }
 				}
 			}
 
@@ -231,19 +216,16 @@ __global__ void set_ngbrFlags_kernel(const cuSZ3& n, int*& ngbrFlags, VType*& qu
 
 				//on-axis
 				if (ngbrFlags[idx - n.x*n.y] & NF_NOTEMPTY) { ngbrFlags[idx] |= NF_NNZ; }
-				else { ngbrFlags[idx] &= ~NF_NNZ; }
 
 				//off-axis (y slice : xz)
 				if (ijk.i < n.x - 1) {
 
 					if (ngbrFlags[idx + 1 - n.x*n.y] & NF_NOTEMPTY) { ngbrFlags[idx] |= NF_XZ_PXNZ; }
-					else { ngbrFlags[idx] &= ~NF_XZ_PXNZ; }
 				}
 
 				if (ijk.i > 0) {
 
 					if (ngbrFlags[idx - 1 - n.x*n.y] & NF_NOTEMPTY) { ngbrFlags[idx] |= NF_XZ_NXNZ; }
-					else { ngbrFlags[idx] &= ~NF_XZ_NXNZ; }
 				}
 			}
 

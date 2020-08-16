@@ -127,7 +127,8 @@ __device__ cuReal3 ManagedDiffEqFMCUDA::SLLB(int idx)
 	//m is M / Ms0 : magnitude of M in this cell divided by the saturation magnetization at 0K.
 	cuBReal Mnorm = M[idx].norm();
 	cuBReal Ms0 = pcuMesh->pMs->get0();
-	cuBReal mM = Mnorm * Mnorm / Ms0;
+	cuBReal m = Mnorm / Ms0;
+	cuBReal msq = m * m;
 
 	cuBReal Ms = *pcuMesh->pMs;
 	cuBReal alpha = *pcuMesh->palpha;
@@ -180,8 +181,8 @@ __device__ cuReal3 ManagedDiffEqFMCUDA::SLLB(int idx)
 	cuReal3 H_Thermal_Value = (*pH_Thermal)[position] * sqrt(alpha - alpha_par) / alpha;
 	cuReal3 Torque_Thermal_Value = (*pTorque_Thermal)[position] * sqrt(alpha_par);
 
-	return (-(cuBReal)GAMMA * grel / (1 + alpha * alpha)) * ((M[idx] ^ Heff[idx]) + alpha * ((M[idx] / mM) ^ (M[idx] ^ (Heff[idx] + H_Thermal_Value)))) +
-		(cuBReal)GAMMA * grel * alpha_par * (M[idx] * (Heff[idx] + Hl)) * (M[idx] / mM) + Torque_Thermal_Value;
+	return (-(cuBReal)GAMMA * grel * msq / (msq + alpha * alpha)) * (M[idx] ^ Heff[idx]) + (-(cuBReal)GAMMA * grel * m * alpha / (msq + alpha * alpha)) * ((M[idx] / Mnorm) ^ (M[idx] ^ (Heff[idx] + H_Thermal_Value))) +
+		(cuBReal)GAMMA * grel * alpha_par * Ms0 * ((M[idx] / Mnorm) * (Heff[idx] + Hl)) * (M[idx] / Mnorm) + Torque_Thermal_Value;
 }
 
 //------------------------------------------------------------------------------------------------------
@@ -225,6 +226,7 @@ __device__ cuReal3 ManagedDiffEqFMCUDA::SLLBSTT(int idx)
 	cuBReal Ms0 = pcuMesh->pMs->get0();
 	cuBReal mM = Mnorm * Mnorm / Ms0;
 	cuBReal m = Mnorm / Ms0;
+	cuBReal msq = m * m;
 
 	cuBReal Ms = *pcuMesh->pMs;
 	cuBReal alpha = *pcuMesh->palpha;
@@ -284,8 +286,8 @@ __device__ cuReal3 ManagedDiffEqFMCUDA::SLLBSTT(int idx)
 	cuReal3 Torque_Thermal_Value = (*pTorque_Thermal)[position] * sqrt(alpha_par);
 
 	cuReal3 LLBSTT_Eval =
-		(-(cuBReal)GAMMA * grel / (1 + alpha * alpha)) * ((M[idx] ^ Heff[idx]) + alpha * ((M[idx] / mM) ^ (M[idx] ^ (Heff[idx] + H_Thermal_Value)))) +
-		(cuBReal)GAMMA * grel * alpha_par * (M[idx] * (Heff[idx] + Hl)) * (M[idx] / mM) + Torque_Thermal_Value;
+		(-(cuBReal)GAMMA * grel * msq / (msq + alpha * alpha)) * (M[idx] ^ Heff[idx]) + (-(cuBReal)GAMMA * grel * m * alpha / (msq + alpha * alpha)) * ((M[idx] / Mnorm) ^ (M[idx] ^ (Heff[idx] + H_Thermal_Value))) +
+		(cuBReal)GAMMA * grel * alpha_par * Ms0 * ((M[idx] / Mnorm) * (Heff[idx] + Hl)) * (M[idx] / Mnorm) + Torque_Thermal_Value;
 
 	if (E.linear_size()) {
 
@@ -303,7 +305,7 @@ __device__ cuReal3 ManagedDiffEqFMCUDA::SLLBSTT(int idx)
 		LLBSTT_Eval +=
 			(((1 + alpha_perp_red * beta) * u_dot_del_M) -
 			((beta - alpha_perp_red) * ((M[idx] / Mnorm) ^ u_dot_del_M)) -
-				(alpha_perp_red * (beta - alpha_perp_red) * (M[idx] / Mnorm) * ((M[idx] / Mnorm) * u_dot_del_M))) / (1 + alpha * alpha);
+				(alpha_perp_red * (beta - alpha_perp_red) * (M[idx] / Mnorm) * ((M[idx] / Mnorm) * u_dot_del_M))) * msq / (msq + alpha * alpha);
 	}
 
 	return LLBSTT_Eval;

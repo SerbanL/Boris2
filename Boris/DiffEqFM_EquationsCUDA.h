@@ -124,7 +124,8 @@ __device__ cuReal3 ManagedDiffEqFMCUDA::LLB(int idx)
 	//m is M / Ms0 : magnitude of M in this cell divided by the saturation magnetization at 0K.
 	cuBReal Mnorm = M[idx].norm();
 	cuBReal Ms0 = pcuMesh->pMs->get0();
-	cuBReal mM = Mnorm * Mnorm / Ms0;
+	cuBReal m = Mnorm / Ms0;
+	cuBReal msq = m*m;
 
 	cuBReal Ms = *pcuMesh->pMs;
 	cuBReal alpha = *pcuMesh->palpha;
@@ -174,8 +175,8 @@ __device__ cuReal3 ManagedDiffEqFMCUDA::LLB(int idx)
 		Hl = -1 * M[idx] / (susrel * (cuBReal)MU0 * Ms0);
 	}
 
-	return (-(cuBReal)GAMMA * grel / (1 + alpha * alpha)) * ((M[idx] ^ Heff[idx]) + alpha * ((M[idx] / mM) ^ (M[idx] ^ Heff[idx]))) +
-		(cuBReal)GAMMA * grel * alpha_par * (M[idx] * (Heff[idx] + Hl)) * (M[idx] / mM);
+	return (-(cuBReal)GAMMA * grel * msq / (msq + alpha * alpha)) * (M[idx] ^ Heff[idx]) + (-(cuBReal)GAMMA * grel * m * alpha / (msq + alpha * alpha)) * ((M[idx] / Mnorm) ^ (M[idx] ^ Heff[idx])) +
+		(cuBReal)GAMMA * grel * alpha_par * Ms0 * ((M[idx] / Mnorm) * (Heff[idx] + Hl)) * (M[idx] / Mnorm);
 }
 
 //------------------------------------------------------------------------------------------------------
@@ -216,7 +217,7 @@ __device__ cuReal3 ManagedDiffEqFMCUDA::LLBSTT(int idx)
 	cuBReal Mnorm = M[idx].norm();
 	cuBReal Ms0 = pcuMesh->pMs->get0();
 	cuBReal m = Mnorm / Ms0;
-	cuBReal mM = Mnorm * Mnorm / Ms0;
+	cuBReal msq = m * m;
 
 	cuBReal Ms = *pcuMesh->pMs;
 	cuBReal alpha = *pcuMesh->palpha;
@@ -273,8 +274,8 @@ __device__ cuReal3 ManagedDiffEqFMCUDA::LLBSTT(int idx)
 	}
 
 	cuReal3 LLBSTT_Eval =
-		(-(cuBReal)GAMMA * grel / (1 + alpha * alpha)) * ((M[idx] ^ Heff[idx]) + alpha * ((M[idx] / mM) ^ (M[idx] ^ Heff[idx]))) +
-		(cuBReal)GAMMA * grel * alpha_par * (M[idx] * (Heff[idx] + Hl)) * (M[idx] / mM);
+		(-(cuBReal)GAMMA * grel * msq / (msq + alpha * alpha)) * (M[idx] ^ Heff[idx]) + (-(cuBReal)GAMMA * grel * m * alpha / (msq + alpha * alpha)) * ((M[idx] / Mnorm) ^ (M[idx] ^ Heff[idx])) +
+		(cuBReal)GAMMA * grel * alpha_par * Ms0 * ((M[idx] / Mnorm) * (Heff[idx] + Hl)) * (M[idx] / Mnorm);
 
 	if (E.linear_size()) {
 
@@ -292,7 +293,7 @@ __device__ cuReal3 ManagedDiffEqFMCUDA::LLBSTT(int idx)
 		LLBSTT_Eval +=
 			(((1 + alpha_perp_red * beta) * u_dot_del_M) -
 			((beta - alpha_perp_red) * ((M[idx] / Mnorm) ^ u_dot_del_M)) -
-				(alpha_perp_red * (beta - alpha_perp_red) * (M[idx] / Mnorm) * ((M[idx] / Mnorm) * u_dot_del_M))) / (1 + alpha * alpha);
+				(alpha_perp_red * (beta - alpha_perp_red) * (M[idx] / Mnorm) * ((M[idx] / Mnorm) * u_dot_del_M))) * msq / (msq + alpha * alpha);
 	}
 
 	return LLBSTT_Eval;

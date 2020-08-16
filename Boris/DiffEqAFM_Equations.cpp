@@ -113,7 +113,7 @@ DBL3 DifferentialEquationAFM::LLB(int idx)
 	DBL2 M = DBL2(pMesh->M[idx].norm(), pMesh->M2[idx].norm());
 	DBL2 Ms0 = pMesh->Ms_AFM.get0();
 	DBL2 m = M / Ms0;
-	DBL2 mM = m & M;
+	DBL2 msq = m & m;
 
 	DBL2 Ms = pMesh->Ms_AFM;
 	DBL2 alpha = pMesh->alpha_AFM;
@@ -170,12 +170,12 @@ DBL3 DifferentialEquationAFM::LLB(int idx)
 	}
 
 	//sub-lattice B value so we can read it after
-	Equation_Eval_2[tn] = (-GAMMA * grel.j / (1 + alpha.j * alpha.j)) * ((pMesh->M2[idx] ^ pMesh->Heff2[idx]) + alpha.j * ((pMesh->M2[idx] / mM.j) ^ (pMesh->M2[idx] ^ pMesh->Heff2[idx]))) +
-		GAMMA * grel.j * alpha_par.j * (pMesh->M2[idx] * (pMesh->Heff2[idx] + Hl_2)) * (pMesh->M2[idx] / mM.j);
+	Equation_Eval_2[tn] = (-GAMMA * grel.j * msq.j / (msq.j + alpha.j * alpha.j)) * (pMesh->M2[idx] ^ pMesh->Heff2[idx]) + (-GAMMA * grel.j * m.j * alpha.j / (msq.j + alpha.j * alpha.j)) * ((pMesh->M2[idx] / M.j) ^ (pMesh->M2[idx] ^ pMesh->Heff2[idx])) +
+		GAMMA * grel.j * alpha_par.j * Ms0.j * ((pMesh->M2[idx] / M.j) * (pMesh->Heff2[idx] + Hl_2)) * (pMesh->M2[idx] / M.j);
 
 	//return the sub-lattice A value as normal
-	return (-GAMMA * grel.i / (1 + alpha.i * alpha.i)) * ((pMesh->M[idx] ^ pMesh->Heff[idx]) + alpha.i * ((pMesh->M[idx] / mM.i) ^ (pMesh->M[idx] ^ pMesh->Heff[idx]))) +
-		GAMMA * grel.i * alpha_par.i * (pMesh->M[idx] * (pMesh->Heff[idx] + Hl_1)) * (pMesh->M[idx] / mM.i);
+	return (-GAMMA * grel.i * msq.i / (msq.i + alpha.i * alpha.i)) * (pMesh->M[idx] ^ pMesh->Heff[idx]) + (-GAMMA * grel.i * m.i * alpha.i / (msq.i + alpha.i * alpha.i)) * ((pMesh->M[idx] / M.i) ^ (pMesh->M[idx] ^ pMesh->Heff[idx])) +
+		GAMMA * grel.i * alpha_par.i * Ms0.i * ((pMesh->M[idx] / M.i) * (pMesh->Heff[idx] + Hl_1)) * (pMesh->M[idx] / M.i);
 }
 
 //------------------------------------------------------------------------------------------------------
@@ -197,7 +197,7 @@ DBL3 DifferentialEquationAFM::LLBSTT(int idx)
 	DBL2 M = DBL2(pMesh->M[idx].norm(), pMesh->M2[idx].norm());
 	DBL2 Ms0 = pMesh->Ms_AFM.get0();
 	DBL2 m = M / Ms0;
-	DBL2 mM = m & M;
+	DBL2 msq = m & m;
 
 	DBL2 Ms = pMesh->Ms_AFM;
 	DBL2 alpha = pMesh->alpha_AFM;
@@ -259,11 +259,11 @@ DBL3 DifferentialEquationAFM::LLBSTT(int idx)
 		Hl_2 = -1 * (pMesh->M2[idx] / (MU0 * Ms0.j)) * ((1.0 / susrel.j) + (3 * tau_ij.j * T_Curie * (BOLTZMANN / MUB) / mu.j) * ((susrel.i / susrel.j) - proj * (me.i / me.j)));
 	}
 
-	DBL3 LLGSTT_Eval_A = (-GAMMA * grel.i / (1 + alpha.i * alpha.i)) * ((pMesh->M[idx] ^ pMesh->Heff[idx]) + alpha.i * ((pMesh->M[idx] / mM.i) ^ (pMesh->M[idx] ^ pMesh->Heff[idx]))) +
-		GAMMA * grel.i * alpha_par.i * (pMesh->M[idx] * (pMesh->Heff[idx] + Hl_1)) * (pMesh->M[idx] / mM.i);
+	DBL3 LLGSTT_Eval_A = (-GAMMA * grel.i * msq.i / (msq.i + alpha.i * alpha.i)) * (pMesh->M[idx] ^ pMesh->Heff[idx]) + (-GAMMA * grel.i * m.i * alpha.i / (msq.i + alpha.i * alpha.i)) * ((pMesh->M[idx] / M.i) ^ (pMesh->M[idx] ^ pMesh->Heff[idx])) +
+		GAMMA * grel.i * alpha_par.i * Ms0.i * ((pMesh->M[idx] / M.i) * (pMesh->Heff[idx] + Hl_1)) * (pMesh->M[idx] / M.i);
 
-	DBL3 LLGSTT_Eval_B = (-GAMMA * grel.j / (1 + alpha.j * alpha.j)) * ((pMesh->M2[idx] ^ pMesh->Heff2[idx]) + alpha.j * ((pMesh->M2[idx] / mM.j) ^ (pMesh->M2[idx] ^ pMesh->Heff2[idx]))) +
-		GAMMA * grel.j * alpha_par.j * (pMesh->M2[idx] * (pMesh->Heff2[idx] + Hl_2)) * (pMesh->M2[idx] / mM.j);
+	DBL3 LLGSTT_Eval_B = (-GAMMA * grel.j * msq.j / (msq.j + alpha.j * alpha.j)) * (pMesh->M2[idx] ^ pMesh->Heff2[idx]) + (-GAMMA * grel.j * m.j * alpha.j / (msq.j + alpha.j * alpha.j)) * ((pMesh->M2[idx] / M.j) ^ (pMesh->M2[idx] ^ pMesh->Heff2[idx])) +
+		GAMMA * grel.j * alpha_par.j * Ms0.j * ((pMesh->M2[idx] / M.j) * (pMesh->Heff2[idx] + Hl_2)) * (pMesh->M2[idx] / M.j);
 
 	if (pMesh->E.linear_size()) {
 
@@ -281,12 +281,12 @@ DBL3 DifferentialEquationAFM::LLBSTT(int idx)
 		LLGSTT_Eval_A +=
 			(((1 + alpha_perp_red.i * beta) * u_dot_del_M_A) -
 			((beta - alpha_perp_red.i) * ((pMesh->M[idx] / M.i) ^ u_dot_del_M_A)) -
-				(alpha_perp_red.i * (beta - alpha_perp_red.i) * (pMesh->M[idx] / M.i) * ((pMesh->M[idx] / M.i) * u_dot_del_M_A))) / (1 + alpha.i * alpha.i);
+				(alpha_perp_red.i * (beta - alpha_perp_red.i) * (pMesh->M[idx] / M.i) * ((pMesh->M[idx] / M.i) * u_dot_del_M_A))) * msq.i / (msq.i + alpha.i * alpha.i);
 
 		LLGSTT_Eval_B +=
 			(((1 + alpha_perp_red.j * beta) * u_dot_del_M_B) -
 			((beta - alpha_perp_red.j) * ((pMesh->M2[idx] / M.j) ^ u_dot_del_M_B)) -
-				(alpha_perp_red.j * (beta - alpha_perp_red.j) * (pMesh->M2[idx] / M.j) * ((pMesh->M2[idx] / M.j) * u_dot_del_M_B))) / (1 + alpha.j * alpha.j);
+				(alpha_perp_red.j * (beta - alpha_perp_red.j) * (pMesh->M2[idx] / M.j) * ((pMesh->M2[idx] / M.j) * u_dot_del_M_B))) * msq.j / (msq.j + alpha.j * alpha.j);
 	}
 
 	//sub-lattice B value so we can read it after

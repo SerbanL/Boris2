@@ -53,10 +53,9 @@ bool DemagTFunc::CalcDiagTens3D(VEC<DBL3> &Ddiag, INT3 n, INT3 N, DBL3 hRatios, 
 
 				DBL3 val;
 
-				int cells_radius_sq = i*i + j*j + k*k;
-
 				//apply asymptotic equations?
-				if (asymptotic_distance > 0 && cells_radius_sq >= asymptotic_distance*asymptotic_distance) {
+				//Must include the separate i, j, k checks otherwise the i*i + j*j + k*k expression can overflow the 4 byte integer range
+				if (asymptotic_distance > 0 && (i >= asymptotic_distance || j >= asymptotic_distance || k >= asymptotic_distance || i * i + j * j + k * k >= asymptotic_distance * asymptotic_distance)) {
 
 					val = DBL3(
 						demagAsymptoticDiag_xx.AsymptoticLdia(i * hRatios.x, j * hRatios.y, k * hRatios.z) * sign,
@@ -131,10 +130,9 @@ bool DemagTFunc::CalcOffDiagTens3D(VEC<DBL3> &Dodiag, INT3 n, INT3 N, DBL3 hRati
 
 				DBL3 val;
 
-				int cells_radius_sq = i * i + j * j + k * k;
-
 				//apply asymptotic equations?
-				if (asymptotic_distance > 0 && cells_radius_sq >= asymptotic_distance * asymptotic_distance) {
+				//Must include the separate i, j, k checks otherwise the i*i + j*j + k*k expression can overflow the 4 byte integer range
+				if (asymptotic_distance > 0 && (i >= asymptotic_distance || j >= asymptotic_distance || k >= asymptotic_distance || i * i + j * j + k * k >= asymptotic_distance * asymptotic_distance)) {
 
 					//D12, D13, D23
 					val = DBL3(
@@ -202,10 +200,9 @@ bool DemagTFunc::CalcDiagTens2D(VEC<DBL3> &Ddiag, INT3 n, INT3 N, DBL3 hRatios, 
 
 			DBL3 val;
 
-			int cells_radius_sq = i * i + j * j;
-
 			//apply asymptotic equations?
-			if (asymptotic_distance > 0 && cells_radius_sq >= asymptotic_distance * asymptotic_distance) {
+			//Must include the separate i, j checks otherwise the i*i + j*j expression can overflow the 4 byte integer range
+			if (asymptotic_distance > 0 && (i >= asymptotic_distance || j >= asymptotic_distance || i * i + j * j >= asymptotic_distance * asymptotic_distance)) {
 
 				val = DBL3(
 					demagAsymptoticDiag_xx.AsymptoticLdia(i * hRatios.x, j * hRatios.y, 0) * sign,
@@ -269,10 +266,9 @@ bool DemagTFunc::CalcOffDiagTens2D(std::vector<double> &Dodiag, INT3 n, INT3 N, 
 
 			double val;
 
-			int cells_radius_sq = i * i + j * j;
-
 			//apply asymptotic equations?
-			if (asymptotic_distance > 0 && cells_radius_sq >= asymptotic_distance * asymptotic_distance) {
+			//Must include the separate i, j checks otherwise the i*i + j*j expression can overflow the 4 byte integer range
+			if (asymptotic_distance > 0 && (i >= asymptotic_distance || j >= asymptotic_distance || i * i + j * j >= asymptotic_distance * asymptotic_distance)) {
 
 				val = demagAsymptoticOffDiag_xy.AsymptoticLodia(i * hRatios.x, j * hRatios.y, 0) * sign;
 			}

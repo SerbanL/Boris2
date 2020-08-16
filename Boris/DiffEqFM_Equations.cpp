@@ -98,7 +98,8 @@ DBL3 DifferentialEquationFM::LLB(int idx)
 	//m is M / Ms0 : magnitude of M in this cell divided by the saturation magnetization at 0K.
 	double M = pMesh->M[idx].norm();
 	double Ms0 = pMesh->Ms.get0();
-	double mM = M * M / Ms0;
+	double m = M / Ms0;
+	double msq = m * m;
 
 	double Ms = pMesh->Ms;
 	double alpha = pMesh->alpha;
@@ -142,8 +143,8 @@ DBL3 DifferentialEquationFM::LLB(int idx)
 		Hl = -1.0 * pMesh->M[idx] / (susrel * MU0 * Ms0);
 	}
 
-	return (-GAMMA * grel / (1 + alpha * alpha)) * ((pMesh->M[idx] ^ pMesh->Heff[idx]) + alpha * ((pMesh->M[idx] / mM) ^ (pMesh->M[idx] ^ pMesh->Heff[idx]))) +
-		GAMMA * grel * alpha_par * (pMesh->M[idx] * (pMesh->Heff[idx] + Hl)) * (pMesh->M[idx] / mM);
+	return (-GAMMA * grel * msq / (msq + alpha * alpha)) * (pMesh->M[idx] ^ pMesh->Heff[idx]) + (-GAMMA * grel * m * alpha / (msq + alpha * alpha)) * ((pMesh->M[idx] / M) ^ (pMesh->M[idx] ^ pMesh->Heff[idx])) +
+		GAMMA * grel * alpha_par * Ms0 * ((pMesh->M[idx] / M) * (pMesh->Heff[idx] + Hl)) * (pMesh->M[idx] / M);
 }
 
 //------------------------------------------------------------------------------------------------------
@@ -179,7 +180,7 @@ DBL3 DifferentialEquationFM::LLBSTT(int idx)
 	double M = pMesh->M[idx].norm();
 	double Ms0 = pMesh->Ms.get0();
 	double m = M / Ms0;
-	double mM = M * M / Ms0;
+	double msq = m * m;
 
 	double Ms = pMesh->Ms;
 	double alpha = pMesh->alpha;
@@ -230,8 +231,8 @@ DBL3 DifferentialEquationFM::LLBSTT(int idx)
 	}
 
 	DBL3 LLBSTT_Eval = 
-		(-GAMMA * grel / (1 + alpha * alpha)) * ((pMesh->M[idx] ^ pMesh->Heff[idx]) + alpha * ((pMesh->M[idx] / mM) ^ (pMesh->M[idx] ^ pMesh->Heff[idx]))) +
-		GAMMA * grel * alpha_par * (pMesh->M[idx] * (pMesh->Heff[idx] + Hl)) * (pMesh->M[idx] / mM);
+		(-GAMMA * grel * msq / (msq + alpha * alpha)) * (pMesh->M[idx] ^ pMesh->Heff[idx]) + (-GAMMA * grel * m * alpha / (msq + alpha * alpha)) * ((pMesh->M[idx] / M) ^ (pMesh->M[idx] ^ pMesh->Heff[idx])) +
+		GAMMA * grel * alpha_par * Ms0 * ((pMesh->M[idx] / M) * (pMesh->Heff[idx] + Hl)) * (pMesh->M[idx] / M);
 
 	if (pMesh->E.linear_size()) {
 		
@@ -246,7 +247,7 @@ DBL3 DifferentialEquationFM::LLBSTT(int idx)
 		LLBSTT_Eval += 
 			(((1 + alpha_perp_red * beta) * u_dot_del_M) -
 			((beta - alpha_perp_red) * ((pMesh->M[idx] / M) ^ u_dot_del_M)) -
-			(alpha_perp_red * (beta - alpha_perp_red) * (pMesh->M[idx] / M) * ((pMesh->M[idx] / M) * u_dot_del_M))) / (1 + alpha * alpha);
+			(alpha_perp_red * (beta - alpha_perp_red) * (pMesh->M[idx] / M) * ((pMesh->M[idx] / M) * u_dot_del_M))) * msq / (msq + alpha * alpha);
 	}
 
 	return LLBSTT_Eval;

@@ -169,7 +169,8 @@ DBL3 DifferentialEquationFM::SLLB(int idx)
 	//m is M / Ms0 : magnitude of M in this cell divided by the saturation magnetization at 0K.
 	double M = pMesh->M[idx].norm();
 	double Ms0 = pMesh->Ms.get0();
-	double mM = M * M / Ms0;
+	double m = M / Ms0;
+	double msq = m * m;
 
 	double Ms = pMesh->Ms;
 	double alpha = pMesh->alpha;
@@ -216,8 +217,8 @@ DBL3 DifferentialEquationFM::SLLB(int idx)
 	DBL3 H_Thermal_Value = H_Thermal[position] * sqrt(alpha - alpha_par) / alpha;
 	DBL3 Torque_Thermal_Value = Torque_Thermal[position] * sqrt(alpha_par);
 
-	return (-GAMMA * grel / (1 + alpha * alpha)) * ((pMesh->M[idx] ^ pMesh->Heff[idx]) + alpha * ((pMesh->M[idx] / mM) ^ (pMesh->M[idx] ^ (pMesh->Heff[idx] + H_Thermal_Value)))) +
-		GAMMA * grel * alpha_par * (pMesh->M[idx] * (pMesh->Heff[idx] + Hl)) * (pMesh->M[idx] / mM) + Torque_Thermal_Value;
+	return (-GAMMA * grel * msq / (msq + alpha * alpha)) * (pMesh->M[idx] ^ pMesh->Heff[idx]) + (-GAMMA * grel * m * alpha / (msq + alpha * alpha)) * ((pMesh->M[idx] / M) ^ (pMesh->M[idx] ^ (pMesh->Heff[idx] + H_Thermal_Value))) +
+		GAMMA * grel * alpha_par * Ms0 * ((pMesh->M[idx] / M) * (pMesh->Heff[idx] + Hl)) * (pMesh->M[idx] / M) + Torque_Thermal_Value;
 }
 
 //------------------------------------------------------------------------------------------------------
@@ -255,7 +256,7 @@ DBL3 DifferentialEquationFM::SLLBSTT(int idx)
 	double M = pMesh->M[idx].norm();
 	double Ms0 = pMesh->Ms.get0();
 	double m = M / Ms0;
-	double mM = M * M / Ms0;
+	double msq = m * m;
 
 	double Ms = pMesh->Ms;
 	double alpha = pMesh->alpha;
@@ -309,8 +310,8 @@ DBL3 DifferentialEquationFM::SLLBSTT(int idx)
 	DBL3 Torque_Thermal_Value = Torque_Thermal[position] * sqrt(alpha_par);
 
 	DBL3 LLBSTT_Eval =
-		(-GAMMA * grel / (1 + alpha * alpha)) * ((pMesh->M[idx] ^ pMesh->Heff[idx]) + alpha * ((pMesh->M[idx] / mM) ^ (pMesh->M[idx] ^ (pMesh->Heff[idx] + H_Thermal_Value)))) +
-		GAMMA * grel * alpha_par * (pMesh->M[idx] * (pMesh->Heff[idx] + Hl)) * (pMesh->M[idx] / mM) + Torque_Thermal_Value;
+		(-GAMMA * grel * msq / (msq + alpha * alpha)) * (pMesh->M[idx] ^ pMesh->Heff[idx]) + (-GAMMA * grel * m * alpha / (msq + alpha * alpha)) * ((pMesh->M[idx] / M) ^ (pMesh->M[idx] ^ (pMesh->Heff[idx] + H_Thermal_Value))) +
+		GAMMA * grel * alpha_par * Ms0 * ((pMesh->M[idx] / M) * (pMesh->Heff[idx] + Hl)) * (pMesh->M[idx] / M) + Torque_Thermal_Value;
 
 	if (pMesh->E.linear_size()) {
 
@@ -325,7 +326,7 @@ DBL3 DifferentialEquationFM::SLLBSTT(int idx)
 		LLBSTT_Eval +=
 			(((1 + alpha_perp_red * beta) * u_dot_del_M) -
 			((beta - alpha_perp_red) * ((pMesh->M[idx] / M) ^ u_dot_del_M)) -
-				(alpha_perp_red * (beta - alpha_perp_red) * (pMesh->M[idx] / M) * ((pMesh->M[idx] / M) * u_dot_del_M))) / (1 + alpha * alpha);
+				(alpha_perp_red * (beta - alpha_perp_red) * (pMesh->M[idx] / M) * ((pMesh->M[idx] / M) * u_dot_del_M))) * msq / (msq + alpha * alpha);
 	}
 
 	return LLBSTT_Eval;

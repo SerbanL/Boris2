@@ -77,8 +77,8 @@ VEC<DBL3>& Transport::GetSpinCurrent(int component)
 				//2. diffusion with homogeneous Neumann boundary condition
 				Js -= grad_S * De;
 
-				//3. charge pumping
-				//4. topological Hall effect
+				//3. spin pumping
+				//4. topological spin Hall effect
 
 				if (component != 2 && (cpump_enabled || the_enabled)) {
 

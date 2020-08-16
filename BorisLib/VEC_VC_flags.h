@@ -115,19 +115,16 @@ void VEC_VC<VType>::set_ngbrFlags(void)
 
 						//on-axis
 						if (ngbrFlags[idx + 1] & NF_NOTEMPTY) { ngbrFlags[idx] |= NF_NPX; }
-						else { ngbrFlags[idx] &= ~NF_NPX; }
 
 						//off-axis (z slice : xy)
 						if (j < VEC<VType>::n.y - 1) {
 
 							if (ngbrFlags[idx + 1 + VEC<VType>::n.x] & NF_NOTEMPTY) { ngbrFlags[idx] |= NF_XY_PXPY; }
-							else { ngbrFlags[idx] &= ~NF_XY_PXPY; }
 						}
 
 						if (j > 0) {
 
 							if (ngbrFlags[idx + 1 - VEC<VType>::n.x] & NF_NOTEMPTY) { ngbrFlags[idx] |= NF_XY_PXNY; }
-							else { ngbrFlags[idx] &= ~NF_XY_PXNY; }
 						}
 					}
 
@@ -135,19 +132,16 @@ void VEC_VC<VType>::set_ngbrFlags(void)
 
 						//on-axis
 						if (ngbrFlags[idx - 1] & NF_NOTEMPTY) { ngbrFlags[idx] |= NF_NNX; }
-						else { ngbrFlags[idx] &= ~NF_NNX; }
 
 						//off-axis (z slice : xy)
 						if (j < VEC<VType>::n.y - 1) {
 
 							if (ngbrFlags[idx - 1 + VEC<VType>::n.x] & NF_NOTEMPTY) { ngbrFlags[idx] |= NF_XY_NXPY; }
-							else { ngbrFlags[idx] &= ~NF_XY_NXPY; }
 						}
 
 						if (j > 0) {
 
 							if (ngbrFlags[idx - 1 - VEC<VType>::n.x] & NF_NOTEMPTY) { ngbrFlags[idx] |= NF_XY_NXNY; }
-							else { ngbrFlags[idx] &= ~NF_XY_NXNY; }
 						}
 					}
 
@@ -155,19 +149,16 @@ void VEC_VC<VType>::set_ngbrFlags(void)
 
 						//on-axis
 						if (ngbrFlags[idx + VEC<VType>::n.x] & NF_NOTEMPTY) { ngbrFlags[idx] |= NF_NPY; }
-						else { ngbrFlags[idx] &= ~NF_NPY; }
 
 						//off-axis (x slice : yz)
 						if (k < VEC<VType>::n.z - 1) {
 
 							if (ngbrFlags[idx + VEC<VType>::n.x + VEC<VType>::n.x*VEC<VType>::n.y] & NF_NOTEMPTY) { ngbrFlags[idx] |= NF_YZ_PYPZ; }
-							else { ngbrFlags[idx] &= ~NF_YZ_PYPZ; }
 						}
 
 						if (k > 0) {
 
 							if (ngbrFlags[idx + VEC<VType>::n.x - VEC<VType>::n.x*VEC<VType>::n.y] & NF_NOTEMPTY) { ngbrFlags[idx] |= NF_YZ_PYNZ; }
-							else { ngbrFlags[idx] &= ~NF_YZ_PYNZ; }
 						}
 					}
 
@@ -175,19 +166,16 @@ void VEC_VC<VType>::set_ngbrFlags(void)
 
 						//on-axis
 						if (ngbrFlags[idx - VEC<VType>::n.x] & NF_NOTEMPTY) { ngbrFlags[idx] |= NF_NNY; }
-						else { ngbrFlags[idx] &= ~NF_NNY; }
 
 						//off-axis (x slice : yz)
 						if (k < VEC<VType>::n.z - 1) {
 
 							if (ngbrFlags[idx - VEC<VType>::n.x + VEC<VType>::n.x*VEC<VType>::n.y] & NF_NOTEMPTY) { ngbrFlags[idx] |= NF_YZ_NYPZ; }
-							else { ngbrFlags[idx] &= ~NF_YZ_NYPZ; }
 						}
 
 						if (k > 0) {
 
 							if (ngbrFlags[idx - VEC<VType>::n.x - VEC<VType>::n.x*VEC<VType>::n.y] & NF_NOTEMPTY) { ngbrFlags[idx] |= NF_YZ_NYNZ; }
-							else { ngbrFlags[idx] &= ~NF_YZ_NYNZ; }
 						}
 					}
 
@@ -195,19 +183,16 @@ void VEC_VC<VType>::set_ngbrFlags(void)
 
 						//on-axis
 						if (ngbrFlags[idx + VEC<VType>::n.x*VEC<VType>::n.y] & NF_NOTEMPTY) { ngbrFlags[idx] |= NF_NPZ; }
-						else { ngbrFlags[idx] &= ~NF_NPZ; }
 
 						//off-axis (y slice : xz)
 						if (i < VEC<VType>::n.x - 1) {
 
 							if (ngbrFlags[idx + 1 + VEC<VType>::n.x*VEC<VType>::n.y] & NF_NOTEMPTY) { ngbrFlags[idx] |= NF_XZ_PXPZ; }
-							else { ngbrFlags[idx] &= ~NF_XZ_PXPZ; }
 						}
 
 						if (i > 0) {
 
 							if (ngbrFlags[idx - 1 + VEC<VType>::n.x*VEC<VType>::n.y] & NF_NOTEMPTY) { ngbrFlags[idx] |= NF_XZ_NXPZ; }
-							else { ngbrFlags[idx] &= ~NF_XZ_NXPZ; }
 						}
 					}
 
@@ -215,19 +200,16 @@ void VEC_VC<VType>::set_ngbrFlags(void)
 
 						//on-axis
 						if (ngbrFlags[idx - VEC<VType>::n.x*VEC<VType>::n.y] & NF_NOTEMPTY) { ngbrFlags[idx] |= NF_NNZ; }
-						else { ngbrFlags[idx] &= ~NF_NNZ; }
 
 						//off-axis (y slice : xz)
 						if (i < VEC<VType>::n.x - 1) {
 
 							if (ngbrFlags[idx + 1 - VEC<VType>::n.x*VEC<VType>::n.y] & NF_NOTEMPTY) { ngbrFlags[idx] |= NF_XZ_PXNZ; }
-							else { ngbrFlags[idx] &= ~NF_XZ_PXNZ; }
 						}
 
 						if (i > 0) {
 
 							if (ngbrFlags[idx - 1 - VEC<VType>::n.x*VEC<VType>::n.y] & NF_NOTEMPTY) { ngbrFlags[idx] |= NF_XZ_NXNZ; }
-							else { ngbrFlags[idx] &= ~NF_XZ_NXNZ; }
 						}
 					}
 

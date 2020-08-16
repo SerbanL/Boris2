@@ -42,10 +42,8 @@ bool DemagTFunc::CalcDiagTens2D_Shifted_Irregular(VEC<DBL3> &Ddiag, INT3 n, INT3
 
 				DBL3 val;
 
-				double cells_radius_sq = i * i + j * j + (shift.z / d.z) * (shift.z / d.z);
-
 				//apply asymptotic equations?
-				if (asymptotic_distance > 0 && int(floor_epsilon(cells_radius_sq)) >= asymptotic_distance * asymptotic_distance) {
+				if (asymptotic_distance > 0 && (i >= asymptotic_distance || j >= asymptotic_distance || int(floor_epsilon(mod(shift.z / d.z))) >= asymptotic_distance || int(floor_epsilon(i * i + j * j + (shift.z / d.z) * (shift.z / d.z))) >= asymptotic_distance * asymptotic_distance)) {
 
 					//asymptotic approximation : can apply equations for cells with same dimensions and simply multiply by source cell thickness to adjust (remember d and s can only differ in z component) - this is exact, not a further approximation
 					//the demag field at the destination cell, in the asymptotic approximation regime, will scale with the source cell thickness, but not with the destination cell thickness
@@ -79,14 +77,15 @@ bool DemagTFunc::CalcDiagTens2D_Shifted_Irregular(VEC<DBL3> &Ddiag, INT3 n, INT3
 
 				DBL3 val;
 
-				double cells_radius_sq = 
-					(i + (shift.x / d.x)) * (i + (shift.x / d.x)) + 
-					(j + (shift.y / d.y)) * (j + (shift.y / d.y)) + 
-					(shift.z / d.z) * (shift.z / d.z);
+				double is = mod(i + (shift.x / d.x));
+				double js = mod(j + (shift.y / d.y));
+				double ks = mod(shift.z / d.z);
 
 				//apply asymptotic equations?
-				if (asymptotic_distance > 0 && int(floor_epsilon(cells_radius_sq)) >= asymptotic_distance * asymptotic_distance) {
-
+				if (asymptotic_distance > 0 && 
+					(int(floor_epsilon(is)) >= asymptotic_distance || int(floor_epsilon(js)) >= asymptotic_distance || int(floor_epsilon(ks)) >= asymptotic_distance ||
+					int(floor_epsilon(is * is + js * js + ks * ks)) >= asymptotic_distance * asymptotic_distance)) {
+				
 					//asymptotic approximation : can apply equations for cells with same dimensions and simply multiply by source cell thickness to adjust (remember d and s can only differ in z component) - this is exact, not a further approximation
 					//the demag field at the destination cell, in the asymptotic approximation regime, will scale with the source cell thickness, but not with the destination cell thickness
 					val = DBL3(
@@ -159,10 +158,8 @@ bool DemagTFunc::CalcOffDiagTens2D_Shifted_Irregular(VEC<DBL3> &Dodiag, INT3 n, 
 
 				DBL3 val;
 
-				double cells_radius_sq = i * i + j * j + (shift.z / d.z) * (shift.z / d.z);
-
 				//apply asymptotic equations?
-				if (asymptotic_distance > 0 && int(floor_epsilon(cells_radius_sq)) >= asymptotic_distance * asymptotic_distance) {
+				if (asymptotic_distance > 0 && (i >= asymptotic_distance || j >= asymptotic_distance || int(floor_epsilon(mod(shift.z / d.z))) >= asymptotic_distance || int(floor_epsilon(i * i + j * j + (shift.z / d.z) * (shift.z / d.z))) >= asymptotic_distance * asymptotic_distance)) {
 
 					//asymptotic approximation : can apply equations for cells with same dimensions and simply multiply by source cell thickness to adjust (remember d and s can only differ in z component) - this is exact, not a further approximation
 					//the demag field at the destination cell, in the asymptotic approximation regime, will scale with the source cell thickness, but not with the destination cell thickness
@@ -197,13 +194,14 @@ bool DemagTFunc::CalcOffDiagTens2D_Shifted_Irregular(VEC<DBL3> &Dodiag, INT3 n, 
 
 				DBL3 val;
 
-				double cells_radius_sq =
-					(i + (shift.x / d.x)) * (i + (shift.x / d.x)) +
-					(j + (shift.y / d.y)) * (j + (shift.y / d.y)) +
-					(shift.z / d.z) * (shift.z / d.z);
+				double is = mod(i + (shift.x / d.x));
+				double js = mod(j + (shift.y / d.y));
+				double ks = mod(shift.z / d.z);
 
 				//apply asymptotic equations?
-				if (asymptotic_distance > 0 && int(floor_epsilon(cells_radius_sq)) >= asymptotic_distance * asymptotic_distance) {
+				if (asymptotic_distance > 0 &&
+					(int(floor_epsilon(is)) >= asymptotic_distance || int(floor_epsilon(js)) >= asymptotic_distance || int(floor_epsilon(ks)) >= asymptotic_distance ||
+					int(floor_epsilon(is * is + js * js + ks * ks)) >= asymptotic_distance * asymptotic_distance)) {
 
 					//asymptotic approximation : can apply equations for cells with same dimensions and simply multiply by source cell thickness to adjust (remember d and s can only differ in z component) - this is exact, not a further approximation
 					//the demag field at the destination cell, in the asymptotic approximation regime, will scale with the source cell thickness, but not with the destination cell thickness

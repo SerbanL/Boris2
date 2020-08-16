@@ -120,7 +120,7 @@ __device__ cuReal3 ManagedDiffEqAFMCUDA::SLLB(int idx, cuReal3& value_B)
 	cuReal2 Mmag = cuReal2(M[idx].norm(), M2[idx].norm());
 	cuReal2 Ms0 = pcuMesh->pMs_AFM->get0();
 	cuReal2 m = Mmag / Ms0;
-	cuReal2 mM = m & Mmag;
+	cuReal2 msq = m & m;
 
 	cuReal2 Ms = *pcuMesh->pMs_AFM;
 	cuReal2 alpha = *pcuMesh->palpha_AFM;
@@ -190,12 +190,12 @@ __device__ cuReal3 ManagedDiffEqAFMCUDA::SLLB(int idx, cuReal3& value_B)
 	cuReal3 Torque_Thermal_Value_2 = (*pTorque_Thermal_2)[position] * sqrt(alpha_par.j);
 
 	//sub-lattice B value so we can read it after
-	value_B = (-(cuBReal)GAMMA * grel.j / (1 + alpha.j * alpha.j)) * ((M2[idx] ^ Heff2[idx]) + alpha.j * ((M2[idx] / mM.j) ^ (M2[idx] ^ (Heff2[idx] + H_Thermal_Value_2)))) +
-		(cuBReal)GAMMA * grel.j * alpha_par.j * (M2[idx] * (Heff2[idx] + Hl_2)) * (M2[idx] / mM.j) + Torque_Thermal_Value_2;
+	value_B = (-(cuBReal)GAMMA * grel.j * msq.j / (msq.j + alpha.j * alpha.j)) * (M2[idx] ^ Heff2[idx]) + (-(cuBReal)GAMMA * grel.j * m.j * alpha.j / (msq.j + alpha.j * alpha.j)) * ((M2[idx] / Mmag.j) ^ (M2[idx] ^ (Heff2[idx] + H_Thermal_Value_2))) +
+		(cuBReal)GAMMA * grel.j * alpha_par.j * Ms0.j * ((M2[idx] / Mmag.j) * (Heff2[idx] + Hl_2)) * (M2[idx] / Mmag.j) + Torque_Thermal_Value_2;
 
 	//return the sub-lattice A value as normal
-	return (-(cuBReal)GAMMA * grel.i / (1 + alpha.i * alpha.i)) * ((M[idx] ^ Heff[idx]) + alpha.i * ((M[idx] / mM.i) ^ (M[idx] ^ (Heff[idx] + H_Thermal_Value)))) +
-		(cuBReal)GAMMA * grel.i * alpha_par.i * (M[idx] * (Heff[idx] + Hl_1)) * (M[idx] / mM.i) + Torque_Thermal_Value;
+	return (-(cuBReal)GAMMA * grel.i * msq.i / (msq.i + alpha.i * alpha.i)) * (M[idx] ^ Heff[idx]) + (-(cuBReal)GAMMA * grel.i * m.i * alpha.i / (msq.i + alpha.i * alpha.i)) * ((M[idx] / Mmag.i) ^ (M[idx] ^ (Heff[idx] + H_Thermal_Value))) +
+		(cuBReal)GAMMA * grel.i * alpha_par.i * Ms0.i * ((M[idx] / Mmag.i) * (Heff[idx] + Hl_1)) * (M[idx] / Mmag.i) + Torque_Thermal_Value;
 }
 
 //------------------------------------------------------------------------------------------------------
@@ -222,7 +222,7 @@ __device__ cuReal3 ManagedDiffEqAFMCUDA::SLLBSTT(int idx, cuReal3& value_B)
 	cuReal2 Mmag = cuReal2(M[idx].norm(), M2[idx].norm());
 	cuReal2 Ms0 = pcuMesh->pMs_AFM->get0();
 	cuReal2 m = Mmag / Ms0;
-	cuReal2 mM = m & Mmag;
+	cuReal2 msq = m & m;
 
 	cuReal2 Ms = *pcuMesh->pMs_AFM;
 	cuReal2 alpha = *pcuMesh->palpha_AFM;
@@ -298,11 +298,11 @@ __device__ cuReal3 ManagedDiffEqAFMCUDA::SLLBSTT(int idx, cuReal3& value_B)
 	cuReal3 H_Thermal_Value_2 = (*pH_Thermal_2)[position] * sqrt(alpha.j - alpha_par.j) / alpha.j;
 	cuReal3 Torque_Thermal_Value_2 = (*pTorque_Thermal_2)[position] * sqrt(alpha_par.j);
 
-	cuReal3 LLGSTT_Eval_A = (-(cuBReal)GAMMA * grel.i / (1 + alpha.i * alpha.i)) * ((M[idx] ^ Heff[idx]) + alpha.i * ((M[idx] / mM.i) ^ (M[idx] ^ (Heff[idx] + H_Thermal_Value)))) +
-		(cuBReal)GAMMA * grel.i * alpha_par.i * (M[idx] * (Heff[idx] + Hl_1)) * (M[idx] / mM.i) + Torque_Thermal_Value;
+	cuReal3 LLGSTT_Eval_A = (-(cuBReal)GAMMA * grel.i * msq.i / (msq.i + alpha.i * alpha.i)) * (M[idx] ^ Heff[idx]) + (-(cuBReal)GAMMA * grel.i * m.i * alpha.i / (msq.i + alpha.i * alpha.i)) * ((M[idx] / Mmag.i) ^ (M[idx] ^ (Heff[idx] + H_Thermal_Value))) +
+		(cuBReal)GAMMA * grel.i * alpha_par.i * Ms0.i * ((M[idx] / Mmag.i) * (Heff[idx] + Hl_1)) * (M[idx] / Mmag.i) + Torque_Thermal_Value;
 
-	cuReal3 LLGSTT_Eval_B = (-(cuBReal)GAMMA * grel.j / (1 + alpha.j * alpha.j)) * ((M2[idx] ^ Heff2[idx]) + alpha.j * ((M2[idx] / mM.j) ^ (M2[idx] ^ (Heff2[idx] + H_Thermal_Value_2)))) +
-		(cuBReal)GAMMA * grel.j * alpha_par.j * (M2[idx] * (Heff2[idx] + Hl_2)) * (M2[idx] / mM.j) + Torque_Thermal_Value_2;
+	cuReal3 LLGSTT_Eval_B = (-(cuBReal)GAMMA * grel.j * msq.j / (msq.j + alpha.j * alpha.j)) * (M2[idx] ^ Heff2[idx]) + (-(cuBReal)GAMMA * grel.j * m.j * alpha.j / (msq.j + alpha.j * alpha.j)) * ((M2[idx] / Mmag.j) ^ (M2[idx] ^ (Heff2[idx] + H_Thermal_Value_2))) +
+		(cuBReal)GAMMA * grel.j * alpha_par.j * Ms0.j * ((M2[idx] / Mmag.j) * (Heff2[idx] + Hl_2)) * (M2[idx] / Mmag.j) + Torque_Thermal_Value_2;
 
 	if (E.linear_size()) {
 
@@ -323,12 +323,12 @@ __device__ cuReal3 ManagedDiffEqAFMCUDA::SLLBSTT(int idx, cuReal3& value_B)
 		LLGSTT_Eval_A +=
 			(((1 + alpha_perp_red.i * beta) * u_dot_del_M_A) -
 			((beta - alpha_perp_red.i) * ((M[idx] / Mmag.i) ^ u_dot_del_M_A)) -
-				(alpha_perp_red.i * (beta - alpha_perp_red.i) * (M[idx] / Mmag.i) * ((M[idx] / Mmag.i) * u_dot_del_M_A))) / (1 + alpha.i * alpha.i);
+				(alpha_perp_red.i * (beta - alpha_perp_red.i) * (M[idx] / Mmag.i) * ((M[idx] / Mmag.i) * u_dot_del_M_A))) * msq.i / (msq.i + alpha.i * alpha.i);
 
 		LLGSTT_Eval_B +=
 			(((1 + alpha_perp_red.j * beta) * u_dot_del_M_B) -
 			((beta - alpha_perp_red.j) * ((M2[idx] / Mmag.j) ^ u_dot_del_M_B)) -
-				(alpha_perp_red.j * (beta - alpha_perp_red.j) * (M2[idx] / Mmag.j) * ((M2[idx] / Mmag.j) * u_dot_del_M_B))) / (1 + alpha.j * alpha.j);
+				(alpha_perp_red.j * (beta - alpha_perp_red.j) * (M2[idx] / Mmag.j) * ((M2[idx] / Mmag.j) * u_dot_del_M_B))) * msq.j / (msq.j + alpha.j * alpha.j);
 	}
 
 	//sub-lattice B value so we can read it after
