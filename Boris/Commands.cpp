@@ -4544,6 +4544,46 @@ void Simulation::HandleCommand(string command_string)
 		}
 		break;
 
+		case CMD_MCSERIAL:
+		{
+			int status;
+			string meshName;
+
+			error = commandSpec.GetParameters(command_fields, status, meshName);
+			if (error) { error.reset() = commandSpec.GetParameters(command_fields, status); meshName = SMesh.superMeshHandle; }
+
+			if (!error) {
+
+				if (!err_hndl.qcall(&SuperMesh::Set_MonteCarlo_Serial, &SMesh, (bool)status, meshName)) {
+
+					UpdateScreen();
+				}
+			}
+			else if (verbose) Print_MCSettings();
+		}
+		break;
+
+		case CMD_MCCONSTRAIN:
+		{
+			DBL3 value;
+			string meshName;
+
+			error = commandSpec.GetParameters(command_fields, value, meshName);
+			if (error) { error.reset() = commandSpec.GetParameters(command_fields, value); meshName = SMesh.superMeshHandle; }
+
+			if (!error) {
+
+				if (!err_hndl.qcall(&SuperMesh::Set_MonteCarlo_Constrained, &SMesh, !value.IsNull(), value, meshName)) {
+
+					UpdateScreen();
+				}
+
+				UpdateScreen();
+			}
+			else if (verbose) Print_MCSettings();
+		}
+		break;
+
 		//---------------- CMD_DP_ commands here
 
 		case CMD_DP_CLEARALL:

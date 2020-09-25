@@ -164,7 +164,6 @@ double Zeeman::UpdateField(void)
 	else {
 
 		double time = pSMesh->GetStageTime();
-		double Temperature = pMesh->base_temperature;
 
 		if (pMesh->GetMeshType() == MESH_ANTIFERROMAGNETIC) {
 
@@ -288,7 +287,6 @@ double Zeeman::GetEnergyDensity(Rect& avRect)
 	else {
 
 		double time = pSMesh->GetStageTime();
-		double Temperature = pMesh->base_temperature;
 
 		if (pMesh->GetMeshType() == MESH_ANTIFERROMAGNETIC) {
 

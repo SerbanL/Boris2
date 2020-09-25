@@ -172,6 +172,7 @@ void Simulation::MakeIOInfo(void)
 	ioInfo.push_back(mesh_info, IOI_MESH_FORSTOCHASTICITY);
 	ioInfo.push_back(mesh_info, IOI_MESH_FORSPEEDUP);
 	ioInfo.push_back(mesh_info, IOI_MESH_FORSKYPOSDMUL);
+	ioInfo.push_back(mesh_info, IOI_MESH_FORMC);
 
 	//Shows ferromagnetic super-mesh rectangle (unit m) : textId is the mesh rectangle for the ferromagnetic super-mesh
 	//IOI_FMSMESHRECTANGLE
@@ -321,10 +322,14 @@ void Simulation::MakeIOInfo(void)
 	ioInfo.set(showdata_info_generic + string("<i><b>Magnetisation relaxation |dm/dt|</i>"), INT2(IOI_SHOWDATA, DATA_DMDT));
 	ioInfo.set(showdata_info_generic + string("<i><b>Average magnetisation</i>"), INT2(IOI_SHOWDATA, DATA_AVM));
 	ioInfo.set(showdata_info_generic + string("<i><b>Average magnetisation sub-lattice B</i>"), INT2(IOI_SHOWDATA, DATA_AVM2));
+	ioInfo.set(showdata_info_generic + string("<i><b>Average squared X magnetisation</i>"), INT2(IOI_SHOWDATA, DATA_AVMXSQ));
+	ioInfo.set(showdata_info_generic + string("<i><b>Average squared Y magnetisation</i>"), INT2(IOI_SHOWDATA, DATA_AVMYSQ));
+	ioInfo.set(showdata_info_generic + string("<i><b>Average squared Z magnetisation</i>"), INT2(IOI_SHOWDATA, DATA_AVMZSQ));
 	ioInfo.set(showdata_info_generic + string("<i><b>Magnetization magnitude min-max</i>"), INT2(IOI_SHOWDATA, DATA_M_MINMAX));
 	ioInfo.set(showdata_info_generic + string("<i><b>Magnetization component x min-max</i>"), INT2(IOI_SHOWDATA, DATA_MX_MINMAX));
 	ioInfo.set(showdata_info_generic + string("<i><b>Magnetization component y min-max</i>"), INT2(IOI_SHOWDATA, DATA_MY_MINMAX));
 	ioInfo.set(showdata_info_generic + string("<i><b>Magnetization component z min-max</i>"), INT2(IOI_SHOWDATA, DATA_MZ_MINMAX));
+	ioInfo.set(showdata_info_generic + string("<i><b>Monte-Carlo cone angle (deg.) and target acceptance.</i>"), INT2(IOI_SHOWDATA, DATA_MONTECARLOPARAMS));
 	ioInfo.set(showdata_info_generic + string("<i><b>Applied magnetic field</i>"), INT2(IOI_SHOWDATA, DATA_HA));
 	ioInfo.set(showdata_info_generic + string("<i><b>Average charge current density</i>"), INT2(IOI_SHOWDATA, DATA_JC));
 	ioInfo.set(showdata_info_generic + string("<i><b>Average spin x-current density</i>"), INT2(IOI_SHOWDATA, DATA_JSX));
@@ -372,10 +377,14 @@ void Simulation::MakeIOInfo(void)
 	ioInfo.set(data_info_generic + string("<i><b>Magnetisation relaxation |dm/dt|</i>"), INT2(IOI_DATA, DATA_DMDT));
 	ioInfo.set(data_info_generic + string("<i><b>Average magnetisation</i>"), INT2(IOI_DATA, DATA_AVM));
 	ioInfo.set(data_info_generic + string("<i><b>Average magnetisation sub-lattice B</i>"), INT2(IOI_DATA, DATA_AVM2));
+	ioInfo.set(data_info_generic + string("<i><b>Average squared X magnetisation</i>"), INT2(IOI_DATA, DATA_AVMXSQ));
+	ioInfo.set(data_info_generic + string("<i><b>Average squared Y magnetisation</i>"), INT2(IOI_DATA, DATA_AVMYSQ));
+	ioInfo.set(data_info_generic + string("<i><b>Average squared Z magnetisation</i>"), INT2(IOI_DATA, DATA_AVMZSQ));
 	ioInfo.set(data_info_generic + string("<i><b>Magnetization magnitude min-max</i>"), INT2(IOI_DATA, DATA_M_MINMAX));
 	ioInfo.set(data_info_generic + string("<i><b>Magnetization component x min-max</i>"), INT2(IOI_DATA, DATA_MX_MINMAX));
 	ioInfo.set(data_info_generic + string("<i><b>Magnetization component y min-max</i>"), INT2(IOI_DATA, DATA_MY_MINMAX));
 	ioInfo.set(data_info_generic + string("<i><b>Magnetization component z min-max</i>"), INT2(IOI_DATA, DATA_MZ_MINMAX));
+	ioInfo.set(data_info_generic + string("<i><b>Monte-Carlo cone angle (deg.) and target acceptance.</i>"), INT2(IOI_DATA, DATA_MONTECARLOPARAMS));
 	ioInfo.set(data_info_generic + string("<i><b>Applied magnetic field</i>"), INT2(IOI_DATA, DATA_HA));
 	ioInfo.set(data_info_generic + string("<i><b>Average charge current density</i>"), INT2(IOI_DATA, DATA_JC));
 	ioInfo.set(data_info_generic + string("<i><b>Average spin x-current density</i>"), INT2(IOI_DATA, DATA_JSX));
@@ -505,6 +514,7 @@ void Simulation::MakeIOInfo(void)
 	ioInfo.set(stage_generic_info + string("<i><b>Set heat source sequence using custom equation"), INT2(IOI_STAGE, SS_QEQUATIONSEQ));
 	ioInfo.set(stage_generic_info + string("<i><b>Set from file in current directory\n<i><b>File must have tab-spaced columns as:\n<i><b>time and value all in S.I. units.\n<i><b>Time resolution set by stage time condition."), INT2(IOI_STAGE, SS_QFILE));
 	ioInfo.set(stage_generic_info + string("<i><b>Set uniform stress in polar coordinates"), INT2(IOI_STAGE, SS_TSIGPOLAR));
+	ioInfo.set(stage_generic_info + string("<i><b>Use Monte-Carlo algorithm in atomistic meshes."), INT2(IOI_STAGE, SS_MONTECARLO));
 
 	//Shows a stage added to the simulation schedule : minorId is the minor id of elements in Simulation::simStages (major id there is always 0), auxId is the number of the interactive object in the list, textId is the configured stage text
 	//Note this entry must always represent the entry in Simulation::simStages with the index in auxId.
@@ -558,6 +568,7 @@ void Simulation::MakeIOInfo(void)
 	ioInfo.set(stagevalue_generic_info + string("<i><b>Steps: Text equation"), INT2(IOI_SETSTAGEVALUE, SS_QEQUATIONSEQ));
 	ioInfo.set(stagevalue_generic_info + string("<i><b>Set values from file."), INT2(IOI_SETSTAGEVALUE, SS_QFILE));
 	ioInfo.set(stagevalue_generic_info + string("<i><b>magnitude, theta, polar"), INT2(IOI_SETSTAGEVALUE, SS_TSIGPOLAR));
+	ioInfo.set(stagevalue_generic_info + string("<i><b>acceptance_rate"), INT2(IOI_SETSTAGEVALUE, SS_MONTECARLO));
 
 	//Shows the stop condition for the simulation schedule stage : minorId is the minor id of elements in Simulation::simStages (major id there is always 0), auxId is the number of the interactive object in the list, textId is the stop type and value as a string
 	//IOI_STAGESTOPCONDITION
@@ -1370,6 +1381,25 @@ void Simulation::MakeIOInfo(void)
 		string("\n[tc1,1,0,1/tc]dbl-click: edit entry");
 
 	ioInfo.push_back(IOI_SKYPOSDMUL_info, IOI_SKYPOSDMUL);
+
+	//Shows Monte-Carlo computation type (serial/parallel) : minorId is the unique mesh id number, auxId is the status (0 : parallel, 1 : serial, -1 : N/A)
+	//IOI_MCCOMPUTATION
+
+	string IOI_MCCOMPUTATION_info =
+		string("[tc1,1,0,1/tc]<b>Monte Carlo Computation Type</b>") +
+		string("\n[tc1,1,0,1/tc]click: toggle");
+
+	ioInfo.push_back(IOI_MCCOMPUTATION_info, IOI_MCCOMPUTATION);
+
+	//Shows Monte-Carlo algorithm type : minorId is the unique mesh id number, auxId is the type (0 : classical, 1 : constrained, -1 : N/A), textId is the constrained DBL3 direction.
+	//IOI_MCTYPE
+
+	string IOI_MCTYPE_info =
+		string("[tc1,1,0,1/tc]<b>Monte Carlo Algorithm Type</b>") +
+		string("\n[tc1,1,0,1/tc]right-click: change") +
+		string("\n[tc1,1,0,1/tc]dbl-click: edit");
+
+	ioInfo.push_back(IOI_MCTYPE_info, IOI_MCTYPE);
 }
 
 //---------------------------------------------------- MAKE INTERACTIVE OBJECT : Auxiliary method
@@ -2014,6 +2044,16 @@ string Simulation::MakeIO(IOI_ identifier, PType ... params)
 		}
 		break;
 
+	case IOI_MESH_FORMC:
+		if (params_str.size() == 1) {
+
+			int meshIndex = ToNum(params_str[0]);
+			string meshName = SMesh().get_key_from_index(meshIndex);
+
+			return MakeInteractiveObject(meshName, IOI_MESH_FORMC, SMesh[meshName]->get_id(), 1, meshName);
+		}
+		break;
+
 	case IOI_MOVINGMESH:
 		if (SMesh.IsMovingMeshSet()) {
 
@@ -2581,7 +2621,25 @@ string Simulation::MakeIO(IOI_ identifier, PType ... params)
 			return MakeInteractiveObject(ToString(multiplier), IOI_SKYPOSDMUL, SMesh[meshIndex]->get_id(), -1, ToString(multiplier), ONCOLOR);
 		}
 		break;
+
+	case IOI_MCCOMPUTATION:
+		if (params_str.size() == 1) {
+
+			int meshIndex = ToNum(params_str[0]);
+
+			return MakeInteractiveObject(" Parallel ", IOI_MCCOMPUTATION, SMesh[meshIndex]->get_id(), 0);
+		}
+		break;
 	
+	case IOI_MCTYPE:
+		if (params_str.size() == 1) {
+
+			int meshIndex = ToNum(params_str[0]);
+
+			return MakeInteractiveObject(" Classical ", IOI_MCTYPE, SMesh[meshIndex]->get_id(), 0, "");
+		}
+		break;
+
 	}
 
 	return "";

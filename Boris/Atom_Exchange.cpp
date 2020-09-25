@@ -103,7 +103,7 @@ double Atom_Exchange::UpdateField(void)
 	//convert to energy density and return. Divide by two since in the Hamiltonian the sum is performed only once for every pair of spins, but if you use the M.H expression each sum appears twice.
 	//Also note, this energy density is not the same as the micromagnetic one, due to different zero-energy points.
 	//To obtain the micromagnetic energy density you also have to subtract the energy density obtained at saturation from the Heisenberg Hamiltonian.
-	//Could be done here easily, but decided not to (add J * number of neigbhors to energy, then convert t).
+	//Could be done here easily, but decided not to (add J * number of neigbhors to energy).
 	if (non_empty_volume) this->energy = -MUB_MU0 * energy / (2*non_empty_volume);
 	else this->energy = 0.0;
 
@@ -216,6 +216,24 @@ void Atom_Exchange::Compute_Exchange(VEC<double>& displayVEC)
 		}
 		else displayVEC[idx] = 0.0;
 	}
+}
+
+//-------------------Energy methods
+
+//For simple cubic mesh spin_index coincides with index in M1
+double Atom_Exchange::Get_Atomistic_Energy(int spin_index)
+{
+	//For CUDA there are separate device functions using by CUDA kernels.
+
+	if (paMesh->M1.is_not_empty(spin_index)) {
+
+		double J = paMesh->J;
+		paMesh->update_parameters_mcoarse(spin_index, paMesh->J, J);
+
+		//local spin energy given -J * Sum_over_neighbors_j (Si . Sj), where Si, Sj are unit vectors
+		return -J * (paMesh->M1[spin_index].normalized() * paMesh->M1.ngbr_dirsum(spin_index));
+	}
+	else return 0.0;
 }
 
 #endif

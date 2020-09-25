@@ -373,6 +373,7 @@
     <CudaCompile Include="Atom_iDMExchangeCUDA.cu" />
     <CudaCompile Include="Atom_MeshCUDA.cu" />
     <CudaCompile Include="Atom_Mesh_CubicCUDA_Compute.cu" />
+    <CudaCompile Include="Atom_Mesh_CubicCUDA_MonteCarlo.cu" />
     <CudaCompile Include="Atom_MOpticalCUDA.cu" />
     <CudaCompile Include="Atom_ZeemanCUDA.cu" />
     <CudaCompile Include="DiffEqDMCUDA.cu" />
@@ -391,6 +392,7 @@
     <CudaCompile Include="DiffEq_CommonBaseCUDA.cu" />
     <CudaCompile Include="DipoleDipoleKernelCUDA.cu" />
     <CudaCompile Include="HeatBaseCUDA.cu" />
+    <CudaCompile Include="ManagedAtom_MeshCUDA_MonteCarlo_SC.cu" />
     <CudaCompile Include="MaterialParameterCUDA.cu">
       <FileType>Document</FileType>
     </CudaCompile>
@@ -536,6 +538,7 @@
     <ClCompile Include="Atom_iDMExchange.cpp" />
     <ClCompile Include="Atom_iDMExchangeCUDA.cpp" />
     <ClCompile Include="Atom_Mesh_Cubic_Compute.cpp" />
+    <ClCompile Include="Atom_Mesh_Cubic_MonteCarlo.cpp" />
     <ClCompile Include="Atom_MOptical.cpp" />
     <ClCompile Include="Atom_MOpticalCUDA.cpp" />
     <ClCompile Include="DiffEq_CommonBaseCUDA.cpp" />
@@ -775,6 +778,7 @@
     <ClCompile Include="SuperMeshSettings.cpp" />
     <ClCompile Include="SuperMeshSimulation.cpp" />
     <ClCompile Include="SuperMeshTemperature.cpp" />
+    <ClCompile Include="SuperMesh_MonteCarlo.cpp" />
     <ClCompile Include="SurfExchange.cpp" />
     <ClCompile Include="SurfExchangeCUDA.cpp" />
     <ClCompile Include="SurfExchangeCUDA_AFM.cpp" />

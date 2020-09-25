@@ -571,6 +571,12 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 	}
 	break;
 
+	case IOI_MESH_FORMC:
+	{
+		display_meshIO(&Simulation::Build_MCSettings_ListLine);
+	}
+	break;
+
 	//Shows mesh rectangle (units m) : minorId is the unique mesh id number, textId is the mesh rectangle
 	case IOI_MESHRECTANGLE:
 	{
@@ -2866,16 +2872,25 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 
 		if (meshIdx >= 0) {
 
-			if (images >= 0 && !SMesh[meshIdx]->Is_Demag_Enabled()) {
-
-				pTO->SetBackgroundColor(UNAVAILABLECOLOR);
-				pTO->set(" N/A ");
-				stateChanged = true;
-				iop.auxId = -1;
-			}
-			else if (SMesh[meshIdx]->Is_Demag_Enabled() && SMesh[meshIdx]->CallModuleMethod(&DemagBase::Get_PBC).x != images) {
+			if (SMesh[meshIdx]->Is_Demag_Enabled() && SMesh[meshIdx]->CallModuleMethod(&DemagBase::Get_PBC).x != images) {
 
 				iop.auxId = SMesh[meshIdx]->CallModuleMethod(&DemagBase::Get_PBC).x;
+
+				if (iop.auxId > 0) {
+
+					pTO->SetBackgroundColor(ONCOLOR);
+				}
+				else {
+
+					pTO->SetBackgroundColor(OFFCOLOR);
+				}
+
+				pTO->set(" " + ToString(iop.auxId) + " ");
+				stateChanged = true;
+			}
+			else if (!SMesh[meshIdx]->Is_Demag_Enabled() && SMesh[meshIdx]->Get_Magnetic_PBC().x != images) {
+
+				iop.auxId = SMesh[meshIdx]->Get_Magnetic_PBC().x;
 
 				if (iop.auxId > 0) {
 
@@ -2903,16 +2918,25 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 
 		if (meshIdx >= 0) {
 
-			if (images >= 0 && !SMesh[meshIdx]->Is_Demag_Enabled()) {
-
-				pTO->SetBackgroundColor(UNAVAILABLECOLOR);
-				pTO->set(" N/A ");
-				stateChanged = true;
-				iop.auxId = -1;
-			}
-			else if (SMesh[meshIdx]->Is_Demag_Enabled() && SMesh[meshIdx]->CallModuleMethod(&DemagBase::Get_PBC).y != images) {
+			if (SMesh[meshIdx]->Is_Demag_Enabled() && SMesh[meshIdx]->CallModuleMethod(&DemagBase::Get_PBC).y != images) {
 
 				iop.auxId = SMesh[meshIdx]->CallModuleMethod(&DemagBase::Get_PBC).y;
+
+				if (iop.auxId > 0) {
+
+					pTO->SetBackgroundColor(ONCOLOR);
+				}
+				else {
+
+					pTO->SetBackgroundColor(OFFCOLOR);
+				}
+
+				pTO->set(" " + ToString(iop.auxId) + " ");
+				stateChanged = true;
+			}
+			else if (!SMesh[meshIdx]->Is_Demag_Enabled() && SMesh[meshIdx]->Get_Magnetic_PBC().y != images) {
+
+				iop.auxId = SMesh[meshIdx]->Get_Magnetic_PBC().y;
 
 				if (iop.auxId > 0) {
 
@@ -2940,16 +2964,25 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 
 		if (meshIdx >= 0) {
 
-			if (images >= 0 && !SMesh[meshIdx]->Is_Demag_Enabled()) {
-
-				pTO->SetBackgroundColor(UNAVAILABLECOLOR);
-				pTO->set(" N/A ");
-				stateChanged = true;
-				iop.auxId = -1;
-			}
-			else if (SMesh[meshIdx]->Is_Demag_Enabled() && SMesh[meshIdx]->CallModuleMethod(&DemagBase::Get_PBC).z != images) {
+			if (SMesh[meshIdx]->Is_Demag_Enabled() && SMesh[meshIdx]->CallModuleMethod(&DemagBase::Get_PBC).z != images) {
 
 				iop.auxId = SMesh[meshIdx]->CallModuleMethod(&DemagBase::Get_PBC).z;
+
+				if (iop.auxId > 0) {
+
+					pTO->SetBackgroundColor(ONCOLOR);
+				}
+				else {
+
+					pTO->SetBackgroundColor(OFFCOLOR);
+				}
+
+				pTO->set(" " + ToString(iop.auxId) + " ");
+				stateChanged = true;
+			}
+			else if (!SMesh[meshIdx]->Is_Demag_Enabled() && SMesh[meshIdx]->Get_Magnetic_PBC().z != images) {
+
+				iop.auxId = SMesh[meshIdx]->Get_Magnetic_PBC().z;
 
 				if (iop.auxId > 0) {
 
@@ -3147,6 +3180,81 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 			else if (multiplier != set_multiplier) {
 
 				iop.textId = ToString(set_multiplier);
+
+				pTO->set(" " + iop.textId + " ");
+				stateChanged = true;
+			}
+		}
+	}
+	break;
+
+	//Shows Monte-Carlo computation type (serial/parallel) : minorId is the unique mesh id number, auxId is the status (0 : parallel, 1 : serial, -1 : N/A)
+	case IOI_MCCOMPUTATION:
+	{
+		int meshId = iop.minorId;
+		int status = iop.auxId;
+
+		int meshIdx = SMesh.contains_id(meshId);
+
+		if (meshIdx >= 0) {
+
+			if (status >= 0 && !SMesh[meshIdx]->is_atomistic()) {
+
+				pTO->SetBackgroundColor(UNAVAILABLECOLOR);
+				pTO->set(" N/A ");
+				stateChanged = true;
+				iop.auxId = -1;
+			}
+			else if (status >= 0 && (bool)status != dynamic_cast<Atom_Mesh*>(SMesh[meshIdx])->Get_MonteCarlo_Serial()) {
+
+				iop.auxId = dynamic_cast<Atom_Mesh*>(SMesh[meshIdx])->Get_MonteCarlo_Serial();
+
+				if (iop.auxId == 1) {
+
+					pTO->set(" Serial ");
+				}
+				else {
+
+					pTO->set(" Parallel ");
+				}
+
+				stateChanged = true;
+			}
+		}
+	}
+	break;
+
+	//Shows Monte-Carlo algorithm type : minorId is the unique mesh id number, auxId is the type (0 : classical, 1 : constrained, -1 : N/A), textId is the constrained DBL3 direction.
+	case IOI_MCTYPE:
+	{
+		int meshId = iop.minorId;
+		int type = iop.auxId;
+		string direction = iop.textId;
+
+		int meshIdx = SMesh.contains_id(meshId);
+
+		if (meshIdx >= 0) {
+
+			if (type >= 0 && !SMesh[meshIdx]->is_atomistic()) {
+
+				pTO->SetBackgroundColor(UNAVAILABLECOLOR);
+				pTO->set(" N/A ");
+				stateChanged = true;
+				iop.auxId = -1;
+			}
+			else if (type >= 0 && 
+				((bool)type != dynamic_cast<Atom_Mesh*>(SMesh[meshIdx])->Get_MonteCarlo_Constrained() || 
+				(type == 1 && (DBL3)ToNum(direction) != dynamic_cast<Atom_Mesh*>(SMesh[meshIdx])->Get_MonteCarlo_Constrained_Direction()))) {
+
+				iop.auxId = dynamic_cast<Atom_Mesh*>(SMesh[meshIdx])->Get_MonteCarlo_Constrained();
+				if (iop.auxId == 0) {
+
+					iop.textId = "Classical";
+				}
+				else {
+
+					iop.textId = ToString(dynamic_cast<Atom_Mesh*>(SMesh[meshIdx])->Get_MonteCarlo_Constrained_Direction());
+				}
 
 				pTO->set(" " + iop.textId + " ");
 				stateChanged = true;

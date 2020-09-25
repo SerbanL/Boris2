@@ -152,4 +152,26 @@ double Atom_Anisotropy_Uniaxial::GetEnergyDensity(Rect& avRect)
 	return energy;
 }
 
+//-------------------Energy methods
+
+//For simple cubic mesh spin_index coincides with index in M1
+double Atom_Anisotropy_Uniaxial::Get_Atomistic_Energy(int spin_index)
+{
+	//For CUDA there are separate device functions using by CUDA kernels.
+
+	if (paMesh->M1.is_not_empty(spin_index)) {
+
+		double K = paMesh->K;
+		DBL3 mcanis_ea1 = paMesh->mcanis_ea1;
+		paMesh->update_parameters_mcoarse(spin_index, paMesh->K, K, paMesh->mcanis_ea1, mcanis_ea1);
+
+		//calculate m.ea dot product
+		double dotprod = paMesh->M1[spin_index].normalized() * mcanis_ea1;
+
+		//Hamiltonian contribution as -Ku * (S * ea)^2, where S is the local spin direction
+		return -K * dotprod * dotprod;
+	}
+	else return 0.0;
+}
+
 #endif

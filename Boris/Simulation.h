@@ -514,6 +514,11 @@ private:
 	void Print_skypos_dmul(void);
 	string Build_skypos_dmul_ListLine(int meshIndex);
 
+	//---------------------------------------------------- MONTE-CARLO SETTINGS
+
+	void Print_MCSettings(void);
+	string Build_MCSettings_ListLine(int meshIndex);
+
 	//---------------------------------------------------- MAKE INTERACTIVE OBJECT : Auxiliary method
 
 	//Generate a formatted string depending on the interactive object identifier

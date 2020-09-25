@@ -605,48 +605,42 @@ inline DBL3 solve_crossprod_perp(double a, double b, const DBL3& m, const DBL3& 
 
 ///////////////////////////////////////////////////////////////////////////////
 
-//rotate the vector r through the given polar and azimuthal angles. The angles are in radians.
-//i.e. if we have the unit vector n = [ sin(theta)cos(phi), sin(theta)sin(phi), cos(theta) ]
-//then we rotate the coordinate system s.t. the new x axis is n
-//then the rotated vector r' (returned vector) is that vector which has the same components in the new coordinte system as the vector r has in the original system
-//
-//The unit vector directions of the axes of the rotate coordinate system, expressed in the original coordinate system are:
-// x' = [ sin(theta)cos(phi), sin(theta)sin(phi), cos(theta) ] = n
-// y' = [ -sin(phi), cos(phi), 0 ]
-// z' = x' x y' = [ -cos(theta)cos(phi), -cos(theta)sin(phi), sin(theta) ]
+//rotate the vector r by setting the coordinate system x axis to given polar and azimuthal angles. The angles are in radians.
+//i.e. if we have the unit vector n = [ cos(phi)sin(theta), sin(phi)sin(theta), cos(theta) ]
+//then we rotate the coordinate system s.t. the new x axis is n : 1) rotate the x axis around z through azimuthal, obtaining new x' and y' axes. 2) rotate x' axis around y' axis through (pi/2 - polar), obtaining new x'', y'=y'', z'' axes
+//then the rotated vector r' (returned vector) is that vector which has the same components in the new coordinate system as the vector r has in the original system.
 inline DBL3 rotate_polar(const DBL3& r, double theta, double phi)
 {
 	return DBL3(
-		sin(theta)*cos(phi) * r.x - sin(phi) * r.y - cos(theta)*cos(phi) * r.z,
-		sin(theta)*sin(phi) * r.x + cos(phi) * r.y - cos(theta)*sin(phi) * r.z,
-		cos(theta)		    * r.x - 0              + sin(theta)			 * r.z
+		cos(phi)*sin(theta) * r.x - sin(phi) * r.y - cos(phi)*cos(theta) * r.z,
+		sin(phi)*sin(theta) * r.x + cos(phi) * r.y - sin(phi)*cos(theta) * r.z,
+		cos(theta)		    * r.x - 0              + sin(theta)	 		 * r.z
 	);
 }
 
 //same as above but the rotation is specified using the unit vector n
 inline DBL3 rotate_polar(const DBL3& r, const DBL3& n)
 {
-	//if n = [sin(theta)cos(phi), sin(theta)sin(phi), cos(theta)]
+	//if n = [cos(phi)sin(theta), sin(phi)sin(theta), cos(theta)]
 	//where theta ranges in [0, PI], and phi ranges in [0, 2*PI] then:
 	
 	//nxy is sin(theta)
 	double nxy = sqrt(n.x*n.x + n.y*n.y);
 
 	//then sin(phi) = ny / nxy, and cos(phi) = nx / nxy
+	//n.z = cos(theta)
 
 	if (nxy > 0) {
 
 		return DBL3(
-			n.x * r.x - (n.y / nxy) * r.y - (n.z*n.x / nxy) * r.z,
-			n.y * r.x + (n.x / nxy) * r.y - (n.z*n.y / nxy) * r.z,
-			n.z	* r.x - 0				  + nxy				* r.z
+			n.x * r.x - (n.y / nxy) * r.y - (n.x / nxy) * n.z * r.z,
+			n.y * r.x + (n.x / nxy) * r.y - (n.y / nxy) * n.z * r.z,
+			n.z * r.x - 0				  + nxy				  * r.z
 		);
 	}
 	else {
 
 		//special case where n = [0, 0, n.z]
-		//thus take phi = 0
-		//cos(theta) = sign of n.z
 
 		if (n.z > 0) {
 
@@ -657,4 +651,62 @@ inline DBL3 rotate_polar(const DBL3& r, const DBL3& n)
 			return DBL3(+r.z, r.y, -r.x);
 		}
 	}
+}
+
+//This is the inverse operation of rotate_polar.
+//i.e. for rotate polar we have A * r = r_rot, where A is the rotation matrix for theta and phi angles.
+//Then here we use the A^-1 matrix, so that if r_rot is passed as argument we get back the r vector (theta and phi same angles as for rotate_polar)
+inline DBL3 invrotate_polar(const DBL3& r, double theta, double phi)
+{
+	return DBL3(
+		cos(phi)*sin(theta) * r.x + sin(phi) * sin(theta) * r.y + cos(theta) * r.z,
+		-sin(phi)			* r.x + cos(phi)			  * r.y + 0,
+		-cos(phi)*cos(theta)* r.x - sin(phi)*cos(theta)   * r.y + sin(theta) * r.z
+	);
+}
+
+//same as above but the rotation is specified using the unit vector n
+inline DBL3 invrotate_polar(const DBL3& r, const DBL3& n)
+{
+	//if n = [cos(phi)sin(theta), sin(phi)sin(theta), cos(theta)]
+	//where theta ranges in [0, PI], and phi ranges in [0, 2*PI] then:
+
+	//nxy is sin(theta)
+	double nxy = sqrt(n.x*n.x + n.y*n.y);
+
+	//then sin(phi) = ny / nxy, and cos(phi) = nx / nxy
+	//n.z = cos(theta)
+
+	if (nxy > 0) {
+
+		return DBL3(
+			n.x * r.x + n.y * r.y + n.z	* r.z,
+			-(n.y / nxy) * r.x + (n.x / nxy) * r.y,
+			-(n.x / nxy) * n.z * r.x - (n.y / nxy) * n.z * r.y + nxy * r.z
+		);
+	}
+	else {
+
+		//special case where n = [0, 0, n.z]
+
+		if (n.z > 0) {
+
+			return DBL3(+r.z, r.y, -r.x);
+		}
+		else {
+
+			return DBL3(-r.z, r.y, +r.x);
+		}
+	}
+}
+
+//return a vector which is rotate by theta (0 to PI) from the vector r and by phi around the vector r (0 to 2PI)
+//s.t. if r is along the x axis, theta is a rotation in the xy plane, and phi is a rotation around the x axis (geometric sense rotations).
+inline DBL3 relrotate_polar(const DBL3& r, double theta, double phi)
+{
+	//rotation around the x axis first
+	DBL3 rdash = DBL3(cos(theta), sin(theta)*cos(phi), sin(phi)*sin(theta)) * r.norm();
+
+	//now the vector to return is that vector obtained by rotating the x axis into r
+	return rotate_polar(rdash, r.normalized());
 }

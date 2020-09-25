@@ -1,7 +1,7 @@
 #include "stdafx.h"
 #include "Simulation.h"
 
-//MAIN SIMULATION LOOP. Runs in SimulationThread launched in BorisWinapi.
+//MAIN SIMULATION LOOP. Runs in SimulationThread
 void Simulation::Simulate(void)
 {
 	//stop other parts of the program from changing simulation parameters in the middle of an interation
@@ -11,13 +11,26 @@ void Simulation::Simulate(void)
 		//Check conditions for saving data
 		CheckSaveDataConditions();
 
-		//advance time for this iteration
+		if (simStages[stage_step.major].stage_type() == SS_MONTECARLO) {
+
+			//Monte-Carlo stages are special - use Iterate_MonteCarlo to advance simulation instead
 #if COMPILECUDA == 1
-		if (cudaEnabled) SMesh.AdvanceTimeCUDA();
-		else SMesh.AdvanceTime();
+			if (cudaEnabled) SMesh.Iterate_MonteCarloCUDA(simStages[stage_step.major].get_value<double>(stage_step.minor));
+			else SMesh.Iterate_MonteCarlo(simStages[stage_step.major].get_value<double>(stage_step.minor));
 #else
-		SMesh.AdvanceTime();
+			SMesh.Iterate_MonteCarlo(simStages[stage_step.major].get_value<double>(stage_step.minor));
 #endif
+		}
+		else {
+
+			//advance time for this iteration
+#if COMPILECUDA == 1
+			if (cudaEnabled) SMesh.AdvanceTimeCUDA();
+			else SMesh.AdvanceTime();
+#else
+			SMesh.AdvanceTime();
+#endif
+		}
 
 		//Display update
 		if (iterUpdate && SMesh.GetIteration() % iterUpdate == 0) UpdateScreen_Quick();

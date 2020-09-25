@@ -148,7 +148,6 @@ double Atom_Zeeman::UpdateField(void)
 	else {
 
 		double time = pSMesh->GetStageTime();
-		double Temperature = paMesh->base_temperature;
 
 #pragma omp parallel for reduction(+:energy)
 		for (int j = 0; j < paMesh->n.y; j++) {
@@ -224,7 +223,6 @@ double Atom_Zeeman::GetEnergyDensity(Rect& avRect)
 	else {
 
 		double time = pSMesh->GetStageTime();
-		double Temperature = paMesh->base_temperature;
 
 #pragma omp parallel for reduction(+:energy, num_points)
 		for (int j = 0; j < paMesh->n.y; j++) {
@@ -255,6 +253,51 @@ double Atom_Zeeman::GetEnergyDensity(Rect& avRect)
 	else energy = 0.0;
 
 	return energy;
+}
+
+//-------------------Energy methods
+
+//For simple cubic mesh spin_index coincides with index in M1
+double Atom_Zeeman::Get_Atomistic_Energy(int spin_index)
+{
+	//For CUDA there are separate device functions using by CUDA kernels.
+
+	if (paMesh->M1.is_not_empty(spin_index)) {
+
+		/////////////////////////////////////////
+		// Fixed set field
+		/////////////////////////////////////////
+
+		if (!H_equation.is_set()) {
+
+			if (IsZ(Ha.norm())) {
+
+				return 0.0;
+			}
+
+			double cHA = paMesh->cHA;
+			paMesh->update_parameters_mcoarse(spin_index, paMesh->cHA, cHA);
+
+			return -MUB * paMesh->M1[spin_index] * MU0 * (cHA * Ha);
+		}
+
+		/////////////////////////////////////////
+		// Field set from user equation
+		/////////////////////////////////////////
+
+		else {
+
+			//on top of spatial dependence specified through an equation, also allow spatial dependence through the cHA parameter
+			double cHA = paMesh->cHA;
+			paMesh->update_parameters_mcoarse(spin_index, paMesh->cHA, cHA);
+
+			DBL3 relpos = paMesh->M1.cellidx_to_position(spin_index);
+			DBL3 H = H_equation.evaluate_vector(relpos.x, relpos.y, relpos.z, pSMesh->GetStageTime());
+
+			return -MUB * paMesh->M1[spin_index] * MU0 * (cHA * H);
+		}
+	}
+	else return 0.0;
 }
 
 //----------------------------------------------- Others

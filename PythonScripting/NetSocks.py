@@ -1,5 +1,5 @@
-#NetSocks Module Updated on : 30/07/2020
-#Boris version : 2.81
+#NetSocks Module Updated on : 11/09/2020
+#Boris version : 2.9
 
 import socket
 import time
@@ -899,6 +899,12 @@ class NSClient:
     
     def mcellsize(self, value = ''):
     	return self.SendCommand("mcellsize", [value])
+    
+    def mcconstrain(self, value = '', meshname = ''):
+    	return self.SendCommand("mcconstrain", [value, meshname])
+    
+    def mcserial(self, value = '', meshname = ''):
+    	return self.SendCommand("mcserial", [value, meshname])
     
     def memory(self):
     	return self.SendCommand("memory")

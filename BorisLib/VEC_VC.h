@@ -357,6 +357,10 @@ public:
 	//return number of neighbors present (pbcs not taken into consideration)
 	int ngbr_count(int index) const { return ((ngbrFlags[index] & NF_NPX) == NF_NPX) + ((ngbrFlags[index] & NF_NNX) == NF_NNX) + ((ngbrFlags[index] & NF_NPY) == NF_NPY) + ((ngbrFlags[index] & NF_NNY) == NF_NNY) + ((ngbrFlags[index] & NF_NPZ) == NF_NPZ) + ((ngbrFlags[index] & NF_NNZ) == NF_NNZ); }
 
+	//populate neighbors (must have 6 elements) with indexes of neighbors for idx cell, setting -1 for cells which are not neighbors (empty or due to boundaries)
+	//order is +x, -x, +y, -y, +z, -z
+	void get_neighbors(int idx, std::vector<int>& neighbors);
+
 	//--------------------------------------------SET CELL FLAGS - EXTERNAL USE : VEC_VC_flags.h
 
 	//set dirichlet boundary conditions from surface_rect (must be a rectangle intersecting with one of the surfaces of this mesh) and value
@@ -529,6 +533,21 @@ public:
 	//parallel processing versions - do not call from parallel code!!!
 	VType average_nonempty_omp(const Box& box) const;
 	VType average_nonempty_omp(const Rect& rectangle = Rect()) const;
+
+	template <typename PType = decltype(GetMagnitude(std::declval<VType>()))>
+	PType average_xsq_nonempty_omp(const Box& box) const;
+	template <typename PType = decltype(GetMagnitude(std::declval<VType>()))>
+	PType average_xsq_nonempty_omp(const Rect& rectangle = Rect()) const;
+
+	template <typename PType = decltype(GetMagnitude(std::declval<VType>()))>
+	PType average_ysq_nonempty_omp(const Box& box) const;
+	template <typename PType = decltype(GetMagnitude(std::declval<VType>()))>
+	PType average_ysq_nonempty_omp(const Rect& rectangle = Rect()) const;
+
+	template <typename PType = decltype(GetMagnitude(std::declval<VType>()))>
+	PType average_zsq_nonempty_omp(const Box& box) const;
+	template <typename PType = decltype(GetMagnitude(std::declval<VType>()))>
+	PType average_zsq_nonempty_omp(const Rect& rectangle = Rect()) const;
 
 	//--------------------------------------------NUMERICAL PROPERTIES : VEC_VC_nprops.h
 

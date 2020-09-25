@@ -41,6 +41,7 @@ class Atom_Mesh_Cubic :
 	bool,
 	//Members in this derived class
 	bool, bool,
+	double, double, bool, bool, DBL3,
 	//Material Parameters
 	MatP<double, double>, MatP<double, double>, MatP<DBL2, double>,
 	MatP<double, double>, MatP<double, double>,
@@ -79,6 +80,22 @@ private:
 	//number of atomic moments per cell
 	const int atoms_per_cell = 1;
 
+	// MONTE-CARLO DATA
+
+	//vector of Monte-Carlo algorithm indices, used for shuffling spin picking order (used for serial MC algorithms)
+	std::vector<unsigned> mc_indices;
+
+	//used for parallel constrained MC algorithm, where we use the Fisher-Yates algorithm to shuffle spin indices so spins are paired randomly (this must surely be important, can't have the same spin pairings every step).
+	std::vector<unsigned> mc_indices_red, mc_indices_black;
+
+private:
+
+	//Take a Monte Carlo step in this atomistic mesh : these functions implement the actual algorithms
+	void Iterate_MonteCarlo_Serial_Classic(void);
+	void Iterate_MonteCarlo_Serial_Constrained(void);
+	void Iterate_MonteCarlo_Parallel_Classic(void);
+	void Iterate_MonteCarlo_Parallel_Constrained(void);
+
 public:
 
 	//constructor taking only a SuperMesh pointer (SuperMesh is the owner) only needed for loading : all required values will be set by LoadObjectState method in ProgramState
@@ -106,6 +123,14 @@ public:
 
 #if COMPILECUDA == 1
 	void PrepareNewIterationCUDA(void) { if (paMeshCUDA && !pMod.is_ID_set(MOD_ZEEMAN)) paMeshCUDA->Heff1()->set(n.dim(), cuReal3()); }
+#endif
+
+	//Take a Monte Carlo step in this atomistic mesh
+	void Iterate_MonteCarlo(double acceptance_rate);
+
+#if COMPILECUDA == 1
+	//Take a Monte Carlo step in this atomistic mesh
+	void Iterate_MonteCarloCUDA(double acceptance_rate);
 #endif
 
 	//Check if mesh needs to be moved (using the MoveMesh method) - return amount of movement required (i.e. parameter to use when calling MoveMesh).
@@ -183,6 +208,11 @@ public:
 
 	//get average magnetic moment in given rectangle (entire mesh if none specified)
 	DBL3 GetAverageMoment(Rect rectangle = Rect());
+
+	//Average square of components
+	double GetAverageXMomentSq(Rect rectangle = Rect());
+	double GetAverageYMomentSq(Rect rectangle = Rect());
+	double GetAverageZMomentSq(Rect rectangle = Rect());
 
 	//get moment magnitude min-max in given rectangle (entire mesh if none specified)
 	DBL2 GetMomentMinMax(Rect rectangle = Rect());

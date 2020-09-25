@@ -20,6 +20,7 @@ Atom_Mesh_Cubic::Atom_Mesh_Cubic(SuperMesh *pSMesh_) :
 			VINFO(exclude_from_multiconvdemag),
 			//Members in this derived class
 			VINFO(move_mesh_trigger), VINFO(exchange_couple_to_meshes),
+			VINFO(mc_cone_angledeg), VINFO(mc_acceptance_rate), VINFO(mc_parallel), VINFO(mc_constrain), VINFO(cmc_n),
 			//Material Parameters
 			VINFO(alpha), VINFO(mu_s), VINFO(Nxy),
 			VINFO(J), VINFO(D),
@@ -35,7 +36,8 @@ Atom_Mesh_Cubic::Atom_Mesh_Cubic(SuperMesh *pSMesh_) :
 			IINFO(Atom_Demag_N), IINFO(Atom_Demag), IINFO(Atom_DipoleDipole), IINFO(Atom_Zeeman), IINFO(Atom_Exchange), IINFO(Atom_DMExchange), IINFO(Atom_iDMExchange), IINFO(Atom_MOptical), IINFO(Atom_Anisotropy_Uniaxial), IINFO(Atom_Anisotropy_Cubic), IINFO(Atom_Heat)
 		}),
 	meshODE(this)
-{}
+{
+}
 
 Atom_Mesh_Cubic::Atom_Mesh_Cubic(Rect meshRect_, DBL3 h_, SuperMesh *pSMesh_) :
 	Atom_Mesh(MESH_ATOM_CUBIC, pSMesh_),
@@ -50,6 +52,7 @@ Atom_Mesh_Cubic::Atom_Mesh_Cubic(Rect meshRect_, DBL3 h_, SuperMesh *pSMesh_) :
 			VINFO(exclude_from_multiconvdemag),
 			//Members in this derived class
 			VINFO(move_mesh_trigger), VINFO(exchange_couple_to_meshes),
+			VINFO(mc_cone_angledeg), VINFO(mc_acceptance_rate), VINFO(mc_parallel), VINFO(mc_constrain), VINFO(cmc_n),
 			//Material Parameters
 			VINFO(alpha), VINFO(mu_s), VINFO(Nxy),
 			VINFO(J), VINFO(D),

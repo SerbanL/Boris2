@@ -9,6 +9,8 @@ class Atom_Mesh;
 
 #if defined(MODULE_COMPILATION_ANIUNI) && ATOMISTIC == 1
 
+//Uniaxial anisotropy for an atomistic simple cubic mesh
+
 class Atom_Anisotropy_Uniaxial :
 	public Modules,
 	public ProgramState<Atom_Anisotropy_Uniaxial, tuple<>, tuple<>>
@@ -46,6 +48,11 @@ public:
 	//-------------------Energy density methods
 
 	double GetEnergyDensity(Rect& avRect);
+
+	//-------------------Energy methods
+
+	//For simple cubic mesh spin_index coincides with index in M1
+	double Get_Atomistic_Energy(int spin_index);
 };
 
 #else

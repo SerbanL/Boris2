@@ -1,5 +1,7 @@
 #pragma once
 
+#include <atomic>
+
 #include "Boris_Enums_Defs.h"
 
 #include "MeshBase.h"
@@ -12,6 +14,15 @@
 #endif
 
 class SuperMesh;
+
+//Monte-Carlo Algorithm : minimum allowed cone angle
+#define MONTECARLO_CONEANGLEDEG_MIN		1.0
+//Monte-Carlo Algorithm : maximum allowed cone angle
+#define MONTECARLO_CONEANGLEDEG_MAX		180.0
+//Monte-Carlo Algorithm : change in cone angle per step
+#define MONTECARLO_CONEANGLEDEG_DELTA	1.0
+//Monte-Carlo Algorithm : target aceptance probability (vary cone angle to reach this)
+#define MONTECARLO_TARGETACCEPTANCE		0.5
 
 /////////////////////////////////////////////////////////////////////
 //
@@ -27,6 +38,26 @@ class Atom_Mesh :
 #endif
 
 protected:
+
+	// MONTE-CARLO DATA
+
+	//random number generator - used by Monte Carlo methods
+	BorisRand prng;
+
+	//Monte-Carlo current cone angle (vary to reach MONTECARLO_TARGETACCEPTANCE)
+	double mc_cone_angledeg = 30.0;
+
+	//last Monte-Carlo step acceptance probability (save it so we can read it out)
+	double mc_acceptance_rate = 0.0;
+
+	//use parallel Monte-Carlo algorithms?
+	bool mc_parallel = true;
+
+	//use constrained Monte-Carlo?
+	bool mc_constrain = false;
+	
+	//Constrained Monte-Carlo direction
+	DBL3 cmc_n = DBL3(1.0, 0.0, 0.0);
 
 public:
 
@@ -184,6 +215,18 @@ public:
 
 	//set PBC for required VECs : should only be called from a demag module
 	BError Set_Magnetic_PBC(INT3 pbc_images);
+	INT3 Get_Magnetic_PBC(void) { return INT3(M1.is_pbc_x(), M1.is_pbc_y(), M1.is_pbc_z()); }
+
+	void Set_MonteCarlo_Serial(bool status) { mc_parallel = !status; }
+	bool Get_MonteCarlo_Serial(void) { return !mc_parallel; }
+
+	void Set_MonteCarlo_Constrained(DBL3 cmc_n_)
+	{
+		if (cmc_n_.IsNull()) mc_constrain = false;
+		else { mc_constrain = true; cmc_n = cmc_n_; }
+	}
+	bool Get_MonteCarlo_Constrained(void) { return mc_constrain; }
+	DBL3 Get_MonteCarlo_Constrained_Direction(void) { return cmc_n; }
 
 	//----------------------------------- MODULES CONTROL (implement MeshBase) : Atom_MeshModules.cpp
 
@@ -318,6 +361,11 @@ public:
 
 	//get average magnetisation in given rectangle (entire mesh if none specified)
 	virtual DBL3 GetAverageMoment(Rect rectangle = Rect()) = 0;
+	
+	//Average square of components
+	virtual double GetAverageXMomentSq(Rect rectangle = Rect()) = 0;
+	virtual double GetAverageYMomentSq(Rect rectangle = Rect()) = 0;
+	virtual double GetAverageZMomentSq(Rect rectangle = Rect()) = 0;
 
 	//get moment magnitude min-max in given rectangle (entire mesh if none specified)
 	virtual DBL2 GetMomentMinMax(Rect rectangle = Rect()) = 0;
@@ -326,6 +374,8 @@ public:
 	virtual DBL2 GetMomentXMinMax(Rect rectangle = Rect()) = 0;
 	virtual DBL2 GetMomentYMinMax(Rect rectangle = Rect()) = 0;
 	virtual DBL2 GetMomentZMinMax(Rect rectangle = Rect()) = 0;
+
+	DBL2 Get_MonteCarlo_Params(void) { return DBL2(mc_cone_angledeg, mc_acceptance_rate); }
 
 	//------Implementing MeshBase
 

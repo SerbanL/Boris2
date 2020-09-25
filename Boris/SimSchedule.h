@@ -19,7 +19,9 @@ enum SS_ {
 	SS_TEQUATION, SS_TEQUATIONSEQ,
 	SS_QEQUATION, SS_QEQUATIONSEQ,
 	SS_HFIELDFILE, SS_VFILE, SS_IFILE, SS_TFILE, SS_QFILE,
-	SS_TSIGPOLAR
+	SS_TSIGPOLAR,
+
+	SS_MONTECARLO
 };
 
 //simulation stage stop conditions -> add new values at the end to keep older simulation files compatible

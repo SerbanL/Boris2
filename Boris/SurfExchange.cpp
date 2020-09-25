@@ -155,7 +155,7 @@ BError SurfExchange::Initialize(void)
 						pMesh_Top[mesh_idx]->h.z / 2);
 
 					//can't couple to an empty cell
-					if (!tmeshRect.contains(cell_rel_pos) || pMesh_Top[mesh_idx]->M.is_empty(cell_rel_pos)) continue;
+					if (!tmeshRect.contains(cell_rel_pos + tmeshRect.s) || pMesh_Top[mesh_idx]->M.is_empty(cell_rel_pos)) continue;
 
 					//if we are here then the cell in this mesh at cell_idx has something to couple to so count it : it will contribute to the surface exchange energy density
 					coupled_cells++;
@@ -187,7 +187,7 @@ BError SurfExchange::Initialize(void)
 						pMesh_Bot[mesh_idx]->meshRect.e.z - pMesh_Bot[mesh_idx]->meshRect.s.z - (pMesh_Bot[mesh_idx]->h.z / 2));
 
 					//can't couple to an empty cell
-					if (!bmeshRect.contains(cell_rel_pos) || pMesh_Bot[mesh_idx]->M.is_empty(cell_rel_pos)) continue;
+					if (!bmeshRect.contains(cell_rel_pos + bmeshRect.s) || pMesh_Bot[mesh_idx]->M.is_empty(cell_rel_pos)) continue;
 
 					//if we are here then the cell in this mesh at cell_idx has something to couple to so count it : it will contribute to the surface exchange energy density
 					coupled_cells++;
@@ -276,7 +276,7 @@ double SurfExchange::UpdateField(void)
 						pMesh_Top[mesh_idx]->h.z / 2);
 
 					//can't couple to an empty cell
-					if (!tmeshRect.contains(cell_rel_pos) || pMesh_Top[mesh_idx]->M.is_empty(cell_rel_pos)) continue;
+					if (!tmeshRect.contains(cell_rel_pos + tmeshRect.s) || pMesh_Top[mesh_idx]->M.is_empty(cell_rel_pos)) continue;
 
 					DBL3 Hsurfexh;
 
@@ -287,9 +287,6 @@ double SurfExchange::UpdateField(void)
 						//diamagnetic mesh sets coupling constant
 						double neta_dia = pMesh_Top[mesh_idx]->neta_dia;
 						pMesh_Top[mesh_idx]->update_parameters_atposition(cell_rel_pos, pMesh_Top[mesh_idx]->neta_dia, neta_dia);
-
-						//Hse = neta_dia * sus * Hext / (mu0 * Ms * tF)
-						//energy_density  = -neta_dia * sus * Hext.mF / tF
 
 						DBL3 Mdia = pMesh_Top[mesh_idx]->M[cell_rel_pos];
 						DBL3 m_i = pMesh->M[cell_idx] / Ms;
@@ -372,7 +369,7 @@ double SurfExchange::UpdateField(void)
 						pMesh_Bot[mesh_idx]->meshRect.e.z - pMesh_Bot[mesh_idx]->meshRect.s.z - (pMesh_Bot[mesh_idx]->h.z / 2));
 
 					//can't couple to an empty cell
-					if (!bmeshRect.contains(cell_rel_pos) || pMesh_Bot[mesh_idx]->M.is_empty(cell_rel_pos)) continue;
+					if (!bmeshRect.contains(cell_rel_pos + bmeshRect.s) || pMesh_Bot[mesh_idx]->M.is_empty(cell_rel_pos)) continue;
 
 					DBL3 Hsurfexh;
 
@@ -383,9 +380,6 @@ double SurfExchange::UpdateField(void)
 						//diamagnetic mesh sets coupling constant
 						double neta_dia = pMesh_Bot[mesh_idx]->neta_dia;
 						pMesh_Bot[mesh_idx]->update_parameters_atposition(cell_rel_pos, pMesh_Bot[mesh_idx]->neta_dia, neta_dia);
-
-						//Hse = neta_dia * sus * Hext / (mu0 * Ms * tF)
-						//energy_density  = -neta_dia * sus * Hext.mF / tF
 
 						DBL3 Mdia = pMesh_Bot[mesh_idx]->M[cell_rel_pos];
 						DBL3 m_i = pMesh->M[cell_idx] / Ms;

@@ -22,6 +22,8 @@ private:
 	//pointer to cpu version of this mesh
 	Atom_Mesh_Cubic *paMeshCubic;
 
+protected:
+
 public:
 
 	//make this object by copying data from the Mesh holding this object
@@ -34,6 +36,12 @@ public:
 	//call when a configuration change has occurred - some objects might need to be updated accordingly
 	BError UpdateConfiguration(UPDATECONFIG_ cfgMessage);
 	void UpdateConfiguration_Values(UPDATECONFIG_ cfgMessage) {}
+
+	//Take a Monte Carlo Metropolis step in this atomistic mesh
+	cuBReal Iterate_MonteCarloCUDA_Classic(cuBReal mc_cone_angledeg);
+
+	//Take a constrained Monte Carlo Metropolis step in this atomistic mesh
+	cuBReal Iterate_MonteCarloCUDA_Constrained(cuBReal mc_cone_angledeg);
 
 	//----------------------------------- OTHER IMPORTANT CONTROL METHODS
 
@@ -77,6 +85,8 @@ public:
 	//call when a configuration change has occurred - some objects might need to be updated accordingly
 	BError UpdateConfiguration(UPDATECONFIG_ cfgMessage) { return BError(); }
 	void UpdateConfiguration_Values(UPDATECONFIG_ cfgMessage) {}
+
+	void Iterate_MonteCarloCUDA(cuBReal acceptance_rate) {}
 
 	//----------------------------------- OTHER IMPORTANT CONTROL METHODS
 

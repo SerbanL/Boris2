@@ -252,6 +252,13 @@ public:
 	void UpdateTransportSolverCUDA(void);
 #endif
 
+	//Take a Monte Carlo step over all atomistic meshes using settings in each mesh; increase the iterations counters.
+	void Iterate_MonteCarlo(double acceptance_rate);
+
+#if COMPILECUDA == 1
+	void Iterate_MonteCarloCUDA(double acceptance_rate);
+#endif
+
 	//----------------------------------- ODE SOLVER CONTROL  : SuperMeshODE.cpp
 
 	//Reset all ODE solvers in meshes with on ODE
@@ -338,6 +345,14 @@ public:
 	cu_obj<ManagedDiffEq_CommonCUDA>& Get_ManagedDiffEq_CommonCUDA(void) { return odeSolver.Get_pODECUDA()->Get_ManagedDiffEq_CommonCUDA(); }
 	cu_obj<ManagedAtom_DiffEq_CommonCUDA>& Get_ManagedAtom_DiffEq_CommonCUDA(void) { return atom_odeSolver.Get_pODECUDA()->Get_ManagedAtom_DiffEq_CommonCUDA(); }
 #endif
+
+	//---------------------------------------------------------MONTE-CARLO SOLVER CONTROL : SuperMesh_MonteCarlo.cpp
+
+	//switch to serial (true) or parallel (false) in given mesh - all if meshName is the supermesh handle
+	BError Set_MonteCarlo_Serial(bool status, string meshName);
+
+	//switch to constrained Monnte-Carlo (true) or classical (false) in given mesh - all if meshName is the supermesh handle; if constrained, then use cmc_n direction.
+	BError Set_MonteCarlo_Constrained(bool status, DBL3 cmc_n, string meshName);
 
 	//--------------------------------------------------------- MESH HANDLING - COMPONENTS : SuperMeshMeshes.cpp
 

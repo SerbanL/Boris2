@@ -14,6 +14,16 @@ void Simulation::AddGenericStage(SS_ stageType, string meshName)
 	}
 	break;
 
+	case SS_MONTECARLO:
+	{
+		StageConfig stageConfig = StageConfig(stageDescriptors(stageType), stageStopDescriptors(STOP_ITERATIONS));
+		stageConfig.set_value(0.5);
+		stageConfig.set_stopvalue(10000);
+
+		simStages.push_back(stageConfig);
+	}
+	break;
+
 	case SS_HFIELDXYZ:
 	{
 		//zero field with STOP_MXH
@@ -113,30 +123,6 @@ void Simulation::AddGenericStage(SS_ stageType, string meshName)
 	}
 	break;
 
-	/*
-	case SS_VSIN:
-	{
-		//10 mV oscillation 1 GHz for 100 cycles
-		StageConfig stageConfig = StageConfig(stageDescriptors(stageType), stageStopDescriptors(STOP_TIME));
-		stageConfig.set_value(SINOSC(10e-3, 20, 100));
-		stageConfig.set_stopvalue(50e-12);
-
-		simStages.push_back(stageConfig);
-	}
-	break;
-
-	case SS_VCOS:
-	{
-		//10 mV oscillation 1 GHz for 100 cycles
-		StageConfig stageConfig = StageConfig(stageDescriptors(stageType), stageStopDescriptors(STOP_TIME));
-		stageConfig.set_value(COSOSC(10e-3, 20, 100));
-		stageConfig.set_stopvalue(50e-12);
-
-		simStages.push_back(stageConfig);
-	}
-	break;
-	*/
-
 	case SS_VEQUATION:
 	{
 		//zero potential with STOP_MXH
@@ -191,30 +177,6 @@ void Simulation::AddGenericStage(SS_ stageType, string meshName)
 		simStages.push_back(stageConfig);
 	}
 	break;
-
-	/*
-	case SS_ISIN:
-	{
-		//1 mA oscillation 1 GHz for 100 cycles
-		StageConfig stageConfig = StageConfig(stageDescriptors(stageType), stageStopDescriptors(STOP_TIME));
-		stageConfig.set_value(SINOSC(1e-3, 20, 100));
-		stageConfig.set_stopvalue(50e-12);
-
-		simStages.push_back(stageConfig);
-	}
-	break;
-
-	case SS_ICOS:
-	{
-		//1 mA oscillation 1 GHz for 100 cycles
-		StageConfig stageConfig = StageConfig(stageDescriptors(stageType), stageStopDescriptors(STOP_TIME));
-		stageConfig.set_value(COSOSC(1e-3, 20, 100));
-		stageConfig.set_stopvalue(50e-12);
-
-		simStages.push_back(stageConfig);
-	}
-	break;
-	*/
 
 	case SS_IEQUATION:
 	{
@@ -780,6 +742,7 @@ void Simulation::SetSimulationStageValue(void)
 	switch( simStages[stage_step.major].stage_type() ) {
 
 	case SS_RELAX:
+	case SS_MONTECARLO:
 	break;
 
 	case SS_HFIELDXYZ:
@@ -873,8 +836,6 @@ void Simulation::SetSimulationStageValue(void)
 
 	case SS_V:
 	case SS_VSEQ:
-	//case SS_VSIN:
-	//case SS_VCOS:
 	case SS_VFILE:
 	{
 		double potential = simStages[stage_step.major].get_value<double>(stage_step.minor);
@@ -885,8 +846,6 @@ void Simulation::SetSimulationStageValue(void)
 
 	case SS_I:
 	case SS_ISEQ:
-	//case SS_ISIN:
-	//case SS_ICOS:
 	case SS_IFILE:
 	{
 		double current = simStages[stage_step.major].get_value<double>(stage_step.minor);

@@ -161,7 +161,7 @@ double Atom_Anisotropy_Cubic::GetEnergyDensity(Rect& avRect)
 			double d3 = (paMesh->M1[idx] * mcanis_ea3) / mu_s;
 
 			//update energy
-			energy += K * (d1*d1*d2*d2 + d1 * d1*d3*d3 + d2*d2*d3*d3);
+			energy += K * (d1*d1*d2*d2 + d1*d1*d3*d3 + d2*d2*d3*d3);
 			num_points++;
 		}
 	}
@@ -171,6 +171,38 @@ double Atom_Anisotropy_Cubic::GetEnergyDensity(Rect& avRect)
 	else energy = 0.0;
 
 	return energy;
+}
+
+//-------------------Energy methods
+
+//For simple cubic mesh spin_index coincides with index in M1
+double Atom_Anisotropy_Cubic::Get_Atomistic_Energy(int spin_index)
+{
+	//For CUDA there are separate device functions using by CUDA kernels.
+
+	if (paMesh->M1.is_not_empty(spin_index)) {
+
+		double K = paMesh->K;
+		DBL3 mcanis_ea1 = paMesh->mcanis_ea1;
+		DBL3 mcanis_ea2 = paMesh->mcanis_ea2;
+		paMesh->update_parameters_mcoarse(spin_index, paMesh->K, K, paMesh->mcanis_ea1, mcanis_ea1, paMesh->mcanis_ea2, mcanis_ea2);
+
+		//vector product of ea1 and ea2 : the third orthogonal axis
+		DBL3 mcanis_ea3 = mcanis_ea1 ^ mcanis_ea2;
+
+		DBL3 S = paMesh->M1[spin_index].normalized();
+
+		//calculate m.ea1, m.ea2 and m.ea3 dot products
+		double d1 = S * mcanis_ea1;
+		double d2 = S * mcanis_ea2;
+		double d3 = S * mcanis_ea3;
+
+		//Hamiltonian contribution as K * (Sx^2*Sy^2 + Sx^2*Sz^2 + Sy^2*Sz^2), where S is the local spin direction (for easy axes coinciding with the xyz system)
+		//This is equivalent to the form -K/2 * (Sx^4 + Sy^4 + Sz^4) - energy zero point differs but that's immaterial.
+		//Also note the correct signs here for given easy axes (need to be careful, some publications have this wrong).
+		return K * (d1*d1*d2*d2 + d1 * d1*d3*d3 + d2 * d2*d3*d3);
+	}
+	else return 0.0;
 }
 
 #endif

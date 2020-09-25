@@ -9,7 +9,7 @@ class Atom_Mesh;
 
 #if defined(MODULE_COMPILATION_EXCHANGE) && ATOMISTIC == 1
 
-//Anisotropy modules can only be used in a magnetic mesh
+//Heisenberg exchange for an atomistic simple cubic mesh
 
 class Atom_Exchange :
 	public Modules,
@@ -52,6 +52,11 @@ public:
 
 	//Compute exchange energy density and store it in displayVEC
 	void Compute_Exchange(VEC<double>& displayVEC);
+
+	//-------------------Energy methods
+
+	//For simple cubic mesh spin_index coincides with index in M1
+	double Get_Atomistic_Energy(int spin_index);
 };
 
 #else

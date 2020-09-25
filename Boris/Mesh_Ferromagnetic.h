@@ -16,6 +16,7 @@
 #include "DMExchange.h"
 #include "iDMExchange.h"
 #include "SurfExchange.h"
+#include "SurfExchange_AFM.h"
 #include "Demag.h"
 #include "Demag_N.h"
 #include "SDemag_Demag.h"

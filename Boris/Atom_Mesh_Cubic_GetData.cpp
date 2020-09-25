@@ -49,13 +49,56 @@ DBL3 Atom_Mesh_Cubic::GetAverageMoment(Rect rectangle)
 #if COMPILECUDA == 1
 	if (paMeshCUDA) {
 
-		if (M1.linear_size()) return paMeshCUDA->M1()->average_nonempty(n.dim(), rectangle) * MUB;
+		if (M1.linear_size()) return paMeshCUDA->M1()->average_nonempty(n.dim(), rectangle);
 		else return DBL3(0.0);
 	}
 #endif
 
-	if (M1.linear_size()) return M1.average_nonempty_omp(rectangle) * MUB;
+	if (M1.linear_size()) return M1.average_nonempty_omp(rectangle);
 	else return DBL3(0.0);
+}
+
+//Average square of components
+double Atom_Mesh_Cubic::GetAverageXMomentSq(Rect rectangle)
+{
+#if COMPILECUDA == 1
+	if (paMeshCUDA) {
+
+		if (M1.linear_size()) return paMeshCUDA->M1()->average_xsq_nonempty(n.dim(), rectangle);
+		else return 0.0;
+	}
+#endif
+
+	if (M1.linear_size()) return M1.average_xsq_nonempty_omp(rectangle);
+	else return 0.0;
+}
+
+double Atom_Mesh_Cubic::GetAverageYMomentSq(Rect rectangle)
+{
+#if COMPILECUDA == 1
+	if (paMeshCUDA) {
+
+		if (M1.linear_size()) return paMeshCUDA->M1()->average_ysq_nonempty(n.dim(), rectangle);
+		else return 0.0;
+	}
+#endif
+
+	if (M1.linear_size()) return M1.average_ysq_nonempty_omp(rectangle);
+	else return 0.0;
+}
+
+double Atom_Mesh_Cubic::GetAverageZMomentSq(Rect rectangle)
+{
+#if COMPILECUDA == 1
+	if (paMeshCUDA) {
+
+		if (M1.linear_size()) return paMeshCUDA->M1()->average_zsq_nonempty(n.dim(), rectangle);
+		else return 0.0;
+	}
+#endif
+
+	if (M1.linear_size()) return M1.average_zsq_nonempty_omp(rectangle);
+	else return 0.0;
 }
 
 //get moment magnitude min-max in given rectangle (entire mesh if none specified)
@@ -64,7 +107,7 @@ DBL2 Atom_Mesh_Cubic::GetMomentMinMax(Rect rectangle)
 #if COMPILECUDA == 1
 	if (paMeshCUDA) {
 
-		if (M1.linear_size()) return paMeshCUDA->M1()->get_minmax(n.dim(), rectangle) * MUB;
+		if (M1.linear_size()) return paMeshCUDA->M1()->get_minmax(n.dim(), rectangle);
 		else return DBL2(0.0);
 	}
 #endif
@@ -79,7 +122,7 @@ DBL2 Atom_Mesh_Cubic::GetMomentXMinMax(Rect rectangle)
 #if COMPILECUDA == 1
 	if (paMeshCUDA) {
 
-		if (M1.linear_size()) return paMeshCUDA->M1()->get_minmax_component_x(n.dim(), rectangle) * MUB;
+		if (M1.linear_size()) return paMeshCUDA->M1()->get_minmax_component_x(n.dim(), rectangle);
 		else return DBL2(0.0);
 	}
 #endif
@@ -93,7 +136,7 @@ DBL2 Atom_Mesh_Cubic::GetMomentYMinMax(Rect rectangle)
 #if COMPILECUDA == 1
 	if (paMeshCUDA) {
 
-		if (M1.linear_size()) return paMeshCUDA->M1()->get_minmax_component_y(n.dim(), rectangle) * MUB;
+		if (M1.linear_size()) return paMeshCUDA->M1()->get_minmax_component_y(n.dim(), rectangle);
 		else return DBL2(0.0);
 	}
 #endif
@@ -107,7 +150,7 @@ DBL2 Atom_Mesh_Cubic::GetMomentZMinMax(Rect rectangle)
 #if COMPILECUDA == 1
 	if (paMeshCUDA) {
 
-		if (M1.linear_size()) return paMeshCUDA->M1()->get_minmax_component_z(n.dim(), rectangle) * MUB;
+		if (M1.linear_size()) return paMeshCUDA->M1()->get_minmax_component_z(n.dim(), rectangle);
 		else return DBL2(0.0);
 	}
 #endif

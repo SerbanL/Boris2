@@ -1058,6 +1058,16 @@ Simulation::Simulation(int Program_Version) :
 	commands[CMD_SKYPOSDMUL].limits = { { double(1.0), double(10.0) }, {Any(), Any()} };
 	commands[CMD_SKYPOSDMUL].return_descr = "[tc0,0.5,0,1/tc]Script return values: <i>multiplier</i>";
 
+	commands.insert(CMD_MCSERIAL, CommandSpecifier(CMD_MCSERIAL), "mcserial");
+	commands[CMD_MCSERIAL].usage = "[tc0,0.5,0,1/tc]USAGE : <b>mcserial</b> <i>value (meshname)</i>";
+	commands[CMD_MCSERIAL].descr = "[tc0,0.5,0.5,1/tc]Change Monte-Carlo algorithm type. 0: parallel (default); red-black ordering parallelization 1: serial (testing only); spins picked in random order. If meshname not specified setting is applied to all atomistic meshes.";
+	commands[CMD_MCSERIAL].limits = { { int(0), int(1) }, {Any(), Any()} };
+
+	commands.insert(CMD_MCCONSTRAIN, CommandSpecifier(CMD_MCCONSTRAIN), "mcconstrain");
+	commands[CMD_MCCONSTRAIN].usage = "[tc0,0.5,0,1/tc]USAGE : <b>mcconstrain</b> <i>value (meshname)</i>";
+	commands[CMD_MCCONSTRAIN].descr = "[tc0,0.5,0.5,1/tc]Set value 0 to revert to classic Monte-Carlo Metropolis for ASD. Set a unit vector direction value (x y z) to switch to constrained Monte Carlo as described in PRB 82, 054415 (2010). If meshname not specified setting is applied to all atomistic meshes.";
+	commands[CMD_MCCONSTRAIN].limits = { { DBL3(), Any() }, {Any(), Any()} };
+
 	commands.insert(CMD_DP_CLEARALL, CommandSpecifier(CMD_DP_CLEARALL), "dp_clearall");
 	commands[CMD_DP_CLEARALL].usage = "[tc0,0.5,0,1/tc]USAGE : <b>dp_clearall</b>";
 	commands[CMD_DP_CLEARALL].descr = "[tc0,0.5,0.5,1/tc]Clear all dp arrays.";
@@ -1413,11 +1423,15 @@ Simulation::Simulation(int Program_Version) :
 	dataDescriptor.push_back("dmdt", DatumSpecifier("|dm/dt| : ", 1), DATA_DMDT);
 	dataDescriptor.push_back("Ha", DatumSpecifier("Applied Field : ", 3, "A/m", false), DATA_HA);
 	dataDescriptor.push_back("<M>", DatumSpecifier("<M> : ", 3, "A/m", false, false), DATA_AVM);
+	dataDescriptor.push_back("<Mxsq>", DatumSpecifier("<Mxsq> : ", 1, "A/m", false, false), DATA_AVMXSQ);
+	dataDescriptor.push_back("<Mysq>", DatumSpecifier("<Mysq> : ", 1, "A/m", false, false), DATA_AVMYSQ);
+	dataDescriptor.push_back("<Mzsq>", DatumSpecifier("<Mzsq> : ", 1, "A/m", false, false), DATA_AVMZSQ);
 	dataDescriptor.push_back("<M2>", DatumSpecifier("<M2> : ", 3, "A/m", false, false), DATA_AVM2);
 	dataDescriptor.push_back("|M|mm", DatumSpecifier("|M|mm : ", 2, "A/m", false, false), DATA_M_MINMAX);
 	dataDescriptor.push_back("Mx_mm", DatumSpecifier("Mx_mm : ", 2, "A/m", false, false), DATA_MX_MINMAX);
 	dataDescriptor.push_back("My_mm", DatumSpecifier("My_mm : ", 2, "A/m", false, false), DATA_MY_MINMAX);
 	dataDescriptor.push_back("Mz_mm", DatumSpecifier("Mz_mm : ", 2, "A/m", false, false), DATA_MZ_MINMAX);
+	dataDescriptor.push_back("MCparams", DatumSpecifier("MCparams : ", 2, "", false), DATA_MONTECARLOPARAMS);
 	dataDescriptor.push_back("<Jc>", DatumSpecifier("<Jc> : ", 3, "A/m^2", false, false), DATA_JC);
 	dataDescriptor.push_back("<Jsx>", DatumSpecifier("<Jsx> : ", 3, "A/s", false, false), DATA_JSX);
 	dataDescriptor.push_back("<Jsy>", DatumSpecifier("<Jsy> : ", 3, "A/s", false, false), DATA_JSY);
@@ -1584,6 +1598,7 @@ Simulation::Simulation(int Program_Version) :
 	stageDescriptors.push_back("Qequation_seq", StageDescriptor(SS_QEQUATIONSEQ, "", false, true), SS_QEQUATIONSEQ);
 	stageDescriptors.push_back("Qfile", StageDescriptor(SS_QFILE, "", false), SS_QFILE);
 	stageDescriptors.push_back("Sunif", StageDescriptor(SS_TSIGPOLAR, "Pa", false), SS_TSIGPOLAR);
+	stageDescriptors.push_back("MonteCarlo", StageDescriptor(SS_MONTECARLO), SS_MONTECARLO);
 
 	stageStopDescriptors.push_back("nostop", StageStopDescriptor(STOP_NOSTOP), STOP_NOSTOP);
 	stageStopDescriptors.push_back("iter", StageStopDescriptor(STOP_ITERATIONS), STOP_ITERATIONS);
@@ -1627,7 +1642,7 @@ Simulation::Simulation(int Program_Version) :
 
 	BD.DisplayConsoleMessage("Console activated...");
 
-	//start window sockets thread to listen for incoming messages
+	//start network sockets thread to listen for incoming messages
 	if (start_scriptserver) Script_Server_Control(true);
 
 	//Check with "www.boris-spintronics.uk" if program version is up to date, and get latest update time for materials database

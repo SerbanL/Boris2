@@ -226,7 +226,7 @@ void Transport::PrimeSpinSolver_Spin(void)
 				//E_dot_del_m term is very important, but Evaluate_SpinSolver_delsqV_RHS term could be neglected in most cases especially if E is uniform.
 				delsq_S_fixed[idx] += (P * MUB_E * pMesh->elC[idx] / De) * (Evaluate_SpinSolver_delsqV_RHS(idx) * m - E_dot_del_m);
 
-				//spin pumping and topological spin Hall effect
+				//charge pumping and topological Hall effect
 				if (cpump_enabled || the_enabled) {
 
 					DBL3 dx_m = grad_m.x;
@@ -641,7 +641,7 @@ double Transport::diff2_st_V_pri(int cell1_idx, DBL3 shift) const
 }
 
 //CMBND for S
-//flux = a + b S' at the interface, b = -De, a = -(muB*P*sigma/e) * E ox m + (SHA*sigma*muB/e)*epsE + spin pumping + topological spin Hall effect
+//flux = a + b S' at the interface, b = -De, a = -(muB*P*sigma/e) * E ox m + (SHA*sigma*muB/e)*epsE + charge pumping + topological Hall effect
 //VERIFIED - CORRECT
 DBL3 Transport::afunc_st_S_sec(DBL3 relpos_m1, DBL3 shift, DBL3 stencil) const
 {
@@ -729,7 +729,7 @@ DBL3 Transport::afunc_st_S_sec(DBL3 relpos_m1, DBL3 shift, DBL3 stencil) const
 	}
 }
 
-//flux = a + b S' at the interface, b = -De, a = -(muB*P*sigma/e) * E ox m + (SHA*sigma*muB/e)*epsE + spin pumping + topological spin Hall effect
+//flux = a + b S' at the interface, b = -De, a = -(muB*P*sigma/e) * E ox m + (SHA*sigma*muB/e)*epsE + charge pumping + topological Hall effect
 //VERIFIED - CORRECT
 DBL3 Transport::afunc_st_S_pri(int cell1_idx, int cell2_idx, DBL3 shift) const
 {

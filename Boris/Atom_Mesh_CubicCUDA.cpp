@@ -22,9 +22,9 @@ Atom_Mesh_CubicCUDA::~Atom_Mesh_CubicCUDA()
 //call when a configuration change has occurred - some objects might need to be updated accordingly
 BError Atom_Mesh_CubicCUDA::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 {
-	BError error(CLASS_STR(FMeshCUDA));
+	BError error(CLASS_STR(Atom_Mesh_CubicCUDA));
 
-	if (ucfg::check_cfgflags(cfgMessage, UPDATECONFIG_MESHCHANGE)) {
+	if (ucfg::check_cfgflags(cfgMessage, UPDATECONFIG_MESHCHANGE, UPDATECONFIG_MODULEADDED, UPDATECONFIG_MODULEDELETED)) {
 
 		//resize arrays held in Mesh - if changing mesh to new size then use resize : this maps values from old mesh to new mesh size (keeping magnitudes). Otherwise assign magnetization along x in whole mesh.
 		if (M1()->size_cpu().dim()) {
@@ -34,6 +34,24 @@ BError Atom_Mesh_CubicCUDA::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 		else if (!M1()->assign((cuReal3)h, (cuRect)meshRect, cuReal3(-(mu_s()->get_current_cpu()), 0, 0))) return error(BERROR_OUTOFGPUMEMORY_CRIT);
 
 		if (!Heff1()->assign((cuReal3)h, (cuRect)meshRect, cuReal3())) return error(BERROR_OUTOFGPUMEMORY_CRIT);
+
+		//setup prng for MC methods
+		if (prng()->initialize(GetSystemTickCount(), n.dim() / 128) != cudaSuccess) error(BERROR_OUTOFGPUMEMORY_NCRIT);
+
+		//Setup cuaModules and cuaNumModules so they cann be used at runtime by Monte-Carlo methods
+		if (ucfg::check_cfgflags(cfgMessage, UPDATECONFIG_MODULEADDED, UPDATECONFIG_MODULEDELETED)) {
+			
+			std::vector<int> modules_ids(paMeshCubic->pMod.size());
+
+			for (int idx = 0; idx < modules_ids.size(); idx++) {
+
+				modules_ids[idx] = paMeshCubic->pMod.get_ID_from_index(idx);
+			}
+
+			cuaModules.resize(modules_ids.size());
+			cuaModules.copy_from_cpuvector(modules_ids);
+			cuaNumModules.from_cpu((int)modules_ids.size());
+		}
 	}
 
 	return error;

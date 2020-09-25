@@ -788,3 +788,135 @@ void VEC_VC<VType>::clear_robin_conditions(void)
 		ngbrFlags2.shrink_to_fit();
 	}
 }
+
+//populate neighbors (must have 6 elements) with indexes of neighbors for index cell, setting -1 for cells which are not neighbors (empty or due to boundaries)
+//order is +x, -x, +y, -y, +z, -z
+template <typename VType>
+void VEC_VC<VType>::get_neighbors(int idx, std::vector<int>& neighbors)
+{
+	//x
+	if ((ngbrFlags[idx] & NF_BOTHX) == NF_BOTHX) {
+
+		//+x and -x neighbors
+		neighbors[0] = idx + 1;
+		neighbors[1] = idx - 1;
+	}
+	else if (ngbrFlags[idx] & NF_NGBRX) {
+
+		if (ngbrFlags[idx] & NF_NPX) {
+
+			if (ngbrFlags[idx] & NF_PBCX) {
+
+				neighbors[0] = idx + 1;
+				neighbors[1] = idx + VEC<VType>::n.x - 1;
+			}
+			else {
+
+				neighbors[0] = idx + 1;
+				neighbors[1] = -1;
+			}
+		}
+		else {
+
+			if (ngbrFlags[idx] & NF_PBCX) {
+
+				neighbors[0] = idx - (VEC<VType>::n.x - 1);
+				neighbors[1] = idx - 1;
+			}
+			else {
+
+				neighbors[0] = -1;
+				neighbors[1] = idx - 1;
+			}
+		}
+	}
+	else {
+
+		neighbors[0] = -1;
+		neighbors[1] = -1;
+	}
+
+	//y
+	if ((ngbrFlags[idx] & NF_BOTHY) == NF_BOTHY) {
+
+		//+y and -y neighbors
+		neighbors[2] = idx + VEC<VType>::n.x;
+		neighbors[3] = idx - VEC<VType>::n.x;
+	}
+	else if (ngbrFlags[idx] & NF_NGBRY) {
+
+		if (ngbrFlags[idx] & NF_NPY) {
+
+			if (ngbrFlags[idx] & NF_PBCY) {
+
+				neighbors[2] = idx + VEC<VType>::n.x;
+				neighbors[3] = idx + (VEC<VType>::n.y - 1)*VEC<VType>::n.x;
+			}
+			else {
+
+				neighbors[2] = idx + VEC<VType>::n.x;
+				neighbors[3] = -1;
+			}
+		}
+		else {
+
+			if (ngbrFlags[idx] & NF_PBCY) {
+
+				neighbors[2] = idx - (VEC<VType>::n.y - 1)*VEC<VType>::n.x;
+				neighbors[3] = idx - VEC<VType>::n.x;
+			}
+			else {
+
+				neighbors[2] = -1;
+				neighbors[3] = idx - VEC<VType>::n.x;
+			}
+		}
+	}
+	else {
+
+		neighbors[2] = -1;
+		neighbors[3] = -1;
+	}
+
+	//z
+	if ((ngbrFlags[idx] & NF_BOTHZ) == NF_BOTHZ) {
+
+		//+z and -z neighbors
+		neighbors[4] = idx + VEC<VType>::n.x * VEC<VType>::n.y;
+		neighbors[5] = idx - VEC<VType>::n.x * VEC<VType>::n.y;
+	}
+	else if (ngbrFlags[idx] & NF_NGBRZ) {
+
+		if (ngbrFlags[idx] & NF_NPZ) {
+
+			if (ngbrFlags[idx] & NF_PBCZ) {
+
+				neighbors[4] = idx + VEC<VType>::n.x * VEC<VType>::n.y;
+				neighbors[5] = idx + (VEC<VType>::n.z - 1) * VEC<VType>::n.x*VEC<VType>::n.y;
+			}
+			else {
+
+				neighbors[4] = idx + VEC<VType>::n.x * VEC<VType>::n.y;
+				neighbors[5] = -1;
+			}
+		}
+		else {
+
+			if (ngbrFlags[idx] & NF_PBCZ) {
+
+				neighbors[4] = idx - (VEC<VType>::n.z - 1) * VEC<VType>::n.x*VEC<VType>::n.y;
+				neighbors[5] = idx - VEC<VType>::n.x;
+			}
+			else {
+
+				neighbors[4] = -1;
+				neighbors[5] = idx - VEC<VType>::n.x * VEC<VType>::n.y;
+			}
+		}
+	}
+	else {
+
+		neighbors[4] = -1;
+		neighbors[5] = -1;
+	}
+}

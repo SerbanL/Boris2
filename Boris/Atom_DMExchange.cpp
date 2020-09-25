@@ -220,4 +220,29 @@ void Atom_DMExchange::Compute_Exchange(VEC<double>& displayVEC)
 	}
 }
 
+//-------------------Energy methods
+
+//For simple cubic mesh spin_index coincides with index in M1
+double Atom_DMExchange::Get_Atomistic_Energy(int spin_index)
+{
+	//For CUDA there are separate device functions using by CUDA kernels.
+
+	if (paMesh->M1.is_not_empty(spin_index)) {
+
+		double J = paMesh->J;
+		double D = paMesh->D;
+		paMesh->update_parameters_mcoarse(spin_index, paMesh->J, J, paMesh->D, D);
+
+		//local spin energy given:
+		//1) exchange: -J * Sum_over_neighbors_j (Si . Sj), where Si, Sj are unit vectors
+		//2) DM exchange: D * Sum_over_neighbors_j(rij . (Si x Sj))
+
+		//Now anisotropic_ngbr_dirsum returns rij x Sj, and Si . (rij x Sj) = -Si. (Sj x rij) = -rij . (Si x Sj)
+		//Thus compute: -D * (paMesh->M1[spin_index].normalized() * paMesh->M1.anisotropic_ngbr_dirsum(spin_index));
+
+		return paMesh->M1[spin_index].normalized() * (-J * paMesh->M1.ngbr_dirsum(spin_index) - D * paMesh->M1.anisotropic_ngbr_dirsum(spin_index));
+	}
+	else return 0.0;
+}
+
 #endif

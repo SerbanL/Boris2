@@ -203,6 +203,13 @@ public:
 	virtual void PrepareNewIterationCUDA(void) = 0;
 #endif
 
+	//Take a Monte Carlo step in this mesh if atomistic (overloaded by atomistic mesh implementation) using settings in each mesh
+	virtual void Iterate_MonteCarlo(double acceptance_rate) {}
+
+#if COMPILECUDA == 1
+	virtual void Iterate_MonteCarloCUDA(double acceptance_rate) {}
+#endif
+
 	//----------------------------------- OTHER CONTROL METHODS
 
 	//used by move mesh algorithm : shift mesh quantities (e.g. magnetisation) by the given shift (metric units) value within this mesh. The shift is along the x-axis direction only (+ve or -ve).
@@ -213,6 +220,7 @@ public:
 
 	//set PBC for required VECs : should only be called from a demag module
 	virtual BError Set_Magnetic_PBC(INT3 pbc_images) = 0;
+	virtual INT3 Get_Magnetic_PBC(void) = 0;
 
 	//----------------------------------- MODULES indexing
 

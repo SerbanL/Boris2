@@ -46,6 +46,11 @@ public:
 	//-------------------Energy density methods
 
 	double GetEnergyDensity(Rect& avRect);
+
+	//-------------------Energy methods
+
+	//For simple cubic mesh spin_index coincides with index in M1
+	double Get_Atomistic_Energy(int spin_index);
 };
 
 #else

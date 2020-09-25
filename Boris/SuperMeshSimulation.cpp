@@ -215,3 +215,31 @@ void SuperMesh::UpdateTransportSolverCUDA(void)
 	if (IsSuperMeshModuleSet(MODS_STRANSPORT)) pSMod(MODS_STRANSPORT)->UpdateFieldCUDA();
 }
 #endif
+
+//Take a Monte Carlo step over all atomistic meshes using settings in each mesh; increase the iterations counters.
+void SuperMesh::Iterate_MonteCarlo(double acceptance_rate)
+{
+	for (int idx = 0; idx < (int)pMesh.size(); idx++) {
+
+		//Iterate Monte Carlo Metropolis algorithm for atomistic meshes only
+		if (pMesh[idx]->is_atomistic()) pMesh[idx]->Iterate_MonteCarlo(acceptance_rate);
+	}
+
+	//Increment iterations counters only (stage and global iterations)
+	odeSolver.Increment();
+}
+
+#if COMPILECUDA == 1
+//Take a Monte Carlo step over all atomistic meshes using settings in each mesh; increase the iterations counters.
+void SuperMesh::Iterate_MonteCarloCUDA(double acceptance_rate)
+{
+	for (int idx = 0; idx < (int)pMesh.size(); idx++) {
+
+		//Iterate Monte Carlo Metropolis algorithm for atomistic meshes only
+		if (pMesh[idx]->is_atomistic()) pMesh[idx]->Iterate_MonteCarloCUDA(acceptance_rate);
+	}
+
+	//Increment iterations counters only (stage and global iterations)
+	odeSolver.Increment();
+}
+#endif

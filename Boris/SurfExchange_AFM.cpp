@@ -155,7 +155,7 @@ BError SurfExchange_AFM::Initialize(void)
 						pMesh_Top[mesh_idx]->h.z / 2);
 
 					//can't couple to an empty cell
-					if (!tmeshRect.contains(cell_rel_pos) || pMesh_Top[mesh_idx]->M.is_empty(cell_rel_pos)) continue;
+					if (!tmeshRect.contains(cell_rel_pos + tmeshRect.s) || pMesh_Top[mesh_idx]->M.is_empty(cell_rel_pos)) continue;
 
 					//if we are here then the cell in this mesh at cell_idx has something to couple to so count it : it will contribute to the surface exchange energy density
 					coupled_cells++;
@@ -187,7 +187,7 @@ BError SurfExchange_AFM::Initialize(void)
 						pMesh_Bot[mesh_idx]->meshRect.e.z - pMesh_Bot[mesh_idx]->meshRect.s.z - (pMesh_Bot[mesh_idx]->h.z / 2));
 
 					//can't couple to an empty cell
-					if (!bmeshRect.contains(cell_rel_pos) || pMesh_Bot[mesh_idx]->M.is_empty(cell_rel_pos)) continue;
+					if (!bmeshRect.contains(cell_rel_pos + bmeshRect.s) || pMesh_Bot[mesh_idx]->M.is_empty(cell_rel_pos)) continue;
 
 					//if we are here then the cell in this mesh at cell_idx has something to couple to so count it : it will contribute to the surface exchange energy density
 					coupled_cells++;
@@ -274,7 +274,7 @@ double SurfExchange_AFM::UpdateField(void)
 						pMesh_Top[mesh_idx]->h.z / 2);
 
 					//can't couple to an empty cell
-					if (!tmeshRect.contains(cell_rel_pos) || pMesh_Top[mesh_idx]->M.is_empty(cell_rel_pos)) continue;
+					if (!tmeshRect.contains(cell_rel_pos + tmeshRect.s) || pMesh_Top[mesh_idx]->M.is_empty(cell_rel_pos)) continue;
 
 					DBL3 Hsurfexh1, Hsurfexh2;
 
@@ -358,7 +358,7 @@ double SurfExchange_AFM::UpdateField(void)
 						pMesh_Bot[mesh_idx]->meshRect.e.z - pMesh_Bot[mesh_idx]->meshRect.s.z - (pMesh_Bot[mesh_idx]->h.z / 2));
 
 					//can't couple to an empty cell
-					if (!bmeshRect.contains(cell_rel_pos) || pMesh_Bot[mesh_idx]->M.is_empty(cell_rel_pos)) continue;
+					if (!bmeshRect.contains(cell_rel_pos + bmeshRect.s) || pMesh_Bot[mesh_idx]->M.is_empty(cell_rel_pos)) continue;
 
 					DBL3 Hsurfexh1, Hsurfexh2;
 

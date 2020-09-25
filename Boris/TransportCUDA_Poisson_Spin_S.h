@@ -118,7 +118,7 @@ public:
 	//Functions used for calculating CMBND values
 
 	//CMBND for S
-	//flux = a + b S' at the interface, b = -De, a = -(muB*P*sigma/e) * E ox m + (SHA*sigma*muB/e)*epsE + spin pumping + topological spin Hall effect	
+	//flux = a + b S' at the interface, b = -De, a = -(muB*P*sigma/e) * E ox m + (SHA*sigma*muB/e)*epsE + charge pumping + topological Hall effect	
 	__device__ cuReal3 a_func_pri(int cell1_idx, int cell2_idx, cuReal3 shift)
 	{
 		//need to find value at boundary so use interpolation
@@ -208,7 +208,7 @@ public:
 		}
 	}
 
-	//flux = a + b S' at the interface, b = -De, a = -(muB*P*sigma/e) * E ox m + (SHA*sigma*muB/e)*epsE + spin pumping + topological spin Hall effect
+	//flux = a + b S' at the interface, b = -De, a = -(muB*P*sigma/e) * E ox m + (SHA*sigma*muB/e)*epsE + charge pumping + topological Hall effect
 	__device__ cuReal3 a_func_sec(cuReal3 relpos_m1, cuReal3 shift, cuReal3 stencil)
 	{
 		//need to find value at boundary so use interpolation

@@ -1912,6 +1912,12 @@
     <ClCompile Include="SurfExchangeCUDA_AFM.cpp">
       <Filter>03. MODULES\__MICROMAGNETIC\MM MODULES - CUDA</Filter>
     </ClCompile>
+    <ClCompile Include="Atom_Mesh_Cubic_MonteCarlo.cpp">
+      <Filter>02. MESHES\__ATOMISTIC\CPU\ATOM MESHES - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="SuperMesh_MonteCarlo.cpp">
+      <Filter>04. SUPERMESH\SUPERMESH - CPU</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="BorisWinapi.rc">
@@ -2261,6 +2267,12 @@
     </CudaCompile>
     <CudaCompile Include="SurfExchangeCUDA_AFM.cu">
       <Filter>03. MODULES\__MICROMAGNETIC\MM MODULES - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="Atom_Mesh_CubicCUDA_MonteCarlo.cu">
+      <Filter>02. MESHES\__ATOMISTIC\CUDA\ATOM MESHES - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="ManagedAtom_MeshCUDA_MonteCarlo_SC.cu">
+      <Filter>02. MESHES\__ATOMISTIC\CUDA\ATOM MESHES INTERFACE - CUDA</Filter>
     </CudaCompile>
   </ItemGroup>
 </Project>

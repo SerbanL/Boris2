@@ -69,6 +69,7 @@ enum IOI_
 	IOI_MESH_FORSTOCHASTICITY,
 	IOI_MESH_FORSPEEDUP,
 	IOI_MESH_FORSKYPOSDMUL,
+	IOI_MESH_FORMC,
 
 	//Shows ferromagnetic super-mesh rectangle (unit m) : textId is the mesh rectangle for the ferromagnetic super-mesh
 	IOI_FMSMESHRECTANGLE,
@@ -334,5 +335,11 @@ enum IOI_
 	IOI_USERCONSTANT,
 
 	//Show skypos diameter multiplier : minorId is the unique mesh id number, textId is the multiplier as a string
-	IOI_SKYPOSDMUL
+	IOI_SKYPOSDMUL,
+
+	//Shows Monte-Carlo computation type (serial/parallel) : minorId is the unique mesh id number, auxId is the status (0 : parallel, 1 : serial, -1 : N/A)
+	IOI_MCCOMPUTATION,
+	
+	//Shows Monte-Carlo algorithm type : minorId is the unique mesh id number, auxId is the type (0 : classical, 1 : constrained, -1 : N/A), textId is the constrained DBL3 direction.
+	IOI_MCTYPE
 };

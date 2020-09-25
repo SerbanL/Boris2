@@ -149,6 +149,9 @@ BError SuperMesh::SwitchCUDAState(bool cudaState)
 
 			pSMeshCUDA = new SuperMeshCUDA(this);
 		}
+
+		//Monte-Carlo serial mode not possible with cuda on
+		Set_MonteCarlo_Serial(false, superMeshHandle);
 	}
 	else {
 

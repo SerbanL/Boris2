@@ -159,7 +159,7 @@ Any Simulation::GetDataValue(DatumConfig dConfig)
 		else {
 
 			//return average magnetisation in the atomistic cell also : average atomistic moment (averaged over all participating unit cells), divided by unit cell volume
-			return Any(dynamic_cast<Atom_Mesh*>(SMesh[dConfig.meshName])->GetAverageMoment(dConfig.rectangle) / SMesh[dConfig.meshName]->h.dim());
+			return Any(dynamic_cast<Atom_Mesh*>(SMesh[dConfig.meshName])->GetAverageMoment(dConfig.rectangle) * MUB / SMesh[dConfig.meshName]->h.dim());
 		}
 	}
 	break;
@@ -174,6 +174,51 @@ Any Simulation::GetDataValue(DatumConfig dConfig)
 	}
 	break;
 
+	case DATA_AVMXSQ:
+	{
+		if (!SMesh[dConfig.meshName]->is_atomistic()) {
+
+			return Any(dynamic_cast<Mesh*>(SMesh[dConfig.meshName])->GetAverageXMagnetisationSq(dConfig.rectangle));
+		}
+		else {
+
+			//return average magnetisation in the atomistic cell also : average atomistic moment (averaged over all participating unit cells), divided by unit cell volume
+			double r = MUB / SMesh[dConfig.meshName]->h.dim();
+			return Any(dynamic_cast<Atom_Mesh*>(SMesh[dConfig.meshName])->GetAverageXMomentSq(dConfig.rectangle) * r * r);
+		}
+	}
+	break;
+
+	case DATA_AVMYSQ:
+	{
+		if (!SMesh[dConfig.meshName]->is_atomistic()) {
+
+			return Any(dynamic_cast<Mesh*>(SMesh[dConfig.meshName])->GetAverageYMagnetisationSq(dConfig.rectangle));
+		}
+		else {
+
+			//return average magnetisation in the atomistic cell also : average atomistic moment (averaged over all participating unit cells), divided by unit cell volume
+			double r = MUB / SMesh[dConfig.meshName]->h.dim();
+			return Any(dynamic_cast<Atom_Mesh*>(SMesh[dConfig.meshName])->GetAverageYMomentSq(dConfig.rectangle) * r * r);
+		}
+	}
+	break;
+
+	case DATA_AVMZSQ:
+	{
+		if (!SMesh[dConfig.meshName]->is_atomistic()) {
+
+			return Any(dynamic_cast<Mesh*>(SMesh[dConfig.meshName])->GetAverageZMagnetisationSq(dConfig.rectangle));
+		}
+		else {
+
+			//return average magnetisation in the atomistic cell also : average atomistic moment (averaged over all participating unit cells), divided by unit cell volume
+			double r = MUB / SMesh[dConfig.meshName]->h.dim();
+			return Any(dynamic_cast<Atom_Mesh*>(SMesh[dConfig.meshName])->GetAverageZMomentSq(dConfig.rectangle) * r * r);
+		}
+	}
+	break;
+
 	case DATA_MX_MINMAX:
 	{
 		if (!SMesh[dConfig.meshName]->is_atomistic()) {
@@ -182,7 +227,7 @@ Any Simulation::GetDataValue(DatumConfig dConfig)
 		}
 		else {
 
-			return Any(dynamic_cast<Atom_Mesh*>(SMesh[dConfig.meshName])->GetMomentXMinMax(dConfig.rectangle) / SMesh[dConfig.meshName]->h.dim());
+			return Any(dynamic_cast<Atom_Mesh*>(SMesh[dConfig.meshName])->GetMomentXMinMax(dConfig.rectangle) * MUB / SMesh[dConfig.meshName]->h.dim());
 		}
 	}
 	break;
@@ -195,7 +240,7 @@ Any Simulation::GetDataValue(DatumConfig dConfig)
 		}
 		else {
 
-			return Any(dynamic_cast<Atom_Mesh*>(SMesh[dConfig.meshName])->GetMomentYMinMax(dConfig.rectangle) / SMesh[dConfig.meshName]->h.dim());
+			return Any(dynamic_cast<Atom_Mesh*>(SMesh[dConfig.meshName])->GetMomentYMinMax(dConfig.rectangle) * MUB / SMesh[dConfig.meshName]->h.dim());
 		}
 	}
 	break;
@@ -208,7 +253,7 @@ Any Simulation::GetDataValue(DatumConfig dConfig)
 		}
 		else {
 
-			return Any(dynamic_cast<Atom_Mesh*>(SMesh[dConfig.meshName])->GetMomentZMinMax(dConfig.rectangle) / SMesh[dConfig.meshName]->h.dim());
+			return Any(dynamic_cast<Atom_Mesh*>(SMesh[dConfig.meshName])->GetMomentZMinMax(dConfig.rectangle) * MUB / SMesh[dConfig.meshName]->h.dim());
 		}
 	}
 	break;
@@ -221,8 +266,18 @@ Any Simulation::GetDataValue(DatumConfig dConfig)
 		}
 		else {
 
-			return Any(dynamic_cast<Atom_Mesh*>(SMesh[dConfig.meshName])->GetMomentMinMax(dConfig.rectangle) / SMesh[dConfig.meshName]->h.dim());
+			return Any(dynamic_cast<Atom_Mesh*>(SMesh[dConfig.meshName])->GetMomentMinMax(dConfig.rectangle) * MUB / SMesh[dConfig.meshName]->h.dim());
 		}
+	}
+	break;
+
+	case DATA_MONTECARLOPARAMS:
+	{
+		if (SMesh[dConfig.meshName]->is_atomistic()) {
+
+			return Any(dynamic_cast<Atom_Mesh*>(SMesh[dConfig.meshName])->Get_MonteCarlo_Params());
+		}
+		else return Any(DBL2());
 	}
 	break;
 

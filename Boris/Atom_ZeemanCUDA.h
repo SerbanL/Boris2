@@ -52,6 +52,8 @@ public:
 
 	void SetField(cuReal3 Hxyz);
 
+	cu_obj<cuReal3>& GetField_cu_obj(void) { return Ha; }
+
 	BError SetFieldEquation(const std::vector<std::vector< std::vector<EqComp::FSPEC> >>& fspec);
 };
 

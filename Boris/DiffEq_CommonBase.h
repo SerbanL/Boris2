@@ -205,6 +205,16 @@ public:
 	//use if both types of solvers are active (also works if just one is active): micromagnetic and atomistic
 	void Iterate(void);
 
+	//Increment iterations counters only (stage and global iterations) - e.g. used by Monte Carlo methods as a step counter
+	void Increment(void)
+	{
+		iteration++;
+		stageiteration++;
+		//just making sure
+		available = true;
+	}
+
+
 #if COMPILECUDA == 1
 	void IterateCUDA(void);
 #endif

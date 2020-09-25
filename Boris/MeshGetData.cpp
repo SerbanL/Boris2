@@ -35,6 +35,49 @@ DBL3 Mesh::GetAverageMagnetisation2(Rect rectangle)
 	else return DBL3(0.0);
 }
 
+//Average square of components
+double Mesh::GetAverageXMagnetisationSq(Rect rectangle)
+{
+#if COMPILECUDA == 1
+	if (pMeshCUDA) {
+
+		if (M.linear_size()) return pMeshCUDA->M()->average_xsq_nonempty(n.dim(), rectangle);
+		else return 0.0;
+	}
+#endif
+
+	if (M.linear_size()) return M.average_xsq_nonempty_omp(rectangle);
+	else return 0.0;
+}
+
+double Mesh::GetAverageYMagnetisationSq(Rect rectangle)
+{
+#if COMPILECUDA == 1
+	if (pMeshCUDA) {
+
+		if (M.linear_size()) return pMeshCUDA->M()->average_ysq_nonempty(n.dim(), rectangle);
+		else return 0.0;
+	}
+#endif
+
+	if (M.linear_size()) return M.average_ysq_nonempty_omp(rectangle);
+	else return 0.0;
+}
+
+double Mesh::GetAverageZMagnetisationSq(Rect rectangle)
+{
+#if COMPILECUDA == 1
+	if (pMeshCUDA) {
+
+		if (M.linear_size()) return pMeshCUDA->M()->average_zsq_nonempty(n.dim(), rectangle);
+		else return 0.0;
+	}
+#endif
+
+	if (M.linear_size()) return M.average_zsq_nonempty_omp(rectangle);
+	else return 0.0;
+}
+
 //get magnetisation magnitude min-max in given rectangle (entire mesh if none specified)
 DBL2 Mesh::GetMagnetisationMinMax(Rect rectangle)
 {

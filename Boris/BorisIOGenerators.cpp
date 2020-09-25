@@ -1087,3 +1087,26 @@ string Simulation::Build_skypos_dmul_ListLine(int meshIndex)
 
 	return skypos_line;
 }
+
+//---------------------------------------------------- MONTE-CARLO SETTINGS
+
+void Simulation::Print_MCSettings(void)
+{
+	string mcsettings_info;
+
+	for (int idxMesh = 0; idxMesh < (int)SMesh().size(); idxMesh++) {
+
+		mcsettings_info += Build_MCSettings_ListLine(idxMesh) + "\n";
+	}
+
+	BD.DisplayFormattedConsoleMessage(mcsettings_info);
+}
+
+string Simulation::Build_MCSettings_ListLine(int meshIndex)
+{
+	string mcsettings_line = MakeIO(IOI_MESH_FORMC, meshIndex) +
+		"</c>[tc1,1,1,1/tc] [sa0/sa] Computation type: " + MakeIO(IOI_MCCOMPUTATION, meshIndex) +
+		"</c>[tc1,1,1,1/tc] [sa1/sa] Monte-Carlo algorithm type: " + MakeIO(IOI_MCTYPE, meshIndex);
+
+	return mcsettings_line;
+}

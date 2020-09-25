@@ -6,6 +6,7 @@
 #if defined(MODULE_COMPILATION_ZEEMAN) && ATOMISTIC == 1
 
 #include "Atom_Zeeman.h"
+#include "Atom_MeshCUDA.h"
 
 Atom_ZeemanCUDA::Atom_ZeemanCUDA(Atom_MeshCUDA* paMeshCUDA_, Atom_Zeeman* paZeeman_) :
 	ModulesCUDA()
@@ -16,11 +17,15 @@ Atom_ZeemanCUDA::Atom_ZeemanCUDA(Atom_MeshCUDA* paMeshCUDA_, Atom_Zeeman* paZeem
 	//copy over any other data in holder module
 	Ha.from_cpu(paZeeman->GetField());
 
+	paMeshCUDA->pHa = &Ha;
+
 	if (paZeeman->H_equation.is_set()) SetFieldEquation(paZeeman->H_equation.get_vector_fspec());
 }
 
 Atom_ZeemanCUDA::~Atom_ZeemanCUDA()
-{}
+{
+	paMeshCUDA->pHa = nullptr;
+}
 
 BError Atom_ZeemanCUDA::Initialize(void)
 {

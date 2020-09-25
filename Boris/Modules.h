@@ -146,4 +146,8 @@ public:
 #endif
 		return energy;
 	}
+
+	//return atomistic energy for given spin index (for a simple cubic mesh this coincides with the index in M1, but for other crystal structures it does not - individual mesh modules will know what to do).
+	//Implement as appropriate.
+	virtual double Get_Atomistic_Energy(int spin_index) { return 0.0; }
 };

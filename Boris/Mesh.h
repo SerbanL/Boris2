@@ -184,6 +184,7 @@ public:
 
 	//set PBC for required VECs : should only be called from a demag module
 	BError Set_Magnetic_PBC(INT3 pbc_images);
+	INT3 Get_Magnetic_PBC(void) { return INT3(M.is_pbc_x(), M.is_pbc_y(), M.is_pbc_z()); }
 
 	//----------------------------------- MODULES CONTROL (implement MeshBase) : MeshModules.cpp
 
@@ -324,6 +325,11 @@ public:
 	//2: antiferromagnetic only, sub-lattice B
 	DBL3 GetAverageMagnetisation(Rect rectangle = Rect());
 	DBL3 GetAverageMagnetisation2(Rect rectangle = Rect());
+
+	//Average square of components
+	double GetAverageXMagnetisationSq(Rect rectangle = Rect());
+	double GetAverageYMagnetisationSq(Rect rectangle = Rect());
+	double GetAverageZMagnetisationSq(Rect rectangle = Rect());
 
 	//get magnetisation magnitude min-max in given rectangle (entire mesh if none specified)
 	DBL2 GetMagnetisationMinMax(Rect rectangle = Rect());

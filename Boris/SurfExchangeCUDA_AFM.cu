@@ -53,7 +53,7 @@ __global__ void SurfExchangeCUDA_AFM_TopFM_UpdateField(ManagedMeshCUDA& cuMesh, 
 					M_Top.h.z / 2);
 
 				//can't couple to an empty cell
-				if (!M_Top.rect.contains(cell_rel_pos) || M_Top.is_empty(cell_rel_pos)) continue;
+				if (!M_Top.rect.contains(cell_rel_pos + M_Top.rect.s) || M_Top.is_empty(cell_rel_pos)) continue;
 
 				cuBReal J1 = *(pMesh_Top[mesh_idx].pJ1);
 				cuBReal J2 = *(pMesh_Top[mesh_idx].pJ2);
@@ -127,7 +127,7 @@ __global__ void SurfExchangeCUDA_AFM_TopAFM_UpdateField(ManagedMeshCUDA& cuMesh,
 					M_Top.h.z / 2);
 
 				//can't couple to an empty cell
-				if (!M_Top.rect.contains(cell_rel_pos) || M_Top.is_empty(cell_rel_pos)) continue;
+				if (!M_Top.rect.contains(cell_rel_pos + M_Top.rect.s) || M_Top.is_empty(cell_rel_pos)) continue;
 
 				cuBReal J1 = *(pMesh_Top[mesh_idx].pJ1);
 				cuBReal J2 = *(pMesh_Top[mesh_idx].pJ2);
@@ -203,7 +203,7 @@ __global__ void SurfExchangeCUDA_AFM_BotFM_UpdateField(ManagedMeshCUDA& cuMesh, 
 					M_Bot.rect.e.z - M_Bot.rect.s.z - M_Bot.h.z / 2);
 
 				//can't couple to an empty cell
-				if (!M_Bot.rect.contains(cell_rel_pos) || M_Bot.is_empty(cell_rel_pos)) continue;
+				if (!M_Bot.rect.contains(cell_rel_pos + M_Bot.rect.s) || M_Bot.is_empty(cell_rel_pos)) continue;
 
 				//yes, then get value of magnetization used in coupling with current cell at cell_idx
 				cuReal3 m_j = M_Bot[cell_rel_pos].normalized();
@@ -274,7 +274,7 @@ __global__ void SurfExchangeCUDA_AFM_BotAFM_UpdateField(ManagedMeshCUDA& cuMesh,
 					M_Bot.rect.e.z - M_Bot.rect.s.z - M_Bot.h.z / 2);
 
 				//can't couple to an empty cell
-				if (!M_Bot.rect.contains(cell_rel_pos) || M_Bot.is_empty(cell_rel_pos)) continue;
+				if (!M_Bot.rect.contains(cell_rel_pos + M_Bot.rect.s) || M_Bot.is_empty(cell_rel_pos)) continue;
 
 				//yes, then get value of magnetization used in coupling with current cell at cell_idx
 				cuReal3 m_j1 = M_Bot[cell_rel_pos].normalized();

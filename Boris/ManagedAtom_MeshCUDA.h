@@ -255,6 +255,31 @@ public:
 	//Update parameter values if temperature dependent at the given cell index - M cell index; position not calculated
 	template <typename ... MeshParam_List>
 	__device__ void update_parameters_atposition(const cuReal3& position, MeshParam_List& ... params);
+
+	//----------------------------------- MONTE-CARLO METHODS FOR ENERGY COMPUTATION
+
+	//SIMPLE CUBIC
+
+	//switch function which adds all assigned energy contributions in this mesh
+	__device__ cuBReal Get_Atomistic_Energy_SC(int spin_index, int*& cuaModules, int numModules, cuReal3& Ha);
+
+	//Atom_ExchangeCUDA
+	__device__ cuBReal Get_Atomistic_Energy_SC_ExchangeCUDA(int spin_index);
+
+	//Atom_DMExchangeCUDA
+	__device__ cuBReal Get_Atomistic_Energy_SC_DMExchangeCUDA(int spin_index);
+
+	//Atom_iDMExchangeCUDA
+	__device__ cuBReal Get_Atomistic_Energy_SC_iDMExchangeCUDA(int spin_index);
+
+	//Atom_ZeemanCUDA
+	__device__ cuBReal Get_Atomistic_Energy_SC_ZeemanCUDA(int spin_index, cuReal3& Ha);
+
+	//Atom_AnisotropyCUDA
+	__device__ cuBReal Get_Atomistic_Energy_SC_AnisotropyCUDA(int spin_index);
+
+	//Atom_AnisotropyCubiCUDA
+	__device__ cuBReal Get_Atomistic_Energy_SC_AnisotropyCubiCUDA(int spin_index);
 };
 
 #endif

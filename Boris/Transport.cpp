@@ -109,8 +109,6 @@ bool Transport::Need_dM_dt_Calculation(void)
 		if (IsNZ((double)pMesh->cpump_eff.get0())) return true;
 	}
 
-	if (IsNZ((double)pMesh->cpump_eff.get0())) return true;
-
 	return false;
 }
 
@@ -125,10 +123,7 @@ bool Transport::Need_delsq_V_fixed_Precalculation(void)
 bool Transport::Need_delsq_S_fixed_Precalculation(void)
 {
 	//precalculation only needed in magnetic meshes, or in normal metal meshes with SHE enabled
-	return (
-		stsolve == STSOLVE_FERROMAGNETIC || 
-		(stsolve == STSOLVE_NORMALMETAL && IsNZ(pMesh->SHA.get0()))
-		);
+	return (stsolve == STSOLVE_FERROMAGNETIC || (stsolve == STSOLVE_NORMALMETAL && IsNZ(pMesh->SHA.get0())));
 }
 
 //-------------------Abstract base class method implementations

@@ -533,7 +533,18 @@ BError SuperMesh::Set_PBC(string meshName, string flag, int images)
 
 			pMesh[meshName]->CallModuleMethod(&DemagBase::Set_PBC, pbc_images);
 		}
-		else return error(BERROR_INCORRECTNAME);
+		else {
+
+			//PBC in individual mesh without Demag module added : just apply PBC to differential operators, e.g. for exchange computation
+			INT3 pbc_images = pMesh[meshName]->Get_Magnetic_PBC();
+
+			if (flag == "x") pbc_images.x = images;
+			else if (flag == "y") pbc_images.y = images;
+			else if (flag == "z") pbc_images.z = images;
+			else return error(BERROR_INCORRECTVALUE);
+
+			pMesh[meshName]->Set_Magnetic_PBC(pbc_images);
+		}
 	}
 	else {
 

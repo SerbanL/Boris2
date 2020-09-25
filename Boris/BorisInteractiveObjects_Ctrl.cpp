@@ -413,6 +413,7 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 	case IOI_MESH_FORSTOCHASTICITY:
 	case IOI_MESH_FORSPEEDUP:
 	case IOI_MESH_FORSKYPOSDMUL:
+	case IOI_MESH_FORMC:
 	{
 		//parameters from iop
 		string meshName = iop.textId;
@@ -2265,6 +2266,47 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 			string to_text = trimendspaces(pTO->GetText());
 
 			sendCommand_verbose(CMD_SKYPOSDMUL, to_text, SMesh.key_from_meshId(meshId));
+		}
+	}
+	break;
+
+	//Shows Monte-Carlo computation type (serial/parallel) : minorId is the unique mesh id number, auxId is the status (0 : parallel, 1 : serial, -1 : N/A)
+	case IOI_MCCOMPUTATION:
+	{
+		int meshId = iop.minorId;
+		bool status = iop.auxId;
+
+		if (actionCode == AC_MOUSERIGHTDOWN || actionCode == AC_MOUSELEFTDOWN) sendCommand_verbose(CMD_MCSERIAL, !status, SMesh.key_from_meshId(meshId));
+	}
+	break;
+
+	//Shows Monte-Carlo algorithm type : minorId is the unique mesh id number, auxId is the type (0 : classical, 1 : constrained, -1 : N/A), textId is the constrained DBL3 direction.
+	case IOI_MCTYPE:
+	{
+		int meshId = iop.minorId;
+		int type = iop.auxId;
+
+		if (type == 0) {
+
+			//Currently in classical mode. Click to toggle to constrained mode with default x axis direction.
+			if (actionCode == AC_MOUSERIGHTDOWN) sendCommand_verbose(CMD_MCCONSTRAIN, DBL3(1.0, 0.0, 0.0), SMesh.key_from_meshId(meshId));
+		}
+		else if (type == 1) {
+
+			//Currently in constrained mode. Right-click to toggle, or double-click to edit direction
+			if (actionCode == AC_MOUSERIGHTDOWN) sendCommand_verbose(CMD_MCCONSTRAIN, DBL3(), SMesh.key_from_meshId(meshId));
+
+			//on double-click make popup edit box to edit the currently displayed value
+			else if (actionCode == AC_DOUBLECLICK) { actionOutcome = AO_STARTPOPUPEDITBOX; }
+
+			//popup edit box has returned some text - try to set value from it
+			else if (actionCode == AC_POPUPEDITTEXTBOXRETURNEDTEXT) {
+
+				//the actual text returned by the popup edit box
+				string to_text = trimendspaces(pTO->GetText());
+
+				sendCommand_verbose(CMD_MCCONSTRAIN, to_text, SMesh.key_from_meshId(meshId));
+			}
 		}
 	}
 	break;

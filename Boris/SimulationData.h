@@ -23,7 +23,9 @@ enum DATA_
 	DATA_E_MELASTIC,
 	DATA_TEMP_L,
 	DATA_E_EXCH_MAX, DATA_Q_TOPO,
-	DATA_MX_MINMAX, DATA_MY_MINMAX, DATA_MZ_MINMAX, DATA_M_MINMAX
+	DATA_MX_MINMAX, DATA_MY_MINMAX, DATA_MZ_MINMAX, DATA_M_MINMAX,
+	DATA_AVMXSQ, DATA_AVMYSQ, DATA_AVMZSQ,
+	DATA_MONTECARLOPARAMS
 };
 
 //Specifier for available output data : this is stored in a vector with lut indexing, where DATA_ values are used for the major id - the DatumSpecifier corresponds to it

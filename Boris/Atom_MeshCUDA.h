@@ -22,10 +22,29 @@ private:
 	//Still keep references to some Mesh data members here as we cannot use pMesh in .cu files (cannot have BorisLib.h in those compilation units - real headache, will need to fix this at some point somehow: problem is the nvcc compiler throws errors due to C++14 code in BorisLib)
 	Atom_Mesh *paMesh;
 
+protected:
+
+	// MONTE-CARLO DATA
+
+	//random number generator - used by Monte Carlo methods
+	cu_obj<cuBorisRand> prng;
+
+	//last Monte-Carlo step acceptance probability
+	cu_obj<cuBReal> mc_acceptance_rate;
+
 public:
+
+	//This points to data in Atom_ZeemanCUDA if set (else nullptr) - managed by Atom_ZeemanCUDA
+	//pHa is nullptr if Atom_ZeemanCUDA not active
+	cu_obj<cuReal3>* pHa = nullptr;
 
 	//Managed Mesh
 	cu_obj<ManagedAtom_MeshCUDA> cuaMesh;
+
+	//stores MOD_ identifiers of modules active in this mesh; used for Monte-Carlo energy methods so we can identify which contributions to include.
+	cu_arr<int> cuaModules;
+	//number of elements stored in cuaModules
+	cu_obj<int> cuaNumModules;
 
 	//-----Magnetic properties
 

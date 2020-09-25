@@ -51,7 +51,7 @@ __global__ void SurfExchangeCUDA_TopFM_UpdateField(ManagedMeshCUDA& cuMesh, Mana
 					M_Top.h.z / 2);
 
 				//can't couple to an empty cell
-				if (!M_Top.rect.contains(cell_rel_pos) || M_Top.is_empty(cell_rel_pos)) continue;
+				if (!M_Top.rect.contains(cell_rel_pos + M_Top.rect.s) || M_Top.is_empty(cell_rel_pos)) continue;
 
 				cuBReal J1 = *(pMesh_Top[mesh_idx].pJ1);
 				cuBReal J2 = *(pMesh_Top[mesh_idx].pJ2);
@@ -122,7 +122,7 @@ __global__ void SurfExchangeCUDA_TopAFM_UpdateField(ManagedMeshCUDA& cuMesh, Man
 					M_Top.h.z / 2);
 
 				//can't couple to an empty cell
-				if (!M_Top.rect.contains(cell_rel_pos) || M_Top.is_empty(cell_rel_pos)) continue;
+				if (!M_Top.rect.contains(cell_rel_pos + M_Top.rect.s) || M_Top.is_empty(cell_rel_pos)) continue;
 
 				cuBReal J1 = *(pMesh_Top[mesh_idx].pJ1);
 				cuBReal J2 = *(pMesh_Top[mesh_idx].pJ2);
@@ -191,7 +191,7 @@ __global__ void SurfExchangeCUDA_TopDiamagnetic_UpdateField(ManagedMeshCUDA& cuM
 					M_Top.h.z / 2);
 
 				//can't couple to an empty cell
-				if (!M_Top.rect.contains(cell_rel_pos) || M_Top.is_empty(cell_rel_pos)) continue;
+				if (!M_Top.rect.contains(cell_rel_pos + M_Top.rect.s) || M_Top.is_empty(cell_rel_pos)) continue;
 
 				cuBReal neta_dia = *(pMesh_Top[mesh_idx].pneta_dia);
 				pMesh_Top[mesh_idx].update_parameters_atposition(cell_rel_pos, *(pMesh_Top[mesh_idx].pneta_dia), neta_dia);
@@ -261,7 +261,7 @@ __global__ void SurfExchangeCUDA_BotFM_UpdateField(ManagedMeshCUDA& cuMesh, Mana
 					M_Bot.rect.e.z - M_Bot.rect.s.z - M_Bot.h.z / 2);
 
 				//can't couple to an empty cell
-				if (!M_Bot.rect.contains(cell_rel_pos) || M_Bot.is_empty(cell_rel_pos)) continue;
+				if (!M_Bot.rect.contains(cell_rel_pos + M_Bot.rect.s) || M_Bot.is_empty(cell_rel_pos)) continue;
 
 				//yes, then get value of magnetization used in coupling with current cell at cell_idx
 				cuReal3 m_j = M_Bot[cell_rel_pos].normalized();
@@ -329,7 +329,7 @@ __global__ void SurfExchangeCUDA_BotAFM_UpdateField(ManagedMeshCUDA& cuMesh, Man
 					M_Bot.rect.e.z - M_Bot.rect.s.z - M_Bot.h.z / 2);
 
 				//can't couple to an empty cell
-				if (!M_Bot.rect.contains(cell_rel_pos) || M_Bot.is_empty(cell_rel_pos)) continue;
+				if (!M_Bot.rect.contains(cell_rel_pos + M_Bot.rect.s) || M_Bot.is_empty(cell_rel_pos)) continue;
 
 				//yes, then get value of magnetization used in coupling with current cell at cell_idx
 				cuReal3 m_j1 = M_Bot[cell_rel_pos].normalized();
@@ -393,7 +393,7 @@ __global__ void SurfExchangeCUDA_BotDiamagnetic_UpdateField(ManagedMeshCUDA& cuM
 					M_Bot.rect.e.z - M_Bot.rect.s.z - M_Bot.h.z / 2);
 
 				//can't couple to an empty cell
-				if (!M_Bot.rect.contains(cell_rel_pos) || M_Bot.is_empty(cell_rel_pos)) continue;
+				if (!M_Bot.rect.contains(cell_rel_pos + M_Bot.rect.s) || M_Bot.is_empty(cell_rel_pos)) continue;
 
 				cuBReal neta_dia = *(pMesh_Bot[mesh_idx].pneta_dia);
 				pMesh_Bot[mesh_idx].update_parameters_atposition(cell_rel_pos, *(pMesh_Bot[mesh_idx].pneta_dia), neta_dia);

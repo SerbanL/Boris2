@@ -188,7 +188,7 @@ __global__ void PrimeSpinSolver_Spin_Kernel(ManagedMeshCUDA& cuMesh, TransportCU
 				//E_dot_del_m term is very important, but Evaluate_SpinSolver_delsqV_RHS term could be neglected in most cases especially if E is uniform.
 				delsq_S_fixed[idx] += (P * (cuBReal)MUB_E * elC[idx] / De) * (poisson_Spin_S.pPoisson_Spin_V->Poisson_RHS(idx) * m - E_dot_del_m);
 
-				//spin pumping and topological spin Hall effect
+				//charge pumping and topological Hall effect
 				if (cpump_enabled || the_enabled) {
 
 					cuReal3 dx_m = grad_m.x;
