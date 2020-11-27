@@ -167,7 +167,7 @@ double STransport::UpdateField(void)
 	//skip any transport solver computations if static_transport_solver is enabled : transport solver will be interated only at the end of a step or stage
 	if (pSMesh->static_transport_solver) return 0.0;
 
-	//only need to update this after an entire magnetisation equation time step is solved (but always update spin accumulation field if spin current solver enabled)
+	//only need to update this after an entire magnetization equation time step is solved (but always update spin accumulation field if spin current solver enabled)
 	if (pSMesh->CurrentTimeStepSolved()) {
 
 		//use V or I equation to set electrode potentials? time dependence only
@@ -332,8 +332,10 @@ BError STransport::SetPotentialEquation(string equation_string, int step)
 	//set equation if not already set, or this is the first step in a stage
 	if (!V_equation.is_set() || step == 0) {
 
-		if (!V_equation.make_from_string(equation_string, { {"Ss", 0} })) return error(BERROR_INCORRECTSTRING);
+		//important to set user constants first : if these are required then the make_from_string call will fail. This may mean the user constants are not set when we expect them to.
 		UpdateTEquationUserConstants();
+
+		if (!V_equation.make_from_string(equation_string, { {"Ss", 0} })) return error(BERROR_INCORRECTSTRING);
 	}
 	else {
 

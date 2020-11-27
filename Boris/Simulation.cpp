@@ -60,6 +60,26 @@ Simulation::Simulation(int Program_Version) :
 	else cudaAvailable = true;
 
 	if (cudaAvailable) cudaDeviceReset();
+
+	for (int idx = 0; idx < deviceCount; idx++)
+	{
+		cudaDeviceProp deviceProperties;
+		cudaGetDeviceProperties(&deviceProperties, idx);
+
+		std::string device_info = deviceProperties.name + std::string("; Compute: ") + ToString(deviceProperties.major);
+
+		cudaDeviceVersions.push_back(std::pair<int, std::string>(deviceProperties.major * 100, device_info));
+	}
+
+	//Select first device with matches current CUDA version
+	for (int idx = 0; idx < deviceCount; idx++) {
+	
+		if (cudaDeviceVersions[idx].first == __CUDA_ARCH__) {
+
+			cudaDeviceSelect = idx;
+			break;
+		}
+	}
 #endif
 
 	//---------------------------------------------------------------- COMMANDS
@@ -287,33 +307,34 @@ Simulation::Simulation(int Program_Version) :
 	commands.insert(CMD_SETANGLE, CommandSpecifier(CMD_SETANGLE), "setangle");
 	commands[CMD_SETANGLE].usage = "[tc0,0.5,0,1/tc]USAGE : <b>setangle</b> <i>polar azimuthal (meshname)</i>";
 	commands[CMD_SETANGLE].limits = { { double(-360.0), double(360.0) },{ double(-360.0), double(360.0) }, { Any(), Any() } };
-	commands[CMD_SETANGLE].descr = "[tc0,0.5,0.5,1/tc]Set magnetisation angle in mesh uniformly using polar coordinates. If mesh name not specified, this is set for all ferromagnetic meshes.";
+	commands[CMD_SETANGLE].descr = "[tc0,0.5,0.5,1/tc]Set magnetization angle in mesh uniformly using polar coordinates. If mesh name not specified, this is set for all ferromagnetic meshes.";
 
 	commands.insert(CMD_RANDOM, CommandSpecifier(CMD_RANDOM), "random");
-	commands[CMD_RANDOM].usage = "[tc0,0.5,0,1/tc]USAGE : <b>random</b> <i>(meshname)</i>";
-	commands[CMD_RANDOM].descr = "[tc0,0.5,0.5,1/tc]Set random magnetisation distribution in mesh. If mesh name not specified, set for focused mesh.";
+	commands[CMD_RANDOM].usage = "[tc0,0.5,0,1/tc]USAGE : <b>random</b> <i>(meshname, (seed))</i>";
+	commands[CMD_RANDOM].limits = { { Any(), Any() }, { int(1), Any() } };
+	commands[CMD_RANDOM].descr = "[tc0,0.5,0.5,1/tc]Set random magnetization distribution in mesh, with pseud-random number generator seed (default 1 if not specified). If mesh name not specified, set for focused mesh.";
 
 	commands.insert(CMD_SETRECT, CommandSpecifier(CMD_SETRECT), "setrect");
 	commands[CMD_SETRECT].usage = "[tc0,0.5,0,1/tc]USAGE : <b>setrect</b> <i>polar azimuthal rectangle (meshname)</i>";
 	commands[CMD_SETRECT].limits = { { double(-360.0), double(360.0) },{ double(-360.0), double(360.0) }, { Rect(), Any() }, { Any(), Any() } };
-	commands[CMD_SETRECT].descr = "[tc0,0.5,0.5,1/tc]Set magnetisation angle in given rectangle of mesh (relative coordinates) uniformly using polar coordinates. If mesh name not specified, the active mesh is used.";
+	commands[CMD_SETRECT].descr = "[tc0,0.5,0.5,1/tc]Set magnetization angle in given rectangle of mesh (relative coordinates) uniformly using polar coordinates. If mesh name not specified, the active mesh is used.";
 	commands[CMD_SETRECT].unit = "m";
 
 	commands.insert(CMD_INVERTMAG, CommandSpecifier(CMD_INVERTMAG), "invertmag");
 	commands[CMD_INVERTMAG].usage = "[tc0,0.5,0,1/tc]USAGE : <b>invertmag</b> <i>(components) (meshname)</i>";
 	commands[CMD_INVERTMAG].limits = { { Any(), Any() } };
-	commands[CMD_INVERTMAG].descr = "[tc0,0.5,0.5,1/tc]Invert magnetisation direction. If mesh name not specified, the active mesh is used. You can choose to invert just one or two components instead of the entire vector: specify components as x y z, e.g. invertmag x";
+	commands[CMD_INVERTMAG].descr = "[tc0,0.5,0.5,1/tc]Invert magnetization direction. If mesh name not specified, the active mesh is used. You can choose to invert just one or two components instead of the entire vector: specify components as x y z, e.g. invertmag x";
 
 	commands.insert(CMD_MIRRORMAG, CommandSpecifier(CMD_MIRRORMAG), "mirrormag");
 	commands[CMD_MIRRORMAG].usage = "[tc0,0.5,0,1/tc]USAGE : <b>mirrormag</b> <i>axis (meshname)</i>";
 	commands[CMD_MIRRORMAG].limits = { { Any(), Any() } };
-	commands[CMD_MIRRORMAG].descr = "[tc0,0.5,0.5,1/tc]Mirror magnetisation in a given axis, specified as x, y, z, e.g. mirrormag x. If mesh name not specified, the active mesh is used";
+	commands[CMD_MIRRORMAG].descr = "[tc0,0.5,0.5,1/tc]Mirror magnetization in a given axis, specified as x, y, z, e.g. mirrormag x. If mesh name not specified, the active mesh is used";
 
 	commands.insert(CMD_DWALL, CommandSpecifier(CMD_DWALL), "dwall");
 	commands[CMD_DWALL].usage = "[tc0,0.5,0,1/tc]USAGE : <b>dwall</b> <i>longitudinal transverse width position (meshname)</i>";
 	commands[CMD_DWALL].limits = { { Any(), Any() } , { Any(), Any() }, { double(0.0), Any() }, { double(0.0), Any() }, { Any(), Any() } };
 	commands[CMD_DWALL].unit = "m";
-	commands[CMD_DWALL].descr = "[tc0,0.5,0.5,1/tc]Create an idealised domain wall (tanh profile for longitudinal component, 1/cosh profile for transverse component) along the x-axis direction in the given mesh (active mesh if name not specified). For longitudinal and transverse specify the components of magnetisation as x, -x, y, -y, z, -z, i.e. specify using these string literals. For width and position use metric units.";
+	commands[CMD_DWALL].descr = "[tc0,0.5,0.5,1/tc]Create an idealised domain wall (tanh profile for longitudinal component, 1/cosh profile for transverse component) along the x-axis direction in the given mesh (active mesh if name not specified). For longitudinal and transverse specify the components of magnetization as x, -x, y, -y, z, -z, i.e. specify using these string literals. For width and position use metric units.";
 
 	commands.insert(CMD_VORTEX, CommandSpecifier(CMD_VORTEX), "vortex");
 	commands[CMD_VORTEX].usage = "[tc0,0.5,0,1/tc]USAGE : <b>vortex</b> <i>longitudinal rotation core (rectangle) (meshname)</i>";
@@ -566,7 +587,7 @@ Simulation::Simulation(int Program_Version) :
 
 	commands.insert(CMD_COPYMESHDATA, CommandSpecifier(CMD_COPYMESHDATA), "copymeshdata");
 	commands[CMD_COPYMESHDATA].usage = "[tc0,0.5,0,1/tc]USAGE : <b>copymeshdata</b> <i>meshname_from meshname_to (...)</i>";
-	commands[CMD_COPYMESHDATA].descr = "[tc0,0.5,0.5,1/tc]Copy all primary mesh data (e.g. magnetisation values and shape) from first mesh to all other meshes given - all meshes must be of same type.";
+	commands[CMD_COPYMESHDATA].descr = "[tc0,0.5,0.5,1/tc]Copy all primary mesh data (e.g. magnetization values and shape) from first mesh to all other meshes given - all meshes must be of same type.";
 
 	commands.insert(CMD_PARAMSVAR, CommandSpecifier(CMD_PARAMSVAR), "paramsvar");
 	commands[CMD_PARAMSVAR].usage = "[tc0,0.5,0,1/tc]USAGE : <b>paramsvar</b> <i>(meshname)</i>";
@@ -688,7 +709,7 @@ Simulation::Simulation(int Program_Version) :
 
 	commands.insert(CMD_COUPLETODIPOLES, CommandSpecifier(CMD_COUPLETODIPOLES), "coupletodipoles");
 	commands[CMD_COUPLETODIPOLES].usage = "[tc0,0.5,0,1/tc]USAGE : <b>coupletodipoles</b> <i>status</i>";
-	commands[CMD_COUPLETODIPOLES].descr = "[tc0,0.5,0.5,1/tc]Set/unset coupling to dipoles : if ferromagnetic meshes touch a dipole mesh then interface magnetic cells are exchange coupled to the dipole magnetisation direction.";
+	commands[CMD_COUPLETODIPOLES].descr = "[tc0,0.5,0.5,1/tc]Set/unset coupling to dipoles : if ferromagnetic meshes touch a dipole mesh then interface magnetic cells are exchange coupled to the dipole magnetization direction.";
 
 	commands.insert(CMD_EXCHANGECOUPLEDMESHES, CommandSpecifier(CMD_EXCHANGECOUPLEDMESHES), "exchangecoupledmeshes");
 	commands[CMD_EXCHANGECOUPLEDMESHES].usage = "[tc0,0.5,0,1/tc]USAGE : <b>exchangecoupledmeshes</b> <i>status (meshname)</i>";
@@ -876,6 +897,12 @@ Simulation::Simulation(int Program_Version) :
 	commands[CMD_MEMORY].usage = "[tc0,0.5,0,1/tc]USAGE : <b>memory</b>";
 	commands[CMD_MEMORY].descr = "[tc0,0.5,0.5,1/tc]Show CPU and GPU-addressable memory information (total and free).";
 
+	commands.insert(CMD_SELCUDADEV, CommandSpecifier(CMD_SELCUDADEV), "selectcudadevice");
+	commands[CMD_SELCUDADEV].usage = "[tc0,0.5,0,1/tc]USAGE : <b>selectcudadevice</b> <i>number</i>";
+	commands[CMD_SELCUDADEV].limits = { { int(0), Any() } };
+	commands[CMD_SELCUDADEV].descr = "[tc0,0.5,0.5,1/tc]Select CUDA device to use from available devices. The device CUDA Compute version must match Boris CUDA version. Devices numbered from 0 up, default selection at startup is device 0.";
+	commands[CMD_SELCUDADEV].return_descr = "[tc0,0.5,0,1/tc]Script return values: <i>number</i>";
+
 	commands.insert(CMD_OPENMANUAL, CommandSpecifier(CMD_OPENMANUAL), "manual");
 	commands[CMD_OPENMANUAL].usage = "[tc0,0.5,0,1/tc]USAGE : <b>manual</b>";
 	commands[CMD_OPENMANUAL].descr = "[tc0,0.5,0.5,1/tc]Opens Boris manual for current version.";
@@ -892,10 +919,10 @@ Simulation::Simulation(int Program_Version) :
 	commands[CMD_CLEARROUGHNESS].descr = "[tc0,0.5,0.5,1/tc]Clear roughness by setting the fine shape same as the coarse M shape.";
 
 	commands.insert(CMD_ROUGHENMESH, CommandSpecifier(CMD_ROUGHENMESH), "roughenmesh");
-	commands[CMD_ROUGHENMESH].usage = "[tc0,0.5,0,1/tc]USAGE : <b>roughenmesh</b> <i>depth (axis, (seed))</i>";
+	commands[CMD_ROUGHENMESH].usage = "[tc0,0.5,0,1/tc]USAGE : <b>roughenmesh</b> <i>depth (side, (seed))</i>";
 	commands[CMD_ROUGHENMESH].limits = { { double(0), Any() }, { Any(), Any() }, { int(1), Any() } };
 	commands[CMD_ROUGHENMESH].unit = "m";
-	commands[CMD_ROUGHENMESH].descr = "[tc0,0.5,0.5,1/tc]Roughen active mesh to given depth (m) along a named axis (use axis = x, y, or z as literal, z by default). The seed is used for the pseudo-random number generator, 1 by default.";
+	commands[CMD_ROUGHENMESH].descr = "[tc0,0.5,0.5,1/tc]Roughen active mesh to given depth (m) on named side (use side = x, y, z, -x, -y, -z as literal, z by default). The seed is used for the pseudo-random number generator, 1 by default.";
 
 	commands.insert(CMD_SURFROUGHENJAGGED, CommandSpecifier(CMD_SURFROUGHENJAGGED), "surfroughenjagged");
 	commands[CMD_SURFROUGHENJAGGED].usage = "[tc0,0.5,0,1/tc]USAGE : <b>surfroughenjagged</b> <i>depth spacing (seed, (sides))</i>";
@@ -960,11 +987,11 @@ Simulation::Simulation(int Program_Version) :
 
 	commands.insert(CMD_SHOWLENGHTS, CommandSpecifier(CMD_SHOWLENGHTS), "showlengths");
 	commands[CMD_SHOWLENGHTS].usage = "[tc0,0.5,0,1/tc]USAGE : <b>showlengths</b>";
-	commands[CMD_SHOWLENGHTS].descr = "[tc0,0.5,0.5,1/tc]Calculate a number of critical lengths for the focused mesh (must be ferromagnetic) to inform magnetisation cellsize selection. lex = sqrt(2 A / mu0 Ms^2) : exchange length, l_Bloch = sqrt(A / K1) : Bloch wall width, l_sky = PI D / 4 K1 : Neel skyrmion wall width.";
+	commands[CMD_SHOWLENGHTS].descr = "[tc0,0.5,0.5,1/tc]Calculate a number of critical lengths for the focused mesh (must be ferromagnetic) to inform magnetization cellsize selection. lex = sqrt(2 A / mu0 Ms^2) : exchange length, l_Bloch = sqrt(A / K1) : Bloch wall width, l_sky = PI D / 4 K1 : Neel skyrmion wall width.";
 
 	commands.insert(CMD_SHOWMCELLS, CommandSpecifier(CMD_SHOWMCELLS), "showmcells");
 	commands[CMD_SHOWMCELLS].usage = "[tc0,0.5,0,1/tc]USAGE : <b>showmcells</b>";
-	commands[CMD_SHOWMCELLS].descr = "[tc0,0.5,0.5,1/tc]Show number of discretisation cells for magnetisation for focused mesh (must be ferromagnetic).";
+	commands[CMD_SHOWMCELLS].descr = "[tc0,0.5,0.5,1/tc]Show number of discretisation cells for magnetization for focused mesh (must be ferromagnetic).";
 	commands[CMD_SHOWMCELLS].return_descr = "[tc0,0.5,0,1/tc]Script return values: <i>n</i>";
 
 	commands.insert(CMD_LOADOVF2MESH, CommandSpecifier(CMD_LOADOVF2MESH), "loadovf2mesh");
@@ -973,12 +1000,12 @@ Simulation::Simulation(int Program_Version) :
 
 	commands.insert(CMD_LOADOVF2MAG, CommandSpecifier(CMD_LOADOVF2MAG), "loadovf2mag");
 	commands[CMD_LOADOVF2MAG].usage = "[tc0,0.5,0,1/tc]USAGE : <b>loadovf2mag</b> <i>(renormalize_value) (directory/)filename</i>";
-	commands[CMD_LOADOVF2MAG].descr = "[tc0,0.5,0.5,1/tc]Load an OOMMF-style OVF 2.0 file containing magnetisation data, into the currently focused mesh (which must be ferromagnetic), mapping the data to the current mesh dimensions. By default the loaded data will not be renormalized: renormalize_value = 0. If a value is specified for renormalize_value, the loaded data will be renormalized to it (e.g. this would be an Ms value).";
+	commands[CMD_LOADOVF2MAG].descr = "[tc0,0.5,0.5,1/tc]Load an OOMMF-style OVF 2.0 file containing magnetization data, into the currently focused mesh (which must be ferromagnetic), mapping the data to the current mesh dimensions. By default the loaded data will not be renormalized: renormalize_value = 0. If a value is specified for renormalize_value, the loaded data will be renormalized to it (e.g. this would be an Ms value).";
 	commands[CMD_LOADOVF2MAG].unit = "A/m";
 
 	commands.insert(CMD_SAVEOVF2MAG, CommandSpecifier(CMD_SAVEOVF2MAG), "saveovf2mag");
 	commands[CMD_SAVEOVF2MAG].usage = "[tc0,0.5,0,1/tc]USAGE : <b>saveovf2mag</b> <i>(n) (data_type) (directory/)filename</i>";
-	commands[CMD_SAVEOVF2MAG].descr = "[tc0,0.5,0.5,1/tc]Save an OOMMF-style OVF 2.0 file containing magnetisation data from the currently focused mesh (which must be ferromagnetic). You can normalize the data to Ms0 value by specifying the n flag (e.g. saveovf2mag n filename) - by default the data is not normalized. You can specify the data type as data_type = bin4 (single precision 4 bytes per float), data_type = bin8 (double precision 8 bytes per float), or data_type = text. By default bin8 is used.";
+	commands[CMD_SAVEOVF2MAG].descr = "[tc0,0.5,0.5,1/tc]Save an OOMMF-style OVF 2.0 file containing magnetization data from the currently focused mesh (which must be ferromagnetic). You can normalize the data to Ms0 value by specifying the n flag (e.g. saveovf2mag n filename) - by default the data is not normalized. You can specify the data type as data_type = bin4 (single precision 4 bytes per float), data_type = bin8 (double precision 8 bytes per float), or data_type = text. By default bin8 is used.";
 
 	commands.insert(CMD_SAVEOVF2PARAMVAR, CommandSpecifier(CMD_SAVEOVF2PARAMVAR), "saveovf2param");
 	commands[CMD_SAVEOVF2PARAMVAR].usage = "[tc0,0.5,0,1/tc]USAGE : <b>saveovf2param</b> <i>(data_type) (meshname) paramname (directory/)filename</i>";
@@ -1032,6 +1059,24 @@ Simulation::Simulation(int Program_Version) :
 	commands[CMD_STARTUPSCRIPTSERVER].usage = "[tc0,0.5,0,1/tc]USAGE : <b>startupscriptserver</b> <i>status</i>";
 	commands[CMD_STARTUPSCRIPTSERVER].descr = "[tc0,0.5,0.5,1/tc]Set startup script server flag.";
 
+	commands.insert(CMD_THREADS, CommandSpecifier(CMD_THREADS), "threads");
+	commands[CMD_THREADS].usage = "[tc0,0.5,0,1/tc]USAGE : <b>threads</b> <i>number</i>";
+	commands[CMD_THREADS].descr = "[tc0,0.5,0.5,1/tc]Set number of threads to use for cuda 0 computations. Value of zero means set maximum available.";
+	commands[CMD_THREADS].limits = { { int(0), Any(omp_get_num_procs()) } };
+	commands[CMD_THREADS].return_descr = "[tc0,0.5,0,1/tc]Script return values: <i>num_threads</i>";
+
+	commands.insert(CMD_SERVERPORT, CommandSpecifier(CMD_SERVERPORT), "serverport");
+	commands[CMD_SERVERPORT].usage = "[tc0,0.5,0,1/tc]USAGE : <b>serverport</b> <i>port</i>";
+	commands[CMD_SERVERPORT].descr = "[tc0,0.5,0.5,1/tc]Set script server port.";
+	commands[CMD_SERVERPORT].limits = { { int(0), Any() } };
+	commands[CMD_SERVERPORT].return_descr = "[tc0,0.5,0,1/tc]Script return values: <i>port</i>";
+
+	commands.insert(CMD_SERVERSLEEPMS, CommandSpecifier(CMD_SERVERSLEEPMS), "serversleepms");
+	commands[CMD_SERVERSLEEPMS].usage = "[tc0,0.5,0,1/tc]USAGE : <b>serversleepms</b> <i>time_ms</i>";
+	commands[CMD_SERVERSLEEPMS].descr = "[tc0,0.5,0.5,1/tc]Set script server thread sleep time in ms: lower value makes server more responsive, but increases CPU load.";
+	commands[CMD_SERVERSLEEPMS].limits = { { int(1), Any() } };
+	commands[CMD_SERVERSLEEPMS].return_descr = "[tc0,0.5,0,1/tc]Script return values: <i>time_ms</i>";
+
 	commands.insert(CMD_SHOWTC, CommandSpecifier(CMD_SHOWTC), "showtc");
 	commands[CMD_SHOWTC].usage = "[tc0,0.5,0,1/tc]USAGE : <b>showtc</b>";
 	commands[CMD_SHOWTC].descr = "[tc0,0.5,0.5,1/tc]Show predicted Tc value (K) for current mesh in focus (must be atomistic), using formula Tc = J*e*z/3kB, where e is the spin-wave correction factor, and z is the coordination number.";
@@ -1039,7 +1084,7 @@ Simulation::Simulation(int Program_Version) :
 
 	commands.insert(CMD_SHOWMS, CommandSpecifier(CMD_SHOWMS), "showms");
 	commands[CMD_SHOWMS].usage = "[tc0,0.5,0,1/tc]USAGE : <b>showms</b>";
-	commands[CMD_SHOWMS].descr = "[tc0,0.5,0.5,1/tc]Show predicted saturation magnetisation (A/m) value for current mesh in focus (must be atomistic), using formula Ms = mu_s*n/a^3, where n is the number of atomic moments per unit cell, and a is the atomic cell size.";
+	commands[CMD_SHOWMS].descr = "[tc0,0.5,0.5,1/tc]Show predicted saturation magnetization (A/m) value for current mesh in focus (must be atomistic), using formula Ms = mu_s*n/a^3, where n is the number of atomic moments per unit cell, and a is the atomic cell size.";
 	commands[CMD_SHOWMS].return_descr = "[tc0,0.5,0,1/tc]Script return values: <i>Ms</i>";
 
 	commands.insert(CMD_SHOWA, CommandSpecifier(CMD_SHOWA), "showa");
@@ -1127,13 +1172,13 @@ Simulation::Simulation(int Program_Version) :
 	commands.insert(CMD_DP_GETPROFILE, CommandSpecifier(CMD_DP_GETPROFILE), "dp_getprofile");
 	commands[CMD_DP_GETPROFILE].usage = "[tc0,0.5,0,1/tc]USAGE : <b>dp_getprofile</b> <i>start end dp_index</i>";
 	commands[CMD_DP_GETPROFILE].limits = { { DBL3(-MAXSIMSPACE), DBL3(MAXSIMSPACE) }, { DBL3(-MAXSIMSPACE), DBL3(MAXSIMSPACE) }, { int(0), int(MAX_ARRAYS - 1) } };
-	commands[CMD_DP_GETPROFILE].descr = "[tc0,0.5,0.5,1/tc]Extract profile of physical quantity displayed on screen, at the current display resolution, along the line specified with given start and end cartesian absolute coordinates (m). Place profile in given dp arrays: 4 consecutive dp arrays are used, first for distance along line, the next 3 for physical quantity so allow space for these starting at dp_index.";
+	commands[CMD_DP_GETPROFILE].descr = "[tc0,0.5,0.5,1/tc]Extract profile of physical quantity displayed on screen, at the current display resolution, along the line specified with given start and end cartesian absolute coordinates (m). Place profile in given dp arrays: up to 4 consecutive dp arrays are used, first for distance along line, the next 3 for physical quantity components (e.g. Mx, My, Mz) so allow space for these starting at dp_index.";
 	commands[CMD_DP_GETPROFILE].unit = "m";
 
 	commands.insert(CMD_DP_GETEXACTPROFILE, CommandSpecifier(CMD_DP_GETEXACTPROFILE), "dp_getexactprofile");
 	commands[CMD_DP_GETEXACTPROFILE].usage = "[tc0,0.5,0,1/tc]USAGE : <b>dp_getexactprofile</b> <i>start end step dp_index (stencil)</i>";
 	commands[CMD_DP_GETEXACTPROFILE].limits = { { DBL3(-MAXSIMSPACE), DBL3(MAXSIMSPACE) }, { DBL3(-MAXSIMSPACE), DBL3(MAXSIMSPACE) }, { MINMESHSPACE, Any() }, { int(0), int(MAX_ARRAYS - 1) }, { DBL3(MINMESHSPACE), Any() } };
-	commands[CMD_DP_GETEXACTPROFILE].descr = "[tc0,0.5,0.5,1/tc]Extract profile of physical quantity displayed on screen, directly from the mesh so using the exact mesh resolution not the displayed resolution, along the line specified with given start and end cartesian absolute coordinates (m), and with the given step size (m). If stencil specified - as x y z (m) - then obtain profile values using weighted averaging with stencil centered on profile point. Place profile in given dp arrays: 4 consecutive dp arrays are used, first for distance along line, the next 3 for physical quantity so allow space for these starting at dp_index.";
+	commands[CMD_DP_GETEXACTPROFILE].descr = "[tc0,0.5,0.5,1/tc]Extract profile of physical quantity displayed on screen, directly from the mesh so using the exact mesh resolution not the displayed resolution, along the line specified with given start and end cartesian absolute coordinates (m), and with the given step size (m). If stencil specified - as x y z (m) - then obtain profile values using weighted averaging with stencil centered on profile point. Place profile in given dp arrays: up to 3 consecutive dp arrays are used for physical quantity components (e.g. Mx, My, Mz) so allow space for these starting at dp_index.";
 	commands[CMD_DP_GETEXACTPROFILE].unit = "m";
 
 	commands.insert(CMD_DP_GETPATH, CommandSpecifier(CMD_DP_GETPATH), "dp_getpath");
@@ -1171,13 +1216,13 @@ Simulation::Simulation(int Program_Version) :
 
 	commands.insert(CMD_DP_HISTOGRAM, CommandSpecifier(CMD_DP_HISTOGRAM), "dp_histogram");
 	commands[CMD_DP_HISTOGRAM].usage = "[tc0,0.5,0,1/tc]USAGE : <b>dp_histogram</b> <i>dp_x dp_y (bin min max)</i>";
-	commands[CMD_DP_HISTOGRAM].descr = "[tc0,0.5,0.5,1/tc]Calculate a histogram with given bin, minimum and maximum values, from the magnetisation magnitude of the focused mesh (must be magnetic). Save histogram in dp arrays at dp_x, dp_y. If histogram parameters not given use a bin with 100 steps between minimum and maximum magnetisation magnitude.";
+	commands[CMD_DP_HISTOGRAM].descr = "[tc0,0.5,0.5,1/tc]Calculate a histogram with given bin, minimum and maximum values, from the magnetization magnitude of the focused mesh (must be magnetic). Save histogram in dp arrays at dp_x, dp_y. If histogram parameters not given use a bin with 100 steps between minimum and maximum magnetization magnitude.";
 	commands[CMD_DP_HISTOGRAM].limits = { { int(0), int(MAX_ARRAYS - 1) }, { int(0), int(MAX_ARRAYS - 1) }, {double(0), Any()}, {double(0), Any()}, {double(0), Any()} };
 	commands[CMD_DP_HISTOGRAM].unit = "A/m";
 
 	commands.insert(CMD_DP_HISTOGRAM2, CommandSpecifier(CMD_DP_HISTOGRAM2), "dp_histogram2");
 	commands[CMD_DP_HISTOGRAM2].usage = "[tc0,0.5,0,1/tc]USAGE : <b>dp_histogram2</b> <i>dp_x dp_y (bin min max M2 deltaM2)</i>";
-	commands[CMD_DP_HISTOGRAM2].descr = "[tc0,0.5,0.5,1/tc]Calculate a histogram for a 2-sublattice mesh with given bin, minimum and maximum values for sub-lattice A, if the corresponding magnetisation magnitude in sub-lattice B equals M2 within the given deltaM2. Save histogram in dp arrays at dp_x, dp_y. If histogram parameters not given use a bin with 100 steps between minimum and maximum magnetisation magnitude, with M2 set to MeB and deltaM2 set 0.01*MeB respectively.";
+	commands[CMD_DP_HISTOGRAM2].descr = "[tc0,0.5,0.5,1/tc]Calculate a histogram for a 2-sublattice mesh with given bin, minimum and maximum values for sub-lattice A, if the corresponding magnetization magnitude in sub-lattice B equals M2 within the given deltaM2. Save histogram in dp arrays at dp_x, dp_y. If histogram parameters not given use a bin with 100 steps between minimum and maximum magnetization magnitude, with M2 set to MeB and deltaM2 set 0.01*MeB respectively.";
 	commands[CMD_DP_HISTOGRAM2].limits = { { int(0), int(MAX_ARRAYS - 1) }, { int(0), int(MAX_ARRAYS - 1) }, {double(0), Any()}, {double(0), Any()}, {double(0), Any()}, {double(0), Any()}, {double(0), Any()} };
 	commands[CMD_DP_HISTOGRAM2].unit = "A/m";
 
@@ -1643,6 +1688,8 @@ Simulation::Simulation(int Program_Version) :
 	BD.DisplayConsoleMessage("Console activated...");
 
 	//start network sockets thread to listen for incoming messages
+	commSocket.Change_Port(server_port);
+	commSocket.Change_RecvSleep(server_recv_sleep_ms);
 	if (start_scriptserver) Script_Server_Control(true);
 
 	//Check with "www.boris-spintronics.uk" if program version is up to date, and get latest update time for materials database
@@ -1658,6 +1705,9 @@ Simulation::Simulation(int Program_Version) :
 	SaveSimulation(directory + "default");
 
 	BD.DisplayFormattedConsoleMessage("[tc0,0.5,0,1/tc]To open manual use the <b>manual</b> command.");
+
+	//Set number of OpenMP threads (default is use all available but user can configure this)
+	if (!OmpThreads) OmpThreads = omp_get_num_procs();
 }
 
 Simulation::~Simulation()

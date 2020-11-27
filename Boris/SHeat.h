@@ -42,7 +42,7 @@ private:
 
 	//----------------------
 
-	//time step for the heat equation - if in a magnetic mesh must always be smaller or equal to dT (the magnetisation equation time-step)
+	//time step for the heat equation - if in a magnetic mesh must always be smaller or equal to dT (the magnetization equation time-step)
 	double heat_dT = 0.2e-12;
 
 	//save the last magnetic dT used: when advancing the heat equation this is the time we need to advance by. 

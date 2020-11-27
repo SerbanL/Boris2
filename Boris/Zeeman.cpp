@@ -350,7 +350,7 @@ void Zeeman::SetField(DBL3 Hxyz)
 
 	Ha = Hxyz;
 
-	//if atomic_moment is not zero then changing the applied field also changes the temperature dependence of me (normalised equilibrium magnetisation). This in turn affects a number of material parameters.
+	//if atomic_moment is not zero then changing the applied field also changes the temperature dependence of me (normalised equilibrium magnetization). This in turn affects a number of material parameters.
 	//Note, if only using LLG then set atomic_moment= 0 as calling SetCurieTemperature every time the applied field changes can be costly (if the field changes very often)
 
 	bool atomic_moment_zero = false;

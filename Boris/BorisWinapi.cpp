@@ -10,8 +10,15 @@
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-//Program master object - WndProc dispatches messages to this.
+//Program master object
 Simulation *pSim = nullptr;
+
+//Separate function to make the Simulation object, so it can be called on a separate std::thread.
+//See https://stackoverflow.com/questions/64988525/bug-related-to-g-openmp-when-using-stdthread/65001887#65001887 for reason
+void make_Simulation(HWND hWnd)
+{
+	pSim = new Simulation(hWnd, Program_Version);
+}
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -43,7 +50,7 @@ enum IDM_ {
 	IDM_CFG_MODULES, IDM_CFG_ODE, IDM_CFG_TIMESTEP, IDM_CFG_ASTEP, IDM_CFG_MULTICONV, IDM_CFG_PBC,
 	//PARAMETERS
 	IDM_PARAM_SHOW, IDM_PARAM_TDEP, IDM_PARAM_SDEP, IDM_PARAM_COPY,
-	//MAGNETISATION
+	//MAGNETIZATION
 	IDM_MAG_SET, IDM_MAG_FIELD, IDM_MAG_DWALL, IDM_MAG_VORTEX, IDM_MAG_SKYRMION, IDM_MAG_BLOCHSKYRMION, IDM_MAG_RANDOM, IDM_MAG_2DGRAINS, IDM_MAG_3DGRAINS, IDM_MAG_LOADOVF2MAG, IDM_MAG_SAVEOVF2MAG, IDM_MAG_ADDRECT, IDM_MAG_DELRECT, IDM_MAG_SETRECT, IDM_MAG_INVERT, IDM_MAG_MIRROR,
 	//ROUGHNESS
 	IDM_ROUGH_SHOW, IDM_ROUGH_EDIT, IDM_ROUGH_ROUGHEN, IDM_ROUGH_SURFROUGHEN, IDM_ROUGH_LOAD, IDM_ROUGH_CLEARROUGH,
@@ -167,7 +174,7 @@ void AddMenus(HWND hwnd)
 
 	AppendMenuW(hMenubar, MF_POPUP, (UINT_PTR)hMenu_Param, L"&Parameters");
 
-	//MAGNETISATION
+	//MAGNETIZATION
 	HMENU hMenu_Mag = CreateMenu();
 
 	AppendMenuW(hMenu_Mag, MF_STRING, IDM_MAG_SET, L"&Uniform");
@@ -190,7 +197,7 @@ void AddMenus(HWND hwnd)
 	AppendMenuW(hMenu_Mag, MF_SEPARATOR, 0, NULL);
 	AppendMenuW(hMenu_Mag, MF_STRING, IDM_MAG_FIELD, L"&Field");
 
-	AppendMenuW(hMenubar, MF_POPUP, (UINT_PTR)hMenu_Mag, L"&Magnetisation");
+	AppendMenuW(hMenubar, MF_POPUP, (UINT_PTR)hMenu_Mag, L"&magnetization");
 
 	//ROUGHNESS
 	HMENU hMenu_Rough = CreateMenu();
@@ -444,7 +451,10 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
    ChangeWindowMessageFilterEx(hWnd, WM_COPYGLOBALDATA, MSGFLT_ALLOW, nullptr);
    
    //Instantiate Simulation object and start main simulation loop thread (non-blocking)
-   pSim = new Simulation(hWnd, Program_Version);
+   
+   //See https://stackoverflow.com/questions/64988525/bug-related-to-g-openmp-when-using-stdthread/65001887#65001887
+   std::thread simulation_instantiation_thread(&make_Simulation, hWnd);
+   simulation_instantiation_thread.join();
 
    //Add menus - this needs to be after creating Simulation as we need to get status flags to disable some menu items (e.g. CUDA available)
    AddMenus(hWnd);
@@ -916,7 +926,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			if (pSim) pSim->NewMessage(AC_CONSOLECOMMAND_ENTRY, INT2(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam)), ToString(CMD_COPYPARAMS));
 			break;
 
-		//MAGNETISATION
+		//MAGNETIZATION
 		case IDM_MAG_SET:
 			if (pSim) pSim->NewMessage(AC_CONSOLECOMMAND_NOPARAMS_ENTRY, INT2(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam)), ToString(CMD_SETANGLE) + " 90 0");
 			break;

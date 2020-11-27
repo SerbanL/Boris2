@@ -377,8 +377,8 @@ void FMesh::CoupleToDipoles(bool status)
 
 				if (status) {
 
-					//set interface cells to have magnetisation direction along the touching dipole direction
-					DBL3 Mdipole_direction = dynamic_cast<Mesh*>((*pSMesh)[idx])->GetAverageMagnetisation().normalized();
+					//set interface cells to have magnetization direction along the touching dipole direction
+					DBL3 Mdipole_direction = dynamic_cast<Mesh*>((*pSMesh)[idx])->GetAveragemagnetization().normalized();
 
 					Box box = M.box_from_rect_max(mesh_intersection);
 
@@ -409,13 +409,13 @@ double FMesh::CheckMoveMesh(void)
 #endif
 
 	//move mesh algorithm applied to systems containing domain walls in order to simulate domain wall movement.
-	//In this case the magnetisation at the ends of the mesh must be fixed (magnetisation evolver not applied to the ends).
-	//Find the average magnetisation projected along the absolute direction of the magnetisation at the ends.
+	//In this case the magnetization at the ends of the mesh must be fixed (magnetization evolver not applied to the ends).
+	//Find the average magnetization projected along the absolute direction of the magnetization at the ends.
 	//For a domain wall at the centre this value should be close to zero. If it exceeds a threshold then move mesh by a cellsize along +x or -x.
 
 	if (!move_mesh_trigger) return 0;
 
-	//the ends should not be completely empty, and must have a constant magnetisation direction
+	//the ends should not be completely empty, and must have a constant magnetization direction
 	int cells_fixed = (int)ceil_epsilon((double)n.x * MOVEMESH_ENDRATIO);
 
 	DBL3 M_end = M.average_omp(Box(0, 0, 0, cells_fixed, n.y, n.z));
@@ -514,7 +514,7 @@ void FMesh::SetAtomicMoment(DBL2 atomic_moment_ub)
 {
 	atomic_moment = atomic_moment_ub.i;
 
-	//setting atomic_moment will affect the temperature dependence of me (normalised equilibrium magnetisation), so some parameter temperature dependencies must change - calling SetCurieTemperature with the current Curie temperature will do this
+	//setting atomic_moment will affect the temperature dependence of me (normalised equilibrium magnetization), so some parameter temperature dependencies must change - calling SetCurieTemperature with the current Curie temperature will do this
 	SetCurieTemperature(T_Curie, false);
 }
 

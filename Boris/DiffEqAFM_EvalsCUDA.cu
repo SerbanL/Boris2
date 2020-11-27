@@ -7,7 +7,7 @@
 
 //-----------------------------------------
 
-__global__ void RestoreMagnetisation_AFM_kernel(cuVEC_VC<cuReal3>& M, cuVEC<cuReal3>& sM1, cuVEC_VC<cuReal3>& M2, cuVEC<cuReal3>& sM1_2)
+__global__ void Restoremagnetization_AFM_kernel(cuVEC_VC<cuReal3>& M, cuVEC<cuReal3>& sM1, cuVEC_VC<cuReal3>& M2, cuVEC<cuReal3>& sM1_2)
 {
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
 
@@ -18,10 +18,10 @@ __global__ void RestoreMagnetisation_AFM_kernel(cuVEC_VC<cuReal3>& M, cuVEC<cuRe
 	}
 }
 
-//Restore magnetisation after a failed step for adaptive time-step methods
-void DifferentialEquationAFMCUDA::RestoreMagnetisation(void)
+//Restore magnetization after a failed step for adaptive time-step methods
+void DifferentialEquationAFMCUDA::Restoremagnetization(void)
 {
-	RestoreMagnetisation_AFM_kernel <<< (pMeshCUDA->n.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (pMeshCUDA->M, sM1, pMeshCUDA->M2, sM1_2);
+	Restoremagnetization_AFM_kernel <<< (pMeshCUDA->n.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (pMeshCUDA->M, sM1, pMeshCUDA->M2, sM1_2);
 }
 
 //-----------------------------------------

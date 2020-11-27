@@ -29,7 +29,6 @@ SuperMesh::SuperMesh(void) :
 	//default atomistic ODE settings
 	SetAtomisticODE(ODE_LLG, EVAL_RKF);
 
-	//default starting state
 	AddMesh(activeMeshName, MESH_FERROMAGNETIC, Rect(DBL3(80e-9, 80e-9, 10e-9)));
 }
 

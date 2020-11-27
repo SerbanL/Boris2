@@ -44,7 +44,7 @@ private:
 	VEC<DBL3> Fmul_rough;
 	VEC<DBL3> Fomul_rough;
 
-	//Magnetisation shape on the fine mesh, i.e. a refined version of pMesh->M, but we only need to keep track of empty / non-empty cells (i.e. the shape)
+	//magnetization shape on the fine mesh, i.e. a refined version of pMesh->M, but we only need to keep track of empty / non-empty cells (i.e. the shape)
 	//When loading an image file, if Roughness module enabled then load it into Mshape_fine first, then set pMesh->M from Mfine such that
 	//the coarse magnetic body includes the fine one (i.e. if a coarse cell has any non-empty fine cells then set them as non-empty)
 	VEC_VC<double> Mshape_fine;

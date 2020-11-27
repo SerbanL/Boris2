@@ -31,7 +31,7 @@ struct PhysQRepComponent :
 	//unit of PhysQ values form which this PhysQRepComponent was generated
 	string unit;
 
-	//the displayed type name (e.g. Magnetisation)
+	//the displayed type name (e.g. magnetization)
 	string typeName;
 
 	//the mesh name from which the PhysQ which generated this PhysQRepComponent was collected

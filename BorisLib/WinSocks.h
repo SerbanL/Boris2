@@ -56,6 +56,9 @@ private:
 	//the last received message
 	std::string last_message;
 
+	std::string server_port = DEFAULT_PORT;
+	int server_recvsleepms = RECVSLEEPMS;
+
 private:
 
 	//Make non-blocking listen socket on DEFAULT_PORT to accept incoming connections - done in the constructor
@@ -63,8 +66,11 @@ private:
 
 public:
 
-	NetSocks(int buffer_size = DEFAULT_BUFLEN);
+	NetSocks(std::string port = DEFAULT_PORT, int recvsleepms = RECVSLEEPMS, int buffer_size = DEFAULT_BUFLEN);
 	~NetSocks();
+
+	void Change_Port(std::string port);
+	void Change_RecvSleep(int recvsleepms) { server_recvsleepms = recvsleepms; }
 
 	//Non-blocking call to Listen for incoming messages - return message when received
 	std::string Listen(void);
@@ -84,8 +90,11 @@ public:
 
 //SERVER------------------------------------------------------------------------
 
-inline NetSocks::NetSocks(int buffer_size)
+inline NetSocks::NetSocks(std::string port, int recvsleepms, int buffer_size)
 {
+	server_port = port;
+	server_recvsleepms = recvsleepms;
+
 	recvbuflen = buffer_size;
 	recvbuf = new char[recvbuflen];
 
@@ -109,6 +118,27 @@ inline NetSocks::~NetSocks()
 	WSACleanup();
 
 	delete recvbuf;
+}
+
+inline void NetSocks::Change_Port(std::string port)
+{
+	server_port = port;
+
+	if (clientConnected) {
+
+		// shutdown the connection since we're done
+		shutdown(ClientSocket, SD_SEND);
+		closesocket(ClientSocket);
+	}
+
+	if (listenSocketActive) {
+
+		closesocket(ListenSocket);
+	}
+
+	WSACleanup();
+
+	MakeListenSocket();
 }
 
 inline void NetSocks::MakeListenSocket(void) 
@@ -138,7 +168,7 @@ inline void NetSocks::MakeListenSocket(void)
 	hints.ai_flags = AI_PASSIVE;
 
 	// Resolve the server address and port
-	iResult = getaddrinfo(nullptr, DEFAULT_PORT, &hints, &result);
+	iResult = getaddrinfo(nullptr, server_port.c_str(), &hints, &result);
 	if (iResult != 0) {
 
 		//error
@@ -251,7 +281,7 @@ inline std::string NetSocks::Listen(void)
 	}
 
 	//sleep before calling the non-blocking recv function (client socket is not blocking)
-	std::this_thread::sleep_for(std::chrono::milliseconds(RECVSLEEPMS));
+	std::this_thread::sleep_for(std::chrono::milliseconds(server_recvsleepms));
 
 	return "";
 }

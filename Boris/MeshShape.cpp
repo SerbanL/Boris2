@@ -16,7 +16,7 @@ BError Mesh::copy_mesh_data(MeshBase& copy_this)
 	//if CUDA on then first transfer data to cpu as there may be a mismatch
 	if (pMeshCUDA) {
 
-		error = pMeshCUDA->copy_shapes_to_cpu();
+		error = pcopy_this->pMeshCUDA->copy_shapes_to_cpu();
 	}
 #endif
 
@@ -119,33 +119,18 @@ BError Mesh::setrect(Rect rectangle)
 	return error;
 }
 
-//roughen mesh sides perpendicular to a named axis (axis = "x", "y", "z") to given depth (same units as h) with prng instantiated with given seed.
-BError Mesh::RoughenMeshSides(string axis, double depth, unsigned seed)
+//roughen mesh sides (side = "x", "y", "z", "-x", "-y", or "-z") to given depth (same units as h) with prng instantiated with given seed.
+BError Mesh::RoughenMeshSides(string side, double depth, int seed)
 {
 	BError error(__FUNCTION__);
 
-	if ((axis != "x" && axis != "y" && axis != "z") || depth <= 0 || seed < 1) return error(BERROR_INCORRECTVALUE);
+	if ((side != "x" && side != "y" && side != "z" && side != "-x" && side != "-y" && side != "-z") || depth <= 0 || seed < 1) return error(BERROR_INCORRECTVALUE);
 
-	auto run_this = [](auto& VEC_VC_quantity, auto default_value, string axis, double depth, unsigned seed) -> BError {
+	auto run_this = [](auto& VEC_VC_quantity, auto default_value, string side, double depth, int seed) -> BError {
 
 		bool success = true;
 
-		string side_m = "-z", side_p = "z";
-
-		if (axis == "x") {
-
-			side_m = "-x";
-			side_p = "x";
-		}
-
-		if (axis == "y") {
-
-			side_m = "-y";
-			side_p = "y";
-		}
-
-		success &= VEC_VC_quantity.generate_roughside(side_m, depth, seed);
-		success &= VEC_VC_quantity.generate_roughside(side_p, depth, seed);
+		success &= VEC_VC_quantity.generate_roughside(side, depth, seed);
 
 		if (success) return BError();
 		else {
@@ -155,20 +140,20 @@ BError Mesh::RoughenMeshSides(string axis, double depth, unsigned seed)
 		}
 	};
 
-	error = change_mesh_shape(run_this, axis, depth, seed);
+	error = change_mesh_shape(run_this, side, depth, seed);
 
 	return error;
 }
 
 //Roughen mesh top and bottom surfaces using a jagged pattern to given depth and peak spacing (same units as h) with prng instantiated with given seed.
 //Rough both top and bottom if sides is empty, else it should be either -z or z.
-BError Mesh::RoughenMeshSurfaces_Jagged(double depth, double spacing, unsigned seed, string sides)
+BError Mesh::RoughenMeshSurfaces_Jagged(double depth, double spacing, int seed, string sides)
 {
 	BError error(__FUNCTION__);
 
 	if (depth <= 0 || spacing <= 0 || seed < 1) return error(BERROR_INCORRECTVALUE);
 
-	auto run_this = [](auto& VEC_VC_quantity, auto default_value, double depth, double spacing, unsigned seed, string sides) -> BError {
+	auto run_this = [](auto& VEC_VC_quantity, auto default_value, double depth, double spacing, int seed, string sides) -> BError {
 
 		bool success = true;
 
@@ -188,13 +173,13 @@ BError Mesh::RoughenMeshSurfaces_Jagged(double depth, double spacing, unsigned s
 }
 
 //Generate Voronoi 2D grains in xy plane (boundaries between Voronoi cells set to empty) at given average spacing with prng instantiated with given seed.
-BError Mesh::GenerateGrains2D(double spacing, unsigned seed)
+BError Mesh::GenerateGrains2D(double spacing, int seed)
 {
 	BError error(__FUNCTION__);
 
 	if (spacing <= 0 || seed < 1) return error(BERROR_INCORRECTVALUE);
 
-	auto run_this = [](auto& VEC_VC_quantity, auto default_value, double spacing, unsigned seed) -> BError {
+	auto run_this = [](auto& VEC_VC_quantity, auto default_value, double spacing, int seed) -> BError {
 
 		bool success = true;
 
@@ -214,13 +199,13 @@ BError Mesh::GenerateGrains2D(double spacing, unsigned seed)
 }
 
 //Generate Voronoi 3D grains (boundaries between Voronoi cells set to empty) at given average spacing with prng instantiated with given seed.
-BError Mesh::GenerateGrains3D(double spacing, unsigned seed)
+BError Mesh::GenerateGrains3D(double spacing, int seed)
 {
 	BError error(__FUNCTION__);
 
 	if (spacing <= 0 || seed < 1) return error(BERROR_INCORRECTVALUE);
 
-	auto run_this = [](auto& VEC_VC_quantity, auto default_value, double spacing, unsigned seed) -> BError {
+	auto run_this = [](auto& VEC_VC_quantity, auto default_value, double spacing, int seed) -> BError {
 
 		bool success = true;
 

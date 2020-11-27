@@ -4,6 +4,20 @@
 #include "CompileFlags.h"
 #if GRAPHICS == 0
 
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+//Program master object
+Simulation *pSim = nullptr;
+
+//Separate function to make the Simulation object, so it can be called on a separate std::thread.
+//See https://stackoverflow.com/questions/64988525/bug-related-to-g-openmp-when-using-stdthread/65001887#65001887 for reason
+void make_Simulation(void)
+{
+	pSim = new Simulation(Program_Version);
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 class TextInput :
 	public Threads<TextInput>
 {
@@ -49,10 +63,11 @@ int main(void)
 
 #endif
 
-	Simulation *pSim;
-
 	//Instantiate Simulation object and start main simulation loop thread (non-blocking)
-	pSim = new Simulation(Program_Version);
+	
+	//See https://stackoverflow.com/questions/64988525/bug-related-to-g-openmp-when-using-stdthread/65001887#65001887
+	std::thread simulation_instantiation_thread(&make_Simulation);
+	simulation_instantiation_thread.join();
 
 	//Get user input until exit condition reached
 	TextInput textInput(pSim);

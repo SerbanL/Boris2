@@ -166,7 +166,7 @@ double Atom_Demag::UpdateField(void)
 
 			//calculate field required
 
-			//transfer magnetic moments to magnetisation mesh, converting from moment to magnetisation in the process
+			//transfer magnetic moments to magnetization mesh, converting from moment to magnetization in the process
 			M.transfer_in();
 
 			//convolute and get "energy" value
@@ -191,7 +191,7 @@ double Atom_Demag::UpdateField(void)
 
 		//don't use evaluation speedup
 
-		//transfer magnetic moments to magnetisation mesh, converting from moment to magnetisation in the process
+		//transfer magnetic moments to magnetization mesh, converting from moment to magnetization in the process
 		M.transfer_in();
 
 		//convolute and get "energy" value

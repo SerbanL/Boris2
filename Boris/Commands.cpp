@@ -122,7 +122,7 @@ void Simulation::HandleCommand(string command_string)
 		case CMD_COMPUTEFIELDS:
 			ComputeFields();
 			break;
-
+			
 		//DEPRECATED
 		//This was used by Python scripts to detected when simulation has finished. Still keep it for compatibility with old scripts.
 		//Instead you should use the ws.Run() call in Python scripts
@@ -191,7 +191,7 @@ void Simulation::HandleCommand(string command_string)
 					UpdateDataBoxEntries(meshRect_old, SMesh[meshName]->GetMeshRect(), meshName);
 				};
 
-				if (!err_hndl.call(&SuperMesh::SetMeshRect, &SMesh, SMesh.GetMeshFocus(), meshRect, save_data_updater)) {
+				if (!err_hndl.call(error, &SuperMesh::SetMeshRect, &SMesh, SMesh.GetMeshFocus(), meshRect, save_data_updater)) {
 
 					UpdateScreen_AutoSet();
 				}
@@ -235,7 +235,7 @@ void Simulation::HandleCommand(string command_string)
 
 				StopSimulation();
 
-				if (!err_hndl.call(&MeshBase::SetMeshCellsize, SMesh.active_mesh(), h)) {
+				if (!err_hndl.call(error, &MeshBase::SetMeshCellsize, SMesh.active_mesh(), h)) {
 
 					UpdateScreen();
 				}
@@ -255,7 +255,7 @@ void Simulation::HandleCommand(string command_string)
 
 				StopSimulation();
 
-				if (!err_hndl.call(&MeshBase::SetMeshECellsize, SMesh.active_mesh(), h_e)) {
+				if (!err_hndl.call(error, &MeshBase::SetMeshECellsize, SMesh.active_mesh(), h_e)) {
 
 					UpdateScreen();
 				}
@@ -275,7 +275,7 @@ void Simulation::HandleCommand(string command_string)
 
 				StopSimulation();
 
-				if (!err_hndl.call(&MeshBase::SetMeshTCellsize, SMesh.active_mesh(), h_t)) {
+				if (!err_hndl.call(error, &MeshBase::SetMeshTCellsize, SMesh.active_mesh(), h_t)) {
 
 					UpdateScreen();
 				}
@@ -295,7 +295,7 @@ void Simulation::HandleCommand(string command_string)
 
 				StopSimulation();
 
-				if (!err_hndl.call(&Mesh::SetMeshSCellsize, dynamic_cast<Mesh*>(SMesh.active_mesh()), h_s, false)) {
+				if (!err_hndl.call(error, &Mesh::SetMeshSCellsize, dynamic_cast<Mesh*>(SMesh.active_mesh()), h_s, false)) {
 
 					UpdateScreen();
 				}
@@ -318,7 +318,7 @@ void Simulation::HandleCommand(string command_string)
 
 				StopSimulation();
 
-				if (!err_hndl.call(&MeshBase::SetMeshMCellsize, SMesh.active_mesh(), h_m)) {
+				if (!err_hndl.call(error, &MeshBase::SetMeshMCellsize, SMesh.active_mesh(), h_m)) {
 
 					UpdateScreen();
 				}
@@ -338,7 +338,7 @@ void Simulation::HandleCommand(string command_string)
 
 				StopSimulation();
 
-				if (!err_hndl.call(&SuperMesh::SetFMSMeshCellsize, &SMesh, h)) {
+				if (!err_hndl.call(error, &SuperMesh::SetFMSMeshCellsize, &SMesh, h)) {
 
 					UpdateScreen();
 				}
@@ -358,7 +358,7 @@ void Simulation::HandleCommand(string command_string)
 
 				StopSimulation();
 
-				if (!err_hndl.call(&SuperMesh::SetESMeshCellsize, &SMesh, h)) {
+				if (!err_hndl.call(error, &SuperMesh::SetESMeshCellsize, &SMesh, h)) {
 
 					UpdateScreen();
 				}
@@ -382,7 +382,7 @@ void Simulation::HandleCommand(string command_string)
 
 				if (pMesh) {
 
-					if (!err_hndl.call(&Atom_Mesh::Set_Demag_Cellsize, pMesh, h_dm)) {
+					if (!err_hndl.call(error, &Atom_Mesh::Set_Demag_Cellsize, pMesh, h_dm)) {
 
 						UpdateScreen();
 					}
@@ -415,7 +415,7 @@ void Simulation::HandleCommand(string command_string)
 
 				StopSimulation();
 
-				if (!err_hndl.call(&SuperMesh::AddMesh, &SMesh, meshName, MESH_FERROMAGNETIC, meshRect)) {
+				if (!err_hndl.call(error, &SuperMesh::AddMesh, &SMesh, meshName, MESH_FERROMAGNETIC, meshRect)) {
 
 					UpdateScreen();
 				}
@@ -436,7 +436,7 @@ void Simulation::HandleCommand(string command_string)
 
 				StopSimulation();
 
-				if (!err_hndl.call(&SuperMesh::AddMesh, &SMesh, new_meshName, MESH_FERROMAGNETIC, meshRect)) {
+				if (!err_hndl.call(error, &SuperMesh::AddMesh, &SMesh, new_meshName, MESH_FERROMAGNETIC, meshRect)) {
 
 					SMesh.SetMeshFocus(new_meshName);
 					UpdateScreen_AutoSet_KeepOrientation();
@@ -478,7 +478,7 @@ void Simulation::HandleCommand(string command_string)
 
 				StopSimulation();
 
-				if (!err_hndl.call(&SuperMesh::AddMesh, &SMesh, meshName, MESH_ANTIFERROMAGNETIC, meshRect)) {
+				if (!err_hndl.call(error, &SuperMesh::AddMesh, &SMesh, meshName, MESH_ANTIFERROMAGNETIC, meshRect)) {
 
 					UpdateScreen();
 				}
@@ -499,7 +499,7 @@ void Simulation::HandleCommand(string command_string)
 
 				StopSimulation();
 
-				if (!err_hndl.call(&SuperMesh::AddMesh, &SMesh, new_meshName, MESH_ANTIFERROMAGNETIC, meshRect)) {
+				if (!err_hndl.call(error, &SuperMesh::AddMesh, &SMesh, new_meshName, MESH_ANTIFERROMAGNETIC, meshRect)) {
 
 					SMesh.SetMeshFocus(new_meshName);
 					UpdateScreen_AutoSet_KeepOrientation();
@@ -541,7 +541,7 @@ void Simulation::HandleCommand(string command_string)
 
 				StopSimulation();
 
-				if (!err_hndl.call(&SuperMesh::AddMesh, &SMesh, meshName, MESH_METAL, meshRect)) {
+				if (!err_hndl.call(error, &SuperMesh::AddMesh, &SMesh, meshName, MESH_METAL, meshRect)) {
 
 					UpdateScreen();
 				}
@@ -562,7 +562,7 @@ void Simulation::HandleCommand(string command_string)
 
 				StopSimulation();
 
-				if (!err_hndl.call(&SuperMesh::AddMesh, &SMesh, meshName, MESH_INSULATOR, meshRect)) {
+				if (!err_hndl.call(error, &SuperMesh::AddMesh, &SMesh, meshName, MESH_INSULATOR, meshRect)) {
 
 					UpdateScreen();
 				}
@@ -583,7 +583,7 @@ void Simulation::HandleCommand(string command_string)
 
 				StopSimulation();
 
-				if (!err_hndl.call(&SuperMesh::AddMesh, &SMesh, meshName, MESH_DIPOLE, meshRect)) {
+				if (!err_hndl.call(error, &SuperMesh::AddMesh, &SMesh, meshName, MESH_DIPOLE, meshRect)) {
 
 					UpdateScreen();
 				}
@@ -604,7 +604,7 @@ void Simulation::HandleCommand(string command_string)
 
 				StopSimulation();
 
-				if (!err_hndl.call(&SuperMesh::AddMesh, &SMesh, meshName, MESH_DIAMAGNETIC, meshRect)) {
+				if (!err_hndl.call(error, &SuperMesh::AddMesh, &SMesh, meshName, MESH_DIAMAGNETIC, meshRect)) {
 
 					UpdateScreen();
 				}
@@ -625,7 +625,7 @@ void Simulation::HandleCommand(string command_string)
 
 				StopSimulation();
 
-				if (!err_hndl.call(&SuperMesh::AddMesh, &SMesh, meshName, MESH_ATOM_CUBIC, meshRect)) {
+				if (!err_hndl.call(error, &SuperMesh::AddMesh, &SMesh, meshName, MESH_ATOM_CUBIC, meshRect)) {
 
 					UpdateScreen();
 				}
@@ -646,7 +646,7 @@ void Simulation::HandleCommand(string command_string)
 
 				StopSimulation();
 
-				if (!err_hndl.call(&SuperMesh::AddMesh, &SMesh, new_meshName, MESH_ATOM_CUBIC, meshRect)) {
+				if (!err_hndl.call(error, &SuperMesh::AddMesh, &SMesh, new_meshName, MESH_ATOM_CUBIC, meshRect)) {
 
 					SMesh.SetMeshFocus(new_meshName);
 					UpdateScreen_AutoSet_KeepOrientation();
@@ -686,7 +686,7 @@ void Simulation::HandleCommand(string command_string)
 				StopSimulation();
 
 				//delete mesh
-				if (!err_hndl.qcall(&SuperMesh::DelMesh, &SMesh, meshName)) {
+				if (!err_hndl.qcall(error, &SuperMesh::DelMesh, &SMesh, meshName)) {
 
 					//delete any affected entries in data box
 					DeleteDataBoxFields(meshName);
@@ -712,7 +712,7 @@ void Simulation::HandleCommand(string command_string)
 				//note, mesh name is not allowed to have any spaces - needs to be a single word
 				newName = trimspaces(newName);
 
-				if (!err_hndl.qcall(&SuperMesh::RenameMesh, &SMesh, oldName, newName)) {
+				if (!err_hndl.qcall(error, &SuperMesh::RenameMesh, &SMesh, oldName, newName)) {
 
 					StopSimulation();
 
@@ -741,7 +741,7 @@ void Simulation::HandleCommand(string command_string)
 
 				string foucusedMesh = SMesh.GetMeshFocus();
 
-				if (!err_hndl.qcall(&SuperMesh::SetMeshFocus, &SMesh, meshName)) {
+				if (!err_hndl.qcall(error, &SuperMesh::SetMeshFocus, &SMesh, meshName)) {
 
 					if(foucusedMesh != SMesh.GetMeshFocus())
 						UpdateScreen_AutoSet();
@@ -763,7 +763,7 @@ void Simulation::HandleCommand(string command_string)
 
 				string foucusedMesh = SMesh.GetMeshFocus();
 
-				if (!err_hndl.qcall(&SuperMesh::SetMeshFocus, &SMesh, meshName)) {
+				if (!err_hndl.qcall(error, &SuperMesh::SetMeshFocus, &SMesh, meshName)) {
 
 					if (foucusedMesh != SMesh.GetMeshFocus())
 						UpdateScreen_AutoSet_KeepOrientation();
@@ -788,7 +788,7 @@ void Simulation::HandleCommand(string command_string)
 
 				StopSimulation();
 
-				if (!err_hndl.qcall(&SuperMesh::delrect, &SMesh, meshName, rectangle)) {
+				if (!err_hndl.qcall(error, &SuperMesh::delrect, &SMesh, meshName, rectangle)) {
 
 					UpdateScreen();
 				}
@@ -809,7 +809,7 @@ void Simulation::HandleCommand(string command_string)
 
 				StopSimulation();
 
-				if (!err_hndl.qcall(&SuperMesh::setrect, &SMesh, meshName, rectangle)) {
+				if (!err_hndl.qcall(error, &SuperMesh::setrect, &SMesh, meshName, rectangle)) {
 
 					UpdateScreen();
 				}
@@ -829,7 +829,7 @@ void Simulation::HandleCommand(string command_string)
 
 				StopSimulation();
 
-				if (!err_hndl.qcall(&SuperMesh::resetrect, &SMesh, meshName)) {
+				if (!err_hndl.qcall(error, &SuperMesh::resetrect, &SMesh, meshName)) {
 
 					UpdateScreen();
 				}
@@ -918,7 +918,7 @@ void Simulation::HandleCommand(string command_string)
 
 			if (!error) {
 
-				if (!err_hndl.qcall(&SuperMesh::SetMagAngle, &SMesh, meshName, polar, azim)) {
+				if (!err_hndl.qcall(error, &SuperMesh::SetMagAngle, &SMesh, meshName, polar, azim)) {
 
 					UpdateScreen();
 				}
@@ -931,13 +931,15 @@ void Simulation::HandleCommand(string command_string)
 		case CMD_RANDOM:
 		{
 			string meshName;
+			int seed;
 
-			error = commandSpec.GetParameters(command_fields, meshName);
-			if (error == BERROR_PARAMMISMATCH) { error.reset(); meshName = SMesh.GetMeshFocus(); }
+			error = commandSpec.GetParameters(command_fields, meshName, seed);
+			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, meshName); seed = 1; }
+			if (error == BERROR_PARAMMISMATCH) { error.reset(); meshName = SMesh.GetMeshFocus(); seed = 1; }
 
 			if (!error) {
 
-				if (!err_hndl.qcall(&SuperMesh::SetRandomMag, &SMesh, meshName)) {
+				if (!err_hndl.qcall(error, &SuperMesh::SetRandomMag, &SMesh, meshName, seed)) {
 
 					UpdateScreen();
 				}
@@ -991,7 +993,7 @@ void Simulation::HandleCommand(string command_string)
 				}
 				else meshName = SMesh.GetMeshFocus();
 				
-				if (!err_hndl.qcall(&SuperMesh::SetInvertedMag, &SMesh, meshName, x, y, z)) {
+				if (!err_hndl.qcall(error, &SuperMesh::SetInvertedMag, &SMesh, meshName, x, y, z)) {
 
 					UpdateScreen();
 				}
@@ -1011,7 +1013,7 @@ void Simulation::HandleCommand(string command_string)
 
 			if (!error) {
 
-				if (!err_hndl.qcall(&SuperMesh::SetMirroredMag, &SMesh, meshName, axis)) {
+				if (!err_hndl.qcall(error, &SuperMesh::SetMirroredMag, &SMesh, meshName, axis)) {
 
 					UpdateScreen();
 				}
@@ -1032,7 +1034,7 @@ void Simulation::HandleCommand(string command_string)
 
 			if (!error) {
 
-				if (!err_hndl.qcall(&SuperMesh::SetMagAngle_Rect, &SMesh, meshName, polar, azim, rectangle)) {
+				if (!err_hndl.qcall(error, &SuperMesh::SetMagAngle_Rect, &SMesh, meshName, polar, azim, rectangle)) {
 
 					UpdateScreen();
 				}
@@ -1052,7 +1054,7 @@ void Simulation::HandleCommand(string command_string)
 
 			if (!error) {
 
-				if (!err_hndl.qcall(&SuperMesh::SetMagDomainWall, &SMesh, meshName, longitudinal, transverse, width, position)) {
+				if (!err_hndl.qcall(error, &SuperMesh::SetMagDomainWall, &SMesh, meshName, longitudinal, transverse, width, position)) {
 
 					UpdateScreen();
 				}
@@ -1083,10 +1085,10 @@ void Simulation::HandleCommand(string command_string)
 				//l = +1, r = +1, c = -1 : vortex_hh_cclk_dn
 				//l = +1, r = +1, c = +1 : vortex_hh_cclk_up
 
-				//l = -1, r = -1, c = -1 : vortex_hh_cclk_up, then invert magnetisation.
-				//l = -1, r = -1, c = +1 : vortex_hh_cclk_dn, then invert magnetisation.
-				//l = -1, r = +1, c = -1 : vortex_hh_clk_up, then invert magnetisation.
-				//l = -1, r = +1, c = +1 : vortex_hh_clk_dn, then invert magnetisation.
+				//l = -1, r = -1, c = -1 : vortex_hh_cclk_up, then invert magnetization.
+				//l = -1, r = -1, c = +1 : vortex_hh_cclk_dn, then invert magnetization.
+				//l = -1, r = +1, c = -1 : vortex_hh_clk_up, then invert magnetization.
+				//l = -1, r = +1, c = +1 : vortex_hh_clk_dn, then invert magnetization.
 
 				if (longitudinal > 0) {
 
@@ -1112,7 +1114,7 @@ void Simulation::HandleCommand(string command_string)
 
 				if (!error) {
 
-					//data loaded correctly, so resize currently focused mesh (if ferromagnetic) then copy magnetisation data to it.
+					//data loaded correctly, so resize currently focused mesh (if ferromagnetic) then copy magnetization data to it.
 					if (SMesh.active_mesh()->is_atomistic()) {
 
 						data.renormalize(dynamic_cast<Atom_Mesh*>(SMesh.active_mesh())->mu_s.get0());
@@ -1148,7 +1150,7 @@ void Simulation::HandleCommand(string command_string)
 
 			if (!error) {
 
-				if (!err_hndl.qcall(&SuperMesh::SetSkyrmion, &SMesh, meshName, core, chirality, diameter, position)) {
+				if (!err_hndl.qcall(error, &SuperMesh::SetSkyrmion, &SMesh, meshName, core, chirality, diameter, position)) {
 
 					UpdateScreen();
 				}
@@ -1169,7 +1171,7 @@ void Simulation::HandleCommand(string command_string)
 
 			if (!error) {
 
-				if (!err_hndl.qcall(&SuperMesh::SetSkyrmionBloch, &SMesh, meshName, core, chirality, diameter, position)) {
+				if (!err_hndl.qcall(error, &SuperMesh::SetSkyrmionBloch, &SMesh, meshName, core, chirality, diameter, position)) {
 
 					UpdateScreen();
 				}
@@ -1190,7 +1192,7 @@ void Simulation::HandleCommand(string command_string)
 
 				StopSimulation();
 
-				if (!err_hndl.qcall(&SuperMesh::Set_PBC, &SMesh, meshName, flag, images)) {
+				if (!err_hndl.qcall(error, &SuperMesh::Set_PBC, &SMesh, meshName, flag, images)) {
 
 					UpdateScreen();
 				}
@@ -1209,7 +1211,7 @@ void Simulation::HandleCommand(string command_string)
 
 			if (!error) {
 
-				if (!err_hndl.qcall(&SuperMesh::SetField, &SMesh, meshName, Polar_to_Cartesian(field_polar))) {
+				if (!err_hndl.qcall(error, &SuperMesh::SetField, &SMesh, meshName, Polar_to_Cartesian(field_polar))) {
 
 					UpdateScreen();
 				}
@@ -1230,7 +1232,7 @@ void Simulation::HandleCommand(string command_string)
 
 			if (!error) {
 
-				if (!err_hndl.qcall(&SuperMesh::SetUniformStress, &SMesh, meshName, Polar_to_Cartesian(stress_polar))) {
+				if (!err_hndl.qcall(error, &SuperMesh::SetUniformStress, &SMesh, meshName, Polar_to_Cartesian(stress_polar))) {
 
 					UpdateScreen();
 				}
@@ -1259,7 +1261,7 @@ void Simulation::HandleCommand(string command_string)
 
 				MOD_ moduleID = (MOD_)moduleHandles.get_ID_from_value(moduleHandle);
 
-				if(!err_hndl.call(&SuperMesh::AddModule, &SMesh, meshName, moduleID)) {
+				if(!err_hndl.call(error, &SuperMesh::AddModule, &SMesh, meshName, moduleID)) {
 
 					RefreshScreen();
 				}
@@ -1280,7 +1282,7 @@ void Simulation::HandleCommand(string command_string)
 
 				MOD_ moduleID = (MOD_)moduleHandles.get_ID_from_value(moduleHandle);
 
-				if (!err_hndl.qcall(&SuperMesh::DelModule, &SMesh, meshName, moduleID)) {
+				if (!err_hndl.qcall(error, &SuperMesh::DelModule, &SMesh, meshName, moduleID)) {
 
 					RefreshScreen();
 				}
@@ -1404,7 +1406,7 @@ void Simulation::HandleCommand(string command_string)
 
 				if (setOde != ODE_ERROR && odeEval != EVAL_ERROR && vector_contains(odeAllowedEvals(setOde), odeEval)) {
 
-					if (!err_hndl.call(&SuperMesh::SetODE, &SMesh, setOde, odeEval)) {
+					if (!err_hndl.call(error, &SuperMesh::SetODE, &SMesh, setOde, odeEval)) {
 
 						UpdateScreen();
 					}
@@ -1433,7 +1435,7 @@ void Simulation::HandleCommand(string command_string)
 
 				if (setatom_Ode != ODE_ERROR && odeEval != EVAL_ERROR && vector_contains(odeAllowedEvals(setatom_Ode), odeEval) && vector_contains(odeAllowedEvals(odeID), odeEval)) {
 
-					if (!err_hndl.call(&SuperMesh::SetAtomisticODE, &SMesh, setatom_Ode, odeEval)) {
+					if (!err_hndl.call(error, &SuperMesh::SetAtomisticODE, &SMesh, setatom_Ode, odeEval)) {
 
 						UpdateScreen();
 					}
@@ -1462,7 +1464,7 @@ void Simulation::HandleCommand(string command_string)
 
 				if (odeEval != EVAL_ERROR && vector_contains(odeAllowedEvals(odeID), odeEval) && vector_contains(odeAllowedEvals(atom_odeID), odeEval)) {
 
-					if (!err_hndl.call(&SuperMesh::SetODEEval, &SMesh, odeEval)) {
+					if (!err_hndl.call(error, &SuperMesh::SetODEEval, &SMesh, odeEval)) {
 
 						UpdateScreen();
 					}
@@ -2041,23 +2043,22 @@ void Simulation::HandleCommand(string command_string)
 		case CMD_SETPARAM:
 		{
 			string paramName, paramValue, meshName;
-			bool set_value = true;
 
 			error = commandSpec.GetParameters(command_fields, meshName, paramName, paramValue);
-			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, meshName, paramName); set_value = false; }
+			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, meshName, paramName); }
 
-			if (!error && set_value) {
+			if (!error) {
 
 				StopSimulation();
 
-				if (!err_hndl.qcall(&SuperMesh::set_meshparam_value, &SMesh, meshName, paramName, paramValue)) {
+				if (!err_hndl.qcall(error, &SuperMesh::set_meshparam_value, &SMesh, meshName, paramName, paramValue)) {
 
 					UpdateScreen();
 				}
 			}
-			else if (verbose && set_value) PrintCommandUsage(command_name);
+			else if (verbose) PrintCommandUsage(command_name);
 
-			if (script_client_connected && !error && !set_value) {
+			if (script_client_connected) {
 
 				SMesh.get_meshparam_value(meshName, paramName, paramValue);
 				commSocket.SetSendData(commandSpec.PrepareReturnParameters(paramValue));
@@ -2096,7 +2097,7 @@ void Simulation::HandleCommand(string command_string)
 
 			StopSimulation();
 
-			if (!err_hndl.qcall(&SuperMesh::clear_meshparam_temp, &SMesh, meshName, paramName)) {
+			if (!err_hndl.qcall(error, &SuperMesh::clear_meshparam_temp, &SMesh, meshName, paramName)) {
 
 				UpdateScreen();
 			}
@@ -2113,7 +2114,7 @@ void Simulation::HandleCommand(string command_string)
 
 				StopSimulation();
 
-				if (!err_hndl.qcall(&SuperMesh::set_meshparam_t_equation, &SMesh, meshName, paramName, equationText)) {
+				if (!err_hndl.qcall(error, &SuperMesh::set_meshparam_t_equation, &SMesh, meshName, paramName, equationText)) {
 
 					UpdateScreen();
 				}
@@ -2215,7 +2216,7 @@ void Simulation::HandleCommand(string command_string)
 
 				for (int idx = 0; idx < meshNames_to.size(); idx++) {
 
-					err_hndl.qcall(&SuperMesh::copy_mesh_parameters, &SMesh, meshName_from, meshNames_to[idx]);
+					err_hndl.qcall(error, &SuperMesh::copy_mesh_parameters, &SMesh, meshName_from, meshNames_to[idx]);
 				}
 
 				UpdateScreen();
@@ -2239,7 +2240,7 @@ void Simulation::HandleCommand(string command_string)
 
 				for (int idx = 0; idx < meshNames_to.size(); idx++) {
 
-					err_hndl.qcall(&SuperMesh::copy_mesh_data, &SMesh, meshName_from, meshNames_to[idx]);
+					err_hndl.qcall(error, &SuperMesh::copy_mesh_data, &SMesh, meshName_from, meshNames_to[idx]);
 				}
 
 				UpdateScreen();
@@ -2272,7 +2273,7 @@ void Simulation::HandleCommand(string command_string)
 
 			if (!error) {
 
-				if (!err_hndl.qcall(&SuperMesh::set_meshparamvar_display, &SMesh, meshName, paramName)) {
+				if (!err_hndl.qcall(error, &SuperMesh::set_meshparamvar_display, &SMesh, meshName, paramName)) {
 
 					UpdateScreen();
 				}
@@ -2295,7 +2296,7 @@ void Simulation::HandleCommand(string command_string)
 
 			StopSimulation();
 
-			if (!err_hndl.qcall(&SuperMesh::clear_meshparam_variation, &SMesh, meshName)) {
+			if (!err_hndl.qcall(error, &SuperMesh::clear_meshparam_variation, &SMesh, meshName)) {
 
 				UpdateScreen();
 			}
@@ -2312,7 +2313,7 @@ void Simulation::HandleCommand(string command_string)
 
 				StopSimulation();
 
-				if (!err_hndl.qcall(&SuperMesh::clear_meshparam_variation, &SMesh, meshName, paramName)) {
+				if (!err_hndl.qcall(error, &SuperMesh::clear_meshparam_variation, &SMesh, meshName, paramName)) {
 
 					UpdateScreen();
 				}
@@ -2351,7 +2352,7 @@ void Simulation::HandleCommand(string command_string)
 						equationText = generatorArgs;
 					}
 
-					if (!err_hndl.qcall(&SuperMesh::set_meshparam_s_equation, &SMesh, meshName, paramName, equationText)) {
+					if (!err_hndl.qcall(error, &SuperMesh::set_meshparam_s_equation, &SMesh, meshName, paramName, equationText)) {
 
 						UpdateScreen();
 					}
@@ -2404,7 +2405,7 @@ void Simulation::HandleCommand(string command_string)
 
 			if (!error) {
 
-				if (!err_hndl.call(&Simulation::LoadSimulation, this, simFileName)) {
+				if (!err_hndl.call(error, &Simulation::LoadSimulation, this, simFileName)) {
 
 					if (verbose) BD.DisplayConsoleMessage("Simulation loaded : " + simFileName);
 				}
@@ -2431,7 +2432,7 @@ void Simulation::HandleCommand(string command_string)
 
 				MESHDISPLAY_ display = (MESHDISPLAY_)displayHandles.get_ID_from_value(name);
 				
-				if (!err_hndl.qcall(&SuperMesh::SetDisplayedPhysicalQuantity, &SMesh, meshName, (int)display)) {
+				if (!err_hndl.qcall(error, &SuperMesh::SetDisplayedPhysicalQuantity, &SMesh, meshName, (int)display)) {
 
 					UpdateScreen();
 				}
@@ -2466,7 +2467,7 @@ void Simulation::HandleCommand(string command_string)
 
 				MESHDISPLAY_ display = (MESHDISPLAY_)displayHandles.get_ID_from_value(name);
 
-				if (!err_hndl.qcall(&SuperMesh::SetDisplayedBackgroundPhysicalQuantity, &SMesh, meshName, (int)display)) {
+				if (!err_hndl.qcall(error, &SuperMesh::SetDisplayedBackgroundPhysicalQuantity, &SMesh, meshName, (int)display)) {
 
 					UpdateScreen();
 				}
@@ -2484,7 +2485,7 @@ void Simulation::HandleCommand(string command_string)
 
 			if (!error) {
 
-				if (!err_hndl.qcall(&SuperMesh::SetVEC3Rep, &SMesh, meshName, (int)vecreptype)) {
+				if (!err_hndl.qcall(error, &SuperMesh::SetVEC3Rep, &SMesh, meshName, (int)vecreptype)) {
 
 					UpdateScreen();
 				}
@@ -2695,7 +2696,7 @@ void Simulation::HandleCommand(string command_string)
 
 				StopSimulation();
 
-				err_hndl.call(&SuperMesh::PrepareMovingMesh, &SMesh, meshName);				
+				err_hndl.call(error, &SuperMesh::PrepareMovingMesh, &SMesh, meshName);				
 				UpdateScreen();
 			}
 			else if (verbose) PrintCommandUsage(command_name);
@@ -2713,7 +2714,7 @@ void Simulation::HandleCommand(string command_string)
 
 				StopSimulation();
 
-				err_hndl.call(&SuperMesh::PrepareMovingMesh_Bloch, &SMesh, meshName);
+				err_hndl.call(error, &SuperMesh::PrepareMovingMesh_Bloch, &SMesh, meshName);
 				UpdateScreen();
 			}
 			else if (verbose) PrintCommandUsage(command_name);
@@ -2731,7 +2732,7 @@ void Simulation::HandleCommand(string command_string)
 
 				StopSimulation();
 
-				err_hndl.call(&SuperMesh::PrepareMovingMesh_Neel, &SMesh, meshName);
+				err_hndl.call(error, &SuperMesh::PrepareMovingMesh_Neel, &SMesh, meshName);
 				UpdateScreen();
 			}
 			else if (verbose) PrintCommandUsage(command_name);
@@ -2749,7 +2750,7 @@ void Simulation::HandleCommand(string command_string)
 
 				StopSimulation();
 
-				err_hndl.call(&SuperMesh::PrepareMovingMesh_Skyrmion, &SMesh, meshName);
+				err_hndl.call(error, &SuperMesh::PrepareMovingMesh_Skyrmion, &SMesh, meshName);
 				UpdateScreen();
 			}
 			else if (verbose) PrintCommandUsage(command_name);
@@ -3109,7 +3110,7 @@ void Simulation::HandleCommand(string command_string)
 
 			if (!error) {
 
-				if (!err_hndl.qcall(&SuperMesh::SetBaseTemperature, &SMesh, meshName, Temperature)) {
+				if (!err_hndl.qcall(error, &SuperMesh::SetBaseTemperature, &SMesh, meshName, Temperature)) {
 
 					UpdateScreen();
 				}
@@ -3156,7 +3157,7 @@ void Simulation::HandleCommand(string command_string)
 
 			if (!error) {
 
-				if (!err_hndl.qcall(&SuperMesh::SetAmbientTemperature, &SMesh, meshName, T_ambient)) {
+				if (!err_hndl.qcall(error, &SuperMesh::SetAmbientTemperature, &SMesh, meshName, T_ambient)) {
 
 					UpdateScreen();
 				}
@@ -3180,7 +3181,7 @@ void Simulation::HandleCommand(string command_string)
 
 				StopSimulation();
 
-				if (!err_hndl.qcall(&SuperMesh::SetAlphaHeatBoundary, &SMesh, meshName, alpha_boundary)) {
+				if (!err_hndl.qcall(error, &SuperMesh::SetAlphaHeatBoundary, &SMesh, meshName, alpha_boundary)) {
 
 					UpdateScreen();
 				}
@@ -3205,7 +3206,7 @@ void Simulation::HandleCommand(string command_string)
 
 				StopSimulation();
 
-				if (!err_hndl.qcall(&SuperMesh::SetInsulatingSides, &SMesh, meshName, literal, status)) {
+				if (!err_hndl.qcall(error, &SuperMesh::SetInsulatingSides, &SMesh, meshName, literal, status)) {
 
 					UpdateScreen();
 				}
@@ -3234,7 +3235,7 @@ void Simulation::HandleCommand(string command_string)
 
 				StopSimulation();
 
-				if (!err_hndl.qcall(&SuperMesh::SetCurieTemperature, &SMesh, meshName, T_Curie)) {
+				if (!err_hndl.qcall(error, &SuperMesh::SetCurieTemperature, &SMesh, meshName, T_Curie)) {
 
 					UpdateScreen();
 				}
@@ -3258,7 +3259,7 @@ void Simulation::HandleCommand(string command_string)
 
 				StopSimulation();
 
-				if (!err_hndl.qcall(&SuperMesh::SetCurieTemperatureMaterial, &SMesh, meshName, T_Curie_material)) {
+				if (!err_hndl.qcall(error, &SuperMesh::SetCurieTemperatureMaterial, &SMesh, meshName, T_Curie_material)) {
 
 					UpdateScreen();
 				}
@@ -3284,7 +3285,7 @@ void Simulation::HandleCommand(string command_string)
 
 				StopSimulation();
 
-				if (!err_hndl.qcall(&SuperMesh::SetAtomicMagneticMoment, &SMesh, meshName, atomic_moment_AFM)) {
+				if (!err_hndl.qcall(error, &SuperMesh::SetAtomicMagneticMoment, &SMesh, meshName, atomic_moment_AFM)) {
 
 					UpdateScreen();
 				}
@@ -3339,14 +3340,14 @@ void Simulation::HandleCommand(string command_string)
 				if (tau_ij >= DBL2(0.0)) {
 
 					//set both intra and inter terms
-					if (!err_hndl.qcall(&SuperMesh::SetTcCoupling, &SMesh, meshName, tau_ii, tau_ij)) {
+					if (!err_hndl.qcall(error, &SuperMesh::SetTcCoupling, &SMesh, meshName, tau_ii, tau_ij)) {
 
 						UpdateScreen();
 					}
 				}
 
 				//only intra terms
-				else if (!err_hndl.qcall(&SuperMesh::SetTcCoupling_Intra, &SMesh, meshName, tau_ii)) {
+				else if (!err_hndl.qcall(error, &SuperMesh::SetTcCoupling_Intra, &SMesh, meshName, tau_ii)) {
 
 					UpdateScreen();
 				}
@@ -3492,13 +3493,13 @@ void Simulation::HandleCommand(string command_string)
 
 						StopSimulation();
 						
-						if (!err_hndl.qcall(&SuperMesh::SwitchCUDAState, &SMesh, status)) {
+						if (!err_hndl.qcall(error, &SuperMesh::SwitchCUDAState, &SMesh, status, cudaDeviceSelect)) {
 
 							cudaEnabled = status;
 						}
 						else {
 							
-							SMesh.SwitchCUDAState(false);
+							SMesh.SwitchCUDAState(false, cudaDeviceSelect);
 							cudaEnabled = false;
 						}
 						
@@ -3517,6 +3518,49 @@ void Simulation::HandleCommand(string command_string)
 		case CMD_MEMORY:
 		{
 			if (verbose) Print_MemoryInfo();
+		}
+		break;
+
+		case CMD_SELCUDADEV:
+		{
+			int device;
+
+			error = commandSpec.GetParameters(command_fields, device);
+
+			if (!error && device < cudaDeviceVersions.size()) {
+
+				if (cudaAvailable) {
+
+					if (cudaDeviceVersions[device].first != __CUDA_ARCH__) error(BERROR_CUDAVERSIONMISMATCH_NCRIT);
+					else {
+
+						if (cudaDeviceSelect != device) {
+
+							cudaDeviceSelect = device;
+
+							StopSimulation();
+
+							//if CUDA on, switch it off then back on so everything switches over to the new GPU selection (memory transfer from old GPU to CPU, then to new GPU seamlessly).
+							if (cudaEnabled) {
+
+								err_hndl.qcall(error, &SuperMesh::SwitchCUDAState, &SMesh, false, cudaDeviceSelect);
+								cudaEnabled = false;
+								if (!err_hndl.qcall(error, &SuperMesh::SwitchCUDAState, &SMesh, true, cudaDeviceSelect)) {
+
+									cudaEnabled = true;
+								}
+							}
+
+							UpdateScreen();
+						}
+					}
+				}
+				else error(BERROR_NOTAVAILABLE);
+			}
+			else if (verbose) Print_CUDAStatus();
+
+			if (script_client_connected)
+				commSocket.SetSendData(commandSpec.PrepareReturnParameters(cudaDeviceSelect));
 		}
 		break;
 
@@ -3539,7 +3583,7 @@ void Simulation::HandleCommand(string command_string)
 
 			if (!error) {
 
-				if (!err_hndl.qcall(&SuperMesh::SetMeshRoughnessRefinement, &SMesh, meshName, refine)) {
+				if (!err_hndl.qcall(error, &SuperMesh::SetMeshRoughnessRefinement, &SMesh, meshName, refine)) {
 
 					UpdateScreen();
 				}
@@ -3557,7 +3601,7 @@ void Simulation::HandleCommand(string command_string)
 
 			if (!error) {
 
-				if (!err_hndl.qcall(&SuperMesh::ClearMeshRoughness, &SMesh, meshName)) {
+				if (!err_hndl.qcall(error, &SuperMesh::ClearMeshRoughness, &SMesh, meshName)) {
 
 					UpdateScreen();
 				}
@@ -3569,26 +3613,26 @@ void Simulation::HandleCommand(string command_string)
 		case CMD_ROUGHENMESH:
 		{
 			double depth;
-			string axis;
+			string side;
 			int seed;
 
-			error = commandSpec.GetParameters(command_fields, depth, axis, seed);
+			error = commandSpec.GetParameters(command_fields, depth, side, seed);
 			if (error == BERROR_PARAMMISMATCH) { 
 				
-				error.reset() = commandSpec.GetParameters(command_fields, depth, axis); 
+				error.reset() = commandSpec.GetParameters(command_fields, depth, side);
 				seed = 1;
 
 				if (error == BERROR_PARAMMISMATCH) {
 
 					error.reset() = commandSpec.GetParameters(command_fields, depth);
-					axis = "z";
+					side = "z";
 					seed = 1;
 				}
 			}
 
 			if (!error) {
 
-				if (!err_hndl.qcall(&SuperMesh::RoughenMeshSides, &SMesh, SMesh.GetMeshFocus(), axis, depth, seed)) {
+				if (!err_hndl.qcall(error, &SuperMesh::RoughenMeshSides, &SMesh, SMesh.GetMeshFocus(), side, depth, seed)) {
 
 					UpdateScreen();
 				}
@@ -3617,7 +3661,7 @@ void Simulation::HandleCommand(string command_string)
 
 			if (!error) {
 
-				if (!err_hndl.qcall(&SuperMesh::RoughenMeshSurfaces_Jagged, &SMesh, SMesh.GetMeshFocus(), depth, spacing, seed, sides)) {
+				if (!err_hndl.qcall(error, &SuperMesh::RoughenMeshSurfaces_Jagged, &SMesh, SMesh.GetMeshFocus(), depth, spacing, seed, sides)) {
 
 					UpdateScreen();
 				}
@@ -3636,7 +3680,7 @@ void Simulation::HandleCommand(string command_string)
 
 			if (!error) {
 
-				if (!err_hndl.qcall(&SuperMesh::GenerateGrains2D, &SMesh, SMesh.GetMeshFocus(), spacing, seed)) {
+				if (!err_hndl.qcall(error, &SuperMesh::GenerateGrains2D, &SMesh, SMesh.GetMeshFocus(), spacing, seed)) {
 
 					UpdateScreen();
 				}
@@ -3655,7 +3699,7 @@ void Simulation::HandleCommand(string command_string)
 
 			if (!error) {
 
-				if (!err_hndl.qcall(&SuperMesh::GenerateGrains3D, &SMesh, SMesh.GetMeshFocus(), spacing, seed)) {
+				if (!err_hndl.qcall(error, &SuperMesh::GenerateGrains3D, &SMesh, SMesh.GetMeshFocus(), spacing, seed)) {
 
 					UpdateScreen();
 				}
@@ -3685,7 +3729,7 @@ void Simulation::HandleCommand(string command_string)
 
 			if (!error) {
 
-				if (!err_hndl.call(&MaterialsDB::SwitchDataBase, &mdb, mdbName)) {
+				if (!err_hndl.call(error, &MaterialsDB::SwitchDataBase, &mdb, mdbName)) {
 
 					UpdateScreen();
 				}
@@ -3730,7 +3774,7 @@ void Simulation::HandleCommand(string command_string)
 
 			if (!error) {
 
-				err_hndl.call(&MaterialsDB::DelMDBEntry, &mdb, materialName);
+				err_hndl.call(error, &MaterialsDB::DelMDBEntry, &mdb, materialName);
 
 			}
 			else if (verbose) PrintCommandUsage(command_name);
@@ -3739,7 +3783,7 @@ void Simulation::HandleCommand(string command_string)
 
 		case CMD_REFRESHMDB:
 		{
-			err_hndl.call(&MaterialsDB::RefreshMDB, &mdb);
+			err_hndl.call(error, &MaterialsDB::RefreshMDB, &mdb);
 		}
 		break;
 
@@ -3756,7 +3800,7 @@ void Simulation::HandleCommand(string command_string)
 
 				StopSimulation();
 
-				if (!err_hndl.call(&MaterialsDB::LoadMaterial, &mdb, materialName, &meshType)) {
+				if (!err_hndl.call(error, &MaterialsDB::LoadMaterial, &mdb, materialName, &meshType)) {
 
 					//material loaded in mdb and meshType available.
 					
@@ -3789,7 +3833,7 @@ void Simulation::HandleCommand(string command_string)
 					}
 
 					//first make the mesh with the correct rectangle and mesh type
-					if (!err_hndl.call(&SuperMesh::AddMesh, &SMesh, meshName, (MESH_)meshType, meshRect)) {
+					if (!err_hndl.call(error, &SuperMesh::AddMesh, &SMesh, meshName, (MESH_)meshType, meshRect)) {
 
 						//mesh created, now copy parameter values
 						mdb.copy_parameters(*dynamic_cast<Mesh*>(SMesh[meshName]));
@@ -3819,7 +3863,7 @@ void Simulation::HandleCommand(string command_string)
 
 				StopSimulation();
 
-				if (!err_hndl.call(&MaterialsDB::LoadMaterial, &mdb, materialName, &meshType)) {
+				if (!err_hndl.call(error, &MaterialsDB::LoadMaterial, &mdb, materialName, &meshType)) {
 
 					//material loaded in mdb and meshType available.
 
@@ -3852,7 +3896,7 @@ void Simulation::HandleCommand(string command_string)
 					}
 
 					//first make the mesh with the correct rectangle and mesh type
-					if (!err_hndl.call(&SuperMesh::AddMesh, &SMesh, new_meshName, (MESH_)meshType, meshRect)) {
+					if (!err_hndl.call(error, &SuperMesh::AddMesh, &SMesh, new_meshName, (MESH_)meshType, meshRect)) {
 
 						//mesh created, now copy parameter values
 						mdb.copy_parameters(*dynamic_cast<Mesh*>(SMesh[new_meshName]));
@@ -3902,7 +3946,7 @@ void Simulation::HandleCommand(string command_string)
 
 				string returnMessage;
 
-				if (!err_hndl.call(&MaterialsDB::RequestMDBSync, &mdb, materialName, domain_name, mdb_entry_handler, emailContact, &returnMessage)) {
+				if (!err_hndl.call(error, &MaterialsDB::RequestMDBSync, &mdb, materialName, domain_name, mdb_entry_handler, emailContact, &returnMessage)) {
 
 					BD.DisplayConsoleMessage(returnMessage);
 				}
@@ -3919,7 +3963,7 @@ void Simulation::HandleCommand(string command_string)
 		{
 			string returnMessage;
 
-			if (!err_hndl.call(&MaterialsDB::UpdateMDB, &mdb, domain_name, mdb_update_handler, &returnMessage)) {
+			if (!err_hndl.call(error, &MaterialsDB::UpdateMDB, &mdb, domain_name, mdb_update_handler, &returnMessage)) {
 
 				BD.DisplayConsoleMessage("Materials database successfully updated.");
 			}
@@ -4012,9 +4056,9 @@ void Simulation::HandleCommand(string command_string)
 						new_mesh_name = string("permalloy_") + ToString(meshnum);
 					}
 
-					if (!err_hndl.call(&SuperMesh::AddMesh, &SMesh, new_mesh_name, MESH_FERROMAGNETIC, data.rect)) {
+					if (!err_hndl.call(error, &SuperMesh::AddMesh, &SMesh, new_mesh_name, MESH_FERROMAGNETIC, data.rect)) {
 
-						if (!err_hndl.call(&MeshBase::SetMeshCellsize, SMesh[new_mesh_name], data.h)) {
+						if (!err_hndl.call(error, &MeshBase::SetMeshCellsize, SMesh[new_mesh_name], data.h)) {
 
 							SMesh[new_mesh_name]->SetMagFromData(data);
 						}
@@ -4061,7 +4105,7 @@ void Simulation::HandleCommand(string command_string)
 
 				if (!error) {
 
-					//data loaded correctly, so resize currently focused mesh (if ferromagnetic) then copy magnetisation data to it.
+					//data loaded correctly, so resize currently focused mesh (if ferromagnetic) then copy magnetization data to it.
 
 					if (IsNZ(renormalize_value)) data.renormalize(renormalize_value);
 
@@ -4156,7 +4200,7 @@ void Simulation::HandleCommand(string command_string)
 					if (GetFileTermination(fileName) != ".ovf") fileName += ".ovf";
 					if (!GetFilenameDirectory(fileName).length()) fileName = directory + fileName;
 
-					if (!err_hndl.call(&SuperMesh::SaveOnScreenPhysicalQuantity, &SMesh, fileName, data_type)) {
+					if (!err_hndl.call(error, &SuperMesh::SaveOnScreenPhysicalQuantity, &SMesh, fileName, data_type)) {
 
 						BD.DisplayConsoleMessage("Data saved : " + fileName);
 					}
@@ -4469,6 +4513,75 @@ void Simulation::HandleCommand(string command_string)
 		}
 		break;
 
+		case CMD_THREADS:
+		{
+			int threads;
+
+			error = commandSpec.GetParameters(command_fields, threads);
+
+			if (!error) {
+
+				StopSimulation();
+
+				OmpThreads = threads;
+				if (!OmpThreads || OmpThreads > omp_get_num_procs()) OmpThreads = omp_get_num_procs();
+				Save_Startup_Flags();
+
+				UpdateScreen();
+			}
+			else if (verbose && error == BERROR_PARAMOUTOFBOUNDS) PrintCommandUsage(command_name);
+			else if (verbose) Print_Threads();
+
+			if (script_client_connected) commSocket.SetSendData(commandSpec.PrepareReturnParameters(OmpThreads));
+		}
+		break;
+
+		case CMD_SERVERPORT:
+		{
+			int port;
+
+			error = commandSpec.GetParameters(command_fields, port);
+
+			if (!error) {
+
+				StopSimulation();
+
+				server_port = ToString(port);
+				commSocket.Change_Port(server_port);
+				Save_Startup_Flags();
+
+				UpdateScreen();
+			}
+			else if (verbose && error == BERROR_PARAMOUTOFBOUNDS) PrintCommandUsage(command_name);
+			else if (verbose) Print_ServerInfo();
+
+			if (script_client_connected) commSocket.SetSendData(commandSpec.PrepareReturnParameters(server_port));
+		}
+		break;
+			
+		case CMD_SERVERSLEEPMS:
+		{
+			int sleep_ms;
+
+			error = commandSpec.GetParameters(command_fields, sleep_ms);
+
+			if (!error) {
+
+				StopSimulation();
+
+				server_recv_sleep_ms = sleep_ms;
+				commSocket.Change_RecvSleep(server_recv_sleep_ms);
+				Save_Startup_Flags();
+
+				UpdateScreen();
+			}
+			else if (verbose && error == BERROR_PARAMOUTOFBOUNDS) PrintCommandUsage(command_name);
+			else if (verbose) Print_ServerInfo();
+
+			if (script_client_connected) commSocket.SetSendData(commandSpec.PrepareReturnParameters(server_recv_sleep_ms));
+		}
+		break;
+
 		case CMD_SHOWTC:
 		{
 			if (SMesh.active_mesh()->Magnetism_Enabled() && SMesh.active_mesh()->is_atomistic()) {
@@ -4554,7 +4667,7 @@ void Simulation::HandleCommand(string command_string)
 
 			if (!error) {
 
-				if (!err_hndl.qcall(&SuperMesh::Set_MonteCarlo_Serial, &SMesh, (bool)status, meshName)) {
+				if (!err_hndl.qcall(error, &SuperMesh::Set_MonteCarlo_Serial, &SMesh, (bool)status, meshName)) {
 
 					UpdateScreen();
 				}
@@ -4573,7 +4686,7 @@ void Simulation::HandleCommand(string command_string)
 
 			if (!error) {
 
-				if (!err_hndl.qcall(&SuperMesh::Set_MonteCarlo_Constrained, &SMesh, !value.IsNull(), value, meshName)) {
+				if (!err_hndl.qcall(error, &SuperMesh::Set_MonteCarlo_Constrained, &SMesh, !value.IsNull(), value, meshName)) {
 
 					UpdateScreen();
 				}
@@ -5216,7 +5329,7 @@ void Simulation::HandleCommand(string command_string)
 						if (pMesh) {
 
 							DBL2 Ms_AFM = pMesh->Ms_AFM;
-							//equilibrium magnetisation on sub-lattice B at set mesh base temperature
+							//equilibrium magnetization on sub-lattice B at set mesh base temperature
 							M2 = Ms_AFM.j;
 							deltaM2 = M2 * 0.01;
 						}
@@ -6158,7 +6271,13 @@ void Simulation::HandleCommand(string command_string)
 			break;
 		}
 
-		if (error) err_hndl.show_error(error, verbose);
+		if (error) {
+
+			err_hndl.show_error(error, verbose);
+
+			//show error in Python console through return parameter, but not if the error is due to a parameter mismatch as this is also caused if the command is issued without all parameter in order to retrieve data
+			if (script_client_connected && error != BERROR_PARAMMISMATCH) commSocket.SetSendData({err_hndl.get_error_text(error)});
+		}
 	}
 	else err_hndl.show_error(BERROR_COMMAND_NOTRECOGNIZED, verbose);
 }

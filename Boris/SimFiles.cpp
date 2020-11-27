@@ -23,12 +23,12 @@ BError Simulation::SaveSimulation(string fileName)
 		bdout.precision(CONVERSIONPRECISION);
 
 		//before saving, switch CUDA off, so everything is stored and up to date in cpu memory
-		if (cudaEnabled) error = SMesh.SwitchCUDAState(false);
+		if (cudaEnabled) error = SMesh.SwitchCUDAState(false, cudaDeviceSelect);
 
 		if(!error) SaveObjectState(bdout);
 
 		//switch CUDA back on if it was on before
-		if (cudaEnabled && !error) error = SMesh.SwitchCUDAState(true);
+		if (cudaEnabled && !error) error = SMesh.SwitchCUDAState(true, cudaDeviceSelect);
 
 		bdout.close();
 
@@ -85,7 +85,7 @@ BError Simulation::LoadSimulation(string fileName)
 				string default_file = GetUserDocumentsPath() + boris_data_directory + boris_simulations_directory + string("default.bsm");
 				bdin.open(default_file.c_str(), ios::in | ios::binary);
 
-				if (cudaAvailable && cudaEnabled) error = SMesh.SwitchCUDAState(false);
+				if (cudaAvailable && cudaEnabled) error = SMesh.SwitchCUDAState(false, cudaDeviceSelect);
 				cudaEnabled = false;
 				
 				if (!error) success = LoadObjectState(bdin);
@@ -118,7 +118,7 @@ BError Simulation::LoadSimulation(string fileName)
 		}
 
 		//before loading make sure CUDA is switched off so it doesn't cause problems with loading
-		if (cudaAvailable && cudaEnabled) error = SMesh.SwitchCUDAState(false);
+		if (cudaAvailable && cudaEnabled) error = SMesh.SwitchCUDAState(false, cudaDeviceSelect);
 		//also make sure cudaEnabled flag is false, so when objects are made they are first made on the host only : trying to make them on the device too in parallel can cause problems.
 		cudaEnabled = false;
 
@@ -133,7 +133,7 @@ BError Simulation::LoadSimulation(string fileName)
 		if (!success) return error(BERROR_COULDNOTLOADFILE_CRIT);
 
 		//cudaEnabled will have been modified depending on what was stored in the simulation file, but CUDA is still switched off at this point; switch CUDA on if indicated
-		if (cudaEnabled && !error) error = SMesh.SwitchCUDAState(true);
+		if (cudaEnabled && !error) error = SMesh.SwitchCUDAState(true, cudaDeviceSelect);
 
 		//check for any errors in loading program state
 		if (!error) error = SMesh.Error_On_Create();

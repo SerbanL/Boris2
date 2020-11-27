@@ -19,7 +19,7 @@ __global__ void RestoreMoments_Cubic_kernel(cuVEC_VC<cuReal3>& M1, cuVEC<cuReal3
 	}
 }
 
-//Restore magnetisation after a failed step for adaptive time-step methods
+//Restore magnetization after a failed step for adaptive time-step methods
 void Atom_DifferentialEquationCubicCUDA::RestoreMoments(void)
 {
 	RestoreMoments_Cubic_kernel <<< (paMeshCUDA->n.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (paMeshCUDA->M1, sM1);

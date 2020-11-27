@@ -359,7 +359,7 @@ public:
 
 	//------Specific to Atom_Mesh
 
-	//get average magnetisation in given rectangle (entire mesh if none specified)
+	//get average magnetization in given rectangle (entire mesh if none specified)
 	virtual DBL3 GetAverageMoment(Rect rectangle = Rect()) = 0;
 	
 	//Average square of components
@@ -407,7 +407,7 @@ public:
 	//return phase transition temperature (K) based on formula Tc = J*e*z/3kB
 	virtual double Show_Transition_Temperature(void) = 0;
 
-	//return saturation magnetisation (A/m) based on formula Ms = mu_s*n/a^3
+	//return saturation magnetization (A/m) based on formula Ms = mu_s*n/a^3
 	virtual double Show_Ms(void) = 0;
 
 	//return exchange stiffness (J/m) based on formula A = J*n/2a
@@ -434,18 +434,18 @@ public:
 	//set cells to non-empty in given box
 	BError setrect(Rect rectangle);
 
-	//roughen mesh sides perpendicular to a named axis (axis = "x", "y", "z") to given depth (same units as h) with prng instantiated with given seed.
-	BError RoughenMeshSides(string axis, double depth, unsigned seed);
+	//roughen mesh sides (side = "x", "y", "z", "-x", "-y", or "-z") to given depth (same units as h) with prng instantiated with given seed.
+	BError RoughenMeshSides(string side, double depth, int seed);
 
 	//Roughen mesh top and bottom surfaces using a jagged pattern to given depth and peak spacing (same units as h) with prng instantiated with given seed.
 	//Rough both top and bottom if sides is empty, else it should be either -z or z.
-	BError RoughenMeshSurfaces_Jagged(double depth, double spacing, unsigned seed, string sides);
+	BError RoughenMeshSurfaces_Jagged(double depth, double spacing, int seed, string sides);
 
 	//Generate Voronoi 2D grains in xy plane (boundaries between Voronoi cells set to empty) at given average spacing with prng instantiated with given seed.
-	BError GenerateGrains2D(double spacing, unsigned seed);
+	BError GenerateGrains2D(double spacing, int seed);
 
 	//Generate Voronoi 3D grains (boundaries between Voronoi cells set to empty) at given average spacing with prng instantiated with given seed.
-	BError GenerateGrains3D(double spacing, unsigned seed);
+	BError GenerateGrains3D(double spacing, int seed);
 
 	//----------------------------------- METHODS REDEFINED IN SOME IMPLEMENTATIONS (virtual here - with exceptions)
 };

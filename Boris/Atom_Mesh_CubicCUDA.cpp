@@ -66,7 +66,7 @@ cuBReal Atom_Mesh_CubicCUDA::CheckMoveMesh(bool antisymmetric, double threshold)
 
 	if (!paMeshCubic->move_mesh_trigger) return 0;
 
-	//the ends should not be completely empty, and must have a constant magnetisation direction
+	//the ends should not be completely empty, and must have a constant magnetization direction
 	int cells_fixed = (int)ceil_epsilon((double)n.x * MOVEMESH_ENDRATIO);
 
 	cuReal3 M_end = M1()->average(n.dim(), cuBox(0, 0, 0, cells_fixed, n.y, n.z));

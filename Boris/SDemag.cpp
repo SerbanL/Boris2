@@ -643,6 +643,9 @@ BError SDemag::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 
 				if (!sm_Vals.resize(pSMesh->h_fm, pSMesh->sMeshRect_fm)) return error(BERROR_OUTOFMEMORY_CRIT);
 			}
+
+			//Check if h_fm.z divides each magnetic mesh thickness exactly - if not issue a warning to user
+
 		}
 		else {
 

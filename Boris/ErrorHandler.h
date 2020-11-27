@@ -17,6 +17,7 @@ enum BERROR_
 	BERROR_OUTOFGPUMEMORY_CRIT,				//Out of gpu memory : critical, must restore program
 	BERROR_OUTOFGPUMEMORY_NCRIT,			//Out of gpu memory : not critical, program can still work
 	BERROR_GPUERROR_CRIT,					//gpu error : critical, must restore program
+	BERROR_CUDAVERSIONMISMATCH_NCRIT,		//Device CUDA version doesn't match program CUDA architecture
 	BERROR_INCORRECTMODCONFIG,				//Modules not configured correctly. Cannot start simulation
 	BERROR_INCORRECTCONFIG,					//Incorrect configuration (e.g. eval method doesn't match ode allowed evals)
 	BERROR_INCORRECTARRAYS,					//Incorrect arrays used
@@ -161,6 +162,7 @@ public:
 
 	//compare with a BERROR_ code
 	bool operator==(BERROR_ code) const { return (err_code == code); }
+	bool operator!=(BERROR_ code) const { return (err_code != code); }
 
 	//reset error code and return object to receive new error, if any; e.g. if(error == BERROR_SOMETHING) error.reset() = function(...);
 	BError& reset(void) { err_code = BERROR_NONE; return *this; }
@@ -183,34 +185,39 @@ private:
 
 private:
 
-	string get_error_string(BError error) { return errors[error.code()].first; }
+	string get_error_string(BError error) const { return errors[error.code()].first; }
 
-	bool is_critical_error(BError error) { return (errors[error.code()].second == ERRLEV_CRIT); }
+	bool is_critical_error(BError error) const { return (errors[error.code()].second == ERRLEV_CRIT); }
 
-	bool is_silent_error(BError error) { return (errors[error.code()].second == ERRLEV_SILENT); }
+	bool is_silent_error(BError error) const { return (errors[error.code()].second == ERRLEV_SILENT); }
 
 public:
 
 	ErrorHandler(Owner* pOwner_);
 
-	void show_error(BError error, bool verbose = true)
+	void show_error(BError error, bool verbose = true) const
 	{
 		if (!is_silent_error(error)) pOwner->show_error(error, get_error_string(error), verbose);
 	}
 
+	string get_error_text(BError error) const
+	{
+		return "ERROR : " + get_error_string(error) + " Info : " + error.info();
+	}
+
 	//full call, no parameters
 	template <typename Object>
-	bool call(BError(Object::*method)(), Object* pObject)
+	bool call(BError& error, BError(Object::*method)(), Object* pObject)
 	{
 		pOwner->create_restore();
 
-		BError error = (pObject->*method)();
+		error = (pObject->*method)();
 
 		if (error) {
 
 			if (is_critical_error(error)) pOwner->restore_state();
 
-			if (!is_silent_error(error)) pOwner->show_error(error, get_error_string(error), true);
+			//if (!is_silent_error(error)) pOwner->show_error(error, get_error_string(error), true);
 
 			//error occured
 			return true;
@@ -222,17 +229,17 @@ public:
 
 	//full call, with parameters
 	template <typename Object, typename ... PType>
-	bool call(BError(Object::*method)(PType ...), Object* pObject, PType ... params)
+	bool call(BError& error, BError(Object::*method)(PType ...), Object* pObject, PType ... params)
 	{
 		pOwner->create_restore();
 
-		BError error = (pObject->*method)(params...);
+		error = (pObject->*method)(params...);
 
 		if (error) {
 
 			if (is_critical_error(error)) pOwner->restore_state();
 
-			if (!is_silent_error(error)) pOwner->show_error(error, get_error_string(error), true);
+			//if (!is_silent_error(error)) pOwner->show_error(error, get_error_string(error), true);
 
 			//error occured
 			return true;
@@ -244,13 +251,13 @@ public:
 
 	//quick call, no parameters
 	template <typename Object>
-	bool qcall(BError(Object::*method)(), Object* pObject)
+	bool qcall(BError& error, BError(Object::*method)(), Object* pObject)
 	{
-		BError error = (pObject->*method)();
+		error = (pObject->*method)();
 
 		if (error) {
 
-			if (!is_silent_error(error)) pOwner->show_error(error, get_error_string(error), true);
+			//if (!is_silent_error(error)) pOwner->show_error(error, get_error_string(error), true);
 
 			//error occured
 			return true;
@@ -262,13 +269,13 @@ public:
 
 	//quick call, with parameters
 	template <typename Object, typename ... PType>
-	bool qcall(BError(Object::*method)(PType ...), Object* pObject, PType ... params)
+	bool qcall(BError& error, BError(Object::*method)(PType ...), Object* pObject, PType ... params)
 	{
-		BError error = (pObject->*method)(params...);
+		error = (pObject->*method)(params...);
 
 		if (error) {
 
-			if (!is_silent_error(error)) pOwner->show_error(error, get_error_string(error), true);
+			//if (!is_silent_error(error)) pOwner->show_error(error, get_error_string(error), true);
 
 			//error occured
 			return true;
@@ -295,6 +302,7 @@ ErrorHandler<Owner>::ErrorHandler(Owner* pOwner_) :
 	errors[BERROR_OUTOFGPUMEMORY_CRIT] = pair<string, ERRLEV_>( "Out of GPU memory.", ERRLEV_CRIT);
 	errors[BERROR_OUTOFGPUMEMORY_NCRIT] = pair<string, ERRLEV_>("Out of GPU memory.", ERRLEV_NCRIT);
 	errors[BERROR_GPUERROR_CRIT] = pair<string, ERRLEV_>("GPU error.", ERRLEV_CRIT);
+	errors[BERROR_CUDAVERSIONMISMATCH_NCRIT] = pair<string, ERRLEV_>("Device CUDA version mismatch. Use matching Boris CUDA version.", ERRLEV_NCRIT);
 	errors[BERROR_INCORRECTMODCONFIG] = pair<string, ERRLEV_>( "Incorrect modules configuration.", ERRLEV_NCRIT);
 	errors[BERROR_INCORRECTCONFIG] = pair<string, ERRLEV_>( "Incorrect configuration.", ERRLEV_NCRIT);
 	errors[BERROR_INCORRECTARRAYS] = pair<string, ERRLEV_>( "Incorrect arrays.", ERRLEV_NCRIT);

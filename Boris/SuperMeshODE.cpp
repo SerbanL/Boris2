@@ -65,7 +65,7 @@ BError SuperMesh::SetODEEval(EVAL_ evalMethod)
 	return error;
 }
 
-//set the time step for the magnetisation solver
+//set the time step for the magnetization solver
 void SuperMesh::SetTimeStep(double dT) 
 { 
 	odeSolver.SetdT(dT); 

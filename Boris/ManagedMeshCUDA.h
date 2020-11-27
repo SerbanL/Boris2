@@ -29,7 +29,7 @@ public:
 	MatPCUDA<cuBReal, cuBReal>* palpha;
 	MatPCUDA<cuReal2, cuBReal>* palpha_AFM;
 
-	//Saturation magnetisation (A/m)
+	//Saturation magnetization (A/m)
 	MatPCUDA<cuBReal, cuBReal>* pMs;
 	MatPCUDA<cuReal2, cuBReal>* pMs_AFM;
 
@@ -64,7 +64,7 @@ public:
 	MatPCUDA<cuBReal, cuBReal>* pJ1;
 	MatPCUDA<cuBReal, cuBReal>* pJ2;
 
-	//surface exchange coupling per magnetisation from a diamagnet (J/Am) - EXPERIMENTAL : Hse = neta * sus * Hext / mu0 * Ms * tF
+	//surface exchange coupling per magnetization from a diamagnet (J/Am) - EXPERIMENTAL : Hse = neta * sus * Hext / mu0 * Ms * tF
 	MatPCUDA<cuBReal, cuBReal>* pneta_dia;
 
 	//Magneto-crystalline anisotropy K1 and K2 constants (J/m^3) and easy axes directions. For uniaxial anisotropy only ea1 is needed, for cubic ea1 and ea2 should be orthogonal.

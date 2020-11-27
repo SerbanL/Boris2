@@ -1,5 +1,5 @@
-#NetSocks Module Updated on : 11/09/2020
-#Boris version : 2.9
+#NetSocks Module Updated on : 25/11/2020
+#Boris version : 3.0
 
 import socket
 import time
@@ -14,38 +14,21 @@ class NSClient:
 
     #################### DATA #######################
     
-    # Create a TCP/IP socket
-    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-
     maxLenMessage = 4096
     timeout_ms = 300000
     
-    serverip = ''
-    defaultPort = 1542
+    serverip = 'localhost'
+    serverport = 1542
     
-    connected = False
-    
-    pollTimer_ms = 0
+    verbose = False
 
     #################### CTOR / DTOR #######################
 
-    def __init__(self, serverip = 'localhost', verbose = False):
+    def __init__(self, serverip = 'localhost', serverport = 1542, verbose = False):
 
-        self.serverip = serverip        
+        self.serverip = serverip     
+        self.serverport = serverport
         self.verbose = verbose
-
-        print('connecting to %s:%s' % (serverip, self.defaultPort))
-
-        try:
-            self.sock.connect((serverip, self.defaultPort))
-            self.sock.settimeout(self.timeout_ms / 1000)
-            self.connected = True
-        except:
-            self.connected = False
-            
-    def __del__(self):
-        #make sure any previous instance has the socket closed before starting a new one
-        self.sock.close()
 
     #################### AUXILIARY #######################
 
@@ -55,19 +38,7 @@ class NSClient:
     def Convert_Returned_Parameter(self, string):
         try:    return float(string)
         except: return string
-
-    #wait for data to be returned by server using a blocking socket (typically used with the run command to wait for simulation finished signal)
-    def WaitForResponse(self):
-        
-        try: 
-            self.sock.setblocking(True)
-            data = str(self.sock.recv(self.maxLenMessage), 'utf-8')
-            print('RX : %s' % data)
-            self.sock.settimeout(self.timeout_ms / 1000)
-        except:
-            print("WaitForResponse: failed.")
-            self.sock.close()
-            
+    
     #SendCommand also serves as auxiliary method
     
     #check if we can convert the row text to list of numbers; expecting tab-spaced data
@@ -147,7 +118,7 @@ class NSClient:
         
     def PlotPolar_Data(self, r, theta_deg, xlabel = '', ylabel = '', title = '', label_ = '', imageFile = ''):
         
-        #plt.axes(xlabel = xlabel, ylabel = ylabel, title = title)
+        plt.axes(xlabel = xlabel, ylabel = ylabel, title = title)
         plt.grid()
         plt.polar([np.radians(t) for t in theta_deg], r, label = label_)
         if len(label_): plt.legend()
@@ -166,7 +137,8 @@ class NSClient:
         
         lines = []
         
-        vector = isinstance(vec[0], list) and len(vec[0]) == 3
+        if not isinstance(vec, np.ndarray): vec = np.asarray(vec)
+        is_vectorial = (vec.shape[1] == 3)
         
         lines.append("# OOMMF OVF 2.0")
         lines.append("# Segment count: 1")
@@ -195,7 +167,7 @@ class NSClient:
         lines.append("# ystepsize: " + str((rect_m[4] - rect_m[1]) / nodes[1]))
         lines.append("# zstepsize: " + str((rect_m[5] - rect_m[2]) / nodes[2]))
         lines.append("#")
-        if vector: lines.append("# valuedim: 3")
+        if is_vectorial: lines.append("# valuedim: 3")
         else: lines.append("# valuedim: 1")
         lines.append("#")
         lines.append("# End: Header")
@@ -207,18 +179,10 @@ class NSClient:
             #write header
             for line in lines: f.write(bytes(line + '\n', 'utf-8'))
             
-            #check value
-            vec.insert(0, 123456789012345.0)
-            #write vec_sca as 8-byte floats (including the check value)
-            if vector:
-                #write vector quantity
-                for value in vec:
-                    float_aray = np.array(value, 'float64')
-                    float_aray.tofile(f)
-            else:
-                #write scalar quantity
-                float_aray = np.array(vec, 'float64')
-                float_aray.tofile(f)
+            #insert check value and flatten
+            vec = np.insert(vec, 0, 123456789012345.0)
+            #write as 8-byte floats (including the check value)
+            vec.tofile(f)
             
             #write termination
             f.write(bytes("# End: data " + "binary 8" + '\n', 'utf-8'))
@@ -230,7 +194,7 @@ class NSClient:
     
     def Read_OVF2(self, fileName):
         
-        vec = []
+        vec = np.ndarray(0)
         
         meshtype_rectangular = False
         meshunit = 1.0
@@ -364,9 +328,10 @@ class NSClient:
                             return vec, n, meshRect
                         
                         if valuedim == 1:
-                            vec = [0.0] * n[0]*n[1]*n[2]
+                            vec = np.zeros((n[0]*n[1]*n[2], 1))
                             
-                            for i, j, k in product(range(n[0]), range(n[1]), range(n[2])):
+                            #k, j, i order is important, since itertools product iterates the outer index first, and the file has i iterated first
+                            for k, j, i in product(range(n[2]), range(n[1]), range(n[0])):
                                 if data_bytes == 4:
                                     value = struct.unpack('f', f.read(4))
                                     vec[i + j*n[0] + k*n[0]*n[1]] = value[0]
@@ -379,12 +344,12 @@ class NSClient:
                                     vec[i + j*n[0] + k*n[0]*n[1]] = float(line)
                             
                         elif valuedim == 3:
-                            vec = [[0.0, 0.0, 0.0]] * n[0]*n[1]*n[2]
-                            
-                            for i, j, k in product(range(n[0]), range(n[1]), range(n[2])):
+                            vec = np.zeros((n[0]*n[1]*n[2], 3))
+
+                            for k, j, i in product(range(n[2]), range(n[1]), range(n[0])):
                                 if data_bytes == 4:
                                     value = struct.unpack('3f', f.read(4*3))
-                                    vec[i + j*n[0] + k*n[0]*n[1]] = [value[0], value[1], value[2]]
+                                    vec[i + j*n[0] + k*n[0]*n[1]] = [value[0], value[0], value[2]]
                                 elif data_bytes == 8:
                                     value = struct.unpack('3d', f.read(8*3))
                                     vec[i + j*n[0] + k*n[0]*n[1]] = [value[0], value[1], value[2]] 
@@ -399,14 +364,24 @@ class NSClient:
         
         return vec, n, meshRect
         
-
     #################### SPECIAL COMMANDS #######################
 
     #Send run command and wait for simulation to finish : blocking call
     def Run(self):
 
         self.SendCommand("run")
-        self.WaitForResponse()
+            
+        #Now wait for response using a blocking socket
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+        
+            sock.connect((self.serverip, self.serverport))
+        
+            # Look for the response
+            try:
+                data = str(sock.recv(self.maxLenMessage), 'utf-8')
+                print('RX : %s' % data)
+            except:
+                print("SendCommand (receive): timed out.")
         
     #Save in given filename a new row containing parameters in dataList as tab-spaced characters
     #This uses the savecomment command to save in the local Boris data directory as currently configured in Boris
@@ -1204,105 +1179,75 @@ class NSClient:
     	return self.SendCommand("vortex", [longitudinal, rotation, core, rectangle, meshname])
     
 
-    #################### LEGACY METHODS : DON'T USE (directly) #######################
+    #################### Command Send / Data Receive #######################
 
-    #Legacy method / Auxiliary : send named command together with any parameters specified using a list
-    #New version use methods named after command name directly : improves simulation script readability
-    #You can also use this to send the run command as a non-blocking call
     def SendCommand(self, command, values = None):
 
-        try: 
-            self.sock.settimeout(self.timeout_ms / 1000)
-        except: 
-            self.sock.close()
-            return
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+        
+            sock.connect((self.serverip, self.serverport))
+            sock.settimeout(self.timeout_ms / 1000)
 
-        while True:
-            message = command
-
-            #command arguments if specified : space-separated
-            if values is not None: 
-                for value in values: 
-                    #first check if it's a string
-                    if isinstance(value, str):
-                        #only add it if not empty
-                        if len(value): message += ' ' + value
-                    #not a string : could be a list or a number
-                    else:
-                        #first try to convert entries in a list to add as space-seaprated parameters
-                        try:
-                            for entry in value: message += ' ' + str(entry)
-                        #not a list, so add a number after converting to string
-                        except:
-                            message += ' ' + str(value)
-                    
-            try:
-                # Send data
-                if self.verbose == True: self.sock.sendall(bytes('>' + message, 'utf-8'))
-                else: self.sock.sendall(bytes('*' + message, 'utf-8'))
-                print('TX : %s' % message)
-            except:
-                print("SendCommand (send): timed out.")
-                self.sock.close()
-                return
-
-            # Look for the response
-            try:
-                data = str(self.sock.recv(self.maxLenMessage), 'utf-8')
-            except:
-                print("SendCommand (receive): timed out.")
-                self.sock.close()
-                return
+            while True:
+                message = command
     
-            #note, the returned data always starts with a tab
-            fields = data.split('\t')
-
-            if len(fields) >= 2 and fields[1] == 'stopped':
-                    #if we received the 'stopped' message this means a simulation was running when we sent this command. 
-                    #this caused the simulation to stop thus issuing the 'stopped' message since a client is connected.
-                    #since this command is expecting another message to be returned, we need to receive it - issue recv call again
-                    try:
-                        data = str(self.sock.recv(self.maxLenMessage), 'utf-8')
-                    except:
-                        print("SendCommand (receive): timed out.")
-                        self.sock.close()
-                        return
-
-                    #note, the returned data always starts with a tab
-                    fields = data.split('\t')
-
-            print('RX : %s' % data)
-
-            #the received message should always have at least 2 fields since the message always starts with a tab
-            if len(fields) >= 2:      
-
-                #list of floats where there should be floats instead of strings (skip first entry always as this is empty)
-                return_data = [self.Convert_Returned_Parameter(entry) for entry in fields[1:]]
-                #if the returned data has multiple parameters then return it as a list, else as a single element
-                if len(return_data) == 1: return return_data[0]
-                else: return return_data
-
-    #Legacy : send multiple commands without parameters
-    def SendCommands(self, commands):
-
-        for command in commands: self.SendCommand(command)
-
-    #Legacy : use Run() instead.
-    def IsSimulationRunning(self, simRunningPollInterval_ms = 500):
-
-        if abs(time.clock()*1000 - self.pollTimer_ms) > simRunningPollInterval_ms:
-            self.pollTimer_ms = time.clock()*1000
-            return self.SendCommand('isrunning')
-        else:
-            #this method will typically be used in a while loop, so make sure user won't flood cpu with function calls
-            time.sleep(simRunningPollInterval_ms/10000)
-
-        return True
+                #command arguments if specified : space-separated
+                if values is not None: 
+                    for value in values: 
+                        #first check if it's a string
+                        if isinstance(value, str):
+                            #only add it if not empty
+                            if len(value): message += ' ' + value
+                        #not a string : could be a list or a number
+                        else:
+                            #first try to convert entries in a list to add as space-seaprated parameters
+                            try:
+                                for entry in value: message += ' ' + str(entry)
+                            #not a list, so add a number after converting to string
+                            except:
+                                message += ' ' + str(value)
+                        
+                try:
+                    # Send data
+                    if self.verbose == True: sock.sendall(bytes('>' + message, 'utf-8'))
+                    else: sock.sendall(bytes('*' + message, 'utf-8'))
+                    print('TX : %s' % message)
+                except:
+                    print("SendCommand (send): timed out.")
+                    return
+    
+                # Look for the response
+                try:
+                    data = str(sock.recv(self.maxLenMessage), 'utf-8')
+                except:
+                    print("SendCommand (receive): timed out.")
+                    return
+        
+                #note, the returned data always starts with a tab
+                fields = data.split('\t')
+    
+                if len(fields) >= 2 and fields[1] == 'stopped':
+                        #if we received the 'stopped' message this means a simulation was running when we sent this command. 
+                        #this caused the simulation to stop thus issuing the 'stopped' message since a client is connected.
+                        #since this command is expecting another message to be returned, we need to receive it - issue recv call again
+                        try:
+                            data = str(sock.recv(self.maxLenMessage), 'utf-8')
+                        except:
+                            print("SendCommand (receive): timed out.")
+                            return
+    
+                        #note, the returned data always starts with a tab
+                        fields = data.split('\t')
+    
+                print('RX : %s' % data)
+    
+                #the received message should always have at least 2 fields since the message always starts with a tab
+                if len(fields) >= 2:      
+    
+                    #list of floats where there should be floats instead of strings (skip first entry always as this is empty)
+                    return_data = [self.Convert_Returned_Parameter(entry) for entry in fields[1:]]
+                    #if the returned data has multiple parameters then return it as a list, else as a single element
+                    if len(return_data) == 1: return return_data[0]
+                    else: return return_data
     
 ###############################################################################################################################
-    
-#Still keep this function for legacy compatibility : instead you should just index returned list directly if you're expecting a list
-def Get(expected_list, index):
-
-    try: return expected_list[index]
-    except: return expected_list

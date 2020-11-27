@@ -251,6 +251,9 @@ enum IOI_
 	//Shows cuda enabled/disabled or n/a state. auxId is enabled (1)/disabled(0)/not available(-1) status.
 	IOI_CUDASTATE,
 
+	//Shows CUDA device information and state. minorId is the device number (from 1 up), auxId is enabled (1)/disabled(0)/not available(-1) status. 
+	IOI_CUDADEVICE,
+
 	//Shows gpu free memory. auxId is the value
 	IOI_GPUMEMFREE,
 
@@ -271,6 +274,15 @@ enum IOI_
 
 	//Shows log_errors enabled/disabled state. auxId is enabled (1)/disabled(0) status.
 	IOI_ERRORLOGSTATUS,
+
+	//Shows number of threads. auxId is the value.
+	IOI_THREADS,
+
+	//Shows server port. auxId is the value.
+	IOI_SERVERPORT,
+		
+	//Shows server sleep time in ms. auxId is the value.
+	IOI_SERVERSLEEPMS,
 
 	//Shows neighboring meshes exchange coupling setting for this mesh. minorId is the unique mesh id number, auxId is the status (1/0 : on/off, -1 : not available: must be ferromagnetic mesh)
 	IOI_MESHEXCHCOUPLING,

@@ -179,7 +179,7 @@ public:
 
 	//----------------------------------- OTHER CONTROL METHODS : MeshControl.cpp
 
-	//used by move mesh algorithm : shift mesh quantities (e.g. magnetisation) by the given shift (metric units) value within this mesh. The shift is along the x-axis direction only (+ve or -ve).
+	//used by move mesh algorithm : shift mesh quantities (e.g. magnetization) by the given shift (metric units) value within this mesh. The shift is along the x-axis direction only (+ve or -ve).
 	void MoveMesh(double x_shift);
 
 	//set PBC for required VECs : should only be called from a demag module
@@ -320,24 +320,24 @@ public:
 
 	//------Specific to Mesh
 
-	//get average magnetisation in given rectangle (entire mesh if none specified)
+	//get average magnetization in given rectangle (entire mesh if none specified)
 	//1: ferromagnetic or antiferromagnetic sub-lattice A
 	//2: antiferromagnetic only, sub-lattice B
-	DBL3 GetAverageMagnetisation(Rect rectangle = Rect());
-	DBL3 GetAverageMagnetisation2(Rect rectangle = Rect());
+	DBL3 GetAveragemagnetization(Rect rectangle = Rect());
+	DBL3 GetAveragemagnetization2(Rect rectangle = Rect());
 
 	//Average square of components
-	double GetAverageXMagnetisationSq(Rect rectangle = Rect());
-	double GetAverageYMagnetisationSq(Rect rectangle = Rect());
-	double GetAverageZMagnetisationSq(Rect rectangle = Rect());
+	double GetAverageXmagnetizationSq(Rect rectangle = Rect());
+	double GetAverageYmagnetizationSq(Rect rectangle = Rect());
+	double GetAverageZmagnetizationSq(Rect rectangle = Rect());
 
-	//get magnetisation magnitude min-max in given rectangle (entire mesh if none specified)
-	DBL2 GetMagnetisationMinMax(Rect rectangle = Rect());
+	//get magnetization magnitude min-max in given rectangle (entire mesh if none specified)
+	DBL2 GetmagnetizationMinMax(Rect rectangle = Rect());
 
-	//get magnetisation component min-max in given rectangle (entire mesh if none specified)
-	DBL2 GetMagnetisationXMinMax(Rect rectangle = Rect());
-	DBL2 GetMagnetisationYMinMax(Rect rectangle = Rect());
-	DBL2 GetMagnetisationZMinMax(Rect rectangle = Rect());
+	//get magnetization component min-max in given rectangle (entire mesh if none specified)
+	DBL2 GetmagnetizationXMinMax(Rect rectangle = Rect());
+	DBL2 GetmagnetizationYMinMax(Rect rectangle = Rect());
+	DBL2 GetmagnetizationZMinMax(Rect rectangle = Rect());
 
 	//get Curie temperature (the set value)
 	double GetCurieTemperature(void) { return T_Curie; }
@@ -412,18 +412,18 @@ public:
 	//set cells to non-empty in given box
 	BError setrect(Rect rectangle);
 
-	//roughen mesh sides perpendicular to a named axis (axis = "x", "y", "z") to given depth (same units as h) with prng instantiated with given seed.
-	BError RoughenMeshSides(string axis, double depth, unsigned seed);
+	//roughen mesh sides (side = "x", "y", "z", "-x", "-y", or "-z") to given depth (same units as h) with prng instantiated with given seed.
+	BError RoughenMeshSides(string side, double depth, int seed);
 
 	//Roughen mesh top and bottom surfaces using a jagged pattern to given depth and peak spacing (same units as h) with prng instantiated with given seed.
 	//Rough both top and bottom if sides is empty, else it should be either -z or z.
-	BError RoughenMeshSurfaces_Jagged(double depth, double spacing, unsigned seed, string sides);
+	BError RoughenMeshSurfaces_Jagged(double depth, double spacing, int seed, string sides);
 
 	//Generate Voronoi 2D grains in xy plane (boundaries between Voronoi cells set to empty) at given average spacing with prng instantiated with given seed.
-	BError GenerateGrains2D(double spacing, unsigned seed);
+	BError GenerateGrains2D(double spacing, int seed);
 
 	//Generate Voronoi 3D grains (boundaries between Voronoi cells set to empty) at given average spacing with prng instantiated with given seed.
-	BError GenerateGrains3D(double spacing, unsigned seed);
+	BError GenerateGrains3D(double spacing, int seed);
 
 	//----------------------------------- METHODS REDEFINED IN SOME IMPLEMENTATIONS (virtual here - with exceptions)
 
@@ -463,7 +463,7 @@ BError Mesh::change_mesh_shape(Lambda& run_this, PType& ... params)
 
 	BError error(__FUNCTION__);
 
-	//Magnetisation
+	//magnetization
 	if (!shape_change_individual || 
 		(shape_change_individual && (displayedPhysicalQuantity == MESHDISPLAY_MAGNETIZATION || displayedPhysicalQuantity == MESHDISPLAY_MAGNETIZATION2 || displayedPhysicalQuantity == MESHDISPLAY_MAGNETIZATION12)))
 	{

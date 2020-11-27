@@ -207,7 +207,7 @@ double MElastic::UpdateField(void)
 			//yz, xz, xy
 			DBL3 Sod = pMesh->strain_odiag[position];
 			
-			//normalised magnetisation
+			//normalised magnetization
 			//Magneto-elastic term here applicable for a cubic crystal. We use the mcanis_ea1 and mcanis_ea2 axes to fix the cubic lattice orientation, thus rotate the m, Sd and Sod vectors.
 			
 			DBL3 m = DBL3(pMesh->M[idx] * mcanis_ea1, pMesh->M[idx] * mcanis_ea2, pMesh->M[idx] * mcanis_ea3) / Ms;

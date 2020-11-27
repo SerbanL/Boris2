@@ -59,7 +59,7 @@ __global__ void RunEuler_Kernel_withReductions(ManagedDiffEqFMCUDA& cuDiffEq, Ma
 		}
 	}
 
-	//only reduce for dmdt (and mxh) if grel is not zero (if it's zero this means magnetisation dynamics is disabled in this mesh)
+	//only reduce for dmdt (and mxh) if grel is not zero (if it's zero this means magnetization dynamics is disabled in this mesh)
 	if (cuMesh.pgrel->get0()) {
 
 		reduction_avg(0, 1, &mxh, *cuDiffEq.pmxh_av, *cuDiffEq.pavpoints);

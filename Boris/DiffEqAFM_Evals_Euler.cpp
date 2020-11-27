@@ -65,7 +65,7 @@ void DifferentialEquationAFM::RunEuler_withReductions(void)
 	//magnitude of average mxh torque, set in mxh_reduction.max as this will be used to set the mxh value in ODECommon
 	if (pMesh->grel.get0()) {
 
-		//only reduce for mxh if grel is not zero (if it's zero this means magnetisation dynamics are disabled in this mesh)
+		//only reduce for mxh if grel is not zero (if it's zero this means magnetization dynamics are disabled in this mesh)
 		mxh_reduction.max = GetMagnitude(mxh_av_reduction.average());
 		dmdt_reduction.max = GetMagnitude(dmdt_av_reduction.average());
 	}

@@ -52,6 +52,9 @@ private:
 	//the last received message
 	std::string last_message;
 
+	std::string server_port = DEFAULT_PORT;
+	int server_recvsleepms = RECVSLEEPMS;
+
 private:
 
 	//Make non-blocking listen socket on DEFAULT_PORT to accept incoming connections - done in the constructor
@@ -59,8 +62,11 @@ private:
 
 public:
 
-	NetSocks(int buffer_size = DEFAULT_BUFLEN);
+	NetSocks(std::string port = DEFAULT_PORT, int recvsleepms = RECVSLEEPMS, int buffer_size = DEFAULT_BUFLEN);
 	~NetSocks();
+
+	void Change_Port(std::string port);
+	void Change_RecvSleep(int recvsleepms) { server_recvsleepms = recvsleepms; }
 
 	//Non-blocking call to Listen for incoming messages - return message when received
 	std::string Listen(void);
@@ -80,8 +86,11 @@ public:
 
 //SERVER------------------------------------------------------------------------
 
-inline NetSocks::NetSocks(int buffer_size)
+inline NetSocks::NetSocks(std::string port, int recvsleepms, int buffer_size)
 {
+	server_port = port;
+	server_recvsleepms = recvsleepms;
+
 	recvbuflen = buffer_size;
 	recvbuf = new char[recvbuflen];
 
@@ -103,6 +112,25 @@ inline NetSocks::~NetSocks()
 	}
 	
 	delete recvbuf;
+}
+
+inline void NetSocks::Change_Port(std::string port)
+{
+	server_port = port;
+
+	if (clientConnected) {
+
+		// shutdown the connection since we're done
+		shutdown(ClientSocket, SHUT_RDWR);
+		close(ClientSocket);
+	}
+
+	if (listenSocketActive) {
+
+		close(ListenSocket);
+	}
+
+	MakeListenSocket();
 }
 
 inline void NetSocks::MakeListenSocket(void) 

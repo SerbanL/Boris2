@@ -117,7 +117,7 @@ BError SHeatCUDA::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 
 void SHeatCUDA::UpdateField(void)
 {
-	//only need to update this after an entire magnetisation equation time step is solved
+	//only need to update this after an entire magnetization equation time step is solved
 	//also if heat_dT is set to zero skip the heat equation solver : this will maintain a fixed temperature
 	if (!pSMesh->CurrentTimeStepSolved() || pSHeat->heat_dT < MINTIMESTEP) return;
 	

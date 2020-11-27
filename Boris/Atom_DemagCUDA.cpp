@@ -93,7 +93,7 @@ void Atom_DemagCUDA::UpdateField(void)
 
 			//calculate field required
 
-			//transfer magnetic moments to magnetisation mesh, converting from moment to magnetisation in the process
+			//transfer magnetic moments to magnetization mesh, converting from moment to magnetization in the process
 			M()->transfer_in(paDemag->M.linear_size(), paDemag->M.size_transfer_in());
 
 			//convolute and get energy density value
@@ -110,7 +110,7 @@ void Atom_DemagCUDA::UpdateField(void)
 
 		if (paMeshCUDA->CurrentTimeStepSolved()) ZeroEnergy();
 
-		//transfer magnetic moments to magnetisation mesh, converting from moment to magnetisation in the process
+		//transfer magnetic moments to magnetization mesh, converting from moment to magnetization in the process
 		M()->transfer_in(paDemag->M.linear_size(), paDemag->M.size_transfer_in());
 
 		//convolute and get energy density value

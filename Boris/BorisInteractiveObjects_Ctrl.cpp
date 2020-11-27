@@ -1781,6 +1781,14 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 	}
 	break;
 	
+	//Shows CUDA device information and state. minorId is the device number (from 1 up), auxId is enabled (1)/disabled(0)/not available(-1) status. 
+	case IOI_CUDADEVICE:
+	{
+		int device = iop.minorId;
+		if (actionCode == AC_MOUSERIGHTDOWN || actionCode == AC_MOUSELEFTDOWN) sendCommand_verbose(CMD_SELCUDADEV, device);
+	}
+	break;
+
 	//Shows scale_rects enabled/disabled state. auxId is enabled (1)/disabled(0) status.
 	case IOI_SCALERECTSSTATUS:
 	{
@@ -1823,6 +1831,60 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 		bool status = iop.auxId;
 
 		if (actionCode == AC_MOUSERIGHTDOWN || actionCode == AC_MOUSELEFTDOWN) sendCommand_verbose(CMD_STARTUPSCRIPTSERVER, !status);
+	}
+	break;
+
+	//Shows number of threads. auxId is the value.
+	case IOI_THREADS:
+	{
+		if (actionCode == AC_MOUSERIGHTDOWN) sendCommand_verbose(CMD_THREADS, 0);
+
+		//on double-click make popup edit box to edit the currently displayed value
+		if (actionCode == AC_DOUBLECLICK) { actionOutcome = AO_STARTPOPUPEDITBOX; }
+
+		//popup edit box has returned some text - try to set value from it
+		else if (actionCode == AC_POPUPEDITTEXTBOXRETURNEDTEXT) {
+
+			//the actual text returned by the popup edit box
+			string to_text = trim(trimendspaces(pTO->GetText()), ",");
+
+			sendCommand_verbose(CMD_THREADS, to_text);
+		}
+	}
+	break;
+
+
+	//Shows server port. auxId is the value.
+	case IOI_SERVERPORT:
+	{
+		//on double-click make popup edit box to edit the currently displayed value
+		if (actionCode == AC_DOUBLECLICK) { actionOutcome = AO_STARTPOPUPEDITBOX; }
+
+		//popup edit box has returned some text - try to set value from it
+		else if (actionCode == AC_POPUPEDITTEXTBOXRETURNEDTEXT) {
+
+			//the actual text returned by the popup edit box
+			string to_text = trim(trimendspaces(pTO->GetText()), ",");
+
+			sendCommand_verbose(CMD_SERVERPORT, to_text);
+		}
+	}
+	break;
+
+	//Shows server sleep time in ms. auxId is the value.
+	case IOI_SERVERSLEEPMS:
+	{
+		//on double-click make popup edit box to edit the currently displayed value
+		if (actionCode == AC_DOUBLECLICK) { actionOutcome = AO_STARTPOPUPEDITBOX; }
+
+		//popup edit box has returned some text - try to set value from it
+		else if (actionCode == AC_POPUPEDITTEXTBOXRETURNEDTEXT) {
+
+			//the actual text returned by the popup edit box
+			string to_text = trim(trimendspaces(pTO->GetText()), ",");
+
+			sendCommand_verbose(CMD_SERVERSLEEPMS, to_text);
+		}
 	}
 	break;
 

@@ -38,7 +38,7 @@ BError SuperMesh::SetMagAngle_Rect(string meshName, double polar, double azim, R
 	return error;
 }
 
-//Invert magnetisation direction in given mesh (must be magnetic)
+//Invert magnetization direction in given mesh (must be magnetic)
 BError SuperMesh::SetInvertedMag(string meshName, bool x, bool y, bool z)
 {
 	BError error(__FUNCTION__);
@@ -50,7 +50,7 @@ BError SuperMesh::SetInvertedMag(string meshName, bool x, bool y, bool z)
 	return error;
 }
 
-//Mirror magnetisation in given axis (literal x, y, or z) in given mesh (must be magnetic)
+//Mirror magnetization in given axis (literal x, y, or z) in given mesh (must be magnetic)
 BError SuperMesh::SetMirroredMag(string meshName, string axis)
 {
 	BError error(__FUNCTION__);
@@ -63,13 +63,13 @@ BError SuperMesh::SetMirroredMag(string meshName, string axis)
 }
 
 //Set random magentisation distribution in given mesh (must be magnetic)
-BError SuperMesh::SetRandomMag(string meshName)
+BError SuperMesh::SetRandomMag(string meshName, int seed)
 {
 	BError error(__FUNCTION__);
 
 	if (!contains(meshName)) return error(BERROR_INCORRECTNAME);
 
-	pMesh[meshName]->SetRandomMag();
+	pMesh[meshName]->SetRandomMag(seed);
 
 	return error;
 }

@@ -165,6 +165,94 @@ inline bool VEC<double>::generate_jagged(DBL3 new_h, Rect new_rect, DBL2 range, 
 	return true;
 }
 
+//polynomial slopes at slides with exponent n, starting from maximum value at surfaces, proceeding inwards towards minimum up to a depth of length * ratio
+//abl_x, abl_y, abl_z : depth ratio for negative side, depth ratio for positive side
+//values : minimum centre, maximum outer, polynomial exponent
+template <>
+inline bool VEC<double>::generate_ablpol(DBL3 new_h, Rect new_rect, DBL2 abl_x, DBL2 abl_y, DBL2 abl_z, DBL3 values)
+{
+	if (!resize(new_h, new_rect)) return false;
+
+	double length = rect.length();
+	double width = rect.width();
+	double height = rect.height();
+
+	double min = values.i;
+	double max = values.j;
+	int pn = round(values.k);
+	if (pn < 1) pn = 1;
+
+	double nx = abl_x.i * length;
+	double px = length * (1.0 - abl_x.j);
+	double ny = abl_y.i * width;
+	double py = width * (1.0 - abl_y.j);
+	double nz = abl_z.i * height;
+	double pz = height * (1.0 - abl_z.j);
+	
+	double nx_alpha = 0.0, px_alpha = 0.0;
+	if (abl_x.i > 0) nx_alpha = (max - min) / pow(-abl_x.i * length, pn);
+	if (abl_x.j > 0) px_alpha = (max - min) / pow(+abl_x.j * length, pn);
+
+	double ny_alpha = 0.0, py_alpha = 0.0;
+	if (abl_y.i > 0) ny_alpha = (max - min) / pow(-abl_y.i * width, pn);
+	if (abl_y.j > 0) py_alpha = (max - min) / pow(+abl_y.j * width, pn);
+
+	double nz_alpha = 0.0, pz_alpha = 0.0;
+	if (abl_z.i > 0) nz_alpha = (max - min) / pow(-abl_z.i * height, pn);
+	if (abl_z.j > 0) pz_alpha = (max - min) / pow(+abl_z.j * height, pn);
+
+	//formula (e.g. x): v = alpha * (x - w)^pn + min, where x is position from negative side, w is nx or px, and alpha = nx_alpha negative side or alpha = px_alpha for positive side
+	//applicable for x between 0 and nx for negative side, and between px and length for positive side
+
+#pragma omp parallel for
+	for (int idx = 0; idx < n.dim(); idx++)
+		quantity[idx] = min;
+
+	for (int k = 0; k < n.z; k++) {
+#pragma omp parallel for
+		for (int j = 0; j < n.y; j++) {
+			for (int i = 0; i < n.x; i++) {
+			
+				int idx = i + j * n.x + k * n.x*n.y;
+
+				double pos_x = (i + 0.5) * h.x;
+				double pos_y = (j + 0.5) * h.y;
+				double pos_z = (k + 0.5) * h.z;
+
+				//x
+				if (pos_x <= nx) {
+					
+					quantity[idx] += nx_alpha * pow(pos_x - nx, pn) + min;
+				}
+				else if (pos_x >= px) {
+
+					quantity[idx] += px_alpha * pow(pos_x - px, pn) + min;
+				}
+
+				//y
+				if (pos_y <= ny) {
+
+					quantity[idx] += ny_alpha * pow(pos_y - ny, pn) + min;
+				}
+				else if (pos_y >= py) {
+
+					quantity[idx] += py_alpha * pow(pos_y - py, pn) + min;
+				}
+
+				//z
+				if (pos_z <= nz) {
+
+					quantity[idx] += nz_alpha * pow(pos_z - nz, pn) + min;
+				}
+				else if (pos_z >= pz) {
+
+					quantity[idx] += pz_alpha * pow(pos_z - pz, pn) + min;
+				}
+			}
+		}
+	}
+}
+
 //defects: generate circular defects with a tanh radial profile with values in the given range, diameter range and average spacing (prng instantiated with given seed). The defect positioning is random. 
 template <>
 inline bool VEC<double>::generate_defects(DBL3 new_h, Rect new_rect, DBL2 range, double base_value, DBL2 diameter_range, double spacing, unsigned seed)

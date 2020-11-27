@@ -160,7 +160,7 @@ private:
 	//the VEC holding this Transfer object
 	VEC<VType>* pVEC;
 
-	//mesh_in and mesh_out VECs have exactly the same rectangle and cellsize for each index, but may differ in value stored (e.g. magnetisation and effective field) - they could also be exactly the same VEC
+	//mesh_in and mesh_out VECs have exactly the same rectangle and cellsize for each index, but may differ in value stored (e.g. magnetization and effective field) - they could also be exactly the same VEC
 	//mesh_in2 can be used if we require multiple inputs, e.g. an averaged input (mesh_in + mesh_in2) / 2, or multiplied input : mesh_in * mesh_in2.
 	//mesh_out2 can be used if require duplicating outputs
 	//For both mesh_in2 and mesh_out2, the input averaging and output duplicating is done if the respective VECs are not empty

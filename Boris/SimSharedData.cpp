@@ -47,6 +47,9 @@ size_t SimulationSharedData::gpuMemTotal_MB = 0;
 size_t SimulationSharedData::cpuMemFree_MB = 0;
 size_t SimulationSharedData::cpuMemTotal_MB = 0;
 
+//collect available cuda device major versions here, indexed from 0
+std::vector<std::pair<int, std::string>> SimulationSharedData::cudaDeviceVersions;
+
 vector_key<double> SimulationSharedData::userConstants;
 
 SimulationSharedData::SimulationSharedData(bool called_from_Simulation)
@@ -86,6 +89,8 @@ SimulationSharedData::SimulationSharedData(bool called_from_Simulation)
 		vargenerator_descriptor.push_back("vorrot2D", "70, 110; -45, 45; 40nm; 1", MATPVAR_VORONOIROT2D);
 		//DBL2 theta (degrees), DBL2 phi (degrees), double spacing, int seed
 		vargenerator_descriptor.push_back("vorrot3D", "70, 110; -45, 45; 40nm; 1", MATPVAR_VORONOIROT3D);
+		//DBL2 x sides ratios, DBL2 y sides ratios, DBL2 z sides ratios, DBL3 inner mimimum, outer maximum, polynomial exponent
+		vargenerator_descriptor.push_back("abl_pol", "0.25, 0.25; 0, 0; 0, 0; 0, 1, 1", MATPVAR_ABLPOL);
 
 		//--------------
 
@@ -318,7 +323,7 @@ SimulationSharedData::SimulationSharedData(bool called_from_Simulation)
 		params_enabled_props.push_back({ true, true }, PARAM_K2);
 		params_enabled_props.push_back({ false, true }, PARAM_EA1);
 		params_enabled_props.push_back({ false, true }, PARAM_EA2);
-		params_enabled_props.push_back({ false, false }, PARAM_SUSREL);
+		params_enabled_props.push_back({ true, false }, PARAM_SUSREL);
 		params_enabled_props.push_back({ false, false }, PARAM_SUSPREL);
 		params_enabled_props.push_back({ true, true }, PARAM_ELC);
 		params_enabled_props.push_back({ true, true }, PARAM_AMR);
@@ -364,7 +369,7 @@ SimulationSharedData::SimulationSharedData(bool called_from_Simulation)
 		params_enabled_props.push_back({ true, true }, PARAM_SHC_E);
 		params_enabled_props.push_back({ true, true }, PARAM_G_E);
 		params_enabled_props.push_back({ true, true }, PARAM_A_AFH);
-		params_enabled_props.push_back({ false, true }, PARAM_SUSREL_AFM);
+		params_enabled_props.push_back({ true, true }, PARAM_SUSREL_AFM);
 		params_enabled_props.push_back({ false, true }, PARAM_AFTAU);
 		params_enabled_props.push_back({ false, true }, PARAM_AFTAUCROSS);
 		params_enabled_props.push_back({ false, true }, PARAM_MUB_AFM);

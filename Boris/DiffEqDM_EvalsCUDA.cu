@@ -9,7 +9,7 @@
 
 //-----------------------------------------
 
-__global__ void RestoreMagnetisation_DM_kernel(cuVEC_VC<cuReal3>& M, cuVEC<cuReal3>& sM1)
+__global__ void Restoremagnetization_DM_kernel(cuVEC_VC<cuReal3>& M, cuVEC<cuReal3>& sM1)
 {
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
 
@@ -19,10 +19,10 @@ __global__ void RestoreMagnetisation_DM_kernel(cuVEC_VC<cuReal3>& M, cuVEC<cuRea
 	}
 }
 
-//Restore magnetisation after a failed step for adaptive time-step methods
-void DifferentialEquationDMCUDA::RestoreMagnetisation(void)
+//Restore magnetization after a failed step for adaptive time-step methods
+void DifferentialEquationDMCUDA::Restoremagnetization(void)
 {
-	RestoreMagnetisation_DM_kernel <<< (pMeshCUDA->n.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (pMeshCUDA->M, sM1);
+	Restoremagnetization_DM_kernel <<< (pMeshCUDA->n.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (pMeshCUDA->M, sM1);
 }
 
 //-----------------------------------------

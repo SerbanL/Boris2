@@ -144,7 +144,7 @@ void Atom_DipoleDipoleCUDA::UpdateField(void)
 
 		if (using_macrocell) {
 
-			//transfer magnetic moments to magnetisation mesh, converting from moment to magnetisation in the process
+			//transfer magnetic moments to magnetization mesh, converting from moment to magnetization in the process
 			M()->transfer_in(paDipoleDipole->M.linear_size(), paDipoleDipole->M.size_transfer_in());
 
 			//convolute; energy not calculated in macrocell mode : would need to correct for use of self demag term in macrocell

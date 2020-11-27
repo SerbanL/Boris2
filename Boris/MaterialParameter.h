@@ -130,6 +130,11 @@ private:
 	//random points in given range at given square spacing in xy plane : in between fill using bilinear interpolation
 	bool set_s_jagged(DBL3 h, Rect rect, DBL2 range, double spacing, int seed);
 
+	//polynomial slopes at slides with exponent n, starting from maximum value at surfaces, proceeding inwards towards minimum up to a depth of length * ratio
+	//abl_x, abl_y, abl_z : depth ratio for negative side, depth ratio for positive side
+	//values : minimum centre, maximum outer, polynomial exponent
+	bool set_s_ablpol(DBL3 h, Rect rect, DBL2 abl_x, DBL2 abl_y, DBL2 abl_z, DBL3 values);
+
 	//generate circular defects with a tanh radial profile with values in the given range, diameter range and average spacing (prng instantiated with given seed). The defect positioning is random.
 	bool set_s_defects(DBL3 h, Rect rect, DBL2 range, DBL2 diameter_range, double spacing, int seed);
 
@@ -1401,6 +1406,21 @@ BError MatP<PType, SType>::set_s_scaling(DBL3 h, Rect rect, MATPVAR_ generatorID
 	}
 	break;
 
+	case MATPVAR_ABLPOL:
+	{
+		vector<string> fields = split(generatorArgs, " ");
+
+		if (fields.size() != 9) return error(BERROR_INCORRECTVALUE);
+
+		DBL2 abl_x = DBL2(ToNum(fields[0]), ToNum(fields[1]));
+		DBL2 abl_y = DBL2(ToNum(fields[2]), ToNum(fields[3]));
+		DBL2 abl_z = DBL2(ToNum(fields[4]), ToNum(fields[5]));
+		DBL3 values = DBL3(ToNum(fields[6]), ToNum(fields[7]), ToNum(fields[8]));
+
+		if (!set_s_ablpol(h, rect, abl_x, abl_y, abl_z, values)) error(BERROR_OUTOFMEMORY_NCRIT);
+	}
+	break;
+
 	case MATPVAR_DEFECTS:
 	{
 		vector<string> fields = split(generatorArgs, " ");
@@ -1635,6 +1655,29 @@ bool MatP<PType, SType>::set_s_jagged(DBL3 h, Rect rect, DBL2 range, double spac
 
 		s_scaling_type = MATPVAR_JAGGED;
 		s_scaling_info = vargenerator_descriptor.get_key_from_ID(MATPVAR_JAGGED) + "; " + ToString(range) + "; " + ToString(spacing, "m") + "; " + ToString(seed);
+	}
+	else clear_s_scaling();
+
+	//update cuda object also if set
+#if COMPILECUDA == 1
+	if (p_cu_obj_mpcuda) update_cuda_object();
+#endif
+
+	return success;
+}
+
+//polynomial slopes at slides with exponent n, starting from maximum value at surfaces, proceeding inwards towards minimum up to a depth of length * ratio
+//abl_x, abl_y, abl_z : depth ratio for negative side, depth ratio for positive side
+//values : minimum centre, maximum outer, polynomial exponenttemplate <typename PType, typename SType>
+template <typename PType, typename SType>
+bool MatP<PType, SType>::set_s_ablpol(DBL3 h, Rect rect, DBL2 abl_x, DBL2 abl_y, DBL2 abl_z, DBL3 values)
+{
+	bool success = s_scaling.generate_ablpol(h, rect, abl_x, abl_y, abl_z, values);
+
+	if (success) {
+
+		s_scaling_type = MATPVAR_ABLPOL;
+		s_scaling_info = vargenerator_descriptor.get_key_from_ID(MATPVAR_ABLPOL) + "; " + ToString(abl_x) + "; " + ToString(abl_y) + "; " + ToString(abl_z) + "; " + ToString(values);
 	}
 	else clear_s_scaling();
 

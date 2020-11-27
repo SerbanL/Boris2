@@ -5,8 +5,8 @@
 
 //----------------------------------- VALUE GETTERS
 
-//get average magnetisation in given rectangle (entire mesh if none specified)
-DBL3 Mesh::GetAverageMagnetisation(Rect rectangle)
+//get average magnetization in given rectangle (entire mesh if none specified)
+DBL3 Mesh::GetAveragemagnetization(Rect rectangle)
 {
 #if COMPILECUDA == 1
 	if (pMeshCUDA) {
@@ -20,8 +20,8 @@ DBL3 Mesh::GetAverageMagnetisation(Rect rectangle)
 	else return DBL3(0.0);
 }
 
-//get average magnetisation in given rectangle (entire mesh if none specified); sub-lattice B
-DBL3 Mesh::GetAverageMagnetisation2(Rect rectangle)
+//get average magnetization in given rectangle (entire mesh if none specified); sub-lattice B
+DBL3 Mesh::GetAveragemagnetization2(Rect rectangle)
 {
 #if COMPILECUDA == 1
 	if (pMeshCUDA) {
@@ -36,7 +36,7 @@ DBL3 Mesh::GetAverageMagnetisation2(Rect rectangle)
 }
 
 //Average square of components
-double Mesh::GetAverageXMagnetisationSq(Rect rectangle)
+double Mesh::GetAverageXmagnetizationSq(Rect rectangle)
 {
 #if COMPILECUDA == 1
 	if (pMeshCUDA) {
@@ -50,7 +50,7 @@ double Mesh::GetAverageXMagnetisationSq(Rect rectangle)
 	else return 0.0;
 }
 
-double Mesh::GetAverageYMagnetisationSq(Rect rectangle)
+double Mesh::GetAverageYmagnetizationSq(Rect rectangle)
 {
 #if COMPILECUDA == 1
 	if (pMeshCUDA) {
@@ -64,7 +64,7 @@ double Mesh::GetAverageYMagnetisationSq(Rect rectangle)
 	else return 0.0;
 }
 
-double Mesh::GetAverageZMagnetisationSq(Rect rectangle)
+double Mesh::GetAverageZmagnetizationSq(Rect rectangle)
 {
 #if COMPILECUDA == 1
 	if (pMeshCUDA) {
@@ -78,8 +78,8 @@ double Mesh::GetAverageZMagnetisationSq(Rect rectangle)
 	else return 0.0;
 }
 
-//get magnetisation magnitude min-max in given rectangle (entire mesh if none specified)
-DBL2 Mesh::GetMagnetisationMinMax(Rect rectangle)
+//get magnetization magnitude min-max in given rectangle (entire mesh if none specified)
+DBL2 Mesh::GetmagnetizationMinMax(Rect rectangle)
 {
 #if COMPILECUDA == 1
 	if (pMeshCUDA) {
@@ -93,8 +93,8 @@ DBL2 Mesh::GetMagnetisationMinMax(Rect rectangle)
 	else return DBL2(0.0);
 }
 
-//get magnetisation component min-max in given rectangle (entire mesh if none specified)
-DBL2 Mesh::GetMagnetisationXMinMax(Rect rectangle)
+//get magnetization component min-max in given rectangle (entire mesh if none specified)
+DBL2 Mesh::GetmagnetizationXMinMax(Rect rectangle)
 {
 #if COMPILECUDA == 1
 	if (pMeshCUDA) {
@@ -108,8 +108,8 @@ DBL2 Mesh::GetMagnetisationXMinMax(Rect rectangle)
 	else return DBL2(0.0);
 }
 
-//get magnetisation component min-max in given rectangle (entire mesh if none specified)
-DBL2 Mesh::GetMagnetisationYMinMax(Rect rectangle)
+//get magnetization component min-max in given rectangle (entire mesh if none specified)
+DBL2 Mesh::GetmagnetizationYMinMax(Rect rectangle)
 {
 #if COMPILECUDA == 1
 	if (pMeshCUDA) {
@@ -123,8 +123,8 @@ DBL2 Mesh::GetMagnetisationYMinMax(Rect rectangle)
 	else return DBL2(0.0);
 }
 
-//get magnetisation component min-max in given rectangle (entire mesh if none specified)
-DBL2 Mesh::GetMagnetisationZMinMax(Rect rectangle)
+//get magnetization component min-max in given rectangle (entire mesh if none specified)
+DBL2 Mesh::GetmagnetizationZMinMax(Rect rectangle)
 {
 #if COMPILECUDA == 1
 	if (pMeshCUDA) {

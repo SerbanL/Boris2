@@ -80,7 +80,7 @@ public:
 
 	void Reset_recalculateStrayField(void) { recalculateStrayField = false; }
 
-	//also need to set magnetisation temperature dependence in this mesh when a Curie temperature is set - don't need to store Curie temperature here, just set temperature dependence for Ms
+	//also need to set magnetization temperature dependence in this mesh when a Curie temperature is set - don't need to store Curie temperature here, just set temperature dependence for Ms
 	void SetCurieTemperature(double Tc, bool set_default_dependences);
 
 	//----------------------------------- VARIOUS GET METHODS

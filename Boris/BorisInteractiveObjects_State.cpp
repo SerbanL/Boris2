@@ -2364,6 +2364,31 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 	}
 	break;
 
+	//Shows CUDA device information and state. minorId is the device number (from 1 up), auxId is enabled (1)/disabled(0)/not available(-1) status. 
+	case IOI_CUDADEVICE:
+	{
+		int device = iop.minorId;
+		int status = iop.auxId;
+
+		//make sure status color matches; if not available then the IOI will be grayed out when created and cannot be selected.
+		if ((status == 1 && device != cudaDeviceSelect) || (status == 0 && device == cudaDeviceSelect)) {
+			
+			if (device == cudaDeviceSelect) {
+
+				iop.auxId = 1;
+				pTO->SetBackgroundColor(ONCOLOR);
+			}
+			else {
+
+				iop.auxId = 0;
+				pTO->SetBackgroundColor(OFFCOLOR);
+			}
+
+			stateChanged = true;
+		}
+	}
+	break;
+
 	//Shows scale_rects enabled/disabled state. auxId is enabled (1)/disabled(0) status.
 	case IOI_SCALERECTSSTATUS:
 	{
@@ -2484,6 +2509,48 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 				pTO->set(" Off ");
 			}
 
+			stateChanged = true;
+		}
+	}
+	break;
+
+	//Shows number of threads. auxId is the value.
+	case IOI_THREADS:
+	{
+		int threads = iop.auxId;
+
+		if (threads != OmpThreads) {
+
+			iop.auxId = OmpThreads;
+			pTO->set(" " + ToString(iop.auxId) + " ");
+			stateChanged = true;
+		}
+	}
+	break;
+
+	//Shows server port. auxId is the value.
+	case IOI_SERVERPORT:
+	{
+		std::string port = ToString(iop.auxId);
+		
+		if (port != server_port) {
+
+			iop.auxId = ToNum(server_port);
+			pTO->set(" " + ToString(iop.auxId) + " ");
+			stateChanged = true;
+		}
+	}
+	break;
+
+	//Shows server sleep time in ms. auxId is the value.
+	case IOI_SERVERSLEEPMS:
+	{
+		int sleepms = iop.auxId;
+
+		if (sleepms != server_recv_sleep_ms) {
+
+			iop.auxId = server_recv_sleep_ms;
+			pTO->set(" " + ToString(iop.auxId) + " ");
 			stateChanged = true;
 		}
 	}

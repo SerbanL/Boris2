@@ -42,7 +42,7 @@ private:
 protected:
 
 	//reserved unique thread ids for various uses
-	enum THREAD_ { THREAD_ERROR = -1, THREAD_GENERATENEW = 0, THREAD_LOOP, THREAD_GETINPUT, THREAD_HANDLEMESSAGE, THREAD_HANDLEMESSAGE2, THREAD_HANDLEMESSAGE3, THREAD_HANDLECLIENT, THREAD_NETWORK, THREAD_TIMEDCHECK, THREAD_TIMEDREFRESH };
+	enum THREAD_ { THREAD_ERROR = -1, THREAD_GENERATENEW = 0, THREAD_LOOP, THREAD_GETINPUT, THREAD_HANDLEMESSAGE, THREAD_HANDLEMESSAGE2, THREAD_HANDLEMESSAGE3, THREAD_DISKACCESS, THREAD_DISPLAY, THREAD_HANDLECLIENT, THREAD_NETWORK, THREAD_TIMEDCHECK, THREAD_TIMEDREFRESH };
 
 private:
 
@@ -69,10 +69,13 @@ protected:	//all methods usable by other objects are set as protected to force u
 	//infinite while loop thread : launch it with an Owner method, this thread will call the method without delay in a while loop
 
 	//launch new thread (either using a reserved thread id, or generate a new one) and return thread id
-	int infinite_loop_launch(void(Owner::*runThisMethod)(), int threadId = THREAD_GENERATENEW);
+	//With infinite_loop_launch allow specification of number of OmpThreads, since this is typically used to execute some computationally intensive task and control of number of threads could be useful.
+	//With MSVC (OpenMP2.0) you can just call omp_set_num_threads once and OMP_NUM_THREADS value will apply to all threads
+	//With g++ the OMP_NUM_THREADS value is thread private! Thus only takes effect if set in this thread!!! I'd rather not modify all #pragma omp parallel for directives instead.
+	int infinite_loop_launch(void(Owner::*runThisMethod)(), int threadId = THREAD_GENERATENEW, int OmpThreads = 0);
 
 	template <typename ... PType>
-	int infinite_loop_launch(void(Owner::*runThisMethod)(PType...), PType... param, int threadId = THREAD_GENERATENEW);
+	int infinite_loop_launch(void(Owner::*runThisMethod)(PType...), PType... param, int threadId = THREAD_GENERATENEW, int OmpThreads = 0);
 
 	//--------------------DELAYED CALL THREAD
 	//delayed call thread : run the Owner method a single time after a fixed time delay
@@ -164,11 +167,14 @@ void Threads<Owner>::stop_thread(int threadId)
 	//if not running (or not a valid threadId) then return
 	if (!is_thread_running(threadId)) return;
 
-	//stop the thread
-	std::atomic_store(&thread_running[threadId], false);
+	while (thread_active[threadId]) {
 
-	//wait for the loop to actually stop - the sleep is needed to give it a chance to write the value.
-	while (thread_active[threadId]) { std::this_thread::sleep_for(std::chrono::milliseconds(1)); }
+		//stop the thread
+		std::atomic_store(&thread_running[threadId], false);
+
+		//wait for the loop to actually stop - the sleep is needed to give it a chance to write the value.
+		std::this_thread::sleep_for(std::chrono::milliseconds(1));
+	}
 }
 
 template <class Owner>
@@ -190,21 +196,17 @@ int Threads<Owner>::run_on_thread(std::function<void()> runThis, int threadId)
 {
 	//std::mutex must be locked before calling this std::function
 
-	//don't start another thread of this type - return false, i.e. couldn't start
-	if (threadId == THREAD_ERROR || thread_active[threadId]) { thread_mutex.unlock(); return THREAD_GENERATENEW; }
-
-	//mark thread_active
-	while (!std::atomic_exchange(&thread_active[threadId], true));
+	if (threadId == THREAD_ERROR || std::atomic_exchange(&thread_active[threadId], true)) { thread_mutex.unlock(); return THREAD_GENERATENEW; }
 
 	//thread will shortly be running
-	while (!std::atomic_exchange(&thread_running[threadId], true));
+	thread_running[threadId] = true;
 
 	//release the lock now as the call may be blocking, or take a long time to execute - don't want to stop other threads from being created.
 	thread_mutex.unlock();
 
 	std::thread threaded_call(runThis);
 
-	//now launch the infinite loop thread
+	//now launch the thread
 	if (blocking_call[threadId]) threaded_call.join();
 	else threaded_call.detach();
 
@@ -218,14 +220,17 @@ int Threads<Owner>::run_on_thread(std::function<void()> runThis, int threadId)
 //INFINITE LOOP
 
 template <class Owner>
-int Threads<Owner>::infinite_loop_launch(void (Owner::*runThisMethod)(), int threadId)
+int Threads<Owner>::infinite_loop_launch(void (Owner::*runThisMethod)(), int threadId, int OmpThreads)
 {
 	//ensure thread-safe access
 	thread_mutex.lock();
 
 	threadId = configure_threadId(threadId);
 
-	std::function<void()> calling_method = [this, threadId, runThisMethod] {
+	std::function<void()> calling_method = [this, threadId, runThisMethod, OmpThreads] {
+
+		//Set number of OpenMP threads to use on this thread
+		if (OmpThreads && OmpThreads <= omp_get_num_procs()) omp_set_num_threads(OmpThreads);
 
 		//infinite_loop_running was incremented by the launcher
 		while (this->thread_running[threadId]) {
@@ -243,23 +248,26 @@ int Threads<Owner>::infinite_loop_launch(void (Owner::*runThisMethod)(), int thr
 
 template <class Owner>
 template <typename ... PType>
-int Threads<Owner>::infinite_loop_launch(void (Owner::*runThisMethod)(PType...), PType... param, int threadId)
+int Threads<Owner>::infinite_loop_launch(void (Owner::*runThisMethod)(PType...), PType... param, int threadId, int OmpThreads)
 {
 	//ensure thread-safe access
 	thread_mutex.lock();
 
 	threadId = configure_threadId(threadId);
 
-	std::function<void()> calling_method = [this, param..., threadId, runThisMethod]{
+	std::function<void()> calling_method = [this, param..., threadId, runThisMethod, OmpThreads]{
 
-		//infinite_loop_running was incremented by the launcher
-		while (this->thread_running[threadId]) {
+		//Set number of OpenMP threads to use on this thread
+		if (OmpThreads && OmpThreads <= omp_get_num_procs()) omp_set_num_threads(OmpThreads);
 
-			CALLFP(this->owner, runThisMethod)(param...);
-		}
+	//infinite_loop_running was incremented by the launcher
+	while (this->thread_running[threadId]) {
 
-		//infinite_loop_thread_active was incremented by the launcher
-		std::atomic_store(&this->thread_active[threadId], false);
+		CALLFP(this->owner, runThisMethod)(param...);
+	}
+
+	//infinite_loop_thread_active was incremented by the launcher
+	std::atomic_store(&this->thread_active[threadId], false);
 	};
 
 	return run_on_thread(calling_method, threadId);
@@ -348,8 +356,8 @@ int Threads<Owner>::single_call_launch(void (Owner::*runThisMethod)(PType...), P
 
 		CALLFP(this->owner, runThisMethod)(param...);
 
-		//this was set to 1 by the launcher
-		std::atomic_store(&this->thread_active[threadId], false);
+	//this was set to 1 by the launcher
+	std::atomic_store(&this->thread_active[threadId], false);
 	};
 
 	return run_on_thread(calling_method, threadId);
@@ -408,8 +416,8 @@ int Threads<Owner>::timed_call_launch(void (Owner::*runThisMethod)(PType...), PT
 			time_elapsed_ms += refresh_ms;
 		}
 
-		//this was set to 1 by the launcher
-		std::atomic_store(&this->thread_active[threadId], false);
+	//this was set to 1 by the launcher
+	std::atomic_store(&this->thread_active[threadId], false);
 	};
 
 	return run_on_thread(calling_method, threadId);

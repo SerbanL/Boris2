@@ -152,7 +152,7 @@ private:
 	bool scale_rects = false;
 
 	//if ferromagnetic meshes touch a dipole mesh then interface magnetic cells are frozen (ode doesn't update them - use skip cell flags) if this flag is true
-	//Moreover the interface cells are set with magnetisation direction along the dipole magnetisation direction. This is an easy way of simulating exchange coupling to the dipoles.
+	//Moreover the interface cells are set with magnetization direction along the dipole magnetization direction. This is an easy way of simulating exchange coupling to the dipoles.
 	bool coupled_dipoles = false;
 
 	//the total calculated energy density -> return by UpdateModules() or UpdateField() methods.
@@ -220,8 +220,8 @@ public:
 	//this will typically involve changing a value across multiple objects, thus better to call this method rather than try to remember which objects need the value changed.
 	void UpdateConfiguration_Values(UPDATECONFIG_ cfgMessage);
 
-	//switch CUDA state on/off
-	BError SwitchCUDAState(bool cudaState);
+	//switch CUDA state on/off; when switching on set selected cuda device number (from 1 up)
+	BError SwitchCUDAState(bool cudaState, int cudaDeviceSelect);
 
 	//---------------------------------------------------------MULTI-MESH CONTROL METHODS : SuperMeshControl.cpp
 
@@ -275,7 +275,7 @@ public:
 	//set ODE evaluation method, applicable to both micromagnetic and atomistic solvers
 	BError SetODEEval(EVAL_ evalMethod);
 
-	//set the time step for the magnetisation solver
+	//set the time step for the magnetization solver
 	void SetTimeStep(double dT);
 
 	//set parameters for adaptive time step control
@@ -375,7 +375,7 @@ public:
 	//set mesh rect for named mesh (any if applicable any other dependent meshes) and update dependent save data rects by calling the provided function.
 	BError SetMeshRect(string meshName, Rect meshRect, std::function<void(string, Rect)> save_data_updater);
 
-	//copy all primary mesh data (magnetisation, elC, Temp, etc.) but do not change dimensions or discretisation
+	//copy all primary mesh data (magnetization, elC, Temp, etc.) but do not change dimensions or discretisation
 	BError copy_mesh_data(string meshName_from, string meshName_to);
 
 	//delete or add rectangle for given mesh
@@ -383,8 +383,8 @@ public:
 	BError setrect(string meshName, Rect rectangle);
 	BError resetrect(string meshName);
 
-	//roughen mesh sides perpendicular to a named axis (axis = "x", "y", "z") to given depth (same units as h) with prng instantiated with given seed.
-	BError RoughenMeshSides(string meshName, string axis, double depth, int seed);
+	//roughen mesh sides (side = "x", "y", "z", "-x", "-y", or "-z") to given depth (same units as h) with prng instantiated with given seed.
+	BError RoughenMeshSides(string meshName, string side, double depth, int seed);
 
 	//Roughen mesh top and bottom surfaces using a jagged pattern to given depth and peak spacing (same units as h) with prng instantiated with given seed.
 	//Rough both top and bottom if sides is empty, else it should be either -z or z.
@@ -401,20 +401,20 @@ public:
 
 	//--------------------------------------------------------- MESH HANDLING - SETTINGS : SuperMeshMeshes_Settings.cpp
 
-	//set magnetisation angle in given mesh (all if meshName not given)
+	//set magnetization angle in given mesh (all if meshName not given)
 	BError SetMagAngle(string meshName, double polar, double azim);
 
-	//set magnetisation angle in given mesh (must be specified), and only in given rectangle of meshName (relative coordinates)
+	//set magnetization angle in given mesh (must be specified), and only in given rectangle of meshName (relative coordinates)
 	BError SetMagAngle_Rect(string meshName, double polar, double azim, Rect rectangle);
 
-	//Invert magnetisation direction in given mesh (must be magnetic)
+	//Invert magnetization direction in given mesh (must be magnetic)
 	BError SetInvertedMag(string meshName, bool x = true, bool y = true, bool z = true);
 
-	//Mirror magnetisation in given axis (literal x, y, or z) in given mesh (must be magnetic)
+	//Mirror magnetization in given axis (literal x, y, or z) in given mesh (must be magnetic)
 	BError SetMirroredMag(string meshName, string axis);
 
 	//Set random magentisation distribution in given mesh (must be magnetic)
-	BError SetRandomMag(string meshName);
+	BError SetRandomMag(string meshName, int seed);
 
 	//longitudinal and transverse are the components specified as string literals : "-z", "-y", "-x", "x", "y", "z"
 	BError SetMagDomainWall(string meshName, string longitudinal, string transverse, double width, double position);

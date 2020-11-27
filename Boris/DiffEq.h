@@ -179,8 +179,8 @@ protected:
 
 	//---------------------------------------- OTHERS
 
-	//Restore magnetisation after a failed step for adaptive time-step methods
-	virtual void RestoreMagnetisation(void) = 0;
+	//Restore magnetization after a failed step for adaptive time-step methods
+	virtual void Restoremagnetization(void) = 0;
 
 	//---------------------------------------- OTHER CALCULATION METHODS
 

@@ -634,9 +634,11 @@ double Convolution<Owner, Kernel>::Convolute_2D(VEC<DBL3> &In1, VEC<DBL3> &In2, 
 template <typename Owner, typename Kernel>
 double Convolution<Owner, Kernel>::Convolute_3D(VEC<DBL3> &In, VEC<DBL3> &Out, bool clearOut)
 {	
+	//3D
+
 	//1. FFTs along x
 	for (int k = 0; k < n.z; k++) {
-	#pragma omp parallel for
+#pragma omp parallel for
 		for (int j = 0; j < n.y; j++) {
 
 			int tn = omp_get_thread_num();

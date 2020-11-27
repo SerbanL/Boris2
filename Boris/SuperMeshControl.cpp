@@ -134,8 +134,9 @@ void SuperMesh::UpdateConfiguration_Values(UPDATECONFIG_ cfgMessage)
 	atom_odeSolver.UpdateConfiguration_Values(cfgMessage);
 }
 
-//switch CUDA state on/off
-BError SuperMesh::SwitchCUDAState(bool cudaState)
+
+//switch CUDA state on/off; when switching on set selected cuda device number (from 0 up)
+BError SuperMesh::SwitchCUDAState(bool cudaState, int cudaDeviceSelect)
 {
 	BError error(CLASS_STR(SuperMesh));
 
@@ -144,6 +145,13 @@ BError SuperMesh::SwitchCUDAState(bool cudaState)
 	//Switch for SuperMesh
 
 	if (cudaState) {
+		
+		//Select indicated CUDA device if possible
+		if (cudaDeviceSelect < cudaDeviceVersions.size() && cudaDeviceVersions[cudaDeviceSelect].first == __CUDA_ARCH__) {
+
+			cudaSetDevice(cudaDeviceSelect);
+		}
+		else return error(BERROR_CUDAVERSIONMISMATCH_NCRIT);
 
 		if (!pSMeshCUDA) {
 
@@ -197,8 +205,8 @@ BError SuperMesh::SwitchCUDAState(bool cudaState)
 }
 
 //couple magnetic meshes to any touching dipole meshes, setting interface cell values and flags
-//this is used for moving mesh algorithm, in particular for domain wall simulations, where effectively an infinite wire is achieved by removing end magnetic charges, and setting exchange coupling to dipole magnetisation direction.
-//Magnetic charges remove using stray field from dipoles; "exchange coupling" achieved by setting skip cells at the ends of the wire: i.e. cells which are not updated by the ODE solver, and have magnetisation direction along the dipole direction 
+//this is used for moving mesh algorithm, in particular for domain wall simulations, where effectively an infinite wire is achieved by removing end magnetic charges, and setting exchange coupling to dipole magnetization direction.
+//Magnetic charges remove using stray field from dipoles; "exchange coupling" achieved by setting skip cells at the ends of the wire: i.e. cells which are not updated by the ODE solver, and have magnetization direction along the dipole direction 
 void SuperMesh::CoupleToDipoles(void)
 {
 	for (int idx = 0; idx < (int)pMesh.size(); idx++) {

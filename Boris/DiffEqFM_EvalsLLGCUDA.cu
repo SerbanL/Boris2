@@ -63,7 +63,7 @@ __global__ void RunEuler_LLG_withReductions_Kernel(ManagedDiffEqFMCUDA& cuDiffEq
 		}
 	}
 
-	//only reduce for dmdt (and mxh) if grel is not zero (if it's zero this means magnetisation dynamics is disabled in this mesh)
+	//only reduce for dmdt (and mxh) if grel is not zero (if it's zero this means magnetization dynamics is disabled in this mesh)
 	if (cuMesh.pgrel->get0()) {
 
 		reduction_avg(0, 1, &mxh, *cuDiffEq.pmxh_av, *cuDiffEq.pavpoints);
@@ -154,7 +154,7 @@ __global__ void RunTEuler_Step0_LLG_withReductions_Kernel(ManagedDiffEqFMCUDA& c
 		}
 	}
 
-	//only reduce for mxh if grel is not zero (if it's zero this means magnetisation dynamics is disabled in this mesh)
+	//only reduce for mxh if grel is not zero (if it's zero this means magnetization dynamics is disabled in this mesh)
 	if (cuMesh.pgrel->get0()) {
 
 		reduction_avg(0, 1, &mxh, *cuDiffEq.pmxh_av, *cuDiffEq.pavpoints);
@@ -239,7 +239,7 @@ __global__ void RunTEuler_Step1_LLG_withReductions_Kernel(ManagedDiffEqFMCUDA& c
 		}
 	}
 
-	//only reduce for dmdt if grel is not zero (if it's zero this means magnetisation dynamics is disabled in this mesh)
+	//only reduce for dmdt if grel is not zero (if it's zero this means magnetization dynamics is disabled in this mesh)
 	if (cuMesh.pgrel->get0()) {
 
 		reduction_avg(0, 1, &dmdt, *cuDiffEq.pdmdt_av, *cuDiffEq.pavpoints2);
@@ -343,7 +343,7 @@ __global__ void RunAHeun_Step1_LLG_withReductions_Kernel(ManagedDiffEqFMCUDA& cu
 		}
 	}
 
-	//only reduce for dmdt if grel is not zero (if it's zero this means magnetisation dynamics is disabled in this mesh)
+	//only reduce for dmdt if grel is not zero (if it's zero this means magnetization dynamics is disabled in this mesh)
 	if (cuMesh.pgrel->get0()) {
 
 		reduction_avg(0, 1, &dmdt, *cuDiffEq.pdmdt_av, *cuDiffEq.pavpoints2);
@@ -443,7 +443,7 @@ __global__ void RunRK4_Step0_LLG_withReductions_Kernel(ManagedDiffEqFMCUDA& cuDi
 		}
 	}
 
-	//only reduce for mxh if grel is not zero (if it's zero this means magnetisation dynamics is disabled in this mesh)
+	//only reduce for mxh if grel is not zero (if it's zero this means magnetization dynamics is disabled in this mesh)
 	if (cuMesh.pgrel->get0()) {
 
 		reduction_max(0, 1, &mxh, *cuDiffEq.pmxh);
@@ -583,7 +583,7 @@ __global__ void RunRK4_Step3_LLG_withReductions_Kernel(ManagedDiffEqFMCUDA& cuDi
 		}
 	}
 
-	//only reduce for dmdt if grel is not zero (if it's zero this means magnetisation dynamics is disabled in this mesh)
+	//only reduce for dmdt if grel is not zero (if it's zero this means magnetization dynamics is disabled in this mesh)
 	if (cuMesh.pgrel->get0()) {
 
 		reduction_max(0, 1, &dmdt, *cuDiffEq.pdmdt);
@@ -680,7 +680,7 @@ __global__ void RunABM_Predictor_LLG_withReductions_Kernel(ManagedDiffEqFMCUDA& 
 		}
 	}
 
-	//only reduce for mxh if grel is not zero (if it's zero this means magnetisation dynamics is disabled in this mesh)
+	//only reduce for mxh if grel is not zero (if it's zero this means magnetization dynamics is disabled in this mesh)
 	if (cuMesh.pgrel->get0()) {
 
 		reduction_max(0, 1, &mxh, *cuDiffEq.pmxh);
@@ -788,7 +788,7 @@ __global__ void RunABM_Corrector_LLG_withReductions_Kernel(ManagedDiffEqFMCUDA& 
 		}
 	}
 
-	//only reduce for dmdt if grel is not zero (if it's zero this means magnetisation dynamics is disabled in this mesh)
+	//only reduce for dmdt if grel is not zero (if it's zero this means magnetization dynamics is disabled in this mesh)
 	if (cuMesh.pgrel->get0()) {
 
 		reduction_max(0, 1, &dmdt, *cuDiffEq.pdmdt);
@@ -967,7 +967,7 @@ __global__ void RunRKF45_Step0_LLG_withReductions_Kernel(ManagedDiffEqFMCUDA& cu
 		}
 	}
 
-	//only reduce for mxh if grel is not zero (if it's zero this means magnetisation dynamics is disabled in this mesh)
+	//only reduce for mxh if grel is not zero (if it's zero this means magnetization dynamics is disabled in this mesh)
 	if (cuMesh.pgrel->get0()) {
 
 		reduction_max(0, 1, &mxh, *cuDiffEq.pmxh);
@@ -1167,7 +1167,7 @@ __global__ void RunRKF45_Step5_LLG_withReductions_Kernel(ManagedDiffEqFMCUDA& cu
 		}
 	}
 
-	//only reduce for dmdt if grel is not zero (if it's zero this means magnetisation dynamics is disabled in this mesh)
+	//only reduce for dmdt if grel is not zero (if it's zero this means magnetization dynamics is disabled in this mesh)
 	if (cuMesh.pgrel->get0()) {
 
 		reduction_max(0, 1, &dmdt, *cuDiffEq.pdmdt);

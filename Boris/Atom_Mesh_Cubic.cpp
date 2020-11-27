@@ -341,7 +341,7 @@ void Atom_Mesh_Cubic::CoupleToDipoles(bool status)
 
 				if (status) {
 
-					//set interface cells to have magnetisation direction along the touching dipole direction
+					//set interface cells to have magnetization direction along the touching dipole direction
 					DBL3 Mdipole_direction = dynamic_cast<Atom_Mesh*>((*pSMesh)[idx])->GetAverageMoment().normalized();
 
 					Box box = M1.box_from_rect_max(mesh_intersection);
@@ -378,7 +378,7 @@ double Atom_Mesh_Cubic::CheckMoveMesh(void)
 
 	if (!move_mesh_trigger) return 0;
 
-	//the ends should not be completely empty, and must have a constant magnetisation direction
+	//the ends should not be completely empty, and must have a constant magnetization direction
 	int cells_fixed = (int)ceil_epsilon((double)n.x * MOVEMESH_ENDRATIO);
 
 	DBL3 M_end = M1.average_omp(Box(0, 0, 0, cells_fixed, n.y, n.z));

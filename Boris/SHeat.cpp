@@ -112,7 +112,7 @@ BError SHeat::MakeCUDAModule(void)
 
 double SHeat::UpdateField(void)
 {
-	//only need to update this after an entire magnetisation equation time step is solved
+	//only need to update this after an entire magnetization equation time step is solved
 	//also if heat_dT is set to zero skip the heat equation solver : this will maintain a fixed temperature
 	if (!pSMesh->CurrentTimeStepSolved() || heat_dT < MINTIMESTEP) return 0.0;
 

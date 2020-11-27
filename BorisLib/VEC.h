@@ -217,6 +217,12 @@ public:
 	//In between these random values use bi-linear interpolation. The random values are spaced in the xy plane at equal distances along x or y using the spacing value (same units as the VEC rect)
 	bool generate_jagged(DBL3 new_h, Rect new_rect, DBL2 range, double spacing, unsigned seed) { return true; }
 
+	//absorbing boundary conditions polynomial slopes: set VEC dimensions and generate polynomial slopes at slides
+	//polynomial slopes at slides with exponent n, starting from maximum value at surfaces, proceeding inwards towards minimum up to a depth of length * ratio
+	//abl_x, abl_y, abl_z : depth ratio for negative side, depth ratio for positive side
+	//values : minimum centre, maximum outer, polynomial exponent
+	bool generate_ablpol(DBL3 new_h, Rect new_rect, DBL2 abl_x, DBL2 abl_y, DBL2 abl_z, DBL3 values) { return true; }
+
 	//voronoi 2D: set VEC dimensions (force 2D in xy plane) and generate random values in the given range with each value fixed in a voronoi cell, and average spacing (prng instantiated with given seed).
 	bool generate_voronoi2d(DBL3 new_h, Rect new_rect, DBL2 range, double spacing, unsigned seed);
 
@@ -224,20 +230,20 @@ public:
 	bool generate_voronoi3d(DBL3 new_h, Rect new_rect, DBL2 range, double spacing, unsigned seed);
 
 	//voronoi boundary 2D: set VEC dimensions (force 2D in xy plane) and generate voronoi 2d tessellation with average spacing. Set coefficient values randomly in the given range only at the Voronoi cell boundaries (prng instantiated with given seed).
-	bool generate_voronoiboundary2d(DBL3 new_h, Rect new_rect, DBL2 range, VType base_value, double spacing, int seed);
+	bool generate_voronoiboundary2d(DBL3 new_h, Rect new_rect, DBL2 range, VType base_value, double spacing, unsigned seed);
 
 	//voronoi boundary 3D: set VEC dimensions and generate voronoi 3d tessellation with average spacing. Set coefficient values randomly in the given range only at the Voronoi cell boundaries (prng instantiated with given seed).
-	bool generate_voronoiboundary3d(DBL3 new_h, Rect new_rect, DBL2 range, VType base_value, double spacing, int seed);
+	bool generate_voronoiboundary3d(DBL3 new_h, Rect new_rect, DBL2 range, VType base_value, double spacing, unsigned seed);
 
 	//voronoi rotations 2D: set VEC dimensions (force 2D in xy plane) and generate voronoi 2d tessellation with average spacing. This method is applicable only to DBL3 PType, where a rotation operation is applied, fixed in each Voronoi cell. 
 	//The rotation uses the values for polar (theta) and azimuthal (phi) angles specified in given ranges in degrees. prng instantiated with given seed.
 	//specialised for DBL3 only : applies rotation to vector
-	bool generate_voronoirotation2d(DBL3 new_h, Rect new_rect, DBL2 theta, DBL2 phi, double spacing, int seed) { return true; }
+	bool generate_voronoirotation2d(DBL3 new_h, Rect new_rect, DBL2 theta, DBL2 phi, double spacing, unsigned seed) { return true; }
 
 	//voronoi rotations 3D: set VEC dimensions and generate voronoi 3d tessellation with average spacing. This method is applicable only to DBL3 PType, where a rotation operation is applied, fixed in each Voronoi cell. 
 	//The rotation uses the values for polar (theta) and azimuthal (phi) angles specified in given ranges in degrees. prng instantiated with given seed.
 	//specialised for DBL3 only : applies rotation to vector
-	bool generate_voronoirotation3d(DBL3 new_h, Rect new_rect, DBL2 theta, DBL2 phi, double spacing, int seed) { return true; }
+	bool generate_voronoirotation3d(DBL3 new_h, Rect new_rect, DBL2 theta, DBL2 phi, double spacing, unsigned seed) { return true; }
 
 	//--------------------------------------------GETTERS : VEC_aux.h
 

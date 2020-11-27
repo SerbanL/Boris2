@@ -17,7 +17,7 @@ Atom_DifferentialEquationCubic::~Atom_DifferentialEquationCubic()
 
 //---------------------------------------- OTHERS
 
-//Restore magnetisation after a failed step for adaptive time-step methods
+//Restore magnetization after a failed step for adaptive time-step methods
 void Atom_DifferentialEquationCubic::RestoreMoments(void)
 {
 #pragma omp parallel for

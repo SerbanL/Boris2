@@ -44,7 +44,7 @@ public:
 	cu_obj<MatPCUDA<cuBReal, cuBReal>> alpha;
 	cu_obj<MatPCUDA<cuReal2, cuBReal>> alpha_AFM;
 
-	//Saturation magnetisation (A/m)
+	//Saturation magnetization (A/m)
 	cu_obj<MatPCUDA<cuBReal, cuBReal>> Ms;
 	cu_obj<MatPCUDA<cuReal2, cuBReal>> Ms_AFM;
 
@@ -79,7 +79,7 @@ public:
 	cu_obj<MatPCUDA<cuBReal, cuBReal>> J1;
 	cu_obj<MatPCUDA<cuBReal, cuBReal>> J2;
 
-	//surface exchange coupling per magnetisation from a diamagnet (J/Am) - EXPERIMENTAL : Hse = neta * sus * Hext / mu0 * Ms * tF
+	//surface exchange coupling per magnetization from a diamagnet (J/Am) - EXPERIMENTAL : Hse = neta * sus * Hext / mu0 * Ms * tF
 	cu_obj<MatPCUDA<cuBReal, cuBReal>> neta_dia;
 
 	//Magneto-crystalline anisotropy K1 and K2 constants (J/m^3) and easy axes directions. For uniaxial anisotropy only ea1 is needed, for cubic ea1 and ea2 should be orthogonal.
@@ -127,7 +127,7 @@ public:
 	//electron carrier density (1/m^3)
 	cu_obj<MatPCUDA<cuBReal, cuBReal>> n_density;
 
-	//diffusion spin polarisation (unitless)
+	//diffusion spin polarization (unitless)
 	cu_obj<MatPCUDA<cuBReal, cuBReal>> betaD;
 
 	//spin Hall angle (unitless)

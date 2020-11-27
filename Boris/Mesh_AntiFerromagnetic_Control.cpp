@@ -42,7 +42,7 @@ void AFMesh::SetMagAngle(double polar, double azim, Rect rectangle)
 	}
 }
 
-//Invert magnetisation direction in given mesh (must be magnetic)
+//Invert magnetization direction in given mesh (must be magnetic)
 void AFMesh::SetInvertedMag(bool x, bool y, bool z)
 {
 #if COMPILECUDA == 1
@@ -74,7 +74,7 @@ void AFMesh::SetInvertedMag(bool x, bool y, bool z)
 #endif
 }
 
-//Mirror magnetisation in given axis (literal x, y, or z) in given mesh (must be magnetic)
+//Mirror magnetization in given axis (literal x, y, or z) in given mesh (must be magnetic)
 void AFMesh::SetMirroredMag(string axis)
 {
 #if COMPILECUDA == 1
@@ -165,8 +165,8 @@ void AFMesh::SetMirroredMag(string axis)
 #endif
 }
 
-//Set random magnetisation distribution in given mesh (must be magnetic)
-void AFMesh::SetRandomMag(void)
+//Set random magnetization distribution in given mesh (must be magnetic)
+void AFMesh::SetRandomMag(int seed)
 {
 #if COMPILECUDA == 1
 	//refresh M from gpu memory
@@ -177,7 +177,7 @@ void AFMesh::SetRandomMag(void)
 	}
 #endif
 
-	BorisRand prng(GetSystemTickCount());
+	BorisRand prng(seed);
 
 #pragma omp parallel for
 	for (int idx = 0; idx < M.linear_size(); idx++) {

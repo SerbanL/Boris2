@@ -59,7 +59,7 @@ BError SuperMesh::SetMeshRect(string meshName, Rect meshRect, std::function<void
 	return error;
 }
 
-//copy all primary mesh data (magnetisation, elC, Temp, etc.) but do not change dimensions or discretisation
+//copy all primary mesh data (magnetization, elC, Temp, etc.) but do not change dimensions or discretisation
 BError SuperMesh::copy_mesh_data(string meshName_from, string meshName_to)
 {
 	BError error(__FUNCTION__);
@@ -104,16 +104,16 @@ BError SuperMesh::resetrect(string meshName)
 	return error;
 }
 
-//roughen mesh sides perpendicular to a named axis (axis = "x", "y", "z") to given depth (same units as h) with prng instantiated with given seed.
-BError SuperMesh::RoughenMeshSides(string meshName, string axis, double depth, int seed)
+//roughen mesh sides (side = "x", "y", "z", "-x", "-y", or "-z") to given depth (same units as h) with prng instantiated with given seed.
+BError SuperMesh::RoughenMeshSides(string meshName, string side, double depth, int seed)
 {
 	BError error(__FUNCTION__);
 
 	if (!contains(meshName)) return error(BERROR_INCORRECTNAME);
 
-	if ((axis != "x" && axis != "y" && axis != "z") || depth <= 0 || seed < 1) return error(BERROR_INCORRECTVALUE);
+	if ((side != "x" && side != "y" && side != "z" && side != "-x" && side != "-y" && side != "-z") || depth <= 0 || seed < 1) return error(BERROR_INCORRECTVALUE);
 
-	error = pMesh[meshName]->RoughenMeshSides(axis, depth, seed);
+	error = pMesh[meshName]->RoughenMeshSides(side, depth, seed);
 
 	return error;
 }

@@ -191,7 +191,7 @@ void STransportCUDA::UpdateField(void)
 	//skip any transport solver computations if static_transport_solver is enabled : transport solver will be interated only at the end of a step or stage
 	if (pSMesh->static_transport_solver) return;
 
-	//only need to update this after an entire magnetisation equation time step is solved (but always update spin accumulation field if spin current solver enabled)
+	//only need to update this after an entire magnetization equation time step is solved (but always update spin accumulation field if spin current solver enabled)
 	if (pSMesh->CurrentTimeStepSolved()) {
 
 		//use V or I equation to set electrode potentials? time dependence only

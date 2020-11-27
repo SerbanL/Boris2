@@ -21,7 +21,7 @@ __global__ void Demag_NCUDA_Cubic_UpdateField(ManagedAtom_MeshCUDA& cuaMesh, cuB
 
 	if (idx < Heff1.linear_size()) {
 
-		//used to convert moment to magnetisation in each atomistic unit cell
+		//used to convert moment to magnetization in each atomistic unit cell
 		cuBReal conversion = (cuBReal)MUB / M1.h.dim();
 
 		cuReal3 Heff_value = cuReal3();

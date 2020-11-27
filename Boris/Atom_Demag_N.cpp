@@ -82,7 +82,7 @@ double Atom_Demag_N::UpdateField(void)
 {
 	double energy = 0;
 
-	//used to convert moment to magnetisation in each atomistic unit cell
+	//used to convert moment to magnetization in each atomistic unit cell
 	double conversion = MUB / paMesh->M1.h.dim();
 
 #pragma omp parallel for reduction (+:energy)

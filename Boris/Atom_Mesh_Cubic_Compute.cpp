@@ -49,7 +49,7 @@ double Atom_Mesh_Cubic::Show_Transition_Temperature(void)
 	return J * spinwave_factor * coordination_number / (3 * BOLTZMANN);
 }
 
-//return saturation magnetisation (A/m) based on formula Ms = mu_s*n/a^3
+//return saturation magnetization (A/m) based on formula Ms = mu_s*n/a^3
 double Atom_Mesh_Cubic::Show_Ms(void)
 {
 	return mu_s * (MUB / h.dim()) * atoms_per_cell;

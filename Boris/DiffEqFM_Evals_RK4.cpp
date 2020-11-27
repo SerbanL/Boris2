@@ -40,7 +40,7 @@ void DifferentialEquationFM::RunRK4_Step0_withReductions(void)
 
 	if (pMesh->grel.get0()) {
 
-		//only reduce for mxh if grel is not zero (if it's zero this means magnetisation dynamics are disabled in this mesh)
+		//only reduce for mxh if grel is not zero (if it's zero this means magnetization dynamics are disabled in this mesh)
 		mxh_reduction.maximum();
 	}
 	else {
@@ -143,7 +143,7 @@ void DifferentialEquationFM::RunRK4_Step3_withReductions(void)
 
 	if (pMesh->grel.get0()) {
 
-		//only reduce for dmdt if grel is not zero (if it's zero this means magnetisation dynamics are disabled in this mesh)
+		//only reduce for dmdt if grel is not zero (if it's zero this means magnetization dynamics are disabled in this mesh)
 		dmdt_reduction.maximum();
 	}
 	else {

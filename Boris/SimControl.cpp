@@ -59,24 +59,26 @@ void Simulation::ComputeFields(void)
 	}
 	else {
 
+		BError error;
 		BD.DisplayConsoleMessage("Initializing modules...");
 
 		bool initialization_error;
 
 		if (!cudaEnabled) {
 
-			initialization_error = err_hndl.qcall(&SuperMesh::InitializeAllModules, &SMesh);
+			initialization_error = err_hndl.qcall(error, &SuperMesh::InitializeAllModules, &SMesh);
 		}
 		else {
 
 #if COMPILECUDA == 1
-			initialization_error = err_hndl.qcall(&SuperMesh::InitializeAllModulesCUDA, &SMesh);
+			initialization_error = err_hndl.qcall(error, &SuperMesh::InitializeAllModulesCUDA, &SMesh);
 #endif
 		}
 
 		if (initialization_error) {
 
 			BD.DisplayConsoleError("Failed to initialize simulation.");
+			err_hndl.show_error(error, true);
 			return;
 		}
 	}
@@ -107,21 +109,23 @@ void Simulation::RunSimulation(void)
 
 	BD.DisplayConsoleMessage("Initializing modules...");
 
+	BError error;
 	bool initialization_error;
 
 	if (!cudaEnabled) {
 
-		initialization_error = err_hndl.qcall(&SuperMesh::InitializeAllModules, &SMesh);
+		initialization_error = err_hndl.qcall(error, &SuperMesh::InitializeAllModules, &SMesh);
 	}
 	else {
 #if COMPILECUDA == 1
-		initialization_error = err_hndl.qcall(&SuperMesh::InitializeAllModulesCUDA, &SMesh);
+		initialization_error = err_hndl.qcall(error, &SuperMesh::InitializeAllModulesCUDA, &SMesh);
 #endif
 	}
 
 	if (initialization_error) {
 
 		BD.DisplayConsoleError("Failed to initialize simulation.");
+		err_hndl.show_error(error, true);
 		return;
 	}
 
@@ -135,7 +139,7 @@ void Simulation::RunSimulation(void)
 		}
 	}
 
-	infinite_loop_launch(&Simulation::Simulate, THREAD_LOOP);
+	infinite_loop_launch(&Simulation::Simulate, THREAD_LOOP, OmpThreads);
 	BD.DisplayConsoleMessage("Initialized. Simulation running. Started at: " + Get_Date_Time());
 
 	sim_start_ms = GetSystemTickCount();

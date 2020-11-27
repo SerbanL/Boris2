@@ -17,7 +17,7 @@
 
 void Atom_DifferentialEquationCubic::RunSD_Start(void)
 {
-	//set new magnetisation vectors
+	//set new magnetization vectors
 #pragma omp parallel for
 	for (int idx = 0; idx < paMesh->n.dim(); idx++) {
 
@@ -89,7 +89,7 @@ void Atom_DifferentialEquationCubic::RunSD_BB(void)
 	double _delta_G_sq = 0.0;
 	double _delta_M_dot_delta_G = 0.0;
 
-	//set new magnetisation vectors
+	//set new magnetization vectors
 #pragma omp parallel for reduction(+:_delta_M_sq, _delta_G_sq, _delta_M_dot_delta_G)
 	for (int idx = 0; idx < paMesh->n.dim(); idx++) {
 

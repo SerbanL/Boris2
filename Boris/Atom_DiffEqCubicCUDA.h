@@ -127,7 +127,7 @@ public:
 
 	//---------------------------------------- OTHERS
 
-	//Restore magnetisation after a failed step for adaptive time-step methods
+	//Restore magnetization after a failed step for adaptive time-step methods
 	void RestoreMoments(void);
 
 	//----------------------------------- GETTERS
@@ -257,8 +257,8 @@ public:
 
 	//---------------------------------------- OTHERS
 
-	//Restore magnetisation after a failed step for adaptive time-step methods
-	void RestoreMagnetisation(void) {}
+	//Restore magnetization after a failed step for adaptive time-step methods
+	void Restoremagnetization(void) {}
 
 	//----------------------------------- GETTERS
 

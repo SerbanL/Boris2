@@ -154,7 +154,7 @@ public:
 
 	//---------------------------------------- OTHERS : DiffEqDM.cpp
 
-	void RestoreMagnetisation(void);
+	void Restoremagnetization(void);
 
 	//---------------------------------------- OTHER CALCULATION METHODS : DiffEqDM_SEquations.cpp
 
@@ -330,7 +330,7 @@ public:
 
 	//---------------------------------------- OTHERS : DiffEqFM.cpp
 
-	void RestoreMagnetisation(void) {}
+	void Restoremagnetization(void) {}
 
 	//---------------------------------------- OTHER CALCULATION METHODS : DiffEqFM_SEquations.cpp
 

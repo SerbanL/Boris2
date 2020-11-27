@@ -42,7 +42,7 @@ __global__ void MElasticCUDA_UpdateField_FM(ManagedMeshCUDA& cuMesh, cuBReal& en
 			//yz, xz, xy
 			cuReal3 Sod = strain_odiag[position];
 
-			//normalised magnetisation
+			//normalised magnetization
 			//Magneto-elastic term here applicable for a cubic crystal. We use the mcanis_ea1 and mcanis_ea2 axes to fix the cubic lattice orientation, thus rotate the m, Sd and Sod vectors.
 
 			cuReal3 m = cuReal3(M[idx] * mcanis_ea1, M[idx] * mcanis_ea2, M[idx] * mcanis_ea3) / Ms;

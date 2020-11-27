@@ -86,7 +86,7 @@ string Simulation::Build_Mesh_ListLine(int meshIndex)
 		"</c> [sa1/sa]Magnetic cell " + MakeIO(IOI_MESHCELLSIZE, meshIndex) +
 		"</c> [sa2/sa]Electric cell " + MakeIO(IOI_MESHECELLSIZE, meshIndex) +
 		"</c> [sa3/sa]Thermal cell " + MakeIO(IOI_MESHTCELLSIZE, meshIndex) +
-		"</c> [sa4/sa]Mechanical cell " + MakeIO(IOI_MESHMCELLSIZE, meshIndex);
+		"</c> [sa4/sa]Mechanical cell " + MakeIO(IOI_MESHMCELLSIZE, meshIndex) + "</c>";
 
 	return mesh_line;
 }
@@ -860,7 +860,13 @@ string Simulation::Build_Speedup_ListLine(int meshIndex)
 
 void Simulation::Print_CUDAStatus(void)
 {
-	string cuda_info = "[tc1,1,1,1/tc]CUDA status : " + MakeIO(IOI_CUDASTATE, cudaEnabled);
+	string cuda_info = "[tc1,1,1,1/tc]CUDA status : " + MakeIO(IOI_CUDASTATE, cudaEnabled) + "\n";
+	cuda_info += "</c>[tc1,1,1,1/tc]Available CUDA devices ([tc0,0.5,0,1/tc]green: [tc1,1,1,1/tc]selected, [tc1,0,0,1/tc]red: [tc1,1,1,1/tc]not selected and available, [tc0.5,0.5,0.5,1/tc]gray: [tc1,1,1,1/tc]not available - device CUDA Compute version mismatch)\n";
+
+	for (int idx = 0; idx < cudaDeviceVersions.size(); idx++) {
+
+		cuda_info += "</c>[tc1,1,1,1/tc]Device " + ToString(idx) + " : " + MakeIO(IOI_CUDADEVICE, idx) + "\n";
+	}
 
 	BD.DisplayFormattedConsoleMessage(cuda_info);
 }
@@ -924,9 +930,30 @@ void Simulation::Print_StartupOptions(void)
 {
 	string startup_info = "[tc1,1,1,1/tc]Check for updates on startup : [sa0/sa]" + MakeIO(IOI_UPDATESTATUSCHECKSTARTUP, start_check_updates);
 	startup_info += "</c>\n[tc1,1,1,1/tc]Start script server on startup : [sa0/sa]" + MakeIO(IOI_SCRIPTSERVERSTARTUP, start_scriptserver);
+	startup_info += "</c>\n[tc1,1,1,1/tc]Server port : [sa0/sa]" + MakeIO(IOI_SERVERPORT, server_port) + "</c>[tc1,1,1,1/tc] with receive sleep (ms) : " + MakeIO(IOI_SERVERSLEEPMS, server_recv_sleep_ms);
 	startup_info += "</c>\n[tc1,1,1,1/tc]Error log status : [sa0/sa]" + MakeIO(IOI_ERRORLOGSTATUS, log_errors);
+	startup_info += "</c>\n[tc1,1,1,1/tc]CPU Threads : [sa0/sa]" + MakeIO(IOI_THREADS, OmpThreads);
 
 	BD.DisplayFormattedConsoleMessage(startup_info);
+}
+
+//---------------------------------------------------- NUMBER OF THREADS
+
+void Simulation::Print_Threads(void)
+{
+	string threads_info = "[tc1,1,1,1/tc]Number of threads : " + MakeIO(IOI_THREADS, OmpThreads);
+
+	BD.DisplayFormattedConsoleMessage(threads_info);
+}
+
+//---------------------------------------------------- SCRIPT SERVER INFO
+
+void Simulation::Print_ServerInfo(void)
+{
+	string server_info = "[tc1,1,1,1/tc]Server port : " + MakeIO(IOI_SERVERPORT, server_port);
+	server_info += "</c>[tc1,1,1,1/tc] with receive sleep (ms) : " + MakeIO(IOI_SERVERSLEEPMS, server_recv_sleep_ms);
+
+	BD.DisplayFormattedConsoleMessage(server_info);
 }
 
 //---------------------------------------------------- NEIGHBORING MESHES EXCHANGE COUPLING

@@ -155,7 +155,7 @@ public:
 	void SetMirroredMag(string axis);
 
 	//Set random magentisation distribution in given mesh (must be magnetic)
-	void SetRandomMag(void);
+	void SetRandomMag(int seed);
 
 	//set a domain wall with given width (metric units) at position within mesh (metric units). 
 	//Longitudinal and transverse are magnetisation componets as: 1: x, 2: y, 3: z, 1: -x, 2: -y, 3: -z

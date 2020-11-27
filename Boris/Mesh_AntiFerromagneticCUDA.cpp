@@ -48,13 +48,13 @@ BError AFMeshCUDA::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 cuBReal AFMeshCUDA::CheckMoveMesh(bool antisymmetric, double threshold)
 {
 	//move mesh algorithm applied to systems containing domain walls in order to simulate domain wall movement.
-	//In this case the magnetisation at the ends of the mesh must be fixed (magnetisation evolver not applied to the ends).
-	//Find the average magnetisation projected along the absolute direction of the magnetisation at the ends.
+	//In this case the magnetization at the ends of the mesh must be fixed (magnetization evolver not applied to the ends).
+	//Find the average magnetization projected along the absolute direction of the magnetization at the ends.
 	//For a domain wall at the centre this value should be close to zero. If it exceeds a threshold then move mesh by a cellsize along +x or -x.
 
 	if (!pAFMesh->move_mesh_trigger) return 0;
 
-	//the ends should not be completely empty, and must have a constant magnetisation direction
+	//the ends should not be completely empty, and must have a constant magnetization direction
 	int cells_fixed = (int)ceil_epsilon((double)n.x * MOVEMESH_ENDRATIO);
 
 	cuReal3 M_end = M()->average(n.dim(), cuBox(0, 0, 0, cells_fixed, n.y, n.z));

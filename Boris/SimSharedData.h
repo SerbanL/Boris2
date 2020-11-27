@@ -80,6 +80,9 @@ protected:
 	static size_t cpuMemFree_MB;
 	static size_t cpuMemTotal_MB;
 
+	//collect available cuda device major versions here, indexed from 0
+	static std::vector<std::pair<int, std::string>> cudaDeviceVersions;
+
 public:
 
 	//if set to true, the transport solver is iterated only at the end of a step or stage

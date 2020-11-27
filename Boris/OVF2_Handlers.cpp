@@ -338,7 +338,7 @@ BError OVF2::Read_OVF2_SCA(std::string fileName, VECType& data)
 
 								read_line(bdin, line);
 
-								data[INT3(i, j, k)] = ToNum(string(line));
+								data[INT3(i, j, k)] = ToNum(trim_leading_spaces(string(line)));
 							}
 						}
 					}
@@ -666,7 +666,7 @@ BError OVF2::Read_OVF2_VEC(std::string fileName, VECType& data)
 								read_line(bdin, line);
 
 								//typically data is space-seaprated, but allow tab-separated text data too
-								vector<string> fields = split(string(line), { " ", "\t" });
+								vector<string> fields = split(trim_leading_spaces(string(line)), { " ", "\t" });
 
 								if (fields.size() >= 3) {
 

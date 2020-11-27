@@ -43,7 +43,7 @@ double Atom_Mesh_Cubic::GetTopologicalCharge(Rect rectangle)
 	else return 0.0;
 }
 
-//get average magnetisation in given rectangle (entire mesh if none specified)
+//get average magnetization in given rectangle (entire mesh if none specified)
 DBL3 Atom_Mesh_Cubic::GetAverageMoment(Rect rectangle)
 {
 #if COMPILECUDA == 1

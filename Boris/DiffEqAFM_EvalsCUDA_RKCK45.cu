@@ -44,7 +44,7 @@ __global__ void RunRKCK45_Step0_withReductions_Kernel(ManagedDiffEqAFMCUDA& cuDi
 		}
 	}
 
-	//only reduce for mxh if grel is not zero (if it's zero this means magnetisation dynamics is disabled in this mesh)
+	//only reduce for mxh if grel is not zero (if it's zero this means magnetization dynamics is disabled in this mesh)
 	if (cuMesh.pgrel->get0()) {
 
 		reduction_max(0, 1, &mxh, *cuDiffEq.pmxh);
@@ -209,7 +209,7 @@ __global__ void RunRKCK45_Step5_withReductions_Kernel(ManagedDiffEqAFMCUDA& cuDi
 		}
 	}
 
-	//only reduce for dmdt if grel is not zero (if it's zero this means magnetisation dynamics is disabled in this mesh)
+	//only reduce for dmdt if grel is not zero (if it's zero this means magnetization dynamics is disabled in this mesh)
 	if (cuMesh.pgrel->get0()) {
 
 		reduction_max(0, 1, &dmdt, *cuDiffEq.pdmdt);

@@ -154,11 +154,11 @@ Any Simulation::GetDataValue(DatumConfig dConfig)
 	{
 		if (!SMesh[dConfig.meshName]->is_atomistic()) {
 
-			return Any(dynamic_cast<Mesh*>(SMesh[dConfig.meshName])->GetAverageMagnetisation(dConfig.rectangle));
+			return Any(dynamic_cast<Mesh*>(SMesh[dConfig.meshName])->GetAveragemagnetization(dConfig.rectangle));
 		}
 		else {
 
-			//return average magnetisation in the atomistic cell also : average atomistic moment (averaged over all participating unit cells), divided by unit cell volume
+			//return average magnetization in the atomistic cell also : average atomistic moment (averaged over all participating unit cells), divided by unit cell volume
 			return Any(dynamic_cast<Atom_Mesh*>(SMesh[dConfig.meshName])->GetAverageMoment(dConfig.rectangle) * MUB / SMesh[dConfig.meshName]->h.dim());
 		}
 	}
@@ -168,7 +168,7 @@ Any Simulation::GetDataValue(DatumConfig dConfig)
 	{
 		if (!SMesh[dConfig.meshName]->is_atomistic()) {
 
-			return Any(dynamic_cast<Mesh*>(SMesh[dConfig.meshName])->GetAverageMagnetisation2(dConfig.rectangle));
+			return Any(dynamic_cast<Mesh*>(SMesh[dConfig.meshName])->GetAveragemagnetization2(dConfig.rectangle));
 		}
 		else return Any(DBL3());
 	}
@@ -178,11 +178,11 @@ Any Simulation::GetDataValue(DatumConfig dConfig)
 	{
 		if (!SMesh[dConfig.meshName]->is_atomistic()) {
 
-			return Any(dynamic_cast<Mesh*>(SMesh[dConfig.meshName])->GetAverageXMagnetisationSq(dConfig.rectangle));
+			return Any(dynamic_cast<Mesh*>(SMesh[dConfig.meshName])->GetAverageXmagnetizationSq(dConfig.rectangle));
 		}
 		else {
 
-			//return average magnetisation in the atomistic cell also : average atomistic moment (averaged over all participating unit cells), divided by unit cell volume
+			//return average magnetization in the atomistic cell also : average atomistic moment (averaged over all participating unit cells), divided by unit cell volume
 			double r = MUB / SMesh[dConfig.meshName]->h.dim();
 			return Any(dynamic_cast<Atom_Mesh*>(SMesh[dConfig.meshName])->GetAverageXMomentSq(dConfig.rectangle) * r * r);
 		}
@@ -193,11 +193,11 @@ Any Simulation::GetDataValue(DatumConfig dConfig)
 	{
 		if (!SMesh[dConfig.meshName]->is_atomistic()) {
 
-			return Any(dynamic_cast<Mesh*>(SMesh[dConfig.meshName])->GetAverageYMagnetisationSq(dConfig.rectangle));
+			return Any(dynamic_cast<Mesh*>(SMesh[dConfig.meshName])->GetAverageYmagnetizationSq(dConfig.rectangle));
 		}
 		else {
 
-			//return average magnetisation in the atomistic cell also : average atomistic moment (averaged over all participating unit cells), divided by unit cell volume
+			//return average magnetization in the atomistic cell also : average atomistic moment (averaged over all participating unit cells), divided by unit cell volume
 			double r = MUB / SMesh[dConfig.meshName]->h.dim();
 			return Any(dynamic_cast<Atom_Mesh*>(SMesh[dConfig.meshName])->GetAverageYMomentSq(dConfig.rectangle) * r * r);
 		}
@@ -208,11 +208,11 @@ Any Simulation::GetDataValue(DatumConfig dConfig)
 	{
 		if (!SMesh[dConfig.meshName]->is_atomistic()) {
 
-			return Any(dynamic_cast<Mesh*>(SMesh[dConfig.meshName])->GetAverageZMagnetisationSq(dConfig.rectangle));
+			return Any(dynamic_cast<Mesh*>(SMesh[dConfig.meshName])->GetAverageZmagnetizationSq(dConfig.rectangle));
 		}
 		else {
 
-			//return average magnetisation in the atomistic cell also : average atomistic moment (averaged over all participating unit cells), divided by unit cell volume
+			//return average magnetization in the atomistic cell also : average atomistic moment (averaged over all participating unit cells), divided by unit cell volume
 			double r = MUB / SMesh[dConfig.meshName]->h.dim();
 			return Any(dynamic_cast<Atom_Mesh*>(SMesh[dConfig.meshName])->GetAverageZMomentSq(dConfig.rectangle) * r * r);
 		}
@@ -223,7 +223,7 @@ Any Simulation::GetDataValue(DatumConfig dConfig)
 	{
 		if (!SMesh[dConfig.meshName]->is_atomistic()) {
 
-			return Any(dynamic_cast<Mesh*>(SMesh[dConfig.meshName])->GetMagnetisationXMinMax(dConfig.rectangle));
+			return Any(dynamic_cast<Mesh*>(SMesh[dConfig.meshName])->GetmagnetizationXMinMax(dConfig.rectangle));
 		}
 		else {
 
@@ -236,7 +236,7 @@ Any Simulation::GetDataValue(DatumConfig dConfig)
 	{
 		if (!SMesh[dConfig.meshName]->is_atomistic()) {
 
-			return Any(dynamic_cast<Mesh*>(SMesh[dConfig.meshName])->GetMagnetisationYMinMax(dConfig.rectangle));
+			return Any(dynamic_cast<Mesh*>(SMesh[dConfig.meshName])->GetmagnetizationYMinMax(dConfig.rectangle));
 		}
 		else {
 
@@ -249,7 +249,7 @@ Any Simulation::GetDataValue(DatumConfig dConfig)
 	{
 		if (!SMesh[dConfig.meshName]->is_atomistic()) {
 
-			return Any(dynamic_cast<Mesh*>(SMesh[dConfig.meshName])->GetMagnetisationZMinMax(dConfig.rectangle));
+			return Any(dynamic_cast<Mesh*>(SMesh[dConfig.meshName])->GetmagnetizationZMinMax(dConfig.rectangle));
 		}
 		else {
 
@@ -262,7 +262,7 @@ Any Simulation::GetDataValue(DatumConfig dConfig)
 	{
 		if (!SMesh[dConfig.meshName]->is_atomistic()) {
 
-			return Any(dynamic_cast<Mesh*>(SMesh[dConfig.meshName])->GetMagnetisationMinMax(dConfig.rectangle));
+			return Any(dynamic_cast<Mesh*>(SMesh[dConfig.meshName])->GetmagnetizationMinMax(dConfig.rectangle));
 		}
 		else {
 
@@ -575,8 +575,36 @@ void Simulation::DeleteSaveDataEntries(string meshName)
 
 void Simulation::SaveData(void) 
 {
-	//Actual data saving:
+	//First build text to write to data file as a single row
+	string row_text;
 
+	//save actual values as configured in saveDataList
+	for (int idx = 0; idx < saveDataList.size(); idx++) {
+
+		string value_string = GetDataValueString(saveDataList[idx], true);
+		replaceall(value_string, ", ", "\t");
+
+		row_text += value_string;
+		if (idx != saveDataList.size() - 1) row_text += "\t";
+	}
+
+	//Actual data saving (asynchronous):
+	while(single_call_launch<const std::string&>(&Simulation::SaveData_DiskWrite, row_text, THREAD_DISKACCESS) != THREAD_DISKACCESS);
+	
+	//Image saving:
+	if (saveImageFlag) {
+
+		//update and refresh mesh display before saving image (the image is captured from on-screen image)
+		UpdateMeshDisplay();
+
+		string imageFile = directory + imageSaveFileBase + ToString(SMesh.GetIteration()) + ".png";
+		BD.SaveMeshImage(imageFile, image_cropping);
+	}
+}
+
+//This method does the actual writing to disk : can be launched asynchronously from SaveData method
+void Simulation::SaveData_DiskWrite(const std::string& row_text)
+{
 	if (saveDataFlag) {
 
 		//we need a file name to save to
@@ -641,30 +669,9 @@ void Simulation::SaveData(void)
 				bdout << "\n\n";
 			}
 
-			//save actual values as configured in saveDataList
-			for (int idx = 0; idx < saveDataList.size(); idx++) {
+			bdout << row_text << "\n";
 
-				string value_string = GetDataValueString(saveDataList[idx], true);
-				replaceall(value_string, ", ", "\t");
-
-				bdout << value_string;
-				if (idx != saveDataList.size() - 1) bdout << "\t";
-			}
-
-			bdout << "\n";
 			bdout.close();
 		}
-	}
-
-	//Image saving:
-
-	if (saveImageFlag) {
-
-		//update and refresh mesh display before saving image (the image is captured from on-screen image)
-		UpdateMeshDisplay();
-		RefreshScreen();
-
-		string imageFile = directory + imageSaveFileBase + ToString(SMesh.GetIteration()) + ".png";
-		BD.SaveMeshImage(imageFile, image_cropping);
 	}
 }

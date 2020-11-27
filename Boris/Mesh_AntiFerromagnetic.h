@@ -140,17 +140,17 @@ public:
 	//this method is also used by the dipole mesh where it does something else - sets the dipole direction
 	void SetMagAngle(double polar, double azim, Rect rectangle = Rect());
 
-	//Invert magnetisation direction in given mesh
+	//Invert magnetization direction in given mesh
 	void SetInvertedMag(bool x, bool y, bool z);
 
-	//Mirror magnetisation in given axis (literal x, y, or z) in given mesh (must be magnetic)
+	//Mirror magnetization in given axis (literal x, y, or z) in given mesh (must be magnetic)
 	void SetMirroredMag(string axis);
 
 	//Set random magentisation distribution in given mesh
-	void SetRandomMag(void);
+	void SetRandomMag(int seed);
 
 	//set a domain wall with given width (metric units) at position within mesh (metric units). 
-	//Longitudinal and transverse are magnetisation componets as: 1: x, 2: y, 3: z, 1: -x, 2: -y, 3: -z
+	//Longitudinal and transverse are magnetization componets as: 1: x, 2: y, 3: z, 1: -x, 2: -y, 3: -z
 	void SetMagDomainWall(int longitudinal, int transverse, double width, double position);
 
 	//set Neel skyrmion with given orientation (core is up: 1, core is down: -1), chirality (1 for towards centre, -1 away from it) in given rectangle (relative to mesh), calculated in the x-y plane

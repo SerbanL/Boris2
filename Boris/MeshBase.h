@@ -212,7 +212,7 @@ public:
 
 	//----------------------------------- OTHER CONTROL METHODS
 
-	//used by move mesh algorithm : shift mesh quantities (e.g. magnetisation) by the given shift (metric units) value within this mesh. The shift is along the x-axis direction only (+ve or -ve).
+	//used by move mesh algorithm : shift mesh quantities (e.g. magnetization) by the given shift (metric units) value within this mesh. The shift is along the x-axis direction only (+ve or -ve).
 	virtual void MoveMesh(double x_shift) = 0;
 
 	//Check if mesh needs to be moved (using the MoveMesh method) - return amount of movement required (i.e. parameter to use when calling MoveMesh).
@@ -488,18 +488,18 @@ public:
 	//set cells to non-empty in given box
 	virtual BError setrect(Rect rectangle) = 0;
 
-	//roughen mesh sides perpendicular to a named axis (axis = "x", "y", "z") to given depth (same units as h) with prng instantiated with given seed.
-	virtual BError RoughenMeshSides(string axis, double depth, unsigned seed) = 0;
+	//roughen mesh sides (side = "x", "y", "z", "-x", "-y", or "-z") to given depth (same units as h) with prng instantiated with given seed.
+	virtual BError RoughenMeshSides(string side, double depth, int seed) = 0;
 
 	//Roughen mesh top and bottom surfaces using a jagged pattern to given depth and peak spacing (same units as h) with prng instantiated with given seed.
 	//Rough both top and bottom if sides is empty, else it should be either -z or z.
-	virtual BError RoughenMeshSurfaces_Jagged(double depth, double spacing, unsigned seed, string sides) = 0;
+	virtual BError RoughenMeshSurfaces_Jagged(double depth, double spacing, int seed, string sides) = 0;
 
 	//Generate Voronoi 2D grains in xy plane (boundaries between Voronoi cells set to empty) at given average spacing with prng instantiated with given seed.
-	virtual BError GenerateGrains2D(double spacing, unsigned seed) = 0;
+	virtual BError GenerateGrains2D(double spacing, int seed) = 0;
 
 	//Generate Voronoi 3D grains (boundaries between Voronoi cells set to empty) at given average spacing with prng instantiated with given seed.
-	virtual BError GenerateGrains3D(double spacing, unsigned seed) = 0;
+	virtual BError GenerateGrains3D(double spacing, int seed) = 0;
 
 	//----------------------------------- METHODS REDEFINED IN SOME IMPLEMENTATIONS (virtual here)
 
@@ -526,17 +526,17 @@ public:
 	//this method is also used by the dipole mesh where it does something else - sets the dipole direction
 	virtual void SetMagAngle(double polar, double azim, Rect rectangle = Rect()) {}
 
-	//Invert magnetisation direction in given mesh (must be magnetic)
+	//Invert magnetization direction in given mesh (must be magnetic)
 	virtual void SetInvertedMag(bool x, bool y, bool z) {}
 
-	//Mirror magnetisation in given axis (literal x, y, or z) in given mesh (must be magnetic)
+	//Mirror magnetization in given axis (literal x, y, or z) in given mesh (must be magnetic)
 	virtual void SetMirroredMag(string axis) {}
 
 	//Set random magentisation distribution in given mesh (must be magnetic)
-	virtual void SetRandomMag(void) {}
+	virtual void SetRandomMag(int seed) {}
 
 	//set a domain wall with given width (metric units) at position within mesh (metric units). 
-	//Longitudinal and transverse are magnetisation componets as: 1: x, 2: y, 3: z, 1: -x, 2: -y, 3: -z
+	//Longitudinal and transverse are magnetization componets as: 1: x, 2: y, 3: z, 1: -x, 2: -y, 3: -z
 	virtual void SetMagDomainWall(int longitudinal, int transverse, double width, double position) {}
 
 	//set Neel skyrmion with given orientation (core is up: 1, core is down: -1), chirality (1 for towards centre, -1 away from it) in given rectangle (relative to mesh), calculated in the x-y plane

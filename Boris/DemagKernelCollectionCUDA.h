@@ -30,7 +30,7 @@ private:
 	//For the vectors below the order must match, i.e. the nth rect in Rect_collection corresponds to the nth kernel
 	//These are the kernels used to obtain values in this mesh using contributions from those respective meshes.
 
-	//kernels used to multiply fft-ed magnetisation from other layers
+	//kernels used to multiply fft-ed magnetization from other layers
 	vector<shared_ptr<cu_obj<cuKerType>>> kernels;
 
 	//kernels collected in a cu_arr so we can pass it to a __global__ function

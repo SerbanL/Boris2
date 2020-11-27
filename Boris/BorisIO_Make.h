@@ -317,14 +317,14 @@ void Simulation::MakeIOInfo(void)
 	ioInfo.set(showdata_info_generic + string("<i><b>Simulation stage time</i>"), INT2(IOI_SHOWDATA, DATA_STAGETIME));
 	ioInfo.set(showdata_info_generic + string("<i><b>Simulation iterations</i>"), INT2(IOI_SHOWDATA, DATA_ITERATIONS));
 	ioInfo.set(showdata_info_generic + string("<i><b>Simulation stage iterations</i>"), INT2(IOI_SHOWDATA, DATA_SITERATIONS));
-	ioInfo.set(showdata_info_generic + string("<i><b>Magnetisation solver time step</i>"), INT2(IOI_SHOWDATA, DATA_DT));
-	ioInfo.set(showdata_info_generic + string("<i><b>Magnetisation relaxation |mxh|</i>"), INT2(IOI_SHOWDATA, DATA_MXH));
-	ioInfo.set(showdata_info_generic + string("<i><b>Magnetisation relaxation |dm/dt|</i>"), INT2(IOI_SHOWDATA, DATA_DMDT));
-	ioInfo.set(showdata_info_generic + string("<i><b>Average magnetisation</i>"), INT2(IOI_SHOWDATA, DATA_AVM));
-	ioInfo.set(showdata_info_generic + string("<i><b>Average magnetisation sub-lattice B</i>"), INT2(IOI_SHOWDATA, DATA_AVM2));
-	ioInfo.set(showdata_info_generic + string("<i><b>Average squared X magnetisation</i>"), INT2(IOI_SHOWDATA, DATA_AVMXSQ));
-	ioInfo.set(showdata_info_generic + string("<i><b>Average squared Y magnetisation</i>"), INT2(IOI_SHOWDATA, DATA_AVMYSQ));
-	ioInfo.set(showdata_info_generic + string("<i><b>Average squared Z magnetisation</i>"), INT2(IOI_SHOWDATA, DATA_AVMZSQ));
+	ioInfo.set(showdata_info_generic + string("<i><b>magnetization solver time step</i>"), INT2(IOI_SHOWDATA, DATA_DT));
+	ioInfo.set(showdata_info_generic + string("<i><b>magnetization relaxation |mxh|</i>"), INT2(IOI_SHOWDATA, DATA_MXH));
+	ioInfo.set(showdata_info_generic + string("<i><b>magnetization relaxation |dm/dt|</i>"), INT2(IOI_SHOWDATA, DATA_DMDT));
+	ioInfo.set(showdata_info_generic + string("<i><b>Average magnetization</i>"), INT2(IOI_SHOWDATA, DATA_AVM));
+	ioInfo.set(showdata_info_generic + string("<i><b>Average magnetization sub-lattice B</i>"), INT2(IOI_SHOWDATA, DATA_AVM2));
+	ioInfo.set(showdata_info_generic + string("<i><b>Average squared X magnetization</i>"), INT2(IOI_SHOWDATA, DATA_AVMXSQ));
+	ioInfo.set(showdata_info_generic + string("<i><b>Average squared Y magnetization</i>"), INT2(IOI_SHOWDATA, DATA_AVMYSQ));
+	ioInfo.set(showdata_info_generic + string("<i><b>Average squared Z magnetization</i>"), INT2(IOI_SHOWDATA, DATA_AVMZSQ));
 	ioInfo.set(showdata_info_generic + string("<i><b>Magnetization magnitude min-max</i>"), INT2(IOI_SHOWDATA, DATA_M_MINMAX));
 	ioInfo.set(showdata_info_generic + string("<i><b>Magnetization component x min-max</i>"), INT2(IOI_SHOWDATA, DATA_MX_MINMAX));
 	ioInfo.set(showdata_info_generic + string("<i><b>Magnetization component y min-max</i>"), INT2(IOI_SHOWDATA, DATA_MY_MINMAX));
@@ -372,14 +372,14 @@ void Simulation::MakeIOInfo(void)
 	ioInfo.set(data_info_generic + string("<i><b>Simulation stage time</i>"), INT2(IOI_DATA, DATA_STAGETIME));
 	ioInfo.set(data_info_generic + string("<i><b>Simulation iterations</i>"), INT2(IOI_DATA, DATA_ITERATIONS));
 	ioInfo.set(data_info_generic + string("<i><b>Simulation stage iterations</i>"), INT2(IOI_DATA, DATA_SITERATIONS));
-	ioInfo.set(data_info_generic + string("<i><b>Magnetisation solver time step</i>"), INT2(IOI_DATA, DATA_DT));
-	ioInfo.set(data_info_generic + string("<i><b>Magnetisation relaxation |mxh|</i>"), INT2(IOI_DATA, DATA_MXH));
-	ioInfo.set(data_info_generic + string("<i><b>Magnetisation relaxation |dm/dt|</i>"), INT2(IOI_DATA, DATA_DMDT));
-	ioInfo.set(data_info_generic + string("<i><b>Average magnetisation</i>"), INT2(IOI_DATA, DATA_AVM));
-	ioInfo.set(data_info_generic + string("<i><b>Average magnetisation sub-lattice B</i>"), INT2(IOI_DATA, DATA_AVM2));
-	ioInfo.set(data_info_generic + string("<i><b>Average squared X magnetisation</i>"), INT2(IOI_DATA, DATA_AVMXSQ));
-	ioInfo.set(data_info_generic + string("<i><b>Average squared Y magnetisation</i>"), INT2(IOI_DATA, DATA_AVMYSQ));
-	ioInfo.set(data_info_generic + string("<i><b>Average squared Z magnetisation</i>"), INT2(IOI_DATA, DATA_AVMZSQ));
+	ioInfo.set(data_info_generic + string("<i><b>magnetization solver time step</i>"), INT2(IOI_DATA, DATA_DT));
+	ioInfo.set(data_info_generic + string("<i><b>magnetization relaxation |mxh|</i>"), INT2(IOI_DATA, DATA_MXH));
+	ioInfo.set(data_info_generic + string("<i><b>magnetization relaxation |dm/dt|</i>"), INT2(IOI_DATA, DATA_DMDT));
+	ioInfo.set(data_info_generic + string("<i><b>Average magnetization</i>"), INT2(IOI_DATA, DATA_AVM));
+	ioInfo.set(data_info_generic + string("<i><b>Average magnetization sub-lattice B</i>"), INT2(IOI_DATA, DATA_AVM2));
+	ioInfo.set(data_info_generic + string("<i><b>Average squared X magnetization</i>"), INT2(IOI_DATA, DATA_AVMXSQ));
+	ioInfo.set(data_info_generic + string("<i><b>Average squared Y magnetization</i>"), INT2(IOI_DATA, DATA_AVMYSQ));
+	ioInfo.set(data_info_generic + string("<i><b>Average squared Z magnetization</i>"), INT2(IOI_DATA, DATA_AVMZSQ));
 	ioInfo.set(data_info_generic + string("<i><b>Magnetization magnitude min-max</i>"), INT2(IOI_DATA, DATA_M_MINMAX));
 	ioInfo.set(data_info_generic + string("<i><b>Magnetization component x min-max</i>"), INT2(IOI_DATA, DATA_MX_MINMAX));
 	ioInfo.set(data_info_generic + string("<i><b>Magnetization component y min-max</i>"), INT2(IOI_DATA, DATA_MY_MINMAX));
@@ -635,8 +635,8 @@ void Simulation::MakeIOInfo(void)
 	ioInfo.set(param_generic_info + string("<i><b>Electron gyromagnetic ratio relative value"), INT2(IOI_MESHPARAM, PARAM_GREL_AFM));
 	ioInfo.set(param_generic_info + string("<i><b>Gilbert damping"), INT2(IOI_MESHPARAM, PARAM_GDAMPING));
 	ioInfo.set(param_generic_info + string("<i><b>Gilbert damping"), INT2(IOI_MESHPARAM, PARAM_GDAMPING_AFM));
-	ioInfo.set(param_generic_info + string("<i><b>Saturation magnetisation"), INT2(IOI_MESHPARAM, PARAM_MS));
-	ioInfo.set(param_generic_info + string("<i><b>Saturation magnetisation"), INT2(IOI_MESHPARAM, PARAM_MS_AFM));
+	ioInfo.set(param_generic_info + string("<i><b>Saturation magnetization"), INT2(IOI_MESHPARAM, PARAM_MS));
+	ioInfo.set(param_generic_info + string("<i><b>Saturation magnetization"), INT2(IOI_MESHPARAM, PARAM_MS_AFM));
 	ioInfo.set(param_generic_info + string("<i><b>Demag factors Nx, Ny"), INT2(IOI_MESHPARAM, PARAM_DEMAGXY));
 	ioInfo.set(param_generic_info + string("<i><b>Exchange stiffness"), INT2(IOI_MESHPARAM, PARAM_A));
 	ioInfo.set(param_generic_info + string("<i><b>Exchange stiffness"), INT2(IOI_MESHPARAM, PARAM_A_AFM));
@@ -664,10 +664,10 @@ void Simulation::MakeIOInfo(void)
 	ioInfo.set(param_generic_info + string("<i><b>Heat source"), INT2(IOI_MESHPARAM, PARAM_Q));
 	ioInfo.set(param_generic_info + string("<i><b>Base electrical conductivity"), INT2(IOI_MESHPARAM, PARAM_ELC));
 	ioInfo.set(param_generic_info + string("<i><b>Anisotropic magnetoresistance"), INT2(IOI_MESHPARAM, PARAM_AMR));
-	ioInfo.set(param_generic_info + string("<i><b>Current spin polarisation"), INT2(IOI_MESHPARAM, PARAM_P));
+	ioInfo.set(param_generic_info + string("<i><b>Current spin polarization"), INT2(IOI_MESHPARAM, PARAM_P));
 	ioInfo.set(param_generic_info + string("<i><b>Zhang-Li non-adiabaticity"), INT2(IOI_MESHPARAM, PARAM_BETA));
 	ioInfo.set(param_generic_info + string("<i><b>Electron diffusion"), INT2(IOI_MESHPARAM, PARAM_DE));
-	ioInfo.set(param_generic_info + string("<i><b>Diffusion spin polarisation"), INT2(IOI_MESHPARAM, PARAM_BETAD));
+	ioInfo.set(param_generic_info + string("<i><b>Diffusion spin polarization"), INT2(IOI_MESHPARAM, PARAM_BETAD));
 	ioInfo.set(param_generic_info + string("<i><b>Spin-Hall angle\n<i><b>In FM meshes used for SOTField module"), INT2(IOI_MESHPARAM, PARAM_SHA));
 	ioInfo.set(param_generic_info + string("<i><b>Field-like spin torque coefficient\n<i><b>Used for SOTField and STField modules in FM meshes"), INT2(IOI_MESHPARAM, PARAM_FLSOT));
 	ioInfo.set(param_generic_info + string("<i><b>Slonczewski macrospin torques parameters."), INT2(IOI_MESHPARAM, PARAM_STQ));
@@ -747,6 +747,7 @@ void Simulation::MakeIOInfo(void)
 	ioInfo.set(paramvargen_generic_info + string("<i><b>Set from ovf2 file (mapped to current dimensions)."), INT2(IOI_MESHPARAMVARGENERATOR, MATPVAR_OVF2));
 	ioInfo.set(paramvargen_generic_info + string("<i><b>Random with range (min, max) and seed"), INT2(IOI_MESHPARAMVARGENERATOR, MATPVAR_RANDOM));
 	ioInfo.set(paramvargen_generic_info + string("<i><b>Jagged with range (min, max)\n<i><b>spacing (m) and seed"), INT2(IOI_MESHPARAMVARGENERATOR, MATPVAR_JAGGED));
+	ioInfo.set(paramvargen_generic_info + string("<i><b>Polynomial slopes at sides along each axis\n<b>to length ratio from max at surface to min at centre\n<i>ratio_-x, ratio_+x;\n<i>ratio_-y, ratio_+y;\n<i>ratio_-z, ratio_+z;\n<i>min, max, polynomial exponent;<b>"), INT2(IOI_MESHPARAMVARGENERATOR, MATPVAR_ABLPOL));
 	ioInfo.set(paramvargen_generic_info + string("<i><b>Circular defects with value range (min, max)\n<i><b>diameter range (min, max)\n<i><b>average spacing (m) and seed"), INT2(IOI_MESHPARAMVARGENERATOR, MATPVAR_DEFECTS));
 	ioInfo.set(paramvargen_generic_info + string("<i><b>Line faults with value range (min, max)\n<i><b>length range (m) (min, max)\n<i><b>orientation range in degrees (min, max)\n<i><b>average spacing (m) and seed"), INT2(IOI_MESHPARAMVARGENERATOR, MATPVAR_FAULTS));
 	ioInfo.set(paramvargen_generic_info + string("<i><b>Voronoi 2D cells with value range (min, max)\n<i><b>average spacing (m) and seed"), INT2(IOI_MESHPARAMVARGENERATOR, MATPVAR_VORONOI2D));
@@ -768,10 +769,10 @@ void Simulation::MakeIOInfo(void)
 		string("\n[tc1,1,0,1/tc]right-click: change background state\n");
 
 	ioInfo.set(meshdisplay_generic_info + string("<i><b>Nothing displayed"), INT2(IOI_MESHDISPLAY, MESHDISPLAY_NONE));
-	ioInfo.set(meshdisplay_generic_info + string("<i><b>Magnetisation"), INT2(IOI_MESHDISPLAY, MESHDISPLAY_MAGNETIZATION));
+	ioInfo.set(meshdisplay_generic_info + string("<i><b>magnetization"), INT2(IOI_MESHDISPLAY, MESHDISPLAY_MAGNETIZATION));
 	ioInfo.set(meshdisplay_generic_info + string("<i><b>Atomic Moments"), INT2(IOI_MESHDISPLAY, MESHDISPLAY_MOMENT));
-	ioInfo.set(meshdisplay_generic_info + string("<i><b>Magnetisation sub-lattice 2"), INT2(IOI_MESHDISPLAY, MESHDISPLAY_MAGNETIZATION2));
-	ioInfo.set(meshdisplay_generic_info + string("<i><b>AF Magnetisation"), INT2(IOI_MESHDISPLAY, MESHDISPLAY_MAGNETIZATION12));
+	ioInfo.set(meshdisplay_generic_info + string("<i><b>magnetization sub-lattice 2"), INT2(IOI_MESHDISPLAY, MESHDISPLAY_MAGNETIZATION2));
+	ioInfo.set(meshdisplay_generic_info + string("<i><b>AF magnetization"), INT2(IOI_MESHDISPLAY, MESHDISPLAY_MAGNETIZATION12));
 	ioInfo.set(meshdisplay_generic_info + string("<i><b>Total effective H field"), INT2(IOI_MESHDISPLAY, MESHDISPLAY_EFFECTIVEFIELD));
 	ioInfo.set(meshdisplay_generic_info + string("<i><b>Total effective H field sub-lattice 2"), INT2(IOI_MESHDISPLAY, MESHDISPLAY_EFFECTIVEFIELD2));
 	ioInfo.set(meshdisplay_generic_info + string("<i><b>AF Total effective H field"), INT2(IOI_MESHDISPLAY, MESHDISPLAY_EFFECTIVEFIELD12));
@@ -1116,6 +1117,16 @@ void Simulation::MakeIOInfo(void)
 
 	ioInfo.push_back(cudastate_info, IOI_CUDASTATE);
 
+	//Shows CUDA device information and state. minorId is the device number (from 1 up), auxId is enabled (1)/disabled(0)/not available(-1) status. 
+	//IOI_CUDADEVICE
+
+	string cudadevice_info =
+		string("[tc1,1,0,1/tc]<b>CUDA device selector") +
+		string("\n[tc1,1,0,1/tc]<i>green: set, red: not set, gray: N/A</i>") +
+		string("\n[tc1,1,0,1/tc]click: change status\n");
+
+	ioInfo.push_back(cudadevice_info, IOI_CUDADEVICE);
+
 	//Shows gpu free memory. auxId is the value
 	//IOI_GPUMEMFREE
 
@@ -1201,6 +1212,34 @@ void Simulation::MakeIOInfo(void)
 		string("\n[tc1,1,0,1/tc]click: change status\n");
 
 	ioInfo.push_back(start_scriptserver_info, IOI_SCRIPTSERVERSTARTUP);
+
+	//Shows number of threads. auxId is the value.
+	//IOI_THREADS
+
+	string threads_info =
+		string("[tc1,1,0,1/tc]<b>Number of threads for CPU computations") +
+		string("\n[tc1,1,0,1/tc]right-click: maximum") +
+		string("\n[tc1,1,0,1/tc]dbl-click: edit\n");
+
+	ioInfo.push_back(threads_info, IOI_THREADS);
+
+	//Shows server port. auxId is the value.
+	//IOI_SERVERPORT
+
+	string serverport_info =
+		string("[tc1,1,0,1/tc]<b>Script server port") +
+		string("\n[tc1,1,0,1/tc]dbl-click: edit\n");
+
+	ioInfo.push_back(serverport_info, IOI_SERVERPORT);
+
+	//Shows server sleep time in ms. auxId is the value.
+	//IOI_SERVERSLEEPMS
+
+	string serversleepms_info =
+		string("[tc1,1,0,1/tc]<b>Script server sleep time in ms") +
+		string("\n[tc1,1,0,1/tc]dbl-click: edit\n");
+
+	ioInfo.push_back(serversleepms_info, IOI_SERVERSLEEPMS);
 
 	//IOI_MESHEXCHCOUPLING
 
@@ -2321,6 +2360,27 @@ string Simulation::MakeIO(IOI_ identifier, PType ... params)
 		}
 		break;
 
+	//Shows CUDA device information and state. minorId is the device number (from 1 up), auxId is enabled (1)/disabled(0)/not available(-1) status. 
+	case IOI_CUDADEVICE:
+		if (params_str.size() == 1) {
+
+			int device = ToNum(params_str[0]);
+
+			if (!cudaAvailable) return MakeInteractiveObject("N/A", IOI_CUDADEVICE, device, -1, "", UNAVAILABLECOLOR);
+			else {
+
+				if (cudaDeviceVersions[device].first != __CUDA_ARCH__) {
+
+					return MakeInteractiveObject(cudaDeviceVersions[device].second, IOI_CUDADEVICE, device, -1, "", UNAVAILABLECOLOR);
+				}
+				else {
+
+					return MakeInteractiveObject(cudaDeviceVersions[device].second, IOI_CUDADEVICE, device, 0, "", OFFCOLOR);
+				}
+			}
+		}
+		break;
+
 	//Shows gpu free memory. auxId is the value
 	case IOI_GPUMEMFREE:
 		if (params_str.size() == 1) {
@@ -2413,6 +2473,36 @@ string Simulation::MakeIO(IOI_ identifier, PType ... params)
 
 			if (status == 0) return MakeInteractiveObject("Off", IOI_SCRIPTSERVERSTARTUP, -1, 0, "", OFFCOLOR);
 			else return MakeInteractiveObject("On", IOI_SCRIPTSERVERSTARTUP, -1, 1, "", ONCOLOR);
+		}
+		break;
+
+	//Shows number of threads. auxId is the value.
+	case IOI_THREADS:
+		if (params_str.size() == 1) {
+
+			int threads = ToNum(params_str[0]);
+
+			return MakeInteractiveObject(ToString(threads), IOI_THREADS, -1, threads);
+		}
+		break;
+
+	//Shows server port. auxId is the value.
+	case IOI_SERVERPORT:
+		if (params_str.size() == 1) {
+
+			string port = params_str[0];
+
+			return MakeInteractiveObject(port, IOI_SERVERPORT, -1, ToNum(port));
+		}
+		break;
+
+	//Shows server sleep time in ms. auxId is the value.
+	case IOI_SERVERSLEEPMS:
+		if (params_str.size() == 1) {
+
+			int sleepms = ToNum(params_str[0]);
+
+			return MakeInteractiveObject(ToString(sleepms), IOI_SERVERSLEEPMS, -1, sleepms);
 		}
 		break;
 

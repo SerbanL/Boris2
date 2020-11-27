@@ -58,7 +58,7 @@ public:
 	MatP<double, double> alpha = 0.02;
 	MatP<DBL2, double> alpha_AFM = DBL2(0.02);
 
-	//Saturation magnetisation (A/m)
+	//Saturation magnetization (A/m)
 	MatP<double, double> Ms = 8e5;
 	MatP<DBL2, double> Ms_AFM = DBL2(8e5);
 
@@ -94,7 +94,7 @@ public:
 	MatP<double, double> J1 = -1e-3;
 	MatP<double, double> J2 = 0;
 
-	//surface exchange coupling per magnetisation from a diamagnet (J/Am) - EXPERIMENTAL : Hse = neta * sus * Hext / mu0 * Ms * tF
+	//surface exchange coupling per magnetization from a diamagnet (J/Am) - EXPERIMENTAL : Hse = neta * sus * Hext / mu0 * Ms * tF
 	MatP<double, double> neta_dia = 2e-5;
 
 	//Magneto-crystalline anisotropy K1 and K2 constants (J/m^3) and easy axes directions. For uniaxial anisotropy only ea1 is needed, for cubic ea1 and ea2 should be orthogonal.
@@ -141,7 +141,7 @@ public:
 	//electron carrier density (1/m^3)
 	MatP<double, double> n_density = 1.8e29;
 
-	//diffusion spin polarisation (unitless)
+	//diffusion spin polarization (unitless)
 	MatP<double, double> betaD = 0.5;
 
 	//spin Hall angle (unitless)

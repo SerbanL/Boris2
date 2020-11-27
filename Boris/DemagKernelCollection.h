@@ -84,7 +84,7 @@ private:
 	//For the vectors below the order must match, i.e. the nth rect in Rect_collection corresponds to the nth kernel
 	//These are the kernels used to obtain values in this mesh using contributions from those respective meshes.
 
-	//kernels used to multiply fft-ed magnetisation from other layers
+	//kernels used to multiply fft-ed magnetization from other layers
 	vector<shared_ptr<KerType>> kernels;
 
 	//if z-shifted, re-use already calculated kernel if the only difference is just the sign of the shift : use kernel symmetries to recover correct multiplication
