@@ -165,7 +165,7 @@ inline bool VEC<double>::generate_jagged(DBL3 new_h, Rect new_rect, DBL2 range, 
 	return true;
 }
 
-//polynomial slopes at slides with exponent n, starting from maximum value at surfaces, proceeding inwards towards minimum up to a depth of length * ratio
+//polynomial slopes at sides with exponent n, starting from maximum value at surfaces, proceeding inwards towards minimum up to a depth of length * ratio
 //abl_x, abl_y, abl_z : depth ratio for negative side, depth ratio for positive side
 //values : minimum centre, maximum outer, polynomial exponent
 template <>
@@ -205,8 +205,10 @@ inline bool VEC<double>::generate_ablpol(DBL3 new_h, Rect new_rect, DBL2 abl_x, 
 	//applicable for x between 0 and nx for negative side, and between px and length for positive side
 
 #pragma omp parallel for
-	for (int idx = 0; idx < n.dim(); idx++)
+	for (int idx = 0; idx < n.dim(); idx++) {
+
 		quantity[idx] = min;
+	}
 
 	for (int k = 0; k < n.z; k++) {
 #pragma omp parallel for
@@ -222,35 +224,226 @@ inline bool VEC<double>::generate_ablpol(DBL3 new_h, Rect new_rect, DBL2 abl_x, 
 				//x
 				if (pos_x <= nx) {
 					
-					quantity[idx] += nx_alpha * pow(pos_x - nx, pn) + min;
+					quantity[idx] += nx_alpha * pow(pos_x - nx, pn);
 				}
 				else if (pos_x >= px) {
 
-					quantity[idx] += px_alpha * pow(pos_x - px, pn) + min;
+					quantity[idx] += px_alpha * pow(pos_x - px, pn);
 				}
 
 				//y
 				if (pos_y <= ny) {
 
-					quantity[idx] += ny_alpha * pow(pos_y - ny, pn) + min;
+					quantity[idx] += ny_alpha * pow(pos_y - ny, pn);
 				}
 				else if (pos_y >= py) {
 
-					quantity[idx] += py_alpha * pow(pos_y - py, pn) + min;
+					quantity[idx] += py_alpha * pow(pos_y - py, pn);
 				}
 
 				//z
 				if (pos_z <= nz) {
 
-					quantity[idx] += nz_alpha * pow(pos_z - nz, pn) + min;
+					quantity[idx] += nz_alpha * pow(pos_z - nz, pn);
 				}
 				else if (pos_z >= pz) {
 
-					quantity[idx] += pz_alpha * pow(pos_z - pz, pn) + min;
+					quantity[idx] += pz_alpha * pow(pos_z - pz, pn);
 				}
 			}
 		}
 	}
+
+	return true;
+}
+
+//absorbing boundary conditions tanh slopes: set VEC dimensions and generate tanh slopes at slides
+//tanh slopes at sides with sigma value, starting from maximum value at surfaces, proceeding inwards towards minimum up to a depth of length * ratio
+//tanh profile centered
+//abl_x, abl_y, abl_z : depth ratio for negative side, depth ratio for positive side
+//values : minimum centre, maximum outer, tanh sigma in nm
+template <>
+inline bool VEC<double>::generate_abltanh(DBL3 new_h, Rect new_rect, DBL2 abl_x, DBL2 abl_y, DBL2 abl_z, DBL3 values)
+{ 
+	if (!resize(new_h, new_rect)) return false;
+
+	double length = rect.length();
+	double width = rect.width();
+	double height = rect.height();
+
+	double min = values.i;
+	double max = values.j;
+	double sigma = values.k * 1e-9;
+	int pn = round(values.k);
+	if (pn < 1) pn = 1;
+
+	double wnx = abl_x.i * length;
+	double wpx = abl_x.j * length;
+	double wny = abl_y.i * width;
+	double wpy = abl_y.j * width;
+	double wnz = abl_z.i * height;
+	double wpz = abl_z.j * height;
+
+	double nx_alpha = 0.0, px_alpha = 0.0;
+	if (abl_x.i > 0) nx_alpha = (max - min) / (2 * tanh(wnx / (2 * sigma)));
+	if (abl_x.j > 0) px_alpha = (max - min) / (2 * tanh(wpx / (2 * sigma)));
+
+	double ny_alpha = 0.0, py_alpha = 0.0;
+	if (abl_y.i > 0) ny_alpha = (max - min) / (2 * tanh(wny / (2 * sigma)));
+	if (abl_y.j > 0) py_alpha = (max - min) / (2 * tanh(wpy / (2 * sigma)));
+
+	double nz_alpha = 0.0, pz_alpha = 0.0;
+	if (abl_z.i > 0) nz_alpha = (max - min) / (2 * tanh(wnz / (2 * sigma)));
+	if (abl_z.j > 0) pz_alpha = (max - min) / (2 * tanh(wpz / (2 * sigma)));
+
+	//formula (e.g. x): v = alpha * [tanh(x/sigma) + tanh(w/2sigma)] + min, where w is the width and x is position from centre of tanh
+	//applicable for x between 0 and wnx for negative side, and between length - wpx and length for positive side
+
+#pragma omp parallel for
+	for (int idx = 0; idx < n.dim(); idx++) {
+
+		quantity[idx] = min;
+	}
+
+	for (int k = 0; k < n.z; k++) {
+#pragma omp parallel for
+		for (int j = 0; j < n.y; j++) {
+			for (int i = 0; i < n.x; i++) {
+
+				int idx = i + j * n.x + k * n.x*n.y;
+
+				double pos_x = (i + 0.5) * h.x;
+				double pos_y = (j + 0.5) * h.y;
+				double pos_z = (k + 0.5) * h.z;
+
+				//x
+				if (pos_x <= wnx) {
+
+					quantity[idx] += nx_alpha * (tanh(-(pos_x - wnx / 2) / sigma) + tanh(wnx / (2 * sigma)));
+				}
+				else if (pos_x >= length - wpx) {
+
+					quantity[idx] += px_alpha * (tanh((pos_x - (length - wpx / 2)) / sigma) + tanh(wpx / (2 * sigma)));
+				}
+
+				//y
+				if (pos_y <= wny) {
+
+					quantity[idx] += ny_alpha * (tanh(-(pos_y - wny / 2) / sigma) + tanh(wny / (2 * sigma)));
+				}
+				else if (pos_y >= width - wpy) {
+
+					quantity[idx] += py_alpha * (tanh((pos_y - (width - wpy / 2)) / sigma) + tanh(wpy / (2 * sigma)));
+				}
+
+				//z
+				if (pos_z <= wnz) {
+
+					quantity[idx] += nz_alpha * (tanh(-(pos_z - wnz / 2) / sigma) + tanh(wnz / (2 * sigma)));
+				}
+				else if (pos_z >= height - wpz) {
+
+					quantity[idx] += pz_alpha * (tanh((pos_z - (height - wpz / 2)) / sigma) + tanh(wpz / (2 * sigma)));
+				}
+			}
+		}
+	}
+
+	return true;
+}
+
+//absorbing boundary conditions exp slopes: set VEC dimensions and generate exp slopes at slides
+//exp slopes at sides with sigma value, starting from maximum value at surfaces, proceeding inwards towards minimum up to a depth of length * ratio
+//abl_x, abl_y, abl_z : depth ratio for negative side, depth ratio for positive side
+//values : minimum centre, maximum outer, exp sigma in nm
+template <>
+inline bool VEC<double>::generate_ablexp(DBL3 new_h, Rect new_rect, DBL2 abl_x, DBL2 abl_y, DBL2 abl_z, DBL3 values)
+{
+	if (!resize(new_h, new_rect)) return false;
+
+	double length = rect.length();
+	double width = rect.width();
+	double height = rect.height();
+
+	double min = values.i;
+	double max = values.j;
+	double sigma = values.k * 1e-9;
+	int pn = round(values.k);
+	if (pn < 1) pn = 1;
+
+	double wnx = abl_x.i * length;
+	double wpx = abl_x.j * length;
+	double wny = abl_y.i * width;
+	double wpy = abl_y.j * width;
+	double wnz = abl_z.i * height;
+	double wpz = abl_z.j * height;
+
+	double nx_alpha = 0.0, px_alpha = 0.0;
+	if (abl_x.i > 0) nx_alpha = (max - min) / (exp(wnx / sigma) - 1);
+	if (abl_x.j > 0) px_alpha = (max - min) / (exp(wpx / sigma) - 1);
+
+	double ny_alpha = 0.0, py_alpha = 0.0;
+	if (abl_y.i > 0) ny_alpha = (max - min) / (exp(wny / sigma) - 1);
+	if (abl_y.j > 0) py_alpha = (max - min) / (exp(wpy / sigma) - 1);
+
+	double nz_alpha = 0.0, pz_alpha = 0.0;
+	if (abl_z.i > 0) nz_alpha = (max - min) / (exp(wnz / sigma) - 1);
+	if (abl_z.j > 0) pz_alpha = (max - min) / (exp(wpz / sigma) - 1);
+
+	//formula (e.g. x): v = alpha * [exp(x/sigma) - 1] + min, where w is the width and x is position start of exponential region
+	//applicable for x between 0 and wnx for negative side, and between length - wpx and length for positive side
+
+#pragma omp parallel for
+	for (int idx = 0; idx < n.dim(); idx++) {
+
+		quantity[idx] = min;
+	}
+
+	for (int k = 0; k < n.z; k++) {
+#pragma omp parallel for
+		for (int j = 0; j < n.y; j++) {
+			for (int i = 0; i < n.x; i++) {
+
+				int idx = i + j * n.x + k * n.x*n.y;
+
+				double pos_x = (i + 0.5) * h.x;
+				double pos_y = (j + 0.5) * h.y;
+				double pos_z = (k + 0.5) * h.z;
+
+				//x
+				if (pos_x <= wnx) {
+
+					quantity[idx] += nx_alpha * (exp(-(pos_x - wnx) / sigma) - 1);
+				}
+				else if (pos_x >= length - wpx) {
+
+					quantity[idx] += px_alpha * (exp((pos_x - (length - wpx)) / sigma) - 1);
+				}
+
+				//y
+				if (pos_y <= wny) {
+
+					quantity[idx] += ny_alpha * (exp(-(pos_y - wny) / sigma) - 1);
+				}
+				else if (pos_y >= width - wpy) {
+
+					quantity[idx] += py_alpha * (exp((pos_y - (width - wpy)) / sigma) - 1);
+				}
+
+				//z
+				if (pos_z <= wnz) {
+
+					quantity[idx] += nz_alpha * (exp(-(pos_z - wnz) / sigma) - 1);
+				}
+				else if (pos_z >= height - wpz) {
+
+					quantity[idx] += pz_alpha * (exp((pos_z - (height - wpz)) / sigma) - 1);
+				}
+			}
+		}
+	}
+
+	return true;
 }
 
 //defects: generate circular defects with a tanh radial profile with values in the given range, diameter range and average spacing (prng instantiated with given seed). The defect positioning is random. 

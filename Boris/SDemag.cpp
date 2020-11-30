@@ -645,7 +645,17 @@ BError SDemag::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 			}
 
 			//Check if h_fm.z divides each magnetic mesh thickness exactly - if not issue a warning to user
+			for (int idx = 0; idx < (int)pSMesh->pMesh.size(); idx++) {
 
+				if ((*pSMesh)[idx]->MComputation_Enabled() && !(*pSMesh)[idx]->is_atomistic()) {
+
+					double start = dynamic_cast<Mesh*>((*pSMesh)[idx])->meshRect.s.z;
+					double end = dynamic_cast<Mesh*>((*pSMesh)[idx])->meshRect.e.z;
+
+					if (IsNZ(round(start / pSMesh->h_fm.z) - start / pSMesh->h_fm.z)) { error(BWARNING_INCORRECTCELLSIZE); break; }
+					if (IsNZ(round(end / pSMesh->h_fm.z) - end / pSMesh->h_fm.z)) { error(BWARNING_INCORRECTCELLSIZE); break; }
+				}
+			}
 		}
 		else {
 

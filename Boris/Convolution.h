@@ -16,9 +16,9 @@ using namespace std;
 //1. Pre-set dimensions of In and Out VECs so memory can be allocated correctly : SZ3 n for number of cells in each dimension, DBL3 h for cellsize (h needed for Kernel calculation since h may not be cubic)
 
 //2. Construct this with the required Kernel class.
-//This defines exactly what kernels are used, how they are calculated - Calculate_Demag_Kernels() - and how the pointwise multiplication is done (see e.g. DemagKernel.h for an example)
+//This defines exactly what kernels are used, how they are calculated - e.g. Calculate_Demag_Kernels() - and how the pointwise multiplication is done (see e.g. DemagKernel.h for an example)
 
-//3. Before starting a computation call Calculate_Demag_Kernels() - provided by the Kernel class - to pre-compute the Kernels
+//3. Before starting a computation call e.g. Calculate_Demag_Kernels() - provided by the Kernel class - to pre-compute the Kernels
 
 //4. Call Convolute with In and Out to compute the convolution during run-time
 

@@ -1,12 +1,15 @@
-#NetSocks Module Updated on : 25/11/2020
-#Boris version : 3.0
+#NetSocks Module Updated on : 30/11/2020
+#Boris version : 3.0g
 
+import os
+import subprocess
+import platform
 import socket
-import time
 import matplotlib.pyplot as plt
 import numpy as np
 from itertools import product
 import struct
+import time
 
 ###############################################################################################################################
 
@@ -19,16 +22,70 @@ class NSClient:
     
     serverip = 'localhost'
     serverport = 1542
+    serverpwd = ''
     
     verbose = False
 
+    #on Windows assume this is where Boris.exe is (should be if installed with installer)
+    #on Linux don't attempt to define a default : user will have to provide path if they want automatic startup
+    win_default_boris_path = 'C:/Program Files (x86)/Boris'
+
     #################### CTOR / DTOR #######################
 
-    def __init__(self, serverip = 'localhost', serverport = 1542, verbose = False):
+    def __init__(self, 
+                 serverip = 'localhost', serverport = 1542, serverpwd = '', 
+                 cudaDevice = -1, 
+                 boris_path = '', boris_exe = '',
+                 window = 'back',
+                 verbose = False):
 
         self.serverip = serverip     
         self.serverport = serverport
         self.verbose = verbose
+        self.serverpwd = serverpwd
+        
+        #if boris path not specified use default if using Windows
+        #Linux users will need to provide path
+        if boris_path == '':
+            
+            if platform.system() == 'Windows':
+                boris_path = self.win_default_boris_path
+                
+        if boris_exe == '':
+            
+            if platform.system() == 'Windows':
+                boris_exe = 'Boris.exe'
+            
+            else:
+                boris_exe = './BorisLin'
+            
+        #start a new Boris instance if none exists listening on serverport, if we have a path to Boris.exe            
+        if len(boris_path):
+            
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+        
+                try:
+                    sock.connect((self.serverip, self.serverport))
+                except:
+                    if serverip == 'localhost':
+                        print("No server found on port %d. Starting new instance." % serverport)
+                        os.chdir(boris_path)
+                        subprocess.Popen([boris_exe, str(serverport), str(cudaDevice), window, serverpwd])
+                        
+                        #now make sure server is running and ready to accept input
+                        for tryidx in range(100):
+                        
+                            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock2:
+                                
+                                try:
+                                    sock2.connect((self.serverip, self.serverport))
+                                    print("New instance started.")
+                                    break
+                                except:
+                                    time.sleep(0.1)
+                                
+                    else:
+                        print("No server found on port %d. Make sure remote host has a Boris instance running for given port and is accessible." % serverport)
 
     #################### AUXILIARY #######################
 
@@ -1209,8 +1266,8 @@ class NSClient:
                         
                 try:
                     # Send data
-                    if self.verbose == True: sock.sendall(bytes('>' + message, 'utf-8'))
-                    else: sock.sendall(bytes('*' + message, 'utf-8'))
+                    if self.verbose == True: sock.sendall(bytes(self.serverpwd + '>' + message, 'utf-8'))
+                    else: sock.sendall(bytes(self.serverpwd + '*' + message, 'utf-8'))
                     print('TX : %s' % message)
                 except:
                     print("SendCommand (send): timed out.")

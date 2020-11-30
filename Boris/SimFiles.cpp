@@ -87,7 +87,7 @@ BError Simulation::LoadSimulation(string fileName)
 
 				if (cudaAvailable && cudaEnabled) error = SMesh.SwitchCUDAState(false, cudaDeviceSelect);
 				cudaEnabled = false;
-				
+
 				if (!error) success = LoadObjectState(bdin);
 
 				bdin.close();
@@ -122,7 +122,7 @@ BError Simulation::LoadSimulation(string fileName)
 		//also make sure cudaEnabled flag is false, so when objects are made they are first made on the host only : trying to make them on the device too in parallel can cause problems.
 		cudaEnabled = false;
 
-		if(!error) success = LoadObjectState(bdin);
+		if (!error) success = LoadObjectState(bdin);
 
 		bdin.close();
 
@@ -133,7 +133,22 @@ BError Simulation::LoadSimulation(string fileName)
 		if (!success) return error(BERROR_COULDNOTLOADFILE_CRIT);
 
 		//cudaEnabled will have been modified depending on what was stored in the simulation file, but CUDA is still switched off at this point; switch CUDA on if indicated
-		if (cudaEnabled && !error) error = SMesh.SwitchCUDAState(true, cudaDeviceSelect);
+#if COMPILECUDA == 1
+		if (cudaEnabled && !error) {
+
+			//a previous simulation file might have been configured for a cuda device != on a multi-GPU machine; might not be available on current machine
+			if (cudaDeviceSelect >= cudaDeviceVersions.size() || cudaDeviceVersions[cudaDeviceSelect].first != __CUDA_ARCH__) {
+
+				//back to default, since cuda available this device should be present
+				cudaDeviceSelect = 0;
+			}
+
+			if (cudaDeviceVersions[cudaDeviceSelect].first == __CUDA_ARCH__) {
+
+				error = SMesh.SwitchCUDAState(true, cudaDeviceSelect);
+			}
+		}
+#endif
 
 		//check for any errors in loading program state
 		if (!error) error = SMesh.Error_On_Create();

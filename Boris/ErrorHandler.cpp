@@ -39,15 +39,20 @@ void Simulation::restore_state(void)
 //show the error
 void Simulation::show_error(BError berror, string error_message, bool verbose)
 { 
-	string err_text = error_message + " Info : " + berror.info();
+	if (verbose) {
 
-	if (verbose) BD.DisplayConsoleError("ERROR : " + err_text);
+		//if (berror.warning_set()) BD.DisplayConsoleWarning("WARNING : " + err_text);
+		//else BD.DisplayConsoleError("ERROR : " + err_text);
+
+		if (berror.warning_set()) BD.DisplayConsoleWarning(error_message);
+		else BD.DisplayConsoleError(error_message);
+	}
 
 	if (log_errors) {
 
 		ofstream bdout;
 		bdout.open(errorlog_fileName.c_str(), ios::out | ios::app);
-		bdout << Get_Date_Time() + err_text << endl;
+		bdout << Get_Date_Time() + error_message << endl;
 		bdout.close();
 	}
 

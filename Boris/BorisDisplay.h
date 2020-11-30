@@ -142,6 +142,7 @@ public:
 	//display various message types in the console
 	void DisplayConsoleMessage(string text);
 	void DisplayConsoleError(string text);
+	void DisplayConsoleWarning(string text);
 	void DisplayConsoleListing(string text);
 	void DisplayFormattedConsoleMessage(string text);
 

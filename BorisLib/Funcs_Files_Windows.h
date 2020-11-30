@@ -120,11 +120,14 @@ inline std::vector<std::string> GetFilesInDirectory(std::string directory, std::
 }
 
 //open a file programatically : the file name includes a path
-inline void open_file(std::string fileName)
+inline void open_file(std::string fileName, std::string parameters = "")
 {
 	std::string command = "open";
 
-	ShellExecute(GetDesktopWindow(), StringtoWCHARPointer(command), StringtoWCHARPointer(fileName), NULL, NULL, SW_SHOWNORMAL);
+	if (!parameters.length())
+		ShellExecute(GetDesktopWindow(), StringtoWCHARPointer(command), StringtoWCHARPointer(fileName), NULL, NULL, SW_SHOWNORMAL);
+	else
+		ShellExecute(GetDesktopWindow(), StringtoWCHARPointer(command), StringtoWCHARPointer(fileName), StringtoWCHARPointer(parameters), NULL, SW_SHOWNORMAL);
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////

@@ -114,8 +114,8 @@ BError ConvolutionData::SetConvolutionDimensions(SZ3 n_, DBL3 h_, bool embed_mul
 	//set N values for FFT dimensions
 	if (pbc_images.x) {
 
-		//pbc : can use wrap-around, but currently only even values of N are allowed. Thus if n is odd, N has an extra cell (user should be warned in this case to use only even values for n in pbc directions).
-		N.x = n.x + (n.x % 2);
+		//pbc : can use wrap-around
+		N.x = n.x;
 	}
 	else {
 
@@ -125,7 +125,7 @@ BError ConvolutionData::SetConvolutionDimensions(SZ3 n_, DBL3 h_, bool embed_mul
 
 	if (pbc_images.y) {
 
-		N.y = n.y + (n.y % 2);
+		N.y = n.y;
 	}
 	else {
 
@@ -136,7 +136,7 @@ BError ConvolutionData::SetConvolutionDimensions(SZ3 n_, DBL3 h_, bool embed_mul
 
 		if (pbc_images.z) {
 
-			N.z = n.z + (n.z % 2);
+			N.z = n.z;
 		}
 		else {
 

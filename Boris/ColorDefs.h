@@ -8,6 +8,7 @@
 
 #define MESSAGECOLOR D2D1::ColorF(D2D1::ColorF::Green)  //rgba = (0, 0.5, 0, 1)
 #define ERRORCOLOR D2D1::ColorF(D2D1::ColorF::Red)		//rgba = (1, 0, 0, 1)
+#define WARNINGCOLOR D2D1::ColorF(D2D1::ColorF::Yellow)	//rgba = (1, 1, 0, 1)
 #define LISTINGCOLOR D2D1::ColorF(D2D1::ColorF::White)  //rgba = (1, 1, 1, 1)
 #define USERCOLOR D2D1::ColorF(D2D1::ColorF::Yellow)	//rgba = (1, 1, 0, 1)
 #define BGRNDTEXTCOLOR D2D1::ColorF(0,0)				//rgba = (0, 0, 0, 0)

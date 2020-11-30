@@ -1871,6 +1871,23 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 	}
 	break;
 
+	//Shows server password. textId is the password.
+	case IOI_SERVERPWD:
+	{
+		//on double-click make popup edit box to edit the currently displayed value
+		if (actionCode == AC_DOUBLECLICK) { actionOutcome = AO_STARTPOPUPEDITBOX; }
+
+		//popup edit box has returned some text - try to set value from it
+		else if (actionCode == AC_POPUPEDITTEXTBOXRETURNEDTEXT) {
+
+			//the actual text returned by the popup edit box
+			string to_text = trim(trimendspaces(pTO->GetText()), ",");
+
+			sendCommand_verbose(CMD_SERVERPWD, to_text);
+		}
+	}
+	break;
+
 	//Shows server sleep time in ms. auxId is the value.
 	case IOI_SERVERSLEEPMS:
 	{

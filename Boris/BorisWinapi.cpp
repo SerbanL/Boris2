@@ -10,14 +10,11 @@
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-//Program master object
-Simulation *pSim = nullptr;
-
 //Separate function to make the Simulation object, so it can be called on a separate std::thread.
 //See https://stackoverflow.com/questions/64988525/bug-related-to-g-openmp-when-using-stdthread/65001887#65001887 for reason
 void make_Simulation(HWND hWnd)
 {
-	pSim = new Simulation(hWnd, Program_Version);
+	pSim = new Simulation(hWnd, Program_Version, server_port, server_pwd, cudaDevice);
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -331,6 +328,8 @@ int APIENTRY _tWinMain(_In_ HINSTANCE hInstance,
 					   _In_ LPTSTR    lpCmdLine,
 					   _In_ int       nCmdShow)
 {
+	//////////////////////
+
 	UNREFERENCED_PARAMETER(hPrevInstance);
 	UNREFERENCED_PARAMETER(lpCmdLine);
 
@@ -341,15 +340,57 @@ int APIENTRY _tWinMain(_In_ HINSTANCE hInstance,
 	LoadString(hInstance, IDS_APP_TITLE, szTitle, MAX_LOADSTRING);
 	LoadString(hInstance, IDC_BORISWINAPI, szWindowClass, MAX_LOADSTRING);
 	
+	//////////////////////
 	//overwrite the title bar
 
 	//Bizarre bug here : if you convert to (float) instead of (double) the program crashes!!!
 	//If however you declare a stringstream variable before (just declare, you don't have to use it!) then program doesn't crash!
 	//Gets better : it used to work with (float) but for an unknown reason it suddenly started crashing and I don't know what's changed.
 	//Without a doubt the strangest bug I have ever seen - but as usual it will make sense when investigated properly, but I suspect it won't be easy.
-	string sTitle = string("Boris v") + ToString((double)Program_Version / 100);
+	//string sTitle = string("Boris v") + ToString((double)Program_Version / 100);
+	string sTitle = string("Boris v3.0g (30/11/2020) CUDA 7 DP");
 	copy(sTitle.begin(), sTitle.end(), szTitle);
 	szTitle[sTitle.size()] = 0;
+
+	//////////////////////
+	//Arguments
+
+	LPWSTR *szArgList;
+	int argc;
+
+	szArgList = CommandLineToArgvW(GetCommandLine(), &argc);
+
+	for (int i = 1; i < argc; i++)
+	{
+		//First argument: server port
+		if (i == 1) {
+
+			server_port = WideStringtoString(szArgList[i]);
+		}
+
+		//Second argument: cuda device
+		if (i == 2) {
+
+			cudaDevice = ToNum(WideStringtoString(szArgList[i]));
+		}
+
+		//Third argument: window options (front/back)
+		if (i == 3) {
+
+			window_startup_option = WideStringtoString(szArgList[i]);
+		}
+
+		//Fourth argument: server password
+		if (i == 4) {
+
+			server_pwd = WideStringtoString(szArgList[i]);
+		}
+	}
+
+	LocalFree(szArgList);
+
+	//////////////////////
+	//Startup
 
 	MyRegisterClass(hInstance);
 
@@ -429,6 +470,12 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
    }
 
    ShowWindow(hWnd, SW_SHOWMAXIMIZED);
+
+   if (window_startup_option == "back") {
+
+	   SetWindowPos(hWnd, HWND_BOTTOM, 0, 0, 0, 0, SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOSIZE);
+   }
+
    UpdateWindow(hWnd);
    
    //Stop the "Program has stopped working" pop-up error box after closing program. I really cannot figure out why it appears sometimes!!!

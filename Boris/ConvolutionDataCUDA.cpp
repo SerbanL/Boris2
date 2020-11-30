@@ -55,8 +55,8 @@ BError ConvolutionDataCUDA::SetConvolutionDimensions(cuSZ3 n_, cuReal3 h_, bool 
 	//set N values for FFT dimensions
 	if (pbc_images.x) {
 
-		//pbc : can use wrap-around, but currently only even values of N are allowed. Thus if n is odd, N has an extra cell (user should be warned in this case to use only even values for n in pbc directions).
-		N.x = n.x + (n.x % 2);
+		//pbc : can use wrap-around
+		N.x = n.x;
 	}
 	else {
 
@@ -66,7 +66,7 @@ BError ConvolutionDataCUDA::SetConvolutionDimensions(cuSZ3 n_, cuReal3 h_, bool 
 
 	if (pbc_images.y) {
 
-		N.y = n.y + (n.y % 2);
+		N.y = n.y;
 	}
 	else {
 
@@ -77,7 +77,7 @@ BError ConvolutionDataCUDA::SetConvolutionDimensions(cuSZ3 n_, cuReal3 h_, bool 
 
 		if (pbc_images.z) {
 
-			N.z = n.z + (n.z % 2);
+			N.z = n.z;
 
 			//in z pbc mode we'll want to disable q2d mode as that only works for powers of 2 with N.z at least 2 times larger than n.z
 			//if N.z is a power of 2 could adapt a q2D type mode for n.z = N.z but not worth the effort currently - is z pbc mode really that useful?

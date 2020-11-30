@@ -3529,6 +3529,7 @@ void Simulation::HandleCommand(string command_string)
 
 			if (!error && device < cudaDeviceVersions.size()) {
 
+#if COMPILECUDA == 1
 				if (cudaAvailable) {
 
 					if (cudaDeviceVersions[device].first != __CUDA_ARCH__) error(BERROR_CUDAVERSIONMISMATCH_NCRIT);
@@ -3556,6 +3557,7 @@ void Simulation::HandleCommand(string command_string)
 					}
 				}
 				else error(BERROR_NOTAVAILABLE);
+#endif
 			}
 			else if (verbose) Print_CUDAStatus();
 
@@ -4558,6 +4560,26 @@ void Simulation::HandleCommand(string command_string)
 			if (script_client_connected) commSocket.SetSendData(commandSpec.PrepareReturnParameters(server_port));
 		}
 		break;
+
+		case CMD_SERVERPWD:
+		{
+			std::string password;
+
+			error = commandSpec.GetParameters(command_fields, password);
+
+			if (!error) {
+
+				StopSimulation();
+
+				server_pwd = password;
+				commSocket.Change_Password(server_pwd);
+				Save_Startup_Flags();
+
+				UpdateScreen();
+			}
+			else if (verbose) PrintCommandUsage(command_name);
+		}
+		break;
 			
 		case CMD_SERVERSLEEPMS:
 		{
@@ -4579,6 +4601,29 @@ void Simulation::HandleCommand(string command_string)
 			else if (verbose) Print_ServerInfo();
 
 			if (script_client_connected) commSocket.SetSendData(commandSpec.PrepareReturnParameters(server_recv_sleep_ms));
+		}
+		break;
+
+		case CMD_NEWINSTANCE:
+		{
+			int port;
+			int cudaDevice;
+			std::string password;
+
+			error = commandSpec.GetParameters(command_fields, port, cudaDevice, password);
+			if (error) { error.reset() = commandSpec.GetParameters(command_fields, port, cudaDevice); password = ""; }
+			if (error) { error.reset() = commandSpec.GetParameters(command_fields, port); cudaDevice = -1; password = ""; }
+
+			if (!error) {
+
+				std::string boris_path = GetExeDirectory();
+
+				if (password.length())
+					open_file(boris_path + "Boris.exe", ToString(port) + " " + ToString(cudaDevice) + " back " + password);
+				else
+					open_file(boris_path + "Boris.exe", ToString(port) + " " + ToString(cudaDevice) + " back ");
+			}
+			else if (verbose) PrintCommandUsage(command_name);
 		}
 		break;
 
@@ -6230,6 +6275,7 @@ void Simulation::HandleCommand(string command_string)
 
 		case CMD_TEST:
 		{
+			/*
 			vector<string> commands_output;
 			commands_output.resize(commands.size());
 
@@ -6264,6 +6310,7 @@ void Simulation::HandleCommand(string command_string)
 			commands_description = trim(commands_description, "</i>");
 
 			SaveTextToFile("c:/commands.txt", commands_description);
+			*/
 		}
 		break;
 
@@ -6271,7 +6318,7 @@ void Simulation::HandleCommand(string command_string)
 			break;
 		}
 
-		if (error) {
+		if (error || error.warning_set()) {
 
 			err_hndl.show_error(error, verbose);
 

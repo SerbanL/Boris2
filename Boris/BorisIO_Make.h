@@ -748,6 +748,8 @@ void Simulation::MakeIOInfo(void)
 	ioInfo.set(paramvargen_generic_info + string("<i><b>Random with range (min, max) and seed"), INT2(IOI_MESHPARAMVARGENERATOR, MATPVAR_RANDOM));
 	ioInfo.set(paramvargen_generic_info + string("<i><b>Jagged with range (min, max)\n<i><b>spacing (m) and seed"), INT2(IOI_MESHPARAMVARGENERATOR, MATPVAR_JAGGED));
 	ioInfo.set(paramvargen_generic_info + string("<i><b>Polynomial slopes at sides along each axis\n<b>to length ratio from max at surface to min at centre\n<i>ratio_-x, ratio_+x;\n<i>ratio_-y, ratio_+y;\n<i>ratio_-z, ratio_+z;\n<i>min, max, polynomial exponent;<b>"), INT2(IOI_MESHPARAMVARGENERATOR, MATPVAR_ABLPOL));
+	ioInfo.set(paramvargen_generic_info + string("<i><b>Tanh slopes at sides along each axis\n<b>to length ratio from max at surface to min at centre\n<i>ratio_-x, ratio_+x;\n<i>ratio_-y, ratio_+y;\n<i>ratio_-z, ratio_+z;\n<i>min, max, tanh sigma in nm;<b>"), INT2(IOI_MESHPARAMVARGENERATOR, MATPVAR_ABLTANH));
+	ioInfo.set(paramvargen_generic_info + string("<i><b>Exp slopes at sides along each axis\n<b>to length ratio from max at surface to min at centre\n<i>ratio_-x, ratio_+x;\n<i>ratio_-y, ratio_+y;\n<i>ratio_-z, ratio_+z;\n<i>min, max, exp sigma in nm;<b>"), INT2(IOI_MESHPARAMVARGENERATOR, MATPVAR_ABLEXP));
 	ioInfo.set(paramvargen_generic_info + string("<i><b>Circular defects with value range (min, max)\n<i><b>diameter range (min, max)\n<i><b>average spacing (m) and seed"), INT2(IOI_MESHPARAMVARGENERATOR, MATPVAR_DEFECTS));
 	ioInfo.set(paramvargen_generic_info + string("<i><b>Line faults with value range (min, max)\n<i><b>length range (m) (min, max)\n<i><b>orientation range in degrees (min, max)\n<i><b>average spacing (m) and seed"), INT2(IOI_MESHPARAMVARGENERATOR, MATPVAR_FAULTS));
 	ioInfo.set(paramvargen_generic_info + string("<i><b>Voronoi 2D cells with value range (min, max)\n<i><b>average spacing (m) and seed"), INT2(IOI_MESHPARAMVARGENERATOR, MATPVAR_VORONOI2D));
@@ -1231,6 +1233,15 @@ void Simulation::MakeIOInfo(void)
 		string("\n[tc1,1,0,1/tc]dbl-click: edit\n");
 
 	ioInfo.push_back(serverport_info, IOI_SERVERPORT);
+
+	//Shows server password. textId is the password.
+	//IOI_SERVERPWD
+
+	string serverpwd_info =
+		string("[tc1,1,0,1/tc]<b>Script server password") +
+		string("\n[tc1,1,0,1/tc]dbl-click: edit\n");
+
+	ioInfo.push_back(serverpwd_info, IOI_SERVERPWD);
 
 	//Shows server sleep time in ms. auxId is the value.
 	//IOI_SERVERSLEEPMS
@@ -2367,6 +2378,7 @@ string Simulation::MakeIO(IOI_ identifier, PType ... params)
 			int device = ToNum(params_str[0]);
 
 			if (!cudaAvailable) return MakeInteractiveObject("N/A", IOI_CUDADEVICE, device, -1, "", UNAVAILABLECOLOR);
+#if COMPILECUDA == 1
 			else {
 
 				if (cudaDeviceVersions[device].first != __CUDA_ARCH__) {
@@ -2378,6 +2390,9 @@ string Simulation::MakeIO(IOI_ identifier, PType ... params)
 					return MakeInteractiveObject(cudaDeviceVersions[device].second, IOI_CUDADEVICE, device, 0, "", OFFCOLOR);
 				}
 			}
+#else
+			return MakeInteractiveObject("N/A", IOI_CUDADEVICE, device, -1, "", UNAVAILABLECOLOR);
+#endif
 		}
 		break;
 
@@ -2493,6 +2508,18 @@ string Simulation::MakeIO(IOI_ identifier, PType ... params)
 			string port = params_str[0];
 
 			return MakeInteractiveObject(port, IOI_SERVERPORT, -1, ToNum(port));
+		}
+		break;
+
+	//Shows server password. textId is the password.
+	case IOI_SERVERPWD:
+		if (params_str.size() == 1) {
+
+			string password = params_str[0];
+
+			//for display only
+			if (!password.length()) return MakeInteractiveObject(" ", IOI_SERVERPWD, -1, 0, "");
+			else return MakeInteractiveObject(password, IOI_SERVERPWD, -1, 0, password);
 		}
 		break;
 

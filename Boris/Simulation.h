@@ -85,7 +85,18 @@ class Simulation :
 	public SimulationSharedData, 
 	public Threads<Simulation>,
 	public ProgramState<Simulation, 
-	tuple<BorisDisplay, string, string, string, string, bool, bool, bool, vector_lut<DatumConfig>, vector_lut<DatumConfig>, INT2, vector_lut<StageConfig>, int, bool, SuperMesh, bool, bool, bool, DBL4, DBL2, DBL2, int, vector_key<double>>,
+	tuple<
+	BorisDisplay, 
+	string, string, string, string, bool, bool, bool, 
+	vector_lut<DatumConfig>, vector_lut<DatumConfig>, 
+	INT2, 
+	vector_lut<StageConfig>, int, bool, 
+	SuperMesh, 
+	bool, int, 
+	bool, 
+	bool, 
+	DBL4, DBL2, DBL2, int, 
+	vector_key<double>>,
 	tuple<> >
 {
 private:
@@ -138,6 +149,8 @@ private:
 	std::string server_port = DEFAULT_PORT;
 	//default server receiver sleep time : lower value improves server responsivity but increase CPU load for server thread.
 	int server_recv_sleep_ms = RECVSLEEPMS;
+	//default server password : no password by default (mostly comms will happen locally behind a firewall, or in any case a firewall would be on by default, but user can set a password anyway)
+	std::string server_pwd = "";
 
 	ErrorHandler<Simulation> err_hndl;
 
@@ -699,9 +712,9 @@ public:
 	//-------------------------------------Other public methods
 
 #if GRAPHICS == 1
-	Simulation(HWND hWnd, int Program_Version);
+	Simulation(HWND hWnd, int Program_Version, std::string server_port_ = "", std::string server_pwd_ = "", int cudaDevice = -1);
 #else
-	Simulation(int Program_Version);
+	Simulation(int Program_Version, std::string server_port_ = "", std::string server_pwd_ = "", int cudaDevice = -1);
 #endif
 	~Simulation();
 

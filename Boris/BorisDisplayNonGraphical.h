@@ -177,6 +177,7 @@ public:
 	//display various message types in the console
 	void DisplayConsoleMessage(string text) { cout << text << endl; }
 	void DisplayConsoleError(string text) { cout << text << endl; }
+	void DisplayConsoleWarning(string text) { cout << text << endl; }
 	void DisplayConsoleListing(string text) { cout << text << endl; }
 
 	//display message after stripping out the formatting

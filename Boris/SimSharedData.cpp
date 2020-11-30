@@ -91,6 +91,10 @@ SimulationSharedData::SimulationSharedData(bool called_from_Simulation)
 		vargenerator_descriptor.push_back("vorrot3D", "70, 110; -45, 45; 40nm; 1", MATPVAR_VORONOIROT3D);
 		//DBL2 x sides ratios, DBL2 y sides ratios, DBL2 z sides ratios, DBL3 inner mimimum, outer maximum, polynomial exponent
 		vargenerator_descriptor.push_back("abl_pol", "0.25, 0.25; 0, 0; 0, 0; 0, 1, 1", MATPVAR_ABLPOL);
+		//DBL2 x sides ratios, DBL2 y sides ratios, DBL2 z sides ratios, DBL3 inner mimimum, outer maximum, tanh sigma in nm
+		vargenerator_descriptor.push_back("abl_tanh", "0.25, 0.25; 0, 0; 0, 0; 0, 1, 10.0", MATPVAR_ABLTANH);
+		//DBL2 x sides ratios, DBL2 y sides ratios, DBL2 z sides ratios, DBL3 inner mimimum, outer maximum, exp sigma in nm
+		vargenerator_descriptor.push_back("abl_exp", "0.25, 0.25; 0, 0; 0, 0; 0, 1, 10.0", MATPVAR_ABLEXP);
 
 		//--------------
 

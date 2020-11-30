@@ -47,12 +47,15 @@ inline std::vector<std::string> GetFilesInDirectory(std::string directory, std::
 }
 
 //open a file programatically : the file name includes a path
-inline void open_file(std::string fileName)
+inline void open_file(std::string fileName, std::string parameters = "")
 {
 	pid_t pid = fork();
     if (pid == 0) {
 
-        execl("/usr/bin/xdg-open", "xdg-open", fileName.c_str(), (char *)0);
+		if (!parameters.length())
+			execl("/usr/bin/xdg-open", "xdg-open", fileName.c_str(), (char *)0);
+		else
+			execl("/usr/bin/xdg-open", "xdg-open", fileName.c_str(), parameters.c_str());
     }
 }
 

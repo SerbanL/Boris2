@@ -23,11 +23,8 @@ protected:
 
 	//dimensions of FFT spaces, even so can always divide by 2 :
 	//In directions without PBC these are double the n values, but not necessarily a power of 2.
-	//In directions with PBC these are the same as the n values, except must be even, i.e. if n odd then N is n + 1.
-	//This is not very restrictive, but will change it to allow odd values in pbc directions in a future version.
-	//With N always even we can use the same code for pbc and non-pbc. 
+	//In directions with PBC these are the same as the n values.
 	//For pbc all we have to do is calculate the kernel differently and set N value to n rather than double that of n.
-	//Thus for pbc if n is odd the result will not be correct and user should be warned about it.
 	SZ3 N;
 
 	//periodic boundary conditions -> setting these changes convolution dimensions and workflow for kernel calculation.

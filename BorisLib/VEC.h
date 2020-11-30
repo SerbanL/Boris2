@@ -218,10 +218,23 @@ public:
 	bool generate_jagged(DBL3 new_h, Rect new_rect, DBL2 range, double spacing, unsigned seed) { return true; }
 
 	//absorbing boundary conditions polynomial slopes: set VEC dimensions and generate polynomial slopes at slides
-	//polynomial slopes at slides with exponent n, starting from maximum value at surfaces, proceeding inwards towards minimum up to a depth of length * ratio
+	//polynomial slopes at sides with exponent n, starting from maximum value at surfaces, proceeding inwards towards minimum up to a depth of length * ratio
 	//abl_x, abl_y, abl_z : depth ratio for negative side, depth ratio for positive side
 	//values : minimum centre, maximum outer, polynomial exponent
 	bool generate_ablpol(DBL3 new_h, Rect new_rect, DBL2 abl_x, DBL2 abl_y, DBL2 abl_z, DBL3 values) { return true; }
+
+	//absorbing boundary conditions tanh slopes: set VEC dimensions and generate tanh slopes at slides
+	//tanh slopes at sides with sigma value, starting from maximum value at surfaces, proceeding inwards towards minimum up to a depth of length * ratio
+	//tanh profile centered
+	//abl_x, abl_y, abl_z : depth ratio for negative side, depth ratio for positive side
+	//values : minimum centre, maximum outer, tanh sigma in nm
+	bool generate_abltanh(DBL3 new_h, Rect new_rect, DBL2 abl_x, DBL2 abl_y, DBL2 abl_z, DBL3 values) { return true; }
+
+	//absorbing boundary conditions exp slopes: set VEC dimensions and generate exp slopes at slides
+	//exp slopes at sides with sigma value, starting from maximum value at surfaces, proceeding inwards towards minimum up to a depth of length * ratio
+	//abl_x, abl_y, abl_z : depth ratio for negative side, depth ratio for positive side
+	//values : minimum centre, maximum outer, exp sigma in nm
+	bool generate_ablexp(DBL3 new_h, Rect new_rect, DBL2 abl_x, DBL2 abl_y, DBL2 abl_z, DBL3 values) { return true; }
 
 	//voronoi 2D: set VEC dimensions (force 2D in xy plane) and generate random values in the given range with each value fixed in a voronoi cell, and average spacing (prng instantiated with given seed).
 	bool generate_voronoi2d(DBL3 new_h, Rect new_rect, DBL2 range, double spacing, unsigned seed);

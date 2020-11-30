@@ -281,6 +281,9 @@ enum IOI_
 	//Shows server port. auxId is the value.
 	IOI_SERVERPORT,
 		
+	//Shows server password. textId is the password.
+	IOI_SERVERPWD,
+
 	//Shows server sleep time in ms. auxId is the value.
 	IOI_SERVERSLEEPMS,
 

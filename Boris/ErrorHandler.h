@@ -49,6 +49,14 @@ enum BERROR_
 	BERROR_ENUMSIZE
 };
 
+//BWARNING_ enum with all the possible error identifiers : warnings are simply displayed messages, but not errors, so everything proceeds as normal
+enum BWARNING_
+{
+	BWARNING_NONE = 0,
+	BWARNING_INCORRECTCELLSIZE,				//cellsize set is incorrect
+	BWARNING_ENUMSIZE
+};
+
 enum ERRLEV_ 
 { 
 	ERRLEV_SILENT,							//Error occured but don't display it
@@ -89,13 +97,17 @@ class BError {
 	//the error code
 	BERROR_ err_code = BERROR_NONE;
 
-	//info for the error code containing the whole chain of functions returning errors, each with their own info
-	vector<string> err_info;
+	BWARNING_ warn_code = BWARNING_NONE;
+
+	//accumulated info for the error or warning code containing the whole chain of functions returning errors or warnings, each with their own info
+	vector<string> accum_info;
 
 public:
 
+	//None
 	BError(void) {}
 
+	//Errors
 	BError(BERROR_ err_code_) 
 	{
 		err_code = err_code_;
@@ -104,32 +116,62 @@ public:
 	BError(BERROR_ err_code_, string local_info)
 	{
 		err_code = err_code_;
-		err_info.push_back(local_info);
+		accum_info.push_back(local_info);
+	}
+
+	//Warnings
+	BError(BWARNING_ warn_code_)
+	{
+		warn_code = warn_code_;
+	}
+
+	BError(BWARNING_ warn_code_, string local_info)
+	{
+		warn_code = warn_code_;
+		accum_info.push_back(local_info);
 	}
 
 	//make error object with local info - further info gets added later from functions returning errors
 	BError(string local_info)
 	{
-		err_info.push_back(local_info);
+		accum_info.push_back(local_info);
 	}
 
+	//copy constructor
 	BError(const BError& copyThis)
 	{
 		*this = copyThis;
 	}
 
+	//use to get error from a returning function : if error or warning returned then copy info
+	BError& operator=(const BError& rhs)
+	{
+		if (rhs.code() || rhs.wcode()) {
+
+			err_code = rhs.code();
+			warn_code = rhs.wcode();
+			accum_info.reserve(accum_info.size() + rhs.accum_info.size());
+			accum_info.insert(accum_info.end(), rhs.accum_info.begin(), rhs.accum_info.end());
+		}
+
+		return *this;
+	}
+
 	//get error code
 	BERROR_ code(void) const { return err_code; }
+
+	//get warning code
+	BWARNING_ wcode(void) const { return warn_code; }
 
 	//get error info as a combined string
 	string info(void) const 
 	{ 
 		string info_string;
 
-		for (int idx = 0; idx < err_info.size(); idx++) {
+		for (int idx = 0; idx < accum_info.size(); idx++) {
 
-			info_string += err_info[idx];
-			if (idx != err_info.size() - 1) info_string += " > ";
+			info_string += accum_info[idx];
+			if (idx != accum_info.size() - 1) info_string += " > ";
 		}
 
 		return info_string;
@@ -138,25 +180,24 @@ public:
 	//use to check if error code set
 	operator bool() const { return err_code; }
 
+	//check if a warning is set
+	bool warning_set(void) const { return warn_code; }
+
 	//set an error code
 	BError& operator()(BERROR_ set_err_code) { err_code = set_err_code; return *this; }
 	BError& operator()(BERROR_ set_err_code, string local_info) 
 	{ 
 		err_code = set_err_code; 
-		err_info.push_back(local_info);
+		accum_info.push_back(local_info);
 		return *this; 
 	}
 
-	//use to get error from a returning function : if error returned then copy info
-	BError& operator=(const BError& rhs)
+	//set a warning code
+	BError& operator()(BWARNING_ set_warn_code) { warn_code = set_warn_code; return *this; }
+	BError& operator()(BWARNING_ set_warn_code, string local_info)
 	{
-		if (rhs.code()) {
-
-			err_code = rhs.code();
-			err_info.reserve(err_info.size() + rhs.err_info.size());
-			err_info.insert(err_info.end(), rhs.err_info.begin(), rhs.err_info.end());
-		}
-
+		warn_code = set_warn_code;
+		accum_info.push_back(local_info);
 		return *this;
 	}
 
@@ -164,10 +205,25 @@ public:
 	bool operator==(BERROR_ code) const { return (err_code == code); }
 	bool operator!=(BERROR_ code) const { return (err_code != code); }
 
-	//reset error code and return object to receive new error, if any; e.g. if(error == BERROR_SOMETHING) error.reset() = function(...);
-	BError& reset(void) { err_code = BERROR_NONE; return *this; }
+	//compare with a BWARNING_ code
+	bool operator==(BWARNING_ code) const { return (warn_code == code); }
+	bool operator!=(BWARNING_ code) const { return (warn_code != code); }
 
-	void clear(void) { err_code = BERROR_NONE; err_info.clear(); err_info.shrink_to_fit(); }
+	//reset error code and return object to receive new error, if any; e.g. if(error == BERROR_SOMETHING) error.reset() = function(...);
+	BError& reset(void) 
+	{ 
+		err_code = BERROR_NONE;
+		warn_code = BWARNING_NONE;
+		return *this; 
+	}
+
+	void clear(void) 
+	{ 
+		err_code = BERROR_NONE;
+		warn_code = BWARNING_NONE;
+		accum_info.clear();
+		accum_info.shrink_to_fit();
+	}
 };
 
 //------------------------------------------------------------------------------- ERROR HANDLER
@@ -183,13 +239,18 @@ private:
 	//error messages
 	vector<pair<string, ERRLEV_>> errors;
 
+	//warnings messages
+	vector<string> warnings;
+
 private:
 
-	string get_error_string(BError error) const { return errors[error.code()].first; }
+	//string get_error_string(BError error) const { return errors[error.code()].first; }
 
 	bool is_critical_error(BError error) const { return (errors[error.code()].second == ERRLEV_CRIT); }
 
 	bool is_silent_error(BError error) const { return (errors[error.code()].second == ERRLEV_SILENT); }
+
+	bool is_warning(BError error) const { return (error.wcode() != BWARNING_NONE); }
 
 public:
 
@@ -197,12 +258,13 @@ public:
 
 	void show_error(BError error, bool verbose = true) const
 	{
-		if (!is_silent_error(error)) pOwner->show_error(error, get_error_string(error), verbose);
+		if (!is_silent_error(error) || is_warning(error)) pOwner->show_error(error, get_error_text(error), verbose);
 	}
 
 	string get_error_text(BError error) const
 	{
-		return "ERROR : " + get_error_string(error) + " Info : " + error.info();
+		if (is_warning(error)) return "WARNING : " + warnings[error.wcode()] + " Info : " + error.info();
+		else return "ERROR : " + errors[error.code()].first + " Info : " + error.info();
 	}
 
 	//full call, no parameters
@@ -216,8 +278,6 @@ public:
 		if (error) {
 
 			if (is_critical_error(error)) pOwner->restore_state();
-
-			//if (!is_silent_error(error)) pOwner->show_error(error, get_error_string(error), true);
 
 			//error occured
 			return true;
@@ -239,8 +299,6 @@ public:
 
 			if (is_critical_error(error)) pOwner->restore_state();
 
-			//if (!is_silent_error(error)) pOwner->show_error(error, get_error_string(error), true);
-
 			//error occured
 			return true;
 		}
@@ -256,8 +314,6 @@ public:
 		error = (pObject->*method)();
 
 		if (error) {
-
-			//if (!is_silent_error(error)) pOwner->show_error(error, get_error_string(error), true);
 
 			//error occured
 			return true;
@@ -275,8 +331,6 @@ public:
 
 		if (error) {
 
-			//if (!is_silent_error(error)) pOwner->show_error(error, get_error_string(error), true);
-
 			//error occured
 			return true;
 		}
@@ -291,6 +345,8 @@ template <typename Owner>
 ErrorHandler<Owner>::ErrorHandler(Owner* pOwner_) :
 	pOwner(pOwner_)
 {
+	/////////////////////////////////////////////////////////////////////////////////////
+
 	errors.resize(BERROR_ENUMSIZE);
 
 	errors[BERROR_NONE] = pair<string, ERRLEV_>( "", ERRLEV_SILENT );
@@ -331,4 +387,12 @@ ErrorHandler<Owner>::ErrorHandler(Owner* pOwner_) :
 	errors[BERROR_SPINSOLVER_FIT3] = pair<string, ERRLEV_>("Must be ferromagnetic mesh with transport module added and spin transport solver enabled. hm_mesh must be a metal mesh with transport module added.", ERRLEV_NCRIT);
 	errors[BERROR_SPINSOLVER_FIT4] = pair<string, ERRLEV_>("Must give metal and ferromagnetic meshes in this order.", ERRLEV_NCRIT);
 	errors[BERROR_NOTDEFINED] = pair<string, ERRLEV_>("Name not defined.", ERRLEV_NCRIT);
+
+	/////////////////////////////////////////////////////////////////////////////////////
+
+	warnings.resize(BWARNING_ENUMSIZE);
+
+	warnings[BWARNING_INCORRECTCELLSIZE] = string("Working with incorrect cellsize.");
+
+	/////////////////////////////////////////////////////////////////////////////////////
 }

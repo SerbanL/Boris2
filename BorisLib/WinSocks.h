@@ -59,6 +59,9 @@ private:
 	std::string server_port = DEFAULT_PORT;
 	int server_recvsleepms = RECVSLEEPMS;
 
+	//server password : all client messages must be preceded by this string otherwise reject them
+	std::string password = "";
+
 private:
 
 	//Make non-blocking listen socket on DEFAULT_PORT to accept incoming connections - done in the constructor
@@ -71,6 +74,9 @@ public:
 
 	void Change_Port(std::string port);
 	void Change_RecvSleep(int recvsleepms) { server_recvsleepms = recvsleepms; }
+
+	void Change_Password(std::string password_) { password = password_; }
+	std::string Show_Password(void) { return password; }
 
 	//Non-blocking call to Listen for incoming messages - return message when received
 	std::string Listen(void);
@@ -274,10 +280,16 @@ inline std::string NetSocks::Listen(void)
 	//all good, return the received message
 	if (iResult > 0) {
 
-		//received message, return it to be processed
+		//received message, return it to be processed after password check
 		last_message = std::string(recvbuf).substr(0, iResult);
 
-		return last_message;
+		if (last_message.length() > password.length()) {
+
+			if (last_message.substr(0, password.length()) == password) return last_message.substr(password.length());
+		}
+
+		//failed password check
+		return "";
 	}
 
 	//sleep before calling the non-blocking recv function (client socket is not blocking)

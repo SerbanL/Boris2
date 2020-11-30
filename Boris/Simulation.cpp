@@ -2,7 +2,7 @@
 #include "Simulation.h"
 
 #if GRAPHICS == 1
-Simulation::Simulation(HWND hWnd, int Program_Version) :
+Simulation::Simulation(HWND hWnd, int Program_Version, std::string server_port_, std::string server_pwd_, int cudaDevice) :
 	err_hndl(this),
 	BD(hWnd, new SimTOFunct(this, &Simulation::ConsoleActionHandler, &Simulation::ConsoleInteractiveObjectState)),
 	SimulationSharedData(true),
@@ -15,14 +15,14 @@ Simulation::Simulation(HWND hWnd, int Program_Version) :
 			VINFO(stage_step),
 			VINFO(simStages), VINFO(iterUpdate), VINFO(autocomplete),
 			VINFO(SMesh),
-			VINFO(cudaEnabled),
+			VINFO(cudaEnabled), VINFO(cudaDeviceSelect),
 			VINFO(shape_change_individual),
 			VINFO(static_transport_solver),
 			VINFO(image_cropping), VINFO(displayTransparency), VINFO(displayThresholds), VINFO(displayThresholdTrigger),
 			VINFO(userConstants)
 		}, {})
 #else
-Simulation::Simulation(int Program_Version) :
+Simulation::Simulation(int Program_Version, std::string server_port_, std::string server_pwd_, int cudaDevice) :
 	err_hndl(this),
 	BD(),
 	SimulationSharedData(true),
@@ -35,7 +35,7 @@ Simulation::Simulation(int Program_Version) :
 			VINFO(stage_step),
 			VINFO(simStages), VINFO(iterUpdate), VINFO(autocomplete),
 			VINFO(SMesh),
-			VINFO(cudaEnabled),
+			VINFO(cudaEnabled), VINFO(cudaDeviceSelect),
 			VINFO(shape_change_individual),
 			VINFO(static_transport_solver),
 			VINFO(image_cropping), VINFO(displayTransparency), VINFO(displayThresholds), VINFO(displayThresholdTrigger),
@@ -51,6 +51,8 @@ Simulation::Simulation(int Program_Version) :
 
 	//default directory
 	directory = GetUserDocumentsPath() + boris_data_directory + boris_simulations_directory;
+
+	//---------------------------------------------------------------- CUDA
 
 #if COMPILECUDA == 1
 	int deviceCount;
@@ -71,13 +73,17 @@ Simulation::Simulation(int Program_Version) :
 		cudaDeviceVersions.push_back(std::pair<int, std::string>(deviceProperties.major * 100, device_info));
 	}
 
-	//Select first device with matches current CUDA version
-	for (int idx = 0; idx < deviceCount; idx++) {
-	
-		if (cudaDeviceVersions[idx].first == __CUDA_ARCH__) {
+	//with the default parameter cudaDevice = -1 we need to determine a value for cudaDeviceSelect
+	if (cudaDevice < 0) {
 
-			cudaDeviceSelect = idx;
-			break;
+		//Select first device with matches current CUDA version
+		for (int idx = 0; idx < deviceCount; idx++) {
+	
+			if (cudaDeviceVersions[idx].first == __CUDA_ARCH__) {
+
+				cudaDeviceSelect = idx;
+				break;
+			}
 		}
 	}
 #endif
@@ -1071,11 +1077,21 @@ Simulation::Simulation(int Program_Version) :
 	commands[CMD_SERVERPORT].limits = { { int(0), Any() } };
 	commands[CMD_SERVERPORT].return_descr = "[tc0,0.5,0,1/tc]Script return values: <i>port</i>";
 
+	commands.insert(CMD_SERVERPWD, CommandSpecifier(CMD_SERVERPWD), "serverpassword");
+	commands[CMD_SERVERPWD].usage = "[tc0,0.5,0,1/tc]USAGE : <b>serverpassword</b> <i>password</i>";
+	commands[CMD_SERVERPWD].descr = "[tc0,0.5,0.5,1/tc]Set/change script server password - this is used to authenticate remote client messages. By default no password is set (blank).";
+	commands[CMD_SERVERPWD].limits = { { Any(), Any() } };
+
 	commands.insert(CMD_SERVERSLEEPMS, CommandSpecifier(CMD_SERVERSLEEPMS), "serversleepms");
 	commands[CMD_SERVERSLEEPMS].usage = "[tc0,0.5,0,1/tc]USAGE : <b>serversleepms</b> <i>time_ms</i>";
 	commands[CMD_SERVERSLEEPMS].descr = "[tc0,0.5,0.5,1/tc]Set script server thread sleep time in ms: lower value makes server more responsive, but increases CPU load.";
 	commands[CMD_SERVERSLEEPMS].limits = { { int(1), Any() } };
 	commands[CMD_SERVERSLEEPMS].return_descr = "[tc0,0.5,0,1/tc]Script return values: <i>time_ms</i>";
+
+	commands.insert(CMD_NEWINSTANCE, CommandSpecifier(CMD_NEWINSTANCE), "newinstance");
+	commands[CMD_NEWINSTANCE].usage = "[tc0,0.5,0,1/tc]USAGE : <b>newinstance</b> <i>port (cudaDevice (password))</i>";
+	commands[CMD_NEWINSTANCE].descr = "[tc0,0.5,0.5,1/tc]Start a new local Boris instance with given server port, and optionally cuda device number (0/1/2/3/...); a value of -1 means automatically determine cuda device. If password not blank this should be specified otherwise server will not start.";
+	commands[CMD_NEWINSTANCE].limits = { { int(0), Any() }, { int(-1), Any() }, { Any(), Any() } };
 
 	commands.insert(CMD_SHOWTC, CommandSpecifier(CMD_SHOWTC), "showtc");
 	commands[CMD_SHOWTC].usage = "[tc0,0.5,0,1/tc]USAGE : <b>showtc</b>";
@@ -1675,7 +1691,7 @@ Simulation::Simulation(int Program_Version) :
 	NewDataBoxField(DatumConfig(DATA_TIME));
 	NewDataBoxField(DatumConfig(DATA_MXH));
 
-	//---------------------------------------------------------------- START
+	//---------------------------------------------------------------- STARTUP OPTIONS
 	
 	//set error log file with path
 	errorlog_fileName = GetUserDocumentsPath() + boris_data_directory + "errorlog.txt";
@@ -1685,29 +1701,56 @@ Simulation::Simulation(int Program_Version) :
 	//Load options for startup first
 	Load_Startup_Flags();
 
-	BD.DisplayConsoleMessage("Console activated...");
+	//---------------------------------------------------------------- SERVER START
 
 	//start network sockets thread to listen for incoming messages
+	commSocket.Change_Password(server_pwd);
 	commSocket.Change_Port(server_port);
 	commSocket.Change_RecvSleep(server_recv_sleep_ms);
-	if (start_scriptserver) Script_Server_Control(true);
+	if (start_scriptserver && !server_port_.length()) {
+
+		Script_Server_Control(true);
+	}
+	else if (server_port_.length()) {
+
+		//if a server_port_ was passed in, then over-ride start_scriptserver flag
+		//in this case the provided password must match the local password
+		if (server_pwd == server_pwd_ || !server_pwd.length()) {
+
+			server_port = server_port_;
+			commSocket.Change_Port(server_port);
+
+			Script_Server_Control(true);
+		}
+	}
+
+	//---------------------------------------------------------------- UPDATES
 
 	//Check with "www.boris-spintronics.uk" if program version is up to date, and get latest update time for materials database
 	if (start_check_updates) single_call_launch(&Simulation::CheckUpdate, THREAD_HANDLEMESSAGE2);
 
+	//---------------------------------------------------------------- FINAL SETTINGS
+
+	//Set number of OpenMP threads (default is use all available but user can configure this)
+	if (!OmpThreads) OmpThreads = omp_get_num_procs();
+
 	//Update display - do not animate starting view
 	UpdateScreen_AutoSet_Sudden();
+
+	//---------------------------------------------------------------- MESSAGES
 
 	//if this directory doesn't exist create it
 	if (!MakeDirectory(directory)) BD.DisplayConsoleError("ERROR : Couldn't create user directory.");
 
-	//save the default state in program directory for loading with "default" command (update this automatically in case the program version has changed)
-	SaveSimulation(directory + "default");
-
+	BD.DisplayConsoleMessage("Console activated...");
 	BD.DisplayFormattedConsoleMessage("[tc0,0.5,0,1/tc]To open manual use the <b>manual</b> command.");
 
-	//Set number of OpenMP threads (default is use all available but user can configure this)
-	if (!OmpThreads) OmpThreads = omp_get_num_procs();
+	//---------------------------------------------------------------- SAVE DEFAULT and CTOR FINISH
+
+	Save_Startup_Flags();
+
+	//save the default state in program directory for loading with "default" command (update this automatically in case the program version has changed)
+	SaveSimulation(directory + "default");
 }
 
 Simulation::~Simulation()

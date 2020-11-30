@@ -738,6 +738,23 @@ void BorisDisplay::DisplayConsoleError(string text)
 	displayMutex.unlock();
 }
 
+void BorisDisplay::DisplayConsoleWarning(string text)
+{
+	//for external calls only
+	displayMutex.lock();
+
+	//Check for newline and carriage return separators (\n, \r)
+	vector<string> messageLines = split(text, "\r", "\n");
+
+	//add them line by line
+	for (int i = 0; i < messageLines.size(); i++)
+		pbConsole->NewTextLine(messageLines[i], FormatSpecifier(WARNINGCOLOR));
+
+	Refresh(WIN_CONSOLE);
+
+	displayMutex.unlock();
+}
+
 void BorisDisplay::DisplayConsoleListing(string text) 
 {
 	//for external calls only

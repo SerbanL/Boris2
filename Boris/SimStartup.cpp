@@ -31,6 +31,12 @@ void Simulation::Load_Startup_Flags(void)
 				if (bdin.getline(line, FILEROWCHARS)) server_port = string(line);
 			}
 
+			//Script server configuration : password
+			if (string(line) == STRINGIFY(server_pwd)) {
+
+				if (bdin.getline(line, FILEROWCHARS)) server_pwd = string(line);
+			}
+
 			//Script server configuration : sleep
 			if (string(line) == STRINGIFY(server_recv_sleep_ms)) {
 
@@ -73,6 +79,10 @@ void Simulation::Save_Startup_Flags(void)
 		//Script server configuration : port
 		bdout << STRINGIFY(server_port) << endl;
 		bdout << server_port << endl;
+
+		//Script server configuration : password
+		bdout << STRINGIFY(server_pwd) << endl;
+		bdout << server_pwd << endl;
 
 		//Script server configuration : sleep
 		bdout << STRINGIFY(server_recv_sleep_ms) << endl;

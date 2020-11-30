@@ -930,7 +930,9 @@ void Simulation::Print_StartupOptions(void)
 {
 	string startup_info = "[tc1,1,1,1/tc]Check for updates on startup : [sa0/sa]" + MakeIO(IOI_UPDATESTATUSCHECKSTARTUP, start_check_updates);
 	startup_info += "</c>\n[tc1,1,1,1/tc]Start script server on startup : [sa0/sa]" + MakeIO(IOI_SCRIPTSERVERSTARTUP, start_scriptserver);
-	startup_info += "</c>\n[tc1,1,1,1/tc]Server port : [sa0/sa]" + MakeIO(IOI_SERVERPORT, server_port) + "</c>[tc1,1,1,1/tc] with receive sleep (ms) : " + MakeIO(IOI_SERVERSLEEPMS, server_recv_sleep_ms);
+	startup_info += "</c>\n[tc1,1,1,1/tc]Server port : [sa0/sa]" + MakeIO(IOI_SERVERPORT, server_port) + 
+		"</c>[tc1,1,1,1/tc] with password : " + MakeIO(IOI_SERVERPWD, server_pwd) +
+		"</c>[tc1,1,1,1/tc] and receive sleep (ms) : " + MakeIO(IOI_SERVERSLEEPMS, server_recv_sleep_ms);
 	startup_info += "</c>\n[tc1,1,1,1/tc]Error log status : [sa0/sa]" + MakeIO(IOI_ERRORLOGSTATUS, log_errors);
 	startup_info += "</c>\n[tc1,1,1,1/tc]CPU Threads : [sa0/sa]" + MakeIO(IOI_THREADS, OmpThreads);
 
@@ -951,7 +953,8 @@ void Simulation::Print_Threads(void)
 void Simulation::Print_ServerInfo(void)
 {
 	string server_info = "[tc1,1,1,1/tc]Server port : " + MakeIO(IOI_SERVERPORT, server_port);
-	server_info += "</c>[tc1,1,1,1/tc] with receive sleep (ms) : " + MakeIO(IOI_SERVERSLEEPMS, server_recv_sleep_ms);
+	server_info += "</c>[tc1,1,1,1/tc] with password : " + MakeIO(IOI_SERVERPWD, server_pwd);
+	server_info += "</c>[tc1,1,1,1/tc] and receive sleep (ms) : " + MakeIO(IOI_SERVERSLEEPMS, server_recv_sleep_ms);
 
 	BD.DisplayFormattedConsoleMessage(server_info);
 }

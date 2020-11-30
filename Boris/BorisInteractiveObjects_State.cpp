@@ -2542,6 +2542,22 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 	}
 	break;
 
+	//Shows server password. textId is the password.
+	case IOI_SERVERPWD:
+	{
+		std::string password = iop.textId;
+
+		if (password != server_pwd) {
+
+			iop.textId = server_pwd;
+
+			pTO->set(" " + server_pwd + " ");
+
+			stateChanged = true;
+		}
+	}
+	break;
+
 	//Shows server sleep time in ms. auxId is the value.
 	case IOI_SERVERSLEEPMS:
 	{
