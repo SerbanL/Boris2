@@ -63,7 +63,7 @@ Possible values for arch are:
 Example: $ make configure arch=70
 
 If arch is not specified a default value of 50 is used.
-You can also compile CUDA code with single or double precision floating point. The default value, if not specified, is sprec=0 (single precision – recommended for most users). If you have a GPU capable of handling double precision floating point efficiently you can configure with sprec=1.
+You can also compile CUDA code with single or double precision floating point. The default value, if not specified, is sprec=1 (single precision – recommended for most users). If you have a GPU capable of handling double precision floating point efficiently you can configure with sprec=0.
 
 <b>Step 2: Compilation.</b>
 
