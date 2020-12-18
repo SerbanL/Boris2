@@ -1,7 +1,7 @@
 # Boris2
 Boris Computational Spintronics.
 
-C++17 used. The codebase is contained in 804 files (.h, .cpp, .cu, .cuh, .py) and can be compiled on Windows or Linux-based OS with MSVC compiler or g++ compiler respectively.
+C++17 used. The codebase is contained in 821 files (.h, .cpp, .cu, .cuh, .py) and can be compiled on Windows or Linux-based OS with MSVC compiler or g++ compiler respectively.
 
 # Download
 Latest compiled version with installer, including source code with makefile for Linux-based OS, found here : https://boris-spintronics.uk/download
@@ -39,6 +39,7 @@ Updates:
 
 1.	Get latest g++ compiler: $ sudo apt install build-essential
 2.	Get OpenMP: $ sudo apt-get install libomp-dev
+3.  Get LibTBB: $ sudo apt-get install libtbb-dev
 3.	Get CUDA: $ sudo apt install nvidia-cuda-toolkit
 4.	Get SFML: $ sudo apt-get install libsfml-dev
 5.	Get FFTW3: Instructions at http://www.fftw.org/fftw2_doc/fftw_6.html
