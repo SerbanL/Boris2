@@ -8,7 +8,7 @@
 #include "BorisGraphics.h"
 #include "WinSpaces.h"
 
-using namespace std;
+
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
@@ -39,7 +39,7 @@ protected:
 	void DrawWindow_Quick(void) { DrawWindow(); }
 
 	//Implementation of message handling routine
-	ActionOutcome NewMessage(AC_ aCode, INT2 mouse, string data = "");
+	ActionOutcome NewMessage(AC_ aCode, INT2 mouse, std::string data = "");
 
 	void SetDefaultCursor(void) { SetCursor(LoadCursor(nullptr, IDC_HAND)); }
 

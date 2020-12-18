@@ -19,7 +19,7 @@ void BorisIOIPopupTextBox::DrawWindow(void)
 	DrawTextLines();
 }
 
-ActionOutcome BorisIOIPopupTextBox::NewMessage(AC_ aCode, INT2 mouse, string data) 
+ActionOutcome BorisIOIPopupTextBox::NewMessage(AC_ aCode, INT2 mouse, std::string data) 
 {
 	ActionOutcome actionResult;
 

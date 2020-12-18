@@ -42,7 +42,7 @@ class OmpReduction {
 	std::vector<int> min_index;
 	std::vector<int> max_index;
 
-	//int not bool : don't use vector<bool> as it's not a real bool array and you'll have some very unpleasant bugs (e.g. #pragma omp parallel for doesn't work with it!!!!)
+	//int not bool : don't use std::vector<bool> as it's not a real bool array and you'll have some very unpleasant bugs (e.g. #pragma omp parallel for doesn't work with it!!!!)
 	std::vector<int> reduction_value_not_set;
 
 	//vectors of size OmpThreads for average reduction : running average on each thread then combine at the end : need to keep track of running averages as well as number of points in averages

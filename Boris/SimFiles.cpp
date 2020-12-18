@@ -1,7 +1,7 @@
 #include "stdafx.h"
 #include "Simulation.h"
 
-BError Simulation::SaveSimulation(string fileName)
+BError Simulation::SaveSimulation(std::string fileName)
 {
 	BError error(__FUNCTION__);
 
@@ -12,13 +12,13 @@ BError Simulation::SaveSimulation(string fileName)
 
 	if (!GetFilenameDirectory(fileName).length()) fileName = directory + fileName;
 
-	ofstream bdout;
-	bdout.open(fileName.c_str(), ios::out | ios::binary);
+	std::ofstream bdout;
+	bdout.open(fileName.c_str(), std::ios::out | std::ios::binary);
 
 	if (bdout.is_open()) {
 
 		//save version number header
-		bdout << simfile_header << Program_Version << endl;
+		bdout << simfile_header << Program_Version << std::endl;
 
 		bdout.precision(CONVERSIONPRECISION);
 
@@ -39,7 +39,7 @@ BError Simulation::SaveSimulation(string fileName)
 	else return error(BERROR_COULDNOTSAVEFILE);
 }
 
-BError Simulation::LoadSimulation(string fileName)
+BError Simulation::LoadSimulation(std::string fileName)
 {
 	BError error(__FUNCTION__);
 
@@ -57,10 +57,10 @@ BError Simulation::LoadSimulation(string fileName)
 	if (!GetFilenameDirectory(fileName).length()) fileName = directory + fileName;
 	else directory = GetFilenameDirectory(fileName);
 
-	string save_directory = directory;
+	std::string save_directory = directory;
 
-	ifstream bdin;
-	bdin.open(fileName.c_str(), ios::in | ios::binary);
+	std::ifstream bdin;
+	bdin.open(fileName.c_str(), std::ios::in | std::ios::binary);
 
 	if (bdin.is_open()) {
 
@@ -68,11 +68,11 @@ BError Simulation::LoadSimulation(string fileName)
 		char line[FILEROWCHARS];
 		bdin.getline(line, FILEROWCHARS);
 
-		size_t pos = string(line).find(simfile_header);
+		size_t pos = std::string(line).find(simfile_header);
 		if (pos != std::string::npos) {
 
 			//header found, get version
-			int SimFile_Version_Number = ToNum(string(line).substr(simfile_header.length()));
+			int SimFile_Version_Number = ToNum(std::string(line).substr(simfile_header.length()));
 
 			//check if simulation file version matches program version : if it doesn't then first load default state then attempt to load simulation file
 			if (SimFile_Version_Number < Program_Version) {
@@ -82,8 +82,8 @@ BError Simulation::LoadSimulation(string fileName)
 				//close original stream so we can load default state
 				bdin.close();
 
-				string default_file = GetUserDocumentsPath() + boris_data_directory + boris_simulations_directory + string("default.bsm");
-				bdin.open(default_file.c_str(), ios::in | ios::binary);
+				std::string default_file = GetUserDocumentsPath() + boris_data_directory + boris_simulations_directory + std::string("default.bsm");
+				bdin.open(default_file.c_str(), std::ios::in | std::ios::binary);
 
 				if (cudaAvailable && cudaEnabled) error = SMesh.SwitchCUDAState(false, cudaDeviceSelect);
 				cudaEnabled = false;
@@ -95,7 +95,7 @@ BError Simulation::LoadSimulation(string fileName)
 				if (!success) return error(BERROR_COULDNOTLOADFILE_CRIT);
 
 				//at this point default state is loaded, so re-open the original simulation file
-				bdin.open(fileName.c_str(), ios::in | ios::binary);
+				bdin.open(fileName.c_str(), std::ios::in | std::ios::binary);
 
 				//chuck away the first line with the header
 				bdin.getline(line, FILEROWCHARS);

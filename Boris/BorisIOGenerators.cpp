@@ -8,9 +8,9 @@
 //Check with "www.boris-spintronics.uk" if program version is up to date
 void Simulation::CheckUpdate(void)
 {
-	string response_message;
+	std::string response_message;
 
-	string console_update_message = "[tc0,0.5,0,1/tc]Program version update status : "  + MakeIO(IOI_PROGRAMUPDATESTATUS);
+	std::string console_update_message = "[tc0,0.5,0,1/tc]Program version update status : "  + MakeIO(IOI_PROGRAMUPDATESTATUS);
 
 	console_update_message += "</c>[tc0,0.5,0,1/tc] Check for updates on startup : " + MakeIO(IOI_UPDATESTATUSCHECKSTARTUP, start_check_updates);
 
@@ -21,7 +21,7 @@ void Simulation::CheckUpdate(void)
 
 	HTTP httpComms(domain_name);
 
-	if (httpComms.is_available() && httpComms.http_post(version_checker, string("version=") + ToString(Program_Version), response_message)) {
+	if (httpComms.is_available() && httpComms.http_post(version_checker, std::string("version=") + ToString(Program_Version), response_message)) {
 
 		int latest_version = ToNum(response_message);
 
@@ -59,7 +59,7 @@ void Simulation::OpenDownloadPage(void)
 
 void Simulation::Print_Mesh_List(void) 
 {
-	string mesh_list = "[tc1,1,1,1/tc]Available meshes ([tc0,0.5,0,1/tc]green [tc1,1,1,1/tc]in focus) :\n";
+	std::string mesh_list = "[tc1,1,1,1/tc]Available meshes ([tc0,0.5,0,1/tc]green [tc1,1,1,1/tc]in focus) :\n";
 
 	//super-mesh
 	//1. magnetic
@@ -78,9 +78,9 @@ void Simulation::Print_Mesh_List(void)
 	BD.DisplayFormattedConsoleMessage(mesh_list);
 }
 
-string Simulation::Build_Mesh_ListLine(int meshIndex) 
+std::string Simulation::Build_Mesh_ListLine(int meshIndex) 
 {
-	string mesh_line =
+	std::string mesh_line =
 		"Mesh " + MakeIO(IOI_MESH_FORMESHLIST, meshIndex) +
 		"</c> [sa0/sa]with rectangle " + MakeIO(IOI_MESHRECTANGLE, meshIndex) +
 		"</c> [sa1/sa]Magnetic cell " + MakeIO(IOI_MESHCELLSIZE, meshIndex) +
@@ -95,7 +95,7 @@ string Simulation::Build_Mesh_ListLine(int meshIndex)
 
 void Simulation::Print_MeshDisplay_List(void)
 {
-	string mesh_display_list = "[tc1,1,1,1/tc]Mesh display thresholds (minimum, maximum) : " + MakeIO(IOI_MESHDISPLAYTHRESHOLDS, ToString(displayThresholds)) + "</c>[tc1,1,1,1/tc] For vectors trigger on: " + MakeIO(IOI_MESHDISPLAYTHRESHOLDTRIG) + "</c>\n";
+	std::string mesh_display_list = "[tc1,1,1,1/tc]Mesh display thresholds (minimum, maximum) : " + MakeIO(IOI_MESHDISPLAYTHRESHOLDS, ToString(displayThresholds)) + "</c>[tc1,1,1,1/tc] For vectors trigger on: " + MakeIO(IOI_MESHDISPLAYTHRESHOLDTRIG) + "</c>\n";
 	mesh_display_list += "[tc1,1,1,1/tc]Dual mesh display transparency (foreground, background) : " + MakeIO(IOI_MESHDISPLAYTRANSPARENCY, ToString(displayTransparency)) + "</c>\n";
 	
 	mesh_display_list += "[tc1,1,1,1/tc]<b>" + SMesh.superMeshHandle + "</b> [a0/a]display options ";
@@ -117,11 +117,11 @@ void Simulation::Print_MeshDisplay_List(void)
 	BD.DisplayFormattedConsoleMessage(mesh_display_list);
 }
 
-string Simulation::Build_MeshDisplay_ListLine(int meshIndex)
+std::string Simulation::Build_MeshDisplay_ListLine(int meshIndex)
 {
 	MESH_ meshType = SMesh[meshIndex]->GetMeshType();
 
-	string mesh_display_line = MakeIO(IOI_MESH_FORDISPLAYOPTIONS, meshIndex) + "</c> [sa0/sa]display options ";
+	std::string mesh_display_line = MakeIO(IOI_MESH_FORDISPLAYOPTIONS, meshIndex) + "</c> [sa0/sa]display options ";
 
 	//iterate through all the possible display options for this mesh type
 	for (int idx = 0; idx < (int)meshAllowedDisplay(meshType).size(); idx++) {
@@ -138,7 +138,7 @@ string Simulation::Build_MeshDisplay_ListLine(int meshIndex)
 
 void Simulation::Print_Modules_List(void) 
 {
-	string modules_list = "[tc1,1,1,1/tc]Available modules ([tc0,0.5,0,1/tc]green [tc1,1,1,1/tc]added, [tc1,0,0,1/tc]red [tc1,1,1,1/tc]not added) :\n";
+	std::string modules_list = "[tc1,1,1,1/tc]Available modules ([tc0,0.5,0,1/tc]green [tc1,1,1,1/tc]added, [tc1,0,0,1/tc]red [tc1,1,1,1/tc]not added) :\n";
 
 	modules_list += "[tc1,1,1,1/tc]<b>" + SMesh.superMeshHandle + "</b> [a0/a]modules ";
 
@@ -166,9 +166,9 @@ void Simulation::Print_Modules_List(void)
 	BD.DisplayFormattedConsoleMessage(modules_list);
 }
 
-string Simulation::Build_Modules_ListLine(int meshIndex)
+std::string Simulation::Build_Modules_ListLine(int meshIndex)
 {
-	string modulesListLine = "[tc1,1,1,1/tc]" + MakeIO(IOI_MESH_FORMODULES, meshIndex) + "</c> [sa0/sa]modules ";
+	std::string modulesListLine = "[tc1,1,1,1/tc]" + MakeIO(IOI_MESH_FORMODULES, meshIndex) + "</c> [sa0/sa]modules ";
 
 	//get the mesh type so we can index modules_for_meshtype with it (modules_for_meshtype is a vector_lut with MESH_ values as the major id - it contains the available modules for this mesh type)
 	MESH_ meshType = SMesh[meshIndex]->GetMeshType();
@@ -192,7 +192,7 @@ string Simulation::Build_Modules_ListLine(int meshIndex)
 
 void Simulation::Print_ODEs(void) 
 {
-	string odes_eval_list = "[tc1,1,1,1/tc]Available ODEs and associated evaluation methods ([tc0,0.5,0,1/tc]green [tc1,1,1,1/tc]set, [tc1,0,0,1/tc]red [tc1,1,1,1/tc]not set, [tc0.5,0.5,0.5,1/tc]gray [tc1,1,1,1/tc]not available) : \n";
+	std::string odes_eval_list = "[tc1,1,1,1/tc]Available ODEs and associated evaluation methods ([tc0,0.5,0,1/tc]green [tc1,1,1,1/tc]set, [tc1,0,0,1/tc]red [tc1,1,1,1/tc]not set, [tc0.5,0.5,0.5,1/tc]gray [tc1,1,1,1/tc]not available) : \n";
 
 	odes_eval_list += "[tc1,1,1,1/tc]Set Micromagnetic Equation: ";
 
@@ -232,7 +232,7 @@ void Simulation::Print_ODEs(void)
 
 void Simulation::Print_ShowData(void) 
 {
-	string showData = "[tc1,1,1,1/tc]Choose data to show value for (double-click to show, right click to pin it to data box):\n";
+	std::string showData = "[tc1,1,1,1/tc]Choose data to show value for (double-click to show, right click to pin it to data box):\n";
 
 	for (int idx = 0; idx < (int)dataDescriptor.size(); idx++) {
 
@@ -248,7 +248,7 @@ void Simulation::Print_ShowData(void)
 
 void Simulation::Print_AvailableOutputData(void) 
 {
-	string showData = "[tc1,1,1,1/tc]Add data to output list from the following :\n";
+	std::string showData = "[tc1,1,1,1/tc]Add data to output list from the following :\n";
 
 	for (int idx = 0; idx < (int)dataDescriptor.size(); idx++) {
 
@@ -262,15 +262,15 @@ void Simulation::Print_AvailableOutputData(void)
 
 void Simulation::Print_SetOutputData_List(void) 
 {
-	string showData =
-		string("[tc1,1,1,1/tc]Current file for output data : ") + 
+	std::string showData =
+		std::string("[tc1,1,1,1/tc]Current file for output data : ") + 
 		"[a0/a]" + MakeIO(IOI_DIRECTORY, directory) + "</c>" +
 		MakeIO(IOI_SAVEDATAFILE, savedataFile) +
 		"</c>[tc1,1,1,1/tc]. [a1/a]Data save " +
 		"[a2/a]" + MakeIO(IOI_SAVEDATAFLAG) + "</c>\n";
 
 	showData +=
-		string("</c>[tc1,1,1,1/tc]Current file base for images : ") +
+		std::string("</c>[tc1,1,1,1/tc]Current file base for images : ") +
 		"[sa0/sa]" + MakeIO(IOI_SAVEIMAGEFILEBASE, imageSaveFileBase) + "</c>" +
 		"</c>[tc1,1,1,1/tc]. [sa1/sa]Image save " +
 		"[sa2/sa]" + MakeIO(IOI_SAVEIMAGEFLAG) + "</c>\n";
@@ -285,14 +285,14 @@ void Simulation::Print_SetOutputData_List(void)
 	BD.DisplayFormattedConsoleMessage(showData);
 }
 
-string Simulation::Build_SetOutputData_ListLine(int index_in_list) 
+std::string Simulation::Build_SetOutputData_ListLine(int index_in_list) 
 {
 	return MakeIO(IOI_OUTDATA, index_in_list);
 }
 
-string Simulation::Build_SetOutputData_Text(int index_in_list)
+std::string Simulation::Build_SetOutputData_Text(int index_in_list)
 {
-	string meshName, dataBoxString;
+	std::string meshName, dataBoxString;
 
 	if (!dataDescriptor(saveDataList[index_in_list].datumId).meshless) {
 
@@ -312,7 +312,7 @@ string Simulation::Build_SetOutputData_Text(int index_in_list)
 void Simulation::Print_SetStages_List(void) 
 {
 	//Current set stages
-	string simStagesList = "[tc1,1,1,1/tc]Simulation schedule stages :\n";
+	std::string simStagesList = "[tc1,1,1,1/tc]Simulation schedule stages :\n";
 
 	for (int idx = 0; idx < (int)simStages.size(); idx++) {
 
@@ -320,7 +320,7 @@ void Simulation::Print_SetStages_List(void)
 	}
 	
 	//Available configuration options
-	string showStageTypes = "</c>\n[tc1,1,1,1/tc]Stage/step stopping conditions, apply to all stages : ";
+	std::string showStageTypes = "</c>\n[tc1,1,1,1/tc]Stage/step stopping conditions, apply to all stages : ";
 	
 	for (int stopIdx = 0; stopIdx < stageStopDescriptors.size(); stopIdx++) {
 		
@@ -344,9 +344,9 @@ void Simulation::Print_SetStages_List(void)
 	BD.DisplayFormattedConsoleMessage(simStagesList + showStageTypes);
 }
 
-string Simulation::Build_SetStages_ListLine(int index_in_list) 
+std::string Simulation::Build_SetStages_ListLine(int index_in_list) 
 {
-	string stageLineText;
+	std::string stageLineText;
 
 	//the stage tpye
 	stageLineText = MakeIO(IOI_SETSTAGE, index_in_list);
@@ -369,29 +369,29 @@ string Simulation::Build_SetStages_ListLine(int index_in_list)
 	return stageLineText;
 }
 
-string Simulation::Build_SetStages_Text(int index_in_list) 
+std::string Simulation::Build_SetStages_Text(int index_in_list) 
 {
-	string meshName;
+	std::string meshName;
 	if (simStages[index_in_list].meshname().length()) meshName = " <" + simStages[index_in_list].meshname() + ">";
 
-	string text = ToString(index_in_list) + ". " + stageDescriptors.get_key_from_ID(simStages[index_in_list].stage_type()) + meshName;
+	std::string text = ToString(index_in_list) + ". " + stageDescriptors.get_key_from_ID(simStages[index_in_list].stage_type()) + meshName;
 
 	return text;
 }
 
-string Simulation::Build_SetStages_ValueText(int index_in_list) 
+std::string Simulation::Build_SetStages_ValueText(int index_in_list) 
 {
-	string text;
+	std::string text;
 
 	if (simStages[index_in_list].IsValueSet()) text = simStages[index_in_list].get_value_string();
 
 	return text;
 }
 
-string Simulation::Build_SetStages_StopConditionText(int index_in_list) 
+std::string Simulation::Build_SetStages_StopConditionText(int index_in_list) 
 {
 	//the stop condition and value
-	string stopConditionString = stageStopDescriptors.get_key_from_ID(simStages[index_in_list].stop_condition());
+	std::string stopConditionString = stageStopDescriptors.get_key_from_ID(simStages[index_in_list].stop_condition());
 
 	if (simStages[index_in_list].IsStopValueSet())
 		stopConditionString += ": " + simStages[index_in_list].get_stopvalue_string();
@@ -399,9 +399,9 @@ string Simulation::Build_SetStages_StopConditionText(int index_in_list)
 	return stopConditionString;
 }
 
-string Simulation::Build_SetStages_SaveConditionText(int index_in_list, int dsaveIdx) 
+std::string Simulation::Build_SetStages_SaveConditionText(int index_in_list, int dsaveIdx) 
 {
-	string dsaveConditionString = dataSaveDescriptors.get_key_from_index(dsaveIdx);
+	std::string dsaveConditionString = dataSaveDescriptors.get_key_from_index(dsaveIdx);
 
 	if (simStages[index_in_list].IsdSaveValueSet())
 		dsaveConditionString += ": " + simStages[index_in_list].get_dsavevalue_string();
@@ -411,18 +411,18 @@ string Simulation::Build_SetStages_SaveConditionText(int index_in_list, int dsav
 
 //---------------------------------------------------- MESH PARAMETERS
 
-void Simulation::Print_MeshParams(string meshName)
+void Simulation::Print_MeshParams(std::string meshName)
 {
 	if (!SMesh.contains(meshName)) return;
 
 	BD.DisplayFormattedConsoleMessage(Build_MeshParams_Line(SMesh().index_from_key(meshName)));
 }
 
-string Simulation::Build_MeshParams_Line(int meshIndex)
+std::string Simulation::Build_MeshParams_Line(int meshIndex)
 {
-	string meshParamsString = "[tc1,1,1,1/tc]Parameters for " + MakeIO(IOI_MESH_FORPARAMS, meshIndex) + "</c>\n";
+	std::string meshParamsString = "[tc1,1,1,1/tc]Parameters for " + MakeIO(IOI_MESH_FORPARAMS, meshIndex) + "</c>\n";
 
-	string ferromagneticParameters, econductionParameters, tconductionParameters, mechanicalParameters;
+	std::string ferromagneticParameters, econductionParameters, tconductionParameters, mechanicalParameters;
 
 	int f_index = 0;
 	int e_index = 0;
@@ -474,7 +474,7 @@ string Simulation::Build_MeshParams_Line(int meshIndex)
 	return meshParamsString;
 }
 
-string Simulation::Build_MeshParams_Text(int meshIdx, PARAM_ paramId)
+std::string Simulation::Build_MeshParams_Text(int meshIdx, PARAM_ paramId)
 {
 	return SMesh[meshIdx]->get_meshparam_handle(paramId) + ": " + SMesh[meshIdx]->get_meshparam_value(paramId);
 }
@@ -482,13 +482,13 @@ string Simulation::Build_MeshParams_Text(int meshIdx, PARAM_ paramId)
 //---------------------------------------------------- MESH PARAMETERS TEMPERATURE DEPENDENCE
 
 //print all mesh parameters temperature dependence for the given mesh name
-void Simulation::Print_MeshParamsTemperature(string meshName)
+void Simulation::Print_MeshParamsTemperature(std::string meshName)
 {
 	if (!SMesh.contains(meshName)) return;
 
-	string meshParamsTemp = Build_MeshParamsTemp_Text(SMesh().index_from_key(meshName));
+	std::string meshParamsTemp = Build_MeshParamsTemp_Text(SMesh().index_from_key(meshName));
 
-	meshParamsTemp += "[tc1,1,1,1/tc]\nAvailable temperature dependence type (drag to param, right click for info): ";
+	meshParamsTemp += "[tc1,1,1,1/tc]\nAvailable temperature dependence type (drag to param, shift-click for info): ";
 
 	for (int idx = 0; idx < temperature_dependence_type.size(); idx++) {
 
@@ -500,11 +500,11 @@ void Simulation::Print_MeshParamsTemperature(string meshName)
 	BD.DisplayFormattedConsoleMessage(meshParamsTemp);
 }
 
-string Simulation::Build_MeshParamsTemp_Text(int meshIndex)
+std::string Simulation::Build_MeshParamsTemp_Text(int meshIndex)
 {
-	string meshParamsString = "[tc1,1,1,1/tc]Parameters temperature dependence for " + MakeIO(IOI_MESH_FORPARAMSTEMP, meshIndex) + "</c>\n";
+	std::string meshParamsString = "[tc1,1,1,1/tc]Parameters temperature dependence for " + MakeIO(IOI_MESH_FORPARAMSTEMP, meshIndex) + "</c>\n";
 
-	string ferromagneticParameters, econductionParameters, tconductionParameters, mechanicalParameters;
+	std::string ferromagneticParameters, econductionParameters, tconductionParameters, mechanicalParameters;
 
 	int f_index = 0;
 	int e_index = 0;
@@ -561,13 +561,13 @@ string Simulation::Build_MeshParamsTemp_Text(int meshIndex)
 //---------------------------------------------------- MESH PARAMETERS SPATIAL DEPENDENCE
 
 //print all mesh parameters temperature dependence for the given mesh name
-void Simulation::Print_MeshParamsVariation(string meshName)
+void Simulation::Print_MeshParamsVariation(std::string meshName)
 {
 	if (!SMesh.contains(meshName)) return;
 
-	string meshParamsVar = Build_MeshParamsVariation_Text(SMesh().index_from_key(meshName));
+	std::string meshParamsVar = Build_MeshParamsVariation_Text(SMesh().index_from_key(meshName));
 
-	meshParamsVar += "[tc1,1,1,1/tc]\nAvailable spatial variation generators (drag to param, right click for info): ";
+	meshParamsVar += "[tc1,1,1,1/tc]\nAvailable spatial variation generators (drag to param, shift-click for info): ";
 
 	for (int idx = 0; idx < vargenerator_descriptor.size(); idx++) {
 
@@ -579,11 +579,11 @@ void Simulation::Print_MeshParamsVariation(string meshName)
 	BD.DisplayFormattedConsoleMessage(meshParamsVar);
 }
 
-string Simulation::Build_MeshParamsVariation_Text(int meshIndex)
+std::string Simulation::Build_MeshParamsVariation_Text(int meshIndex)
 {
-	string meshParamsString = "[tc1,1,1,1/tc]Parameters spatial dependence for " + MakeIO(IOI_MESH_FORPARAMSVAR, meshIndex) + "</c>\n";
+	std::string meshParamsString = "[tc1,1,1,1/tc]Parameters spatial dependence for " + MakeIO(IOI_MESH_FORPARAMSVAR, meshIndex) + "</c>\n";
 
-	string ferromagneticParameters, econductionParameters, tconductionParameters, mechanicalParameters;
+	std::string ferromagneticParameters, econductionParameters, tconductionParameters, mechanicalParameters;
 
 	int f_index = 0;
 	int e_index = 0;
@@ -641,7 +641,7 @@ string Simulation::Build_MeshParamsVariation_Text(int meshIndex)
 
 void Simulation::PrintMovingMeshSettings(void)
 {
-	string movingmesh_text = "[tc1,1,1,1/tc]Moving mesh trigger : " + MakeIO(IOI_MOVINGMESH);
+	std::string movingmesh_text = "[tc1,1,1,1/tc]Moving mesh trigger : " + MakeIO(IOI_MOVINGMESH);
 
 	movingmesh_text += "</c>[tc1,1,1,1/tc] Moving mesh type : " + MakeIO(IOI_MOVINGMESHASYM);
 	movingmesh_text += "</c>[tc1,1,1,1/tc] Mesh shift threshold : " + MakeIO(IOI_MOVINGMESHTHRESH);
@@ -654,7 +654,7 @@ void Simulation::PrintMovingMeshSettings(void)
 void Simulation::Print_Electrodes_List(void)
 {
 
-	string electrode_list = "[tc1,1,1,1/tc]Using " + MakeIO(IOI_CONSTANTCURRENTSOURCE) + "</c>\n";
+	std::string electrode_list = "[tc1,1,1,1/tc]Using " + MakeIO(IOI_CONSTANTCURRENTSOURCE) + "</c>\n";
 
 	if (SMesh.IsSuperMeshModuleSet(MODS_STRANSPORT)) {
 
@@ -670,10 +670,10 @@ void Simulation::Print_Electrodes_List(void)
 	BD.DisplayFormattedConsoleMessage(electrode_list);
 }
 
-string Simulation::Build_Electrodes_ListLine(int el_index)
+std::string Simulation::Build_Electrodes_ListLine(int el_index)
 {
 	//electrode rectangle
-	string electrode_list_line = "[tc1,1,1,1/tc]Electrode rectangle " + MakeIO(IOI_ELECTRODERECT, el_index) + "</c>";
+	std::string electrode_list_line = "[tc1,1,1,1/tc]Electrode rectangle " + MakeIO(IOI_ELECTRODERECT, el_index) + "</c>";
 
 	//electrode potential
 	electrode_list_line += "[tc1,1,1,1/tc] [sa0/sa]Potential " + MakeIO(IOI_ELECTRODEPOTENTIAL, el_index) + "</c>";
@@ -686,14 +686,15 @@ string Simulation::Build_Electrodes_ListLine(int el_index)
 
 void Simulation::PrintTransportSolverConfig(void)
 {
-	string tsolver_text;
+	std::string tsolver_text;
 
 	tsolver_text = "[tc1,1,1,1/tc]Charge-solver convergence error : " + MakeIO(IOI_TSOLVERCONVERROR) + "</c>";
 	tsolver_text += " with iterations timeout : " + MakeIO(IOI_TSOLVERTIMEOUT) + "</c>";
 	tsolver_text += " Spin-solver convergence error : " + MakeIO(IOI_SSOLVERCONVERROR) + "</c>";
 	tsolver_text += " with iterations timeout : " + MakeIO(IOI_SSOLVERTIMEOUT) + "</c>\n";
 	tsolver_text += " SOR damping values (V, S) : " + MakeIO(IOI_SORDAMPING) + "</c>\n";
-	tsolver_text += "Static transport solver : " + MakeIO(IOI_STATICTRANSPORT) + "</c>\n";
+	tsolver_text += "Static transport solver : " + MakeIO(IOI_STATICTRANSPORT) + "</c>";
+	tsolver_text += " Status : " + MakeIO(IOI_DISABLEDTRANSPORT) + "</c>\n";
 
 	BD.DisplayFormattedConsoleMessage(tsolver_text);
 }
@@ -702,7 +703,7 @@ void Simulation::PrintTransportSolverConfig(void)
 
 void Simulation::Print_MeshTemperature_List(void)
 {
-	string mesh_temperature_list;
+	std::string mesh_temperature_list;
 
 	for (int idxMesh = 0; idxMesh < (int)SMesh().size(); idxMesh++) {
 
@@ -712,16 +713,16 @@ void Simulation::Print_MeshTemperature_List(void)
 	BD.DisplayFormattedConsoleMessage(mesh_temperature_list);
 }
 
-string Simulation::Build_MeshTemperature_ListLine(int meshIndex)
+std::string Simulation::Build_MeshTemperature_ListLine(int meshIndex)
 {
-	string mesh_temperature_line = MakeIO(IOI_MESH_FORTEMPERATURE, meshIndex) + "</c>[tc1,1,1,1/tc] [sa0/sa]base temperature : " + MakeIO(IOI_BASETEMPERATURE, meshIndex);
+	std::string mesh_temperature_line = MakeIO(IOI_MESH_FORTEMPERATURE, meshIndex) + "</c>[tc1,1,1,1/tc] [sa0/sa]base temperature : " + MakeIO(IOI_BASETEMPERATURE, meshIndex);
 
 	return mesh_temperature_line;
 }
 
 void Simulation::Print_HeatBoundaries_List(void)
 {
-	string mesh_heatboundaries_list;
+	std::string mesh_heatboundaries_list;
 
 	for (int idxMesh = 0; idxMesh < (int)SMesh().size(); idxMesh++) {
 
@@ -731,10 +732,10 @@ void Simulation::Print_HeatBoundaries_List(void)
 	BD.DisplayFormattedConsoleMessage(mesh_heatboundaries_list);
 }
 
-string Simulation::Build_HeatBoundaries_ListLine(int meshIndex)
+std::string Simulation::Build_HeatBoundaries_ListLine(int meshIndex)
 {
 
-	string mesh_heatboundaries_line = 
+	std::string mesh_heatboundaries_line = 
 		MakeIO(IOI_MESH_FORHEATBOUNDARIES, meshIndex) +
 		"</c>[tc1,1,1,1/tc] [sa0/sa]Ambient temperature : " + MakeIO(IOI_AMBIENT_TEMPERATURE, meshIndex) +
 		"</c>[tc1,1,1,1/tc] [sa1/sa]Robin coefficient : " + MakeIO(IOI_ROBIN_ALPHA, meshIndex) +
@@ -753,7 +754,7 @@ string Simulation::Build_HeatBoundaries_ListLine(int meshIndex)
 
 void Simulation::Print_CurieandMoment_List(void)
 {
-	string curie_and_moment_list;
+	std::string curie_and_moment_list;
 
 	for (int idxMesh = 0; idxMesh < (int)SMesh().size(); idxMesh++) {
 
@@ -763,13 +764,13 @@ void Simulation::Print_CurieandMoment_List(void)
 	BD.DisplayFormattedConsoleMessage(curie_and_moment_list);
 }
 
-string Simulation::Build_CurieandMoment_ListLine(int meshIndex)
+std::string Simulation::Build_CurieandMoment_ListLine(int meshIndex)
 {
 	if (meshIndex < SMesh.size()) {
 
 		if (SMesh[meshIndex]->GetMeshType() != MESH_ANTIFERROMAGNETIC) {
 
-			string curie_and_moment_line = MakeIO(IOI_MESH_FORCURIEANDMOMENT, meshIndex) +
+			std::string curie_and_moment_line = MakeIO(IOI_MESH_FORCURIEANDMOMENT, meshIndex) +
 				"</c>[tc1,1,1,1/tc] [sa0/sa]Set Curie temperature : [sa1/sa]" + MakeIO(IOI_CURIETEMP, meshIndex) +
 				"</c>[tc1,1,1,1/tc] [sa2/sa]Indicative material Curie temperature : [sa3/sa]" + MakeIO(IOI_CURIETEMPMATERIAL, meshIndex) +
 				"</c>[tc1,1,1,1/tc] [sa4/sa]Atomic moment (multiple of Bohr magneton) : [sa5/sa]" + MakeIO(IOI_ATOMICMOMENT, meshIndex);
@@ -778,7 +779,7 @@ string Simulation::Build_CurieandMoment_ListLine(int meshIndex)
 		}
 		else {
 
-			string curie_and_moment_line = MakeIO(IOI_MESH_FORCURIEANDMOMENT, meshIndex) +
+			std::string curie_and_moment_line = MakeIO(IOI_MESH_FORCURIEANDMOMENT, meshIndex) +
 				"</c>[tc1,1,1,1/tc] [sa0/sa]Set Neel temperature : [sa1/sa]" + MakeIO(IOI_CURIETEMP, meshIndex) +
 				"</c>[tc1,1,1,1/tc] [sa2/sa]Indicative material Neel temperature : [sa3/sa]" + MakeIO(IOI_CURIETEMPMATERIAL, meshIndex) +
 				"</c>[tc1,1,1,1/tc] [sa4/sa]Atomic moments (multiples of Bohr magneton) : [sa5/sa]" + MakeIO(IOI_ATOMICMOMENT_AFM, meshIndex) +
@@ -795,7 +796,7 @@ string Simulation::Build_CurieandMoment_ListLine(int meshIndex)
 
 void Simulation::Print_TemperatureModel_List(void)
 {
-	string tmodel_list;
+	std::string tmodel_list;
 
 	for (int idxMesh = 0; idxMesh < (int)SMesh().size(); idxMesh++) {
 
@@ -805,9 +806,9 @@ void Simulation::Print_TemperatureModel_List(void)
 	BD.DisplayFormattedConsoleMessage(tmodel_list);
 }
 
-string Simulation::Build_TemperatureModel_ListLine(int meshIndex)
+std::string Simulation::Build_TemperatureModel_ListLine(int meshIndex)
 {
-	string tmodel_line = MakeIO(IOI_MESH_FORTMODEL, meshIndex) +
+	std::string tmodel_line = MakeIO(IOI_MESH_FORTMODEL, meshIndex) +
 		"</c>[tc1,1,1,1/tc] [sa0/sa]Temperature model type : " + MakeIO(IOI_TMODEL, meshIndex);
 
 	return tmodel_line;
@@ -817,7 +818,7 @@ string Simulation::Build_TemperatureModel_ListLine(int meshIndex)
 
 void Simulation::Print_Stochasticity_List(void)
 {
-	string stochasticity_list = "[tc1,1,1,1/tc]Stochastic time-step : " + MakeIO(IOI_STOCHDT) + "</c> Linked to ODE dT : " + MakeIO(IOI_LINKSTOCHDT) + "</c>\n";
+	std::string stochasticity_list = "[tc1,1,1,1/tc]Stochastic time-step : " + MakeIO(IOI_STOCHDT) + "</c> Linked to ODE dT : " + MakeIO(IOI_LINKSTOCHDT) + "</c>\n";
 
 	for (int idxMesh = 0; idxMesh < (int)SMesh().size(); idxMesh++) {
 
@@ -827,9 +828,9 @@ void Simulation::Print_Stochasticity_List(void)
 	BD.DisplayFormattedConsoleMessage(stochasticity_list);
 }
 
-string Simulation::Build_Stochasticity_ListLine(int meshIndex)
+std::string Simulation::Build_Stochasticity_ListLine(int meshIndex)
 {
-	string stochasticity_line = MakeIO(IOI_MESH_FORSTOCHASTICITY, meshIndex) +
+	std::string stochasticity_line = MakeIO(IOI_MESH_FORSTOCHASTICITY, meshIndex) +
 		"</c>[tc1,1,1,1/tc] [sa0/sa]Stochastic cellsize : " + MakeIO(IOI_MESHSCELLSIZE, meshIndex) + "</c>[tc1,1,1,1/tc] [sa1/sa] Linked to magnetic cellize : " + MakeIO(IOI_LINKSTOCHASTIC, meshIndex);
 
 	return stochasticity_line;
@@ -839,7 +840,7 @@ string Simulation::Build_Stochasticity_ListLine(int meshIndex)
 
 void Simulation::Print_Speedup_List(void)
 {
-	string speedup_list = "[tc1,1,1,1/tc]Evaluation speedup mode : " + MakeIO(IOI_SPEEDUPMODE) + "</c> Speedup time-step (for extreme mode only): " + MakeIO(IOI_SPEEDUPDT) + "</c> Linked to ODE dT : " + MakeIO(IOI_LINKSPEEDUPDT) + "</c>\n";
+	std::string speedup_list = "[tc1,1,1,1/tc]Evaluation speedup mode : " + MakeIO(IOI_SPEEDUPMODE) + "</c> Speedup time-step (for extreme mode only): " + MakeIO(IOI_SPEEDUPDT) + "</c> Linked to ODE dT : " + MakeIO(IOI_LINKSPEEDUPDT) + "</c>\n";
 
 	for (int idxMesh = 0; idxMesh < (int)SMesh().size(); idxMesh++) {
 
@@ -849,9 +850,9 @@ void Simulation::Print_Speedup_List(void)
 	BD.DisplayFormattedConsoleMessage(speedup_list);
 }
 
-string Simulation::Build_Speedup_ListLine(int meshIndex)
+std::string Simulation::Build_Speedup_ListLine(int meshIndex)
 {
-	string speedup_line = MakeIO(IOI_MESH_FORSPEEDUP, meshIndex) + "</c>[tc1,1,1,1/tc] Macrocell size : " + MakeIO(IOI_MESHDMCELLSIZE, meshIndex);
+	std::string speedup_line = MakeIO(IOI_MESH_FORSPEEDUP, meshIndex) + "</c>[tc1,1,1,1/tc] Macrocell size : " + MakeIO(IOI_MESHDMCELLSIZE, meshIndex);
 
 	return speedup_line;
 }
@@ -860,7 +861,7 @@ string Simulation::Build_Speedup_ListLine(int meshIndex)
 
 void Simulation::Print_CUDAStatus(void)
 {
-	string cuda_info = "[tc1,1,1,1/tc]CUDA status : " + MakeIO(IOI_CUDASTATE, cudaEnabled) + "\n";
+	std::string cuda_info = "[tc1,1,1,1/tc]CUDA status : " + MakeIO(IOI_CUDASTATE, cudaEnabled) + "\n";
 	cuda_info += "</c>[tc1,1,1,1/tc]Available CUDA devices ([tc0,0.5,0,1/tc]green: [tc1,1,1,1/tc]selected, [tc1,0,0,1/tc]red: [tc1,1,1,1/tc]not selected and available, [tc0.5,0.5,0.5,1/tc]gray: [tc1,1,1,1/tc]not available - device CUDA Compute version mismatch)\n";
 
 	for (int idx = 0; idx < cudaDeviceVersions.size(); idx++) {
@@ -873,7 +874,7 @@ void Simulation::Print_CUDAStatus(void)
 
 void Simulation::Print_MemoryInfo(void)
 {
-	string memory_info;
+	std::string memory_info;
 
 	memory_info += "[tc1,1,1,1/tc]CPU free memory (MB) : " + MakeIO(IOI_CPUMEMFREE, cpuMemFree_MB);
 	memory_info += "</c>[tc1,1,1,1/tc] [a0/a]out of (MB) : " + MakeIO(IOI_CPUMEMTOTAL, cpuMemTotal_MB) + "\n";
@@ -888,7 +889,7 @@ void Simulation::Print_MemoryInfo(void)
 
 void Simulation::Print_Scale_Rects_Status(void)
 {
-	string scale_rects_info = "[tc1,1,1,1/tc]Scale mesh rectangles : " + MakeIO(IOI_SCALERECTSSTATUS, SMesh.Get_Scale_Rects());
+	std::string scale_rects_info = "[tc1,1,1,1/tc]Scale mesh rectangles : " + MakeIO(IOI_SCALERECTSSTATUS, SMesh.Get_Scale_Rects());
 
 	BD.DisplayFormattedConsoleMessage(scale_rects_info);
 }
@@ -897,7 +898,7 @@ void Simulation::Print_Scale_Rects_Status(void)
 
 void Simulation::Print_CoupledToDipoles_Settings(void)
 {
-	string coupled_to_dipoles_info = "[tc1,1,1,1/tc]Exchange coupling to dipoles : " + MakeIO(IOI_COUPLEDTODIPOLESSTATUS, SMesh.Get_Coupled_To_Dipoles());
+	std::string coupled_to_dipoles_info = "[tc1,1,1,1/tc]Exchange coupling to dipoles : " + MakeIO(IOI_COUPLEDTODIPOLESSTATUS, SMesh.Get_Coupled_To_Dipoles());
 
 	BD.DisplayFormattedConsoleMessage(coupled_to_dipoles_info);
 }
@@ -906,21 +907,21 @@ void Simulation::Print_CoupledToDipoles_Settings(void)
 
 void Simulation::Print_ErrorLogStatus(void)
 {
-	string error_log_info = "[tc1,1,1,1/tc]Error log status : " + MakeIO(IOI_ERRORLOGSTATUS, log_errors);
+	std::string error_log_info = "[tc1,1,1,1/tc]Error log status : " + MakeIO(IOI_ERRORLOGSTATUS, log_errors);
 
 	BD.DisplayFormattedConsoleMessage(error_log_info);
 }
 
 void Simulation::Print_StartupUpdateCheckStatus(void)
 {
-	string startup_info = "[tc1,1,1,1/tc]Check for updates on startup : " + MakeIO(IOI_UPDATESTATUSCHECKSTARTUP, start_check_updates);
+	std::string startup_info = "[tc1,1,1,1/tc]Check for updates on startup : " + MakeIO(IOI_UPDATESTATUSCHECKSTARTUP, start_check_updates);
 
 	BD.DisplayFormattedConsoleMessage(startup_info);
 }
 
 void Simulation::Print_StartupScriptServerStatus(void)
 {
-	string startup_info = "[tc1,1,1,1/tc]Start script server on startup : " + MakeIO(IOI_SCRIPTSERVERSTARTUP, start_scriptserver);
+	std::string startup_info = "[tc1,1,1,1/tc]Start script server on startup : " + MakeIO(IOI_SCRIPTSERVERSTARTUP, start_scriptserver);
 
 	BD.DisplayFormattedConsoleMessage(startup_info);
 }
@@ -928,7 +929,7 @@ void Simulation::Print_StartupScriptServerStatus(void)
 //print all startup options
 void Simulation::Print_StartupOptions(void)
 {
-	string startup_info = "[tc1,1,1,1/tc]Check for updates on startup : [sa0/sa]" + MakeIO(IOI_UPDATESTATUSCHECKSTARTUP, start_check_updates);
+	std::string startup_info = "[tc1,1,1,1/tc]Check for updates on startup : [sa0/sa]" + MakeIO(IOI_UPDATESTATUSCHECKSTARTUP, start_check_updates);
 	startup_info += "</c>\n[tc1,1,1,1/tc]Start script server on startup : [sa0/sa]" + MakeIO(IOI_SCRIPTSERVERSTARTUP, start_scriptserver);
 	startup_info += "</c>\n[tc1,1,1,1/tc]Server port : [sa0/sa]" + MakeIO(IOI_SERVERPORT, server_port) + 
 		"</c>[tc1,1,1,1/tc] with password : " + MakeIO(IOI_SERVERPWD, server_pwd) +
@@ -943,7 +944,7 @@ void Simulation::Print_StartupOptions(void)
 
 void Simulation::Print_Threads(void)
 {
-	string threads_info = "[tc1,1,1,1/tc]Number of threads : " + MakeIO(IOI_THREADS, OmpThreads);
+	std::string threads_info = "[tc1,1,1,1/tc]Number of threads : " + MakeIO(IOI_THREADS, OmpThreads);
 
 	BD.DisplayFormattedConsoleMessage(threads_info);
 }
@@ -952,7 +953,7 @@ void Simulation::Print_Threads(void)
 
 void Simulation::Print_ServerInfo(void)
 {
-	string server_info = "[tc1,1,1,1/tc]Server port : " + MakeIO(IOI_SERVERPORT, server_port);
+	std::string server_info = "[tc1,1,1,1/tc]Server port : " + MakeIO(IOI_SERVERPORT, server_port);
 	server_info += "</c>[tc1,1,1,1/tc] with password : " + MakeIO(IOI_SERVERPWD, server_pwd);
 	server_info += "</c>[tc1,1,1,1/tc] and receive sleep (ms) : " + MakeIO(IOI_SERVERSLEEPMS, server_recv_sleep_ms);
 
@@ -963,7 +964,7 @@ void Simulation::Print_ServerInfo(void)
 
 void Simulation::Print_ExchangeCoupledMeshes_List(void)
 {
-	string ec_info = "[tc1,1,1,1/tc]Neighboring meshes exchange coupling.\n";
+	std::string ec_info = "[tc1,1,1,1/tc]Neighboring meshes exchange coupling.\n";
 
 	for (int idxMesh = 0; idxMesh < (int)SMesh().size(); idxMesh++) {
 
@@ -973,9 +974,9 @@ void Simulation::Print_ExchangeCoupledMeshes_List(void)
 	BD.DisplayFormattedConsoleMessage(ec_info);
 }
 
-string Simulation::Build_ExchangeCoupledMeshes_ListLine(int meshIndex)
+std::string Simulation::Build_ExchangeCoupledMeshes_ListLine(int meshIndex)
 {
-	string ec_line = MakeIO(IOI_MESH_FOREXCHCOUPLING, meshIndex) +
+	std::string ec_line = MakeIO(IOI_MESH_FOREXCHCOUPLING, meshIndex) +
 		"</c>[tc1,1,1,1/tc] [sa0/sa]: " + MakeIO(IOI_MESHEXCHCOUPLING, meshIndex) + "\n";
 
 	return ec_line;
@@ -983,9 +984,9 @@ string Simulation::Build_ExchangeCoupledMeshes_ListLine(int meshIndex)
 
 //---------------------------------------------------- MESH ROUGHNESS REFINEMENT
 
-void Simulation::Print_MeshRoughnessRefinement(string meshName)
+void Simulation::Print_MeshRoughnessRefinement(std::string meshName)
 {
-	string roughness_refinement_info = "[tc1,1,1,1/tc]Roughness refinement cells multiplier : " + MakeIO(IOI_REFINEROUGHNESS, meshName);
+	std::string roughness_refinement_info = "[tc1,1,1,1/tc]Roughness refinement cells multiplier : " + MakeIO(IOI_REFINEROUGHNESS, meshName);
 
 	BD.DisplayFormattedConsoleMessage(roughness_refinement_info);
 }
@@ -993,7 +994,7 @@ void Simulation::Print_MeshRoughnessRefinement(string meshName)
 
 void Simulation::Print_MultiConvolution_Config(void)
 {
-	string multiconv_info = "[tc1,1,1,1/tc]Multi-layered convolution : " + MakeIO(IOI_MULTICONV, SMesh.Get_Multilayered_Convolution_Status());
+	std::string multiconv_info = "[tc1,1,1,1/tc]Multi-layered convolution : " + MakeIO(IOI_MULTICONV, SMesh.Get_Multilayered_Convolution_Status());
 
 	multiconv_info += "</c> [tc1,1,1,1/tc]Force 2D : " + MakeIO(IOI_2DMULTICONV, SMesh.Get_2D_Multilayered_Convolution_Status());
 	multiconv_info += "</c> [tc1,1,1,1/tc]Use default n : " + MakeIO(IOI_NCOMMONSTATUS, SMesh.Use_Default_n_Status());
@@ -1006,7 +1007,7 @@ void Simulation::Print_MultiConvolution_Config(void)
 
 void Simulation::Print_MaterialsDatabase(void)
 {
-	string mdb_info = "[tc1,1,1,1/tc]Local materials database in use : " + MakeIO(IOI_LOCALMDB, mdb.GetDataBaseName());
+	std::string mdb_info = "[tc1,1,1,1/tc]Local materials database in use : " + MakeIO(IOI_LOCALMDB, mdb.GetDataBaseName());
 
 	BD.DisplayFormattedConsoleMessage(mdb_info);
 }
@@ -1015,7 +1016,7 @@ void Simulation::Print_MaterialsDatabase(void)
 
 void Simulation::Print_AStepCtrl(void)
 {
-	string astep_ctrl_info = "[tc1,1,1,1/tc]Adaptive time step control. err_fail : " + MakeIO(IOI_ODERELERRFAIL, SMesh.Get_AStepRelErrCtrl().i);
+	std::string astep_ctrl_info = "[tc1,1,1,1/tc]Adaptive time step control. err_fail : " + MakeIO(IOI_ODERELERRFAIL, SMesh.Get_AStepRelErrCtrl().i);
 	astep_ctrl_info += "</c> [tc1,1,1,1/tc]err_high : " + MakeIO(IOI_ODERELERRHIGH, SMesh.Get_AStepRelErrCtrl().j);
 	astep_ctrl_info += "</c> [tc1,1,1,1/tc]err_low : " + MakeIO(IOI_ODERELERRLOW, SMesh.Get_AStepRelErrCtrl().k);
 	astep_ctrl_info += "</c> [tc1,1,1,1/tc]dT_incr : " + MakeIO(IOI_ODEDTINCR, SMesh.Get_AStepdTCtrl().i);
@@ -1029,9 +1030,9 @@ void Simulation::Print_AStepCtrl(void)
 
 void Simulation::Print_PBC(void)
 {
-	string pbc_info = "[tc1,1,1,1/tc]Periodic boundary conditions for magnetization.\n";
+	std::string pbc_info = "[tc1,1,1,1/tc]Periodic boundary conditions for magnetization.\n";
 
-	pbc_info += string("[tc1,1,1,1/tc]Supermesh PBC: ") +
+	pbc_info += std::string("[tc1,1,1,1/tc]Supermesh PBC: ") +
 		"</c>[tc1,1,1,1/tc] [sa0/sa] x: " + MakeIO(IOI_SPBC_X) +
 		"</c>[tc1,1,1,1/tc] [sa1/sa] y: " + MakeIO(IOI_SPBC_Y) +
 		"</c>[tc1,1,1,1/tc] [sa2/sa] z: " + MakeIO(IOI_SPBC_Z) + "\n";
@@ -1044,9 +1045,9 @@ void Simulation::Print_PBC(void)
 	BD.DisplayFormattedConsoleMessage(pbc_info);
 }
 
-string Simulation::Build_PBC_ListLine(int meshIndex)
+std::string Simulation::Build_PBC_ListLine(int meshIndex)
 {
-	string pbc_line = MakeIO(IOI_MESH_FORPBC, meshIndex) +
+	std::string pbc_line = MakeIO(IOI_MESH_FORPBC, meshIndex) +
 		"</c>[tc1,1,1,1/tc] [sa0/sa] x: " + MakeIO(IOI_PBC_X, meshIndex) +
 		"</c>[tc1,1,1,1/tc] [sa1/sa] y: " + MakeIO(IOI_PBC_Y, meshIndex) +
 		"</c>[tc1,1,1,1/tc] [sa2/sa] z: " + MakeIO(IOI_PBC_Z, meshIndex);
@@ -1058,7 +1059,7 @@ string Simulation::Build_PBC_ListLine(int meshIndex)
 
 void Simulation::Print_IndividualShapeStatus(void)
 {
-	string individualshape_info = "[tc1,1,1,1/tc]Individual shape status flag : " + MakeIO(IOI_INDIVIDUALSHAPE, shape_change_individual);
+	std::string individualshape_info = "[tc1,1,1,1/tc]Individual shape status flag : " + MakeIO(IOI_INDIVIDUALSHAPE, shape_change_individual);
 
 	BD.DisplayFormattedConsoleMessage(individualshape_info);
 }
@@ -1068,7 +1069,7 @@ void Simulation::Print_IndividualShapeStatus(void)
 //Print currently set equation constants
 void Simulation::Print_EquationConstants(void)
 {
-	string showUserConstants = "[tc1,1,1,1/tc]Defined user constants :\n";
+	std::string showUserConstants = "[tc1,1,1,1/tc]Defined user constants :\n";
 
 	for (int idx = 0; idx < (int)userConstants.size(); idx++) {
 
@@ -1078,18 +1079,18 @@ void Simulation::Print_EquationConstants(void)
 	BD.DisplayFormattedConsoleMessage(showUserConstants);
 }
 
-//build formatted string for interactive objects describing user constants at index_in_list from userConstants (also helper method to build the actual unformatted display text in the object)
-string Simulation::Build_EquationConstants_ListLine(int index_in_list)
+//build formatted std::string for interactive objects describing user constants at index_in_list from userConstants (also helper method to build the actual unformatted display text in the object)
+std::string Simulation::Build_EquationConstants_ListLine(int index_in_list)
 {
-	string name = userConstants.get_key_from_index(index_in_list);
+	std::string name = userConstants.get_key_from_index(index_in_list);
 	double value = userConstants[index_in_list];
 
 	return MakeIO(IOI_USERCONSTANT, name, value, index_in_list);
 }
 
-string Simulation::Build_EquationConstants_Text(int index_in_list)
+std::string Simulation::Build_EquationConstants_Text(int index_in_list)
 {
-	string name = userConstants.get_key_from_index(index_in_list);
+	std::string name = userConstants.get_key_from_index(index_in_list);
 	double value = userConstants[index_in_list];
 
 	return name + ": " + ToString(value);
@@ -1100,7 +1101,7 @@ string Simulation::Build_EquationConstants_Text(int index_in_list)
 //Print skypos multiplier value
 void Simulation::Print_skypos_dmul(void)
 {
-	string skypos_info;
+	std::string skypos_info;
 
 	for (int idxMesh = 0; idxMesh < (int)SMesh().size(); idxMesh++) {
 
@@ -1110,9 +1111,9 @@ void Simulation::Print_skypos_dmul(void)
 	BD.DisplayFormattedConsoleMessage(skypos_info);
 }
 
-string Simulation::Build_skypos_dmul_ListLine(int meshIndex)
+std::string Simulation::Build_skypos_dmul_ListLine(int meshIndex)
 {
-	string skypos_line = MakeIO(IOI_MESH_FORSKYPOSDMUL, meshIndex) +
+	std::string skypos_line = MakeIO(IOI_MESH_FORSKYPOSDMUL, meshIndex) +
 		"</c>[tc1,1,1,1/tc] [sa0/sa] skypos multiplier: " + MakeIO(IOI_SKYPOSDMUL, meshIndex);
 
 	return skypos_line;
@@ -1122,7 +1123,7 @@ string Simulation::Build_skypos_dmul_ListLine(int meshIndex)
 
 void Simulation::Print_MCSettings(void)
 {
-	string mcsettings_info;
+	std::string mcsettings_info;
 
 	for (int idxMesh = 0; idxMesh < (int)SMesh().size(); idxMesh++) {
 
@@ -1132,11 +1133,37 @@ void Simulation::Print_MCSettings(void)
 	BD.DisplayFormattedConsoleMessage(mcsettings_info);
 }
 
-string Simulation::Build_MCSettings_ListLine(int meshIndex)
+std::string Simulation::Build_MCSettings_ListLine(int meshIndex)
 {
-	string mcsettings_line = MakeIO(IOI_MESH_FORMC, meshIndex) +
+	std::string mcsettings_line = MakeIO(IOI_MESH_FORMC, meshIndex) +
 		"</c>[tc1,1,1,1/tc] [sa0/sa] Computation type: " + MakeIO(IOI_MCCOMPUTATION, meshIndex) +
 		"</c>[tc1,1,1,1/tc] [sa1/sa] Monte-Carlo algorithm type: " + MakeIO(IOI_MCTYPE, meshIndex);
 
 	return mcsettings_line;
+}
+
+//---------------------------------------------------- SHAPE MODIFIERS
+
+void Simulation::Print_ShapeSettings(void)
+{
+	std::string shape_info = "[tc1,1,1,1/tc]Elementary shape commands modifiers: ";
+	shape_info += "</c>[tc1,1,1,1/tc] Rotation : " + MakeIO(IOI_SHAPEROT, shape_rotation);
+	shape_info += "</c>[tc1,1,1,1/tc] Repetitions (x, y, z) : " + MakeIO(IOI_SHAPEREP, shape_repetitions);
+	shape_info += "</c>[tc1,1,1,1/tc] Displacement (x, y, z) : " + MakeIO(IOI_SHAPEDSP, shape_displacement);
+	shape_info += "</c>[tc1,1,1,1/tc] Method : " + MakeIO(IOI_SHAPEMET, shape_method);
+
+	BD.DisplayFormattedConsoleMessage(shape_info);
+}
+
+//---------------------------------------------------- SHAPE MODIFIERS
+
+void Simulation::Print_DisplayRenderSettings(void)
+{
+	std::string displayrender_info = "[tc1,1,1,1/tc]Display rendering settings: ";
+	displayrender_info += "</c>[tc1,1,1,1/tc] Detail Level : " + MakeIO(IOI_DISPRENDER_DETAIL, BD.GetDetailLevel());
+	displayrender_info += "</c>[tc1,1,1,1/tc] Cells Threshold 1 : " + MakeIO(IOI_DISPRENDER_THRESH1, BD.GetRenderThresholds().i);
+	displayrender_info += "</c>[tc1,1,1,1/tc] Cells Threshold 2 : " + MakeIO(IOI_DISPRENDER_THRESH2, BD.GetRenderThresholds().j);
+	displayrender_info += "</c>[tc1,1,1,1/tc] Cells Threshold 3 : " + MakeIO(IOI_DISPRENDER_THRESH3, BD.GetRenderThresholds().k);
+
+	BD.DisplayFormattedConsoleMessage(displayrender_info);
 }

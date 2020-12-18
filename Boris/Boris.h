@@ -4,6 +4,7 @@
 
 #include "Simulation.h"
 #include "BorisLib.h"
+#include "cuBLib_Flags.h"
 #include "Commands.h"
 
 ////////////////////////////////////
@@ -20,7 +21,7 @@ static std::string window_startup_option = "front";
 ////////////////////////////////////
 //Version
 
-static int Program_Version = 290;
+static int Program_Version = 300;
 
 ////////////////////////////////////
 //Program master object

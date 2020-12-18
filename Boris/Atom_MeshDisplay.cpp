@@ -93,7 +93,7 @@ PhysQ Atom_Mesh::FetchOnScreenPhysicalQuantity(double detail_level, bool getBack
 }
 
 //save the quantity currently displayed on screen in an ovf2 file using the specified format
-BError Atom_Mesh::SaveOnScreenPhysicalQuantity(string fileName, string ovf2_dataType)
+BError Atom_Mesh::SaveOnScreenPhysicalQuantity(std::string fileName, std::string ovf2_dataType)
 {
 #if COMPILECUDA == 1
 	if (paMeshCUDA) { return paMeshCUDA->SaveOnScreenPhysicalQuantity(fileName, ovf2_dataType); }

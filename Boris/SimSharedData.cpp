@@ -5,18 +5,18 @@
 #include "MeshParams.h"
 #include "SimulationData.h"
 
-vector_lut<string> SimulationSharedData::temperature_dependence_type;
+vector_lut<std::string> SimulationSharedData::temperature_dependence_type;
 
-vector_key_lut<string> SimulationSharedData::vargenerator_descriptor;
+vector_key_lut<std::string> SimulationSharedData::vargenerator_descriptor;
 
-vector_lut<string> SimulationSharedData::meshDisplay_unit;
-vector_lut<string> SimulationSharedData::displayHandles;
+vector_lut<std::string> SimulationSharedData::meshDisplay_unit;
+vector_lut<std::string> SimulationSharedData::displayHandles;
 
-vector_lut< vector<MOD_> > SimulationSharedData::modules_for_meshtype;
+vector_lut< std::vector<MOD_> > SimulationSharedData::modules_for_meshtype;
 
-vector_lut< vector<MESHDISPLAY_> > SimulationSharedData::meshAllowedDisplay;
+vector_lut< std::vector<MESHDISPLAY_> > SimulationSharedData::meshAllowedDisplay;
 
-vector_lut< vector<PARAM_> > SimulationSharedData::params_for_meshtype;
+vector_lut< std::vector<PARAM_> > SimulationSharedData::params_for_meshtype;
 
 vector_lut<std::pair<bool, bool>> SimulationSharedData::params_enabled_props;
 
@@ -28,7 +28,7 @@ exclusions<MOD_> SimulationSharedData::superMeshCompanionModules;
 
 vector_lut<DatumConfig> SimulationSharedData::saveDataList;
 
-string SimulationSharedData::directory;
+std::string SimulationSharedData::directory;
 
 DBL2 SimulationSharedData::displayTransparency = DBL2(0.7, 1.0);
 DBL2 SimulationSharedData::displayThresholds = DBL2();
@@ -38,7 +38,11 @@ bool SimulationSharedData::shape_change_individual = false;
 
 bool SimulationSharedData::static_transport_solver = false;
 
+bool SimulationSharedData::disabled_transport_solver = false;
+
 bool SimulationSharedData::cudaEnabled = false;
+
+int SimulationSharedData::cudaDeviceSelect = 0;
 
 INT2 SimulationSharedData::stage_step = INT2();
 
@@ -67,6 +71,7 @@ SimulationSharedData::SimulationSharedData(bool called_from_Simulation)
 
 		vargenerator_descriptor.push_back("none", "", MATPVAR_NONE);
 		vargenerator_descriptor.push_back("mask", "0, 1; pngfile", MATPVAR_MASK);
+		vargenerator_descriptor.push_back("shape", "shape", MATPVAR_SHAPE);
 		vargenerator_descriptor.push_back("ovf2", "ovf2file", MATPVAR_OVF2);
 		vargenerator_descriptor.push_back("equation", "1", MATPVAR_EQUATION);
 		//DBL2 range, int seed

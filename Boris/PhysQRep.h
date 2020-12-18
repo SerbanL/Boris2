@@ -9,7 +9,7 @@
 
 struct PhysQRepComponent :
 	public ProgramState<PhysQRepComponent,
-	tuple<bool, double, int, bool, string, string, string>, tuple<>>
+	std::tuple<bool, double, int, bool, std::string, std::string, std::string>, std::tuple<>>
 {
 	//scale the dimension of drawn objects to the largest value (modulus) in the physical quantity?
 	bool scale_to_magnitude = true;
@@ -22,20 +22,23 @@ struct PhysQRepComponent :
 
 	//the calculated batch of transforms used in rendering - its rect is the same as the PhysQ rect, its cellsize depends on the level of detail used to generate this PhysQRepComponent
 	VEC<CBObjectTransform> transformBatch;
-	vector<bool> emptyCell;
+	std::vector<bool> emptyCell;
+	//if there are many cells to draw then use transformBatch_render instead: the problem is transformBatch can also have many cells marked not to be rendered, and we will be looping over them in the drawing routine, wasting iterations.
+	//instead save only the cells marked to be rendered to this vector
+	std::vector<CBObjectTransform> transformBatch_render;
 
 	//drawe mesh outline using this calculated transform applied to CDO_CUBEFRAME
 	CBObjectTransform meshFrame = CBObjectTransform();
 	bool drawFrame = true;
 
 	//unit of PhysQ values form which this PhysQRepComponent was generated
-	string unit;
+	std::string unit;
 
 	//the displayed type name (e.g. magnetization)
-	string typeName;
+	std::string typeName;
 
 	//the mesh name from which the PhysQ which generated this PhysQRepComponent was collected
-	string meshName;
+	std::string meshName;
 
 	//the type of representation to use for vectorial quantities (specified when a PhysQ is returned, so value set here before calculating a representation for it)
 	VEC3REP_ vec3rep;
@@ -108,7 +111,7 @@ struct PhysQRepSettings {
 	//---------------------------------------------------------------------------------------------
 
 	//calculate settings for default view (these are the settings set when the mesh focus changes)
-	PhysQRepSettings(vector<PhysQ>& physQ, UINT wndWidth, D2D1_RECT_F spaceRect);
+	PhysQRepSettings(std::vector<PhysQ>& physQ, UINT wndWidth, D2D1_RECT_F spaceRect);
 
 	PhysQRepSettings(
 		Rect focusRect_, double m_to_l_, double detail_level_,
@@ -167,7 +170,7 @@ struct PhysQRepSettings {
 class PhysQRep :
 	public GraphicalObject,
 	public ProgramState<PhysQRep,
-	tuple<double, Rect, double, string, string, DBL2, string, vector<PhysQRepComponent>>, tuple<>>
+	std::tuple<double, Rect, double, int, int, int, std::string, std::string, DBL2, std::string, std::vector<PhysQRepComponent>>, std::tuple<>>
 {
 private:
 
@@ -182,24 +185,30 @@ private:
 	//level of displayed detail. This is the side of a cubic mesh cell. The number of displayed elements in each mesh is obtained by dividing its rectangle by this cubic cell (to the nearest integer in each dimension).
 	double detail_level = 5e-9;
 
+	//for vector quantity display switch to using simpler elements if number of displayed cells exceeds this amount; value of zero disables this mode
+	int renderspeedup1_cells = NUMDRAWNCELLS_RENDERSPEEDUP1;
+	//for vector and scalar quantity display switch to not drawing completely surrounded cells if number of displayed cells exceeds this amount; value of zero disables this mode
+	int renderspeedup2_cells = NUMDRAWNCELLS_RENDERSPEEDUP2;
+	//for vector quantity display only draw cells on a checkerboard pattern
+	int renderspeedup3_cells = NUMDRAWNCELLS_RENDERSPEEDUP3;
+
 	//the name of mesh in focus
-	string meshName_focused;
+	std::string meshName_focused;
 
 	//the name of displayed type for mesh in focus
-	string typeName_focused;
+	std::string typeName_focused;
 
 	//minimum and maximum values in focused mesh (if vectorial quantities these are magnitudes)
 	DBL2 minmax_focusedmeshValues = DBL2();
 
 	//unit of minmax values
-	string unit;
+	std::string unit;
 
 	//computed physical representations for each mesh with displayed quantities
-	vector<PhysQRepComponent> physQRep;
+	std::vector<PhysQRepComponent> physQRep;
 
-	//vectors used for obtaining info when mouse hovers over displayed mesh - declared here so we don't have to allocate them every time
-	vector<double> mouseInfoDistances;
-	vector<pair<int, DBL3>> mouseInfoIntersections;
+	//vector used for obtaining info when mouse hovers over displayed mesh - declared here so we don't have to allocate them every time; contains distance, mesh index, intersection point
+	std::vector<std::tuple<double, int, DBL3>> mouseInfo;
 
 	//highlight cell mouse is hovering over
 	bool highlightCell = false;
@@ -234,7 +243,11 @@ public:
 
 	PhysQRep(void) :
 		GraphicalObject(),
-		ProgramStateNames(this, { VINFO(m_to_l), VINFO(focusRect), VINFO(detail_level), VINFO(meshName_focused), VINFO(typeName_focused), VINFO(minmax_focusedmeshValues), VINFO(unit), VINFO(physQRep) }, {})
+		ProgramStateNames(this, { 
+		VINFO(m_to_l), VINFO(focusRect), 
+		VINFO(detail_level), VINFO(renderspeedup1_cells), VINFO(renderspeedup2_cells), VINFO(renderspeedup3_cells), 
+		VINFO(meshName_focused), VINFO(typeName_focused), VINFO(minmax_focusedmeshValues), VINFO(unit), 
+		VINFO(physQRep) }, {})
 	{
 	}
 
@@ -244,13 +257,15 @@ public:
 
 	size_t size(void) { return physQRep.size(); }
 	
-	string get_focused_meshName(void) { return meshName_focused; }
-	string get_focused_typeName(void) { return typeName_focused; }
+	std::string get_focused_meshName(void) { return meshName_focused; }
+	std::string get_focused_typeName(void) { return typeName_focused; }
 
-	string get_min_value_string(void) { return ToString(minmax_focusedmeshValues.i, unit); }
-	string get_max_value_string(void) { return ToString(minmax_focusedmeshValues.j, unit); }
+	std::string get_min_value_string(void) { return ToString(minmax_focusedmeshValues.i, unit); }
+	std::string get_max_value_string(void) { return ToString(minmax_focusedmeshValues.j, unit); }
 
 	double get_detail_level(void) { return detail_level; }
+
+	INT3 get_display_renderthresholds(void) { return INT3(renderspeedup1_cells, renderspeedup2_cells, renderspeedup3_cells); }
 
 	//------------------------------------------- indexing
 
@@ -274,19 +289,26 @@ public:
 		if (detail_level > DETAILVALUEMAX) detail_level = DETAILVALUEMAX;
 	}
 
+	void set_display_renderthresholds(INT3 renderthresholds) 
+	{ 
+		renderspeedup1_cells = renderthresholds.i;
+		renderspeedup2_cells = renderthresholds.j;
+		renderspeedup3_cells = renderthresholds.k;
+	}
+
 	//get current display settings
 	PhysQRepSettings get_current_settings(void);
 
 	//------------------------------------------- Calculations
 
 	//Calculate default settings and from physQ calculate physQRep
-	void CalculateRepresentation_AutoSettings(vector<PhysQ> physQ, D2D1_RECT_F spaceRect);
+	void CalculateRepresentation_AutoSettings(std::vector<PhysQ> physQ, D2D1_RECT_F spaceRect);
 
 	//Set new settings, then calculate representation using these new settings
-	void CalculateRepresentation_NewSettings(vector<PhysQ> physQ, PhysQRepSettings newSettings);
+	void CalculateRepresentation_NewSettings(std::vector<PhysQ> physQ, PhysQRepSettings newSettings);
 
 	//Calculate physical quantity representation at current settings, without changing them
-	void CalculateRepresentation(vector<PhysQ> physQ);
+	void CalculateRepresentation(std::vector<PhysQ> physQ);
 
 	//------------------------------------------- Drawing
 
@@ -299,7 +321,7 @@ public:
 	//------------------------------------------- Value reading
 
 	//from mouse coordinates obtain mesh coordinates as seen on screen, together with value at the position. If mouse is not on a mesh point return false.
-	bool GetMouseInfo(INT2 mouse, string* pmeshName, string* ptypeName, DBL3* pMeshPosition = nullptr, double* pMeshValue = nullptr, string* pValueUnit = nullptr);
+	bool GetMouseInfo(INT2 mouse, std::string* pmeshName, std::string* ptypeName, DBL3* pMeshPosition = nullptr, double* pMeshValue = nullptr, std::string* pValueUnit = nullptr);
 };
 
 #endif

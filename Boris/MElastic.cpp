@@ -282,7 +282,7 @@ void MElastic::SetUniformStress(DBL3 Tsig_xyz)
 }
 
 //Displacement : from this calculate strain tensor
-BError MElastic::Load_Displacement_OVF2(string fileName)
+BError MElastic::Load_Displacement_OVF2(std::string fileName)
 {
 	BError error(CLASS_STR(MElastic));
 
@@ -309,7 +309,7 @@ BError MElastic::Load_Displacement_OVF2(string fileName)
 //These are specified using 2 separate OVF2 files containing vector data:
 //one for the xx, yy, zz elements (diagonal)
 //the other for the yz, xz, xy elements (off-diagonal, in this order)
-BError MElastic::Load_Strain_OVF2(string fileName_Diag, string fileName_ODiag)
+BError MElastic::Load_Strain_OVF2(std::string fileName_Diag, std::string fileName_ODiag)
 {
 	BError error(CLASS_STR(MElastic));
 

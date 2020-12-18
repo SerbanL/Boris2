@@ -40,7 +40,7 @@ class SuperMesh;
 class FMesh :
 	public Mesh,
 	public ProgramState<FMesh,
-	tuple<
+	std::tuple<
 	//Mesh members
 	int, int, int, 
 	int, int, int, int, 
@@ -65,7 +65,7 @@ class FMesh :
 	
 	//OBSOLETE
 	//must keep to allow some older simulation files to load if they have these defined
-	//Since these are complex types (i.e. they inherit from ProgramState), taking them out is problematic as ProgramState will encounter the "end type" string corresponding to them and return from LoadObjectState method
+	//Since these are complex types (i.e. they inherit from ProgramState), taking them out is problematic as ProgramState will encounter the "end type" std::string corresponding to them and return from LoadObjectState method
 	//If these data member names are no longer defined then ProgramState will have skipped over them and thus not issued a new call to LoadObjectState as required for a complex type: thus returning on encountering "end type" means returning from the wrong LoadObjectState method call.
 	//This can potentially cause a whole host of unwanted side effects and even crash the program.
 	//This is really due to my bad initial design of ProgramState : I should have signalled when a complex type starts ("start type") so it can identify matching "start type" and "end type" strings, and if data member name not found simply jump over that block.
@@ -75,7 +75,7 @@ class FMesh :
 	MatP<double, double>, MatP<double, double>, MatP<DBL3, DBL3>
 	>,
 	//Module Implementations
-	tuple<Demag_N, Demag, SDemag_Demag, Exch_6ngbr_Neu, DMExchange, iDMExchange, SurfExchange, Zeeman, MOptical, Anisotropy_Uniaxial, Anisotropy_Cubic, MElastic, Transport, Heat, SOTField, STField, Roughness> >
+	std::tuple<Demag_N, Demag, SDemag_Demag, Exch_6ngbr_Neu, DMExchange, iDMExchange, SurfExchange, Zeeman, MOptical, Anisotropy_Uniaxial, Anisotropy_Cubic, MElastic, Transport, Heat, SOTField, STField, Roughness> >
 {
 #if COMPILECUDA == 1
 	friend FMeshCUDA;
@@ -148,11 +148,17 @@ public:
 	//this method is also used by the dipole mesh where it does something else - sets the dipole direction
 	void SetMagAngle(double polar, double azim, Rect rectangle = Rect());
 
+	//set magnetization angle only in given shape
+	void SetMagAngle_Shape(double polar, double azim, std::vector<MeshShape> shapes);
+
+	//Set magnetization angle in solid object only containing given relative position uniformly using polar coordinates
+	void SetMagAngle_Object(double polar, double azim, DBL3 position);
+
 	//Invert magnetisation direction in given mesh (must be magnetic)
 	void SetInvertedMag(bool x, bool y, bool z);
 
 	//Mirror magnetisation in given axis (literal x, y, or z) in given mesh (must be magnetic)
-	void SetMirroredMag(string axis);
+	void SetMirroredMag(std::string axis);
 
 	//Set random magentisation distribution in given mesh (must be magnetic)
 	void SetRandomMag(int seed);

@@ -26,19 +26,24 @@ void Simulation::Script_Server_Control(bool status)
 void Simulation::Listen_Incoming_Message(void) 
 {
 	//Listen for incoming messages - non-blocking call, but this method runs on a thread with an infinite loop which keeps calling Simulation::Listen_Incoming_Message
-	string message = commSocket.Listen();
+	std::string message = commSocket.Listen();
 
 	if (message.length()) {
+
+		//must make sure there is no clash between direct user input and scripted input, otherwise crashes can result
+		userInputMutex.lock();
 
 		//handle command using the usual HandleCommand method, but on a blocking thread call - need to wait for it to finish before responding to client
 		set_blocking_thread(THREAD_HANDLEMESSAGE);
 		//Keep trying to launch the command handler : if THREAD_HANDLEMESSAGE is busy or has not yet been marked as not active (this is possible even if the previous call to THREAD_HANDLEMESSAGE has finished and we returned parameters to client - it can take much longer than usual sometimes),
 		//we receive THREAD_GENERATENEW response back until THREAD_HANDLEMESSAGE is available (marked as not active).
 		//If the command handler was launched and completed successfully, the single_call_launch method will respond with THREAD_HANDLEMESSAGE after it returns.
-		while (single_call_launch<string>(&Simulation::HandleCommand, message, THREAD_HANDLEMESSAGE) != THREAD_HANDLEMESSAGE);
+		while (single_call_launch<std::string>(&Simulation::HandleCommand, message, THREAD_HANDLEMESSAGE) != THREAD_HANDLEMESSAGE);
 
 		//the command was handled using a blocking thread, so now parameters should be available to send
 		commSocket.SendDataParams();
+
+		userInputMutex.unlock();
 	}
 }
 
@@ -46,18 +51,18 @@ void Simulation::Listen_Incoming_Message(void)
 //
 // Command handler
 
-void Simulation::HandleCommand(string command_string) 
+void Simulation::HandleCommand(std::string command_string) 
 {
 	//cannot change simulation parameters in the middle of an interation. simulationMutex also used by Simulate() method, but there it is non-blocking
 	simulationMutex.lock();
-	lock_guard<mutex> simlock(simulationMutex, adopt_lock);
+	std::lock_guard<std::mutex> simlock(simulationMutex, std::adopt_lock);
 
 	//ensure we do not handle a command during a display refresh
-	//This method locks and unlocks the display mutex (cannot leave it locked and unlock it at the end of HandleCommand, since HandleCommand can call other BD methods)
+	//This method locks and unlocks the display std::mutex (cannot leave it locked and unlock it at the end of HandleCommand, since HandleCommand can call other BD methods)
 	//It is important to do this since HandleCommand can cause changes to data which are used during a display refresh and could result in a crash.
 	//It is theoretically possible a BD method is called right after WaitForDisplayEnd but before HandleCommand returns - this could happen in response to a user action only.
 	//This is virtually impossible however, as the user would have to issue commands quicker than it takes for the program to make changes to critical data.
-	//Not ideal solution, the only foolproof solution is to lock the display mutex and unlock it before calling any BD methods here (or before returning), but after changes to data have been made.
+	//Not ideal solution, the only foolproof solution is to lock the display std::mutex and unlock it before calling any BD methods here (or before returning), but after changes to data have been made.
 	//This is messy so I'd rather not go down that route since it only guards against an extremely unlikely scenario.
 	BD.WaitForDisplayEnd();
 
@@ -68,8 +73,8 @@ void Simulation::HandleCommand(string command_string)
 	bool script_client_connected = false;
 
 	//commands are always of the form: commandname (param1) (param2) ...
-	vector<string> command_fields = split(command_string, " ");
-	string command_name = command_fields.front();
+	std::vector<std::string> command_fields = split(command_string, " ");
+	std::string command_name = command_fields.front();
 
 	if (!command_name.length()) {
 
@@ -103,6 +108,11 @@ void Simulation::HandleCommand(string command_string)
 		CommandSpecifier commandSpec = commands[command_name];
 
 		BError error;
+
+#if COMPILECUDA == 1
+		//Commands are executed on newly spawned threads, so if cuda is on and we are not using device 0 (default device) we must switch to required device, otherwise 0 will be used
+		if (cudaEnabled && cudaDeviceSelect != 0) cudaSetDevice(cudaDeviceSelect);
+#endif
 
 		//valid command name entered : process it
 		switch (commandSpec.cmdId) {
@@ -183,7 +193,7 @@ void Simulation::HandleCommand(string command_string)
 
 				StopSimulation();
 
-				std::function<void(string, Rect)> save_data_updater = [&](string meshName, Rect meshRect_old) -> void {
+				std::function<void(std::string, Rect)> save_data_updater = [&](std::string meshName, Rect meshRect_old) -> void {
 
 					//update rectangles in saveDataList for the named mesh
 					UpdateSaveDataEntries(meshRect_old, SMesh[meshName]->GetMeshRect(), meshName);
@@ -405,7 +415,7 @@ void Simulation::HandleCommand(string command_string)
 
 		case CMD_ADDFMESH:
 		{
-			string meshName;
+			std::string meshName;
 			Rect meshRect;
 
 			//note, mesh name is not allowed to have any spaces - needs to be a single word
@@ -426,7 +436,7 @@ void Simulation::HandleCommand(string command_string)
 
 		case CMD_SETFMESH:
 		{
-			string new_meshName;
+			std::string new_meshName;
 			Rect meshRect;
 
 			//note, mesh name is not allowed to have any spaces - needs to be a single word
@@ -441,7 +451,7 @@ void Simulation::HandleCommand(string command_string)
 					SMesh.SetMeshFocus(new_meshName);
 					UpdateScreen_AutoSet_KeepOrientation();
 
-					std::vector<string> meshNames;
+					std::vector<std::string> meshNames;
 					for (int idx = 0; idx < SMesh.size(); idx++) {
 
 						meshNames.push_back(SMesh.key_from_meshIdx(idx));
@@ -468,7 +478,7 @@ void Simulation::HandleCommand(string command_string)
 
 		case CMD_ADDAFMESH:
 		{
-			string meshName;
+			std::string meshName;
 			Rect meshRect;
 
 			//note, mesh name is not allowed to have any spaces - needs to be a single word
@@ -489,7 +499,7 @@ void Simulation::HandleCommand(string command_string)
 
 		case CMD_SETAFMESH:
 		{
-			string new_meshName;
+			std::string new_meshName;
 			Rect meshRect;
 
 			//note, mesh name is not allowed to have any spaces - needs to be a single word
@@ -504,7 +514,7 @@ void Simulation::HandleCommand(string command_string)
 					SMesh.SetMeshFocus(new_meshName);
 					UpdateScreen_AutoSet_KeepOrientation();
 
-					std::vector<string> meshNames;
+					std::vector<std::string> meshNames;
 					for (int idx = 0; idx < SMesh.size(); idx++) {
 
 						meshNames.push_back(SMesh.key_from_meshIdx(idx));
@@ -531,7 +541,7 @@ void Simulation::HandleCommand(string command_string)
 
 		case CMD_ADDMETALMESH:
 		{
-			string meshName;
+			std::string meshName;
 			Rect meshRect;
 
 			//note, mesh name is not allowed to have any spaces - needs to be a single word
@@ -552,7 +562,7 @@ void Simulation::HandleCommand(string command_string)
 
 		case CMD_ADDINSULATORMESH:
 		{
-			string meshName;
+			std::string meshName;
 			Rect meshRect;
 
 			//note, mesh name is not allowed to have any spaces - needs to be a single word
@@ -573,7 +583,7 @@ void Simulation::HandleCommand(string command_string)
 
 		case CMD_ADDDIPOLEMESH:
 		{
-			string meshName;
+			std::string meshName;
 			Rect meshRect;
 
 			//note, mesh name is not allowed to have any spaces - needs to be a single word
@@ -594,7 +604,7 @@ void Simulation::HandleCommand(string command_string)
 
 		case CMD_ADDDIAMAGNETICMESH:
 		{
-			string meshName;
+			std::string meshName;
 			Rect meshRect;
 
 			//note, mesh name is not allowed to have any spaces - needs to be a single word
@@ -615,7 +625,7 @@ void Simulation::HandleCommand(string command_string)
 
 		case CMD_ADDAMESHCUBIC:
 		{
-			string meshName;
+			std::string meshName;
 			Rect meshRect;
 
 			//note, mesh name is not allowed to have any spaces - needs to be a single word
@@ -636,7 +646,7 @@ void Simulation::HandleCommand(string command_string)
 
 		case CMD_SETAMESHCUBIC:
 		{
-			string new_meshName;
+			std::string new_meshName;
 			Rect meshRect;
 
 			//note, mesh name is not allowed to have any spaces - needs to be a single word
@@ -651,7 +661,7 @@ void Simulation::HandleCommand(string command_string)
 					SMesh.SetMeshFocus(new_meshName);
 					UpdateScreen_AutoSet_KeepOrientation();
 
-					std::vector<string> meshNames;
+					std::vector<std::string> meshNames;
 					for (int idx = 0; idx < SMesh.size(); idx++) {
 
 						meshNames.push_back(SMesh.key_from_meshIdx(idx));
@@ -678,7 +688,7 @@ void Simulation::HandleCommand(string command_string)
 
 		case CMD_DELMESH:
 		{
-			string meshName;
+			std::string meshName;
 			error = commandSpec.GetParameters(command_fields, meshName);
 
 			if (!error) {
@@ -702,7 +712,7 @@ void Simulation::HandleCommand(string command_string)
 
 		case CMD_RENAMEMESH:
 		{
-			string oldName = SMesh.GetMeshFocus(), newName;
+			std::string oldName = SMesh.GetMeshFocus(), newName;
 
 			error = commandSpec.GetParameters(command_fields, oldName, newName);
 			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, newName); oldName = SMesh.GetMeshFocus(); }
@@ -734,12 +744,12 @@ void Simulation::HandleCommand(string command_string)
 
 		case CMD_MESHFOCUS:
 		{
-			string meshName;
+			std::string meshName;
 			error = commandSpec.GetParameters(command_fields, meshName);
 
 			if (!error) {
 
-				string foucusedMesh = SMesh.GetMeshFocus();
+				std::string foucusedMesh = SMesh.GetMeshFocus();
 
 				if (!err_hndl.qcall(error, &SuperMesh::SetMeshFocus, &SMesh, meshName)) {
 
@@ -756,12 +766,12 @@ void Simulation::HandleCommand(string command_string)
 
 		case CMD_MESHFOCUS2:
 		{
-			string meshName;
+			std::string meshName;
 			error = commandSpec.GetParameters(command_fields, meshName);
 
 			if (!error) {
 
-				string foucusedMesh = SMesh.GetMeshFocus();
+				std::string foucusedMesh = SMesh.GetMeshFocus();
 
 				if (!err_hndl.qcall(error, &SuperMesh::SetMeshFocus, &SMesh, meshName)) {
 
@@ -779,10 +789,11 @@ void Simulation::HandleCommand(string command_string)
 		case CMD_DELRECT:
 		{
 			Rect rectangle;
-			string meshName = SMesh.GetMeshFocus();
+			std::string meshName = SMesh.GetMeshFocus();
 
 			error = commandSpec.GetParameters(command_fields, rectangle, meshName);
 			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, rectangle); meshName = SMesh.GetMeshFocus(); }
+			if (error == BERROR_PARAMMISMATCH) { error.reset(); meshName = SMesh.GetMeshFocus(); rectangle = Rect(DBL3(), SMesh[meshName]->GetMeshDimensions()); }
 
 			if (!error) {
 
@@ -800,7 +811,7 @@ void Simulation::HandleCommand(string command_string)
 		case CMD_ADDRECT:
 		{
 			Rect rectangle;
-			string meshName = SMesh.GetMeshFocus();
+			std::string meshName = SMesh.GetMeshFocus();
 
 			error = commandSpec.GetParameters(command_fields, rectangle, meshName);
 			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, rectangle); meshName = SMesh.GetMeshFocus(); }
@@ -820,7 +831,7 @@ void Simulation::HandleCommand(string command_string)
 
 		case CMD_RESETMESH:
 		{
-			string meshName;
+			std::string meshName;
 
 			error = commandSpec.GetParameters(command_fields, meshName);
 			if (error == BERROR_PARAMMISMATCH) { meshName = SMesh.GetMeshFocus(); error.reset(); }
@@ -840,7 +851,7 @@ void Simulation::HandleCommand(string command_string)
 		case CMD_LOADMASKFILE:
 		{
 			double zDepth;
-			string fileName;
+			std::string fileName;
 
 			error = commandSpec.GetParameters(command_fields, zDepth, fileName);
 			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, fileName); zDepth = 0; }
@@ -855,9 +866,9 @@ void Simulation::HandleCommand(string command_string)
 				if (!GetFilenameDirectory(fileName).length()) fileName = directory + fileName;
 
 				//define code required to load the bitmap - this will be passed for the mesh to use
-				function<vector<unsigned char>(string, INT2)> bitmap_loader = [&](string fileName, INT2 n_plane) -> vector<unsigned char> {
+				std::function<std::vector<unsigned char>(std::string, INT2)> bitmap_loader = [&](std::string fileName, INT2 n_plane) -> std::vector<unsigned char> {
 
-					vector<unsigned char> bitmap;
+					std::vector<unsigned char> bitmap;
 					BD.BGMethods()->GetBitmapFromImage(fileName, bitmap, n_plane);
 
 					return bitmap;
@@ -911,7 +922,7 @@ void Simulation::HandleCommand(string command_string)
 		case CMD_SETANGLE:
 		{
 			double polar, azim;
-			string meshName;
+			std::string meshName;
 
 			error = commandSpec.GetParameters(command_fields, polar, azim, meshName);
 			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, polar, azim); meshName = ""; }
@@ -928,9 +939,30 @@ void Simulation::HandleCommand(string command_string)
 		}
 		break;
 
+		case CMD_SETOBJECTANGLE:
+		{
+			double polar, azim;
+			DBL3 position;
+			std::string meshName;
+
+			error = commandSpec.GetParameters(command_fields, polar, azim, position, meshName);
+			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, polar, azim, position); meshName = SMesh.GetMeshFocus(); }
+
+			if (!error) {
+
+				if (!err_hndl.qcall(error, &SuperMesh::SetMagAngle_Object, &SMesh, meshName, polar, azim, position)) {
+
+					UpdateScreen();
+				}
+
+			}
+			else if (verbose) PrintCommandUsage(command_name);
+		}
+		break;
+
 		case CMD_RANDOM:
 		{
-			string meshName;
+			std::string meshName;
 			int seed;
 
 			error = commandSpec.GetParameters(command_fields, meshName, seed);
@@ -951,8 +983,8 @@ void Simulation::HandleCommand(string command_string)
 
 		case CMD_INVERTMAG:
 		{
-			string meshName;
-			string inputString;
+			std::string meshName;
+			std::string inputString;
 			bool x = true, y = true, z = true;
 
 			error = commandSpec.GetParameters(command_fields, inputString);
@@ -962,7 +994,7 @@ void Simulation::HandleCommand(string command_string)
 
 				if (inputString.length()) {
 
-					vector<string> fields = split(inputString, " ");
+					std::vector<std::string> fields = split(inputString, " ");
 
 					int num_options;
 
@@ -1005,8 +1037,8 @@ void Simulation::HandleCommand(string command_string)
 
 		case CMD_MIRRORMAG:
 		{
-			string meshName;
-			string axis;
+			std::string meshName;
+			std::string axis;
 
 			error = commandSpec.GetParameters(command_fields, axis, meshName);
 			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, axis); meshName = SMesh.GetMeshFocus(); }
@@ -1027,7 +1059,7 @@ void Simulation::HandleCommand(string command_string)
 		{
 			Rect rectangle;
 			double polar, azim;
-			string meshName;
+			std::string meshName;
 
 			error = commandSpec.GetParameters(command_fields, polar, azim, rectangle, meshName);
 			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, polar, azim, rectangle); meshName = SMesh.GetMeshFocus(); }
@@ -1045,9 +1077,9 @@ void Simulation::HandleCommand(string command_string)
 
 		case CMD_DWALL:
 		{
-			string longitudinal, transverse;
+			std::string longitudinal, transverse;
 			double width, position;
-			string meshName;
+			std::string meshName;
 
 			error = commandSpec.GetParameters(command_fields, longitudinal, transverse, width, position, meshName);
 			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, longitudinal, transverse, width, position); meshName = SMesh.GetMeshFocus(); }
@@ -1067,7 +1099,7 @@ void Simulation::HandleCommand(string command_string)
 		{
 			int longitudinal, rotation, core;
 			Rect rect;
-			string meshName;
+			std::string meshName;
 
 			error = commandSpec.GetParameters(command_fields, longitudinal, rotation, core, rect, meshName);
 			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, longitudinal, rotation, core, rect); meshName = SMesh.GetMeshFocus(); }
@@ -1077,7 +1109,7 @@ void Simulation::HandleCommand(string command_string)
 
 				StopSimulation();
 
-				string vortexFile;
+				std::string vortexFile;
 				bool invertMag = false;
 
 				//l = +1, r = -1, c = -1 : vortex_hh_clk_dn
@@ -1143,7 +1175,7 @@ void Simulation::HandleCommand(string command_string)
 			int core, chirality;
 			double diameter;
 			DBL2 position;
-			string meshName;
+			std::string meshName;
 
 			error = commandSpec.GetParameters(command_fields, core, chirality, diameter, position, meshName);
 			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, core, chirality, diameter, position); meshName = SMesh.GetMeshFocus(); }
@@ -1164,7 +1196,7 @@ void Simulation::HandleCommand(string command_string)
 			int core, chirality;
 			double diameter;
 			DBL2 position;
-			string meshName;
+			std::string meshName;
 
 			error = commandSpec.GetParameters(command_fields, core, chirality, diameter, position, meshName);
 			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, core, chirality, diameter, position); meshName = SMesh.GetMeshFocus(); }
@@ -1182,8 +1214,8 @@ void Simulation::HandleCommand(string command_string)
 
 		case CMD_PBC:
 		{
-			string meshName;
-			string flag;
+			std::string meshName;
+			std::string flag;
 			int images;
 
 			error = commandSpec.GetParameters(command_fields, meshName, flag, images);
@@ -1204,7 +1236,7 @@ void Simulation::HandleCommand(string command_string)
 		case CMD_SETFIELD:
 		{
 			DBL3 field_polar;
-			string meshName = "";
+			std::string meshName = "";
 
 			error = commandSpec.GetParameters(command_fields, field_polar, meshName);
 			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, field_polar); meshName = ""; }
@@ -1225,7 +1257,7 @@ void Simulation::HandleCommand(string command_string)
 		case CMD_SETSTRESS:
 		{
 			DBL3 stress_polar;
-			string meshName = "";
+			std::string meshName = "";
 
 			error = commandSpec.GetParameters(command_fields, stress_polar, meshName);
 			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, stress_polar); meshName = ""; }
@@ -1251,7 +1283,7 @@ void Simulation::HandleCommand(string command_string)
 
 		case CMD_ADDMODULE:
 		{
-			string moduleHandle, meshName;
+			std::string moduleHandle, meshName;
 
 			error = commandSpec.GetParameters(command_fields, meshName, moduleHandle);
 
@@ -1272,7 +1304,7 @@ void Simulation::HandleCommand(string command_string)
 
 		case CMD_DELMODULE:
 		{
-			string moduleHandle, meshName;
+			std::string moduleHandle, meshName;
 			
 			error = commandSpec.GetParameters(command_fields, meshName, moduleHandle);
 
@@ -1366,7 +1398,7 @@ void Simulation::HandleCommand(string command_string)
 		case CMD_EXCLUDEMULTICONVDEMAG:
 		{
 			bool status;
-			string meshName;
+			std::string meshName;
 
 			error = commandSpec.GetParameters(command_fields, status, meshName);
 
@@ -1390,7 +1422,7 @@ void Simulation::HandleCommand(string command_string)
 
 		case CMD_SETODE:
 		{
-			string odeHandle, odeEvalHandle;
+			std::string odeHandle, odeEvalHandle;
 			
 			error = commandSpec.GetParameters(command_fields, odeHandle, odeEvalHandle);
 
@@ -1419,7 +1451,7 @@ void Simulation::HandleCommand(string command_string)
 
 		case CMD_SETATOMODE:
 		{
-			string odeHandle, odeEvalHandle;
+			std::string odeHandle, odeEvalHandle;
 
 			error = commandSpec.GetParameters(command_fields, odeHandle, odeEvalHandle);
 
@@ -1448,7 +1480,7 @@ void Simulation::HandleCommand(string command_string)
 
 		case CMD_SETODEEVAL:
 		{
-			string odeEvalHandle;
+			std::string odeEvalHandle;
 
 			error = commandSpec.GetParameters(command_fields, odeEvalHandle);
 
@@ -1527,8 +1559,8 @@ void Simulation::HandleCommand(string command_string)
 
 		case CMD_SHOWDATA:
 		{
-			string dataName;
-			string meshName = SMesh.GetMeshFocus();
+			std::string dataName;
+			std::string meshName = SMesh.GetMeshFocus();
 			Rect dataRect;
 
 			error = commandSpec.GetParameters(command_fields, dataName, meshName, dataRect);
@@ -1539,7 +1571,7 @@ void Simulation::HandleCommand(string command_string)
 
 				if (verbose) {
 
-					string text;
+					std::string text;
 
 					//mesh name if applicable
 					if (!dataDescriptor[dataName].meshless) {
@@ -1561,7 +1593,7 @@ void Simulation::HandleCommand(string command_string)
 					BD.DisplayFormattedConsoleMessage(text);
 				}
 
-				//for script return the number of returned data fields is variable. This is done by obtaining the a string using GetDataValueString, then splitting it using the usual separators (, or ;)
+				//for script return the number of returned data fields is variable. This is done by obtaining the a std::string using GetDataValueString, then splitting it using the usual separators (, or ;)
 				if (script_client_connected)
 					commSocket.SetSendData(commandSpec.PrepareReturnParameters(GetDataValue(DatumConfig((DATA_)dataDescriptor.get_ID_from_key(dataName), meshName, dataRect))));
 
@@ -1609,8 +1641,8 @@ void Simulation::HandleCommand(string command_string)
 
 		case CMD_ADDDATA:
 		{
-			string dataName;
-			string meshName = SMesh.GetMeshFocus();
+			std::string dataName;
+			std::string meshName = SMesh.GetMeshFocus();
 			Rect dataRect;
 
 			error = commandSpec.GetParameters(command_fields, dataName, meshName, dataRect);
@@ -1634,8 +1666,8 @@ void Simulation::HandleCommand(string command_string)
 
 		case CMD_SETDATA:
 		{
-			string dataName;
-			string meshName = SMesh.GetMeshFocus();
+			std::string dataName;
+			std::string meshName = SMesh.GetMeshFocus();
 			Rect dataRect;
 
 			error = commandSpec.GetParameters(command_fields, dataName, meshName, dataRect);
@@ -1665,8 +1697,8 @@ void Simulation::HandleCommand(string command_string)
 		case CMD_EDITDATA:
 		{
 			int index = 0;
-			string dataName;
-			string meshName = SMesh.GetMeshFocus();
+			std::string dataName;
+			std::string meshName = SMesh.GetMeshFocus();
 			Rect dataRect;
 
 			error = commandSpec.GetParameters(command_fields, index, dataName, meshName, dataRect);
@@ -1694,7 +1726,7 @@ void Simulation::HandleCommand(string command_string)
 
 		case CMD_ADDPINNEDDATA:
 		{
-			string dataName, meshName = SMesh.GetMeshFocus();
+			std::string dataName, meshName = SMesh.GetMeshFocus();
 			Rect dataRect;
 
 			error = commandSpec.GetParameters(command_fields, dataName, meshName, dataRect);
@@ -1735,7 +1767,7 @@ void Simulation::HandleCommand(string command_string)
 
 		case CMD_CHDIR:
 		{
-			string directory_;
+			std::string directory_;
 
 			error = commandSpec.GetParameters(command_fields, directory_);
 
@@ -1752,7 +1784,7 @@ void Simulation::HandleCommand(string command_string)
 			}
 			else {
 
-				string text = "[tc1,1,1,1/tc]Current working directory : " + MakeIO(IOI_DIRECTORY, directory);
+				std::string text = "[tc1,1,1,1/tc]Current working directory : " + MakeIO(IOI_DIRECTORY, directory);
 				if (verbose) BD.DisplayFormattedConsoleMessage(text);
 			}
 
@@ -1762,13 +1794,13 @@ void Simulation::HandleCommand(string command_string)
 
 		case CMD_SAVEDATAFILE:
 		{
-			string fileName;
+			std::string fileName;
 
 			error = commandSpec.GetParameters(command_fields, fileName);
 
 			if (!error) {
 
-				string directory_ = ExtractFilenameDirectory(fileName);
+				std::string directory_ = ExtractFilenameDirectory(fileName);
 				if (directory_.length()) directory = directory_;
 				savedataFile = fileName;
 
@@ -1778,7 +1810,7 @@ void Simulation::HandleCommand(string command_string)
 			}
 			else {
 
-				string text = "[tc1,1,1,1/tc]Current file for output data : " + MakeIO(IOI_DIRECTORY, directory) + MakeIO(IOI_SAVEDATAFILE, savedataFile);
+				std::string text = "[tc1,1,1,1/tc]Current file for output data : " + MakeIO(IOI_DIRECTORY, directory) + MakeIO(IOI_SAVEDATAFILE, savedataFile);
 				if (verbose) BD.DisplayFormattedConsoleMessage(text);
 			}
 
@@ -1788,21 +1820,21 @@ void Simulation::HandleCommand(string command_string)
 
 		case CMD_SAVECOMMENT:
 		{
-			string fileName,  comment;
+			std::string fileName,  comment;
 
 			error = commandSpec.GetParameters(command_fields, fileName, comment);
 
 			if (!error) {
 
-				string directory_ = ExtractFilenameDirectory(fileName);
+				std::string directory_ = ExtractFilenameDirectory(fileName);
 				if (!directory_.length()) fileName = directory + fileName;
 				if (!GetFileTermination(fileName).length()) fileName += ".txt";
 
-				ofstream bdout;
-				bdout.open(fileName, ios::out | ios::app);
+				std::ofstream bdout;
+				bdout.open(fileName, std::ios::out | std::ios::app);
 				if (bdout.is_open()) {
 
-					bdout << comment << endl;
+					bdout << comment << std::endl;
 					bdout.close();
 				}
 			}
@@ -1811,13 +1843,13 @@ void Simulation::HandleCommand(string command_string)
 
 		case CMD_SAVEIMAGEFILE:
 		{
-			string fileName;
+			std::string fileName;
 
 			error = commandSpec.GetParameters(command_fields, fileName);
 
 			if (!error) {
 
-				string directory_ = ExtractFilenameDirectory(fileName);
+				std::string directory_ = ExtractFilenameDirectory(fileName);
 				if (directory_.length()) directory = directory_;
 				imageSaveFileBase = fileName;
 
@@ -1825,7 +1857,7 @@ void Simulation::HandleCommand(string command_string)
 			}
 			else {
 
-				string text = "[tc1,1,1,1/tc]Current file image saving : " + MakeIO(IOI_DIRECTORY, directory) + MakeIO(IOI_SAVEIMAGEFILEBASE, imageSaveFileBase);
+				std::string text = "[tc1,1,1,1/tc]Current file image saving : " + MakeIO(IOI_DIRECTORY, directory) + MakeIO(IOI_SAVEIMAGEFILEBASE, imageSaveFileBase);
 				if (verbose) BD.DisplayFormattedConsoleMessage(text);
 			}
 
@@ -1879,8 +1911,8 @@ void Simulation::HandleCommand(string command_string)
 
 		case CMD_ADDSTAGE:
 		{
-			string stageTypeName;
-			string meshName = SMesh.GetMeshFocus();
+			std::string stageTypeName;
+			std::string meshName = SMesh.GetMeshFocus();
 
 			error = commandSpec.GetParameters(command_fields, stageTypeName, meshName);
 			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, stageTypeName); meshName = SMesh.GetMeshFocus(); }
@@ -1897,8 +1929,8 @@ void Simulation::HandleCommand(string command_string)
 
 		case CMD_SETSTAGE:
 		{
-			string stageTypeName;
-			string meshName = SMesh.GetMeshFocus();
+			std::string stageTypeName;
+			std::string meshName = SMesh.GetMeshFocus();
 
 			error = commandSpec.GetParameters(command_fields, stageTypeName, meshName);
 			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, stageTypeName); meshName = SMesh.GetMeshFocus(); }
@@ -1944,8 +1976,8 @@ void Simulation::HandleCommand(string command_string)
 		case CMD_EDITSTAGE:
 		{
 			int index;
-			string stageTypeName;
-			string meshName = SMesh.GetMeshFocus();
+			std::string stageTypeName;
+			std::string meshName = SMesh.GetMeshFocus();
 
 			error = commandSpec.GetParameters(command_fields, index, stageTypeName, meshName);
 			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, index, stageTypeName); meshName = SMesh.GetMeshFocus(); }
@@ -1963,7 +1995,7 @@ void Simulation::HandleCommand(string command_string)
 		case CMD_EDITSTAGEVALUE:
 		{
 			int index;
-			string value_string;
+			std::string value_string;
 
 			error = commandSpec.GetParameters(command_fields, index, value_string);
 
@@ -1979,8 +2011,8 @@ void Simulation::HandleCommand(string command_string)
 		case CMD_EDITSTAGESTOP:
 		{
 			int index;
-			string stageStopName;
-			string value_string;
+			std::string stageStopName;
+			std::string value_string;
 
 			error = commandSpec.GetParameters(command_fields, index, stageStopName, value_string);
 			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, index, stageStopName); value_string = ""; }
@@ -2003,8 +2035,8 @@ void Simulation::HandleCommand(string command_string)
 		case CMD_EDITDATASAVE:
 		{
 			int index;
-			string dSaveType;
-			string value_string;
+			std::string dSaveType;
+			std::string value_string;
 
 			error = commandSpec.GetParameters(command_fields, index, dSaveType, value_string);
 			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, index, dSaveType); value_string = ""; }
@@ -2026,7 +2058,7 @@ void Simulation::HandleCommand(string command_string)
 
 		case CMD_PARAMS:
 		{
-			string meshName;
+			std::string meshName;
 
 			error = commandSpec.GetParameters(command_fields, meshName);
 			
@@ -2042,12 +2074,13 @@ void Simulation::HandleCommand(string command_string)
 
 		case CMD_SETPARAM:
 		{
-			string paramName, paramValue, meshName;
+			std::string paramName, paramValue, meshName;
+			bool set_value = true;
 
 			error = commandSpec.GetParameters(command_fields, meshName, paramName, paramValue);
-			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, meshName, paramName); }
+			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, meshName, paramName); set_value = false; }
 
-			if (!error) {
+			if (!error && set_value) {
 
 				StopSimulation();
 
@@ -2056,9 +2089,9 @@ void Simulation::HandleCommand(string command_string)
 					UpdateScreen();
 				}
 			}
-			else if (verbose) PrintCommandUsage(command_name);
+			else if (verbose && set_value) PrintCommandUsage(command_name);
 
-			if (script_client_connected) {
+			if (script_client_connected && !set_value) {
 
 				SMesh.get_meshparam_value(meshName, paramName, paramValue);
 				commSocket.SetSendData(commandSpec.PrepareReturnParameters(paramValue));
@@ -2068,7 +2101,7 @@ void Simulation::HandleCommand(string command_string)
 
 		case CMD_PARAMSTEMP:
 		{
-			string meshName;
+			std::string meshName;
 			
 			error = commandSpec.GetParameters(command_fields, meshName);
 
@@ -2084,7 +2117,7 @@ void Simulation::HandleCommand(string command_string)
 
 		case CMD_CLEARPARAMSTEMP:
 		{
-			string meshName, paramName;
+			std::string meshName, paramName;
 
 			error = commandSpec.GetParameters(command_fields, meshName, paramName);
 			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, meshName); paramName = ""; }
@@ -2106,7 +2139,7 @@ void Simulation::HandleCommand(string command_string)
 
 		case CMD_SETPARAMTEMPEQUATION:
 		{
-			string meshName, paramName, equationText;
+			std::string meshName, paramName, equationText;
 
 			error = commandSpec.GetParameters(command_fields, meshName, paramName, equationText);
 
@@ -2125,7 +2158,7 @@ void Simulation::HandleCommand(string command_string)
 
 		case CMD_SETPARAMTEMPARRAY:
 		{
-			string meshName, paramName, fileName;
+			std::string meshName, paramName, fileName;
 
 			error = commandSpec.GetParameters(command_fields, meshName, paramName, fileName);
 			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, meshName, paramName); fileName = ""; }
@@ -2143,10 +2176,10 @@ void Simulation::HandleCommand(string command_string)
 					if (GetFileTermination(fileName) != ".txt")
 						fileName += ".txt";
 
-					vector<vector<double>> load_arrays;
+					std::vector<std::vector<double>> load_arrays;
 					if (ReadDataColumns(fileName, "\t", load_arrays, { 0, 1, 2, 3 })) {
 
-						vector<double> empty;
+						std::vector<double> empty;
 
 						if (load_arrays.size() == 4 && load_arrays[3].size()) error = SMesh.set_meshparam_tscaling_array(meshName, paramName, load_arrays[0], load_arrays[1], load_arrays[2], load_arrays[3], fileName);
 						else if (load_arrays.size() == 3 && load_arrays[2].size()) error = SMesh.set_meshparam_tscaling_array(meshName, paramName, load_arrays[0], load_arrays[1], load_arrays[2], empty, fileName);
@@ -2160,7 +2193,7 @@ void Simulation::HandleCommand(string command_string)
 				else {
 					
 					//default array
-					vector<double> temp(2), scaling(2), empty;
+					std::vector<double> temp(2), scaling(2), empty;
 					temp = { 0.0, 1.0 };
 					scaling = { 1.0, 1.0 };
 					error = SMesh.set_meshparam_tscaling_array(meshName, paramName, temp, scaling, empty, empty);
@@ -2183,7 +2216,7 @@ void Simulation::HandleCommand(string command_string)
 					//load from dp arrays
 					StopSimulation();
 
-					vector<double> empty;
+					std::vector<double> empty;
 
 					if (GoodIdx(dpArr.size(), dp_c_iy, dp_c_iz)) error = SMesh.set_meshparam_tscaling_array(SMesh.GetMeshFocus(), paramName, dpArr[dp_T_idx], dpArr[dp_c_ix], dpArr[dp_c_iy], dpArr[dp_c_iz]);
 					else if (GoodIdx(dpArr.size(), dp_c_iy)) error = SMesh.set_meshparam_tscaling_array(SMesh.GetMeshFocus(), paramName, dpArr[dp_T_idx], dpArr[dp_c_ix], dpArr[dp_c_iy], empty);
@@ -2203,12 +2236,12 @@ void Simulation::HandleCommand(string command_string)
 
 		case CMD_COPYPARAMS:
 		{
-			string meshName_from, meshNames_to_string;
+			std::string meshName_from, meshNames_to_string;
 
 			error = commandSpec.GetParameters(command_fields, meshName_from, meshNames_to_string);
 
 			//multiple mesh names could have been entered
-			vector<string> meshNames_to = split(meshNames_to_string, " ");
+			std::vector<std::string> meshNames_to = split(meshNames_to_string, " ");
 
 			if (!error && meshNames_to.size()) {
 
@@ -2227,12 +2260,12 @@ void Simulation::HandleCommand(string command_string)
 
 		case CMD_COPYMESHDATA:
 		{
-			string meshName_from, meshNames_to_string;
+			std::string meshName_from, meshNames_to_string;
 
 			error = commandSpec.GetParameters(command_fields, meshName_from, meshNames_to_string);
 
 			//multiple mesh names could have been entered
-			vector<string> meshNames_to = split(meshNames_to_string, " ");
+			std::vector<std::string> meshNames_to = split(meshNames_to_string, " ");
 
 			if (!error && meshNames_to.size()) {
 
@@ -2251,7 +2284,7 @@ void Simulation::HandleCommand(string command_string)
 
 		case CMD_PARAMSVAR:
 		{
-			string meshName;
+			std::string meshName;
 
 			error = commandSpec.GetParameters(command_fields, meshName);
 
@@ -2267,7 +2300,7 @@ void Simulation::HandleCommand(string command_string)
 
 		case CMD_SETDISPLAYEDPARAMSVAR:
 		{
-			string meshName, paramName;
+			std::string meshName, paramName;
 
 			error = commandSpec.GetParameters(command_fields, meshName, paramName);
 
@@ -2284,7 +2317,7 @@ void Simulation::HandleCommand(string command_string)
 
 		case CMD_CLEARPARAMSVAR:
 		{
-			string meshName;
+			std::string meshName;
 
 			error = commandSpec.GetParameters(command_fields, meshName);
 
@@ -2305,7 +2338,7 @@ void Simulation::HandleCommand(string command_string)
 
 		case CMD_CLEARPARAMVAR:
 		{
-			string meshName, paramName;
+			std::string meshName, paramName;
 
 			error = commandSpec.GetParameters(command_fields, meshName, paramName);
 
@@ -2323,7 +2356,7 @@ void Simulation::HandleCommand(string command_string)
 
 		case CMD_SETPARAMVAR:
 		{
-			string meshName, paramName, generatorName, generatorArgs;
+			std::string meshName, paramName, generatorName, generatorArgs;
 
 			error = commandSpec.GetParameters(command_fields, meshName, paramName, generatorName, generatorArgs);
 			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, meshName, paramName, generatorName); generatorArgs = ""; }
@@ -2336,7 +2369,7 @@ void Simulation::HandleCommand(string command_string)
 				//in this case generatorName is not a key in vargenerator_descriptor - this is how we recognize this type of input
 				if (vargenerator_descriptor.get_ID_from_key(generatorName) == MATPVAR_EQUATION || !vargenerator_descriptor.has_key(generatorName)) {
 
-					string equationText;
+					std::string equationText;
 
 					if (!vargenerator_descriptor.has_key(generatorName)) {
 
@@ -2354,21 +2387,24 @@ void Simulation::HandleCommand(string command_string)
 
 					if (!err_hndl.qcall(error, &SuperMesh::set_meshparam_s_equation, &SMesh, meshName, paramName, equationText)) {
 
+						SMesh.set_meshparamvar_display(meshName, paramName);
 						UpdateScreen();
 					}
 				}
 				else {
 
 					//used with custom parameter variation generator (set from grayscale png file)
-					function<vector<unsigned char>(string, INT2)> bitmap_loader = [&](string fileName, INT2 n_plane) -> vector<unsigned char> {
+					std::function<std::vector<unsigned char>(std::string, INT2)> bitmap_loader = [&](std::string fileName, INT2 n_plane) -> std::vector<unsigned char> {
 
-						vector<unsigned char> bitmap;
+						std::vector<unsigned char> bitmap;
 						BD.BGMethods()->GetBitmapFromImage(fileName, bitmap, n_plane);
 
 						return bitmap;
 					};
 
+
 					error = SMesh.set_meshparam_var(meshName, paramName, generatorName, generatorArgs, bitmap_loader);
+					if (!error) SMesh.set_meshparamvar_display(meshName, paramName);
 				}
 
 				UpdateScreen();
@@ -2379,7 +2415,7 @@ void Simulation::HandleCommand(string command_string)
 
 		case CMD_SAVESIM:
 		{
-			string simFileName;
+			std::string simFileName;
 
 			error = commandSpec.GetParameters(command_fields, simFileName);
 
@@ -2399,7 +2435,7 @@ void Simulation::HandleCommand(string command_string)
 
 		case CMD_LOADSIM:
 		{
-			string simFileName;
+			std::string simFileName;
 
 			error = commandSpec.GetParameters(command_fields, simFileName);
 
@@ -2423,7 +2459,7 @@ void Simulation::HandleCommand(string command_string)
 
 		case CMD_DISPLAY:
 		{
-			string name, meshName;
+			std::string name, meshName;
 
 			error = commandSpec.GetParameters(command_fields, name, meshName);
 			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, name); meshName = SMesh.GetMeshFocus(); }
@@ -2452,13 +2488,32 @@ void Simulation::HandleCommand(string command_string)
 				BD.SetDetailLevel(detail_level);
 				UpdateScreen();
 			}
-			else if (verbose) PrintCommandUsage(command_name);
+			else if (verbose) Print_DisplayRenderSettings();
+
+			if (script_client_connected) commSocket.SetSendData(commandSpec.PrepareReturnParameters(BD.GetDetailLevel()));
+		}
+		break;
+
+		case CMD_DISPLAYRENDERTHRESH:
+		{
+			INT3 renderthresholds;
+
+			error = commandSpec.GetParameters(command_fields, renderthresholds);
+
+			if (!error) {
+
+				BD.SetRenderThresholds(renderthresholds);
+				UpdateScreen();
+			}
+			else if (verbose) Print_DisplayRenderSettings();
+
+			if (script_client_connected) commSocket.SetSendData(commandSpec.PrepareReturnParameters(BD.GetRenderThresholds()));
 		}
 		break;
 
 		case CMD_DISPLAYBACKGROUND:
 		{
-			string name, meshName;
+			std::string name, meshName;
 
 			error = commandSpec.GetParameters(command_fields, name, meshName);
 			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, name); meshName = SMesh.GetMeshFocus(); }
@@ -2478,7 +2533,7 @@ void Simulation::HandleCommand(string command_string)
 
 		case CMD_VECREP:
 		{
-			string meshName;
+			std::string meshName;
 			int vecreptype;
 
 			error = commandSpec.GetParameters(command_fields, meshName, vecreptype);
@@ -2544,7 +2599,7 @@ void Simulation::HandleCommand(string command_string)
 
 		case CMD_SAVEMESHIMAGE:
 		{
-			string fileName;
+			std::string fileName;
 
 			error = commandSpec.GetParameters(command_fields, fileName);
 
@@ -2571,7 +2626,7 @@ void Simulation::HandleCommand(string command_string)
 
 		case CMD_MAKEVIDEO:
 		{
-			string fileNameBase;
+			std::string fileNameBase;
 			double fps;
 			int quality;
 			
@@ -2581,10 +2636,10 @@ void Simulation::HandleCommand(string command_string)
 
 				StopSimulation();
 
-				string sequenceDirectory = directory;
+				std::string sequenceDirectory = directory;
 				if (GetFilenameDirectory(fileNameBase).length()) sequenceDirectory = ExtractFilenameDirectory(fileNameBase);
 
-				vector<string> fileNames = GetFilesInDirectory(sequenceDirectory, fileNameBase, ".png");
+				std::vector<std::string> fileNames = GetFilesInDirectory(sequenceDirectory, fileNameBase, ".png");
 
 				BD.DisplayConsoleMessage("Encoding video ... please wait.");
 
@@ -2612,7 +2667,7 @@ void Simulation::HandleCommand(string command_string)
 			}
 			else if (verbose) {
 
-				string text = "[tc1,1,1,1/tc]Image cropping settings : " + MakeIO(IOI_IMAGECROPPING);
+				std::string text = "[tc1,1,1,1/tc]Image cropping settings : " + MakeIO(IOI_IMAGECROPPING);
 				if (verbose) BD.DisplayFormattedConsoleMessage(text);
 			}
 		}
@@ -2620,7 +2675,7 @@ void Simulation::HandleCommand(string command_string)
 
 		case CMD_MOVINGMESH:
 		{
-			string meshName;
+			std::string meshName;
 
 			error = commandSpec.GetParameters(command_fields, meshName);
 
@@ -2687,7 +2742,7 @@ void Simulation::HandleCommand(string command_string)
 
 		case CMD_PREPAREMOVINGMESH:
 		{
-			string meshName;
+			std::string meshName;
 
 			error = commandSpec.GetParameters(command_fields, meshName);
 			if (error) { error.reset(); meshName = SMesh.GetMeshFocus(); }
@@ -2705,7 +2760,7 @@ void Simulation::HandleCommand(string command_string)
 
 		case CMD_PREPAREMOVINGBLOCHMESH:
 		{
-			string meshName;
+			std::string meshName;
 
 			error = commandSpec.GetParameters(command_fields, meshName);
 			if (error) { error.reset(); meshName = SMesh.GetMeshFocus(); }
@@ -2723,7 +2778,7 @@ void Simulation::HandleCommand(string command_string)
 
 		case CMD_PREPAREMOVINGNEELMESH:
 		{
-			string meshName;
+			std::string meshName;
 
 			error = commandSpec.GetParameters(command_fields, meshName);
 			if (error) { error.reset(); meshName = SMesh.GetMeshFocus(); }
@@ -2741,7 +2796,7 @@ void Simulation::HandleCommand(string command_string)
 
 		case CMD_PREPAREMOVINGSKYRMIONMESH:
 		{
-			string meshName;
+			std::string meshName;
 
 			error = commandSpec.GetParameters(command_fields, meshName);
 			if (error) { error.reset(); meshName = SMesh.GetMeshFocus(); }
@@ -2778,7 +2833,7 @@ void Simulation::HandleCommand(string command_string)
 		case CMD_EXCHANGECOUPLEDMESHES:
 		{
 			bool status;
-			string meshName;
+			std::string meshName;
 
 			error = commandSpec.GetParameters(command_fields, status, meshName);
 			if (error) { error.reset() = commandSpec.GetParameters(command_fields, status); meshName = SMesh.GetMeshFocus(); }
@@ -2921,6 +2976,30 @@ void Simulation::HandleCommand(string command_string)
 				else if (verbose) PrintCommandUsage(command_name);
 
 				if (script_client_connected) commSocket.SetSendData(commandSpec.PrepareReturnParameters(SMesh.CallModuleMethod(&STransport::GetCurrent)));
+			}
+			else error(BERROR_INCORRECTACTION);
+		}
+		break;
+
+		case CMD_SETCURRENTDENSITY:
+		{
+			if (SMesh.IsSuperMeshModuleSet(MODS_STRANSPORT)) {
+
+				DBL3 Jcvalue;
+				std::string meshName;
+
+				error = commandSpec.GetParameters(command_fields, Jcvalue, meshName);
+				if (error) { error.reset() = commandSpec.GetParameters(command_fields, Jcvalue); meshName = SMesh.GetMeshFocus(); }
+
+				if (!error) {
+
+					if (!err_hndl.call(error, &SuperMesh::SetEFromJcValue, &SMesh, Jcvalue, meshName)) {
+
+						disabled_transport_solver = true;
+						UpdateScreen();
+					}
+				}
+				else if (verbose) PrintCommandUsage(command_name);
 			}
 			else error(BERROR_INCORRECTACTION);
 		}
@@ -3100,10 +3179,37 @@ void Simulation::HandleCommand(string command_string)
 		}
 		break;
 
+		case CMD_DISABLETRANSPORTSOLVER:
+		{
+			if (SMesh.IsSuperMeshModuleSet(MODS_STRANSPORT)) {
+
+				bool status;
+
+				error = commandSpec.GetParameters(command_fields, status);
+
+				if (!error) {
+
+					StopSimulation();
+
+					disabled_transport_solver = status;
+
+					SMesh.UpdateConfiguration(UPDATECONFIG_TRANSPORT);
+
+					UpdateScreen();
+				}
+				else if (verbose) PrintTransportSolverConfig();
+
+				if (script_client_connected)
+					commSocket.SetSendData(commandSpec.PrepareReturnParameters(disabled_transport_solver));
+			}
+			else error(BERROR_INCORRECTACTION);
+		}
+		break;
+
 		case CMD_TEMPERATURE:
 		{
 			double Temperature;
-			string meshName;
+			std::string meshName;
 
 			error = commandSpec.GetParameters(command_fields, Temperature, meshName);
 			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, Temperature); meshName = SMesh.superMeshHandle; }
@@ -3138,7 +3244,7 @@ void Simulation::HandleCommand(string command_string)
 			}
 			else if (verbose) {
 
-				string heatdT = "[tc1,1,1,1/tc]Heat Equation Time Step: " + MakeIO(IOI_HEATDT) + "</c>";
+				std::string heatdT = "[tc1,1,1,1/tc]Heat Equation Time Step: " + MakeIO(IOI_HEATDT) + "</c>";
 				BD.DisplayFormattedConsoleMessage(heatdT);
 			}
 
@@ -3150,7 +3256,7 @@ void Simulation::HandleCommand(string command_string)
 		case CMD_AMBIENTTEMPERATURE:
 		{
 			double T_ambient;
-			string meshName;
+			std::string meshName;
 
 			error = commandSpec.GetParameters(command_fields, T_ambient, meshName);
 			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, T_ambient); meshName = SMesh.superMeshHandle; }
@@ -3172,7 +3278,7 @@ void Simulation::HandleCommand(string command_string)
 		case CMD_ROBINALPHA:
 		{
 			double alpha_boundary;
-			string meshName;
+			std::string meshName;
 
 			error = commandSpec.GetParameters(command_fields, alpha_boundary, meshName);
 			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, alpha_boundary); meshName = SMesh.superMeshHandle; }
@@ -3195,9 +3301,9 @@ void Simulation::HandleCommand(string command_string)
 
 		case CMD_INSULATINGSIDES:
 		{
-			string literal;
+			std::string literal;
 			bool status;
-			string meshName;
+			std::string meshName;
 
 			error = commandSpec.GetParameters(command_fields, literal, status, meshName);
 			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, literal, status); meshName = SMesh.GetMeshFocus(); }
@@ -3216,7 +3322,7 @@ void Simulation::HandleCommand(string command_string)
 			if (script_client_connected) {
 				if (SMesh.active_mesh()->IsModuleSet(MOD_HEAT)) {
 
-					vector<bool> insulating = SMesh.active_mesh()->CallModuleMethod(&HeatBase::GetInsulatingSides);
+					std::vector<bool> insulating = SMesh.active_mesh()->CallModuleMethod(&HeatBase::GetInsulatingSides);
 					commSocket.SetSendData(commandSpec.PrepareReturnParameters(insulating[0], insulating[1], insulating[2], insulating[3], insulating[4], insulating[5]));
 				}
 			}
@@ -3226,7 +3332,7 @@ void Simulation::HandleCommand(string command_string)
 		case CMD_CURIETEMPERATURE:
 		{
 			double T_Curie;
-			string meshName;
+			std::string meshName;
 
 			error = commandSpec.GetParameters(command_fields, T_Curie, meshName);
 			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, T_Curie); meshName = SMesh.superMeshHandle; }
@@ -3250,7 +3356,7 @@ void Simulation::HandleCommand(string command_string)
 		case CMD_CURIETEMPERATUREMATERIAL:
 		{
 			double T_Curie_material;
-			string meshName;
+			std::string meshName;
 
 			error = commandSpec.GetParameters(command_fields, T_Curie_material, meshName);
 			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, T_Curie_material); meshName = SMesh.GetMeshFocus(); }
@@ -3275,7 +3381,7 @@ void Simulation::HandleCommand(string command_string)
 		{
 			double atomic_moment;
 			DBL2 atomic_moment_AFM;
-			string meshName;
+			std::string meshName;
 
 			error = commandSpec.GetParameters(command_fields, atomic_moment_AFM, meshName);
 			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, atomic_moment, meshName); atomic_moment_AFM = DBL2(atomic_moment); }
@@ -3305,16 +3411,16 @@ void Simulation::HandleCommand(string command_string)
 		case CMD_TAU:
 		{
 			DBL2 tau_ii;
-			string entry;
+			std::string entry;
 			DBL2 tau_ij;
-			string meshName;
+			std::string meshName;
 
 			error = commandSpec.GetParameters(command_fields, tau_ii, entry);
 			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, tau_ii); meshName = SMesh.superMeshHandle; tau_ij = DBL2(-1.0); }
 
 			if (!error) {
 
-				vector<string> fields = split(entry, " ");
+				std::vector<std::string> fields = split(entry, " ");
 
 				if (fields.size() == 3) {
 
@@ -3364,7 +3470,7 @@ void Simulation::HandleCommand(string command_string)
 		case CMD_TMODEL:
 		{
 			int tmodeltype;
-			string meshName;
+			std::string meshName;
 
 			error = commandSpec.GetParameters(command_fields, tmodeltype, meshName);
 			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, tmodeltype); meshName = SMesh.GetMeshFocus(); }
@@ -3390,7 +3496,7 @@ void Simulation::HandleCommand(string command_string)
 		case CMD_LINKSTOCHASTIC:
 		{
 			bool flag;
-			string meshName;
+			std::string meshName;
 
 			error = commandSpec.GetParameters(command_fields, flag, meshName);
 			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, flag); meshName = SMesh.superMeshHandle; }
@@ -3537,19 +3643,25 @@ void Simulation::HandleCommand(string command_string)
 
 						if (cudaDeviceSelect != device) {
 
-							cudaDeviceSelect = device;
-
 							StopSimulation();
 
 							//if CUDA on, switch it off then back on so everything switches over to the new GPU selection (memory transfer from old GPU to CPU, then to new GPU seamlessly).
 							if (cudaEnabled) {
 
+								//first switch off with current device still selected
 								err_hndl.qcall(error, &SuperMesh::SwitchCUDAState, &SMesh, false, cudaDeviceSelect);
 								cudaEnabled = false;
+
+								//now select new device and turn cuda back on
+								cudaDeviceSelect = device;
 								if (!err_hndl.qcall(error, &SuperMesh::SwitchCUDAState, &SMesh, true, cudaDeviceSelect)) {
 
 									cudaEnabled = true;
 								}
+							}
+							else {
+
+								cudaDeviceSelect = device;
 							}
 
 							UpdateScreen();
@@ -3568,8 +3680,8 @@ void Simulation::HandleCommand(string command_string)
 
 		case CMD_OPENMANUAL:
 		{
-			string directory = GetUserDocumentsPath() + boris_data_directory;
-			string fileName = "BorisManual-v" + ToString(Program_Version) + ".pdf";
+			std::string directory = GetUserDocumentsPath() + boris_data_directory;
+			std::string fileName = "BorisManual-v" + ToString(Program_Version) + ".pdf";
 
 			open_file(directory + fileName);
 		}
@@ -3577,7 +3689,7 @@ void Simulation::HandleCommand(string command_string)
 
 		case CMD_REFINEROUGHNESS:
 		{
-			string meshName;
+			std::string meshName;
 			INT3 refine;
 
 			error = commandSpec.GetParameters(command_fields, refine, meshName);
@@ -3596,7 +3708,7 @@ void Simulation::HandleCommand(string command_string)
 
 		case CMD_CLEARROUGHNESS:
 		{
-			string meshName;
+			std::string meshName;
 
 			error = commandSpec.GetParameters(command_fields, meshName);
 			if (error == BERROR_PARAMMISMATCH) { error.reset(); meshName = SMesh.GetMeshFocus(); }
@@ -3615,7 +3727,7 @@ void Simulation::HandleCommand(string command_string)
 		case CMD_ROUGHENMESH:
 		{
 			double depth;
-			string side;
+			std::string side;
 			int seed;
 
 			error = commandSpec.GetParameters(command_fields, depth, side, seed);
@@ -3646,7 +3758,7 @@ void Simulation::HandleCommand(string command_string)
 		case CMD_SURFROUGHENJAGGED:
 		{
 			double depth, spacing;
-			string sides;
+			std::string sides;
 			int seed;
 
 			error = commandSpec.GetParameters(command_fields, depth, spacing, seed, sides);
@@ -3725,7 +3837,7 @@ void Simulation::HandleCommand(string command_string)
 
 		case CMD_MATERIALSDATABASE:
 		{
-			string mdbName;
+			std::string mdbName;
 
 			error = commandSpec.GetParameters(command_fields, mdbName);
 
@@ -3742,7 +3854,7 @@ void Simulation::HandleCommand(string command_string)
 
 		case CMD_ADDMDBENTRY:
 		{
-			string meshName, materialName;
+			std::string meshName, materialName;
 
 			error = commandSpec.GetParameters(command_fields, meshName, materialName);
 			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, meshName); materialName = meshName; }
@@ -3770,7 +3882,7 @@ void Simulation::HandleCommand(string command_string)
 
 		case CMD_DELMDBENTRY:
 		{
-			string materialName;
+			std::string materialName;
 
 			error = commandSpec.GetParameters(command_fields, materialName);
 
@@ -3791,7 +3903,7 @@ void Simulation::HandleCommand(string command_string)
 
 		case CMD_ADDMATERIAL:
 		{
-			string materialName;
+			std::string materialName;
 			Rect meshRect;
 
 			error = commandSpec.GetParameters(command_fields, materialName, meshRect);
@@ -3806,7 +3918,7 @@ void Simulation::HandleCommand(string command_string)
 
 					//material loaded in mdb and meshType available.
 					
-					string meshName = materialName;
+					std::string meshName = materialName;
 
 					//does this mesh name already exist?
 					while (SMesh.contains(meshName)) {
@@ -3817,11 +3929,11 @@ void Simulation::HandleCommand(string command_string)
 
 						if (pos == std::string::npos) {
 
-							meshName += string("_1");
+							meshName += std::string("_1");
 						}
 						else {
 
-							string termination = meshName.substr(pos + 1);
+							std::string termination = meshName.substr(pos + 1);
 							if (has_digits_only(termination)) {
 
 								int number = ToNum(termination);
@@ -3830,7 +3942,7 @@ void Simulation::HandleCommand(string command_string)
 
 								meshName = meshName.substr(0, pos + 1) + termination;
 							}
-							else meshName += string("_1");
+							else meshName += std::string("_1");
 						}
 					}
 
@@ -3854,7 +3966,7 @@ void Simulation::HandleCommand(string command_string)
 
 		case CMD_SETMATERIAL:
 		{
-			string materialName;
+			std::string materialName;
 			Rect meshRect;
 
 			error = commandSpec.GetParameters(command_fields, materialName, meshRect);
@@ -3869,7 +3981,7 @@ void Simulation::HandleCommand(string command_string)
 
 					//material loaded in mdb and meshType available.
 
-					string new_meshName = materialName;
+					std::string new_meshName = materialName;
 
 					//does this mesh name already exist?
 					while (SMesh.contains(new_meshName)) {
@@ -3880,11 +3992,11 @@ void Simulation::HandleCommand(string command_string)
 
 						if (pos == std::string::npos) {
 
-							new_meshName += string("_1");
+							new_meshName += std::string("_1");
 						}
 						else {
 
-							string termination = new_meshName.substr(pos + 1);
+							std::string termination = new_meshName.substr(pos + 1);
 							if (has_digits_only(termination)) {
 
 								int number = ToNum(termination);
@@ -3893,7 +4005,7 @@ void Simulation::HandleCommand(string command_string)
 
 								new_meshName = new_meshName.substr(0, pos + 1) + termination;
 							}
-							else new_meshName += string("_1");
+							else new_meshName += std::string("_1");
 						}
 					}
 
@@ -3906,7 +4018,7 @@ void Simulation::HandleCommand(string command_string)
 						SMesh.SetMeshFocus(new_meshName);
 						UpdateScreen_AutoSet_KeepOrientation();
 
-						std::vector<string> meshNames;
+						std::vector<std::string> meshNames;
 						for (int idx = 0; idx < SMesh.size(); idx++) {
 
 							meshNames.push_back(SMesh.key_from_meshIdx(idx));
@@ -3939,14 +4051,14 @@ void Simulation::HandleCommand(string command_string)
 
 		case CMD_REQMDBSYNC:
 		{
-			string materialName, emailContact;
+			std::string materialName, emailContact;
 
 			error = commandSpec.GetParameters(command_fields, materialName, emailContact);
 			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, materialName); emailContact = "N/A"; }
 
 			if (!error) {
 
-				string returnMessage;
+				std::string returnMessage;
 
 				if (!err_hndl.call(error, &MaterialsDB::RequestMDBSync, &mdb, materialName, domain_name, mdb_entry_handler, emailContact, &returnMessage)) {
 
@@ -3963,7 +4075,7 @@ void Simulation::HandleCommand(string command_string)
 
 		case CMD_UPDATEMDB:
 		{
-			string returnMessage;
+			std::string returnMessage;
 
 			if (!err_hndl.call(error, &MaterialsDB::UpdateMDB, &mdb, domain_name, mdb_update_handler, &returnMessage)) {
 
@@ -3984,7 +4096,7 @@ void Simulation::HandleCommand(string command_string)
 					double Ku = dynamic_cast<Mesh*>(SMesh.active_mesh())->K1;
 					double D = dynamic_cast<Mesh*>(SMesh.active_mesh())->D;
 
-					string l_ex, l_Bloch("N/A"), l_sky("N/A");
+					std::string l_ex, l_Bloch("N/A"), l_sky("N/A");
 
 					l_ex = ToString(sqrt(2 * A / (MU0 * Ms*Ms)), "m");
 
@@ -4002,7 +4114,7 @@ void Simulation::HandleCommand(string command_string)
 		{
 			if (SMesh.active_mesh()->Magnetism_Enabled()) {
 
-				if (verbose) BD.DisplayConsoleMessage("M discretisation cells : " + ToString(SMesh.active_mesh()->n));
+				if (verbose) BD.DisplayConsoleMessage("M discretisation cells : " + ToString(SMesh.active_mesh()->n) + " Total cells: " + ToString(SMesh.active_mesh()->n.dim()));
 
 				if (script_client_connected) commSocket.SetSendData(commandSpec.PrepareReturnParameters(SMesh.active_mesh()->n));
 			}
@@ -4012,7 +4124,7 @@ void Simulation::HandleCommand(string command_string)
 
 		case CMD_LOADOVF2MESH:
 		{
-			string params_string;
+			std::string params_string;
 
 			error = commandSpec.GetParameters(command_fields, params_string);
 			if (!error) {
@@ -4020,10 +4132,10 @@ void Simulation::HandleCommand(string command_string)
 				StopSimulation();
 
 				double renormalize_value = 0.0;
-				string fileName;
+				std::string fileName;
 
 				//using split_numeric approach since the file name path can contain spaces.
-				vector<string> entries = split_numeric(params_string);
+				std::vector<std::string> entries = split_numeric(params_string);
 
 				if (entries.size() == 2) {
 
@@ -4048,14 +4160,14 @@ void Simulation::HandleCommand(string command_string)
 
 					if (IsNZ(renormalize_value)) data.renormalize(renormalize_value);
 
-					string new_mesh_name = "permalloy";
+					std::string new_mesh_name = "permalloy";
 
 					int meshnum = 0;
 
 					while (SMesh.contains(new_mesh_name)) {
 
 						meshnum++;
-						new_mesh_name = string("permalloy_") + ToString(meshnum);
+						new_mesh_name = std::string("permalloy_") + ToString(meshnum);
 					}
 
 					if (!err_hndl.call(error, &SuperMesh::AddMesh, &SMesh, new_mesh_name, MESH_FERROMAGNETIC, data.rect)) {
@@ -4075,7 +4187,7 @@ void Simulation::HandleCommand(string command_string)
 
 		case CMD_LOADOVF2MAG:
 		{
-			string params_string;
+			std::string params_string;
 
 			error = commandSpec.GetParameters(command_fields, params_string);
 			if (!error) {
@@ -4083,10 +4195,10 @@ void Simulation::HandleCommand(string command_string)
 				StopSimulation();
 
 				double renormalize_value = 0.0;
-				string fileName;
+				std::string fileName;
 
 				//using split_numeric approach since the file name path can contain spaces.
-				vector<string> entries = split_numeric(params_string);
+				std::vector<std::string> entries = split_numeric(params_string);
 
 				if (entries.size() == 2) {
 
@@ -4107,7 +4219,7 @@ void Simulation::HandleCommand(string command_string)
 
 				if (!error) {
 
-					//data loaded correctly, so resize currently focused mesh (if ferromagnetic) then copy magnetization data to it.
+					//data loaded correctly, so copy magnetization data to focused mesh.
 
 					if (IsNZ(renormalize_value)) data.renormalize(renormalize_value);
 
@@ -4123,9 +4235,81 @@ void Simulation::HandleCommand(string command_string)
 		}
 		break;
 
+		case CMD_LOADOVF2TEMP:
+		{
+			std::string fileName;
+
+			error = commandSpec.GetParameters(command_fields, fileName);
+			
+			if (!error) {
+
+				StopSimulation();
+
+				if (GetFileTermination(fileName) != ".ovf")
+					fileName += ".ovf";
+
+				if (!GetFilenameDirectory(fileName).length()) fileName = directory + fileName;
+
+				VEC<double> data;
+
+				OVF2 ovf2;
+				error = ovf2.Read_OVF2_SCA(fileName, data);
+
+				if (!error) {
+
+					//data loaded correctly, so set temperature from it
+
+					if (SMesh.active_mesh()->TComputation_Enabled()) {
+
+						SMesh.active_mesh()->SetTempFromData(data);
+						UpdateScreen();
+					}
+					else err_hndl.show_error(BERROR_NOHEAT, verbose);
+				}
+			}
+			else if (verbose) PrintCommandUsage(command_name);
+		}
+		break;
+
+		case CMD_LOADOVF2CURR:
+		{
+			std::string fileName;
+
+			error = commandSpec.GetParameters(command_fields, fileName);
+
+			if (!error) {
+
+				StopSimulation();
+
+				if (GetFileTermination(fileName) != ".ovf")
+					fileName += ".ovf";
+
+				if (!GetFilenameDirectory(fileName).length()) fileName = directory + fileName;
+
+				VEC<DBL3> data;
+
+				OVF2 ovf2;
+				error = ovf2.Read_OVF2_VEC(fileName, data);
+
+				if (!error) {
+
+					//data loaded correctly, so set electric field from it (we've loaded current density so divide by conductivity)
+
+					if (SMesh.active_mesh()->EComputation_Enabled()) {
+
+						SMesh.active_mesh()->SetEFromJcData(data);
+						UpdateScreen();
+					}
+					else err_hndl.show_error(BERROR_NOTRANSPORT, verbose);
+				}
+			}
+			else if (verbose) PrintCommandUsage(command_name);
+		}
+		break;
+
 		case CMD_SAVEOVF2MAG:
 		{
-			string parameters;
+			std::string parameters;
 
 			error = commandSpec.GetParameters(command_fields, parameters);
 
@@ -4134,10 +4318,10 @@ void Simulation::HandleCommand(string command_string)
 				if (SMesh.active_mesh()->Magnetism_Enabled() && !SMesh.active_mesh()->is_atomistic()) {
 
 					bool normalize = false;
-					string data_type = "bin8";
-					string fileName;
+					std::string data_type = "bin8";
+					std::string fileName;
 
-					vector<string> fields = split(parameters, " ");
+					std::vector<std::string> fields = split(parameters, " ");
 
 					int oparams = 0;
 
@@ -4176,15 +4360,15 @@ void Simulation::HandleCommand(string command_string)
 
 		case CMD_SAVEOVF2:
 		{
-			string parameters;
+			std::string parameters;
 
 			error = commandSpec.GetParameters(command_fields, parameters);
 
 			if (!error) {
 				
-				string data_type = "bin8";
+				std::string data_type = "bin8";
 
-				vector<string> fields = split(parameters, " ");
+				std::vector<std::string> fields = split(parameters, " ");
 
 				int oparams = 0;
 
@@ -4197,7 +4381,7 @@ void Simulation::HandleCommand(string command_string)
 				if (fields.size() > oparams) {
 
 					//get filename
-					string fileName = combine(subvec(fields, oparams), " ");
+					std::string fileName = combine(subvec(fields, oparams), " ");
 
 					if (GetFileTermination(fileName) != ".ovf") fileName += ".ovf";
 					if (!GetFilenameDirectory(fileName).length()) fileName = directory + fileName;
@@ -4214,17 +4398,17 @@ void Simulation::HandleCommand(string command_string)
 
 		case CMD_SAVEOVF2PARAMVAR:
 		{
-			string parameters;
+			std::string parameters;
 
 			//expecting (data_type) (meshname) paramname (directory/)filename
 			error = commandSpec.GetParameters(command_fields, parameters);
 
 			if (!error) {
 
-				string data_type = "bin8";
-				string fileName, meshname, paramname;
+				std::string data_type = "bin8";
+				std::string fileName, meshname, paramname;
 
-				vector<string> fields = split(parameters, " ");
+				std::vector<std::string> fields = split(parameters, " ");
 
 				int oparams = 0;
 
@@ -4310,7 +4494,7 @@ void Simulation::HandleCommand(string command_string)
 
 		case CMD_LOADOVF2DISP:
 		{
-			string fileName;
+			std::string fileName;
 
 			error = commandSpec.GetParameters(command_fields, fileName);
 			if (!error) {
@@ -4338,7 +4522,7 @@ void Simulation::HandleCommand(string command_string)
 
 		case CMD_LOADOVF2STRAIN:
 		{
-			string parameters;
+			std::string parameters;
 
 			error = commandSpec.GetParameters(command_fields, parameters);
 			if (!error) {
@@ -4347,11 +4531,11 @@ void Simulation::HandleCommand(string command_string)
 
 				if (SMesh.active_mesh()->Magnetism_Enabled() && SMesh.active_mesh()->IsModuleSet(MOD_MELASTIC)) {
 
-					vector<string> fields = split(parameters, ".ovf");
+					std::vector<std::string> fields = split(parameters, ".ovf");
 
 					if (fields.size() >= 2) {
 
-						string fileName_diag, fileName_odiag;
+						std::string fileName_diag, fileName_odiag;
 
 						fileName_diag = fields[0] + ".ovf";
 						fileName_odiag = fields[1] + ".ovf";
@@ -4396,7 +4580,7 @@ void Simulation::HandleCommand(string command_string)
 
 		case CMD_EQUATIONCONSTANTS:
 		{
-			string userconstant_name;
+			std::string userconstant_name;
 			double value;
 
 			error = commandSpec.GetParameters(command_fields, userconstant_name, value);
@@ -4430,7 +4614,7 @@ void Simulation::HandleCommand(string command_string)
 
 		case CMD_DELEQUATIONCONSTANT:
 		{
-			string userconstant_name;
+			std::string userconstant_name;
 
 			error = commandSpec.GetParameters(command_fields, userconstant_name);
 
@@ -4464,8 +4648,8 @@ void Simulation::HandleCommand(string command_string)
 
 		case CMD_FLUSHERRORLOG:
 		{
-			ofstream bdout;
-			bdout.open(errorlog_fileName.c_str(), ios::out);
+			std::ofstream bdout;
+			bdout.open(errorlog_fileName.c_str(), std::ios::out);
 			bdout.close();
 		}
 		break;
@@ -4686,7 +4870,7 @@ void Simulation::HandleCommand(string command_string)
 		case CMD_SKYPOSDMUL:
 		{
 			double multiplier;
-			string meshName;
+			std::string meshName;
 
 			error = commandSpec.GetParameters(command_fields, multiplier, meshName);
 			if (error) { error.reset() = commandSpec.GetParameters(command_fields, multiplier); meshName = SMesh.GetMeshFocus(); }
@@ -4705,7 +4889,7 @@ void Simulation::HandleCommand(string command_string)
 		case CMD_MCSERIAL:
 		{
 			int status;
-			string meshName;
+			std::string meshName;
 
 			error = commandSpec.GetParameters(command_fields, status, meshName);
 			if (error) { error.reset() = commandSpec.GetParameters(command_fields, status); meshName = SMesh.superMeshHandle; }
@@ -4724,7 +4908,7 @@ void Simulation::HandleCommand(string command_string)
 		case CMD_MCCONSTRAIN:
 		{
 			DBL3 value;
-			string meshName;
+			std::string meshName;
 
 			error = commandSpec.GetParameters(command_fields, value, meshName);
 			if (error) { error.reset() = commandSpec.GetParameters(command_fields, value); meshName = SMesh.superMeshHandle; }
@@ -4739,6 +4923,468 @@ void Simulation::HandleCommand(string command_string)
 				UpdateScreen();
 			}
 			else if (verbose) Print_MCSettings();
+		}
+		break;
+
+		case CMD_SHAPEMOD_ROT:
+		{
+			DBL3 rotation;
+
+			error = commandSpec.GetParameters(command_fields, rotation);
+
+			if (!error) {
+
+				shape_rotation = rotation;
+				UpdateScreen();
+			}
+			else if (verbose) Print_ShapeSettings();
+
+			if (script_client_connected) commSocket.SetSendData(commandSpec.PrepareReturnParameters(shape_rotation));
+		}
+		break;
+
+		case CMD_SHAPEMOD_REP:
+		{
+			INT3 repetitions;
+
+			error = commandSpec.GetParameters(command_fields, repetitions);
+
+			if (!error) {
+
+				shape_repetitions = repetitions;
+				UpdateScreen();
+			}
+			else if (verbose) Print_ShapeSettings();
+
+			if (script_client_connected) commSocket.SetSendData(commandSpec.PrepareReturnParameters(shape_repetitions));
+		}
+		break;
+
+		case CMD_SHAPEMOD_DISP:
+		{
+			DBL3 displacement;
+
+			error = commandSpec.GetParameters(command_fields, displacement);
+
+			if (!error) {
+
+				shape_displacement = displacement;
+				UpdateScreen();
+			}
+			else if (verbose) Print_ShapeSettings();
+
+			if (script_client_connected) commSocket.SetSendData(commandSpec.PrepareReturnParameters(shape_displacement));
+		}
+		break;
+
+		case CMD_SHAPEMOD_METHOD: 
+		{
+			std::string method;
+
+			error = commandSpec.GetParameters(command_fields, method);
+
+			if (!error) {
+				
+				//make sure method name is correct
+				if (MeshShape().set_method(method) != MSHAPEMETHOD_NONE) {
+
+					shape_method = method;
+					UpdateScreen();
+				}
+				else error(BERROR_INCORRECTSTRING);
+			}
+			else if (verbose) Print_ShapeSettings();
+
+			if (script_client_connected) commSocket.SetSendData(commandSpec.PrepareReturnParameters(shape_method));
+		}
+		break;
+
+		case CMD_SHAPE_DISK:
+		{
+			DBL2 diameters;
+			DBL2 position;
+			DBL2 z_coords;
+			std::string meshName = SMesh.GetMeshFocus();
+
+			DBL3 dimensions, centre_pos;
+
+			error = commandSpec.GetParameters(command_fields, diameters, position, z_coords);
+			if (error) { error.reset() = commandSpec.GetParameters(command_fields, diameters, position); z_coords = DBL2(0, SMesh[meshName]->GetMeshDimensions().z); }
+
+			if (!error) {
+
+				StopSimulation();
+
+				dimensions = DBL3(diameters.x, diameters.y, z_coords.j - z_coords.i);
+				centre_pos = DBL3(position.x, position.y, (z_coords.j + z_coords.i) / 2);
+				
+				if (!err_hndl.qcall(error, &MeshBase::shape_disk, SMesh[meshName], MeshShape(MSHAPE_DISK, dimensions, centre_pos, shape_rotation * PI / 180, shape_repetitions, shape_displacement, MeshShape().set_method(shape_method)))) {
+
+					UpdateScreen();
+				}
+
+				UpdateScreen();
+			}
+			else if (verbose) PrintCommandUsage(command_name);
+
+			if (script_client_connected) commSocket.SetSendData(commandSpec.PrepareReturnParameters(MeshShape(MSHAPE_DISK).name(), dimensions, centre_pos, shape_rotation, shape_repetitions, shape_displacement, shape_method));
+		}
+		break;
+
+		case CMD_SHAPE_RECT:
+		{
+			DBL2 lengths;
+			DBL2 position;
+			DBL2 z_coords;
+			std::string meshName = SMesh.GetMeshFocus();
+
+			DBL3 dimensions, centre_pos;
+
+			error = commandSpec.GetParameters(command_fields, lengths, position, z_coords);
+			if (error) { error.reset() = commandSpec.GetParameters(command_fields, lengths, position); z_coords = DBL2(0, SMesh[meshName]->GetMeshDimensions().z); }
+
+			if (!error) {
+
+				StopSimulation();
+
+				dimensions = DBL3(lengths.x, lengths.y, z_coords.j - z_coords.i);
+				centre_pos = DBL3(position.x, position.y, (z_coords.j + z_coords.i) / 2);
+
+				if (!err_hndl.qcall(error, &MeshBase::shape_rect, SMesh[meshName], MeshShape(MSHAPE_DISK, dimensions, centre_pos, shape_rotation * PI / 180, shape_repetitions, shape_displacement, MeshShape().set_method(shape_method)))) {
+
+					UpdateScreen();
+				}
+
+				UpdateScreen();
+			}
+			else if (verbose) PrintCommandUsage(command_name);
+
+			if (script_client_connected) commSocket.SetSendData(commandSpec.PrepareReturnParameters(MeshShape(MSHAPE_RECT).name(), dimensions, centre_pos, shape_rotation, shape_repetitions, shape_displacement, shape_method));
+		}
+		break;
+
+		case CMD_SHAPE_TRIANGLE:
+		{
+			DBL2 lengths;
+			DBL2 position;
+			DBL2 z_coords;
+			std::string meshName = SMesh.GetMeshFocus();
+
+			DBL3 dimensions, centre_pos;
+
+			error = commandSpec.GetParameters(command_fields, lengths, position, z_coords);
+			if (error) { error.reset() = commandSpec.GetParameters(command_fields, lengths, position); z_coords = DBL2(0, SMesh[meshName]->GetMeshDimensions().z); }
+
+			if (!error) {
+
+				StopSimulation();
+
+				dimensions = DBL3(lengths.x, lengths.y, z_coords.j - z_coords.i);
+				centre_pos = DBL3(position.x, position.y, (z_coords.j + z_coords.i) / 2);
+
+				if (!err_hndl.qcall(error, &MeshBase::shape_triangle, SMesh[meshName], MeshShape(MSHAPE_TRIANGLE, dimensions, centre_pos, shape_rotation * PI / 180, shape_repetitions, shape_displacement, MeshShape().set_method(shape_method)))) {
+
+					UpdateScreen();
+				}
+
+				UpdateScreen();
+			}
+			else if (verbose) PrintCommandUsage(command_name);
+
+			if (script_client_connected) commSocket.SetSendData(commandSpec.PrepareReturnParameters(MeshShape(MSHAPE_TRIANGLE).name(), dimensions, centre_pos, shape_rotation, shape_repetitions, shape_displacement, shape_method));
+		}
+		break;
+
+		case CMD_SHAPE_ELLIPSOID:
+		{
+			DBL3 dimensions;
+			DBL3 centre_pos;
+			std::string meshName = SMesh.GetMeshFocus();
+
+			error = commandSpec.GetParameters(command_fields, dimensions, centre_pos);
+
+			if (!error) {
+
+				StopSimulation();
+
+				if (!err_hndl.qcall(error, &MeshBase::shape_ellipsoid, SMesh[meshName], MeshShape(MSHAPE_ELLIPSOID, dimensions, centre_pos, shape_rotation * PI / 180, shape_repetitions, shape_displacement, MeshShape().set_method(shape_method)))) {
+
+					UpdateScreen();
+				}
+
+				UpdateScreen();
+			}
+			else if (verbose) PrintCommandUsage(command_name);
+
+			if (script_client_connected) commSocket.SetSendData(commandSpec.PrepareReturnParameters(MeshShape(MSHAPE_ELLIPSOID).name(), dimensions, centre_pos, shape_rotation, shape_repetitions, shape_displacement, shape_method));
+		}
+		break;
+
+		case CMD_SHAPE_PYRAMID:
+		{
+			DBL3 dimensions;
+			DBL3 centre_pos;
+			std::string meshName = SMesh.GetMeshFocus();
+
+			error = commandSpec.GetParameters(command_fields, dimensions, centre_pos);
+
+			if (!error) {
+
+				StopSimulation();
+
+				if (!err_hndl.qcall(error, &MeshBase::shape_pyramid, SMesh[meshName], MeshShape(MSHAPE_PYRAMID, dimensions, centre_pos, shape_rotation * PI / 180, shape_repetitions, shape_displacement, MeshShape().set_method(shape_method)))) {
+
+					UpdateScreen();
+				}
+
+				UpdateScreen();
+			}
+			else if (verbose) PrintCommandUsage(command_name);
+
+			if (script_client_connected) commSocket.SetSendData(commandSpec.PrepareReturnParameters(MeshShape(MSHAPE_PYRAMID).name(), dimensions, centre_pos, shape_rotation, shape_repetitions, shape_displacement, shape_method));
+		}
+		break;
+
+		case CMD_SHAPE_TETRAHEDRON:
+		{
+			DBL3 dimensions;
+			DBL3 centre_pos;
+			std::string meshName = SMesh.GetMeshFocus();
+
+			error = commandSpec.GetParameters(command_fields, dimensions, centre_pos);
+
+			if (!error) {
+
+				StopSimulation();
+
+				if (!err_hndl.qcall(error, &MeshBase::shape_tetrahedron, SMesh[meshName], MeshShape(MSHAPE_TETRAHEDRON, dimensions, centre_pos, shape_rotation * PI / 180, shape_repetitions, shape_displacement, MeshShape().set_method(shape_method)))) {
+
+					UpdateScreen();
+				}
+
+				UpdateScreen();
+			}
+			else if (verbose) PrintCommandUsage(command_name);
+
+			if (script_client_connected) commSocket.SetSendData(commandSpec.PrepareReturnParameters(MeshShape(MSHAPE_TETRAHEDRON).name(), dimensions, centre_pos, shape_rotation, shape_repetitions, shape_displacement, shape_method));
+		}
+		break;
+
+		case CMD_SHAPE_CONE:
+		{
+			DBL3 dimensions;
+			DBL3 centre_pos;
+			std::string meshName = SMesh.GetMeshFocus();
+
+			error = commandSpec.GetParameters(command_fields, dimensions, centre_pos);
+
+			if (!error) {
+
+				StopSimulation();
+
+				if (!err_hndl.qcall(error, &MeshBase::shape_cone, SMesh[meshName], MeshShape(MSHAPE_CONE, dimensions, centre_pos, shape_rotation * PI / 180, shape_repetitions, shape_displacement, MeshShape().set_method(shape_method)))) {
+
+					UpdateScreen();
+				}
+
+				UpdateScreen();
+			}
+			else if (verbose) PrintCommandUsage(command_name);
+
+			if (script_client_connected) commSocket.SetSendData(commandSpec.PrepareReturnParameters(MeshShape(MSHAPE_CONE).name(), dimensions, centre_pos, shape_rotation, shape_repetitions, shape_displacement, shape_method));
+		}
+		break;
+
+		case CMD_SHAPE_TORUS:
+		{
+			DBL3 dimensions;
+			DBL3 centre_pos;
+			std::string meshName = SMesh.GetMeshFocus();
+
+			error = commandSpec.GetParameters(command_fields, dimensions, centre_pos);
+
+			if (!error) {
+
+				StopSimulation();
+
+				if (!err_hndl.qcall(error, &MeshBase::shape_torus, SMesh[meshName], MeshShape(MSHAPE_TORUS, dimensions, centre_pos, shape_rotation * PI / 180, shape_repetitions, shape_displacement, MeshShape().set_method(shape_method)))) {
+
+					UpdateScreen();
+				}
+
+				UpdateScreen();
+			}
+			else if (verbose) PrintCommandUsage(command_name);
+
+			if (script_client_connected) commSocket.SetSendData(commandSpec.PrepareReturnParameters(MeshShape(MSHAPE_TORUS).name(), dimensions, centre_pos, shape_rotation, shape_repetitions, shape_displacement, shape_method));
+		}
+		break;
+
+		case CMD_SHAPE_SET:
+		{
+			//name : 1, dimensions: 3, centre_pos: 3, shape_rotation: 3, shape_repetitions: 3, shape_displacement: 3, shape_method: 1. Total space-sparated fields per shape: 17
+			int num_fields_per_shape = 17;
+			int num_shapes = command_fields.size() / num_fields_per_shape;
+			
+			if (num_shapes >= 1) {
+				
+				StopSimulation();
+
+				std::string meshName = SMesh.GetMeshFocus();
+
+				std::string shape_name;
+				DBL3 dimensions;
+				DBL3 centre_pos;
+				DBL3 rotation;
+				INT3 repetitions;
+				DBL3 displacement;
+				std::string method;
+
+				std::vector<MeshShape> shapes;
+				for (int shape_idx = 0; shape_idx < num_shapes; shape_idx++) {
+
+					std::vector<std::string> shape_fields = subvec(command_fields, shape_idx * num_fields_per_shape, (shape_idx + 1) * num_fields_per_shape);
+					error = commandSpec.GetParameters(shape_fields, shape_name, dimensions, centre_pos, rotation, repetitions, displacement, method);
+
+					MSHAPE_ shape_id = MeshShape().set_shape(shape_name);
+					MSHAPEMETHOD_ method_id = MeshShape().set_method(method);
+
+					//make sure shape and method names are correct
+					if (shape_id == MSHAPE_NONE || method_id == MSHAPEMETHOD_NONE) {
+
+						error(BERROR_INCORRECTNAME);
+						break;
+					}
+
+					if (!error) shapes.push_back(MeshShape(shape_id, dimensions, centre_pos, rotation * PI / 180, repetitions, displacement, method_id));
+					else break;
+				}
+
+				if (!error) {
+				
+					if (!err_hndl.qcall(error, &MeshBase::shape_set, SMesh[meshName], shapes)) {
+
+						UpdateScreen();
+					}
+				}
+				else if (verbose) PrintCommandUsage(command_name);
+			}
+			else if (verbose) PrintCommandUsage(command_name);
+		}
+		break;
+
+		case CMD_SETSHAPEANGLE:
+		{
+			//name : 1, dimensions: 3, centre_pos: 3, shape_rotation: 3, shape_repetitions: 3, shape_displacement: 3, shape_method: 1. Total space-sparated fields per shape: 17
+			//two extra parameters for angle values
+			int num_fields_per_shape = 17;
+			int num_shapes = ((int)command_fields.size() - 2) / num_fields_per_shape;
+
+			if (num_shapes >= 1) {
+
+				StopSimulation();
+
+				std::string meshName = SMesh.GetMeshFocus();
+
+				std::string shape_name;
+				DBL3 dimensions;
+				DBL3 centre_pos;
+				DBL3 rotation;
+				INT3 repetitions;
+				DBL3 displacement;
+				std::string method;
+				DBL2 angle;
+				
+				std::vector<MeshShape> shapes;
+				for (int shape_idx = 0; shape_idx < num_shapes; shape_idx++) {
+
+					std::vector<std::string> shape_fields = subvec(command_fields, shape_idx * num_fields_per_shape, (shape_idx + 1) * num_fields_per_shape);
+					JoinToVector(shape_fields, subvec(command_fields, (int)command_fields.size() - 2));
+					error = commandSpec.GetParameters(shape_fields, shape_name, dimensions, centre_pos, rotation, repetitions, displacement, method, angle);
+
+					MSHAPE_ shape_id = MeshShape().set_shape(shape_name);
+					MSHAPEMETHOD_ method_id = MeshShape().set_method(method);
+					
+					//make sure shape and method names are correct
+					if (shape_id == MSHAPE_NONE || method_id == MSHAPEMETHOD_NONE) {
+
+						error(BERROR_INCORRECTNAME);
+						break;
+					}
+					
+					if (!error) shapes.push_back(MeshShape(shape_id, dimensions, centre_pos, rotation * PI / 180, repetitions, displacement, method_id));
+					else break;
+				}
+
+				if (!error) {
+
+					if (!err_hndl.qcall(error, &SuperMesh::SetMagAngle_Shape, &SMesh, meshName, angle.i, angle.j, shapes)) {
+
+						UpdateScreen();
+					}
+				}
+				else if (verbose) PrintCommandUsage(command_name);
+			}
+			else if (verbose) PrintCommandUsage(command_name);
+		}
+		break;
+
+		case CMD_SHAPE_SETPARAM:
+		{
+			//name : 1, dimensions: 3, centre_pos: 3, shape_rotation: 3, shape_repetitions: 3, shape_displacement: 3, shape_method: 1. Total space-sparated fields per shape: 17
+			//extra parameter for paramName and also for value
+			int num_fields_per_shape = 17;
+			int num_shapes = ((int)command_fields.size() - 1) / num_fields_per_shape;
+			int num_fields_value = (int)command_fields.size() - num_shapes * num_fields_per_shape - 1;
+
+			if (num_shapes >= 1 && num_fields_value >= 1) {
+
+				StopSimulation();
+
+				std::string meshName = SMesh.GetMeshFocus();
+
+				std::string paramName;
+				std::string shape_name;
+				DBL3 dimensions;
+				DBL3 centre_pos;
+				DBL3 rotation;
+				INT3 repetitions;
+				DBL3 displacement;
+				std::string method;
+				std::string value_text;
+
+				std::vector<MeshShape> shapes;
+				for (int shape_idx = 0; shape_idx < num_shapes; shape_idx++) {
+
+					std::vector<std::string> shape_fields = subvec(command_fields, 0, 1);
+					JoinToVector(shape_fields, subvec(command_fields, shape_idx * num_fields_per_shape + 1, (shape_idx + 1) * num_fields_per_shape + 1));
+					JoinToVector(shape_fields, subvec(command_fields, (int)command_fields.size() - num_fields_value));
+					error = commandSpec.GetParameters(shape_fields, paramName, shape_name, dimensions, centre_pos, rotation, repetitions, displacement, method, value_text);
+
+					MSHAPE_ shape_id = MeshShape().set_shape(shape_name);
+					MSHAPEMETHOD_ method_id = MeshShape().set_method(method);
+
+					//make sure shape and method names are correct
+					if (shape_id == MSHAPE_NONE || method_id == MSHAPEMETHOD_NONE) {
+
+						error(BERROR_INCORRECTNAME);
+						break;
+					}
+
+					if (!error) shapes.push_back(MeshShape(shape_id, dimensions, centre_pos, rotation * PI / 180, repetitions, displacement, method_id));
+					else break;
+				}
+
+				if (!error) {
+
+					error = SMesh.set_meshparam_shape(meshName, paramName, shapes, value_text);
+					if (!error) SMesh.set_meshparamvar_display(meshName, paramName);
+
+					UpdateScreen();
+				}
+				else if (verbose) PrintCommandUsage(command_name);
+			}
+			else if (verbose) PrintCommandUsage(command_name);
 		}
 		break;
 
@@ -4828,18 +5474,18 @@ void Simulation::HandleCommand(string command_string)
 
 		case CMD_DP_LOAD:
 		{
-			string fileName_indexes_string;
+			std::string fileName_indexes_string;
 
 			error = commandSpec.GetParameters(command_fields, fileName_indexes_string);
 
-			//using split_numeric approach since the file name path can contain spaces. If parameters correct then we'll have first a non-numeric string (the file path and file name) then a numeric string.
-			vector<string> entries = split_numeric(fileName_indexes_string);
+			//using split_numeric approach since the file name path can contain spaces. If parameters correct then we'll have first a non-numeric std::string (the file path and file name) then a numeric std::string.
+			std::vector<std::string> entries = split_numeric(fileName_indexes_string);
 			if (entries.size() < 2) error(BERROR_PARAMMISMATCH);
 
 			if (!error) {
 
-				string fileName = combine(subvec(entries, 0, entries.size() - 1), " ");
-				string indexes_string = entries.back();
+				std::string fileName = combine(subvec(entries, 0, entries.size() - 1), " ");
+				std::string indexes_string = entries.back();
 
 				if (!GetFilenameDirectory(fileName).length()) fileName = directory + fileName;
 
@@ -4848,7 +5494,7 @@ void Simulation::HandleCommand(string command_string)
 
 				int rows_read;
 
-				error = dpArr.load_arrays(fileName, vec_convert<int, string>(split(indexes_string)), &rows_read);
+				error = dpArr.load_arrays(fileName, vec_convert<int, std::string>(split(indexes_string)), &rows_read);
 
 				if (verbose && !error) BD.DisplayConsoleMessage("Number of rows read : " + ToString(rows_read));
 			}
@@ -4858,25 +5504,25 @@ void Simulation::HandleCommand(string command_string)
 
 		case CMD_DP_SAVE:
 		{
-			string fileName_indexes_string;
+			std::string fileName_indexes_string;
 
 			error = commandSpec.GetParameters(command_fields, fileName_indexes_string);
 
-			//using split_numeric approach since the file name path can contain spaces. If parameters correct then we'll have first a non-numeric string (the file path and file name) then a numeric string.
-			vector<string> entries = split_numeric(fileName_indexes_string);
+			//using split_numeric approach since the file name path can contain spaces. If parameters correct then we'll have first a non-numeric std::string (the file path and file name) then a numeric std::string.
+			std::vector<std::string> entries = split_numeric(fileName_indexes_string);
 			if (entries.size() < 2) error(BERROR_PARAMMISMATCH);
 
 			if (!error) {
 
-				string fileName = combine(subvec(entries, 0, entries.size() - 1), " ");
-				string indexes_string = entries.back();
+				std::string fileName = combine(subvec(entries, 0, entries.size() - 1), " ");
+				std::string indexes_string = entries.back();
 
 				if (!GetFilenameDirectory(fileName).length()) fileName = directory + fileName;
 
 				if (GetFileTermination(fileName) != ".txt")
 					fileName += ".txt";
 
-				error = dpArr.save_arrays(fileName, vec_convert<int, string>(split(indexes_string)));
+				error = dpArr.save_arrays(fileName, vec_convert<int, std::string>(split(indexes_string)));
 
 				if (verbose && !error) BD.DisplayConsoleMessage("Data saved in : " + fileName);
 			}
@@ -4886,18 +5532,18 @@ void Simulation::HandleCommand(string command_string)
 
 		case CMD_DP_SAVEASROW:
 		{
-			string fileName_indexes_string;
+			std::string fileName_indexes_string;
 
 			error = commandSpec.GetParameters(command_fields, fileName_indexes_string);
 
-			//using split_numeric approach since the file name path can contain spaces. If parameters correct then we'll have first a non-numeric string (the file path and file name) then a numeric string.
-			vector<string> entries = split_numeric(fileName_indexes_string);
+			//using split_numeric approach since the file name path can contain spaces. If parameters correct then we'll have first a non-numeric std::string (the file path and file name) then a numeric std::string.
+			std::vector<std::string> entries = split_numeric(fileName_indexes_string);
 			if (entries.size() < 2) error(BERROR_PARAMMISMATCH);
 
 			if (!error) {
 
-				string fileName = combine(subvec(entries, 0, entries.size() - 1), " ");
-				string index_string = entries.back();
+				std::string fileName = combine(subvec(entries, 0, entries.size() - 1), " ");
+				std::string index_string = entries.back();
 
 				int dp_index = ToNum(index_string);
 
@@ -4916,18 +5562,18 @@ void Simulation::HandleCommand(string command_string)
 
 		case CMD_DP_SAVEAPPENDASROW:
 		{
-			string fileName_indexes_string;
+			std::string fileName_indexes_string;
 
 			error = commandSpec.GetParameters(command_fields, fileName_indexes_string);
 
-			//using split_numeric approach since the file name path can contain spaces. If parameters correct then we'll have first a non-numeric string (the file path and file name) then a numeric string.
-			vector<string> entries = split_numeric(fileName_indexes_string);
+			//using split_numeric approach since the file name path can contain spaces. If parameters correct then we'll have first a non-numeric std::string (the file path and file name) then a numeric std::string.
+			std::vector<std::string> entries = split_numeric(fileName_indexes_string);
 			if (entries.size() < 2) error(BERROR_PARAMMISMATCH);
 
 			if (!error) {
 
-				string fileName = combine(subvec(entries, 0, entries.size() - 1), " ");
-				string index_string = entries.back();
+				std::string fileName = combine(subvec(entries, 0, entries.size() - 1), " ");
+				std::string index_string = entries.back();
 
 				int dp_index = ToNum(index_string);
 
@@ -4946,7 +5592,7 @@ void Simulation::HandleCommand(string command_string)
 
 		case CMD_DP_NEWFILE:
 		{
-			string fileName;
+			std::string fileName;
 
 			error = commandSpec.GetParameters(command_fields, fileName);
 
@@ -4967,25 +5613,25 @@ void Simulation::HandleCommand(string command_string)
 
 		case CMD_DP_SAVEAPPEND:
 		{
-			string fileName_indexes_string;
+			std::string fileName_indexes_string;
 
 			error = commandSpec.GetParameters(command_fields, fileName_indexes_string);
 
-			//using split_numeric approach since the file name path can contain spaces. If parameters correct then we'll have first a non-numeric string (the file path and file name) then a numeric string.
-			vector<string> entries = split_numeric(fileName_indexes_string);
+			//using split_numeric approach since the file name path can contain spaces. If parameters correct then we'll have first a non-numeric std::string (the file path and file name) then a numeric std::string.
+			std::vector<std::string> entries = split_numeric(fileName_indexes_string);
 			if (entries.size() < 2) error(BERROR_PARAMMISMATCH);
 
 			if (!error) {
 
-				string fileName = combine(subvec(entries, 0, entries.size() - 1), " ");
-				string indexes_string = entries.back();
+				std::string fileName = combine(subvec(entries, 0, entries.size() - 1), " ");
+				std::string indexes_string = entries.back();
 
 				if (!GetFilenameDirectory(fileName).length()) fileName = directory + fileName;
 
 				if (GetFileTermination(fileName) != ".txt")
 					fileName += ".txt";
 
-				error = dpArr.save_arrays(fileName, vec_convert<int, string>(split(indexes_string)), true);
+				error = dpArr.save_arrays(fileName, vec_convert<int, std::string>(split(indexes_string)), true);
 
 				if (verbose && !error) BD.DisplayConsoleMessage("Data saved in : " + fileName);
 			}
@@ -5019,14 +5665,14 @@ void Simulation::HandleCommand(string command_string)
 			error = commandSpec.GetParameters(command_fields, start, end, step, arr_idx, stencil);
 			if (error) { error.reset() = commandSpec.GetParameters(command_fields, start, end, step, arr_idx); stencil = DBL3(); }
 
-			if (!error) {
+			if (!error && start != end) {
 
 				//prepare data displayed on screen ready to be read out below
 				SMesh.PrepareDisplayedMeshValue();
 
 				int num_points = round((end - start).norm() / step) + 1;
 
-				vector<double> data_x(num_points), data_y(num_points), data_z(num_points);
+				std::vector<double> position(num_points), data_x(num_points), data_y(num_points), data_z(num_points);
 
 				bool average = !stencil.IsNull();
 
@@ -5045,14 +5691,17 @@ void Simulation::HandleCommand(string command_string)
 						value = SMesh.GetDisplayedMeshValue(pos);
 					}
 
+					//position along displacement unit vector
+					position[idx] = (pos - start) * (end-start).normalized();
 					data_x[idx] = value.x;
 					data_y[idx] = value.y;
 					data_z[idx] = value.z;
 				}
 
-				dpArr.set_array(arr_idx, data_x);
-				dpArr.set_array(arr_idx + 1, data_y);
-				dpArr.set_array(arr_idx + 2, data_z);
+				dpArr.set_array(arr_idx + 0, position);
+				dpArr.set_array(arr_idx + 1, data_x);
+				dpArr.set_array(arr_idx + 2, data_y);
+				dpArr.set_array(arr_idx + 3, data_z);
 
 				if (verbose) BD.DisplayConsoleMessage("Path extracted.");
 			}
@@ -5068,14 +5717,14 @@ void Simulation::HandleCommand(string command_string)
 
 			if (!error) {
 
-				vector<double> x, y, z;
+				std::vector<double> x, y, z;
 				x = dpArr[arr_idx_path];
 				y = dpArr[arr_idx_path + 1];
 				z = dpArr[arr_idx_path + 2];
 
 				int pathsize = minimum(x.size(), y.size(), z.size());
 
-				vector<double> data_x(pathsize), data_y(pathsize), data_z(pathsize);
+				std::vector<double> data_x(pathsize), data_y(pathsize), data_z(pathsize);
 
 				//prepare data displayed on screen ready to be read out below
 				SMesh.PrepareDisplayedMeshValue();
@@ -5690,7 +6339,7 @@ void Simulation::HandleCommand(string command_string)
 
 		case CMD_DP_DUMPTDEP:
 		{
-			string meshName, paramName;
+			std::string meshName, paramName;
 			int dp_arr;
 			double max_temperature;
 
@@ -5798,7 +6447,7 @@ void Simulation::HandleCommand(string command_string)
 
 			if (!error) {
 
-				string meshName = SMesh.GetMeshFocus();
+				std::string meshName = SMesh.GetMeshFocus();
 
 				if (SMesh[meshName]->GetMeshType() == MESH_FERROMAGNETIC && SMesh[meshName]->IsModuleSet(MOD_TRANSPORT) && SMesh.SolveSpinCurrent() && 
 					(IsNZ(dynamic_cast<Mesh*>(SMesh[meshName])->ts_eff.get0()) || IsNZ(dynamic_cast<Mesh*>(SMesh[meshName])->tsi_eff.get0()))) {
@@ -5866,7 +6515,7 @@ void Simulation::HandleCommand(string command_string)
 		case CMD_DP_FITADIABATIC:
 		case CMD_DP_FITNONADIABATIC:
 		{
-			string meshName = SMesh.GetMeshFocus();
+			std::string meshName = SMesh.GetMeshFocus();
 
 			double abs_error_threshold, Rsq_threshold, T_ratio_threshold;
 			int stencil = 3;
@@ -5951,14 +6600,14 @@ void Simulation::HandleCommand(string command_string)
 		case CMD_DP_FITSOT:
 		{
 			Rect rectangle;
-			string hm_mesh;
+			std::string hm_mesh;
 
 			error = commandSpec.GetParameters(command_fields, hm_mesh, rectangle);
 			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, hm_mesh); rectangle = SMesh.active_mesh()->GetMeshRect(); }
 
 			if (!error) {
 
-				string meshName = SMesh.GetMeshFocus();
+				std::string meshName = SMesh.GetMeshFocus();
 
 				if (SMesh[meshName]->GetMeshType() == MESH_FERROMAGNETIC && SMesh[meshName]->IsModuleSet(MOD_TRANSPORT) && SMesh.SolveSpinCurrent()
 					&& SMesh.contains(hm_mesh) && SMesh[hm_mesh]->GetMeshType() == MESH_METAL && SMesh[hm_mesh]->IsModuleSet(MOD_TRANSPORT)) {
@@ -5990,14 +6639,14 @@ void Simulation::HandleCommand(string command_string)
 		case CMD_DP_FITSOTSTT:
 		{
 			Rect rectangle;
-			string hm_mesh;
+			std::string hm_mesh;
 
 			error = commandSpec.GetParameters(command_fields, hm_mesh, rectangle);
 			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, hm_mesh); rectangle = SMesh.active_mesh()->GetMeshRect(); }
 
 			if (!error) {
 
-				string meshName = SMesh.GetMeshFocus();
+				std::string meshName = SMesh.GetMeshFocus();
 
 				if (SMesh[meshName]->GetMeshType() == MESH_FERROMAGNETIC && SMesh[meshName]->IsModuleSet(MOD_TRANSPORT) && SMesh.SolveSpinCurrent()
 					&& SMesh.contains(hm_mesh) && SMesh[hm_mesh]->GetMeshType() == MESH_METAL && SMesh[hm_mesh]->IsModuleSet(MOD_TRANSPORT)) {
@@ -6067,7 +6716,7 @@ void Simulation::HandleCommand(string command_string)
 
 		case CMD_DP_CALCSOT:
 		{
-			string hm_mesh, fm_mesh;
+			std::string hm_mesh, fm_mesh;
 
 			error = commandSpec.GetParameters(command_fields, hm_mesh, fm_mesh);
 
@@ -6118,7 +6767,7 @@ void Simulation::HandleCommand(string command_string)
 
 		case CMD_DP_CALCEXCHANGE:
 		{
-			string meshName = SMesh.GetMeshFocus();
+			std::string meshName = SMesh.GetMeshFocus();
 
 			if (SMesh[meshName]->Magnetism_Enabled() && SMesh[meshName]->ExchangeComputation_Enabled()) {
 
@@ -6131,7 +6780,7 @@ void Simulation::HandleCommand(string command_string)
 
 		case CMD_DP_CALCTOPOCHARGEDENSITY:
 		{
-			string meshName = SMesh.GetMeshFocus();
+			std::string meshName = SMesh.GetMeshFocus();
 
 			if (SMesh[meshName]->Magnetism_Enabled()) {
 
@@ -6275,8 +6924,7 @@ void Simulation::HandleCommand(string command_string)
 
 		case CMD_TEST:
 		{
-			/*
-			vector<string> commands_output;
+			std::vector<std::string> commands_output;
 			commands_output.resize(commands.size());
 
 			for (int idx = 0; idx < commands.size(); idx++) {
@@ -6284,9 +6932,9 @@ void Simulation::HandleCommand(string command_string)
 				commands_output[idx] = commands.get_key_from_index(idx);
 			}
 
-			quicksort(commands_output);
+			std::sort(commands_output.begin(), commands_output.end());
 
-			string commands_description;
+			std::string commands_description;
 
 			for (int idx = 0; idx < commands.size(); idx++) {
 
@@ -6310,7 +6958,6 @@ void Simulation::HandleCommand(string command_string)
 			commands_description = trim(commands_description, "</i>");
 
 			SaveTextToFile("c:/commands.txt", commands_description);
-			*/
 		}
 		break;
 

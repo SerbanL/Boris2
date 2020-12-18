@@ -3,15 +3,17 @@
 #include "BorisLib_Config.h"
 #if OPERATING_SYSTEM == OS_WIN
 
-// Windows Header Files:
-
+//Windows Header Files:
 #include <atlstr.h>
 #include <strsafe.h>
 #include <shellapi.h>
 #include <Windows.h>
 #include <shlobj.h>
+
+//Others
 #include <string>
 #include <algorithm>
+#include <execution>
 
 #include "Funcs_Files.h"
 #include "Funcs_Conv_Windows.h"
@@ -44,8 +46,7 @@ inline std::string GetExeDirectory(void)
 //return all files sharing the given base (in specified directory) and termination. Return them ordered (including full path) by creation time
 inline std::vector<std::string> GetFilesInDirectory(std::string directory, std::string baseFileName, std::string termination)
 {
-	std::vector<std::string> fileNames;
-	std::vector<double> creationTimes;
+	std::vector<std::pair<std::string, double>> fileNames_creationTimes;
 
 	WIN32_FIND_DATA ffd;
 	TCHAR szDir[MAX_PATH];
@@ -59,7 +60,13 @@ inline std::vector<std::string> GetFilesInDirectory(std::string directory, std::
 	// Find the first file in the directory.
 	hFind = FindFirstFile(szDir, &ffd);
 
-	if (INVALID_HANDLE_VALUE == hFind) return fileNames;
+	if (INVALID_HANDLE_VALUE == hFind) {
+
+		//extract and return fileNames only
+		std::vector<std::string> fileNames(fileNames_creationTimes.size());
+		std::transform(fileNames_creationTimes.begin(), fileNames_creationTimes.end(), fileNames.begin(), [](auto const& pair) { return pair.first; });
+		return fileNames;
+	}
 
 	// Get all the files in the directory.
 	do {
@@ -83,14 +90,12 @@ inline std::vector<std::string> GetFilesInDirectory(std::string directory, std::
 				if (!termination.length()) {
 
 					//if no basefile name or termination is specified then just get the file
-					fileNames.push_back(directory + fileName);
-					creationTimes.push_back((double)uli.QuadPart);
+					fileNames_creationTimes.push_back({ directory + fileName, (double)uli.QuadPart });
 				}
 				else if (fileName.substr(fileName.length() - termination.length()).compare(termination) == 0) {
 
 					//if no basefile name is specified but the termination is, then it must match that of the file (the ending of the file name)
-					fileNames.push_back(directory + fileName);
-					creationTimes.push_back((double)uli.QuadPart);
+					fileNames_creationTimes.push_back({ directory + fileName, (double)uli.QuadPart });
 				}
 			}
 			else if (fileName.substr(0, baseFileName.length()).compare(baseFileName) == 0) {
@@ -98,13 +103,11 @@ inline std::vector<std::string> GetFilesInDirectory(std::string directory, std::
 				//if basefile name is specified then it must match that of the file (the beggining of the file name)
 				if (!termination.length()) {
 
-					fileNames.push_back(directory + fileName);
-					creationTimes.push_back((double)uli.QuadPart);
+					fileNames_creationTimes.push_back({ directory + fileName, (double)uli.QuadPart });
 				}
 				else if (fileName.substr(fileName.length() - termination.length()).compare(termination) == 0) {
 
-					fileNames.push_back(directory + fileName);
-					creationTimes.push_back((double)uli.QuadPart);
+					fileNames_creationTimes.push_back({ directory + fileName, (double)uli.QuadPart });
 				}
 			}
 		}
@@ -114,8 +117,11 @@ inline std::vector<std::string> GetFilesInDirectory(std::string directory, std::
 	FindClose(hFind);
 
 	//sort by creation time order
-	quicksort(creationTimes, fileNames);
+	std::sort(std::execution::par_unseq, fileNames_creationTimes.begin(), fileNames_creationTimes.end());
 
+	//extract and return fileNames only
+	std::vector<std::string> fileNames(fileNames_creationTimes.size());
+	std::transform(fileNames_creationTimes.begin(), fileNames_creationTimes.end(), fileNames.begin(), [](auto const& pair) { return pair.first; });
 	return fileNames;
 }
 

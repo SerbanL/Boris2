@@ -21,7 +21,7 @@ void BorisTextBox::DrawWindow(void)
 	DrawResizingFrame();
 }
 
-ActionOutcome BorisTextBox::NewMessage(AC_ aCode, INT2 mouse, string data) 
+ActionOutcome BorisTextBox::NewMessage(AC_ aCode, INT2 mouse, std::string data) 
 {
 	ActionOutcome actionResult;
 

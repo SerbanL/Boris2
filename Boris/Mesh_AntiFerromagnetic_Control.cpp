@@ -42,11 +42,67 @@ void AFMesh::SetMagAngle(double polar, double azim, Rect rectangle)
 	}
 }
 
+//set magnetization angle only in given shape
+void AFMesh::SetMagAngle_Shape(double polar, double azim, std::vector<MeshShape> shapes)
+{
+#if COMPILECUDA == 1
+	//refresh from gpu memory
+	if (pMeshCUDA) {
+
+		pMeshCUDA->M()->copy_to_cpuvec(M);
+		pMeshCUDA->M2()->copy_to_cpuvec(M2);
+	}
+#endif
+
+	if (M.linear_size()) {
+
+		M.shape_setvalue(shapes, Polar_to_Cartesian(DBL3(Ms_AFM.get().i, polar, azim)));
+		M2.shape_setvalue(shapes, Polar_to_Cartesian(DBL3(-1.0 * Ms_AFM.get().j, polar, azim)));
+	}
+
+#if COMPILECUDA == 1
+	//refresh gpu memory
+	if (pMeshCUDA) {
+
+		pMeshCUDA->M()->copy_from_cpuvec(M);
+		pMeshCUDA->M2()->copy_from_cpuvec(M2);
+	}
+#endif
+}
+
+//Set magnetization angle in solid object only containing given relative position uniformly using polar coordinates
+void AFMesh::SetMagAngle_Object(double polar, double azim, DBL3 position)
+{
+#if COMPILECUDA == 1
+	//refresh M from gpu memory
+	if (pMeshCUDA) {
+
+		pMeshCUDA->M()->copy_to_cpuvec(M);
+		pMeshCUDA->M2()->copy_to_cpuvec(M2);
+	}
+#endif
+
+	if (M.linear_size()) {
+
+		M.setobject(Polar_to_Cartesian(DBL3(Ms_AFM.get().i, polar, azim)), position);
+		M2.setobject(Polar_to_Cartesian(DBL3(-1.0 * Ms_AFM.get().j, polar, azim)), position);
+	}
+
+#if COMPILECUDA == 1
+	//refresh gpu memory
+	if (pMeshCUDA) {
+
+		pMeshCUDA->M()->copy_from_cpuvec(M);
+		pMeshCUDA->M2()->copy_from_cpuvec(M2);
+	}
+#endif
+}
+
 //Invert magnetization direction in given mesh (must be magnetic)
 void AFMesh::SetInvertedMag(bool x, bool y, bool z)
 {
 #if COMPILECUDA == 1
-	//refresh M from gpu memory
+	//refresh from gpu memory
 	if (pMeshCUDA) {
 
 		pMeshCUDA->M()->copy_to_cpuvec(M);
@@ -75,7 +131,7 @@ void AFMesh::SetInvertedMag(bool x, bool y, bool z)
 }
 
 //Mirror magnetization in given axis (literal x, y, or z) in given mesh (must be magnetic)
-void AFMesh::SetMirroredMag(string axis)
+void AFMesh::SetMirroredMag(std::string axis)
 {
 #if COMPILECUDA == 1
 	//refresh M from gpu memory

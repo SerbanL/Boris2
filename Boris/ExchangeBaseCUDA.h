@@ -20,15 +20,15 @@ class ExchangeBaseCUDA {
 protected:
 
 	//CMBND contacts between this mesh and other ferromagnetic meshes (we do not require other ferromagnetic meshes to have an exchange module enabled, just this one).
-	vector<cu_obj<CMBNDInfoCUDA>> CMBNDcontactsCUDA;
+	std::vector<cu_obj<CMBNDInfoCUDA>> CMBNDcontactsCUDA;
 	//...and we also need a cpu-memory version
-	vector<CMBNDInfoCUDA> CMBNDcontacts;
+	std::vector<CMBNDInfoCUDA> CMBNDcontacts;
 
 	//vector of pointers to all ferromagnetic meshes in managed mesh cuda form
-	vector<cu_obj<ManagedMeshCUDA>*> pContactingManagedMeshes;
+	std::vector<cu_obj<ManagedMeshCUDA>*> pContactingManagedMeshes;
 
 	//as above but this vector contains the MeshCUDA pointers
-	vector<MeshCUDA*> pContactingMeshes;
+	std::vector<MeshCUDA*> pContactingMeshes;
 
 	//pointer to CUDA version of mesh object holding the effective field module holding this CUDA module (the primary mesh)
 	MeshCUDA* pMeshCUDA;

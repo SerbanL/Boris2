@@ -4,7 +4,7 @@
 #include "Boris_Enums_Defs.h"
 #include "ErrorHandler.h"
 
-using namespace std;
+
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
@@ -50,7 +50,7 @@ public:
 	virtual void SetField(DBL3 Hxyz) = 0;
 	virtual DBL3 GetField(void) = 0;
 
-	virtual BError SetFieldEquation(string equation_string, int step) = 0;
+	virtual BError SetFieldEquation(std::string equation_string, int step) = 0;
 
 	//if base temperature changes we need to adjust Tb in H_equation if it's used.
 	virtual void SetBaseTemperature(double Temperature) = 0;

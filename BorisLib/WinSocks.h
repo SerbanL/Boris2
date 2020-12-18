@@ -13,7 +13,7 @@
 
 #pragma comment (lib, "Ws2_32.lib")
 
-#define DEFAULT_BUFLEN 1024
+#define DEFAULT_BUFLEN 1048576
 #define DEFAULT_PORT "1542"
 
 //Used for non-blocking calls to recv : after each call sleep this number of ms to avoid hogging too much CPU time 
@@ -59,7 +59,7 @@ private:
 	std::string server_port = DEFAULT_PORT;
 	int server_recvsleepms = RECVSLEEPMS;
 
-	//server password : all client messages must be preceded by this string otherwise reject them
+	//server password : all client messages must be preceded by this std::string otherwise reject them
 	std::string password = "";
 
 private:
@@ -90,6 +90,8 @@ public:
 
 	//if something went wrong with a received command then set the first data field as the '!' symbol - this will let the client know something is not right
 	void SignalClientError(std::string message);
+
+	bool ClientConnected(void) { return clientConnected; }
 };
 
 //-----------------------------------------------------------------------------------------------------------------------------------------------

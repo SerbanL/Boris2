@@ -33,27 +33,30 @@ BError STransportCUDA::Initialize(void)
 
 	if (!initialized) {
 
-		////////////////////////////////////////////////////////////////////////////
-		//Calculate V, E and elC before starting
-		////////////////////////////////////////////////////////////////////////////
+		if (!pSMesh->disabled_transport_solver) {
 
-		//initialize V with a linear slope between ground and another electrode (in most problems there are only 2 electrodes setup) - do this for all transport meshes
-		initialize_potential_values();
+			////////////////////////////////////////////////////////////////////////////
+			//Calculate V, E and elC before starting
+			////////////////////////////////////////////////////////////////////////////
 
-		//set electric field and  electrical conductivity in individual transport modules (in this order!)
-		for (int idx = 0; idx < (int)pTransport.size(); idx++) {
+			//initialize V with a linear slope between ground and another electrode (in most problems there are only 2 electrodes setup) - do this for all transport meshes
+			initialize_potential_values();
 
-			pTransport[idx]->CalculateElectricField();
-			pTransport[idx]->CalculateElectricalConductivity(true);
+			//set electric field and  electrical conductivity in individual transport modules (in this order!)
+			for (int idx = 0; idx < (int)pTransport.size(); idx++) {
+
+				pTransport[idx]->CalculateElectricField();
+				pTransport[idx]->CalculateElectricalConductivity(true);
+			}
+
+			//solve only for charge current (V and Jc with continuous boundaries)
+			if (!pSMesh->SolveSpinCurrent()) solve_charge_transport_sor();
+			//solve both spin and charge currents (V, Jc, S with appropriate boundaries : continuous, except between N and F layers where interface conductivities are specified)
+			else solve_spin_transport_sor();
+
+			pSTrans->recalculate_transport = true;
+			pSTrans->transport_recalculated = true;
 		}
-
-		//solve only for charge current (V and Jc with continuous boundaries)
-		if (!pSMesh->SolveSpinCurrent()) solve_charge_transport_sor();
-		//solve both spin and charge currents (V, Jc, S with appropriate boundaries : continuous, except between N and F layers where interface conductivities are specified)
-		else solve_spin_transport_sor();
-
-		pSTrans->recalculate_transport = true;
-		pSTrans->transport_recalculated = true;
 
 		initialized = true;
 	}
@@ -71,7 +74,7 @@ BError STransportCUDA::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 		UPDATECONFIG_MESHSHAPECHANGE, UPDATECONFIG_MESHCHANGE,
 		UPDATECONFIG_MESHADDED, UPDATECONFIG_MESHDELETED,
 		UPDATECONFIG_MODULEADDED, UPDATECONFIG_MODULEDELETED,
-		UPDATECONFIG_TRANSPORT_ELECTRODE,
+		UPDATECONFIG_TRANSPORT_ELECTRODE, UPDATECONFIG_TRANSPORT,
 		UPDATECONFIG_ODE_SOLVER)) {
 		
 		////////////////////////////////////////////////////////////////////////////
@@ -115,8 +118,8 @@ BError STransportCUDA::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 
 		for (int idx = 0; idx < pSTrans->CMBNDcontacts.size(); idx++) {
 
-			vector<cu_obj<CMBNDInfoCUDA>> mesh_contacts;
-			vector<CMBNDInfoCUDA> mesh_contacts_cpu;
+			std::vector<cu_obj<CMBNDInfoCUDA>> mesh_contacts;
+			std::vector<CMBNDInfoCUDA> mesh_contacts_cpu;
 
 			for (int idx_contact = 0; idx_contact < pSTrans->CMBNDcontacts[idx].size(); idx_contact++) {
 
@@ -189,7 +192,7 @@ void STransportCUDA::initialize_potential_values(void)
 void STransportCUDA::UpdateField(void)
 {
 	//skip any transport solver computations if static_transport_solver is enabled : transport solver will be interated only at the end of a step or stage
-	if (pSMesh->static_transport_solver) return;
+	if (pSMesh->static_transport_solver || pSMesh->disabled_transport_solver) return;
 
 	//only need to update this after an entire magnetization equation time step is solved (but always update spin accumulation field if spin current solver enabled)
 	if (pSMesh->CurrentTimeStepSolved()) {

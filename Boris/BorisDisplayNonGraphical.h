@@ -18,7 +18,7 @@
 #pragma comment(lib, "sfml-system.lib")
 #pragma comment(lib, "sfml-graphics.lib")
 
-using namespace std;
+
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
@@ -26,7 +26,7 @@ using namespace std;
 
 class BorisGraphics :
 	public ProgramState<BorisGraphics,
-	tuple<float, float, float, float, float, float, float, float, float, float, float, int, int>, tuple<>>
+	std::tuple<float, float, float, float, float, float, float, float, float, float, float, int, int>, std::tuple<>>
 {
 private:
 
@@ -47,11 +47,11 @@ public:
 	{}
 
 	//from image file extract a raw bitmap (BYTE array with 4 BYTE-sized entries as B-G-R-A for each pixel) to specified pixel size (so image file is rescaled to specified size)
-	void GetBitmapFromImage(string fileName, vector<unsigned char>& bitmap, INT2 n_plane);
+	void GetBitmapFromImage(std::string fileName, std::vector<unsigned char>& bitmap, INT2 n_plane);
 
-	bool MakeVideoFromFileSequence(string directory, vector<string>& fileNames, unsigned int fps, double scaling, int quality)
+	bool MakeVideoFromFileSequence(std::string directory, std::vector<std::string>& fileNames, unsigned int fps, double scaling, int quality)
 	{
-		cout << "Not available in console-only mode" << endl;
+		std::cout << "Not available in console-only mode" << std::endl;
 
 		return false;
 	}
@@ -65,7 +65,7 @@ public:
 
 struct PhysQRepComponent :
 	public ProgramState<PhysQRepComponent,
-	tuple<bool, double, int, bool, string, string, string>, tuple<>>
+	std::tuple<bool, double, int, bool, std::string, std::string, std::string>, std::tuple<>>
 {
 private:
 
@@ -73,9 +73,9 @@ private:
 	double exponent = 0.2;
 	int obSelector = 0;
 	bool drawFrame = true;
-	string unit;
-	string typeName;
-	string meshName;
+	std::string unit;
+	std::string typeName;
+	std::string meshName;
 
 public:
 
@@ -91,18 +91,18 @@ public:
 
 class PhysQRep :
 	public ProgramState<PhysQRep,
-	tuple<double, Rect, double, string, string, DBL2, string, vector<PhysQRepComponent>>, tuple<>>
+	std::tuple<double, Rect, double, std::string, std::string, DBL2, std::string, std::vector<PhysQRepComponent>>, std::tuple<>>
 {
 private:
 
 	double m_to_l = 1e9;
 	Rect focusRect;
 	double detail_level = 5e-9;
-	string meshName_focused;
-	string typeName_focused;
+	std::string meshName_focused;
+	std::string typeName_focused;
 	DBL2 minmax_focusedmeshValues = DBL2();
-	string unit;
-	vector<PhysQRepComponent> physQRep;
+	std::string unit;
+	std::vector<PhysQRepComponent> physQRep;
 
 public:
 
@@ -115,7 +115,7 @@ public:
 
 class BorisMeshWindow :
 	public ProgramState<BorisMeshWindow,
-	tuple<PhysQRep, DBL3, string, string, string, string, bool>, tuple<>>
+	std::tuple<PhysQRep, DBL3, std::string, std::string, std::string, std::string, bool>, std::tuple<>>
 
 {
 private:
@@ -124,7 +124,7 @@ private:
 
 	//when mouse hovers over mesh values are picked and set here to be displayed
 	DBL3 meshPosition;
-	string meshName, typeName, mouse_mesh_info_position, mouse_mesh_info_value;
+	std::string meshName, typeName, mouse_mesh_info_position, mouse_mesh_info_value;
 	bool displayMeshInfo = false;
 
 public:
@@ -142,7 +142,7 @@ public:
 
 class BorisDisplay :
 	public ProgramState<BorisDisplay,
-	tuple<BorisGraphics*, BorisMeshWindow*>, tuple<>>
+	std::tuple<BorisGraphics*, BorisMeshWindow*>, std::tuple<>>
 {
 private: //Private data
 
@@ -175,30 +175,35 @@ public:
 	void ClearDataBox(void) {}
 
 	//display various message types in the console
-	void DisplayConsoleMessage(string text) { cout << text << endl; }
-	void DisplayConsoleError(string text) { cout << text << endl; }
-	void DisplayConsoleWarning(string text) { cout << text << endl; }
-	void DisplayConsoleListing(string text) { cout << text << endl; }
+	void DisplayConsoleMessage(std::string text) { std::cout << text << std::endl; }
+	void DisplayConsoleError(std::string text) { std::cout << text << std::endl; }
+	void DisplayConsoleWarning(std::string text) { std::cout << text << std::endl; }
+	void DisplayConsoleListing(std::string text) { std::cout << text << std::endl; }
 
 	//display message after stripping out the formatting
-	void DisplayFormattedConsoleMessage(string text);
+	void DisplayFormattedConsoleMessage(std::string text);
 
 	//add a new entry in the data box as an interative object (use formatted text)
-	void NewDataBoxField(string formattedText) {}
-	//update the data box at given lineIdx to the given value, passed as a string
-	void UpdateDataBoxField(int lineIdx, string value_string) {}
+	void NewDataBoxField(std::string formattedText) {}
+	//update the data box at given lineIdx to the given value, passed as a std::string
+	void UpdateDataBoxField(int lineIdx, std::string value_string) {}
 
 	//set the console line entry text
-	void SetConsoleEntryLineText(string text) { cout << text; }
+	void SetConsoleEntryLineText(std::string text) { std::cout << text; }
 
-	bool SaveMeshImage(string fileName, DBL4 image_cropping = DBL4(0, 0, 1, 1))
+	bool SaveMeshImage(std::string fileName, DBL4 image_cropping = DBL4(0, 0, 1, 1))
 	{ 
-		cout << "Not available in console-only mode" << endl; 
+		std::cout << "Not available in console-only mode" << std::endl; 
 		return false;
 	}
 
 	//Set mesh display detail level directly (N/A in non-graphics mode)
 	void SetDetailLevel(double detail_level) {}
+	double GetDetailLevel(void) { return 0.0; }
+
+	//Set mesh display render threshold values for faster rendering when we have many cells
+	void SetRenderThresholds(INT3 renderthresholds) {}
+	INT3 GetRenderThresholds(void) { return INT3(); }
 
 	//allows access to Boris Graphics public methods.
 	BorisGraphics* BGMethods(void) { return pBG; }

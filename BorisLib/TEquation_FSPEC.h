@@ -38,7 +38,7 @@ namespace EqComp {
 		//power functions where either the exponent or base is a constant (initially create FUNC_POW, then optimize later to one of these if possible)
 		FUNC_POWER_EXPCONST, FUNC_POWER_EXPCONST_PMUL, FUNC_POWER_BASECONST, FUNC_POWER_BASECONST_PMUL,
 
-		//Definite sum function : not actually evaluated, but used to expand the input string
+		//Definite sum function : not actually evaluated, but used to expand the input std::string
 		FUNC_SUM,
 
 		//SPECIAL FUNCTIONS

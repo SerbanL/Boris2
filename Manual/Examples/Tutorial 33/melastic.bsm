@@ -1,4 +1,4 @@
-Boris simulation file version 280
+Boris simulation file version 300
 start complex type
 BD
 pBG
@@ -40,6 +40,12 @@ focusRect
 0, 0, 0; 3.2e-07, 3.2e-07, 5e-09
 detail_level
 1.09263e-08
+renderspeedup1_cells
+0
+renderspeedup2_cells
+1000000
+renderspeedup3_cells
+2000000
 meshName_focused
 Fe
 typeName_focused
@@ -84,13 +90,13 @@ end type
 end type
 end complex type
 directory
-C:\Users\Serban\Documents\Boris Data\Simulations\
+C:\Boris2.9\Manual\Examples\Tutorial 33\
 savedataFile
 melastic.txt
 imageSaveFileBase
 mesh_image
 currentSimulationFile
-C:\Users\Serban\Documents\Boris Data\Simulations\melastic.bsm
+C:\Boris2.9\Manual\Examples\Tutorial 33\melastic.bsm
 appendToDataFile
 0
 saveDataFlag
@@ -1195,14 +1201,6 @@ end type
 end complex type
 pMod
 5
-2, 0
-Demag
-demag_pbc_images
-10, 10, 0
-end type
-4, 0
-Exch_6ngbr_Neu
-end type
 8, 0
 Zeeman
 Ha
@@ -1226,6 +1224,14 @@ bin data
 end type
 end complex type
 end type
+2, 0
+Demag
+demag_pbc_images
+10, 10, 0
+end type
+4, 0
+Exch_6ngbr_Neu
+end type
 10, 0
 Anisotropy_Cubic
 end type
@@ -1240,6 +1246,8 @@ move_mesh_trigger
 0
 start complex type
 skyShift
+dia_mul
+2
 skyTrack_Id
 0
 bin data
@@ -2825,6 +2833,210 @@ value_at_0K
 0
 current_value
 0
+t_scaling
+0
+bin data
+0
+t_scaling_y
+0
+bin data
+0
+t_scaling_z
+0
+bin data
+0
+s_scaling
+0, 0, 0
+bin data
+0
+t_scaling_info
+none
+s_scaling_type
+0
+s_scaling_info
+none
+start complex type
+Tscaling_eq
+text_equation
+
+variables
+1
+T
+userconstants
+2
+Tc
+Tb
+userconstants_values
+2
+bin data
+16
+                end type
+end complex type
+start complex type
+Sscaling_eq
+text_equation
+
+variables
+4
+x
+y
+z
+t
+userconstants
+3
+Lx
+Ly
+Lz
+userconstants_values
+3
+bin data
+24
+:Œ0âŽy•>:Œ0âŽy•>:Œ0âŽy5>end type
+end complex type
+end type
+end complex type
+start complex type
+STq
+value_at_0K
+1, 0
+current_value
+1, 0
+t_scaling
+0
+bin data
+0
+t_scaling_y
+0
+bin data
+0
+t_scaling_z
+0
+bin data
+0
+s_scaling
+0, 0, 0
+bin data
+0
+t_scaling_info
+none
+s_scaling_type
+0
+s_scaling_info
+none
+start complex type
+Tscaling_eq
+text_equation
+
+variables
+1
+T
+userconstants
+2
+Tc
+Tb
+userconstants_values
+2
+bin data
+16
+                end type
+end complex type
+start complex type
+Sscaling_eq
+text_equation
+
+variables
+4
+x
+y
+z
+t
+userconstants
+3
+Lx
+Ly
+Lz
+userconstants_values
+3
+bin data
+24
+:Œ0âŽy•>:Œ0âŽy•>:Œ0âŽy5>end type
+end complex type
+end type
+end complex type
+start complex type
+STa
+value_at_0K
+0.6, 0.4
+current_value
+0.6, 0.4
+t_scaling
+0
+bin data
+0
+t_scaling_y
+0
+bin data
+0
+t_scaling_z
+0
+bin data
+0
+s_scaling
+0, 0, 0
+bin data
+0
+t_scaling_info
+none
+s_scaling_type
+0
+s_scaling_info
+none
+start complex type
+Tscaling_eq
+text_equation
+
+variables
+1
+T
+userconstants
+2
+Tc
+Tb
+userconstants_values
+2
+bin data
+16
+                end type
+end complex type
+start complex type
+Sscaling_eq
+text_equation
+
+variables
+4
+x
+y
+z
+t
+userconstants
+3
+Lx
+Ly
+Lz
+userconstants_values
+3
+bin data
+24
+:Œ0âŽy•>:Œ0âŽy•>:Œ0âŽy5>end type
+end complex type
+end type
+end complex type
+start complex type
+STp
+value_at_0K
+-1, 0, 0
+current_value
+-1, 0, 0
 t_scaling
 0
 bin data
@@ -4674,9 +4886,13 @@ end type
 end complex type
 cudaEnabled
 0
+cudaDeviceSelect
+0
 shape_change_individual
 0
 static_transport_solver
+0
+disabled_transport_solver
 0
 image_cropping
 0.001, 0.001, 0.999, 0.999
@@ -4686,6 +4902,14 @@ displayThresholds
 0, 0
 displayThresholdTrigger
 3
+shape_rotation
+0, 0, 0
+shape_repetitions
+1, 1, 1
+shape_displacement
+0, 0, 0
+shape_method
+add
 userConstants
 0
 end type

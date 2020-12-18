@@ -132,7 +132,7 @@ void BorisConsole::DeleteTextFromEntryLine(void)
 	}
 }
 
-bool BorisConsole::NewCommandEntered(string &command)
+bool BorisConsole::NewCommandEntered(std::string &command)
 {
 	//cancel text selection now (if any)
 	ResetTextSelector();
@@ -154,12 +154,12 @@ bool BorisConsole::NewCommandEntered(string &command)
 	else return false;
 }
 
-string BorisConsole::FormatEntryLineText(string text)
+std::string BorisConsole::FormatEntryLineText(std::string text)
 {
 	//USERCOLOR (Yellow) with BGRNDCOLOR (no color)
-	string formattedText = "<b>[tc1,1,0,1/tc][bc0,0,0,0/bc]";
+	std::string formattedText = "<b>[tc1,1,0,1/tc][bc0,0,0,0/bc]";
 
-	vector<string> words = split(text, " ");
+	std::vector<std::string> words = split(text, " ");
 
 	//if last character is a separator then make an additional entry in words (blank)
 	if (text[text.length() - 1] == ' ')
@@ -226,7 +226,7 @@ void BorisConsole::DrawWindow_Quick(void)
 	DrawResizingFrame();
 }
 
-ActionOutcome BorisConsole::NewMessage(AC_ aCode, INT2 mouse, string data)
+ActionOutcome BorisConsole::NewMessage(AC_ aCode, INT2 mouse, std::string data)
 {
 	ActionOutcome actionResult;
 
@@ -440,7 +440,7 @@ ActionOutcome BorisConsole::NewMessage(AC_ aCode, INT2 mouse, string data)
 
 	case AC_CTRL_C:
 	{
-		string entryLineText = textLines.get_paragraph(LastLine());
+		std::string entryLineText = textLines.get_paragraph(LastLine());
 		if (selectStart != selectEnd) SetClipboardText(entryLineText.substr(selectStart, selectEnd + 1 - selectStart));
 		else SetClipboardText(entryLineText.substr(promptPos, 1));
 	}
@@ -582,9 +582,9 @@ ActionOutcome BorisConsole::NewMessage(AC_ aCode, INT2 mouse, string data)
 					else {
 
 						//double clicked on text on entry line : select clicked word
-						string entryLineText = textLines.get_paragraph(LastLine());
+						std::string entryLineText = textLines.get_paragraph(LastLine());
 
-						pair<int, int> selectionIndexes = get_word_indexes(entryLineText, promptPos);
+						std::pair<int, int> selectionIndexes = get_word_indexes(entryLineText, promptPos);
 						selectStart = selectionIndexes.first;
 						selectEnd = selectionIndexes.second;
 					}
@@ -649,7 +649,7 @@ ActionOutcome BorisConsole::NewMessage(AC_ aCode, INT2 mouse, string data)
 	return actionResult;
 }
 
-void BorisConsole::NewUserEntry(string text)
+void BorisConsole::NewUserEntry(std::string text)
 {
 	//if selection enabled then replace with enetered text : first delete selection, then insert text
 	if (selectStart != selectEnd) DeleteTextFromEntryLine();
@@ -665,7 +665,33 @@ void BorisConsole::NewUserEntry(string text)
 	SetPrompterRect();
 }
 
-void BorisConsole::NewTextLine(string text, FormatSpecifier fs)
+//very similar to NewUserEntry, but add a space first if any text exists before prompt position
+void BorisConsole::NewSpacedUserEntry(std::string text)
+{
+	//if selection enabled then replace with enetered text : first delete selection, then insert text
+	if (selectStart != selectEnd) DeleteTextFromEntryLine();
+
+	INT2 elIdx = EntryLineIndex(promptPos);
+
+	std::string consoleText = textLines.get_paragraph(LastLine());
+	if (promptPos > 0 && promptPos - 1 < consoleText.length() && consoleText[promptPos - 1] != ' ') {
+
+		textLines[elIdx.i].insert(elIdx.j, " " + text);
+		promptPos += (int)text.length() + 1;
+	}
+	else {
+
+		textLines[elIdx.i].insert(elIdx.j, text);
+		promptPos += (int)text.length();
+	}
+
+	//Now make sure the entry line text is in the required formatting
+	SetFormattingonEntryLine();
+
+	SetPrompterRect();
+}
+
+void BorisConsole::NewTextLine(std::string text, FormatSpecifier fs)
 {
 	//If some text has already been entered on the entry line, then insert the new message before, pushing the entry line down one
 	textLines.insert_paragraph(LastLine(), TextLine(text, fs));
@@ -677,7 +703,7 @@ void BorisConsole::NewTextLine(string text, FormatSpecifier fs)
 	SetPrompterRect();
 }
 
-void BorisConsole::InsertTextatPrompter(string text)
+void BorisConsole::InsertTextatPrompter(std::string text)
 {
 	if (!text.length()) return;
 
@@ -685,7 +711,7 @@ void BorisConsole::InsertTextatPrompter(string text)
 	ResetTextSelector();
 
 	//Stop insertion with newline characters : messes up the entry line and not needed.
-	vector<string> messageLines = split(text, "\r", "\n");
+	std::vector<std::string> messageLines = split(text, "\r", "\n");
 
 	INT2 elIdx = EntryLineIndex(promptPos);
 
@@ -707,25 +733,25 @@ void BorisConsole::InsertTextatPrompter(string text)
 }
 
 //This sets the default formatting for the entry line text - first word bold, further words italic, USERCOLOR, BGRNDTEXTCOLOR, no outline.
-void BorisConsole::SetEntryLineText(string text)
+void BorisConsole::SetEntryLineText(std::string text)
 {
 	//Stop insertion with newline characters : messes up the entry line and not needed.
-	vector<string> messageLines = split(text, "\r", "\n");
+	std::vector<std::string> messageLines = split(text, "\r", "\n");
 
 	int lineIndex = textLines.LastPara();
-
+	
 	if (messageLines.size())
 		textLines.replace_paragraph(lineIndex, textLines.BuildFormattedTextLine(FormatEntryLineText(messageLines[0]), lineIndex));
 	else
 		textLines.replace_paragraph(lineIndex, textLines.BuildFormattedTextLine(FormatEntryLineText(""), lineIndex));
-
+		
 	//might need to split entry lines into multiple lines to fit window width - DrawTextLines(false) will do this without graphically updating the screen
 	DrawTextLines(false);
 
 	SetPrompterEnd();
 }
 
-void BorisConsole::NewFormattedTextLine(string text)
+void BorisConsole::NewFormattedTextLine(std::string text)
 {
 	//Display text on last line: existing console entry text will be pushed down
 	TextDisplay::NewFormattedTextLine(LastLine(), text);

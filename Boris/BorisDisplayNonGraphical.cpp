@@ -4,13 +4,13 @@
 #if GRAPHICS == 0
 
 //from image file extract a raw bitmap (BYTE array with 4 BYTE-sized entries as B-G-R-A for each pixel) to specified pixel size (so image file is rescaled to specified size)
-void BorisGraphics::GetBitmapFromImage(string fileName, vector<unsigned char>& bitmap, INT2 n_plane)
+void BorisGraphics::GetBitmapFromImage(std::string fileName, std::vector<unsigned char>& bitmap, INT2 n_plane)
 {
 	//load texture from file
 	sf::Texture texture;
 	if (!texture.loadFromFile(fileName))
 	{
-		cout << "Could not load mask file" << endl;
+		std::cout << "Could not load mask file" << std::endl;
 		return;
 	}
 
@@ -42,7 +42,7 @@ void BorisGraphics::GetBitmapFromImage(string fileName, vector<unsigned char>& b
 	}
 }
 
-void BorisDisplay::DisplayFormattedConsoleMessage(string text)
+void BorisDisplay::DisplayFormattedConsoleMessage(std::string text)
 {
 	//first trim all formmatting specifiers in block form (i.e. with extra text info between start and end text formatting specifiers)
 	for (int idx = 0; idx < TF::textblockSpecifiers.size(); idx++) {
@@ -57,7 +57,7 @@ void BorisDisplay::DisplayFormattedConsoleMessage(string text)
 	}
 
 	//finally display the unformatted text
-	cout << text << endl;
+	std::cout << text << std::endl;
 }
 
 #endif

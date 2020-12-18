@@ -181,13 +181,13 @@ bool DemagTFunc::CalcDiagTens3D_PBC(VEC<DBL3> &Ddiag, INT3 N, DBL3 hRatios, bool
 {
 	//zero the tensor first
 	Ddiag.set(DBL3());
-	
+
 	// Set-up and calculate f values
 	if (!fill_f_vals(SZ3(
 		(x_images ? asymptotic_distance : N.x / 2),
 		(y_images ? asymptotic_distance : N.y / 2),
 		(z_images ? asymptotic_distance : N.z / 2)), hRatios, asymptotic_distance)) return false;
-		
+
 	//Setup asymptotic approximation settings
 	DemagAsymptoticDiag demagAsymptoticDiag_xx(hRatios.x, hRatios.y, hRatios.z);
 	DemagAsymptoticDiag demagAsymptoticDiag_yy(hRatios.y, hRatios.x, hRatios.z);
@@ -264,7 +264,7 @@ bool DemagTFunc::CalcDiagTens3D_PBC(VEC<DBL3> &Ddiag, INT3 N, DBL3 hRatios, bool
 					if (!z_images)
 						Ddiag[INT3(i0, (N.y - j0) % N.y, (N.z - k0) % N.z)] = val;
 				}
-				
+
 				if (!z_images) {
 
 					Ddiag[INT3(i0, j0, (N.z - k0) % N.z)] = val;
@@ -306,7 +306,7 @@ bool DemagTFunc::CalcOffDiagTens3D_PBC(VEC<DBL3> &Dodiag, INT3 N, DBL3 hRatios, 
 
 	int sign = 1;
 	if (minus) sign = -1;
-	
+
 #pragma omp parallel for
 	for (int j0 = 0; j0 < (y_images ? N.y : N.y / 2); j0++) {
 		for (int k0 = 0; k0 < (z_images ? N.z : N.z / 2); k0++) {

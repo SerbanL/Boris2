@@ -3,7 +3,7 @@
 #include "BorisLib.h"
 #include "Modules.h"
 
-using namespace std;
+
 
 class SuperMesh;
 class HeatBase;
@@ -16,7 +16,7 @@ class HeatBase;
 
 class SHeat :
 	public Modules,
-	public ProgramState<SHeat, tuple<double>, tuple<>>
+	public ProgramState<SHeat, std::tuple<double>, std::tuple<>>
 {
 
 #if COMPILECUDA == 1
@@ -32,13 +32,13 @@ private:
 
 	//CMBND contacts for all contacting transport meshes - these are ordered by first vector index; for each mesh there could be multiple contacting meshes and these are ordered by second vector index
 	//CMBNDInfo describes the contact between 2 meshes, allowing calculation of values at cmbnd cells based on continuity of a potential and flux (temperature and heat flux)
-	vector< vector<CMBNDInfo> > CMBNDcontacts;
+	std::vector< std::vector<CMBNDInfo> > CMBNDcontacts;
 
 	//list of all Heat modules in meshes (same ordering as first vector in CMBNDcontacts)
-	vector<HeatBase*> pHeat;
+	std::vector<HeatBase*> pHeat;
 
 	//vector of pointers to all Temp - need this to set cmbnd flags (same ordering as first vector in CMBNDcontacts)
-	vector<VEC_VC<double>*> pTemp;
+	std::vector<VEC_VC<double>*> pTemp;
 
 	//----------------------
 

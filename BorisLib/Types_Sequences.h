@@ -525,7 +525,7 @@ public:
 		steps = 1;
 	}
 
-	//input string specified as "n: ...", where n is the number of sequence outputs ( = steps + 1). Each step output has the same string output.
+	//input std::string specified as "n: ...", where n is the number of sequence outputs ( = steps + 1). Each step output has the same std::string output.
 	StringSequence(std::string string_seq)
 	{
 		size_t pos = string_seq.find_first_of(':');

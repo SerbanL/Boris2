@@ -7,7 +7,7 @@
 #include "StrayFieldCUDA.h"
 #endif
 
-using namespace std;
+
 
 class SuperMesh;
 class DipoleMesh;
@@ -16,7 +16,7 @@ class DipoleMesh;
 
 class StrayField :
 	public Modules,
-	public ProgramState<StrayField, tuple<>, tuple<>>
+	public ProgramState<StrayField, std::tuple<>, std::tuple<>>
 {
 
 #if COMPILECUDA == 1
@@ -32,7 +32,7 @@ private:
 	VEC<DBL3> strayField;
 
 	//all currently set dipole meshes
-	vector<DipoleMesh*> dipoles;
+	std::vector<DipoleMesh*> dipoles;
 
 private:
 

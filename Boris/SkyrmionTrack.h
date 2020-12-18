@@ -14,8 +14,8 @@
 //Class used to track one or more skyrmions in a given ferromagnetic mesh
 class SkyrmionTrack :
 	public ProgramState<SkyrmionTrack,
-	tuple<double, std::vector<DBL2>, std::vector<DBL2>, std::vector<DBL2>, std::vector<Rect>>,
-	tuple<> >
+	std::tuple<double, std::vector<DBL2>, std::vector<DBL2>, std::vector<DBL2>, std::vector<Rect>>,
+	std::tuple<> >
 {
 
 private:
@@ -24,26 +24,26 @@ private:
 	double dia_mul = 2.0;
 
 	//identify skyrmion tracker by bottom-left Rect coordinates
-	vector<DBL2> skyTrack_Id;
+	std::vector<DBL2> skyTrack_Id;
 
 	//the skyrmion total shift - same vector size as skyTrack_Id
-	vector<DBL2> skyTrack_Shift;
+	std::vector<DBL2> skyTrack_Shift;
 
 	//the skyrmion total shift from last pass; use it to eliminate shift oscillations - same vector size as skyTrack_Id
-	vector<DBL2> skyTrack_ShiftLast;
+	std::vector<DBL2> skyTrack_ShiftLast;
 
 	//when using the skyrmion fitting method we record the updated skyrmion rectangle here
-	vector<Rect> skyTrack_rect;
+	std::vector<Rect> skyTrack_rect;
 
 	//xy data used for fitting skyrmions - resize as needed and keep size.
-	vector<DBL2> xy_data;
+	std::vector<DBL2> xy_data;
 
 #if COMPILECUDA == 1
 	//in CUDA mode, before fitting extract data from M into y_data_gpu using a kernel call, then transfer it to cpu memory in y_data_cpu; after this you can run the LMA fitting algorithm on the cpu.
 	//(not great due to gpu to cpu memory transfer, but the alternative is to write the fitting algorithm in CUDA code which isn't great either : 
 	//the xy data size is pretty small so gpu computation here is not ideal, plus it's not straightforward to implement the LMA algorithm in CUDA; the memory transfer is small so current method should be fine)
 	cu_arr<cuBReal> data_gpu;
-	vector<cuBReal> data_cpu;
+	std::vector<cuBReal> data_cpu;
 #endif
 
 private:

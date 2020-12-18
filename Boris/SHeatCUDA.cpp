@@ -66,8 +66,8 @@ BError SHeatCUDA::Initialize(void)
 
 	for (int idx = 0; idx < pSHeat->CMBNDcontacts.size(); idx++) {
 
-		vector<cu_obj<CMBNDInfoCUDA>> mesh_contacts;
-		vector<CMBNDInfoCUDA> mesh_contacts_cpu;
+		std::vector<cu_obj<CMBNDInfoCUDA>> mesh_contacts;
+		std::vector<CMBNDInfoCUDA> mesh_contacts_cpu;
 
 		for (int idx_contact = 0; idx_contact < pSHeat->CMBNDcontacts[idx].size(); idx_contact++) {
 

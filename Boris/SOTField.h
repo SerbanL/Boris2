@@ -3,7 +3,7 @@
 #include "BorisLib.h"
 #include "Modules.h"
 
-using namespace std;
+
 
 class Mesh;
 
@@ -13,7 +13,7 @@ class Mesh;
 
 class SOTField :
 	public Modules,
-	public ProgramState<SOTField, tuple<>, tuple<>>
+	public ProgramState<SOTField, std::tuple<>, std::tuple<>>
 {
 
 private:

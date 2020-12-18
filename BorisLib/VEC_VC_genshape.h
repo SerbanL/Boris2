@@ -133,7 +133,7 @@ bool VEC_VC<VType>::generate_jagged_surfaces(double depth, double spacing, unsig
 		}
 	};
 
-	//cout number of empty cells along the z aixs from starting index, either from -z face (direction > 0) or from +z face (direction < 0)
+	//std::cout number of empty cells along the z aixs from starting index, either from -z face (direction > 0) or from +z face (direction < 0)
 	auto count_cells_cut = [&](INT3 starting_idx, int direction) -> int {
 
 		int cells_cut = 0;

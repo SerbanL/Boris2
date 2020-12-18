@@ -43,18 +43,18 @@ protected:
 	//additional scratch space used when kernel multiplication is not embedded (embed_multiplication = false)
 	VEC<ReIm3> F2;
 
-	vector<fftw_plan> plan_fwd_x, plan_fwd_y, plan_fwd_z;
-	vector<fftw_plan> plan_inv_x, plan_inv_y, plan_inv_z;
+	std::vector<fftw_plan> plan_fwd_x, plan_fwd_y, plan_fwd_z;
+	std::vector<fftw_plan> plan_inv_x, plan_inv_y, plan_inv_z;
 
 	//forward fft lines with constant zero padding
-	vector<double*> pline_zp_x;
-	vector<fftw_complex*> pline_zp_y, pline_zp_z;
+	std::vector<double*> pline_zp_x;
+	std::vector<fftw_complex*> pline_zp_y, pline_zp_z;
 
 	//fft and ifft line without zero padding
-	vector<fftw_complex*> pline;
+	std::vector<fftw_complex*> pline;
 
 	//ifft line for real output, to be truncated
-	vector<double*> pline_rev_x;
+	std::vector<double*> pline_rev_x;
 	
 	//the flow is:
 	//input -> pline_zp_x -fft-> pline -> F

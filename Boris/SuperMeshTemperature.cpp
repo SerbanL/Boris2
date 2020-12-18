@@ -3,7 +3,7 @@
 
 //--------------------------------------------------------- TEMPERATURE / HEAT SOLVER CONTROL : SuperMeshTemperature.cpp
 
-BError SuperMesh::SetBaseTemperature(string meshName, double Temperature)
+BError SuperMesh::SetBaseTemperature(std::string meshName, double Temperature)
 {
 	BError error(__FUNCTION__);
 
@@ -33,7 +33,7 @@ BError SuperMesh::SetBaseTemperature(string meshName, double Temperature)
 }
 
 //ambient and alpha boundary coefficient for Robin boundary conditions - set in Heat module if active
-BError SuperMesh::SetAmbientTemperature(string meshName, double T_ambient)
+BError SuperMesh::SetAmbientTemperature(std::string meshName, double T_ambient)
 {
 	BError error(__FUNCTION__);
 
@@ -56,7 +56,7 @@ BError SuperMesh::SetAmbientTemperature(string meshName, double T_ambient)
 	return error;
 }
 
-BError SuperMesh::SetAlphaHeatBoundary(string meshName, double alpha_boundary)
+BError SuperMesh::SetAlphaHeatBoundary(std::string meshName, double alpha_boundary)
 {
 	BError error(__FUNCTION__);
 
@@ -79,7 +79,7 @@ BError SuperMesh::SetAlphaHeatBoundary(string meshName, double alpha_boundary)
 	return error;
 }
 
-BError SuperMesh::SetInsulatingSides(string meshName, string literal, bool status)
+BError SuperMesh::SetInsulatingSides(std::string meshName, std::string literal, bool status)
 {
 	BError error(__FUNCTION__);
 
@@ -90,7 +90,7 @@ BError SuperMesh::SetInsulatingSides(string meshName, string literal, bool statu
 	return error;
 }
 
-BError SuperMesh::SetCurieTemperature(string meshName, double T_Curie)
+BError SuperMesh::SetCurieTemperature(std::string meshName, double T_Curie)
 {
 	BError error(__FUNCTION__);
 
@@ -122,7 +122,7 @@ BError SuperMesh::SetCurieTemperature(string meshName, double T_Curie)
 	return error;
 }
 
-BError SuperMesh::SetCurieTemperatureMaterial(string meshName, double T_Curie_material)
+BError SuperMesh::SetCurieTemperatureMaterial(std::string meshName, double T_Curie_material)
 {
 	BError error(__FUNCTION__);
 
@@ -137,7 +137,7 @@ BError SuperMesh::SetCurieTemperatureMaterial(string meshName, double T_Curie_ma
 	return error;
 }
 
-BError SuperMesh::SetAtomicMagneticMoment(string meshName, DBL2 atomic_moment)
+BError SuperMesh::SetAtomicMagneticMoment(std::string meshName, DBL2 atomic_moment)
 {
 	BError error(__FUNCTION__);
 
@@ -168,7 +168,7 @@ BError SuperMesh::SetAtomicMagneticMoment(string meshName, DBL2 atomic_moment)
 }
 
 //set Tc (critical temperature) coupling terms for 2-sublattice model
-BError SuperMesh::SetTcCoupling(string meshName, DBL2 tau_ii, DBL2 tau_ij)
+BError SuperMesh::SetTcCoupling(std::string meshName, DBL2 tau_ii, DBL2 tau_ij)
 {
 	BError error(__FUNCTION__);
 
@@ -198,7 +198,7 @@ BError SuperMesh::SetTcCoupling(string meshName, DBL2 tau_ii, DBL2 tau_ij)
 	return error;
 }
 
-BError SuperMesh::SetTcCoupling_Intra(string meshName, DBL2 tau_ii)
+BError SuperMesh::SetTcCoupling_Intra(std::string meshName, DBL2 tau_ii)
 {
 	BError error(__FUNCTION__);
 
@@ -228,7 +228,7 @@ BError SuperMesh::SetTcCoupling_Intra(string meshName, DBL2 tau_ii)
 	return error;
 }
 
-BError SuperMesh::SetTcCoupling_Inter(string meshName, DBL2 tau_ij)
+BError SuperMesh::SetTcCoupling_Inter(std::string meshName, DBL2 tau_ij)
 {
 	BError error(__FUNCTION__);
 
@@ -259,7 +259,7 @@ BError SuperMesh::SetTcCoupling_Inter(string meshName, DBL2 tau_ij)
 }
 
 //Set temperature model
-BError SuperMesh::SetTemperatureModel(string meshName, int tmtype)
+BError SuperMesh::SetTemperatureModel(std::string meshName, int tmtype)
 {
 	BError error(__FUNCTION__);
 

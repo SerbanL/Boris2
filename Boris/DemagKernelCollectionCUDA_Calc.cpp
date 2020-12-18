@@ -10,7 +10,7 @@
 //-------------------------- KERNEL CALCULATION
 
 //this initializes all the convolution kernels for the given mesh dimensions. 2D is for n.z == 1.
-BError DemagKernelCollectionCUDA::Calculate_Demag_Kernels(vector<DemagKernelCollectionCUDA*>& kernelCollection)
+BError DemagKernelCollectionCUDA::Calculate_Demag_Kernels(std::vector<DemagKernelCollectionCUDA*>& kernelCollection)
 {
 	BError error(__FUNCTION__);
 
@@ -38,7 +38,7 @@ BError DemagKernelCollectionCUDA::Calculate_Demag_Kernels(vector<DemagKernelColl
 
 			for (int idx = 0; idx < kernelCollection.size(); idx++) {
 
-				shared_ptr<cu_obj<cuKerType>> existing_kernel = kernelCollection[idx]->KernelAlreadyComputed(shift, h_src, h_dst);
+				std::shared_ptr<cu_obj<cuKerType>> existing_kernel = kernelCollection[idx]->KernelAlreadyComputed(shift, h_src, h_dst);
 
 				if (existing_kernel != nullptr) {
 
@@ -65,7 +65,7 @@ BError DemagKernelCollectionCUDA::Calculate_Demag_Kernels(vector<DemagKernelColl
 			if (kernels[index] == nullptr) {
 
 				//no -> allocate then compute it
-				kernels[index] = shared_ptr<cu_obj<cuKerType>>(new cu_obj<cuKerType>());
+				kernels[index] = std::shared_ptr<cu_obj<cuKerType>>(new cu_obj<cuKerType>());
 				if (!(*kernels[index])()->AllocateKernels(Rect_collection[index], this_rect, N)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
 
 				//is it z shifted? keep copy of flag in cpu memory
@@ -149,7 +149,7 @@ BError DemagKernelCollectionCUDA::Calculate_Demag_Kernels(vector<DemagKernelColl
 }
 
 //search to find a matching kernel that has already been computed and return pointer to it -> kernel can be identified from shift, source and destination discretisation
-shared_ptr<cu_obj<cuKerType>> DemagKernelCollectionCUDA::KernelAlreadyComputed(cuReal3 shift, cuReal3 h_src, cuReal3 h_dst)
+std::shared_ptr<cu_obj<cuKerType>> DemagKernelCollectionCUDA::KernelAlreadyComputed(cuReal3 shift, cuReal3 h_src, cuReal3 h_dst)
 {
 	//kernels[index] must not be nullptr, must have kernel_calculated = true and shift, h_src, h_dst must match the corresponding values in kernels[index] 
 	
@@ -196,7 +196,7 @@ BError DemagKernelCollectionCUDA::Calculate_Demag_Kernels_2D_Self(int index)
 	if (!Ddiag.resize(N)) return error(BERROR_OUTOFMEMORY_NCRIT);
 
 	//off-diagonal tensor elements
-	vector<double> Dodiag;
+	std::vector<double> Dodiag;
 	if (!malloc_vector(Dodiag, N.x*N.y)) return error(BERROR_OUTOFMEMORY_NCRIT);
 
 	//use ratios instead of cellsizes directly - same result but better in terms of floating point errors
@@ -213,17 +213,19 @@ BError DemagKernelCollectionCUDA::Calculate_Demag_Kernels_2D_Self(int index)
 		//pbcs used in at least one dimension
 		if (!dtf.CalcDiagTens2D_PBC(
 			Ddiag, N, h / h_max,
-			true, ASYMPTOTIC_DISTANCE, pbc_images.x, pbc_images.y, pbc_images.z)) return error(BERROR_OUTOFMEMORY_NCRIT);
+			true, ASYMPTOTIC_DISTANCE, 
+			pbc_images.x, pbc_images.y, pbc_images.z)) return error(BERROR_OUTOFMEMORY_NCRIT);
 
 		if (!dtf.CalcOffDiagTens2D_PBC(
 			Dodiag, N, h / h_max,
-			true, ASYMPTOTIC_DISTANCE, pbc_images.x, pbc_images.y, pbc_images.z)) return error(BERROR_OUTOFMEMORY_NCRIT);
+			true, ASYMPTOTIC_DISTANCE, 
+			pbc_images.x, pbc_images.y, pbc_images.z)) return error(BERROR_OUTOFMEMORY_NCRIT);
 	}
 
 	//-------------- DEMAG KERNELS ON CPU-ADDRESSABLE MEMORY
 
 	VEC<DBL3> Kdiag_cpu;
-	vector<double> K2D_odiag_cpu;
+	std::vector<double> K2D_odiag_cpu;
 
 	if (!transpose_xy) {
 

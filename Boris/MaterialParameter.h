@@ -13,7 +13,7 @@
 #include "MaterialParameterCUDA.h"
 #endif
 
-using namespace std;
+#include <execution>
 
 /////////////////////////////////////////////////////////////////////////////////////////////////
 //Class holding a single material parameter with any associated temperature dependence and spatial variation.
@@ -31,7 +31,7 @@ using namespace std;
 template <typename PType, typename SType>
 class MatP :
 	public SimulationSharedData,
-	public ProgramState<MatP<PType, SType>, tuple<PType, PType, vector<double>, vector<double>, vector<double>, VEC<SType>, string, int, string, TEquation<double>, TEquation<double, double, double, double>>, tuple<>>
+	public ProgramState<MatP<PType, SType>, std::tuple<PType, PType, std::vector<double>, std::vector<double>, std::vector<double>, VEC<SType>, std::string, int, std::string, TEquation<double>, TEquation<double, double, double, double>>, std::tuple<>>
 {
 
 private:
@@ -50,24 +50,24 @@ private:
 	PType current_value;
 
 	//array describing temperature scaling of value_at_0K. The index in this vector is the temperature value in K, i.e. values are set at 1K increments starting at 0K
-	vector<double> t_scaling;
+	std::vector<double> t_scaling;
 
 	//additional components for dual or vector quantities if set
-	vector<double> t_scaling_y;
-	vector<double> t_scaling_z;
+	std::vector<double> t_scaling_y;
+	std::vector<double> t_scaling_z;
 
 	//temperature scaling equation, if set : takes only the parameter T (temperature); Tc constant : Curie temperature, Tb constant : base temperature
 	TEquation<double> Tscaling_eq;
 
 	//pointers to special functions, calculated elsewhere
-	shared_ptr<Funcs_Special> pCurieWeiss = nullptr;
-	shared_ptr<Funcs_Special> pLongRelSus = nullptr;
-	shared_ptr<Funcs_Special> pCurieWeiss1 = nullptr;
-	shared_ptr<Funcs_Special> pCurieWeiss2 = nullptr;
-	shared_ptr<Funcs_Special> pLongRelSus1 = nullptr;
-	shared_ptr<Funcs_Special> pLongRelSus2 = nullptr;
-	shared_ptr<Funcs_Special> pAlpha1 = nullptr;
-	shared_ptr<Funcs_Special> pAlpha2 = nullptr;
+	std::shared_ptr<Funcs_Special> pCurieWeiss = nullptr;
+	std::shared_ptr<Funcs_Special> pLongRelSus = nullptr;
+	std::shared_ptr<Funcs_Special> pCurieWeiss1 = nullptr;
+	std::shared_ptr<Funcs_Special> pCurieWeiss2 = nullptr;
+	std::shared_ptr<Funcs_Special> pLongRelSus1 = nullptr;
+	std::shared_ptr<Funcs_Special> pLongRelSus2 = nullptr;
+	std::shared_ptr<Funcs_Special> pAlpha1 = nullptr;
+	std::shared_ptr<Funcs_Special> pAlpha2 = nullptr;
 
 #if COMPILECUDA == 1
 	//as above but CUDA version : need to keep this here not in MatPCUDA since MatPCUDA is cu_obj managed and TEquationCUDA is meant to be held in cpu memory
@@ -96,13 +96,13 @@ private:
 #endif
 
 	//temperature scaling setting info. this is used if the temperature dependence is set using an array, and this would contain the file name from which the temperature dependence was loaded
-	string t_scaling_info = temperature_dependence_type(MATPTDEP_NONE);
+	std::string t_scaling_info = temperature_dependence_type(MATPTDEP_NONE);
 
 	//value from MATPVAR_ enum
 	int s_scaling_type = MATPVAR_NONE;
 
 	//spatial scaling setting info : text with ";" separators. First field is the scaling set type (e.g. none, custom, random, jagged, etc.); The other fields are parameters for spatial generators.
-	string s_scaling_info = vargenerator_descriptor.get_key_from_ID(MATPVAR_NONE);
+	std::string s_scaling_info = vargenerator_descriptor.get_key_from_ID(MATPVAR_NONE);
 
 private:
 
@@ -119,10 +119,13 @@ private:
 	//---------Set spatial dependence : generator methods
 
 	//custom, set from an image file : coefficients vary from 0 : black to 1 : white
-	bool set_s_custom(DBL3 h, Rect rect, double offset, double scale, string fileName, const function<vector<unsigned char>(string, INT2)>& bitmap_loader);
+	bool set_s_custom(DBL3 h, Rect rect, double offset, double scale, std::string fileName, const std::function<std::vector<unsigned char>(std::string, INT2)>& bitmap_loader);
+
+	//set value in given composite shape
+	bool set_s_shape(DBL3 h, Rect rect, std::vector<MeshShape> shapes, SType value);
 
 	//set s_scaling VEC by loading it form the named OVF2 file -  data types must match, but data is stretched to given mesh dimensions.
-	bool set_s_ovf2(DBL3 h, Rect rect, string fileName);
+	bool set_s_ovf2(DBL3 h, Rect rect, std::string fileName);
 
 	//random points in given range
 	bool set_s_random(DBL3 h, Rect rect, DBL2 range, int seed);
@@ -180,7 +183,7 @@ public:
 		SimulationSharedData(),
 		Tscaling_eq({"T"}),
 		Sscaling_eq({"x", "y", "z", "t"}),
-		ProgramState<MatP<PType, SType>, tuple<PType, PType, vector<double>, vector<double>, vector<double>, VEC<SType>, string, int, string, TEquation<double>, TEquation<double, double, double, double>>, tuple<>>
+		ProgramState<MatP<PType, SType>, std::tuple<PType, PType, std::vector<double>, std::vector<double>, std::vector<double>, VEC<SType>, std::string, int, std::string, TEquation<double>, TEquation<double, double, double, double>>, std::tuple<>>
 		(this, { VINFO(value_at_0K), VINFO(current_value), VINFO(t_scaling), VINFO(t_scaling_y), VINFO(t_scaling_z), VINFO(s_scaling), VINFO(t_scaling_info), VINFO(s_scaling_type), VINFO(s_scaling_info), VINFO(Tscaling_eq), VINFO(Sscaling_eq) }, {})
 	{
 		value_at_0K = PType();
@@ -192,7 +195,7 @@ public:
 		Tscaling_eq({ "T" }),
 		Sscaling_eq({ "x", "y", "z", "t" }),
 		value_at_0K(value),
-		ProgramState<MatP<PType, SType>, tuple<PType, PType, vector<double>, vector<double>, vector<double>, VEC<SType>, string, int, string, TEquation<double>, TEquation<double, double, double, double>>, tuple<>>
+		ProgramState<MatP<PType, SType>, std::tuple<PType, PType, std::vector<double>, std::vector<double>, std::vector<double>, VEC<SType>, std::string, int, std::string, TEquation<double>, TEquation<double, double, double, double>>, std::tuple<>>
 		(this, { VINFO(value_at_0K), VINFO(current_value), VINFO(t_scaling), VINFO(t_scaling_y), VINFO(t_scaling_z), VINFO(s_scaling), VINFO(t_scaling_info), VINFO(s_scaling_type), VINFO(s_scaling_info), VINFO(Tscaling_eq), VINFO(Sscaling_eq) }, {})
 	{
 		current_value = value_at_0K;	//default to 0K value
@@ -253,18 +256,18 @@ public:
 	//---------Set scaling equation (temperature)
 
 	//set scaling text equation
-	void set_t_scaling_equation(const string& equationText, const vector_key<double>& userConstants, double T_Curie, double base_temperature);
+	void set_t_scaling_equation(const std::string& equationText, const vector_key<double>& userConstants, double T_Curie, double base_temperature);
 
 	//update set equations with user constants, mesh dimensions (where applicable), material Curie temperature and base temperature (where applicable)
 	bool update_equations(const vector_key<double>& userConstants, DBL3 meshDimensions, double T_Curie, double base_temperature);
 
 	//set special functions in text equation, also increasing ref count locally if passed in : the Funcs_Special objects are computed externally.
 	void set_t_scaling_special_functions(
-		shared_ptr<Funcs_Special> pCurieWeiss_ = nullptr,
-		shared_ptr<Funcs_Special> pLongRelSus_ = nullptr,
-		shared_ptr<Funcs_Special> pCurieWeiss1_ = nullptr, shared_ptr<Funcs_Special> pCurieWeiss2_ = nullptr,
-		shared_ptr<Funcs_Special> pLongRelSus1_ = nullptr, shared_ptr<Funcs_Special> pLongRelSus2_ = nullptr,
-		shared_ptr<Funcs_Special> pAlpha1_ = nullptr, shared_ptr<Funcs_Special> pAlpha2_ = nullptr);
+		std::shared_ptr<Funcs_Special> pCurieWeiss_ = nullptr,
+		std::shared_ptr<Funcs_Special> pLongRelSus_ = nullptr,
+		std::shared_ptr<Funcs_Special> pCurieWeiss1_ = nullptr, std::shared_ptr<Funcs_Special> pCurieWeiss2_ = nullptr,
+		std::shared_ptr<Funcs_Special> pLongRelSus1_ = nullptr, std::shared_ptr<Funcs_Special> pLongRelSus2_ = nullptr,
+		std::shared_ptr<Funcs_Special> pAlpha1_ = nullptr, std::shared_ptr<Funcs_Special> pAlpha2_ = nullptr);
 
 #if COMPILECUDA == 1
 	//set special functions in text equation, also increasing ref count locally if passed in : the Funcs_Special objects are computed externally.
@@ -282,14 +285,14 @@ public:
 	void clear_t_scaling(void);
 
 	//calculate t_scaling from given temperature dependence of scaling coefficients
-	bool set_t_scaling_array(vector<double>& temp_arr, vector<double>& scaling_arr, vector<double>& scaling_arr_y, vector<double>& scaling_arr_z);
+	bool set_t_scaling_array(std::vector<double> temp_arr, std::vector<double> scaling_arr, std::vector<double> scaling_arr_y, std::vector<double> scaling_arr_z);
 
 	//set scaling array directly, where the value indexes must correspond to temperature values (e.g. t_scaling[0] is for temperature 0 K, etc.).
-	void set_precalculated_t_scaling_array(vector<double>& scaling_arr, vector<double>& scaling_arr_y, vector<double>& scaling_arr_z);
+	void set_precalculated_t_scaling_array(std::vector<double>& scaling_arr, std::vector<double>& scaling_arr_y, std::vector<double>& scaling_arr_z);
 
 	//---------Set scaling info (temperature)
 
-	void set_t_scaling_info(string info_text);
+	void set_t_scaling_info(std::string info_text);
 
 	//---------Set spatial dependence
 
@@ -299,16 +302,19 @@ public:
 	//update spatial scaling VEC for cellsize and rectangle, depending on currently set spatial scaling
 	bool update_s_scaling(DBL3 h, Rect rect);
 
-	//set parameter spatial variation using a given generator and arguments (arguments passed as a string to be interpreted and converted using ToNum)
-	BError set_s_scaling(DBL3 h, Rect rect, MATPVAR_ generatorID, string generatorArgs, const function<vector<unsigned char>(string, INT2)>& bitmap_loader);
+	//set parameter spatial variation using a given generator and arguments (arguments passed as a std::string to be interpreted and converted using ToNum)
+	BError set_s_scaling(DBL3 h, Rect rect, MATPVAR_ generatorID, std::string generatorArgs, const std::function<std::vector<unsigned char>(std::string, INT2)>& bitmap_loader);
+
+	//set value in given composite shape : this calls set_s_shape in turn
+	BError set_s_scaling_shape(DBL3 h, Rect rect, std::vector<MeshShape> shapes, SType value);
 
 	//set spatial scaling text equation
-	void set_s_scaling_equation(const string& equationText, const vector_key<double>& userConstants, DBL3 meshDimensions);
+	void set_s_scaling_equation(const std::string& equationText, const vector_key<double>& userConstants, DBL3 meshDimensions);
 
 	//---------Get temperature dependence
 
 	//get temperature scaling coefficients as an array from 0K up to and including max_temperature
-	bool get_temperature_scaling(double max_temperature, vector<double>& get_scaling_x, vector<double>& get_scaling_y, vector<double>& get_scaling_z);
+	bool get_temperature_scaling(double max_temperature, std::vector<double>& get_scaling_x, std::vector<double>& get_scaling_y, std::vector<double>& get_scaling_z);
 
 	//---------Get spatial variation
 
@@ -327,11 +333,11 @@ public:
 
 	//---------Get Info (intended for console display)
 
-	//returns a string describing the set temperature dependence ("none", "array/filename" or set equation : "equation text") 
-	string get_info_string(void) const { return t_scaling_info; }
+	//returns a std::string describing the set temperature dependence ("none", "array/filename" or set equation : "equation text") 
+	std::string get_info_string(void) const { return t_scaling_info; }
 
-	//returns a string describing the set spatial dependence ("none", "array" or set equation : "name parameters...") 
-	string get_varinfo_string(void) const { return s_scaling_info; }
+	//returns a std::string describing the set spatial dependence ("none", "array" or set equation : "name parameters...") 
+	std::string get_varinfo_string(void) const { return s_scaling_info; }
 
 	//does it have a temperature dependence?
 	bool is_tdep(void) const { return (Tscaling_eq.is_set() || t_scaling.size()); }
@@ -356,103 +362,103 @@ public:
 
 	//multiply with a MatP - '^' is used to signify vector product for VAL3
 	template <typename PType_, typename SType_>
-	auto operator^(const MatP<PType_, SType_>& rhs) const -> decltype(declval<PType_>() ^ declval<PType_>())
+	auto operator^(const MatP<PType_, SType_>& rhs) const -> decltype(std::declval<PType_>() ^ std::declval<PType_>())
 	{
 		return current_value ^ rhs.current_value;
 	}
 
 	//multiply with a MatP - '&' is used to signify component-by-component product for VAL3
 	template <typename PType_, typename SType_>
-	auto operator&(const MatP<PType_, SType_>& rhs) const -> decltype(declval<PType_>() & declval<PType_>())
+	auto operator&(const MatP<PType_, SType_>& rhs) const -> decltype(std::declval<PType_>() & std::declval<PType_>())
 	{
 		return current_value & rhs.current_value;
 	}
 
 	//multiply with a MatP
-	auto operator*(const MatP& rhs) const -> decltype(declval<PType>() * declval<PType>())
+	auto operator*(const MatP& rhs) const -> decltype(std::declval<PType>() * std::declval<PType>())
 	{
 		return current_value * rhs.current_value;
 	}
 
 	//multiply with a value on the RHS
 	template <typename PType_, std::enable_if_t<!std::is_same<PType_, MatP<PType, SType>>::value>* = nullptr>
-	auto operator*(const PType_& rhs) const -> decltype(declval<PType>() * declval<PType_>())
+	auto operator*(const PType_& rhs) const -> decltype(std::declval<PType>() * std::declval<PType_>())
 	{
 		return current_value * rhs;
 	}
 
 	//multiply with a value on the LHS
 	template <typename _PType, std::enable_if_t<!std::is_same<_PType, MatP<PType, SType>>::value>* = nullptr>
-	friend auto operator*(const _PType& lhs, const MatP<PType, SType>& rhs) -> decltype(declval<_PType>() * declval<PType>())
+	friend auto operator*(const _PType& lhs, const MatP<PType, SType>& rhs) -> decltype(std::declval<_PType>() * std::declval<PType>())
 	{
 		return lhs * rhs.current_value;
 	}
 
 	//divide by a MatP
-	auto operator/(const MatP& rhs) const -> decltype(declval<PType>() / declval<PType>())
+	auto operator/(const MatP& rhs) const -> decltype(std::declval<PType>() / std::declval<PType>())
 	{
 		return current_value / rhs.current_value;
 	}
 
 	//division with a value on the RHS
 	template <typename PType_, std::enable_if_t<!std::is_same<PType_, MatP<PType, SType>>::value>* = nullptr>
-	auto operator/(const PType_& rhs) const -> decltype(declval<PType>() / declval<PType_>())
+	auto operator/(const PType_& rhs) const -> decltype(std::declval<PType>() / std::declval<PType_>())
 	{
 		return current_value / rhs;
 	}
 
 	//division with a value on the LHS
 	template <typename _PType, std::enable_if_t<!std::is_same<_PType, MatP<PType, SType>>::value>* = nullptr>
-	friend auto operator/(const _PType& lhs, const MatP<PType, SType>& rhs) -> decltype(declval<_PType>() / declval<PType>())
+	friend auto operator/(const _PType& lhs, const MatP<PType, SType>& rhs) -> decltype(std::declval<_PType>() / std::declval<PType>())
 	{
 		return lhs / rhs.current_value;
 	}
 
 	//addition with a MatP
-	auto operator+(const MatP& rhs) const -> decltype(declval<PType>() + declval<PType>())
+	auto operator+(const MatP& rhs) const -> decltype(std::declval<PType>() + std::declval<PType>())
 	{
 		return current_value + rhs.current_value;
 	}
 
 	//addition with a value on the RHS
 	template <typename PType_, std::enable_if_t<!std::is_same<PType_, MatP<PType, SType>>::value>* = nullptr>
-	auto operator+(const PType_& rhs) const -> decltype(declval<PType>() + declval<PType_>())
+	auto operator+(const PType_& rhs) const -> decltype(std::declval<PType>() + std::declval<PType_>())
 	{
 		return current_value + rhs;
 	}
 
 	//addition with a value on the LHS
 	template <typename _PType, std::enable_if_t<!std::is_same<_PType, MatP<PType, SType>>::value>* = nullptr>
-	friend auto operator+(const _PType& lhs, const MatP<PType, SType>& rhs) -> decltype(declval<_PType>() + declval<PType>())
+	friend auto operator+(const _PType& lhs, const MatP<PType, SType>& rhs) -> decltype(std::declval<_PType>() + std::declval<PType>())
 	{
 		return lhs + rhs.current_value;
 	}
 
 	//difference with a MatP
-	auto operator-(const MatP& rhs) const -> decltype(declval<PType>() - declval<PType>())
+	auto operator-(const MatP& rhs) const -> decltype(std::declval<PType>() - std::declval<PType>())
 	{
 		return current_value - rhs.current_value;
 	}
 
 	//difference with a value on the RHS
 	template <typename PType_, std::enable_if_t<!std::is_same<PType_, MatP<PType, SType>>::value>* = nullptr>
-	auto operator-(const PType_& rhs) const -> decltype(declval<PType>() - declval<PType_>())
+	auto operator-(const PType_& rhs) const -> decltype(std::declval<PType>() - std::declval<PType_>())
 	{
 		return current_value - rhs;
 	}
 
 	//difference with a value on the LHS
 	template <typename _PType, std::enable_if_t<!std::is_same<_PType, MatP<PType, SType>>::value>* = nullptr>
-	friend auto operator-(const _PType& lhs, const MatP<PType, SType>& rhs) -> decltype(declval<_PType>() - declval<PType>())
+	friend auto operator-(const _PType& lhs, const MatP<PType, SType>& rhs) -> decltype(std::declval<_PType>() - std::declval<PType>())
 	{
 		return lhs - rhs.current_value;
 	}
 
 	//---------Special access methods
 
-	vector<double>& t_scaling_ref(void) { return t_scaling; }
-	vector<double>& t_scaling_y_ref(void) { return t_scaling_y; }
-	vector<double>& t_scaling_z_ref(void) { return t_scaling_z; }
+	std::vector<double>& t_scaling_ref(void) { return t_scaling; }
+	std::vector<double>& t_scaling_y_ref(void) { return t_scaling_y; }
+	std::vector<double>& t_scaling_z_ref(void) { return t_scaling_z; }
 
 	VEC<SType>& s_scaling_ref(void) { return s_scaling; }
 
@@ -943,9 +949,9 @@ MatP<PType, SType>& MatP<PType, SType>::operator=(PType set_value)
 
 //set scaling text equation
 template <typename PType, typename SType>
-void MatP<PType, SType>::set_t_scaling_equation(const string& equationText, const vector_key<double>& userConstants, double T_Curie, double base_temperature)
+void MatP<PType, SType>::set_t_scaling_equation(const std::string& equationText, const vector_key<double>& userConstants, double T_Curie, double base_temperature)
 {
-	vector<pair<string, double>> constants(userConstants.size());
+	std::vector<std::pair<std::string, double>> constants(userConstants.size());
 	for (int idx = 0; idx < constants.size(); idx++) {
 
 		constants[idx] = { userConstants.get_key_from_index(idx), userConstants[idx] };
@@ -978,7 +984,7 @@ bool MatP<PType, SType>::update_equations(const vector_key<double>& userConstant
 {
 	bool success = true;
 
-	vector<pair<string, double>> constants(userConstants.size());
+	std::vector<std::pair<std::string, double>> constants(userConstants.size());
 	for (int idx = 0; idx < constants.size(); idx++) {
 
 		constants[idx] = { userConstants.get_key_from_index(idx), userConstants[idx] };
@@ -1006,11 +1012,11 @@ bool MatP<PType, SType>::update_equations(const vector_key<double>& userConstant
 //set special functions in text equation, also increasing ref count locally if passed in : the Funcs_Special objects are computed externally.
 template <typename PType, typename SType>
 void MatP<PType, SType>::set_t_scaling_special_functions(
-	shared_ptr<Funcs_Special> pCurieWeiss_,
-	shared_ptr<Funcs_Special> pLongRelSus_,
-	shared_ptr<Funcs_Special> pCurieWeiss1_, shared_ptr<Funcs_Special> pCurieWeiss2_,
-	shared_ptr<Funcs_Special> pLongRelSus1_, shared_ptr<Funcs_Special> pLongRelSus2_,
-	shared_ptr<Funcs_Special> pAlpha1_, shared_ptr<Funcs_Special> pAlpha2_)
+	std::shared_ptr<Funcs_Special> pCurieWeiss_,
+	std::shared_ptr<Funcs_Special> pLongRelSus_,
+	std::shared_ptr<Funcs_Special> pCurieWeiss1_, std::shared_ptr<Funcs_Special> pCurieWeiss2_,
+	std::shared_ptr<Funcs_Special> pLongRelSus1_, std::shared_ptr<Funcs_Special> pLongRelSus2_,
+	std::shared_ptr<Funcs_Special> pAlpha1_, std::shared_ptr<Funcs_Special> pAlpha2_)
 {
 	//increase reference count locally if passed in
 	if (pCurieWeiss_) pCurieWeiss = pCurieWeiss_;
@@ -1156,7 +1162,7 @@ void MatP<PType, SType>::clear_t_scaling(void)
 
 //calculate t_scaling from given temperature dependence of scaling coefficients
 template <typename PType, typename SType>
-bool MatP<PType, SType>::set_t_scaling_array(vector<double>& temp_arr, vector<double>& scaling_arr, vector<double>& scaling_arr_y, vector<double>& scaling_arr_z)
+bool MatP<PType, SType>::set_t_scaling_array(std::vector<double> temp_arr, std::vector<double> scaling_arr, std::vector<double> scaling_arr_y, std::vector<double> scaling_arr_z)
 {
 	//vectors must have same size and must have at least 2 points
 	if (temp_arr.size() < 2 || temp_arr.size() != scaling_arr.size()) return false;
@@ -1164,16 +1170,36 @@ bool MatP<PType, SType>::set_t_scaling_array(vector<double>& temp_arr, vector<do
 	if (scaling_arr_z.size() && temp_arr.size() != scaling_arr_z.size()) return false;
 	if (scaling_arr_z.size() && !scaling_arr_y.size()) return false;
 
-	auto calculate_t_scaling = [](vector<double>& temp_arr, vector<double>& scaling_arr, vector<double>& t_scaling) -> bool {
+	//prep work: make sure temperature values are strictly increasing with corresponding order in scaling arrays kept : bundle everything in a vector of tuples to work on
+	std::vector<std::tuple<double, double, double, double>> arr_bundle(temp_arr.size());
+#pragma omp parallel for
+	for (int idx = 0; idx < arr_bundle.size(); idx++) {
 
-		//make sure the temperature values are in increasing order
-		quicksort(temp_arr, scaling_arr);
+		double x = scaling_arr[idx], y = 0.0, z = 0.0;
+		if (scaling_arr_y.size()) y = scaling_arr_y[idx];
+		if (scaling_arr_z.size()) z = scaling_arr_z[idx];
+
+		arr_bundle[idx] = { temp_arr[idx], x, y, z };
+	}
+
+	//make sure temperature is in increasing order
+	std::sort(std::execution::par_unseq, arr_bundle.begin(), arr_bundle.end());
+
+	//extract from tuple back to vectors
+	std::transform(arr_bundle.begin(), arr_bundle.end(), temp_arr.begin(), [](auto const& tup) { return std::get<0>(tup); });
+	std::transform(arr_bundle.begin(), arr_bundle.end(), scaling_arr.begin(), [](auto const& tup) { return std::get<1>(tup); });
+	if (scaling_arr_y.size()) std::transform(arr_bundle.begin(), arr_bundle.end(), scaling_arr_y.begin(), [](auto const& tup) { return std::get<2>(tup); });
+	if (scaling_arr_z.size()) std::transform(arr_bundle.begin(), arr_bundle.end(), scaling_arr_z.begin(), [](auto const& tup) { return std::get<3>(tup); });
+
+	//make sure temperature values are not repeated - values must be strictly increasing
+	if (scaling_arr_y.size() && scaling_arr_z.size()) delete_repeats(temp_arr, scaling_arr, scaling_arr_y, scaling_arr_z);
+	else if (scaling_arr_y.size()) delete_repeats(temp_arr, scaling_arr, scaling_arr_y);
+	else delete_repeats(temp_arr, scaling_arr);
+
+	auto calculate_t_scaling = [](std::vector<double>& temp_arr, std::vector<double>& scaling_arr, std::vector<double>& t_scaling) -> bool {
 
 		//temperature values cannot be negative
 		if (temp_arr[0] < 0) return false;
-
-		//make sure temperature values are not repeated - values must be strictly increasing
-		delete_repeats(temp_arr, scaling_arr);
 
 		//set tscaling size : covers temperature from 0K up to maximum possible temperature in 1K increments.
 		double max_temp = minimum(temp_arr.back(), MAX_TEMPERATURE);
@@ -1245,7 +1271,7 @@ bool MatP<PType, SType>::set_t_scaling_array(vector<double>& temp_arr, vector<do
 }
 
 template <typename PType, typename SType>
-void MatP<PType, SType>::set_precalculated_t_scaling_array(vector<double>& scaling_arr, vector<double>& scaling_arr_y, vector<double>& scaling_arr_z)
+void MatP<PType, SType>::set_precalculated_t_scaling_array(std::vector<double>& scaling_arr, std::vector<double>& scaling_arr_y, std::vector<double>& scaling_arr_z)
 {
 	t_scaling = scaling_arr;
 
@@ -1268,13 +1294,13 @@ void MatP<PType, SType>::set_precalculated_t_scaling_array(vector<double>& scali
 //---------Set scaling info (temperature)
 
 template <typename PType, typename SType>
-void MatP<PType, SType>::set_t_scaling_info(string info_text)
+void MatP<PType, SType>::set_t_scaling_info(std::string info_text)
 {
 	t_scaling_info = info_text;
 
 	if (!t_scaling_info.length()) {
 
-		//empty string: set default info
+		//empty std::string: set default info
 
 		if (!is_tdep()) t_scaling_info = temperature_dependence_type(MATPTDEP_NONE);
 		else {
@@ -1311,7 +1337,7 @@ bool MatP<PType, SType>::update_s_scaling(DBL3 h, Rect rect)
 	if (s_scaling_type == MATPVAR_NONE) return true;
 
 	//there is a spatial scaling set
-	if (s_scaling_type == MATPVAR_MASK || s_scaling_type == MATPVAR_OVF2) {
+	if (s_scaling_type == MATPVAR_MASK || s_scaling_type == MATPVAR_OVF2 || s_scaling_type == MATPVAR_SHAPE) {
 
 		if (s_scaling_type == MATPVAR_MASK) {
 
@@ -1321,7 +1347,7 @@ bool MatP<PType, SType>::update_s_scaling(DBL3 h, Rect rect)
 		}
 		else {
 
-			//for ovf2 scaling just stretch to new sizes, but keep it 2D if already 2D only
+			//for ovf2 and shape scaling just stretch to new sizes, but keep it 2D if already 2D only
 			INT3 cells = round(rect / h);
 			if (s_scaling.linear_size()) {
 
@@ -1340,10 +1366,10 @@ bool MatP<PType, SType>::update_s_scaling(DBL3 h, Rect rect)
 		if ((s_scaling.h == h) && (s_scaling.rect == rect)) return true;
 
 		//fields in s_scaling_info first contains the generator name, then its args - all separated using "; " or ", "
-		vector<string> fields = split(s_scaling_info, ", ", "; ");
+		std::vector<std::string> fields = split(s_scaling_info, ", ", "; ");
 
-		//get rid of first field, then recombine into a string using " " as separators
-		BError error = set_s_scaling(h, rect, (MATPVAR_)s_scaling_type, combine(subvec(fields, 1), " "), function<vector<unsigned char>(string, INT2)>());
+		//get rid of first field, then recombine into a std::string using " " as separators
+		BError error = set_s_scaling(h, rect, (MATPVAR_)s_scaling_type, combine(subvec(fields, 1), " "), std::function<std::vector<unsigned char>(std::string, INT2)>());
 		if (error) return false;
 	}
 
@@ -1354,9 +1380,9 @@ bool MatP<PType, SType>::update_s_scaling(DBL3 h, Rect rect)
 	return true;
 }
 
-//set parameter spatial variation using a given generator and arguments (arguments passed as a string to be interpreted and converted using ToNum)
+//set parameter spatial variation using a given generator and arguments (arguments passed as a std::string to be interpreted and converted using ToNum)
 template <typename PType, typename SType>
-BError MatP<PType, SType>::set_s_scaling(DBL3 h, Rect rect, MATPVAR_ generatorID, string generatorArgs, const function<vector<unsigned char>(string, INT2)>& bitmap_loader)
+BError MatP<PType, SType>::set_s_scaling(DBL3 h, Rect rect, MATPVAR_ generatorID, std::string generatorArgs, const std::function<std::vector<unsigned char>(std::string, INT2)>& bitmap_loader)
 {
 	BError error(__FUNCTION__);
 
@@ -1370,21 +1396,27 @@ BError MatP<PType, SType>::set_s_scaling(DBL3 h, Rect rect, MATPVAR_ generatorID
 
 	case MATPVAR_MASK:
 	{
-		vector<string> fields = split(generatorArgs, " ");
+		std::vector<std::string> fields = split(generatorArgs, " ");
 
 		if (fields.size() < 3) return error(BERROR_INCORRECTVALUE);
 
 		double offset = ToNum(fields[0]);
 		double scale = ToNum(fields[1]);
-		string fileName = combine(subvec(fields, 2), " ");
+		std::string fileName = combine(subvec(fields, 2), " ");
 
 		if (!set_s_custom(h, rect, offset, scale, fileName, bitmap_loader)) error(BERROR_OUTOFMEMORY_NCRIT);
 	}
 	break;
 
+	case MATPVAR_SHAPE:
+	{
+		if (!set_s_shape(h, rect, {}, SType())) error(BERROR_OUTOFMEMORY_NCRIT);
+	}
+	break;
+
 	case MATPVAR_OVF2:
 	{
-		string fileName = generatorArgs;
+		std::string fileName = generatorArgs;
 
 		if (!set_s_ovf2(h, rect, fileName)) error(BERROR_OUTOFMEMORY_NCRIT);
 	}
@@ -1392,7 +1424,7 @@ BError MatP<PType, SType>::set_s_scaling(DBL3 h, Rect rect, MATPVAR_ generatorID
 
 	case MATPVAR_RANDOM:
 	{
-		vector<string> fields = split(generatorArgs, " ");
+		std::vector<std::string> fields = split(generatorArgs, " ");
 
 		if (fields.size() != 3) return error(BERROR_INCORRECTVALUE);
 
@@ -1405,7 +1437,7 @@ BError MatP<PType, SType>::set_s_scaling(DBL3 h, Rect rect, MATPVAR_ generatorID
 
 	case MATPVAR_JAGGED:
 	{
-		vector<string> fields = split(generatorArgs, " ");
+		std::vector<std::string> fields = split(generatorArgs, " ");
 
 		if (fields.size() != 4) return error(BERROR_INCORRECTVALUE);
 
@@ -1419,7 +1451,7 @@ BError MatP<PType, SType>::set_s_scaling(DBL3 h, Rect rect, MATPVAR_ generatorID
 
 	case MATPVAR_ABLPOL:
 	{
-		vector<string> fields = split(generatorArgs, " ");
+		std::vector<std::string> fields = split(generatorArgs, " ");
 
 		if (fields.size() != 9) return error(BERROR_INCORRECTVALUE);
 
@@ -1434,7 +1466,7 @@ BError MatP<PType, SType>::set_s_scaling(DBL3 h, Rect rect, MATPVAR_ generatorID
 
 	case MATPVAR_ABLTANH:
 	{
-		vector<string> fields = split(generatorArgs, " ");
+		std::vector<std::string> fields = split(generatorArgs, " ");
 
 		if (fields.size() != 9) return error(BERROR_INCORRECTVALUE);
 
@@ -1449,7 +1481,7 @@ BError MatP<PType, SType>::set_s_scaling(DBL3 h, Rect rect, MATPVAR_ generatorID
 
 	case MATPVAR_ABLEXP:
 	{
-		vector<string> fields = split(generatorArgs, " ");
+		std::vector<std::string> fields = split(generatorArgs, " ");
 
 		if (fields.size() != 9) return error(BERROR_INCORRECTVALUE);
 
@@ -1464,7 +1496,7 @@ BError MatP<PType, SType>::set_s_scaling(DBL3 h, Rect rect, MATPVAR_ generatorID
 
 	case MATPVAR_DEFECTS:
 	{
-		vector<string> fields = split(generatorArgs, " ");
+		std::vector<std::string> fields = split(generatorArgs, " ");
 
 		if (fields.size() != 6) return error(BERROR_INCORRECTVALUE);
 
@@ -1479,7 +1511,7 @@ BError MatP<PType, SType>::set_s_scaling(DBL3 h, Rect rect, MATPVAR_ generatorID
 
 	case MATPVAR_FAULTS:
 	{
-		vector<string> fields = split(generatorArgs, " ");
+		std::vector<std::string> fields = split(generatorArgs, " ");
 
 		if (fields.size() != 8) return error(BERROR_INCORRECTVALUE);
 
@@ -1495,7 +1527,7 @@ BError MatP<PType, SType>::set_s_scaling(DBL3 h, Rect rect, MATPVAR_ generatorID
 
 	case MATPVAR_VORONOI2D:
 	{
-		vector<string> fields = split(generatorArgs, " ");
+		std::vector<std::string> fields = split(generatorArgs, " ");
 
 		if (fields.size() != 4) return error(BERROR_INCORRECTVALUE);
 
@@ -1509,7 +1541,7 @@ BError MatP<PType, SType>::set_s_scaling(DBL3 h, Rect rect, MATPVAR_ generatorID
 
 	case MATPVAR_VORONOI3D:
 	{
-		vector<string> fields = split(generatorArgs, " ");
+		std::vector<std::string> fields = split(generatorArgs, " ");
 
 		if (fields.size() != 4) return error(BERROR_INCORRECTVALUE);
 
@@ -1523,7 +1555,7 @@ BError MatP<PType, SType>::set_s_scaling(DBL3 h, Rect rect, MATPVAR_ generatorID
 
 	case MATPVAR_VORONOIBND2D:
 	{
-		vector<string> fields = split(generatorArgs, " ");
+		std::vector<std::string> fields = split(generatorArgs, " ");
 
 		if (fields.size() != 4) return error(BERROR_INCORRECTVALUE);
 
@@ -1537,7 +1569,7 @@ BError MatP<PType, SType>::set_s_scaling(DBL3 h, Rect rect, MATPVAR_ generatorID
 
 	case MATPVAR_VORONOIBND3D:
 	{
-		vector<string> fields = split(generatorArgs, " ");
+		std::vector<std::string> fields = split(generatorArgs, " ");
 
 		if (fields.size() != 4) return error(BERROR_INCORRECTVALUE);
 
@@ -1551,7 +1583,7 @@ BError MatP<PType, SType>::set_s_scaling(DBL3 h, Rect rect, MATPVAR_ generatorID
 
 	case MATPVAR_VORONOIROT2D:
 	{
-		vector<string> fields = split(generatorArgs, " ");
+		std::vector<std::string> fields = split(generatorArgs, " ");
 
 		if (fields.size() != 6) return error(BERROR_INCORRECTVALUE);
 
@@ -1566,7 +1598,7 @@ BError MatP<PType, SType>::set_s_scaling(DBL3 h, Rect rect, MATPVAR_ generatorID
 
 	case MATPVAR_VORONOIROT3D:
 	{
-		vector<string> fields = split(generatorArgs, " ");
+		std::vector<std::string> fields = split(generatorArgs, " ");
 
 		if (fields.size() != 6) return error(BERROR_INCORRECTVALUE);
 
@@ -1583,11 +1615,24 @@ BError MatP<PType, SType>::set_s_scaling(DBL3 h, Rect rect, MATPVAR_ generatorID
 	return error;
 }
 
+//set value in given composite shape : this calls set_s_shape in turn
+template <typename PType, typename SType>
+BError MatP<PType, SType>::set_s_scaling_shape(DBL3 h, Rect rect, std::vector<MeshShape> shapes, SType value)
+{
+	BError error(__FUNCTION__);
+
+	Sscaling_eq.clear();
+
+	if (!set_s_shape(h, rect, shapes, value)) error(BERROR_OUTOFMEMORY_NCRIT);
+
+	return error;
+}
+
 //set spatial scaling text equation
 template <typename PType, typename SType>
-void MatP<PType, SType>::set_s_scaling_equation(const string& equationText, const vector_key<double>& userConstants, DBL3 meshDimensions)
+void MatP<PType, SType>::set_s_scaling_equation(const std::string& equationText, const vector_key<double>& userConstants, DBL3 meshDimensions)
 {
-	vector<pair<string, double>> constants(userConstants.size());
+	std::vector<std::pair<std::string, double>> constants(userConstants.size());
 	for (int idx = 0; idx < constants.size(); idx++) {
 
 		constants[idx] = { userConstants.get_key_from_index(idx), userConstants[idx] };
@@ -1611,7 +1656,7 @@ void MatP<PType, SType>::set_s_scaling_equation(const string& equationText, cons
 
 //custom, set from an image file : coefficients vary from 0 : black to 1 : white
 template <typename PType, typename SType>
-bool MatP<PType, SType>::set_s_custom(DBL3 h, Rect rect, double offset, double scale, string fileName, const function<vector<unsigned char>(string, INT2)>& bitmap_loader)
+bool MatP<PType, SType>::set_s_custom(DBL3 h, Rect rect, double offset, double scale, std::string fileName, const std::function<std::vector<unsigned char>(std::string, INT2)>& bitmap_loader)
 {
 	if (GetFileTermination(fileName) != ".png")
 		fileName += ".png";
@@ -1637,9 +1682,36 @@ bool MatP<PType, SType>::set_s_custom(DBL3 h, Rect rect, double offset, double s
 	return true;
 }
 
+//shape : set value only in shape
+template <typename PType, typename SType>
+bool MatP<PType, SType>::set_s_shape(DBL3 h, Rect rect, std::vector<MeshShape> shapes, SType value)
+{
+	bool success = true;
+
+	//make sure the data is loaded for the current mesh dimensions
+	success = s_scaling.resize(h, rect);
+
+	if (success) {
+
+		s_scaling_type = MATPVAR_SHAPE;
+		s_scaling_info = vargenerator_descriptor.get_key_from_ID(MATPVAR_SHAPE);
+
+		if (shapes.size()) {
+
+			s_scaling.shape_setvalue(shapes, value);
+		}
+	}
+
+#if COMPILECUDA == 1
+	if (p_cu_obj_mpcuda) update_cuda_object();
+#endif
+
+	return success;
+}
+
 //set s_scaling VEC by loading it form the named OVF2 file -  data types must match, but data is stretched to given mesh dimensions.
 template <typename PType, typename SType>
-bool MatP<PType, SType>::set_s_ovf2(DBL3 h, Rect rect, string fileName)
+bool MatP<PType, SType>::set_s_ovf2(DBL3 h, Rect rect, std::string fileName)
 {
 	if (GetFileTermination(fileName) != ".ovf")
 		fileName += ".ovf";
@@ -1951,7 +2023,7 @@ bool MatP<PType, SType>::set_s_voronoirotation3d(DBL3 h, Rect rect, DBL2 theta, 
 
 //get temperature scaling coefficients as an array from 0K up to and including max_temperature
 template <typename PType, typename SType>
-bool MatP<PType, SType>::get_temperature_scaling(double max_temperature, vector<double>& get_scaling_x, vector<double>& get_scaling_y, vector<double>& get_scaling_z)
+bool MatP<PType, SType>::get_temperature_scaling(double max_temperature, std::vector<double>& get_scaling_x, std::vector<double>& get_scaling_y, std::vector<double>& get_scaling_z)
 {
 	if (max_temperature < 0 || max_temperature > MAX_TEMPERATURE) return false;
 

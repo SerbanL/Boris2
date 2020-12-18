@@ -150,6 +150,12 @@ public:
 		return pcu_array;
 	}
 
+	//get gpu address of stored array in cpu memory directly; this can be used with thrust device pointers, e.g. thrust::device_ptr<VType> dev_ptr(arr.get_array());
+	VType*& get_array(void)
+	{
+		return cu_array;
+	}
+
 	//------------------------------------------- INDEXING
 
 	__device__ VType operator[](int idx) { return cu_array[idx]; }
@@ -172,11 +178,11 @@ public:
 
 	//copy values from a std::vector into gpu memory. Doesn't set size, but copies up to currently allocated size.
 	template <typename Type>
-	__host__ void copy_from_cpuvector(std::vector<Type>& cpuvec);
+	__host__ void copy_from_vector(std::vector<Type>& cpuvec);
 
 	//copy values to a std::vector into cpu memory. Doesn't set size, but copies up to currently allocated size.
 	template <typename Type>
-	__host__ void copy_to_cpuvector(std::vector<Type>& cpuvec);
+	__host__ void copy_to_vector(std::vector<Type>& cpuvec);
 
 	//------------------------------------------- SET VALUE : cuArray_aux.h
 

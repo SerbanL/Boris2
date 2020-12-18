@@ -151,7 +151,7 @@ void AFMesh::RepairObjectState(void)
 //call when a configuration change has occurred - some objects might need to be updated accordingly
 BError AFMesh::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 {
-	BError error(string(CLASS_STR(AFMesh)) + "(" + (*pSMesh).key_from_meshId(meshId) + ")");
+	BError error(std::string(CLASS_STR(AFMesh)) + "(" + (*pSMesh).key_from_meshId(meshId) + ")");
 
 	///////////////////////////////////////////////////////
 	//Mesh specific configuration
@@ -271,7 +271,7 @@ void AFMesh::UpdateConfiguration_Values(UPDATECONFIG_ cfgMessage)
 
 BError AFMesh::SwitchCUDAState(bool cudaState)
 {
-	BError error(string(CLASS_STR(AFMesh)) + "(" + (*pSMesh).key_from_meshId(meshId) + ")");
+	BError error(std::string(CLASS_STR(AFMesh)) + "(" + (*pSMesh).key_from_meshId(meshId) + ")");
 
 #if COMPILECUDA == 1
 
@@ -473,16 +473,16 @@ void AFMesh::SetCurieTemperature(double Tc, bool set_default_dependences)
 		if (set_default_dependences) {
 
 			//set default temperature dependences
-			Ms_AFM.set_t_scaling_equation(string("me1(T/Tc), me2(T/Tc)"), userConstants, T_Curie, base_temperature);
-			A_AFM.set_t_scaling_equation(string("me1(T/Tc)^2, me2(T/Tc)^2"), userConstants, T_Curie, base_temperature);
-			Ah.set_t_scaling_equation(string("me1(T/Tc)*me2(T/Tc)"), userConstants, T_Curie, base_temperature);
-			Anh.set_t_scaling_equation(string("me1(T/Tc)*me2(T/Tc)"), userConstants, T_Curie, base_temperature);
-			D_AFM.set_t_scaling_equation(string("me1(T/Tc)^2, me2(T/Tc)^2"), userConstants, T_Curie, base_temperature);
-			K1_AFM.set_t_scaling_equation(string("me1(T/Tc)^3, me2(T/Tc)^3"), userConstants, T_Curie, base_temperature);
-			K2_AFM.set_t_scaling_equation(string("me1(T/Tc)^3, me2(T/Tc)^3"), userConstants, T_Curie, base_temperature);
+			Ms_AFM.set_t_scaling_equation(std::string("me1(T/Tc), me2(T/Tc)"), userConstants, T_Curie, base_temperature);
+			A_AFM.set_t_scaling_equation(std::string("me1(T/Tc)^2, me2(T/Tc)^2"), userConstants, T_Curie, base_temperature);
+			Ah.set_t_scaling_equation(std::string("me1(T/Tc)*me2(T/Tc)"), userConstants, T_Curie, base_temperature);
+			Anh.set_t_scaling_equation(std::string("me1(T/Tc)*me2(T/Tc)"), userConstants, T_Curie, base_temperature);
+			D_AFM.set_t_scaling_equation(std::string("me1(T/Tc)^2, me2(T/Tc)^2"), userConstants, T_Curie, base_temperature);
+			K1_AFM.set_t_scaling_equation(std::string("me1(T/Tc)^3, me2(T/Tc)^3"), userConstants, T_Curie, base_temperature);
+			K2_AFM.set_t_scaling_equation(std::string("me1(T/Tc)^3, me2(T/Tc)^3"), userConstants, T_Curie, base_temperature);
 
-			susrel_AFM.set_t_scaling_equation(string("chi1(T/Tc), chi2(T/Tc)"), userConstants, T_Curie, base_temperature);
-			alpha_AFM.set_t_scaling_equation(string("alpha1(T/Tc), alpha2(T/Tc)"), userConstants, T_Curie, base_temperature);
+			susrel_AFM.set_t_scaling_equation(std::string("chi1(T/Tc), chi2(T/Tc)"), userConstants, T_Curie, base_temperature);
+			alpha_AFM.set_t_scaling_equation(std::string("alpha1(T/Tc), alpha2(T/Tc)"), userConstants, T_Curie, base_temperature);
 		}
 
 		//make sure to also update them - this method can be called during a simulation, e.g. if field changes.

@@ -140,7 +140,8 @@ void BorisDisplay::MakeIOIPopupTextBox(INT2 parent_winId, INT2 mouse)
 	//the popup data box was created with a mouse left click, so transmit that to it
 	pnewPopUpBox->NewMessage(AC_MOUSELEFTDOWN, mouse);
 
-	Draw();
+	//CHECK : RESPONSIVITY IMPROVEMENT
+	//Draw();
 }
 
 //make a popup edit box. After editing the text send it back to the original interactive object to use.
@@ -156,7 +157,7 @@ void BorisDisplay::MakeIOIPopupEditBox(INT2 parent_winId, INT2 mouse)
 
 	//get the text object from parent window (as a text line)
 	TextLine popup_textLine = pParent->GetRawTextLine_ScreenCoords(click);
-	string rawText;
+	std::string rawText;
 	rawText << popup_textLine;
 
 	//the interactive object which called for this popup to be spawned
@@ -187,17 +188,15 @@ void BorisDisplay::MakeIOIPopupEditBox(INT2 parent_winId, INT2 mouse)
 
 	//the popup data box was created with a mouse left click, so transmit that to it
 	pnewPopUpBox->NewMessage(AC_MOUSELEFTDOWN, mouse);
-
-	Draw();
 }
 
 //Make a text box which displays some fixed info. The window is deleted as soon as the mouse leaves it.
-void BorisDisplay::MakeHoverInfoTextBox(INT2 mouse, string formatted_text_info_string)
+void BorisDisplay::MakeHoverInfoTextBox(INT2 mouse, std::string formatted_text_info_string)
 {
 	//there may be multiple lines in the foramtted text
-	vector<string> messageLines = split(formatted_text_info_string, "\r", "\n");
+	std::vector<std::string> messageLines = split(formatted_text_info_string, "\r", "\n");
 
-	//text info to display - create it from formatted text string
+	//text info to display - create it from formatted text std::string
 	TextLines tlines;
 	
 	for (int idx = 0; idx < messageLines.size(); idx++) {
@@ -230,7 +229,8 @@ void BorisDisplay::MakeHoverInfoTextBox(INT2 mouse, string formatted_text_info_s
 
 	BringWindowToFront(pnewHoverInfoTextBox->GetwinId());
 
-	Draw();
+	//CHECK : RESPONSIVITY IMPROVEMENT
+	//Draw();
 }
 
 void BorisDisplay::PopupTextBoxInteraction(INT2 popupId, INT2 mouse) 
@@ -572,7 +572,7 @@ void BorisDisplay::Draw(int winIdMajor)
 	pBG->EndD3DDraw();
 }
 
-ActionOutcome BorisDisplay::NewMessage(AC_ aCode, INT2 mouse, string data) 
+ActionOutcome BorisDisplay::NewMessage(AC_ aCode, INT2 mouse, std::string data) 
 {
 	ActionOutcome actionResult;
 
@@ -695,6 +695,11 @@ ActionOutcome BorisDisplay::NewMessage(AC_ aCode, INT2 mouse, string data)
 				RecalculateWindowLinks(actionResult.winId);
 				break;
 
+			case AO_ADDCONSOLECOORDINATE:
+				pbConsole->NewSpacedUserEntry(actionResult.text);
+				Draw();
+				break;
+
 			default:
 				break;
 			}
@@ -704,13 +709,13 @@ ActionOutcome BorisDisplay::NewMessage(AC_ aCode, INT2 mouse, string data)
 	return actionResult;
 }
 
-void BorisDisplay::DisplayConsoleMessage(string text) 
+void BorisDisplay::DisplayConsoleMessage(std::string text) 
 {
 	//for external calls only
 	displayMutex.lock();
 
 	//Check for newline and carriage return separators (\n, \r)
-	vector<string> messageLines = split(text, "\r", "\n");
+	std::vector<std::string> messageLines = split(text, "\r", "\n");
 
 	//add them line by line
 	for (int i = 0; i < messageLines.size(); i++)
@@ -721,13 +726,13 @@ void BorisDisplay::DisplayConsoleMessage(string text)
 	displayMutex.unlock();
 }
 
-void BorisDisplay::DisplayConsoleError(string text)
+void BorisDisplay::DisplayConsoleError(std::string text)
 {
 	//for external calls only
 	displayMutex.lock();
 
 	//Check for newline and carriage return separators (\n, \r)
-	vector<string> messageLines = split(text, "\r", "\n");
+	std::vector<std::string> messageLines = split(text, "\r", "\n");
 
 	//add them line by line
 	for (int i = 0; i < messageLines.size(); i++)
@@ -738,13 +743,13 @@ void BorisDisplay::DisplayConsoleError(string text)
 	displayMutex.unlock();
 }
 
-void BorisDisplay::DisplayConsoleWarning(string text)
+void BorisDisplay::DisplayConsoleWarning(std::string text)
 {
 	//for external calls only
 	displayMutex.lock();
 
 	//Check for newline and carriage return separators (\n, \r)
-	vector<string> messageLines = split(text, "\r", "\n");
+	std::vector<std::string> messageLines = split(text, "\r", "\n");
 
 	//add them line by line
 	for (int i = 0; i < messageLines.size(); i++)
@@ -755,13 +760,13 @@ void BorisDisplay::DisplayConsoleWarning(string text)
 	displayMutex.unlock();
 }
 
-void BorisDisplay::DisplayConsoleListing(string text) 
+void BorisDisplay::DisplayConsoleListing(std::string text) 
 {
 	//for external calls only
 	displayMutex.lock();
 
 	//Check for newline and carriage return separators (\n, \r)
-	vector<string> messageLines = split(text, "\r", "\n");
+	std::vector<std::string> messageLines = split(text, "\r", "\n");
 
 	//add them line by line
 	for (int i = 0; i < messageLines.size(); i++)
@@ -772,13 +777,13 @@ void BorisDisplay::DisplayConsoleListing(string text)
 	displayMutex.unlock();
 }
 
-void BorisDisplay::DisplayFormattedConsoleMessage(string text) 
+void BorisDisplay::DisplayFormattedConsoleMessage(std::string text) 
 {
 	//for external calls only
 	displayMutex.lock();
 
 	//Check for newline and carriage return separators (\n, \r)
-	vector<string> messageLines = split(text, "\r", "\n");
+	std::vector<std::string> messageLines = split(text, "\r", "\n");
 
 	//add them line by line
 	for (int i = 0; i < messageLines.size(); i++)
@@ -789,7 +794,7 @@ void BorisDisplay::DisplayFormattedConsoleMessage(string text)
 	displayMutex.unlock();
 }
 
-void BorisDisplay::NewDataBoxField(string formattedText) 
+void BorisDisplay::NewDataBoxField(std::string formattedText) 
 {
 	//for external calls only
 	displayMutex.lock();
@@ -801,7 +806,7 @@ void BorisDisplay::NewDataBoxField(string formattedText)
 	displayMutex.unlock();
 }
 
-void BorisDisplay::UpdateDataBoxField(int lineIdx, string value_string) 
+void BorisDisplay::UpdateDataBoxField(int lineIdx, std::string value_string) 
 {
 	//for external calls only
 	displayMutex.lock();
@@ -816,7 +821,7 @@ void BorisDisplay::UpdateDataBoxField(int lineIdx, string value_string)
 }
 
 //adjust display for default view of physical quantity representation
-void BorisDisplay::AutoSetMeshDisplaySettings(vector<PhysQ> physQ) 
+void BorisDisplay::AutoSetMeshDisplaySettings(std::vector<PhysQ> physQ) 
 { 
 	displayMutex.lock(); 
 
@@ -830,9 +835,9 @@ void BorisDisplay::AutoSetMeshDisplaySettings(vector<PhysQ> physQ)
 	//animation duration at the refresh rate
 	double duration_ms = FOCUSCHANGEDURATION_MS;
 	
-	//animate start to end view - use blocking thread as animation is fairly short. If non-blocking would have to solve the complication with the mutex, not worth it in this case.
+	//animate start to end view - use blocking thread as animation is fairly short. If non-blocking would have to solve the complication with the std::mutex, not worth it in this case.
 	set_blocking_thread(THREAD_TIMEDREFRESH);
-	timed_call_launch<vector<PhysQ>*, PhysQRepSettings, PhysQRepSettings, double*, DWORD, DWORD>
+	timed_call_launch<std::vector<PhysQ>*, PhysQRepSettings, PhysQRepSettings, double*, DWORD, DWORD>
 		(&BorisDisplay::AnimateMeshViewChange, &physQ, start_settings, end_settings, &parameter, GetSystemTickCount(), duration_ms, refresh_ms, duration_ms, THREAD_TIMEDREFRESH);
 		
 	//make sure the end view is actually set
@@ -841,7 +846,7 @@ void BorisDisplay::AutoSetMeshDisplaySettings(vector<PhysQ> physQ)
 	displayMutex.unlock(); 
 }
 
-void BorisDisplay::AutoSetMeshDisplaySettings_KeepOrientation(vector<PhysQ> physQ)
+void BorisDisplay::AutoSetMeshDisplaySettings_KeepOrientation(std::vector<PhysQ> physQ)
 {
 	displayMutex.lock();
 
@@ -867,9 +872,9 @@ void BorisDisplay::AutoSetMeshDisplaySettings_KeepOrientation(vector<PhysQ> phys
 	//animation duration at the refresh rate
 	double duration_ms = FOCUSCHANGEDURATION_MS/2;
 
-	//animate start to end view - use blocking thread as animation is fairly short. If non-blocking would have to solve the complication with the mutex, not worth it in this case.
+	//animate start to end view - use blocking thread as animation is fairly short. If non-blocking would have to solve the complication with the std::mutex, not worth it in this case.
 	set_blocking_thread(THREAD_TIMEDREFRESH);
-	timed_call_launch<vector<PhysQ>*, PhysQRepSettings, PhysQRepSettings, double*, DWORD, DWORD>
+	timed_call_launch<std::vector<PhysQ>*, PhysQRepSettings, PhysQRepSettings, double*, DWORD, DWORD>
 		(&BorisDisplay::AnimateMeshViewChange, &physQ, start_settings, end_settings, &parameter, GetSystemTickCount(), duration_ms, refresh_ms, duration_ms, THREAD_TIMEDREFRESH);
 
 	//make sure the end view is actually set
@@ -878,7 +883,7 @@ void BorisDisplay::AutoSetMeshDisplaySettings_KeepOrientation(vector<PhysQ> phys
 	displayMutex.unlock();
 }
 
-void BorisDisplay::AnimateMeshViewChange(vector<PhysQ>* pphysQ, PhysQRepSettings start, PhysQRepSettings end, double* parameter, DWORD start_time_ms, DWORD duration_ms)
+void BorisDisplay::AnimateMeshViewChange(std::vector<PhysQ>* pphysQ, PhysQRepSettings start, PhysQRepSettings end, double* parameter, DWORD start_time_ms, DWORD duration_ms)
 {
 	PhysQRepSettings newSettings = start * (1 - *parameter) + end * (*parameter);
 

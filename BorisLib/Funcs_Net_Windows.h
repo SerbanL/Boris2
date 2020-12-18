@@ -32,7 +32,7 @@ private:
 
 private:
 
-	//From given domain name and port (default 80) get the ip address as a string (set it in HTTP::ip_address); also save domain_name to HTTP::domain_name. Return false if failed.
+	//From given domain name and port (default 80) get the ip address as a std::string (set it in HTTP::ip_address); also save domain_name to HTTP::domain_name. Return false if failed.
 	bool ip_address_from_hostname(std::string domain_name)
 	{
 		this->domain_name = domain_name;
@@ -146,7 +146,7 @@ public:
 	std::string get_ip_address(void) { return ip_address; }
 
 	//send an HTTP 1.1 POST request to a domainname/page (e.g. to www.boris-spintronics.uk/version.php, where domainname = www.boris-spintronics.uk and page = version.php) and obtain response
-	//send POST parameters as a string using the usual POST syntax
+	//send POST parameters as a std::string using the usual POST syntax
 	//return false if couldn't obtain response. If true then received message set in response
 	bool http_post(std::string page, std::string parameters, std::string& response_message, int buffer_size = DEFAULT_BUFLEN)
 	{
@@ -185,7 +185,7 @@ public:
 
 					std::string message_length_hex = message_no_header.substr(0, pos_message_start);
 
-					//convert from hex string to int
+					//convert from hex std::string to int
 					std::stringstream ss;
 					ss << std::hex << message_length_hex;
 					int num_chars;
@@ -236,7 +236,7 @@ public:
 
 					std::string message_length_hex = message_no_header.substr(0, pos_message_start);
 
-					//convert from hex string to int
+					//convert from hex std::string to int
 					std::stringstream ss;
 					ss << std::hex << message_length_hex;
 					int num_chars;

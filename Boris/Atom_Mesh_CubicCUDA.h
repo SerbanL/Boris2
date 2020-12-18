@@ -22,6 +22,18 @@ private:
 	//pointer to cpu version of this mesh
 	Atom_Mesh_Cubic *paMeshCubic;
 
+	// Constrained MONTE-CARLO DATA
+
+	//total moment along constrained direction
+	cu_obj<cuBReal> cmc_M;
+
+	//constraining direction
+	cu_obj<cuReal3> cmc_n;
+
+	//mc indices and shuffling auxiliary array : same as for the cpu version, but generate unsigned random numbers, not doubles, for most efficient sort-based shuffle
+	cu_arr<unsigned> mc_indices_red, mc_indices_black;
+	cu_arr<unsigned> mc_shuf_red, mc_shuf_black;
+
 protected:
 
 public:
@@ -47,6 +59,10 @@ public:
 
 	//Check if mesh needs to be moved (using the MoveMesh method) - return amount of movement required (i.e. parameter to use when calling MoveMesh).
 	cuBReal CheckMoveMesh(bool antisymmetric, double threshold);
+
+	//----------------------------------- OTHER CONTROL METHODS : implement pure virtual Atom_Mesh methods
+
+	void Set_MonteCarlo_Constrained(DBL3 cmc_n_);
 
 	//----------------------------------- ENABLED MESH PROPERTIES CHECKERS
 

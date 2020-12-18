@@ -6,7 +6,7 @@
 #include "BorisGraphics.h"
 
 //calculate settings for default view (these are the settings set when the mesh focus changes)
-PhysQRepSettings::PhysQRepSettings(vector<PhysQ>& physQ, UINT wndWidth, D2D1_RECT_F spaceRect)
+PhysQRepSettings::PhysQRepSettings(std::vector<PhysQ>& physQ, UINT wndWidth, D2D1_RECT_F spaceRect)
 {
 	//quantities being auto-adjusted are:
 	//1. focusRect
@@ -94,13 +94,13 @@ PhysQRepSettings PhysQRep::get_current_settings(void)
 }
 
 //From physQ calculate physQRep, and auto-set display to fit the mesh in focus on screen at default camera settings
-void PhysQRep::CalculateRepresentation_AutoSettings(vector<PhysQ> physQ, D2D1_RECT_F spaceRect)
+void PhysQRep::CalculateRepresentation_AutoSettings(std::vector<PhysQ> physQ, D2D1_RECT_F spaceRect)
 {
 	PhysQRepSettings settings(physQ, pBG->wndWidth, spaceRect);
 	CalculateRepresentation_NewSettings(physQ, settings);
 }
 
-void PhysQRep::CalculateRepresentation_NewSettings(vector<PhysQ> physQ, PhysQRepSettings newSettings)
+void PhysQRep::CalculateRepresentation_NewSettings(std::vector<PhysQ> physQ, PhysQRepSettings newSettings)
 {
 	//set PhysQRep settings
 	focusRect = newSettings.focusRect;
@@ -120,7 +120,7 @@ void PhysQRep::CalculateRepresentation_NewSettings(vector<PhysQ> physQ, PhysQRep
 }
 
 //Calculate physical quantity representation were display option settings have already been set (either by default or through the CalculateRepresentation_AutoSettings method above)
-void PhysQRep::CalculateRepresentation(vector<PhysQ> physQ)
+void PhysQRep::CalculateRepresentation(std::vector<PhysQ> physQ)
 {
 	//physQ and physQRep have to have same dimensions
 	if (physQRep.size() != physQ.size())
@@ -158,8 +158,8 @@ void PhysQRep::CalculateRepresentation(vector<PhysQ> physQ)
 		physQRep[idx].vec3rep = physQ[idx].get_vec3rep();
 	}
 	
-	vector<double> minimum, maximum, maximum2;
-	vector<bool>  min_not_set, max_not_set, max2_not_set;
+	std::vector<double> minimum, maximum, maximum2;
+	std::vector<bool>  min_not_set, max_not_set, max2_not_set;
 
 	minimum.assign(maxtypeval + 1, 0.0);
 	maximum.assign(maxtypeval + 1, 0.0);
@@ -274,6 +274,18 @@ void PhysQRep::CalculateRepresentation(vector<PhysQ> physQ)
 				AdjustMagnitude_SCA(physQRep[idx], DBL2(minimum[type], maximum[type]));
 			}
 		}
+
+		//are we going to use transformBatch_render instead of transformBatch for rendering? If so copy elements over from transformBatch to transformBatch_render
+		//Note the calculation routines determine which one to use, and clears transformBatch_render if not needed, or sets required size for it
+		if (physQRep[idx].transformBatch_render.size()) {
+
+			int num_rendered_cells = 0;
+			for (int cell_idx = 0; cell_idx < physQRep[idx].transformBatch.linear_size(); cell_idx++) {
+
+				if (!physQRep[idx].transformBatch[cell_idx].skip_render)
+					physQRep[idx].transformBatch_render[num_rendered_cells++] = physQRep[idx].transformBatch[cell_idx];
+			}
+		}
 	}
 }
 
@@ -311,7 +323,8 @@ DBL2 PhysQRep::CalculateRepresentation_VEC(VECType* pQ, PhysQRepComponent& physQ
 
 	if (physQRepComponent.vec3rep == VEC3REP_FULL) {
 
-		physQRepComponent.obSelector = CDO_ARROW;
+		if (renderspeedup1_cells && ndisp.dim() >= renderspeedup1_cells) physQRepComponent.obSelector = CDO_CONE;
+		else physQRepComponent.obSelector = CDO_ARROW;
 	}
 	else {
 
@@ -323,8 +336,10 @@ DBL2 PhysQRep::CalculateRepresentation_VEC(VECType* pQ, PhysQRepComponent& physQ
 	
 	omp_reduction.new_minmax_reduction();
 
+	int num_rendered_cells = 0;
+
 	for (int k = 0; k < ndisp.z; k++) {
-#pragma omp parallel for
+#pragma omp parallel for reduction(+:num_rendered_cells)
 		for (int j = 0; j < ndisp.y; j++) {
 			for (int i = 0; i < ndisp.x; i++) {
 
@@ -332,29 +347,35 @@ DBL2 PhysQRep::CalculateRepresentation_VEC(VECType* pQ, PhysQRepComponent& physQ
 
 				DBL3 rel_pos = hdisp & (DBL3(i, j, k) + DBL3(0.5));
 
+				int idx = i + j * ndisp.x + k * ndisp.x*ndisp.y;
+
+				physQRepComponent.transformBatch[idx].skip_render = false;
+
 				if (pQ->is_empty(rel_pos)) {
 
 					//most cells are not empty, so the check above should be kept since it's fast
 					//there is the possibility that for a coarse display cell the check above returns empty but actually the coarse cell is not empty
 					//thus use the complete check here with the coarse cell rectangle
 					Rect cellRect = Rect(DBL3(i, j, k) & hdisp, DBL3(i + 1, j + 1, k + 1) & hdisp);
+
 					if (pQ->is_empty(cellRect)) {
 
 						//set this to empty
-						physQRepComponent.transformBatch[i + j * ndisp.x + k * ndisp.x*ndisp.y] = CBObjectTransform();
-						physQRepComponent.emptyCell[i + j * ndisp.x + k * ndisp.x*ndisp.y] = true;
+						physQRepComponent.transformBatch[idx] = CBObjectTransform();
+						physQRepComponent.transformBatch[idx].skip_render = true;
+						physQRepComponent.emptyCell[idx] = true;
 						continue;
 					}
 					else {
 
 						value = (DBL3)(*pQ).average(cellRect);
-						physQRepComponent.emptyCell[i + j * ndisp.x + k * ndisp.x*ndisp.y] = false;
+						physQRepComponent.emptyCell[idx] = false;
 					}
 				}
 				else {
 
 					value = (DBL3)(*pQ)[rel_pos];
-					physQRepComponent.emptyCell[i + j * ndisp.x + k * ndisp.x*ndisp.y] = false;
+					physQRepComponent.emptyCell[idx] = false;
 				}
 							
 				//the magnitude of VEC3 value
@@ -471,8 +492,9 @@ DBL2 PhysQRep::CalculateRepresentation_VEC(VECType* pQ, PhysQRepComponent& physQ
 				//skip this cell
 				if (skip) {
 
-					physQRepComponent.transformBatch[i + j * ndisp.x + k * ndisp.x*ndisp.y] = CBObjectTransform();
-					physQRepComponent.emptyCell[i + j * ndisp.x + k * ndisp.x*ndisp.y] = true;
+					physQRepComponent.transformBatch[idx] = CBObjectTransform();
+					physQRepComponent.emptyCell[idx] = true;
+					physQRepComponent.transformBatch[idx].skip_render = true;
 				}
 
 				switch (physQRepComponent.vec3rep)
@@ -481,37 +503,81 @@ DBL2 PhysQRep::CalculateRepresentation_VEC(VECType* pQ, PhysQRepComponent& physQ
 				case VEC3REP_DIRECTION:
 					//reduce magnitude values
 					omp_reduction.reduce_minmax(value_mag);
-					if (!skip) physQRepComponent.transformBatch[i + j * ndisp.x + k * ndisp.x*ndisp.y] = CBObjectTransform(Rotation, Scale, Translation, Color, maxTransparency, translation, value_mag);
+					if (!skip) physQRepComponent.transformBatch[idx] = CBObjectTransform(Rotation, Scale, Translation, Color, maxTransparency, translation, value_mag);
 					break;
 
 				case VEC3REP_MAGNITUDE:
 					//reduce magnitude values
 					omp_reduction.reduce_minmax(value_mag);
-					if (!skip) physQRepComponent.transformBatch[i + j * ndisp.x + k * ndisp.x*ndisp.y] = CBObjectTransform(Rotation, Scale, Translation, Color, maxTransparency, translation, value_mag);
+					if (!skip) physQRepComponent.transformBatch[idx] = CBObjectTransform(Rotation, Scale, Translation, Color, maxTransparency, translation, value_mag);
 					break;
 
 				case VEC3REP_X:
 					//reduce x values
 					omp_reduction.reduce_minmax(value.x);
-					if (!skip) physQRepComponent.transformBatch[i + j * ndisp.x + k * ndisp.x*ndisp.y] = CBObjectTransform(Rotation, Scale, Translation, Color, maxTransparency, translation, value.x);
+					if (!skip) physQRepComponent.transformBatch[idx] = CBObjectTransform(Rotation, Scale, Translation, Color, maxTransparency, translation, value.x);
 					break;
 
 				case VEC3REP_Y:
 					//reduce y values
 					omp_reduction.reduce_minmax(value.y);
-					if (!skip) physQRepComponent.transformBatch[i + j * ndisp.x + k * ndisp.x*ndisp.y] = CBObjectTransform(Rotation, Scale, Translation, Color, maxTransparency, translation, value.y);
+					if (!skip) physQRepComponent.transformBatch[idx] = CBObjectTransform(Rotation, Scale, Translation, Color, maxTransparency, translation, value.y);
 					break;
 
 				case VEC3REP_Z:
 					//reduce z values
 					omp_reduction.reduce_minmax(value.z);
-					if (!skip) physQRepComponent.transformBatch[i + j * ndisp.x + k * ndisp.x*ndisp.y] = CBObjectTransform(Rotation, Scale, Translation, Color, maxTransparency, translation, value.z);
+					if (!skip) physQRepComponent.transformBatch[idx] = CBObjectTransform(Rotation, Scale, Translation, Color, maxTransparency, translation, value.z);
 					break;
 				}
 
-				physQRepComponent.transformBatch[i + j * ndisp.x + k * ndisp.x*ndisp.y].maxTransparency = maxTransparency;
+				physQRepComponent.transformBatch[idx].maxTransparency = maxTransparency;
+				
+				//skip rendering obscured cells?
+				if (!skip && ((renderspeedup2_cells && ndisp.dim() >= renderspeedup2_cells) || (renderspeedup3_cells && ndisp.dim() >= renderspeedup3_cells))) {
+
+					bool force_skip = false;
+
+					if (physQRepComponent.vec3rep == VEC3REP_FULL && renderspeedup3_cells && ndisp.dim() >= renderspeedup3_cells) {
+
+						//red_nudge = true for odd rows and even planes or for even rows and odd planes - have to keep index on the checkerboard pattern
+						bool red_nudge = (((j % 2) == 1 && (k % 2) == 0) || (((j % 2) == 0 && (k % 2) == 1)));
+
+						//true for black square, false for red square
+						force_skip = (i - red_nudge) % 2;
+						if (force_skip) physQRepComponent.transformBatch[idx].skip_render = true;
+					}
+					
+					//enable faster rendering by skipping cells which are surrounded (thus obscured).
+					if (!force_skip && renderspeedup2_cells && i > 0 && j > 0 && k > 0 && i < ndisp.x - 1 && j < ndisp.y - 1 && k < ndisp.z - 1) {
+
+						Rect cellRect_1 = Rect(DBL3(i - 1, j - 1, k - 1) & hdisp, DBL3(i, j + 2, k + 2) & hdisp);
+						Rect cellRect_2 = Rect(DBL3(i + 1, j - 1, k - 1) & hdisp, DBL3(i + 2, j + 2, k + 2) & hdisp);
+						Rect cellRect_3 = Rect(DBL3(i, j - 1, k - 1) & hdisp, DBL3(i + 1, j, k + 2) & hdisp);
+						Rect cellRect_4 = Rect(DBL3(i, j + 1, k - 1) & hdisp, DBL3(i + 1, j + 2, k + 2) & hdisp);
+						Rect cellRect_5 = Rect(DBL3(i, j, k + 1) & hdisp, DBL3(i + 1, j + 1, k + 2) & hdisp);
+						Rect cellRect_6 = Rect(DBL3(i, j, k - 1) & hdisp, DBL3(i + 1, j + 1, k) & hdisp);
+
+						if (pQ->is_not_empty(cellRect_1) && pQ->is_not_empty(cellRect_2) && 
+							pQ->is_not_empty(cellRect_3) && pQ->is_not_empty(cellRect_4) &&
+							pQ->is_not_empty(cellRect_5) && pQ->is_not_empty(cellRect_6))
+							physQRepComponent.transformBatch[idx].skip_render = true;
+					}
+				}
+
+				if (!physQRepComponent.transformBatch[idx].skip_render) num_rendered_cells++;
 			}
 		}
+	}
+
+	//make sure transformBatch_render has correct size as this will detemine if it's used for rendering or not; elements will be copied from transformBatch to transformBatch_render after this function completes if needed
+	if (num_rendered_cells < physQRepComponent.transformBatch.linear_size()) {
+
+		physQRepComponent.transformBatch_render.resize(num_rendered_cells);
+	}
+	else {
+
+		physQRepComponent.transformBatch_render.clear();
 	}
 
 	//return minimum, maximum
@@ -571,14 +637,22 @@ DBL2 PhysQRep::CalculateRepresentation_VEC(VECType* pQ, VECType* pQ2, PhysQRepCo
 
 	omp_reduction.new_minmax_reduction();
 
+	int num_rendered_cells = 0;
+
 	for (int k = 0; k < ndisp.z; k++) {
-#pragma omp parallel for
+#pragma omp parallel for reduction(+:num_rendered_cells)
 		for (int j = 0; j < ndisp.y; j++) {
 			for (int i = 0; i < ndisp.x; i++) {
 
 				DBL3 value, value2;
 
 				DBL3 rel_pos = hdisp & (DBL3(i, j, k) + DBL3(0.5));
+
+				int idx1 = i + j * ndisp.x + 2 * k * ndisp.x*ndisp.y;
+				int idx2 = i + j * ndisp.x + (2 * k + 1) * ndisp.x*ndisp.y;
+
+				physQRepComponent.transformBatch[idx1].skip_render = false;
+				physQRepComponent.transformBatch[idx2].skip_render = false;
 
 				if (pQ->is_empty(rel_pos)) {
 
@@ -589,29 +663,31 @@ DBL2 PhysQRep::CalculateRepresentation_VEC(VECType* pQ, VECType* pQ2, PhysQRepCo
 					if (pQ->is_empty(cellRect)) {
 
 						//set this to empty
-						physQRepComponent.transformBatch[i + j * ndisp.x + 2 * k * ndisp.x*ndisp.y] = CBObjectTransform();
-						physQRepComponent.transformBatch[i + j * ndisp.x + (2 * k + 1) * ndisp.x*ndisp.y] = CBObjectTransform();
-						
-						physQRepComponent.emptyCell[i + j * ndisp.x + 2 * k * ndisp.x*ndisp.y] = true;
-						physQRepComponent.emptyCell[i + j * ndisp.x + (2 * k + 1) * ndisp.x*ndisp.y] = true;
+						physQRepComponent.transformBatch[idx1] = CBObjectTransform();
+						physQRepComponent.transformBatch[idx2] = CBObjectTransform();
+						physQRepComponent.transformBatch[idx1].skip_render = true;
+						physQRepComponent.transformBatch[idx2].skip_render = true;
+
+						physQRepComponent.emptyCell[idx1] = true;
+						physQRepComponent.emptyCell[idx2] = true;
 						continue;
 					}
 					else {
 
 						value = (DBL3)(*pQ).average(cellRect);
-						physQRepComponent.emptyCell[i + j * ndisp.x + 2 * k * ndisp.x*ndisp.y] = false;
+						physQRepComponent.emptyCell[idx1] = false;
 
 						value2 = (DBL3)(*pQ2).average(cellRect);
-						physQRepComponent.emptyCell[i + j * ndisp.x + (2 * k + 1) * ndisp.x*ndisp.y] = false;
+						physQRepComponent.emptyCell[idx2] = false;
 					}
 				}
 				else {
 
 					value = (DBL3)(*pQ)[rel_pos];
-					physQRepComponent.emptyCell[i + j * ndisp.x + 2 * k * ndisp.x*ndisp.y] = false;
+					physQRepComponent.emptyCell[idx1] = false;
 
 					value2 = (DBL3)(*pQ2)[rel_pos];
-					physQRepComponent.emptyCell[i + j * ndisp.x + (2 * k + 1) * ndisp.x*ndisp.y] = false;
+					physQRepComponent.emptyCell[idx2] = false;
 				}
 
 				//the magnitude of VEC3 value
@@ -766,10 +842,13 @@ DBL2 PhysQRep::CalculateRepresentation_VEC(VECType* pQ, VECType* pQ2, PhysQRepCo
 				//skip this cell
 				if (skip) {
 
-					physQRepComponent.transformBatch[i + j * ndisp.x + 2 * k * ndisp.x*ndisp.y] = CBObjectTransform();
-					physQRepComponent.transformBatch[i + j * ndisp.x + (2 * k + 1) * ndisp.x*ndisp.y] = CBObjectTransform();
-					physQRepComponent.emptyCell[i + j * ndisp.x + 2 * k * ndisp.x*ndisp.y] = true;
-					physQRepComponent.emptyCell[i + j * ndisp.x + (2 * k + 1) * ndisp.x*ndisp.y] = true;
+					physQRepComponent.transformBatch[idx1] = CBObjectTransform();
+					physQRepComponent.transformBatch[idx2] = CBObjectTransform();
+					physQRepComponent.transformBatch[idx1].skip_render = true;
+					physQRepComponent.transformBatch[idx2].skip_render = true;
+
+					physQRepComponent.emptyCell[idx1] = true;
+					physQRepComponent.emptyCell[idx2] = true;
 				}
 
 				switch (physQRepComponent.vec3rep)
@@ -781,8 +860,8 @@ DBL2 PhysQRep::CalculateRepresentation_VEC(VECType* pQ, VECType* pQ2, PhysQRepCo
 					omp_reduction.reduce_minmax(value_mag2);
 					if (!skip) {
 
-						physQRepComponent.transformBatch[i + j * ndisp.x + 2 * k * ndisp.x*ndisp.y] = CBObjectTransform(Rotation, Scale, Translation, Color, maxTransparency, translation, value_mag);
-						physQRepComponent.transformBatch[i + j * ndisp.x + (2 * k + 1) * ndisp.x*ndisp.y] = CBObjectTransform(Rotation2, Scale, Translation, Color2, maxTransparency, translation, value_mag2);
+						physQRepComponent.transformBatch[idx1] = CBObjectTransform(Rotation, Scale, Translation, Color, maxTransparency, translation, value_mag);
+						physQRepComponent.transformBatch[idx2] = CBObjectTransform(Rotation2, Scale, Translation, Color2, maxTransparency, translation, value_mag2);
 					}
 					break;
 
@@ -792,8 +871,8 @@ DBL2 PhysQRep::CalculateRepresentation_VEC(VECType* pQ, VECType* pQ2, PhysQRepCo
 					omp_reduction.reduce_minmax(value_mag2);
 					if (!skip) {
 
-						physQRepComponent.transformBatch[i + j * ndisp.x + 2 * k * ndisp.x*ndisp.y] = CBObjectTransform(Rotation, Scale, Translation, Color, maxTransparency, translation, value_mag);
-						physQRepComponent.transformBatch[i + j * ndisp.x + (2 * k + 1) * ndisp.x*ndisp.y] = CBObjectTransform(Rotation2, Scale, Translation, Color2, maxTransparency, translation, value_mag2);
+						physQRepComponent.transformBatch[idx1] = CBObjectTransform(Rotation, Scale, Translation, Color, maxTransparency, translation, value_mag);
+						physQRepComponent.transformBatch[idx2] = CBObjectTransform(Rotation2, Scale, Translation, Color2, maxTransparency, translation, value_mag2);
 					}
 					break;
 
@@ -803,8 +882,8 @@ DBL2 PhysQRep::CalculateRepresentation_VEC(VECType* pQ, VECType* pQ2, PhysQRepCo
 					omp_reduction.reduce_minmax(value2.x);
 					if (!skip) {
 
-						physQRepComponent.transformBatch[i + j * ndisp.x + 2 * k * ndisp.x*ndisp.y] = CBObjectTransform(Rotation, Scale, Translation, Color, maxTransparency, translation, value.x);
-						physQRepComponent.transformBatch[i + j * ndisp.x + (2 * k + 1) * ndisp.x*ndisp.y] = CBObjectTransform(Rotation2, Scale, Translation, Color2, maxTransparency, translation, value2.x);
+						physQRepComponent.transformBatch[idx1] = CBObjectTransform(Rotation, Scale, Translation, Color, maxTransparency, translation, value.x);
+						physQRepComponent.transformBatch[idx2] = CBObjectTransform(Rotation2, Scale, Translation, Color2, maxTransparency, translation, value2.x);
 					}
 					break;
 
@@ -814,8 +893,8 @@ DBL2 PhysQRep::CalculateRepresentation_VEC(VECType* pQ, VECType* pQ2, PhysQRepCo
 					omp_reduction.reduce_minmax(value2.y);
 					if (!skip) {
 
-						physQRepComponent.transformBatch[i + j * ndisp.x + 2 * k * ndisp.x*ndisp.y] = CBObjectTransform(Rotation, Scale, Translation, Color, maxTransparency, translation, value.y);
-						physQRepComponent.transformBatch[i + j * ndisp.x + (2 * k + 1) * ndisp.x*ndisp.y] = CBObjectTransform(Rotation2, Scale, Translation, Color2, maxTransparency, translation, value2.y);
+						physQRepComponent.transformBatch[idx1] = CBObjectTransform(Rotation, Scale, Translation, Color, maxTransparency, translation, value.y);
+						physQRepComponent.transformBatch[idx2] = CBObjectTransform(Rotation2, Scale, Translation, Color2, maxTransparency, translation, value2.y);
 					}
 					break;
 
@@ -825,15 +904,68 @@ DBL2 PhysQRep::CalculateRepresentation_VEC(VECType* pQ, VECType* pQ2, PhysQRepCo
 					omp_reduction.reduce_minmax(value2.z);
 					if (!skip) {
 
-						physQRepComponent.transformBatch[i + j * ndisp.x + 2 * k * ndisp.x*ndisp.y] = CBObjectTransform(Rotation, Scale, Translation, Color, maxTransparency, translation, value.z);
-						physQRepComponent.transformBatch[i + j * ndisp.x + (2 * k + 1) * ndisp.x*ndisp.y] = CBObjectTransform(Rotation2, Scale, Translation, Color2, maxTransparency, translation, value2.z);
+						physQRepComponent.transformBatch[idx1] = CBObjectTransform(Rotation, Scale, Translation, Color, maxTransparency, translation, value.z);
+						physQRepComponent.transformBatch[idx2] = CBObjectTransform(Rotation2, Scale, Translation, Color2, maxTransparency, translation, value2.z);
 					}
 					break;
 				}
 
-				physQRepComponent.transformBatch[i + j * ndisp.x + k * ndisp.x*ndisp.y].maxTransparency = maxTransparency;
+				physQRepComponent.transformBatch[idx1].maxTransparency = maxTransparency;
+				physQRepComponent.transformBatch[idx2].maxTransparency = maxTransparency;
+
+				//skip rendering obscured cells?
+				if (!skip && ((renderspeedup2_cells && ndisp.dim() >= renderspeedup2_cells) || (renderspeedup3_cells && ndisp.dim() >= renderspeedup3_cells))) {
+
+					bool force_skip = false;
+
+					if (physQRepComponent.vec3rep == VEC3REP_FULL && renderspeedup3_cells && ndisp.dim() >= renderspeedup3_cells) {
+
+						//red_nudge = true for odd rows and even planes or for even rows and odd planes - have to keep index on the checkerboard pattern
+						bool red_nudge = (((j % 2) == 1 && (k % 2) == 0) || (((j % 2) == 0 && (k % 2) == 1)));
+
+						//true for black square, false for red square
+						force_skip = (i - red_nudge) % 2;
+						if (force_skip) {
+
+							physQRepComponent.transformBatch[idx1].skip_render = true;
+							physQRepComponent.transformBatch[idx2].skip_render = true;
+						}
+					}
+
+					//enable faster rendering by skipping cells which are surrounded (thus obscured).
+					if (!force_skip && renderspeedup2_cells && i > 0 && j > 0 && k > 0 && i < ndisp.x - 1 && j < ndisp.y - 1 && k < ndisp.z - 1) {
+
+						Rect cellRect_1 = Rect(DBL3(i - 1, j - 1, k - 1) & hdisp, DBL3(i, j + 2, k + 2) & hdisp);
+						Rect cellRect_2 = Rect(DBL3(i + 1, j - 1, k - 1) & hdisp, DBL3(i + 2, j + 2, k + 2) & hdisp);
+						Rect cellRect_3 = Rect(DBL3(i, j - 1, k - 1) & hdisp, DBL3(i + 1, j, k + 2) & hdisp);
+						Rect cellRect_4 = Rect(DBL3(i, j + 1, k - 1) & hdisp, DBL3(i + 1, j + 2, k + 2) & hdisp);
+						Rect cellRect_5 = Rect(DBL3(i, j, k + 1) & hdisp, DBL3(i + 1, j + 1, k + 2) & hdisp);
+						Rect cellRect_6 = Rect(DBL3(i, j, k - 1) & hdisp, DBL3(i + 1, j + 1, k) & hdisp);
+
+						if (pQ->is_not_empty(cellRect_1) && pQ->is_not_empty(cellRect_2) &&
+							pQ->is_not_empty(cellRect_3) && pQ->is_not_empty(cellRect_4) &&
+							pQ->is_not_empty(cellRect_5) && pQ->is_not_empty(cellRect_6)) {
+
+							physQRepComponent.transformBatch[idx1].skip_render = true;
+							physQRepComponent.transformBatch[idx2].skip_render = true;
+						}
+					}
+				}
+
+				if (!physQRepComponent.transformBatch[idx1].skip_render) num_rendered_cells++;
+				if (!physQRepComponent.transformBatch[idx2].skip_render) num_rendered_cells++;
 			}
 		}
+	}
+
+	//make sure transformBatch_render has correct size as this will detemine if it's used for rendering or not; elements will be copied from transformBatch to transformBatch_render after this function completes if needed
+	if (num_rendered_cells < physQRepComponent.transformBatch.linear_size()) {
+
+		physQRepComponent.transformBatch_render.resize(num_rendered_cells);
+	}
+	else {
+
+		physQRepComponent.transformBatch_render.clear();
 	}
 
 	//return minimum, maximum
@@ -901,7 +1033,9 @@ DBL2 PhysQRep::CalculateRepresentation_SCA(VECType* pQ, PhysQRepComponent& physQ
 
 	omp_reduction.new_minmax_reduction();
 
-	#pragma omp parallel for
+	int num_rendered_cells = 0;
+
+	#pragma omp parallel for reduction(+:num_rendered_cells)
 	for (int j = 0; j < ndisp.y; j++) {
 		for (int k = 0; k < ndisp.z; k++) {
 			for (int i = 0; i < ndisp.x; i++) {
@@ -909,6 +1043,10 @@ DBL2 PhysQRep::CalculateRepresentation_SCA(VECType* pQ, PhysQRepComponent& physQ
 				double value;
 
 				DBL3 rel_pos = hdisp & (DBL3(i, j, k) + DBL3(0.5));
+
+				int idx = i + j * ndisp.x + k * ndisp.x*ndisp.y;
+
+				physQRepComponent.transformBatch[idx].skip_render = false;
 
 				if (pQ->is_empty(rel_pos)) {
 
@@ -919,20 +1057,21 @@ DBL2 PhysQRep::CalculateRepresentation_SCA(VECType* pQ, PhysQRepComponent& physQ
 					if (pQ->is_empty(cellRect)) {
 
 						//set this to empty
-						physQRepComponent.transformBatch[i + j * ndisp.x + k * ndisp.x*ndisp.y] = CBObjectTransform();
-						physQRepComponent.emptyCell[i + j * ndisp.x + k * ndisp.x*ndisp.y] = true;
+						physQRepComponent.transformBatch[idx] = CBObjectTransform();
+						physQRepComponent.transformBatch[idx].skip_render = true;
+						physQRepComponent.emptyCell[idx] = true;
 						continue;
 					}
 					else {
 
 						value = (double)(*pQ).average(cellRect);
-						physQRepComponent.emptyCell[i + j * ndisp.x + k * ndisp.x*ndisp.y] = false;
+						physQRepComponent.emptyCell[idx] = false;
 					}
 				}
 				else {
 
 					value = (double)(*pQ)[rel_pos];
-					physQRepComponent.emptyCell[i + j * ndisp.x + k * ndisp.x*ndisp.y] = false;
+					physQRepComponent.emptyCell[idx] = false;
 				}
 
 				//reduce values
@@ -948,16 +1087,52 @@ DBL2 PhysQRep::CalculateRepresentation_SCA(VECType* pQ, PhysQRepComponent& physQ
 
 				XMFLOAT4 Color = XMFLOAT4(0.0f, 0.0f, 1.0f, minimum(get_alpha_value(translation), (float)maxTransparency));
 
+				bool skip = false;
+
 				if (!displayThresholds.IsNull() && (value <= displayThresholds.i || value >= displayThresholds.j)) {
 
-					physQRepComponent.transformBatch[i + j * ndisp.x + k * ndisp.x*ndisp.y] = CBObjectTransform();
-					physQRepComponent.emptyCell[i + j * ndisp.x + k * ndisp.x*ndisp.y] = true;
+					physQRepComponent.transformBatch[idx] = CBObjectTransform();
+					physQRepComponent.transformBatch[idx].skip_render = true;
+					physQRepComponent.emptyCell[idx] = true;
+					skip = true;
 				}
-				else physQRepComponent.transformBatch[i + j * ndisp.x + k * ndisp.x*ndisp.y] = CBObjectTransform(Rotation, Scale, Translation, Color, maxTransparency, translation, value);
+				else physQRepComponent.transformBatch[idx] = CBObjectTransform(Rotation, Scale, Translation, Color, maxTransparency, translation, value);
 
-				physQRepComponent.transformBatch[i + j * ndisp.x + k * ndisp.x*ndisp.y].maxTransparency = maxTransparency;
+				physQRepComponent.transformBatch[idx].maxTransparency = maxTransparency;
+
+				//skip rendering obscured cells?
+				if (!skip && renderspeedup2_cells && ndisp.dim() >= renderspeedup2_cells) {
+
+					//enable faster rendering by skipping cells which are surrounded (thus obscured).
+					if (renderspeedup2_cells && i > 0 && j > 0 && k > 0 && i < ndisp.x - 1 && j < ndisp.y - 1 && k < ndisp.z - 1) {
+
+						Rect cellRect_1 = Rect(DBL3(i - 1, j - 1, k - 1) & hdisp, DBL3(i, j + 2, k + 2) & hdisp);
+						Rect cellRect_2 = Rect(DBL3(i + 1, j - 1, k - 1) & hdisp, DBL3(i + 2, j + 2, k + 2) & hdisp);
+						Rect cellRect_3 = Rect(DBL3(i, j - 1, k - 1) & hdisp, DBL3(i + 1, j, k + 2) & hdisp);
+						Rect cellRect_4 = Rect(DBL3(i, j + 1, k - 1) & hdisp, DBL3(i + 1, j + 2, k + 2) & hdisp);
+						Rect cellRect_5 = Rect(DBL3(i, j, k + 1) & hdisp, DBL3(i + 1, j + 1, k + 2) & hdisp);
+						Rect cellRect_6 = Rect(DBL3(i, j, k - 1) & hdisp, DBL3(i + 1, j + 1, k) & hdisp);
+
+						if (pQ->is_not_empty(cellRect_1) && pQ->is_not_empty(cellRect_2) &&
+							pQ->is_not_empty(cellRect_3) && pQ->is_not_empty(cellRect_4) &&
+							pQ->is_not_empty(cellRect_5) && pQ->is_not_empty(cellRect_6))
+							physQRepComponent.transformBatch[idx].skip_render = true;
+					}
+				}
+
+				if (!physQRepComponent.transformBatch[idx].skip_render) num_rendered_cells++;
 			}
 		}
+	}
+
+	//make sure transformBatch_render has correct size as this will detemine if it's used for rendering or not; elements will be copied from transformBatch to transformBatch_render after this function completes if needed
+	if (num_rendered_cells < physQRepComponent.transformBatch.linear_size()) {
+
+		physQRepComponent.transformBatch_render.resize(num_rendered_cells);
+	}
+	else {
+
+		physQRepComponent.transformBatch_render.clear();
 	}
 
 	//return minimum, maximum
@@ -1011,10 +1186,21 @@ void PhysQRep::SetAlphaBlend(void)
 {
 	for (int idx = 0; idx < (int)physQRep.size(); idx++) {
 
-		#pragma omp parallel for
-		for (int cidx = 0; cidx < physQRep[idx].transformBatch.linear_size(); cidx++) {
+		if (physQRep[idx].transformBatch_render.size()) {
 
-			physQRep[idx].transformBatch[cidx].Color.w = minimum(get_alpha_value(physQRep[idx].transformBatch[cidx].position), (float)physQRep[idx].transformBatch[cidx].maxTransparency);
+#pragma omp parallel for
+			for (int cidx = 0; cidx < physQRep[idx].transformBatch_render.size(); cidx++) {
+
+				physQRep[idx].transformBatch_render[cidx].Color.w = minimum(get_alpha_value(physQRep[idx].transformBatch_render[cidx].position), (float)physQRep[idx].transformBatch_render[cidx].maxTransparency);
+			}
+		}
+		else {
+
+#pragma omp parallel for
+			for (int cidx = 0; cidx < physQRep[idx].transformBatch.linear_size(); cidx++) {
+
+				physQRep[idx].transformBatch[cidx].Color.w = minimum(get_alpha_value(physQRep[idx].transformBatch[cidx].position), (float)physQRep[idx].transformBatch[cidx].maxTransparency);
+			}
 		}
 	}
 }
@@ -1024,7 +1210,8 @@ void PhysQRep::DrawPhysQRep(void)
 	for (int idx = 0; idx < (int)physQRep.size(); idx++) {
 
 		//draw mesh values representations
-		pBG->DrawCBObjectBatch(physQRep[idx].transformBatch.get_vector(), (CDO_)physQRep[idx].obSelector);
+		if (physQRep[idx].transformBatch_render.size()) pBG->DrawCBObjectBatch(physQRep[idx].transformBatch_render, (CDO_)physQRep[idx].obSelector);
+		else pBG->DrawCBObjectBatch(physQRep[idx].transformBatch.get_vector(), (CDO_)physQRep[idx].obSelector);
 		
 		//draw mesh frame
 		if(physQRep[idx].drawFrame) 
@@ -1038,7 +1225,7 @@ void PhysQRep::DrawPhysQRep(void)
 
 //------------------------------------------- Value reading
 
-bool PhysQRep::GetMouseInfo(INT2 mouse, string *pmeshName, string* ptypeName, DBL3* pMeshPosition, double* pMeshValue, string* pValueUnit)
+bool PhysQRep::GetMouseInfo(INT2 mouse, std::string *pmeshName, std::string* ptypeName, DBL3* pMeshPosition, double* pMeshValue, std::string* pValueUnit)
 {
 	highlightCell = false;
 
@@ -1048,8 +1235,7 @@ bool PhysQRep::GetMouseInfo(INT2 mouse, string *pmeshName, string* ptypeName, DB
 	DBL3 camPoint = pBG->GetCameraPosition() / (2 * m_to_l) + focusRect.size() / 2 + focusRect.s;
 
 	//these are used to store multiple intersections and will sort them by distance. The closest mesh is not necessarily the final output since it may have empty cells.
-	mouseInfoDistances.assign(physQRep.size(), get_distance(camPoint, farPoint));
-	mouseInfoIntersections.assign(physQRep.size(), pair<int, DBL3>(0, DBL3()));
+	mouseInfo.assign(physQRep.size(), { get_distance(camPoint, farPoint), 0, DBL3() });
 
 	bool intersection_found = false;
 
@@ -1063,8 +1249,7 @@ bool PhysQRep::GetMouseInfo(INT2 mouse, string *pmeshName, string* ptypeName, DB
 
 		if (meshRect.intersection_test(camPoint, farPoint, &intersectionPoint)) {
 
-			mouseInfoDistances[idx] = get_distance(camPoint, intersectionPoint);
-			mouseInfoIntersections[idx] = pair<int, DBL3>(idx, intersectionPoint);
+			mouseInfo[idx] = { get_distance(camPoint, intersectionPoint), idx, intersectionPoint };
 			intersection_found = true;
 		}
 	}
@@ -1073,13 +1258,13 @@ bool PhysQRep::GetMouseInfo(INT2 mouse, string *pmeshName, string* ptypeName, DB
 	if (intersection_found) {
 		
 		//sort all obtained intersections by distance - closest to camera first
-		quicksort(mouseInfoDistances, mouseInfoIntersections);
+		std::sort(mouseInfo.begin(), mouseInfo.end());
 
 		//now check all of them - cannot just read from first mesh intersection as there may be empty cells
-		for (int idx = 0; idx < mouseInfoIntersections.size(); idx++) {
+		for (int idx = 0; idx < mouseInfo.size(); idx++) {
 
-			int picked_mesh_idx = mouseInfoIntersections[idx].first;
-			DBL3 meshPoint = mouseInfoIntersections[idx].second;
+			int picked_mesh_idx = std::get<1>(mouseInfo[idx]);
+			DBL3 meshPoint = std::get<2>(mouseInfo[idx]);
 
 			Rect meshRect = physQRep[picked_mesh_idx].transformBatch.rect;
 			DBL3 cellSize = physQRep[picked_mesh_idx].transformBatch.h;

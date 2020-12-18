@@ -10,7 +10,12 @@
 SDemag::SDemag(SuperMesh *pSMesh_) :
 	Modules(),
 	Convolution<SDemag, DemagKernel>(),
-	ProgramStateNames(this, { VINFO(use_multilayered_convolution), VINFO(n_common), VINFO(use_default_n), VINFO(force_2d_convolution), VINFO(demag_pbc_images) }, {})
+	ProgramStateNames(this, 
+		{ 
+			VINFO(use_multilayered_convolution), 
+			VINFO(n_common), 
+			VINFO(use_default_n), VINFO(force_2d_convolution), 
+			VINFO(demag_pbc_images) }, {})
 {
 	pSMesh = pSMesh_;
 
@@ -120,7 +125,7 @@ void SDemag::Destroy_SDemag_Demag_Modules(void)
 //make sure the pSDemag_Demag list is up to date : if any mismatches found return false
 bool SDemag::Update_SDemag_Demag_List(void)
 {
-	vector<SDemag_Demag*> pSDemag_Demag_;
+	std::vector<SDemag_Demag*> pSDemag_Demag_;
 
 	//also make sure the FFT spaces and rectangles list is correct -> rebuild it
 	FFT_Spaces_Input.clear();
@@ -480,6 +485,7 @@ BError SDemag::Initialize(void)
 					//set convolution dimensions using the common discretisation
 					//kernel collection must be used without multiplcation embedding. Calling this also sets full sizes for S and S2 scratch spaces.
 					error = pSDemag_Demag[idx]->SetDimensions(n_common, h_convolution, false, demag_pbc_images);
+
 					if (error) return error;
 				}
 
@@ -518,8 +524,8 @@ BError SDemag::Initialize_Mesh_Transfer(void)
 	BError error(CLASS_STR(SDemag));
 
 	//now calculate data required for mesh transfers, as well as demag corrections
-	vector< VEC<DBL3>* > pVal_from, pVal_from2;
-	vector< VEC<DBL3>* > pVal_to, pVal_to2;
+	std::vector< VEC<DBL3>* > pVal_from, pVal_from2;
+	std::vector< VEC<DBL3>* > pVal_to, pVal_to2;
 
 	antiferromagnetic_meshes_present = false;
 

@@ -327,7 +327,7 @@ DBL3 Atom_Zeeman::GetField(void)
 	else return Ha;
 }
 
-BError Atom_Zeeman::SetFieldEquation(string equation_string, int step)
+BError Atom_Zeeman::SetFieldEquation(std::string equation_string, int step)
 {
 	BError error(CLASS_STR(Atom_Zeeman));
 
@@ -362,7 +362,7 @@ void Atom_Zeeman::UpdateTEquationUserConstants(bool makeCuda)
 {
 	if (paMesh->userConstants.size()) {
 
-		vector<pair<string, double>> constants(paMesh->userConstants.size());
+		std::vector<std::pair<std::string, double>> constants(paMesh->userConstants.size());
 		for (int idx = 0; idx < paMesh->userConstants.size(); idx++) {
 
 			constants[idx] = { paMesh->userConstants.get_key_from_index(idx), paMesh->userConstants[idx] };

@@ -329,8 +329,8 @@ HRESULT D3D::InitDevice(HWND hWnd) {
     return S_OK;
 }
 
-HRESULT D3D::SetD2DInterop(void) {
-
+HRESULT D3D::SetD2DInterop(void) 
+{
 	if(!Initialized) return S_FALSE;
 
 	//Should initialize com but note it will be initialized only on the thread calling this method, so you may need to initialized it again in other routines.
@@ -361,16 +361,16 @@ HRESULT D3D::SetD2DInterop(void) {
 	return S_OK;
 }
 
-string D3D::GetErrorMessage(HRESULT hr) {
-
+std::string D3D::GetErrorMessage(HRESULT hr) 
+{
 	_com_error err(hr);
-	wstring errMsg = err.ErrorMessage();
-	string retString(errMsg.begin(), errMsg.end());
+	std::wstring errMsg = err.ErrorMessage();
+	std::string retString(errMsg.begin(), errMsg.end());
 
 	return retString;
 }
 
-void D3D::DrawCBObjectBatch(vector<CBObjectTransform> &cbOTBatch, ObjectBufferCollection &objCol, CDO_ objColSelector) 
+void D3D::DrawCBObjectBatch(std::vector<CBObjectTransform> &cbOTBatch, ObjectBufferCollection &objCol, CDO_ objColSelector) 
 {
 	//set object buffer and shaders to immediate context, if not already set
 	objCol.SetContext(pImmediateContext, objColSelector);
@@ -384,11 +384,13 @@ void D3D::DrawCBObjectBatch(vector<CBObjectTransform> &cbOTBatch, ObjectBufferCo
 	// Set primitive topology 
 	pImmediateContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-	for(int n = 0; n < cbOTBatch.size(); n++) {
+	for (int idx = 0; idx < cbOTBatch.size(); idx++) {
 
-		g_World = cbOTBatch[n].Transform();
+		if (cbOTBatch[idx].skip_render) continue;
+
+		g_World = cbOTBatch[idx].Transform();
 		cb.mWorld = XMMatrixTranspose(g_World);
-		cb.vOutputColor = cbOTBatch[n].Color;
+		cb.vOutputColor = cbOTBatch[idx].Color;
 
 		//update and draw transformed object to back buffer
 		pImmediateContext->UpdateSubresource(objCol.objBuf[objColSelector]->pCB, 0, nullptr, &cb, 0, 0);
@@ -447,17 +449,17 @@ void D3D::DrawFrameObject(XMMATRIX Rotation, XMMATRIX Scaling, XMMATRIX Translat
 	pImmediateContext->DrawIndexed(objCol.objBuf[objColSelector]->iCount, 0, 0);
 }
 
-bool D3D::SaveScreenToPNG(string fileName, D2D1_RECT_F capture_rect) 
+bool D3D::SaveScreenToPNG(std::string fileName, D2D1_RECT_F capture_rect) 
 {
-	//lock the mutex as this method can be called directly and interferes with rendering (e.g. call to save an image arrives just as a frame is being rendered)
+	//lock the std::mutex as this method can be called directly and interferes with rendering (e.g. call to save an image arrives just as a frame is being rendered)
 	GraphicsMutex.lock();
 
 	CoInitialize(nullptr);
 
 	HRESULT hr = S_OK;
 
-	//convert string
-	wstring pfileName = StringtoWideString(fileName);
+	//convert std::string
+	std::wstring pfileName = StringtoWideString(fileName);
 
 	ID3D11Texture2D *pDestTexture = nullptr;
 	ID3D11Texture2D *pSourceTexture = nullptr;
@@ -497,15 +499,15 @@ bool D3D::SaveScreenToPNG(string fileName, D2D1_RECT_F capture_rect)
 	else return false;
 }
 
-HRESULT D3D::LoadScaledBitmap(string fileName, IWICFormatConverter **ppWICFormatConverter, D2D1_SIZE_U size) {
+HRESULT D3D::LoadScaledBitmap(std::string fileName, IWICFormatConverter **ppWICFormatConverter, D2D1_SIZE_U size) {
 	
 	//Return IWICFormatConverter loaded from fileName and scaled to given size.
 	//If size is zero then do not rescale
 
 	HRESULT hr = S_OK;
 
-	//convert string
-	wstring pfileName = StringtoWideString(fileName);
+	//convert std::string
+	std::wstring pfileName = StringtoWideString(fileName);
 
 	//stuff needed for d2d operations
 
@@ -553,15 +555,15 @@ HRESULT D3D::LoadScaledBitmap(string fileName, IWICFormatConverter **ppWICFormat
 	return hr;
 }
 
-HRESULT D3D::GetImageDimensions(string fileName, UINT *pbmpWidth, UINT *pbmpHeight) {
+HRESULT D3D::GetImageDimensions(std::string fileName, UINT *pbmpWidth, UINT *pbmpHeight) {
 
 	*pbmpWidth = 0;
 	*pbmpHeight = 0;
 
 	HRESULT hr = S_OK;
 
-	//convert string
-	wstring pfileName = StringtoWideString(fileName);
+	//convert std::string
+	std::wstring pfileName = StringtoWideString(fileName);
 
 	//stuff needed for d2d operations
 
@@ -590,7 +592,7 @@ HRESULT D3D::GetImageDimensions(string fileName, UINT *pbmpWidth, UINT *pbmpHeig
 	return hr;
 }
 
-HRESULT D3D::InitializeSinkWriter(string fileName, IMFSinkWriter **ppWriter, DWORD *pStreamIndex, UINT32 VIDEO_WIDTH, UINT32 VIDEO_HEIGHT, UINT32 VIDEO_FPS, int quality) {
+HRESULT D3D::InitializeSinkWriter(std::string fileName, IMFSinkWriter **ppWriter, DWORD *pStreamIndex, UINT32 VIDEO_WIDTH, UINT32 VIDEO_HEIGHT, UINT32 VIDEO_FPS, int quality) {
 
 	GUID   VIDEO_ENCODING_FORMAT = MFVideoFormat_WMV3;
 	GUID   VIDEO_INPUT_FORMAT = MFVideoFormat_RGB32;
@@ -637,8 +639,8 @@ HRESULT D3D::InitializeSinkWriter(string fileName, IMFSinkWriter **ppWriter, DWO
     IMFMediaType    *pMediaTypeIn = nullptr;   
     DWORD           streamIndex = 0;     
 
-	//convert string
-	wstring pfileName = StringtoWideString(fileName);
+	//convert std::string
+	std::wstring pfileName = StringtoWideString(fileName);
 
     HRESULT hr = MFCreateSinkWriterFromURL(pfileName.c_str(), nullptr, nullptr, &pSinkWriter);
 
@@ -696,7 +698,7 @@ HRESULT D3D::InitializeSinkWriter(string fileName, IMFSinkWriter **ppWriter, DWO
 	return hr;
 }
 
-HRESULT D3D::WriteFrameFromFile(string fileName, IMFSinkWriter *pWriter, DWORD streamIndex, const LONGLONG& timeStamp, UINT32 VIDEO_WIDTH, UINT32 VIDEO_HEIGHT, UINT32 VIDEO_FPS) {
+HRESULT D3D::WriteFrameFromFile(std::string fileName, IMFSinkWriter *pWriter, DWORD streamIndex, const LONGLONG& timeStamp, UINT32 VIDEO_WIDTH, UINT32 VIDEO_HEIGHT, UINT32 VIDEO_FPS) {
 
 	HRESULT hr = S_OK;
 
@@ -763,7 +765,7 @@ HRESULT D3D::WriteFrameFromFile(string fileName, IMFSinkWriter *pWriter, DWORD s
 // When loading from a .fx file the vertex shader routine must be named (the entry point) "VS" and the pixel shader (the entry point) "PS".
 //
 //--------------------------------------------------------------------------------------------------------------------------
-HRESULT ObjectBufferCollection::NewObjectBuffer(ID3D11Device* pd3dDevice, ID3D11DeviceContext* pImmediateContext, SimpleVertex vertices[], UINT vSize, WORD indices[], UINT iSize, string VSFile, string PSFile) {
+HRESULT ObjectBufferCollection::NewObjectBuffer(ID3D11Device* pd3dDevice, ID3D11DeviceContext* pImmediateContext, SimpleVertex vertices[], UINT vSize, WORD indices[], UINT iSize, std::string VSFile, std::string PSFile) {
 	
 	if(!vSize || !iSize) return S_FALSE;
 
@@ -873,7 +875,7 @@ HRESULT ObjectBufferCollection::NewObjectBuffer(ID3D11Device* pd3dDevice, ID3D11
 // as well as loading the shader into the Blob. The Shader entry point name must be VS in the .fx file
 //
 //----------------------------------------------------------------------------------------------------------------------------------------------------
-HRESULT ObjectBufferCollection::CompileShaderFromFile(string fileName, LPCSTR pEntryPoint, LPCSTR pShaderModel, ID3DBlob** ppBlobOut) {
+HRESULT ObjectBufferCollection::CompileShaderFromFile(std::string fileName, LPCSTR pEntryPoint, LPCSTR pShaderModel, ID3DBlob** ppBlobOut) {
     
 	HRESULT hr = S_OK;
 
@@ -894,7 +896,7 @@ HRESULT ObjectBufferCollection::CompileShaderFromFile(string fileName, LPCSTR pE
     return S_OK;
 }
 
-bool D3D::MakeVideoFromFileSequence(string outputFile, vector<string> &inputFiles, UINT32 VIDEO_FPS, float frameScaler, int quality) {
+bool D3D::MakeVideoFromFileSequence(std::string outputFile, std::vector<std::string> &inputFiles, UINT32 VIDEO_FPS, float frameScaler, int quality) {
 
 	HRESULT hr = S_OK;
 
@@ -986,7 +988,7 @@ DBL3 D3D::Pick_FarPlane_Point(INT2 mouse)
 	return DBL3(farPoint_xm.x, farPoint_xm.y, farPoint_xm.z);
 }
 
-bool D3D::GetBitmapFromImage(string bitmapFile, vector<unsigned char>& bitmap, INT2 pixels_size)
+bool D3D::GetBitmapFromImage(std::string bitmapFile, std::vector<unsigned char>& bitmap, INT2 pixels_size)
 {
 	HRESULT hr = S_OK;
 

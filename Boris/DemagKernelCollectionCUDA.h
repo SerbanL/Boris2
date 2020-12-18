@@ -13,7 +13,7 @@
 #include "DemagKernelCollectionCUDA_KerType.h"
 #include "ErrorHandler.h"
 
-using namespace std;
+
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 //
@@ -31,7 +31,7 @@ private:
 	//These are the kernels used to obtain values in this mesh using contributions from those respective meshes.
 
 	//kernels used to multiply fft-ed magnetization from other layers
-	vector<shared_ptr<cu_obj<cuKerType>>> kernels;
+	std::vector<std::shared_ptr<cu_obj<cuKerType>>> kernels;
 
 	//kernels collected in a cu_arr so we can pass it to a __global__ function
 	cu_arr<cuKerType> kernels_gpu;
@@ -41,17 +41,17 @@ private:
 
 	//if z-shifted, re-use already calculated kernel if the only difference is just the sign of the shift : use kernel symmetries to recover correct multiplication
 	//this vector has 1-2-1 correspondence with kernels
-	vector<bool> inverse_shifted;
+	std::vector<bool> inverse_shifted;
 	
 	//this also needs to be passed to a __global__ so build it from inverse_shifted
 	cu_arr<bool> inverse_shifted_gpu;
 
 	//also keep a copy of this in cpu memory for convenience (these flags also found in kernels)
-	vector<bool> zshifted;
+	std::vector<bool> zshifted;
 
 	//collection of all mesh rectangles participating in convolution
 	//All meshes must have same number of cells, thus you can determine the cellsize used in each mesh
-	vector<cuRect> Rect_collection;
+	std::vector<cuRect> Rect_collection;
 
 	//also need to know what the rectangle for this mesh is (i.e. the mesh that this DemagKernelCollection object applies to)
 	cuRect this_rect;
@@ -89,7 +89,7 @@ private:
 	BError Calculate_Demag_Kernels_3D_Complex_Full(int index);
 
 	//search to find a matching kernel that has already been computed and return pointer to it -> kernel can be identified from shift, source and destination discretisation
-	shared_ptr<cu_obj<cuKerType>> KernelAlreadyComputed(cuReal3 shift, cuReal3 h_src, cuReal3 h_dst);
+	std::shared_ptr<cu_obj<cuKerType>> KernelAlreadyComputed(cuReal3 shift, cuReal3 h_src, cuReal3 h_dst);
 
 protected:
 
@@ -107,11 +107,11 @@ protected:
 	//-------------------------- SETTERS
 
 	//Set all the rectangles participating in convolution. This determines the number of kernels needed : one for each mesh.
-	BError Set_Rect_Collection(vector<cuRect>& Rect_collection_, cuRect this_rect_, cuBReal h_max_);
+	BError Set_Rect_Collection(std::vector<cuRect>& Rect_collection_, cuRect this_rect_, cuBReal h_max_);
 
 	//-------------------------- GETTERS
 
-	shared_ptr<cu_obj<cuKerType>> Get_Kernel(int index) { return kernels[index]; }
+	std::shared_ptr<cu_obj<cuKerType>> Get_Kernel(int index) { return kernels[index]; }
 
 	bool is_inverse_shifted(int index) { return inverse_shifted[index]; }
 
@@ -119,7 +119,7 @@ protected:
 
 	//this initializes all the convolution kernels for the given mesh dimensions.
 	//use information for other DemagKernelCollection objects in the set so we re-use kernels as much as possible
-	BError Calculate_Demag_Kernels(vector<DemagKernelCollectionCUDA*>& kernelCollection);
+	BError Calculate_Demag_Kernels(std::vector<DemagKernelCollectionCUDA*>& kernelCollection);
 
 	//-------------------------- RUN-TIME KERNEL MULTIPLICATION
 

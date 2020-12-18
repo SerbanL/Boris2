@@ -27,7 +27,7 @@ BError DemagKernelCollection::Calculate_Demag_Kernels(std::vector<DemagKernelCol
 			
 			for (int idx = 0; idx < kernelCollection.size(); idx++) {
 
-				shared_ptr<KerType> existing_kernel = kernelCollection[idx]->KernelAlreadyComputed(shift, h_src, h_dst);
+				std::shared_ptr<KerType> existing_kernel = kernelCollection[idx]->KernelAlreadyComputed(shift, h_src, h_dst);
 
 				if (existing_kernel != nullptr) {
 
@@ -51,7 +51,7 @@ BError DemagKernelCollection::Calculate_Demag_Kernels(std::vector<DemagKernelCol
 			if (kernels[index] == nullptr) {
 
 				//no -> allocate then compute it
-				kernels[index] = shared_ptr<KerType>(new KerType());
+				kernels[index] = std::shared_ptr<KerType>(new KerType());
 				error = kernels[index]->AllocateKernels(Rect_collection[index], this_rect, N);
 				if (error) return error;
 
@@ -111,7 +111,7 @@ BError DemagKernelCollection::Calculate_Demag_Kernels(std::vector<DemagKernelCol
 }
 
 //search to find a matching kernel that has already been computed and return pointer to it -> kernel can be identified from shift, source and destination discretisation
-shared_ptr<KerType> DemagKernelCollection::KernelAlreadyComputed(DBL3 shift, DBL3 h_src, DBL3 h_dst)
+std::shared_ptr<KerType> DemagKernelCollection::KernelAlreadyComputed(DBL3 shift, DBL3 h_src, DBL3 h_dst)
 {
 	//kernels[index] must not be nullptr, must have kernel_calculated = true and shift, h_src, h_dst must match the corresponding values in kernels[index] 
 
@@ -158,7 +158,7 @@ BError DemagKernelCollection::Calculate_Demag_Kernels_2D_Self(int index)
 	if (!Ddiag.resize(N)) return error(BERROR_OUTOFMEMORY_NCRIT);
 
 	//off-diagonal tensor elements
-	vector<double> Dodiag;
+	std::vector<double> Dodiag;
 	if (!malloc_vector(Dodiag, N.x*N.y)) return error(BERROR_OUTOFMEMORY_NCRIT);
 
 	//use ratios instead of cellsizes directly - same result but better in terms of floating point errors
@@ -175,11 +175,13 @@ BError DemagKernelCollection::Calculate_Demag_Kernels_2D_Self(int index)
 		//pbcs used in at least one dimension
 		if (!dtf.CalcDiagTens2D_PBC(
 			Ddiag, N, h / h_max, 
-			true, ASYMPTOTIC_DISTANCE, pbc_images.x, pbc_images.y, pbc_images.z)) return error(BERROR_OUTOFMEMORY_NCRIT);
+			true, ASYMPTOTIC_DISTANCE, 
+			pbc_images.x, pbc_images.y, pbc_images.z)) return error(BERROR_OUTOFMEMORY_NCRIT);
 
 		if (!dtf.CalcOffDiagTens2D_PBC(
 			Dodiag, N, h / h_max, 
-			true, ASYMPTOTIC_DISTANCE, pbc_images.x, pbc_images.y, pbc_images.z)) return error(BERROR_OUTOFMEMORY_NCRIT);
+			true, ASYMPTOTIC_DISTANCE, 
+			pbc_images.x, pbc_images.y, pbc_images.z)) return error(BERROR_OUTOFMEMORY_NCRIT);
 	}
 	
 	//-------------- SETUP FFT

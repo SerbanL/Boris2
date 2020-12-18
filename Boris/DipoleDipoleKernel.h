@@ -8,7 +8,7 @@
 #include "BorisLib.h"
 #include "DipoleDipoleTFunc.h"
 
-using namespace std;
+
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 //
@@ -23,7 +23,7 @@ class DipoleDipoleKernel :
 public:
 
 	//off-diagonal Kernel used for 2D only (real parts only, imaginary parts are zero)
-	vector<double> K2D_odiag;
+	std::vector<double> K2D_odiag;
 
 	//Kernels for 3D
 	//Kdiag : Kx, Ky, Kz; Kodiag : Kxy, Kxz, Kyz; (real parts only, imaginary parts are zero)

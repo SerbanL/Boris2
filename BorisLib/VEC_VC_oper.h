@@ -39,6 +39,116 @@ void VEC_VC<VType>::setrectnonempty(const Rect& rectangle, VType value)
 	}
 }
 
+//set value in solid object only containing relpos
+template <typename VType>
+void VEC_VC<VType>::setobject(VType value, DBL3 relpos)
+{
+	//use a simple serial algorithm for filling a solid object
+	//it's fast enough even for very large meshes (almost instantaneous in terms of response to user input) and since it's not meant to be used at runtime a parallel algorithm is not really necessary
+
+	int start_idx = VEC<VType>::position_to_cellidx(relpos);
+	if (is_empty(start_idx)) return;
+
+	//allocate memory in chunks when needed, to avoid having to allocate memory too often
+	const int memory_chunk = 10000;
+
+	//keep track of marked cells here so we can restore ngbrFlags state at the end
+	std::vector<int> marked_cells(memory_chunk);
+	int num_marked_cells = 0;
+
+	std::vector<int> array1, array2(memory_chunk);
+	int num_previous_cells = 0;
+	int num_current_cells = 0;
+
+	VEC<VType>::quantity[start_idx] = value;
+	ngbrFlags[start_idx] &= ~NF_NOTEMPTY;
+	marked_cells[num_marked_cells++] = start_idx;
+	array2[num_current_cells++] = start_idx;
+
+	while (num_current_cells > 0) {
+
+		num_previous_cells = num_current_cells;
+
+		//reset current cells to zero before going through previous cells so we can recount number of current cells
+		num_current_cells = 0;
+
+		//array1 must always have the list of previously marked cells, and array2 will store the marked cells for next iteration, so swap their storage every time
+		array1.swap(array2);
+
+		//go through cells marked last time and find new cells to mark
+		//NOTE: this could be parallelized in theory by working with sets of non-interacting sub-grids (and move memory allocation outside of for loop)
+		//e.g. rather than getting indexes from array1 only, you could use several of them, each storing non-interacting cell indexes
+		for (int idx = 0; idx < num_previous_cells; idx++) {
+
+			//make sure marked_cells and array for next iteration has enough memory allocated
+			if (num_marked_cells + 6 > marked_cells.size()) marked_cells.resize(marked_cells.size() + memory_chunk);
+			if (num_current_cells + 6 > array2.size()) array2.resize(array2.size() + memory_chunk);
+
+			//cell index for which we consider its neighbors
+			int pidx = array1[idx];
+
+			//must be a neighbor, and not already marked (NF_NOTEMPTY)
+			if ((ngbrFlags[pidx] & NF_NPX) && (ngbrFlags[pidx + 1] & NF_NOTEMPTY)) {
+
+				//set value and mark it as already marked
+				VEC<VType>::quantity[pidx + 1] = value;
+				ngbrFlags[pidx + 1] &= ~NF_NOTEMPTY;
+				//save it so we can restore the NF_NOTEMPTY flags (all cells in which we set value are not actually empty)
+				marked_cells[num_marked_cells++] = pidx + 1;
+				//save it in number of cells to use on next iteration, which will be used to generate new neighbors
+				array2[num_current_cells++] = pidx + 1;
+			}
+
+			if ((ngbrFlags[pidx] & NF_NNX) && (ngbrFlags[pidx - 1] & NF_NOTEMPTY)) {
+
+				VEC<VType>::quantity[pidx - 1] = value;
+				ngbrFlags[pidx - 1] &= ~NF_NOTEMPTY;
+				marked_cells[num_marked_cells++] = pidx - 1;
+				array2[num_current_cells++] = pidx - 1;
+			}
+
+			if ((ngbrFlags[pidx] & NF_NPY) && (ngbrFlags[pidx + VEC<VType>::n.x] & NF_NOTEMPTY)) {
+
+				VEC<VType>::quantity[pidx + VEC<VType>::n.x] = value;
+				ngbrFlags[pidx + VEC<VType>::n.x] &= ~NF_NOTEMPTY;
+				marked_cells[num_marked_cells++] = pidx + VEC<VType>::n.x;
+				array2[num_current_cells++] = pidx + VEC<VType>::n.x;
+			}
+
+			if ((ngbrFlags[pidx] & NF_NNY) && (ngbrFlags[pidx - VEC<VType>::n.x] & NF_NOTEMPTY)) {
+
+				VEC<VType>::quantity[pidx - VEC<VType>::n.x] = value;
+				ngbrFlags[pidx - VEC<VType>::n.x] &= ~NF_NOTEMPTY;
+				marked_cells[num_marked_cells++] = pidx - VEC<VType>::n.x;
+				array2[num_current_cells++] = pidx - VEC<VType>::n.x;
+			}
+
+			if ((ngbrFlags[pidx] & NF_NPZ) && (ngbrFlags[pidx + VEC<VType>::n.x*VEC<VType>::n.y] & NF_NOTEMPTY)) {
+
+				VEC<VType>::quantity[pidx + VEC<VType>::n.x*VEC<VType>::n.y] = value;
+				ngbrFlags[pidx + VEC<VType>::n.x*VEC<VType>::n.y] &= ~NF_NOTEMPTY;
+				marked_cells[num_marked_cells++] = pidx + VEC<VType>::n.x*VEC<VType>::n.y;
+				array2[num_current_cells++] = pidx + VEC<VType>::n.x*VEC<VType>::n.y;
+			}
+
+			if ((ngbrFlags[pidx] & NF_NNZ) && (ngbrFlags[pidx - VEC<VType>::n.x*VEC<VType>::n.y] & NF_NOTEMPTY)) {
+
+				VEC<VType>::quantity[pidx - VEC<VType>::n.x*VEC<VType>::n.y] = value;
+				ngbrFlags[pidx - VEC<VType>::n.x*VEC<VType>::n.y] &= ~NF_NOTEMPTY;
+				marked_cells[num_marked_cells++] = pidx - VEC<VType>::n.x*VEC<VType>::n.y;
+				array2[num_current_cells++] = pidx - VEC<VType>::n.x*VEC<VType>::n.y;
+			}
+		}
+	} 
+	
+	//restore cells marked with NF_NOTEMPTY
+#pragma omp parallel for
+	for (int idx = 0; idx < num_marked_cells; idx++) {
+
+		ngbrFlags[marked_cells[idx]] |= NF_NOTEMPTY;
+	}
+}
+
 //re-normalize all non-zero values to have the new magnitude (multiply by new_norm and divide by current magnitude)
 template <typename VType>
 template <typename PType>

@@ -249,7 +249,7 @@ public:
 	PhysQ FetchOnScreenPhysicalQuantity(double detail_level = 0.0, bool getBackground = false);
 
 	//save the quantity currently displayed on screen in an ovf2 file using the specified format
-	BError SaveOnScreenPhysicalQuantity(string fileName, string ovf2_dataType);
+	BError SaveOnScreenPhysicalQuantity(std::string fileName, std::string ovf2_dataType);
 
 	//Before calling a run of GetDisplayedMeshValue, make sure to call PrepareDisplayedMeshValue : this calculates and stores in displayVEC storage and quantities which don't have memory allocated directly, but require computation and temporary storage.
 	void PrepareDisplayedMeshValue(void);
@@ -404,7 +404,7 @@ public:
 	BError copy_mesh_data(MeshBase& copy_this);
 
 	//mask cells using bitmap image : white -> empty cells. black -> keep values. Apply mask up to given z depth number of cells depending on grayscale value (zDepth, all if 0).
-	BError applymask(double zDepth_m, string fileName, function<vector<unsigned char>(string, INT2)>& bitmap_loader);
+	BError applymask(double zDepth_m, std::string fileName, std::function<std::vector<unsigned char>(std::string, INT2)>& bitmap_loader);
 
 	//set cells to empty in given rectangle (delete by setting entries to zero). The rectangle is relative to this mesh.
 	BError delrect(Rect rectangle);
@@ -413,17 +413,47 @@ public:
 	BError setrect(Rect rectangle);
 
 	//roughen mesh sides (side = "x", "y", "z", "-x", "-y", or "-z") to given depth (same units as h) with prng instantiated with given seed.
-	BError RoughenMeshSides(string side, double depth, int seed);
+	BError RoughenMeshSides(std::string side, double depth, int seed);
 
 	//Roughen mesh top and bottom surfaces using a jagged pattern to given depth and peak spacing (same units as h) with prng instantiated with given seed.
 	//Rough both top and bottom if sides is empty, else it should be either -z or z.
-	BError RoughenMeshSurfaces_Jagged(double depth, double spacing, int seed, string sides);
+	BError RoughenMeshSurfaces_Jagged(double depth, double spacing, int seed, std::string sides);
 
 	//Generate Voronoi 2D grains in xy plane (boundaries between Voronoi cells set to empty) at given average spacing with prng instantiated with given seed.
 	BError GenerateGrains2D(double spacing, int seed);
 
 	//Generate Voronoi 3D grains (boundaries between Voronoi cells set to empty) at given average spacing with prng instantiated with given seed.
 	BError GenerateGrains3D(double spacing, int seed);
+
+	//Advanced mesh shape control methods
+
+	//Disk with dimensions (x, y diameters, thickness), centre position relative to mesh, rotation angles, number of repetitions along x, y, z (1, 1, 1 for no repetitions), displacement values if repetitions used
+	//Method: or (add shape) / not (delete shape) / xor (add and delete overlaps)
+	BError shape_disk(MeshShape shape);
+
+	//rectangle shape
+	BError shape_rect(MeshShape shape);
+
+	//triangle shape
+	BError shape_triangle(MeshShape shape);
+
+	//prolate ellipsoid
+	BError shape_ellipsoid(MeshShape shape);
+
+	//pyramid
+	BError shape_pyramid(MeshShape shape);
+
+	//tetrahedron
+	BError shape_tetrahedron(MeshShape shape);
+
+	//cone
+	BError shape_cone(MeshShape shape);
+
+	//torus
+	BError shape_torus(MeshShape shape);
+
+	//general shape setting function, can set composite shape using combination of the above elementary shapes
+	BError shape_set(std::vector<MeshShape> shapes);
 
 	//----------------------------------- METHODS REDEFINED IN SOME IMPLEMENTATIONS (virtual here - with exceptions)
 
@@ -462,6 +492,13 @@ BError Mesh::change_mesh_shape(Lambda& run_this, PType& ... params)
 	//Primary quantities are : M, elC, Temp, u_disp
 
 	BError error(__FUNCTION__);
+
+#if COMPILECUDA == 1
+	if (pMeshCUDA) {
+
+		error = pMeshCUDA->copy_shapes_to_cpu();
+	}
+#endif
 
 	//magnetization
 	if (!shape_change_individual || 

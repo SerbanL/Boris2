@@ -38,6 +38,44 @@ void Atom_Mesh_Cubic::SetMagAngle(double polar, double azim, Rect rectangle)
 	}
 }
 
+//set magnetization angle only in given shape
+void Atom_Mesh_Cubic::SetMagAngle_Shape(double polar, double azim, std::vector<MeshShape> shapes)
+{
+#if COMPILECUDA == 1
+	//refresh from gpu memory
+	if (paMeshCUDA) paMeshCUDA->M1()->copy_to_cpuvec(M1);
+#endif
+
+	if (M1.linear_size()) {
+
+		M1.shape_setvalue(shapes, Polar_to_Cartesian(DBL3(mu_s, polar, azim)));
+	}
+
+#if COMPILECUDA == 1
+	//refresh gpu memory
+	if (paMeshCUDA) paMeshCUDA->M1()->copy_from_cpuvec(M1);
+#endif
+}
+
+//Set magnetization angle in solid object only containing given relative position uniformly using polar coordinates
+void Atom_Mesh_Cubic::SetMagAngle_Object(double polar, double azim, DBL3 position)
+{
+#if COMPILECUDA == 1
+	//refresh M from gpu memory
+	if (paMeshCUDA) paMeshCUDA->M1()->copy_to_cpuvec(M1);
+#endif
+
+	if (M1.linear_size()) {
+
+		M1.setobject(Polar_to_Cartesian(DBL3(mu_s, polar, azim)), position);
+	}
+
+#if COMPILECUDA == 1
+	//refresh gpu memory
+	if (paMeshCUDA) paMeshCUDA->M1()->copy_from_cpuvec(M1);
+#endif
+}
+
 //Invert magnetization direction in given mesh
 void Atom_Mesh_Cubic::SetInvertedMag(bool x, bool y, bool z)
 {
@@ -62,7 +100,7 @@ void Atom_Mesh_Cubic::SetInvertedMag(bool x, bool y, bool z)
 }
 
 //Mirror magnetization in given axis (literal x, y, or z) in given mesh (must be magnetic)
-void Atom_Mesh_Cubic::SetMirroredMag(string axis)
+void Atom_Mesh_Cubic::SetMirroredMag(std::string axis)
 {
 #if COMPILECUDA == 1
 	//refresh M from gpu memory

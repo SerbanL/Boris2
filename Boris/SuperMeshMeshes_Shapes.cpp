@@ -4,7 +4,7 @@
 //--------------------------------------------------------- MESH HANDLING - SHAPES
 
 //set mesh rect for named mesh (any if applicable any other dependent meshes) and update dependent save data rects by calling the provided function.
-BError SuperMesh::SetMeshRect(string meshName, Rect meshRect, std::function<void(string, Rect)> save_data_updater)
+BError SuperMesh::SetMeshRect(std::string meshName, Rect meshRect, std::function<void(std::string, Rect)> save_data_updater)
 {
 	BError error(__FUNCTION__);
 
@@ -60,7 +60,7 @@ BError SuperMesh::SetMeshRect(string meshName, Rect meshRect, std::function<void
 }
 
 //copy all primary mesh data (magnetization, elC, Temp, etc.) but do not change dimensions or discretisation
-BError SuperMesh::copy_mesh_data(string meshName_from, string meshName_to)
+BError SuperMesh::copy_mesh_data(std::string meshName_from, std::string meshName_to)
 {
 	BError error(__FUNCTION__);
 
@@ -71,7 +71,7 @@ BError SuperMesh::copy_mesh_data(string meshName_from, string meshName_to)
 	return error;
 }
 
-BError SuperMesh::delrect(string meshName, Rect rectangle)
+BError SuperMesh::delrect(std::string meshName, Rect rectangle)
 {
 	BError error(__FUNCTION__);
 
@@ -82,7 +82,7 @@ BError SuperMesh::delrect(string meshName, Rect rectangle)
 	return error;
 }
 
-BError SuperMesh::setrect(string meshName, Rect rectangle)
+BError SuperMesh::setrect(std::string meshName, Rect rectangle)
 {
 	BError error(__FUNCTION__);
 
@@ -93,7 +93,7 @@ BError SuperMesh::setrect(string meshName, Rect rectangle)
 	return error;
 }
 
-BError SuperMesh::resetrect(string meshName)
+BError SuperMesh::resetrect(std::string meshName)
 {
 	BError error(__FUNCTION__);
 
@@ -105,7 +105,7 @@ BError SuperMesh::resetrect(string meshName)
 }
 
 //roughen mesh sides (side = "x", "y", "z", "-x", "-y", or "-z") to given depth (same units as h) with prng instantiated with given seed.
-BError SuperMesh::RoughenMeshSides(string meshName, string side, double depth, int seed)
+BError SuperMesh::RoughenMeshSides(std::string meshName, std::string side, double depth, int seed)
 {
 	BError error(__FUNCTION__);
 
@@ -120,7 +120,7 @@ BError SuperMesh::RoughenMeshSides(string meshName, string side, double depth, i
 
 //Roughen mesh top and bottom surfaces using a jagged pattern to given depth and peak spacing (same units as h) with prng instantiated with given seed.
 //Rough both top and bottom if sides is empty, else it should be either -z or z.
-BError SuperMesh::RoughenMeshSurfaces_Jagged(string meshName, double depth, double spacing, int seed, string sides)
+BError SuperMesh::RoughenMeshSurfaces_Jagged(std::string meshName, double depth, double spacing, int seed, std::string sides)
 {
 	BError error(__FUNCTION__);
 
@@ -134,7 +134,7 @@ BError SuperMesh::RoughenMeshSurfaces_Jagged(string meshName, double depth, doub
 }
 
 //clear roughness: set fine shape to coarse shape
-BError SuperMesh::ClearMeshRoughness(string meshName)
+BError SuperMesh::ClearMeshRoughness(std::string meshName)
 {
 	BError error(__FUNCTION__);
 
@@ -146,7 +146,7 @@ BError SuperMesh::ClearMeshRoughness(string meshName)
 }
 
 //Generate Voronoi 2D grains in xy plane (boundaries between Voronoi cells set to empty) at given average spacing with prng instantiated with given seed.
-BError SuperMesh::GenerateGrains2D(string meshName, double spacing, int seed)
+BError SuperMesh::GenerateGrains2D(std::string meshName, double spacing, int seed)
 {
 	BError error(__FUNCTION__);
 
@@ -160,7 +160,7 @@ BError SuperMesh::GenerateGrains2D(string meshName, double spacing, int seed)
 }
 
 //Generate Voronoi 3D grains (boundaries between Voronoi cells set to empty) at given average spacing with prng instantiated with given seed.
-BError SuperMesh::GenerateGrains3D(string meshName, double spacing, int seed)
+BError SuperMesh::GenerateGrains3D(std::string meshName, double spacing, int seed)
 {
 	BError error(__FUNCTION__);
 

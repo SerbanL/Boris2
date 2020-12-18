@@ -18,7 +18,7 @@
 class SuperMesh;
 class STransport;
 
-using namespace std;
+
 
 class STransportCUDA :
 	public ModulesCUDA
@@ -42,18 +42,18 @@ private:
 	//CMBND contacts for all contacting transport meshes - these are ordered by first vector index; for each transport mesh there could be multiple contacting meshes and these are ordered by second vector index
 	//CMBNDInfo describes the contact between 2 meshes, allowing calculation of values at cmbnd cells based on continuity of a potential and flux
 	//we need a cu_obj managed copy of CMBNDcontacts from STransport so we can pass it to cuda kernels efficiently
-	vector< vector< cu_obj<CMBNDInfoCUDA> > > CMBNDcontactsCUDA;
+	std::vector< std::vector< cu_obj<CMBNDInfoCUDA> > > CMBNDcontactsCUDA;
 	//...and we also need a cpu-memory version, even though we can access it using pSTrans - the problem is, we need the cpu data in .cu files where we cannot define STransport (as nvcc will then attempt to compile BorisLib)
-	vector< vector<CMBNDInfoCUDA> > CMBNDcontacts;
+	std::vector< std::vector<CMBNDInfoCUDA> > CMBNDcontacts;
 
 	//list of all transport modules in transport meshes (same ordering as first vector in CMBNDcontacts)
-	vector<TransportCUDA*> pTransport;
+	std::vector<TransportCUDA*> pTransport;
 
 	//vector of pointers to all V - need this to set cmbnd flags (same ordering as first vector in CMBNDcontacts)
-	vector<cu_obj<cuVEC_VC<cuBReal>>*> pV;
+	std::vector<cu_obj<cuVEC_VC<cuBReal>>*> pV;
 
 	//vector of pointers to all S - need this to set cmbnd flags (same ordering as first vector in CMBNDcontacts)
-	vector<cu_obj<cuVEC_VC<cuReal3>>*> pS;
+	std::vector<cu_obj<cuVEC_VC<cuReal3>>*> pS;
 
 	//Object with functions for calculating cmbnd values when using interface conductances
 	cu_obj<STransportCUDA_GInterf_V_Funcs> gInterf_V;

@@ -7,6 +7,7 @@
 #include "VEC_mng.h"
 #include "VEC_aux.h"
 #include "VEC_generate.h"
+#include "VEC_shapemask.h"
 #include "VEC_Voronoi.h"
 #include "VEC_oper.h"
 #include "VEC_avg.h"

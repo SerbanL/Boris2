@@ -18,7 +18,7 @@
 #include "MeshBaseCUDA.h"
 #endif
 
-using namespace std;
+
 
 class SuperMesh;
 
@@ -288,7 +288,7 @@ public:
 	double GetBaseTemperature(void) { return base_temperature; }
 
 	//set text equation for base temperature : when iterating, the base temperature will be evaluated and set using the text equation
-	BError SetBaseTemperatureEquation(string equation_string, int step);
+	BError SetBaseTemperatureEquation(std::string equation_string, int step);
 	void UpdateTEquationUserConstants(void);
 
 	//parameters spatial variation setters
@@ -299,8 +299,11 @@ public:
 	//update text equations for mesh parameters with user constants, mesh dimensions, Curie temperature, base temperature
 	bool update_all_meshparam_equations(void);
 
-	//set parameter spatial variation using a given generator and arguments (arguments passed as a string to be interpreted and converted using ToNum)
-	BError set_meshparam_var(PARAM_ paramID, MATPVAR_ generatorID, string generatorArgs, function<vector<unsigned char>(string, INT2)>& bitmap_loader);
+	//set parameter spatial variation using a given generator and arguments (arguments passed as a std::string to be interpreted and converted using ToNum)
+	BError set_meshparam_var(PARAM_ paramID, MATPVAR_ generatorID, std::string generatorArgs, std::function<std::vector<unsigned char>(std::string, INT2)>& bitmap_loader);
+
+	//set parameter spatial variation using a shape : set value in given shape only
+	BError set_meshparam_shape(PARAM_ paramID, std::vector<MeshShape> shapes, std::string value_text);
 
 	//others	
 
@@ -319,7 +322,7 @@ public:
 	virtual PhysQ FetchOnScreenPhysicalQuantity(double detail_level = 0.0, bool getBackground = false) = 0;
 
 	//save the quantity currently displayed on screen in an ovf2 file using the specified format
-	virtual BError SaveOnScreenPhysicalQuantity(string fileName, string ovf2_dataType) = 0;
+	virtual BError SaveOnScreenPhysicalQuantity(std::string fileName, std::string ovf2_dataType) = 0;
 
 	//Before calling a run of GetDisplayedMeshValue, make sure to call PrepareDisplayedMeshValue : this calculates and stores in displayVEC storage and quantities which don't have memory allocated directly, but require computation and temporary storage.
 	virtual void PrepareDisplayedMeshValue(void) = 0;
@@ -480,7 +483,7 @@ public:
 	virtual BError copy_mesh_data(MeshBase& copy_this) = 0;
 
 	//mask cells using bitmap image : white -> empty cells. black -> keep values. Apply mask up to given z depth number of cells depending on grayscale value (zDepth, all if 0).
-	virtual BError applymask(double zDepth_m, string fileName, function<vector<unsigned char>(string, INT2)>& bitmap_loader) = 0;
+	virtual BError applymask(double zDepth_m, std::string fileName, std::function<std::vector<unsigned char>(std::string, INT2)>& bitmap_loader) = 0;
 
 	//set cells to empty in given rectangle (delete by setting entries to zero). The rectangle is relative to this mesh.
 	virtual BError delrect(Rect rectangle) = 0;
@@ -489,17 +492,47 @@ public:
 	virtual BError setrect(Rect rectangle) = 0;
 
 	//roughen mesh sides (side = "x", "y", "z", "-x", "-y", or "-z") to given depth (same units as h) with prng instantiated with given seed.
-	virtual BError RoughenMeshSides(string side, double depth, int seed) = 0;
+	virtual BError RoughenMeshSides(std::string side, double depth, int seed) = 0;
 
 	//Roughen mesh top and bottom surfaces using a jagged pattern to given depth and peak spacing (same units as h) with prng instantiated with given seed.
 	//Rough both top and bottom if sides is empty, else it should be either -z or z.
-	virtual BError RoughenMeshSurfaces_Jagged(double depth, double spacing, int seed, string sides) = 0;
+	virtual BError RoughenMeshSurfaces_Jagged(double depth, double spacing, int seed, std::string sides) = 0;
 
 	//Generate Voronoi 2D grains in xy plane (boundaries between Voronoi cells set to empty) at given average spacing with prng instantiated with given seed.
 	virtual BError GenerateGrains2D(double spacing, int seed) = 0;
 
 	//Generate Voronoi 3D grains (boundaries between Voronoi cells set to empty) at given average spacing with prng instantiated with given seed.
 	virtual BError GenerateGrains3D(double spacing, int seed) = 0;
+
+	//Advanced mesh shape control methods
+	//Method: or (add shape) / not (delete shape) / xor (add and delete overlaps)
+	
+	//Disk with dimensions (x, y diameters, thickness), centre position relative to mesh, rotation angles, number of repetitions along x, y, z (1, 1, 1 for no repetitions), displacement values if repetitions used
+	virtual BError shape_disk(MeshShape shape) = 0;
+
+	//rectangle shape
+	virtual BError shape_rect(MeshShape shape) = 0;
+
+	//isosceles triangle shape
+	virtual BError shape_triangle(MeshShape shape) = 0;
+
+	//prolate ellipsoid
+	virtual BError shape_ellipsoid(MeshShape shape) = 0;
+
+	//pyramid
+	virtual BError shape_pyramid(MeshShape shape) = 0;
+
+	//tetrahedron
+	virtual BError shape_tetrahedron(MeshShape shape) = 0;
+
+	//cone
+	virtual BError shape_cone(MeshShape shape) = 0;
+
+	//torus
+	virtual BError shape_torus(MeshShape shape) = 0;
+
+	//general shape setting function, can set composite shape using combination of the above elementary shapes
+	virtual BError shape_set(std::vector<MeshShape> shapes) = 0;
 
 	//----------------------------------- METHODS REDEFINED IN SOME IMPLEMENTATIONS (virtual here)
 
@@ -526,11 +559,16 @@ public:
 	//this method is also used by the dipole mesh where it does something else - sets the dipole direction
 	virtual void SetMagAngle(double polar, double azim, Rect rectangle = Rect()) {}
 
+	virtual void SetMagAngle_Shape(double polar, double azim, std::vector<MeshShape> shapes) {}
+
+	//Set magnetization angle in solid object only containing given relative position uniformly using polar coordinates
+	virtual void SetMagAngle_Object(double polar, double azim, DBL3 position) {}
+
 	//Invert magnetization direction in given mesh (must be magnetic)
 	virtual void SetInvertedMag(bool x, bool y, bool z) {}
 
 	//Mirror magnetization in given axis (literal x, y, or z) in given mesh (must be magnetic)
-	virtual void SetMirroredMag(string axis) {}
+	virtual void SetMirroredMag(std::string axis) {}
 
 	//Set random magentisation distribution in given mesh (must be magnetic)
 	virtual void SetRandomMag(int seed) {}
@@ -547,6 +585,15 @@ public:
 
 	//set M from given data VEC (0 values mean empty points) -> stretch data to M dimensions if needed.
 	virtual void SetMagFromData(VEC<DBL3>& data, const Rect& dstRect = Rect()) {}
+
+	//Set Temp from given data VEC -> stretch data to mesh dimensions if needed.
+	void SetTempFromData(VEC<double>& data, const Rect& dstRect = Rect());
+
+	//Set E from current density data, by dividing by electrical conductivity (elC). Set V and S to zero. This is meant for computations with fixed Jc and transport solver iteration disabled.
+	void SetEFromJcData(VEC<DBL3>& data);
+	
+	//set electric field VEC from a constant Jc value
+	void SetEFromJcValue(DBL3 Jcvalue);
 
 	//Set/Get mesh exchange coupling status to other meshes
 	virtual void SetMeshExchangeCoupling(bool status) {}

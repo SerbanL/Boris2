@@ -7,6 +7,16 @@ BError SuperMesh::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 {
 	BError error(CLASS_STR(SuperMesh));
 	
+#if COMPILECUDA == 1
+	//Commands are executed on newly spawned threads, so if cuda is on and we are not using device 0 (default device) we must switch to required device, otherwise 0 will be used
+	if (cudaEnabled && cudaDeviceSelect != 0) {
+
+		int device = 0;
+		cudaGetDevice(&device);
+		if (device != cudaDeviceSelect) cudaSetDevice(cudaDeviceSelect);
+	}
+#endif
+
 	//1. Magnetic super-mesh - also construct the entire super-mesh rectangle
 
 	//calculate magnetic super-mesh from currently set meshes and super-mesh cellsize
@@ -144,15 +154,15 @@ BError SuperMesh::SwitchCUDAState(bool cudaState, int cudaDeviceSelect)
 
 	//Switch for SuperMesh
 
+	//Select indicated CUDA device if possible
+	if (cudaDeviceSelect < cudaDeviceVersions.size() && cudaDeviceVersions[cudaDeviceSelect].first == __CUDA_ARCH__) {
+
+		cudaSetDevice(cudaDeviceSelect);
+	}
+	else return error(BERROR_CUDAVERSIONMISMATCH_NCRIT);
+
 	if (cudaState) {
-		
-		//Select indicated CUDA device if possible
-		if (cudaDeviceSelect < cudaDeviceVersions.size() && cudaDeviceVersions[cudaDeviceSelect].first == __CUDA_ARCH__) {
-
-			cudaSetDevice(cudaDeviceSelect);
-		}
-		else return error(BERROR_CUDAVERSIONMISMATCH_NCRIT);
-
+	
 		if (!pSMeshCUDA) {
 
 			pSMeshCUDA = new SuperMeshCUDA(this);

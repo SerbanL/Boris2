@@ -4,7 +4,7 @@
 
 #include "ProgramState.h"
 
-//Build an equation from a user-supplied string, which can be efficiently evaluated at run-time.
+//Build an equation from a user-supplied std::string, which can be efficiently evaluated at run-time.
 //
 //The equation can be typed in a natural format, detailed below.
 
@@ -64,7 +64,7 @@ private:
 
 	///////////////////////////////////////////////////////////
 
-	//the user equation stored as a string
+	//the user equation stored as a std::string
 	std::string text_equation;
 
 	///////////////////////////////////////////////////////////
@@ -410,12 +410,12 @@ private:
 					//does the equation to the left of this operator contain only matched bracket pairs? i.e. is this operator a valid node at this tree level?
 					if (!count_bracket_pairs(eq_substr_left)) {
 
-						//found a node -> add it to equation branches string
+						//found a node -> add it to equation branches std::string
 						//also add the operator. Don't set branch joining indexes yet, we'll make these when we make the actual branches
 						eq_branches.push_back(eq_substr_left);
 						eq_binops.push_back(binop[op_idx].second);
 
-						//there must be a string to the right of this operator and now we want to break it down further at this tree level
+						//there must be a std::string to the right of this operator and now we want to break it down further at this tree level
 						return split_equation(eq_substr, idx + 1);
 					}
 				}
@@ -452,7 +452,7 @@ private:
 
 			//parse eq_binops and eliminate one operator at a time by making a new node; recurse until none left
 			//consider them in order of precedence, thus sort them first
-			quicksort(eq_binops);
+			std::sort(eq_binops.begin(), eq_binops.end());
 
 			for (int idx = 0; idx < eq_binops.size(); idx++) {
 
@@ -675,7 +675,7 @@ public:
 
 	void RepairObjectState(void)
 	{
-		//remake the TEquation object from reloaded text equation string
+		//remake the TEquation object from reloaded text equation std::string
 		clear_Funcs();
 
 		std::vector<std::pair<std::string, double>> constants_and_values(userconstants.size());
@@ -773,7 +773,7 @@ public:
 
 		if (error_on_create) return false;
 
-		//From equation string build an equation with Function objects which can be numerically evaluated.
+		//From equation std::string build an equation with Function objects which can be numerically evaluated.
 
 		//The equation can be represented as a tree with all the branches converging to a single point, the evaluated value.
 		//all lowest-level branches start with a basis function, i.e. either a constant or a function variable.
@@ -782,7 +782,7 @@ public:
 		//1. Translate the text equation into a EqComp::FSPEC equation specifier. This is a logical representation of the text equation.
 		//2. Translate the EqComp::FSPEC specifier structure into an actual equation with allocated Function objects.
 
-		//prepare the equation string:
+		//prepare the equation std::string:
 		//remove white spaces
 		eq_str = trimspaces(eq_str);
 
@@ -816,7 +816,7 @@ public:
 
 			//each entry in EqComp::FSPEC specifies a branch as a cascade of EqComp::FSPEC objects from bottom up.
 
-			//expand string if needed according to entries in equation_expanders
+			//expand std::string if needed according to entries in equation_expanders
 			while (expand_equation_string(eq_str_component));
 
 			auto& fspec = eq_component.get_fspec();
@@ -843,7 +843,7 @@ public:
 		if (eq_str_components.size() >= 2) success &= make_equation_component(eq_str_components[1], eq_component_2);
 		if (eq_str_components.size() >= 3) success &= make_equation_component(eq_str_components[2], eq_component_3);
 
-		//if equation string was not correct then need to clear Functions otherwise the structure is probably unstable and will crash the program if executed.
+		//if equation std::string was not correct then need to clear Functions otherwise the structure is probably unstable and will crash the program if executed.
 		if (!success) clear_Funcs();
 
 		//Set Special functions if available

@@ -37,7 +37,7 @@ void Simulation::restore_state(void)
 }
 
 //show the error
-void Simulation::show_error(BError berror, string error_message, bool verbose)
+void Simulation::show_error(BError berror, std::string error_message, bool verbose)
 { 
 	if (verbose) {
 
@@ -50,9 +50,9 @@ void Simulation::show_error(BError berror, string error_message, bool verbose)
 
 	if (log_errors) {
 
-		ofstream bdout;
-		bdout.open(errorlog_fileName.c_str(), ios::out | ios::app);
-		bdout << Get_Date_Time() + error_message << endl;
+		std::ofstream bdout;
+		bdout.open(errorlog_fileName.c_str(), std::ios::out | std::ios::app);
+		bdout << Get_Date_Time() + error_message << std::endl;
 		bdout.close();
 	}
 

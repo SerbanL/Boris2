@@ -20,7 +20,7 @@ class SuperMesh;
 class MetalMesh :
 	public Mesh,
 	public ProgramState<MetalMesh,
-	tuple<
+	std::tuple<
 	//Mesh members
 	int, int, int, 
 	int, int, 
@@ -34,7 +34,7 @@ class MetalMesh :
 	MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<DBL2, double>, MatP<DBL2, double>, double, TEquation<double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>
 	>,
 	//Module Implementations
-	tuple<Transport, Heat> >
+	std::tuple<Transport, Heat> >
 {
 
 #if COMPILECUDA == 1

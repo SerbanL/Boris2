@@ -2,7 +2,10 @@
 #include "DipoleDipoleTFunc.h"
 
 //Compute in Ddiag the diagonal tensor elements (Dxx, Dyy, Dzz) which has sizes given by N.
-bool DipoleDipoleTFunc::CalcDiagTens2D_PBC(VEC<DBL3> &Ddiag, INT3 N, DBL3 h, bool include_self_demag, int x_images, int y_images, int z_images)
+bool DipoleDipoleTFunc::CalcDiagTens2D_PBC(
+	VEC<DBL3> &Ddiag, INT3 N, DBL3 h, 
+	bool include_self_demag, 
+	int x_images, int y_images, int z_images)
 {
 	//zero the tensor first
 	Ddiag.set(DBL3());

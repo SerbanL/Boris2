@@ -85,7 +85,7 @@ inline bool MakeDirectory(std::string directory)
 	return true;
 }
 
-//This function has been adapted from : https://stackoverflow.com/questions/27378318/c-get-string-from-clipboard-on-linux
+//This function has been adapted from : https://stackoverflow.com/questions/27378318/c-get-std::string-from-clipboard-on-linux
 //Needs "-lX11" for linking
 inline std::string GetClipboardText(void)
 {

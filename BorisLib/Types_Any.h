@@ -11,7 +11,7 @@
 // b = std::string("test");	//conversion not possible, b still stores a 6
 //
 // Any can be used with stream << operators and std::stringstream >> operator. e.g.:
-// cout << b << endl;	//output 6
+// std::cout << b << std::endl;	//output 6
 //
 // Any d(5.5);			//d stores a double
 // d = b;				//d now stores an integer

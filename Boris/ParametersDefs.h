@@ -34,9 +34,15 @@ enum MATPTDEP_ { MATPTDEP_NONE = 0, MATPTDEP_ARRAY, MATPTDEP_EQUATION };
 
 //enum for spatial variation types
 enum MATPVAR_ { 
-	MATPVAR_NONE = 0, MATPVAR_MASK, MATPVAR_RANDOM, MATPVAR_JAGGED, MATPVAR_ABLPOL, MATPVAR_ABLTANH, MATPVAR_ABLEXP, MATPVAR_DEFECTS, MATPVAR_FAULTS,
+	MATPVAR_NONE = 0, 
+	MATPVAR_MASK, 
+	MATPVAR_RANDOM, MATPVAR_JAGGED, 
+	MATPVAR_ABLPOL, MATPVAR_ABLTANH, MATPVAR_ABLEXP, 
+	MATPVAR_DEFECTS, MATPVAR_FAULTS,
 	MATPVAR_VORONOI2D, MATPVAR_VORONOI3D, MATPVAR_VORONOIBND2D, MATPVAR_VORONOIBND3D, MATPVAR_VORONOIROT2D, MATPVAR_VORONOIROT3D,
-	MATPVAR_EQUATION, MATPVAR_OVF2
+	MATPVAR_EQUATION, 
+	MATPVAR_OVF2,
+	MATPVAR_SHAPE
 };
 
 /////////////////////////////////////////////////////////////////////////////////////////////////
@@ -45,7 +51,7 @@ enum MATPVAR_ {
 
 struct MeshParamDescriptor {
 
-	//the unit used when converting from a string containing units to a numerical value and conversely
+	//the unit used when converting from a std::string containing units to a numerical value and conversely
 	std::string unit;
 
 	PARAMTYPE_ paramType = PARAMTYPE_NONE;

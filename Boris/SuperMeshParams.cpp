@@ -4,7 +4,7 @@
 //--------------------------------------------------------- MESH PARAMETERS
 
 //these set parameter values and temperature dependence in the indicated mesh - call through these since it's important to call UpdateConfiguration also
-BError SuperMesh::set_meshparam_value(string meshName, string paramHandle, string value_text)
+BError SuperMesh::set_meshparam_value(std::string meshName, std::string paramHandle, std::string value_text)
 {
 	BError error(__FUNCTION__);
 
@@ -19,8 +19,8 @@ BError SuperMesh::set_meshparam_value(string meshName, string paramHandle, strin
 	return error;
 }
 
-//get named parameter value from given mesh. Set value as a string in value_text, without units
-BError SuperMesh::get_meshparam_value(string meshName, string paramHandle, string& value_text)
+//get named parameter value from given mesh. Set value as a std::string in value_text, without units
+BError SuperMesh::get_meshparam_value(std::string meshName, std::string paramHandle, std::string& value_text)
 {
 	BError error(__FUNCTION__);
 
@@ -35,7 +35,7 @@ BError SuperMesh::get_meshparam_value(string meshName, string paramHandle, strin
 
 //--------------------------------------------------------- temperature dependence
 
-BError SuperMesh::set_meshparam_t_equation(string meshName, string paramHandle, string equationText)
+BError SuperMesh::set_meshparam_t_equation(std::string meshName, std::string paramHandle, std::string equationText)
 {
 	BError error(__FUNCTION__);
 
@@ -50,7 +50,7 @@ BError SuperMesh::set_meshparam_t_equation(string meshName, string paramHandle, 
 	return error;
 }
 
-BError SuperMesh::set_meshparam_tscaling_array(string meshName, string paramHandle, vector<double>& temp, vector<double>& scaling_x, vector<double>& scaling_y, vector<double>& scaling_z, string fileName_info)
+BError SuperMesh::set_meshparam_tscaling_array(std::string meshName, std::string paramHandle, std::vector<double>& temp, std::vector<double>& scaling_x, std::vector<double>& scaling_y, std::vector<double>& scaling_z, std::string fileName_info)
 {
 	BError error(__FUNCTION__);
 
@@ -60,7 +60,7 @@ BError SuperMesh::set_meshparam_tscaling_array(string meshName, string paramHand
 
 	if (pMesh[meshName]->set_meshparam_tscaling_array(paramID, temp, scaling_x, scaling_y, scaling_z)) {
 
-		//set fileName as the temperature scaling info for console displayuu purposes
+		//set fileName as the temperature scaling info for console display purposes
 		ExtractFilenameDirectory(fileName_info);
 		ExtractFilenameTermination(fileName_info);
 		pMesh[meshName]->set_meshparam_tscaling_info(paramID, fileName_info);
@@ -72,8 +72,8 @@ BError SuperMesh::set_meshparam_tscaling_array(string meshName, string paramHand
 	else return error(BERROR_INCORRECTARRAYS);
 }
 
-//clear parameters temperature dependence in given mesh for given parameter (all meshes and parameters if empty string, all parameters in given mesh if empty string)
-BError SuperMesh::clear_meshparam_temp(string meshName, string paramHandle)
+//clear parameters temperature dependence in given mesh for given parameter (all meshes and parameters if empty std::string, all parameters in given mesh if empty std::string)
+BError SuperMesh::clear_meshparam_temp(std::string meshName, std::string paramHandle)
 {
 	BError error(__FUNCTION__);
 
@@ -107,7 +107,7 @@ BError SuperMesh::clear_meshparam_temp(string meshName, string paramHandle)
 
 //--------------------------------------------------------- spatial dependence
 
-BError SuperMesh::set_meshparam_s_equation(string meshName, string paramHandle, string equationText)
+BError SuperMesh::set_meshparam_s_equation(std::string meshName, std::string paramHandle, std::string equationText)
 {
 	BError error(__FUNCTION__);
 
@@ -122,8 +122,8 @@ BError SuperMesh::set_meshparam_s_equation(string meshName, string paramHandle, 
 	return error;
 }
 
-//clear parameters spatial dependence (variation) in given mesh (all meshes if empty string)
-BError SuperMesh::clear_meshparam_variation(string meshName)
+//clear parameters spatial dependence (variation) in given mesh (all meshes if empty std::string)
+BError SuperMesh::clear_meshparam_variation(std::string meshName)
 {
 	BError error(__FUNCTION__);
 
@@ -147,7 +147,7 @@ BError SuperMesh::clear_meshparam_variation(string meshName)
 }
 
 //clear parameter spatial dependence (variation) in given mesh for named parameter only
-BError SuperMesh::clear_meshparam_variation(string meshName, string paramHandle)
+BError SuperMesh::clear_meshparam_variation(std::string meshName, std::string paramHandle)
 {
 	BError error(__FUNCTION__);
 
@@ -163,7 +163,7 @@ BError SuperMesh::clear_meshparam_variation(string meshName, string paramHandle)
 }
 
 //set parameter to display in given mesh when ParamVar spatial variation display is enabled
-BError SuperMesh::set_meshparamvar_display(string meshName, string paramHandle)
+BError SuperMesh::set_meshparamvar_display(std::string meshName, std::string paramHandle)
 {
 	BError error(__FUNCTION__);
 
@@ -175,7 +175,7 @@ BError SuperMesh::set_meshparamvar_display(string meshName, string paramHandle)
 }
 
 //set parameter spatial variation using a given generator
-BError SuperMesh::set_meshparam_var(string meshName, string paramHandle, string generatorHandle, string generatorArgs, function<vector<unsigned char>(string, INT2)>& bitmap_loader)
+BError SuperMesh::set_meshparam_var(std::string meshName, std::string paramHandle, std::string generatorHandle, std::string generatorArgs, std::function<std::vector<unsigned char>(std::string, INT2)>& bitmap_loader)
 {
 	BError error(__FUNCTION__);
 
@@ -193,8 +193,24 @@ BError SuperMesh::set_meshparam_var(string meshName, string paramHandle, string 
 	return error;
 }
 
+//set parameter spatial variation using a shape : set value in given shape only
+BError SuperMesh::set_meshparam_shape(std::string meshName, std::string paramHandle, std::vector<MeshShape> shapes, std::string value_text)
+{
+	BError error(__FUNCTION__);
+
+	if (!contains(meshName) || !pMesh[meshName]->contains_param(paramHandle)) return error(BERROR_INCORRECTNAME);
+
+	PARAM_ paramID = (PARAM_)pMesh[meshName]->get_meshparam_id(paramHandle);
+
+	error = pMesh[meshName]->set_meshparam_shape(paramID, shapes, value_text);
+
+	if (!error) error = UpdateConfiguration(UPDATECONFIG_PARAMCHANGED);
+
+	return error;
+}
+
 //copy all parameters from another Mesh
-BError SuperMesh::copy_mesh_parameters(string meshName_from, string meshName_to)
+BError SuperMesh::copy_mesh_parameters(std::string meshName_from, std::string meshName_to)
 {
 	BError error(__FUNCTION__);
 

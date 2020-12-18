@@ -1952,8 +1952,8 @@ __global__ void cu_Demag_ConvProd_q2D_32_transpose_xy(cuVEC<cuReal3>& Kdiag, cuV
 		cu_arr<cuReIm> econj, cossin;
 		cu_arr<int> shufind;
 
-		vector<ReIm> econj_cpu(q2D_level), cossin_cpu(q2D_level);
-		vector<int> shufind_cpu(q2D_level);
+		std::vector<ReIm> econj_cpu(q2D_level), cossin_cpu(q2D_level);
+		std::vector<int> shufind_cpu(q2D_level);
 
 		//calculate exp factors for FFT/IFFT
 		for (int idx = 0; idx < q2D_level; idx++) {
@@ -1998,9 +1998,9 @@ __global__ void cu_Demag_ConvProd_q2D_32_transpose_xy(cuVEC<cuReal3>& Kdiag, cuV
 		cossin.resize(q2D_level);
 		shufind.resize(q2D_level);
 
-		econj.copy_from_cpuvector(econj_cpu);
-		cossin.copy_from_cpuvector(cossin_cpu);
-		shufind.copy_from_cpuvector(shufind_cpu);
+		econj.copy_from_vector(econj_cpu);
+		cossin.copy_from_vector(cossin_cpu);
+		shufind.copy_from_vector(shufind_cpu);
 	}
 
 //N = (N.x/2 + 1, N.y, N.z), where N.z > 32

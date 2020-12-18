@@ -4,7 +4,7 @@
 
 #include "BorisLib.h"
 
-using namespace std;
+
 
 //Simulation data available as outputs - add new entries at the end to keep older simulation files compatible
 enum DATA_ 
@@ -33,10 +33,10 @@ enum DATA_
 struct DatumSpecifier {
 
 	//Label to display in data box (if available). If Label not set then this datum is not available for display in data box
-	string Label;
+	std::string Label;
 
 	//physical unit (if any)
-	string unit;
+	std::string unit;
 
 	//number of components for this data entry (e.g a vector quantity has 3 components, etc.). This info is just used for the data save file header when labelling the data saved in columns.
 	int components;
@@ -44,7 +44,7 @@ struct DatumSpecifier {
 	//flags: meshless means this datum is not associated with any mesh. boxless means it doesn't need a box
 	bool meshless, boxless;
 
-	DatumSpecifier(string Label_, int components_, string unit_ = "", bool meshless_ = true, bool boxless_ = true) {
+	DatumSpecifier(std::string Label_, int components_, std::string unit_ = "", bool meshless_ = true, bool boxless_ = true) {
 
 		Label = Label_;
 		components = components_;
@@ -63,26 +63,26 @@ struct DatumSpecifier {
 
 //Configuration for a particular datum, which may be selected to be saved during a simulation, or display in the data box
 struct DatumConfig :
-	public ProgramState<DatumConfig, tuple<int, string, Rect>, tuple<>>
+	public ProgramState<DatumConfig, std::tuple<int, std::string, Rect>, std::tuple<>>
 {
 
 	//the particular datum this configuration is for
 	int datumId;
 
 	//mesh name this configured datum is associated with. If blank then mesh name is not applicable. For super-mesh use SuperMesh:superMeshHandle (i.e. "supermesh")
-	string meshName;
+	std::string meshName;
 
 	//for some data a Box may be applicable : e.g. obtain average value in given mesh only in this box (subset of mesh size)
 	Rect rectangle;
 
-	DatumConfig(int datumId_, string meshName_, Rect rectangle_) : ProgramStateNames(this, { VINFO(datumId), VINFO(meshName), VINFO(rectangle) }, {})
+	DatumConfig(int datumId_, std::string meshName_, Rect rectangle_) : ProgramStateNames(this, { VINFO(datumId), VINFO(meshName), VINFO(rectangle) }, {})
 	{
 		datumId = datumId_;
 		meshName = meshName_;
 		rectangle = rectangle_;
 	}
 
-	DatumConfig(int datumId_, string meshName_) : ProgramStateNames(this, { VINFO(datumId), VINFO(meshName), VINFO(rectangle) }, {})
+	DatumConfig(int datumId_, std::string meshName_) : ProgramStateNames(this, { VINFO(datumId), VINFO(meshName), VINFO(rectangle) }, {})
 	{
 		datumId = datumId_;
 		meshName = meshName_;

@@ -3,7 +3,7 @@
 #include "BorisLib.h"
 #include "Modules.h"
 
-using namespace std;
+
 
 class Mesh;
 class FMesh;
@@ -25,7 +25,7 @@ class SuperMesh;
 class Oersted : 
 	public Modules,
 	public Convolution<Oersted, OerstedKernel>,
-	public ProgramState<Oersted, tuple<>, tuple<>>
+	public ProgramState<Oersted, std::tuple<>, std::tuple<>>
 {
 
 #if COMPILECUDA == 1

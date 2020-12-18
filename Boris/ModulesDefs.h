@@ -1,6 +1,6 @@
 #pragma once
 
-using namespace std;
+
 
 //Modules (MODS_ entries are super-mesh versions and not available as normal module handles
 //Add new entries at the end to keep older simulation files compatible

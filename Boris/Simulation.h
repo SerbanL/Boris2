@@ -14,9 +14,6 @@
 //replace #if _MSC_VER < 1600 || _MSC_VER > 1913
 //with
 //#if _MSC_VER < 1600 || _MSC_VER > 1916
-//
-//Did this and didn't cause any problems, but need to be aware this isn't officially supported and could potentially cause problems.
-//I understand CUDA 10 officially supports all VS2017 versions but didn't try it yet (maybe I should!). VS2019 also available but no need to upgrade yet.
 
 //3.
 //Cannot import BorisLib.h in .cu files. This is due to nvcc not supporting C++17 standards at the time of writing (only C++14).
@@ -26,28 +23,18 @@
 //On Windows 10 it's possible CUDA nvcc will keep coming up with "exit error code 1", including when you simply try to clean the project.
 //This is a generic error, and if you enable maximum verbosity in VS (Tools > Options > Projects & Solutions > Build and Run) you'll see this is because of "Access is denied." for a process which writes some temporary data.
 //In particular when the process is trying to write temporary data to "C:\Users\<UserName>\AppData\Local" it won't be able to because of denied access.
-//I got around this by giving full control for this folder in Security settings. This problem appeared out of the blue and I don't really know why, I suspect it's something to do with a Windows Defender update or something similar.
 
 //5.
 //Don't set the number of CUDA threads per block too large. Currently using 128.
-//If the amount of code that is included in a CUDA kernel is too large (through inlining of various functions, etc. etc.) the program will start to exhibit very strange bugs with no apparent solution, and completely defying logic.
-//I've struggled with this for some time, until I realised it's because of too many threads per block used when launching kernels. Transport solver kernels are particularly notorious.
-//As soon as I reduced them - hey presto! - logic restored and everything works again. 
-//Used to be 512 threads per block, then reduced to 256. When some kernels got too big again, same type of bugs appeared. This time I knew not to waste time and reduced to the current value of 128 - good again!
-//Tested this on CUDA 5 and CUDA 6 architectures and didn't find any variation in this behaviour.
+//If the amount of code that is included in a CUDA kernel is too large (through inlining of various functions, etc. etc.) the program will start to exhibit very strange bugs.
 
 //BUGS
 
 //NOT SOLVED:
+//1. Drag and drop simulation file sometimes crashes program.
 
 //LIKELY SOLVED:
-
 //SOLVED:
-//1. Drag and drop simulation file sometimes crashes program. Found bad conversion function - I'm certain that was the problem, so consider this solved but keep an eye on this for a while.
-//2. Saving simulation file sometimes sets dT to zero (to a floating point error). I've only seen it happen with CUDA enabled. Solution: Checks in ODECommonCUDA destructor fixed. 
-//3. Using a python script may result in program hanging if issuing a flood of commands. Solution : reworked NetSocks module.
-//4. If heat solver diverges (e.g. due to too high a time step), and at least 1 material parameter has a temperature dependence, when in CUDA mode out of gpu memory errors can result requiring a program restart. 
-//I seem to have fixed it using extra checks on Temperature when getting updated parameter values, but I don't understand why this happens without the checks so the solution seems like a hack. Not happy with this!
 
 #pragma once
 
@@ -78,51 +65,50 @@
 #include "BorisCUDALib.h"
 #endif
 
-using namespace std;
-
 //Top level object
 class Simulation : 
 	public SimulationSharedData, 
 	public Threads<Simulation>,
 	public ProgramState<Simulation, 
-	tuple<
+	std::tuple<
 	BorisDisplay, 
-	string, string, string, string, bool, bool, bool, 
+	std::string, std::string, std::string, std::string, bool, bool, bool, 
 	vector_lut<DatumConfig>, vector_lut<DatumConfig>, 
 	INT2, 
 	vector_lut<StageConfig>, int, bool, 
 	SuperMesh, 
 	bool, int, 
 	bool, 
-	bool, 
-	DBL4, DBL2, DBL2, int, 
+	bool, bool,
+	DBL4, DBL2, DBL2, int,
+	DBL3, INT3, DBL3, std::string,
 	vector_key<double>>,
-	tuple<> >
+	std::tuple<> >
 {
 private:
 
 	//saved simulation file header and program version number
-	string simfile_header = "Boris simulation file version ";
+	std::string simfile_header = "Boris simulation file version ";
 	
-	string domain_name = "www.boris-spintronics.uk";
-	string download_page = "/download";
+	std::string domain_name = "www.boris-spintronics.uk";
+	std::string download_page = "/download";
 	//check if current program version is the latest
-	string version_checker = "version.php";
+	std::string version_checker = "version.php";
 	//allow users to send a new entry for the online materials database
-	string mdb_entry_handler = "mdbentry.php";
+	std::string mdb_entry_handler = "mdbentry.php";
 	//update the local materials database from the online materials database
-	string mdb_update_handler = "mdb.php";
+	std::string mdb_update_handler = "mdb.php";
 	//check when the online materials database was last updated
-	string mdb_lastupdate = "mdbtime.php";
+	std::string mdb_lastupdate = "mdbtime.php";
 
 	//directory name with Boris Data (e.g. error log output, default.bsm, and other important folders
 #if OPERATING_SYSTEM == OS_WIN
-	string boris_data_directory = "Boris Data/";
+	std::string boris_data_directory = "Boris Data/";
 #elif OPERATING_SYSTEM == OS_LIN
-	string boris_data_directory = "Boris_Data/";
+	std::string boris_data_directory = "Boris_Data/";
 #endif
 	//Default simulations directory folder, located within boris_data_directory
-	string boris_simulations_directory = "Simulations/";
+	std::string boris_simulations_directory = "Simulations/";
 
 	//check for updates on program startup?
 	bool start_check_updates = true;
@@ -131,7 +117,7 @@ private:
 	bool start_scriptserver = true;
 
 	//save/load startup flags in this file (e.g. log_errors, start_check_updates, start_scriptserver)
-	string startup_options_file;
+	std::string startup_options_file;
 
 	int Program_Version;
 
@@ -156,7 +142,7 @@ private:
 
 	//log errors generated by command input?
 	bool log_errors = true;
-	string errorlog_fileName;
+	std::string errorlog_fileName;
 
 	//the display master object - all display updates done through this object
 	BorisDisplay BD;
@@ -174,12 +160,12 @@ private:
 	vector_key_lut<DatumSpecifier> dataDescriptor;
 
 	//files for saving output data
-	string savedataFile = "out_data.txt";
+	std::string savedataFile = "out_data.txt";
 	//image save file base (during a simulation this is complemented by _iteration.png termination)
-	string imageSaveFileBase = "mesh_image";
+	std::string imageSaveFileBase = "mesh_image";
 
 	//currently loaded simulation file, including directory (empty if none)
-	string currentSimulationFile;
+	std::string currentSimulationFile;
 	//append or create new data file?
 	bool appendToDataFile = false;
 	//saveDataList is in SimulationSharedData
@@ -191,18 +177,18 @@ private:
 	vector_lut<DatumConfig> dataBoxList;
 
 	//lut-indexed vector of module handles (handle as entered in the console) : can be indexed using a value from MOD_ enum
-	vector_lut<string> moduleHandles;
+	vector_lut<std::string> moduleHandles;
 
 	//For each ODE_ entry specify allowed EVAL_ entries (i.e. for each differential equation specify allowed evaluation methods)
-	vector_lut< vector<EVAL_> > odeAllowedEvals;
+	vector_lut< std::vector<EVAL_> > odeAllowedEvals;
 	//The default evaluation method for each ODE : this is the evaluation method set when changing ODEs
 	vector_lut<EVAL_> odeDefaultEval;
 	//Link ODE_ entries with text handles (ODE_ is the major id) : micromagnetic meshes
-	vector_lut<string> odeHandles;
+	vector_lut<std::string> odeHandles;
 	//Link ODE_ entries with text handles (ODE_ is the major id) : atomistic meshes (smaller subset of ODEs allowed, but same evaluation methods)
-	vector_lut<string> atom_odeHandles;
+	vector_lut<std::string> atom_odeHandles;
 	//Link EVAL_ entries with text handles (EVAL_ is the major id)
-	vector_lut<string> odeEvalHandles;
+	vector_lut<std::string> odeEvalHandles;
 
 	//handles and descriptors for simulation stages types, stop conditions and data saving conditions, indexed by SS_ and STOP_ respectively, as well as keys (handles)
 	vector_key_lut<StageDescriptor> stageDescriptors;
@@ -210,7 +196,7 @@ private:
 	vector_key_lut<DataSaveDescriptor> dataSaveDescriptors;
 
 	//interactive console object info : index with majorId (IOI_ entry) and minorId (subtype). If only one entry for majorId then it applies irrespective of minorId.
-	vector_lut<string> ioInfo;
+	vector_lut<std::string> ioInfo;
 
 	//simulation stages describing the simulation schedule
 	vector_lut<StageConfig> simStages;
@@ -225,6 +211,13 @@ private:
 	//use a small back-off (0.001) for default settings to avoid capturing lines at the edges
 	DBL4 image_cropping = DBL4(0.001, 0.001, 0.999, 0.999);
 
+	//modifiers for shape generator commands (shape_...)
+	DBL3 shape_rotation = DBL3(0, 0, 0);
+	INT3 shape_repetitions = INT3(1, 1, 1);
+	DBL3 shape_displacement = DBL3(0, 0, 0);
+	//mesh shape generation method
+	std::string shape_method = MeshShape(MSHAPEMETHOD_ADD).method_name();
+	
 	//Simulation super-mesh
 	SuperMesh SMesh;
 
@@ -239,12 +232,11 @@ private:
 	bool cudaAvailable;
 #endif
 
-	//there may be more than 1 cuda devices, numbered from 0 up. This does not switch cuda on, but indicates which devices is used when cuda is switched on
-	//always check the current program cuda architecture matches the device cuda compute version when switching on
-	int cudaDeviceSelect = 0;
-
 	//thread-safe access to simulation state changes - e.g. don't want to change parameters in the middle of an iteration
-	mutex simulationMutex;
+	std::mutex simulationMutex;
+
+	//thread-safe access for external input: must make sure there is no clash between direct user input and scripted input, otherwise crashes can result
+	std::mutex userInputMutex;
 
 	//timing values used for benchmarking - use benchtime command to return sim_end_ms - sim_start_ms
 	unsigned int sim_start_ms = 0, sim_end_ms = 0;
@@ -282,8 +274,8 @@ private:
 	//-------------------------------------Files loading and saving
 
 	//Save / Load simulation from .bsm file : use ProgramState methods.
-	BError SaveSimulation(string fileName);
-	BError LoadSimulation(string fileName);
+	BError SaveSimulation(std::string fileName);
+	BError LoadSimulation(std::string fileName);
 
 	//implement pure virtual method from ProgramState
 	void RepairObjectState(void) { dpArr.clear_all(); }
@@ -292,6 +284,8 @@ private:
 
 	//Start and stop Simulate method in a separate thread
 	void RunSimulation(void);
+	//SetupRunSimulation sets cuda device and number of OpenMP threads for the RunSimulation, called on the same thread as RunSimulation
+	void SetupRunSimulation(void);
 	void StopSimulation(void);
 	//stop and reset simulation back to starting point
 	void ResetSimulation(void);
@@ -303,12 +297,12 @@ private:
 	void ComputeFields(void);
 
 	//Command handler
-	void HandleCommand(string command);
+	void HandleCommand(std::string command);
 
 	//-------------------------------------Simulation schedule
 
 	//add a new simulation stage with default settings
-	void AddGenericStage(SS_ stageType, string meshName = "");
+	void AddGenericStage(SS_ stageType, std::string meshName = "");
 	void DeleteStage(int stageIndex);
 
 	//set stop condition for index-th entry in simStages (the index-th stage) with default stop value.
@@ -317,13 +311,13 @@ private:
 	void SetGenericDataSaveCondition(int index, DSAVE_ dsaveType);
 
 	//edit set stage type, stop condition, or data save condition
-	void EditStageType(int index, SS_ stageType, string meshName = "");
-	void EditStageValue(int stageIndex, string value_string);
-	void EditStageStopCondition(int index, STOP_ stopType, string stopValueString = "");
-	void EditDataSaveCondition(int index, DSAVE_ dsaveType, string dsaveValueString = "");
+	void EditStageType(int index, SS_ stageType, std::string meshName = "");
+	void EditStageValue(int stageIndex, std::string value_string);
+	void EditStageStopCondition(int index, STOP_ stopType, std::string stopValueString = "");
+	void EditDataSaveCondition(int index, DSAVE_ dsaveType, std::string dsaveValueString = "");
 
 	//update mesh names in simStages
-	void UpdateStageMeshNames(string oldMeshName, string newMeshName);
+	void UpdateStageMeshNames(std::string oldMeshName, std::string newMeshName);
 
 	//get stage step, step as an INT2, also checking if they are valid
 	INT2 Check_and_GetStageStep();
@@ -343,33 +337,33 @@ private:
 	//-------------------------------------Console messages helper methods
 
 	//show usage for given console command
-	void PrintCommandUsage(string command_name) { BD.DisplayFormattedConsoleMessage(commands[command_name].usage); BD.DisplayFormattedConsoleMessage(commands[command_name].descr); BD.DisplayFormattedConsoleMessage(commands[command_name].return_descr); }
+	void PrintCommandUsage(std::string command_name) { BD.DisplayFormattedConsoleMessage(commands[command_name].usage); BD.DisplayFormattedConsoleMessage(commands[command_name].descr); BD.DisplayFormattedConsoleMessage(commands[command_name].return_descr); }
 
 	//---------------------------------------------------- MESH LIST
 
 	//NOTE, in general we have two main types of methods:
 
 	//1. void Print_something_List(void)			: this displays in the console required formatted text involving a list of things
-	//2. string Build_something_ListLine(int index) : this makes the formatted text for a single line in the list for the above method. Also needed in state handler to update the list when something changes.
+	//2. std::string Build_something_ListLine(int index) : this makes the formatted text for a single line in the list for the above method. Also needed in state handler to update the list when something changes.
 
-	//Sometimes methods like this are also use : string Build_something_Text(int index) : this makes unformatted text used in interactive objects textId and displayed text.
+	//Sometimes methods like this are also use : std::string Build_something_Text(int index) : this makes unformatted text used in interactive objects textId and displayed text.
 
 	//show list of meshes
 	void Print_Mesh_List(void);
-	//build formatted string, describing the given mesh
-	string Build_Mesh_ListLine(int meshIndex);
+	//build formatted std::string, describing the given mesh
+	std::string Build_Mesh_ListLine(int meshIndex);
 
 	//---------------------------------------------------- MESH DISPLAY
 
 	void Print_MeshDisplay_List(void);
-	string Build_MeshDisplay_ListLine(int meshIndex);
+	std::string Build_MeshDisplay_ListLine(int meshIndex);
 
 	//---------------------------------------------------- MODULES LIST
 
 	//show list of modules (active and not active) for all meshes
 	void Print_Modules_List(void);
-	//build formatted string, describing the modules available for a given named mesh
-	string Build_Modules_ListLine(int meshIndex);
+	//build formatted std::string, describing the modules available for a given named mesh
+	std::string Build_Modules_ListLine(int meshIndex);
 
 	//---------------------------------------------------- ODES LIST
 
@@ -386,51 +380,51 @@ private:
 	//Print available and currently set output data as interactive lists
 	void Print_AvailableOutputData(void);
 
-	//build formatted string for interactive object describing an entry in saveDataList at index_in_list (also helper method to build the actual unformatted display text in the object)
+	//build formatted std::string for interactive object describing an entry in saveDataList at index_in_list (also helper method to build the actual unformatted display text in the object)
 	void Print_SetOutputData_List(void);
-	string Build_SetOutputData_ListLine(int index_in_list);
-	string Build_SetOutputData_Text(int index_in_list);
+	std::string Build_SetOutputData_ListLine(int index_in_list);
+	std::string Build_SetOutputData_Text(int index_in_list);
 
 	//---------------------------------------------------- SIMULATION STAGES
 
 	//Print available and currently set simulation stages as interactive lists
 	void Print_SetStages_List(void);
 
-	//build formatted string for interactive object describing an entry in simStages at index_in_list (also helper method to build the actual unformatted display text in the object)
-	string Build_SetStages_ListLine(int index_in_list);
-	string Build_SetStages_Text(int index_in_list);
+	//build formatted std::string for interactive object describing an entry in simStages at index_in_list (also helper method to build the actual unformatted display text in the object)
+	std::string Build_SetStages_ListLine(int index_in_list);
+	std::string Build_SetStages_Text(int index_in_list);
 
 	//helpers for interactive objects for set stages lines
-	string Build_SetStages_ValueText(int index_in_list);
-	string Build_SetStages_StopConditionText(int index_in_list);
-	string Build_SetStages_SaveConditionText(int index_in_list, int dsaveIdx);
+	std::string Build_SetStages_ValueText(int index_in_list);
+	std::string Build_SetStages_StopConditionText(int index_in_list);
+	std::string Build_SetStages_SaveConditionText(int index_in_list, int dsaveIdx);
 
 	//---------------------------------------------------- MESH PARAMETERS
 
 	//print all mesh parameters for the given mesh name
-	void Print_MeshParams(string meshName);
+	void Print_MeshParams(std::string meshName);
 
 	//build an entire line with mesh parameters for a given mesh index
-	string Build_MeshParams_Line(int meshIndex);
+	std::string Build_MeshParams_Line(int meshIndex);
 
 	//build mesh parameter text for a given mesh index and param identifier - helper method
-	string Build_MeshParams_Text(int meshIdx, PARAM_ paramId);
+	std::string Build_MeshParams_Text(int meshIdx, PARAM_ paramId);
 
 	//---------------------------------------------------- MESH PARAMETERS TEMPERATURE DEPENDENCE
 
 	//print all mesh parameters temperature dependence for the given mesh name
-	void Print_MeshParamsTemperature(string meshName);
+	void Print_MeshParamsTemperature(std::string meshName);
 
 	//build an entire line with mesh parameters temperature dependence for a given mesh index
-	string Build_MeshParamsTemp_Text(int meshIndex);
+	std::string Build_MeshParamsTemp_Text(int meshIndex);
 
 	//---------------------------------------------------- MESH PARAMETERS SPATIAL DEPENDENCE
 
 	//print all mesh parameters spatial dependence for the given mesh name
-	void Print_MeshParamsVariation(string meshName);
+	void Print_MeshParamsVariation(std::string meshName);
 
 	//build an entire line with mesh parameters spatial dependence for a given mesh index
-	string Build_MeshParamsVariation_Text(int meshIndex);
+	std::string Build_MeshParamsVariation_Text(int meshIndex);
 
 	//---------------------------------------------------- MOVING MESH SETTINGS
 
@@ -439,37 +433,37 @@ private:
 	//---------------------------------------------------- ELECTRODES and TRANSPORT SETTINGS
 
 	void Print_Electrodes_List(void);
-	string Build_Electrodes_ListLine(int el_index);
+	std::string Build_Electrodes_ListLine(int el_index);
 
 	void PrintTransportSolverConfig(void);
 
 	//---------------------------------------------------- TEMPERATURE
 
 	void Print_MeshTemperature_List(void);
-	string Build_MeshTemperature_ListLine(int meshIndex);
+	std::string Build_MeshTemperature_ListLine(int meshIndex);
 
 	void Print_HeatBoundaries_List(void);
-	string Build_HeatBoundaries_ListLine(int meshIndex);
+	std::string Build_HeatBoundaries_ListLine(int meshIndex);
 
 	//---------------------------------------------------- CURIE TEMPERATURE and ATOMIC MOMENT
 
 	void Print_CurieandMoment_List(void);
-	string Build_CurieandMoment_ListLine(int meshIndex);
+	std::string Build_CurieandMoment_ListLine(int meshIndex);
 	
 	//---------------------------------------------------- TEMPERATURE MODEL TYPE
 
 	void Print_TemperatureModel_List(void);
-	string Build_TemperatureModel_ListLine(int meshIndex);
+	std::string Build_TemperatureModel_ListLine(int meshIndex);
 
 	//---------------------------------------------------- STOCHASTICITY SETIINGS
 
 	void Print_Stochasticity_List(void);
-	string Build_Stochasticity_ListLine(int meshIndex);
+	std::string Build_Stochasticity_ListLine(int meshIndex);
 
 	//---------------------------------------------------- EVALUATION SPEEDUP SETIINGS
 
 	void Print_Speedup_List(void);
-	string Build_Speedup_ListLine(int meshIndex);
+	std::string Build_Speedup_ListLine(int meshIndex);
 
 	//---------------------------------------------------- CUDA and MEMORY INFO
 
@@ -505,11 +499,11 @@ private:
 	//---------------------------------------------------- NEIGHBORING MESHES EXCHANGE COUPLING
 
 	void Print_ExchangeCoupledMeshes_List(void);
-	string Build_ExchangeCoupledMeshes_ListLine(int meshIndex);
+	std::string Build_ExchangeCoupledMeshes_ListLine(int meshIndex);
 
 	//---------------------------------------------------- MESH ROUGHNESS REFINEMENT
 
-	void Print_MeshRoughnessRefinement(string meshName);
+	void Print_MeshRoughnessRefinement(std::string meshName);
 
 	//---------------------------------------------------- MULTILAYERED CONVOLUTION CONFIGURATION
 
@@ -526,7 +520,7 @@ private:
 	//---------------------------------------------------- PERIODIC BOUNDARY CONDITIONS
 
 	void Print_PBC(void);
-	string Build_PBC_ListLine(int meshIndex);
+	std::string Build_PBC_ListLine(int meshIndex);
 
 	//---------------------------------------------------- INDIVIDUAL SHAPE CONTROL
 
@@ -537,32 +531,40 @@ private:
 	//Print currently set equation constants
 	void Print_EquationConstants(void);
 
-	//build formatted string for interactive objects describing user constants at index_in_list from userConstants (also helper method to build the actual unformatted display text in the object)
-	string Build_EquationConstants_ListLine(int index_in_list);
-	string Build_EquationConstants_Text(int index_in_list);
+	//build formatted std::string for interactive objects describing user constants at index_in_list from userConstants (also helper method to build the actual unformatted display text in the object)
+	std::string Build_EquationConstants_ListLine(int index_in_list);
+	std::string Build_EquationConstants_Text(int index_in_list);
 
 	//---------------------------------------------------- SKYPOS SETTINGS
 	
 	//Print skypos multiplier value
 	void Print_skypos_dmul(void);
-	string Build_skypos_dmul_ListLine(int meshIndex);
+	std::string Build_skypos_dmul_ListLine(int meshIndex);
 
 	//---------------------------------------------------- MONTE-CARLO SETTINGS
 
 	void Print_MCSettings(void);
-	string Build_MCSettings_ListLine(int meshIndex);
+	std::string Build_MCSettings_ListLine(int meshIndex);
+
+	//---------------------------------------------------- SHAPE MODIFIERS
+
+	void Print_ShapeSettings(void);
+
+	//---------------------------------------------------- SHAPE MODIFIERS
+	
+	void Print_DisplayRenderSettings(void);
 
 	//---------------------------------------------------- MAKE INTERACTIVE OBJECT : Auxiliary method
 
-	//Generate a formatted string depending on the interactive object identifier
+	//Generate a formatted std::string depending on the interactive object identifier
 	template <typename ... PType>
-	string MakeIO(IOI_ identifier, PType ... params);
+	std::string MakeIO(IOI_ identifier, PType ... params);
 
 	//construct ioInfo object in constructor
 	void MakeIOInfo(void);
 
 	//set entry line in console to given text
-	void SetConsoleEntryLineText(string text) { BD.SetConsoleEntryLineText(text); }
+	void SetConsoleEntryLineText(std::string text) { BD.SetConsoleEntryLineText(text); }
 
 	//-------------------------------------Script client
 
@@ -584,32 +586,32 @@ private:
 	void RebuildDataBox(void);
 
 	//delete any data box fields with given mesh name set
-	void DeleteDataBoxFields(string meshName);
+	void DeleteDataBoxFields(std::string meshName);
 
 	//change names of mesh names in data box fields
-	void ChangeDataBoxLabels(string oldMeshName, string newMeshName);
+	void ChangeDataBoxLabels(std::string oldMeshName, std::string newMeshName);
 
 	//update rectangles in dataBoxList (rect_old and rect_new are the old and new rectangles for the given mesh. All dataBoxList rectangles are scaled accordingly.
-	void UpdateDataBoxEntries(Rect rect_old, Rect rect_new, string meshName);
+	void UpdateDataBoxEntries(Rect rect_old, Rect rect_new, std::string meshName);
 
 	//from given data identifier obtain the corresponding simulation value
 	Any GetDataValue(DatumConfig dConfig);
 
-	//this is GetDataValue but with string conversion
-	string GetDataValueString(DatumConfig dConfig, bool ignore_unit = false);
+	//this is GetDataValue but with std::string conversion
+	std::string GetDataValueString(DatumConfig dConfig, bool ignore_unit = false);
 
 	//make a new entry in saveDataList
-	void NewSaveDataEntry(DATA_ dataId, string meshName = "", Rect dataRect = Rect());
-	void EditSaveDataEntry(int index, DATA_ dataId, string meshName = "", Rect dataRect = Rect());
+	void NewSaveDataEntry(DATA_ dataId, std::string meshName = "", Rect dataRect = Rect());
+	void EditSaveDataEntry(int index, DATA_ dataId, std::string meshName = "", Rect dataRect = Rect());
 
 	//update mesh names in saveDataList
-	void UpdateSaveDataEntries(string oldMeshName, string newMeshName);
+	void UpdateSaveDataEntries(std::string oldMeshName, std::string newMeshName);
 
 	//update rectangles in saveDataList (rect_old and rect_new are the old and new rectangles for the given mesh. All data rectangles are scaled accordingly.
-	void UpdateSaveDataEntries(Rect rect_old, Rect rect_new, string meshName);
+	void UpdateSaveDataEntries(Rect rect_old, Rect rect_new, std::string meshName);
 
 	//delete save data entries which depend on given meshName
-	void DeleteSaveDataEntries(string meshName);
+	void DeleteSaveDataEntries(std::string meshName);
 
 	//save currently configured data for saving (in saveDataList) to save data file (savedataFile in directory)
 	void SaveData(void);
@@ -630,16 +632,16 @@ private:
 	void AutoSetMeshDisplay_Sudden(void) { BD.AutoSetMeshDisplaySettings_Sudden(SMesh.FetchOnScreenPhysicalQuantity(BD.Get_MeshDisplay_DetailLevel())); }
 
 	//update mesh viewer with physical quantity - do not call directly, call it through UpdateScreen(); Also refreshes screen, updating interactive objects
-	void UpdateMeshDisplay(void) { BD.UpdateMeshDisplay(SMesh.FetchOnScreenPhysicalQuantity(BD.Get_MeshDisplay_DetailLevel())); }
+	void UpdateMeshDisplay(bool asynchronous = false) { BD.UpdateMeshDisplay(SMesh.FetchOnScreenPhysicalQuantity(BD.Get_MeshDisplay_DetailLevel()), asynchronous); }
 	//update mesh viewer with physical quantity - do not call directly, call it through UpdateScreen_Quick(); Also refreshes screen, but does not update interactive objects, so slightly quicker than UpdateMeshDisplay
-	void UpdateMeshDisplay_Quick(void) { BD.UpdateMeshDisplay_Quick(SMesh.FetchOnScreenPhysicalQuantity(BD.Get_MeshDisplay_DetailLevel())); }
+	void UpdateMeshDisplay_Quick(bool asynchronous = false) { BD.UpdateMeshDisplay_Quick(SMesh.FetchOnScreenPhysicalQuantity(BD.Get_MeshDisplay_DetailLevel()), asynchronous); }
 
 	//-------------------------------------Display update methods
 
 	//refresh screen (so similar to RefreshScreen();) but also update displayed quantites. 
-	void UpdateScreen(void) { UpdateDataBox(); UpdateMeshDisplay(); }
+	void UpdateScreen(bool asynchronous = false) { UpdateDataBox(); UpdateMeshDisplay(asynchronous); }
 	//quicker version where interactive objects are not updated
-	void UpdateScreen_Quick(void) { UpdateDataBox(); UpdateMeshDisplay_Quick(); }
+	void UpdateScreen_Quick(bool asynchronous = false) { UpdateDataBox(); UpdateMeshDisplay_Quick(asynchronous); }
 
 	//update screen and set default view settings - animate view change from current to new settings
 	void UpdateScreen_AutoSet(void) { UpdateDataBox(); AutoSetMeshDisplay(); RefreshScreen(); }
@@ -670,15 +672,15 @@ private:
 	void AutoSetMeshDisplay_Sudden(void) {}
 
 	//update mesh viewer with physical quantity - do not call directly, call it through UpdateScreen(); Also refreshes screen, updating interactive objects
-	void UpdateMeshDisplay(void) {}
+	void UpdateMeshDisplay(bool asynchronous = false) {}
 	//update mesh viewer with physical quantity - do not call directly, call it through UpdateScreen_Quick(); Also refreshes screen, but does not update interactive objects, so slightly quicker than UpdateMeshDisplay
-	void UpdateMeshDisplay_Quick(void) {}
+	void UpdateMeshDisplay_Quick(bool asynchronous = false) {}
 
 	//-------------------------------------Display update methods
 
 	//refresh screen (so similar to RefreshScreen();) but also update displayed quantites. 
-	void UpdateScreen(void) {}
-	void UpdateScreen_Quick(void) {}
+	void UpdateScreen(bool asynchronous = false) {}
+	void UpdateScreen_Quick(bool asynchronous = false) {}
 
 	//update screen and set default view settings - animate view change from current to new settings
 	void UpdateScreen_AutoSet(void) {}
@@ -707,7 +709,7 @@ public:
 	void restore_state(void);
 
 	//show the error
-	void show_error(BError error, string error_message, bool verbose = true);
+	void show_error(BError error, std::string error_message, bool verbose = true);
 
 	//-------------------------------------Other public methods
 
@@ -732,9 +734,9 @@ public:
 
 #if GRAPHICS == 1
 	//Process message received from WndProc -> delegated to BorisDisplay using thread-safe access
-	void NewMessage(AC_ aCode, INT2 mouse, string data = "");
+	void NewMessage(AC_ aCode, INT2 mouse, std::string data = "");
 #else
-	void NewMessage(string message);
+	void NewMessage(std::string message);
 #endif
 
 	//Functions called from menu to display various things
@@ -753,6 +755,8 @@ public:
 	bool GetCoupleToDipolesStatus(void) { return SMesh.Get_Coupled_To_Dipoles(); }
 	
 	bool GetMovingMeshStatus(void) { return SMesh.IsMovingMeshSet(); }
+
+	bool GetDisabledTransportStatus(void) { return disabled_transport_solver; }
 
 	bool GetScriptServerStatus(void) { return is_thread_running(THREAD_NETWORK); }
 };

@@ -47,7 +47,7 @@ BError StrayFieldCUDA::Initialize(void)
 		strayField_size = strayField()->size_cpu().dim();
 
 		//need to collect cpu versions to initialize the mesh transfer object, before transferring it to the gpu
-		vector< VEC<DBL3>* > meshes_out_cpu;
+		std::vector< VEC<DBL3>* > meshes_out_cpu;
 
 		//array of pointers to oputput meshes (Heff) to transfer to
 		cu_arr<cuVEC<cuReal3>> meshes_out;
@@ -82,7 +82,7 @@ BError StrayFieldCUDA::Initialize(void)
 		}
 
 		//Initialize the mesh transfer object.
-		if (!pStrayField->strayField.Initialize_MeshTransfer(vector< VEC<DBL3>* >(), meshes_out_cpu, MESHTRANSFERTYPE_WEIGHTED)) return error(BERROR_OUTOFMEMORY_CRIT);
+		if (!pStrayField->strayField.Initialize_MeshTransfer(std::vector< VEC<DBL3>* >(), meshes_out_cpu, MESHTRANSFERTYPE_WEIGHTED)) return error(BERROR_OUTOFMEMORY_CRIT);
 
 		//Now copy mesh transfer object to cuda version
 		if (!strayField()->copy_transfer_info(meshes_out, meshes_out, pStrayField->strayField)) return error(BERROR_OUTOFGPUMEMORY_CRIT);

@@ -8,7 +8,7 @@
 #include "BorisGraphics.h"
 #include "WinSpaces.h"
 
-using namespace std;
+
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
@@ -68,8 +68,8 @@ private:
 	//delete text depending on prompter position
 	void DeleteTextFromEntryLine(void);
 	//insert text at prompter position
-	void NewUserEntry(string text);
-	void InsertTextatPrompter(string text);
+	void NewUserEntry(std::string text);
+	void InsertTextatPrompter(std::string text);
 
 protected:
 
@@ -77,13 +77,13 @@ protected:
 	void DrawWindow_Quick(void) { DrawWindow(); }
 
 	//Implementation of message handling routine
-	ActionOutcome NewMessage(AC_ aCode, INT2 mouse, string data = "");
+	ActionOutcome NewMessage(AC_ aCode, INT2 mouse, std::string data = "");
 
 	void SetDefaultCursor(void) { SetCursor(LoadCursor(nullptr, IDC_HAND)); }
 
 	void AdjustWindowDimensions(D2D1_RECT_F delta) { ChangeWindowSides(delta); }
 
-	virtual void SetText(string text, FormatSpecifier fs)
+	virtual void SetText(std::string text, FormatSpecifier fs)
 	{
 		TextDisplay::SetText(text, fs);
 		SetDefault();

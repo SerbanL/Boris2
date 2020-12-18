@@ -5,7 +5,7 @@
 
 #include "ZeemanBase.h"
 
-using namespace std;
+
 
 class Mesh;
 
@@ -18,7 +18,7 @@ class SuperMesh;
 class Zeeman : 
 	public Modules,
 	public ZeemanBase,
-	public ProgramState<Zeeman, tuple<DBL3, TEquation<double, double, double, double>>, tuple<>>
+	public ProgramState<Zeeman, std::tuple<DBL3, TEquation<double, double, double, double>>, std::tuple<>>
 {
 
 #if COMPILECUDA == 1
@@ -71,7 +71,7 @@ public:
 	//Get currently set field : if a field equation is set then evaluate it at the centre of the mesh
 	DBL3 GetField(void);
 
-	BError SetFieldEquation(string equation_string, int step);
+	BError SetFieldEquation(std::string equation_string, int step);
 
 	//if base temperature changes we need to adjust Tb in H_equation if it's used.
 	void SetBaseTemperature(double Temperature);
@@ -122,7 +122,7 @@ public:
 	void SetField(DBL3 Hxyz) {}
 	DBL3 GetField(void) { return DBL3(); }
 
-	BError SetFieldEquation(string equation_string, int step) { return BError(); }
+	BError SetFieldEquation(std::string equation_string, int step) { return BError(); }
 
 	//if base temperature changes we need to adjust Tb in H_equation if it's used.
 	void SetBaseTemperature(double Temperature) {}

@@ -4,7 +4,7 @@
 #include "Modules.h"
 #include "DemagBase.h"
 
-using namespace std;
+
 
 class Atom_Mesh;
 
@@ -21,7 +21,7 @@ class Atom_Demag :
 	public Modules,
 	public DemagBase,
 	public Convolution<Atom_Demag, DemagKernel>,
-	public ProgramState<Atom_Demag, tuple<INT3>, tuple<>>
+	public ProgramState<Atom_Demag, std::tuple<INT3>, std::tuple<>>
 {
 
 #if COMPILECUDA == 1

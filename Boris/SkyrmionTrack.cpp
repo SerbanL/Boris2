@@ -70,7 +70,7 @@ DBL4 SkyrmionTrack::Get_skypos_diameters(VEC_VC<DBL3>& M, Rect skyRect)
 
 	CurveFitting fit;
 
-	vector<double> params;
+	std::vector<double> params;
 
 	//skyRect was the original skyrmion rectangle, used to identify it. We now want to work with the updated skyrmion rectangle.
 	skyRect = skyTrack_rect[skyTrack_idx];

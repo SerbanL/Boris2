@@ -157,6 +157,7 @@ BError SDemagCUDA::Initialize(void)
 					//set convolution dimensions using the common discretisation
 					//kernel collection must be used without multiplcation embedding. Calling this also sets full sizes for S and S2 scratch spaces.
 					error = pSDemagCUDA_Demag[idx]->SetDimensions((cuSZ3)pSDemag->n_common, h_convolution, false, pSDemag->Get_PBC());
+
 					if (error) return error;
 				}
 

@@ -38,25 +38,29 @@ INT_PTR CALLBACK	About(HWND, UINT, WPARAM, LPARAM);
 
 enum IDM_ {
 	//FILE
-	IDM_FILE_DEFAULT, IDM_FILE_LOAD, IDM_FILE_LOADEXAMPLE, IDM_FILE_SAVE, IDM_FILE_SAVEAS, IDM_FILE_SAVEIMAGE, IDM_FILE_MAKEVIDEO, IDM_FILE_IMAGECROPPING, IDM_FILE_CHDIR, IDM_FILE_QUIT,
+	IDM_FILE_DEFAULT, IDM_FILE_LOAD, IDM_FILE_LOADEXAMPLE, IDM_FILE_SAVE, IDM_FILE_SAVEAS, IDM_FILE_SAVEOVF2, IDM_FILE_SAVEIMAGE, IDM_FILE_MAKEVIDEO, IDM_FILE_IMAGECROPPING, IDM_FILE_CHDIR, IDM_FILE_QUIT,
 	//SIMULATION
 	IDM_SIM_RUN, IDM_SIM_COMPUTEFIELDS, IDM_SIM_STOP, IDM_SIM_RESET, IDM_SIM_CUDA, IDM_SIM_SERVER, IDM_SIM_SCHEDULE, IDM_SIM_DATA, IDM_SIM_SHOWDATA, IDM_SIM_BENCHTIME,
 	//MESH
 	IDM_MESH_SHOW, IDM_MESH_LOADMASK, IDM_MESH_MASKALL, IDM_MESH_SCALERECTS, IDM_MESH_RESET, IDM_MESH_ADDMATERIAL, IDM_MESH_ADDFERROMAGNET, IDM_MESH_ADDANTIFERROMAGNET, IDM_MESH_ADDMETAL, IDM_MESH_ADDINSULATOR, IDM_MESH_ADDDIPOLE, IDM_MESH_DIAMAGNET, IDM_MESH_ATOMSIMPLECUBIC, IDM_MESH_EXCHANGECOUPLED, IDM_MESH_COUPLETODIPOLES, IDM_MESH_COPY,
+	//SHAPES
+	IDM_SHAPES_MODIFIERS, IDM_SHAPES_DELRECT, IDM_SHAPES_RECT, IDM_SHAPES_DISK, IDM_SHAPES_TRIANGLE, IDM_SHAPES_TETRAHEDRON, IDM_SHAPES_PYRAMID, IDM_SHAPES_CONE, IDM_SHAPES_ELLIPSOID, IDM_SHAPES_TORUS,
 	//CONFIGURATION
 	IDM_CFG_MODULES, IDM_CFG_ODE, IDM_CFG_TIMESTEP, IDM_CFG_ASTEP, IDM_CFG_MULTICONV, IDM_CFG_PBC,
 	//PARAMETERS
 	IDM_PARAM_SHOW, IDM_PARAM_TDEP, IDM_PARAM_SDEP, IDM_PARAM_COPY,
 	//MAGNETIZATION
-	IDM_MAG_SET, IDM_MAG_FIELD, IDM_MAG_DWALL, IDM_MAG_VORTEX, IDM_MAG_SKYRMION, IDM_MAG_BLOCHSKYRMION, IDM_MAG_RANDOM, IDM_MAG_2DGRAINS, IDM_MAG_3DGRAINS, IDM_MAG_LOADOVF2MAG, IDM_MAG_SAVEOVF2MAG, IDM_MAG_ADDRECT, IDM_MAG_DELRECT, IDM_MAG_SETRECT, IDM_MAG_INVERT, IDM_MAG_MIRROR,
+	IDM_MAG_SET, IDM_MAG_SETOBJECT, IDM_MAG_FIELD, IDM_MAG_DWALL, IDM_MAG_VORTEX, IDM_MAG_SKYRMION, IDM_MAG_BLOCHSKYRMION, IDM_MAG_RANDOM, IDM_MAG_2DGRAINS, IDM_MAG_3DGRAINS, IDM_MAG_LOADOVF2MAG, IDM_MAG_SAVEOVF2MAG, IDM_MAG_ADDRECT, IDM_MAG_DELRECT, IDM_MAG_SETRECT, IDM_MAG_INVERT, IDM_MAG_MIRROR,
 	//ROUGHNESS
 	IDM_ROUGH_SHOW, IDM_ROUGH_EDIT, IDM_ROUGH_ROUGHEN, IDM_ROUGH_SURFROUGHEN, IDM_ROUGH_LOAD, IDM_ROUGH_CLEARROUGH,
 	//TEMPERATURE
-	IDM_TEMPERATURE_SET, IDM_TEMPERATURE_CURIE, IDM_TEMPERATURE_AMBIENT, IDM_TEMPERATURE_TIMESTEP,
+	IDM_TEMPERATURE_SET, IDM_TEMPERATURE_CURIE, IDM_TEMPERATURE_AMBIENT, IDM_TEMPERATURE_LOADOVF2, IDM_TEMPERATURE_TIMESTEP,
 	//TRANSPORT
-	IDM_TRANS_DEFAULTELECTRODES, IDM_TRANS_ELECTRODES, IDM_TRANS_ADDELECTRODE, IDM_TRANS_CLEARELECTRODES, IDM_TRANS_SETV, IDM_TRANS_SETI, IDM_TRANS_CONFIG,
+	IDM_TRANS_DISABLE, IDM_TRANS_DEFAULTELECTRODES, IDM_TRANS_ELECTRODES, IDM_TRANS_ADDELECTRODE, IDM_TRANS_CLEARELECTRODES, IDM_TRANS_SETV, IDM_TRANS_SETI, IDM_TRANS_SETJC, IDM_TRANS_LOADOVF2, IDM_TRANS_CONFIG,
+	//MELASTIC
+	IDM_MELASTIC_SETSTRESS, IDM_MELASTIC_LOADOVF2DISP, IDM_MELASTIC_LOADOVF2STRAIN,
 	//VIEW
-	IDM_VIEW_DISPLAY, IDM_VIEW_UPDATEFREQUENCY, IDM_VIEW_CENTER, IDM_VIEW_CLEARCONSOLE,
+	IDM_VIEW_DISPLAY, IDM_VIEW_UPDATEFREQUENCY, IDM_VIEW_RENDER, IDM_VIEW_CENTER, IDM_VIEW_CLEARCONSOLE,
 	//ALGORITHMS
 	IDM_ALGO_MOVINGMESH, IDM_ALGO_BLOCHMOVINGMESH, IDM_ALGO_NEELMOVINGMESH, IDM_ALGO_SKYMOVINGMESH, IDM_ALGO_CLEARMOVINGMESH, IDM_ALGO_MOVINGMESHENABLED,
 	//DATA PROCESSING
@@ -81,6 +85,7 @@ void AddMenus(HWND hwnd)
 	AppendMenuW(hMenu_File, MF_STRING, IDM_FILE_LOADEXAMPLE, L"&Load Example");
 	AppendMenuW(hMenu_File, MF_STRING, IDM_FILE_SAVE,          L"&Save\tCtrl-S");
 	AppendMenuW(hMenu_File, MF_STRING, IDM_FILE_SAVEAS,        L"&Save As\tCtrl-A");
+	AppendMenuW(hMenu_File, MF_STRING, IDM_FILE_SAVEOVF2, L"&Save OVF2");
 	AppendMenuW(hMenu_File, MF_SEPARATOR, 0, NULL);
 	AppendMenuW(hMenu_File, MF_STRING, IDM_FILE_SAVEIMAGE,     L"&Save Image\tCtrl-I");
 	AppendMenuW(hMenu_File, MF_STRING, IDM_FILE_MAKEVIDEO,     L"&Make Video");
@@ -146,6 +151,24 @@ void AddMenus(HWND hwnd)
 
 	AppendMenuW(hMenubar, MF_POPUP, (UINT_PTR)hMenu_Mesh, L"&Mesh");
 
+	//SHAPES
+	HMENU hMenu_Shapes = CreateMenu();
+
+	AppendMenuW(hMenu_Shapes, MF_STRING, IDM_SHAPES_MODIFIERS, L"&Modifiers");
+	AppendMenuW(hMenu_Shapes, MF_SEPARATOR, 0, NULL);
+	AppendMenuW(hMenu_Shapes, MF_STRING, IDM_SHAPES_DELRECT, L"&Clear All");
+	AppendMenuW(hMenu_Shapes, MF_SEPARATOR, 0, NULL);
+	AppendMenuW(hMenu_Shapes, MF_STRING, IDM_SHAPES_RECT, L"&Rectangle");
+	AppendMenuW(hMenu_Shapes, MF_STRING, IDM_SHAPES_DISK, L"&Disk");
+	AppendMenuW(hMenu_Shapes, MF_STRING, IDM_SHAPES_TRIANGLE, L"&Triangle");
+	AppendMenuW(hMenu_Shapes, MF_STRING, IDM_SHAPES_TETRAHEDRON, L"&Tetrahedron");
+	AppendMenuW(hMenu_Shapes, MF_STRING, IDM_SHAPES_PYRAMID, L"&Pyramid");
+	AppendMenuW(hMenu_Shapes, MF_STRING, IDM_SHAPES_CONE, L"&Cone");
+	AppendMenuW(hMenu_Shapes, MF_STRING, IDM_SHAPES_ELLIPSOID, L"&Ellipsoid");
+	AppendMenuW(hMenu_Shapes, MF_STRING, IDM_SHAPES_TORUS, L"&Torus");
+
+	AppendMenuW(hMenubar, MF_POPUP, (UINT_PTR)hMenu_Shapes, L"&Shapes");
+
 	//CONFIGURATION
 	HMENU hMenu_Cfg = CreateMenu();
 
@@ -175,6 +198,7 @@ void AddMenus(HWND hwnd)
 	HMENU hMenu_Mag = CreateMenu();
 
 	AppendMenuW(hMenu_Mag, MF_STRING, IDM_MAG_SET, L"&Uniform");
+	AppendMenuW(hMenu_Mag, MF_STRING, IDM_MAG_SETOBJECT, L"&Object");
 	AppendMenuW(hMenu_Mag, MF_STRING, IDM_MAG_DWALL, L"&Domain Wall");
 	AppendMenuW(hMenu_Mag, MF_STRING, IDM_MAG_VORTEX, L"&Vortex");
 	AppendMenuW(hMenu_Mag, MF_STRING, IDM_MAG_SKYRMION, L"&Skyrmion");
@@ -194,7 +218,7 @@ void AddMenus(HWND hwnd)
 	AppendMenuW(hMenu_Mag, MF_SEPARATOR, 0, NULL);
 	AppendMenuW(hMenu_Mag, MF_STRING, IDM_MAG_FIELD, L"&Field");
 
-	AppendMenuW(hMenubar, MF_POPUP, (UINT_PTR)hMenu_Mag, L"&magnetization");
+	AppendMenuW(hMenubar, MF_POPUP, (UINT_PTR)hMenu_Mag, L"&Magnetization");
 
 	//ROUGHNESS
 	HMENU hMenu_Rough = CreateMenu();
@@ -218,6 +242,8 @@ void AddMenus(HWND hwnd)
 	AppendMenuW(hMenu_Temp, MF_STRING, IDM_TEMPERATURE_CURIE, L"&Curie");
 	AppendMenuW(hMenu_Temp, MF_STRING, IDM_TEMPERATURE_AMBIENT, L"&Ambient");
 	AppendMenuW(hMenu_Temp, MF_SEPARATOR, 0, NULL);
+	AppendMenuW(hMenu_Temp, MF_STRING, IDM_TEMPERATURE_LOADOVF2, L"&Load OVF2 Temperature");
+	AppendMenuW(hMenu_Temp, MF_SEPARATOR, 0, NULL);
 	AppendMenuW(hMenu_Temp, MF_STRING, IDM_TEMPERATURE_TIMESTEP, L"&Time Step");
 
 	AppendMenuW(hMenubar, MF_POPUP, (UINT_PTR)hMenu_Temp, L"&Temperature");
@@ -225,6 +251,8 @@ void AddMenus(HWND hwnd)
 	//TRANSPORT
 	HMENU hMenu_Trans = CreateMenu();
 
+	AppendMenuW(hMenu_Trans, MF_STRING, IDM_TRANS_DISABLE, L"&Disable Iteration");
+	AppendMenuW(hMenu_Trans, MF_SEPARATOR, 0, NULL);
 	AppendMenuW(hMenu_Trans, MF_STRING, IDM_TRANS_DEFAULTELECTRODES, L"&Set Default Electrodes");
 	AppendMenuW(hMenu_Trans, MF_STRING, IDM_TRANS_ELECTRODES, L"&Show Electrodes");
 	AppendMenuW(hMenu_Trans, MF_STRING, IDM_TRANS_ADDELECTRODE, L"&Add Electrode");
@@ -232,10 +260,22 @@ void AddMenus(HWND hwnd)
 	AppendMenuW(hMenu_Trans, MF_SEPARATOR, 0, NULL);
 	AppendMenuW(hMenu_Trans, MF_STRING, IDM_TRANS_SETV, L"&Set Potential");
 	AppendMenuW(hMenu_Trans, MF_STRING, IDM_TRANS_SETI, L"&Set Current");
+	AppendMenuW(hMenu_Trans, MF_STRING, IDM_TRANS_SETJC, L"&Set Current Density");
+	AppendMenuW(hMenu_Trans, MF_STRING, IDM_TRANS_LOADOVF2, L"&Load OVF2 Current Density");
 	AppendMenuW(hMenu_Trans, MF_SEPARATOR, 0, NULL);
 	AppendMenuW(hMenu_Trans, MF_STRING, IDM_TRANS_CONFIG, L"&Configuration");
 
 	AppendMenuW(hMenubar, MF_POPUP, (UINT_PTR)hMenu_Trans, L"&Transport");
+
+	//MELASTIC
+	HMENU hMenu_Melastic = CreateMenu();
+
+	AppendMenuW(hMenu_Melastic, MF_STRING, IDM_MELASTIC_SETSTRESS, L"&Set Stress");
+	AppendMenuW(hMenu_Melastic, MF_SEPARATOR, 0, NULL);
+	AppendMenuW(hMenu_Melastic, MF_STRING, IDM_MELASTIC_LOADOVF2DISP, L"&Load OVF2 Displacement");
+	AppendMenuW(hMenu_Melastic, MF_STRING, IDM_MELASTIC_LOADOVF2STRAIN, L"&Load OVF2 Strain");
+
+	AppendMenuW(hMenubar, MF_POPUP, (UINT_PTR)hMenu_Melastic, L"&Mechanical");
 
 	//VIEW
 	HMENU hMenu_View = CreateMenu();
@@ -243,6 +283,7 @@ void AddMenus(HWND hwnd)
 	AppendMenuW(hMenu_View, MF_STRING, IDM_VIEW_DISPLAY, L"&Display\tCtrl-Alt-D");
 	AppendMenuW(hMenu_View, MF_STRING, IDM_VIEW_CENTER, L"&Center Mesh\tCtrl-Alt-C");
 	AppendMenuW(hMenu_View, MF_STRING, IDM_VIEW_UPDATEFREQUENCY, L"&Update Frequency\tCtrl-Alt-I");
+	AppendMenuW(hMenu_View, MF_STRING, IDM_VIEW_RENDER, L"&Render Options");
 	AppendMenuW(hMenu_View, MF_SEPARATOR, 0, NULL);
 	AppendMenuW(hMenu_View, MF_STRING, IDM_VIEW_CLEARCONSOLE, L"&Clear Console");
 
@@ -343,12 +384,19 @@ int APIENTRY _tWinMain(_In_ HINSTANCE hInstance,
 	//////////////////////
 	//overwrite the title bar
 
-	//Bizarre bug here : if you convert to (float) instead of (double) the program crashes!!!
-	//If however you declare a stringstream variable before (just declare, you don't have to use it!) then program doesn't crash!
-	//Gets better : it used to work with (float) but for an unknown reason it suddenly started crashing and I don't know what's changed.
-	//Without a doubt the strangest bug I have ever seen - but as usual it will make sense when investigated properly, but I suspect it won't be easy.
-	//string sTitle = string("Boris v") + ToString((double)Program_Version / 100);
-	string sTitle = string("Boris v3.0g (30/11/2020) CUDA 7 DP");
+	std::string sTitle = std::string("Boris v") + ToString((double)Program_Version / 100);
+
+#if COMPILECUDA == 1
+	sTitle += std::string(" CUDA ") + ToString((double)__CUDA_ARCH__ / 100);
+#if SINGLEPRECISION == 1
+	sTitle += std::string(" SP");
+#else
+	sTitle += std::string(" DP");
+#endif
+#else
+	sTitle += std::string(" Lite.");
+#endif
+
 	copy(sTitle.begin(), sTitle.end(), szTitle);
 	szTitle[sTitle.size()] = 0;
 
@@ -502,7 +550,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
    //See https://stackoverflow.com/questions/64988525/bug-related-to-g-openmp-when-using-stdthread/65001887#65001887
    std::thread simulation_instantiation_thread(&make_Simulation, hWnd);
    simulation_instantiation_thread.join();
-
+   
    //Add menus - this needs to be after creating Simulation as we need to get status flags to disable some menu items (e.g. CUDA available)
    AddMenus(hWnd);
 
@@ -549,7 +597,7 @@ std::string BrowseFolder(void)
 			imalloc->Release();
 		}
 
-		return WideStringtoString(wstring(path));
+		return WideStringtoString(std::wstring(path));
 	}
 
 	return "";
@@ -652,11 +700,18 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		if (pSim) {
 
 			CheckMenuItem(hMenubar, IDM_SIM_SERVER, (pSim->GetScriptServerStatus() ? MF_CHECKED : MF_UNCHECKED));
+			
 			CheckMenuItem(hMenubar, IDM_MESH_MASKALL, (pSim->GetIndividualShapeStatus() ? MF_UNCHECKED : MF_CHECKED));
+			
 			CheckMenuItem(hMenubar, IDM_MESH_SCALERECTS, (pSim->GetScaleRectsStatus() ? MF_CHECKED : MF_UNCHECKED));
+			
 			CheckMenuItem(hMenubar, IDM_MESH_COUPLETODIPOLES, (pSim->GetCoupleToDipolesStatus() ? MF_CHECKED : MF_UNCHECKED));
+			
 			if (pSim->GetCUDAStatus() != -1) CheckMenuItem(hMenubar, IDM_SIM_CUDA, (pSim->GetCUDAStatus() ? MF_CHECKED : MF_UNCHECKED));
+			
 			CheckMenuItem(hMenubar, IDM_ALGO_MOVINGMESHENABLED, (pSim->GetMovingMeshStatus() ? MF_CHECKED : MF_UNCHECKED));
+
+			CheckMenuItem(hMenubar, IDM_TRANS_DISABLE, (pSim->GetDisabledTransportStatus() ? MF_CHECKED : MF_UNCHECKED));
 		}
 	}
 		break;
@@ -699,6 +754,13 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		}
 			break;
 
+		case IDM_FILE_SAVEOVF2:
+		{
+			std::string fileName = SaveFileDialog(hWnd);
+			if (pSim && fileName.length()) pSim->NewMessage(AC_CONSOLECOMMAND, INT2(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam)), ToString(CMD_SAVEOVF2) + " " + fileName);
+		}
+			break;
+
 		case IDM_FILE_SAVEIMAGE_HK:
 		case IDM_FILE_SAVEIMAGE:
 		{
@@ -719,7 +781,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		case IDM_FILE_CHDIR:
 		{
 			if (pSim) pSim->NewMessage(AC_CONSOLECOMMAND, INT2(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam)), ToString(CMD_CHDIR));
-			string directory = BrowseFolder();
+			std::string directory = BrowseFolder();
 			if (pSim && directory.length()) pSim->NewMessage(AC_CONSOLECOMMAND, INT2(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam)), ToString(CMD_CHDIR) + " " + directory);
 		}
 			break;
@@ -844,6 +906,47 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 		case IDM_MESH_COPY:
 			if (pSim) pSim->NewMessage(AC_CONSOLECOMMAND_ENTRY, INT2(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam)), ToString(CMD_COPYMESHDATA));
+			break;
+
+			//SHAPES
+		case IDM_SHAPES_MODIFIERS:
+			if (pSim) pSim->NewMessage(AC_CONSOLECOMMAND, INT2(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam)), ToString(CMD_SHAPEMOD_ROT));
+			break;
+
+		case IDM_SHAPES_DELRECT:
+			if (pSim) pSim->NewMessage(AC_CONSOLECOMMAND, INT2(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam)), ToString(CMD_DELRECT));
+			break;
+
+		case IDM_SHAPES_RECT:
+			if (pSim) pSim->NewMessage(AC_CONSOLECOMMAND_ENTRY, INT2(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam)), ToString(CMD_SHAPE_RECT));
+			break;
+
+		case IDM_SHAPES_DISK:
+			if (pSim) pSim->NewMessage(AC_CONSOLECOMMAND_ENTRY, INT2(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam)), ToString(CMD_SHAPE_DISK));
+			break;
+
+		case IDM_SHAPES_TRIANGLE:
+			if (pSim) pSim->NewMessage(AC_CONSOLECOMMAND_ENTRY, INT2(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam)), ToString(CMD_SHAPE_TRIANGLE));
+			break;
+
+		case IDM_SHAPES_TETRAHEDRON:
+			if (pSim) pSim->NewMessage(AC_CONSOLECOMMAND_ENTRY, INT2(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam)), ToString(CMD_SHAPE_TETRAHEDRON));
+			break;
+
+		case IDM_SHAPES_PYRAMID:
+			if (pSim) pSim->NewMessage(AC_CONSOLECOMMAND_ENTRY, INT2(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam)), ToString(CMD_SHAPE_PYRAMID));
+			break;
+
+		case IDM_SHAPES_CONE:
+			if (pSim) pSim->NewMessage(AC_CONSOLECOMMAND_ENTRY, INT2(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam)), ToString(CMD_SHAPE_CONE));
+			break;
+
+		case IDM_SHAPES_ELLIPSOID:
+			if (pSim) pSim->NewMessage(AC_CONSOLECOMMAND_ENTRY, INT2(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam)), ToString(CMD_SHAPE_ELLIPSOID));
+			break;
+
+		case IDM_SHAPES_TORUS:
+			if (pSim) pSim->NewMessage(AC_CONSOLECOMMAND_ENTRY, INT2(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam)), ToString(CMD_SHAPE_TORUS));
 			break;
 
 			//SIMULATION
@@ -978,6 +1081,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			if (pSim) pSim->NewMessage(AC_CONSOLECOMMAND_NOPARAMS_ENTRY, INT2(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam)), ToString(CMD_SETANGLE) + " 90 0");
 			break;
 
+		case IDM_MAG_SETOBJECT:
+			if (pSim) pSim->NewMessage(AC_CONSOLECOMMAND_ENTRY, INT2(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam)), ToString(CMD_SETOBJECTANGLE));
+			break;
+
 		case IDM_MAG_FIELD:
 			if (pSim) pSim->NewMessage(AC_CONSOLECOMMAND_NOPARAMS_ENTRY, INT2(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam)), ToString(CMD_SETFIELD) + " 1e3 90 0");
 			break;
@@ -1086,11 +1193,35 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			if (pSim) pSim->NewMessage(AC_CONSOLECOMMAND_ENTRY, INT2(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam)), ToString(CMD_AMBIENTTEMPERATURE));
 			break;
 
+		case IDM_TEMPERATURE_LOADOVF2:
+		{
+			std::string fileName = OpenFileDialog(hWnd);
+			if (pSim && fileName.length()) pSim->NewMessage(AC_CONSOLECOMMAND, INT2(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam)), ToString(CMD_LOADOVF2TEMP) + " " + fileName);
+		}
+			break;
+
 		case IDM_TEMPERATURE_TIMESTEP:
 			if (pSim) pSim->NewMessage(AC_CONSOLECOMMAND_ENTRY, INT2(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam)), ToString(CMD_SETHEATDT));
 			break;
 
 		//TRANSPORT
+		case IDM_TRANS_DISABLE:
+		{
+			UINT state = GetMenuState(hMenubar, IDM_TRANS_DISABLE, MF_BYCOMMAND);
+
+			if (state == MF_CHECKED) {
+
+				if (pSim) pSim->NewMessage(AC_CONSOLECOMMAND, INT2(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam)), ToString(CMD_DISABLETRANSPORTSOLVER) + " 0");
+				if (!pSim->GetDisabledTransportStatus()) CheckMenuItem(hMenubar, IDM_TRANS_DISABLE, MF_UNCHECKED);
+			}
+			else {
+
+				if (pSim) pSim->NewMessage(AC_CONSOLECOMMAND, INT2(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam)), ToString(CMD_DISABLETRANSPORTSOLVER) + " 1");
+				if (pSim->GetDisabledTransportStatus()) CheckMenuItem(hMenubar, IDM_TRANS_DISABLE, MF_CHECKED);
+			}
+		}
+			break;
+
 		case IDM_TRANS_DEFAULTELECTRODES:
 			if (pSim) {
 
@@ -1119,8 +1250,35 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			if (pSim) pSim->NewMessage(AC_CONSOLECOMMAND_ENTRY, INT2(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam)), ToString(CMD_SETCURRENT));
 			break;
 
+		case IDM_TRANS_SETJC:
+			if (pSim) pSim->NewMessage(AC_CONSOLECOMMAND_ENTRY, INT2(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam)), ToString(CMD_SETCURRENTDENSITY));
+			break;
+
+		case IDM_TRANS_LOADOVF2:
+		{
+			std::string fileName = OpenFileDialog(hWnd);
+			if (pSim && fileName.length()) pSim->NewMessage(AC_CONSOLECOMMAND, INT2(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam)), ToString(CMD_LOADOVF2CURR) + " " + fileName);
+		}
+			break;
+
 		case IDM_TRANS_CONFIG:
 			if (pSim) pSim->NewMessage(AC_CONSOLECOMMAND, INT2(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam)), ToString(CMD_TSOLVERCONFIG));
+			break;
+
+		//MELASTIC
+		case IDM_MELASTIC_SETSTRESS:
+			if (pSim) pSim->NewMessage(AC_CONSOLECOMMAND_ENTRY, INT2(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam)), ToString(CMD_SETSTRESS));
+			break;
+
+		case IDM_MELASTIC_LOADOVF2DISP:
+		{
+			std::string fileName = OpenFileDialog(hWnd);
+			if (pSim && fileName.length()) pSim->NewMessage(AC_CONSOLECOMMAND, INT2(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam)), ToString(CMD_LOADOVF2DISP) + " " + fileName);
+		}
+			break;
+
+		case IDM_MELASTIC_LOADOVF2STRAIN:
+			if (pSim) pSim->NewMessage(AC_CONSOLECOMMAND_ENTRY, INT2(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam)), ToString(CMD_LOADOVF2STRAIN));
 			break;
 
 		//VIEW
@@ -1137,6 +1295,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		case IDM_VIEW_UPDATEFREQUENCY_HK:
 		case IDM_VIEW_UPDATEFREQUENCY:
 			if (pSim) pSim->NewMessage(AC_CONSOLECOMMAND_ENTRY, INT2(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam)), ToString(CMD_ITERUPDATE));
+			break;
+
+		case IDM_VIEW_RENDER:
+			if (pSim) pSim->NewMessage(AC_CONSOLECOMMAND, INT2(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam)), ToString(CMD_DISPLAYDETAILLEVEL));
 			break;
 
 		case IDM_VIEW_CLEARCONSOLE:
@@ -1207,7 +1369,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			break;
 
 		case IDM_DP_GETPROFILE:
-			if (pSim) pSim->NewMessage(AC_CONSOLECOMMAND_ENTRY, INT2(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam)), ToString(CMD_DP_GETPROFILE));
+			if (pSim) pSim->NewMessage(AC_CONSOLECOMMAND_ENTRY, INT2(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam)), ToString(CMD_DP_GETEXACTPROFILE));
 			break;
 
 		case IDM_AVERAGEMESHRECT:
@@ -1554,7 +1716,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 					POINT dropPoint;
 					DragQueryPoint(hDrop, &dropPoint);
 
-					string fileName = WideStringtoString(std::wstring(lpszFile));
+					std::string fileName = WideStringtoString(std::wstring(lpszFile));
 
 					pSim->NewMessage(AC_DROPFILES, INT2((int)dropPoint.x, (int)dropPoint.y), fileName);
 				}

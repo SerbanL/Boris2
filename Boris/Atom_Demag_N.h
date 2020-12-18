@@ -3,7 +3,7 @@
 #include "BorisLib.h"
 #include "Modules.h"
 
-using namespace std;
+
 
 class Atom_Mesh;
 
@@ -15,7 +15,7 @@ class Atom_Mesh;
 
 class Atom_Demag_N :
 	public Modules,
-	public ProgramState<Atom_Demag_N, tuple<>, tuple<>>
+	public ProgramState<Atom_Demag_N, std::tuple<>, std::tuple<>>
 {
 
 private:

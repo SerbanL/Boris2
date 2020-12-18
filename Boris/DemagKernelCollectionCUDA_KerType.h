@@ -7,7 +7,7 @@
 
 #include "BorisCUDALib.h"
 
-using namespace std;
+
 
 //collect various kernel types in this struct used in demag kernel collections
 //cuKerType is cu_obj managed, thus resides entirely in gpu memory

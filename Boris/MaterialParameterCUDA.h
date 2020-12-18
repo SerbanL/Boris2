@@ -9,7 +9,7 @@
 
 #include "ParametersDefs.h"
 
-using namespace std;
+
 
 /////////////////////////////////////////////////////////////////////////////////////////////////
 //Class holding a single material parameter with any associated temperature dependence.
@@ -155,94 +155,94 @@ public:
 	//multiply with a MatP - '^' is used to signify vector product for VAL3
 
 	template <typename PType_, typename SType_>
-	__device__ auto operator^(const MatPCUDA<PType_, SType_>& rhs) const -> decltype(declval<PType_>() ^ declval<PType_>())
+	__device__ auto operator^(const MatPCUDA<PType_, SType_>& rhs) const -> decltype(std::declval<PType_>() ^ std::declval<PType_>())
 	{
 		return current_value ^ rhs.current_value;
 	}
 
 	//multiply with a MatP - '&' is used to signify component-by-component product for VAL3
 	template <typename PType_, typename SType_>
-	__device__ auto operator&(const MatPCUDA<PType_, SType_>& rhs) const -> decltype(declval<PType_>() & declval<PType_>())
+	__device__ auto operator&(const MatPCUDA<PType_, SType_>& rhs) const -> decltype(std::declval<PType_>() & std::declval<PType_>())
 	{
 		return current_value & rhs.current_value;
 	}
 
 	//multiply with a MatP
-	__device__ auto operator*(const MatPCUDA& rhs) const -> decltype(declval<PType>() * declval<PType>())
+	__device__ auto operator*(const MatPCUDA& rhs) const -> decltype(std::declval<PType>() * std::declval<PType>())
 	{
 		return current_value * rhs.current_value;
 	}
 
 	//multiply with a value on the RHS
 	template <typename PType_, std::enable_if_t<!std::is_same<PType_, MatPCUDA<PType, SType>>::value>* = nullptr>
-	__device__ auto operator*(const PType_& rhs) const -> decltype(declval<PType>() * declval<PType_>())
+	__device__ auto operator*(const PType_& rhs) const -> decltype(std::declval<PType>() * std::declval<PType_>())
 	{
 		return current_value * rhs;
 	}
 
 	//multiply with a value on the LHS
 	template <typename _PType, std::enable_if_t<!std::is_same<_PType, MatPCUDA<PType, SType>>::value>* = nullptr>
-	__device__ friend auto operator*(const _PType& lhs, const MatPCUDA<PType, SType>& rhs) -> decltype(declval<_PType>() * declval<PType>())
+	__device__ friend auto operator*(const _PType& lhs, const MatPCUDA<PType, SType>& rhs) -> decltype(std::declval<_PType>() * std::declval<PType>())
 	{
 		return lhs * rhs.current_value;
 	}
 
 	//divide by a MatP
-	__device__ auto operator/(const MatPCUDA& rhs) const -> decltype(declval<PType>() / declval<PType>())
+	__device__ auto operator/(const MatPCUDA& rhs) const -> decltype(std::declval<PType>() / std::declval<PType>())
 	{
 		return current_value / rhs.current_value;
 	}
 
 	//division with a value on the RHS
 	template <typename PType_, std::enable_if_t<!std::is_same<PType_, MatPCUDA<PType, SType>>::value>* = nullptr>
-	__device__ auto operator/(const PType_& rhs) const -> decltype(declval<PType>() / declval<PType_>())
+	__device__ auto operator/(const PType_& rhs) const -> decltype(std::declval<PType>() / std::declval<PType_>())
 	{
 		return current_value / rhs;
 	}
 
 	//division with a value on the LHS
 	template <typename _PType, std::enable_if_t<!std::is_same<_PType, MatPCUDA<PType, SType>>::value>* = nullptr>
-	__device__ friend auto operator/(const _PType& lhs, const MatPCUDA<PType, SType>& rhs) -> decltype(declval<_PType>() / declval<PType>())
+	__device__ friend auto operator/(const _PType& lhs, const MatPCUDA<PType, SType>& rhs) -> decltype(std::declval<_PType>() / std::declval<PType>())
 	{
 		return lhs / rhs.current_value;
 	}
 
 	//addition with a MatP
-	__device__ auto operator+(const MatPCUDA& rhs) const -> decltype(declval<PType>() + declval<PType>())
+	__device__ auto operator+(const MatPCUDA& rhs) const -> decltype(std::declval<PType>() + std::declval<PType>())
 	{
 		return current_value + rhs.current_value;
 	}
 
 	//addition with a value on the RHS
 	template <typename PType_, std::enable_if_t<!std::is_same<PType_, MatPCUDA<PType, SType>>::value>* = nullptr>
-	__device__ auto operator+(const PType_& rhs) const -> decltype(declval<PType>() + declval<PType_>())
+	__device__ auto operator+(const PType_& rhs) const -> decltype(std::declval<PType>() + std::declval<PType_>())
 	{
 		return current_value + rhs;
 	}
 
 	//addition with a value on the LHS
 	template <typename _PType, std::enable_if_t<!std::is_same<_PType, MatPCUDA<PType, SType>>::value>* = nullptr>
-	__device__ friend auto operator+(const _PType& lhs, const MatPCUDA<PType, SType>& rhs) -> decltype(declval<_PType>() + declval<PType>())
+	__device__ friend auto operator+(const _PType& lhs, const MatPCUDA<PType, SType>& rhs) -> decltype(std::declval<_PType>() + std::declval<PType>())
 	{
 		return lhs + rhs.current_value;
 	}
 
 	//difference with a MatP
-	__device__ auto operator-(const MatPCUDA& rhs) const -> decltype(declval<PType>() - declval<PType>())
+	__device__ auto operator-(const MatPCUDA& rhs) const -> decltype(std::declval<PType>() - std::declval<PType>())
 	{
 		return current_value - rhs.current_value;
 	}
 
 	//addition with a value on the RHS
 	template <typename PType_, std::enable_if_t<!std::is_same<PType_, MatPCUDA<PType, SType>>::value>* = nullptr>
-	__device__ auto operator-(const PType_& rhs) const -> decltype(declval<PType>() - declval<PType_>())
+	__device__ auto operator-(const PType_& rhs) const -> decltype(std::declval<PType>() - std::declval<PType_>())
 	{
 		return current_value - rhs;
 	}
 
 	//addition with a value on the LHS
 	template <typename _PType, std::enable_if_t<!std::is_same<_PType, MatPCUDA<PType, SType>>::value>* = nullptr>
-	__device__ friend auto operator-(const _PType& lhs, const MatPCUDA<PType, SType>& rhs) -> decltype(declval<_PType>() - declval<PType>())
+	__device__ friend auto operator-(const _PType& lhs, const MatPCUDA<PType, SType>& rhs) -> decltype(std::declval<_PType>() - std::declval<PType>())
 	{
 		return lhs - rhs.current_value;
 	}

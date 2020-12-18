@@ -7,6 +7,7 @@
 #include "VEC_VC_flags.h"
 #include "VEC_VC_cmbnd.h"
 #include "VEC_VC_shape.h"
+#include "VEC_VC_shapemask.h"
 #include "VEC_VC_genshape.h"
 #include "VEC_VC_Voronoi.h"
 #include "VEC_VC_oper.h"

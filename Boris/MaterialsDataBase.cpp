@@ -3,7 +3,7 @@
 
 #include <iostream>
 
-MaterialsDB::MaterialsDB(vector<PARAM_>& enabledParams) :
+MaterialsDB::MaterialsDB(std::vector<PARAM_>& enabledParams) :
 	dbEntry(enabledParams)
 {
 	//default database
@@ -16,7 +16,7 @@ MaterialsDB::MaterialsDB(vector<PARAM_>& enabledParams) :
 
 	//if BorisMDB.txt doesn't exist, make it
 
-	ifstream bdin;
+	std::ifstream bdin;
 	bdin.open(databaseName_withpath.c_str(), std::ios::in);
 
 	if (!bdin.is_open()) {
@@ -51,7 +51,7 @@ MaterialsDB::MaterialsDB(vector<PARAM_>& enabledParams) :
 //-------------------------------------------------------------------- AUXILIARY
 
 //make a fresh mdb file at databaseName_withpath, erasing any existing file
-BError MaterialsDB::make_mdb_file(string newdatabaseName)
+BError MaterialsDB::make_mdb_file(std::string newdatabaseName)
 {
 	//0. Name - this is the material name, and it is the handle used with addmaterial command
 	//1. Formula - symbol equation for material (information only)
@@ -75,7 +75,7 @@ BError MaterialsDB::make_mdb_file(string newdatabaseName)
 
 	BError error(__FUNCTION__);
 
-	ofstream bdout;
+	std::ofstream bdout;
 
 	bdout.open(newdatabaseName.c_str(), std::ios::out);
 
@@ -87,11 +87,11 @@ BError MaterialsDB::make_mdb_file(string newdatabaseName)
 
 		for (int idx = 0; idx < dbEntry.get_num_meshparams(); idx++) {
 
-			string handle = dbEntry.get_meshparam_handle(idx);
-			string unit = dbEntry.get_meshparam_unit(idx);
+			std::string handle = dbEntry.get_meshparam_handle(idx);
+			std::string unit = dbEntry.get_meshparam_unit(idx);
 
-			string Parameter = handle;
-			if (unit.length()) Parameter += string(" (") + unit + string(")");
+			std::string Parameter = handle;
+			if (unit.length()) Parameter += std::string(" (") + unit + std::string(")");
 
 			bdout << "\t" << Parameter << "\tDOI";
 		}
@@ -124,14 +124,14 @@ BError MaterialsDB::fix_mdb_file(void)
 	//////////////////////////////////////////
 
 	//the list of parameter handles as found in dbEntry, in same order
-	vector<string> parameters_handles;
+	std::vector<std::string> parameters_handles;
 
 	for (int idx = 0; idx < dbEntry.get_num_meshparams(); idx++) {
 
-		string handle = dbEntry.get_meshparam_handle(idx);
-		string unit = dbEntry.get_meshparam_unit(idx);
+		std::string handle = dbEntry.get_meshparam_handle(idx);
+		std::string unit = dbEntry.get_meshparam_unit(idx);
 
-		if (unit.length()) handle += string(" (") + unit + string(")");
+		if (unit.length()) handle += std::string(" (") + unit + std::string(")");
 
 		parameters_handles.push_back(handle);
 	}
@@ -144,7 +144,7 @@ BError MaterialsDB::fix_mdb_file(void)
 
 		if (!entries.size() || entries[0].size() <= params_start_idx) return error(BERROR_INCORRECTARRAYS);
 
-		vector<int> erase_columns;
+		std::vector<int> erase_columns;
 
 		for (int idx = params_start_idx; idx < entries[0].size(); idx += 2) {
 
@@ -184,7 +184,7 @@ BError MaterialsDB::fix_mdb_file(void)
 		//now check parameters to see if there are any not present in the database parameters
 		//if any found, then insert columns in the entries with parameter values set as "N/A"
 
-		vector<string> insert_columns;
+		std::vector<std::string> insert_columns;
 
 		for (int idx = 0; idx < parameters_handles.size(); idx++) {
 
@@ -261,7 +261,7 @@ BError MaterialsDB::store_entries(void)
 }
 
 //find row index in entries for given materialName
-int MaterialsDB::find_entry_idx(string materialName)
+int MaterialsDB::find_entry_idx(std::string materialName)
 {
 	int material_row_idx = -1;
 
@@ -277,22 +277,22 @@ int MaterialsDB::find_entry_idx(string materialName)
 	return material_row_idx;
 }
 
-//replace certain characters with an ascii signalling code before sending the string with POST / GET requests
-void MaterialsDB::encode_characters_ascii(string& message)
+//replace certain characters with an ascii signalling code before sending the std::string with POST / GET requests
+void MaterialsDB::encode_characters_ascii(std::string& message)
 {
 	//+ -> <asc>43</asc>
 
-	replaceall(message, string("+"), string("<asc>43</asc>"));
+	replaceall(message, std::string("+"), std::string("<asc>43</asc>"));
 }
 
 //-------------------------------------------------------------------- COMMAND HANDLERS
 
 //handles the materialsdatabase command - switches the currently selected database
-BError MaterialsDB::SwitchDataBase(string newdatabaseName)
+BError MaterialsDB::SwitchDataBase(std::string newdatabaseName)
 {
 	BError error(__FUNCTION__);
 
-	ifstream bdin;
+	std::ifstream bdin;
 	bdin.open(newdatabaseName.c_str(), std::ios::in);
 
 	if (!bdin.is_open()) {
@@ -320,7 +320,7 @@ BError MaterialsDB::SwitchDataBase(string newdatabaseName)
 //set in *pmeshType the type of material loaded, e.g. ferromagnetic, metal, insulator, etc. - see enum MESH_ in MeshDefs.h for possible values
 //If succesful return true so the caller can create a mesh of the required type
 //The actual mesh parameter values will then be available here in dbEntry
-BError MaterialsDB::LoadMaterial(string materialName, int* pmeshType)
+BError MaterialsDB::LoadMaterial(std::string materialName, int* pmeshType)
 {
 	BError error(__FUNCTION__);
 
@@ -351,19 +351,19 @@ BError MaterialsDB::LoadMaterial(string materialName, int* pmeshType)
 
 		for (int idx = 0; idx < dbEntry.get_num_meshparams(); idx++) {
 
-			//for each parameter in dbEntry search the entries vector then set value from string
-			string handle = dbEntry.get_meshparam_handle(idx);
-			string unit = dbEntry.get_meshparam_unit(idx);
+			//for each parameter in dbEntry search the entries vector then set value from std::string
+			std::string handle = dbEntry.get_meshparam_handle(idx);
+			std::string unit = dbEntry.get_meshparam_unit(idx);
 
-			string Parameter = handle;
-			if (unit.length()) Parameter += string(" (") + unit + string(")");
+			std::string Parameter = handle;
+			if (unit.length()) Parameter += std::string(" (") + unit + std::string(")");
 
 			int column_idx = search_vector(entries[0], Parameter);
 
 			if (column_idx >= 0 && column_idx < entries[material_row_idx].size()) {
 
 				//found it
-				string value_string = entries[material_row_idx][column_idx];
+				std::string value_string = entries[material_row_idx][column_idx];
 
 				//set value if available
 				if (value_string != "N/A") {
@@ -390,13 +390,13 @@ void MaterialsDB::copy_parameters(MeshParams& copy_to_this)
 }
 
 //add new entry in currently selected data base - use with addmdbentry command
-BError MaterialsDB::AddMDBEntry(string materialName, MeshParams& meshParamsValues, MESH_ meshType)
+BError MaterialsDB::AddMDBEntry(std::string materialName, MeshParams& meshParamsValues, MESH_ meshType)
 {
 	BError error(__FUNCTION__);
 
 	if (!entries.size()) return error(BERROR_INCORRECTARRAYS);
 
-	vector<string> new_entry;
+	std::vector<std::string> new_entry;
 	
 	//search mdb for any entries with materialName - overwrite it if found, but keep fields which are normally manually edited
 
@@ -407,15 +407,15 @@ BError MaterialsDB::AddMDBEntry(string materialName, MeshParams& meshParamsValue
 	//////////////////////////////////////////
 
 	//the list of parameter handles and ids as found in dbEntry, in same order
-	vector<string> parameters_handles;
-	vector<PARAM_> parameters_ids;
+	std::vector<std::string> parameters_handles;
+	std::vector<PARAM_> parameters_ids;
 
 	for (int idx = 0; idx < dbEntry.get_num_meshparams(); idx++) {
 
-		string handle = dbEntry.get_meshparam_handle(idx);
-		string unit = dbEntry.get_meshparam_unit(idx);
+		std::string handle = dbEntry.get_meshparam_handle(idx);
+		std::string unit = dbEntry.get_meshparam_unit(idx);
 
-		if (unit.length()) handle += string(" (") + unit + string(")");
+		if (unit.length()) handle += std::string(" (") + unit + std::string(")");
 
 		parameters_handles.push_back(handle);
 		parameters_ids.push_back((PARAM_)dbEntry.get_meshparam_id(idx));
@@ -451,11 +451,11 @@ BError MaterialsDB::AddMDBEntry(string materialName, MeshParams& meshParamsValue
 	for (int idx = params_start_idx; idx < entries[0].size(); idx += 2) {
 
 		//entry handle
-		string handle = entries[0][idx];
+		std::string handle = entries[0][idx];
 
-		string value = "N/A";
+		std::string value = "N/A";
 
-		//get value string
+		//get value std::string
 		int idx_param = search_vector(parameters_handles, handle);
 
 		//get value from meshParamsValues if available
@@ -492,7 +492,7 @@ BError MaterialsDB::AddMDBEntry(string materialName, MeshParams& meshParamsValue
 }
 
 //delete entry in currently selected data base
-BError MaterialsDB::DelMDBEntry(string materialName)
+BError MaterialsDB::DelMDBEntry(std::string materialName)
 {
 	BError error(__FUNCTION__);
 
@@ -521,7 +521,7 @@ BError MaterialsDB::RefreshMDB(void)
 //If successfully sent, the entry will be checked by a moderator, and if correct will become available for all users
 //If successfully sent, returnMessage is empty, otherwise it contains a message detailing why the sync request couldn't be sent (e.g. incorrectly formatted entry / missing parameters etc. - too specific to set this as a BError entry)
 //BError contains general info, e.g. couldn't connect etc. (or no error code if everything fine)
-BError MaterialsDB::RequestMDBSync(string materialName, string domain_name, string mdb_entry_handler, string emailContact, string *presponseMessage)
+BError MaterialsDB::RequestMDBSync(std::string materialName, std::string domain_name, std::string mdb_entry_handler, std::string emailContact, std::string *presponseMessage)
 {
 	BError error(__FUNCTION__);
 
@@ -533,10 +533,10 @@ BError MaterialsDB::RequestMDBSync(string materialName, string domain_name, stri
 
 	//////////////////////////////////////////
 
-	//build string to send : entries in given row separated by tabs
-	string new_entry_string = combine(subvec(entries[existing_entry_idx], 0, params_start_idx), "\t");
+	//build std::string to send : entries in given row separated by tabs
+	std::string new_entry_string = combine(subvec(entries[existing_entry_idx], 0, params_start_idx), "\t");
 
-	new_entry_string += string("\t") + emailContact;
+	new_entry_string += std::string("\t") + emailContact;
 
 	//parameter values are sent as:
 	//handle (unit); value; doi;
@@ -544,45 +544,45 @@ BError MaterialsDB::RequestMDBSync(string materialName, string domain_name, stri
 	for (int idx = params_start_idx; idx < entries[0].size(); idx += 2) {
 
 		//entry handle
-		string handle_withunit = entries[0][idx];
+		std::string handle_withunit = entries[0][idx];
 
 		//remove unit since the column names in the sql database only contain the parameter handle, not augmented by units
-		string handle = trimblock(handle_withunit, " (", ")");
+		std::string handle = trimblock(handle_withunit, " (", ")");
 
 		if (idx + 1 < entries[existing_entry_idx].size()) {
 
-			string value = entries[existing_entry_idx][idx];
-			string doi = entries[existing_entry_idx][idx + 1];
+			std::string value = entries[existing_entry_idx][idx];
+			std::string doi = entries[existing_entry_idx][idx + 1];
 
 			//we want the doi to be entered as https://doi.org/...
 			//if the start bit is missing then add it
-			if (doi != "N/A" && doi.find(string("https://doi.org/")) == string::npos) {
+			if (doi != "N/A" && doi.find(std::string("https://doi.org/")) == std::string::npos) {
 
 				//does not contain https://doi.org/
 
-				if (doi.find(string("doi.org/")) == string::npos) {
+				if (doi.find(std::string("doi.org/")) == std::string::npos) {
 
 					//does not contain doi.org/ either
-					doi = string("https://doi.org/") + doi;
+					doi = std::string("https://doi.org/") + doi;
 				}
 				else {
 
 					//contains doi.org/ already
-					doi = string("https://") + doi;
+					doi = std::string("https://") + doi;
 				}
 			}
 
-			new_entry_string += string("\t") + handle + string(";") + value + string(";") + doi + string(";");
+			new_entry_string += std::string("\t") + handle + std::string(";") + value + std::string(";") + doi + std::string(";");
 		}
 		else return error(BERROR_INCORRECTARRAYS);
 	}
 	
 	//need a terminating tab as php script uses this
-	new_entry_string += string("\t");
+	new_entry_string += std::string("\t");
 
 	///////////////////////////////////////////////
 
-	//now send string to handler
+	//now send std::string to handler
 	HTTP httpComms(domain_name);
 
 	//certain characters are not sent properly with POST request, e.g. + which gets replaced by a space
@@ -591,10 +591,10 @@ BError MaterialsDB::RequestMDBSync(string materialName, string domain_name, stri
 
 	encode_characters_ascii(new_entry_string);
 
-	if (httpComms.is_available() && httpComms.http_post(mdb_entry_handler, string("newentry=") + new_entry_string, *presponseMessage)) {
+	if (httpComms.is_available() && httpComms.http_post(mdb_entry_handler, std::string("newentry=") + new_entry_string, *presponseMessage)) {
 
 		//new entry was sent, *preturnMessage contains a message from the server which can be displayed in the console.
-		if (*presponseMessage != string("Server message: Entry received.")) {
+		if (*presponseMessage != std::string("Server message: Entry received.")) {
 
 			return error(BERROR_INCORRECTACTION_SILENT);
 		}
@@ -610,7 +610,7 @@ BError MaterialsDB::RequestMDBSync(string materialName, string domain_name, stri
 
 //check if there are any new online materials data base entries - should only be called once at the start of the program to limit the potential for spamming the server
 //the server should also have a built-in timer to reject requests from users if sent too often from same ip
-BError MaterialsDB::CheckMDBLastUpdate(string *presponseMessage)
+BError MaterialsDB::CheckMDBLastUpdate(std::string *presponseMessage)
 {
 	BError error(__FUNCTION__);
 
@@ -618,7 +618,7 @@ BError MaterialsDB::CheckMDBLastUpdate(string *presponseMessage)
 }
 
 //Update BorisMDB.txt database with any new entries available in the online version. Handles the updatemdb command. 
-BError MaterialsDB::UpdateMDB(string domain_name, string mdb_handler, string* presponseMessage)
+BError MaterialsDB::UpdateMDB(std::string domain_name, std::string mdb_handler, std::string* presponseMessage)
 {
 	BError error(__FUNCTION__);
 
@@ -628,11 +628,11 @@ BError MaterialsDB::UpdateMDB(string domain_name, string mdb_handler, string* pr
 	//////////////////////////////////////////
 
 	//the list of handles in the order found in the entries vector
-	vector<string> parameters_handles;
+	std::vector<std::string> parameters_handles;
 
 	for (int idx = params_start_idx; idx < entries[0].size(); idx+=2) {
 
-		string handle = entries[0][idx];
+		std::string handle = entries[0][idx];
 		//remove units
 		handle = trimblock(handle, " (", ")");
 
@@ -643,13 +643,13 @@ BError MaterialsDB::UpdateMDB(string domain_name, string mdb_handler, string* pr
 
 	HTTP httpComms(domain_name);
 
-	string responseMessage;
+	std::string responseMessage;
 
 	if (httpComms.is_available() && httpComms.http_post(mdb_handler, "", responseMessage, 16 * 1024 * 1024)) {
 
 		//new entry was sent, *preturnMessage contains a message from the server which can be displayed in the console.
 
-		vector<string> rows = split(responseMessage, "\n");
+		std::vector<std::string> rows = split(responseMessage, "\n");
 		
 		if (rows.size() <= 1) {
 
@@ -658,12 +658,12 @@ BError MaterialsDB::UpdateMDB(string domain_name, string mdb_handler, string* pr
 		}
 
 		//get entries in fields
-		vector<vector<string>> fields;
+		std::vector<std::vector<std::string>> fields;
 		fields.resize(rows.size());
 
 		for (int idx = 0; idx < fields.size(); idx++) {
 
-			vector<string> row = split(rows[idx], "\t");
+			std::vector<std::string> row = split(rows[idx], "\t");
 			fields[idx] = row;
 		}
 
@@ -701,7 +701,7 @@ BError MaterialsDB::UpdateMDB(string domain_name, string mdb_handler, string* pr
 			}
 
 			//"State" column is always just before the parameters start
-			entries[entry_idx][params_start_idx - 1] = string("SHARED");
+			entries[entry_idx][params_start_idx - 1] = std::string("SHARED");
 
 			//now write parameters and DOI
 			for (int j = params_start_idx - 1; j < fields[i].size(); j++) {
@@ -711,13 +711,13 @@ BError MaterialsDB::UpdateMDB(string domain_name, string mdb_handler, string* pr
 				int idx_param_entry = params_start_idx + (j - params_start_idx + 1) * 2;
 
 				//entry is of the form value [DOI]
-				string entry = fields[i][j];
+				std::string entry = fields[i][j];
 
-				string value = trimblock(entry, " [", "]");
-				string doi = get_first_contained_substring(entry, " [", "]");
+				std::string value = trimblock(entry, " [", "]");
+				std::string doi = get_first_contained_substring(entry, " [", "]");
 
 				//find idx where we should place these in entries
-				string handle = fields[0][j];
+				std::string handle = fields[0][j];
 
 				int column_idx = search_vector(parameters_handles, handle);
 

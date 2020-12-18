@@ -6,8 +6,8 @@
 
 //Example use:
 //
-//string cuda_error_string = gpuErrchk(cudaPeekAtLastError());
-//if(cuda_error_string.length()) { ... show error string ... }
+//std::string cuda_error_string = gpuErrchk(cudaPeekAtLastError());
+//if(cuda_error_string.length()) { ... show error std::string ... }
 //
 
 #define gpuErrchk(ans) gpuAssert((ans), __FILE__, __LINE__);

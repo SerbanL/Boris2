@@ -7,7 +7,7 @@
 #include "Boris_Enums_Defs.h"
 #include "MeshDefs.h"
 
-using namespace std;
+
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //	
@@ -106,34 +106,34 @@ public:
 
 	//get id of indexed mesh parameter (this is the value from PARAM_ enum)
 	int get_meshparam_id(int index) { return meshParams.get_ID_from_index(index); }
-	int get_meshparam_id(string paramHandle) { return meshParams.get_ID_from_key(paramHandle); }
+	int get_meshparam_id(std::string paramHandle) { return meshParams.get_ID_from_key(paramHandle); }
 
 	//get handle of indexed mesh parameter
-	string get_meshparam_handle(int index) { return meshParams.get_key_from_index(index); }
-	string get_meshparam_handle(PARAM_ paramID) { return meshParams.get_key_from_ID(paramID); }
+	std::string get_meshparam_handle(int index) { return meshParams.get_key_from_index(index); }
+	std::string get_meshparam_handle(PARAM_ paramID) { return meshParams.get_key_from_ID(paramID); }
 
 	//get unit of indexed mesh parameter
-	string get_meshparam_unit(int index) { return meshParams[index].unit; }
-	string get_meshparam_unit(PARAM_ paramID) { return meshParams(paramID).unit; }
+	std::string get_meshparam_unit(int index) { return meshParams[index].unit; }
+	std::string get_meshparam_unit(PARAM_ paramID) { return meshParams(paramID).unit; }
 
 	bool contains_param(PARAM_ paramID) { return meshParams.is_ID_set(paramID); }
-	bool contains_param(string paramHandle) { return meshParams.has_key(paramHandle); }
+	bool contains_param(std::string paramHandle) { return meshParams.has_key(paramHandle); }
 
-	//get value of indexed mesh parameter as a string (with unit)
-	string get_meshparam_value(int index);
-	string get_meshparam_value(PARAM_ paramID);
+	//get value of indexed mesh parameter as a std::string (with unit)
+	std::string get_meshparam_value(int index);
+	std::string get_meshparam_value(PARAM_ paramID);
 
-	//get value of indexed mesh parameter as a string (without unit)
-	string get_meshparam_value_sci(int index);
-	string get_meshparam_value_sci(PARAM_ paramID);
+	//get value of indexed mesh parameter as a std::string (without unit)
+	std::string get_meshparam_value_sci(int index);
+	std::string get_meshparam_value_sci(PARAM_ paramID);
 
 	PARAMTYPE_ get_meshparam_type(PARAM_ paramID) { return meshParams(paramID).get_type(); }
 
-	//returns a string describing the set temperature dependence ("none", "array" or set equation : "name parameters...") 
-	string get_paraminfo_string(PARAM_ paramID);
+	//returns a std::string describing the set temperature dependence ("none", "array" or set equation : "name parameters...") 
+	std::string get_paraminfo_string(PARAM_ paramID);
 
-	//returns a string describing the set spatial dependence with any parameters
-	string get_paramvarinfo_string(PARAM_ paramID);
+	//returns a std::string describing the set spatial dependence with any parameters
+	std::string get_paramvarinfo_string(PARAM_ paramID);
 
 	//check if the given parameter has a temperature dependence set
 	bool is_paramtemp_set(PARAM_ paramID);
@@ -149,7 +149,7 @@ public:
 	bool is_param_nonconst(PARAM_ paramID);
 
 	//get mesh parameter temperature scaling up to max_temperature : return a vector from 0K up to and including max_temperature with scaling coefficients
-	bool get_meshparam_tempscaling(PARAM_ paramID, double max_temperature, vector<double>& x, vector<double>& y, vector<double>& z);
+	bool get_meshparam_tempscaling(PARAM_ paramID, double max_temperature, std::vector<double>& x, std::vector<double>& y, std::vector<double>& z);
 
 	//is this param hidden or can we display it?
 	bool is_param_hidden(PARAM_ paramID) { return meshParams(paramID).hidden; }
@@ -169,22 +169,22 @@ public:
 
 	//-------------------------Setters : value and temperature dependence
 
-	//set value from string for named parameter (units allowed in string)
-	void set_meshparam_value(PARAM_ paramID, string value_text);
+	//set value from std::string for named parameter (units allowed in std::string)
+	void set_meshparam_value(PARAM_ paramID, std::string value_text);
 
 	//clear mesh parameter temperature dependence
 	void clear_meshparam_temp(PARAM_ paramID);
 
 	//set mesh parameter array scaling
-	bool set_meshparam_tscaling_array(PARAM_ paramID, vector<double>& temp, vector<double>& scaling_x, vector<double>& scaling_y, vector<double>& scaling_z);
+	bool set_meshparam_tscaling_array(PARAM_ paramID, std::vector<double>& temp, std::vector<double>& scaling_x, std::vector<double>& scaling_y, std::vector<double>& scaling_z);
 
-	//set temperature dependence info string for console display purposes
-	void set_meshparam_tscaling_info(PARAM_ paramID, string info_text);
+	//set temperature dependence info std::string for console display purposes
+	void set_meshparam_tscaling_info(PARAM_ paramID, std::string info_text);
 
 	//-------------------------Setters : spatial variation
 
 	//set the mesh parameter spatial variation equation with given user constants
-	void set_meshparam_s_equation(PARAM_ paramID, string& equationText, vector_key<double>& userConstants, DBL3 meshDimensions);
+	void set_meshparam_s_equation(PARAM_ paramID, std::string& equationText, vector_key<double>& userConstants, DBL3 meshDimensions);
 
 	//clear mesh parameter spatial variation (all if paramID == PARAM_ALL)
 	void clear_meshparam_variation(PARAM_ paramID);
@@ -192,13 +192,16 @@ public:
 	//update mesh parameter spatial variation (e.g. cellsize or rectangle could have changed)
 	bool update_meshparam_var(PARAM_ paramID, DBL3 h, Rect rect);
 
-	//set parameter spatial variation using a given generator and arguments (arguments passed as a string to be interpreted and converted using ToNum)
-	BError set_meshparam_var(PARAM_ paramID, MATPVAR_ generatorID, DBL3 h, Rect rect, string generatorArgs, function<vector<unsigned char>(string, INT2)>& bitmap_loader);
+	//set parameter spatial variation using a given generator and arguments (arguments passed as a std::string to be interpreted and converted using ToNum)
+	BError set_meshparam_var(PARAM_ paramID, MATPVAR_ generatorID, DBL3 h, Rect rect, std::string generatorArgs, std::function<std::vector<unsigned char>(std::string, INT2)>& bitmap_loader);
+
+	//set parameter spatial variation using a shape : set value in given shape only
+	BError set_meshparam_shape(PARAM_ paramID, DBL3 h, Rect rect, std::vector<MeshShape> shapes, std::string value_text);
 
 	//-------------------------Setters/Updaters : text equations
 
 	//set the mesh parameter temperature equation with given user constants
-	virtual void set_meshparam_t_equation(PARAM_ paramID, string& equationText, vector_key<double>& userConstants) = 0;
+	virtual void set_meshparam_t_equation(PARAM_ paramID, std::string& equationText, vector_key<double>& userConstants) = 0;
 
 	//update text equations for mesh parameters with user constants, mesh dimensions, Curie temperature, base temperature
 	virtual bool update_meshparam_equations(PARAM_ paramID, vector_key<double>& userConstants, DBL3 meshDimensions) = 0;

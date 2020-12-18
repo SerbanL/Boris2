@@ -3,7 +3,7 @@
 
 //--------------------------------------------------------- MESH HANDLING - SETTINGS
 
-BError SuperMesh::SetMagAngle(string meshName, double polar, double azim)
+BError SuperMesh::SetMagAngle(std::string meshName, double polar, double azim)
 {
 	BError error(__FUNCTION__);
 
@@ -24,7 +24,7 @@ BError SuperMesh::SetMagAngle(string meshName, double polar, double azim)
 	return error;
 }
 
-BError SuperMesh::SetMagAngle_Rect(string meshName, double polar, double azim, Rect rectangle)
+BError SuperMesh::SetMagAngle_Rect(std::string meshName, double polar, double azim, Rect rectangle)
 {
 	BError error(__FUNCTION__);
 
@@ -38,8 +38,52 @@ BError SuperMesh::SetMagAngle_Rect(string meshName, double polar, double azim, R
 	return error;
 }
 
+//set magnetization angle in given mesh using given shape
+BError SuperMesh::SetMagAngle_Shape(std::string meshName, double polar, double azim, std::vector<MeshShape> shapes)
+{
+	BError error(__FUNCTION__);
+
+	if (meshName.length() && !contains(meshName)) return error(BERROR_INCORRECTNAME);
+
+	if (meshName.length()) {
+
+		pMesh[meshName]->SetMagAngle_Shape(polar, azim, shapes);
+	}
+	else {
+
+		for (int idx = 0; idx < pMesh.size(); idx++) {
+
+			pMesh[idx]->SetMagAngle_Shape(polar, azim, shapes);
+		}
+	}
+
+	return error;
+}
+
+//Set magnetization angle in solid object only containing given relative position uniformly using polar coordinates
+BError SuperMesh::SetMagAngle_Object(std::string meshName, double polar, double azim, DBL3 position)
+{
+	BError error(__FUNCTION__);
+
+	if (meshName.length() && !contains(meshName)) return error(BERROR_INCORRECTNAME);
+
+	if (meshName.length()) {
+
+		pMesh[meshName]->SetMagAngle_Object(polar, azim, position);
+	}
+	else {
+
+		for (int idx = 0; idx < pMesh.size(); idx++) {
+
+			pMesh[idx]->SetMagAngle_Object(polar, azim, position);
+		}
+	}
+
+	return error;
+}
+
 //Invert magnetization direction in given mesh (must be magnetic)
-BError SuperMesh::SetInvertedMag(string meshName, bool x, bool y, bool z)
+BError SuperMesh::SetInvertedMag(std::string meshName, bool x, bool y, bool z)
 {
 	BError error(__FUNCTION__);
 
@@ -51,7 +95,7 @@ BError SuperMesh::SetInvertedMag(string meshName, bool x, bool y, bool z)
 }
 
 //Mirror magnetization in given axis (literal x, y, or z) in given mesh (must be magnetic)
-BError SuperMesh::SetMirroredMag(string meshName, string axis)
+BError SuperMesh::SetMirroredMag(std::string meshName, std::string axis)
 {
 	BError error(__FUNCTION__);
 
@@ -63,7 +107,7 @@ BError SuperMesh::SetMirroredMag(string meshName, string axis)
 }
 
 //Set random magentisation distribution in given mesh (must be magnetic)
-BError SuperMesh::SetRandomMag(string meshName, int seed)
+BError SuperMesh::SetRandomMag(std::string meshName, int seed)
 {
 	BError error(__FUNCTION__);
 
@@ -74,17 +118,17 @@ BError SuperMesh::SetRandomMag(string meshName, int seed)
 	return error;
 }
 
-BError SuperMesh::SetMagDomainWall(string meshName, string longitudinal, string transverse, double width, double position)
+BError SuperMesh::SetMagDomainWall(std::string meshName, std::string longitudinal, std::string transverse, double width, double position)
 {
 	BError error(__FUNCTION__);
 
 	if (!contains(meshName)) return error(BERROR_INCORRECTNAME);
 
-	auto set_component_from_literals = [](string literal) -> int {
+	auto set_component_from_literals = [](std::string literal) -> int {
 
 		if (!literal.length()) return 0;
 
-		vector<string> literals = { "-z", "-y", "-x", "", "x", "y", "z" };
+		std::vector<std::string> literals = { "-z", "-y", "-x", "", "x", "y", "z" };
 
 		for (int idx = 0; idx < (int)literals.size(); idx++)
 			if (literal == literals[idx]) return (idx - 3);
@@ -102,7 +146,7 @@ BError SuperMesh::SetMagDomainWall(string meshName, string longitudinal, string 
 }
 
 //Set Neel skyrmion in given mesh with chirality, diameter and relative x-y plane position
-BError SuperMesh::SetSkyrmion(string meshName, int orientation, int chirality, double diameter, DBL2 position)
+BError SuperMesh::SetSkyrmion(std::string meshName, int orientation, int chirality, double diameter, DBL2 position)
 {
 	BError error(__FUNCTION__);
 
@@ -123,7 +167,7 @@ BError SuperMesh::SetSkyrmion(string meshName, int orientation, int chirality, d
 }
 
 //Set Bloch skyrmion in given mesh with chirality, diameter and relative x-y plane position
-BError SuperMesh::SetSkyrmionBloch(string meshName, int orientation, int chirality, double diameter, DBL2 position)
+BError SuperMesh::SetSkyrmionBloch(std::string meshName, int orientation, int chirality, double diameter, DBL2 position)
 {
 	BError error(__FUNCTION__);
 
@@ -143,7 +187,7 @@ BError SuperMesh::SetSkyrmionBloch(string meshName, int orientation, int chirali
 	return error;
 }
 
-BError SuperMesh::SetField(string meshName, DBL3 field_cartesian)
+BError SuperMesh::SetField(std::string meshName, DBL3 field_cartesian)
 {
 	BError error(__FUNCTION__);
 
@@ -165,7 +209,7 @@ BError SuperMesh::SetField(string meshName, DBL3 field_cartesian)
 }
 
 //Set uniform applied mechanical stress
-BError SuperMesh::SetUniformStress(string meshName, DBL3 stress_cartesian)
+BError SuperMesh::SetUniformStress(std::string meshName, DBL3 stress_cartesian)
 {
 	BError error(__FUNCTION__);
 
@@ -187,18 +231,18 @@ BError SuperMesh::SetUniformStress(string meshName, DBL3 stress_cartesian)
 }
 
 //fully prepare moving mesh algorithm on named mesh (must be ferromagnetic) - transverse wall
-BError SuperMesh::PrepareMovingMesh(string meshName)
+BError SuperMesh::PrepareMovingMesh(std::string meshName)
 {
 	BError error(__FUNCTION__);
 
 	if (!contains(meshName) || !pMesh[meshName]->MComputation_Enabled()) return error(BERROR_INCORRECTNAME);
 
 	//1. Set dipoles left and right, size 4 times the mesh length
-	string left_dipole = "dip_left", right_dipole = "dip_right";
+	std::string left_dipole = "dip_left", right_dipole = "dip_right";
 
-	auto adjust_name = [&](string& name) {
+	auto adjust_name = [&](std::string& name) {
 
-		string adjusted_name = name;
+		std::string adjusted_name = name;
 
 		int num = 1;
 		while (contains(adjusted_name)) {
@@ -254,7 +298,7 @@ BError SuperMesh::PrepareMovingMesh(string meshName)
 }
 
 //fully prepare moving mesh algorithm on named mesh (must be ferromagnetic) - bloch wall
-BError SuperMesh::PrepareMovingMesh_Bloch(string meshName)
+BError SuperMesh::PrepareMovingMesh_Bloch(std::string meshName)
 {
 	BError error(__FUNCTION__);
 
@@ -273,11 +317,11 @@ BError SuperMesh::PrepareMovingMesh_Bloch(string meshName)
 	pMesh[meshName]->SetMagAngle(180, 0, Rect(DBL3((1 - MOVEMESH_ENDRATIO) * dim.x, 0, 0), dim));
 
 	//3. Set dipoles left and right, size 4 times the mesh length
-	string left_dipole = "dip_left", right_dipole = "dip_right";
+	std::string left_dipole = "dip_left", right_dipole = "dip_right";
 
-	auto adjust_name = [&](string& name) {
+	auto adjust_name = [&](std::string& name) {
 
-		string adjusted_name = name;
+		std::string adjusted_name = name;
 
 		int num = 1;
 		while (contains(adjusted_name)) {
@@ -321,18 +365,18 @@ BError SuperMesh::PrepareMovingMesh_Bloch(string meshName)
 }
 
 //fully prepare moving mesh algorithm on named mesh (must be ferromagnetic) - neel wall
-BError SuperMesh::PrepareMovingMesh_Neel(string meshName)
+BError SuperMesh::PrepareMovingMesh_Neel(std::string meshName)
 {
 	BError error(__FUNCTION__);
 
 	if (!contains(meshName) || !pMesh[meshName]->MComputation_Enabled()) return error(BERROR_INCORRECTNAME);
 
 	//1. Set dipoles left and right, size 4 times the mesh length
-	string left_dipole = "dip_left", right_dipole = "dip_right";
+	std::string left_dipole = "dip_left", right_dipole = "dip_right";
 
-	auto adjust_name = [&](string& name) {
+	auto adjust_name = [&](std::string& name) {
 
-		string adjusted_name = name;
+		std::string adjusted_name = name;
 
 		int num = 1;
 		while (contains(adjusted_name)) {
@@ -388,18 +432,18 @@ BError SuperMesh::PrepareMovingMesh_Neel(string meshName)
 }
 
 //fully prepare moving mesh algorithm on named mesh (must be ferromagnetic) - skyrmion
-BError SuperMesh::PrepareMovingMesh_Skyrmion(string meshName)
+BError SuperMesh::PrepareMovingMesh_Skyrmion(std::string meshName)
 {
 	BError error(__FUNCTION__);
 
 	if (!contains(meshName) || !pMesh[meshName]->MComputation_Enabled()) return error(BERROR_INCORRECTNAME);
 
 	//1. Set dipoles left and right, size 4 times the mesh length
-	string left_dipole = "dip_left", right_dipole = "dip_right";
+	std::string left_dipole = "dip_left", right_dipole = "dip_right";
 
-	auto adjust_name = [&](string& name) {
+	auto adjust_name = [&](std::string& name) {
 
-		string adjusted_name = name;
+		std::string adjusted_name = name;
 
 		int num = 1;
 		while (contains(adjusted_name)) {
@@ -458,15 +502,15 @@ BError SuperMesh::PrepareMovingMesh_Skyrmion(string meshName)
 void SuperMesh::ClearMovingMesh(void)
 {
 	//1. Delete all dipole meshes which contain dip_left or dip_right in the name
-	string left_dipole = "dip_left", right_dipole = "dip_right";
+	std::string left_dipole = "dip_left", right_dipole = "dip_right";
 
-	vector<string> meshes_to_delete;
+	std::vector<std::string> meshes_to_delete;
 
 	for (int idx = 0; idx < pMesh.size(); idx++) {
 
 		if (pMesh[idx]->GetMeshType() == MESH_DIPOLE) {
 
-			string meshName = pMesh.get_key_from_index(idx);
+			std::string meshName = pMesh.get_key_from_index(idx);
 
 			if (meshName.find(left_dipole) != std::string::npos || meshName.find(right_dipole) != std::string::npos) {
 
@@ -495,7 +539,7 @@ void SuperMesh::ClearMovingMesh(void)
 }
 
 //set ferromagnetic mesh roughness refinement if Roughness module enabled in given mesh
-BError SuperMesh::SetMeshRoughnessRefinement(string meshName, INT3 refine)
+BError SuperMesh::SetMeshRoughnessRefinement(std::string meshName, INT3 refine)
 {
 	BError error(__FUNCTION__);
 
@@ -510,7 +554,7 @@ BError SuperMesh::SetMeshRoughnessRefinement(string meshName, INT3 refine)
 
 //Set periodic boundary conditions for magnetization
 //possible flags: x, y, z
-BError SuperMesh::Set_PBC(string meshName, string flag, int images)
+BError SuperMesh::Set_PBC(std::string meshName, std::string flag, int images)
 {
 	BError error(__FUNCTION__);
 
@@ -567,7 +611,7 @@ BError SuperMesh::Set_PBC(string meshName, string flag, int images)
 }
 
 //set exchange coupling to neighboring meshes - an exchange-type module (i.e. inherit from ExchangeBase) must be enabled in the named mesh
-BError SuperMesh::Set_ExchangeCoupledMeshes(bool status, string meshName)
+BError SuperMesh::Set_ExchangeCoupledMeshes(bool status, std::string meshName)
 {
 	BError error(__FUNCTION__);
 
@@ -579,7 +623,7 @@ BError SuperMesh::Set_ExchangeCoupledMeshes(bool status, string meshName)
 }
 
 //Set/Get multilayered demag exclusion : will need to call UpdateConfiguration when the flag is changed, so the correct SDemag_Demag modules and related settings are set from the SDemag module.
-BError SuperMesh::Set_Demag_Exclusion(bool exclude_from_multiconvdemag, string meshName)
+BError SuperMesh::Set_Demag_Exclusion(bool exclude_from_multiconvdemag, std::string meshName)
 {
 	BError error(__FUNCTION__);
 
@@ -593,7 +637,7 @@ BError SuperMesh::Set_Demag_Exclusion(bool exclude_from_multiconvdemag, string m
 }
 
 //set link_stochastic flag in named mesh, or all meshes if supermesh handle given
-BError SuperMesh::SetLinkStochastic(bool link_stochastic, string meshName)
+BError SuperMesh::SetLinkStochastic(bool link_stochastic, std::string meshName)
 {
 	BError error(__FUNCTION__);
 
@@ -613,6 +657,19 @@ BError SuperMesh::SetLinkStochastic(bool link_stochastic, string meshName)
 			if (pMesh[idx]->MComputation_Enabled() && !pMesh[meshName]->is_atomistic()) error = dynamic_cast<Mesh*>(pMesh[idx])->SetLinkStochastic(link_stochastic);
 		}
 	}
+
+	return error;
+}
+
+//set electric field VEC from a constant Jc value in named mesh
+BError SuperMesh::SetEFromJcValue(DBL3 Jcvalue, std::string meshName)
+{
+	BError error(__FUNCTION__);
+
+	if (!contains(meshName)) return error(BERROR_INCORRECTNAME);
+	if (!pMesh[meshName]->EComputation_Enabled()) return error(BERROR_NOTRANSPORT);
+
+	pMesh[meshName]->SetEFromJcValue(Jcvalue);
 
 	return error;
 }

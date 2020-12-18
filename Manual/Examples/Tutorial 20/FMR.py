@@ -1,24 +1,16 @@
 """
-This script is part of Boris Computational Spintronics v2.8
+This script is part of Boris Computational Spintronics v3.0
 
 @author: Serban Lepadatu, 2020
 """
 
-import os
-import sys
 from NetSocks import NSClient
 import matplotlib.pyplot as plt
 import numpy as np
 
 #setup communication with server
-ns = NSClient('localhost')
-
-########################################
-
-#the working directory : same as this script file
-directory = os.path.dirname(sys.argv[0]) + "/"
-ns.default()
-ns.chdir(directory)
+ns = NSClient()
+ns.configure(True)
 
 ########################################
 
@@ -30,9 +22,9 @@ def func_lorentz(x, y0, S, w, x0):
 #Prepare FMR simulation for given simulation file and ferromagnetic mesh name
 #Geometry, parameters and correct modules must be prepared already in the simulation file
 #This only changes required stages, output data and data file
-def PrepareFMRSimulation(simulationFile_withPath, ferromagnetic_meshName):
+def PrepareFMRSimulation(simulationFile, ferromagnetic_meshName):
 
-    ns.loadsim(simulationFile_withPath)
+    ns.loadsim(simulationFile)
 
     #temporary data file
     ns.savedatafile('fmrcycle.txt')
@@ -54,7 +46,7 @@ def PrepareFMRSimulation(simulationFile_withPath, ferromagnetic_meshName):
     ns.setangle(90, 270)
 
     #save file
-    ns.savesim(simulationFile_withPath)
+    ns.savesim(simulationFile)
 
 #################################################################################################
 
@@ -139,7 +131,7 @@ Hstep = 1000
 rfFreq = 20e9
 
 #load simulation and prepare
-PrepareFMRSimulation(directory + simulation_file, ferromagnetic_meshName)
+PrepareFMRSimulation(simulation_file, ferromagnetic_meshName)
 
 #sweep field
 for step in range(int((Hend-Hstart)/Hstep) + 1):

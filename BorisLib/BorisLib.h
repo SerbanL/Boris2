@@ -24,6 +24,3 @@
 #include "BLib_VEC_VC.h"
 #include "BLib_CurveFitting.h"
 
-//LEGACY : disabled (use fftw3 instead)
-//#include "BLib_FFT.h"
-

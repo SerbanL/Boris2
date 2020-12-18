@@ -3,7 +3,7 @@
 #include "BorisLib.h"
 #include "Modules.h"
 
-using namespace std;
+
 
 class Mesh;
 class SDemag;
@@ -28,7 +28,7 @@ class SDemagCUDA;
 class SDemag_Demag :
 	public Modules,
 	public Convolution<SDemag_Demag, DemagKernelCollection>,
-	public ProgramState<SDemag_Demag, tuple<SZ3, DBL3, Rect, int>, tuple<>>
+	public ProgramState<SDemag_Demag, std::tuple<SZ3, DBL3, Rect, int>, std::tuple<>>
 {
 
 	friend SDemag;

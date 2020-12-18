@@ -11,7 +11,7 @@
 //
 //	Case change
 
-//from text return a new string with lowercase only
+//from text return a new std::string with lowercase only
 inline std::string lowercase(const std::string& text)
 {
 	std::string text_lowercase = text;
@@ -24,7 +24,7 @@ inline std::string lowercase(const std::string& text)
 	return text_lowercase;
 }
 
-//from text return a new string with uppercase only
+//from text return a new std::string with uppercase only
 inline std::string uppercase(const std::string& text)
 {
 	std::string text_uppercase = text;
@@ -42,7 +42,7 @@ inline std::string uppercase(const std::string& text)
 //	Trimming
 
 //remove all match substring - variants for a single match std::string (and in particular a dedicated function for spaces)
-//return trimmed string (but leave original intact)
+//return trimmed std::string (but leave original intact)
 inline std::string trim(std::string text, const std::string& match)
 {
 	//trim can be called only as trim(text), where match = "" by default - this is used in the parameter pack version when recursing.
@@ -206,8 +206,8 @@ inline std::vector<std::string> split(const std::string& textstring)
 	return split(textstring, {" "});
 }
 
-//split input string into substrings using space as a separator but only when the spaces delimit a maximally numeric substring.
-//A numeric substring is a string which contains only digits and spaces. A maximally numeric substring is a numeric substring which cannot be extended by adding characters either to the left or to the right.
+//split input std::string into substrings using space as a separator but only when the spaces delimit a maximally numeric substring.
+//A numeric substring is a std::string which contains only digits and spaces. A maximally numeric substring is a numeric substring which cannot be extended by adding characters either to the left or to the right.
 //e.g. "c:\file path\file name 2.txt 0 1 2 text 3 4 5" will be split into "c:\file path\file name 2.txt", "0 1 2", "text", "3 4 5"
 inline std::vector<std::string> split_numeric(const std::string& textstring)
 {
@@ -236,7 +236,7 @@ inline std::vector<std::string> split_numeric(const std::string& textstring)
 				int start_idx = idx;
 				int end_idx = start_idx + 1;
 
-				//reached end : the last string was numeric
+				//reached end : the last std::string was numeric
 				if (end_idx == textstring.length()) isnumeric = true;
 
 				//is it a numeric substring? There must be a space after a digit to be a real numeric substring
@@ -359,7 +359,7 @@ inline bool replaceall(std::string &text, const std::string& match, const std::s
 	return replaced;
 }
 
-//get first substring contained between start and end substrings, also deleting it from the original string (including the start and end)
+//get first substring contained between start and end substrings, also deleting it from the original std::string (including the start and end)
 inline std::string remove_first_contained_substring(std::string& text, const std::string& start, const std::string& end)
 {
 	size_t pos_start = text.find(start) + start.length();
@@ -375,7 +375,7 @@ inline std::string remove_first_contained_substring(std::string& text, const std
 	return "";
 }
 
-//get last substring contained between start and end substrings, also deleting it from the original string (including the start and end)
+//get last substring contained between start and end substrings, also deleting it from the original std::string (including the start and end)
 inline std::string remove_last_contained_substring(std::string& text, const std::string& start, const std::string& end)
 {
 	std::string text_reverse = text;
@@ -455,7 +455,7 @@ inline bool ShiftSubstring_L2R(std::string &leftString, std::string &rightString
 //
 //	Getters
 
-//return string before match string, excluding the match (return empty if not match)
+//return std::string before match std::string, excluding the match (return empty if not match)
 inline std::string get_before_match(const std::string& text, const std::string& match)
 {
 	size_t pos_match = text.find(match);
@@ -467,7 +467,7 @@ inline std::string get_before_match(const std::string& text, const std::string& 
 	else return "";
 }
 
-//return string after match string, excluding the match (return empty if not match)
+//return std::string after match std::string, excluding the match (return empty if not match)
 inline std::string get_after_match(const std::string& text, const std::string& match)
 {
 	size_t pos_match = text.find(match);
@@ -580,7 +580,7 @@ inline std::pair<int, int> get_word_indexes(const std::string& text, int charIdx
 //
 //	Properties
 
-//check the input string contains only numbers : non-empty and, apart from separators list of characters, must contain only alphanumeric characters, e, -, +, .
+//check the input std::string contains only numbers : non-empty and, apart from separators list of characters, must contain only alphanumeric characters, e, -, +, .
 inline bool has_numbers_only(const std::string& text, std::string separators)
 {
 	if (!text.length()) return false;
@@ -590,7 +590,7 @@ inline bool has_numbers_only(const std::string& text, std::string separators)
 	return (std::find_if(text.begin(), text.end(), [&](const char& c) { return (allowed_characters.find(c) == std::string::npos); }) == text.end());
 }
 
-//check the input string contains only digits
+//check the input std::string contains only digits
 inline bool has_digits_only(const std::string& text)
 {
 	if (!text.length()) return false;

@@ -2,7 +2,7 @@
 
 #include "Funcs_Math_base.h"
 #include "Types_VAL.h"
-#include "Funcs_Algorithms_base.h"
+#include "Funcs_Algorithms.h"
 #include "Funcs_Aux_base.h"
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -320,38 +320,6 @@ Type sum_KahanNeumaier(std::vector<Type> &sum_this)
 	return (sum + c);
 }
 
-//Kahan sum with pre-ordering by decreasing magnitude
-template <typename Type, std::enable_if_t<std::is_floating_point<Type>::value>* = nullptr>
-Type sum_Kahansort(std::vector<Type> &sum_this)
-{
-	//Kahan summation
-
-	//sorting by decreasing magnitude
-	invquicksortmag(sum_this);
-
-	Type sum = Type();
-
-	//A running compensation for lost low-order bits.
-	Type c = Type();
-
-	for (int i = 0; i < sum_this.size(); i++) {
-
-		//new term to add to sum with correction from previous iteration
-		Type y = sum_this[i] - c;
-
-		//add term to temporary
-		Type t = sum + y;
-
-		//find correction for lost low-order bits -> to apply at next iteration
-		c = (t - sum) - y;
-
-		//now set in running sum
-		sum = t;
-	}
-
-	return sum;
-}
-
 ///////////////////////////////////////////////////////////////////////////////
 
 //Use linear interpolation/extrapolation to obtain the y value at the given x, where
@@ -465,6 +433,14 @@ inline bool point_on_rhs_of_line(const DBL3& s, const DBL3& e, const DBL3& p, co
 inline bool point_on_rhs_of_line(const DBL2& s, const DBL2& e, const DBL2& p)
 {
 	return ((DBL3(e.x, e.y, 0) - DBL3(s.x, s.y, 0)) ^ (DBL3(p.x, p.y, 0) - DBL3(s.x, s.y, 0))) * DBL3(0, 0, 1) < 0;
+}
+
+//check if point p is on the right-hand-side of plane defined by the points p1, p2, p3 (in this order!)
+//the meaning of rhs then is if p is on the side of the plane containing the surface normal direction n, where n is along this cross product: (p2 - p1) ^ (p3 - p1)
+//i.e. if you look towards the plane which has points p1 p2 p3 in counter-clockwise direction then you are on the rhs!
+inline bool point_on_rhs_of_plane(const DBL3& p1, const DBL3& p2, const DBL3& p3, const DBL3& p)
+{
+	return ((p2 - p1) ^ (p3 - p1)) * (p - p1) > 0;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -605,6 +581,16 @@ inline DBL3 solve_crossprod_perp(double a, double b, const DBL3& m, const DBL3& 
 
 ///////////////////////////////////////////////////////////////////////////////
 
+//rotate object through angles in radians as psi: around y, theta: around x, phi: around z
+inline DBL3 rotate_object_yxz(const DBL3& r, double psi, double theta, double phi)
+{
+	return DBL3(
+		(cos(psi) * cos(phi) + sin(psi) * sin(theta) * sin(phi)) * r.x + (cos(phi) * sin(psi) * sin(theta) - cos(psi) * sin(phi)) * r.y + (cos(theta) * sin(psi)) * r.z,
+		(cos(theta) * sin(phi)) * r.x + (cos(theta) * cos(phi)) * r.y - sin(theta) * r.z,
+		(cos(psi) * sin(theta) * sin(phi) - cos(phi) * sin(psi)) * r.x + (cos(psi) * cos(phi) * sin(theta) + sin(psi) * sin(phi)) * r.y + (cos(psi) * cos(theta)) * r.z
+	);
+}
+
 //rotate the vector r by setting the coordinate system x axis to given polar and azimuthal angles. The angles are in radians.
 //i.e. if we have the unit vector n = [ cos(phi)sin(theta), sin(phi)sin(theta), cos(theta) ]
 //then we rotate the coordinate system s.t. the new x axis is n : 1) rotate the x axis around z through azimuthal, obtaining new x' and y' axes. 2) rotate x' axis around y' axis through (pi/2 - polar), obtaining new x'', y'=y'', z'' axes
@@ -700,7 +686,7 @@ inline DBL3 invrotate_polar(const DBL3& r, const DBL3& n)
 	}
 }
 
-//return a vector which is rotate by theta (0 to PI) from the vector r and by phi around the vector r (0 to 2PI)
+//return a vector which is rotated by theta (0 to PI) from the vector r and by phi around the vector r (0 to 2PI)
 //s.t. if r is along the x axis, theta is a rotation in the xy plane, and phi is a rotation around the x axis (geometric sense rotations).
 inline DBL3 relrotate_polar(const DBL3& r, double theta, double phi)
 {

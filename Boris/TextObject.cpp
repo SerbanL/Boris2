@@ -16,7 +16,7 @@ TextObject::TextObject() : GraphicalObject()
 
 
 //almost full constructor : no action handler set
-TextObject::TextObject(string text_, FormatSpecifier fs) : GraphicalObject()
+TextObject::TextObject(std::string text_, FormatSpecifier fs) : GraphicalObject()
 {
 	fulltext = text_;
 	set_display_text_length();
@@ -25,7 +25,7 @@ TextObject::TextObject(string text_, FormatSpecifier fs) : GraphicalObject()
 }
 
 //full constructor
-TextObject::TextObject(string text_, FormatSpecifier fs, SimTOFunct *pActionHandler_, float X, float Y)
+TextObject::TextObject(std::string text_, FormatSpecifier fs, SimTOFunct *pActionHandler_, float X, float Y)
 {
 	fulltext = text_;
 	set_display_text_length();
@@ -34,12 +34,12 @@ TextObject::TextObject(string text_, FormatSpecifier fs, SimTOFunct *pActionHand
 
 	if (pActionHandler_) {
 
-		pActionHandler = shared_ptr<SimTOFunct>(new SimTOFunct(pActionHandler_));
+		pActionHandler = std::shared_ptr<SimTOFunct>(new SimTOFunct(pActionHandler_));
 	}
 }
 
 //full constructor for text alignment object starter. *ptao_line is the TextLine on which this TextObject being created will be located
-TextObject::TextObject(string text_, FormatSpecifier fs, SimTOFunct *pActionHandler_, TextLine* ptao_line, float X, float Y)
+TextObject::TextObject(std::string text_, FormatSpecifier fs, SimTOFunct *pActionHandler_, TextLine* ptao_line, float X, float Y)
 {
 	fulltext = text_;
 	set_display_text_length();
@@ -48,17 +48,17 @@ TextObject::TextObject(string text_, FormatSpecifier fs, SimTOFunct *pActionHand
 
 	if (pActionHandler_) {
 
-		pActionHandler = shared_ptr<SimTOFunct>(new SimTOFunct(pActionHandler_));
+		pActionHandler = std::shared_ptr<SimTOFunct>(new SimTOFunct(pActionHandler_));
 
 		//starting tao
-		aligned_objects = tao_vec_ptr(new vector<tao_ptr>());
+		aligned_objects = tao_vec_ptr(new std::vector<tao_ptr>());
 		//for now this object is the only tao in the vector
 		aligned_objects->push_back(tao_ptr(ptao_line, this));
 	}
 }
 
 //full constructor for text alignment object with synchronisation (synchronise to existing tao: synch_tao). *ptao_line is the TextLine on which this TextObject being created will be located
-TextObject::TextObject(string text_, FormatSpecifier fs, SimTOFunct *pActionHandler_, TextLine* ptao_line, TextObject* psynch_tao, float X, float Y)
+TextObject::TextObject(std::string text_, FormatSpecifier fs, SimTOFunct *pActionHandler_, TextLine* ptao_line, TextObject* psynch_tao, float X, float Y)
 {
 	fulltext = text_;
 	set_display_text_length();
@@ -67,7 +67,7 @@ TextObject::TextObject(string text_, FormatSpecifier fs, SimTOFunct *pActionHand
 
 	if (pActionHandler_) {
 
-		pActionHandler = shared_ptr<SimTOFunct>(new SimTOFunct(pActionHandler_));
+		pActionHandler = std::shared_ptr<SimTOFunct>(new SimTOFunct(pActionHandler_));
 
 		//check if we can actually synchronise to the passed (supposedly) tao - if not there's a bug in the code! This textobject will not become a tao then.
 		if (psynch_tao->is_text_alignment_object() && pActionHandler_->iop.majorId == psynch_tao->get_text_alignment_object_number()) {
@@ -150,7 +150,7 @@ void TextObject::Draw(float dX, float dY, float widthLimit)
 		D2D1_RECT_F drawRect = toRect;
 		drawRect.right = widthLimit;
 
-		string cut_text = fulltext;
+		std::string cut_text = fulltext;
 
 		for (int i = 1; i <= fulltext.length(); i++) {
 
@@ -164,7 +164,7 @@ void TextObject::Draw(float dX, float dY, float widthLimit)
 		if (cut_text.length() > displayTextLength) {
 
 			//limit displayed text and show ... termination
-			pBG->DrawTextLine(cut_text.substr(0, displayTextLength - 3) + string("..."), GetShiftedRect(drawRect, dX, dY), fs);
+			pBG->DrawTextLine(cut_text.substr(0, displayTextLength - 3) + std::string("..."), GetShiftedRect(drawRect, dX, dY), fs);
 		}
 		else pBG->DrawTextLine(cut_text, GetShiftedRect(drawRect, dX, dY), fs);
 	}
@@ -173,7 +173,7 @@ void TextObject::Draw(float dX, float dY, float widthLimit)
 		if (fulltext.length() > displayTextLength) {
 
 			//limit displayed text and show ... termination
-			pBG->DrawTextLine(fulltext.substr(0, displayTextLength - 3) + string("..."), GetShiftedRect(toRect, dX, dY), fs);
+			pBG->DrawTextLine(fulltext.substr(0, displayTextLength - 3) + std::string("..."), GetShiftedRect(toRect, dX, dY), fs);
 		}
 		else pBG->DrawTextLine(fulltext, GetShiftedRect(toRect, dX, dY), fs);
 	}
@@ -187,14 +187,14 @@ bool TextObject::SplitOnOverflow(TextObject &nonOverflowingTO, float right, char
 	//is the current text overflowing?
 	if (TextOverflows(right)) {
 
-		//overflow detected: need to extract the largest whole-word string which fits in one line
-		string leftString;
+		//overflow detected: need to extract the largest whole-word std::string which fits in one line
+		std::string leftString;
 		nonOverflowingTO.set(leftString);
 
 		while (true) {
 
-			//Shift one word at a time from current text to leftString, continue until the largest non-overflowing string is extracted
-			//It is possible the current text is a single word which overflows. In this case the output TextObject will have a blank string.
+			//Shift one word at a time from current text to leftString, continue until the largest non-overflowing std::string is extracted
+			//It is possible the current text is a single word which overflows. In this case the output TextObject will have a blank std::string.
 			if (ShiftSubstring_R2L(leftString, fulltext, separator)) {
 
 				nonOverflowingTO.set(leftString);
@@ -227,7 +227,7 @@ bool TextObject::SplitOnOverflow(TextObject &nonOverflowingTO, float right, char
 void TextObject::ShiftFirstWord(TextObject &oneWordTextObject)
 {
 	oneWordTextObject = *this;
-	string oneWordText;
+	std::string oneWordText;
 	oneWordTextObject.set(oneWordText);
 
 	if (!ShiftSubstring_R2L(oneWordText, fulltext, ' ')) {
@@ -242,7 +242,7 @@ void TextObject::ShiftFirstWord(TextObject &oneWordTextObject)
 
 bool TextObject::delchar(int delIdx) 
 {
-	//Delete character from index position (do not delete if index outside range). Return true if deletion results in empty string.
+	//Delete character from index position (do not delete if index outside range). Return true if deletion results in empty std::string.
 
 	if (GoodIdx((int)fulltext.length() - 1, delIdx)) {
 
@@ -370,7 +370,7 @@ TextLine::TextLine(void)
 	textLineVEC.push_back(TextObject("", FormatSpecifier()));
 }
 
-TextLine::TextLine(string text, FormatSpecifier fs) 
+TextLine::TextLine(std::string text, FormatSpecifier fs) 
 {
 	splitLine = SPLIT_NO;
 
@@ -578,8 +578,8 @@ TextLine& TextLine::SetSplitLineRectangle(float widthLimit)
 	return *this;
 }
 
-//Get text of TextLine object into a string
-string& operator<<(string &lhs, const TextLine &rhs) 
+//Get text of TextLine object into a std::string
+std::string& operator<<(std::string &lhs, const TextLine &rhs) 
 {
 	lhs = "";
 
@@ -628,7 +628,7 @@ template void TextLine::insert<int>(int charIdx, int &insertText);
 template void TextLine::insert<size_t>(int charIdx, size_t &insertText);
 template void TextLine::insert<float>(int charIdx, float &insertText);
 template void TextLine::insert<double>(int charIdx, double &insertText);
-template void TextLine::insert<string>(int charIdx, string &insertText);
+template void TextLine::insert<std::string>(int charIdx, std::string &insertText);
 template void TextLine::insert<INT2>(int charIdx, INT2 &insertText);
 template void TextLine::insert<INT3>(int charIdx, INT3 &insertText);
 
@@ -646,7 +646,7 @@ template <typename VType> void TextLine::insert(int charIdx, VType &insertText)
 bool TextLine::delchar(int delIdx) 
 {
 	//delete character at the required index.
-	//If deletion results in empty string for that TextObject, then erase the TextObject too, unless it is the last one on the line. In the latter case return true (deletion has resulted in empty textLine)
+	//If deletion results in empty std::string for that TextObject, then erase the TextObject too, unless it is the last one on the line. In the latter case return true (deletion has resulted in empty textLine)
 	//Finally recalculate rectangles so they are contiguous.
 
 	if (!GoodIdx(length() - 1, delIdx)) return false;
@@ -825,7 +825,7 @@ bool TextLines::CheckLine_InteractiveObjectState(int lineIdx)
 
 						//The message may consist of multiple lines - insert them one by one
 						//Check for newline and carriage return separators (\n, \r)
-						vector<string> messageLines = split(IOS_change.textMessage, "\r", "\n");
+						std::vector<std::string> messageLines = split(IOS_change.textMessage, "\r", "\n");
 
 						for (int idx = 0; idx < messageLines.size(); idx++) {
 
@@ -835,7 +835,7 @@ bool TextLines::CheckLine_InteractiveObjectState(int lineIdx)
 					else {
 						//The message may consist of multiple lines - insert them one by one
 						//Check for newline and carriage return separators (\n, \r)
-						vector<string> messageLines = split(IOS_change.textMessage, "\r", "\n");
+						std::vector<std::string> messageLines = split(IOS_change.textMessage, "\r", "\n");
 
 						for (int idx = 0; idx < messageLines.size(); idx++) {
 
@@ -874,7 +874,7 @@ bool TextLines::CheckLine_InteractiveObjectState(int lineIdx)
 
 						int start_char_idx = tl->CharIndex_of_TextObject(to);
 						int length = max_startchar_idx - start_char_idx;
-						to->set(string(length, ' '));
+						to->set(std::string(length, ' '));
 
 						//the line also needs the rectangles recalculated
 						tl->RecalculateRectangles();
@@ -907,9 +907,9 @@ bool TextLines::CheckLine_InteractiveObjectState(int lineIdx)
 	return stateChanged;
 }
 
-vector<TextLine> TextLines::SplitLinetoFitWidth(TextLine& textLine)
+std::vector<TextLine> TextLines::SplitLinetoFitWidth(TextLine& textLine)
 {
-	vector<TextLine> split_textLine;
+	std::vector<TextLine> split_textLine;
 
 	if (widthLimit > 0 && !textLine.IsBlank()) {
 
@@ -1034,7 +1034,7 @@ void TextLines::FitLinetoWidth(int &lineIdx)
 	}
 	
 	//for the line at lineIdx, split it into multiple lines which fit to widthLimit
-	vector<TextLine> split_textLine = SplitLinetoFitWidth(textLinesVEC[lineIdx]);
+	std::vector<TextLine> split_textLine = SplitLinetoFitWidth(textLinesVEC[lineIdx]);
 	
 	if (split_textLine.size() > 1) {
 
@@ -1158,20 +1158,22 @@ bool TextLines::Draw(int &topLine, float height, float dX, float dY, bool doDraw
 		else if (textLinesVEC[i].bottom() - relY > height) break;	//only need lines in view
 	}
 	*/
+	if (doDraw) {
 
-	//first go through all the lines on screen to check for any changes needed to interactive objects
-	for (int i = topLine; ; i++) {
+		//first go through all the lines on screen to check for any changes needed to interactive objects
+		for (int i = topLine; ; i++) {
 
-		//LastLine() can change value during the loop now since we could be adding or deleting objects.
-		if (i > LastLine()) break;
+			//LastLine() can change value during the loop now since we could be adding or deleting objects.
+			if (i > LastLine()) break;
 
-		//Check visible interactive object states on this line before drawing - if any of them have changed then recalculate lines before drawing. 
-		//Also delete TextObject if IOS_DELETING state is set. Insert objects if IOS_WASLASTINLIST is set. All this is done in the routine below.
+			//Check visible interactive object states on this line before drawing - if any of them have changed then recalculate lines before drawing. 
+			//Also delete TextObject if IOS_DELETING state is set. Insert objects if IOS_WASLASTINLIST is set. All this is done in the routine below.
 
-		CheckLine_InteractiveObjectState(i);
+			CheckLine_InteractiveObjectState(i);
 
-		//only need lines in view
-		if (textLinesVEC[i].bottom() - relY > height) break;
+			//only need lines in view
+			if (textLinesVEC[i].bottom() - relY > height) break;
+		}
 	}
 
 	//next fit lines in console width
@@ -1255,7 +1257,7 @@ void TextLines::set(const TextLine &setThisTextLine)
 }
 
 //append text to last TextObject on last TextLine
-void TextLines::operator+=(const string &rhs)
+void TextLines::operator+=(const std::string &rhs)
 {
 	textLinesVEC[LastLine()] += rhs;
 
@@ -1363,9 +1365,9 @@ void TextLines::delline(int lineIdx) {
 	RecalculateRectangles(lineIdx);
 }
 
-string TextLines::get_paragraph(int lineIdx) {
+std::string TextLines::get_paragraph(int lineIdx) {
 
-	string text;
+	std::string text;
 
 	for (int idx = GetSplitStartIndex(lineIdx); idx <= GetSplitEndIndex(lineIdx); idx++)
 		text += textLinesVEC[idx];
@@ -1508,19 +1510,19 @@ D2D1_RECT_F TextLines::get_rect(void)
 //</c> clear formatting back to default
 
 //in addition to text also pass the intended lineIndex where this must be placed. This is used by synchronising text alignment objects - if a new stao is being made, it will search for taos to synchronise to at lineIndex - 1.
-TextLine TextLines::BuildFormattedTextLine(string text, int lineIndex)
+TextLine TextLines::BuildFormattedTextLine(std::string text, int lineIndex)
 {
 	TextLine newLine;
 
 	//Defined in TextFormatting.h
-	vector<string>& formattingVector = TF::textformattingVector;
+	std::vector<std::string>& formattingVector = TF::textformattingVector;
 
 	//Default settings : modified by formatting
 	FormatSpecifier fs;
 
 	SimTOFunct *pActionHandler_ = nullptr;
 
-	string remainingText;
+	std::string remainingText;
 
 	while (true) {
 
@@ -1570,12 +1572,12 @@ TextLine TextLines::BuildFormattedTextLine(string text, int lineIndex)
 
 			case TF_TCSTART:
 			{
-				string save_text = remainingText;	//save remaining text in case the passed text does not have the correct formatting sequence
+				std::string save_text = remainingText;	//save remaining text in case the passed text does not have the correct formatting sequence
 				text = remainingText;
 				formCode = SplitOnFormatSpecifier(text, remainingText, formattingVector);
 				if (formCode == TF_TCEND) {
 
-					vector<string> rgba = split(text, ",");
+					std::vector<std::string> rgba = split(text, ",");
 					if (rgba.size() == 4) {
 						D3DCOLORVALUE newColor = { ToNum(rgba[0]),ToNum(rgba[1]),ToNum(rgba[2]),ToNum(rgba[3]) };
 						fs.textColor = newColor;
@@ -1588,12 +1590,12 @@ TextLine TextLines::BuildFormattedTextLine(string text, int lineIndex)
 
 			case TF_BCSTART:
 			{
-				string save_text = remainingText;	//save remaining text in case the passed text does not have the correct formatting sequence
+				std::string save_text = remainingText;	//save remaining text in case the passed text does not have the correct formatting sequence
 				text = remainingText;
 				formCode = SplitOnFormatSpecifier(text, remainingText, formattingVector);
 				if (formCode == TF_BCEND) {
 
-					vector<string> rgba = split(text, ",");
+					std::vector<std::string> rgba = split(text, ",");
 					if (rgba.size() == 4) {
 						D3DCOLORVALUE newColor = { ToNum(rgba[0]),ToNum(rgba[1]),ToNum(rgba[2]),ToNum(rgba[3]) };
 						fs.bgrndColor = newColor;
@@ -1606,12 +1608,12 @@ TextLine TextLines::BuildFormattedTextLine(string text, int lineIndex)
 
 			case TF_SETACTIONSPECSTART:
 			{
-				string save_text = remainingText;	//save remaining text in case the passed text does not have the correct formatting sequence
+				std::string save_text = remainingText;	//save remaining text in case the passed text does not have the correct formatting sequence
 				text = remainingText;
 				formCode = SplitOnFormatSpecifier(text, remainingText, formattingVector);
 				if (formCode == TF_SETACTIONSPECEND) {
 
-					vector<string> ids = split(text, ",");
+					std::vector<std::string> ids = split(text, ",");
 					if (ids.size() >= 4) {
 
 						pActionHandler_ = pActionHandler;
@@ -1628,12 +1630,12 @@ TextLine TextLines::BuildFormattedTextLine(string text, int lineIndex)
 
 			case TF_TAOSIMPLESTART:
 			{
-				string save_text = remainingText;	//save remaining text in case the passed text does not have the correct formatting sequence
+				std::string save_text = remainingText;	//save remaining text in case the passed text does not have the correct formatting sequence
 				text = remainingText;
 				formCode = SplitOnFormatSpecifier(text, remainingText, formattingVector);
 				if (formCode == TF_TAOSIMPLEEND) {
 
-					vector<string> ids = split(text, ",");
+					std::vector<std::string> ids = split(text, ",");
 					if (ids.size() >= 1) {
 
 						pActionHandler_ = pActionHandler;
@@ -1655,12 +1657,12 @@ TextLine TextLines::BuildFormattedTextLine(string text, int lineIndex)
 
 			case TF_TAOSYNCHROSTART:
 			{
-				string save_text = remainingText;	//save remaining text in case the passed text does not have the correct formatting sequence
+				std::string save_text = remainingText;	//save remaining text in case the passed text does not have the correct formatting sequence
 				text = remainingText;
 				formCode = SplitOnFormatSpecifier(text, remainingText, formattingVector);
 				if (formCode == TF_TAOSYNCHROEND) {
 
-					vector<string> ids = split(text, ",");
+					std::vector<std::string> ids = split(text, ",");
 					if (ids.size() >= 1) {
 
 						pActionHandler_ = pActionHandler;
@@ -1739,7 +1741,7 @@ TextLine TextLines::BuildFormattedTextLine(string text, int lineIndex)
 			//check to see if other formatting specifiers follow immediately.
 			text = remainingText;
 			if (!text.length()) break;
-			string remainingText_;
+			std::string remainingText_;
 			formCode = SplitOnFormatSpecifier(text, remainingText_, formattingVector);
 
 			//if text contains something then no immediate specifiers found, otherwise take another iteration to process formCode and check for further specifiers.

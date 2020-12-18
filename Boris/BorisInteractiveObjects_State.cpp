@@ -14,7 +14,7 @@
 InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(InteractiveObjectProperties &iop, TextObject *pTO) 
 {
 	//!!!IMPORTANT!!!: Do not call for a Refresh in this method, as it is called during a Refresh() : causes infinite loop! 
-	//Also, this method was called from within BorisDisplay (through a function pointer), which was thread-safe accessed so the mutex is now locked.
+	//Also, this method was called from within BorisDisplay (through a function pointer), which was thread-safe accessed so the std::mutex is now locked.
 
 	//return true if TextObject was changed in any way (including its state). Set iop.state = IOS_DELETING if this object needs to be deleted.
 
@@ -45,7 +45,7 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 				stateChanged = true;
 				//set IOS_WASLASTINLIST so the caller knows to insert the object below
 				iop.state = IOS_WASLASTINLIST;
-				//insert a new output data interactive object after this : simMethod_BuildListEntry is a Simulation method which takes an integer argument (the index for which to build the formatted text string) and returns a string
+				//insert a new output data interactive object after this : simMethod_BuildListEntry is a Simulation method which takes an integer argument (the index for which to build the formatted text std::string) and returns a std::string
 				stateChanged.textMessage = "";
 				for (int idx = index_in_list + 1; idx <= lastIndex; idx++) {
 
@@ -64,7 +64,7 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 		//parameters from iop
 		int meshId = iop.minorId;
 		bool update = (bool)iop.auxId;
-		string meshName = iop.textId;
+		std::string meshName = iop.textId;
 
 		//from unique mesh id number get index in pMesh (held in SMesh)
 		int meshIdx = SMesh.contains_id(meshId);
@@ -148,7 +148,7 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 		//parameters from iop
 		int dataBoxList_idminor = iop.minorId;
 		int DataBox_index = iop.auxId;			//this data box entry should represent the element with this index in dataBoxList
-		string meshName = iop.textId;
+		std::string meshName = iop.textId;
 
 		//this is the index corresponding to the dataBoxList_idminor - on any mismatch just reconstruct the data box entry to correspond to the element with DataBox_index index in dataBoxList
 		int index_in_list = dataBoxList.get_index_from_id(INT2(0, dataBoxList_idminor));
@@ -161,13 +161,13 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 			break;
 		}
 
-		string actualmeshName = dataBoxList[DataBox_index].meshName;
+		std::string actualmeshName = dataBoxList[DataBox_index].meshName;
 
 		//if displayed meshname doesn't match the actual mesh name, or if indexes don't match, update Label (the n-th entry in the data box should represent the n-th entry in dataBoxList).
 		if ((actualmeshName.length() && meshName != actualmeshName) || index_in_list != DataBox_index) {
 
 			//meshname is set but doesn't match displayes name: update it.
-			string newObjectText;
+			std::string newObjectText;
 			if (actualmeshName.length()) {
 
 				iop.textId = actualmeshName;
@@ -269,7 +269,7 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 	case IOI_ODEDT:
 	{
 		//parameters from iop
-		string dT_string = iop.textId;
+		std::string dT_string = iop.textId;
 
 		if (dT_string != ToString(SMesh.GetTimeStep(), "s")) {
 
@@ -285,7 +285,7 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 	case IOI_STOCHDT:
 	{
 		//parameters from iop
-		string dT_string = iop.textId;
+		std::string dT_string = iop.textId;
 
 		if (dT_string != ToString(SMesh.GetStochTimeStep(), "s")) {
 
@@ -327,7 +327,7 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 	case IOI_SPEEDUPDT:
 	{
 		//parameters from iop
-		string dT_string = iop.textId;
+		std::string dT_string = iop.textId;
 
 		if (dT_string != ToString(SMesh.GetSpeedupTimeStep(), "s")) {
 
@@ -369,11 +369,11 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 	case IOI_HEATDT:
 	{
 		//parameters from iop
-		string dT_string = iop.textId;
+		std::string dT_string = iop.textId;
 
 		if (SMesh.IsSuperMeshModuleSet(MODS_SHEAT)) {
 
-			string actualdT_string = ToString(SMesh.CallModuleMethod(&SHeat::get_heat_dT), "s");
+			std::string actualdT_string = ToString(SMesh.CallModuleMethod(&SHeat::get_heat_dT), "s");
 
 			if (dT_string != actualdT_string) {
 
@@ -442,7 +442,7 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 	{
 		int meshId = iop.minorId;
 		int meshIdx = SMesh.contains_id(meshId);
-		string meshName = iop.textId;
+		std::string meshName = iop.textId;
 		
 		if (meshIdx >= 0 && meshName != SMesh().get_key_from_index(meshIdx)) {
 
@@ -462,7 +462,7 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 	{
 		int meshId = iop.minorId;
 		int meshIdx = SMesh.contains_id(meshId);
-		string meshName = iop.textId;
+		std::string meshName = iop.textId;
 
 		if (meshIdx >= 0 && meshName != SMesh().get_key_from_index(meshIdx)) {
 
@@ -482,7 +482,7 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 	{
 		int meshId = iop.minorId;
 		int meshIdx = SMesh.contains_id(meshId);
-		string meshName = iop.textId;
+		std::string meshName = iop.textId;
 
 		if (meshIdx >= 0 && meshName != SMesh().get_key_from_index(meshIdx)) {
 
@@ -582,7 +582,7 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 	{
 		//parameters from iop
 		int meshId = iop.minorId;
-		string rectValue = iop.textId;
+		std::string rectValue = iop.textId;
 
 		int meshIdx = SMesh.contains_id(meshId);
 		if (meshIdx >= 0) {
@@ -610,7 +610,7 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 	case IOI_FMSMESHRECTANGLE:
 	{
 		//parameters from iop
-		string rectValue = iop.textId;
+		std::string rectValue = iop.textId;
 
 		//update mesh rectangle if not matching
 		Rect meshRect = SMesh.GetFMSMeshRect();
@@ -628,7 +628,7 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 	case IOI_ESMESHRECTANGLE:
 	{
 		//parameters from iop
-		string rectValue = iop.textId;
+		std::string rectValue = iop.textId;
 
 		//update mesh rectangle if not matching
 		Rect meshRect = SMesh.GetESMeshRect();
@@ -661,7 +661,7 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 		//parameters from iop
 		int meshId = iop.minorId;
 		bool enabled = (bool)iop.auxId;
-		string cellsizeValue = iop.textId;
+		std::string cellsizeValue = iop.textId;
 
 		int meshIdx = SMesh.contains_id(meshId);
 		if (meshIdx >= 0) {
@@ -715,7 +715,7 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 		//parameters from iop
 		int meshId = iop.minorId;
 		bool enabled = (bool)iop.auxId;
-		string cellsizeValue = iop.textId;
+		std::string cellsizeValue = iop.textId;
 
 		int meshIdx = SMesh.contains_id(meshId);
 		if (meshIdx >= 0) {
@@ -769,7 +769,7 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 		//parameters from iop
 		int meshId = iop.minorId;
 		bool enabled = (bool)iop.auxId;
-		string cellsizeValue = iop.textId;
+		std::string cellsizeValue = iop.textId;
 
 		int meshIdx = SMesh.contains_id(meshId);
 		if (meshIdx >= 0) {
@@ -823,7 +823,7 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 		//parameters from iop
 		int meshId = iop.minorId;
 		bool enabled = (bool)iop.auxId;
-		string cellsizeValue = iop.textId;
+		std::string cellsizeValue = iop.textId;
 
 		int meshIdx = SMesh.contains_id(meshId);
 		if (meshIdx >= 0) {
@@ -878,7 +878,7 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 		//parameters from iop
 		int meshId = iop.minorId;
 		bool enabled = (bool)iop.auxId;
-		string cellsizeValue = iop.textId;
+		std::string cellsizeValue = iop.textId;
 
 		int meshIdx = SMesh.contains_id(meshId);
 		if (meshIdx >= 0) {
@@ -973,7 +973,7 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 		//parameters from iop
 		int meshId = iop.minorId;
 		bool enabled = (bool)iop.auxId;
-		string cellsizeValue = iop.textId;
+		std::string cellsizeValue = iop.textId;
 
 		int meshIdx = SMesh.contains_id(meshId);
 		if (meshIdx >= 0) {
@@ -1056,7 +1056,7 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 	case IOI_FMSMESHCELLSIZE:
 	{
 		//parameters from iop
-		string cellsizeValue = iop.textId;
+		std::string cellsizeValue = iop.textId;
 
 		//update mesh cellsize if not matching
 		DBL3 meshCellsize = SMesh.GetFMSMeshCellsize();
@@ -1074,7 +1074,7 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 	case IOI_ESMESHCELLSIZE:
 	{
 		//parameters from iop
-		string cellsizeValue = iop.textId;
+		std::string cellsizeValue = iop.textId;
 
 		//update mesh cellsize if not matching
 		DBL3 meshCellsize = SMesh.GetESMeshCellsize();
@@ -1106,7 +1106,7 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 	case IOI_DIRECTORY:
 	{
 		//parameters from iop
-		string directory_fromio = iop.textId;
+		std::string directory_fromio = iop.textId;
 
 		//update name if not matching
 		if (directory != directory_fromio) {
@@ -1123,7 +1123,7 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 	case IOI_SAVEDATAFILE:
 	{
 		//parameters from iop
-		string savedataFile_fromiop = iop.textId;
+		std::string savedataFile_fromiop = iop.textId;
 
 		//update name if not matching
 		if (savedataFile != savedataFile_fromiop) {
@@ -1140,7 +1140,7 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 	case IOI_SAVEIMAGEFILEBASE:
 	{
 		//parameters from iop
-		string savedataFile_fromiop = iop.textId;
+		std::string savedataFile_fromiop = iop.textId;
 
 		//update name if not matching
 		if (imageSaveFileBase != savedataFile_fromiop) {
@@ -1211,7 +1211,7 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 		//parameters from iop
 		int outDataId = iop.minorId;
 		int io_index = iop.auxId;
-		string configuredOutData = iop.textId;
+		std::string configuredOutData = iop.textId;
 
 		int index_in_list = saveDataList.get_index_from_id(INT2(0, outDataId));
 
@@ -1236,7 +1236,7 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 		//parameters from iop
 		int stageId_minor = iop.minorId;
 		int io_index = iop.auxId;
-		string configuredSetStage = iop.textId;
+		std::string configuredSetStage = iop.textId;
 
 		int index_in_list = simStages.get_index_from_id(INT2(0, stageId_minor));
 
@@ -1256,15 +1256,15 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 	break;
 
 
-	//Shows the value to set for the simulation schedule stage : minorId is the minor id of elements in Simulation::simStages (major id there is always 0), auxId is the number of the interactive object in the list, textId is the value as a string
+	//Shows the value to set for the simulation schedule stage : minorId is the minor id of elements in Simulation::simStages (major id there is always 0), auxId is the number of the interactive object in the list, textId is the value as a std::string
 	case IOI_SETSTAGEVALUE:
 	{
 		//parameters from iop
 		int stageId_minor = iop.minorId;
-		string stageValueText = iop.textId;
+		std::string stageValueText = iop.textId;
 
-		//this is the value as a string
-		string actualValuestring = simStages[INT2(0, stageId_minor)].get_value_string();
+		//this is the value as a std::string
+		std::string actualValuestring = simStages[INT2(0, stageId_minor)].get_value_string();
 
 		if (stageValueText != actualValuestring) {
 
@@ -1275,13 +1275,13 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 	}
 	break;
 
-	//Shows the stop condition for the simulation schedule stage : minorId is the minor id of elements in Simulation::simStages (major id there is always 0), auxId is the number of the interactive object in the list, textId is the stop type and value as a string
+	//Shows the stop condition for the simulation schedule stage : minorId is the minor id of elements in Simulation::simStages (major id there is always 0), auxId is the number of the interactive object in the list, textId is the stop type and value as a std::string
 	case IOI_STAGESTOPCONDITION:
 	{
 		//parameters from iop
 		int stageId_minor = iop.minorId;
 		int io_index = iop.auxId;
-		string stopConditionText = iop.textId;
+		std::string stopConditionText = iop.textId;
 
 		if (stopConditionText != Build_SetStages_StopConditionText(io_index)) {
 
@@ -1292,13 +1292,13 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 	}
 	break;
 
-	//Shows the saving condition for the simulation schedule stage : minorId is the minor id of elements in Simulation::simStages (major id there is always 0), auxId is the DSAVE_ value for this data save type, textId is the save type and value as a string
+	//Shows the saving condition for the simulation schedule stage : minorId is the minor id of elements in Simulation::simStages (major id there is always 0), auxId is the DSAVE_ value for this data save type, textId is the save type and value as a std::string
 	case IOI_DSAVETYPE:
 	{
 		//parameters from iop
 		int stageId_minor = iop.minorId;
 		DSAVE_ dSaveType = (DSAVE_)iop.auxId;
-		string saveConditionText = iop.textId;
+		std::string saveConditionText = iop.textId;
 
 		if (simStages.is_id_set(INT2(0, stageId_minor))) {
 
@@ -1353,16 +1353,16 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 		PARAM_ paramId = (PARAM_)iop.minorId;
 		int meshId = iop.auxId;
 		
-		string paramText = get_after_match(iop.textId, string("\t"));
-		string meshName = get_before_match(iop.textId, string("\t"));
+		std::string paramText = get_after_match(iop.textId, std::string("\t"));
+		std::string meshName = get_before_match(iop.textId, std::string("\t"));
 
 		int meshIdx = SMesh.contains_id(meshId);
 		if (meshIdx >= 0 && meshName == SMesh().get_key_from_index(meshIdx)) {
 
 			if (paramText != Build_MeshParams_Text(meshIdx, paramId)) {
 
-				string meshParam_text = Build_MeshParams_Text(meshIdx, paramId);
-				iop.textId = SMesh().get_key_from_index(meshIdx) + string("\t") + meshParam_text;
+				std::string meshParam_text = Build_MeshParams_Text(meshIdx, paramId);
+				iop.textId = SMesh().get_key_from_index(meshIdx) + std::string("\t") + meshParam_text;
 
 				pTO->set(" " + meshParam_text + " ");
 				stateChanged = true;
@@ -1385,16 +1385,16 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 		PARAM_ paramId = (PARAM_)iop.minorId;
 		int meshId = iop.auxId;
 		
-		string paramText = get_after_match(iop.textId, string("\t"));
-		string meshName = get_before_match(iop.textId, string("\t"));
+		std::string paramText = get_after_match(iop.textId, std::string("\t"));
+		std::string meshName = get_before_match(iop.textId, std::string("\t"));
 
 		int meshIdx = SMesh.contains_id(meshId);
 		if (meshIdx >= 0 && meshName == SMesh().get_key_from_index(meshIdx)) {
 
 			if (paramText != SMesh[meshIdx]->get_paraminfo_string(paramId)) {
 
-				string meshParam_text = SMesh[meshIdx]->get_paraminfo_string(paramId);
-				iop.textId = SMesh().get_key_from_index(meshIdx) + string("\t") + meshParam_text;
+				std::string meshParam_text = SMesh[meshIdx]->get_paraminfo_string(paramId);
+				iop.textId = SMesh().get_key_from_index(meshIdx) + std::string("\t") + meshParam_text;
 
 				pTO->set(" " + meshParam_text + " ");
 
@@ -1432,16 +1432,16 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 		PARAM_ paramId = (PARAM_)iop.minorId;
 		int meshId = iop.auxId;
 		
-		string paramText = get_after_match(iop.textId, string("\t"));
-		string meshName = get_before_match(iop.textId, string("\t"));
+		std::string paramText = get_after_match(iop.textId, std::string("\t"));
+		std::string meshName = get_before_match(iop.textId, std::string("\t"));
 
 		int meshIdx = SMesh.contains_id(meshId);
 		if (meshIdx >= 0 && meshName == SMesh().get_key_from_index(meshIdx)) {
 
 			if (paramText != SMesh[meshIdx]->get_paramvarinfo_string(paramId)) {
 
-				string meshParam_text = SMesh[meshIdx]->get_paramvarinfo_string(paramId);
-				iop.textId = SMesh().get_key_from_index(meshIdx) + string("\t") + meshParam_text;
+				std::string meshParam_text = SMesh[meshIdx]->get_paramvarinfo_string(paramId);
+				iop.textId = SMesh().get_key_from_index(meshIdx) + std::string("\t") + meshParam_text;
 
 				pTO->set(" " + meshParam_text + " ");
 
@@ -1467,7 +1467,7 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 		//parameters from iop
 		MESHDISPLAY_ displayOption = (MESHDISPLAY_)iop.minorId;
 		int meshId = iop.auxId;
-		string displayHandle = iop.textId;
+		std::string displayHandle = iop.textId;
 
 		int meshIdx = SMesh.contains_id(meshId);
 		if (meshIdx >= 0) {
@@ -1494,11 +1494,11 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 	}
 	break;
 
-	//Shows dual mesh display transparency values : textId is the DBL2 value as a string
+	//Shows dual mesh display transparency values : textId is the DBL2 value as a std::string
 	case IOI_MESHDISPLAYTRANSPARENCY:
 	{
 		//parameters from iop
-		string value = iop.textId;
+		std::string value = iop.textId;
 
 		if (value != ToString(displayTransparency)) {
 
@@ -1509,11 +1509,11 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 	}
 	break;
 
-	//Shows mesh display threshold values : textId is the DBL2 value as a string
+	//Shows mesh display threshold values : textId is the DBL2 value as a std::string
 	case IOI_MESHDISPLAYTHRESHOLDS:
 	{
 		//parameters from iop
-		string value = iop.textId;
+		std::string value = iop.textId;
 
 		if (value != ToString(displayThresholds)) {
 
@@ -1560,7 +1560,7 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 	{
 		//parameters from iop
 		MESHDISPLAY_ displayOption = (MESHDISPLAY_)iop.minorId;
-		string displayHandle = iop.textId;
+		std::string displayHandle = iop.textId;
 
 		if (SMesh.GetDisplayedPhysicalQuantity() == displayOption) {
 
@@ -1660,7 +1660,7 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 		//parameters from iop
 		int meshId = iop.minorId;
 		bool moving_mesh = iop.auxId;
-		string meshName = iop.textId;
+		std::string meshName = iop.textId;
 
 		//is there a state mismatch?
 		if (moving_mesh != SMesh.IsMovingMeshSet()) {
@@ -1725,11 +1725,11 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 	}
 	break;
 
-	//Shows movingmesh threshold : textId is the threshold value as a string
+	//Shows movingmesh threshold : textId is the threshold value as a std::string
 	case IOI_MOVINGMESHTHRESH:
 	{
 		//parameters from iop
-		string threshold_string = iop.textId;
+		std::string threshold_string = iop.textId;
 
 		if (threshold_string != ToString(SMesh.MoveMeshThreshold())) {
 
@@ -1741,13 +1741,13 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 	}
 	break;
 
-	//Shows electrode box. minorId is the minor Id in STransport::electrode_boxes, auxId is the number of the interactive object in the list (electrode index), textId is the electrode rect as a string
+	//Shows electrode box. minorId is the minor Id in STransport::electrode_boxes, auxId is the number of the interactive object in the list (electrode index), textId is the electrode rect as a std::string
 	case IOI_ELECTRODERECT:
 	{
 		//parameters from iop
 		int electrodeId_minor = iop.minorId;
 		int io_index = iop.auxId;
-		string rect_string = iop.textId;
+		std::string rect_string = iop.textId;
 
 		//actual index in electrodes list for the electrode identifier (should normally be the same as io_index)
 		int index_in_list = SMesh.CallModuleMethod(&STransport::GetElectrodeIndex, electrodeId_minor);
@@ -1775,12 +1775,12 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 	}
 	break;
 
-	//Shows electrode potential. minorId is the electrode index, textId is potential value as a string
+	//Shows electrode potential. minorId is the electrode index, textId is potential value as a std::string
 	case IOI_ELECTRODEPOTENTIAL:
 	{
 		//parameters from iop
 		int el_index = iop.minorId;
-		string potential_string = iop.textId;
+		std::string potential_string = iop.textId;
 
 		if (ToString(SMesh.CallModuleMethod(&STransport::GetElectrodeInfo, el_index).second, "V") != potential_string) {
 
@@ -1892,11 +1892,11 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 	}
 	break;
 
-	//Shows SOR damping values when used in fixed damping mode. textId is the DBL2 damping value as a string. (DBL2 since we need different damping values for V and S solvers)
+	//Shows SOR damping values when used in fixed damping mode. textId is the DBL2 damping value as a std::string. (DBL2 since we need different damping values for V and S solvers)
 	case IOI_SORDAMPING:
 	{
 		//parameters from iop
-		string SOR_damping = iop.textId;
+		std::string SOR_damping = iop.textId;
 
 		if (SOR_damping != ToString(SMesh.CallModuleMethod(&STransport::GetSORDamping))) {
 
@@ -1934,11 +1934,37 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 	}
 	break;
 
+	//Disabled transport solver state. auxId is the value (0/1)
+	case IOI_DISABLEDTRANSPORT:
+	{
+		//parameters from iop
+		bool status = iop.auxId;
+
+		if (status != disabled_transport_solver) {
+
+			iop.auxId = disabled_transport_solver;
+
+			if (iop.auxId == 0) {
+
+				pTO->SetBackgroundColor(ONCOLOR);
+				pTO->set(" Enabled ");
+			}
+			else {
+
+				pTO->SetBackgroundColor(OFFCOLOR);
+				pTO->set(" Disabled ");
+			}
+
+			stateChanged = true;
+		}
+	}
+	break;
+
 	//Shows mesh base temperature. minorId is the unique mesh id number, textId is the temperature value
 	case IOI_BASETEMPERATURE:
 	{
 		int meshId = iop.minorId;
-		string temp_string = iop.textId;
+		std::string temp_string = iop.textId;
 
 		int meshIdx = SMesh.contains_id(meshId);
 
@@ -1956,7 +1982,7 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 	case IOI_AMBIENT_TEMPERATURE:
 	{
 		int meshId = iop.minorId;
-		string temp_string = iop.textId;
+		std::string temp_string = iop.textId;
 		bool status = iop.auxId;
 
 		int meshIdx = SMesh.contains_id(meshId);
@@ -1996,7 +2022,7 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 	case IOI_ROBIN_ALPHA:
 	{
 		int meshId = iop.minorId;
-		string alpha_string = iop.textId;
+		std::string alpha_string = iop.textId;
 		bool status = iop.auxId;
 
 		int meshIdx = SMesh.contains_id(meshId);
@@ -2036,7 +2062,7 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 	case IOI_INSULATINGSIDE:
 	{
 		int meshId = iop.minorId;
-		string literal = iop.textId;
+		std::string literal = iop.textId;
 		int status = iop.auxId;
 
 		int meshIdx = SMesh.contains_id(meshId);
@@ -2097,7 +2123,7 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 	case IOI_CURIETEMP:
 	{
 		int meshId = iop.minorId;
-		string temp_string = iop.textId;
+		std::string temp_string = iop.textId;
 		bool status = iop.auxId;
 
 		int meshIdx = SMesh.contains_id(meshId);
@@ -2138,7 +2164,7 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 	case IOI_CURIETEMPMATERIAL:
 	{
 		int meshId = iop.minorId;
-		string temp_string = iop.textId;
+		std::string temp_string = iop.textId;
 		bool status = iop.auxId;
 
 		int meshIdx = SMesh.contains_id(meshId);
@@ -2179,7 +2205,7 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 	case IOI_ATOMICMOMENT:
 	{
 		int meshId = iop.minorId;
-		string amoment_string = iop.textId;
+		std::string amoment_string = iop.textId;
 		bool status = iop.auxId;
 
 		int meshIdx = SMesh.contains_id(meshId);
@@ -2220,7 +2246,7 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 	case IOI_ATOMICMOMENT_AFM:
 	{
 		int meshId = iop.minorId;
-		string amoment_string = iop.textId;
+		std::string amoment_string = iop.textId;
 		bool status = iop.auxId;
 
 		int meshIdx = SMesh.contains_id(meshId);
@@ -2261,7 +2287,7 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 	case IOI_TAU:
 	{
 		int meshId = iop.minorId;
-		string amoment_string = iop.textId;
+		std::string amoment_string = iop.textId;
 		bool status = iop.auxId;
 
 		int meshIdx = SMesh.contains_id(meshId);
@@ -2607,7 +2633,7 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 	case IOI_REFINEROUGHNESS:
 	{
 		int meshId = iop.minorId;
-		string refine_string = iop.textId;
+		std::string refine_string = iop.textId;
 		bool status = iop.auxId;
 
 		int meshIdx = SMesh.contains_id(meshId);
@@ -2744,7 +2770,7 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 	//Shows n_common for multi-layered convolution. auxId is the status (-1 : N/A, otherwise available). textId is the value as a SZ3.
 	case IOI_NCOMMON:
 	{
-		string common_n = iop.textId;
+		std::string common_n = iop.textId;
 
 		if (common_n != ToString(SMesh.Get_n_common())) {
 
@@ -2774,7 +2800,7 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 	case IOI_LOCALMDB:
 	{
 		//parameters from iop
-		string mdbFile = iop.textId;
+		std::string mdbFile = iop.textId;
 
 		//update name if not matching
 		if (mdbFile != mdb.GetDataBaseName()) {
@@ -3204,7 +3230,7 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 	//Shows image cropping settings : textId has the DBL4 value as text
 	case IOI_IMAGECROPPING:
 	{
-		string value_text = iop.textId;
+		std::string value_text = iop.textId;
 
 		DBL4 value = ToNum(value_text);
 
@@ -3219,14 +3245,14 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 	}
 	break;
 
-	//Show user constant for text equations : minorId is the index in Simulation::userConstants, auxId is the number of the interactive object in the list as it appears in the console, textId is the constant name and value string 
+	//Show user constant for text equations : minorId is the index in Simulation::userConstants, auxId is the number of the interactive object in the list as it appears in the console, textId is the constant name and value std::string 
 	//Note this entry must always represent the entry in Simulation::userConstants with the index in auxId.
 	case IOI_USERCONSTANT:
 	{
 		//parameters from iop
 		int index = iop.minorId;
 		int io_index = iop.auxId;
-		string userConstant_text = iop.textId;
+		std::string userConstant_text = iop.textId;
 
 		if (io_index < userConstants.size() && (index != io_index || userConstant_text != Build_EquationConstants_Text(io_index))) {
 
@@ -3241,7 +3267,7 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 	}
 	break;
 
-	//Show skypos diameter multiplier : minorId is the unique mesh id number, textId is the multiplier as a string
+	//Show skypos diameter multiplier : minorId is the unique mesh id number, textId is the multiplier as a std::string
 	case IOI_SKYPOSDMUL:
 	{
 		int meshId = iop.minorId;
@@ -3312,7 +3338,7 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 	{
 		int meshId = iop.minorId;
 		int type = iop.auxId;
-		string direction = iop.textId;
+		std::string direction = iop.textId;
 
 		int meshIdx = SMesh.contains_id(meshId);
 
@@ -3342,6 +3368,140 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 				pTO->set(" " + iop.textId + " ");
 				stateChanged = true;
 			}
+		}
+	}
+	break;
+
+	//Shows shape rotation setting: textId is the value as text (DBL3)
+	case IOI_SHAPEROT:
+	{
+		std::string value_text = iop.textId;
+
+		DBL3 value = ToNum(value_text);
+
+		if (value != shape_rotation) {
+
+			iop.textId = ToString(shape_rotation);
+
+			pTO->set(" " + iop.textId + " ");
+
+			stateChanged = true;
+		}
+	}
+	break;
+
+	//Shows shape repetition setting: textId is the value as text (INT3)
+	case IOI_SHAPEREP:
+	{
+		std::string value_text = iop.textId;
+
+		INT3 value = ToNum(value_text);
+
+		if (value != shape_repetitions) {
+
+			iop.textId = ToString(shape_repetitions);
+
+			pTO->set(" " + iop.textId + " ");
+
+			stateChanged = true;
+		}
+	}
+	break;
+
+	//Shows shape displacement setting: textId is the value as text (DBL3)
+	case IOI_SHAPEDSP:
+	{
+		std::string value_text = iop.textId;
+
+		DBL3 value = ToNum(value_text);
+
+		if (value != shape_displacement) {
+
+			iop.textId = ToString(shape_displacement, "m");
+
+			pTO->set(" " + iop.textId + " ");
+
+			stateChanged = true;
+		}
+	}
+	break;
+
+	//Shows shape method setting: textId is the value as text (method)
+	case IOI_SHAPEMET:
+	{
+		std::string value_text = iop.textId;
+
+		if (value_text != shape_method) {
+
+			iop.textId = shape_method;
+
+			pTO->set(" " + iop.textId + " ");
+
+			stateChanged = true;
+		}
+	}
+	break;
+
+	//Shows display render detail level: textId is the value
+	case IOI_DISPRENDER_DETAIL:
+	{
+		std::string value_text = iop.textId;
+		
+		if (value_text != ToString(BD.GetDetailLevel(), "m")) {
+
+			iop.textId = ToString(BD.GetDetailLevel(), "m");
+
+			pTO->set(" " + iop.textId + " ");
+
+			stateChanged = true;
+		}
+	}
+	break;
+
+	//Shows display render threshold 1: auxId is the value
+	case IOI_DISPRENDER_THRESH1:
+	{
+		int value = iop.auxId;
+
+		if (value != BD.GetRenderThresholds().i) {
+
+			iop.auxId = BD.GetRenderThresholds().i;
+
+			pTO->set(" " + ToString(iop.auxId) + " ");
+
+			stateChanged = true;
+		}
+	}
+	break;
+
+	//Shows display render threshold 2: auxId is the value
+	case IOI_DISPRENDER_THRESH2:
+	{
+		int value = iop.auxId;
+
+		if (value != BD.GetRenderThresholds().j) {
+
+			iop.auxId = BD.GetRenderThresholds().j;
+
+			pTO->set(" " + ToString(iop.auxId) + " ");
+
+			stateChanged = true;
+		}
+	}
+	break;
+
+	//Shows display render threshold 3: auxId is the value
+	case IOI_DISPRENDER_THRESH3:
+	{
+		int value = iop.auxId;
+
+		if (value != BD.GetRenderThresholds().k) {
+
+			iop.auxId = BD.GetRenderThresholds().k;
+
+			pTO->set(" " + ToString(iop.auxId) + " ");
+
+			stateChanged = true;
 		}
 	}
 	break;

@@ -69,7 +69,7 @@
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
-    <Import Project="$(VCTargetsPath)\BuildCustomizations\CUDA 9.2.props" />
+    <Import Project="$(VCTargetsPath)\BuildCustomizations\CUDA 11.0.props" />
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
@@ -170,7 +170,7 @@
       <CompileAsManaged>false</CompileAsManaged>
       <AdditionalIncludeDirectories>$(SolutionDir)\BorisLib; $(SolutionDir)\BorisCUDALib;$(CudaToolkitIncludeDir)</AdditionalIncludeDirectories>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
-      <LanguageStandard>stdcpp14</LanguageStandard>
+      <LanguageStandard>stdcpp17</LanguageStandard>
       <AdditionalOptions>-Bv %(AdditionalOptions)</AdditionalOptions>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <BufferSecurityCheck>false</BufferSecurityCheck>
@@ -192,13 +192,14 @@
       <GenerateRelocatableDeviceCode>true</GenerateRelocatableDeviceCode>
       <TargetMachinePlatform>64</TargetMachinePlatform>
       <Warning>W0</Warning>
-      <AdditionalOptions>-w %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>-w -Wno-deprecated-gpu-targets %(AdditionalOptions)</AdditionalOptions>
     </CudaCompile>
     <CudaLink>
       <AdditionalLibraryDirectories>cudart_static.lib; cufft.lib</AdditionalLibraryDirectories>
     </CudaLink>
     <CudaLink>
       <AdditionalDependencies>cudart_static.lib; cufft.lib</AdditionalDependencies>
+      <AdditionalOptions>-w %(AdditionalOptions)</AdditionalOptions>
     </CudaLink>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='test|x64'">
@@ -690,6 +691,7 @@
     <ClCompile Include="MeshBaseCUDA.cpp" />
     <ClCompile Include="MeshBaseModules.cpp" />
     <ClCompile Include="MeshBaseParamsControl.cpp" />
+    <ClCompile Include="MeshBaseQuantities.cpp" />
     <ClCompile Include="MeshCompute.cpp" />
     <ClCompile Include="MeshControl.cpp" />
     <ClCompile Include="MeshCUDA.cpp" />
@@ -913,6 +915,6 @@
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
-    <Import Project="$(VCTargetsPath)\BuildCustomizations\CUDA 9.2.targets" />
+    <Import Project="$(VCTargetsPath)\BuildCustomizations\CUDA 11.0.targets" />
   </ImportGroup>
 </Project>

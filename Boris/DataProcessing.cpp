@@ -9,7 +9,7 @@ DPArrays::DPArrays(int _max_arrays) :
 
 //------------------------------------------------------------------------------------------ load_arrays
 
-BError DPArrays::load_arrays(string fileName, vector<int> all_indexes, int* prows_read)
+BError DPArrays::load_arrays(std::string fileName, std::vector<int> all_indexes, int* prows_read)
 {
 	BError error(__FUNCTION__);
 
@@ -24,7 +24,7 @@ BError DPArrays::load_arrays(string fileName, vector<int> all_indexes, int* prow
 	if(!GoodArrays(all_indexes)) return error(BERROR_INCORRECTARRAYS);
 
 	//load columns from data file
-	vector<vector<double>> data_cols;
+	std::vector<std::vector<double>> data_cols;
 	ReadDataColumns(fileName, "\t", data_cols, subvec(all_indexes, 0, (int)all_indexes.size() / 2));
 
 	//save columns in respective dp arrays
@@ -42,7 +42,7 @@ BError DPArrays::load_arrays(string fileName, vector<int> all_indexes, int* prow
 
 //------------------------------------------------------------------------------------------ save_arrays
 
-BError DPArrays::save_arrays(string fileName, vector<int> all_indexes, bool append)
+BError DPArrays::save_arrays(std::string fileName, std::vector<int> all_indexes, bool append)
 {
 	BError error(__FUNCTION__);
 
@@ -55,7 +55,7 @@ BError DPArrays::save_arrays(string fileName, vector<int> all_indexes, bool appe
 }
 
 //save dp array as a single tab-spaced row
-BError DPArrays::save_array_transposed(string fileName, int dp_index, bool append)
+BError DPArrays::save_array_transposed(std::string fileName, int dp_index, bool append)
 {
 	BError error(__FUNCTION__);
 
@@ -69,7 +69,7 @@ BError DPArrays::save_array_transposed(string fileName, int dp_index, bool appen
 
 //--------------------- testing
 
-BError DPArrays::dump_tdep(SuperMesh *pSMesh, string meshName, string paramName, double max_temperature, int dp_arr)
+BError DPArrays::dump_tdep(SuperMesh *pSMesh, std::string meshName, std::string paramName, double max_temperature, int dp_arr)
 {
 	BError error(__FUNCTION__);
 
@@ -910,7 +910,7 @@ BError DPArrays::complete_hysteresis(int dp_x, int dp_y)
 
 	if (!GoodArrays_Unique(dp_x, dp_y) || !dpA[dp_y].size() || dpA[dp_x].size() != dpA[dp_y].size()) return error(BERROR_INCORRECTARRAYS);
 
-	vector<double> dp_x_new(dpA[dp_x].size()), dp_y_new(dpA[dp_y].size());
+	std::vector<double> dp_x_new(dpA[dp_x].size()), dp_y_new(dpA[dp_y].size());
 
 #pragma omp parallel for
 	for (int idx = 0; idx < dpA[dp_x].size(); idx++) {
@@ -1122,9 +1122,9 @@ BError DPArrays::fit_lorentz(int dp_x, int dp_y, DBL2 *pS, DBL2 *pH0, DBL2 *pdH,
 
 	CurveFitting curve_fit;
 
-	vector<double> params, params_std;
+	std::vector<double> params, params_std;
 
-	vector<DBL2> xy_data;
+	std::vector<DBL2> xy_data;
 
 	xy_data.resize(dpA[dp_x].size());
 
@@ -1157,9 +1157,9 @@ BError DPArrays::fit_lorentz2(int dp_x, int dp_y, DBL2 *pS, DBL2 *pA, DBL2 *pH0,
 
 	CurveFitting curve_fit;
 
-	vector<double> params, params_std;
+	std::vector<double> params, params_std;
 
-	vector<DBL2> xy_data;
+	std::vector<DBL2> xy_data;
 
 	xy_data.resize(dpA[dp_x].size());
 
@@ -1193,9 +1193,9 @@ BError DPArrays::fit_skyrmion(int dp_x, int dp_y, DBL2 *pR, DBL2 *px0, DBL2 *pMs
 
 	CurveFitting curve_fit;
 
-	vector<double> params, params_std;
+	std::vector<double> params, params_std;
 
-	vector<DBL2> xy_data;
+	std::vector<DBL2> xy_data;
 
 	xy_data.resize(dpA[dp_x].size());
 
@@ -1228,8 +1228,8 @@ BError DPArrays::fit_stt(VEC<DBL3>& T, VEC_VC<DBL3>& M, VEC_VC<DBL3>& J, Rect re
 	INT3 box_sizes = cells_box.size();
 	int points = box_sizes.dim();
 
-	vector<DBL2> xy_data_adiabatic_y(points, DBL2()), xy_data_nonadiabatic_y(points, DBL2());
-	vector<double> adiabatic_x(points, 0.0), nonadiabatic_x(points, 0.0);
+	std::vector<DBL2> xy_data_adiabatic_y(points, DBL2()), xy_data_nonadiabatic_y(points, DBL2());
+	std::vector<double> adiabatic_x(points, 0.0), nonadiabatic_x(points, 0.0);
 
 	//to extract P and beta we separate the orthogonal adiabatic and non-adiabatic terms and fit them separately
 	//Thus first fit (J.del)m * Ts = P * MUB_E * [(J.del)m]^2 -> this gives P
@@ -1265,7 +1265,7 @@ BError DPArrays::fit_stt(VEC<DBL3>& T, VEC_VC<DBL3>& M, VEC_VC<DBL3>& J, Rect re
 
 	CurveFitting curve_fit;
 
-	vector<double> params, params_std;
+	std::vector<double> params, params_std;
 
 	curve_fit.FitSTT_LMA(xy_data_adiabatic_y, xy_data_nonadiabatic_y, adiabatic_x, nonadiabatic_x, params, params_std, pRsq);
 
@@ -1302,8 +1302,8 @@ BError DPArrays::fit_stt_variation(VEC<DBL3>& T, VEC_VC<DBL3>& M, VEC_VC<DBL3>& 
 	}
 
 	//2. Calculate fitting vectors for the entire mesh space
-	vector<double> xy_data_adiabatic_y(points, 0.0), xy_data_nonadiabatic_y(points, 0.0);
-	vector<double> adiabatic_x(points, 0.0), nonadiabatic_x(points, 0.0);
+	std::vector<double> xy_data_adiabatic_y(points, 0.0), xy_data_nonadiabatic_y(points, 0.0);
+	std::vector<double> adiabatic_x(points, 0.0), nonadiabatic_x(points, 0.0);
 
 #pragma omp parallel for
 	for (int i = 0; i < n.i; i++) {
@@ -1341,11 +1341,11 @@ BError DPArrays::fit_stt_variation(VEC<DBL3>& T, VEC_VC<DBL3>& M, VEC_VC<DBL3>& 
 	INT3 n_stencil = INT3(stencil_size, stencil_size, 1);
 
 	CurveFitting curve_fit;
-	vector<double> params, params_std;
+	std::vector<double> params, params_std;
 	double Rsq;
 
-	vector<DBL2> stencil_xy_data_adiabatic_y(n_stencil.dim(), DBL2()), stencil_xy_data_nonadiabatic_y(n_stencil.dim(), DBL2());
-	vector<double> stencil_adiabatic_x(n_stencil.dim(), 0.0), stencil_nonadiabatic_x(n_stencil.dim(), 0.0);
+	std::vector<DBL2> stencil_xy_data_adiabatic_y(n_stencil.dim(), DBL2()), stencil_xy_data_nonadiabatic_y(n_stencil.dim(), DBL2());
+	std::vector<double> stencil_adiabatic_x(n_stencil.dim(), 0.0), stencil_nonadiabatic_x(n_stencil.dim(), 0.0);
 
 	//setup indexes in xy_data to fit : these are fixed for the stencil
 	for (int idx = 0; idx < n_stencil.dim(); idx++) {
@@ -1426,8 +1426,8 @@ BError DPArrays::fit_sot(VEC<DBL3>& T, VEC_VC<DBL3>& M, VEC_VC<DBL3>& J, Rect re
 	INT3 box_sizes = cells_box.size();
 	int points = box_sizes.dim();
 
-	vector<DBL2> xy_data_dampinglike_y(points, DBL2()), xy_data_fieldlike_y(points, DBL2());
-	vector<double> dampinglike_x(points, 0.0), fieldlike_x(points, 0.0);
+	std::vector<DBL2> xy_data_dampinglike_y(points, DBL2()), xy_data_fieldlike_y(points, DBL2());
+	std::vector<double> dampinglike_x(points, 0.0), fieldlike_x(points, 0.0);
 
 #pragma omp parallel for
 	for (int i = cells_box.s.i; i < cells_box.e.i; i++) {
@@ -1471,7 +1471,7 @@ BError DPArrays::fit_sot(VEC<DBL3>& T, VEC_VC<DBL3>& M, VEC_VC<DBL3>& J, Rect re
 
 	CurveFitting curve_fit;
 
-	vector<double> params, params_std;
+	std::vector<double> params, params_std;
 
 	curve_fit.FitSOT_LMA(xy_data_dampinglike_y, xy_data_fieldlike_y, dampinglike_x, fieldlike_x, params, params_std, pRsq);
 
@@ -1514,13 +1514,13 @@ BError DPArrays::fit_sotstt(VEC<DBL3>& T, VEC_VC<DBL3>& M, VEC_VC<DBL3>& J_hm, V
 	INT3 box_sizes = cells_box.size();
 	int points = box_sizes.dim();
 
-	vector<DBL2> xy_data_adiabatic_y(points, DBL2()), xy_data_nonadiabatic_y(points, DBL2());
-	vector<DBL2> xy_data_dampinglike_y(points, DBL2()), xy_data_fieldlike_y(points, DBL2());
+	std::vector<DBL2> xy_data_adiabatic_y(points, DBL2()), xy_data_nonadiabatic_y(points, DBL2());
+	std::vector<DBL2> xy_data_dampinglike_y(points, DBL2()), xy_data_fieldlike_y(points, DBL2());
 
-	vector<double> adiabatic_fit_main_x(points, 0.0), adiabatic_fit_dampinglike_x(points, 0.0), adiabatic_fit_fieldlike_x(points, 0.0);
-	vector<double> nonadiabatic_fit_main_x(points, 0.0), nonadiabatic_fit_dampinglike_x(points, 0.0), nonadiabatic_fit_fieldlike_x(points, 0.0);
-	vector<double> dampinglike_fit_main_x(points, 0.0), dampinglike_fit_adiabatic_x(points, 0.0), dampinglike_fit_nonadiabatic_x(points, 0.0);
-	vector<double> fieldlike_fit_main_x(points, 0.0), fieldlike_fit_adiabatic_x(points, 0.0), fieldlike_fit_nonadiabatic_x(points, 0.0);
+	std::vector<double> adiabatic_fit_main_x(points, 0.0), adiabatic_fit_dampinglike_x(points, 0.0), adiabatic_fit_fieldlike_x(points, 0.0);
+	std::vector<double> nonadiabatic_fit_main_x(points, 0.0), nonadiabatic_fit_dampinglike_x(points, 0.0), nonadiabatic_fit_fieldlike_x(points, 0.0);
+	std::vector<double> dampinglike_fit_main_x(points, 0.0), dampinglike_fit_adiabatic_x(points, 0.0), dampinglike_fit_nonadiabatic_x(points, 0.0);
+	std::vector<double> fieldlike_fit_main_x(points, 0.0), fieldlike_fit_adiabatic_x(points, 0.0), fieldlike_fit_nonadiabatic_x(points, 0.0);
 
 #pragma omp parallel for
 	for (int i = cells_box.s.i; i < cells_box.e.i; i++) {
@@ -1584,7 +1584,7 @@ BError DPArrays::fit_sotstt(VEC<DBL3>& T, VEC_VC<DBL3>& M, VEC_VC<DBL3>& J_hm, V
 
 	CurveFitting curve_fit;
 
-	vector<double> params, params_std;
+	std::vector<double> params, params_std;
 	
 	curve_fit.FitSOTSTT_LMA(xy_data_adiabatic_y, xy_data_nonadiabatic_y, xy_data_dampinglike_y, xy_data_fieldlike_y,
 		adiabatic_fit_main_x, adiabatic_fit_dampinglike_x, adiabatic_fit_fieldlike_x,

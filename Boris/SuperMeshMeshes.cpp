@@ -3,7 +3,7 @@
 
 //--------------------------------------------------------- MESH HANDLING - COMPONENTS
 
-BError SuperMesh::AddMesh(string meshName, MESH_ meshType, Rect meshRect)
+BError SuperMesh::AddMesh(std::string meshName, MESH_ meshType, Rect meshRect)
 {
 	BError error(__FUNCTION__);
 
@@ -70,7 +70,7 @@ BError SuperMesh::AddMesh(string meshName, MESH_ meshType, Rect meshRect)
 	return error;
 }
 
-BError SuperMesh::DelMesh(string meshName)
+BError SuperMesh::DelMesh(std::string meshName)
 {
 	BError error(__FUNCTION__);
 
@@ -90,7 +90,7 @@ BError SuperMesh::DelMesh(string meshName)
 	return error;
 }
 
-BError SuperMesh::RenameMesh(string oldName, string newName)
+BError SuperMesh::RenameMesh(std::string oldName, std::string newName)
 {
 	BError error(__FUNCTION__);
 
@@ -105,7 +105,7 @@ BError SuperMesh::RenameMesh(string oldName, string newName)
 	return error;
 }
 
-BError SuperMesh::SetMeshFocus(string meshName)
+BError SuperMesh::SetMeshFocus(std::string meshName)
 {
 	BError error(__FUNCTION__);
 

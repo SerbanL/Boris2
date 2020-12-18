@@ -304,7 +304,7 @@ struct VAL3 {
 			rhs.z = rhs.x;
 			break;
 
-		//string in Polar form - convert to Cartesian
+		//std::string in Polar form - convert to Cartesian
 		case 2:
 		{
 			std::vector<std::string> r_theta = split(components[0], ";");
@@ -321,7 +321,7 @@ struct VAL3 {
 		}
 			break;
 
-		//string in Cartesian form
+		//std::string in Cartesian form
 		case 3:
 			rhs.x = ToNum(trimspaces(components[0]), "");
 			rhs.y = ToNum(trimspaces(components[1]), "");

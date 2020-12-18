@@ -42,6 +42,14 @@ BError SuperMesh::InitializeAllModulesCUDA(void)
 {
 	BError error(CLASS_STR(SuperMesh));
 
+	//Commands are executed on newly spawned threads, so if cuda is on and we are not using device 0 (default device) we must switch to required device, otherwise 0 will be used
+	if (cudaDeviceSelect != 0) {
+
+		int device = 0;
+		cudaGetDevice(&device);
+		if (device != cudaDeviceSelect) cudaSetDevice(cudaDeviceSelect);
+	}
+
 	energy_density_weights.assign(pMesh.size(), 0.0);
 
 	double total_nonempty_volume = 0.0;
@@ -169,6 +177,14 @@ void SuperMesh::ComputeFields(void)
 #if COMPILECUDA == 1
 void SuperMesh::ComputeFieldsCUDA(void)
 {
+	//Commands are executed on newly spawned threads, so if cuda is on and we are not using device 0 (default device) we must switch to required device, otherwise 0 will be used
+	if (cudaDeviceSelect != 0) {
+
+		int device = 0;
+		cudaGetDevice(&device);
+		if (device != cudaDeviceSelect) cudaSetDevice(cudaDeviceSelect);
+	}
+
 	//prepare meshes for new iteration (typically involves setting some state flag)
 	for (int idx = 0; idx < (int)pMesh.size(); idx++) {
 

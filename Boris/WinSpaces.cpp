@@ -114,7 +114,7 @@ void WinSpace::Toggle_Maximise_Normal(INT2 mouse, ActionOutcome &actionResult) {
 	}
 }
 
-ActionOutcome WinSpace::NewMessage_CommonResponses(AC_ aCode, INT2 mouse, string data) {
+ActionOutcome WinSpace::NewMessage_CommonResponses(AC_ aCode, INT2 mouse, std::string data) {
 
 	//Windows event occured in this space: process it. This is called by all derived classes and defines common responses, so only add behavior here that all classes should implement. Further responses to same windows message may follow after this.
 	//
@@ -295,6 +295,7 @@ ActionOutcome WinSpace::NewMessage_CommonResponses(AC_ aCode, INT2 mouse, string
 	case AC_CTRL_C:
 	case AC_CTRL_V:
 	case AC_DROPFILES:
+	case AC_SHIFT_MOUSELEFTDOWN:
 		//These codes can only be handled by particular windows, so respond to them there. Notice windowEntered flag not checked.
 		actionResult.SetCode(winId, mouse, AO_NOTHANDLED);
 		break;
@@ -340,7 +341,7 @@ TextDisplay::TextDisplay(D2D1_RECT_F ratios, INT2 winId, SimTOFunct *pActionHand
 	ResizeWindow(ratios);
 }
 
-ActionOutcome TextDisplay::NewMessage_CommonResponses(AC_ aCode, INT2 mouse, string data) {
+ActionOutcome TextDisplay::NewMessage_CommonResponses(AC_ aCode, INT2 mouse, std::string data) {
 
 	ActionOutcome actionResult = WinSpace::NewMessage_CommonResponses(aCode, mouse, data);
 
@@ -511,14 +512,14 @@ TextLine TextDisplay::GetRawTextLine_ScreenCoords(INT2 objIdx)
 	return textLine_singleObject;
 }
 
-void TextDisplay::SetText(string text, FormatSpecifier fs) {
+void TextDisplay::SetText(std::string text, FormatSpecifier fs) {
 
 	topLine = 0;
 
 	textLines.set(TextLine(text, fs));
 }
 
-void TextDisplay::NewFormattedTextLine(int lineIdx, string text) 
+void TextDisplay::NewFormattedTextLine(int lineIdx, std::string text) 
 {
 	textLines.insert_paragraph(lineIdx, textLines.BuildFormattedTextLine(text, lineIdx));
 }

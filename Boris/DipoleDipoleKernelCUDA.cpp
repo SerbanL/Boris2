@@ -71,7 +71,7 @@ BError DipoleDipoleKernelCUDA::Calculate_DipoleDipole_Kernels_2D(bool include_se
 	if (!Ddiag.resize(N)) return error(BERROR_OUTOFMEMORY_NCRIT);
 
 	//off-diagonal tensor elements
-	vector<double> Dodiag;
+	std::vector<double> Dodiag;
 	if (!malloc_vector(Dodiag, N.x*N.y)) return error(BERROR_OUTOFMEMORY_NCRIT);
 
 	//Don't use cellsize ratios here, use cellsize directly
@@ -86,14 +86,20 @@ BError DipoleDipoleKernelCUDA::Calculate_DipoleDipole_Kernels_2D(bool include_se
 	else {
 
 		//pbcs used in at least one dimension
-		if (!dtf.CalcDiagTens2D_PBC(Ddiag, N, h, include_self_demag, pbc_images.x, pbc_images.y, pbc_images.z)) return error(BERROR_OUTOFMEMORY_NCRIT);
-		if (!dtf.CalcOffDiagTens2D_PBC(Dodiag, N, h, pbc_images.x, pbc_images.y, pbc_images.z)) return error(BERROR_OUTOFMEMORY_NCRIT);
+		if (!dtf.CalcDiagTens2D_PBC(
+			Ddiag, N, h, 
+			include_self_demag, 
+			pbc_images.x, pbc_images.y, pbc_images.z)) return error(BERROR_OUTOFMEMORY_NCRIT);
+
+		if (!dtf.CalcOffDiagTens2D_PBC(
+			Dodiag, N, h, 
+			pbc_images.x, pbc_images.y, pbc_images.z)) return error(BERROR_OUTOFMEMORY_NCRIT);
 	}
 
 	//-------------- KERNELS ON CPU-ADDRESSABLE MEMORY
 
 	VEC<DBL3> Kdiag_cpu;
-	vector<double> K2D_odiag_cpu;
+	std::vector<double> K2D_odiag_cpu;
 
 	if (!transpose_xy) {
 

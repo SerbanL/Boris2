@@ -3,13 +3,22 @@
 
 //----------------------------------- DISPLAY-ASSOCIATED GET/SET METHODS
 
-vector<PhysQ> SuperMesh::FetchOnScreenPhysicalQuantity(double detail_level)
+std::vector<PhysQ> SuperMesh::FetchOnScreenPhysicalQuantity(double detail_level)
 {
-	vector<PhysQ> physQ;
+	std::vector<PhysQ> physQ;
 
 	bool cudaSupermesh = false;
 
 #if COMPILECUDA == 1
+
+	//Commands are executed on newly spawned threads, so if cuda is on and we are not using device 0 (default device) we must switch to required device, otherwise 0 will be used
+	if (cudaEnabled && cudaDeviceSelect != 0) {
+
+		int device = 0;
+		cudaGetDevice(&device);
+		if (device != cudaDeviceSelect) cudaSetDevice(cudaDeviceSelect);
+	}
+
 	if (pSMeshCUDA) {
 
 		//if super-mesh display quantities are set with CUDA enabled then get them from PSMeshCUDA
@@ -78,7 +87,7 @@ vector<PhysQ> SuperMesh::FetchOnScreenPhysicalQuantity(double detail_level)
 }
 
 //save the quantity currently displayed on screen in an ovf2 file using the specified format
-BError SuperMesh::SaveOnScreenPhysicalQuantity(string fileName, string ovf2_dataType)
+BError SuperMesh::SaveOnScreenPhysicalQuantity(std::string fileName, std::string ovf2_dataType)
 {
 #if COMPILECUDA == 1
 	if (pSMeshCUDA) { return pSMeshCUDA->SaveOnScreenPhysicalQuantity(fileName, ovf2_dataType); }
@@ -276,7 +285,7 @@ Any  SuperMesh::GetAverageDisplayedMeshValue(Rect rel_rect)
 	return Any();
 }
 
-BError SuperMesh::SetDisplayedPhysicalQuantity(string meshName, int displayedPhysicalQuantity_)
+BError SuperMesh::SetDisplayedPhysicalQuantity(std::string meshName, int displayedPhysicalQuantity_)
 {
 	BError error(__FUNCTION__);
 
@@ -302,7 +311,7 @@ BError SuperMesh::SetDisplayedPhysicalQuantity(string meshName, int displayedPhy
 	return error;
 }
 
-BError SuperMesh::SetDisplayedBackgroundPhysicalQuantity(string meshName, int displayedBackgroundPhysicalQuantity_)
+BError SuperMesh::SetDisplayedBackgroundPhysicalQuantity(std::string meshName, int displayedBackgroundPhysicalQuantity_)
 {
 	BError error(__FUNCTION__);
 
@@ -319,7 +328,7 @@ BError SuperMesh::SetDisplayedBackgroundPhysicalQuantity(string meshName, int di
 }
 
 //Get/Set vectorial quantity representation options in named mesh (which could be the supermesh)
-BError SuperMesh::SetVEC3Rep(string meshName, int vec3rep_)
+BError SuperMesh::SetVEC3Rep(std::string meshName, int vec3rep_)
 {
 	BError error(__FUNCTION__);
 
@@ -337,7 +346,7 @@ BError SuperMesh::SetVEC3Rep(string meshName, int vec3rep_)
 	return error;
 }
 
-int SuperMesh::GetVEC3Rep(string meshName)
+int SuperMesh::GetVEC3Rep(std::string meshName)
 {
 	if (!contains(meshName) && meshName != superMeshHandle) return vec3rep;
 

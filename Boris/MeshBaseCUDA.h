@@ -12,7 +12,7 @@
 
 #include "MeshDisplayCUDA.h"
 
-using namespace std;
+
 
 class MeshBase;
 class PhysQ;
@@ -141,7 +141,7 @@ public:
 	virtual PhysQ FetchOnScreenPhysicalQuantity(double detail_level, bool getBackground) = 0;
 
 	//save the quantity currently displayed on screen in an ovf2 file using the specified format
-	virtual BError SaveOnScreenPhysicalQuantity(string fileName, string ovf2_dataType) = 0;
+	virtual BError SaveOnScreenPhysicalQuantity(std::string fileName, std::string ovf2_dataType) = 0;
 
 	//Before calling a run of GetDisplayedMeshValue, make sure to call PrepareDisplayedMeshValue : this calculates and stores in displayVEC storage and quantities which don't have memory allocated directly, but require computation and temporary storage.
 	virtual void PrepareDisplayedMeshValue(void) = 0;

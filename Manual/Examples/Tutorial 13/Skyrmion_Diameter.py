@@ -1,23 +1,15 @@
 """
-This script is part of Boris Computational Spintronics v2.8
+This script is part of Boris Computational Spintronics v3.0
 
 @author: Serban Lepadatu, 2020
 """
 
-import os
-import sys
 from NetSocks import NSClient
 import matplotlib.pyplot as plt
 
 #setup communication with server
-ns = NSClient('localhost')
-
-########################################
-
-#the working directory : same as this script file
-directory = os.path.dirname(sys.argv[0]) + "/"
-ns.default()
-ns.chdir(directory)
+ns = NSClient()
+ns.configure(True)
 
 ########################################
 
@@ -32,9 +24,10 @@ start_field = 2e3
 end_field = 20e3
 field_step = 1e3
 
-ns.loadsim(directory + simfile)
+ns.loadsim(simfile)
 
 meshrect = ns.meshrect()
+cellsize = ns.cellsize()
 length = meshrect[3] - meshrect[0]
 width = meshrect[4] - meshrect[1]
 thickness = meshrect[5] - meshrect[2]
@@ -49,7 +42,7 @@ for i in range(0, steps + 1):
 
     ns.Run()
 
-    ns.dp_getprofile([0, width/2, thickness/2], [length, width/2, thickness/2], 0)
+    ns.dp_getexactprofile([0, width/2, thickness/2], [length, width/2, thickness/2], cellsize[0], 0)
 
     skyrmion = ns.dp_fitskyrmion(0, 3)
     diameter = skyrmion[0] * 2

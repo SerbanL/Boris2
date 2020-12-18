@@ -33,7 +33,7 @@ BError StrayField::Initialize(void)
 
 		dipoles.clear();
 
-		vector< VEC<DBL3>* > meshes_out;
+		std::vector< VEC<DBL3>* > meshes_out;
 
 		//identify all existing dipole meshes and output Heff meshes
 		for (int idx = 0; idx < (int)pSMesh->size(); idx++) {
@@ -59,7 +59,7 @@ BError StrayField::Initialize(void)
 		}
 
 		//Initialize the mesh transfer object.
-		if (!strayField.Initialize_MeshTransfer(vector< VEC<DBL3>* >(), meshes_out, MESHTRANSFERTYPE_WEIGHTED)) return error(BERROR_OUTOFMEMORY_CRIT);
+		if (!strayField.Initialize_MeshTransfer(std::vector< VEC<DBL3>* >(), meshes_out, MESHTRANSFERTYPE_WEIGHTED)) return error(BERROR_OUTOFMEMORY_CRIT);
 
 		strayField.set(DBL3(0));
 

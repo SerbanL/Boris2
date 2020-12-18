@@ -19,7 +19,7 @@ class SuperMesh;
 class InsulatorMesh :
 	public Mesh,
 	public ProgramState<InsulatorMesh,
-	tuple<
+	std::tuple<
 	//Mesh members
 	int, int, int, int, int, int, int, Rect, SZ3, DBL3, SZ3, DBL3, VEC_VC<double>, vector_lut<Modules*>,
 	//Members in this derived class
@@ -28,7 +28,7 @@ class InsulatorMesh :
 	double, TEquation<double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>
 	>,
 	//Module Implementations
-	tuple<Heat> >
+	std::tuple<Heat> >
 {
 
 #if COMPILECUDA == 1

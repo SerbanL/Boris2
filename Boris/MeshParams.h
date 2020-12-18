@@ -12,7 +12,7 @@
 #include "MeshParamsCUDA.h"
 #endif
 
-using namespace std;
+
 
 /////////////////////////////////////////////////////////////////////////////////////////////////
 //	
@@ -35,14 +35,14 @@ protected:
 	//Special functions to be set in material parameters text equations when needed
 
 	//resolution of 10000 means e.g. for Tc = 1000 the Curie-Weiss function will be available with a resolution of 0.1 K
-	shared_ptr<Funcs_Special> pCurieWeiss = nullptr;
-	shared_ptr<Funcs_Special> pLongRelSus = nullptr;
-	shared_ptr<Funcs_Special> pCurieWeiss1 = nullptr;
-	shared_ptr<Funcs_Special> pCurieWeiss2 = nullptr;
-	shared_ptr<Funcs_Special> pLongRelSus1 = nullptr;
-	shared_ptr<Funcs_Special> pLongRelSus2 = nullptr;
-	shared_ptr<Funcs_Special> pAlpha1 = nullptr;
-	shared_ptr<Funcs_Special> pAlpha2 = nullptr;
+	std::shared_ptr<Funcs_Special> pCurieWeiss = nullptr;
+	std::shared_ptr<Funcs_Special> pLongRelSus = nullptr;
+	std::shared_ptr<Funcs_Special> pCurieWeiss1 = nullptr;
+	std::shared_ptr<Funcs_Special> pCurieWeiss2 = nullptr;
+	std::shared_ptr<Funcs_Special> pLongRelSus1 = nullptr;
+	std::shared_ptr<Funcs_Special> pLongRelSus2 = nullptr;
+	std::shared_ptr<Funcs_Special> pAlpha1 = nullptr;
+	std::shared_ptr<Funcs_Special> pAlpha2 = nullptr;
 
 public:
 
@@ -258,7 +258,7 @@ public:
 	//------------------------CTOR/DTOR
 
 	//inherited by Mesh implementations
-	MeshParams(vector<PARAM_>& enabledParams);
+	MeshParams(std::vector<PARAM_>& enabledParams);
 	
 	virtual ~MeshParams() {}
 
@@ -270,7 +270,7 @@ public:
 	//-------------------------Setters/Updaters : text equations
 
 	//set the mesh parameter temperature equation with given user constants
-	void set_meshparam_t_equation(PARAM_ paramID, string& equationText, vector_key<double>& userConstants);
+	void set_meshparam_t_equation(PARAM_ paramID, std::string& equationText, vector_key<double>& userConstants);
 
 	//update text equations for mesh parameters with user constants, mesh dimensions, Curie temperature, base temperature
 	bool update_meshparam_equations(PARAM_ paramID, vector_key<double>& userConstants, DBL3 meshDimensions);

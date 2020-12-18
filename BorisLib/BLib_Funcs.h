@@ -29,7 +29,6 @@
 		-> Funcs_Math_base
 
 #include "Funcs_Algorithms.h"
--> Funcs_Algorithms_base
 -> Types_VAL
 	-> Funcs_Conv
 		-> Introspection_base
@@ -39,10 +38,9 @@
 	-> Funcs_Strings
 		-> Funcs_Vectors
 	-> Funcs_Aux_base
--> Funcs_Math (see below)
 
 #include "Funcs_Math.h"
--> Funcs_Algorithms_base
+-> Funcs_Algorithms
 -> Funcs_Math_base.h
 -> Types_VAL
 	-> Funcs_Conv

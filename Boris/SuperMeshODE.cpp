@@ -159,7 +159,7 @@ void SuperMesh::SetMoveMeshThreshold(double threshold)
 	odeSolver.SetMoveMeshThreshold(threshold); 
 }
 
-void SuperMesh::SetMoveMeshTrigger(bool status, string meshName)
+void SuperMesh::SetMoveMeshTrigger(bool status, std::string meshName)
 {
 	//if meshName not contained then we want meshId to be -1 : this means we'll be setting trigger on first magnetic mesh
 	if (contains(meshName)) {

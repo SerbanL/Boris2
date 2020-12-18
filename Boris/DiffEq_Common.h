@@ -24,7 +24,7 @@ typedef DBL3(DifferentialEquation::*Equation)(int idx);
 
 class ODECommon :
 	public ProgramState<ODECommon,
-	tuple<
+	std::tuple<
 	int, int, 
 	double, double, 
 	double, double, int, int, 
@@ -33,7 +33,7 @@ class ODECommon :
 	double, double, double, double, double, double, 
 	int, 
 	bool, bool, double, double>,
-	tuple<>>,
+	std::tuple<>>,
 	public ODECommon_Base
 {
 	friend ODECommon_Base;

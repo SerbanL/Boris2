@@ -32,14 +32,14 @@
 #include "Types_Rect.h"
 -> Types_VAL (see above)
 -> Funcs_Math
-	-> Funcs_Algorithms_base
+	-> Funcs_Algorithms
 	-> Funcs_Math_base.h
 	-> Types_VAL (see above)
 
 #include "Types_Sequences.h"
 -> Types_VAL (see above)
 -> Funcs_Math
-	-> Funcs_Algorithms_base
+	-> Funcs_Algorithms
 	-> Funcs_Math_base.h
 	-> Types_VAL (see above)
 -> Funcs_Vectors

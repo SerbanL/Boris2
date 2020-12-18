@@ -44,7 +44,7 @@ private:
 	//--------
 
 	//collection of all SDemagCUDA_Demag modules in individual ferromagnetic meshes
-	vector<SDemagCUDA_Demag*> pSDemagCUDA_Demag;
+	std::vector<SDemagCUDA_Demag*> pSDemagCUDA_Demag;
 
 	//collect FFT input spaces : after Forward FFT the ffts of M from the individual meshes will be found here
 	//These are used as inputs to kernel multiplications. Same order as pSDemag_Demag.
@@ -56,10 +56,10 @@ private:
 	//in 2D mode the rectangles can differ in thickness but must have the same xy size
 	//thus in 3D mode find largest one and extend all the other rectangles to match (if possible try to have them overlapping in xy-plane projections so we can use kernel symmetries)
 	//in 2D mode find largest xy dimension and extend all xy dimensions -> again try to overlap their xy-plane projections
-	vector<cuRect> Rect_collection;
+	std::vector<cuRect> Rect_collection;
 
 	//demag kernels used for multilayered convolution, one collection per mesh/SDemag_Demag module. Don't recalculate redundant kernels in the collection.
-	vector<DemagKernelCollectionCUDA*> kernel_collection;
+	std::vector<DemagKernelCollectionCUDA*> kernel_collection;
 
 	//The demag field computed separately (supermesh convolution): at certain steps in the ODE evaluation method we don't need to recalculate the demag field but can use a previous evaluation with an acceptable impact on the numerical error.
 	//This mode needs to be enabled by the user, and can be much faster than the default mode. The default mode is to re-evaluate the demag field at every step.

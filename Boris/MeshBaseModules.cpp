@@ -47,7 +47,7 @@ void MeshBase::DelModule(Modules* pModule)
 
 BError MeshBase::InitializeAllModules(void)
 {
-	BError error(string(CLASS_STR(MeshBase)) + "(" + (*pSMesh).key_from_meshId(meshId) + ")");
+	BError error(std::string(CLASS_STR(MeshBase)) + "(" + (*pSMesh).key_from_meshId(meshId) + ")");
 
 	for (int idx = 0; idx < (int)pMod.size(); idx++) {
 
@@ -61,7 +61,7 @@ BError MeshBase::InitializeAllModules(void)
 #if COMPILECUDA == 1
 BError MeshBase::InitializeAllModulesCUDA(void)
 {
-	BError error(string(CLASS_STR(MeshBase)) + "(" + (*pSMesh).key_from_meshId(meshId) + ")");
+	BError error(std::string(CLASS_STR(MeshBase)) + "(" + (*pSMesh).key_from_meshId(meshId) + ")");
 
 	for (int idx = 0; idx < (int)pMod.size(); idx++) {
 

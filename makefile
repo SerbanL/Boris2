@@ -3,6 +3,7 @@
 #arch=50 for Maxwell
 #arch=60 for Pascal
 #arch=70 for Volta (and Turing)
+#arch=80 for Ampere
 #example: $ make configure arch=70
 ifndef arch
 	arch = $(file < arch.txt)
@@ -14,7 +15,7 @@ ifndef sprec
 endif
 
 #Boris program version
-BVERSION := 290
+BVERSION := 300
 
 #Working directories
 BORIS_DATA_DIR := Boris_Data
@@ -45,10 +46,10 @@ cuda: $(CUOBJ_FILES)
 configure:
 	$(file > BorisCUDALib/cuBLib_Flags.h,#pragma once)
 	$(file >> BorisCUDALib/cuBLib_Flags.h,)
-	$(file >> BorisCUDALib/cuBLib_Flags.h,//make sure to compile with matching architecture, e.g. compute_50, sm_50 for __CUDA_ARCH__ 500, etc.)
+	$(file >> BorisCUDALib/cuBLib_Flags.h,)
 	$(file >> BorisCUDALib/cuBLib_Flags.h,#define __CUDA_ARCH__ $(arch)0)
 	$(file >> BorisCUDALib/cuBLib_Flags.h,)
-	$(file >> BorisCUDALib/cuBLib_Flags.h,//compile with cuda single precision (float types) or double precision (double types). Set SINGLEPRECISION to 1 for single, otherwise (0) for double.)
+	$(file >> BorisCUDALib/cuBLib_Flags.h,)
 	$(file >> BorisCUDALib/cuBLib_Flags.h,#define SINGLEPRECISION $(sprec))
 	$(file > arch.txt,$(arch))
 	mkdir -p $(OBJ_DIR)
@@ -61,7 +62,7 @@ compile: $(OBJ_FILES) $(CUOBJ_FILES)
  
 install:
 	nvcc -arch=sm_$(arch) -dlink -w $(CUOBJ_DIR)/*.o -o $(CUOBJ_DIR)/rdc_link.o 
-	g++ $(OBJ_DIR)/*.o $(CUOBJ_DIR)/*.o -fopenmp -lsfml-graphics -lsfml-window -lsfml-system -lfftw3 -lX11 -lcudart -lcufft -lcudadevrt -o BorisLin
+	g++ $(OBJ_DIR)/*.o $(CUOBJ_DIR)/*.o -fopenmp -ltbb -lsfml-graphics -lsfml-window -lsfml-system -lfftw3 -lX11 -lcudart -lcufft -lcudadevrt -o BorisLin
 	rm -f $(OBJ_FILES) $(CUOBJ_FILES) $(CUOBJ_DIR)/rdc_link.o
 	mkdir -p ~/Documents/$(BORIS_DATA_DIR)
 	mkdir -p ~/Documents/$(BORIS_SIM_DIR)

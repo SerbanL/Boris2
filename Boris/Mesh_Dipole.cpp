@@ -86,7 +86,7 @@ void DipoleMesh::RepairObjectState(void)
 //call when a configuration change has occurred - some objects might need to be updated accordingly
 BError DipoleMesh::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 {
-	BError error(string(CLASS_STR(DipoleMesh)) + "(" + (*pSMesh).key_from_meshId(meshId) + ")");
+	BError error(std::string(CLASS_STR(DipoleMesh)) + "(" + (*pSMesh).key_from_meshId(meshId) + ")");
 
 	n = SZ3(1);
 	h = meshRect.size();
@@ -175,7 +175,7 @@ void DipoleMesh::UpdateConfiguration_Values(UPDATECONFIG_ cfgMessage)
 
 BError DipoleMesh::SwitchCUDAState(bool cudaState)
 {
-	BError error(string(CLASS_STR(DipoleMesh)) + "(" + (*pSMesh).key_from_meshId(meshId) + ")");
+	BError error(std::string(CLASS_STR(DipoleMesh)) + "(" + (*pSMesh).key_from_meshId(meshId) + ")");
 
 #if COMPILECUDA == 1
 
@@ -264,7 +264,7 @@ void DipoleMesh::SetCurieTemperature(double Tc, bool set_default_dependences)
 		if (set_default_dependences) {
 
 			//set default temperature dependences
-			Ms.set_t_scaling_equation(string("me(T/Tc)"), userConstants, T_Curie, base_temperature);
+			Ms.set_t_scaling_equation(std::string("me(T/Tc)"), userConstants, T_Curie, base_temperature);
 
 			//make sure to also update them - this method can be called during a simulation, e.g. if field changes.
 			Ms.update(base_temperature);

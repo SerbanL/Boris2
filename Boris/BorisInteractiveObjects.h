@@ -1,6 +1,6 @@
 #pragma once
 
-using namespace std;
+
 
 //Interactive console object identifiers - this is the majorId in InteractiveObjectProperties
 enum IOI_ 
@@ -133,13 +133,13 @@ enum IOI_
 	//Note this entry must always represent the entry in Simulation::simStages with the index in auxId.
 	IOI_SETSTAGE,
 
-	//Shows the value to set for the simulation schedule stage : minorId is the minor id of elements in Simulation::simStages (major id there is always 0), auxId is the number of the interactive object in the list, textId is the value as a string
+	//Shows the value to set for the simulation schedule stage : minorId is the minor id of elements in Simulation::simStages (major id there is always 0), auxId is the number of the interactive object in the list, textId is the value as a std::string
 	IOI_SETSTAGEVALUE,
 
-	//Shows the stop condition for the simulation schedule stage : minorId is the minor id of elements in Simulation::simStages (major id there is always 0), auxId is the number of the interactive object in the list, textId is the stop type and value as a string
+	//Shows the stop condition for the simulation schedule stage : minorId is the minor id of elements in Simulation::simStages (major id there is always 0), auxId is the number of the interactive object in the list, textId is the stop type and value as a std::string
 	IOI_STAGESTOPCONDITION,
 
-	//Shows the saving condition for the simulation schedule stage : minorId is the minor id of elements in Simulation::simStages (major id there is always 0), auxId is the DSAVE_ value for this data save type, textId is the save type and value as a string
+	//Shows the saving condition for the simulation schedule stage : minorId is the minor id of elements in Simulation::simStages (major id there is always 0), auxId is the DSAVE_ value for this data save type, textId is the save type and value as a std::string
 	IOI_DSAVETYPE,
 
 	//Shows a stop condition, used to apply the same condition to all simulation stages : minorId is the STOP_ value, textId is the stop type handle
@@ -168,10 +168,10 @@ enum IOI_
 	//Shows super-mesh display option : minorId is the MESHDISPLAY_ value, textId is the MESHDISPLAY_ handle
 	IOI_SMESHDISPLAY,
 
-	//Shows dual mesh display transparency values : textId is the DBL2 value as a string
+	//Shows dual mesh display transparency values : textId is the DBL2 value as a std::string
 	IOI_MESHDISPLAYTRANSPARENCY,
 	
-	//Shows mesh display threshold values : textId is the DBL2 value as a string
+	//Shows mesh display threshold values : textId is the DBL2 value as a std::string
 	IOI_MESHDISPLAYTHRESHOLDS,
 
 	//Shows mesh display threshold trigger type : auxId is the trigger option
@@ -188,13 +188,13 @@ enum IOI_
 	//Shows movingmesh symmetry : auxId is the asymmetry status (1: asymmetric, 0: symmetric)
 	IOI_MOVINGMESHASYM,
 
-	//Shows movingmesh threshold : textId is the threshold value as a string
+	//Shows movingmesh threshold : textId is the threshold value as a std::string
 	IOI_MOVINGMESHTHRESH,
 
-	//Shows electrode box. minorId is the minor Id in STransport::electrode_boxes, auxId is the number of the interactive object in the list (electrode index), textId is the electrode rect as a string
+	//Shows electrode box. minorId is the minor Id in STransport::electrode_boxes, auxId is the number of the interactive object in the list (electrode index), textId is the electrode rect as a std::string
 	IOI_ELECTRODERECT,
 
-	//Shows electrode potential. minorId is the electrode index, textId is potential value as a string
+	//Shows electrode potential. minorId is the electrode index, textId is potential value as a std::string
 	IOI_ELECTRODEPOTENTIAL,
 
 	//Shows electrode ground setting. minorId is the electrode index, auxId is the setting (0 : not ground, 1 : ground)
@@ -215,7 +215,7 @@ enum IOI_
 	//Shows spin transport solver timeout iterations. auxId is the timeout value.
 	IOI_SSOLVERTIMEOUT,
 
-	//Shows SOR damping values when used in fixed damping mode. textId is the DBL2 damping value as a string. (DBL2 since we need different damping values for V and S solvers)
+	//Shows SOR damping values when used in fixed damping mode. textId is the DBL2 damping value as a std::string. (DBL2 since we need different damping values for V and S solvers)
 	IOI_SORDAMPING,
 
 	//Shows mesh temperature. minorId is the unique mesh id number, textId is the temperature value
@@ -342,19 +342,46 @@ enum IOI_
 	//Static transport solver state. auxId is the value (0/1)
 	IOI_STATICTRANSPORT,
 
+	//Disabled transport solver state. auxId is the value (0/1)
+	IOI_DISABLEDTRANSPORT,
+
 	//Shows image cropping settings : textId has the DBL4 value as text
 	IOI_IMAGECROPPING,
 
-	//Show user constant for text equations : minorId is the index in Simulation::userConstants, auxId is the number of the interactive object in the list as it appears in the console, textId is the constant name and value string 
+	//Show user constant for text equations : minorId is the index in Simulation::userConstants, auxId is the number of the interactive object in the list as it appears in the console, textId is the constant name and value std::string 
 	//Note this entry must always represent the entry in Simulation::userConstants with the index in auxId.
 	IOI_USERCONSTANT,
 
-	//Show skypos diameter multiplier : minorId is the unique mesh id number, textId is the multiplier as a string
+	//Show skypos diameter multiplier : minorId is the unique mesh id number, textId is the multiplier as a std::string
 	IOI_SKYPOSDMUL,
 
 	//Shows Monte-Carlo computation type (serial/parallel) : minorId is the unique mesh id number, auxId is the status (0 : parallel, 1 : serial, -1 : N/A)
 	IOI_MCCOMPUTATION,
 	
 	//Shows Monte-Carlo algorithm type : minorId is the unique mesh id number, auxId is the type (0 : classical, 1 : constrained, -1 : N/A), textId is the constrained DBL3 direction.
-	IOI_MCTYPE
+	IOI_MCTYPE,
+
+	//Shows shape rotation setting: textId is the value as text (DBL3)
+	IOI_SHAPEROT,
+
+	//Shows shape repetition setting: textId is the value as text (INT3)
+	IOI_SHAPEREP,
+
+	//Shows shape displacement setting: textId is the value as text (DBL3)
+	IOI_SHAPEDSP,
+
+	//Shows shape method setting: textId is the value as text (method)
+	IOI_SHAPEMET,
+
+	//Shows display render detail level: textId is the value
+	IOI_DISPRENDER_DETAIL,
+
+	//Shows display render threshold 1: auxId is the value
+	IOI_DISPRENDER_THRESH1,
+
+	//Shows display render threshold 2: auxId is the value
+	IOI_DISPRENDER_THRESH2,
+
+	//Shows display render threshold 3: auxId is the value
+	IOI_DISPRENDER_THRESH3
 };

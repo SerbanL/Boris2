@@ -19,7 +19,7 @@
 #define RESIZEBORDER	10								//Number of pixels of resizing border
 #define RESIZEFRAMEBORDER	3							//Number of pixels of displayed resizing frame
 
-using namespace std;
+
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -42,24 +42,27 @@ enum AC_
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 //Action outcome codes, usually generated after processing AC_ messages, but can also be used to pass messages around
-enum AO_ {AO_NOTHING = 0, AO_NOTHANDLED, 
-		  AO_TEXTRETURNED, AO_MESSAGERETURNED, AO_MESHFOCUS2, AO_FILEDROPPEDINCONSOLE, AO_FILEDROPPEDINMESH,
-		  AO_SETTOPMOST, 
-		  AO_REFRESH, AO_REFRESHWINDOW, AO_DELAYEDREFRESH, AO_DRAW, AO_DRAWWINDOW,
-		  AO_STARTINTERACTION, AO_ENDINTERACTION, AO_HOVERCHECK, AO_SHOWHOVERINFO, AO_DESTROYWINDOW, AO_CHECKIOINTERACTION, AO_CHECKIODROPINTERACTION, AO_WINRESIZED,
-		  AO_STARTPOPUPEDITBOX, AO_POPUPEDITBOXRETURNEDTEXT,
-		  AO_RECALCULATEMESHDISPLAY};
+enum AO_ {
+	AO_NOTHING = 0, AO_NOTHANDLED, 
+	AO_TEXTRETURNED, AO_MESSAGERETURNED, AO_MESHFOCUS2, AO_FILEDROPPEDINCONSOLE, AO_FILEDROPPEDINMESH,
+	AO_SETTOPMOST, 
+	AO_REFRESH, AO_REFRESHWINDOW, AO_DELAYEDREFRESH, AO_DRAW, AO_DRAWWINDOW,
+	AO_STARTINTERACTION, AO_ENDINTERACTION, AO_HOVERCHECK, AO_SHOWHOVERINFO, AO_DESTROYWINDOW, AO_CHECKIOINTERACTION, AO_CHECKIODROPINTERACTION, AO_WINRESIZED,
+	AO_STARTPOPUPEDITBOX, AO_POPUPEDITBOXRETURNEDTEXT,
+	AO_RECALCULATEMESHDISPLAY, 
+	AO_ADDCONSOLECOORDINATE
+};
 
 //ActionOutcome object for passing action outcome messages after being handled in NewMessage method
 class ActionOutcome {
 
 	//Multiple action outcome codes could be generated, but this should always have size >= 1
-	vector<AO_> aoCodes;
+	std::vector<AO_> aoCodes;
 
 public:
 
 	//text generated as a result of AO_TEXTRETURNED or AO_MESSAGERETURNED
-	string text;
+	std::string text;
 
 	//mouse coordinates where action occured
 	INT2 mouse;
@@ -321,7 +324,7 @@ private: //Private methods
 protected: //Protected methods
 
 	//Windows event occured in this space: process it. This is shared by all derived classes and defines common responses, in addition to particular responses in NewMessage
-	ActionOutcome NewMessage_CommonResponses(AC_ aCode, INT2 mouse, string data);
+	ActionOutcome NewMessage_CommonResponses(AC_ aCode, INT2 mouse, std::string data);
 
 	bool IsDoubleClick(AC_ &aCode);
 	bool IsHoveringOverResizeArea(void);
@@ -363,7 +366,7 @@ public: //Public methods
 	virtual void DrawWindow_Quick(void) = 0;
 
 	//Windows event occured in this space: process it.
-	virtual ActionOutcome NewMessage(AC_ aCode, INT2 mouse, string data = "") = 0;
+	virtual ActionOutcome NewMessage(AC_ aCode, INT2 mouse, std::string data = "") = 0;
 
 	virtual void SetDefaultCursor(void) = 0;
 
@@ -416,7 +419,7 @@ private: //private methods
 
 protected: //protected methods
 
-	ActionOutcome NewMessage_CommonResponses(AC_ aCode, INT2 mouse, string data);
+	ActionOutcome NewMessage_CommonResponses(AC_ aCode, INT2 mouse, std::string data);
 
 	//Set topLine so that the last line will not overflow the space rect. If it does, set topLine so that the last line is as far down in the console as possible
 	void ResetTopLineIndex(void);
@@ -464,10 +467,10 @@ protected: //protected methods
 	}
 
 	//Set text in window space, erasing any existing text
-	void SetText(string text, FormatSpecifier fs);
+	void SetText(std::string text, FormatSpecifier fs);
 
 	//Add text using text formatting (either on a new line or at the given line index as an insertion, pushing down all existing lines from that index onwards)
-	void NewFormattedTextLine(int lineIdx, string text);
+	void NewFormattedTextLine(int lineIdx, std::string text);
 
 	void ClearWindow(void) { textLines.clear(); topLine = 0; }
 

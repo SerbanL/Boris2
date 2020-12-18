@@ -7,8 +7,6 @@
 
 #include "BorisLib.h"
 
-using namespace std;
-
 //Simulation object holds state and action handlers
 class TextObject;
 class Simulation;
@@ -34,7 +32,7 @@ struct InteractiveObjectActionOutcome {
 	int actionOutcome;
 
 	//any returned text
-	string text;
+	std::string text;
 
 	InteractiveObjectActionOutcome(void) : actionOutcome(0) {}
 	InteractiveObjectActionOutcome(int actionOutcome_) : actionOutcome(actionOutcome_) {}
@@ -65,7 +63,7 @@ struct InteractiveObjectStateChange {
 	bool stateChanged;
 
 	//some IOS_ states rely on a text message returned by the state handler
-	string textMessage;
+	std::string textMessage;
 
 	InteractiveObjectStateChange(void) : stateChanged(false) {}
 
@@ -93,7 +91,7 @@ public:
 	int auxId;
 
 	//a text identifier for this object
-	string textId;
+	std::string textId;
 
 	//used to interact another object with this - set this Id before calling the Action handler with AC_INTERACTOBJECTS code
 	INT2 interactingObjectId;
@@ -110,7 +108,7 @@ public:
 		interactingObjectId = INT2();
 	}
 
-	InteractiveObjectProperties(int majorId, int minorId = 0, int auxId = 0, string textId = "") 
+	InteractiveObjectProperties(int majorId, int minorId = 0, int auxId = 0, std::string textId = "") 
 	{
 		this->majorId = majorId;
 		this->minorId = minorId;
@@ -143,16 +141,16 @@ public:
 
 public:
 	
-	SimTOFunct(HandlerObject *pHandler, SimAH ActionHandler, SimSH StateHandler) {
-
+	SimTOFunct(HandlerObject *pHandler, SimAH ActionHandler, SimSH StateHandler) 
+	{
 		this->pHandler = pHandler;
 		this->ActionHandler = ActionHandler;
 		this->StateHandler = StateHandler;
 	}
 	
 	//copy constructor when used with new operator
-	SimTOFunct(const SimTOFunct *pSTF) {
-
+	SimTOFunct(const SimTOFunct *pSTF) 
+	{
 		pHandler = pSTF->pHandler;
 		ActionHandler = pSTF->ActionHandler;
 		StateHandler = pSTF->StateHandler;

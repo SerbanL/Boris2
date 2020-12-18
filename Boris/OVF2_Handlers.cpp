@@ -79,18 +79,18 @@ BError OVF2::Read_OVF2_SCA(std::string fileName, VECType& data)
 	//return 0 if something went wrong : abort loading OVF file
 	//return 1 if everything fine, continue
 	//return 2 if start of data header found
-	auto scan_line = [&](string line) -> int {
+	auto scan_line = [&](std::string line) -> int {
 
 		if (line.find(headers(MESHTYPE)) != std::string::npos) {
 
-			string value = line.substr(headers(MESHTYPE).length());
+			std::string value = line.substr(headers(MESHTYPE).length());
 			if (value != "rectangular") return 0;
 			meshtype_rectangular = true;
 		}
 
 		else if (line.find(headers(MESHUNIT)) != std::string::npos) {
 
-			string value = line.substr(headers(MESHUNIT).length());
+			std::string value = line.substr(headers(MESHUNIT).length());
 			if (value == "m") meshunit = 1.0;
 			else if (value == "nm") meshunit = 1e-9;
 			else return 0;
@@ -98,91 +98,91 @@ BError OVF2::Read_OVF2_SCA(std::string fileName, VECType& data)
 
 		else if (line.find(headers(VALUEDIM)) != std::string::npos) {
 
-			string value = line.substr(headers(VALUEDIM).length());
+			std::string value = line.substr(headers(VALUEDIM).length());
 			if (value == "1") valuedim = 1;
 			else return 0;
 		}
 
 		else if (line.find(headers(XMIN)) != std::string::npos) {
 
-			string value = line.substr(headers(XMIN).length());
+			std::string value = line.substr(headers(XMIN).length());
 			//meshunit should have been read by now (value of 1.0 is the default)
 			meshRect.s.x = (double)ToNum(value) * meshunit;
 		}
 
 		else if (line.find(headers(YMIN)) != std::string::npos) {
 
-			string value = line.substr(headers(YMIN).length());
+			std::string value = line.substr(headers(YMIN).length());
 			//meshunit should have been read by now (value of 1.0 is the default)
 			meshRect.s.y = (double)ToNum(value) * meshunit;
 		}
 
 		else if (line.find(headers(ZMIN)) != std::string::npos) {
 
-			string value = line.substr(headers(ZMIN).length());
+			std::string value = line.substr(headers(ZMIN).length());
 			//meshunit should have been read by now (value of 1.0 is the default)
 			meshRect.s.z = (double)ToNum(value) * meshunit;
 		}
 
 		else if (line.find(headers(XMAX)) != std::string::npos) {
 
-			string value = line.substr(headers(XMAX).length());
+			std::string value = line.substr(headers(XMAX).length());
 			//meshunit should have been read by now (value of 1.0 is the default)
 			meshRect.e.x = (double)ToNum(value) * meshunit;
 		}
 
 		else if (line.find(headers(YMAX)) != std::string::npos) {
 
-			string value = line.substr(headers(YMAX).length());
+			std::string value = line.substr(headers(YMAX).length());
 			//meshunit should have been read by now (value of 1.0 is the default)
 			meshRect.e.y = (double)ToNum(value) * meshunit;
 		}
 
 		else if (line.find(headers(ZMAX)) != std::string::npos) {
 
-			string value = line.substr(headers(ZMAX).length());
+			std::string value = line.substr(headers(ZMAX).length());
 			//meshunit should have been read by now (value of 1.0 is the default)
 			meshRect.e.z = (double)ToNum(value) * meshunit;
 		}
 
 		else if (line.find(headers(XNODES)) != std::string::npos) {
 
-			string value = line.substr(headers(XNODES).length());
+			std::string value = line.substr(headers(XNODES).length());
 
 			n.x = ToNum(value);
 		}
 
 		else if (line.find(headers(YNODES)) != std::string::npos) {
 
-			string value = line.substr(headers(YNODES).length());
+			std::string value = line.substr(headers(YNODES).length());
 
 			n.y = ToNum(value);
 		}
 
 		else if (line.find(headers(ZNODES)) != std::string::npos) {
 
-			string value = line.substr(headers(ZNODES).length());
+			std::string value = line.substr(headers(ZNODES).length());
 
 			n.z = ToNum(value);
 		}
 
 		else if (line.find(headers(XSTEP)) != std::string::npos) {
 
-			string value = line.substr(headers(XSTEP).length());
+			std::string value = line.substr(headers(XSTEP).length());
 
 			h.x = (double)ToNum(value) * meshunit;
 		}
 
 		else if (line.find(headers(YSTEP)) != std::string::npos) {
 
-			string value = line.substr(headers(YSTEP).length());
+			std::string value = line.substr(headers(YSTEP).length());
 
 			h.y = (double)ToNum(value) * meshunit;
 		}
 
 		else if (line.find(headers(ZSTEP)) != std::string::npos) {
 
-			string value = line.substr(headers(ZSTEP).length());
+			std::string value = line.substr(headers(ZSTEP).length());
 
 			h.z = (double)ToNum(value) * meshunit;
 		}
@@ -190,7 +190,7 @@ BError OVF2::Read_OVF2_SCA(std::string fileName, VECType& data)
 		else if (lowercase(line).find(lowercase(headers(BEGIN_DATA))) != std::string::npos) {
 
 			//convert to lowercase for comparison as some implementations may choose to have "Data" instead of "data"
-			string value = lowercase(line.substr(headers(BEGIN_DATA).length()));
+			std::string value = lowercase(line.substr(headers(BEGIN_DATA).length()));
 
 			//data headers already in lowercase but better use the lowercase conversion anyway to reduce possibility of bugs in the future
 			if (value == lowercase(data_headers(DATA_BINARY4))) {
@@ -219,9 +219,9 @@ BError OVF2::Read_OVF2_SCA(std::string fileName, VECType& data)
 
 		if (bdin.getline(line, FILEROWCHARS)) {
 
-			//some file editors will append a carriage return at the end of the line, which messes string comparisons here
+			//some file editors will append a carriage return at the end of the line, which messes std::string comparisons here
 			//e.g. Python text file write methods (write, writelines) will append a carriage return in addition to a newline
-			//if we find a carriage return at the end of the read line simply replace it with a string termination
+			//if we find a carriage return at the end of the read line simply replace it with a std::string termination
 			if (std::string(line).substr(std::string(line).length() - 1) == "\r")
 				line[std::string(line).length() - 1] = '\0';
 
@@ -338,7 +338,7 @@ BError OVF2::Read_OVF2_SCA(std::string fileName, VECType& data)
 
 								read_line(bdin, line);
 
-								data[INT3(i, j, k)] = ToNum(trim_leading_spaces(string(line)));
+								data[INT3(i, j, k)] = ToNum(trim_leading_spaces(std::string(line)));
 							}
 						}
 					}
@@ -402,18 +402,18 @@ BError OVF2::Read_OVF2_VEC(std::string fileName, VECType& data)
 	//return 0 if something went wrong : abort loading OVF file
 	//return 1 if everything fine, continue
 	//return 2 if start of data header found
-	auto scan_line = [&](string line) -> int {
+	auto scan_line = [&](std::string line) -> int {
 
 		if (line.find(headers(MESHTYPE)) != std::string::npos) {
 
-			string value = line.substr(headers(MESHTYPE).length());
+			std::string value = line.substr(headers(MESHTYPE).length());
 			if (value != "rectangular") return 0;
 			meshtype_rectangular = true;
 		}
 
 		else if (line.find(headers(MESHUNIT)) != std::string::npos) {
 
-			string value = line.substr(headers(MESHUNIT).length());
+			std::string value = line.substr(headers(MESHUNIT).length());
 			if (value == "m") meshunit = 1.0;
 			else if (value == "nm") meshunit = 1e-9;
 			else return 0;
@@ -421,91 +421,91 @@ BError OVF2::Read_OVF2_VEC(std::string fileName, VECType& data)
 
 		else if (line.find(headers(VALUEDIM)) != std::string::npos) {
 
-			string value = line.substr(headers(VALUEDIM).length());
+			std::string value = line.substr(headers(VALUEDIM).length());
 			if (value == "3") valuedim = 3;
 			else return 0;
 		}
 
 		else if (line.find(headers(XMIN)) != std::string::npos) {
 
-			string value = line.substr(headers(XMIN).length());
+			std::string value = line.substr(headers(XMIN).length());
 			//meshunit should have been read by now (value of 1.0 is the default)
 			meshRect.s.x = (double)ToNum(value) * meshunit;
 		}
 
 		else if (line.find(headers(YMIN)) != std::string::npos) {
 
-			string value = line.substr(headers(YMIN).length());
+			std::string value = line.substr(headers(YMIN).length());
 			//meshunit should have been read by now (value of 1.0 is the default)
 			meshRect.s.y = (double)ToNum(value) * meshunit;
 		}
 
 		else if (line.find(headers(ZMIN)) != std::string::npos) {
 
-			string value = line.substr(headers(ZMIN).length());
+			std::string value = line.substr(headers(ZMIN).length());
 			//meshunit should have been read by now (value of 1.0 is the default)
 			meshRect.s.z = (double)ToNum(value) * meshunit;
 		}
 
 		else if (line.find(headers(XMAX)) != std::string::npos) {
 
-			string value = line.substr(headers(XMAX).length());
+			std::string value = line.substr(headers(XMAX).length());
 			//meshunit should have been read by now (value of 1.0 is the default)
 			meshRect.e.x = (double)ToNum(value) * meshunit;
 		}
 
 		else if (line.find(headers(YMAX)) != std::string::npos) {
 
-			string value = line.substr(headers(YMAX).length());
+			std::string value = line.substr(headers(YMAX).length());
 			//meshunit should have been read by now (value of 1.0 is the default)
 			meshRect.e.y = (double)ToNum(value) * meshunit;
 		}
 
 		else if (line.find(headers(ZMAX)) != std::string::npos) {
 
-			string value = line.substr(headers(ZMAX).length());
+			std::string value = line.substr(headers(ZMAX).length());
 			//meshunit should have been read by now (value of 1.0 is the default)
 			meshRect.e.z = (double)ToNum(value) * meshunit;
 		}
 
 		else if (line.find(headers(XNODES)) != std::string::npos) {
 
-			string value = line.substr(headers(XNODES).length());
+			std::string value = line.substr(headers(XNODES).length());
 
 			n.x = ToNum(value);
 		}
 
 		else if (line.find(headers(YNODES)) != std::string::npos) {
 
-			string value = line.substr(headers(YNODES).length());
+			std::string value = line.substr(headers(YNODES).length());
 
 			n.y = ToNum(value);
 		}
 
 		else if (line.find(headers(ZNODES)) != std::string::npos) {
 
-			string value = line.substr(headers(ZNODES).length());
+			std::string value = line.substr(headers(ZNODES).length());
 
 			n.z = ToNum(value);
 		}
 
 		else if (line.find(headers(XSTEP)) != std::string::npos) {
 
-			string value = line.substr(headers(XSTEP).length());
+			std::string value = line.substr(headers(XSTEP).length());
 
 			h.x = (double)ToNum(value) * meshunit;
 		}
 
 		else if (line.find(headers(YSTEP)) != std::string::npos) {
 
-			string value = line.substr(headers(YSTEP).length());
+			std::string value = line.substr(headers(YSTEP).length());
 
 			h.y = (double)ToNum(value) * meshunit;
 		}
 
 		else if (line.find(headers(ZSTEP)) != std::string::npos) {
 
-			string value = line.substr(headers(ZSTEP).length());
+			std::string value = line.substr(headers(ZSTEP).length());
 
 			h.z = (double)ToNum(value) * meshunit;
 		}
@@ -513,7 +513,7 @@ BError OVF2::Read_OVF2_VEC(std::string fileName, VECType& data)
 		else if (lowercase(line).find(lowercase(headers(BEGIN_DATA))) != std::string::npos) {
 
 			//convert to lowercase for comparison as some implementations may choose to have "Data" instead of "data"
-			string value = lowercase(line.substr(headers(BEGIN_DATA).length()));
+			std::string value = lowercase(line.substr(headers(BEGIN_DATA).length()));
 
 			//data headers already in lowercase but better use the lowercase conversion anyway to reduce possibility of bugs in the future
 			if (value == lowercase(data_headers(DATA_BINARY4))) {
@@ -542,9 +542,9 @@ BError OVF2::Read_OVF2_VEC(std::string fileName, VECType& data)
 
 		if (bdin.getline(line, FILEROWCHARS)) {
 
-			//some file editors will append a carriage return at the end of the line, which messes string comparisons here
+			//some file editors will append a carriage return at the end of the line, which messes std::string comparisons here
 			//e.g. Python text file write methods (write, writelines) will append a carriage return in addition to a newline
-			//if we find a carriage return at the end of the read line simply replace it with a string termination
+			//if we find a carriage return at the end of the read line simply replace it with a std::string termination
 			if (std::string(line).substr(std::string(line).length() - 1) == "\r")
 				line[std::string(line).length() - 1] = '\0';
 
@@ -666,7 +666,7 @@ BError OVF2::Read_OVF2_VEC(std::string fileName, VECType& data)
 								read_line(bdin, line);
 
 								//typically data is space-seaprated, but allow tab-separated text data too
-								vector<string> fields = split(trim_leading_spaces(string(line)), { " ", "\t" });
+								std::vector<std::string> fields = split(trim_leading_spaces(std::string(line)), { " ", "\t" });
 
 								if (fields.size() >= 3) {
 
@@ -709,7 +709,7 @@ BError OVF2::Write_OVF2_VEC(std::string fileName, VECType& data, std::string dat
 	else return error(BERROR_INCORRECTNAME);
 
 	std::ofstream bdout;
-	bdout.open(fileName.c_str(), ios::out | ios::binary);
+	bdout.open(fileName.c_str(), std::ios::out | std::ios::binary);
 
 	ExtractFilenameDirectory(fileName);
 
@@ -816,7 +816,7 @@ BError OVF2::Write_OVF2_SCA(std::string fileName, VECType& data, std::string dat
 	else return error(BERROR_INCORRECTNAME);
 
 	std::ofstream bdout;
-	bdout.open(fileName.c_str(), ios::out | ios::binary);
+	bdout.open(fileName.c_str(), std::ios::out | std::ios::binary);
 
 	ExtractFilenameDirectory(fileName);
 

@@ -17,7 +17,7 @@
 //maximum characters a text object can display (text it actually holds is not limited, but we do want to limit the text displayed on screen).
 #define MAX_TEXTOBJECT_LENGTH	50
 
-using namespace std;
+
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////TEXT OBJECT
 
@@ -29,14 +29,14 @@ class TextObject :
 	friend class TextLines;
 
 	//tao pointer pair : the TextObject* itself and TextLine* for the TextObject TextLine
-	typedef pair<TextLine*, TextObject*> tao_ptr;
+	typedef std::pair<TextLine*, TextObject*> tao_ptr;
 	//used for synchronised taos shared vector
-	typedef shared_ptr< vector<tao_ptr> > tao_vec_ptr;
+	typedef std::shared_ptr< std::vector<tao_ptr> > tao_vec_ptr;
 
 private:
 
 	//This is the full text stored in this object, which may be longer than the displayed text (only interactive objects which are not text alignment objects are limited in display length)
-	string fulltext;
+	std::string fulltext;
 
 	//number of characters to display from fulltext : limit to MAX_TEXTOBJECT_LENGTH
 	int displayTextLength;
@@ -50,7 +50,7 @@ private:
 	//Action handler functionoid: called when user interacts with this object (if set), e.g. through a mouse click.
 	//A shared_ptr is used to allow for easy garbage collection. When an interactive object is made a new pActionHandler is made. Since it's a shared_ptr we don't have to worry about deleting it in the destructor. This is useful because in the meantime this object could
 	//be copied over to another text object, in which case the reference count of pActionHandler increases. With a normal pointer simply deleting pActionHandler in the destructor would leave the other text object pActionHandler dangling.
-	shared_ptr<SimTOFunct> pActionHandler = nullptr;
+	std::shared_ptr<SimTOFunct> pActionHandler = nullptr;
 
 	//shared pointer to vector of pointers to text alignment objects (tao), including this one. If empty this is not a text alignment object. This shared_ptr is shared between the synchronised taos. 
 	//If one gets deleted then it removes its entry in the vector, thus this information is immediately available to all other synchronised taos. The first tao makes the shared_ptr, the others which synchronise on creation just add themselves to the vector.
@@ -75,7 +75,7 @@ private:
 	//from this object extract the first word (identified using a space separator) to the new object (keep same formatting), including the space separator. If no space found then shift the whole text.
 	void ShiftFirstWord(TextObject &oneWordTextObject);
 
-	//from the set full text set the text string to display
+	//from the set full text set the text std::string to display
 	void set_display_text_length(void)
 	{
 		//only limit interactive objects which are not text alignment objects
@@ -139,16 +139,16 @@ public:  //public methods
 	TextObject();
 
 	//constructor : no action handler set
-	TextObject(string text, FormatSpecifier fs);
+	TextObject(std::string text, FormatSpecifier fs);
 
 	//full constructor
-	TextObject(string text, FormatSpecifier fs, SimTOFunct *pActionHandler_, float X = 0, float Y = 0);
+	TextObject(std::string text, FormatSpecifier fs, SimTOFunct *pActionHandler_, float X = 0, float Y = 0);
 
 	//full constructor for text alignment object starter. *ptao_line is the TextLine on which this TextObject being created will be located
-	TextObject(string text, FormatSpecifier fs, SimTOFunct *pActionHandler_, TextLine* ptao_line, float X = 0, float Y = 0);
+	TextObject(std::string text, FormatSpecifier fs, SimTOFunct *pActionHandler_, TextLine* ptao_line, float X = 0, float Y = 0);
 
 	//full constructor for text alignment object with synchronisation (synchronise to existing tao: synch_tao). *ptao_line is the TextLine on which this TextObject being created will be located
-	TextObject(string text, FormatSpecifier fs, SimTOFunct *pActionHandler_, TextLine* ptao_line, TextObject* psynch_tao, float X = 0, float Y = 0);
+	TextObject(std::string text, FormatSpecifier fs, SimTOFunct *pActionHandler_, TextLine* ptao_line, TextObject* psynch_tao, float X = 0, float Y = 0);
 
 	//destructor - must manage aligned_objects
 	~TextObject();
@@ -185,7 +185,7 @@ public:  //public methods
 		CalculateRectangle(); 
 	}
 
-	//delete character from end of string or from the given index (if index is valid). Return true if deletion results in empty string.
+	//delete character from end of std::string or from the given index (if index is valid). Return true if deletion results in empty std::string.
 	bool delchar(int delIdx);
 
 	//-------------------Text formatting modification methods
@@ -194,14 +194,14 @@ public:  //public methods
 
 	//-------------------Text get methods
 
-	//Get textObject text into a string
-	friend string& operator<<(string &lhs, const TextObject &rhs) { lhs = rhs.fulltext; return lhs; }
+	//Get textObject text into a std::string
+	friend std::string& operator<<(std::string &lhs, const TextObject &rhs) { lhs = rhs.fulltext; return lhs; }
 
 	//as above but using a method
-	string GetText(void) { return fulltext; }
+	std::string GetText(void) { return fulltext; }
 
-	//Get textObject text into a string by adding to it
-	friend string& operator+=(string &lhs, const TextObject &rhs) { lhs += rhs.fulltext; return lhs; }
+	//Get textObject text into a std::string by adding to it
+	friend std::string& operator+=(std::string &lhs, const TextObject &rhs) { lhs += rhs.fulltext; return lhs; }
 
 	FormatSpecifier GetFormatSpecifier(void) { return fs; }
 
@@ -265,7 +265,7 @@ class TextLine {
 
 private:
 
-	vector<TextObject> textLineVEC;
+	std::vector<TextObject> textLineVEC;
 
 	SPLIT_ splitLine;
 
@@ -316,7 +316,7 @@ public:
 
 	TextLine(void);
 
-	TextLine(string text, FormatSpecifier fs);
+	TextLine(std::string text, FormatSpecifier fs);
 
 	~TextLine(void);
 
@@ -348,7 +348,7 @@ public:
 	//set text of a given text object on this line
 	template <typename VType> void set_textobject(int toIdx, VType &setText) { if (GoodIdx(LastElem(), toIdx)) { textLineVEC[toIdx].set(setText); RecalculateRectangles(toIdx + 1); } }
 
-	//delete character from end of string or from the given index (if index is valid). Return true if deletion results in empty textLine string.
+	//delete character from end of std::string or from the given index (if index is valid). Return true if deletion results in empty textLine std::string.
 	bool delchar(int delIdx);
 
 	//delete text from start character to given length in number of characters
@@ -359,11 +359,11 @@ public:
 
 	//-------------------Text get methods
 
-	//Get text of TextLine object into a string
-	friend string& operator<<(string &lhs, const TextLine &rhs);
+	//Get text of TextLine object into a std::string
+	friend std::string& operator<<(std::string &lhs, const TextLine &rhs);
 
-	//Get textObject text into a string by adding to it
-	friend string& operator+=(string &lhs, const TextLine &rhs) { string text; text << rhs; lhs += text; return lhs; }
+	//Get textObject text into a std::string by adding to it
+	friend std::string& operator+=(std::string &lhs, const TextLine &rhs) { std::string text; text << rhs; lhs += text; return lhs; }
 
 	//-------------------Coordinates and rectangles set / get methods
 
@@ -412,7 +412,7 @@ private:
 	SimTOFunct * pActionHandler;
 
 	//main text storage - line by line
-	vector<TextLine> textLinesVEC;
+	std::vector<TextLine> textLinesVEC;
 
 	//if set then text is wrapped to this limit
 	float widthLimit;
@@ -429,7 +429,7 @@ private:
 	bool CheckLine_InteractiveObjectState(int lineIdx);
 
 	//split given line into multiple lines fitting the widthLimit value above. Do not split interactive objects or whole words.
-	vector<TextLine> SplitLinetoFitWidth(TextLine& textLine);
+	std::vector<TextLine> SplitLinetoFitWidth(TextLine& textLine);
 
 	//spplit line at lineIdx into multiple lines which fit to widthLimit
 	void FitLinetoWidth(int &lineIdx);
@@ -488,7 +488,7 @@ public:
 	void clear(void) { textLinesVEC.clear(); textLinesVEC.push_back(TextLine()); }
 
 	//append text to last TextObject on last TextLine
-	void operator+=(const string &rhs);
+	void operator+=(const std::string &rhs);
 
 	//add a text line at the end, replacing the last line if it is blank
 	void push(const TextLine &newTextLine);
@@ -505,7 +505,7 @@ public:
 	//-------------------Text get methods
 
 	//get text of paragraph containing lineIdx
-	string get_paragraph(int lineIdx);
+	std::string get_paragraph(int lineIdx);
 
 	//-------------------Indexes retrieval methods
 
@@ -566,7 +566,7 @@ public:
 	//</c> clear formatting back to default
 
 	//in addition to text also pass the intended lineIndex where this must be placed. This is used by synchronising text alignment objects.
-	TextLine BuildFormattedTextLine(string text, int lineIndex);
+	TextLine BuildFormattedTextLine(std::string text, int lineIndex);
 };
 
 #endif

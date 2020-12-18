@@ -3,7 +3,7 @@
 #include "BorisLib.h"
 #include "Modules.h"
 
-using namespace std;
+
 
 class Mesh;
 
@@ -13,7 +13,7 @@ class Mesh;
 
 class MOptical :
 	public Modules,
-	public ProgramState<MOptical, tuple<>, tuple<>>
+	public ProgramState<MOptical, std::tuple<>, std::tuple<>>
 {
 
 #if COMPILECUDA == 1

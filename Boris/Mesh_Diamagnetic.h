@@ -27,7 +27,7 @@ class SuperMesh;
 class DiaMesh :
 	public Mesh,
 	public ProgramState<DiaMesh,
-	tuple<
+	std::tuple<
 	
 	//Mesh members
 	int, int, int, int, int, int, int, Rect, SZ3, DBL3, SZ3, DBL3, SZ3, DBL3, SZ3, DBL3, VEC_VC<DBL3>, VEC_VC<double>, VEC_VC<DBL3>, VEC_VC<double>, VEC_VC<double>, VEC_VC<double>, VEC_VC<DBL3>, VEC_VC<DBL3>, VEC_VC<DBL3>, vector_lut<Modules*>, bool,
@@ -38,7 +38,7 @@ class DiaMesh :
 	double, TEquation<double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>
 	>,
 	//Module Implementations
-	tuple<Demag, SDemag_Demag, SurfExchange, Zeeman, MOptical, Transport, Heat> >
+	std::tuple<Demag, SDemag_Demag, SurfExchange, Zeeman, MOptical, Transport, Heat> >
 {
 
 #if COMPILECUDA == 1

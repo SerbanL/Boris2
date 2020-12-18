@@ -3,7 +3,7 @@
 
 //----------------------------------- MODULES CONTROL
 
-BError SuperMesh::AddModule(string meshName, MOD_ moduleId)
+BError SuperMesh::AddModule(std::string meshName, MOD_ moduleId)
 {
 	BError error(__FUNCTION__);
 
@@ -84,7 +84,7 @@ BError SuperMesh::AddModule(string meshName, MOD_ moduleId)
 	return error;
 }
 
-BError SuperMesh::DelModule(string meshName, MOD_ moduleId)
+BError SuperMesh::DelModule(std::string meshName, MOD_ moduleId)
 {
 	BError error(__FUNCTION__);
 

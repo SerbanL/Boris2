@@ -6,7 +6,7 @@
 
 #include "MeshDefs.h"
 
-using namespace std;
+
 
 //Manages materials data bases, allowing users to save/load materials definitions
 
@@ -39,16 +39,16 @@ using namespace std;
 
 class MaterialsDB {
 
-	string default_databaseName = "BorisMDB.txt";
+	std::string default_databaseName = "BorisMDB.txt";
 
 	//name of the currently selected database : this is a file path together with file name
 	//the default setting uses the user documents path + "Boris Data" + "BorisMDB.txt"
-	string databaseName_withpath;
+	std::string databaseName_withpath;
 
 	//all entries in the currently selected database
 	//first row has column labels
 	//parameter values start at params_start_idx (see below). Two columns each, one for the value, the other for the DOI
-	vector<vector<string>> entries;
+	std::vector<std::vector<std::string>> entries;
 
 	//latest parameters loaded from data base - configured in the constructor to indicate enabled mesh parameters
 	MeshParams dbEntry;
@@ -61,13 +61,13 @@ class MaterialsDB {
 	MESH_ dbEntryType;
 
 	//for all entries in MESH_ enum associate a handle which will be used with the Type field in data base entries
-	vector_lut<string> meshTypeHandles;
+	vector_lut<std::string> meshTypeHandles;
 
 private:
 
 	//make a fresh mdb file at dbname, which must include a path, erasing any existing file
 	//also loads entries
-	BError make_mdb_file(string newdatabaseName);
+	BError make_mdb_file(std::string newdatabaseName);
 
 	//make sure the mdb file has the correct entries for parameters as obtained from dbEntry
 	//also loads entries
@@ -80,37 +80,37 @@ private:
 	BError store_entries(void);
 
 	//find row index in entries for given materialName
-	int find_entry_idx(string materialName);
+	int find_entry_idx(std::string materialName);
 
-	//replace certain characters with an ascii signalling code before sending the string with POST / GET requests
-	void encode_characters_ascii(string& message);
+	//replace certain characters with an ascii signalling code before sending the std::string with POST / GET requests
+	void encode_characters_ascii(std::string& message);
 
 public:
 
-	MaterialsDB(vector<PARAM_>& enabledParams);
+	MaterialsDB(std::vector<PARAM_>& enabledParams);
 
 	//handles the materialsdatabase command - switches the currently selected database
-	BError SwitchDataBase(string newdatabaseName);
+	BError SwitchDataBase(std::string newdatabaseName);
 
 	//get the currently set data base name
-	string GetDataBaseName(void) { return databaseName_withpath; }
+	std::string GetDataBaseName(void) { return databaseName_withpath; }
 
 	//attempt to load entry from current database for material with given name
 	//set in *pmeshType the type of material loaded, e.g. ferromagnetic, metal, insulator, etc. - see enum MESH_ in MeshDefs.h for possible values
 	//pmeshType is nullptr then ignore this parameter
 	//If succesful return true so the caller can create a mesh of the required type
 	//The actual mesh parameter values will then be available here in dbEntry
-	BError LoadMaterial(string materialName, int* pmeshType = nullptr);
+	BError LoadMaterial(std::string materialName, int* pmeshType = nullptr);
 
 	//copy parameters from current dbEntry to copy_to_this - e.g. a newly created mesh with addmaterial
 	//can also be used with the setmaterial command, which overwrites mesh parameter values in an already created mesh
 	void copy_parameters(MeshParams& copy_to_this);
 
 	//add new entry in currently selected database - use with addmdbentry command
-	BError AddMDBEntry(string materialName, MeshParams& meshParamsValues, MESH_ meshType);
+	BError AddMDBEntry(std::string materialName, MeshParams& meshParamsValues, MESH_ meshType);
 
 	//delete entry in currently selected database
-	BError DelMDBEntry(string materialName);
+	BError DelMDBEntry(std::string materialName);
 
 	//reload the currently selected database
 	BError RefreshMDB(void);
@@ -119,12 +119,12 @@ public:
 	//If successfully sent, the entry will be checked by a moderator, and if correct will become available for all users
 	//If successfully sent, returnMessage is empty, otherwise it contains a message detailing why the sync request couldn't be sent (e.g. incorrectly formatted entry / missing parameters etc. - too specific to set this as a BError entry)
 	//BError contains general info, e.g. couldn't connect etc. (or no error code if everything fine)
-	BError RequestMDBSync(string materialName, string domain_name, string mdb_entry_handler, string emailContact, string *presponseMessage);
+	BError RequestMDBSync(std::string materialName, std::string domain_name, std::string mdb_entry_handler, std::string emailContact, std::string *presponseMessage);
 
 	//check if there are any new online materials data base entries - should only be called once at the start of the program to limit the potential for spamming the server
 	//the server should also have a built-in timer to reject requests from users if sent too often from same ip
-	BError CheckMDBLastUpdate(string *presponseMessage);
+	BError CheckMDBLastUpdate(std::string *presponseMessage);
 
 	//Update BorisMDB.txt with any new entries available in the online version. Handles the updatemdb command. 
-	BError UpdateMDB(string domain_name, string mdb_handler, string* presponseMessage);
+	BError UpdateMDB(std::string domain_name, std::string mdb_handler, std::string* presponseMessage);
 };

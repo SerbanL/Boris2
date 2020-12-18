@@ -3,7 +3,7 @@
 #include "BorisLib.h"
 #include "Modules.h"
 
-using namespace std;
+
 
 class SuperMesh;
 
@@ -28,7 +28,7 @@ class SuperMesh;
 class SDemag :
 	public Modules,
 	public Convolution<SDemag, DemagKernel>,
-	public ProgramState<SDemag, tuple<bool, SZ3, bool, int, INT3>, tuple<>>
+	public ProgramState<SDemag, std::tuple<bool, SZ3, bool, int, INT3>, std::tuple<>>
 {
 #if COMPILECUDA == 1
 	friend SDemagCUDA;
@@ -62,11 +62,11 @@ private:
 	bool use_multilayered_convolution = true;
 
 	//collection of all SDemag_Demag modules in individual (anti)ferromagnetic meshes - these modules are only created by this SDemag module
-	vector<SDemag_Demag*> pSDemag_Demag;
+	std::vector<SDemag_Demag*> pSDemag_Demag;
 
 	//collect FFT input spaces : after Forward FFT the ffts of M from the individual meshes will be found here
 	//These are used as inputs to kernel multiplications. Same order as pSDemag_Demag.
-	vector<VEC<ReIm3>*> FFT_Spaces_Input;
+	std::vector<VEC<ReIm3>*> FFT_Spaces_Input;
 
 	//collection of rectangles of meshes, same ordering as for pSDemag_Demag and FFT_Spaces, used in multi-layered convolution
 	//these are not necessarily the rectangles of the input M meshes, but are the rectangles of the transfer meshes (M -> transfer -> convolution)
@@ -74,10 +74,10 @@ private:
 	//in 2D mode the rectangles can differ in thickness but must have the same xy size
 	//thus in 3D mode find largest one and extend all the other rectangles to match (if possible try to have them overlapping in xy-plane projections so we can use kernel symmetries)
 	//in 2D mode find largest xy dimension and extend all xy dimensions -> again try to overlap their xy-plane projections
-	vector<Rect> Rect_collection;
+	std::vector<Rect> Rect_collection;
 
 	//demag kernels used for multilayered convolution, one collection per mesh/SDemag_Demag module. Don't recalculate redundant kernels in the collection.
-	vector<DemagKernelCollection*> kernel_collection;
+	std::vector<DemagKernelCollection*> kernel_collection;
 
 	//common discretisation number of cells
 	//int multi-layered convolution, all layers must have exactly the same discretisation number of cells. This can be changed by the user but the default setting should suffice for the vast majority of cases.

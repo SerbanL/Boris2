@@ -1918,6 +1918,9 @@
     <ClCompile Include="SuperMesh_MonteCarlo.cpp">
       <Filter>04. SUPERMESH\SUPERMESH - CPU</Filter>
     </ClCompile>
+    <ClCompile Include="MeshBaseQuantities.cpp">
+      <Filter>02. MESHES\MESHES BASE - CPU</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="BorisWinapi.rc">

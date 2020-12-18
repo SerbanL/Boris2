@@ -78,7 +78,7 @@ public:
 	PhysQ FetchOnScreenPhysicalQuantity(double detail_level, bool getBackground);
 
 	//save the quantity currently displayed on screen in an ovf2 file using the specified format
-	BError SaveOnScreenPhysicalQuantity(string fileName, string ovf2_dataType);
+	BError SaveOnScreenPhysicalQuantity(std::string fileName, std::string ovf2_dataType);
 
 	//Before calling a run of GetDisplayedMeshValue, make sure to call PrepareDisplayedMeshValue : this calculates and stores in displayVEC storage and quantities which don't have memory allocated directly, but require computation and temporary storage.
 	void PrepareDisplayedMeshValue(void);

@@ -1,73 +1,355 @@
-#NetSocks Module Updated on : 30/07/2020
-#Boris version : 2.81
-
+#NetSocks Module Updated on : 17/12/2020
+#Boris version : 3.0
+import sys
+import os
+import subprocess
+import platform
 import socket
-import time
 import matplotlib.pyplot as plt
 import numpy as np
 from itertools import product
 import struct
+import time
+from copy import deepcopy
 
+###############################################################################################################################
+
+class ElementaryShape:
+    
+    #################### DATA
+    
+    #name of elementary shape: disk, rect, triangle, ellipsoid, pyramid, tetrahedron, cone, torus
+    name = ""
+    
+    #dimensions in metres
+    dimensions = np.array([0.0, 0.0, 0.0])
+    
+    #shape centre coordinates position, relative to mesh
+    position = np.array([0.0, 0.0, 0.0])
+    
+    #rotation in degrees as psi (around y), theta (around x), phi (around z)
+    rotation = np.array([0.0, 0.0, 0.0])
+    
+    #number of x, y, z repetitions for generating arrays
+    repetitions = np.array([1, 1, 1])
+    
+    #x, y, z displacement in metres used when generating arrays
+    displacement = np.array([0.0, 0.0, 0.0])
+    
+    #method used to draw shape: add, sub, xor, and
+    method = "add"
+    
+    #################### CTOR
+    
+    def __init__(
+            self,
+            name = "",
+            dimensions = np.array([0.0, 0.0, 0.0]), 
+            position = np.array([0.0, 0.0, 0.0]),
+            rotation = np.array([0.0, 0.0, 0.0]),
+            repetitions = np.array([1, 1, 1]),
+            displacement = np.array([0.0, 0.0, 0.0]),
+            method = "add"): 
+        
+        self.name = deepcopy(name)
+        self.dimensions = np.array(deepcopy(dimensions))
+        self.position = np.array(deepcopy(position))
+        self.rotation = np.array(deepcopy(rotation))
+        self.repetitions = np.array(deepcopy(repetitions))
+        self.displacement = np.array(deepcopy(displacement))
+        self.method = np.array(deepcopy(method))
+        
+    #################### DIMENSIONS
+        
+    def setdimensions(self, dimensions):
+        """set dimensions of elementary shape"""
+        self.dimensions = np.array(deepcopy(dimensions))
+        
+    def scale(self, scalefactors):
+        """scale dimensions of elementary shape"""
+        self.dimensions *= np.array(scalefactors)
+            
+    #################### POSITION
+            
+    def setposition(self, position):
+        """set position of elementary shape"""
+        self.position = np.array(deepcopy(position))
+        
+    def move(self, positionshift):
+        """translate position of elementary shape"""
+        self.position += np.array(positionshift)
+        
+    #################### ROTATION
+            
+    def setrotation(self, rotation):
+        """set rotation of elementary shape"""
+        self.rotation = np.array(deepcopy(rotation))
+        
+    def rotate(self, rotation):
+        """rotate elementary shape"""
+        self.rotation += np.array(rotation)
+        
+    #################### REPETITIONS
+            
+    def setrepetitions(self, repetitions, displacement):
+        """set number of repetitions and displacement of elementary shape for generating array"""
+        self.repetitions = np.array(deepcopy(repetitions))
+        self.displacement = np.array(deepcopy(displacement))
+        
+    #################### METHOD
+    
+    def setaddshape(self):
+        self.method = "add"
+        
+    def setsubshape(self):
+        self.method = "sub"
+        
+    def is_additive(self):
+        return self.method == "add"
+    
+    def is_subtractive(self):
+        return self.method == "sub"
+    
+    #################### CONVERSION
+    
+    def tostring(self):
+        lst = [self.dimensions, self.position, self.rotation, self.repetitions, self.displacement]
+        text_lst = [self.name] + [" ".join(map(str, elem)) for elem in lst] + [self.method]
+        return " ".join(map(str, text_lst))
+
+###############################################################################################################################
+
+class Shape:
+    
+    #################### DATA
+    
+    #List of elementary shapes
+    shapes = []
+    
+    #################### CTOR
+    
+    def __init__(self, shape = ElementaryShape()):
+        self.shapes = [deepcopy(shape)]
+        
+    #################### OPERATORS
+        
+    #Add two shapes, returning new copy
+    def __add__(self, shape_right):
+        
+        newshape = Shape()
+        newshape.shapes = deepcopy(self.shapes) + deepcopy(shape_right.shapes)
+        return newshape
+    
+    #Subtract two shapes, returning new copy
+    def __sub__(self, shape_right):
+        
+        newshape_left = deepcopy(self)
+        newshape_right = deepcopy(shape_right)
+        for shape in newshape_right.shapes:
+            if shape.is_additive(): shape.setsubshape()
+            elif shape.is_subtractive(): shape.setaddshape()
+        return newshape_left + newshape_right
+      
+    #################### AUXILIARY
+    
+    def rotate_object_yxz(self, r, psi_theta_phi_deg):
+        
+        psi, theta, phi = psi_theta_phi_deg[0] * np.pi / 180, psi_theta_phi_deg[1] * np.pi / 180, psi_theta_phi_deg[2] * np.pi / 180
+        rr = np.array(r)
+        
+        rr[0] = (np.cos(psi) * np.cos(phi) + np.sin(psi) * np.sin(theta) * np.sin(phi)) * r[0] + (np.cos(phi) * np.sin(psi) * np.sin(theta) - np.cos(psi) * np.sin(phi)) * r[1] + (np.cos(theta) * np.sin(psi)) * r[2]
+        rr[1] = (np.cos(theta) * np.sin(phi)) * r[0] + (np.cos(theta) * np.cos(phi)) * r[1] - np.sin(theta) * r[2]
+        rr[2] = (np.cos(psi) * np.sin(theta) * np.sin(phi) - np.cos(phi) * np.sin(psi)) * r[0] + (np.cos(psi) * np.cos(phi) * np.sin(theta) + np.sin(psi) * np.sin(phi)) * r[1] + (np.cos(psi) * np.cos(theta)) * r[2]
+        return rr
+    
+    #################### DIMENSIONS
+    
+    def setdimensions(self, dimensions):
+        """set dimensions of first elementary shape contained, and scale everything else in proportion"""
+        scalefactors = np.array(dimensions) / self.shapes[0].dimensions
+        self.scale(scalefactors)
+        return self
+        
+    def scale(self, scalefactors):
+        """scale dimensions of shape"""
+        current_position = self.shapes[0].position
+        for shape in self.shapes: 
+            shape.scale(scalefactors)
+            shape.setposition(current_position + (shape.position - current_position) * scalefactors)
+        return self
+    
+    #################### POSITION    
+    
+    def setposition(self, position):
+        """set position of shape, defined by the position of the first elementary shape contained"""
+        current_position = self.shapes[0].position
+        self.shapes[0].setposition(position)
+        for shape in self.shapes[1:]: shape.move(position - current_position)
+        return self
+        
+    def move(self, positionshift):
+        """translate position of shape"""
+        for shape in self.shapes: shape.move(positionshift)
+        return self
+        
+    #################### ROTATION
+    
+    def setrotation(self, rotation):
+        """set rotation of shape, around shape position as defined by the first elementary shape contained"""
+        current_position = self.shapes[0].position
+        for shape in self.shapes:
+            shape.setposition(current_position + self.rotate_object_yxz(shape.position - current_position, rotation))
+            shape.setrotation(rotation)
+        return self
+        
+    def rotate(self, rotation):
+        """rotate shape around shape position as defined by the first elementary shape contained"""
+        current_position = self.shapes[0].position
+        for shape in self.shapes:
+            shape.setposition(current_position + self.rotate_object_yxz(shape.position - current_position, rotation))
+            shape.rotate(rotation)
+        return self
+    
+    #################### REPETITIONS
+    
+    def setrepetitions(self, repetitions, displacement):
+        """set number of repetitions and displacement of shape for generating array"""
+        for shape in self.shapes: shape.setrepetitions(repetitions, displacement)
+        return self
+        
+    #################### CONVERSION
+    
+    def tostring(self):
+        shapes_text = [shape.tostring() for shape in self.shapes]
+        return " ".join(shapes_text)
+        
+    #################### ELEMENTARY SHAPES GENERATORS
+        
+    #define an elementary disk shape
+    def disk(dimensions = np.array([0.0, 0.0, 0.0]), position = np.array([0.0, 0.0, 0.0])):
+        return Shape(ElementaryShape("disk", dimensions, position))
+    
+    #define an elementary rectangle shape
+    def rect(dimensions = np.array([0.0, 0.0, 0.0]), position = np.array([0.0, 0.0, 0.0])):
+        return Shape(ElementaryShape("rect", dimensions, position))
+    
+    #define an elementary triangle shape
+    def triangle(dimensions = np.array([0.0, 0.0, 0.0]), position = np.array([0.0, 0.0, 0.0])):
+        return Shape(ElementaryShape("triangle", dimensions, position))
+    
+    #define an elementary ellipsoid shape
+    def ellipsoid(dimensions = np.array([0.0, 0.0, 0.0]), position = np.array([0.0, 0.0, 0.0])):
+        return Shape(ElementaryShape("ellipsoid", dimensions, position))
+    
+    #define an elementary pyramid shape
+    def pyramid(dimensions = np.array([0.0, 0.0, 0.0]), position = np.array([0.0, 0.0, 0.0])):
+        return Shape(ElementaryShape("pyramid", dimensions, position))
+    
+    #define an elementary tetrahedron shape
+    def tetrahedron(dimensions = np.array([0.0, 0.0, 0.0]), position = np.array([0.0, 0.0, 0.0])):
+        return Shape(ElementaryShape("tetrahedron", dimensions, position))
+    
+    #define an elementary cone shape
+    def cone(dimensions = np.array([0.0, 0.0, 0.0]), position = np.array([0.0, 0.0, 0.0])):
+        return Shape(ElementaryShape("cone", dimensions, position))
+    
+    #define an elementary torus shape
+    def torus(dimensions = np.array([0.0, 0.0, 0.0]), position = np.array([0.0, 0.0, 0.0])):
+        return Shape(ElementaryShape("torus", dimensions, position))
+
+        
 ###############################################################################################################################
 
 class NSClient:
 
-    #################### DATA #######################
+    #################### DATA
     
-    # Create a TCP/IP socket
-    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-
     maxLenMessage = 4096
     timeout_ms = 300000
     
-    serverip = ''
-    defaultPort = 1542
+    serverip = 'localhost'
+    serverport = 1542
+    serverpwd = ''
     
-    connected = False
+    #verbosity of Boris console
+    verbose = False
     
-    pollTimer_ms = 0
+    #verbosity of Python script (adjusted by configure)
+    script_verbose = True
 
-    #################### CTOR / DTOR #######################
+    #on Windows assume this is where Boris.exe is (should be if installed with installer)
+    #on Linux don't attempt to define a default : user will have to provide path if they want automatic startup
+    win_default_boris_path = 'C:/Program Files (x86)/Boris'
 
-    def __init__(self, serverip = 'localhost', verbose = False):
+    #################### CTOR / DTOR
 
-        self.serverip = serverip        
+    def __init__(self, 
+                 serverip = 'localhost', serverport = 1542, serverpwd = '', 
+                 cudaDevice = -1, 
+                 boris_path = '', boris_exe = '',
+                 window = 'back',
+                 verbose = False):
+
+        self.serverip = serverip     
+        self.serverport = serverport
         self.verbose = verbose
-
-        print('connecting to %s:%s' % (serverip, self.defaultPort))
-
-        try:
-            self.sock.connect((serverip, self.defaultPort))
-            self.sock.settimeout(self.timeout_ms / 1000)
-            self.connected = True
-        except:
-            self.connected = False
+        self.serverpwd = serverpwd
+        
+        #if boris path not specified use default if using Windows
+        #Linux users will need to provide path
+        if boris_path == '':
             
-    def __del__(self):
-        #make sure any previous instance has the socket closed before starting a new one
-        self.sock.close()
+            if platform.system() == 'Windows':
+                boris_path = self.win_default_boris_path
+                
+        if boris_exe == '':
+            
+            if platform.system() == 'Windows':
+                boris_exe = 'Boris.exe'
+            
+            else:
+                boris_exe = './BorisLin'
+            
+        #start a new Boris instance if none exists listening on serverport, if we have a path to Boris.exe            
+        if len(boris_path):
+            
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+        
+                try:
+                    sock.connect((self.serverip, self.serverport))
+                except:
+                    if serverip == 'localhost':
+                        print("No server found on port %d. Starting new instance." % serverport)
+                        os.chdir(boris_path)
+                        subprocess.Popen([boris_exe, str(serverport), str(cudaDevice), window, serverpwd])
+                        
+                        #now make sure server is running and ready to accept input
+                        for tryidx in range(10):
+                        
+                            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock2:
+                                
+                                try:
+                                    sock2.connect((self.serverip, self.serverport))
+                                    print("New instance started.")
+                                    break
+                                except:
+                                    time.sleep(0.1)
+                        else:
+                            print("Couldn't start new instance with required server port - start it manually.");
+                                
+                                
+                    else:
+                        print("No server found on port %d. Make sure remote host has a Boris instance running for given port and is accessible." % serverport)
 
-    #################### AUXILIARY #######################
+    #################### AUXILIARY
 
     #use this on return parameters : returned parameters can either be numbers or a word (text without spaces)
     #the words by themselves cannot be converted to numbers
     #thus try to convert to a number first, if not must be a word
-    def Convert_Returned_Parameter(self, string):
+    def convert_returned_parameter(self, string):
         try:    return float(string)
         except: return string
-
-    #wait for data to be returned by server using a blocking socket (typically used with the run command to wait for simulation finished signal)
-    def WaitForResponse(self):
-        
-        try: 
-            self.sock.setblocking(True)
-            data = str(self.sock.recv(self.maxLenMessage), 'utf-8')
-            print('RX : %s' % data)
-            self.sock.settimeout(self.timeout_ms / 1000)
-        except:
-            print("WaitForResponse: failed.")
-            self.sock.close()
-            
+    
     #SendCommand also serves as auxiliary method
     
     #check if we can convert the row text to list of numbers; expecting tab-spaced data
@@ -79,11 +361,26 @@ class NSClient:
 
         return True
     
-    #################### PLOTTING HELPERS #######################
+    #Set directory same as script directory if running on localhost only. Reset to default state unless specified otherwise
+    def configure(self, reset_to_default = True, script_verbose = True):
+        """Set directory same as script directory, and reset to default state if called with True; also set script verbosity"""
+        
+        self.script_verbose = script_verbose
+        
+        if self.serverip == 'localhost':
+            directory = os.path.dirname(sys.argv[0]) + "/"
+            print("Working directory is: ", directory)
+            if reset_to_default: self.default()
+            self.chdir(directory)
+            
+        elif reset_to_default: self.default()
+            
+    
+    #################### PLOTTING HELPERS
     
     #load columns from tab-spaced data file, e.g. as outputted by a Boris simulation
     def Get_Data_Columns(self, fileName, column_indexes = '', separator = '\t'):
-        
+        """Get indexed columns from tab-spaced data file as a list"""
         #Get data locally
         f = open(fileName, 'r')
         rows = [[float(number) for number in row.rstrip().split(separator)] for row in f.readlines() if self.can_convert(row, separator)]
@@ -105,7 +402,7 @@ class NSClient:
         
     #Save data columns in file name, tab separated
     def Save_Data_Columns(self, fileName, data_columns):
-        
+        """Save data columns to tab-spaced data file"""
         f = open(fileName, 'w')
         
         max_len = 0
@@ -135,7 +432,7 @@ class NSClient:
     #Simple plot of y vs x : helps if you just want to see a simple simulation output plot
     #you can get data from simulation output file and plot it in just 2 lines of code in your Python script (can be done in 1 line with 2 calls to Get_Data_Columns instead)
     def Plot_Data(self, x, y, xlabel = '', ylabel = '', title = '', label_ = '', imageFile = ''):
-        
+        """Simple plotting helper"""
         plt.axes(xlabel = xlabel, ylabel = ylabel, title = title)
         plt.grid()
         plt.plot(x, y, label = label_)
@@ -146,8 +443,8 @@ class NSClient:
         plt.show()
         
     def PlotPolar_Data(self, r, theta_deg, xlabel = '', ylabel = '', title = '', label_ = '', imageFile = ''):
-        
-        #plt.axes(xlabel = xlabel, ylabel = ylabel, title = title)
+        """Simple plotting helper: polar"""
+        plt.axes(xlabel = xlabel, ylabel = ylabel, title = title)
         plt.grid()
         plt.polar([np.radians(t) for t in theta_deg], r, label = label_)
         if len(label_): plt.legend()
@@ -156,17 +453,18 @@ class NSClient:
         
         plt.show()
 
-    #################### OVF2 HELPERS #######################
+    #################### OVF2 HELPERS
 
     #write an OVF2 file for a mesh with given rectangle (m), number of nodes and values in vec list ordered by x, then y, finally z.
     #rect_m must be a list with 6 elements : [xmin, ymin, zmin, xmax, ymax, zmax]
     #nodes must be a list with 3 integers : [xnodes, ynodes, znodes]; the cellsize is determined from rect_m and nodes
     #vec can be a scalar quantity (list of floats), or a vector quantity (list of 3-element lists)
     def Write_OVF2(self, fileName, vec, nodes, rect_m):
-        
+        """Write an OVF2 file from numpy array with given integer number of cells (nodes) and mesh rectangle (m)"""
         lines = []
         
-        vector = isinstance(vec[0], list) and len(vec[0]) == 3
+        if not isinstance(vec, np.ndarray): vec = np.asarray(vec)
+        is_vectorial = (vec.shape[1] == 3)
         
         lines.append("# OOMMF OVF 2.0")
         lines.append("# Segment count: 1")
@@ -195,7 +493,7 @@ class NSClient:
         lines.append("# ystepsize: " + str((rect_m[4] - rect_m[1]) / nodes[1]))
         lines.append("# zstepsize: " + str((rect_m[5] - rect_m[2]) / nodes[2]))
         lines.append("#")
-        if vector: lines.append("# valuedim: 3")
+        if is_vectorial: lines.append("# valuedim: 3")
         else: lines.append("# valuedim: 1")
         lines.append("#")
         lines.append("# End: Header")
@@ -207,18 +505,10 @@ class NSClient:
             #write header
             for line in lines: f.write(bytes(line + '\n', 'utf-8'))
             
-            #check value
-            vec.insert(0, 123456789012345.0)
-            #write vec_sca as 8-byte floats (including the check value)
-            if vector:
-                #write vector quantity
-                for value in vec:
-                    float_aray = np.array(value, 'float64')
-                    float_aray.tofile(f)
-            else:
-                #write scalar quantity
-                float_aray = np.array(vec, 'float64')
-                float_aray.tofile(f)
+            #insert check value and flatten
+            vec = np.insert(vec, 0, 123456789012345.0)
+            #write as 8-byte floats (including the check value)
+            vec.tofile(f)
             
             #write termination
             f.write(bytes("# End: data " + "binary 8" + '\n', 'utf-8'))
@@ -229,8 +519,8 @@ class NSClient:
         return False
     
     def Read_OVF2(self, fileName):
-        
-        vec = []
+        """Return a numpy array, integer number of cells, and mesh rectangle, from OVF2 file"""
+        vec = np.ndarray(0)
         
         meshtype_rectangular = False
         meshunit = 1.0
@@ -364,9 +654,10 @@ class NSClient:
                             return vec, n, meshRect
                         
                         if valuedim == 1:
-                            vec = [0.0] * n[0]*n[1]*n[2]
+                            vec = np.zeros((n[0]*n[1]*n[2], 1))
                             
-                            for i, j, k in product(range(n[0]), range(n[1]), range(n[2])):
+                            #k, j, i order is important, since itertools product iterates the outer index first, and the file has i iterated first
+                            for k, j, i in product(range(n[2]), range(n[1]), range(n[0])):
                                 if data_bytes == 4:
                                     value = struct.unpack('f', f.read(4))
                                     vec[i + j*n[0] + k*n[0]*n[1]] = value[0]
@@ -379,12 +670,12 @@ class NSClient:
                                     vec[i + j*n[0] + k*n[0]*n[1]] = float(line)
                             
                         elif valuedim == 3:
-                            vec = [[0.0, 0.0, 0.0]] * n[0]*n[1]*n[2]
-                            
-                            for i, j, k in product(range(n[0]), range(n[1]), range(n[2])):
+                            vec = np.zeros((n[0]*n[1]*n[2], 3))
+
+                            for k, j, i in product(range(n[2]), range(n[1]), range(n[0])):
                                 if data_bytes == 4:
                                     value = struct.unpack('3f', f.read(4*3))
-                                    vec[i + j*n[0] + k*n[0]*n[1]] = [value[0], value[1], value[2]]
+                                    vec[i + j*n[0] + k*n[0]*n[1]] = [value[0], value[0], value[2]]
                                 elif data_bytes == 8:
                                     value = struct.unpack('3d', f.read(8*3))
                                     vec[i + j*n[0] + k*n[0]*n[1]] = [value[0], value[1], value[2]] 
@@ -399,19 +690,34 @@ class NSClient:
         
         return vec, n, meshRect
         
-
-    #################### SPECIAL COMMANDS #######################
+    #################### SPECIAL COMMANDS
 
     #Send run command and wait for simulation to finish : blocking call
     def Run(self):
 
-        self.SendCommand("run")
-        self.WaitForResponse()
+        """Run simulation and wait for it to finish: blocking call"""
+        
+        #Now wait for response using a blocking socket
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+        
+            sock.connect((self.serverip, self.serverport))
+            
+            # Look for the response
+            try:
+                if self.script_verbose: print('TX : run')
+                sock.sendall(bytes(self.serverpwd + '*' + "run", 'utf-8'))
+                #receive response to run command
+                str(sock.recv(self.maxLenMessage), 'utf-8')
+                #now wait for "stopped" signal
+                data = str(sock.recv(self.maxLenMessage), 'utf-8')
+                if self.script_verbose: print('RX : %s' % data)
+            except:
+                print("SendCommand (receive): timed out.")
         
     #Save in given filename a new row containing parameters in dataList as tab-spaced characters
     #This uses the savecomment command to save in the local Boris data directory as currently configured in Boris
     def SaveDataToFile(self, fileName, dataList):
-
+        """Save a single row of tab-spaced data, appending to file"""
         command = 'savecomment ' + fileName + ' '
 
         for entry in dataList: command += str(entry) + '\t'
@@ -419,7 +725,7 @@ class NSClient:
         #send command with parameters (remove tab if last character - not needed)
         self.SendCommand(command.rstrip('\t'))
 
-    #################### CONSOLE COMMANDS <-> METHODS #######################
+    #################### CONSOLE COMMANDS <-> METHODS
 
     #Structure of command methods (use this to generate them programatically after grabbing commands list with their USAGE from Boris):
     #Thus if you add new commands in Boris you can just run a separate script to update this module automatically so you don't have to keep track of changes
@@ -582,6 +888,9 @@ class NSClient:
     def designateground(self, electrode_index = ''):
     	return self.SendCommand("designateground", [electrode_index])
     
+    def disabletransportsolver(self, status = ''):
+    	return self.SendCommand("disabletransportsolver", [status])
+    
     def display(self, name = '', meshname = ''):
     	return self.SendCommand("display", [name, meshname])
     
@@ -590,6 +899,9 @@ class NSClient:
     
     def displaydetail(self, size = ''):
     	return self.SendCommand("displaydetail", [size])
+    
+    def displayrenderthresholds(self, thresh1 = '', thresh2 = '', thresh3 = ''):
+        return self.SendCommand("displayrenderthresholds", [thresh1, thresh2, thresh3])
     
     def displaythresholds(self, minimum = '', maximum = ''):
     	return self.SendCommand("displaythresholds", [minimum, maximum])
@@ -756,11 +1068,11 @@ class NSClient:
     def dp_saveappend(self, filename = '', dp_indexes = ''):
     	return self.SendCommand("dp_saveappend", [filename, dp_indexes])
     
-    def dp_saveasrow(self, filename = '', dp_index = ''):
-    	return self.SendCommand("dp_saveasrow", [filename, dp_index])
-    
     def dp_saveappendasrow(self, filename = '', dp_index = ''):
     	return self.SendCommand("dp_saveappendasrow", [filename, dp_index])
+    
+    def dp_saveasrow(self, filename = '', dp_index = ''):
+    	return self.SendCommand("dp_saveasrow", [filename, dp_index])
     
     def dp_sequence(self, dp_index = '', start_value = '', increment = '', points = ''):
     	return self.SendCommand("dp_sequence", [dp_index, start_value, increment, points])
@@ -870,6 +1182,9 @@ class NSClient:
     def loadmaskfile(self, z_depth = '', filename = ''):
     	return self.SendCommand("loadmaskfile", [z_depth, filename])
     
+    def loadovf2curr(self, filename = ''):
+    	return self.SendCommand("loadovf2curr", [filename])
+    
     def loadovf2disp(self, filename = ''):
     	return self.SendCommand("loadovf2disp", [filename])
     
@@ -881,6 +1196,9 @@ class NSClient:
     
     def loadovf2strain(self, filename_diag = '', filename_odiag = ''):
     	return self.SendCommand("loadovf2strain", [filename_diag, filename_odiag])
+    
+    def loadovf2temp(self, filename = ''):
+    	return self.SendCommand("loadovf2temp", [filename])
     
     def loadsim(self, filename = ''):
     	return self.SendCommand("loadsim", [filename])
@@ -897,8 +1215,14 @@ class NSClient:
     def materialsdatabase(self, mdbname = ''):
     	return self.SendCommand("materialsdatabase", [mdbname])
     
+    def mcconstrain(self, value = '', meshname = ''):
+    	return self.SendCommand("mcconstrain", [value, meshname])
+    
     def mcellsize(self, value = ''):
     	return self.SendCommand("mcellsize", [value])
+    
+    def mcserial(self, value = '', meshname = ''):
+    	return self.SendCommand("mcserial", [value, meshname])
     
     def memory(self):
     	return self.SendCommand("memory")
@@ -942,6 +1266,9 @@ class NSClient:
     def neelpreparemovingmesh(self, meshname = ''):
     	return self.SendCommand("neelpreparemovingmesh", [meshname])
     
+    def newinstance(self, port = '', cudaDevice = '', password = ''):
+    	return self.SendCommand("newinstance", [port, cudaDevice, password])
+    
     def ode(self):
     	return self.SendCommand("ode")
     
@@ -960,8 +1287,8 @@ class NSClient:
     def preparemovingmesh(self, meshname = ''):
     	return self.SendCommand("preparemovingmesh", [meshname])
     
-    def random(self, meshname = ''):
-    	return self.SendCommand("random", [meshname])
+    def random(self, meshname = '', seed = ''):
+    	return self.SendCommand("random", [meshname, seed])
     
     def refineroughness(self, value = '', meshname = ''):
     	return self.SendCommand("refineroughness", [value, meshname])
@@ -987,8 +1314,8 @@ class NSClient:
     def robinalpha(self, robin_alpha = '', meshname = ''):
     	return self.SendCommand("robinalpha", [robin_alpha, meshname])
     
-    def roughenmesh(self, depth = '', axis = '', seed = ''):
-    	return self.SendCommand("roughenmesh", [depth, axis, seed])
+    def roughenmesh(self, depth = '', side = '', seed = ''):
+    	return self.SendCommand("roughenmesh", [depth, side, seed])
     
     def savecomment(self, filename = '', comment = ''):
     	return self.SendCommand("savecomment", [filename, comment])
@@ -1029,6 +1356,18 @@ class NSClient:
     def scriptserver(self, status = ''):
     	return self.SendCommand("scriptserver", [status])
     
+    def selectcudadevice(self, number = ''):
+    	return self.SendCommand("selectcudadevice", [number])
+    
+    def serverpassword(self, password = ''):
+    	return self.SendCommand("serverpassword", [password])
+    
+    def serverport(self, port = ''):
+    	return self.SendCommand("serverport", [port])
+    
+    def serversleepms(self, time_ms = ''):
+    	return self.SendCommand("serversleepms", [time_ms])
+    
     def setafmesh(self, name = '', rectangle = ''):
     	return self.SendCommand("setafmesh", [name, rectangle])
     
@@ -1043,6 +1382,9 @@ class NSClient:
     
     def setcurrent(self, current = ''):
     	return self.SendCommand("setcurrent", [current])
+    
+    def setcurrentdensity(self, Jx = '', Jy = '', Jz = '', meshname = ''):
+    	return self.SendCommand("setcurrentdensity", [Jx, Jy, Jz, meshname])
     
     def setdata(self, dataname = '', meshname = '', rectangle = ''):
     	return self.SendCommand("setdata", [dataname, meshname, rectangle])
@@ -1080,6 +1422,9 @@ class NSClient:
     def setmesh(self, name = '', rectangle = ''):
     	return self.SendCommand("setmesh", [name, rectangle])
     
+    def setobjectangle(self, polar = '', azimuthal = '', position = '', meshname = ''):
+    	return self.SendCommand("setobjectangle", [polar, azimuthal, position, meshname])
+    
     def setode(self, equation = '', evaluation = ''):
     	return self.SendCommand("setode", [equation, evaluation])
     
@@ -1112,6 +1457,51 @@ class NSClient:
     
     def setstress(self, magnitude = '', polar = '', azimuthal = '', meshname = ''):
     	return self.SendCommand("setstress", [magnitude, polar, azimuthal, meshname])
+    
+    def shape_cone(self, len_x = '', len_y = '', len_z = '', cpos_x = '', cpos_y = '', cpos_z = ''):
+    	return self.SendCommand("shape_cone", [len_x, len_y, len_z, cpos_x, cpos_y, cpos_z])
+    
+    def shape_disk(self, dia_x = '', dia_y = '', cpos_x = '', cpos_y = '', z_start = '', z_end = ''):
+    	return self.SendCommand("shape_disk", [dia_x, dia_y, cpos_x, cpos_y, z_start, z_end])
+    
+    def shape_displacement(self, x = '', y = '', z = ''):
+    	return self.SendCommand("shape_displacement", [x, y, z])
+    
+    def shape_ellipsoid(self, dia_x = '', dia_y = '', dia_z = '', cpos_x = '', cpos_y = '', cpos_z = ''):
+    	return self.SendCommand("shape_ellipsoid", [dia_x, dia_y, dia_z, cpos_x, cpos_y, cpos_z])
+    
+    def shape_method(self, method = ''):
+    	return self.SendCommand("shape_method", [method])
+    
+    def shape_pyramid(self, len_x = '', len_y = '', len_z = '', cpos_x = '', cpos_y = '', cpos_z = ''):
+    	return self.SendCommand("shape_pyramid", [len_x, len_y, len_z, cpos_x, cpos_y, cpos_z])
+    
+    def shape_rect(self, len_x = '', len_y = '', cpos_x = '', cpos_y = '', z_start = '', z_end = ''):
+    	return self.SendCommand("shape_rect", [len_x, len_y, cpos_x, cpos_y, z_start, z_end])
+    
+    def shape_repetitions(self, x = '', y = '', z = ''):
+    	return self.SendCommand("shape_repetitions", [x, y, z])
+    
+    def shape_rotation(self, theta = '', phi = ''):
+    	return self.SendCommand("shape_rotation", [theta, phi])
+    
+    def shape_set(self, shape = Shape()):
+    	return self.SendCommand("shape_set", [shape.tostring()])
+    
+    def shape_setangle(self, shape = Shape(), theta = '', polar = ''):
+    	return self.SendCommand("shape_setangle", [shape.tostring(), theta, polar])
+    
+    def shape_setparam(self, paramname = '', shape = Shape(), scaling_value = ''):
+    	return self.SendCommand("shape_setparam", [paramname, shape.tostring(), scaling_value])
+    
+    def shape_tetrahedron(self, len_x = '', len_y = '', len_z = '', cpos_x = '', cpos_y = '', cpos_z = ''):
+    	return self.SendCommand("shape_tetrahedron", [len_x, len_y, len_z, cpos_x, cpos_y, cpos_z])
+    
+    def shape_torus(self, len_x = '', len_y = '', len_z = '', cpos_x = '', cpos_y = '', cpos_z = ''):
+    	return self.SendCommand("shape_torus", [len_x, len_y, len_z, cpos_x, cpos_y, cpos_z])
+    
+    def shape_triangle(self, len_x = '', len_y = '', cpos_x = '', cpos_y = '', z_start = '', z_end = ''):
+    	return self.SendCommand("shape_triangle", [len_x, len_y, cpos_x, cpos_y, z_start, z_end])
     
     def showa(self):
     	return self.SendCommand("showa")
@@ -1179,6 +1569,9 @@ class NSClient:
     def temperature(self, value = '', meshname = ''):
     	return self.SendCommand("temperature", [value, meshname])
     
+    def threads(self, number = ''):
+    	return self.SendCommand("threads", [number])
+    
     def tmodel(self, num_temperatures = '', meshname = ''):
     	return self.SendCommand("tmodel", [num_temperatures, meshname])
     
@@ -1198,105 +1591,76 @@ class NSClient:
     	return self.SendCommand("vortex", [longitudinal, rotation, core, rectangle, meshname])
     
 
-    #################### LEGACY METHODS : DON'T USE (directly) #######################
+    
+    #################### Command Send / Data Receive #######################
 
-    #Legacy method / Auxiliary : send named command together with any parameters specified using a list
-    #New version use methods named after command name directly : improves simulation script readability
-    #You can also use this to send the run command as a non-blocking call
     def SendCommand(self, command, values = None):
 
-        try: 
-            self.sock.settimeout(self.timeout_ms / 1000)
-        except: 
-            self.sock.close()
-            return
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+        
+            sock.connect((self.serverip, self.serverport))
+            sock.settimeout(self.timeout_ms / 1000)
 
-        while True:
-            message = command
-
-            #command arguments if specified : space-separated
-            if values is not None: 
-                for value in values: 
-                    #first check if it's a string
-                    if isinstance(value, str):
-                        #only add it if not empty
-                        if len(value): message += ' ' + value
-                    #not a string : could be a list or a number
-                    else:
-                        #first try to convert entries in a list to add as space-seaprated parameters
-                        try:
-                            for entry in value: message += ' ' + str(entry)
-                        #not a list, so add a number after converting to string
-                        except:
-                            message += ' ' + str(value)
-                    
-            try:
-                # Send data
-                if self.verbose == True: self.sock.sendall(bytes('>' + message, 'utf-8'))
-                else: self.sock.sendall(bytes('*' + message, 'utf-8'))
-                print('TX : %s' % message)
-            except:
-                print("SendCommand (send): timed out.")
-                self.sock.close()
-                return
-
-            # Look for the response
-            try:
-                data = str(self.sock.recv(self.maxLenMessage), 'utf-8')
-            except:
-                print("SendCommand (receive): timed out.")
-                self.sock.close()
-                return
+            while True:
+                message = command
     
-            #note, the returned data always starts with a tab
-            fields = data.split('\t')
-
-            if len(fields) >= 2 and fields[1] == 'stopped':
-                    #if we received the 'stopped' message this means a simulation was running when we sent this command. 
-                    #this caused the simulation to stop thus issuing the 'stopped' message since a client is connected.
-                    #since this command is expecting another message to be returned, we need to receive it - issue recv call again
-                    try:
-                        data = str(self.sock.recv(self.maxLenMessage), 'utf-8')
-                    except:
-                        print("SendCommand (receive): timed out.")
-                        self.sock.close()
-                        return
-
-                    #note, the returned data always starts with a tab
-                    fields = data.split('\t')
-
-            print('RX : %s' % data)
-
-            #the received message should always have at least 2 fields since the message always starts with a tab
-            if len(fields) >= 2:      
-
-                #list of floats where there should be floats instead of strings (skip first entry always as this is empty)
-                return_data = [self.Convert_Returned_Parameter(entry) for entry in fields[1:]]
-                #if the returned data has multiple parameters then return it as a list, else as a single element
-                if len(return_data) == 1: return return_data[0]
-                else: return return_data
-
-    #Legacy : send multiple commands without parameters
-    def SendCommands(self, commands):
-
-        for command in commands: self.SendCommand(command)
-
-    #Legacy : use Run() instead.
-    def IsSimulationRunning(self, simRunningPollInterval_ms = 500):
-
-        if abs(time.clock()*1000 - self.pollTimer_ms) > simRunningPollInterval_ms:
-            self.pollTimer_ms = time.clock()*1000
-            return self.SendCommand('isrunning')
-        else:
-            #this method will typically be used in a while loop, so make sure user won't flood cpu with function calls
-            time.sleep(simRunningPollInterval_ms/10000)
-
-        return True
+                #command arguments if specified : space-separated
+                if values is not None: 
+                    for value in values: 
+                        #first check if it's a string
+                        if isinstance(value, str):
+                            #only add it if not empty
+                            if len(value): message += ' ' + value
+                        #not a string : could be a list or a number
+                        else:
+                            #first try to convert entries in a list to add as space-seaprated parameters
+                            try:
+                                for entry in value: message += ' ' + str(entry)
+                            #not a list, so add a number after converting to string
+                            except:
+                                message += ' ' + str(value)
+                        
+                try:
+                    # Send data
+                    if self.verbose == True: sock.sendall(bytes(self.serverpwd + '>' + message, 'utf-8'))
+                    else: sock.sendall(bytes(self.serverpwd + '*' + message, 'utf-8'))
+                    if self.script_verbose: print('TX : %s' % message)
+                except:
+                    print("SendCommand (send): timed out.")
+                    return
+    
+                # Look for the response
+                try:
+                    data = str(sock.recv(self.maxLenMessage), 'utf-8')
+                except:
+                    print("SendCommand (receive): timed out.")
+                    return
+        
+                #note, the returned data always starts with a tab
+                fields = data.split('\t')
+    
+                if len(fields) >= 2 and fields[1] == 'stopped':
+                        #if we received the 'stopped' message this means a simulation was running when we sent this command. 
+                        #this caused the simulation to stop thus issuing the 'stopped' message since a client is connected.
+                        #since this command is expecting another message to be returned, we need to receive it - issue recv call again
+                        try:
+                            data = str(sock.recv(self.maxLenMessage), 'utf-8')
+                        except:
+                            print("SendCommand (receive): timed out.")
+                            return
+    
+                        #note, the returned data always starts with a tab
+                        fields = data.split('\t')
+    
+                if self.script_verbose: print('RX : %s' % data)
+    
+                #the received message should always have at least 2 fields since the message always starts with a tab
+                if len(fields) >= 2:      
+    
+                    #list of floats where there should be floats instead of strings (skip first entry always as this is empty)
+                    return_data = [self.convert_returned_parameter(entry) for entry in fields[1:]]
+                    #if the returned data has multiple parameters then return it as a list, else as a single element
+                    if len(return_data) == 1: return return_data[0]
+                    else: return return_data
     
 ###############################################################################################################################
-    
-#Still keep this function for legacy compatibility : instead you should just index returned list directly if you're expecting a list
-def Get(expected_list, index):
-
-    try: return expected_list[index]
-    except: return expected_list

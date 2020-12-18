@@ -42,7 +42,7 @@ for line in lines:
                 param = param.lstrip('(').rstrip(')')
                 
                 #some parameters may specify the directory name is optional as (directory\)name : get rid of it
-                if param[:len("directory\)")] == "directory\)": param = param.lstrip("directory\)")
+                if param[:len("directory/)")] == "directory/)": param = param.lstrip("directory/)")
                 
                 #if there are multiple levels of optional parameters, e.g. (param1, (param2)), then a comma will be present now - get rid of it
                 #if a list of parameters is possible this will be specified as param... - get rid of ... : in the Python method you can pass this as a list to the function

@@ -1,25 +1,15 @@
 """
-This script is part of Boris Computational Spintronics v2.8
+This script is part of Boris Computational Spintronics v3.0
 
 @author: Serban Lepadatu, 2020
 """
 
-import os
-import sys
 from NetSocks import NSClient
 import numpy as np
 from itertools import product
 
-#setup communication with server
-ns = NSClient('localhost')
-
-########################################
-
-#the working directory : same as this script file
-directory = os.path.dirname(sys.argv[0]) + "/"
-#restore program to default state
-ns.default()
-ns.chdir(directory)
+ns = NSClient()
+ns.configure(True)
 
 ########################################
 
@@ -28,7 +18,7 @@ ns.chdir(directory)
 Nxy, Nz = 32, 16
 
 #M list to write in OVF2 file : has Nxy*Nxy*Nz cells, initialised with empty cells
-M = [[0,0,0]] * Nxy**2*Nz
+M = np.zeros((Nxy**2*Nz,3))
 
 #setup hollow hemisphere values
 origin = [Nxy/2, Nxy/2, Nz]
@@ -41,7 +31,7 @@ for i, j, k in product(range(Nxy), range(Nxy), range(Nz)):
     
     if rad >= rad_inner and rad <= rad_outer:
         #Mark these cells as non-empty
-        M[i + j*Nxy + k*Nxy*Nxy] = [1,0,0]
+        M[i + j*Nxy + k*Nxy*Nxy] = [1.0,0.0,0.0]
 
 #Write M to OVF2 file ready to load into Boris
 #to load into Boris use loadovf2mag command, e.g. as 

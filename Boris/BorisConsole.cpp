@@ -19,13 +19,13 @@ class TextInput :
 	public Threads<TextInput>
 {
 
-	string message;
+	std::string message;
 
 private:
 
 	void get_user_command(Simulation *pSim)
 	{
-		getline(cin, message);
+		getline(std::cin, message);
 	}
 
 private:

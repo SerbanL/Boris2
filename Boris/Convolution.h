@@ -5,7 +5,7 @@
 
 #include "ConvolutionData.h"
 
-using namespace std;
+
 
 //Convolution based on convolution theorem : 
 //Out is the convolution of In with some tensor. 

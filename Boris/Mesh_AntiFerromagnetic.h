@@ -38,7 +38,7 @@ class SuperMesh;
 class AFMesh :
 	public Mesh,
 	public ProgramState<AFMesh,
-	tuple<
+	std::tuple<
 	//Mesh members
 	int, int, int, 
 	int, int, int, int, 
@@ -58,7 +58,7 @@ class AFMesh :
 	MatP<double, double>, 
 	MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>>,
 	//Module Implementations
-	tuple<Demag_N, Demag, SDemag_Demag, Exch_6ngbr_Neu, DMExchange, iDMExchange, SurfExchange_AFM, Zeeman, MOptical, Anisotropy_Uniaxial, Anisotropy_Cubic, Transport, Heat, SOTField, Roughness> >
+	std::tuple<Demag_N, Demag, SDemag_Demag, Exch_6ngbr_Neu, DMExchange, iDMExchange, SurfExchange_AFM, Zeeman, MOptical, Anisotropy_Uniaxial, Anisotropy_Cubic, Transport, Heat, SOTField, Roughness> >
 {
 #if COMPILECUDA == 1
 	friend AFMeshCUDA;
@@ -140,11 +140,17 @@ public:
 	//this method is also used by the dipole mesh where it does something else - sets the dipole direction
 	void SetMagAngle(double polar, double azim, Rect rectangle = Rect());
 
+	//set magnetization angle only in given shape
+	void SetMagAngle_Shape(double polar, double azim, std::vector<MeshShape> shapes);
+
+	//Set magnetization angle in solid object only containing given relative position uniformly using polar coordinates
+	void SetMagAngle_Object(double polar, double azim, DBL3 position);
+
 	//Invert magnetization direction in given mesh
 	void SetInvertedMag(bool x, bool y, bool z);
 
 	//Mirror magnetization in given axis (literal x, y, or z) in given mesh (must be magnetic)
-	void SetMirroredMag(string axis);
+	void SetMirroredMag(std::string axis);
 
 	//Set random magentisation distribution in given mesh
 	void SetRandomMag(int seed);

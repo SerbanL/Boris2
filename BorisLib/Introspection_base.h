@@ -288,7 +288,7 @@ struct is_varinfo : std::integral_constant<bool, __is_varinfo<Type>::value > {};
 template <typename CType>
 struct contained_type {
 
-	//can index as [0] even for empty conatainers since in evaluating decltype(declval<CType>()[0]) no memory access actually occurs
+	//can index as [0] even for empty conatainers since in evaluating decltype(std::declval<CType>()[0]) no memory access actually occurs
 	//need to std::remove_reference since the above returns a reference to the stored type in the container
 	using type = typename std::remove_reference<decltype(std::declval<CType>()[0])>::type;
 };

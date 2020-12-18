@@ -8,7 +8,7 @@
 
 #include "ConvolutionData.h"
 
-using namespace std;
+
 
 //NOTES:
 
@@ -40,7 +40,7 @@ using namespace std;
 struct KerType {
 
 	//2D off-diagonal for self-demag (only need real version)
-	vector<double> K2D_odiag;
+	std::vector<double> K2D_odiag;
 
 	//3D Complex
 	VEC<ReIm3> Kdiag_cmpl, Kodiag_cmpl;
@@ -85,15 +85,15 @@ private:
 	//These are the kernels used to obtain values in this mesh using contributions from those respective meshes.
 
 	//kernels used to multiply fft-ed magnetization from other layers
-	vector<shared_ptr<KerType>> kernels;
+	std::vector<std::shared_ptr<KerType>> kernels;
 
 	//if z-shifted, re-use already calculated kernel if the only difference is just the sign of the shift : use kernel symmetries to recover correct multiplication
 	//this vector has 1-2-1 correspondence with kernels
-	vector<bool> inverse_shifted;
+	std::vector<bool> inverse_shifted;
 
 	//collection of all mesh rectangles participating in convolution
 	//All meshes must have same number of cells, thus you can determine the cellsize used in each mesh
-	vector<Rect> Rect_collection;
+	std::vector<Rect> Rect_collection;
 
 	//also need to know what the rectangle for this mesh is (i.e. the mesh that this DemagKernelCollection object applies to)
 	Rect this_rect;
@@ -127,7 +127,7 @@ private:
 	BError Calculate_Demag_Kernels_3D_Complex_Full(int index);
 
 	//search to find a matching kernel that has already been computed and return pointer to it -> kernel can be identified from shift, source and destination discretisation
-	shared_ptr<KerType> KernelAlreadyComputed(DBL3 shift, DBL3 h_src, DBL3 h_dst);
+	std::shared_ptr<KerType> KernelAlreadyComputed(DBL3 shift, DBL3 h_src, DBL3 h_dst);
 
 	//-------------------------- RUN-TIME KERNEL MULTIPLICATION
 
@@ -160,11 +160,11 @@ protected:
 	//-------------------------- SETTERS
 
 	//Set all the rectangles participating in convolution. This determines the number of kernels needed : one for each mesh.
-	BError Set_Rect_Collection(vector<Rect>& Rect_collection_, Rect this_rect_, double h_max_);
+	BError Set_Rect_Collection(std::vector<Rect>& Rect_collection_, Rect this_rect_, double h_max_);
 
 	//-------------------------- GETTERS
 
-	shared_ptr<KerType> Get_Kernel(int index) { return kernels[index]; }
+	std::shared_ptr<KerType> Get_Kernel(int index) { return kernels[index]; }
 
 	bool is_inverse_shifted(int index) { return inverse_shifted[index]; }
 

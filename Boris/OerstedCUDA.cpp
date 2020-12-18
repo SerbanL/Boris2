@@ -40,9 +40,9 @@ BError OerstedCUDA::Initialize(void)
 	ZeroEnergy();
 
 	//always recalculate the mesh transfer as some meshes could have changed
-	vector< VEC<DBL3>* > pVal_from_cpu_E;
-	vector< VEC<double>* > pVal_from_cpu_elC;
-	vector< VEC<DBL3>* > pVal_to_cpu;
+	std::vector< VEC<DBL3>* > pVal_from_cpu_E;
+	std::vector< VEC<double>* > pVal_from_cpu_elC;
+	std::vector< VEC<DBL3>* > pVal_to_cpu;
 
 	//array of pointers to input meshes (M) and oputput meshes (Heff) to transfer from and to
 	cu_arr<cuVEC<cuReal3>> pVal_from_E;

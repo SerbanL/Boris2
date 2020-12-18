@@ -1,7 +1,7 @@
 #include "stdafx.h"
 #include "MeshParams.h"
 
-MeshParams::MeshParams(vector<PARAM_>& enabledParams)
+MeshParams::MeshParams(std::vector<PARAM_>& enabledParams)
 {
 	//see comment in MeshParamsBase
 	set_meshparamsbase_implementation(this, MESHTYPE_MICROMAGNETIC);
@@ -282,19 +282,19 @@ MeshParams::MeshParams(vector<PARAM_>& enabledParams)
 	/// Special Functions
 
 	//resolution of 10000 means e.g. for Tc = 1000 the Curie-Weiss function will be available with a resolution of 0.1 K
-	pCurieWeiss = shared_ptr<Funcs_Special>(new Funcs_Special(EqComp::FUNC_CURIEWEISS, 0.0, 10000));
-	pLongRelSus = shared_ptr<Funcs_Special>(new Funcs_Special(EqComp::FUNC_LONGRELSUS, 0.0, 10000));
+	pCurieWeiss = std::shared_ptr<Funcs_Special>(new Funcs_Special(EqComp::FUNC_CURIEWEISS, 0.0, 10000));
+	pLongRelSus = std::shared_ptr<Funcs_Special>(new Funcs_Special(EqComp::FUNC_LONGRELSUS, 0.0, 10000));
 	pLongRelSus->Initialize_LongitudinalRelSusceptibility(pCurieWeiss->get_data(), atomic_moment, T_Curie_material);
 
-	pCurieWeiss1 = shared_ptr<Funcs_Special>(new Funcs_Special(EqComp::FUNC_CURIEWEISS1, 0.0, 10000));
-	pCurieWeiss2 = shared_ptr<Funcs_Special>(new Funcs_Special(EqComp::FUNC_CURIEWEISS2, 0.0, 10000));
-	pLongRelSus1 = shared_ptr<Funcs_Special>(new Funcs_Special(EqComp::FUNC_LONGRELSUS1, 0.0, 10000));
-	pLongRelSus2 = shared_ptr<Funcs_Special>(new Funcs_Special(EqComp::FUNC_LONGRELSUS2, 0.0, 10000));
+	pCurieWeiss1 = std::shared_ptr<Funcs_Special>(new Funcs_Special(EqComp::FUNC_CURIEWEISS1, 0.0, 10000));
+	pCurieWeiss2 = std::shared_ptr<Funcs_Special>(new Funcs_Special(EqComp::FUNC_CURIEWEISS2, 0.0, 10000));
+	pLongRelSus1 = std::shared_ptr<Funcs_Special>(new Funcs_Special(EqComp::FUNC_LONGRELSUS1, 0.0, 10000));
+	pLongRelSus2 = std::shared_ptr<Funcs_Special>(new Funcs_Special(EqComp::FUNC_LONGRELSUS2, 0.0, 10000));
 	pLongRelSus1->Initialize_LongitudinalRelSusceptibility1(pCurieWeiss1->get_data(), pCurieWeiss2->get_data(), tau_ii, tau_ij, atomic_moment_AFM, T_Curie_material);
 	pLongRelSus2->Initialize_LongitudinalRelSusceptibility2(pCurieWeiss1->get_data(), pCurieWeiss2->get_data(), tau_ii, tau_ij, atomic_moment_AFM, T_Curie_material);
 
-	pAlpha1 = shared_ptr<Funcs_Special>(new Funcs_Special(EqComp::FUNC_ALPHA1, 0.0, 10000));
-	pAlpha2 = shared_ptr<Funcs_Special>(new Funcs_Special(EqComp::FUNC_ALPHA2, 0.0, 10000));
+	pAlpha1 = std::shared_ptr<Funcs_Special>(new Funcs_Special(EqComp::FUNC_ALPHA1, 0.0, 10000));
+	pAlpha2 = std::shared_ptr<Funcs_Special>(new Funcs_Special(EqComp::FUNC_ALPHA2, 0.0, 10000));
 
 	//make sure special functions are set by default for all material parameters text equations
 	set_special_functions();
@@ -359,9 +359,9 @@ void MeshParams::copy_parameters(MeshParams& copy_this)
 //-------------------------Setters/Updaters : text equations
 
 //set the mesh parameter equation with given user constants
-void MeshParams::set_meshparam_t_equation(PARAM_ paramID, string& equationText, vector_key<double>& userConstants)
+void MeshParams::set_meshparam_t_equation(PARAM_ paramID, std::string& equationText, vector_key<double>& userConstants)
 {
-	auto code = [](auto& MatP_object, string& equationText, vector_key<double>& userConstants, double T_Curie, double base_temperature) -> void {
+	auto code = [](auto& MatP_object, std::string& equationText, vector_key<double>& userConstants, double T_Curie, double base_temperature) -> void {
 
 		MatP_object.set_t_scaling_equation(equationText, userConstants, T_Curie, base_temperature);
 	};

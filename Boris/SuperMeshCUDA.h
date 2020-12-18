@@ -58,10 +58,10 @@ public:
 
 	//----------------------------------- DISPLAY-ASSOCIATED GET/SET METHODS
 
-	vector<PhysQ> FetchOnScreenPhysicalQuantity(double detail_level);
+	std::vector<PhysQ> FetchOnScreenPhysicalQuantity(double detail_level);
 
 	//save the quantity currently displayed on screen in an ovf2 file using the specified format
-	BError SaveOnScreenPhysicalQuantity(string fileName, string ovf2_dataType);
+	BError SaveOnScreenPhysicalQuantity(std::string fileName, std::string ovf2_dataType);
 
 	//Before calling a run of GetDisplayedMeshValue, make sure to call PrepareDisplayedMeshValue : this calculates and stores in displayVEC storage and quantities which don't have memory allocated directly, but require computation and temporary storage.
 	void PrepareDisplayedMeshValue(void);
@@ -77,6 +77,9 @@ public:
 
 	//check if ODE solver needs spin accumulation solved
 	bool SolveSpinCurrent(void);
+
+	//check disabled_transport_solver flag
+	bool DisabledTransportSolver(void);
 };
 
 #endif

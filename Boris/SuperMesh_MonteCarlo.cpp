@@ -2,7 +2,7 @@
 #include "SuperMesh.h"
 
 //switch to serial (true) or parallel (false) in given mesh - all if meshName is the supermesh handle
-BError SuperMesh::Set_MonteCarlo_Serial(bool status, string meshName)
+BError SuperMesh::Set_MonteCarlo_Serial(bool status, std::string meshName)
 {
 	BError error(__FUNCTION__);
 
@@ -35,7 +35,7 @@ BError SuperMesh::Set_MonteCarlo_Serial(bool status, string meshName)
 
 
 //switch to constrained Monnte-Carlo (true) or classical (false) in given mesh - all if meshName is the supermesh handle; if constrained, then use cmc_n direction.
-BError SuperMesh::Set_MonteCarlo_Constrained(bool status, DBL3 cmc_n, string meshName)
+BError SuperMesh::Set_MonteCarlo_Constrained(bool status, DBL3 cmc_n, std::string meshName)
 {
 	BError error(__FUNCTION__);
 

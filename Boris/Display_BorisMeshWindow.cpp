@@ -35,7 +35,7 @@ void BorisMeshWindow::DrawWindow(void)
 	//draw the physical quantity set to be displayed in the mesh
 	physQRep.DrawPhysQRep();
 
-	string text = " Focused Mesh : " + physQRep.get_focused_meshName() + " - " + physQRep.get_focused_typeName();
+	std::string text = " Focused Mesh : " + physQRep.get_focused_meshName() + " - " + physQRep.get_focused_typeName();
 	pBG->DrawSimpleTextLine(text, FLT2(spaceRect.left, spaceRect.top + MESHTEXTSIZE), D2D1::ColorF(D2D1::ColorF::Gray), &pMeshWinTextFormat);
 
 	text = " Minimum  : " + physQRep.get_min_value_string();
@@ -60,7 +60,7 @@ void BorisMeshWindow::DrawWindow(void)
 	if (GetSystemTickCount() - start_time_ms > MAXDRAWTIMEALLOWED_MS) ZoomNotchUp();
 }
 
-ActionOutcome BorisMeshWindow::NewMessage(AC_ aCode, INT2 mouse, string data) {
+ActionOutcome BorisMeshWindow::NewMessage(AC_ aCode, INT2 mouse, std::string data) {
 
 	ActionOutcome actionResult;
 
@@ -97,6 +97,24 @@ ActionOutcome BorisMeshWindow::NewMessage(AC_ aCode, INT2 mouse, string data) {
 			}
 		}
 		break;
+
+	case AC_SHIFT_MOUSELEFTDOWN:
+	{
+		if (windowEntered) {
+
+			//see if mouse is hovering over a mesh
+			DBL3 newMeshPosition = DBL3(1, 1, 1);
+			std::string unit;
+			double meshValue;
+
+			if (physQRep.GetMouseInfo(INT2(mouse.x, mouse.y), &meshName, &typeName, &newMeshPosition, &meshValue, &unit)) {
+
+				actionResult.text = trim(ToString(newMeshPosition, "m"), ",");
+				actionResult.SetCode(winId, mouse, AO_ADDCONSOLECOORDINATE);
+			}
+		}
+	}
+	break;
 
 	case AC_MOUSELEFTUP:
 		if (windowEntered) SetDefaultCursor();
@@ -149,7 +167,7 @@ ActionOutcome BorisMeshWindow::NewMessage(AC_ aCode, INT2 mouse, string data) {
 
 				//see if mouse is hovering over a mesh
 				DBL3 newMeshPosition;
-				string unit;
+				std::string unit;
 				double meshValue;
 
 				if (physQRep.GetMouseInfo(INT2(mouse.x, mouse.y), &meshName, &typeName, &newMeshPosition, &meshValue, &unit)) {
@@ -163,7 +181,7 @@ ActionOutcome BorisMeshWindow::NewMessage(AC_ aCode, INT2 mouse, string data) {
 						//get position within mesh and corresponding value to be displayed
 						meshPosition = newMeshPosition;
 						mouse_mesh_info_position = ToString(meshPosition, "m");
-						mouse_mesh_info_value = ToString(meshValue, unit) + string(" (") + meshName + " - " + typeName + string(")");
+						mouse_mesh_info_value = ToString(meshValue, unit) + std::string(" (") + meshName + " - " + typeName + std::string(")");
 					}
 				}
 				else {
@@ -209,18 +227,18 @@ ActionOutcome BorisMeshWindow::NewMessage(AC_ aCode, INT2 mouse, string data) {
 	return actionResult;
 }
 
-void BorisMeshWindow::AutoSetMeshDisplaySettings(vector<PhysQ> physQ)
+void BorisMeshWindow::AutoSetMeshDisplaySettings(std::vector<PhysQ> physQ)
 {
 	physQRep.CalculateRepresentation_AutoSettings(physQ, spaceRect);
 }
 
-void BorisMeshWindow::UpdatePhysQRep(vector<PhysQ> physQ)
+void BorisMeshWindow::UpdatePhysQRep(std::vector<PhysQ> physQ)
 {
 	physQRep.CalculateRepresentation(physQ);
 }
 
 //image_cropping specify normalized cropping within the mesh image, as left, bottom, right, top : 0, 0 point is left, bottom of screen as far as user is concerned.
-bool BorisMeshWindow::SaveMeshImage(string fileName, DBL4 image_cropping)
+bool BorisMeshWindow::SaveMeshImage(std::string fileName, DBL4 image_cropping)
 {
 	//here remember D2D wants 0, 0 point as the left, top points of screen, so need to invert role of bottom and top in image_cropping.
 	double left = spaceRectDims.width * image_cropping.i + spaceRect.left;
@@ -249,5 +267,22 @@ void BorisMeshWindow::SetDetailLevel(double detail_level)
 {
 	physQRep.set_detail_level(detail_level);
 }
+
+double BorisMeshWindow::GetDetailLevel(void)
+{
+	return physQRep.get_detail_level();
+}
+
+//Set mesh display render threshold values for faster rendering when we have many cells
+void BorisMeshWindow::SetRenderThresholds(INT3 renderthresholds)
+{
+	physQRep.set_display_renderthresholds(renderthresholds);
+}
+
+INT3 BorisMeshWindow::GetRenderThresholds(void)
+{
+	return physQRep.get_display_renderthresholds();
+}
+
 
 #endif

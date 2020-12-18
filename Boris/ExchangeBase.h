@@ -11,7 +11,7 @@
 class SuperMesh;
 class Mesh;
 
-using namespace std;
+
 
 class ExchangeBase {
 
@@ -25,13 +25,13 @@ private:
 	Mesh *pMesh;
 
 	//CMBND contacts between this mesh and other (anti)ferromagnetic meshes (we do not require other ferromagnetic meshes to have an exchange module enabled, just this one).
-	vector<CMBNDInfo> CMBNDcontacts;
+	std::vector<CMBNDInfo> CMBNDcontacts;
 
 	//vector of pointers to all M - CMBNDInfo has a data member INT2 mesh_idx; mesh_idx.secondary is an index in pM for a mesh in contact with this one
-	vector<VEC_VC<DBL3>*> pM;
+	std::vector<VEC_VC<DBL3>*> pM;
 
 	//vector of pointers to all ferromagnetic meshes - same ordering as pM
-	vector<Mesh*> pMeshes;
+	std::vector<Mesh*> pMeshes;
 
 protected:
 

@@ -22,9 +22,9 @@ SuperMeshCUDA::~SuperMeshCUDA()
 
 //----------------------------------- DISPLAY-ASSOCIATED GET/SET METHODS
 
-vector<PhysQ> SuperMeshCUDA::FetchOnScreenPhysicalQuantity(double detail_level)
+std::vector<PhysQ> SuperMeshCUDA::FetchOnScreenPhysicalQuantity(double detail_level)
 {
-	vector<PhysQ> physQ;
+	std::vector<PhysQ> physQ;
 	
 	//get anything displayed on super-mesh
 	switch (pSMesh->displayedPhysicalQuantity) {
@@ -71,7 +71,7 @@ vector<PhysQ> SuperMeshCUDA::FetchOnScreenPhysicalQuantity(double detail_level)
 }
 
 //save the quantity currently displayed on screen in an ovf2 file using the specified format
-BError SuperMeshCUDA::SaveOnScreenPhysicalQuantity(string fileName, string ovf2_dataType)
+BError SuperMeshCUDA::SaveOnScreenPhysicalQuantity(std::string fileName, std::string ovf2_dataType)
 {
 	BError error(__FUNCTION__);
 
@@ -253,6 +253,12 @@ Any SuperMeshCUDA::GetAverageDisplayedMeshValue(Rect rel_rect)
 bool SuperMeshCUDA::SolveSpinCurrent(void)
 {
 	return pSMesh->SolveSpinCurrent();
+}
+
+//check disabled_transport_solver flag
+bool SuperMeshCUDA::DisabledTransportSolver(void)
+{
+	return pSMesh->disabled_transport_solver;
 }
 
 #endif

@@ -10,7 +10,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 // TO STRING
 
-//convert numerical value to string.
+//convert numerical value to std::string.
 template <typename Type> std::string ToString(const Type& value, const std::string& unit)
 { 
 	Conversion::tostringconversion sc;
@@ -30,23 +30,23 @@ std::string ToString(const Type& value)
 ///////////////////////////////////////////////////////////////////////////////
 // FROM STRING
 
-//convert string to numerical value. Example call: float fval = ToNum(str);
-//If unit specified, allow use of unit magnitudes in input string rather than e notation
-//inline Conversion::tonumberconversion ToNum(const string& text) { return Conversion::tonumberconversion(text, ""); }
+//convert std::string to numerical value. Example call: float fval = ToNum(str);
+//If unit specified, allow use of unit magnitudes in input std::string rather than e notation
+//inline Conversion::tonumberconversion ToNum(const std::string& text) { return Conversion::tonumberconversion(text, ""); }
 inline Conversion::tonumberconversion ToNum(const std::string& text, const std::string& unit = "") { return Conversion::tonumberconversion(text, unit); }
 inline Conversion::tonumberconversion ToNum(std::string&& text, const std::string& unit = "") { return Conversion::tonumberconversion( move(text), unit ); }
 
 ///////////////////////////////////////////////////////////////////////////////
 //
 
-//OType is a string : use ToString
+//OType is a std::string : use ToString
 template <typename OType, typename IType>
 OType Convert(const IType& value, std::true_type)
 {
 	return ToString(value);
 }
 
-//OType not a string : use ToNum
+//OType not a std::string : use ToNum
 template <typename OType, typename IType>
 OType Convert(const IType& value, std::false_type)
 {

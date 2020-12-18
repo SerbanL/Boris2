@@ -7,7 +7,7 @@
 #include "SurfExchangeCUDA_AFM.h"
 #endif
 
-using namespace std;
+
 
 class Mesh;
 
@@ -17,7 +17,7 @@ class Mesh;
 
 class SurfExchange_AFM :
 	public Modules,
-	public ProgramState<SurfExchange_AFM, tuple<>, tuple<>>
+	public ProgramState<SurfExchange_AFM, std::tuple<>, std::tuple<>>
 {
 
 #if COMPILECUDA == 1
@@ -30,7 +30,7 @@ private:
 	Mesh* pMesh;
 
 	//magnetic meshes in surface exchange coupling with the mesh holding this module, top and bottom
-	vector<Mesh*> pMesh_Bot, pMesh_Top;
+	std::vector<Mesh*> pMesh_Bot, pMesh_Top;
 
 	//number of coupled cells (either top or bottom) in this mesh
 	int coupled_cells = 0;

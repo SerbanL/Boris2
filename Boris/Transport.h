@@ -3,7 +3,7 @@
 #include "BorisLib.h"
 #include "Modules.h"
 
-using namespace std;
+
 
 class Mesh;
 class SuperMesh;
@@ -19,7 +19,7 @@ class STransport;
 
 class Transport :
 	public Modules,
-	public ProgramState<Transport, tuple<>,	tuple<>>
+	public ProgramState<Transport, std::tuple<>,	std::tuple<>>
 {
 	
 	friend STransport;

@@ -23,13 +23,21 @@ enum VEC3REP_ { VEC3REP_FULL = 0, VEC3REP_X, VEC3REP_Y, VEC3REP_Z, VEC3REP_DIREC
 #define DETAILNOTCHDN 0.75
 
 //aim to draw in maximum this amount of time (ms). If this is exceeded then try to reduce level of detail.
-#define MAXDRAWTIMEALLOWED_MS	250
+#define MAXDRAWTIMEALLOWED_MS	1000
+
+//If there are too many cells to draw then start using rendering speedup tricks so drawing time remains reasonable
+//Level 1: start using elements with fewer vertexes, e.g. cones instead of arrows
+#define NUMDRAWNCELLS_RENDERSPEEDUP1	0
+//Level 2: don't draw surrounded cells
+#define NUMDRAWNCELLS_RENDERSPEEDUP2	1000000
+//Level 3: only draw cells on a checkerboard pattern
+#define NUMDRAWNCELLS_RENDERSPEEDUP3	2000000
 
 //default detail level in order to fit a maximum number of cells along maximum mesh dimensions
 #define DETAILDEFAULTCELLS	30
 
 //smallest and largest values of detail level (m). Smaller means greater detail.
-#define DETAILVALUEMIN	1e-9
+#define DETAILVALUEMIN	1e-10
 #define DETAILVALUEMAX	1e-6
 
 //reduce the fit by scaling the meter to logical units conversion constant - makes the mesh to view window fit looser (UNITSSCALEBACK = 1 for exact fit)

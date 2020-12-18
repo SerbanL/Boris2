@@ -117,7 +117,7 @@ void Atom_Mesh_Cubic::RepairObjectState(void)
 //call when a configuration change has occurred - some objects might need to be updated accordingly
 BError Atom_Mesh_Cubic::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 {
-	BError error(string(CLASS_STR(Atom_Mesh_Cubic)) + "(" + (*pSMesh).key_from_meshId(meshId) + ")");
+	BError error(std::string(CLASS_STR(Atom_Mesh_Cubic)) + "(" + (*pSMesh).key_from_meshId(meshId) + ")");
 
 	///////////////////////////////////////////////////////
 	//Mesh specific configuration
@@ -234,7 +234,7 @@ void Atom_Mesh_Cubic::UpdateConfiguration_Values(UPDATECONFIG_ cfgMessage)
 
 BError Atom_Mesh_Cubic::SwitchCUDAState(bool cudaState)
 {
-	BError error(string(CLASS_STR(Atom_Mesh_Cubic)) + "(" + (*pSMesh).key_from_meshId(meshId) + ")");
+	BError error(std::string(CLASS_STR(Atom_Mesh_Cubic)) + "(" + (*pSMesh).key_from_meshId(meshId) + ")");
 
 #if COMPILECUDA == 1
 
@@ -401,5 +401,17 @@ double Atom_Mesh_Cubic::CheckMoveMesh(void)
 }
 
 //----------------------------------- OVERLOAD MESH VIRTUAL METHODS
+
+//----------------------------------- OTHER CONTROL METHODS : implement pure virtual Atom_Mesh methods
+
+void Atom_Mesh_Cubic::Set_MonteCarlo_Constrained(DBL3 cmc_n_)
+{
+	if (cmc_n_.IsNull()) mc_constrain = false;
+	else { mc_constrain = true; cmc_n = cmc_n_; }
+
+#if COMPILECUDA == 1
+	if (paMeshCUDA) paMeshCUDA->Set_MonteCarlo_Constrained(cmc_n);
+#endif
+}
 
 #endif

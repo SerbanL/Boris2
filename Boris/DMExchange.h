@@ -3,7 +3,7 @@
 #include "BorisLib.h"
 #include "Modules.h"
 
-using namespace std;
+
 
 class Mesh;
 
@@ -16,7 +16,7 @@ class Mesh;
 class DMExchange :
 	public Modules,
 	public ExchangeBase,
-	public ProgramState<DMExchange, tuple<>, tuple<>>
+	public ProgramState<DMExchange, std::tuple<>, std::tuple<>>
 {
 
 private:

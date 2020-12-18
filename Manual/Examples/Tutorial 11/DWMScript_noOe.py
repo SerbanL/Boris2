@@ -1,29 +1,22 @@
 """
-This script is part of Boris Computational Spintronics v2.8
+This script is part of Boris Computational Spintronics v3.0
 
 @author: Serban Lepadatu, 2020
 """
 
-import os
-import sys
 from NetSocks import NSClient
 import matplotlib.pyplot as plt
 import numpy as np
 
 #setup communication with server
-ns = NSClient('localhost')
+ns = NSClient()
+ns.configure(True)
 
 ########################################
 
-#the working directory : same as this script file
-directory = os.path.dirname(sys.argv[0]) + "/"
-ns.chdir(directory)
-
-########################################
-
-def load_and_prepare_sim(filename_with_path, rawdata_file):
+def load_and_prepare_sim(filename, rawdata_file):
     
-    ns.loadsim(filename_with_path)
+    ns.loadsim(filename)
 
     #set 2 stages : the first will achieve steady state motion but not save data, the second will save data
     #Note : addstage simply adds a generic stage; we will need to edit the stop and save conditions, as well as the set stage values
@@ -57,7 +50,7 @@ steps = 10
 for polarity in range(-1, 2, 2):
 
     #simulate from low to high current strength for each polarity
-    load_and_prepare_sim(directory + filename, rawdata_file)
+    load_and_prepare_sim(filename, rawdata_file)
 
     for step in range(0, steps + 1):
 
@@ -102,7 +95,7 @@ Ms = ns.setparam('permalloy', 'Ms')
 beta = ns.setparam('permalloy', 'beta')
 muB = 9.274009994e-24
 e = 1.60217662e-19
-u_data = [-J*P*muB/(2*e*Ms*(1 + beta**2)) for J in data_noOe[0]]
+u_data = [-J*P*muB/(e*Ms*(1 + beta**2)) for J in data_noOe[0]]
 
 plt.axes(xlabel = 'u (m/s)', ylabel = 'DW Velocity (m/s)', title = 'no Oe')
 plt.plot(u_data, data_noOe[1], 'o')

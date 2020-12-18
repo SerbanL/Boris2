@@ -3,7 +3,7 @@
 #include "BorisLib.h"
 #include "Modules.h"
 
-using namespace std;
+
 
 class Mesh;
 
@@ -13,7 +13,7 @@ class SuperMesh;
 
 class MElastic :
 	public Modules,
-	public ProgramState<MElastic, tuple<DBL3>, tuple<>>
+	public ProgramState<MElastic, std::tuple<DBL3>, std::tuple<>>
 {
 
 #if COMPILECUDA == 1
@@ -69,14 +69,14 @@ public:
 	//Set strain or displacement by loading from OVF2 files
 	
 	//Displacement : from this calculate strain tensor
-	BError Load_Displacement_OVF2(string fileName);
+	BError Load_Displacement_OVF2(std::string fileName);
 
 	//Tensor : displacement is not calculated, as we only need the strain tensor to obtain the effective fields at runtime
 	//For a strain tensor for cubic crystals, we only have 6 elements : diagonal and off-diagonal (symmetric).
 	//These are specified using 2 separate OVF2 files containing vector data:
 	//one for the xx, yy, zz elements (diagonal)
 	//the other for the yz, xz, xy elements (off-diagonal, in this order)
-	BError Load_Strain_OVF2(string fileName_Diag, string fileName_ODiag);
+	BError Load_Strain_OVF2(std::string fileName_Diag, std::string fileName_ODiag);
 };
 
 #else
@@ -122,8 +122,8 @@ public:
 	void SetUniformStress(DBL3 Tsig_xyz) {}
 	DBL3 GetUniformStress(void) { return DBL3(); }
 
-	BError Load_Displacement_OVF2(string fileName) { return BError(); }
-	BError Load_Strain_OVF2(string fileName_Diag, string fileName_ODiag) { return BError(); }
+	BError Load_Displacement_OVF2(std::string fileName) { return BError(); }
+	BError Load_Strain_OVF2(std::string fileName_Diag, std::string fileName_ODiag) { return BError(); }
 };
 
 #endif

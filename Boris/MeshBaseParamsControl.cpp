@@ -4,7 +4,7 @@
 #include "SuperMesh.h"
 
 //set text equation for base temperature : when iterating, the base temperature will be evaluated and set using the text equation
-BError MeshBase::SetBaseTemperatureEquation(string equation_string, int step)
+BError MeshBase::SetBaseTemperatureEquation(std::string equation_string, int step)
 {
 	BError error(CLASS_STR(Atom_Mesh));
 
@@ -30,7 +30,7 @@ void MeshBase::UpdateTEquationUserConstants(void)
 {
 	if (userConstants.size()) {
 
-		vector<pair<string, double>> constants(userConstants.size());
+		std::vector<std::pair<std::string, double>> constants(userConstants.size());
 		for (int idx = 0; idx < userConstants.size(); idx++) {
 
 			constants[idx] = { userConstants.get_key_from_index(idx), userConstants[idx] };
@@ -75,14 +75,26 @@ bool MeshBase::update_all_meshparam_equations(void)
 	return success;
 }
 
-//set parameter spatial variation using a given generator and arguments (arguments passed as a string to be interpreted and converted using ToNum)
-BError MeshBase::set_meshparam_var(PARAM_ paramID, MATPVAR_ generatorID, string generatorArgs, function<vector<unsigned char>(string, INT2)>& bitmap_loader)
+//set parameter spatial variation using a given generator and arguments (arguments passed as a std::string to be interpreted and converted using ToNum)
+BError MeshBase::set_meshparam_var(PARAM_ paramID, MATPVAR_ generatorID, std::string generatorArgs, std::function<std::vector<unsigned char>(std::string, INT2)>& bitmap_loader)
 {
 	BError error(__FUNCTION__);
 
 	DBL3 cellsize = get_paramtype_cellsize(paramID);
 
 	error = MeshParamsBase::set_meshparam_var(paramID, generatorID, cellsize, meshRect, generatorArgs, bitmap_loader);
+
+	return error;
+}
+
+//set parameter spatial variation using a shape : set value in given shape only
+BError MeshBase::set_meshparam_shape(PARAM_ paramID, std::vector<MeshShape> shapes, std::string value_text)
+{
+	BError error(__FUNCTION__);
+
+	DBL3 cellsize = get_paramtype_cellsize(paramID);
+
+	error = MeshParamsBase::set_meshparam_shape(paramID, cellsize, meshRect, shapes, value_text);
 
 	return error;
 }

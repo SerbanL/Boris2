@@ -183,7 +183,7 @@ PhysQ Mesh::FetchOnScreenPhysicalQuantity(double detail_level, bool getBackgroun
 }
 
 //save the quantity currently displayed on screen in an ovf2 file using the specified format
-BError Mesh::SaveOnScreenPhysicalQuantity(string fileName, string ovf2_dataType)
+BError Mesh::SaveOnScreenPhysicalQuantity(std::string fileName, std::string ovf2_dataType)
 {
 #if COMPILECUDA == 1
 	if (pMeshCUDA) { return pMeshCUDA->SaveOnScreenPhysicalQuantity(fileName, ovf2_dataType); }

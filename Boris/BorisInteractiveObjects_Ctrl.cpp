@@ -13,9 +13,9 @@
 
 InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, InteractiveObjectProperties& iop, TextObject *pTO)
 {
-	//!!!IMPORTANT!!! Do not access BorisDisplay through thread-safe entry points from here. This method was called from within BorisDisplay (through a function pointer), which was thread-safe accessed so the mutex is now locked.
+	//!!!IMPORTANT!!! Do not access BorisDisplay through thread-safe entry points from here. This method was called from within BorisDisplay (through a function pointer), which was thread-safe accessed so the std::mutex is now locked.
 	//In fact it's better not to make any calls to BorisDisplay here at all (e.g. DisplayConsoleMessage). There should always be a better way. e.g. an interactive object will typically require a console
-	//command to be issued - in this case just launch the command on the THREAD_HANDLEMESSAGE thread. If that command needs any console text displayed, it will wait for the display mutex to become available.
+	//command to be issued - in this case just launch the command on the THREAD_HANDLEMESSAGE thread. If that command needs any console text displayed, it will wait for the display std::mutex to become available.
 
 	//Makes changes in the program depending on the interactive object properties and the action type with which it was interacted with. No changes to the object are made here, that is handled by ConsoleInteractiveObjectState during Refresh cycles
 
@@ -26,7 +26,7 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 
 		//mouse is hovering over interactive object - display hover info?
 		
-		//the index in ioInfo to obtain info string
+		//the index in ioInfo to obtain info std::string
 		INT2 id = INT2(iop.majorId, iop.minorId);
 		
 		//1. special cases first (require modification of minor id)
@@ -59,14 +59,14 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 		}
 		else {
 
-			//at most one entry for this majorId, so this could be a generic info string applicable for any minorId - if no entry at all then nothing to display
+			//at most one entry for this majorId, so this could be a generic info std::string applicable for any minorId - if no entry at all then nothing to display
 			if (ioInfo.is_ID_set(iop.majorId)) {
 
 				actionOutcome.text = ioInfo(iop.majorId);
 			}
 		}
 
-		//only ask to display if we managed to retrieve a non-empty string
+		//only ask to display if we managed to retrieve a non-empty std::string
 		if (actionOutcome.text.length()) {
 
 			actionOutcome = AO_SHOWHOVERINFO;
@@ -95,37 +95,37 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 	//SEND COMMAND TO COMMAND HANDLER (not verbose) : makes code neater using this quick lambda
 	auto sendCommand = [&](CMD_ commandCode, auto ...params) {
 
-		string command = "~" + commands.get_key_from_index(commandCode);
+		std::string command = "~" + commands.get_key_from_index(commandCode);
 
-		for (string param : { ToString(params)... })
+		for (std::string param : { ToString(params)... })
 			command += " " + param;
 
 		//launch command
-		single_call_launch<string>(&Simulation::HandleCommand, command, THREAD_HANDLEMESSAGE);
+		single_call_launch<std::string>(&Simulation::HandleCommand, command, THREAD_HANDLEMESSAGE);
 	};
 
 	//SEND COMMAND TO COMMAND HANDLER (verbose) : makes code neater using this quick lambda
 	auto sendCommand_verbose = [&](CMD_ commandCode, auto ...params) {
 
-		string command = commands.get_key_from_index(commandCode);
+		std::string command = commands.get_key_from_index(commandCode);
 
-		for (string param : { ToString(params)... })
+		for (std::string param : { ToString(params)... })
 			command += " " + param;
 
 		//launch command
-		single_call_launch<string>(&Simulation::HandleCommand, command, THREAD_HANDLEMESSAGE);
-		single_call_launch<string>(&Simulation::SetConsoleEntryLineText, "", THREAD_HANDLEMESSAGE2);
+		single_call_launch<std::string>(&Simulation::HandleCommand, command, THREAD_HANDLEMESSAGE);
+		single_call_launch<std::string>(&Simulation::SetConsoleEntryLineText, "", THREAD_HANDLEMESSAGE2);
 	};
 
 	//SET CONSOLE ENTRY LINE : form a command syntax and set it as the console entry line for further editing by user
 	auto setConsoleEntry = [&](CMD_ commandCode, auto ...params) {
 
-		string text = commands.get_key_from_index(commandCode);
+		std::string text = commands.get_key_from_index(commandCode);
 
-		for (string param : { ToString(params)... })
+		for (std::string param : { ToString(params)... })
 			text += " " + param;
 
-		single_call_launch<string>(&Simulation::SetConsoleEntryLineText, text, THREAD_HANDLEMESSAGE2);
+		single_call_launch<std::string>(&Simulation::SetConsoleEntryLineText, text, THREAD_HANDLEMESSAGE2);
 	};
 
 	//------------------------------------------------------ SWITCH FOR HANDLING THE DIFFERENT INTERACTIVE OBJECTS
@@ -264,7 +264,7 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 	case IOI_ODEDT:
 	{
 		//parameters from iop
-		string dT_string = ToNum(iop.textId);
+		std::string dT_string = ToNum(iop.textId);
 
 		//try to set ODE time step
 		//on double-click make popup edit box to edit the currently displayed value
@@ -274,7 +274,7 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 		if (actionCode == AC_POPUPEDITTEXTBOXRETURNEDTEXT) {
 
 			//the actual text returned by the popup edit box
-			string to_text = pTO->GetText();
+			std::string to_text = pTO->GetText();
 			sendCommand_verbose(CMD_SETDT, trimspaces(to_text));
 		}
 	}
@@ -284,7 +284,7 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 	case IOI_STOCHDT:
 	{
 		//parameters from iop
-		string dT_string = ToNum(iop.textId);
+		std::string dT_string = ToNum(iop.textId);
 
 		//try to set ODE time step
 		//on double-click make popup edit box to edit the currently displayed value
@@ -294,7 +294,7 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 		if (actionCode == AC_POPUPEDITTEXTBOXRETURNEDTEXT) {
 
 			//the actual text returned by the popup edit box
-			string to_text = pTO->GetText();
+			std::string to_text = pTO->GetText();
 			sendCommand_verbose(CMD_SETDTSTOCH, trimspaces(to_text));
 		}
 	}
@@ -315,7 +315,7 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 	case IOI_SPEEDUPDT:
 	{
 		//parameters from iop
-		string dT_string = ToNum(iop.textId);
+		std::string dT_string = ToNum(iop.textId);
 
 		//try to set ODE time step
 		//on double-click make popup edit box to edit the currently displayed value
@@ -325,7 +325,7 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 		if (actionCode == AC_POPUPEDITTEXTBOXRETURNEDTEXT) {
 
 			//the actual text returned by the popup edit box
-			string to_text = pTO->GetText();
+			std::string to_text = pTO->GetText();
 			sendCommand_verbose(CMD_SETDTSPEEDUP, trimspaces(to_text));
 		}
 	}
@@ -345,9 +345,6 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 	//Set heat equation time step: textId is the value
 	case IOI_HEATDT:
 	{
-		//parameters from iop
-		string dT_string = ToNum(iop.textId);
-
 		//try to set ODE time step
 		//on double-click make popup edit box to edit the currently displayed value
 		if (actionCode == AC_DOUBLECLICK) { actionOutcome = AO_STARTPOPUPEDITBOX; }
@@ -356,7 +353,7 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 		if (actionCode == AC_POPUPEDITTEXTBOXRETURNEDTEXT) {
 
 			//the actual text returned by the popup edit box
-			string to_text = pTO->GetText();
+			std::string to_text = pTO->GetText();
 			sendCommand_verbose(CMD_SETHEATDT, trimspaces(to_text));
 		}
 	}
@@ -366,7 +363,7 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 	case IOI_ODE_EVAL:
 	{
 		//parameters from iop
-		string evalHandle = iop.textId;
+		std::string evalHandle = iop.textId;
 
 		//try to set ODE and its evaluation method
 		if (actionCode == AC_MOUSELEFTDOWN) sendCommand_verbose(CMD_SETODEEVAL, evalHandle);
@@ -379,7 +376,7 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 	case IOI_MESH_FORPARAMSVAR:
 	{
 		//parameters from iop
-		string meshName = iop.textId;
+		std::string meshName = iop.textId;
 
 		//try to change mesh focus
 		if (actionCode == AC_MOUSELEFTDOWN) sendCommand_verbose(CMD_MESHFOCUS, meshName);
@@ -395,7 +392,7 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 		else if (actionCode == AC_POPUPEDITTEXTBOXRETURNEDTEXT) {
 
 			//the actual text returned by the popup edit box
-			string to_text = pTO->GetText();
+			std::string to_text = pTO->GetText();
 			sendCommand_verbose(CMD_RENAMEMESH, trimspaces(to_text));
 		};
 	}
@@ -416,7 +413,7 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 	case IOI_MESH_FORMC:
 	{
 		//parameters from iop
-		string meshName = iop.textId;
+		std::string meshName = iop.textId;
 		int meshId = iop.minorId;
 
 		//try to change mesh focus
@@ -438,7 +435,7 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 		else if (actionCode == AC_POPUPEDITTEXTBOXRETURNEDTEXT) {
 
 			//the actual text returned by the popup edit box
-			string to_text = pTO->GetText();
+			std::string to_text = pTO->GetText();
 			sendCommand_verbose(CMD_RENAMEMESH, trimspaces(to_text));
 		}
 
@@ -471,7 +468,7 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 	{
 		//parameters from iop
 		int meshId = iop.minorId;
-		string meshRect_string = iop.textId;
+		std::string meshRect_string = iop.textId;
 
 		//on double-click make popup edit box to edit the currently displayed value
 		if (actionCode == AC_DOUBLECLICK) { 
@@ -484,7 +481,7 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 		if (actionCode == AC_POPUPEDITTEXTBOXRETURNEDTEXT) {
 
 			//the actual text returned by the popup edit box
-			string to_text = pTO->GetText();
+			std::string to_text = pTO->GetText();
 			sendCommand_verbose(CMD_MESHRECT, combine(split(trimspaces(to_text), ",", ";"), " "));
 		};
 	}
@@ -496,7 +493,7 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 		//parameters from iop
 		int meshId = iop.minorId;
 		bool enabled = (bool)iop.auxId;
-		string cellsize_string = iop.textId;
+		std::string cellsize_string = iop.textId;
 
 		//on double-click make popup edit box to edit the currently displayed value
 		if (actionCode == AC_DOUBLECLICK && enabled) {
@@ -509,7 +506,7 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 		if (actionCode == AC_POPUPEDITTEXTBOXRETURNEDTEXT) {
 
 			//the actual text returned by the popup edit box
-			string to_text = pTO->GetText();
+			std::string to_text = pTO->GetText();
 			sendCommand_verbose(CMD_CELLSIZE, combine(split(trimspaces(to_text), ",", ";"), " "));
 		};
 	}
@@ -521,7 +518,7 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 		//parameters from iop
 		int meshId = iop.minorId;
 		bool enabled = (bool)iop.auxId;
-		string cellsize_string = iop.textId;
+		std::string cellsize_string = iop.textId;
 
 		//on double-click make popup edit box to edit the currently displayed value
 		if (actionCode == AC_DOUBLECLICK && enabled) {
@@ -534,7 +531,7 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 		if (actionCode == AC_POPUPEDITTEXTBOXRETURNEDTEXT) {
 
 			//the actual text returned by the popup edit box
-			string to_text = pTO->GetText();
+			std::string to_text = pTO->GetText();
 			sendCommand_verbose(CMD_ECELLSIZE, combine(split(trimspaces(to_text), ",", ";"), " "));
 		};
 	}
@@ -546,7 +543,7 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 		//parameters from iop
 		int meshId = iop.minorId;
 		bool enabled = (bool)iop.auxId;
-		string cellsize_string = iop.textId;
+		std::string cellsize_string = iop.textId;
 
 		//on double-click make popup edit box to edit the currently displayed value
 		if (actionCode == AC_DOUBLECLICK && enabled) {
@@ -559,7 +556,7 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 		if (actionCode == AC_POPUPEDITTEXTBOXRETURNEDTEXT) {
 
 			//the actual text returned by the popup edit box
-			string to_text = pTO->GetText();
+			std::string to_text = pTO->GetText();
 			sendCommand_verbose(CMD_TCELLSIZE, combine(split(trimspaces(to_text), ",", ";"), " "));
 		};
 	}
@@ -571,7 +568,7 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 		//parameters from iop
 		int meshId = iop.minorId;
 		bool enabled = (bool)iop.auxId;
-		string cellsize_string = iop.textId;
+		std::string cellsize_string = iop.textId;
 
 		//on double-click make popup edit box to edit the currently displayed value
 		if (actionCode == AC_DOUBLECLICK && enabled) {
@@ -584,7 +581,7 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 		if (actionCode == AC_POPUPEDITTEXTBOXRETURNEDTEXT) {
 
 			//the actual text returned by the popup edit box
-			string to_text = pTO->GetText();
+			std::string to_text = pTO->GetText();
 			sendCommand_verbose(CMD_MCELLSIZE, combine(split(trimspaces(to_text), ",", ";"), " "));
 		};
 	}
@@ -596,7 +593,7 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 		//parameters from iop
 		int meshId = iop.minorId;
 		bool enabled = (bool)iop.auxId;
-		string cellsize_string = iop.textId;
+		std::string cellsize_string = iop.textId;
 
 		//on double-click make popup edit box to edit the currently displayed value
 		if (actionCode == AC_DOUBLECLICK && enabled) {
@@ -609,7 +606,7 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 		if (actionCode == AC_POPUPEDITTEXTBOXRETURNEDTEXT) {
 
 			//the actual text returned by the popup edit box
-			string to_text = pTO->GetText();
+			std::string to_text = pTO->GetText();
 			sendCommand_verbose(CMD_SCELLSIZE, combine(split(trimspaces(to_text), ",", ";"), " "));
 		};
 	}
@@ -634,7 +631,7 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 		//parameters from iop
 		int meshId = iop.minorId;
 		bool enabled = (bool)iop.auxId;
-		string cellsize_string = iop.textId;
+		std::string cellsize_string = iop.textId;
 
 		//on double-click make popup edit box to edit the currently displayed value
 		if (actionCode == AC_DOUBLECLICK && enabled) {
@@ -647,7 +644,7 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 		if (actionCode == AC_POPUPEDITTEXTBOXRETURNEDTEXT) {
 
 			//the actual text returned by the popup edit box
-			string to_text = pTO->GetText();
+			std::string to_text = pTO->GetText();
 			sendCommand_verbose(CMD_ATOMDMCELLSIZE, combine(split(trimspaces(to_text), ",", ";"), " "));
 		};
 	}
@@ -667,7 +664,7 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 	//Shows ferromagnetic super-mesh cellsize (units m) : textId is the mesh cellsize for the ferromagnetic super-mesh
 	case IOI_FMSMESHCELLSIZE:
 	{
-		string cellsizeValue = iop.textId;
+		std::string cellsizeValue = iop.textId;
 
 		//on double-click make popup edit box to edit the currently displayed value
 		if (actionCode == AC_DOUBLECLICK) { actionOutcome = AO_STARTPOPUPEDITBOX; }
@@ -676,7 +673,7 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 		if (actionCode == AC_POPUPEDITTEXTBOXRETURNEDTEXT) {
 
 			//the actual text returned by the popup edit box
-			string to_text = pTO->GetText();
+			std::string to_text = pTO->GetText();
 			sendCommand_verbose(CMD_FMSCELLSIZE, combine(split(trimspaces(to_text), ",", ";"), " "));
 		};
 	}
@@ -685,7 +682,7 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 	//Shows electric super-mesh cellsize (units m) : textId is the mesh cellsize for the ferromagnetic super-mesh
 	case IOI_ESMESHCELLSIZE:
 	{
-		string cellsizeValue = iop.textId;
+		std::string cellsizeValue = iop.textId;
 
 		//on double-click make popup edit box to edit the currently displayed value
 		if (actionCode == AC_DOUBLECLICK) { actionOutcome = AO_STARTPOPUPEDITBOX; }
@@ -694,7 +691,7 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 		if (actionCode == AC_POPUPEDITTEXTBOXRETURNEDTEXT) {
 
 			//the actual text returned by the popup edit box
-			string to_text = pTO->GetText();
+			std::string to_text = pTO->GetText();
 			sendCommand_verbose(CMD_ESCELLSIZE, combine(split(trimspaces(to_text), ",", ";"), " "));
 		};
 	}
@@ -704,7 +701,7 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 	case IOI_SHOWDATA:
 	{
 		//parameters from iop
-		string dataHandle = iop.textId;
+		std::string dataHandle = iop.textId;
 
 		if (actionCode == AC_DOUBLECLICK) sendCommand_verbose(CMD_SHOWDATA, dataHandle);
 
@@ -735,7 +732,7 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 	case IOI_DATA:
 	{
 		//parameters from iop
-		string dataHandle = iop.textId;
+		std::string dataHandle = iop.textId;
 
 		if (actionCode == AC_DOUBLECLICK) sendCommand_verbose(CMD_ADDDATA, dataHandle);
 
@@ -760,7 +757,7 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 	case IOI_DIRECTORY:
 	{
 		//parameters from iop
-		string directory = iop.textId;
+		std::string directory = iop.textId;
 
 		//on double-click make popup edit box to edit the currently displayed value
 		if (actionCode == AC_DOUBLECLICK) { actionOutcome = AO_STARTPOPUPEDITBOX; }
@@ -769,7 +766,7 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 		if (actionCode == AC_POPUPEDITTEXTBOXRETURNEDTEXT) {
 
 			//the actual text returned by the popup edit box
-			string to_text = pTO->GetText();
+			std::string to_text = pTO->GetText();
 			sendCommand_verbose(CMD_CHDIR, trimendspaces(to_text));
 		}
 	}
@@ -779,7 +776,7 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 	case IOI_SAVEDATAFILE:
 	{
 		//parameters from iop
-		string savedataFile = iop.textId;
+		std::string savedataFile = iop.textId;
 
 		//on double-click make popup edit box to edit the currently displayed value
 		if (actionCode == AC_DOUBLECLICK) { actionOutcome = AO_STARTPOPUPEDITBOX; }
@@ -788,7 +785,7 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 		if (actionCode == AC_POPUPEDITTEXTBOXRETURNEDTEXT) {
 
 			//the actual text returned by the popup edit box
-			string to_text = pTO->GetText();
+			std::string to_text = pTO->GetText();
 			sendCommand_verbose(CMD_SAVEDATAFILE, trimendspaces(to_text));
 		}
 	}
@@ -798,7 +795,7 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 	case IOI_SAVEIMAGEFILEBASE:
 	{
 		//parameters from iop
-		string imageSaveFileBase = iop.textId;
+		std::string imageSaveFileBase = iop.textId;
 
 		//on double-click make popup edit box to edit the currently displayed value
 		if (actionCode == AC_DOUBLECLICK) { actionOutcome = AO_STARTPOPUPEDITBOX; }
@@ -807,7 +804,7 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 		if (actionCode == AC_POPUPEDITTEXTBOXRETURNEDTEXT) {
 
 			//the actual text returned by the popup edit box
-			string to_text = pTO->GetText();
+			std::string to_text = pTO->GetText();
 			sendCommand_verbose(CMD_SAVEIMAGEFILE, trimendspaces(to_text));
 		}
 	}
@@ -845,15 +842,15 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 		else if (actionCode == AC_POPUPEDITTEXTBOXRETURNEDTEXT) {
 
 			//the actual text returned by the popup edit box
-			string to_text = trimspaces(pTO->GetText());
+			std::string to_text = trimspaces(pTO->GetText());
 
 			//After trimming all spaces has the form (last 2 are optional):
 			//index.dataName<meshname>(rectangle)
 
-			string index, dataName;
+			std::string index, dataName;
 
-			string meshName = remove_last_contained_substring(to_text, "<", ">");
-			string rectangle = remove_last_contained_substring(to_text, "(", ")");
+			std::string meshName = remove_last_contained_substring(to_text, "<", ">");
+			std::string rectangle = remove_last_contained_substring(to_text, "(", ")");
 			replaceall(rectangle, ",", " ");
 			replaceall(rectangle, ";", " ");
 
@@ -889,7 +886,7 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 
 				if (saveDataList.is_id_set(INT2(0, outDataId))) {
 
-					string dataHandle = dataDescriptor.get_key_from_ID(saveDataList[INT2(0, outDataId)].datumId);
+					std::string dataHandle = dataDescriptor.get_key_from_ID(saveDataList[INT2(0, outDataId)].datumId);
 					sendCommand_verbose(CMD_ADDPINNEDDATA, dataHandle, saveDataList[io_index].meshName, saveDataList[io_index].rectangle);
 				}
 
@@ -904,7 +901,7 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 	case IOI_STAGE:
 	{
 		//parameters from iop
-		string stageHandle = iop.textId;
+		std::string stageHandle = iop.textId;
 
 		if (actionCode == AC_DOUBLECLICK) sendCommand_verbose(CMD_ADDSTAGE, stageHandle);
 	}
@@ -927,13 +924,13 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 		else if (actionCode == AC_POPUPEDITTEXTBOXRETURNEDTEXT) {
 
 			//the actual text returned by the popup edit box
-			string to_text = trimspaces(pTO->GetText());
+			std::string to_text = trimspaces(pTO->GetText());
 
 			//After trimming all spaces has the form (the last one is optional):
 			//index.stageName<meshname>
 
-			string index, stageName;
-			string meshName = remove_last_contained_substring(to_text, "<", ">");
+			std::string index, stageName;
+			std::string meshName = remove_last_contained_substring(to_text, "<", ">");
 
 			auto fields = split(to_text, ".");
 			if (fields.size() == 2) {
@@ -961,12 +958,12 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 	}
 	break;
 
-	//Shows the value to set for the simulation schedule stage : minorId is the minor id of elements in Simulation::simStages (major id there is always 0), auxId is the number of the interactive object in the list, textId is the value as a string
+	//Shows the value to set for the simulation schedule stage : minorId is the minor id of elements in Simulation::simStages (major id there is always 0), auxId is the number of the interactive object in the list, textId is the value as a std::string
 	case IOI_SETSTAGEVALUE:
 	{
 		//parameters from iop
 		int io_index = iop.auxId;
-		string stageValueText = iop.textId;
+		std::string stageValueText = iop.textId;
 
 		//on double-click make popup edit box to edit the currently displayed value
 		if (actionCode == AC_DOUBLECLICK) { actionOutcome = AO_STARTPOPUPEDITBOX; }
@@ -975,19 +972,19 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 		else if (actionCode == AC_POPUPEDITTEXTBOXRETURNEDTEXT) {
 
 			//the actual text returned by the popup edit box
-			string to_text = trimendspaces(pTO->GetText());
+			std::string to_text = trimendspaces(pTO->GetText());
 
 			sendCommand_verbose(CMD_EDITSTAGEVALUE, io_index, to_text);
 		}
 	}
 	break;
 
-	//Shows the stop condition for the simulation schedule stage : minorId is the minor id of elements in Simulation::simStages (major id there is always 0), auxId is the number of the interactive object in the list, textId is the stop type and value as a string
+	//Shows the stop condition for the simulation schedule stage : minorId is the minor id of elements in Simulation::simStages (major id there is always 0), auxId is the number of the interactive object in the list, textId is the stop type and value as a std::string
 	case IOI_STAGESTOPCONDITION:
 	{
 		//parameters from iop
 		int io_index = iop.auxId;
-		string stopConditionText = iop.textId;
+		std::string stopConditionText = iop.textId;
 
 		//on double-click make popup edit box to edit the currently displayed value
 		if (actionCode == AC_DOUBLECLICK) { actionOutcome = AO_STARTPOPUPEDITBOX; }
@@ -996,19 +993,19 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 		else if (actionCode == AC_POPUPEDITTEXTBOXRETURNEDTEXT) {
 
 			//the actual text returned by the popup edit box
-			string to_text = trim(trimendspaces(pTO->GetText()), ":", ",", ";");
+			std::string to_text = trim(trimendspaces(pTO->GetText()), ":", ",", ";");
 
 			sendCommand_verbose(CMD_EDITSTAGESTOP, io_index, to_text);
 		}
 	}
 	break;
 
-	//Shows the saving condition for the simulation schedule stage : minorId is the minor id of elements in Simulation::simStages (major id there is always 0), auxId is the DSAVE_ value for this data save type, textId is the save type and value as a string
+	//Shows the saving condition for the simulation schedule stage : minorId is the minor id of elements in Simulation::simStages (major id there is always 0), auxId is the DSAVE_ value for this data save type, textId is the save type and value as a std::string
 	case IOI_DSAVETYPE:
 	{
 		//parameters from iop
 		int stageId_minor = iop.minorId;
-		string saveConditionText = iop.textId;
+		std::string saveConditionText = iop.textId;
 
 		int io_index = simStages.get_index_from_id(INT2(0, stageId_minor));
 
@@ -1024,7 +1021,7 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 		if (actionCode == AC_POPUPEDITTEXTBOXRETURNEDTEXT) {
 
 			//the actual text returned by the popup edit box
-			string to_text = trim(trimendspaces(pTO->GetText()), ":", ",", ";");
+			std::string to_text = trim(trimendspaces(pTO->GetText()), ":", ",", ";");
 
 			sendCommand_verbose(CMD_EDITDATASAVE, io_index, to_text);
 		}
@@ -1035,7 +1032,7 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 	case IOI_STAGESTOPCONDITIONALL:
 	{
 		//parameters from iop
-		string stopTypeHandle = iop.textId;
+		std::string stopTypeHandle = iop.textId;
 
 		if (actionCode == AC_MOUSELEFTDOWN) sendCommand_verbose(CMD_EDITSTAGESTOP, -1, stopTypeHandle);
 
@@ -1047,7 +1044,7 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 	case IOI_DSAVETYPEALL:
 	{
 		//parameters from iop
-		string saveTypeHandle = iop.textId;
+		std::string saveTypeHandle = iop.textId;
 
 		if (actionCode == AC_MOUSELEFTDOWN) sendCommand_verbose(CMD_EDITDATASAVE, -1, saveTypeHandle);
 
@@ -1061,9 +1058,9 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 		//parameters from iop
 		PARAM_ paramId = (PARAM_)iop.minorId;
 		int meshId = iop.auxId;
-		string paramText = iop.textId;
+		std::string paramText = iop.textId;
 
-		string meshName = SMesh.key_from_meshId(meshId);
+		std::string meshName = SMesh.key_from_meshId(meshId);
 
 		//on double-click make popup edit box to edit the currently displayed value
 		if (actionCode == AC_DOUBLECLICK) { actionOutcome = AO_STARTPOPUPEDITBOX; }
@@ -1072,13 +1069,13 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 		if (actionCode == AC_POPUPEDITTEXTBOXRETURNEDTEXT) {
 
 			//the actual text returned by the popup edit box
-			string to_text = pTO->GetText();
+			std::string to_text = pTO->GetText();
 
 			//meshName of holding mesh
-			string meshName = SMesh.key_from_meshId(meshId);
+			std::string meshName = SMesh.key_from_meshId(meshId);
 
 			//the text should be of the form "parameter_handle: value_with_units"; extract value_with_units if possible
-			vector<string> fields = split(to_text, { ": " });
+			std::vector<std::string> fields = split(to_text, { ": " });
 			if (fields.size() > 1) {
 				
 				sendCommand_verbose(CMD_SETPARAM, meshName, SMesh[meshName]->get_meshparam_handle(paramId), fields[1]);
@@ -1093,9 +1090,9 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 		//parameters from iop
 		PARAM_ paramId = (PARAM_)iop.minorId;
 		int meshId = iop.auxId;
-		string paramText = iop.textId;
+		std::string paramText = iop.textId;
 
-		string meshName = SMesh.key_from_meshId(meshId);
+		std::string meshName = SMesh.key_from_meshId(meshId);
 
 		//on double-click make popup edit box to edit the currently displayed value
 		if (actionCode == AC_DOUBLECLICK) { 
@@ -1150,10 +1147,10 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 		//parameters from iop
 		PARAM_ paramId = (PARAM_)iop.minorId;
 		int meshId = iop.auxId;
-		string paramText = iop.textId;
+		std::string paramText = iop.textId;
 
-		string meshName = SMesh.key_from_meshId(meshId);
-		string paramName = SMesh[meshName]->get_meshparam_handle(paramId);
+		std::string meshName = SMesh.key_from_meshId(meshId);
+		std::string paramName = SMesh[meshName]->get_meshparam_handle(paramId);
 
 		if (actionCode == AC_MOUSELEFTDOWN) sendCommand_verbose(CMD_SETDISPLAYEDPARAMSVAR, meshName, paramName);
 		
@@ -1164,7 +1161,7 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 		else if (actionCode == AC_POPUPEDITTEXTBOXRETURNEDTEXT) {
 			
 			//the actual text returned by the popup edit box
-			string to_text;
+			std::string to_text;
 
 			if (SMesh[meshName]->is_paramvarequation_set(paramId)) {
 
@@ -1215,16 +1212,16 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 		//parameters from iop
 		MESHDISPLAY_ displayOption = (MESHDISPLAY_)iop.minorId;
 		int meshId = iop.auxId;
-		string displayHandle = iop.textId;
+		std::string displayHandle = iop.textId;
 
-		string meshName = SMesh.key_from_meshId(meshId);
+		std::string meshName = SMesh.key_from_meshId(meshId);
 
 		if (actionCode == AC_MOUSELEFTDOWN) sendCommand_verbose(CMD_DISPLAY, displayHandle, meshName);
 		if (actionCode == AC_MOUSERIGHTDOWN) sendCommand_verbose(CMD_DISPLAYBACKGROUND, displayHandle, meshName);
 	}
 	break;
 
-	//Shows dual mesh display transparency values : textId is the DBL2 value as a string
+	//Shows dual mesh display transparency values : textId is the DBL2 value as a std::string
 	case IOI_MESHDISPLAYTRANSPARENCY:
 	{
 		//on double-click make popup edit box to edit the currently displayed value
@@ -1234,7 +1231,7 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 		else if (actionCode == AC_POPUPEDITTEXTBOXRETURNEDTEXT) {
 
 			//the actual text returned by the popup edit box
-			vector<string> fields = split(trimendspaces(pTO->GetText()), ", ");
+			std::vector<std::string> fields = split(trimendspaces(pTO->GetText()), ", ");
 
 			if (fields.size() == 2) {
 
@@ -1244,7 +1241,7 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 	}
 	break;
 
-	//Shows mesh display threshold values : textId is the DBL2 value as a string
+	//Shows mesh display threshold values : textId is the DBL2 value as a std::string
 	case IOI_MESHDISPLAYTHRESHOLDS:
 	{
 		//on double-click make popup edit box to edit the currently displayed value
@@ -1256,7 +1253,7 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 		else if (actionCode == AC_POPUPEDITTEXTBOXRETURNEDTEXT) {
 
 			//the actual text returned by the popup edit box
-			vector<string> fields = split(trimendspaces(pTO->GetText()), ", ");
+			std::vector<std::string> fields = split(trimendspaces(pTO->GetText()), ", ");
 
 			if (fields.size() == 2) {
 
@@ -1295,7 +1292,7 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 	{
 		//parameters from iop
 		MESHDISPLAY_ displayOption = (MESHDISPLAY_)iop.minorId;
-		string displayHandle = iop.textId;
+		std::string displayHandle = iop.textId;
 
 		if (actionCode == AC_MOUSELEFTDOWN) sendCommand_verbose(CMD_DISPLAY, displayHandle, SMesh.superMeshHandle);
 	}
@@ -1308,7 +1305,7 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 		int meshId = iop.minorId;
 		int option = iop.auxId;
 
-		string meshName = SMesh.key_from_meshId(meshId);
+		std::string meshName = SMesh.key_from_meshId(meshId);
 
 		if (actionCode == AC_MOUSELEFTDOWN) sendCommand_verbose(CMD_VECREP, meshName, (option + 1) % VEC3REP_NUMOPTIONS);
 		if (actionCode == AC_MOUSERIGHTDOWN) sendCommand_verbose(CMD_VECREP, meshName, (option + VEC3REP_NUMOPTIONS - 1) % VEC3REP_NUMOPTIONS);
@@ -1332,7 +1329,7 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 		//parameters from iop
 		int meshId = iop.minorId;
 		bool moving_mesh = iop.auxId;
-		string meshName = iop.textId;
+		std::string meshName = iop.textId;
 
 		//on double-click make popup edit box to edit the currently displayed value
 		if (actionCode == AC_DOUBLECLICK) { actionOutcome = AO_STARTPOPUPEDITBOX; }
@@ -1341,7 +1338,7 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 		else if (actionCode == AC_POPUPEDITTEXTBOXRETURNEDTEXT) {
 
 			//the actual text returned by the popup edit box
-			string to_text = trimendspaces(pTO->GetText());
+			std::string to_text = trimendspaces(pTO->GetText());
 
 			sendCommand_verbose(CMD_MOVINGMESH, to_text);
 		}
@@ -1360,11 +1357,11 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 	}
 	break;
 
-	//Shows movingmesh threshold : textId is the threshold value as a string
+	//Shows movingmesh threshold : textId is the threshold value as a std::string
 	case IOI_MOVINGMESHTHRESH:
 	{
 		//parameters from iop
-		string threshold_string = iop.textId;
+		std::string threshold_string = iop.textId;
 
 		//on double-click make popup edit box to edit the currently displayed value
 		if (actionCode == AC_DOUBLECLICK) { actionOutcome = AO_STARTPOPUPEDITBOX; }
@@ -1373,14 +1370,14 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 		else if (actionCode == AC_POPUPEDITTEXTBOXRETURNEDTEXT) {
 
 			//the actual text returned by the popup edit box
-			string to_text = trimendspaces(pTO->GetText());
+			std::string to_text = trimendspaces(pTO->GetText());
 
 			sendCommand_verbose(CMD_MOVINGMESHTHRESH, to_text);
 		}
 	}
 	break;
 
-	//Shows electrode box. minorId is the minor Id in STransport::electrode_boxes, auxId is the number of the interactive object in the list (electrode index), textId is the electrode rect as a string
+	//Shows electrode box. minorId is the minor Id in STransport::electrode_boxes, auxId is the number of the interactive object in the list (electrode index), textId is the electrode rect as a std::string
 	case IOI_ELECTRODERECT:
 	{
 		//parameters from iop
@@ -1394,7 +1391,7 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 		else if (actionCode == AC_POPUPEDITTEXTBOXRETURNEDTEXT) {
 
 			//the actual text returned by the popup edit box
-			string to_text = trimendspaces(pTO->GetText());
+			std::string to_text = trimendspaces(pTO->GetText());
 			replaceall(to_text, ", ", " ");
 			replaceall(to_text, "; ", " ");
 
@@ -1405,12 +1402,12 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 	}
 	break;
 
-	//Shows electrode potential. minorId is the electrode index, textId is potential value as a string
+	//Shows electrode potential. minorId is the electrode index, textId is potential value as a std::string
 	case IOI_ELECTRODEPOTENTIAL:
 	{
 		//parameters from iop
 		int el_index = iop.minorId;
-		string potential_string = iop.textId;
+		std::string potential_string = iop.textId;
 
 		//on double-click make popup edit box to edit the currently displayed value
 		if (actionCode == AC_DOUBLECLICK) { actionOutcome = AO_STARTPOPUPEDITBOX; }
@@ -1419,7 +1416,7 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 		else if (actionCode == AC_POPUPEDITTEXTBOXRETURNEDTEXT) {
 
 			//the actual text returned by the popup edit box
-			string to_text = trimendspaces(pTO->GetText());
+			std::string to_text = trimendspaces(pTO->GetText());
 
 			sendCommand_verbose(CMD_SETELECTRODEPOTENTIAL, el_index, to_text);
 		}
@@ -1465,7 +1462,7 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 		else if (actionCode == AC_POPUPEDITTEXTBOXRETURNEDTEXT) {
 
 			//the actual text returned by the popup edit box
-			string to_text = trimendspaces(pTO->GetText());
+			std::string to_text = trimendspaces(pTO->GetText());
 
 			sendCommand_verbose(CMD_TSOLVERCONFIG, to_text, SMesh.CallModuleMethod(&STransport::GetConvergenceTimeout));
 		}
@@ -1485,7 +1482,7 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 		else if (actionCode == AC_POPUPEDITTEXTBOXRETURNEDTEXT) {
 
 			//the actual text returned by the popup edit box
-			string to_text = trimendspaces(pTO->GetText());
+			std::string to_text = trimendspaces(pTO->GetText());
 
 			sendCommand_verbose(CMD_TSOLVERCONFIG, SMesh.CallModuleMethod(&STransport::GetConvergenceError), to_text);
 		}
@@ -1505,7 +1502,7 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 		else if (actionCode == AC_POPUPEDITTEXTBOXRETURNEDTEXT) {
 
 			//the actual text returned by the popup edit box
-			string to_text = trimendspaces(pTO->GetText());
+			std::string to_text = trimendspaces(pTO->GetText());
 
 			sendCommand_verbose(CMD_SSOLVERCONFIG, to_text, SMesh.CallModuleMethod(&STransport::GetSConvergenceTimeout));
 		}
@@ -1525,18 +1522,18 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 		else if (actionCode == AC_POPUPEDITTEXTBOXRETURNEDTEXT) {
 
 			//the actual text returned by the popup edit box
-			string to_text = trimendspaces(pTO->GetText());
+			std::string to_text = trimendspaces(pTO->GetText());
 
 			sendCommand_verbose(CMD_SSOLVERCONFIG, SMesh.CallModuleMethod(&STransport::GetSConvergenceError), to_text);
 		}
 	}
 	break;
 
-	//Shows SOR damping values when used in fixed damping mode. textId is the DBL2 damping value as a string. (DBL2 since we need different damping values for V and S solvers)
+	//Shows SOR damping values when used in fixed damping mode. textId is the DBL2 damping value as a std::string. (DBL2 since we need different damping values for V and S solvers)
 	case IOI_SORDAMPING:
 	{
 		//parameters from iop
-		string SOR_damping = iop.textId;
+		std::string SOR_damping = iop.textId;
 
 		//on double-click make popup edit box to edit the currently displayed value
 		if (actionCode == AC_DOUBLECLICK) { actionOutcome = AO_STARTPOPUPEDITBOX; }
@@ -1545,7 +1542,7 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 		else if (actionCode == AC_POPUPEDITTEXTBOXRETURNEDTEXT) {
 
 			//the actual text returned by the popup edit box
-			string to_text = trimendspaces(pTO->GetText());
+			std::string to_text = trimendspaces(pTO->GetText());
 			replaceall(to_text, ", ", " ");
 			replaceall(to_text, "; ", " ");
 
@@ -1564,11 +1561,21 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 	}
 	break;
 
+	//Disabled transport solver state. auxId is the value (0/1)
+	case IOI_DISABLEDTRANSPORT:
+	{
+		//parameters from iop
+		bool status = iop.auxId;
+
+		if (actionCode == AC_MOUSERIGHTDOWN || actionCode == AC_MOUSELEFTDOWN) sendCommand_verbose(CMD_DISABLETRANSPORTSOLVER, !status);
+	}
+	break;
+
 	//Shows mesh temperature. minorId is the unique mesh id number, textId is the temperature value
 	case IOI_BASETEMPERATURE:
 	{
 		int meshId = iop.minorId;
-		string temp_string = iop.textId;
+		std::string temp_string = iop.textId;
 
 		//on double-click make popup edit box to edit the currently displayed value
 		if (actionCode == AC_DOUBLECLICK) { actionOutcome = AO_STARTPOPUPEDITBOX; }
@@ -1577,7 +1584,7 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 		else if (actionCode == AC_POPUPEDITTEXTBOXRETURNEDTEXT) {
 
 			//the actual text returned by the popup edit box
-			string to_text = trimendspaces(pTO->GetText());
+			std::string to_text = trimendspaces(pTO->GetText());
 
 			sendCommand_verbose(CMD_TEMPERATURE, to_text, SMesh.key_from_meshId(meshId));
 		}
@@ -1590,7 +1597,7 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 	case IOI_AMBIENT_TEMPERATURE:
 	{
 		int meshId = iop.minorId;
-		string temp_string = iop.textId;
+		std::string temp_string = iop.textId;
 		bool enabled = iop.auxId;
 
 		if (enabled) {
@@ -1602,7 +1609,7 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 			else if (actionCode == AC_POPUPEDITTEXTBOXRETURNEDTEXT) {
 
 				//the actual text returned by the popup edit box
-				string to_text = trimendspaces(pTO->GetText());
+				std::string to_text = trimendspaces(pTO->GetText());
 
 				sendCommand_verbose(CMD_AMBIENTTEMPERATURE, to_text, SMesh.key_from_meshId(meshId));
 			}
@@ -1616,7 +1623,7 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 	case IOI_ROBIN_ALPHA:
 	{
 		int meshId = iop.minorId;
-		string alpha_string = iop.textId;
+		std::string alpha_string = iop.textId;
 		bool enabled = iop.auxId;
 
 		if (enabled) {
@@ -1628,7 +1635,7 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 			else if (actionCode == AC_POPUPEDITTEXTBOXRETURNEDTEXT) {
 
 				//the actual text returned by the popup edit box
-				string to_text = trimendspaces(pTO->GetText());
+				std::string to_text = trimendspaces(pTO->GetText());
 
 				sendCommand_verbose(CMD_ROBINALPHA, to_text, SMesh.key_from_meshId(meshId));
 			}
@@ -1642,7 +1649,7 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 	case IOI_INSULATINGSIDE:
 	{
 		int meshId = iop.minorId;
-		string literal = iop.textId;
+		std::string literal = iop.textId;
 		int status = iop.auxId;
 
 		if (status >= 0) {
@@ -1657,7 +1664,7 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 	case IOI_CURIETEMP:
 	{
 		int meshId = iop.minorId;
-		string temp_string = iop.textId;
+		std::string temp_string = iop.textId;
 
 		//on double-click make popup edit box to edit the currently displayed value
 		if (actionCode == AC_DOUBLECLICK) { actionOutcome = AO_STARTPOPUPEDITBOX; }
@@ -1666,7 +1673,7 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 		else if (actionCode == AC_POPUPEDITTEXTBOXRETURNEDTEXT) {
 
 			//the actual text returned by the popup edit box
-			string to_text = trimendspaces(pTO->GetText());
+			std::string to_text = trimendspaces(pTO->GetText());
 
 			sendCommand_verbose(CMD_CURIETEMPERATURE, to_text, SMesh.key_from_meshId(meshId));
 		}
@@ -1677,7 +1684,7 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 	case IOI_CURIETEMPMATERIAL:
 	{
 		int meshId = iop.minorId;
-		string temp_string = iop.textId;
+		std::string temp_string = iop.textId;
 
 		//on double-click make popup edit box to edit the currently displayed value
 		if (actionCode == AC_DOUBLECLICK) { actionOutcome = AO_STARTPOPUPEDITBOX; }
@@ -1686,7 +1693,7 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 		else if (actionCode == AC_POPUPEDITTEXTBOXRETURNEDTEXT) {
 
 			//the actual text returned by the popup edit box
-			string to_text = trimendspaces(pTO->GetText());
+			std::string to_text = trimendspaces(pTO->GetText());
 
 			sendCommand_verbose(CMD_CURIETEMPERATUREMATERIAL, to_text, SMesh.key_from_meshId(meshId));
 		}
@@ -1697,7 +1704,7 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 	case IOI_ATOMICMOMENT:
 	{
 		int meshId = iop.minorId;
-		string amoment_string = iop.textId;
+		std::string amoment_string = iop.textId;
 
 		//on double-click make popup edit box to edit the currently displayed value
 		if (actionCode == AC_DOUBLECLICK) { actionOutcome = AO_STARTPOPUPEDITBOX; }
@@ -1706,7 +1713,7 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 		else if (actionCode == AC_POPUPEDITTEXTBOXRETURNEDTEXT) {
 
 			//the actual text returned by the popup edit box
-			string to_text = trimendspaces(pTO->GetText());
+			std::string to_text = trimendspaces(pTO->GetText());
 
 			sendCommand_verbose(CMD_ATOMICMOMENT, to_text, SMesh.key_from_meshId(meshId));
 		}
@@ -1717,7 +1724,7 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 	case IOI_ATOMICMOMENT_AFM:
 	{
 		int meshId = iop.minorId;
-		string amoment_string = iop.textId;
+		std::string amoment_string = iop.textId;
 
 		//on double-click make popup edit box to edit the currently displayed value
 		if (actionCode == AC_DOUBLECLICK) { actionOutcome = AO_STARTPOPUPEDITBOX; }
@@ -1726,7 +1733,7 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 		else if (actionCode == AC_POPUPEDITTEXTBOXRETURNEDTEXT) {
 
 			//the actual text returned by the popup edit box
-			string to_text = trimendspaces(pTO->GetText());
+			std::string to_text = trimendspaces(pTO->GetText());
 
 			sendCommand_verbose(CMD_ATOMICMOMENT, to_text, SMesh.key_from_meshId(meshId));
 		}
@@ -1737,7 +1744,7 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 	case IOI_TAU:
 	{
 		int meshId = iop.minorId;
-		string tau_string = iop.textId;
+		std::string tau_string = iop.textId;
 
 		//on double-click make popup edit box to edit the currently displayed value
 		if (actionCode == AC_DOUBLECLICK) { actionOutcome = AO_STARTPOPUPEDITBOX; }
@@ -1746,7 +1753,7 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 		else if (actionCode == AC_POPUPEDITTEXTBOXRETURNEDTEXT) {
 
 			//the actual text returned by the popup edit box
-			string to_text = trimendspaces(pTO->GetText());
+			std::string to_text = trimendspaces(pTO->GetText());
 
 			sendCommand_verbose(CMD_TAU, to_text, SMesh.key_from_meshId(meshId));
 		}
@@ -1846,7 +1853,7 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 		else if (actionCode == AC_POPUPEDITTEXTBOXRETURNEDTEXT) {
 
 			//the actual text returned by the popup edit box
-			string to_text = trim(trimendspaces(pTO->GetText()), ",");
+			std::string to_text = trim(trimendspaces(pTO->GetText()), ",");
 
 			sendCommand_verbose(CMD_THREADS, to_text);
 		}
@@ -1864,7 +1871,7 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 		else if (actionCode == AC_POPUPEDITTEXTBOXRETURNEDTEXT) {
 
 			//the actual text returned by the popup edit box
-			string to_text = trim(trimendspaces(pTO->GetText()), ",");
+			std::string to_text = trim(trimendspaces(pTO->GetText()), ",");
 
 			sendCommand_verbose(CMD_SERVERPORT, to_text);
 		}
@@ -1881,7 +1888,7 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 		else if (actionCode == AC_POPUPEDITTEXTBOXRETURNEDTEXT) {
 
 			//the actual text returned by the popup edit box
-			string to_text = trim(trimendspaces(pTO->GetText()), ",");
+			std::string to_text = trim(trimendspaces(pTO->GetText()), ",");
 
 			sendCommand_verbose(CMD_SERVERPWD, to_text);
 		}
@@ -1898,7 +1905,7 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 		else if (actionCode == AC_POPUPEDITTEXTBOXRETURNEDTEXT) {
 
 			//the actual text returned by the popup edit box
-			string to_text = trim(trimendspaces(pTO->GetText()), ",");
+			std::string to_text = trim(trimendspaces(pTO->GetText()), ",");
 
 			sendCommand_verbose(CMD_SERVERSLEEPMS, to_text);
 		}
@@ -1919,7 +1926,7 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 	case IOI_REFINEROUGHNESS:
 	{
 		int meshId = iop.minorId;
-		string refine = iop.textId;
+		std::string refine = iop.textId;
 		bool status = iop.auxId;
 
 		//on double-click make popup edit box to edit the currently displayed value
@@ -1929,7 +1936,7 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 		else if (actionCode == AC_POPUPEDITTEXTBOXRETURNEDTEXT) {
 
 			//the actual text returned by the popup edit box
-			string to_text = trim(trimendspaces(pTO->GetText()), ",");
+			std::string to_text = trim(trimendspaces(pTO->GetText()), ",");
 
 			sendCommand_verbose(CMD_REFINEROUGHNESS, to_text, SMesh.key_from_meshId(meshId));
 		}
@@ -1967,7 +1974,7 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 	case IOI_NCOMMON:
 	{
 		int status = iop.auxId;
-		string n_common = iop.textId;
+		std::string n_common = iop.textId;
 
 		//on double-click make popup edit box to edit the currently displayed value
 		if (actionCode == AC_DOUBLECLICK && status >= 0) { actionOutcome = AO_STARTPOPUPEDITBOX; }
@@ -1976,7 +1983,7 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 		else if (actionCode == AC_POPUPEDITTEXTBOXRETURNEDTEXT) {
 
 			//the actual text returned by the popup edit box
-			string to_text = trim(trimendspaces(pTO->GetText()), ",");
+			std::string to_text = trim(trimendspaces(pTO->GetText()), ",");
 
 			sendCommand_verbose(CMD_NCOMMON, to_text);
 		}
@@ -1987,7 +1994,7 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 	case IOI_LOCALMDB:
 	{
 		//parameters from iop
-		string mdbFile = iop.textId;
+		std::string mdbFile = iop.textId;
 
 		//on double-click make popup edit box to edit the currently displayed value
 		if (actionCode == AC_DOUBLECLICK) { actionOutcome = AO_STARTPOPUPEDITBOX; }
@@ -1996,7 +2003,7 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 		else if (actionCode == AC_POPUPEDITTEXTBOXRETURNEDTEXT) {
 
 			//the actual text returned by the popup edit box
-			string to_text = trimendspaces(pTO->GetText());
+			std::string to_text = trimendspaces(pTO->GetText());
 
 			sendCommand_verbose(CMD_MATERIALSDATABASE, to_text);
 		}
@@ -2013,7 +2020,7 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 		else if (actionCode == AC_POPUPEDITTEXTBOXRETURNEDTEXT) {
 
 			//the actual text returned by the popup edit box
-			string to_text = trim(trimendspaces(pTO->GetText()), ",");
+			std::string to_text = trim(trimendspaces(pTO->GetText()), ",");
 
 			double y = SMesh.Get_AStepRelErrCtrl().y;
 			double z = SMesh.Get_AStepRelErrCtrl().z;
@@ -2033,7 +2040,7 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 		else if (actionCode == AC_POPUPEDITTEXTBOXRETURNEDTEXT) {
 
 			//the actual text returned by the popup edit box
-			string to_text = trim(trimendspaces(pTO->GetText()), ",");
+			std::string to_text = trim(trimendspaces(pTO->GetText()), ",");
 
 			double x = SMesh.Get_AStepRelErrCtrl().x;
 			double z = SMesh.Get_AStepRelErrCtrl().z;
@@ -2053,7 +2060,7 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 		else if (actionCode == AC_POPUPEDITTEXTBOXRETURNEDTEXT) {
 
 			//the actual text returned by the popup edit box
-			string to_text = trim(trimendspaces(pTO->GetText()), ",");
+			std::string to_text = trim(trimendspaces(pTO->GetText()), ",");
 
 			double x = SMesh.Get_AStepRelErrCtrl().x;
 			double y = SMesh.Get_AStepRelErrCtrl().y;
@@ -2073,7 +2080,7 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 		else if (actionCode == AC_POPUPEDITTEXTBOXRETURNEDTEXT) {
 
 			//the actual text returned by the popup edit box
-			string to_text = trim(trimendspaces(pTO->GetText()), ",");
+			std::string to_text = trim(trimendspaces(pTO->GetText()), ",");
 
 			double y = SMesh.Get_AStepdTCtrl().y;
 			double z = SMesh.Get_AStepdTCtrl().z;
@@ -2093,7 +2100,7 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 		else if (actionCode == AC_POPUPEDITTEXTBOXRETURNEDTEXT) {
 
 			//the actual text returned by the popup edit box
-			string to_text = trim(trimendspaces(pTO->GetText()), ",");
+			std::string to_text = trim(trimendspaces(pTO->GetText()), ",");
 
 			double x = SMesh.Get_AStepdTCtrl().x;
 			double z = SMesh.Get_AStepdTCtrl().z;
@@ -2113,7 +2120,7 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 		else if (actionCode == AC_POPUPEDITTEXTBOXRETURNEDTEXT) {
 
 			//the actual text returned by the popup edit box
-			string to_text = trim(trimendspaces(pTO->GetText()), ",");
+			std::string to_text = trim(trimendspaces(pTO->GetText()), ",");
 
 			double x = SMesh.Get_AStepdTCtrl().x;
 			double y = SMesh.Get_AStepdTCtrl().y;
@@ -2138,7 +2145,7 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 		else if (actionCode == AC_POPUPEDITTEXTBOXRETURNEDTEXT) {
 
 			//the actual text returned by the popup edit box
-			string to_text = trimendspaces(pTO->GetText());
+			std::string to_text = trimendspaces(pTO->GetText());
 
 			sendCommand_verbose(CMD_PBC, SMesh.key_from_meshId(meshId), "x", to_text);
 		}
@@ -2162,7 +2169,7 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 		else if (actionCode == AC_POPUPEDITTEXTBOXRETURNEDTEXT) {
 
 			//the actual text returned by the popup edit box
-			string to_text = trimendspaces(pTO->GetText());
+			std::string to_text = trimendspaces(pTO->GetText());
 
 			sendCommand_verbose(CMD_PBC, SMesh.key_from_meshId(meshId), "y", to_text);
 		}
@@ -2186,7 +2193,7 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 		else if (actionCode == AC_POPUPEDITTEXTBOXRETURNEDTEXT) {
 
 			//the actual text returned by the popup edit box
-			string to_text = trimendspaces(pTO->GetText());
+			std::string to_text = trimendspaces(pTO->GetText());
 
 			sendCommand_verbose(CMD_PBC, SMesh.key_from_meshId(meshId), "z", to_text);
 		}
@@ -2209,7 +2216,7 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 		else if (actionCode == AC_POPUPEDITTEXTBOXRETURNEDTEXT) {
 
 			//the actual text returned by the popup edit box
-			string to_text = trimendspaces(pTO->GetText());
+			std::string to_text = trimendspaces(pTO->GetText());
 
 			sendCommand_verbose(CMD_PBC, SMesh.superMeshHandle, "x", to_text);
 		}
@@ -2232,7 +2239,7 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 		else if (actionCode == AC_POPUPEDITTEXTBOXRETURNEDTEXT) {
 
 			//the actual text returned by the popup edit box
-			string to_text = trimendspaces(pTO->GetText());
+			std::string to_text = trimendspaces(pTO->GetText());
 
 			sendCommand_verbose(CMD_PBC, SMesh.superMeshHandle, "y", to_text);
 		}
@@ -2255,7 +2262,7 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 		else if (actionCode == AC_POPUPEDITTEXTBOXRETURNEDTEXT) {
 
 			//the actual text returned by the popup edit box
-			string to_text = trimendspaces(pTO->GetText());
+			std::string to_text = trimendspaces(pTO->GetText());
 
 			sendCommand_verbose(CMD_PBC, SMesh.superMeshHandle, "z", to_text);
 		}
@@ -2276,7 +2283,7 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 	//Shows image cropping settings : textId has the DBL4 value as text
 	case IOI_IMAGECROPPING:
 	{
-		string value_text = iop.textId;
+		std::string value_text = iop.textId;
 
 		//on double-click make popup edit box to edit the currently displayed value
 		if (actionCode == AC_DOUBLECLICK) { actionOutcome = AO_STARTPOPUPEDITBOX; }
@@ -2285,14 +2292,14 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 		else if (actionCode == AC_POPUPEDITTEXTBOXRETURNEDTEXT) {
 
 			//the actual text returned by the popup edit box
-			string to_text = trim(trimendspaces(pTO->GetText()), ",");
+			std::string to_text = trim(trimendspaces(pTO->GetText()), ",");
 
 			sendCommand_verbose(CMD_IMAGECROPPING, to_text);
 		}
 	}
 	break;
 
-	//Show user constant for text equations : minorId is the index in Simulation::userConstants, auxId is the number of the interactive object in the list as it appears in the console, textId is the constant name and value string 
+	//Show user constant for text equations : minorId is the index in Simulation::userConstants, auxId is the number of the interactive object in the list as it appears in the console, textId is the constant name and value std::string 
 	//Note this entry must always represent the entry in Simulation::userConstants with the index in auxId.
 	case IOI_USERCONSTANT:
 	{
@@ -2300,7 +2307,7 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 		int index = iop.minorId;
 		int io_index = iop.auxId;
 
-		string constant_name = userConstants.get_key_from_index(index);
+		std::string constant_name = userConstants.get_key_from_index(index);
 
 		if (actionCode == AC_MOUSERIGHTDOWN) sendCommand_verbose(CMD_DELEQUATIONCONSTANT, constant_name);
 
@@ -2311,7 +2318,7 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 		else if (actionCode == AC_POPUPEDITTEXTBOXRETURNEDTEXT) {
 
 			//the actual text returned by the popup edit box
-			string to_text = trimspaces(pTO->GetText());
+			std::string to_text = trimspaces(pTO->GetText());
 
 			//After trimming all spaces has the form (last 2 are optional):
 			//constant_name:value
@@ -2319,7 +2326,7 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 			auto fields = split(to_text, ":");
 			if (fields.size() == 2) {
 
-				string new_constant_name = fields[0];
+				std::string new_constant_name = fields[0];
 				double value = ToNum(fields[1]);
 				
 				if (new_constant_name != constant_name) userConstants.change_key(constant_name, new_constant_name);
@@ -2329,7 +2336,7 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 	}
 	break;
 
-	//Show skypos diameter multiplier : minorId is the unique mesh id number, textId is the multiplier as a string
+	//Show skypos diameter multiplier : minorId is the unique mesh id number, textId is the multiplier as a std::string
 	case IOI_SKYPOSDMUL:
 	{
 		int meshId = iop.minorId;
@@ -2342,7 +2349,7 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 		else if (actionCode == AC_POPUPEDITTEXTBOXRETURNEDTEXT) {
 
 			//the actual text returned by the popup edit box
-			string to_text = trimendspaces(pTO->GetText());
+			std::string to_text = trimendspaces(pTO->GetText());
 
 			sendCommand_verbose(CMD_SKYPOSDMUL, to_text, SMesh.key_from_meshId(meshId));
 		}
@@ -2382,13 +2389,151 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 			else if (actionCode == AC_POPUPEDITTEXTBOXRETURNEDTEXT) {
 
 				//the actual text returned by the popup edit box
-				string to_text = trimendspaces(pTO->GetText());
+				std::string to_text = trimendspaces(pTO->GetText());
 
 				sendCommand_verbose(CMD_MCCONSTRAIN, to_text, SMesh.key_from_meshId(meshId));
 			}
 		}
 	}
 	break;
+	//Shows shape rotation setting: textId is the value as text (DBL3)
+	case IOI_SHAPEROT:
+	{
+		//on double-click make popup edit box to edit the currently displayed value
+		if (actionCode == AC_DOUBLECLICK) { actionOutcome = AO_STARTPOPUPEDITBOX; }
+
+		//popup edit box has returned some text - try to set value from it
+		else if (actionCode == AC_POPUPEDITTEXTBOXRETURNEDTEXT) {
+
+			//the actual text returned by the popup edit box
+			std::string to_text = trimendspaces(pTO->GetText());
+
+			sendCommand_verbose(CMD_SHAPEMOD_ROT, to_text);
+		}
+	}
+	break;
+
+	//Shows shape repetition setting: textId is the value as text (INT3)
+	case IOI_SHAPEREP:
+	{
+		//on double-click make popup edit box to edit the currently displayed value
+		if (actionCode == AC_DOUBLECLICK) { actionOutcome = AO_STARTPOPUPEDITBOX; }
+
+		//popup edit box has returned some text - try to set value from it
+		else if (actionCode == AC_POPUPEDITTEXTBOXRETURNEDTEXT) {
+
+			//the actual text returned by the popup edit box
+			std::string to_text = trimendspaces(pTO->GetText());
+
+			sendCommand_verbose(CMD_SHAPEMOD_REP, to_text);
+		}
+	}
+	break;
+
+	//Shows shape displacement setting: textId is the value as text (DBL3)
+	case IOI_SHAPEDSP:
+	{
+		//on double-click make popup edit box to edit the currently displayed value
+		if (actionCode == AC_DOUBLECLICK) { actionOutcome = AO_STARTPOPUPEDITBOX; }
+
+		//popup edit box has returned some text - try to set value from it
+		else if (actionCode == AC_POPUPEDITTEXTBOXRETURNEDTEXT) {
+
+			//the actual text returned by the popup edit box
+			std::string to_text = trimendspaces(pTO->GetText());
+
+			sendCommand_verbose(CMD_SHAPEMOD_DISP, to_text);
+		}
+	}
+	break;
+
+	//Shows shape method setting: textId is the value as text (method)
+	case IOI_SHAPEMET:
+	{
+		std::string method = iop.textId;
+		int method_id = MeshShape().set_method(method);
+
+		if (actionCode == AC_MOUSERIGHTDOWN || actionCode == AC_MOUSELEFTDOWN) sendCommand_verbose(CMD_SHAPEMOD_METHOD, MeshShape(MSHAPEMETHOD_((method_id + 1) % (int)MSHAPEMETHOD_NUMMETHODS)).method_name());
+	}
+	break;
+
+	//Shows display render detail level: textId is the value
+	case IOI_DISPRENDER_DETAIL:
+	{
+		//on double-click make popup edit box to edit the currently displayed value
+		if (actionCode == AC_DOUBLECLICK) { actionOutcome = AO_STARTPOPUPEDITBOX; }
+
+		//popup edit box has returned some text - try to set value from it
+		else if (actionCode == AC_POPUPEDITTEXTBOXRETURNEDTEXT) {
+
+			//the actual text returned by the popup edit box
+			std::string to_text = pTO->GetText();
+
+			sendCommand_verbose(CMD_DISPLAYDETAILLEVEL, trimspaces(to_text));
+		}
+	}
+	break;
+
+	//Shows display render threshold 1: textId is the value
+	case IOI_DISPRENDER_THRESH1:
+	{
+		//on double-click make popup edit box to edit the currently displayed value
+		if (actionCode == AC_DOUBLECLICK) { actionOutcome = AO_STARTPOPUPEDITBOX; }
+
+		//popup edit box has returned some text - try to set value from it
+		else if (actionCode == AC_POPUPEDITTEXTBOXRETURNEDTEXT) {
+
+			//the actual text returned by the popup edit box
+			std::string to_text = trimendspaces(pTO->GetText());
+
+			INT3 thresholds = BD.GetRenderThresholds();
+			thresholds.i = ToNum(to_text);
+
+			sendCommand_verbose(CMD_DISPLAYRENDERTHRESH, ToString(thresholds));
+		}
+	}
+	break;
+
+	//Shows display render threshold 2: textId is the value
+	case IOI_DISPRENDER_THRESH2:
+	{
+		//on double-click make popup edit box to edit the currently displayed value
+		if (actionCode == AC_DOUBLECLICK) { actionOutcome = AO_STARTPOPUPEDITBOX; }
+
+		//popup edit box has returned some text - try to set value from it
+		else if (actionCode == AC_POPUPEDITTEXTBOXRETURNEDTEXT) {
+
+			//the actual text returned by the popup edit box
+			std::string to_text = trimendspaces(pTO->GetText());
+
+			INT3 thresholds = BD.GetRenderThresholds();
+			thresholds.j = ToNum(to_text);
+
+			sendCommand_verbose(CMD_DISPLAYRENDERTHRESH, ToString(thresholds));
+		}
+	}
+	break;
+
+	//Shows display render threshold 3: textId is the value
+	case IOI_DISPRENDER_THRESH3:
+	{
+		//on double-click make popup edit box to edit the currently displayed value
+		if (actionCode == AC_DOUBLECLICK) { actionOutcome = AO_STARTPOPUPEDITBOX; }
+
+		//popup edit box has returned some text - try to set value from it
+		else if (actionCode == AC_POPUPEDITTEXTBOXRETURNEDTEXT) {
+
+			//the actual text returned by the popup edit box
+			std::string to_text = trimendspaces(pTO->GetText());
+
+			INT3 thresholds = BD.GetRenderThresholds();
+			thresholds.k = ToNum(to_text);
+
+			sendCommand_verbose(CMD_DISPLAYRENDERTHRESH, ToString(thresholds));
+		}
+	}
+	break;
+
 
 	default:
 		break;

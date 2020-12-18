@@ -53,7 +53,7 @@
 #define CAMERAFOV	30.0f
 
 using namespace DirectX;
-using namespace std;
+
 
 //enum defining cell display objects. These are custom objects so better not to define them here, but in the file implementing the derived client class (whose base class is D3D).
 enum CDO_;
@@ -169,16 +169,16 @@ struct ObjectBuffer {
 
 struct ObjectBufferCollection {
 
-	vector<ObjectBuffer*> objBuf;
+	std::vector<ObjectBuffer*> objBuf;
 
 	CDO_ activeOB;
 
 	ObjectBufferCollection(CDO_ activeOB) { this->activeOB = activeOB; }
 
-	HRESULT NewObjectBuffer(ID3D11Device* pd3dDevice, ID3D11DeviceContext* pImmediateContext, SimpleVertex vertices[], UINT vSize, WORD indices[], UINT iSize, string VSFile, string PSFile);
+	HRESULT NewObjectBuffer(ID3D11Device* pd3dDevice, ID3D11DeviceContext* pImmediateContext, SimpleVertex vertices[], UINT vSize, WORD indices[], UINT iSize, std::string VSFile, std::string PSFile);
 
 	//Load shaders from a .fx file and compile it to a .cso file
-	HRESULT CompileShaderFromFile(string fileName, LPCSTR szEntryPoint, LPCSTR szShaderModel, ID3DBlob** ppBlobOut);
+	HRESULT CompileShaderFromFile(std::string fileName, LPCSTR szEntryPoint, LPCSTR szShaderModel, ID3DBlob** ppBlobOut);
 
 	void SetContext(ID3D11DeviceContext* pImmediateContext, CDO_ objColSelector) {
 
@@ -217,6 +217,9 @@ struct CBObjectTransform {
 
 	//the position of object (in world view, logical units) on which this Transform is used : this will be the translation value used to set Trans
 	DBL3 position;
+
+	//set this to true to skip rendering (e.g. empty or obscured cell)
+	bool skip_render = false;
 
 	CBObjectTransform(void) 
 	{
@@ -324,11 +327,11 @@ public:  //Public data
 	//main window width and height
 	UINT wndWidth, wndHeight;
 
-	//Use a mutex to access drawing methods which could be accessed by multiple threads. 
-	//Only use the mutex at the first point of entry : define a Refresh method which handles all calls to updating the screen (parts or all of it). The mutex is used there.
-	//Also use the mutex at the start of methods which call for drawing to be done to a file, as these will also use the back buffer.
-	//NOTE : this mutex may not be needed, if instead graphics routines are managed by a top level display object (calls eventually get here), in which case it should have its own mutex.
-	mutex GraphicsMutex;
+	//Use a std::mutex to access drawing methods which could be accessed by multiple threads. 
+	//Only use the std::mutex at the first point of entry : define a Refresh method which handles all calls to updating the screen (parts or all of it). The std::mutex is used there.
+	//Also use the std::mutex at the start of methods which call for drawing to be done to a file, as these will also use the back buffer.
+	//NOTE : this std::mutex may not be needed, if instead graphics routines are managed by a top level display object (calls eventually get here), in which case it should have its own std::mutex.
+	std::mutex GraphicsMutex;
 
 private: //Private methods
 
@@ -349,11 +352,11 @@ protected: //Protected methods
 	inline void BeginD2DDraw(void) {pD2DRT->BeginDraw();}
 	inline void EndD2DDraw(void) {pD2DRT->EndDraw();}
 
-	//get string from HRESULT
-	string GetErrorMessage(HRESULT hr);
+	//get std::string from HRESULT
+	std::string GetErrorMessage(HRESULT hr);
 
 	//Draw a batch of identical objects (objBuf with given pixel and vertex shaders) as indicated by the cbOTBatch vector - each object can be individually rotated, scaled, translated and colored
-	void DrawCBObjectBatch(vector<CBObjectTransform> &cbOTBatch, ObjectBufferCollection &objCol, CDO_ objColSelector);
+	void DrawCBObjectBatch(std::vector<CBObjectTransform> &cbOTBatch, ObjectBufferCollection &objCol, CDO_ objColSelector);
 	//Draw a single constant buffer object
 	void DrawCBObject(XMMATRIX Rotation, XMMATRIX Scaling, XMMATRIX Translation, XMFLOAT4 Color, ObjectBufferCollection &objCol, CDO_ objColSelector);
 
@@ -361,20 +364,20 @@ protected: //Protected methods
 	void DrawFrameObject(XMMATRIX Rotation, XMMATRIX Scaling, XMMATRIX Translation, XMFLOAT4 Color, ObjectBufferCollection &objCol, CDO_ objColSelector);
 
 	//save currently displaying image in capture_rect to png file
-	bool SaveScreenToPNG(string fileName, D2D1_RECT_F capture_rect);
+	bool SaveScreenToPNG(std::string fileName, D2D1_RECT_F capture_rect);
 
 	//Load bitmap from file to given size
-	HRESULT LoadScaledBitmap(string fileName, IWICFormatConverter **ppWICFormatConverter, D2D1_SIZE_U size);
+	HRESULT LoadScaledBitmap(std::string fileName, IWICFormatConverter **ppWICFormatConverter, D2D1_SIZE_U size);
 	//Get dimensions in pixels of image in the given image file
-	HRESULT GetImageDimensions(string fileName, UINT *pbmpWidth, UINT *pbmpHeight);
+	HRESULT GetImageDimensions(std::string fileName, UINT *pbmpWidth, UINT *pbmpHeight);
 
 	//Video encoding methods : Initialize a sink writer and write frames to it. These methods must be directed by another method which starts the process, writes frames and ends the process.
 	//Initialize a sink writer and also get a stream index for it. The output video will be in the given filename, with the given fps and frames will have the given dimensions.
 	//quality determines the bit-rate used
-	HRESULT InitializeSinkWriter(string fileName, IMFSinkWriter **ppWriter, DWORD *pStreamIndex, UINT32 VIDEO_WIDTH, UINT32 VIDEO_HEIGHT, UINT32 VIDEO_FPS, int quality);
+	HRESULT InitializeSinkWriter(std::string fileName, IMFSinkWriter **ppWriter, DWORD *pStreamIndex, UINT32 VIDEO_WIDTH, UINT32 VIDEO_HEIGHT, UINT32 VIDEO_FPS, int quality);
 	//Write a frame to the initialized sink writer (also need the stream index for it) by loading it from the given image file. The frame is loaded to the given dimensions (which must match the initialized sink writer).
 	//The fps must also match that of the initialized sink writer. The frame will be placed at the time position indicated by timeStamp: each frame lasts for VIDEO_FRAME_DURATION = 10 * 1000 * 1000 / VIDEO_FPS ticks, so increment timeStamp by this count for every new frame.
-	HRESULT WriteFrameFromFile(string fileName, IMFSinkWriter *pWriter, DWORD streamIndex, const LONGLONG& timeStamp, UINT32 VIDEO_WIDTH, UINT32 VIDEO_HEIGHT, UINT32 VIDEO_FPS);
+	HRESULT WriteFrameFromFile(std::string fileName, IMFSinkWriter *pWriter, DWORD streamIndex, const LONGLONG& timeStamp, UINT32 VIDEO_WIDTH, UINT32 VIDEO_HEIGHT, UINT32 VIDEO_FPS);
 
 public:  //Public methods
 
@@ -383,10 +386,10 @@ public:  //Public methods
 
 	//Any rendering should be done between a pair of BeginD3DDraw() ... EndD3DDraw(), including drawing using the D2D render target (pD2DRT), but the latter must also use the D2D pairing methods.
 	//clears screen and other buffers as necessary - we just clear the depth buffer here.
-	void BeginD3DDraw(void) {pImmediateContext->ClearDepthStencilView(pDepthStencilView, D3D11_CLEAR_DEPTH, 1.0f, 0);}
-	void ClearScreen(void) {pImmediateContext->ClearRenderTargetView(pRenderTargetView, Colors::White);}
+	void BeginD3DDraw(void) { pImmediateContext->ClearDepthStencilView(pDepthStencilView, D3D11_CLEAR_DEPTH, 1.0f, 0); }
+	void ClearScreen(void) { pImmediateContext->ClearRenderTargetView(pRenderTargetView, Colors::White); }
 	//presents back buffer to front buffer (screen)
-	void EndD3DDraw(void) {pSwapChain->Present( 0, 0 );}
+	void EndD3DDraw(void) { pSwapChain->Present( 0, 0 ); }
 
 	//call ReInitialize whenever window dimensions have changed. It will automatically clean and remake all resources held in this class.
 	void ReInitialize(HWND hWnd);
@@ -413,7 +416,7 @@ public:  //Public methods
 	void ResetCamera(void);
 
 	//Make a video file from an input image sequence at the given fps. The input images are scaled in dimensions by the frameScaler value (best quality frameScaler = 1, worst quality capped at frameScaler = 0.25)
-	bool MakeVideoFromFileSequence(string outputFile, vector<string> &inputFiles, UINT32 VIDEO_FPS, float frameScaler, int quality);
+	bool MakeVideoFromFileSequence(std::string outputFile, std::vector<std::string> &inputFiles, UINT32 VIDEO_FPS, float frameScaler, int quality);
 
 	////////////////Getters
 
@@ -426,7 +429,7 @@ public:  //Public methods
 	////////////////Work with image files
 
 	//from image file (.png) extract a raw bitmap (BYTE array with 4 BYTE-sized entries as B-G-R-A for each pixel) to specified pixel size (so image file is rescaled to specified size)
-	bool GetBitmapFromImage(string bitmapFile, vector<unsigned char>& bitmap, INT2 pixels_size);
+	bool GetBitmapFromImage(std::string bitmapFile, std::vector<unsigned char>& bitmap, INT2 pixels_size);
 
 };
 

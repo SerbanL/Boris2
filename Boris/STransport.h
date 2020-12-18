@@ -8,7 +8,7 @@
 #include "STransportCUDA.h"
 #endif
 
-using namespace std;
+
 
 class SuperMesh;
 
@@ -16,7 +16,7 @@ class SuperMesh;
 
 class STransport :
 	public Modules,
-	public ProgramState<STransport, tuple<vector_lut<Rect>, vector<double>, int, double, double, double, double, bool, double, int, double, int, DBL2, TEquation<double>, TEquation<double>>, tuple<>>
+	public ProgramState<STransport, std::tuple<vector_lut<Rect>, std::vector<double>, int, double, double, double, double, bool, double, int, double, int, DBL2, TEquation<double>, TEquation<double>>, std::tuple<>>
 {
 
 #if COMPILECUDA == 1
@@ -37,16 +37,16 @@ private:
 
 	//CMBND contacts for all contacting transport meshes - these are ordered by first vector index; for each transport mesh there could be multiple contacting meshes and these are ordered by second vector index
 	//CMBNDInfo describes the contact between 2 meshes, allowing calculation of values at cmbnd cells based on continuity of a potential and flux
-	vector< vector<CMBNDInfo> > CMBNDcontacts;
+	std::vector< std::vector<CMBNDInfo> > CMBNDcontacts;
 
 	//list of all transport modules in transport meshes (same ordering as first vector in CMBNDcontacts)
-	vector<Transport*> pTransport;
+	std::vector<Transport*> pTransport;
 
 	//vector of pointers to all V - need this to set cmbnd flags (same ordering as first vector in CMBNDcontacts)
-	vector<VEC_VC<double>*> pV;
+	std::vector<VEC_VC<double>*> pV;
 
 	//vector of pointers to all S - need this to set cmbnd flags (same ordering as first vector in CMBNDcontacts)
-	vector<VEC_VC<DBL3>*> pS;
+	std::vector<VEC_VC<DBL3>*> pS;
 
 	//----------------------
 
@@ -54,7 +54,7 @@ private:
 	vector_lut<Rect> electrode_rects;
 	
 	//fixed potential values on the electrodes (the Dirichlet boundary values)
-	vector<double> electrode_potentials;
+	std::vector<double> electrode_potentials;
 
 	//index of electrode designated as ground (-1 if none). Note: need a ground to define current polarity and calculate total current.
 	int ground_electrode_index = -1;
@@ -215,9 +215,9 @@ public:
 	//set fixed SOR damping values (for V and S solvers)
 	void SetSORDamping(DBL2 _SOR_damping);
 
-	//set text equation from string
-	BError SetPotentialEquation(string equation_string, int step);
-	BError SetCurrentEquation(string equation_string, int step);
+	//set text equation from std::string
+	BError SetPotentialEquation(std::string equation_string, int step);
+	BError SetCurrentEquation(std::string equation_string, int step);
 
 	//-------------------Electrodes methods
 
@@ -251,7 +251,7 @@ public:
 	int GetNumberofElectrodes(void) { return (int)electrode_rects.size(); }
 
 	//get electrode info (Rect and potential value) of electrode with given index
-	pair<Rect, double> GetElectrodeInfo(int index);
+	std::pair<Rect, double> GetElectrodeInfo(int index);
 
 	//get the minor id of electrode with given index
 	int GetElectrodeid(int index);
@@ -341,9 +341,9 @@ public:
 	//set fixed SOR damping values (for V and S solvers)
 	void SetSORDamping(DBL2 _SOR_damping) {}
 
-	//set text equation from string
-	BError SetPotentialEquation(string equation_string, int step) { return BError(); }
-	BError SetCurrentEquation(string equation_string, int step) { return BError(); }
+	//set text equation from std::string
+	BError SetPotentialEquation(std::string equation_string, int step) { return BError(); }
+	BError SetCurrentEquation(std::string equation_string, int step) { return BError(); }
 
 	//-------------------Electrodes methods
 
@@ -377,7 +377,7 @@ public:
 	int GetNumberofElectrodes(void) { return 0; }
 
 	//get electrode info (Rect and potential value) of electrode with given index
-	pair<Rect, double> GetElectrodeInfo(int index) { return pair<Rect, double>(); }
+	std::pair<Rect, double> GetElectrodeInfo(int index) { return std::pair<Rect, double>(); }
 
 	//get the minor id of electrode with given index
 	int GetElectrodeid(int index) { return -1; }

@@ -10,6 +10,8 @@ Atom_Mesh_CubicCUDA::Atom_Mesh_CubicCUDA(Atom_Mesh_Cubic* paMesh) :
 	Atom_MeshCUDA(paMesh)
 {
 	paMeshCubic = paMesh;
+
+	cmc_n.from_cpu(paMesh->cmc_n);
 }
 
 Atom_Mesh_CubicCUDA::~Atom_Mesh_CubicCUDA()
@@ -49,7 +51,7 @@ BError Atom_Mesh_CubicCUDA::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 			}
 
 			cuaModules.resize(modules_ids.size());
-			cuaModules.copy_from_cpuvector(modules_ids);
+			cuaModules.copy_from_vector(modules_ids);
 			cuaNumModules.from_cpu((int)modules_ids.size());
 		}
 	}
@@ -94,6 +96,13 @@ cuBReal Atom_Mesh_CubicCUDA::CheckMoveMesh(bool antisymmetric, double threshold)
 bool Atom_Mesh_CubicCUDA::GetMeshExchangeCoupling(void)
 {
 	return paMeshCubic->GetMeshExchangeCoupling();
+}
+
+//----------------------------------- OTHER CONTROL METHODS : implement pure virtual Atom_Mesh methods
+
+void Atom_Mesh_CubicCUDA::Set_MonteCarlo_Constrained(DBL3 cmc_n_)
+{
+	cmc_n.from_cpu(cmc_n_);
 }
 
 #endif

@@ -381,7 +381,7 @@ DBL3 Zeeman::GetField(void)
 	else return Ha; 
 }
 
-BError Zeeman::SetFieldEquation(string equation_string, int step)
+BError Zeeman::SetFieldEquation(std::string equation_string, int step)
 {
 	BError error(CLASS_STR(Zeeman));
 
@@ -416,7 +416,7 @@ void Zeeman::UpdateTEquationUserConstants(bool makeCuda)
 {
 	if (pMesh->userConstants.size()) {
 
-		vector<pair<string, double>> constants(pMesh->userConstants.size());
+		std::vector<std::pair<std::string, double>> constants(pMesh->userConstants.size());
 		for (int idx = 0; idx < pMesh->userConstants.size(); idx++) {
 
 			constants[idx] = { pMesh->userConstants.get_key_from_index(idx), pMesh->userConstants[idx] };

@@ -123,7 +123,7 @@ BError DemagKernelCollection::AllocateKernelMemory(void)
 //-------------------------- SETTERS
 
 //Set all the rectangles participating in convolution. This determines the number of kernels needed : one for each mesh.
-BError DemagKernelCollection::Set_Rect_Collection(vector<Rect>& Rect_collection_, Rect this_rect_, double h_max_)
+BError DemagKernelCollection::Set_Rect_Collection(std::vector<Rect>& Rect_collection_, Rect this_rect_, double h_max_)
 {
 	BError error(__FUNCTION__);
 

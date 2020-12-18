@@ -232,6 +232,21 @@ private:
 	//check if we need to use ngbrFlags2 (allocate memory etc.)
 	bool use_extended_flags(void);
 
+	//---------------------------------------------MULTIPLE ENTRIES SETTERS - VEC SHAPE MASKS : VEC_VEC_shapemask.h
+
+	//auxiliary function for generating shapes, where the shape is defined in shape_method
+	//shape_method takes two parameters: distance from shape centre and dimensions of shape; if point is within shape then return true
+	//generate shape at centre_pos with given rotation
+	//make given number of repetitions, with displacements between repetitions
+	//shape set using the indicated method (or, not, xor) and default_value
+	void shape_setter(std::function<bool(DBL3, DBL3)>& shape_method, MeshShape shape, VType default_value);
+
+	//set composite shape: differs slightly from single elementary shape setter: this adds the composite shape into the mesh, so any subtractive shapes are only subtracted when forming the composite shape, not subtracted from the mesh
+	void shape_setter(std::vector<std::function<bool(DBL3, DBL3)>> shape_methods, std::vector<MeshShape> shapes, VType default_value);
+
+	//similar to shape_setter, but sets value in composite shape where both the mesh and composite shapes are not empty
+	void shape_valuesetter(std::vector<std::function<bool(DBL3, DBL3)>> shape_methods, std::vector<MeshShape> shapes, VType value);
+
 public:
 
 	//--------------------------------------------CONSTRUCTORS : VEC_VC_mng.h
@@ -474,6 +489,42 @@ public:
 	//Generate 3D Voronoi cells with boundaries between cells set to empty
 	bool generate_Voronoi3D(double spacing, unsigned seed);
 
+	//---------------------------------------------MULTIPLE ENTRIES SETTERS - VEC SHAPE MASKS : VEC_VEC_shapemask.h
+
+	//shape_setter auxiliary method is used to set the actual shape (setshape = true) by default. set it to false if you just want to retrieve the shape definition method is std::function without actually setting it
+
+	//disk
+	std::function<bool(DBL3, DBL3)> shape_disk(MeshShape shape, VType default_value, bool setshape = true);
+
+	//rectangle
+	std::function<bool(DBL3, DBL3)> shape_rect(MeshShape shape, VType default_value, bool setshape = true);
+
+	//triangle
+	std::function<bool(DBL3, DBL3)> shape_triangle(MeshShape shape, VType default_value, bool setshape = true);
+
+	//ellipsoid
+	std::function<bool(DBL3, DBL3)> shape_ellipsoid(MeshShape shape, VType default_value, bool setshape = true);
+
+	//pyramid
+	std::function<bool(DBL3, DBL3)> shape_pyramid(MeshShape shape, VType default_value, bool setshape = true);
+
+	//tetrahedron
+	std::function<bool(DBL3, DBL3)> shape_tetrahedron(MeshShape shape, VType default_value, bool setshape = true);
+
+	//cone
+	std::function<bool(DBL3, DBL3)> shape_cone(MeshShape shape, VType default_value, bool setshape = true);
+
+	//torus
+	std::function<bool(DBL3, DBL3)> shape_torus(MeshShape shape, VType default_value, bool setshape = true);
+
+	//set a composite shape using combination of the above elementary shapes
+	void shape_set(std::vector<MeshShape> shapes, VType default_value);
+
+	//set a composite shape using combination of the above elementary shapes but:
+	//only set value in non-empty parts of mesh, which are also non-empty parts of shape
+	//uses the shape_valuesetter auxiliary method
+	void shape_setvalue(std::vector<MeshShape> shapes, VType value);
+
 	//--------------------------------------------MULTIPLE ENTRIES SETTERS - OTHERS : VEC_VC_oper.h
 
 	//exactly the same as assign value - do not use assign as it is slow (sets flags)
@@ -481,6 +532,9 @@ public:
 
 	//set value in non-empty cells only in given rectangle (relative coordinates)
 	void setrectnonempty(const Rect& rectangle, VType value = VType());
+
+	//set value in solid object only containing relpos
+	void setobject(VType value, DBL3 relpos);
 
 	//re-normalize all non-zero values to have the new magnitude (multiply by new_norm and divide by current magnitude)
 	template <typename PType = decltype(GetMagnitude(std::declval<VType>()))>

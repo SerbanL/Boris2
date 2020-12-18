@@ -108,7 +108,7 @@ void DiaMesh::RepairObjectState(void)
 //call when a configuration change has occurred - some objects might need to be updated accordingly
 BError DiaMesh::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 {
-	BError error(string(CLASS_STR(DiaMesh)) + "(" + (*pSMesh).key_from_meshId(meshId) + ")");
+	BError error(std::string(CLASS_STR(DiaMesh)) + "(" + (*pSMesh).key_from_meshId(meshId) + ")");
 
 	///////////////////////////////////////////////////////
 	//Mesh specific configuration
@@ -213,7 +213,7 @@ void DiaMesh::UpdateConfiguration_Values(UPDATECONFIG_ cfgMessage)
 
 BError DiaMesh::SwitchCUDAState(bool cudaState)
 {
-	BError error(string(CLASS_STR(DiaMesh)) + "(" + (*pSMesh).key_from_meshId(meshId) + ")");
+	BError error(std::string(CLASS_STR(DiaMesh)) + "(" + (*pSMesh).key_from_meshId(meshId) + ")");
 
 #if COMPILECUDA == 1
 

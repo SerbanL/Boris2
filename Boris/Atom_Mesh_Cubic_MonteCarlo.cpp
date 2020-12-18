@@ -3,6 +3,9 @@
 
 #ifdef MESH_COMPILATION_ATOM_CUBIC
 
+//defines std::execution::par_unseq used for parallel std::sort
+#include <execution>
+
 //Take a Monte Carlo step in this atomistic mesh
 void Atom_Mesh_Cubic::Iterate_MonteCarlo(double acceptance_rate)
 {
@@ -400,25 +403,22 @@ void Atom_Mesh_Cubic::Iterate_MonteCarlo_Parallel_Constrained(void)
 	// 3) pick spin pairs exactly once in a random order per CMC step, and pairs picked both from red or from black squares, not mixed.
 	// 4) do not update cmc_M after every move, but only calculate cmc_M at the start of every step (this is problematic for parallel algorithm but turns out not necessary - see comments for the serial version where we do update after every move)
 
-	//red-black : two passes will be taken : first generate red and black indices so we can shuffle them
-	int rb = 0;
-	while (rb < 2) {
-
+	//red-black : two passes will be taken : first generate red and black indices for these passes, together with random doubles so we can shuffle them using sort-based shuffle
+	
 #pragma omp parallel for
-		for (int idx_jk = 0; idx_jk < M1.n.y * M1.n.z; idx_jk++) {
+	for (int j = 0; j < n.y; j++) {
+		for (int i = 0; i < n.x; i++) {
+			for (int k = 0; k < n.z; k++) {
 
-			int j = idx_jk % M1.n.y;
-			int k = (idx_jk / M1.n.y) % M1.n.z;
+				//red_nudge = true for odd rows and even planes or for even rows and odd planes - have to keep index on the checkerboard pattern
+				bool red_nudge = (((j % 2) == 1 && (k % 2) == 0) || (((j % 2) == 0 && (k % 2) == 1)));
 
-			//red_nudge = true for odd rows and even planes or for even rows and odd planes - have to keep index on the checkerboard pattern
-			bool red_nudge = (((j % 2) == 1 && (k % 2) == 0) || (((j % 2) == 0 && (k % 2) == 1)));
+				//true for black square, false for red square
+				bool black_square = (i - red_nudge) % 2;
 
-			//For red pass (first) i starts from red_nudge. For black pass (second) i starts from !red_nudge.
-			for (int i = (1 - rb) * red_nudge + rb * (!red_nudge); i < M1.n.x; i += 2) {
+				int spin_idx = i + j * n.x + k * n.x*n.y;
 
-				int spin_idx = i + j * M1.n.x + k * M1.n.x*M1.n.y;
-
-				if (rb == 0) {
+				if (!black_square) {
 
 					//Form red squares index (0, 1, 2 ...) from total index
 					int even_rows = 0, odd_rows;
@@ -439,7 +439,7 @@ void Atom_Mesh_Cubic::Iterate_MonteCarlo_Parallel_Constrained(void)
 
 					int idx_red = (i / 2) + (even_rows + odd_rows) + (even_planes + odd_planes);
 
-					mc_indices_red[idx_red] = spin_idx;
+					mc_indices_red[idx_red] = { prng.rand(), spin_idx };
 				}
 				else {
 
@@ -462,43 +462,18 @@ void Atom_Mesh_Cubic::Iterate_MonteCarlo_Parallel_Constrained(void)
 
 					int idx_black = (i / 2) + (even_rows + odd_rows) + (even_planes + odd_planes);
 
-					mc_indices_black[idx_black] = spin_idx;
+					mc_indices_black[idx_black] = { prng.rand(), spin_idx };
 				}
 			}
 		}
-
-		rb++;
 	}
 
-	//pre-shuffle red and black indices so paired spins are not always the same
-	//Serial Fisher-Yates shuffling algorithm. 
-	//TO DO : Parallel shuffling is possible but a bit of a pain - probably best to use a bijective hash function to generate random permutations but need to look into this carefully.
-	//The serial shuffling algorithm is not so bad as this is a minor relative cost of the overall Monte-Carlo algorithm, but need a parallel one for CUDA.
-	rb = 0;
-	while (rb < 2) {
+	//Now do the truffle shuffle!
+	std::sort(std::execution::par_unseq, mc_indices_red.begin(), mc_indices_red.end());
+	std::sort(std::execution::par_unseq, mc_indices_black.begin(), mc_indices_black.end());
 
-		int num = (rb == 0 ? num_reds : num_blacks);
-		for (int idx = num - 1; idx >= 0; idx--) {
-
-			int rand_idx = floor(prng.rand() * (idx + 1));
-			//rand_idx < num check to be sure - it is theoretically possible rand_idx = num can be generated but the probability is small.
-			if (rand_idx >= num) continue;
-			
-			if (rb == 0) {
-
-				std::swap(mc_indices_red[idx], mc_indices_red[rand_idx]);
-			}
-			else {
-
-				std::swap(mc_indices_black[idx], mc_indices_black[rand_idx]);
-			}
-		}
-
-		rb++;
-	}
-
-	//Now run the algorithm in parallel using two passes
-	rb = 0;
+	//Finally run the algorithm in parallel using two passes
+	int rb = 0;
 	while (rb < 2) {
 
 		double acceptance_rate = 0.0;
@@ -514,13 +489,13 @@ void Atom_Mesh_Cubic::Iterate_MonteCarlo_Parallel_Constrained(void)
 
 			if (rb == 0) {
 				
-				spin_idx1 = mc_indices_red[idx];
-				spin_idx2 = mc_indices_red[idx - 1];
+				spin_idx1 = mc_indices_red[idx].second;
+				spin_idx2 = mc_indices_red[idx - 1].second;
 			}
 			else {
 
-				spin_idx1 = mc_indices_black[idx];
-				spin_idx2 = mc_indices_black[idx - 1];
+				spin_idx1 = mc_indices_black[idx].second;
+				spin_idx2 = mc_indices_black[idx - 1].second;
 			}
 
 			//If there are empty cells then make sure to only pair non-empty ones

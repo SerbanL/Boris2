@@ -5,7 +5,7 @@
 void Simulation::Simulate(void)
 {
 	//stop other parts of the program from changing simulation parameters in the middle of an interation
-	//non-blocking mutex is needed here so we can stop the simulation from HandleCommand - it also uses the simulationMutex. If Simulation thread gets blocked by this mutex they'll wait on each other forever.
+	//non-blocking std::mutex is needed here so we can stop the simulation from HandleCommand - it also uses the simulationMutex. If Simulation thread gets blocked by this std::mutex they'll wait on each other forever.
 	if (simulationMutex.try_lock()) {
 
 		//Check conditions for saving data
@@ -33,7 +33,7 @@ void Simulation::Simulate(void)
 		}
 
 		//Display update
-		if (iterUpdate && SMesh.GetIteration() % iterUpdate == 0) UpdateScreen_Quick();
+		if (iterUpdate && SMesh.GetIteration() % iterUpdate == 0) UpdateScreen_Quick(true);
 
 		//Check conditions for advancing simulation schedule
 		CheckSimulationSchedule();
@@ -45,7 +45,7 @@ void Simulation::Simulate(void)
 		//With Visual Studio 2017 v141 toolset : without the short wait below, when HandleCommand has been called, simulationMutex will block access for a long time as this Simulate method gets called over and over again on its thread.
 		//This means the command gets executed very late (ten seconds not unusual) - not good!
 		//This wasn't a problem with Visual Studio 2012, v110 or v120 toolset. Maybe with the VS2017 compiler the calls to Simulate on the infinite loop thread are all inlined. 
-		//Effectively there is almost no delay between unlocking and locking the mutex again on the next iteration - THREAD_HANDLEMESSAGE cannot sneak in to lock simulationMutex easily!
+		//Effectively there is almost no delay between unlocking and locking the std::mutex again on the next iteration - THREAD_HANDLEMESSAGE cannot sneak in to lock simulationMutex easily!
 		if (is_thread_running(THREAD_HANDLEMESSAGE)) std::this_thread::sleep_for(std::chrono::milliseconds(1));
 	}
 }
@@ -85,7 +85,6 @@ void Simulation::ComputeFields(void)
 
 	BD.DisplayConsoleMessage("Initialized. Updating fields.");
 
-	//advance time for this iteration
 #if COMPILECUDA == 1
 	if (cudaEnabled) SMesh.ComputeFieldsCUDA();
 	else SMesh.ComputeFields();
@@ -139,10 +138,22 @@ void Simulation::RunSimulation(void)
 		}
 	}
 
-	infinite_loop_launch(&Simulation::Simulate, THREAD_LOOP, OmpThreads);
+	infinite_loop_launch(&Simulation::Simulate, &Simulation::SetupRunSimulation, THREAD_LOOP);
 	BD.DisplayConsoleMessage("Initialized. Simulation running. Started at: " + Get_Date_Time());
 
 	sim_start_ms = GetSystemTickCount();
+}
+
+//SetupRunSimulation sets cuda device and number of OpenMP threads for the RunSimulation, called on the same thread as RunSimulation
+void Simulation::SetupRunSimulation(void)
+{
+	//Set number of OpenMP threads to use on this thread
+	if (OmpThreads && OmpThreads <= omp_get_num_procs()) omp_set_num_threads(OmpThreads);
+
+#if COMPILECUDA == 1
+	//Commands are executed on newly spawned threads, so if cuda is on and we are not using device 0 (default device) we must switch to required device, otherwise 0 will be used
+	if (cudaEnabled && cudaDeviceSelect != 0) cudaSetDevice(cudaDeviceSelect);
+#endif
 }
 
 void Simulation::StopSimulation(void)
@@ -151,16 +162,16 @@ void Simulation::StopSimulation(void)
 
 		stop_thread(THREAD_LOOP);
 
-		//make sure the current time step is finished, by iterating a bit more if necessary, before relinquishing control
-		while (!SMesh.CurrentTimeStepSolved()) Simulate();
-
 		sim_end_ms = GetSystemTickCount();
 
 		BD.DisplayConsoleMessage("Simulation stopped. " + Get_Date_Time());
 
-		//if client connected, signal simulation has finished
-		commSocket.SetSendData({ "stopped" });
-		commSocket.SendDataParams();
+		if (commSocket.ClientConnected()) {
+
+			//if client connected, signal simulation has finished
+			commSocket.SetSendData({ "stopped" });
+			commSocket.SendDataParams();
+		}
 
 		UpdateScreen();
 	}
@@ -172,6 +183,6 @@ void Simulation::ResetSimulation(void)
 
 	stage_step = INT2();
 	SMesh.ResetODE();
-
+	
 	UpdateScreen();
 }

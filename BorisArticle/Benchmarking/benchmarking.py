@@ -1,28 +1,17 @@
 """
 This script is part of Boris Computational Spintronics Article
-
-Generates data in Figure 11.
-
+Generates benchmarking data
 @author: Serban Lepadatu, 2020
 """
 
-import os
-import sys
 from NetSocks import NSClient
 import numpy as np
 
-#setup communication with server
 ns = NSClient('localhost')
+ns.configure(True)
 
 ########################################
 
-#the working directory : same as this script file
-directory = os.path.dirname(sys.argv[0]) + "/"
-#restore program to default state
-ns.default()
-ns.chdir(directory)
-
-ns.loadsim('benchmarking')
 h = ns.cellsize()
 
 #Use this for Euler
@@ -34,11 +23,11 @@ h = ns.cellsize()
 #Use this for RK4
 ns.setode('LLG', 'RK4')
 ns.setdt(100e-15)
-bench_file = 'Boris_benchmark_RK4_GTX980Ti.txt'
+bench_file = 'Boris_benchmark_RK4_GTX980Ti_Win.txt'
 evals_per_iter = 4
 
-Nx0, Ny0 = 64, 512
-iters0 = 25600
+Nx0, Ny0 = 16, 128
+iters0 = 102400
 
 for z in range(7):
 
@@ -46,7 +35,7 @@ for z in range(7):
     Ny = Ny0 / Nz
     Nx = Nx0
     
-    for x in range(0,9):
+    for x in range(0,13):
         
         Nx = Nx0 * (2**x)
         iters = iters0 / (2**x)

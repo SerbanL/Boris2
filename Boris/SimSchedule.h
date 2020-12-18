@@ -3,7 +3,7 @@
 #include "BorisLib.h"
 #include "SimSharedData.h"
 
-using namespace std;
+
 
 //simulation stage/step settings -> add new values at the end to keep older simulation files compatible
 enum SS_ { 
@@ -31,18 +31,18 @@ enum STOP_ { STOP_NOSTOP = 0, STOP_ITERATIONS, STOP_MXH, STOP_TIME, STOP_DMDT };
 enum DSAVE_ { DSAVE_NONE = 0, DSAVE_STAGE, DSAVE_STEP, DSAVE_ITER, DSAVE_TIME };
 
 struct StageDescriptor : 
-	public ProgramState<StageDescriptor, tuple<int, string, bool, bool>, tuple<> >
+	public ProgramState<StageDescriptor, std::tuple<int, std::string, bool, bool>, std::tuple<> >
 {
 
 	int stageSetting;
-	string unit;
+	std::string unit;
 
 	bool meshless;
 
 	//we don't want to display some stage descriptors : set this to true in that case
 	bool invisible = false;
 
-	StageDescriptor(int stageSetting_, string unit_ = "", bool meshless_ = true, bool invisible_ = false) :
+	StageDescriptor(int stageSetting_, std::string unit_ = "", bool meshless_ = true, bool invisible_ = false) :
 		ProgramStateNames(this, { VINFO(stageSetting), VINFO(unit) , VINFO(meshless), VINFO(invisible) }, {})
 	{
 		stageSetting = stageSetting_;
@@ -80,13 +80,13 @@ struct StageDescriptor :
 };
 
 struct StageStopDescriptor :
-	public ProgramState<StageStopDescriptor, tuple<int, string>, tuple<> >
+	public ProgramState<StageStopDescriptor, std::tuple<int, std::string>, std::tuple<> >
 {
 
 	int stopCondition;
-	string unit;
+	std::string unit;
 
-	StageStopDescriptor(int stopCondition_, string unit_ = "") :
+	StageStopDescriptor(int stopCondition_, std::string unit_ = "") :
 		ProgramStateNames(this, { VINFO(stopCondition), VINFO(unit) }, {})
 	{
 		stopCondition = stopCondition_;
@@ -118,13 +118,13 @@ struct StageStopDescriptor :
 };
 
 struct DataSaveDescriptor :
-	public ProgramState<DataSaveDescriptor, tuple<int, string>, tuple<> >
+	public ProgramState<DataSaveDescriptor, std::tuple<int, std::string>, std::tuple<> >
 {
 
 	int dataSaveType;
-	string unit;
+	std::string unit;
 
-	DataSaveDescriptor(int dataSaveType_, string unit_ = "") :
+	DataSaveDescriptor(int dataSaveType_, std::string unit_ = "") :
 		ProgramStateNames(this, { VINFO(dataSaveType), VINFO(unit) }, {})
 	{
 		dataSaveType = dataSaveType_;
@@ -157,7 +157,7 @@ struct DataSaveDescriptor :
 
 class StageConfig :
 	public SimulationSharedData,
-	public ProgramState<StageConfig, tuple< StageDescriptor, Any, StageStopDescriptor, Any, string, DataSaveDescriptor, Any >, tuple<> >
+	public ProgramState<StageConfig, std::tuple< StageDescriptor, Any, StageStopDescriptor, Any, std::string, DataSaveDescriptor, Any >, std::tuple<> >
 {
 
 private:
@@ -171,7 +171,7 @@ private:
 	Any stopValue;
 	
 	//mesh name for the stage setting, if applicable
-	string meshName;
+	std::string meshName;
 
 	//data saving configuration and threshold value for saving data (e.g. number of iterations, time interval etc.)
 	DataSaveDescriptor dataSaveDescriptor;
@@ -216,7 +216,7 @@ public:
 	{}
 
 	//make a new stage
-	StageConfig(StageDescriptor &stageDescriptor_, StageStopDescriptor &stopDescriptor_, string meshName_ = "") :
+	StageConfig(StageDescriptor &stageDescriptor_, StageStopDescriptor &stopDescriptor_, std::string meshName_ = "") :
 		ProgramStateNames(this,
 			{
 				VINFO(stageDescriptor), VINFO(setValue),
@@ -322,7 +322,7 @@ public:
 	//get save data type
 	DSAVE_ dsave_type(void) { return (DSAVE_)dataSaveDescriptor.dataSaveType; }
 
-	string meshname(void) { return meshName; }
+	std::string meshname(void) { return meshName; }
 
 	//get number of steps configured for this stage (will be zero if single value set)
 	int number_of_steps(void) { 
@@ -395,9 +395,9 @@ public:
 
 	//----------------------------------- OTHER SETTERS
 
-	void set_meshname(string meshName) { if(!stageDescriptor.meshless) this->meshName = meshName; }
+	void set_meshname(std::string meshName) { if(!stageDescriptor.meshless) this->meshName = meshName; }
 
-	void set_stagevalue_fromcomponents(const vector<string>& value_components) 
+	void set_stagevalue_fromcomponents(const std::vector<std::string>& value_components) 
 	{ 
 		if (!setValue.IsNull()) {
 
@@ -406,7 +406,7 @@ public:
 		}
 	}
 
-	void set_stagevalue_fromstring(const string& value_string) 
+	void set_stagevalue_fromstring(const std::string& value_string) 
 	{ 
 		if (!setValue.IsNull()) {
 
@@ -415,7 +415,7 @@ public:
 		}
 	}
 
-	void set_stopvalue_fromstring(const string& value_string) 
+	void set_stopvalue_fromstring(const std::string& value_string) 
 	{ 
 		if (!stopValue.IsNull()) {
 
@@ -426,7 +426,7 @@ public:
 		}
 	}
 
-	void set_dsavevalue_fromstring(const string& value_string) { if(!dsaveValue.IsNull()) dsaveValue.convert_string(value_string, dataSaveDescriptor.unit); }
+	void set_dsavevalue_fromstring(const std::string& value_string) { if(!dsaveValue.IsNull()) dsaveValue.convert_string(value_string, dataSaveDescriptor.unit); }
 
 	//----------------------------------- GET STAGE SET VALUE
 
@@ -513,7 +513,7 @@ public:
 		else return setValue;
 	}
 
-	string get_value_string(void) { return setValue.convert_to_string( stageDescriptor.unit ); }
+	std::string get_value_string(void) { return setValue.convert_to_string( stageDescriptor.unit ); }
 	
 	//----------------------------------- GET STOP CONDITION VALUE
 
@@ -524,7 +524,7 @@ public:
 		return stopValue;
 	}
 
-	string get_stopvalue_string(void) {
+	std::string get_stopvalue_string(void) {
 
 		return stopValue.convert_to_string( stopDescriptor.unit );
 	}
@@ -538,7 +538,7 @@ public:
 		return dsaveValue;
 	}
 
-	string get_dsavevalue_string(void) {
+	std::string get_dsavevalue_string(void) {
 
 		return dsaveValue.convert_to_string( dataSaveDescriptor.unit );
 	}

@@ -16,27 +16,27 @@ class SimulationSharedData {
 
 protected:
 
-	//material temperature dependence types : stored string : text to appear in console, lut : entry from MATPTDEP_ enum
-	static vector_lut<string> temperature_dependence_type;
+	//material temperature dependence types : stored std::string : text to appear in console, lut : entry from MATPTDEP_ enum
+	static vector_lut<std::string> temperature_dependence_type;
 
 	//available pre-set spatial variation generators to use for material parameters spatial dependence
-	//key: name of generator to appear in console, lut: a MATPVAR_ entry, stored string : default parameters for generator stored as text, usable with ToNum
-	static vector_key_lut<string> vargenerator_descriptor;
+	//key: name of generator to appear in console, lut: a MATPVAR_ entry, stored std::string : default parameters for generator stored as text, usable with ToNum
+	static vector_key_lut<std::string> vargenerator_descriptor;
 
 	//unit of displayed mesh quantity
-	static vector_lut<string> meshDisplay_unit;
+	static vector_lut<std::string> meshDisplay_unit;
 	
 	//quantities to display in meshes
-	static vector_lut<string> displayHandles;
+	static vector_lut<std::string> displayHandles;
 
 	//available modules for each mesh type
-	static vector_lut< vector<MOD_> > modules_for_meshtype;
+	static vector_lut< std::vector<MOD_> > modules_for_meshtype;
 
 	//allowed quantities to display for each mesh type
-	static vector_lut< vector<MESHDISPLAY_> > meshAllowedDisplay;
+	static vector_lut< std::vector<MESHDISPLAY_> > meshAllowedDisplay;
 
 	//available material parameters for each mesh type
-	static vector_lut< vector<PARAM_> > params_for_meshtype;
+	static vector_lut< std::vector<PARAM_> > params_for_meshtype;
 
 	//entries from PARAM_, specifying if temperature dependence (first) and spatial variation (second) are enabled.
 	static vector_lut<std::pair<bool, bool>> params_enabled_props;
@@ -72,7 +72,7 @@ protected:
 	static int displayThresholdTrigger;
 
 	//working directory
-	static string directory;
+	static std::string directory;
 
 	//free and total memory for gpu and cpu - update these as memory is allocated / freed so we can keep track of it in console interactive objects without having to interrogate at every refresh
 	static size_t gpuMemFree_MB;
@@ -89,8 +89,15 @@ public:
 	//this is useful for static problems, e.g. MR loops, where it's more efficient to have the magnetization state solved separately.
 	static bool static_transport_solver;
 
+	//if set to true, the transport solver iteration is entirely disabled, so all transport quantities remain constant.
+	static bool disabled_transport_solver;
+
 	//enable all cuda computations?
 	static bool cudaEnabled;
+
+	//there may be more than 1 cuda devices, numbered from 0 up. This does not switch cuda on, but indicates which devices is used when cuda is switched on
+	//always check the current program cuda architecture matches the device cuda compute version when switching on
+	static int cudaDeviceSelect;
 
 	//simulation schedule indexes : stage (main index in simStages) and step (sub-index in stage)
 	static INT2 stage_step;

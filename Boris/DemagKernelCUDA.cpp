@@ -71,7 +71,7 @@ BError DemagKernelCUDA::Calculate_Demag_Kernels_2D(bool include_self_demag)
 	if (!Ddiag.resize(N)) return error(BERROR_OUTOFMEMORY_NCRIT);
 
 	//off-diagonal tensor elements
-	vector<double> Dodiag;
+	std::vector<double> Dodiag;
 	if (!malloc_vector(Dodiag, N.x*N.y)) return error(BERROR_OUTOFMEMORY_NCRIT);
 
 	//use ratios instead of cellsizes directly - same result but better in terms of floating point errors
@@ -86,14 +86,21 @@ BError DemagKernelCUDA::Calculate_Demag_Kernels_2D(bool include_self_demag)
 	else {
 
 		//pbcs used in at least one dimension
-		if (!dtf.CalcDiagTens2D_PBC(Ddiag, N, h / maximum(h.x, h.y, h.z), true, ASYMPTOTIC_DISTANCE, pbc_images.x, pbc_images.y, pbc_images.z)) return error(BERROR_OUTOFMEMORY_NCRIT);
-		if (!dtf.CalcOffDiagTens2D_PBC(Dodiag, N, h / maximum(h.x, h.y, h.z), true, ASYMPTOTIC_DISTANCE, pbc_images.x, pbc_images.y, pbc_images.z)) return error(BERROR_OUTOFMEMORY_NCRIT);
+		if (!dtf.CalcDiagTens2D_PBC(
+			Ddiag, N, h / maximum(h.x, h.y, h.z), 
+			true, ASYMPTOTIC_DISTANCE, 
+			pbc_images.x, pbc_images.y, pbc_images.z)) return error(BERROR_OUTOFMEMORY_NCRIT);
+
+		if (!dtf.CalcOffDiagTens2D_PBC(
+			Dodiag, N, h / maximum(h.x, h.y, h.z), 
+			true, ASYMPTOTIC_DISTANCE, 
+			pbc_images.x, pbc_images.y, pbc_images.z)) return error(BERROR_OUTOFMEMORY_NCRIT);
 	}
 
 	//-------------- DEMAG KERNELS ON CPU-ADDRESSABLE MEMORY
 
 	VEC<DBL3> Kdiag_cpu;
-	vector<double> K2D_odiag_cpu;
+	std::vector<double> K2D_odiag_cpu;
 
 	if (!transpose_xy) {
 

@@ -13,7 +13,7 @@ enum CMD_
 	CMD_ADDAMESHCUBIC, CMD_SETAMESHCUBIC,
 	CMD_DELMESH, CMD_RENAMEMESH, CMD_MESHFOCUS, CMD_MESHFOCUS2, CMD_MESH, CMD_MESHRECT, CMD_SCALEMESHRECTS, CMD_CELLSIZE, CMD_ECELLSIZE, CMD_TCELLSIZE, CMD_MCELLSIZE, CMD_SCELLSIZE, CMD_FMSCELLSIZE, CMD_ESCELLSIZE, CMD_ATOMDMCELLSIZE,
 	CMD_DELRECT, CMD_ADDRECT, CMD_RESETMESH, CMD_LOADMASKFILE, CMD_INDIVIDUALMASKSHAPE,
-	CMD_SETANGLE, CMD_INVERTMAG, CMD_MIRRORMAG, CMD_SETRECT, CMD_DWALL, CMD_VORTEX, CMD_SKYRMION, CMD_SKYRMIONBLOCH, CMD_RANDOM,
+	CMD_SETANGLE, CMD_SETOBJECTANGLE, CMD_INVERTMAG, CMD_MIRRORMAG, CMD_SETRECT, CMD_DWALL, CMD_VORTEX, CMD_SKYRMION, CMD_SKYRMIONBLOCH, CMD_RANDOM,
 	CMD_PBC,
 	CMD_SETFIELD, CMD_SETSTRESS,
 	CMD_MODULES, CMD_ADDMODULE, CMD_DELMODULE,
@@ -27,10 +27,10 @@ enum CMD_
 	CMD_COPYMESHDATA,
 	CMD_PARAMSVAR, CMD_SETDISPLAYEDPARAMSVAR, CMD_CLEARPARAMSVAR, CMD_CLEARPARAMVAR, CMD_SETPARAMVAR,
 	CMD_SAVESIM, CMD_LOADSIM, CMD_DEFAULT,
-	CMD_DISPLAY, CMD_DISPLAYDETAILLEVEL, CMD_DISPLAYBACKGROUND, CMD_VECREP, CMD_SAVEMESHIMAGE, CMD_MAKEVIDEO, CMD_IMAGECROPPING, CMD_DISPLAYTRANSPARENCY, CMD_DISPLAYTHRESHOLDS, CMD_DISPLAYTHRESHOLDTRIGGER,
+	CMD_DISPLAY, CMD_DISPLAYDETAILLEVEL, CMD_DISPLAYRENDERTHRESH, CMD_DISPLAYBACKGROUND, CMD_VECREP, CMD_SAVEMESHIMAGE, CMD_MAKEVIDEO, CMD_IMAGECROPPING, CMD_DISPLAYTRANSPARENCY, CMD_DISPLAYTHRESHOLDS, CMD_DISPLAYTHRESHOLDTRIGGER,
 	CMD_MOVINGMESH, CMD_CLEARMOVINGMESH, CMD_MOVINGMESHASYM, CMD_MOVINGMESHTHRESH, CMD_PREPAREMOVINGMESH, CMD_PREPAREMOVINGBLOCHMESH, CMD_PREPAREMOVINGNEELMESH, CMD_PREPAREMOVINGSKYRMIONMESH, CMD_COUPLETODIPOLES, CMD_EXCHANGECOUPLEDMESHES,
-	CMD_ADDELECTRODE, CMD_DELELECTRODE, CMD_CLEARELECTRODES, CMD_ELECTRODES, CMD_SETDEFAULTELECTRODES, CMD_SETELECTRODERECT, CMD_SETELECTRODEPOTENTIAL, CMD_DESIGNATEGROUND, CMD_SETPOTENTIAL, CMD_SETCURRENT, 
-	CMD_TSOLVERCONFIG, CMD_SSOLVERCONFIG, CMD_SETSORDAMPING, CMD_STATICTRANSPORTSOLVER,
+	CMD_ADDELECTRODE, CMD_DELELECTRODE, CMD_CLEARELECTRODES, CMD_ELECTRODES, CMD_SETDEFAULTELECTRODES, CMD_SETELECTRODERECT, CMD_SETELECTRODEPOTENTIAL, CMD_DESIGNATEGROUND, CMD_SETPOTENTIAL, CMD_SETCURRENT, CMD_SETCURRENTDENSITY,
+	CMD_TSOLVERCONFIG, CMD_SSOLVERCONFIG, CMD_SETSORDAMPING, CMD_STATICTRANSPORTSOLVER, CMD_DISABLETRANSPORTSOLVER,
 	CMD_TEMPERATURE, CMD_SETHEATDT, CMD_AMBIENTTEMPERATURE, CMD_ROBINALPHA, CMD_INSULATINGSIDES, CMD_CURIETEMPERATURE, CMD_CURIETEMPERATUREMATERIAL, CMD_ATOMICMOMENT, CMD_TAU, CMD_TMODEL,
 	CMD_STOCHASTIC, CMD_LINKSTOCHASTIC, CMD_SETDTSTOCH, CMD_LINKDTSTOCHASTIC,
 	CMD_SETDTSPEEDUP, CMD_LINKDTSPEEDUP,
@@ -41,7 +41,7 @@ enum CMD_
 	CMD_BENCHTIME,
 	CMD_MATERIALSDATABASE, CMD_ADDMATERIAL, CMD_SETMATERIAL, CMD_ADDMDBENTRY, CMD_DELMDBENTRY, CMD_REFRESHMDB, CMD_REQMDBSYNC, CMD_UPDATEMDB,
 	CMD_SHOWLENGHTS, CMD_SHOWMCELLS,
-	CMD_LOADOVF2MESH, CMD_LOADOVF2MAG, CMD_SAVEOVF2MAG, CMD_SAVEOVF2PARAMVAR, CMD_SAVEOVF2, CMD_LOADOVF2DISP, CMD_LOADOVF2STRAIN,
+	CMD_LOADOVF2MESH, CMD_LOADOVF2MAG, CMD_SAVEOVF2MAG, CMD_SAVEOVF2PARAMVAR, CMD_SAVEOVF2, CMD_LOADOVF2DISP, CMD_LOADOVF2STRAIN, CMD_LOADOVF2TEMP, CMD_LOADOVF2CURR,
 	CMD_SCRIPTSERVER, CMD_CHECKUPDATES,
 	CMD_EQUATIONCONSTANTS, CMD_CLEAREQUATIONCONSTANTS, CMD_DELEQUATIONCONSTANT,
 	CMD_FLUSHERRORLOG, CMD_ERRORLOG,
@@ -52,6 +52,11 @@ enum CMD_
 	CMD_SHOWTC, CMD_SHOWMS, CMD_SHOWA, CMD_SHOWK,
 	CMD_SKYPOSDMUL,
 	CMD_MCSERIAL, CMD_MCCONSTRAIN,
+	//shape modifiers
+	CMD_SHAPEMOD_ROT, CMD_SHAPEMOD_REP, CMD_SHAPEMOD_DISP, CMD_SHAPEMOD_METHOD,
+	//when adding a new shape, also add a case in CMD_SHAPE_SET command
+	CMD_SHAPE_DISK, CMD_SHAPE_RECT, CMD_SHAPE_TRIANGLE, CMD_SHAPE_ELLIPSOID, CMD_SHAPE_PYRAMID, CMD_SHAPE_TETRAHEDRON, CMD_SHAPE_CONE, CMD_SHAPE_TORUS, CMD_SHAPE_SET,
+	CMD_SETSHAPEANGLE, CMD_SHAPE_SETPARAM,
 
 	CMD_DP_CLEARALL, CMD_DP_CLEAR, CMD_DP_SHOWSIZES, CMD_DP_GET, CMD_DP_SET, CMD_DP_LOAD, CMD_DP_SAVE, CMD_DP_SAVEAPPEND, CMD_DP_SAVEASROW, CMD_DP_SAVEAPPENDASROW, CMD_DP_NEWFILE,
 	CMD_DP_GETPROFILE, CMD_DP_GETEXACTPROFILE, CMD_DP_GETPATH, CMD_GETVALUE, CMD_AVERAGEMESHRECT, CMD_DP_TOPOCHARGE, CMD_DP_COUNTSKYRMIONS, CMD_DP_HISTOGRAM, CMD_DP_HISTOGRAM2,
@@ -71,7 +76,7 @@ enum CMD_
 	CMD_TEST
 };
 
-using namespace std;
+
 
 //Describes the structure of a command, and helper methods for processing commands
 struct CommandSpecifier {
@@ -84,12 +89,12 @@ public:
 	//show usage and command description using formatted strings (for display in console).
 	//Also show description of returned values for script clients.
 	//If unit is specified, allow input using physical quantity units rather then e notation
-	string usage, descr, return_descr;
-	string unit;
+	std::string usage, descr, return_descr;
+	std::string unit;
 
-	//limits for parameters specified here; the pair gives the lower and upper limit (inclusive). To ommit a limit set it as an Any(). 
+	//limits for parameters specified here; the pair gives the lower and upper limit (inclusive). To omit a limit set it as an Any(). 
 	//Otherwise must set the Any with the expected parameter type, in the order expected!
-	vector<pair<Any, Any>> limits;
+	std::vector<std::pair<Any, Any>> limits;
 
 private:
 
@@ -100,9 +105,9 @@ private:
 
 		if (!limits.size()) return error;
 
-		auto make_error_info = [&]() -> string {
+		auto make_error_info = [&]() -> std::string {
 
-			string limits_string = "Parameter " + ToString(index) + ", ";
+			std::string limits_string = "Parameter " + ToString(index) + ", ";
 
 			if (limits[index].first.IsNull()) limits_string += "Min : N/A to ";
 			else {
@@ -144,9 +149,9 @@ private:
 
 		if (!limits.size()) return error;
 
-		auto make_error_info = [&]() -> string {
+		auto make_error_info = [&]() -> std::string {
 
-			string limits_string = "Parameter " + ToString(index) + ", ";
+			std::string limits_string = "Parameter " + ToString(index) + ", ";
 
 			if (limits[index].first.IsNull()) limits_string += "Min : N/A to ";
 			else {
@@ -194,12 +199,12 @@ public:
 
 	//get parameters contained as strings in components, into values passed in the parameter pack
 	template <typename ... Type> 
-	BError GetParameters(vector<string>& components, Type& ... values) 
+	BError GetParameters(std::vector<std::string>& components, Type& ... values) 
 	{
 		BError error;
 
 		//get parameters as a vector of Any objects. Construct  Any objects using pointers, so changes to vector entries result in changes to passed parameters - since these are in turn passed through reference changes are propagated to caller.
-		vector<Any> a_values = make_vector(Any(&values)...);
+		std::vector<Any> a_values = make_vector(Any(&values)...);
 
 		//component index
 		int cIdx = 0;
@@ -218,10 +223,10 @@ public:
 			if (cIdx == cIdx_) return error(BERROR_PARAMMISMATCH);
 		}
 		
-		//if last value is a string, add any remaining components to it using space separators.
+		//if last value is a std::string, add any remaining components to it using space separators.
 		if (a_values.back().is_type(btype_info<std::string>())) {
 
-			string text = a_values.back();
+			std::string text = a_values.back();
 
 			if (cIdx < (int)components.size()) {
 
@@ -237,11 +242,11 @@ public:
 	}
 
 	template <typename ... Type>
-	vector<string> PrepareReturnParameters(Type... values)
+	std::vector<std::string> PrepareReturnParameters(Type... values)
 	{
-		vector<string> outVector;
+		std::vector<std::string> outVector;
 
-		for (string value_text : { ToString(values)... })
+		for (std::string value_text : { ToString(values)... })
 			JoinToVector(outVector, split(value_text, ", ", "; "));
 
 		return outVector;

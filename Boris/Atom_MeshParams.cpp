@@ -1,7 +1,7 @@
 #include "stdafx.h"
 #include "Atom_MeshParams.h"
 
-Atom_MeshParams::Atom_MeshParams(vector<PARAM_>& enabledParams)
+Atom_MeshParams::Atom_MeshParams(std::vector<PARAM_>& enabledParams)
 {
 	//see comment in MeshParamsBase
 	set_meshparamsbase_implementation(this, MESHTYPE_ATOMISTIC);
@@ -122,9 +122,9 @@ void Atom_MeshParams::copy_parameters(Atom_MeshParams& copy_this)
 //-------------------------Setters/Updaters : text equations
 
 //set the mesh parameter equation with given user constants
-void Atom_MeshParams::set_meshparam_t_equation(PARAM_ paramID, string& equationText, vector_key<double>& userConstants)
+void Atom_MeshParams::set_meshparam_t_equation(PARAM_ paramID, std::string& equationText, vector_key<double>& userConstants)
 {
-	auto code = [](auto& MatP_object, string& equationText, vector_key<double>& userConstants, double base_temperature) -> void {
+	auto code = [](auto& MatP_object, std::string& equationText, vector_key<double>& userConstants, double base_temperature) -> void {
 
 		MatP_object.set_t_scaling_equation(equationText, userConstants, 0.0, base_temperature);
 	};

@@ -24,7 +24,7 @@ typedef DBL3(Atom_DifferentialEquation::*Atom_Equation)(int idx);
 
 class Atom_ODECommon :
 	public ProgramState<Atom_ODECommon,
-	tuple<
+	std::tuple<
 	int, int, 
 	double, double, 
 	double, double, int, int, 
@@ -33,7 +33,7 @@ class Atom_ODECommon :
 	double, double, double, double, double, double, 
 	int, 
 	bool, bool, double, double>,
-	tuple<>>,
+	std::tuple<>>,
 	public ODECommon_Base
 {
 	friend ODECommon_Base;

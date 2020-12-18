@@ -47,6 +47,22 @@ __global__ void CalculateCurrentDensity_Charge_Kernel(cuVEC_VC<cuReal3>& Jc, cuV
 	}
 }
 
+//if transport solver disabled we need to set displayVEC_VC directly from E and elC as Jc = elC * E
+__global__ void CalculateFixedCurrentDensity_Charge_Kernel(cuVEC_VC<cuReal3>& Jc, cuVEC_VC<cuReal3>& E, cuVEC_VC<cuBReal>& elC)
+{
+	int idx = blockIdx.x * blockDim.x + threadIdx.x;
+
+	if (idx < Jc.linear_size()) {
+
+		//only calculate current on non-empty cells - empty cells have already been assigned 0 at UpdateConfiguration
+		if (elC.is_not_empty(idx)) {
+
+			Jc[idx] = elC[idx] * E[idx];
+		}
+		else Jc[idx] = cuReal3(0.0);
+	}
+}
+
 __global__ void CalculateCurrentDensity_Spin_Kernel(cuVEC_VC<cuReal3>& Jc, ManagedMeshCUDA& cuMesh, TransportCUDA_Spin_V_Funcs& poisson_Spin_V)
 {
 	cuVEC<cuReal3>& E = *cuMesh.pE;
@@ -159,13 +175,21 @@ cu_obj<cuVEC_VC<cuReal3>>& TransportCUDA::GetChargeCurrent(void)
 {
 	if (!PrepareDisplayVEC_VC(pMeshCUDA->h_e)) return displayVEC_VC;
 
-	if (stsolve == STSOLVE_NONE) {
+	if (!pSMeshCUDA->DisabledTransportSolver()) {
 
-		CalculateCurrentDensity_Charge_Kernel <<< (pMeshCUDA->n_e.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (displayVEC_VC, pMeshCUDA->V, pMeshCUDA->elC);
+		if (stsolve == STSOLVE_NONE) {
+
+			CalculateCurrentDensity_Charge_Kernel << < (pMeshCUDA->n_e.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >> > (displayVEC_VC, pMeshCUDA->V, pMeshCUDA->elC);
+		}
+		else {
+
+			CalculateCurrentDensity_Spin_Kernel << < (pMeshCUDA->n_e.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >> > (displayVEC_VC, pMeshCUDA->cuMesh, poisson_Spin_V);
+		}
 	}
 	else {
 
-		CalculateCurrentDensity_Spin_Kernel <<< (pMeshCUDA->n_e.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (displayVEC_VC, pMeshCUDA->cuMesh, poisson_Spin_V);
+		//if transport solver disabled we need to set displayVEC_VC directly from E and elC as Jc = elC * E
+		CalculateFixedCurrentDensity_Charge_Kernel <<< (pMeshCUDA->n_e.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (displayVEC_VC, pMeshCUDA->E, pMeshCUDA->elC);
 	}
 
 	return displayVEC_VC;

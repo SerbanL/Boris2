@@ -32,7 +32,7 @@ void HeatBase::SetAlphaBoundary(double alpha_boundary_)
 }
 
 //Set Q_equation text equation object
-BError HeatBase::SetQEquation(string equation_string, int step)
+BError HeatBase::SetQEquation(std::string equation_string, int step)
 {
 	BError error(CLASS_STR(HeatBase));
 
@@ -67,7 +67,7 @@ void HeatBase::UpdateTEquationUserConstants(bool makeCuda)
 {
 	if (pMeshBase->userConstants.size()) {
 
-		vector<pair<string, double>> constants(pMeshBase->userConstants.size());
+		std::vector<std::pair<std::string, double>> constants(pMeshBase->userConstants.size());
 		for (int idx = 0; idx < pMeshBase->userConstants.size(); idx++) {
 
 			constants[idx] = { pMeshBase->userConstants.get_key_from_index(idx), pMeshBase->userConstants[idx] };
@@ -84,7 +84,7 @@ void HeatBase::UpdateTEquationUserConstants(bool makeCuda)
 }
 
 //set insulating mesh sides flags. str can be "x", "-x", "y", "-y", "z", "-z"
-void HeatBase::SetInsulatingSides(string literal, bool status)
+void HeatBase::SetInsulatingSides(std::string literal, bool status)
 {
 	if (literal == "x") insulate_px = status;
 	else if (literal == "-x") insulate_nx = status;

@@ -3,7 +3,7 @@
 #include "BorisLib.h"
 #include "Modules.h"
 
-using namespace std;
+
 
 class Atom_Mesh;
 
@@ -13,7 +13,7 @@ class Atom_Mesh;
 
 class Atom_MOptical :
 	public Modules,
-	public ProgramState<Atom_MOptical, tuple<>, tuple<>>
+	public ProgramState<Atom_MOptical, std::tuple<>, std::tuple<>>
 {
 
 #if COMPILECUDA == 1

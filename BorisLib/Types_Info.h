@@ -8,7 +8,7 @@
 //Since the names are hard-coded this is platform-independent.
 //This is mainly intended for use with Types_Any.h, which will result in different ProgramState output save files on different OS 
 //When you introduce a new type which Types_Any can handle, add a new specialization for btype_info etc. 
-//It doesn't really matter what string you hard-code below, but to keep it consistent enter the string produced on Windows (naming is more sensible than on Linux anyway, although more verbose, but these are not used in performance-critical situations).
+//It doesn't really matter what std::string you hard-code below, but to keep it consistent enter the std::string produced on Windows (naming is more sensible than on Linux anyway, although more verbose, but these are not used in performance-critical situations).
 
 template <typename Type>
 class btype_info {

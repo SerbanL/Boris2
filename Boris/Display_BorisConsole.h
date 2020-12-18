@@ -8,7 +8,7 @@
 #include "BorisGraphics.h"
 #include "WinSpaces.h"
 
-using namespace std;
+
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
@@ -61,10 +61,10 @@ private:
 	void ResetTextSelector(void) { selectEnd = 0; selectStart = selectEnd; }
 
 	//Enter pressed, return command line text in command (if any). Return true if there was text on line, otherwise false. If true then set a new line prompter.
-	bool NewCommandEntered(string &command);
+	bool NewCommandEntered(std::string &command);
 
 	//Text on the entry line must always be of the form: first word bold, further words italic non-bold. Must have USERCOLOR textcolor and BGRNDTEXTCOLOR with no outline.
-	string FormatEntryLineText(string text);
+	std::string FormatEntryLineText(std::string text);
 
 	//make sure formatting of entry line is correct 
 	void SetFormattingonEntryLine(void);
@@ -75,26 +75,29 @@ protected:
 	void DrawWindow_Quick(void);
 
 	//Implementation of message handling routine
-	ActionOutcome NewMessage(AC_ aCode, INT2 mouse, string data = "");
+	ActionOutcome NewMessage(AC_ aCode, INT2 mouse, std::string data = "");
 
 	void SetDefaultCursor(void) { SetCursor(LoadCursor(nullptr, IDC_IBEAM)); }
 
 	void AdjustWindowDimensions(D2D1_RECT_F delta) { ChangeWindowSides(delta); }
 
 	//New user entry at prompter position
-	void NewUserEntry(string text);
+	void NewUserEntry(std::string text);
+
+	//very similar to NewUserEntry, but add a space first if any text exists before prompt position
+	void NewSpacedUserEntry(std::string text);
 
 	//add new simple text line (fixed formatting)
-	void NewTextLine(string text, FormatSpecifier fs);
+	void NewTextLine(std::string text, FormatSpecifier fs);
 
 	//overloads the TextDisplay base method to add extra functionality : new text line with variable formatting
-	void NewFormattedTextLine(string text);
+	void NewFormattedTextLine(std::string text);
 
 	//insert text at prompter by adding to respective TextObject.
-	void InsertTextatPrompter(string text);
+	void InsertTextatPrompter(std::string text);
 
 	//set text as the entry line text (formatted type)
-	void SetEntryLineText(string text);
+	void SetEntryLineText(std::string text);
 
 public:
 

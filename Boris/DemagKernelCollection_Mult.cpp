@@ -14,7 +14,7 @@ void DemagKernelCollection::KernelMultiplication_2D_Self(VEC<ReIm3>& In, VEC<ReI
 	//Full multiplication with use of kernel symmetries -> re-arranged for better cache use compared to the line versions
 
 	VEC<DBL3>& Kdiag = kernels[self_contribution_index]->Kdiag_real;
-	vector<double>& K2D_odiag = kernels[self_contribution_index]->K2D_odiag;
+	std::vector<double>& K2D_odiag = kernels[self_contribution_index]->K2D_odiag;
 
 	//zero-th line
 #pragma omp parallel for

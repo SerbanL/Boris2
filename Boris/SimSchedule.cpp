@@ -1,7 +1,7 @@
 #include "stdafx.h"
 #include "Simulation.h"
 
-void Simulation::AddGenericStage(SS_ stageType, string meshName) 
+void Simulation::AddGenericStage(SS_ stageType, std::string meshName) 
 {
 	switch(stageType) {
 
@@ -403,7 +403,7 @@ void Simulation::SetGenericDataSaveCondition(int index, DSAVE_ dsaveType)
 	}
 }
 
-void Simulation::EditStageType(int index, SS_ stageType, string meshName) 
+void Simulation::EditStageType(int index, SS_ stageType, std::string meshName) 
 {
 	//if same stage type as before just change the mesh name
 	if(GoodIdx(simStages.last(), index) && simStages[index].stage_type() == stageType) {
@@ -419,7 +419,7 @@ void Simulation::EditStageType(int index, SS_ stageType, string meshName)
 	}
 }
 
-void Simulation::EditStageValue(int stageIndex, string value_string) 
+void Simulation::EditStageValue(int stageIndex, std::string value_string) 
 {
 	bool adjust_special = false;
 
@@ -538,7 +538,7 @@ void Simulation::EditStageValue(int stageIndex, string value_string)
 	}
 }
 
-void Simulation::EditStageStopCondition(int index, STOP_ stopType, string stopValueString) 
+void Simulation::EditStageStopCondition(int index, STOP_ stopType, std::string stopValueString) 
 {
 	//if same stop condition as before just change the stop value
 	if(GoodIdx(simStages.last(), index) && simStages[index].stop_condition() == stopType) {
@@ -552,7 +552,7 @@ void Simulation::EditStageStopCondition(int index, STOP_ stopType, string stopVa
 	}
 }
 
-void Simulation::EditDataSaveCondition(int index, DSAVE_ dsaveType, string dsaveValueString)
+void Simulation::EditDataSaveCondition(int index, DSAVE_ dsaveType, std::string dsaveValueString)
 {
 	//if same saving condition as before just change the value
 	if(GoodIdx(simStages.last(), index) && simStages[index].dsave_type() == dsaveType) {
@@ -566,7 +566,7 @@ void Simulation::EditDataSaveCondition(int index, DSAVE_ dsaveType, string dsave
 	}
 }
 
-void Simulation::UpdateStageMeshNames(string oldMeshName, string newMeshName) 
+void Simulation::UpdateStageMeshNames(std::string oldMeshName, std::string newMeshName) 
 {
 	for(int idx = 0; idx < simStages.size(); idx++) {
 
@@ -751,7 +751,7 @@ void Simulation::SetSimulationStageValue(void)
 	case SS_HFMR:
 	case SS_HFIELDFILE:
 	{
-		string meshName = simStages[stage_step.major].meshname();
+		std::string meshName = simStages[stage_step.major].meshname();
 
 		DBL3 appliedField = simStages[stage_step.major].get_value<DBL3>(stage_step.minor);
 
@@ -767,7 +767,7 @@ void Simulation::SetSimulationStageValue(void)
 
 	case SS_TSIGPOLAR:
 	{
-		string meshName = simStages[stage_step.major].meshname();
+		std::string meshName = simStages[stage_step.major].meshname();
 
 		DBL3 appliedStress = simStages[stage_step.major].get_value<DBL3>(stage_step.minor);
 
@@ -783,7 +783,7 @@ void Simulation::SetSimulationStageValue(void)
 
 	case SS_HFIELDEQUATION:
 	{
-		string meshName = simStages[stage_step.major].meshname();
+		std::string meshName = simStages[stage_step.major].meshname();
 
 		std::string equation_text = simStages[stage_step.major].get_value<std::string>(stage_step.minor);
 
@@ -799,7 +799,7 @@ void Simulation::SetSimulationStageValue(void)
 
 	case SS_HFIELDEQUATIONSEQ:
 	{
-		string meshName = simStages[stage_step.major].meshname();
+		std::string meshName = simStages[stage_step.major].meshname();
 
 		std::string equation_text = simStages[stage_step.major].get_value<std::string>(stage_step.minor);
 		//for a equation sequence we have "n: actual equation", where n is the number of steps
@@ -877,7 +877,7 @@ void Simulation::SetSimulationStageValue(void)
 	case SS_TSEQ:
 	case SS_TFILE:
 	{
-		string meshName = simStages[stage_step.major].meshname();
+		std::string meshName = simStages[stage_step.major].meshname();
 
 		double temperature = simStages[stage_step.major].get_value<double>(stage_step.minor);
 
@@ -895,7 +895,7 @@ void Simulation::SetSimulationStageValue(void)
 
 	case SS_TEQUATION:
 	{
-		string meshName = simStages[stage_step.major].meshname();
+		std::string meshName = simStages[stage_step.major].meshname();
 
 		std::string equation_text = simStages[stage_step.major].get_value<std::string>(stage_step.minor);
 
@@ -913,7 +913,7 @@ void Simulation::SetSimulationStageValue(void)
 
 	case SS_TEQUATIONSEQ:
 	{
-		string meshName = simStages[stage_step.major].meshname();
+		std::string meshName = simStages[stage_step.major].meshname();
 
 		std::string equation_text = simStages[stage_step.major].get_value<std::string>(stage_step.minor);
 
@@ -936,7 +936,7 @@ void Simulation::SetSimulationStageValue(void)
 	case SS_QSEQ:
 	case SS_QFILE:
 	{
-		string meshName = simStages[stage_step.major].meshname();
+		std::string meshName = simStages[stage_step.major].meshname();
 
 		double Qvalue = simStages[stage_step.major].get_value<double>(stage_step.minor);
 
@@ -954,7 +954,7 @@ void Simulation::SetSimulationStageValue(void)
 
 	case SS_QEQUATION:
 	{
-		string meshName = simStages[stage_step.major].meshname();
+		std::string meshName = simStages[stage_step.major].meshname();
 
 		std::string equation_text = simStages[stage_step.major].get_value<std::string>(stage_step.minor);
 
@@ -970,7 +970,7 @@ void Simulation::SetSimulationStageValue(void)
 
 	case SS_QEQUATIONSEQ:
 	{
-		string meshName = simStages[stage_step.major].meshname();
+		std::string meshName = simStages[stage_step.major].meshname();
 
 		std::string equation_text = simStages[stage_step.major].get_value<std::string>(stage_step.minor);
 

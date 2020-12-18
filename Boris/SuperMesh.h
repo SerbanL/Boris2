@@ -23,7 +23,7 @@
 #include "SuperMeshCUDA.h"
 #endif
 
-using namespace std;
+
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //	
@@ -36,15 +36,15 @@ using namespace std;
 class SuperMesh : 
 	public SimulationSharedData, 
 	public ProgramState<SuperMesh,
-	tuple<
+	std::tuple<
 	int, int, 
 	SZ3, DBL3, Rect, SZ3, DBL3, Rect, 
 	ODECommon, Atom_ODECommon,
 	vector_key<MeshBase*>, 
 	vector_lut<Modules*>, 
-	string, string, 
+	std::string, std::string, 
 	bool, bool>,
-	tuple<
+	std::tuple<
 	//Micromagnetic Meshes
 	FMesh, DipoleMesh, MetalMesh, InsulatorMesh, AFMesh, DiaMesh,
 	//Atomistic Meshes
@@ -93,7 +93,7 @@ private:
 	int vec3rep = (int)VEC3REP_FULL;
 
 	//name of currently active mesh in the pMesh vector (used for quicker data inputting in the console)
-	string activeMeshName = "permalloy";
+	std::string activeMeshName = "permalloy";
 
 	//-----Supermesh dimensions
 
@@ -159,12 +159,12 @@ private:
 	double total_energy_density = 0.0;
 	//different meshes have different weights when contributing to the total energy density -> ratio of their non-empty volume to total non-empty volume
 	//this vector is calculated at initialization and has same size as pMesh vector
-	vector<double> energy_density_weights;
+	std::vector<double> energy_density_weights;
 
 public:
 
 	//name of super-mesh for use in console (e.g. addmodule supermesh sdemag). It is also a reserved name : no other module can be named with this handle
-	string superMeshHandle = "supermesh";
+	std::string superMeshHandle = "supermesh";
 
 private:
 
@@ -184,7 +184,7 @@ public:
 	//--------------------------------------------------------- MESH INDEXING and related methods
 
 	//index the super-mesh using mesh name to return a mesh pointer (assumes the referenced mesh is contained in the pMesh vector).
-	MeshBase* operator[](const string &key) { return pMesh[key]; }
+	MeshBase* operator[](const std::string &key) { return pMesh[key]; }
 	MeshBase* operator[](const int &meshIdx) { return pMesh[meshIdx]; }
 
 	//obtain mesh which contains the given coordinate (units m)
@@ -201,12 +201,12 @@ public:
 	vector_key<MeshBase*>& operator()(void) { return pMesh; }
 
 	//check if SMesh contains the given mesh : identify it by its key, or by its unique mesh id - for the latter return the index in pMesh (-1 if not found)
-	bool contains(string &key) { return pMesh.has_key(key); }
+	bool contains(std::string &key) { return pMesh.has_key(key); }
 	int contains_id(int meshId) { for (int idx = 0; idx < (int)pMesh.size(); idx++) if (pMesh[idx]->get_id() == meshId) return idx; return -1; }
 
 	//from unique mesh id get key of entry in pMesh vector
-	string key_from_meshId(int meshId) { for (int idx = 0; idx < (int)pMesh.size(); idx++) if (pMesh[idx]->get_id() == meshId) return pMesh.get_key_from_index(idx); return ""; }
-	string key_from_meshIdx(int meshIdx) { return pMesh.get_key_from_index(meshIdx); }
+	std::string key_from_meshId(int meshId) { for (int idx = 0; idx < (int)pMesh.size(); idx++) if (pMesh[idx]->get_id() == meshId) return pMesh.get_key_from_index(idx); return ""; }
+	std::string key_from_meshIdx(int meshIdx) { return pMesh.get_key_from_index(meshIdx); }
 
 	int size(void) { return (int)pMesh.size(); }
 
@@ -308,7 +308,7 @@ public:
 	void SetMoveMeshAntisymmetric(bool antisymmetric);
 	void SetMoveMeshThreshold(double threshold);
 
-	void SetMoveMeshTrigger(bool status, string meshName = "");
+	void SetMoveMeshTrigger(bool status, std::string meshName = "");
 
 	//---Other ODE Getters
 
@@ -349,193 +349,205 @@ public:
 	//---------------------------------------------------------MONTE-CARLO SOLVER CONTROL : SuperMesh_MonteCarlo.cpp
 
 	//switch to serial (true) or parallel (false) in given mesh - all if meshName is the supermesh handle
-	BError Set_MonteCarlo_Serial(bool status, string meshName);
+	BError Set_MonteCarlo_Serial(bool status, std::string meshName);
 
 	//switch to constrained Monnte-Carlo (true) or classical (false) in given mesh - all if meshName is the supermesh handle; if constrained, then use cmc_n direction.
-	BError Set_MonteCarlo_Constrained(bool status, DBL3 cmc_n, string meshName);
+	BError Set_MonteCarlo_Constrained(bool status, DBL3 cmc_n, std::string meshName);
 
 	//--------------------------------------------------------- MESH HANDLING - COMPONENTS : SuperMeshMeshes.cpp
 
 	//Add a new mesh of given type, name and dimensions
-	BError AddMesh(string meshName, MESH_ meshType, Rect meshRect);
+	BError AddMesh(std::string meshName, MESH_ meshType, Rect meshRect);
 
 	//delete a ferromagnetic mesh
-	BError DelMesh(string meshName);
+	BError DelMesh(std::string meshName);
 
 	//rename a mesh
-	BError RenameMesh(string oldName, string newName);
+	BError RenameMesh(std::string oldName, std::string newName);
 
 	//change mesh focus
-	BError SetMeshFocus(string meshName);
+	BError SetMeshFocus(std::string meshName);
 	//get name of mesh in focus
-	string GetMeshFocus(void) { return activeMeshName; }
+	std::string GetMeshFocus(void) { return activeMeshName; }
 
 	//--------------------------------------------------------- MESH HANDLING - SHAPES : SuperMeshMeshes_Shapes.cpp
 
 	//set mesh rect for named mesh (any if applicable any other dependent meshes) and update dependent save data rects by calling the provided function.
-	BError SetMeshRect(string meshName, Rect meshRect, std::function<void(string, Rect)> save_data_updater);
+	BError SetMeshRect(std::string meshName, Rect meshRect, std::function<void(std::string, Rect)> save_data_updater);
 
 	//copy all primary mesh data (magnetization, elC, Temp, etc.) but do not change dimensions or discretisation
-	BError copy_mesh_data(string meshName_from, string meshName_to);
+	BError copy_mesh_data(std::string meshName_from, std::string meshName_to);
 
 	//delete or add rectangle for given mesh
-	BError delrect(string meshName, Rect rectangle);
-	BError setrect(string meshName, Rect rectangle);
-	BError resetrect(string meshName);
+	BError delrect(std::string meshName, Rect rectangle);
+	BError setrect(std::string meshName, Rect rectangle);
+	BError resetrect(std::string meshName);
 
 	//roughen mesh sides (side = "x", "y", "z", "-x", "-y", or "-z") to given depth (same units as h) with prng instantiated with given seed.
-	BError RoughenMeshSides(string meshName, string side, double depth, int seed);
+	BError RoughenMeshSides(std::string meshName, std::string side, double depth, int seed);
 
 	//Roughen mesh top and bottom surfaces using a jagged pattern to given depth and peak spacing (same units as h) with prng instantiated with given seed.
 	//Rough both top and bottom if sides is empty, else it should be either -z or z.
-	BError RoughenMeshSurfaces_Jagged(string meshName, double depth, double spacing, int seed, string sides);
+	BError RoughenMeshSurfaces_Jagged(std::string meshName, double depth, double spacing, int seed, std::string sides);
 
 	//clear roughness: set fine shape to coarse shape
-	BError ClearMeshRoughness(string meshName);
+	BError ClearMeshRoughness(std::string meshName);
 
 	//Generate Voronoi 2D grains in xy plane (boundaries between Voronoi cells set to empty) at given average spacing with prng instantiated with given seed.
-	BError GenerateGrains2D(string meshName, double spacing, int seed);
+	BError GenerateGrains2D(std::string meshName, double spacing, int seed);
 
 	//Generate Voronoi 3D grains (boundaries between Voronoi cells set to empty) at given average spacing with prng instantiated with given seed.
-	BError GenerateGrains3D(string meshName, double spacing, int seed);
+	BError GenerateGrains3D(std::string meshName, double spacing, int seed);
 
 	//--------------------------------------------------------- MESH HANDLING - SETTINGS : SuperMeshMeshes_Settings.cpp
 
 	//set magnetization angle in given mesh (all if meshName not given)
-	BError SetMagAngle(string meshName, double polar, double azim);
+	BError SetMagAngle(std::string meshName, double polar, double azim);
 
 	//set magnetization angle in given mesh (must be specified), and only in given rectangle of meshName (relative coordinates)
-	BError SetMagAngle_Rect(string meshName, double polar, double azim, Rect rectangle);
+	BError SetMagAngle_Rect(std::string meshName, double polar, double azim, Rect rectangle);
+
+	//set magnetization angle in given mesh using given shape
+	BError SetMagAngle_Shape(std::string meshName, double polar, double azim, std::vector<MeshShape> shapes);
+
+	//Set magnetization angle in solid object only containing given relative position uniformly using polar coordinates
+	BError SetMagAngle_Object(std::string meshName, double polar, double azim, DBL3 position);
 
 	//Invert magnetization direction in given mesh (must be magnetic)
-	BError SetInvertedMag(string meshName, bool x = true, bool y = true, bool z = true);
+	BError SetInvertedMag(std::string meshName, bool x = true, bool y = true, bool z = true);
 
 	//Mirror magnetization in given axis (literal x, y, or z) in given mesh (must be magnetic)
-	BError SetMirroredMag(string meshName, string axis);
+	BError SetMirroredMag(std::string meshName, std::string axis);
 
 	//Set random magentisation distribution in given mesh (must be magnetic)
-	BError SetRandomMag(string meshName, int seed);
+	BError SetRandomMag(std::string meshName, int seed);
 
-	//longitudinal and transverse are the components specified as string literals : "-z", "-y", "-x", "x", "y", "z"
-	BError SetMagDomainWall(string meshName, string longitudinal, string transverse, double width, double position);
+	//longitudinal and transverse are the components specified as std::string literals : "-z", "-y", "-x", "x", "y", "z"
+	BError SetMagDomainWall(std::string meshName, std::string longitudinal, std::string transverse, double width, double position);
 
 	//Set Neel skyrmion in given mesh with chirality, diameter and relative x-y plane position
-	BError SetSkyrmion(string meshName, int orientation, int chirality, double diameter, DBL2 position);
+	BError SetSkyrmion(std::string meshName, int orientation, int chirality, double diameter, DBL2 position);
 	
 	//Set Bloch skyrmion in given mesh with chirality, diameter and relative x-y plane position
-	BError SetSkyrmionBloch(string meshName, int orientation, int chirality, double diameter, DBL2 position);
+	BError SetSkyrmionBloch(std::string meshName, int orientation, int chirality, double diameter, DBL2 position);
 
 	//Set applied magnetic field
-	BError SetField(string meshName, DBL3 field_cartesian);
+	BError SetField(std::string meshName, DBL3 field_cartesian);
 
 	//Set uniform applied mechanical stress
-	BError SetUniformStress(string meshName, DBL3 stress_cartesian);
+	BError SetUniformStress(std::string meshName, DBL3 stress_cartesian);
 
 	//fully prepare moving mesh algorithm on named mesh (must be ferromagnetic) - transverse wall
-	BError PrepareMovingMesh(string meshName);
+	BError PrepareMovingMesh(std::string meshName);
 
 	//fully prepare moving mesh algorithm on named mesh (must be ferromagnetic) - bloch wall
-	BError PrepareMovingMesh_Bloch(string meshName);
+	BError PrepareMovingMesh_Bloch(std::string meshName);
 
 	//fully prepare moving mesh algorithm on named mesh (must be ferromagnetic) - neel wall
-	BError PrepareMovingMesh_Neel(string meshName);
+	BError PrepareMovingMesh_Neel(std::string meshName);
 
 	//fully prepare moving mesh algorithm on named mesh (must be ferromagnetic) - skyrmion
-	BError PrepareMovingMesh_Skyrmion(string meshName);
+	BError PrepareMovingMesh_Skyrmion(std::string meshName);
 
 	//Clear moving mesh settings made by a prepare method
 	void ClearMovingMesh(void);
 
 	//set ferromagnetic mesh roughness refinement if Roughness module enabled in given mesh
-	BError SetMeshRoughnessRefinement(string meshName, INT3 refine);
+	BError SetMeshRoughnessRefinement(std::string meshName, INT3 refine);
 
 	//Set periodic boundary conditions for magnetization
 	//possible flags: x, y, z
-	BError Set_PBC(string meshName, string flag, int images);
+	BError Set_PBC(std::string meshName, std::string flag, int images);
 
 	//set exchange coupling to neighboring meshes - an exchange-type module (i.e. inherit from ExchangeBase) must be enabled in the named mesh
-	BError Set_ExchangeCoupledMeshes(bool status, string meshName);
+	BError Set_ExchangeCoupledMeshes(bool status, std::string meshName);
 
 	//Set/Get multilayered demag exclusion : will need to call UpdateConfiguration when the flag is changed, so the correct SDemag_Demag modules and related settings are set from the SDemag module.
-	BError Set_Demag_Exclusion(bool exclude_from_multiconvdemag, string meshName);
+	BError Set_Demag_Exclusion(bool exclude_from_multiconvdemag, std::string meshName);
 
 	//set link_stochastic flag in named mesh, or all meshes if supermesh handle given
-	BError SetLinkStochastic(bool link_stochastic, string meshName);
+	BError SetLinkStochastic(bool link_stochastic, std::string meshName);
+
+	//set electric field VEC from a constant Jc value in named mesh
+	BError SetEFromJcValue(DBL3 Jcvalue, std::string meshName);
 
 	//--------------------------------------------------------- MESH PARAMETERS : SuperMeshParams.cpp
 
 	//these set parameter values and temperature dependence in the indicated mesh - call through these since it's important to call UpdateConfiguration also
-	BError set_meshparam_value(string meshName, string paramHandle, string value_text);
+	BError set_meshparam_value(std::string meshName, std::string paramHandle, std::string value_text);
 	
-	//get named parameter value from given mesh. Set value as a string in value_text, without units
-	BError get_meshparam_value(string meshName, string paramHandle, string& value_text);
+	//get named parameter value from given mesh. Set value as a std::string in value_text, without units
+	BError get_meshparam_value(std::string meshName, std::string paramHandle, std::string& value_text);
 
 	//temperature dependence
 
-	BError set_meshparam_t_equation(string meshName, string paramHandle, string equationText);
+	BError set_meshparam_t_equation(std::string meshName, std::string paramHandle, std::string equationText);
 	
-	BError set_meshparam_tscaling_array(string meshName, string paramHandle, vector<double>& temp, vector<double>& scaling_x, vector<double>& scaling_y, vector<double>& scaling_z, string fileName_info = "");
+	BError set_meshparam_tscaling_array(std::string meshName, std::string paramHandle, std::vector<double>& temp, std::vector<double>& scaling_x, std::vector<double>& scaling_y, std::vector<double>& scaling_z, std::string fileName_info = "");
 
-	//clear parameters temperature dependence in given mesh (all meshes if empty string)
-	BError clear_meshparam_temp(string meshName, string paramHandle);
+	//clear parameters temperature dependence in given mesh (all meshes if empty std::string)
+	BError clear_meshparam_temp(std::string meshName, std::string paramHandle);
 	
 	//spatial dependence
 
-	BError set_meshparam_s_equation(string meshName, string paramHandle, string equationText);
+	BError set_meshparam_s_equation(std::string meshName, std::string paramHandle, std::string equationText);
 
-	//clear parameters spatial dependence (variation) in given mesh (all meshes if empty string)
-	BError clear_meshparam_variation(string meshName);
+	//clear parameters spatial dependence (variation) in given mesh (all meshes if empty std::string)
+	BError clear_meshparam_variation(std::string meshName);
 
 	//clear parameter spatial dependence (variation) in given mesh for named parameter only
-	BError clear_meshparam_variation(string meshName, string paramHandle);
+	BError clear_meshparam_variation(std::string meshName, std::string paramHandle);
 
 	//set parameter to display in given mesh when ParamVar spatial variation display is enabled
-	BError set_meshparamvar_display(string meshName, string paramHandle);
+	BError set_meshparamvar_display(std::string meshName, std::string paramHandle);
 
-	//set parameter spatial variation using a given generator and arguments (arguments passed as a string to be interpreted and converted using ToNum)
-	BError set_meshparam_var(string meshName, string paramHandle, string generatorHandle, string generatorArgs, function<vector<unsigned char>(string, INT2)>& bitmap_loader);
+	//set parameter spatial variation using a given generator and arguments (arguments passed as a std::string to be interpreted and converted using ToNum)
+	BError set_meshparam_var(std::string meshName, std::string paramHandle, std::string generatorHandle, std::string generatorArgs, std::function<std::vector<unsigned char>(std::string, INT2)>& bitmap_loader);
+
+	//set parameter spatial variation using a shape : set value in given shape only
+	BError set_meshparam_shape(std::string meshName, std::string paramHandle, std::vector<MeshShape> shapes, std::string value_text);
 
 	//copy all parameters from another Mesh
-	BError copy_mesh_parameters(string meshName_from, string meshName_to);
+	BError copy_mesh_parameters(std::string meshName_from, std::string meshName_to);
 
 	//--------------------------------------------------------- TEMPERATURE / HEAT SOLVER CONTROL : SuperMeshTemperature.cpp
 
 	//set mesh base temperature. If spatial variation set and Heat module enabled then non-uniform base temperature will be set
-	BError SetBaseTemperature(string meshName, double Temperature);
+	BError SetBaseTemperature(std::string meshName, double Temperature);
 
 	//ambient and alpha boundary coefficient for Robin boundary conditions - set in Heat module if active
-	BError SetAmbientTemperature(string meshName, double T_ambient);
-	BError SetAlphaHeatBoundary(string meshName, double alpha_boundary);
+	BError SetAmbientTemperature(std::string meshName, double T_ambient);
+	BError SetAlphaHeatBoundary(std::string meshName, double alpha_boundary);
 	
 	//insulating mesh sides for heat equation (Neumann boundary conditions). literal can be "x", "-x", "y", "-y", "z", "-z"
-	BError SetInsulatingSides(string meshName, string literal, bool status);
+	BError SetInsulatingSides(std::string meshName, std::string literal, bool status);
 
 	//set Curie temperature/atomic moment as Bohr magneton multiple for named mesh or all meshes (if meshName is the supermesh handle)
 	//this is for the actually set Tc value
 	//applicable for micromagnetic meshes only
-	BError SetCurieTemperature(string meshName, double T_Curie);
+	BError SetCurieTemperature(std::string meshName, double T_Curie);
 	
 	//this is for the indicative material Tc value
 	//applicable for micromagnetic meshes only
-	BError SetCurieTemperatureMaterial(string meshName, double T_Curie_material);
-	BError SetAtomicMagneticMoment(string meshName, DBL2 atomic_moment);
+	BError SetCurieTemperatureMaterial(std::string meshName, double T_Curie_material);
+	BError SetAtomicMagneticMoment(std::string meshName, DBL2 atomic_moment);
 
 	//set Tc (critical temperature) coupling terms for 2-sublattice model
 	//applicable for micromagnetic meshes only
-	BError SetTcCoupling(string meshName, DBL2 tau_ii, DBL2 tau_ij);
-	BError SetTcCoupling_Intra(string meshName, DBL2 tau_ii);
-	BError SetTcCoupling_Inter(string meshName, DBL2 tau_ij);
+	BError SetTcCoupling(std::string meshName, DBL2 tau_ii, DBL2 tau_ij);
+	BError SetTcCoupling_Intra(std::string meshName, DBL2 tau_ii);
+	BError SetTcCoupling_Inter(std::string meshName, DBL2 tau_ij);
 
 	//Set temperature model
-	BError SetTemperatureModel(string meshName, int tmtype);
+	BError SetTemperatureModel(std::string meshName, int tmtype);
 
 	//----------------------------------- MODULES CONTROL : SuperMeshModules.cpp
 
 	//Add module to given mesh (delegate implementation to AddModule in the referenced mesh), checking for super-mesh module clashes
-	BError AddModule(string meshName, MOD_ moduleId);
+	BError AddModule(std::string meshName, MOD_ moduleId);
 
 	//Delete module from given mesh (delegate implementation to DelModule in the referenced mesh), checking for super-mesh module clashes
-	BError DelModule(string meshName, MOD_ moduleId);
+	BError DelModule(std::string meshName, MOD_ moduleId);
 
 	bool IsSuperMeshModuleSet(MOD_ moduleId) { return pSMod.is_ID_set(moduleId); }
 
@@ -587,10 +599,10 @@ public:
 
 	//----------------------------------- DISPLAY-ASSOCIATED GET/SET METHODS : SuperMeshDisplay.cpp
 
-	vector<PhysQ> FetchOnScreenPhysicalQuantity(double detail_level = 0.0);
+	std::vector<PhysQ> FetchOnScreenPhysicalQuantity(double detail_level = 0.0);
 	
 	//save the quantity currently displayed on screen in an ovf2 file using the specified format
-	BError SaveOnScreenPhysicalQuantity(string fileName, string ovf2_dataType);
+	BError SaveOnScreenPhysicalQuantity(std::string fileName, std::string ovf2_dataType);
 
 	//Before calling a run of GetDisplayedMeshValue, make sure to call PrepareDisplayedMeshValue : this calculates and stores in displayVEC storage and quantities which don't have memory allocated directly, but require computation and temporary storage.
 	void PrepareDisplayedMeshValue(void);
@@ -604,12 +616,12 @@ public:
 
 	int GetDisplayedPhysicalQuantity(void) { return displayedPhysicalQuantity; }
 
-	BError SetDisplayedPhysicalQuantity(string meshName, int displayedPhysicalQuantity_);
-	BError SetDisplayedBackgroundPhysicalQuantity(string meshName, int displayedBackgroundPhysicalQuantity_);
+	BError SetDisplayedPhysicalQuantity(std::string meshName, int displayedPhysicalQuantity_);
+	BError SetDisplayedBackgroundPhysicalQuantity(std::string meshName, int displayedBackgroundPhysicalQuantity_);
 
 	//Get/Set vectorial quantity representation options in named mesh (which could be the supermesh)
-	BError SetVEC3Rep(string meshName, int vec3rep_);
-	int GetVEC3Rep(string meshName);
+	BError SetVEC3Rep(std::string meshName, int vec3rep_);
+	int GetVEC3Rep(std::string meshName);
 
 	//--------------------------------------------------------- MODULE METHODS TEMPLATED CALLERS
 

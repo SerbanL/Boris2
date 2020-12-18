@@ -1,32 +1,22 @@
 """
-This script is part of Boris Computational Spintronics v2.8
+This script is part of Boris Computational Spintronics v3.0
 
 @author: Serban Lepadatu, 2020
 """
 
-import os
-import sys
 from NetSocks import NSClient
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
 
-#setup communication with server. By default sent messages are not displayed in console. 
-#To enable verbose mode use e.g.: NSClient('localhost', True)
-ns = NSClient('localhost')
-
-########################################
-
-#the working directory : same as this script file, typically expecting simulation file to be in same directory as this script file
-directory = os.path.dirname(sys.argv[0]) + "/"
-#make sure Boris is reset to default in case a ready set simulation file is not loaded below (if so this can be commented out)
-ns.default()
-#set working directory same as this script file
-ns.chdir(directory)
+#setup communication with server
+ns = NSClient()
+ns.configure(True)
 
 ########################################
 
 #for a script running this program entirely from scratch (no loadsim) see Tutorial 0
 ns.loadsim('ufsky_fm')
+ns.displaydetail(1e-9)
 
 #0 to 10ps
 ns.editstagestop(0, 'time', 10e-12)

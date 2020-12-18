@@ -3,7 +3,7 @@
 #include "BorisLib.h"
 #include "Modules.h"
 
-using namespace std;
+
 
 class Mesh;
 
@@ -23,7 +23,7 @@ class Mesh;
 class Roughness :
 	public Modules,
 	public Convolution<Roughness, RoughnessKernel<Roughness>>,
-	public ProgramState<Roughness, tuple<INT3, VEC_VC<double>>, tuple<>>
+	public ProgramState<Roughness, std::tuple<INT3, VEC_VC<double>>, std::tuple<>>
 {
 	friend RoughnessKernel<Roughness>;
 

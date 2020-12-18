@@ -10,6 +10,8 @@
 #include "BLib_prng.h"
 #include "BLib_OmpReduction.h"
 
+#include "VEC_shapedef.h"
+
 ////////////////////////////////////////////////////////////////////////////////////////////////// VEC<VType>
 //
 // n-component quantity with 3 dimensions
@@ -58,6 +60,21 @@ private:
 
 	//from current rectangle and h value set n. h may also need to be adjusted since n must be an integer. Resize quantity to new n value : return success or fail. If failed then nothing changed.
 	bool set_n_adjust_h(void);
+
+	//---------------------------------------------MULTIPLE ENTRIES SETTERS - VEC SHAPE MASKS : VEC_shapemask.h
+
+	//auxiliary function for generating shapes, where the shape is defined in shape_method
+	//shape_method takes two parameters: distance from shape centre and dimensions of shape; if point is within shape then return true
+	//generate shape at centre_pos with given rotation
+	//make given number of repetitions, with displacements between repetitions
+	//shape set using the indicated method (or, not, xor) and default_value
+	void shape_setter(std::function<bool(DBL3, DBL3)>& shape_method, MeshShape shape, VType default_value);
+
+	//set composite shape: differs slightly from single elementary shape setter: this adds the composite shape into the mesh, so any subtractive shapes are only subtracted when forming the composite shape, not subtracted from the mesh
+	void shape_setter(std::vector<std::function<bool(DBL3, DBL3)>> shape_methods, std::vector<MeshShape> shapes, VType default_value);
+
+	//similar to shape_setter, but sets value in composite shape composite shape is not empty
+	void shape_valuesetter(std::vector<std::function<bool(DBL3, DBL3)>> shape_methods, std::vector<MeshShape> shapes, VType value);
 
 protected:
 
@@ -257,6 +274,44 @@ public:
 	//The rotation uses the values for polar (theta) and azimuthal (phi) angles specified in given ranges in degrees. prng instantiated with given seed.
 	//specialised for DBL3 only : applies rotation to vector
 	bool generate_voronoirotation3d(DBL3 new_h, Rect new_rect, DBL2 theta, DBL2 phi, double spacing, unsigned seed) { return true; }
+
+	//--------------------------------------------VEC SHAPE MASKS : VEC_shapemask.h
+
+	//method: or (add shape) / not (delete shape) / xor (add and delete overlaps) / and (set value only if not empty)
+
+	//all use the auxiliary shape_setter method
+
+	//disk
+	std::function<bool(DBL3, DBL3)> shape_disk(MeshShape shape, VType default_value, bool setshape = true);
+
+	//rectangle
+	std::function<bool(DBL3, DBL3)> shape_rect(MeshShape shape, VType default_value, bool setshape = true);
+
+	//triangle
+	std::function<bool(DBL3, DBL3)> shape_triangle(MeshShape shape, VType default_value, bool setshape = true);
+
+	//ellipsoid
+	std::function<bool(DBL3, DBL3)> shape_ellipsoid(MeshShape shape, VType default_value, bool setshape = true);
+
+	//pyramid
+	std::function<bool(DBL3, DBL3)> shape_pyramid(MeshShape shape, VType default_value, bool setshape = true);
+
+	//tetrahedron
+	std::function<bool(DBL3, DBL3)> shape_tetrahedron(MeshShape shape, VType default_value, bool setshape = true);
+
+	//cone
+	std::function<bool(DBL3, DBL3)> shape_cone(MeshShape shape, VType default_value, bool setshape = true);
+
+	//torus
+	std::function<bool(DBL3, DBL3)> shape_torus(MeshShape shape, VType default_value, bool setshape = true);
+
+	//set a composite shape using combination of the above elementary shapes
+	void shape_set(std::vector<MeshShape> shapes, VType default_value);
+
+	//set a composite shape using combination of the above elementary shapes but:
+	//only set value in non-empty parts of shape
+	//uses the shape_valuesetter auxiliary method
+	void shape_setvalue(std::vector<MeshShape> shapes, VType value);
 
 	//--------------------------------------------GETTERS : VEC_aux.h
 

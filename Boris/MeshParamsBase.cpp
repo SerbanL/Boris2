@@ -25,71 +25,71 @@ RType MeshParamsBase::run_on_param_switch(PARAM_ paramID, Lambda& run_this, PTyp
 
 //-------------------------Getters
 
-//get value of indexed mesh parameter as a string (with unit)
-string MeshParamsBase::get_meshparam_value(int index)
+//get value of indexed mesh parameter as a std::string (with unit)
+std::string MeshParamsBase::get_meshparam_value(int index)
 {
 	PARAM_ paramID = (PARAM_)get_meshparam_id(index);
 
-	auto code = [&](auto& MatP_object, string unit) -> string {
+	auto code = [&](auto& MatP_object, std::string unit) -> std::string {
 
 		return ToString(MatP_object.get0(), unit);
 	};
 
-	return run_on_param_switch<string>(paramID, code, meshParams(paramID).unit);
+	return run_on_param_switch<std::string>(paramID, code, meshParams(paramID).unit);
 }
 
-string MeshParamsBase::get_meshparam_value(PARAM_ paramID)
+std::string MeshParamsBase::get_meshparam_value(PARAM_ paramID)
 {
-	auto code = [&](auto& MatP_object, string unit) -> string {
+	auto code = [&](auto& MatP_object, std::string unit) -> std::string {
 
 		return ToString(MatP_object.get0(), unit);
 	};
 
-	return run_on_param_switch<string>(paramID, code, meshParams(paramID).unit);
+	return run_on_param_switch<std::string>(paramID, code, meshParams(paramID).unit);
 }
 
-//get value of indexed mesh parameter as a string (without unit)
-string MeshParamsBase::get_meshparam_value_sci(int index)
+//get value of indexed mesh parameter as a std::string (without unit)
+std::string MeshParamsBase::get_meshparam_value_sci(int index)
 {
 	PARAM_ paramID = (PARAM_)get_meshparam_id(index);
 
-	auto code = [&](auto& MatP_object) -> string {
+	auto code = [&](auto& MatP_object) -> std::string {
 
 		return ToString(MatP_object.get0());
 	};
 
-	return run_on_param_switch<string>(paramID, code);
+	return run_on_param_switch<std::string>(paramID, code);
 }
 
-string MeshParamsBase::get_meshparam_value_sci(PARAM_ paramID)
+std::string MeshParamsBase::get_meshparam_value_sci(PARAM_ paramID)
 {
-	auto code = [&](auto& MatP_object) -> string {
+	auto code = [&](auto& MatP_object) -> std::string {
 
 		return ToString(MatP_object.get0());
 	};
 
-	return run_on_param_switch<string>(paramID, code);
+	return run_on_param_switch<std::string>(paramID, code);
 }
 
-string MeshParamsBase::get_paraminfo_string(PARAM_ paramID)
+std::string MeshParamsBase::get_paraminfo_string(PARAM_ paramID)
 {
-	auto code = [&](auto& MatP_object, PARAM_ paramID) -> string {
+	auto code = [&](auto& MatP_object, PARAM_ paramID) -> std::string {
 
 		return get_meshparam_handle(paramID) + ": " + MatP_object.get_info_string();
 	};
 
-	return run_on_param_switch<string>(paramID, code, paramID);
+	return run_on_param_switch<std::string>(paramID, code, paramID);
 }
 
-//returns a string describing the set spatial dependence with any parameters
-string MeshParamsBase::get_paramvarinfo_string(PARAM_ paramID)
+//returns a std::string describing the set spatial dependence with any parameters
+std::string MeshParamsBase::get_paramvarinfo_string(PARAM_ paramID)
 {
-	auto code = [&](auto& MatP_object, PARAM_ paramID) -> string {
+	auto code = [&](auto& MatP_object, PARAM_ paramID) -> std::string {
 
 		return get_meshparam_handle(paramID) + ": " + MatP_object.get_varinfo_string();
 	};
 
-	return run_on_param_switch<string>(paramID, code, paramID);
+	return run_on_param_switch<std::string>(paramID, code, paramID);
 }
 
 bool MeshParamsBase::is_paramtemp_set(PARAM_ paramID)
@@ -135,9 +135,9 @@ bool MeshParamsBase::is_param_nonconst(PARAM_ paramID)
 	return run_on_param_switch<bool>(paramID, code);
 }
 
-bool MeshParamsBase::get_meshparam_tempscaling(PARAM_ paramID, double max_temperature, vector<double>& x, vector<double>& y, vector<double>& z)
+bool MeshParamsBase::get_meshparam_tempscaling(PARAM_ paramID, double max_temperature, std::vector<double>& x, std::vector<double>& y, std::vector<double>& z)
 {
-	auto code = [](auto& MatP_object, double max_temperature, vector<double>& x, vector<double>& y, vector<double>& z) -> bool {
+	auto code = [](auto& MatP_object, double max_temperature, std::vector<double>& x, std::vector<double>& y, std::vector<double>& z) -> bool {
 
 		return MatP_object.get_temperature_scaling(max_temperature, x, y, z);
 	};
@@ -216,10 +216,10 @@ void MeshParamsBase::calculate_meshparam_s_scaling(PARAM_ paramID, VEC<DBL3>& di
 
 //-------------------------Setters : value and temperature dependence
 
-//set value from string for named parameter (units allowed in string)
-void MeshParamsBase::set_meshparam_value(PARAM_ paramID, string value_text)
+//set value from std::string for named parameter (units allowed in std::string)
+void MeshParamsBase::set_meshparam_value(PARAM_ paramID, std::string value_text)
 {
-	auto code = [](auto& MatP_object, string value_text, string unit) -> void {
+	auto code = [](auto& MatP_object, std::string value_text, std::string unit) -> void {
 
 		decltype(MatP_object.get0()) value = ToNum(value_text, unit);
 		MatP_object = value;
@@ -251,9 +251,9 @@ void MeshParamsBase::clear_meshparam_temp(PARAM_ paramID)
 }
 
 //set mesh parameter array scaling
-bool MeshParamsBase::set_meshparam_tscaling_array(PARAM_ paramID, vector<double>& temp, vector<double>& scaling_x, vector<double>& scaling_y, vector<double>& scaling_z)
+bool MeshParamsBase::set_meshparam_tscaling_array(PARAM_ paramID, std::vector<double>& temp, std::vector<double>& scaling_x, std::vector<double>& scaling_y, std::vector<double>& scaling_z)
 {
-	auto code = [](auto& MatP_object, vector<double>& temp, vector<double>& scaling_x, vector<double>& scaling_y, vector<double>& scaling_z) -> bool {
+	auto code = [](auto& MatP_object, std::vector<double>& temp, std::vector<double>& scaling_x, std::vector<double>& scaling_y, std::vector<double>& scaling_z) -> bool {
 
 		return MatP_object.set_t_scaling_array(temp, scaling_x, scaling_y, scaling_z);
 	};
@@ -261,10 +261,10 @@ bool MeshParamsBase::set_meshparam_tscaling_array(PARAM_ paramID, vector<double>
 	return run_on_param_switch<bool>(paramID, code, temp, scaling_x, scaling_y, scaling_z);
 }
 
-//set temperature dependence info string for console display purposes
-void MeshParamsBase::set_meshparam_tscaling_info(PARAM_ paramID, string info_text)
+//set temperature dependence info std::string for console display purposes
+void MeshParamsBase::set_meshparam_tscaling_info(PARAM_ paramID, std::string info_text)
 {
-	auto code = [](auto& MatP_object, string info_text) -> void {
+	auto code = [](auto& MatP_object, std::string info_text) -> void {
 
 		MatP_object.set_t_scaling_info(info_text);
 	};
@@ -275,9 +275,9 @@ void MeshParamsBase::set_meshparam_tscaling_info(PARAM_ paramID, string info_tex
 //-------------------------Setters : spatial variation
 
 //set the mesh parameter spatial variation equation with given user constants
-void MeshParamsBase::set_meshparam_s_equation(PARAM_ paramID, string& equationText, vector_key<double>& userConstants, DBL3 meshDimensions)
+void MeshParamsBase::set_meshparam_s_equation(PARAM_ paramID, std::string& equationText, vector_key<double>& userConstants, DBL3 meshDimensions)
 {
-	auto code = [](auto& MatP_object, string& equationText, vector_key<double>& userConstants, DBL3 meshDimensions) -> void {
+	auto code = [](auto& MatP_object, std::string& equationText, vector_key<double>& userConstants, DBL3 meshDimensions) -> void {
 
 		MatP_object.set_s_scaling_equation(equationText, userConstants, meshDimensions);
 	};
@@ -321,17 +321,32 @@ bool MeshParamsBase::update_meshparam_var(PARAM_ paramID, DBL3 h, Rect rect)
 	return run_on_param_switch<bool>(paramID, code, h, rect);
 }
 
-//set parameter spatial variation using a given generator and arguments (arguments passed as a string to be interpreted and converted using ToNum)
-BError MeshParamsBase::set_meshparam_var(PARAM_ paramID, MATPVAR_ generatorID, DBL3 h, Rect rect, string generatorArgs, function<vector<unsigned char>(string, INT2)>& bitmap_loader)
+//set parameter spatial variation using a given generator and arguments (arguments passed as a std::string to be interpreted and converted using ToNum)
+BError MeshParamsBase::set_meshparam_var(PARAM_ paramID, MATPVAR_ generatorID, DBL3 h, Rect rect, std::string generatorArgs, std::function<std::vector<unsigned char>(std::string, INT2)>& bitmap_loader)
 {
 	BError error(__FUNCTION__);
 
-	auto code = [](auto& MatP_object, DBL3 h, Rect rect, MATPVAR_ generatorID, string generatorArgs, function<vector<unsigned char>(string, INT2)>& bitmap_loader) -> BError {
+	auto code = [](auto& MatP_object, DBL3 h, Rect rect, MATPVAR_ generatorID, std::string generatorArgs, std::function<std::vector<unsigned char>(std::string, INT2)>& bitmap_loader) -> BError {
 
 		return MatP_object.set_s_scaling(h, rect, generatorID, generatorArgs, bitmap_loader);
 	};
 
 	error = run_on_param_switch<BError>(paramID, code, h, rect, generatorID, generatorArgs, bitmap_loader);
+
+	return error;
+}
+
+//set parameter spatial variation using a shape : set value in given shape only
+BError MeshParamsBase::set_meshparam_shape(PARAM_ paramID, DBL3 h, Rect rect, std::vector<MeshShape> shapes, std::string value_text)
+{
+	BError error(__FUNCTION__);
+
+	auto code = [](auto& MatP_object, DBL3 h, Rect rect, std::vector<MeshShape> shapes, std::string value_text) -> BError {
+
+		return MatP_object.set_s_scaling_shape(h, rect, shapes, ToNum(value_text));
+	};
+
+	error = run_on_param_switch<BError>(paramID, code, h, rect, shapes, value_text);
 
 	return error;
 }

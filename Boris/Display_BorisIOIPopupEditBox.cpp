@@ -127,7 +127,7 @@ void BorisIOIPopupEditBox::DeleteTextFromEntryLine(void)
 	SetPrompterRect();
 }
 
-void BorisIOIPopupEditBox::NewUserEntry(string text)
+void BorisIOIPopupEditBox::NewUserEntry(std::string text)
 {
 	//if selection enabled then replace with enetered text : first delete selection, then insert text
 	if (selectStart != selectEnd) DeleteTextFromEntryLine();
@@ -141,7 +141,7 @@ void BorisIOIPopupEditBox::NewUserEntry(string text)
 	SetPrompterRect();
 }
 
-void BorisIOIPopupEditBox::InsertTextatPrompter(string text)
+void BorisIOIPopupEditBox::InsertTextatPrompter(std::string text)
 {
 	if (!text.length()) return;
 
@@ -149,7 +149,7 @@ void BorisIOIPopupEditBox::InsertTextatPrompter(string text)
 	ResetTextSelector();
 
 	//Stop insertion with newline characters : messes up the entry line and not needed.
-	vector<string> messageLines = split(text, "\r", "\n");
+	std::vector<std::string> messageLines = split(text, "\r", "\n");
 
 	INT2 elIdx = EntryLineIndex(promptPos);
 
@@ -179,7 +179,7 @@ void BorisIOIPopupEditBox::DrawWindow(void)
 	DrawFrame();
 }
 
-ActionOutcome BorisIOIPopupEditBox::NewMessage(AC_ aCode, INT2 mouse, string data)
+ActionOutcome BorisIOIPopupEditBox::NewMessage(AC_ aCode, INT2 mouse, std::string data)
 {
 	ActionOutcome actionResult;
 
@@ -324,7 +324,7 @@ ActionOutcome BorisIOIPopupEditBox::NewMessage(AC_ aCode, INT2 mouse, string dat
 
 	case AC_CTRL_C:
 	{
-		string entryLineText = textLines.get_paragraph(LastLine());
+		std::string entryLineText = textLines.get_paragraph(LastLine());
 		if (selectStart != selectEnd) SetClipboardText(entryLineText.substr(selectStart, selectEnd + 1 - selectStart));
 		else SetClipboardText(entryLineText.substr(promptPos, 1));
 	}
@@ -369,9 +369,9 @@ ActionOutcome BorisIOIPopupEditBox::NewMessage(AC_ aCode, INT2 mouse, string dat
 					else {
 
 						//double clicked on text on entry line : select clicked word
-						string entryLineText = textLines.get_paragraph(LastLine());
+						std::string entryLineText = textLines.get_paragraph(LastLine());
 
-						pair<int, int> selectionIndexes = get_word_indexes(entryLineText, promptPos);
+						std::pair<int, int> selectionIndexes = get_word_indexes(entryLineText, promptPos);
 						selectStart = selectionIndexes.first;
 						selectEnd = selectionIndexes.second;
 					}

@@ -17,8 +17,9 @@ Simulation::Simulation(HWND hWnd, int Program_Version, std::string server_port_,
 			VINFO(SMesh),
 			VINFO(cudaEnabled), VINFO(cudaDeviceSelect),
 			VINFO(shape_change_individual),
-			VINFO(static_transport_solver),
+			VINFO(static_transport_solver), VINFO(disabled_transport_solver),
 			VINFO(image_cropping), VINFO(displayTransparency), VINFO(displayThresholds), VINFO(displayThresholdTrigger),
+			VINFO(shape_rotation), VINFO(shape_repetitions), VINFO(shape_displacement), VINFO(shape_method),
 			VINFO(userConstants)
 		}, {})
 #else
@@ -37,8 +38,9 @@ Simulation::Simulation(int Program_Version, std::string server_port_, std::strin
 			VINFO(SMesh),
 			VINFO(cudaEnabled), VINFO(cudaDeviceSelect),
 			VINFO(shape_change_individual),
-			VINFO(static_transport_solver),
+			VINFO(static_transport_solver), VINFO(disabled_transport_solver),
 			VINFO(image_cropping), VINFO(displayTransparency), VINFO(displayThresholds), VINFO(displayThresholdTrigger),
+			VINFO(shape_rotation), VINFO(shape_repetitions), VINFO(shape_displacement), VINFO(shape_method),
 			VINFO(userConstants)
 		}, {})
 #endif
@@ -61,30 +63,38 @@ Simulation::Simulation(int Program_Version, std::string server_port_, std::strin
 	if (cudaResultCode != cudaSuccess) cudaAvailable = false;
 	else cudaAvailable = true;
 
-	if (cudaAvailable) cudaDeviceReset();
+	if (cudaAvailable) {
 
-	for (int idx = 0; idx < deviceCount; idx++)
-	{
-		cudaDeviceProp deviceProperties;
-		cudaGetDeviceProperties(&deviceProperties, idx);
+		for (int idx = 0; idx < deviceCount; idx++)
+		{
+			cudaDeviceProp deviceProperties;
+			cudaGetDeviceProperties(&deviceProperties, idx);
 
-		std::string device_info = deviceProperties.name + std::string("; Compute: ") + ToString(deviceProperties.major);
+			std::string device_info = deviceProperties.name + std::string("; Compute: ") + ToString(deviceProperties.major);
 
-		cudaDeviceVersions.push_back(std::pair<int, std::string>(deviceProperties.major * 100, device_info));
-	}
+			cudaDeviceVersions.push_back(std::pair<int, std::string>(deviceProperties.major * 100, device_info));
+		}
 
-	//with the default parameter cudaDevice = -1 we need to determine a value for cudaDeviceSelect
-	if (cudaDevice < 0) {
+		//with the default parameter cudaDevice = -1 we need to determine a value for cudaDeviceSelect
+		if (cudaDevice < 0) {
 
-		//Select first device with matches current CUDA version
-		for (int idx = 0; idx < deviceCount; idx++) {
-	
-			if (cudaDeviceVersions[idx].first == __CUDA_ARCH__) {
+			//Select first device with matches current CUDA version
+			for (int idx = 0; idx < deviceCount; idx++) {
 
-				cudaDeviceSelect = idx;
-				break;
+				if (cudaDeviceVersions[idx].first == __CUDA_ARCH__) {
+
+					cudaDeviceSelect = idx;
+					break;
+				}
 			}
 		}
+		else if (cudaDevice < deviceCount) {
+
+			if (cudaDeviceVersions[cudaDevice].first == __CUDA_ARCH__) cudaDeviceSelect = cudaDevice;
+		}
+
+		cudaSetDevice(cudaDeviceSelect);
+		cudaDeviceReset();
 	}
 #endif
 
@@ -284,9 +294,9 @@ Simulation::Simulation(int Program_Version, std::string server_port_, std::strin
 	commands[CMD_ATOMDMCELLSIZE].return_descr = "[tc0,0.5,0,1/tc]Script return values: <i>cellsize</i> - return demagnetizing field macrocell size.";
 
 	commands.insert(CMD_DELRECT, CommandSpecifier(CMD_DELRECT), "delrect");
-	commands[CMD_DELRECT].usage = "[tc0,0.5,0,1/tc]USAGE : <b>delrect</b> <i>rectangle (meshname)</i>";
+	commands[CMD_DELRECT].usage = "[tc0,0.5,0,1/tc]USAGE : <b>delrect</b> <i>(rectangle, (meshname))</i>";
 	commands[CMD_DELRECT].limits = { { Rect(), Any() }, { Any(), Any() } };
-	commands[CMD_DELRECT].descr = "[tc0,0.5,0.5,1/tc]Void rectangle (m) within given mesh (active mesh if name not given). The rectangle coordinates are relative to specified mesh.";
+	commands[CMD_DELRECT].descr = "[tc0,0.5,0.5,1/tc]Void rectangle (m) within given mesh (active mesh if name not given). The rectangle coordinates are relative to specified mesh. If rectangle not given void entire mesh.";
 	commands[CMD_DELRECT].unit = "m";
 
 	commands.insert(CMD_ADDRECT, CommandSpecifier(CMD_ADDRECT), "addrect");
@@ -315,6 +325,12 @@ Simulation::Simulation(int Program_Version, std::string server_port_, std::strin
 	commands[CMD_SETANGLE].limits = { { double(-360.0), double(360.0) },{ double(-360.0), double(360.0) }, { Any(), Any() } };
 	commands[CMD_SETANGLE].descr = "[tc0,0.5,0.5,1/tc]Set magnetization angle in mesh uniformly using polar coordinates. If mesh name not specified, this is set for all ferromagnetic meshes.";
 
+	commands.insert(CMD_SETOBJECTANGLE, CommandSpecifier(CMD_SETOBJECTANGLE), "setobjectangle");
+	commands[CMD_SETOBJECTANGLE].usage = "[tc0,0.5,0,1/tc]USAGE : <b>setobjectangle</b> <i>polar azimuthal position (meshname)</i>";
+	commands[CMD_SETOBJECTANGLE].limits = { { double(-360.0), double(360.0) },{ double(-360.0), double(360.0) }, { DBL3(), Any() },  { Any(), Any() } };
+	commands[CMD_SETOBJECTANGLE].descr = "[tc0,0.5,0.5,1/tc]Set magnetization angle in solid object only containing given relative position (x y z) uniformly using polar coordinates. If mesh name not specified, the current focused mesh is used.";
+	commands[CMD_SETOBJECTANGLE].unit = "m";
+
 	commands.insert(CMD_RANDOM, CommandSpecifier(CMD_RANDOM), "random");
 	commands[CMD_RANDOM].usage = "[tc0,0.5,0,1/tc]USAGE : <b>random</b> <i>(meshname, (seed))</i>";
 	commands[CMD_RANDOM].limits = { { Any(), Any() }, { int(1), Any() } };
@@ -340,7 +356,7 @@ Simulation::Simulation(int Program_Version, std::string server_port_, std::strin
 	commands[CMD_DWALL].usage = "[tc0,0.5,0,1/tc]USAGE : <b>dwall</b> <i>longitudinal transverse width position (meshname)</i>";
 	commands[CMD_DWALL].limits = { { Any(), Any() } , { Any(), Any() }, { double(0.0), Any() }, { double(0.0), Any() }, { Any(), Any() } };
 	commands[CMD_DWALL].unit = "m";
-	commands[CMD_DWALL].descr = "[tc0,0.5,0.5,1/tc]Create an idealised domain wall (tanh profile for longitudinal component, 1/cosh profile for transverse component) along the x-axis direction in the given mesh (active mesh if name not specified). For longitudinal and transverse specify the components of magnetization as x, -x, y, -y, z, -z, i.e. specify using these string literals. For width and position use metric units.";
+	commands[CMD_DWALL].descr = "[tc0,0.5,0.5,1/tc]Create an idealised domain wall (tanh profile for longitudinal component, 1/cosh profile for transverse component) along the x-axis direction in the given mesh (active mesh if name not specified). For longitudinal and transverse specify the components of magnetization as x, -x, y, -y, z, -z, i.e. specify using these std::string literals. For width and position use metric units.";
 
 	commands.insert(CMD_VORTEX, CommandSpecifier(CMD_VORTEX), "vortex");
 	commands[CMD_VORTEX].usage = "[tc0,0.5,0,1/tc]USAGE : <b>vortex</b> <i>longitudinal rotation core (rectangle) (meshname)</i>";
@@ -362,7 +378,7 @@ Simulation::Simulation(int Program_Version, std::string server_port_, std::strin
 
 	commands.insert(CMD_PBC, CommandSpecifier(CMD_PBC), "pbc");
 	commands[CMD_PBC].usage = "[tc0,0.5,0,1/tc]USAGE : <b>pbc</b> <i>meshname flag images</i>";
-	commands[CMD_PBC].descr = "[tc0,0.5,0.5,1/tc]Set periodic boundary conditions for magnetization in given mesh (must be ferromagnetic). Flags specify types of perodic boundary conditions: x, y, or z; images specify the number of mesh images to use either side for the given direction when calculating the demagnetising kernel - a value of zero disables pbc. e.g. ""pbc x 10"" sets x periodic boundary conditions with 10 images either side for the focused mesh; ""pbc x 0"" clears pbc for the x axis.";
+	commands[CMD_PBC].descr = "[tc0,0.5,0.5,1/tc]Set periodic boundary conditions for magnetization in given mesh (must be magnetic, or supermesh). Flags specify types of perodic boundary conditions: x, y, or z; images specify the number of mesh images to use either side for the given direction when calculating the demagnetising kernel - a value of zero disables pbc. e.g. ""pbc x 10"" sets x periodic boundary conditions with 10 images either side for the focused mesh; ""pbc x 0"" clears pbc for the x axis.";
 	commands[CMD_PBC].limits = { { Any(), Any() },{ Any(), Any() }, {int(0), int(1000)} };
 
 	commands.insert(CMD_SETFIELD, CommandSpecifier(CMD_SETFIELD), "setfield");
@@ -639,7 +655,15 @@ Simulation::Simulation(int Program_Version, std::string server_port_, std::strin
 	commands.insert(CMD_DISPLAYDETAILLEVEL, CommandSpecifier(CMD_DISPLAYDETAILLEVEL), "displaydetail");
 	commands[CMD_DISPLAYDETAILLEVEL].usage = "[tc0,0.5,0,1/tc]USAGE : <b>displaydetail</b> <i>size</i>";
 	commands[CMD_DISPLAYDETAILLEVEL].descr = "[tc0,0.5,0.5,1/tc]Change displayed detail level to given displayed cell size (m).";
+	commands[CMD_DISPLAYDETAILLEVEL].limits = { { double(MINMESHSPACE / 2), Any() } };
 	commands[CMD_DISPLAYDETAILLEVEL].unit = "m";
+	commands[CMD_DISPLAYDETAILLEVEL].return_descr = "[tc0,0.5,0,1/tc]Script return values: <i>size</i>";
+
+	commands.insert(CMD_DISPLAYRENDERTHRESH, CommandSpecifier(CMD_DISPLAYRENDERTHRESH), "displayrenderthresholds");
+	commands[CMD_DISPLAYRENDERTHRESH].usage = "[tc0,0.5,0,1/tc]USAGE : <b>displayrenderthresholds</b> <i>thresh1 thresh2 thresh3</i>";
+	commands[CMD_DISPLAYRENDERTHRESH].descr = "[tc0,0.5,0.5,1/tc]Set display render thresholds of number of displayed cells for faster rendering as: 1) switch to using simpler elements (vectors only), 2) don't display surrounded cells, 3) display on checkerboard pattern even if not surrounded (vectors only). Set to zero to disable.";
+	commands[CMD_DISPLAYRENDERTHRESH].limits = { { INT3(), Any() } };
+	commands[CMD_DISPLAYRENDERTHRESH].return_descr = "[tc0,0.5,0,1/tc]Script return values: <i>thresh1 thresh2 thresh3</i>";
 
 	commands.insert(CMD_DISPLAYBACKGROUND, CommandSpecifier(CMD_DISPLAYBACKGROUND), "displaybackground");
 	commands[CMD_DISPLAYBACKGROUND].usage = "[tc0,0.5,0,1/tc]USAGE : <b>displaybackground</b> <i>name (meshname)</i>";
@@ -771,6 +795,11 @@ Simulation::Simulation(int Program_Version, std::string server_port_, std::strin
 	commands[CMD_SETCURRENT].unit = "A";
 	commands[CMD_SETCURRENT].return_descr = "[tc0,0.5,0,1/tc]Script return values: <i>current</i>";
 
+	commands.insert(CMD_SETCURRENTDENSITY, CommandSpecifier(CMD_SETCURRENTDENSITY), "setcurrentdensity");
+	commands[CMD_SETCURRENTDENSITY].usage = "[tc0,0.5,0,1/tc]USAGE : <b>setcurrentdensity</b> <i>Jx Jy Jz (meshname)</i>";
+	commands[CMD_SETCURRENTDENSITY].descr = "[tc0,0.5,0.5,1/tc]Set a constant current density vector with given components in given mesh (focused mesh if not given). Must have transport module added, but transport solver iteration will be disabled.";
+	commands[CMD_SETCURRENTDENSITY].unit = "A/m2";
+
 	commands.insert(CMD_TSOLVERCONFIG, CommandSpecifier(CMD_TSOLVERCONFIG), "tsolverconfig");
 	commands[CMD_TSOLVERCONFIG].usage = "[tc0,0.5,0,1/tc]USAGE : <b>tsolverconfig</b> <i>convergence_error (iters_timeout)</i>";
 	commands[CMD_TSOLVERCONFIG].limits = { { double(1e-10), double(1e-1) }, { int(1), int(500000) } };
@@ -794,6 +823,12 @@ Simulation::Simulation(int Program_Version, std::string server_port_, std::strin
 	commands[CMD_STATICTRANSPORTSOLVER].limits = { { int(0), int(1) } };
 	commands[CMD_STATICTRANSPORTSOLVER].descr = "[tc0,0.5,0.5,1/tc]If static transport solver is set, the transport solver is only iterated at the end of a stage or step. You should set a high iterations timeout if using this mode.";
 	commands[CMD_STATICTRANSPORTSOLVER].return_descr = "[tc0,0.5,0,1/tc]Script return values: <i>status</i>";
+
+	commands.insert(CMD_DISABLETRANSPORTSOLVER, CommandSpecifier(CMD_DISABLETRANSPORTSOLVER), "disabletransportsolver");
+	commands[CMD_DISABLETRANSPORTSOLVER].usage = "[tc0,0.5,0,1/tc]USAGE : <b>disabletransportsolver</b> <i>status</i>";
+	commands[CMD_DISABLETRANSPORTSOLVER].limits = { { int(0), int(1) } };
+	commands[CMD_DISABLETRANSPORTSOLVER].descr = "[tc0,0.5,0.5,1/tc]Disable iteration of transport solver so any set current density remains constant.";
+	commands[CMD_DISABLETRANSPORTSOLVER].return_descr = "[tc0,0.5,0,1/tc]Script return values: <i>status</i>";
 
 	commands.insert(CMD_TEMPERATURE, CommandSpecifier(CMD_TEMPERATURE), "temperature");
 	commands[CMD_TEMPERATURE].usage = "[tc0,0.5,0,1/tc]USAGE : <b>temperature</b> <i>value (meshname)</i>";
@@ -934,7 +969,7 @@ Simulation::Simulation(int Program_Version, std::string server_port_, std::strin
 	commands[CMD_SURFROUGHENJAGGED].usage = "[tc0,0.5,0,1/tc]USAGE : <b>surfroughenjagged</b> <i>depth spacing (seed, (sides))</i>";
 	commands[CMD_SURFROUGHENJAGGED].limits = { { double(0), Any() },{ double(0), Any() },{ int(1), Any() },{ Any(), Any() } };
 	commands[CMD_SURFROUGHENJAGGED].unit = "m";
-	commands[CMD_SURFROUGHENJAGGED].descr = "[tc0,0.5,0.5,1/tc]Roughen active mesh surfaces using a jagged pattern to given depth (m) and peak spacing (m). Roughen both sides by default, unless sides is specified as -z or z (string literal). The seed is used for the pseudo-random number generator, 1 by default.";
+	commands[CMD_SURFROUGHENJAGGED].descr = "[tc0,0.5,0.5,1/tc]Roughen active mesh surfaces using a jagged pattern to given depth (m) and peak spacing (m). Roughen both sides by default, unless sides is specified as -z or z (std::string literal). The seed is used for the pseudo-random number generator, 1 by default.";
 
 	commands.insert(CMD_GENERATE2DGRAINS, CommandSpecifier(CMD_GENERATE2DGRAINS), "generate2dgrains");
 	commands[CMD_GENERATE2DGRAINS].usage = "[tc0,0.5,0,1/tc]USAGE : <b>generate2dgrains</b> <i>spacing (seed)</i>";
@@ -1008,6 +1043,14 @@ Simulation::Simulation(int Program_Version, std::string server_port_, std::strin
 	commands[CMD_LOADOVF2MAG].usage = "[tc0,0.5,0,1/tc]USAGE : <b>loadovf2mag</b> <i>(renormalize_value) (directory/)filename</i>";
 	commands[CMD_LOADOVF2MAG].descr = "[tc0,0.5,0.5,1/tc]Load an OOMMF-style OVF 2.0 file containing magnetization data, into the currently focused mesh (which must be ferromagnetic), mapping the data to the current mesh dimensions. By default the loaded data will not be renormalized: renormalize_value = 0. If a value is specified for renormalize_value, the loaded data will be renormalized to it (e.g. this would be an Ms value).";
 	commands[CMD_LOADOVF2MAG].unit = "A/m";
+
+	commands.insert(CMD_LOADOVF2TEMP, CommandSpecifier(CMD_LOADOVF2TEMP), "loadovf2temp");
+	commands[CMD_LOADOVF2TEMP].usage = "[tc0,0.5,0,1/tc]USAGE : <b>loadovf2temp</b> <i>(directory/)filename</i>";
+	commands[CMD_LOADOVF2TEMP].descr = "[tc0,0.5,0.5,1/tc]Load an OOMMF-style OVF 2.0 file containing temperature data, into the currently focused mesh (which must have heat module enabled), mapping the data to the current mesh dimensions.";
+
+	commands.insert(CMD_LOADOVF2CURR, CommandSpecifier(CMD_LOADOVF2CURR), "loadovf2curr");
+	commands[CMD_LOADOVF2CURR].usage = "[tc0,0.5,0,1/tc]USAGE : <b>loadovf2curr</b> <i>(directory/)filename</i>";
+	commands[CMD_LOADOVF2CURR].descr = "[tc0,0.5,0.5,1/tc]Load an OOMMF-style OVF 2.0 file containing current density data, into the currently focused mesh (which must have transport module enabled), mapping the data to the current mesh dimensions.";
 
 	commands.insert(CMD_SAVEOVF2MAG, CommandSpecifier(CMD_SAVEOVF2MAG), "saveovf2mag");
 	commands[CMD_SAVEOVF2MAG].usage = "[tc0,0.5,0,1/tc]USAGE : <b>saveovf2mag</b> <i>(n) (data_type) (directory/)filename</i>";
@@ -1128,6 +1171,104 @@ Simulation::Simulation(int Program_Version, std::string server_port_, std::strin
 	commands[CMD_MCCONSTRAIN].usage = "[tc0,0.5,0,1/tc]USAGE : <b>mcconstrain</b> <i>value (meshname)</i>";
 	commands[CMD_MCCONSTRAIN].descr = "[tc0,0.5,0.5,1/tc]Set value 0 to revert to classic Monte-Carlo Metropolis for ASD. Set a unit vector direction value (x y z) to switch to constrained Monte Carlo as described in PRB 82, 054415 (2010). If meshname not specified setting is applied to all atomistic meshes.";
 	commands[CMD_MCCONSTRAIN].limits = { { DBL3(), Any() }, {Any(), Any()} };
+
+	commands.insert(CMD_SHAPEMOD_ROT, CommandSpecifier(CMD_SHAPEMOD_ROT), "shape_rotation");
+	commands[CMD_SHAPEMOD_ROT].usage = "[tc0,0.5,0,1/tc]USAGE : <b>shape_rotation</b> <i>psi theta phi</i>";
+	commands[CMD_SHAPEMOD_ROT].descr = "[tc0,0.5,0.5,1/tc]Set modifier for shape generator commands: rotation using psi (around y), theta (around x) and phi (around z) in degrees.";
+	commands[CMD_SHAPEMOD_ROT].limits = { { DBL3(-360), DBL3(360) } };
+
+	commands.insert(CMD_SHAPEMOD_REP, CommandSpecifier(CMD_SHAPEMOD_REP), "shape_repetitions");
+	commands[CMD_SHAPEMOD_REP].usage = "[tc0,0.5,0,1/tc]USAGE : <b>shape_repetitions</b> <i>x y z</i>";
+	commands[CMD_SHAPEMOD_REP].descr = "[tc0,0.5,0.5,1/tc]Set modifier for shape generator commands: number of shape repetitions along x, y, z.";
+	commands[CMD_SHAPEMOD_REP].limits = { { INT3(1), Any() } };
+	commands[CMD_SHAPEMOD_REP].return_descr = "[tc0,0.5,0,1/tc]Script return values: <i>value</i>";
+
+	commands.insert(CMD_SHAPEMOD_DISP, CommandSpecifier(CMD_SHAPEMOD_DISP), "shape_displacement");
+	commands[CMD_SHAPEMOD_DISP].usage = "[tc0,0.5,0,1/tc]USAGE : <b>shape_displacement</b> <i>x y z</i>";
+	commands[CMD_SHAPEMOD_DISP].descr = "[tc0,0.5,0.5,1/tc]Set modifier for shape generator commands: displacements along x, y, z to use with shape repetitions (shape_repetitions).";
+	commands[CMD_SHAPEMOD_DISP].unit = "m";
+	commands[CMD_SHAPEMOD_DISP].limits = { { DBL3(), Any() } };
+	commands[CMD_SHAPEMOD_DISP].return_descr = "[tc0,0.5,0,1/tc]Script return values: <i>value</i>";
+
+	commands.insert(CMD_SHAPEMOD_METHOD, CommandSpecifier(CMD_SHAPEMOD_METHOD), "shape_method");
+	commands[CMD_SHAPEMOD_METHOD].usage = "[tc0,0.5,0,1/tc]USAGE : <b>shape_method</b> <i>method</i>";
+	commands[CMD_SHAPEMOD_METHOD].descr = "[tc0,0.5,0.5,1/tc]Set modifier for shape generator commands: method to use when applying shape as string literal: add or sub.";
+	commands[CMD_SHAPEMOD_METHOD].limits = { { Any(), Any() } };
+	commands[CMD_SHAPEMOD_METHOD].return_descr = "[tc0,0.5,0,1/tc]Script return values: <i>name</i>";
+
+	commands.insert(CMD_SHAPE_DISK, CommandSpecifier(CMD_SHAPE_DISK), "shape_disk");
+	commands[CMD_SHAPE_DISK].usage = "[tc0,0.5,0,1/tc]USAGE : <b>shape_disk</b> <i>dia_x dia_y cpos_x cpos_y (z_start z_end)</i>";
+	commands[CMD_SHAPE_DISK].descr = "[tc0,0.5,0.5,1/tc]Set a disk shape in focused mesh with given x and y diameters at given centre position with x and y coordinates. Optionally specify z start and end coordinates, otherwise entire mesh thickness used.";
+	commands[CMD_SHAPE_DISK].unit = "m";
+	commands[CMD_SHAPE_DISK].limits = { { DBL2(), Any() }, { DBL2(-MAXSIMSPACE),  DBL2(+MAXSIMSPACE) }, { DBL2(-MAXSIMSPACE),  DBL2(+MAXSIMSPACE) } };
+	commands[CMD_SHAPE_DISK].return_descr = "[tc0,0.5,0,1/tc]Script return values: shape object definition as <i>name dim_x dim_y dim_z cpos_x cpos_y cpos_z</i>";
+
+	commands.insert(CMD_SHAPE_RECT, CommandSpecifier(CMD_SHAPE_RECT), "shape_rect");
+	commands[CMD_SHAPE_RECT].usage = "[tc0,0.5,0,1/tc]USAGE : <b>shape_rect</b> <i>len_x len_y cpos_x cpos_y (z_start z_end)</i>";
+	commands[CMD_SHAPE_RECT].descr = "[tc0,0.5,0.5,1/tc]Set a rectangle shape in focused mesh with given x and y lengths at given centre position with x and y coordinates. Optionally specify z start and end coordinates, otherwise entire mesh thickness used.";
+	commands[CMD_SHAPE_RECT].unit = "m";
+	commands[CMD_SHAPE_RECT].limits = { { DBL2(), Any() }, { DBL2(-MAXSIMSPACE),  DBL2(+MAXSIMSPACE) }, { DBL2(-MAXSIMSPACE),  DBL2(+MAXSIMSPACE) } };
+	commands[CMD_SHAPE_RECT].return_descr = "[tc0,0.5,0,1/tc]Script return values: shape object definition as <i>name dim_x dim_y dim_z cpos_x cpos_y cpos_z</i>";
+
+	commands.insert(CMD_SHAPE_TRIANGLE, CommandSpecifier(CMD_SHAPE_TRIANGLE), "shape_triangle");
+	commands[CMD_SHAPE_TRIANGLE].usage = "[tc0,0.5,0,1/tc]USAGE : <b>shape_triangle</b> <i>len_x len_y cpos_x cpos_y (z_start z_end)</i>";
+	commands[CMD_SHAPE_TRIANGLE].descr = "[tc0,0.5,0.5,1/tc]Set a triangle shape in focused mesh with given x and y lengths at given centre position with x and y coordinates. Optionally specify z start and end coordinates, otherwise entire mesh thickness used.";
+	commands[CMD_SHAPE_TRIANGLE].unit = "m";
+	commands[CMD_SHAPE_TRIANGLE].limits = { { DBL2(), Any() }, { DBL2(-MAXSIMSPACE),  DBL2(+MAXSIMSPACE) }, { DBL2(-MAXSIMSPACE),  DBL2(+MAXSIMSPACE) } };
+	commands[CMD_SHAPE_TRIANGLE].return_descr = "[tc0,0.5,0,1/tc]Script return values: shape object definition as <i>name dim_x dim_y dim_z cpos_x cpos_y cpos_z rot_theta rot_phi repeat_x repeat_y repeat_z disp_x disp_y disp_z method</i>";
+
+	commands.insert(CMD_SHAPE_ELLIPSOID, CommandSpecifier(CMD_SHAPE_ELLIPSOID), "shape_ellipsoid");
+	commands[CMD_SHAPE_ELLIPSOID].usage = "[tc0,0.5,0,1/tc]USAGE : <b>shape_ellipsoid</b> <i>dia_x dia_y dia_z cpos_x cpos_y cpos_z</i>";
+	commands[CMD_SHAPE_ELLIPSOID].descr = "[tc0,0.5,0.5,1/tc]Set a prolate ellipsoid shape in focused mesh with given diameters (x, y, z) at given centre position coordinates (x, y, z).";
+	commands[CMD_SHAPE_ELLIPSOID].unit = "m";
+	commands[CMD_SHAPE_ELLIPSOID].limits = { { DBL3(), Any() }, { DBL3(-MAXSIMSPACE), DBL3(+MAXSIMSPACE) } };
+	commands[CMD_SHAPE_ELLIPSOID].return_descr = "[tc0,0.5,0,1/tc]Script return values: shape object definition as <i>name dim_x dim_y dim_z cpos_x cpos_y cpos_z rot_theta rot_phi repeat_x repeat_y repeat_z disp_x disp_y disp_z method</i>";
+
+	commands.insert(CMD_SHAPE_PYRAMID, CommandSpecifier(CMD_SHAPE_PYRAMID), "shape_pyramid");
+	commands[CMD_SHAPE_PYRAMID].usage = "[tc0,0.5,0,1/tc]USAGE : <b>shape_pyramid</b> <i>len_x len_y len_z cpos_x cpos_y cpos_z</i>";
+	commands[CMD_SHAPE_PYRAMID].descr = "[tc0,0.5,0.5,1/tc]Set a pyramid shape in focused mesh with given lengths (x, y, z) at given centre position coordinates (x, y, z).";
+	commands[CMD_SHAPE_PYRAMID].unit = "m";
+	commands[CMD_SHAPE_PYRAMID].limits = { { DBL3(), Any() }, { DBL3(-MAXSIMSPACE), DBL3(+MAXSIMSPACE) } };
+	commands[CMD_SHAPE_PYRAMID].return_descr = "[tc0,0.5,0,1/tc]Script return values: shape object definition as <i>name dim_x dim_y dim_z cpos_x cpos_y cpos_z rot_theta rot_phi repeat_x repeat_y repeat_z disp_x disp_y disp_z method</i>";
+
+	commands.insert(CMD_SHAPE_TETRAHEDRON, CommandSpecifier(CMD_SHAPE_TETRAHEDRON), "shape_tetrahedron");
+	commands[CMD_SHAPE_TETRAHEDRON].usage = "[tc0,0.5,0,1/tc]USAGE : <b>shape_tetrahedron</b> <i>len_x len_y len_z cpos_x cpos_y cpos_z</i>";
+	commands[CMD_SHAPE_TETRAHEDRON].descr = "[tc0,0.5,0.5,1/tc]Set a tetrahedron shape in focused mesh with given lengths (x, y, z) at given centre position coordinates (x, y, z).";
+	commands[CMD_SHAPE_TETRAHEDRON].unit = "m";
+	commands[CMD_SHAPE_TETRAHEDRON].limits = { { DBL3(), Any() }, { DBL3(-MAXSIMSPACE), DBL3(+MAXSIMSPACE) } };
+	commands[CMD_SHAPE_TETRAHEDRON].return_descr = "[tc0,0.5,0,1/tc]Script return values: shape object definition as <i>name dim_x dim_y dim_z cpos_x cpos_y cpos_z rot_theta rot_phi repeat_x repeat_y repeat_z disp_x disp_y disp_z method</i>";
+
+	commands.insert(CMD_SHAPE_CONE, CommandSpecifier(CMD_SHAPE_CONE), "shape_cone");
+	commands[CMD_SHAPE_CONE].usage = "[tc0,0.5,0,1/tc]USAGE : <b>shape_cone</b> <i>len_x len_y len_z cpos_x cpos_y cpos_z</i>";
+	commands[CMD_SHAPE_CONE].descr = "[tc0,0.5,0.5,1/tc]Set a conical shape in focused mesh with given lengths (x, y, z) at given centre position coordinates (x, y, z).";
+	commands[CMD_SHAPE_CONE].unit = "m";
+	commands[CMD_SHAPE_CONE].limits = { { DBL3(), Any() }, { DBL3(-MAXSIMSPACE), DBL3(+MAXSIMSPACE) } };
+	commands[CMD_SHAPE_CONE].return_descr = "[tc0,0.5,0,1/tc]Script return values: shape object definition as <i>name dim_x dim_y dim_z cpos_x cpos_y cpos_z rot_theta rot_phi repeat_x repeat_y repeat_z disp_x disp_y disp_z method</i>";
+
+	commands.insert(CMD_SHAPE_TORUS, CommandSpecifier(CMD_SHAPE_TORUS), "shape_torus");
+	commands[CMD_SHAPE_TORUS].usage = "[tc0,0.5,0,1/tc]USAGE : <b>shape_torus</b> <i>len_x len_y len_z cpos_x cpos_y cpos_z</i>";
+	commands[CMD_SHAPE_TORUS].descr = "[tc0,0.5,0.5,1/tc]Set a torus shape in focused mesh with given lengths (x, y, z) at given centre position coordinates (x, y, z).";
+	commands[CMD_SHAPE_TORUS].unit = "m";
+	commands[CMD_SHAPE_TORUS].limits = { { DBL3(), Any() }, { DBL3(-MAXSIMSPACE), DBL3(+MAXSIMSPACE) } };
+	commands[CMD_SHAPE_TORUS].return_descr = "[tc0,0.5,0,1/tc]Script return values: shape object definition as <i>name dim_x dim_y dim_z cpos_x cpos_y cpos_z rot_theta rot_phi repeat_x repeat_y repeat_z disp_x disp_y disp_z method</i>";
+
+	commands.insert(CMD_SHAPE_SET, CommandSpecifier(CMD_SHAPE_SET), "shape_set");
+	commands[CMD_SHAPE_SET].usage = "[tc0,0.5,0,1/tc]USAGE : <b>shape_set</b> <i>name dim_x dim_y dim_z cpos_x cpos_y cpos_z rot_psi rot_theta rot_phi repeat_x repeat_y repeat_z disp_x disp_y disp_z method ...</i>";
+	commands[CMD_SHAPE_SET].descr = "[tc0,0.5,0.5,1/tc]General command for setting a shape: mean to be used with scripted simulations, not directly from the console. Can be used with the return data frome shape_... commands, and can take multiple elementary shapes to form a composite object. Set a named shape in focused mesh with given dimensions (x, y, z) at given centre position coordinates (x, y, z).";
+	commands[CMD_SHAPE_SET].unit = "m";
+	commands[CMD_SHAPE_SET].limits = { { Any(), Any() },  { DBL3(), Any() }, { DBL3(-MAXSIMSPACE), DBL3(+MAXSIMSPACE) }, { DBL3(-360), DBL3(360) }, { INT3(1), Any() }, { DBL3(), Any() }, { Any(), Any() } };
+
+	commands.insert(CMD_SETSHAPEANGLE, CommandSpecifier(CMD_SETSHAPEANGLE), "shape_setangle");
+	commands[CMD_SETSHAPEANGLE].usage = "[tc0,0.5,0,1/tc]USAGE : <b>shape_setangle</b> <i>name dim_x dim_y dim_z cpos_x cpos_y cpos_z rot_psi rot_theta rot_phi repeat_x repeat_y repeat_z disp_x disp_y disp_z method ... theta polar</i>";
+	commands[CMD_SETSHAPEANGLE].descr = "[tc0,0.5,0.5,1/tc]Set magnetization angle (theta - polar, phi - azimuthal) in degrees for given shape identifier (or composite shape). The shape identifier is returned by one of the shape_... commands, also same parameters taken by the shape_set command. As with shape_set this command is intended for scripted simulations only.";
+	commands[CMD_SETSHAPEANGLE].unit = "m";
+	commands[CMD_SETSHAPEANGLE].limits = { { Any(), Any() },  { DBL3(), Any() }, { DBL3(-MAXSIMSPACE), DBL3(+MAXSIMSPACE) }, { DBL3(-360), DBL3(360) }, { INT3(1), Any() }, { DBL3(), Any() }, { Any(), Any() }, {DBL2(-360), DBL2(360)} };
+
+	commands.insert(CMD_SHAPE_SETPARAM, CommandSpecifier(CMD_SHAPE_SETPARAM), "shape_setparam");
+	commands[CMD_SHAPE_SETPARAM].usage = "[tc0,0.5,0,1/tc]USAGE : <b>shape_setparam</b> <i>paramname name dim_x dim_y dim_z cpos_x cpos_y cpos_z rot_psi rot_theta rot_phi repeat_x repeat_y repeat_z disp_x disp_y disp_z method ... scaling_value</i>";
+	commands[CMD_SHAPE_SETPARAM].descr = "[tc0,0.5,0.5,1/tc].Set material parameter scaling value in given shape only. If you want to set effective parameter value directly, not as a scaling value, then set base parameter value (setparam) to 1 and the real parameter value through this command. Once a shape is set, other spatial variation generators will only generate in non-empty cells.";
+	commands[CMD_SHAPE_SETPARAM].unit = "m";
+	commands[CMD_SHAPE_SETPARAM].limits = { { Any(), Any() }, { Any(), Any() },  { DBL3(), Any() }, { DBL3(-MAXSIMSPACE), DBL3(+MAXSIMSPACE) }, { DBL3(-360), DBL3(360) }, { INT3(1), Any() }, { DBL3(), Any() }, { Any(), Any() }, { Any(), Any() } };
 
 	commands.insert(CMD_DP_CLEARALL, CommandSpecifier(CMD_DP_CLEARALL), "dp_clearall");
 	commands[CMD_DP_CLEARALL].usage = "[tc0,0.5,0,1/tc]USAGE : <b>dp_clearall</b>";

@@ -38,6 +38,43 @@ void FMesh::SetMagAngle(double polar, double azim, Rect rectangle)
 	}
 }
 
+void FMesh::SetMagAngle_Shape(double polar, double azim, std::vector<MeshShape> shapes)
+{
+#if COMPILECUDA == 1
+	//refresh M from gpu memory
+	if (pMeshCUDA) pMeshCUDA->M()->copy_to_cpuvec(M);
+#endif
+
+	if (M.linear_size()) {
+
+		M.shape_setvalue(shapes, Polar_to_Cartesian(DBL3(Ms, polar, azim)));
+	}
+
+#if COMPILECUDA == 1
+	//refresh gpu memory
+	if (pMeshCUDA) pMeshCUDA->M()->copy_from_cpuvec(M);
+#endif
+}
+
+//Set magnetization angle in solid object only containing given relative position uniformly using polar coordinates
+void FMesh::SetMagAngle_Object(double polar, double azim, DBL3 position)
+{
+#if COMPILECUDA == 1
+	//refresh M from gpu memory
+	if (pMeshCUDA) pMeshCUDA->M()->copy_to_cpuvec(M);
+#endif
+
+	if (M.linear_size()) {
+
+		M.setobject(Polar_to_Cartesian(DBL3(Ms, polar, azim)), position);
+	}
+
+#if COMPILECUDA == 1
+	//refresh gpu memory
+	if (pMeshCUDA) pMeshCUDA->M()->copy_from_cpuvec(M);
+#endif
+}
+
 //Invert magnetization direction in given mesh (must be ferromagnetic)
 void FMesh::SetInvertedMag(bool x, bool y, bool z)
 {
@@ -62,7 +99,7 @@ void FMesh::SetInvertedMag(bool x, bool y, bool z)
 }
 
 //Mirror magnetization in given axis (literal x, y, or z) in given mesh (must be magnetic)
-void FMesh::SetMirroredMag(string axis)
+void FMesh::SetMirroredMag(std::string axis)
 {
 #if COMPILECUDA == 1
 	//refresh M from gpu memory

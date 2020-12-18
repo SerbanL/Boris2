@@ -19,7 +19,7 @@ void BorisHoverInfoTextBox::DrawWindow(void)
 	DrawTextLines();
 }
 
-ActionOutcome BorisHoverInfoTextBox::NewMessage(AC_ aCode, INT2 mouse, string data) 
+ActionOutcome BorisHoverInfoTextBox::NewMessage(AC_ aCode, INT2 mouse, std::string data) 
 {
 	ActionOutcome actionResult;
 

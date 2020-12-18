@@ -10,7 +10,7 @@
 #include "PhysQRep.h"
 #include "Display_Defs.h"
 
-using namespace std;
+
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
@@ -19,7 +19,7 @@ using namespace std;
 class BorisMeshWindow :
 	public WinSpace,
 	public ProgramState<BorisMeshWindow,
-	tuple<PhysQRep, DBL3, string, string, string, string, bool>, tuple<>>
+	std::tuple<PhysQRep, DBL3, std::string, std::string, std::string, std::string, bool>, std::tuple<>>
 {
 	friend class BorisDisplay;
 
@@ -33,7 +33,7 @@ private:
 
 	//when mouse hovers over mesh values are picked and set here to be displayed
 	DBL3 meshPosition;
-	string meshName, typeName, mouse_mesh_info_position, mouse_mesh_info_value;
+	std::string meshName, typeName, mouse_mesh_info_position, mouse_mesh_info_value;
 	bool displayMeshInfo = false;
 
 private:
@@ -42,28 +42,33 @@ private:
 	void ZoomNotchDn(void);
 	//rather than changing detail level using mouse wheel, set it directly using this
 	void SetDetailLevel(double detail_level);
+	double GetDetailLevel(void);
+
+	//Set mesh display render threshold values for faster rendering when we have many cells
+	void SetRenderThresholds(INT3 renderthresholds);
+	INT3 GetRenderThresholds(void);
 
 protected:
 
 	void AdjustWindowDimensions(D2D1_RECT_F delta) { ChangeWindowSides(delta); }
 
 	//compute the physical quantity representation for the given physical quantity
-	void UpdatePhysQRep(vector<PhysQ> physQ);
+	void UpdatePhysQRep(std::vector<PhysQ> physQ);
 
 	//adjust mesh display camera fov and averaging stencil dimension for default physical quantity representation
-	void AutoSetMeshDisplaySettings(vector<PhysQ> physQ);
+	void AutoSetMeshDisplaySettings(std::vector<PhysQ> physQ);
 
 	double Get_PhysQRep_DetailLevel(void) { return physQRep.get_detail_level(); }
 
 	void DrawWindow(void);
 	void DrawWindow_Quick(void) { DrawWindow(); }
 
-	ActionOutcome NewMessage(AC_ aCode, INT2 mouse, string data = "");
+	ActionOutcome NewMessage(AC_ aCode, INT2 mouse, std::string data = "");
 
 	void SetDefaultCursor(void) { SetCursor(LoadCursor(nullptr, IDC_ARROW)); }
 
 	//image_cropping specify normalized cropping within the mesh image, as left, bottom, right, top : 0, 0 point is left, bottom of screen as far as user is concerned.
-	bool SaveMeshImage(string fileName, DBL4 image_cropping);
+	bool SaveMeshImage(std::string fileName, DBL4 image_cropping);
 
 public:
 

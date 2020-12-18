@@ -3,7 +3,7 @@
 #include "BorisLib.h"
 #include "Modules.h"
 
-using namespace std;
+
 
 class Mesh;
 
@@ -13,7 +13,7 @@ class Mesh;
 
 class Anisotropy_Uniaxial :
 	public Modules,
-	public ProgramState<Anisotropy_Uniaxial, tuple<>, tuple<>>
+	public ProgramState<Anisotropy_Uniaxial, std::tuple<>, std::tuple<>>
 {
 private:
 

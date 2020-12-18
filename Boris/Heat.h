@@ -17,7 +17,7 @@ class SuperMesh;
 class Heat :
 	public virtual Modules,
 	public HeatBase,
-	public ProgramState<Heat, tuple<int, double, double, bool, bool, bool, bool, bool, bool, TEquation<double, double, double, double>>, tuple<>>
+	public ProgramState<Heat, std::tuple<int, double, double, bool, bool, bool, bool, bool, bool, TEquation<double, double, double, double>>, std::tuple<>>
 {
 
 #if COMPILECUDA == 1
@@ -128,10 +128,10 @@ public:
 	void SetBaseTemperature(double Temperature) {}
 
 	//set insulating mesh sides flags. literal can be "x", "-x", "y", "-y", "z", "-z"
-	void SetInsulatingSides(string literal, bool status) {}
+	void SetInsulatingSides(std::string literal, bool status) {}
 
 	//Set Q_equation text equation object
-	BError SetQEquation(string equation_string, int step) { return BError(); }
+	BError SetQEquation(std::string equation_string, int step) { return BError(); }
 
 	//set temperature solver type
 	BError Set_TMType(TMTYPE_ tmtype_ = TMTYPE_DEFAULT) { return BError(); }
@@ -143,9 +143,9 @@ public:
 	double GetAlphaBoundary(void) { return 0.0; }
 
 	//get status of insulating side. literal can be "x", "-x", "y", "-y", "z", "-z"
-	bool GetInsulatingSide(string literal) { return true; }
+	bool GetInsulatingSide(std::string literal) { return true; }
 	//get all at once
-	vector<bool> GetInsulatingSides(void) { return {}; }
+	std::vector<bool> GetInsulatingSides(void) { return {}; }
 
 	//get the set temperature model type
 	int Get_TMType(void) { return 0; }

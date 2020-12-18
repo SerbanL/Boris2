@@ -31,7 +31,7 @@ class SuperMesh;
 class Atom_Mesh_Cubic :
 	public Atom_Mesh,
 	public ProgramState<Atom_Mesh_Cubic,
-	tuple<
+	std::tuple<
 	//Mesh members
 	int, int, int, 
 	int, int, int, int, 
@@ -53,7 +53,7 @@ class Atom_Mesh_Cubic :
 	MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>
 	>,
 	//Module Implementations
-	tuple<Atom_Demag_N, Atom_Demag, Atom_DipoleDipole, Atom_Zeeman, Atom_Exchange, Atom_DMExchange, Atom_iDMExchange, Atom_MOptical, Atom_Anisotropy_Uniaxial, Atom_Anisotropy_Cubic, Atom_Heat> >
+	std::tuple<Atom_Demag_N, Atom_Demag, Atom_DipoleDipole, Atom_Zeeman, Atom_Exchange, Atom_DMExchange, Atom_iDMExchange, Atom_MOptical, Atom_Anisotropy_Uniaxial, Atom_Anisotropy_Cubic, Atom_Heat> >
 {
 #if COMPILECUDA == 1
 	friend Atom_Mesh_CubicCUDA;
@@ -85,8 +85,17 @@ private:
 	//vector of Monte-Carlo algorithm indices, used for shuffling spin picking order (used for serial MC algorithms)
 	std::vector<unsigned> mc_indices;
 
-	//used for parallel constrained MC algorithm, where we use the Fisher-Yates algorithm to shuffle spin indices so spins are paired randomly (this must surely be important, can't have the same spin pairings every step).
-	std::vector<unsigned> mc_indices_red, mc_indices_black;
+	// Constrained MONTE-CARLO DATA
+
+	//Constrained Monte-Carlo direction
+	DBL3 cmc_n = DBL3(1.0, 0.0, 0.0);
+
+	//used for parallel constrained MC algorithm
+	//Need to shuffle the mc indices every iteration (this must surely be important, can't have the same spin pairings every step)
+	//define as double, unsigned pair so we can use a sort-based shuffle algorithm, with sort from std::sort : generate random doubles, then sort them, with the mc indices moved in the same way, so result is shuffling.
+	//std::sort can be executed as a parallel algorithm with C++17 stl, and random doubles also generated in parallel, so this is a fully parallel shuffle algorithm.
+	//TO DO : Direct parallel shuffling is possible but a bit of a pain - probably best to use a bijective hash function to generate random permutations but need to look into this carefully. Probably not worth the effort for CPU code.
+	std::vector<std::pair<double, unsigned>> mc_indices_red, mc_indices_black;
 
 private:
 
@@ -151,11 +160,17 @@ public:
 	//this method is also used by the dipole mesh where it does something else - sets the dipole direction
 	void SetMagAngle(double polar, double azim, Rect rectangle = Rect());
 
+	//set magnetization angle only in given shape
+	void SetMagAngle_Shape(double polar, double azim, std::vector<MeshShape> shapes);
+
+	//Set magnetization angle in solid object only containing given relative position uniformly using polar coordinates
+	void SetMagAngle_Object(double polar, double azim, DBL3 position);
+
 	//Invert magnetization direction in given mesh (must be magnetic)
 	void SetInvertedMag(bool x, bool y, bool z);
 
 	//Mirror magnetization in given axis (literal x, y, or z) in given mesh (must be magnetic)
-	void SetMirroredMag(string axis);
+	void SetMirroredMag(std::string axis);
 
 	//Set random magentisation distribution in given mesh (must be magnetic)
 	void SetRandomMag(int seed);
@@ -182,6 +197,11 @@ public:
 	//set/get exchange_couple_to_meshes status flag
 	void SetMeshExchangeCoupling(bool status) { exchange_couple_to_meshes = status; }
 	bool GetMeshExchangeCoupling(void) { return exchange_couple_to_meshes; }
+
+	//----------------------------------- OTHER CONTROL METHODS : implement pure virtual Atom_Mesh methods
+
+	void Set_MonteCarlo_Constrained(DBL3 cmc_n_);
+	DBL3 Get_MonteCarlo_Constrained_Direction(void) { return cmc_n; }
 
 	//----------------------------------- OTHER CALCULATION METHODS : Atom_Mesh_Cubic_Compute.cpp
 
@@ -292,6 +312,11 @@ public:
 	//set/get exchange_couple_to_meshes status flag
 	void SetMeshExchangeCoupling(bool status) {}
 	bool GetMeshExchangeCoupling(void) { return false; }
+
+	//----------------------------------- OTHER CONTROL METHODS : implement pure virtual Atom_Mesh methods
+
+	void Set_MonteCarlo_Constrained(DBL3 cmc_n_) {}
+	DBL3 Get_MonteCarlo_Constrained_Direction(void) { return DBL3(); }
 
 	//----------------------------------- OTHER CALCULATION METHODS : Atom_Mesh_Cubic_Compute.cpp
 

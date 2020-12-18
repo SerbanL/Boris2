@@ -34,9 +34,9 @@ BError Oersted::Initialize(void)
 	if (pSMesh->sMeshRect_e.IsNull() || pSMesh->sMeshRect_fm.IsNull()) return error(BERROR_INCORRECTMODCONFIG);
 
 	//always recalculate the mesh transfer as some meshes could have changed
-	vector< VEC<DBL3>* > pVal_from_E;
-	vector< VEC<double>* > pVal_from_elC;
-	vector< VEC<DBL3>* > pVal_to;
+	std::vector< VEC<DBL3>* > pVal_from_E;
+	std::vector< VEC<double>* > pVal_from_elC;
+	std::vector< VEC<DBL3>* > pVal_to;
 
 	//identify all existing electric computation meshes to get Jc from and magnetic computation meshes to transfer Heff to
 	for (int idx = 0; idx < (int)pSMesh->pMesh.size(); idx++) {

@@ -2,7 +2,7 @@
 
 #include "BorisLib.h"
 
-using namespace std;
+
 
 #include "ErrorHandler.h"
 #include "Boris_Enums_Defs.h"
@@ -29,7 +29,7 @@ protected:
 	int tmtype;
 
 	//evaluate heat equation and store result here. After this is done advance time for temperature based on values stored here.
-	vector<double> heatEq_RHS;
+	std::vector<double> heatEq_RHS;
 
 	//ambient temperature and alpha boundary value used in Robin boundary conditions (Newton's law of cooling):
 	//Flux in direction of surface normal = alpha_boundary * (T_boundary - T_ambient)
@@ -96,10 +96,10 @@ public:
 	virtual void SetBaseTemperature(double Temperature) = 0;
 
 	//set insulating mesh sides flags. literal can be "x", "-x", "y", "-y", "z", "-z"
-	void SetInsulatingSides(string literal, bool status);
+	void SetInsulatingSides(std::string literal, bool status);
 
 	//Set Q_equation text equation object
-	BError SetQEquation(string equation_string, int step);
+	BError SetQEquation(std::string equation_string, int step);
 
 	//set temperature solver type
 	BError Set_TMType(TMTYPE_ tmtype_ = TMTYPE_DEFAULT);
@@ -111,7 +111,7 @@ public:
 	double GetAlphaBoundary(void) { return alpha_boundary; }
 
 	//get status of insulating side. literal can be "x", "-x", "y", "-y", "z", "-z"
-	bool GetInsulatingSide(string literal)
+	bool GetInsulatingSide(std::string literal)
 	{
 		if (literal == "x") return insulate_px;
 		else if (literal == "-x") return insulate_nx;
@@ -124,7 +124,7 @@ public:
 	}
 
 	//get all at once
-	vector<bool> GetInsulatingSides(void) { return { insulate_px, insulate_nx, insulate_py, insulate_ny, insulate_pz, insulate_nz }; }
+	std::vector<bool> GetInsulatingSides(void) { return { insulate_px, insulate_nx, insulate_py, insulate_ny, insulate_pz, insulate_nz }; }
 
 	//get the set temperature model type
 	int Get_TMType(void) { return tmtype; }
@@ -173,10 +173,10 @@ public:
 	void SetBaseTemperature(double Temperature) {}
 
 	//set insulating mesh sides flags. literal can be "x", "-x", "y", "-y", "z", "-z"
-	void SetInsulatingSides(string literal, bool status) {}
+	void SetInsulatingSides(std::string literal, bool status) {}
 
 	//Set Q_equation text equation object
-	BError SetQEquation(string equation_string, int step) { return BError(); }
+	BError SetQEquation(std::string equation_string, int step) { return BError(); }
 
 	//set temperature solver type
 	BError Set_TMType(TMTYPE_ tmtype_ = TMTYPE_DEFAULT) { return BError(); }
@@ -188,13 +188,13 @@ public:
 	double GetAlphaBoundary(void) { return 0.0; }
 
 	//get status of insulating side. literal can be "x", "-x", "y", "-y", "z", "-z"
-	bool GetInsulatingSide(string literal)
+	bool GetInsulatingSide(std::string literal)
 	{
 		return false;
 	}
 
 	//get all at once
-	vector<bool> GetInsulatingSides(void) { return {}; }
+	std::vector<bool> GetInsulatingSides(void) { return {}; }
 
 	//get the set temperature model type
 	int Get_TMType(void) { return 0; }

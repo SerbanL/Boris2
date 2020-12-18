@@ -73,7 +73,7 @@ void InsulatorMesh::RepairObjectState(void)
 //call when a configuration change has occurred - some objects might need to be updated accordingly
 BError InsulatorMesh::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 {
-	BError error(string(CLASS_STR(InsulatorMesh)) + "(" + (*pSMesh).key_from_meshId(meshId) + ")");
+	BError error(std::string(CLASS_STR(InsulatorMesh)) + "(" + (*pSMesh).key_from_meshId(meshId) + ")");
 
 	///////////////////////////////////////////////////////
 	//Mesh specific configuration
@@ -155,7 +155,7 @@ void InsulatorMesh::UpdateConfiguration_Values(UPDATECONFIG_ cfgMessage)
 
 BError InsulatorMesh::SwitchCUDAState(bool cudaState)
 {
-	BError error(string(CLASS_STR(InsulatorMesh)) + "(" + (*pSMesh).key_from_meshId(meshId) + ")");
+	BError error(std::string(CLASS_STR(InsulatorMesh)) + "(" + (*pSMesh).key_from_meshId(meshId) + ")");
 
 #if COMPILECUDA == 1
 

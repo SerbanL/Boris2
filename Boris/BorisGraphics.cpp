@@ -4,7 +4,7 @@
 
 BorisGraphics* GraphicalObject::pBG = nullptr;
 
-BorisGraphics::BorisGraphics(HWND hWnd, string defFont, float defFontSize) : 
+BorisGraphics::BorisGraphics(HWND hWnd, std::string defFont, float defFontSize) : 
 	D3D(hWnd), defFont(defFont), defFontSize(defFontSize), objCol(CDO_NONE),
 	ProgramStateNames(this,
 		{
@@ -129,15 +129,15 @@ void BorisGraphics::Setup2DGraphicsResources(void) {
 }
 
 //Load into objCol the geometrical object specified in the given VIN file, and using the given pixel and vertex compiled shaders (give filenames)
-HRESULT BorisGraphics::LoadVINFile(string filename, string VSFile, string PSFile, ObjectBufferCollection &objCol) {
+HRESULT BorisGraphics::LoadVINFile(std::string filename, std::string VSFile, std::string PSFile, ObjectBufferCollection &objCol) {
 
 	HRESULT success = S_OK;
 
-	vector<SimpleVertex> Vertices;
-	vector<WORD> Indices;
+	std::vector<SimpleVertex> Vertices;
+	std::vector<WORD> Indices;
 
 	//Load vertices data from tab-separated block
-	vector<float> VLoad;
+	std::vector<float> VLoad;
 	ReadBlockData(filename, "\t", VLoad, 8);
 	for(int i = 0; i < VLoad.size()/8; i++) {
 
@@ -187,7 +187,7 @@ HRESULT BorisGraphics::CreateSolidBrush(D2D1_COLOR_F color, ID2D1SolidColorBrush
 	return pD2DRT->CreateSolidColorBrush(color, ppBrush);
 }
 
-HRESULT BorisGraphics::CreateTextFormat(string fontName, FLOAT fontSize, DWRITE_FONT_WEIGHT fontWeight, DWRITE_FONT_STYLE fontStyle, IDWriteTextFormat **ppTextFormat) {
+HRESULT BorisGraphics::CreateTextFormat(std::string fontName, FLOAT fontSize, DWRITE_FONT_WEIGHT fontWeight, DWRITE_FONT_STYLE fontStyle, IDWriteTextFormat **ppTextFormat) {
 
 	IDWriteFactory *pDWriteFactory;
 
@@ -384,7 +384,7 @@ void BorisGraphics::FillPromptRectangle(D2D1_RECT_F rect) {
 	pD2DRT->FillRectangle(&rect, pVariableColorBrush);
 }
 
-void BorisGraphics::DrawTextLine(string text, D2D1_RECT_F textRect, FormatSpecifier fs)
+void BorisGraphics::DrawTextLine(std::string text, D2D1_RECT_F textRect, FormatSpecifier fs)
 {
 	BeginD2DDraw();
 
@@ -452,7 +452,7 @@ void BorisGraphics::DrawTextLine(string text, D2D1_RECT_F textRect, FormatSpecif
 	EndD2DDraw();
 }
 
-void BorisGraphics::DrawSimpleTextLine(string text, FLT2 position, D2D1_COLOR_F textColor, IDWriteTextFormat** ppTextFormat)
+void BorisGraphics::DrawSimpleTextLine(std::string text, FLT2 position, D2D1_COLOR_F textColor, IDWriteTextFormat** ppTextFormat)
 {
 	BeginD2DDraw();
 
@@ -473,7 +473,7 @@ void BorisGraphics::DrawSimpleTextLine(string text, FLT2 position, D2D1_COLOR_F 
 }
 
 //draw a batch of objects with precomputed transforms (CBObjectTransform). Draw using selected object from ObjectBufferCollection objCol
-void BorisGraphics::DrawCBObjectBatch(vector<CBObjectTransform>& transformBatch, CDO_ objColSelector)
+void BorisGraphics::DrawCBObjectBatch(std::vector<CBObjectTransform>& transformBatch, CDO_ objColSelector)
 {
 	D3D::DrawCBObjectBatch(transformBatch, objCol, objColSelector);
 }
@@ -507,7 +507,7 @@ void BorisGraphics::DrawCoordinateSystem(D2D1_RECT_F spaceRect) {
 	Set3DOriginPixelPosition(_view_shiftX, _view_shiftY, _view_shiftZ);
 }
 
-float BorisGraphics::GetFontStringPixelsWidth(const string& str, const FormatSpecifier& fs) 
+float BorisGraphics::GetFontStringPixelsWidth(const std::string& str, const FormatSpecifier& fs) 
 {
 	HRESULT hr = S_OK;
 
@@ -537,12 +537,12 @@ float BorisGraphics::GetFontStringPixelsWidth(const string& str, const FormatSpe
 	return TextMetrics.width;
 }
 
-float BorisGraphics::GetMonospacedFontStringPixelsWidth(const string& str)
+float BorisGraphics::GetMonospacedFontStringPixelsWidth(const std::string& str)
 {
 	return monospacedfontPixWidth * str.length();
 }
 
-bool BorisGraphics::SaveScreenToFile(string fileName, D2D1_RECT_F capture_rect)
+bool BorisGraphics::SaveScreenToFile(std::string fileName, D2D1_RECT_F capture_rect)
 {
 	return SaveScreenToPNG(fileName, capture_rect);
 }

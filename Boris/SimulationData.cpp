@@ -9,7 +9,7 @@ void Simulation::NewDataBoxField(DatumConfig dConfig)
 		int minorId = dataBoxList.push_back(dConfig);
 
 		//Data box entry, showing the label of a given entry in Simulation::dataBoxList : minorId is the minor id of elements in Simulation::dataBoxList (major id there is always 0), auxId is the number of the interactive object in the list (i.e. entry number as it appears in data box in order). textId is the mesh name (if associated with this data type)
-		string Label = "<b>[tc0,0,0,1/tc][io" + ToString((int)IOI_DATABOXFIELDLABEL) + "," + ToString(minorId) + "," + ToString(dataBoxList.last());
+		std::string Label = "<b>[tc0,0,0,1/tc][io" + ToString((int)IOI_DATABOXFIELDLABEL) + "," + ToString(minorId) + "," + ToString(dataBoxList.last());
 
 		//add mesh name if needed
 		if (dConfig.meshName.length() && !dataDescriptor(dConfig.datumId).meshless) {
@@ -20,7 +20,7 @@ void Simulation::NewDataBoxField(DatumConfig dConfig)
 
 		Label += dataDescriptor(dConfig.datumId).Label;
 
-		string formattedTextEntry = Label + "</io></b>" + GetDataValueString(dConfig);
+		std::string formattedTextEntry = Label + "</io></b>" + GetDataValueString(dConfig);
 
 		BD.NewDataBoxField(formattedTextEntry);
 	}
@@ -49,7 +49,7 @@ void Simulation::RebuildDataBox(void)
 			int minorId = id.minor;
 
 			//Data box entry, showing the label of a given entry in Simulation::dataBoxList : minorId is the minor id of elements in Simulation::dataBoxList (major id there is always 0), auxId is the number of the interactive object in the list (i.e. entry number as it appears in data box in order). textId is the mesh name (if associated with this data type)
-			string Label = "<b>[tc0,0,0,1/tc][io" + ToString((int)IOI_DATABOXFIELDLABEL) + "," + ToString(minorId) + "," + ToString(idx);
+			std::string Label = "<b>[tc0,0,0,1/tc][io" + ToString((int)IOI_DATABOXFIELDLABEL) + "," + ToString(minorId) + "," + ToString(idx);
 
 			//add mesh name if needed
 			if (dConfig.meshName.length() && !dataDescriptor(dConfig.datumId).meshless) {
@@ -63,14 +63,14 @@ void Simulation::RebuildDataBox(void)
 			//data box entries do not allow use of boxes on data - use whole mesh for these data
 			dConfig.rectangle = Rect();
 
-			string formattedTextEntry = Label + "</io></b>" + GetDataValueString(dConfig);
+			std::string formattedTextEntry = Label + "</io></b>" + GetDataValueString(dConfig);
 
 			BD.NewDataBoxField(formattedTextEntry);
 		}
 	}
 }
 
-void Simulation::DeleteDataBoxFields(string meshName) 
+void Simulation::DeleteDataBoxFields(std::string meshName) 
 {
 	for (int idx = dataBoxList.last(); idx >= 0; idx--) {
 
@@ -78,7 +78,7 @@ void Simulation::DeleteDataBoxFields(string meshName)
 	}
 }
 
-void Simulation::ChangeDataBoxLabels(string oldMeshName, string newMeshName) 
+void Simulation::ChangeDataBoxLabels(std::string oldMeshName, std::string newMeshName) 
 {
 	for (int idx = 0; idx < dataBoxList.size(); idx++) {
 
@@ -87,7 +87,7 @@ void Simulation::ChangeDataBoxLabels(string oldMeshName, string newMeshName)
 }
 
 //update rectangles in dataBoxList (rect_old and rect_new are the old and new rectangles for the given mesh. All dataBoxList rectangles are scaled accordingly.
-void Simulation::UpdateDataBoxEntries(Rect rect_old, Rect rect_new, string meshName)
+void Simulation::UpdateDataBoxEntries(Rect rect_old, Rect rect_new, std::string meshName)
 {
 	for (int idx = 0; idx < dataBoxList.size(); idx++) {
 
@@ -503,15 +503,15 @@ Any Simulation::GetDataValue(DatumConfig dConfig)
 	return Any(0);
 }
 
-string Simulation::GetDataValueString(DatumConfig dConfig, bool ignore_unit) 
+std::string Simulation::GetDataValueString(DatumConfig dConfig, bool ignore_unit) 
 {
-	string unit;
+	std::string unit;
 	if (!ignore_unit) unit = dataDescriptor(dConfig.datumId).unit;
 
 	return GetDataValue(dConfig).convert_to_string(unit);
 }
 
-void Simulation::NewSaveDataEntry(DATA_ dataId, string meshName, Rect dataRect) 
+void Simulation::NewSaveDataEntry(DATA_ dataId, std::string meshName, Rect dataRect) 
 {
 	//if not meshless, make sure meshName is valid
 	if (!dataDescriptor(dataId).meshless && !SMesh.contains(meshName)) return;
@@ -526,7 +526,7 @@ void Simulation::NewSaveDataEntry(DATA_ dataId, string meshName, Rect dataRect)
 	saveDataList.push_back(DatumConfig(dataId, meshName, dataRect));
 }
 
-void Simulation::EditSaveDataEntry(int index, DATA_ dataId, string meshName, Rect dataRect) 
+void Simulation::EditSaveDataEntry(int index, DATA_ dataId, std::string meshName, Rect dataRect) 
 {
 	if (!GoodIdx(saveDataList.last(), index)) return;
 
@@ -543,7 +543,7 @@ void Simulation::EditSaveDataEntry(int index, DATA_ dataId, string meshName, Rec
 	saveDataList[index] = DatumConfig(dataId, meshName, dataRect);
 }
 
-void Simulation::UpdateSaveDataEntries(string oldMeshName, string newMeshName) 
+void Simulation::UpdateSaveDataEntries(std::string oldMeshName, std::string newMeshName) 
 {
 	for (int idx = 0; idx < saveDataList.size(); idx++) {
 
@@ -551,7 +551,7 @@ void Simulation::UpdateSaveDataEntries(string oldMeshName, string newMeshName)
 	}
 }
 
-void Simulation::UpdateSaveDataEntries(Rect rect_old, Rect rect_new, string meshName) 
+void Simulation::UpdateSaveDataEntries(Rect rect_old, Rect rect_new, std::string meshName) 
 {
 	for (int idx = 0; idx < saveDataList.size(); idx++) {
 
@@ -560,7 +560,7 @@ void Simulation::UpdateSaveDataEntries(Rect rect_old, Rect rect_new, string mesh
 	}
 }
 
-void Simulation::DeleteSaveDataEntries(string meshName) 
+void Simulation::DeleteSaveDataEntries(std::string meshName) 
 {
 	int idx = 0;
 
@@ -576,12 +576,12 @@ void Simulation::DeleteSaveDataEntries(string meshName)
 void Simulation::SaveData(void) 
 {
 	//First build text to write to data file as a single row
-	string row_text;
+	std::string row_text;
 
 	//save actual values as configured in saveDataList
 	for (int idx = 0; idx < saveDataList.size(); idx++) {
 
-		string value_string = GetDataValueString(saveDataList[idx], true);
+		std::string value_string = GetDataValueString(saveDataList[idx], true);
 		replaceall(value_string, ", ", "\t");
 
 		row_text += value_string;
@@ -597,7 +597,7 @@ void Simulation::SaveData(void)
 		//update and refresh mesh display before saving image (the image is captured from on-screen image)
 		UpdateMeshDisplay();
 
-		string imageFile = directory + imageSaveFileBase + ToString(SMesh.GetIteration()) + ".png";
+		std::string imageFile = directory + imageSaveFileBase + ToString(SMesh.GetIteration()) + ".png";
 		BD.SaveMeshImage(imageFile, image_cropping);
 	}
 }
@@ -610,20 +610,20 @@ void Simulation::SaveData_DiskWrite(const std::string& row_text)
 		//we need a file name to save to
 		if (savedataFile.size()) {
 
-			ofstream bdout;
+			std::ofstream bdout;
 
 			//append to file or make a new one ?
-			if (appendToDataFile) bdout.open((directory + savedataFile).c_str(), ios::out | ios::app);
+			if (appendToDataFile) bdout.open((directory + savedataFile).c_str(), std::ios::out | std::ios::app);
 			else {
 
 				//Create new file
-				bdout.open((directory + savedataFile).c_str(), ios::out);
+				bdout.open((directory + savedataFile).c_str(), std::ios::out);
 				appendToDataFile = true;
 
 				//Append header
 				time_t rawtime;
 				time(&rawtime);
-				bdout << string(ctime(&rawtime)) << "\n";
+				bdout << std::string(ctime(&rawtime)) << "\n";
 
 				//List meshes
 				for (int idx = 0; idx < SMesh.size(); idx++) {

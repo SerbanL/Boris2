@@ -59,7 +59,7 @@ private: //--------------------------------------------------- DATA
 	//signal complex type end
 	const std::string endType = "end type";
 
-	//signal binary data block. This will be followed by number of BYTEs in the block (need this to keep compatibility with older save files - if this string encountered when not expected then jump over the binary block)
+	//signal binary data block. This will be followed by number of BYTEs in the block (need this to keep compatibility with older save files - if this std::string encountered when not expected then jump over the binary block)
 	const std::string binaryData = "bin data";
 
 	//variables are saved using their names and variable references, and this info is contained in VarInfo. Need a std::tuple to expand the parameter pack.
@@ -401,7 +401,7 @@ private: //--------------------------------------------------- METHODS
 	template <typename Type>
 	void parse_save_tuple(std::ofstream &bdout, Type& entry)
 	{
-		//signal start of complex type : save_tuple_entry will issue a call to SaveObjectState, but we want "start type" string to appear before the object name
+		//signal start of complex type : save_tuple_entry will issue a call to SaveObjectState, but we want "start type" std::string to appear before the object name
 		if (int_tag_select<decltype(entry.value)>::value == 4) bdout << startComplexType << std::endl;
 
 		bdout << entry.name << std::endl;
@@ -680,7 +680,7 @@ private: //--------------------------------------------------- METHODS
 			clear_vector(value);						//deep clear the std::vector : if it contains pointers then delete them before clearing
 			value.resize(ToNum(vec_size_text));
 
-			//all vectors next contain 2 lines : first there's the binary data string, then the number of BYTEs (excluding any key and id lines). Skip over these as not needed.
+			//all vectors next contain 2 lines : first there's the binary data std::string, then the number of BYTEs (excluding any key and id lines). Skip over these as not needed.
 			//There are some exceptions however (e.g. strings and Any not saved as binary), so need to handle these cases too.
 
 			bool vec_with_key = is_vector_withkey<Type>::value;
@@ -854,7 +854,7 @@ public:
 
 					//starting a new complex type : the next line should contain the object name which will be loaded with its own LoadObjectState method.
 					//If all goes fine then this flag is not used.
-					//If there's a problem, in particular the object name is no longer defined, we'll need to search for a matching end type string and skip over the block
+					//If there's a problem, in particular the object name is no longer defined, we'll need to search for a matching end type std::string and skip over the block
 					complex_type_just_started = true;
 					continue;
 				}
@@ -897,7 +897,7 @@ public:
 
 						int started_types = 1;
 
-						//a complex type was just started before this, and we couldn't find the name : this means this name is no longer defined, and we should find the matching end type string and skip over without returning yet.
+						//a complex type was just started before this, and we couldn't find the name : this means this name is no longer defined, and we should find the matching end type std::string and skip over without returning yet.
 						while (started_types) {
 
 							if (bdin.getline(line, FILEROWCHARS)) {
@@ -921,7 +921,7 @@ public:
 							}
 							else {
 
-								//something wrong : didn't find end type string
+								//something wrong : didn't find end type std::string
 								RepairObjectState();
 								return false;
 							}

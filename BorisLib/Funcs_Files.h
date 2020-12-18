@@ -16,7 +16,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 // GENERAL
 
-//return termination including the dot. If no proper termination found then return empty string.
+//return termination including the dot. If no proper termination found then return empty std::string.
 inline std::string GetFileTermination(const std::string& fileName)
 {
 	size_t found = fileName.find_last_of(".");

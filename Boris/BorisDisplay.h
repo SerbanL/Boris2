@@ -27,7 +27,7 @@
 //enum for different types of window spaces : these are the winId major identifier
 enum WIN_ { WIN_ALL = -1, WIN_NONE, WIN_CONSOLE, WIN_DATABOX, WIN_MESHWINDOW, WIN_IOIPOPUPTEXTBOX, WIN_IOIPOPUPEDITBOX, WIN_HOVERINFOTEXTBOX };
 
-using namespace std;
+
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
@@ -37,7 +37,7 @@ class BorisDisplay :
 	public GraphicalObject,
 	public Threads<BorisDisplay>,
 	public ProgramState<BorisDisplay,
-	tuple<BorisGraphics*, BorisMeshWindow*>, tuple<>>
+	std::tuple<BorisGraphics*, BorisMeshWindow*>, std::tuple<>>
 {
 private:
 
@@ -56,10 +56,10 @@ private:
 	BorisTextBox *pbDataBox;
 
 	//pairs of windows with linked sides : these sides have coordinates which are maintained during resizing. The order of winIds in the pair is important.
-	vector<PAIR> winLinkages_RightLeft, winLinkages_BottomTop;
+	std::vector<PAIR> winLinkages_RightLeft, winLinkages_BottomTop;
 
 	//need thread-safe access to BorisDisplay - guard all external points of access (public methods)
-	mutex displayMutex;
+	std::mutex displayMutex;
 
 private:
 
@@ -90,7 +90,7 @@ private:
 	void PopupEditBoxReturnedText(INT2 popupId, INT2 mouse);
 
 	//Make a text box which displays some fixed info. The window is deleted as soon as the mouse leaves it.
-	void MakeHoverInfoTextBox(INT2 mouse, string formatted_text_info_string);
+	void MakeHoverInfoTextBox(INT2 mouse, std::string formatted_text_info_string);
 
 	//link 2 windows on their left - right sides, or bottom - top sides The order is important.
 	void LinkWindowSides_RightLeft(INT2 winId_RightSide, INT2 winId_LeftSide) { winLinkages_RightLeft.push_back(PAIR(winId_RightSide, winId_LeftSide)); }
@@ -105,7 +105,7 @@ private:
 	//-----------------------------------------------Advanced display methods
 
 	//run this on a thread to animate the transition between mesh view of *pphysQ with start and end settings. *parameter varies between 0 and 1 and increases based on start time and duration
-	void AnimateMeshViewChange(vector<PhysQ>* pphysQ, PhysQRepSettings start, PhysQRepSettings end, double* parameter, DWORD start_time_ms, DWORD duration_ms);
+	void AnimateMeshViewChange(std::vector<PhysQ>* pphysQ, PhysQRepSettings start, PhysQRepSettings end, double* parameter, DWORD start_time_ms, DWORD duration_ms);
 
 	//-----------------------------------------------Mirror public methods - accessed through their thread-safe callers from outside BorisDisplay; available here for internal use.
 
@@ -116,7 +116,7 @@ private:
 	void Draw(int winIdMajor = WIN_ALL);
 
 	//Process message received from WndProc
-	ActionOutcome NewMessage(AC_ aCode, INT2 mouse, string data = "");
+	ActionOutcome NewMessage(AC_ aCode, INT2 mouse, std::string data = "");
 
 public:
 
@@ -137,51 +137,64 @@ public:
 	void ClearDataBox(void) { displayMutex.lock(); pbDataBox->ClearWindow(); Refresh(); displayMutex.unlock(); }
 
 	//Process message received from WndProc
-	ActionOutcome NewMessage_ThreadSafe(AC_ aCode, INT2 mouse, string data = "") { displayMutex.lock(); ActionOutcome ao = NewMessage(aCode, mouse, data); displayMutex.unlock(); return ao; }
+	ActionOutcome NewMessage_ThreadSafe(AC_ aCode, INT2 mouse, std::string data = "") { displayMutex.lock(); ActionOutcome ao = NewMessage(aCode, mouse, data); displayMutex.unlock(); return ao; }
 
 	//display various message types in the console
-	void DisplayConsoleMessage(string text);
-	void DisplayConsoleError(string text);
-	void DisplayConsoleWarning(string text);
-	void DisplayConsoleListing(string text);
-	void DisplayFormattedConsoleMessage(string text);
+	void DisplayConsoleMessage(std::string text);
+	void DisplayConsoleError(std::string text);
+	void DisplayConsoleWarning(std::string text);
+	void DisplayConsoleListing(std::string text);
+	void DisplayFormattedConsoleMessage(std::string text);
 
 	//add a new entry in the data box as an interative object (use formatted text)
-	void NewDataBoxField(string formattedText);
-	//update the data box at given lineIdx to the given value, passed as a string
-	void UpdateDataBoxField(int lineIdx, string value_string);
+	void NewDataBoxField(std::string formattedText);
+	//update the data box at given lineIdx to the given value, passed as a std::string
+	void UpdateDataBoxField(int lineIdx, std::string value_string);
 
 	//set the console line entry text
-	void SetConsoleEntryLineText(string text) { displayMutex.lock(); pbConsole->SetEntryLineText(text); Refresh(WIN_CONSOLE); displayMutex.unlock(); }
+	void SetConsoleEntryLineText(std::string text) { displayMutex.lock(); pbConsole->SetEntryLineText(text); Draw(WIN_CONSOLE); displayMutex.unlock(); }
 
 	//adjust display for default view of physical quantity representation - animate view change
-	void AutoSetMeshDisplaySettings(vector<PhysQ> physQ);
+	void AutoSetMeshDisplaySettings(std::vector<PhysQ> physQ);
 
-	void AutoSetMeshDisplaySettings_KeepOrientation(vector<PhysQ> physQ);
+	void AutoSetMeshDisplaySettings_KeepOrientation(std::vector<PhysQ> physQ);
 
 	//adjust display for default view of physical quantity representation - no animation used, just set.
-	void AutoSetMeshDisplaySettings_Sudden(vector<PhysQ> physQ) { displayMutex.lock(); pbMeshWin->AutoSetMeshDisplaySettings(physQ); displayMutex.unlock(); }
+	void AutoSetMeshDisplaySettings_Sudden(std::vector<PhysQ> physQ) { displayMutex.lock(); pbMeshWin->AutoSetMeshDisplaySettings(physQ); displayMutex.unlock(); }
 
 	//Calculate graphical representation of given physical quantity and refresh screen
-	//only update if mutex can be locked right away, as this is used in performance-critical parts
-	void UpdateMeshDisplay_Asynchronous(vector<PhysQ> physQ) { if (displayMutex.try_lock()) { pbMeshWin->UpdatePhysQRep(physQ); Refresh(); displayMutex.unlock(); } }
-	void UpdateMeshDisplay(vector<PhysQ> physQ) { single_call_launch(&BorisDisplay::UpdateMeshDisplay_Asynchronous, physQ, THREAD_DISPLAY); }
+	//only update if std::mutex can be locked right away, as this is used in performance-critical parts
+	void UpdateMeshDisplay_Auxiliary(std::vector<PhysQ> physQ) { if (displayMutex.try_lock()) { pbMeshWin->UpdatePhysQRep(physQ); Refresh(); displayMutex.unlock(); } }
+	void UpdateMeshDisplay(std::vector<PhysQ> physQ, bool asynchronous)
+	{ 
+		if (asynchronous) single_call_launch<std::vector<PhysQ>>(&BorisDisplay::UpdateMeshDisplay_Auxiliary, physQ, THREAD_DISPLAY);
+		else UpdateMeshDisplay_Auxiliary(physQ);
+	}
 
 	//Calculate graphical representation of given physical quantity and draw screen (so doesn't update interactive objects, just draws)
-	//only update if mutex can be locked right away, as this is used in performance-critical parts
-	void UpdateMeshDisplay_Quick_Asynchronous(vector<PhysQ> physQ) { if (displayMutex.try_lock()) { pbMeshWin->UpdatePhysQRep(physQ); Draw(); displayMutex.unlock(); } }
-	void UpdateMeshDisplay_Quick(vector<PhysQ> physQ) { single_call_launch(&BorisDisplay::UpdateMeshDisplay_Quick_Asynchronous, physQ, THREAD_DISPLAY); }
+	//only update if std::mutex can be locked right away, as this is used in performance-critical parts
+	void UpdateMeshDisplay_Quick_Auxiliary(std::vector<PhysQ> physQ) { if (displayMutex.try_lock()) { pbMeshWin->UpdatePhysQRep(physQ); Draw(); displayMutex.unlock(); } }
+	void UpdateMeshDisplay_Quick(std::vector<PhysQ> physQ, bool asynchronous) 
+	{ 
+		if (asynchronous) single_call_launch<std::vector<PhysQ>>(&BorisDisplay::UpdateMeshDisplay_Quick_Auxiliary, physQ, THREAD_DISPLAY);
+		else UpdateMeshDisplay_Quick_Auxiliary(physQ);
+	}
 
 	//image_cropping specify normalized cropping within the mesh image, as left, bottom, right, top : 0, 0 point is left, bottom of screen as far as user is concerned.
-	bool SaveMeshImage(string fileName, DBL4 image_cropping = DBL4(0, 0, 1, 1)) { displayMutex.lock(); bool success = pbMeshWin->SaveMeshImage(fileName, image_cropping); displayMutex.unlock(); return success; }
+	bool SaveMeshImage(std::string fileName, DBL4 image_cropping = DBL4(0, 0, 1, 1)) { displayMutex.lock(); bool success = pbMeshWin->SaveMeshImage(fileName, image_cropping); displayMutex.unlock(); return success; }
 
 	//Set mesh display detail level directly
-	void SetDetailLevel(double detail_level) { if (displayMutex.try_lock()) { pbMeshWin->SetDetailLevel(detail_level); displayMutex.unlock(); } }
+	void SetDetailLevel(double detail_level) { displayMutex.lock(); pbMeshWin->SetDetailLevel(detail_level); displayMutex.unlock(); }
+	double GetDetailLevel(void) { return pbMeshWin->GetDetailLevel();	}
+
+	//Set mesh display render threshold values for faster rendering when we have many cells
+	void SetRenderThresholds(INT3 renderthresholds) { displayMutex.lock(); pbMeshWin->SetRenderThresholds(renderthresholds); displayMutex.unlock(); }
+	INT3 GetRenderThresholds(void) { return pbMeshWin->GetRenderThresholds(); }
 
 	//allows access to Boris Graphics public methods.
 	BorisGraphics* BGMethods(void) { return pBG; }
 
-	//Lock and unlock the display mutex : calling this to ensure that any code that follows is not executed during a display refresh or before any other public BorisDisplay method has finished.
+	//Lock and unlock the display std::mutex : calling this to ensure that any code that follows is not executed during a display refresh or before any other public BorisDisplay method has finished.
 	void WaitForDisplayEnd(void) { displayMutex.lock(); displayMutex.unlock(); }
 };
 

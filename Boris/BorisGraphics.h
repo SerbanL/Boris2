@@ -37,7 +37,7 @@
 //scaling factor for fov change using the mouse wheel
 #define ZOOMNOTCH 1.15F
 
-using namespace std;
+
 
 //Text object outline enum: types of outline to be used for text objects
 enum TOO_ {TOO_NONE = 0, TOO_ROUND, TOO_SQUARE};
@@ -114,7 +114,7 @@ struct FormatSpecifier {
 class BorisGraphics : 
 	public D3D,
 	public ProgramState<BorisGraphics,
-	tuple<float, float, float, float, float, float, float, float, float, float, float, int, int>, tuple<>>
+	std::tuple<float, float, float, float, float, float, float, float, float, float, float, int, int>, std::tuple<>>
 {
 private:
 
@@ -124,7 +124,7 @@ private:
 	IDWriteTextFormat *pNormalTextFormat, *pBoldTextFormat, *pItalicTextFormat, *pBoldItalicTextFormat;
 
 	//default font and font sizes. set at initialization, cannot be changed later
-	const string defFont;
+	const std::string defFont;
 	const float defFontSize;
 
 	float fontPixHeight;
@@ -150,11 +150,11 @@ private:
 	void Cleanup(void);
 
 	//Load into objCol the geometrical object specified in the given VIN file, and using the given pixel and vertex compiled shaders (give filenames)
-	HRESULT LoadVINFile(string filename, string VSFile, string PSFile, ObjectBufferCollection &objCol);
+	HRESULT LoadVINFile(std::string filename, std::string VSFile, std::string PSFile, ObjectBufferCollection &objCol);
 
 public:
 
-	BorisGraphics(HWND hWnd, string defFont, float defFontSize);
+	BorisGraphics(HWND hWnd, std::string defFont, float defFontSize);
 	~BorisGraphics();
 
 	void RepairObjectState(void);
@@ -163,7 +163,7 @@ public:
 
 	//Brush and text format creation methods
 	HRESULT CreateSolidBrush(D2D1_COLOR_F color, ID2D1SolidColorBrush **ppBrush);
-	HRESULT CreateTextFormat(string fontName, FLOAT fontSize, DWRITE_FONT_WEIGHT fontWeight, DWRITE_FONT_STYLE fontStyle, IDWriteTextFormat **ppTextFormat);
+	HRESULT CreateTextFormat(std::string fontName, FLOAT fontSize, DWRITE_FONT_WEIGHT fontWeight, DWRITE_FONT_STYLE fontStyle, IDWriteTextFormat **ppTextFormat);
 
 	//Create geometry from given path points
 	HRESULT CreatePath(D2D1_POINT_2F *ppathpoints, UINT32 pointsCount, ID2D1PathGeometry **ppPathGeometry);
@@ -188,16 +188,16 @@ public:
 	void FillPromptRectangle(D2D1_RECT_F rect);
 
 	//Draw text methods using full formatting specifier
-	void DrawTextLine(string text, D2D1_RECT_F textRect, FormatSpecifier fs);
+	void DrawTextLine(std::string text, D2D1_RECT_F textRect, FormatSpecifier fs);
 	//Simpler text draw method with externally provided IDWriteTextFormat, but fewer options : just the text, top-left position and color
-	void DrawSimpleTextLine(string text, FLT2 position, D2D1_COLOR_F textColor, IDWriteTextFormat** ppTextFormat);
+	void DrawSimpleTextLine(std::string text, FLT2 position, D2D1_COLOR_F textColor, IDWriteTextFormat** ppTextFormat);
 
 	//Draw stored 3D object
 	void DrawCBObject(CDO_ objColSelector, XMMATRIX Rotation, XMMATRIX Scaling, XMMATRIX Translation, XMFLOAT4 Color) { D3D::DrawCBObject(Rotation, Scaling, Translation, Color, objCol, objColSelector); }
 	void DrawCBObject(CDO_ objColSelector, XMFLOAT4 Color) { D3D::DrawCBObject(XMMatrixIdentity(), XMMatrixIdentity(), XMMatrixIdentity(), Color, objCol, objColSelector); }
 
 	//draw a batch of objects with precomputed transforms (CBObjectTransform). Draw using selected object from ObjectBufferCollection objCol
-	void DrawCBObjectBatch(vector<CBObjectTransform>& transformBatch, CDO_ objColSelector);
+	void DrawCBObjectBatch(std::vector<CBObjectTransform>& transformBatch, CDO_ objColSelector);
 
 	void DrawFrameObject(CDO_ objColSelector, XMMATRIX Rotation, XMMATRIX Scaling, XMMATRIX Translation, XMFLOAT4 Color) { D3D::DrawFrameObject(Rotation, Scaling, Translation, Color, objCol, objColSelector); }
 	void DrawFrameObject(CDO_ objColSelector, XMFLOAT4 Color) { D3D::DrawFrameObject(XMMatrixIdentity(), XMMatrixIdentity(), XMMatrixIdentity(), Color, objCol, objColSelector); }
@@ -205,15 +205,15 @@ public:
 	//Draw the coordinate system in the bottom-left corner of the given spaceRect
 	void DrawCoordinateSystem(D2D1_RECT_F spaceRect);
 
-	//Get dimensions in physical pixels of formatted text string
-	float GetFontStringPixelsWidth(const string& str, const FormatSpecifier& fs);
-	float GetMonospacedFontStringPixelsWidth(const string& str);
+	//Get dimensions in physical pixels of formatted text std::string
+	float GetFontStringPixelsWidth(const std::string& str, const FormatSpecifier& fs);
+	float GetMonospacedFontStringPixelsWidth(const std::string& str);
 
 	float GetFontPixelsHeight(void) { return fontPixHeight; }
 	float GetMonospacedFontPixelsWidth(void) { return monospacedfontPixWidth; }
 
 	//save currently displayed image (in specified rectangle) to file
-	bool SaveScreenToFile(string fileName, D2D1_RECT_F capture_rect);
+	bool SaveScreenToFile(std::string fileName, D2D1_RECT_F capture_rect);
 
 	//Get camera properties
 	FLT3 GetCameraPosition(void) { return FLT3(camX, camY, camZ); }
@@ -241,7 +241,7 @@ public:
 	GraphicalObject() { thisObjectHasAllocatedMemory = false; }
 
 	//full constructor - only the top level graphical object (e.g. a display coordinator object) should call this, the rest can just call the empty constructor.
-	GraphicalObject(HWND hWnd, string defFont, float defFontSize) {
+	GraphicalObject(HWND hWnd, std::string defFont, float defFontSize) {
 
 		if(!pBG) {
 

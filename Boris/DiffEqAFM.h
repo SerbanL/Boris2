@@ -35,7 +35,7 @@ private:
 
 	//When calling an equation to evaluate it only the sub-lattice A value is returned.
 	//The additional sub-lattice B value is set here so we can read it
-	vector<DBL3> Equation_Eval_2;
+	std::vector<DBL3> Equation_Eval_2;
 
 public:
 

@@ -9,14 +9,14 @@
 
 #define MAX_ARRAYS	10000
 
-using namespace std;
+
 
 class DPArrays {
 
 private:
 
 	//a number of data processing arrays (each a single column array). The length of each array is not fixed, but the number of available arrays is fixed at instantiation.
-	vector< vector<double> > dpA;
+	std::vector< std::vector<double> > dpA;
 
 	//maximum number of available arrays
 	const int max_arrays;
@@ -27,7 +27,7 @@ private:
 	template <typename ... Arrs>
 	bool GoodArrays(Arrs ... dp_idx) const
 	{
-		vector<int> dp_indexes = make_vector(dp_idx...);
+		std::vector<int> dp_indexes = make_vector(dp_idx...);
 
 		return GoodArrays(dp_indexes);
 	}
@@ -47,9 +47,9 @@ private:
 	template <typename ... Arrs>
 	bool GoodArrays_Unique(Arrs ... dp_idx)
 	{
-		vector<int> dp_indexes = make_vector(dp_idx...);
+		std::vector<int> dp_indexes = make_vector(dp_idx...);
 
-		quicksort(dp_indexes);
+		std::sort(dp_indexes.begin(), dp_indexes.end());
 
 		if (dp_indexes[0] < 0 || dp_indexes[0] >= max_arrays) return false;
 
@@ -70,7 +70,7 @@ public:
 	int size(void) { return max_arrays; }
 
 	//Indexing
-	vector<double>& operator[](int arr_idx) { return dpA[arr_idx]; }
+	std::vector<double>& operator[](int arr_idx) { return dpA[arr_idx]; }
 
 	//value setters
 	void push_value(int arr_idx, double value) { dpA[arr_idx].push_back(value); }
@@ -81,7 +81,7 @@ public:
 		dpA[arr_idx + 2].push_back(value.z);
 	}
 
-	void set_array(int arr_idx, vector<double>& data) { if (arr_idx < max_arrays) dpA[arr_idx] = data; }
+	void set_array(int arr_idx, std::vector<double>& data) { if (arr_idx < max_arrays) dpA[arr_idx] = data; }
 
 	//
 	//Various data processing methods accessible externally (corresponding to console commands for data processing)
@@ -121,13 +121,13 @@ public:
 	}
 
 	//load a number of arrays from a file with given name : the file should contain columns of data
-	BError load_arrays(string fileName, vector<int> all_indexes, int* prows_read);
+	BError load_arrays(std::string fileName, std::vector<int> all_indexes, int* prows_read);
 
 	//save dp arrays with given indexes to file
-	BError save_arrays(string fileName, vector<int> all_indexes, bool append = false);
+	BError save_arrays(std::string fileName, std::vector<int> all_indexes, bool append = false);
 
 	//save dp array as a single tab-spaced row
-	BError save_array_transposed(string fileName, int dp_index, bool append = false);
+	BError save_array_transposed(std::string fileName, int dp_index, bool append = false);
 
 	//--------------------- data extraction from meshes
 
@@ -168,7 +168,7 @@ public:
 
 	//--------------------- testing
 
-	BError dump_tdep(SuperMesh *pSMesh, string meshName, string paramName, double max_temperature, int dp_arr);
+	BError dump_tdep(SuperMesh *pSMesh, std::string meshName, std::string paramName, double max_temperature, int dp_arr);
 
 	//--------------------- simple algebraic operations
 

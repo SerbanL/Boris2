@@ -11,7 +11,7 @@
 
 inline std::wstring StringtoWideString(const std::string& text) 
 {
-	//string to wstring conversion. To get LPCWSTR then attach .c_str() to returned wstring
+	//std::string to std::wstring conversion. To get LPCWSTR then attach .c_str() to returned std::wstring
 	int len;
     int slength = (int)text.length() + 1;
     len = MultiByteToWideChar(CP_ACP, 0, text.c_str(), slength, 0, 0); 
@@ -30,7 +30,7 @@ inline std::string WideStringtoString(std::wstring wstr)
 
 inline WCHAR* StringtoWCHARPointer(const std::string& text) 
 {
-	//string to wstring conversion. To get LPCWSTR then attach .c_str() to returned wstring
+	//std::string to std::wstring conversion. To get LPCWSTR then attach .c_str() to returned std::wstring
 	int len;
     int slength = (int)text.length() + 1;
     len = MultiByteToWideChar(CP_ACP, 0, text.c_str(), slength, 0, 0);

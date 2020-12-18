@@ -65,7 +65,7 @@ DBL4 SkyrmionTrack::Get_skypos_diametersCUDA(size_t size, DBL3 h, Rect M_rect, c
 
 	CurveFitting fit;
 
-	vector<double> params;
+	std::vector<double> params;
 
 	//skyRect was the original skyrmion rectangle, used to identify it. We now want to work with the updated skyrmion rectangle.
 	skyRect = skyTrack_rect[skyTrack_idx];
@@ -103,7 +103,7 @@ DBL4 SkyrmionTrack::Get_skypos_diametersCUDA(size_t size, DBL3 h, Rect M_rect, c
 		else return DBL2(-1);
 
 		//Transfer extracted profile from gpu to cpu
-		data_gpu.copy_to_cpuvector(data_cpu);
+		data_gpu.copy_to_vector(data_cpu);
 
 		double window_start = h.x / 2 + skyRect.s.x;
 		double window_end = ((double)points_x - 0.5) * h.x + skyRect.s.x;
@@ -152,7 +152,7 @@ DBL4 SkyrmionTrack::Get_skypos_diametersCUDA(size_t size, DBL3 h, Rect M_rect, c
 		else return DBL2(-1);
 
 		//Transfer extracted profile from gpu to cpu
-		data_gpu.copy_to_cpuvector(data_cpu);
+		data_gpu.copy_to_vector(data_cpu);
 
 		double window_start = h.y / 2 + skyRect.s.y;
 		double window_end = ((double)points_y - 0.5) * h.y + skyRect.s.y;
@@ -210,7 +210,7 @@ DBL4 SkyrmionTrack::Get_skypos_diametersCUDA(size_t size, DBL3 h, Rect M_rect, c
 			else return DBL2(-1);
 
 			//Transfer extracted profile from gpu to cpu
-			data_gpu.copy_to_cpuvector(data_cpu);
+			data_gpu.copy_to_vector(data_cpu);
 
 			bool plus_sign = data_cpu[0] > 0;
 			double first_crossing = 0.0, second_crossing = 0.0;
@@ -304,7 +304,7 @@ DBL4 SkyrmionTrack::Get_skypos_diametersCUDA(size_t size, DBL3 h, Rect M_rect, c
 			else return DBL2(-1);
 
 			//Transfer extracted profile from gpu to cpu
-			data_gpu.copy_to_cpuvector(data_cpu);
+			data_gpu.copy_to_vector(data_cpu);
 
 			bool plus_sign = data_cpu[0] > 0;
 			double first_crossing = 0.0, second_crossing = 0.0;

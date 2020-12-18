@@ -42,7 +42,7 @@ private:
 	//pointer to cpu version of MeshCUDA
 	Mesh* pMesh;
 
-	//Same for the supermesgh
+	//Same for the supermesh
 	SuperMeshCUDA* pSMeshCUDA;
 	SuperMesh* pSMesh;
 

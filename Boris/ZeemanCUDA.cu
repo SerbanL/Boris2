@@ -34,7 +34,7 @@ __global__ void ZeemanCUDA_UpdateField_FMDM(ManagedMeshCUDA& cuMesh, cuReal3& Ha
 		}
 	}
 
-	if(do_reduction) reduction_sum(0, 1, &energy_, energy);
+	if (do_reduction) reduction_sum(0, 1, &energy_, energy);
 }
 
 __global__ void ZeemanCUDA_UpdateField_Equation_FMDM(

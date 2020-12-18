@@ -1,24 +1,14 @@
 """
-This script is part of Boris Computational Spintronics v2.8
+This script is part of Boris Computational Spintronics v3.0
 
 @author: Serban Lepadatu, 2020
 """
 
-import os
-import sys
 from NetSocks import NSClient
 import matplotlib.pyplot as plt
 
-#setup communication with server
-ns = NSClient('localhost')
-
-########################################
-
-#the working directory : same as this script file
-directory = os.path.dirname(sys.argv[0]) + "/"
-#restore program to default state
-ns.default()
-ns.chdir(directory)
+ns = NSClient()
+ns.configure(True)
 
 ########################################
 

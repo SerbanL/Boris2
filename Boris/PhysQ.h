@@ -6,7 +6,7 @@
 
 #include "PhysQDefs.h"
 
-using namespace std;
+
 
 //------------------------------- The physical quantities collected from meshes - to be computed into a physical quantity representation
 
@@ -59,7 +59,7 @@ private:
 	bool meshInFocus = false;
 
 	//the mesh name from which this PhysQ was collected
-	string meshName;
+	std::string meshName;
 
 public:
 
@@ -120,7 +120,7 @@ public:
 	//------------------------------------------- Setters
 
 	//set meshInFocus flag as well as mesh name
-	PhysQ& set_focus(bool status, string meshName_) { meshInFocus = status; meshName = meshName_; return *this; }
+	PhysQ& set_focus(bool status, std::string meshName_) { meshInFocus = status; meshName = meshName_; return *this; }
 
 	//set display transparency
 	PhysQ& set_transparency(double displayTransparency_) { displayTransparency = displayTransparency_; return *this; }
@@ -151,9 +151,9 @@ public:
 
 	bool is_focused(void) { return meshInFocus; }
 
-	string get_name(void) { return meshName; }
-	string get_unit(void) { return meshDisplay_unit(displayedType); }
-	string get_type_name(void) { return displayHandles(displayedType); }
+	std::string get_name(void) { return meshName; }
+	std::string get_unit(void) { return meshDisplay_unit(displayedType); }
+	std::string get_type_name(void) { return displayHandles(displayedType); }
 	int get_type(void) { return displayedType; }
 
 	VEC3REP_ get_vec3rep(void) { return vec3rep; }
