@@ -62,6 +62,7 @@ struct PhysQRepComponent :
 		obSelector = copyThis.obSelector;
 
 		transformBatch = copyThis.transformBatch;
+		transformBatch_render = copyThis.transformBatch_render;
 		emptyCell = copyThis.emptyCell;
 
 		meshFrame = copyThis.meshFrame;
@@ -76,6 +77,7 @@ struct PhysQRepComponent :
 	{ 
 		//this must be recalculated (will be done on first call to update the physical quantity representation)
 		transformBatch.clear();
+		transformBatch_render.clear();
 		emptyCell.clear();
 	}			
 };

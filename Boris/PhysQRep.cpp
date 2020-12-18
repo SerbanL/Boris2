@@ -179,6 +179,7 @@ void PhysQRep::CalculateRepresentation(std::vector<PhysQ> physQ)
 		if (physQ[idx].is_empty()) {
 
 			physQRep[idx].transformBatch.clear();
+			physQRep[idx].transformBatch_render.clear();
 			continue;
 		}
 
@@ -569,11 +570,11 @@ DBL2 PhysQRep::CalculateRepresentation_VEC(VECType* pQ, PhysQRepComponent& physQ
 			}
 		}
 	}
-
+	
 	//make sure transformBatch_render has correct size as this will detemine if it's used for rendering or not; elements will be copied from transformBatch to transformBatch_render after this function completes if needed
 	if (num_rendered_cells < physQRepComponent.transformBatch.linear_size()) {
 
-		physQRepComponent.transformBatch_render.resize(num_rendered_cells);
+		if (physQRepComponent.transformBatch_render.size() != num_rendered_cells) physQRepComponent.transformBatch_render.resize(num_rendered_cells);
 	}
 	else {
 
@@ -961,7 +962,7 @@ DBL2 PhysQRep::CalculateRepresentation_VEC(VECType* pQ, VECType* pQ2, PhysQRepCo
 	//make sure transformBatch_render has correct size as this will detemine if it's used for rendering or not; elements will be copied from transformBatch to transformBatch_render after this function completes if needed
 	if (num_rendered_cells < physQRepComponent.transformBatch.linear_size()) {
 
-		physQRepComponent.transformBatch_render.resize(num_rendered_cells);
+		if (physQRepComponent.transformBatch_render.size() != num_rendered_cells) physQRepComponent.transformBatch_render.resize(num_rendered_cells);
 	}
 	else {
 
@@ -1128,7 +1129,7 @@ DBL2 PhysQRep::CalculateRepresentation_SCA(VECType* pQ, PhysQRepComponent& physQ
 	//make sure transformBatch_render has correct size as this will detemine if it's used for rendering or not; elements will be copied from transformBatch to transformBatch_render after this function completes if needed
 	if (num_rendered_cells < physQRepComponent.transformBatch.linear_size()) {
 
-		physQRepComponent.transformBatch_render.resize(num_rendered_cells);
+		if (physQRepComponent.transformBatch_render.size() != num_rendered_cells) physQRepComponent.transformBatch_render.resize(num_rendered_cells);
 	}
 	else {
 
