@@ -64,18 +64,14 @@ __global__ void RunSD_Start_Kernel(ManagedDiffEqAFMCUDA& cuDiffEq, ManagedMeshCU
 				//This is applicable to the LLGStatic approach, i.e. no precession term and damping set to 1.
 				//M_next = m_next * Ms
 
-				//The above equation can be solved for m_next explicitly (m_next . m = 1, i.e. norm conserved) as:
-				//
-				//Let s = dT * GAMMA / 4, the stepsize; H = Heff. Then:
-				//m = (m - s(m.H * (m - 2sH) + 2sm(H.H) - 2H)) / (1 + sm.H)
-
-				cuBReal mH = m * H;
-				cuBReal mH2 = m2 * H2;
+				//The above equation can be solved for m_next explicitly.
 
 				cuBReal s = dT * (cuBReal)GAMMA / 4.0;
 
-				m = (m - s * (mH * (m - 2 * s*H) + 2 * s*m*(H*H) - 2 * H)) / (1 + s * mH);
-				m2 = (m2 - s * (mH2 * (m2 - 2 * s*H2) + 2 * s*m2*(H2*H2) - 2 * H2)) / (1 + s * mH2);
+				cuReal3 mxH = m ^ H;
+				cuReal3 mxH2 = m2 ^ H2;
+				m = ((1 - s*s*(mxH*mxH)) * m - 2*s*(m ^ mxH)) / (1 + s*s*(mxH*mxH));
+				m2 = ((1 - s*s*(mxH2*mxH2)) * m2 - 2*s*(m2 ^ mxH2)) / (1 + s*s*(mxH2*mxH2));
 
 				//set new M
 				(*cuMesh.pM)[idx] = m * Ms_AFM.i;
@@ -223,18 +219,14 @@ __global__ void RunSD_Advance_withReductions_Kernel(ManagedDiffEqAFMCUDA& cuDiff
 				//This is applicable to the LLGStatic approach, i.e. no precession term and damping set to 1.
 				//M_next = m_next * Ms
 
-				//The above equation can be solved for m_next explicitly (m_next . m = 1, i.e. norm conserved) as:
-				//
-				//Let s = dT * GAMMA / 4, the stepsize; H = Heff. Then:
-				//m = (m - s(m.H * (m - 2sH) + 2sm(H.H) - 2H)) / (1 + sm.H)
-
-				cuBReal mH = m * H;
-				cuBReal mH2 = m2 * H2;
+				//The above equation can be solved for m_next explicitly.
 
 				cuBReal s = dT * (cuBReal)GAMMA / 4.0;
 
-				m = (m - s * (mH * (m - 2 * s*H) + 2 * s*m*(H*H) - 2 * H)) / (1 + s * mH);
-				m2 = (m2 - s * (mH2 * (m2 - 2 * s*H2) + 2 * s*m2*(H2*H2) - 2 * H2)) / (1 + s * mH2);
+				cuReal3 mxH = m ^ H;
+				cuReal3 mxH2 = m2 ^ H2;
+				m = ((1 - s*s*(mxH*mxH)) * m - 2*s*(m ^ mxH)) / (1 + s*s*(mxH*mxH));
+				m2 = ((1 - s*s*(mxH2*mxH2)) * m2 - 2*s*(m2 ^ mxH2)) / (1 + s*s*(mxH2*mxH2));
 
 				//set new M
 				(*cuMesh.pM)[idx] = m * Ms_AFM.i;
@@ -300,18 +292,14 @@ __global__ void RunSD_Advance_withReduction_mxh_Kernel(ManagedDiffEqAFMCUDA& cuD
 				//This is applicable to the LLGStatic approach, i.e. no precession term and damping set to 1.
 				//M_next = m_next * Ms
 
-				//The above equation can be solved for m_next explicitly (m_next . m = 1, i.e. norm conserved) as:
-				//
-				//Let s = dT * GAMMA / 4, the stepsize; H = Heff. Then:
-				//m = (m - s(m.H * (m - 2sH) + 2sm(H.H) - 2H)) / (1 + sm.H)
-
-				cuBReal mH = m * H;
-				cuBReal mH2 = m2 * H2;
+				//The above equation can be solved for m_next explicitly.
 
 				cuBReal s = dT * (cuBReal)GAMMA / 4.0;
 
-				m = (m - s * (mH * (m - 2 * s*H) + 2 * s*m*(H*H) - 2 * H)) / (1 + s * mH);
-				m2 = (m2 - s * (mH2 * (m2 - 2 * s*H2) + 2 * s*m2*(H2*H2) - 2 * H2)) / (1 + s * mH2);
+				cuReal3 mxH = m ^ H;
+				cuReal3 mxH2 = m2 ^ H2;
+				m = ((1 - s*s*(mxH*mxH)) * m - 2*s*(m ^ mxH)) / (1 + s*s*(mxH*mxH));
+				m2 = ((1 - s*s*(mxH2*mxH2)) * m2 - 2*s*(m2 ^ mxH2)) / (1 + s*s*(mxH2*mxH2));
 
 				//set new M
 				(*cuMesh.pM)[idx] = m * Ms_AFM.i;
@@ -369,18 +357,14 @@ __global__ void RunSD_Advance_withReduction_dmdt_Kernel(ManagedDiffEqAFMCUDA& cu
 				//This is applicable to the LLGStatic approach, i.e. no precession term and damping set to 1.
 				//M_next = m_next * Ms
 
-				//The above equation can be solved for m_next explicitly (m_next . m = 1, i.e. norm conserved) as:
-				//
-				//Let s = dT * GAMMA / 4, the stepsize; H = Heff. Then:
-				//m = (m - s(m.H * (m - 2sH) + 2sm(H.H) - 2H)) / (1 + sm.H)
-
-				cuBReal mH = m * H;
-				cuBReal mH2 = m2 * H2;
+				//The above equation can be solved for m_next explicitly.
 
 				cuBReal s = dT * (cuBReal)GAMMA / 4.0;
 
-				m = (m - s * (mH * (m - 2 * s*H) + 2 * s*m*(H*H) - 2 * H)) / (1 + s * mH);
-				m2 = (m2 - s * (mH2 * (m2 - 2 * s*H2) + 2 * s*m2*(H2*H2) - 2 * H2)) / (1 + s * mH2);
+				cuReal3 mxH = m ^ H;
+				cuReal3 mxH2 = m2 ^ H2;
+				m = ((1 - s*s*(mxH*mxH)) * m - 2*s*(m ^ mxH)) / (1 + s*s*(mxH*mxH));
+				m2 = ((1 - s*s*(mxH2*mxH2)) * m2 - 2*s*(m2 ^ mxH2)) / (1 + s*s*(mxH2*mxH2));
 
 				//set new M
 				(*cuMesh.pM)[idx] = m * Ms_AFM.i;
@@ -441,18 +425,14 @@ __global__ void RunSD_Advance_Kernel(ManagedDiffEqAFMCUDA& cuDiffEq, ManagedMesh
 				//This is applicable to the LLGStatic approach, i.e. no precession term and damping set to 1.
 				//M_next = m_next * Ms
 
-				//The above equation can be solved for m_next explicitly (m_next . m = 1, i.e. norm conserved) as:
-				//
-				//Let s = dT * GAMMA / 4, the stepsize; H = Heff. Then:
-				//m = (m - s(m.H * (m - 2sH) + 2sm(H.H) - 2H)) / (1 + sm.H)
-
-				cuBReal mH = m * H;
-				cuBReal mH2 = m2 * H2;
+				//The above equation can be solved for m_next explicitly.
 
 				cuBReal s = dT * (cuBReal)GAMMA / 4.0;
 
-				m = (m - s * (mH * (m - 2 * s*H) + 2 * s*m*(H*H) - 2 * H)) / (1 + s * mH);
-				m2 = (m2 - s * (mH2 * (m2 - 2 * s*H2) + 2 * s*m2*(H2*H2) - 2 * H2)) / (1 + s * mH2);
+				cuReal3 mxH = m ^ H;
+				cuReal3 mxH2 = m2 ^ H2;
+				m = ((1 - s*s*(mxH*mxH)) * m - 2*s*(m ^ mxH)) / (1 + s*s*(mxH*mxH));
+				m2 = ((1 - s*s*(mxH2*mxH2)) * m2 - 2*s*(m2 ^ mxH2)) / (1 + s*s*(mxH2*mxH2));
 
 				//set new M
 				(*cuMesh.pM)[idx] = m * Ms_AFM.i;

@@ -4,15 +4,12 @@ This script is part of Boris Computational Spintronics v2.8
 @author: Serban Lepadatu, 2020
 """
 
-import os
-import sys
 from NetSocks import NSClient
 import numpy as np
 import matplotlib.pyplot as plt
 
-#setup communication with server. By default sent messages are not displayed in console. 
-#To enable verbose mode use e.g.: NSClient('localhost', True)
-ns = NSClient('localhost')
+ns = NSClient()
+ns.configure(True)
 
 ########################################
 

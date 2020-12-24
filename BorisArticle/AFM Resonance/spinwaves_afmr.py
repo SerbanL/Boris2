@@ -1,13 +1,11 @@
 """
 This script is part of Boris Computational Spintronics Article
 
-Generates data in Figure 9(b).
+Generates data in Figure 10(b).
 
 @author: Serban Lepadatu, 2020
 """
 
-import os
-import sys
 from NetSocks import NSClient
 import numpy as np
 import scipy as sp
@@ -16,9 +14,8 @@ import matplotlib.pyplot as plt
 import matplotlib as mpl
 import scipy.signal
 
-#setup communication with server. By default sent messages are not displayed in console. 
-#To enable verbose mode use e.g.: NSClient('localhost', True)
-ns = NSClient('localhost')
+ns = NSClient()
+ns.configure(True)
 
 ########################################
 
@@ -62,15 +59,6 @@ mpl.rcParams['mathtext.default'] = 'regular'
 
 mpl.rcParams['savefig.dpi'] = 600
 mpl.rcParams['savefig.bbox'] = 'tight'
-
-########################################
-
-#the working directory : same as this script file, typically expecting simulation file to be in same directory as this script file
-directory = os.path.dirname(sys.argv[0]) + "/"
-#make sure Boris is reset to default in case a ready set simulation file is not loaded below (if so this can be commented out)
-ns.default()
-#set working directory same as this script file
-ns.chdir(directory)
 
 ########################################
 
@@ -170,8 +158,8 @@ while time < total_time:
     #get magnetisation profile along length through center
     ns.dp_getexactprofile([cellsize[0]/2, meshdim[1]/2 + cellsize[1]/2, 0], [meshdim[0] - cellsize[0]/2, meshdim[1]/2 + cellsize[1]/2, 0], mesh_step, 0)
     #save only the y component of magnetisation at time_step intervals
-    ns.dp_div(1, Ms)
-    ns.dp_saveappendasrow(output_file, 1)
+    ns.dp_div(2, Ms)
+    ns.dp_saveappendasrow(output_file, 2)
     
     time += time_step
 

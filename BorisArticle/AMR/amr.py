@@ -1,20 +1,18 @@
 """
 This script is part of Boris Computational Spintronics Article
 
-Generates data in Figure 6(b).
+Generates data in Figure 7(b).
 
 @author: Serban Lepadatu, 2020
-"""
 
-import os
-import sys
+"""
 from NetSocks import NSClient
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 import numpy as np
 
-#setup communication with server
-ns = NSClient('localhost')
+ns = NSClient()
+ns.configure(True)
 
 ########################################
 
@@ -61,14 +59,6 @@ mpl.rcParams['savefig.bbox'] = 'tight'
 
 ########################################
 
-#the working directory : same as this script file
-directory = os.path.dirname(sys.argv[0]) + "/"
-#restore program to default state
-ns.default()
-ns.chdir(directory)
-
-########################################
-
 dimensions = [320e-9, 160e-9, 10e-9]
 contact_extension = 100e-9
 contact_foothold = 30e-9
@@ -77,19 +67,19 @@ contact_thickness = 5e-9
 max_field = 600e3
 field_steps = 600
 
-use_prepared_sims = True
+use_prepared_sims = False
 
 def setup_and_simulate_amr_loop(direction_deg):
 
-    ns.default()
-    ns.chdir(directory)
+    ns.configure(True)
     
     #Setup permalloy ellipse
     ns.meshrect(dimensions)
     ns.cellsize([5e-9, 5e-9, 5e-9])
     ns.ecellsize([2.5e-9, 2.5e-9, 2.5e-9])
     
-    ns.loadmaskfile(filename = 'Circle')
+    ns.delrect()
+    ns.shape_disk([dimensions[0], dimensions[1]], [dimensions[0]/2, dimensions[1]/2])
     
     ns.addmodule('permalloy', 'transport')
     
@@ -118,7 +108,7 @@ def setup_and_simulate_amr_loop(direction_deg):
     #set amr percentage of 2%
     ns.setparam('permalloy', 'amr', 2.0)
     
-    ns.setode('LLGStatic', 'RKF45')
+    ns.setode('LLGStatic', 'SDesc')
     #only need current density each step after magnetisation has relaxed
     #without static transport solver switching events are very slow to simulate as the transport solver will be iterating a lot
     ns.statictransportsolver(1)
@@ -173,6 +163,7 @@ def setup_and_simulate_amr_loop(direction_deg):
     #save field strength and resistance in processed file, then plot it here
     loop_file = 'amr_loop_deg_%d.txt' % direction_deg
     ns.dp_save(loop_file, [3, 4])
+    
     amr_data = ns.Get_Data_Columns(loop_file, [0, 1])
     plt.axes(xlabel = 'H (A/m)', ylabel = 'R (Ohms)', title = 'AMR Loop')
     plt.plot(amr_data[0], amr_data[1])
@@ -195,8 +186,8 @@ def simulate_amr_loop(simfile, direction_deg):
     loop_file = 'amr_loop_deg_%d.txt' % direction_deg
     ns.dp_save(loop_file, [3, 4])
     amr_data = ns.Get_Data_Columns(loop_file, [0, 1])
-    plt.axes(xlabel = 'H (A/m)', ylabel = 'R (Ohms)', title = 'AMR Loop')
-    plt.plot(amr_data[0], amr_data[1])
+    Hrange_k = [H / 1e3 for H in amr_data[0]]
+    plt.plot(Hrange_k, amr_data[1], label = '${\Theta}$ = %d$^o$' % direction_deg)
     plt.show()
     
     

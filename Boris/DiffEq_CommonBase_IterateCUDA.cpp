@@ -979,6 +979,8 @@ void ODECommon_Base::IterateCUDA(void)
 #ifdef ODE_EVAL_COMPILATION_SD
 		if (primed) {
 
+			bool do_sd_reset = false;
+
 			//1. calculate parameters for Barzilai-Borwein stepsizes -> solver must be primed with step 0 (after it is primed next loop starts from step 1)
 			//must reset the static delta_... quantities before running these across all meshes
 
@@ -1017,21 +1019,21 @@ void ODECommon_Base::IterateCUDA(void)
 							dT = (dT_2 < dT ? dT_2 : dT);
 						}
 					}
-					else dT = SD_DEFAULT_DT;
+					else do_sd_reset = true;
 				}
 
 				if (patom_odeSolver->pODE.size()) {
 
 					double atom_dT;
 
-					if (patom_odeSolver->delta_M_dot_delta_G) {
+					if (patom_odeSolver->delta_M_dot_delta_G && !do_sd_reset) {
 
 						atom_dT = patom_odeSolver->delta_M_sq / patom_odeSolver->delta_M_dot_delta_G;
-					}
-					else atom_dT = SD_DEFAULT_DT;
 
-					if (podeSolver->pODE.size()) dT = (atom_dT < dT ? atom_dT : dT);
-					else dT = atom_dT;
+						if (podeSolver->pODE.size()) dT = (atom_dT < dT ? atom_dT : dT);
+						else dT = atom_dT;
+					}
+					else do_sd_reset = true;
 				}
 			}
 			else {
@@ -1049,24 +1051,32 @@ void ODECommon_Base::IterateCUDA(void)
 							dT = (dT_2 < dT ? dT_2 : dT);
 						}
 					}
-					else dT = SD_DEFAULT_DT;
+					else do_sd_reset = true;
 				}
 
 				if (patom_odeSolver->pODE.size()) {
 
 					double atom_dT;
 
-					if (patom_odeSolver->delta_G_sq) {
+					if (patom_odeSolver->delta_G_sq && !do_sd_reset) {
 
 						atom_dT = patom_odeSolver->delta_M_dot_delta_G / patom_odeSolver->delta_G_sq;
-					}
-					else atom_dT = SD_DEFAULT_DT;
 
-					if (podeSolver->pODE.size()) dT = (atom_dT < dT ? atom_dT : dT);
-					else dT = atom_dT;
+						if (podeSolver->pODE.size()) dT = (atom_dT < dT ? atom_dT : dT);
+						else dT = atom_dT;
+					}
+					else do_sd_reset = true;
 				}
 			}
-			//don't enforce dT limits, even if dT becomes negative.
+
+			if (dT < 0) do_sd_reset = true;
+
+			if (do_sd_reset) {
+
+				dT = (++sd_reset_consecutive_iters) * dT_min;
+				if (dT > dT_max) dT = dT_max;
+			}
+			else sd_reset_consecutive_iters = 0;
 
 			//make sure to transfer dT value to GPU
 			podeSolver->pODECUDA->Sync_dT();
@@ -1096,7 +1106,7 @@ void ODECommon_Base::IterateCUDA(void)
 		}
 		else {
 
-			dT = SD_DEFAULT_DT;
+			dT = dT_min;
 
 			//make sure to transfer dT value to GPU
 			podeSolver->pODECUDA->Sync_dT();
@@ -1119,6 +1129,7 @@ void ODECommon_Base::IterateCUDA(void)
 			stagetime += dT;
 
 			primed = true;
+			sd_reset_consecutive_iters = 0;
 		}
 #endif
 	}

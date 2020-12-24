@@ -6,8 +6,6 @@ Generates data in Figure 4(b).
 @author: Serban Lepadatu, 2020
 """
 
-import os
-import sys
 from NetSocks import NSClient
 import numpy as np
 import matplotlib.pyplot as plt
@@ -15,7 +13,8 @@ import matplotlib as mpl
 from itertools import product
 
 #setup communication with server
-ns = NSClient('localhost')
+ns = NSClient()
+ns.configure(True)
 
 ########################################
 
@@ -59,14 +58,6 @@ mpl.rcParams['mathtext.default'] = 'regular'
 
 mpl.rcParams['savefig.dpi'] = 600
 mpl.rcParams['savefig.bbox'] = 'tight'
-
-########################################
-
-#the working directory : same as this script file
-directory = os.path.dirname(sys.argv[0]) + "/"
-#restore program to default state
-ns.default()
-ns.chdir(directory)
 
 ########################################
 
@@ -138,7 +129,9 @@ if not skip_initialization:
     ns.reset()
     
     #configure for STT
-    ns.setode('LLG-STT', 'RK4')
+    ns.setode('LLG-SA', 'RK4')
+    #adjust l_ph to result in beta ~ 0.1
+    ns.setparam('permalloy', 'l_ph', 2.1e-9)
     ns.setdt(100e-15)
     ns.addmodule('permalloy', 'transport')
     ns.ecellsize([h, h, h])

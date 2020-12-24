@@ -34,7 +34,7 @@ ns.adddata('<M>')
 ns.savedatafile('hysteresis.txt')
 
 #solve using LLGStatic equation (damping set to 1 and no precession)
-ns.setode('LLGStatic', 'RKF45')
+ns.setode('LLGStatic', 'SDesc')
 
 #run program
 ns.Run()

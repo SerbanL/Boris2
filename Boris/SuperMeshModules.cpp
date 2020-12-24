@@ -48,7 +48,7 @@ BError SuperMesh::AddModule(std::string meshName, MOD_ moduleId)
 
 		if (error) pSMod.pop_back();
 	}
-	else return error(BERROR_INCORRECTACTION_SILENT);
+	//else return error(BERROR_INCORRECTACTION_SILENT);
 
 	if (!error) {
 

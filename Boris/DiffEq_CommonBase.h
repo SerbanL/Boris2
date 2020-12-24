@@ -141,6 +141,9 @@ protected:
 	//some evaluation methods need to be primed (e.g. ABM); 
 	static bool primed;
 
+	//when we have to reset steepest descent keep track of it, so we can increase the reset time if we have to reset every iteration: can get stuck otherwise
+	static int sd_reset_consecutive_iters;
+
 	//-----------------------------------Moving mesh data
 
 	//use moving mesh algorithm?

@@ -1,25 +1,19 @@
 """
 This script is part of Boris Computational Spintronics Article
 
+Generates data in Figure 5.
+
 @author: Serban Lepadatu, 2020
 """
 
-import os
 from NetSocks import NSClient
 import numpy as np
 from numpy import random
 from itertools import product
 
 #setup communication with server
-ns = NSClient('localhost')
-
-########################################
-
-#the working directory : same as this script file
-directory = os.path.dirname(os.path.realpath(__file__)) + "/"
-#restore program to default state
-ns.default()
-ns.chdir(directory)
+ns = NSClient()
+ns.configure(True)
 
 ########################################
 # Simulation function

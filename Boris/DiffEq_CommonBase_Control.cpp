@@ -76,6 +76,9 @@ BError ODECommon_Base::SetEvaluationMethod(EVAL_ evalMethod_)
 	{
 		//set starting dT - set a very conservative initial stepsize otherwise solver priming can be bad.
 		dT = SD_DEFAULT_DT;
+		//reset to dT_min when needed
+		dT_min = SD_MINDT;
+		dT_max = SD_MAXDT;
 	}
 	break;
 

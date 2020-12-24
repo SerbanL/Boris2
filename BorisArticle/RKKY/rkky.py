@@ -1,19 +1,18 @@
 """
 This script is part of Boris Computational Spintronics Article
 
-Generates data in Figure 5.
+Generates data in Figure 6.
 
 @author: Serban Lepadatu, 2020
 """
 
-import os
-import sys
 from NetSocks import NSClient
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 
 #setup communication with server
-ns = NSClient('localhost')
+ns = NSClient()
+ns.configure(True)
 
 ########################################
 
@@ -60,20 +59,13 @@ mpl.rcParams['savefig.bbox'] = 'tight'
 
 ########################################
 
-#the working directory : same as this script file
-directory = os.path.dirname(sys.argv[0]) + "/"
-ns.default()
-ns.chdir(directory)
-
-########################################
-
 output_file = 'rkky.txt'
 savesim_file = 'rkky'
 
 thickness1, spacing, thickness2 = 4.9e-9, 0.6e-9, 2.9e-9
 repetitions = 10
 planesize, planecell = 300e-9, 3e-9
-max_field, steps = 500e3, 500
+max_field, steps = 1000e3, 500
 
 ########################################
 
@@ -140,7 +132,6 @@ ns.setode('LLGStatic', 'SDesc')
 
 #save simulation file so we don't have to set everything up again next time, can just run this instead
 ns.savesim(savesim_file)
-
 ns.cuda(1)
 #this will take up to 15 to 30 mins to simulate depending on the GPU
 ns.Run()

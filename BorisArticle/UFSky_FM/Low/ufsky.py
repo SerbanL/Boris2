@@ -1,29 +1,17 @@
 """
 This script is part of Boris Computational Spintronics v2.8
 
-Generates data in Figure 8(c).
+Generates data in Figure 9(c).
 
 @author: Serban Lepadatu, 2020
 """
 
-import os
-import sys
 from NetSocks import NSClient
 import numpy as np
 import matplotlib.pyplot as plt
 
-#setup communication with server. By default sent messages are not displayed in console. 
-#To enable verbose mode use e.g.: NSClient('localhost', True)
-ns = NSClient('localhost')
-
-########################################
-
-#the working directory : same as this script file, typically expecting simulation file to be in same directory as this script file
-directory = os.path.dirname(sys.argv[0]) + "/"
-#make sure Boris is reset to default in case a ready set simulation file is not loaded below (if so this can be commented out)
-ns.default()
-#set working directory same as this script file
-ns.chdir(directory)
+ns = NSClient()
+ns.configure(True)
 
 ########################################
 

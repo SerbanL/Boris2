@@ -31,15 +31,15 @@ ns.addmodule('Fe', 'surfexchange')
 #set bilinear surface exchange coupling value - exchange bias is proportional to this
 ns.setparam('Fe', 'J1', 0.2e-3)
 
-ns.setode('LLGStatic', 'RKF45')
+ns.setode('LLGStatic', 'SDesc')
 
 ns.setstage('Hpolar_seq', 'supermesh')
 ns.editstagevalue(0, [-50e3, 90, 5, 100e3, 90, 5, 50])
-ns.editstagestop(0, 'mxh', 1e-4)
+ns.editstagestop(0, 'mxh', 1e-5)
 ns.editdatasave(0, 'step')
 ns.addstage('Hpolar_seq', 'supermesh')
 ns.editstagevalue(1, [100e3, 90, 5, -50e3, 90, 5, 50])
-ns.editstagestop(1, 'mxh', 1e-4)
+ns.editstagestop(1, 'mxh', 1e-5)
 ns.editdatasave(1, 'step')
 
 ns.setdata('Ha')

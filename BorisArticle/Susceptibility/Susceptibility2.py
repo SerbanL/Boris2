@@ -1,10 +1,11 @@
 """
 This script is part of Boris Computational Spintronics Article
 
+Generates data in Figure 14.
+
 @author: Serban Lepadatu, 2020
 """
 
-import os
 from NetSocks import NSClient
 import numpy as np
 import matplotlib as mpl
@@ -12,8 +13,8 @@ import matplotlib.pyplot as plt
 from matplotlib.ticker import LogLocator
 import matplotlib.ticker
 
-#setup communication with server
-ns = NSClient('localhost')
+ns = NSClient()
+ns.configure(True)
 
 ########################################
 
@@ -60,14 +61,6 @@ mpl.rcParams['mathtext.default'] = 'regular'
 
 mpl.rcParams['savefig.dpi'] = 600
 mpl.rcParams['savefig.bbox'] = 'tight'
-
-########################################
-
-#the working directory : same as this script file
-directory = os.path.dirname(os.path.realpath(__file__)) + "/"
-#restore program to default state
-ns.default()
-ns.chdir(directory)
 
 ########################################
 # Settings 

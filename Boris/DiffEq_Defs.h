@@ -112,7 +112,9 @@
 #define RKDP_DEFAULT_DT	0.5e-12
 
 //default dT -> for the SD solver this acts as the starting timestep and the value it resets to when needed
-#define SD_DEFAULT_DT	1e-15
+#define SD_DEFAULT_DT	1e-13
+#define SD_MAXDT	1e-11
+#define SD_MINDT	SD_DEFAULT_DT
 
 //difficult to simulate when temperature is very close to the Curie temperature due to numerical instability, especially with stochastic equations. instead use an epsilon approach (units of Kelvin).
 #define TCURIE_EPSILON	0.5

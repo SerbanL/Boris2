@@ -71,6 +71,8 @@ bool ODECommon_Base::alternator = false;
 
 bool ODECommon_Base::primed = false;
 
+int ODECommon_Base::sd_reset_consecutive_iters = 0;
+
 //-----------------------------------Moving mesh data
 
 bool ODECommon_Base::moving_mesh = false;
