@@ -82,7 +82,7 @@ $ ./BorisLin
 
 # Publication
 
-A technical paper on Boris has now been submitted for publication. Preprint available at:
-https://arxiv.org/ftp/arxiv/papers/2008/2008.02478.pdf
+A technical paper on Boris has been published: 
+S. Lepadatu, "Boris computational spintronics — High performance multi-mesh magnetic and spin transport modeling software", J. Appl. Phys. 128, 243902 (2020).
 
 If using Boris for published works please use this as a reference.
