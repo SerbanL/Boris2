@@ -71,7 +71,7 @@ inline std::string GetUserDocumentsPath(void)
     pw = getpwuid(uid);
 	if (pw) {
 		
-		return std::string("/home/") + std::string(pw->pw_name) + std::string("/Documents/");
+		return std::string(pw->pw_dir) + std::string("/Documents/");
 	}
 	else return "";
 }
