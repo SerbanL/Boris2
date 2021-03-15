@@ -31,7 +31,12 @@ BError Atom_Exchange::Initialize(void)
 {
 	BError error(CLASS_STR(Atom_Exchange));
 
-	initialized = true;
+	//Make sure display data has memory allocated (or freed) as required
+	error = Update_Module_Display_VECs(
+		paMesh->h, paMesh->meshRect, 
+		(MOD_)paMesh->Get_Module_Heff_Display() == MOD_EXCHANGE || paMesh->IsOutputDataSet_withRect(DATA_E_EXCH),
+		(MOD_)paMesh->Get_Module_Energy_Display() == MOD_EXCHANGE || paMesh->IsOutputDataSet_withRect(DATA_E_EXCH));
+	if (!error)	initialized = true;
 
 	non_empty_volume = paMesh->Get_NonEmpty_Magnetic_Volume();
 
@@ -97,6 +102,9 @@ double Atom_Exchange::UpdateField(void)
 
 			//update energy E = -mu_s * Bex. Will finish off at the end with prefactors.
 			energy += paMesh->M1[idx] * Heff_value;
+
+			if (Module_Heff.linear_size()) Module_Heff[idx] = Heff_value;
+			if (Module_energy.linear_size()) Module_energy[idx] = -MUB_MU0 * paMesh->M1[idx] * Heff_value / (2  * paMesh->M1.h.dim());
 		}
 	}
 
@@ -110,120 +118,12 @@ double Atom_Exchange::UpdateField(void)
 	return this->energy;
 }
 
-//-------------------Energy density methods
-
-double Atom_Exchange::GetEnergyDensity(Rect& avRect)
-{
-#if COMPILECUDA == 1
-	if (pModuleCUDA) return dynamic_cast<Atom_ExchangeCUDA*>(pModuleCUDA)->GetEnergyDensity(avRect);
-#endif
-
-	double energy = 0;
-
-	int num_points = 0;
-
-#pragma omp parallel for reduction(+:energy, num_points)
-	for (int idx = 0; idx < paMesh->n.dim(); idx++) {
-
-		//only average over values in given rectangle
-		if (!avRect.contains(paMesh->M1.cellidx_to_position(idx))) continue;
-
-		if (paMesh->M1.is_not_empty(idx)) {
-
-			double mu_s = paMesh->mu_s;
-			double J = paMesh->J;
-			paMesh->update_parameters_mcoarse(idx, paMesh->mu_s, mu_s, paMesh->J, J);
-
-			//update effective field with the Heisenberg exchange field
-			DBL3 Heff_value = (J / (MUB_MU0*mu_s)) * paMesh->M1.ngbr_dirsum(idx);
-
-			//update energy E = -mu_s * Bex
-			energy += paMesh->M1[idx] * Heff_value;
-			num_points++;
-		}
-	}
-
-	//convert to energy density and return
-	if (num_points) energy = -MUB_MU0 * energy / (2 * num_points * paMesh->M1.h.dim());
-	else energy = 0.0;
-
-	return energy;
-}
-
-double Atom_Exchange::GetEnergy_Max(Rect& rectangle)
-{
-#if COMPILECUDA == 1
-	if (pModuleCUDA) return dynamic_cast<Atom_ExchangeCUDA*>(pModuleCUDA)->GetEnergy_Max(rectangle);
-#endif
-
-	INT3 n = paMesh->n;
-
-	OmpReduction<double> emax;
-	emax.new_minmax_reduction();
-
-#pragma omp parallel for
-	for (int idx = 0; idx < n.dim(); idx++) {
-
-		//only obtain max in given rectangle
-		if (!rectangle.contains(paMesh->M1.cellidx_to_position(idx))) continue;
-
-		if (paMesh->M1.is_not_empty(idx)) {
-
-			double mu_s = paMesh->mu_s;
-			double J = paMesh->J;
-			paMesh->update_parameters_mcoarse(idx, paMesh->mu_s, mu_s, paMesh->J, J);
-
-			//effective field with the Heisenberg exchange field
-			DBL3 Heff_value = (J / (MUB_MU0*mu_s)) * paMesh->M1.ngbr_dirsum(idx);
-
-			//update energy E = -mu_s * Bex
-			energy = -MUB_MU0 * paMesh->M1[idx] * Heff_value / 2;
-
-			emax.reduce_max(fabs(energy));
-		}
-	}
-
-	//return maximum energy density modulus
-	return emax.maximum() / paMesh->M1.h.dim();
-}
-
-//Compute exchange energy density and store it in displayVEC
-void Atom_Exchange::Compute_Exchange(VEC<double>& displayVEC)
-{
-	displayVEC.resize(paMesh->h, paMesh->meshRect);
-
-#if COMPILECUDA == 1
-	if (pModuleCUDA) {
-
-		dynamic_cast<Atom_ExchangeCUDA*>(pModuleCUDA)->Compute_Exchange(displayVEC);
-		return;
-	}
-#endif
-
-#pragma omp parallel for
-	for (int idx = 0; idx < paMesh->n.dim(); idx++) {
-
-		if (paMesh->M1.is_not_empty(idx)) {
-
-			double mu_s = paMesh->mu_s;
-			double J = paMesh->J;
-			paMesh->update_parameters_mcoarse(idx, paMesh->mu_s, mu_s, paMesh->J, J);
-
-			//effective field with the Heisenberg exchange field
-			DBL3 Heff_value = (J / (MUB_MU0*mu_s)) * paMesh->M1.ngbr_dirsum(idx);
-
-			displayVEC[idx] = -MUB_MU0 * paMesh->M1[idx] * Heff_value / (2 * paMesh->M1.h.dim());
-		}
-		else displayVEC[idx] = 0.0;
-	}
-}
-
 //-------------------Energy methods
 
 //For simple cubic mesh spin_index coincides with index in M1
-double Atom_Exchange::Get_Atomistic_Energy(int spin_index)
+double Atom_Exchange::Get_Atomistic_EnergyChange(int spin_index, DBL3 Mnew)
 {
-	//For CUDA there are separate device functions using by CUDA kernels.
+	//For CUDA there are separate device functions used by CUDA kernels.
 
 	if (paMesh->M1.is_not_empty(spin_index)) {
 
@@ -231,7 +131,7 @@ double Atom_Exchange::Get_Atomistic_Energy(int spin_index)
 		paMesh->update_parameters_mcoarse(spin_index, paMesh->J, J);
 
 		//local spin energy given -J * Sum_over_neighbors_j (Si . Sj), where Si, Sj are unit vectors
-		return -J * (paMesh->M1[spin_index].normalized() * paMesh->M1.ngbr_dirsum(spin_index));
+		return -J * ((Mnew.normalized() - paMesh->M1[spin_index].normalized()) * paMesh->M1.ngbr_dirsum(spin_index));
 	}
 	else return 0.0;
 }

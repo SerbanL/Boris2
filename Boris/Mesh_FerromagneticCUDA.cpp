@@ -5,6 +5,8 @@
 #ifdef MESH_COMPILATION_FERROMAGNETIC
 
 #include "Mesh_Ferromagnetic.h"
+#include "ManagedDiffEqFMCUDA.h"
+#include "DiffEqFMCUDA.h"
 
 FMeshCUDA::FMeshCUDA(FMesh* pMesh) :
 	MeshCUDA(pMesh)
@@ -72,10 +74,17 @@ cuBReal FMeshCUDA::CheckMoveMesh(bool antisymmetric, double threshold)
 
 //----------------------------------- ENABLED MESH PROPERTIES CHECKERS
 
-	//get exchange_couple_to_meshes status flag from the cpu version
+//get exchange_couple_to_meshes status flag from the cpu version
 bool FMeshCUDA::GetMeshExchangeCoupling(void)
 {
 	return pFMesh->GetMeshExchangeCoupling();
+}
+
+//-----------------------------------OBJECT GETTERS
+
+cu_obj<ManagedDiffEqFMCUDA>& FMeshCUDA::Get_ManagedDiffEqCUDA(void)
+{
+	return dynamic_cast<DifferentialEquationFMCUDA*>(pFMesh->Get_DifferentialEquation().Get_DifferentialEquationCUDA_ptr())->Get_ManagedDiffEqCUDA();
 }
 
 #endif

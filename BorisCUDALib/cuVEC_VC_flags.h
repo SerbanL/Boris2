@@ -174,11 +174,11 @@ __host__ void cuVEC_VC<VType>::clear_pbc(void)
 
 //set pbc conditions : setting any to false clears flags
 template <typename VType>
-__host__ void cuVEC_VC<VType>::set_pbc(bool pbc_x_, bool pbc_y_, bool pbc_z_)
+__host__ void cuVEC_VC<VType>::set_pbc(int pbc_x_, int pbc_y_, int pbc_z_)
 {
-	set_gpu_value(pbc_x, (int)pbc_x_);
-	set_gpu_value(pbc_y, (int)pbc_y_);
-	set_gpu_value(pbc_z, (int)pbc_z_);
+	set_gpu_value(pbc_x, pbc_x_);
+	set_gpu_value(pbc_y, pbc_y_);
+	set_gpu_value(pbc_z, pbc_z_);
 
 	set_pbc_flags();
 }

@@ -94,12 +94,20 @@ MeshParams::MeshParams(std::vector<PARAM_>& enabledParams)
 			meshParams.push_back("K2", MeshParamDescriptor(PARAMTYPE_MAGNETIC, "J/m3"), PARAM_K2);
 			break;
 
+		case PARAM_K3:
+			meshParams.push_back("K3", MeshParamDescriptor(PARAMTYPE_MAGNETIC, "J/m3"), PARAM_K3);
+			break;
+
 		case PARAM_K1_AFM:
 			meshParams.push_back("K1_AFM", MeshParamDescriptor(PARAMTYPE_MAGNETIC, "J/m3"), PARAM_K1_AFM);
 			break;
 
 		case PARAM_K2_AFM:
 			meshParams.push_back("K2_AFM", MeshParamDescriptor(PARAMTYPE_MAGNETIC, "J/m3"), PARAM_K2_AFM);
+			break;
+
+		case PARAM_K3_AFM:
+			meshParams.push_back("K3_AFM", MeshParamDescriptor(PARAMTYPE_MAGNETIC, "J/m3"), PARAM_K3_AFM);
 			break;
 
 		case PARAM_TC:
@@ -123,6 +131,10 @@ MeshParams::MeshParams(std::vector<PARAM_>& enabledParams)
 
 		case PARAM_EA2:
 			meshParams.push_back("ea2", MeshParamDescriptor(PARAMTYPE_MAGNETIC), PARAM_EA2);
+			break;
+
+		case PARAM_EA3:
+			meshParams.push_back("ea3", MeshParamDescriptor(PARAMTYPE_MAGNETIC), PARAM_EA3);
 			break;
 
 		case PARAM_SUSREL:
@@ -298,6 +310,21 @@ MeshParams::MeshParams(std::vector<PARAM_>& enabledParams)
 
 	//make sure special functions are set by default for all material parameters text equations
 	set_special_functions();
+}
+
+//-------------------------Getters
+
+std::string MeshParams::get_tensorial_anisotropy_string(void)
+{
+	std::string Ktstring;
+
+	for (int idx = 0; idx < Kt.size(); idx++) {
+
+		Ktstring += ToString(Kt[idx].i) + "x" + ToString(Kt[idx].j) + "y" + ToString(Kt[idx].k) + "z" + ToString(Kt[idx].l);
+		if (idx != Kt.size() - 1) Ktstring += " ";
+	}
+
+	return Ktstring;
 }
 
 //-------------------------Parameter control

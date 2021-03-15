@@ -188,6 +188,43 @@ std::string Simulation::Build_Modules_ListLine(int meshIndex)
 	return modulesListLine;
 }
 
+//---------------------------------------------------- MODULES EFFCTIVE FIELD DISPLAY LIST
+
+void Simulation::Print_DisplayModules_List(void)
+{
+	std::string displaymodules_list = "[tc1,1,1,1/tc]Modules for effective field display ([tc1,0.5,0,1/tc]orange [tc1,1,1,1/tc]selected, [tc1,0,0,1/tc]red [tc1,1,1,1/tc]not selected) :\n";
+
+	//show modules
+	for (int idxMesh = 0; idxMesh < (int)SMesh().size(); idxMesh++) {
+
+		displaymodules_list += Build_DisplayModules_ListLine(idxMesh) + "\n";
+	}
+
+	BD.DisplayFormattedConsoleMessage(displaymodules_list);
+}
+
+std::string Simulation::Build_DisplayModules_ListLine(int meshIndex)
+{
+	std::string displaymodulesListLine = "[tc1,1,1,1/tc]" + MakeIO(IOI_MESH_FORDISPLAYMODULES, meshIndex) + "</c> [sa0/sa]modules ";
+
+	//get the mesh type so we can index modules_for_meshtype with it (modules_for_meshtype is a vector_lut with MESH_ values as the major id - it contains the available modules for this mesh type)
+	MESH_ meshType = SMesh[meshIndex]->GetMeshType();
+
+	for (int idx = 0; idx < (int)displaymodules_for_meshtype(meshType).size(); idx++) {
+
+		//get next available module for this mesh type
+		MOD_ moduleID = displaymodules_for_meshtype(meshType)[idx];
+
+		//some modules are not set in moduleHandles, as they are not intended to be displayed in the console ("silent" background modules, e.g. SDemag_Demag managed by through SDemag)
+		if (moduleHandles.is_ID_set(moduleID)) {
+
+			displaymodulesListLine += "[sa" + ToString(idx + 1) + "/sa]" + MakeIO(IOI_DISPLAYMODULE, meshIndex, displaymodules_for_meshtype(meshType)[idx]) + "</c> ";
+		}
+	}
+
+	return displaymodulesListLine;
+}
+
 //---------------------------------------------------- ODES LIST
 
 void Simulation::Print_ODEs(void) 
@@ -840,7 +877,7 @@ std::string Simulation::Build_Stochasticity_ListLine(int meshIndex)
 
 void Simulation::Print_Speedup_List(void)
 {
-	std::string speedup_list = "[tc1,1,1,1/tc]Evaluation speedup mode : " + MakeIO(IOI_SPEEDUPMODE) + "</c> Speedup time-step (for extreme mode only): " + MakeIO(IOI_SPEEDUPDT) + "</c> Linked to ODE dT : " + MakeIO(IOI_LINKSPEEDUPDT) + "</c>\n";
+	std::string speedup_list = "[tc1,1,1,1/tc]Evaluation speedup mode : " + MakeIO(IOI_SPEEDUPMODE) + "</c> Speedup demag field evaluation time-step: " + MakeIO(IOI_SPEEDUPDT) + "</c> Linked to ODE dT : " + MakeIO(IOI_LINKSPEEDUPDT) + "</c>\n";
 
 	for (int idxMesh = 0; idxMesh < (int)SMesh().size(); idxMesh++) {
 
@@ -1119,11 +1156,21 @@ std::string Simulation::Build_skypos_dmul_ListLine(int meshIndex)
 	return skypos_line;
 }
 
+//---------------------------------------------------- DWPOS SETTINGS
+
+//Print dwpos fitting component value
+void Simulation::Print_DWPos_Component(void)
+{
+	std::string dwpos_info = "[tc1,1,1,1/tc]Domain wall fitting component (for dwpos runtime data) : " + MakeIO(IOI_DWPOSCOMPONENT, SMesh.Get_DWPos_Component());
+
+	BD.DisplayFormattedConsoleMessage(dwpos_info);
+}
+
 //---------------------------------------------------- MONTE-CARLO SETTINGS
 
 void Simulation::Print_MCSettings(void)
 {
-	std::string mcsettings_info;
+	std::string mcsettings_info = "[tc1,1,1,1/tc]Monte Carlo computefields : " + MakeIO(IOI_MCCOMPUTEFIELDS, SMesh.Get_MonteCarlo_ComputeFields()) + "\n";
 
 	for (int idxMesh = 0; idxMesh < (int)SMesh().size(); idxMesh++) {
 

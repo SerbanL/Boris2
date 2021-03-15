@@ -283,6 +283,8 @@ BError Atom_DifferentialEquationCubicCUDA::UpdateConfiguration(UPDATECONFIG_ cfg
 		}
 	}
 
+	if (cfgMessage == UPDATECONFIG_PARAMVALUECHANGED_MLENGTH) RenormalizeMoments();
+
 	return error;
 }
 

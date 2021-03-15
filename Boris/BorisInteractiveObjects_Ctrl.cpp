@@ -183,17 +183,17 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 	case IOI_MODULE:
 	{
 		//parameters from iop
-		MOD_ module = (MOD_)iop.minorId;
+		MOD_ moduleID = (MOD_)iop.minorId;
 		int meshId = iop.auxId;
 
 		//try to add module
-		if (actionCode == AC_MOUSELEFTDOWN) sendCommand_verbose(CMD_ADDMODULE, SMesh.key_from_meshId(meshId), moduleHandles(module));
+		if (actionCode == AC_MOUSELEFTDOWN) sendCommand_verbose(CMD_ADDMODULE, SMesh.key_from_meshId(meshId), moduleHandles(moduleID));
 
 		//try to remove module
 		else if (actionCode == AC_MOUSERIGHTDOWN) {
 
 			//special treatment of MOD_DEMAG to control if excluded from multilayered demag convolution
-			if (module == MOD_DEMAG && SMesh.IsSuperMeshModuleSet(MODS_SDEMAG)) {
+			if (moduleID == MOD_DEMAG && SMesh.IsSuperMeshModuleSet(MODS_SDEMAG)) {
 
 				int meshIdx = SMesh.contains_id(meshId);
 				if (meshIdx >= 0) {
@@ -201,7 +201,7 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 					sendCommand_verbose(CMD_EXCLUDEMULTICONVDEMAG, !SMesh[meshIdx]->Get_Demag_Exclusion(), SMesh.key_from_meshId(meshId));
 				}
 			}
-			else sendCommand_verbose(CMD_DELMODULE, SMesh.key_from_meshId(meshId), moduleHandles(module));
+			else sendCommand_verbose(CMD_DELMODULE, SMesh.key_from_meshId(meshId), moduleHandles(moduleID));
 		}
 	}
 	break;
@@ -210,13 +210,28 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 	case IOI_SMODULE:
 	{
 		//parameters from iop
-		MOD_ module = (MOD_)iop.minorId;
+		MOD_ moduleID = (MOD_)iop.minorId;
 
 		//try to add module
-		if (actionCode == AC_MOUSELEFTDOWN) sendCommand_verbose(CMD_ADDMODULE, SMesh.superMeshHandle, moduleHandles(module));
+		if (actionCode == AC_MOUSELEFTDOWN) sendCommand_verbose(CMD_ADDMODULE, SMesh.superMeshHandle, moduleHandles(moduleID));
 
 		//try to remove module
-		else if (actionCode == AC_MOUSERIGHTDOWN) sendCommand_verbose(CMD_DELMODULE, SMesh.superMeshHandle, moduleHandles(module));
+		else if (actionCode == AC_MOUSERIGHTDOWN) sendCommand_verbose(CMD_DELMODULE, SMesh.superMeshHandle, moduleHandles(moduleID));
+	}
+	break;
+
+	//Module used for effective field display for a given mesh: minorId in InteractiveObjectProperties is an entry from MOD_ enum identifying the module, auxId contains the unique mesh id number this module refers to, textId is the MOD_ value used for display
+	case IOI_DISPLAYMODULE:
+	{
+		//parameters from iop
+		MOD_ moduleID = (MOD_)iop.minorId;
+		int meshId = iop.auxId;
+
+		//try to add module to display
+		if (actionCode == AC_MOUSELEFTDOWN) sendCommand_verbose(CMD_DISPLAYMODULE, moduleHandles(moduleID), SMesh.key_from_meshId(meshId));
+
+		//remove module from display
+		else if (actionCode == AC_MOUSERIGHTDOWN) sendCommand_verbose(CMD_DISPLAYMODULE, "none", SMesh.key_from_meshId(meshId));
 	}
 	break;
 
@@ -406,6 +421,7 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 	case IOI_MESH_FORTEMPERATURE:
 	case IOI_MESH_FORDISPLAYOPTIONS:
 	case IOI_MESH_FORMODULES:
+	case IOI_MESH_FORDISPLAYMODULES:
 	case IOI_MESH_FORMESHLIST:
 	case IOI_MESH_FORSTOCHASTICITY:
 	case IOI_MESH_FORSPEEDUP:
@@ -2130,7 +2146,7 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 	}
 	break;
 
-	//Shows PBC setting for individual demag modules. minorId is the unique mesh id number, auxId is the pbc images number (0 disables pbc; -1 means setting is not available) (must be ferromagnetic mesh)
+	//Shows PBC setting for individual demag modules. minorId is the unique mesh id number, auxId is the pbc images number (0 disables pbc) (must be ferromagnetic mesh)
 	case IOI_PBC_X:
 	{
 		int meshId = iop.minorId;
@@ -2154,7 +2170,7 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 	}
 	break;
 
-	//Shows PBC setting for individual demag modules. minorId is the unique mesh id number, auxId is the pbc images number (0 disables pbc; -1 means setting is not available) (must be ferromagnetic mesh)
+	//Shows PBC setting for individual demag modules. minorId is the unique mesh id number, auxId is the pbc images number (0 disables pbc) (must be ferromagnetic mesh)
 	case IOI_PBC_Y:
 	{
 		int meshId = iop.minorId;
@@ -2178,7 +2194,7 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 	}
 	break;
 
-	//Shows PBC setting for individual demag modules. minorId is the unique mesh id number, auxId is the pbc images number (0 disables pbc; -1 means setting is not available) (must be ferromagnetic mesh)
+	//Shows PBC setting for individual demag modules. minorId is the unique mesh id number, auxId is the pbc images number (0 disables pbc) (must be ferromagnetic mesh)
 	case IOI_PBC_Z:
 	{
 		int meshId = iop.minorId;
@@ -2202,7 +2218,7 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 	}
 	break;
 
-	//Shows PBC setting for supermesh/multilayered demag. auxId is the pbc images number (0 disables pbc; -1 means setting is not available)
+	//Shows PBC setting for supermesh/multilayered demag. auxId is the pbc images number (0 disables pbc)
 	case IOI_SPBC_X:
 	{
 		int images = iop.auxId;
@@ -2225,7 +2241,7 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 	}
 	break;
 
-	//Shows PBC setting for supermesh/multilayered demag. auxId is the pbc images number (0 disables pbc; -1 means setting is not available)
+	//Shows PBC setting for supermesh/multilayered demag. auxId is the pbc images number (0 disables pbc)
 	case IOI_SPBC_Y:
 	{
 		int images = iop.auxId;
@@ -2248,7 +2264,7 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 	}
 	break;
 
-	//Shows PBC setting for supermesh/multilayered demag. auxId is the pbc images number (0 disables pbc; -1 means setting is not available)
+	//Shows PBC setting for supermesh/multilayered demag. auxId is the pbc images number (0 disables pbc)
 	case IOI_SPBC_Z:
 	{
 		int images = iop.auxId;
@@ -2356,6 +2372,16 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 	}
 	break;
 
+	//Shows dwpos fitting component. auxId is the value (-1, 0, 1, 2)
+	case IOI_DWPOSCOMPONENT:
+	{
+		//component takes on 0, 1, 2, 3
+		int component = iop.auxId + 1;
+
+		if (actionCode == AC_MOUSERIGHTDOWN || actionCode == AC_MOUSELEFTDOWN) sendCommand_verbose(CMD_DWPOS_COMPONENT, (component + 1) % 4 - 1);
+	}
+	break;
+
 	//Shows Monte-Carlo computation type (serial/parallel) : minorId is the unique mesh id number, auxId is the status (0 : parallel, 1 : serial, -1 : N/A)
 	case IOI_MCCOMPUTATION:
 	{
@@ -2363,6 +2389,15 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 		bool status = iop.auxId;
 
 		if (actionCode == AC_MOUSERIGHTDOWN || actionCode == AC_MOUSELEFTDOWN) sendCommand_verbose(CMD_MCSERIAL, !status, SMesh.key_from_meshId(meshId));
+	}
+	break;
+
+	//Shows Monte-Carlo computefields state flag : auxId is the state (0: disabled, 1: enabled)
+	case IOI_MCCOMPUTEFIELDS:
+	{
+		bool status = iop.auxId;
+
+		if (actionCode == AC_MOUSERIGHTDOWN || actionCode == AC_MOUSELEFTDOWN) sendCommand_verbose(CMD_MCCOMPUTEFIELDS, !status);
 	}
 	break;
 

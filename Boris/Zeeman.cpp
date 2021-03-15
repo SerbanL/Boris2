@@ -40,7 +40,13 @@ BError Zeeman::Initialize(void)
 {
 	BError error(CLASS_STR(Zeeman));
 
-	initialized = true;
+	//Make sure display data has memory allocated (or freed) as required
+	error = Update_Module_Display_VECs(
+		pMesh->h, pMesh->meshRect, 
+		(MOD_)pMesh->Get_Module_Heff_Display() == MOD_ZEEMAN || pMesh->IsOutputDataSet_withRect(DATA_E_ZEE),
+		(MOD_)pMesh->Get_Module_Energy_Display() == MOD_ZEEMAN || pMesh->IsOutputDataSet_withRect(DATA_E_ZEE),
+		pMesh->GetMeshType() == MESH_ANTIFERROMAGNETIC);
+	if (!error) initialized = true;
 
 	return error;
 }
@@ -63,8 +69,6 @@ BError Zeeman::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 			H_equation.set_constant("Lz", meshDim.z, false);
 			H_equation.remake_equation();
 		}
-
-		Initialize();
 	}
 
 	//------------------------ CUDA UpdateConfiguration if set
@@ -139,6 +143,11 @@ double Zeeman::UpdateField(void)
 				pMesh->Heff2[idx] = (cHA * Ha);
 
 				energy += (pMesh->M[idx] + pMesh->M2[idx]) * (cHA * Ha) / 2;
+
+				if (Module_Heff.linear_size()) Module_Heff[idx] = cHA * Ha;
+				if (Module_Heff2.linear_size()) Module_Heff2[idx] = cHA * Ha;
+				if (Module_energy.linear_size()) Module_energy[idx] = -MU0 * pMesh->M[idx] * (cHA * Ha);
+				if (Module_energy2.linear_size()) Module_energy2[idx] = -MU0 * pMesh->M2[idx] * (cHA * Ha);
 			}
 		}
 
@@ -153,6 +162,9 @@ double Zeeman::UpdateField(void)
 				pMesh->Heff[idx] = (cHA * Ha);
 
 				energy += pMesh->M[idx] * (cHA * Ha);
+
+				if (Module_Heff.linear_size()) Module_Heff[idx] = cHA * Ha;
+				if (Module_energy.linear_size()) Module_energy[idx] = -MU0 * pMesh->M[idx] * (cHA * Ha);
 			}
 		}
 	}
@@ -185,6 +197,11 @@ double Zeeman::UpdateField(void)
 						pMesh->Heff2[idx] = (cHA * H);
 
 						energy += (pMesh->M[idx] + pMesh->M2[idx]) * (cHA * H) / 2;
+
+						if (Module_Heff.linear_size()) Module_Heff[idx] = cHA * H;
+						if (Module_Heff2.linear_size()) Module_Heff2[idx] = cHA * H;
+						if (Module_energy.linear_size()) Module_energy[idx] = -MU0 * pMesh->M[idx] * (cHA * H);
+						if (Module_energy2.linear_size()) Module_energy2[idx] = -MU0 * pMesh->M2[idx] * (cHA * H);
 					}
 				}
 			}
@@ -209,6 +226,9 @@ double Zeeman::UpdateField(void)
 						pMesh->Heff[idx] = (cHA * H);
 
 						energy += pMesh->M[idx] * (cHA * H);
+
+						if (Module_Heff.linear_size()) Module_Heff[idx] = cHA * H;
+						if (Module_energy.linear_size()) Module_energy[idx] = -MU0 * pMesh->M[idx] * (cHA * H);
 					}
 				}
 			}
@@ -221,124 +241,6 @@ double Zeeman::UpdateField(void)
 	this->energy = energy;
 
 	return this->energy;
-}
-
-//-------------------Energy density methods
-
-double Zeeman::GetEnergyDensity(Rect& avRect)
-{
-#if COMPILECUDA == 1
-	if (pModuleCUDA) return dynamic_cast<ZeemanCUDA*>(pModuleCUDA)->GetEnergyDensity(avRect);
-#endif
-
-	/////////////////////////////////////////
-	// Fixed set field
-	/////////////////////////////////////////
-
-	double energy = 0;
-
-	int num_points = 0;
-
-	if (!H_equation.is_set()) {
-
-		if (IsZ(Ha.norm())) {
-
-			this->energy = 0;
-			return 0.0;
-		}
-
-		if (pMesh->GetMeshType() == MESH_ANTIFERROMAGNETIC) {
-
-#pragma omp parallel for reduction(+:energy, num_points)
-			for (int idx = 0; idx < pMesh->n.dim(); idx++) {
-
-				//only average over values in given rectangle
-				if (!avRect.contains(pMesh->M.cellidx_to_position(idx))) continue;
-
-				double cHA = pMesh->cHA;
-				pMesh->update_parameters_mcoarse(idx, pMesh->cHA, cHA);
-
-				energy += (pMesh->M[idx] + pMesh->M2[idx]) * (cHA * Ha) / 2;
-				num_points++;
-			}
-		}
-
-		else {
-
-#pragma omp parallel for reduction(+:energy, num_points)
-			for (int idx = 0; idx < pMesh->n.dim(); idx++) {
-
-				//only average over values in given rectangle
-				if (!avRect.contains(pMesh->M.cellidx_to_position(idx))) continue;
-
-				double cHA = pMesh->cHA;
-				pMesh->update_parameters_mcoarse(idx, pMesh->cHA, cHA);
-
-				energy += pMesh->M[idx] * (cHA * Ha);
-				num_points++;
-			}
-		}
-	}
-
-	/////////////////////////////////////////
-	// Field set from user equation
-	/////////////////////////////////////////
-
-	else {
-
-		double time = pSMesh->GetStageTime();
-
-		if (pMesh->GetMeshType() == MESH_ANTIFERROMAGNETIC) {
-
-#pragma omp parallel for reduction(+:energy, num_points)
-			for (int j = 0; j < pMesh->n.y; j++) {
-				for (int k = 0; k < pMesh->n.z; k++) {
-					for (int i = 0; i < pMesh->n.x; i++) {
-
-						int idx = i + j * pMesh->n.x + k * pMesh->n.x*pMesh->n.y;
-
-						//on top of spatial dependence specified through an equation, also allow spatial dependence through the cHA parameter
-						double cHA = pMesh->cHA;
-						pMesh->update_parameters_mcoarse(idx, pMesh->cHA, cHA);
-
-						DBL3 relpos = DBL3(i + 0.5, j + 0.5, k + 0.5) & pMesh->h;
-						DBL3 H = H_equation.evaluate_vector(relpos.x, relpos.y, relpos.z, time);
-
-						energy += (pMesh->M[idx] + pMesh->M2[idx]) * (cHA * H) / 2;
-						num_points++;
-					}
-				}
-			}
-		}
-
-		else {
-
-#pragma omp parallel for reduction(+:energy, num_points)
-			for (int j = 0; j < pMesh->n.y; j++) {
-				for (int k = 0; k < pMesh->n.z; k++) {
-					for (int i = 0; i < pMesh->n.x; i++) {
-
-						int idx = i + j * pMesh->n.x + k * pMesh->n.x*pMesh->n.y;
-
-						//on top of spatial dependence specified through an equation, also allow spatial dependence through the cHA parameter
-						double cHA = pMesh->cHA;
-						pMesh->update_parameters_mcoarse(idx, pMesh->cHA, cHA);
-
-						DBL3 relpos = DBL3(i + 0.5, j + 0.5, k + 0.5) & pMesh->h;
-						DBL3 H = H_equation.evaluate_vector(relpos.x, relpos.y, relpos.z, time);
-
-						energy += pMesh->M[idx] * (cHA * H);
-						num_points++;
-					}
-				}
-			}
-		}
-	}
-
-	if (num_points) energy *= -MU0 / num_points;
-	else energy = 0;
-
-	return energy;
 }
 
 //----------------------------------------------- Others

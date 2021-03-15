@@ -29,6 +29,11 @@ template void cuVEC<cuSZ3>::add_values(size_t size, cu_obj<cuVEC<cuSZ3>>& add_th
 template void cuVEC<cuFLT3>::add_values(size_t size, cu_obj<cuVEC<cuFLT3>>& add_this);
 template void cuVEC<cuDBL3>::add_values(size_t size, cu_obj<cuVEC<cuDBL3>>& add_this);
 
+template void cuVEC<cuINT4>::add_values(size_t size, cu_obj<cuVEC<cuINT4>>& add_this);
+template void cuVEC<cuSZ4>::add_values(size_t size, cu_obj<cuVEC<cuSZ4>>& add_this);
+template void cuVEC<cuFLT4>::add_values(size_t size, cu_obj<cuVEC<cuFLT4>>& add_this);
+template void cuVEC<cuDBL4>::add_values(size_t size, cu_obj<cuVEC<cuDBL4>>& add_this);
+
 template void cuVEC<cuINT33>::add_values(size_t size, cu_obj<cuVEC<cuINT33>>& add_this);
 template void cuVEC<cuFLT33>::add_values(size_t size, cu_obj<cuVEC<cuFLT33>>& add_this);
 template void cuVEC<cuDBL33>::add_values(size_t size, cu_obj<cuVEC<cuDBL33>>& add_this);
@@ -68,6 +73,11 @@ template void cuVEC<cuINT3>::sub_values(size_t size, cu_obj<cuVEC<cuINT3>>& sub_
 template void cuVEC<cuSZ3>::sub_values(size_t size, cu_obj<cuVEC<cuSZ3>>& sub_this);
 template void cuVEC<cuFLT3>::sub_values(size_t size, cu_obj<cuVEC<cuFLT3>>& sub_this);
 template void cuVEC<cuDBL3>::sub_values(size_t size, cu_obj<cuVEC<cuDBL3>>& sub_this);
+
+template void cuVEC<cuINT4>::sub_values(size_t size, cu_obj<cuVEC<cuINT4>>& sub_this);
+template void cuVEC<cuSZ4>::sub_values(size_t size, cu_obj<cuVEC<cuSZ4>>& sub_this);
+template void cuVEC<cuFLT4>::sub_values(size_t size, cu_obj<cuVEC<cuFLT4>>& sub_this);
+template void cuVEC<cuDBL4>::sub_values(size_t size, cu_obj<cuVEC<cuDBL4>>& sub_this);
 
 template void cuVEC<cuINT33>::sub_values(size_t size, cu_obj<cuVEC<cuINT33>>& sub_this);
 template void cuVEC<cuFLT33>::sub_values(size_t size, cu_obj<cuVEC<cuFLT33>>& sub_this);

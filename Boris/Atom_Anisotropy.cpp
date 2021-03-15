@@ -31,7 +31,12 @@ BError Atom_Anisotropy_Uniaxial::Initialize(void)
 {
 	BError error(CLASS_STR(Atom_Anisotropy_Uniaxial));
 
-	initialized = true;
+	//Make sure display data has memory allocated (or freed) as required
+	error = Update_Module_Display_VECs(
+		paMesh->h, paMesh->meshRect, 
+		(MOD_)paMesh->Get_Module_Heff_Display() == MOD_ANIUNI || paMesh->IsOutputDataSet_withRect(DATA_E_ANIS),
+		(MOD_)paMesh->Get_Module_Energy_Display() == MOD_ANIUNI || paMesh->IsOutputDataSet_withRect(DATA_E_ANIS));
+	if (!error)	initialized = true;
 
 	non_empty_volume = paMesh->Get_NonEmpty_Magnetic_Volume();
 
@@ -43,8 +48,6 @@ BError Atom_Anisotropy_Uniaxial::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 	BError error(CLASS_STR(Atom_Anisotropy_Uniaxial));
 
 	Uninitialize();
-
-	Initialize();
 
 	//------------------------ CUDA UpdateConfiguration if set
 
@@ -87,20 +90,23 @@ double Atom_Anisotropy_Uniaxial::UpdateField(void)
 		if (paMesh->M1.is_not_empty(idx)) {
 
 			double mu_s = paMesh->mu_s;
-			double K = paMesh->K;
+			double K1 = paMesh->K1;
+			double K2 = paMesh->K2;
 			DBL3 mcanis_ea1 = paMesh->mcanis_ea1;
-			paMesh->update_parameters_mcoarse(idx, paMesh->mu_s, mu_s, paMesh->K, K, paMesh->mcanis_ea1, mcanis_ea1);
+			paMesh->update_parameters_mcoarse(idx, paMesh->mu_s, mu_s, paMesh->K1, K1, paMesh->K2, K2, paMesh->mcanis_ea1, mcanis_ea1);
 
 			//calculate m.ea dot product
 			double dotprod = (paMesh->M1[idx] * mcanis_ea1) / mu_s;
 
 			//update effective field with the anisotropy field
-			DBL3 Heff_value = (2 * K / (MUB_MU0*mu_s)) * dotprod * mcanis_ea1;
+			DBL3 Heff_value = (2 / (MUB_MU0*mu_s)) * dotprod * (K1 + 2 * K2 * (1 - dotprod * dotprod)) * mcanis_ea1;
 
 			paMesh->Heff1[idx] += Heff_value;
 
-			//update energy E = K * (1 - dotprod*dotprod)
-			energy += K * (1 - dotprod*dotprod);
+			energy += (K1 + K2 * (1 - dotprod * dotprod)) * (1 - dotprod * dotprod);
+
+			if (Module_Heff.linear_size()) Module_Heff[idx] = Heff_value;
+			if (Module_energy.linear_size()) Module_energy[idx] = (K1 + K2 * (1 - dotprod * dotprod)) * (1 - dotprod * dotprod) / paMesh->M1.h.dim();
 		}
 	}
 	
@@ -111,65 +117,28 @@ double Atom_Anisotropy_Uniaxial::UpdateField(void)
 	return this->energy;
 }
 
-//-------------------Energy density methods
-
-double Atom_Anisotropy_Uniaxial::GetEnergyDensity(Rect& avRect)
-{
-#if COMPILECUDA == 1
-	if (pModuleCUDA) return dynamic_cast<Atom_Anisotropy_UniaxialCUDA*>(pModuleCUDA)->GetEnergyDensity(avRect);
-#endif
-
-	double energy = 0;
-
-	int num_points = 0;
-
-#pragma omp parallel for reduction(+:energy, num_points)
-	for (int idx = 0; idx < paMesh->n.dim(); idx++) {
-
-		//only average over values in given rectangle
-		if (!avRect.contains(paMesh->M1.cellidx_to_position(idx))) continue;
-
-		if (paMesh->M1.is_not_empty(idx)) {
-
-			double mu_s = paMesh->mu_s;
-			double K = paMesh->K;
-			DBL3 mcanis_ea1 = paMesh->mcanis_ea1;
-			paMesh->update_parameters_mcoarse(idx, paMesh->mu_s, mu_s, paMesh->K, K, paMesh->mcanis_ea1, mcanis_ea1);
-
-			//calculate m.ea dot product
-			double dotprod = (paMesh->M1[idx] * mcanis_ea1) / mu_s;
-
-			//update energy E = K * (1 - dotprod*dotprod)
-			energy += K * (1 - dotprod * dotprod);
-			num_points++;
-		}
-	}
-
-	//convert to energy density and return
-	if (num_points) energy = energy / (num_points * paMesh->M1.h.dim());
-	else energy = 0.0;
-
-	return energy;
-}
-
 //-------------------Energy methods
 
 //For simple cubic mesh spin_index coincides with index in M1
-double Atom_Anisotropy_Uniaxial::Get_Atomistic_Energy(int spin_index)
+double Atom_Anisotropy_Uniaxial::Get_Atomistic_EnergyChange(int spin_index, DBL3 Mnew)
 {
-	//For CUDA there are separate device functions using by CUDA kernels.
+	//For CUDA there are separate device functions used by CUDA kernels.
 
 	if (paMesh->M1.is_not_empty(spin_index)) {
 
-		double K = paMesh->K;
+		double K1 = paMesh->K1;
+		double K2 = paMesh->K2;
 		DBL3 mcanis_ea1 = paMesh->mcanis_ea1;
-		paMesh->update_parameters_mcoarse(spin_index, paMesh->K, K, paMesh->mcanis_ea1, mcanis_ea1);
+		paMesh->update_parameters_mcoarse(spin_index, paMesh->K1, K1, paMesh->K2, K2, paMesh->mcanis_ea1, mcanis_ea1);
 
 		//calculate m.ea dot product
 		double dotprod = paMesh->M1[spin_index].normalized() * mcanis_ea1;
+		double dotprod_new = Mnew.normalized() * mcanis_ea1;
+		double dpsq = dotprod * dotprod;
+		double dpsq_new = dotprod_new * dotprod_new;
 
 		//Hamiltonian contribution as -Ku * (S * ea)^2, where S is the local spin direction
-		return -K * dotprod * dotprod;
+		return -K1 * (dotprod_new * dotprod_new - dotprod * dotprod) - K2 * (dpsq_new * dpsq_new - dpsq * dpsq);
 	}
 	else return 0.0;
 }

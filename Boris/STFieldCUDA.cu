@@ -11,7 +11,7 @@
 #include "Mesh_FerromagneticCUDA.h"
 #include "MeshParamsControlCUDA.h"
 
-__global__ void STFieldCUDA_UpdateField(ManagedMeshCUDA& cuMesh)
+__global__ void STFieldCUDA_UpdateField(ManagedMeshCUDA& cuMesh, ManagedModulesCUDA& cuModule)
 {
 	cuVEC_VC<cuReal3>& M = *cuMesh.pM;
 	cuVEC<cuReal3>& Heff = *cuMesh.pHeff;
@@ -21,6 +21,8 @@ __global__ void STFieldCUDA_UpdateField(ManagedMeshCUDA& cuMesh)
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
 
 	if (idx < Heff.linear_size()) {
+
+		cuReal3 STField;
 
 		if (M.is_not_empty(idx)) {
 
@@ -43,9 +45,12 @@ __global__ void STFieldCUDA_UpdateField(ManagedMeshCUDA& cuMesh)
 
 				cuBReal a_const = -(neta * (cuBReal)MUB_E * Jc / ((cuBReal)GAMMA * grel)) / (Ms * Ms * (M.rect.e.z - M.rect.s.z));
 
-				Heff[idx] += a_const * ((M[idx] ^ STp) + flSOT * Ms * STp);
+				STField = a_const * ((M[idx] ^ STp) + flSOT * Ms * STp);
+				Heff[idx] += STField;
 			}
 		}
+
+		if (cuModule.pModule_Heff->linear_size()) (*cuModule.pModule_Heff)[idx] = STField;
 	}
 }
 
@@ -55,7 +60,7 @@ void STFieldCUDA::UpdateField(void)
 {
 	if (!pMeshCUDA->EComputation_Enabled()) return;
 
-	STFieldCUDA_UpdateField <<< (pMeshCUDA->n.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (pMeshCUDA->cuMesh);
+	STFieldCUDA_UpdateField <<< (pMeshCUDA->n.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (pMeshCUDA->cuMesh, cuModule);
 }
 
 #endif

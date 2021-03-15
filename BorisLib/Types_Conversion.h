@@ -3,6 +3,7 @@
 #include <string>
 #include <sstream>
 #include <fstream>
+#include <iomanip>
 
 #include "Introspection_base.h"
 #include "Funcs_Math_base.h"
@@ -12,22 +13,6 @@
 //
 
 namespace Conversion {
-
-	template <typename Type>
-	std::string ToString_convertible(const Type& value, std::true_type)
-	{
-		//called if the operation ss << value is possible (Type has is_streamable_out trait for std::stringstream)
-		std::stringstream ss;
-		ss << value;
-
-		return ss.str();
-	}
-
-	template <typename Type>
-	std::string ToString_convertible(const Type& value, std::false_type)
-	{
-		return "";
-	}
 
 	//-----------------------------------------
 
@@ -42,12 +27,12 @@ namespace Conversion {
 
 		//this is called if value can be streamed to a std::stringstream
 		//
-		template <typename Type> 
+		template <typename Type>
 		std::string convert(const Type& value, std::true_type)
 		{
 			std::stringstream ss;
 
-			if (!unit.length()) { ss << value; return ss.str(); }
+			if (!unit.length()) { ss << std::setprecision(precision()) << value; return ss.str(); }
 
 			//Note! Unit should only be set for types that can be converted to a double. Need the reinterpret_cast to stop compilation errors.
 			int decexp;
@@ -98,7 +83,7 @@ namespace Conversion {
 				break;
 			}
 
-			ss << value_adjusted << unitmagnitude + unit;
+			ss << std::setprecision(precision()) << value_adjusted << unitmagnitude + unit;
 
 			return ss.str();
 		}
@@ -111,19 +96,51 @@ namespace Conversion {
 	public:
 
 		tostringconversion(void) {}
-	
+
 		void set_unit(const std::string& unit_) { unit = unit_; }
 
-		template <typename Type> 
+		//use this to set conversion precision (number of significant figures) using Meyer's singleton approach
+		//NOTE: it's more elegant to have a static data member in tostringconversion but then this has to be initialized somewhere
+		//You would want to initialize it in this header file, e.g. int tostringconversion::tostring_precision = 6;
+		//The problem then is you run into multiple redefitions for programs with multiple translation units
+		//The solution would be to inline int tostringconversion::tostring_precision = 6; but this is only available in C++17
+		//I prefer this solution over Meyer's singleton, but this precludes using nvcc with C++14, so stick to current solution for now
+		//you could even do inline static tostring_precision = 6; inside the class - ideal solution if you didn't have to compile some code with C++14
+		//To set precision for further calls to ToString() just use Conversion::tostringconversion::precision() = value;
+		static int& precision(void)
+		{
+			static int tostring_precision(6);
+			return tostring_precision;
+		}
+
+		template <typename Type>
 		tostringconversion& operator<<(const Type& rhs)
-		{ 
+		{
 			text += convert(rhs, is_streamable_out<std::stringstream, Type>());
 
-			return *this; 
+			return *this;
 		}
 
 		std::string str(void) { return text; }
 	};
+
+	//-----------------------------------------
+
+	template <typename Type>
+	std::string ToString_convertible(const Type& value, std::true_type)
+	{
+		//called if the operation ss << value is possible (Type has is_streamable_out trait for std::stringstream)
+		std::stringstream ss;
+		ss << std::setprecision(tostringconversion::precision()) << value;
+
+		return ss.str();
+	}
+
+	template <typename Type>
+	std::string ToString_convertible(const Type& value, std::false_type)
+	{
+		return "";
+	}
 
 	//-----------------------------------------
 
@@ -180,11 +197,11 @@ namespace Conversion {
 	public:
 
 		tonumberconversion(const std::string& text_, const std::string& unit_ = "") : text(text_), unit(unit_) {}
-		tonumberconversion(std::string&& text_, const std::string& unit_ = "") : text( move(text_) ), unit(unit_) {}
+		tonumberconversion(std::string&& text_, const std::string& unit_ = "") : text(move(text_)), unit(unit_) {}
 
 		//conversion operator from Conversion to Type
-		template <typename Type> 
-		operator Type() 
+		template <typename Type>
+		operator Type()
 		{
 			//can only convert if Type accepts >> operator from strinstream
 			return convertible<Type>(is_streamable_in<std::stringstream, Type>());

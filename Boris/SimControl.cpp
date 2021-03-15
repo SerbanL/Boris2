@@ -15,10 +15,19 @@ void Simulation::Simulate(void)
 
 			//Monte-Carlo stages are special - use Iterate_MonteCarlo to advance simulation instead
 #if COMPILECUDA == 1
-			if (cudaEnabled) SMesh.Iterate_MonteCarloCUDA(simStages[stage_step.major].get_value<double>(stage_step.minor));
-			else SMesh.Iterate_MonteCarlo(simStages[stage_step.major].get_value<double>(stage_step.minor));
+			if (cudaEnabled) {
+
+				SMesh.Iterate_MonteCarloCUDA(simStages[stage_step.major].get_value<double>(stage_step.minor));
+				if (SMesh.Get_MonteCarlo_ComputeFields()) SMesh.ComputeFieldsCUDA();
+			}
+			else {
+
+				SMesh.Iterate_MonteCarlo(simStages[stage_step.major].get_value<double>(stage_step.minor));
+				if (SMesh.Get_MonteCarlo_ComputeFields()) SMesh.ComputeFields();
+			}
 #else
 			SMesh.Iterate_MonteCarlo(simStages[stage_step.major].get_value<double>(stage_step.minor));
+			if (SMesh.Get_MonteCarlo_ComputeFields()) SMesh.ComputeFields();
 #endif
 		}
 		else {
@@ -32,8 +41,8 @@ void Simulation::Simulate(void)
 #endif
 		}
 
-		//Display update
-		if (iterUpdate && SMesh.GetIteration() % iterUpdate == 0) UpdateScreen_Quick(true);
+		//Display update (asynchronous only if cuda is enabled)
+		if (iterUpdate && SMesh.GetIteration() % iterUpdate == 0) UpdateScreen_Quick(cudaEnabled);
 
 		//Check conditions for advancing simulation schedule
 		CheckSimulationSchedule();
@@ -100,6 +109,12 @@ void Simulation::ComputeFields(void)
 
 void Simulation::RunSimulation(void)
 {
+	//make sure the disk buffer has the correct size
+	if (savedata_diskbuffer.size() != savedata_diskbuffer_size) savedata_diskbuffer.resize(savedata_diskbuffer_size);
+	if (savedata_diskoverflowbuffer.size() != savedata_diskbuffer_size) savedata_diskoverflowbuffer.resize(savedata_diskbuffer_size);
+	savedata_diskbuffer_position = 0;
+	savedata_diskoverflowbuffer_position = 0;
+
 	if (is_thread_running(THREAD_LOOP)) {
 
 		BD.DisplayConsoleMessage("Simulation already running.");
@@ -163,6 +178,10 @@ void Simulation::StopSimulation(void)
 		stop_thread(THREAD_LOOP);
 
 		sim_end_ms = GetSystemTickCount();
+
+		//flush disk buffer
+		if (savedata_diskoverflowbuffer_position) SaveData_DiskBufferFlush(&savedata_diskoverflowbuffer, &savedata_diskoverflowbuffer_position);
+		if (savedata_diskbuffer_position) SaveData_DiskBufferFlush(&savedata_diskbuffer, &savedata_diskbuffer_position);
 
 		BD.DisplayConsoleMessage("Simulation stopped. " + Get_Date_Time());
 

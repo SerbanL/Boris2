@@ -7,9 +7,17 @@
 
 #include "BorisCUDALib.h"
 
+#include "ManagedModulesCUDA.h"
+
+#include "ModulesDefs.h"
+
 class ModulesCUDA {
 
+	friend ManagedModulesCUDA;
+
 private:
+
+	bool holder_module_destroyed = false;
 
 protected:
 
@@ -24,21 +32,39 @@ protected:
 	//auxiliary for obtaining average energy in a custom rectangle : count non-zero points for average.
 	cu_obj<size_t> points_count;
 
-private:
+	//effective field in this module : if sized then module should be updating this if appropriate, else skip saving effective field
+	//2nd VEC used for 2-sublattice modules
+	cu_obj<cuVEC<cuReal3>> Module_Heff, Module_Heff2;
+	size_t Module_Heff_size = 0, Module_Heff2_size = 0;
 
-	bool holder_module_destroyed = false;
+	//energy (density) spatial variation : if sized then module should be updating this is appropriate, else skip saving energy density
+	//2nd VEC used for 2-sublattice modules
+	cu_obj<cuVEC<cuBReal>> Module_energy, Module_energy2;
+	size_t Module_energy_size = 0, Module_energy2_size = 0;
+
+	//Managed Module : just pass this into cuda kernels so you can access the above data through cuModule
+	cu_obj<ManagedModulesCUDA> cuModule;
 
 protected:
 
 	//-------------------------- Kernel Launchers
 
+	//zero the auxiliary values (energy and points_count)
 	void ZeroEnergy(void);
+
+	//zero the cuVECs if not empty
+	void ZeroModuleVECs(void);
 
 public:
 
 	//-------------------------- Constructor and Destructor
 
-	ModulesCUDA(void) { ZeroEnergy(); }
+	ModulesCUDA(void) 
+	{ 
+		ZeroEnergy(); 
+		//setup ManagedModulesCUDA object
+		cuModule()->set_pointers(this);
+	}
 
 	virtual ~ModulesCUDA() {}
 
@@ -81,11 +107,29 @@ public:
 	//Simulation run-time method used to do calculations. This will launch a kernel.
 	virtual void UpdateField(void) = 0;
 
+	//-------------------------- Effective field and energy VECs
+
+	//Make sure memory is allocated correctly for display data if used, else free memory
+	BError Update_Module_Display_VECs(cuReal3 h, cuRect meshRect, bool Module_Heff_used, bool Module_Energy_used, bool twosublattice = false);
+
+	//Get VECs for display
+	cu_obj<cuVEC<cuReal3>>& Get_Module_Heff(void) { return Module_Heff; }
+	cu_obj<cuVEC<cuReal3>>& Get_Module_Heff2(void) { return Module_Heff2; }
+
+	//Get VECs for display
+	cu_obj<cuVEC<cuBReal>>& Get_Module_Energy(void) { return Module_energy; }
+	cu_obj<cuVEC<cuBReal>>& Get_Module_Energy2(void) { return Module_energy2; }
+
 	//-------------------------- Getters
 
 	bool IsInitialized(void) { return initialized; }
 
+	//-------------------------- Energies
+
 	cuBReal GetEnergyDensity(void) { return energy.to_cpu(); }
+	
+	//Calculate the energy density in the given rect only
+	cuBReal GetEnergyDensity(cuRect avRect);
 };
 
 #endif

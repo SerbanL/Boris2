@@ -58,16 +58,12 @@ void Atom_DifferentialEquationCubic::RunSD_Start(void)
 				//This is applicable to the LLGStatic approach, i.e. no precession term and damping set to 1.
 				//M_next = m_next * Ms
 
-				//The above equation can be solved for m_next explicitly (m_next . m = 1, i.e. norm conserved) as:
-				//
-				//Let s = dT * GAMMA / 4, the stepsize; H = Heff1. Then:
-				//m = (m - s(m.H * (m - 2sH) + 2sm(H.H) - 2H)) / (1 + sm.H)
-
-				double mH = m * H;
+				//The above equation can be solved for m_next explicitly.
 
 				double s = dT * GAMMA / 4.0;
 
-				m = (m - s*(mH * (m - 2*s*H) + 2*s*m*(H*H) - 2*H)) / (1 + s*mH);
+				DBL3 mxH = m ^ H;
+				m = ((1 - s*s*(mxH*mxH)) * m - 2*s*(m ^ mxH)) / (1 + s*s*(mxH*mxH));
 
 				//set new M1
 				paMesh->M1[idx] = m * mu_s;
@@ -183,16 +179,12 @@ void Atom_DifferentialEquationCubic::RunSD_Advance_withReductions(void)
 				//This is applicable to the LLGStatic approach, i.e. no precession term and damping set to 1.
 				//M_next = m_next * Ms
 
-				//The above equation can be solved for m_next explicitly (m_next . m = 1, i.e. norm conserved) as:
-				//
-				//Let s = dT * GAMMA / 4, the stepsize; H = Heff1. Then:
-				//m = (m - s(m.H * (m - 2sH) + 2sm(H.H) - 2H)) / (1 + sm.H)
-
-				double mH = m * H;
+				//The above equation can be solved for m_next explicitly.
 
 				double s = dT * GAMMA / 4.0;
 
-				m = (m - s * (mH * (m - 2 * s*H) + 2 * s*m*(H*H) - 2 * H)) / (1 + s * mH);
+				DBL3 mxH = m ^ H;
+				m = ((1 - s*s*(mxH*mxH)) * m - 2*s*(m ^ mxH)) / (1 + s*s*(mxH*mxH));
 
 				//set new M1
 				paMesh->M1[idx] = m * mu_s;
@@ -241,16 +233,12 @@ void Atom_DifferentialEquationCubic::RunSD_Advance(void)
 				//This is applicable to the LLGStatic approach, i.e. no precession term and damping set to 1.
 				//M_next = m_next * Ms
 
-				//The above equation can be solved for m_next explicitly (m_next . m = 1, i.e. norm conserved) as:
-				//
-				//Let s = dT * GAMMA / 4, the stepsize; H = Heff1. Then:
-				//m = (m - s(m.H * (m - 2sH) + 2sm(H.H) - 2H)) / (1 + sm.H)
-
-				double mH = m * H;
+				//The above equation can be solved for m_next explicitly.
 
 				double s = dT * GAMMA / 4.0;
 
-				m = (m - s * (mH * (m - 2 * s*H) + 2 * s*m*(H*H) - 2 * H)) / (1 + s * mH);
+				DBL3 mxH = m ^ H;
+				m = ((1 - s*s*(mxH*mxH)) * m - 2*s*(m ^ mxH)) / (1 + s*s*(mxH*mxH));
 
 				//set new M1
 				paMesh->M1[idx] = m * mu_s;

@@ -33,15 +33,44 @@ PhysQ Mesh::FetchOnScreenPhysicalQuantity(double detail_level, bool getBackgroun
 		break;
 
 	case MESHDISPLAY_EFFECTIVEFIELD:
-		return PhysQ(&Heff, physicalQuantity, (VEC3REP_)vec3rep);
+		if (Module_Heff_Display == MOD_ALL || Module_Heff_Display == MOD_ERROR) return PhysQ(&Heff, physicalQuantity, (VEC3REP_)vec3rep);
+		else {
+			
+			MOD_ Module_Heff = (MOD_)Get_ActualModule_Heff_Display();
+			if (IsModuleSet(Module_Heff)) return PhysQ(&pMod(Module_Heff)->Get_Module_Heff(), physicalQuantity, (VEC3REP_)vec3rep);
+		}
 		break;
 
 	case MESHDISPLAY_EFFECTIVEFIELD2:
-		return PhysQ(&Heff2, physicalQuantity, (VEC3REP_)vec3rep);
+		if (Module_Heff_Display == MOD_ALL || Module_Heff_Display == MOD_ERROR) return PhysQ(&Heff2, physicalQuantity, (VEC3REP_)vec3rep);
+		else {
+
+			MOD_ Module_Heff = (MOD_)Get_ActualModule_Heff_Display();
+			if (IsModuleSet(Module_Heff)) return PhysQ(&pMod(Module_Heff)->Get_Module_Heff2(), physicalQuantity, (VEC3REP_)vec3rep);
+		}
 		break;
 
 	case MESHDISPLAY_EFFECTIVEFIELD12:
-		return PhysQ(&Heff, &Heff2, physicalQuantity, (VEC3REP_)vec3rep);
+		if (Module_Heff_Display == MOD_ALL || Module_Heff_Display == MOD_ERROR) return PhysQ(&Heff, &Heff2, physicalQuantity, (VEC3REP_)vec3rep);
+		else {
+
+			MOD_ Module_Heff = (MOD_)Get_ActualModule_Heff_Display();
+			if (IsModuleSet(Module_Heff)) return PhysQ(&pMod(Module_Heff)->Get_Module_Heff(), &pMod(Module_Heff)->Get_Module_Heff2(), physicalQuantity, (VEC3REP_)vec3rep);
+		}
+		break;
+
+	case MESHDISPLAY_ENERGY:
+	{
+		MOD_ Module_Energy = (MOD_)Get_ActualModule_Energy_Display();
+		if (IsModuleSet(Module_Energy)) return PhysQ(&pMod(Module_Energy)->Get_Module_Energy(), physicalQuantity);
+	}
+		break;
+
+	case MESHDISPLAY_ENERGY2:
+	{
+		MOD_ Module_Energy = (MOD_)Get_ActualModule_Energy_Display();
+		if (IsModuleSet(Module_Energy)) return PhysQ(&pMod(Module_Energy)->Get_Module_Energy2(), physicalQuantity);
+	}
 		break;
 
 	case MESHDISPLAY_CURRDENSITY:
@@ -212,15 +241,44 @@ BError Mesh::SaveOnScreenPhysicalQuantity(std::string fileName, std::string ovf2
 		break;
 
 	case MESHDISPLAY_EFFECTIVEFIELD:
-		error = ovf2.Write_OVF2_VEC(fileName, Heff, ovf2_dataType);
+		if (Module_Heff_Display == MOD_ALL || Module_Heff_Display == MOD_ERROR) error = ovf2.Write_OVF2_VEC(fileName, Heff, ovf2_dataType);
+		else {
+			
+			MOD_ Module_Heff = (MOD_)Get_ActualModule_Heff_Display();
+			if (IsModuleSet(Module_Heff)) error = ovf2.Write_OVF2_VEC(fileName, pMod(Module_Heff)->Get_Module_Heff(), ovf2_dataType);
+		}
 		break;
 
 	case MESHDISPLAY_EFFECTIVEFIELD2:
-		error = ovf2.Write_OVF2_VEC(fileName, Heff2, ovf2_dataType);
+		if (Module_Heff_Display == MOD_ALL || Module_Heff_Display == MOD_ERROR) error = ovf2.Write_OVF2_VEC(fileName, Heff2, ovf2_dataType);
+		else {
+
+			MOD_ Module_Heff = (MOD_)Get_ActualModule_Heff_Display();
+			if (IsModuleSet(Module_Heff)) error = ovf2.Write_OVF2_VEC(fileName, pMod(Module_Heff)->Get_Module_Heff2(), ovf2_dataType);
+		}
 		break;
 
 	case MESHDISPLAY_EFFECTIVEFIELD12:
-		error = ovf2.Write_OVF2_VEC(fileName, Heff, ovf2_dataType);
+		if (Module_Heff_Display == MOD_ALL || Module_Heff_Display == MOD_ERROR) error = ovf2.Write_OVF2_VEC(fileName, Heff, ovf2_dataType);
+		else {
+
+			MOD_ Module_Heff = (MOD_)Get_ActualModule_Heff_Display();
+			if (IsModuleSet(Module_Heff)) error = ovf2.Write_OVF2_VEC(fileName, pMod(Module_Heff)->Get_Module_Heff(), ovf2_dataType);
+		}
+		break;
+
+	case MESHDISPLAY_ENERGY:
+	{
+		MOD_ Module_Energy = (MOD_)Get_ActualModule_Energy_Display();
+		if (IsModuleSet(Module_Energy)) error = ovf2.Write_OVF2_SCA(fileName, pMod(Module_Energy)->Get_Module_Energy(), ovf2_dataType);
+	}
+		break;
+
+	case MESHDISPLAY_ENERGY2:
+	{
+		MOD_ Module_Energy = (MOD_)Get_ActualModule_Energy_Display();
+		if (IsModuleSet(Module_Energy)) error = ovf2.Write_OVF2_SCA(fileName, pMod(Module_Energy)->Get_Module_Energy2(), ovf2_dataType);
+	}
 		break;
 
 	case MESHDISPLAY_CURRDENSITY:

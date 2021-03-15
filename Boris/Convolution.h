@@ -41,18 +41,18 @@ private:
 	//convolute In with kernels, set output in Out. 2D is for n.z == 1.
 	//If clearOut flag is true then Out is set, otherwise Out is added into.
 	//SINGLE INPUT, SINGLE OUTPUT
-	double Convolute_2D(VEC<DBL3> &In, VEC<DBL3> &Out, bool clearOut);
-	double Convolute_3D(VEC<DBL3> &In, VEC<DBL3> &Out, bool clearOut);
+	double Convolute_2D(VEC<DBL3> &In, VEC<DBL3> &Out, bool clearOut, VEC<DBL3>* pH = nullptr, VEC<double>* penergy = nullptr);
+	double Convolute_3D(VEC<DBL3> &In, VEC<DBL3> &Out, bool clearOut, VEC<DBL3>* pH = nullptr, VEC<double>* penergy = nullptr);
 
 	//AVERAGED INPUTS, SINGLE OUTPUT
 	//Same as Convolution with (In1 + In2) / 2 as input.
-	double Convolute_2D(VEC<DBL3> &In1, VEC<DBL3> &In2, VEC<DBL3> &Out, bool clearOut);
-	double Convolute_3D(VEC<DBL3> &In1, VEC<DBL3> &In2, VEC<DBL3> &Out, bool clearOut);
+	double Convolute_2D(VEC<DBL3> &In1, VEC<DBL3> &In2, VEC<DBL3> &Out, bool clearOut, VEC<DBL3>* pH = nullptr, VEC<double>* penergy = nullptr);
+	double Convolute_3D(VEC<DBL3> &In1, VEC<DBL3> &In2, VEC<DBL3> &Out, bool clearOut, VEC<DBL3>* pH = nullptr, VEC<double>* penergy = nullptr);
 
 	//AVERAGED INPUTS, DUPLICATED OUTPUTS
 	//Same as Convolution with (In1 + In2) / 2 as input and output copied to both Out1 and Out2.
-	double Convolute_2D(VEC<DBL3> &In1, VEC<DBL3> &In2, VEC<DBL3> &Out1, VEC<DBL3> &Out2, bool clearOut);
-	double Convolute_3D(VEC<DBL3> &In1, VEC<DBL3> &In2, VEC<DBL3> &Out1, VEC<DBL3> &Out2, bool clearOut);
+	double Convolute_2D(VEC<DBL3> &In1, VEC<DBL3> &In2, VEC<DBL3> &Out1, VEC<DBL3> &Out2, bool clearOut, VEC<DBL3>* pH = nullptr, VEC<double>* penergy = nullptr);
+	double Convolute_3D(VEC<DBL3> &In1, VEC<DBL3> &In2, VEC<DBL3> &Out1, VEC<DBL3> &Out2, bool clearOut, VEC<DBL3>* pH = nullptr, VEC<double>* penergy = nullptr);
 
 	//Not embedded
 
@@ -68,18 +68,18 @@ private:
 
 	//SINGLE OUTPUT
 
-	double InverseFFT_2D(VEC<DBL3> &In, VEC<DBL3> &Out, bool clearOut);
-	double InverseFFT_3D(VEC<DBL3> &In, VEC<DBL3> &Out, bool clearOut);
+	double InverseFFT_2D(VEC<DBL3> &In, VEC<DBL3> &Out, bool clearOut, VEC<DBL3>* pH = nullptr, VEC<double>* penergy = nullptr);
+	double InverseFFT_3D(VEC<DBL3> &In, VEC<DBL3> &Out, bool clearOut, VEC<DBL3>* pH = nullptr, VEC<double>* penergy = nullptr);
 
 	//AVERAGED INPUTS, SINGLE OUTPUT
 
-	double InverseFFT_2D(VEC<DBL3> &In1, VEC<DBL3> &In2, VEC<DBL3> &Out, bool clearOut);
-	double InverseFFT_3D(VEC<DBL3> &In1, VEC<DBL3> &In2, VEC<DBL3> &Out, bool clearOut);
+	double InverseFFT_2D(VEC<DBL3> &In1, VEC<DBL3> &In2, VEC<DBL3> &Out, bool clearOut, VEC<DBL3>* pH = nullptr, VEC<double>* penergy = nullptr);
+	double InverseFFT_3D(VEC<DBL3> &In1, VEC<DBL3> &In2, VEC<DBL3> &Out, bool clearOut, VEC<DBL3>* pH = nullptr, VEC<double>* penergy = nullptr);
 
 	//AVERAGED INPUTS, DUPLICATED OUTPUTS
 
-	double InverseFFT_2D(VEC<DBL3> &In1, VEC<DBL3> &In2, VEC<DBL3> &Out1, VEC<DBL3> &Out2, bool clearOut);
-	double InverseFFT_3D(VEC<DBL3> &In1, VEC<DBL3> &In2, VEC<DBL3> &Out1, VEC<DBL3> &Out2, bool clearOut);
+	double InverseFFT_2D(VEC<DBL3> &In1, VEC<DBL3> &In2, VEC<DBL3> &Out1, VEC<DBL3> &Out2, bool clearOut, VEC<DBL3>* pH = nullptr, VEC<double>* penergy = nullptr);
+	double InverseFFT_3D(VEC<DBL3> &In1, VEC<DBL3> &In2, VEC<DBL3> &Out1, VEC<DBL3> &Out2, bool clearOut, VEC<DBL3>* pH = nullptr, VEC<double>* penergy = nullptr);
 
 protected:
 
@@ -139,10 +139,10 @@ protected:
 
 	//Run a 2D or 3D convolution depending on set n (n.z == 1 for 2D).
 	//Return dot product of In with Out
-	double Convolute(VEC<DBL3> &In, VEC<DBL3> &Out, bool clearOut)
+	double Convolute(VEC<DBL3> &In, VEC<DBL3> &Out, bool clearOut, VEC<DBL3>* pH = nullptr, VEC<double>* penergy = nullptr)
 	{
-		if (n.z == 1) return Convolute_2D(In, Out, clearOut);
-		else return Convolute_3D(In, Out, clearOut);
+		if (n.z == 1) return Convolute_2D(In, Out, clearOut, pH, penergy);
+		else return Convolute_3D(In, Out, clearOut, pH, penergy);
 	}
 
 	//AVERAGED INPUTS, SINGLE OUTPUT
@@ -150,10 +150,10 @@ protected:
 	//Run a 2D or 3D convolution depending on set n (n.z == 1 for 2D).
 	//Return dot product of In with Out
 	//Same as Convolution with (In1 + In2) / 2 as input.
-	double Convolute_AveragedInputs(VEC<DBL3> &In1, VEC<DBL3> &In2, VEC<DBL3> &Out, bool clearOut)
+	double Convolute_AveragedInputs(VEC<DBL3> &In1, VEC<DBL3> &In2, VEC<DBL3> &Out, bool clearOut, VEC<DBL3>* pH = nullptr, VEC<double>* penergy = nullptr)
 	{
-		if (n.z == 1) return Convolute_2D(In1, In2, Out, clearOut);
-		else return Convolute_3D(In1, In2, Out, clearOut);
+		if (n.z == 1) return Convolute_2D(In1, In2, Out, clearOut, pH, penergy);
+		else return Convolute_3D(In1, In2, Out, clearOut, pH, penergy);
 	}
 
 	//AVERAGED INPUTS, DUPLICATED OUTPUTS
@@ -161,10 +161,10 @@ protected:
 	//Run a 2D or 3D convolution depending on set n (n.z == 1 for 2D).
 	//Return dot product of In with Out
 	//Same as Convolution with (In1 + In2) / 2 as input and output copied to both Out1 and Out2.
-	double Convolute_AveragedInputs_DuplicatedOutputs(VEC<DBL3> &In1, VEC<DBL3> &In2, VEC<DBL3> &Out1, VEC<DBL3> &Out2, bool clearOut)
+	double Convolute_AveragedInputs_DuplicatedOutputs(VEC<DBL3> &In1, VEC<DBL3> &In2, VEC<DBL3> &Out1, VEC<DBL3> &Out2, bool clearOut, VEC<DBL3>* pH = nullptr, VEC<double>* penergy = nullptr)
 	{
-		if (n.z == 1) return Convolute_2D(In1, In2, Out1, Out2, clearOut);
-		else return Convolute_3D(In1, In2, Out1, Out2, clearOut);
+		if (n.z == 1) return Convolute_2D(In1, In2, Out1, Out2, clearOut, pH, penergy);
+		else return Convolute_3D(In1, In2, Out1, Out2, clearOut, pH, penergy);
 	}
 
 	//Not embedded (must set multiplication_embedding = false before using these)
@@ -213,30 +213,30 @@ protected:
 	//SINGLE OUTPUT
 
 	//3. Inverse. Return dot product of In with Out. (F2 -> Out)
-	double InverseFFT(VEC<DBL3> &In, VEC<DBL3> &Out, bool clearOut)
+	double InverseFFT(VEC<DBL3> &In, VEC<DBL3> &Out, bool clearOut, VEC<DBL3>* pH = nullptr, VEC<double>* penergy = nullptr)
 	{
-		if (n.z == 1) return InverseFFT_2D(In, Out, clearOut);
-		else return InverseFFT_3D(In, Out, clearOut);
+		if (n.z == 1) return InverseFFT_2D(In, Out, clearOut, pH, penergy);
+		else return InverseFFT_3D(In, Out, clearOut, pH, penergy);
 	}
 
 	//AVERAGED INPUTS, SINGLE OUTPUT
 
 	//3. Inverse. Return dot product of In with Out. (F2 -> Out)
 	//Same as InverseFFT with (In1 + In2) / 2 as input and output copied to both Out1 and Out2.
-	double InverseFFT_AveragedInputs(VEC<DBL3> &In1, VEC<DBL3> &In2, VEC<DBL3> &Out, bool clearOut)
+	double InverseFFT_AveragedInputs(VEC<DBL3> &In1, VEC<DBL3> &In2, VEC<DBL3> &Out, bool clearOut, VEC<DBL3>* pH = nullptr, VEC<double>* penergy = nullptr)
 	{
-		if (n.z == 1) return InverseFFT_2D(In1, In2, Out, clearOut);
-		else return InverseFFT_3D(In1, In2, Out, clearOut);
+		if (n.z == 1) return InverseFFT_2D(In1, In2, Out, clearOut, pH, penergy);
+		else return InverseFFT_3D(In1, In2, Out, clearOut, pH, penergy);
 	}
 
 	//AVERAGED INPUTS, DUPLICATED OUTPUTS
 
 	//3. Inverse. Return dot product of In with Out. (F2 -> Out)
 	//Same as InverseFFT with (In1 + In2) / 2 as input and output copied to both Out1 and Out2.
-	double InverseFFT_AveragedInputs_DuplicatedOutputs(VEC<DBL3> &In1, VEC<DBL3> &In2, VEC<DBL3> &Out1, VEC<DBL3> &Out2, bool clearOut)
+	double InverseFFT_AveragedInputs_DuplicatedOutputs(VEC<DBL3> &In1, VEC<DBL3> &In2, VEC<DBL3> &Out1, VEC<DBL3> &Out2, bool clearOut, VEC<DBL3>* pH = nullptr, VEC<double>* penergy = nullptr)
 	{
-		if (n.z == 1) return InverseFFT_2D(In1, In2, Out1, Out2, clearOut);
-		else return InverseFFT_3D(In1, In2, Out1, Out2, clearOut);
+		if (n.z == 1) return InverseFFT_2D(In1, In2, Out1, Out2, clearOut, pH, penergy);
+		else return InverseFFT_3D(In1, In2, Out1, Out2, clearOut, pH, penergy);
 	}
 };
 
@@ -259,7 +259,7 @@ BError Convolution<Owner, Kernel>::SetDimensions(SZ3 n_, DBL3 h_, bool multiplic
 
 //SINGLE INPUT, SINGLE OUTPUT
 template <typename Owner, typename Kernel>
-double Convolution<Owner, Kernel>::Convolute_2D(VEC<DBL3> &In, VEC<DBL3> &Out, bool clearOut)
+double Convolution<Owner, Kernel>::Convolute_2D(VEC<DBL3> &In, VEC<DBL3> &Out, bool clearOut, VEC<DBL3>* pH, VEC<double>* penergy)
 {
 	//2D
 
@@ -343,6 +343,10 @@ double Convolution<Owner, Kernel>::Convolute_2D(VEC<DBL3> &In, VEC<DBL3> &Out, b
 				Out[i + j * n.x] = Out_val;
 
 				dot_product += In_val * Out_val;
+
+				//capture output effective field and energy with spatial resolution if required
+				if (pH) (*pH)[i + j * n.x] = Out_val;
+				if (penergy) (*penergy)[i + j * n.x] = -MU0 * (In_val * Out_val) / 2;
 			}
 		}
 	}
@@ -373,6 +377,10 @@ double Convolution<Owner, Kernel>::Convolute_2D(VEC<DBL3> &In, VEC<DBL3> &Out, b
 				Out[i + j * n.x] += Out_val;
 
 				dot_product += In_val * Out_val;
+
+				//capture output effective field and energy with spatial resolution if required
+				if (pH) (*pH)[i + j * n.x] = Out_val;
+				if (penergy) (*penergy)[i + j * n.x] = -MU0 * (In_val * Out_val) / 2;
 			}
 		}
 	}
@@ -382,7 +390,7 @@ double Convolution<Owner, Kernel>::Convolute_2D(VEC<DBL3> &In, VEC<DBL3> &Out, b
 
 //AVERAGED INPUTS, SINGLE OUTPUT
 template <typename Owner, typename Kernel>
-double Convolution<Owner, Kernel>::Convolute_2D(VEC<DBL3> &In1, VEC<DBL3> &In2, VEC<DBL3> &Out, bool clearOut)
+double Convolution<Owner, Kernel>::Convolute_2D(VEC<DBL3> &In1, VEC<DBL3> &In2, VEC<DBL3> &Out, bool clearOut, VEC<DBL3>* pH, VEC<double>* penergy)
 {
 	//2D
 
@@ -466,6 +474,10 @@ double Convolution<Owner, Kernel>::Convolute_2D(VEC<DBL3> &In1, VEC<DBL3> &In2, 
 				Out[i + j * n.x] = Out_val;
 
 				dot_product += In_val * Out_val;
+
+				//capture output effective field and energy with spatial resolution if required
+				if (pH) (*pH)[i + j * n.x] = Out_val;
+				if (penergy) (*penergy)[i + j * n.x] = -MU0 * (In_val * Out_val) / 2;
 			}
 		}
 	}
@@ -496,6 +508,10 @@ double Convolution<Owner, Kernel>::Convolute_2D(VEC<DBL3> &In1, VEC<DBL3> &In2, 
 				Out[i + j * n.x] += Out_val;
 
 				dot_product += In_val * Out_val;
+
+				//capture output effective field and energy with spatial resolution if required
+				if (pH) (*pH)[i + j * n.x] = Out_val;
+				if (penergy) (*penergy)[i + j * n.x] = -MU0 * (In_val * Out_val) / 2;
 			}
 		}
 	}
@@ -505,7 +521,7 @@ double Convolution<Owner, Kernel>::Convolute_2D(VEC<DBL3> &In1, VEC<DBL3> &In2, 
 
 //AVERAGED INPUTS, DUPLICATED OUTPUTS
 template <typename Owner, typename Kernel>
-double Convolution<Owner, Kernel>::Convolute_2D(VEC<DBL3> &In1, VEC<DBL3> &In2, VEC<DBL3> &Out1, VEC<DBL3> &Out2, bool clearOut)
+double Convolution<Owner, Kernel>::Convolute_2D(VEC<DBL3> &In1, VEC<DBL3> &In2, VEC<DBL3> &Out1, VEC<DBL3> &Out2, bool clearOut, VEC<DBL3>* pH, VEC<double>* penergy)
 {
 	//2D
 
@@ -590,6 +606,10 @@ double Convolution<Owner, Kernel>::Convolute_2D(VEC<DBL3> &In1, VEC<DBL3> &In2, 
 				Out2[i + j * n.x] = Out_val;
 
 				dot_product += In_val * Out_val;
+
+				//capture output effective field and energy with spatial resolution if required
+				if (pH) (*pH)[i + j * n.x] = Out_val;
+				if (penergy) (*penergy)[i + j * n.x] = -MU0 * (In_val * Out_val) / 2;
 			}
 		}
 	}
@@ -621,6 +641,10 @@ double Convolution<Owner, Kernel>::Convolute_2D(VEC<DBL3> &In1, VEC<DBL3> &In2, 
 				Out2[i + j * n.x] += Out_val;
 
 				dot_product += In_val * Out_val;
+
+				//capture output effective field and energy with spatial resolution if required
+				if (pH) (*pH)[i + j * n.x] = Out_val;
+				if (penergy) (*penergy)[i + j * n.x] = -MU0 * (In_val * Out_val) / 2;
 			}
 		}
 	}
@@ -632,7 +656,7 @@ double Convolution<Owner, Kernel>::Convolute_2D(VEC<DBL3> &In1, VEC<DBL3> &In2, 
 
 //SINGLE INPUT, SINGLE OUTPUT
 template <typename Owner, typename Kernel>
-double Convolution<Owner, Kernel>::Convolute_3D(VEC<DBL3> &In, VEC<DBL3> &Out, bool clearOut)
+double Convolution<Owner, Kernel>::Convolute_3D(VEC<DBL3> &In, VEC<DBL3> &Out, bool clearOut, VEC<DBL3>* pH, VEC<double>* penergy)
 {	
 	//3D
 
@@ -769,6 +793,10 @@ double Convolution<Owner, Kernel>::Convolute_3D(VEC<DBL3> &In, VEC<DBL3> &Out, b
 					Out[i + j * n.x + k * n.x * n.y] = Out_val;
 
 					dot_product += In_val * Out_val;
+
+					//capture output effective field and energy with spatial resolution if required
+					if (pH) (*pH)[i + j * n.x + k * n.x * n.y] = Out_val;
+					if (penergy) (*penergy)[i + j * n.x + k * n.x * n.y] = -MU0 * (In_val * Out_val) / 2;
 				}
 			}
 		}
@@ -800,6 +828,10 @@ double Convolution<Owner, Kernel>::Convolute_3D(VEC<DBL3> &In, VEC<DBL3> &Out, b
 					Out[i + j * n.x + k * n.x * n.y] += Out_val;
 
 					dot_product += In_val * Out_val;
+
+					//capture output effective field and energy with spatial resolution if required
+					if (pH) (*pH)[i + j * n.x + k * n.x * n.y] = Out_val;
+					if (penergy) (*penergy)[i + j * n.x + k * n.x * n.y] = -MU0 * (In_val * Out_val) / 2;
 				}
 			}
 		}
@@ -810,7 +842,7 @@ double Convolution<Owner, Kernel>::Convolute_3D(VEC<DBL3> &In, VEC<DBL3> &Out, b
 
 //AVERAGED INPUTS, SINGLE OUTPUT
 template <typename Owner, typename Kernel>
-double Convolution<Owner, Kernel>::Convolute_3D(VEC<DBL3> &In1, VEC<DBL3> &In2, VEC<DBL3> &Out, bool clearOut)
+double Convolution<Owner, Kernel>::Convolute_3D(VEC<DBL3> &In1, VEC<DBL3> &In2, VEC<DBL3> &Out, bool clearOut, VEC<DBL3>* pH, VEC<double>* penergy)
 {
 	//1. FFTs along x
 	for (int k = 0; k < n.z; k++) {
@@ -945,6 +977,10 @@ double Convolution<Owner, Kernel>::Convolute_3D(VEC<DBL3> &In1, VEC<DBL3> &In2, 
 					Out[i + j * n.x + k * n.x * n.y] = Out_val;
 
 					dot_product += In_val * Out_val;
+
+					//capture output effective field and energy with spatial resolution if required
+					if (pH) (*pH)[i + j * n.x + k * n.x * n.y] = Out_val;
+					if (penergy) (*penergy)[i + j * n.x + k * n.x * n.y] = -MU0 * (In_val * Out_val) / 2;
 				}
 			}
 		}
@@ -976,6 +1012,10 @@ double Convolution<Owner, Kernel>::Convolute_3D(VEC<DBL3> &In1, VEC<DBL3> &In2, 
 					Out[i + j * n.x + k * n.x * n.y] += Out_val;
 
 					dot_product += In_val * Out_val;
+
+					//capture output effective field and energy with spatial resolution if required
+					if (pH) (*pH)[i + j * n.x + k * n.x * n.y] = Out_val;
+					if (penergy) (*penergy)[i + j * n.x + k * n.x * n.y] = -MU0 * (In_val * Out_val) / 2;
 				}
 			}
 		}
@@ -986,7 +1026,7 @@ double Convolution<Owner, Kernel>::Convolute_3D(VEC<DBL3> &In1, VEC<DBL3> &In2, 
 
 //AVERAGED INPUTS, DUPLICATED OUTPUTS
 template <typename Owner, typename Kernel>
-double Convolution<Owner, Kernel>::Convolute_3D(VEC<DBL3> &In1, VEC<DBL3> &In2, VEC<DBL3> &Out1, VEC<DBL3> &Out2, bool clearOut)
+double Convolution<Owner, Kernel>::Convolute_3D(VEC<DBL3> &In1, VEC<DBL3> &In2, VEC<DBL3> &Out1, VEC<DBL3> &Out2, bool clearOut, VEC<DBL3>* pH, VEC<double>* penergy)
 {
 	//1. FFTs along x
 	for (int k = 0; k < n.z; k++) {
@@ -1122,6 +1162,10 @@ double Convolution<Owner, Kernel>::Convolute_3D(VEC<DBL3> &In1, VEC<DBL3> &In2, 
 					Out2[i + j * n.x + k * n.x * n.y] = Out_val;
 
 					dot_product += In_val * Out_val;
+
+					//capture output effective field and energy with spatial resolution if required
+					if (pH) (*pH)[i + j * n.x + k * n.x * n.y] = Out_val;
+					if (penergy) (*penergy)[i + j * n.x + k * n.x * n.y] = -MU0 * (In_val * Out_val) / 2;
 				}
 			}
 		}
@@ -1154,6 +1198,10 @@ double Convolution<Owner, Kernel>::Convolute_3D(VEC<DBL3> &In1, VEC<DBL3> &In2, 
 					Out2[i + j * n.x + k * n.x * n.y] += Out_val;
 
 					dot_product += In_val * Out_val;
+
+					//capture output effective field and energy with spatial resolution if required
+					if (pH) (*pH)[i + j * n.x + k * n.x * n.y] = Out_val;
+					if (penergy) (*penergy)[i + j * n.x + k * n.x * n.y] = -MU0 * (In_val * Out_val) / 2;
 				}
 			}
 		}
@@ -1223,7 +1271,7 @@ void Convolution<Owner, Kernel>::ForwardFFT_2D(VEC<DBL3> &In)
 
 //3. Inverse. Return dot product of In with Out. (F2 -> Out)
 template <typename Owner, typename Kernel>
-double Convolution<Owner, Kernel>::InverseFFT_2D(VEC<DBL3> &In, VEC<DBL3> &Out, bool clearOut)
+double Convolution<Owner, Kernel>::InverseFFT_2D(VEC<DBL3> &In, VEC<DBL3> &Out, bool clearOut, VEC<DBL3>* pH, VEC<double>* penergy)
 {
 	//1. IFFTs along y
 #pragma omp parallel for
@@ -1275,6 +1323,10 @@ double Convolution<Owner, Kernel>::InverseFFT_2D(VEC<DBL3> &In, VEC<DBL3> &Out, 
 				Out[i + j * n.x] = Out_val;
 
 				dot_product += In_val * Out_val;
+
+				//capture output effective field and energy with spatial resolution if required
+				if (pH) (*pH)[i + j * n.x] = Out_val;
+				if (penergy) (*penergy)[i + j * n.x] = -MU0 * (In_val * Out_val) / 2;
 			}
 		}
 	}
@@ -1304,6 +1356,10 @@ double Convolution<Owner, Kernel>::InverseFFT_2D(VEC<DBL3> &In, VEC<DBL3> &Out, 
 				Out[i + j * n.x] += Out_val;
 
 				dot_product += In_val * Out_val;
+
+				//capture output effective field and energy with spatial resolution if required
+				if (pH) (*pH)[i + j * n.x] = Out_val;
+				if (penergy) (*penergy)[i + j * n.x] = -MU0 * (In_val * Out_val) / 2;
 			}
 		}
 	}
@@ -1370,7 +1426,7 @@ void Convolution<Owner, Kernel>::ForwardFFT_2D(VEC<DBL3> &In1, VEC<DBL3> &In2)
 
 //3. Inverse. Return dot product of In with Out. (F2 -> Out)
 template <typename Owner, typename Kernel>
-double Convolution<Owner, Kernel>::InverseFFT_2D(VEC<DBL3> &In1, VEC<DBL3> &In2, VEC<DBL3> &Out, bool clearOut)
+double Convolution<Owner, Kernel>::InverseFFT_2D(VEC<DBL3> &In1, VEC<DBL3> &In2, VEC<DBL3> &Out, bool clearOut, VEC<DBL3>* pH, VEC<double>* penergy)
 {
 	//1. IFFTs along y
 #pragma omp parallel for
@@ -1422,6 +1478,10 @@ double Convolution<Owner, Kernel>::InverseFFT_2D(VEC<DBL3> &In1, VEC<DBL3> &In2,
 				Out[i + j * n.x] = Out_val;
 
 				dot_product += In_val * Out_val;
+
+				//capture output effective field and energy with spatial resolution if required
+				if (pH) (*pH)[i + j * n.x] = Out_val;
+				if (penergy) (*penergy)[i + j * n.x] = -MU0 * (In_val * Out_val) / 2;
 			}
 		}
 	}
@@ -1451,6 +1511,10 @@ double Convolution<Owner, Kernel>::InverseFFT_2D(VEC<DBL3> &In1, VEC<DBL3> &In2,
 				Out[i + j * n.x] += Out_val;
 
 				dot_product += In_val * Out_val;
+
+				//capture output effective field and energy with spatial resolution if required
+				if (pH) (*pH)[i + j * n.x] = Out_val;
+				if (penergy) (*penergy)[i + j * n.x] = -MU0 * (In_val * Out_val) / 2;
 			}
 		}
 	}
@@ -1462,7 +1526,7 @@ double Convolution<Owner, Kernel>::InverseFFT_2D(VEC<DBL3> &In1, VEC<DBL3> &In2,
 
 //3. Inverse. Return dot product of In with Out. (F2 -> Out)
 template <typename Owner, typename Kernel>
-double Convolution<Owner, Kernel>::InverseFFT_2D(VEC<DBL3> &In1, VEC<DBL3> &In2, VEC<DBL3> &Out1, VEC<DBL3> &Out2, bool clearOut)
+double Convolution<Owner, Kernel>::InverseFFT_2D(VEC<DBL3> &In1, VEC<DBL3> &In2, VEC<DBL3> &Out1, VEC<DBL3> &Out2, bool clearOut, VEC<DBL3>* pH, VEC<double>* penergy)
 {
 	//1. IFFTs along y
 #pragma omp parallel for
@@ -1515,6 +1579,10 @@ double Convolution<Owner, Kernel>::InverseFFT_2D(VEC<DBL3> &In1, VEC<DBL3> &In2,
 				Out2[i + j * n.x] = Out_val;
 
 				dot_product += In_val * Out_val;
+
+				//capture output effective field and energy with spatial resolution if required
+				if (pH) (*pH)[i + j * n.x] = Out_val;
+				if (penergy) (*penergy)[i + j * n.x] = -MU0 * (In_val * Out_val) / 2;
 			}
 		}
 	}
@@ -1545,6 +1613,10 @@ double Convolution<Owner, Kernel>::InverseFFT_2D(VEC<DBL3> &In1, VEC<DBL3> &In2,
 				Out2[i + j * n.x] += Out_val;
 
 				dot_product += In_val * Out_val;
+
+				//capture output effective field and energy with spatial resolution if required
+				if (pH) (*pH)[i + j * n.x] = Out_val;
+				if (penergy) (*penergy)[i + j * n.x] = -MU0 * (In_val * Out_val) / 2;
 			}
 		}
 	}
@@ -1639,7 +1711,7 @@ void Convolution<Owner, Kernel>::ForwardFFT_3D(VEC<DBL3> &In)
 
 //3. Inverse. Return dot product of In with Out. (F2 -> Out)
 template <typename Owner, typename Kernel>
-double Convolution<Owner, Kernel>::InverseFFT_3D(VEC<DBL3> &In, VEC<DBL3> &Out, bool clearOut)
+double Convolution<Owner, Kernel>::InverseFFT_3D(VEC<DBL3> &In, VEC<DBL3> &Out, bool clearOut, VEC<DBL3>* pH, VEC<double>* penergy)
 {
 	//1. IFFTs along z
 #pragma omp parallel for
@@ -1718,6 +1790,10 @@ double Convolution<Owner, Kernel>::InverseFFT_3D(VEC<DBL3> &In, VEC<DBL3> &Out, 
 					Out[i + j * n.x + k * n.x * n.y] = Out_val;
 
 					dot_product += In_val * Out_val;
+
+					//capture output effective field and energy with spatial resolution if required
+					if (pH) (*pH)[i + j * n.x + k * n.x * n.y] = Out_val;
+					if (penergy) (*penergy)[i + j * n.x + k * n.x * n.y] = -MU0 * (In_val * Out_val) / 2;
 				}
 			}
 		}
@@ -1749,6 +1825,10 @@ double Convolution<Owner, Kernel>::InverseFFT_3D(VEC<DBL3> &In, VEC<DBL3> &Out, 
 					Out[i + j * n.x + k * n.x * n.y] += Out_val;
 
 					dot_product += In_val * Out_val;
+
+					//capture output effective field and energy with spatial resolution if required
+					if (pH) (*pH)[i + j * n.x + k * n.x * n.y] = Out_val;
+					if (penergy) (*penergy)[i + j * n.x + k * n.x * n.y] = -MU0 * (In_val * Out_val) / 2;
 				}
 			}
 		}
@@ -1842,7 +1922,7 @@ void Convolution<Owner, Kernel>::ForwardFFT_3D(VEC<DBL3> &In1, VEC<DBL3> &In2)
 
 //3. Inverse. Return dot product of In with Out. (F2 -> Out)
 template <typename Owner, typename Kernel>
-double Convolution<Owner, Kernel>::InverseFFT_3D(VEC<DBL3> &In1, VEC<DBL3> &In2, VEC<DBL3> &Out, bool clearOut)
+double Convolution<Owner, Kernel>::InverseFFT_3D(VEC<DBL3> &In1, VEC<DBL3> &In2, VEC<DBL3> &Out, bool clearOut, VEC<DBL3>* pH, VEC<double>* penergy)
 {
 	//1. IFFTs along z
 #pragma omp parallel for
@@ -1921,6 +2001,10 @@ double Convolution<Owner, Kernel>::InverseFFT_3D(VEC<DBL3> &In1, VEC<DBL3> &In2,
 					Out[i + j * n.x + k * n.x * n.y] = Out_val;
 
 					dot_product += In_val * Out_val;
+
+					//capture output effective field and energy with spatial resolution if required
+					if (pH) (*pH)[i + j * n.x + k * n.x * n.y] = Out_val;
+					if (penergy) (*penergy)[i + j * n.x + k * n.x * n.y] = -MU0 * (In_val * Out_val) / 2;
 				}
 			}
 		}
@@ -1952,6 +2036,10 @@ double Convolution<Owner, Kernel>::InverseFFT_3D(VEC<DBL3> &In1, VEC<DBL3> &In2,
 					Out[i + j * n.x + k * n.x * n.y] += Out_val;
 
 					dot_product += In_val * Out_val;
+
+					//capture output effective field and energy with spatial resolution if required
+					if (pH) (*pH)[i + j * n.x + k * n.x * n.y] = Out_val;
+					if (penergy) (*penergy)[i + j * n.x + k * n.x * n.y] = -MU0 * (In_val * Out_val) / 2;
 				}
 			}
 		}
@@ -1964,7 +2052,7 @@ double Convolution<Owner, Kernel>::InverseFFT_3D(VEC<DBL3> &In1, VEC<DBL3> &In2,
 
 //3. Inverse. Return dot product of In with Out. (F2 -> Out)
 template <typename Owner, typename Kernel>
-double Convolution<Owner, Kernel>::InverseFFT_3D(VEC<DBL3> &In1, VEC<DBL3> &In2, VEC<DBL3> &Out1, VEC<DBL3> &Out2, bool clearOut)
+double Convolution<Owner, Kernel>::InverseFFT_3D(VEC<DBL3> &In1, VEC<DBL3> &In2, VEC<DBL3> &Out1, VEC<DBL3> &Out2, bool clearOut, VEC<DBL3>* pH, VEC<double>* penergy)
 {
 	//1. IFFTs along z
 #pragma omp parallel for
@@ -2044,6 +2132,10 @@ double Convolution<Owner, Kernel>::InverseFFT_3D(VEC<DBL3> &In1, VEC<DBL3> &In2,
 					Out2[i + j * n.x + k * n.x * n.y] = Out_val;
 
 					dot_product += In_val * Out_val;
+
+					//capture output effective field and energy with spatial resolution if required
+					if (pH) (*pH)[i + j * n.x + k * n.x * n.y] = Out_val;
+					if (penergy) (*penergy)[i + j * n.x + k * n.x * n.y] = -MU0 * (In_val * Out_val) / 2;
 				}
 			}
 		}
@@ -2076,6 +2168,10 @@ double Convolution<Owner, Kernel>::InverseFFT_3D(VEC<DBL3> &In1, VEC<DBL3> &In2,
 					Out2[i + j * n.x + k * n.x * n.y] += Out_val;
 
 					dot_product += In_val * Out_val;
+
+					//capture output effective field and energy with spatial resolution if required
+					if (pH) (*pH)[i + j * n.x + k * n.x * n.y] = Out_val;
+					if (penergy) (*penergy)[i + j * n.x + k * n.x * n.y] = -MU0 * (In_val * Out_val) / 2;
 				}
 			}
 		}

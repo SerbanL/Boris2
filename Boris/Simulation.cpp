@@ -10,7 +10,7 @@ Simulation::Simulation(HWND hWnd, int Program_Version, std::string server_port_,
 	ProgramStateNames(this,
 		{
 			VINFO(BD),
-			VINFO(directory), VINFO(savedataFile), VINFO(imageSaveFileBase), VINFO(currentSimulationFile), VINFO(appendToDataFile), VINFO(saveDataFlag), VINFO(saveImageFlag),
+			VINFO(directory), VINFO(savedataFile), VINFO(imageSaveFileBase), VINFO(currentSimulationFile), VINFO(appendToDataFile), VINFO(saveDataFlag), VINFO(saveImageFlag), VINFO(dataprecision), VINFO(savedata_diskbuffer_size),
 			VINFO(saveDataList), VINFO(dataBoxList),
 			VINFO(stage_step),
 			VINFO(simStages), VINFO(iterUpdate), VINFO(autocomplete),
@@ -31,7 +31,7 @@ Simulation::Simulation(int Program_Version, std::string server_port_, std::strin
 	ProgramStateNames(this,
 		{
 			VINFO(BD),
-			VINFO(directory), VINFO(savedataFile), VINFO(imageSaveFileBase), VINFO(currentSimulationFile), VINFO(appendToDataFile), VINFO(saveDataFlag), VINFO(saveImageFlag),
+			VINFO(directory), VINFO(savedataFile), VINFO(imageSaveFileBase), VINFO(currentSimulationFile), VINFO(appendToDataFile), VINFO(saveDataFlag), VINFO(saveImageFlag), VINFO(dataprecision), VINFO(savedata_diskbuffer_size),
 			VINFO(saveDataList), VINFO(dataBoxList),
 			VINFO(stage_step),
 			VINFO(simStages), VINFO(iterUpdate), VINFO(autocomplete),
@@ -325,6 +325,21 @@ Simulation::Simulation(int Program_Version, std::string server_port_, std::strin
 	commands[CMD_SETANGLE].limits = { { double(-360.0), double(360.0) },{ double(-360.0), double(360.0) }, { Any(), Any() } };
 	commands[CMD_SETANGLE].descr = "[tc0,0.5,0.5,1/tc]Set magnetization angle in mesh uniformly using polar coordinates. If mesh name not specified, this is set for all ferromagnetic meshes.";
 
+	commands.insert(CMD_FLOWER, CommandSpecifier(CMD_FLOWER), "flower");
+	commands[CMD_FLOWER].usage = "[tc0,0.5,0,1/tc]USAGE : <b>flower</b> <i>direction (radius thickness centre (meshname))</i>";
+	commands[CMD_FLOWER].limits = { {int(-1), int(+1)}, { double(0.0), Any() }, { double(0.0), Any() }, { DBL3(), Any() }, { Any(), Any() } };
+	commands[CMD_FLOWER].descr = "[tc0,0.5,0.5,1/tc]Set magnetization in a flower state with given direction (-1 or +1) starting at given centre, over given radius and thickness. If not specified then entire mesh is used, centred. If mesh name not specified, this is set for focused mesh only.";
+
+	commands.insert(CMD_ONION, CommandSpecifier(CMD_ONION), "onion");
+	commands[CMD_ONION].usage = "[tc0,0.5,0,1/tc]USAGE : <b>onion</b> <i>direction (radius1 radius2 thickness centre (meshname))</i>";
+	commands[CMD_ONION].limits = { {int(-1), int(+1)}, { double(0.0), Any() }, { double(0.0), Any() }, { double(0.0), Any() }, { DBL3(), Any() }, { Any(), Any() } };
+	commands[CMD_ONION].descr = "[tc0,0.5,0.5,1/tc]Set magnetization in an onion state with given direction (-1 clockwise, +1 anti-clockwise) starting at given centre, from radius1 to radius2 and thickness. If not specified then entire mesh is used, centred. If mesh name not specified, this is set for focused mesh only.";
+
+	commands.insert(CMD_CROSSTIE, CommandSpecifier(CMD_CROSSTIE), "crosstie");
+	commands[CMD_CROSSTIE].usage = "[tc0,0.5,0,1/tc]USAGE : <b>crosstie</b> <i>direction (radius thickness centre (meshname))</i>";
+	commands[CMD_CROSSTIE].limits = { {int(-1), int(+1)}, { double(0.0), Any() }, { double(0.0), Any() }, { DBL3(), Any() }, { Any(), Any() } };
+	commands[CMD_CROSSTIE].descr = "[tc0,0.5,0.5,1/tc]Set magnetization in a crosstie state with given direction (-1 or +1) starting at given centre, over given radius and thickness. If not specified then entire mesh is used, centred. If mesh name not specified, this is set for focused mesh only.";
+
 	commands.insert(CMD_SETOBJECTANGLE, CommandSpecifier(CMD_SETOBJECTANGLE), "setobjectangle");
 	commands[CMD_SETOBJECTANGLE].usage = "[tc0,0.5,0,1/tc]USAGE : <b>setobjectangle</b> <i>polar azimuthal position (meshname)</i>";
 	commands[CMD_SETOBJECTANGLE].limits = { { double(-360.0), double(360.0) },{ double(-360.0), double(360.0) }, { DBL3(), Any() },  { Any(), Any() } };
@@ -335,6 +350,11 @@ Simulation::Simulation(int Program_Version, std::string server_port_, std::strin
 	commands[CMD_RANDOM].usage = "[tc0,0.5,0,1/tc]USAGE : <b>random</b> <i>(meshname, (seed))</i>";
 	commands[CMD_RANDOM].limits = { { Any(), Any() }, { int(1), Any() } };
 	commands[CMD_RANDOM].descr = "[tc0,0.5,0.5,1/tc]Set random magnetization distribution in mesh, with pseud-random number generator seed (default 1 if not specified). If mesh name not specified, set for focused mesh.";
+
+	commands.insert(CMD_RANDOMXY, CommandSpecifier(CMD_RANDOMXY), "randomxy");
+	commands[CMD_RANDOMXY].usage = "[tc0,0.5,0,1/tc]USAGE : <b>randomxy</b> <i>(meshname, (seed))</i>";
+	commands[CMD_RANDOMXY].limits = { { Any(), Any() }, { int(1), Any() } };
+	commands[CMD_RANDOMXY].descr = "[tc0,0.5,0.5,1/tc]Set random magnetization distribution in the xy plane in mesh, with pseud-random number generator seed (default 1 if not specified). If mesh name not specified, set for focused mesh.";
 
 	commands.insert(CMD_SETRECT, CommandSpecifier(CMD_SETRECT), "setrect");
 	commands[CMD_SETRECT].usage = "[tc0,0.5,0,1/tc]USAGE : <b>setrect</b> <i>polar azimuthal rectangle (meshname)</i>";
@@ -379,7 +399,7 @@ Simulation::Simulation(int Program_Version, std::string server_port_, std::strin
 	commands.insert(CMD_PBC, CommandSpecifier(CMD_PBC), "pbc");
 	commands[CMD_PBC].usage = "[tc0,0.5,0,1/tc]USAGE : <b>pbc</b> <i>meshname flag images</i>";
 	commands[CMD_PBC].descr = "[tc0,0.5,0.5,1/tc]Set periodic boundary conditions for magnetization in given mesh (must be magnetic, or supermesh). Flags specify types of perodic boundary conditions: x, y, or z; images specify the number of mesh images to use either side for the given direction when calculating the demagnetising kernel - a value of zero disables pbc. e.g. ""pbc x 10"" sets x periodic boundary conditions with 10 images either side for the focused mesh; ""pbc x 0"" clears pbc for the x axis.";
-	commands[CMD_PBC].limits = { { Any(), Any() },{ Any(), Any() }, {int(0), int(1000)} };
+	commands[CMD_PBC].limits = { { Any(), Any() }, { Any(), Any() }, { Any(), Any() } };
 
 	commands.insert(CMD_SETFIELD, CommandSpecifier(CMD_SETFIELD), "setfield");
 	commands[CMD_SETFIELD].usage = "[tc0,0.5,0,1/tc]USAGE : <b>setfield</b> <i>magnitude polar azimuthal (meshname)</i>";
@@ -436,9 +456,10 @@ Simulation::Simulation(int Program_Version, std::string server_port_, std::strin
 	commands[CMD_ODE].descr = "[tc0,0.5,0.5,1/tc]Show interactive list of available and currently set ODEs and evaluation methods.";
 
 	commands.insert(CMD_EVALSPEEDUP, CommandSpecifier(CMD_EVALSPEEDUP), "evalspeedup");
-	commands[CMD_EVALSPEEDUP].usage = "[tc0,0.5,0,1/tc]USAGE : <b>evalspeedup</b> <i>status</i>";
+	commands[CMD_EVALSPEEDUP].usage = "[tc0,0.5,0,1/tc]USAGE : <b>evalspeedup</b> <i>level</i>";
 	commands[CMD_EVALSPEEDUP].limits = { { int(EVALSPEEDUP_NONE), int(EVALSPEEDUP_NUMENTRIES) - 1 } };
-	commands[CMD_EVALSPEEDUP].descr = "[tc0,0.5,0.5,1/tc]<b>!!!Experimental!!!</b>Status levels: 0 (no speedup), 1 (accurate), 2 (aggressive), 3 (extreme).";
+	commands[CMD_EVALSPEEDUP].descr = "[tc0,0.5,0.5,1/tc]Enable/disable evaluation speedup by extrapolating demag field at evaluation substeps from previous field updates. Status levels: 0 (no speedup), 1 (step), 2 (linear), 3 (quadratic). If enabling speedup strongly recommended to always use quadratic type.";
+	commands[CMD_EVALSPEEDUP].return_descr = "[tc0,0.5,0,1/tc]Script return values: <i>level</i>";
 
 	commands.insert(CMD_SETODE, CommandSpecifier(CMD_SETODE), "setode");
 	commands[CMD_SETODE].usage = "[tc0,0.5,0,1/tc]USAGE : <b>setode</b> <i>equation evaluation</i>";
@@ -542,6 +563,18 @@ Simulation::Simulation(int Program_Version, std::string server_port_, std::strin
 	commands[CMD_IMAGESAVEFLAG].descr = "[tc0,0.5,0.5,1/tc]Set image saving flag status.";
 	commands[CMD_IMAGESAVEFLAG].return_descr = "[tc0,0.5,0,1/tc]Script return values: <i>status</i>";
 
+	commands.insert(CMD_DISKBUFFERLINES, CommandSpecifier(CMD_DISKBUFFERLINES), "diskbufferlines");
+	commands[CMD_DISKBUFFERLINES].usage = "[tc0,0.5,0,1/tc]USAGE : <b>diskbufferlines</b> <i>lines</i>";
+	commands[CMD_DISKBUFFERLINES].limits = { { int(1), Any() } };
+	commands[CMD_DISKBUFFERLINES].descr = "[tc0,0.5,0.5,1/tc]Set output disk buffer number of lines - default is 100. You shouldn't need to adjust this.";
+	commands[CMD_DISKBUFFERLINES].return_descr = "[tc0,0.5,0,1/tc]Script return values: <i>bufferlines</i>";
+
+	commands.insert(CMD_DATAPRECISION, CommandSpecifier(CMD_DATAPRECISION), "dataprecision");
+	commands[CMD_DATAPRECISION].usage = "[tc0,0.5,0,1/tc]USAGE : <b>dataprecision</b> <i>precision</i>";
+	commands[CMD_DATAPRECISION].limits = { { int(SAVEDATAPRECISION), Any() } };
+	commands[CMD_DATAPRECISION].descr = "[tc0,0.5,0.5,1/tc]Set number of significant figures used for saving data to file as well as data display. The default (and minimum) is 6.";
+	commands[CMD_DATAPRECISION].return_descr = "[tc0,0.5,0,1/tc]Script return values: <i>precision</i>";
+
 	commands.insert(CMD_STAGES, CommandSpecifier(CMD_STAGES), "stages");
 	commands[CMD_STAGES].usage = "[tc0,0.5,0,1/tc]USAGE : <b>stages</b>";
 	commands[CMD_STAGES].descr = "[tc0,0.5,0.5,1/tc]Shows list of currently set simulation stages and available stage types.";
@@ -586,6 +619,10 @@ Simulation::Simulation(int Program_Version, std::string server_port_, std::strin
 	commands[CMD_SETPARAM].usage = "[tc0,0.5,0,1/tc]USAGE : <b>setparam</b> <i>meshname paramname (value)</i>";
 	commands[CMD_SETPARAM].descr = "[tc0,0.5,0.5,1/tc]Set the named parameter to given value.";
 	commands[CMD_SETPARAM].return_descr = "[tc0,0.5,0,1/tc]Script return values: <i>value</i> - return value of named parameter in named mesh.";
+
+	commands.insert(CMD_SETKTENS, CommandSpecifier(CMD_SETKTENS), "setktens");
+	commands[CMD_SETKTENS].usage = "[tc0,0.5,0,1/tc]USAGE : <b>setktens</b> <i>term1 (term2 ...)</i>";
+	commands[CMD_SETKTENS].descr = "[tc0,0.5,0.5,1/tc]Set the anisotropy energy terms for tensorial anisotropy. Each term must be of the form dxn1yn2zn3, where d is a number, n1, n2, n3 are integers >= 0. x, y, z are string literals.";
 
 	commands.insert(CMD_PARAMSTEMP, CommandSpecifier(CMD_PARAMSTEMP), "paramstemp");
 	commands[CMD_PARAMSTEMP].usage = "[tc0,0.5,0,1/tc]USAGE : <b>paramstemp</b> <i>(meshname)</i>";
@@ -651,6 +688,10 @@ Simulation::Simulation(int Program_Version, std::string server_port_, std::strin
 	commands.insert(CMD_DISPLAY, CommandSpecifier(CMD_DISPLAY), "display");
 	commands[CMD_DISPLAY].usage = "[tc0,0.5,0,1/tc]USAGE : <b>display</b> <i>name (meshname)</i>";
 	commands[CMD_DISPLAY].descr = "[tc0,0.5,0.5,1/tc]Change quantity to display for given mesh (active mesh if name not given).";
+
+	commands.insert(CMD_DISPLAYMODULE, CommandSpecifier(CMD_DISPLAYMODULE), "displaymodule");
+	commands[CMD_DISPLAYMODULE].usage = "[tc0,0.5,0,1/tc]USAGE : <b>displaymodule</b> <i>modulename (meshname)</i>";
+	commands[CMD_DISPLAYMODULE].descr = "[tc0,0.5,0.5,1/tc]Select module for effective field and energy density display (active mesh if name not given). If modulename is none then display total effective field.";
 
 	commands.insert(CMD_DISPLAYDETAILLEVEL, CommandSpecifier(CMD_DISPLAYDETAILLEVEL), "displaydetail");
 	commands[CMD_DISPLAYDETAILLEVEL].usage = "[tc0,0.5,0,1/tc]USAGE : <b>displaydetail</b> <i>size</i>";
@@ -739,7 +780,7 @@ Simulation::Simulation(int Program_Version, std::string server_port_, std::strin
 
 	commands.insert(CMD_COUPLETODIPOLES, CommandSpecifier(CMD_COUPLETODIPOLES), "coupletodipoles");
 	commands[CMD_COUPLETODIPOLES].usage = "[tc0,0.5,0,1/tc]USAGE : <b>coupletodipoles</b> <i>status</i>";
-	commands[CMD_COUPLETODIPOLES].descr = "[tc0,0.5,0.5,1/tc]Set/unset coupling to dipoles : if ferromagnetic meshes touch a dipole mesh then interface magnetic cells are exchange coupled to the dipole magnetization direction.";
+	commands[CMD_COUPLETODIPOLES].descr = "[tc0,0.5,0.5,1/tc]Set/unset coupling to dipoles : if magnetic meshes touch a dipole mesh then interface magnetic cells are coupled to the dipole magnetization direction.";
 
 	commands.insert(CMD_EXCHANGECOUPLEDMESHES, CommandSpecifier(CMD_EXCHANGECOUPLEDMESHES), "exchangecoupledmeshes");
 	commands[CMD_EXCHANGECOUPLEDMESHES].usage = "[tc0,0.5,0,1/tc]USAGE : <b>exchangecoupledmeshes</b> <i>status (meshname)</i>";
@@ -765,8 +806,9 @@ Simulation::Simulation(int Program_Version, std::string server_port_, std::strin
 	commands[CMD_ELECTRODES].descr = "[tc0,0.5,0.5,1/tc]Show currently configured electrodes.";
 
 	commands.insert(CMD_SETDEFAULTELECTRODES, CommandSpecifier(CMD_SETDEFAULTELECTRODES), "setdefaultelectrodes");
-	commands[CMD_SETDEFAULTELECTRODES].usage = "[tc0,0.5,0,1/tc]USAGE : <b>setdefaultelectrodes</b>";
-	commands[CMD_SETDEFAULTELECTRODES].descr = "[tc0,0.5,0.5,1/tc]Set electrodes at the x-axis ends of the given mesh, both set at 0V. Set the left-side electrode as the ground. Delete all other electrodes.";
+	commands[CMD_SETDEFAULTELECTRODES].usage = "[tc0,0.5,0,1/tc]USAGE : <b>setdefaultelectrodes</b> <i>(sides)</i>";
+	commands[CMD_SETDEFAULTELECTRODES].limits = { { Any(), Any() } };
+	commands[CMD_SETDEFAULTELECTRODES].descr = "[tc0,0.5,0.5,1/tc]Set electrodes at the x-axis ends of the given mesh, both set at 0V. If sides specified (literal x, y, or z) then set at respective axis ends instead of default x-axis ends. Set the left-side electrode as the ground. Delete all other electrodes.";
 
 	commands.insert(CMD_SETELECTRODERECT, CommandSpecifier(CMD_SETELECTRODERECT), "setelectroderect");
 	commands[CMD_SETELECTRODERECT].usage = "[tc0,0.5,0,1/tc]USAGE : <b>setelectroderect</b> <i>electrode_index electrode_rect</i>";
@@ -802,13 +844,13 @@ Simulation::Simulation(int Program_Version, std::string server_port_, std::strin
 
 	commands.insert(CMD_TSOLVERCONFIG, CommandSpecifier(CMD_TSOLVERCONFIG), "tsolverconfig");
 	commands[CMD_TSOLVERCONFIG].usage = "[tc0,0.5,0,1/tc]USAGE : <b>tsolverconfig</b> <i>convergence_error (iters_timeout)</i>";
-	commands[CMD_TSOLVERCONFIG].limits = { { double(1e-10), double(1e-1) }, { int(1), int(500000) } };
+	commands[CMD_TSOLVERCONFIG].limits = { { double(0.0), double(1.0) }, { int(1), Any() } };
 	commands[CMD_TSOLVERCONFIG].descr = "[tc0,0.5,0.5,1/tc]Set transport solver convergence error and iterations for timeout (if given, else use default).";
 	commands[CMD_TSOLVERCONFIG].return_descr = "[tc0,0.5,0,1/tc]Script return values: <i>convergence_error iters_timeout</i>";
 
 	commands.insert(CMD_SSOLVERCONFIG, CommandSpecifier(CMD_SSOLVERCONFIG), "ssolverconfig");
 	commands[CMD_SSOLVERCONFIG].usage = "[tc0,0.5,0,1/tc]USAGE : <b>ssolverconfig</b> <i>s_convergence_error (s_iters_timeout)</i>";
-	commands[CMD_SSOLVERCONFIG].limits = { { double(1e-10), double(1e-1) },{ int(1), int(50000) } };
+	commands[CMD_SSOLVERCONFIG].limits = { { double(0.0), double(1.0) }, { int(1), Any() } };
 	commands[CMD_SSOLVERCONFIG].descr = "[tc0,0.5,0.5,1/tc]Set spin-transport solver convergence error and iterations for timeout (if given, else use default).";
 	commands[CMD_SSOLVERCONFIG].return_descr = "[tc0,0.5,0,1/tc]Script return values: <i>s_convergence_error s_iters_timeout</i>";
 	
@@ -920,14 +962,14 @@ Simulation::Simulation(int Program_Version, std::string server_port_, std::strin
 	commands.insert(CMD_SETDTSPEEDUP, CommandSpecifier(CMD_SETDTSPEEDUP), "setdtspeedup");
 	commands[CMD_SETDTSPEEDUP].usage = "[tc0,0.5,0,1/tc]USAGE : <b>setdtspeedup</b> <i>value</i>";
 	commands[CMD_SETDTSPEEDUP].limits = { { double(MINTIMESTEP), double(MAXTIMESTEP) } };
-	commands[CMD_SETDTSPEEDUP].descr = "[tc0,0.5,0.5,1/tc]Set time step for evaluation speedup, to be used in when in extreme mode.";
+	commands[CMD_SETDTSPEEDUP].descr = "[tc0,0.5,0.5,1/tc]Set time step for evaluation speedup.";
 	commands[CMD_SETDTSPEEDUP].unit = "s";
 	commands[CMD_SETDTSPEEDUP].return_descr = "[tc0,0.5,0,1/tc]Script return values: <i>dTspeedup</i>";
 
 	commands.insert(CMD_LINKDTSPEEDUP, CommandSpecifier(CMD_LINKDTSPEEDUP), "linkdtspeedup");
 	commands[CMD_LINKDTSPEEDUP].usage = "[tc0,0.5,0,1/tc]USAGE : <b>linkdtspeedup</b> <i>flag</i>";
 	commands[CMD_LINKDTSPEEDUP].limits = { { int(0), int(1) } };
-	commands[CMD_LINKDTSPEEDUP].descr = "[tc0,0.5,0.5,1/tc]Links speedup time-step to ODE time-step if set, else speedup time-step is independently controlled. Applicable in extreme mode only.";
+	commands[CMD_LINKDTSPEEDUP].descr = "[tc0,0.5,0.5,1/tc]Links speedup time-step to ODE time-step if set, else speedup time-step is independently controlled.";
 
 	commands.insert(CMD_CUDA, CommandSpecifier(CMD_CUDA), "cuda");
 	commands[CMD_CUDA].usage = "[tc0,0.5,0,1/tc]USAGE : <b>cuda</b> <i>status</i>";
@@ -1162,6 +1204,12 @@ Simulation::Simulation(int Program_Version, std::string server_port_, std::strin
 	commands[CMD_SKYPOSDMUL].limits = { { double(1.0), double(10.0) }, {Any(), Any()} };
 	commands[CMD_SKYPOSDMUL].return_descr = "[tc0,0.5,0,1/tc]Script return values: <i>multiplier</i>";
 
+	commands.insert(CMD_DWPOS_COMPONENT, CommandSpecifier(CMD_DWPOS_COMPONENT), "dwposcomponent");
+	commands[CMD_DWPOS_COMPONENT].usage = "[tc0,0.5,0,1/tc]USAGE : <b>dwposcomponent</b> <i>value</i>";
+	commands[CMD_DWPOS_COMPONENT].descr = "[tc0,0.5,0.5,1/tc]Set vector component used to extract dwpos_x, dwpos_y, dwpos_z data: this should be the component with a tanh profile. -1: automatic (detect tanh component), 0: x, 1: y, 2: z. Default is automatic, but you might want to specify component as the automatic detection can fail when very noisy (e.g. close to Tc for atomistic simulations).";
+	commands[CMD_DWPOS_COMPONENT].limits = { {int(-1), int(2)} };
+	commands[CMD_DWPOS_COMPONENT].return_descr = "[tc0,0.5,0,1/tc]Script return values: <i>value</i>";
+
 	commands.insert(CMD_MCSERIAL, CommandSpecifier(CMD_MCSERIAL), "mcserial");
 	commands[CMD_MCSERIAL].usage = "[tc0,0.5,0,1/tc]USAGE : <b>mcserial</b> <i>value (meshname)</i>";
 	commands[CMD_MCSERIAL].descr = "[tc0,0.5,0.5,1/tc]Change Monte-Carlo algorithm type. 0: parallel (default); red-black ordering parallelization 1: serial (testing only); spins picked in random order. If meshname not specified setting is applied to all atomistic meshes.";
@@ -1171,6 +1219,18 @@ Simulation::Simulation(int Program_Version, std::string server_port_, std::strin
 	commands[CMD_MCCONSTRAIN].usage = "[tc0,0.5,0,1/tc]USAGE : <b>mcconstrain</b> <i>value (meshname)</i>";
 	commands[CMD_MCCONSTRAIN].descr = "[tc0,0.5,0.5,1/tc]Set value 0 to revert to classic Monte-Carlo Metropolis for ASD. Set a unit vector direction value (x y z) to switch to constrained Monte Carlo as described in PRB 82, 054415 (2010). If meshname not specified setting is applied to all atomistic meshes.";
 	commands[CMD_MCCONSTRAIN].limits = { { DBL3(), Any() }, {Any(), Any()} };
+
+	commands.insert(CMD_MCCOMPUTEFIELDS, CommandSpecifier(CMD_MCCOMPUTEFIELDS), "mccomputefields");
+	commands[CMD_MCCOMPUTEFIELDS].usage = "[tc0,0.5,0,1/tc]USAGE : <b>mccomputefields</b> <i>status</i>";
+	commands[CMD_MCCOMPUTEFIELDS].descr = "[tc0,0.5,0.5,1/tc]Enable/disable modules update during Monte Carlo stages. Disabled by default, but if you want to save energy density terms you need to enabled this - equivalent to running ComputeFields after every Monte Carlo step.";
+	commands[CMD_MCCOMPUTEFIELDS].limits = { {Any(), Any()} };
+	commands[CMD_MCCOMPUTEFIELDS].return_descr = "[tc0,0.5,0,1/tc]Script return values: <i>status</i>";
+
+	commands.insert(CMD_MCCONEANGLELIMITS, CommandSpecifier(CMD_MCCONEANGLELIMITS), "mcconeangle");
+	commands[CMD_MCCONEANGLELIMITS].usage = "[tc0,0.5,0,1/tc]USAGE : <b>mcconeangle</b> <i>min_angle max_angle</i>";
+	commands[CMD_MCCONEANGLELIMITS].descr = "[tc0,0.5,0.5,1/tc]Set Monte Carlo cone angle limits (1 to 180 degrees). Setting min and max values the same results in a fixed cone angle Monte Carlo algorithm.";
+	commands[CMD_MCCONEANGLELIMITS].limits = { {INT2(1, 1), INT2(180, 180)} };
+	commands[CMD_MCCONEANGLELIMITS].return_descr = "[tc0,0.5,0,1/tc]Script return values: <i>min_angle max_angle</i>";
 
 	commands.insert(CMD_SHAPEMOD_ROT, CommandSpecifier(CMD_SHAPEMOD_ROT), "shape_rotation");
 	commands[CMD_SHAPEMOD_ROT].usage = "[tc0,0.5,0,1/tc]USAGE : <b>shape_rotation</b> <i>psi theta phi</i>";
@@ -1335,13 +1395,8 @@ Simulation::Simulation(int Program_Version, std::string server_port_, std::strin
 	commands.insert(CMD_DP_GETEXACTPROFILE, CommandSpecifier(CMD_DP_GETEXACTPROFILE), "dp_getexactprofile");
 	commands[CMD_DP_GETEXACTPROFILE].usage = "[tc0,0.5,0,1/tc]USAGE : <b>dp_getexactprofile</b> <i>start end step dp_index (stencil)</i>";
 	commands[CMD_DP_GETEXACTPROFILE].limits = { { DBL3(-MAXSIMSPACE), DBL3(MAXSIMSPACE) }, { DBL3(-MAXSIMSPACE), DBL3(MAXSIMSPACE) }, { MINMESHSPACE, Any() }, { int(0), int(MAX_ARRAYS - 1) }, { DBL3(MINMESHSPACE), Any() } };
-	commands[CMD_DP_GETEXACTPROFILE].descr = "[tc0,0.5,0.5,1/tc]Extract profile of physical quantity displayed on screen, directly from the mesh so using the exact mesh resolution not the displayed resolution, along the line specified with given start and end cartesian absolute coordinates (m), and with the given step size (m). If stencil specified - as x y z (m) - then obtain profile values using weighted averaging with stencil centered on profile point. Place profile in given dp arrays: up to 3 consecutive dp arrays are used for physical quantity components (e.g. Mx, My, Mz) so allow space for these starting at dp_index.";
+	commands[CMD_DP_GETEXACTPROFILE].descr = "[tc0,0.5,0.5,1/tc]Extract profile of physical quantity displayed on screen, directly from the mesh (so using the exact mesh resolution not the displayed resolution), along the line specified with given start and end cartesian absolute coordinates (m), and with the given step size (m). If stencil specified - as x y z (m) - then obtain profile values using weighted averaging with stencil centered on profile point. Place profile in given dp arrays: up to 4 consecutive dp arrays are used, first for distance along line, the next 3 for physical quantity components (e.g. Mx, My, Mz) so allow space for these starting at dp_index.";
 	commands[CMD_DP_GETEXACTPROFILE].unit = "m";
-
-	commands.insert(CMD_DP_GETPATH, CommandSpecifier(CMD_DP_GETPATH), "dp_getpath");
-	commands[CMD_DP_GETPATH].usage = "[tc0,0.5,0,1/tc]USAGE : <b>dp_getpath</b> <i>dp_index_in dp_index_out</i>";
-	commands[CMD_DP_GETPATH].limits = { { int(0), int(MAX_ARRAYS - 3) }, { int(0), int(MAX_ARRAYS - 3) } };
-	commands[CMD_DP_GETPATH].descr = "[tc0,0.5,0.5,1/tc]Extract profile of physical quantity displayed on screen, directly from stored mesh data thus independent of display resolution, along the path specified in Cartesian absolute coordinates (m) through dp arrays at dp_index_in, dp_index_in + 1, dp_index_in + 2 (x, y, z coordinates resp.). Place extracted profile in given dp arrays dp_index_out, dp_index_out + 1, dp_index_out + 2 (x, y, z components for vector data).";
 
 	commands.insert(CMD_GETVALUE, CommandSpecifier(CMD_GETVALUE), "getvalue");
 	commands[CMD_GETVALUE].usage = "[tc0,0.5,0,1/tc]USAGE : <b>getvalue</b> <i>abspos</i>";
@@ -1428,6 +1483,11 @@ Simulation::Simulation(int Program_Version, std::string server_port_, std::strin
 	commands[CMD_DP_DIV].limits = { { int(0), int(MAX_ARRAYS - 1) },{ Any(), Any() },{ int(0), int(MAX_ARRAYS - 1) } };
 	commands[CMD_DP_DIV].descr = "[tc0,0.5,0.5,1/tc]Divide dp array by value and place it in destination (or at same position if destination not specified).";
 
+	commands.insert(CMD_DP_POW, CommandSpecifier(CMD_DP_POW), "dp_pow");
+	commands[CMD_DP_POW].usage = "[tc0,0.5,0,1/tc]USAGE : <b>dp_pow</b> <i>dp_source exponent (dp_dest)</i>";
+	commands[CMD_DP_POW].limits = { { int(0), int(MAX_ARRAYS - 1) },{ Any(), Any() },{ int(0), int(MAX_ARRAYS - 1) } };
+	commands[CMD_DP_POW].descr = "[tc0,0.5,0.5,1/tc]Exponentiate source aray values and place it in destination (or at same position if destination not specified).";
+
 	commands.insert(CMD_DP_DOTPROD, CommandSpecifier(CMD_DP_DOTPROD), "dp_dotprod");
 	commands[CMD_DP_DOTPROD].usage = "[tc0,0.5,0,1/tc]USAGE : <b>dp_dotprod</b> <i>dp_vector ux uy uz dp_out</i>";
 	commands[CMD_DP_DOTPROD].limits = { { int(0), int(MAX_ARRAYS - 3) },{ Any(), Any() },{ Any(), Any() },{ Any(), Any() },{ int(0), int(MAX_ARRAYS - 1) } };
@@ -1465,10 +1525,16 @@ Simulation::Simulation(int Program_Version, std::string server_port_, std::strin
 	commands[CMD_DP_MINMAX].return_descr = "[tc0,0.5,0,1/tc]Script return values: <i>min_value min_index max_value max_index</i>.";
 
 	commands.insert(CMD_DP_MEAN, CommandSpecifier(CMD_DP_MEAN), "dp_mean");
-	commands[CMD_DP_MEAN].usage = "[tc0,0.5,0,1/tc]USAGE : <b>dp_mean</b> <i>dp_index</i>";
-	commands[CMD_DP_MEAN].limits = { { int(0), int(MAX_ARRAYS - 1) } };
-	commands[CMD_DP_MEAN].descr = "[tc0,0.5,0.5,1/tc]Obtain mean value with standard deviation.";
+	commands[CMD_DP_MEAN].usage = "[tc0,0.5,0,1/tc]USAGE : <b>dp_mean</b> <i>dp_index (exclusion_ratio)</i>";
+	commands[CMD_DP_MEAN].limits = { { int(0), int(MAX_ARRAYS - 1) }, { double(0), Any() } };
+	commands[CMD_DP_MEAN].descr = "[tc0,0.5,0.5,1/tc]Obtain mean value with standard deviation. If exclusion_ratio (>0) included, then exclude any points which are greater than exclusion_ratio normalised distance away from the mean.";
 	commands[CMD_DP_MEAN].return_descr = "[tc0,0.5,0,1/tc]Script return values: <i>mean stdev</i>.";
+
+	commands.insert(CMD_DP_CHUNKEDSTD, CommandSpecifier(CMD_DP_CHUNKEDSTD), "dp_chunkedstd");
+	commands[CMD_DP_CHUNKEDSTD].usage = "[tc0,0.5,0,1/tc]USAGE : <b>dp_chunkedstd</b> <i>dp_index chunk</i>";
+	commands[CMD_DP_CHUNKEDSTD].limits = { { int(0), int(MAX_ARRAYS - 1) }, { int(0), Any() } };
+	commands[CMD_DP_CHUNKEDSTD].descr = "[tc0,0.5,0.5,1/tc]Obtain stadard deviation from every chunk number of elements in dp array, then average all the chunk std value to obtain final std. In the special case where chunk is the number of elements in the dp array (set chunk = 0 for this case), the chunked std is the same as the usual std on the mean.";
+	commands[CMD_DP_CHUNKEDSTD].return_descr = "[tc0,0.5,0,1/tc]Script return values: <i>std</i>.";
 
 	commands.insert(CMD_DP_GETAMPLI, CommandSpecifier(CMD_DP_GETAMPLI), "dp_getampli");
 	commands[CMD_DP_GETAMPLI].usage = "[tc0,0.5,0,1/tc]USAGE : <b>dp_getampli</b> <i>dp_source pointsPeriod</i>";
@@ -1522,6 +1588,12 @@ Simulation::Simulation(int Program_Version, std::string server_port_, std::strin
 	commands[CMD_DP_FITSKYRMION].descr = "[tc0,0.5,0.5,1/tc]Fit skyrmion z component to obtain radius and center position : Mz(x) = Ms * cos(2*arctan(sinh(R/w)/sinh((x-x0)/w))).";
 	commands[CMD_DP_FITSKYRMION].return_descr = "[tc0,0.5,0,1/tc]Script return values: <i>R, x0, Ms, w, std_R, std_x0, std_Ms, std_w</i>.";
 
+	commands.insert(CMD_DP_FITDW, CommandSpecifier(CMD_DP_FITDW), "dp_fitdw");
+	commands[CMD_DP_FITDW].usage = "[tc0,0.5,0,1/tc]USAGE : <b>dp_fitdw</b> <i>dp_x dp_y</i>";
+	commands[CMD_DP_FITDW].limits = { { int(0), int(MAX_ARRAYS - 1) }, { int(0), int(MAX_ARRAYS - 1) } };
+	commands[CMD_DP_FITDW].descr = "[tc0,0.5,0.5,1/tc]Fit domain wall tanh component to obtain width and center position : M(x) = A * tanh(PI * (x - x0) / D).";
+	commands[CMD_DP_FITDW].return_descr = "[tc0,0.5,0,1/tc]Script return values: <i>D, x0, A, std_D, std_x0, std_A</i>.";
+
 	commands.insert(CMD_DP_FITSTT, CommandSpecifier(CMD_DP_FITSTT), "dp_fitstt");
 	commands[CMD_DP_FITSTT].usage = "[tc0,0.5,0,1/tc]USAGE : <b>dp_fitstt</b> <i>(rectangle)</i>";
 	commands[CMD_DP_FITSTT].limits = { {Rect(), Any()} };
@@ -1558,10 +1630,6 @@ Simulation::Simulation(int Program_Version, std::string server_port_, std::strin
 	commands[CMD_DP_FITADIABATIC].usage = "[tc0,0.5,0,1/tc]USAGE : <b>dp_fitadiabatic</b> <i>(abs_err Rsq T_ratio (stencil))</i>";
 	commands[CMD_DP_FITADIABATIC].limits = { {double(0.0), Any()}, {double(0.0), Any()}, {double(0.0), Any()}, {int(3), Any()} };
 	commands[CMD_DP_FITADIABATIC].descr = "[tc0,0.5,0.5,1/tc]Fit the computed self-consistent spin torque (see below) using Zhang-Li STT with fitting parameters P and beta (non-adiabaticity) using a given square in-plane stencil (default size 3) in order to extract the spatial variation of P. Cut-off values for absolute fitting error (default 0.1), Rsq measure (default 0.9), and normalized torque magnitude (default 0.1) can be set - value of zero disables cutoff. The focused mesh must be ferromagnetic, have the transport module set with spin solver enabled, and we also require Jc and either Ts or Tsi to have been computed. The fitting is done on Ts, Tsi, or on their sum depending if they’ve been enabled or not. Output available in Cust_S.";
-
-	commands.insert(CMD_DP_CALCEXCHANGE, CommandSpecifier(CMD_DP_CALCEXCHANGE), "dp_calcexchange");
-	commands[CMD_DP_CALCEXCHANGE].usage = "[tc0,0.5,0,1/tc]USAGE : <b>dp_calcexchange</b>";
-	commands[CMD_DP_CALCEXCHANGE].descr = "[tc0,0.5,0.5,1/tc]Calculate spatial dependence of exchange energy density for the focused mesh (must be magnetic and have an exchange module enabled). Output available in Cust_S.";
 
 	commands.insert(CMD_DP_CALCTOPOCHARGEDENSITY, CommandSpecifier(CMD_DP_CALCTOPOCHARGEDENSITY), "dp_calctopochargedensity");
 	commands[CMD_DP_CALCTOPOCHARGEDENSITY].usage = "[tc0,0.5,0,1/tc]USAGE : <b>dp_calctopochargedensity</b>";
@@ -1625,9 +1693,6 @@ Simulation::Simulation(int Program_Version, std::string server_port_, std::strin
 	dataDescriptor.push_back("dmdt", DatumSpecifier("|dm/dt| : ", 1), DATA_DMDT);
 	dataDescriptor.push_back("Ha", DatumSpecifier("Applied Field : ", 3, "A/m", false), DATA_HA);
 	dataDescriptor.push_back("<M>", DatumSpecifier("<M> : ", 3, "A/m", false, false), DATA_AVM);
-	dataDescriptor.push_back("<Mxsq>", DatumSpecifier("<Mxsq> : ", 1, "A/m", false, false), DATA_AVMXSQ);
-	dataDescriptor.push_back("<Mysq>", DatumSpecifier("<Mysq> : ", 1, "A/m", false, false), DATA_AVMYSQ);
-	dataDescriptor.push_back("<Mzsq>", DatumSpecifier("<Mzsq> : ", 1, "A/m", false, false), DATA_AVMZSQ);
 	dataDescriptor.push_back("<M2>", DatumSpecifier("<M2> : ", 3, "A/m", false, false), DATA_AVM2);
 	dataDescriptor.push_back("|M|mm", DatumSpecifier("|M|mm : ", 2, "A/m", false, false), DATA_M_MINMAX);
 	dataDescriptor.push_back("Mx_mm", DatumSpecifier("Mx_mm : ", 2, "A/m", false, false), DATA_MX_MINMAX);
@@ -1638,6 +1703,10 @@ Simulation::Simulation(int Program_Version, std::string server_port_, std::strin
 	dataDescriptor.push_back("<Jsx>", DatumSpecifier("<Jsx> : ", 3, "A/s", false, false), DATA_JSX);
 	dataDescriptor.push_back("<Jsy>", DatumSpecifier("<Jsy> : ", 3, "A/s", false, false), DATA_JSY);
 	dataDescriptor.push_back("<Jsz>", DatumSpecifier("<Jsz> : ", 3, "A/s", false, false), DATA_JSZ);
+	dataDescriptor.push_back("<mxdmdt>", DatumSpecifier("<mxdmdt> : ", 3, "1/s", false, false), DATA_RESPUMP);
+	dataDescriptor.push_back("<dmdt>", DatumSpecifier("<dmdt> : ", 3, "1/s", false, false), DATA_IMSPUMP);
+	dataDescriptor.push_back("<mxdmdt2>", DatumSpecifier("<mxdmdt2> : ", 3, "1/s", false, false), DATA_RESPUMP2);
+	dataDescriptor.push_back("<dmdt2>", DatumSpecifier("<dmdt2> : ", 3, "1/s", false, false), DATA_IMSPUMP2);
 	dataDescriptor.push_back("<V>", DatumSpecifier("<V> : ", 1, "V", false, false), DATA_V);
 	dataDescriptor.push_back("<S>", DatumSpecifier("<S> : ", 3, "A/m", false, false), DATA_S);
 	dataDescriptor.push_back("<elC>", DatumSpecifier("<elC> : ", 1, "S/m", false, false), DATA_ELC);
@@ -1646,16 +1715,19 @@ Simulation::Simulation(int Program_Version, std::string server_port_, std::strin
 	dataDescriptor.push_back("V", DatumSpecifier("Potential : ", 1, "V"), DATA_POTENTIAL);
 	dataDescriptor.push_back("I", DatumSpecifier("I, Net I : ", 2, "A"), DATA_CURRENT);
 	dataDescriptor.push_back("R", DatumSpecifier("Resistance : ", 1, "Ohm"), DATA_RESISTANCE);
-	dataDescriptor.push_back("e_demag", DatumSpecifier("Demag e : ", 1, "J/m3", false), DATA_E_DEMAG);
+	dataDescriptor.push_back("e_demag", DatumSpecifier("Demag e : ", 1, "J/m3", false, false), DATA_E_DEMAG);
 	dataDescriptor.push_back("e_exch", DatumSpecifier("Exchange e : ", 1, "J/m3", false, false), DATA_E_EXCH);
-	dataDescriptor.push_back("e_exch_max", DatumSpecifier("Exchange Maximum e : ", 1, "J/m3", false, false), DATA_E_EXCH_MAX);
-	dataDescriptor.push_back("e_surfexch", DatumSpecifier("Surface exchange e : ", 1, "J/m3", false), DATA_E_SURFEXCH);
+	dataDescriptor.push_back("e_surfexch", DatumSpecifier("Surface exchange e : ", 1, "J/m3", false, false), DATA_E_SURFEXCH);
 	dataDescriptor.push_back("e_zee", DatumSpecifier("Zeeman e : ", 1, "J/m3", false, false), DATA_E_ZEE);
-	dataDescriptor.push_back("e_mel", DatumSpecifier("Magnetoelastic e : ", 1, "J/m3", false), DATA_E_MELASTIC);
+	dataDescriptor.push_back("e_mo", DatumSpecifier("Magneto-optical e : ", 1, "J/m3", false, false), DATA_E_MOPTICAL);
+	dataDescriptor.push_back("e_mel", DatumSpecifier("Magnetoelastic e : ", 1, "J/m3", false, false), DATA_E_MELASTIC);
 	dataDescriptor.push_back("e_anis", DatumSpecifier("Anisotropy e : ", 1, "J/m3", false, false), DATA_E_ANIS);
-	dataDescriptor.push_back("e_rough", DatumSpecifier("Roughness e : ", 1, "J/m3", false), DATA_E_ROUGH);
+	dataDescriptor.push_back("e_rough", DatumSpecifier("Roughness e : ", 1, "J/m3", false, false), DATA_E_ROUGH);
 	dataDescriptor.push_back("e_total", DatumSpecifier("Total e : ", 1, "J/m3", true), DATA_E_TOTAL);
 	dataDescriptor.push_back("dwshift", DatumSpecifier("DW shift : ", 1, "m"), DATA_DWSHIFT);
+	dataDescriptor.push_back("dwpos_x", DatumSpecifier("DW (pos, width) : ", 2, "m", false, false), DATA_DWPOS_X);
+	dataDescriptor.push_back("dwpos_y", DatumSpecifier("DW (pos, width) : ", 2, "m", false, false), DATA_DWPOS_Y);
+	dataDescriptor.push_back("dwpos_z", DatumSpecifier("DW (pos, width) : ", 2, "m", false, false), DATA_DWPOS_Z);
 	dataDescriptor.push_back("skyshift", DatumSpecifier("Skyrmion shift : ", 2, "m", false, false), DATA_SKYSHIFT);
 	dataDescriptor.push_back("skypos", DatumSpecifier("Skyrmion (pos, dia) : ", 4, "m", false, false), DATA_SKYPOS);
 	dataDescriptor.push_back("Q_topo", DatumSpecifier("Topological Charge : ", 1, "", false, false), DATA_Q_TOPO);
@@ -1676,6 +1748,8 @@ Simulation::Simulation(int Program_Version, std::string server_port_, std::strin
 	moduleHandles.push_back("moptical", MOD_MOPTICAL);
 	moduleHandles.push_back("aniuni", MOD_ANIUNI);
 	moduleHandles.push_back("anicubi", MOD_ANICUBI);
+	moduleHandles.push_back("anibi", MOD_ANIBI);
+	moduleHandles.push_back("anitens", MOD_ANITENS);
 	moduleHandles.push_back("melastic", MOD_MELASTIC);
 	moduleHandles.push_back("transport", MOD_TRANSPORT);
 	moduleHandles.push_back("heat", MOD_HEAT);

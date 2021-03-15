@@ -14,7 +14,8 @@ BError SuperMesh::set_meshparam_value(std::string meshName, std::string paramHan
 
 	pMesh[meshName]->set_meshparam_value(paramID, value_text);
 
-	error = UpdateConfiguration(UPDATECONFIG_PARAMVALUECHANGED);
+	if (pMesh[meshName]->param_changes_mlength(paramID)) error = UpdateConfiguration(UPDATECONFIG_PARAMVALUECHANGED_MLENGTH);
+	else error = UpdateConfiguration(UPDATECONFIG_PARAMVALUECHANGED);
 
 	return error;
 }

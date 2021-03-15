@@ -130,6 +130,9 @@ public:
 	//Restore magnetization after a failed step for adaptive time-step methods
 	void RestoreMoments(void);
 
+	//renormalize vectors to set moment length value (which could have a spatial variation)
+	void RenormalizeMoments(void);
+
 	//----------------------------------- GETTERS
 
 	//get reference to stored managed cuda differential equation object (cuaDiffEq)
@@ -258,7 +261,7 @@ public:
 	//---------------------------------------- OTHERS
 
 	//Restore magnetization after a failed step for adaptive time-step methods
-	void Restoremagnetization(void) {}
+	void RestoreMagnetization(void) {}
 
 	//----------------------------------- GETTERS
 

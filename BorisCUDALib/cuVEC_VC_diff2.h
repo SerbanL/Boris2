@@ -35,7 +35,7 @@ __device__ VType cuVEC_VC<VType>::dxx_neu(int idx) const
 			//is it a pbc along x? If yes, then we are guaranteed to have a "neighbor" on the other side, so use it; otherwise apply boundary condition.
 			if (ngbrFlags[idx] & NF_PBCX) {
 
-				diff = (cuVEC<VType>::quantity[idx + 1] + cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x - 1] - 2 * cuVEC<VType>::quantity[idx]) / hsq;
+				diff = (cuVEC<VType>::quantity[idx + 1] + cu_get_sign(pbc_x) * cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x - 1] - 2 * cuVEC<VType>::quantity[idx]) / hsq;
 			}
 			else {
 
@@ -47,7 +47,7 @@ __device__ VType cuVEC_VC<VType>::dxx_neu(int idx) const
 			//is it a pbc along x? If yes, then we are guaranteed to have a "neighbor" on the other side, so use it; otherwise apply boundary condition.
 			if (ngbrFlags[idx] & NF_PBCX) {
 
-				diff = (cuVEC<VType>::quantity[idx - (cuVEC<VType>::n.x - 1)] + cuVEC<VType>::quantity[idx - 1] - 2 * cuVEC<VType>::quantity[idx]) / hsq;
+				diff = (cu_get_sign(pbc_x) * cuVEC<VType>::quantity[idx - (cuVEC<VType>::n.x - 1)] + cuVEC<VType>::quantity[idx - 1] - 2 * cuVEC<VType>::quantity[idx]) / hsq;
 			}
 			else {
 
@@ -84,7 +84,7 @@ __device__ VType cuVEC_VC<VType>::dyy_neu(int idx) const
 			//is it a pbc along y? If yes, then we are guaranteed to have a "neighbor" on the other side, so use it; otherwise apply boundary condition.
 			if (ngbrFlags[idx] & NF_PBCY) {
 
-				diff = (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x] + cuVEC<VType>::quantity[idx + (cuVEC<VType>::n.y - 1)*cuVEC<VType>::n.x] - 2 * cuVEC<VType>::quantity[idx]) / hsq;
+				diff = (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x] + cu_get_sign(pbc_y) * cuVEC<VType>::quantity[idx + (cuVEC<VType>::n.y - 1)*cuVEC<VType>::n.x] - 2 * cuVEC<VType>::quantity[idx]) / hsq;
 			}
 			else {
 
@@ -96,7 +96,7 @@ __device__ VType cuVEC_VC<VType>::dyy_neu(int idx) const
 			//is it a pbc along y? If yes, then we are guaranteed to have a "neighbor" on the other side, so use it; otherwise apply boundary condition.
 			if (ngbrFlags[idx] & NF_PBCY) {
 
-				diff = (cuVEC<VType>::quantity[idx - (cuVEC<VType>::n.y - 1)*cuVEC<VType>::n.x] + cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x] - 2 * cuVEC<VType>::quantity[idx]) / hsq;
+				diff = (cu_get_sign(pbc_y) * cuVEC<VType>::quantity[idx - (cuVEC<VType>::n.y - 1)*cuVEC<VType>::n.x] + cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x] - 2 * cuVEC<VType>::quantity[idx]) / hsq;
 			}
 			else {
 
@@ -133,7 +133,7 @@ __device__ VType cuVEC_VC<VType>::dzz_neu(int idx) const
 			//is it a pbc along z? If yes, then we are guaranteed to have a "neighbor" on the other side, so use it; otherwise apply boundary condition.
 			if (ngbrFlags[idx] & NF_PBCZ) {
 
-				diff = (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x*cuVEC<VType>::n.y] + cuVEC<VType>::quantity[idx + (cuVEC<VType>::n.z - 1) * cuVEC<VType>::n.x*cuVEC<VType>::n.y] - 2 * cuVEC<VType>::quantity[idx]) / hsq;
+				diff = (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x*cuVEC<VType>::n.y] + cu_get_sign(pbc_z) * cuVEC<VType>::quantity[idx + (cuVEC<VType>::n.z - 1) * cuVEC<VType>::n.x*cuVEC<VType>::n.y] - 2 * cuVEC<VType>::quantity[idx]) / hsq;
 			}
 			else {
 
@@ -145,7 +145,7 @@ __device__ VType cuVEC_VC<VType>::dzz_neu(int idx) const
 			//is it a pbc along z? If yes, then we are guaranteed to have a "neighbor" on the other side, so use it; otherwise apply boundary condition.
 			if (ngbrFlags[idx] & NF_PBCZ) {
 
-				diff = (cuVEC<VType>::quantity[idx - (cuVEC<VType>::n.z - 1) * cuVEC<VType>::n.x*cuVEC<VType>::n.y] + cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x*cuVEC<VType>::n.y] - 2 * cuVEC<VType>::quantity[idx]) / hsq;
+				diff = (cu_get_sign(pbc_z) * cuVEC<VType>::quantity[idx - (cuVEC<VType>::n.z - 1) * cuVEC<VType>::n.x*cuVEC<VType>::n.y] + cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x*cuVEC<VType>::n.y] - 2 * cuVEC<VType>::quantity[idx]) / hsq;
 			}
 			else {
 
@@ -189,7 +189,7 @@ __device__ VType cuVEC_VC<VType>::dxx_nneu(int idx, const Class_BDiff& bdiff_cla
 			//is it a pbc along x? If yes, then we are guaranteed to have a "neighbor" on the other side, so use it; otherwise apply boundary condition.
 			if (ngbrFlags[idx] & NF_PBCX) {
 
-				diff = (cuVEC<VType>::quantity[idx + 1] + cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x - 1] - 2 * cuVEC<VType>::quantity[idx]) / hsq;
+				diff = (cuVEC<VType>::quantity[idx + 1] + cu_get_sign(pbc_x) * cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x - 1] - 2 * cuVEC<VType>::quantity[idx]) / hsq;
 			}
 			else {
 
@@ -201,7 +201,7 @@ __device__ VType cuVEC_VC<VType>::dxx_nneu(int idx, const Class_BDiff& bdiff_cla
 			//is it a pbc along x? If yes, then we are guaranteed to have a "neighbor" on the other side, so use it; otherwise apply boundary condition.
 			if (ngbrFlags[idx] & NF_PBCX) {
 
-				diff = (cuVEC<VType>::quantity[idx - (cuVEC<VType>::n.x - 1)] + cuVEC<VType>::quantity[idx - 1] - 2 * cuVEC<VType>::quantity[idx]) / hsq;
+				diff = (cu_get_sign(pbc_x) * cuVEC<VType>::quantity[idx - (cuVEC<VType>::n.x - 1)] + cuVEC<VType>::quantity[idx - 1] - 2 * cuVEC<VType>::quantity[idx]) / hsq;
 			}
 			else {
 
@@ -239,7 +239,7 @@ __device__ VType cuVEC_VC<VType>::dyy_nneu(int idx, const Class_BDiff& bdiff_cla
 			//is it a pbc along y? If yes, then we are guaranteed to have a "neighbor" on the other side, so use it; otherwise apply boundary condition.
 			if (ngbrFlags[idx] & NF_PBCY) {
 
-				diff = (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x] + cuVEC<VType>::quantity[idx + (cuVEC<VType>::n.y - 1)*cuVEC<VType>::n.x] - 2 * cuVEC<VType>::quantity[idx]) / hsq;
+				diff = (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x] + cu_get_sign(pbc_y) * cuVEC<VType>::quantity[idx + (cuVEC<VType>::n.y - 1)*cuVEC<VType>::n.x] - 2 * cuVEC<VType>::quantity[idx]) / hsq;
 			}
 			else {
 
@@ -251,7 +251,7 @@ __device__ VType cuVEC_VC<VType>::dyy_nneu(int idx, const Class_BDiff& bdiff_cla
 			//is it a pbc along y? If yes, then we are guaranteed to have a "neighbor" on the other side, so use it; otherwise apply boundary condition.
 			if (ngbrFlags[idx] & NF_PBCY) {
 
-				diff = (cuVEC<VType>::quantity[idx - (cuVEC<VType>::n.y - 1)*cuVEC<VType>::n.x] + cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x] - 2 * cuVEC<VType>::quantity[idx]) / hsq;
+				diff = (cu_get_sign(pbc_y) * cuVEC<VType>::quantity[idx - (cuVEC<VType>::n.y - 1)*cuVEC<VType>::n.x] + cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x] - 2 * cuVEC<VType>::quantity[idx]) / hsq;
 			}
 			else {
 
@@ -289,7 +289,7 @@ __device__ VType cuVEC_VC<VType>::dzz_nneu(int idx, const Class_BDiff& bdiff_cla
 			//is it a pbc along z? If yes, then we are guaranteed to have a "neighbor" on the other side, so use it; otherwise apply boundary condition.
 			if (ngbrFlags[idx] & NF_PBCZ) {
 
-				diff = (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x*cuVEC<VType>::n.y] + cuVEC<VType>::quantity[idx + (cuVEC<VType>::n.z - 1) * cuVEC<VType>::n.x*cuVEC<VType>::n.y] - 2 * cuVEC<VType>::quantity[idx]) / hsq;
+				diff = (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x*cuVEC<VType>::n.y] + cu_get_sign(pbc_z) * cuVEC<VType>::quantity[idx + (cuVEC<VType>::n.z - 1) * cuVEC<VType>::n.x*cuVEC<VType>::n.y] - 2 * cuVEC<VType>::quantity[idx]) / hsq;
 			}
 			else {
 
@@ -301,7 +301,7 @@ __device__ VType cuVEC_VC<VType>::dzz_nneu(int idx, const Class_BDiff& bdiff_cla
 			//is it a pbc along z? If yes, then we are guaranteed to have a "neighbor" on the other side, so use it; otherwise apply boundary condition.
 			if (ngbrFlags[idx] & NF_PBCZ) {
 
-				diff = (cuVEC<VType>::quantity[idx - (cuVEC<VType>::n.z - 1) * cuVEC<VType>::n.x*cuVEC<VType>::n.y] + cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x*cuVEC<VType>::n.y] - 2 * cuVEC<VType>::quantity[idx]) / hsq;
+				diff = (cu_get_sign(pbc_z) * cuVEC<VType>::quantity[idx - (cuVEC<VType>::n.z - 1) * cuVEC<VType>::n.x*cuVEC<VType>::n.y] + cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x*cuVEC<VType>::n.y] - 2 * cuVEC<VType>::quantity[idx]) / hsq;
 			}
 			else {
 
@@ -339,7 +339,7 @@ __device__ VType cuVEC_VC<VType>::dxx_nneu(int idx, const cuVAL3<VType>& bdiff) 
 			//is it a pbc along x? If yes, then we are guaranteed to have a "neighbor" on the other side, so use it; otherwise apply boundary condition.
 			if (ngbrFlags[idx] & NF_PBCX) {
 
-				diff = (cuVEC<VType>::quantity[idx + 1] + cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x - 1] - 2 * cuVEC<VType>::quantity[idx]) / hsq;
+				diff = (cuVEC<VType>::quantity[idx + 1] + cu_get_sign(pbc_x) * cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x - 1] - 2 * cuVEC<VType>::quantity[idx]) / hsq;
 			}
 			else {
 
@@ -351,7 +351,7 @@ __device__ VType cuVEC_VC<VType>::dxx_nneu(int idx, const cuVAL3<VType>& bdiff) 
 			//is it a pbc along x? If yes, then we are guaranteed to have a "neighbor" on the other side, so use it; otherwise apply boundary condition.
 			if (ngbrFlags[idx] & NF_PBCX) {
 
-				diff = (cuVEC<VType>::quantity[idx - (cuVEC<VType>::n.x - 1)] + cuVEC<VType>::quantity[idx - 1] - 2 * cuVEC<VType>::quantity[idx]) / hsq;
+				diff = (cu_get_sign(pbc_x) * cuVEC<VType>::quantity[idx - (cuVEC<VType>::n.x - 1)] + cuVEC<VType>::quantity[idx - 1] - 2 * cuVEC<VType>::quantity[idx]) / hsq;
 			}
 			else {
 
@@ -388,7 +388,7 @@ __device__ VType cuVEC_VC<VType>::dyy_nneu(int idx, const cuVAL3<VType>& bdiff) 
 			//is it a pbc along y? If yes, then we are guaranteed to have a "neighbor" on the other side, so use it; otherwise apply boundary condition.
 			if (ngbrFlags[idx] & NF_PBCY) {
 
-				diff = (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x] + cuVEC<VType>::quantity[idx + (cuVEC<VType>::n.y - 1)*cuVEC<VType>::n.x] - 2 * cuVEC<VType>::quantity[idx]) / hsq;
+				diff = (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x] + cu_get_sign(pbc_y) * cuVEC<VType>::quantity[idx + (cuVEC<VType>::n.y - 1)*cuVEC<VType>::n.x] - 2 * cuVEC<VType>::quantity[idx]) / hsq;
 			}
 			else {
 
@@ -400,7 +400,7 @@ __device__ VType cuVEC_VC<VType>::dyy_nneu(int idx, const cuVAL3<VType>& bdiff) 
 			//is it a pbc along y? If yes, then we are guaranteed to have a "neighbor" on the other side, so use it; otherwise apply boundary condition.
 			if (ngbrFlags[idx] & NF_PBCY) {
 
-				diff = (cuVEC<VType>::quantity[idx - (cuVEC<VType>::n.y - 1)*cuVEC<VType>::n.x] + cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x] - 2 * cuVEC<VType>::quantity[idx]) / hsq;
+				diff = (cu_get_sign(pbc_y) * cuVEC<VType>::quantity[idx - (cuVEC<VType>::n.y - 1)*cuVEC<VType>::n.x] + cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x] - 2 * cuVEC<VType>::quantity[idx]) / hsq;
 			}
 			else {
 
@@ -437,7 +437,7 @@ __device__ VType cuVEC_VC<VType>::dzz_nneu(int idx, const cuVAL3<VType>& bdiff) 
 			//is it a pbc along z? If yes, then we are guaranteed to have a "neighbor" on the other side, so use it; otherwise apply boundary condition.
 			if (ngbrFlags[idx] & NF_PBCZ) {
 
-				diff = (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x*cuVEC<VType>::n.y] + cuVEC<VType>::quantity[idx + (cuVEC<VType>::n.z - 1) * cuVEC<VType>::n.x*cuVEC<VType>::n.y] - 2 * cuVEC<VType>::quantity[idx]) / hsq;
+				diff = (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x*cuVEC<VType>::n.y] + cu_get_sign(pbc_z) * cuVEC<VType>::quantity[idx + (cuVEC<VType>::n.z - 1) * cuVEC<VType>::n.x*cuVEC<VType>::n.y] - 2 * cuVEC<VType>::quantity[idx]) / hsq;
 			}
 			else {
 
@@ -449,7 +449,7 @@ __device__ VType cuVEC_VC<VType>::dzz_nneu(int idx, const cuVAL3<VType>& bdiff) 
 			//is it a pbc along z? If yes, then we are guaranteed to have a "neighbor" on the other side, so use it; otherwise apply boundary condition.
 			if (ngbrFlags[idx] & NF_PBCZ) {
 
-				diff = (cuVEC<VType>::quantity[idx - (cuVEC<VType>::n.z - 1) * cuVEC<VType>::n.x*cuVEC<VType>::n.y] + cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x*cuVEC<VType>::n.y] - 2 * cuVEC<VType>::quantity[idx]) / hsq;
+				diff = (cu_get_sign(pbc_z) * cuVEC<VType>::quantity[idx - (cuVEC<VType>::n.z - 1) * cuVEC<VType>::n.x*cuVEC<VType>::n.y] + cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x*cuVEC<VType>::n.y] - 2 * cuVEC<VType>::quantity[idx]) / hsq;
 			}
 			else {
 
@@ -499,7 +499,7 @@ __device__ VType cuVEC_VC<VType>::dxx_diri(int idx) const
 			//is it a pbc along x? If yes, then we are guaranteed to have a "neighbor" on the other side, so use it; otherwise apply boundary condition.
 			if (ngbrFlags[idx] & NF_PBCX) {
 
-				diff = (cuVEC<VType>::quantity[idx + 1] + cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x - 1] - 2 * cuVEC<VType>::quantity[idx]) / hsq;
+				diff = (cuVEC<VType>::quantity[idx + 1] + cu_get_sign(pbc_x) * cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x - 1] - 2 * cuVEC<VType>::quantity[idx]) / hsq;
 			}
 			else {
 
@@ -511,7 +511,7 @@ __device__ VType cuVEC_VC<VType>::dxx_diri(int idx) const
 			//is it a pbc along x? If yes, then we are guaranteed to have a "neighbor" on the other side, so use it; otherwise apply boundary condition.
 			if (ngbrFlags[idx] & NF_PBCX) {
 
-				diff = (cuVEC<VType>::quantity[idx - (cuVEC<VType>::n.x - 1)] + cuVEC<VType>::quantity[idx - 1] - 2 * cuVEC<VType>::quantity[idx]) / hsq;
+				diff = (cu_get_sign(pbc_x) * cuVEC<VType>::quantity[idx - (cuVEC<VType>::n.x - 1)] + cuVEC<VType>::quantity[idx - 1] - 2 * cuVEC<VType>::quantity[idx]) / hsq;
 			}
 			else {
 
@@ -553,7 +553,7 @@ __device__ VType cuVEC_VC<VType>::dyy_diri(int idx) const
 			//is it a pbc along y? If yes, then we are guaranteed to have a "neighbor" on the other side, so use it; otherwise apply boundary condition.
 			if (ngbrFlags[idx] & NF_PBCY) {
 
-				diff = (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x] + cuVEC<VType>::quantity[idx + (cuVEC<VType>::n.y - 1)*cuVEC<VType>::n.x] - 2 * cuVEC<VType>::quantity[idx]) / hsq;
+				diff = (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x] + cu_get_sign(pbc_y) * cuVEC<VType>::quantity[idx + (cuVEC<VType>::n.y - 1)*cuVEC<VType>::n.x] - 2 * cuVEC<VType>::quantity[idx]) / hsq;
 			}
 			else {
 
@@ -565,7 +565,7 @@ __device__ VType cuVEC_VC<VType>::dyy_diri(int idx) const
 			//is it a pbc along y? If yes, then we are guaranteed to have a "neighbor" on the other side, so use it; otherwise apply boundary condition.
 			if (ngbrFlags[idx] & NF_PBCY) {
 
-				diff = (cuVEC<VType>::quantity[idx - (cuVEC<VType>::n.y - 1)*cuVEC<VType>::n.x] + cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x] - 2 * cuVEC<VType>::quantity[idx]) / hsq;
+				diff = (cu_get_sign(pbc_y) * cuVEC<VType>::quantity[idx - (cuVEC<VType>::n.y - 1)*cuVEC<VType>::n.x] + cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x] - 2 * cuVEC<VType>::quantity[idx]) / hsq;
 			}
 			else {
 
@@ -600,14 +600,14 @@ __device__ VType cuVEC_VC<VType>::dzz_diri(int idx) const
 		if (using_extended_flags && (ngbrFlags2[idx] & NF2_DIRICHLETZ)) {
 
 			if (ngbrFlags2[idx] & NF2_DIRICHLETPZ) diff = (2 * cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x*cuVEC<VType>::n.y] + 4 * get_dirichlet_value(NF2_DIRICHLETPZ, idx) - 6 * cuVEC<VType>::quantity[idx]) / hsq;
-			else								 diff = (2 * cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x*cuVEC<VType>::n.y] + 4 * get_dirichlet_value(NF2_DIRICHLETNZ, idx) - 6 * cuVEC<VType>::quantity[idx]) / hsq;
+			else								   diff = (2 * cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x*cuVEC<VType>::n.y] + 4 * get_dirichlet_value(NF2_DIRICHLETNZ, idx) - 6 * cuVEC<VType>::quantity[idx]) / hsq;
 		}
 		else if (ngbrFlags[idx] & NF_NPZ) {
 
 			//is it a pbc along z? If yes, then we are guaranteed to have a "neighbor" on the other side, so use it; otherwise apply boundary condition.
 			if (ngbrFlags[idx] & NF_PBCZ) {
 
-				diff = (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x*cuVEC<VType>::n.y] + cuVEC<VType>::quantity[idx + (cuVEC<VType>::n.z - 1) * cuVEC<VType>::n.x*cuVEC<VType>::n.y] - 2 * cuVEC<VType>::quantity[idx]) / hsq;
+				diff = (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x*cuVEC<VType>::n.y] + cu_get_sign(pbc_z) * cuVEC<VType>::quantity[idx + (cuVEC<VType>::n.z - 1) * cuVEC<VType>::n.x*cuVEC<VType>::n.y] - 2 * cuVEC<VType>::quantity[idx]) / hsq;
 			}
 			else {
 
@@ -619,7 +619,7 @@ __device__ VType cuVEC_VC<VType>::dzz_diri(int idx) const
 			//is it a pbc along z? If yes, then we are guaranteed to have a "neighbor" on the other side, so use it; otherwise apply boundary condition.
 			if (ngbrFlags[idx] & NF_PBCZ) {
 
-				diff = (cuVEC<VType>::quantity[idx - (cuVEC<VType>::n.z - 1) * cuVEC<VType>::n.x*cuVEC<VType>::n.y] + cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x*cuVEC<VType>::n.y] - 2 * cuVEC<VType>::quantity[idx]) / hsq;
+				diff = (cu_get_sign(pbc_z) * cuVEC<VType>::quantity[idx - (cuVEC<VType>::n.z - 1) * cuVEC<VType>::n.x*cuVEC<VType>::n.y] + cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x*cuVEC<VType>::n.y] - 2 * cuVEC<VType>::quantity[idx]) / hsq;
 			}
 			else {
 
@@ -662,14 +662,14 @@ __device__ VType cuVEC_VC<VType>::dxx_diri_nneu(int idx, const Class_BDiff& bdif
 		if (using_extended_flags && (ngbrFlags2[idx] & NF2_DIRICHLETX)) {
 
 			if (ngbrFlags2[idx] & NF2_DIRICHLETPX) diff = (2 * cuVEC<VType>::quantity[idx + 1] + 4 * get_dirichlet_value(NF2_DIRICHLETPX, idx) - 6 * cuVEC<VType>::quantity[idx]) / hsq;
-			else								 diff = (2 * cuVEC<VType>::quantity[idx - 1] + 4 * get_dirichlet_value(NF2_DIRICHLETNX, idx) - 6 * cuVEC<VType>::quantity[idx]) / hsq;
+			else								   diff = (2 * cuVEC<VType>::quantity[idx - 1] + 4 * get_dirichlet_value(NF2_DIRICHLETNX, idx) - 6 * cuVEC<VType>::quantity[idx]) / hsq;
 		}
 		else if (ngbrFlags[idx] & NF_NPX) {
 
 			//is it a pbc along x? If yes, then we are guaranteed to have a "neighbor" on the other side, so use it; otherwise apply boundary condition.
 			if (ngbrFlags[idx] & NF_PBCX) {
 
-				diff = (cuVEC<VType>::quantity[idx + 1] + cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x - 1] - 2 * cuVEC<VType>::quantity[idx]) / hsq;
+				diff = (cuVEC<VType>::quantity[idx + 1] + cu_get_sign(pbc_x) * cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x - 1] - 2 * cuVEC<VType>::quantity[idx]) / hsq;
 			}
 			else {
 
@@ -681,7 +681,7 @@ __device__ VType cuVEC_VC<VType>::dxx_diri_nneu(int idx, const Class_BDiff& bdif
 			//is it a pbc along x? If yes, then we are guaranteed to have a "neighbor" on the other side, so use it; otherwise apply boundary condition.
 			if (ngbrFlags[idx] & NF_PBCX) {
 
-				diff = (cuVEC<VType>::quantity[idx - (cuVEC<VType>::n.x - 1)] + cuVEC<VType>::quantity[idx - 1] - 2 * cuVEC<VType>::quantity[idx]) / hsq;
+				diff = (cu_get_sign(pbc_x) * cuVEC<VType>::quantity[idx - (cuVEC<VType>::n.x - 1)] + cuVEC<VType>::quantity[idx - 1] - 2 * cuVEC<VType>::quantity[idx]) / hsq;
 			}
 			else {
 
@@ -717,14 +717,14 @@ __device__ VType cuVEC_VC<VType>::dyy_diri_nneu(int idx, const Class_BDiff& bdif
 		if (using_extended_flags && (ngbrFlags2[idx] & NF2_DIRICHLETY)) {
 
 			if (ngbrFlags2[idx] & NF2_DIRICHLETPY) diff = (2 * cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x] + 4 * get_dirichlet_value(NF2_DIRICHLETPY, idx) - 6 * cuVEC<VType>::quantity[idx]) / hsq;
-			else								 diff = (2 * cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x] + 4 * get_dirichlet_value(NF2_DIRICHLETNY, idx) - 6 * cuVEC<VType>::quantity[idx]) / hsq;
+			else								   diff = (2 * cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x] + 4 * get_dirichlet_value(NF2_DIRICHLETNY, idx) - 6 * cuVEC<VType>::quantity[idx]) / hsq;
 		}
 		else if (ngbrFlags[idx] & NF_NPY) {
 
 			//is it a pbc along y? If yes, then we are guaranteed to have a "neighbor" on the other side, so use it; otherwise apply boundary condition.
 			if (ngbrFlags[idx] & NF_PBCY) {
 
-				diff = (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x] + cuVEC<VType>::quantity[idx + (cuVEC<VType>::n.y - 1)*cuVEC<VType>::n.x] - 2 * cuVEC<VType>::quantity[idx]) / hsq;
+				diff = (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x] + cu_get_sign(pbc_y) * cuVEC<VType>::quantity[idx + (cuVEC<VType>::n.y - 1)*cuVEC<VType>::n.x] - 2 * cuVEC<VType>::quantity[idx]) / hsq;
 			}
 			else {
 
@@ -736,7 +736,7 @@ __device__ VType cuVEC_VC<VType>::dyy_diri_nneu(int idx, const Class_BDiff& bdif
 			//is it a pbc along y? If yes, then we are guaranteed to have a "neighbor" on the other side, so use it; otherwise apply boundary condition.
 			if (ngbrFlags[idx] & NF_PBCY) {
 
-				diff = (cuVEC<VType>::quantity[idx - (cuVEC<VType>::n.y - 1)*cuVEC<VType>::n.x] + cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x] - 2 * cuVEC<VType>::quantity[idx]) / hsq;
+				diff = (cu_get_sign(pbc_y) * cuVEC<VType>::quantity[idx - (cuVEC<VType>::n.y - 1)*cuVEC<VType>::n.x] + cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x] - 2 * cuVEC<VType>::quantity[idx]) / hsq;
 			}
 			else {
 
@@ -772,14 +772,14 @@ __device__ VType cuVEC_VC<VType>::dzz_diri_nneu(int idx, const Class_BDiff& bdif
 		if (using_extended_flags && (ngbrFlags2[idx] & NF2_DIRICHLETZ)) {
 
 			if (ngbrFlags2[idx] & NF2_DIRICHLETPZ) diff = (2 * cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x*cuVEC<VType>::n.y] + 4 * get_dirichlet_value(NF2_DIRICHLETPZ, idx) - 6 * cuVEC<VType>::quantity[idx]) / hsq;
-			else								 diff = (2 * cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x*cuVEC<VType>::n.y] + 4 * get_dirichlet_value(NF2_DIRICHLETNZ, idx) - 6 * cuVEC<VType>::quantity[idx]) / hsq;
+			else								   diff = (2 * cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x*cuVEC<VType>::n.y] + 4 * get_dirichlet_value(NF2_DIRICHLETNZ, idx) - 6 * cuVEC<VType>::quantity[idx]) / hsq;
 		}
 		else if (ngbrFlags[idx] & NF_NPZ) {
 
 			//is it a pbc along z? If yes, then we are guaranteed to have a "neighbor" on the other side, so use it; otherwise apply boundary condition.
 			if (ngbrFlags[idx] & NF_PBCZ) {
 
-				diff = (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x*cuVEC<VType>::n.y] + cuVEC<VType>::quantity[idx + (cuVEC<VType>::n.z - 1) * cuVEC<VType>::n.x*cuVEC<VType>::n.y] - 2 * cuVEC<VType>::quantity[idx]) / hsq;
+				diff = (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x*cuVEC<VType>::n.y] + cu_get_sign(pbc_z) * cuVEC<VType>::quantity[idx + (cuVEC<VType>::n.z - 1) * cuVEC<VType>::n.x*cuVEC<VType>::n.y] - 2 * cuVEC<VType>::quantity[idx]) / hsq;
 			}
 			else {
 
@@ -791,7 +791,7 @@ __device__ VType cuVEC_VC<VType>::dzz_diri_nneu(int idx, const Class_BDiff& bdif
 			//is it a pbc along z? If yes, then we are guaranteed to have a "neighbor" on the other side, so use it; otherwise apply boundary condition.
 			if (ngbrFlags[idx] & NF_PBCZ) {
 
-				diff = (cuVEC<VType>::quantity[idx - (cuVEC<VType>::n.z - 1) * cuVEC<VType>::n.x*cuVEC<VType>::n.y] + cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x*cuVEC<VType>::n.y] - 2 * cuVEC<VType>::quantity[idx]) / hsq;
+				diff = (cu_get_sign(pbc_z) * cuVEC<VType>::quantity[idx - (cuVEC<VType>::n.z - 1) * cuVEC<VType>::n.x*cuVEC<VType>::n.y] + cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x*cuVEC<VType>::n.y] - 2 * cuVEC<VType>::quantity[idx]) / hsq;
 			}
 			else {
 
@@ -828,14 +828,14 @@ __device__ VType cuVEC_VC<VType>::dxx_diri_nneu(int idx, const cuVAL3<VType>& bd
 		if (using_extended_flags && (ngbrFlags2[idx] & NF2_DIRICHLETX)) {
 
 			if (ngbrFlags2[idx] & NF2_DIRICHLETPX) diff = (2 * cuVEC<VType>::quantity[idx + 1] + 4 * get_dirichlet_value(NF2_DIRICHLETPX, idx) - 6 * cuVEC<VType>::quantity[idx]) / hsq;
-			else								 diff = (2 * cuVEC<VType>::quantity[idx - 1] + 4 * get_dirichlet_value(NF2_DIRICHLETNX, idx) - 6 * cuVEC<VType>::quantity[idx]) / hsq;
+			else								   diff = (2 * cuVEC<VType>::quantity[idx - 1] + 4 * get_dirichlet_value(NF2_DIRICHLETNX, idx) - 6 * cuVEC<VType>::quantity[idx]) / hsq;
 		}
 		else if (ngbrFlags[idx] & NF_NPX) {
 
 			//is it a pbc along x? If yes, then we are guaranteed to have a "neighbor" on the other side, so use it; otherwise apply boundary condition.
 			if (ngbrFlags[idx] & NF_PBCX) {
 
-				diff = (cuVEC<VType>::quantity[idx + 1] + cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x - 1] - 2 * cuVEC<VType>::quantity[idx]) / hsq;
+				diff = (cuVEC<VType>::quantity[idx + 1] + cu_get_sign(pbc_x) * cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x - 1] - 2 * cuVEC<VType>::quantity[idx]) / hsq;
 			}
 			else {
 
@@ -847,7 +847,7 @@ __device__ VType cuVEC_VC<VType>::dxx_diri_nneu(int idx, const cuVAL3<VType>& bd
 			//is it a pbc along x? If yes, then we are guaranteed to have a "neighbor" on the other side, so use it; otherwise apply boundary condition.
 			if (ngbrFlags[idx] & NF_PBCX) {
 
-				diff = (cuVEC<VType>::quantity[idx - (cuVEC<VType>::n.x - 1)] + cuVEC<VType>::quantity[idx - 1] - 2 * cuVEC<VType>::quantity[idx]) / hsq;
+				diff = (cu_get_sign(pbc_x) * cuVEC<VType>::quantity[idx - (cuVEC<VType>::n.x - 1)] + cuVEC<VType>::quantity[idx - 1] - 2 * cuVEC<VType>::quantity[idx]) / hsq;
 			}
 			else {
 
@@ -882,14 +882,14 @@ __device__ VType cuVEC_VC<VType>::dyy_diri_nneu(int idx, const cuVAL3<VType>& bd
 		if (using_extended_flags && (ngbrFlags2[idx] & NF2_DIRICHLETY)) {
 
 			if (ngbrFlags2[idx] & NF2_DIRICHLETPY) diff = (2 * cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x] + 4 * get_dirichlet_value(NF2_DIRICHLETPY, idx) - 6 * cuVEC<VType>::quantity[idx]) / hsq;
-			else								 diff = (2 * cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x] + 4 * get_dirichlet_value(NF2_DIRICHLETNY, idx) - 6 * cuVEC<VType>::quantity[idx]) / hsq;
+			else								   diff = (2 * cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x] + 4 * get_dirichlet_value(NF2_DIRICHLETNY, idx) - 6 * cuVEC<VType>::quantity[idx]) / hsq;
 		}
 		else if (ngbrFlags[idx] & NF_NPY) {
 
 			//is it a pbc along y? If yes, then we are guaranteed to have a "neighbor" on the other side, so use it; otherwise apply boundary condition.
 			if (ngbrFlags[idx] & NF_PBCY) {
 
-				diff = (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x] + cuVEC<VType>::quantity[idx + (cuVEC<VType>::n.y - 1)*cuVEC<VType>::n.x] - 2 * cuVEC<VType>::quantity[idx]) / hsq;
+				diff = (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x] + cu_get_sign(pbc_y) * cuVEC<VType>::quantity[idx + (cuVEC<VType>::n.y - 1)*cuVEC<VType>::n.x] - 2 * cuVEC<VType>::quantity[idx]) / hsq;
 			}
 			else {
 
@@ -901,7 +901,7 @@ __device__ VType cuVEC_VC<VType>::dyy_diri_nneu(int idx, const cuVAL3<VType>& bd
 			//is it a pbc along y? If yes, then we are guaranteed to have a "neighbor" on the other side, so use it; otherwise apply boundary condition.
 			if (ngbrFlags[idx] & NF_PBCY) {
 
-				diff = (cuVEC<VType>::quantity[idx - (cuVEC<VType>::n.y - 1)*cuVEC<VType>::n.x] + cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x] - 2 * cuVEC<VType>::quantity[idx]) / hsq;
+				diff = (cu_get_sign(pbc_y) * cuVEC<VType>::quantity[idx - (cuVEC<VType>::n.y - 1)*cuVEC<VType>::n.x] + cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x] - 2 * cuVEC<VType>::quantity[idx]) / hsq;
 			}
 			else {
 
@@ -936,14 +936,14 @@ __device__ VType cuVEC_VC<VType>::dzz_diri_nneu(int idx, const cuVAL3<VType>& bd
 		if (using_extended_flags && (ngbrFlags2[idx] & NF2_DIRICHLETZ)) {
 
 			if (ngbrFlags2[idx] & NF2_DIRICHLETPZ) diff = (2 * cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x*cuVEC<VType>::n.y] + 4 * get_dirichlet_value(NF2_DIRICHLETPZ, idx) - 6 * cuVEC<VType>::quantity[idx]) / hsq;
-			else								 diff = (2 * cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x*cuVEC<VType>::n.y] + 4 * get_dirichlet_value(NF2_DIRICHLETNZ, idx) - 6 * cuVEC<VType>::quantity[idx]) / hsq;
+			else								   diff = (2 * cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x*cuVEC<VType>::n.y] + 4 * get_dirichlet_value(NF2_DIRICHLETNZ, idx) - 6 * cuVEC<VType>::quantity[idx]) / hsq;
 		}
 		else if (ngbrFlags[idx] & NF_NPZ) {
 
 			//is it a pbc along z? If yes, then we are guaranteed to have a "neighbor" on the other side, so use it; otherwise apply boundary condition.
 			if (ngbrFlags[idx] & NF_PBCZ) {
 
-				diff = (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x*cuVEC<VType>::n.y] + cuVEC<VType>::quantity[idx + (cuVEC<VType>::n.z - 1) * cuVEC<VType>::n.x*cuVEC<VType>::n.y] - 2 * cuVEC<VType>::quantity[idx]) / hsq;
+				diff = (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x*cuVEC<VType>::n.y] + cu_get_sign(pbc_z) * cuVEC<VType>::quantity[idx + (cuVEC<VType>::n.z - 1) * cuVEC<VType>::n.x*cuVEC<VType>::n.y] - 2 * cuVEC<VType>::quantity[idx]) / hsq;
 			}
 			else {
 
@@ -955,7 +955,7 @@ __device__ VType cuVEC_VC<VType>::dzz_diri_nneu(int idx, const cuVAL3<VType>& bd
 			//is it a pbc along z? If yes, then we are guaranteed to have a "neighbor" on the other side, so use it; otherwise apply boundary condition.
 			if (ngbrFlags[idx] & NF_PBCZ) {
 
-				diff = (cuVEC<VType>::quantity[idx - (cuVEC<VType>::n.z - 1) * cuVEC<VType>::n.x*cuVEC<VType>::n.y] + cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x*cuVEC<VType>::n.y] - 2 * cuVEC<VType>::quantity[idx]) / hsq;
+				diff = (cu_get_sign(pbc_z) * cuVEC<VType>::quantity[idx - (cuVEC<VType>::n.z - 1) * cuVEC<VType>::n.x*cuVEC<VType>::n.y] + cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x*cuVEC<VType>::n.y] - 2 * cuVEC<VType>::quantity[idx]) / hsq;
 			}
 			else {
 
@@ -1029,7 +1029,7 @@ __device__ VType cuVEC_VC<VType>::dxx_robin(int idx, cuBReal K) const
 			//is it a pbc along x? If yes, then we are guaranteed to have a "neighbor" on the other side, so use it; otherwise apply boundary condition.
 			if (ngbrFlags[idx] & NF_PBCX) {
 
-				diff = (cuVEC<VType>::quantity[idx + 1] + cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x - 1] - 2 * cuVEC<VType>::quantity[idx]) / hsq;
+				diff = (cuVEC<VType>::quantity[idx + 1] + cu_get_sign(pbc_x) * cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x - 1] - 2 * cuVEC<VType>::quantity[idx]) / hsq;
 			}
 			else {
 
@@ -1041,7 +1041,7 @@ __device__ VType cuVEC_VC<VType>::dxx_robin(int idx, cuBReal K) const
 			//is it a pbc along x? If yes, then we are guaranteed to have a "neighbor" on the other side, so use it; otherwise apply boundary condition.
 			if (ngbrFlags[idx] & NF_PBCX) {
 
-				diff = (cuVEC<VType>::quantity[idx - (cuVEC<VType>::n.x - 1)] + cuVEC<VType>::quantity[idx - 1] - 2 * cuVEC<VType>::quantity[idx]) / hsq;
+				diff = (cu_get_sign(pbc_x) * cuVEC<VType>::quantity[idx - (cuVEC<VType>::n.x - 1)] + cuVEC<VType>::quantity[idx - 1] - 2 * cuVEC<VType>::quantity[idx]) / hsq;
 			}
 			else {
 
@@ -1108,7 +1108,7 @@ __device__ VType cuVEC_VC<VType>::dyy_robin(int idx, cuBReal K) const
 			//is it a pbc along y? If yes, then we are guaranteed to have a "neighbor" on the other side, so use it; otherwise apply boundary condition.
 			if (ngbrFlags[idx] & NF_PBCY) {
 
-				diff = (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x] + cuVEC<VType>::quantity[idx + (cuVEC<VType>::n.y - 1)*cuVEC<VType>::n.x] - 2 * cuVEC<VType>::quantity[idx]) / hsq;
+				diff = (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x] + cu_get_sign(pbc_y) * cuVEC<VType>::quantity[idx + (cuVEC<VType>::n.y - 1)*cuVEC<VType>::n.x] - 2 * cuVEC<VType>::quantity[idx]) / hsq;
 			}
 			else {
 
@@ -1120,7 +1120,7 @@ __device__ VType cuVEC_VC<VType>::dyy_robin(int idx, cuBReal K) const
 			//is it a pbc along y? If yes, then we are guaranteed to have a "neighbor" on the other side, so use it; otherwise apply boundary condition.
 			if (ngbrFlags[idx] & NF_PBCY) {
 
-				diff = (cuVEC<VType>::quantity[idx - (cuVEC<VType>::n.y - 1)*cuVEC<VType>::n.x] + cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x] - 2 * cuVEC<VType>::quantity[idx]) / hsq;
+				diff = (cu_get_sign(pbc_y) * cuVEC<VType>::quantity[idx - (cuVEC<VType>::n.y - 1)*cuVEC<VType>::n.x] + cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x] - 2 * cuVEC<VType>::quantity[idx]) / hsq;
 			}
 			else {
 
@@ -1187,7 +1187,7 @@ __device__ VType cuVEC_VC<VType>::dzz_robin(int idx, cuBReal K) const
 			//is it a pbc along z? If yes, then we are guaranteed to have a "neighbor" on the other side, so use it; otherwise apply boundary condition.
 			if (ngbrFlags[idx] & NF_PBCZ) {
 
-				diff = (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x*cuVEC<VType>::n.y] + cuVEC<VType>::quantity[idx + (cuVEC<VType>::n.z - 1) * cuVEC<VType>::n.x*cuVEC<VType>::n.y] - 2 * cuVEC<VType>::quantity[idx]) / hsq;
+				diff = (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x*cuVEC<VType>::n.y] + cu_get_sign(pbc_z) * cuVEC<VType>::quantity[idx + (cuVEC<VType>::n.z - 1) * cuVEC<VType>::n.x*cuVEC<VType>::n.y] - 2 * cuVEC<VType>::quantity[idx]) / hsq;
 			}
 			else {
 
@@ -1199,7 +1199,7 @@ __device__ VType cuVEC_VC<VType>::dzz_robin(int idx, cuBReal K) const
 			//is it a pbc along z? If yes, then we are guaranteed to have a "neighbor" on the other side, so use it; otherwise apply boundary condition.
 			if (ngbrFlags[idx] & NF_PBCZ) {
 
-				diff = (cuVEC<VType>::quantity[idx - (cuVEC<VType>::n.z - 1) * cuVEC<VType>::n.x*cuVEC<VType>::n.y] + cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x*cuVEC<VType>::n.y] - 2 * cuVEC<VType>::quantity[idx]) / hsq;
+				diff = (cu_get_sign(pbc_z) * cuVEC<VType>::quantity[idx - (cuVEC<VType>::n.z - 1) * cuVEC<VType>::n.x*cuVEC<VType>::n.y] + cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x*cuVEC<VType>::n.y] - 2 * cuVEC<VType>::quantity[idx]) / hsq;
 			}
 			else {
 

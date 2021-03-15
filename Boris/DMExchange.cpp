@@ -46,6 +46,12 @@ BError DMExchange::Initialize(void)
 
 	error = ExchangeBase::Initialize();
 
+	//Make sure display data has memory allocated (or freed) as required
+	error = Update_Module_Display_VECs(
+		pMesh->h, pMesh->meshRect, 
+		(MOD_)pMesh->Get_ActualModule_Heff_Display() == MOD_DMEXCHANGE || pMesh->IsOutputDataSet_withRect(DATA_E_EXCH),
+		(MOD_)pMesh->Get_ActualModule_Energy_Display() == MOD_DMEXCHANGE || pMesh->IsOutputDataSet_withRect(DATA_E_EXCH),
+		pMesh->GetMeshType() == MESH_ANTIFERROMAGNETIC);
 	if (!error) initialized = true;
 
 	return error;
@@ -113,19 +119,19 @@ double DMExchange::UpdateField(void)
 				double Aconst = 2 * A / (MU0 * Ms * Ms);
 				double Dconst = -2 * D / (MU0 * Ms * Ms);
 
-				DBL3 Hexch;
+				DBL3 Hexch_A, Hexch_D;
 
 				if (pMesh->M.is_interior(idx)) {
 
 					//interior point : can use cheaper neu versions
 
 					//direct exchange contribution
-					Hexch = Aconst * pMesh->M.delsq_neu(idx);
+					Hexch_A = Aconst * pMesh->M.delsq_neu(idx);
 
 					//Dzyaloshinskii-Moriya exchange contribution
 
 					//Hdm, ex = -2D / (mu0*Ms) * curl m
-					Hexch += Dconst * pMesh->M.curl_neu(idx);
+					Hexch_D = Dconst * pMesh->M.curl_neu(idx);
 				}
 				else {
 
@@ -137,18 +143,35 @@ double DMExchange::UpdateField(void)
 
 					//direct exchange contribution
 					//cells marked with cmbnd are calculated using exchange coupling to other ferromagnetic meshes - see below; the delsq_nneu evaluates to zero in the CMBND coupling direction.
-					Hexch = Aconst * pMesh->M.delsq_nneu(idx, bnd_nneu);
+					Hexch_A = Aconst * pMesh->M.delsq_nneu(idx, bnd_nneu);
 
 					//Dzyaloshinskii-Moriya exchange contribution
 
 					//Hdm, ex = -2D / (mu0*Ms) * curl m
 					//For cmbnd cells curl_nneu does not evaluate to zero in the CMBND coupling direction, but sided differentials are used - when setting values at CMBND cells for exchange coupled meshes must correct for this.
-					Hexch += Dconst * pMesh->M.curl_nneu(idx, bnd_nneu);
+					Hexch_D = Dconst * pMesh->M.curl_nneu(idx, bnd_nneu);
 				}
 
-				pMesh->Heff[idx] += Hexch;
+				pMesh->Heff[idx] += Hexch_A + Hexch_D;
 
-				energy += pMesh->M[idx] * Hexch;
+				energy += pMesh->M[idx] * (Hexch_A + Hexch_D);
+
+				//spatial dependence display of effective field and energy density
+				if (Module_Heff.linear_size() && Module_energy.linear_size()) {
+
+					if ((MOD_)pMesh->Get_Module_Heff_Display() == MOD_EXCHANGE) {
+
+						//total : direct and DMI
+						Module_Heff[idx] = Hexch_A + Hexch_D;
+						Module_energy[idx] = -MU0 * (pMesh->M[idx] * (Hexch_A + Hexch_D)) / 2;
+					}
+					else {
+
+						//just DMI
+						Module_Heff[idx] = Hexch_D;
+						Module_energy[idx] = -MU0 * (pMesh->M[idx] * Hexch_D) / 2;
+					}
+				}
 			}
 		}
 	}
@@ -174,7 +197,7 @@ double DMExchange::UpdateField(void)
 				DBL2 Aconst = 2 * A_AFM / (MU0 * (Ms_AFM & Ms_AFM));
 				DBL2 Dconst = -2 * D_AFM / (MU0 * (Ms_AFM & Ms_AFM));
 
-				DBL3 Hexch, Hexch2;
+				DBL3 Hexch_A, Hexch_D, Hexch_A2, Hexch_D2;
 
 				if (pMesh->M.is_interior(idx)) {
 
@@ -186,14 +209,14 @@ double DMExchange::UpdateField(void)
 
 					DBL2 M = DBL2(pMesh->M[idx].norm(), pMesh->M2[idx].norm());
 
-					Hexch = Aconst.i * delsq_M_A + (-4 * Ah.i * (pMesh->M[idx] ^ (pMesh->M[idx] ^ pMesh->M2[idx])) / (M.i*M.i) + Anh.i * delsq_M_B) / (MU0*Ms_AFM.i*Ms_AFM.j);
-					Hexch2 = Aconst.j * delsq_M_B + (-4 * Ah.j * (pMesh->M2[idx] ^ (pMesh->M2[idx] ^ pMesh->M[idx])) / (M.j*M.j) + Anh.j * delsq_M_A) / (MU0*Ms_AFM.i*Ms_AFM.j);
+					Hexch_A = Aconst.i * delsq_M_A + (-4 * Ah.i * (pMesh->M[idx] ^ (pMesh->M[idx] ^ pMesh->M2[idx])) / (M.i*M.i) + Anh.i * delsq_M_B) / (MU0*Ms_AFM.i*Ms_AFM.j);
+					Hexch_A2 = Aconst.j * delsq_M_B + (-4 * Ah.j * (pMesh->M2[idx] ^ (pMesh->M2[idx] ^ pMesh->M[idx])) / (M.j*M.j) + Anh.j * delsq_M_A) / (MU0*Ms_AFM.i*Ms_AFM.j);
 
 					//2. Dzyaloshinskii-Moriya exchange contribution
 
 					//Hdm, ex = -2D / (mu0*Ms) * curl m
-					Hexch += Dconst.i * pMesh->M.curl_neu(idx);
-					Hexch2 += Dconst.j * pMesh->M2.curl_neu(idx);
+					Hexch_D = Dconst.i * pMesh->M.curl_neu(idx);
+					Hexch_D2 = Dconst.j * pMesh->M2.curl_neu(idx);
 				}
 				else {
 
@@ -216,21 +239,54 @@ double DMExchange::UpdateField(void)
 					//1. direct exchange contribution + AFM contribution
 
 					//cells marked with cmbnd are calculated using exchange coupling to other ferromagnetic meshes - see below; the delsq_nneu evaluates to zero in the CMBND coupling direction.
-					Hexch = Aconst.i * delsq_M_A + (-4 * Ah.i * (pMesh->M[idx] ^ (pMesh->M[idx] ^ pMesh->M2[idx])) / (M.i*M.i) + Anh.i * delsq_M_B) / (MU0*Ms_AFM.i*Ms_AFM.j);
-					Hexch2 = Aconst.j * delsq_M_B + (-4 * Ah.j * (pMesh->M2[idx] ^ (pMesh->M2[idx] ^ pMesh->M[idx])) / (M.j*M.j) + Anh.j * delsq_M_A) / (MU0*Ms_AFM.i*Ms_AFM.j);
+					Hexch_A = Aconst.i * delsq_M_A + (-4 * Ah.i * (pMesh->M[idx] ^ (pMesh->M[idx] ^ pMesh->M2[idx])) / (M.i*M.i) + Anh.i * delsq_M_B) / (MU0*Ms_AFM.i*Ms_AFM.j);
+					Hexch_A2 = Aconst.j * delsq_M_B + (-4 * Ah.j * (pMesh->M2[idx] ^ (pMesh->M2[idx] ^ pMesh->M[idx])) / (M.j*M.j) + Anh.j * delsq_M_A) / (MU0*Ms_AFM.i*Ms_AFM.j);
 
 					//2. Dzyaloshinskii-Moriya exchange contribution
 
 					//Hdm, ex = -2D / (mu0*Ms) * curl m
 					//For cmbnd cells curl_nneu does not evaluate to zero in the CMBND coupling direction, but sided differentials are used - when setting values at CMBND cells for exchange coupled meshes must correct for this.
-					Hexch += Dconst.i * pMesh->M.curl_nneu(idx, bndA_nneu);
-					Hexch2 += Dconst.j * pMesh->M2.curl_nneu(idx, bndB_nneu);
+					Hexch_D = Dconst.i * pMesh->M.curl_nneu(idx, bndA_nneu);
+					Hexch_D2 = Dconst.j * pMesh->M2.curl_nneu(idx, bndB_nneu);
 				}
 
-				pMesh->Heff[idx] += Hexch;
-				pMesh->Heff2[idx] += Hexch2;
+				pMesh->Heff[idx] += Hexch_A + Hexch_D;
+				pMesh->Heff2[idx] += Hexch_A2 + Hexch_D2;
 
-				energy += (pMesh->M[idx] * Hexch + pMesh->M2[idx] * Hexch2) / 2;
+				energy += (pMesh->M[idx] * (Hexch_A + Hexch_D) + pMesh->M2[idx] * (Hexch_A2 + Hexch_D2)) / 2;
+
+				//spatial dependence display of effective field and energy density
+				if (Module_Heff.linear_size() && Module_energy.linear_size()) {
+
+					if ((MOD_)pMesh->Get_Module_Heff_Display() == MOD_EXCHANGE) {
+
+						//total : direct and DMI
+						Module_Heff[idx] = Hexch_A + Hexch_D;
+						Module_energy[idx] = -MU0 * (pMesh->M[idx] * (Hexch_A + Hexch_D)) / 2;
+					}
+					else {
+
+						//just DMI
+						Module_Heff[idx] = Hexch_D;
+						Module_energy[idx] = -MU0 * (pMesh->M[idx] * Hexch_D) / 2;
+					}
+				}
+
+				if (Module_Heff2.linear_size() && Module_energy2.linear_size()) {
+
+					if ((MOD_)pMesh->Get_Module_Heff_Display() == MOD_EXCHANGE) {
+
+						//total : direct and DMI
+						Module_Heff2[idx] = Hexch_A2 + Hexch_D2;
+						Module_energy2[idx] = -MU0 * (pMesh->M2[idx] * (Hexch_A2 + Hexch_D2)) / 2;
+					}
+					else {
+
+						//just DMI
+						Module_Heff2[idx] = Hexch_D2;
+						Module_energy2[idx] = -MU0 * (pMesh->M2[idx] * Hexch_D2) / 2;
+					}
+				}
 			}
 		}
 	}
@@ -386,491 +442,11 @@ double DMExchange::UpdateField(void)
 
 	//average energy density, this is correct, see notes - e_ex ~= -(mu0/2) M.H as can be derived from the full expression for e_ex. It is not -mu0 M.H, which is the energy density for a dipole in a field !
 	if (pMesh->M.get_nonempty_cells()) energy *= -MU0 / (2 * (pMesh->M.get_nonempty_cells()));
-	else energy = 0;
+	else energy = 0.0;
 
 	this->energy = energy;
 
 	return this->energy;
-}
-
-//-------------------Energy density methods
-
-double DMExchange::GetEnergyDensity(Rect& avRect)
-{
-#if COMPILECUDA == 1
-	if (pModuleCUDA) return dynamic_cast<DMExchangeCUDA*>(pModuleCUDA)->GetEnergyDensity(avRect);
-#endif
-
-	double energy = 0;
-	int num_points = 0;
-
-	INT3 n = pMesh->n;
-
-	///////////////////////////////////////////////////////////////////////////////////////////////
-	////////////////////////////////////// FERROMAGNETIC MESH /////////////////////////////////////
-	///////////////////////////////////////////////////////////////////////////////////////////////
-
-	if (pMesh->GetMeshType() == MESH_FERROMAGNETIC) {
-
-#pragma omp parallel for reduction(+:energy, num_points) 
-		for (int idx = 0; idx < n.dim(); idx++) {
-
-			//only average over values in given rectangle
-			if (!avRect.contains(pMesh->M.cellidx_to_position(idx))) continue;
-
-			if (pMesh->M.is_not_empty(idx)) {
-
-				double Ms = pMesh->Ms;
-				double A = pMesh->A;
-				double D = pMesh->D;
-				pMesh->update_parameters_mcoarse(idx, pMesh->A, A, pMesh->D, D, pMesh->Ms, Ms);
-
-				double Aconst = 2 * A / (MU0 * Ms * Ms);
-				double Dconst = -2 * D / (MU0 * Ms * Ms);
-
-				DBL3 Hexch;
-
-				if (pMesh->M.is_interior(idx)) {
-
-					//interior point : can use cheaper neu versions
-
-					//direct exchange contribution
-					Hexch = Aconst * pMesh->M.delsq_neu(idx);
-
-					//Dzyaloshinskii-Moriya exchange contribution
-
-					//Hdm, ex = -2D / (mu0*Ms) * curl m
-					Hexch += Dconst * pMesh->M.curl_neu(idx);
-				}
-				else {
-
-					//Non-homogeneous Neumann boundary conditions apply when using DMI. Required to ensure Brown's condition is fulfilled, i.e. equivalent to m x h -> 0 when relaxing.
-					DBL3 bnd_dm_dx = (D / (2 * A)) * DBL3(0, -pMesh->M[idx].z, pMesh->M[idx].y);
-					DBL3 bnd_dm_dy = (D / (2 * A)) * DBL3(pMesh->M[idx].z, 0, -pMesh->M[idx].x);
-					DBL3 bnd_dm_dz = (D / (2 * A)) * DBL3(-pMesh->M[idx].y, pMesh->M[idx].x, 0);
-					DBL33 bnd_nneu = DBL33(bnd_dm_dx, bnd_dm_dy, bnd_dm_dz);
-
-					//direct exchange contribution
-					//cells marked with cmbnd are calculated using exchange coupling to other ferromagnetic meshes - see below; the delsq_nneu evaluates to zero in the CMBND coupling direction.
-					Hexch = Aconst * pMesh->M.delsq_nneu(idx, bnd_nneu);
-
-					//Dzyaloshinskii-Moriya exchange contribution
-
-					//Hdm, ex = -2D / (mu0*Ms) * curl m
-					//For cmbnd cells curl_nneu does not evaluate to zero in the CMBND coupling direction, but sided differentials are used - when setting values at CMBND cells for exchange coupled meshes must correct for this.
-					Hexch += Dconst * pMesh->M.curl_nneu(idx, bnd_nneu);
-				}
-
-				energy += pMesh->M[idx] * Hexch;
-				num_points++;
-			}
-		}
-	}
-
-	///////////////////////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////// ANTIFERROMAGNETIC MESH ///////////////////////////////////
-	///////////////////////////////////////////////////////////////////////////////////////////////
-
-	else if (pMesh->GetMeshType() == MESH_ANTIFERROMAGNETIC) {
-
-#pragma omp parallel for reduction(+:energy, num_points) 
-		for (int idx = 0; idx < n.dim(); idx++) {
-
-			//only average over values in given rectangle
-			if (!avRect.contains(pMesh->M.cellidx_to_position(idx))) continue;
-
-			if (pMesh->M.is_not_empty(idx)) {
-
-				DBL2 Ms_AFM = pMesh->Ms_AFM;
-				DBL2 A_AFM = pMesh->A_AFM;
-				DBL2 Ah = pMesh->Ah;
-				DBL2 Anh = pMesh->Anh;
-				DBL2 D_AFM = pMesh->D_AFM;
-				pMesh->update_parameters_mcoarse(idx, pMesh->A_AFM, A_AFM, pMesh->Ah, Ah, pMesh->Anh, Anh, pMesh->D_AFM, D_AFM, pMesh->Ms_AFM, Ms_AFM);
-
-				DBL2 Aconst = 2 * A_AFM / (MU0 * (Ms_AFM & Ms_AFM));
-				DBL2 Dconst = -2 * D_AFM / (MU0 * (Ms_AFM & Ms_AFM));
-
-				DBL3 Hexch, Hexch2;
-
-				if (pMesh->M.is_interior(idx)) {
-
-					//interior point : can use cheaper neu versions
-
-					//1. direct exchange contribution + AFM contribution
-					DBL3 delsq_M_A = pMesh->M.delsq_neu(idx);
-					DBL3 delsq_M_B = pMesh->M2.delsq_neu(idx);
-
-					DBL2 M = DBL2(pMesh->M[idx].norm(), pMesh->M2[idx].norm());
-
-					Hexch = Aconst.i * delsq_M_A + (-4 * Ah.i * (pMesh->M[idx] ^ (pMesh->M[idx] ^ pMesh->M2[idx])) / (M.i*M.i) + Anh.i * delsq_M_B) / (MU0*Ms_AFM.i*Ms_AFM.j);
-					Hexch2 = Aconst.j * delsq_M_B + (-4 * Ah.j * (pMesh->M2[idx] ^ (pMesh->M2[idx] ^ pMesh->M[idx])) / (M.j*M.j) + Anh.j * delsq_M_A) / (MU0*Ms_AFM.i*Ms_AFM.j);
-
-					//2. Dzyaloshinskii-Moriya exchange contribution
-
-					//Hdm, ex = -2D / (mu0*Ms) * curl m
-					Hexch += Dconst.i * pMesh->M.curl_neu(idx);
-					Hexch2 += Dconst.j * pMesh->M2.curl_neu(idx);
-				}
-				else {
-
-					//Non-homogeneous Neumann boundary conditions apply when using DMI. Required to ensure Brown's condition is fulfilled, i.e. m x h -> 0 when relaxing.
-					DBL3 bnd_dm_dx = (D_AFM.i / (2 * A_AFM.i)) * DBL3(0, -pMesh->M[idx].z, pMesh->M[idx].y);
-					DBL3 bnd_dm_dy = (D_AFM.i / (2 * A_AFM.i)) * DBL3(pMesh->M[idx].z, 0, -pMesh->M[idx].x);
-					DBL3 bnd_dm_dz = (D_AFM.i / (2 * A_AFM.i)) * DBL3(-pMesh->M[idx].y, pMesh->M[idx].x, 0);
-					DBL33 bndA_nneu = DBL33(bnd_dm_dx, bnd_dm_dy, bnd_dm_dz);
-
-					bnd_dm_dx = (D_AFM.j / (2 * A_AFM.j)) * DBL3(0, -pMesh->M2[idx].z, pMesh->M2[idx].y);
-					bnd_dm_dy = (D_AFM.j / (2 * A_AFM.j)) * DBL3(pMesh->M2[idx].z, 0, -pMesh->M2[idx].x);
-					bnd_dm_dz = (D_AFM.j / (2 * A_AFM.j)) * DBL3(-pMesh->M2[idx].y, pMesh->M2[idx].x, 0);
-					DBL33 bndB_nneu = DBL33(bnd_dm_dx, bnd_dm_dy, bnd_dm_dz);
-
-					DBL3 delsq_M_A = pMesh->M.delsq_nneu(idx, bndA_nneu);
-					DBL3 delsq_M_B = pMesh->M2.delsq_nneu(idx, bndB_nneu);
-
-					DBL2 M = DBL2(pMesh->M[idx].norm(), pMesh->M2[idx].norm());
-
-					//1. direct exchange contribution + AFM contribution
-
-					//cells marked with cmbnd are calculated using exchange coupling to other ferromagnetic meshes - see below; the delsq_nneu evaluates to zero in the CMBND coupling direction.
-					Hexch = Aconst.i * delsq_M_A + (-4 * Ah.i * (pMesh->M[idx] ^ (pMesh->M[idx] ^ pMesh->M2[idx])) / (M.i*M.i) + Anh.i * delsq_M_B) / (MU0*Ms_AFM.i*Ms_AFM.j);
-					Hexch2 = Aconst.j * delsq_M_B + (-4 * Ah.j * (pMesh->M2[idx] ^ (pMesh->M2[idx] ^ pMesh->M[idx])) / (M.j*M.j) + Anh.j * delsq_M_A) / (MU0*Ms_AFM.i*Ms_AFM.j);
-
-					//2. Dzyaloshinskii-Moriya exchange contribution
-
-					//Hdm, ex = -2D / (mu0*Ms) * curl m
-					//For cmbnd cells curl_nneu does not evaluate to zero in the CMBND coupling direction, but sided differentials are used - when setting values at CMBND cells for exchange coupled meshes must correct for this.
-					Hexch += Dconst.i * pMesh->M.curl_nneu(idx, bndA_nneu);
-					Hexch2 += Dconst.j * pMesh->M2.curl_nneu(idx, bndB_nneu);
-				}
-
-				energy += (pMesh->M[idx] * Hexch + pMesh->M2[idx] * Hexch2) / 2;
-				num_points++;
-			}
-		}
-	}
-
-	///////////////////////////////////////////////////////////////////////////////////////////////
-	///////////////////////////////////// FINAL ENERGY DENSITY VALUE //////////////////////////////
-	///////////////////////////////////////////////////////////////////////////////////////////////
-
-	//average energy density, this is correct, see notes - e_ex ~= -(mu0/2) M.H as can be derived from the full expression for e_ex. It is not -mu0 M.H, which is the energy density for a dipole in a field !
-	if (num_points) energy *= -MU0 / (2 * num_points);
-	else energy = 0;
-
-	return energy;
-}
-
-double DMExchange::GetEnergy_Max(Rect& rectangle)
-{
-#if COMPILECUDA == 1
-	if (pModuleCUDA) return dynamic_cast<DMExchangeCUDA*>(pModuleCUDA)->GetEnergy_Max(rectangle);
-#endif
-
-	INT3 n = pMesh->n;
-
-	OmpReduction<double> emax;
-	emax.new_minmax_reduction();
-
-	///////////////////////////////////////////////////////////////////////////////////////////////
-	////////////////////////////////////// FERROMAGNETIC MESH /////////////////////////////////////
-	///////////////////////////////////////////////////////////////////////////////////////////////
-
-	if (pMesh->GetMeshType() == MESH_FERROMAGNETIC) {
-
-#pragma omp parallel for
-		for (int idx = 0; idx < n.dim(); idx++) {
-
-			//only obtain max in given rectangle
-			if (!rectangle.contains(pMesh->M.cellidx_to_position(idx))) continue;
-
-			if (pMesh->M.is_not_empty(idx)) {
-
-				double Ms = pMesh->Ms;
-				double A = pMesh->A;
-				double D = pMesh->D;
-				pMesh->update_parameters_mcoarse(idx, pMesh->A, A, pMesh->D, D, pMesh->Ms, Ms);
-
-				double Aconst = 2 * A / (MU0 * Ms * Ms);
-				double Dconst = -2 * D / (MU0 * Ms * Ms);
-
-				DBL3 Hexch;
-
-				if (pMesh->M.is_interior(idx)) {
-
-					//interior point : can use cheaper neu versions
-
-					//direct exchange contribution
-					Hexch = Aconst * pMesh->M.delsq_neu(idx);
-
-					//Dzyaloshinskii-Moriya exchange contribution
-
-					//Hdm, ex = -2D / (mu0*Ms) * curl m
-					Hexch += Dconst * pMesh->M.curl_neu(idx);
-				}
-				else {
-
-					//Non-homogeneous Neumann boundary conditions apply when using DMI. Required to ensure Brown's condition is fulfilled, i.e. equivalent to m x h -> 0 when relaxing.
-					DBL3 bnd_dm_dx = (D / (2 * A)) * DBL3(0, -pMesh->M[idx].z, pMesh->M[idx].y);
-					DBL3 bnd_dm_dy = (D / (2 * A)) * DBL3(pMesh->M[idx].z, 0, -pMesh->M[idx].x);
-					DBL3 bnd_dm_dz = (D / (2 * A)) * DBL3(-pMesh->M[idx].y, pMesh->M[idx].x, 0);
-					DBL33 bnd_nneu = DBL33(bnd_dm_dx, bnd_dm_dy, bnd_dm_dz);
-
-					//direct exchange contribution
-					//cells marked with cmbnd are calculated using exchange coupling to other ferromagnetic meshes - see below; the delsq_nneu evaluates to zero in the CMBND coupling direction.
-					Hexch = Aconst * pMesh->M.delsq_nneu(idx, bnd_nneu);
-
-					//Dzyaloshinskii-Moriya exchange contribution
-
-					//Hdm, ex = -2D / (mu0*Ms) * curl m
-					//For cmbnd cells curl_nneu does not evaluate to zero in the CMBND coupling direction, but sided differentials are used - when setting values at CMBND cells for exchange coupled meshes must correct for this.
-					Hexch += Dconst * pMesh->M.curl_nneu(idx, bnd_nneu);
-				}
-
-				emax.reduce_max(fabs(pMesh->M[idx] * Hexch));
-			}
-		}
-	}
-
-	///////////////////////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////// ANTIFERROMAGNETIC MESH ///////////////////////////////////
-	///////////////////////////////////////////////////////////////////////////////////////////////
-
-	else if (pMesh->GetMeshType() == MESH_ANTIFERROMAGNETIC) {
-
-#pragma omp parallel for
-		for (int idx = 0; idx < n.dim(); idx++) {
-
-			//only obtain max in given rectangle
-			if (!rectangle.contains(pMesh->M.cellidx_to_position(idx))) continue;
-
-			if (pMesh->M.is_not_empty(idx)) {
-
-				DBL2 Ms_AFM = pMesh->Ms_AFM;
-				DBL2 A_AFM = pMesh->A_AFM;
-				DBL2 Ah = pMesh->Ah;
-				DBL2 Anh = pMesh->Anh;
-				DBL2 D_AFM = pMesh->D_AFM;
-				pMesh->update_parameters_mcoarse(idx, pMesh->A_AFM, A_AFM, pMesh->Ah, Ah, pMesh->Anh, Anh, pMesh->D_AFM, D_AFM, pMesh->Ms_AFM, Ms_AFM);
-
-				DBL2 Aconst = 2 * A_AFM / (MU0 * (Ms_AFM & Ms_AFM));
-				DBL2 Dconst = -2 * D_AFM / (MU0 * (Ms_AFM & Ms_AFM));
-
-				DBL3 Hexch, Hexch2;
-
-				if (pMesh->M.is_interior(idx)) {
-
-					//interior point : can use cheaper neu versions
-
-					//1. direct exchange contribution + AFM contribution
-					DBL3 delsq_M_A = pMesh->M.delsq_neu(idx);
-					DBL3 delsq_M_B = pMesh->M2.delsq_neu(idx);
-
-					DBL2 M = DBL2(pMesh->M[idx].norm(), pMesh->M2[idx].norm());
-
-					Hexch = Aconst.i * delsq_M_A + (-4 * Ah.i * (pMesh->M[idx] ^ (pMesh->M[idx] ^ pMesh->M2[idx])) / (M.i*M.i) + Anh.i * delsq_M_B) / (MU0*Ms_AFM.i*Ms_AFM.j);
-					Hexch2 = Aconst.j * delsq_M_B + (-4 * Ah.j * (pMesh->M2[idx] ^ (pMesh->M2[idx] ^ pMesh->M[idx])) / (M.j*M.j) + Anh.j * delsq_M_A) / (MU0*Ms_AFM.i*Ms_AFM.j);
-
-					//2. Dzyaloshinskii-Moriya exchange contribution
-
-					//Hdm, ex = -2D / (mu0*Ms) * curl m
-					Hexch += Dconst.i * pMesh->M.curl_neu(idx);
-					Hexch2 += Dconst.j * pMesh->M2.curl_neu(idx);
-				}
-				else {
-
-					//Non-homogeneous Neumann boundary conditions apply when using DMI. Required to ensure Brown's condition is fulfilled, i.e. m x h -> 0 when relaxing.
-					DBL3 bnd_dm_dx = (D_AFM.i / (2 * A_AFM.i)) * DBL3(0, -pMesh->M[idx].z, pMesh->M[idx].y);
-					DBL3 bnd_dm_dy = (D_AFM.i / (2 * A_AFM.i)) * DBL3(pMesh->M[idx].z, 0, -pMesh->M[idx].x);
-					DBL3 bnd_dm_dz = (D_AFM.i / (2 * A_AFM.i)) * DBL3(-pMesh->M[idx].y, pMesh->M[idx].x, 0);
-					DBL33 bndA_nneu = DBL33(bnd_dm_dx, bnd_dm_dy, bnd_dm_dz);
-
-					bnd_dm_dx = (D_AFM.j / (2 * A_AFM.j)) * DBL3(0, -pMesh->M2[idx].z, pMesh->M2[idx].y);
-					bnd_dm_dy = (D_AFM.j / (2 * A_AFM.j)) * DBL3(pMesh->M2[idx].z, 0, -pMesh->M2[idx].x);
-					bnd_dm_dz = (D_AFM.j / (2 * A_AFM.j)) * DBL3(-pMesh->M2[idx].y, pMesh->M2[idx].x, 0);
-					DBL33 bndB_nneu = DBL33(bnd_dm_dx, bnd_dm_dy, bnd_dm_dz);
-
-					DBL3 delsq_M_A = pMesh->M.delsq_nneu(idx, bndA_nneu);
-					DBL3 delsq_M_B = pMesh->M2.delsq_nneu(idx, bndB_nneu);
-
-					DBL2 M = DBL2(pMesh->M[idx].norm(), pMesh->M2[idx].norm());
-
-					//1. direct exchange contribution + AFM contribution
-
-					//cells marked with cmbnd are calculated using exchange coupling to other ferromagnetic meshes - see below; the delsq_nneu evaluates to zero in the CMBND coupling direction.
-					Hexch = Aconst.i * delsq_M_A + (-4 * Ah.i * (pMesh->M[idx] ^ (pMesh->M[idx] ^ pMesh->M2[idx])) / (M.i*M.i) + Anh.i * delsq_M_B) / (MU0*Ms_AFM.i*Ms_AFM.j);
-					Hexch2 = Aconst.j * delsq_M_B + (-4 * Ah.j * (pMesh->M2[idx] ^ (pMesh->M2[idx] ^ pMesh->M[idx])) / (M.j*M.j) + Anh.j * delsq_M_A) / (MU0*Ms_AFM.i*Ms_AFM.j);
-
-					//2. Dzyaloshinskii-Moriya exchange contribution
-
-					//Hdm, ex = -2D / (mu0*Ms) * curl m
-					//For cmbnd cells curl_nneu does not evaluate to zero in the CMBND coupling direction, but sided differentials are used - when setting values at CMBND cells for exchange coupled meshes must correct for this.
-					Hexch += Dconst.i * pMesh->M.curl_nneu(idx, bndA_nneu);
-					Hexch2 += Dconst.j * pMesh->M2.curl_nneu(idx, bndB_nneu);
-				}
-
-				emax.reduce_max(fabs((pMesh->M[idx] * Hexch + pMesh->M2[idx] * Hexch2) / 2));
-			}
-		}
-	}
-
-	///////////////////////////////////////////////////////////////////////////////////////////////
-	///////////////////////////////////// FINAL ENERGY DENSITY VALUE //////////////////////////////
-	///////////////////////////////////////////////////////////////////////////////////////////////
-
-	return emax.maximum() * MU0 / 2;
-}
-
-//Compute exchange energy density and store it in displayVEC
-void DMExchange::Compute_Exchange(VEC<double>& displayVEC)
-{
-	displayVEC.resize(pMesh->h, pMesh->meshRect);
-
-#if COMPILECUDA == 1
-	if (pModuleCUDA) {
-
-		dynamic_cast<DMExchangeCUDA*>(pModuleCUDA)->Compute_Exchange(displayVEC);
-		return;
-	}
-#endif
-
-	///////////////////////////////////////////////////////////////////////////////////////////////
-	////////////////////////////////////// FERROMAGNETIC MESH /////////////////////////////////////
-	///////////////////////////////////////////////////////////////////////////////////////////////
-
-	if (pMesh->GetMeshType() == MESH_FERROMAGNETIC) {
-
-#pragma omp parallel for
-		for (int idx = 0; idx < pMesh->n.dim(); idx++) {
-
-			if (pMesh->M.is_not_empty(idx)) {
-
-				double Ms = pMesh->Ms;
-				double A = pMesh->A;
-				double D = pMesh->D;
-				pMesh->update_parameters_mcoarse(idx, pMesh->A, A, pMesh->D, D, pMesh->Ms, Ms);
-
-				double Aconst = 2 * A / (MU0 * Ms * Ms);
-				double Dconst = -2 * D / (MU0 * Ms * Ms);
-
-				DBL3 Hexch;
-
-				if (pMesh->M.is_interior(idx)) {
-
-					//interior point : can use cheaper neu versions
-
-					//direct exchange contribution
-					Hexch = Aconst * pMesh->M.delsq_neu(idx);
-
-					//Dzyaloshinskii-Moriya exchange contribution
-
-					//Hdm, ex = -2D / (mu0*Ms) * curl m
-					Hexch += Dconst * pMesh->M.curl_neu(idx);
-				}
-				else {
-
-					//Non-homogeneous Neumann boundary conditions apply when using DMI. Required to ensure Brown's condition is fulfilled, i.e. equivalent to m x h -> 0 when relaxing.
-					DBL3 bnd_dm_dx = (D / (2 * A)) * DBL3(0, -pMesh->M[idx].z, pMesh->M[idx].y);
-					DBL3 bnd_dm_dy = (D / (2 * A)) * DBL3(pMesh->M[idx].z, 0, -pMesh->M[idx].x);
-					DBL3 bnd_dm_dz = (D / (2 * A)) * DBL3(-pMesh->M[idx].y, pMesh->M[idx].x, 0);
-					DBL33 bnd_nneu = DBL33(bnd_dm_dx, bnd_dm_dy, bnd_dm_dz);
-
-					//direct exchange contribution
-					//cells marked with cmbnd are calculated using exchange coupling to other ferromagnetic meshes - see below; the delsq_nneu evaluates to zero in the CMBND coupling direction.
-					Hexch = Aconst * pMesh->M.delsq_nneu(idx, bnd_nneu);
-
-					//Dzyaloshinskii-Moriya exchange contribution
-
-					//Hdm, ex = -2D / (mu0*Ms) * curl m
-					//For cmbnd cells curl_nneu does not evaluate to zero in the CMBND coupling direction, but sided differentials are used - when setting values at CMBND cells for exchange coupled meshes must correct for this.
-					Hexch += Dconst * pMesh->M.curl_nneu(idx, bnd_nneu);
-				}
-
-				displayVEC[idx] = -(MU0/2) * (pMesh->M[idx] * Hexch);
-			}
-			else displayVEC[idx] = 0.0;
-		}
-	}
-
-	///////////////////////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////// ANTIFERROMAGNETIC MESH ///////////////////////////////////
-	///////////////////////////////////////////////////////////////////////////////////////////////
-
-	else if (pMesh->GetMeshType() == MESH_ANTIFERROMAGNETIC) {
-
-#pragma omp parallel for
-		for (int idx = 0; idx < pMesh->n.dim(); idx++) {
-
-			if (pMesh->M.is_not_empty(idx)) {
-
-				DBL2 Ms_AFM = pMesh->Ms_AFM;
-				DBL2 A_AFM = pMesh->A_AFM;
-				DBL2 Ah = pMesh->Ah;
-				DBL2 Anh = pMesh->Anh;
-				DBL2 D_AFM = pMesh->D_AFM;
-				pMesh->update_parameters_mcoarse(idx, pMesh->A_AFM, A_AFM, pMesh->Ah, Ah, pMesh->Anh, Anh, pMesh->D_AFM, D_AFM, pMesh->Ms_AFM, Ms_AFM);
-
-				DBL2 Aconst = 2 * A_AFM / (MU0 * (Ms_AFM & Ms_AFM));
-				DBL2 Dconst = -2 * D_AFM / (MU0 * (Ms_AFM & Ms_AFM));
-
-				DBL3 Hexch, Hexch2;
-
-				if (pMesh->M.is_interior(idx)) {
-
-					//interior point : can use cheaper neu versions
-
-					//1. direct exchange contribution + AFM contribution
-					DBL3 delsq_M_A = pMesh->M.delsq_neu(idx);
-					DBL3 delsq_M_B = pMesh->M2.delsq_neu(idx);
-
-					DBL2 M = DBL2(pMesh->M[idx].norm(), pMesh->M2[idx].norm());
-
-					Hexch = Aconst.i * delsq_M_A + (-4 * Ah.i * (pMesh->M[idx] ^ (pMesh->M[idx] ^ pMesh->M2[idx])) / (M.i*M.i) + Anh.i * delsq_M_B) / (MU0*Ms_AFM.i*Ms_AFM.j);
-					Hexch2 = Aconst.j * delsq_M_B + (-4 * Ah.j * (pMesh->M2[idx] ^ (pMesh->M2[idx] ^ pMesh->M[idx])) / (M.j*M.j) + Anh.j * delsq_M_A) / (MU0*Ms_AFM.i*Ms_AFM.j);
-
-					//2. Dzyaloshinskii-Moriya exchange contribution
-
-					//Hdm, ex = -2D / (mu0*Ms) * curl m
-					Hexch += Dconst.i * pMesh->M.curl_neu(idx);
-					Hexch2 += Dconst.j * pMesh->M2.curl_neu(idx);
-				}
-				else {
-
-					//Non-homogeneous Neumann boundary conditions apply when using DMI. Required to ensure Brown's condition is fulfilled, i.e. m x h -> 0 when relaxing.
-					DBL3 bnd_dm_dx = (D_AFM.i / (2 * A_AFM.i)) * DBL3(0, -pMesh->M[idx].z, pMesh->M[idx].y);
-					DBL3 bnd_dm_dy = (D_AFM.i / (2 * A_AFM.i)) * DBL3(pMesh->M[idx].z, 0, -pMesh->M[idx].x);
-					DBL3 bnd_dm_dz = (D_AFM.i / (2 * A_AFM.i)) * DBL3(-pMesh->M[idx].y, pMesh->M[idx].x, 0);
-					DBL33 bndA_nneu = DBL33(bnd_dm_dx, bnd_dm_dy, bnd_dm_dz);
-
-					bnd_dm_dx = (D_AFM.j / (2 * A_AFM.j)) * DBL3(0, -pMesh->M2[idx].z, pMesh->M2[idx].y);
-					bnd_dm_dy = (D_AFM.j / (2 * A_AFM.j)) * DBL3(pMesh->M2[idx].z, 0, -pMesh->M2[idx].x);
-					bnd_dm_dz = (D_AFM.j / (2 * A_AFM.j)) * DBL3(-pMesh->M2[idx].y, pMesh->M2[idx].x, 0);
-					DBL33 bndB_nneu = DBL33(bnd_dm_dx, bnd_dm_dy, bnd_dm_dz);
-
-					DBL3 delsq_M_A = pMesh->M.delsq_nneu(idx, bndA_nneu);
-					DBL3 delsq_M_B = pMesh->M2.delsq_nneu(idx, bndB_nneu);
-
-					DBL2 M = DBL2(pMesh->M[idx].norm(), pMesh->M2[idx].norm());
-
-					//1. direct exchange contribution + AFM contribution
-
-					//cells marked with cmbnd are calculated using exchange coupling to other ferromagnetic meshes - see below; the delsq_nneu evaluates to zero in the CMBND coupling direction.
-					Hexch = Aconst.i * delsq_M_A + (-4 * Ah.i * (pMesh->M[idx] ^ (pMesh->M[idx] ^ pMesh->M2[idx])) / (M.i*M.i) + Anh.i * delsq_M_B) / (MU0*Ms_AFM.i*Ms_AFM.j);
-					Hexch2 = Aconst.j * delsq_M_B + (-4 * Ah.j * (pMesh->M2[idx] ^ (pMesh->M2[idx] ^ pMesh->M[idx])) / (M.j*M.j) + Anh.j * delsq_M_A) / (MU0*Ms_AFM.i*Ms_AFM.j);
-
-					//2. Dzyaloshinskii-Moriya exchange contribution
-
-					//Hdm, ex = -2D / (mu0*Ms) * curl m
-					//For cmbnd cells curl_nneu does not evaluate to zero in the CMBND coupling direction, but sided differentials are used - when setting values at CMBND cells for exchange coupled meshes must correct for this.
-					Hexch += Dconst.i * pMesh->M.curl_nneu(idx, bndA_nneu);
-					Hexch2 += Dconst.j * pMesh->M2.curl_nneu(idx, bndB_nneu);
-				}
-
-				displayVEC[idx] = -(MU0 / 2) * (pMesh->M[idx] * Hexch + pMesh->M2[idx] * Hexch2) / 2;
-			}
-			else displayVEC[idx] = 0.0;
-		}
-	}
 }
 
 #endif

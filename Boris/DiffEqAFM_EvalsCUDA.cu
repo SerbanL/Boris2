@@ -5,6 +5,8 @@
 
 #include "BorisCUDALib.cuh"
 
+#include "MeshParamsControlCUDA.h"
+
 //-----------------------------------------
 
 __global__ void Restoremagnetization_AFM_kernel(cuVEC_VC<cuReal3>& M, cuVEC<cuReal3>& sM1, cuVEC_VC<cuReal3>& M2, cuVEC<cuReal3>& sM1_2)
@@ -19,9 +21,35 @@ __global__ void Restoremagnetization_AFM_kernel(cuVEC_VC<cuReal3>& M, cuVEC<cuRe
 }
 
 //Restore magnetization after a failed step for adaptive time-step methods
-void DifferentialEquationAFMCUDA::Restoremagnetization(void)
+void DifferentialEquationAFMCUDA::RestoreMagnetization(void)
 {
 	Restoremagnetization_AFM_kernel <<< (pMeshCUDA->n.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (pMeshCUDA->M, sM1, pMeshCUDA->M2, sM1_2);
+}
+
+//-----------------------------------------
+
+__global__ void RenormalizeMagnetization_AFM_kernel(ManagedMeshCUDA& cuMesh)
+{
+	int idx = blockIdx.x * blockDim.x + threadIdx.x;
+
+
+	if (idx < cuMesh.pM->linear_size()) {
+
+		if (cuMesh.pM->is_not_empty(idx)) {
+
+			cuReal2 Ms_AFM = *cuMesh.pMs_AFM;
+			cuMesh.update_parameters_mcoarse(idx, *cuMesh.pMs_AFM, Ms_AFM);
+
+			(*cuMesh.pM)[idx].renormalize(Ms_AFM.i);
+			(*cuMesh.pM2)[idx].renormalize(Ms_AFM.j);
+		}
+	}
+}
+
+//Restore magnetization after a failed step for adaptive time-step methods
+void DifferentialEquationAFMCUDA::RenormalizeMagnetization(void)
+{
+	RenormalizeMagnetization_AFM_kernel <<< (pMeshCUDA->n.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (pMeshCUDA->cuMesh);
 }
 
 //-----------------------------------------

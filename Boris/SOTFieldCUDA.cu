@@ -12,7 +12,7 @@
 #include "Mesh_AntiFerromagneticCUDA.h"
 #include "MeshParamsControlCUDA.h"
 
-__global__ void SOTFieldCUDA_FM_UpdateField(ManagedMeshCUDA& cuMesh)
+__global__ void SOTFieldCUDA_FM_UpdateField(ManagedMeshCUDA& cuMesh, ManagedModulesCUDA& cuModule)
 {
 	cuVEC_VC<cuReal3>& M = *cuMesh.pM;
 	cuVEC<cuReal3>& Heff = *cuMesh.pHeff;
@@ -22,6 +22,8 @@ __global__ void SOTFieldCUDA_FM_UpdateField(ManagedMeshCUDA& cuMesh)
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
 
 	if (idx < Heff.linear_size()) {
+
+		cuReal3 SOTField;
 
 		if (M.is_not_empty(idx)) {
 
@@ -38,13 +40,16 @@ __global__ void SOTFieldCUDA_FM_UpdateField(ManagedMeshCUDA& cuMesh)
 				int idx_E = E.position_to_cellidx(M.cellidx_to_position(idx));
 				cuReal3 p_vec = cuReal3(0, 0, 1) ^ (elC[idx_E] * E[idx_E]);
 
-				Heff[idx] += a_const * ((M[idx] ^ p_vec) + flSOT * Ms * p_vec);
+				SOTField = a_const * ((M[idx] ^ p_vec) + flSOT * Ms * p_vec);
+				Heff[idx] += SOTField;
 			}
 		}
+
+		if (cuModule.pModule_Heff->linear_size()) (*cuModule.pModule_Heff)[idx] = SOTField;
 	}
 }
 
-__global__ void SOTFieldCUDA_AFM_UpdateField(ManagedMeshCUDA& cuMesh)
+__global__ void SOTFieldCUDA_AFM_UpdateField(ManagedMeshCUDA& cuMesh, ManagedModulesCUDA& cuModule)
 {
 	cuVEC_VC<cuReal3>& M = *cuMesh.pM;
 	cuVEC_VC<cuReal3>& M2 = *cuMesh.pM2;
@@ -56,6 +61,8 @@ __global__ void SOTFieldCUDA_AFM_UpdateField(ManagedMeshCUDA& cuMesh)
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
 
 	if (idx < Heff.linear_size()) {
+
+		cuReal3 SOTField_A, SOTField_B;
 
 		if (M.is_not_empty(idx)) {
 
@@ -73,13 +80,16 @@ __global__ void SOTFieldCUDA_AFM_UpdateField(ManagedMeshCUDA& cuMesh)
 				int idx_E = E.position_to_cellidx(M.cellidx_to_position(idx));
 				cuReal3 p_vec = cuReal3(0, 0, 1) ^ (elC[idx_E] * E[idx_E]);
 
-				cuReal3 SOTField_A = a_const_A * ((M[idx] ^ p_vec) + flSOT * Ms_AFM.i * p_vec);
-				cuReal3 SOTField_B = a_const_B * ((M2[idx] ^ p_vec) + flSOT * Ms_AFM.j * p_vec);
+				SOTField_A = a_const_A * ((M[idx] ^ p_vec) + flSOT * Ms_AFM.i * p_vec);
+				SOTField_B = a_const_B * ((M2[idx] ^ p_vec) + flSOT * Ms_AFM.j * p_vec);
 
 				Heff[idx] += SOTField_A;
 				Heff2[idx] += SOTField_B;
 			}
 		}
+
+		if (cuModule.pModule_Heff->linear_size()) (*cuModule.pModule_Heff)[idx] = SOTField_A;
+		if (cuModule.pModule_Heff2->linear_size()) (*cuModule.pModule_Heff2)[idx] = SOTField_B;
 	}
 }
 
@@ -91,11 +101,11 @@ void SOTFieldCUDA::UpdateField(void)
 
 	if (pMeshCUDA->GetMeshType() == MESH_ANTIFERROMAGNETIC) {
 
-		SOTFieldCUDA_AFM_UpdateField <<< (pMeshCUDA->n.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (pMeshCUDA->cuMesh);
+		SOTFieldCUDA_AFM_UpdateField <<< (pMeshCUDA->n.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (pMeshCUDA->cuMesh, cuModule);
 	}
 	else {
 
-		SOTFieldCUDA_FM_UpdateField <<< (pMeshCUDA->n.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (pMeshCUDA->cuMesh);
+		SOTFieldCUDA_FM_UpdateField <<< (pMeshCUDA->n.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (pMeshCUDA->cuMesh, cuModule);
 	}
 }
 

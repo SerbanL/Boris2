@@ -11,6 +11,7 @@
 #include "BorisCUDALib.h"
 
 class AFMesh;
+class ManagedDiffEqAFMCUDA;
 
 //Store Mesh quantities as cu_obj managed cuda VECs
 class AFMeshCUDA :
@@ -44,6 +45,20 @@ public:
 
 	//get exchange_couple_to_meshes status flag from the cpu version
 	bool GetMeshExchangeCoupling(void);
+
+	//----------------------------------- ODE METHODS IN (ANTI)FERROMAGNETIC MESH : Mesh_AntiFerromagneticCUDA.cu
+
+	//return average dm/dt in the given avRect (relative rect). Here m is the direction vector.
+	DBL3 Average_dmdt(cuBox avBox);
+	DBL3 Average_dmdt2(cuBox avBox);
+
+	//return average m x dm/dt in the given avRect (relative rect). Here m is the direction vector.
+	DBL3 Average_mxdmdt(cuBox avBox);
+	DBL3 Average_mxdmdt2(cuBox avBox);
+
+	//-----------------------------------OBJECT GETTERS
+
+	cu_obj<ManagedDiffEqAFMCUDA>& Get_ManagedDiffEqCUDA(void);
 };
 
 #else
@@ -73,6 +88,16 @@ public:
 
 	//Check if mesh needs to be moved (using the MoveMesh method) - return amount of movement required (i.e. parameter to use when calling MoveMesh).
 	cuBReal CheckMoveMesh(bool antisymmetric, double threshold) { return 0.0; }
+
+	//----------------------------------- ODE METHODS IN (ANTI)FERROMAGNETIC MESH : Mesh_AntiFerromagneticCUDA.cu
+
+	//return average dm/dt in the given avRect (relative rect). Here m is the direction vector.
+	DBL3 Average_dmdt(cuBox avBox) { return DBL3(); }
+	DBL3 Average_dmdt2(cuBox avBox) { return DBL3(); }
+
+	//return average m x dm/dt in the given avRect (relative rect). Here m is the direction vector.
+	DBL3 Average_mxdmdt(cuBox avBox) { return DBL3(); }
+	DBL3 Average_mxdmdt2(cuBox avBox) { return DBL3(); }
 };
 
 #endif

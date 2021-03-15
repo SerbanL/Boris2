@@ -35,11 +35,19 @@ public:
 	cu_obj<MatPCUDA<cuBReal, cuBReal>> D;
 
 	//Magneto-crystalline anisotropy constants (J) and easy axes directions. For uniaxial anisotropy only ea1 is needed.
-	cu_obj<MatPCUDA<cuBReal, cuBReal>> K;
+	cu_obj<MatPCUDA<cuBReal, cuBReal>> K1;
+	cu_obj<MatPCUDA<cuBReal, cuBReal>> K2;
+	cu_obj<MatPCUDA<cuBReal, cuBReal>> K3;
 
 	//Magneto-crystalline anisotropy easy axes directions
 	cu_obj<MatPCUDA<cuReal3, cuReal3>> mcanis_ea1;
 	cu_obj<MatPCUDA<cuReal3, cuReal3>> mcanis_ea2;
+	cu_obj<MatPCUDA<cuReal3, cuReal3>> mcanis_ea3;
+
+	//tensorial anisotropy. each term is a contribution to the anisotropy energy density as d*a^n1 b^n2 c^n3. Here a = m.mcanis_ea1, b = m.mcanis_ea2, c = m.mcanis_ea3.
+	//For 2nd order we aditionally multiply by K1, 4th order K2, 6th order K3. Any other orders d coefficient contains anisotropy energy density.
+	//each DBL4 stores (d, n1, n2, n3), where d != 0, n1, n2, n3 >= 0, n1+n2+n3>0. Odd order terms allowed.
+	cu_obj<cuVEC<cuReal4>> Kt;
 
 	//-----------BCC (2 per unit cell)
 

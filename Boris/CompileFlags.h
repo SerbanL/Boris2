@@ -32,7 +32,7 @@
 //----------------------------------------------------------------- MULTISCALE
 
 //set to 0 to disable all atomistic computations
-#define ATOMISTIC	1
+#define ATOMISTIC	1  
 
 //----------------------------------------------------------------- MESHES
 
@@ -71,6 +71,7 @@
 #elif MESH_COMPILATION == MESH_COMPILATION_CUST
 
 #define MESH_COMPILATION_FERROMAGNETIC
+#define MESH_COMPILATION_ATOM_CUBIC
 
 #endif
 
@@ -110,7 +111,7 @@
 #define ODE_EVAL_COMPILATION_TEULER
 #define ODE_EVAL_COMPILATION_RK4
 #define ODE_EVAL_COMPILATION_RKF
-
+#define ODE_EVAL_COMPILATION_SD
 
 #endif
 
@@ -137,6 +138,8 @@
 //Flags for new modules go here
 #define MODULE_COMPILATION_ANIUNI
 #define MODULE_COMPILATION_ANICUBI
+#define MODULE_COMPILATION_ANIBI
+#define MODULE_COMPILATION_ANITENS
 #define MODULE_COMPILATION_DEMAG
 #define MODULE_COMPILATION_DEMAG_N
 #define MODULE_COMPILATION_DMEXCHANGE

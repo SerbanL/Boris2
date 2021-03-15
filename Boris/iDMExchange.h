@@ -3,8 +3,6 @@
 #include "BorisLib.h"
 #include "Modules.h"
 
-
-
 class Mesh;
 
 #ifdef MODULE_COMPILATION_IDMEXCHANGE
@@ -45,14 +43,6 @@ public:
 	BError MakeCUDAModule(void);
 
 	double UpdateField(void);
-
-	//-------------------Energy density methods
-
-	double GetEnergyDensity(Rect& avRect);
-	double GetEnergy_Max(Rect& rectangle);
-
-	//Compute exchange energy density and store it in displayVEC
-	void Compute_Exchange(VEC<double>& displayVEC);
 };
 
 #else
@@ -80,13 +70,6 @@ public:
 	BError MakeCUDAModule(void) { return BError(); }
 
 	double UpdateField(void) { return 0.0; }
-
-	//-------------------Energy density methods
-
-	double GetEnergyDensity(Rect& avRect) { return 0.0; }
-	double GetEnergy_Max(Rect& rectangle) { return 0.0; }
-	
-	void Compute_Exchange(VEC<double>& displayVEC) {}
 };
 
 #endif

@@ -13,18 +13,19 @@ Atom_Mesh_Cubic::Atom_Mesh_Cubic(SuperMesh *pSMesh_) :
 		{
 			//Mesh members
 			VINFO(meshType), VINFO(meshIdCounter), VINFO(meshId), 
-			VINFO(displayedPhysicalQuantity), VINFO(displayedBackgroundPhysicalQuantity), VINFO(vec3rep), VINFO(displayedParamVar), 
+			VINFO(displayedPhysicalQuantity), VINFO(displayedBackgroundPhysicalQuantity), VINFO(vec3rep), VINFO(displayedParamVar), VINFO(Module_Heff_Display), VINFO(Module_Energy_Display),
 			VINFO(meshRect), VINFO(n), VINFO(h), VINFO(n_e), VINFO(h_e), VINFO(n_t), VINFO(h_t), VINFO(n_m), VINFO(h_m), VINFO(n_dm), VINFO(h_dm),
 			VINFO(M1), VINFO(Temp), VINFO(Temp_l),
 			VINFO(pMod), 
 			VINFO(exclude_from_multiconvdemag),
 			//Members in this derived class
-			VINFO(move_mesh_trigger), VINFO(exchange_couple_to_meshes),
+			VINFO(move_mesh_trigger), VINFO(skyShift), VINFO(exchange_couple_to_meshes),
 			VINFO(mc_cone_angledeg), VINFO(mc_acceptance_rate), VINFO(mc_parallel), VINFO(mc_constrain), VINFO(cmc_n),
 			//Material Parameters
 			VINFO(alpha), VINFO(mu_s), VINFO(Nxy),
 			VINFO(J), VINFO(D),
-			VINFO(K), VINFO(mcanis_ea1), VINFO(mcanis_ea2),
+			VINFO(K1), VINFO(K2),  VINFO(K3), VINFO(mcanis_ea1), VINFO(mcanis_ea2), VINFO(mcanis_ea3),
+			VINFO(Kt),
 			VINFO(cHA), VINFO(cHmo),
 			VINFO(elecCond),
 			VINFO(base_temperature), VINFO(T_equation), 
@@ -33,7 +34,11 @@ Atom_Mesh_Cubic::Atom_Mesh_Cubic(SuperMesh *pSMesh_) :
 		},
 		{
 			//Modules Implementations
-			IINFO(Atom_Demag_N), IINFO(Atom_Demag), IINFO(Atom_DipoleDipole), IINFO(Atom_Zeeman), IINFO(Atom_Exchange), IINFO(Atom_DMExchange), IINFO(Atom_iDMExchange), IINFO(Atom_MOptical), IINFO(Atom_Anisotropy_Uniaxial), IINFO(Atom_Anisotropy_Cubic), IINFO(Atom_Heat)
+			IINFO(Atom_Demag_N), IINFO(Atom_Demag), IINFO(Atom_DipoleDipole), 
+			IINFO(Atom_Zeeman), IINFO(Atom_MOptical),
+			IINFO(Atom_Exchange), IINFO(Atom_DMExchange), IINFO(Atom_iDMExchange), 
+			IINFO(Atom_Anisotropy_Uniaxial), IINFO(Atom_Anisotropy_Cubic), IINFO(Atom_Anisotropy_Biaxial), IINFO(Atom_Anisotropy_Tensorial),
+			IINFO(Atom_Heat)
 		}),
 	meshODE(this)
 {
@@ -45,18 +50,19 @@ Atom_Mesh_Cubic::Atom_Mesh_Cubic(Rect meshRect_, DBL3 h_, SuperMesh *pSMesh_) :
 		{
 			//Mesh members
 			VINFO(meshType), VINFO(meshIdCounter), VINFO(meshId),
-			VINFO(displayedPhysicalQuantity), VINFO(displayedBackgroundPhysicalQuantity), VINFO(vec3rep), VINFO(displayedParamVar),
+			VINFO(displayedPhysicalQuantity), VINFO(displayedBackgroundPhysicalQuantity), VINFO(vec3rep), VINFO(displayedParamVar), VINFO(Module_Heff_Display), VINFO(Module_Energy_Display),
 			VINFO(meshRect), VINFO(n), VINFO(h), VINFO(n_e), VINFO(h_e), VINFO(n_t), VINFO(h_t), VINFO(n_m), VINFO(h_m), VINFO(n_dm), VINFO(h_dm),
 			VINFO(M1), VINFO(Temp), VINFO(Temp_l),
 			VINFO(pMod),
 			VINFO(exclude_from_multiconvdemag),
 			//Members in this derived class
-			VINFO(move_mesh_trigger), VINFO(exchange_couple_to_meshes),
+			VINFO(move_mesh_trigger), VINFO(skyShift), VINFO(exchange_couple_to_meshes),
 			VINFO(mc_cone_angledeg), VINFO(mc_acceptance_rate), VINFO(mc_parallel), VINFO(mc_constrain), VINFO(cmc_n),
 			//Material Parameters
 			VINFO(alpha), VINFO(mu_s), VINFO(Nxy),
 			VINFO(J), VINFO(D),
-			VINFO(K), VINFO(mcanis_ea1), VINFO(mcanis_ea2),
+			VINFO(K1), VINFO(K2),  VINFO(K3), VINFO(mcanis_ea1), VINFO(mcanis_ea2), VINFO(mcanis_ea3),
+			VINFO(Kt),
 			VINFO(cHA), VINFO(cHmo),
 			VINFO(elecCond),
 			VINFO(base_temperature), VINFO(T_equation),
@@ -65,7 +71,11 @@ Atom_Mesh_Cubic::Atom_Mesh_Cubic(Rect meshRect_, DBL3 h_, SuperMesh *pSMesh_) :
 		},
 		{
 			//Modules Implementations
-			IINFO(Atom_Demag_N), IINFO(Atom_Demag), IINFO(Atom_DipoleDipole), IINFO(Atom_Zeeman), IINFO(Atom_Exchange), IINFO(Atom_DMExchange), IINFO(Atom_iDMExchange), IINFO(Atom_MOptical), IINFO(Atom_Anisotropy_Uniaxial), IINFO(Atom_Anisotropy_Cubic), IINFO(Atom_Heat)
+			IINFO(Atom_Demag_N), IINFO(Atom_Demag), IINFO(Atom_DipoleDipole),
+			IINFO(Atom_Zeeman), IINFO(Atom_MOptical),
+			IINFO(Atom_Exchange), IINFO(Atom_DMExchange), IINFO(Atom_iDMExchange),
+			IINFO(Atom_Anisotropy_Uniaxial), IINFO(Atom_Anisotropy_Cubic), IINFO(Atom_Anisotropy_Biaxial), IINFO(Atom_Anisotropy_Tensorial),
+			IINFO(Atom_Heat)
 		}),
 	meshODE(this)
 {
@@ -342,7 +352,7 @@ void Atom_Mesh_Cubic::CoupleToDipoles(bool status)
 				if (status) {
 
 					//set interface cells to have magnetization direction along the touching dipole direction
-					DBL3 Mdipole_direction = dynamic_cast<Atom_Mesh*>((*pSMesh)[idx])->GetAverageMoment().normalized();
+					DBL3 Mdipole_direction = dynamic_cast<Mesh*>((*pSMesh)[idx])->GetAveragemagnetization().normalized();
 
 					Box box = M1.box_from_rect_max(mesh_intersection);
 

@@ -20,6 +20,7 @@ __global__ void RunEuler_Kernel_withReductions(ManagedAtom_DiffEqCubicCUDA& cuaD
 
 	cuReal3 mxh = cuReal3();
 	cuReal3 dmdt = cuReal3();
+	bool include_in_average = false;
 
 	//multiplicative conversion factor from atomic moment (units of muB) to A/m
 	cuBReal conversion = (cuBReal)MUB / cuaMesh.pM1->h.dim();
@@ -52,12 +53,13 @@ __global__ void RunEuler_Kernel_withReductions(ManagedAtom_DiffEqCubicCUDA& cuaD
 
 				//obtain maximum normalized dmdt term
 				dmdt = ((*cuaMesh.pM1)[idx] - (*cuaDiffEq.psM1)[idx]) / (dT * (cuBReal)GAMMA * conversion * Mnorm * Mnorm);
+				include_in_average = true;
 			}
 		}
 	}
 
-	reduction_avg(0, 1, &mxh, *cuaDiffEq.pmxh_av, *cuaDiffEq.pavpoints);
-	reduction_avg(0, 1, &dmdt, *cuaDiffEq.pdmdt_av, *cuaDiffEq.pavpoints2);
+	reduction_avg(0, 1, &mxh, *cuaDiffEq.pmxh_av, *cuaDiffEq.pavpoints, include_in_average);
+	reduction_avg(0, 1, &dmdt, *cuaDiffEq.pdmdt_av, *cuaDiffEq.pavpoints2, include_in_average);
 }
 
 __global__ void RunEuler_Kernel(ManagedAtom_DiffEqCubicCUDA& cuaDiffEq, ManagedAtom_MeshCUDA& cuaMesh)

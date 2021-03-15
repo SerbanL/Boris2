@@ -45,18 +45,10 @@ public:
 
 	double UpdateField(void);
 
-	//-------------------Energy density methods
-
-	double GetEnergyDensity(Rect& avRect);
-	double GetEnergy_Max(Rect& rectangle);
-
-	//Compute exchange energy density and store it in displayVEC
-	void Compute_Exchange(VEC<double>& displayVEC);
-
 	//-------------------Energy methods
 
 	//For simple cubic mesh spin_index coincides with index in M1
-	double Get_Atomistic_Energy(int spin_index);
+	double Get_Atomistic_EnergyChange(int spin_index, DBL3 Mnew);
 };
 
 #else
@@ -90,14 +82,6 @@ public:
 	BError MakeCUDAModule(void) { return BError(); }
 
 	double UpdateField(void) { return 0.0; }
-
-	//-------------------Energy density methods
-
-	double GetEnergyDensity(Rect& avRect) { return 0.0; }
-	double GetEnergy_Max(Rect& rectangle) { return 0.0; }
-
-	//Compute exchange energy density and store it in displayVEC
-	void Compute_Exchange(VEC<double>& displayVEC) {}
 };
 
 

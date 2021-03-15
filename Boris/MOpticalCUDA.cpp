@@ -7,6 +7,8 @@
 
 #include "MOptical.h"
 #include "MeshCUDA.h"
+#include "MeshDefs.h"
+#include "DataDefs.h"
 
 MOpticalCUDA::MOpticalCUDA(MeshCUDA* pMeshCUDA_) :
 	ModulesCUDA()
@@ -21,7 +23,13 @@ BError MOpticalCUDA::Initialize(void)
 {
 	BError error(CLASS_STR(MOpticalCUDA));
 
-	initialized = true;
+	//Make sure display data has memory allocated (or freed) as required
+	error = Update_Module_Display_VECs(
+		(cuReal3)pMeshCUDA->h, (cuRect)pMeshCUDA->meshRect, 
+		(MOD_)pMeshCUDA->Get_Module_Heff_Display() == MOD_MOPTICAL || pMeshCUDA->IsOutputDataSet_withRect(DATA_E_MOPTICAL),
+		(MOD_)pMeshCUDA->Get_Module_Energy_Display() == MOD_MOPTICAL || pMeshCUDA->IsOutputDataSet_withRect(DATA_E_MOPTICAL),
+		pMeshCUDA->GetMeshType() == MESH_ANTIFERROMAGNETIC);
+	if (!error)	initialized = true;
 
 	return error;
 }
@@ -33,7 +41,6 @@ BError MOpticalCUDA::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 	if (ucfg::check_cfgflags(cfgMessage, UPDATECONFIG_MESHCHANGE)) {
 
 		Uninitialize();
-		Initialize();
 	}
 
 	return error;

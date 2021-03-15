@@ -61,6 +61,14 @@ BError Atom_Mesh::AddModule(MOD_ moduleID, bool force_add)
 		pMod.push_back(new Atom_Anisotropy_Cubic(this), MOD_ANICUBI);
 		break;
 
+	case MOD_ANIBI:
+		pMod.push_back(new Atom_Anisotropy_Biaxial(this), MOD_ANIBI);
+		break;
+
+	case MOD_ANITENS:
+		pMod.push_back(new Atom_Anisotropy_Tensorial(this), MOD_ANITENS);
+		break;
+
 	case MOD_HEAT:
 		pMod.push_back(new Atom_Heat(this), MOD_HEAT);
 		break;

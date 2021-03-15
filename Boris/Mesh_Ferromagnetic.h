@@ -11,6 +11,7 @@
 #ifdef MESH_COMPILATION_FERROMAGNETIC
 
 #include "SkyrmionTrack.h"
+#include "DWRunTimeFit.h"
 
 #include "Exchange.h"
 #include "DMExchange.h"
@@ -24,6 +25,8 @@
 #include "MOptical.h"
 #include "Anisotropy.h"
 #include "AnisotropyCubi.h"
+#include "AnisotropyBiaxial.h"
+#include "AnisotropyTensorial.h"
 #include "MElastic.h"
 #include "Transport.h"
 #include "Heat.h"
@@ -43,7 +46,7 @@ class FMesh :
 	std::tuple<
 	//Mesh members
 	int, int, int, 
-	int, int, int, int, 
+	int, int, int, int, int, int,
 	Rect, SZ3, DBL3, SZ3, DBL3, SZ3, DBL3, SZ3, DBL3, SZ3, DBL3, bool,
 	VEC_VC<DBL3>, VEC_VC<double>, VEC_VC<DBL3>, VEC_VC<double>, VEC_VC<double>, VEC_VC<double>, VEC_VC<DBL3>, VEC_VC<DBL3>, VEC_VC<DBL3>, 
 	vector_lut<Modules*>, 
@@ -53,7 +56,8 @@ class FMesh :
 	//Material Parameters
 	MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<DBL2, double>, 
 	MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, 
-	MatP<double, double>, MatP<double, double>, MatP<DBL3, DBL3>, MatP<DBL3, DBL3>, 
+	MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<DBL3, DBL3>, MatP<DBL3, DBL3>, MatP<DBL3, DBL3>,
+	std::vector<DBL4>,
 	MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>,
 	MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, 
 	MatP<double, double>, MatP<double, double>, MatP<DBL2, double>, MatP<DBL2, double>, MatP<DBL3, double>, 
@@ -75,7 +79,13 @@ class FMesh :
 	MatP<double, double>, MatP<double, double>, MatP<DBL3, DBL3>
 	>,
 	//Module Implementations
-	std::tuple<Demag_N, Demag, SDemag_Demag, Exch_6ngbr_Neu, DMExchange, iDMExchange, SurfExchange, Zeeman, MOptical, Anisotropy_Uniaxial, Anisotropy_Cubic, MElastic, Transport, Heat, SOTField, STField, Roughness> >
+	std::tuple<
+	Demag_N, Demag, SDemag_Demag, 
+	Exch_6ngbr_Neu, DMExchange, iDMExchange, SurfExchange, 
+	Zeeman, MOptical, MElastic, Roughness,
+	Anisotropy_Uniaxial, Anisotropy_Cubic, Anisotropy_Biaxial, Anisotropy_Tensorial, 
+	Transport, Heat, 
+	SOTField, STField> >
 {
 #if COMPILECUDA == 1
 	friend FMeshCUDA;
@@ -91,6 +101,9 @@ private:
 
 	//object used to track one or more skyrmions in this mesh
 	SkyrmionTrack skyShift;
+
+	//domain wall run-time position and width fitting
+	DWPosWidth dwPos;
 
 	//direct exchange coupling to neighboring meshes?
 	//If true this is applicable for this mesh only for cells at contacts with other ferromagnetic meshes 
@@ -143,6 +156,12 @@ public:
 	//get rate of change of magnetization (overloaded by Ferromagnetic meshes)
 	DBL3 dMdt(int idx);
 
+	//return average dm/dt in the given avRect (relative rect). Here m is the direction vector.
+	DBL3 Average_dmdt(Rect avRect);
+
+	//return average m x dm/dt in the given avRect (relative rect). Here m is the direction vector.
+	DBL3 Average_mxdmdt(Rect avRect);
+
 	//----------------------------------- FERROMAGNETIC MESH QUANTITIES CONTROL : Mesh_Ferromagnetic_Control.cpp
 
 	//this method is also used by the dipole mesh where it does something else - sets the dipole direction
@@ -154,6 +173,15 @@ public:
 	//Set magnetization angle in solid object only containing given relative position uniformly using polar coordinates
 	void SetMagAngle_Object(double polar, double azim, DBL3 position);
 
+	//Flower state magnetization
+	void SetMagFlower(int direction, DBL3 centre, double radius, double thickness);
+
+	//Onion state magnetization
+	void SetMagOnion(int direction, DBL3 centre, double radius1, double radius2, double thickness);
+
+	//Crosstie state magnetization
+	void SetMagCrosstie(int direction, DBL3 centre, double radius, double thickness);
+
 	//Invert magnetisation direction in given mesh (must be magnetic)
 	void SetInvertedMag(bool x, bool y, bool z);
 
@@ -162,6 +190,7 @@ public:
 
 	//Set random magentisation distribution in given mesh (must be magnetic)
 	void SetRandomMag(int seed);
+	void SetRandomXYMag(int seed);
 
 	//set a domain wall with given width (metric units) at position within mesh (metric units). 
 	//Longitudinal and transverse are magnetisation componets as: 1: x, 2: y, 3: z, 1: -x, 2: -y, 3: -z
@@ -206,6 +235,13 @@ public:
 	//set/get skypos tracker rect size diameter multiplier
 	double Get_skypos_dmul(void) { return skyShift.Get_skypos_dmul(); }
 	void Set_skypos_dmul(double dia_mul_) { skyShift.Set_skypos_dmul(dia_mul_); }
+
+	//Fit domain wall along the x direction through centre of rectangle : fit the component which matches a tanh profile. Return centre position and width.
+	DBL2 FitDomainWall_X(Rect rectangle);
+	//Fit domain wall along the y direction through centre of rectangle : fit the component which matches a tanh profile. Return centre position and width.
+	DBL2 FitDomainWall_Y(Rect rectangle);
+	//Fit domain wall along the z direction through centre of rectangle : fit the component which matches a tanh profile. Return centre position and width.
+	DBL2 FitDomainWall_Z(Rect rectangle);
 
 	//set/get exchange_couple_to_meshes status flag
 	void SetMeshExchangeCoupling(bool status) { exchange_couple_to_meshes = status; }

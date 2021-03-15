@@ -36,6 +36,13 @@ __host__ __device__ auto cu_GetMagnitude(const cuVAL3Type& V) -> decltype(std::d
 	return sqrt(V.x*V.x + V.y*V.y + V.z*V.z);
 }
 
+//get magnitude for cuVAL4 types (a cuVAL4 type can be identified by checking if an cuINT4 can be converted to it.
+template <typename cuVAL4Type, std::enable_if_t<std::is_convertible<cuINT4, cuVAL4Type>::value>* = nullptr>
+__host__ __device__ auto cu_GetMagnitude(const cuVAL4Type& V) -> decltype(std::declval<cuVAL4Type>().t)
+{
+	return sqrt(V.x*V.x + V.y*V.y + V.z*V.z + V.t*V.t);
+}
+
 template <typename Type, std::enable_if_t<std::is_same<Type, cuBComplex>::value>* = nullptr>
 __host__ __device__ cuBReal cu_GetMagnitude(const Type& V)
 {
@@ -114,6 +121,9 @@ __device__ RType cu_minimum(RType param, PType ... params)
 template <typename cuVAL3Type, std::enable_if_t<std::is_convertible<cuINT3, cuVAL3Type>::value>* = nullptr>
 __host__ __device__ cuVAL3Type cu_round(const cuVAL3Type& val3) { return cuVAL3Type(round(val3.x), round(val3.y), round(val3.z)); }
 
+template <typename cuVAL4Type, std::enable_if_t<std::is_convertible<cuINT4, cuVAL4Type>::value>* = nullptr>
+__host__ __device__ cuVAL4Type cu_round(const cuVAL4Type& val4) { return cuVAL4Type(round(val4.x), round(val4.y), round(val4.z), round(val4.t)); }
+
 //"fixed" floor function.
 //Note, using just the standard floor is not good enough : if the floating point value is very close to the upper integer value then its value should be equal to it.
 //The standard floor function will result in "wrong" behaviour by returning the lower integer.
@@ -142,6 +152,14 @@ __host__ __device__ cuVAL3Type cu_floor(const cuVAL3Type& fval) { return cuVAL3T
 template <typename cuVAL3Type, std::enable_if_t<std::is_convertible<cuINT3, cuVAL3Type>::value>* = nullptr>
 __host__ __device__ cuVAL3Type cu_ceil(const cuVAL3Type& fval) { return cuVAL3Type(cu_ceil_epsilon(fval.x), cu_ceil_epsilon(fval.y), cu_ceil_epsilon(fval.z)); }
 
+//return "fixed" floor of each VAL4 component
+template <typename cuVAL4Type, std::enable_if_t<std::is_convertible<cuINT4, cuVAL4Type>::value>* = nullptr>
+__host__ __device__ cuVAL4Type cu_floor(const cuVAL4Type& fval) { return cuVAL4Type(cu_floor_epsilon(fval.x), cu_floor_epsilon(fval.y), cu_floor_epsilon(fval.z), cu_floor_epsilon(fval.t)); }
+
+//return "fixed" ceil of each DBL4 component.
+template <typename cuVAL4Type, std::enable_if_t<std::is_convertible<cuINT4, cuVAL4Type>::value>* = nullptr>
+__host__ __device__ cuVAL4Type cu_ceil(const cuVAL4Type& fval) { return cuVAL4Type(cu_ceil_epsilon(fval.x), cu_ceil_epsilon(fval.y), cu_ceil_epsilon(fval.z), cu_ceil_epsilon(fval.t)); }
+
 //absolute value for a floating point number
 template <typename Type, std::enable_if_t<std::is_floating_point<Type>::value>* = nullptr>
 __host__ __device__ Type cu_mod(const Type& fval) { return fabs(fval); }
@@ -153,6 +171,10 @@ __host__ __device__ Type cu_mod(const Type& ival) { return ival * (2 * (ival >= 
 //absolute value for a VAL3
 template <typename cuVAL3Type, std::enable_if_t<std::is_convertible<cuINT3, cuVAL3Type>::value>* = nullptr>
 __host__ __device__ cuVAL3Type cu_mod(const cuVAL3Type& fval) { return cuVAL3Type(cu_mod(fval.x), cu_mod(fval.y), cu_mod(fval.z)); }
+
+//absolute value for a VAL4
+template <typename cuVAL4Type, std::enable_if_t<std::is_convertible<cuINT4, cuVAL4Type>::value>* = nullptr>
+__host__ __device__ cuVAL4Type cu_mod(const cuVAL4Type& fval) { return cuVAL4Type(cu_mod(fval.x), cu_mod(fval.y), cu_mod(fval.z), cu_mod(fval.t)); }
 
 //get sign of integer value or zero : -1, 0, +1
 template <typename Type, std::enable_if_t<std::is_integral<Type>::value>* = nullptr>

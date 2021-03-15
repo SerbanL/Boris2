@@ -10,7 +10,8 @@ SuperMesh::SuperMesh(void) :
 			VINFO(pMesh),
 			VINFO(pSMod),
 			VINFO(activeMeshName), VINFO(superMeshHandle),
-			VINFO(scale_rects), VINFO(coupled_dipoles)
+			VINFO(scale_rects), VINFO(coupled_dipoles), VINFO(dwpos_component),
+			VINFO(computefields_if_MC), VINFO(cone_angle_minmax)
 		}, 
 		{
 			//Mesh implementations

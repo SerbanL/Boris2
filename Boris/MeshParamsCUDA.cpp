@@ -57,15 +57,22 @@ MeshParamsCUDA::MeshParamsCUDA(MeshParams *pmeshParams)
 	pmeshParams->K1.set_p_cu_obj_mpcuda(&K1);
 	K2()->set_from_cpu(pmeshParams->K2);
 	pmeshParams->K2.set_p_cu_obj_mpcuda(&K2);
+	K3()->set_from_cpu(pmeshParams->K3);
+	pmeshParams->K3.set_p_cu_obj_mpcuda(&K3);
+
 	mcanis_ea1()->set_from_cpu(pmeshParams->mcanis_ea1);
 	pmeshParams->mcanis_ea1.set_p_cu_obj_mpcuda(&mcanis_ea1);
 	mcanis_ea2()->set_from_cpu(pmeshParams->mcanis_ea2);
 	pmeshParams->mcanis_ea2.set_p_cu_obj_mpcuda(&mcanis_ea2);
+	mcanis_ea3()->set_from_cpu(pmeshParams->mcanis_ea3);
+	pmeshParams->mcanis_ea3.set_p_cu_obj_mpcuda(&mcanis_ea3);
 
 	K1_AFM()->set_from_cpu(pmeshParams->K1_AFM);
 	pmeshParams->K1_AFM.set_p_cu_obj_mpcuda(&K1_AFM);
 	K2_AFM()->set_from_cpu(pmeshParams->K2_AFM);
 	pmeshParams->K2_AFM.set_p_cu_obj_mpcuda(&K2_AFM);
+	K3_AFM()->set_from_cpu(pmeshParams->K3_AFM);
+	pmeshParams->K3_AFM.set_p_cu_obj_mpcuda(&K3_AFM);
 
 	susrel()->set_from_cpu(pmeshParams->susrel);
 	pmeshParams->susrel.set_p_cu_obj_mpcuda(&susrel);
@@ -250,11 +257,15 @@ MeshParamsCUDA::~MeshParamsCUDA()
 
 	pmeshParams->K1.null_p_cu_obj_mpcuda();
 	pmeshParams->K2.null_p_cu_obj_mpcuda();
+	pmeshParams->K3.null_p_cu_obj_mpcuda();
+
 	pmeshParams->mcanis_ea1.null_p_cu_obj_mpcuda();
 	pmeshParams->mcanis_ea2.null_p_cu_obj_mpcuda();
+	pmeshParams->mcanis_ea3.null_p_cu_obj_mpcuda();
 
 	pmeshParams->K1_AFM.null_p_cu_obj_mpcuda();
 	pmeshParams->K2_AFM.null_p_cu_obj_mpcuda();
+	pmeshParams->K3_AFM.null_p_cu_obj_mpcuda();
 
 	pmeshParams->susrel.null_p_cu_obj_mpcuda();
 	pmeshParams->susrel_AFM.null_p_cu_obj_mpcuda();

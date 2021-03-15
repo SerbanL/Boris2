@@ -125,3 +125,56 @@ __device__ VType cuVEC<VType>::weighted_average(const cuINT3& ijk, const cuReal3
 	
 	return smoothedValue;
 }
+
+//full average in given rectangle (absolute coordinates).
+template <typename VType>
+__device__ VType cuVEC<VType>::average(const cuRect& rectangle)
+{
+	cuBox box = box_from_rect_max(rectangle);
+
+	VType av = VType();
+	int count = 0;
+
+	for (int i = (box.s.x >= 0 ? box.s.x : 0); i < (box.e.x <= n.x ? box.e.x : n.x); i++) {
+		for (int j = (box.s.y >= 0 ? box.s.y : 0); j < (box.e.y <= n.y ? box.e.y : n.y); j++) {
+			for (int k = (box.s.z >= 0 ? box.s.z : 0); k < (box.e.z <= n.z ? box.e.z : n.z); k++) {
+
+				//get running average
+				VType value = quantity[i + j * n.x + k * n.x*n.y];
+
+				count++;
+				av = (av * (count - 1) + value) / count;
+			}
+		}
+	}
+
+	return av;
+}
+
+//average in given rectangle (absolute coordinates), excluding zero points (assumed empty).
+template <typename VType>
+__device__ VType cuVEC<VType>::average_nonempty(const cuRect& rectangle)
+{
+	cuBox box = box_from_rect_max(rectangle);
+
+	VType av = VType();
+	int count = 0;
+
+	for (int i = (box.s.x >= 0 ? box.s.x : 0); i < (box.e.x <= n.x ? box.e.x : n.x); i++) {
+		for (int j = (box.s.y >= 0 ? box.s.y : 0); j < (box.e.y <= n.y ? box.e.y : n.y); j++) {
+			for (int k = (box.s.z >= 0 ? box.s.z : 0); k < (box.e.z <= n.z ? box.e.z : n.z); k++) {
+
+				//get running average
+				VType value = quantity[i + j * n.x + k * n.x*n.y];
+
+				if (cuIsNZ(cu_GetMagnitude(value))) {
+
+					count++;
+					av = (av * (count - 1) + value) / count;
+				}
+			}
+		}
+	}
+
+	return av;
+}

@@ -11,7 +11,7 @@
 #include "MeshDefs.h"
 
 //Top mesh is ferromagnetic
-__global__ void SurfExchangeCUDA_TopFM_UpdateField(ManagedMeshCUDA& cuMesh, ManagedMeshCUDA* pMesh_Top, size_t coupled_meshes, cuBReal& energy, int& coupled_cells, bool do_reduction)
+__global__ void SurfExchangeCUDA_TopFM_UpdateField(ManagedMeshCUDA& cuMesh, ManagedMeshCUDA* pMesh_Top, size_t coupled_meshes, ManagedModulesCUDA& cuModule, int& coupled_cells, bool do_reduction)
 {
 	cuVEC_VC<cuReal3>& M = *cuMesh.pM;
 	cuVEC<cuReal3>& Heff = *cuMesh.pHeff;
@@ -30,8 +30,9 @@ __global__ void SurfExchangeCUDA_TopFM_UpdateField(ManagedMeshCUDA& cuMesh, Mana
 
 		int i = idx % n.x;
 		int j = idx / n.x;
-		int k = idx / (n.x * n.y);
 		int cell_idx_top = i + j * n.x + (n.z - 1) * n.x*n.y;
+
+		cuReal3 Hsurfexh;
 
 		//skip empty cells
 		if (M.is_not_empty(cell_idx_top)) {
@@ -64,24 +65,31 @@ __global__ void SurfExchangeCUDA_TopFM_UpdateField(ManagedMeshCUDA& cuMesh, Mana
 				cuBReal dot_prod = m_i * m_j;
 
 				//total surface exchange field in coupling cells, including bilinear and biquadratic terms
-				cuReal3 Hsurfexh = (m_j / ((cuBReal)MU0 * Ms * thickness)) * (J1 + 2 * J2 * dot_prod);
+				Hsurfexh += (m_j / ((cuBReal)MU0 * Ms * thickness)) * (J1 + 2 * J2 * dot_prod);
 
-				//couple all cells through the layer thickness : the surface exchange field is applicable for effectively 2D layers, but the simulation allows 3D meshes.
-				Heff[i + j * n.x + k * n.x*n.y] += Hsurfexh;
+				if (do_reduction) {
 
-				if (do_reduction && k == n.z - 1) {
-
-					energy_ = (-1 * J1 - 2 * J2 * dot_prod) * dot_prod / (thickness * coupled_cells);
+					energy_ += (-1 * J1 - 2 * J2 * dot_prod) * dot_prod / (thickness * coupled_cells);
 				}
+			}
+
+			//couple all cells through the layer thickness : the surface exchange field is applicable for effectively 2D layers, but the simulation allows 3D meshes.
+			for (int k = 0; k < n.z; k++) {
+
+				int cell_idx = i + j * n.x + k * n.x*n.y;
+				Heff[cell_idx] += Hsurfexh;
+
+				if (do_reduction && cuModule.pModule_Heff->linear_size()) (*cuModule.pModule_Heff)[cell_idx] += Hsurfexh;
+				if (do_reduction && cuModule.pModule_energy->linear_size()) (*cuModule.pModule_energy)[cell_idx] += energy_ * coupled_cells;
 			}
 		}
 	}
 
-	if (do_reduction) reduction_sum(0, 1, &energy_, energy);
+	if (do_reduction) reduction_sum(0, 1, &energy_, *cuModule.penergy);
 }
 
 //Top mesh is antiferromagnetic
-__global__ void SurfExchangeCUDA_TopAFM_UpdateField(ManagedMeshCUDA& cuMesh, ManagedMeshCUDA* pMesh_Top, size_t coupled_meshes, cuBReal& energy, int& coupled_cells, bool do_reduction)
+__global__ void SurfExchangeCUDA_TopAFM_UpdateField(ManagedMeshCUDA& cuMesh, ManagedMeshCUDA* pMesh_Top, size_t coupled_meshes, ManagedModulesCUDA& cuModule, int& coupled_cells, bool do_reduction)
 {
 	cuVEC_VC<cuReal3>& M = *cuMesh.pM;
 	cuVEC<cuReal3>& Heff = *cuMesh.pHeff;
@@ -108,6 +116,8 @@ __global__ void SurfExchangeCUDA_TopAFM_UpdateField(ManagedMeshCUDA& cuMesh, Man
 
 			cuBReal Ms = *cuMesh.pMs;
 			cuMesh.update_parameters_mcoarse(cell_idx_top, *cuMesh.pMs, Ms);
+
+			cuReal3 Hsurfexh;
 
 			//check all meshes for coupling
 			for (int mesh_idx = 0; mesh_idx < coupled_meshes; mesh_idx++) {
@@ -134,24 +144,31 @@ __global__ void SurfExchangeCUDA_TopAFM_UpdateField(ManagedMeshCUDA& cuMesh, Man
 				cuReal3 m_i = M[cell_idx_top] / Ms;
 
 				//total surface exchange field in coupling cells, including contributions from both sub-lattices
-				cuReal3 Hsurfexh = (m_j1 / ((cuBReal)MU0 * Ms * thickness)) * J1 + (m_j2 / ((cuBReal)MU0 * Ms * thickness)) * J2;
+				Hsurfexh += (m_j1 / ((cuBReal)MU0 * Ms * thickness)) * J1 + (m_j2 / ((cuBReal)MU0 * Ms * thickness)) * J2;
 
-				//couple all cells through the layer thickness : the surface exchange field is applicable for effectively 2D layers, but the simulation allows 3D meshes.
-				Heff[i + j * n.x + k * n.x*n.y] += Hsurfexh;
+				if (do_reduction) {
 
-				if (do_reduction && k == n.z - 1) {
-
-					energy_ = (-J1 * (m_i * m_j1) - J2 * (m_i * m_j2)) / (thickness * coupled_cells);
+					energy_ += (-J1 * (m_i * m_j1) - J2 * (m_i * m_j2)) / (thickness * coupled_cells);
 				}
+			}
+
+			//couple all cells through the layer thickness : the surface exchange field is applicable for effectively 2D layers, but the simulation allows 3D meshes.
+			for (int k = 0; k < n.z; k++) {
+
+				int cell_idx = i + j * n.x + k * n.x*n.y;
+				Heff[cell_idx] += Hsurfexh;
+
+				if (do_reduction && cuModule.pModule_Heff->linear_size()) (*cuModule.pModule_Heff)[cell_idx] += Hsurfexh;
+				if (do_reduction && cuModule.pModule_energy->linear_size()) (*cuModule.pModule_energy)[cell_idx] += energy_ * coupled_cells;
 			}
 		}
 	}
 
-	if (do_reduction) reduction_sum(0, 1, &energy_, energy);
+	if (do_reduction) reduction_sum(0, 1, &energy_, *cuModule.penergy);
 }
 
 //The top mesh is diamagnetic
-__global__ void SurfExchangeCUDA_TopDiamagnetic_UpdateField(ManagedMeshCUDA& cuMesh, ManagedMeshCUDA* pMesh_Top, size_t coupled_meshes, cuBReal& energy, int& coupled_cells, bool do_reduction)
+__global__ void SurfExchangeCUDA_TopDiamagnetic_UpdateField(ManagedMeshCUDA& cuMesh, ManagedMeshCUDA* pMesh_Top, size_t coupled_meshes, ManagedModulesCUDA& cuModule, int& coupled_cells, bool do_reduction)
 {
 	cuVEC_VC<cuReal3>& M = *cuMesh.pM;
 	cuVEC<cuReal3>& Heff = *cuMesh.pHeff;
@@ -179,6 +196,8 @@ __global__ void SurfExchangeCUDA_TopDiamagnetic_UpdateField(ManagedMeshCUDA& cuM
 			cuBReal Ms = *cuMesh.pMs;
 			cuMesh.update_parameters_mcoarse(cell_idx_top, *cuMesh.pMs, Ms);
 
+			cuReal3 Hsurfexh;
+
 			//check all meshes for coupling
 			for (int mesh_idx = 0; mesh_idx < coupled_meshes; mesh_idx++) {
 
@@ -202,24 +221,31 @@ __global__ void SurfExchangeCUDA_TopDiamagnetic_UpdateField(ManagedMeshCUDA& cuM
 				cuReal3 Mdia = M_Top[cell_rel_pos];
 				cuReal3 m_i = M[cell_idx_top] / Ms;
 
-				cuReal3 Hsurfexh = neta_dia * Mdia / (MU0 * Ms * thickness);
+				Hsurfexh += neta_dia * Mdia / (MU0 * Ms * thickness);
 
-				//couple all cells through the layer thickness : the surface exchange field is applicable for effectively 2D layers, but the simulation allows 3D meshes.
-				Heff[i + j * n.x + k * n.x*n.y] += Hsurfexh;
+				if (do_reduction) {
 
-				if (do_reduction && k == n.z - 1) {
-
-					energy_ = -neta_dia * (Mdia*m_i) / (thickness * coupled_cells);
+					energy_ += -neta_dia * (Mdia*m_i) / (thickness * coupled_cells);
 				}
+			}
+
+			//couple all cells through the layer thickness : the surface exchange field is applicable for effectively 2D layers, but the simulation allows 3D meshes.
+			for (int k = 0; k < n.z; k++) {
+
+				int cell_idx = i + j * n.x + k * n.x*n.y;
+				Heff[cell_idx] += Hsurfexh;
+
+				if (do_reduction && cuModule.pModule_Heff->linear_size()) (*cuModule.pModule_Heff)[cell_idx] += Hsurfexh;
+				if (do_reduction && cuModule.pModule_energy->linear_size()) (*cuModule.pModule_energy)[cell_idx] += energy_ * coupled_cells;
 			}
 		}
 	}
 
-	if (do_reduction) reduction_sum(0, 1, &energy_, energy);
+	if (do_reduction) reduction_sum(0, 1, &energy_, *cuModule.penergy);
 }
 
 //Bottom mesh is ferromagnetic
-__global__ void SurfExchangeCUDA_BotFM_UpdateField(ManagedMeshCUDA& cuMesh, ManagedMeshCUDA* pMesh_Bot, size_t coupled_meshes, cuBReal& energy, int& coupled_cells, bool do_reduction)
+__global__ void SurfExchangeCUDA_BotFM_UpdateField(ManagedMeshCUDA& cuMesh, ManagedMeshCUDA* pMesh_Bot, size_t coupled_meshes, ManagedModulesCUDA& cuModule, int& coupled_cells, bool do_reduction)
 {
 	cuVEC_VC<cuReal3>& M = *cuMesh.pM;
 	cuVEC<cuReal3>& Heff = *cuMesh.pHeff;
@@ -238,7 +264,6 @@ __global__ void SurfExchangeCUDA_BotFM_UpdateField(ManagedMeshCUDA& cuMesh, Mana
 
 		int i = idx % n.x;
 		int j = idx / n.x;
-		int k = idx / (n.x * n.y);
 		int cell_idx_bot = i + j * n.x;
 
 		//skip empty cells
@@ -248,6 +273,8 @@ __global__ void SurfExchangeCUDA_BotFM_UpdateField(ManagedMeshCUDA& cuMesh, Mana
 			cuBReal J1 = *cuMesh.pJ1;
 			cuBReal J2 = *cuMesh.pJ2;
 			cuMesh.update_parameters_mcoarse(cell_idx_bot, *cuMesh.pMs, Ms, *cuMesh.pJ1, J1, *cuMesh.pJ2, J2);
+
+			cuReal3 Hsurfexh;
 
 			//check all meshes for coupling
 			for (int mesh_idx = 0; mesh_idx < coupled_meshes; mesh_idx++) {
@@ -270,23 +297,31 @@ __global__ void SurfExchangeCUDA_BotFM_UpdateField(ManagedMeshCUDA& cuMesh, Mana
 				cuBReal dot_prod = m_i * m_j;
 
 				//total surface exchange field in coupling cells, including bilinear and biquadratic terms
-				cuReal3 Hsurfexh = (m_j / ((cuBReal)MU0 * Ms * thickness)) * (J1 + 2 * J2 * dot_prod);
+				Hsurfexh += (m_j / ((cuBReal)MU0 * Ms * thickness)) * (J1 + 2 * J2 * dot_prod);
 
-				Heff[i + j * n.x + k * n.x*n.y] += Hsurfexh;
+				if (do_reduction) {
 
-				if (do_reduction && k == 0) {
-
-					energy_ = (-1 * J1 - 2 * J2 * dot_prod) * dot_prod / (thickness * coupled_cells);
+					energy_ += (-1 * J1 - 2 * J2 * dot_prod) * dot_prod / (thickness * coupled_cells);
 				}
+			}
+
+			//couple all cells through the layer thickness : the surface exchange field is applicable for effectively 2D layers, but the simulation allows 3D meshes.
+			for (int k = 0; k < n.z; k++) {
+
+				int cell_idx = i + j * n.x + k * n.x*n.y;
+				Heff[cell_idx] += Hsurfexh;
+
+				if (do_reduction && cuModule.pModule_Heff->linear_size()) (*cuModule.pModule_Heff)[cell_idx] += Hsurfexh;
+				if (do_reduction && cuModule.pModule_energy->linear_size()) (*cuModule.pModule_energy)[cell_idx] += energy_ * coupled_cells;
 			}
 		}
 	}
 
-	if (do_reduction) reduction_sum(0, 1, &energy_, energy);
+	if (do_reduction) reduction_sum(0, 1, &energy_, *cuModule.penergy);
 }
 
 //Bottom mesh is antiferromagnetic
-__global__ void SurfExchangeCUDA_BotAFM_UpdateField(ManagedMeshCUDA& cuMesh, ManagedMeshCUDA* pMesh_Bot, size_t coupled_meshes, cuBReal& energy, int& coupled_cells, bool do_reduction)
+__global__ void SurfExchangeCUDA_BotAFM_UpdateField(ManagedMeshCUDA& cuMesh, ManagedMeshCUDA* pMesh_Bot, size_t coupled_meshes, ManagedModulesCUDA& cuModule, int& coupled_cells, bool do_reduction)
 {
 	cuVEC_VC<cuReal3>& M = *cuMesh.pM;
 	cuVEC<cuReal3>& Heff = *cuMesh.pHeff;
@@ -316,6 +351,8 @@ __global__ void SurfExchangeCUDA_BotAFM_UpdateField(ManagedMeshCUDA& cuMesh, Man
 			cuBReal J2 = *cuMesh.pJ2;
 			cuMesh.update_parameters_mcoarse(cell_idx_bot, *cuMesh.pMs, Ms, *cuMesh.pJ1, J1, *cuMesh.pJ2, J2);
 
+			cuReal3 Hsurfexh;
+
 			//check all meshes for coupling
 			for (int mesh_idx = 0; mesh_idx < coupled_meshes; mesh_idx++) {
 
@@ -337,23 +374,31 @@ __global__ void SurfExchangeCUDA_BotAFM_UpdateField(ManagedMeshCUDA& cuMesh, Man
 				cuReal3 m_i = M[cell_idx_bot] / Ms;
 
 				//total surface exchange field in coupling cells, including bilinear and biquadratic terms
-				cuReal3 Hsurfexh = (m_j1 / ((cuBReal)MU0 * Ms * thickness)) * J1 + (m_j2 / ((cuBReal)MU0 * Ms * thickness)) * J2;
+				Hsurfexh += (m_j1 / ((cuBReal)MU0 * Ms * thickness)) * J1 + (m_j2 / ((cuBReal)MU0 * Ms * thickness)) * J2;
 
-				Heff[i + j * n.x + k * n.x*n.y] += Hsurfexh;
+				if (do_reduction) {
 
-				if (do_reduction && k == 0) {
-
-					energy_ = (-J1 * (m_i * m_j1) - J2 * (m_i * m_j2)) / (thickness * coupled_cells);
+					energy_ += (-J1 * (m_i * m_j1) - J2 * (m_i * m_j2)) / (thickness * coupled_cells);
 				}
+			}
+
+			//couple all cells through the layer thickness : the surface exchange field is applicable for effectively 2D layers, but the simulation allows 3D meshes.
+			for (int k = 0; k < n.z; k++) {
+
+				int cell_idx = i + j * n.x + k * n.x*n.y;
+				Heff[cell_idx] += Hsurfexh;
+
+				if (do_reduction && cuModule.pModule_Heff->linear_size()) (*cuModule.pModule_Heff)[cell_idx] += Hsurfexh;
+				if (do_reduction && cuModule.pModule_energy->linear_size()) (*cuModule.pModule_energy)[cell_idx] += energy_ * coupled_cells;
 			}
 		}
 	}
 
-	if (do_reduction) reduction_sum(0, 1, &energy_, energy);
+	if (do_reduction) reduction_sum(0, 1, &energy_, *cuModule.penergy);
 }
 
 //Bottom mesh is diamagnetic
-__global__ void SurfExchangeCUDA_BotDiamagnetic_UpdateField(ManagedMeshCUDA& cuMesh, ManagedMeshCUDA* pMesh_Bot, size_t coupled_meshes, cuBReal& energy, int& coupled_cells, bool do_reduction)
+__global__ void SurfExchangeCUDA_BotDiamagnetic_UpdateField(ManagedMeshCUDA& cuMesh, ManagedMeshCUDA* pMesh_Bot, size_t coupled_meshes, ManagedModulesCUDA& cuModule, int& coupled_cells, bool do_reduction)
 {
 	cuVEC_VC<cuReal3>& M = *cuMesh.pM;
 	cuVEC<cuReal3>& Heff = *cuMesh.pHeff;
@@ -381,6 +426,8 @@ __global__ void SurfExchangeCUDA_BotDiamagnetic_UpdateField(ManagedMeshCUDA& cuM
 			cuBReal Ms = *cuMesh.pMs;
 			cuMesh.update_parameters_mcoarse(cell_idx_bot, *cuMesh.pMs, Ms);
 
+			cuReal3 Hsurfexh;
+
 			//check all meshes for coupling
 			for (int mesh_idx = 0; mesh_idx < coupled_meshes; mesh_idx++) {
 
@@ -404,20 +451,27 @@ __global__ void SurfExchangeCUDA_BotDiamagnetic_UpdateField(ManagedMeshCUDA& cuM
 				cuReal3 Mdia = M_Bot[cell_rel_pos];
 				cuReal3 m_i = M[cell_idx_bot] / Ms;
 
-				cuReal3 Hsurfexh = neta_dia * Mdia / (MU0 * Ms * thickness);
+				Hsurfexh += neta_dia * Mdia / (MU0 * Ms * thickness);
 
-				//couple all cells through the layer thickness : the surface exchange field is applicable for effectively 2D layers, but the simulation allows 3D meshes.
-				Heff[i + j * n.x + k * n.x*n.y] += Hsurfexh;
+				if (do_reduction) {
 
-				if (do_reduction && k == 0) {
-
-					energy_ = -neta_dia * (Mdia*m_i) / (thickness * coupled_cells);
+					energy_ += -neta_dia * (Mdia*m_i) / (thickness * coupled_cells);
 				}
+			}
+
+			//couple all cells through the layer thickness : the surface exchange field is applicable for effectively 2D layers, but the simulation allows 3D meshes.
+			for (int k = 0; k < n.z; k++) {
+
+				int cell_idx = i + j * n.x + k * n.x*n.y;
+				Heff[cell_idx] += Hsurfexh;
+
+				if (do_reduction && cuModule.pModule_Heff->linear_size()) (*cuModule.pModule_Heff)[cell_idx] += Hsurfexh;
+				if (do_reduction && cuModule.pModule_energy->linear_size()) (*cuModule.pModule_energy)[cell_idx] += energy_ * coupled_cells;
 			}
 		}
 	}
 
-	if (do_reduction) reduction_sum(0, 1, &energy_, energy);
+	if (do_reduction) reduction_sum(0, 1, &energy_, *cuModule.penergy);
 }
 
 //----------------------- UpdateField LAUNCHER
@@ -429,21 +483,22 @@ void SurfExchangeCUDA::UpdateField(void)
 	if (pMeshCUDA->CurrentTimeStepSolved()) {
 
 		ZeroEnergy();
+		ZeroModuleVECs();
 
 		//Coupling from ferromagnetic meshes
 
 		//Top
 		if (pMeshFM_Top.size()) {
 
-			SurfExchangeCUDA_TopFM_UpdateField <<< (pMeshCUDA->n.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>>
-				(pMeshCUDA->cuMesh, pMeshFM_Top, pMeshFM_Top.size(), energy, coupled_cells, true);
+			SurfExchangeCUDA_TopFM_UpdateField <<< (pMeshCUDA->n.x * pMeshCUDA->n.y + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>>
+				(pMeshCUDA->cuMesh, pMeshFM_Top, pMeshFM_Top.size(), cuModule, coupled_cells, true);
 		}
 
 		//Bottom
 		if (pMeshFM_Bot.size()) {
 
-			SurfExchangeCUDA_BotFM_UpdateField <<< (pMeshCUDA->n.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>>
-				(pMeshCUDA->cuMesh, pMeshFM_Bot, pMeshFM_Bot.size(), energy, coupled_cells, true);
+			SurfExchangeCUDA_BotFM_UpdateField <<< (pMeshCUDA->n.x * pMeshCUDA->n.y + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>>
+				(pMeshCUDA->cuMesh, pMeshFM_Bot, pMeshFM_Bot.size(), cuModule, coupled_cells, true);
 		}
 
 		//Coupling from antiferromagnetic meshes
@@ -451,15 +506,15 @@ void SurfExchangeCUDA::UpdateField(void)
 		//Top
 		if (pMeshAFM_Top.size()) {
 
-			SurfExchangeCUDA_TopAFM_UpdateField << < (pMeshCUDA->n.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >> >
-				(pMeshCUDA->cuMesh, pMeshAFM_Top, pMeshAFM_Top.size(), energy, coupled_cells, true);
+			SurfExchangeCUDA_TopAFM_UpdateField <<< (pMeshCUDA->n.x * pMeshCUDA->n.y + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>>
+				(pMeshCUDA->cuMesh, pMeshAFM_Top, pMeshAFM_Top.size(), cuModule, coupled_cells, true);
 		}
 
 		//Bottom
 		if (pMeshAFM_Bot.size()) {
 
-			SurfExchangeCUDA_BotAFM_UpdateField << < (pMeshCUDA->n.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >> >
-				(pMeshCUDA->cuMesh, pMeshAFM_Bot, pMeshAFM_Bot.size(), energy, coupled_cells, true);
+			SurfExchangeCUDA_BotAFM_UpdateField <<< (pMeshCUDA->n.x * pMeshCUDA->n.y + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>>
+				(pMeshCUDA->cuMesh, pMeshAFM_Bot, pMeshAFM_Bot.size(), cuModule, coupled_cells, true);
 		}
 
 		//Coupling from diamagnetic meshes
@@ -467,15 +522,15 @@ void SurfExchangeCUDA::UpdateField(void)
 		//Top
 		if (pMeshDia_Top.size()) {
 
-			SurfExchangeCUDA_TopDiamagnetic_UpdateField <<< (pMeshCUDA->n.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>>
-				(pMeshCUDA->cuMesh, pMeshDia_Top, pMeshDia_Top.size(), energy, coupled_cells, true);
+			SurfExchangeCUDA_TopDiamagnetic_UpdateField <<< (pMeshCUDA->n.x * pMeshCUDA->n.y + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>>
+				(pMeshCUDA->cuMesh, pMeshDia_Top, pMeshDia_Top.size(), cuModule, coupled_cells, true);
 		}
 
 		//Bottom
 		if (pMeshDia_Bot.size()) {
 
-			SurfExchangeCUDA_BotDiamagnetic_UpdateField <<< (pMeshCUDA->n.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >> >
-				(pMeshCUDA->cuMesh, pMeshDia_Bot, pMeshDia_Bot.size(), energy, coupled_cells, true);
+			SurfExchangeCUDA_BotDiamagnetic_UpdateField <<< (pMeshCUDA->n.x * pMeshCUDA->n.y + CUDATHREADS) / CUDATHREADS, CUDATHREADS >> >
+				(pMeshCUDA->cuMesh, pMeshDia_Bot, pMeshDia_Bot.size(), cuModule, coupled_cells, true);
 		}
 	}
 	else {
@@ -485,15 +540,15 @@ void SurfExchangeCUDA::UpdateField(void)
 		//Top
 		if (pMeshFM_Top.size()) {
 
-			SurfExchangeCUDA_TopFM_UpdateField <<< (pMeshCUDA->n.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>>
-				(pMeshCUDA->cuMesh, pMeshFM_Top, pMeshFM_Top.size(), energy, coupled_cells, false);
+			SurfExchangeCUDA_TopFM_UpdateField <<< (pMeshCUDA->n.x * pMeshCUDA->n.y + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>>
+				(pMeshCUDA->cuMesh, pMeshFM_Top, pMeshFM_Top.size(), cuModule, coupled_cells, false);
 		}
 
 		//Bottom
 		if (pMeshFM_Bot.size()) {
 
-			SurfExchangeCUDA_BotFM_UpdateField <<< (pMeshCUDA->n.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>>
-				(pMeshCUDA->cuMesh, pMeshFM_Bot, pMeshFM_Bot.size(), energy, coupled_cells, false);
+			SurfExchangeCUDA_BotFM_UpdateField <<< (pMeshCUDA->n.x * pMeshCUDA->n.y + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>>
+				(pMeshCUDA->cuMesh, pMeshFM_Bot, pMeshFM_Bot.size(), cuModule, coupled_cells, false);
 		}
 
 		//Coupling from antiferromagnetic
@@ -501,15 +556,15 @@ void SurfExchangeCUDA::UpdateField(void)
 		//Top
 		if (pMeshAFM_Top.size()) {
 
-			SurfExchangeCUDA_TopAFM_UpdateField << < (pMeshCUDA->n.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >> >
-				(pMeshCUDA->cuMesh, pMeshAFM_Top, pMeshAFM_Top.size(), energy, coupled_cells, false);
+			SurfExchangeCUDA_TopAFM_UpdateField <<< (pMeshCUDA->n.x * pMeshCUDA->n.y + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>>
+				(pMeshCUDA->cuMesh, pMeshAFM_Top, pMeshAFM_Top.size(), cuModule, coupled_cells, false);
 		}
 
 		//Bottom
 		if (pMeshAFM_Bot.size()) {
 
-			SurfExchangeCUDA_BotAFM_UpdateField << < (pMeshCUDA->n.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >> >
-				(pMeshCUDA->cuMesh, pMeshAFM_Bot, pMeshAFM_Bot.size(), energy, coupled_cells, false);
+			SurfExchangeCUDA_BotAFM_UpdateField <<< (pMeshCUDA->n.x * pMeshCUDA->n.y + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>>
+				(pMeshCUDA->cuMesh, pMeshAFM_Bot, pMeshAFM_Bot.size(), cuModule, coupled_cells, false);
 		}
 
 		//Coupling from diamagnetic meshes
@@ -517,15 +572,15 @@ void SurfExchangeCUDA::UpdateField(void)
 		//Top
 		if (pMeshDia_Top.size()) {
 
-			SurfExchangeCUDA_TopDiamagnetic_UpdateField <<< (pMeshCUDA->n.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>>
-				(pMeshCUDA->cuMesh, pMeshDia_Top, pMeshDia_Top.size(), energy, coupled_cells, false);
+			SurfExchangeCUDA_TopDiamagnetic_UpdateField <<< (pMeshCUDA->n.x * pMeshCUDA->n.y + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>>
+				(pMeshCUDA->cuMesh, pMeshDia_Top, pMeshDia_Top.size(), cuModule, coupled_cells, false);
 		}
 
 		//Bottom
 		if (pMeshDia_Bot.size()) {
 
-			SurfExchangeCUDA_BotDiamagnetic_UpdateField <<< (pMeshCUDA->n.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>>
-				(pMeshCUDA->cuMesh, pMeshDia_Bot, pMeshDia_Bot.size(), energy, coupled_cells, false);
+			SurfExchangeCUDA_BotDiamagnetic_UpdateField <<< (pMeshCUDA->n.x * pMeshCUDA->n.y + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>>
+				(pMeshCUDA->cuMesh, pMeshDia_Bot, pMeshDia_Bot.size(), cuModule, coupled_cells, false);
 		}
 	}
 }

@@ -6,10 +6,10 @@
 
 //mesh transfer in means if we have 1 or more (non-overlapping) contributing meshes, each with their own discretisation, we want to transfer their values to a single mesh (called supermesh for this purpose)
 //The supermesh may intersect some of the contributing meshes, and also has its own discretization
-//Thus the problem is how do we obtain the supermesh values to be a desired representation of thee input values.
+//Thus the problem is how do we obtain the supermesh values to be a desired representation of the input values.
 //There are different methods available, which should be chosen depending on the required result:
 
-//MESHTRANSFERTYPE_WEIGHTED : use a weighted average for all contributing cells (these are cells which interest with the supermesh cell), further weight them by the covered volume ratio, i.e. ratio of contributing volume to supermesh cell volume.
+//MESHTRANSFERTYPE_WEIGHTED : use a weighted average for all contributing cells (these are cells which intersect with the supermesh cell), further weight them by the covered volume ratio, i.e. ratio of contributing volume to supermesh cell volume.
 //MESHTRANSFERTYPE_CLIPPED : as for MESHTRANSFERTYPE_WEIGHTED, but ignore partially covered super-mesh cells, and do not apply a covered volume ratio weight.
 //MESHTRANSFERTYPE_ENLARGED : as for MESHTRANSFERTYPE_WEIGHTED except the value is not multiplied by the covered volume ratio (but all intersecting cells can contribute, even those which are only partially covered).
 //MESHTRANSFERTYPE_SUM : simple sum of all contributions from all intersecting cells

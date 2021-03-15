@@ -12,6 +12,13 @@ __host__ void cuVEC<VType>::alloc_initialize_data(void)
 	nullgpuptr(quantity);
 	nullgpuptr(aux_block_values);
 
+	nullgpuptr(line_profile);
+	nullgpuptr(line_profile_component_x);
+	nullgpuptr(line_profile_component_y);
+	nullgpuptr(line_profile_component_z);
+	nullgpuptr(line_profile_avpoints);
+	set_gpu_value(line_profile_component_size, (size_t)0);
+
 	set_n(cuSZ3());
 	set_h(cuReal3());
 	set_rect(cuRect());
@@ -62,6 +69,37 @@ __host__ bool cuVEC<VType>::set_n_adjust_h(void)
 		return false;
 	}
 	else return true;
+}
+
+template <typename VType>
+__host__ bool cuVEC<VType>::allocate_profile_component_memory(size_t size)
+{
+	if (size == get_gpu_value(line_profile_component_size)) return true;
+
+	auto fail_memory_allocation = [&]() {
+
+		gpu_free_managed(line_profile);
+		gpu_free_managed(line_profile_component_x);
+		gpu_free_managed(line_profile_component_y);
+		gpu_free_managed(line_profile_component_z);
+		gpu_free_managed(line_profile_avpoints);
+		set_gpu_value(line_profile_component_size, (size_t)0);
+	};
+
+	//try to allocate required memory for profile component array
+	cudaError_t error = gpu_alloc_managed(line_profile, size);
+	if (error != cudaSuccess) { fail_memory_allocation(); return false; }
+	error = gpu_alloc_managed(line_profile_component_x, size);
+	if (error != cudaSuccess) { fail_memory_allocation(); return false; }
+	error = gpu_alloc_managed(line_profile_component_y, size);
+	if (error != cudaSuccess) { fail_memory_allocation(); return false; }
+	error = gpu_alloc_managed(line_profile_component_z, size);
+	if (error != cudaSuccess) { fail_memory_allocation(); return false; }
+	error = gpu_alloc_managed(line_profile_avpoints, size);
+	if (error != cudaSuccess) { fail_memory_allocation(); return false; }
+
+	set_gpu_value(line_profile_component_size, size);
+	return true;
 }
 
 //--------------------------------------------GET/SET FROM/TO GPU MEMORY
@@ -217,6 +255,13 @@ __host__ void cuVEC<VType>::destruct_cu_obj(void)
 	gpu_free_managed(quantity);
 	gpu_free_managed(aux_block_values);
 	
+	gpu_free_managed(line_profile);
+	gpu_free_managed(line_profile_component_x);
+	gpu_free_managed(line_profile_component_y);
+	gpu_free_managed(line_profile_component_z);
+	gpu_free_managed(line_profile_avpoints);
+	set_gpu_value(line_profile_component_size, (size_t)0);
+
 	transfer.destruct_cu_obj();
 }
 
@@ -345,6 +390,13 @@ __host__ void cuVEC<VType>::clear(void)
 	gpu_free_managed(quantity);
 	gpu_free_managed(aux_block_values);
 
+	gpu_free_managed(line_profile);
+	gpu_free_managed(line_profile_component_x);
+	gpu_free_managed(line_profile_component_y);
+	gpu_free_managed(line_profile_component_z);
+	gpu_free_managed(line_profile_avpoints);
+	set_gpu_value(line_profile_component_size, (size_t)0);
+
 	SetMeshRect(); 
 }
 
@@ -439,16 +491,6 @@ __host__ bool cuVEC<VType>::copy_from_cpuvec(cpuVEC& vec)
 	return true;
 }
 
-template <typename VType>
-template <typename SType>
-__host__ bool cuVEC<VType>::copy_from_vector(std::vector<SType>& vec)
-{
-	cudaError_t error = cpu_to_gpu_managed(quantity, vec.data(), vec.size());
-	if (error != cudaSuccess) return false;
-
-	return true;
-}
-
 //faster version of set_cpuvec, where it is assumed the cpu vec already has the same sizes as this cuVEC : only quantity is copied.
 template <typename VType>
 template <typename cpuVEC>
@@ -462,34 +504,24 @@ __host__ bool cuVEC<VType>::copy_to_cpuvec(cpuVEC& vec)
 
 template <typename VType>
 template <typename SType>
-__host__ bool cuVEC<VType>::copy_to_vector(std::vector<SType>& vec)
-{
-	cudaError_t error = gpu_to_cpu_managed(vec.data(), quantity, vec.size());
-	if (error != cudaSuccess) return false;
-
-	return true;
-}
-
-//--------------------------------------------COPY TO / FROM STD::VECTOR : cuVEC_mng.h
-
-template <typename VType>
-__host__ bool cuVEC<VType>::copy_to_vector(std::vector<VType>& vec)
-{
-	if (vec.size() != get_gpu_value(n).dim()) return false;
-	
-	cudaError_t error = gpu_to_cpu_managed(vec.data(), quantity, vec.size());
-	
-	if (error != cudaSuccess) return false;
-	else return true;
-}
-
-template <typename VType>
-__host__ bool cuVEC<VType>::copy_from_vector(std::vector<VType>& vec)
+__host__ bool cuVEC<VType>::copy_from_vector(std::vector<SType>& vec)
 {
 	if (vec.size() != get_gpu_value(n).dim()) return false;
 
 	cudaError_t error = cpu_to_gpu_managed(quantity, vec.data(), vec.size());
-
 	if (error != cudaSuccess) return false;
+
 	else return true;
+}
+
+template <typename VType>
+template <typename SType>
+__host__ bool cuVEC<VType>::copy_to_vector(std::vector<SType>& vec)
+{
+	if (vec.size() != get_gpu_value(n).dim()) return false;
+
+	cudaError_t error = gpu_to_cpu_managed(vec.data(), quantity, vec.size());
+	if (error != cudaSuccess) return false;
+
+	return true;
 }

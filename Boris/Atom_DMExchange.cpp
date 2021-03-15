@@ -31,7 +31,12 @@ BError Atom_DMExchange::Initialize(void)
 {
 	BError error(CLASS_STR(Atom_DMExchange));
 
-	initialized = true;
+	//Make sure display data has memory allocated (or freed) as required
+	error = Update_Module_Display_VECs(
+		paMesh->h, paMesh->meshRect, 
+		(MOD_)paMesh->Get_ActualModule_Heff_Display() == MOD_DMEXCHANGE || paMesh->IsOutputDataSet_withRect(DATA_E_EXCH),
+		(MOD_)paMesh->Get_ActualModule_Heff_Display() == MOD_DMEXCHANGE || paMesh->IsOutputDataSet_withRect(DATA_E_EXCH));
+	if (!error)	initialized = true;
 
 	non_empty_volume = paMesh->Get_NonEmpty_Magnetic_Volume();
 
@@ -92,12 +97,30 @@ double Atom_DMExchange::UpdateField(void)
 			paMesh->update_parameters_mcoarse(idx, paMesh->mu_s, mu_s, paMesh->J, J, paMesh->D, D);
 
 			//update effective field with the Heisenberg and DMI exchange field
-			DBL3 Heff_value = (J * paMesh->M1.ngbr_dirsum(idx) + D * paMesh->M1.anisotropic_ngbr_dirsum(idx)) / (MUB_MU0*mu_s);
+			DBL3 Hexch_A = J * paMesh->M1.ngbr_dirsum(idx) / (MUB_MU0*mu_s);
+			DBL3 Hexch_D = D * paMesh->M1.anisotropic_ngbr_dirsum(idx) / (MUB_MU0*mu_s);
 
-			paMesh->Heff1[idx] += Heff_value;
+			paMesh->Heff1[idx] += (Hexch_A + Hexch_D);
 
 			//update energy E = -mu_s * Bex
-			energy += paMesh->M1[idx] * Heff_value;
+			energy += paMesh->M1[idx] * (Hexch_A + Hexch_D);
+
+			//spatial dependence display of effective field and energy density
+			if (Module_Heff.linear_size() && Module_energy.linear_size()) {
+
+				if ((MOD_)paMesh->Get_Module_Heff_Display() == MOD_EXCHANGE) {
+
+					//total : direct and DMI
+					Module_Heff[idx] = Hexch_A + Hexch_D;
+					Module_energy[idx] = -MUB_MU0 * (paMesh->M1[idx] * (Hexch_A + Hexch_D)) / (2 * paMesh->M1.h.dim());
+				}
+				else {
+
+					//just DMI
+					Module_Heff[idx] = Hexch_D;
+					Module_energy[idx] = -MUB_MU0 * (paMesh->M1[idx] * Hexch_D) / (2 * paMesh->M1.h.dim());
+				}
+			}
 		}
 	}
 
@@ -109,123 +132,12 @@ double Atom_DMExchange::UpdateField(void)
 	return this->energy;
 }
 
-//-------------------Energy density methods
-
-double Atom_DMExchange::GetEnergyDensity(Rect& avRect)
-{
-#if COMPILECUDA == 1
-	if (pModuleCUDA) return dynamic_cast<Atom_DMExchangeCUDA*>(pModuleCUDA)->GetEnergyDensity(avRect);
-#endif
-
-	double energy = 0;
-
-	int num_points = 0;
-
-#pragma omp parallel for reduction(+:energy, num_points)
-	for (int idx = 0; idx < paMesh->n.dim(); idx++) {
-
-		//only average over values in given rectangle
-		if (!avRect.contains(paMesh->M1.cellidx_to_position(idx))) continue;
-
-		if (paMesh->M1.is_not_empty(idx)) {
-
-			double mu_s = paMesh->mu_s;
-			double J = paMesh->J;
-			double D = paMesh->D;
-			paMesh->update_parameters_mcoarse(idx, paMesh->mu_s, mu_s, paMesh->J, J, paMesh->D, D);
-
-			//update effective field with the Heisenberg and DMI exchange field
-			DBL3 Heff_value = (J * paMesh->M1.ngbr_dirsum(idx) + D * paMesh->M1.anisotropic_ngbr_dirsum(idx)) / (MUB_MU0*mu_s);
-
-			//update energy E = -mu_s * Bex
-			energy += paMesh->M1[idx] * Heff_value;
-			num_points++;
-		}
-	}
-
-	//convert to energy density and return
-	if (num_points) energy = -MUB_MU0 * energy / (2 * num_points * paMesh->M1.h.dim());
-	else energy = 0.0;
-
-	return energy;
-}
-
-double Atom_DMExchange::GetEnergy_Max(Rect& rectangle)
-{
-#if COMPILECUDA == 1
-	if (pModuleCUDA) return dynamic_cast<Atom_DMExchangeCUDA*>(pModuleCUDA)->GetEnergy_Max(rectangle);
-#endif
-
-	INT3 n = paMesh->n;
-
-	OmpReduction<double> emax;
-	emax.new_minmax_reduction();
-
-#pragma omp parallel for
-	for (int idx = 0; idx < n.dim(); idx++) {
-
-		//only obtain max in given rectangle
-		if (!rectangle.contains(paMesh->M1.cellidx_to_position(idx))) continue;
-
-		if (paMesh->M1.is_not_empty(idx)) {
-
-			double mu_s = paMesh->mu_s;
-			double J = paMesh->J;
-			double D = paMesh->D;
-			paMesh->update_parameters_mcoarse(idx, paMesh->mu_s, mu_s, paMesh->J, J, paMesh->D, D);
-
-			//update effective field with the Heisenberg and DMI exchange field
-			DBL3 Heff_value = (J * paMesh->M1.ngbr_dirsum(idx) + D * paMesh->M1.anisotropic_ngbr_dirsum(idx)) / (MUB_MU0*mu_s);
-
-			//update energy E = -mu_s * Bex
-			energy = -MUB_MU0 * paMesh->M1[idx] * Heff_value / 2;
-
-			emax.reduce_max(fabs(energy));
-		}
-	}
-
-	//return maximum energy density modulus
-	return emax.maximum() / paMesh->M1.h.dim();
-}
-
-//Compute exchange energy density and store it in displayVEC
-void Atom_DMExchange::Compute_Exchange(VEC<double>& displayVEC)
-{
-	displayVEC.resize(paMesh->h, paMesh->meshRect);
-
-#if COMPILECUDA == 1
-	if (pModuleCUDA) {
-
-		dynamic_cast<Atom_DMExchangeCUDA*>(pModuleCUDA)->Compute_Exchange(displayVEC);
-		return;
-	}
-#endif
-
-#pragma omp parallel for
-	for (int idx = 0; idx < paMesh->n.dim(); idx++) {
-
-		if (paMesh->M1.is_not_empty(idx)) {
-
-			double mu_s = paMesh->mu_s;
-			double J = paMesh->J;
-			double D = paMesh->D;
-			paMesh->update_parameters_mcoarse(idx, paMesh->mu_s, mu_s, paMesh->J, J, paMesh->D, D);
-
-			//update effective field with the Heisenberg and DMI exchange field
-			DBL3 Heff_value = (J * paMesh->M1.ngbr_dirsum(idx) + D * paMesh->M1.anisotropic_ngbr_dirsum(idx)) / (MUB_MU0*mu_s);
-
-			displayVEC[idx] = -MUB_MU0 * paMesh->M1[idx] * Heff_value / (2 * paMesh->M1.h.dim());
-		}
-		else displayVEC[idx] = 0.0;
-	}
-}
-
 //-------------------Energy methods
 
 //For simple cubic mesh spin_index coincides with index in M1
-double Atom_DMExchange::Get_Atomistic_Energy(int spin_index)
+double Atom_DMExchange::Get_Atomistic_EnergyChange(int spin_index, DBL3 Mnew)
 {
-	//For CUDA there are separate device functions using by CUDA kernels.
+	//For CUDA there are separate device functions used by CUDA kernels.
 
 	if (paMesh->M1.is_not_empty(spin_index)) {
 
@@ -240,7 +152,7 @@ double Atom_DMExchange::Get_Atomistic_Energy(int spin_index)
 		//Now anisotropic_ngbr_dirsum returns rij x Sj, and Si . (rij x Sj) = -Si. (Sj x rij) = -rij . (Si x Sj)
 		//Thus compute: -D * (paMesh->M1[spin_index].normalized() * paMesh->M1.anisotropic_ngbr_dirsum(spin_index));
 
-		return paMesh->M1[spin_index].normalized() * (-J * paMesh->M1.ngbr_dirsum(spin_index) - D * paMesh->M1.anisotropic_ngbr_dirsum(spin_index));
+		return (Mnew.normalized() - paMesh->M1[spin_index].normalized()) * (-J * paMesh->M1.ngbr_dirsum(spin_index) - D * paMesh->M1.anisotropic_ngbr_dirsum(spin_index));
 	}
 	else return 0.0;
 }

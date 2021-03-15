@@ -21,6 +21,7 @@ __global__ void RunEuler_Kernel_withReductions(ManagedDiffEqAFMCUDA& cuDiffEq, M
 
 	cuReal3 mxh = cuReal3();
 	cuReal3 dmdt = cuReal3();
+	bool include_in_average = false;
 
 	if (idx < cuMesh.pM->linear_size()) {
 
@@ -35,6 +36,7 @@ __global__ void RunEuler_Kernel_withReductions(ManagedDiffEqAFMCUDA& cuDiffEq, M
 				//obtain average normalized torque term
 				cuBReal Mnorm = (*cuMesh.pM)[idx].norm();
 				mxh = ((*cuMesh.pM)[idx] ^ (*cuMesh.pHeff)[idx]) / (Mnorm * Mnorm);
+				include_in_average = true;
 
 				//First evaluate RHS of set equation at the current time step
 				cuReal3 rhs2;
@@ -68,8 +70,8 @@ __global__ void RunEuler_Kernel_withReductions(ManagedDiffEqAFMCUDA& cuDiffEq, M
 	//only reduce for dmdt (and mxh) if grel is not zero (if it's zero this means magnetization dynamics is disabled in this mesh)
 	if (cuMesh.pgrel->get0()) {
 
-		reduction_avg(0, 1, &mxh, *cuDiffEq.pmxh_av, *cuDiffEq.pavpoints);
-		reduction_avg(0, 1, &dmdt, *cuDiffEq.pdmdt_av, *cuDiffEq.pavpoints2);
+		reduction_avg(0, 1, &mxh, *cuDiffEq.pmxh_av, *cuDiffEq.pavpoints, include_in_average);
+		reduction_avg(0, 1, &dmdt, *cuDiffEq.pdmdt_av, *cuDiffEq.pavpoints2, include_in_average);
 	}
 }
 

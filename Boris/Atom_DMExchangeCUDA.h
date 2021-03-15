@@ -19,16 +19,13 @@ class Atom_DMExchangeCUDA :
 	public ModulesCUDA
 {
 
+private:
+
 	//pointer to CUDA version of mesh object holding the effective field module holding this CUDA module
 	Atom_MeshCUDA* paMeshCUDA;
 
-	//used to compute exchange energy density spatial variation
-	//memory assigned when needed
-	cu_obj<cuVEC<cuBReal>> exchange_displayVEC;
-
-private:
-
-	void Compute_ExchangeCUDA(void);
+	//just the dmi energy (so not including direct exchange)
+	cu_obj<cuBReal> energy_dmi;
 
 public:
 
@@ -45,14 +42,6 @@ public:
 	void UpdateConfiguration_Values(UPDATECONFIG_ cfgMessage) {}
 
 	void UpdateField(void);
-
-	//-------------------Energy density methods
-
-	cuBReal GetEnergyDensity(cuRect avRect);
-	cuBReal GetEnergy_Max(cuRect rectangle);
-
-	//compute exchange energy density in exchange_displayVEC
-	void Compute_Exchange(VEC<double>& displayVEC);
 };
 
 #else

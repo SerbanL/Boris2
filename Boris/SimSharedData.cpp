@@ -13,6 +13,7 @@ vector_lut<std::string> SimulationSharedData::meshDisplay_unit;
 vector_lut<std::string> SimulationSharedData::displayHandles;
 
 vector_lut< std::vector<MOD_> > SimulationSharedData::modules_for_meshtype;
+vector_lut< std::vector<MOD_> > SimulationSharedData::displaymodules_for_meshtype;
 
 vector_lut< std::vector<MESHDISPLAY_> > SimulationSharedData::meshAllowedDisplay;
 
@@ -114,7 +115,9 @@ SimulationSharedData::SimulationSharedData(bool called_from_Simulation)
 		meshDisplay_unit.push_back("A/m", MESHDISPLAY_EFFECTIVEFIELD);
 		meshDisplay_unit.push_back("A/m", MESHDISPLAY_EFFECTIVEFIELD2);
 		meshDisplay_unit.push_back("A/m", MESHDISPLAY_EFFECTIVEFIELD12);
-		meshDisplay_unit.push_back("A/m3", MESHDISPLAY_CURRDENSITY);
+		meshDisplay_unit.push_back("J/m3", MESHDISPLAY_ENERGY);
+		meshDisplay_unit.push_back("J/m3", MESHDISPLAY_ENERGY2);
+		meshDisplay_unit.push_back("A/m2", MESHDISPLAY_CURRDENSITY);
 		meshDisplay_unit.push_back("V", MESHDISPLAY_VOLTAGE);
 		meshDisplay_unit.push_back("S/m", MESHDISPLAY_ELCOND);
 		meshDisplay_unit.push_back("A/m", MESHDISPLAY_SACCUM);
@@ -143,6 +146,8 @@ SimulationSharedData::SimulationSharedData(bool called_from_Simulation)
 		displayHandles.push_back("Heff", MESHDISPLAY_EFFECTIVEFIELD);
 		displayHandles.push_back("Heff2", MESHDISPLAY_EFFECTIVEFIELD2);
 		displayHandles.push_back("Heff12", MESHDISPLAY_EFFECTIVEFIELD12);
+		displayHandles.push_back("Ed", MESHDISPLAY_ENERGY);
+		displayHandles.push_back("Ed2", MESHDISPLAY_ENERGY2);
 		displayHandles.push_back("Jc", MESHDISPLAY_CURRDENSITY);
 		displayHandles.push_back("V", MESHDISPLAY_VOLTAGE);
 		displayHandles.push_back("elC", MESHDISPLAY_ELCOND);
@@ -168,7 +173,7 @@ SimulationSharedData::SimulationSharedData(bool called_from_Simulation)
 		exclusiveModules.storeset(MOD_DEMAG_N, MOD_DEMAG, MOD_SDEMAG_DEMAG, MOD_ATOM_DIPOLEDIPOLE);
 		exclusiveModules.storeset(MOD_EXCHANGE, MOD_DMEXCHANGE, MOD_IDMEXCHANGE);
 		exclusiveModules.storeset(MOD_SURFEXCHANGE);
-		exclusiveModules.storeset(MOD_ANIUNI, MOD_ANICUBI);
+		exclusiveModules.storeset(MOD_ANIUNI, MOD_ANICUBI, MOD_ANIBI, MOD_ANITENS);
 		exclusiveModules.storeset(MOD_MELASTIC);
 		exclusiveModules.storeset(MOD_ZEEMAN);
 		exclusiveModules.storeset(MOD_MOPTICAL);
@@ -192,24 +197,41 @@ SimulationSharedData::SimulationSharedData(bool called_from_Simulation)
 		//assign possible modules for each mesh type
 		modules_for_meshtype.push_back(make_vector(MODS_SDEMAG, MODS_STRAYFIELD, MODS_STRANSPORT, MODS_OERSTED, MODS_SHEAT), MESH_SUPERMESH);
 
+		//FERROMAGNETIC
 		modules_for_meshtype.push_back(make_vector(
 			MOD_DEMAG_N, MOD_DEMAG, MOD_SDEMAG_DEMAG,
 			MOD_EXCHANGE, MOD_DMEXCHANGE, MOD_IDMEXCHANGE, MOD_SURFEXCHANGE, 
-			MOD_ZEEMAN, MOD_MOPTICAL,
-			MOD_ANIUNI, MOD_ANICUBI, MOD_MELASTIC,
+			MOD_ZEEMAN, MOD_MOPTICAL, MOD_MELASTIC, MOD_ROUGHNESS,
+			MOD_ANIUNI, MOD_ANICUBI, MOD_ANIBI, MOD_ANITENS, 
 			MOD_TRANSPORT,
 			MOD_HEAT, 
-			MOD_SOTFIELD, MOD_STFIELD, MOD_ROUGHNESS), MESH_FERROMAGNETIC);
+			MOD_SOTFIELD, MOD_STFIELD), MESH_FERROMAGNETIC);
 
+		displaymodules_for_meshtype.push_back(make_vector(
+			MOD_DEMAG_N, MOD_DEMAG, MOD_SDEMAG_DEMAG,
+			MOD_EXCHANGE, MOD_DMEXCHANGE, MOD_IDMEXCHANGE, MOD_SURFEXCHANGE,
+			MOD_ZEEMAN, MOD_MOPTICAL, MOD_MELASTIC, MOD_ROUGHNESS,
+			MOD_ANIUNI, MOD_ANICUBI, MOD_ANIBI, MOD_ANITENS,
+			MOD_SOTFIELD, MOD_STFIELD), MESH_FERROMAGNETIC);
+
+		//ANTIFERROMAGNETIC
 		modules_for_meshtype.push_back(make_vector(
 			MOD_DEMAG_N, MOD_DEMAG, MOD_SDEMAG_DEMAG,
 			MOD_EXCHANGE, MOD_DMEXCHANGE, MOD_IDMEXCHANGE, MOD_SURFEXCHANGE,
 			MOD_ZEEMAN, MOD_MOPTICAL,
-			MOD_ANIUNI, MOD_ANICUBI,
+			MOD_ANIUNI, MOD_ANICUBI, MOD_ANIBI, MOD_ANITENS,
 			MOD_TRANSPORT,
 			MOD_HEAT,
 			MOD_SOTFIELD, MOD_ROUGHNESS), MESH_ANTIFERROMAGNETIC);
 
+		displaymodules_for_meshtype.push_back(make_vector(
+			MOD_DEMAG_N, MOD_DEMAG, MOD_SDEMAG_DEMAG,
+			MOD_EXCHANGE, MOD_DMEXCHANGE, MOD_IDMEXCHANGE, MOD_SURFEXCHANGE,
+			MOD_ZEEMAN, MOD_MOPTICAL,
+			MOD_ANIUNI, MOD_ANICUBI, MOD_ANIBI, MOD_ANITENS,
+			MOD_SOTFIELD, MOD_ROUGHNESS), MESH_ANTIFERROMAGNETIC);
+
+		//DIAMAGNETIC
 		modules_for_meshtype.push_back(make_vector(
 			MOD_DEMAG, MOD_SDEMAG_DEMAG,
 			MOD_SURFEXCHANGE,
@@ -217,36 +239,54 @@ SimulationSharedData::SimulationSharedData(bool called_from_Simulation)
 			MOD_TRANSPORT,
 			MOD_HEAT), MESH_DIAMAGNETIC);
 
+		displaymodules_for_meshtype.push_back(make_vector(
+			MOD_DEMAG, MOD_SDEMAG_DEMAG,
+			MOD_SURFEXCHANGE,
+			MOD_ZEEMAN, MOD_MOPTICAL), MESH_DIAMAGNETIC);
+
+		//DIPOLE
 		modules_for_meshtype.push_back(make_vector(MOD_TRANSPORT, MOD_HEAT), MESH_DIPOLE);
+		displaymodules_for_meshtype.push_back({}, MESH_DIPOLE);
 
+		//METAL
 		modules_for_meshtype.push_back(make_vector(MOD_TRANSPORT, MOD_HEAT), MESH_METAL);
+		displaymodules_for_meshtype.push_back({}, MESH_METAL);
 
+		//INSULATOR
 		modules_for_meshtype.push_back(make_vector(MOD_HEAT), MESH_INSULATOR);
+		displaymodules_for_meshtype.push_back({}, MESH_INSULATOR);
 
+		//ATOMISTIC SIMPLE CUBIC
 		modules_for_meshtype.push_back(make_vector(
 			MOD_DEMAG_N, MOD_DEMAG, MOD_ATOM_DIPOLEDIPOLE,
 			MOD_EXCHANGE, MOD_DMEXCHANGE, MOD_IDMEXCHANGE,
 			MOD_ZEEMAN, MOD_MOPTICAL,
-			MOD_ANIUNI, MOD_ANICUBI,
+			MOD_ANIUNI, MOD_ANICUBI, MOD_ANIBI, MOD_ANITENS,
 			MOD_HEAT), MESH_ATOM_CUBIC);
+
+		displaymodules_for_meshtype.push_back(make_vector(
+			MOD_DEMAG_N, MOD_DEMAG, MOD_ATOM_DIPOLEDIPOLE,
+			MOD_EXCHANGE, MOD_DMEXCHANGE, MOD_IDMEXCHANGE,
+			MOD_ZEEMAN, MOD_MOPTICAL,
+			MOD_ANIUNI, MOD_ANICUBI, MOD_ANIBI, MOD_ANITENS), MESH_ATOM_CUBIC);
 
 		//----------------
 
 		meshAllowedDisplay.push_back(make_vector(MESHDISPLAY_NONE, MESHDISPLAY_SM_DEMAG, MESHDISPLAY_SM_OERSTED, MESHDISPLAY_SM_STRAYH), MESH_SUPERMESH);
 
 		meshAllowedDisplay.push_back(make_vector(
-			MESHDISPLAY_NONE, MESHDISPLAY_MAGNETIZATION, MESHDISPLAY_EFFECTIVEFIELD, 
+			MESHDISPLAY_NONE, MESHDISPLAY_MAGNETIZATION, MESHDISPLAY_EFFECTIVEFIELD, MESHDISPLAY_ENERGY,
 			MESHDISPLAY_CURRDENSITY, MESHDISPLAY_VOLTAGE, MESHDISPLAY_ELCOND, MESHDISPLAY_SACCUM, MESHDISPLAY_JSX, MESHDISPLAY_JSY, MESHDISPLAY_JSZ, MESHDISPLAY_TS, MESHDISPLAY_TSI,
 			MESHDISPLAY_TEMPERATURE, MESHDISPLAY_UDISP, MESHDISPLAY_STRAINDIAG, MESHDISPLAY_STRAINODIAG, MESHDISPLAY_PARAMVAR, MESHDISPLAY_ROUGHNESS, MESHDISPLAY_CUSTOM_VEC, MESHDISPLAY_CUSTOM_SCA), MESH_FERROMAGNETIC);
 
 		meshAllowedDisplay.push_back(make_vector(
-			MESHDISPLAY_NONE, MESHDISPLAY_MAGNETIZATION, MESHDISPLAY_MAGNETIZATION2, MESHDISPLAY_MAGNETIZATION12, MESHDISPLAY_EFFECTIVEFIELD, MESHDISPLAY_EFFECTIVEFIELD2, MESHDISPLAY_EFFECTIVEFIELD12,
+			MESHDISPLAY_NONE, MESHDISPLAY_MAGNETIZATION, MESHDISPLAY_MAGNETIZATION2, MESHDISPLAY_MAGNETIZATION12, MESHDISPLAY_EFFECTIVEFIELD, MESHDISPLAY_EFFECTIVEFIELD2, MESHDISPLAY_EFFECTIVEFIELD12, MESHDISPLAY_ENERGY, MESHDISPLAY_ENERGY2,
 			MESHDISPLAY_CURRDENSITY, MESHDISPLAY_VOLTAGE, MESHDISPLAY_ELCOND,
 			MESHDISPLAY_TEMPERATURE,
 			MESHDISPLAY_PARAMVAR, MESHDISPLAY_ROUGHNESS, MESHDISPLAY_CUSTOM_VEC, MESHDISPLAY_CUSTOM_SCA), MESH_ANTIFERROMAGNETIC);
 
 		meshAllowedDisplay.push_back(make_vector(
-			MESHDISPLAY_NONE, MESHDISPLAY_MAGNETIZATION, MESHDISPLAY_EFFECTIVEFIELD,
+			MESHDISPLAY_NONE, MESHDISPLAY_MAGNETIZATION, MESHDISPLAY_EFFECTIVEFIELD, MESHDISPLAY_ENERGY,
 			MESHDISPLAY_CURRDENSITY, MESHDISPLAY_VOLTAGE, MESHDISPLAY_ELCOND, MESHDISPLAY_SACCUM, MESHDISPLAY_JSX, MESHDISPLAY_JSY, MESHDISPLAY_JSZ,
 			MESHDISPLAY_TEMPERATURE, MESHDISPLAY_PARAMVAR), MESH_DIAMAGNETIC);
 
@@ -263,7 +303,7 @@ SimulationSharedData::SimulationSharedData(bool called_from_Simulation)
 		meshAllowedDisplay.push_back(make_vector(MESHDISPLAY_NONE, MESHDISPLAY_TEMPERATURE, MESHDISPLAY_PARAMVAR), MESH_INSULATOR);
 
 		meshAllowedDisplay.push_back(make_vector(
-			MESHDISPLAY_NONE, MESHDISPLAY_MOMENT, MESHDISPLAY_EFFECTIVEFIELD,
+			MESHDISPLAY_NONE, MESHDISPLAY_MOMENT, MESHDISPLAY_EFFECTIVEFIELD, MESHDISPLAY_ENERGY,
 			MESHDISPLAY_TEMPERATURE, MESHDISPLAY_PARAMVAR, MESHDISPLAY_CUSTOM_VEC, MESHDISPLAY_CUSTOM_SCA), MESH_ATOM_CUBIC);
 
 		//----------------
@@ -272,7 +312,7 @@ SimulationSharedData::SimulationSharedData(bool called_from_Simulation)
 		params_for_meshtype.push_back(make_vector(
 			PARAM_GREL, PARAM_GDAMPING, PARAM_MS, PARAM_DEMAGXY, 
 			PARAM_A, PARAM_D, PARAM_J1, PARAM_J2, 
-			PARAM_K1, PARAM_K2, PARAM_EA1, PARAM_EA2, 
+			PARAM_K1, PARAM_K2, PARAM_K3, PARAM_EA1, PARAM_EA2, PARAM_EA3,
 			PARAM_TC, PARAM_MUB, PARAM_SUSREL,
 			PARAM_HA, PARAM_HMO,
 			PARAM_ELC, PARAM_AMR, PARAM_P, PARAM_BETA, PARAM_DE, PARAM_NDENSITY, PARAM_SHA, PARAM_FLSOT, PARAM_STQ, PARAM_STA, PARAM_STP, PARAM_BETAD, PARAM_LSF, PARAM_LEX, PARAM_LPH, PARAM_GI, PARAM_GMIX, PARAM_PUMPEFF, PARAM_CPUMP_EFF, PARAM_THE_EFF, PARAM_TSEFF, PARAM_TSIEFF,
@@ -282,7 +322,7 @@ SimulationSharedData::SimulationSharedData(bool called_from_Simulation)
 		params_for_meshtype.push_back(make_vector(
 			PARAM_GREL_AFM, PARAM_GDAMPING_AFM, PARAM_MS_AFM, PARAM_DEMAGXY, 
 			PARAM_A_AFM, PARAM_A_AFH, PARAM_A_AFNH, PARAM_D_AFM, PARAM_AFTAU, PARAM_AFTAUCROSS, PARAM_J1, PARAM_J2, 
-			PARAM_K1_AFM, PARAM_K2_AFM, PARAM_EA1, PARAM_EA2,
+			PARAM_K1_AFM, PARAM_K2_AFM, PARAM_K3_AFM, PARAM_EA1, PARAM_EA2, PARAM_EA3,
 			PARAM_TC, PARAM_MUB_AFM, PARAM_SUSREL_AFM,
 			PARAM_HA, PARAM_HMO,
 			PARAM_ELC, PARAM_P, PARAM_BETA, PARAM_SHA, PARAM_FLSOT,
@@ -306,7 +346,7 @@ SimulationSharedData::SimulationSharedData(bool called_from_Simulation)
 		params_for_meshtype.push_back(make_vector(
 			PARAM_ATOM_SC_DAMPING, PARAM_ATOM_SC_MUS, PARAM_DEMAGXY,
 			PARAM_ATOM_SC_J, PARAM_ATOM_SC_D,
-			PARAM_ATOM_SC_K, PARAM_ATOM_EA1, PARAM_ATOM_EA2,
+			PARAM_ATOM_SC_K1, PARAM_ATOM_SC_K2, PARAM_ATOM_SC_K3, PARAM_ATOM_EA1, PARAM_ATOM_EA2, PARAM_ATOM_EA3,
 			PARAM_HA, PARAM_HMO,
 			PARAM_ELC,
 			PARAM_THERMCOND, PARAM_DENSITY,
@@ -330,8 +370,10 @@ SimulationSharedData::SimulationSharedData(bool called_from_Simulation)
 		params_enabled_props.push_back({ true, true }, PARAM_J2);
 		params_enabled_props.push_back({ true, true }, PARAM_K1);
 		params_enabled_props.push_back({ true, true }, PARAM_K2);
+		params_enabled_props.push_back({ true, true }, PARAM_K3);
 		params_enabled_props.push_back({ false, true }, PARAM_EA1);
 		params_enabled_props.push_back({ false, true }, PARAM_EA2);
+		params_enabled_props.push_back({ false, true }, PARAM_EA3);
 		params_enabled_props.push_back({ true, false }, PARAM_SUSREL);
 		params_enabled_props.push_back({ false, false }, PARAM_SUSPREL);
 		params_enabled_props.push_back({ true, true }, PARAM_ELC);
@@ -384,13 +426,17 @@ SimulationSharedData::SimulationSharedData(bool called_from_Simulation)
 		params_enabled_props.push_back({ false, true }, PARAM_MUB_AFM);
 		params_enabled_props.push_back({ true, true }, PARAM_K1_AFM);
 		params_enabled_props.push_back({ true, true }, PARAM_K2_AFM);
+		params_enabled_props.push_back({ true, true }, PARAM_K3_AFM);
 		params_enabled_props.push_back({ true, true }, PARAM_HMO);
 		params_enabled_props.push_back({ false, true }, PARAM_ATOM_SC_DAMPING);
 		params_enabled_props.push_back({ false, true }, PARAM_ATOM_SC_MUS);
 		params_enabled_props.push_back({ false, true }, PARAM_ATOM_SC_J);
 		params_enabled_props.push_back({ false, true }, PARAM_ATOM_SC_D);
-		params_enabled_props.push_back({ false, true }, PARAM_ATOM_SC_K);
+		params_enabled_props.push_back({ false, true }, PARAM_ATOM_SC_K1);
+		params_enabled_props.push_back({ false, true }, PARAM_ATOM_SC_K2);
+		params_enabled_props.push_back({ false, true }, PARAM_ATOM_SC_K3);
 		params_enabled_props.push_back({ false, true }, PARAM_ATOM_EA1);
 		params_enabled_props.push_back({ false, true }, PARAM_ATOM_EA2);
+		params_enabled_props.push_back({ false, true }, PARAM_ATOM_EA3);
 	}
 }

@@ -33,6 +33,11 @@ template void cuVEC<cuSZ3>::setbox(cuBox box, cuSZ3 value);
 template void cuVEC<cuFLT3>::setbox(cuBox box, cuFLT3 value);
 template void cuVEC<cuDBL3>::setbox(cuBox box, cuDBL3 value);
 
+template void cuVEC<cuINT4>::setbox(cuBox box, cuINT4 value);
+template void cuVEC<cuSZ4>::setbox(cuBox box, cuSZ4 value);
+template void cuVEC<cuFLT4>::setbox(cuBox box, cuFLT4 value);
+template void cuVEC<cuDBL4>::setbox(cuBox box, cuDBL4 value);
+
 template void cuVEC<cuINT33>::setbox(cuBox box, cuINT33 value);
 template void cuVEC<cuFLT33>::setbox(cuBox box, cuFLT33 value);
 template void cuVEC<cuDBL33>::setbox(cuBox box, cuDBL33 value);
@@ -72,6 +77,11 @@ template void cuVEC<cuSZ3>::set(size_t size, cuSZ3 value);
 template void cuVEC<cuFLT3>::set(size_t size, cuFLT3 value);
 template void cuVEC<cuDBL3>::set(size_t size, cuDBL3 value);
 
+template void cuVEC<cuINT4>::set(size_t size, cuINT4 value);
+template void cuVEC<cuSZ4>::set(size_t size, cuSZ4 value);
+template void cuVEC<cuFLT4>::set(size_t size, cuFLT4 value);
+template void cuVEC<cuDBL4>::set(size_t size, cuDBL4 value);
+
 template void cuVEC<cuINT33>::set(size_t size, cuINT33 value);
 template void cuVEC<cuFLT33>::set(size_t size, cuFLT33 value);
 template void cuVEC<cuDBL33>::set(size_t size, cuDBL33 value);
@@ -105,6 +115,9 @@ template void cuVEC<double>::renormalize(size_t arr_size, double new_norm);
 
 template void cuVEC<cuFLT3>::renormalize(size_t arr_size, float new_norm);
 template void cuVEC<cuDBL3>::renormalize(size_t arr_size, double new_norm);
+
+template void cuVEC<cuFLT4>::renormalize(size_t arr_size, float new_norm);
+template void cuVEC<cuDBL4>::renormalize(size_t arr_size, double new_norm);
 
 template <typename VType>
 template <typename PType>

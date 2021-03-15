@@ -43,7 +43,8 @@ class SuperMesh :
 	vector_key<MeshBase*>, 
 	vector_lut<Modules*>, 
 	std::string, std::string, 
-	bool, bool>,
+	bool, bool, int,
+	bool, INT2>,
 	std::tuple<
 	//Micromagnetic Meshes
 	FMesh, DipoleMesh, MetalMesh, InsulatorMesh, AFMesh, DiaMesh,
@@ -154,6 +155,22 @@ private:
 	//if ferromagnetic meshes touch a dipole mesh then interface magnetic cells are frozen (ode doesn't update them - use skip cell flags) if this flag is true
 	//Moreover the interface cells are set with magnetization direction along the dipole magnetization direction. This is an easy way of simulating exchange coupling to the dipoles.
 	bool coupled_dipoles = false;
+	
+	//-----Mesh data settings
+
+	//select which component to use when fitting to obtain domain wall width and position for dwpos_x, dwpos_y, dwpos_z parameters
+	//-1: automatic (detect tanh component), 0: x, 1: y, 2: z. You might want to set to defined component if too noisy to reliably auto detect.
+	int dwpos_component = -1;
+
+	//-----Monte Carlo settings
+
+	//if running a Monte Carlo algorithm normally we don't want to update fields as well, but set this true if needed (e.g. if you also want to save energy density values for which we need to update fields)
+	bool computefields_if_MC = false;
+
+	//MC cone angle limits. If min and max are the same this turn the adaptive MC algorithms into fixed cone angle.
+	INT2 cone_angle_minmax = INT2(MONTECARLO_CONEANGLEDEG_MIN, MONTECARLO_CONEANGLEDEG_MAX);
+
+	//-----Auxiliary
 
 	//the total calculated energy density -> return by UpdateModules() or UpdateField() methods.
 	double total_energy_density = 0.0;
@@ -301,6 +318,8 @@ public:
 
 	//check in ODECommon the type of field update we need to do depending on the ODE evaluation step
 	int Check_Step_Update(void);
+	//get total time with evaluation step resolution level
+	double Get_EvalStep_Time(void);
 
 	//check if ODE solver needs spin accumulation solved
 	bool SolveSpinCurrent(void);
@@ -353,6 +372,12 @@ public:
 
 	//switch to constrained Monnte-Carlo (true) or classical (false) in given mesh - all if meshName is the supermesh handle; if constrained, then use cmc_n direction.
 	BError Set_MonteCarlo_Constrained(bool status, DBL3 cmc_n, std::string meshName);
+
+	void Set_MonteCarlo_ComputeFields(bool status) { computefields_if_MC = status; }
+	bool Get_MonteCarlo_ComputeFields(void) { return computefields_if_MC; }
+
+	void Set_MonteCarlo_ConeAngleLimits(INT2 cone_angle_minmax_) { cone_angle_minmax = cone_angle_minmax_; }
+	INT2 Get_MonteCarlo_ConeAngleLimits(void) { return cone_angle_minmax; }
 
 	//--------------------------------------------------------- MESH HANDLING - COMPONENTS : SuperMeshMeshes.cpp
 
@@ -413,14 +438,24 @@ public:
 	//Set magnetization angle in solid object only containing given relative position uniformly using polar coordinates
 	BError SetMagAngle_Object(std::string meshName, double polar, double azim, DBL3 position);
 
+	//Flower state magnetization
+	BError SetMagFlower(std::string meshName, int direction, DBL3 centre, double radius, double thickness);
+
+	//Onion state magnetization
+	BError SetMagOnion(std::string meshName, int direction, DBL3 centre, double radius1, double radius2, double thickness);
+
+	//Crosstie state magnetization
+	BError SetMagCrosstie(std::string meshName, int direction, DBL3 centre, double radius, double thickness);
+	
 	//Invert magnetization direction in given mesh (must be magnetic)
 	BError SetInvertedMag(std::string meshName, bool x = true, bool y = true, bool z = true);
 
 	//Mirror magnetization in given axis (literal x, y, or z) in given mesh (must be magnetic)
 	BError SetMirroredMag(std::string meshName, std::string axis);
 
-	//Set random magentisation distribution in given mesh (must be magnetic)
+	//Set random magnetization distribution in given mesh (must be magnetic)
 	BError SetRandomMag(std::string meshName, int seed);
+	BError SetRandomXYMag(std::string meshName, int seed);
 
 	//longitudinal and transverse are the components specified as std::string literals : "-z", "-y", "-x", "x", "y", "z"
 	BError SetMagDomainWall(std::string meshName, std::string longitudinal, std::string transverse, double width, double position);
@@ -571,8 +606,13 @@ public:
 
 	bool Get_Coupled_To_Dipoles(void) { return coupled_dipoles; }
 
+	int Get_DWPos_Component(void) { return dwpos_component; }
+
 	//get total volume energy density
 	double GetTotalEnergyDensity(void);
+
+	//search save data list (saveDataList) for given dataID set for given mesh. Return true if found and its rectangle is not Null; else return false.
+	bool IsOutputDataSet_withRect(int datumId, MeshBase* pmesh);
 
 	//--------Getters for supermesh modules specific properties
 
@@ -596,6 +636,8 @@ public:
 	void Set_Scale_Rects(bool status) { scale_rects = status; }
 
 	void Set_Coupled_To_Dipoles(bool status) { coupled_dipoles = status; CoupleToDipoles(); }
+
+	void Set_DWPos_Component(int component) { dwpos_component = component; }
 
 	//----------------------------------- DISPLAY-ASSOCIATED GET/SET METHODS : SuperMeshDisplay.cpp
 

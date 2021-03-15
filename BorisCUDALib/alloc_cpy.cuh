@@ -38,6 +38,11 @@ template void set_cuda_array_launcher<cuSZ3>(size_t size, cuSZ3* cu_dest_ptr, cu
 template void set_cuda_array_launcher<cuFLT3>(size_t size, cuFLT3* cu_dest_ptr, cuFLT3 value);
 template void set_cuda_array_launcher<cuDBL3>(size_t size, cuDBL3* cu_dest_ptr, cuDBL3 value);
 
+template void set_cuda_array_launcher<cuINT4>(size_t size, cuINT4* cu_dest_ptr, cuINT4 value);
+template void set_cuda_array_launcher<cuSZ4>(size_t size, cuSZ4* cu_dest_ptr, cuSZ4 value);
+template void set_cuda_array_launcher<cuFLT4>(size_t size, cuFLT4* cu_dest_ptr, cuFLT4 value);
+template void set_cuda_array_launcher<cuDBL4>(size_t size, cuDBL4* cu_dest_ptr, cuDBL4 value);
+
 template void set_cuda_array_launcher<cuINT33>(size_t size, cuINT33* cu_dest_ptr, cuINT33 value);
 template void set_cuda_array_launcher<cuFLT33>(size_t size, cuFLT33* cu_dest_ptr, cuFLT33 value);
 template void set_cuda_array_launcher<cuDBL33>(size_t size, cuDBL33* cu_dest_ptr, cuDBL33 value);

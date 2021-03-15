@@ -144,6 +144,9 @@ public:
 
 	void RestoreMoments(void);
 
+	//renormalize vectors to set moment length value (which could have a spatial variation)
+	void RenormalizeMoments(void);
+
 	//---------------------------------------- OTHER CALCULATION METHODS : Atom_DiffEqCubic_SEquations.cpp
 
 	//called when using stochastic equations
@@ -309,6 +312,9 @@ public:
 	//---------------------------------------- OTHERS : DiffEqFM.cpp
 
 	void RestoreMoments(void) {}
+
+	//renormalize vectors to set moment length value (which could have a spatial variation)
+	virtual void RenormalizeMoments(void) {}
 
 	//---------------------------------------- OTHER CALCULATION METHODS : Atom_DiffEqCubic_SEquations.cpp
 

@@ -11,7 +11,7 @@
 #include "Mesh_FerromagneticCUDA.h"
 #include "MeshParamsControlCUDA.h"
 
-__global__ void MElasticCUDA_UpdateField_FM(ManagedMeshCUDA& cuMesh, cuBReal& energy, bool do_reduction)
+__global__ void MElasticCUDA_UpdateField_FM(ManagedMeshCUDA& cuMesh, ManagedModulesCUDA& cuModule, bool do_reduction)
 {
 	cuVEC_VC<cuReal3>& M = *cuMesh.pM;
 	cuVEC<cuReal3>& Heff = *cuMesh.pHeff;
@@ -30,11 +30,9 @@ __global__ void MElasticCUDA_UpdateField_FM(ManagedMeshCUDA& cuMesh, cuBReal& en
 			cuBReal Ms = *cuMesh.pMs;
 			cuReal3 mcanis_ea1 = *cuMesh.pmcanis_ea1;
 			cuReal3 mcanis_ea2 = *cuMesh.pmcanis_ea2;
+			cuReal3 mcanis_ea3 = *cuMesh.pmcanis_ea3;
 			cuReal2 MEc = *cuMesh.pMEc;
-			cuMesh.update_parameters_mcoarse(idx, *cuMesh.pMs, Ms, *cuMesh.pMEc, MEc, *cuMesh.pmcanis_ea1, mcanis_ea1, *cuMesh.pmcanis_ea2, mcanis_ea2);
-
-			//vector product of ea1 and ea2 : the third orthogonal axis
-			cuReal3 mcanis_ea3 = mcanis_ea1 ^ mcanis_ea2;
+			cuMesh.update_parameters_mcoarse(idx, *cuMesh.pMs, Ms, *cuMesh.pMEc, MEc, *cuMesh.pmcanis_ea1, mcanis_ea1, *cuMesh.pmcanis_ea2, mcanis_ea2, *cuMesh.pmcanis_ea3, mcanis_ea3);
 
 			cuReal3 position = M.cellidx_to_position(idx);
 			//xx, yy, zz
@@ -66,10 +64,13 @@ __global__ void MElasticCUDA_UpdateField_FM(ManagedMeshCUDA& cuMesh, cuBReal& en
 				int non_empty_cells = M.get_nonempty_cells();
 				if (non_empty_cells) energy_ = -(cuBReal)MU0 * M[idx] * (Hmel_1 + Hmel_2) / (2 * non_empty_cells);
 			}
+
+			if (do_reduction && cuModule.pModule_Heff->linear_size()) (*cuModule.pModule_Heff)[idx] = Hmel_1 + Hmel_2;
+			if (do_reduction && cuModule.pModule_energy->linear_size()) (*cuModule.pModule_energy)[idx] = -(cuBReal)MU0 * M[idx] * (Hmel_1 + Hmel_2) / 2;
 		}
 	}
 
-	if (do_reduction) reduction_sum(0, 1, &energy_, energy);
+	if (do_reduction) reduction_sum(0, 1, &energy_, *cuModule.penergy);
 }
 
 //----------------------- UpdateField LAUNCHER
@@ -80,9 +81,9 @@ void MElasticCUDA::UpdateField(void)
 
 		ZeroEnergy();
 
-		MElasticCUDA_UpdateField_FM <<< (pMeshCUDA->n.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (pMeshCUDA->cuMesh, energy, true);
+		MElasticCUDA_UpdateField_FM <<< (pMeshCUDA->n.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (pMeshCUDA->cuMesh, cuModule, true);
 	}
-	else MElasticCUDA_UpdateField_FM <<< (pMeshCUDA->n.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (pMeshCUDA->cuMesh, energy, false);
+	else MElasticCUDA_UpdateField_FM <<< (pMeshCUDA->n.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (pMeshCUDA->cuMesh, cuModule, false);
 }
 
 #endif

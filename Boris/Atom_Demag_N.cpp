@@ -34,9 +34,16 @@ Atom_Demag_N::~Atom_Demag_N()
 
 BError Atom_Demag_N::Initialize(void)
 {
-	initialized = true;
+	BError error(CLASS_STR(Atom_Demag_N));
 
-	return BError(CLASS_STR(Atom_Demag_N));
+	//Make sure display data has memory allocated (or freed) as required
+	error = Update_Module_Display_VECs(
+		paMesh->h, paMesh->meshRect, 
+		(MOD_)paMesh->Get_Module_Heff_Display() == MOD_DEMAG_N || paMesh->IsOutputDataSet_withRect(DATA_E_DEMAG), 
+		(MOD_)paMesh->Get_Module_Energy_Display() == MOD_DEMAG_N || paMesh->IsOutputDataSet_withRect(DATA_E_DEMAG));
+	if (!error)	initialized = true;
+
+	return error;
 }
 
 BError Atom_Demag_N::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
@@ -44,8 +51,6 @@ BError Atom_Demag_N::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 	BError error(CLASS_STR(Atom_Demag_N));
 
 	Uninitialize();
-
-	Initialize();
 
 	//------------------------ CUDA UpdateConfiguration if set
 
@@ -99,13 +104,38 @@ double Atom_Demag_N::UpdateField(void)
 
 			//energy density contribution (to be scaled)
 			energy += paMesh->M1[idx] * Heff_value;
+
+			if (Module_Heff.linear_size()) Module_Heff[idx] = Heff_value;
+			if (Module_energy.linear_size()) Module_energy[idx] = -MUB_MU0 * paMesh->M1[idx] * Heff_value / (2 * paMesh->M1.h.dim());
 		}
 	}
 
-	if (paMesh->M1.get_nonempty_cells()) this->energy = -energy * MUB_MU0 / (2 * paMesh->M1.get_nonempty_cells());
+	if (paMesh->M1.get_nonempty_cells()) this->energy = -energy * MU0 * conversion / (2 * paMesh->M1.get_nonempty_cells());
 	else this->energy = 0;
 
 	return this->energy;
+}
+
+//-------------------Energy methods
+
+//For simple cubic mesh spin_index coincides with index in M1
+double Atom_Demag_N::Get_Atomistic_EnergyChange(int spin_index, DBL3 Mnew)
+{
+	//For CUDA there are separate device functions used by CUDA kernels.
+
+	if (paMesh->M1.is_not_empty(spin_index)) {
+
+		//Nxy shouldn't have a temperature (or spatial) dependence so not using update_parameters_mcoarse here
+		DBL2 Nxy = paMesh->Nxy;
+
+		double Nz = (1 - Nxy.x - Nxy.y);
+
+		double r = MUB / paMesh->h.dim();
+		DBL3 S = paMesh->M1[spin_index];
+
+		return (MUB_MU0 / 2) * r * (Nxy.x * (Mnew.x*Mnew.x - S.x*S.x) + Nxy.y * (Mnew.y*Mnew.y - S.y*S.y) + Nz * (Mnew.z*Mnew.z - S.z*S.z));
+	}
+	else return 0.0;
 }
 
 #endif

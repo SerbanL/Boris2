@@ -186,12 +186,12 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 	case IOI_MODULE:
 	{
 		//parameters from iop
-		MOD_ module = (MOD_)iop.minorId;
+		MOD_ moduleID = (MOD_)iop.minorId;
 		int meshId = iop.auxId;
 
 		//from unique mesh id number get index in pMesh (held in SMesh)
 		int meshIdx = SMesh.contains_id(meshId);
-		if (meshIdx >= 0 && SMesh[meshIdx]->IsModuleSet(module)) {
+		if (meshIdx >= 0 && SMesh[meshIdx]->IsModuleSet(moduleID)) {
 
 			//the mesh is contained and the module is set : ON color
 			pTO->SetBackgroundColor(ONCOLOR);
@@ -208,7 +208,7 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 			pTO->SetBackgroundColor(OFFCOLOR);
 
 			//special treatment of MOD_DEMAG to show if excluded from multilayered demag convolution
-			if (module == MOD_DEMAG) {
+			if (moduleID == MOD_DEMAG) {
 
 				if (SMesh.IsSuperMeshModuleSet(MODS_SDEMAG)) {
 
@@ -228,6 +228,37 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 		if (SMesh.IsSuperMeshModuleSet(module))
 			pTO->SetBackgroundColor(ONCOLOR);
 		else pTO->SetBackgroundColor(OFFCOLOR);
+	}
+	break;
+
+	//Module used for effective field display for a given mesh: minorId in InteractiveObjectProperties is an entry from MOD_ enum identifying the module, auxId contains the unique mesh id number this module refers to, textId is the MOD_ value used for display
+	case IOI_DISPLAYMODULE:
+	{
+		//parameters from iop
+		MOD_ moduleID = (MOD_)iop.minorId;
+		int meshId = iop.auxId;
+		int moduleDisplayed = ToNum(iop.textId);
+
+		//from unique mesh id number get index in pMesh (held in SMesh)
+		int meshIdx = SMesh.contains_id(meshId);
+		if (meshIdx >= 0) {
+
+			//mesh is available
+			if (moduleDisplayed != SMesh[meshIdx]->Get_Module_Heff_Display()) {
+
+				//mismatch, so adjust color and store correct value
+				iop.textId = ToString(SMesh[meshIdx]->Get_Module_Heff_Display());
+
+				if (SMesh[meshIdx]->Get_Module_Heff_Display() == (int)moduleID) pTO->SetBackgroundColor(ALTONCOLOR);
+				else pTO->SetBackgroundColor(OFFCOLOR);
+			}
+		}
+		else if (meshIdx < 0) {
+
+			//the mesh is not contained : must have been deleted - delete this object
+			stateChanged = true;
+			iop.state = IOS_DELETING;
+		}
 	}
 	break;
 
@@ -501,6 +532,13 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 	case IOI_MESH_FORMODULES:
 	{
 		display_meshIO(&Simulation::Build_Modules_ListLine);
+	}
+	break;
+
+	//Shows a mesh name : minorId is the unique mesh id number, textId is the mesh name (below are similar objects but used in different lists, so these lists need updating differently)
+	case IOI_MESH_FORDISPLAYMODULES:
+	{
+		display_meshIO(&Simulation::Build_DisplayModules_ListLine);
 	}
 	break;
 
@@ -1037,13 +1075,13 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 				pTO->set(" None ");
 				break;
 			case 1:
-				pTO->set(" Accurate ");
+				pTO->set(" Step ");
 				break;
 			case 2:
-				pTO->set(" Aggressive ");
+				pTO->set(" Linear ");
 				break;
 			case 3:
-				pTO->set(" Extreme ");
+				pTO->set(" Quadratic ");
 				break;
 			}
 
@@ -2971,7 +3009,7 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 	}
 	break;
 
-	//Shows PBC setting. minorId is the unique mesh id number, auxId is the pbc images number (0 disables pbc; -1 means setting is not available) (must be ferromagnetic mesh)
+	//Shows PBC setting. minorId is the unique mesh id number, auxId is the pbc images number (0 disables pbc) (must be ferromagnetic mesh)
 	case IOI_PBC_X:
 	{
 		int meshId = iop.minorId;
@@ -2985,7 +3023,7 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 
 				iop.auxId = SMesh[meshIdx]->CallModuleMethod(&DemagBase::Get_PBC).x;
 
-				if (iop.auxId > 0) {
+				if (iop.auxId != 0) {
 
 					pTO->SetBackgroundColor(ONCOLOR);
 				}
@@ -3001,7 +3039,7 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 
 				iop.auxId = SMesh[meshIdx]->Get_Magnetic_PBC().x;
 
-				if (iop.auxId > 0) {
+				if (iop.auxId != 0) {
 
 					pTO->SetBackgroundColor(ONCOLOR);
 				}
@@ -3017,7 +3055,7 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 	}
 	break;
 
-	//Shows PBC setting. minorId is the unique mesh id number, auxId is the pbc images number (0 disables pbc; -1 means setting is not available) (must be ferromagnetic mesh)
+	//Shows PBC setting. minorId is the unique mesh id number, auxId is the pbc images number (0 disables pbc) (must be ferromagnetic mesh)
 	case IOI_PBC_Y:
 	{
 		int meshId = iop.minorId;
@@ -3031,7 +3069,7 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 
 				iop.auxId = SMesh[meshIdx]->CallModuleMethod(&DemagBase::Get_PBC).y;
 
-				if (iop.auxId > 0) {
+				if (iop.auxId != 0) {
 
 					pTO->SetBackgroundColor(ONCOLOR);
 				}
@@ -3047,7 +3085,7 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 
 				iop.auxId = SMesh[meshIdx]->Get_Magnetic_PBC().y;
 
-				if (iop.auxId > 0) {
+				if (iop.auxId != 0) {
 
 					pTO->SetBackgroundColor(ONCOLOR);
 				}
@@ -3063,7 +3101,7 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 	}
 	break;
 
-	//Shows PBC setting. minorId is the unique mesh id number, auxId is the pbc images number (0 disables pbc; -1 means setting is not available) (must be ferromagnetic mesh)
+	//Shows PBC setting. minorId is the unique mesh id number, auxId is the pbc images number (0 disables pbc) (must be ferromagnetic mesh)
 	case IOI_PBC_Z:
 	{
 		int meshId = iop.minorId;
@@ -3077,7 +3115,7 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 
 				iop.auxId = SMesh[meshIdx]->CallModuleMethod(&DemagBase::Get_PBC).z;
 
-				if (iop.auxId > 0) {
+				if (iop.auxId != 0) {
 
 					pTO->SetBackgroundColor(ONCOLOR);
 				}
@@ -3093,7 +3131,7 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 
 				iop.auxId = SMesh[meshIdx]->Get_Magnetic_PBC().z;
 
-				if (iop.auxId > 0) {
+				if (iop.auxId != 0) {
 
 					pTO->SetBackgroundColor(ONCOLOR);
 				}
@@ -3109,23 +3147,26 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 	}
 	break;
 
-	//Shows PBC setting for supermesh/multilayered demag. auxId is the pbc images number (0 disables pbc; -1 means setting is not available)
+	//Shows PBC setting for supermesh/multilayered demag. auxId is the pbc images number (0 disables pbc)
 	case IOI_SPBC_X:
 	{
 		int images = iop.auxId;
+		int status = iop.minorId;
 
-		if (images >= 0 && !SMesh.IsSuperMeshModuleSet(MODS_SDEMAG)) {
+		if (status && !SMesh.IsSuperMeshModuleSet(MODS_SDEMAG)) {
 
 			pTO->SetBackgroundColor(UNAVAILABLECOLOR);
 			pTO->set(" N/A ");
 			stateChanged = true;
-			iop.auxId = -1;
+			iop.auxId = 0;
+			iop.minorId = 0;
 		}
-		else if (SMesh.IsSuperMeshModuleSet(MODS_SDEMAG) && dynamic_cast<SDemag*>(SMesh.GetSuperMeshModule(MODS_SDEMAG))->Get_PBC().x != images) {
+		else if (SMesh.IsSuperMeshModuleSet(MODS_SDEMAG) && (dynamic_cast<SDemag*>(SMesh.GetSuperMeshModule(MODS_SDEMAG))->Get_PBC().x != images || !status)) {
 
+			iop.minorId = 1;
 			iop.auxId = SMesh.CallModuleMethod(&SDemag::Get_PBC).x;
 
-			if (iop.auxId > 0) {
+			if (iop.auxId != 0) {
 
 				pTO->SetBackgroundColor(ONCOLOR);
 			}
@@ -3140,23 +3181,26 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 	}
 	break;
 
-	//Shows PBC setting for supermesh/multilayered demag. auxId is the pbc images number (0 disables pbc; -1 means setting is not available)
+	//Shows PBC setting for supermesh/multilayered demag. auxId is the pbc images number (0 disables pbc)
 	case IOI_SPBC_Y:
 	{
 		int images = iop.auxId;
+		int status = iop.minorId;
 
-		if (images >= 0 && !SMesh.IsSuperMeshModuleSet(MODS_SDEMAG)) {
+		if (status && !SMesh.IsSuperMeshModuleSet(MODS_SDEMAG)) {
 
 			pTO->SetBackgroundColor(UNAVAILABLECOLOR);
 			pTO->set(" N/A ");
 			stateChanged = true;
-			iop.auxId = -1;
+			iop.auxId = 0;
+			iop.minorId = 0;
 		}
-		else if (SMesh.IsSuperMeshModuleSet(MODS_SDEMAG) && dynamic_cast<SDemag*>(SMesh.GetSuperMeshModule(MODS_SDEMAG))->Get_PBC().y != images) {
+		else if (SMesh.IsSuperMeshModuleSet(MODS_SDEMAG) && (dynamic_cast<SDemag*>(SMesh.GetSuperMeshModule(MODS_SDEMAG))->Get_PBC().y != images || !status)) {
 
+			iop.minorId = 1;
 			iop.auxId = SMesh.CallModuleMethod(&SDemag::Get_PBC).y;
 
-			if (iop.auxId > 0) {
+			if (iop.auxId != 0) {
 
 				pTO->SetBackgroundColor(ONCOLOR);
 			}
@@ -3171,23 +3215,26 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 	}
 	break;
 
-	//Shows PBC setting for supermesh/multilayered demag. auxId is the pbc images number (0 disables pbc; -1 means setting is not available)
+	//Shows PBC setting for supermesh/multilayered demag. auxId is the pbc images number (0 disables pbc), minorId is enabled (1)/disabled (0) status
 	case IOI_SPBC_Z:
 	{
 		int images = iop.auxId;
+		int status = iop.minorId;
 
-		if (images >= 0 && !SMesh.IsSuperMeshModuleSet(MODS_SDEMAG)) {
+		if (status && !SMesh.IsSuperMeshModuleSet(MODS_SDEMAG)) {
 
 			pTO->SetBackgroundColor(UNAVAILABLECOLOR);
 			pTO->set(" N/A ");
 			stateChanged = true;
-			iop.auxId = -1;
+			iop.auxId = 0;
+			iop.minorId = 0;
 		}
-		else if (SMesh.IsSuperMeshModuleSet(MODS_SDEMAG) && dynamic_cast<SDemag*>(SMesh.GetSuperMeshModule(MODS_SDEMAG))->Get_PBC().z != images) {
+		else if (SMesh.IsSuperMeshModuleSet(MODS_SDEMAG) && (dynamic_cast<SDemag*>(SMesh.GetSuperMeshModule(MODS_SDEMAG))->Get_PBC().z != images || !status)) {
 
+			iop.minorId = 1;
 			iop.auxId = SMesh.CallModuleMethod(&SDemag::Get_PBC).z;
 
-			if (iop.auxId > 0) {
+			if (iop.auxId != 0) {
 
 				pTO->SetBackgroundColor(ONCOLOR);
 			}
@@ -3297,6 +3344,37 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 	}
 	break;
 
+	//Shows dwpos fitting component. auxId is the value (-1, 0, 1, 2)
+	case IOI_DWPOSCOMPONENT:
+	{
+		int component = iop.auxId;
+
+		if (component != SMesh.Get_DWPos_Component()) {
+
+			iop.auxId = SMesh.Get_DWPos_Component();
+
+			if (iop.auxId == -1) {
+
+				pTO->set(" Auto ");
+			}
+			else if (iop.auxId == 0) {
+
+				pTO->set(" x ");
+			}
+			else if (iop.auxId == 1) {
+
+				pTO->set(" y ");
+			}
+			else if (iop.auxId == 2) {
+
+				pTO->set(" z ");
+			}
+
+			stateChanged = true;
+		}
+	}
+	break;
+
 	//Shows Monte-Carlo computation type (serial/parallel) : minorId is the unique mesh id number, auxId is the status (0 : parallel, 1 : serial, -1 : N/A)
 	case IOI_MCCOMPUTATION:
 	{
@@ -3368,6 +3446,31 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 				pTO->set(" " + iop.textId + " ");
 				stateChanged = true;
 			}
+		}
+	}
+	break;
+
+	//Shows Monte-Carlo computefields state flag : auxId is the state (0: disabled, 1: enabled)
+	case IOI_MCCOMPUTEFIELDS:
+	{
+		int status = iop.auxId;
+
+		if (status != (int)SMesh.Get_MonteCarlo_ComputeFields()) {
+
+			iop.auxId = SMesh.Get_MonteCarlo_ComputeFields();
+
+			if (iop.auxId == 1) {
+
+				pTO->SetBackgroundColor(ONCOLOR);
+				pTO->set(" Enabled ");
+			}
+			else {
+
+				pTO->SetBackgroundColor(OFFCOLOR);
+				pTO->set(" Disabled ");
+			}
+
+			stateChanged = true;
 		}
 	}
 	break;

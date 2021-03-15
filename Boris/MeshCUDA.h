@@ -134,6 +134,9 @@ public:
 	//-----------------------------------OBJECT GETTERS
 
 	cu_obj<ManagedDiffEq_CommonCUDA>& Get_ManagedDiffEq_CommonCUDA(void);
+
+	std::vector<DBL4>& get_tensorial_anisotropy(void);
+	std::vector<DBL4>& get_tensorial_anisotropy2(void);
 };
 
 #endif

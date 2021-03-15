@@ -76,6 +76,63 @@ void Atom_Mesh_Cubic::SetMagAngle_Object(double polar, double azim, DBL3 positio
 #endif
 }
 
+//Flower state magnetization
+void Atom_Mesh_Cubic::SetMagFlower(int direction, DBL3 centre, double radius, double thickness)
+{
+#if COMPILECUDA == 1
+	//refresh M from gpu memory
+	if (paMeshCUDA) paMeshCUDA->M1()->copy_to_cpuvec(M1);
+#endif
+
+	if (M1.linear_size()) {
+		
+		M1.generate_flower(direction, centre, radius, thickness);
+	}
+
+#if COMPILECUDA == 1
+	//refresh gpu memory
+	if (paMeshCUDA) paMeshCUDA->M1()->copy_from_cpuvec(M1);
+#endif
+}
+
+//Onion state magnetization
+void Atom_Mesh_Cubic::SetMagOnion(int direction, DBL3 centre, double radius1, double radius2, double thickness)
+{
+#if COMPILECUDA == 1
+	//refresh M from gpu memory
+	if (paMeshCUDA) paMeshCUDA->M1()->copy_to_cpuvec(M1);
+#endif
+
+	if (M1.linear_size()) {
+
+		M1.generate_onion(direction, centre, radius1, radius2, thickness);
+	}
+
+#if COMPILECUDA == 1
+	//refresh gpu memory
+	if (paMeshCUDA) paMeshCUDA->M1()->copy_from_cpuvec(M1);
+#endif
+}
+
+//Crosstie state magnetization
+void Atom_Mesh_Cubic::SetMagCrosstie(int direction, DBL3 centre, double radius, double thickness)
+{
+#if COMPILECUDA == 1
+	//refresh M from gpu memory
+	if (paMeshCUDA) paMeshCUDA->M1()->copy_to_cpuvec(M1);
+#endif
+
+	if (M1.linear_size()) {
+
+		M1.generate_crosstie(direction, centre, radius, thickness);
+	}
+
+#if COMPILECUDA == 1
+	//refresh gpu memory
+	if (paMeshCUDA) paMeshCUDA->M1()->copy_from_cpuvec(M1);
+#endif
+}
+
 //Invert magnetization direction in given mesh
 void Atom_Mesh_Cubic::SetInvertedMag(bool x, bool y, bool z)
 {
@@ -189,6 +246,32 @@ void Atom_Mesh_Cubic::SetRandomMag(int seed)
 			double phi = prng.rand() * TWO_PI;
 
 			M1[idx] = M1[idx].norm() * DBL3(cos(phi)*sin(theta), sin(phi)*sin(theta), cos(theta));
+		}
+	}
+
+#if COMPILECUDA == 1
+	//refresh gpu memory
+	if (paMeshCUDA) paMeshCUDA->M1()->copy_from_cpuvec(M1);
+#endif
+}
+
+void Atom_Mesh_Cubic::SetRandomXYMag(int seed)
+{
+#if COMPILECUDA == 1
+	//refresh M from gpu memory
+	if (paMeshCUDA) paMeshCUDA->M1()->copy_to_cpuvec(M1);
+#endif
+
+	BorisRand prng(seed);
+
+#pragma omp parallel for
+	for (int idx = 0; idx < M1.linear_size(); idx++) {
+
+		if (M1.is_not_empty(idx)) {
+
+			double phi = prng.rand() * TWO_PI;
+
+			M1[idx] = M1[idx].norm() * DBL3(cos(phi), sin(phi), 0.0);
 		}
 	}
 

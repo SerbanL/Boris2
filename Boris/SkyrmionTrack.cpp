@@ -78,106 +78,6 @@ DBL4 SkyrmionTrack::Get_skypos_diameters(VEC_VC<DBL3>& M, Rect skyRect)
 	//in-plane mesh dimensions
 	DBL2 meshDim = DBL2(M.rect.e.x - M.rect.s.x, M.rect.e.y - M.rect.s.y);
 
-	/*
-
-	//OLD METHOD : NOT RESILIENT ENOUGH
-
-	//maximum number of points along any dimension in the skyrmion tracking window; multiply by 2 since the skyrmion window is adjusted to be 2 times the skyrmion diameter so in the extreme it could be two times the mesh size.
-	int max_points = maximum((M.rect.e.x - M.rect.s.x) / M.h.x, (M.rect.e.y - M.rect.s.y) / M.h.y) * 2;
-	if (max_points <= 0) return DBL4();
-
-	//get x axis data then fit to find skyrmion diameter and center position
-	auto fit_x_axis = [&](void) -> DBL2 {
-
-		int points_x = (skyRect.e.x - skyRect.s.x) / M.h.x;
-		
-		//skyrmion too large for current mesh size so fail the fitting
-		if (points_x > max_points) return DBL2(-1);
-
-		//to improve fitting accuracy extended the number of points either side by filling in start / end values.
-		int end_points = 100;
-
-		//keep working arrays to maximum possible size (memory use is not significant and this avoids allocating memory often).
-		if (xy_data.size() < max_points + 2 * end_points) xy_data.resize(max_points + 2 * end_points);
-
-		double window_start = M.h.x / 2 + skyRect.s.x;
-		double window_end = ((double)points_x - 0.5) * M.h.x + skyRect.s.x;
-
-#pragma omp parallel for
-		for (int idx = 0; idx < points_x; idx++) {
-
-			double position = window_start + idx * M.h.x;
-			xy_data[idx + end_points].x = position;
-
-			DBL3 value = M.weighted_average(DBL3(position, (skyRect.e.y + skyRect.s.y) / 2, M.h.z / 2), M.h);
-			xy_data[idx + end_points].y = value.x;
-		}
-
-#pragma omp parallel for
-		for (int idx = 0; idx < end_points; idx++) {
-
-			//left end
-			xy_data[idx].x = window_start - (end_points - idx) * M.h.x;
-			xy_data[idx].y = 0.0;
-
-			//right end
-			xy_data[idx + points_x + end_points].x = window_end + (idx + 1) * M.h.x;
-			xy_data[idx + points_x + end_points].y = 0.0;
-		}
-
-		fit.FitSkyrmion_Longitudinal_LMA(xy_data, params, points_x + 2 * end_points);
-
-		//return diameter and center x
-		return DBL2(params[0] * 2, params[1]);
-	};
-
-	//get y axis data then fit to find skyrmion diameter and center position
-	auto fit_y_axis = [&](void) -> DBL2 {
-
-		int points_y = (skyRect.e.y - skyRect.s.y) / M.h.y;
-		
-		//skyrmion too large for current mesh size so fail the fitting
-		if (points_y > max_points) return DBL2(-1);
-
-		//to improve fitting accuracy extended the number of points either side by filling in start / end values.
-		int end_points = 100;
-
-		//keep working arrays to maximum possible size (memory use is not significant and this avoids allocating memory often).
-		if (xy_data.size() < max_points + 2 * end_points) xy_data.resize(max_points + 2 * end_points);
-
-		double window_start = M.h.y / 2 + skyRect.s.y;
-		double window_end = ((double)points_y - 0.5) * M.h.y + skyRect.s.y;
-
-#pragma omp parallel for
-		for (int idx = 0; idx < points_y; idx++) {
-
-			double position = window_start + idx * M.h.y;
-			xy_data[idx + end_points].x = position;
-
-			DBL3 value = M.weighted_average(DBL3((skyRect.e.x + skyRect.s.x) / 2, position, M.h.z / 2), M.h);
-			xy_data[idx + end_points].y = value.y;
-		}
-
-#pragma omp parallel for
-		for (int idx = 0; idx < end_points; idx++) {
-
-			//left end
-			xy_data[idx].x = window_start - (end_points - idx) * M.h.y;
-			xy_data[idx].y = 0.0;
-
-			//right end
-			xy_data[idx + points_y + end_points].x = window_end + (idx + 1) * M.h.y;
-			xy_data[idx + points_y + end_points].y = 0.0;
-		}
-
-		//fit.FitSkyrmion_LMA(xy_data, params, points_y + 2 * end_points);
-		fit.FitSkyrmion_Longitudinal_LMA(xy_data, params, points_y + 2 * end_points);
-
-		//return diameter and center y
-		return DBL2(params[0] * 2, params[1]);
-	};
-	*/
-
 	//find skyrmion bounds along the x axis - these are the points the sign of the z component changes
 	//initially try to find the bounds through the center of the updated tracker rectangle : this will work the vast majority of the time
 	//if the bounds couldn't be found then search from them line by line - this will happen if the tracker rectangle doesn't have the skyrmion in the center
@@ -185,7 +85,7 @@ DBL4 SkyrmionTrack::Get_skypos_diameters(VEC_VC<DBL3>& M, Rect skyRect)
 
 		auto search_line = [&](double pos_y) -> DBL2 {
 
-			double position = skyRect.s.x;
+			double position = skyRect.s.x + M.h.x/2;
 			position -= floor_epsilon(position / meshDim.x) * meshDim.x;
 
 			bool plus_sign = M.weighted_average(DBL3(position, pos_y, M.h.z / 2), M.h).z > 0;
@@ -193,7 +93,7 @@ DBL4 SkyrmionTrack::Get_skypos_diameters(VEC_VC<DBL3>& M, Rect skyRect)
 
 			for (int idx = 0; idx < (skyRect.e.x - skyRect.s.x) / M.h.x; idx++) {
 
-				position = skyRect.s.x + idx * M.h.x;
+				position = skyRect.s.x + ((double)idx + 0.5) * M.h.x;
 				//position can be outside mesh, so wrap around
 				position -= floor_epsilon(position / meshDim.x) * meshDim.x;
 
@@ -205,11 +105,11 @@ DBL4 SkyrmionTrack::Get_skypos_diameters(VEC_VC<DBL3>& M, Rect skyRect)
 
 					if (!first_crossing) {
 
-						first_crossing = skyRect.s.x + idx * M.h.x;
+						first_crossing = skyRect.s.x + ((double)idx + 0.5) * M.h.x;
 					}
 					else {
 
-						second_crossing = skyRect.s.x + idx * M.h.x;
+						second_crossing = skyRect.s.x + ((double)idx + 0.5) * M.h.x;
 						break;
 					}
 				}
@@ -267,7 +167,7 @@ DBL4 SkyrmionTrack::Get_skypos_diameters(VEC_VC<DBL3>& M, Rect skyRect)
 
 		auto search_line = [&](double pos_x) -> DBL2 {
 
-			double position = skyRect.s.y;
+			double position = skyRect.s.y + M.h.y/2;
 			position -= floor_epsilon(position / meshDim.y) * meshDim.y;
 
 			bool plus_sign = M.weighted_average(DBL3(pos_x, position, M.h.z / 2), M.h).z > 0;
@@ -275,7 +175,7 @@ DBL4 SkyrmionTrack::Get_skypos_diameters(VEC_VC<DBL3>& M, Rect skyRect)
 
 			for (int idx = 0; idx < (skyRect.e.y - skyRect.s.y) / M.h.y; idx++) {
 
-				position = skyRect.s.y + idx * M.h.y;
+				position = skyRect.s.y + ((double)idx + 0.5) * M.h.y;
 				position -= floor_epsilon(position / meshDim.y) * meshDim.y;
 
 				double value = M.weighted_average(DBL3(pos_x, position, M.h.z / 2), M.h).z;
@@ -286,11 +186,11 @@ DBL4 SkyrmionTrack::Get_skypos_diameters(VEC_VC<DBL3>& M, Rect skyRect)
 
 					if (!first_crossing) {
 
-						first_crossing = skyRect.s.y + idx * M.h.y;
+						first_crossing = skyRect.s.y + ((double)idx + 0.5) * M.h.y;
 					}
 					else {
 
-						second_crossing = skyRect.s.y + idx * M.h.y;
+						second_crossing = skyRect.s.y + ((double)idx + 0.5) * M.h.y;
 						break;
 					}
 				}

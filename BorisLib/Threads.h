@@ -42,7 +42,7 @@ private:
 protected:
 
 	//reserved unique thread ids for various uses
-	enum THREAD_ { THREAD_ERROR = -1, THREAD_GENERATENEW = 0, THREAD_LOOP, THREAD_GETINPUT, THREAD_HANDLEMESSAGE, THREAD_HANDLEMESSAGE2, THREAD_HANDLEMESSAGE3, THREAD_DISKACCESS, THREAD_DISPLAY, THREAD_HANDLECLIENT, THREAD_NETWORK, THREAD_TIMEDCHECK, THREAD_TIMEDREFRESH };
+	enum THREAD_ { THREAD_ERROR = -1, THREAD_GENERATENEW = 0, THREAD_LOOP, THREAD_LOOP_STOP, THREAD_GETINPUT, THREAD_HANDLEMESSAGE, THREAD_HANDLEMESSAGE2, THREAD_HANDLEMESSAGE3, THREAD_DISKACCESS, THREAD_DISPLAY, THREAD_HANDLECLIENT, THREAD_NETWORK, THREAD_TIMEDCHECK, THREAD_TIMEDREFRESH };
 
 private:
 
@@ -62,6 +62,7 @@ protected:	//all methods usable by other objects are set as protected to force u
 	void stop_thread(int threadId);
 
 	int set_blocking_thread(int threadId = THREAD_GENERATENEW);
+	int set_nonblocking_thread(int threadId = THREAD_GENERATENEW);
 
 	bool is_thread_running(int threadId) const { if (threadId < THREAD_MAXIMUM) return thread_active[threadId]; else return false; }
 
@@ -187,6 +188,20 @@ int Threads<Owner>::set_blocking_thread(int threadId)
 	threadId = configure_threadId(threadId);
 
 	if (threadId != THREAD_ERROR) blocking_call[threadId] = true;
+
+	thread_mutex.unlock();
+
+	return threadId;
+}
+
+template <class Owner>
+int Threads<Owner>::set_nonblocking_thread(int threadId)
+{
+	thread_mutex.lock();
+
+	threadId = configure_threadId(threadId);
+
+	if (threadId != THREAD_ERROR) blocking_call[threadId] = false;
 
 	thread_mutex.unlock();
 
@@ -400,12 +415,12 @@ int Threads<Owner>::single_call_launch(void (Owner::*runThisMethod)(PType...), P
 
 	threadId = configure_threadId(threadId);
 
-	std::function<void()> calling_method = [this, param..., threadId, runThisMethod]{
+	std::function<void()> calling_method = [this, param..., threadId, runThisMethod] {
 
 		CALLFP(this->owner, runThisMethod)(param...);
 
-	//this was set to 1 by the launcher
-	std::atomic_store(&this->thread_active[threadId], false);
+		//this was set to 1 by the launcher
+		std::atomic_store(&this->thread_active[threadId], false);
 	};
 
 	return run_on_thread(calling_method, threadId);

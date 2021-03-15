@@ -3,8 +3,6 @@
 #include "BorisLib.h"
 #include "Modules.h"
 
-
-
 class Atom_Mesh;
 
 #if defined(MODULE_COMPILATION_ANIUNI) && ATOMISTIC == 1
@@ -45,14 +43,10 @@ public:
 
 	double UpdateField(void);
 
-	//-------------------Energy density methods
-
-	double GetEnergyDensity(Rect& avRect);
-
 	//-------------------Energy methods
 
 	//For simple cubic mesh spin_index coincides with index in M1
-	double Get_Atomistic_Energy(int spin_index);
+	double Get_Atomistic_EnergyChange(int spin_index, DBL3 Mnew);
 };
 
 #else
@@ -86,10 +80,6 @@ public:
 	BError MakeCUDAModule(void) { return BError(); }
 
 	double UpdateField(void) { return 0.0; }
-
-	//-------------------Energy density methods
-
-	double GetEnergyDensity(Rect& avRect) { return 0.0; }
 };
 
 

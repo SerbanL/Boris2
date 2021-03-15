@@ -4,6 +4,7 @@
 #ifdef MESH_COMPILATION_FERROMAGNETIC
 
 #include "Mesh_Ferromagnetic.h"
+#include "MeshParamsControl.h"
 
 DifferentialEquationFM::DifferentialEquationFM(FMesh *pMesh):
 	DifferentialEquation(pMesh)
@@ -18,11 +19,27 @@ DifferentialEquationFM::~DifferentialEquationFM()
 //---------------------------------------- OTHERS
 
 //Restore magnetization after a failed step for adaptive time-step methods
-void DifferentialEquationFM::Restoremagnetization(void)
+void DifferentialEquationFM::RestoreMagnetization(void)
 {
 #pragma omp parallel for
 	for (int idx = 0; idx < pMesh->n.dim(); idx++)
 		pMesh->M[idx] = sM1[idx];
+}
+
+//renormalize vectors to set magnetization length value (which could have a spatial variation)
+void DifferentialEquationFM::RenormalizeMagnetization(void)
+{
+#pragma omp parallel for
+	for (int idx = 0; idx < pMesh->n.dim(); idx++) {
+
+		if (pMesh->M.is_not_empty(idx)) {
+
+			double Ms = pMesh->Ms;
+			pMesh->update_parameters_mcoarse(idx, pMesh->Ms, Ms);
+
+			pMesh->M[idx].renormalize(Ms);
+		}
+	}
 }
 
 //---------------------------------------- SET-UP METHODS
@@ -196,7 +213,6 @@ void DifferentialEquationFM::CleanupMemory(void)
 #endif
 }
 
-
 BError DifferentialEquationFM::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 {
 	BError error(CLASS_STR(DifferentialEquationFM));
@@ -243,6 +259,8 @@ BError DifferentialEquationFM::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 			}
 		}
 	}
+
+	if (cfgMessage == UPDATECONFIG_PARAMVALUECHANGED_MLENGTH) RenormalizeMagnetization();
 
 	//----------------------- CUDA mirroring
 

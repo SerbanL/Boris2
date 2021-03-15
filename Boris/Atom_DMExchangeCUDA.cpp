@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "Atom_DMExchangeCUDA.h"
+#include "DataDefs.h"
 
 #if defined(MODULE_COMPILATION_DMEXCHANGE) && ATOMISTIC == 1
 
@@ -22,7 +23,12 @@ BError Atom_DMExchangeCUDA::Initialize(void)
 {
 	BError error(CLASS_STR(Atom_DMExchangeCUDA));
 
-	initialized = true;
+	//Make sure display data has memory allocated (or freed) as required
+	error = Update_Module_Display_VECs(
+		(cuReal3)paMeshCUDA->h, (cuRect)paMeshCUDA->meshRect, 
+		(MOD_)paMeshCUDA->Get_ActualModule_Heff_Display() == MOD_DMEXCHANGE || paMeshCUDA->IsOutputDataSet_withRect(DATA_E_EXCH),
+		(MOD_)paMeshCUDA->Get_ActualModule_Heff_Display() == MOD_DMEXCHANGE || paMeshCUDA->IsOutputDataSet_withRect(DATA_E_EXCH));
+	if (!error)	initialized = true;
 
 	return error;
 }
@@ -34,13 +40,6 @@ BError Atom_DMExchangeCUDA::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 	Uninitialize();
 
 	return error;
-}
-
-void Atom_DMExchangeCUDA::Compute_Exchange(VEC<double>& displayVEC)
-{
-	Compute_ExchangeCUDA();
-
-	exchange_displayVEC()->copy_to_cpuvec(displayVEC);
 }
 
 #endif

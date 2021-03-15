@@ -514,6 +514,23 @@ BError DPArrays::divide(int dp_source, int dp_dest, double value)
 	return error;
 }
 
+BError DPArrays::exponentiate(int dp_source, int dp_dest, double exponent)
+{
+	BError error(__FUNCTION__);
+
+	if (!GoodArrays(dp_source, dp_dest)) return error(BERROR_INCORRECTARRAYS);
+
+	resize(dp_dest, dpA[dp_source].size());
+
+#pragma omp parallel for
+	for (int idx = 0; idx < (int)dpA[dp_source].size(); idx++) {
+
+		dpA[dp_dest][idx] = pow(dpA[dp_source][idx], exponent);
+	}
+
+	return error;
+}
+
 BError DPArrays::multiply(int dp_source, int dp_dest, double value)
 {
 	BError error(__FUNCTION__);
@@ -668,26 +685,103 @@ BError DPArrays::get_min_max(int dp_source, DBL2* pmin_max_values, INT2* pmin_ma
 	return error;
 }
 
-BError DPArrays::get_mean(int dp_source, DBL2* pmean_err)
+BError DPArrays::get_mean(int dp_source, DBL2* pmean_err, double exclusion_ratio)
 {
 	BError error(__FUNCTION__);
 
 	if (!GoodArrays(dp_source) || !dpA[dp_source].size()) return error(BERROR_INCORRECTARRAYS);
 
 	//mean : sum of points / number of points
-	double mean = accumulate(dpA[dp_source].begin(), dpA[dp_source].end(), 0.0) / dpA[dp_source].size();
+	double mean = sum_KahanNeumaier(dpA[dp_source]) / dpA[dp_source].size();
 	double stdev_sq = 0;
 
-	//unweighted standard deviation squared : sum of squares of distances between points and mean, divided by number of points
-	#pragma omp parallel for reduction(+:stdev_sq)
-	for (int idx = 0; idx < (int)dpA[dp_source].size(); idx++) {
+	//second pass required to exclude points if included
+	if (exclusion_ratio > 0 && mean != 0.0) {
 
-		stdev_sq += pow(dpA[dp_source][idx] - mean, 2);
+		double mean2 = 0.0;
+		int num_mean_points = 0;
+
+#pragma omp parallel for reduction(+:mean2, num_mean_points)
+		for (int idx = 0; idx < dpA[dp_source].size(); idx++) {
+
+			double value = dpA[dp_source][idx];
+			if (fabs(value / mean - 1.0) < exclusion_ratio) {
+
+				mean2 += value;
+				num_mean_points++;
+			}
+		}
+
+		if (num_mean_points) {
+
+			mean2 /= num_mean_points;
+
+#pragma omp parallel for reduction(+:stdev_sq)
+			for (int idx = 0; idx < (int)dpA[dp_source].size(); idx++) {
+
+				double value = dpA[dp_source][idx];
+				if (fabs(value / mean - 1.0) < exclusion_ratio) {
+
+					stdev_sq += pow(value - mean2, 2);
+				}
+			}
+
+			stdev_sq /= num_mean_points;
+		}
+
+		mean = mean2;
+	}
+	else {
+
+		//unweighted standard deviation squared : sum of squares of distances between points and mean, divided by number of points
+#pragma omp parallel for reduction(+:stdev_sq)
+		for (int idx = 0; idx < (int)dpA[dp_source].size(); idx++) {
+
+			stdev_sq += pow(dpA[dp_source][idx] - mean, 2);
+		}
+
+		stdev_sq /= dpA[dp_source].size();
 	}
 
-	stdev_sq /= dpA[dp_source].size();
-
 	*pmean_err = DBL2(mean, sqrt(stdev_sq));
+
+	return error;
+}
+
+//find standard deviation on the mean in chunks: i.e. obtain it from every chunk number of values in dp_source, then average them to obtain final std
+//in the limit chunk = dp_source number of points (set chunk = 0) for this special case, the std is the usual std on the mean
+BError DPArrays::get_chunkedstd(int dp_source, int chunk, double* std)
+{
+	BError error(__FUNCTION__);
+
+	if (!GoodArrays(dp_source) || !dpA[dp_source].size()) return error(BERROR_INCORRECTARRAYS);
+
+	if (chunk <= 0 || chunk > dpA[dp_source].size()) chunk = dpA[dp_source].size();
+
+	double cstd = 0.0;
+	int num_chunks = dpA[dp_source].size() / chunk;
+	if (num_chunks == 0) num_chunks = 1;
+
+#pragma omp parallel for reduction(+:cstd)
+	for (int idx = 0; idx < dpA[dp_source].size(); idx += chunk) {
+
+		double av = 0.0, avsq = 0.0;
+
+		if (idx + chunk <= dpA[dp_source].size()) {
+
+			for (int idx_chunk = 0; idx_chunk < chunk; idx_chunk++) {
+
+				double value = dpA[dp_source][idx + idx_chunk];
+				av += value / chunk;
+				avsq += value * value / chunk;
+			}
+
+			cstd += (avsq - av * av) / num_chunks;
+		}
+	}
+
+	if ((dpA[dp_source].size() % chunk) && num_chunks > 1) *std = sqrt(cstd * num_chunks / (num_chunks - 1));
+	else *std = sqrt(cstd);
 
 	return error;
 }
@@ -1213,6 +1307,40 @@ BError DPArrays::fit_skyrmion(int dp_x, int dp_y, DBL2 *pR, DBL2 *px0, DBL2 *pMs
 		*px0 = DBL2(params[1], params_std[1]);
 		*pMs = DBL2(params[2], params_std[2]);
 		*pw = DBL2(params[3], params_std[3]);
+	}
+	else return error(BERROR_INCORRECTARRAYS);
+
+	return error;
+}
+
+//fit M(x) = A * tanh((x - x0) / (D / 2)). Return fitting parameters with their standard deviations.
+BError DPArrays::fit_domainwall(int dp_x, int dp_y, DBL2 *pA, DBL2 *px0, DBL2 *pD)
+{
+	BError error(__FUNCTION__);
+
+	if (!GoodArrays_Unique(dp_x, dp_y) || dpA[dp_x].size() != dpA[dp_y].size()) return error(BERROR_INCORRECTARRAYS);
+
+	CurveFitting curve_fit;
+
+	std::vector<double> params, params_std;
+
+	std::vector<DBL2> xy_data;
+
+	xy_data.resize(dpA[dp_x].size());
+
+#pragma omp parallel for
+	for (int idx = 0; idx < xy_data.size(); idx++) {
+
+		xy_data[idx] = DBL2(dpA[dp_x][idx], dpA[dp_y][idx]);
+	}
+
+	curve_fit.FitDW_LMA(xy_data, params, params_std);
+
+	if (params.size() >= 3 && params_std.size() >= 3) {
+
+		*pA = DBL2(params[0], params_std[0]);
+		*px0 = DBL2(params[1], params_std[1]);
+		*pD = DBL2(params[2], params_std[2]);
 	}
 	else return error(BERROR_INCORRECTARRAYS);
 

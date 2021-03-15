@@ -143,6 +143,7 @@ public:
 
 	//return dM by dT - should only be used when evaluation sequence has ended (TimeStepSolved() == true)
 	__device__ cuReal3 dMdt(int idx) { return ((*(pcuMesh->pM))[idx] - (*psM1)[idx]) / *pdT_last; }
+	__device__ cuReal3 dMdt2(int idx) { return ((*(pcuMesh->pM2))[idx] - (*psM1_2)[idx]) / *pdT_last; }
 };
 
 #else

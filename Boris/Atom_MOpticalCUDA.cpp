@@ -7,6 +7,7 @@
 
 #include "Atom_MOptical.h"
 #include "Atom_MeshCUDA.h"
+#include "DataDefs.h"
 
 Atom_MOpticalCUDA::Atom_MOpticalCUDA(Atom_MeshCUDA* paMeshCUDA_) :
 	ModulesCUDA()
@@ -21,7 +22,12 @@ BError Atom_MOpticalCUDA::Initialize(void)
 {
 	BError error(CLASS_STR(Atom_MOpticalCUDA));
 
-	initialized = true;
+	//Make sure display data has memory allocated (or freed) as required
+	error = Update_Module_Display_VECs(
+		(cuReal3)paMeshCUDA->h, (cuRect)paMeshCUDA->meshRect, 
+		(MOD_)paMeshCUDA->Get_Module_Heff_Display() == MOD_MOPTICAL || paMeshCUDA->IsOutputDataSet_withRect(DATA_E_MOPTICAL),
+		(MOD_)paMeshCUDA->Get_Module_Energy_Display() == MOD_MOPTICAL || paMeshCUDA->IsOutputDataSet_withRect(DATA_E_MOPTICAL));
+	if (!error)	initialized = true;
 
 	return error;
 }
@@ -33,7 +39,6 @@ BError Atom_MOpticalCUDA::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 	if (ucfg::check_cfgflags(cfgMessage, UPDATECONFIG_MESHCHANGE)) {
 
 		Uninitialize();
-		Initialize();
 	}
 
 	return error;

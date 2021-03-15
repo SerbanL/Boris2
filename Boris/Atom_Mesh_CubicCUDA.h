@@ -11,6 +11,7 @@
 #ifdef MESH_COMPILATION_ATOM_CUBIC
 
 class Atom_Mesh_Cubic;
+class ManagedAtom_DiffEqCubicCUDA;
 
 //Store Mesh quantities as cu_obj managed cuda VECs
 class Atom_Mesh_CubicCUDA :
@@ -21,6 +22,8 @@ private:
 
 	//pointer to cpu version of this mesh
 	Atom_Mesh_Cubic *paMeshCubic;
+
+	// MONTE-CARLO DATA
 
 	// Constrained MONTE-CARLO DATA
 
@@ -50,10 +53,10 @@ public:
 	void UpdateConfiguration_Values(UPDATECONFIG_ cfgMessage) {}
 
 	//Take a Monte Carlo Metropolis step in this atomistic mesh
-	cuBReal Iterate_MonteCarloCUDA_Classic(cuBReal mc_cone_angledeg);
+	cuBReal Iterate_MonteCarloCUDA_Classic(cuBReal mc_cone_angledeg, double target_acceptance_rate);
 
 	//Take a constrained Monte Carlo Metropolis step in this atomistic mesh
-	cuBReal Iterate_MonteCarloCUDA_Constrained(cuBReal mc_cone_angledeg);
+	cuBReal Iterate_MonteCarloCUDA_Constrained(cuBReal mc_cone_angledeg, double target_acceptance_rate);
 
 	//----------------------------------- OTHER IMPORTANT CONTROL METHODS
 
@@ -77,6 +80,18 @@ public:
 	//compute topological charge density spatial dependence and have it available in aux_vec_sca
 	//Use formula Qdensity = m.(dm/dx x dm/dy) / 4PI
 	void Compute_TopoChargeDensity(void);
+
+	//----------------------------------- ODE METHODS IN MAGNETIC MESH : Atom_Mesh_CubicCUDA.cu
+
+	//return average dm/dt in the given avRect (relative rect). Here m is the direction vector.
+	DBL3 Average_dmdt(cuBox avBox);
+
+	//return average m x dm/dt in the given avRect (relative rect). Here m is the direction vector.
+	DBL3 Average_mxdmdt(cuBox avBox);
+
+	//-----------------------------------OBJECT GETTERS
+
+	cu_obj<ManagedAtom_DiffEqCubicCUDA>& Get_ManagedAtom_DiffEqCUDA(void);
 };
 
 #else
@@ -102,7 +117,11 @@ public:
 	BError UpdateConfiguration(UPDATECONFIG_ cfgMessage) { return BError(); }
 	void UpdateConfiguration_Values(UPDATECONFIG_ cfgMessage) {}
 
-	void Iterate_MonteCarloCUDA(cuBReal acceptance_rate) {}
+	//Take a Monte Carlo Metropolis step in this atomistic mesh
+	cuBReal Iterate_MonteCarloCUDA_Classic(cuBReal mc_cone_angledeg, double target_acceptance_rate) { return 0.0; }
+
+	//Take a constrained Monte Carlo Metropolis step in this atomistic mesh
+	cuBReal Iterate_MonteCarloCUDA_Constrained(cuBReal mc_cone_angledeg, double target_acceptance_rate) { return 0.0; }
 
 	//----------------------------------- OTHER IMPORTANT CONTROL METHODS
 
@@ -117,6 +136,14 @@ public:
 	//compute topological charge density spatial dependence and have it available in aux_vec_sca
 	//Use formula Qdensity = m.(dm/dx x dm/dy) / 4PI
 	void Compute_TopoChargeDensity(void) {}
+
+	//----------------------------------- ODE METHODS IN MAGNETIC MESH : Atom_Mesh_CubicCUDA.cu
+
+	//return average dm/dt in the given avRect (relative rect). Here m is the direction vector.
+	DBL3 Average_dmdt(cuBox avBox) { return DBL3(); }
+
+	//return average m x dm/dt in the given avRect (relative rect). Here m is the direction vector.
+	DBL3 Average_mxdmdt(cuBox avBox) { return DBL3(); }
 };
 
 #endif

@@ -6,6 +6,9 @@
 #ifdef MODULE_COMPILATION_ZEEMAN
 
 #include "Zeeman.h"
+#include "MeshCUDA.h"
+#include "MeshDefs.h"
+#include "DataDefs.h"
 
 ZeemanCUDA::ZeemanCUDA(MeshCUDA* pMeshCUDA_, Zeeman* pZeeman_) :
 	ModulesCUDA()
@@ -26,7 +29,13 @@ BError ZeemanCUDA::Initialize(void)
 {
 	BError error(CLASS_STR(ZeemanCUDA));
 
-	initialized = true;
+	//Make sure display data has memory allocated (or freed) as required
+	error = Update_Module_Display_VECs(
+		(cuReal3)pMeshCUDA->h, (cuRect)pMeshCUDA->meshRect, 
+		(MOD_)pMeshCUDA->Get_Module_Heff_Display() == MOD_ZEEMAN || pMeshCUDA->IsOutputDataSet_withRect(DATA_E_ZEE),
+		(MOD_)pMeshCUDA->Get_Module_Energy_Display() == MOD_ZEEMAN || pMeshCUDA->IsOutputDataSet_withRect(DATA_E_ZEE),
+		pMeshCUDA->GetMeshType() == MESH_ANTIFERROMAGNETIC);
+	if (!error)	initialized = true;
 
 	return error;
 }

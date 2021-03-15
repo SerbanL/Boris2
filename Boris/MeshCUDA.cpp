@@ -133,32 +133,102 @@ PhysQ MeshCUDA::FetchOnScreenPhysicalQuantity(double detail_level, bool getBackg
 		break;
 		
 	case MESHDISPLAY_EFFECTIVEFIELD:
-		
-		if (prepare_display(n, meshRect, detail_level, Heff)) {
+		if ((MOD_)pMesh->Get_Module_Heff_Display() == MOD_ALL || (MOD_)pMesh->Get_Module_Heff_Display() == MOD_ERROR) {
 
-			//return PhysQ made from the cpu version of coarse mesh display.
-			return PhysQ(pdisplay_vec_vec, physicalQuantity, (VEC3REP_)pMesh->vec3rep);
+			if (prepare_display(n, meshRect, detail_level, Heff)) {
+
+				//return PhysQ made from the cpu version of coarse mesh display.
+				return PhysQ(pdisplay_vec_vec, physicalQuantity, (VEC3REP_)pMesh->vec3rep);
+			}
+		}
+		else {
+
+			MOD_ Module_Heff = (MOD_)pMesh->Get_ActualModule_Heff_Display();
+			if (pMesh->IsModuleSet(Module_Heff)) {
+
+				if (prepare_display(n, meshRect, detail_level, pMesh->pMod(Module_Heff)->Get_Module_HeffCUDA())) {
+
+					//return PhysQ made from the cpu version of coarse mesh display.
+					return PhysQ(pdisplay_vec_vec, physicalQuantity, (VEC3REP_)pMesh->vec3rep);
+				}
+			}
 		}
 		break;
 
 	case MESHDISPLAY_EFFECTIVEFIELD2:
+		if ((MOD_)pMesh->Get_Module_Heff_Display() == MOD_ALL || (MOD_)pMesh->Get_Module_Heff_Display() == MOD_ERROR) {
 
-		if (prepare_display(n, meshRect, detail_level, Heff2)) {
+			if (prepare_display(n, meshRect, detail_level, Heff2)) {
 
-			//return PhysQ made from the cpu version of coarse mesh display.
-			return PhysQ(pdisplay_vec_vec, physicalQuantity, (VEC3REP_)pMesh->vec3rep);
+				//return PhysQ made from the cpu version of coarse mesh display.
+				return PhysQ(pdisplay_vec_vec, physicalQuantity, (VEC3REP_)pMesh->vec3rep);
+			}
+		}
+		else {
+
+			MOD_ Module_Heff = (MOD_)pMesh->Get_ActualModule_Heff_Display();
+			if (pMesh->IsModuleSet(Module_Heff)) {
+
+				if (prepare_display(n, meshRect, detail_level, pMesh->pMod(Module_Heff)->Get_Module_Heff2CUDA())) {
+
+					//return PhysQ made from the cpu version of coarse mesh display.
+					return PhysQ(pdisplay_vec_vec, physicalQuantity, (VEC3REP_)pMesh->vec3rep);
+				}
+			}
 		}
 		break;
 
 	case MESHDISPLAY_EFFECTIVEFIELD12:
+		if ((MOD_)pMesh->Get_Module_Heff_Display() == MOD_ALL || (MOD_)pMesh->Get_Module_Heff_Display() == MOD_ERROR) {
 
-		if (prepare_display(n, meshRect, detail_level, Heff, Heff2)) {
+			if (prepare_display(n, meshRect, detail_level, Heff, Heff2)) {
 
-			//return PhysQ made from the cpu version of coarse mesh display.
-			return PhysQ(pdisplay_vec_vec, pdisplay2_vec_vec, physicalQuantity, (VEC3REP_)pMesh->vec3rep);
+				//return PhysQ made from the cpu version of coarse mesh display.
+				return PhysQ(pdisplay_vec_vec, pdisplay2_vec_vec, physicalQuantity, (VEC3REP_)pMesh->vec3rep);
+			}
+		}
+		else {
+
+			MOD_ Module_Heff = (MOD_)pMesh->Get_ActualModule_Heff_Display();
+			if (pMesh->IsModuleSet(Module_Heff)) {
+
+				if (prepare_display(n, meshRect, detail_level, pMesh->pMod(Module_Heff)->Get_Module_HeffCUDA(), pMesh->pMod(Module_Heff)->Get_Module_Heff2CUDA())) {
+
+					//return PhysQ made from the cpu version of coarse mesh display.
+					return PhysQ(pdisplay_vec_vec, pdisplay2_vec_vec, physicalQuantity, (VEC3REP_)pMesh->vec3rep);
+				}
+			}
 		}
 		break;
-		
+
+	case MESHDISPLAY_ENERGY:
+	{
+		MOD_ Module_Energy = (MOD_)pMesh->Get_ActualModule_Energy_Display();
+		if (pMesh->IsModuleSet(Module_Energy)) {
+
+			if (prepare_display(n, meshRect, detail_level, pMesh->pMod(Module_Energy)->Get_Module_EnergyCUDA())) {
+
+				//return PhysQ made from the cpu version of coarse mesh display.
+				return PhysQ(pdisplay_vec_sca, physicalQuantity);
+			}
+		}
+	}
+		break;
+
+	case MESHDISPLAY_ENERGY2:
+	{
+		MOD_ Module_Energy = (MOD_)pMesh->Get_ActualModule_Energy_Display();
+		if (pMesh->IsModuleSet(Module_Energy)) {
+
+			if (prepare_display(n, meshRect, detail_level, pMesh->pMod(Module_Energy)->Get_Module_Energy2CUDA())) {
+
+				//return PhysQ made from the cpu version of coarse mesh display.
+				return PhysQ(pdisplay_vec_sca, physicalQuantity);
+			}
+		}
+	}
+		break;
+
 	case MESHDISPLAY_CURRDENSITY:
 
 		if (pMesh->IsModuleSet(MOD_TRANSPORT)) {
@@ -396,24 +466,76 @@ BError MeshCUDA::SaveOnScreenPhysicalQuantity(std::string fileName, std::string 
 		break;
 
 	case MESHDISPLAY_EFFECTIVEFIELD:
+		if ((MOD_)pMesh->Get_Module_Heff_Display() == MOD_ALL || (MOD_)pMesh->Get_Module_Heff_Display() == MOD_ERROR) {
 
-		//pdisplay_vec_vec at maximum resolution
-		prepare_display(n, meshRect, h.mindim(), Heff);
-		error = ovf2.Write_OVF2_VEC(fileName, *pdisplay_vec_vec, ovf2_dataType);
+			prepare_display(n, meshRect, h.mindim(), Heff);
+			error = ovf2.Write_OVF2_VEC(fileName, *pdisplay_vec_vec, ovf2_dataType);
+		}
+		else {
+
+			MOD_ Module_Heff = (MOD_)pMesh->Get_ActualModule_Heff_Display();
+			if (pMesh->IsModuleSet(Module_Heff)) {
+
+				prepare_display(n, meshRect, h.mindim(), pMesh->pMod(Module_Heff)->Get_Module_HeffCUDA());
+				error = ovf2.Write_OVF2_VEC(fileName, *pdisplay_vec_vec, ovf2_dataType);
+			}
+		}
 		break;
 
 	case MESHDISPLAY_EFFECTIVEFIELD2:
+		if ((MOD_)pMesh->Get_Module_Heff_Display() == MOD_ALL || (MOD_)pMesh->Get_Module_Heff_Display() == MOD_ERROR) {
 
-		//pdisplay_vec_vec at maximum resolution
-		prepare_display(n, meshRect, h.mindim(), Heff2);
-		error = ovf2.Write_OVF2_VEC(fileName, *pdisplay_vec_vec, ovf2_dataType);
+			prepare_display(n, meshRect, h.mindim(), Heff2);
+			error = ovf2.Write_OVF2_VEC(fileName, *pdisplay_vec_vec, ovf2_dataType);
+		}
+		else {
+
+			MOD_ Module_Heff = (MOD_)pMesh->Get_ActualModule_Heff_Display();
+			if (pMesh->IsModuleSet(Module_Heff)) {
+
+				prepare_display(n, meshRect, h.mindim(), pMesh->pMod(Module_Heff)->Get_Module_Heff2CUDA());
+				error = ovf2.Write_OVF2_VEC(fileName, *pdisplay_vec_vec, ovf2_dataType);
+			}
+		}
 		break;
 
 	case MESHDISPLAY_EFFECTIVEFIELD12:
+		if ((MOD_)pMesh->Get_Module_Heff_Display() == MOD_ALL || (MOD_)pMesh->Get_Module_Heff_Display() == MOD_ERROR) {
 
-		//pdisplay_vec_vec at maximum resolution
-		prepare_display(n, meshRect, h.mindim(), Heff);
-		error = ovf2.Write_OVF2_VEC(fileName, *pdisplay_vec_vec, ovf2_dataType);
+			prepare_display(n, meshRect, h.mindim(), Heff);
+			error = ovf2.Write_OVF2_VEC(fileName, *pdisplay_vec_vec, ovf2_dataType);
+		}
+		else {
+
+			MOD_ Module_Heff = (MOD_)pMesh->Get_ActualModule_Heff_Display();
+			if (pMesh->IsModuleSet(Module_Heff)) {
+
+				prepare_display(n, meshRect, h.mindim(), pMesh->pMod(Module_Heff)->Get_Module_HeffCUDA());
+				error = ovf2.Write_OVF2_VEC(fileName, *pdisplay_vec_vec, ovf2_dataType);
+			}
+		}
+		break;
+
+	case MESHDISPLAY_ENERGY:
+	{
+		MOD_ Module_Energy = (MOD_)pMesh->Get_ActualModule_Energy_Display();
+		if (pMesh->IsModuleSet(Module_Energy)) {
+
+			prepare_display(n, meshRect, h.mindim(), pMesh->pMod(Module_Energy)->Get_Module_EnergyCUDA());
+			error = ovf2.Write_OVF2_SCA(fileName, *pdisplay_vec_sca, ovf2_dataType);
+		}
+	}
+		break;
+
+	case MESHDISPLAY_ENERGY2:
+	{
+		MOD_ Module_Energy = (MOD_)pMesh->Get_ActualModule_Energy_Display();
+		if (pMesh->IsModuleSet(Module_Energy)) {
+
+			prepare_display(n, meshRect, h.mindim(), pMesh->pMod(Module_Energy)->Get_Module_Energy2CUDA());
+			error = ovf2.Write_OVF2_SCA(fileName, *pdisplay_vec_sca, ovf2_dataType);
+		}
+	}
 		break;
 
 	case MESHDISPLAY_CURRDENSITY:
@@ -1069,6 +1191,16 @@ BError MeshCUDA::copy_shapes_to_cpu(void)
 cu_obj<ManagedDiffEq_CommonCUDA>& MeshCUDA::Get_ManagedDiffEq_CommonCUDA(void)
 { 
 	return pMesh->pSMesh->Get_ManagedDiffEq_CommonCUDA(); 
+}
+
+std::vector<DBL4>& MeshCUDA::get_tensorial_anisotropy(void)
+{
+	return pMesh->Kt;
+}
+
+std::vector<DBL4>& MeshCUDA::get_tensorial_anisotropy2(void)
+{
+	return pMesh->Kt2;
 }
 
 #endif

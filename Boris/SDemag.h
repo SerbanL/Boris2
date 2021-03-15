@@ -96,12 +96,12 @@ private:
 	//these pbc images are applicable for supermesh or multilayered convolution only - in the case of multilayered convolution all meshes have the same pbc conditions applied.
 	INT3 demag_pbc_images = INT3();
 
-	//The demag field computed separately (supermesh convolution): at certain steps in the ODE evaluation method we don't need to recalculate the demag field but can use a previous evaluation with an acceptable impact on the numerical error.
-	//This mode needs to be enabled by the user, and can be much faster than the default mode. The default mode is to re-evaluate the demag field at every step.
-	VEC<DBL3> Hdemag;
+	//Evaluation speedup mode data
 
-	//when using the evaluation speedup method we must ensure we have a previous Hdemag evaluation available; this flag applies to both supermesh and multilayered convolution
-	bool Hdemag_calculated = false;
+	//times at which evaluations were done, used for extrapolation
+	double time_demag1 = 0.0, time_demag2 = 0.0, time_demag3 = 0.0;
+
+	int num_Hdemag_saved = 0;
 
 private:
 
@@ -188,8 +188,7 @@ public:
 
 	VEC<DBL3>& GetDemagField(void) 
 	{ 
-		if (Hdemag_calculated) return Hdemag;
-		else return sm_Vals; 
+		return sm_Vals; 
 	}
 
 	//Get PBC images for supermesh demag

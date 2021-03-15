@@ -37,7 +37,7 @@ Atom_DipoleDipole::~Atom_DipoleDipole()
 	//when deleting the Demag module any pbc settings should no longer take effect in this mesh
 	//thus must clear pbc flags in M1
 
-	paMesh->M1.set_pbc(false, false, false);
+	paMesh->M1.set_pbc(0, 0, 0);
 
 	//same for the CUDA version if we are in cuda mode
 #if COMPILECUDA == 1
@@ -61,18 +61,41 @@ BError Atom_DipoleDipole::Initialize_Mesh_Transfer(void)
 
 		if (!M.resize(paMesh->h_dm, paMesh->meshRect)) return error(BERROR_OUTOFMEMORY_CRIT);
 		if (!M.Initialize_MeshTransfer({ &paMesh->M1 }, {}, MESHTRANSFERTYPE_SUM)) return error(BERROR_OUTOFMEMORY_CRIT);
-	}
-	else M.clear();
-
-	if (using_macrocell || paMesh->pSMesh->GetEvaluationSpeedup()) {
-
-		//Hd used if using macrocell, or if using eval speedup
 
 		if (!Hd.resize(paMesh->h_dm, paMesh->meshRect)) return error(BERROR_OUTOFMEMORY_CRIT);
 		if (!Hd.Initialize_MeshTransfer({}, { &paMesh->Heff1 }, MESHTRANSFERTYPE_ENLARGED)) return error(BERROR_OUTOFMEMORY_CRIT);
 	}
-	else Hd.clear();
+	else {
 
+		M.clear();
+		Hd.clear();
+	}
+
+	if (paMesh->pSMesh->GetEvaluationSpeedup()) {
+
+		//make sure to allocate memory for Hdemag if we need it
+		if (paMesh->pSMesh->GetEvaluationSpeedup() >= 3) { if (!Hdemag3.resize(paMesh->h_dm, paMesh->meshRect)) return error(BERROR_OUTOFMEMORY_CRIT); }
+		else Hdemag3.clear();
+
+		if (paMesh->pSMesh->GetEvaluationSpeedup() >= 2) { if (!Hdemag2.resize(paMesh->h_dm, paMesh->meshRect)) return error(BERROR_OUTOFMEMORY_CRIT); }
+		else Hdemag2.clear();
+
+		if (paMesh->pSMesh->GetEvaluationSpeedup() >= 1) { if (!Hdemag.resize(paMesh->h_dm, paMesh->meshRect)) return error(BERROR_OUTOFMEMORY_CRIT); }
+		else Hdemag.clear();
+
+		if (Hdemag.linear_size()) if (!Hdemag.Initialize_MeshTransfer({}, { &paMesh->Heff1 }, MESHTRANSFERTYPE_ENLARGED)) return error(BERROR_OUTOFMEMORY_CRIT);
+		if (Hdemag2.linear_size()) if (!Hdemag2.Initialize_MeshTransfer({}, { &paMesh->Heff1 }, MESHTRANSFERTYPE_ENLARGED)) return error(BERROR_OUTOFMEMORY_CRIT);
+		if (Hdemag3.linear_size()) if (!Hdemag3.Initialize_MeshTransfer({}, { &paMesh->Heff1 }, MESHTRANSFERTYPE_ENLARGED)) return error(BERROR_OUTOFMEMORY_CRIT);
+	}
+	else {
+
+		Hdemag.clear();
+		Hdemag2.clear();
+		Hdemag3.clear();
+	}
+
+	num_Hdemag_saved = 0;
+	   
 	return error;
 }
 
@@ -90,6 +113,8 @@ BError Atom_DipoleDipole::Initialize(void)
 		//Remember the kernel is pre-multiplied by muB, so the correct field results since the stored moments are in units of muB.
 		error = Calculate_DipoleDipole_Kernels(using_macrocell);
 
+		if (using_macrocell) selfDemagCoeff = DipoleDipoleTFunc().SelfDemag_PBC(paMesh->h_dm, paMesh->n_dm, demag_pbc_images);
+
 		if (!error) initialized = true;
 	}
 
@@ -104,7 +129,12 @@ BError Atom_DipoleDipole::Initialize(void)
 		non_empty_volume = paMesh->M1.get_nonempty_cells() * paMesh->M1.h.dim();
 	}
 
-	Hd_calculated = false;
+	//Make sure display data has memory allocated (or freed) as required
+	error = Update_Module_Display_VECs(
+		paMesh->h, paMesh->meshRect, 
+		(MOD_)paMesh->Get_Module_Heff_Display() == MOD_ATOM_DIPOLEDIPOLE || paMesh->IsOutputDataSet_withRect(DATA_E_DEMAG),
+		(MOD_)paMesh->Get_Module_Energy_Display() == MOD_ATOM_DIPOLEDIPOLE || paMesh->IsOutputDataSet_withRect(DATA_E_DEMAG));
+	if (error)	initialized = false;
 
 	return error;
 }
@@ -142,9 +172,13 @@ BError Atom_DipoleDipole::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 
 		Hd.clear();
 		M.clear();
+
+		Hdemag.clear();
+		Hdemag2.clear();
+		Hdemag3.clear();
 	}
 
-	Hd_calculated = false;
+	num_Hdemag_saved = 0;
 
 	//------------------------ CUDA UpdateConfiguration if set
 
@@ -175,7 +209,7 @@ BError Atom_DipoleDipole::Set_PBC(INT3 demag_pbc_images_)
 
 BError Atom_DipoleDipole::MakeCUDAModule(void)
 {
-	BError error(CLASS_STR(Atom_Demag));
+	BError error(CLASS_STR(Atom_DipoleDipole));
 
 #if COMPILECUDA == 1
 
@@ -194,64 +228,22 @@ BError Atom_DipoleDipole::MakeCUDAModule(void)
 
 double Atom_DipoleDipole::UpdateField(void)
 {
-	///////////////////////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////// EVAL SPEEDUP /////////////////////////////////////////
-	///////////////////////////////////////////////////////////////////////////////////////////////
-
-	if (paMesh->pSMesh->GetEvaluationSpeedup()) {
-
-		//use evaluation speedup method (calculate Hdemag only when required, otherwise just update effective field with previously calculated Hdemag)
-
-		int update_type = paMesh->pSMesh->Check_Step_Update();
-
-		if (update_type != EVALSPEEDUPSTEP_SKIP || !Hd_calculated) {
-
-			//calculate field required
-
-			if (using_macrocell) {
-
-				//transfer magnetic moments to macrocell mesh
-				M.transfer_in();
-
-				//convolute and get "energy" value
-				Convolute(M, Hd, true);
-				//energy not calculated in macrocell mode : would need to correct for use of self demag term in macrocell
-				energy = 0.0;
-			}
-			else {
-
-				//not using macrocell so get moments directly from mesh
-
-				//convolute and get "energy" value
-				energy = Convolute(paMesh->M1, Hd, true);
-
-				//finish off energy value
-				if (non_empty_volume) energy *= -MUB_MU0 / (2 * non_empty_volume);
-				else energy = 0;
-			}
-
-			Hd_calculated = true;
-		}
-
-		//transfer dipole-dipole field to atomistic mesh effective field : all atomistic cells within the larger micromagnetic cell receive the same field
-		Hd.transfer_out();
-	}
+	//transfer magnetic moments to macrocell mesh
+	if (using_macrocell) M.transfer_in();
 
 	///////////////////////////////////////////////////////////////////////////////////////////////
 	///////////////////////////////////////// NO SPEEDUP //////////////////////////////////////////
 	///////////////////////////////////////////////////////////////////////////////////////////////
 
-	else {
+	if (!paMesh->pSMesh->GetEvaluationSpeedup() || (num_Hdemag_saved < paMesh->pSMesh->GetEvaluationSpeedup() && !paMesh->pSMesh->Check_Step_Update())) {
 
 		//don't use evaluation speedup
 
 		if (using_macrocell) {
 
-			//transfer magnetic moments to macrocell mesh
-			M.transfer_in();
-
 			//convolute and get "energy" value
-			Convolute(M, Hd, true);
+			if (Module_Heff.linear_size()) Convolute(M, Hd, true, &Module_Heff, &Module_energy);
+			else Convolute(M, Hd, true);
 			//energy not calculated in macrocell mode : would need to correct for use of self demag term in macrocell
 			energy = 0.0;
 
@@ -263,11 +255,226 @@ double Atom_DipoleDipole::UpdateField(void)
 			//not using macrocell so get moments directly from mesh
 
 			//convolute and get "energy" value
-			energy = Convolute(paMesh->M1, paMesh->Heff1, false);
+			if (Module_Heff.linear_size()) energy = Convolute(paMesh->M1, paMesh->Heff1, false, &Module_Heff, &Module_energy);
+			else energy = Convolute(paMesh->M1, paMesh->Heff1, false);
 
 			//finish off energy value
 			if (non_empty_volume) energy *= -MUB_MU0 / (2 * non_empty_volume);
 			else energy = 0;
+		}
+	}
+
+	///////////////////////////////////////////////////////////////////////////////////////////////
+	//////////////////////////////////////// EVAL SPEEDUP /////////////////////////////////////////
+	///////////////////////////////////////////////////////////////////////////////////////////////
+
+	else {
+
+		//use evaluation speedup method (Hdemag will have memory allocated - this was done in the Initialize method)
+
+		//update if required by ODE solver or if we don't have enough previous evaluations saved to extrapolate
+		if (paMesh->pSMesh->Check_Step_Update() || num_Hdemag_saved < paMesh->pSMesh->GetEvaluationSpeedup()) {
+
+			VEC<DBL3>* pHdemag;
+
+			if (num_Hdemag_saved < paMesh->pSMesh->GetEvaluationSpeedup()) {
+
+				//don't have enough evaluations, so save next one
+				switch (num_Hdemag_saved)
+				{
+				case 0:
+					pHdemag = &Hdemag;
+					time_demag1 = paMesh->pSMesh->Get_EvalStep_Time();
+					break;
+				case 1:
+					pHdemag = &Hdemag2;
+					time_demag2 = paMesh->pSMesh->Get_EvalStep_Time();
+					break;
+				case 2:
+					pHdemag = &Hdemag3;
+					time_demag3 = paMesh->pSMesh->Get_EvalStep_Time();
+					break;
+				}
+
+				num_Hdemag_saved++;
+			}
+			else {
+
+				//have enough evaluations saved, so just cycle between them now
+
+				//QUADRATIC
+				if (paMesh->pSMesh->GetEvaluationSpeedup() == 3) {
+
+					//1, 2, 3 -> next is 1
+					if (time_demag3 > time_demag2 && time_demag2 > time_demag1) {
+
+						pHdemag = &Hdemag;
+						time_demag1 = paMesh->pSMesh->Get_EvalStep_Time();
+					}
+					//2, 3, 1 -> next is 2
+					else if (time_demag3 > time_demag2 && time_demag1 > time_demag2) {
+
+						pHdemag = &Hdemag2;
+						time_demag2 = paMesh->pSMesh->Get_EvalStep_Time();
+					}
+					//3, 1, 2 -> next is 3, leading to 1, 2, 3 again
+					else {
+
+						pHdemag = &Hdemag3;
+						time_demag3 = paMesh->pSMesh->Get_EvalStep_Time();
+					}
+				}
+				//LINEAR
+				else if (paMesh->pSMesh->GetEvaluationSpeedup() == 2) {
+
+					//1, 2 -> next is 1
+					if (time_demag2 > time_demag1) {
+
+						pHdemag = &Hdemag;
+						time_demag1 = paMesh->pSMesh->Get_EvalStep_Time();
+					}
+					//2, 1 -> next is 2, leading to 1, 2 again
+					else {
+
+						pHdemag = &Hdemag2;
+						time_demag2 = paMesh->pSMesh->Get_EvalStep_Time();
+					}
+				}
+				//STEP
+				else {
+
+					pHdemag = &Hdemag;
+				}
+			}
+
+			//convolute and get "energy" value
+			if (using_macrocell) {
+
+				//convolute and get "energy" value
+				if (Module_Heff.linear_size()) Convolute(M, *pHdemag, true, &Module_Heff, &Module_energy);
+				else Convolute(M, *pHdemag, true);
+				//energy not calculated in macrocell mode : would need to correct for use of self demag term in macrocell
+				energy = 0.0;
+			}
+			else {
+
+				//not using macrocell so get moments directly from mesh
+
+				//convolute and get "energy" value
+				if (Module_Heff.linear_size()) energy = Convolute(paMesh->M1, *pHdemag, true, &Module_Heff, &Module_energy);
+				else energy = Convolute(paMesh->M1, *pHdemag, true);
+
+				//finish off energy value
+				if (non_empty_volume) energy *= -MUB_MU0 / (2 * non_empty_volume);
+				else energy = 0;
+			}
+
+			//transfer demagnetising field to atomistic mesh effective field : all atomistic cells within the larger micromagnetic cell receive the same field
+			pHdemag->transfer_out();
+
+			//subtract self contribution if using macrocell
+			if (using_macrocell) {
+				
+				#pragma omp parallel for
+				for (int idx = 0; idx < pHdemag->linear_size(); idx++) {
+
+					//subtract self contribution: we'll add in again for the new moment, so it least the self contribution is exact
+					(*pHdemag)[idx] -= (selfDemagCoeff & M[idx]);
+				}
+			}
+		}
+		else {
+
+			//not required to update, and we have enough previous evaluations: use previous Hdemag saves to extrapolate for current evaluation
+
+			double a1 = 1.0, a2 = 0.0, a3 = 0.0;
+			double time = paMesh->pSMesh->Get_EvalStep_Time();
+
+			//QUADRATIC
+			if (paMesh->pSMesh->GetEvaluationSpeedup() == 3) {
+
+				if (time_demag2 != time_demag1 && time_demag2 != time_demag3 && time_demag1 != time_demag3) {
+
+					a1 = (time - time_demag2) * (time - time_demag3) / ((time_demag1 - time_demag2) * (time_demag1 - time_demag3));
+					a2 = (time - time_demag1) * (time - time_demag3) / ((time_demag2 - time_demag1) * (time_demag2 - time_demag3));
+					a3 = (time - time_demag1) * (time - time_demag2) / ((time_demag3 - time_demag1) * (time_demag3 - time_demag2));
+				}
+
+				//construct effective field approximation
+				if (using_macrocell) {
+
+					#pragma omp parallel for
+					for (int idx = 0; idx < Hdemag.linear_size(); idx++) {
+
+					 	Hd[idx] = Hdemag[idx] * a1 + Hdemag2[idx] * a2 + Hdemag3[idx] * a3 + (selfDemagCoeff & M[idx]);
+					}
+
+					//add to Heff in the atomistic mesh
+					Hd.transfer_out();
+				}
+				else {
+
+					#pragma omp parallel for
+					for (int idx = 0; idx < Hdemag.linear_size(); idx++) {
+
+						paMesh->Heff1[idx] += Hdemag[idx] * a1 + Hdemag2[idx] * a2 + Hdemag3[idx] * a3;
+					}
+				}
+			}
+			//LINEAR
+			else if (paMesh->pSMesh->GetEvaluationSpeedup() == 2) {
+
+				if (time_demag2 != time_demag1) {
+
+					a1 = (time - time_demag2) / (time_demag1 - time_demag2);
+					a2 = (time - time_demag1) / (time_demag2 - time_demag1);
+				}
+
+				//construct effective field approximation
+				if (using_macrocell) {
+
+					#pragma omp parallel for
+					for (int idx = 0; idx < Hdemag.linear_size(); idx++) {
+
+						Hd[idx] = Hdemag[idx] * a1 + Hdemag2[idx] * a2 + (selfDemagCoeff & M[idx]);
+					}
+
+					//add to Heff in the atomistic mesh
+					Hd.transfer_out();
+				}
+				else {
+
+					#pragma omp parallel for
+					for (int idx = 0; idx < Hdemag.linear_size(); idx++) {
+
+						paMesh->Heff1[idx] += Hdemag[idx] * a1 + Hdemag2[idx] * a2;
+					}
+				}
+			}
+			//STEP
+			else {
+
+				//construct effective field approximation
+				if (using_macrocell) {
+
+					#pragma omp parallel for
+					for (int idx = 0; idx < Hdemag.linear_size(); idx++) {
+
+						Hd[idx] = Hdemag[idx] + (selfDemagCoeff & M[idx]);
+					}
+
+					//add to Heff in the atomistic mesh
+					Hd.transfer_out();
+				}
+				else {
+
+					#pragma omp parallel for
+					for (int idx = 0; idx < Hdemag.linear_size(); idx++) {
+
+						paMesh->Heff1[idx] += Hdemag[idx];
+					}
+				}
+			}
 		}
 	}
 

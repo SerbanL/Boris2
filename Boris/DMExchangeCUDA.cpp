@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "DMExchangeCUDA.h"
+#include "DataDefs.h"
 
 #if COMPILECUDA == 1
 
@@ -7,6 +8,7 @@
 
 #include "MeshCUDA.h"
 #include "DMExchange.h"
+#include "MeshDefs.h"
 
 DMExchangeCUDA::DMExchangeCUDA(MeshCUDA* pMeshCUDA_, DMExchange* pDMExchange)
 	: 
@@ -25,6 +27,12 @@ BError DMExchangeCUDA::Initialize(void)
 
 	error = ExchangeBaseCUDA::Initialize();
 
+	//Make sure display data has memory allocated (or freed) as required
+	error = Update_Module_Display_VECs(
+		(cuReal3)pMeshCUDA->h, (cuRect)pMeshCUDA->meshRect, 
+		(MOD_)pMeshCUDA->Get_ActualModule_Heff_Display() == MOD_DMEXCHANGE || pMeshCUDA->IsOutputDataSet_withRect(DATA_E_EXCH),
+		(MOD_)pMeshCUDA->Get_ActualModule_Energy_Display() == MOD_DMEXCHANGE || pMeshCUDA->IsOutputDataSet_withRect(DATA_E_EXCH),
+		pMeshCUDA->GetMeshType() == MESH_ANTIFERROMAGNETIC);
 	if (!error) initialized = true;
 
 	return error;

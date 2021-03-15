@@ -41,9 +41,6 @@ private:
 	//These are only used if the macrocell is enabled (i.e. h_dm is greater than h), however Hd is also used if eval speedup is enabled so we can store field computations
 	VEC<DBL3> M, Hd;
 
-	//when using the evaluation speedup method we must ensure we have a previous Hd evaluation available
-	bool Hd_calculated = false;
-
 	//use macrocell method, or compute dipole-dipole interaction at the atomic unit cell level (i.e. when h_dm == h)?
 	bool using_macrocell = true;
 

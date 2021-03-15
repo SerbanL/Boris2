@@ -177,6 +177,7 @@ public:
 	BError subtract(int dp_source, int dp_dest, double value);
 	BError multiply(int dp_source, int dp_dest, double value);
 	BError divide(int dp_source, int dp_dest, double value);
+	BError exponentiate(int dp_source, int dp_dest, double exponent);
 	BError dotproduct(int dp_x, int dp_y, int dp_z, DBL3 u, int dp_out);
 
 	//multiple sources versions
@@ -190,7 +191,11 @@ public:
 
 	BError get_min_max(int dp_source, DBL2* pmin_max_values, INT2* pmin_max_indexes = nullptr);
 
-	BError get_mean(int dp_source, DBL2* pmean_err);
+	BError get_mean(int dp_source, DBL2* pmean_err, double exclusion_ratio = 0.0);
+
+	//find standard deviation on the mean in chunks: i.e. obtain it from every chunk number of values in dp_source, then average them to obtain final std
+	//in the limit chunk = dp_source number of points (set chunk = 0) for this special case, the std is the usual std on the mean
+	BError get_chunkedstd(int dp_source, int chunk, double* std);
 
 	//get amplitude value (max - min)/2 every pointsPeriod
 	BError get_amplitude(int dp_source, int pointsPeriod, double* pamplitude);
@@ -238,6 +243,9 @@ public:
 
 	//fit Mz(x) = Ms * cos(2*arctan(sinh(R/w)/sinh((x-x0)/w))). Return fitting parameters with their standard deviations.
 	BError fit_skyrmion(int dp_x, int dp_y, DBL2 *pR, DBL2 *px0, DBL2 *pMs, DBL2 *pw);
+
+	//fit M(x) = A * tanh((x - x0) / (D / 2)). Return fitting parameters with their standard deviations.
+	BError fit_domainwall(int dp_x, int dp_y, DBL2 *pA, DBL2 *px0, DBL2 *pD);
 
 	//fit STT function
 	BError fit_stt(VEC<DBL3>& T, VEC_VC<DBL3>& M, VEC_VC<DBL3>& J, Rect rectangle, DBL2* pP, DBL2 *pbeta, double *pRsq);

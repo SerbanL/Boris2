@@ -25,6 +25,7 @@ __global__ void RunEuler_LLG_withReductions_Kernel(ManagedAtom_DiffEqCubicCUDA& 
 
 	cuReal3 mxh = cuReal3();
 	cuReal3 dmdt = cuReal3();
+	bool include_in_average = false;
 
 	//multiplicative conversion factor from atomic moment (units of muB) to A/m
 	cuBReal conversion = (cuBReal)MUB / M1.h.dim();
@@ -56,12 +57,13 @@ __global__ void RunEuler_LLG_withReductions_Kernel(ManagedAtom_DiffEqCubicCUDA& 
 				
 				//obtain maximum normalized dmdt term
 				dmdt = ((*cuaMesh.pM1)[idx] - (*cuaDiffEq.psM1)[idx]) / (dT * (cuBReal)GAMMA * conversion * Mnorm * Mnorm);
+				include_in_average = true;
 			}
 		}
 	}
 
-	reduction_avg(0, 1, &mxh, *cuaDiffEq.pmxh_av, *cuaDiffEq.pavpoints);
-	reduction_avg(0, 1, &dmdt, *cuaDiffEq.pdmdt_av, *cuaDiffEq.pavpoints2);
+	reduction_avg(0, 1, &mxh, *cuaDiffEq.pmxh_av, *cuaDiffEq.pavpoints, include_in_average);
+	reduction_avg(0, 1, &dmdt, *cuaDiffEq.pdmdt_av, *cuaDiffEq.pavpoints2, include_in_average);
 }
 
 __global__ void RunEuler_LLG_Kernel(ManagedAtom_DiffEqCubicCUDA& cuaDiffEq, ManagedAtom_MeshCUDA& cuaMesh)
@@ -116,6 +118,7 @@ __global__ void RunTEuler_Step0_LLG_withReductions_Kernel(ManagedAtom_DiffEqCubi
 	cuBReal alpha = *cuaMesh.palpha;
 
 	cuReal3 mxh = cuReal3();
+	bool include_in_average = false;
 
 	//multiplicative conversion factor from atomic moment (units of muB) to A/m
 	cuBReal conversion = (cuBReal)MUB / M1.h.dim();
@@ -136,6 +139,7 @@ __global__ void RunTEuler_Step0_LLG_withReductions_Kernel(ManagedAtom_DiffEqCubi
 				//obtain average normalized torque term
 				cuBReal Mnorm = M1[idx].norm();
 				mxh = (M1[idx] ^ Heff1[idx]) / (conversion * Mnorm * Mnorm);
+				include_in_average = true;
 
 				//Now estimate moment for the next time step
 				M1[idx] += rhs * dT;
@@ -143,7 +147,7 @@ __global__ void RunTEuler_Step0_LLG_withReductions_Kernel(ManagedAtom_DiffEqCubi
 		}
 	}
 
-	reduction_avg(0, 1, &mxh, *cuaDiffEq.pmxh_av, *cuaDiffEq.pavpoints);
+	reduction_avg(0, 1, &mxh, *cuaDiffEq.pmxh_av, *cuaDiffEq.pavpoints, include_in_average);
 }
 
 __global__ void RunTEuler_Step0_LLG_Kernel(ManagedAtom_DiffEqCubicCUDA& cuaDiffEq, ManagedAtom_MeshCUDA& cuaMesh)
@@ -191,6 +195,7 @@ __global__ void RunTEuler_Step1_LLG_withReductions_Kernel(ManagedAtom_DiffEqCubi
 	cuBReal alpha = *cuaMesh.palpha;
 
 	cuReal3 dmdt = cuReal3();
+	bool include_in_average = false;
 
 	//multiplicative conversion factor from atomic moment (units of muB) to A/m
 	cuBReal conversion = (cuBReal)MUB / M1.h.dim();
@@ -216,11 +221,12 @@ __global__ void RunTEuler_Step1_LLG_withReductions_Kernel(ManagedAtom_DiffEqCubi
 				//obtain maximum normalized dmdt term
 				cuBReal Mnorm = (*cuaMesh.pM1)[idx].norm();
 				dmdt = ((*cuaMesh.pM1)[idx] - (*cuaDiffEq.psM1)[idx]) / (dT * (cuBReal)GAMMA * conversion * Mnorm * Mnorm);
+				include_in_average = true;
 			}
 		}
 	}
 
-	reduction_avg(0, 1, &dmdt, *cuaDiffEq.pdmdt_av, *cuaDiffEq.pavpoints2);
+	reduction_avg(0, 1, &dmdt, *cuaDiffEq.pdmdt_av, *cuaDiffEq.pavpoints2, include_in_average);
 }
 
 __global__ void RunTEuler_Step1_LLG_Kernel(ManagedAtom_DiffEqCubicCUDA& cuaDiffEq, ManagedAtom_MeshCUDA& cuaMesh)
@@ -273,6 +279,7 @@ __global__ void RunAHeun_Step1_LLG_withReductions_Kernel(ManagedAtom_DiffEqCubic
 	cuBReal alpha = *cuaMesh.palpha;
 
 	cuReal3 dmdt = cuReal3();
+	bool include_in_average = false;
 
 	//multiplicative conversion factor from atomic moment (units of muB) to A/m
 	cuBReal conversion = (cuBReal)MUB / M1.h.dim();
@@ -304,6 +311,7 @@ __global__ void RunAHeun_Step1_LLG_withReductions_Kernel(ManagedAtom_DiffEqCubic
 				//obtain maximum normalized dmdt term
 				cuBReal Mnorm = (*cuaMesh.pM1)[idx].norm();
 				dmdt = ((*cuaMesh.pM1)[idx] - (*cuaDiffEq.psM1)[idx]) / (dT * (cuBReal)GAMMA * conversion * Mnorm * Mnorm);
+				include_in_average = true;
 
 				//local truncation error (between predicted and corrected)
 				lte = cu_GetMagnitude((*cuaMesh.pM1)[idx] - saveM) / (*cuaMesh.pM1)[idx].norm();
@@ -311,7 +319,7 @@ __global__ void RunAHeun_Step1_LLG_withReductions_Kernel(ManagedAtom_DiffEqCubic
 		}
 	}
 
-	reduction_avg(0, 1, &dmdt, *cuaDiffEq.pdmdt_av, *cuaDiffEq.pavpoints2);
+	reduction_avg(0, 1, &dmdt, *cuaDiffEq.pdmdt_av, *cuaDiffEq.pavpoints2, include_in_average);
 	reduction_max(0, 1, &lte, *cuaDiffEq.plte);
 }
 

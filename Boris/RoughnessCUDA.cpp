@@ -7,6 +7,8 @@
 
 #include "MeshCUDA.h"
 #include "Roughness.h"
+#include "MeshDefs.h"
+#include "DataDefs.h"
 
 RoughnessCUDA::RoughnessCUDA(MeshCUDA* pMeshCUDA_, Roughness* pRough_) :
 	ModulesCUDA()
@@ -38,7 +40,13 @@ BError RoughnessCUDA::Initialize(void)
 		Fomul_rough()->set_from_cpuvec(pRough->Fomul_rough);
 	}
 
-	initialized = true;
+	//Make sure display data has memory allocated (or freed) as required
+	error = Update_Module_Display_VECs(
+		(cuReal3)pMeshCUDA->h, (cuRect)pMeshCUDA->meshRect, 
+		(MOD_)pMeshCUDA->Get_Module_Heff_Display() == MOD_ROUGHNESS || pMeshCUDA->IsOutputDataSet_withRect(DATA_E_ROUGH),
+		(MOD_)pMeshCUDA->Get_Module_Energy_Display() == MOD_ROUGHNESS || pMeshCUDA->IsOutputDataSet_withRect(DATA_E_ROUGH),
+		pMeshCUDA->GetMeshType() == MESH_ANTIFERROMAGNETIC);
+	if (!error)	initialized = true;
 
 	return error;
 }

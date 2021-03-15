@@ -5,6 +5,8 @@
 #ifdef MESH_COMPILATION_ATOM_CUBIC
 
 #include "Atom_Mesh_Cubic.h"
+#include "ManagedAtom_DiffEqCubicCUDA.h"
+#include "Atom_DiffEqCubicCUDA.h"
 
 Atom_Mesh_CubicCUDA::Atom_Mesh_CubicCUDA(Atom_Mesh_Cubic* paMesh) :
 	Atom_MeshCUDA(paMesh)
@@ -103,6 +105,13 @@ bool Atom_Mesh_CubicCUDA::GetMeshExchangeCoupling(void)
 void Atom_Mesh_CubicCUDA::Set_MonteCarlo_Constrained(DBL3 cmc_n_)
 {
 	cmc_n.from_cpu(cmc_n_);
+}
+
+//-----------------------------------OBJECT GETTERS
+
+cu_obj<ManagedAtom_DiffEqCubicCUDA>& Atom_Mesh_CubicCUDA::Get_ManagedAtom_DiffEqCUDA(void)
+{
+	return dynamic_cast<Atom_DifferentialEquationCubicCUDA*>(paMeshCubic->Get_DifferentialEquation().Get_DifferentialEquationCUDA_ptr())->Get_ManagedAtom_DiffEqCUDA();
 }
 
 #endif

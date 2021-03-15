@@ -3,8 +3,6 @@
 #include "BorisLib.h"
 #include "Modules.h"
 
-
-
 class Mesh;
 
 #include "DemagBase.h"
@@ -25,13 +23,6 @@ private:
 
 	//pointer to mesh object holding this effective field module
 	Mesh *pMesh;
-
-	//The demag field computed separately : at certain steps in the ODE evaluation method we don't need to recalculate the demag field but can use a previous evaluation with an acceptable impact on the numerical error.
-	//This mode needs to be enabled by the user, and can be much faster than the default mode. The default mode is to re-evaluate the demag field at every step.
-	VEC<DBL3> Hdemag;
-
-	//when using the evaluation speedup method we must ensure we have a previous Hdemag evaluation available
-	bool Hdemag_calculated = false;
 
 public:
 

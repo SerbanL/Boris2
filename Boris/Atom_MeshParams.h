@@ -52,11 +52,19 @@ public:
 	MatP<double, double> D = 5e-23;
 
 	//Magneto-crystalline anisotropy constants (J) and easy axes directions. For uniaxial anisotropy only ea1 is needed.
-	MatP<double, double> K = 5.65e-25;
+	MatP<double, double> K1 = 5.65e-25;
+	MatP<double, double> K2 = 0.0;
+	MatP<double, double> K3 = 0.0;
 
 	//Magneto-crystalline anisotropy easy axes directions
 	MatP<DBL3, DBL3> mcanis_ea1 = DBL3(1, 0, 0);
 	MatP<DBL3, DBL3> mcanis_ea2 = DBL3(0, 1, 0);
+	MatP<DBL3, DBL3> mcanis_ea3 = DBL3(0, 0, 1);
+
+	//tensorial anisotropy. each term is a contribution to the anisotropy energy density as d*a^n1 b^n2 c^n3. Here a = m.mcanis_ea1, b = m.mcanis_ea2, c = m.mcanis_ea3.
+	//For 2nd order we aditionally multiply by K1, 4th order K2, 6th order K3. Any other orders d coefficient contains anisotropy energy density.
+	//each DBL4 stores (d, n1, n2, n3), where d != 0, n1, n2, n3 >= 0, n1+n2+n3>0. Odd order terms allowed.
+	std::vector<DBL4> Kt;
 
 	//-----------BCC (2 per unit cell)
 
@@ -118,6 +126,10 @@ public:
 	//copy all parameters from another Mesh
 	void copy_parameters(Atom_MeshParams& copy_this);
 
+	//-------------------------Getters
+
+	std::string get_tensorial_anisotropy_string(void);
+
 	//-------------------------Setters/Updaters : text equations
 
 	//set the mesh parameter temperature equation with given user constants
@@ -150,8 +162,16 @@ RType Atom_MeshParams::run_on_param(PARAM_ paramID, Lambda& run_this, PType& ...
 		return run_this(D, run_this_args...);
 		break;
 
-	case PARAM_ATOM_SC_K:
-		return run_this(K, run_this_args...);
+	case PARAM_ATOM_SC_K1:
+		return run_this(K1, run_this_args...);
+		break;
+
+	case PARAM_ATOM_SC_K2:
+		return run_this(K2, run_this_args...);
+		break;
+
+	case PARAM_ATOM_SC_K3:
+		return run_this(K3, run_this_args...);
 		break;
 
 	case PARAM_ATOM_EA1:
@@ -160,6 +180,10 @@ RType Atom_MeshParams::run_on_param(PARAM_ paramID, Lambda& run_this, PType& ...
 
 	case PARAM_ATOM_EA2:
 		return run_this(mcanis_ea2, run_this_args...);
+		break;
+
+	case PARAM_ATOM_EA3:
+		return run_this(mcanis_ea3, run_this_args...);
 		break;
 
 	case PARAM_DEMAGXY:

@@ -35,7 +35,9 @@ BError SOTField::Initialize(void)
 {
 	BError error(CLASS_STR(SOTField));
 
-	initialized = true;
+	//Make sure display data has memory allocated (or freed) as required
+	error = Update_Module_Display_VECs(pMesh->h, pMesh->meshRect, (MOD_)pMesh->Get_Module_Heff_Display() == MOD_SOTFIELD, (MOD_)pMesh->Get_Module_Energy_Display() == MOD_SOTFIELD, pMesh->GetMeshType() == MESH_ANTIFERROMAGNETIC);
+	if (!error)	initialized = true;
 
 	return error;
 }
@@ -45,8 +47,6 @@ BError SOTField::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 	BError error(CLASS_STR(SOTField));
 
 	Uninitialize();
-
-	Initialize();
 
 	//------------------------ CUDA UpdateConfiguration if set
 
@@ -105,7 +105,10 @@ double SOTField::UpdateField(void)
 				int idx_E = pMesh->E.position_to_cellidx(pMesh->M.cellidx_to_position(idx));
 				DBL3 p_vec = (DBL3(0, 0, 1) ^ pMesh->E[idx_E]) * pMesh->elC[idx_E];
 
-				pMesh->Heff[idx] += a_const * ((pMesh->M[idx] ^ p_vec) + flSOT * Ms * p_vec);
+				DBL3 SOTField = a_const * ((pMesh->M[idx] ^ p_vec) + flSOT * Ms * p_vec);
+				pMesh->Heff[idx] += SOTField;
+
+				if (Module_Heff.linear_size()) Module_Heff[idx] = SOTField;
 			}
 		}
 	}
@@ -138,6 +141,9 @@ double SOTField::UpdateField(void)
 
 				pMesh->Heff[idx] += SOTField_A;
 				pMesh->Heff2[idx] += SOTField_B;
+
+				if (Module_Heff.linear_size()) Module_Heff[idx] = SOTField_A;
+				if (Module_Heff2.linear_size()) Module_Heff2[idx] = SOTField_B;
 			}
 		}
 	}

@@ -119,6 +119,9 @@ public:
 	bool contains_param(PARAM_ paramID) { return meshParams.is_ID_set(paramID); }
 	bool contains_param(std::string paramHandle) { return meshParams.has_key(paramHandle); }
 
+	//check if parameter changes magnetization length
+	bool param_changes_mlength(PARAM_ paramID) { return (paramID == PARAM_MS || paramID == PARAM_MS_AFM || paramID == PARAM_ATOM_SC_MUS); }
+
 	//get value of indexed mesh parameter as a std::string (with unit)
 	std::string get_meshparam_value(int index);
 	std::string get_meshparam_value(PARAM_ paramID);
@@ -210,4 +213,8 @@ public:
 
 	//call this to update given parameter output value to current base_temperature
 	void update_parameters(PARAM_ paramID = PARAM_ALL);
+
+	//-------------------------Special setters/getters
+
+	virtual std::string get_tensorial_anisotropy_string(void) { return ""; }
 };

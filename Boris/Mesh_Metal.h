@@ -23,8 +23,7 @@ class MetalMesh :
 	std::tuple<
 	//Mesh members
 	int, int, int, 
-	int, int, 
-	int, int, 
+	int, int, int, int, int, int,
 	Rect, SZ3, DBL3, SZ3, DBL3, SZ3, DBL3, 
 	VEC_VC<double>, VEC_VC<DBL3>, VEC_VC<double>, VEC_VC<double>, VEC_VC<double>, 
 	vector_lut<Modules*>,

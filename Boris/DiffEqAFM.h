@@ -176,7 +176,10 @@ public:
 
 	//---------------------------------------- OTHERS : DiffEqFM.cpp
 
-	void Restoremagnetization(void);
+	void RestoreMagnetization(void);
+
+	//renormalize vectors to set magnetization length value (which could have a spatial variation)
+	void RenormalizeMagnetization(void);
 
 	//---------------------------------------- OTHER CALCULATION METHODS : DiffEqFM_SEquations.cpp
 
@@ -204,6 +207,7 @@ public:
 
 	//return dM by dT - should only be used when evaluation sequence has ended (TimeStepSolved() == true)
 	DBL3 dMdt(int idx);
+	DBL3 dMdt2(int idx);
 };
 
 #else
@@ -353,7 +357,10 @@ public:
 
 	//---------------------------------------- OTHERS : DiffEqFM.cpp
 
-	void Restoremagnetization(void) {}
+	void RestoreMagnetization(void) {}
+
+	//renormalize vectors to set magnetization length value (which could have a spatial variation)
+	void RenormalizeMagnetization(void) {}
 
 	//---------------------------------------- OTHER CALCULATION METHODS : DiffEqFM_SEquations.cpp
 

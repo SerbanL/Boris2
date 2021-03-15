@@ -174,51 +174,6 @@ Any Simulation::GetDataValue(DatumConfig dConfig)
 	}
 	break;
 
-	case DATA_AVMXSQ:
-	{
-		if (!SMesh[dConfig.meshName]->is_atomistic()) {
-
-			return Any(dynamic_cast<Mesh*>(SMesh[dConfig.meshName])->GetAverageXmagnetizationSq(dConfig.rectangle));
-		}
-		else {
-
-			//return average magnetization in the atomistic cell also : average atomistic moment (averaged over all participating unit cells), divided by unit cell volume
-			double r = MUB / SMesh[dConfig.meshName]->h.dim();
-			return Any(dynamic_cast<Atom_Mesh*>(SMesh[dConfig.meshName])->GetAverageXMomentSq(dConfig.rectangle) * r * r);
-		}
-	}
-	break;
-
-	case DATA_AVMYSQ:
-	{
-		if (!SMesh[dConfig.meshName]->is_atomistic()) {
-
-			return Any(dynamic_cast<Mesh*>(SMesh[dConfig.meshName])->GetAverageYmagnetizationSq(dConfig.rectangle));
-		}
-		else {
-
-			//return average magnetization in the atomistic cell also : average atomistic moment (averaged over all participating unit cells), divided by unit cell volume
-			double r = MUB / SMesh[dConfig.meshName]->h.dim();
-			return Any(dynamic_cast<Atom_Mesh*>(SMesh[dConfig.meshName])->GetAverageYMomentSq(dConfig.rectangle) * r * r);
-		}
-	}
-	break;
-
-	case DATA_AVMZSQ:
-	{
-		if (!SMesh[dConfig.meshName]->is_atomistic()) {
-
-			return Any(dynamic_cast<Mesh*>(SMesh[dConfig.meshName])->GetAverageZmagnetizationSq(dConfig.rectangle));
-		}
-		else {
-
-			//return average magnetization in the atomistic cell also : average atomistic moment (averaged over all participating unit cells), divided by unit cell volume
-			double r = MUB / SMesh[dConfig.meshName]->h.dim();
-			return Any(dynamic_cast<Atom_Mesh*>(SMesh[dConfig.meshName])->GetAverageZMomentSq(dConfig.rectangle) * r * r);
-		}
-	}
-	break;
-
 	case DATA_MX_MINMAX:
 	{
 		if (!SMesh[dConfig.meshName]->is_atomistic()) {
@@ -311,6 +266,30 @@ Any Simulation::GetDataValue(DatumConfig dConfig)
 	}
 	break;
 
+	case DATA_RESPUMP:
+	{
+		return Any(SMesh[dConfig.meshName]->Average_mxdmdt(dConfig.rectangle));
+	}
+	break;
+
+	case DATA_RESPUMP2:
+	{
+		return Any(SMesh[dConfig.meshName]->Average_mxdmdt2(dConfig.rectangle));
+	}
+	break;
+
+	case DATA_IMSPUMP:
+	{
+		return Any(SMesh[dConfig.meshName]->Average_dmdt(dConfig.rectangle));
+	}
+	break;
+
+	case DATA_IMSPUMP2:
+	{
+		return Any(SMesh[dConfig.meshName]->Average_dmdt2(dConfig.rectangle));
+	}
+	break;
+
 	case DATA_V:
 	{
 		return Any(SMesh[dConfig.meshName]->GetAverageElectricalPotential(dConfig.rectangle));
@@ -349,93 +328,59 @@ Any Simulation::GetDataValue(DatumConfig dConfig)
 
 	case DATA_E_DEMAG:
 	{
-		if (!SMesh.IsSuperMeshModuleSet(MODS_SDEMAG)) {
+		if (!SMesh.IsSuperMeshModuleSet(MODS_SDEMAG) || SMesh.CallModuleMethod<bool, SDemag>(&SDemag::Get_Multilayered_Convolution_Status)) {
 
 			//read demag energy from named mesh if supermesh demag module not set (also works for MOD_ATOM_DIPOLEDIPOLE since it's exclusive with MOD_DEMAG)
-			return Any(SMesh[dConfig.meshName]->GetEnergyDensity(MOD_DEMAG));
+			//or else if SDemag set, but using multilayered convolution (then get energy directly from SDemag_Demag module
+			return Any(SMesh[dConfig.meshName]->GetEnergyDensity(MOD_DEMAG, dConfig.rectangle));
 		}
 		else {
 
-			//get energy value from set supermesh demag module
-			return SMesh.CallModuleMethod<double, SDemag>(&SDemag::GetEnergyDensity);
+			//get energy value from set supermesh demag module, where we are using supermesh convolution
+			return Any(SMesh.GetSuperMeshModule(MODS_SDEMAG)->GetEnergyDensity(dConfig.rectangle));
 		}
 	}
 	break;
 
 	case DATA_E_EXCH:
 	{
-		if (dConfig.rectangle.IsNull() || dConfig.rectangle == SMesh[dConfig.meshName]->meshRect) {
-
-			//read exchange energy density from named mesh (use MOD_EXCHANGE; works for all exclusive exchange modules )
-			return Any(SMesh[dConfig.meshName]->GetEnergyDensity(MOD_EXCHANGE));
-		}
-		else {
-
-			//calculate energy density as average in given rect only
-			return Any(SMesh[dConfig.meshName]->GetEnergyDensity(MOD_EXCHANGE, dConfig.rectangle));
-		}
-	}
-	break;
-
-	case DATA_E_EXCH_MAX:
-	{
-		return Any(SMesh[dConfig.meshName]->Get_Max_Exchange_EnergyDensity(dConfig.rectangle));
-	}
-	break;
-
-	case DATA_Q_TOPO:
-	{
-		return Any(SMesh[dConfig.meshName]->GetTopologicalCharge(dConfig.rectangle));
+		return Any(SMesh[dConfig.meshName]->GetEnergyDensity(MOD_EXCHANGE, dConfig.rectangle));
 	}
 	break;
 
 	case DATA_E_SURFEXCH:
 	{
-		return Any(SMesh[dConfig.meshName]->GetEnergyDensity(MOD_SURFEXCHANGE));
+		return Any(SMesh[dConfig.meshName]->GetEnergyDensity(MOD_SURFEXCHANGE, dConfig.rectangle));
 	}
 	break;
 
 	case DATA_E_ZEE:
 	{
-		if (dConfig.rectangle.IsNull() || dConfig.rectangle == SMesh[dConfig.meshName]->meshRect) {
+		return Any(SMesh[dConfig.meshName]->GetEnergyDensity(MOD_ZEEMAN, dConfig.rectangle));
+	}
+	break;
 
-			//get already calculated energy density, averaged over the entire mesh
-			return Any(SMesh[dConfig.meshName]->GetEnergyDensity(MOD_ZEEMAN));
-		}
-		else {
-
-			//calculate energy density as average in given rect only
-			return Any(SMesh[dConfig.meshName]->GetEnergyDensity(MOD_ZEEMAN, dConfig.rectangle));
-		}
+	case DATA_E_MOPTICAL:
+	{
+		return Any(SMesh[dConfig.meshName]->GetEnergyDensity(MOD_MOPTICAL, dConfig.rectangle));
 	}
 	break;
 
 	case DATA_E_MELASTIC:
 	{
-		return Any(SMesh[dConfig.meshName]->GetEnergyDensity(MOD_MELASTIC));
+		return Any(SMesh[dConfig.meshName]->GetEnergyDensity(MOD_MELASTIC, dConfig.rectangle));
 	}
 	break;
 
 	case DATA_E_ANIS:
 	{
-		if (dConfig.rectangle.IsNull() || dConfig.rectangle == SMesh[dConfig.meshName]->meshRect) {
-
-			//get already calculated energy density, averaged over the entire mesh
-			if (SMesh[dConfig.meshName]->IsModuleSet(MOD_ANICUBI)) return Any(SMesh[dConfig.meshName]->GetEnergyDensity(MOD_ANICUBI));
-			else return Any(SMesh[dConfig.meshName]->GetEnergyDensity(MOD_ANIUNI));
-		}
-		else {
-
-			//calculate energy density as average in given rect only
-			if (SMesh[dConfig.meshName]->IsModuleSet(MOD_ANICUBI)) return Any(SMesh[dConfig.meshName]->GetEnergyDensity(MOD_ANICUBI, dConfig.rectangle));
-			else return Any(SMesh[dConfig.meshName]->GetEnergyDensity(MOD_ANIUNI, dConfig.rectangle));
-		}
+		return Any(SMesh[dConfig.meshName]->GetEnergyDensity(MOD_ANIUNI, dConfig.rectangle));
 	}
 	break;
 
 	case DATA_E_ROUGH:
 	{
-		return Any(SMesh[dConfig.meshName]->GetEnergyDensity(MOD_ROUGHNESS));
+		return Any(SMesh[dConfig.meshName]->GetEnergyDensity(MOD_ROUGHNESS, dConfig.rectangle));
 	}
 	break;
 
@@ -445,9 +390,33 @@ Any Simulation::GetDataValue(DatumConfig dConfig)
 	}
 	break;
 
+	case DATA_Q_TOPO:
+	{
+		return Any(SMesh[dConfig.meshName]->GetTopologicalCharge(dConfig.rectangle));
+	}
+	break;
+
 	case DATA_DWSHIFT:
 	{
 		return Any(SMesh.Get_dwshift());
+	}
+	break;
+
+	case DATA_DWPOS_X:
+	{
+		return Any(SMesh[dConfig.meshName]->FitDomainWall_X(dConfig.rectangle));
+	}
+	break;
+
+	case DATA_DWPOS_Y:
+	{
+		return Any(SMesh[dConfig.meshName]->FitDomainWall_Y(dConfig.rectangle));
+	}
+	break;
+
+	case DATA_DWPOS_Z:
+	{
+		return Any(SMesh[dConfig.meshName]->FitDomainWall_Z(dConfig.rectangle));
 	}
 	break;
 
@@ -588,9 +557,32 @@ void Simulation::SaveData(void)
 		if (idx != saveDataList.size() - 1) row_text += "\t";
 	}
 
-	//Actual data saving (asynchronous):
-	while(single_call_launch<const std::string&>(&Simulation::SaveData_DiskWrite, row_text, THREAD_DISKACCESS) != THREAD_DISKACCESS);
-	
+	if (!is_thread_running(THREAD_DISKACCESS)) {
+		
+		if (savedata_diskbuffer_position < savedata_diskbuffer_size) savedata_diskbuffer[savedata_diskbuffer_position++] = row_text;
+		if (savedata_diskbuffer_position == savedata_diskbuffer_size) {
+
+			//flush overflow buffer synchronously if we have to: this contains entries written before the regular buffer could be completely flushed asynchronously, so come before any new entries in the regular buffer
+			if (savedata_diskoverflowbuffer_position) SaveData_DiskBufferFlush(&savedata_diskoverflowbuffer, &savedata_diskoverflowbuffer_position);
+
+			//flush regular buffer asynchronously
+			while (single_call_launch<std::vector<std::string>*, int*>(&Simulation::SaveData_DiskBufferFlush, &savedata_diskbuffer, &savedata_diskbuffer_position, THREAD_DISKACCESS) != THREAD_DISKACCESS);
+		}
+	}
+	else {
+
+		//regular buffer still being written: add entries in overflow buffer
+		if (savedata_diskoverflowbuffer_position < savedata_diskbuffer_size) savedata_diskoverflowbuffer[savedata_diskoverflowbuffer_position++] = row_text;
+		else {
+
+			//overflow buffer also full : flush it synchronously when the previous write operation finishes
+			//stop disk thread: this command will complete when the writing operation finishes
+			stop_thread(THREAD_DISKACCESS);
+			//now flush overflow buffer synchronously when previous operation finishes
+			SaveData_DiskBufferFlush(&savedata_diskoverflowbuffer, &savedata_diskoverflowbuffer_position);
+		}
+	}
+
 	//Image saving:
 	if (saveImageFlag) {
 
@@ -603,7 +595,7 @@ void Simulation::SaveData(void)
 }
 
 //This method does the actual writing to disk : can be launched asynchronously from SaveData method
-void Simulation::SaveData_DiskWrite(const std::string& row_text)
+void Simulation::SaveData_DiskBufferFlush(std::vector<std::string>* pdiskbuffer, int* pdiskbuffer_position)
 {
 	if (saveDataFlag) {
 
@@ -623,7 +615,7 @@ void Simulation::SaveData_DiskWrite(const std::string& row_text)
 				//Append header
 				time_t rawtime;
 				time(&rawtime);
-				bdout << std::string(ctime(&rawtime)) << "\n";
+				bdout << std::string(ctime(&rawtime)) << std::endl;
 
 				//List meshes
 				for (int idx = 0; idx < SMesh.size(); idx++) {
@@ -632,7 +624,7 @@ void Simulation::SaveData_DiskWrite(const std::string& row_text)
 					bdout << "Rectangle : " << ToString(SMesh[idx]->GetMeshRect(), "m") << ". ";
 					bdout << "Cells : " << ToString(SMesh[idx]->GetMeshSize()) << ". ";
 					bdout << "Cellsize : " << ToString(SMesh[idx]->GetMeshCellsize(), "m");
-					bdout << "\n";
+					bdout << std::endl;
 				}
 
 				//Supermesh settings
@@ -640,7 +632,7 @@ void Simulation::SaveData_DiskWrite(const std::string& row_text)
 				bdout << "Rectangle : " << ToString(SMesh.GetFMSMeshRect(), "m") << ". ";
 				bdout << "Cells : " << ToString(SMesh.GetFMSMeshsize()) << ". ";
 				bdout << "Cellsize : " << ToString(SMesh.GetFMSMeshCellsize(), "m");
-				bdout << "\n";
+				bdout << std::endl;
 
 				//List saved data labels and units
 				bdout << "\nSaved data (dataname (unit) <meshname> (cells_rectangle)) : \n\n";
@@ -666,10 +658,17 @@ void Simulation::SaveData_DiskWrite(const std::string& row_text)
 						bdout << '\t';
 				}
 
-				bdout << "\n\n";
+				bdout << std::endl << std::endl;
 			}
 
-			bdout << row_text << "\n";
+			//write buffer entries
+			for (int idx = 0; idx < *pdiskbuffer_position; idx++) {
+
+				bdout << (*pdiskbuffer)[idx] << std::endl;
+			}
+
+			//buffer flushed now
+			*pdiskbuffer_position = 0;
 
 			bdout.close();
 		}

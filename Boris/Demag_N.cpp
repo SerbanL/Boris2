@@ -34,9 +34,16 @@ Demag_N::~Demag_N()
 
 BError Demag_N::Initialize(void)
 {
-	initialized = true;
+	BError error(CLASS_STR(Demag_N));
 
-	return BError(CLASS_STR(Demag_N));
+	//Make sure display data has memory allocated (or freed) as required
+	error = Update_Module_Display_VECs(
+		pMesh->h, pMesh->meshRect, 
+		(MOD_)pMesh->Get_Module_Heff_Display() == MOD_DEMAG_N || pMesh->IsOutputDataSet_withRect(DATA_E_DEMAG),
+		(MOD_)pMesh->Get_Module_Energy_Display() == MOD_DEMAG_N || pMesh->IsOutputDataSet_withRect(DATA_E_DEMAG));
+	if (!error)	initialized = true;
+
+	return error;
 }
 
 BError Demag_N::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
@@ -44,8 +51,6 @@ BError Demag_N::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 	BError error(CLASS_STR(Demag_N));
 
 	Uninitialize();
-
-	Initialize();
 
 	//------------------------ CUDA UpdateConfiguration if set
 
@@ -97,6 +102,9 @@ double Demag_N::UpdateField(void)
 				pMesh->Heff[idx] += Heff_value;
 
 				energy += pMesh->M[idx] * Heff_value;
+
+				if (Module_Heff.linear_size()) Module_Heff[idx] = Heff_value;
+				if (Module_energy.linear_size()) Module_energy[idx] = -MU0 * (pMesh->M[idx] * Heff_value) / 2;
 			}
 		}
 	}
@@ -119,6 +127,9 @@ double Demag_N::UpdateField(void)
 				pMesh->Heff2[idx] += Heff_value;
 
 				energy += Mval * Heff_value;
+
+				if (Module_Heff.linear_size()) Module_Heff[idx] = Heff_value;
+				if (Module_energy.linear_size()) Module_energy[idx] = -MU0 * (Mval * Heff_value) / 2;
 			}
 		}
 	}

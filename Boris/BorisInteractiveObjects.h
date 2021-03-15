@@ -25,6 +25,9 @@ enum IOI_
 	//super-mesh module : minor type is an entry from MOD_ enum
 	IOI_SMODULE,
 
+	//Module used for effective field display for a given mesh: minorId in InteractiveObjectProperties is an entry from MOD_ enum identifying the module, auxId contains the unique mesh id number this module refers to, textId is the MOD_ value used for display
+	IOI_DISPLAYMODULE,
+
 	//Available/set ode : minorId is an entry from ODE_ (the equation)
 	IOI_ODE,
 
@@ -58,6 +61,7 @@ enum IOI_
 	IOI_MESH_FORPARAMSTEMP,
 	IOI_MESH_FORPARAMSVAR,
 	IOI_MESH_FORMODULES,
+	IOI_MESH_FORDISPLAYMODULES,
 	IOI_MESH_FORMESHLIST,
 	IOI_MESH_FORDISPLAYOPTIONS,
 	IOI_MESH_FORTEMPERATURE,
@@ -326,12 +330,12 @@ enum IOI_
 	//Shows maximum dT value. textId is the value.
 	IOI_ODEDTMAX,
 
-	//Shows PBC setting for individual demag modules. minorId is the unique mesh id number, auxId is the pbc images number (0 disables pbc; -1 means setting is not available) (must be ferromagnetic mesh);
+	//Shows PBC setting for individual demag modules. minorId is the unique mesh id number, auxId is the pbc images number (0 disables pbc) (must be ferromagnetic mesh);
 	IOI_PBC_X,
 	IOI_PBC_Y,
 	IOI_PBC_Z,
 
-	//Shows PBC setting for supermesh/multilayered demag. auxId is the pbc images number (0 disables pbc; -1 means setting is not available)
+	//Shows PBC setting for supermesh/multilayered demag. auxId is the pbc images number (0 disables pbc)
 	IOI_SPBC_X,
 	IOI_SPBC_Y,
 	IOI_SPBC_Z,
@@ -355,11 +359,17 @@ enum IOI_
 	//Show skypos diameter multiplier : minorId is the unique mesh id number, textId is the multiplier as a std::string
 	IOI_SKYPOSDMUL,
 
+	//Shows dwpos fitting component. auxId is the value (-1, 0, 1, 2)
+	IOI_DWPOSCOMPONENT,
+
 	//Shows Monte-Carlo computation type (serial/parallel) : minorId is the unique mesh id number, auxId is the status (0 : parallel, 1 : serial, -1 : N/A)
 	IOI_MCCOMPUTATION,
 	
 	//Shows Monte-Carlo algorithm type : minorId is the unique mesh id number, auxId is the type (0 : classical, 1 : constrained, -1 : N/A), textId is the constrained DBL3 direction.
 	IOI_MCTYPE,
+
+	//Shows Monte-Carlo computefields state flag : auxId is the state (0: disabled, 1: enabled)
+	IOI_MCCOMPUTEFIELDS,
 
 	//Shows shape rotation setting: textId is the value as text (DBL3)
 	IOI_SHAPEROT,

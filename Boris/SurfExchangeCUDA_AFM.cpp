@@ -8,6 +8,7 @@
 #include "SurfExchange_AFM.h"
 #include "Mesh_AntiFerromagnetic.h"
 #include "Mesh_AntiFerromagneticCUDA.h"
+#include "DataDefs.h"
 
 SurfExchangeCUDA_AFM::SurfExchangeCUDA_AFM(MeshCUDA* pMeshCUDA_, SurfExchange_AFM* pSurfExch_)
 	: ModulesCUDA()
@@ -73,6 +74,13 @@ BError SurfExchangeCUDA_AFM::Initialize(void)
 
 		initialized = true;
 	}
+
+	//Make sure display data has memory allocated (or freed) as required
+	error = Update_Module_Display_VECs(
+		(cuReal3)pMeshCUDA->h, (cuRect)pMeshCUDA->meshRect,
+		(MOD_)pMeshCUDA->Get_Module_Heff_Display() == MOD_SURFEXCHANGE || pMeshCUDA->IsOutputDataSet_withRect(DATA_E_SURFEXCH),
+		(MOD_)pMeshCUDA->Get_Module_Energy_Display() == MOD_SURFEXCHANGE || pMeshCUDA->IsOutputDataSet_withRect(DATA_E_SURFEXCH));
+	if (error) initialized = false;
 
 	return error;
 }

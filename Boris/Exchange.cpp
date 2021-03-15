@@ -56,7 +56,13 @@ BError Exch_6ngbr_Neu::Initialize(void)
 	BError error(CLASS_STR(Exch_6ngbr_Neu));
 
 	error = ExchangeBase::Initialize();
-
+	
+	//Make sure display data has memory allocated (or freed) as required
+	error = Update_Module_Display_VECs(
+		pMesh->h, pMesh->meshRect, 
+		(MOD_)pMesh->Get_Module_Heff_Display() == MOD_EXCHANGE || pMesh->IsOutputDataSet_withRect(DATA_E_EXCH), 
+		(MOD_)pMesh->Get_Module_Energy_Display() == MOD_EXCHANGE || pMesh->IsOutputDataSet_withRect(DATA_E_EXCH),
+		pMesh->GetMeshType() == MESH_ANTIFERROMAGNETIC);
 	if (!error) initialized = true;
 
 	return error;
@@ -124,6 +130,9 @@ double Exch_6ngbr_Neu::UpdateField(void)
 				pMesh->Heff[idx] += Hexch;
 
 				energy += pMesh->M[idx] * Hexch;
+
+				if (Module_Heff.linear_size()) Module_Heff[idx] = Hexch;
+				if (Module_energy.linear_size()) Module_energy[idx] = -MU0 * (pMesh->M[idx] * Hexch) / 2;
 			}
 		}
 	}
@@ -159,6 +168,11 @@ double Exch_6ngbr_Neu::UpdateField(void)
 				pMesh->Heff2[idx] += Hexch2;
 
 				energy += (pMesh->M[idx] * Hexch + pMesh->M2[idx] * Hexch2) / 2;
+
+				if (Module_Heff.linear_size()) Module_Heff[idx] = Hexch;
+				if (Module_Heff2.linear_size()) Module_Heff2[idx] = Hexch2;
+				if (Module_energy.linear_size()) Module_energy[idx] = -MU0 * (pMesh->M[idx] * Hexch) / 2;
+				if (Module_energy2.linear_size()) Module_energy2[idx] = -MU0 * (pMesh->M2[idx] * Hexch2) / 2;
 			}
 		}
 	}
@@ -275,244 +289,6 @@ double Exch_6ngbr_Neu::UpdateField(void)
 	this->energy = energy;
 
 	return this->energy;
-}
-
-//-------------------Energy density methods
-
-double Exch_6ngbr_Neu::GetEnergyDensity(Rect& avRect)
-{
-#if COMPILECUDA == 1
-	if (pModuleCUDA) return dynamic_cast<Exch_6ngbr_NeuCUDA*>(pModuleCUDA)->GetEnergyDensity(avRect);
-#endif
-
-	double energy = 0;
-	int num_points = 0;
-
-	INT3 n = pMesh->n;
-
-	///////////////////////////////////////////////////////////////////////////////////////////////
-	////////////////////////////////////// FERROMAGNETIC MESH /////////////////////////////////////
-	///////////////////////////////////////////////////////////////////////////////////////////////
-
-	if (pMesh->GetMeshType() == MESH_FERROMAGNETIC) {
-
-#pragma omp parallel for reduction(+:energy, num_points)
-		for (int idx = 0; idx < pMesh->n.dim(); idx++) {
-
-			//only average over values in given rectangle
-			if (!avRect.contains(pMesh->M.cellidx_to_position(idx))) continue;
-
-			if (pMesh->M.is_not_empty(idx)) {
-
-				double Ms = pMesh->Ms;
-				double A = pMesh->A;
-				pMesh->update_parameters_mcoarse(idx, pMesh->A, A, pMesh->Ms, Ms);
-
-				//cells marked with cmbnd are calculated using exchange coupling to other ferromagnetic meshes - see below; the delsq_neu evaluates to zero in the CMBND coupling direction.
-				DBL3 Hexch = (2 * A / (MU0*Ms*Ms)) * pMesh->M.delsq_neu(idx);
-
-				energy += pMesh->M[idx] * Hexch;
-				num_points++;
-			}
-		}
-	}
-
-	///////////////////////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////// ANTIFERROMAGNETIC MESH ///////////////////////////////////
-	///////////////////////////////////////////////////////////////////////////////////////////////
-
-	else if (pMesh->GetMeshType() == MESH_ANTIFERROMAGNETIC) {
-
-#pragma omp parallel for reduction(+:energy, num_points) 
-		for (int idx = 0; idx < n.dim(); idx++) {
-
-			//only average over values in given rectangle
-			if (!avRect.contains(pMesh->M.cellidx_to_position(idx))) continue;
-
-			if (pMesh->M.is_not_empty(idx)) {
-
-				DBL2 Ms_AFM = pMesh->Ms_AFM;
-				DBL2 A_AFM = pMesh->A_AFM;
-				DBL2 Ah = pMesh->Ah;
-				DBL2 Anh = pMesh->Anh;
-				pMesh->update_parameters_mcoarse(idx, pMesh->A_AFM, A_AFM, pMesh->Ah, Ah, pMesh->Anh, Anh, pMesh->Ms_AFM, Ms_AFM);
-
-				//cells marked with cmbnd are calculated using exchange coupling to other ferromagnetic meshes - see below; the delsq_neu evaluates to zero in the CMBND coupling direction.
-
-				DBL3 delsq_M_A = pMesh->M.delsq_neu(idx);
-				DBL3 delsq_M_B = pMesh->M2.delsq_neu(idx);
-
-				DBL2 M = DBL2(pMesh->M[idx].norm(), pMesh->M2[idx].norm());
-
-				DBL3 Hexch = (2 * A_AFM.i / (MU0*Ms_AFM.i*Ms_AFM.i)) * delsq_M_A + (-4 * Ah.i * (pMesh->M[idx] ^ (pMesh->M[idx] ^ pMesh->M2[idx])) / (M.i*M.i) + Anh.i * delsq_M_B) / (MU0*Ms_AFM.i*Ms_AFM.j);
-				DBL3 Hexch2 = (2 * A_AFM.j / (MU0*Ms_AFM.j*Ms_AFM.j)) * delsq_M_B + (-4 * Ah.j * (pMesh->M2[idx] ^ (pMesh->M2[idx] ^ pMesh->M[idx])) / (M.j*M.j) + Anh.j * delsq_M_A) / (MU0*Ms_AFM.i*Ms_AFM.j);
-
-				energy += (pMesh->M[idx] * Hexch + pMesh->M2[idx] * Hexch2) / 2;
-				num_points++;
-			}
-		}
-	}
-
-	///////////////////////////////////////////////////////////////////////////////////////////////
-	///////////////////////////////////// FINAL ENERGY DENSITY VALUE //////////////////////////////
-	///////////////////////////////////////////////////////////////////////////////////////////////
-
-	//average energy density, this is correct, see notes - e_ex ~= -(mu0/2) M.H as can be derived from the full expression for e_ex. It is not -mu0 M.H, which is the energy density for a dipole in a field !
-	if (num_points) energy *= -MU0 / (2 * num_points);
-	else energy = 0;
-
-	return energy;
-}
-
-double Exch_6ngbr_Neu::GetEnergy_Max(Rect& rectangle)
-{
-#if COMPILECUDA == 1
-	if (pModuleCUDA) return dynamic_cast<Exch_6ngbr_NeuCUDA*>(pModuleCUDA)->GetEnergy_Max(rectangle);
-#endif
-
-	INT3 n = pMesh->n;
-
-	OmpReduction<double> emax;
-	emax.new_minmax_reduction();
-
-	///////////////////////////////////////////////////////////////////////////////////////////////
-	////////////////////////////////////// FERROMAGNETIC MESH /////////////////////////////////////
-	///////////////////////////////////////////////////////////////////////////////////////////////
-
-	if (pMesh->GetMeshType() == MESH_FERROMAGNETIC) {
-
-#pragma omp parallel for
-		for (int idx = 0; idx < n.dim(); idx++) {
-
-			//only obtain max in given rectangle
-			if (!rectangle.contains(pMesh->M.cellidx_to_position(idx))) continue;
-
-			if (pMesh->M.is_not_empty(idx)) {
-
-				double Ms = pMesh->Ms;
-				double A = pMesh->A;
-				pMesh->update_parameters_mcoarse(idx, pMesh->A, A, pMesh->Ms, Ms);
-
-				//cells marked with cmbnd are calculated using exchange coupling to other ferromagnetic meshes - see below; the delsq_neu evaluates to zero in the CMBND coupling direction.
-				DBL3 Hexch = (2 * A / (MU0*Ms*Ms)) * pMesh->M.delsq_neu(idx);
-
-				emax.reduce_max(fabs(pMesh->M[idx] * Hexch));
-			}
-		}
-	}
-
-	///////////////////////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////// ANTIFERROMAGNETIC MESH ///////////////////////////////////
-	///////////////////////////////////////////////////////////////////////////////////////////////
-
-	else if (pMesh->GetMeshType() == MESH_ANTIFERROMAGNETIC) 
-	{
-
-#pragma omp parallel for
-		for (int idx = 0; idx < n.dim(); idx++) {
-
-			//only obtain max in given rectangle
-			if (!rectangle.contains(pMesh->M.cellidx_to_position(idx))) continue;
-
-			if (pMesh->M.is_not_empty(idx)) {
-
-				DBL2 Ms_AFM = pMesh->Ms_AFM;
-				DBL2 A_AFM = pMesh->A_AFM;
-				DBL2 Ah = pMesh->Ah;
-				DBL2 Anh = pMesh->Anh;
-				pMesh->update_parameters_mcoarse(idx, pMesh->A_AFM, A_AFM, pMesh->Ah, Ah, pMesh->Anh, Anh, pMesh->Ms_AFM, Ms_AFM);
-
-				//cells marked with cmbnd are calculated using exchange coupling to other ferromagnetic meshes - see below; the delsq_neu evaluates to zero in the CMBND coupling direction.
-
-				DBL3 delsq_M_A = pMesh->M.delsq_neu(idx);
-				DBL3 delsq_M_B = pMesh->M2.delsq_neu(idx);
-
-				DBL2 M = DBL2(pMesh->M[idx].norm(), pMesh->M2[idx].norm());
-
-				DBL3 Hexch = (2 * A_AFM.i / (MU0*Ms_AFM.i*Ms_AFM.i)) * delsq_M_A + (-4 * Ah.i * (pMesh->M[idx] ^ (pMesh->M[idx] ^ pMesh->M2[idx])) / (M.i*M.i) + Anh.i * delsq_M_B) / (MU0*Ms_AFM.i*Ms_AFM.j);
-				DBL3 Hexch2 = (2 * A_AFM.j / (MU0*Ms_AFM.j*Ms_AFM.j)) * delsq_M_B + (-4 * Ah.j * (pMesh->M2[idx] ^ (pMesh->M2[idx] ^ pMesh->M[idx])) / (M.j*M.j) + Anh.j * delsq_M_A) / (MU0*Ms_AFM.i*Ms_AFM.j);
-
-				emax.reduce_max(fabs((pMesh->M[idx] * Hexch + pMesh->M2[idx] * Hexch2) / 2));
-			}
-		}
-	}
-
-	///////////////////////////////////////////////////////////////////////////////////////////////
-	///////////////////////////////////// FINAL ENERGY DENSITY VALUE //////////////////////////////
-	///////////////////////////////////////////////////////////////////////////////////////////////
-
-	return emax.maximum() * MU0 / 2;
-}
-
-//Compute exchange energy density and store it in displayVEC
-void Exch_6ngbr_Neu::Compute_Exchange(VEC<double>& displayVEC)
-{
-	displayVEC.resize(pMesh->h, pMesh->meshRect);
-
-#if COMPILECUDA == 1
-	if (pModuleCUDA) {
-
-		dynamic_cast<Exch_6ngbr_NeuCUDA*>(pModuleCUDA)->Compute_Exchange(displayVEC);
-		return;
-	}
-#endif
-
-	///////////////////////////////////////////////////////////////////////////////////////////////
-	////////////////////////////////////// FERROMAGNETIC MESH /////////////////////////////////////
-	///////////////////////////////////////////////////////////////////////////////////////////////
-
-	if (pMesh->GetMeshType() == MESH_FERROMAGNETIC) {
-
-#pragma omp parallel for
-		for (int idx = 0; idx < pMesh->n.dim(); idx++) {
-
-			if (pMesh->M.is_not_empty(idx)) {
-
-				double Ms = pMesh->Ms;
-				double A = pMesh->A;
-				pMesh->update_parameters_mcoarse(idx, pMesh->A, A, pMesh->Ms, Ms);
-
-				//cells marked with cmbnd are calculated using exchange coupling to other ferromagnetic meshes - see below; the delsq_neu evaluates to zero in the CMBND coupling direction.
-				DBL3 Hexch = (2 * A / (MU0*Ms*Ms)) * pMesh->M.delsq_neu(idx);
-
-				displayVEC[idx] = -(MU0 / 2) * (pMesh->M[idx] * Hexch);
-			}
-			else displayVEC[idx] = 0.0;
-		}
-	}
-
-	///////////////////////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////// ANTIFERROMAGNETIC MESH ///////////////////////////////////
-	///////////////////////////////////////////////////////////////////////////////////////////////
-
-	else if (pMesh->GetMeshType() == MESH_ANTIFERROMAGNETIC) {
-
-#pragma omp parallel for
-		for (int idx = 0; idx < pMesh->n.dim(); idx++) {
-
-			if (pMesh->M.is_not_empty(idx)) {
-
-				DBL2 Ms_AFM = pMesh->Ms_AFM;
-				DBL2 A_AFM = pMesh->A_AFM;
-				DBL2 Ah = pMesh->Ah;
-				DBL2 Anh = pMesh->Anh;
-				pMesh->update_parameters_mcoarse(idx, pMesh->A_AFM, A_AFM, pMesh->Ah, Ah, pMesh->Anh, Anh, pMesh->Ms_AFM, Ms_AFM);
-
-				//cells marked with cmbnd are calculated using exchange coupling to other ferromagnetic meshes - see below; the delsq_neu evaluates to zero in the CMBND coupling direction.
-
-				DBL3 delsq_M_A = pMesh->M.delsq_neu(idx);
-				DBL3 delsq_M_B = pMesh->M2.delsq_neu(idx);
-
-				DBL2 M = DBL2(pMesh->M[idx].norm(), pMesh->M2[idx].norm());
-
-				DBL3 Hexch = (2 * A_AFM.i / (MU0*Ms_AFM.i*Ms_AFM.i)) * delsq_M_A + (-4 * Ah.i * (pMesh->M[idx] ^ (pMesh->M[idx] ^ pMesh->M2[idx])) / (M.i*M.i) + Anh.i * delsq_M_B) / (MU0*Ms_AFM.i*Ms_AFM.j);
-				DBL3 Hexch2 = (2 * A_AFM.j / (MU0*Ms_AFM.j*Ms_AFM.j)) * delsq_M_B + (-4 * Ah.j * (pMesh->M2[idx] ^ (pMesh->M2[idx] ^ pMesh->M[idx])) / (M.j*M.j) + Anh.j * delsq_M_A) / (MU0*Ms_AFM.i*Ms_AFM.j);
-
-				displayVEC[idx] = -(MU0 / 2) * (pMesh->M[idx] * Hexch + pMesh->M2[idx] * Hexch2) / 2;
-			}
-			else displayVEC[idx] = 0.0;
-		}
-	}
 }
 
 #endif

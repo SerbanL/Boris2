@@ -27,11 +27,31 @@ private:
 	Atom_Demag *paDemag;
 
 	//The demag field and magnetization computed separately at the demag macrocell size.
-	//Hdemag has cellsize h_dm (but can be cleared so need to keep this info separate, above).
-	cu_obj<cuVEC<cuReal3>> M, Hdemag;
+	//Hd has cellsize h_dm (but can be cleared so need to keep this info separate, above).
+	cu_obj<cuVEC<cuReal3>> M, Hd;
 
-	//when using the evaluation speedup method we must ensure we have a previous Hdemag evaluation available
-	bool Hdemag_calculated = false;
+	//Evaluation speedup mode data
+
+	//1 Hdemag: no extrapolation, just save evaluation and reuse
+	//2 Hdemag: linear extrapolation, need 2
+	//3 Hdemag: quadratic extrapolation, need 3
+	cu_obj<cuVEC<cuReal3>> Hdemag, Hdemag2, Hdemag3;
+
+	//times at which evaluations were done, used for extrapolation
+	double time_demag1 = 0.0, time_demag2 = 0.0, time_demag3 = 0.0;
+
+	int num_Hdemag_saved = 0;
+
+	//-Nxx, -Nyy, -Nzz values at r = r0
+	cu_obj<cuReal3> selfDemagCoeff;
+
+private:
+
+	void Atom_Demag_EvalSpeedup_SubSelf(cu_obj<cuVEC<cuReal3>>& H);
+
+	void Atom_Demag_EvalSpeedup_SetExtrapField_AddSelf(cu_obj<cuVEC<cuReal3>>& H, cuBReal a1, cuBReal a2, cuBReal a3);
+	void Atom_Demag_EvalSpeedup_SetExtrapField_AddSelf(cu_obj<cuVEC<cuReal3>>& H, cuBReal a1, cuBReal a2);
+	void Atom_Demag_EvalSpeedup_SetExtrapField_AddSelf(cu_obj<cuVEC<cuReal3>>& H);
 
 public:
 

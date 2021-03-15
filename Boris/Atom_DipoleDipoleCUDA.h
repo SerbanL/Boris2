@@ -31,16 +31,45 @@ private:
 	//These are only used if the macrocell is enabled (i.e. h_dm is greater than h)
 	cu_obj<cuVEC<cuReal3>> M, Hd;
 
-	//when using the evaluation speedup method we must ensure we have a previous Hd evaluation available
-	bool Hd_calculated = false;
-
 	//use macrocell method, or compute dipole-dipole interaction at the atomic unit cell level (i.e. when h_dm == h)?
 	bool using_macrocell = true;
+
+	//Evaluation speedup mode data
+
+	//1 Hdemag: no extrapolation, just save evaluation and reuse
+	//2 Hdemag: linear extrapolation, need 2
+	//3 Hdemag: quadratic extrapolation, need 3
+	cu_obj<cuVEC<cuReal3>> Hdemag, Hdemag2, Hdemag3;
+
+	//times at which evaluations were done, used for extrapolation
+	double time_demag1 = 0.0, time_demag2 = 0.0, time_demag3 = 0.0;
+
+	int num_Hdemag_saved = 0;
+
+	//-Nxx, -Nyy, -Nzz values at r = r0
+	cu_obj<cuReal3> selfDemagCoeff;
 
 private:
 
 	//convert value in energy to energy density by dividing by cellsize volume of V
 	void Energy_to_EnergyDensity(cu_obj<cuVEC<cuReal3>>& V);
+
+	//Macrocell mode: subtract self contribution from calculated field
+	void Atom_DipoleDipole_EvalSpeedup_SubSelf(cu_obj<cuVEC<cuReal3>>& H);
+
+	//Macrocell mode, QUADRATIC: extrapolate field and add self contribution
+	void Atom_DipoleDipole_EvalSpeedup_SetExtrapField_AddSelf(cu_obj<cuVEC<cuReal3>>& H, cuBReal a1, cuBReal a2, cuBReal a3);
+	//Macrocell mode, LINEAR: extrapolate field and add self contribution
+	void Atom_DipoleDipole_EvalSpeedup_SetExtrapField_AddSelf(cu_obj<cuVEC<cuReal3>>& H, cuBReal a1, cuBReal a2);
+	//Macrocell mode, STEP: extrapolate field and add self contribution
+	void Atom_DipoleDipole_EvalSpeedup_SetExtrapField_AddSelf(cu_obj<cuVEC<cuReal3>>& H);
+
+	//QUADRATIC: extrapolate field
+	void Atom_DipoleDipole_EvalSpeedup_AddExtrapField(cu_obj<cuVEC<cuReal3>>& H, cuBReal a1, cuBReal a2, cuBReal a3);
+	//LINEAR: extrapolate field
+	void Atom_DipoleDipole_EvalSpeedup_AddExtrapField(cu_obj<cuVEC<cuReal3>>& H, cuBReal a1, cuBReal a2);
+	//STEP: extrapolate field
+	void Atom_DipoleDipole_EvalSpeedup_AddExtrapField(cu_obj<cuVEC<cuReal3>>& H);
 
 public:
 

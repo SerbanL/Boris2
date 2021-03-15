@@ -30,7 +30,9 @@ class DiaMesh :
 	std::tuple<
 	
 	//Mesh members
-	int, int, int, int, int, int, int, Rect, SZ3, DBL3, SZ3, DBL3, SZ3, DBL3, SZ3, DBL3, VEC_VC<DBL3>, VEC_VC<double>, VEC_VC<DBL3>, VEC_VC<double>, VEC_VC<double>, VEC_VC<double>, VEC_VC<DBL3>, VEC_VC<DBL3>, VEC_VC<DBL3>, vector_lut<Modules*>, bool,
+	int, int, int, 
+	int, int, int, int, int, int,
+	Rect, SZ3, DBL3, SZ3, DBL3, SZ3, DBL3, SZ3, DBL3, VEC_VC<DBL3>, VEC_VC<double>, VEC_VC<DBL3>, VEC_VC<double>, VEC_VC<double>, VEC_VC<double>, VEC_VC<DBL3>, VEC_VC<DBL3>, VEC_VC<DBL3>, vector_lut<Modules*>, bool,
 	//Members in this derived class
 	//Material Parameters
 	MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, 

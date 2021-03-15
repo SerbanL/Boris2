@@ -35,7 +35,13 @@ BError MOptical::Initialize(void)
 {
 	BError error(CLASS_STR(MOptical));
 
-	initialized = true;
+	//Make sure display data has memory allocated (or freed) as required
+	error = Update_Module_Display_VECs(
+		pMesh->h, pMesh->meshRect, 
+		(MOD_)pMesh->Get_Module_Heff_Display() == MOD_MOPTICAL || pMesh->IsOutputDataSet_withRect(DATA_E_MOPTICAL),
+		(MOD_)pMesh->Get_Module_Energy_Display() == MOD_MOPTICAL || pMesh->IsOutputDataSet_withRect(DATA_E_MOPTICAL),
+		pMesh->GetMeshType() == MESH_ANTIFERROMAGNETIC);
+	if (!error)	initialized = true;
 
 	return error;
 }
@@ -47,7 +53,6 @@ BError MOptical::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 	if (ucfg::check_cfgflags(cfgMessage, UPDATECONFIG_MESHCHANGE)) {
 
 		Uninitialize();
-		Initialize();
 	}
 
 	//------------------------ CUDA UpdateConfiguration if set
@@ -93,8 +98,11 @@ BError MOptical::MakeCUDAModule(void)
 
 double MOptical::UpdateField(void)
 {
+	double energy = 0;
+
 	if (pMesh->GetMeshType() == MESH_ANTIFERROMAGNETIC) {
 
+#pragma omp parallel for reduction(+:energy)
 		for (int idx = 0; idx < pMesh->n.dim(); idx++) {
 
 			double cHmo = pMesh->cHmo;
@@ -103,11 +111,19 @@ double MOptical::UpdateField(void)
 			//magneto-optical field along z direction only : spatial and time dependence set through the usual material parameter mechanism
 			pMesh->Heff[idx] += DBL3(0, 0, cHmo);
 			pMesh->Heff2[idx] += DBL3(0, 0, cHmo);
+
+			energy += (pMesh->M[idx] + pMesh->M2[idx]) * DBL3(0, 0, cHmo) / 2;
+
+			if (Module_Heff.linear_size()) Module_Heff[idx] = DBL3(0, 0, cHmo);
+			if (Module_Heff2.linear_size()) Module_Heff2[idx] = DBL3(0, 0, cHmo);
+			if (Module_energy.linear_size()) Module_energy[idx] = -MU0 * pMesh->M[idx] * DBL3(0, 0, cHmo);
+			if (Module_energy2.linear_size()) Module_energy2[idx] = -MU0 * pMesh->M2[idx] * DBL3(0, 0, cHmo);
 		}
 	}
 
 	else {
 
+#pragma omp parallel for reduction(+:energy)
 		for (int idx = 0; idx < pMesh->n.dim(); idx++) {
 
 			double cHmo = pMesh->cHmo;
@@ -115,11 +131,20 @@ double MOptical::UpdateField(void)
 
 			//magneto-optical field along z direction only : spatial and time dependence set through the usual material parameter mechanism
 			pMesh->Heff[idx] += DBL3(0, 0, cHmo);
+
+			energy += pMesh->M[idx] * DBL3(0, 0, cHmo);
+
+			if (Module_Heff.linear_size()) Module_Heff[idx] = DBL3(0, 0, cHmo);
+			if (Module_energy.linear_size()) Module_energy[idx] = -MU0 * pMesh->M[idx] * DBL3(0, 0, cHmo);
 		}
 	}
 
-	//no energy density returned
-	return 0.0;
+	if (pMesh->M.get_nonempty_cells()) energy *= -MU0 / pMesh->M.get_nonempty_cells();
+	else energy = 0;
+
+	this->energy = energy;
+
+	return this->energy;
 }
 
 #endif

@@ -13,7 +13,7 @@ FMesh::FMesh(SuperMesh *pSMesh_) :
 		{
 			//Mesh members
 			VINFO(meshType), VINFO(meshIdCounter), VINFO(meshId), 
-			VINFO(displayedPhysicalQuantity), VINFO(displayedBackgroundPhysicalQuantity), VINFO(vec3rep), VINFO(displayedParamVar), 
+			VINFO(displayedPhysicalQuantity), VINFO(displayedBackgroundPhysicalQuantity), VINFO(vec3rep), VINFO(displayedParamVar), VINFO(Module_Heff_Display), VINFO(Module_Energy_Display),
 			VINFO(meshRect), VINFO(n), VINFO(h), VINFO(n_e), VINFO(h_e), VINFO(n_t), VINFO(h_t), VINFO(n_m), VINFO(h_m), VINFO(n_s), VINFO(h_s), VINFO(link_stochastic),
 			VINFO(M), VINFO(V), VINFO(S), VINFO(elC), VINFO(Temp), VINFO(Temp_l), VINFO(u_disp), VINFO(strain_diag), VINFO(strain_odiag), 
 			VINFO(pMod), 
@@ -23,7 +23,8 @@ FMesh::FMesh(SuperMesh *pSMesh_) :
 			//Material Parameters
 			VINFO(grel), VINFO(alpha), VINFO(Ms), VINFO(Nxy), 
 			VINFO(A), VINFO(D), VINFO(J1), VINFO(J2), 
-			VINFO(K1), VINFO(K2), VINFO(mcanis_ea1), VINFO(mcanis_ea2), 
+			VINFO(K1), VINFO(K2), VINFO(K3), VINFO(mcanis_ea1), VINFO(mcanis_ea2), VINFO(mcanis_ea3),
+			VINFO(Kt),
 			VINFO(susrel), VINFO(susprel), VINFO(cHA), VINFO(cHmo),
 			VINFO(elecCond), VINFO(amrPercentage), VINFO(P), VINFO(beta), VINFO(De), VINFO(n_density), 
 			VINFO(SHA), VINFO(flSOT), VINFO(STq), VINFO(STa), VINFO(STp), 
@@ -40,11 +41,10 @@ FMesh::FMesh(SuperMesh *pSMesh_) :
 			//Modules Implementations
 			IINFO(Demag_N), IINFO(Demag), IINFO(SDemag_Demag),
 			IINFO(Exch_6ngbr_Neu), IINFO(DMExchange), IINFO(iDMExchange), IINFO(SurfExchange),
-			IINFO(Zeeman), IINFO(MOptical),
-			IINFO(Anisotropy_Uniaxial), IINFO(Anisotropy_Cubic), IINFO(MElastic),
+			IINFO(Zeeman), IINFO(MOptical), IINFO(MElastic), IINFO(Roughness),
+			IINFO(Anisotropy_Uniaxial), IINFO(Anisotropy_Cubic), IINFO(Anisotropy_Biaxial), IINFO(Anisotropy_Tensorial),
 			IINFO(Transport), IINFO(Heat),
-			IINFO(SOTField), IINFO(STField),
-			IINFO(Roughness)
+			IINFO(SOTField), IINFO(STField)
 		}),
 	meshODE(this)
 {}
@@ -55,7 +55,7 @@ FMesh::FMesh(Rect meshRect_, DBL3 h_, SuperMesh *pSMesh_) :
 		{
 			//Mesh members
 			VINFO(meshType), VINFO(meshIdCounter), VINFO(meshId),
-			VINFO(displayedPhysicalQuantity), VINFO(displayedBackgroundPhysicalQuantity), VINFO(vec3rep), VINFO(displayedParamVar),
+			VINFO(displayedPhysicalQuantity), VINFO(displayedBackgroundPhysicalQuantity), VINFO(vec3rep), VINFO(displayedParamVar), VINFO(Module_Heff_Display), VINFO(Module_Energy_Display),
 			VINFO(meshRect), VINFO(n), VINFO(h), VINFO(n_e), VINFO(h_e), VINFO(n_t), VINFO(h_t), VINFO(n_m), VINFO(h_m), VINFO(n_s), VINFO(h_s), VINFO(link_stochastic),
 			VINFO(M), VINFO(V), VINFO(S), VINFO(elC), VINFO(Temp), VINFO(Temp_l), VINFO(u_disp), VINFO(strain_diag), VINFO(strain_odiag),
 			VINFO(pMod),
@@ -65,7 +65,8 @@ FMesh::FMesh(Rect meshRect_, DBL3 h_, SuperMesh *pSMesh_) :
 			//Material Parameters
 			VINFO(grel), VINFO(alpha), VINFO(Ms), VINFO(Nxy),
 			VINFO(A), VINFO(D), VINFO(J1), VINFO(J2),
-			VINFO(K1), VINFO(K2), VINFO(mcanis_ea1), VINFO(mcanis_ea2),
+			VINFO(K1), VINFO(K2), VINFO(K3), VINFO(mcanis_ea1), VINFO(mcanis_ea2), VINFO(mcanis_ea3),
+			VINFO(Kt),
 			VINFO(susrel), VINFO(susprel), VINFO(cHA), VINFO(cHmo),
 			VINFO(elecCond), VINFO(amrPercentage), VINFO(P), VINFO(beta), VINFO(De), VINFO(n_density), 
 			VINFO(SHA), VINFO(flSOT), VINFO(STq), VINFO(STa), VINFO(STp), 
@@ -82,11 +83,10 @@ FMesh::FMesh(Rect meshRect_, DBL3 h_, SuperMesh *pSMesh_) :
 			//Modules Implementations
 			IINFO(Demag_N), IINFO(Demag), IINFO(SDemag_Demag),
 			IINFO(Exch_6ngbr_Neu), IINFO(DMExchange), IINFO(iDMExchange), IINFO(SurfExchange),
-			IINFO(Zeeman), IINFO(MOptical),
-			IINFO(Anisotropy_Uniaxial), IINFO(Anisotropy_Cubic), IINFO(MElastic),
+			IINFO(Zeeman), IINFO(MOptical), IINFO(MElastic), IINFO(Roughness),
+			IINFO(Anisotropy_Uniaxial), IINFO(Anisotropy_Cubic), IINFO(Anisotropy_Biaxial), IINFO(Anisotropy_Tensorial),
 			IINFO(Transport), IINFO(Heat),
-			IINFO(SOTField), IINFO(STField),
-			IINFO(Roughness)
+			IINFO(SOTField), IINFO(STField)
 		}),
 	meshODE(this)
 {

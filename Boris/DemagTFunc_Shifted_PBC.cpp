@@ -8,6 +8,11 @@ bool DemagTFunc::CalcDiagTens3D_Shifted_PBC(VEC<DBL3> &Ddiag, INT3 N, DBL3 hRati
 	bool minus, int asymptotic_distance,
 	int x_images, int y_images, int z_images)
 {
+	//caller can have these negative (which means use inverse pbc for differential operators, but for demag we need them positive)
+	x_images = abs(x_images);
+	y_images = abs(y_images);
+	z_images = abs(z_images);
+
 	//zero the tensor first
 	Ddiag.set(DBL3());
 
@@ -155,6 +160,11 @@ bool DemagTFunc::CalcOffDiagTens3D_Shifted_PBC(VEC<DBL3> &Dodiag, INT3 N, DBL3 h
 	bool minus, int asymptotic_distance,
 	int x_images, int y_images, int z_images)
 {
+	//caller can have these negative (which means use inverse pbc for differential operators, but for demag we need them positive)
+	x_images = abs(x_images);
+	y_images = abs(y_images);
+	z_images = abs(z_images);
+
 	//zero the tensor first
 	Dodiag.set(DBL3());
 
@@ -308,6 +318,11 @@ bool DemagTFunc::CalcDiagTens2D_Shifted_PBC(VEC<DBL3> &Ddiag, INT3 N, DBL3 hRati
 	bool minus, int asymptotic_distance,
 	int x_images, int y_images, int z_images)
 {
+	//caller can have these negative (which means use inverse pbc for differential operators, but for demag we need them positive)
+	x_images = abs(x_images);
+	y_images = abs(y_images);
+	z_images = abs(z_images);
+
 	//zero the tensor first
 	Ddiag.set(DBL3());
 
@@ -450,6 +465,11 @@ bool DemagTFunc::CalcOffDiagTens2D_Shifted_PBC(VEC<DBL3> &Dodiag, INT3 N, DBL3 h
 	bool minus, int asymptotic_distance,
 	int x_images, int y_images, int z_images)
 {
+	//caller can have these negative (which means use inverse pbc for differential operators, but for demag we need them positive)
+	x_images = abs(x_images);
+	y_images = abs(y_images);
+	z_images = abs(z_images);
+
 	//zero the tensor first
 	Dodiag.set(DBL3());
 

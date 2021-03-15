@@ -52,6 +52,9 @@ template void cuVEC<double>::set_linear(cuReal3 position1, double value1, cuReal
 template void cuVEC<cuFLT3>::set_linear(cuReal3 position1, cuFLT3 value1, cuReal3 position2, cuFLT3 value2);
 template void cuVEC<cuDBL3>::set_linear(cuReal3 position1, cuDBL3 value1, cuReal3 position2, cuDBL3 value2);
 
+template void cuVEC<cuFLT4>::set_linear(cuReal3 position1, cuFLT4 value1, cuReal3 position2, cuFLT4 value2);
+template void cuVEC<cuDBL4>::set_linear(cuReal3 position1, cuDBL4 value1, cuReal3 position2, cuDBL4 value2);
+
 //similar to generate_linear except new dimensions not set
 template <typename VType>
 __host__ void cuVEC<VType>::set_linear(cuReal3 position1, VType value1, cuReal3 position2, VType value2)

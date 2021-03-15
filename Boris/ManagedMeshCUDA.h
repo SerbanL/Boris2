@@ -70,12 +70,18 @@ public:
 	//Magneto-crystalline anisotropy K1 and K2 constants (J/m^3) and easy axes directions. For uniaxial anisotropy only ea1 is needed, for cubic ea1 and ea2 should be orthogonal.
 	MatPCUDA<cuBReal, cuBReal>* pK1;
 	MatPCUDA<cuBReal, cuBReal>* pK2;
+	MatPCUDA<cuBReal, cuBReal>* pK3;
 	MatPCUDA<cuReal3, cuReal3>* pmcanis_ea1;
 	MatPCUDA<cuReal3, cuReal3>* pmcanis_ea2;
+	MatPCUDA<cuReal3, cuReal3>* pmcanis_ea3;
 
 	//Anisotropy values for 2-sublattice model
 	MatPCUDA<cuReal2, cuBReal>* pK1_AFM;
 	MatPCUDA<cuReal2, cuBReal>* pK2_AFM;
+	MatPCUDA<cuReal2, cuBReal>* pK3_AFM;
+
+	//Tensorial anisotropy terms
+	cuVEC<cuReal4> *pKt, *pKt2;
 
 	//longitudinal (parallel) susceptibility relative to mu0*Ms0, i.e. divided by mu0*Ms0, Ms0 is the 0K Ms value - for use with LLB equation. Units As^2/kg
 	MatPCUDA<cuBReal, cuBReal>* psusrel;

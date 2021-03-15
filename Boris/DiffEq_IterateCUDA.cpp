@@ -10,7 +10,7 @@ void ODECommon::RestoreCUDA(void)
 {
 	for (int idx = 0; idx < (int)pODE.size(); idx++) {
 
-		pODE[idx]->pmeshODECUDA->Restoremagnetization();
+		pODE[idx]->pmeshODECUDA->RestoreMagnetization();
 	}
 }
 

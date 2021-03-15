@@ -126,13 +126,7 @@ enum ODE_ { ODE_ERROR = -1, ODE_LLG, ODE_LLGSTT, ODE_LLB, ODE_LLBSTT, ODE_SLLG, 
 enum EVAL_ { EVAL_ERROR = -1, EVAL_EULER, EVAL_TEULER, EVAL_RK4, EVAL_ABM, EVAL_RKF, EVAL_RK23, EVAL_SD, EVAL_AHEUN, EVAL_RKCK, EVAL_RKDP };
 
 //EVALSPEEDUP_NONE : evaluate all fields every step (default)
-//EVALSPEEDUP_ACCURATE : skip field evaluation but only if accuracy not "significantly" affected
-//EVALSPEEDUP_AGGRESIVE : allow some moderate loss of accuracy by skipping more steps where applicable (in many cases this is the same as EVALSPEEDUP_ACCURATE)
-//EVALSPEEDUP_EXTREME : only one field evaluation per time step, irrespective of how many steps the evaluation method uses
-enum EVALSPEEDUP_ { EVALSPEEDUP_NONE = 0, EVALSPEEDUP_ACCURATE, EVALSPEEDUP_AGGRESIVE, EVALSPEEDUP_EXTREME, EVALSPEEDUP_NUMENTRIES };
-
-//return values for Check_Step_Update method in DiffEq
-//EVALSPEEDUPSTEP_SKIP : do not update field, use previous calculation if available
-//EVALSPEEDUPSTEP_COMPUTE_NO_SAVE : update field and do not save calculation for next step (since at the next step we'll have to calculate field again so no point saving it)
-//EVALSPEEDUPSTEP_COMPUTE_AND_SAVE : update field and save calculation for next time (since at the next step we'll need to re-use calculation)
-enum EVALSPEEDUPSTEP_ { EVALSPEEDUPSTEP_SKIP = 0, EVALSPEEDUPSTEP_COMPUTE_NO_SAVE, EVALSPEEDUPSTEP_COMPUTE_AND_SAVE };
+//EVALSPEEDUP_STEP : use previously computed demag field
+//EVALSPEEDUP_LINEAR : linear interpolation using 2 previously computed demag fields
+//EVALSPEEDUP_QUADRATIC : quadratic (polynomial) interpolation using 3 previously computed demag fields
+enum EVALSPEEDUP_ { EVALSPEEDUP_NONE = 0, EVALSPEEDUP_STEP, EVALSPEEDUP_LINEAR, EVALSPEEDUP_QUADRATIC, EVALSPEEDUP_NUMENTRIES };

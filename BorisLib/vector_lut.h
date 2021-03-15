@@ -156,10 +156,10 @@ public:
 	//------------------------------------ CHECKERS
 
 	//is the given id currently set? (i.e. is there a stored element with this id?)
-	bool is_id_set(INT2 id) const { return (id.i < (int)LUT_byId.size() && id.j < (int)LUT_byId[id.i].size() && LUT_byId[id.i][id.j] >= 0); }
+	bool is_id_set(INT2 id) const { return (id.i >= 0 && id.i < (int)LUT_byId.size() && id.j >= 0 && id.j < (int)LUT_byId[id.i].size() && LUT_byId[id.i][id.j] >= 0); }
 
 	//is the major id set ? (assume minor id = 0)
-	bool is_ID_set(int majorID) const { return (majorID < (int)LUT_byId.size() && LUT_byId[majorID][0] >= 0); }
+	bool is_ID_set(int majorID) const { return (majorID >= 0 && majorID < (int)LUT_byId.size() && LUT_byId[majorID][0] >= 0); }
 
 	//does this std::vector contain the given value?
 	bool has_value(Type value) const { for (int idx = 0; idx < (int)storedObjects.size(); idx++) if (storedObjects[idx] == value) return true; return false; }
@@ -177,10 +177,10 @@ public:
 	//--- from Id
 
 	//return index of element with given id - this assumes the id exists
-	int get_index_from_id(INT2 id) const { if (id.i < (int)LUT_byId.size() && id.j < (int)LUT_byId[id.i].size()) return LUT_byId[id.i][id.j]; else return -1; }
+	int get_index_from_id(INT2 id) const { if (id.i >= 0 && id.i < (int)LUT_byId.size() && id.j >= 0 && id.j < (int)LUT_byId[id.i].size()) return LUT_byId[id.i][id.j]; else return -1; }
 
 	//return index of element with given major id (assume minor id = 0) - this further assumes the id exists
-	int get_index_from_ID(int majorID) const { if (majorID < (int)LUT_byId.size()) return LUT_byId[majorID][0]; else return -1; }
+	int get_index_from_ID(int majorID) const { if (majorID >= 0 && majorID < (int)LUT_byId.size()) return LUT_byId[majorID][0]; else return -1; }
 
 	//--- from index
 

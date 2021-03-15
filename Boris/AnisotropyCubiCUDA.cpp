@@ -6,6 +6,8 @@
 #ifdef MODULE_COMPILATION_ANICUBI
 
 #include "MeshCUDA.h"
+#include "MeshDefs.h"
+#include "DataDefs.h"
 
 //--------------- CUBIC
 
@@ -22,7 +24,13 @@ BError Anisotropy_CubicCUDA::Initialize(void)
 {
 	BError error(CLASS_STR(Anisotropy_CubicCUDA));
 
-	initialized = true;
+	//Make sure display data has memory allocated (or freed) as required
+	error = Update_Module_Display_VECs(
+		(cuReal3)pMeshCUDA->h, (cuRect)pMeshCUDA->meshRect, 
+		(MOD_)pMeshCUDA->Get_Module_Heff_Display() == MOD_ANICUBI || pMeshCUDA->IsOutputDataSet_withRect(DATA_E_ANIS),
+		(MOD_)pMeshCUDA->Get_Module_Energy_Display() == MOD_ANICUBI || pMeshCUDA->IsOutputDataSet_withRect(DATA_E_ANIS),
+		pMeshCUDA->GetMeshType() == MESH_ANTIFERROMAGNETIC);
+	if (!error) initialized = true;
 
 	return error;
 }
@@ -32,8 +40,6 @@ BError Anisotropy_CubicCUDA::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 	BError error(CLASS_STR(Anisotropy_CubicCUDA));
 
 	Uninitialize();
-
-	Initialize();
 
 	return error;
 }

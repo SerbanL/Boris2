@@ -54,3 +54,18 @@ BError Mesh::copy_mesh_parameters(MeshBase& copy_this)
 
 	return error;
 }
+
+//-------------------------Setters
+
+//set tensorial anisotropy terms
+BError Mesh::set_tensorial_anisotropy(std::vector<DBL4> Kt)
+{
+	BError error(__FUNCTION__);
+
+	this->Kt = Kt;
+	Kt2 = Kt;
+
+	error = UpdateConfiguration(UPDATECONFIG_PARAMCHANGED);
+
+	return error;
+}

@@ -3,6 +3,9 @@
 
 #ifdef MESH_COMPILATION_ATOM_CUBIC
 
+#include "Atom_DMExchange.h"
+#include "Atom_iDMExchange.h"
+
 //----------------------------------- VALUE GETTERS
 
 //get topological charge using formula Q = Integral(m.(dm/dx x dm/dy) dxdy) / 4PI
@@ -56,49 +59,6 @@ DBL3 Atom_Mesh_Cubic::GetAverageMoment(Rect rectangle)
 
 	if (M1.linear_size()) return M1.average_nonempty_omp(rectangle);
 	else return DBL3(0.0);
-}
-
-//Average square of components
-double Atom_Mesh_Cubic::GetAverageXMomentSq(Rect rectangle)
-{
-#if COMPILECUDA == 1
-	if (paMeshCUDA) {
-
-		if (M1.linear_size()) return paMeshCUDA->M1()->average_xsq_nonempty(n.dim(), rectangle);
-		else return 0.0;
-	}
-#endif
-
-	if (M1.linear_size()) return M1.average_xsq_nonempty_omp(rectangle);
-	else return 0.0;
-}
-
-double Atom_Mesh_Cubic::GetAverageYMomentSq(Rect rectangle)
-{
-#if COMPILECUDA == 1
-	if (paMeshCUDA) {
-
-		if (M1.linear_size()) return paMeshCUDA->M1()->average_ysq_nonempty(n.dim(), rectangle);
-		else return 0.0;
-	}
-#endif
-
-	if (M1.linear_size()) return M1.average_ysq_nonempty_omp(rectangle);
-	else return 0.0;
-}
-
-double Atom_Mesh_Cubic::GetAverageZMomentSq(Rect rectangle)
-{
-#if COMPILECUDA == 1
-	if (paMeshCUDA) {
-
-		if (M1.linear_size()) return paMeshCUDA->M1()->average_zsq_nonempty(n.dim(), rectangle);
-		else return 0.0;
-	}
-#endif
-
-	if (M1.linear_size()) return M1.average_zsq_nonempty_omp(rectangle);
-	else return 0.0;
 }
 
 //get moment magnitude min-max in given rectangle (entire mesh if none specified)

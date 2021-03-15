@@ -23,6 +23,14 @@ class VEC {
 
 	friend Transfer<VType>;
 
+private:
+
+	//temporary storage for extracting line profile data : the extracted mesh points only as VType
+	std::vector<VType> line_profile_storage;
+
+	//extract a single component, for VAL3 floating types, together with line profile displacement as xy data.
+	std::vector<DBL2> line_profile_component;
+
 protected:
 
 	//used for min, max and average reduction : stuck with OMP2.0 currently!
@@ -208,7 +216,7 @@ public:
 
 	//--------------------------------------------VEC GENERATORS : VEC_generate.h, VEC_Voronoi.h
 
-	//most of these are specialised for double only
+	//most of these are specialised for one type (e.g. double only, or DBL3 only)
 
 	//generate custom values from grayscale bitmap : black = 0, white = 1. Apply scaling and offset also.
 	//bitmap size must match new_n.x * new_n.y
@@ -274,6 +282,15 @@ public:
 	//The rotation uses the values for polar (theta) and azimuthal (phi) angles specified in given ranges in degrees. prng instantiated with given seed.
 	//specialised for DBL3 only : applies rotation to vector
 	bool generate_voronoirotation3d(DBL3 new_h, Rect new_rect, DBL2 theta, DBL2 phi, double spacing, unsigned seed) { return true; }
+
+	//flower state for vector type
+	bool generate_flower(int direction, DBL3 centre, double radius, double thickness) { return true; }
+
+	//onion state for vector type
+	bool generate_onion(int direction, DBL3 centre, double radius1, double radius2, double thickness) { return true; }
+
+	//cross-tie state for vector type
+	bool generate_crosstie(int direction, DBL3 centre, double radius, double thickness) { return true; }
 
 	//--------------------------------------------VEC SHAPE MASKS : VEC_shapemask.h
 
@@ -347,22 +364,20 @@ public:
 
 	//--------------------------------------------EXTRACT A LINE PROFILE : VEC_extract.h
 
-	//extract profile to a vector : extract size points starting at (start + step * 0.5) in the direction step; use weighted average to extract profile with stencil given by h
-	//e.g. if you have a start and end point with given step, then setting size = |end - start| / |step| means the profile must be extracted between (start + 0.5*step) and (end - 0.5*step). e.g.: |.|.|.|.|
-	//NOTE : chose not to return the std::vector but instead take it by reference so it can be modified, where the function expects the vector to have the correct size already
-	//the former is much slower in the context these functions are likely to be used, even with move semantics, since a vector has to be allocated every time. 
-	//Instead the vector is already allocated before these functions are called, so they can be used repeatedly without having to allocate memory every time.
-	void extract_profile(size_t size, std::vector<VType>& profile, DBL3 start, DBL3 step);
+	//for all these methods use wrap-around when extracting profiles if points on profile exceed mesh boundaries
 
-	//these specifically apply for VType == cuReal3, allowing extraction of the x, y, z components separately
-	template <typename PType = decltype(GetMagnitude(std::declval<VType>()))>
-	void extract_profile_component_x(size_t size, std::vector<PType>& profile, DBL3 start, DBL3 step);
+	//extract profile in profile_storage temporary vector, returned through reference: extract starting at start in the direction end - step, with given step; use average to extract profile with given stencil, excluding zero points (assumed empty)
+	//all coordinates are relative positions
+	std::vector<VType>& extract_profile(DBL3 start, DBL3 end, double step, DBL3 stencil);
 
-	template <typename PType = decltype(GetMagnitude(std::declval<VType>()))>
-	void extract_profile_component_y(size_t size, std::vector<PType>& profile, DBL3 start, DBL3 step);
-
-	template <typename PType = decltype(GetMagnitude(std::declval<VType>()))>
-	void extract_profile_component_z(size_t size, std::vector<PType>& profile, DBL3 start, DBL3 step);
+	//as above but only component x (for VAL3 floating types only). Return xy data as line profile position and extracted component at that position.
+	std::vector<DBL2>& extract_profile_component_x(DBL3 start, DBL3 end, double step, DBL3 stencil);
+	//as above but only component y (for VAL3 floating types only). Return xy data as line profile position and extracted component at that position.
+	std::vector<DBL2>& extract_profile_component_y(DBL3 start, DBL3 end, double step, DBL3 stencil);
+	//as above but only component z (for VAL3 floating types only). Return xy data as line profile position and extracted component at that position.
+	std::vector<DBL2>& extract_profile_component_z(DBL3 start, DBL3 end, double step, DBL3 stencil);
+	//as above but only component which has largest value for the first point (after stencil averaging) (for VAL3 floating types only). Return xy data as line profile position and extracted component at that position.
+	std::vector<DBL2>& extract_profile_component_max(DBL3 start, DBL3 end, double step, DBL3 stencil);
 
 	//--------------------------------------------TRANSPOSITION : VEC_trans.h
 

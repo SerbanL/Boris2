@@ -31,6 +31,8 @@ protected:
 
 	//available modules for each mesh type
 	static vector_lut< std::vector<MOD_> > modules_for_meshtype;
+	//subset of modules_for_meshtype with modules only suitable for effective field display
+	static vector_lut< std::vector<MOD_> > displaymodules_for_meshtype;
 
 	//allowed quantities to display for each mesh type
 	static vector_lut< std::vector<MESHDISPLAY_> > meshAllowedDisplay;

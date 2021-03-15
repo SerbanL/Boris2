@@ -263,6 +263,14 @@ BError Roughness::Initialize(void)
 		if (!error) initialized = true;
 	}
 
+	//Make sure display data has memory allocated (or freed) as required
+	error = Update_Module_Display_VECs(
+		pMesh->h, pMesh->meshRect, 
+		(MOD_)pMesh->Get_Module_Heff_Display() == MOD_ROUGHNESS || pMesh->IsOutputDataSet_withRect(DATA_E_ROUGH),
+		(MOD_)pMesh->Get_Module_Energy_Display() == MOD_ROUGHNESS || pMesh->IsOutputDataSet_withRect(DATA_E_ROUGH),
+		pMesh->GetMeshType() == MESH_ANTIFERROMAGNETIC);
+	if (error) initialized = false;
+
 	return error;
 }
 
@@ -362,6 +370,9 @@ double Roughness::UpdateField(void)
 				pMesh->Heff[idx] += Hrough;
 
 				energy += Hrough * pMesh->M[idx];
+
+				if (Module_Heff.linear_size()) Module_Heff[idx] = Hrough;
+				if (Module_energy.linear_size()) Module_energy[idx] = -MU0 * pMesh->M[idx] * Hrough / 2;
 			}
 		}
 	}
@@ -382,6 +393,11 @@ double Roughness::UpdateField(void)
 				pMesh->Heff2[idx] += Hrough;
 
 				energy += Hrough * (pMesh->M[idx] + pMesh->M2[idx]) / 2;
+
+				if (Module_Heff.linear_size()) Module_Heff[idx] = Hrough;
+				if (Module_Heff2.linear_size()) Module_Heff2[idx] = Hrough;
+				if (Module_energy.linear_size()) Module_energy[idx] = -MU0 * pMesh->M[idx] * Hrough / 2;
+				if (Module_energy2.linear_size()) Module_energy2[idx] = -MU0 * pMesh->M2[idx] * Hrough / 2;
 			}
 		}
 	}

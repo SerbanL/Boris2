@@ -154,7 +154,10 @@ public:
 
 	//---------------------------------------- OTHERS : DiffEqFM.cpp
 
-	void Restoremagnetization(void);
+	void RestoreMagnetization(void);
+
+	//renormalize vectors to set magnetization length value (which could have a spatial variation)
+	void RenormalizeMagnetization(void);
 
 	//---------------------------------------- OTHER CALCULATION METHODS : DiffEqFM_SEquations.cpp
 
@@ -330,7 +333,10 @@ public:
 
 	//---------------------------------------- OTHERS : DiffEqFM.cpp
 
-	void Restoremagnetization(void) {}
+	void RestoreMagnetization(void) {}
+
+	//renormalize vectors to set magnetization length value (which could have a spatial variation)
+	void RenormalizeMagnetization(void) {}
 
 	//---------------------------------------- OTHER CALCULATION METHODS : DiffEqFM_SEquations.cpp
 

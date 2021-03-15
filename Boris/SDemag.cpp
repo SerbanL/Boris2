@@ -440,15 +440,6 @@ BError SDemag::Set_Magnetic_PBC(void)
 BError SDemag::Initialize(void)
 {
 	BError error(CLASS_STR(SDemag));
-	
-	if (!use_multilayered_convolution) {
-
-		//make sure to allocate memory for Hdemag if we need it
-		if (pSMesh->GetEvaluationSpeedup()) Hdemag.resize(pSMesh->h_fm, pSMesh->sMeshRect_fm);
-		else Hdemag.clear();
-	}
-
-	Hdemag_calculated = false;
 
 	//FFT Kernels are not so quick to calculate - if already initialized then we are guaranteed they are correct
 	if (!initialized) {
@@ -515,6 +506,8 @@ BError SDemag::Initialize(void)
 		}
 	}
 
+	num_Hdemag_saved = 0;
+
 	return error;
 }
 
@@ -555,14 +548,6 @@ BError SDemag::Initialize_Mesh_Transfer(void)
 		//use built-in corrections based on interpolation
 		if (!sm_Vals.Initialize_MeshTransfer(pVal_from, pVal_to, MESHTRANSFERTYPE_WEIGHTED)) return error(BERROR_OUTOFMEMORY_CRIT);
 
-		//the Hdemag.size() check is needed : if in CUDA mode, this method will be called to initialize mesh transfer in sm_Vals so the transfer info can be copied over to the gpu
-		//In this case it's possible Hdemag does not have the correct memory allocated; if not in CUDA mode we first pass through Initialization method before calling this, in which case Hdemag will be sized correctly.
-		if (pSMesh->GetEvaluationSpeedup() && Hdemag.size() == sm_Vals.size()) {
-
-			//initialize mesh transfer for Hdemag as well if we are using evaluation speedup
-			if (!Hdemag.Initialize_MeshTransfer(pVal_from, pVal_to, MESHTRANSFERTYPE_WEIGHTED)) return error(BERROR_OUTOFMEMORY_CRIT);
-		}
-
 		//transfer values from invidual M meshes to sm_Vals - we need this to get number of non-empty cells
 		sm_Vals.transfer_in();
 
@@ -579,14 +564,6 @@ BError SDemag::Initialize_Mesh_Transfer(void)
 
 		//use built-in corrections based on interpolation
 		if (!sm_Vals.Initialize_MeshTransfer_AveragedInputs_DuplicatedOutputs(pVal_from, pVal_from2, pVal_to, pVal_to2, MESHTRANSFERTYPE_WEIGHTED)) return error(BERROR_OUTOFMEMORY_CRIT);
-
-		//the Hdemag.size() check is needed : if in CUDA mode, this method will be called to initialize mesh transfer in sm_Vals so the transfer info can be copied over to the gpu
-		//In this case it's possible Hdemag does not have the correct memory allocated; if not in CUDA mode we first pass through Initialization method before calling this, in which case Hdemag will be sized correctly.
-		if (pSMesh->GetEvaluationSpeedup() && Hdemag.size() == sm_Vals.size()) {
-
-			//initialize mesh transfer for Hdemag as well if we are using evaluation speedup
-			if (!Hdemag.Initialize_MeshTransfer_AveragedInputs_DuplicatedOutputs(pVal_from, pVal_from2, pVal_to, pVal_to2, MESHTRANSFERTYPE_WEIGHTED)) return error(BERROR_OUTOFMEMORY_CRIT);
-		}
 
 		//transfer values from invidual M meshes to sm_Vals - we need this to get number of non-empty cells
 		//NOTE : do not use transfer_in_averaged here as for antiferromagnetic meshes in the ground state this will result in zero values everywhere, looking like there are no non-empty cells
@@ -629,10 +606,6 @@ BError SDemag::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 	BError error(CLASS_STR(SDemag));
 
 	if (ucfg::check_cfgflags(cfgMessage, UPDATECONFIG_DEMAG_CONVCHANGE, UPDATECONFIG_SMESH_CELLSIZE, UPDATECONFIG_MESHCHANGE, UPDATECONFIG_MESHADDED, UPDATECONFIG_MESHDELETED, UPDATECONFIG_MODULEADDED, UPDATECONFIG_MODULEDELETED)) {
-
-		//if memory needs to be allocated for Hdemag, it will be done through Initialize 
-		Hdemag.clear();
-		Hdemag_calculated = false;
 
 		if (!use_multilayered_convolution) {
 
@@ -730,134 +703,37 @@ double SDemag::UpdateField(void)
 	if (!use_multilayered_convolution) {
 
 		///////////////////////////////////////////////////////////////////////////////////////////////
-		////////////////////////////////// EVAL SPEEDUP - SUPERMESH ///////////////////////////////////
-		///////////////////////////////////////////////////////////////////////////////////////////////
-
-		if (pSMesh->GetEvaluationSpeedup()) {
-
-			//use evaluation speedup method (Hdemag will have memory allocated - this was done in the Initialize method)
-
-			int update_type = pSMesh->Check_Step_Update();
-
-			if (update_type != EVALSPEEDUPSTEP_SKIP || !Hdemag_calculated) {
-
-				//calculate field required
-
-				if (update_type == EVALSPEEDUPSTEP_COMPUTE_AND_SAVE) {
-
-					//calculate field and save it for next time : we'll need to use it (expecting update_type = EVALSPEEDUPSTEP_SKIP next time)
-
-					if (!antiferromagnetic_meshes_present) {
-
-						//transfer values from invidual M meshes to sm_Vals
-						sm_Vals.transfer_in();
-					}
-					else {
-
-						//transfer values from invidual M meshes to sm_Vals
-						sm_Vals.transfer_in_averaged();
-					}
-
-					//convolute and get "energy" value
-					energy = Convolute(sm_Vals, Hdemag, true);
-
-					Hdemag_calculated = true;
-
-					//finish off energy value
-					energy *= -MU0 / (2 * non_empty_cells);
-				}
-				else {
-
-					//calculate field but do not save it for next time : we'll need to recalculate it again (expecting update_type != EVALSPEEDUPSTEP_SKIP again next time : EVALSPEEDUPSTEP_COMPUTE_NO_SAVE or EVALSPEEDUPSTEP_COMPUTE_AND_SAVE)
-
-					if (!antiferromagnetic_meshes_present) {
-
-						//transfer values from invidual M meshes to sm_Vals
-						sm_Vals.transfer_in();
-
-						//convolute and get "energy" value
-						energy = Convolute(sm_Vals, sm_Vals, true);
-
-						//good practice to set this to false
-						Hdemag_calculated = false;
-
-						//finish off energy value
-						energy *= -MU0 / (2 * non_empty_cells);
-
-						//transfer to individual Heff meshes
-						sm_Vals.transfer_out();
-					}
-					else {
-
-						//transfer values from invidual M meshes to sm_Vals
-						sm_Vals.transfer_in_averaged();
-
-						//convolute and get "energy" value
-						energy = Convolute(sm_Vals, sm_Vals, true);
-
-						//good practice to set this to false
-						Hdemag_calculated = false;
-
-						//finish off energy value
-						energy *= -MU0 / (2 * non_empty_cells);
-
-						//transfer to individual Heff meshes
-						sm_Vals.transfer_out_duplicated();
-					}
-
-					//return here to avoid adding Hdemag to Heff : we've already added demag field contribution
-					return energy;
-				}
-			}
-
-			if (!antiferromagnetic_meshes_present) {
-
-				//transfer contribution to meshes Heff
-				Hdemag.transfer_out();
-			}
-			else {
-
-				//transfer contribution to meshes Heff
-				Hdemag.transfer_out_duplicated();
-			}
-		}
-
-		///////////////////////////////////////////////////////////////////////////////////////////////
 		//////////////////////////////////// NO SPEEDUP - SUPERMESH ///////////////////////////////////
+		// eval speedup not used for supermesh convolution - possible, but not worth implementing it //
 		///////////////////////////////////////////////////////////////////////////////////////////////
 
+		if (!antiferromagnetic_meshes_present) {
+
+			//transfer values from invidual M meshes to sm_Vals
+			sm_Vals.transfer_in();
+
+			//convolution with demag kernels, output overwrites in sm_Vals
+			energy = Convolute(sm_Vals, sm_Vals, true);
+
+			//finish off energy value
+			energy *= -MU0 / (2 * non_empty_cells);
+
+			//transfer to individual Heff meshes
+			sm_Vals.transfer_out();
+		}
 		else {
 
-			//don't use evaluation speedup, so no need to use Hdemag (this won't have memory allocated anyway)
+			//transfer values from invidual M meshes to sm_Vals
+			sm_Vals.transfer_in_averaged();
 
-			if (!antiferromagnetic_meshes_present) {
+			//convolution with demag kernels, output overwrites in sm_Vals
+			energy = Convolute(sm_Vals, sm_Vals, true);
 
-				//transfer values from invidual M meshes to sm_Vals
-				sm_Vals.transfer_in();
+			//finish off energy value
+			energy *= -MU0 / (2 * non_empty_cells);
 
-				//convolution with demag kernels, output overwrites in sm_Vals
-				energy = Convolute(sm_Vals, sm_Vals, true);
-
-				//finish off energy value
-				energy *= -MU0 / (2 * non_empty_cells);
-
-				//transfer to individual Heff meshes
-				sm_Vals.transfer_out();
-			}
-			else {
-
-				//transfer values from invidual M meshes to sm_Vals
-				sm_Vals.transfer_in_averaged();
-
-				//convolution with demag kernels, output overwrites in sm_Vals
-				energy = Convolute(sm_Vals, sm_Vals, true);
-
-				//finish off energy value
-				energy *= -MU0 / (2 * non_empty_cells);
-
-				//transfer to individual Heff meshes
-				sm_Vals.transfer_out_duplicated();
-			}
+			//transfer to individual Heff meshes
+			sm_Vals.transfer_out_duplicated();
 		}
 	}
 
@@ -867,295 +743,63 @@ double SDemag::UpdateField(void)
 
 	else {
 
-		///////////////////////////////////////////////////////////////////////////////////////////////
-		////////////////////////////////// EVAL SPEEDUP - MULTILAYERED ////////////////////////////////
-		///////////////////////////////////////////////////////////////////////////////////////////////
+		//Forward FFT for all ferromagnetic meshes
+		for (int idx = 0; idx < pSDemag_Demag.size(); idx++) {
 
-		if (pSMesh->GetEvaluationSpeedup()) {
+			///////////////////////////////////////////////////////////////////////////////////////////////
+			//////////////////////////////////// ANTIFERROMAGNETIC MESH ///////////////////////////////////
+			///////////////////////////////////////////////////////////////////////////////////////////////
 
-			//use evaluation speedup method (Hdemag will have memory allocated - this was done in the Initialize method)
+			if (pSDemag_Demag[idx]->pMesh->GetMeshType() == MESH_ANTIFERROMAGNETIC) {
 
-			int update_type = pSMesh->Check_Step_Update();
+				if (pSDemag_Demag[idx]->do_transfer) {
 
-			if (update_type != EVALSPEEDUPSTEP_SKIP || !Hdemag_calculated) {
+					//transfer from M to common meshing
+					pSDemag_Demag[idx]->transfer.transfer_in_averaged();
 
-				//calculate field required
-
-				//Forward FFT for all ferromagnetic meshes
-				for (int idx = 0; idx < pSDemag_Demag.size(); idx++) {
-
-					///////////////////////////////////////////////////////////////////////////////////////////////
-					//////////////////////////////////// ANTIFERROMAGNETIC MESH ///////////////////////////////////
-					///////////////////////////////////////////////////////////////////////////////////////////////
-
-					if (pSDemag_Demag[idx]->pMesh->GetMeshType() == MESH_ANTIFERROMAGNETIC) {
-
-						if (pSDemag_Demag[idx]->do_transfer) {
-
-							//transfer from M to common meshing
-							pSDemag_Demag[idx]->transfer.transfer_in_averaged();
-
-							//do forward FFT
-							pSDemag_Demag[idx]->ForwardFFT(pSDemag_Demag[idx]->transfer);
-						}
-						else {
-
-							pSDemag_Demag[idx]->ForwardFFT_AveragedInputs(pSDemag_Demag[idx]->pMesh->M, pSDemag_Demag[idx]->pMesh->M2);
-						}
-					}
-
-					///////////////////////////////////////////////////////////////////////////////////////////////
-					///////////////////////////////////// OTHER MAGNETIC MESH /////////////////////////////////////
-					///////////////////////////////////////////////////////////////////////////////////////////////
-
-					else {
-
-						if (pSDemag_Demag[idx]->do_transfer) {
-
-							//transfer from M to common meshing
-							pSDemag_Demag[idx]->transfer.transfer_in();
-
-							//do forward FFT
-							pSDemag_Demag[idx]->ForwardFFT(pSDemag_Demag[idx]->transfer);
-						}
-						else {
-
-							pSDemag_Demag[idx]->ForwardFFT(pSDemag_Demag[idx]->pMesh->M);
-						}
-					}
-				}
-		
-				//Kernel multiplications for multiple inputs. Reverse loop ordering improves cache use at both ends.
-				for (int idx = pSDemag_Demag.size() - 1; idx >= 0; idx--) {
-
-					pSDemag_Demag[idx]->KernelMultiplication_MultipleInputs(FFT_Spaces_Input);
-				}
-
-				if (update_type == EVALSPEEDUPSTEP_COMPUTE_AND_SAVE) {
-
-					//calculate field and save it for next time : we'll need to use it (expecting update_type = EVALSPEEDUPSTEP_SKIP next time)
-
-					energy = 0;
-
-					//Inverse FFT
-					for (int idx_mesh = 0; idx_mesh < pSDemag_Demag.size(); idx_mesh++) {
-
-						///////////////////////////////////////////////////////////////////////////////////////////////
-						//////////////////////////////////// ANTIFERROMAGNETIC MESH ///////////////////////////////////
-						///////////////////////////////////////////////////////////////////////////////////////////////
-
-						if (pSDemag_Demag[idx_mesh]->pMesh->GetMeshType() == MESH_ANTIFERROMAGNETIC) {
-
-							if (pSDemag_Demag[idx_mesh]->do_transfer) {
-
-								//do inverse FFT and accumulate energy
-								energy += (pSDemag_Demag[idx_mesh]->InverseFFT(pSDemag_Demag[idx_mesh]->transfer, pSDemag_Demag[idx_mesh]->Hdemag, true) / pSDemag_Demag[idx_mesh]->non_empty_cells) * pSDemag_Demag[idx_mesh]->energy_density_weight;
-							}
-							else {
-
-								//do inverse FFT and accumulate energy
-								energy += (pSDemag_Demag[idx_mesh]->InverseFFT_AveragedInputs(
-									pSDemag_Demag[idx_mesh]->pMesh->M, pSDemag_Demag[idx_mesh]->pMesh->M2,
-									pSDemag_Demag[idx_mesh]->Hdemag, true) / pSDemag_Demag[idx_mesh]->non_empty_cells) * pSDemag_Demag[idx_mesh]->energy_density_weight;
-							}
-						}
-
-						///////////////////////////////////////////////////////////////////////////////////////////////
-						///////////////////////////////////// OTHER MAGNETIC MESH /////////////////////////////////////
-						///////////////////////////////////////////////////////////////////////////////////////////////
-
-						else {
-
-							if (pSDemag_Demag[idx_mesh]->do_transfer) {
-
-								//do inverse FFT and accumulate energy
-								energy += (pSDemag_Demag[idx_mesh]->InverseFFT(pSDemag_Demag[idx_mesh]->transfer, pSDemag_Demag[idx_mesh]->Hdemag, true) / pSDemag_Demag[idx_mesh]->non_empty_cells) * pSDemag_Demag[idx_mesh]->energy_density_weight;
-							}
-							else {
-
-								//do inverse FFT and accumulate energy
-								energy += (pSDemag_Demag[idx_mesh]->InverseFFT(pSDemag_Demag[idx_mesh]->pMesh->M, pSDemag_Demag[idx_mesh]->Hdemag, true) / pSDemag_Demag[idx_mesh]->non_empty_cells) * pSDemag_Demag[idx_mesh]->energy_density_weight;
-							}
-						}
-					}
-
-					//finish off energy value
-					energy *= -MU0 / 2;
-
-					Hdemag_calculated = true;
+					//do forward FFT
+					pSDemag_Demag[idx]->ForwardFFT(pSDemag_Demag[idx]->transfer);
 				}
 				else {
 
-					//calculate field but do not save it for next time : we'll need to recalculate it again (expecting update_type != EVALSPEEDUPSTEP_SKIP again next time : EVALSPEEDUPSTEP_COMPUTE_NO_SAVE or EVALSPEEDUPSTEP_COMPUTE_AND_SAVE)
-
-					energy = 0;
-
-					//Inverse FFT
-					for (int idx_mesh = 0; idx_mesh < pSDemag_Demag.size(); idx_mesh++) {
-
-						///////////////////////////////////////////////////////////////////////////////////////////////
-						//////////////////////////////////// ANTIFERROMAGNETIC MESH ///////////////////////////////////
-						///////////////////////////////////////////////////////////////////////////////////////////////
-
-						if (pSDemag_Demag[idx_mesh]->pMesh->GetMeshType() == MESH_ANTIFERROMAGNETIC) {
-
-							if (pSDemag_Demag[idx_mesh]->do_transfer) {
-
-								//do inverse FFT and accumulate energy
-								energy += (pSDemag_Demag[idx_mesh]->InverseFFT(pSDemag_Demag[idx_mesh]->transfer, pSDemag_Demag[idx_mesh]->transfer, true) / pSDemag_Demag[idx_mesh]->non_empty_cells) * pSDemag_Demag[idx_mesh]->energy_density_weight;
-
-								//transfer to Heff in each mesh
-								pSDemag_Demag[idx_mesh]->transfer.transfer_out_duplicated();
-							}
-							else {
-
-								//do inverse FFT and accumulate energy
-								energy += (pSDemag_Demag[idx_mesh]->InverseFFT_AveragedInputs_DuplicatedOutputs(
-									pSDemag_Demag[idx_mesh]->pMesh->M, pSDemag_Demag[idx_mesh]->pMesh->M2, 
-									pSDemag_Demag[idx_mesh]->pMesh->Heff, pSDemag_Demag[idx_mesh]->pMesh->Heff2, false) / pSDemag_Demag[idx_mesh]->non_empty_cells) * pSDemag_Demag[idx_mesh]->energy_density_weight;
-							}
-						}
-
-						///////////////////////////////////////////////////////////////////////////////////////////////
-						///////////////////////////////////// OTHER MAGNETIC MESH /////////////////////////////////////
-						///////////////////////////////////////////////////////////////////////////////////////////////
-
-						else {
-
-							if (pSDemag_Demag[idx_mesh]->do_transfer) {
-
-								//do inverse FFT and accumulate energy
-								energy += (pSDemag_Demag[idx_mesh]->InverseFFT(pSDemag_Demag[idx_mesh]->transfer, pSDemag_Demag[idx_mesh]->transfer, true) / pSDemag_Demag[idx_mesh]->non_empty_cells) * pSDemag_Demag[idx_mesh]->energy_density_weight;
-
-								//transfer to Heff in each mesh
-								pSDemag_Demag[idx_mesh]->transfer.transfer_out();
-							}
-							else {
-
-								//do inverse FFT and accumulate energy
-								energy += (pSDemag_Demag[idx_mesh]->InverseFFT(pSDemag_Demag[idx_mesh]->pMesh->M, pSDemag_Demag[idx_mesh]->pMesh->Heff, false) / pSDemag_Demag[idx_mesh]->non_empty_cells) * pSDemag_Demag[idx_mesh]->energy_density_weight;
-							}
-						}
-					}
-
-					//finish off energy value
-					energy *= -MU0 / 2;
-
-					//good practice to set this to false
-					Hdemag_calculated = false;
-
-					//return here to avoid adding Hdemag to Heff : we've already added demag field contribution
-					return energy;
+					pSDemag_Demag[idx]->ForwardFFT_AveragedInputs(pSDemag_Demag[idx]->pMesh->M, pSDemag_Demag[idx]->pMesh->M2);
 				}
 			}
 
-			//add contribution to Heff in each mesh
-			for (int idx_mesh = 0; idx_mesh < pSDemag_Demag.size(); idx_mesh++) {
+			///////////////////////////////////////////////////////////////////////////////////////////////
+			///////////////////////////////////// OTHER MAGNETIC MESH /////////////////////////////////////
+			///////////////////////////////////////////////////////////////////////////////////////////////
 
-				///////////////////////////////////////////////////////////////////////////////////////////////
-				//////////////////////////////////// ANTIFERROMAGNETIC MESH ///////////////////////////////////
-				///////////////////////////////////////////////////////////////////////////////////////////////
+			else {
 
-				if (pSDemag_Demag[idx_mesh]->pMesh->GetMeshType() == MESH_ANTIFERROMAGNETIC) {
+				if (pSDemag_Demag[idx]->do_transfer) {
 
-					if (pSDemag_Demag[idx_mesh]->do_transfer) {
+					//transfer from M to common meshing
+					pSDemag_Demag[idx]->transfer.transfer_in();
 
-						//transfer to Heff in each mesh
-						pSDemag_Demag[idx_mesh]->Hdemag.transfer_out_duplicated();
-					}
-					else {
-
-						//add contribution to Heff in each mesh
-						#pragma omp parallel for
-						for (int idx_point = 0; idx_point < pSDemag_Demag[idx_mesh]->Hdemag.linear_size(); idx_point++) {
-
-							pSDemag_Demag[idx_mesh]->pMesh->Heff[idx_point] += pSDemag_Demag[idx_mesh]->Hdemag[idx_point];
-							pSDemag_Demag[idx_mesh]->pMesh->Heff2[idx_point] += pSDemag_Demag[idx_mesh]->Hdemag[idx_point];
-						}
-					}
+					//do forward FFT
+					pSDemag_Demag[idx]->ForwardFFT(pSDemag_Demag[idx]->transfer);
 				}
-
-				///////////////////////////////////////////////////////////////////////////////////////////////
-				///////////////////////////////////// OTHER MAGNETIC MESH /////////////////////////////////////
-				///////////////////////////////////////////////////////////////////////////////////////////////
-
 				else {
 
-					if (pSDemag_Demag[idx_mesh]->do_transfer) {
-
-						//transfer to Heff in each mesh
-						pSDemag_Demag[idx_mesh]->Hdemag.transfer_out();
-					}
-					else {
-
-						//add contribution to Heff in each mesh
-#pragma omp parallel for
-						for (int idx_point = 0; idx_point < pSDemag_Demag[idx_mesh]->Hdemag.linear_size(); idx_point++) {
-
-							pSDemag_Demag[idx_mesh]->pMesh->Heff[idx_point] += pSDemag_Demag[idx_mesh]->Hdemag[idx_point];
-						}
-					}
+					pSDemag_Demag[idx]->ForwardFFT(pSDemag_Demag[idx]->pMesh->M);
 				}
 			}
+		}
+
+		//Kernel multiplications for multiple inputs. Reverse loop ordering improves cache use at both ends.
+		for (int idx = pSDemag_Demag.size() - 1; idx >= 0; idx--) {
+
+			pSDemag_Demag[idx]->KernelMultiplication_MultipleInputs(FFT_Spaces_Input);
 		}
 
 		///////////////////////////////////////////////////////////////////////////////////////////////
 		/////////////////////////////////// NO SPEEDUP - MULTILAYERED /////////////////////////////////
 		///////////////////////////////////////////////////////////////////////////////////////////////
 
-		else {
+		if (!pSMesh->GetEvaluationSpeedup() || (num_Hdemag_saved < pSMesh->GetEvaluationSpeedup() && !pSMesh->Check_Step_Update())) {
 
 			//don't use evaluation speedup, so no need to use Hdemag in SDemag_Demag modules (this won't have memory allocated anyway)
-			
-			//Forward FFT for all ferromagnetic meshes
-			for (int idx = 0; idx < pSDemag_Demag.size(); idx++) {
-
-				///////////////////////////////////////////////////////////////////////////////////////////////
-				//////////////////////////////////// ANTIFERROMAGNETIC MESH ///////////////////////////////////
-				///////////////////////////////////////////////////////////////////////////////////////////////
-
-				if (pSDemag_Demag[idx]->pMesh->GetMeshType() == MESH_ANTIFERROMAGNETIC) {
-
-					if (pSDemag_Demag[idx]->do_transfer) {
-
-						//transfer from M to common meshing
-						pSDemag_Demag[idx]->transfer.transfer_in_averaged();
-
-						//do forward FFT
-						pSDemag_Demag[idx]->ForwardFFT(pSDemag_Demag[idx]->transfer);
-					}
-					else {
-
-						pSDemag_Demag[idx]->ForwardFFT_AveragedInputs(pSDemag_Demag[idx]->pMesh->M, pSDemag_Demag[idx]->pMesh->M2);
-					}
-				}
-
-				///////////////////////////////////////////////////////////////////////////////////////////////
-				///////////////////////////////////// OTHER MAGNETIC MESH /////////////////////////////////////
-				///////////////////////////////////////////////////////////////////////////////////////////////
-
-				else {
-
-					if (pSDemag_Demag[idx]->do_transfer) {
-
-						//transfer from M to common meshing
-						pSDemag_Demag[idx]->transfer.transfer_in();
-
-						//do forward FFT
-						pSDemag_Demag[idx]->ForwardFFT(pSDemag_Demag[idx]->transfer);
-					}
-					else {
-
-						pSDemag_Demag[idx]->ForwardFFT(pSDemag_Demag[idx]->pMesh->M);
-					}
-				}
-			}
-
-			//Kernel multiplications for multiple inputs. Reverse loop ordering improves cache use at both ends.
-			for (int idx = pSDemag_Demag.size() - 1; idx >= 0; idx--) {
-
-				pSDemag_Demag[idx]->KernelMultiplication_MultipleInputs(FFT_Spaces_Input);
-			}
 
 			energy = 0;
 
@@ -1171,7 +815,15 @@ double SDemag::UpdateField(void)
 					if (pSDemag_Demag[idx]->do_transfer) {
 
 						//do inverse FFT and accumulate energy
-						energy += (pSDemag_Demag[idx]->InverseFFT(pSDemag_Demag[idx]->transfer, pSDemag_Demag[idx]->transfer, true) / pSDemag_Demag[idx]->non_empty_cells) * pSDemag_Demag[idx]->energy_density_weight;
+						if (pSDemag_Demag[idx]->transfer_Module_Heff.linear_size()) {
+
+							pSDemag_Demag[idx]->energy += (-MU0 / 2) * (pSDemag_Demag[idx]->InverseFFT(
+								pSDemag_Demag[idx]->transfer, pSDemag_Demag[idx]->transfer, true, &pSDemag_Demag[idx]->transfer_Module_Heff, &pSDemag_Demag[idx]->transfer_Module_energy) / pSDemag_Demag[idx]->non_empty_cells);
+
+							pSDemag_Demag[idx]->transfer_Module_Heff.transfer_out();
+							pSDemag_Demag[idx]->transfer_Module_energy.transfer_out();
+						}
+						else pSDemag_Demag[idx]->energy += (-MU0 / 2) * (pSDemag_Demag[idx]->InverseFFT(pSDemag_Demag[idx]->transfer, pSDemag_Demag[idx]->transfer, true) / pSDemag_Demag[idx]->non_empty_cells);
 
 						//transfer to Heff in each mesh
 						pSDemag_Demag[idx]->transfer.transfer_out_duplicated();
@@ -1179,9 +831,14 @@ double SDemag::UpdateField(void)
 					else {
 
 						//do inverse FFT and accumulate energy
-						energy += (pSDemag_Demag[idx]->InverseFFT_AveragedInputs_DuplicatedOutputs(
-							pSDemag_Demag[idx]->pMesh->M, pSDemag_Demag[idx]->pMesh->M2,
-							pSDemag_Demag[idx]->pMesh->Heff, pSDemag_Demag[idx]->pMesh->Heff2, false) / pSDemag_Demag[idx]->non_empty_cells) * pSDemag_Demag[idx]->energy_density_weight;
+						if (pSDemag_Demag[idx]->Module_Heff.linear_size())
+							pSDemag_Demag[idx]->energy += (-MU0 / 2) * (pSDemag_Demag[idx]->InverseFFT_AveragedInputs_DuplicatedOutputs(
+								pSDemag_Demag[idx]->pMesh->M, pSDemag_Demag[idx]->pMesh->M2,
+								pSDemag_Demag[idx]->pMesh->Heff, pSDemag_Demag[idx]->pMesh->Heff2, false, &pSDemag_Demag[idx]->Module_Heff, &pSDemag_Demag[idx]->Module_energy) / pSDemag_Demag[idx]->non_empty_cells);
+						else
+							pSDemag_Demag[idx]->energy += (-MU0 / 2) * (pSDemag_Demag[idx]->InverseFFT_AveragedInputs_DuplicatedOutputs(
+								pSDemag_Demag[idx]->pMesh->M, pSDemag_Demag[idx]->pMesh->M2,
+								pSDemag_Demag[idx]->pMesh->Heff, pSDemag_Demag[idx]->pMesh->Heff2, false) / pSDemag_Demag[idx]->non_empty_cells);
 					}
 				}
 
@@ -1194,21 +851,480 @@ double SDemag::UpdateField(void)
 					if (pSDemag_Demag[idx]->do_transfer) {
 
 						//do inverse FFT and accumulate energy
-						energy += (pSDemag_Demag[idx]->InverseFFT(pSDemag_Demag[idx]->transfer, pSDemag_Demag[idx]->transfer, true) / pSDemag_Demag[idx]->non_empty_cells) * pSDemag_Demag[idx]->energy_density_weight;
+						if (pSDemag_Demag[idx]->transfer_Module_Heff.linear_size()) {
+
+							pSDemag_Demag[idx]->energy += (-MU0 / 2) * (pSDemag_Demag[idx]->InverseFFT(
+								pSDemag_Demag[idx]->transfer, pSDemag_Demag[idx]->transfer, true, &pSDemag_Demag[idx]->transfer_Module_Heff, &pSDemag_Demag[idx]->transfer_Module_energy) / pSDemag_Demag[idx]->non_empty_cells);
+
+							pSDemag_Demag[idx]->transfer_Module_Heff.transfer_out();
+							pSDemag_Demag[idx]->transfer_Module_energy.transfer_out();
+						}
+						else pSDemag_Demag[idx]->energy += (-MU0 / 2) * (pSDemag_Demag[idx]->InverseFFT(pSDemag_Demag[idx]->transfer, pSDemag_Demag[idx]->transfer, true) / pSDemag_Demag[idx]->non_empty_cells);
 
 						//transfer to Heff in each mesh
 						pSDemag_Demag[idx]->transfer.transfer_out();
 					}
 					else {
-
+						
 						//do inverse FFT and accumulate energy
-						energy += (pSDemag_Demag[idx]->InverseFFT(pSDemag_Demag[idx]->pMesh->M, pSDemag_Demag[idx]->pMesh->Heff, false) / pSDemag_Demag[idx]->non_empty_cells) * pSDemag_Demag[idx]->energy_density_weight;
+						if (pSDemag_Demag[idx]->Module_Heff.linear_size()) {
+
+							pSDemag_Demag[idx]->energy += (-MU0 / 2) * (pSDemag_Demag[idx]->InverseFFT(
+								pSDemag_Demag[idx]->pMesh->M, pSDemag_Demag[idx]->pMesh->Heff, false, &pSDemag_Demag[idx]->Module_Heff, &pSDemag_Demag[idx]->Module_energy) / pSDemag_Demag[idx]->non_empty_cells);
+						}
+						else {
+
+							pSDemag_Demag[idx]->energy += (-MU0 / 2) * (pSDemag_Demag[idx]->InverseFFT(pSDemag_Demag[idx]->pMesh->M, pSDemag_Demag[idx]->pMesh->Heff, false) / pSDemag_Demag[idx]->non_empty_cells);
+						}
+					}
+				}
+
+				//build total energy
+				energy += pSDemag_Demag[idx]->energy * pSDemag_Demag[idx]->energy_density_weight;
+			}
+		}
+
+		///////////////////////////////////////////////////////////////////////////////////////////////
+		////////////////////////////////// EVAL SPEEDUP - MULTILAYERED ////////////////////////////////
+		///////////////////////////////////////////////////////////////////////////////////////////////
+
+		else {
+
+			//update if required by ODE solver or if we don't have enough previous evaluations saved to extrapolate
+			if (pSMesh->Check_Step_Update() || num_Hdemag_saved < pSMesh->GetEvaluationSpeedup()) {
+
+				energy = 0;
+
+				for (int idx_mesh = 0; idx_mesh < pSDemag_Demag.size(); idx_mesh++) {
+
+					VEC<DBL3>* pHdemag;
+
+					if (num_Hdemag_saved < pSMesh->GetEvaluationSpeedup()) {
+
+						//don't have enough evaluations, so save next one
+						switch (num_Hdemag_saved)
+						{
+						case 0:
+							pHdemag = &pSDemag_Demag[idx_mesh]->Hdemag;
+							if (idx_mesh == pSDemag_Demag.size() - 1) time_demag1 = pSMesh->Get_EvalStep_Time();
+							break;
+						case 1:
+							pHdemag = &pSDemag_Demag[idx_mesh]->Hdemag2;
+							if (idx_mesh == pSDemag_Demag.size() - 1) time_demag2 = pSMesh->Get_EvalStep_Time();
+							break;
+						case 2:
+							pHdemag = &pSDemag_Demag[idx_mesh]->Hdemag3;
+							if (idx_mesh == pSDemag_Demag.size() - 1) time_demag3 = pSMesh->Get_EvalStep_Time();
+							break;
+						}
+
+						if (idx_mesh == pSDemag_Demag.size() - 1) num_Hdemag_saved++;
+					}
+					else {
+
+						//have enough evaluations saved, so just cycle between them now
+
+						//QUADRATIC
+						if (pSMesh->GetEvaluationSpeedup() == 3) {
+
+							//1, 2, 3 -> next is 1
+							if (time_demag3 > time_demag2 && time_demag2 > time_demag1) {
+
+								pHdemag = &pSDemag_Demag[idx_mesh]->Hdemag;
+								if (idx_mesh == pSDemag_Demag.size() - 1) time_demag1 = pSMesh->Get_EvalStep_Time();
+							}
+							//2, 3, 1 -> next is 2
+							else if (time_demag3 > time_demag2 && time_demag1 > time_demag2) {
+
+								pHdemag = &pSDemag_Demag[idx_mesh]->Hdemag2;
+								if (idx_mesh == pSDemag_Demag.size() - 1) time_demag2 = pSMesh->Get_EvalStep_Time();
+							}
+							//3, 1, 2 -> next is 3, leading to 1, 2, 3 again
+							else {
+
+								pHdemag = &pSDemag_Demag[idx_mesh]->Hdemag3;
+								if (idx_mesh == pSDemag_Demag.size() - 1) time_demag3 = pSMesh->Get_EvalStep_Time();
+							}
+						}
+						//LINEAR
+						else if (pSMesh->GetEvaluationSpeedup() == 2) {
+
+							//1, 2 -> next is 1
+							if (time_demag2 > time_demag1) {
+
+								pHdemag = &pSDemag_Demag[idx_mesh]->Hdemag;
+								if (idx_mesh == pSDemag_Demag.size() - 1) time_demag1 = pSMesh->Get_EvalStep_Time();
+							}
+							//2, 1 -> next is 2, leading to 1, 2 again
+							else {
+
+								pHdemag = &pSDemag_Demag[idx_mesh]->Hdemag2;
+								if (idx_mesh == pSDemag_Demag.size() - 1) time_demag2 = pSMesh->Get_EvalStep_Time();
+							}
+						}
+						//STEP
+						else {
+
+							pHdemag = &pSDemag_Demag[idx_mesh]->Hdemag;
+						}
+					}
+
+					//Inverse FFT
+
+					///////////////////////////////////////////////////////////////////////////////////////////////
+					//////////////////////////////////// ANTIFERROMAGNETIC MESH ///////////////////////////////////
+					///////////////////////////////////////////////////////////////////////////////////////////////
+
+					if (pSDemag_Demag[idx_mesh]->pMesh->GetMeshType() == MESH_ANTIFERROMAGNETIC) {
+
+						if (pSDemag_Demag[idx_mesh]->do_transfer) {
+
+							//do inverse FFT and accumulate energy
+							if (pSDemag_Demag[idx_mesh]->transfer_Module_Heff.linear_size()) {
+
+								pSDemag_Demag[idx_mesh]->energy += (-MU0 / 2) * (pSDemag_Demag[idx_mesh]->InverseFFT(
+									pSDemag_Demag[idx_mesh]->transfer, *pHdemag, true, &pSDemag_Demag[idx_mesh]->transfer_Module_Heff, &pSDemag_Demag[idx_mesh]->transfer_Module_energy) / pSDemag_Demag[idx_mesh]->non_empty_cells);
+
+								pSDemag_Demag[idx_mesh]->transfer_Module_Heff.transfer_out();
+								pSDemag_Demag[idx_mesh]->transfer_Module_energy.transfer_out();
+							}
+							else {
+
+								pSDemag_Demag[idx_mesh]->energy += (-MU0 / 2) * (pSDemag_Demag[idx_mesh]->InverseFFT(pSDemag_Demag[idx_mesh]->transfer, *pHdemag, true) / pSDemag_Demag[idx_mesh]->non_empty_cells);
+							}
+
+							//transfer to Heff in each mesh
+							pHdemag->transfer_out_duplicated();
+
+							//remove self demag contribution
+							#pragma omp parallel for
+							for (int idx = 0; idx < pHdemag->linear_size(); idx++) {
+
+								//subtract self demag contribution: we'll add in again for the new magnetization, so it least the self demag is exact
+								(*pHdemag)[idx] -= (pSDemag_Demag[idx_mesh]->selfDemagCoeff & pSDemag_Demag[idx_mesh]->transfer[idx]);
+							}
+						}
+						else {
+
+							//do inverse FFT and accumulate energy
+							if (pSDemag_Demag[idx_mesh]->Module_Heff.linear_size()) {
+
+								pSDemag_Demag[idx_mesh]->energy += (-MU0 / 2) * (pSDemag_Demag[idx_mesh]->InverseFFT_AveragedInputs(
+									pSDemag_Demag[idx_mesh]->pMesh->M, pSDemag_Demag[idx_mesh]->pMesh->M2,
+									*pHdemag, true, &pSDemag_Demag[idx_mesh]->Module_Heff, &pSDemag_Demag[idx_mesh]->Module_energy) / pSDemag_Demag[idx_mesh]->non_empty_cells);
+							}
+							else {
+
+								pSDemag_Demag[idx_mesh]->energy += (-MU0 / 2) * (pSDemag_Demag[idx_mesh]->InverseFFT_AveragedInputs(
+									pSDemag_Demag[idx_mesh]->pMesh->M, pSDemag_Demag[idx_mesh]->pMesh->M2,
+									*pHdemag, true) / pSDemag_Demag[idx_mesh]->non_empty_cells);
+							}
+
+							//add contribution to Heff and Heff2 then remove self demag contribution
+							#pragma omp parallel for
+							for (int idx = 0; idx < pHdemag->linear_size(); idx++) {
+
+								pSDemag_Demag[idx_mesh]->pMesh->Heff[idx] += (*pHdemag)[idx];
+								pSDemag_Demag[idx_mesh]->pMesh->Heff2[idx] += (*pHdemag)[idx];
+								//subtract self demag contribution: we'll add in again for the new magnetization, so it least the self demag is exact
+								(*pHdemag)[idx] -= (pSDemag_Demag[idx_mesh]->selfDemagCoeff & (pSDemag_Demag[idx_mesh]->pMesh->M[idx] + pSDemag_Demag[idx_mesh]->pMesh->M2[idx]) / 2);
+							}
+						}
+					}
+
+					///////////////////////////////////////////////////////////////////////////////////////////////
+					///////////////////////////////////// OTHER MAGNETIC MESH /////////////////////////////////////
+					///////////////////////////////////////////////////////////////////////////////////////////////
+
+					else {
+
+						if (pSDemag_Demag[idx_mesh]->do_transfer) {
+
+							//do inverse FFT and accumulate energy
+							if (pSDemag_Demag[idx_mesh]->transfer_Module_Heff.linear_size()) {
+
+								pSDemag_Demag[idx_mesh]->energy += (-MU0 / 2) * (pSDemag_Demag[idx_mesh]->InverseFFT(
+									pSDemag_Demag[idx_mesh]->transfer, *pHdemag, true, &pSDemag_Demag[idx_mesh]->transfer_Module_Heff, &pSDemag_Demag[idx_mesh]->transfer_Module_energy) / pSDemag_Demag[idx_mesh]->non_empty_cells);
+
+								pSDemag_Demag[idx_mesh]->transfer_Module_Heff.transfer_out();
+								pSDemag_Demag[idx_mesh]->transfer_Module_energy.transfer_out();
+							}
+							else {
+
+								pSDemag_Demag[idx_mesh]->energy += (-MU0 / 2) * (pSDemag_Demag[idx_mesh]->InverseFFT(pSDemag_Demag[idx_mesh]->transfer, *pHdemag, true) / pSDemag_Demag[idx_mesh]->non_empty_cells);
+							}
+
+							//transfer to Heff in each mesh
+							pHdemag->transfer_out();
+
+							//remove self demag contribution
+							#pragma omp parallel for
+							for (int idx = 0; idx < pHdemag->linear_size(); idx++) {
+
+								//subtract self demag contribution: we'll add in again for the new magnetization, so it least the self demag is exact
+								(*pHdemag)[idx] -= (pSDemag_Demag[idx_mesh]->selfDemagCoeff & pSDemag_Demag[idx_mesh]->transfer[idx]);
+							}
+						}
+						else {
+
+							//do inverse FFT and accumulate energy
+							if (pSDemag_Demag[idx_mesh]->Module_Heff.linear_size()) {
+
+								pSDemag_Demag[idx_mesh]->energy += (-MU0 / 2) * (pSDemag_Demag[idx_mesh]->InverseFFT(
+									pSDemag_Demag[idx_mesh]->pMesh->M, *pHdemag, true, &pSDemag_Demag[idx_mesh]->Module_Heff, &pSDemag_Demag[idx_mesh]->Module_energy) / pSDemag_Demag[idx_mesh]->non_empty_cells);
+							}
+							else {
+
+								pSDemag_Demag[idx_mesh]->energy += (-MU0 / 2) * (pSDemag_Demag[idx_mesh]->InverseFFT(
+									pSDemag_Demag[idx_mesh]->pMesh->M, *pHdemag, true) / pSDemag_Demag[idx_mesh]->non_empty_cells);
+							}
+
+							//add contribution to Heff then remove self demag contribution
+							#pragma omp parallel for
+							for (int idx = 0; idx < pHdemag->linear_size(); idx++) {
+
+								pSDemag_Demag[idx_mesh]->pMesh->Heff[idx] += (*pHdemag)[idx];
+								//subtract self demag contribution: we'll add in again for the new magnetization, so it least the self demag is exact
+								(*pHdemag)[idx] -= (pSDemag_Demag[idx_mesh]->selfDemagCoeff & pSDemag_Demag[idx_mesh]->pMesh->M[idx]);
+							}
+						}
+					}
+
+					//build total energy
+					energy += pSDemag_Demag[idx_mesh]->energy * pSDemag_Demag[idx_mesh]->energy_density_weight;
+				}
+			}
+			else {
+
+				//not required to update, and we have enough previous evaluations: use previous Hdemag saves to extrapolate for current evaluation
+
+				double a1 = 1.0, a2 = 0.0, a3 = 0.0;
+				double time = pSMesh->Get_EvalStep_Time();
+
+				//QUADRATIC
+				if (pSMesh->GetEvaluationSpeedup() == 3) {
+
+					if (time_demag2 != time_demag1 && time_demag2 != time_demag3 && time_demag1 != time_demag3) {
+
+						a1 = (time - time_demag2) * (time - time_demag3) / ((time_demag1 - time_demag2) * (time_demag1 - time_demag3));
+						a2 = (time - time_demag1) * (time - time_demag3) / ((time_demag2 - time_demag1) * (time_demag2 - time_demag3));
+						a3 = (time - time_demag1) * (time - time_demag2) / ((time_demag3 - time_demag1) * (time_demag3 - time_demag2));
+					}
+
+					for (int idx_mesh = 0; idx_mesh < pSDemag_Demag.size(); idx_mesh++) {
+
+						//ANTIFERROMAGNETIC
+						if (pSDemag_Demag[idx_mesh]->pMesh->GetMeshType() == MESH_ANTIFERROMAGNETIC) {
+
+							if (pSDemag_Demag[idx_mesh]->do_transfer) {
+
+								#pragma omp parallel for
+								for (int idx = 0; idx < pSDemag_Demag[idx_mesh]->Hdemag.linear_size(); idx++) {
+
+									DBL3 Hdemag_value =
+										pSDemag_Demag[idx_mesh]->Hdemag[idx] * a1 + pSDemag_Demag[idx_mesh]->Hdemag2[idx] * a2 + pSDemag_Demag[idx_mesh]->Hdemag3[idx] * a3 +
+										(pSDemag_Demag[idx_mesh]->selfDemagCoeff & pSDemag_Demag[idx_mesh]->transfer[idx]);
+
+									pSDemag_Demag[idx_mesh]->transfer[idx] = Hdemag_value;
+								}
+
+								//transfer to Heff in each mesh
+								pSDemag_Demag[idx_mesh]->transfer.transfer_out_duplicated();
+							}
+							else {
+
+								//add contribution to Heff and Heff2
+								#pragma omp parallel for
+								for (int idx = 0; idx < pSDemag_Demag[idx_mesh]->Hdemag.linear_size(); idx++) {
+
+									DBL3 Hdemag_value =
+										pSDemag_Demag[idx_mesh]->Hdemag[idx] * a1 + pSDemag_Demag[idx_mesh]->Hdemag2[idx] * a2 + pSDemag_Demag[idx_mesh]->Hdemag3[idx] * a3 +
+										(pSDemag_Demag[idx_mesh]->selfDemagCoeff & (pSDemag_Demag[idx_mesh]->pMesh->M[idx] + pSDemag_Demag[idx_mesh]->pMesh->M2[idx]) / 2);
+
+									pSDemag_Demag[idx_mesh]->pMesh->Heff[idx] += Hdemag_value;
+									pSDemag_Demag[idx_mesh]->pMesh->Heff2[idx] += Hdemag_value;
+								}
+							}
+						}
+						//FERROMAGNETIC
+						else {
+
+							if (pSDemag_Demag[idx_mesh]->do_transfer) {
+
+								#pragma omp parallel for
+								for (int idx = 0; idx < pSDemag_Demag[idx_mesh]->Hdemag.linear_size(); idx++) {
+
+									DBL3 Hdemag_value =
+										pSDemag_Demag[idx_mesh]->Hdemag[idx] * a1 + pSDemag_Demag[idx_mesh]->Hdemag2[idx] * a2 + pSDemag_Demag[idx_mesh]->Hdemag3[idx] * a3 +
+										(pSDemag_Demag[idx_mesh]->selfDemagCoeff & pSDemag_Demag[idx_mesh]->transfer[idx]);
+
+									pSDemag_Demag[idx_mesh]->transfer[idx] = Hdemag_value;
+								}
+
+								//transfer to Heff in each mesh
+								pSDemag_Demag[idx_mesh]->transfer.transfer_out();
+							}
+							else {
+
+								//add contribution to Heff
+								#pragma omp parallel for
+								for (int idx = 0; idx < pSDemag_Demag[idx_mesh]->Hdemag.linear_size(); idx++) {
+
+									pSDemag_Demag[idx_mesh]->pMesh->Heff[idx] +=
+										pSDemag_Demag[idx_mesh]->Hdemag[idx] * a1 + pSDemag_Demag[idx_mesh]->Hdemag2[idx] * a2 + pSDemag_Demag[idx_mesh]->Hdemag3[idx] * a3 +
+										(pSDemag_Demag[idx_mesh]->selfDemagCoeff & pSDemag_Demag[idx_mesh]->pMesh->M[idx]);
+								}
+							}
+						}
+					}
+				}
+				//LINEAR
+				else if (pSMesh->GetEvaluationSpeedup() == 2) {
+
+					if (time_demag2 != time_demag1) {
+
+						a1 = (time - time_demag2) / (time_demag1 - time_demag2);
+						a2 = (time - time_demag1) / (time_demag2 - time_demag1);
+					}
+
+					for (int idx_mesh = 0; idx_mesh < pSDemag_Demag.size(); idx_mesh++) {
+
+						//ANTIFERROMAGNETIC
+						if (pSDemag_Demag[idx_mesh]->pMesh->GetMeshType() == MESH_ANTIFERROMAGNETIC) {
+
+							if (pSDemag_Demag[idx_mesh]->do_transfer) {
+
+								#pragma omp parallel for
+								for (int idx = 0; idx < pSDemag_Demag[idx_mesh]->Hdemag.linear_size(); idx++) {
+
+									DBL3 Hdemag_value =
+										pSDemag_Demag[idx_mesh]->Hdemag[idx] * a1 + pSDemag_Demag[idx_mesh]->Hdemag2[idx] * a2 +
+										(pSDemag_Demag[idx_mesh]->selfDemagCoeff & pSDemag_Demag[idx_mesh]->transfer[idx]);
+
+									pSDemag_Demag[idx_mesh]->transfer[idx] = Hdemag_value;
+								}
+
+								//transfer to Heff in each mesh
+								pSDemag_Demag[idx_mesh]->transfer.transfer_out_duplicated();
+							}
+							else {
+
+								//add contribution to Heff and Heff2
+								#pragma omp parallel for
+								for (int idx = 0; idx < pSDemag_Demag[idx_mesh]->Hdemag.linear_size(); idx++) {
+
+									DBL3 Hdemag_value =
+										pSDemag_Demag[idx_mesh]->Hdemag[idx] * a1 + pSDemag_Demag[idx_mesh]->Hdemag2[idx] * a2 +
+										(pSDemag_Demag[idx_mesh]->selfDemagCoeff & (pSDemag_Demag[idx_mesh]->pMesh->M[idx] + pSDemag_Demag[idx_mesh]->pMesh->M2[idx]) / 2);
+
+									pSDemag_Demag[idx_mesh]->pMesh->Heff[idx] += Hdemag_value;
+									pSDemag_Demag[idx_mesh]->pMesh->Heff2[idx] += Hdemag_value;
+								}
+							}
+						}
+						//FERROMAGNETIC
+						else {
+
+							if (pSDemag_Demag[idx_mesh]->do_transfer) {
+
+								#pragma omp parallel for
+								for (int idx = 0; idx < pSDemag_Demag[idx_mesh]->Hdemag.linear_size(); idx++) {
+
+									DBL3 Hdemag_value =
+										pSDemag_Demag[idx_mesh]->Hdemag[idx] * a1 + pSDemag_Demag[idx_mesh]->Hdemag2[idx] * a2 +
+										(pSDemag_Demag[idx_mesh]->selfDemagCoeff & pSDemag_Demag[idx_mesh]->transfer[idx]);
+
+									pSDemag_Demag[idx_mesh]->transfer[idx] = Hdemag_value;
+								}
+
+								//transfer to Heff in each mesh
+								pSDemag_Demag[idx_mesh]->transfer.transfer_out();
+							}
+							else {
+
+								//add contribution to Heff
+								#pragma omp parallel for
+								for (int idx = 0; idx < pSDemag_Demag[idx_mesh]->Hdemag.linear_size(); idx++) {
+
+									pSDemag_Demag[idx_mesh]->pMesh->Heff[idx] +=
+										pSDemag_Demag[idx_mesh]->Hdemag[idx] * a1 + pSDemag_Demag[idx_mesh]->Hdemag2[idx] * a2 +
+										(pSDemag_Demag[idx_mesh]->selfDemagCoeff & pSDemag_Demag[idx_mesh]->pMesh->M[idx]);
+								}
+							}
+						}
+					}
+				}
+				//STEP
+				else {
+
+					for (int idx_mesh = 0; idx_mesh < pSDemag_Demag.size(); idx_mesh++) {
+
+						//ANTIFERROMAGNETIC
+						if (pSDemag_Demag[idx_mesh]->pMesh->GetMeshType() == MESH_ANTIFERROMAGNETIC) {
+
+							if (pSDemag_Demag[idx_mesh]->do_transfer) {
+
+								#pragma omp parallel for
+								for (int idx = 0; idx < pSDemag_Demag[idx_mesh]->Hdemag.linear_size(); idx++) {
+
+									DBL3 Hdemag_value =
+										pSDemag_Demag[idx_mesh]->Hdemag[idx] +
+										(pSDemag_Demag[idx_mesh]->selfDemagCoeff & pSDemag_Demag[idx_mesh]->transfer[idx]);
+
+									pSDemag_Demag[idx_mesh]->transfer[idx] = Hdemag_value;
+								}
+
+								//transfer to Heff in each mesh
+								pSDemag_Demag[idx_mesh]->transfer.transfer_out_duplicated();
+							}
+							else {
+
+								//add contribution to Heff and Heff2
+								#pragma omp parallel for
+								for (int idx = 0; idx < pSDemag_Demag[idx_mesh]->Hdemag.linear_size(); idx++) {
+
+									DBL3 Hdemag_value =
+										pSDemag_Demag[idx_mesh]->Hdemag[idx] +
+										(pSDemag_Demag[idx_mesh]->selfDemagCoeff & (pSDemag_Demag[idx_mesh]->pMesh->M[idx] + pSDemag_Demag[idx_mesh]->pMesh->M2[idx]) / 2);
+
+									pSDemag_Demag[idx_mesh]->pMesh->Heff[idx] += Hdemag_value;
+									pSDemag_Demag[idx_mesh]->pMesh->Heff2[idx] += Hdemag_value;
+								}
+							}
+						}
+						//FERROMAGNETIC
+						else {
+
+							if (pSDemag_Demag[idx_mesh]->do_transfer) {
+
+								#pragma omp parallel for
+								for (int idx = 0; idx < pSDemag_Demag[idx_mesh]->Hdemag.linear_size(); idx++) {
+
+									DBL3 Hdemag_value =
+										pSDemag_Demag[idx_mesh]->Hdemag[idx] +
+										(pSDemag_Demag[idx_mesh]->selfDemagCoeff & pSDemag_Demag[idx_mesh]->transfer[idx]);
+
+									pSDemag_Demag[idx_mesh]->transfer[idx] = Hdemag_value;
+								}
+
+								//transfer to Heff in each mesh
+								pSDemag_Demag[idx_mesh]->transfer.transfer_out();
+							}
+							else {
+
+								//add contribution to Heff
+								#pragma omp parallel for
+								for (int idx = 0; idx < pSDemag_Demag[idx_mesh]->Hdemag.linear_size(); idx++) {
+
+									pSDemag_Demag[idx_mesh]->pMesh->Heff[idx] +=
+										pSDemag_Demag[idx_mesh]->Hdemag[idx] +
+										(pSDemag_Demag[idx_mesh]->selfDemagCoeff & pSDemag_Demag[idx_mesh]->pMesh->M[idx]);
+								}
+							}
+						}
 					}
 				}
 			}
-
-			//finish off energy value
-			energy *= -MU0 / 2;
 		}
 	}
 

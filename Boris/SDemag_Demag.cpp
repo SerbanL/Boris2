@@ -67,35 +67,52 @@ BError SDemag_Demag::Initialize_Mesh_Transfer(void)
 	//common discretisation cellsize (may differ in thickness in 2D mode)
 	DBL3 h_common = convolution_rect / pSDemag->n_common;
 
-	//set correct size for transfer VEC
+	//set correct size for transfer VEC (if using transfer)
 	if (!transfer.resize(h_common, convolution_rect)) error_on_create(BERROR_OUTOFMEMORY_CRIT);
 
-	//initialize transfer object
+	//initialize transfer object and any Hdemag objects used for evaluation speedup
 
 	///////////////////////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////// ANTIFERROMAGNETIC MESH ///////////////////////////////////
 	///////////////////////////////////////////////////////////////////////////////////////////////
 
 	if (pMesh->GetMeshType() == MESH_ANTIFERROMAGNETIC) {
-
+		
 		if (!transfer.Initialize_MeshTransfer_AveragedInputs_DuplicatedOutputs(
 			{ &pMesh->M }, { &pMesh->M2 }, { &pMesh->Heff }, { &pMesh->Heff2 },
 			MESHTRANSFERTYPE_WEIGHTED)) return error(BERROR_OUTOFMEMORY_CRIT);
 
-		//the Hdemag.size() check is needed : if in CUDA mode, this method will be called to initialize mesh transfer in transfer so the transfer info can be copied over to the gpu
-		//In this case it's possible Hdemag does not have the correct memory allocated; if not in CUDA mode we first pass through Initialization method before calling this, in which case Hdemag will be sized correctly.
-		if (pMesh->pSMesh->GetEvaluationSpeedup() && Hdemag.size() == transfer.size()) {
+		//the Hdemag.size() checks are needed : if initializing in CUDA mode, this routine will be called so transfer objecty can calculate the mesh transfer. we don't need Hdemag ... from SDemag_Demag module in CUDA mode (but we do need them from the SDemagCUDA_Demag).
+		if (pMesh->pSMesh->GetEvaluationSpeedup()) {
 
-			//initialize mesh transfer for Hdemag as well if we are using evaluation speedup
-			if (!Hdemag.Initialize_MeshTransfer_AveragedInputs_DuplicatedOutputs(
-				{ &pMesh->M }, { &pMesh->M2 }, { &pMesh->Heff }, { &pMesh->Heff2 },
-				MESHTRANSFERTYPE_WEIGHTED)) return error(BERROR_OUTOFMEMORY_CRIT);
+			if (pMesh->pSMesh->GetEvaluationSpeedup() >= 1 && Hdemag.size() == transfer.size()) {
+
+				//initialize mesh transfer for Hdemag as well if we are using evaluation speedup
+				if (!Hdemag.Initialize_MeshTransfer_AveragedInputs_DuplicatedOutputs(
+					{ &pMesh->M }, { &pMesh->M2 }, { &pMesh->Heff }, { &pMesh->Heff2 },
+					MESHTRANSFERTYPE_WEIGHTED)) return error(BERROR_OUTOFMEMORY_CRIT);
+			}
+
+			if (pMesh->pSMesh->GetEvaluationSpeedup() >= 2 && Hdemag2.size() == transfer.size()) {
+
+				//initialize mesh transfer for Hdemag as well if we are using evaluation speedup
+				if (!Hdemag2.Initialize_MeshTransfer_AveragedInputs_DuplicatedOutputs(
+					{ &pMesh->M }, { &pMesh->M2 }, { &pMesh->Heff }, { &pMesh->Heff2 },
+					MESHTRANSFERTYPE_WEIGHTED)) return error(BERROR_OUTOFMEMORY_CRIT);
+			}
+
+			if (pMesh->pSMesh->GetEvaluationSpeedup() >= 3 && Hdemag3.size() == transfer.size()) {
+
+				//initialize mesh transfer for Hdemag as well if we are using evaluation speedup
+				if (!Hdemag3.Initialize_MeshTransfer_AveragedInputs_DuplicatedOutputs(
+					{ &pMesh->M }, { &pMesh->M2 }, { &pMesh->Heff }, { &pMesh->Heff2 },
+					MESHTRANSFERTYPE_WEIGHTED)) return error(BERROR_OUTOFMEMORY_CRIT);
+			}
 		}
 
 		//transfer values from M - we need this to get number of non-empty cells
 		//NOTE : do not use transfer_in_averaged here as for antiferromagnetic meshes in the ground state this will result in zero values everywhere, looking like there are no non-empty cells
 		transfer.transfer_in();
-
 		non_empty_cells = transfer.get_nonempty_cells();
 	}
 
@@ -107,17 +124,29 @@ BError SDemag_Demag::Initialize_Mesh_Transfer(void)
 
 		if (!transfer.Initialize_MeshTransfer({ &pMesh->M }, { &pMesh->Heff }, MESHTRANSFERTYPE_WEIGHTED)) return error(BERROR_OUTOFMEMORY_CRIT);
 
-		//the Hdemag.size() check is needed : if in CUDA mode, this method will be called to initialize mesh transfer in transfer so the transfer info can be copied over to the gpu
-		//In this case it's possible Hdemag does not have the correct memory allocated; if not in CUDA mode we first pass through Initialization method before calling this, in which case Hdemag will be sized correctly.
-		if (pMesh->pSMesh->GetEvaluationSpeedup() && Hdemag.size() == transfer.size()) {
+		if (pMesh->pSMesh->GetEvaluationSpeedup()) {
 
-			//initialize mesh transfer for Hdemag as well if we are using evaluation speedup
-			if (!Hdemag.Initialize_MeshTransfer({ &pMesh->M }, { &pMesh->Heff }, MESHTRANSFERTYPE_WEIGHTED)) return error(BERROR_OUTOFMEMORY_CRIT);
+			if (pMesh->pSMesh->GetEvaluationSpeedup() >= 1 && Hdemag.size() == transfer.size()) {
+
+				//initialize mesh transfer for Hdemag as well if we are using evaluation speedup
+				if (!Hdemag.Initialize_MeshTransfer({ &pMesh->M }, { &pMesh->Heff }, MESHTRANSFERTYPE_WEIGHTED)) return error(BERROR_OUTOFMEMORY_CRIT);
+			}
+
+			if (pMesh->pSMesh->GetEvaluationSpeedup() >= 2 && Hdemag2.size() == transfer.size()) {
+
+				//initialize mesh transfer for Hdemag as well if we are using evaluation speedup
+				if (!Hdemag2.Initialize_MeshTransfer({ &pMesh->M }, { &pMesh->Heff }, MESHTRANSFERTYPE_WEIGHTED)) return error(BERROR_OUTOFMEMORY_CRIT);
+			}
+
+			if (pMesh->pSMesh->GetEvaluationSpeedup() >= 3 && Hdemag3.size() == transfer.size()) {
+
+				//initialize mesh transfer for Hdemag as well if we are using evaluation speedup
+				if (!Hdemag3.Initialize_MeshTransfer({ &pMesh->M }, { &pMesh->Heff }, MESHTRANSFERTYPE_WEIGHTED)) return error(BERROR_OUTOFMEMORY_CRIT);
+			}
 		}
 
 		//transfer values from M - we need this to get number of non-empty cells
 		transfer.transfer_in();
-
 		non_empty_cells = transfer.get_nonempty_cells();
 	}
 
@@ -127,18 +156,59 @@ BError SDemag_Demag::Initialize_Mesh_Transfer(void)
 	return error;
 }
 
-BError SDemag_Demag::Initialize(void)
+//allocate memory and initialize mesh transfer for module Heff and energy display data
+BError SDemag_Demag::Initialize_Module_Display(void)
 {
 	BError error(CLASS_STR(SDemag_Demag));
 
+	//Make sure display data has memory allocated (or freed) as required. Do this first, in case we need to setup a transfer.
+	//NOTE : if working in 2d layering mode, then only enable module heff display for the first occurence of the MOD_SDEMAG_DEMAG, hence the layer_number_2d <= 0 check.
+	if (layer_number_2d <= 0) {
+
+		error = Update_Module_Display_VECs(
+			pMesh->h, pMesh->meshRect, 
+			(MOD_)pMesh->Get_ActualModule_Heff_Display() == MOD_SDEMAG_DEMAG || pMesh->IsOutputDataSet_withRect(DATA_E_DEMAG),
+			(MOD_)pMesh->Get_ActualModule_Energy_Display() == MOD_SDEMAG_DEMAG || pMesh->IsOutputDataSet_withRect(DATA_E_DEMAG));
+		if (error) return error(BERROR_OUTOFMEMORY_CRIT);
+	}
+
+	//set correct size for module Heff and energy transfers, if needed
+	//Only setup module Heff transfer if memory already allocated for  Module_Heff
+	//In case of 2d layering mode, then only the first occurence of the MOD_SDEMAG_DEMAG module has Module_Heff allocated, hence the use of MOD_SDEMAG_DEMAG below.
+	//Note the indexing (MOD_SDEMAG_DEMAG) : this assumes minor id = 0, thus first occurence of the module.
+	if ((*pMesh)(MOD_SDEMAG_DEMAG)->Get_Module_Heff().linear_size()) {
+
+		//convolution rectangle for this module
+		Rect convolution_rect = pSDemag->get_convolution_rect(this);
+
+		//common discretisation cellsize (may differ in thickness in 2D mode)
+		DBL3 h_common = convolution_rect / pSDemag->n_common;
+
+		//only initialize the transfer objects if needed
+		if (convolution_rect != meshRect || h_common != h) {
+
+			if (!transfer_Module_Heff.resize(h_common, convolution_rect)) error_on_create(BERROR_OUTOFMEMORY_CRIT);
+			if (!transfer_Module_energy.resize(h_common, convolution_rect)) error_on_create(BERROR_OUTOFMEMORY_CRIT);
+
+			if (!transfer_Module_Heff.Initialize_MeshTransfer({}, { &(*pMesh)(MOD_SDEMAG_DEMAG)->Get_Module_Heff() }, MESHTRANSFERTYPE_WEIGHTED)) return error(BERROR_OUTOFMEMORY_CRIT);
+			if (!transfer_Module_energy.Initialize_MeshTransfer({}, { &(*pMesh)(MOD_SDEMAG_DEMAG)->Get_Module_Energy() }, MESHTRANSFERTYPE_WEIGHTED)) return error(BERROR_OUTOFMEMORY_CRIT);
+		}
+		else {
+
+			transfer_Module_Heff.clear();
+			transfer_Module_energy.clear();
+		}
+	}
+
+	return error;
+}
+
+BError SDemag_Demag::Initialize(void)
+{
+	BError error(CLASS_STR(SDemag_Demag));
+	
 	if (!pSDemag->IsInitialized()) error = pSDemag->Initialize();
 	if (error) return error;
-	
-	//make sure to allocate memory for Hdemag if we need it
-	if (pMesh->pSMesh->GetEvaluationSpeedup()) Hdemag.resize(pSDemag->get_convolution_rect(this) / pSDemag->n_common, pSDemag->get_convolution_rect(this));
-	else Hdemag.clear();
-
-	pSDemag->Hdemag_calculated = false;
 
 	if (!initialized) {
 
@@ -154,18 +224,28 @@ BError SDemag_Demag::Initialize(void)
 		//common discretisation cellsize (may differ in thickness in 2D mode)
 		DBL3 h_common = convolution_rect / pSDemag->n_common;
 
+		selfDemagCoeff = DemagTFunc().SelfDemag_PBC(h_common, pSDemag->n_common, pSDemag->demag_pbc_images);
+
+		//make sure to allocate memory for Hdemag if we need it
+		if (pMesh->pSMesh->GetEvaluationSpeedup() >= 1) Hdemag.resize(h_common, convolution_rect);
+		else Hdemag.clear();
+
+		if (pMesh->pSMesh->GetEvaluationSpeedup() >= 2) Hdemag2.resize(h_common, convolution_rect);
+		else Hdemag2.clear();
+
+		if (pMesh->pSMesh->GetEvaluationSpeedup() >= 3) Hdemag3.resize(h_common, convolution_rect);
+		else Hdemag3.clear();
+
 		if (convolution_rect == meshRect && h_common == h) {
 
 			//no transfer required
 			do_transfer = false;
 			transfer.clear();
-
 			non_empty_cells = pMesh->M.get_nonempty_cells();
 		}
 		else {
 
 			do_transfer = true;
-
 			Initialize_Mesh_Transfer();
 		}
 
@@ -179,6 +259,10 @@ BError SDemag_Demag::Initialize(void)
 
 		initialized = true;
 	}
+
+	//initialize module display data if needed
+	error = Initialize_Module_Display();
+	if (error) initialized = false;
 
 	return error;
 }
@@ -200,7 +284,8 @@ BError SDemag_Demag::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 
 	//if memory needs to be allocated for Hdemag, it will be done through Initialize 
 	Hdemag.clear();
-	pSDemag->Hdemag_calculated = false;
+	Hdemag2.clear();
+	Hdemag3.clear();
 
 	if (layer_number_2d >= 0) {
 
@@ -247,5 +332,19 @@ BError SDemag_Demag::MakeCUDAModule(void)
 
 	return error;
 }
+
+double SDemag_Demag::UpdateField(void)
+{
+	//demag field update done through the supermesh module.
+	//here we need to zero the module display objects in case they are used : if we have to transfer data into them from the display transfer objects, this is done by adding.
+	//cannot set output when transferring since we can have multiple transfer objects contributing to the display objects
+	ZeroModuleVECs();
+
+	//same goes for the total energy
+	energy = 0.0;
+
+	return 0.0;
+}
+
 
 #endif

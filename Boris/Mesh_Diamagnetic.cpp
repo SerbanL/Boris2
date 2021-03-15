@@ -13,7 +13,7 @@ DiaMesh::DiaMesh(SuperMesh *pSMesh_) :
 		{
 			//Mesh members
 			VINFO(meshType), VINFO(meshIdCounter), VINFO(meshId),
-			VINFO(displayedPhysicalQuantity), VINFO(displayedBackgroundPhysicalQuantity), VINFO(vec3rep), VINFO(displayedParamVar),
+			VINFO(displayedPhysicalQuantity), VINFO(displayedBackgroundPhysicalQuantity), VINFO(vec3rep), VINFO(displayedParamVar), VINFO(Module_Heff_Display), VINFO(Module_Energy_Display),
 			VINFO(meshRect), VINFO(n), VINFO(h), VINFO(n_e), VINFO(h_e), VINFO(n_t), VINFO(h_t), VINFO(n_m), VINFO(h_m), 
 			VINFO(M), VINFO(V), VINFO(S), VINFO(elC), VINFO(Temp), VINFO(Temp_l), VINFO(u_disp), VINFO(strain_diag), VINFO(strain_odiag), VINFO(pMod), VINFO(exclude_from_multiconvdemag),
 			//Members in this derived class
@@ -41,7 +41,7 @@ DiaMesh::DiaMesh(Rect meshRect_, DBL3 h_, SuperMesh *pSMesh_) :
 		{
 			//Mesh members
 			VINFO(meshType), VINFO(meshIdCounter), VINFO(meshId),
-			VINFO(displayedPhysicalQuantity), VINFO(displayedBackgroundPhysicalQuantity), VINFO(vec3rep), VINFO(displayedParamVar),
+			VINFO(displayedPhysicalQuantity), VINFO(displayedBackgroundPhysicalQuantity), VINFO(vec3rep), VINFO(displayedParamVar), VINFO(Module_Heff_Display), VINFO(Module_Energy_Display),
 			VINFO(meshRect), VINFO(n), VINFO(h), VINFO(n_e), VINFO(h_e), VINFO(n_t), VINFO(h_t), VINFO(n_m), VINFO(h_m), 
 			VINFO(M), VINFO(V), VINFO(S), VINFO(elC), VINFO(Temp), VINFO(Temp_l), VINFO(u_disp), VINFO(strain_diag), VINFO(strain_odiag), VINFO(pMod), VINFO(exclude_from_multiconvdemag),
 			//Members in this derived class

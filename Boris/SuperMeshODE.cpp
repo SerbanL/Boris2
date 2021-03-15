@@ -143,6 +143,12 @@ int SuperMesh::Check_Step_Update(void)
 	return odeSolver.Check_Step_Update();
 }
 
+//get total time with evaluation step resolution level
+double SuperMesh::Get_EvalStep_Time(void)
+{
+	return odeSolver.Get_EvalStep_Time();
+}
+
 //check if ODE solver needs spin accumulation solved
 bool SuperMesh::SolveSpinCurrent(void)
 { 

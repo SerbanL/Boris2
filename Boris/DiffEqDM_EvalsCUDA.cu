@@ -20,7 +20,7 @@ __global__ void Restoremagnetization_DM_kernel(cuVEC_VC<cuReal3>& M, cuVEC<cuRea
 }
 
 //Restore magnetization after a failed step for adaptive time-step methods
-void DifferentialEquationDMCUDA::Restoremagnetization(void)
+void DifferentialEquationDMCUDA::RestoreMagnetization(void)
 {
 	Restoremagnetization_DM_kernel <<< (pMeshCUDA->n.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (pMeshCUDA->M, sM1);
 }

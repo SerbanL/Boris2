@@ -4,6 +4,7 @@
 #ifdef MESH_COMPILATION_ATOM_CUBIC
 
 #include "Atom_Mesh_Cubic.h"
+#include "Atom_MeshParamsControl.h"
 
 Atom_DifferentialEquationCubic::Atom_DifferentialEquationCubic(Atom_Mesh_Cubic *paMesh):
 	Atom_DifferentialEquation(paMesh)
@@ -23,6 +24,22 @@ void Atom_DifferentialEquationCubic::RestoreMoments(void)
 #pragma omp parallel for
 	for (int idx = 0; idx < paMesh->n.dim(); idx++)
 		paMesh->M1[idx] = sM1[idx];
+}
+
+//renormalize vectors to set moment length value (which could have a spatial variation)
+void Atom_DifferentialEquationCubic::RenormalizeMoments(void)
+{
+#pragma omp parallel for
+	for (int idx = 0; idx < paMesh->n.dim(); idx++) {
+
+		if (paMesh->M1.is_not_empty(idx)) {
+
+			double mu_s = paMesh->mu_s;
+			paMesh->update_parameters_mcoarse(idx, paMesh->mu_s, mu_s);
+
+			paMesh->M1[idx].renormalize(mu_s);
+		}
+	}
 }
 
 //---------------------------------------- SET-UP METHODS
@@ -212,6 +229,8 @@ BError Atom_DifferentialEquationCubic::UpdateConfiguration(UPDATECONFIG_ cfgMess
 			}
 		}
 	}
+
+	if (cfgMessage == UPDATECONFIG_PARAMVALUECHANGED_MLENGTH) RenormalizeMoments();
 
 	//----------------------- CUDA mirroring
 

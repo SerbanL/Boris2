@@ -21,8 +21,6 @@
 //
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-
-
 class SuperMesh;
 
 class ODECommon;
@@ -70,7 +68,7 @@ protected:
 	//if set to true, dT is used instead of dT (default)
 	static bool link_dTstoch;
 
-	//used by the Check_Step_Update method to recommend if required effective field should be updated (in particular demag field) when in extreme mode (use_evaluation_speedup == EVALSPEEDUP_EXTREME):
+	//used by the Check_Step_Update method to recommend if required effective field should be updated (in particular demag field) when in evaluation speedup mode (use_evaluation_speedup != EVALSPEEDUP_NONE):
 	//in this mode only recommend update at this step value
 	static double dTspeedup;
 	//last time the effective field update recommended by Check_Step_Update was done
@@ -89,7 +87,7 @@ protected:
 	//evaluation step for higher order evaluation methods
 	static int evalStep;
 
-	//use evaluation speedup by skipping certain effective field contributions at specific steps in the evaluation?
+	//use evaluation speedup by approximating the demag field at evaluation substeps from previous demag fields?
 	//this takes on a value from EVALSPEEDUP_ enum
 	static int use_evaluation_speedup;
 
@@ -222,14 +220,12 @@ public:
 	void IterateCUDA(void);
 #endif
 
-	//depending on the set evaluation method, some effective fields (demag field in particular) might not need to be updated at certain steps in the evaluation - keep the previous calculated field contribution
-	//Modules can call this method to check if they should be updating the field or not.
-	//Return values:
-	//EVALSPEEDUPSTEP_SKIP : do not update field, use previous calculation if available
-	//EVALSPEEDUPSTEP_COMPUTE_NO_SAVE : update field and do not save calculation for next step (since at the next step we'll have to calculate field again so no point saving it)
-	//EVALSPEEDUPSTEP_COMPUTE_AND_SAVE : update field and save calculation for next time (since at the next step we'll need to re-use calculation)
-	//To enable this mode you need to set use_evaluation_speedup != EVALSPEEDUP_NONE
-	int Check_Step_Update(void);
+	//check if we should update the demag field if using evaluation speedup mode; 
+	//when in this mode any demag field updates will happen only when ODE step has finished (available == true), but if link_dTspeedup == false this is not necessarily every time step
+	bool Check_Step_Update(void);
+
+	//get total time with evaluation step resolution level
+	double Get_EvalStep_Time(void);
 
 	//----------------------------------- Evaluation Method and Control: DiffEq_CommonBase_Control.cpp
 

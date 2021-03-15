@@ -14,6 +14,7 @@
 #include "BorisCUDALib.cuh"
 
 #include "Atom_MeshCUDA.h"
+#include "Atom_MeshParamsControlCUDA.h"
 
 __global__ void Zero_MCAux_Atom_Mesh_CubicCUDA(cuBReal& aux_real, cuBReal& aux_real2)
 {
@@ -22,7 +23,7 @@ __global__ void Zero_MCAux_Atom_Mesh_CubicCUDA(cuBReal& aux_real, cuBReal& aux_r
 }
 
 ///////////////////////////////////////////////////////////////
-// PARALLEL MONTE-CARLO METROPOLIS
+// PARALLEL MONTE-CARLO METROPOLIS - WITH REDUCTION
 
 __global__ void Iterate_MonteCarloCUDA_Classic_Cubic_red_kernel(ManagedAtom_MeshCUDA& cuaMesh, int* cuaModules, int& numModules, cuReal3& Ha, cuBorisRand& prng, cuBReal mc_cone_angledeg, cuBReal& mc_acceptance_rate)
 {
@@ -61,8 +62,8 @@ __global__ void Iterate_MonteCarloCUDA_Classic_Cubic_red_kernel(ManagedAtom_Mesh
 		spin_idx += (int)red_nudge;
 	}
 	
-	//calculate only in non-empty cells; also skip if indicated as a composite media boundary condition cell
-	if (spin_idx < n.dim() && M1.is_not_empty(spin_idx)) {
+	//calculate only in non-empty and non-frozen cells
+	if (spin_idx < n.dim() && M1.is_not_empty(spin_idx) && !M1.is_skipcell(spin_idx)) {
 
 		//Picked spin is M1[spin_idx]
 		cuReal3 M1_old = M1[spin_idx];
@@ -74,25 +75,26 @@ __global__ void Iterate_MonteCarloCUDA_Classic_Cubic_red_kernel(ManagedAtom_Mesh
 		//Also using a Gaussian distribution to move spin around the initial spin is less efficient, requiring more steps to thermalize.
 		cuReal3 M1_new = relrotate_polar(M1_old, theta_rot, phi_rot);
 
-		//Find energy for current spin by summing all contributing modules energies at given spin only
-		cuBReal old_energy = cuaMesh.Get_Atomistic_Energy_SC(spin_idx, cuaModules, numModules, Ha);
-
-		//Set new spin; M1_new has same length as M1[spin_idx], but reset length anyway to avoid floating point error creep
-		M1[spin_idx] = M1_new.normalized() * M1_old.norm();
-		cuBReal new_energy = cuaMesh.Get_Atomistic_Energy_SC(spin_idx, cuaModules, numModules, Ha);
+		//find energy change : new - old
+		cuBReal energy_delta = cuaMesh.Get_Atomistic_EnergyChange_SC(spin_idx, M1_new, cuaModules, numModules, Ha);
 
 		//Compute acceptance probability
-		cuBReal P_accept = exp(-(new_energy - old_energy) / ((cuBReal)BOLTZMANN * base_temperature));
+		cuBReal P_accept = exp(-energy_delta / ((cuBReal)BOLTZMANN * base_temperature));
 
 		//uniform random number between 0 and 1
 		cuBReal P = prng.rand();
+		if (P <= P_accept) {
 
-		if (P > P_accept) {
+			acceptance_rate = 1.0 / num_moves;
 
-			//reject move
-			M1[spin_idx] = M1_old;
+			//renormalize spin to mu_s to avoid floating point error creep
+			cuBReal mu_s = *cuaMesh.pmu_s;
+			cuaMesh.update_parameters_mcoarse(spin_idx, *cuaMesh.pmu_s, mu_s);
+			M1_new.renormalize(mu_s);
+
+			//set new spin
+			M1[spin_idx] = M1_new;
 		}
-		else acceptance_rate = 1.0 / num_moves;
 	}
 
 	reduction_sum(0, 1, &acceptance_rate, mc_acceptance_rate);
@@ -139,8 +141,8 @@ __global__ void Iterate_MonteCarloCUDA_Classic_Cubic_black_kernel(ManagedAtom_Me
 		spin_idx += (int)black_nudge;
 	}
 
-	//calculate only in non-empty cells; also skip if indicated as a composite media boundary condition cell
-	if (spin_idx < n.dim() && M1.is_not_empty(spin_idx)) {
+	//calculate only in non-empty and non-frozen cells
+	if (spin_idx < n.dim() && M1.is_not_empty(spin_idx) && !M1.is_skipcell(spin_idx)) {
 
 		//Picked spin is M1[spin_idx]
 		cuReal3 M1_old = M1[spin_idx];
@@ -152,39 +154,199 @@ __global__ void Iterate_MonteCarloCUDA_Classic_Cubic_black_kernel(ManagedAtom_Me
 		//Also using a Gaussian distribution to move spin around the initial spin is less efficient, requiring more steps to thermalize.
 		cuReal3 M1_new = relrotate_polar(M1_old, theta_rot, phi_rot);
 
-		//Find energy for current spin by summing all contributing modules energies at given spin only
-		cuBReal old_energy = cuaMesh.Get_Atomistic_Energy_SC(spin_idx, cuaModules, numModules, Ha);
-
-		//Set new spin; M1_new has same length as M1[spin_idx], but reset length anyway to avoid floating point error creep
-		M1[spin_idx] = M1_new.normalized() * M1_old.norm();
-		cuBReal new_energy = cuaMesh.Get_Atomistic_Energy_SC(spin_idx, cuaModules, numModules, Ha);
+		//find energy change : new - old
+		cuBReal energy_delta = cuaMesh.Get_Atomistic_EnergyChange_SC(spin_idx, M1_new, cuaModules, numModules, Ha);
 
 		//Compute acceptance probability
-		cuBReal P_accept = exp(-(new_energy - old_energy) / ((cuBReal)BOLTZMANN * base_temperature));
+		cuBReal P_accept = exp(-energy_delta / ((cuBReal)BOLTZMANN * base_temperature));
 
 		//uniform random number between 0 and 1
 		cuBReal P = prng.rand();
+		if (P <= P_accept) {
 
-		if (P > P_accept) {
+			acceptance_rate = 1.0 / num_moves;
 
-			//reject move
-			M1[spin_idx] = M1_old;
+			//renormalize spin to mu_s to avoid floating point error creep
+			cuBReal mu_s = *cuaMesh.pmu_s;
+			cuaMesh.update_parameters_mcoarse(spin_idx, *cuaMesh.pmu_s, mu_s);
+			M1_new.renormalize(mu_s);
+
+			//set new spin
+			M1[spin_idx] = M1_new;
 		}
-		else acceptance_rate = 1.0 / num_moves;
 	}
 
 	reduction_sum(0, 1, &acceptance_rate, mc_acceptance_rate);
 }
 
-cuBReal Atom_Mesh_CubicCUDA::Iterate_MonteCarloCUDA_Classic(cuBReal mc_cone_angledeg)
+///////////////////////////////////////////////////////////////
+// PARALLEL MONTE-CARLO METROPOLIS - WITHOUT REDUCTION
+
+__global__ void Iterate_MonteCarloCUDA_Classic_Cubic_red_kernel(ManagedAtom_MeshCUDA& cuaMesh, int* cuaModules, int& numModules, cuReal3& Ha, cuBorisRand& prng, cuBReal mc_cone_angledeg)
 {
-	Zero_MCAux_Atom_Mesh_CubicCUDA <<< 1, CUDATHREADS >>> (mc_acceptance_rate, cmc_M);
+	cuVEC_VC<cuReal3>& M1 = *cuaMesh.pM1;
+
+	cuSZ3& n = M1.n;
+
+	cuBReal base_temperature = *cuaMesh.pbase_temperature;
+
+	int num_moves = M1.get_nonempty_cells();
+
+	//this method must be called with half-size : n.dim() / 2, i.e. <<< (n.dim() / 2 + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>>
+	//double idx : idx values will now take on even values
+	int spin_idx = (blockIdx.x * blockDim.x + threadIdx.x) * 2;
+
+	//ijk coordinates corresponding to idx
+	cuINT3 ijk = cuINT3(spin_idx % n.x, (spin_idx / n.x) % n.y, spin_idx / (n.x*n.y));
+
+	if (n.x % 2 == 1) {
+		if (n.y % 2 == 0) {
+
+			//nx is odd and ny is even : for red squares nudge on odd planes only
+			spin_idx += (int)(n.z % 2);
+		}
+		//else : nx is odd and ny is odd, no nudge is needed
+	}
+	else {
+
+		//nx is even : for red squares nudge on a) odd rows and even planes, and b) even rows and odd planes
+
+		//red_nudge = true for odd rows and even planes or for even rows and odd planes - have to keep index on the checkerboard pattern
+		bool red_nudge = (((ijk.j % 2) == 1 && (ijk.k % 2) == 0) || (((ijk.j % 2) == 0 && (ijk.k % 2) == 1)));
+
+		spin_idx += (int)red_nudge;
+	}
+
+	//calculate only in non-empty and non-frozen cells
+	if (spin_idx < n.dim() && M1.is_not_empty(spin_idx) && !M1.is_skipcell(spin_idx)) {
+
+		//Picked spin is M1[spin_idx]
+		cuReal3 M1_old = M1[spin_idx];
+
+		//obtain rotated spin in a cone around the picked spin
+		cuBReal theta_rot = prng.rand() * mc_cone_angledeg * (cuBReal)PI / 180.0;
+		cuBReal phi_rot = prng.rand() * 2 * (cuBReal)PI;
+		//Move spin in cone with uniform random probability distribution. This approach only requires 2 random numbers to be generated. 
+		//Also using a Gaussian distribution to move spin around the initial spin is less efficient, requiring more steps to thermalize.
+		cuReal3 M1_new = relrotate_polar(M1_old, theta_rot, phi_rot);
+
+		//find energy change : new - old
+		cuBReal energy_delta = cuaMesh.Get_Atomistic_EnergyChange_SC(spin_idx, M1_new, cuaModules, numModules, Ha);
+
+		//Compute acceptance probability
+		cuBReal P_accept = exp(-energy_delta / ((cuBReal)BOLTZMANN * base_temperature));
+
+		//uniform random number between 0 and 1
+		cuBReal P = prng.rand();
+		if (P <= P_accept) {
+
+			//renormalize spin to mu_s to avoid floating point error creep
+			cuBReal mu_s = *cuaMesh.pmu_s;
+			cuaMesh.update_parameters_mcoarse(spin_idx, *cuaMesh.pmu_s, mu_s);
+			M1_new.renormalize(mu_s);
+
+			//set new spin
+			M1[spin_idx] = M1_new;
+		}
+	}
+}
+
+__global__ void Iterate_MonteCarloCUDA_Classic_Cubic_black_kernel(ManagedAtom_MeshCUDA& cuaMesh, int* cuaModules, int& numModules, cuReal3& Ha, cuBorisRand& prng, cuBReal mc_cone_angledeg)
+{
+	cuVEC_VC<cuReal3>& M1 = *cuaMesh.pM1;
+
+	cuSZ3& n = M1.n;
+
+	cuBReal base_temperature = *cuaMesh.pbase_temperature;
+
+	int num_moves = M1.get_nonempty_cells();
+
+	//this method must be called with half-size : n.dim() / 2, i.e. <<< (n.dim() / 2 + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>>
+	//double idx : idx values will now take on even values
+	int spin_idx = (blockIdx.x * blockDim.x + threadIdx.x) * 2;
+
+	//ijk coordinates corresponding to idx
+	cuINT3 ijk = cuINT3(spin_idx % n.x, (spin_idx / n.x) % n.y, spin_idx / (n.x*n.y));
+
+	if (n.x % 2 == 1) {
+		if (n.y % 2 == 0) {
+
+			//nx is odd and ny is even : for black squares nudge on even planes only
+			spin_idx += (int)(n.z % 2 == 0);
+		}
+		else {
+
+			//nx is odd and ny is odd, nudge everything by 1 for black squares
+			spin_idx++;
+		}
+	}
+	else {
+
+		//nx is even : for black squares nudge on a) even rows and even planes, and b) odd rows and odd planes
+
+		//red_nudge = true for odd rows and even planes or for even rows and odd planes - have to keep index on the checkerboard pattern
+		bool black_nudge = (((ijk.j % 2) == 0 && (ijk.k % 2) == 0) || (((ijk.j % 2) == 1 && (ijk.k % 2) == 1)));
+
+		spin_idx += (int)black_nudge;
+	}
+
+	//calculate only in non-empty and non-frozen cells
+	if (spin_idx < n.dim() && M1.is_not_empty(spin_idx) && !M1.is_skipcell(spin_idx)) {
+
+		//Picked spin is M1[spin_idx]
+		cuReal3 M1_old = M1[spin_idx];
+
+		//obtain rotated spin in a cone around the picked spin
+		cuBReal theta_rot = prng.rand() * mc_cone_angledeg * (cuBReal)PI / 180.0;
+		cuBReal phi_rot = prng.rand() * 2 * (cuBReal)PI;
+		//Move spin in cone with uniform random probability distribution. This approach only requires 2 random numbers to be generated. 
+		//Also using a Gaussian distribution to move spin around the initial spin is less efficient, requiring more steps to thermalize.
+		cuReal3 M1_new = relrotate_polar(M1_old, theta_rot, phi_rot);
+
+		//find energy change : new - old
+		cuBReal energy_delta = cuaMesh.Get_Atomistic_EnergyChange_SC(spin_idx, M1_new, cuaModules, numModules, Ha);
+
+		//Compute acceptance probability
+		cuBReal P_accept = exp(-energy_delta / ((cuBReal)BOLTZMANN * base_temperature));
+
+		//uniform random number between 0 and 1
+		cuBReal P = prng.rand();
+		if (P <= P_accept) {
+
+			//renormalize spin to mu_s to avoid floating point error creep
+			cuBReal mu_s = *cuaMesh.pmu_s;
+			cuaMesh.update_parameters_mcoarse(spin_idx, *cuaMesh.pmu_s, mu_s);
+			M1_new.renormalize(mu_s);
+
+			//set new spin
+			M1[spin_idx] = M1_new;
+		}
+	}
+}
+
+cuBReal Atom_Mesh_CubicCUDA::Iterate_MonteCarloCUDA_Classic(cuBReal mc_cone_angledeg, double target_acceptance_rate)
+{
+	if (mc_acceptance_reduction_counter == 0) Zero_MCAux_Atom_Mesh_CubicCUDA <<< 1, CUDATHREADS >>> (mc_acceptance_rate, cmc_M);
 
 	//Field set
 	if (pHa) {
 
-		Iterate_MonteCarloCUDA_Classic_Cubic_red_kernel <<< (n.dim() / 2 + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (cuaMesh, cuaModules, cuaNumModules, *pHa, prng, mc_cone_angledeg, mc_acceptance_rate);
-		Iterate_MonteCarloCUDA_Classic_Cubic_black_kernel <<< (n.dim() / 2 + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (cuaMesh, cuaModules, cuaNumModules, *pHa, prng, mc_cone_angledeg, mc_acceptance_rate);
+		if (mc_acceptance_reduction_counter == 0) {
+
+			//with acceptance rate reduction
+			Iterate_MonteCarloCUDA_Classic_Cubic_red_kernel <<< (n.dim() / 2 + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> 
+				(cuaMesh, cuaModules, cuaNumModules, *pHa, prng, mc_cone_angledeg, mc_acceptance_rate);
+			Iterate_MonteCarloCUDA_Classic_Cubic_black_kernel <<< (n.dim() / 2 + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> 
+				(cuaMesh, cuaModules, cuaNumModules, *pHa, prng, mc_cone_angledeg, mc_acceptance_rate);
+		}
+		else {
+
+			//without acceptance rate reduction
+			Iterate_MonteCarloCUDA_Classic_Cubic_red_kernel <<< (n.dim() / 2 + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> 
+				(cuaMesh, cuaModules, cuaNumModules, *pHa, prng, mc_cone_angledeg);
+			Iterate_MonteCarloCUDA_Classic_Cubic_black_kernel <<< (n.dim() / 2 + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> 
+				(cuaMesh, cuaModules, cuaNumModules, *pHa, prng, mc_cone_angledeg);
+		}
 	}
 	//No field (or rather Atom_ZeemanCUDA module not added)
 	else {
@@ -192,15 +354,45 @@ cuBReal Atom_Mesh_CubicCUDA::Iterate_MonteCarloCUDA_Classic(cuBReal mc_cone_angl
 		cu_obj<cuReal3> Ha;
 		Ha.from_cpu(cuReal3());
 
-		Iterate_MonteCarloCUDA_Classic_Cubic_red_kernel <<< (n.dim() / 2 + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (cuaMesh, cuaModules, cuaNumModules, Ha, prng, mc_cone_angledeg, mc_acceptance_rate);
-		Iterate_MonteCarloCUDA_Classic_Cubic_black_kernel <<< (n.dim() / 2 + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (cuaMesh, cuaModules, cuaNumModules, Ha, prng, mc_cone_angledeg, mc_acceptance_rate);
+		if (mc_acceptance_reduction_counter == 0) {
+
+			//with acceptance rate reduction
+			Iterate_MonteCarloCUDA_Classic_Cubic_red_kernel <<< (n.dim() / 2 + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> 
+				(cuaMesh, cuaModules, cuaNumModules, Ha, prng, mc_cone_angledeg, mc_acceptance_rate);
+			Iterate_MonteCarloCUDA_Classic_Cubic_black_kernel <<< (n.dim() / 2 + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> 
+				(cuaMesh, cuaModules, cuaNumModules, Ha, prng, mc_cone_angledeg, mc_acceptance_rate);
+		}
+		else {
+
+			//without acceptance rate reduction
+			Iterate_MonteCarloCUDA_Classic_Cubic_red_kernel <<< (n.dim() / 2 + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> 
+				(cuaMesh, cuaModules, cuaNumModules, Ha, prng, mc_cone_angledeg);
+			Iterate_MonteCarloCUDA_Classic_Cubic_black_kernel <<< (n.dim() / 2 + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> 
+				(cuaMesh, cuaModules, cuaNumModules, Ha, prng, mc_cone_angledeg);
+		}
 	}
 
-	return mc_acceptance_rate.to_cpu();
+	if (mc_acceptance_reduction_counter == 0) {
+
+		mc_acceptance_rate_last = mc_acceptance_rate.to_cpu();
+
+		//is acceptance rate close enough to target acceptance? If yes don't do reduction next time.
+		if (abs(target_acceptance_rate - mc_acceptance_rate_last) < MONTECARLO_ACCEPTANCETOLERANCE) mc_acceptance_reduction_counter = 1;
+
+		return mc_acceptance_rate_last;
+	}
+	else {
+
+		//increase counter until we come full circle : when mc_acceptance_reduction_counter becomes zero again we'll have to do reduction just to check.
+		mc_acceptance_reduction_counter = (mc_acceptance_reduction_counter + 1) % MONTECARLO_REDUCTIONITERS;
+
+		//return exact terget acceptance rate means cone angle will not be adjusted
+		return target_acceptance_rate;
+	}
 }
 
 ///////////////////////////////////////////////////////////////
-// PARALLEL CONSTRAINED MONTE-CARLO METROPOLIS
+// PARALLEL CONSTRAINED MONTE-CARLO METROPOLIS - WITH REDUCTION
 
 //Step 1
 __global__ void MonteCarloCUDA_Constrained_Cubic_CalculateProjection(ManagedAtom_MeshCUDA& cuaMesh, cuBReal& cmc_M, cuReal3& cmc_n)
@@ -304,7 +496,7 @@ __global__ void MonteCarloCUDA_Constrained_Cubic_SetIndices(
 __global__ void Iterate_MonteCarloCUDA_Constrained_Cubic_redblack_kernel(
 	ManagedAtom_MeshCUDA& cuaMesh, 
 	size_t num_points, unsigned* mc_indices, 
-	int* cuaModules, int& numModules, 
+	int* cuaModules, int& numModules,
 	cuReal3& Ha, cuBorisRand& prng,
 	cuBReal& cmc_M, cuReal3& cmc_n,
 	cuBReal mc_cone_angledeg, cuBReal& mc_acceptance_rate)
@@ -329,7 +521,7 @@ __global__ void Iterate_MonteCarloCUDA_Constrained_Cubic_redblack_kernel(
 		int spin_idx2 = mc_indices[idx + 1];
 
 		//If there are empty cells then make sure to only pair non-empty ones
-		if (M1.is_not_empty(spin_idx1) && M1.is_not_empty(spin_idx2)) {
+		if (M1.is_not_empty(spin_idx1) && M1.is_not_empty(spin_idx2) && !M1.is_skipcell(spin_idx1) && !M1.is_skipcell(spin_idx2)) {
 
 			//Picked spins are M1[spin_idx1], M1[spin_idx2]
 			cuReal3 M_old1 = M1[spin_idx1];
@@ -350,53 +542,46 @@ __global__ void Iterate_MonteCarloCUDA_Constrained_Cubic_redblack_kernel(
 			cuBReal sq2 = Mrot_new2.y * Mrot_new2.y + Mrot_new2.z * Mrot_new2.z;
 			cuBReal sqnorm = M_old2.norm()*M_old2.norm();
 
-			if (sq2 <= sqnorm) {
+			if (sq2 < sqnorm) {
 
 				Mrot_new2.x = cu_get_sign(Mrot_old2.x) * sqrt(sqnorm - sq2);
 
 				//Obtain new spins in original coordinate system, i.e. rotate back
 				cuReal3 M_new1 = rotate_polar(Mrot_new1, cmc_n);
 				cuReal3 M_new2 = rotate_polar(Mrot_new2, cmc_n);
-				M_new1 = M_new1.normalized() * M_old1.norm();
-				M_new2 = M_new2.normalized() * M_old2.norm();
 
-				//Find energy for current spin by summing all contributing modules energies at given spins only
-				cuBReal old_energy = cuaMesh.Get_Atomistic_Energy_SC(spin_idx1, cuaModules, numModules, Ha) + cuaMesh.Get_Atomistic_Energy_SC(spin_idx2, cuaModules, numModules, Ha);
+				//find energy change : new - old
+				cuBReal energy_delta = cuaMesh.Get_Atomistic_EnergyChange_SC(spin_idx1, M_new1, cuaModules, numModules, Ha) + cuaMesh.Get_Atomistic_EnergyChange_SC(spin_idx2, M_new2, cuaModules, numModules, Ha);
 
-				//Set new spins
-				M1[spin_idx1] = M_new1;
-				M1[spin_idx2] = M_new2;
-
-				//Find new energy
-				cuBReal new_energy = cuaMesh.Get_Atomistic_Energy_SC(spin_idx1, cuaModules, numModules, Ha) + cuaMesh.Get_Atomistic_Energy_SC(spin_idx2, cuaModules, numModules, Ha);
-
-				cuBReal cmc_M_new = cmc_M + Mrot_new1.x + Mrot_new2.x - Mrot_old1.x - Mrot_old2.x;
+				//use abs: since we're not updating cmc_M after every spin it can become negative above the Curie temperature. with the cmc_M_new > 0.0 check this will result in solver getting stuck
+				cuBReal cmc_M_new = abs(cmc_M) + Mrot_new1.x + Mrot_new2.x - Mrot_old1.x - Mrot_old2.x;
 
 				if (cmc_M_new > 0.0) {
 
-					//Compute acceptance probability
-					cuBReal P_accept = (cmc_M_new / cmc_M) * (cmc_M_new / cmc_M) * (abs(Mrot_old2.x) / abs(Mrot_new2.x)) * exp(-(new_energy - old_energy) / ((cuBReal)BOLTZMANN * base_temperature));
+					//Compute acceptance probability; make sure cmc_M is not zero otherwise we'll stop accepting anything and solver gets stuck
+					cuBReal P_accept;
+					if (cmc_M) P_accept = (cmc_M_new / cmc_M) * (cmc_M_new / cmc_M) * (abs(Mrot_old2.x) / abs(Mrot_new2.x)) * exp(-energy_delta / ((cuBReal)BOLTZMANN * base_temperature));
+					else P_accept = (abs(Mrot_old2.x) / abs(Mrot_new2.x)) * exp(-energy_delta / ((cuBReal)BOLTZMANN * base_temperature));
 
 					//uniform random number between 0 and 1
 					cuBReal P = prng.rand();
-
 					if (P <= P_accept) {
 
 						//move accepted (x2 since we moved 2 spins)
 						acceptance_rate += 2.0 / num_moves;
-					}
-					else {
 
-						//reject move
-						M1[spin_idx1] = M_old1;
-						M1[spin_idx2] = M_old2;
-					}
-				}
-				else {
+						//renormalize spins to mu_s to avoid floating point error creep
+						cuBReal mu_s = *cuaMesh.pmu_s;
+						cuaMesh.update_parameters_mcoarse(spin_idx1, *cuaMesh.pmu_s, mu_s);
+						M_new1.renormalize(mu_s);
+						
+						cuaMesh.update_parameters_mcoarse(spin_idx2, *cuaMesh.pmu_s, mu_s);
+						M_new2.renormalize(mu_s);
 
-					//reject move
-					M1[spin_idx1] = M_old1;
-					M1[spin_idx2] = M_old2;
+						//Set new spins
+						M1[spin_idx1] = M_new1;
+						M1[spin_idx2] = M_new2;
+					}
 				}
 			}
 		}
@@ -405,8 +590,103 @@ __global__ void Iterate_MonteCarloCUDA_Constrained_Cubic_redblack_kernel(
 	reduction_sum(0, 1, &acceptance_rate, mc_acceptance_rate);
 }
 
+///////////////////////////////////////////////////////////////
+// PARALLEL CONSTRAINED MONTE-CARLO METROPOLIS - WITHOUT REDUCTION
+
+//Step 4 (same kernel for red and black, just pass in the right indices!
+__global__ void Iterate_MonteCarloCUDA_Constrained_Cubic_redblack_kernel(
+	ManagedAtom_MeshCUDA& cuaMesh,
+	size_t num_points, unsigned* mc_indices,
+	int* cuaModules, int& numModules,
+	cuReal3& Ha, cuBorisRand& prng,
+	cuBReal& cmc_M, cuReal3& cmc_n,
+	cuBReal mc_cone_angledeg)
+{
+	cuVEC_VC<cuReal3>& M1 = *cuaMesh.pM1;
+
+	cuSZ3& n = M1.n;
+
+	cuBReal base_temperature = *cuaMesh.pbase_temperature;
+
+	int num_moves = M1.get_nonempty_cells();
+
+	//this kernel is launched with at least (num_points / 2 + 1) threads
+	int idx = (blockIdx.x * blockDim.x + threadIdx.x) * 2;
+
+	if (idx < num_points - 1) {
+
+		//use pre-shuffled spins : each will be picked exactly once if even number; if odd, then one spin (random) will be left untouched.
+		int spin_idx1 = mc_indices[idx];
+		int spin_idx2 = mc_indices[idx + 1];
+
+		//If there are empty cells then make sure to only pair non-empty ones
+		if (M1.is_not_empty(spin_idx1) && M1.is_not_empty(spin_idx2) && !M1.is_skipcell(spin_idx1) && !M1.is_skipcell(spin_idx2)) {
+
+			//Picked spins are M1[spin_idx1], M1[spin_idx2]
+			cuReal3 M_old1 = M1[spin_idx1];
+			cuReal3 M_old2 = M1[spin_idx2];
+
+			//rotate to a system with x axis along cmc_n : easier to apply algorithm formulas this way
+			//NOTE : don't rotate x axis towards cmc_n, but rotate cmc_n towards x axis, i.e. use invrotate_polar, not rotate_polar
+			cuReal3 Mrot_old1 = invrotate_polar(M_old1, cmc_n);
+			cuReal3 Mrot_old2 = invrotate_polar(M_old2, cmc_n);
+
+			//obtain rotated spin in a cone around the first picked spin
+			cuBReal theta_rot = prng.rand() * mc_cone_angledeg * (cuBReal)PI / 180.0;
+			cuBReal phi_rot = prng.rand() * 2 * (cuBReal)PI;
+			cuReal3 Mrot_new1 = relrotate_polar(Mrot_old1, theta_rot, phi_rot);
+
+			//adjust second spin to keep required total moment direction
+			cuReal3 Mrot_new2 = cuReal3(0.0, Mrot_old2.y + Mrot_old1.y - Mrot_new1.y, Mrot_old2.z + Mrot_old1.z - Mrot_new1.z);
+			cuBReal sq2 = Mrot_new2.y * Mrot_new2.y + Mrot_new2.z * Mrot_new2.z;
+			cuBReal sqnorm = M_old2.norm()*M_old2.norm();
+
+			if (sq2 < sqnorm) {
+
+				Mrot_new2.x = cu_get_sign(Mrot_old2.x) * sqrt(sqnorm - sq2);
+
+				//Obtain new spins in original coordinate system, i.e. rotate back
+				cuReal3 M_new1 = rotate_polar(Mrot_new1, cmc_n);
+				cuReal3 M_new2 = rotate_polar(Mrot_new2, cmc_n);
+
+				//find energy change : new - old
+				cuBReal energy_delta = cuaMesh.Get_Atomistic_EnergyChange_SC(spin_idx1, M_new1, cuaModules, numModules, Ha) + cuaMesh.Get_Atomistic_EnergyChange_SC(spin_idx2, M_new2, cuaModules, numModules, Ha);
+
+				//use abs: since we're not updating cmc_M after every spin it can become negative above the Curie temperature. with the cmc_M_new > 0.0 check this will result in solver getting stuck
+				cuBReal cmc_M_new = abs(cmc_M) + Mrot_new1.x + Mrot_new2.x - Mrot_old1.x - Mrot_old2.x;
+
+				if (cmc_M_new > 0.0) {
+
+					//Compute acceptance probability; make sure cmc_M is not zero otherwise we'll stop accepting anything and solver gets stuck
+					cuBReal P_accept;
+					if (cmc_M) P_accept = (cmc_M_new / cmc_M) * (cmc_M_new / cmc_M) * (abs(Mrot_old2.x) / abs(Mrot_new2.x)) * exp(-energy_delta / ((cuBReal)BOLTZMANN * base_temperature));
+					else P_accept = (abs(Mrot_old2.x) / abs(Mrot_new2.x)) * exp(-energy_delta / ((cuBReal)BOLTZMANN * base_temperature));
+
+					//uniform random number between 0 and 1
+					cuBReal P = prng.rand();
+
+					if (P <= P_accept) {
+
+						//renormalize spins to mu_s to avoid floating point error creep
+						cuBReal mu_s = *cuaMesh.pmu_s;
+						cuaMesh.update_parameters_mcoarse(spin_idx1, *cuaMesh.pmu_s, mu_s);
+						M_new1.renormalize(mu_s);
+
+						cuaMesh.update_parameters_mcoarse(spin_idx2, *cuaMesh.pmu_s, mu_s);
+						M_new2.renormalize(mu_s);
+
+						//Set new spins
+						M1[spin_idx1] = M_new1;
+						M1[spin_idx2] = M_new2;
+					}
+				}
+			}
+		}
+	}
+}
+
 //Take a constrained Monte Carlo Metropolis step in this atomistic mesh
-cuBReal Atom_Mesh_CubicCUDA::Iterate_MonteCarloCUDA_Constrained(cuBReal mc_cone_angledeg)
+cuBReal Atom_Mesh_CubicCUDA::Iterate_MonteCarloCUDA_Constrained(cuBReal mc_cone_angledeg, double target_acceptance_rate)
 {
 	Zero_MCAux_Atom_Mesh_CubicCUDA <<< 1, CUDATHREADS >>> (mc_acceptance_rate, cmc_M);
 	
@@ -454,23 +734,50 @@ cuBReal Atom_Mesh_CubicCUDA::Iterate_MonteCarloCUDA_Constrained(cuBReal mc_cone_
 	//Field set
 	if (pHa) {
 
-		//red
-		Iterate_MonteCarloCUDA_Constrained_Cubic_redblack_kernel <<< (mc_indices_red.size() / 2 + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> 
-			(cuaMesh, 
-				mc_indices_red.size(), mc_indices_red, 
-				cuaModules, cuaNumModules, 
-				*pHa, prng,
-				cmc_M, cmc_n,
-				mc_cone_angledeg, mc_acceptance_rate);
-		
-		//black
-		Iterate_MonteCarloCUDA_Constrained_Cubic_redblack_kernel <<< (mc_indices_black.size() / 2 + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>>
-			(cuaMesh,
-				mc_indices_black.size(), mc_indices_black,
-				cuaModules, cuaNumModules,
-				*pHa, prng,
-				cmc_M, cmc_n,
-				mc_cone_angledeg, mc_acceptance_rate);
+		if (mc_acceptance_reduction_counter == 0) {
+
+			//with acceptance rate reductions
+
+			//red
+			Iterate_MonteCarloCUDA_Constrained_Cubic_redblack_kernel <<< (mc_indices_red.size() / 2 + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>>
+				(cuaMesh,
+					mc_indices_red.size(), mc_indices_red,
+					cuaModules, cuaNumModules,
+					*pHa, prng,
+					cmc_M, cmc_n,
+					mc_cone_angledeg, mc_acceptance_rate);
+
+			//black
+			Iterate_MonteCarloCUDA_Constrained_Cubic_redblack_kernel <<< (mc_indices_black.size() / 2 + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>>
+				(cuaMesh,
+					mc_indices_black.size(), mc_indices_black,
+					cuaModules, cuaNumModules,
+					*pHa, prng,
+					cmc_M, cmc_n,
+					mc_cone_angledeg, mc_acceptance_rate);
+		}
+		else {
+
+			//without acceptance rate reduction
+
+			//red
+			Iterate_MonteCarloCUDA_Constrained_Cubic_redblack_kernel <<< (mc_indices_red.size() / 2 + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>>
+				(cuaMesh,
+					mc_indices_red.size(), mc_indices_red,
+					cuaModules, cuaNumModules,
+					*pHa, prng,
+					cmc_M, cmc_n,
+					mc_cone_angledeg);
+
+			//black
+			Iterate_MonteCarloCUDA_Constrained_Cubic_redblack_kernel <<< (mc_indices_black.size() / 2 + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>>
+				(cuaMesh,
+					mc_indices_black.size(), mc_indices_black,
+					cuaModules, cuaNumModules,
+					*pHa, prng,
+					cmc_M, cmc_n,
+					mc_cone_angledeg);
+		}
 	}
 	//No field (or rather Atom_ZeemanCUDA module not added)
 	else {
@@ -478,26 +785,69 @@ cuBReal Atom_Mesh_CubicCUDA::Iterate_MonteCarloCUDA_Constrained(cuBReal mc_cone_
 		cu_obj<cuReal3> Ha;
 		Ha.from_cpu(cuReal3());
 
-		//red
-		Iterate_MonteCarloCUDA_Constrained_Cubic_redblack_kernel <<< (mc_indices_red.size() / 2 + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> 
-			(cuaMesh,
-				mc_indices_red.size(), mc_indices_red,
-				cuaModules, cuaNumModules,
-				Ha, prng,
-				cmc_M, cmc_n,
-				mc_cone_angledeg, mc_acceptance_rate);
+		if (mc_acceptance_reduction_counter == 0) {
 
-		//black
-		Iterate_MonteCarloCUDA_Constrained_Cubic_redblack_kernel <<< (mc_indices_black.size() / 2 + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> 
-			(cuaMesh,
-				mc_indices_black.size(), mc_indices_black,
-				cuaModules, cuaNumModules,
-				Ha, prng,
-				cmc_M, cmc_n,
-				mc_cone_angledeg, mc_acceptance_rate);
+			//with acceptance rate reductions
+
+			//red
+			Iterate_MonteCarloCUDA_Constrained_Cubic_redblack_kernel <<< (mc_indices_red.size() / 2 + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>>
+				(cuaMesh,
+					mc_indices_red.size(), mc_indices_red,
+					cuaModules, cuaNumModules,
+					Ha, prng,
+					cmc_M, cmc_n,
+					mc_cone_angledeg, mc_acceptance_rate);
+
+			//black
+			Iterate_MonteCarloCUDA_Constrained_Cubic_redblack_kernel <<< (mc_indices_black.size() / 2 + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>>
+				(cuaMesh,
+					mc_indices_black.size(), mc_indices_black,
+					cuaModules, cuaNumModules,
+					Ha, prng,
+					cmc_M, cmc_n,
+					mc_cone_angledeg, mc_acceptance_rate);
+		}
+		else {
+
+			//without acceptance rate reduction
+
+			//red
+			Iterate_MonteCarloCUDA_Constrained_Cubic_redblack_kernel <<< (mc_indices_red.size() / 2 + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>>
+				(cuaMesh,
+					mc_indices_red.size(), mc_indices_red,
+					cuaModules, cuaNumModules,
+					Ha, prng,
+					cmc_M, cmc_n,
+					mc_cone_angledeg);
+
+			//black
+			Iterate_MonteCarloCUDA_Constrained_Cubic_redblack_kernel <<< (mc_indices_black.size() / 2 + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>>
+				(cuaMesh,
+					mc_indices_black.size(), mc_indices_black,
+					cuaModules, cuaNumModules,
+					Ha, prng,
+					cmc_M, cmc_n,
+					mc_cone_angledeg);
+		}
 	}
 
-	return mc_acceptance_rate.to_cpu();
+	if (mc_acceptance_reduction_counter == 0) {
+
+		mc_acceptance_rate_last = mc_acceptance_rate.to_cpu();
+
+		//is acceptance rate close enough to target acceptance? If yes don't do reduction next time.
+		if (abs(target_acceptance_rate - mc_acceptance_rate_last) < MONTECARLO_ACCEPTANCETOLERANCE) mc_acceptance_reduction_counter = 1;
+
+		return mc_acceptance_rate_last;
+	}
+	else {
+
+		//increase counter until we come full circle : when mc_acceptance_reduction_counter becomes zero again we'll have to do reduction just to check.
+		mc_acceptance_reduction_counter = (mc_acceptance_reduction_counter + 1) % MONTECARLO_REDUCTIONITERS;
+
+		//return exact terget acceptance rate means cone angle will not be adjusted
+		return target_acceptance_rate;
+	}
 }
 
 #endif

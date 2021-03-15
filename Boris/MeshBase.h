@@ -18,8 +18,6 @@
 #include "MeshBaseCUDA.h"
 #endif
 
-
-
 class SuperMesh;
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -76,6 +74,10 @@ protected:
 
 	//if displaying a parameter spatial variation, this value will say which parameter (a value from PARAM_ enum)
 	int displayedParamVar = PARAM_GREL;
+
+	//select module with which we calculate Heff and energy density display (MOD_ERROR means none selected, MOD_ALL means show total effective field)
+	int Module_Heff_Display = MOD_ALL;
+	int Module_Energy_Display = MOD_ERROR;
 
 	//--------Modules
 
@@ -313,6 +315,9 @@ public:
 	//each parameter has a certain type (PARAMTYPE_) - return cellsize in this mesh associated with this parameter type (e.g. ferromagnetic, electric, thermal, elastic)
 	DBL3 get_paramtype_cellsize(PARAM_ paramID);
 
+	//set tensorial anisotropy terms
+	virtual BError set_tensorial_anisotropy(std::vector<DBL4> Kt) { return BError(); }
+
 	//----------------------------------- DISPLAY-ASSOCIATED GET/SET METHODS
 
 	//Return quantity currently set to display on screen.
@@ -359,6 +364,45 @@ public:
 	int GetVEC3Rep(void) { return vec3rep; }
 
 	bool IsDisplayBackgroundEnabled(void) { return displayedBackgroundPhysicalQuantity != MESHDISPLAY_NONE; }
+
+	//Get settings for module display data 
+	//Return module displaying its effective field (MOD_ALL means total Heff)
+	int Get_Module_Heff_Display(void) { return Module_Heff_Display; }
+	//Return module displaying its energy density spatial variation (MOD_ERROR means none set)
+	int Get_Module_Energy_Display(void) { return Module_Energy_Display; }
+
+	//this is similar to Get_Module_Heff_Display, but also takes into account which module is actually set, since e.g. if Module_Heff_Display == MOD_EXCHANGE, but we actually have DM type module set, then need to return the DM module not MOD_EXCHANGE
+	//i.e. the meaning of the Module_Heff_Display value changes depending on what modules are actually set. (MOD_EXCHANGE means total exchange value, but MOD_DMEXCHANGE means just the DMI exchange).
+	//thus: normally this function returns same as Get_Module_Heff_Display, but exceptions handled here
+	int Get_ActualModule_Heff_Display(void)
+	{
+		if (Module_Heff_Display == MOD_EXCHANGE) {
+			if (IsModuleSet(MOD_DMEXCHANGE)) return MOD_DMEXCHANGE;
+			else if (IsModuleSet(MOD_IDMEXCHANGE)) return MOD_IDMEXCHANGE;
+		}
+		if (Module_Heff_Display == MOD_DEMAG) {
+			if (IsModuleSet(MOD_SDEMAG_DEMAG)) return MOD_SDEMAG_DEMAG;
+		}
+		return Module_Heff_Display;
+	}
+
+	//as above but for energy
+	int Get_ActualModule_Energy_Display(void)
+	{
+		if (Module_Energy_Display == MOD_EXCHANGE) {
+			if (IsModuleSet(MOD_DMEXCHANGE)) return MOD_DMEXCHANGE;
+			else if (IsModuleSet(MOD_IDMEXCHANGE)) return MOD_IDMEXCHANGE;
+		}
+		if (Module_Energy_Display == MOD_DEMAG) {
+			if (IsModuleSet(MOD_SDEMAG_DEMAG)) return MOD_SDEMAG_DEMAG;
+		}
+		return Module_Energy_Display;
+	}
+
+	//Set module display quantity : must call UpdateConfiguration so modules can allocate / free energy as required
+	void Set_Module_Heff_Display(int Module_Heff_Display_) { Module_Heff_Display = Module_Heff_Display_; }
+	void Set_Module_Energy_Display(int Module_Energy_Display_) { Module_Energy_Display = Module_Energy_Display_; }
+	void Set_Module_Display(int Module_Display_) { Module_Heff_Display = Module_Display_; Module_Energy_Display = Module_Display_; }
 
 	//----------------------------------- MESH INFO AND SIZE GET/SET METHODS : MeshBase.cpp
 
@@ -409,6 +453,9 @@ public:
 	void Set_Demag_Exclusion(bool exclude_from_multiconvdemag_) { exclude_from_multiconvdemag = exclude_from_multiconvdemag_; }
 	bool Get_Demag_Exclusion(void) { return exclude_from_multiconvdemag; }
 
+	//search save data list (saveDataList) for given dataID set for this mesh. Return true if found and its rectangle is not Null; else return false.
+	bool IsOutputDataSet_withRect(int datumId);
+
 	//----------------------------------- ENABLED MESH PROPERTIES CHECKERS
 
 	//is magnetic dynamics computation enabled? (check Heff not M - e.g. M is not empty for dipole meshes)
@@ -430,26 +477,18 @@ public:
 	virtual bool GInterface_Enabled(void) = 0;
 
 	//are periodic boundary conditions set?
-	virtual bool Is_PBC_x(void) = 0;
-	virtual bool Is_PBC_y(void) = 0;
-	virtual bool Is_PBC_z(void) = 0;
-
-	//check if this mesh has an exchange module enabled (surf exchange doesn't count)
-	bool ExchangeComputation_Enabled(void) { return IsModuleSet(MOD_EXCHANGE) || IsModuleSet(MOD_DMEXCHANGE) || IsModuleSet(MOD_IDMEXCHANGE); }
+	virtual int Is_PBC_x(void) = 0;
+	virtual int Is_PBC_y(void) = 0;
+	virtual int Is_PBC_z(void) = 0;
 
 	//is there a demag-type module set for this mesh? (SDemag not included as this is a SuperMesh module)
 	virtual bool Is_Demag_Enabled(void) = 0;
 
 	//----------------------------------- VALUE GETTERS
 
-	//get energy value for given module or one of its exclusive modules (if none active return 0); call it with MOD_ALL to return total energy density in this mesh; 
-	double GetEnergyDensity(MOD_ moduleType);
-
-	//As above, but get energy in specified rectangle only, where applicable
-	double GetEnergyDensity(MOD_ moduleType, Rect& avRect);
-
-	//get maximum exchange energy density modulus over specified rectangle
-	virtual double Get_Max_Exchange_EnergyDensity(Rect& rectangle) = 0;
+	//get energy value for given module or one of its exclusive modules (if none active return 0); call it with MOD_ALL to return total energy density in this mesh;
+	//If avRect is null then get energy density in entire mesh
+	double GetEnergyDensity(MOD_ moduleType, Rect avRect = Rect());
 
 	//get topological charge using formula Q = Integral(m.(dm/dx x dm/dy) dxdy) / 4PI
 	virtual double GetTopologicalCharge(Rect rectangle = Rect()) = 0;
@@ -470,9 +509,6 @@ public:
 	virtual double GetAverageLatticeTemperature(Rect rectangle = Rect()) = 0;
 
 	//----------------------------------- OTHER CALCULATION METHODS
-
-	//compute exchange energy spatial variation and have it available to display in Cust_S
-	virtual void Compute_Exchange(void) = 0;
 
 	//compute topological charge density spatial dependence and have it available to display in Cust_S
 	//Use formula Qdensity = m.(dm/dx x dm/dy) / 4PI
@@ -554,6 +590,21 @@ public:
 	//couple this mesh to touching dipoles by setting skip cells as required : used for domain wall moving mesh algorithms
 	virtual void CoupleToDipoles(bool status) {}
 
+	//Fit domain wall along the x direction through centre of rectangle : fit the component which matches a tanh profile. Return centre position and width.
+	virtual DBL2 FitDomainWall_X(Rect rectangle) { return DBL2(); }
+	//Fit domain wall along the y direction through centre of rectangle : fit the component which matches a tanh profile. Return centre position and width.
+	virtual DBL2 FitDomainWall_Y(Rect rectangle) { return DBL2(); }
+	//Fit domain wall along the z direction through centre of rectangle : fit the component which matches a tanh profile. Return centre position and width.
+	virtual DBL2 FitDomainWall_Z(Rect rectangle) { return DBL2(); }
+
+	//return average dm/dt in the given avRect (relative rect). Here m is the direction vector.
+	virtual DBL3 Average_dmdt(Rect avRect) { return DBL3(); }
+	virtual DBL3 Average_dmdt2(Rect avRect) { return DBL3(); }
+
+	//return average m x dm/dt in the given avRect (relative rect). Here m is the direction vector.
+	virtual DBL3 Average_mxdmdt(Rect avRect) { return DBL3(); }
+	virtual DBL3 Average_mxdmdt2(Rect avRect) { return DBL3(); }
+
 	//----------------------------------- MESH QUANTITIES CONTROL
 
 	//this method is also used by the dipole mesh where it does something else - sets the dipole direction
@@ -564,6 +615,15 @@ public:
 	//Set magnetization angle in solid object only containing given relative position uniformly using polar coordinates
 	virtual void SetMagAngle_Object(double polar, double azim, DBL3 position) {}
 
+	//Flower state magnetization
+	virtual void SetMagFlower(int direction, DBL3 centre, double radius, double thickness) {}
+
+	//Onion state magnetization
+	virtual void SetMagOnion(int direction, DBL3 centre, double radius1, double radius2, double thickness) {}
+
+	//Crosstie state magnetization
+	virtual void SetMagCrosstie(int direction, DBL3 centre, double radius, double thickness) {}
+
 	//Invert magnetization direction in given mesh (must be magnetic)
 	virtual void SetInvertedMag(bool x, bool y, bool z) {}
 
@@ -572,6 +632,7 @@ public:
 
 	//Set random magentisation distribution in given mesh (must be magnetic)
 	virtual void SetRandomMag(int seed) {}
+	virtual void SetRandomXYMag(int seed) {}
 
 	//set a domain wall with given width (metric units) at position within mesh (metric units). 
 	//Longitudinal and transverse are magnetization componets as: 1: x, 2: y, 3: z, 1: -x, 2: -y, 3: -z

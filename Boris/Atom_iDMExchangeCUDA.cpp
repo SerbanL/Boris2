@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "Atom_iDMExchangeCUDA.h"
+#include "DataDefs.h"
 
 #if defined(MODULE_COMPILATION_IDMEXCHANGE) && ATOMISTIC == 1
 
@@ -22,7 +23,12 @@ BError Atom_iDMExchangeCUDA::Initialize(void)
 {
 	BError error(CLASS_STR(Atom_iDMExchangeCUDA));
 
-	initialized = true;
+	//Make sure display data has memory allocated (or freed) as required
+	error = Update_Module_Display_VECs(
+		(cuReal3)paMeshCUDA->h, (cuRect)paMeshCUDA->meshRect, 
+		(MOD_)paMeshCUDA->Get_ActualModule_Heff_Display() == MOD_IDMEXCHANGE || paMeshCUDA->IsOutputDataSet_withRect(DATA_E_EXCH),
+		(MOD_)paMeshCUDA->Get_ActualModule_Heff_Display() == MOD_IDMEXCHANGE || paMeshCUDA->IsOutputDataSet_withRect(DATA_E_EXCH));
+	if (!error)	initialized = true;
 
 	return error;
 }
@@ -34,13 +40,6 @@ BError Atom_iDMExchangeCUDA::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 	Uninitialize();
 
 	return error;
-}
-
-void Atom_iDMExchangeCUDA::Compute_Exchange(VEC<double>& displayVEC)
-{
-	Compute_ExchangeCUDA();
-
-	exchange_displayVEC()->copy_to_cpuvec(displayVEC);
 }
 
 #endif

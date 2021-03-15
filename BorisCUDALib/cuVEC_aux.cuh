@@ -47,6 +47,11 @@ template void cuVEC<cuSZ3>::count_nonempty_cells(size_t arr_size);
 template void cuVEC<cuFLT3>::count_nonempty_cells(size_t arr_size);
 template void cuVEC<cuDBL3>::count_nonempty_cells(size_t arr_size);
 
+template void cuVEC<cuINT4>::count_nonempty_cells(size_t arr_size);
+template void cuVEC<cuSZ4>::count_nonempty_cells(size_t arr_size);
+template void cuVEC<cuFLT4>::count_nonempty_cells(size_t arr_size);
+template void cuVEC<cuDBL4>::count_nonempty_cells(size_t arr_size);
+
 //count cells which don't have a null value set : i.e. non-empty.
 template <typename VType>
 __host__ void cuVEC<VType>::count_nonempty_cells(size_t arr_size)

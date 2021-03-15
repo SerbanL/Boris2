@@ -7,6 +7,11 @@ bool DipoleDipoleTFunc::CalcDiagTens2D_PBC(
 	bool include_self_demag, 
 	int x_images, int y_images, int z_images)
 {
+	//caller can have these negative (which means use inverse pbc for differential operators, but here we need them positive)
+	x_images = abs(x_images);
+	y_images = abs(y_images);
+	z_images = abs(z_images);
+
 	//zero the tensor first
 	Ddiag.set(DBL3());
 
@@ -23,7 +28,6 @@ bool DipoleDipoleTFunc::CalcDiagTens2D_PBC(
 				for (int j_img = -y_images; j_img < y_images + 1; j_img++) {
 					for (int k_img = -z_images; k_img < z_images + 1; k_img++) {
 
-						//Diagonal elements are symmetric so take modulus of the indexes without any change in sign for the tensor elements
 						int i = i_img * N.x + i0;
 						int j = j_img * N.y + j0;
 						int k = k_img;
@@ -78,6 +82,11 @@ bool DipoleDipoleTFunc::CalcDiagTens2D_PBC(
 //Compute in Dodiag the off-diagonal tensor elements (Dxy, Dxz, Dyz) which has sizes given by N. 
 bool DipoleDipoleTFunc::CalcOffDiagTens2D_PBC(std::vector<double> &Dodiag, INT3 N, DBL3 h, int x_images, int y_images, int z_images)
 {
+	//caller can have these negative (which means use inverse pbc for differential operators, but here we need them positive)
+	x_images = abs(x_images);
+	y_images = abs(y_images);
+	z_images = abs(z_images);
+
 	//zero the tensor first
 	std::fill(Dodiag.begin(), Dodiag.end(), 0.0);
 
@@ -147,6 +156,11 @@ bool DipoleDipoleTFunc::CalcOffDiagTens2D_PBC(std::vector<double> &Dodiag, INT3 
 //Compute in Ddiag the diagonal tensor elements (Dxx, Dyy, Dzz) which has sizes given by N.
 bool DipoleDipoleTFunc::CalcDiagTens3D_PBC(VEC<DBL3> &Ddiag, INT3 N, DBL3 h, bool include_self_demag, int x_images, int y_images, int z_images)
 {
+	//caller can have these negative (which means use inverse pbc for differential operators, but here we need them positive)
+	x_images = abs(x_images);
+	y_images = abs(y_images);
+	z_images = abs(z_images);
+
 	//zero the tensor first
 	Ddiag.set(DBL3());
 
@@ -164,8 +178,6 @@ bool DipoleDipoleTFunc::CalcDiagTens3D_PBC(VEC<DBL3> &Ddiag, INT3 N, DBL3 h, boo
 					for (int j_img = -y_images; j_img < y_images + 1; j_img++) {
 						for (int k_img = -z_images; k_img < z_images + 1; k_img++) {
 
-							//Diagonal elements are symmetric so take modulus of the indexes without any change in sign for the tensor elements
-							//There is significant redundancy remaining, could be optimized further.
 							int i = i_img * N.x + i0;
 							int j = j_img * N.y + j0;
 							int k = k_img * N.z + k0;
@@ -237,6 +249,11 @@ bool DipoleDipoleTFunc::CalcDiagTens3D_PBC(VEC<DBL3> &Ddiag, INT3 N, DBL3 h, boo
 //Compute in Dodiag the off-diagonal tensor elements (Dxy, Dxz, Dyz) which has sizes given by N. 
 bool DipoleDipoleTFunc::CalcOffDiagTens3D_PBC(VEC<DBL3> &Dodiag, INT3 N, DBL3 h, int x_images, int y_images, int z_images)
 {
+	//caller can have these negative (which means use inverse pbc for differential operators, but here we need them positive)
+	x_images = abs(x_images);
+	y_images = abs(y_images);
+	z_images = abs(z_images);
+
 	//zero the tensor first
 	Dodiag.set(DBL3());
 

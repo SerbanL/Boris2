@@ -6,6 +6,7 @@
 #if defined(MODULE_COMPILATION_ANIUNI) && ATOMISTIC == 1
 
 #include "Atom_MeshCUDA.h"
+#include "DataDefs.h"
 
 //--------------- UNIAXIAL
 
@@ -22,7 +23,12 @@ BError Atom_Anisotropy_UniaxialCUDA::Initialize(void)
 {
 	BError error(CLASS_STR(Atom_Anisotropy_UniaxialCUDA));
 
-	initialized = true;
+	//Make sure display data has memory allocated (or freed) as required
+	error = Update_Module_Display_VECs(
+		(cuReal3)paMeshCUDA->h, (cuRect)paMeshCUDA->meshRect, 
+		(MOD_)paMeshCUDA->Get_Module_Heff_Display() == MOD_ANIUNI || paMeshCUDA->IsOutputDataSet_withRect(DATA_E_ANIS),
+		(MOD_)paMeshCUDA->Get_Module_Energy_Display() == MOD_ANIUNI || paMeshCUDA->IsOutputDataSet_withRect(DATA_E_ANIS));
+	if (!error)	initialized = true;
 
 	return error;
 }
@@ -32,8 +38,6 @@ BError Atom_Anisotropy_UniaxialCUDA::UpdateConfiguration(UPDATECONFIG_ cfgMessag
 	BError error(CLASS_STR(Atom_Anisotropy_UniaxialCUDA));
 
 	Uninitialize();
-
-	Initialize();
 
 	return error;
 }

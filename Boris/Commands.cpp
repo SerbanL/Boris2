@@ -939,6 +939,105 @@ void Simulation::HandleCommand(std::string command_string)
 		}
 		break;
 
+		case CMD_FLOWER:
+		{
+			int direction;
+			DBL3 centre;
+			double radius, thickness;
+			std::string meshName;
+
+			error = commandSpec.GetParameters(command_fields, direction, radius, thickness, centre, meshName);
+			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, direction, radius, thickness, centre); meshName = SMesh.GetMeshFocus(); }
+			if (error == BERROR_PARAMMISMATCH) { 
+
+				error.reset() = commandSpec.GetParameters(command_fields, direction);
+				if (error == BERROR_PARAMMISMATCH) { error.reset(); direction = 1; }
+
+				//entire mesh
+				radius = 0.0;
+				//entire thickness
+				thickness = 0.0;
+				//centered
+				centre = SMesh.active_mesh()->GetMeshDimensions() / 2;
+			}
+
+			if (!error) {
+
+				if (!err_hndl.qcall(error, &SuperMesh::SetMagFlower, &SMesh, meshName, direction, centre, radius, thickness)) {
+
+					UpdateScreen();
+				}
+			}
+			else if (verbose) PrintCommandUsage(command_name);
+		}
+		break;
+
+		case CMD_ONION:
+		{
+			int direction;
+			DBL3 centre;
+			double radius1, radius2, thickness;
+			std::string meshName;
+
+			error = commandSpec.GetParameters(command_fields, direction, radius1, radius2, thickness, centre, meshName);
+			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, direction, radius1, radius2, thickness, centre); meshName = SMesh.GetMeshFocus(); }
+			if (error == BERROR_PARAMMISMATCH) {
+
+				error.reset() = commandSpec.GetParameters(command_fields, direction);
+				if (error == BERROR_PARAMMISMATCH) { error.reset(); direction = 1; }
+				
+				//entire mesh
+				radius1 = 0.0; radius2 = 0.0;
+				//entire thickness
+				thickness = 0.0;
+				//centered
+				centre = SMesh.active_mesh()->GetMeshDimensions() / 2;
+			}
+
+			if (!error) {
+
+				if (!err_hndl.qcall(error, &SuperMesh::SetMagOnion, &SMesh, meshName, direction, centre, radius1, radius2, thickness)) {
+
+					UpdateScreen();
+				}
+			}
+			else if (verbose) PrintCommandUsage(command_name);
+		}
+		break;
+
+		case CMD_CROSSTIE:
+		{
+			int direction;
+			DBL3 centre;
+			double radius, thickness;
+			std::string meshName;
+
+			error = commandSpec.GetParameters(command_fields, direction, radius, thickness, centre, meshName);
+			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, direction, radius, thickness, centre); meshName = SMesh.GetMeshFocus(); }
+			if (error == BERROR_PARAMMISMATCH) {
+
+				error.reset() = commandSpec.GetParameters(command_fields, direction);
+				if (error == BERROR_PARAMMISMATCH) { error.reset(); direction = 1; }
+
+				//entire mesh
+				radius = 0.0;
+				//entire thickness
+				thickness = 0.0;
+				//centered
+				centre = SMesh.active_mesh()->GetMeshDimensions() / 2;
+			}
+
+			if (!error) {
+
+				if (!err_hndl.qcall(error, &SuperMesh::SetMagCrosstie, &SMesh, meshName, direction, centre, radius, thickness)) {
+
+					UpdateScreen();
+				}
+			}
+			else if (verbose) PrintCommandUsage(command_name);
+		}
+		break;
+
 		case CMD_SETOBJECTANGLE:
 		{
 			double polar, azim;
@@ -972,6 +1071,27 @@ void Simulation::HandleCommand(std::string command_string)
 			if (!error) {
 
 				if (!err_hndl.qcall(error, &SuperMesh::SetRandomMag, &SMesh, meshName, seed)) {
+
+					UpdateScreen();
+				}
+
+			}
+			else if (verbose) PrintCommandUsage(command_name);
+		}
+		break;
+
+		case CMD_RANDOMXY:
+		{
+			std::string meshName;
+			int seed;
+
+			error = commandSpec.GetParameters(command_fields, meshName, seed);
+			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, meshName); seed = 1; }
+			if (error == BERROR_PARAMMISMATCH) { error.reset(); meshName = SMesh.GetMeshFocus(); seed = 1; }
+
+			if (!error) {
+
+				if (!err_hndl.qcall(error, &SuperMesh::SetRandomXYMag, &SMesh, meshName, seed)) {
 
 					UpdateScreen();
 				}
@@ -1522,6 +1642,8 @@ void Simulation::HandleCommand(std::string command_string)
 				UpdateScreen();
 			}
 			else if (verbose) Print_Speedup_List();
+
+			if (script_client_connected) commSocket.SetSendData(commandSpec.PrepareReturnParameters(SMesh.GetEvaluationSpeedup()));
 		}
 		break;
 
@@ -1901,6 +2023,45 @@ void Simulation::HandleCommand(std::string command_string)
 		}
 		break;
 
+		case CMD_DATAPRECISION:
+		{
+			int precision;
+
+			error = commandSpec.GetParameters(command_fields, precision);
+
+			if (!error) {
+
+				StopSimulation();
+
+				dataprecision = precision;
+				Conversion::tostringconversion::precision() = dataprecision;
+
+				UpdateScreen();
+			}
+			else if (verbose) PrintCommandUsage(command_name);
+
+			if (script_client_connected) commSocket.SetSendData(commandSpec.PrepareReturnParameters(dataprecision));
+		}
+		break;
+
+		case CMD_DISKBUFFERLINES:
+		{
+			int bufferlines;
+
+			error = commandSpec.GetParameters(command_fields, bufferlines);
+
+			if (!error) {
+
+				StopSimulation();
+
+				savedata_diskbuffer_size = bufferlines;
+			}
+			else if (verbose) PrintCommandUsage(command_name);
+
+			if (script_client_connected) commSocket.SetSendData(commandSpec.PrepareReturnParameters(savedata_diskbuffer_size));
+		}
+		break;
+
 		case CMD_STAGES:
 		{
 			if (verbose) Print_SetStages_List();
@@ -2096,6 +2257,54 @@ void Simulation::HandleCommand(std::string command_string)
 				SMesh.get_meshparam_value(meshName, paramName, paramValue);
 				commSocket.SetSendData(commandSpec.PrepareReturnParameters(paramValue));
 			}
+		}
+		break;
+
+		case CMD_SETKTENS:
+		{
+			std::string kterms;
+			std::string meshName = SMesh.GetMeshFocus();
+
+			error = commandSpec.GetParameters(command_fields, kterms);
+
+			if (!error) {
+		
+				//input terms should of the form dxn1yn2zn3
+				//Here d is a number (floating point), n1, n2, n3 are integers. x, y, z are string literals and we expect to find them
+				std::vector<std::string> ktens = split(kterms, " ");
+
+				//extract d n1 n2 n3 values
+				std::vector<DBL4> Kt;
+
+				for (int idx = 0; idx < ktens.size(); idx++) {
+
+					double d = 1.0;
+					int n1 = 0, n2 = 0, n3 = 0;
+					
+					ktens[idx] += " ";
+					size_t pos = ktens[idx].find_first_of("xyz");
+					if (pos != std::string::npos) {
+
+						if (pos) if (ktens[idx].substr(0, pos) != "-") d = ToNum(ktens[idx].substr(0, pos)); else d = -1;
+						std::vector<std::string> entry_fields = split(ktens[idx].substr(pos), { "x", "y", "z" });
+						
+						for (int fidx = 1; fidx < entry_fields.size(); fidx++) {
+
+							std::string component = ktens[idx].substr(pos, 1);
+							if (component == "x") if (entry_fields[fidx].length() && entry_fields[fidx] != " ") n1 = ToNum(entry_fields[fidx]); else n1 = 1;
+							if (component == "y") if (entry_fields[fidx].length() && entry_fields[fidx] != " ") n2 = ToNum(entry_fields[fidx]); else n2 = 1;
+							if (component == "z") if (entry_fields[fidx].length() && entry_fields[fidx] != " ") n3 = ToNum(entry_fields[fidx]); else n3 = 1;
+							pos += entry_fields[fidx].length() + 1;
+						}
+					}
+					else d = ToNum(ktens[idx]);
+					
+					if (d != 0.0 && n1 >= 0 && n2 >= 0 && n3 >= 0) Kt.push_back(DBL4(d, n1, n2, n3));
+				}
+
+				error = SMesh[meshName]->set_tensorial_anisotropy(Kt);
+			}
+			else if (verbose) BD.DisplayConsoleMessage(SMesh[meshName]->get_tensorial_anisotropy_string());
 		}
 		break;
 
@@ -2474,6 +2683,30 @@ void Simulation::HandleCommand(std::string command_string)
 				}
 			}
 			else if(verbose) Print_MeshDisplay_List();
+		}
+		break;
+
+		case CMD_DISPLAYMODULE:
+		{
+			std::string moduleName, meshName;
+
+			error = commandSpec.GetParameters(command_fields, moduleName, meshName);
+			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, moduleName); meshName = SMesh.GetMeshFocus(); }
+
+			if (!error) {
+
+				if (SMesh.contains(meshName)) {
+
+					//need to stop simulation so on initialization memory is allocated correctly
+					StopSimulation();
+
+					if (moduleHandles.has_value(moduleName)) SMesh[meshName]->Set_Module_Display(moduleHandles.get_ID_from_value(moduleName));
+					else SMesh[meshName]->Set_Module_Display(MOD_ALL);
+
+					UpdateScreen();
+				}
+			}
+			else if (verbose) Print_DisplayModules_List();
 		}
 		break;
 
@@ -2914,6 +3147,11 @@ void Simulation::HandleCommand(std::string command_string)
 		case CMD_SETDEFAULTELECTRODES:
 		{
 			if (SMesh.IsSuperMeshModuleSet(MODS_STRANSPORT)) {
+				
+				std::string sides;
+
+				error = commandSpec.GetParameters(command_fields, sides);
+				if (error) { error.reset(); sides = "x"; }
 
 				StopSimulation();
 
@@ -2922,12 +3160,33 @@ void Simulation::HandleCommand(std::string command_string)
 
 				Rect smeshRect = SMesh.GetESMeshRect();
 
-				//left hand side electrode
-				SMesh.CallModuleMethod(&STransport::AddElectrode, 0.0, Rect(smeshRect.s, DBL3(smeshRect.s.x, smeshRect.e.y, smeshRect.e.z)));
-				SMesh.CallModuleMethod(&STransport::DesignateGroundElectrode, 0);
+				if (sides == "z") {
+				
+					//left hand side electrode
+					SMesh.CallModuleMethod(&STransport::AddElectrode, 0.0, Rect(smeshRect.s, DBL3(smeshRect.e.x, smeshRect.e.y, smeshRect.s.z)));
+					SMesh.CallModuleMethod(&STransport::DesignateGroundElectrode, 0);
 
-				//right hand side electrode
-				SMesh.CallModuleMethod(&STransport::AddElectrode, 0.0, Rect(DBL3(smeshRect.e.x, smeshRect.s.y, smeshRect.s.z), smeshRect.e));
+					//right hand side electrode
+					SMesh.CallModuleMethod(&STransport::AddElectrode, 0.0, Rect(DBL3(smeshRect.s.x, smeshRect.s.y, smeshRect.e.z), smeshRect.e));
+				}
+				else if (sides == "y") {
+
+					//left hand side electrode
+					SMesh.CallModuleMethod(&STransport::AddElectrode, 0.0, Rect(smeshRect.s, DBL3(smeshRect.e.x, smeshRect.s.y, smeshRect.e.z)));
+					SMesh.CallModuleMethod(&STransport::DesignateGroundElectrode, 0);
+
+					//right hand side electrode
+					SMesh.CallModuleMethod(&STransport::AddElectrode, 0.0, Rect(DBL3(smeshRect.s.x, smeshRect.e.y, smeshRect.s.z), smeshRect.e));
+				}
+				else {
+
+					//left hand side electrode
+					SMesh.CallModuleMethod(&STransport::AddElectrode, 0.0, Rect(smeshRect.s, DBL3(smeshRect.s.x, smeshRect.e.y, smeshRect.e.z)));
+					SMesh.CallModuleMethod(&STransport::DesignateGroundElectrode, 0);
+
+					//right hand side electrode
+					SMesh.CallModuleMethod(&STransport::AddElectrode, 0.0, Rect(DBL3(smeshRect.e.x, smeshRect.s.y, smeshRect.s.z), smeshRect.e));
+				}
 
 				SMesh.CallModuleMethod(&STransport::SetPotential, 0.0, true);
 
@@ -4886,6 +5145,23 @@ void Simulation::HandleCommand(std::string command_string)
 		}
 		break;
 
+		case CMD_DWPOS_COMPONENT:
+		{
+			int component;
+
+			error = commandSpec.GetParameters(command_fields, component);
+
+			if (!error) {
+
+				SMesh.Set_DWPos_Component(component);
+
+			}
+			else if (verbose) Print_DWPos_Component();
+
+			if (script_client_connected) commSocket.SetSendData(commandSpec.PrepareReturnParameters(SMesh.Get_DWPos_Component()));
+		}
+		break;
+
 		case CMD_MCSERIAL:
 		{
 			int status;
@@ -4923,6 +5199,42 @@ void Simulation::HandleCommand(std::string command_string)
 				UpdateScreen();
 			}
 			else if (verbose) Print_MCSettings();
+		}
+		break;
+
+		case CMD_MCCOMPUTEFIELDS:
+		{
+			bool status;
+
+			error = commandSpec.GetParameters(command_fields, status);
+
+			if (!error) {
+
+				SMesh.Set_MonteCarlo_ComputeFields(status);
+
+				UpdateScreen();
+			}
+			else if (verbose) Print_MCSettings();
+
+			if (script_client_connected) commSocket.SetSendData(commandSpec.PrepareReturnParameters(SMesh.Get_MonteCarlo_ComputeFields()));
+		}
+		break;
+
+		case CMD_MCCONEANGLELIMITS:
+		{
+			INT2 cone_angles;
+
+			error = commandSpec.GetParameters(command_fields, cone_angles);
+
+			if (!error) {
+
+				SMesh.Set_MonteCarlo_ConeAngleLimits(cone_angles);
+
+				UpdateScreen();
+			}
+			else if (verbose) Print_MCSettings();
+
+			if (script_client_connected) commSocket.SetSendData(commandSpec.PrepareReturnParameters(SMesh.Get_MonteCarlo_ConeAngleLimits()));
 		}
 		break;
 
@@ -5676,72 +5988,43 @@ void Simulation::HandleCommand(std::string command_string)
 
 				bool average = !stencil.IsNull();
 
-				#pragma omp parallel for
-				for (int idx = 0; idx < num_points; idx++) {
+				if (average) {
 
-					DBL3 pos = start + idx * (end - start) / (num_points - 1);
+					for (int idx = 0; idx < num_points; idx++) {
 
-					DBL3 value;
-					if (average) {
+						DBL3 pos = start + idx * step * (end - start).normalized();
 
-						value = SMesh.GetAverageDisplayedMeshValue(Rect(DBL3(pos - stencil/2), DBL3(pos + stencil / 2)));
+						DBL3 rel_pos = pos - SMesh.active_mesh()->GetOrigin();
+						DBL3 value = SMesh.GetAverageDisplayedMeshValue(Rect(DBL3(rel_pos - stencil / 2), DBL3(rel_pos + stencil / 2)));
+
+						//position along displacement unit vector
+						position[idx] = idx * step;
+						data_x[idx] = value.x;
+						data_y[idx] = value.y;
+						data_z[idx] = value.z;
 					}
-					else {
+				}
+				else {
 
-						value = SMesh.GetDisplayedMeshValue(pos);
+#pragma omp parallel for
+					for (int idx = 0; idx < num_points; idx++) {
+
+						DBL3 pos = start + idx * step * (end - start).normalized();
+
+						DBL3 value = SMesh.GetDisplayedMeshValue(pos);
+
+						//position along displacement unit vector
+						position[idx] = idx * step;
+						data_x[idx] = value.x;
+						data_y[idx] = value.y;
+						data_z[idx] = value.z;
 					}
-
-					//position along displacement unit vector
-					position[idx] = (pos - start) * (end-start).normalized();
-					data_x[idx] = value.x;
-					data_y[idx] = value.y;
-					data_z[idx] = value.z;
 				}
 
 				dpArr.set_array(arr_idx + 0, position);
 				dpArr.set_array(arr_idx + 1, data_x);
 				dpArr.set_array(arr_idx + 2, data_y);
 				dpArr.set_array(arr_idx + 3, data_z);
-
-				if (verbose) BD.DisplayConsoleMessage("Path extracted.");
-			}
-			else if (verbose) PrintCommandUsage(command_name);
-		}
-		break;
-
-		case CMD_DP_GETPATH:
-		{
-			int arr_idx_path, arr_idx_data;
-
-			error = commandSpec.GetParameters(command_fields, arr_idx_path, arr_idx_data);
-
-			if (!error) {
-
-				std::vector<double> x, y, z;
-				x = dpArr[arr_idx_path];
-				y = dpArr[arr_idx_path + 1];
-				z = dpArr[arr_idx_path + 2];
-
-				int pathsize = minimum(x.size(), y.size(), z.size());
-
-				std::vector<double> data_x(pathsize), data_y(pathsize), data_z(pathsize);
-
-				//prepare data displayed on screen ready to be read out below
-				SMesh.PrepareDisplayedMeshValue();
-
-				#pragma omp parallel for
-				for (int idx = 0; idx < pathsize; idx++) {
-
-					DBL3 value = SMesh.GetDisplayedMeshValue(DBL3(x[idx], y[idx], z[idx]));
-
-					data_x[idx] = value.x;
-					data_y[idx] = value.y;
-					data_z[idx] = value.z;
-				}
-
-				dpArr.set_array(arr_idx_data, data_x);
-				dpArr.set_array(arr_idx_data + 1, data_y);
-				dpArr.set_array(arr_idx_data + 2, data_z);
 
 				if (verbose) BD.DisplayConsoleMessage("Path extracted.");
 			}
@@ -6110,6 +6393,22 @@ void Simulation::HandleCommand(std::string command_string)
 		}
 		break;
 
+		case CMD_DP_POW:
+		{
+			int dp_source, dp_dest;
+			double exponent;
+
+			error = commandSpec.GetParameters(command_fields, dp_source, exponent, dp_dest);
+			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, dp_source, exponent); dp_dest = dp_source; }
+
+			if (!error) {
+
+				error = dpArr.exponentiate(dp_source, dp_dest, exponent);
+			}
+			else if (verbose) PrintCommandUsage(command_name);
+		}
+		break;
+
 		case CMD_DP_DOTPROD:
 		{
 			int dp_vector, dp_out;
@@ -6223,18 +6522,40 @@ void Simulation::HandleCommand(std::string command_string)
 		case CMD_DP_MEAN:
 		{
 			int dp_source;
+			double exclusion_ratio = 0.0;
 
-			error = commandSpec.GetParameters(command_fields, dp_source);
+			error = commandSpec.GetParameters(command_fields, dp_source, exclusion_ratio);
+			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, dp_source); exclusion_ratio = 0.0; }
 
 			if (!error) {
 
 				DBL2 mean_stdev;
 
-				error  = dpArr.get_mean(dp_source, &mean_stdev);
+				error  = dpArr.get_mean(dp_source, &mean_stdev, exclusion_ratio);
 
 				if (verbose && !error) BD.DisplayConsoleMessage("Mean = " + ToString(mean_stdev.x) + " +/- " + ToString(mean_stdev.y));
 
 				if (script_client_connected) commSocket.SetSendData(commandSpec.PrepareReturnParameters(mean_stdev));
+			}
+			else if (verbose) PrintCommandUsage(command_name);
+		}
+		break;
+
+		case CMD_DP_CHUNKEDSTD:
+		{
+			int dp_source, chunk;
+
+			error = commandSpec.GetParameters(command_fields, dp_source, chunk);
+
+			if (!error) {
+
+				double chunked_stdev;
+
+				error = dpArr.get_chunkedstd(dp_source, chunk, &chunked_stdev);
+
+				if (verbose && !error) BD.DisplayConsoleMessage("Chunked std = " + ToString(chunked_stdev));
+
+				if (script_client_connected) commSocket.SetSendData(commandSpec.PrepareReturnParameters(chunked_stdev));
 			}
 			else if (verbose) PrintCommandUsage(command_name);
 		}
@@ -6438,12 +6759,39 @@ void Simulation::HandleCommand(std::string command_string)
 		}
 		break;
 
+		case CMD_DP_FITDW:
+		{
+			int dp_x, dp_y;
+
+			error = commandSpec.GetParameters(command_fields, dp_x, dp_y);
+
+			if (!error) {
+
+				DBL2 A, x0, D;
+
+				error = dpArr.fit_domainwall(dp_x, dp_y, &A, &x0, &D);
+
+				if (verbose && !error) {
+
+					BD.DisplayConsoleMessage(
+						"D = " + ToString(D.major) + " +/- " + ToString(D.minor) + ", " +
+						"x0 = " + ToString(x0.major) + " +/- " + ToString(x0.minor) + ", " +
+						"A = " + ToString(A.major) + " +/- " + ToString(A.minor)
+					);
+				}
+
+				if (script_client_connected) commSocket.SetSendData(commandSpec.PrepareReturnParameters(D.major, x0.major, A.major, D.minor, x0.minor, A.minor));
+			}
+			else if (verbose) PrintCommandUsage(command_name);
+		}
+		break;
+
 		case CMD_DP_FITSTT:
 		{
 			Rect rectangle;
 
 			error = commandSpec.GetParameters(command_fields, rectangle);
-			if (error == BERROR_PARAMMISMATCH) { error.reset(); rectangle = SMesh.active_mesh()->GetMeshRect(); }
+			if (error == BERROR_PARAMMISMATCH) { error.reset(); rectangle = SMesh.active_mesh()->GetMeshRect() - SMesh.active_mesh()->GetOrigin(); }
 
 			if (!error) {
 
@@ -6603,7 +6951,7 @@ void Simulation::HandleCommand(std::string command_string)
 			std::string hm_mesh;
 
 			error = commandSpec.GetParameters(command_fields, hm_mesh, rectangle);
-			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, hm_mesh); rectangle = SMesh.active_mesh()->GetMeshRect(); }
+			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, hm_mesh); rectangle = SMesh.active_mesh()->GetMeshRect() - SMesh.active_mesh()->GetOrigin(); }
 
 			if (!error) {
 
@@ -6642,7 +6990,7 @@ void Simulation::HandleCommand(std::string command_string)
 			std::string hm_mesh;
 
 			error = commandSpec.GetParameters(command_fields, hm_mesh, rectangle);
-			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, hm_mesh); rectangle = SMesh.active_mesh()->GetMeshRect(); }
+			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, hm_mesh); rectangle = SMesh.active_mesh()->GetMeshRect() - SMesh.active_mesh()->GetOrigin(); }
 
 			if (!error) {
 
@@ -6762,19 +7110,6 @@ void Simulation::HandleCommand(std::string command_string)
 				else err_hndl.show_error(BERROR_SPINSOLVER_FIT4, verbose);
 			}
 			else if (verbose) PrintCommandUsage(command_name);
-		}
-		break;
-
-		case CMD_DP_CALCEXCHANGE:
-		{
-			std::string meshName = SMesh.GetMeshFocus();
-
-			if (SMesh[meshName]->Magnetism_Enabled() && SMesh[meshName]->ExchangeComputation_Enabled()) {
-
-				SMesh[meshName]->Compute_Exchange();
-				UpdateScreen();
-			}
-			else err_hndl.show_error(BERROR_INCORRECTCONFIG, verbose);
 		}
 		break;
 
@@ -6924,6 +7259,7 @@ void Simulation::HandleCommand(std::string command_string)
 
 		case CMD_TEST:
 		{
+			/*
 			std::vector<std::string> commands_output;
 			commands_output.resize(commands.size());
 
@@ -6958,6 +7294,7 @@ void Simulation::HandleCommand(std::string command_string)
 			commands_description = trim(commands_description, "</i>");
 
 			SaveTextToFile("c:/commands.txt", commands_description);
+			*/
 		}
 		break;
 

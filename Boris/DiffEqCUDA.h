@@ -165,7 +165,10 @@ protected:
 	//---------------------------------------- OTHERS : DiffEq_EvalsCUDA.cu
 
 	//Restore magnetization after a failed step for adaptive time-step methods
-	virtual void Restoremagnetization(void) = 0;
+	virtual void RestoreMagnetization(void) = 0;
+
+	//renormalize vectors to set magnetization length value (which could have a spatial variation)
+	virtual void RenormalizeMagnetization(void) = 0;
 
 	//---------------------------------------- OTHER CALCULATION METHODS : DiffEq_SEquationsCUDA.cu
 

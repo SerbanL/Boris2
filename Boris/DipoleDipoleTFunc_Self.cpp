@@ -82,3 +82,46 @@ DBL3 DipoleDipoleTFunc::SelfDemag(DBL3 h)
 		SelfDemag(h.y, h.x, h.z),
 		SelfDemag(h.z, h.y, h.x));
 }
+
+DBL3 DipoleDipoleTFunc::SelfDemag_PBC(DBL3 h, DBL3 n, INT3 demag_pbc_images)
+{
+	DBL3 val = DBL3();
+
+	for (int i_img = -demag_pbc_images.x; i_img < demag_pbc_images.x + 1; i_img++) {
+		for (int j_img = -demag_pbc_images.y; j_img < demag_pbc_images.y + 1; j_img++) {
+			for (int k_img = -demag_pbc_images.z; k_img < demag_pbc_images.z + 1; k_img++) {
+
+				int i = i_img * n.x;
+				int j = j_img * n.y;
+				int k = k_img * n.z;
+
+				if (i == 0 && j == 0 && k == 0) {
+
+					val += DBL3(
+						SelfDemag(h.x, h.y, h.z),
+						SelfDemag(h.y, h.x, h.z),
+						SelfDemag(h.z, h.y, h.x));
+				}
+				else {
+
+					//displacement vector
+					DBL3 r = DBL3(i * h.x, j * h.y, k * h.z);
+
+					//length of displacement vector
+					double r_norm = r.norm();
+
+					//prefactor
+					double c = MUB / (4 * PI * r_norm * r_norm * r_norm);
+
+					//unit displacement vector
+					DBL3 r_dir = r / r_norm;
+
+					//D11, D22, D33
+					val += DBL3(3 * r_dir.x*r_dir.x - 1.0, 3 * r_dir.y*r_dir.y - 1.0, 3 * r_dir.z*r_dir.z - 1.0) * c;
+				}
+			}
+		}
+	}
+
+	return val;
+}

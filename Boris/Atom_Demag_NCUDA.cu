@@ -9,7 +9,7 @@
 
 #include "MeshDefs.h"
 
-__global__ void Demag_NCUDA_Cubic_UpdateField(ManagedAtom_MeshCUDA& cuaMesh, cuBReal& energy, bool do_reduction)
+__global__ void Demag_NCUDA_Cubic_UpdateField(ManagedAtom_MeshCUDA& cuaMesh, ManagedModulesCUDA& cuModule, bool do_reduction)
 {
 	cuVEC_VC<cuReal3>& M1 = *cuaMesh.pM1;
 	cuVEC<cuReal3>& Heff1 = *cuaMesh.pHeff1;
@@ -33,14 +33,17 @@ __global__ void Demag_NCUDA_Cubic_UpdateField(ManagedAtom_MeshCUDA& cuaMesh, cuB
 			if (do_reduction) {
 
 				int non_empty_cells = M1.get_nonempty_cells();
-				if (non_empty_cells) energy_ = -(cuBReal)MUB_MU0 * M1[idx] * Heff_value / (2 * non_empty_cells);
+				if (non_empty_cells) energy_ = -(cuBReal)MU0 * conversion * M1[idx] * Heff_value / (2 * non_empty_cells);
 			}
+
+			if (do_reduction && cuModule.pModule_Heff->linear_size()) (*cuModule.pModule_Heff)[idx] = Heff_value;
+			if (do_reduction && cuModule.pModule_energy->linear_size()) (*cuModule.pModule_energy)[idx] = -(cuBReal)MUB_MU0 * M1[idx] * Heff_value / (2 * M1.h.dim());
 		}
 
 		Heff1[idx] += Heff_value;
 	}
 
-	if (do_reduction) reduction_sum(0, 1, &energy_, energy);
+	if (do_reduction) reduction_sum(0, 1, &energy_, *cuModule.penergy);
 }
 
 //----------------------- UpdateField LAUNCHER
@@ -51,11 +54,11 @@ void Atom_Demag_NCUDA::UpdateField(void)
 
 		ZeroEnergy();
 
-		Demag_NCUDA_Cubic_UpdateField <<< (paMeshCUDA->n.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (paMeshCUDA->cuaMesh, energy, true);
+		Demag_NCUDA_Cubic_UpdateField <<< (paMeshCUDA->n.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (paMeshCUDA->cuaMesh, cuModule, true);
 	}
 	else {
 
-		Demag_NCUDA_Cubic_UpdateField <<< (paMeshCUDA->n.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (paMeshCUDA->cuaMesh, energy, false);
+		Demag_NCUDA_Cubic_UpdateField <<< (paMeshCUDA->n.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (paMeshCUDA->cuaMesh, cuModule, false);
 	}
 }
 

@@ -28,8 +28,16 @@ Atom_MeshParams::Atom_MeshParams(std::vector<PARAM_>& enabledParams)
 			meshParams.push_back("D", MeshParamDescriptor(PARAMTYPE_MAGNETIC, "J"), PARAM_ATOM_SC_D);
 			break;
 
-		case PARAM_ATOM_SC_K:
-			meshParams.push_back("K", MeshParamDescriptor(PARAMTYPE_MAGNETIC, "J"), PARAM_ATOM_SC_K);
+		case PARAM_ATOM_SC_K1:
+			meshParams.push_back("K1", MeshParamDescriptor(PARAMTYPE_MAGNETIC, "J"), PARAM_ATOM_SC_K1);
+			break;
+
+		case PARAM_ATOM_SC_K2:
+			meshParams.push_back("K2", MeshParamDescriptor(PARAMTYPE_MAGNETIC, "J"), PARAM_ATOM_SC_K2);
+			break;
+
+		case PARAM_ATOM_SC_K3:
+			meshParams.push_back("K3", MeshParamDescriptor(PARAMTYPE_MAGNETIC, "J"), PARAM_ATOM_SC_K3);
 			break;
 
 		case PARAM_ATOM_EA1:
@@ -38,6 +46,10 @@ Atom_MeshParams::Atom_MeshParams(std::vector<PARAM_>& enabledParams)
 
 		case PARAM_ATOM_EA2:
 			meshParams.push_back("ea2", MeshParamDescriptor(PARAMTYPE_MAGNETIC), PARAM_ATOM_EA2);
+			break;
+
+		case PARAM_ATOM_EA3:
+			meshParams.push_back("ea3", MeshParamDescriptor(PARAMTYPE_MAGNETIC), PARAM_ATOM_EA3);
 			break;
 
 		case PARAM_DEMAGXY:
@@ -85,6 +97,21 @@ Atom_MeshParams::Atom_MeshParams(std::vector<PARAM_>& enabledParams)
 			break;
 		}
 	}
+}
+
+//-------------------------Getters
+
+std::string Atom_MeshParams::get_tensorial_anisotropy_string(void)
+{
+	std::string Ktstring;
+
+	for (int idx = 0; idx < Kt.size(); idx++) {
+
+		Ktstring += ToString(Kt[idx].i) + "x" + ToString(Kt[idx].j) + "y" + ToString(Kt[idx].k) + "z" + ToString(Kt[idx].l);
+		if (idx != Kt.size() - 1) Ktstring += " ";
+	}
+
+	return Ktstring;
 }
 
 //-------------------------Parameter control

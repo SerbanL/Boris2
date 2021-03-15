@@ -32,6 +32,12 @@ protected:
 	//last Monte-Carlo step acceptance probability
 	cu_obj<cuBReal> mc_acceptance_rate;
 
+	//save last acceptance rate
+	double mc_acceptance_rate_last = 0.0;
+
+	//don't need to compute the acceptance rate every single iteration, unless the acceptance rate is not within bounds : when this counter is zero perform reduction.
+	int mc_acceptance_reduction_counter = 0;
+
 public:
 
 	//This points to data in Atom_ZeemanCUDA if set (else nullptr) - managed by Atom_ZeemanCUDA
@@ -148,6 +154,8 @@ public:
 	//-----------------------------------OBJECT GETTERS
 
 	cu_obj<ManagedAtom_DiffEq_CommonCUDA>& Get_ManagedAtom_DiffEq_CommonCUDA(void);
+
+	std::vector<DBL4>& get_tensorial_anisotropy(void);
 };
 
 #endif

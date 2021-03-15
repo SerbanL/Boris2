@@ -19,6 +19,7 @@ __global__ void RunTEuler_Step0_withReductions_Kernel(ManagedDiffEqAFMCUDA& cuDi
 	cuBReal dT = *cuDiffEq.pdT;
 
 	cuReal3 mxh = cuReal3();
+	bool include_in_average = false;
 
 	if (idx < cuMesh.pM->linear_size()) {
 
@@ -27,6 +28,7 @@ __global__ void RunTEuler_Step0_withReductions_Kernel(ManagedDiffEqAFMCUDA& cuDi
 			//obtain average normalized torque term
 			cuBReal Mnorm = (*cuMesh.pM)[idx].norm();
 			mxh = ((*cuMesh.pM)[idx] ^ (*cuMesh.pHeff)[idx]) / (Mnorm * Mnorm);
+			include_in_average = true;
 
 			//Save current magnetization for the next step
 			(*cuDiffEq.psM1)[idx] = (*cuMesh.pM)[idx];
@@ -48,7 +50,7 @@ __global__ void RunTEuler_Step0_withReductions_Kernel(ManagedDiffEqAFMCUDA& cuDi
 	//only reduce for mxh if grel is not zero (if it's zero this means magnetization dynamics is disabled in this mesh)
 	if (cuMesh.pgrel->get0()) {
 
-		reduction_avg(0, 1, &mxh, *cuDiffEq.pmxh_av, *cuDiffEq.pavpoints);
+		reduction_avg(0, 1, &mxh, *cuDiffEq.pmxh_av, *cuDiffEq.pavpoints, include_in_average);
 	}
 }
 
@@ -87,6 +89,7 @@ __global__ void RunTEuler_Step1_withReductions_Kernel(ManagedDiffEqAFMCUDA& cuDi
 	cuBReal dT = *cuDiffEq.pdT;
 
 	cuReal3 dmdt = cuReal3();
+	bool include_in_average = false;
 
 	if (idx < cuMesh.pM->linear_size()) {
 
@@ -113,6 +116,7 @@ __global__ void RunTEuler_Step1_withReductions_Kernel(ManagedDiffEqAFMCUDA& cuDi
 				//obtain maximum normalized dmdt term
 				cuBReal Mnorm = (*cuMesh.pM)[idx].norm();
 				dmdt = ((*cuMesh.pM)[idx] - (*cuDiffEq.psM1)[idx]) / (dT * (cuBReal)GAMMA * Mnorm * Mnorm);
+				include_in_average = true;
 			}
 			else {
 
@@ -127,7 +131,7 @@ __global__ void RunTEuler_Step1_withReductions_Kernel(ManagedDiffEqAFMCUDA& cuDi
 	//only reduce for dmdt (and mxh) if grel is not zero (if it's zero this means magnetization dynamics is disabled in this mesh)
 	if (cuMesh.pgrel->get0()) {
 
-		reduction_avg(0, 1, &dmdt, *cuDiffEq.pdmdt_av, *cuDiffEq.pavpoints2);
+		reduction_avg(0, 1, &dmdt, *cuDiffEq.pdmdt_av, *cuDiffEq.pavpoints2, include_in_average);
 	}
 }
 

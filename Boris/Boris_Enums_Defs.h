@@ -57,6 +57,9 @@ enum UPDATECONFIG_ {
 	//Param value changed
 	UPDATECONFIG_PARAMVALUECHANGED,
 
+	//Magnetization length changed (e.g. Ms)
+	UPDATECONFIG_PARAMVALUECHANGED_MLENGTH,
+
 	//mesh param settings changed
 	UPDATECONFIG_PARAMCHANGED,
 
@@ -79,6 +82,9 @@ enum UPDATECONFIG_ {
 
 	//A module was deleted
 	UPDATECONFIG_MODULEDELETED,
+
+	//Module display (effective field and energy) settings changed
+	UPDATECONFIG_MODULEDISPLAYCHANGED,
 
 	////////////////////////////
 	//SPECIFIC MODULES
@@ -191,3 +197,21 @@ namespace ucfg {
 #define SKYRMION_RING_WIDTH 0.6
 #define SKYRMION_TANH_CONST 2.0
 
+//output buffer number of lines for saving data to disk: when end reached buffer content is written to file
+#define DISKBUFFERLINES	100
+
+//number of significant figures to use for saving data to file
+#define SAVEDATAPRECISION	6
+
+//Monte-Carlo Algorithm : minimum allowed cone angle
+#define MONTECARLO_CONEANGLEDEG_MIN		1.0
+//Monte-Carlo Algorithm : maximum allowed cone angle
+#define MONTECARLO_CONEANGLEDEG_MAX		180.0
+//Monte-Carlo Algorithm : change in cone angle per step
+#define MONTECARLO_CONEANGLEDEG_DELTA	1.0
+//Monte-Carlo Algorithm : target aceptance probability (vary cone angle to reach this)
+#define MONTECARLO_TARGETACCEPTANCE		0.5
+//If actual acceptance rate is within this tolerance close to target acceptance then don't adjust cone angle
+#define MONTECARLO_ACCEPTANCETOLERANCE	0.1
+//Try to perform reduction on acceptance rate only every given number of iterations
+#define MONTECARLO_REDUCTIONITERS		100

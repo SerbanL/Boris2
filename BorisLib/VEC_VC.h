@@ -330,9 +330,9 @@ public:
 
 	//--------------------------------------------PROPERTY CHECHING
 
-	bool is_pbc_x(void) const { return pbc_x; }
-	bool is_pbc_y(void) const { return pbc_y; }
-	bool is_pbc_z(void) const { return pbc_z; }
+	int is_pbc_x(void) const { return pbc_x; }
+	int is_pbc_y(void) const { return pbc_y; }
+	int is_pbc_z(void) const { return pbc_z; }
 
 	//--------------------------------------------FLAG CHECKING : VEC_VC_flags.h
 
@@ -386,7 +386,7 @@ public:
 	void clear_dirichlet_flags(void);
 
 	//set pbc conditions : setting any to false clears flags
-	void set_pbc(bool pbc_x_, bool pbc_y_, bool pbc_z_);
+	void set_pbc(int pbc_x_, int pbc_y_, int pbc_z_);
 
 	//clear all pbc flags : can also be achieved setting all flags to false in set_pbc but this one is more readable
 	void clear_pbc(void);
@@ -587,21 +587,6 @@ public:
 	//parallel processing versions - do not call from parallel code!!!
 	VType average_nonempty_omp(const Box& box) const;
 	VType average_nonempty_omp(const Rect& rectangle = Rect()) const;
-
-	template <typename PType = decltype(GetMagnitude(std::declval<VType>()))>
-	PType average_xsq_nonempty_omp(const Box& box) const;
-	template <typename PType = decltype(GetMagnitude(std::declval<VType>()))>
-	PType average_xsq_nonempty_omp(const Rect& rectangle = Rect()) const;
-
-	template <typename PType = decltype(GetMagnitude(std::declval<VType>()))>
-	PType average_ysq_nonempty_omp(const Box& box) const;
-	template <typename PType = decltype(GetMagnitude(std::declval<VType>()))>
-	PType average_ysq_nonempty_omp(const Rect& rectangle = Rect()) const;
-
-	template <typename PType = decltype(GetMagnitude(std::declval<VType>()))>
-	PType average_zsq_nonempty_omp(const Box& box) const;
-	template <typename PType = decltype(GetMagnitude(std::declval<VType>()))>
-	PType average_zsq_nonempty_omp(const Rect& rectangle = Rect()) const;
 
 	//--------------------------------------------NUMERICAL PROPERTIES : VEC_VC_nprops.h
 

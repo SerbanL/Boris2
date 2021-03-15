@@ -24,6 +24,24 @@ class cuVEC
 {
 	friend cuTransfer<VType>;
 
+private:
+
+	//Line profile extraction data
+
+	//all profile components internal storage
+	VType* line_profile;
+
+	//extract a single component, together with profile position, for cuVAL3 types : auxiliary storage
+	cuReal2* line_profile_component_x;
+	cuReal2* line_profile_component_y;
+	cuReal2* line_profile_component_z;
+
+	//number of points included in line profile average (need to keep track in case there are empty points) for each point
+	size_t* line_profile_avpoints;
+
+	//line_profile_component memory size, stored in GPU memory : transfer to CPU before checking if correct size
+	size_t line_profile_component_size;
+
 protected:
 
 	//the actual mesh quantity: addresses gpu memory
@@ -69,6 +87,9 @@ private:
 
 	//from current rectangle and h value set n. h may also need to be adjusted since n must be an integer. Resize quantity to new n value : return success or fail. If failed then nothing changed.
 	__host__ bool set_n_adjust_h(void);
+
+	//memory management for line_profile_component array : attempt to resize to new size if not already exactly given size
+	__host__ bool allocate_profile_component_memory(size_t size);
 
 protected:
 
@@ -126,17 +147,9 @@ public:
 	template <typename cpuVEC>
 	__host__ bool copy_from_cpuvec(cpuVEC& vec);
 
-	//as above but specifically for std::vector
-	template <typename SType>
-	__host__ bool copy_from_vector(std::vector<SType>& vec);
-
 	//faster version of set_cpuvec, where it is assumed the cpu vec already has the same sizes as this cuVEC : only quantity is copied.
 	template <typename cpuVEC>
 	__host__ bool copy_to_cpuvec(cpuVEC& vec);
-
-	//as above but specifically for std::vector
-	template <typename SType>
-	__host__ bool copy_to_vector(std::vector<SType>& vec);
 
 	//copy values from a cu_arr of same type -> sizes must match
 	__host__ void load_cuarr(size_t size, cu_arr<VType>& input);
@@ -144,37 +157,68 @@ public:
 	//copy values to a cu_arr of same type -> sizes must match
 	__host__ void store_cuarr(size_t size, cu_arr<VType>& output);
 
+	template <typename SType>
+	__host__ bool copy_from_vector(std::vector<SType>& vec);
+
+	//as above but specifically for std::vector
+	template <typename SType>
+	__host__ bool copy_to_vector(std::vector<SType>& vec);
+
 	//--------------------------------------------COPY TO ANOTHER cuVEC :  cuVEC_mng.cuh
 
 	//extract values from this and place them in cuvec : both must have same rectangle, but can differ in h - cuvec.h <= this->h needed (and hence n, where cuvec.n.dim() = size); e.g. this method allows extraction of a coarser cuvec.
 	__host__ void extract_cuvec(size_t size, cuVEC<VType>& cuvec);
 
-	//--------------------------------------------COPY TO / FROM STD::VECTOR : cuVEC_mng.h
-
-	__host__ bool copy_to_vector(std::vector<VType>& vec);
-	__host__ bool copy_from_vector(std::vector<VType>& vec);
-
 	//--------------------------------------------EXTRACT A LINE PROFILE : cuVEC_extract.cuh
 
-	//for all these methods use wrap-around when extracting profiles if points on profile exceed mesh boundaries
+	//auxiliary access
+	__device__ VType*& get_line_profile(void) { return line_profile; }
+	__device__ cuReal2*& get_line_profile_component_x(void) { return line_profile_component_x; }
+	__device__ cuReal2*& get_line_profile_component_y(void) { return line_profile_component_y; }
+	__device__ cuReal2*& get_line_profile_component_z(void) { return line_profile_component_z; }
 
-	//extract profile to a cu_arr : extract size points starting at (start + step * 0.5) in the direction step; use weighted average to extract profile with stencil given by h
-	//e.g. if you have a start and end point with given step, then setting size = |end - start| / |step| means the profile must be extracted between (start + 0.5*step) and (end - 0.5*step). e.g.: |.|.|.|.|
-	__host__ void extract_profile(size_t size, cu_arr<VType>& profile_gpu, cuReal3 start, cuReal3 step);
+	//1. Profile values only, without stencil operation, and with mesh wrap-around
 
-	//these specifically apply for VType == cuReal3, allowing extraction of the x, y, z components separately
-	__host__ void extract_profile_component_x(size_t size, cu_arr<cuBReal>& profile_gpu, cuReal3 start, cuReal3 step);
-	__host__ void extract_profile_component_y(size_t size, cu_arr<cuBReal>& profile_gpu, cuReal3 start, cuReal3 step);
-	__host__ void extract_profile_component_z(size_t size, cu_arr<cuBReal>& profile_gpu, cuReal3 start, cuReal3 step);
-
-	//extract profile to a cu_arr : extract size points starting at (start + step * 0.5) in the direction step; don't use weighted averaging, just read points at position
-	//e.g. if you have a start and end point with given step, then setting size = |end - start| / |step| means the profile must be extracted between (start + 0.5*step) and (end - 0.5*step). e.g.: |.|.|.|.|
-	__host__ void extract_profilepoints(size_t size, cu_arr<VType>& profile_gpu, cuReal3 start, cuReal3 step);
+	//extract profile to a cu_arr : extract size points starting at start in the direction step for the given number of points (size); use weighted average to extract profile with h stencil only
+	__host__ void extract_profilevalues(size_t size, cu_arr<VType>& profile_gpu, cuReal3 start, cuReal3 step);
 
 	//these specifically apply for VType == cuReal3, allowing extraction of the x, y, z components separately
-	__host__ void extract_profilepoints_component_x(size_t size, cu_arr<cuBReal>& profile_gpu, cuReal3 start, cuReal3 step);
-	__host__ void extract_profilepoints_component_y(size_t size, cu_arr<cuBReal>& profile_gpu, cuReal3 start, cuReal3 step);
-	__host__ void extract_profilepoints_component_z(size_t size, cu_arr<cuBReal>& profile_gpu, cuReal3 start, cuReal3 step);
+	__host__ void extract_profilevalues_component_x(size_t size, cu_arr<cuBReal>& profile_gpu, cuReal3 start, cuReal3 step);
+	__host__ void extract_profilevalues_component_y(size_t size, cu_arr<cuBReal>& profile_gpu, cuReal3 start, cuReal3 step);
+	__host__ void extract_profilevalues_component_z(size_t size, cu_arr<cuBReal>& profile_gpu, cuReal3 start, cuReal3 step);
+
+	//2. Profile values only, with stencil operation around profile point (capped to mesh size), and without mesh wrap-around
+
+	//extract profile components: extract starting at start in the direction end - step, with given step; use weighted average to extract profile with given stencil
+	//all coordinates are relative positions. Return profile values in profile_gpu.
+	__host__ bool extract_profile(cuReal3 start, cuReal3 end, cuBReal step, cuReal3 stencil, cu_arr<VType>& profile_gpu);
+
+	//extract profile components: extract starting at start in the direction end - step, with given step; use weighted average to extract profile with given stencil
+	//all coordinates are relative positions. Return profile values in profile_cpu.
+	template <typename SType>
+	__host__ bool extract_profile(cuReal3 start, cuReal3 end, cuBReal step, cuReal3 stencil, std::vector<SType>& profile_cpu);
+
+	//3. Profile values for individual components together with profile position returned in cuReal2/DBL2, with stencil operation around profile point (capped to mesh size), and without mesh wrap-around
+
+	//as above but only component x and pack in profile position too (for VAL3 floating types only). Return data as extracted component in profile_gpu. profile_gpu must have correct size: (end - start).norm() / step + 1.
+	__host__ bool extract_profile_component_x(cuReal3 start, cuReal3 end, cuBReal step, cuReal3 stencil, cu_arr<cuReal2>& profile_gpu);
+	//as above but only component x and pack in profile position too (for VAL3 floating types only). Return data as extracted component in profile_cpu. profile_cpu resized as needed.
+	__host__ bool extract_profile_component_x(cuReal3 start, cuReal3 end, cuBReal step, cuReal3 stencil, std::vector<DBL2>& profile_cpu);
+	
+	//as above but only component y and pack in profile position too (for VAL3 floating types only). Return data as extracted component in profile_gpu. profile_gpu must have correct size: (end - start).norm() / step + 1.
+	__host__ bool extract_profile_component_y(cuReal3 start, cuReal3 end, cuBReal step, cuReal3 stencil, cu_arr<cuReal2>& profile_gpu);
+	//as above but only component y and pack in profile position too (for VAL3 floating types only). Return data as extracted component in profile_cpu. profile_cpu resized as needed.
+	__host__ bool extract_profile_component_y(cuReal3 start, cuReal3 end, cuBReal step, cuReal3 stencil, std::vector<DBL2>& profile_cpu);
+
+	//as above but only component z and pack in profile position too (for VAL3 floating types only). Return data as extracted component in profile_gpu. profile_gpu must have correct size: (end - start).norm() / step + 1.
+	__host__ bool extract_profile_component_z(cuReal3 start, cuReal3 end, cuBReal step, cuReal3 stencil, cu_arr<cuReal2>& profile_gpu);
+	//as above but only component z and pack in profile position too (for VAL3 floating types only). Return data as extracted component in profile_cpu. profile_cpu resized as needed.
+	__host__ bool extract_profile_component_z(cuReal3 start, cuReal3 end, cuBReal step, cuReal3 stencil, std::vector<DBL2>& profile_cpu);
+	
+	//as above but only component which has largest value for the first point and pack in profile position too (after stencil averaging) (for VAL3 floating types only). Return data in profile_gpu. profile_gpu must have correct size: (end - start) / step.norm() + 1.
+	__host__ bool extract_profile_component_max(cuReal3 start, cuReal3 end, cuBReal step, cuReal3 stencil, cu_arr<cuReal2>& profile_gpu);
+	//as above but only component which has largest value for the first point and pack in profile position too (after stencil averaging) (for VAL3 floating types only). Return data in profile_cpu. profile_cpu resized as needed.
+	__host__ bool extract_profile_component_max(cuReal3 start, cuReal3 end, cuBReal step, cuReal3 stencil, std::vector<DBL2>& profile_cpu);
 
 	//--------------------------------------------INDEXING
 
@@ -251,7 +295,7 @@ public:
 
 	__device__ cuSZ3 size(void)  const { return n; }
 	__device__ size_t linear_size(void)  const { return n.dim(); }
-	__device__ size_t linear_size_cpu(void)  const { return get_gpu_value(n).dim(); }
+	__host__ size_t linear_size_cpu(void)  const { return get_gpu_value(n).dim(); }
 
 	__host__ cuSZ3 size_cpu(void) { return get_gpu_value(n); }
 	__host__ cuReal3 cellsize_cpu(void) { return get_gpu_value(h); }
@@ -322,6 +366,12 @@ public:
 
 	//ijk is the cell index in a mesh with cellsize cs and same rect as this cuVEC; if cs is same as h then just read the value at ijk - much faster! If not then get the usual weighted average.
 	__device__ VType weighted_average(const cuINT3& ijk, const cuReal3& cs);
+
+	//full average in given rectangle (absolute coordinates).
+	__device__ VType average(const cuRect& rectangle);
+
+	//average in given rectangle (absolute coordinates), excluding zero points (assumed empty).
+	__device__ VType average_nonempty(const cuRect& rectangle);
 
 	//--------------------------------------------NUMERICAL PROPERTIES : cuVEC_nprops.cuhj
 

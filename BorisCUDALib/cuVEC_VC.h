@@ -404,7 +404,7 @@ public:
 	__host__ void clear_dirichlet_flags(void);
 
 	//set pbc conditions : setting any to false clears flags
-	__host__ void set_pbc(bool pbc_x_, bool pbc_y_, bool pbc_z_);
+	__host__ void set_pbc(int pbc_x_, int pbc_y_, int pbc_z_);
 
 	//clear all pbc flags : can also be achieved setting all flags to false in set_pbc but this one is more readable
 	__host__ void clear_pbc(void);
@@ -466,24 +466,6 @@ public:
 	__host__ VType average_nonempty(size_t arr_size, cuBox box);
 	//average over non-empty cells over given rectangle (relative to this VEC's rect)
 	__host__ VType average_nonempty(size_t arr_size, cuRect rectangle = cuRect());
-
-	template <typename PType = decltype(cu_GetMagnitude(std::declval<VType>()))>
-	__host__ PType average_xsq_nonempty(size_t arr_size, cuBox box);
-	//average over non-empty cells over given rectangle (relative to this VEC's rect)
-	template <typename PType = decltype(cu_GetMagnitude(std::declval<VType>()))>
-	__host__ PType average_xsq_nonempty(size_t arr_size, cuRect rectangle = cuRect());
-
-	template <typename PType = decltype(cu_GetMagnitude(std::declval<VType>()))>
-	__host__ PType average_ysq_nonempty(size_t arr_size, cuBox box);
-	//average over non-empty cells over given rectangle (relative to this VEC's rect)
-	template <typename PType = decltype(cu_GetMagnitude(std::declval<VType>()))>
-	__host__ PType average_ysq_nonempty(size_t arr_size, cuRect rectangle = cuRect());
-
-	template <typename PType = decltype(cu_GetMagnitude(std::declval<VType>()))>
-	__host__ PType average_zsq_nonempty(size_t arr_size, cuBox box);
-	//average over non-empty cells over given rectangle (relative to this VEC's rect)
-	template <typename PType = decltype(cu_GetMagnitude(std::declval<VType>()))>
-	__host__ PType average_zsq_nonempty(size_t arr_size, cuRect rectangle = cuRect());
 
 	//--------------------------------------------NUMERICAL PROPERTIES : cuVEC_VC_nprops.cuh
 	

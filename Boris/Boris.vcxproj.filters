@@ -339,6 +339,9 @@
     <Filter Include="08. CONVOLUTION\DIPOLE DIPOLE KERNEL - CUDA">
       <UniqueIdentifier>{79866724-dc81-4d23-9e85-9a9d257e697b}</UniqueIdentifier>
     </Filter>
+    <Filter Include="02. MESHES\COMMON">
+      <UniqueIdentifier>{263f09c3-3afb-416c-a28c-064493d4b112}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <Text Include="ReadMe.txt" />
@@ -511,9 +514,6 @@
     </ClInclude>
     <ClInclude Include="InteractiveObject.h">
       <Filter>15. GRAPHICS\INTERACTIVE OBJ</Filter>
-    </ClInclude>
-    <ClInclude Include="SkyrmionTrack.h">
-      <Filter>02. MESHES\__MICROMAGNETIC\CPU\MM MESHES - CPU</Filter>
     </ClInclude>
     <ClInclude Include="SOTFieldCUDA.h">
       <Filter>03. MODULES\__MICROMAGNETIC\MM MODULES - CUDA</Filter>
@@ -992,6 +992,48 @@
     <ClInclude Include="SurfExchangeCUDA_AFM.h">
       <Filter>03. MODULES\__MICROMAGNETIC\MM MODULES - CUDA</Filter>
     </ClInclude>
+    <ClInclude Include="SkyrmionTrack.h">
+      <Filter>02. MESHES\COMMON</Filter>
+    </ClInclude>
+    <ClInclude Include="DWRunTimeFit.h">
+      <Filter>02. MESHES\COMMON</Filter>
+    </ClInclude>
+    <ClInclude Include="DWRunTimeFitDefs.h">
+      <Filter>02. MESHES\COMMON</Filter>
+    </ClInclude>
+    <ClInclude Include="DWRunTimeFitCUDA.h">
+      <Filter>02. MESHES\COMMON</Filter>
+    </ClInclude>
+    <ClInclude Include="ManagedModulesCUDA.h">
+      <Filter>03. MODULES\MODULES INTERFACE - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="DataDefs.h">
+      <Filter>00. SIMULATION</Filter>
+    </ClInclude>
+    <ClInclude Include="AnisotropyBiaxial.h">
+      <Filter>03. MODULES\__MICROMAGNETIC\MM MODULES - CPU</Filter>
+    </ClInclude>
+    <ClInclude Include="AnisotropyTensorial.h">
+      <Filter>03. MODULES\__MICROMAGNETIC\MM MODULES - CPU</Filter>
+    </ClInclude>
+    <ClInclude Include="AnisotropyBiaxialCUDA.h">
+      <Filter>03. MODULES\__MICROMAGNETIC\MM MODULES - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="Atom_AnisotropyBiaxial.h">
+      <Filter>03. MODULES\__ATOMISTIC\ATOM MODULES - CPU</Filter>
+    </ClInclude>
+    <ClInclude Include="Atom_AnisotropyTensorial.h">
+      <Filter>03. MODULES\__ATOMISTIC\ATOM MODULES - CPU</Filter>
+    </ClInclude>
+    <ClInclude Include="AnisotropyTensorialCUDA.h">
+      <Filter>03. MODULES\__MICROMAGNETIC\MM MODULES - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="Atom_AnisotropyBiaxialCUDA.h">
+      <Filter>03. MODULES\__ATOMISTIC\ATOM MODULES - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="Atom_AnisotropyTensorialCUDA.h">
+      <Filter>03. MODULES\__ATOMISTIC\ATOM MODULES - CUDA</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="BorisGraphics.cpp">
@@ -1138,9 +1180,6 @@
     <ClCompile Include="TransportCUDA_Poisson_Spin_S.cpp">
       <Filter>10. TRANSPORT SOLVER\TRANSPORT SOLVER - CUDA</Filter>
     </ClCompile>
-    <ClCompile Include="SkyrmionTrack.cpp">
-      <Filter>02. MESHES\__MICROMAGNETIC\CPU\MM MESHES - CPU</Filter>
-    </ClCompile>
     <ClCompile Include="SOTFieldCUDA.cpp">
       <Filter>03. MODULES\__MICROMAGNETIC\MM MODULES - CUDA</Filter>
     </ClCompile>
@@ -1194,9 +1233,6 @@
     </ClCompile>
     <ClCompile Include="ExchangeBaseCUDA.cpp">
       <Filter>07. EXCHANGE\__MICROMAGNETIC\EXCHANGE - CUDA</Filter>
-    </ClCompile>
-    <ClCompile Include="SkyrmionTrackCUDA.cpp">
-      <Filter>02. MESHES\__MICROMAGNETIC\CPU\MM MESHES - CPU</Filter>
     </ClCompile>
     <ClCompile Include="Mesh_AntiFerromagnetic.cpp">
       <Filter>02. MESHES\__MICROMAGNETIC\CPU\MM MESHES - CPU</Filter>
@@ -1921,6 +1957,57 @@
     <ClCompile Include="MeshBaseQuantities.cpp">
       <Filter>02. MESHES\MESHES BASE - CPU</Filter>
     </ClCompile>
+    <ClCompile Include="DemagTFunc_Self.cpp">
+      <Filter>09. FUNCS\DEMAG FUNCS - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="SkyrmionTrack.cpp">
+      <Filter>02. MESHES\COMMON</Filter>
+    </ClCompile>
+    <ClCompile Include="SkyrmionTrackCUDA.cpp">
+      <Filter>02. MESHES\COMMON</Filter>
+    </ClCompile>
+    <ClCompile Include="DWRunTimeFit.cpp">
+      <Filter>02. MESHES\COMMON</Filter>
+    </ClCompile>
+    <ClCompile Include="Mesh_AntiFerromagnetic_Compute.cpp">
+      <Filter>02. MESHES\__MICROMAGNETIC\CPU\MM MESHES - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="Mesh_Ferromagnetic_Compute.cpp">
+      <Filter>02. MESHES\__MICROMAGNETIC\CPU\MM MESHES - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="ManagedModulesCUDA.cpp">
+      <Filter>03. MODULES\MODULES INTERFACE - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="ModulesCUDA.cpp">
+      <Filter>03. MODULES\MODULES INTERFACE - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="AnisotropyBiaxial.cpp">
+      <Filter>03. MODULES\__MICROMAGNETIC\MM MODULES - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="AnisotropyTensorial.cpp">
+      <Filter>03. MODULES\__MICROMAGNETIC\MM MODULES - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="AnisotropyBiaxialCUDA.cpp">
+      <Filter>03. MODULES\__MICROMAGNETIC\MM MODULES - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="AnisotropyTensorialCUDA.cpp">
+      <Filter>03. MODULES\__MICROMAGNETIC\MM MODULES - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="Atom_AnisotropyBiaxial.cpp">
+      <Filter>03. MODULES\__ATOMISTIC\ATOM MODULES - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="Atom_AnisotropyTensorial.cpp">
+      <Filter>03. MODULES\__ATOMISTIC\ATOM MODULES - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="Atom_AnisotropyBiaxialCUDA.cpp">
+      <Filter>03. MODULES\__ATOMISTIC\ATOM MODULES - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="Atom_AnisotropyTensorialCUDA.cpp">
+      <Filter>03. MODULES\__ATOMISTIC\ATOM MODULES - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="Atom_Mesh_Cubic_ODEControl.cpp">
+      <Filter>02. MESHES\__ATOMISTIC\CPU\ATOM MESHES - CPU</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="BorisWinapi.rc">
@@ -2217,9 +2304,6 @@
     <CudaCompile Include="DiffEq_CommonBaseCUDA.cu">
       <Filter>01. DIFFERENTIAL EQUATIONS\DIFF EQUATIONS BASE - CUDA</Filter>
     </CudaCompile>
-    <CudaCompile Include="Atom_AnisotropyUniCUDA.cu">
-      <Filter>03. MODULES\__ATOMISTIC\ATOM MODULES - CUDA</Filter>
-    </CudaCompile>
     <CudaCompile Include="Atom_ExchangeCUDA.cu">
       <Filter>07. EXCHANGE\__ATOMISTIC\ATOM EXCHANGE - CUDA</Filter>
     </CudaCompile>
@@ -2276,6 +2360,45 @@
     </CudaCompile>
     <CudaCompile Include="ManagedAtom_MeshCUDA_MonteCarlo_SC.cu">
       <Filter>02. MESHES\__ATOMISTIC\CUDA\ATOM MESHES INTERFACE - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="DemagCUDA.cu">
+      <Filter>03. MODULES\__MICROMAGNETIC\MM MODULES - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="Atom_DemagCUDA.cu">
+      <Filter>03. MODULES\__ATOMISTIC\ATOM MODULES - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="SDemagCUDA.cu">
+      <Filter>06. SUPERMESH DEMAG\DEMAG - SUPERMESH - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="DWRunTimeFitCUDA.cu">
+      <Filter>02. MESHES\COMMON</Filter>
+    </CudaCompile>
+    <CudaCompile Include="Atom_AnisotropyUniCUDA.cu">
+      <Filter>03. MODULES\__ATOMISTIC\ATOM MODULES - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="AnisotropyBiaxialCUDA.cu">
+      <Filter>03. MODULES\__MICROMAGNETIC\MM MODULES - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="AnisotropyTensorialCUDA.cu">
+      <Filter>03. MODULES\__MICROMAGNETIC\MM MODULES - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="Atom_AnisotropyBiaxialCUDA.cu">
+      <Filter>03. MODULES\__ATOMISTIC\ATOM MODULES - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="Atom_AnisotropyTensorialCUDA.cu">
+      <Filter>03. MODULES\__ATOMISTIC\ATOM MODULES - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="Mesh_FerromagneticCUDA.cu">
+      <Filter>02. MESHES\__MICROMAGNETIC\CUDA\MM MESHES - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="MeshBaseCUDA.cu">
+      <Filter>02. MESHES\MESHES BASE - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="Mesh_AntiFerromagneticCUDA.cu">
+      <Filter>02. MESHES\__MICROMAGNETIC\CUDA\MM MESHES - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="Atom_Mesh_CubicCUDA.cu">
+      <Filter>02. MESHES\__ATOMISTIC\CUDA\ATOM MESHES - CUDA</Filter>
     </CudaCompile>
   </ItemGroup>
 </Project>

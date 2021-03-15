@@ -72,7 +72,7 @@ class Simulation :
 	public ProgramState<Simulation, 
 	std::tuple<
 	BorisDisplay, 
-	std::string, std::string, std::string, std::string, bool, bool, bool, 
+	std::string, std::string, std::string, std::string, bool, bool, bool, int, int,
 	vector_lut<DatumConfig>, vector_lut<DatumConfig>, 
 	INT2, 
 	vector_lut<StageConfig>, int, bool, 
@@ -172,6 +172,15 @@ private:
 
 	//flags for enabling data and image saving (they both use the same saving condition in the simulation schedule)
 	bool saveDataFlag = true, saveImageFlag = false;
+
+	//precision (number of significant figures) of data in saved files and display (mesh viewer, databox, console: affects ToString precision)
+	int dataprecision = SAVEDATAPRECISION;
+
+	//output buffered data saving to disk
+	int savedata_diskbuffer_size = DISKBUFFERLINES;
+	//savedata_diskbuffer_position maximum value is savedata_diskbuffer_size, and indicates the next position to write data to buffer; when maximum reached then flush buffer
+	int savedata_diskbuffer_position = 0, savedata_diskoverflowbuffer_position = 0;
+	std::vector<std::string> savedata_diskbuffer, savedata_diskoverflowbuffer;
 
 	//data to display in data box
 	vector_lut<DatumConfig> dataBoxList;
@@ -278,7 +287,11 @@ private:
 	BError LoadSimulation(std::string fileName);
 
 	//implement pure virtual method from ProgramState
-	void RepairObjectState(void) { dpArr.clear_all(); }
+	void RepairObjectState(void) 
+	{ 
+		Conversion::tostringconversion::precision() = dataprecision;
+		dpArr.clear_all(); 
+	}
 
 	//-------------------------------------Simulation control
 
@@ -364,6 +377,13 @@ private:
 	void Print_Modules_List(void);
 	//build formatted std::string, describing the modules available for a given named mesh
 	std::string Build_Modules_ListLine(int meshIndex);
+
+	//---------------------------------------------------- MODULES EFFCTIVE FIELD DISPLAY LIST
+
+	//show list of modules (active and not active) for all meshes
+	void Print_DisplayModules_List(void);
+	//build formatted std::string, describing the modules available for a given named mesh
+	std::string Build_DisplayModules_ListLine(int meshIndex);
 
 	//---------------------------------------------------- ODES LIST
 
@@ -541,6 +561,11 @@ private:
 	void Print_skypos_dmul(void);
 	std::string Build_skypos_dmul_ListLine(int meshIndex);
 
+	//---------------------------------------------------- DWPOS SETTINGS
+
+	//Print dwpos fitting component value
+	void Print_DWPos_Component(void);
+
 	//---------------------------------------------------- MONTE-CARLO SETTINGS
 
 	void Print_MCSettings(void);
@@ -616,7 +641,7 @@ private:
 	//save currently configured data for saving (in saveDataList) to save data file (savedataFile in directory)
 	void SaveData(void);
 	//This method does the actual writing to disk : can be launched asynchronously from SaveData method
-	void SaveData_DiskWrite(const std::string& row_text);
+	void SaveData_DiskBufferFlush(std::vector<std::string>* pdiskbuffer, int* diskbuffer_position);
 
 #if GRAPHICS == 1
 

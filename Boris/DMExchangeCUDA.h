@@ -17,6 +17,8 @@ class DMExchangeCUDA :
 	public ExchangeBaseCUDA
 {
 
+private:
+
 	//pointer to CUDA version of mesh object holding the effective field module holding this CUDA module
 	MeshCUDA* pMeshCUDA;
 
@@ -35,14 +37,6 @@ public:
 	void UpdateConfiguration_Values(UPDATECONFIG_ cfgMessage) {}
 
 	void UpdateField(void);
-
-	//-------------------Energy density methods
-
-	cuBReal GetEnergyDensity(cuRect avRect);
-	cuBReal GetEnergy_Max(cuRect rectangle);
-
-	//compute exchange energy density in exchange_displayVEC
-	void Compute_ExchangeCUDA(void);
 
 	//-------------------
 

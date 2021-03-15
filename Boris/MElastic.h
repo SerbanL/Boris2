@@ -3,8 +3,6 @@
 #include "BorisLib.h"
 #include "Modules.h"
 
-
-
 class Mesh;
 
 #ifdef MODULE_COMPILATION_MELASTIC

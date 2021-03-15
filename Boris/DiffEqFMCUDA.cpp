@@ -305,6 +305,8 @@ BError DifferentialEquationFMCUDA::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 		}
 	}
 
+	if (cfgMessage == UPDATECONFIG_PARAMVALUECHANGED_MLENGTH) RenormalizeMagnetization();
+
 	return error;
 }
 

@@ -585,3 +585,104 @@ inline bool VEC<double>::generate_faults(DBL3 new_h, Rect new_rect, DBL2 range, 
 
 	return true;
 }
+
+//flower state for vector type
+template <>
+inline bool VEC<DBL3>::generate_flower(int direction, DBL3 centre, double radius, double thickness)
+{ 
+	if (thickness == 0.0) thickness = rect.e.z - rect.s.z;
+
+	for (int k = 0; k < n.z; k++) {
+#pragma omp parallel for
+		for (int j = 0; j < n.y; j++) {
+			for (int i = 0; i < n.x; i++) {
+
+				DBL3 position = cellidx_to_position(INT3(i, j, k));
+				DBL3 distance = position - centre;
+				DBL2 radial = DBL2(distance.x, distance.y);
+
+				if (abs(distance.z) <= thickness / 2 && (radius == 0.0 || radial.norm() <= radius)) {
+
+					int idx = i + j*n.x + k*n.x*n.y;
+					if (is_not_empty(idx)) {
+
+						double magnitude = GetMagnitude(quantity[idx]);
+						quantity[idx] = DBL3(radial.x, radial.y, 0.0).normalized() * magnitude * direction;
+					}
+				}
+			}
+		}
+	}
+
+	return true; 
+}
+
+//onion state for vector type
+template <>
+inline bool VEC<DBL3>::generate_onion(int direction, DBL3 centre, double radius1, double radius2, double thickness)
+{
+	if (thickness == 0.0) thickness = rect.e.z - rect.s.z;
+
+	for (int k = 0; k < n.z; k++) {
+#pragma omp parallel for
+		for (int j = 0; j < n.y; j++) {
+			for (int i = 0; i < n.x; i++) {
+
+				DBL3 position = cellidx_to_position(INT3(i, j, k));
+				DBL3 distance = position - centre;
+				DBL2 radial = DBL2(distance.x, distance.y);
+
+				if (abs(distance.z) <= thickness / 2 && (radius1 == 0.0 || radial.norm() <= radius1) && (radius2 == 0.0 || radial.norm() <= radius2)) {
+
+					int idx = i + j * n.x + k * n.x*n.y;
+					if (is_not_empty(idx)) {
+
+						double magnitude = GetMagnitude(quantity[idx]);
+
+						if (radial.x && radial.y) {
+
+							quantity[idx] = DBL3(-get_sign(radial.y) / abs(radial.x), +get_sign(radial.x) / abs(radial.y), 0.0).normalized() * magnitude * direction;
+						}
+						else {
+							
+							quantity[idx] = DBL3(-radial.y, radial.x, 0.0).normalized() * magnitude * direction;
+						}
+					}
+				}
+			}
+		}
+	}
+
+	return true;
+}
+
+//cross-tie state for vector type
+template <>
+inline bool VEC<DBL3>::generate_crosstie(int direction, DBL3 centre, double radius, double thickness)
+{
+	if (thickness == 0.0) thickness = rect.e.z - rect.s.z;
+
+	for (int k = 0; k < n.z; k++) {
+#pragma omp parallel for
+		for (int j = 0; j < n.y; j++) {
+			for (int i = 0; i < n.x; i++) {
+
+				DBL3 position = cellidx_to_position(INT3(i, j, k));
+				DBL3 distance = position - centre;
+				DBL2 radial = DBL2(distance.x, distance.y);
+
+				if (abs(distance.z) <= thickness / 2 && (radius == 0.0 || radial.norm() <= radius)) {
+
+					int idx = i + j * n.x + k * n.x*n.y;
+					if (is_not_empty(idx)) {
+
+						double magnitude = GetMagnitude(quantity[idx]);
+						quantity[idx] = DBL3(radial.y, radial.x, 0.0).normalized() * magnitude * direction;
+					}
+				}
+			}
+		}
+	}
+
+	return true;
+}

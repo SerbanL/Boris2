@@ -1380,213 +1380,116 @@ void ODECommon_Base::Iterate(void)
 	}
 }
 
-//depending on the set evaluation method, some effective fields (demag field in particular) might not need to be updated at certain steps in the evaluation - keep the previous calculated field contribution
-//Modules can call this method to check if they should be updating the field (true) or not (false).
-//EVALSPEEDUPSTEP_SKIP : do not update field, use previous calculation if available
-//EVALSPEEDUPSTEP_COMPUTE_NO_SAVE : update field and do not save calculation for next step (since at the next step we'll have to calculate field again so no point saving it)
-//EVALSPEEDUPSTEP_COMPUTE_AND_SAVE : update field and save calculation for next time (since at the next step we'll need to re-use calculation)
-//To enable this mode you need to set use_evaluation_speedup != EVALSPEEDUP_NONE
-int ODECommon_Base::Check_Step_Update(void)
+//get total time with evaluation step resolution level
+double ODECommon_Base::Get_EvalStep_Time(void)
 {
-	//must enable by setting use_evaluation_speedup != EVALSPEEDUP_NONE
-	if (use_evaluation_speedup == EVALSPEEDUP_NONE) return EVALSPEEDUPSTEP_COMPUTE_NO_SAVE;
+	//Define c values in Butcher tableaux
 
-	if (use_evaluation_speedup == EVALSPEEDUP_EXTREME && !link_dTspeedup) {
-
-		//extreme mode with time step not linked to dT (the intention is for the updating time step to be larger than dT, but in any case in this mode the updating will be done at most once per dT time step)
-		//Note, in this mode the update will be done at the first evaluation step, whereas in extreme mode with link_dTspeedup true, it will be done as indicated below for each method (not necessarily at the first evaluation)
-		
-		//recommend skipping (and re-using previous value) if time step from previous evaluation is too small
-		if (time < time_speedup + dTspeedup) return EVALSPEEDUPSTEP_SKIP;
-		else {
-
-			//update evaluation time and recommend updating
-			time_speedup = time;
-			return EVALSPEEDUPSTEP_COMPUTE_AND_SAVE;
-		}
-	}
-
-	//it is possible to indicate skipping on step 0, but the caller will have to ensure a previous field evaluation exists which can be used instead - we do not keep track of that here.
-
-	//TEuler
-	static int evalspeedup_teuler[3][2] = {
-		//accurate
-		{ EVALSPEEDUPSTEP_SKIP , EVALSPEEDUPSTEP_COMPUTE_AND_SAVE },
-		//aggressive
-		{ EVALSPEEDUPSTEP_SKIP , EVALSPEEDUPSTEP_COMPUTE_AND_SAVE },
-		//extreme
-		{ EVALSPEEDUPSTEP_SKIP , EVALSPEEDUPSTEP_COMPUTE_AND_SAVE }
-	};
-
-	//AHeun
-	static int evalspeedup_aheun[3][2] = {
-		//accurate
-		{ EVALSPEEDUPSTEP_SKIP , EVALSPEEDUPSTEP_COMPUTE_AND_SAVE },
-		//aggressive
-		{ EVALSPEEDUPSTEP_SKIP , EVALSPEEDUPSTEP_COMPUTE_AND_SAVE },
-		//extreme
-		{ EVALSPEEDUPSTEP_SKIP , EVALSPEEDUPSTEP_COMPUTE_AND_SAVE }
-	};
-
-	//ABM
-	static int evalspeedup_abm[3][2] = {
-		//accurate
-		{ EVALSPEEDUPSTEP_SKIP , EVALSPEEDUPSTEP_COMPUTE_AND_SAVE },
-		//aggressive
-		{ EVALSPEEDUPSTEP_SKIP , EVALSPEEDUPSTEP_COMPUTE_AND_SAVE },
-		//extreme
-		{ EVALSPEEDUPSTEP_SKIP , EVALSPEEDUPSTEP_COMPUTE_AND_SAVE }
-	};
-
-	//RK23
-	static int evalspeedup_rk23[3][3] = {
-		//accurate
-		{ EVALSPEEDUPSTEP_SKIP , EVALSPEEDUPSTEP_COMPUTE_NO_SAVE , EVALSPEEDUPSTEP_COMPUTE_AND_SAVE },
-		//aggressive
-		{ EVALSPEEDUPSTEP_SKIP , EVALSPEEDUPSTEP_COMPUTE_AND_SAVE , EVALSPEEDUPSTEP_SKIP },
-		//extreme
-		{ EVALSPEEDUPSTEP_SKIP , EVALSPEEDUPSTEP_COMPUTE_AND_SAVE , EVALSPEEDUPSTEP_SKIP }
-	};
+	//Trapezoidal Euler
+	static double evaltime_teuler[4] = { 0.0, 0.5 };
 
 	//RK4
-	static int evalspeedup_rk4[3][4] = {
-		//accurate
-		{ EVALSPEEDUPSTEP_COMPUTE_NO_SAVE , EVALSPEEDUPSTEP_COMPUTE_AND_SAVE , EVALSPEEDUPSTEP_SKIP , EVALSPEEDUPSTEP_COMPUTE_NO_SAVE },
-		//aggressive
-		{ EVALSPEEDUPSTEP_SKIP , EVALSPEEDUPSTEP_COMPUTE_AND_SAVE , EVALSPEEDUPSTEP_SKIP , EVALSPEEDUPSTEP_COMPUTE_AND_SAVE },
-		//extreme
-		{ EVALSPEEDUPSTEP_SKIP , EVALSPEEDUPSTEP_SKIP , EVALSPEEDUPSTEP_SKIP , EVALSPEEDUPSTEP_COMPUTE_AND_SAVE }
-	};
+	static double evaltime_rk4[4] = { 0.0, 0.5, 0.5, 1.0 };
 
-	//RKF
-	static int evalspeedup_rkf[3][6] = {
-		//accurate
-		{ EVALSPEEDUPSTEP_COMPUTE_NO_SAVE , EVALSPEEDUPSTEP_COMPUTE_AND_SAVE , EVALSPEEDUPSTEP_SKIP , EVALSPEEDUPSTEP_COMPUTE_AND_SAVE, EVALSPEEDUPSTEP_SKIP, EVALSPEEDUPSTEP_SKIP },
-		//aggressive
-		{ EVALSPEEDUPSTEP_SKIP , EVALSPEEDUPSTEP_COMPUTE_AND_SAVE , EVALSPEEDUPSTEP_SKIP , EVALSPEEDUPSTEP_COMPUTE_AND_SAVE, EVALSPEEDUPSTEP_SKIP, EVALSPEEDUPSTEP_SKIP },
-		//extreme
-		{ EVALSPEEDUPSTEP_SKIP , EVALSPEEDUPSTEP_SKIP , EVALSPEEDUPSTEP_SKIP , EVALSPEEDUPSTEP_COMPUTE_AND_SAVE, EVALSPEEDUPSTEP_SKIP, EVALSPEEDUPSTEP_SKIP }
-	};
+	//ABM
+	static double evaltime_abm[2] = { 0.0, 1.0 };
 
-	//RKCK
-	static int evalspeedup_rkck[3][6] = {
-		//accurate
-		{ EVALSPEEDUPSTEP_SKIP , EVALSPEEDUPSTEP_COMPUTE_AND_SAVE , EVALSPEEDUPSTEP_SKIP , EVALSPEEDUPSTEP_COMPUTE_NO_SAVE, EVALSPEEDUPSTEP_COMPUTE_AND_SAVE, EVALSPEEDUPSTEP_SKIP },
-		//aggressive
-		{ EVALSPEEDUPSTEP_SKIP , EVALSPEEDUPSTEP_SKIP , EVALSPEEDUPSTEP_SKIP , EVALSPEEDUPSTEP_COMPUTE_NO_SAVE, EVALSPEEDUPSTEP_COMPUTE_AND_SAVE, EVALSPEEDUPSTEP_SKIP },
-		//extreme
-		{ EVALSPEEDUPSTEP_SKIP , EVALSPEEDUPSTEP_SKIP , EVALSPEEDUPSTEP_SKIP , EVALSPEEDUPSTEP_SKIP, EVALSPEEDUPSTEP_COMPUTE_AND_SAVE, EVALSPEEDUPSTEP_SKIP }
-	};
+	//RK23
+	static double evaltime_rk23[4] = { 0.0, 0.5, 0.75 };
 
-	//RKDP
-	static int evalspeedup_rkdp[3][6] = {
-		//accurate
-		{ EVALSPEEDUPSTEP_SKIP , EVALSPEEDUPSTEP_COMPUTE_NO_SAVE , EVALSPEEDUPSTEP_COMPUTE_NO_SAVE , EVALSPEEDUPSTEP_COMPUTE_AND_SAVE, EVALSPEEDUPSTEP_SKIP, EVALSPEEDUPSTEP_SKIP },
-		//aggressive
-		{ EVALSPEEDUPSTEP_SKIP , EVALSPEEDUPSTEP_COMPUTE_AND_SAVE , EVALSPEEDUPSTEP_SKIP , EVALSPEEDUPSTEP_COMPUTE_AND_SAVE, EVALSPEEDUPSTEP_SKIP, EVALSPEEDUPSTEP_SKIP },
-		//extreme
-		{ EVALSPEEDUPSTEP_SKIP , EVALSPEEDUPSTEP_SKIP , EVALSPEEDUPSTEP_SKIP , EVALSPEEDUPSTEP_COMPUTE_AND_SAVE, EVALSPEEDUPSTEP_SKIP, EVALSPEEDUPSTEP_SKIP }
-	};
+	//RKF45
+	static double evaltime_rkf45[6] = { 0.0, 0.25, 0.375, 12.0/13, 1.0, 0.5 };
+
+	//RKCK45
+	static double evaltime_rkck45[6] = { 0.0, 0.2, 0.3, 0.6, 1.0, 0.875 };
+
+	//RKDP54
+	static double evaltime_rkdp54[6] = { 0.0, 0.2, 0.3, 0.8, 8.0/9, 1.0 };
 
 	switch (evalMethod) {
 
 	case EVAL_EULER:
 	{
-		return EVALSPEEDUPSTEP_COMPUTE_NO_SAVE;
+		return time;
 	}
 	break;
 
 	case EVAL_TEULER:
 	{
-		//0: 0, 1: 1/2
-
-		//Accurate, Aggresive, Extreme : skip on 0 (accurate)
-		return evalspeedup_teuler[use_evaluation_speedup - 1][evalStep];
+		return time + dT * evaltime_teuler[evalStep];
 	}
 	break;
 
 	case EVAL_AHEUN:
 	{
-		//0: 0, 1: 1/2
-
-		//Accurate, Aggresive, Extreme : skip on 0 (accurate)
-		return evalspeedup_aheun[use_evaluation_speedup - 1][evalStep];
+		return time + dT * evaltime_teuler[evalStep];
 	}
 	break;
 
 	case EVAL_RK4:
 	{
-		//0: 0, 1: 1/2, 2: 1/2, 3: 1
-
-		//Accurate:  skip on 2 (accurate)
-		//Aggressive : skip on 0 and 2 (still accurate)
-		//Extreme : evaluate last only (inaccurate)
-
-		return evalspeedup_rk4[use_evaluation_speedup - 1][evalStep];
+		return time + dT * evaltime_rk4[evalStep];
 	}
 	break;
 
 	case EVAL_ABM:
 	{
-		//Accurate, Aggresive, Extreme : skip on 0 (accurate)
-
-		if (primed) return evalspeedup_abm[use_evaluation_speedup - 1][evalStep];
+		return time + dT * evaltime_abm[evalStep];
 	}
 	break;
 
 	case EVAL_RK23:
 	{
-		//0: 0, 1: 1/2, 2 : 3/4
-
-		//Accurate: skip on 0 (accurate)
-		//Aggressive, Extreme (some loss of accuracy): skip on 0 and 2
-
-		return evalspeedup_rk23[use_evaluation_speedup - 1][evalStep];
+		return time + dT * evaltime_rk23[evalStep];
 	}
 	break;
 
 	case EVAL_SD:
 	{
-		return EVALSPEEDUPSTEP_COMPUTE_NO_SAVE;
+		return time;
 	}
 	break;
 
 	case EVAL_RKF:
 	{
-		//0: 0, 1: 1/4, 2: 3/8, 3: 12/13, 4: 1, 5: 1/2
-
-		//Accurate: skip on 2, 4, 5 (accurate)
-		//Aggressive: skip on 0, 2, 4, 5 (still accurate)
-		//Extreme : evaluate at 3 only (inaccurate but surprisingly close)
-
-		return evalspeedup_rkf[use_evaluation_speedup - 1][evalStep];
+		return time + dT * evaltime_rkf45[evalStep];
 	}
 	break;
 
 	case EVAL_RKCK:
 	{
-		//0: 0, 1: 1/5, 2: 3/10, 3: 3/5, 4: 1, 5: 7/8
-
-		//Accurate: skip on 0, 2, 5 (accurate)
-		//Aggressive: skip on 0, 1, 2, 5 (some loss of accuracy)
-		//Extreme: evaluate at 4 only (inaccurate)
-
-		return evalspeedup_rkck[use_evaluation_speedup - 1][evalStep];
+		return time + dT * evaltime_rkck45[evalStep];
 	}
 	break;
 
 	case EVAL_RKDP:
 	{
-		//0: 0, 1: 1/5, 2: 3/10, 3: 4/5, 4: 8/9, 5: 1
-
-		//Accurate: skip on 0, 4, 5 (accurate)
-		//Aggressive: skip on 0, 2, 4, 5 (a little loss of accuracy)
-		//Extreme: evaluate at 3 only (inaccurate)
-
-		return evalspeedup_rkdp[use_evaluation_speedup - 1][evalStep];
+		return time + dT * evaltime_rkdp54[evalStep];
 	}
 	break;
 	}
 
-	return EVALSPEEDUPSTEP_COMPUTE_AND_SAVE;
+	return time;
+}
+
+//check if we should update the demag field if using evaluation speedup mode; 
+//when in this mode any demag field updates will happen only when ODE step has finished (available == true), but if link_dTspeedup == false this is not necessarily every time step
+bool ODECommon_Base::Check_Step_Update(void)
+{
+	if (use_evaluation_speedup == EVALSPEEDUP_NONE) return true;
+
+	else if (!link_dTspeedup) {
+		
+		double time_eval = Get_EvalStep_Time();
+
+		//recommend skipping (and re-using previous value) if time step from previous evaluation is too small
+		if (time_eval < time_speedup + dTspeedup) return false;
+		else {
+
+			//update evaluation time and recommend updating
+			time_speedup = time_eval;
+			return true;
+		}
+	}
+	else return available == true;
 }

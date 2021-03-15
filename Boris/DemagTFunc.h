@@ -255,6 +255,11 @@ public:
 	//all off-diagonal components - single value computation version
 	DBL3 Lodia_single(DBL3 dist, DBL3 h, bool minus = true);
 
+	//---------------------SINGLE VALUE COMPUTE (SELF DEMAG METHODS)
+
 	//Self demag coefficients only (Dxx, Dyy, Dzz) for the given cellsize - you can calculate these separately e.g. if you set include_self_demag = false in the above methods (useful for super-mesh demag).
 	DBL3 SelfDemag(DBL3 h, bool minus = true);
+
+	//As above but also add PBC contribution to self demag
+	DBL3 SelfDemag_PBC(DBL3 h, DBL3 n, INT3 demag_pbc_images, int asymptotic_distance = ASYMPTOTIC_DISTANCE, bool minus = true);
 };

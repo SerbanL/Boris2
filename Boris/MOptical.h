@@ -48,12 +48,6 @@ public:
 	BError MakeCUDAModule(void);
 
 	double UpdateField(void);
-
-	//-------------------Energy density methods
-
-	double GetEnergyDensity(Rect& avRect) { return 0.0; }
-
-	//-------------------
 };
 
 #else
@@ -81,12 +75,6 @@ public:
 	BError MakeCUDAModule(void) { return BError(); }
 
 	double UpdateField(void) { return 0.0; }
-
-	//-------------------Energy density methods
-
-	double GetEnergyDensity(Rect& avRect) { return 0.0; }
-
-	//-------------------
 };
 
 #endif

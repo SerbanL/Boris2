@@ -25,7 +25,8 @@ private:
 	//pointer to mesh object holding this effective field module
 	Atom_Mesh *paMesh;
 
-private:
+	//divide energy by this to obtain energy density : this is the energy density in the entire mesh, which may not be rectangular.
+	double non_empty_volume = 0.0;
 
 public:
 
@@ -48,12 +49,6 @@ public:
 	BError MakeCUDAModule(void);
 
 	double UpdateField(void);
-
-	//-------------------Energy density methods
-
-	double GetEnergyDensity(Rect& avRect) { return 0.0; }
-
-	//-------------------
 };
 
 #else
@@ -81,12 +76,6 @@ public:
 	BError MakeCUDAModule(void) { return BError(); }
 
 	double UpdateField(void) { return 0.0; }
-
-	//-------------------Energy density methods
-
-	double GetEnergyDensity(Rect& avRect) { return 0.0; }
-
-	//-------------------
 };
 
 #endif

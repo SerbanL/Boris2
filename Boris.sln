@@ -23,6 +23,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "BorisLib", "BorisLib", "{7A
 		BorisLib\BorisLib.h = BorisLib\BorisLib.h
 		BorisLib\BorisLib_Config.h = BorisLib\BorisLib_Config.h
 		BorisLib\CurveFitting.h = BorisLib\CurveFitting.h
+		BorisLib\CurveFitting_DW.h = BorisLib\CurveFitting_DW.h
 		BorisLib\CurveFitting_LMA.h = BorisLib\CurveFitting_LMA.h
 		BorisLib\CurveFitting_Lorentz.h = BorisLib\CurveFitting_Lorentz.h
 		BorisLib\CurveFitting_Lorentz2.h = BorisLib\CurveFitting_Lorentz2.h

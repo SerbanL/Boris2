@@ -1,10 +1,12 @@
 #include "stdafx.h"
 #include "ExchangeCUDA.h"
+#include "DataDefs.h"
 
 #ifdef MODULE_COMPILATION_EXCHANGE
 
 #include "MeshCUDA.h"
 #include "Exchange.h"
+#include "MeshDefs.h"
 
 #if COMPILECUDA == 1
 
@@ -24,6 +26,12 @@ BError Exch_6ngbr_NeuCUDA::Initialize(void)
 
 	error = ExchangeBaseCUDA::Initialize();
 
+	//Make sure display data has memory allocated (or freed) as required
+	error = Update_Module_Display_VECs(
+		(cuReal3)pMeshCUDA->h, (cuRect)pMeshCUDA->meshRect, 
+		(MOD_)pMeshCUDA->Get_Module_Heff_Display() == MOD_EXCHANGE || pMeshCUDA->IsOutputDataSet_withRect(DATA_E_EXCH),
+		(MOD_)pMeshCUDA->Get_Module_Energy_Display() == MOD_EXCHANGE || pMeshCUDA->IsOutputDataSet_withRect(DATA_E_EXCH),
+		pMeshCUDA->GetMeshType() == MESH_ANTIFERROMAGNETIC);
 	if (!error) initialized = true;
 
 	return error;

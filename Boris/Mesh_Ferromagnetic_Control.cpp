@@ -75,6 +75,63 @@ void FMesh::SetMagAngle_Object(double polar, double azim, DBL3 position)
 #endif
 }
 
+//Flower state magnetization
+void FMesh::SetMagFlower(int direction, DBL3 centre, double radius, double thickness)
+{
+#if COMPILECUDA == 1
+	//refresh M from gpu memory
+	if (pMeshCUDA) pMeshCUDA->M()->copy_to_cpuvec(M);
+#endif
+
+	if (M.linear_size()) {
+
+		M.generate_flower(direction, centre, radius, thickness);
+	}
+
+#if COMPILECUDA == 1
+	//refresh gpu memory
+	if (pMeshCUDA) pMeshCUDA->M()->copy_from_cpuvec(M);
+#endif
+}
+
+//Onion state magnetization
+void FMesh::SetMagOnion(int direction, DBL3 centre, double radius1, double radius2, double thickness)
+{
+#if COMPILECUDA == 1
+	//refresh M from gpu memory
+	if (pMeshCUDA) pMeshCUDA->M()->copy_to_cpuvec(M);
+#endif
+
+	if (M.linear_size()) {
+
+		M.generate_onion(direction, centre, radius1, radius2, thickness);
+	}
+
+#if COMPILECUDA == 1
+	//refresh gpu memory
+	if (pMeshCUDA) pMeshCUDA->M()->copy_from_cpuvec(M);
+#endif
+}
+
+//Crosstie state magnetization
+void FMesh::SetMagCrosstie(int direction, DBL3 centre, double radius, double thickness)
+{
+#if COMPILECUDA == 1
+	//refresh M from gpu memory
+	if (pMeshCUDA) pMeshCUDA->M()->copy_to_cpuvec(M);
+#endif
+
+	if (M.linear_size()) {
+
+		M.generate_crosstie(direction, centre, radius, thickness);
+	}
+
+#if COMPILECUDA == 1
+	//refresh gpu memory
+	if (pMeshCUDA) pMeshCUDA->M()->copy_from_cpuvec(M);
+#endif
+}
+
 //Invert magnetization direction in given mesh (must be ferromagnetic)
 void FMesh::SetInvertedMag(bool x, bool y, bool z)
 {
@@ -188,6 +245,32 @@ void FMesh::SetRandomMag(int seed)
 			double phi = prng.rand() * TWO_PI;
 
 			M[idx] = M[idx].norm() * DBL3(cos(phi)*sin(theta), sin(phi)*sin(theta), cos(theta));
+		}
+	}
+
+#if COMPILECUDA == 1
+	//refresh gpu memory
+	if (pMeshCUDA) pMeshCUDA->M()->copy_from_cpuvec(M);
+#endif
+}
+
+void FMesh::SetRandomXYMag(int seed)
+{
+#if COMPILECUDA == 1
+	//refresh M from gpu memory
+	if (pMeshCUDA) pMeshCUDA->M()->copy_to_cpuvec(M);
+#endif
+
+	BorisRand prng(seed);
+
+#pragma omp parallel for
+	for (int idx = 0; idx < M.linear_size(); idx++) {
+
+		if (M.is_not_empty(idx)) {
+
+			double phi = prng.rand() * TWO_PI;
+
+			M[idx] = M[idx].norm() * DBL3(cos(phi), sin(phi), 0.0);
 		}
 	}
 

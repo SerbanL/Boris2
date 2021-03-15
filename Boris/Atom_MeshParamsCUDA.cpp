@@ -22,12 +22,19 @@ Atom_MeshParamsCUDA::Atom_MeshParamsCUDA(Atom_MeshParams *pameshParams)
 	D()->set_from_cpu(pameshParams->D);
 	pameshParams->D.set_p_cu_obj_mpcuda(&D);
 
-	K()->set_from_cpu(pameshParams->K);
-	pameshParams->K.set_p_cu_obj_mpcuda(&K);
+	K1()->set_from_cpu(pameshParams->K1);
+	pameshParams->K1.set_p_cu_obj_mpcuda(&K1);
+	K2()->set_from_cpu(pameshParams->K2);
+	pameshParams->K2.set_p_cu_obj_mpcuda(&K2);
+	K3()->set_from_cpu(pameshParams->K3);
+	pameshParams->K3.set_p_cu_obj_mpcuda(&K3);
+
 	mcanis_ea1()->set_from_cpu(pameshParams->mcanis_ea1);
 	pameshParams->mcanis_ea1.set_p_cu_obj_mpcuda(&mcanis_ea1);
 	mcanis_ea2()->set_from_cpu(pameshParams->mcanis_ea2);
 	pameshParams->mcanis_ea2.set_p_cu_obj_mpcuda(&mcanis_ea2);
+	mcanis_ea3()->set_from_cpu(pameshParams->mcanis_ea3);
+	pameshParams->mcanis_ea3.set_p_cu_obj_mpcuda(&mcanis_ea3);
 
 	//-----------Others
 
@@ -78,9 +85,13 @@ Atom_MeshParamsCUDA::~Atom_MeshParamsCUDA()
 	pameshParams->J.null_p_cu_obj_mpcuda();
 	pameshParams->D.null_p_cu_obj_mpcuda();
 
-	pameshParams->K.null_p_cu_obj_mpcuda();
+	pameshParams->K1.null_p_cu_obj_mpcuda();
+	pameshParams->K2.null_p_cu_obj_mpcuda();
+	pameshParams->K3.null_p_cu_obj_mpcuda();
+
 	pameshParams->mcanis_ea1.null_p_cu_obj_mpcuda();
 	pameshParams->mcanis_ea2.null_p_cu_obj_mpcuda();
+	pameshParams->mcanis_ea3.null_p_cu_obj_mpcuda();
 
 	//-----------Others
 

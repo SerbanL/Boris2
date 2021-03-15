@@ -15,15 +15,6 @@
 
 class SuperMesh;
 
-//Monte-Carlo Algorithm : minimum allowed cone angle
-#define MONTECARLO_CONEANGLEDEG_MIN		1.0
-//Monte-Carlo Algorithm : maximum allowed cone angle
-#define MONTECARLO_CONEANGLEDEG_MAX		180.0
-//Monte-Carlo Algorithm : change in cone angle per step
-#define MONTECARLO_CONEANGLEDEG_DELTA	1.0
-//Monte-Carlo Algorithm : target aceptance probability (vary cone angle to reach this)
-#define MONTECARLO_TARGETACCEPTANCE		0.5
-
 /////////////////////////////////////////////////////////////////////
 //
 //abstract base Atomic Mesh class - implement various types of atomic meshes using this base
@@ -249,6 +240,9 @@ public:
 	//copy all parameters from another Mesh
 	BError copy_mesh_parameters(MeshBase& copy_this);
 
+	//set tensorial anisotropy terms
+	BError set_tensorial_anisotropy(std::vector<DBL4> Kt);
+
 	//----------------------------------- RUNTIME PARAMETER UPDATERS (Atom_MeshParamsControl.h)
 
 	//UPDATER M COARSENESS - PUBLIC
@@ -344,9 +338,9 @@ public:
 	}
 
 	//are periodic boundary conditions set for atomic moments?
-	bool Is_PBC_x(void) { return M1.is_pbc_x(); }
-	bool Is_PBC_y(void) { return M1.is_pbc_y(); }
-	bool Is_PBC_z(void) { return M1.is_pbc_z(); }
+	int Is_PBC_x(void) { return M1.is_pbc_x(); }
+	int Is_PBC_y(void) { return M1.is_pbc_y(); }
+	int Is_PBC_z(void) { return M1.is_pbc_z(); }
 
 	//is there a demag-type module set for this mesh? (SDemag not included as this is a SuperMesh module)
 	bool Is_Demag_Enabled(void) { return IsModuleSet(MOD_DEMAG) || IsModuleSet(MOD_ATOM_DIPOLEDIPOLE); }
@@ -357,11 +351,6 @@ public:
 
 	//get average magnetization in given rectangle (entire mesh if none specified)
 	virtual DBL3 GetAverageMoment(Rect rectangle = Rect()) = 0;
-	
-	//Average square of components
-	virtual double GetAverageXMomentSq(Rect rectangle = Rect()) = 0;
-	virtual double GetAverageYMomentSq(Rect rectangle = Rect()) = 0;
-	virtual double GetAverageZMomentSq(Rect rectangle = Rect()) = 0;
 
 	//get moment magnitude min-max in given rectangle (entire mesh if none specified)
 	virtual DBL2 GetMomentMinMax(Rect rectangle = Rect()) = 0;
@@ -397,9 +386,6 @@ public:
 
 	//----------------------------------- VALUE GETTERS : Atom_MeshCompute.cpp
 
-	//get maximum exchange energy density modulus over specified rectangle
-	double Get_Max_Exchange_EnergyDensity(Rect& rectangle);
-
 	//return phase transition temperature (K) based on formula Tc = J*e*z/3kB
 	virtual double Show_Transition_Temperature(void) = 0;
 
@@ -413,9 +399,6 @@ public:
 	virtual double Show_Ku(void) = 0;
 
 	//----------------------------------- OTHER CALCULATION METHODS : Atom_MeshCompute.cpp
-
-	//compute exchange energy spatial variation and have it available to display in Cust_S
-	void Compute_Exchange(void);
 
 	//----------------------------------- OTHER MESH SHAPE CONTROL : Atom_MeshShape.cpp
 

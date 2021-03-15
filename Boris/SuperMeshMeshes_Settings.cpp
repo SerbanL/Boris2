@@ -82,6 +82,42 @@ BError SuperMesh::SetMagAngle_Object(std::string meshName, double polar, double 
 	return error;
 }
 
+//Flower state magnetization
+BError SuperMesh::SetMagFlower(std::string meshName, int direction, DBL3 centre, double radius, double thickness)
+{
+	BError error(__FUNCTION__);
+
+	if (!contains(meshName)) return error(BERROR_INCORRECTNAME);
+
+	pMesh[meshName]->SetMagFlower(direction, centre, radius, thickness);
+
+	return error;
+}
+
+//Onion state magnetization
+BError SuperMesh::SetMagOnion(std::string meshName, int direction, DBL3 centre, double radius1, double radius2, double thickness)
+{
+	BError error(__FUNCTION__);
+
+	if (!contains(meshName)) return error(BERROR_INCORRECTNAME);
+
+	pMesh[meshName]->SetMagOnion(direction, centre, radius1, radius2, thickness);
+
+	return error;
+}
+
+//Crosstie state magnetization
+BError SuperMesh::SetMagCrosstie(std::string meshName, int direction, DBL3 centre, double radius, double thickness)
+{
+	BError error(__FUNCTION__);
+
+	if (!contains(meshName)) return error(BERROR_INCORRECTNAME);
+
+	pMesh[meshName]->SetMagCrosstie(direction, centre, radius, thickness);
+
+	return error;
+}
+
 //Invert magnetization direction in given mesh (must be magnetic)
 BError SuperMesh::SetInvertedMag(std::string meshName, bool x, bool y, bool z)
 {
@@ -114,6 +150,17 @@ BError SuperMesh::SetRandomMag(std::string meshName, int seed)
 	if (!contains(meshName)) return error(BERROR_INCORRECTNAME);
 
 	pMesh[meshName]->SetRandomMag(seed);
+
+	return error;
+}
+
+BError SuperMesh::SetRandomXYMag(std::string meshName, int seed)
+{
+	BError error(__FUNCTION__);
+
+	if (!contains(meshName)) return error(BERROR_INCORRECTNAME);
+
+	pMesh[meshName]->SetRandomXYMag(seed);
 
 	return error;
 }
@@ -292,6 +339,9 @@ BError SuperMesh::PrepareMovingMesh(std::string meshName)
 	//5. set scalemeshrects to true
 	scale_rects = true;
 
+	//6. couple ends to dipoles also
+	Set_Coupled_To_Dipoles(true);
+
 	if (!error) error = UpdateConfiguration(UPDATECONFIG_GENERIC);
 
 	return error;
@@ -358,6 +408,9 @@ BError SuperMesh::PrepareMovingMesh_Bloch(std::string meshName)
 
 	//5. set scalemeshrects to true
 	scale_rects = true;
+
+	//6. couple ends to dipoles also
+	Set_Coupled_To_Dipoles(true);
 
 	if (!error) error = UpdateConfiguration(UPDATECONFIG_GENERIC);
 
@@ -426,6 +479,9 @@ BError SuperMesh::PrepareMovingMesh_Neel(std::string meshName)
 	//5. set scalemeshrects to true
 	scale_rects = true;
 
+	//6. couple ends to dipoles also
+	Set_Coupled_To_Dipoles(true);
+
 	if (!error) error = UpdateConfiguration(UPDATECONFIG_GENERIC);
 
 	return error;
@@ -493,6 +549,9 @@ BError SuperMesh::PrepareMovingMesh_Skyrmion(std::string meshName)
 	//5. set scalemeshrects to true
 	scale_rects = true;
 
+	//6. couple ends to dipoles also
+	Set_Coupled_To_Dipoles(true);
+
 	if (!error) error = UpdateConfiguration(UPDATECONFIG_GENERIC);
 
 	return error;
@@ -534,6 +593,9 @@ void SuperMesh::ClearMovingMesh(void)
 
 	//5. set scalemeshrects to false
 	scale_rects = false;
+
+	//6. uncouple ends from dipoles also
+	Set_Coupled_To_Dipoles(false);
 
 	UpdateConfiguration(UPDATECONFIG_GENERIC);
 }
@@ -672,4 +734,34 @@ BError SuperMesh::SetEFromJcValue(DBL3 Jcvalue, std::string meshName)
 	pMesh[meshName]->SetEFromJcValue(Jcvalue);
 
 	return error;
+}
+
+//--------------------------------------------------------- GET/SET PROPERTIES / VALUES at SuperMesh level
+
+//search save data list (saveDataList) for given dataID set for given mesh. Return true if found and its rectangle is not Null (or equal to the mesh rect); else return false.
+bool SuperMesh::IsOutputDataSet_withRect(int datumId, MeshBase* pmesh)
+{
+	//first get mesh name from mesh pointer	
+	std::string meshName;
+	for (int idx = 0; idx < pMesh.size(); idx++) {
+
+		if (pMesh[idx] == pmesh) {
+
+			meshName = pMesh.get_key_from_index(idx);
+			break;
+		}
+	}
+	
+	if (!meshName.length()) return false;
+
+	//now search output data for match
+	for (int idx = 0; idx < saveDataList.size(); idx++) {
+
+		if (saveDataList[idx].datumId == (int)datumId && 
+			saveDataList[idx].meshName == meshName &&
+			!saveDataList[idx].rectangle.IsNull() &&
+			saveDataList[idx].rectangle != pmesh->meshRect) return true;
+	}
+
+	return false;
 }

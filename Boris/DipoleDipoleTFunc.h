@@ -73,4 +73,6 @@ public:
 	//---------------------SELF DEMAG (for macrocell) : DipoleDipoleTFunnc_Self.cpp
 
 	DBL3 SelfDemag(DBL3 hRatios);
+
+	DBL3 SelfDemag_PBC(DBL3 h, DBL3 n, INT3 demag_pbc_images);
 };

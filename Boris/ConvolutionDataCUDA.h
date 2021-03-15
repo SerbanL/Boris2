@@ -136,49 +136,73 @@ protected:
 
 	//Copy convolution result (in cuS arrays) to output and obtain energy value : product of In with Out times -MU0 / (2 * non_empty_points), where non_empty_points = In.get_nonempty_points();
 	template <typename cuVECIn, typename cuVECOut>
-	void FinishConvolution_Set(cu_obj<cuVECIn>& In, cu_obj<cuVECOut>& Out, cu_obj<cuBReal>& energy, bool get_energy);
+	void FinishConvolution_Set(
+		cu_obj<cuVECIn>& In, cu_obj<cuVECOut>& Out, cu_obj<cuBReal>& energy, bool get_energy, 
+		cu_obj<cuVEC<cuReal3>>* pH = nullptr, cu_obj<cuVEC<cuBReal>>* penergy = nullptr);
 	
 	//Add convolution result (in cuS arrays) to output and obtain energy value : product of In with Out times -MU0 / (2 * non_empty_points), where non_empty_points = In.get_nonempty_points();
 	template <typename cuVECIn, typename cuVECOut>
-	void FinishConvolution_Add(cu_obj<cuVECIn>& In, cu_obj<cuVECOut>& Out, cu_obj<cuBReal>& energy, bool get_energy);
+	void FinishConvolution_Add(
+		cu_obj<cuVECIn>& In, cu_obj<cuVECOut>& Out, cu_obj<cuBReal>& energy, bool get_energy, 
+		cu_obj<cuVEC<cuReal3>>* pH = nullptr, cu_obj<cuVEC<cuBReal>>* penergy = nullptr);
 
 	//Copy convolution result (in cuS arrays) to output and obtain energy value : weighted product of In with Out times -MU0 / (2 * non_empty_points), where non_empty_points = In.get_nonempty_points();
 	template <typename cuVECIn, typename cuVECOut>
-	void FinishConvolution_Set(cu_obj<cuVECIn>& In, cu_obj<cuVECOut>& Out, cu_obj<cuBReal>& energy, cu_obj<cuBReal>& energy_weight);
+	void FinishConvolution_Set(
+		cu_obj<cuVECIn>& In, cu_obj<cuVECOut>& Out, cu_obj<cuBReal>& energy, cu_obj<cuBReal>& energy_weight, 
+		cu_obj<cuVEC<cuReal3>>* pH = nullptr, cu_obj<cuVEC<cuBReal>>* penergy = nullptr);
 
 	//Add convolution result (in cuS arrays) to output and obtain energy value : weighted product of In with Out times -MU0 / (2 * non_empty_points), where non_empty_points = In.get_nonempty_points();
 	template <typename cuVECIn, typename cuVECOut>
-	void FinishConvolution_Add(cu_obj<cuVECIn>& In, cu_obj<cuVECOut>& Out, cu_obj<cuBReal>& energy, cu_obj<cuBReal>& energy_weight);
+	void FinishConvolution_Add(
+		cu_obj<cuVECIn>& In, cu_obj<cuVECOut>& Out, cu_obj<cuBReal>& energy, cu_obj<cuBReal>& energy_weight, 
+		cu_obj<cuVEC<cuReal3>>* pH = nullptr, cu_obj<cuVEC<cuBReal>>* penergy = nullptr);
 
 	//AVERAGED INPUTS, SINGLE OUTPUT
 
 	//same as above but for averaged input
 	template <typename cuVECIn, typename cuVECOut>
-	void FinishConvolution_Set(cu_obj<cuVECIn>& In1, cu_obj<cuVECIn>& In2, cu_obj<cuVECOut>& Out, cu_obj<cuBReal>& energy, bool get_energy);
+	void FinishConvolution_Set(
+		cu_obj<cuVECIn>& In1, cu_obj<cuVECIn>& In2, cu_obj<cuVECOut>& Out, cu_obj<cuBReal>& energy, bool get_energy, 
+		cu_obj<cuVEC<cuReal3>>* pH = nullptr, cu_obj<cuVEC<cuBReal>>* penergy = nullptr);
 
 	template <typename cuVECIn, typename cuVECOut>
-	void FinishConvolution_Add(cu_obj<cuVECIn>& In1, cu_obj<cuVECIn>& In2, cu_obj<cuVECOut>& Out, cu_obj<cuBReal>& energy, bool get_energy);
+	void FinishConvolution_Add(
+		cu_obj<cuVECIn>& In1, cu_obj<cuVECIn>& In2, cu_obj<cuVECOut>& Out, cu_obj<cuBReal>& energy, bool get_energy, 
+		cu_obj<cuVEC<cuReal3>>* pH = nullptr, cu_obj<cuVEC<cuBReal>>* penergy = nullptr);
 
 	template <typename cuVECIn, typename cuVECOut>
-	void FinishConvolution_Set(cu_obj<cuVECIn>& In1, cu_obj<cuVECIn>& In2, cu_obj<cuVECOut>& Out, cu_obj<cuBReal>& energy, cu_obj<cuBReal>& energy_weight);
+	void FinishConvolution_Set(
+		cu_obj<cuVECIn>& In1, cu_obj<cuVECIn>& In2, cu_obj<cuVECOut>& Out, cu_obj<cuBReal>& energy, cu_obj<cuBReal>& energy_weight, 
+		cu_obj<cuVEC<cuReal3>>* pH = nullptr, cu_obj<cuVEC<cuBReal>>* penergy = nullptr);
 
 	template <typename cuVECIn, typename cuVECOut>
-	void FinishConvolution_Add(cu_obj<cuVECIn>& In1, cu_obj<cuVECIn>& In2, cu_obj<cuVECOut>& Out, cu_obj<cuBReal>& energy, cu_obj<cuBReal>& energy_weight);
+	void FinishConvolution_Add(
+		cu_obj<cuVECIn>& In1, cu_obj<cuVECIn>& In2, cu_obj<cuVECOut>& Out, cu_obj<cuBReal>& energy, cu_obj<cuBReal>& energy_weight, 
+		cu_obj<cuVEC<cuReal3>>* pH = nullptr, cu_obj<cuVEC<cuBReal>>* penergy = nullptr);
 
 	//AVERAGED INPUTS, DUPLICATED OUTPUTS
 
 	//same as above but for averaged input and duplicated output
 	template <typename cuVECIn, typename cuVECOut>
-	void FinishConvolution_Set(cu_obj<cuVECIn>& In1, cu_obj<cuVECIn>& In2, cu_obj<cuVECOut>& Out1, cu_obj<cuVECOut>& Out2, cu_obj<cuBReal>& energy, bool get_energy);
+	void FinishConvolution_Set(
+		cu_obj<cuVECIn>& In1, cu_obj<cuVECIn>& In2, cu_obj<cuVECOut>& Out1, cu_obj<cuVECOut>& Out2, cu_obj<cuBReal>& energy, bool get_energy, 
+		cu_obj<cuVEC<cuReal3>>* pH = nullptr, cu_obj<cuVEC<cuBReal>>* penergy = nullptr);
 	
 	template <typename cuVECIn, typename cuVECOut>
-	void FinishConvolution_Add(cu_obj<cuVECIn>& In1, cu_obj<cuVECIn>& In2, cu_obj<cuVECOut>& Out1, cu_obj<cuVECOut>& Out2, cu_obj<cuBReal>& energy, bool get_energy);
+	void FinishConvolution_Add(
+		cu_obj<cuVECIn>& In1, cu_obj<cuVECIn>& In2, cu_obj<cuVECOut>& Out1, cu_obj<cuVECOut>& Out2, cu_obj<cuBReal>& energy, bool get_energy, 
+		cu_obj<cuVEC<cuReal3>>* pH = nullptr, cu_obj<cuVEC<cuBReal>>* penergy = nullptr);
 
 	template <typename cuVECIn, typename cuVECOut>
-	void FinishConvolution_Set(cu_obj<cuVECIn>& In1, cu_obj<cuVECIn>& In2, cu_obj<cuVECOut>& Out1, cu_obj<cuVECOut>& Out2, cu_obj<cuBReal>& energy, cu_obj<cuBReal>& energy_weight);
+	void FinishConvolution_Set(
+		cu_obj<cuVECIn>& In1, cu_obj<cuVECIn>& In2, cu_obj<cuVECOut>& Out1, cu_obj<cuVECOut>& Out2, cu_obj<cuBReal>& energy, cu_obj<cuBReal>& energy_weight,
+		cu_obj<cuVEC<cuReal3>>* pH = nullptr, cu_obj<cuVEC<cuBReal>>* penergy = nullptr);
 
 	template <typename cuVECIn, typename cuVECOut>
-	void FinishConvolution_Add(cu_obj<cuVECIn>& In1, cu_obj<cuVECIn>& In2, cu_obj<cuVECOut>& Out1, cu_obj<cuVECOut>& Out2, cu_obj<cuBReal>& energy, cu_obj<cuBReal>& energy_weight);
+	void FinishConvolution_Add(
+		cu_obj<cuVECIn>& In1, cu_obj<cuVECIn>& In2, cu_obj<cuVECOut>& Out1, cu_obj<cuVECOut>& Out2, cu_obj<cuBReal>& energy, cu_obj<cuBReal>& energy_weight, 
+		cu_obj<cuVEC<cuReal3>>* pH = nullptr, cu_obj<cuVEC<cuBReal>>* penergy = nullptr);
 
 	//-------------------------- GETTERS
 

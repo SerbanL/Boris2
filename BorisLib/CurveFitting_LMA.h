@@ -10,6 +10,7 @@
 #include "CurveFitting_STT.h"
 #include "CurveFitting_SOT.h"
 #include "CurveFitting_SOTSTT.h"
+#include "CurveFitting_DW.h"
 
 class CurveFitting_LMA :
 	//CurveFitting_LMA is the generic LMA algorithm, and it inherits particular fitting functions here 
@@ -20,7 +21,8 @@ class CurveFitting_LMA :
 	public CurveFitting_Skyrmion<CurveFitting_LMA>,
 	public CurveFitting_STT<CurveFitting_LMA>,
 	public CurveFitting_SOT<CurveFitting_LMA>,
-	public CurveFitting_SOTSTT<CurveFitting_LMA>
+	public CurveFitting_SOTSTT<CurveFitting_LMA>,
+	public CurveFitting_DW<CurveFitting_LMA>
 {
 	//use friend declaration so I don't have to make the data members below public
 	friend CurveFitting_Lorentz;
@@ -29,6 +31,7 @@ class CurveFitting_LMA :
 	friend CurveFitting_STT;
 	friend CurveFitting_SOT;
 	friend CurveFitting_SOTSTT;
+	friend CurveFitting_DW;
 
 private:
 

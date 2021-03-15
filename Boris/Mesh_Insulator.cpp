@@ -13,7 +13,7 @@ InsulatorMesh::InsulatorMesh(SuperMesh *pSMesh_) :
 		{
 			//Mesh members
 			VINFO(meshType), VINFO(meshIdCounter), VINFO(meshId), 
-			VINFO(displayedPhysicalQuantity), VINFO(displayedBackgroundPhysicalQuantity), VINFO(vec3rep), VINFO(displayedParamVar), 
+			VINFO(displayedPhysicalQuantity), VINFO(displayedBackgroundPhysicalQuantity), VINFO(vec3rep), VINFO(displayedParamVar), VINFO(Module_Heff_Display), VINFO(Module_Energy_Display),
 			VINFO(meshRect), VINFO(n_t), VINFO(h_t), VINFO(n_m), VINFO(h_m), VINFO(Temp), VINFO(pMod),
 			//Members in this derived class
 
@@ -32,7 +32,7 @@ InsulatorMesh::InsulatorMesh(Rect meshRect_, DBL3 h_, SuperMesh *pSMesh_) :
 		{
 			//Mesh members
 			VINFO(meshType), VINFO(meshIdCounter), VINFO(meshId), 
-			VINFO(displayedPhysicalQuantity), VINFO(displayedBackgroundPhysicalQuantity), VINFO(vec3rep), VINFO(displayedParamVar), 
+			VINFO(displayedPhysicalQuantity), VINFO(displayedBackgroundPhysicalQuantity), VINFO(vec3rep), VINFO(displayedParamVar), VINFO(Module_Heff_Display), VINFO(Module_Energy_Display),
 			VINFO(meshRect), VINFO(n_t), VINFO(h_t), VINFO(n_m), VINFO(h_m), VINFO(Temp), VINFO(pMod),
 			//Members in this derived class
 

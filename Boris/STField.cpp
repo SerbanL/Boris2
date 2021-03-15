@@ -35,7 +35,9 @@ BError STField::Initialize(void)
 {
 	BError error(CLASS_STR(STField));
 
-	initialized = true;
+	//Make sure display data has memory allocated (or freed) as required
+	error = Update_Module_Display_VECs(pMesh->h, pMesh->meshRect, (MOD_)pMesh->Get_Module_Heff_Display() == MOD_STFIELD, (MOD_)pMesh->Get_Module_Energy_Display() == MOD_STFIELD, pMesh->GetMeshType() == MESH_ANTIFERROMAGNETIC);
+	if (!error)	initialized = true;
 
 	return error;
 }
@@ -45,8 +47,6 @@ BError STField::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 	BError error(CLASS_STR(STField));
 
 	Uninitialize();
-
-	Initialize();
 
 	//------------------------ CUDA UpdateConfiguration if set
 
@@ -105,7 +105,10 @@ double STField::UpdateField(void)
 
 			double a_const = -(neta * MUB_E * Jc / (GAMMA * grel)) / (Ms * Ms * pMesh->GetMeshDimensions().z);
 
-			pMesh->Heff[idx] += a_const * ((pMesh->M[idx] ^ STp) + flSOT * Ms * STp);
+			DBL3 STField = a_const * ((pMesh->M[idx] ^ STp) + flSOT * Ms * STp);
+			pMesh->Heff[idx] += STField;
+
+			if (Module_Heff.linear_size()) Module_Heff[idx] = STField;
 		}
 	}
 

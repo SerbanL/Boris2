@@ -40,7 +40,12 @@ BError Atom_Zeeman::Initialize(void)
 {
 	BError error(CLASS_STR(Atom_Zeeman));
 
-	initialized = true;
+	//Make sure display data has memory allocated (or freed) as required
+	error = Update_Module_Display_VECs(
+		paMesh->h, paMesh->meshRect, 
+		(MOD_)paMesh->Get_Module_Heff_Display() == MOD_ZEEMAN || paMesh->IsOutputDataSet_withRect(DATA_E_ZEE),
+		(MOD_)paMesh->Get_Module_Energy_Display() == MOD_ZEEMAN || paMesh->IsOutputDataSet_withRect(DATA_E_ZEE));
+	if (!error)	initialized = true;
 
 	non_empty_volume = paMesh->Get_NonEmpty_Magnetic_Volume();
 
@@ -65,8 +70,6 @@ BError Atom_Zeeman::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 			H_equation.set_constant("Lz", meshDim.z, false);
 			H_equation.remake_equation();
 		}
-
-		Initialize();
 	}
 
 	//------------------------ CUDA UpdateConfiguration if set
@@ -137,7 +140,10 @@ double Atom_Zeeman::UpdateField(void)
 
 			paMesh->Heff1[idx] = cHA * Ha;
 
-			energy -= MUB * paMesh->M1[idx] * MU0 * (cHA * Ha);
+			energy += -MUB * paMesh->M1[idx] * MU0 * (cHA * Ha);
+
+			if (Module_Heff.linear_size()) Module_Heff[idx] = cHA * Ha;
+			if (Module_energy.linear_size()) Module_energy[idx] = -MUB * paMesh->M1[idx] * MU0 * (cHA * Ha) / paMesh->M1.h.dim();
 		}
 	}
 
@@ -165,7 +171,10 @@ double Atom_Zeeman::UpdateField(void)
 
 					paMesh->Heff1[idx] = cHA * H;
 
-					energy -= MUB * paMesh->M1[idx] * MU0 * (cHA * H);
+					energy += -MUB * paMesh->M1[idx] * MU0 * (cHA * H);
+
+					if (Module_Heff.linear_size()) Module_Heff[idx] = cHA * H;
+					if (Module_energy.linear_size()) Module_energy[idx] = -MUB * paMesh->M1[idx] * MU0 * (cHA * H) / paMesh->M1.h.dim();
 				}
 			}
 		}
@@ -178,89 +187,12 @@ double Atom_Zeeman::UpdateField(void)
 	return this->energy;
 }
 
-//-------------------Energy density methods
-
-double Atom_Zeeman::GetEnergyDensity(Rect& avRect)
-{
-#if COMPILECUDA == 1
-	if (pModuleCUDA) return dynamic_cast<Atom_ZeemanCUDA*>(pModuleCUDA)->GetEnergyDensity(avRect);
-#endif
-
-	/////////////////////////////////////////
-	// Fixed set field
-	/////////////////////////////////////////
-
-	double energy = 0;
-
-	int num_points = 0;
-
-	if (!H_equation.is_set()) {
-
-		if (IsZ(Ha.norm())) {
-
-			this->energy = 0;
-			return 0.0;
-		}
-
-#pragma omp parallel for reduction(+:energy, num_points)
-		for (int idx = 0; idx < paMesh->n.dim(); idx++) {
-
-			//only average over values in given rectangle
-			if (!avRect.contains(paMesh->M1.cellidx_to_position(idx))) continue;
-			
-			double cHA = paMesh->cHA;
-			paMesh->update_parameters_mcoarse(idx, paMesh->cHA, cHA);
-
-			energy -= MUB * paMesh->M1[idx] * MU0 * (cHA * Ha);
-			num_points++;
-		}
-	}
-
-	/////////////////////////////////////////
-	// Field set from user equation
-	/////////////////////////////////////////
-
-	else {
-
-		double time = pSMesh->GetStageTime();
-
-#pragma omp parallel for reduction(+:energy, num_points)
-		for (int j = 0; j < paMesh->n.y; j++) {
-			for (int k = 0; k < paMesh->n.z; k++) {
-				for (int i = 0; i < paMesh->n.x; i++) {
-
-					int idx = i + j * paMesh->n.x + k * paMesh->n.x*paMesh->n.y;
-
-					//only average over values in given rectangle
-					if (!avRect.contains(paMesh->M1.cellidx_to_position(idx))) continue;
-
-					//on top of spatial dependence specified through an equation, also allow spatial dependence through the cHA parameter
-					double cHA = paMesh->cHA;
-					paMesh->update_parameters_mcoarse(idx, paMesh->cHA, cHA);
-
-					DBL3 relpos = DBL3(i + 0.5, j + 0.5, k + 0.5) & paMesh->h;
-					DBL3 H = H_equation.evaluate_vector(relpos.x, relpos.y, relpos.z, time);
-
-					energy -= MUB * paMesh->M1[idx] * MU0 * (cHA * H);
-					num_points++;
-				}
-			}
-		}
-	}
-
-	//convert to energy density and return
-	if (num_points) energy = energy / (num_points * paMesh->M1.h.dim());
-	else energy = 0.0;
-
-	return energy;
-}
-
 //-------------------Energy methods
 
 //For simple cubic mesh spin_index coincides with index in M1
-double Atom_Zeeman::Get_Atomistic_Energy(int spin_index)
+double Atom_Zeeman::Get_Atomistic_EnergyChange(int spin_index, DBL3 Mnew)
 {
-	//For CUDA there are separate device functions using by CUDA kernels.
+	//For CUDA there are separate device functions used by CUDA kernels.
 
 	if (paMesh->M1.is_not_empty(spin_index)) {
 
@@ -278,7 +210,7 @@ double Atom_Zeeman::Get_Atomistic_Energy(int spin_index)
 			double cHA = paMesh->cHA;
 			paMesh->update_parameters_mcoarse(spin_index, paMesh->cHA, cHA);
 
-			return -MUB * paMesh->M1[spin_index] * MU0 * (cHA * Ha);
+			return -MUB * (Mnew - paMesh->M1[spin_index]) * MU0 * (cHA * Ha);
 		}
 
 		/////////////////////////////////////////
@@ -294,7 +226,7 @@ double Atom_Zeeman::Get_Atomistic_Energy(int spin_index)
 			DBL3 relpos = paMesh->M1.cellidx_to_position(spin_index);
 			DBL3 H = H_equation.evaluate_vector(relpos.x, relpos.y, relpos.z, pSMesh->GetStageTime());
 
-			return -MUB * paMesh->M1[spin_index] * MU0 * (cHA * H);
+			return -MUB * (Mnew - paMesh->M1[spin_index]) * MU0 * (cHA * H);
 		}
 	}
 	else return 0.0;

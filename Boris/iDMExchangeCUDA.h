@@ -17,10 +17,10 @@ class iDMExchangeCUDA :
 	public ExchangeBaseCUDA
 {
 
+private:
+
 	//pointer to CUDA version of mesh object holding the effective field module holding this CUDA module
 	MeshCUDA* pMeshCUDA;
-
-private:
 
 public:
 
@@ -37,13 +37,6 @@ public:
 	void UpdateConfiguration_Values(UPDATECONFIG_ cfgMessage) {}
 
 	void UpdateField(void);
-
-	//-------------------Energy density methods
-
-	cuBReal GetEnergyDensity(cuRect avRect);
-	cuBReal GetEnergy_Max(cuRect rectangle);
-
-	void Compute_ExchangeCUDA(void);
 
 	//-------------------
 

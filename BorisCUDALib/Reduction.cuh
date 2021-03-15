@@ -55,7 +55,7 @@ __device__ void reduction_sum(int element_idx, size_t array_size, FType* large_a
 //Divide result by points_count to obtain the average value; Important : result and points_count must be reset to zero before calling this.
 
 template <typename FType>
-__device__ void reduction_avg(int element_idx, size_t array_size, FType* large_array, FType& result, size_t& points_count, bool include_in_reduction = true)
+__device__ void reduction_avg(int element_idx, size_t array_size, FType* large_array, FType& result, size_t& points_count, bool include_in_reduction)
 {
 	//memory shared between threads in a block
 	__shared__ FType shared_memory[CUDATHREADS];

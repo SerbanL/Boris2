@@ -19,6 +19,7 @@ __global__ void RunTEuler_Step0_withReductions_Kernel(ManagedAtom_DiffEqCubicCUD
 	cuBReal dT = *cuaDiffEq.pdT;
 
 	cuReal3 mxh = cuReal3();
+	bool include_in_average = false;
 
 	//multiplicative conversion factor from atomic moment (units of muB) to A/m
 	cuBReal conversion = (cuBReal)MUB / cuaMesh.pM1->h.dim();
@@ -30,6 +31,7 @@ __global__ void RunTEuler_Step0_withReductions_Kernel(ManagedAtom_DiffEqCubicCUD
 			//obtain average normalized torque term
 			cuBReal Mnorm = (*cuaMesh.pM1)[idx].norm();
 			mxh = ((*cuaMesh.pM1)[idx] ^ (*cuaMesh.pHeff1)[idx]) / (conversion * Mnorm * Mnorm);
+			include_in_average = true;
 
 			//Save current moment for the next step
 			(*cuaDiffEq.psM1)[idx] = (*cuaMesh.pM1)[idx];
@@ -45,7 +47,7 @@ __global__ void RunTEuler_Step0_withReductions_Kernel(ManagedAtom_DiffEqCubicCUD
 		}
 	}
 
-	reduction_avg(0, 1, &mxh, *cuaDiffEq.pmxh_av, *cuaDiffEq.pavpoints);
+	reduction_avg(0, 1, &mxh, *cuaDiffEq.pmxh_av, *cuaDiffEq.pavpoints, include_in_average);
 }
 
 __global__ void RunTEuler_Step0_Kernel(ManagedAtom_DiffEqCubicCUDA& cuaDiffEq, ManagedAtom_MeshCUDA& cuaMesh)
@@ -80,6 +82,7 @@ __global__ void RunTEuler_Step1_withReductions_Kernel(ManagedAtom_DiffEqCubicCUD
 	cuBReal dT = *cuaDiffEq.pdT;
 
 	cuReal3 dmdt = cuReal3();
+	bool include_in_average = false;
 
 	//multiplicative conversion factor from atomic moment (units of muB) to A/m
 	cuBReal conversion = (cuBReal)MUB / cuaMesh.pM1->h.dim();
@@ -106,11 +109,12 @@ __global__ void RunTEuler_Step1_withReductions_Kernel(ManagedAtom_DiffEqCubicCUD
 				//obtain maximum normalized dmdt term
 				cuBReal Mnorm = (*cuaMesh.pM1)[idx].norm();
 				dmdt = ((*cuaMesh.pM1)[idx] - (*cuaDiffEq.psM1)[idx]) / (dT * (cuBReal)GAMMA * conversion * Mnorm * Mnorm);
+				include_in_average = true;
 			}
 		}
 	}
 
-	reduction_avg(0, 1, &dmdt, *cuaDiffEq.pdmdt_av, *cuaDiffEq.pavpoints2);
+	reduction_avg(0, 1, &dmdt, *cuaDiffEq.pdmdt_av, *cuaDiffEq.pavpoints2, include_in_average);
 }
 
 __global__ void RunTEuler_Step1_Kernel(ManagedAtom_DiffEqCubicCUDA& cuaDiffEq, ManagedAtom_MeshCUDA& cuaMesh)

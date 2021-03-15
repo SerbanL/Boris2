@@ -2,6 +2,8 @@
 #include "Mesh.h"
 
 #include "Transport.h"
+#include "DMExchange.h"
+#include "iDMExchange.h"
 
 //----------------------------------- VALUE GETTERS
 
@@ -33,49 +35,6 @@ DBL3 Mesh::GetAveragemagnetization2(Rect rectangle)
 
 	if (M2.linear_size()) return M2.average_nonempty_omp(rectangle);
 	else return DBL3(0.0);
-}
-
-//Average square of components
-double Mesh::GetAverageXmagnetizationSq(Rect rectangle)
-{
-#if COMPILECUDA == 1
-	if (pMeshCUDA) {
-
-		if (M.linear_size()) return pMeshCUDA->M()->average_xsq_nonempty(n.dim(), rectangle);
-		else return 0.0;
-	}
-#endif
-
-	if (M.linear_size()) return M.average_xsq_nonempty_omp(rectangle);
-	else return 0.0;
-}
-
-double Mesh::GetAverageYmagnetizationSq(Rect rectangle)
-{
-#if COMPILECUDA == 1
-	if (pMeshCUDA) {
-
-		if (M.linear_size()) return pMeshCUDA->M()->average_ysq_nonempty(n.dim(), rectangle);
-		else return 0.0;
-	}
-#endif
-
-	if (M.linear_size()) return M.average_ysq_nonempty_omp(rectangle);
-	else return 0.0;
-}
-
-double Mesh::GetAverageZmagnetizationSq(Rect rectangle)
-{
-#if COMPILECUDA == 1
-	if (pMeshCUDA) {
-
-		if (M.linear_size()) return pMeshCUDA->M()->average_zsq_nonempty(n.dim(), rectangle);
-		else return 0.0;
-	}
-#endif
-
-	if (M.linear_size()) return M.average_zsq_nonempty_omp(rectangle);
-	else return 0.0;
 }
 
 //get magnetization magnitude min-max in given rectangle (entire mesh if none specified)

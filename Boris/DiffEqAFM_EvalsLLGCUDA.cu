@@ -29,6 +29,7 @@ __global__ void RunEuler_LLG_withReductions_Kernel(ManagedDiffEqAFMCUDA& cuDiffE
 
 	cuReal3 mxh = cuReal3();
 	cuReal3 dmdt = cuReal3();
+	bool include_in_average = false;
 
 	if (idx < M.linear_size()) {
 
@@ -49,6 +50,7 @@ __global__ void RunEuler_LLG_withReductions_Kernel(ManagedDiffEqAFMCUDA& cuDiffE
 				//obtain average normalized torque term
 				cuBReal Mnorm = M[idx].norm();
 				mxh = (M[idx] ^ Heff[idx]) / (Mnorm * Mnorm);
+				include_in_average = true;
 
 				//Now estimate magnetization for the next time step
 				M[idx] += rhs * dT;
@@ -75,8 +77,8 @@ __global__ void RunEuler_LLG_withReductions_Kernel(ManagedDiffEqAFMCUDA& cuDiffE
 	//only reduce for dmdt (and mxh) if grel is not zero (if it's zero this means magnetization dynamics is disabled in this mesh)
 	if (cuMesh.pgrel->get0()) {
 
-		reduction_avg(0, 1, &mxh, *cuDiffEq.pmxh_av, *cuDiffEq.pavpoints);
-		reduction_avg(0, 1, &dmdt, *cuDiffEq.pdmdt_av, *cuDiffEq.pavpoints2);
+		reduction_avg(0, 1, &mxh, *cuDiffEq.pmxh_av, *cuDiffEq.pavpoints, include_in_average);
+		reduction_avg(0, 1, &dmdt, *cuDiffEq.pdmdt_av, *cuDiffEq.pavpoints2, include_in_average);
 	}
 }
 
@@ -151,6 +153,7 @@ __global__ void RunTEuler_Step0_LLG_withReductions_Kernel(ManagedDiffEqAFMCUDA& 
 	cuReal2 grel_AFM = *cuMesh.pgrel_AFM;
 
 	cuReal3 mxh = cuReal3();
+	bool include_in_average = false;
 
 	if (idx < M.linear_size()) {
 
@@ -171,6 +174,7 @@ __global__ void RunTEuler_Step0_LLG_withReductions_Kernel(ManagedDiffEqAFMCUDA& 
 				//obtain average normalized torque term
 				cuBReal Mnorm = M[idx].norm();
 				mxh = (M[idx] ^ Heff[idx]) / (Mnorm * Mnorm);
+				include_in_average = true;
 
 				//Now estimate magnetization for the next time step
 				M[idx] += rhs * dT;
@@ -182,7 +186,7 @@ __global__ void RunTEuler_Step0_LLG_withReductions_Kernel(ManagedDiffEqAFMCUDA& 
 	//only reduce for mxh if grel is not zero (if it's zero this means magnetization dynamics is disabled in this mesh)
 	if (cuMesh.pgrel->get0()) {
 
-		reduction_avg(0, 1, &mxh, *cuDiffEq.pmxh_av, *cuDiffEq.pavpoints);
+		reduction_avg(0, 1, &mxh, *cuDiffEq.pmxh_av, *cuDiffEq.pavpoints, include_in_average);
 	}
 }
 
@@ -243,6 +247,7 @@ __global__ void RunTEuler_Step1_LLG_withReductions_Kernel(ManagedDiffEqAFMCUDA& 
 	cuReal2 grel_AFM = *cuMesh.pgrel_AFM;
 
 	cuReal3 dmdt = cuReal3();
+	bool include_in_average = false;
 
 	if (idx < M.linear_size()) {
 
@@ -269,6 +274,7 @@ __global__ void RunTEuler_Step1_LLG_withReductions_Kernel(ManagedDiffEqAFMCUDA& 
 				//obtain maximum normalized dmdt term
 				cuBReal Mnorm = (*cuMesh.pM)[idx].norm();
 				dmdt = ((*cuMesh.pM)[idx] - (*cuDiffEq.psM1)[idx]) / (dT * (cuBReal)GAMMA * Mnorm * Mnorm);
+				include_in_average = true;
 			}
 			else {
 
@@ -282,7 +288,7 @@ __global__ void RunTEuler_Step1_LLG_withReductions_Kernel(ManagedDiffEqAFMCUDA& 
 	//only reduce for dmdt if grel is not zero (if it's zero this means magnetization dynamics is disabled in this mesh)
 	if (cuMesh.pgrel->get0()) {
 
-		reduction_avg(0, 1, &dmdt, *cuDiffEq.pdmdt_av, *cuDiffEq.pavpoints2);
+		reduction_avg(0, 1, &dmdt, *cuDiffEq.pdmdt_av, *cuDiffEq.pavpoints2, include_in_average);
 	}
 }
 
@@ -356,6 +362,7 @@ __global__ void RunAHeun_Step1_LLG_withReductions_Kernel(ManagedDiffEqAFMCUDA& c
 
 	cuBReal lte = 0.0;
 	cuReal3 dmdt = cuReal3();
+	bool include_in_average = false;
 
 	if (idx < M.linear_size()) {
 
@@ -385,6 +392,7 @@ __global__ void RunAHeun_Step1_LLG_withReductions_Kernel(ManagedDiffEqAFMCUDA& c
 				//obtain maximum normalized dmdt term
 				cuBReal Mnorm = (*cuMesh.pM)[idx].norm();
 				dmdt = ((*cuMesh.pM)[idx] - (*cuDiffEq.psM1)[idx]) / (dT * (cuBReal)GAMMA * Mnorm * Mnorm);
+				include_in_average = true;
 
 				//local truncation error (between predicted and corrected)
 				lte = cu_GetMagnitude((*cuMesh.pM)[idx] - saveM) / (*cuMesh.pM)[idx].norm();
@@ -401,7 +409,7 @@ __global__ void RunAHeun_Step1_LLG_withReductions_Kernel(ManagedDiffEqAFMCUDA& c
 	//only reduce for dmdt if grel is not zero (if it's zero this means magnetization dynamics is disabled in this mesh)
 	if (cuMesh.pgrel->get0()) {
 
-		reduction_avg(0, 1, &dmdt, *cuDiffEq.pdmdt_av, *cuDiffEq.pavpoints2);
+		reduction_avg(0, 1, &dmdt, *cuDiffEq.pdmdt_av, *cuDiffEq.pavpoints2, include_in_average);
 	}
 
 	reduction_max(0, 1, &lte, *cuDiffEq.plte);

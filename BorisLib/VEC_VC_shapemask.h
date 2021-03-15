@@ -11,38 +11,51 @@
 template <typename VType>
 void VEC_VC<VType>::shape_setter(std::function<bool(DBL3, DBL3)>& shape_method, MeshShape shape, VType default_value)
 {
-	if (!(shape.repetitions > INT3())) return;
-	if (!(shape.dimensions > DBL3())) return;
+	if (!(shape.repetitions >= INT3())) return;
+	if (!(shape.dimensions >= DBL3())) return;
 
 	//limit number of repetitions if exceeding mesh size, otherwise they're wasted (and user might have entered something not sensible)
-	if (shape.repetitions.x * shape.displacements.x > VEC_VC<VType>::rect.length()) shape.repetitions.x = round(VEC_VC<VType>::rect.length() / shape.displacements.x);
-	if (shape.repetitions.y * shape.displacements.y > VEC_VC<VType>::rect.width()) shape.repetitions.y = round(VEC_VC<VType>::rect.width() / shape.displacements.y);
-	if (shape.repetitions.z * shape.displacements.z > VEC_VC<VType>::rect.height()) shape.repetitions.z = round(VEC_VC<VType>::rect.height() / shape.displacements.z);
+	if (shape.repetitions.x * shape.displacements.x > VEC<VType>::rect.length() + shape.displacements.x) shape.repetitions.x = round((VEC<VType>::rect.length() + shape.displacements.x) / shape.displacements.x);
+	if (shape.repetitions.y * shape.displacements.y > VEC<VType>::rect.width() + shape.displacements.y) shape.repetitions.y = round((VEC<VType>::rect.width() + shape.displacements.y) / shape.displacements.y);
+	if (shape.repetitions.z * shape.displacements.z > VEC<VType>::rect.height() + shape.displacements.z) shape.repetitions.z = round((VEC<VType>::rect.height() + shape.displacements.z) / shape.displacements.z);
 
 	//make a vector with centre positions for multiple shapes in an array
 	std::vector<DBL3> centre_pos_vec;
 	if (!malloc_vector(centre_pos_vec, shape.repetitions.dim())) return;
 
-	for (int i = 0; i < shape.repetitions.i; i++) {
-		for (int j = 0; j < shape.repetitions.j; j++) {
-			for (int k = 0; k < shape.repetitions.k; k++) {
+	//vector of start and end indexes which contain each element repetition, capped to mesh size
+	std::vector<Box> idx_vec;
+	if (!malloc_vector(idx_vec, shape.repetitions.dim())) return;
 
+	double centre_maxdist = shape.dimensions.norm() / 2;
+
+#pragma omp parallel for
+	for (int j = 0; j < shape.repetitions.j; j++) {
+		for (int k = 0; k < shape.repetitions.k; k++) {
+			for (int i = 0; i < shape.repetitions.i; i++) {
+
+				//centre position of element in array
 				int idx = i + j * shape.repetitions.i + k * shape.repetitions.i * shape.repetitions.j;
 				centre_pos_vec[idx] = (shape.displacements & DBL3(i, j, k)) + shape.centre_pos;
+
+				//start and end indexes of element in array
+				DBL3 pos_ll = centre_pos_vec[idx] - DBL3(centre_maxdist) + VEC<VType>::rect.s;
+				DBL3 pos_ur = centre_pos_vec[idx] + DBL3(centre_maxdist) + VEC<VType>::rect.s;
+				idx_vec[idx] = Box(VEC<VType>::cellidx_from_position(pos_ll), VEC<VType>::cellidx_from_position(pos_ur));
 			}
 		}
 	}
 
+	for (int obidx = 0; obidx < centre_pos_vec.size(); obidx++) {
+
 #pragma omp parallel for
-	for (int j = 0; j < VEC<VType>::n.y; j++) {
-		for (int k = 0; k < VEC<VType>::n.z; k++) {
-			for (int i = 0; i < VEC<VType>::n.x; i++) {
+		for (int j = idx_vec[obidx].s.j; j < idx_vec[obidx].e.j; j++) {
+			for (int k = idx_vec[obidx].s.k; k < idx_vec[obidx].e.k; k++) {
+				for (int i = idx_vec[obidx].s.i; i < idx_vec[obidx].e.i; i++) {
 
-				int idx = i + j * VEC<VType>::n.x + k * VEC<VType>::n.x*VEC<VType>::n.y;
+					int idx = i + j * VEC<VType>::n.x + k * VEC<VType>::n.x*VEC<VType>::n.y;
 
-				DBL3 position = VEC<VType>::cellidx_to_position(INT3(i, j, k));
-
-				for (int obidx = 0; obidx < centre_pos_vec.size(); obidx++) {
+					DBL3 position = VEC<VType>::cellidx_to_position(INT3(i, j, k));
 
 					if (shape_method(rotate_object_yxz(position - centre_pos_vec[obidx], -shape.rotation.x, -shape.rotation.y, -shape.rotation.z), shape.dimensions)) {
 
@@ -263,55 +276,67 @@ std::function<bool(DBL3, DBL3)> VEC_VC<VType>::shape_torus(MeshShape shape, VTyp
 template <typename VType>
 void VEC_VC<VType>::shape_setter(std::vector<std::function<bool(DBL3, DBL3)>> shape_methods, std::vector<MeshShape> shapes, VType default_value)
 {
-	//make checks and adjustments on shapes vector
-	for (int idx = 0; idx < shapes.size(); idx++) {
+	if (!shapes.size()) return;
+	
+	//all shapes must have same number of repetitions, and central position given by first shape
+	MeshShape& shape = shapes[0];
 
-		if (!(shapes[idx].repetitions > INT3())) return;
-		if (!(shapes[idx].dimensions > DBL3())) return;
+	if (!(shape.repetitions >= INT3())) return;
+	if (!(shape.dimensions >= DBL3())) return;
 
-		//limit number of repetitions if exceeding mesh size, otherwise they're wasted (and user might have entered something not sensible)
-		if (shapes[idx].repetitions.x * shapes[idx].displacements.x > VEC<VType>::rect.length()) shapes[idx].repetitions.x = round(VEC<VType>::rect.length() / shapes[idx].displacements.x);
-		if (shapes[idx].repetitions.y * shapes[idx].displacements.y > VEC<VType>::rect.width()) shapes[idx].repetitions.y = round(VEC<VType>::rect.width() / shapes[idx].displacements.y);
-		if (shapes[idx].repetitions.z * shapes[idx].displacements.z > VEC<VType>::rect.height()) shapes[idx].repetitions.z = round(VEC<VType>::rect.height() / shapes[idx].displacements.z);
+	//limit number of repetitions if exceeding mesh size, otherwise they're wasted (and user might have entered something not sensible)
+	if (shape.repetitions.x * shape.displacements.x > VEC<VType>::rect.length() + shape.displacements.x) shape.repetitions.x = round((VEC<VType>::rect.length() + shape.displacements.x) / shape.displacements.x);
+	if (shape.repetitions.y * shape.displacements.y > VEC<VType>::rect.width() + shape.displacements.y) shape.repetitions.y = round((VEC<VType>::rect.width() + shape.displacements.y) / shape.displacements.y);
+	if (shape.repetitions.z * shape.displacements.z > VEC<VType>::rect.height() + shape.displacements.z) shape.repetitions.z = round((VEC<VType>::rect.height() + shape.displacements.z) / shape.displacements.z);
+
+	std::vector<DBL3> centre_pos_vec;
+	if (!malloc_vector(centre_pos_vec, shape.repetitions.dim())) return;
+
+	//vector of start and end indexes which contain each element repetition, capped to mesh size
+	std::vector<Box> idx_vec;
+	if (!malloc_vector(idx_vec, shape.repetitions.dim())) return;
+
+	double centre_maxdist = shape.dimensions.norm() / 2;
+	for (int shape_idx = 1; shape_idx < shapes.size(); shape_idx++) {
+
+		double distance = (shape.centre_pos - shapes[shape_idx].centre_pos).norm() + shapes[shape_idx].dimensions.norm() / 2;
+		centre_maxdist = (centre_maxdist > distance ? centre_maxdist : distance);
 	}
 
-	//make a vector with centre positions for multiple shapes in an array, for each shape in shapes
+#pragma omp parallel for
+	for (int j = 0; j < shape.repetitions.j; j++) {
+		for (int k = 0; k < shape.repetitions.k; k++) {
+			for (int i = 0; i < shape.repetitions.i; i++) {
 
-	std::vector<std::vector<DBL3>> centre_pos_vecs(shapes.size());
-
-	for (int shape_idx = 0; shape_idx < shapes.size(); shape_idx++) {
-
-		if (!malloc_vector(centre_pos_vecs[shape_idx], shapes[shape_idx].repetitions.dim())) return;
-
-		for (int i = 0; i < shapes[shape_idx].repetitions.i; i++) {
-			for (int j = 0; j < shapes[shape_idx].repetitions.j; j++) {
-				for (int k = 0; k < shapes[shape_idx].repetitions.k; k++) {
-
-					int idx = i + j * shapes[shape_idx].repetitions.i + k * shapes[shape_idx].repetitions.i * shapes[shape_idx].repetitions.j;
-					centre_pos_vecs[shape_idx][idx] = (shapes[shape_idx].displacements & DBL3(i, j, k)) + shapes[shape_idx].centre_pos;
-				}
+				//centre position of element in array
+				int idx = i + j * shape.repetitions.i + k * shape.repetitions.i * shape.repetitions.j;
+				centre_pos_vec[idx] = (shape.displacements & DBL3(i, j, k)) + shape.centre_pos;
+				
+				//start and end indexes of element in array
+				DBL3 pos_ll = centre_pos_vec[idx] - DBL3(centre_maxdist) + VEC<VType>::rect.s;
+				DBL3 pos_ur = centre_pos_vec[idx] + DBL3(centre_maxdist) + VEC<VType>::rect.s;
+				idx_vec[idx] = Box(VEC<VType>::cellidx_from_position(pos_ll), VEC<VType>::cellidx_from_position(pos_ur));
 			}
 		}
 	}
 
+	for (int obidx = 0; obidx < centre_pos_vec.size(); obidx++) {
+
 #pragma omp parallel for
-	for (int j = 0; j < VEC<VType>::n.y; j++) {
-		for (int k = 0; k < VEC<VType>::n.z; k++) {
-			for (int i = 0; i < VEC<VType>::n.x; i++) {
+		for (int j = idx_vec[obidx].s.j; j < idx_vec[obidx].e.j; j++) {
+			for (int k = idx_vec[obidx].s.k; k < idx_vec[obidx].e.k; k++) {
+				for (int i = idx_vec[obidx].s.i; i < idx_vec[obidx].e.i; i++) {
 
-				int idx = i + j * VEC<VType>::n.x + k * VEC<VType>::n.x*VEC<VType>::n.y;
+					int idx = i + j * VEC<VType>::n.x + k * VEC<VType>::n.x*VEC<VType>::n.y;
 
-				DBL3 position = VEC<VType>::cellidx_to_position(INT3(i, j, k));
+					DBL3 position = VEC<VType>::cellidx_to_position(INT3(i, j, k));
 
-				bool set_value = false;
+					bool set_value = false;
 
-				//check composite shape
-				for (int shape_idx = 0; shape_idx < shapes.size(); shape_idx++) {
+					//check composite shape
+					for (int shape_idx = 0; shape_idx < shapes.size(); shape_idx++) {
 
-					//check each object in this shape (e.g. might be repeated as an array)
-					for (int obidx = 0; obidx < centre_pos_vecs[shape_idx].size(); obidx++) {
-						
-						if (shape_methods[shape_idx](rotate_object_yxz(position - centre_pos_vecs[shape_idx][obidx], -shapes[shape_idx].rotation.x, -shapes[shape_idx].rotation.y, -shapes[shape_idx].rotation.z), shapes[shape_idx].dimensions)) {
+						if (shape_methods[shape_idx](rotate_object_yxz(position - (centre_pos_vec[obidx] + shapes[shape_idx].centre_pos - shape.centre_pos), -shapes[shape_idx].rotation.x, -shapes[shape_idx].rotation.y, -shapes[shape_idx].rotation.z), shapes[shape_idx].dimensions)) {
 
 							switch (shapes[shape_idx].method) {
 
@@ -334,12 +359,12 @@ void VEC_VC<VType>::shape_setter(std::vector<std::function<bool(DBL3, DBL3)>> sh
 							}
 						}
 					}
-				}
 
-				if (set_value) {
+					if (set_value) {
 
-					VEC<VType>::quantity[idx] = default_value;
-					mark_not_empty(idx);
+						VEC<VType>::quantity[idx] = default_value;
+						mark_not_empty(idx);
+					}
 				}
 			}
 		}
@@ -399,58 +424,70 @@ void VEC_VC<VType>::shape_set(std::vector<MeshShape> shapes, VType default_value
 template <typename VType>
 void VEC_VC<VType>::shape_valuesetter(std::vector<std::function<bool(DBL3, DBL3)>> shape_methods, std::vector<MeshShape> shapes, VType value)
 {
-	//make checks and adjustments on shapes vector
-	for (int idx = 0; idx < shapes.size(); idx++) {
+	if (!shapes.size()) return;
 
-		if (!(shapes[idx].repetitions > INT3())) return;
-		if (!(shapes[idx].dimensions > DBL3())) return;
+	//all shapes must have same number of repetitions, and central position given by first shape
+	MeshShape& shape = shapes[0];
 
-		//limit number of repetitions if exceeding mesh size, otherwise they're wasted (and user might have entered something not sensible)
-		if (shapes[idx].repetitions.x * shapes[idx].displacements.x > VEC<VType>::rect.length()) shapes[idx].repetitions.x = round(VEC<VType>::rect.length() / shapes[idx].displacements.x);
-		if (shapes[idx].repetitions.y * shapes[idx].displacements.y > VEC<VType>::rect.width()) shapes[idx].repetitions.y = round(VEC<VType>::rect.width() / shapes[idx].displacements.y);
-		if (shapes[idx].repetitions.z * shapes[idx].displacements.z > VEC<VType>::rect.height()) shapes[idx].repetitions.z = round(VEC<VType>::rect.height() / shapes[idx].displacements.z);
+	if (!(shape.repetitions >= INT3())) return;
+	if (!(shape.dimensions >= DBL3())) return;
+
+	//limit number of repetitions if exceeding mesh size, otherwise they're wasted (and user might have entered something not sensible)
+	if (shape.repetitions.x * shape.displacements.x > VEC<VType>::rect.length() + shape.displacements.x) shape.repetitions.x = round((VEC<VType>::rect.length() + shape.displacements.x) / shape.displacements.x);
+	if (shape.repetitions.y * shape.displacements.y > VEC<VType>::rect.width() + shape.displacements.y) shape.repetitions.y = round((VEC<VType>::rect.width() + shape.displacements.y) / shape.displacements.y);
+	if (shape.repetitions.z * shape.displacements.z > VEC<VType>::rect.height() + shape.displacements.z) shape.repetitions.z = round((VEC<VType>::rect.height() + shape.displacements.z) / shape.displacements.z);
+
+	std::vector<DBL3> centre_pos_vec;
+	if (!malloc_vector(centre_pos_vec, shape.repetitions.dim())) return;
+
+	//vector of start and end indexes which contain each element repetition, capped to mesh size
+	std::vector<Box> idx_vec;
+	if (!malloc_vector(idx_vec, shape.repetitions.dim())) return;
+
+	double centre_maxdist = shape.dimensions.norm() / 2;
+	for (int shape_idx = 1; shape_idx < shapes.size(); shape_idx++) {
+
+		double distance = (shape.centre_pos - shapes[shape_idx].centre_pos).norm() + shapes[shape_idx].dimensions.norm() / 2;
+		centre_maxdist = (centre_maxdist > distance ? centre_maxdist : distance);
 	}
 
-	//make a vector with centre positions for multiple shapes in an array, for each shape in shapes
+#pragma omp parallel for
+	for (int j = 0; j < shape.repetitions.j; j++) {
+		for (int k = 0; k < shape.repetitions.k; k++) {
+			for (int i = 0; i < shape.repetitions.i; i++) {
 
-	std::vector<std::vector<DBL3>> centre_pos_vecs(shapes.size());
+				//centre position of element in array
+				int idx = i + j * shape.repetitions.i + k * shape.repetitions.i * shape.repetitions.j;
+				centre_pos_vec[idx] = (shape.displacements & DBL3(i, j, k)) + shape.centre_pos;
 
-	for (int shape_idx = 0; shape_idx < shapes.size(); shape_idx++) {
-
-		if (!malloc_vector(centre_pos_vecs[shape_idx], shapes[shape_idx].repetitions.dim())) return;
-
-		for (int i = 0; i < shapes[shape_idx].repetitions.i; i++) {
-			for (int j = 0; j < shapes[shape_idx].repetitions.j; j++) {
-				for (int k = 0; k < shapes[shape_idx].repetitions.k; k++) {
-
-					int idx = i + j * shapes[shape_idx].repetitions.i + k * shapes[shape_idx].repetitions.i * shapes[shape_idx].repetitions.j;
-					centre_pos_vecs[shape_idx][idx] = (shapes[shape_idx].displacements & DBL3(i, j, k)) + shapes[shape_idx].centre_pos;
-				}
+				//start and end indexes of element in array
+				DBL3 pos_ll = centre_pos_vec[idx] - DBL3(centre_maxdist) + VEC<VType>::rect.s;
+				DBL3 pos_ur = centre_pos_vec[idx] + DBL3(centre_maxdist) + VEC<VType>::rect.s;
+				idx_vec[idx] = Box(VEC<VType>::cellidx_from_position(pos_ll), VEC<VType>::cellidx_from_position(pos_ur));
 			}
 		}
 	}
 
+	for (int obidx = 0; obidx < centre_pos_vec.size(); obidx++) {
+
 #pragma omp parallel for
-	for (int j = 0; j < VEC<VType>::n.y; j++) {
-		for (int k = 0; k < VEC<VType>::n.z; k++) {
-			for (int i = 0; i < VEC<VType>::n.x; i++) {
+		for (int j = idx_vec[obidx].s.j; j < idx_vec[obidx].e.j; j++) {
+			for (int k = idx_vec[obidx].s.k; k < idx_vec[obidx].e.k; k++) {
+				for (int i = idx_vec[obidx].s.i; i < idx_vec[obidx].e.i; i++) {
 
-				int idx = i + j * VEC<VType>::n.x + k * VEC<VType>::n.x*VEC<VType>::n.y;
+					int idx = i + j * VEC<VType>::n.x + k * VEC<VType>::n.x*VEC<VType>::n.y;
 
-				DBL3 position = VEC<VType>::cellidx_to_position(INT3(i, j, k));
+					DBL3 position = VEC<VType>::cellidx_to_position(INT3(i, j, k));
 
-				//if mesh is empty at this point then nothing to set
-				if (is_empty(idx)) continue;
+					//if mesh is empty at this point then nothing to set
+					if (is_empty(idx)) continue;
 
-				bool set_value = false;
+					bool set_value = false;
 
-				//check composite shape
-				for (int shape_idx = 0; shape_idx < shapes.size(); shape_idx++) {
+					//check composite shape
+					for (int shape_idx = 0; shape_idx < shapes.size(); shape_idx++) {
 
-					//check each object in this shape (e.g. might be repeated as an array)
-					for (int obidx = 0; obidx < centre_pos_vecs[shape_idx].size(); obidx++) {
-
-						if (shape_methods[shape_idx](rotate_object_yxz(position - centre_pos_vecs[shape_idx][obidx], -shapes[shape_idx].rotation.x, -shapes[shape_idx].rotation.y, -shapes[shape_idx].rotation.z), shapes[shape_idx].dimensions)) {
+						if (shape_methods[shape_idx](rotate_object_yxz(position - (centre_pos_vec[obidx] + shapes[shape_idx].centre_pos - shape.centre_pos), -shapes[shape_idx].rotation.x, -shapes[shape_idx].rotation.y, -shapes[shape_idx].rotation.z), shapes[shape_idx].dimensions)) {
 
 							switch (shapes[shape_idx].method) {
 
@@ -473,9 +510,9 @@ void VEC_VC<VType>::shape_valuesetter(std::vector<std::function<bool(DBL3, DBL3)
 							}
 						}
 					}
-				}
 
-				if (set_value) VEC<VType>::quantity[idx] = value;
+					if (set_value) VEC<VType>::quantity[idx] = value;
+				}
 			}
 		}
 	}

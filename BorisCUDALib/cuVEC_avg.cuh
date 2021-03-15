@@ -13,7 +13,7 @@ __global__ void average_kernel(cuSZ3& n, VType*& quantity, VType& average_value,
 {
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
 	
-	reduction_avg(idx, n.dim(), quantity, average_value, points_count);
+	reduction_avg(idx, n.dim(), quantity, average_value, points_count, true);
 }
 
 template <typename VType>

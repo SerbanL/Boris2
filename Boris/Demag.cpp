@@ -37,8 +37,8 @@ Demag::~Demag()
 	//when deleting the Demag module any pbc settings should no longer take effect in this mesh
 	//thus must clear pbc flags in M
 
-	pMesh->M.set_pbc(false, false, false);
-	pMesh->M2.set_pbc(false, false, false);
+	pMesh->M.set_pbc(0, 0, 0);
+	pMesh->M2.set_pbc(0, 0, 0);
 
 	//same for the CUDA version if we are in cuda mode
 #if COMPILECUDA == 1
@@ -57,20 +57,29 @@ BError Demag::Initialize(void)
 		
 		error = Calculate_Demag_Kernels();
 
+		selfDemagCoeff = DemagTFunc().SelfDemag_PBC(pMesh->h, pMesh->n, demag_pbc_images);
+
 		if (!error) initialized = true;
 	}
 
 	//make sure to allocate memory for Hdemag if we need it
-	if (pMesh->pSMesh->GetEvaluationSpeedup()) {
+	if (pMesh->pSMesh->GetEvaluationSpeedup() >= 3) { if (!Hdemag3.resize(pMesh->h, pMesh->meshRect)) return error(BERROR_OUTOFMEMORY_CRIT); }
+	else Hdemag3.clear();
 
-		Hdemag.resize(pMesh->h, pMesh->meshRect);
-	}
-	else {
+	if (pMesh->pSMesh->GetEvaluationSpeedup() >= 2) { if (!Hdemag2.resize(pMesh->h, pMesh->meshRect)) return error(BERROR_OUTOFMEMORY_CRIT); }
+	else Hdemag2.clear();
 
-		Hdemag.clear();
-	}
+	if (pMesh->pSMesh->GetEvaluationSpeedup() >= 1) { if (!Hdemag.resize(pMesh->h, pMesh->meshRect)) return error(BERROR_OUTOFMEMORY_CRIT); }
+	else Hdemag.clear();
 
-	Hdemag_calculated = false;
+	num_Hdemag_saved = 0;
+
+	//Make sure display data has memory allocated (or freed) as required
+	error = Update_Module_Display_VECs(
+		pMesh->h, pMesh->meshRect, 
+		(MOD_)pMesh->Get_Module_Heff_Display() == MOD_DEMAG || pMesh->IsOutputDataSet_withRect(DATA_E_DEMAG),
+		(MOD_)pMesh->Get_Module_Energy_Display() == MOD_DEMAG || pMesh->IsOutputDataSet_withRect(DATA_E_DEMAG));
+	if (error) initialized = false;
 
 	return error;
 }
@@ -86,11 +95,14 @@ BError Demag::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 
 		//Set convolution dimensions for embedded multiplication and required PBC conditions
 		error = SetDimensions(pMesh->n, pMesh->h, true, demag_pbc_images);
+
+		//if memory needs to be allocated for Hdemag, it will be done through Initialize 
+		Hdemag.clear();
+		Hdemag2.clear();
+		Hdemag3.clear();
 	}
 
-	//if memory needs to be allocated for Hdemag, it will be done through Initialize 
-	Hdemag.clear();
-	Hdemag_calculated = false;
+	num_Hdemag_saved = 0;
 
 	//------------------------ CUDA UpdateConfiguration if set
 
@@ -141,108 +153,246 @@ BError Demag::MakeCUDAModule(void)
 double Demag::UpdateField(void) 
 {
 	///////////////////////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////// EVAL SPEEDUP /////////////////////////////////////////
-	///////////////////////////////////////////////////////////////////////////////////////////////
-
-	if (pMesh->pSMesh->GetEvaluationSpeedup()) {
-
-		//use evaluation speedup method (Hdemag will have memory allocated - this was done in the Initialize method)
-
-		int update_type = pMesh->pSMesh->Check_Step_Update();
-
-		if (update_type != EVALSPEEDUPSTEP_SKIP || !Hdemag_calculated) {
-
-			//calculate field required
-
-			if (update_type == EVALSPEEDUPSTEP_COMPUTE_AND_SAVE) {
-
-				//calculate field and save it for next time : we'll need to use it (expecting update_type = EVALSPEEDUPSTEP_SKIP next time)
-
-				//convolute and get "energy" value
-				if (pMesh->GetMeshType() == MESH_ANTIFERROMAGNETIC) {
-
-					energy = Convolute_AveragedInputs(pMesh->M, pMesh->M2, Hdemag, true);
-				}
-				else {
-
-					energy = Convolute(pMesh->M, Hdemag, true);
-				}
-
-				Hdemag_calculated = true;
-
-				//finish off energy value
-				if (pMesh->M.get_nonempty_cells()) energy *= -MU0 / (2 * pMesh->M.get_nonempty_cells());
-				else energy = 0;
-			}
-			else {
-
-				//calculate field but do not save it for next time : we'll need to recalculate it again (expecting update_type != EVALSPEEDUPSTEP_SKIP again next time : EVALSPEEDUPSTEP_COMPUTE_NO_SAVE or EVALSPEEDUPSTEP_COMPUTE_AND_SAVE)
-
-				//convolute and get "energy" value
-				if (pMesh->GetMeshType() == MESH_ANTIFERROMAGNETIC) {
-
-					energy = Convolute_AveragedInputs_DuplicatedOutputs(pMesh->M, pMesh->M2, pMesh->Heff, pMesh->Heff2, false);
-				}
-				else {
-
-					energy = Convolute(pMesh->M, pMesh->Heff, false);
-				}
-
-				//good practice to set this to false
-				Hdemag_calculated = false;
-
-				//finish off energy value
-				if (pMesh->M.get_nonempty_cells()) energy *= -MU0 / (2 * pMesh->M.get_nonempty_cells());
-				else energy = 0;
-
-				//return here to avoid adding Hdemag to Heff : we've already added demag field contribution
-				return energy;
-			}
-		}
-
-		if (pMesh->GetMeshType() == MESH_ANTIFERROMAGNETIC) {
-
-			//add contribution to Heff and Heff2
-#pragma omp parallel for
-			for (int idx = 0; idx < Hdemag.linear_size(); idx++) {
-
-				pMesh->Heff[idx] += Hdemag[idx];
-				pMesh->Heff2[idx] += Hdemag[idx];
-			}
-		}
-
-		else {
-
-			//add contribution to Heff
-#pragma omp parallel for
-			for (int idx = 0; idx < Hdemag.linear_size(); idx++) {
-
-				pMesh->Heff[idx] += Hdemag[idx];
-			}
-		}
-	}
-
-	///////////////////////////////////////////////////////////////////////////////////////////////
 	///////////////////////////////////////// NO SPEEDUP //////////////////////////////////////////
 	///////////////////////////////////////////////////////////////////////////////////////////////
 
-	else {
+	if (!pMesh->pSMesh->GetEvaluationSpeedup() || (num_Hdemag_saved < pMesh->pSMesh->GetEvaluationSpeedup() && !pMesh->pSMesh->Check_Step_Update())) {
 
-		//don't use evaluation speedup, so no need to use Hdemag (this won't have memory allocated anyway)
+		//don't use evaluation speedup, so no need to use Hdemag (this won't have memory allocated anyway) - or else we are using speedup but don't yet have enough previous evaluations at steps where we should be extrapolating
 
 		//convolute and get "energy" value
 		if (pMesh->GetMeshType() == MESH_ANTIFERROMAGNETIC) {
 
-			energy = Convolute_AveragedInputs_DuplicatedOutputs(pMesh->M, pMesh->M2, pMesh->Heff, pMesh->Heff2, false);
+			if (Module_Heff.linear_size()) energy = Convolute_AveragedInputs_DuplicatedOutputs(pMesh->M, pMesh->M2, pMesh->Heff, pMesh->Heff2, false, &Module_Heff, &Module_energy);
+			else energy = Convolute_AveragedInputs_DuplicatedOutputs(pMesh->M, pMesh->M2, pMesh->Heff, pMesh->Heff2, false);
 		}
 		else {
 
-			energy = Convolute(pMesh->M, pMesh->Heff, false);
+			if (Module_Heff.linear_size()) energy = Convolute(pMesh->M, pMesh->Heff, false, &Module_Heff, &Module_energy);
+			else energy = Convolute(pMesh->M, pMesh->Heff, false);
 		}
 
 		//finish off energy value
 		if (pMesh->M.get_nonempty_cells()) energy *= -MU0 / (2 * pMesh->M.get_nonempty_cells());
 		else energy = 0;
+	}
+
+	///////////////////////////////////////////////////////////////////////////////////////////////
+	//////////////////////////////////////// EVAL SPEEDUP /////////////////////////////////////////
+	///////////////////////////////////////////////////////////////////////////////////////////////
+	
+	else {
+
+		//use evaluation speedup method (Hdemag will have memory allocated - this was done in the Initialize method)
+
+		//update if required by ODE solver or if we don't have enough previous evaluations saved to extrapolate
+		if (pMesh->pSMesh->Check_Step_Update() || num_Hdemag_saved < pMesh->pSMesh->GetEvaluationSpeedup()) {
+
+			VEC<DBL3>* pHdemag;
+
+			if (num_Hdemag_saved < pMesh->pSMesh->GetEvaluationSpeedup()) {
+
+				//don't have enough evaluations, so save next one
+				switch (num_Hdemag_saved)
+				{
+				case 0:
+					pHdemag = &Hdemag;
+					time_demag1 = pMesh->pSMesh->Get_EvalStep_Time();
+					break;
+				case 1:
+					pHdemag = &Hdemag2;
+					time_demag2 = pMesh->pSMesh->Get_EvalStep_Time();
+					break;
+				case 2:
+					pHdemag = &Hdemag3;
+					time_demag3 = pMesh->pSMesh->Get_EvalStep_Time();
+					break;
+				}
+
+				num_Hdemag_saved++;
+			}
+			else {
+
+				//have enough evaluations saved, so just cycle between them now
+				
+				//QUADRATIC
+				if (pMesh->pSMesh->GetEvaluationSpeedup() == 3) {
+
+					//1, 2, 3 -> next is 1
+					if (time_demag3 > time_demag2 && time_demag2 > time_demag1) {
+
+						pHdemag = &Hdemag;
+						time_demag1 = pMesh->pSMesh->Get_EvalStep_Time();
+					}
+					//2, 3, 1 -> next is 2
+					else if (time_demag3 > time_demag2 && time_demag1 > time_demag2) {
+
+						pHdemag = &Hdemag2;
+						time_demag2 = pMesh->pSMesh->Get_EvalStep_Time();
+					}
+					//3, 1, 2 -> next is 3, leading to 1, 2, 3 again
+					else {
+
+						pHdemag = &Hdemag3;
+						time_demag3 = pMesh->pSMesh->Get_EvalStep_Time();
+					}
+				}
+				//LINEAR
+				else if (pMesh->pSMesh->GetEvaluationSpeedup() == 2) {
+
+					//1, 2 -> next is 1
+					if (time_demag2 > time_demag1) {
+
+						pHdemag = &Hdemag;
+						time_demag1 = pMesh->pSMesh->Get_EvalStep_Time();
+					}
+					//2, 1 -> next is 2, leading to 1, 2 again
+					else {
+
+						pHdemag = &Hdemag2;
+						time_demag2 = pMesh->pSMesh->Get_EvalStep_Time();
+					}
+				}
+				//STEP
+				else {
+
+					pHdemag = &Hdemag;
+				}
+			}
+			
+			//do evaluation
+			if (pMesh->GetMeshType() == MESH_ANTIFERROMAGNETIC) {
+
+				if (Module_Heff.linear_size()) energy = Convolute_AveragedInputs(pMesh->M, pMesh->M2, *pHdemag, true, &Module_Heff, &Module_energy);
+				else energy = Convolute_AveragedInputs(pMesh->M, pMesh->M2, *pHdemag, true);
+			}
+			else {
+
+				if (Module_Heff.linear_size()) energy = Convolute(pMesh->M, *pHdemag, true, &Module_Heff, &Module_energy);
+				else energy = Convolute(pMesh->M, *pHdemag, true);
+			}
+
+			//finish off energy value
+			if (pMesh->M.get_nonempty_cells()) energy *= -MU0 / (2 * pMesh->M.get_nonempty_cells());
+			else energy = 0;
+
+			if (pMesh->GetMeshType() == MESH_ANTIFERROMAGNETIC) {
+
+				//add contribution to Heff and Heff2
+#pragma omp parallel for
+				for (int idx = 0; idx < pHdemag->linear_size(); idx++) {
+
+					pMesh->Heff[idx] += (*pHdemag)[idx];
+					pMesh->Heff2[idx] += (*pHdemag)[idx];
+					//subtract self demag contribution: we'll add in again for the new magnetization, so it least the self demag is exact
+					(*pHdemag)[idx] -= (selfDemagCoeff & (pMesh->M[idx] + pMesh->M2[idx]) / 2);
+				}
+			}
+			else {
+
+				//add contribution to Heff
+#pragma omp parallel for
+				for (int idx = 0; idx < pHdemag->linear_size(); idx++) {
+
+					pMesh->Heff[idx] += (*pHdemag)[idx];
+					//subtract self demag contribution: we'll add in again for the new magnetization, so it least the self demag is exact
+					(*pHdemag)[idx] -= (selfDemagCoeff & pMesh->M[idx]);
+				}
+			}
+		}
+		else {
+
+			//not required to update, and we have enough previous evaluations: use previous Hdemag saves to extrapolate for current evaluation
+
+			double a1 = 1.0, a2 = 0.0, a3 = 0.0;
+			double time = pMesh->pSMesh->Get_EvalStep_Time();
+
+			//QUADRATIC
+			if (pMesh->pSMesh->GetEvaluationSpeedup() == 3) {
+
+				if (time_demag2 != time_demag1 && time_demag2 != time_demag3 && time_demag1 != time_demag3) {
+
+					a1 = (time - time_demag2) * (time - time_demag3) / ((time_demag1 - time_demag2) * (time_demag1 - time_demag3));
+					a2 = (time - time_demag1) * (time - time_demag3) / ((time_demag2 - time_demag1) * (time_demag2 - time_demag3));
+					a3 = (time - time_demag1) * (time - time_demag2) / ((time_demag3 - time_demag1) * (time_demag3 - time_demag2));
+				}
+
+				if (pMesh->GetMeshType() == MESH_ANTIFERROMAGNETIC) {
+
+					//add contribution to Heff and Heff2
+#pragma omp parallel for
+					for (int idx = 0; idx < Hdemag.linear_size(); idx++) {
+
+						DBL3 Hdemag_value = Hdemag[idx] * a1 + Hdemag2[idx] * a2 + Hdemag3[idx] * a3 + (selfDemagCoeff & (pMesh->M[idx] + pMesh->M2[idx]) / 2);
+						pMesh->Heff[idx] += Hdemag_value;
+						pMesh->Heff2[idx] += Hdemag_value;
+					}
+				}
+				else {
+
+					//add contribution to Heff
+#pragma omp parallel for
+					for (int idx = 0; idx < Hdemag.linear_size(); idx++) {
+
+						pMesh->Heff[idx] += Hdemag[idx] * a1 + Hdemag2[idx] * a2 + Hdemag3[idx] * a3 + (selfDemagCoeff & pMesh->M[idx]);
+					}
+				}
+			}
+			//LINEAR
+			else if (pMesh->pSMesh->GetEvaluationSpeedup() == 2) {
+
+				if (time_demag2 != time_demag1) {
+
+					a1 = (time - time_demag2) / (time_demag1 - time_demag2);
+					a2 = (time - time_demag1) / (time_demag2 - time_demag1);
+				}
+
+				if (pMesh->GetMeshType() == MESH_ANTIFERROMAGNETIC) {
+
+					//add contribution to Heff and Heff2
+#pragma omp parallel for
+					for (int idx = 0; idx < Hdemag.linear_size(); idx++) {
+
+						DBL3 Hdemag_value = Hdemag[idx] * a1 + Hdemag2[idx] * a2 + (selfDemagCoeff & (pMesh->M[idx] + pMesh->M2[idx]) / 2);
+						pMesh->Heff[idx] += Hdemag_value;
+						pMesh->Heff2[idx] += Hdemag_value;
+					}
+				}
+				else {
+
+					//add contribution to Heff
+#pragma omp parallel for
+					for (int idx = 0; idx < Hdemag.linear_size(); idx++) {
+
+						pMesh->Heff[idx] += Hdemag[idx] * a1 + Hdemag2[idx] * a2 + (selfDemagCoeff & pMesh->M[idx]);
+					}
+				}
+			}
+			//STEP
+			else {
+
+				if (pMesh->GetMeshType() == MESH_ANTIFERROMAGNETIC) {
+
+					//add contribution to Heff and Heff2
+#pragma omp parallel for
+					for (int idx = 0; idx < Hdemag.linear_size(); idx++) {
+
+						DBL3 Hdemag_value = Hdemag[idx] + (selfDemagCoeff & (pMesh->M[idx] + pMesh->M2[idx]) / 2);
+						pMesh->Heff[idx] += Hdemag_value;
+						pMesh->Heff2[idx] += Hdemag_value;
+					}
+				}
+				else {
+
+					//add contribution to Heff
+#pragma omp parallel for
+					for (int idx = 0; idx < Hdemag.linear_size(); idx++) {
+
+						pMesh->Heff[idx] += Hdemag[idx] + (selfDemagCoeff & pMesh->M[idx]);
+					}
+				}
+			}
+		}
 	}
 
 	return energy;

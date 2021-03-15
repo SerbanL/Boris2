@@ -32,7 +32,18 @@ protected:
 	ModulesCUDA* pModuleCUDA = nullptr;
 #endif
 
-private: //Private methods
+	//effective field in this module : if sized then module should be updating this if appropriate, else skip saving effective field
+	//2nd VEC used for 2-sublattice modules
+	VEC<DBL3> Module_Heff, Module_Heff2;
+
+	//energy (density) spatial variation : if sized then module should be updating this is appropriate, else skip saving energy density
+	//2nd VEC used for 2-sublattice modules
+	VEC<double> Module_energy, Module_energy2;
+
+protected:
+
+	//zero the VECs if not empty
+	void ZeroModuleVECs(void);
 
 public:
 
@@ -114,6 +125,30 @@ public:
 	void UpdateFieldCUDA(void) { if (pModuleCUDA) pModuleCUDA->UpdateField(); }
 #endif
 
+	//-------------------------- Effective field and energy VECs
+
+	//Make sure memory is allocated correctly for display data if used, else free memory
+	BError Update_Module_Display_VECs(DBL3 h, Rect meshRect, bool Module_Heff_used, bool Module_Energy_used, bool twosublattice = false);
+
+	//Get VECs for display
+	VEC<DBL3>& Get_Module_Heff(void) { return Module_Heff; }
+	VEC<DBL3>& Get_Module_Heff2(void) { return Module_Heff2; }
+
+	//Get VECs for display
+	VEC<double>& Get_Module_Energy(void) { return Module_energy; }
+	VEC<double>& Get_Module_Energy2(void) { return Module_energy2; }
+
+#if COMPILECUDA == 1
+	//IMPORTANT : only use these if pModuleCUDA is not nullptr (so only before checking if CUDA switched on)
+	//Get VECs for display
+	cu_obj<cuVEC<cuReal3>>& Get_Module_HeffCUDA(void) { return pModuleCUDA->Get_Module_Heff(); }
+	cu_obj<cuVEC<cuReal3>>& Get_Module_Heff2CUDA(void) { return pModuleCUDA->Get_Module_Heff2(); }
+
+	//Get VECs for display
+	cu_obj<cuVEC<cuBReal>>& Get_Module_EnergyCUDA(void) { return pModuleCUDA->Get_Module_Energy(); }
+	cu_obj<cuVEC<cuBReal>>& Get_Module_Energy2CUDA(void) { return pModuleCUDA->Get_Module_Energy2(); }
+#endif
+
 	//-------------------------- Getters
 
 #if COMPILECUDA == 1
@@ -128,26 +163,16 @@ public:
 		return initialized;
 	}
 
+	//-------------------------- Energies
+
 	//Get energy density averaged over the entire mesh during the UpdateField call
-	double GetEnergyDensity(void) 
-	{ 
-#if COMPILECUDA == 1
-		if (pModuleCUDA) return pModuleCUDA->GetEnergyDensity();
-#endif
-		return energy;
-	}
+	double GetEnergyDensity(void);
 
-	//Callculate the energy density in the given rect only
-	//by default this is the same as the above method, but if modules can return the energy density in a given rect this method will be overloaded
-	virtual double GetEnergyDensity(Rect& avRect)
-	{
-#if COMPILECUDA == 1
-		if (pModuleCUDA) return pModuleCUDA->GetEnergyDensity();
-#endif
-		return energy;
-	}
+	//Calculate the energy density in the given rect only
+	double GetEnergyDensity(Rect& avRect);
 
-	//return atomistic energy for given spin index (for a simple cubic mesh this coincides with the index in M1, but for other crystal structures it does not - individual mesh modules will know what to do).
+	//return atomistic energy change from current spin to new spin (for a simple cubic mesh current spin coincides with the index in M1, but for other crystal structures it does not - individual mesh modules will know what to do).
 	//Implement as appropriate.
-	virtual double Get_Atomistic_Energy(int spin_index) { return 0.0; }
+	//Return new - old energy to be used with monte Carlo methods
+	virtual double Get_Atomistic_EnergyChange(int spin_index, DBL3 Mnew) { return 0.0; }
 };

@@ -105,12 +105,40 @@ PhysQ Atom_MeshCUDA::FetchOnScreenPhysicalQuantity(double detail_level, bool get
 		break;
 
 	case MESHDISPLAY_EFFECTIVEFIELD:
+		if ((MOD_)paMesh->Get_Module_Heff_Display() == MOD_ALL || (MOD_)paMesh->Get_Module_Heff_Display() == MOD_ERROR) {
 
-		if (prepare_display(n, meshRect, detail_level, Heff1)) {
+			if (prepare_display(n, meshRect, detail_level, Heff1)) {
 
-			//return PhysQ made from the cpu version of coarse mesh display.
-			return PhysQ(pdisplay_vec_vec, physicalQuantity, (VEC3REP_)paMesh->vec3rep);
+				//return PhysQ made from the cpu version of coarse mesh display.
+				return PhysQ(pdisplay_vec_vec, physicalQuantity, (VEC3REP_)paMesh->vec3rep);
+			}
 		}
+		else {
+
+			MOD_ Module_Heff = (MOD_)paMesh->Get_ActualModule_Heff_Display();
+			if (paMesh->IsModuleSet(Module_Heff)) {
+
+				if (prepare_display(n, meshRect, detail_level, paMesh->pMod(Module_Heff)->Get_Module_HeffCUDA())) {
+
+					//return PhysQ made from the cpu version of coarse mesh display.
+					return PhysQ(pdisplay_vec_vec, physicalQuantity, (VEC3REP_)paMesh->vec3rep);
+				}
+			}
+		}
+		break;
+
+	case MESHDISPLAY_ENERGY:
+	{
+		MOD_ Module_Energy = (MOD_)paMesh->Get_ActualModule_Energy_Display();
+		if (paMesh->IsModuleSet(Module_Energy)) {
+
+			if (prepare_display(n, meshRect, detail_level, paMesh->pMod(Module_Energy)->Get_Module_EnergyCUDA())) {
+
+				//return PhysQ made from the cpu version of coarse mesh display.
+				return PhysQ(pdisplay_vec_sca, physicalQuantity);
+			}
+		}
+	}
 		break;
 
 	case MESHDISPLAY_TEMPERATURE:
@@ -202,10 +230,31 @@ BError Atom_MeshCUDA::SaveOnScreenPhysicalQuantity(std::string fileName, std::st
 		break;
 
 	case MESHDISPLAY_EFFECTIVEFIELD:
+		if ((MOD_)paMesh->Get_Module_Heff_Display() == MOD_ALL || (MOD_)paMesh->Get_Module_Heff_Display() == MOD_ERROR) {
 
-		//pdisplay_vec_vec at maximum resolution
-		prepare_display(n, meshRect, h.mindim(), Heff1);
-		error = ovf2.Write_OVF2_VEC(fileName, *pdisplay_vec_vec, ovf2_dataType);
+			prepare_display(n, meshRect, h.mindim(), Heff1);
+			error = ovf2.Write_OVF2_VEC(fileName, *pdisplay_vec_vec, ovf2_dataType);
+		}
+		else {
+
+			MOD_ Module_Heff = (MOD_)paMesh->Get_ActualModule_Heff_Display();
+			if (paMesh->IsModuleSet(Module_Heff)) {
+
+				prepare_display(n, meshRect, h.mindim(), paMesh->pMod(Module_Heff)->Get_Module_HeffCUDA());
+				error = ovf2.Write_OVF2_VEC(fileName, *pdisplay_vec_vec, ovf2_dataType);
+			}
+		}
+		break;
+
+	case MESHDISPLAY_ENERGY:
+	{
+		MOD_ Module_Energy = (MOD_)paMesh->Get_ActualModule_Energy_Display();
+		if (paMesh->IsModuleSet(Module_Energy)) {
+
+			prepare_display(n, meshRect, h.mindim(), paMesh->pMod(Module_Energy)->Get_Module_EnergyCUDA());
+			error = ovf2.Write_OVF2_SCA(fileName, *pdisplay_vec_sca, ovf2_dataType);
+		}
+	}
 		break;
 
 	case MESHDISPLAY_TEMPERATURE:
@@ -438,6 +487,11 @@ BError Atom_MeshCUDA::copy_shapes_to_cpu(void)
 cu_obj<ManagedAtom_DiffEq_CommonCUDA>& Atom_MeshCUDA::Get_ManagedAtom_DiffEq_CommonCUDA(void)
 {
 	return paMesh->pSMesh->Get_ManagedAtom_DiffEq_CommonCUDA();
+}
+
+std::vector<DBL4>& Atom_MeshCUDA::get_tensorial_anisotropy(void)
+{
+	return paMesh->Kt;
 }
 
 #endif

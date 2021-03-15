@@ -13,8 +13,7 @@ MetalMesh::MetalMesh(SuperMesh *pSMesh_) :
 		{
 			//Mesh members
 			VINFO(meshType), VINFO(meshIdCounter), VINFO(meshId), 
-			VINFO(displayedPhysicalQuantity), VINFO(displayedBackgroundPhysicalQuantity), 
-			VINFO(vec3rep), VINFO(displayedParamVar), 
+			VINFO(displayedPhysicalQuantity), VINFO(displayedBackgroundPhysicalQuantity), VINFO(vec3rep), VINFO(displayedParamVar), VINFO(Module_Heff_Display), VINFO(Module_Energy_Display),
 			VINFO(meshRect), VINFO(n_e), VINFO(h_e), VINFO(n_t), VINFO(h_t), VINFO(n_m), VINFO(h_m), 
 			VINFO(V), VINFO(S), VINFO(elC), VINFO(Temp), VINFO(Temp_l), 
 			VINFO(pMod),
@@ -36,8 +35,7 @@ MetalMesh::MetalMesh(Rect meshRect_, DBL3 h_, SuperMesh *pSMesh_) :
 		{
 			//Mesh members
 			VINFO(meshType), VINFO(meshIdCounter), VINFO(meshId),
-			VINFO(displayedPhysicalQuantity), VINFO(displayedBackgroundPhysicalQuantity),
-			VINFO(vec3rep), VINFO(displayedParamVar),
+			VINFO(displayedPhysicalQuantity), VINFO(displayedBackgroundPhysicalQuantity), VINFO(vec3rep), VINFO(displayedParamVar), VINFO(Module_Heff_Display), VINFO(Module_Energy_Display),
 			VINFO(meshRect), VINFO(n_e), VINFO(h_e), VINFO(n_t), VINFO(h_t), VINFO(n_m), VINFO(h_m),
 			VINFO(V), VINFO(S), VINFO(elC), VINFO(Temp), VINFO(Temp_l),
 			VINFO(pMod),

@@ -36,11 +36,17 @@ public:
 	MatPCUDA<cuBReal, cuBReal>* pD;
 
 	//Magneto-crystalline anisotropy constants (J) and easy axes directions. For uniaxial anisotropy only ea1 is needed.
-	MatPCUDA<cuBReal, cuBReal>* pK;
+	MatPCUDA<cuBReal, cuBReal>* pK1;
+	MatPCUDA<cuBReal, cuBReal>* pK2;
+	MatPCUDA<cuBReal, cuBReal>* pK3;
 
 	//Magneto-crystalline anisotropy easy axes directions
 	MatPCUDA<cuReal3, cuReal3>* pmcanis_ea1;
 	MatPCUDA<cuReal3, cuReal3>* pmcanis_ea2;
+	MatPCUDA<cuReal3, cuReal3>* pmcanis_ea3;
+
+	//Tensorial anisotropy terms
+	cuVEC<cuReal4> *pKt;
 
 	//-----------BCC (2 per unit cell)
 
@@ -260,26 +266,35 @@ public:
 
 	//SIMPLE CUBIC
 
-	//switch function which adds all assigned energy contributions in this mesh
-	__device__ cuBReal Get_Atomistic_Energy_SC(int spin_index, int*& cuaModules, int numModules, cuReal3& Ha);
+	//switch function which adds all assigned energy contributions in this mesh to calculate energy change from current spin to Mnew spin : return energy change as new - old
+	__device__ cuBReal Get_Atomistic_EnergyChange_SC(int spin_index, cuReal3 Mnew, int*& cuaModules, int numModules, cuReal3& Ha);
+
+	//Atom_Demag_N
+	__device__ cuBReal Get_Atomistic_EnergyChange_SC_DemagNCUDA(int spin_index, cuReal3 Mnew);
 
 	//Atom_ExchangeCUDA
-	__device__ cuBReal Get_Atomistic_Energy_SC_ExchangeCUDA(int spin_index);
+	__device__ cuBReal Get_Atomistic_EnergyChange_SC_ExchangeCUDA(int spin_index, cuReal3 Mnew);
 
 	//Atom_DMExchangeCUDA
-	__device__ cuBReal Get_Atomistic_Energy_SC_DMExchangeCUDA(int spin_index);
+	__device__ cuBReal Get_Atomistic_EnergyChange_SC_DMExchangeCUDA(int spin_index, cuReal3 Mnew);
 
 	//Atom_iDMExchangeCUDA
-	__device__ cuBReal Get_Atomistic_Energy_SC_iDMExchangeCUDA(int spin_index);
+	__device__ cuBReal Get_Atomistic_EnergyChange_SC_iDMExchangeCUDA(int spin_index, cuReal3 Mnew);
 
 	//Atom_ZeemanCUDA
-	__device__ cuBReal Get_Atomistic_Energy_SC_ZeemanCUDA(int spin_index, cuReal3& Ha);
+	__device__ cuBReal Get_Atomistic_EnergyChange_SC_ZeemanCUDA(int spin_index, cuReal3 Mnew, cuReal3& Ha);
 
 	//Atom_AnisotropyCUDA
-	__device__ cuBReal Get_Atomistic_Energy_SC_AnisotropyCUDA(int spin_index);
+	__device__ cuBReal Get_Atomistic_EnergyChange_SC_AnisotropyCUDA(int spin_index, cuReal3 Mnew);
 
 	//Atom_AnisotropyCubiCUDA
-	__device__ cuBReal Get_Atomistic_Energy_SC_AnisotropyCubiCUDA(int spin_index);
+	__device__ cuBReal Get_Atomistic_EnergyChange_SC_AnisotropyCubiCUDA(int spin_index, cuReal3 Mnew);
+
+	//Atom_AnisotropyBiaxialCUDA
+	__device__ cuBReal Get_Atomistic_EnergyChange_SC_AnisotropyBiaxialCUDA(int spin_index, cuReal3 Mnew);
+
+	//Atom_AnisotropyTensorialCUDA
+	__device__ cuBReal Get_Atomistic_EnergyChange_SC_AnisotropyTensorialCUDA(int spin_index, cuReal3 Mnew);
 };
 
 #endif

@@ -40,6 +40,11 @@ template bool cuVEC<cuSZ3>::mapmesh_newdims(const cuSZ3& new_n);
 template bool cuVEC<cuFLT3>::mapmesh_newdims(const cuSZ3& new_n);
 template bool cuVEC<cuDBL3>::mapmesh_newdims(const cuSZ3& new_n);
 
+template bool cuVEC<cuINT4>::mapmesh_newdims(const cuSZ3& new_n);
+template bool cuVEC<cuSZ4>::mapmesh_newdims(const cuSZ3& new_n);
+template bool cuVEC<cuFLT4>::mapmesh_newdims(const cuSZ3& new_n);
+template bool cuVEC<cuDBL4>::mapmesh_newdims(const cuSZ3& new_n);
+
 template bool cuVEC<cuINT33>::mapmesh_newdims(const cuSZ3& new_n);
 template bool cuVEC<cuFLT33>::mapmesh_newdims(const cuSZ3& new_n);
 template bool cuVEC<cuDBL33>::mapmesh_newdims(const cuSZ3& new_n);
@@ -187,6 +192,11 @@ template void cuVEC<cuSZ3>::extract_cuvec(size_t size, cuVEC<cuSZ3>& cuvec);
 template void cuVEC<cuFLT3>::extract_cuvec(size_t size, cuVEC<cuFLT3>& cuvec);
 template void cuVEC<cuDBL3>::extract_cuvec(size_t size, cuVEC<cuDBL3>& cuvec);
 
+template void cuVEC<cuINT4>::extract_cuvec(size_t size, cuVEC<cuINT4>& cuvec);
+template void cuVEC<cuSZ4>::extract_cuvec(size_t size, cuVEC<cuSZ4>& cuvec);
+template void cuVEC<cuFLT4>::extract_cuvec(size_t size, cuVEC<cuFLT4>& cuvec);
+template void cuVEC<cuDBL4>::extract_cuvec(size_t size, cuVEC<cuDBL4>& cuvec);
+
 template void cuVEC<cuINT33>::extract_cuvec(size_t size, cuVEC<cuINT33>& cuvec);
 template void cuVEC<cuFLT33>::extract_cuvec(size_t size, cuVEC<cuFLT33>& cuvec);
 template void cuVEC<cuDBL33>::extract_cuvec(size_t size, cuVEC<cuDBL33>& cuvec);
@@ -227,6 +237,11 @@ template void cuVEC<cuSZ3>::load_cuarr(size_t size, cu_arr<cuSZ3>& input);
 template void cuVEC<cuFLT3>::load_cuarr(size_t size, cu_arr<cuFLT3>& input);
 template void cuVEC<cuDBL3>::load_cuarr(size_t size, cu_arr<cuDBL3>& input);
 
+template void cuVEC<cuINT4>::load_cuarr(size_t size, cu_arr<cuINT4>& input);
+template void cuVEC<cuSZ4>::load_cuarr(size_t size, cu_arr<cuSZ4>& input);
+template void cuVEC<cuFLT4>::load_cuarr(size_t size, cu_arr<cuFLT4>& input);
+template void cuVEC<cuDBL4>::load_cuarr(size_t size, cu_arr<cuDBL4>& input);
+
 template void cuVEC<cuINT33>::load_cuarr(size_t size, cu_arr<cuINT33>& input);
 template void cuVEC<cuFLT33>::load_cuarr(size_t size, cu_arr<cuFLT33>& input);
 template void cuVEC<cuDBL33>::load_cuarr(size_t size, cu_arr<cuDBL33>& input);
@@ -265,6 +280,11 @@ template void cuVEC<cuINT3>::store_cuarr(size_t size, cu_arr<cuINT3>& output);
 template void cuVEC<cuSZ3>::store_cuarr(size_t size, cu_arr<cuSZ3>& output);
 template void cuVEC<cuFLT3>::store_cuarr(size_t size, cu_arr<cuFLT3>& output);
 template void cuVEC<cuDBL3>::store_cuarr(size_t size, cu_arr<cuDBL3>& output);
+
+template void cuVEC<cuINT4>::store_cuarr(size_t size, cu_arr<cuINT4>& output);
+template void cuVEC<cuSZ4>::store_cuarr(size_t size, cu_arr<cuSZ4>& output);
+template void cuVEC<cuFLT4>::store_cuarr(size_t size, cu_arr<cuFLT4>& output);
+template void cuVEC<cuDBL4>::store_cuarr(size_t size, cu_arr<cuDBL4>& output);
 
 template void cuVEC<cuINT33>::store_cuarr(size_t size, cu_arr<cuINT33>& output);
 template void cuVEC<cuFLT33>::store_cuarr(size_t size, cu_arr<cuFLT33>& output);

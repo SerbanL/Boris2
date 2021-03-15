@@ -98,6 +98,90 @@ void AFMesh::SetMagAngle_Object(double polar, double azim, DBL3 position)
 #endif
 }
 
+//Flower state magnetization
+void AFMesh::SetMagFlower(int direction, DBL3 centre, double radius, double thickness)
+{
+#if COMPILECUDA == 1
+	//refresh M from gpu memory
+	if (pMeshCUDA) {
+
+		pMeshCUDA->M()->copy_to_cpuvec(M);
+		pMeshCUDA->M2()->copy_to_cpuvec(M2);
+	}
+#endif
+
+	if (M.linear_size()) {
+		
+		M.generate_flower(direction, centre, radius, thickness);
+		M2.generate_flower(direction * -1, centre, radius, thickness);
+	}
+
+#if COMPILECUDA == 1
+	//refresh gpu memory
+	if (pMeshCUDA) {
+
+		pMeshCUDA->M()->copy_from_cpuvec(M);
+		pMeshCUDA->M2()->copy_from_cpuvec(M2);
+	}
+#endif
+}
+
+//Onion state magnetization
+void AFMesh::SetMagOnion(int direction, DBL3 centre, double radius1, double radius2, double thickness)
+{
+#if COMPILECUDA == 1
+	//refresh M from gpu memory
+	if (pMeshCUDA) {
+
+		pMeshCUDA->M()->copy_to_cpuvec(M);
+		pMeshCUDA->M2()->copy_to_cpuvec(M2);
+	}
+#endif
+
+	if (M.linear_size()) {
+
+		M.generate_onion(direction, centre, radius1, radius2, thickness);
+		M2.generate_onion(direction * -1, centre, radius1, radius2, thickness);
+	}
+
+#if COMPILECUDA == 1
+	//refresh gpu memory
+	if (pMeshCUDA) {
+
+		pMeshCUDA->M()->copy_from_cpuvec(M);
+		pMeshCUDA->M2()->copy_from_cpuvec(M2);
+	}
+#endif
+}
+
+//Crosstie state magnetization
+void AFMesh::SetMagCrosstie(int direction, DBL3 centre, double radius, double thickness)
+{
+#if COMPILECUDA == 1
+	//refresh M from gpu memory
+	if (pMeshCUDA) {
+
+		pMeshCUDA->M()->copy_to_cpuvec(M);
+		pMeshCUDA->M2()->copy_to_cpuvec(M2);
+	}
+#endif
+
+	if (M.linear_size()) {
+
+		M.generate_crosstie(direction, centre, radius, thickness);
+		M2.generate_crosstie(direction * -1, centre, radius, thickness);
+	}
+
+#if COMPILECUDA == 1
+	//refresh gpu memory
+	if (pMeshCUDA) {
+
+		pMeshCUDA->M()->copy_from_cpuvec(M);
+		pMeshCUDA->M2()->copy_from_cpuvec(M2);
+	}
+#endif
+}
+
 //Invert magnetization direction in given mesh (must be magnetic)
 void AFMesh::SetInvertedMag(bool x, bool y, bool z)
 {
@@ -244,6 +328,41 @@ void AFMesh::SetRandomMag(int seed)
 			double phi = prng.rand() * TWO_PI;
 
 			M[idx] = M[idx].norm() * DBL3(cos(phi)*sin(theta), sin(phi)*sin(theta), cos(theta));
+			M2[idx] = -1.0 * M[idx];
+		}
+	}
+
+#if COMPILECUDA == 1
+	//refresh gpu memory
+	if (pMeshCUDA) {
+
+		pMeshCUDA->M()->copy_from_cpuvec(M);
+		pMeshCUDA->M2()->copy_from_cpuvec(M2);
+	}
+#endif
+}
+
+void AFMesh::SetRandomXYMag(int seed)
+{
+#if COMPILECUDA == 1
+	//refresh M from gpu memory
+	if (pMeshCUDA) {
+
+		pMeshCUDA->M()->copy_to_cpuvec(M);
+		pMeshCUDA->M2()->copy_to_cpuvec(M2);
+	}
+#endif
+
+	BorisRand prng(seed);
+
+#pragma omp parallel for
+	for (int idx = 0; idx < M.linear_size(); idx++) {
+
+		if (M.is_not_empty(idx)) {
+
+			double phi = prng.rand() * TWO_PI;
+
+			M[idx] = M[idx].norm() * DBL3(cos(phi), sin(phi), 0.0);
 			M2[idx] = -1.0 * M[idx];
 		}
 	}

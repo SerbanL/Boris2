@@ -65,7 +65,13 @@ BError Anisotropy_Uniaxial::Initialize(void)
 { 	
 	BError error(CLASS_STR(Anisotropy_Uniaxial));
 	
-	initialized = true;
+	//Make sure display data has memory allocated (or freed) as required
+	error = Update_Module_Display_VECs(
+		pMesh->h, pMesh->meshRect, 
+		(MOD_)pMesh->Get_Module_Heff_Display() == MOD_ANIUNI || pMesh->IsOutputDataSet_withRect(DATA_E_ANIS),
+		(MOD_)pMesh->Get_Module_Energy_Display() == MOD_ANIUNI || pMesh->IsOutputDataSet_withRect(DATA_E_ANIS),
+		pMesh->GetMeshType() == MESH_ANTIFERROMAGNETIC);
+	if (!error)	initialized = true;
 
 	return error;
 }
@@ -75,8 +81,6 @@ BError Anisotropy_Uniaxial::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 	BError error(CLASS_STR(Anisotropy_Uniaxial));
 
 	Uninitialize();
-
-	Initialize();
 
 	//------------------------ CUDA UpdateConfiguration if set
 
@@ -124,7 +128,6 @@ double Anisotropy_Uniaxial::UpdateField(void)
 				double K1 = pMesh->K1;
 				double K2 = pMesh->K2;
 				DBL3 mcanis_ea1 = pMesh->mcanis_ea1;
-
 				pMesh->update_parameters_mcoarse(idx, pMesh->Ms, Ms, pMesh->K1, K1, pMesh->K2, K2, pMesh->mcanis_ea1, mcanis_ea1);
 
 				//calculate m.ea dot product
@@ -137,6 +140,9 @@ double Anisotropy_Uniaxial::UpdateField(void)
 
 				//update energy (E/V) = K1 * sin^2(theta) + K2 * sin^4(theta) = K1 * [ 1 - dotprod*dotprod ] + K2 * [1 - dotprod * dotprod]^2
 				energy += (K1 + K2 * (1 - dotprod * dotprod)) * (1 - dotprod * dotprod);
+
+				if (Module_Heff.linear_size()) Module_Heff[idx] = Heff_value;
+				if (Module_energy.linear_size()) Module_energy[idx] = (K1 + K2 * (1 - dotprod * dotprod)) * (1 - dotprod * dotprod);
 			}
 		}
 	}
@@ -152,7 +158,6 @@ double Anisotropy_Uniaxial::UpdateField(void)
 				DBL2 K1_AFM = pMesh->K1_AFM;
 				DBL2 K2_AFM = pMesh->K2_AFM;
 				DBL3 mcanis_ea1 = pMesh->mcanis_ea1;
-
 				pMesh->update_parameters_mcoarse(idx, pMesh->Ms_AFM, Ms_AFM, pMesh->K1_AFM, K1_AFM, pMesh->K2_AFM, K2_AFM, pMesh->mcanis_ea1, mcanis_ea1);
 
 				//calculate m.ea dot product
@@ -168,6 +173,11 @@ double Anisotropy_Uniaxial::UpdateField(void)
 
 				//update energy (E/V) = K1 * sin^2(theta) + K2 * sin^4(theta) = K1 * [ 1 - dotprod*dotprod ] + K2 * [1 - dotprod * dotprod]^2
 				energy += ((K1_AFM.i + K2_AFM.i * (1 - dotprod * dotprod)) * (1 - dotprod * dotprod) + (K1_AFM.j + K2_AFM.j * (1 - dotprod2 * dotprod2)) * (1 - dotprod2 * dotprod2)) / 2;
+
+				if (Module_Heff.linear_size()) Module_Heff[idx] = Heff_value;
+				if (Module_Heff2.linear_size()) Module_Heff2[idx] = Heff_value2;
+				if (Module_energy.linear_size()) Module_energy[idx] = (K1_AFM.i + K2_AFM.i * (1 - dotprod * dotprod)) * (1 - dotprod * dotprod);
+				if (Module_energy2.linear_size()) Module_energy2[idx] = (K1_AFM.j + K2_AFM.j * (1 - dotprod2 * dotprod2)) * (1 - dotprod2 * dotprod2);
 			}
 		}
 	}
@@ -178,79 +188,6 @@ double Anisotropy_Uniaxial::UpdateField(void)
 	this->energy = energy;
 
 	return this->energy;
-}
-
-//-------------------Energy density methods
-
-double Anisotropy_Uniaxial::GetEnergyDensity(Rect& avRect)
-{
-#if COMPILECUDA == 1
-	if (pModuleCUDA) return dynamic_cast<Anisotropy_UniaxialCUDA*>(pModuleCUDA)->GetEnergyDensity(avRect);
-#endif
-
-	double energy = 0;
-
-	int num_points = 0;
-
-	if (pMesh->GetMeshType() == MESH_FERROMAGNETIC) {
-
-#pragma omp parallel for reduction(+:energy, num_points)
-		for (int idx = 0; idx < pMesh->n.dim(); idx++) {
-
-			//only average over values in given rectangle
-			if (!avRect.contains(pMesh->M.cellidx_to_position(idx))) continue;
-
-			if (pMesh->M.is_not_empty(idx)) {
-
-				double Ms = pMesh->Ms;
-				double K1 = pMesh->K1;
-				double K2 = pMesh->K2;
-				DBL3 mcanis_ea1 = pMesh->mcanis_ea1;
-
-				pMesh->update_parameters_mcoarse(idx, pMesh->Ms, Ms, pMesh->K1, K1, pMesh->K2, K2, pMesh->mcanis_ea1, mcanis_ea1);
-
-				//calculate m.ea dot product
-				double dotprod = (pMesh->M[idx] * mcanis_ea1) / Ms;
-
-				//update energy (E/V) = K1 * sin^2(theta) + K2 * sin^4(theta) = K1 * [ 1 - dotprod*dotprod ] + K2 * [1 - dotprod * dotprod]^2
-				energy += (K1 + K2 * (1 - dotprod * dotprod)) * (1 - dotprod * dotprod);
-				num_points++;
-			}
-		}
-	}
-
-	else if (pMesh->GetMeshType() == MESH_ANTIFERROMAGNETIC) {
-
-#pragma omp parallel for reduction(+:energy, num_points)
-		for (int idx = 0; idx < pMesh->n.dim(); idx++) {
-
-			//only average over values in given rectangle
-			if (!avRect.contains(pMesh->M.cellidx_to_position(idx))) continue;
-
-			if (pMesh->M.is_not_empty(idx)) {
-
-				DBL2 Ms_AFM = pMesh->Ms_AFM;
-				DBL2 K1_AFM = pMesh->K1_AFM;
-				DBL2 K2_AFM = pMesh->K2_AFM;
-				DBL3 mcanis_ea1 = pMesh->mcanis_ea1;
-
-				pMesh->update_parameters_mcoarse(idx, pMesh->Ms_AFM, Ms_AFM, pMesh->K1_AFM, K1_AFM, pMesh->K2_AFM, K2_AFM, pMesh->mcanis_ea1, mcanis_ea1);
-
-				//calculate m.ea dot product
-				double dotprod = (pMesh->M[idx] * mcanis_ea1) / Ms_AFM.i;
-				double dotprod2 = (pMesh->M2[idx] * mcanis_ea1) / Ms_AFM.j;
-
-				//update energy (E/V) = K1 * sin^2(theta) + K2 * sin^4(theta) = K1 * [ 1 - dotprod*dotprod ] + K2 * [1 - dotprod * dotprod]^2
-				energy += ((K1_AFM.i + K2_AFM.i * (1 - dotprod * dotprod)) * (1 - dotprod * dotprod) + (K1_AFM.j + K2_AFM.j * (1 - dotprod2 * dotprod2)) * (1 - dotprod2 * dotprod2)) / 2;
-				num_points++;
-			}
-		}
-	}
-
-	if (num_points) energy /= num_points;
-	else energy = 0;
-
-	return energy;
 }
 
 #endif

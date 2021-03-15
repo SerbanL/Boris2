@@ -5,6 +5,8 @@
 #ifdef MESH_COMPILATION_ANTIFERROMAGNETIC
 
 #include "Mesh_AntiFerromagnetic.h"
+#include "ManagedDiffEqAFMCUDA.h"
+#include "DiffEqAFMCUDA.h"
 
 AFMeshCUDA::AFMeshCUDA(AFMesh* pMesh) :
 	MeshCUDA(pMesh)
@@ -78,10 +80,17 @@ cuBReal AFMeshCUDA::CheckMoveMesh(bool antisymmetric, double threshold)
 
 //----------------------------------- ENABLED MESH PROPERTIES CHECKERS
 
-	//get exchange_couple_to_meshes status flag from the cpu version
+//get exchange_couple_to_meshes status flag from the cpu version
 bool AFMeshCUDA::GetMeshExchangeCoupling(void)
 {
 	return pAFMesh->GetMeshExchangeCoupling();
+}
+
+//-----------------------------------OBJECT GETTERS
+
+cu_obj<ManagedDiffEqAFMCUDA>& AFMeshCUDA::Get_ManagedDiffEqCUDA(void)
+{
+	return dynamic_cast<DifferentialEquationAFMCUDA*>(pAFMesh->Get_DifferentialEquation().Get_DifferentialEquationCUDA_ptr())->Get_ManagedDiffEqCUDA();
 }
 
 #endif

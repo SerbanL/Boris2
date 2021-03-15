@@ -41,9 +41,17 @@ Anisotropy_Cubic::Anisotropy_Cubic(Mesh *pMesh) :
 
 BError Anisotropy_Cubic::Initialize(void)
 {
-	initialized = true;
+	BError error(CLASS_STR(Anisotropy_Cubic));
 
-	return BError(CLASS_STR(Anisotropy_Cubic));
+	//Make sure display data has memory allocated (or freed) as required
+	error = Update_Module_Display_VECs(
+		pMesh->h, pMesh->meshRect, 
+		(MOD_)pMesh->Get_Module_Heff_Display() == MOD_ANICUBI || pMesh->IsOutputDataSet_withRect(DATA_E_ANIS),
+		(MOD_)pMesh->Get_Module_Energy_Display() == MOD_ANICUBI || pMesh->IsOutputDataSet_withRect(DATA_E_ANIS), 
+		pMesh->GetMeshType() == MESH_ANTIFERROMAGNETIC);
+	if (!error)	initialized = true;
+
+	return error;
 }
 
 BError Anisotropy_Cubic::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
@@ -51,8 +59,6 @@ BError Anisotropy_Cubic::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 	BError error(CLASS_STR(Anisotropy_Cubic));
 
 	Uninitialize();
-
-	Initialize();
 
 	//------------------------ CUDA UpdateConfiguration if set
 
@@ -101,10 +107,8 @@ double Anisotropy_Cubic::UpdateField(void)
 				double K2 = pMesh->K2;
 				DBL3 mcanis_ea1 = pMesh->mcanis_ea1;
 				DBL3 mcanis_ea2 = pMesh->mcanis_ea2;
-				pMesh->update_parameters_mcoarse(idx, pMesh->Ms, Ms, pMesh->K1, K1, pMesh->K2, K2, pMesh->mcanis_ea1, mcanis_ea1, pMesh->mcanis_ea2, mcanis_ea2);
-
-				//vector product of ea1 and ea2 : the third orthogonal axis
-				DBL3 mcanis_ea3 = mcanis_ea1 ^ mcanis_ea2;
+				DBL3 mcanis_ea3 = pMesh->mcanis_ea3;
+				pMesh->update_parameters_mcoarse(idx, pMesh->Ms, Ms, pMesh->K1, K1, pMesh->K2, K2, pMesh->mcanis_ea1, mcanis_ea1, pMesh->mcanis_ea2, mcanis_ea2, pMesh->mcanis_ea3, mcanis_ea3);
 
 				//calculate m.ea1, m.ea2 and m.ea3 dot products
 				double d1 = (pMesh->M[idx] * mcanis_ea1) / Ms;
@@ -112,12 +116,12 @@ double Anisotropy_Cubic::UpdateField(void)
 				double d3 = (pMesh->M[idx] * mcanis_ea3) / Ms;
 
 				//terms for K1 contribution
-				double a1 = d1 * (d2*d2 + d3 * d3);
-				double a2 = d2 * (d1*d1 + d3 * d3);
-				double a3 = d3 * (d1*d1 + d2 * d2);
+				double a1 = d1 * (d2*d2 + d3*d3);
+				double a2 = d2 * (d1*d1 + d3*d3);
+				double a3 = d3 * (d1*d1 + d2*d2);
 
 				//terms for K2 contribution
-				double d123 = d1 * d2*d3;
+				double d123 = d1*d2*d3;
 
 				double b1 = d123 * d2*d3;
 				double b2 = d123 * d1*d3;
@@ -139,6 +143,9 @@ double Anisotropy_Cubic::UpdateField(void)
 
 				//update energy (E/V)
 				energy += K1 * (d1*d1*d2*d2 + d1*d1*d3*d3 + d2*d2*d3*d3) + K2 * d123*d123;
+
+				if (Module_Heff.linear_size()) Module_Heff[idx] = Heff_value;
+				if (Module_energy.linear_size()) Module_energy[idx] = K1 * (d1*d1*d2*d2 + d1*d1*d3*d3 + d2*d2*d3*d3) + K2 * d123*d123;
 			}
 		}
 	}
@@ -155,11 +162,8 @@ double Anisotropy_Cubic::UpdateField(void)
 				DBL2 K2_AFM = pMesh->K2_AFM;
 				DBL3 mcanis_ea1 = pMesh->mcanis_ea1;
 				DBL3 mcanis_ea2 = pMesh->mcanis_ea2;
-
-				pMesh->update_parameters_mcoarse(idx, pMesh->Ms_AFM, Ms_AFM, pMesh->K1_AFM, K1_AFM, pMesh->K2_AFM, K2_AFM, pMesh->mcanis_ea1, mcanis_ea1, pMesh->mcanis_ea2, mcanis_ea2);
-
-				//vector product of ea1 and ea2 : the third orthogonal axis
-				DBL3 mcanis_ea3 = mcanis_ea1 ^ mcanis_ea2;
+				DBL3 mcanis_ea3 = pMesh->mcanis_ea3;
+				pMesh->update_parameters_mcoarse(idx, pMesh->Ms_AFM, Ms_AFM, pMesh->K1_AFM, K1_AFM, pMesh->K2_AFM, K2_AFM, pMesh->mcanis_ea1, mcanis_ea1, pMesh->mcanis_ea2, mcanis_ea2, pMesh->mcanis_ea3, mcanis_ea3);
 
 				//calculate m.ea1, m.ea2 and m.ea3 dot products
 				double d1 = (pMesh->M[idx] * mcanis_ea1) / Ms_AFM.i;
@@ -225,6 +229,11 @@ double Anisotropy_Cubic::UpdateField(void)
 
 				//update energy (E/V)
 				energy += (K1_AFM.i * (d1*d1*d2*d2 + d1*d1*d3*d3 + d2*d2*d3*d3) + K2_AFM.i * d123*d123 + K1_AFM.j * (d1B*d1B*d2B*d2B + d1B*d1B*d3B*d3B + d2B*d2B*d3B*d3B) + K2_AFM.j * d123B*d123B) / 2;
+
+				if (Module_Heff.linear_size()) Module_Heff[idx] = Heff_value;
+				if (Module_Heff2.linear_size()) Module_Heff2[idx] = Heff_value2;
+				if (Module_energy.linear_size()) Module_energy[idx] = K1_AFM.i * (d1*d1*d2*d2 + d1 * d1*d3*d3 + d2 * d2*d3*d3) + K2_AFM.i * d123*d123;
+				if (Module_energy2.linear_size()) Module_energy2[idx] = K2_AFM.i * d123*d123 + K1_AFM.j * (d1B*d1B*d2B*d2B + d1B * d1B*d3B*d3B + d2B * d2B*d3B*d3B) + K2_AFM.j * d123B*d123B;
 			}
 		}
 	}
@@ -235,115 +244,6 @@ double Anisotropy_Cubic::UpdateField(void)
 	this->energy = energy;
 
 	return this->energy;
-}
-
-//-------------------Energy density methods
-
-double Anisotropy_Cubic::GetEnergyDensity(Rect& avRect)
-{
-#if COMPILECUDA == 1
-	if (pModuleCUDA) return dynamic_cast<Anisotropy_CubicCUDA*>(pModuleCUDA)->GetEnergyDensity(avRect);
-#endif
-
-	double energy = 0;
-
-	int num_points = 0;
-
-	if (pMesh->GetMeshType() == MESH_FERROMAGNETIC) {
-
-#pragma omp parallel for reduction(+:energy, num_points)
-		for (int idx = 0; idx < pMesh->n.dim(); idx++) {
-
-			//only average over values in given rectangle
-			if (!avRect.contains(pMesh->M.cellidx_to_position(idx))) continue;
-
-			if (pMesh->M.is_not_empty(idx)) {
-
-				double Ms = pMesh->Ms;
-				double K1 = pMesh->K1;
-				double K2 = pMesh->K2;
-				DBL3 mcanis_ea1 = pMesh->mcanis_ea1;
-				DBL3 mcanis_ea2 = pMesh->mcanis_ea2;
-				pMesh->update_parameters_mcoarse(idx, pMesh->Ms, Ms, pMesh->K1, K1, pMesh->K2, K2, pMesh->mcanis_ea1, mcanis_ea1, pMesh->mcanis_ea2, mcanis_ea2);
-
-				//vector product of ea1 and ea2 : the third orthogonal axis
-				DBL3 mcanis_ea3 = mcanis_ea1 ^ mcanis_ea2;
-
-				//calculate m.ea1, m.ea2 and m.ea3 dot products
-				double d1 = (pMesh->M[idx] * mcanis_ea1) / Ms;
-				double d2 = (pMesh->M[idx] * mcanis_ea2) / Ms;
-				double d3 = (pMesh->M[idx] * mcanis_ea3) / Ms;
-
-				//terms for K2 contribution
-				double d123 = d1*d2*d3;
-
-				double b1 = d123 * d2*d3;
-				double b2 = d123 * d1*d3;
-				double b3 = d123 * d1*d2;
-
-				//update energy (E/V)
-				energy += K1 * (d1*d1*d2*d2 + d1*d1*d3*d3 + d2*d2*d3*d3) + K2 * d123*d123;
-				num_points++;
-			}
-		}
-	}
-
-	else if (pMesh->GetMeshType() == MESH_ANTIFERROMAGNETIC) {
-
-#pragma omp parallel for reduction(+:energy, num_points)
-		for (int idx = 0; idx < pMesh->n.dim(); idx++) {
-
-			//only average over values in given rectangle
-			if (!avRect.contains(pMesh->M.cellidx_to_position(idx))) continue;
-
-			if (pMesh->M.is_not_empty(idx)) {
-
-				DBL2 Ms_AFM = pMesh->Ms_AFM;
-				DBL2 K1_AFM = pMesh->K1_AFM;
-				DBL2 K2_AFM = pMesh->K2_AFM;
-				DBL3 mcanis_ea1 = pMesh->mcanis_ea1;
-				DBL3 mcanis_ea2 = pMesh->mcanis_ea2;
-
-				pMesh->update_parameters_mcoarse(idx, pMesh->Ms_AFM, Ms_AFM, pMesh->K1_AFM, K1_AFM, pMesh->K2_AFM, K2_AFM, pMesh->mcanis_ea1, mcanis_ea1, pMesh->mcanis_ea2, mcanis_ea2);
-
-				//vector product of ea1 and ea2 : the third orthogonal axis
-				DBL3 mcanis_ea3 = mcanis_ea1 ^ mcanis_ea2;
-
-				//calculate m.ea1, m.ea2 and m.ea3 dot products
-				double d1 = (pMesh->M[idx] * mcanis_ea1) / Ms_AFM.i;
-				double d2 = (pMesh->M[idx] * mcanis_ea2) / Ms_AFM.i;
-				double d3 = (pMesh->M[idx] * mcanis_ea3) / Ms_AFM.i;
-
-				//terms for K2 contribution
-				double d123 = d1*d2*d3;
-
-				double b1 = d123 * d2*d3;
-				double b2 = d123 * d1*d3;
-				double b3 = d123 * d1*d2;
-
-				//same thing for sub-lattice B
-
-				double d1B = (pMesh->M2[idx] * mcanis_ea1) / Ms_AFM.j;
-				double d2B = (pMesh->M2[idx] * mcanis_ea2) / Ms_AFM.j;
-				double d3B = (pMesh->M2[idx] * mcanis_ea3) / Ms_AFM.j;
-
-				double d123B = d1B*d2B*d3B;
-
-				double b1B = d123B * d2B*d3B;
-				double b2B = d123B * d1B*d3B;
-				double b3B = d123B * d1B*d2B;
-
-				//update energy (E/V)
-				energy += (K1_AFM.i * (d1*d1*d2*d2 + d1*d1*d3*d3 + d2*d2*d3*d3) + K2_AFM.i * d123*d123 + K1_AFM.j * (d1B*d1B*d2B*d2B + d1B*d1B*d3B*d3B + d2B*d2B*d3B*d3B) + K2_AFM.j * d123B*d123B) / 2;
-				num_points++;
-			}
-		}
-	}
-
-	if (num_points) energy /= num_points;
-	else energy = 0;
-
-	return energy;
 }
 
 #endif

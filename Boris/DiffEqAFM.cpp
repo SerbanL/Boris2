@@ -22,13 +22,30 @@ DifferentialEquationAFM::~DifferentialEquationAFM()
 //---------------------------------------- OTHERS
 
 //Restore magnetization after a failed step for adaptive time-step methods
-void DifferentialEquationAFM::Restoremagnetization(void)
+void DifferentialEquationAFM::RestoreMagnetization(void)
 {
 #pragma omp parallel for
 	for (int idx = 0; idx < pMesh->n.dim(); idx++) {
 
 		pMesh->M[idx] = sM1[idx];
 		pMesh->M2[idx] = sM1_2[idx];
+	}
+}
+
+//renormalize vectors to set magnetization length value (which could have a spatial variation)
+void DifferentialEquationAFM::RenormalizeMagnetization(void)
+{
+#pragma omp parallel for
+	for (int idx = 0; idx < pMesh->n.dim(); idx++) {
+
+		if (pMesh->M.is_not_empty(idx)) {
+
+			DBL2 Ms_AFM = pMesh->Ms_AFM;
+			pMesh->update_parameters_mcoarse(idx, pMesh->Ms_AFM, Ms_AFM);
+
+			pMesh->M[idx].renormalize(Ms_AFM.i);
+			pMesh->M2[idx].renormalize(Ms_AFM.j);
+		}
 	}
 }
 
@@ -292,6 +309,8 @@ BError DifferentialEquationAFM::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 		}
 	}
 
+	if (cfgMessage == UPDATECONFIG_PARAMVALUECHANGED_MLENGTH) RenormalizeMagnetization();
+
 	//----------------------- CUDA mirroring
 
 #if COMPILECUDA == 1
@@ -339,5 +358,11 @@ DBL3 DifferentialEquationAFM::dMdt(int idx)
 {
 	return (pMesh->M[idx] - sM1[idx]) / dT_last;
 }
+
+DBL3 DifferentialEquationAFM::dMdt2(int idx)
+{
+	return (pMesh->M2[idx] - sM1_2[idx]) / dT_last;
+}
+
 
 #endif

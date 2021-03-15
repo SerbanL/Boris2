@@ -85,12 +85,20 @@ public:
 	//Magneto-crystalline anisotropy K1 and K2 constants (J/m^3) and easy axes directions. For uniaxial anisotropy only ea1 is needed, for cubic ea1 and ea2 should be orthogonal.
 	cu_obj<MatPCUDA<cuBReal, cuBReal>> K1;
 	cu_obj<MatPCUDA<cuBReal, cuBReal>> K2;
+	cu_obj<MatPCUDA<cuBReal, cuBReal>> K3;
 	cu_obj<MatPCUDA<cuReal3, cuReal3>> mcanis_ea1;
 	cu_obj<MatPCUDA<cuReal3, cuReal3>> mcanis_ea2;
+	cu_obj<MatPCUDA<cuReal3, cuReal3>> mcanis_ea3;
 
 	//Anisotropy values for 2-sublattice model
 	cu_obj<MatPCUDA<cuReal2, cuBReal>> K1_AFM;
 	cu_obj<MatPCUDA<cuReal2, cuBReal>> K2_AFM;
+	cu_obj<MatPCUDA<cuReal2, cuBReal>> K3_AFM;
+
+	//tensorial anisotropy. each term is a contribution to the anisotropy energy density as d*a^n1 b^n2 c^n3. Here a = m.mcanis_ea1, b = m.mcanis_ea2, c = m.mcanis_ea3.
+	//For 2nd order we aditionally multiply by K1, 4th order K2, 6th order K3. Any other orders d coefficient contains anisotropy energy density.
+	//each DBL4 stores (d, n1, n2, n3), where d != 0, n1, n2, n3 >= 0, n1+n2+n3>0. Odd order terms allowed.
+	cu_obj<cuVEC<cuReal4>> Kt, Kt2;
 
 	//longitudinal (parallel) susceptibility relative to mu0*Ms0, i.e. divided by mu0*Ms0, Ms0 is the 0K Ms value - for use with LLB equation. Units As^2/kg
 	cu_obj<MatPCUDA<cuBReal, cuBReal>> susrel;

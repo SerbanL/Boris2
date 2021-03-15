@@ -108,57 +108,6 @@ DBL3 DemagTFunc::Lodia_single(DBL3 dist, DBL3 h, bool minus)
 		Lodia_single(dist.y, dist.z, dist.x, h.y, h.z, h.x)) * sign;
 }
 
-double DemagTFunc::SelfDemag(double hx, double hy, double hz)
-{
-	int tn = omp_get_thread_num();
-
-	main_sum[tn][0] = +8 * f(0, 0, 0);
-
-	main_sum[tn][1] = -4 * f(hx, 0, 0);
-	main_sum[tn][2] = -4 * f(-hx, 0, 0);
-	main_sum[tn][3] = -4 * f(0, hy, 0);
-	main_sum[tn][4] = -4 * f(0, -hy, 0);
-	main_sum[tn][5] = -4 * f(0, 0, hz);
-	main_sum[tn][6] = -4 * f(0, 0, -hz);
-
-	main_sum[tn][7] = +2 * f(-hx, -hy, 0);
-	main_sum[tn][8] = +2 * f(-hx, hy, 0);
-	main_sum[tn][9] = +2 * f(hx, -hy, 0);
-	main_sum[tn][10] = +2 * f(hx, hy, 0);
-
-	main_sum[tn][11] = +2 * f(-hx, 0, -hz);
-	main_sum[tn][12] = +2 * f(-hx, 0, hz);
-	main_sum[tn][13] = +2 * f(hx, 0, -hz);
-	main_sum[tn][14] = +2 * f(hx, 0, hz);
-
-	main_sum[tn][15] = +2 * f(0, -hy, -hz);
-	main_sum[tn][16] = +2 * f(0, -hy, hz);
-	main_sum[tn][17] = +2 * f(0, hy, -hz);
-	main_sum[tn][18] = +2 * f(0, hy, hz);
-
-	main_sum[tn][19] = -1 * f(-hx, -hy, -hz);
-	main_sum[tn][20] = -1 * f(-hx, -hy, hz);
-	main_sum[tn][21] = -1 * f(-hx, hy, -hz);
-	main_sum[tn][22] = -1 * f(hx, -hy, -hz);
-	main_sum[tn][23] = -1 * f(-hx, hy, hz);
-	main_sum[tn][24] = -1 * f(hx, -hy, hz);
-	main_sum[tn][25] = -1 * f(hx, hy, -hz);
-	main_sum[tn][26] = -1 * f(hx, hy, hz);
-
-	return sum_KahanNeumaier(main_sum[tn]) / (4 * PI * hx * hy * hz);
-}
-
-DBL3 DemagTFunc::SelfDemag(DBL3 h, bool minus)
-{
-	int sign = 1;
-	if (minus) sign = -1;
-
-	return DBL3(
-		SelfDemag(h.x, h.y, h.z),
-		SelfDemag(h.y, h.x, h.z),
-		SelfDemag(h.z, h.y, h.x)) * sign;
-}
-
 //diagonal component for irregular tensor, where source and destination cells can differ in z cellsize : xx and yy components only
 double DemagTFunc::Ldia_shifted_irregular_xx_yy_single(double x, double y, double z, double hx, double hy, double sz, double dz)
 {

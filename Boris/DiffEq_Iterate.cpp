@@ -8,6 +8,6 @@ void ODECommon::Restore(void)
 {
 	for (int idx = 0; idx < (int)pODE.size(); idx++) {
 
-		pODE[idx]->Restoremagnetization();
+		pODE[idx]->RestoreMagnetization();
 	}
 }

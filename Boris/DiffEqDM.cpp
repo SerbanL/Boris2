@@ -18,7 +18,7 @@ DifferentialEquationDM::~DifferentialEquationDM()
 //---------------------------------------- OTHERS
 
 //Restore magnetization after a failed step for adaptive time-step methods
-void DifferentialEquationDM::Restoremagnetization(void)
+void DifferentialEquationDM::RestoreMagnetization(void)
 {
 #pragma omp parallel for
 	for (int idx = 0; idx < pMesh->n.dim(); idx++)

@@ -9,7 +9,7 @@
 #include "Mesh_FerromagneticCUDA.h"
 #include "MeshDefs.h"
 
-__global__ void RoughnessCUDA_FM_UpdateField_Kernel(ManagedMeshCUDA& cuMesh, cuVEC<cuReal3>& Fmul_rough, cuVEC<cuReal3>& Fomul_rough, cuBReal& energy, bool do_reduction)
+__global__ void RoughnessCUDA_FM_UpdateField_Kernel(ManagedMeshCUDA& cuMesh, cuVEC<cuReal3>& Fmul_rough, cuVEC<cuReal3>& Fomul_rough, ManagedModulesCUDA& cuModule, bool do_reduction)
 {
 	cuVEC_VC<cuReal3>& M = *cuMesh.pM;
 	cuVEC<cuReal3>& Heff = *cuMesh.pHeff;
@@ -34,15 +34,18 @@ __global__ void RoughnessCUDA_FM_UpdateField_Kernel(ManagedMeshCUDA& cuMesh, cuV
 				int non_empty_cells = M.get_nonempty_cells();
 				if (non_empty_cells) energy_ = -(cuBReal)MU0 * M[idx] * Hrough / (2 * non_empty_cells);
 			}
+
+			if (do_reduction && cuModule.pModule_Heff->linear_size()) (*cuModule.pModule_Heff)[idx] = Hrough;
+			if (do_reduction && cuModule.pModule_energy->linear_size()) (*cuModule.pModule_energy)[idx] = -(cuBReal)MU0 * M[idx] * Hrough / 2;
 		}
 
 		Heff[idx] += Hrough;
 	}
 
-	if (do_reduction) reduction_sum(0, 1, &energy_, energy);
+	if (do_reduction) reduction_sum(0, 1, &energy_, *cuModule.penergy);
 }
 
-__global__ void RoughnessCUDA_AFM_UpdateField_Kernel(ManagedMeshCUDA& cuMesh, cuVEC<cuReal3>& Fmul_rough, cuVEC<cuReal3>& Fomul_rough, cuBReal& energy, bool do_reduction)
+__global__ void RoughnessCUDA_AFM_UpdateField_Kernel(ManagedMeshCUDA& cuMesh, cuVEC<cuReal3>& Fmul_rough, cuVEC<cuReal3>& Fomul_rough, ManagedModulesCUDA& cuModule, bool do_reduction)
 {
 	cuVEC_VC<cuReal3>& M = *cuMesh.pM;
 	cuVEC<cuReal3>& Heff = *cuMesh.pHeff;
@@ -70,13 +73,18 @@ __global__ void RoughnessCUDA_AFM_UpdateField_Kernel(ManagedMeshCUDA& cuMesh, cu
 				int non_empty_cells = M.get_nonempty_cells();
 				if (non_empty_cells) energy_ = -(cuBReal)MU0 * (M[idx] + M2[idx]) * Hrough / (4 * non_empty_cells);
 			}
+
+			if (do_reduction && cuModule.pModule_Heff->linear_size()) (*cuModule.pModule_Heff)[idx] = Hrough;
+			if (do_reduction && cuModule.pModule_Heff2->linear_size()) (*cuModule.pModule_Heff2)[idx] = Hrough;
+			if (do_reduction && cuModule.pModule_energy->linear_size()) (*cuModule.pModule_energy)[idx] = -MU0 * M[idx] * Hrough / 2;
+			if (do_reduction && cuModule.pModule_energy2->linear_size()) (*cuModule.pModule_energy2)[idx] = -MU0 * M2[idx] * Hrough / 2;
 		}
 
 		Heff[idx] += Hrough;
 		Heff2[idx] += Hrough;
 	}
 
-	if (do_reduction) reduction_sum(0, 1, &energy_, energy);
+	if (do_reduction) reduction_sum(0, 1, &energy_, *cuModule.penergy);
 }
 
 void RoughnessCUDA::UpdateField(void)
@@ -87,11 +95,11 @@ void RoughnessCUDA::UpdateField(void)
 
 			ZeroEnergy();
 
-			RoughnessCUDA_FM_UpdateField_Kernel << < (pMeshCUDA->n.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >> > (pMeshCUDA->cuMesh, Fmul_rough, Fomul_rough, energy, true);
+			RoughnessCUDA_FM_UpdateField_Kernel <<< (pMeshCUDA->n.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (pMeshCUDA->cuMesh, Fmul_rough, Fomul_rough, cuModule, true);
 		}
 		else {
 
-			RoughnessCUDA_FM_UpdateField_Kernel << < (pMeshCUDA->n.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >> > (pMeshCUDA->cuMesh, Fmul_rough, Fomul_rough, energy, false);
+			RoughnessCUDA_FM_UpdateField_Kernel <<< (pMeshCUDA->n.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (pMeshCUDA->cuMesh, Fmul_rough, Fomul_rough, cuModule, false);
 		}
 	}
 
@@ -101,11 +109,11 @@ void RoughnessCUDA::UpdateField(void)
 
 			ZeroEnergy();
 
-			RoughnessCUDA_AFM_UpdateField_Kernel << < (pMeshCUDA->n.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >> > (pMeshCUDA->cuMesh, Fmul_rough, Fomul_rough, energy, true);
+			RoughnessCUDA_AFM_UpdateField_Kernel <<< (pMeshCUDA->n.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (pMeshCUDA->cuMesh, Fmul_rough, Fomul_rough, cuModule, true);
 		}
 		else {
 
-			RoughnessCUDA_AFM_UpdateField_Kernel << < (pMeshCUDA->n.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >> > (pMeshCUDA->cuMesh, Fmul_rough, Fomul_rough, energy, false);
+			RoughnessCUDA_AFM_UpdateField_Kernel <<< (pMeshCUDA->n.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (pMeshCUDA->cuMesh, Fmul_rough, Fomul_rough, cuModule, false);
 		}
 	}
 }

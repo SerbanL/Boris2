@@ -11,8 +11,6 @@
 class SuperMesh;
 class Mesh;
 
-
-
 class ExchangeBase {
 
 #if COMPILECUDA == 1

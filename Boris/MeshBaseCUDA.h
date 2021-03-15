@@ -34,6 +34,8 @@ protected:
 
 	//auxiliary for computations
 	cu_obj<cuBReal> aux_real;
+	cu_obj<cuReal3> aux_real3;
+	cu_obj<size_t> aux_int;
 
 	//auxiliary cuVEC for computations
 	cu_obj<cuVEC<cuBReal>> aux_vec_sca;
@@ -105,6 +107,11 @@ public:
 	//yz, xz, xy
 	cu_obj<cuVEC_VC<cuReal3>> strain_odiag;
 
+protected:
+
+	//zero all single aux avalues
+	void Zero_aux_values(void);
+
 public:
 
 	//------------------------CTOR/DTOR
@@ -156,6 +163,14 @@ public:
 	//copy aux_vec_sca in GPU memory to displayVEC in CPU memory
 	virtual void copy_aux_vec_sca(VEC<double>& displayVEC) = 0;
 
+	//Get settings for module display data 
+	//Return module displaying its effective field (MOD_ALL means total Heff)
+	int Get_Module_Heff_Display(void);
+	int Get_ActualModule_Heff_Display(void);
+	//Return module displaying its energy density spatial variation (MOD_ERROR means none set)
+	int Get_Module_Energy_Display(void);
+	int Get_ActualModule_Energy_Display(void);
+
 	//----------------------------------- MESH INFO GET/SET METHODS
 
 	//NOTE : these type of methods are required here so we can access these properties in .cu files, where we cannot use a Mesh pointer
@@ -163,6 +178,9 @@ public:
 	//A future version of nvcc will make this practice redundant
 
 	int GetMeshType(void);
+
+	//search save data list (saveDataList) for given dataID set for this mesh. Return true if found and its rectangle is not Null; else return false.
+	bool IsOutputDataSet_withRect(int datumId);
 
 	//----------------------------------- ENABLED MESH PROPERTIES CHECKERS
 
@@ -202,6 +220,9 @@ public:
 
 	//check in ODECommon the type of field update we need to do depending on the ODE evaluation step
 	int Check_Step_Update(void);
+
+	//get total time with evaluation step resolution level
+	cuBReal Get_EvalStep_Time(void);
 
 	cuBReal GetStageTime(void);
 	int GetStageStep(void);

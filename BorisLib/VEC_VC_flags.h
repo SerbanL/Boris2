@@ -686,7 +686,7 @@ void VEC_VC<VType>::set_pbc_flags(void)
 
 //set pbc conditions : setting any to false clears flags
 template <typename VType>
-void VEC_VC<VType>::set_pbc(bool pbc_x_, bool pbc_y_, bool pbc_z_)
+void VEC_VC<VType>::set_pbc(int pbc_x_, int pbc_y_, int pbc_z_)
 {
 	pbc_x = pbc_x_;
 	pbc_y = pbc_y_;

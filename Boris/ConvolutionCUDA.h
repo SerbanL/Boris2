@@ -29,27 +29,39 @@ private:
 	//If clearOut flag is true then Out is set, otherwise Out is added into.
 	//SINGLE INPUT, SINGLE OUTPUT
 	template <typename cuVECIn, typename cuVECOut>
-	void Convolute_2D(cu_obj<cuVECIn>& In, cu_obj<cuVECOut>& Out, cu_obj<cuBReal>& energy, bool get_energy, bool clearOut);
+	void Convolute_2D(
+		cu_obj<cuVECIn>& In, cu_obj<cuVECOut>& Out, cu_obj<cuBReal>& energy, bool get_energy, bool clearOut, 
+		cu_obj<cuVEC<cuReal3>>* pH = nullptr, cu_obj<cuVEC<cuBReal>>* penergy = nullptr);
 	
 	template <typename cuVECIn, typename cuVECOut>
-	void Convolute_3D(cu_obj<cuVECIn>& In, cu_obj<cuVECOut>& Out, cu_obj<cuBReal>& energy, bool get_energy, bool clearOut);
+	void Convolute_3D(
+		cu_obj<cuVECIn>& In, cu_obj<cuVECOut>& Out, cu_obj<cuBReal>& energy, bool get_energy, bool clearOut, 
+		cu_obj<cuVEC<cuReal3>>* pH = nullptr, cu_obj<cuVEC<cuBReal>>* penergy = nullptr);
 
 	//AVERAGED INPUTS, SINGLE OUTPUT
 
 	//Same as Convolution with (In1 + In2) / 2 as input.
 	template <typename cuVECIn, typename cuVECOut>
-	void Convolute_2D(cu_obj<cuVECIn>& In1, cu_obj<cuVECIn>& In2, cu_obj<cuVECOut>& Out, cu_obj<cuBReal>& energy, bool get_energy, bool clearOut);
+	void Convolute_2D(
+		cu_obj<cuVECIn>& In1, cu_obj<cuVECIn>& In2, cu_obj<cuVECOut>& Out, cu_obj<cuBReal>& energy, bool get_energy, bool clearOut, 
+		cu_obj<cuVEC<cuReal3>>* pH = nullptr, cu_obj<cuVEC<cuBReal>>* penergy = nullptr);
 
 	template <typename cuVECIn, typename cuVECOut>
-	void Convolute_3D(cu_obj<cuVECIn>& In1, cu_obj<cuVECIn>& In2, cu_obj<cuVECOut>& Out, cu_obj<cuBReal>& energy, bool get_energy, bool clearOut);
+	void Convolute_3D(
+		cu_obj<cuVECIn>& In1, cu_obj<cuVECIn>& In2, cu_obj<cuVECOut>& Out, cu_obj<cuBReal>& energy, bool get_energy, bool clearOut, 
+		cu_obj<cuVEC<cuReal3>>* pH = nullptr, cu_obj<cuVEC<cuBReal>>* penergy = nullptr);
 
 	//AVERAGED INPUTS, DUPLICATED OUTPUTS
 	//Same as Convolution with (In1 + In2) / 2 as input and output copied to both Out1 and Out2.
 	template <typename cuVECIn, typename cuVECOut>
-	void Convolute_2D(cu_obj<cuVECIn>& In1, cu_obj<cuVECIn>& In2, cu_obj<cuVECOut>& Out1, cu_obj<cuVECOut>& Out2, cu_obj<cuBReal>& energy, bool get_energy, bool clearOut);
+	void Convolute_2D(
+		cu_obj<cuVECIn>& In1, cu_obj<cuVECIn>& In2, cu_obj<cuVECOut>& Out1, cu_obj<cuVECOut>& Out2, cu_obj<cuBReal>& energy, bool get_energy, bool clearOut,
+		cu_obj<cuVEC<cuReal3>>* pH = nullptr, cu_obj<cuVEC<cuBReal>>* penergy = nullptr);
 
 	template <typename cuVECIn, typename cuVECOut>
-	void Convolute_3D(cu_obj<cuVECIn>& In1, cu_obj<cuVECIn>& In2, cu_obj<cuVECOut>& Out1, cu_obj<cuVECOut>& Out2, cu_obj<cuBReal>& energy, bool get_energy, bool clearOut);
+	void Convolute_3D(
+		cu_obj<cuVECIn>& In1, cu_obj<cuVECIn>& In2, cu_obj<cuVECOut>& Out1, cu_obj<cuVECOut>& Out2, cu_obj<cuBReal>& energy, bool get_energy, bool clearOut,
+		cu_obj<cuVEC<cuReal3>>* pH = nullptr, cu_obj<cuVEC<cuBReal>>* penergy = nullptr);
 
 	//Not embedded
 
@@ -77,61 +89,97 @@ private:
 
 	//inverse FFT with the option of calculating an energy contribution ((-MU0/2)(In * Out) / input_non_empty_cells
 	template <typename cuVECIn, typename cuVECOut>
-	void InverseFFT_2D(cu_obj<cuVECIn>& In, cu_obj<cuVECOut>& Out, cu_obj<cuBReal>& energy, bool get_energy, bool clearOut);
+	void InverseFFT_2D(
+		cu_obj<cuVECIn>& In, cu_obj<cuVECOut>& Out, 
+		cu_obj<cuBReal>& energy, bool get_energy, bool clearOut, 
+		cu_obj<cuVEC<cuReal3>>* pH = nullptr, cu_obj<cuVEC<cuBReal>>* penergy = nullptr);
 
 	//inverse FFT with the option of calculating an energy contribution ((-MU0/2)(In * Out) / input_non_empty_cells
 	template <typename cuVECIn, typename cuVECOut>
-	void InverseFFT_3D(cu_obj<cuVECIn>& In, cu_obj<cuVECOut>& Out, cu_obj<cuBReal>& energy, bool get_energy, bool clearOut);
+	void InverseFFT_3D(
+		cu_obj<cuVECIn>& In, cu_obj<cuVECOut>& Out, 
+		cu_obj<cuBReal>& energy, bool get_energy, bool clearOut,
+		cu_obj<cuVEC<cuReal3>>* pH = nullptr, cu_obj<cuVEC<cuBReal>>* penergy = nullptr);
 
 	//inverse FFT with calculation of a weighted energy contribution: weight*((-MU0/2)(In * Out) / input_non_empty_cells.
 	//This is useful when calculating an energy total from multiple meshes which might need different weights.
 	template <typename cuVECIn, typename cuVECOut>
-	void InverseFFT_2D(cu_obj<cuVECIn>& In, cu_obj<cuVECOut>& Out, cu_obj<cuBReal>& energy, cu_obj<cuBReal>& energy_weight, bool clearOut);
+	void InverseFFT_2D(
+		cu_obj<cuVECIn>& In, cu_obj<cuVECOut>& Out, 
+		cu_obj<cuBReal>& energy, cu_obj<cuBReal>& energy_weight, bool clearOut,
+		cu_obj<cuVEC<cuReal3>>* pH = nullptr, cu_obj<cuVEC<cuBReal>>* penergy = nullptr);
 
 	//inverse FFT with calculation of a weighted energy contribution: weight*((-MU0/2)(In * Out) / input_non_empty_cells.
 	//This is useful when calculating an energy total from multiple meshes which might need different weights.
 	template <typename cuVECIn, typename cuVECOut>
-	void InverseFFT_3D(cu_obj<cuVECIn>& In, cu_obj<cuVECOut>& Out, cu_obj<cuBReal>& energy, cu_obj<cuBReal>& energy_weight, bool clearOut);
+	void InverseFFT_3D(
+		cu_obj<cuVECIn>& In, cu_obj<cuVECOut>& Out, 
+		cu_obj<cuBReal>& energy, cu_obj<cuBReal>& energy_weight, bool clearOut,
+		cu_obj<cuVEC<cuReal3>>* pH = nullptr, cu_obj<cuVEC<cuBReal>>* penergy = nullptr);
 
 	//AVERAGED INPUTS, SINGLE OUTPUT
 
 	//inverse FFT with the option of calculating an energy contribution ((-MU0/2)(In * Out) / input_non_empty_cells
 	template <typename cuVECIn, typename cuVECOut>
-	void InverseFFT_2D(cu_obj<cuVECIn>& In1, cu_obj<cuVECIn>& In2, cu_obj<cuVECOut>& Out, cu_obj<cuBReal>& energy, bool get_energy, bool clearOut);
+	void InverseFFT_2D(
+		cu_obj<cuVECIn>& In1, cu_obj<cuVECIn>& In2, cu_obj<cuVECOut>& Out, 
+		cu_obj<cuBReal>& energy, bool get_energy, bool clearOut,
+		cu_obj<cuVEC<cuReal3>>* pH = nullptr, cu_obj<cuVEC<cuBReal>>* penergy = nullptr);
 
 	//inverse FFT with the option of calculating an energy contribution ((-MU0/2)(In * Out) / input_non_empty_cells
 	template <typename cuVECIn, typename cuVECOut>
-	void InverseFFT_3D(cu_obj<cuVECIn>& In1, cu_obj<cuVECIn>& In2, cu_obj<cuVECOut>& Out, cu_obj<cuBReal>& energy, bool get_energy, bool clearOut);
+	void InverseFFT_3D(
+		cu_obj<cuVECIn>& In1, cu_obj<cuVECIn>& In2, cu_obj<cuVECOut>& Out, 
+		cu_obj<cuBReal>& energy, bool get_energy, bool clearOut,
+		cu_obj<cuVEC<cuReal3>>* pH = nullptr, cu_obj<cuVEC<cuBReal>>* penergy = nullptr);
 
 	//inverse FFT with calculation of a weighted energy contribution: weight*((-MU0/2)(In * Out) / input_non_empty_cells.
 	//This is useful when calculating an energy total from multiple meshes which might need different weights.
 	template <typename cuVECIn, typename cuVECOut>
-	void InverseFFT_2D(cu_obj<cuVECIn>& In1, cu_obj<cuVECIn>& In2, cu_obj<cuVECOut>& Out, cu_obj<cuBReal>& energy, cu_obj<cuBReal>& energy_weight, bool clearOut);
+	void InverseFFT_2D(
+		cu_obj<cuVECIn>& In1, cu_obj<cuVECIn>& In2, cu_obj<cuVECOut>& Out, 
+		cu_obj<cuBReal>& energy, cu_obj<cuBReal>& energy_weight, bool clearOut,
+		cu_obj<cuVEC<cuReal3>>* pH = nullptr, cu_obj<cuVEC<cuBReal>>* penergy = nullptr);
 
 	//inverse FFT with calculation of a weighted energy contribution: weight*((-MU0/2)(In * Out) / input_non_empty_cells.
 	//This is useful when calculating an energy total from multiple meshes which might need different weights.
 	template <typename cuVECIn, typename cuVECOut>
-	void InverseFFT_3D(cu_obj<cuVECIn>& In1, cu_obj<cuVECIn>& In2, cu_obj<cuVECOut>& Out, cu_obj<cuBReal>& energy, cu_obj<cuBReal>& energy_weight, bool clearOut);
+	void InverseFFT_3D(
+		cu_obj<cuVECIn>& In1, cu_obj<cuVECIn>& In2, cu_obj<cuVECOut>& Out, 
+		cu_obj<cuBReal>& energy, cu_obj<cuBReal>& energy_weight, bool clearOut,
+		cu_obj<cuVEC<cuReal3>>* pH = nullptr, cu_obj<cuVEC<cuBReal>>* penergy = nullptr);
 
 	//AVERAGED INPUTS, DUPLICATED OUTPUTS
 
 	//inverse FFT with the option of calculating an energy contribution ((-MU0/2)(In * Out) / input_non_empty_cells
 	template <typename cuVECIn, typename cuVECOut>
-	void InverseFFT_2D(cu_obj<cuVECIn>& In1, cu_obj<cuVECIn>& In2, cu_obj<cuVECOut>& Out1, cu_obj<cuVECOut>& Out2, cu_obj<cuBReal>& energy, bool get_energy, bool clearOut);
+	void InverseFFT_2D(
+		cu_obj<cuVECIn>& In1, cu_obj<cuVECIn>& In2, cu_obj<cuVECOut>& Out1, cu_obj<cuVECOut>& Out2, 
+		cu_obj<cuBReal>& energy, bool get_energy, bool clearOut,
+		cu_obj<cuVEC<cuReal3>>* pH = nullptr, cu_obj<cuVEC<cuBReal>>* penergy = nullptr);
 
 	//inverse FFT with the option of calculating an energy contribution ((-MU0/2)(In * Out) / input_non_empty_cells
 	template <typename cuVECIn, typename cuVECOut>
-	void InverseFFT_3D(cu_obj<cuVECIn>& In1, cu_obj<cuVECIn>& In2, cu_obj<cuVECOut>& Out1, cu_obj<cuVECOut>& Out2, cu_obj<cuBReal>& energy, bool get_energy, bool clearOut);
+	void InverseFFT_3D(
+		cu_obj<cuVECIn>& In1, cu_obj<cuVECIn>& In2, cu_obj<cuVECOut>& Out1, cu_obj<cuVECOut>& Out2, 
+		cu_obj<cuBReal>& energy, bool get_energy, bool clearOut,
+		cu_obj<cuVEC<cuReal3>>* pH = nullptr, cu_obj<cuVEC<cuBReal>>* penergy = nullptr);
 
 	//inverse FFT with calculation of a weighted energy contribution: weight*((-MU0/2)(In * Out) / input_non_empty_cells.
 	//This is useful when calculating an energy total from multiple meshes which might need different weights.
 	template <typename cuVECIn, typename cuVECOut>
-	void InverseFFT_2D(cu_obj<cuVECIn>& In1, cu_obj<cuVECIn>& In2, cu_obj<cuVECOut>& Out1, cu_obj<cuVECOut>& Out2, cu_obj<cuBReal>& energy, cu_obj<cuBReal>& energy_weight, bool clearOut);
+	void InverseFFT_2D(
+		cu_obj<cuVECIn>& In1, cu_obj<cuVECIn>& In2, cu_obj<cuVECOut>& Out1, cu_obj<cuVECOut>& Out2, 
+		cu_obj<cuBReal>& energy, cu_obj<cuBReal>& energy_weight, bool clearOut,
+		cu_obj<cuVEC<cuReal3>>* pH = nullptr, cu_obj<cuVEC<cuBReal>>* penergy = nullptr);
 
 	//inverse FFT with calculation of a weighted energy contribution: weight*((-MU0/2)(In * Out) / input_non_empty_cells.
 	//This is useful when calculating an energy total from multiple meshes which might need different weights.
 	template <typename cuVECIn, typename cuVECOut>
-	void InverseFFT_3D(cu_obj<cuVECIn>& In1, cu_obj<cuVECIn>& In2, cu_obj<cuVECOut>& Out1, cu_obj<cuVECOut>& Out2, cu_obj<cuBReal>& energy, cu_obj<cuBReal>& energy_weight, bool clearOut);
+	void InverseFFT_3D(
+		cu_obj<cuVECIn>& In1, cu_obj<cuVECIn>& In2, cu_obj<cuVECOut>& Out1, cu_obj<cuVECOut>& Out2, 
+		cu_obj<cuBReal>& energy, cu_obj<cuBReal>& energy_weight, bool clearOut,
+		cu_obj<cuVEC<cuReal3>>* pH = nullptr, cu_obj<cuVEC<cuBReal>>* penergy = nullptr);
 
 protected:
 
@@ -153,7 +201,7 @@ protected:
 	//-------------------------- CONFIGURATION
 
 	//This method sets all values from n and h, including allocating memory - call this before initializing kernels or doing any convolutions
-	BError SetDimensions(cuSZ3 n_, cuReal3 h_, bool multiplication_embedding_ = true, cuINT3 pbc_images_ = INT3());
+	BError SetDimensions(cuSZ3 n_, cuReal3 h_, bool multiplication_embedding_ = true, cuINT3 pbc_images_ = cuINT3());
 
 	//-------------------------- CHECK
 
@@ -166,30 +214,36 @@ protected:
 
 	//Run a 2D or 3D convolution depending on set n (n.z == 1 for 2D)
 	template <typename cuVECIn, typename cuVECOut>
-	void Convolute(cu_obj<cuVECIn>& In, cu_obj<cuVECOut>& Out, cu_obj<cuBReal>& energy, bool get_energy, bool clearOut = true)
+	void Convolute(
+		cu_obj<cuVECIn>& In, cu_obj<cuVECOut>& Out, cu_obj<cuBReal>& energy, bool get_energy, bool clearOut = true, 
+		cu_obj<cuVEC<cuReal3>>* pH = nullptr, cu_obj<cuVEC<cuBReal>>* penergy = nullptr)
 	{
-		if (n.z == 1) Convolute_2D(In, Out, energy, get_energy, clearOut);
-		else Convolute_3D(In, Out, energy, get_energy, clearOut);
+		if (n.z == 1) Convolute_2D(In, Out, energy, get_energy, clearOut, pH, penergy);
+		else Convolute_3D(In, Out, energy, get_energy, clearOut, pH, penergy);
 	}
 
 	//AVERAGED INPUTS, SINGLE OUTPUT
 
 	//Same as Convolution with (In1 + In2) / 2 as input.
 	template <typename cuVECIn, typename cuVECOut>
-	void Convolute_AveragedInputs(cu_obj<cuVECIn>& In1, cu_obj<cuVECIn>& In2, cu_obj<cuVECOut>& Out, cu_obj<cuBReal>& energy, bool get_energy, bool clearOut = true)
+	void Convolute_AveragedInputs(
+		cu_obj<cuVECIn>& In1, cu_obj<cuVECIn>& In2, cu_obj<cuVECOut>& Out, cu_obj<cuBReal>& energy, bool get_energy, bool clearOut = true, 
+		cu_obj<cuVEC<cuReal3>>* pH = nullptr, cu_obj<cuVEC<cuBReal>>* penergy = nullptr)
 	{
-		if (n.z == 1) Convolute_2D(In1, In2, Out, energy, get_energy, clearOut);
-		else Convolute_3D(In1, In2, Out, energy, get_energy, clearOut);
+		if (n.z == 1) Convolute_2D(In1, In2, Out, energy, get_energy, clearOut, pH, penergy);
+		else Convolute_3D(In1, In2, Out, energy, get_energy, clearOut, pH, penergy);
 	}
 
 	//AVERAGED INPUTS, DUPLICATED OUTPUTS
 
 	//Same as Convolution with (In1 + In2) / 2 as input and output copied to both Out1 and Out2.
 	template <typename cuVECIn, typename cuVECOut>
-	void Convolute_AveragedInputs_DuplicatedOutputs(cu_obj<cuVECIn>& In1, cu_obj<cuVECIn>& In2, cu_obj<cuVECOut>& Out1, cu_obj<cuVECOut>& Out2, cu_obj<cuBReal>& energy, bool get_energy, bool clearOut = true)
+	void Convolute_AveragedInputs_DuplicatedOutputs(
+		cu_obj<cuVECIn>& In1, cu_obj<cuVECIn>& In2, cu_obj<cuVECOut>& Out1, cu_obj<cuVECOut>& Out2, cu_obj<cuBReal>& energy, bool get_energy, bool clearOut = true, 
+		cu_obj<cuVEC<cuReal3>>* pH = nullptr, cu_obj<cuVEC<cuBReal>>* penergy = nullptr)
 	{
-		if (n.z == 1) Convolute_2D(In1, In2, Out1, Out2, energy, get_energy, clearOut);
-		else Convolute_3D(In1, In2, Out1, Out2, energy, get_energy, clearOut);
+		if (n.z == 1) Convolute_2D(In1, In2, Out1, Out2, energy, get_energy, clearOut, pH, penergy);
+		else Convolute_3D(In1, In2, Out1, Out2, energy, get_energy, clearOut, pH, penergy);
 	}
 
 	//Convolution broken down into parts : forward FFT, Kernel Multiplication, inverse FFT
@@ -225,57 +279,75 @@ protected:
 
 	//inverse FFT with the option of calculating an energy contribution ((-MU0/2)(In * Out) / input_non_empty_cells
 	template <typename cuVECIn, typename cuVECOut>
-	void InverseFFT(cu_obj<cuVECIn>& In, cu_obj<cuVECOut>& Out, cu_obj<cuBReal>& energy, bool get_energy, bool clearOut = true)
+	void InverseFFT(
+		cu_obj<cuVECIn>& In, cu_obj<cuVECOut>& Out, 
+		cu_obj<cuBReal>& energy, bool get_energy, bool clearOut = true, 
+		cu_obj<cuVEC<cuReal3>>* pH = nullptr, cu_obj<cuVEC<cuBReal>>* penergy = nullptr)
 	{
-		if (n.z == 1) InverseFFT_2D(In, Out, energy, get_energy, clearOut);
-		else InverseFFT_3D(In, Out, energy, get_energy, clearOut);
+		if (n.z == 1) InverseFFT_2D(In, Out, energy, get_energy, clearOut, pH, penergy);
+		else InverseFFT_3D(In, Out, energy, get_energy, clearOut, pH, penergy);
 	}
 
 	//inverse FFT with calculation of a weighted energy contribution: weight*((-MU0/2)(In * Out) / input_non_empty_cells.
 	//This is useful when calculating an energy total from multiple meshes which might need different weights.
 	template <typename cuVECIn, typename cuVECOut>
-	void InverseFFT(cu_obj<cuVECIn>& In, cu_obj<cuVECOut>& Out, cu_obj<cuBReal>& energy, cu_obj<cuBReal>& energy_weight, bool clearOut = true)
+	void InverseFFT(
+		cu_obj<cuVECIn>& In, cu_obj<cuVECOut>& Out, 
+		cu_obj<cuBReal>& energy, cu_obj<cuBReal>& energy_weight, bool clearOut = true, 
+		cu_obj<cuVEC<cuReal3>>* pH = nullptr, cu_obj<cuVEC<cuBReal>>* penergy = nullptr)
 	{
-		if (n.z == 1) InverseFFT_2D(In, Out, energy, energy_weight, clearOut);
-		else InverseFFT_3D(In, Out, energy, energy_weight, clearOut);
+		if (n.z == 1) InverseFFT_2D(In, Out, energy, energy_weight, clearOut, pH, penergy);
+		else InverseFFT_3D(In, Out, energy, energy_weight, clearOut, pH, penergy);
 	}
 
 	//AVERAGED INPUTS, SINGLE OUTPUT
 
 	//inverse FFT with the option of calculating an energy contribution ((-MU0/2)(In * Out) / input_non_empty_cells
 	template <typename cuVECIn, typename cuVECOut>
-	void InverseFFT_AveragedInputs(cu_obj<cuVECIn>& In1, cu_obj<cuVECIn>& In2, cu_obj<cuVECOut>& Out, cu_obj<cuBReal>& energy, bool get_energy, bool clearOut = true)
+	void InverseFFT_AveragedInputs(
+		cu_obj<cuVECIn>& In1, cu_obj<cuVECIn>& In2, cu_obj<cuVECOut>& Out, 
+		cu_obj<cuBReal>& energy, bool get_energy, bool clearOut = true, 
+		cu_obj<cuVEC<cuReal3>>* pH = nullptr, cu_obj<cuVEC<cuBReal>>* penergy = nullptr)
 	{
-		if (n.z == 1) InverseFFT_2D(In1, In2, Out, energy, get_energy, clearOut);
-		else InverseFFT_3D(In1, In2, Out, energy, get_energy, clearOut);
+		if (n.z == 1) InverseFFT_2D(In1, In2, Out, energy, get_energy, clearOut, pH, penergy);
+		else InverseFFT_3D(In1, In2, Out, energy, get_energy, clearOut, pH, penergy);
 	}
 
 	//inverse FFT with calculation of a weighted energy contribution: weight*((-MU0/2)(In * Out) / input_non_empty_cells.
 	//This is useful when calculating an energy total from multiple meshes which might need different weights.
 	template <typename cuVECIn, typename cuVECOut>
-	void InverseFFT_AveragedInputs(cu_obj<cuVECIn>& In1, cu_obj<cuVECIn>& In2, cu_obj<cuVECOut>& Out, cu_obj<cuBReal>& energy, cu_obj<cuBReal>& energy_weight, bool clearOut = true)
+	void InverseFFT_AveragedInputs(
+		cu_obj<cuVECIn>& In1, cu_obj<cuVECIn>& In2, cu_obj<cuVECOut>& Out, 
+		cu_obj<cuBReal>& energy, cu_obj<cuBReal>& energy_weight, bool clearOut = true, 
+		cu_obj<cuVEC<cuReal3>>* pH = nullptr, cu_obj<cuVEC<cuBReal>>* penergy = nullptr)
 	{
-		if (n.z == 1) InverseFFT_2D(In1, In2, Out, energy, energy_weight, clearOut);
-		else InverseFFT_3D(In1, In2, Out, energy, energy_weight, clearOut);
+		if (n.z == 1) InverseFFT_2D(In1, In2, Out, energy, energy_weight, clearOut, pH, penergy);
+		else InverseFFT_3D(In1, In2, Out, energy, energy_weight, clearOut, pH, penergy);
 	}
 
 	//AVERAGED INPUTS, DUPLICATED OUTPUTS
 
 	//inverse FFT with the option of calculating an energy contribution ((-MU0/2)(In * Out) / input_non_empty_cells
 	template <typename cuVECIn, typename cuVECOut>
-	void InverseFFT_AveragedInputs_DuplicatedOutputs(cu_obj<cuVECIn>& In1, cu_obj<cuVECIn>& In2, cu_obj<cuVECOut>& Out1, cu_obj<cuVECOut>& Out2, cu_obj<cuBReal>& energy, bool get_energy, bool clearOut = true)
+	void InverseFFT_AveragedInputs_DuplicatedOutputs(
+		cu_obj<cuVECIn>& In1, cu_obj<cuVECIn>& In2, cu_obj<cuVECOut>& Out1, cu_obj<cuVECOut>& Out2, 
+		cu_obj<cuBReal>& energy, bool get_energy, bool clearOut = true, 
+		cu_obj<cuVEC<cuReal3>>* pH = nullptr, cu_obj<cuVEC<cuBReal>>* penergy = nullptr)
 	{
-		if (n.z == 1) InverseFFT_2D(In1, In2, Out1, Out2, energy, get_energy, clearOut);
-		else InverseFFT_3D(In1, In2, Out1, Out2, energy, get_energy, clearOut);
+		if (n.z == 1) InverseFFT_2D(In1, In2, Out1, Out2, energy, get_energy, clearOut, pH, penergy);
+		else InverseFFT_3D(In1, In2, Out1, Out2, energy, get_energy, clearOut, pH, penergy);
 	}
 
 	//inverse FFT with calculation of a weighted energy contribution: weight*((-MU0/2)(In * Out) / input_non_empty_cells.
 	//This is useful when calculating an energy total from multiple meshes which might need different weights.
 	template <typename cuVECIn, typename cuVECOut>
-	void InverseFFT_AveragedInputs_DuplicatedOutputs(cu_obj<cuVECIn>& In1, cu_obj<cuVECIn>& In2, cu_obj<cuVECOut>& Out1, cu_obj<cuVECOut>& Out2, cu_obj<cuBReal>& energy, cu_obj<cuBReal>& energy_weight, bool clearOut = true)
+	void InverseFFT_AveragedInputs_DuplicatedOutputs(
+		cu_obj<cuVECIn>& In1, cu_obj<cuVECIn>& In2, cu_obj<cuVECOut>& Out1, cu_obj<cuVECOut>& Out2, 
+		cu_obj<cuBReal>& energy, cu_obj<cuBReal>& energy_weight, bool clearOut = true, 
+		cu_obj<cuVEC<cuReal3>>* pH = nullptr, cu_obj<cuVEC<cuBReal>>* penergy = nullptr)
 	{
-		if (n.z == 1) InverseFFT_2D(In1, In2, Out1, Out2, energy, energy_weight, clearOut);
-		else InverseFFT_3D(In1, In2, Out1, Out2, energy, energy_weight, clearOut);
+		if (n.z == 1) InverseFFT_2D(In1, In2, Out1, Out2, energy, energy_weight, clearOut, pH, penergy);
+		else InverseFFT_3D(In1, In2, Out1, Out2, energy, energy_weight, clearOut, pH, penergy);
 	}
 };
 
@@ -308,7 +380,9 @@ BError ConvolutionCUDA<Owner, Kernel>::SetDimensions(cuSZ3 n_, cuReal3 h_, bool 
 
 template <typename Owner, typename Kernel>
 template <typename cuVECIn, typename cuVECOut>
-void ConvolutionCUDA<Owner, Kernel>::Convolute_2D(cu_obj<cuVECIn>& In, cu_obj<cuVECOut>& Out, cu_obj<cuBReal>& energy, bool get_energy, bool clearOut)
+void ConvolutionCUDA<Owner, Kernel>::Convolute_2D(
+	cu_obj<cuVECIn>& In, cu_obj<cuVECOut>& Out, cu_obj<cuBReal>& energy, bool get_energy, bool clearOut,
+	cu_obj<cuVEC<cuReal3>>* pH, cu_obj<cuVEC<cuBReal>>* penergy)
 {
 	//Copy In to cufft arrays, setting all other points to zero
 	CopyInputData(In);
@@ -325,11 +399,11 @@ void ConvolutionCUDA<Owner, Kernel>::Convolute_2D(cu_obj<cuVECIn>& In, cu_obj<cu
 	//Copy cufft arrays to Heff
 	if (clearOut) {
 
-		FinishConvolution_Set(In, Out, energy, get_energy);
+		FinishConvolution_Set(In, Out, energy, get_energy, pH, penergy);
 	}
 	else {
 
-		FinishConvolution_Add(In, Out, energy, get_energy);
+		FinishConvolution_Add(In, Out, energy, get_energy, pH, penergy);
 	}
 }
 
@@ -337,7 +411,9 @@ void ConvolutionCUDA<Owner, Kernel>::Convolute_2D(cu_obj<cuVECIn>& In, cu_obj<cu
 
 template <typename Owner, typename Kernel>
 template <typename cuVECIn, typename cuVECOut>
-void ConvolutionCUDA<Owner, Kernel>::Convolute_2D(cu_obj<cuVECIn>& In1, cu_obj<cuVECIn>& In2, cu_obj<cuVECOut>& Out, cu_obj<cuBReal>& energy, bool get_energy, bool clearOut)
+void ConvolutionCUDA<Owner, Kernel>::Convolute_2D(
+	cu_obj<cuVECIn>& In1, cu_obj<cuVECIn>& In2, cu_obj<cuVECOut>& Out, cu_obj<cuBReal>& energy, bool get_energy, bool clearOut,
+	cu_obj<cuVEC<cuReal3>>* pH, cu_obj<cuVEC<cuBReal>>* penergy)
 {
 	//Copy In to cufft arrays, setting all other points to zero
 	AverageInputData(In1, In2);
@@ -354,11 +430,11 @@ void ConvolutionCUDA<Owner, Kernel>::Convolute_2D(cu_obj<cuVECIn>& In1, cu_obj<c
 	//Copy cufft arrays to Heff
 	if (clearOut) {
 
-		FinishConvolution_Set(In1, In2, Out, energy, get_energy);
+		FinishConvolution_Set(In1, In2, Out, energy, get_energy, pH, penergy);
 	}
 	else {
 
-		FinishConvolution_Add(In1, In2, Out, energy, get_energy);
+		FinishConvolution_Add(In1, In2, Out, energy, get_energy, pH, penergy);
 	}
 }
 
@@ -366,7 +442,9 @@ void ConvolutionCUDA<Owner, Kernel>::Convolute_2D(cu_obj<cuVECIn>& In1, cu_obj<c
 
 template <typename Owner, typename Kernel>
 template <typename cuVECIn, typename cuVECOut>
-void ConvolutionCUDA<Owner, Kernel>::Convolute_2D(cu_obj<cuVECIn>& In1, cu_obj<cuVECIn>& In2, cu_obj<cuVECOut>& Out1, cu_obj<cuVECOut>& Out2, cu_obj<cuBReal>& energy, bool get_energy, bool clearOut)
+void ConvolutionCUDA<Owner, Kernel>::Convolute_2D(
+	cu_obj<cuVECIn>& In1, cu_obj<cuVECIn>& In2, cu_obj<cuVECOut>& Out1, cu_obj<cuVECOut>& Out2, cu_obj<cuBReal>& energy, bool get_energy, bool clearOut,
+	cu_obj<cuVEC<cuReal3>>* pH, cu_obj<cuVEC<cuBReal>>* penergy)
 {
 	//Copy In to cufft arrays, setting all other points to zero
 	AverageInputData(In1, In2);
@@ -383,11 +461,11 @@ void ConvolutionCUDA<Owner, Kernel>::Convolute_2D(cu_obj<cuVECIn>& In1, cu_obj<c
 	//Copy cufft arrays to Heff
 	if (clearOut) {
 
-		FinishConvolution_Set(In1, In2, Out1, Out2, energy, get_energy);
+		FinishConvolution_Set(In1, In2, Out1, Out2, energy, get_energy, pH, penergy);
 	}
 	else {
 
-		FinishConvolution_Add(In1, In2, Out1, Out2, energy, get_energy);
+		FinishConvolution_Add(In1, In2, Out1, Out2, energy, get_energy, pH, penergy);
 	}
 }
 
@@ -397,7 +475,9 @@ void ConvolutionCUDA<Owner, Kernel>::Convolute_2D(cu_obj<cuVECIn>& In1, cu_obj<c
 
 template <typename Owner, typename Kernel>
 template <typename cuVECIn, typename cuVECOut>
-void ConvolutionCUDA<Owner, Kernel>::Convolute_3D(cu_obj<cuVECIn>& In, cu_obj<cuVECOut>& Out, cu_obj<cuBReal>& energy, bool get_energy, bool clearOut)
+void ConvolutionCUDA<Owner, Kernel>::Convolute_3D(
+	cu_obj<cuVECIn>& In, cu_obj<cuVECOut>& Out, cu_obj<cuBReal>& energy, bool get_energy, bool clearOut,
+	cu_obj<cuVEC<cuReal3>>* pH, cu_obj<cuVEC<cuBReal>>* penergy)
 {
 	//Copy In to cufft arrays, setting all other points to zero
 	CopyInputData(In);
@@ -428,11 +508,11 @@ void ConvolutionCUDA<Owner, Kernel>::Convolute_3D(cu_obj<cuVECIn>& In, cu_obj<cu
 	//Copy cufft arrays to Heff
 	if (clearOut) {
 
-		FinishConvolution_Set(In, Out, energy, get_energy);
+		FinishConvolution_Set(In, Out, energy, get_energy, pH, penergy);
 	}
 	else {
 
-		FinishConvolution_Add(In, Out, energy, get_energy);
+		FinishConvolution_Add(In, Out, energy, get_energy, pH, penergy);
 	}
 }
 
@@ -440,7 +520,9 @@ void ConvolutionCUDA<Owner, Kernel>::Convolute_3D(cu_obj<cuVECIn>& In, cu_obj<cu
 
 template <typename Owner, typename Kernel>
 template <typename cuVECIn, typename cuVECOut>
-void ConvolutionCUDA<Owner, Kernel>::Convolute_3D(cu_obj<cuVECIn>& In1, cu_obj<cuVECIn>& In2, cu_obj<cuVECOut>& Out, cu_obj<cuBReal>& energy, bool get_energy, bool clearOut)
+void ConvolutionCUDA<Owner, Kernel>::Convolute_3D(
+	cu_obj<cuVECIn>& In1, cu_obj<cuVECIn>& In2, cu_obj<cuVECOut>& Out, cu_obj<cuBReal>& energy, bool get_energy, bool clearOut,
+	cu_obj<cuVEC<cuReal3>>* pH, cu_obj<cuVEC<cuBReal>>* penergy)
 {
 	//Copy In to cufft arrays, setting all other points to zero
 	AverageInputData(In1, In2);
@@ -471,11 +553,11 @@ void ConvolutionCUDA<Owner, Kernel>::Convolute_3D(cu_obj<cuVECIn>& In1, cu_obj<c
 	//Copy cufft arrays to Heff
 	if (clearOut) {
 
-		FinishConvolution_Set(In1, In2, Out, energy, get_energy);
+		FinishConvolution_Set(In1, In2, Out, energy, get_energy, pH, penergy);
 	}
 	else {
 
-		FinishConvolution_Add(In1, In2, Out, energy, get_energy);
+		FinishConvolution_Add(In1, In2, Out, energy, get_energy, pH, penergy);
 	}
 }
 
@@ -483,7 +565,9 @@ void ConvolutionCUDA<Owner, Kernel>::Convolute_3D(cu_obj<cuVECIn>& In1, cu_obj<c
 
 template <typename Owner, typename Kernel>
 template <typename cuVECIn, typename cuVECOut>
-void ConvolutionCUDA<Owner, Kernel>::Convolute_3D(cu_obj<cuVECIn>& In1, cu_obj<cuVECIn>& In2, cu_obj<cuVECOut>& Out1, cu_obj<cuVECOut>& Out2, cu_obj<cuBReal>& energy, bool get_energy, bool clearOut)
+void ConvolutionCUDA<Owner, Kernel>::Convolute_3D(
+	cu_obj<cuVECIn>& In1, cu_obj<cuVECIn>& In2, cu_obj<cuVECOut>& Out1, cu_obj<cuVECOut>& Out2, cu_obj<cuBReal>& energy, bool get_energy, bool clearOut,
+	cu_obj<cuVEC<cuReal3>>* pH, cu_obj<cuVEC<cuBReal>>* penergy)
 {
 	//Copy In to cufft arrays, setting all other points to zero
 	AverageInputData(In1, In2);
@@ -514,11 +598,11 @@ void ConvolutionCUDA<Owner, Kernel>::Convolute_3D(cu_obj<cuVECIn>& In1, cu_obj<c
 	//Copy cufft arrays to Heff
 	if (clearOut) {
 
-		FinishConvolution_Set(In1, In2, Out1, Out2, energy, get_energy);
+		FinishConvolution_Set(In1, In2, Out1, Out2, energy, get_energy, pH, penergy);
 	}
 	else {
 
-		FinishConvolution_Add(In1, In2, Out1, Out2, energy, get_energy);
+		FinishConvolution_Add(In1, In2, Out1, Out2, energy, get_energy, pH, penergy);
 	}
 }
 
@@ -555,7 +639,10 @@ void ConvolutionCUDA<Owner, Kernel>::ForwardFFT_2D(cu_obj<cuVECIn>& In1, cu_obj<
 //inverse FFT with the option of calculating an energy contribution ((-MU0/2)(In * Out) / input_non_empty_cells
 template <typename Owner, typename Kernel>
 template <typename cuVECIn, typename cuVECOut>
-void ConvolutionCUDA<Owner, Kernel>::InverseFFT_2D(cu_obj<cuVECIn>& In, cu_obj<cuVECOut>& Out, cu_obj<cuBReal>& energy, bool get_energy, bool clearOut)
+void ConvolutionCUDA<Owner, Kernel>::InverseFFT_2D(
+	cu_obj<cuVECIn>& In, cu_obj<cuVECOut>& Out, 
+	cu_obj<cuBReal>& energy, bool get_energy, bool clearOut,
+	cu_obj<cuVEC<cuReal3>>* pH, cu_obj<cuVEC<cuBReal>>* penergy)
 {
 	//Inverse 2D FFT
 	inverse_fft_2D_2();
@@ -563,11 +650,11 @@ void ConvolutionCUDA<Owner, Kernel>::InverseFFT_2D(cu_obj<cuVECIn>& In, cu_obj<c
 	//Copy cufft arrays to Heff
 	if (clearOut) {
 
-		FinishConvolution_Set(In, Out, energy, get_energy);
+		FinishConvolution_Set(In, Out, energy, get_energy, pH, penergy);
 	}
 	else {
 
-		FinishConvolution_Add(In, Out, energy, get_energy);
+		FinishConvolution_Add(In, Out, energy, get_energy, pH, penergy);
 	}
 }
 
@@ -575,7 +662,10 @@ void ConvolutionCUDA<Owner, Kernel>::InverseFFT_2D(cu_obj<cuVECIn>& In, cu_obj<c
 //This is useful when calculating an energy total from multiple meshes which might need different weights.
 template <typename Owner, typename Kernel>
 template <typename cuVECIn, typename cuVECOut>
-void ConvolutionCUDA<Owner, Kernel>::InverseFFT_2D(cu_obj<cuVECIn>& In, cu_obj<cuVECOut>& Out, cu_obj<cuBReal>& energy, cu_obj<cuBReal>& energy_weight, bool clearOut)
+void ConvolutionCUDA<Owner, Kernel>::InverseFFT_2D(
+	cu_obj<cuVECIn>& In, cu_obj<cuVECOut>& Out, cu_obj<cuBReal>& energy, 
+	cu_obj<cuBReal>& energy_weight, bool clearOut,
+	cu_obj<cuVEC<cuReal3>>* pH, cu_obj<cuVEC<cuBReal>>* penergy)
 {
 	//Inverse 2D FFT
 	inverse_fft_2D_2();
@@ -583,11 +673,11 @@ void ConvolutionCUDA<Owner, Kernel>::InverseFFT_2D(cu_obj<cuVECIn>& In, cu_obj<c
 	//Copy cufft arrays to Heff
 	if (clearOut) {
 
-		FinishConvolution_Set(In, Out, energy, energy_weight);
+		FinishConvolution_Set(In, Out, energy, energy_weight, pH, penergy);
 	}
 	else {
 
-		FinishConvolution_Add(In, Out, energy, energy_weight);
+		FinishConvolution_Add(In, Out, energy, energy_weight, pH, penergy);
 	}
 }
 
@@ -596,7 +686,10 @@ void ConvolutionCUDA<Owner, Kernel>::InverseFFT_2D(cu_obj<cuVECIn>& In, cu_obj<c
 //inverse FFT with the option of calculating an energy contribution ((-MU0/2)(In * Out) / input_non_empty_cells
 template <typename Owner, typename Kernel>
 template <typename cuVECIn, typename cuVECOut>
-void ConvolutionCUDA<Owner, Kernel>::InverseFFT_2D(cu_obj<cuVECIn>& In1, cu_obj<cuVECIn>& In2, cu_obj<cuVECOut>& Out, cu_obj<cuBReal>& energy, bool get_energy, bool clearOut)
+void ConvolutionCUDA<Owner, Kernel>::InverseFFT_2D(
+	cu_obj<cuVECIn>& In1, cu_obj<cuVECIn>& In2, cu_obj<cuVECOut>& Out, 
+	cu_obj<cuBReal>& energy, bool get_energy, bool clearOut,
+	cu_obj<cuVEC<cuReal3>>* pH, cu_obj<cuVEC<cuBReal>>* penergy)
 {
 	//Inverse 2D FFT
 	inverse_fft_2D_2();
@@ -604,11 +697,11 @@ void ConvolutionCUDA<Owner, Kernel>::InverseFFT_2D(cu_obj<cuVECIn>& In1, cu_obj<
 	//Copy cufft arrays to Heff
 	if (clearOut) {
 
-		FinishConvolution_Set(In1, In2, Out, energy, get_energy);
+		FinishConvolution_Set(In1, In2, Out, energy, get_energy, pH, penergy);
 	}
 	else {
 
-		FinishConvolution_Add(In1, In2, Out, energy, get_energy);
+		FinishConvolution_Add(In1, In2, Out, energy, get_energy, pH, penergy);
 	}
 }
 
@@ -616,7 +709,10 @@ void ConvolutionCUDA<Owner, Kernel>::InverseFFT_2D(cu_obj<cuVECIn>& In1, cu_obj<
 //This is useful when calculating an energy total from multiple meshes which might need different weights.
 template <typename Owner, typename Kernel>
 template <typename cuVECIn, typename cuVECOut>
-void ConvolutionCUDA<Owner, Kernel>::InverseFFT_2D(cu_obj<cuVECIn>& In1, cu_obj<cuVECIn>& In2, cu_obj<cuVECOut>& Out, cu_obj<cuBReal>& energy, cu_obj<cuBReal>& energy_weight, bool clearOut)
+void ConvolutionCUDA<Owner, Kernel>::InverseFFT_2D(
+	cu_obj<cuVECIn>& In1, cu_obj<cuVECIn>& In2, cu_obj<cuVECOut>& Out, 
+	cu_obj<cuBReal>& energy, cu_obj<cuBReal>& energy_weight, bool clearOut,
+	cu_obj<cuVEC<cuReal3>>* pH, cu_obj<cuVEC<cuBReal>>* penergy)
 {
 	//Inverse 2D FFT
 	inverse_fft_2D_2();
@@ -624,11 +720,11 @@ void ConvolutionCUDA<Owner, Kernel>::InverseFFT_2D(cu_obj<cuVECIn>& In1, cu_obj<
 	//Copy cufft arrays to Heff
 	if (clearOut) {
 
-		FinishConvolution_Set(In1, In2, Out, energy, energy_weight);
+		FinishConvolution_Set(In1, In2, Out, energy, energy_weight, pH, penergy);
 	}
 	else {
 
-		FinishConvolution_Add(In1, In2, Out, energy, energy_weight);
+		FinishConvolution_Add(In1, In2, Out, energy, energy_weight, pH, penergy);
 	}
 }
 
@@ -637,7 +733,10 @@ void ConvolutionCUDA<Owner, Kernel>::InverseFFT_2D(cu_obj<cuVECIn>& In1, cu_obj<
 //inverse FFT with the option of calculating an energy contribution ((-MU0/2)(In * Out) / input_non_empty_cells
 template <typename Owner, typename Kernel>
 template <typename cuVECIn, typename cuVECOut>
-void ConvolutionCUDA<Owner, Kernel>::InverseFFT_2D(cu_obj<cuVECIn>& In1, cu_obj<cuVECIn>& In2, cu_obj<cuVECOut>& Out1, cu_obj<cuVECOut>& Out2, cu_obj<cuBReal>& energy, bool get_energy, bool clearOut)
+void ConvolutionCUDA<Owner, Kernel>::InverseFFT_2D(
+	cu_obj<cuVECIn>& In1, cu_obj<cuVECIn>& In2, cu_obj<cuVECOut>& Out1, cu_obj<cuVECOut>& Out2, 
+	cu_obj<cuBReal>& energy, bool get_energy, bool clearOut,
+	cu_obj<cuVEC<cuReal3>>* pH, cu_obj<cuVEC<cuBReal>>* penergy)
 {
 	//Inverse 2D FFT
 	inverse_fft_2D_2();
@@ -645,11 +744,11 @@ void ConvolutionCUDA<Owner, Kernel>::InverseFFT_2D(cu_obj<cuVECIn>& In1, cu_obj<
 	//Copy cufft arrays to Heff
 	if (clearOut) {
 
-		FinishConvolution_Set(In1, In2, Out1, Out2, energy, get_energy);
+		FinishConvolution_Set(In1, In2, Out1, Out2, energy, get_energy, pH, penergy);
 	}
 	else {
 
-		FinishConvolution_Add(In1, In2, Out1, Out2, energy, get_energy);
+		FinishConvolution_Add(In1, In2, Out1, Out2, energy, get_energy, pH, penergy);
 	}
 }
 
@@ -657,7 +756,10 @@ void ConvolutionCUDA<Owner, Kernel>::InverseFFT_2D(cu_obj<cuVECIn>& In1, cu_obj<
 //This is useful when calculating an energy total from multiple meshes which might need different weights.
 template <typename Owner, typename Kernel>
 template <typename cuVECIn, typename cuVECOut>
-void ConvolutionCUDA<Owner, Kernel>::InverseFFT_2D(cu_obj<cuVECIn>& In1, cu_obj<cuVECIn>& In2, cu_obj<cuVECOut>& Out1, cu_obj<cuVECOut>& Out2, cu_obj<cuBReal>& energy, cu_obj<cuBReal>& energy_weight, bool clearOut)
+void ConvolutionCUDA<Owner, Kernel>::InverseFFT_2D(
+	cu_obj<cuVECIn>& In1, cu_obj<cuVECIn>& In2, cu_obj<cuVECOut>& Out1, cu_obj<cuVECOut>& Out2, 
+	cu_obj<cuBReal>& energy, cu_obj<cuBReal>& energy_weight, bool clearOut,
+	cu_obj<cuVEC<cuReal3>>* pH, cu_obj<cuVEC<cuBReal>>* penergy)
 {
 	//Inverse 2D FFT
 	inverse_fft_2D_2();
@@ -665,11 +767,11 @@ void ConvolutionCUDA<Owner, Kernel>::InverseFFT_2D(cu_obj<cuVECIn>& In1, cu_obj<
 	//Copy cufft arrays to Heff
 	if (clearOut) {
 
-		FinishConvolution_Set(In1, In2, Out1, Out2, energy, energy_weight);
+		FinishConvolution_Set(In1, In2, Out1, Out2, energy, energy_weight, pH, penergy);
 	}
 	else {
 
-		FinishConvolution_Add(In1, In2, Out1, Out2, energy, energy_weight);
+		FinishConvolution_Add(In1, In2, Out1, Out2, energy, energy_weight, pH, penergy);
 	}
 }
 
@@ -706,7 +808,10 @@ void ConvolutionCUDA<Owner, Kernel>::ForwardFFT_3D(cu_obj<cuVECIn>& In1, cu_obj<
 //inverse FFT with the option of calculating an energy contribution ((-MU0/2)(In * Out) / input_non_empty_cells
 template <typename Owner, typename Kernel>
 template <typename cuVECIn, typename cuVECOut>
-void ConvolutionCUDA<Owner, Kernel>::InverseFFT_3D(cu_obj<cuVECIn>& In, cu_obj<cuVECOut>& Out, cu_obj<cuBReal>& energy, bool get_energy, bool clearOut)
+void ConvolutionCUDA<Owner, Kernel>::InverseFFT_3D(
+	cu_obj<cuVECIn>& In, cu_obj<cuVECOut>& Out, 
+	cu_obj<cuBReal>& energy, bool get_energy, bool clearOut,
+	cu_obj<cuVEC<cuReal3>>* pH, cu_obj<cuVEC<cuBReal>>* penergy)
 {
 	//Inverse 3D FFT
 	inverse_fft_3D_2();
@@ -714,11 +819,11 @@ void ConvolutionCUDA<Owner, Kernel>::InverseFFT_3D(cu_obj<cuVECIn>& In, cu_obj<c
 	//Copy cufft arrays to Heff
 	if (clearOut) {
 
-		FinishConvolution_Set(In, Out, energy, get_energy);
+		FinishConvolution_Set(In, Out, energy, get_energy, pH, penergy);
 	}
 	else {
 
-		FinishConvolution_Add(In, Out, energy, get_energy);
+		FinishConvolution_Add(In, Out, energy, get_energy, pH, penergy);
 	}
 }
 
@@ -727,7 +832,10 @@ void ConvolutionCUDA<Owner, Kernel>::InverseFFT_3D(cu_obj<cuVECIn>& In, cu_obj<c
 //This is useful when calculating an energy total from multiple meshes which might need different weights.
 template <typename Owner, typename Kernel>
 template <typename cuVECIn, typename cuVECOut>
-void ConvolutionCUDA<Owner, Kernel>::InverseFFT_3D(cu_obj<cuVECIn>& In, cu_obj<cuVECOut>& Out, cu_obj<cuBReal>& energy, cu_obj<cuBReal>& energy_weight, bool clearOut)
+void ConvolutionCUDA<Owner, Kernel>::InverseFFT_3D(
+	cu_obj<cuVECIn>& In, cu_obj<cuVECOut>& Out, 
+	cu_obj<cuBReal>& energy, cu_obj<cuBReal>& energy_weight, bool clearOut,
+	cu_obj<cuVEC<cuReal3>>* pH, cu_obj<cuVEC<cuBReal>>* penergy)
 {
 	//Inverse 3D FFT
 	inverse_fft_3D_2();
@@ -735,11 +843,11 @@ void ConvolutionCUDA<Owner, Kernel>::InverseFFT_3D(cu_obj<cuVECIn>& In, cu_obj<c
 	//Copy cufft arrays to Heff
 	if (clearOut) {
 
-		FinishConvolution_Set(In, Out, energy, energy_weight);
+		FinishConvolution_Set(In, Out, energy, energy_weight, pH, penergy);
 	}
 	else {
 
-		FinishConvolution_Add(In, Out, energy, energy_weight);
+		FinishConvolution_Add(In, Out, energy, energy_weight, pH, penergy);
 	}
 }
 
@@ -748,7 +856,10 @@ void ConvolutionCUDA<Owner, Kernel>::InverseFFT_3D(cu_obj<cuVECIn>& In, cu_obj<c
 //inverse FFT with the option of calculating an energy contribution ((-MU0/2)(In * Out) / input_non_empty_cells
 template <typename Owner, typename Kernel>
 template <typename cuVECIn, typename cuVECOut>
-void ConvolutionCUDA<Owner, Kernel>::InverseFFT_3D(cu_obj<cuVECIn>& In1, cu_obj<cuVECIn>& In2, cu_obj<cuVECOut>& Out, cu_obj<cuBReal>& energy, bool get_energy, bool clearOut)
+void ConvolutionCUDA<Owner, Kernel>::InverseFFT_3D(
+	cu_obj<cuVECIn>& In1, cu_obj<cuVECIn>& In2, cu_obj<cuVECOut>& Out, 
+	cu_obj<cuBReal>& energy, bool get_energy, bool clearOut,
+	cu_obj<cuVEC<cuReal3>>* pH, cu_obj<cuVEC<cuBReal>>* penergy)
 {
 	//Inverse 3D FFT
 	inverse_fft_3D_2();
@@ -756,11 +867,11 @@ void ConvolutionCUDA<Owner, Kernel>::InverseFFT_3D(cu_obj<cuVECIn>& In1, cu_obj<
 	//Copy cufft arrays to Heff
 	if (clearOut) {
 
-		FinishConvolution_Set(In1, In2, Out, energy, get_energy);
+		FinishConvolution_Set(In1, In2, Out, energy, get_energy, pH, penergy);
 	}
 	else {
 
-		FinishConvolution_Add(In1, In2, Out, energy, get_energy);
+		FinishConvolution_Add(In1, In2, Out, energy, get_energy, pH, penergy);
 	}
 }
 
@@ -769,7 +880,10 @@ void ConvolutionCUDA<Owner, Kernel>::InverseFFT_3D(cu_obj<cuVECIn>& In1, cu_obj<
 //This is useful when calculating an energy total from multiple meshes which might need different weights.
 template <typename Owner, typename Kernel>
 template <typename cuVECIn, typename cuVECOut>
-void ConvolutionCUDA<Owner, Kernel>::InverseFFT_3D(cu_obj<cuVECIn>& In1, cu_obj<cuVECIn>& In2, cu_obj<cuVECOut>& Out, cu_obj<cuBReal>& energy, cu_obj<cuBReal>& energy_weight, bool clearOut)
+void ConvolutionCUDA<Owner, Kernel>::InverseFFT_3D(
+	cu_obj<cuVECIn>& In1, cu_obj<cuVECIn>& In2, cu_obj<cuVECOut>& Out, 
+	cu_obj<cuBReal>& energy, cu_obj<cuBReal>& energy_weight, bool clearOut,
+	cu_obj<cuVEC<cuReal3>>* pH, cu_obj<cuVEC<cuBReal>>* penergy)
 {
 	//Inverse 3D FFT
 	inverse_fft_3D_2();
@@ -777,11 +891,11 @@ void ConvolutionCUDA<Owner, Kernel>::InverseFFT_3D(cu_obj<cuVECIn>& In1, cu_obj<
 	//Copy cufft arrays to Heff
 	if (clearOut) {
 
-		FinishConvolution_Set(In1, In2, Out, energy, energy_weight);
+		FinishConvolution_Set(In1, In2, Out, energy, energy_weight, pH, penergy);
 	}
 	else {
 
-		FinishConvolution_Add(In1, In2, Out, energy, energy_weight);
+		FinishConvolution_Add(In1, In2, Out, energy, energy_weight, pH, penergy);
 	}
 }
 
@@ -790,7 +904,10 @@ void ConvolutionCUDA<Owner, Kernel>::InverseFFT_3D(cu_obj<cuVECIn>& In1, cu_obj<
 //inverse FFT with the option of calculating an energy contribution ((-MU0/2)(In * Out) / input_non_empty_cells
 template <typename Owner, typename Kernel>
 template <typename cuVECIn, typename cuVECOut>
-void ConvolutionCUDA<Owner, Kernel>::InverseFFT_3D(cu_obj<cuVECIn>& In1, cu_obj<cuVECIn>& In2, cu_obj<cuVECOut>& Out1, cu_obj<cuVECOut>& Out2, cu_obj<cuBReal>& energy, bool get_energy, bool clearOut)
+void ConvolutionCUDA<Owner, Kernel>::InverseFFT_3D(
+	cu_obj<cuVECIn>& In1, cu_obj<cuVECIn>& In2, cu_obj<cuVECOut>& Out1, cu_obj<cuVECOut>& Out2, 
+	cu_obj<cuBReal>& energy, bool get_energy, bool clearOut,
+	cu_obj<cuVEC<cuReal3>>* pH, cu_obj<cuVEC<cuBReal>>* penergy)
 {
 	//Inverse 3D FFT
 	inverse_fft_3D_2();
@@ -798,11 +915,11 @@ void ConvolutionCUDA<Owner, Kernel>::InverseFFT_3D(cu_obj<cuVECIn>& In1, cu_obj<
 	//Copy cufft arrays to Heff
 	if (clearOut) {
 
-		FinishConvolution_Set(In1, In2, Out1, Out2, energy, get_energy);
+		FinishConvolution_Set(In1, In2, Out1, Out2, energy, get_energy, pH, penergy);
 	}
 	else {
 
-		FinishConvolution_Add(In1, In2, Out1, Out2, energy, get_energy);
+		FinishConvolution_Add(In1, In2, Out1, Out2, energy, get_energy, pH, penergy);
 	}
 }
 
@@ -811,7 +928,10 @@ void ConvolutionCUDA<Owner, Kernel>::InverseFFT_3D(cu_obj<cuVECIn>& In1, cu_obj<
 //This is useful when calculating an energy total from multiple meshes which might need different weights.
 template <typename Owner, typename Kernel>
 template <typename cuVECIn, typename cuVECOut>
-void ConvolutionCUDA<Owner, Kernel>::InverseFFT_3D(cu_obj<cuVECIn>& In1, cu_obj<cuVECIn>& In2, cu_obj<cuVECOut>& Out1, cu_obj<cuVECOut>& Out2, cu_obj<cuBReal>& energy, cu_obj<cuBReal>& energy_weight, bool clearOut)
+void ConvolutionCUDA<Owner, Kernel>::InverseFFT_3D(
+	cu_obj<cuVECIn>& In1, cu_obj<cuVECIn>& In2, cu_obj<cuVECOut>& Out1, cu_obj<cuVECOut>& Out2, 
+	cu_obj<cuBReal>& energy, cu_obj<cuBReal>& energy_weight, bool clearOut,
+	cu_obj<cuVEC<cuReal3>>* pH, cu_obj<cuVEC<cuBReal>>* penergy)
 {
 	//Inverse 3D FFT
 	inverse_fft_3D_2();
@@ -819,11 +939,11 @@ void ConvolutionCUDA<Owner, Kernel>::InverseFFT_3D(cu_obj<cuVECIn>& In1, cu_obj<
 	//Copy cufft arrays to Heff
 	if (clearOut) {
 
-		FinishConvolution_Set(In1, In2, Out1, Out2, energy, energy_weight);
+		FinishConvolution_Set(In1, In2, Out1, Out2, energy, energy_weight, pH, penergy);
 	}
 	else {
 
-		FinishConvolution_Add(In1, In2, Out1, Out2, energy, energy_weight);
+		FinishConvolution_Add(In1, In2, Out1, Out2, energy, energy_weight, pH, penergy);
 	}
 }
 

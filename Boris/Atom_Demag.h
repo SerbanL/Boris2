@@ -38,11 +38,8 @@ private:
 	int non_empty_cells = 0;
 
 	//The demag field and magnetization computed separately at the demag macrocell size.
-	//Hdemag has cellsize h_dm (but can be cleared so need to keep this info separate, above).
-	VEC<DBL3> M, Hdemag;
-
-	//when using the evaluation speedup method we must ensure we have a previous Hdemag evaluation available
-	bool Hdemag_calculated = false;
+	//Hd has cellsize h_dm (but can be cleared so need to keep this info separate, above).
+	VEC<DBL3> M, Hd;
 
 private:
 

@@ -36,10 +36,6 @@ protected:
 	//pointer to cpu version of this (base for exchange-type module)
 	ExchangeBase* pExchBase;
 
-	//used to compute exchange energy density spatial variation
-	//memory assigned when needed
-	cu_obj<cuVEC<cuBReal>> exchange_displayVEC;
-
 protected:
 
 	//this is overloaded by inheriting Exchange-type modules. Need this to be virtual so if for any reason a base pointer is used, the overloaded method is called instead.
@@ -50,14 +46,7 @@ protected:
 
 	virtual ~ExchangeBaseCUDA() {}
 
-	//compute exchange energy density in exchange_displayVEC
-	virtual void Compute_ExchangeCUDA(void) = 0;
-
 	virtual void CalculateExchangeCoupling(cu_obj<cuBReal>& energy) = 0;
-
-public:
-
-	void Compute_Exchange(VEC<double>& displayVEC);
 };
 
 #endif

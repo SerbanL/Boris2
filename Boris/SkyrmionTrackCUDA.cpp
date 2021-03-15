@@ -73,117 +73,6 @@ DBL4 SkyrmionTrack::Get_skypos_diametersCUDA(size_t size, DBL3 h, Rect M_rect, c
 	//in-plane mesh dimensions
 	DBL2 meshDim = DBL2(M_rect.e.x - M_rect.s.x, M_rect.e.y - M_rect.s.y);
 
-	/*
-
-	//OLD METHOD : NOT RESILIENT ENOUGH
-
-	//maximum number of points along any dimension in the skyrmion tracking window; multiply by 2 since the skyrmion window is adjusted to be 2 times the skyrmion diameter so in the extreme it could be two times the mesh size.
-	int max_points = maximum((M_rect.e.x - M_rect.s.x) / h.x, (M_rect.e.y - M_rect.s.y) / h.y) * 2;
-	if (max_points <= 0) return DBL4();
-
-	//get x axis data then fit to find skyrmion diameter and center position
-	auto fit_x_axis = [&](void) -> DBL2 {
-
-		int points_x = (skyRect.e.x - skyRect.s.x) / h.x;
-		
-		//skyrmion too large for current mesh size so fail the fitting
-		if (points_x > max_points) return DBL2(-1);
-
-		//to improve fitting accuracy extended the number of points either side by filling in start / end values.
-		int end_points = 100;
-
-		//keep working arrays to maximum possible size (memory use is not significant and this avoids allocating memory often).
-		if (xy_data.size() < max_points + 2 * end_points) xy_data.resize(max_points + 2 * end_points);
-		if (data_gpu.size() < max_points) data_gpu.resize(max_points);
-		if (data_cpu.size() != data_gpu.size()) data_cpu.resize(data_gpu.size());
-
-		//Extract profile from M (gpu to gpu)
-		if (data_gpu.size() >= points_x) M()->extract_profile_component_x(points_x, data_gpu, cuReal3(skyRect.s.x, (skyRect.e.y + skyRect.s.y) / 2, h.z / 2), cuReal3(h.x, 0, 0));
-		//just in case
-		else return DBL2(-1);
-
-		//Transfer extracted profile from gpu to cpu
-		data_gpu.copy_to_vector(data_cpu);
-
-		double window_start = h.x / 2 + skyRect.s.x;
-		double window_end = ((double)points_x - 0.5) * h.x + skyRect.s.x;
-
-#pragma omp parallel for
-		for (int idx = 0; idx < points_x; idx++) {
-
-			double position = window_start + idx * h.x;
-			xy_data[idx + end_points].x = position;
-			xy_data[idx + end_points].y = data_cpu[idx];
-		}
-
-#pragma omp parallel for
-		for (int idx = 0; idx < end_points; idx++) {
-
-			//left end
-			xy_data[idx].x = window_start - (end_points - idx) * h.x;
-			xy_data[idx].y = 0.0;
-
-			//right end
-			xy_data[idx + points_x + end_points].x = window_end + (idx + 1) * h.x;
-			xy_data[idx + points_x + end_points].y = 0.0;
-		}
-
-		fit.FitSkyrmion_Longitudinal_LMA(xy_data, params, points_x + 2 * end_points);
-
-		return DBL2(params[0] * 2, params[1]);
-	};
-
-	//get y axis data then fit to find skyrmion diameter and center position
-	auto fit_y_axis = [&](void) -> DBL2 {
-
-		int points_y = (skyRect.e.y - skyRect.s.y) / h.y;
-		if (points_y > max_points) return DBL2(-1);
-
-		//to improve fitting accuracy extended the number of points either side by filling in start / end values.
-		int end_points = 100;
-
-		//keep working arrays to maximum possible size (memory use is not significant and this avoids allocating memory often).
-		if (xy_data.size() < max_points + 2 * end_points) xy_data.resize(max_points + 2 * end_points);
-		if (data_gpu.size() < max_points) data_gpu.resize(max_points);
-		if (data_cpu.size() != data_gpu.size()) data_cpu.resize(data_gpu.size());
-
-		//Extract profile from M (gpu to gpu)
-		if (data_gpu.size() >= points_y) M()->extract_profile_component_y(points_y, data_gpu, cuReal3((skyRect.e.x + skyRect.s.x) / 2, skyRect.s.y, h.z / 2), cuReal3(0, h.y, 0));
-		else return DBL2(-1);
-
-		//Transfer extracted profile from gpu to cpu
-		data_gpu.copy_to_vector(data_cpu);
-
-		double window_start = h.y / 2 + skyRect.s.y;
-		double window_end = ((double)points_y - 0.5) * h.y + skyRect.s.y;
-
-#pragma omp parallel for
-		for (int idx = 0; idx < points_y; idx++) {
-
-			double position = window_start + idx * h.y;
-			xy_data[idx + end_points].x = position;
-			xy_data[idx + end_points].y = data_cpu[idx];
-		}
-
-#pragma omp parallel for
-		for (int idx = 0; idx < end_points; idx++) {
-
-			//left end
-			xy_data[idx].x = window_start - (end_points - idx) * h.y;
-			xy_data[idx].y = 0.0;
-
-			//right end
-			xy_data[idx + points_y + end_points].x = window_end + (idx + 1) * h.y;
-			xy_data[idx + points_y + end_points].y = 0.0;
-		}
-
-		fit.FitSkyrmion_Longitudinal_LMA(xy_data, params, points_y + 2 * end_points);
-
-		return DBL2(params[0] * 2, params[1]);
-	};
-
-	*/
-
 	//maximum number of points along any dimension in the skyrmion tracking window; multiply by 2 since the skyrmion window is adjusted to be 2 times the skyrmion diameter so in the extreme it could be two times the mesh size.
 	int max_points = maximum((M_rect.e.x - M_rect.s.x) / h.x, (M_rect.e.y - M_rect.s.y) / h.y) * 2;
 	if (max_points <= 0) return DBL4();
@@ -202,10 +91,10 @@ DBL4 SkyrmionTrack::Get_skypos_diametersCUDA(size_t size, DBL3 h, Rect M_rect, c
 			if (data_cpu.size() != data_gpu.size()) data_cpu.resize(data_gpu.size());
 
 			//Extract profile from M (gpu to gpu)
-			double position = skyRect.s.x;
+			double position = skyRect.s.x + h.x/2;
 			position -= floor_epsilon(position / meshDim.x) * meshDim.x;
 
-			if (data_gpu.size() >= points_x) M()->extract_profile_component_z(points_x, data_gpu, cuReal3(position, pos_y, h.z / 2), cuReal3(h.x, 0, 0));
+			if (data_gpu.size() >= points_x) M()->extract_profilevalues_component_z(points_x, data_gpu, cuReal3(position, pos_y, h.z / 2), cuReal3(h.x, 0, 0));
 			//just in case
 			else return DBL2(-1);
 
@@ -215,7 +104,7 @@ DBL4 SkyrmionTrack::Get_skypos_diametersCUDA(size_t size, DBL3 h, Rect M_rect, c
 			bool plus_sign = data_cpu[0] > 0;
 			double first_crossing = 0.0, second_crossing = 0.0;
 
-			for (int idx = 0; idx < (skyRect.e.x - skyRect.s.x) / h.x; idx++) {
+			for (int idx = 0; idx < points_x; idx++) {
 
 				double value = data_cpu[idx];
 
@@ -225,11 +114,11 @@ DBL4 SkyrmionTrack::Get_skypos_diametersCUDA(size_t size, DBL3 h, Rect M_rect, c
 
 					if (!first_crossing) {
 
-						first_crossing = skyRect.s.x + idx * h.x;
+						first_crossing = skyRect.s.x + ((double)idx + 0.5) * h.x;
 					}
 					else {
 
-						second_crossing = skyRect.s.x + idx * h.x;
+						second_crossing = skyRect.s.x + ((double)idx + 0.5) * h.x;
 						break;
 					}
 				}
@@ -297,10 +186,10 @@ DBL4 SkyrmionTrack::Get_skypos_diametersCUDA(size_t size, DBL3 h, Rect M_rect, c
 			if (data_cpu.size() != data_gpu.size()) data_cpu.resize(data_gpu.size());
 
 			//Extract profile from M (gpu to gpu)
-			double position = skyRect.s.y;
+			double position = skyRect.s.y + h.y / 2;
 			position -= floor_epsilon(position / meshDim.y) * meshDim.y;
 
-			if (data_gpu.size() >= points_y) M()->extract_profile_component_z(points_y, data_gpu, cuReal3(pos_x, position, h.z / 2), cuReal3(0, h.y, 0));
+			if (data_gpu.size() >= points_y) M()->extract_profilevalues_component_z(points_y, data_gpu, cuReal3(pos_x, position, h.z / 2), cuReal3(0, h.y, 0));
 			else return DBL2(-1);
 
 			//Transfer extracted profile from gpu to cpu
@@ -309,7 +198,7 @@ DBL4 SkyrmionTrack::Get_skypos_diametersCUDA(size_t size, DBL3 h, Rect M_rect, c
 			bool plus_sign = data_cpu[0] > 0;
 			double first_crossing = 0.0, second_crossing = 0.0;
 
-			for (int idx = 0; idx < (skyRect.e.y - skyRect.s.y) / h.y; idx++) {
+			for (int idx = 0; idx < points_y; idx++) {
 
 				double value = data_cpu[idx];
 
@@ -319,11 +208,11 @@ DBL4 SkyrmionTrack::Get_skypos_diametersCUDA(size_t size, DBL3 h, Rect M_rect, c
 
 					if (!first_crossing) {
 
-						first_crossing = skyRect.s.y + idx * h.y;
+						first_crossing = skyRect.s.y + ((double)idx + 0.5) * h.y;
 					}
 					else {
 
-						second_crossing = skyRect.s.y + idx * h.y;
+						second_crossing = skyRect.s.y + ((double)idx + 0.5) * h.y;
 						break;
 					}
 				}

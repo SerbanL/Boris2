@@ -4,6 +4,11 @@
 //Compute in Ddiag the diagonal tensor elements (Dxx, Dyy, Dzz) which has sizes given by N.
 bool DemagTFunc::CalcDiagTens2D_PBC(VEC<DBL3> &Ddiag, INT3 N, DBL3 hRatios, bool minus, int asymptotic_distance, int x_images, int y_images, int z_images)
 {
+	//caller can have these negative (which means use inverse pbc for differential operators, but for demag we need them positive)
+	x_images = abs(x_images);
+	y_images = abs(y_images);
+	z_images = abs(z_images);
+
 	//zero the tensor first
 	Ddiag.set(DBL3());
 
@@ -91,6 +96,11 @@ bool DemagTFunc::CalcDiagTens2D_PBC(VEC<DBL3> &Ddiag, INT3 N, DBL3 hRatios, bool
 //Compute in Dodiag the off-diagonal tensor elements (Dxy, Dxz, Dyz) which has sizes given by N. 
 bool DemagTFunc::CalcOffDiagTens2D_PBC(std::vector<double> &Dodiag, INT3 N, DBL3 hRatios, bool minus, int asymptotic_distance, int x_images, int y_images, int z_images)
 {
+	//caller can have these negative (which means use inverse pbc for differential operators, but for demag we need them positive)
+	x_images = abs(x_images);
+	y_images = abs(y_images);
+	z_images = abs(z_images);
+
 	//zero the tensor first
 	std::fill(Dodiag.begin(), Dodiag.end(), 0.0);
 
@@ -179,6 +189,11 @@ bool DemagTFunc::CalcOffDiagTens2D_PBC(std::vector<double> &Dodiag, INT3 N, DBL3
 //Compute in Ddiag the diagonal tensor elements (Dxx, Dyy, Dzz) which has sizes given by N.
 bool DemagTFunc::CalcDiagTens3D_PBC(VEC<DBL3> &Ddiag, INT3 N, DBL3 hRatios, bool minus, int asymptotic_distance, int x_images, int y_images, int z_images)
 {
+	//caller can have these negative (which means use inverse pbc for differential operators, but for demag we need them positive)
+	x_images = abs(x_images);
+	y_images = abs(y_images);
+	z_images = abs(z_images);
+
 	//zero the tensor first
 	Ddiag.set(DBL3());
 
@@ -284,6 +299,11 @@ bool DemagTFunc::CalcDiagTens3D_PBC(VEC<DBL3> &Ddiag, INT3 N, DBL3 hRatios, bool
 //Compute in Dodiag the off-diagonal tensor elements (Dxy, Dxz, Dyz) which has sizes given by N. 
 bool DemagTFunc::CalcOffDiagTens3D_PBC(VEC<DBL3> &Dodiag, INT3 N, DBL3 hRatios, bool minus, int asymptotic_distance, int x_images, int y_images, int z_images)
 {
+	//caller can have these negative (which means use inverse pbc for differential operators, but for demag we need them positive)
+	x_images = abs(x_images);
+	y_images = abs(y_images);
+	z_images = abs(z_images);
+
 	//zero the tensor first
 	Dodiag.set(DBL3());
 

@@ -140,7 +140,10 @@ public:
 	//---------------------------------------- OTHERS
 
 	//Restore magnetization after a failed step for adaptive time-step methods
-	void Restoremagnetization(void);
+	void RestoreMagnetization(void);
+
+	//renormalize vectors to set magnetization length value (which could have a spatial variation)
+	void RenormalizeMagnetization(void);
 
 	//----------------------------------- GETTERS
 
@@ -271,7 +274,10 @@ public:
 	//---------------------------------------- OTHERS
 
 	//Restore magnetization after a failed step for adaptive time-step methods
-	void Restoremagnetization(void) {}
+	void RestoreMagnetization(void) {}
+
+	//renormalize vectors to set magnetization length value (which could have a spatial variation)
+	void RenormalizeMagnetization(void) {}
 
 	//----------------------------------- GETTERS
 

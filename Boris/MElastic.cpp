@@ -45,7 +45,12 @@ BError MElastic::Initialize(void)
 {
 	BError error(CLASS_STR(MElastic));
 
-	initialized = true;
+	//Make sure display data has memory allocated (or freed) as required
+	error = Update_Module_Display_VECs(
+		pMesh->h, pMesh->meshRect, 
+		(MOD_)pMesh->Get_Module_Heff_Display() == MOD_MELASTIC || pMesh->IsOutputDataSet_withRect(DATA_E_MELASTIC),
+		(MOD_)pMesh->Get_Module_Energy_Display() == MOD_MELASTIC || pMesh->IsOutputDataSet_withRect(DATA_E_MELASTIC));
+	if (!error)	initialized = true;
 
 	return error;
 }
@@ -195,11 +200,9 @@ double MElastic::UpdateField(void)
 			double Ms = pMesh->Ms;
 			DBL3 mcanis_ea1 = pMesh->mcanis_ea1;
 			DBL3 mcanis_ea2 = pMesh->mcanis_ea2;
+			DBL3 mcanis_ea3 = pMesh->mcanis_ea3;
 			DBL2 MEc = pMesh->MEc;
-			pMesh->update_parameters_mcoarse(idx, pMesh->Ms, Ms, pMesh->MEc, MEc, pMesh->mcanis_ea1, mcanis_ea1, pMesh->mcanis_ea2, mcanis_ea2);
-
-			//vector product of ea1 and ea2 : the third orthogonal axis
-			DBL3 mcanis_ea3 = mcanis_ea1 ^ mcanis_ea2;
+			pMesh->update_parameters_mcoarse(idx, pMesh->Ms, Ms, pMesh->MEc, MEc, pMesh->mcanis_ea1, mcanis_ea1, pMesh->mcanis_ea2, mcanis_ea2, pMesh->mcanis_ea3, mcanis_ea3);
 
 			DBL3 position = pMesh->M.cellidx_to_position(idx);
 			//xx, yy, zz
@@ -227,6 +230,9 @@ double MElastic::UpdateField(void)
 			pMesh->Heff[idx] += Hmel_1 + Hmel_2;
 
 			energy += pMesh->M[idx] * (Hmel_1 + Hmel_2);
+
+			if (Module_Heff.linear_size()) Module_Heff[idx] = Hmel_1 + Hmel_2;
+			if (Module_energy.linear_size()) Module_energy[idx] = -MU0 * pMesh->M[idx] * (Hmel_1 + Hmel_2) / 2;
 		}
 	}
 	

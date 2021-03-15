@@ -56,8 +56,6 @@ VType VEC<VType>::average_omp(const Box& box) const
 
 		if (idx < 0 || idx >= n.dim()) continue;
 
-		int tn = omp_get_thread_num();
-
 		reduction.reduce_average(quantity[idx]);
 	}
 

@@ -53,3 +53,17 @@ BError Atom_Mesh::copy_mesh_parameters(MeshBase& copy_this)
 
 	return error;
 }
+
+//-------------------------Setters
+
+//set tensorial anisotropy terms
+BError Atom_Mesh::set_tensorial_anisotropy(std::vector<DBL4> Kt)
+{
+	BError error(__FUNCTION__);
+
+	this->Kt = Kt;
+
+	error = UpdateConfiguration(UPDATECONFIG_PARAMCHANGED);
+
+	return error;
+}

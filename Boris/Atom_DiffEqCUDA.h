@@ -157,6 +157,9 @@ protected:
 	//Restore moments after a failed step for adaptive time-step methods
 	virtual void RestoreMoments(void) = 0;
 
+	//renormalize vectors to set moment length value (which could have a spatial variation)
+	virtual void RenormalizeMoments(void) = 0;
+
 	//---------------------------------------- OTHER CALCULATION METHODS : Atom_DiffEq_SEquationsCUDA.cu
 
 	//called when using stochastic equations

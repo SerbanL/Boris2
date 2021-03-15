@@ -12,8 +12,6 @@
 #include "MeshParamsCUDA.h"
 #endif
 
-
-
 /////////////////////////////////////////////////////////////////////////////////////////////////
 //	
 //	The Mesh material parameters : micromagnetic meshes only
@@ -100,12 +98,20 @@ public:
 	//Magneto-crystalline anisotropy K1 and K2 constants (J/m^3) and easy axes directions. For uniaxial anisotropy only ea1 is needed, for cubic ea1 and ea2 should be orthogonal.
 	MatP<double, double> K1 = 1e4;
 	MatP<double, double> K2 = 0;
+	MatP<double, double> K3 = 0;
 	MatP<DBL3, DBL3> mcanis_ea1 = DBL3(1, 0, 0);
 	MatP<DBL3, DBL3> mcanis_ea2 = DBL3(0, 1, 0);
+	MatP<DBL3, DBL3> mcanis_ea3 = DBL3(0, 0, 1);
+
+	//tensorial anisotropy. each term is a contribution to the anisotropy energy density as d*a^n1 b^n2 c^n3. Here a = m.mcanis_ea1, b = m.mcanis_ea2, c = m.mcanis_ea3.
+	//For 2nd order we aditionally multiply by K1, 4th order K2, 6th order K3. Any other orders d coefficient contains anisotropy energy density.
+	//each DBL4 stores (d, n1, n2, n3), where d != 0, n1, n2, n3 >= 0, n1+n2+n3>0. Odd order terms allowed.
+	std::vector<DBL4> Kt, Kt2;
 
 	//Anisotropy values for 2-sublattice model
 	MatP<DBL2, double> K1_AFM = DBL2(1e5);
 	MatP<DBL2, double> K2_AFM = DBL2(0.0);
+	MatP<DBL2, double> K3_AFM = DBL2(0.0);
 
 	//longitudinal (parallel) susceptibility relative to mu0*Ms0, i.e. divided by mu0*Ms0, Ms0 is the 0K Ms value - for use with LLB equation. Units As^2/kg
 	MatP<double, double> susrel = 1.0;
@@ -267,6 +273,10 @@ public:
 	//copy all parameters from another Mesh
 	void copy_parameters(MeshParams& copy_this);
 
+	//-------------------------Getters
+
+	std::string get_tensorial_anisotropy_string(void);
+
 	//-------------------------Setters/Updaters : text equations
 
 	//set the mesh parameter temperature equation with given user constants
@@ -363,6 +373,10 @@ RType MeshParams::run_on_param(PARAM_ paramID, Lambda& run_this, PType& ... run_
 		return run_this(K2, run_this_args...);
 		break;
 
+	case PARAM_K3:
+		return run_this(K3, run_this_args...);
+		break;
+
 	case PARAM_K1_AFM:
 		return run_this(K1_AFM, run_this_args...);
 		break;
@@ -371,12 +385,20 @@ RType MeshParams::run_on_param(PARAM_ paramID, Lambda& run_this, PType& ... run_
 		return run_this(K2_AFM, run_this_args...);
 		break;
 
+	case PARAM_K3_AFM:
+		return run_this(K3_AFM, run_this_args...);
+		break;
+
 	case PARAM_EA1:
 		return run_this(mcanis_ea1, run_this_args...);
 		break;
 
 	case PARAM_EA2:
 		return run_this(mcanis_ea2, run_this_args...);
+		break;
+
+	case PARAM_EA3:
+		return run_this(mcanis_ea3, run_this_args...);
 		break;
 
 	case PARAM_TC:

@@ -7,6 +7,7 @@
 
 #include "Atom_Zeeman.h"
 #include "Atom_MeshCUDA.h"
+#include "DataDefs.h"
 
 Atom_ZeemanCUDA::Atom_ZeemanCUDA(Atom_MeshCUDA* paMeshCUDA_, Atom_Zeeman* paZeeman_) :
 	ModulesCUDA()
@@ -31,7 +32,12 @@ BError Atom_ZeemanCUDA::Initialize(void)
 {
 	BError error(CLASS_STR(Atom_ZeemanCUDA));
 
-	initialized = true;
+	//Make sure display data has memory allocated (or freed) as required
+	error = Update_Module_Display_VECs(
+		(cuReal3)paMeshCUDA->h, (cuRect)paMeshCUDA->meshRect, 
+		(MOD_)paMeshCUDA->Get_Module_Heff_Display() == MOD_ZEEMAN || paMeshCUDA->IsOutputDataSet_withRect(DATA_E_ZEE),
+		(MOD_)paMeshCUDA->Get_Module_Energy_Display() == MOD_ZEEMAN || paMeshCUDA->IsOutputDataSet_withRect(DATA_E_ZEE));
+	if (!error)	initialized = true;
 
 	return error;
 }
@@ -52,8 +58,6 @@ BError Atom_ZeemanCUDA::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 
 			error = SetFieldEquation(paZeeman->H_equation.get_vector_fspec());
 		}
-
-		Initialize();
 	}
 
 	return error;

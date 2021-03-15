@@ -60,14 +60,14 @@ private:
 	//transfer values from M of this mesh to a VEC with fixed number of cells -> use same meshing for all layers.
 	VEC<DBL3> transfer;
 
+	//if displaying module Heff or energy, and mesh transfer is required, then use these (capture output field and energy, then do transfer)
+	VEC<DBL3> transfer_Module_Heff;
+	VEC<double> transfer_Module_energy;
+
 	//do transfer as M -> transfer -> convolution -> transfer -> Heff if true
 	//if false then don't use the transfer VEC but can do M -> convolution -> Heff directly
 	//this flag will be set false only if the convolution rect matches that of M and n_common matches the discretisation of M (i.e. in this case a mesh transfer would be pointless).
 	bool do_transfer = true;
-
-	//The demag field computed separately : at certain steps in the ODE evaluation method we don't need to recalculate the demag field but can use a previous evaluation with an acceptable impact on the numerical error.
-	//This mode needs to be enabled by the user, and can be much faster than the default mode. The default mode is to re-evaluate the demag field at every step.
-	VEC<DBL3> Hdemag;
 
 	//number of non-empty cells in transfer
 	int non_empty_cells;
@@ -75,10 +75,23 @@ private:
 	//different meshes have different weights when contributing to the total energy density -> ratio of their non-empty volume to total non-empty volume
 	double energy_density_weight = 0.0;
 
+	//Evaluation speedup mode data
+
+	//1 Hdemag: no extrapolation, just save evaluation and reuse
+	//2 Hdemag: linear extrapolation, need 2
+	//3 Hdemag: quadratic extrapolation, need 3
+	VEC<DBL3> Hdemag, Hdemag2, Hdemag3;
+
+	//-Nxx, -Nyy, -Nzz values at r = r0
+	DBL3 selfDemagCoeff = DBL3();
+
 private:
 
 	//initialize transfer object
 	BError Initialize_Mesh_Transfer(void);
+
+	//allocate memory and initialize mesh transfer for module Heff and energy display data
+	BError Initialize_Module_Display(void);
 
 public:
 
@@ -100,7 +113,7 @@ public:
 
 	BError MakeCUDAModule(void);
 
-	double UpdateField(void) { return 0.0; }
+	double UpdateField(void);
 
 	//-------------------Setters
 

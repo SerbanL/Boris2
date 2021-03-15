@@ -214,6 +214,9 @@ public:
 	//this just sets the indicative material Tc value
 	void SetCurieTemperatureMaterial(double Tc_material) { T_Curie_material = Tc_material; }
 
+	//set tensorial anisotropy terms
+	BError set_tensorial_anisotropy(std::vector<DBL4> Kt);
+
 	//----------------------------------- RUNTIME PARAMETER UPDATERS (MeshParamsControl.h)
 
 	//UPDATER M COARSENESS - PUBLIC
@@ -309,9 +312,9 @@ public:
 	bool GInterface_Enabled(void) { return (DBL2(Gmix.get0()).norm() > 0); }
 
 	//are periodic boundary conditions set for magnetization?
-	bool Is_PBC_x(void) { return M.is_pbc_x(); }
-	bool Is_PBC_y(void) { return M.is_pbc_y(); }
-	bool Is_PBC_z(void) { return M.is_pbc_z(); }
+	int Is_PBC_x(void) { return M.is_pbc_x(); }
+	int Is_PBC_y(void) { return M.is_pbc_y(); }
+	int Is_PBC_z(void) { return M.is_pbc_z(); }
 
 	//is there a demag-type module set for this mesh? (SDemag not included as this is a SuperMesh module)
 	bool Is_Demag_Enabled(void) { return IsModuleSet(MOD_DEMAG); }
@@ -325,11 +328,6 @@ public:
 	//2: antiferromagnetic only, sub-lattice B
 	DBL3 GetAveragemagnetization(Rect rectangle = Rect());
 	DBL3 GetAveragemagnetization2(Rect rectangle = Rect());
-
-	//Average square of components
-	double GetAverageXmagnetizationSq(Rect rectangle = Rect());
-	double GetAverageYmagnetizationSq(Rect rectangle = Rect());
-	double GetAverageZmagnetizationSq(Rect rectangle = Rect());
 
 	//get magnetization magnitude min-max in given rectangle (entire mesh if none specified)
 	DBL2 GetmagnetizationMinMax(Rect rectangle = Rect());
@@ -387,13 +385,7 @@ public:
 
 	//----------------------------------- VALUE GETTERS : MeshCompute.cpp
 
-	//get maximum exchange energy density modulus over specified rectangle
-	double Get_Max_Exchange_EnergyDensity(Rect& rectangle);
-
 	//----------------------------------- OTHER CALCULATION METHODS : MeshCompute.cpp
-
-	//compute exchange energy density spatial variation and have it available to display in Cust_S
-	void Compute_Exchange(void);
 
 	//compute topological charge density spatial dependence and have it available to display in Cust_S
 	//Use formula Qdensity = m.(dm/dx x dm/dy) / 4PI

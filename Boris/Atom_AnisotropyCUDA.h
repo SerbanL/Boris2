@@ -34,13 +34,6 @@ public:
 	void UpdateConfiguration_Values(UPDATECONFIG_ cfgMessage) {}
 
 	void UpdateField(void);
-
-	//-------------------Energy density methods
-
-	cuBReal GetEnergyDensity(cuRect avRect);
-
-	//-------------------
-
 };
 
 #else

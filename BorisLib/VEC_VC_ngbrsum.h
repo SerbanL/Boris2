@@ -24,7 +24,7 @@ VType VEC_VC<VType>::ngbr_sum(int idx) const
 			//is it a pbc along x? If yes, then we are guaranteed to have a "neighbor" on the other side, so use it; otherwise just one contribution.
 			if (ngbrFlags[idx] & NF_PBCX) {
 
-				sum = (VEC<VType>::quantity[idx + 1] + VEC<VType>::quantity[idx + VEC<VType>::n.x - 1]);
+				sum = (VEC<VType>::quantity[idx + 1] + get_sign(pbc_x) * VEC<VType>::quantity[idx + VEC<VType>::n.x - 1]);
 			}
 			else {
 
@@ -36,7 +36,7 @@ VType VEC_VC<VType>::ngbr_sum(int idx) const
 			//is it a pbc along x? If yes, then we are guaranteed to have a "neighbor" on the other side, so use it; otherwise just one contribution.
 			if (ngbrFlags[idx] & NF_PBCX) {
 
-				sum = (VEC<VType>::quantity[idx - (VEC<VType>::n.x - 1)] + VEC<VType>::quantity[idx - 1]);
+				sum = (get_sign(pbc_x) * VEC<VType>::quantity[idx - (VEC<VType>::n.x - 1)] + VEC<VType>::quantity[idx - 1]);
 			}
 			else {
 
@@ -57,7 +57,7 @@ VType VEC_VC<VType>::ngbr_sum(int idx) const
 			//is it a pbc along y? If yes, then we are guaranteed to have a "neighbor" on the other side, so use it; otherwise just one contribution.
 			if (ngbrFlags[idx] & NF_PBCY) {
 
-				sum += (VEC<VType>::quantity[idx + VEC<VType>::n.x] + VEC<VType>::quantity[idx + (VEC<VType>::n.y - 1)*VEC<VType>::n.x]);
+				sum += (VEC<VType>::quantity[idx + VEC<VType>::n.x] + get_sign(pbc_y) * VEC<VType>::quantity[idx + (VEC<VType>::n.y - 1)*VEC<VType>::n.x]);
 			}
 			else {
 
@@ -69,7 +69,7 @@ VType VEC_VC<VType>::ngbr_sum(int idx) const
 			//is it a pbc along y? If yes, then we are guaranteed to have a "neighbor" on the other side, so use it; otherwise just one contribution.
 			if (ngbrFlags[idx] & NF_PBCY) {
 
-				sum += (VEC<VType>::quantity[idx - (VEC<VType>::n.y - 1)*VEC<VType>::n.x] + VEC<VType>::quantity[idx - VEC<VType>::n.x]);
+				sum += (get_sign(pbc_y) * VEC<VType>::quantity[idx - (VEC<VType>::n.y - 1)*VEC<VType>::n.x] + VEC<VType>::quantity[idx - VEC<VType>::n.x]);
 			}
 			else {
 
@@ -90,7 +90,7 @@ VType VEC_VC<VType>::ngbr_sum(int idx) const
 			//is it a pbc along z? If yes, then we are guaranteed to have a "neighbor" on the other side, so use it; otherwise just one contribution.
 			if (ngbrFlags[idx] & NF_PBCZ) {
 
-				sum += (VEC<VType>::quantity[idx + VEC<VType>::n.x*VEC<VType>::n.y] + VEC<VType>::quantity[idx + (VEC<VType>::n.z - 1) * VEC<VType>::n.x*VEC<VType>::n.y]);
+				sum += (VEC<VType>::quantity[idx + VEC<VType>::n.x*VEC<VType>::n.y] + get_sign(pbc_z) * VEC<VType>::quantity[idx + (VEC<VType>::n.z - 1) * VEC<VType>::n.x*VEC<VType>::n.y]);
 			}
 			else {
 
@@ -102,7 +102,7 @@ VType VEC_VC<VType>::ngbr_sum(int idx) const
 			//is it a pbc along z? If yes, then we are guaranteed to have a "neighbor" on the other side, so use it; otherwise just one contribution.
 			if (ngbrFlags[idx] & NF_PBCZ) {
 
-				sum += (VEC<VType>::quantity[idx - (VEC<VType>::n.z - 1) * VEC<VType>::n.x*VEC<VType>::n.y] + VEC<VType>::quantity[idx - VEC<VType>::n.x*VEC<VType>::n.y]);
+				sum += (get_sign(pbc_z) * VEC<VType>::quantity[idx - (VEC<VType>::n.z - 1) * VEC<VType>::n.x*VEC<VType>::n.y] + VEC<VType>::quantity[idx - VEC<VType>::n.x*VEC<VType>::n.y]);
 			}
 			else {
 
@@ -133,7 +133,7 @@ VType VEC_VC<VType>::ngbr_dirsum(int idx) const
 			//is it a pbc along x? If yes, then we are guaranteed to have a "neighbor" on the other side, so use it; otherwise just one contribution.
 			if (ngbrFlags[idx] & NF_PBCX) {
 
-				sum = (VEC<VType>::quantity[idx + 1] / GetMagnitude(VEC<VType>::quantity[idx + 1]) + VEC<VType>::quantity[idx + VEC<VType>::n.x - 1] / GetMagnitude(VEC<VType>::quantity[idx + VEC<VType>::n.x - 1]));
+				sum = (VEC<VType>::quantity[idx + 1] / GetMagnitude(VEC<VType>::quantity[idx + 1]) + get_sign(pbc_x) * VEC<VType>::quantity[idx + VEC<VType>::n.x - 1] / GetMagnitude(VEC<VType>::quantity[idx + VEC<VType>::n.x - 1]));
 			}
 			else {
 
@@ -145,7 +145,8 @@ VType VEC_VC<VType>::ngbr_dirsum(int idx) const
 			//is it a pbc along x? If yes, then we are guaranteed to have a "neighbor" on the other side, so use it; otherwise just one contribution.
 			if (ngbrFlags[idx] & NF_PBCX) {
 
-				sum = (VEC<VType>::quantity[idx - (VEC<VType>::n.x - 1)] / GetMagnitude(VEC<VType>::quantity[idx - (VEC<VType>::n.x - 1)]) + VEC<VType>::quantity[idx - 1] / GetMagnitude(VEC<VType>::quantity[idx - 1]));
+				//sum = (VEC<VType>::quantity[idx - (VEC<VType>::n.x - 1)] / GetMagnitude(VEC<VType>::quantity[idx - (VEC<VType>::n.x - 1)]) + VEC<VType>::quantity[idx - 1] / GetMagnitude(VEC<VType>::quantity[idx - 1]));
+				sum = (get_sign(pbc_x) * VEC<VType>::quantity[idx - (VEC<VType>::n.x - 1)] / GetMagnitude(VEC<VType>::quantity[idx - (VEC<VType>::n.x - 1)]) + VEC<VType>::quantity[idx - 1] / GetMagnitude(VEC<VType>::quantity[idx - 1]));
 			}
 			else {
 
@@ -166,7 +167,7 @@ VType VEC_VC<VType>::ngbr_dirsum(int idx) const
 			//is it a pbc along y? If yes, then we are guaranteed to have a "neighbor" on the other side, so use it; otherwise just one contribution.
 			if (ngbrFlags[idx] & NF_PBCY) {
 
-				sum += (VEC<VType>::quantity[idx + VEC<VType>::n.x] / GetMagnitude(VEC<VType>::quantity[idx + VEC<VType>::n.x]) + VEC<VType>::quantity[idx + (VEC<VType>::n.y - 1)*VEC<VType>::n.x] / GetMagnitude(VEC<VType>::quantity[idx + (VEC<VType>::n.y - 1)*VEC<VType>::n.x]));
+				sum += (VEC<VType>::quantity[idx + VEC<VType>::n.x] / GetMagnitude(VEC<VType>::quantity[idx + VEC<VType>::n.x]) + get_sign(pbc_y) * VEC<VType>::quantity[idx + (VEC<VType>::n.y - 1)*VEC<VType>::n.x] / GetMagnitude(VEC<VType>::quantity[idx + (VEC<VType>::n.y - 1)*VEC<VType>::n.x]));
 			}
 			else {
 
@@ -178,7 +179,7 @@ VType VEC_VC<VType>::ngbr_dirsum(int idx) const
 			//is it a pbc along y? If yes, then we are guaranteed to have a "neighbor" on the other side, so use it; otherwise just one contribution.
 			if (ngbrFlags[idx] & NF_PBCY) {
 
-				sum += (VEC<VType>::quantity[idx - (VEC<VType>::n.y - 1)*VEC<VType>::n.x] / GetMagnitude(VEC<VType>::quantity[idx - (VEC<VType>::n.y - 1)*VEC<VType>::n.x]) + VEC<VType>::quantity[idx - VEC<VType>::n.x] / GetMagnitude(VEC<VType>::quantity[idx - VEC<VType>::n.x]));
+				sum += (get_sign(pbc_y) * VEC<VType>::quantity[idx - (VEC<VType>::n.y - 1)*VEC<VType>::n.x] / GetMagnitude(VEC<VType>::quantity[idx - (VEC<VType>::n.y - 1)*VEC<VType>::n.x]) + VEC<VType>::quantity[idx - VEC<VType>::n.x] / GetMagnitude(VEC<VType>::quantity[idx - VEC<VType>::n.x]));
 			}
 			else {
 
@@ -199,7 +200,7 @@ VType VEC_VC<VType>::ngbr_dirsum(int idx) const
 			//is it a pbc along z? If yes, then we are guaranteed to have a "neighbor" on the other side, so use it; otherwise just one contribution.
 			if (ngbrFlags[idx] & NF_PBCZ) {
 
-				sum += (VEC<VType>::quantity[idx + VEC<VType>::n.x*VEC<VType>::n.y] / GetMagnitude(VEC<VType>::quantity[idx + VEC<VType>::n.x*VEC<VType>::n.y]) + VEC<VType>::quantity[idx + (VEC<VType>::n.z - 1) * VEC<VType>::n.x*VEC<VType>::n.y] / GetMagnitude(VEC<VType>::quantity[idx + (VEC<VType>::n.z - 1) * VEC<VType>::n.x*VEC<VType>::n.y]));
+				sum += (VEC<VType>::quantity[idx + VEC<VType>::n.x*VEC<VType>::n.y] / GetMagnitude(VEC<VType>::quantity[idx + VEC<VType>::n.x*VEC<VType>::n.y]) + get_sign(pbc_z) * VEC<VType>::quantity[idx + (VEC<VType>::n.z - 1) * VEC<VType>::n.x*VEC<VType>::n.y] / GetMagnitude(VEC<VType>::quantity[idx + (VEC<VType>::n.z - 1) * VEC<VType>::n.x*VEC<VType>::n.y]));
 			}
 			else {
 
@@ -211,7 +212,7 @@ VType VEC_VC<VType>::ngbr_dirsum(int idx) const
 			//is it a pbc along z? If yes, then we are guaranteed to have a "neighbor" on the other side, so use it; otherwise just one contribution.
 			if (ngbrFlags[idx] & NF_PBCZ) {
 
-				sum += (VEC<VType>::quantity[idx - (VEC<VType>::n.z - 1) * VEC<VType>::n.x*VEC<VType>::n.y] / GetMagnitude(VEC<VType>::quantity[idx - (VEC<VType>::n.z - 1) * VEC<VType>::n.x*VEC<VType>::n.y]) + VEC<VType>::quantity[idx - VEC<VType>::n.x*VEC<VType>::n.y] / GetMagnitude(VEC<VType>::quantity[idx - VEC<VType>::n.x*VEC<VType>::n.y]));
+				sum += (get_sign(pbc_z) * VEC<VType>::quantity[idx - (VEC<VType>::n.z - 1) * VEC<VType>::n.x*VEC<VType>::n.y] / GetMagnitude(VEC<VType>::quantity[idx - (VEC<VType>::n.z - 1) * VEC<VType>::n.x*VEC<VType>::n.y]) + VEC<VType>::quantity[idx - VEC<VType>::n.x*VEC<VType>::n.y] / GetMagnitude(VEC<VType>::quantity[idx - VEC<VType>::n.x*VEC<VType>::n.y]));
 			}
 			else {
 
@@ -246,7 +247,7 @@ VType VEC_VC<VType>::anisotropic_ngbr_sum(int idx) const
 			//is it a pbc along x? If yes, then we are guaranteed to have a "neighbor" on the other side, so use it; otherwise just one contribution.
 			if (ngbrFlags[idx] & NF_PBCX) {
 
-				sum = VType(0.0, -VEC<VType>::quantity[idx + 1].z, VEC<VType>::quantity[idx + 1].y) - VType(0.0, -VEC<VType>::quantity[idx + VEC<VType>::n.x - 1].z, VEC<VType>::quantity[idx + VEC<VType>::n.x - 1].y);
+				sum = VType(0.0, -VEC<VType>::quantity[idx + 1].z, VEC<VType>::quantity[idx + 1].y) - get_sign(pbc_x) * VType(0.0, -VEC<VType>::quantity[idx + VEC<VType>::n.x - 1].z, VEC<VType>::quantity[idx + VEC<VType>::n.x - 1].y);
 			}
 			else {
 
@@ -258,7 +259,7 @@ VType VEC_VC<VType>::anisotropic_ngbr_sum(int idx) const
 			//is it a pbc along x? If yes, then we are guaranteed to have a "neighbor" on the other side, so use it; otherwise just one contribution.
 			if (ngbrFlags[idx] & NF_PBCX) {
 
-				sum = VType(0.0, -VEC<VType>::quantity[idx - (VEC<VType>::n.x - 1)].z, VEC<VType>::quantity[idx - (VEC<VType>::n.x - 1)].y) - VType(0.0, -VEC<VType>::quantity[idx - 1].z, VEC<VType>::quantity[idx - 1].y);
+				sum = get_sign(pbc_x) * VType(0.0, -VEC<VType>::quantity[idx - (VEC<VType>::n.x - 1)].z, VEC<VType>::quantity[idx - (VEC<VType>::n.x - 1)].y) - VType(0.0, -VEC<VType>::quantity[idx - 1].z, VEC<VType>::quantity[idx - 1].y);
 			}
 			else {
 
@@ -279,7 +280,7 @@ VType VEC_VC<VType>::anisotropic_ngbr_sum(int idx) const
 			//is it a pbc along y? If yes, then we are guaranteed to have a "neighbor" on the other side, so use it; otherwise just one contribution.
 			if (ngbrFlags[idx] & NF_PBCY) {
 
-				sum += VType(VEC<VType>::quantity[idx + VEC<VType>::n.x].z, 0.0, -VEC<VType>::quantity[idx + VEC<VType>::n.x].x) - VType(VEC<VType>::quantity[idx + (VEC<VType>::n.y - 1)*VEC<VType>::n.x].z, 0.0, -VEC<VType>::quantity[idx + (VEC<VType>::n.y - 1)*VEC<VType>::n.x].x);
+				sum += VType(VEC<VType>::quantity[idx + VEC<VType>::n.x].z, 0.0, -VEC<VType>::quantity[idx + VEC<VType>::n.x].x) - get_sign(pbc_y) * VType(VEC<VType>::quantity[idx + (VEC<VType>::n.y - 1)*VEC<VType>::n.x].z, 0.0, -VEC<VType>::quantity[idx + (VEC<VType>::n.y - 1)*VEC<VType>::n.x].x);
 			}
 			else {
 
@@ -291,7 +292,7 @@ VType VEC_VC<VType>::anisotropic_ngbr_sum(int idx) const
 			//is it a pbc along y? If yes, then we are guaranteed to have a "neighbor" on the other side, so use it; otherwise just one contribution.
 			if (ngbrFlags[idx] & NF_PBCY) {
 
-				sum += VType(VEC<VType>::quantity[idx - (VEC<VType>::n.y - 1)*VEC<VType>::n.x].z, 0.0, -VEC<VType>::quantity[idx - (VEC<VType>::n.y - 1)*VEC<VType>::n.x].x) - VType(VEC<VType>::quantity[idx - VEC<VType>::n.x].z, 0.0, -VEC<VType>::quantity[idx - VEC<VType>::n.x].x);
+				sum += get_sign(pbc_y) * VType(VEC<VType>::quantity[idx - (VEC<VType>::n.y - 1)*VEC<VType>::n.x].z, 0.0, -VEC<VType>::quantity[idx - (VEC<VType>::n.y - 1)*VEC<VType>::n.x].x) - VType(VEC<VType>::quantity[idx - VEC<VType>::n.x].z, 0.0, -VEC<VType>::quantity[idx - VEC<VType>::n.x].x);
 			}
 			else {
 
@@ -312,7 +313,7 @@ VType VEC_VC<VType>::anisotropic_ngbr_sum(int idx) const
 			//is it a pbc along z? If yes, then we are guaranteed to have a "neighbor" on the other side, so use it; otherwise just one contribution.
 			if (ngbrFlags[idx] & NF_PBCZ) {
 
-				sum += VType(-VEC<VType>::quantity[idx + VEC<VType>::n.x*VEC<VType>::n.y].y, VEC<VType>::quantity[idx + VEC<VType>::n.x*VEC<VType>::n.y].x, 0.0) - VType(-VEC<VType>::quantity[idx + (VEC<VType>::n.z - 1) * VEC<VType>::n.x*VEC<VType>::n.y].y, VEC<VType>::quantity[idx + (VEC<VType>::n.z - 1) * VEC<VType>::n.x*VEC<VType>::n.y].x, 0.0);
+				sum += VType(-VEC<VType>::quantity[idx + VEC<VType>::n.x*VEC<VType>::n.y].y, VEC<VType>::quantity[idx + VEC<VType>::n.x*VEC<VType>::n.y].x, 0.0) - get_sign(pbc_z) * VType(-VEC<VType>::quantity[idx + (VEC<VType>::n.z - 1) * VEC<VType>::n.x*VEC<VType>::n.y].y, VEC<VType>::quantity[idx + (VEC<VType>::n.z - 1) * VEC<VType>::n.x*VEC<VType>::n.y].x, 0.0);
 			}
 			else {
 
@@ -324,7 +325,7 @@ VType VEC_VC<VType>::anisotropic_ngbr_sum(int idx) const
 			//is it a pbc along z? If yes, then we are guaranteed to have a "neighbor" on the other side, so use it; otherwise just one contribution.
 			if (ngbrFlags[idx] & NF_PBCZ) {
 
-				sum += VType(-VEC<VType>::quantity[idx - (VEC<VType>::n.z - 1) * VEC<VType>::n.x*VEC<VType>::n.y].y, VEC<VType>::quantity[idx - (VEC<VType>::n.z - 1) * VEC<VType>::n.x*VEC<VType>::n.y].x, 0.0) - VType(-VEC<VType>::quantity[idx - VEC<VType>::n.x*VEC<VType>::n.y].y, VEC<VType>::quantity[idx - VEC<VType>::n.x*VEC<VType>::n.y].x, 0.0);
+				sum += get_sign(pbc_z) * VType(-VEC<VType>::quantity[idx - (VEC<VType>::n.z - 1) * VEC<VType>::n.x*VEC<VType>::n.y].y, VEC<VType>::quantity[idx - (VEC<VType>::n.z - 1) * VEC<VType>::n.x*VEC<VType>::n.y].x, 0.0) - VType(-VEC<VType>::quantity[idx - VEC<VType>::n.x*VEC<VType>::n.y].y, VEC<VType>::quantity[idx - VEC<VType>::n.x*VEC<VType>::n.y].x, 0.0);
 			}
 			else {
 
@@ -355,7 +356,7 @@ VType VEC_VC<VType>::anisotropic_ngbr_dirsum(int idx) const
 			//is it a pbc along x? If yes, then we are guaranteed to have a "neighbor" on the other side, so use it; otherwise just one contribution.
 			if (ngbrFlags[idx] & NF_PBCX) {
 
-				sum = VType(0.0, -VEC<VType>::quantity[idx + 1].z, VEC<VType>::quantity[idx + 1].y) / GetMagnitude(VEC<VType>::quantity[idx + 1]) - VType(0.0, -VEC<VType>::quantity[idx + VEC<VType>::n.x - 1].z, VEC<VType>::quantity[idx + VEC<VType>::n.x - 1].y) / GetMagnitude(VEC<VType>::quantity[idx + VEC<VType>::n.x - 1]);
+				sum = VType(0.0, -VEC<VType>::quantity[idx + 1].z, VEC<VType>::quantity[idx + 1].y) / GetMagnitude(VEC<VType>::quantity[idx + 1]) - get_sign(pbc_x) * VType(0.0, -VEC<VType>::quantity[idx + VEC<VType>::n.x - 1].z, VEC<VType>::quantity[idx + VEC<VType>::n.x - 1].y) / GetMagnitude(VEC<VType>::quantity[idx + VEC<VType>::n.x - 1]);
 			}
 			else {
 
@@ -367,7 +368,7 @@ VType VEC_VC<VType>::anisotropic_ngbr_dirsum(int idx) const
 			//is it a pbc along x? If yes, then we are guaranteed to have a "neighbor" on the other side, so use it; otherwise just one contribution.
 			if (ngbrFlags[idx] & NF_PBCX) {
 
-				sum = VType(0.0, -VEC<VType>::quantity[idx - (VEC<VType>::n.x - 1)].z, VEC<VType>::quantity[idx - (VEC<VType>::n.x - 1)].y) / GetMagnitude(VEC<VType>::quantity[idx - (VEC<VType>::n.x - 1)]) - VType(0.0, -VEC<VType>::quantity[idx - 1].z, VEC<VType>::quantity[idx - 1].y) / GetMagnitude(VEC<VType>::quantity[idx - 1]);
+				sum = get_sign(pbc_x) * VType(0.0, -VEC<VType>::quantity[idx - (VEC<VType>::n.x - 1)].z, VEC<VType>::quantity[idx - (VEC<VType>::n.x - 1)].y) / GetMagnitude(VEC<VType>::quantity[idx - (VEC<VType>::n.x - 1)]) - VType(0.0, -VEC<VType>::quantity[idx - 1].z, VEC<VType>::quantity[idx - 1].y) / GetMagnitude(VEC<VType>::quantity[idx - 1]);
 			}
 			else {
 
@@ -388,7 +389,7 @@ VType VEC_VC<VType>::anisotropic_ngbr_dirsum(int idx) const
 			//is it a pbc along y? If yes, then we are guaranteed to have a "neighbor" on the other side, so use it; otherwise just one contribution.
 			if (ngbrFlags[idx] & NF_PBCY) {
 
-				sum += VType(VEC<VType>::quantity[idx + VEC<VType>::n.x].z, 0.0, -VEC<VType>::quantity[idx + VEC<VType>::n.x].x) / GetMagnitude(VEC<VType>::quantity[idx + VEC<VType>::n.x]) - VType(VEC<VType>::quantity[idx + (VEC<VType>::n.y - 1)*VEC<VType>::n.x].z, 0.0, -VEC<VType>::quantity[idx + (VEC<VType>::n.y - 1)*VEC<VType>::n.x].x) / GetMagnitude(VEC<VType>::quantity[idx + (VEC<VType>::n.y - 1)*VEC<VType>::n.x]);
+				sum += VType(VEC<VType>::quantity[idx + VEC<VType>::n.x].z, 0.0, -VEC<VType>::quantity[idx + VEC<VType>::n.x].x) / GetMagnitude(VEC<VType>::quantity[idx + VEC<VType>::n.x]) - get_sign(pbc_y) * VType(VEC<VType>::quantity[idx + (VEC<VType>::n.y - 1)*VEC<VType>::n.x].z, 0.0, -VEC<VType>::quantity[idx + (VEC<VType>::n.y - 1)*VEC<VType>::n.x].x) / GetMagnitude(VEC<VType>::quantity[idx + (VEC<VType>::n.y - 1)*VEC<VType>::n.x]);
 			}
 			else {
 
@@ -400,7 +401,7 @@ VType VEC_VC<VType>::anisotropic_ngbr_dirsum(int idx) const
 			//is it a pbc along y? If yes, then we are guaranteed to have a "neighbor" on the other side, so use it; otherwise just one contribution.
 			if (ngbrFlags[idx] & NF_PBCY) {
 
-				sum += VType(VEC<VType>::quantity[idx - (VEC<VType>::n.y - 1)*VEC<VType>::n.x].z, 0.0, -VEC<VType>::quantity[idx - (VEC<VType>::n.y - 1)*VEC<VType>::n.x].x) / GetMagnitude(VEC<VType>::quantity[idx - (VEC<VType>::n.y - 1)*VEC<VType>::n.x]) - VType(VEC<VType>::quantity[idx - VEC<VType>::n.x].z, 0.0, -VEC<VType>::quantity[idx - VEC<VType>::n.x].x) / GetMagnitude(VEC<VType>::quantity[idx - VEC<VType>::n.x]);
+				sum += get_sign(pbc_y) * VType(VEC<VType>::quantity[idx - (VEC<VType>::n.y - 1)*VEC<VType>::n.x].z, 0.0, -VEC<VType>::quantity[idx - (VEC<VType>::n.y - 1)*VEC<VType>::n.x].x) / GetMagnitude(VEC<VType>::quantity[idx - (VEC<VType>::n.y - 1)*VEC<VType>::n.x]) - VType(VEC<VType>::quantity[idx - VEC<VType>::n.x].z, 0.0, -VEC<VType>::quantity[idx - VEC<VType>::n.x].x) / GetMagnitude(VEC<VType>::quantity[idx - VEC<VType>::n.x]);
 			}
 			else {
 
@@ -421,7 +422,7 @@ VType VEC_VC<VType>::anisotropic_ngbr_dirsum(int idx) const
 			//is it a pbc along z? If yes, then we are guaranteed to have a "neighbor" on the other side, so use it; otherwise just one contribution.
 			if (ngbrFlags[idx] & NF_PBCZ) {
 
-				sum += VType(-VEC<VType>::quantity[idx + VEC<VType>::n.x*VEC<VType>::n.y].y, VEC<VType>::quantity[idx + VEC<VType>::n.x*VEC<VType>::n.y].x, 0.0) / GetMagnitude(VEC<VType>::quantity[idx + VEC<VType>::n.x*VEC<VType>::n.y]) - VType(-VEC<VType>::quantity[idx + (VEC<VType>::n.z - 1) * VEC<VType>::n.x*VEC<VType>::n.y].y, VEC<VType>::quantity[idx + (VEC<VType>::n.z - 1) * VEC<VType>::n.x*VEC<VType>::n.y].x, 0.0) / GetMagnitude(VEC<VType>::quantity[idx + (VEC<VType>::n.z - 1) * VEC<VType>::n.x*VEC<VType>::n.y]);
+				sum += VType(-VEC<VType>::quantity[idx + VEC<VType>::n.x*VEC<VType>::n.y].y, VEC<VType>::quantity[idx + VEC<VType>::n.x*VEC<VType>::n.y].x, 0.0) / GetMagnitude(VEC<VType>::quantity[idx + VEC<VType>::n.x*VEC<VType>::n.y]) - get_sign(pbc_z) * VType(-VEC<VType>::quantity[idx + (VEC<VType>::n.z - 1) * VEC<VType>::n.x*VEC<VType>::n.y].y, VEC<VType>::quantity[idx + (VEC<VType>::n.z - 1) * VEC<VType>::n.x*VEC<VType>::n.y].x, 0.0) / GetMagnitude(VEC<VType>::quantity[idx + (VEC<VType>::n.z - 1) * VEC<VType>::n.x*VEC<VType>::n.y]);
 			}
 			else {
 
@@ -433,7 +434,7 @@ VType VEC_VC<VType>::anisotropic_ngbr_dirsum(int idx) const
 			//is it a pbc along z? If yes, then we are guaranteed to have a "neighbor" on the other side, so use it; otherwise just one contribution.
 			if (ngbrFlags[idx] & NF_PBCZ) {
 
-				sum += VType(-VEC<VType>::quantity[idx - (VEC<VType>::n.z - 1) * VEC<VType>::n.x*VEC<VType>::n.y].y, VEC<VType>::quantity[idx - (VEC<VType>::n.z - 1) * VEC<VType>::n.x*VEC<VType>::n.y].x, 0.0) / GetMagnitude(VEC<VType>::quantity[idx - (VEC<VType>::n.z - 1) * VEC<VType>::n.x*VEC<VType>::n.y]) - VType(-VEC<VType>::quantity[idx - VEC<VType>::n.x*VEC<VType>::n.y].y, VEC<VType>::quantity[idx - VEC<VType>::n.x*VEC<VType>::n.y].x, 0.0) / GetMagnitude(VEC<VType>::quantity[idx - VEC<VType>::n.x*VEC<VType>::n.y]);
+				sum += get_sign(pbc_z) * VType(-VEC<VType>::quantity[idx - (VEC<VType>::n.z - 1) * VEC<VType>::n.x*VEC<VType>::n.y].y, VEC<VType>::quantity[idx - (VEC<VType>::n.z - 1) * VEC<VType>::n.x*VEC<VType>::n.y].x, 0.0) / GetMagnitude(VEC<VType>::quantity[idx - (VEC<VType>::n.z - 1) * VEC<VType>::n.x*VEC<VType>::n.y]) - VType(-VEC<VType>::quantity[idx - VEC<VType>::n.x*VEC<VType>::n.y].y, VEC<VType>::quantity[idx - VEC<VType>::n.x*VEC<VType>::n.y].x, 0.0) / GetMagnitude(VEC<VType>::quantity[idx - VEC<VType>::n.x*VEC<VType>::n.y]);
 			}
 			else {
 
@@ -466,7 +467,7 @@ VType VEC_VC<VType>::zanisotropic_ngbr_sum(int idx) const
 			//is it a pbc along x? If yes, then we are guaranteed to have a "neighbor" on the other side, so use it; otherwise just one contribution.
 			if (ngbrFlags[idx] & NF_PBCX) {
 
-				sum = VType(-VEC<VType>::quantity[idx + 1].z, 0.0, VEC<VType>::quantity[idx + 1].x) - VType(-VEC<VType>::quantity[idx + VEC<VType>::n.x - 1].z, 0.0, VEC<VType>::quantity[idx + VEC<VType>::n.x - 1].x);
+				sum = VType(-VEC<VType>::quantity[idx + 1].z, 0.0, VEC<VType>::quantity[idx + 1].x) - get_sign(pbc_x) * VType(-VEC<VType>::quantity[idx + VEC<VType>::n.x - 1].z, 0.0, VEC<VType>::quantity[idx + VEC<VType>::n.x - 1].x);
 			}
 			else {
 
@@ -478,7 +479,7 @@ VType VEC_VC<VType>::zanisotropic_ngbr_sum(int idx) const
 			//is it a pbc along x? If yes, then we are guaranteed to have a "neighbor" on the other side, so use it; otherwise just one contribution.
 			if (ngbrFlags[idx] & NF_PBCX) {
 
-				sum = VType(-VEC<VType>::quantity[idx - (VEC<VType>::n.x - 1)].z, 0.0, VEC<VType>::quantity[idx - (VEC<VType>::n.x - 1)].x) - VType(-VEC<VType>::quantity[idx - 1].z, 0.0, VEC<VType>::quantity[idx - 1].x);
+				sum = get_sign(pbc_x) * VType(-VEC<VType>::quantity[idx - (VEC<VType>::n.x - 1)].z, 0.0, VEC<VType>::quantity[idx - (VEC<VType>::n.x - 1)].x) - VType(-VEC<VType>::quantity[idx - 1].z, 0.0, VEC<VType>::quantity[idx - 1].x);
 			}
 			else {
 
@@ -499,7 +500,7 @@ VType VEC_VC<VType>::zanisotropic_ngbr_sum(int idx) const
 			//is it a pbc along y? If yes, then we are guaranteed to have a "neighbor" on the other side, so use it; otherwise just one contribution.
 			if (ngbrFlags[idx] & NF_PBCY) {
 
-				sum += VType(0.0, -VEC<VType>::quantity[idx + VEC<VType>::n.x].z, VEC<VType>::quantity[idx + VEC<VType>::n.x].y) - VType(0.0, -VEC<VType>::quantity[idx + (VEC<VType>::n.y - 1)*VEC<VType>::n.x].z, VEC<VType>::quantity[idx + (VEC<VType>::n.y - 1)*VEC<VType>::n.x].y);
+				sum += VType(0.0, -VEC<VType>::quantity[idx + VEC<VType>::n.x].z, VEC<VType>::quantity[idx + VEC<VType>::n.x].y) - get_sign(pbc_y) * VType(0.0, -VEC<VType>::quantity[idx + (VEC<VType>::n.y - 1)*VEC<VType>::n.x].z, VEC<VType>::quantity[idx + (VEC<VType>::n.y - 1)*VEC<VType>::n.x].y);
 			}
 			else {
 
@@ -511,7 +512,7 @@ VType VEC_VC<VType>::zanisotropic_ngbr_sum(int idx) const
 			//is it a pbc along y? If yes, then we are guaranteed to have a "neighbor" on the other side, so use it; otherwise just one contribution.
 			if (ngbrFlags[idx] & NF_PBCY) {
 
-				sum += VType(0.0, -VEC<VType>::quantity[idx - (VEC<VType>::n.y - 1)*VEC<VType>::n.x].z, VEC<VType>::quantity[idx - (VEC<VType>::n.y - 1)*VEC<VType>::n.x].y) - VType(0.0, -VEC<VType>::quantity[idx - VEC<VType>::n.x].z, VEC<VType>::quantity[idx - VEC<VType>::n.x].y);
+				sum += get_sign(pbc_y) * VType(0.0, -VEC<VType>::quantity[idx - (VEC<VType>::n.y - 1)*VEC<VType>::n.x].z, VEC<VType>::quantity[idx - (VEC<VType>::n.y - 1)*VEC<VType>::n.x].y) - VType(0.0, -VEC<VType>::quantity[idx - VEC<VType>::n.x].z, VEC<VType>::quantity[idx - VEC<VType>::n.x].y);
 			}
 			else {
 
@@ -542,7 +543,7 @@ VType VEC_VC<VType>::zanisotropic_ngbr_dirsum(int idx) const
 			//is it a pbc along x? If yes, then we are guaranteed to have a "neighbor" on the other side, so use it; otherwise just one contribution.
 			if (ngbrFlags[idx] & NF_PBCX) {
 
-				sum = VType(-VEC<VType>::quantity[idx + 1].z, 0.0, VEC<VType>::quantity[idx + 1].x) / GetMagnitude(VEC<VType>::quantity[idx + 1]) - VType(-VEC<VType>::quantity[idx + VEC<VType>::n.x - 1].z, 0.0, VEC<VType>::quantity[idx + VEC<VType>::n.x - 1].x) / GetMagnitude(VEC<VType>::quantity[idx + VEC<VType>::n.x - 1]);
+				sum = VType(-VEC<VType>::quantity[idx + 1].z, 0.0, VEC<VType>::quantity[idx + 1].x) / GetMagnitude(VEC<VType>::quantity[idx + 1]) - get_sign(pbc_x) * VType(-VEC<VType>::quantity[idx + VEC<VType>::n.x - 1].z, 0.0, VEC<VType>::quantity[idx + VEC<VType>::n.x - 1].x) / GetMagnitude(VEC<VType>::quantity[idx + VEC<VType>::n.x - 1]);
 			}
 			else {
 
@@ -554,7 +555,7 @@ VType VEC_VC<VType>::zanisotropic_ngbr_dirsum(int idx) const
 			//is it a pbc along x? If yes, then we are guaranteed to have a "neighbor" on the other side, so use it; otherwise just one contribution.
 			if (ngbrFlags[idx] & NF_PBCX) {
 
-				sum = VType(-VEC<VType>::quantity[idx - (VEC<VType>::n.x - 1)].z, 0.0, VEC<VType>::quantity[idx - (VEC<VType>::n.x - 1)].x) / GetMagnitude(VEC<VType>::quantity[idx - (VEC<VType>::n.x - 1)]) - VType(-VEC<VType>::quantity[idx - 1].z, 0.0, VEC<VType>::quantity[idx - 1].x) / GetMagnitude(VEC<VType>::quantity[idx - 1]);
+				sum = get_sign(pbc_x) * VType(-VEC<VType>::quantity[idx - (VEC<VType>::n.x - 1)].z, 0.0, VEC<VType>::quantity[idx - (VEC<VType>::n.x - 1)].x) / GetMagnitude(VEC<VType>::quantity[idx - (VEC<VType>::n.x - 1)]) - VType(-VEC<VType>::quantity[idx - 1].z, 0.0, VEC<VType>::quantity[idx - 1].x) / GetMagnitude(VEC<VType>::quantity[idx - 1]);
 			}
 			else {
 
@@ -575,7 +576,7 @@ VType VEC_VC<VType>::zanisotropic_ngbr_dirsum(int idx) const
 			//is it a pbc along y? If yes, then we are guaranteed to have a "neighbor" on the other side, so use it; otherwise just one contribution.
 			if (ngbrFlags[idx] & NF_PBCY) {
 
-				sum += VType(0.0, -VEC<VType>::quantity[idx + VEC<VType>::n.x].z, VEC<VType>::quantity[idx + VEC<VType>::n.x].y) / GetMagnitude(VEC<VType>::quantity[idx + VEC<VType>::n.x]) - VType(0.0, -VEC<VType>::quantity[idx + (VEC<VType>::n.y - 1)*VEC<VType>::n.x].z, VEC<VType>::quantity[idx + (VEC<VType>::n.y - 1)*VEC<VType>::n.x].y) / GetMagnitude(VEC<VType>::quantity[idx + (VEC<VType>::n.y - 1)*VEC<VType>::n.x]);
+				sum += VType(0.0, -VEC<VType>::quantity[idx + VEC<VType>::n.x].z, VEC<VType>::quantity[idx + VEC<VType>::n.x].y) / GetMagnitude(VEC<VType>::quantity[idx + VEC<VType>::n.x]) - get_sign(pbc_y) * VType(0.0, -VEC<VType>::quantity[idx + (VEC<VType>::n.y - 1)*VEC<VType>::n.x].z, VEC<VType>::quantity[idx + (VEC<VType>::n.y - 1)*VEC<VType>::n.x].y) / GetMagnitude(VEC<VType>::quantity[idx + (VEC<VType>::n.y - 1)*VEC<VType>::n.x]);
 			}
 			else {
 
@@ -587,7 +588,7 @@ VType VEC_VC<VType>::zanisotropic_ngbr_dirsum(int idx) const
 			//is it a pbc along y? If yes, then we are guaranteed to have a "neighbor" on the other side, so use it; otherwise just one contribution.
 			if (ngbrFlags[idx] & NF_PBCY) {
 
-				sum += VType(0.0, -VEC<VType>::quantity[idx - (VEC<VType>::n.y - 1)*VEC<VType>::n.x].z, VEC<VType>::quantity[idx - (VEC<VType>::n.y - 1)*VEC<VType>::n.x].y) / GetMagnitude(VEC<VType>::quantity[idx - (VEC<VType>::n.y - 1)*VEC<VType>::n.x]) - VType(0.0, -VEC<VType>::quantity[idx - VEC<VType>::n.x].z, VEC<VType>::quantity[idx - VEC<VType>::n.x].y) / GetMagnitude(VEC<VType>::quantity[idx - VEC<VType>::n.x]);
+				sum += get_sign(pbc_y) * VType(0.0, -VEC<VType>::quantity[idx - (VEC<VType>::n.y - 1)*VEC<VType>::n.x].z, VEC<VType>::quantity[idx - (VEC<VType>::n.y - 1)*VEC<VType>::n.x].y) / GetMagnitude(VEC<VType>::quantity[idx - (VEC<VType>::n.y - 1)*VEC<VType>::n.x]) - VType(0.0, -VEC<VType>::quantity[idx - VEC<VType>::n.x].z, VEC<VType>::quantity[idx - VEC<VType>::n.x].y) / GetMagnitude(VEC<VType>::quantity[idx - VEC<VType>::n.x]);
 			}
 			else {
 
