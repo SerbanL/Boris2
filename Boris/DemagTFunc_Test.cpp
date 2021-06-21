@@ -84,6 +84,7 @@ double DemagTFunc::Lodia_single(double x, double y, double z, double hx, double 
 
 	return sum_KahanNeumaier(main_sum[tn]) / (4 * PI * hx * hy * hz);
 }
+
 //all diagonal components - single value computation version
 DBL3 DemagTFunc::Ldia_single(DBL3 dist, DBL3 h, bool minus)
 {

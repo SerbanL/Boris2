@@ -51,6 +51,9 @@ private:
 
 private:
 
+	//Set pointers in ManagedAtom_MeshCUDA so we can access them in device code. This is used by MonteCarlo algorithm.
+	void set_Atom_DipoleDipoleCUDA_pointers(void);
+
 	//convert value in energy to energy density by dividing by cellsize volume of V
 	void Energy_to_EnergyDensity(cu_obj<cuVEC<cuReal3>>& V);
 

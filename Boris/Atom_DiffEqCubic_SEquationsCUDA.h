@@ -32,12 +32,13 @@ __device__ cuReal3 ManagedAtom_DiffEqCubicCUDA::SLLG(int idx)
 
 	cuBReal mu_s = *pcuaMesh->pmu_s;
 	cuBReal alpha = *pcuaMesh->palpha;
-	pcuaMesh->update_parameters_mcoarse(idx, *pcuaMesh->pmu_s, mu_s, *pcuaMesh->palpha, alpha);
+	cuBReal grel = *pcuaMesh->pgrel;
+	pcuaMesh->update_parameters_mcoarse(idx, *pcuaMesh->pmu_s, mu_s, *pcuaMesh->palpha, alpha, *pcuaMesh->pgrel, grel);
 
 	//H_Thermal has same dimensions as M1 in atomistic meshes
 	cuReal3 H_Thermal_Value = (*pH_Thermal)[idx] * sqrt(alpha);
 
-	return (-(cuBReal)GAMMA / (1 + alpha * alpha)) * ((M1[idx] ^ (Heff1[idx] + H_Thermal_Value)) + alpha * ((M1[idx] / mu_s) ^ (M1[idx] ^ (Heff1[idx] + H_Thermal_Value))));
+	return (-(cuBReal)GAMMA * grel / (1 + alpha * alpha)) * ((M1[idx] ^ (Heff1[idx] + H_Thermal_Value)) + alpha * ((M1[idx] / mu_s) ^ (M1[idx] ^ (Heff1[idx] + H_Thermal_Value))));
 }
 
 //------------------------------------------------------------------------------------------------------
@@ -57,12 +58,13 @@ __device__ cuReal3 ManagedAtom_DiffEqCubicCUDA::SLLGSTT(int idx)
 
 	cuBReal mu_s = *pcuaMesh->pmu_s;
 	cuBReal alpha = *pcuaMesh->palpha;
-	pcuaMesh->update_parameters_mcoarse(idx, *pcuaMesh->pmu_s, mu_s, *pcuaMesh->palpha, alpha);
+	cuBReal grel = *pcuaMesh->pgrel;
+	pcuaMesh->update_parameters_mcoarse(idx, *pcuaMesh->pmu_s, mu_s, *pcuaMesh->palpha, alpha, *pcuaMesh->pgrel, grel);
 
 	//H_Thermal has same dimensions as M1 in atomistic meshes
 	cuReal3 H_Thermal_Value = (*pH_Thermal)[idx] * sqrt(alpha);
 
-	return (-(cuBReal)GAMMA / (1 + alpha * alpha)) * ((M1[idx] ^ (Heff1[idx] + H_Thermal_Value)) + alpha * ((M1[idx] / mu_s) ^ (M1[idx] ^ (Heff1[idx] + H_Thermal_Value))));
+	return (-(cuBReal)GAMMA * grel / (1 + alpha * alpha)) * ((M1[idx] ^ (Heff1[idx] + H_Thermal_Value)) + alpha * ((M1[idx] / mu_s) ^ (M1[idx] ^ (Heff1[idx] + H_Thermal_Value))));
 }
 
 #endif

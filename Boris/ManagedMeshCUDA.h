@@ -230,6 +230,21 @@ public:
 	//Managed cuda mesh pointer so all mesh data can be accessed in device code
 	ManagedDiffEq_CommonCUDA* pcuDiffEq;
 
+	//----------------------------------- MONTE-CARLO DATA FROM MODULES
+
+	//SurfExchangeCUDA
+	//arrays with pointers to other meshes in surface exchange coupling with the mesh holding this module, top and bottom (set from SurfExchangeCUDA)
+	ManagedMeshCUDA* pMeshFM_Top;
+	ManagedMeshCUDA* pMeshFM_Bot;
+	size_t pMeshFM_Top_size, pMeshFM_Bot_size;
+
+	ManagedMeshCUDA* pMeshAFM_Top;
+	ManagedMeshCUDA* pMeshAFM_Bot;
+	size_t pMeshAFM_Top_size, pMeshAFM_Bot_size;
+
+	//DemagCUDA
+	cuVEC<cuReal3>*  pDemag_Heff;
+
 private:
 
 	//----------------------------------- RUNTIME PARAMETER UPDATERS (AUXILIARY) (MeshParamsControlCUDA.h)
@@ -353,6 +368,88 @@ public:
 	//Update parameter values if temperature dependent at the given cell index - M cell index; position not calculated
 	template <typename ... MeshParam_List>
 	__device__ void update_parameters_atposition(const cuReal3& position, MeshParam_List& ... params);
+
+	//----------------------------------- MONTE-CARLO METHODS FOR ENERGY COMPUTATION
+
+	//Energy Deltas
+
+	//Ferromagnetic
+
+	//switch function which adds all assigned energy contributions in this mesh to calculate energy change from current spin to Mnew spin : return energy change as new - old
+	__device__ cuBReal Get_EnergyChange_FM(int spin_index, cuReal3 Mnew, int*& cuModules, int numModules, cuReal3& Ha);
+
+	//Demag_N
+	__device__ cuBReal Get_EnergyChange_FM_DemagNCUDA(int spin_index, cuReal3 Mnew);
+
+	//Demag
+	__device__ cuBReal Get_EnergyChange_FM_DemagCUDA(int spin_index, cuReal3 Mnew);
+
+	//Exch_6ngbr_Neu
+	__device__ cuBReal Get_EnergyChange_FM_ExchangeCUDA(int spin_index, cuReal3 Mnew);
+
+	//DMExchangeCUDA
+	__device__ cuBReal Get_EnergyChange_FM_DMExchangeCUDA(int spin_index, cuReal3 Mnew);
+
+	//iDMExchangeCUDA
+	__device__ cuBReal Get_EnergyChange_FM_iDMExchangeCUDA(int spin_index, cuReal3 Mnew);
+
+	//SurfExchangeCUDA
+	__device__ cuBReal Get_EnergyChange_FM_SurfExchangeCUDA(int spin_index, cuReal3 Mnew);
+
+	//ZeemanCUDA
+	__device__ cuBReal Get_EnergyChange_FM_ZeemanCUDA(int spin_index, cuReal3 Mnew, cuReal3& Ha);
+
+	//AnisotropyCUDA
+	__device__ cuBReal Get_EnergyChange_FM_AnisotropyCUDA(int spin_index, cuReal3 Mnew);
+
+	//AnisotropyCubiCUDA
+	__device__ cuBReal Get_EnergyChange_FM_AnisotropyCubiCUDA(int spin_index, cuReal3 Mnew);
+
+	//AnisotropyBiaxialCUDA
+	__device__ cuBReal Get_EnergyChange_FM_AnisotropyBiaxialCUDA(int spin_index, cuReal3 Mnew);
+
+	//AnisotropyTensorialCUDA
+	__device__ cuBReal Get_EnergyChange_FM_AnisotropyTensorialCUDA(int spin_index, cuReal3 Mnew);
+
+	//Spin Energy
+
+	//Ferromagnetic
+
+	//switch function which adds all assigned energy contributions in this mesh to calculate energy change from current spin to Mnew spin : return energy change as new - old
+	__device__ cuBReal Get_Energy_FM(int spin_index, int*& cuModules, int numModules, cuReal3& Ha);
+
+	//Demag_N
+	__device__ cuBReal Get_Energy_FM_DemagNCUDA(int spin_index);
+
+	//Demag
+	__device__ cuBReal Get_Energy_FM_DemagCUDA(int spin_index);
+
+	//Exch_6ngbr_Neu
+	__device__ cuBReal Get_Energy_FM_ExchangeCUDA(int spin_index);
+
+	//DMExchangeCUDA
+	__device__ cuBReal Get_Energy_FM_DMExchangeCUDA(int spin_index);
+
+	//iDMExchangeCUDA
+	__device__ cuBReal Get_Energy_FM_iDMExchangeCUDA(int spin_index);
+
+	//SurfExchangeCUDA
+	__device__ cuBReal Get_Energy_FM_SurfExchangeCUDA(int spin_index);
+
+	//ZeemanCUDA
+	__device__ cuBReal Get_Energy_FM_ZeemanCUDA(int spin_index, cuReal3& Ha);
+
+	//AnisotropyCUDA
+	__device__ cuBReal Get_Energy_FM_AnisotropyCUDA(int spin_index);
+
+	//AnisotropyCubiCUDA
+	__device__ cuBReal Get_Energy_FM_AnisotropyCubiCUDA(int spin_index);
+
+	//AnisotropyBiaxialCUDA
+	__device__ cuBReal Get_Energy_FM_AnisotropyBiaxialCUDA(int spin_index);
+
+	//AnisotropyTensorialCUDA
+	__device__ cuBReal Get_Energy_FM_AnisotropyTensorialCUDA(int spin_index);
 };
 
 #endif

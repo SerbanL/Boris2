@@ -40,6 +40,30 @@ BError DPArrays::load_arrays(std::string fileName, std::vector<int> all_indexes,
 	return error;
 }
 
+//------------------------------------------------------------------------------------------ set
+
+//set 3 consecutive arrays by extracting from DBL3 in vector
+BError DPArrays::set_arrays(int arr_idx, std::vector<DBL3>& data)
+{
+	BError error(__FUNCTION__);
+
+	if (!GoodArrays(arr_idx, arr_idx + 1, arr_idx + 2)) return error(BERROR_INCORRECTARRAYS);
+
+	if (!resize(arr_idx, data.size())) return error(BERROR_OUTOFMEMORY_NCRIT);
+	if (!resize(arr_idx + 1, data.size())) return error(BERROR_OUTOFMEMORY_NCRIT);
+	if (!resize(arr_idx + 2, data.size())) return error(BERROR_OUTOFMEMORY_NCRIT);
+
+#pragma omp parallel for
+	for (int idx = 0; idx < data.size(); idx++) {
+
+		dpA[arr_idx][idx] = data[idx].x;
+		dpA[arr_idx + 1][idx] = data[idx].y;
+		dpA[arr_idx + 2][idx] = data[idx].z;
+	}
+
+	return error;
+}
+
 //------------------------------------------------------------------------------------------ save_arrays
 
 BError DPArrays::save_arrays(std::string fileName, std::vector<int> all_indexes, bool append)
@@ -256,68 +280,17 @@ BError DPArrays::count_skyrmions(VEC_VC<DBL3>& M, double x, double y, double rad
 	return error;
 }
 
-//calculate histogram for |M| using given parameters
-BError DPArrays::calculate_histogram(VEC_VC<DBL3>& M, int dp_x, int dp_y, double bin, double min, double max)
-{
-	BError error(__FUNCTION__);
-
-	if (!GoodArrays_Unique(dp_x, dp_y)) return error(BERROR_INCORRECTARRAYS);
-
-	if (IsZ(bin)) {
-
-		OmpReduction<double> omp_reduction;
-		omp_reduction.new_minmax_reduction();
-
-#pragma omp parallel for
-		for (int idx = 0; idx < M.linear_size(); idx++) {
-
-			omp_reduction.reduce_minmax(M[idx].norm());
-		}
-
-		DBL2 minmax = omp_reduction.minmax();
-
-		min = minmax.i;
-		max = minmax.j;
-		bin = (max - min) / 100;
-	}
-
-	int num_bins = (max - min) / bin;
-	if (num_bins <= 0) return error(BERROR_OPERATIONFAILED);
-
-	resize(dp_x, num_bins);
-	resize(dp_y, num_bins);
-
-#pragma omp parallel for
-	for (int idx = 0; idx < num_bins; idx++) {
-
-		dpA[dp_x][idx] = min + (idx + 0.5) * bin;
-		dpA[dp_y][idx] = 0;
-	}
-
-	for (int idx = 0; idx < M.linear_size(); idx++) {
-
-		if (M.is_not_empty(idx)) {
-
-			double value = M[idx].norm();
-
-			int bin_idx = floor((value - min) / bin);
-
-			if (bin_idx >= 0 && bin_idx < num_bins) dpA[dp_y][bin_idx] += 1.0 / M.get_nonempty_cells();
-		}
-	}
-
-	return error;
-}
-
 //calculate histogram for |M1| using given parameters if the corresponding value on |M2| is within specified bounds of [M2val - deltaM2val, M2val + deltaM2val]
-BError DPArrays::calculate_histogram2(VEC_VC<DBL3>& M1, VEC_VC<DBL3>& M2, int dp_x, int dp_y, double bin, double min, double max, double M2val, double deltaM2val)
+BError DPArrays::calculate_histogram2(VEC_VC<DBL3>& M1, VEC_VC<DBL3>& M2, int dp_x, int dp_y, int num_bins, double min, double max, double M2val, double deltaM2val)
 {
 	BError error(__FUNCTION__);
 
 	if (!GoodArrays_Unique(dp_x, dp_y)) return error(BERROR_INCORRECTARRAYS);
 	if (M1.size() != M2.size()) return error(BERROR_INCORRECTARRAYS);
 
-	if (IsZ(bin)) {
+	if (num_bins < 2) {
+
+		num_bins = 100;
 
 		OmpReduction<double> omp_reduction;
 		omp_reduction.new_minmax_reduction();
@@ -332,11 +305,9 @@ BError DPArrays::calculate_histogram2(VEC_VC<DBL3>& M1, VEC_VC<DBL3>& M2, int dp
 
 		min = minmax.i;
 		max = minmax.j;
-		bin = (max - min) / 100;
 	}
 
-	int num_bins = (max - min) / bin;
-	if (num_bins <= 0) return error(BERROR_OPERATIONFAILED);
+	double bin = (max - min) / (num_bins - 1);
 
 	resize(dp_x, num_bins);
 	resize(dp_y, num_bins);
@@ -344,7 +315,7 @@ BError DPArrays::calculate_histogram2(VEC_VC<DBL3>& M1, VEC_VC<DBL3>& M2, int dp
 #pragma omp parallel for
 	for (int idx = 0; idx < num_bins; idx++) {
 
-		dpA[dp_x][idx] = min + (idx + 0.5) * bin;
+		dpA[dp_x][idx] = min + idx * bin;
 		dpA[dp_y][idx] = 0;
 	}
 
@@ -357,7 +328,7 @@ BError DPArrays::calculate_histogram2(VEC_VC<DBL3>& M1, VEC_VC<DBL3>& M2, int dp
 
 			double value = M1[idx].norm();
 
-			int bin_idx = floor((value - min) / bin);
+			int bin_idx = floor((value - (min - bin / 2)) / bin);
 
 			if (bin_idx >= 0 && bin_idx < num_bins) {
 
@@ -744,6 +715,25 @@ BError DPArrays::get_mean(int dp_source, DBL2* pmean_err, double exclusion_ratio
 	}
 
 	*pmean_err = DBL2(mean, sqrt(stdev_sq));
+
+	return error;
+}
+
+BError DPArrays::get_sum(int dp_source, double* psum)
+{
+	BError error(__FUNCTION__);
+
+	if (!GoodArrays(dp_source) || !dpA[dp_source].size()) return error(BERROR_INCORRECTARRAYS);
+
+	double sum = 0.0;
+
+#pragma omp parallel for reduction(+:sum)
+	for (int idx = 0; idx < dpA[dp_source].size(); idx++) {
+
+		sum += dpA[dp_source][idx];
+	}
+	
+	*psum = sum;
 
 	return error;
 }

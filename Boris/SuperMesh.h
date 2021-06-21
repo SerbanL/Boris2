@@ -44,7 +44,8 @@ class SuperMesh :
 	vector_lut<Modules*>, 
 	std::string, std::string, 
 	bool, bool, int,
-	bool, INT2>,
+	bool,
+	bool, DBL2>,
 	std::tuple<
 	//Micromagnetic Meshes
 	FMesh, DipoleMesh, MetalMesh, InsulatorMesh, AFMesh, DiaMesh,
@@ -95,6 +96,10 @@ private:
 
 	//name of currently active mesh in the pMesh vector (used for quicker data inputting in the console)
 	std::string activeMeshName = "permalloy";
+
+	//storage for extracted supermesh profiles
+	std::vector<double> profile_storage_dbl;
+	std::vector<DBL3> profile_storage_dbl3;
 
 	//-----Supermesh dimensions
 
@@ -156,6 +161,9 @@ private:
 	//Moreover the interface cells are set with magnetization direction along the dipole magnetization direction. This is an easy way of simulating exchange coupling to the dipoles.
 	bool coupled_dipoles = false;
 	
+	//in CUDA mode initialize kernels on GPU. Can be set to false to initialize on CPU (slightly more accurate, but not enough to make this the default option)
+	bool kernel_initialize_on_gpu = true;
+
 	//-----Mesh data settings
 
 	//select which component to use when fitting to obtain domain wall width and position for dwpos_x, dwpos_y, dwpos_z parameters
@@ -167,8 +175,12 @@ private:
 	//if running a Monte Carlo algorithm normally we don't want to update fields as well, but set this true if needed (e.g. if you also want to save energy density values for which we need to update fields)
 	bool computefields_if_MC = false;
 
+	//if certain modules are added then we need to force effective fields to be computed (e.g. dipole-dipole or demag modules)
+	//this flag is similar to computefields_if_MC, but is purely controlled by the respective modules on initialization
+	bool force_computefields_if_MC = false;
+
 	//MC cone angle limits. If min and max are the same this turn the adaptive MC algorithms into fixed cone angle.
-	INT2 cone_angle_minmax = INT2(MONTECARLO_CONEANGLEDEG_MIN, MONTECARLO_CONEANGLEDEG_MAX);
+	DBL2 cone_angle_minmax = DBL2(MONTECARLO_CONEANGLEDEG_MIN, MONTECARLO_CONEANGLEDEG_MAX);
 
 	//-----Auxiliary
 
@@ -296,7 +308,7 @@ public:
 	void SetTimeStep(double dT);
 
 	//set parameters for adaptive time step control
-	void SetAdaptiveTimeStepCtrl(double err_fail, double err_high, double err_low, double dT_incr, double dT_min, double dT_max);
+	void SetAdaptiveTimeStepCtrl(double err_fail, double dT_incr, double dT_min, double dT_max);
 
 	void SetStochTimeStep(double dTstoch);
 	double GetStochTimeStep(void);
@@ -350,7 +362,7 @@ public:
 	double Get_mxh(void);
 	double Get_dmdt(void);
 
-	DBL3 Get_AStepRelErrCtrl(void);
+	double Get_AStepRelErrCtrl(void);
 	DBL3 Get_AStepdTCtrl(void);
 
 	bool IsMovingMeshSet(void);
@@ -373,11 +385,16 @@ public:
 	//switch to constrained Monnte-Carlo (true) or classical (false) in given mesh - all if meshName is the supermesh handle; if constrained, then use cmc_n direction.
 	BError Set_MonteCarlo_Constrained(bool status, DBL3 cmc_n, std::string meshName);
 
-	void Set_MonteCarlo_ComputeFields(bool status) { computefields_if_MC = status; }
-	bool Get_MonteCarlo_ComputeFields(void) { return computefields_if_MC; }
+	//Disable/enable MC iteration in named mesh
+	BError Set_MonteCarlo_Disabled(bool status, std::string meshName);
 
-	void Set_MonteCarlo_ConeAngleLimits(INT2 cone_angle_minmax_) { cone_angle_minmax = cone_angle_minmax_; }
-	INT2 Get_MonteCarlo_ConeAngleLimits(void) { return cone_angle_minmax; }
+	void Set_MonteCarlo_ComputeFields(bool status) { computefields_if_MC = status; }
+	bool Get_MonteCarlo_ComputeFields(void) { return computefields_if_MC || force_computefields_if_MC; }
+
+	void Set_Force_MonteCarlo_ComputeFields(bool status) { force_computefields_if_MC = status; }
+
+	void Set_MonteCarlo_ConeAngleLimits(DBL2 cone_angle_minmax_) { cone_angle_minmax = cone_angle_minmax_; }
+	DBL2 Get_MonteCarlo_ConeAngleLimits(void) { return cone_angle_minmax; }
 
 	//--------------------------------------------------------- MESH HANDLING - COMPONENTS : SuperMeshMeshes.cpp
 
@@ -606,6 +623,8 @@ public:
 
 	bool Get_Coupled_To_Dipoles(void) { return coupled_dipoles; }
 
+	bool Get_Kernel_Initialize_on_GPU(void) { return kernel_initialize_on_gpu; }
+
 	int Get_DWPos_Component(void) { return dwpos_component; }
 
 	//get total volume energy density
@@ -613,6 +632,12 @@ public:
 
 	//search save data list (saveDataList) for given dataID set for given mesh. Return true if found and its rectangle is not Null; else return false.
 	bool IsOutputDataSet_withRect(int datumId, MeshBase* pmesh);
+
+	//return true if data is set (with any rectangle)
+	bool IsOutputDataSet(int datumId, MeshBase* pmesh);
+
+	//check if given stage is set
+	bool IsStageSet(int stageType);
 
 	//--------Getters for supermesh modules specific properties
 
@@ -637,6 +662,8 @@ public:
 
 	void Set_Coupled_To_Dipoles(bool status) { coupled_dipoles = status; CoupleToDipoles(); }
 
+	BError Set_Kernel_Initialize_on_GPU(bool status) { kernel_initialize_on_gpu = status; return UpdateConfiguration(UPDATECONFIG_DEMAG_CONVCHANGE); }
+
 	void Set_DWPos_Component(int component) { dwpos_component = component; }
 
 	//----------------------------------- DISPLAY-ASSOCIATED GET/SET METHODS : SuperMeshDisplay.cpp
@@ -646,12 +673,10 @@ public:
 	//save the quantity currently displayed on screen in an ovf2 file using the specified format
 	BError SaveOnScreenPhysicalQuantity(std::string fileName, std::string ovf2_dataType);
 
-	//Before calling a run of GetDisplayedMeshValue, make sure to call PrepareDisplayedMeshValue : this calculates and stores in displayVEC storage and quantities which don't have memory allocated directly, but require computation and temporary storage.
-	void PrepareDisplayedMeshValue(void);
-
-	//return value of currently displayed mesh quantity at the given absolute position; the value is read directly from the storage VEC, not from the displayed PhysQ.
-	//Return an Any as the displayed quantity could be either a scalar or a vector.
-	Any GetDisplayedMeshValue(DBL3 abs_pos);
+	//extract profile from named mesh, from currently display mesh quantity, but reading directly from the quantity
+	//Displayed mesh quantity can be scalar or a vector; pass in std::vector pointers, then check for nullptr to determine what type is displayed
+	//if do_average = true then build average and don't return anything, else return just a single-shot profile. If read_average = true then simply read out the internally stored averaged profile by assigning to pointer.
+	void GetPhysicalQuantityProfile(DBL3 start, DBL3 end, double step, DBL3 stencil, std::vector<DBL3>*& pprofile_dbl3, std::vector<double>*& pprofile_dbl, std::string meshName, bool do_average, bool read_average);
 
 	//return average value for currently displayed mesh quantity in the given relative rectangle
 	Any GetAverageDisplayedMeshValue(Rect rel_rect);

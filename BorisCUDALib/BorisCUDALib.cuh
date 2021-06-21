@@ -12,6 +12,7 @@
 #include "cuVEC_aux.cuh"
 #include "cuVEC_mng.cuh"
 #include "cuVEC_extract.cuh"
+#include "cuVEC_histo.cuh"
 #include "cuVEC_generate.cuh"
 #include "cuVEC_oper.cuh"
 #include "cuVEC_avg.cuh"

@@ -54,13 +54,14 @@ __device__ cuReal3 ManagedDiffEqAFMCUDA::LLGStatic(int idx, cuReal3& value_B)
 	cuVEC<cuReal3>& Heff2 = *pcuMesh->pHeff2;
 
 	cuReal2 Ms_AFM = *pcuMesh->pMs_AFM;
-	pcuMesh->update_parameters_mcoarse(idx, *pcuMesh->pMs_AFM, Ms_AFM);
+	cuReal2 grel_AFM = *pcuMesh->pgrel_AFM;
+	pcuMesh->update_parameters_mcoarse(idx, *pcuMesh->pMs_AFM, Ms_AFM, *pcuMesh->pgrel_AFM, grel_AFM);
 
 	//sub-lattice B value so we can read it after
-	value_B = (-(cuBReal)GAMMA / 2) * ((M2[idx] / Ms_AFM.j) ^ (M2[idx] ^ Heff2[idx]));
+	value_B = (-(cuBReal)GAMMA * grel_AFM.j / 2) * ((M2[idx] / Ms_AFM.j) ^ (M2[idx] ^ Heff2[idx]));
 
 	//return the sub-lattice A value as normal
-	return (-(cuBReal)GAMMA / 2) * ((M[idx] / Ms_AFM.i) ^ (M[idx] ^ Heff[idx]));
+	return (-(cuBReal)GAMMA * grel_AFM.i / 2) * ((M[idx] / Ms_AFM.i) ^ (M[idx] ^ Heff[idx]));
 }
 
 //------------------------------------------------------------------------------------------------------

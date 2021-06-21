@@ -40,6 +40,10 @@ class MeshBase :
 
 private:
 
+#if COMPILECUDA == 1
+	friend MeshBaseCUDA;
+#endif
+
 protected:
 
 	//--------Auxiliary
@@ -48,6 +52,14 @@ protected:
 
 	//if the object couldn't be created properly in the constructor an error is set here
 	BError error_on_create;
+
+	//storage for extracted mesh profiles
+	int num_profile_averages = 0;
+	std::vector<double> profile_storage_dbl;
+	std::vector<DBL3> profile_storage_dbl3;
+
+	//auxiliary VEC for computations
+	VEC<DBL3> auxVEC;
 
 	//--------Mesh ID
 
@@ -88,6 +100,33 @@ protected:
 
 	//if this mesh can participate in multilayered demag convolution, you have the option of excluding it (e.g. antiferromagnetic mesh) - by default all meshes with magnetic computation enabled are included.
 	bool exclude_from_multiconvdemag = false;
+
+	//----- MONTE-CARLO Data
+
+	// MONTE-CARLO DATA
+
+	//random number generator - used by Monte Carlo methods
+	BorisRand prng;
+
+	//Monte-Carlo current cone angle (vary to reach MONTECARLO_TARGETACCEPTANCE)
+	double mc_cone_angledeg = 30.0;
+
+	//last Monte-Carlo step acceptance probability (save it so we can read it out)
+	double mc_acceptance_rate = 0.0;
+
+	//use parallel Monte-Carlo algorithms?
+	bool mc_parallel = true;
+
+	//can disable mc iteration in given mesh
+	bool mc_disabled = false;
+
+	// Constrained MONTE-CARLO DATA
+
+	//use constrained Monte-Carlo?
+	bool mc_constrain = false;
+
+	//Constrained Monte-Carlo direction
+	DBL3 cmc_n = DBL3(1.0, 0.0, 0.0);
 
 public:
 
@@ -171,9 +210,13 @@ public:
 	VEC<DBL3> displayVEC_VEC;
 	VEC<double> displayVEC_SCA;
 
-private:
-
 protected:
+
+	//----------------------------------- DISPLAY-ASSOCIATED GET/SET METHODS AUXILIARY
+
+	//average into profile_storage_dbl / profile_storage_dbl3
+	void average_mesh_profile(std::vector<double>& line_profile);
+	void average_mesh_profile(std::vector<DBL3>& line_profile);
 
 public:
 
@@ -223,6 +266,17 @@ public:
 	//set PBC for required VECs : should only be called from a demag module
 	virtual BError Set_Magnetic_PBC(INT3 pbc_images) = 0;
 	virtual INT3 Get_Magnetic_PBC(void) = 0;
+
+	void Set_MonteCarlo_Serial(bool status) { mc_parallel = !status; }
+	bool Get_MonteCarlo_Serial(void) { return !mc_parallel; }
+
+	void Set_MonteCarlo_Disabled(bool status) { mc_disabled = status; }
+	bool Get_MonteCarlo_Disabled(void) { return mc_disabled; }
+
+	bool Get_MonteCarlo_Constrained(void) { return mc_constrain; }
+
+	void Set_MonteCarlo_Constrained(DBL3 cmc_n_);
+	DBL3 Get_MonteCarlo_Constrained_Direction(void) { return cmc_n; }
 
 	//----------------------------------- MODULES indexing
 
@@ -283,6 +337,11 @@ public:
 	virtual void UpdateTransportSolverCUDA(void) = 0;
 #endif
 
+	//----------------------------------- MONTE CARLO AUXILIARY :  MeshBaseMonteCarlo.cpp
+
+	//set cone_angle value depending on required traget acceptance rate (acceptance_rate) and current value of mc_acceptance_rate
+	void MonteCarlo_AdaptiveAngle(double& cone_angle, double acceptance_rate);
+
 	//----------------------------------- PARAMETERS CONTROL/INFO : MeshBaseParamsControl.cpp
 
 	//set/get mesh base temperature; by default any text equation dependence will be cleared unless indicated specifically not to (e.g. called when setting base temperature value after evaluating the text equation)
@@ -318,6 +377,8 @@ public:
 	//set tensorial anisotropy terms
 	virtual BError set_tensorial_anisotropy(std::vector<DBL4> Kt) { return BError(); }
 
+	DBL2 Get_MonteCarlo_Params(void) { return DBL2(mc_cone_angledeg, mc_acceptance_rate); }
+
 	//----------------------------------- DISPLAY-ASSOCIATED GET/SET METHODS
 
 	//Return quantity currently set to display on screen.
@@ -329,12 +390,12 @@ public:
 	//save the quantity currently displayed on screen in an ovf2 file using the specified format
 	virtual BError SaveOnScreenPhysicalQuantity(std::string fileName, std::string ovf2_dataType) = 0;
 
-	//Before calling a run of GetDisplayedMeshValue, make sure to call PrepareDisplayedMeshValue : this calculates and stores in displayVEC storage and quantities which don't have memory allocated directly, but require computation and temporary storage.
-	virtual void PrepareDisplayedMeshValue(void) = 0;
-
-	//return value of currently displayed mesh quantity at the given absolute position; the value is read directly from the storage VEC, not from the displayed PhysQ.
-	//Return an Any as the displayed quantity could be either a scalar or a vector.
-	virtual Any GetDisplayedMeshValue(DBL3 abs_pos) = 0;
+	//extract profile from focused mesh, from currently display mesh quantity, but reading directly from the quantity
+	//Displayed	mesh quantity can be scalar or a vector; pass in std::vector pointers, then check for nullptr to determine what type is displayed
+	//if do_average = true then build average and don't return anything, else return just a single-shot profile. If read_average = true then simply read out the internally stored averaged profile by assigning to pointer.
+	virtual void GetPhysicalQuantityProfile(DBL3 start, DBL3 end, double step, DBL3 stencil, std::vector<DBL3>*& pprofile_dbl3, std::vector<double>*& pprofile_dbl, bool do_average, bool read_average) = 0;
+	//read number of averages performed on profile
+	int GetProfileAverages(void) { return num_profile_averages; }
 
 	//return average value for currently displayed mesh quantity in the given relative rectangle
 	virtual Any GetAverageDisplayedMeshValue(Rect rel_rect) = 0;
@@ -453,8 +514,16 @@ public:
 	void Set_Demag_Exclusion(bool exclude_from_multiconvdemag_) { exclude_from_multiconvdemag = exclude_from_multiconvdemag_; }
 	bool Get_Demag_Exclusion(void) { return exclude_from_multiconvdemag; }
 
-	//search save data list (saveDataList) for given dataID set for this mesh. Return true if found and its rectangle is not Null; else return false.
+	//search save data list (saveDataList) for given dataID set for this mesh. Return true if found and its rectangle is not Null or is not the entire mesh; else return false.
 	bool IsOutputDataSet_withRect(int datumId);
+	//return true if data is set (with any rectangle)
+	bool IsOutputDataSet(int datumId);
+
+	//check if given stage is set
+	bool IsStageSet(int stageType);
+
+	//set computefields_if_MC flag on SuperMesh
+	void Set_Force_MonteCarlo_ComputeFields(bool status);
 
 	//----------------------------------- ENABLED MESH PROPERTIES CHECKERS
 
@@ -489,6 +558,9 @@ public:
 	//get energy value for given module or one of its exclusive modules (if none active return 0); call it with MOD_ALL to return total energy density in this mesh;
 	//If avRect is null then get energy density in entire mesh
 	double GetEnergyDensity(MOD_ moduleType, Rect avRect = Rect());
+
+	//as above but for the torque
+	DBL3 GetTorque(MOD_ moduleType, Rect avRect = Rect());
 
 	//get topological charge using formula Q = Integral(m.(dm/dx x dm/dy) dxdy) / 4PI
 	virtual double GetTopologicalCharge(Rect rectangle = Rect()) = 0;
@@ -604,6 +676,26 @@ public:
 	//return average m x dm/dt in the given avRect (relative rect). Here m is the direction vector.
 	virtual DBL3 Average_mxdmdt(Rect avRect) { return DBL3(); }
 	virtual DBL3 Average_mxdmdt2(Rect avRect) { return DBL3(); }
+
+	//compute magnitude histogram data
+	//extract histogram between magnitudes min and max with given number of bins. if min max not given (set them to zero) then determine them first. 
+	//output probabilities in histogram_p, corresponding to values set in histogram_x min, min + bin, ..., max, where bin = (max - min) / (num_bins - 1)
+	//if macrocell_dims is not INT3(1) then first average in macrocells containing given number of individual mesh cells, then obtain histogram
+	virtual bool Get_Histogram(std::vector<double>& histogram_x, std::vector<double>& histogram_p, int num_bins, double& min, double& max, INT3 macrocell_dims) { return true; }
+
+	//As for Get_Histogram, but use thermal averaging in each macrocell
+	virtual bool Get_ThAvHistogram(std::vector<double>& histogram_x, std::vector<double>& histogram_p, int num_bins, double& min, double& max, INT3 macrocell_dims) { return true; }
+
+	//angular deviation histogram computed from ndir unit vector direction. If ndir not given (DBL3()), then angular deviation computed from average magnetization direction
+	virtual bool Get_AngHistogram(std::vector<double>& histogram_x, std::vector<double>& histogram_p, int num_bins, double& min, double& max, INT3 macrocell_dims, DBL3 ndir) { return true; }
+
+	//As for Get_AngHistogram, but use thermal averaging in each macrocell
+	virtual bool Get_ThAvAngHistogram(std::vector<double>& histogram_x, std::vector<double>& histogram_p, int num_bins, double& min, double& max, INT3 macrocell_dims, DBL3 ndir) { return true; }
+
+	//Find average magnetization length by averaging values in macrocells
+	virtual double Get_ChunkedAverageMagnetizationLength(INT3 macrocell_dims) { return 0.0; }
+
+	virtual DBL3 GetThermodynamicAverageMagnetization(Rect rectangle) { return 0.0; }
 
 	//----------------------------------- MESH QUANTITIES CONTROL
 

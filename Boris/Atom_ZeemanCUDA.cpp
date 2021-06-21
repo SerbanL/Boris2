@@ -85,6 +85,13 @@ void Atom_ZeemanCUDA::SetField(cuReal3 Hxyz)
 	Ha.from_cpu(Hxyz);
 }
 
+//-------------------Torque methods
+
+cuReal3 Atom_ZeemanCUDA::GetTorque(cuRect avRect)
+{
+	return CalculateTorque(paMeshCUDA->M1, avRect);
+}
+
 #endif
 
 #endif

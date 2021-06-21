@@ -47,6 +47,13 @@ BError iDMExchangeCUDA::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 	return error;
 }
 
+//-------------------Torque methods
+
+cuReal3 iDMExchangeCUDA::GetTorque(cuRect avRect)
+{
+	return CalculateTorque(pMeshCUDA->M, avRect);
+}
+
 #endif
 
 #endif

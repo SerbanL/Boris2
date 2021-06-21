@@ -4,6 +4,7 @@
 #include "Modules.h"
 #include "MeshParams.h"
 #include "SimulationData.h"
+#include "SimSchedule.h"
 
 vector_lut<std::string> SimulationSharedData::temperature_dependence_type;
 
@@ -28,6 +29,9 @@ exclusions<MOD_> SimulationSharedData::superMeshExclusiveModules;
 exclusions<MOD_> SimulationSharedData::superMeshCompanionModules;
 
 vector_lut<DatumConfig> SimulationSharedData::saveDataList;
+
+//simulation stages describing the simulation schedule
+vector_lut<StageConfig> SimulationSharedData::simStages;
 
 std::string SimulationSharedData::directory;
 
@@ -111,7 +115,7 @@ SimulationSharedData::SimulationSharedData(bool called_from_Simulation)
 		meshDisplay_unit.push_back("A/m", MESHDISPLAY_MAGNETIZATION);
 		meshDisplay_unit.push_back("A/m", MESHDISPLAY_MAGNETIZATION2);
 		meshDisplay_unit.push_back("A/m", MESHDISPLAY_MAGNETIZATION12);
-		meshDisplay_unit.push_back("J/T", MESHDISPLAY_MOMENT);
+		meshDisplay_unit.push_back("muB", MESHDISPLAY_MOMENT);
 		meshDisplay_unit.push_back("A/m", MESHDISPLAY_EFFECTIVEFIELD);
 		meshDisplay_unit.push_back("A/m", MESHDISPLAY_EFFECTIVEFIELD2);
 		meshDisplay_unit.push_back("A/m", MESHDISPLAY_EFFECTIVEFIELD12);
@@ -259,14 +263,14 @@ SimulationSharedData::SimulationSharedData(bool called_from_Simulation)
 		//ATOMISTIC SIMPLE CUBIC
 		modules_for_meshtype.push_back(make_vector(
 			MOD_DEMAG_N, MOD_DEMAG, MOD_ATOM_DIPOLEDIPOLE,
-			MOD_EXCHANGE, MOD_DMEXCHANGE, MOD_IDMEXCHANGE,
+			MOD_EXCHANGE, MOD_DMEXCHANGE, MOD_IDMEXCHANGE, MOD_SURFEXCHANGE,
 			MOD_ZEEMAN, MOD_MOPTICAL,
 			MOD_ANIUNI, MOD_ANICUBI, MOD_ANIBI, MOD_ANITENS,
 			MOD_HEAT), MESH_ATOM_CUBIC);
 
 		displaymodules_for_meshtype.push_back(make_vector(
 			MOD_DEMAG_N, MOD_DEMAG, MOD_ATOM_DIPOLEDIPOLE,
-			MOD_EXCHANGE, MOD_DMEXCHANGE, MOD_IDMEXCHANGE,
+			MOD_EXCHANGE, MOD_DMEXCHANGE, MOD_IDMEXCHANGE, MOD_SURFEXCHANGE,
 			MOD_ZEEMAN, MOD_MOPTICAL,
 			MOD_ANIUNI, MOD_ANICUBI, MOD_ANIBI, MOD_ANITENS), MESH_ATOM_CUBIC);
 
@@ -344,8 +348,8 @@ SimulationSharedData::SimulationSharedData(bool called_from_Simulation)
 		params_for_meshtype.push_back(make_vector(PARAM_THERMCOND, PARAM_DENSITY, PARAM_SHC), MESH_INSULATOR);
 
 		params_for_meshtype.push_back(make_vector(
-			PARAM_ATOM_SC_DAMPING, PARAM_ATOM_SC_MUS, PARAM_DEMAGXY,
-			PARAM_ATOM_SC_J, PARAM_ATOM_SC_D,
+			PARAM_GREL, PARAM_ATOM_SC_DAMPING, PARAM_ATOM_SC_MUS, PARAM_DEMAGXY,
+			PARAM_ATOM_SC_J, PARAM_ATOM_SC_D, PARAM_ATOM_JS,
 			PARAM_ATOM_SC_K1, PARAM_ATOM_SC_K2, PARAM_ATOM_SC_K3, PARAM_ATOM_EA1, PARAM_ATOM_EA2, PARAM_ATOM_EA3,
 			PARAM_HA, PARAM_HMO,
 			PARAM_ELC,
@@ -432,6 +436,7 @@ SimulationSharedData::SimulationSharedData(bool called_from_Simulation)
 		params_enabled_props.push_back({ false, true }, PARAM_ATOM_SC_MUS);
 		params_enabled_props.push_back({ false, true }, PARAM_ATOM_SC_J);
 		params_enabled_props.push_back({ false, true }, PARAM_ATOM_SC_D);
+		params_enabled_props.push_back({ false, true }, PARAM_ATOM_JS);
 		params_enabled_props.push_back({ false, true }, PARAM_ATOM_SC_K1);
 		params_enabled_props.push_back({ false, true }, PARAM_ATOM_SC_K2);
 		params_enabled_props.push_back({ false, true }, PARAM_ATOM_SC_K3);

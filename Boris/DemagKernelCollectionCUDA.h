@@ -71,25 +71,37 @@ private:
 	//-------------------------- KERNEL CALCULATION
 
 	//2D layers, real kernels for self demag (Kdiag_real, and K2D_odiag, with full use of kernel symmetries)
-	BError Calculate_Demag_Kernels_2D_Self(int index);
+	BError Calculate_Demag_Kernels_2D_Self(int index, bool initialize_on_gpu);
+	BError Calculate_Demag_Kernels_2D_Self_onGPU(int index);
 
 	//2D layers, z shift only : Kernels can be stored as real with use of kernel symmetries. Kxx, Kyy, Kzz, Kxy real, Kxz, Kyz imaginary
-	BError Calculate_Demag_Kernels_2D_zShifted(int index);
+	BError Calculate_Demag_Kernels_2D_zShifted(int index, bool initialize_on_gpu);
+	BError Calculate_Demag_Kernels_2D_zShifted_onGPU(int index);
 
 	//2D layers, complex kernels most general case (Kdiag_cmpl, and Kodiag_cmpl, without any kernel symmetries)
-	BError Calculate_Demag_Kernels_2D_Complex_Full(int index);
+	BError Calculate_Demag_Kernels_2D_Complex_Full(int index, bool initialize_on_gpu);
+	BError Calculate_Demag_Kernels_2D_Complex_Full_onGPU(int index);
 
 	//3D layers, real kernels for self demag (Kdiag_real, and Kodiag_real, with full use of kernel symmetries)
-	BError Calculate_Demag_Kernels_3D_Self(int index);
+	BError Calculate_Demag_Kernels_3D_Self(int index, bool initialize_on_gpu);
+	BError Calculate_Demag_Kernels_3D_Self_onGPU(int index);
 
 	//3D layers, z shift only : Kernels can be stored with use of kernel symmetries (but still complex).
-	BError Calculate_Demag_Kernels_3D_zShifted(int index);
+	BError Calculate_Demag_Kernels_3D_zShifted(int index, bool initialize_on_gpu);
+	BError Calculate_Demag_Kernels_3D_zShifted_onGPU(int index);
 
 	//3D layers, complex kernels most general case (Kdiag_cmpl, and Kodiag_cmpl, without any kernel symmetries)
-	BError Calculate_Demag_Kernels_3D_Complex_Full(int index);
+	BError Calculate_Demag_Kernels_3D_Complex_Full(int index, bool initialize_on_gpu);
+	BError Calculate_Demag_Kernels_3D_Complex_Full_onGPU(int index);
 
 	//search to find a matching kernel that has already been computed and return pointer to it -> kernel can be identified from shift, source and destination discretisation
 	std::shared_ptr<cu_obj<cuKerType>> KernelAlreadyComputed(cuReal3 shift, cuReal3 h_src, cuReal3 h_dst);
+
+	//Auxiliary for kernel computations on the GPU
+
+	//copy Re or Im parts of cuOut to cuIn
+	void cuOut_to_cuIn_Re(size_t size, cu_arr<cufftDoubleReal>& cuIn, cu_arr<cufftDoubleComplex>& cuOut);
+	void cuOut_to_cuIn_Im(size_t size, cu_arr<cufftDoubleReal>& cuIn, cu_arr<cufftDoubleComplex>& cuOut);
 
 protected:
 
@@ -119,7 +131,7 @@ protected:
 
 	//this initializes all the convolution kernels for the given mesh dimensions.
 	//use information for other DemagKernelCollection objects in the set so we re-use kernels as much as possible
-	BError Calculate_Demag_Kernels(std::vector<DemagKernelCollectionCUDA*>& kernelCollection);
+	BError Calculate_Demag_Kernels(std::vector<DemagKernelCollectionCUDA*>& kernelCollection, bool initialize_on_gpu = true);
 
 	//-------------------------- RUN-TIME KERNEL MULTIPLICATION
 

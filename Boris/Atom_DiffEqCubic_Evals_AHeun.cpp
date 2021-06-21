@@ -43,7 +43,13 @@ void Atom_DifferentialEquationCubic::RunAHeun_Step0_withReductions(void)
 		}
 	}
 
-	mxh_reduction.max = GetMagnitude(mxh_av_reduction.average());
+	//magnitude of average mxh torque, set in mxh_reduction.max as this will be used to set the mxh value in ODECommon
+	if (paMesh->grel.get0()) {
+
+		//only reduce for mxh if grel is not zero (if it's zero this means magnetization dynamics are disabled in this mesh)
+		mxh_reduction.max = GetMagnitude(mxh_av_reduction.average());
+	}
+	else mxh_reduction.max = 0.0;
 }
 
 void Atom_DifferentialEquationCubic::RunAHeun_Step0(void)
@@ -114,7 +120,16 @@ void Atom_DifferentialEquationCubic::RunAHeun_Step1_withReductions(void)
 	}
 
 	lte_reduction.maximum();
-	dmdt_reduction.max = GetMagnitude(dmdt_av_reduction.average());
+
+	if (paMesh->grel.get0()) {
+
+		//only reduce for dmdt if grel is not zero (if it's zero this means magnetization dynamics are disabled in this mesh)
+		dmdt_reduction.max = GetMagnitude(dmdt_av_reduction.average());
+	}
+	else {
+
+		dmdt_reduction.max = 0.0;
+	}
 }
 
 void Atom_DifferentialEquationCubic::RunAHeun_Step1(void)

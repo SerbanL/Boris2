@@ -70,6 +70,8 @@ protected:
 	//image_cropping specify normalized cropping within the mesh image, as left, bottom, right, top : 0, 0 point is left, bottom of screen as far as user is concerned.
 	bool SaveMeshImage(std::string fileName, DBL4 image_cropping);
 
+	bool SaveImage(std::string fileName, std::vector<PhysQ> physQ);
+
 public:
 
 	//Setup new window space with rectangle specified by ratios of the entire screen

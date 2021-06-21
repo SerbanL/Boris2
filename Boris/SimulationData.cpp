@@ -154,13 +154,19 @@ Any Simulation::GetDataValue(DatumConfig dConfig)
 	{
 		if (!SMesh[dConfig.meshName]->is_atomistic()) {
 
-			return Any(dynamic_cast<Mesh*>(SMesh[dConfig.meshName])->GetAveragemagnetization(dConfig.rectangle));
+			return Any(dynamic_cast<Mesh*>(SMesh[dConfig.meshName])->GetAverageMagnetization(dConfig.rectangle));
 		}
 		else {
 
 			//return average magnetization in the atomistic cell also : average atomistic moment (averaged over all participating unit cells), divided by unit cell volume
 			return Any(dynamic_cast<Atom_Mesh*>(SMesh[dConfig.meshName])->GetAverageMoment(dConfig.rectangle) * MUB / SMesh[dConfig.meshName]->h.dim());
 		}
+	}
+	break;
+
+	case DATA_THAVM:
+	{
+		return Any((SMesh[dConfig.meshName])->GetThermodynamicAverageMagnetization(dConfig.rectangle));
 	}
 	break;
 
@@ -228,11 +234,7 @@ Any Simulation::GetDataValue(DatumConfig dConfig)
 
 	case DATA_MONTECARLOPARAMS:
 	{
-		if (SMesh[dConfig.meshName]->is_atomistic()) {
-
-			return Any(dynamic_cast<Atom_Mesh*>(SMesh[dConfig.meshName])->Get_MonteCarlo_Params());
-		}
-		else return Any(DBL2());
+		return Any(SMesh[dConfig.meshName]->Get_MonteCarlo_Params());
 	}
 	break;
 
@@ -348,15 +350,33 @@ Any Simulation::GetDataValue(DatumConfig dConfig)
 	}
 	break;
 
+	case DATA_T_EXCH:
+	{
+		return Any(SMesh[dConfig.meshName]->GetTorque(MOD_EXCHANGE, dConfig.rectangle));
+	}
+	break;
+
 	case DATA_E_SURFEXCH:
 	{
 		return Any(SMesh[dConfig.meshName]->GetEnergyDensity(MOD_SURFEXCHANGE, dConfig.rectangle));
 	}
 	break;
 
+	case DATA_T_SURFEXCH:
+	{
+		return Any(SMesh[dConfig.meshName]->GetTorque(MOD_SURFEXCHANGE, dConfig.rectangle));
+	}
+	break;
+
 	case DATA_E_ZEE:
 	{
 		return Any(SMesh[dConfig.meshName]->GetEnergyDensity(MOD_ZEEMAN, dConfig.rectangle));
+	}
+	break;
+
+	case DATA_T_ZEE:
+	{
+		return Any(SMesh[dConfig.meshName]->GetTorque(MOD_ZEEMAN, dConfig.rectangle));
 	}
 	break;
 
@@ -375,6 +395,12 @@ Any Simulation::GetDataValue(DatumConfig dConfig)
 	case DATA_E_ANIS:
 	{
 		return Any(SMesh[dConfig.meshName]->GetEnergyDensity(MOD_ANIUNI, dConfig.rectangle));
+	}
+	break;
+
+	case DATA_T_ANIS:
+	{
+		return Any(SMesh[dConfig.meshName]->GetTorque(MOD_ANIUNI, dConfig.rectangle));
 	}
 	break;
 
@@ -465,6 +491,25 @@ Any Simulation::GetDataValue(DatumConfig dConfig)
 	case DATA_HEATDT:
 	{
 		return Any(SMesh.CallModuleMethod(&SHeat::get_heat_dT));
+	}
+	break;
+
+	case DATA_COMMBUFFER:
+	{
+		//the main purpose of this is to execute the command buffer during a simulation data saving schedule, so e.g. showdata commbuf is not useful
+		if (!is_thread_running(THREAD_HANDLEMESSAGE)) {
+
+			//This could do with more thinking. The problem is simulationMutex must be unlocked before we call RunCommandBuffer
+			//try_lock to test if locked shouldn't be used this way since it can fail spuriously according to documentation - OS dependent.
+			//The solution for now is : if we are here, then the only remaining possibility this has been called during a simulation schedule.
+			//In this case simulationMutex is locked, so unlock it then lock back again.
+			//Note, launching RunCommandBuffer asynchronously doesn't work since we have to complete running the buffered commands before proceeding - i.e. must be synchronous.
+			simulationMutex.unlock();
+			RunCommandBuffer();
+			simulationMutex.lock();
+		}
+
+		return Any(command_buffer.size());
 	}
 	break;
 	}
@@ -590,7 +635,7 @@ void Simulation::SaveData(void)
 		UpdateMeshDisplay();
 
 		std::string imageFile = directory + imageSaveFileBase + ToString(SMesh.GetIteration()) + ".png";
-		BD.SaveMeshImage(imageFile, image_cropping);
+		BD.SaveImage(imageFile, SMesh.FetchOnScreenPhysicalQuantity(BD.Get_MeshDisplay_DetailLevel()));
 	}
 }
 

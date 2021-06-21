@@ -237,8 +237,8 @@ void SuperMesh::Iterate_MonteCarlo(double acceptance_rate)
 {
 	for (int idx = 0; idx < (int)pMesh.size(); idx++) {
 
-		//Iterate Monte Carlo Metropolis algorithm for atomistic meshes only
-		if (pMesh[idx]->is_atomistic()) pMesh[idx]->Iterate_MonteCarlo(acceptance_rate);
+		//Iterate Monte Carlo Metropolis algorithm
+		pMesh[idx]->Iterate_MonteCarlo(acceptance_rate);
 	}
 
 	//Increment iterations counters only (stage and global iterations)
@@ -251,8 +251,8 @@ void SuperMesh::Iterate_MonteCarloCUDA(double acceptance_rate)
 {
 	for (int idx = 0; idx < (int)pMesh.size(); idx++) {
 
-		//Iterate Monte Carlo Metropolis algorithm for atomistic meshes only
-		if (pMesh[idx]->is_atomistic()) pMesh[idx]->Iterate_MonteCarloCUDA(acceptance_rate);
+		//Iterate Monte Carlo Metropolis algorithm
+		pMesh[idx]->Iterate_MonteCarloCUDA(acceptance_rate);
 	}
 
 	//Increment iterations counters only (stage and global iterations)

@@ -39,6 +39,9 @@ public:
 
 	//-----------SIMPLE CUBIC
 
+	//Relative electron gyromagnetic ratio
+	MatP<double, double> grel = 1.0;
+
 	//Gilbert damping (atomistic: intrinsic)
 	MatP<double, double> alpha = 0.02;
 
@@ -50,6 +53,9 @@ public:
 
 	//DMI exchange constant : (units of J)
 	MatP<double, double> D = 5e-23;
+
+	//Surface exchange coupling, used by the surfexchange module to couple two spins on different meshes at the surface (units of J)
+	MatP<double, double> Js = -1e-21;
 
 	//Magneto-crystalline anisotropy constants (J) and easy axes directions. For uniaxial anisotropy only ea1 is needed.
 	MatP<double, double> K1 = 5.65e-25;
@@ -146,6 +152,10 @@ RType Atom_MeshParams::run_on_param(PARAM_ paramID, Lambda& run_this, PType& ...
 {
 	switch (paramID) {
 		
+	case PARAM_GREL:
+		return run_this(grel, run_this_args...);
+		break;
+
 	case PARAM_ATOM_SC_DAMPING:
 		return run_this(alpha, run_this_args...);
 		break;
@@ -160,6 +170,10 @@ RType Atom_MeshParams::run_on_param(PARAM_ paramID, Lambda& run_this, PType& ...
 
 	case PARAM_ATOM_SC_D:
 		return run_this(D, run_this_args...);
+		break;
+
+	case PARAM_ATOM_JS:
+		return run_this(Js, run_this_args...);
 		break;
 
 	case PARAM_ATOM_SC_K1:

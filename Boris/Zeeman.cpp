@@ -243,6 +243,92 @@ double Zeeman::UpdateField(void)
 	return this->energy;
 }
 
+//-------------------Energy methods
+
+double Zeeman::Get_EnergyChange(int spin_index, DBL3 Mnew)
+{
+	//For CUDA there are separate device functions used by CUDA kernels.
+
+	if (pMesh->M.is_not_empty(spin_index)) {
+
+		/////////////////////////////////////////
+		// Fixed set field
+		/////////////////////////////////////////
+
+		if (!H_equation.is_set()) {
+
+			if (IsZ(Ha.norm())) {
+
+				return 0.0;
+			}
+
+			double cHA = pMesh->cHA;
+			pMesh->update_parameters_mcoarse(spin_index, pMesh->cHA, cHA);
+
+			return -pMesh->h.dim() * (Mnew - pMesh->M[spin_index]) * MU0 * (cHA * Ha);
+		}
+
+		/////////////////////////////////////////
+		// Field set from user equation
+		/////////////////////////////////////////
+
+		else {
+
+			//on top of spatial dependence specified through an equation, also allow spatial dependence through the cHA parameter
+			double cHA = pMesh->cHA;
+			pMesh->update_parameters_mcoarse(spin_index, pMesh->cHA, cHA);
+
+			DBL3 relpos = pMesh->M.cellidx_to_position(spin_index);
+			DBL3 H = H_equation.evaluate_vector(relpos.x, relpos.y, relpos.z, pSMesh->GetStageTime());
+
+			return -pMesh->h.dim() * (Mnew - pMesh->M[spin_index]) * MU0 * (cHA * H);
+		}
+	}
+	else return 0.0;
+}
+
+double Zeeman::Get_Energy(int spin_index)
+{
+	//For CUDA there are separate device functions used by CUDA kernels.
+
+	if (pMesh->M.is_not_empty(spin_index)) {
+
+		/////////////////////////////////////////
+		// Fixed set field
+		/////////////////////////////////////////
+
+		if (!H_equation.is_set()) {
+
+			if (IsZ(Ha.norm())) {
+
+				return 0.0;
+			}
+
+			double cHA = pMesh->cHA;
+			pMesh->update_parameters_mcoarse(spin_index, pMesh->cHA, cHA);
+
+			return -pMesh->h.dim() * pMesh->M[spin_index] * MU0 * (cHA * Ha);
+		}
+
+		/////////////////////////////////////////
+		// Field set from user equation
+		/////////////////////////////////////////
+
+		else {
+
+			//on top of spatial dependence specified through an equation, also allow spatial dependence through the cHA parameter
+			double cHA = pMesh->cHA;
+			pMesh->update_parameters_mcoarse(spin_index, pMesh->cHA, cHA);
+
+			DBL3 relpos = pMesh->M.cellidx_to_position(spin_index);
+			DBL3 H = H_equation.evaluate_vector(relpos.x, relpos.y, relpos.z, pSMesh->GetStageTime());
+
+			return -pMesh->h.dim() * pMesh->M[spin_index] * MU0 * (cHA * H);
+		}
+	}
+	else return 0.0;
+}
+
 //----------------------------------------------- Others
 
 void Zeeman::SetField(DBL3 Hxyz)
@@ -347,6 +433,17 @@ void Zeeman::SetBaseTemperature(double Temperature)
 #if COMPILECUDA == 1
 	if (pModuleCUDA) dynamic_cast<ZeemanCUDA*>(pModuleCUDA)->SetFieldEquation(H_equation.get_vector_fspec());
 #endif
+}
+
+//-------------------Torque methods
+
+DBL3 Zeeman::GetTorque(Rect& avRect)
+{
+#if COMPILECUDA == 1
+	if (pModuleCUDA) return reinterpret_cast<ZeemanCUDA*>(pModuleCUDA)->GetTorque(avRect);
+#endif
+
+	return CalculateTorque(pMesh->M, avRect);
 }
 
 #endif

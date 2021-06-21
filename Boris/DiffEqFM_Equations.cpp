@@ -27,9 +27,10 @@ DBL3 DifferentialEquationFM::LLG(int idx)
 DBL3 DifferentialEquationFM::LLGStatic(int idx)
 {
 	double Ms = pMesh->Ms;
-	pMesh->update_parameters_mcoarse(idx, pMesh->Ms, Ms);
+	double grel = pMesh->grel;
+	pMesh->update_parameters_mcoarse(idx, pMesh->Ms, Ms, pMesh->grel, grel);
 
-	return (-GAMMA / 2) * ((pMesh->M[idx] / Ms) ^ (pMesh->M[idx] ^ pMesh->Heff[idx]));
+	return (-GAMMA * grel / 2) * ((pMesh->M[idx] / Ms) ^ (pMesh->M[idx] ^ pMesh->Heff[idx]));
 }
 
 //------------------------------------------------------------------------------------------------------
@@ -111,7 +112,7 @@ DBL3 DifferentialEquationFM::LLB(int idx)
 	//the longitudinal relaxation field - an effective field contribution, but only need to add it to the longitudinal relaxation term as the others involve cross products with pMesh->M[idx]
 	DBL3 Hl;
 
-	if (Temperature < T_Curie) {
+	if (Temperature <= T_Curie) {
 
 		if (Temperature > T_Curie - TCURIE_EPSILON) {
 
@@ -140,7 +141,7 @@ DBL3 DifferentialEquationFM::LLB(int idx)
 		alpha_par = alpha;
 
 		//Note, the parallel susceptibility is related to susrel by : susrel = suspar / mu0Ms
-		Hl = -1.0 * pMesh->M[idx] / (susrel * MU0 * Ms0);
+		Hl = -1.0 * (pMesh->M[idx] / (susrel * MU0 * Ms0)) * (1 + 3 * msq * T_Curie / (5 * (Temperature - T_Curie)));
 	}
 
 	return (-GAMMA * grel * msq / (msq + alpha * alpha)) * (pMesh->M[idx] ^ pMesh->Heff[idx]) + (-GAMMA * grel * m * alpha / (msq + alpha * alpha)) * ((pMesh->M[idx] / M) ^ (pMesh->M[idx] ^ pMesh->Heff[idx])) +
@@ -194,7 +195,7 @@ DBL3 DifferentialEquationFM::LLBSTT(int idx)
 	//the longitudinal relaxation field - an effective field contribution, but only need to add it to the longitudinal relaxation term as the others involve cross products with pMesh->M[idx]
 	DBL3 Hl;
 
-	if (Temperature < T_Curie) {
+	if (Temperature <= T_Curie) {
 
 		if (Temperature > T_Curie - TCURIE_EPSILON) {
 
@@ -227,7 +228,7 @@ DBL3 DifferentialEquationFM::LLBSTT(int idx)
 		alpha_par = alpha;
 
 		//Note, the parallel susceptibility is related to susrel by : susrel = suspar / mu0Ms
-		Hl = -1 * pMesh->M[idx] / (susrel * MU0 * Ms0);
+		Hl = -1.0 * (pMesh->M[idx] / (susrel * MU0 * Ms0)) * (1 + 3 * msq * T_Curie / (5 * (Temperature - T_Curie)));
 	}
 
 	DBL3 LLBSTT_Eval = 

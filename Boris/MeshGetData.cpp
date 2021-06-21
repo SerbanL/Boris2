@@ -8,7 +8,7 @@
 //----------------------------------- VALUE GETTERS
 
 //get average magnetization in given rectangle (entire mesh if none specified)
-DBL3 Mesh::GetAveragemagnetization(Rect rectangle)
+DBL3 Mesh::GetAverageMagnetization(Rect rectangle)
 {
 #if COMPILECUDA == 1
 	if (pMeshCUDA) {

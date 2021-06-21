@@ -4,6 +4,8 @@
 
 #if defined(MODULE_COMPILATION_DEMAG) && ATOMISTIC == 1
 
+#include "SimScheduleDefs.h"
+
 #include "Atom_Mesh.h"
 
 #if COMPILECUDA == 1
@@ -38,6 +40,9 @@ Atom_Demag::~Atom_Demag()
 	//thus must clear pbc flags in M1
 
 	paMesh->M1.set_pbc(0, 0, 0);
+
+	//might not need to keep computing fields : if we do then the module which requires it will set the flag back to true on initialization
+	paMesh->Set_Force_MonteCarlo_ComputeFields(false);
 
 	//same for the CUDA version if we are in cuda mode
 #if COMPILECUDA == 1
@@ -99,10 +104,13 @@ BError Atom_Demag::Initialize(void)
 
 	//Make sure display data has memory allocated (or freed) as required
 	error = Update_Module_Display_VECs(
-		paMesh->h, paMesh->meshRect, 
-		(MOD_)paMesh->Get_Module_Heff_Display() == MOD_DEMAG || paMesh->IsOutputDataSet_withRect(DATA_E_DEMAG),
-		(MOD_)paMesh->Get_Module_Energy_Display() == MOD_DEMAG || paMesh->IsOutputDataSet_withRect(DATA_E_DEMAG));
+		paMesh->h_dm, paMesh->meshRect, 
+		(MOD_)paMesh->Get_Module_Heff_Display() == MOD_DEMAG || paMesh->IsOutputDataSet_withRect(DATA_E_DEMAG) || paMesh->IsStageSet(SS_MONTECARLO),
+		(MOD_)paMesh->Get_Module_Energy_Display() == MOD_DEMAG || paMesh->IsOutputDataSet_withRect(DATA_E_DEMAG) || paMesh->IsStageSet(SS_MONTECARLO));
 	if (error)	initialized = false;
+
+	//if a Monte Carlo stage is set then we need to compute fields
+	if (paMesh->IsStageSet(SS_MONTECARLO)) paMesh->Set_Force_MonteCarlo_ComputeFields(true);
 
 	return error;
 }
@@ -112,7 +120,7 @@ BError Atom_Demag::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 	BError error(CLASS_STR(Atom_Demag));
 
 	//only need to uninitialize if n or h have changed, or pbc settings have changed
-	if (!CheckDimensions(paMesh->n_dm, paMesh->h_dm, demag_pbc_images) || cfgMessage == UPDATECONFIG_MESHCHANGE) {
+	if (!CheckDimensions(paMesh->n_dm, paMesh->h_dm, demag_pbc_images) || cfgMessage == UPDATECONFIG_MESHCHANGE || cfgMessage == UPDATECONFIG_DEMAG_CONVCHANGE) {
 
 		Uninitialize();
 
@@ -365,6 +373,32 @@ double Atom_Demag::UpdateField(void)
 	}
 
 	return energy;
+}
+
+//-------------------Energy methods
+
+//For simple cubic mesh spin_index coincides with index in M1
+double Atom_Demag::Get_EnergyChange(int spin_index, DBL3 Mnew)
+{
+	//Energy at spin i is then E_i = -mu0 * Hd_i * mu_i, where mu_i is the magnetic moment, Hd_i is the dipole-dipole field at spin i. 
+	//Note, no division by 2: this only comes in the total energy since there we consider pairs twice.
+
+	//Module_Heff needs to be calculated (done during a Monte Carlo simulation, where this method would be used)
+	if (Module_Heff.linear_size()) {
+
+		return -MUB_MU0 * Module_Heff[paMesh->M1.cellidx_to_position(spin_index)] * (Mnew - paMesh->M1[spin_index]);
+	}
+	else return 0.0;
+}
+
+double Atom_Demag::Get_Energy(int spin_index)
+{
+	//Module_Heff needs to be calculated (done during a Monte Carlo simulation, where this method would be used)
+	if (Module_Heff.linear_size()) {
+
+		return -MUB_MU0 * Module_Heff[paMesh->M1.cellidx_to_position(spin_index)] * paMesh->M1[spin_index];
+	}
+	else return 0.0;
 }
 
 #endif

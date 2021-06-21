@@ -7,6 +7,22 @@
 #include "BorisCUDALib.cuh"
 #include "Atom_MeshCUDA.h"
 
+//----------------------- Initialization
+
+__global__ void set_Atom_DipoleDipoleCUDA_pointers_kernel(
+	ManagedAtom_MeshCUDA& cuaMesh, cuVEC<cuReal3>& Module_Heff)
+{
+	if (threadIdx.x == 0) cuaMesh.pAtom_Demag_Heff = &Module_Heff;
+}
+
+void Atom_DipoleDipoleCUDA::set_Atom_DipoleDipoleCUDA_pointers(void)
+{
+	set_Atom_DipoleDipoleCUDA_pointers_kernel <<< 1, CUDATHREADS >>>
+		(paMeshCUDA->cuaMesh, Module_Heff);
+}
+
+//----------------------- Auxiliary
+
 __global__ void Energy_to_EnergyDensity_Kernel(cuBReal& energy, cuVEC<cuReal3>& V)
 {
 	if (threadIdx.x == 0) energy *= (cuBReal)MUB / V.h.dim();

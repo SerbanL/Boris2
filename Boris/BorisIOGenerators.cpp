@@ -1040,6 +1040,15 @@ void Simulation::Print_MultiConvolution_Config(void)
 	BD.DisplayFormattedConsoleMessage(multiconv_info);
 }
 
+//---------------------------------------------------- GPU KERNELS DEMAG INITIALIZATION CONFIGURATION
+
+void Simulation::Print_GPUKernels_Config(void)
+{
+	std::string gpukernels_info = "[tc1,1,1,1/tc]Demag kernels initialization on GPU (when in CUDA mode) : " + MakeIO(IOI_GPUKERNELS, SMesh.Get_Kernel_Initialize_on_GPU());
+
+	BD.DisplayFormattedConsoleMessage(gpukernels_info);
+}
+
 //---------------------------------------------------- MATERIALS DATABASE
 
 void Simulation::Print_MaterialsDatabase(void)
@@ -1053,9 +1062,7 @@ void Simulation::Print_MaterialsDatabase(void)
 
 void Simulation::Print_AStepCtrl(void)
 {
-	std::string astep_ctrl_info = "[tc1,1,1,1/tc]Adaptive time step control. err_fail : " + MakeIO(IOI_ODERELERRFAIL, SMesh.Get_AStepRelErrCtrl().i);
-	astep_ctrl_info += "</c> [tc1,1,1,1/tc]err_high : " + MakeIO(IOI_ODERELERRHIGH, SMesh.Get_AStepRelErrCtrl().j);
-	astep_ctrl_info += "</c> [tc1,1,1,1/tc]err_low : " + MakeIO(IOI_ODERELERRLOW, SMesh.Get_AStepRelErrCtrl().k);
+	std::string astep_ctrl_info = "[tc1,1,1,1/tc]Adaptive time step control. err_fail : " + MakeIO(IOI_ODERELERRFAIL, SMesh.Get_AStepRelErrCtrl());
 	astep_ctrl_info += "</c> [tc1,1,1,1/tc]dT_incr : " + MakeIO(IOI_ODEDTINCR, SMesh.Get_AStepdTCtrl().i);
 	astep_ctrl_info += "</c> [tc1,1,1,1/tc]dT_min : " + MakeIO(IOI_ODEDTMIN, SMesh.Get_AStepdTCtrl().j);
 	astep_ctrl_info += "</c> [tc1,1,1,1/tc]dT_max : " + MakeIO(IOI_ODEDTMAX, SMesh.Get_AStepdTCtrl().k);
@@ -1184,7 +1191,8 @@ std::string Simulation::Build_MCSettings_ListLine(int meshIndex)
 {
 	std::string mcsettings_line = MakeIO(IOI_MESH_FORMC, meshIndex) +
 		"</c>[tc1,1,1,1/tc] [sa0/sa] Computation type: " + MakeIO(IOI_MCCOMPUTATION, meshIndex) +
-		"</c>[tc1,1,1,1/tc] [sa1/sa] Monte-Carlo algorithm type: " + MakeIO(IOI_MCTYPE, meshIndex);
+		"</c>[tc1,1,1,1/tc] [sa1/sa] Monte-Carlo algorithm type: " + MakeIO(IOI_MCTYPE, meshIndex) +
+		"</c>[tc1,1,1,1/tc] [sa2/sa] Status: " + MakeIO(IOI_MCDISABLED, meshIndex);
 
 	return mcsettings_line;
 }

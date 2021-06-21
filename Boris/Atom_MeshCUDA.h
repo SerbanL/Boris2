@@ -24,20 +24,6 @@ private:
 
 protected:
 
-	// MONTE-CARLO DATA
-
-	//random number generator - used by Monte Carlo methods
-	cu_obj<cuBorisRand> prng;
-
-	//last Monte-Carlo step acceptance probability
-	cu_obj<cuBReal> mc_acceptance_rate;
-
-	//save last acceptance rate
-	double mc_acceptance_rate_last = 0.0;
-
-	//don't need to compute the acceptance rate every single iteration, unless the acceptance rate is not within bounds : when this counter is zero perform reduction.
-	int mc_acceptance_reduction_counter = 0;
-
 public:
 
 	//This points to data in Atom_ZeemanCUDA if set (else nullptr) - managed by Atom_ZeemanCUDA
@@ -96,12 +82,10 @@ public:
 	//save the quantity currently displayed on screen in an ovf2 file using the specified format
 	BError SaveOnScreenPhysicalQuantity(std::string fileName, std::string ovf2_dataType);
 
-	//Before calling a run of GetDisplayedMeshValue, make sure to call PrepareDisplayedMeshValue : this calculates and stores in displayVEC storage and quantities which don't have memory allocated directly, but require computation and temporary storage.
-	void PrepareDisplayedMeshValue(void);
-
-	//return value of currently displayed mesh quantity at the given absolute position; the value is read directly from the storage VEC, not from the displayed PhysQ.
-	//Return an Any as the displayed quantity could be either a scalar or a vector.
-	Any GetDisplayedMeshValue(DBL3 abs_pos);
+	//extract profile from focused mesh, from currently display mesh quantity, but reading directly from the quantity
+	//Displayed	mesh quantity can be scalar or a vector; pass in std::vector pointers, then check for nullptr to determine what type is displayed
+	//if do_average = true then build average and don't return anything, else return just a single-shot profile. If read_average = true then simply read out the internally stored averaged profile by assigning to pointer.
+	void GetPhysicalQuantityProfile(DBL3 start, DBL3 end, double step, DBL3 stencil, std::vector<DBL3>*& pprofile_dbl3, std::vector<double>*& pprofile_dbl, bool do_average, bool read_average);
 
 	//return average value for currently displayed mesh quantity in the given relative rectangle
 	Any GetAverageDisplayedMeshValue(Rect rel_rect);
@@ -148,8 +132,6 @@ public:
 	BError copy_shapes_to_cpu(void);
 
 	//----------------------------------- OTHER CONTROL METHODS
-
-	virtual void Set_MonteCarlo_Constrained(DBL3 cmc_n_) = 0;
 
 	//-----------------------------------OBJECT GETTERS
 

@@ -336,6 +336,7 @@ void Simulation::MakeIOInfo(void)
 	ioInfo.set(showdata_info_generic + std::string("<i><b>magnetization relaxation |dm/dt|</i>"), INT2(IOI_SHOWDATA, DATA_DMDT));
 	ioInfo.set(showdata_info_generic + std::string("<i><b>Average magnetization</i>"), INT2(IOI_SHOWDATA, DATA_AVM));
 	ioInfo.set(showdata_info_generic + std::string("<i><b>Average magnetization sub-lattice B</i>"), INT2(IOI_SHOWDATA, DATA_AVM2));
+	ioInfo.set(showdata_info_generic + std::string("<i><b>Thermodynamic average magnetization</i>"), INT2(IOI_SHOWDATA, DATA_THAVM));
 	ioInfo.set(showdata_info_generic + std::string("<i><b>Magnetization magnitude min-max</i>"), INT2(IOI_SHOWDATA, DATA_M_MINMAX));
 	ioInfo.set(showdata_info_generic + std::string("<i><b>Magnetization component x min-max</i>"), INT2(IOI_SHOWDATA, DATA_MX_MINMAX));
 	ioInfo.set(showdata_info_generic + std::string("<i><b>Magnetization component y min-max</i>"), INT2(IOI_SHOWDATA, DATA_MY_MINMAX));
@@ -358,11 +359,16 @@ void Simulation::MakeIOInfo(void)
 	ioInfo.set(showdata_info_generic + std::string("<i><b>Total resistance (V/I)</i>"), INT2(IOI_SHOWDATA, DATA_RESISTANCE));
 	ioInfo.set(showdata_info_generic + std::string("<i><b>Energy density: demag</i>"), INT2(IOI_SHOWDATA, DATA_E_DEMAG));
 	ioInfo.set(showdata_info_generic + std::string("<i><b>Energy density: exchange</i>"), INT2(IOI_SHOWDATA, DATA_E_EXCH));
+	ioInfo.set(showdata_info_generic + std::string("<i><b>Torque: exchange</i>"), INT2(IOI_SHOWDATA, DATA_T_EXCH));
 	ioInfo.set(showdata_info_generic + std::string("<i><b>Energy density: surface exchange</i>"), INT2(IOI_SHOWDATA, DATA_E_SURFEXCH));
+	ioInfo.set(showdata_info_generic + std::string("<i><b>Torque: surface exchange</i>"), INT2(IOI_SHOWDATA, DATA_T_SURFEXCH));
 	ioInfo.set(showdata_info_generic + std::string("<i><b>Energy density: applied H field</i>"), INT2(IOI_SHOWDATA, DATA_E_ZEE));
+	ioInfo.set(showdata_info_generic + std::string("<i><b>Torque: applied H field</i>"), INT2(IOI_SHOWDATA, DATA_T_ZEE));
 	ioInfo.set(showdata_info_generic + std::string("<i><b>Energy density: magneto-optical field</i>"), INT2(IOI_SHOWDATA, DATA_E_MOPTICAL));
 	ioInfo.set(showdata_info_generic + std::string("<i><b>Energy density: applied mechanical stress</i>"), INT2(IOI_SHOWDATA, DATA_E_MELASTIC));
 	ioInfo.set(showdata_info_generic + std::string("<i><b>Energy density: anisotropy</i>"), INT2(IOI_SHOWDATA, DATA_E_ANIS));
+	ioInfo.set(showdata_info_generic + std::string("<i><b>Torque: anisotropy</i>"), INT2(IOI_SHOWDATA, DATA_T_ANIS));
+	ioInfo.set(showdata_info_generic + std::string("<i><b>Torque: anisotropy</i>"), INT2(IOI_SHOWDATA, DATA_T_ANIS));
 	ioInfo.set(showdata_info_generic + std::string("<i><b>Energy density: roughness</i>"), INT2(IOI_SHOWDATA, DATA_E_ROUGH));
 	ioInfo.set(showdata_info_generic + std::string("<i><b>Energy density: Total</i>"), INT2(IOI_SHOWDATA, DATA_E_TOTAL));
 	ioInfo.set(showdata_info_generic + std::string("<i><b>Domain wall shift\n<i><b>for moving mesh</i>"), INT2(IOI_SHOWDATA, DATA_DWSHIFT));
@@ -378,6 +384,7 @@ void Simulation::MakeIOInfo(void)
 	ioInfo.set(showdata_info_generic + std::string("<i><b>Average temperature</i>"), INT2(IOI_SHOWDATA, DATA_TEMP));
 	ioInfo.set(showdata_info_generic + std::string("<i><b>Average lattice temperature</i>"), INT2(IOI_SHOWDATA, DATA_TEMP_L));
 	ioInfo.set(showdata_info_generic + std::string("<i><b>Heat solver time step</i>"), INT2(IOI_SHOWDATA, DATA_HEATDT));
+	ioInfo.set(showdata_info_generic + std::string("<i><b>Command buffer data extraction</i>"), INT2(IOI_SHOWDATA, DATA_COMMBUFFER));
 
 	std::string data_info_generic =
 		std::string("[tc1,1,0,1/tc]<b>Output data</b>") +
@@ -395,6 +402,7 @@ void Simulation::MakeIOInfo(void)
 	ioInfo.set(data_info_generic + std::string("<i><b>magnetization relaxation |dm/dt|</i>"), INT2(IOI_DATA, DATA_DMDT));
 	ioInfo.set(data_info_generic + std::string("<i><b>Average magnetization</i>"), INT2(IOI_DATA, DATA_AVM));
 	ioInfo.set(data_info_generic + std::string("<i><b>Average magnetization sub-lattice B</i>"), INT2(IOI_DATA, DATA_AVM2));
+	ioInfo.set(data_info_generic + std::string("<i><b>Thermodynamic average magnetization</i>"), INT2(IOI_DATA, DATA_THAVM));
 	ioInfo.set(data_info_generic + std::string("<i><b>Magnetization magnitude min-max</i>"), INT2(IOI_DATA, DATA_M_MINMAX));
 	ioInfo.set(data_info_generic + std::string("<i><b>Magnetization component x min-max</i>"), INT2(IOI_DATA, DATA_MX_MINMAX));
 	ioInfo.set(data_info_generic + std::string("<i><b>Magnetization component y min-max</i>"), INT2(IOI_DATA, DATA_MY_MINMAX));
@@ -417,11 +425,15 @@ void Simulation::MakeIOInfo(void)
 	ioInfo.set(data_info_generic + std::string("<i><b>Total resistance (V/I)</i>"), INT2(IOI_DATA, DATA_RESISTANCE));
 	ioInfo.set(data_info_generic + std::string("<i><b>Energy density: demag</i>"), INT2(IOI_DATA, DATA_E_DEMAG));
 	ioInfo.set(data_info_generic + std::string("<i><b>Energy density: exchange</i>"), INT2(IOI_DATA, DATA_E_EXCH));
+	ioInfo.set(data_info_generic + std::string("<i><b>Torque: exchange</i>"), INT2(IOI_DATA, DATA_T_EXCH));
 	ioInfo.set(data_info_generic + std::string("<i><b>Energy density: surface exchange</i>"), INT2(IOI_DATA, DATA_E_SURFEXCH));
+	ioInfo.set(data_info_generic + std::string("<i><b>Torque: surface exchange</i>"), INT2(IOI_DATA, DATA_T_SURFEXCH));
 	ioInfo.set(data_info_generic + std::string("<i><b>Energy density: applied H field</i>"), INT2(IOI_DATA, DATA_E_ZEE));
+	ioInfo.set(data_info_generic + std::string("<i><b>Torque: applied H field</i>"), INT2(IOI_DATA, DATA_T_ZEE));
 	ioInfo.set(data_info_generic + std::string("<i><b>Energy density: magneto-optical field</i>"), INT2(IOI_DATA, DATA_E_MOPTICAL));
 	ioInfo.set(data_info_generic + std::string("<i><b>Energy density: applied mechanical stress</i>"), INT2(IOI_DATA, DATA_E_MELASTIC));
 	ioInfo.set(data_info_generic + std::string("<i><b>Energy density: anisotropy</i>"), INT2(IOI_DATA, DATA_E_ANIS));
+	ioInfo.set(data_info_generic + std::string("<i><b>Torque: anisotropy</i>"), INT2(IOI_DATA, DATA_T_ANIS));
 	ioInfo.set(data_info_generic + std::string("<i><b>Energy density: roughness</i>"), INT2(IOI_DATA, DATA_E_ROUGH));
 	ioInfo.set(data_info_generic + std::string("<i><b>Energy density: Total</i>"), INT2(IOI_DATA, DATA_E_TOTAL));
 	ioInfo.set(data_info_generic + std::string("<i><b>Domain wall shift\n<i><b>for moving mesh</i>"), INT2(IOI_DATA, DATA_DWSHIFT));
@@ -437,6 +449,7 @@ void Simulation::MakeIOInfo(void)
 	ioInfo.set(data_info_generic + std::string("<i><b>Average temperature</i>"), INT2(IOI_DATA, DATA_TEMP));
 	ioInfo.set(data_info_generic + std::string("<i><b>Average lattice temperature</i>"), INT2(IOI_DATA, DATA_TEMP_L));
 	ioInfo.set(data_info_generic + std::string("<i><b>Heat solver time step</i>"), INT2(IOI_DATA, DATA_HEATDT));
+	ioInfo.set(data_info_generic + std::string("<i><b>Command buffer data extraction</i>"), INT2(IOI_DATA, DATA_COMMBUFFER));
 
 	//Show currently set directory : textId is the directory
 	//IOI_DIRECTORY
@@ -604,6 +617,8 @@ void Simulation::MakeIOInfo(void)
 	ioInfo.set(stagestop_generic_info + std::string("<i><b>Stop when |mxh| falls below value"), INT2(IOI_STAGESTOPCONDITION, STOP_MXH));
 	ioInfo.set(stagestop_generic_info + std::string("<i><b>Stop when |dm/dt| falls below value"), INT2(IOI_STAGESTOPCONDITION, STOP_DMDT));
 	ioInfo.set(stagestop_generic_info + std::string("<i><b>Stop when stage time value reached"), INT2(IOI_STAGESTOPCONDITION, STOP_TIME));
+	ioInfo.set(stagestop_generic_info + std::string("<i><b>Stop when |mxh| falls below value or when stage iterations value reached"), INT2(IOI_STAGESTOPCONDITION, STOP_MXH_ITER));
+	ioInfo.set(stagestop_generic_info + std::string("<i><b>Stop when |dm/dt| falls below value or when stage iterations value reached"), INT2(IOI_STAGESTOPCONDITION, STOP_DMDT_ITER));
 
 	//Shows the saving condition for the simulation schedule stage : minorId is the minor id of elements in Simulation::simStages (major id there is always 0), auxId is the DSAVE_ value for this data save type, textId is the save type and value as a std::string
 	//IOI_DSAVETYPE
@@ -631,6 +646,8 @@ void Simulation::MakeIOInfo(void)
 	ioInfo.set(stagestopall_generic_info + std::string("<i><b>Stop when |mxh| falls below value"), INT2(IOI_STAGESTOPCONDITIONALL, STOP_MXH));
 	ioInfo.set(stagestopall_generic_info + std::string("<i><b>Stop when |dm/dt| falls below value"), INT2(IOI_STAGESTOPCONDITIONALL, STOP_DMDT));
 	ioInfo.set(stagestopall_generic_info + std::string("<i><b>Stop when stage time value reached"), INT2(IOI_STAGESTOPCONDITIONALL, STOP_TIME));
+	ioInfo.set(stagestopall_generic_info + std::string("<i><b>Stop when |mxh| falls below value or when stage iterations value reached"), INT2(IOI_STAGESTOPCONDITIONALL, STOP_MXH_ITER));
+	ioInfo.set(stagestopall_generic_info + std::string("<i><b>Stop when |dm/dt| falls below value or when stage iterations value reached"), INT2(IOI_STAGESTOPCONDITIONALL, STOP_DMDT_ITER));
 
 	//Shows a data save condition, used to apply the same condition to all simulation stages : minorId is the DSAVE_ value, textId is the save type handle
 	//IOI_DSAVETYPEALL
@@ -723,6 +740,7 @@ void Simulation::MakeIOInfo(void)
 	ioInfo.set(param_generic_info + std::string("<i><b>Atomistic magnetic moment - SC"), INT2(IOI_MESHPARAM, PARAM_ATOM_SC_MUS));
 	ioInfo.set(param_generic_info + std::string("<i><b>Heisenberg exchange energy - SC"), INT2(IOI_MESHPARAM, PARAM_ATOM_SC_J));
 	ioInfo.set(param_generic_info + std::string("<i><b>Atomistic DMI exchange energy - SC"), INT2(IOI_MESHPARAM, PARAM_ATOM_SC_D));
+	ioInfo.set(param_generic_info + std::string("<i><b>Surface exchange energy"), INT2(IOI_MESHPARAM, PARAM_ATOM_JS));
 	ioInfo.set(param_generic_info + std::string("<i><b>Atomistic anisotropy - SC"), INT2(IOI_MESHPARAM, PARAM_ATOM_SC_K1));
 	ioInfo.set(param_generic_info + std::string("<i><b>Atomistic anisotropy - SC"), INT2(IOI_MESHPARAM, PARAM_ATOM_SC_K2));
 	ioInfo.set(param_generic_info + std::string("<i><b>Atomistic anisotropy - SC"), INT2(IOI_MESHPARAM, PARAM_ATOM_SC_K3));
@@ -1353,6 +1371,15 @@ void Simulation::MakeIOInfo(void)
 
 	ioInfo.push_back(IOI_MULTICONV_info, IOI_NCOMMON);
 
+	//Shows status of gpu kernels demag initialization. auxId is the status (0 : Off, 1 : On)
+	//IOI_GPUKERNELS
+
+	std::string IOI_GPUKERNELS_info =
+		std::string("[tc1,1,0,1/tc]<b>GPU kernels initialization</b>") +
+		std::string("\n[tc1,1,0,1/tc]click: change");
+
+	ioInfo.push_back(IOI_GPUKERNELS_info, IOI_GPUKERNELS);
+
 	//Shows materials database in use. textId is the name of the database, including the path.
 	//IOI_LOCALMDB
 
@@ -1363,7 +1390,7 @@ void Simulation::MakeIOInfo(void)
 	ioInfo.push_back(mdbfile_info, IOI_LOCALMDB);
 
 	//Adaptive time step control
-	//IOI_ODERELERRFAIL, IOI_ODERELERRHIGH, IOI_ODERELERRLOW, IOI_ODEDTINCR, IOI_ODEDTMIN, IOI_ODEDTMAX
+	//IOI_ODERELERRFAIL, IOI_ODEDTINCR, IOI_ODEDTMIN, IOI_ODEDTMAX
 
 	std::string astep_ctrl_info =
 		std::string("[tc1,1,0,1/tc]<b>Adaptive time step control</b>") +
@@ -1371,20 +1398,6 @@ void Simulation::MakeIOInfo(void)
 		std::string("\n[tc1,1,0,1/tc]dbl-click: edit");
 
 	ioInfo.push_back(astep_ctrl_info, IOI_ODERELERRFAIL);
-
-	astep_ctrl_info =
-		std::string("[tc1,1,0,1/tc]<b>Adaptive time step control</b>") +
-		std::string("\n[tc1,1,0,1/tc]Decrease dT above this error.") +
-		std::string("\n[tc1,1,0,1/tc]dbl-click: edit");
-
-	ioInfo.push_back(astep_ctrl_info, IOI_ODERELERRHIGH);
-
-	astep_ctrl_info =
-		std::string("[tc1,1,0,1/tc]<b>Adaptive time step control</b>") +
-		std::string("\n[tc1,1,0,1/tc]Increase dT below this error.") +
-		std::string("\n[tc1,1,0,1/tc]dbl-click: edit");
-
-	ioInfo.push_back(astep_ctrl_info, IOI_ODERELERRLOW);
 
 	astep_ctrl_info =
 		std::string("[tc1,1,0,1/tc]<b>Adaptive time step control</b>") +
@@ -1501,6 +1514,15 @@ void Simulation::MakeIOInfo(void)
 		std::string("\n[tc1,1,0,1/tc]dbl-click: edit");
 
 	ioInfo.push_back(IOI_MCTYPE_info, IOI_MCTYPE);
+
+	//Shows Monte-Carlo disabled/enabled status : minorId is the unique mesh id number, auxId is the status (1 : disabled, 0 : enabled).
+	//IOI_MCDISABLED
+
+	std::string IOI_MCDISABLED_info =
+		std::string("[tc1,1,0,1/tc]<b>Monte Carlo Algorithm Status</b>") +
+		std::string("\n[tc1,1,0,1/tc]click: change");
+
+	ioInfo.push_back(IOI_MCDISABLED_info, IOI_MCDISABLED);
 
 	//Shows Monte-Carlo computefields state flag : auxId is the state (0: disabled, 1: enabled)
 	//IOI_MCCOMPUTEFIELDS:
@@ -2733,6 +2755,17 @@ std::string Simulation::MakeIO(IOI_ identifier, PType ... params)
 		}
 		break;
 
+	//Shows status of gpu kernels demag initialization. auxId is the status (0 : Off, 1 : On)
+	case IOI_GPUKERNELS:
+		if (params_str.size() == 1) {
+
+			int status = ToNum(params_str[0]);
+
+			if (status) return MakeInteractiveObject("On", IOI_GPUKERNELS, 0, status, "", ONCOLOR);
+			else return MakeInteractiveObject("Off", IOI_GPUKERNELS, 0, status, "", OFFCOLOR);
+		}
+		break;
+
 	//Shows status of force 2D multi-layered convolution. auxId is the status (-1 : N/A, 0 : Off, 1 : On)
 	case IOI_2DMULTICONV:
 		if (params_str.size() == 1) {
@@ -2772,24 +2805,6 @@ std::string Simulation::MakeIO(IOI_ identifier, PType ... params)
 			std::string value = params_str[0];
 
 			return MakeInteractiveObject(value, IOI_ODERELERRFAIL, 0, 0, value);
-		}
-		break;
-
-	case IOI_ODERELERRHIGH:
-		if (params_str.size() == 1) {
-
-			std::string value = params_str[0];
-
-			return MakeInteractiveObject(value, IOI_ODERELERRHIGH, 0, 0, value);
-		}
-		break;
-
-	case IOI_ODERELERRLOW:
-		if (params_str.size() == 1) {
-
-			std::string value = params_str[0];
-
-			return MakeInteractiveObject(value, IOI_ODERELERRLOW, 0, 0, value);
 		}
 		break;
 
@@ -2944,6 +2959,15 @@ std::string Simulation::MakeIO(IOI_ identifier, PType ... params)
 			int meshIndex = ToNum(params_str[0]);
 
 			return MakeInteractiveObject(" Classical ", IOI_MCTYPE, SMesh[meshIndex]->get_id(), 0, "");
+		}
+		break;
+
+	case IOI_MCDISABLED:
+		if (params_str.size() == 1) {
+
+			int meshIndex = ToNum(params_str[0]);
+
+			return MakeInteractiveObject(" Disabled ", IOI_MCDISABLED, SMesh[meshIndex]->get_id(), 1, "", OFFCOLOR);
 		}
 		break;
 

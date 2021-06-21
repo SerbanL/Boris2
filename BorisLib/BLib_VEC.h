@@ -13,6 +13,7 @@
 #include "VEC_avg.h"
 #include "VEC_arith.h"
 #include "VEC_extract.h"
+#include "VEC_histo.h"
 #include "VEC_nprops.h"
 #include "VEC_trans.h"
 #include "VEC_matops.h"

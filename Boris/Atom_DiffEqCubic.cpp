@@ -30,14 +30,14 @@ void Atom_DifferentialEquationCubic::RestoreMoments(void)
 void Atom_DifferentialEquationCubic::RenormalizeMoments(void)
 {
 #pragma omp parallel for
-	for (int idx = 0; idx < paMesh->n.dim(); idx++) {
+	for (int idx = 0; idx < paMesh->M1.linear_size(); idx++) {
 
 		if (paMesh->M1.is_not_empty(idx)) {
 
 			double mu_s = paMesh->mu_s;
 			paMesh->update_parameters_mcoarse(idx, paMesh->mu_s, mu_s);
 
-			paMesh->M1[idx].renormalize(mu_s);
+			if (mu_s) paMesh->M1[idx].renormalize(mu_s);
 		}
 	}
 }
@@ -208,6 +208,9 @@ BError Atom_DifferentialEquationCubic::UpdateConfiguration(UPDATECONFIG_ cfgMess
 
 	if (ucfg::check_cfgflags(cfgMessage, UPDATECONFIG_ODE_MOVEMESH)) {
 
+		/*
+		//REMOVED : not really necessary, especially if you have ends coupled to dipoles, which freeze end cells only
+		//for atomistic meshes this is also problematic if non-zero temperatures are used
 		if (!error) {
 
 			//set skip cells flags for moving mesh if enabled
@@ -228,6 +231,7 @@ BError Atom_DifferentialEquationCubic::UpdateConfiguration(UPDATECONFIG_ cfgMess
 				paMesh->M1.clear_skipcells();
 			}
 		}
+		*/
 	}
 
 	if (cfgMessage == UPDATECONFIG_PARAMVALUECHANGED_MLENGTH) RenormalizeMoments();

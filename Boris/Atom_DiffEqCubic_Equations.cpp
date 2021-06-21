@@ -19,18 +19,20 @@ DBL3 Atom_DifferentialEquationCubic::LLG(int idx)
 	
 	double mu_s = paMesh->mu_s;
 	double alpha = paMesh->alpha;
-	paMesh->update_parameters_mcoarse(idx, paMesh->mu_s, mu_s, paMesh->alpha, alpha);
+	double grel = paMesh->grel;
+	paMesh->update_parameters_mcoarse(idx, paMesh->mu_s, mu_s, paMesh->alpha, alpha, paMesh->grel, grel);
 
-	return (-GAMMA / (1 + alpha*alpha)) * ((paMesh->M1[idx] ^ paMesh->Heff1[idx]) + alpha * ((paMesh->M1[idx] / mu_s) ^ (paMesh->M1[idx] ^ paMesh->Heff1[idx])));
+	return (-GAMMA * grel / (1 + alpha*alpha)) * ((paMesh->M1[idx] ^ paMesh->Heff1[idx]) + alpha * ((paMesh->M1[idx] / mu_s) ^ (paMesh->M1[idx] ^ paMesh->Heff1[idx])));
 }
 
 //Landau-Lifshitz-Gilbert equation but with no precession term and damping set to 1 : faster relaxation for static problems
 DBL3 Atom_DifferentialEquationCubic::LLGStatic(int idx)
 {
 	double mu_s = paMesh->mu_s;
-	paMesh->update_parameters_mcoarse(idx, paMesh->mu_s, mu_s);
+	double grel = paMesh->grel;
+	paMesh->update_parameters_mcoarse(idx, paMesh->mu_s, mu_s, paMesh->grel, grel);
 
-	return (-GAMMA / 2) * ((paMesh->M1[idx] / mu_s) ^ (paMesh->M1[idx] ^ paMesh->Heff1[idx]));
+	return (-GAMMA * grel / 2) * ((paMesh->M1[idx] / mu_s) ^ (paMesh->M1[idx] ^ paMesh->Heff1[idx]));
 }
 
 DBL3 Atom_DifferentialEquationCubic::LLGSTT(int idx)
@@ -45,9 +47,10 @@ DBL3 Atom_DifferentialEquationCubic::LLGSTT(int idx)
 
 	double mu_s = paMesh->mu_s;
 	double alpha = paMesh->alpha;
-	paMesh->update_parameters_mcoarse(idx, paMesh->mu_s, mu_s, paMesh->alpha, alpha);
+	double grel = paMesh->grel;
+	paMesh->update_parameters_mcoarse(idx, paMesh->mu_s, mu_s, paMesh->alpha, alpha, paMesh->grel, grel);
 
-	return (-GAMMA / (1 + alpha * alpha)) * ((paMesh->M1[idx] ^ paMesh->Heff1[idx]) + alpha * ((paMesh->M1[idx] / mu_s) ^ (paMesh->M1[idx] ^ paMesh->Heff1[idx])));
+	return (-GAMMA * grel / (1 + alpha * alpha)) * ((paMesh->M1[idx] ^ paMesh->Heff1[idx]) + alpha * ((paMesh->M1[idx] / mu_s) ^ (paMesh->M1[idx] ^ paMesh->Heff1[idx])));
 }
 
 #endif

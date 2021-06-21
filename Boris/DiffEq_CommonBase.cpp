@@ -59,11 +59,16 @@ bool ODECommon_Base::calculate_dmdt = true;
 double ODECommon_Base::lte = 0.0;
 
 double ODECommon_Base::err_high_fail = RKF_RELERRFAIL;
-double ODECommon_Base::err_high = RKF_RELERRMAX;
-double ODECommon_Base::err_low = RKF_RELERRMIN;
+//OBSOLETE
+double ODECommon_Base::err_high = 0.0;
+//OBSOLETE
+double ODECommon_Base::err_low = 0.0;
 double ODECommon_Base::dT_increase = RKF_DTINCREASE;
 double ODECommon_Base::dT_max = RKF_MAXDT;
 double ODECommon_Base::dT_min = RKF_MINDT;
+
+//order of evaluation method
+int ODECommon_Base::eval_method_order = 5;
 
 //-----------------------------------Special values
 

@@ -22,6 +22,9 @@ public:
 
 	//-----------SIMPLE CUBIC
 
+	//Relative electron gyromagnetic ratio
+	cu_obj<MatPCUDA<cuBReal, cuBReal>> grel;
+
 	//Gilbert damping (atomistic: intrinsic)
 	cu_obj<MatPCUDA<cuBReal, cuBReal>> alpha;
 
@@ -33,6 +36,9 @@ public:
 
 	//DMI exchange constant : (units of J)
 	cu_obj<MatPCUDA<cuBReal, cuBReal>> D;
+
+	//Surface exchange coupling, used by the surfexchange module to couple two spins on different meshes at the surface (units of J)
+	cu_obj<MatPCUDA<cuBReal, cuBReal>> Js;
 
 	//Magneto-crystalline anisotropy constants (J) and easy axes directions. For uniaxial anisotropy only ea1 is needed.
 	cu_obj<MatPCUDA<cuBReal, cuBReal>> K1;

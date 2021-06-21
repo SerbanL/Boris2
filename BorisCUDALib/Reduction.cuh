@@ -49,16 +49,12 @@ __device__ void reduction_sum(int element_idx, size_t array_size, FType* large_a
 	}
 }
 
-//----------------------------------------- REDUCTION : Average
-
-//Sum elements in large_array of size array_size and store the sum in result; also sum number of points that contribute - element_idx is the index in large_array for this thread
-//Divide result by points_count to obtain the average value; Important : result and points_count must be reset to zero before calling this.
-
+//as above, but custom block size of 1024 threads
 template <typename FType>
-__device__ void reduction_avg(int element_idx, size_t array_size, FType* large_array, FType& result, size_t& points_count, bool include_in_reduction)
+__device__ void reduction_sum_blocksize1024(int element_idx, size_t array_size, FType* large_array, FType& result, bool include_in_reduction = true)
 {
 	//memory shared between threads in a block
-	__shared__ FType shared_memory[CUDATHREADS];
+	__shared__ FType shared_memory[1024];
 
 	//linearized thread id for accessing shared memory
 	unsigned thread_idx = threadIdx.x;
@@ -67,7 +63,6 @@ __device__ void reduction_avg(int element_idx, size_t array_size, FType* large_a
 	if (element_idx < array_size && include_in_reduction) {
 
 		shared_memory[thread_idx] = large_array[element_idx];
-		atomicAdd(&points_count, 1);
 	}
 	else shared_memory[thread_idx] = FType();
 
@@ -75,7 +70,7 @@ __device__ void reduction_avg(int element_idx, size_t array_size, FType* large_a
 
 	__syncthreads();
 
-	for (unsigned s = CUDATHREADS / 2; s > 0; s >>= 1) {
+	for (unsigned s = blockDim.x / 2; s > 0; s >>= 1) {
 
 		if (thread_idx < s) {
 
@@ -90,6 +85,57 @@ __device__ void reduction_avg(int element_idx, size_t array_size, FType* large_a
 
 		//use atomic operation to reduce all shared_memory[0] elements from different blocks to a single value. 
 		atomicAdd(&result, shared_memory[0]);
+	}
+}
+
+//----------------------------------------- REDUCTION : Average
+
+//Sum elements in large_array of size array_size and store the sum in result; also sum number of points that contribute - element_idx is the index in large_array for this thread
+//Divide result by points_count to obtain the average value; Important : result and points_count must be reset to zero before calling this.
+
+template <typename FType>
+__device__ void reduction_avg(int element_idx, size_t array_size, FType* large_array, FType& result, size_t& points_count, bool include_in_reduction = true)
+{
+	//memory shared between threads in a block
+	__shared__ FType shared_memory[CUDATHREADS];
+	__shared__ size_t shared_memory_count[CUDATHREADS];
+
+	//linearized thread id for accessing shared memory
+	unsigned thread_idx = threadIdx.x;
+
+	//store values in shared_memory so we can perform reduction on it
+	if (element_idx < array_size && include_in_reduction) {
+
+		shared_memory[thread_idx] = large_array[element_idx];
+		shared_memory_count[thread_idx] = 1;
+	}
+	else {
+
+		shared_memory[thread_idx] = FType();
+		shared_memory_count[thread_idx] = 0;
+	}
+
+	//reduce values in this block using sequential addressing reduction (reduce pairs of lower half and top half elements iteratively until we are left with just the one element stored in shared_memory[0])
+
+	__syncthreads();
+
+	for (unsigned s = CUDATHREADS / 2; s > 0; s >>= 1) {
+
+		if (thread_idx < s) {
+
+			//summing reduction
+			shared_memory[thread_idx] += shared_memory[thread_idx + s];
+			shared_memory_count[thread_idx] += shared_memory_count[thread_idx + s];
+		}
+
+		__syncthreads();
+	}
+
+	if (thread_idx == 0) {
+
+		//use atomic operation to reduce all shared_memory[0] elements from different blocks to a single value. 
+		atomicAdd(&result, shared_memory[0]);
+		atomicAdd(&points_count, shared_memory_count[0]);
 	}
 }
 
@@ -156,7 +202,7 @@ __device__ void reduction_max(int element_idx, size_t array_size, FType* large_a
 
 		shared_memory[thread_idx] = large_array[element_idx];
 	}
-	else shared_memory[thread_idx] = large_array[0];
+	else shared_memory[thread_idx] = result;
 
 	//reduce values in this block using sequential addressing reduction (reduce pairs of lower half and top half elements iteratively until we are left with just the one element stored in shared_memory[0])
 
@@ -199,7 +245,7 @@ __device__ void reduction_min(int element_idx, size_t array_size, FType* large_a
 
 		shared_memory[thread_idx] = large_array[element_idx];
 	}
-	else shared_memory[thread_idx] = large_array[0];
+	else shared_memory[thread_idx] = result;
 
 	//reduce values in this block using sequential addressing reduction (reduce pairs of lower half and top half elements iteratively until we are left with just the one element stored in shared_memory[0])
 
@@ -246,8 +292,8 @@ __device__ void reduction_minmax(int element_idx, size_t array_size, FType* larg
 	}
 	else {
 
-		shared_memory_min[thread_idx] = large_array[0];
-		shared_memory_max[thread_idx] = large_array[0];
+		shared_memory_min[thread_idx] = minimum;
+		shared_memory_max[thread_idx] = maximum;
 	}
 
 	//reduce values in this block using sequential addressing reduction (reduce pairs of lower half and top half elements iteratively until we are left with just the one element stored in shared_memory[0])

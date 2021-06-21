@@ -125,7 +125,24 @@ double Exch_6ngbr_Neu::UpdateField(void)
 				pMesh->update_parameters_mcoarse(idx, pMesh->A, A, pMesh->Ms, Ms);
 
 				//cells marked with cmbnd are calculated using exchange coupling to other ferromagnetic meshes - see below; the delsq_neu evaluates to zero in the CMBND coupling direction.
-				DBL3 Hexch = (2 * A / (MU0*Ms*Ms)) * pMesh->M.delsq_neu(idx);
+				DBL3 Hexch;
+				
+				if (pMesh->base_temperature > 0.0 && pMesh->T_Curie > 0.0) {
+
+					//for finite temperature simulations the magnetization length may have a spatial variation
+					//this will not affect the transverse torque (mxH), but will affect the longitudinal term in the sLLB equation (m.H) and cannot be neglected when close to Tc.
+
+					DBL33 Mg = pMesh->M.grad_neu(idx);
+					DBL3 dMdx = Mg.x, dMdy = Mg.y, dMdz = Mg.z;
+
+					double delsq_Msq = 2 * pMesh->M[idx] * (pMesh->M.dxx_neu(idx) + pMesh->M.dyy_neu(idx) + pMesh->M.dzz_neu(idx)) + 2 * (dMdx * dMdx + dMdy * dMdy + dMdz * dMdz);
+					double Mnorm = pMesh->M[idx].norm();
+					Hexch = (2 * A / (MU0*Ms*Ms)) * (pMesh->M.delsq_neu(idx) - pMesh->M[idx] * delsq_Msq / (2 * Mnorm*Mnorm));
+				}
+				else {
+					//zero temperature simulations : magnetization length could still vary but will only affect mxH term, so not needed for 0K simulations.
+					Hexch = (2 * A / (MU0*Ms*Ms)) * pMesh->M.delsq_neu(idx);
+				}
 
 				pMesh->Heff[idx] += Hexch;
 
@@ -163,6 +180,8 @@ double Exch_6ngbr_Neu::UpdateField(void)
 
 				DBL3 Hexch = (2 * A_AFM.i / (MU0*Ms_AFM.i*Ms_AFM.i)) * delsq_M_A + (-4 * Ah.i * (pMesh->M[idx] ^ (pMesh->M[idx] ^ pMesh->M2[idx])) / (M.i*M.i) + Anh.i * delsq_M_B) / (MU0*Ms_AFM.i*Ms_AFM.j);
 				DBL3 Hexch2 = (2 * A_AFM.j / (MU0*Ms_AFM.j*Ms_AFM.j)) * delsq_M_B + (-4 * Ah.j * (pMesh->M2[idx] ^ (pMesh->M2[idx] ^ pMesh->M[idx])) / (M.j*M.j) + Anh.j * delsq_M_A) / (MU0*Ms_AFM.i*Ms_AFM.j);
+
+				//TO DO : investigate correction due to non-constant magnetization length.
 
 				pMesh->Heff[idx] += Hexch;
 				pMesh->Heff2[idx] += Hexch2;
@@ -289,6 +308,67 @@ double Exch_6ngbr_Neu::UpdateField(void)
 	this->energy = energy;
 
 	return this->energy;
+}
+
+//-------------------Energy methods
+
+double Exch_6ngbr_Neu::Get_EnergyChange(int spin_index, DBL3 Mnew)
+{
+	//For CUDA there are separate device functions used by CUDA kernels.
+
+	if (pMesh->M.is_not_empty(spin_index)) {
+		
+		double Ms = pMesh->Ms;
+		double A = pMesh->A;
+		pMesh->update_parameters_mcoarse(spin_index, pMesh->A, A, pMesh->Ms, Ms);
+
+		//NOTE : here we only need the change in energy due to spin rotation only. Thus the longitudinal part, which is dependent on spin length only, cancels out. Enforce this by making Mnew length same as old one.
+		Mnew.renormalize(pMesh->M[spin_index].norm());
+
+		DBL3 Hexch = (2 * A / (MU0*Ms*Ms)) * pMesh->M.delsq_neu(spin_index);
+		double energy_ = -MU0 * pMesh->M[spin_index] * Hexch / 2;
+
+		DBL3 Mold = pMesh->M[spin_index];
+		pMesh->M[spin_index] = Mnew;
+		Hexch = (2 * A / (MU0*Ms*Ms)) * pMesh->M.delsq_neu(spin_index);
+		double energynew_ = -MU0 * pMesh->M[spin_index] * Hexch / 2;
+		pMesh->M[spin_index] = Mold;
+
+		//multiply by 2 as we are not double-counting here (same as for Demag)
+		return pMesh->h.dim() * (energynew_ - energy_) * 2;		
+	}
+	else return 0.0;
+}
+
+double Exch_6ngbr_Neu::Get_Energy(int spin_index)
+{
+	//For CUDA there are separate device functions used by CUDA kernels.
+
+	if (pMesh->M.is_not_empty(spin_index)) {
+
+		double Ms = pMesh->Ms;
+		double A = pMesh->A;
+		pMesh->update_parameters_mcoarse(spin_index, pMesh->A, A, pMesh->Ms, Ms);
+
+		DBL3 Hexch = (2 * A / (MU0*Ms*Ms)) * pMesh->M.delsq_neu(spin_index);
+		double energy_ = -MU0 * pMesh->M[spin_index] * Hexch / 2;
+
+		//multiply by 2 as we are not double-counting here (same as for Demag)
+		return pMesh->h.dim() * energy_ * 2;
+	}
+	else return 0.0;
+}
+
+
+//-------------------Torque methods
+
+DBL3 Exch_6ngbr_Neu::GetTorque(Rect& avRect)
+{
+#if COMPILECUDA == 1
+	if (pModuleCUDA) return reinterpret_cast<Exch_6ngbr_NeuCUDA*>(pModuleCUDA)->GetTorque(avRect);
+#endif
+
+	return CalculateTorque(pMesh->M, avRect);
 }
 
 #endif

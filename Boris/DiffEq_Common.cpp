@@ -47,7 +47,7 @@ ODECommon::ODECommon(bool called_from_derived) :
 			VINFO(setODE), VINFO(evalMethod), 
 			VINFO(dT), VINFO(dTstoch), VINFO(time_stoch), VINFO(link_dTstoch),
 			VINFO(dTspeedup), VINFO(time_speedup), VINFO(link_dTspeedup),
-			VINFO(err_high_fail), VINFO(err_high), VINFO(err_low), VINFO(dT_increase), VINFO(dT_min), VINFO(dT_max),
+			VINFO(err_high_fail), VINFO(err_high), VINFO(err_low), VINFO(dT_increase), VINFO(dT_min), VINFO(dT_max), VINFO(eval_method_order),
 			VINFO(use_evaluation_speedup),
 			VINFO(moving_mesh), VINFO(moving_mesh_antisymmetric), VINFO(moving_mesh_threshold), VINFO(moving_mesh_dwshift)
 		}, {})

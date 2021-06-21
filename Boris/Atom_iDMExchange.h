@@ -48,7 +48,13 @@ public:
 	//-------------------Energy methods
 
 	//For simple cubic mesh spin_index coincides with index in M1
-	double Get_Atomistic_EnergyChange(int spin_index, DBL3 Mnew);
+	double Get_EnergyChange(int spin_index, DBL3 Mnew);
+
+	double Get_Energy(int spin_index);
+
+	//-------------------Torque methods
+
+	DBL3 GetTorque(Rect& avRect);
 };
 
 #else

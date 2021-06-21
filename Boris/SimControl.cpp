@@ -4,11 +4,11 @@
 //MAIN SIMULATION LOOP. Runs in SimulationThread
 void Simulation::Simulate(void)
 {
+
 	//stop other parts of the program from changing simulation parameters in the middle of an interation
 	//non-blocking std::mutex is needed here so we can stop the simulation from HandleCommand - it also uses the simulationMutex. If Simulation thread gets blocked by this std::mutex they'll wait on each other forever.
 	if (simulationMutex.try_lock()) {
 
-		//Check conditions for saving data
 		CheckSaveDataConditions();
 
 		if (simStages[stage_step.major].stage_type() == SS_MONTECARLO) {
@@ -143,6 +143,9 @@ void Simulation::RunSimulation(void)
 		return;
 	}
 
+	//show any warnings, and continue
+	if (error.warning_set()) err_hndl.show_error(error, true);
+
 	//set initial stage values if at the beginning (stage = 0, step = 0, and stageiteration = 0)
 	if (Check_and_GetStageStep() == INT2()) {
 
@@ -204,4 +207,13 @@ void Simulation::ResetSimulation(void)
 	SMesh.ResetODE();
 	
 	UpdateScreen();
+}
+
+//Execute the commands stored in the command buffer : when you call this must ensure simulationMutex is unlocked, and THREAD_HANDLEMESSAGE is free (or else launch it asynchonously)
+void Simulation::RunCommandBuffer(void)
+{
+	for (int idx = 0; idx < command_buffer.size(); idx++) {
+
+		HandleCommand(command_buffer[idx]);
+	}
 }

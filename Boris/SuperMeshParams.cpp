@@ -118,7 +118,8 @@ BError SuperMesh::set_meshparam_s_equation(std::string meshName, std::string par
 
 	pMesh[meshName]->set_meshparam_s_equation(paramID, equationText, userConstants, pMesh[meshName]->meshRect.size());
 
-	error = UpdateConfiguration(UPDATECONFIG_PARAMCHANGED);
+	if (pMesh[meshName]->param_changes_mlength(paramID)) error = UpdateConfiguration(UPDATECONFIG_PARAMVALUECHANGED_MLENGTH);
+	else error = UpdateConfiguration(UPDATECONFIG_PARAMCHANGED);
 
 	return error;
 }
@@ -133,6 +134,7 @@ BError SuperMesh::clear_meshparam_variation(std::string meshName)
 	if (meshName.length()) {
 
 		pMesh[meshName]->clear_meshparam_variation(PARAM_ALL);
+	
 	}
 	else {
 
@@ -142,7 +144,7 @@ BError SuperMesh::clear_meshparam_variation(std::string meshName)
 		}
 	}
 
-	error = UpdateConfiguration(UPDATECONFIG_PARAMCHANGED);
+	error = UpdateConfiguration(UPDATECONFIG_PARAMVALUECHANGED_MLENGTH);
 
 	return error;
 }
@@ -158,7 +160,7 @@ BError SuperMesh::clear_meshparam_variation(std::string meshName, std::string pa
 
 	pMesh[meshName]->clear_meshparam_variation(paramID);
 
-	error = UpdateConfiguration(UPDATECONFIG_PARAMCHANGED);
+	error = UpdateConfiguration(UPDATECONFIG_PARAMVALUECHANGED_MLENGTH);
 
 	return error;
 }
@@ -189,7 +191,11 @@ BError SuperMesh::set_meshparam_var(std::string meshName, std::string paramHandl
 
 	error = pMesh[meshName]->set_meshparam_var(paramID, generatorID, generatorArgs, bitmap_loader);
 
-	if (!error) error = UpdateConfiguration(UPDATECONFIG_PARAMCHANGED);
+	if (!error) {
+
+		if (pMesh[meshName]->param_changes_mlength(paramID)) error = UpdateConfiguration(UPDATECONFIG_PARAMVALUECHANGED_MLENGTH);
+		else error = UpdateConfiguration(UPDATECONFIG_PARAMCHANGED);
+	}
 
 	return error;
 }
@@ -205,7 +211,11 @@ BError SuperMesh::set_meshparam_shape(std::string meshName, std::string paramHan
 
 	error = pMesh[meshName]->set_meshparam_shape(paramID, shapes, value_text);
 
-	if (!error) error = UpdateConfiguration(UPDATECONFIG_PARAMCHANGED);
+	if (!error) {
+
+		if (pMesh[meshName]->param_changes_mlength(paramID)) error = UpdateConfiguration(UPDATECONFIG_PARAMVALUECHANGED_MLENGTH);
+		else error = UpdateConfiguration(UPDATECONFIG_PARAMCHANGED);
+	}
 
 	return error;
 }

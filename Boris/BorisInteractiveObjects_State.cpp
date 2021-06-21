@@ -2739,6 +2739,31 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 	}
 	break;
 
+	//Shows status of gpu kernels demag initialization. auxId is the status (0 : Off, 1 : On)
+	case IOI_GPUKERNELS:
+	{
+		int status = iop.auxId;
+
+		if (status != (int)SMesh.Get_Kernel_Initialize_on_GPU()) {
+
+			iop.auxId = (int)SMesh.Get_Kernel_Initialize_on_GPU();
+
+			if (iop.auxId == 1) {
+
+				pTO->SetBackgroundColor(ONCOLOR);
+				pTO->set(" On ");
+			}
+			else if (iop.auxId == 0) {
+
+				pTO->SetBackgroundColor(OFFCOLOR);
+				pTO->set(" Off ");
+			}
+
+			stateChanged = true;
+		}
+	}
+	break;
+
 	//Shows status of force 2D multi-layered convolution. auxId is the status (-1 : N/A, 0 : Off, 1 : On)
 	case IOI_2DMULTICONV:
 	{
@@ -2858,43 +2883,9 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 		double value = ToNum(iop.textId);
 
 		//update value if not matching
-		if (value != SMesh.Get_AStepRelErrCtrl().i) {
+		if (value != SMesh.Get_AStepRelErrCtrl()) {
 
-			iop.textId = ToString(SMesh.Get_AStepRelErrCtrl().i);
-			pTO->set(" " + iop.textId + " ");
-
-			stateChanged = true;
-		}
-	}
-	break;
-
-	//Shows relative error high threshold for decreasing dT. textId is the value.
-	case IOI_ODERELERRHIGH:
-	{
-		//parameters from iop
-		double value = ToNum(iop.textId);
-
-		//update value if not matching
-		if (value != SMesh.Get_AStepRelErrCtrl().j) {
-
-			iop.textId = ToString(SMesh.Get_AStepRelErrCtrl().j);
-			pTO->set(" " + iop.textId + " ");
-
-			stateChanged = true;
-		}
-	}
-	break;
-
-	//Shows relative error low threshold for increasing dT. textId is the value.
-	case IOI_ODERELERRLOW:
-	{
-		//parameters from iop
-		double value = ToNum(iop.textId);
-
-		//update value if not matching
-		if (value != SMesh.Get_AStepRelErrCtrl().k) {
-
-			iop.textId = ToString(SMesh.Get_AStepRelErrCtrl().k);
+			iop.textId = ToString(SMesh.Get_AStepRelErrCtrl());
 			pTO->set(" " + iop.textId + " ");
 
 			stateChanged = true;
@@ -3385,16 +3376,9 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 
 		if (meshIdx >= 0) {
 
-			if (status >= 0 && !SMesh[meshIdx]->is_atomistic()) {
+			if (status >= 0 && (bool)status != SMesh[meshIdx]->Get_MonteCarlo_Serial()) {
 
-				pTO->SetBackgroundColor(UNAVAILABLECOLOR);
-				pTO->set(" N/A ");
-				stateChanged = true;
-				iop.auxId = -1;
-			}
-			else if (status >= 0 && (bool)status != dynamic_cast<Atom_Mesh*>(SMesh[meshIdx])->Get_MonteCarlo_Serial()) {
-
-				iop.auxId = dynamic_cast<Atom_Mesh*>(SMesh[meshIdx])->Get_MonteCarlo_Serial();
+				iop.auxId = SMesh[meshIdx]->Get_MonteCarlo_Serial();
 
 				if (iop.auxId == 1) {
 
@@ -3422,28 +3406,52 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 
 		if (meshIdx >= 0) {
 
-			if (type >= 0 && !SMesh[meshIdx]->is_atomistic()) {
+			if (type >= 0 && 
+				((bool)type != SMesh[meshIdx]->Get_MonteCarlo_Constrained() || 
+				(type == 1 && (DBL3)ToNum(direction) != SMesh[meshIdx]->Get_MonteCarlo_Constrained_Direction()))) {
 
-				pTO->SetBackgroundColor(UNAVAILABLECOLOR);
-				pTO->set(" N/A ");
-				stateChanged = true;
-				iop.auxId = -1;
-			}
-			else if (type >= 0 && 
-				((bool)type != dynamic_cast<Atom_Mesh*>(SMesh[meshIdx])->Get_MonteCarlo_Constrained() || 
-				(type == 1 && (DBL3)ToNum(direction) != dynamic_cast<Atom_Mesh*>(SMesh[meshIdx])->Get_MonteCarlo_Constrained_Direction()))) {
-
-				iop.auxId = dynamic_cast<Atom_Mesh*>(SMesh[meshIdx])->Get_MonteCarlo_Constrained();
+				iop.auxId = SMesh[meshIdx]->Get_MonteCarlo_Constrained();
 				if (iop.auxId == 0) {
 
 					iop.textId = "Classical";
 				}
 				else {
 
-					iop.textId = ToString(dynamic_cast<Atom_Mesh*>(SMesh[meshIdx])->Get_MonteCarlo_Constrained_Direction());
+					iop.textId = ToString(SMesh[meshIdx]->Get_MonteCarlo_Constrained_Direction());
 				}
 
 				pTO->set(" " + iop.textId + " ");
+				stateChanged = true;
+			}
+		}
+	}
+	break;
+
+	//Shows Monte-Carlo disabled/enabled status : minorId is the unique mesh id number, auxId is the status (1 : disabled, 0 : enabled).
+	case IOI_MCDISABLED:
+	{
+		int meshId = iop.minorId;
+		int status = iop.auxId;
+
+		int meshIdx = SMesh.contains_id(meshId);
+
+		if (meshIdx >= 0) {
+
+			if (status >= 0 && (bool)status != SMesh[meshIdx]->Get_MonteCarlo_Disabled()) {
+
+				iop.auxId = SMesh[meshIdx]->Get_MonteCarlo_Disabled();
+
+				if (iop.auxId == 0) {
+
+					pTO->set(" Enabled ");
+					pTO->SetBackgroundColor(ONCOLOR);
+				}
+				else {
+
+					pTO->set(" Disabled ");
+					pTO->SetBackgroundColor(OFFCOLOR);
+				}
+
 				stateChanged = true;
 			}
 		}

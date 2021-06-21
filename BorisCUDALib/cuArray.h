@@ -189,6 +189,9 @@ public:
 	//set all entries to given value
 	__host__ void set(VType value);
 
+	//set single value from cpu memory at given index
+	__host__ void set(int index, VType value);
+
 	//------------------------------------------- GET SIZE : cuArray_aux.h
 
 	__host__ size_t size(void);

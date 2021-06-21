@@ -33,12 +33,31 @@ __global__ void iDMExchangeCUDA_FM_UpdateField(ManagedMeshCUDA& cuMesh, ManagedM
 			cuBReal D = *cuMesh.pD;
 			cuMesh.update_parameters_mcoarse(idx, *cuMesh.pMs, Ms, *cuMesh.pA, A, *cuMesh.pD, D);
 
+			cuBReal Aconst = 2 * A / ((cuBReal)MU0 * Ms * Ms);
+			cuBReal Dconst = -2 * D / ((cuBReal)MU0 * Ms * Ms);
+
 			if (M.is_plane_interior(idx)) {
 
 				//interior point : can use cheaper neu versions
 
 				//direct exchange contribution
-				Hexch_A = 2 * A * M.delsq_neu(idx) / ((cuBReal)MU0 * Ms * Ms);
+				if (*cuMesh.pbase_temperature > 0.0 && *cuMesh.pT_Curie > 0.0) {
+
+					//for finite temperature simulations the magnetization length may have a spatial variation
+					//this will not affect the transverse torque (mxH), but will affect the longitudinal term in the sLLB equation (m.H) and cannot be neglected when close to Tc.
+
+					cuReal33 Mg = M.grad_neu(idx);
+					cuReal3 dMdx = Mg.x, dMdy = Mg.y, dMdz = Mg.z;
+
+					cuBReal delsq_Msq = 2 * M[idx] * (M.dxx_neu(idx) + M.dyy_neu(idx) + M.dzz_neu(idx)) + 2 * (dMdx * dMdx + dMdy * dMdy + dMdz * dMdz);
+					cuBReal Mnorm = M[idx].norm();
+					Hexch_A = Aconst * (M.delsq_neu(idx) - M[idx] * delsq_Msq / (2 * Mnorm*Mnorm));
+				}
+				else {
+
+					//zero temperature simulations : magnetization length could still vary but will only affect mxH term, so not needed for 0K simulations.
+					Hexch_A = Aconst * M.delsq_neu(idx);
+				}
 
 				//Dzyaloshinskii-Moriya interfacial exchange contribution
 
@@ -46,7 +65,7 @@ __global__ void iDMExchangeCUDA_FM_UpdateField(ManagedMeshCUDA& cuMesh, ManagedM
 				cuReal33 Mdiff = M.grad_neu(idx);
 
 				//Hdm, ex = -2D / (mu0*Ms) * (dmz / dx, dmz / dy, -dmx / dx - dmy / dy)
-				Hexch_D = -2 * D * cuReal3(Mdiff.x.z, Mdiff.y.z, -Mdiff.x.x - Mdiff.y.y) / ((cuBReal)MU0 * Ms * Ms);
+				Hexch_D = Dconst * cuReal3(Mdiff.x.z, Mdiff.y.z, -Mdiff.x.x - Mdiff.y.y);
 			}
 			else {
 
@@ -56,7 +75,23 @@ __global__ void iDMExchangeCUDA_FM_UpdateField(ManagedMeshCUDA& cuMesh, ManagedM
 				cuReal33 bnd_nneu = cuReal33(bnd_dm_dx, bnd_dm_dy, cuReal3());
 
 				//direct exchange contribution
-				Hexch_A = 2 * A * M.delsq_nneu(idx, bnd_nneu) / ((cuBReal)MU0 * Ms * Ms);
+				if (*cuMesh.pbase_temperature > 0.0 && *cuMesh.pT_Curie > 0.0) {
+
+					//for finite temperature simulations the magnetization length may have a spatial variation
+					//this will not affect the transverse torque (mxH), but will affect the longitudinal term in the sLLB equation (m.H) and cannot be neglected when close to Tc.
+
+					cuReal33 Mg = M.grad_nneu(idx, bnd_nneu);
+					cuReal3 dMdx = Mg.x, dMdy = Mg.y, dMdz = Mg.z;
+
+					cuBReal delsq_Msq = 2 * M[idx] * (M.dxx_nneu(idx, bnd_nneu) + M.dyy_nneu(idx, bnd_nneu) + M.dzz_nneu(idx, bnd_nneu)) + 2 * (dMdx * dMdx + dMdy * dMdy + dMdz * dMdz);
+					cuBReal Mnorm = M[idx].norm();
+					Hexch_A = Aconst * (M.delsq_nneu(idx, bnd_nneu) - M[idx] * delsq_Msq / (2 * Mnorm*Mnorm));
+				}
+				else {
+
+					//zero temperature simulations : magnetization length could still vary but will only affect mxH term, so not needed for 0K simulations.
+					Hexch_A = Aconst * M.delsq_nneu(idx, bnd_nneu);
+				}
 
 				//Dzyaloshinskii-Moriya interfacial exchange contribution
 
@@ -64,7 +99,7 @@ __global__ void iDMExchangeCUDA_FM_UpdateField(ManagedMeshCUDA& cuMesh, ManagedM
 				cuReal33 Mdiff = M.grad_nneu(idx, bnd_nneu);
 
 				//Hdm, ex = -2D / (mu0*Ms) * (dmz / dx, dmz / dy, -dmx / dx - dmy / dy)
-				Hexch_D = -2 * D * cuReal3(Mdiff.x.z, Mdiff.y.z, -Mdiff.x.x - Mdiff.y.y) / ((cuBReal)MU0 * Ms * Ms);
+				Hexch_D = Dconst * cuReal3(Mdiff.x.z, Mdiff.y.z, -Mdiff.x.x - Mdiff.y.y);
 			}
 
 			if (do_reduction) {

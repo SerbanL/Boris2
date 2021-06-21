@@ -135,7 +135,7 @@ double Atom_DMExchange::UpdateField(void)
 //-------------------Energy methods
 
 //For simple cubic mesh spin_index coincides with index in M1
-double Atom_DMExchange::Get_Atomistic_EnergyChange(int spin_index, DBL3 Mnew)
+double Atom_DMExchange::Get_EnergyChange(int spin_index, DBL3 Mnew)
 {
 	//For CUDA there are separate device functions used by CUDA kernels.
 
@@ -155,6 +155,32 @@ double Atom_DMExchange::Get_Atomistic_EnergyChange(int spin_index, DBL3 Mnew)
 		return (Mnew.normalized() - paMesh->M1[spin_index].normalized()) * (-J * paMesh->M1.ngbr_dirsum(spin_index) - D * paMesh->M1.anisotropic_ngbr_dirsum(spin_index));
 	}
 	else return 0.0;
+}
+
+double Atom_DMExchange::Get_Energy(int spin_index)
+{
+	//For CUDA there are separate device functions used by CUDA kernels.
+
+	if (paMesh->M1.is_not_empty(spin_index)) {
+
+		double J = paMesh->J;
+		double D = paMesh->D;
+		paMesh->update_parameters_mcoarse(spin_index, paMesh->J, J, paMesh->D, D);
+
+		return paMesh->M1[spin_index].normalized() * (-J * paMesh->M1.ngbr_dirsum(spin_index) - D * paMesh->M1.anisotropic_ngbr_dirsum(spin_index));
+	}
+	else return 0.0;
+}
+
+//-------------------Torque methods
+
+DBL3 Atom_DMExchange::GetTorque(Rect& avRect)
+{
+#if COMPILECUDA == 1
+	if (pModuleCUDA) return reinterpret_cast<Atom_DMExchangeCUDA*>(pModuleCUDA)->GetTorque(avRect);
+#endif
+
+	return CalculateTorque(paMesh->M1, avRect);
 }
 
 #endif

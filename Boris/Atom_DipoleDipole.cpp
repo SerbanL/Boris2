@@ -4,6 +4,8 @@
 
 #if defined(MODULE_COMPILATION_ATOM_DIPOLEDIPOLE) && ATOMISTIC == 1
 
+#include "SimScheduleDefs.h"
+
 #include "Atom_Mesh.h"
 
 #if COMPILECUDA == 1
@@ -38,6 +40,9 @@ Atom_DipoleDipole::~Atom_DipoleDipole()
 	//thus must clear pbc flags in M1
 
 	paMesh->M1.set_pbc(0, 0, 0);
+
+	//might not need to keep computing fields : if we do then the module which requires it will set the flag back to true on initialization
+	paMesh->Set_Force_MonteCarlo_ComputeFields(false);
 
 	//same for the CUDA version if we are in cuda mode
 #if COMPILECUDA == 1
@@ -131,10 +136,13 @@ BError Atom_DipoleDipole::Initialize(void)
 
 	//Make sure display data has memory allocated (or freed) as required
 	error = Update_Module_Display_VECs(
-		paMesh->h, paMesh->meshRect, 
-		(MOD_)paMesh->Get_Module_Heff_Display() == MOD_ATOM_DIPOLEDIPOLE || paMesh->IsOutputDataSet_withRect(DATA_E_DEMAG),
-		(MOD_)paMesh->Get_Module_Energy_Display() == MOD_ATOM_DIPOLEDIPOLE || paMesh->IsOutputDataSet_withRect(DATA_E_DEMAG));
+		(using_macrocell ? paMesh->h_dm : paMesh->h), paMesh->meshRect,
+		(MOD_)paMesh->Get_Module_Heff_Display() == MOD_ATOM_DIPOLEDIPOLE || paMesh->IsOutputDataSet_withRect(DATA_E_DEMAG) || paMesh->IsStageSet(SS_MONTECARLO),
+		(MOD_)paMesh->Get_Module_Energy_Display() == MOD_ATOM_DIPOLEDIPOLE || paMesh->IsOutputDataSet_withRect(DATA_E_DEMAG) || paMesh->IsStageSet(SS_MONTECARLO));
 	if (error)	initialized = false;
+
+	//if a Monte Carlo stage is set then we need to compute fields
+	if (paMesh->IsStageSet(SS_MONTECARLO)) paMesh->Set_Force_MonteCarlo_ComputeFields(true);
 
 	return error;
 }
@@ -142,8 +150,6 @@ BError Atom_DipoleDipole::Initialize(void)
 BError Atom_DipoleDipole::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 {
 	BError error(CLASS_STR(Atom_DipoleDipole));
-
-	Uninitialize();
 
 	//must enforce conditions:
 	//1) h_dm has to have an equal integer number of h cells included in all 3 dimensions
@@ -163,7 +169,7 @@ BError Atom_DipoleDipole::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 	}
 
 	//only need to uninitialize if n or h have changed, or pbc settings have changed
-	if (!CheckDimensions(paMesh->n_dm, paMesh->h_dm, demag_pbc_images) || cfgMessage == UPDATECONFIG_MESHCHANGE) {
+	if (!CheckDimensions(paMesh->n_dm, paMesh->h_dm, demag_pbc_images) || cfgMessage == UPDATECONFIG_MESHCHANGE || cfgMessage == UPDATECONFIG_DEMAG_CONVCHANGE) {
 
 		Uninitialize();
 
@@ -479,6 +485,35 @@ double Atom_DipoleDipole::UpdateField(void)
 	}
 
 	return energy;
+}
+
+//-------------------Energy methods
+
+//For simple cubic mesh spin_index coincides with index in M1
+double Atom_DipoleDipole::Get_EnergyChange(int spin_index, DBL3 Mnew)
+{
+	//Energy at spin i is then E_i = -mu0 * Hd_i * mu_i, where mu_i is the magnetic moment, Hd_i is the dipole-dipole field at spin i. 
+	//Note, no division by 2: this only comes in the total energy since there we consider pairs twice.
+
+	//Also note, same formula applies for macrocell and without macrocell: for macrocell self demag term is included in Module_Heff. For change in energy all contributions from other spins in the macrocell cancel out.
+	//Just have to be careful about indexing Module_Heff if in macrocell mode.
+
+	//Module_Heff needs to be calculated (done during a Monte Carlo simulation, where this method would be used)
+	if (Module_Heff.linear_size()) {
+
+		return -MUB_MU0 * Module_Heff[paMesh->M1.cellidx_to_position(spin_index)] * (Mnew - paMesh->M1[spin_index]);
+	}
+	else return 0.0;
+}
+
+double Atom_DipoleDipole::Get_Energy(int spin_index)
+{
+	//Module_Heff needs to be calculated (done during a Monte Carlo simulation, where this method would be used)
+	if (Module_Heff.linear_size()) {
+
+		return -MUB_MU0 * Module_Heff[paMesh->M1.cellidx_to_position(spin_index)] * paMesh->M1[spin_index];
+	}
+	else return 0.0;
 }
 
 #endif

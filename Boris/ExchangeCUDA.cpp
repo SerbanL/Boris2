@@ -46,6 +46,13 @@ BError Exch_6ngbr_NeuCUDA::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 	return error;
 }
 
+//-------------------Torque methods
+
+cuReal3 Exch_6ngbr_NeuCUDA::GetTorque(cuRect avRect)
+{
+	return CalculateTorque(pMeshCUDA->M, avRect);
+}
+
 #endif
 
 #endif

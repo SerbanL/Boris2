@@ -7,6 +7,22 @@
 #include "BorisCUDALib.cuh"
 #include "Atom_MeshCUDA.h"
 
+//----------------------- Initialization
+
+__global__ void set_Atom_DemagCUDA_pointers_kernel(
+	ManagedAtom_MeshCUDA& cuaMesh, cuVEC<cuReal3>& Module_Heff)
+{
+	if (threadIdx.x == 0) cuaMesh.pAtom_Demag_Heff = &Module_Heff;
+}
+
+void Atom_DemagCUDA::set_Atom_DemagCUDA_pointers(void)
+{
+	set_Atom_DemagCUDA_pointers_kernel <<< 1, CUDATHREADS >>>
+		(paMeshCUDA->cuaMesh, Module_Heff);
+}
+
+//----------------------- Auxiliary
+
 __global__ void Atom_Demag_EvalSpeedup_SubSelf_Kernel(
 	cuVEC<cuReal3>& H,
 	cuVEC<cuReal3>& M, cuReal3& selfDemagCoeff)

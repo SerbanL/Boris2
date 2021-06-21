@@ -43,7 +43,14 @@ void Atom_DifferentialEquationCubic::RunTEuler_Step0_withReductions(void)
 		}
 	}
 
-	mxh_reduction.max = GetMagnitude(mxh_av_reduction.average());
+	if (paMesh->grel.get0()) {
+
+		mxh_reduction.max = GetMagnitude(mxh_av_reduction.average());
+	}
+	else {
+
+		mxh_reduction.max = 0.0;
+	}
 }
 
 void Atom_DifferentialEquationCubic::RunTEuler_Step0(void)
@@ -105,7 +112,14 @@ void Atom_DifferentialEquationCubic::RunTEuler_Step1_withReductions(void)
 		}
 	}
 
-	dmdt_reduction.max = GetMagnitude(dmdt_av_reduction.average());
+	if (paMesh->grel.get0()) {
+
+		dmdt_reduction.max = GetMagnitude(dmdt_av_reduction.average());
+	}
+	else {
+
+		dmdt_reduction.max = 0.0;
+	}
 }
 
 void Atom_DifferentialEquationCubic::RunTEuler_Step1(void)

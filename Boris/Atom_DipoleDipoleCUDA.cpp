@@ -5,6 +5,8 @@
 
 #if defined(MODULE_COMPILATION_ATOM_DIPOLEDIPOLE) && ATOMISTIC == 1
 
+#include "SimScheduleDefs.h"
+
 #include "Atom_MeshCUDA.h"
 #include "Atom_Mesh.h"
 #include "Atom_DipoleDipole.h"
@@ -93,10 +95,15 @@ BError Atom_DipoleDipoleCUDA::Initialize(void)
 
 	//Make sure display data has memory allocated (or freed) as required
 	error = Update_Module_Display_VECs(
-		(cuReal3)paMeshCUDA->h, (cuRect)paMeshCUDA->meshRect, 
-		(MOD_)paMeshCUDA->Get_Module_Heff_Display() == MOD_ATOM_DIPOLEDIPOLE || paMeshCUDA->IsOutputDataSet_withRect(DATA_E_DEMAG),
-		(MOD_)paMeshCUDA->Get_Module_Energy_Display() == MOD_ATOM_DIPOLEDIPOLE || paMeshCUDA->IsOutputDataSet_withRect(DATA_E_DEMAG));
+		(using_macrocell ? (cuReal3)paMeshCUDA->h_dm : (cuReal3)paMeshCUDA->h), (cuRect)paMeshCUDA->meshRect,
+		(MOD_)paMeshCUDA->Get_Module_Heff_Display() == MOD_ATOM_DIPOLEDIPOLE || paMeshCUDA->IsOutputDataSet_withRect(DATA_E_DEMAG) || paMeshCUDA->IsStageSet(SS_MONTECARLO),
+		(MOD_)paMeshCUDA->Get_Module_Energy_Display() == MOD_ATOM_DIPOLEDIPOLE || paMeshCUDA->IsOutputDataSet_withRect(DATA_E_DEMAG) || paMeshCUDA->IsStageSet(SS_MONTECARLO));
 	if (error)	initialized = false;
+
+	if (initialized) set_Atom_DipoleDipoleCUDA_pointers();
+
+	//if a Monte Carlo stage is set then we need to compute fields
+	if (paMeshCUDA->IsStageSet(SS_MONTECARLO)) paMeshCUDA->Set_Force_MonteCarlo_ComputeFields(true);
 
 	return error;
 }
@@ -106,7 +113,7 @@ BError Atom_DipoleDipoleCUDA::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 	BError error(CLASS_STR(Atom_DipoleDipoleCUDA));
 
 	//only need to uninitialize if n or h have changed, or pbc settings have changed
-	if (!CheckDimensions(paMeshCUDA->n_dm, paMeshCUDA->h_dm, paDipoleDipole->Get_PBC()) || cfgMessage == UPDATECONFIG_MESHCHANGE) {
+	if (!CheckDimensions(paMeshCUDA->n_dm, paMeshCUDA->h_dm, paDipoleDipole->Get_PBC()) || cfgMessage == UPDATECONFIG_MESHCHANGE || cfgMessage == UPDATECONFIG_DEMAG_CONVCHANGE) {
 
 		Uninitialize();
 

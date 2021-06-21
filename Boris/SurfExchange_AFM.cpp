@@ -130,7 +130,7 @@ BError SurfExchange_AFM::Initialize(void)
 	
 	//count number of coupled cells (either top or bottom) in this mesh
 
-	INT3 n = pMesh->n;
+	SZ3 n = pMesh->n;
 	
 	if (pMesh_Top.size()) {
 
@@ -199,7 +199,7 @@ BError SurfExchange_AFM::Initialize(void)
 	//Make sure display data has memory allocated (or freed) as required
 	error = Update_Module_Display_VECs(
 		pMesh->h, pMesh->meshRect,
-		(MOD_)pMesh->Get_Module_Heff_Display() == MOD_SURFEXCHANGE || pMesh->IsOutputDataSet_withRect(DATA_E_SURFEXCH),
+		(MOD_)pMesh->Get_Module_Heff_Display() == MOD_SURFEXCHANGE || pMesh->IsOutputDataSet_withRect(DATA_E_SURFEXCH) || pMesh->IsOutputDataSet(DATA_T_SURFEXCH),
 		(MOD_)pMesh->Get_Module_Energy_Display() == MOD_SURFEXCHANGE || pMesh->IsOutputDataSet_withRect(DATA_E_SURFEXCH),
 		true);
 	if (!error) initialized = true;
@@ -248,10 +248,13 @@ double SurfExchange_AFM::UpdateField(void)
 {
 	double energy = 0;
 
-	INT3 n = pMesh->n;
+	SZ3 n = pMesh->n;
 
 	//thickness of layer - SurfExchange applies for layers in the xy plane
 	double thickness = pMesh->meshRect.e.z - pMesh->meshRect.s.z;
+
+	//zero module display VECs if needed, since contributions must be added into them to account for possiblility of 2 contributions (top and bottom)
+	ZeroModuleVECs();
 
 	if (pMesh_Top.size()) {
 
@@ -268,9 +271,6 @@ double SurfExchange_AFM::UpdateField(void)
 				DBL2 Ms_AFM = pMesh->Ms_AFM;
 				pMesh->update_parameters_mcoarse(cell_idx, pMesh->Ms_AFM, Ms_AFM);
 
-				DBL3 Hsurfexh1, Hsurfexh2;
-				double cell_energy1 = 0.0, cell_energy2 = 0.0;
-
 				//check all meshes for coupling
 				for (int mesh_idx = 0; mesh_idx < (int)pMesh_Top.size(); mesh_idx++) {
 
@@ -284,6 +284,9 @@ double SurfExchange_AFM::UpdateField(void)
 
 					//can't couple to an empty cell
 					if (!tmeshRect.contains(cell_rel_pos + tmeshRect.s) || pMesh_Top[mesh_idx]->M.is_empty(cell_rel_pos)) continue;
+
+					DBL3 Hsurfexh1, Hsurfexh2;
+					double cell_energy1 = 0.0, cell_energy2 = 0.0;
 
 					if (pMesh_Top[mesh_idx]->GetMeshType() == MESH_FERROMAGNETIC) {
 
@@ -300,10 +303,10 @@ double SurfExchange_AFM::UpdateField(void)
 						DBL3 m_i2 = pMesh->M2[cell_idx] / Ms_AFM.j;
 
 						//total surface exchange field in coupling cells
-						Hsurfexh1 += (m_j / (MU0 * Ms_AFM.i * thickness)) * J1;
-						Hsurfexh2 += (m_j / (MU0 * Ms_AFM.j * thickness)) * J2;
-						cell_energy1 += (-J1 * (m_i1 * m_j)) / thickness;
-						cell_energy2 += (-J2 * (m_i2 * m_j)) / thickness;
+						Hsurfexh1 = (m_j / (MU0 * Ms_AFM.i * thickness)) * J1;
+						Hsurfexh2 = (m_j / (MU0 * Ms_AFM.j * thickness)) * J2;
+						cell_energy1 = (-J1 * (m_i1 * m_j)) / thickness;
+						cell_energy2 = (-J2 * (m_i2 * m_j)) / thickness;
 					}
 					else if (pMesh_Top[mesh_idx]->GetMeshType() == MESH_ANTIFERROMAGNETIC) {
 
@@ -321,27 +324,30 @@ double SurfExchange_AFM::UpdateField(void)
 						DBL3 m_i2 = pMesh->M2[cell_idx] / Ms_AFM.j;
 
 						//total surface exchange field in coupling cells
-						Hsurfexh1 += (m_j1 / (MU0 * Ms_AFM.i * thickness)) * J1;
-						Hsurfexh2 += (m_j2 / (MU0 * Ms_AFM.j * thickness)) * J2;
-						cell_energy1 += (-J1 * (m_i1 * m_j1)) / thickness;
-						cell_energy2 += (-J2 * (m_i2 * m_j2)) / thickness;
+						Hsurfexh1 = (m_j1 / (MU0 * Ms_AFM.i * thickness)) * J1;
+						Hsurfexh2 = (m_j2 / (MU0 * Ms_AFM.j * thickness)) * J2;
+						cell_energy1 = (-J1 * (m_i1 * m_j1)) / thickness;
+						cell_energy2 = (-J2 * (m_i2 * m_j2)) / thickness;
 					}
+
+					//couple all cells through the layer thickness : the surface exchange field is applicable for effectively 2D layers, but the simulation allows 3D meshes.
+					for (int k = 0; k < n.z; k++) {
+
+						int idx = i + j * n.x + k * n.x*n.y;
+						pMesh->Heff[idx] += Hsurfexh1;
+						pMesh->Heff2[idx] += Hsurfexh2;
+
+						if (Module_Heff.linear_size()) Module_Heff[idx] += Hsurfexh1;
+						if (Module_Heff2.linear_size()) Module_Heff2[idx] += Hsurfexh2;
+						if (Module_energy.linear_size()) Module_energy[idx] += cell_energy1;
+						if (Module_energy2.linear_size()) Module_energy2[idx] += cell_energy2;
+					}
+
+					energy += (cell_energy1 + cell_energy2) / 2;
+					
+					//for each cell, either it's not coupled to any other mesh cell (so we never get here), or else it's coupled to exactly one cell on this surface (thus can stop looping over meshes now)
+					break;
 				}
-
-				//couple all cells through the layer thickness : the surface exchange field is applicable for effectively 2D layers, but the simulation allows 3D meshes.
-				for (int k = 0; k < n.z; k++) {
-
-					int idx = i + j * n.x + k * n.x*n.y;
-					pMesh->Heff[idx] += Hsurfexh1;
-					pMesh->Heff2[idx] += Hsurfexh2;
-
-					if (Module_Heff.linear_size()) Module_Heff[idx] = Hsurfexh1;
-					if (Module_Heff2.linear_size()) Module_Heff2[idx] = Hsurfexh2;
-					if (Module_energy.linear_size()) Module_energy[idx] = cell_energy1;
-					if (Module_energy2.linear_size()) Module_energy2[idx] = cell_energy2;
-				}
-
-				energy += (cell_energy1 + cell_energy2) / 2;
 			}
 		}
 	}
@@ -363,9 +369,6 @@ double SurfExchange_AFM::UpdateField(void)
 				double J2 = pMesh->J2;
 				pMesh->update_parameters_mcoarse(cell_idx, pMesh->Ms_AFM, Ms_AFM, pMesh->J1, J1, pMesh->J2, J2);
 
-				DBL3 Hsurfexh1, Hsurfexh2;
-				double cell_energy1 = 0.0, cell_energy2 = 0.0;
-
 				//check all meshes for coupling
 				for (int mesh_idx = 0; mesh_idx < (int)pMesh_Bot.size(); mesh_idx++) {
 
@@ -380,6 +383,9 @@ double SurfExchange_AFM::UpdateField(void)
 					//can't couple to an empty cell
 					if (!bmeshRect.contains(cell_rel_pos + bmeshRect.s) || pMesh_Bot[mesh_idx]->M.is_empty(cell_rel_pos)) continue;
 
+					DBL3 Hsurfexh1, Hsurfexh2;
+					double cell_energy1 = 0.0, cell_energy2 = 0.0;
+
 					if (pMesh_Bot[mesh_idx]->GetMeshType() == MESH_FERROMAGNETIC) {
 
 						//Surface exchange field from a ferromagnetic mesh
@@ -390,10 +396,10 @@ double SurfExchange_AFM::UpdateField(void)
 						DBL3 m_i2 = pMesh->M2[cell_idx] / Ms_AFM.j;
 
 						//total surface exchange field in coupling cells
-						Hsurfexh1 += (m_j / (MU0 * Ms_AFM.i * thickness)) * J1;
-						Hsurfexh2 += (m_j / (MU0 * Ms_AFM.j * thickness)) * J2;
-						cell_energy1 += (-J1 * (m_i1 * m_j)) / thickness;
-						cell_energy2 += (-J2 * (m_i2 * m_j)) / thickness;
+						Hsurfexh1 = (m_j / (MU0 * Ms_AFM.i * thickness)) * J1;
+						Hsurfexh2 = (m_j / (MU0 * Ms_AFM.j * thickness)) * J2;
+						cell_energy1 = (-J1 * (m_i1 * m_j)) / thickness;
+						cell_energy2 = (-J2 * (m_i2 * m_j)) / thickness;
 					}
 					else if (pMesh_Bot[mesh_idx]->GetMeshType() == MESH_ANTIFERROMAGNETIC) {
 
@@ -406,27 +412,30 @@ double SurfExchange_AFM::UpdateField(void)
 						DBL3 m_i2 = pMesh->M2[cell_idx] / Ms_AFM.j;
 
 						//total surface exchange field in coupling cells
-						Hsurfexh1 += (m_j1 / (MU0 * Ms_AFM.i * thickness)) * J1;
-						Hsurfexh2 += (m_j2 / (MU0 * Ms_AFM.j * thickness)) * J2;
-						cell_energy1 += (-J1 * (m_i1 * m_j1)) / thickness;
-						cell_energy2 += (-J2 * (m_i2 * m_j2)) / thickness;
+						Hsurfexh1 = (m_j1 / (MU0 * Ms_AFM.i * thickness)) * J1;
+						Hsurfexh2 = (m_j2 / (MU0 * Ms_AFM.j * thickness)) * J2;
+						cell_energy1 = (-J1 * (m_i1 * m_j1)) / thickness;
+						cell_energy2 = (-J2 * (m_i2 * m_j2)) / thickness;
 					}
+
+					//couple all cells through the layer thickness : the surface exchange field is applicable for effectively 2D layers, but the simulation allows 3D meshes.
+					for (int k = 0; k < n.z; k++) {
+
+						int idx = i + j * n.x + k * n.x*n.y;
+						pMesh->Heff[idx] += Hsurfexh1;
+						pMesh->Heff2[idx] += Hsurfexh2;
+
+						if (Module_Heff.linear_size()) Module_Heff[idx] += Hsurfexh1;
+						if (Module_Heff2.linear_size()) Module_Heff2[idx] += Hsurfexh2;
+						if (Module_energy.linear_size()) Module_energy[idx] += cell_energy1;
+						if (Module_energy2.linear_size()) Module_energy2[idx] += cell_energy2;
+					}
+
+					energy += (cell_energy1 + cell_energy2) / 2;
+
+					//for each cell, either it's not coupled to any other mesh cell (so we never get here), or else it's coupled to exactly one cell on this surface (thus can stop looping over meshes now)
+					break;
 				}
-
-				//couple all cells through the layer thickness : the surface exchange field is applicable for effectively 2D layers, but the simulation allows 3D meshes.
-				for (int k = 0; k < n.z; k++) {
-
-					int idx = i + j * n.x + k * n.x*n.y;
-					pMesh->Heff[idx] += Hsurfexh1;
-					pMesh->Heff2[idx] += Hsurfexh2;
-
-					if (Module_Heff.linear_size()) Module_Heff[idx] = Hsurfexh1;
-					if (Module_Heff2.linear_size()) Module_Heff2[idx] = Hsurfexh2;
-					if (Module_energy.linear_size()) Module_energy[idx] = cell_energy1;
-					if (Module_energy2.linear_size()) Module_energy2[idx] = cell_energy2;
-				}
-
-				energy += (cell_energy1 + cell_energy2) / 2;
 			}
 		}
 	}
@@ -437,6 +446,17 @@ double SurfExchange_AFM::UpdateField(void)
 	this->energy = energy;
 
 	return this->energy;
+}
+
+//-------------------Torque methods
+
+DBL3 SurfExchange_AFM::GetTorque(Rect& avRect)
+{
+#if COMPILECUDA == 1
+	if (pModuleCUDA) return reinterpret_cast<SurfExchangeCUDA_AFM*>(pModuleCUDA)->GetTorque(avRect);
+#endif
+
+	return CalculateTorque(pMesh->M, avRect);
 }
 
 #endif

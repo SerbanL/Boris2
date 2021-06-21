@@ -16,13 +16,9 @@
 //default dT
 #define AHEUN_DEFAULT_DT	0.5e-13
 //above this relative error the evaluation has failed and will be redone with a lower time step
-#define AHEUN_RELERRFAIL	1.5e-4
-//above this relative error the time step will be reduced
-#define AHEUN_RELERRMAX	9e-5
-//below this relative error the time step will be increased
-#define AHEUN_RELERRMIN	8e-5
-//When increasing the time step multiply it with this
-#define AHEUN_DTINCREASE	1.001
+#define AHEUN_RELERRFAIL	1e-4
+//When increasing the time step limit by this
+#define AHEUN_DTINCREASE	2
 //maximum time step the method can reach
 #define AHEUN_MAXDT	1e-12
 //minimum time step the method can reach
@@ -32,83 +28,38 @@
 #define RK4_DEFAULT_DT	0.5e-12
 
 //parameters for ABM adaptive time step
-//above this relative error the evaluation has failed and will be redone with a lower time step
-#define ABM_RELERRFAIL	1.5e-4
-//above this relative error the time step will be reduced
-#define ABM_RELERRMAX	9e-5
-//below this relative error the time step will be increased
-#define ABM_RELERRMIN	4e-5
-//When increasing the time step multiply it with this
-#define ABM_DTINCREASE	1.001
-//maximum time step the method can reach
+#define ABM_RELERRFAIL	1e-4
+#define ABM_DTINCREASE	2
 #define ABM_MAXDT	1e-12
-//minimum time step the method can reach
 #define ABM_MINDT	1e-15
-//default dT
 #define ABM_DEFAULT_DT	0.1e-12
 
 //fixed parameters for RK23 adaptive time step
-//above this relative error the evaluation has failed and will be redone with a lower time step
 #define RK23_RELERRFAIL	1e-4
-//above this relative error the time step will be reduced
-#define RK23_RELERRMAX	5e-5
-//below this relative error the time step will be increased
-#define RK23_RELERRMIN	1e-5
-//When increasing the time step multiply it with this
-#define RK23_DTINCREASE	1.001
-//maximum time step the method can reach
+#define RK23_DTINCREASE	2
 #define RK23_MAXDT	2e-12
-//minimum time step the method can reach
 #define RK23_MINDT	1e-15
-//default dT
 #define RK23_DEFAULT_DT	0.1e-12
 
 //fixed parameters for RKF45 adaptive time step
-//above this relative error the evaluation has failed and will be redone with a lower time step
 #define RKF_RELERRFAIL	1e-4
-//above this relative error the time step will be reduced
-#define RKF_RELERRMAX	5e-5
-//below this relative error the time step will be increased
-#define RKF_RELERRMIN	1e-5
-//When increasing the time step multiply it with this
 #define RKF_DTINCREASE	1.001
-//maximum time step the method can reach
 #define RKF_MAXDT	3e-12
-//minimum time step the method can reach
 #define RKF_MINDT	1e-15
-//default dT
 #define RKF_DEFAULT_DT	0.5e-12
 
 //fixed parameters for RKCK45 adaptive time step
-//above this relative error the evaluation has failed and will be redone with a lower time step
-#define RKCK_RELERRFAIL	1e-4
-//above this relative error the time step will be reduced
-#define RKCK_RELERRMAX	5e-5
-//below this relative error the time step will be increased
-#define RKCK_RELERRMIN	1e-5
-//When increasing the time step multiply it with this
-#define RKCK_DTINCREASE	1.001
-//maximum time step the method can reach
+#define RKCK_RELERRFAIL	1e-5
+#define RKCK_DTINCREASE	2
 #define RKCK_MAXDT	3e-12
-//minimum time step the method can reach
 #define RKCK_MINDT	1e-15
-//default dT
 #define RKCK_DEFAULT_DT	0.5e-12
 
 //fixed parameters for RKDP54 adaptive time step
-//above this relative error the evaluation has failed and will be redone with a lower time step
-#define RKDP_RELERRFAIL	1e-4
-//above this relative error the time step will be reduced
-#define RKDP_RELERRMAX	5e-5
-//below this relative error the time step will be increased
-#define RKDP_RELERRMIN	1e-5
-//When increasing the time step multiply it with this
-#define RKDP_DTINCREASE	1.001
-//maximum time step the method can reach
+#define RKDP_RELERRFAIL	1e-5
+#define RKDP_DTINCREASE	2
 #define RKDP_MAXDT	3e-12
-//minimum time step the method can reach
 #define RKDP_MINDT	1e-15
-//default dT
 #define RKDP_DEFAULT_DT	0.5e-12
 
 //default dT -> for the SD solver this acts as the starting timestep and the value it resets to when needed

@@ -6,6 +6,8 @@
 
 #include "BorisCUDALib.cuh"
 
+#include "Atom_MeshParamsControlCUDA.h"
+
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -16,6 +18,7 @@ __global__ void GetTopologicalCharge_Cubic_Kernel(ManagedAtom_MeshCUDA& cuaMesh,
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
 
 	cuBReal Q_ = 0.0;
+	bool include_in_reduction = false;
 
 	cuReal3 pos;
 
@@ -33,10 +36,12 @@ __global__ void GetTopologicalCharge_Cubic_Kernel(ManagedAtom_MeshCUDA& cuaMesh,
 			cuReal3 dm_dy = M_grad.y / Mnorm;
 
 			Q_ = (M1[idx] / Mnorm) * (dm_dx ^ dm_dy) * M1.h.x * M1.h.y / (4 * (cuBReal)PI * M1.n.z);
+
+			include_in_reduction = true;
 		}
 	}
 
-	reduction_sum(0, 1, &Q_, Q, rectangle.contains(pos));
+	reduction_sum(0, 1, &Q_, Q, include_in_reduction && rectangle.contains(pos));
 }
 
 //get topological charge using formula Q = Integral(m.(dm/dx x dm/dy) dxdy) / 4PI

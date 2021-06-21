@@ -16,7 +16,9 @@ __global__ void GenerateThermalField_Kernel(cuBorisRand& prng, ManagedAtom_DiffE
 {
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
 
-	if (idx < cuaDiffEq.pH_Thermal->linear_size()) {
+	cuBReal grel = cuaMesh.pgrel->get0();
+
+	if (idx < cuaDiffEq.pH_Thermal->linear_size() && cuIsNZ(grel)) {
 
 		cuReal3 position = cuaDiffEq.pH_Thermal->cellidx_to_position(idx);
 
@@ -37,7 +39,7 @@ __global__ void GenerateThermalField_Kernel(cuBorisRand& prng, ManagedAtom_DiffE
 			cuaMesh.update_parameters_mcoarse(idx, *cuaMesh.pmu_s, mu_s);
 
 			//do not include any damping here - this will be included in the stochastic equations
-			cuBReal Hth_const = sqrt(2 * (cuBReal)BOLTZMANN * Temperature / ((cuBReal)MUB_MU0 * GAMMA * mu_s * deltaT));
+			cuBReal Hth_const = sqrt(2 * (cuBReal)BOLTZMANN * Temperature / ((cuBReal)MUB_MU0 * GAMMA * grel * mu_s * deltaT));
 			
 			(*cuaDiffEq.pH_Thermal)[idx] = Hth_const * cuReal3(prng.rand_gauss(0, 1), prng.rand_gauss(0, 1), prng.rand_gauss(0, 1));
 		}

@@ -261,6 +261,9 @@ BError Atom_DifferentialEquationCubicCUDA::UpdateConfiguration(UPDATECONFIG_ cfg
 
 	if (ucfg::check_cfgflags(cfgMessage, UPDATECONFIG_ODE_MOVEMESH)) {
 
+		/*
+		//REMOVED : not really necessary, especially if you have ends coupled to dipoles, which freeze end cells only
+		//for atomistic meshes this is also problematic if non-zero temperatures are used
 		if (!error) {
 
 			//set skip cells flags for moving mesh if enabled
@@ -281,6 +284,7 @@ BError Atom_DifferentialEquationCubicCUDA::UpdateConfiguration(UPDATECONFIG_ cfg
 				paMeshCUDA->M1()->clear_skipcells();
 			}
 		}
+		*/
 	}
 
 	if (cfgMessage == UPDATECONFIG_PARAMVALUECHANGED_MLENGTH) RenormalizeMoments();

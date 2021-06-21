@@ -117,44 +117,13 @@ BError SuperMeshCUDA::SaveOnScreenPhysicalQuantity(std::string fileName, std::st
 	return error;
 }
 
-//Before calling a run of GetDisplayedMeshValue, make sure to call PrepareDisplayedMeshValue : this calculates and stores in displayVEC storage and quantities which don't have memory allocated directly, but require computation and temporary storage.
-void SuperMeshCUDA::PrepareDisplayedMeshValue(void)
+//extract profile from named mesh, from currently display mesh quantity, but reading directly from the quantity
+//Displayed mesh quantity can be scalar or a vector; pass in std::vector pointers, then check for nullptr to determine what type is displayed
+//if do_average = true then build average and don't return anything, else return just a single-shot profile. If read_average = true then simply read out the internally stored averaged profile by assigning to pointer.
+void SuperMeshCUDA::GetPhysicalQuantityProfile(DBL3 start, DBL3 end, double step, DBL3 stencil, std::vector<DBL3>*& pprofile_dbl3, std::vector<double>*& pprofile_dbl, std::string meshName, bool do_average, bool read_average)
 {
-	switch (pSMesh->displayedPhysicalQuantity) {
+	size_t size = round((end - start).norm() / step) + 1;
 
-	case MESHDISPLAY_SM_DEMAG:
-
-		//pdisplay_vec_vec at maximum resolution
-		if (pSMesh->IsSuperMeshModuleSet(MODS_SDEMAG)) {
-
-			prepare_display(n_fm, sMeshRect_fm, h_fm.mindim(), dynamic_cast<SDemag*>(pSMesh->pSMod(MODS_SDEMAG))->GetDemagFieldCUDA());
-		}
-		break;
-
-	case MESHDISPLAY_SM_OERSTED:
-
-		//pdisplay_vec_vec at maximum resolution
-		if (pSMesh->IsSuperMeshModuleSet(MODS_OERSTED)) {
-
-			prepare_display(n_e, sMeshRect_e, h_e.mindim(), dynamic_cast<Oersted*>(pSMesh->pSMod(MODS_OERSTED))->GetOerstedFieldCUDA());
-		}
-		break;
-
-	case MESHDISPLAY_SM_STRAYH:
-
-		//pdisplay_vec_vec at maximum resolution
-		if (pSMesh->IsSuperMeshModuleSet(MODS_STRAYFIELD)) {
-
-			prepare_display(n_fm, sMeshRect_fm, h_fm.mindim(), dynamic_cast<StrayField*>(pSMesh->pSMod(MODS_STRAYFIELD))->GetStrayFieldCUDA());
-		}
-		break;
-	}
-}
-
-//return value of currently displayed mesh quantity at the given absolute position; the value is read directly from the storage VEC, not from the displayed PhysQ.
-//Return an Any as the displayed quantity could be either a scalar or a vector.
-Any SuperMeshCUDA::GetDisplayedMeshValue(DBL3 abs_pos)
-{
 	//get anything displayed on super-mesh
 	switch (pSMesh->displayedPhysicalQuantity) {
 
@@ -163,33 +132,55 @@ Any SuperMeshCUDA::GetDisplayedMeshValue(DBL3 abs_pos)
 		////////////////
 
 	case MESHDISPLAY_NONE:
-	{
-		//find which mesh holds abs_pos, if any, and return value displayed for that mesh
-		for (int idx = 0; idx < pSMesh->pMesh.size(); idx++) {
-
-			if (pSMesh->pMesh[idx]->meshRect.contains(abs_pos)) return pSMesh->pMesh[idx]->GetDisplayedMeshValue(abs_pos);
-		}
-	}
-	break;
+		if (pSMesh->contains(meshName)) pSMesh->pMesh[meshName]->GetPhysicalQuantityProfile(start, end, step, stencil, pprofile_dbl3, pprofile_dbl, do_average, read_average);
+		break;
 
 	////////////////
 	//use a quantity displayed on the supermesh
 	////////////////
 
 	case MESHDISPLAY_SM_DEMAG:
-		return (*pdisplay_vec_vec)[abs_pos - sMeshRect_fm.s];
+
+		//pdisplay_vec_vec at maximum resolution
+		if (pSMesh->IsSuperMeshModuleSet(MODS_SDEMAG)) {
+
+			if (profile_storage_vec.size() != size) { if (!profile_storage_vec.resize(size)) return; }
+			dynamic_cast<SDemag*>(pSMesh->pSMod(MODS_SDEMAG))->GetDemagFieldCUDA()()->extract_profile((cuReal3)start, (cuReal3)end, (cuBReal)step, (cuReal3)stencil, profile_storage_vec);
+
+			if (pSMesh->profile_storage_dbl3.size() != size) { pSMesh->profile_storage_dbl3.resize(size); }
+			profile_storage_vec.copy_to_vector(pSMesh->profile_storage_dbl3);
+			pprofile_dbl3 = &pSMesh->profile_storage_dbl3;
+		}
 		break;
 
 	case MESHDISPLAY_SM_OERSTED:
-		return (*pdisplay_vec_vec)[abs_pos - sMeshRect_e.s];
+
+		//pdisplay_vec_vec at maximum resolution
+		if (pSMesh->IsSuperMeshModuleSet(MODS_OERSTED)) {
+
+			if (profile_storage_vec.size() != size) { if (!profile_storage_vec.resize(size)) return; }
+			dynamic_cast<Oersted*>(pSMesh->pSMod(MODS_OERSTED))->GetOerstedFieldCUDA()()->extract_profile((cuReal3)start, (cuReal3)end, (cuBReal)step, (cuReal3)stencil, profile_storage_vec);
+
+			if (pSMesh->profile_storage_dbl3.size() != size) { pSMesh->profile_storage_dbl3.resize(size); }
+			profile_storage_vec.copy_to_vector(pSMesh->profile_storage_dbl3);
+			pprofile_dbl3 = &pSMesh->profile_storage_dbl3;
+		}
 		break;
 
 	case MESHDISPLAY_SM_STRAYH:
-		return (*pdisplay_vec_vec)[abs_pos - sMeshRect_fm.s];
+
+		//pdisplay_vec_vec at maximum resolution
+		if (pSMesh->IsSuperMeshModuleSet(MODS_STRAYFIELD)) {
+
+			if (profile_storage_vec.size() != size) { if (!profile_storage_vec.resize(size)) return; }
+			dynamic_cast<StrayField*>(pSMesh->pSMod(MODS_STRAYFIELD))->GetStrayFieldCUDA()()->extract_profile((cuReal3)start, (cuReal3)end, (cuBReal)step, (cuReal3)stencil, profile_storage_vec);
+
+			if (pSMesh->profile_storage_dbl3.size() != size) { pSMesh->profile_storage_dbl3.resize(size); }
+			profile_storage_vec.copy_to_vector(pSMesh->profile_storage_dbl3);
+			pprofile_dbl3 = &pSMesh->profile_storage_dbl3;
+		}
 		break;
 	}
-
-	return Any();
 }
 
 //return average value for currently displayed mesh quantity in the given relative rectangle
@@ -218,8 +209,7 @@ Any SuperMeshCUDA::GetAverageDisplayedMeshValue(Rect rel_rect)
 		//pdisplay_vec_vec at maximum resolution
 		if (pSMesh->IsSuperMeshModuleSet(MODS_SDEMAG)) {
 
-			prepare_display(n_fm, sMeshRect_fm, h_fm.mindim(), dynamic_cast<SDemag*>(pSMesh->pSMod(MODS_SDEMAG))->GetDemagFieldCUDA());
-			return pdisplay_vec_vec->average_nonempty_omp(rel_rect);
+			return (DBL3)dynamic_cast<SDemag*>(pSMesh->pSMod(MODS_SDEMAG))->GetDemagFieldCUDA()()->average_nonempty(n_fm.dim(), (cuRect)rel_rect);
 		}
 		break;
 
@@ -228,8 +218,7 @@ Any SuperMeshCUDA::GetAverageDisplayedMeshValue(Rect rel_rect)
 		//pdisplay_vec_vec at maximum resolution
 		if (pSMesh->IsSuperMeshModuleSet(MODS_OERSTED)) {
 
-			prepare_display(n_e, sMeshRect_e, h_e.mindim(), dynamic_cast<Oersted*>(pSMesh->pSMod(MODS_OERSTED))->GetOerstedFieldCUDA());
-			return pdisplay_vec_vec->average_nonempty_omp(rel_rect);
+			return (DBL3)dynamic_cast<Oersted*>(pSMesh->pSMod(MODS_OERSTED))->GetOerstedFieldCUDA()()->average_nonempty(n_e.dim(), (cuRect)rel_rect);
 		}
 		break;
 
@@ -238,8 +227,7 @@ Any SuperMeshCUDA::GetAverageDisplayedMeshValue(Rect rel_rect)
 		//pdisplay_vec_vec at maximum resolution
 		if (pSMesh->IsSuperMeshModuleSet(MODS_STRAYFIELD)) {
 
-			prepare_display(n_fm, sMeshRect_fm, h_fm.mindim(), dynamic_cast<StrayField*>(pSMesh->pSMod(MODS_STRAYFIELD))->GetStrayFieldCUDA());
-			return pdisplay_vec_vec->average_nonempty_omp(rel_rect);
+			return (DBL3)dynamic_cast<StrayField*>(pSMesh->pSMod(MODS_STRAYFIELD))->GetStrayFieldCUDA()()->average_nonempty(n_fm.dim(), (cuRect)rel_rect);
 		}
 		break;
 	}

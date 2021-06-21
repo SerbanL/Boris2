@@ -14,8 +14,8 @@ DBL3 FMesh::dMdt(int idx)
 //return average dm/dt in the given avRect (relative rect). Here m is the direction vector.
 DBL3 FMesh::Average_dmdt(Rect avRect)
 {
-	if (avRect.IsNull()) avRect = meshRect;
-	Box box = M.box_from_rect_max(avRect);
+	if (avRect.IsNull()) avRect = meshRect - meshRect.s;
+	Box box = M.box_from_rect_max(avRect + meshRect.s);
 
 #if COMPILECUDA == 1
 	if (pMeshCUDA) return reinterpret_cast<FMeshCUDA*>(pMeshCUDA)->Average_dmdt(box);
@@ -45,8 +45,8 @@ DBL3 FMesh::Average_dmdt(Rect avRect)
 //return average m x dm/dt in the given avRect (relative rect). Here m is the direction vector.
 DBL3 FMesh::Average_mxdmdt(Rect avRect)
 {
-	if (avRect.IsNull()) avRect = meshRect;
-	Box box = M.box_from_rect_max(avRect);
+	if (avRect.IsNull()) avRect = meshRect - meshRect.s;
+	Box box = M.box_from_rect_max(avRect + meshRect.s);
 
 #if COMPILECUDA == 1
 	if (pMeshCUDA) return reinterpret_cast<FMeshCUDA*>(pMeshCUDA)->Average_mxdmdt(box);

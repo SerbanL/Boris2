@@ -8,7 +8,7 @@ bool DemagTFunc::CalcDiagTens2D_Shifted_Irregular(VEC<DBL3> &Ddiag, INT3 n, INT3
 	Ddiag.set(DBL3());
 
 	//only use irregular version if you have to
-	if (s == d) return CalcDiagTens2D_Shifted(Ddiag, n, N, s, shift, minus);
+	if (s * 1e-9 == d * 1e-9) return CalcDiagTens2D_Shifted(Ddiag, n, N, s, shift, minus, asymptotic_distance);
 
 	if (IsZ(shift.x) && IsZ(shift.y)) {
 
@@ -124,7 +124,7 @@ bool DemagTFunc::CalcOffDiagTens2D_Shifted_Irregular(VEC<DBL3> &Dodiag, INT3 n, 
 	Dodiag.set(DBL3());
 
 	//only use irregular version if you have to
-	if (s == d) return CalcOffDiagTens2D_Shifted(Dodiag, n, N, s, shift, minus);
+	if (s * 1e-9 == d * 1e-9) return CalcOffDiagTens2D_Shifted(Dodiag, n, N, s, shift, minus, asymptotic_distance);
 
 	if (IsZ(shift.x) && IsZ(shift.y)) {
 

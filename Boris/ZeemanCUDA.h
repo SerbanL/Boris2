@@ -49,6 +49,10 @@ public:
 	void SetField(cuReal3 Hxyz);
 
 	BError SetFieldEquation(const std::vector<std::vector< std::vector<EqComp::FSPEC> >>& fspec);
+
+	//-------------------Torque methods
+
+	cuReal3 GetTorque(cuRect avRect);
 };
 
 #else

@@ -42,6 +42,13 @@ BError Atom_Anisotropy_BiaxialCUDA::UpdateConfiguration(UPDATECONFIG_ cfgMessage
 	return error;
 }
 
+//-------------------Torque methods
+
+cuReal3 Atom_Anisotropy_BiaxialCUDA::GetTorque(cuRect avRect)
+{
+	return CalculateTorque(paMeshCUDA->M1, avRect);
+}
+
 #endif
 
 #endif

@@ -27,7 +27,8 @@ __global__ void RunSD_Start_Kernel(ManagedDiffEqAFMCUDA& cuDiffEq, ManagedMeshCU
 				/////////////////////////
 
 				cuReal2 Ms_AFM = *cuMesh.pMs_AFM;
-				cuMesh.update_parameters_mcoarse(idx, *cuMesh.pMs_AFM, Ms_AFM);
+				cuReal2 grel_AFM = *cuMesh.pgrel_AFM;
+				cuMesh.update_parameters_mcoarse(idx, *cuMesh.pMs_AFM, Ms_AFM, *cuMesh.pgrel_AFM, grel_AFM);
 
 				/////////////////////////
 
@@ -66,7 +67,7 @@ __global__ void RunSD_Start_Kernel(ManagedDiffEqAFMCUDA& cuDiffEq, ManagedMeshCU
 
 				//The above equation can be solved for m_next explicitly.
 
-				cuBReal s = dT * (cuBReal)GAMMA / 4.0;
+				cuBReal s = dT * (cuBReal)GAMMA * grel_AFM.i / 4.0;
 
 				cuReal3 mxH = m ^ H;
 				cuReal3 mxH2 = m2 ^ H2;
@@ -200,7 +201,8 @@ __global__ void RunSD_Advance_withReductions_Kernel(ManagedDiffEqAFMCUDA& cuDiff
 				/////////////////////////
 
 				cuReal2 Ms_AFM = *cuMesh.pMs_AFM;
-				cuMesh.update_parameters_mcoarse(idx, *cuMesh.pMs_AFM, Ms_AFM);
+				cuReal2 grel_AFM = *cuMesh.pgrel_AFM;
+				cuMesh.update_parameters_mcoarse(idx, *cuMesh.pMs_AFM, Ms_AFM, *cuMesh.pgrel_AFM, grel_AFM);
 
 				cuReal3 m = (*cuMesh.pM)[idx] / Ms_AFM.i;
 				cuReal3 H = (*cuMesh.pHeff)[idx];
@@ -210,7 +212,7 @@ __global__ void RunSD_Advance_withReductions_Kernel(ManagedDiffEqAFMCUDA& cuDiff
 
 				//obtained maximum normalized torque term
 				cuBReal Mnorm = (*cuMesh.pM)[idx].norm();
-				mxh = cu_GetMagnitude(m ^ H) / Mnorm;
+				if (cuIsNZ(grel_AFM.i)) mxh = cu_GetMagnitude(m ^ H) / Mnorm;
 
 				//The updating equation is (see https://doi.org/10.1063/1.4862839):
 
@@ -221,7 +223,7 @@ __global__ void RunSD_Advance_withReductions_Kernel(ManagedDiffEqAFMCUDA& cuDiff
 
 				//The above equation can be solved for m_next explicitly.
 
-				cuBReal s = dT * (cuBReal)GAMMA / 4.0;
+				cuBReal s = dT * (cuBReal)GAMMA * grel_AFM.i / 4.0;
 
 				cuReal3 mxH = m ^ H;
 				cuReal3 mxH2 = m2 ^ H2;
@@ -237,7 +239,7 @@ __global__ void RunSD_Advance_withReductions_Kernel(ManagedDiffEqAFMCUDA& cuDiff
 				(*cuMesh.pM2)[idx].renormalize(Ms_AFM.j);
 
 				//obtain maximum normalized dmdt term
-				dmdt = cu_GetMagnitude((*cuMesh.pM)[idx] - (*cuDiffEq.psM1)[idx]) / (dT * (cuBReal)GAMMA * Mnorm * Mnorm);
+				if (cuIsNZ(grel_AFM.i)) dmdt = cu_GetMagnitude((*cuMesh.pM)[idx] - (*cuDiffEq.psM1)[idx]) / (dT * (cuBReal)GAMMA * grel_AFM.i * Mnorm * Mnorm);
 			}
 			else {
 
@@ -249,12 +251,8 @@ __global__ void RunSD_Advance_withReductions_Kernel(ManagedDiffEqAFMCUDA& cuDiff
 		}
 	}
 
-	//only reduce for mxh and dmdt if grel is not zero (if it's zero this means magnetization dynamics is disabled in this mesh)
-	if (cuMesh.pgrel->get0()) {
-
-		reduction_max(0, 1, &mxh, *cuDiffEq.pmxh);
-		reduction_max(0, 1, &dmdt, *cuDiffEq.pdmdt);
-	}
+	reduction_max(0, 1, &mxh, *cuDiffEq.pmxh);
+	reduction_max(0, 1, &dmdt, *cuDiffEq.pdmdt);
 }
 
 __global__ void RunSD_Advance_withReduction_mxh_Kernel(ManagedDiffEqAFMCUDA& cuDiffEq, ManagedMeshCUDA& cuMesh)
@@ -274,7 +272,8 @@ __global__ void RunSD_Advance_withReduction_mxh_Kernel(ManagedDiffEqAFMCUDA& cuD
 				/////////////////////////
 
 				cuReal2 Ms_AFM = *cuMesh.pMs_AFM;
-				cuMesh.update_parameters_mcoarse(idx, *cuMesh.pMs_AFM, Ms_AFM);
+				cuReal2 grel_AFM = *cuMesh.pgrel_AFM;
+				cuMesh.update_parameters_mcoarse(idx, *cuMesh.pMs_AFM, Ms_AFM, *cuMesh.pgrel_AFM, grel_AFM);
 
 				cuReal3 m = (*cuMesh.pM)[idx] / Ms_AFM.i;
 				cuReal3 H = (*cuMesh.pHeff)[idx];
@@ -283,7 +282,7 @@ __global__ void RunSD_Advance_withReduction_mxh_Kernel(ManagedDiffEqAFMCUDA& cuD
 				cuReal3 H2 = (*cuMesh.pHeff2)[idx];
 
 				//obtained maximum normalized torque term
-				mxh = cu_GetMagnitude(m ^ H) / (*cuMesh.pM)[idx].norm();
+				if (cuIsNZ(grel_AFM.i)) mxh = cu_GetMagnitude(m ^ H) / (*cuMesh.pM)[idx].norm();
 
 				//The updating equation is (see https://doi.org/10.1063/1.4862839):
 
@@ -294,7 +293,7 @@ __global__ void RunSD_Advance_withReduction_mxh_Kernel(ManagedDiffEqAFMCUDA& cuD
 
 				//The above equation can be solved for m_next explicitly.
 
-				cuBReal s = dT * (cuBReal)GAMMA / 4.0;
+				cuBReal s = dT * (cuBReal)GAMMA * grel_AFM.i / 4.0;
 
 				cuReal3 mxH = m ^ H;
 				cuReal3 mxH2 = m2 ^ H2;
@@ -319,10 +318,7 @@ __global__ void RunSD_Advance_withReduction_mxh_Kernel(ManagedDiffEqAFMCUDA& cuD
 		}
 	}
 
-	if (cuMesh.pgrel->get0()) {
-
-		reduction_max(0, 1, &mxh, *cuDiffEq.pmxh);
-	}
+	reduction_max(0, 1, &mxh, *cuDiffEq.pmxh);
 }
 
 __global__ void RunSD_Advance_withReduction_dmdt_Kernel(ManagedDiffEqAFMCUDA& cuDiffEq, ManagedMeshCUDA& cuMesh)
@@ -342,7 +338,8 @@ __global__ void RunSD_Advance_withReduction_dmdt_Kernel(ManagedDiffEqAFMCUDA& cu
 				/////////////////////////
 
 				cuReal2 Ms_AFM = *cuMesh.pMs_AFM;
-				cuMesh.update_parameters_mcoarse(idx, *cuMesh.pMs_AFM, Ms_AFM);
+				cuReal2 grel_AFM = *cuMesh.pgrel_AFM;
+				cuMesh.update_parameters_mcoarse(idx, *cuMesh.pMs_AFM, Ms_AFM, *cuMesh.pgrel_AFM, grel_AFM);
 
 				cuReal3 m = (*cuMesh.pM)[idx] / Ms_AFM.i;
 				cuReal3 H = (*cuMesh.pHeff)[idx];
@@ -359,7 +356,7 @@ __global__ void RunSD_Advance_withReduction_dmdt_Kernel(ManagedDiffEqAFMCUDA& cu
 
 				//The above equation can be solved for m_next explicitly.
 
-				cuBReal s = dT * (cuBReal)GAMMA / 4.0;
+				cuBReal s = dT * (cuBReal)GAMMA * grel_AFM.i / 4.0;
 
 				cuReal3 mxH = m ^ H;
 				cuReal3 mxH2 = m2 ^ H2;
@@ -375,8 +372,11 @@ __global__ void RunSD_Advance_withReduction_dmdt_Kernel(ManagedDiffEqAFMCUDA& cu
 				(*cuMesh.pM2)[idx].renormalize(Ms_AFM.j);
 
 				//obtain maximum normalized dmdt term
-				cuBReal Mnorm = (*cuMesh.pM)[idx].norm();
-				dmdt = cu_GetMagnitude((*cuMesh.pM)[idx] - (*cuDiffEq.psM1)[idx]) / (dT * (cuBReal)GAMMA * Mnorm * Mnorm);
+				if (cuIsNZ(grel_AFM.i)) {
+
+					cuBReal Mnorm = (*cuMesh.pM)[idx].norm();
+					dmdt = cu_GetMagnitude((*cuMesh.pM)[idx] - (*cuDiffEq.psM1)[idx]) / (dT * (cuBReal)GAMMA * grel_AFM.i * Mnorm * Mnorm);
+				}
 			}
 			else {
 
@@ -388,11 +388,7 @@ __global__ void RunSD_Advance_withReduction_dmdt_Kernel(ManagedDiffEqAFMCUDA& cu
 		}
 	}
 
-	//only reduce for dmdt if grel is not zero (if it's zero this means magnetization dynamics is disabled in this mesh)
-	if (cuMesh.pgrel->get0()) {
-
-		reduction_max(0, 1, &dmdt, *cuDiffEq.pdmdt);
-	}
+	reduction_max(0, 1, &dmdt, *cuDiffEq.pdmdt);
 }
 
 __global__ void RunSD_Advance_Kernel(ManagedDiffEqAFMCUDA& cuDiffEq, ManagedMeshCUDA& cuMesh)
@@ -410,7 +406,8 @@ __global__ void RunSD_Advance_Kernel(ManagedDiffEqAFMCUDA& cuDiffEq, ManagedMesh
 				/////////////////////////
 
 				cuReal2 Ms_AFM = *cuMesh.pMs_AFM;
-				cuMesh.update_parameters_mcoarse(idx, *cuMesh.pMs_AFM, Ms_AFM);
+				cuReal2 grel_AFM = *cuMesh.pgrel_AFM;
+				cuMesh.update_parameters_mcoarse(idx, *cuMesh.pMs_AFM, Ms_AFM, *cuMesh.pgrel_AFM, grel_AFM);
 
 				cuReal3 m = (*cuMesh.pM)[idx] / Ms_AFM.i;
 				cuReal3 H = (*cuMesh.pHeff)[idx];
@@ -427,7 +424,7 @@ __global__ void RunSD_Advance_Kernel(ManagedDiffEqAFMCUDA& cuDiffEq, ManagedMesh
 
 				//The above equation can be solved for m_next explicitly.
 
-				cuBReal s = dT * (cuBReal)GAMMA / 4.0;
+				cuBReal s = dT * (cuBReal)GAMMA * grel_AFM.i / 4.0;
 
 				cuReal3 mxH = m ^ H;
 				cuReal3 mxH2 = m2 ^ H2;

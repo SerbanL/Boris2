@@ -25,11 +25,17 @@ class VEC {
 
 private:
 
+	//Line profile extraction data
+
 	//temporary storage for extracting line profile data : the extracted mesh points only as VType
 	std::vector<VType> line_profile_storage;
 
 	//extract a single component, for VAL3 floating types, together with line profile displacement as xy data.
 	std::vector<DBL2> line_profile_component;
+
+	//Histogram extraction data
+
+	std::vector<std::vector<double>> histogram;
 
 protected:
 
@@ -379,6 +385,26 @@ public:
 	//as above but only component which has largest value for the first point (after stencil averaging) (for VAL3 floating types only). Return xy data as line profile position and extracted component at that position.
 	std::vector<DBL2>& extract_profile_component_max(DBL3 start, DBL3 end, double step, DBL3 stencil);
 
+	//get the last calculated line profile
+	std::vector<VType>& get_last_profile(void) { return line_profile_storage; }
+
+	//--------------------------------------------HISTOGRAMS : VEC_histo.h
+
+	//compute magnitude histogram data
+	//extract histogram between magnitudes min and max with given number of bins. if min max not given (set them to zero) then determine them first.
+	//if num_bins not given then use default value of 100
+	//if macrocell_dims greater than 1 in any dimension then first average mesh data in macrocells of given size
+	//without macrocell then pass in num_nonempty_cells (number of nonempty cells); if this is not passed it it's counted first (costs another kernel launch)
+	//output transferred to cpu in histogram_cpu
+	bool get_mag_histogram(
+		std::vector<double>& histogram_x_cpu, std::vector<double>& histogram_p_cpu, 
+		int num_bins, double& min, double& max, size_t num_nonempty_cells = 0, INT3 macrocell_dims = INT3(1));
+
+	//get angular deviation histogram. deviation from ndir direction is calculated, or the average direction if ndir not specified (IsNull)
+	bool get_ang_histogram(
+		std::vector<double>& histogram_x_cpu, std::vector<double>& histogram_p_cpu,
+		int num_bins, double& min, double& max, size_t num_nonempty_cells = 0, INT3 macrocell_dims = INT3(1), VType ndir = VType());
+
 	//--------------------------------------------TRANSPOSITION : VEC_trans.h
 
 	//transpose values from this VEC to output VEC
@@ -461,11 +487,12 @@ public:
 	//the weights vary linearly with distance from coord
 	VType weighted_average(const DBL3& coord, const DBL3& stencil) const;
 	
-	//weighted average in given rectangle (absolute coordinates). weighted_average with coord and stencil is slightly faster.
-	VType weighted_average(const Rect& rectangle) const;
-
 	//ijk is the cell index in a mesh with cellsize cs and same rect as this VEC; if cs is same as h then just read the value at ijk - much faster! If not then get the usual weighted average.
 	VType weighted_average(const INT3& ijk, const DBL3& cs) const;
+
+	//find "chunked" average magnitude in entire VEC. This means, first find magnitude in each macrocell (size macrocell_dims & h), then average macrocell magnitudes.
+	//Found in VEC_histo.h
+	double chunked_averagemag(INT3 macrocell_dims = INT3(1));
 
 	//--------------------------------------------NUMERICAL PROPERTIES : VEC_nprops.h
 

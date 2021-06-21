@@ -16,6 +16,22 @@ MeshBaseCUDA::MeshBaseCUDA(MeshBase* pMeshBase_) :
 	pMeshBase = pMeshBase_;
 }
 
+MeshBaseCUDA::~MeshBaseCUDA()
+{
+	//copy any extracted profiles to cpu versions (e.g. in case an averaged profile was being extracted, then cuda 0 used before reading the profile out)
+	if (profile_storage_sca.size()) {
+
+		pMeshBase->profile_storage_dbl.resize(profile_storage_sca.size());
+		profile_storage_sca.copy_to_vector(pMeshBase->profile_storage_dbl);
+	}
+
+	if (profile_storage_vec.size()) {
+
+		pMeshBase->profile_storage_dbl3.resize(profile_storage_vec.size());
+		profile_storage_vec.copy_to_vector(pMeshBase->profile_storage_dbl3);
+	}
+}
+
 //----------------------------------- MESH INFO GET/SET METHODS
 
 int MeshBaseCUDA::GetMeshType(void)
@@ -27,6 +43,24 @@ int MeshBaseCUDA::GetMeshType(void)
 bool MeshBaseCUDA::IsOutputDataSet_withRect(int datumId)
 {
 	return pMeshBase->IsOutputDataSet_withRect(datumId);
+}
+
+//return true if data is set (with any rectangle)
+bool MeshBaseCUDA::IsOutputDataSet(int datumId)
+{
+	return pMeshBase->IsOutputDataSet(datumId);
+}
+
+//check if given stage is set
+bool MeshBaseCUDA::IsStageSet(int stageType)
+{
+	return pMeshBase->IsStageSet(stageType);
+}
+
+//set computefields_if_MC flag on SuperMesh
+void MeshBaseCUDA::Set_Force_MonteCarlo_ComputeFields(bool status)
+{
+	pMeshBase->Set_Force_MonteCarlo_ComputeFields(status);
 }
 
 //----------------------------------- VALUE GETTERS

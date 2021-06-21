@@ -15,7 +15,7 @@ bool DemagTFunc::CalcDiagTens2D_Shifted_Irregular_PBC(VEC<DBL3> &Ddiag, INT3 N, 
 	Ddiag.set(DBL3());
 
 	//only use irregular version if you have to
-	if (s == d) return CalcDiagTens2D_Shifted_PBC(Ddiag, N, d, shift, minus, asymptotic_distance, x_images, y_images, z_images);
+	if (s * 1e-9 == d * 1e-9) return CalcDiagTens2D_Shifted_PBC(Ddiag, N, d, shift, minus, asymptotic_distance, x_images, y_images, z_images);
 
 	if (IsZ(shift.x) && IsZ(shift.y) && !z_images) {
 
@@ -77,17 +77,17 @@ bool DemagTFunc::CalcDiagTens2D_Shifted_Irregular_PBC(VEC<DBL3> &Ddiag, INT3 N, 
 
 				if (!x_images) {
 
-					Ddiag[INT3((N.x - i0) % N.x, j0, 0)] = val;
+					if (i0) Ddiag[INT3((N.x - i0) % N.x, j0, 0)] = val;
 
 					if (!y_images) {
 
-						Ddiag[INT3((N.x - i0) % N.x, (N.y - j0) % N.y, 0)] = val;
+						if (i0 && j0) Ddiag[INT3((N.x - i0) % N.x, (N.y - j0) % N.y, 0)] = val;
 					}
 				}
 
 				if (!y_images) {
 
-					Ddiag[INT3(i0, (N.y - j0) % N.y, 0)] = val;
+					if (j0) Ddiag[INT3(i0, (N.y - j0) % N.y, 0)] = val;
 				}
 			}
 		}
@@ -169,7 +169,7 @@ bool DemagTFunc::CalcOffDiagTens2D_Shifted_Irregular_PBC(VEC<DBL3> &Dodiag, INT3
 	Dodiag.set(DBL3());
 
 	//only use irregular version if you have to
-	if (s == d) return CalcOffDiagTens2D_Shifted_PBC(Dodiag, N, s, shift, minus, asymptotic_distance, x_images, y_images, z_images);
+	if (s * 1e-9 == d * 1e-9) return CalcOffDiagTens2D_Shifted_PBC(Dodiag, N, s, shift, minus, asymptotic_distance, x_images, y_images, z_images);
 
 	if (IsZ(shift.x) && IsZ(shift.y) && !z_images) {
 
@@ -238,17 +238,17 @@ bool DemagTFunc::CalcOffDiagTens2D_Shifted_Irregular_PBC(VEC<DBL3> &Dodiag, INT3
 
 				if (!x_images) {
 
-					Dodiag[INT3((N.x - i0) % N.x, j0, 0)] = val & DBL3(-1, -1, +1);
+					if (i0) Dodiag[INT3((N.x - i0) % N.x, j0, 0)] = val & DBL3(-1, -1, +1);
 
 					if (!y_images) {
 
-						Dodiag[INT3((N.x - i0) % N.x, (N.y - j0) % N.y, 0)] = val & DBL3(+1, -1, -1);
+						if (i0 && j0) Dodiag[INT3((N.x - i0) % N.x, (N.y - j0) % N.y, 0)] = val & DBL3(+1, -1, -1);
 					}
 				}
 
 				if (!y_images) {
 
-					Dodiag[INT3(i0, (N.y - j0) % N.y, 0)] = val & DBL3(-1, +1, -1);
+					if (j0) Dodiag[INT3(i0, (N.y - j0) % N.y, 0)] = val & DBL3(-1, +1, -1);
 				}
 			}
 		}

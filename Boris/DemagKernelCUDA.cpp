@@ -6,6 +6,7 @@
 #if defined MODULE_COMPILATION_DEMAG || defined MODULE_COMPILATION_SDEMAG
 
 #include "DemagTFunc.h"
+#include "DemagTFuncCUDA.h"
 
 //-------------------------- MEMORY ALLOCATION
 
@@ -54,9 +55,19 @@ BError DemagKernelCUDA::AllocateKernelMemory(void)
 
 //-------------------------- KERNEL CALCULATION
 
-BError DemagKernelCUDA::Calculate_Demag_Kernels_2D(bool include_self_demag)
+BError DemagKernelCUDA::Calculate_Demag_Kernels_2D(bool include_self_demag, bool initialize_on_gpu)
 {
 	BError error(__FUNCTION__);
+
+	if (initialize_on_gpu) {
+
+		//first attempt to compute kernels on GPU
+		error = Calculate_Demag_Kernels_2D_onGPU(include_self_demag);
+
+		//if it fails (out of GPU memory) then next attempt to initialize on CPU
+		if (error) { error.reset(); error(BWARNING_NOGPUINITIALIZATION); }
+		else return error;
+	}
 
 	//-------------- CALCULATE DEMAG TENSOR
 
@@ -203,7 +214,7 @@ BError DemagKernelCUDA::Calculate_Demag_Kernels_2D(bool include_self_demag)
 				K2D_odiag_cpu[i + j * (N.x / 2 + 1)] = -value_odiag.Im;
 			}
 			else {
-
+				
 				//even w.r.t. y so output is purely real
 				Kdiag_cpu[j + i * (N.y / 2 + 1)] = DBL3(value.x.Re, value.y.Re, value.z.Re);
 
@@ -229,15 +240,135 @@ BError DemagKernelCUDA::Calculate_Demag_Kernels_2D(bool include_self_demag)
 	fftw_free((double*)pline_real);
 	fftw_free((double*)pline_real_odiag);
 	fftw_free((fftw_complex*)pline);
-	
+
 	//Done
 	return error;
 }
 
-BError DemagKernelCUDA::Calculate_Demag_Kernels_3D(bool include_self_demag)
+BError DemagKernelCUDA::Calculate_Demag_Kernels_2D_onGPU(bool include_self_demag)
 {
 	BError error(__FUNCTION__);
 
+	//-------------------------------------------
+
+	cu_arr<cufftDoubleReal> cuInx, cuIny, cuInz;
+	if (!cuInx.resize(N.x*N.y)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
+	if (!cuIny.resize(N.x*N.y)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
+	if (!cuInz.resize(N.x*N.y)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
+
+	cu_arr<cufftDoubleComplex> cuOut;
+	if (!cuOut.resize((N.x / 2 + 1)*N.y)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
+
+	//-------------- CALCULATE DEMAG TENSOR on GPU
+
+	//Demag tensor components
+	//
+	// D11 D12 0
+	// D12 D22 0
+	// 0   0   D33
+
+	DemagTFuncCUDA dtf_gpu;
+
+	if (pbc_images.IsNull()) {
+
+		if (!dtf_gpu.CalcDiagTens2D(cuInx, cuIny, cuInz, n, N, h / maximum(h.x, h.y, h.z), include_self_demag)) return error(BERROR_OUTOFGPUMEMORY_NCRIT);
+	}
+	else {
+
+		if (!dtf_gpu.CalcDiagTens2D_PBC(
+			cuInx, cuIny, cuInz, N, h / maximum(h.x, h.y, h.z),
+			true, ASYMPTOTIC_DISTANCE, pbc_images.x, pbc_images.y, pbc_images.z)) return error(BERROR_OUTOFGPUMEMORY_NCRIT);
+	}
+
+	//-------------- SETUP FFT
+
+	cufftHandle planTens2D_x, planTens2D_y;
+
+	int embed[1] = { 0 };
+	int ndims_x[1] = { (int)N.x };
+	int ndims_y[1] = { (int)N.y };
+
+	//Forward fft along x direction (out-of-place):
+	cufftResult cuffterr = cufftPlanMany(&planTens2D_x, 1, ndims_x,
+		embed, 1, N.x,
+		embed, 1, (N.x / 2 + 1),
+		CUFFT_D2Z, (int)N.y);
+
+	//Forward fft along y direction (out-of-place):
+	cuffterr = cufftPlanMany(&planTens2D_y, 1, ndims_y,
+		embed, (N.x / 2 + 1), 1,
+		embed, (N.x / 2 + 1), 1,
+		CUFFT_D2Z, (int)(N.x / 2 + 1));
+
+	//-------------- FFT REAL TENSOR INTO REAL KERNELS
+
+	auto fftcomponent = [&](cu_arr<cufftDoubleReal>& cuIn, int component) -> void
+	{
+		//Now FFT along x from input to output
+		cufftExecD2Z(planTens2D_x, cuIn, cuOut);
+
+		//extract real parts from cuOut and place in cuIn
+		cuOut_to_cuIn_Re((N.x / 2 + 1) * N.y, cuIn, cuOut);
+
+		//Now FFT along y from input to output
+		cufftExecD2Z(planTens2D_y, cuIn, cuOut);
+
+		//extract real parts from cuOut and place in kernel
+		cuOut_to_Kdiagcomponent(cuOut, component);
+	};
+
+	//diagonal components
+	fftcomponent(cuInx, 1);
+	fftcomponent(cuIny, 2);
+	fftcomponent(cuInz, 3);
+
+	//off-diagonal component
+	if (pbc_images.IsNull()) {
+
+		if (!dtf_gpu.CalcOffDiagTens2D(cuInx, n, N, h / maximum(h.x, h.y, h.z))) return error(BERROR_OUTOFGPUMEMORY_NCRIT);
+	}
+	else {
+
+		if (!dtf_gpu.CalcOffDiagTens2D_PBC(
+			cuInx, N, h / maximum(h.x, h.y, h.z), 
+			true, ASYMPTOTIC_DISTANCE, pbc_images.x, pbc_images.y, pbc_images.z)) return error(BERROR_OUTOFGPUMEMORY_NCRIT);
+	}
+
+	//Now FFT along x from input to output
+	cufftExecD2Z(planTens2D_x, cuInx, cuOut);
+
+	//extract imaginary parts from cuOut and place in cuIn
+	cuOut_to_cuIn_Im((N.x / 2 + 1) * N.y, cuInx, cuOut);
+
+	//Now FFT along y from input to output
+	cufftExecD2Z(planTens2D_y, cuInx, cuOut);
+
+	//extract imaginary part from cuOut and place in kernel, also changing sign
+	cuOut_to_K2D_odiag(cuOut);
+
+	//-------------- CLEANUP
+
+	cufftDestroy(planTens2D_x);
+	cufftDestroy(planTens2D_y);
+
+	//Done
+	return error;
+}
+
+BError DemagKernelCUDA::Calculate_Demag_Kernels_3D(bool include_self_demag, bool initialize_on_gpu)
+{
+	BError error(__FUNCTION__);
+	
+	if (initialize_on_gpu) {
+
+		//first attempt to compute kernels on GPU
+		error = Calculate_Demag_Kernels_3D_onGPU(include_self_demag);
+
+		//if it fails (out of GPU memory) then next attempt to initialize on CPU
+		if (error) { error.reset(); error(BWARNING_NOGPUINITIALIZATION); }
+		else return error;
+	}
+	
 	//-------------- DEMAG TENSOR
 
 	//Demag tensor components
@@ -443,7 +574,7 @@ BError DemagKernelCUDA::Calculate_Demag_Kernels_3D(bool include_self_demag)
 	if (pbc_images.IsNull()) {
 
 		//no pbcs in any dimension -> use these
-		if (!dtf.CalcOffDiagTens3D(D, n, N, h / maximum(h.x, h.y, h.z), include_self_demag)) return error(BERROR_OUTOFMEMORY_NCRIT);
+		if (!dtf.CalcOffDiagTens3D(D, n, N, h / maximum(h.x, h.y, h.z))) return error(BERROR_OUTOFMEMORY_NCRIT);
 	}
 	else {
 
@@ -466,6 +597,159 @@ BError DemagKernelCUDA::Calculate_Demag_Kernels_3D(bool include_self_demag)
 	fftw_free((fftw_complex*)pline);
 	
 	//Done
+	return error;
+}
+
+BError DemagKernelCUDA::Calculate_Demag_Kernels_3D_onGPU(bool include_self_demag)
+{
+	BError error(__FUNCTION__);
+
+	//-------------------------------------------
+
+	cu_arr<cufftDoubleReal> cuInx, cuIny, cuInz;
+	if (!cuInx.resize(N.x*N.y*N.z)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
+	if (!cuIny.resize(N.x*N.y*N.z)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
+	if (!cuInz.resize(N.x*N.y*N.z)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
+
+	cu_arr<cufftDoubleComplex> cuOut;
+	if (!cuOut.resize((N.x / 2 + 1)*N.y*N.z)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
+
+	//-------------- DEMAG TENSOR
+
+	//Demag tensor components
+	//
+	// D11 D12 D13
+	// D12 D22 D23
+	// D13 D23 D33
+
+	DemagTFuncCUDA dtf_gpu;
+	
+	if (pbc_images.IsNull()) {
+
+		if (!dtf_gpu.CalcDiagTens3D(cuInx, cuIny, cuInz, n, N, h / maximum(h.x, h.y, h.z), include_self_demag)) return error(BERROR_OUTOFGPUMEMORY_NCRIT);
+	}
+	else {
+
+		if (!dtf_gpu.CalcDiagTens3D_PBC(
+			cuInx, cuIny, cuInz, N, h / maximum(h.x, h.y, h.z),
+			true, ASYMPTOTIC_DISTANCE, pbc_images.x, pbc_images.y, pbc_images.z)) return error(BERROR_OUTOFGPUMEMORY_NCRIT);
+	}
+	
+	//-------------- SETUP FFT
+
+	cufftHandle planTens3D_x, planTens3D_y, planTens3D_z;
+
+	int embed[1] = { 0 };
+	int ndims_x[1] = { (int)N.x };
+	int ndims_y[1] = { (int)N.y };
+	int ndims_z[1] = { (int)N.z };
+
+	//Forward fft along x direction (out-of-place):
+	cufftResult cuffterr = cufftPlanMany(&planTens3D_x, 1, ndims_x,
+		embed, 1, N.x,
+		embed, 1, (N.x / 2 + 1),
+		CUFFT_D2Z, (int)N.y*N.z);
+
+	//Forward fft along y direction (out-of-place):
+	cuffterr = cufftPlanMany(&planTens3D_y, 1, ndims_y,
+		embed, (N.x / 2 + 1), 1,
+		embed, (N.x / 2 + 1), 1,
+		CUFFT_D2Z, (int)(N.x / 2 + 1));
+
+	//Forward fft along z direction (out-of-place):
+	cuffterr = cufftPlanMany(&planTens3D_z, 1, ndims_z,
+		embed, (N.x / 2 + 1) * (N.y / 2 + 1), 1,
+		embed, (N.x / 2 + 1) * (N.y / 2 + 1), 1,
+		CUFFT_D2Z, (int)(N.x / 2 + 1)*(N.y / 2 + 1));
+
+	//-------------- FFT REAL TENSOR INTO REAL KERNELS
+
+	auto fftdiagcomponent = [&](cu_arr<cufftDoubleReal>& cuIn, int component) -> void
+	{
+		//Now FFT along x from input to output
+		cufftExecD2Z(planTens3D_x, cuIn, cuOut);
+
+		//extract real parts from cuOut and place in cuIn
+		cuOut_to_cuIn_Re((N.x / 2 + 1) * N.y * N.z, cuIn, cuOut);
+
+		//Now FFT along y from input to output
+		for (int k = 0; k < N.z; k++) {
+
+			cufftExecD2Z(planTens3D_y, cuIn + k * (N.x / 2 + 1) * N.y, cuOut + k * (N.x / 2 + 1) * (N.y / 2 + 1));
+		}
+
+		//extract real parts from cuOut and place in cuIn
+		cuOut_to_cuIn_Re((N.x / 2 + 1) * (N.y / 2 + 1) * N.z, cuIn, cuOut);
+
+		//Now FFT along z from input to output
+		cufftExecD2Z(planTens3D_z, cuIn, cuOut);
+
+		//extract real parts from cuOut and place in kernel
+		cuOut_to_Kdiagcomponent(cuOut, component);
+	};
+
+	auto fftodiagcomponent = [&](cu_arr<cufftDoubleReal>& cuIn, int component) -> void
+	{
+		//Now FFT along x from input to output
+		cufftExecD2Z(planTens3D_x, cuIn, cuOut);
+
+		//extract real or imaginary parts from cuOut and place in cuIn, depending on the computed component
+		if (component == 1) cuOut_to_cuIn_Im((N.x / 2 + 1) * N.y * N.z, cuIn, cuOut);
+		else if (component == 2) cuOut_to_cuIn_Im((N.x / 2 + 1) * N.y * N.z, cuIn, cuOut);
+		else if (component == 3) cuOut_to_cuIn_Re((N.x / 2 + 1) * N.y * N.z, cuIn, cuOut);
+
+		//Now FFT along y from input to output
+		for (int k = 0; k < N.z; k++) {
+
+			cufftExecD2Z(planTens3D_y, cuIn + k * (N.x / 2 + 1) * N.y, cuOut + k * (N.x / 2 + 1) * (N.y / 2 + 1));
+		}
+
+		//extract real or imaginary parts from cuOut and place in cuIn, depending on the computed component
+		if (component == 1) cuOut_to_cuIn_Im((N.x / 2 + 1) * (N.y / 2 + 1) * N.z, cuIn, cuOut);
+		else if (component == 2) cuOut_to_cuIn_Re((N.x / 2 + 1) * (N.y / 2 + 1) * N.z, cuIn, cuOut);
+		else if (component == 3) cuOut_to_cuIn_Im((N.x / 2 + 1) * (N.y / 2 + 1) * N.z, cuIn, cuOut);
+
+		//Now FFT along z from input to output
+		cufftExecD2Z(planTens3D_z, cuIn, cuOut);
+
+		//extract -(Re, Im, Im) parts from cuOut and place in kernel
+		cuOut_to_Kodiagcomponent(cuOut, component);
+	};
+
+	//-------------- CALCULATE DIAGONAL TENSOR ELEMENTS THEN TRANSFORM INTO KERNEL
+
+	//diagonal components
+
+	fftdiagcomponent(cuInx, 1);
+	fftdiagcomponent(cuIny, 2);
+	fftdiagcomponent(cuInz, 3);
+
+	//-------------- CALCULATE OFF-DIAGONAL TENSOR ELEMENTS THEN TRANSFORM INTO KERNEL
+	
+	if (pbc_images.IsNull()) {
+
+		//no pbcs in any dimension -> use these
+		if (!dtf_gpu.CalcOffDiagTens3D(cuInx, cuIny, cuInz, n, N, h / maximum(h.x, h.y, h.z))) return error(BERROR_OUTOFGPUMEMORY_NCRIT);
+	}
+	else {
+
+		//pbcs used in at least one dimension
+		if (!dtf_gpu.CalcOffDiagTens3D_PBC(
+			cuInx, cuIny, cuInz, N, h / maximum(h.x, h.y, h.z),
+			true, ASYMPTOTIC_DISTANCE, pbc_images.x, pbc_images.y, pbc_images.z)) return error(BERROR_OUTOFGPUMEMORY_NCRIT);
+	}
+
+	//off-diagonal components
+	fftodiagcomponent(cuInx, 1);
+	fftodiagcomponent(cuIny, 2);
+	fftodiagcomponent(cuInz, 3);
+
+	//-------------- CLEANUP
+
+	cufftDestroy(planTens3D_x);
+	cufftDestroy(planTens3D_y);
+	cufftDestroy(planTens3D_z);
+
 	return error;
 }
 

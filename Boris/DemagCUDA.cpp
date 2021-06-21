@@ -5,10 +5,13 @@
 
 #ifdef MODULE_COMPILATION_DEMAG
 
+#include "SimScheduleDefs.h"
+
 #include "MeshCUDA.h"
 #include "Mesh.h"
 #include "Demag.h"
 #include "DataDefs.h"
+#include "SuperMesh.h"
 
 DemagCUDA::DemagCUDA(MeshCUDA* pMeshCUDA_, Demag *pDemag_) :
 	ModulesCUDA(), 
@@ -31,7 +34,7 @@ BError DemagCUDA::Initialize(void)
 
 	if (!initialized) {
 
-		error = Calculate_Demag_Kernels();
+		error = Calculate_Demag_Kernels(true, pDemag->pMesh->pSMesh->Get_Kernel_Initialize_on_GPU());
 
 		selfDemagCoeff.from_cpu(DemagTFunc().SelfDemag_PBC(pMeshCUDA->h, pMeshCUDA->n, pDemag->Get_PBC()));
 
@@ -53,9 +56,14 @@ BError DemagCUDA::Initialize(void)
 	//Make sure display data has memory allocated (or freed) as required
 	error = Update_Module_Display_VECs(
 		(cuReal3)pMeshCUDA->h, (cuRect)pMeshCUDA->meshRect, 
-		(MOD_)pMeshCUDA->Get_Module_Heff_Display() == MOD_DEMAG || pMeshCUDA->IsOutputDataSet_withRect(DATA_E_DEMAG),
-		(MOD_)pMeshCUDA->Get_Module_Energy_Display() == MOD_DEMAG || pMeshCUDA->IsOutputDataSet_withRect(DATA_E_DEMAG));
+		(MOD_)pMeshCUDA->Get_Module_Heff_Display() == MOD_DEMAG || pMeshCUDA->IsOutputDataSet_withRect(DATA_E_DEMAG) || pMeshCUDA->IsStageSet(SS_MONTECARLO),
+		(MOD_)pMeshCUDA->Get_Module_Energy_Display() == MOD_DEMAG || pMeshCUDA->IsOutputDataSet_withRect(DATA_E_DEMAG) || pMeshCUDA->IsStageSet(SS_MONTECARLO));
 	if (error) initialized = false;
+
+	if (initialized) set_DemagCUDA_pointers();
+
+	//if a Monte Carlo stage is set then we need to compute fields
+	if (pMeshCUDA->IsStageSet(SS_MONTECARLO)) pMeshCUDA->Set_Force_MonteCarlo_ComputeFields(true);
 
 	return error;
 }
@@ -65,7 +73,7 @@ BError DemagCUDA::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 	BError error(CLASS_STR(DemagCUDA));
 
 	//only need to uninitialize if n or h have changed, or pbc settings have changed
-	if (!CheckDimensions(pMeshCUDA->n, pMeshCUDA->h, pDemag->Get_PBC())) {
+	if (!CheckDimensions(pMeshCUDA->n, pMeshCUDA->h, pDemag->Get_PBC()) || cfgMessage == UPDATECONFIG_DEMAG_CONVCHANGE) {
 
 		Uninitialize();
 

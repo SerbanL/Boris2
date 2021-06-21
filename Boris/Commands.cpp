@@ -53,6 +53,70 @@ void Simulation::Listen_Incoming_Message(void)
 
 void Simulation::HandleCommand(std::string command_string) 
 {
+	////////////////////////////////////////////////////////////////////////////
+	//
+	// AUXILIARY LAMBDAS
+
+	//adjust new_meshName such that it doesn't clash with any existing mesh names; return adjusted name
+	auto adjust_meshname = [&](std::string new_meshName) -> std::string {
+
+		//does this mesh name already exist? If yes then modify to a name which doesn't exist
+		while (SMesh.contains(new_meshName)) {
+
+			//if meshName exists then add _#, where # = 1 to start
+			//if meshName already contains a termination of the form _# then increase # until meshName available
+			size_t pos = new_meshName.find_last_of('_');
+
+			if (pos == std::string::npos) {
+
+				new_meshName += std::string("_1");
+			}
+			else {
+
+				std::string termination = new_meshName.substr(pos + 1);
+				if (has_digits_only(termination)) {
+
+					int number = ToNum(termination);
+					number++;
+					termination = ToString(number);
+
+					new_meshName = new_meshName.substr(0, pos + 1) + termination;
+				}
+				else new_meshName += std::string("_1");
+			}
+		}
+
+		return new_meshName;
+	};
+
+	//delete all meshes, except existingmeshName (which must exist)
+	auto delete_all_meshes_except = [&](std::string existingmeshName) {
+
+		if (!SMesh.contains(existingmeshName)) return;
+
+		std::vector<std::string> meshNames;
+		for (int idx = 0; idx < SMesh.size(); idx++) {
+
+			meshNames.push_back(SMesh.key_from_meshIdx(idx));
+		}
+
+		for (auto& meshName : meshNames) {
+
+			if (meshName != existingmeshName) {
+
+				SMesh.DelMesh(meshName);
+				//delete any affected entries in data box
+				DeleteDataBoxFields(meshName);
+				//delete any affected entries in saveDataList
+				DeleteSaveDataEntries(meshName);
+			}
+		}
+	};
+
+	////////////////////////////////////////////////////////////////////////////
+	////////////////////////////////////////////////////////////////////////////
+	////////////////////////////////////////////////////////////////////////////
+
 	//cannot change simulation parameters in the middle of an interation. simulationMutex also used by Simulate() method, but there it is non-blocking
 	simulationMutex.lock();
 	std::lock_guard<std::mutex> simlock(simulationMutex, std::adopt_lock);
@@ -446,28 +510,18 @@ void Simulation::HandleCommand(std::string command_string)
 
 				StopSimulation();
 
+				std::string new_meshName_actual = new_meshName;
+				new_meshName = adjust_meshname(new_meshName);
+
 				if (!err_hndl.call(error, &SuperMesh::AddMesh, &SMesh, new_meshName, MESH_FERROMAGNETIC, meshRect)) {
 
 					SMesh.SetMeshFocus(new_meshName);
 					UpdateScreen_AutoSet_KeepOrientation();
 
-					std::vector<std::string> meshNames;
-					for (int idx = 0; idx < SMesh.size(); idx++) {
+					delete_all_meshes_except(new_meshName);
 
-						meshNames.push_back(SMesh.key_from_meshIdx(idx));
-					}
-
-					for (auto& meshName : meshNames) {
-
-						if (meshName != new_meshName) {
-
-							SMesh.DelMesh(meshName);
-							//delete any affected entries in data box
-							DeleteDataBoxFields(meshName);
-							//delete any affected entries in saveDataList
-							DeleteSaveDataEntries(meshName);
-						}
-					}
+					//if we had to change name, now rename the mesh to the actual required mesh name
+					if (new_meshName != new_meshName_actual) SMesh.RenameMesh(new_meshName, new_meshName_actual);
 
 					UpdateScreen_AutoSet();
 				}
@@ -509,28 +563,18 @@ void Simulation::HandleCommand(std::string command_string)
 
 				StopSimulation();
 
+				std::string new_meshName_actual = new_meshName;
+				new_meshName = adjust_meshname(new_meshName);
+
 				if (!err_hndl.call(error, &SuperMesh::AddMesh, &SMesh, new_meshName, MESH_ANTIFERROMAGNETIC, meshRect)) {
 
 					SMesh.SetMeshFocus(new_meshName);
 					UpdateScreen_AutoSet_KeepOrientation();
 
-					std::vector<std::string> meshNames;
-					for (int idx = 0; idx < SMesh.size(); idx++) {
+					delete_all_meshes_except(new_meshName);
 
-						meshNames.push_back(SMesh.key_from_meshIdx(idx));
-					}
-
-					for (auto& meshName : meshNames) {
-
-						if (meshName != new_meshName) {
-
-							SMesh.DelMesh(meshName);
-							//delete any affected entries in data box
-							DeleteDataBoxFields(meshName);
-							//delete any affected entries in saveDataList
-							DeleteSaveDataEntries(meshName);
-						}
-					}
+					//if we had to change name, now rename the mesh to the actual required mesh name
+					if (new_meshName != new_meshName_actual) SMesh.RenameMesh(new_meshName, new_meshName_actual);
 
 					UpdateScreen_AutoSet();
 				}
@@ -656,28 +700,18 @@ void Simulation::HandleCommand(std::string command_string)
 
 				StopSimulation();
 
+				std::string new_meshName_actual = new_meshName;
+				new_meshName = adjust_meshname(new_meshName);
+
 				if (!err_hndl.call(error, &SuperMesh::AddMesh, &SMesh, new_meshName, MESH_ATOM_CUBIC, meshRect)) {
 
 					SMesh.SetMeshFocus(new_meshName);
 					UpdateScreen_AutoSet_KeepOrientation();
 
-					std::vector<std::string> meshNames;
-					for (int idx = 0; idx < SMesh.size(); idx++) {
+					delete_all_meshes_except(new_meshName);
 
-						meshNames.push_back(SMesh.key_from_meshIdx(idx));
-					}
-
-					for (auto& meshName : meshNames) {
-
-						if (meshName != new_meshName) {
-
-							SMesh.DelMesh(meshName);
-							//delete any affected entries in data box
-							DeleteDataBoxFields(meshName);
-							//delete any affected entries in saveDataList
-							DeleteSaveDataEntries(meshName);
-						}
-					}
+					//if we had to change name, now rename the mesh to the actual required mesh name
+					if (new_meshName != new_meshName_actual) SMesh.RenameMesh(new_meshName, new_meshName_actual);
 
 					UpdateScreen_AutoSet();
 				}
@@ -1534,6 +1568,26 @@ void Simulation::HandleCommand(std::string command_string)
 		}
 		break;
 
+		case CMD_GPUKERNELS:
+		{
+			bool status;
+
+			error = commandSpec.GetParameters(command_fields, status);
+
+			if (!error) {
+
+				StopSimulation();
+
+				error = SMesh.Set_Kernel_Initialize_on_GPU(status);
+
+				RefreshScreen();
+			}
+			else if (verbose) Print_GPUKernels_Config();
+
+			if (script_client_connected) commSocket.SetSendData(commandSpec.PrepareReturnParameters(SMesh.Get_Kernel_Initialize_on_GPU()));
+		}
+		break;
+
 		case CMD_ODE:
 		{
 			if (verbose) Print_ODEs();
@@ -1666,16 +1720,18 @@ void Simulation::HandleCommand(std::string command_string)
 
 		case CMD_ASTEPCTRL:
 		{
-			double err_fail, err_high, err_low, dT_incr, dT_min, dT_max;
+			double err_fail, dT_incr, dT_min, dT_max;
 
-			error = commandSpec.GetParameters(command_fields, err_fail, err_high, err_low, dT_incr, dT_min, dT_max);
+			error = commandSpec.GetParameters(command_fields, err_fail, dT_incr, dT_min, dT_max);
 
 			if (!error) {
 
-				SMesh.SetAdaptiveTimeStepCtrl(err_fail, err_high, err_low, dT_incr, dT_min, dT_max);
+				SMesh.SetAdaptiveTimeStepCtrl(err_fail, dT_incr, dT_min, dT_max);
 				UpdateScreen();
 			}
 			else if (verbose) Print_AStepCtrl();
+
+			if (script_client_connected) commSocket.SetSendData(commandSpec.PrepareReturnParameters(DBL4(SMesh.Get_AStepRelErrCtrl(), SMesh.Get_AStepdTCtrl().i, SMesh.Get_AStepdTCtrl().j, SMesh.Get_AStepdTCtrl().k)));
 		}
 		break;
 
@@ -2386,7 +2442,7 @@ void Simulation::HandleCommand(std::string command_string)
 						fileName += ".txt";
 
 					std::vector<std::vector<double>> load_arrays;
-					if (ReadDataColumns(fileName, "\t", load_arrays, { 0, 1, 2, 3 })) {
+					if (ReadDataColumns(fileName, "\t", load_arrays, { 0, 1 })) {
 
 						std::vector<double> empty;
 
@@ -2852,6 +2908,34 @@ void Simulation::HandleCommand(std::string command_string)
 			if (BD.SaveMeshImage(fileName, image_cropping)) {
 
 				if (verbose) BD.DisplayConsoleMessage("Saved : " + fileName);
+			}
+			else if (verbose) error(BERROR_COULDNOTSAVEFILE);
+		}
+		break;
+
+		case CMD_SAVEIMAGE:
+		{
+			std::string fileName;
+
+			error = commandSpec.GetParameters(command_fields, fileName);
+
+			if (error == BERROR_PARAMMISMATCH) {
+
+				error.reset();
+				fileName = directory + imageSaveFileBase + ".png";
+			}
+			else {
+
+				if (GetFileTermination(fileName) != ".png")
+					fileName += ".png";
+
+				if (!GetFilenameDirectory(fileName).length()) fileName = directory + fileName;
+			}
+
+			if (BD.SaveImage(fileName, SMesh.FetchOnScreenPhysicalQuantity(BD.Get_MeshDisplay_DetailLevel()))) {
+
+				if (verbose) BD.DisplayConsoleMessage("Saved : " + fileName);
+				RefreshScreen();
 			}
 			else if (verbose) error(BERROR_COULDNOTSAVEFILE);
 		}
@@ -4240,33 +4324,8 @@ void Simulation::HandleCommand(std::string command_string)
 
 					//material loaded in mdb and meshType available.
 
-					std::string new_meshName = materialName;
-
 					//does this mesh name already exist?
-					while (SMesh.contains(new_meshName)) {
-
-						//if meshName exists then add _#, where # = 1 to start
-						//if meshName already contains a termination of the form _# then increase # until meshName available
-						size_t pos = new_meshName.find_last_of('_');
-
-						if (pos == std::string::npos) {
-
-							new_meshName += std::string("_1");
-						}
-						else {
-
-							std::string termination = new_meshName.substr(pos + 1);
-							if (has_digits_only(termination)) {
-
-								int number = ToNum(termination);
-								number++;
-								termination = ToString(number);
-
-								new_meshName = new_meshName.substr(0, pos + 1) + termination;
-							}
-							else new_meshName += std::string("_1");
-						}
-					}
+					std::string new_meshName = adjust_meshname(materialName);
 
 					//first make the mesh with the correct rectangle and mesh type
 					if (!err_hndl.call(error, &SuperMesh::AddMesh, &SMesh, new_meshName, (MESH_)meshType, meshRect)) {
@@ -4277,23 +4336,7 @@ void Simulation::HandleCommand(std::string command_string)
 						SMesh.SetMeshFocus(new_meshName);
 						UpdateScreen_AutoSet_KeepOrientation();
 
-						std::vector<std::string> meshNames;
-						for (int idx = 0; idx < SMesh.size(); idx++) {
-
-							meshNames.push_back(SMesh.key_from_meshIdx(idx));
-						}
-
-						for (auto& meshName : meshNames) {
-
-							if (meshName != new_meshName) {
-
-								SMesh.DelMesh(meshName);
-								//delete any affected entries in data box
-								DeleteDataBoxFields(meshName);
-								//delete any affected entries in saveDataList
-								DeleteSaveDataEntries(meshName);
-							}
-						}
+						delete_all_meshes_except(new_meshName);
 
 						UpdateScreen_AutoSet();
 
@@ -5195,8 +5238,24 @@ void Simulation::HandleCommand(std::string command_string)
 
 					UpdateScreen();
 				}
+			}
+			else if (verbose) Print_MCSettings();
+		}
+		break;
 
-				UpdateScreen();
+		case CMD_MCDISABLE:
+		{
+			bool status;
+			std::string meshName;
+
+			error = commandSpec.GetParameters(command_fields, status, meshName);
+
+			if (!error) {
+
+				if (!err_hndl.qcall(error, &SuperMesh::Set_MonteCarlo_Disabled, &SMesh, status, meshName)) {
+
+					UpdateScreen();
+				}
 			}
 			else if (verbose) Print_MCSettings();
 		}
@@ -5222,7 +5281,7 @@ void Simulation::HandleCommand(std::string command_string)
 
 		case CMD_MCCONEANGLELIMITS:
 		{
-			INT2 cone_angles;
+			DBL2 cone_angles;
 
 			error = commandSpec.GetParameters(command_fields, cone_angles);
 
@@ -5700,6 +5759,60 @@ void Simulation::HandleCommand(std::string command_string)
 		}
 		break;
 
+		case CMD_RUNCOMMBUFFER:
+			while (single_call_launch(&Simulation::RunCommandBuffer, THREAD_HANDLEMESSAGE3) != THREAD_HANDLEMESSAGE3);
+			break;
+
+		case CMD_CLEARCOMMBUFFER:
+			command_buffer.clear();
+			break;
+
+		case CMD_BUFFERCOMMAND:
+		{
+			std::string command_with_params;
+
+			error = commandSpec.GetParameters(command_fields, command_with_params);
+
+			if (!error) {
+
+				//buffer the command with current verbosity level if recognized as a command
+				//NOTE : must stop CMD_RUNCOMMBUFFER, CMD_CLEARCOMMBUFFER and CMD_BUFFERCOMMAND from themselves being buffered, to avoid causing program hangups if for whatever reason a user decides buffering these is a good idea!
+
+				std::vector<std::string> command_fields = split(command_with_params, " ");
+				std::string command_name = command_fields.front();
+
+				if (commands.has_key(command_name)) {
+
+					CommandSpecifier commandSpec = commands[command_name];
+
+					if (commandSpec.cmdId != CMD_RUNCOMMBUFFER && commandSpec.cmdId != CMD_CLEARCOMMBUFFER && commandSpec.cmdId != CMD_BUFFERCOMMAND) {
+
+						if (verbose) command_buffer.push_back(command_with_params);
+						else command_buffer.push_back("~" + command_with_params);
+					}
+				}
+			}
+			else if (verbose) {
+
+				if (!command_buffer.size()) BD.DisplayConsoleMessage("Command buffer is empty.");
+
+				for (int idx = 0; idx < command_buffer.size(); idx++) {
+
+					std::vector<std::string> fields = split(command_buffer[idx]);
+				
+					std::string message;
+					for (int fidx = 0; fidx < fields.size(); fidx++) {
+
+						if (fidx == 0) message += "[tc1,1,1,1/tc]<b>" + fields[0] + "</b>";
+						else message += " <i>" + fields[fidx] + "</i>";
+					}
+
+					BD.DisplayFormattedConsoleMessage(message);
+				}
+			}
+		}
+		break;
+
 		//---------------- CMD_DP_ commands here
 
 		case CMD_DP_CLEARALL:
@@ -5973,99 +6086,66 @@ void Simulation::HandleCommand(std::string command_string)
 			DBL3 start, end, stencil;
 			double step;
 			int arr_idx;
+			std::string meshName;
 
-			error = commandSpec.GetParameters(command_fields, start, end, step, arr_idx, stencil);
-			if (error) { error.reset() = commandSpec.GetParameters(command_fields, start, end, step, arr_idx); stencil = DBL3(); }
+			error = commandSpec.GetParameters(command_fields, start, end, step, arr_idx, meshName, stencil);
+			if (error) { error.reset() = commandSpec.GetParameters(command_fields, start, end, step, arr_idx, meshName); stencil = DBL3(); }
 
 			if (!error && start != end) {
 
-				//prepare data displayed on screen ready to be read out below
-				SMesh.PrepareDisplayedMeshValue();
-
 				int num_points = round((end - start).norm() / step) + 1;
 
-				std::vector<double> position(num_points), data_x(num_points), data_y(num_points), data_z(num_points);
+				std::vector<double> position(num_points);
+				std::vector<double>* pprofile_dbl = nullptr;
+				std::vector<DBL3>* pprofile_dbl3 = nullptr;
 
-				bool average = !stencil.IsNull();
+				SMesh.GetPhysicalQuantityProfile(start, end, step, stencil, pprofile_dbl3, pprofile_dbl, meshName, arr_idx < 0, false);
 
-				if (average) {
-
-					for (int idx = 0; idx < num_points; idx++) {
-
-						DBL3 pos = start + idx * step * (end - start).normalized();
-
-						DBL3 rel_pos = pos - SMesh.active_mesh()->GetOrigin();
-						DBL3 value = SMesh.GetAverageDisplayedMeshValue(Rect(DBL3(rel_pos - stencil / 2), DBL3(rel_pos + stencil / 2)));
-
-						//position along displacement unit vector
-						position[idx] = idx * step;
-						data_x[idx] = value.x;
-						data_y[idx] = value.y;
-						data_z[idx] = value.z;
-					}
-				}
-				else {
+				if (arr_idx >= 0) {
 
 #pragma omp parallel for
-					for (int idx = 0; idx < num_points; idx++) {
+					for (int idx = 0; idx < num_points; idx++) position[idx] = idx * step;
 
-						DBL3 pos = start + idx * step * (end - start).normalized();
-
-						DBL3 value = SMesh.GetDisplayedMeshValue(pos);
-
-						//position along displacement unit vector
-						position[idx] = idx * step;
-						data_x[idx] = value.x;
-						data_y[idx] = value.y;
-						data_z[idx] = value.z;
-					}
+					dpArr.set_array(arr_idx, position);
+					if (pprofile_dbl) { if (!dpArr.set_array(arr_idx + 1, *pprofile_dbl)) error(BERROR_INCORRECTARRAYS); }
+					else if (pprofile_dbl3) { error = dpArr.set_arrays(arr_idx + 1, *pprofile_dbl3); }
+					if (verbose && !error && (pprofile_dbl || pprofile_dbl3)) BD.DisplayConsoleMessage("Path extracted.");
 				}
-
-				dpArr.set_array(arr_idx + 0, position);
-				dpArr.set_array(arr_idx + 1, data_x);
-				dpArr.set_array(arr_idx + 2, data_y);
-				dpArr.set_array(arr_idx + 3, data_z);
-
-				if (verbose) BD.DisplayConsoleMessage("Path extracted.");
 			}
 			else if (verbose) PrintCommandUsage(command_name);
 		}
 		break;
 
-		case CMD_GETVALUE:
+		case CMD_DP_GETAVERAGEDPROFILE:
 		{
-			DBL3 abs_pos;
+			DBL3 start, end;
+			double step;
+			int arr_idx;
+			std::string meshName;
 
-			error = commandSpec.GetParameters(command_fields, abs_pos);
+			error = commandSpec.GetParameters(command_fields, start, end, step, arr_idx, meshName);
 
-			if (!error) {
+			if (!error && start != end) {
 
-				//prepare data displayed on screen ready to be read out below
-				SMesh.PrepareDisplayedMeshValue();
-				Any value = SMesh.GetDisplayedMeshValue(abs_pos);
-				if (verbose) BD.DisplayConsoleMessage(value.convert_to_string());
+				int num_points = round((end - start).norm() / step) + 1;
 
-				if (script_client_connected) {
+				std::vector<double> position(num_points);
+				std::vector<double>* pprofile_dbl = nullptr;
+				std::vector<DBL3>* pprofile_dbl3 = nullptr;
 
-					//Longer version so it compiles with C++14
-					if (value.is_type(btype_info<double>())) {
-						
-						double value_converted = value;
-						commSocket.SetSendData(commandSpec.PrepareReturnParameters(value_converted));
-					}
-					else if (value.is_type(btype_info<DBL2>())) {
-						
-						DBL2 value_converted = value;
-						commSocket.SetSendData(commandSpec.PrepareReturnParameters(value_converted));
-					}
-					else if (value.is_type(btype_info<DBL3>())) {
-						
-						DBL3 value_converted = value;
-						commSocket.SetSendData(commandSpec.PrepareReturnParameters(value_converted));
-					}
-				}
+				SMesh.GetPhysicalQuantityProfile(start, end, step, DBL3(), pprofile_dbl3, pprofile_dbl, meshName, false, true);
+
+#pragma omp parallel for
+				for (int idx = 0; idx < num_points; idx++) position[idx] = idx * step;
+
+				dpArr.set_array(arr_idx, position);
+				if (pprofile_dbl) { if (!dpArr.set_array(arr_idx + 1, *pprofile_dbl)) error(BERROR_INCORRECTARRAYS); }
+				else if (pprofile_dbl3) { error = dpArr.set_arrays(arr_idx + 1, *pprofile_dbl3); }
+				if (verbose && !error && (pprofile_dbl || pprofile_dbl3)) BD.DisplayConsoleMessage("Average path extracted. Averaging reset.");
 			}
-			else if (verbose) PrintCommandUsage(command_name);
+			else if (verbose) BD.DisplayConsoleMessage("Current number of averages : " + ToString(SMesh.active_mesh()->GetProfileAverages()));
+
+			if (script_client_connected) commSocket.SetSendData(commandSpec.PrepareReturnParameters(SMesh.active_mesh()->GetProfileAverages()));
 		}
 		break;
 
@@ -6264,21 +6344,24 @@ void Simulation::HandleCommand(std::string command_string)
 
 		case CMD_DP_HISTOGRAM:
 		{
-			double bin = 0.0, min = 0.0, max = 0.0;
+			int num_bins = 0;
+			INT3 macrocell_dims = INT3(1);
+			double min = 0.0, max = 0.0;
 			int dp_x, dp_y;
 
-			error = commandSpec.GetParameters(command_fields, dp_x, dp_y, bin, min, max);
-			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, dp_x, dp_y); bin = 0.0; min = 0.0; max = 0.0; }
-
+			error = commandSpec.GetParameters(command_fields, dp_x, dp_y, macrocell_dims, num_bins, min, max);
+			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, dp_x, dp_y, macrocell_dims); num_bins = 0; min = 0.0; max = 0.0; }
+			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, dp_x, dp_y); macrocell_dims = INT3(1); num_bins = 0; min = 0.0; max = 0.0; }
+			
 			if (!error) {
 
-				if (SMesh.active_mesh()->Magnetism_Enabled() && !SMesh.active_mesh()->is_atomistic()) {
+				if (SMesh.active_mesh()->Magnetism_Enabled()) {
 
-					error = dpArr.calculate_histogram(dynamic_cast<Mesh*>(SMesh.active_mesh())->Get_M(), dp_x, dp_y, bin, min, max);
+					if (!dpArr.GoodArrays_Unique(dp_x, dp_y)) error(BERROR_INCORRECTARRAYS);
+					else {
 
-					if (!error) {
-
-						if (verbose) BD.DisplayConsoleMessage("Histogram calculated.");
+						if (SMesh.active_mesh()->Get_Histogram(dpArr[dp_x], dpArr[dp_y], num_bins, min, max, macrocell_dims))
+							if (verbose) BD.DisplayConsoleMessage("Histogram calculated.");
 					}
 				}
 				else err_hndl.show_error(BERROR_NOTMAGNETIC, verbose);
@@ -6287,14 +6370,128 @@ void Simulation::HandleCommand(std::string command_string)
 		}
 		break;
 
+		case CMD_DP_THAVHISTOGRAM:
+		{
+			int num_bins = 0;
+			INT3 macrocell_dims = INT3(1);
+			double min = 0.0, max = 0.0;
+			int dp_x, dp_y;
+
+			error = commandSpec.GetParameters(command_fields, dp_x, dp_y, macrocell_dims, num_bins, min, max);
+			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, dp_x, dp_y, macrocell_dims); num_bins = 0; min = 0.0; max = 0.0; }
+
+			if (!error) {
+
+				if (SMesh.active_mesh()->Magnetism_Enabled()) {
+
+					if (!dpArr.GoodArrays_Unique(dp_x, dp_y)) error(BERROR_INCORRECTARRAYS);
+					else {
+
+						if (SMesh.active_mesh()->Get_ThAvHistogram(dpArr[dp_x], dpArr[dp_y], num_bins, min, max, macrocell_dims))
+							if (verbose) BD.DisplayConsoleMessage("Histogram calculated.");
+					}
+				}
+				else err_hndl.show_error(BERROR_NOTMAGNETIC, verbose);
+			}
+			else if (verbose) PrintCommandUsage(command_name);
+		}
+		break;
+
+		case CMD_DP_ANGHISTOGRAM:
+		{
+			int num_bins = 0;
+			INT3 macrocell_dims = INT3(1);
+			DBL3 ndir;
+			double min = 0.0, max = 0.0;
+			int dp_x, dp_y;
+
+			error = commandSpec.GetParameters(command_fields, dp_x, dp_y, macrocell_dims, ndir, num_bins, min, max);
+			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, dp_x, dp_y, macrocell_dims, ndir); num_bins = 0; min = 0.0; max = 0.0; }
+			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, dp_x, dp_y, macrocell_dims); ndir = DBL3(); num_bins = 0; min = 0.0; max = 0.0; }
+			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, dp_x, dp_y); macrocell_dims = INT3(1); ndir = DBL3(); num_bins = 0; min = 0.0; max = 0.0; }
+
+			if (!error) {
+
+				if (SMesh.active_mesh()->Magnetism_Enabled()) {
+
+					if (!dpArr.GoodArrays_Unique(dp_x, dp_y)) error(BERROR_INCORRECTARRAYS);
+					else {
+
+						if (SMesh.active_mesh()->Get_AngHistogram(dpArr[dp_x], dpArr[dp_y], num_bins, min, max, macrocell_dims, ndir))
+							if (verbose) BD.DisplayConsoleMessage("Angular deviation histogram calculated.");
+					}
+				}
+				else err_hndl.show_error(BERROR_NOTATOMISTIC, verbose);
+			}
+			else if (verbose) PrintCommandUsage(command_name);
+		}
+		break;
+
+		case CMD_DP_THAVANGHISTOGRAM:
+		{
+			int num_bins = 0;
+			INT3 macrocell_dims = INT3(1);
+			DBL3 ndir;
+			double min = 0.0, max = 0.0;
+			int dp_x, dp_y;
+
+			error = commandSpec.GetParameters(command_fields, dp_x, dp_y, macrocell_dims, ndir, num_bins, min, max);
+			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, dp_x, dp_y, macrocell_dims, ndir); num_bins = 0; min = 0.0; max = 0.0; }
+			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, dp_x, dp_y, macrocell_dims); ndir = DBL3(); num_bins = 0; min = 0.0; max = 0.0; }
+
+			if (!error) {
+
+				if (SMesh.active_mesh()->Magnetism_Enabled()) {
+
+					if (!dpArr.GoodArrays_Unique(dp_x, dp_y)) error(BERROR_INCORRECTARRAYS);
+					else {
+
+						if (SMesh.active_mesh()->Get_ThAvAngHistogram(dpArr[dp_x], dpArr[dp_y], num_bins, min, max, macrocell_dims, ndir))
+							if (verbose) BD.DisplayConsoleMessage("Angular deviation histogram calculated.");
+					}
+				}
+				else err_hndl.show_error(BERROR_NOTATOMISTIC, verbose);
+			}
+			else if (verbose) PrintCommandUsage(command_name);
+		}
+		break;
+
+		case CMD_AVERAGECHUNKEDMAGLENGTH:
+		{
+			INT3 macrocell_dims = INT3(1);
+			int dp_arr = -1;
+			double M_av = 0.0;
+
+			error = commandSpec.GetParameters(command_fields, macrocell_dims, dp_arr);
+			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, macrocell_dims); dp_arr = -1; }
+
+			if (!error) {
+
+				if (SMesh.active_mesh()->Magnetism_Enabled() && SMesh.active_mesh()->is_atomistic()) {
+
+					M_av = SMesh.active_mesh()->Get_ChunkedAverageMagnetizationLength(macrocell_dims);
+
+					if (verbose) BD.DisplayConsoleMessage("Average chunked M length = " + ToString(M_av) + " (A/m)");
+
+					if (dp_arr >= 0) dpArr[dp_arr] = { M_av };
+				}
+				else err_hndl.show_error(BERROR_NOTATOMISTIC, verbose);
+			}
+			else if (verbose) PrintCommandUsage(command_name);
+
+			if (script_client_connected) commSocket.SetSendData(commandSpec.PrepareReturnParameters(M_av));
+		}
+		break;
+
 		case CMD_DP_HISTOGRAM2:
 		{
-			double bin = 0.0, min = 0.0, max = 0.0;
+			int num_bins = 0;
+			double min = 0.0, max = 0.0;
 			double M2 = 0.0, deltaM2 = 0.0;
 			int dp_x, dp_y;
 
-			error = commandSpec.GetParameters(command_fields, dp_x, dp_y, bin, min, max, M2, deltaM2);
-			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, dp_x, dp_y); bin = 0.0; min = 0.0; max = 0.0; M2 = 0.0; deltaM2 = 0.0; }
+			error = commandSpec.GetParameters(command_fields, dp_x, dp_y, num_bins, min, max, M2, deltaM2);
+			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, dp_x, dp_y); num_bins = 0; min = 0.0; max = 0.0; M2 = 0.0; deltaM2 = 0.0; }
 
 			if (!error) {
 				
@@ -6316,7 +6513,7 @@ void Simulation::HandleCommand(std::string command_string)
 						dynamic_cast<Mesh*>(SMesh.active_mesh())->Get_M(), 
 						dynamic_cast<Mesh*>(SMesh.active_mesh())->Get_M2(),
 						dp_x, dp_y, 
-						bin, min, max, M2, deltaM2);
+						num_bins, min, max, M2, deltaM2);
 
 					if (!error) {
 
@@ -6536,6 +6733,25 @@ void Simulation::HandleCommand(std::string command_string)
 				if (verbose && !error) BD.DisplayConsoleMessage("Mean = " + ToString(mean_stdev.x) + " +/- " + ToString(mean_stdev.y));
 
 				if (script_client_connected) commSocket.SetSendData(commandSpec.PrepareReturnParameters(mean_stdev));
+			}
+			else if (verbose) PrintCommandUsage(command_name);
+		}
+		break;
+
+		case CMD_DP_SUM:
+		{
+			int dp_source;
+
+			error = commandSpec.GetParameters(command_fields, dp_source);
+
+			if (!error) {
+
+				double sum = 0.0;
+				error = dpArr.get_sum(dp_source, &sum);
+
+				if (verbose && !error) BD.DisplayConsoleMessage("Sum = " + ToString(sum));
+
+				if (script_client_connected) commSocket.SetSendData(commandSpec.PrepareReturnParameters(sum));
 			}
 			else if (verbose) PrintCommandUsage(command_name);
 		}
@@ -7259,7 +7475,6 @@ void Simulation::HandleCommand(std::string command_string)
 
 		case CMD_TEST:
 		{
-			/*
 			std::vector<std::string> commands_output;
 			commands_output.resize(commands.size());
 
@@ -7294,7 +7509,6 @@ void Simulation::HandleCommand(std::string command_string)
 			commands_description = trim(commands_description, "</i>");
 
 			SaveTextToFile("c:/commands.txt", commands_description);
-			*/
 		}
 		break;
 

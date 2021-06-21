@@ -33,9 +33,10 @@ __device__ cuReal3 ManagedAtom_DiffEqCubicCUDA::LLG(int idx)
 
 	cuBReal mu_s = *pcuaMesh->pmu_s;
 	cuBReal alpha = *pcuaMesh->palpha;
-	pcuaMesh->update_parameters_mcoarse(idx, *pcuaMesh->pmu_s, mu_s, *pcuaMesh->palpha, alpha);
+	cuBReal grel = *pcuaMesh->pgrel;
+	pcuaMesh->update_parameters_mcoarse(idx, *pcuaMesh->pmu_s, mu_s, *pcuaMesh->palpha, alpha, *pcuaMesh->pgrel, grel);
 
-	return (-(cuBReal)GAMMA / (1 + alpha * alpha)) * ((M1[idx] ^ Heff1[idx]) + alpha * ((M1[idx] / mu_s) ^ (M1[idx] ^ Heff1[idx])));
+	return (-(cuBReal)GAMMA * grel / (1 + alpha * alpha)) * ((M1[idx] ^ Heff1[idx]) + alpha * ((M1[idx] / mu_s) ^ (M1[idx] ^ Heff1[idx])));
 }
 
 //Landau-Lifshitz-Gilbert equation but with no precession term and damping set to 1 : faster relaxation for static problems
@@ -45,9 +46,10 @@ __device__ cuReal3 ManagedAtom_DiffEqCubicCUDA::LLGStatic(int idx)
 	cuVEC<cuReal3>& Heff1 = *pcuaMesh->pHeff1;
 
 	cuBReal mu_s = *pcuaMesh->pmu_s;
-	pcuaMesh->update_parameters_mcoarse(idx, *pcuaMesh->pmu_s, mu_s);
+	cuBReal grel = *pcuaMesh->pgrel;
+	pcuaMesh->update_parameters_mcoarse(idx, *pcuaMesh->pmu_s, mu_s, *pcuaMesh->pgrel, grel);
 
-	return (-(cuBReal)GAMMA / 2) * ((M1[idx] / mu_s) ^ (M1[idx] ^ Heff1[idx]));
+	return (-(cuBReal)GAMMA * grel / 2) * ((M1[idx] / mu_s) ^ (M1[idx] ^ Heff1[idx]));
 }
 
 //------------------------------------------------------------------------------------------------------
@@ -67,9 +69,10 @@ __device__ cuReal3 ManagedAtom_DiffEqCubicCUDA::LLGSTT(int idx)
 
 	cuBReal mu_s = *pcuaMesh->pmu_s;
 	cuBReal alpha = *pcuaMesh->palpha;
-	pcuaMesh->update_parameters_mcoarse(idx, *pcuaMesh->pmu_s, mu_s, *pcuaMesh->palpha, alpha);
+	cuBReal grel = *pcuaMesh->pgrel;
+	pcuaMesh->update_parameters_mcoarse(idx, *pcuaMesh->pmu_s, mu_s, *pcuaMesh->palpha, alpha, *pcuaMesh->pgrel, grel);
 
-	return (-(cuBReal)GAMMA / (1 + alpha * alpha)) * ((M1[idx] ^ Heff1[idx]) + alpha * ((M1[idx] / mu_s) ^ (M1[idx] ^ Heff1[idx])));
+	return (-(cuBReal)GAMMA * grel / (1 + alpha * alpha)) * ((M1[idx] ^ Heff1[idx]) + alpha * ((M1[idx] / mu_s) ^ (M1[idx] ^ Heff1[idx])));
 }
 
 #endif

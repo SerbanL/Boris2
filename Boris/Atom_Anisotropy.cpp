@@ -120,7 +120,7 @@ double Atom_Anisotropy_Uniaxial::UpdateField(void)
 //-------------------Energy methods
 
 //For simple cubic mesh spin_index coincides with index in M1
-double Atom_Anisotropy_Uniaxial::Get_Atomistic_EnergyChange(int spin_index, DBL3 Mnew)
+double Atom_Anisotropy_Uniaxial::Get_EnergyChange(int spin_index, DBL3 Mnew)
 {
 	//For CUDA there are separate device functions used by CUDA kernels.
 
@@ -138,9 +138,41 @@ double Atom_Anisotropy_Uniaxial::Get_Atomistic_EnergyChange(int spin_index, DBL3
 		double dpsq_new = dotprod_new * dotprod_new;
 
 		//Hamiltonian contribution as -Ku * (S * ea)^2, where S is the local spin direction
-		return -K1 * (dotprod_new * dotprod_new - dotprod * dotprod) - K2 * (dpsq_new * dpsq_new - dpsq * dpsq);
+		return -K1 * (dpsq_new - dpsq) - K2 * (dpsq_new * dpsq_new - dpsq * dpsq);
 	}
 	else return 0.0;
+}
+
+double Atom_Anisotropy_Uniaxial::Get_Energy(int spin_index)
+{
+	//For CUDA there are separate device functions used by CUDA kernels.
+
+	if (paMesh->M1.is_not_empty(spin_index)) {
+
+		double K1 = paMesh->K1;
+		double K2 = paMesh->K2;
+		DBL3 mcanis_ea1 = paMesh->mcanis_ea1;
+		paMesh->update_parameters_mcoarse(spin_index, paMesh->K1, K1, paMesh->K2, K2, paMesh->mcanis_ea1, mcanis_ea1);
+
+		//calculate m.ea dot product
+		double dotprod = paMesh->M1[spin_index].normalized() * mcanis_ea1;
+		double dpsq = dotprod * dotprod;
+
+		//Hamiltonian contribution as -Ku * (S * ea)^2, where S is the local spin direction
+		return -K1 * dpsq - K2 * dpsq * dpsq;
+	}
+	else return 0.0;
+}
+
+//-------------------Torque methods
+
+DBL3 Atom_Anisotropy_Uniaxial::GetTorque(Rect& avRect)
+{
+#if COMPILECUDA == 1
+	if (pModuleCUDA) return reinterpret_cast<Atom_Anisotropy_UniaxialCUDA*>(pModuleCUDA)->GetTorque(avRect);
+#endif
+
+	return CalculateTorque(paMesh->M1, avRect);
 }
 
 #endif

@@ -140,7 +140,7 @@ __device__ cuReal3 ManagedDiffEqFMCUDA::SLLB(int idx)
 	//the longitudinal relaxation field - an effective field contribution, but only need to add it to the longitudinal relaxation term as the others involve cross products with M[idx]
 	cuReal3 Hl = cuReal3(0.0);
 
-	if (Temperature < T_Curie) {
+	if (Temperature <= T_Curie) {
 		
 		if (Temperature > T_Curie - (cuBReal)TCURIE_EPSILON) {
 
@@ -175,7 +175,7 @@ __device__ cuReal3 ManagedDiffEqFMCUDA::SLLB(int idx)
 		alpha_par = alpha;
 
 		//Note, the parallel susceptibility is related to susrel by : susrel = suspar / mu0Ms
-		Hl = -1 * M[idx] / (susrel * (cuBReal)MU0 * Ms0);
+		Hl = -1.0 * (M[idx] / (susrel * (cuBReal)MU0 * Ms0)) * (1 + 3 * msq * T_Curie / (5 * (Temperature - T_Curie)));
 	}
 
 	cuReal3 H_Thermal_Value = (*pH_Thermal)[position] * sqrt(alpha - alpha_par) / alpha;
@@ -240,7 +240,7 @@ __device__ cuReal3 ManagedDiffEqFMCUDA::SLLBSTT(int idx)
 	//the longitudinal relaxation field - an effective field contribution, but only need to add it to the longitudinal relaxation term as the others involve cross products with M[idx]
 	cuReal3 Hl = cuReal3(0.0);
 
-	if (Temperature < T_Curie) {
+	if (Temperature <= T_Curie) {
 
 		if (Temperature > T_Curie - (cuBReal)TCURIE_EPSILON) {
 
@@ -279,7 +279,7 @@ __device__ cuReal3 ManagedDiffEqFMCUDA::SLLBSTT(int idx)
 		alpha_par = alpha;
 
 		//Note, the parallel susceptibility is related to susrel by : susrel = suspar / mu0Ms
-		Hl = -1 * M[idx] / (susrel * (cuBReal)MU0 * Ms0);
+		Hl = -1.0 * (M[idx] / (susrel * (cuBReal)MU0 * Ms0)) * (1 + 3 * msq * T_Curie / (5 * (Temperature - T_Curie)));
 	}
 
 	cuReal3 H_Thermal_Value = (*pH_Thermal)[position] * sqrt(alpha - alpha_par) / alpha;

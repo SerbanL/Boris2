@@ -115,13 +115,12 @@ protected:
 	static double lte;
 
 	//parameters for adaptive time step calculation method
-	//fail above this relative error : repeat with lower time step
+	//fail above this relative error (or tolerance) : repeat with lower time step
 	static double err_high_fail;
 
-	//decrease time step above this relative error - decrease factor depends on error ratio.
+	//OBSOLETE
 	static double err_high;
-
-	//increase time step above this relative error
+	//OBSOLETE
 	static double err_low;
 
 	//when increasing dT multiply by this (> 1.0)
@@ -130,6 +129,9 @@ protected:
 	//maximum and minimum dT values allowed
 	static double dT_min;
 	static double dT_max;
+
+	//order of evaluation method
+	static int eval_method_order;
 
 	//-----------------------------------Special evaluation values
 
@@ -243,7 +245,7 @@ public:
 	void SetSpeedupTimeStep(double dTspeedup_);
 	void SetLink_dTspeedup(bool link_dTspeedup_);
 
-	void SetAdaptiveTimeStepCtrl(double err_high_fail, double err_high, double err_low, double dT_increase, double dT_min, double dT_max);
+	void SetAdaptiveTimeStepCtrl(double err_high_fail, double dT_increase, double dT_min, double dT_max);
 
 	void SetEvaluationSpeedup(int status) { if (status >= EVALSPEEDUP_NONE && status < EVALSPEEDUP_NUMENTRIES) use_evaluation_speedup = status; }
 
@@ -279,7 +281,7 @@ public:
 	double GetSpeedupTimeStep(void) { return (link_dTspeedup ? dT : dTspeedup); }
 	bool GetLink_dTspeedup(void) { return link_dTspeedup; }
 
-	DBL3 Get_AStepRelErrCtrl(void) { return DBL3(err_high_fail, err_high, err_low); }
+	double Get_AStepRelErrCtrl(void) { return err_high_fail; }
 	DBL3 Get_AStepdTCtrl(void) { return DBL3(dT_increase, dT_min, dT_max); }
 
 	//----------------------------------- Status Getters

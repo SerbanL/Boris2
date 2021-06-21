@@ -369,6 +369,16 @@ void Simulation::SetGenericStopCondition(int index, STOP_ stopType)
 		simStages[index].set_stoptype( stageStopDescriptors(stopType) );
 		simStages[index].set_stopvalue(10e-9);
 		break;
+
+	case STOP_MXH_ITER:
+		simStages[index].set_stoptype(stageStopDescriptors(stopType));
+		simStages[index].set_stopvalue(DBL2(1e-4, 10000));
+		break;
+
+	case STOP_DMDT_ITER:
+		simStages[index].set_stoptype(stageStopDescriptors(stopType));
+		simStages[index].set_stopvalue(DBL2(1e-5, 10000));
+		break;
 	}
 }
 
@@ -615,16 +625,26 @@ void Simulation::CheckSimulationSchedule(void)
 
 	case STOP_TIME:
 	{
-		//See comments for DSAVE_TIME below in Simulation::CheckSaveDataConditions() - same thing applies here.
-
 		double stime = SMesh.GetStageTime();
 		double tstop = (double)simStages[stage_step.major].get_stopvalue();
 		double dT = SMesh.GetTimeStep();
-
-		double delta = stime - floor_fixedepsilon(stime / tstop) * tstop;
-		if (abs(delta) < dT * 0.99 || stime >= tstop) AdvanceSimulationSchedule();
+		if (tstop - stime < dT * 0.01) AdvanceSimulationSchedule();
 	}
 		break;
+
+	case STOP_MXH_ITER:
+	{
+		DBL2 stop = simStages[stage_step.major].get_stopvalue();
+		if (SMesh.Get_mxh() <= stop.i || SMesh.GetStageIteration() >= stop.j) AdvanceSimulationSchedule();
+	}
+	break;
+
+	case STOP_DMDT_ITER: 
+	{
+		DBL2 stop = simStages[stage_step.major].get_stopvalue();
+		if (SMesh.Get_dmdt() <= stop.i || SMesh.GetStageIteration() >= stop.j) AdvanceSimulationSchedule();
+	}
+	break;
 	}
 }
 
@@ -740,7 +760,7 @@ void Simulation::SetSimulationStageValue(void)
 
 	//assume stage_step is correct (if called from AdvanceSimulationSchedule it will be. could also be called directly at the start of a simulation with stage_step reset, so it's also correct).
 
-	switch( simStages[stage_step.major].stage_type() ) {
+	switch(simStages[stage_step.major].stage_type()) {
 
 	case SS_RELAX:
 	case SS_MONTECARLO:

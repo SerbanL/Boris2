@@ -45,45 +45,6 @@ __device__ VType cuVEC<VType>::weighted_average(const cuReal3& coord, const cuRe
 }
 
 template <typename VType>
-__device__ VType cuVEC<VType>::weighted_average(const cuRect& rectangle)
-{
-	//smoothedValue must be initialized to zero
-	VType smoothedValue = VType();
-
-	//1. find indexes of lower-left and uper-right cells intersecting with the stencil (i.e. find cells which contain its lower-left corner and upper-right corner)
-	//Note, it could be a single cell containing both corners : either the stencil is strictly included in it or coincides with it
-
-	//indexes of lower-left and uper-right cells
-	cuINT3 idx_ll = cu_floor((rectangle.s - rect.s) / h);
-	cuINT3 idx_ur = cu_ceil((rectangle.e - rect.s) / h);
-
-	cuReal3 stencil = rectangle.e - rectangle.s;
-	cuReal3 center = ((rectangle.e + rectangle.s) / 2) - rect.s;
-
-	//2. obtain weighted average value from cells intersecting with the stencil (the larger the distance of the cell centre from coord, the lower the weight)
-	cuBReal d_max = cu_GetMagnitude(stencil / 2 + h / 2);						//this is the maximum possible distance (a cell at this distance will get a weight of zero)	
-	cuBReal d_total = 0;														//total reciprocal distance
-
-	for (int ii = (idx_ll.i >= 0 ? idx_ll.i : 0); ii < (idx_ur.i < n.x ? idx_ur.i : n.x); ii++) {
-		for (int jj = (idx_ll.j >= 0 ? idx_ll.j : 0); jj < (idx_ur.j < n.y ? idx_ur.j : n.y); jj++) {
-			for (int kk = (idx_ll.k >= 0 ? idx_ll.k : 0); kk < (idx_ur.k < n.z ? idx_ur.k : n.z); kk++) {
-
-				//find reciprocal distance for each cell : this is its weight * total reciprocal distance (to divide by d_total at the end)
-				cuBReal d_recip = d_max - cu_get_distance(center, cuReal3(((cuBReal)ii + 0.5)*h.x, ((cuBReal)jj + 0.5)*h.y, ((cuBReal)kk + 0.5)*h.z));
-				d_total += d_recip;
-
-				smoothedValue += d_recip * quantity[ii + jj * n.x + kk * n.x*n.y];
-			}
-		}
-	}
-
-	//finally divide by total reciprocal distance to finish off the averaging
-	if (d_total) smoothedValue /= d_total;
-
-	return smoothedValue;
-}
-
-template <typename VType>
 __device__ VType cuVEC<VType>::weighted_average(const cuINT3& ijk, const cuReal3& cs)
 {
 	if (cs == h) return quantity[ijk.i + ijk.j * n.x + ijk.k * n.x * n.y];
@@ -126,11 +87,11 @@ __device__ VType cuVEC<VType>::weighted_average(const cuINT3& ijk, const cuReal3
 	return smoothedValue;
 }
 
-//full average in given rectangle (absolute coordinates).
+//full average in given rectangle (relative coordinates).
 template <typename VType>
 __device__ VType cuVEC<VType>::average(const cuRect& rectangle)
 {
-	cuBox box = box_from_rect_max(rectangle);
+	cuBox box = box_from_rect_max(rectangle + rect.s);
 
 	VType av = VType();
 	int count = 0;
@@ -151,11 +112,11 @@ __device__ VType cuVEC<VType>::average(const cuRect& rectangle)
 	return av;
 }
 
-//average in given rectangle (absolute coordinates), excluding zero points (assumed empty).
+//average in given rectangle (relative coordinates), excluding zero points (assumed empty).
 template <typename VType>
 __device__ VType cuVEC<VType>::average_nonempty(const cuRect& rectangle)
 {
-	cuBox box = box_from_rect_max(rectangle);
+	cuBox box = box_from_rect_max(rectangle + rect.s);
 
 	VType av = VType();
 	int count = 0;

@@ -28,7 +28,8 @@ void DifferentialEquationFM::RunSD_Start(void)
 				/////////////////////////
 
 				double Ms = pMesh->Ms;
-				pMesh->update_parameters_mcoarse(idx, pMesh->Ms, Ms);
+				double grel = pMesh->grel;
+				pMesh->update_parameters_mcoarse(idx, pMesh->Ms, Ms, pMesh->grel, grel);
 
 				DBL3 m = pMesh->M[idx] / Ms;
 				DBL3 H = pMesh->Heff[idx];
@@ -60,7 +61,7 @@ void DifferentialEquationFM::RunSD_Start(void)
 
 				//The above equation can be solved for m_next explicitly.
 
-				double s = dT * GAMMA / 4.0;
+				double s = dT * GAMMA * grel / 4.0;
 
 				DBL3 mxH = m ^ H;
 				m = ((1 - s*s*(mxH*mxH)) * m - 2*s*(m ^ mxH)) / (1 + s*s*(mxH*mxH));
@@ -166,14 +167,18 @@ void DifferentialEquationFM::RunSD_Advance_withReductions(void)
 				/////////////////////////
 
 				double Ms = pMesh->Ms;
-				pMesh->update_parameters_mcoarse(idx, pMesh->Ms, Ms);
+				double grel = pMesh->grel;
+				pMesh->update_parameters_mcoarse(idx, pMesh->Ms, Ms, pMesh->grel, grel);
 
 				DBL3 m = pMesh->M[idx] / Ms;
 				DBL3 H = pMesh->Heff[idx];
 
 				//obtained maximum normalized torque term
-				double _mxh = GetMagnitude(m ^ H) / pMesh->M[idx].norm();
-				mxh_reduction.reduce_max(_mxh);
+				if (IsNZ(grel)) {
+
+					double _mxh = GetMagnitude(m ^ H) / pMesh->M[idx].norm();
+					mxh_reduction.reduce_max(_mxh);
+				}
 
 				//The updating equation is (see https://doi.org/10.1063/1.4862839):
 
@@ -184,7 +189,7 @@ void DifferentialEquationFM::RunSD_Advance_withReductions(void)
 
 				//The above equation can be solved for m_next explicitly.
 
-				double s = dT * GAMMA / 4.0;
+				double s = dT * GAMMA * grel / 4.0;
 
 				DBL3 mxH = m ^ H;
 				m = ((1 - s*s*(mxH*mxH)) * m - 2*s*(m ^ mxH)) / (1 + s*s*(mxH*mxH));
@@ -196,11 +201,11 @@ void DifferentialEquationFM::RunSD_Advance_withReductions(void)
 				pMesh->M[idx].renormalize(Ms);
 
 				//use the flag check here to avoid doing dmdt reduction if not enabled (mxh and dmdt conditions are equivalent here, mxh is more likely to be used - at least by me!)
-				if (calculate_dmdt) {
+				if (calculate_dmdt && IsNZ(grel)) {
 
 					//obtained maximum dmdt term
 					double Mnorm = pMesh->M[idx].norm();
-					double _dmdt = GetMagnitude(pMesh->M[idx] - sM1[idx]) / (dT * GAMMA * Mnorm * Mnorm);
+					double _dmdt = GetMagnitude(pMesh->M[idx] - sM1[idx]) / (dT * GAMMA * grel * Mnorm * Mnorm);
 					dmdt_reduction.reduce_max(_dmdt);
 				}
 			}
@@ -213,17 +218,8 @@ void DifferentialEquationFM::RunSD_Advance_withReductions(void)
 		}
 	}
 
-	if (pMesh->grel.get0()) {
-
-		//only reduce for mxh if grel is not zero (if it's zero this means magnetization dynamics are disabled in this mesh)
-		mxh_reduction.maximum();
-		if (calculate_dmdt) dmdt_reduction.maximum();
-	}
-	else {
-
-		mxh_reduction.max = 0.0;
-		if (calculate_dmdt) dmdt_reduction.max = 0.0;
-	}
+	mxh_reduction.maximum();
+	if (calculate_dmdt) dmdt_reduction.maximum();
 }
 
 void DifferentialEquationFM::RunSD_Advance(void)
@@ -239,7 +235,8 @@ void DifferentialEquationFM::RunSD_Advance(void)
 				/////////////////////////
 
 				double Ms = pMesh->Ms;
-				pMesh->update_parameters_mcoarse(idx, pMesh->Ms, Ms);
+				double grel = pMesh->grel;
+				pMesh->update_parameters_mcoarse(idx, pMesh->Ms, Ms, pMesh->grel, grel);
 
 				DBL3 m = pMesh->M[idx] / Ms;
 				DBL3 H = pMesh->Heff[idx];
@@ -253,7 +250,7 @@ void DifferentialEquationFM::RunSD_Advance(void)
 
 				//The above equation can be solved for m_next explicitly.
 
-				double s = dT * GAMMA / 4.0;
+				double s = dT * GAMMA * grel / 4.0;
 
 				DBL3 mxH = m ^ H;
 				m = ((1 - s*s*(mxH*mxH)) * m - 2*s*(m ^ mxH)) / (1 + s*s*(mxH*mxH));

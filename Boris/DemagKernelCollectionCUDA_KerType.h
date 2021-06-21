@@ -73,18 +73,34 @@ public:
 
 	//Kernels
 	__host__ void Set_K2D_odiag(std::vector<double>& K2D_odiag_cpu);
+	//all-GPU version
+	void Set_K2D_odiag(size_t size, cu_arr<cufftDoubleComplex>& cuOut, int transpose_xy);
 
 	template <typename cpuVEC>
 	__host__ void Set_Kdiag_cmpl(cpuVEC& Kdiag_cmpl_cpu);
+	//all-GPU version (full size : (N.x/2 + 1) * N.y * N.z
+	void Set_Kdiag_cmpl(size_t size, cu_arr<cufftDoubleComplex>& cuOut, int component, int transpose_xy);
+	//all-GPU version (reduced size : (N.x/2 + 1) * (N.y/2 + 1) * (N.z/2 + 1)
+	void Set_Kdiag_cmpl_reduced(size_t size, cu_arr<cufftDoubleComplex>& cuOut, int component, int transpose_xy);
 
 	template <typename cpuVEC>
 	__host__ void Set_Kodiag_cmpl(cpuVEC& Kodiag_cmpl_cpu);
+	//all-GPU version (full size : (N.x/2 + 1) * N.y * N.z
+	void Set_Kodiag_cmpl(size_t size, cu_arr<cufftDoubleComplex>& cuOut, int component, int transpose_xy);
+	//all-GPU version (reduced size : (N.x/2 + 1) * (N.y/2 + 1) * (N.z/2 + 1)
+	void Set_Kodiag_cmpl_reduced(size_t size, cu_arr<cufftDoubleComplex>& cuOut, int component, int transpose_xy);
 
 	template <typename cpuVEC>
 	__host__ void Set_Kdiag_real(cpuVEC& Kdiag_real_cpu);
+	//all-GPU version
+	void Set_Kdiag_real(size_t size, cu_arr<cufftDoubleComplex>& cuOut, int component, int transpose_xy);
 
 	template <typename cpuVEC>
 	__host__ void Set_Kodiag_real(cpuVEC& Kodiag_real_cpu);
+	//all-GPU version  (2D : -Im, Re, Im parts)
+	void Set_Kodiag_real_2D(size_t size, cu_arr<cufftDoubleComplex>& cuOut, int component, int transpose_xy);
+	//all-GPU version  (3D : -Re, -Im, -Im parts)
+	void Set_Kodiag_real_3D(size_t size, cu_arr<cufftDoubleComplex>& cuOut, int component, int transpose_xy);
 
 	//------------------------------ GETTERS
 

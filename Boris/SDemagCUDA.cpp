@@ -64,7 +64,7 @@ BError SDemagCUDA::Initialize(void)
 
 		if (!pSDemag->use_multilayered_convolution) {
 
-			error = Calculate_Demag_Kernels();
+			error = Calculate_Demag_Kernels(true, pSMesh->Get_Kernel_Initialize_on_GPU());
 			if (error) return error;
 
 			//array of pointers to input meshes (M) and oputput meshes (Heff) to transfer from and to

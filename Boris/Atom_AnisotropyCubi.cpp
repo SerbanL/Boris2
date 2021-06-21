@@ -144,7 +144,7 @@ double Atom_Anisotropy_Cubic::UpdateField(void)
 //-------------------Energy methods
 
 //For simple cubic mesh spin_index coincides with index in M1
-double Atom_Anisotropy_Cubic::Get_Atomistic_EnergyChange(int spin_index, DBL3 Mnew)
+double Atom_Anisotropy_Cubic::Get_EnergyChange(int spin_index, DBL3 Mnew)
 {
 	//For CUDA there are separate device functions used by CUDA kernels.
 
@@ -176,6 +176,45 @@ double Atom_Anisotropy_Cubic::Get_Atomistic_EnergyChange(int spin_index, DBL3 Mn
 			+ K2 * (d1_new*d2_new*d3_new*d1_new*d2_new*d3_new - d1*d2*d3*d1*d2*d3);
 	}
 	else return 0.0;
+}
+
+double Atom_Anisotropy_Cubic::Get_Energy(int spin_index)
+{
+	//For CUDA there are separate device functions used by CUDA kernels.
+
+	if (paMesh->M1.is_not_empty(spin_index)) {
+
+		double K1 = paMesh->K1;
+		double K2 = paMesh->K2;
+		DBL3 mcanis_ea1 = paMesh->mcanis_ea1;
+		DBL3 mcanis_ea2 = paMesh->mcanis_ea2;
+		DBL3 mcanis_ea3 = paMesh->mcanis_ea3;
+		paMesh->update_parameters_mcoarse(spin_index, paMesh->K1, K1, paMesh->K2, K2, paMesh->mcanis_ea1, mcanis_ea1, paMesh->mcanis_ea2, mcanis_ea2, paMesh->mcanis_ea3, mcanis_ea3);
+
+		DBL3 S = paMesh->M1[spin_index].normalized();
+
+		//calculate m.ea1, m.ea2 and m.ea3 dot products
+		double d1 = S * mcanis_ea1;
+		double d2 = S * mcanis_ea2;
+		double d3 = S * mcanis_ea3;
+
+		//Hamiltonian contribution as K * (Sx^2*Sy^2 + Sx^2*Sz^2 + Sy^2*Sz^2), where S is the local spin direction (for easy axes coinciding with the xyz system)
+		//This is equivalent to the form -K/2 * (Sx^4 + Sy^4 + Sz^4) - energy zero point differs but that's immaterial.
+		//Also note the correct signs here for given easy axes (need to be careful, some publications have this wrong).
+		return K1 * (d1*d1*d2*d2 + d1*d1*d3*d3 + d2*d2*d3*d3) + K2 * (d1*d2*d3*d1*d2*d3);
+	}
+	else return 0.0;
+}
+
+//-------------------Torque methods
+
+DBL3 Atom_Anisotropy_Cubic::GetTorque(Rect& avRect)
+{
+#if COMPILECUDA == 1
+	if (pModuleCUDA) return reinterpret_cast<Atom_Anisotropy_CubiCUDA*>(pModuleCUDA)->GetTorque(avRect);
+#endif
+
+	return CalculateTorque(paMesh->M1, avRect);
 }
 
 #endif

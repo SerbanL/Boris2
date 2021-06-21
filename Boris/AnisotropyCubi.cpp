@@ -246,4 +246,79 @@ double Anisotropy_Cubic::UpdateField(void)
 	return this->energy;
 }
 
+//-------------------Energy methods
+
+double Anisotropy_Cubic::Get_EnergyChange(int spin_index, DBL3 Mnew)
+{
+	//For CUDA there are separate device functions used by CUDA kernels.
+
+	if (pMesh->M.is_not_empty(spin_index)) {
+
+		double Ms = pMesh->Ms;
+		double K1 = pMesh->K1;
+		double K2 = pMesh->K2;
+		DBL3 mcanis_ea1 = pMesh->mcanis_ea1;
+		DBL3 mcanis_ea2 = pMesh->mcanis_ea2;
+		DBL3 mcanis_ea3 = pMesh->mcanis_ea3;
+		pMesh->update_parameters_mcoarse(spin_index, pMesh->Ms, Ms, pMesh->K1, K1, pMesh->K2, K2, pMesh->mcanis_ea1, mcanis_ea1, pMesh->mcanis_ea2, mcanis_ea2, pMesh->mcanis_ea3, mcanis_ea3);
+
+		DBL3 S = pMesh->M[spin_index] / Ms;
+		DBL3 S_new = Mnew / Ms;
+
+		//calculate m.ea1, m.ea2 and m.ea3 dot products
+		double d1 = S * mcanis_ea1;
+		double d2 = S * mcanis_ea2;
+		double d3 = S * mcanis_ea3;
+		double d123 = d1 * d2 * d3;
+
+		double d1_new = S_new * mcanis_ea1;
+		double d2_new = S_new * mcanis_ea2;
+		double d3_new = S_new * mcanis_ea3;
+		double d123_new = d1_new * d2_new * d3_new;
+
+		return pMesh->h.dim() * (
+			(K1 * (d1_new*d1_new*d2_new*d2_new + d1_new*d1_new*d3_new*d3_new + d2_new*d2_new*d3_new*d3_new) + K2 * d123_new*d123_new) - 
+			(K1 * (d1*d1*d2*d2 + d1*d1*d3*d3 + d2*d2*d3*d3) + K2 * d123*d123));
+	}
+	else return 0.0;
+}
+
+double Anisotropy_Cubic::Get_Energy(int spin_index)
+{
+	//For CUDA there are separate device functions used by CUDA kernels.
+
+	if (pMesh->M.is_not_empty(spin_index)) {
+
+		double Ms = pMesh->Ms;
+		double K1 = pMesh->K1;
+		double K2 = pMesh->K2;
+		DBL3 mcanis_ea1 = pMesh->mcanis_ea1;
+		DBL3 mcanis_ea2 = pMesh->mcanis_ea2;
+		DBL3 mcanis_ea3 = pMesh->mcanis_ea3;
+		pMesh->update_parameters_mcoarse(spin_index, pMesh->Ms, Ms, pMesh->K1, K1, pMesh->K2, K2, pMesh->mcanis_ea1, mcanis_ea1, pMesh->mcanis_ea2, mcanis_ea2, pMesh->mcanis_ea3, mcanis_ea3);
+
+		DBL3 S = pMesh->M[spin_index] / Ms;
+
+		//calculate m.ea1, m.ea2 and m.ea3 dot products
+		double d1 = S * mcanis_ea1;
+		double d2 = S * mcanis_ea2;
+		double d3 = S * mcanis_ea3;
+		double d123 = d1 * d2 * d3;
+
+		return pMesh->h.dim() * ((K1 * (d1*d1*d2*d2 + d1*d1*d3*d3 + d2*d2*d3*d3) + K2 * d123*d123));
+	}
+	else return 0.0;
+}
+
+//-------------------Torque methods
+
+DBL3 Anisotropy_Cubic::GetTorque(Rect& avRect)
+{
+#if COMPILECUDA == 1
+	if (pModuleCUDA) return reinterpret_cast<Anisotropy_CubicCUDA*>(pModuleCUDA)->GetTorque(avRect);
+#endif
+
+	return CalculateTorque(pMesh->M, avRect);
+}
+
 #endif

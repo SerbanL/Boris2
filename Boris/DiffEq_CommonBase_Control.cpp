@@ -18,12 +18,14 @@ BError ODECommon_Base::SetEvaluationMethod(EVAL_ evalMethod_)
 	case EVAL_EULER:
 	{
 		dT = EULER_DEFAULT_DT;
+		eval_method_order = 1;
 	}
 	break;
 
 	case EVAL_TEULER:
 	{
 		dT = TEULER_DEFAULT_DT;
+		eval_method_order = 2;
 	}
 	break;
 
@@ -32,17 +34,17 @@ BError ODECommon_Base::SetEvaluationMethod(EVAL_ evalMethod_)
 		dT = AHEUN_DEFAULT_DT;
 
 		err_high_fail = AHEUN_RELERRFAIL;
-		err_high = AHEUN_RELERRMAX;
-		err_low = AHEUN_RELERRMIN;
 		dT_increase = AHEUN_DTINCREASE;
 		dT_max = AHEUN_MAXDT;
 		dT_min = AHEUN_MINDT;
+		eval_method_order = 2;
 	}
 	break;
 
 	case EVAL_RK4:
 	{
 		dT = RK4_DEFAULT_DT;
+		eval_method_order = 4;
 	}
 	break;
 
@@ -51,11 +53,10 @@ BError ODECommon_Base::SetEvaluationMethod(EVAL_ evalMethod_)
 		dT = ABM_DEFAULT_DT;
 
 		err_high_fail = ABM_RELERRFAIL;
-		err_high = ABM_RELERRMAX;
-		err_low = ABM_RELERRMIN;
 		dT_increase = ABM_DTINCREASE;
 		dT_max = ABM_MAXDT;
 		dT_min = ABM_MINDT;
+		eval_method_order = 2;
 	}
 	break;
 
@@ -64,11 +65,10 @@ BError ODECommon_Base::SetEvaluationMethod(EVAL_ evalMethod_)
 		dT = RK23_DEFAULT_DT;
 
 		err_high_fail = RK23_RELERRFAIL;
-		err_high = RK23_RELERRMAX;
-		err_low = RK23_RELERRMIN;
 		dT_increase = RK23_DTINCREASE;
 		dT_max = RK23_MAXDT;
 		dT_min = RK23_MINDT;
+		eval_method_order = 3;
 	}
 	break;
 
@@ -79,6 +79,7 @@ BError ODECommon_Base::SetEvaluationMethod(EVAL_ evalMethod_)
 		//reset to dT_min when needed
 		dT_min = SD_MINDT;
 		dT_max = SD_MAXDT;
+		eval_method_order = 1;
 	}
 	break;
 
@@ -88,11 +89,10 @@ BError ODECommon_Base::SetEvaluationMethod(EVAL_ evalMethod_)
 		dT = RKF_DEFAULT_DT;
 
 		err_high_fail = RKF_RELERRFAIL;
-		err_high = RKF_RELERRMAX;
-		err_low = RKF_RELERRMIN;
 		dT_increase = RKF_DTINCREASE;
 		dT_max = RKF_MAXDT;
 		dT_min = RKF_MINDT;
+		eval_method_order = 5;
 	}
 	break;
 
@@ -101,11 +101,10 @@ BError ODECommon_Base::SetEvaluationMethod(EVAL_ evalMethod_)
 		dT = RKCK_DEFAULT_DT;
 
 		err_high_fail = RKCK_RELERRFAIL;
-		err_high = RKCK_RELERRMAX;
-		err_low = RKCK_RELERRMIN;
 		dT_increase = RKCK_DTINCREASE;
 		dT_max = RKCK_MAXDT;
 		dT_min = RKCK_MINDT;
+		eval_method_order = 4;
 	}
 	break;
 
@@ -114,11 +113,10 @@ BError ODECommon_Base::SetEvaluationMethod(EVAL_ evalMethod_)
 		dT = RKDP_DEFAULT_DT;
 
 		err_high_fail = RKDP_RELERRFAIL;
-		err_high = RKDP_RELERRMAX;
-		err_low = RKDP_RELERRMIN;
 		dT_increase = RKDP_DTINCREASE;
 		dT_max = RKDP_MAXDT;
 		dT_min = RKDP_MINDT;
+		eval_method_order = 5;
 	}
 	break;
 	}
@@ -246,16 +244,10 @@ void ODECommon_Base::SetLink_dTspeedup(bool link_dTspeedup_)
 	else dTspeedup = dT;
 }
 
-void ODECommon_Base::SetAdaptiveTimeStepCtrl(double err_high_fail, double err_high, double err_low, double dT_increase, double dT_min, double dT_max)
+void ODECommon_Base::SetAdaptiveTimeStepCtrl(double err_high_fail, double dT_increase, double dT_min, double dT_max)
 {
 	this->err_high_fail = err_high_fail;
-	//decrease time step above this relative error - decrease factor depends on error ratio.
-	this->err_high = err_high;
-	//increase time step above this relative error
-	this->err_low = err_low;
-	//when increasing dT multiply by this (> 1.0)
 	this->dT_increase = dT_increase;
-	//maximum and minimum dT values allowed
 	this->dT_min = dT_min;
 	this->dT_max = dT_max;
 }

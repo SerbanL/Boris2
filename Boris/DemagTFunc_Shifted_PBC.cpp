@@ -79,17 +79,17 @@ bool DemagTFunc::CalcDiagTens3D_Shifted_PBC(VEC<DBL3> &Ddiag, INT3 N, DBL3 hRati
 
 					if (!x_images) {
 
-						Ddiag[INT3((N.x - i0) % N.x, j0, (k0 + N.z) % N.z)] = val;
+						if (i0) Ddiag[INT3((N.x - i0) % N.x, j0, (k0 + N.z) % N.z)] = val;
 
 						if (!y_images) {
 
-							Ddiag[INT3((N.x - i0) % N.x, (N.y - j0) % N.y, (k0 + N.z) % N.z)] = val;
+							if (i0 && j0) Ddiag[INT3((N.x - i0) % N.x, (N.y - j0) % N.y, (k0 + N.z) % N.z)] = val;
 						}
 					}
 
 					if (!y_images) {
 
-						Ddiag[INT3(i0, (N.y - j0) % N.y, (k0 + N.z) % N.z)] = val;
+						if (j0) Ddiag[INT3(i0, (N.y - j0) % N.y, (k0 + N.z) % N.z)] = val;
 					}
 				}
 			}
@@ -237,17 +237,17 @@ bool DemagTFunc::CalcOffDiagTens3D_Shifted_PBC(VEC<DBL3> &Dodiag, INT3 N, DBL3 h
 
 					if (!x_images) {
 
-						Dodiag[INT3((N.x - i0) % N.x, j0, (k0 + N.z) % N.z)] = val & DBL3(-1, -1, +1);
+						if (i0) Dodiag[INT3((N.x - i0) % N.x, j0, (k0 + N.z) % N.z)] = val & DBL3(-1, -1, +1);
 
 						if (!y_images) {
 
-							Dodiag[INT3((N.x - i0) % N.x, (N.y - j0) % N.y, (k0 + N.z) % N.z)] = val & DBL3(+1, -1, -1);
+							if (i0 && j0) Dodiag[INT3((N.x - i0) % N.x, (N.y - j0) % N.y, (k0 + N.z) % N.z)] = val & DBL3(+1, -1, -1);
 						}
 					}
 
 					if (!y_images) {
 
-						Dodiag[INT3(i0, (N.y - j0) % N.y, (k0 + N.z) % N.z)] = val & DBL3(-1, +1, -1);
+						if (j0) Dodiag[INT3(i0, (N.y - j0) % N.y, (k0 + N.z) % N.z)] = val & DBL3(-1, +1, -1);
 					}
 				}
 			}
@@ -387,17 +387,17 @@ bool DemagTFunc::CalcDiagTens2D_Shifted_PBC(VEC<DBL3> &Ddiag, INT3 N, DBL3 hRati
 
 				if (!x_images) {
 
-					Ddiag[INT3((N.x - i0) % N.x, j0, 0)] = val;
+					if (i0) Ddiag[INT3((N.x - i0) % N.x, j0, 0)] = val;
 
 					if (!y_images) {
 
-						Ddiag[INT3((N.x - i0) % N.x, (N.y - j0) % N.y, 0)] = val;
+						if (i0 && j0) Ddiag[INT3((N.x - i0) % N.x, (N.y - j0) % N.y, 0)] = val;
 					}
 				}
 
 				if (!y_images) {
 
-					Ddiag[INT3(i0, (N.y - j0) % N.y, 0)] = val;
+					if (j0) Ddiag[INT3(i0, (N.y - j0) % N.y, 0)] = val;
 				}
 			}
 		}
@@ -540,17 +540,17 @@ bool DemagTFunc::CalcOffDiagTens2D_Shifted_PBC(VEC<DBL3> &Dodiag, INT3 N, DBL3 h
 
 				if (!x_images) {
 
-					Dodiag[INT3((N.x - i0) % N.x, j0, 0)] = val & DBL3(-1, -1, +1);
+					if (i0) Dodiag[INT3((N.x - i0) % N.x, j0, 0)] = val & DBL3(-1, -1, +1);
 
 					if (!y_images) {
 
-						Dodiag[INT3((N.x - i0) % N.x, (N.y - j0) % N.y, 0)] = val & DBL3(+1, -1, -1);
+						if (i0 && j0) Dodiag[INT3((N.x - i0) % N.x, (N.y - j0) % N.y, 0)] = val & DBL3(+1, -1, -1);
 					}
 				}
 
 				if (!y_images) {
 
-					Dodiag[INT3(i0, (N.y - j0) % N.y, 0)] = val & DBL3(-1, +1, -1);
+					if (j0) Dodiag[INT3(i0, (N.y - j0) % N.y, 0)] = val & DBL3(-1, +1, -1);
 				}
 			}
 		}

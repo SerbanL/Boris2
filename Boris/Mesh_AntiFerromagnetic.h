@@ -51,6 +51,7 @@ class AFMesh :
 	bool,
 	//Members in this derived class
 	bool, SkyrmionTrack, bool,
+	double, double, bool, bool, bool, DBL3,
 	//Material Parameters
 	MatP<DBL2, double>, MatP<DBL2, double>, MatP<DBL2, double>, MatP<DBL2, double>, 
 	MatP<DBL2, double>, MatP<DBL2, double>, MatP<DBL2, double>, MatP<DBL2, double>, MatP<DBL2, double>, MatP<DBL2, double>,
@@ -241,6 +242,24 @@ public:
 	DBL2 FitDomainWall_Y(Rect rectangle);
 	//Fit domain wall along the z direction through centre of rectangle : fit the component which matches a tanh profile. Return centre position and width.
 	DBL2 FitDomainWall_Z(Rect rectangle);
+
+	//compute magnitude histogram data
+	//extract histogram between magnitudes min and max with given number of bins. if min max not given (set them to zero) then determine them first. 
+	//output probabilities in histogram_p, corresponding to values set in histogram_x min, min + bin, ..., max, where bin = (max - min) / (num_bins - 1)
+	//if macrocell_dims is not INT3(1) then first average in macrocells containing given number of individual mesh cells, then obtain histogram
+	bool Get_Histogram(std::vector<double>& histogram_x, std::vector<double>& histogram_p, int num_bins, double& min, double& max, INT3 macrocell_dims);
+
+	//As for Get_Histogram, but use thermal averaging in each macrocell
+	bool Get_ThAvHistogram(std::vector<double>& histogram_x, std::vector<double>& histogram_p, int num_bins, double& min, double& max, INT3 macrocell_dims) { return true; } //TO DO
+
+	//angular deviation histogram computed from ndir unit vector direction. If ndir not given (DBL3()), then angular deviation computed from average magnetization direction
+	bool Get_AngHistogram(std::vector<double>& histogram_x, std::vector<double>& histogram_p, int num_bins, double& min, double& max, INT3 macrocell_dims, DBL3 ndir);
+
+	//As for Get_AngHistogram, but use thermal averaging in each macrocell
+	bool Get_ThAvAngHistogram(std::vector<double>& histogram_x, std::vector<double>& histogram_p, int num_bins, double& min, double& max, INT3 macrocell_dims, DBL3 ndir) { return true; } //TO DO
+
+	//calculate thermodynamic average of magnetization
+	DBL3 GetThermodynamicAverageMagnetization(Rect rectangle) { return DBL3(); } //TO DO
 
 	//set/get exchange_couple_to_meshes status flag
 	void SetMeshExchangeCoupling(bool status) { exchange_couple_to_meshes = status; }

@@ -29,6 +29,9 @@ BError SuperMesh::SetBaseTemperature(std::string meshName, double Temperature)
 		pMesh[meshName]->CallModuleMethod(&HeatBase::SetAmbientTemperature, Temperature);
 	}
 
+	//when changing temperature it's possible the magnetization length needs to be changed.
+	error = UpdateConfiguration(UPDATECONFIG_PARAMVALUECHANGED_MLENGTH);
+
 	return error;
 }
 

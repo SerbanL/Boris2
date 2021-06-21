@@ -342,6 +342,9 @@
     <Filter Include="02. MESHES\COMMON">
       <UniqueIdentifier>{263f09c3-3afb-416c-a28c-064493d4b112}</UniqueIdentifier>
     </Filter>
+    <Filter Include="09. FUNCS\DEMAG FUNCS - CUDA">
+      <UniqueIdentifier>{f6dbec4a-0ac6-46ea-8ed6-a7796ef706e5}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <Text Include="ReadMe.txt" />
@@ -1033,6 +1036,24 @@
     </ClInclude>
     <ClInclude Include="Atom_AnisotropyTensorialCUDA.h">
       <Filter>03. MODULES\__ATOMISTIC\ATOM MODULES - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="Atom_SurfExchange.h">
+      <Filter>03. MODULES\__ATOMISTIC\ATOM MODULES - CPU</Filter>
+    </ClInclude>
+    <ClInclude Include="Atom_SurfExchangeCUDA.h">
+      <Filter>03. MODULES\__ATOMISTIC\ATOM MODULES - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="DemagTFuncCUDA.h">
+      <Filter>09. FUNCS\DEMAG FUNCS - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="DemagTFunc_AsymptCUDA.h">
+      <Filter>09. FUNCS\DEMAG FUNCS - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="DemagTFunc_fgCUDA.cuh">
+      <Filter>09. FUNCS\DEMAG FUNCS - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="SimScheduleDefs.h">
+      <Filter>00. SIMULATION</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -2008,6 +2029,51 @@
     <ClCompile Include="Atom_Mesh_Cubic_ODEControl.cpp">
       <Filter>02. MESHES\__ATOMISTIC\CPU\ATOM MESHES - CPU</Filter>
     </ClCompile>
+    <ClCompile Include="Atom_SurfExchange.cpp">
+      <Filter>03. MODULES\__ATOMISTIC\ATOM MODULES - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="Atom_SurfExchangeCUDA.cpp">
+      <Filter>03. MODULES\__ATOMISTIC\ATOM MODULES - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="MeshBaseDisplay.cpp">
+      <Filter>02. MESHES\MESHES BASE - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="DemagTFuncCUDA.cpp">
+      <Filter>09. FUNCS\DEMAG FUNCS - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="DemagTFunc_PBCCUDA.cpp">
+      <Filter>09. FUNCS\DEMAG FUNCS - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="DemagKernelCollectionCUDA_Calc_GPU.cpp">
+      <Filter>08. CONVOLUTION\DEMAG KERNEL - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="DemagTFunc_IrregularCUDA.cpp">
+      <Filter>09. FUNCS\DEMAG FUNCS - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="DemagTFunc_ShiftedCUDA.cpp">
+      <Filter>09. FUNCS\DEMAG FUNCS - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="DemagTFunc_Irregular_PBCCUDA.cpp">
+      <Filter>09. FUNCS\DEMAG FUNCS - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="DemagTFunc_Shifted_PBCCUDA.cpp">
+      <Filter>09. FUNCS\DEMAG FUNCS - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="MeshBaseMonteCarlo.cpp">
+      <Filter>02. MESHES\MESHES BASE - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="Mesh_Ferromagnetic_MonteCarlo.cpp">
+      <Filter>02. MESHES\__MICROMAGNETIC\CPU\MM MESHES - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="Atom_Mesh_Cubic_Histo.cpp">
+      <Filter>02. MESHES\__ATOMISTIC\CPU\ATOM MESHES - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="Mesh_Ferromagnetic_Histo.cpp">
+      <Filter>02. MESHES\__MICROMAGNETIC\CPU\MM MESHES - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="Mesh_AntiFerromagnetic_Histo.cpp">
+      <Filter>02. MESHES\__MICROMAGNETIC\CPU\MM MESHES - CPU</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="BorisWinapi.rc">
@@ -2399,6 +2465,57 @@
     </CudaCompile>
     <CudaCompile Include="Atom_Mesh_CubicCUDA.cu">
       <Filter>02. MESHES\__ATOMISTIC\CUDA\ATOM MESHES - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="Atom_SurfExchangeCUDA.cu">
+      <Filter>03. MODULES\__ATOMISTIC\ATOM MODULES - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="DemagKernelCalcAuxCUDA.cu">
+      <Filter>08. CONVOLUTION\DEMAG KERNEL - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="DemagTFunc_fgCUDA.cu">
+      <Filter>09. FUNCS\DEMAG FUNCS - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="DemagTFunc_AsymptCUDA.cu">
+      <Filter>09. FUNCS\DEMAG FUNCS - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="DemagTFuncCUDA.cu">
+      <Filter>09. FUNCS\DEMAG FUNCS - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="DemagTFunc_LCUDA.cuh">
+      <Filter>09. FUNCS\DEMAG FUNCS - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="DemagTFunc_PBCCUDA.cu">
+      <Filter>09. FUNCS\DEMAG FUNCS - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="DemagKernelCollectionCUDA_CalcAux.cu">
+      <Filter>08. CONVOLUTION\DEMAG KERNEL - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="DemagKernelCollectionCUDA_KerType.cu">
+      <Filter>08. CONVOLUTION\DEMAG KERNEL - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="DemagTFunc_ShiftedCUDA.cu">
+      <Filter>09. FUNCS\DEMAG FUNCS - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="DemagTFunc_IrregularCUDA.cu">
+      <Filter>09. FUNCS\DEMAG FUNCS - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="DemagTFunc_Irregular_PBCCUDA.cu">
+      <Filter>09. FUNCS\DEMAG FUNCS - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="DemagTFunc_Shifted_PBCCUDA.cu">
+      <Filter>09. FUNCS\DEMAG FUNCS - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="Atom_Mesh_CubicCUDA_Histo.cu">
+      <Filter>02. MESHES\__ATOMISTIC\CUDA\ATOM MESHES - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="Mesh_FerromagneticCUDA_Histo.cu">
+      <Filter>02. MESHES\__MICROMAGNETIC\CUDA\MM MESHES - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="ManagedMeshCUDA_MonteCarlo_FM.cu">
+      <Filter>02. MESHES\__MICROMAGNETIC\CUDA\MM MESHES INTERFACE - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="Mesh_FerromagneticCUDA_MonteCarlo.cu">
+      <Filter>02. MESHES\__MICROMAGNETIC\CUDA\MM MESHES - CUDA</Filter>
     </CudaCompile>
   </ItemGroup>
 </Project>

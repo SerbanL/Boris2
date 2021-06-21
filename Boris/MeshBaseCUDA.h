@@ -32,6 +32,8 @@ protected:
 	//if the object couldn't be created properly in the constructor an error is set here
 	BError error_on_create;
 
+	//--------Auxiliary
+
 	//auxiliary for computations
 	cu_obj<cuBReal> aux_real;
 	cu_obj<cuReal3> aux_real3;
@@ -39,6 +41,36 @@ protected:
 
 	//auxiliary cuVEC for computations
 	cu_obj<cuVEC<cuBReal>> aux_vec_sca;
+
+	//storage for extracted mesh profiles
+	cu_arr<cuBReal> profile_storage_sca;
+	cu_arr<cuReal3> profile_storage_vec;
+
+	//auxiliary VECs for computations
+	cu_obj<cuVEC<cuReal3>> auxVEC_cuReal3;
+	cu_obj<cuVEC<cuBReal>> auxVEC_cuBReal;
+
+	// MONTE-CARLO DATA
+
+	//random number generator - used by Monte Carlo methods
+	cu_obj<cuBorisRand> prng;
+
+	//last Monte-Carlo step acceptance probability
+	cu_obj<cuBReal> mc_acceptance_rate;
+
+	//save last acceptance rate
+	double mc_acceptance_rate_last = 0.0;
+
+	//don't need to compute the acceptance rate every single iteration, unless the acceptance rate is not within bounds : when this counter is zero perform reduction.
+	int mc_acceptance_reduction_counter = 0;
+
+	// Constrained MONTE-CARLO DATA
+
+	//constraining direction
+	cu_obj<cuReal3> cmc_n;
+
+	//total moment along constrained direction
+	cu_obj<cuBReal> cmc_M;
 
 public:
 
@@ -112,6 +144,14 @@ protected:
 	//zero all single aux avalues
 	void Zero_aux_values(void);
 
+	//----------------------------------- DISPLAY-ASSOCIATED GET/SET METHODS AUXILIARY
+
+	//average into profile_storage_sca / profile_storage_vec
+	void average_mesh_profile(cu_obj<cuVEC<cuBReal>>& cuvec_sca, int& num_profile_averages);
+	void average_mesh_profile(cu_obj<cuVEC_VC<cuBReal>>& cuvecvc_sca, int& num_profile_averages);
+	void average_mesh_profile(cu_obj<cuVEC<cuReal3>>& cuvec_vec, int& num_profile_averages);
+	void average_mesh_profile(cu_obj<cuVEC_VC<cuReal3>>& cuvecvc_vec, int& num_profile_averages);
+
 public:
 
 	//------------------------CTOR/DTOR
@@ -119,7 +159,7 @@ public:
 	//make this object by copying data from the Mesh holding this object
 	MeshBaseCUDA(MeshBase* pMeshBase_);
 
-	virtual ~MeshBaseCUDA() {}
+	virtual ~MeshBaseCUDA();
 
 	//-------------------------- Error report / Management
 
@@ -143,6 +183,8 @@ public:
 	//Check if mesh needs to be moved (using the MoveMesh method) - return amount of movement required (i.e. parameter to use when calling MoveMesh).
 	virtual cuBReal CheckMoveMesh(bool antisymmetric, double threshold) = 0;
 
+	void Set_MonteCarlo_Constrained(DBL3 cmc_n_) { cmc_n.from_cpu(cmc_n_); }
+
 	//----------------------------------- DISPLAY-ASSOCIATED GET/SET METHODS
 
 	virtual PhysQ FetchOnScreenPhysicalQuantity(double detail_level, bool getBackground) = 0;
@@ -150,12 +192,10 @@ public:
 	//save the quantity currently displayed on screen in an ovf2 file using the specified format
 	virtual BError SaveOnScreenPhysicalQuantity(std::string fileName, std::string ovf2_dataType) = 0;
 
-	//Before calling a run of GetDisplayedMeshValue, make sure to call PrepareDisplayedMeshValue : this calculates and stores in displayVEC storage and quantities which don't have memory allocated directly, but require computation and temporary storage.
-	virtual void PrepareDisplayedMeshValue(void) = 0;
-
-	//return value of currently displayed mesh quantity at the given absolute position; the value is read directly from the storage VEC, not from the displayed PhysQ.
-	//Return an Any as the displayed quantity could be either a scalar or a vector.
-	virtual Any GetDisplayedMeshValue(DBL3 abs_pos) = 0;
+	//extract profile from focused mesh, from currently display mesh quantity, but reading directly from the quantity
+	//Displayed	mesh quantity can be scalar or a vector; pass in std::vector pointers, then check for nullptr to determine what type is displayed
+	//if do_average = true then build average and don't return anything, else return just a single-shot profile. If read_average = true then simply read out the internally stored averaged profile by assigning to pointer.
+	virtual void GetPhysicalQuantityProfile(DBL3 start, DBL3 end, double step, DBL3 stencil, std::vector<DBL3>*& pprofile_dbl3, std::vector<double>*& pprofile_dbl, bool do_average, bool read_average) = 0;
 
 	//return average value for currently displayed mesh quantity in the given relative rectangle
 	virtual Any GetAverageDisplayedMeshValue(Rect rel_rect) = 0;
@@ -181,6 +221,14 @@ public:
 
 	//search save data list (saveDataList) for given dataID set for this mesh. Return true if found and its rectangle is not Null; else return false.
 	bool IsOutputDataSet_withRect(int datumId);
+	//return true if data is set (with any rectangle)
+	bool IsOutputDataSet(int datumId);
+
+	//check if given stage is set
+	bool IsStageSet(int stageType);
+
+	//set computefields_if_MC flag on SuperMesh
+	void Set_Force_MonteCarlo_ComputeFields(bool status);
 
 	//----------------------------------- ENABLED MESH PROPERTIES CHECKERS
 

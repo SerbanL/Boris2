@@ -82,7 +82,8 @@ class Simulation :
 	bool, bool,
 	DBL4, DBL2, DBL2, int,
 	DBL3, INT3, DBL3, std::string,
-	vector_key<double>>,
+	vector_key<double>,
+	std::vector<std::string>>,
 	std::tuple<> >
 {
 private:
@@ -207,9 +208,6 @@ private:
 	//interactive console object info : index with majorId (IOI_ entry) and minorId (subtype). If only one entry for majorId then it applies irrespective of minorId.
 	vector_lut<std::string> ioInfo;
 
-	//simulation stages describing the simulation schedule
-	vector_lut<StageConfig> simStages;
-
 	//display updating on number of iterations during simulation
 	int iterUpdate = 100;
 
@@ -227,6 +225,10 @@ private:
 	//mesh shape generation method
 	std::string shape_method = MeshShape(MSHAPEMETHOD_ADD).method_name();
 	
+	//vector of command strings (commands with parameters, as would be typed into the console or received by command server)
+	//this is used to execute a sequennce of commands, e.g. for more advanced data extraction during a data saving schedule
+	std::vector<std::string> command_buffer;
+
 	//Simulation super-mesh
 	SuperMesh SMesh;
 
@@ -311,6 +313,9 @@ private:
 
 	//Command handler
 	void HandleCommand(std::string command);
+	
+	//Execute the commands stored in the command buffer : when you call this must ensure simulationMutex is unlocked, and THREAD_HANDLEMESSAGE is free (or else launch it asynchonously)
+	void RunCommandBuffer(void);
 
 	//-------------------------------------Simulation schedule
 
@@ -528,6 +533,10 @@ private:
 	//---------------------------------------------------- MULTILAYERED CONVOLUTION CONFIGURATION
 
 	void Print_MultiConvolution_Config(void);
+
+	//---------------------------------------------------- GPU KERNELS DEMAG INITIALIZATION CONFIGURATION
+
+	void Print_GPUKernels_Config(void);
 
 	//---------------------------------------------------- MATERIALS DATABASE
 

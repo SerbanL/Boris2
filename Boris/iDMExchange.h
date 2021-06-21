@@ -43,6 +43,16 @@ public:
 	BError MakeCUDAModule(void);
 
 	double UpdateField(void);
+
+	//-------------------Energy methods
+
+	double Get_EnergyChange(int spin_index, DBL3 Mnew);
+
+	double Get_Energy(int spin_index);
+
+	//-------------------Torque methods
+
+	DBL3 GetTorque(Rect& avRect);
 };
 
 #else

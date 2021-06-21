@@ -5,7 +5,10 @@
 #include "ModulesDefs.h"
 #include "ParametersDefs.h"
 #include "MeshDefs.h"
+
 #include "SimulationData.h"
+
+class StageConfig;
 
 //Container for Simulation class data (Simulation inherits from this) to which other lower ranked objects need access - inherit from this (lower ranked means an object which is a member of Simulation, or a member of a member of Simulation, etc.)
 //All members are static, built in the SimulationSharedData constructor
@@ -54,6 +57,9 @@ protected:
 
 	//list of data to output during a simulation (e.g. to output file and/or to processing arrays)
 	static vector_lut<DatumConfig> saveDataList;
+
+	//simulation stages describing the simulation schedule
+	static vector_lut<StageConfig> simStages;
 
 	//modifier for mesh shaping functions
 	//all general shaping functions go through Mesh::change_mesh_shape to apply the shape

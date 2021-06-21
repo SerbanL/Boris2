@@ -72,9 +72,9 @@ void SuperMesh::SetTimeStep(double dT)
 }
 
 //set parameters for adaptive time step control
-void SuperMesh::SetAdaptiveTimeStepCtrl(double err_fail, double err_high, double err_low, double dT_incr, double dT_min, double dT_max) 
+void SuperMesh::SetAdaptiveTimeStepCtrl(double err_fail, double dT_incr, double dT_min, double dT_max) 
 { 
-	odeSolver.SetAdaptiveTimeStepCtrl(err_fail, err_high, err_low, dT_incr, dT_min, dT_max); 
+	odeSolver.SetAdaptiveTimeStepCtrl(err_fail, dT_incr, dT_min, dT_max); 
 }
 
 void SuperMesh::SetStochTimeStep(double dTstoch) 
@@ -122,7 +122,7 @@ void SuperMesh::SetEvaluationSpeedup(int status)
 {
 	odeSolver.SetEvaluationSpeedup(status);
 
-	UpdateConfiguration(UPDATECONFIG_ODE_SOLVER);
+	UpdateConfiguration(UPDATECONFIG_DEMAG_CONVCHANGE);
 }
 
 //check evaluation speedup settings in ode solver
@@ -242,7 +242,7 @@ double SuperMesh::Get_dmdt(void)
 	return odeSolver.Get_dmdt(); 
 }
 
-DBL3 SuperMesh::Get_AStepRelErrCtrl(void) 
+double SuperMesh::Get_AStepRelErrCtrl(void) 
 { 
 	return odeSolver.Get_AStepRelErrCtrl();
 }

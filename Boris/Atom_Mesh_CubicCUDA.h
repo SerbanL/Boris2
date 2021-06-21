@@ -27,12 +27,6 @@ private:
 
 	// Constrained MONTE-CARLO DATA
 
-	//total moment along constrained direction
-	cu_obj<cuBReal> cmc_M;
-
-	//constraining direction
-	cu_obj<cuReal3> cmc_n;
-
 	//mc indices and shuffling auxiliary array : same as for the cpu version, but generate unsigned random numbers, not doubles, for most efficient sort-based shuffle
 	cu_arr<unsigned> mc_indices_red, mc_indices_black;
 	cu_arr<unsigned> mc_shuf_red, mc_shuf_black;
@@ -65,8 +59,6 @@ public:
 
 	//----------------------------------- OTHER CONTROL METHODS : implement pure virtual Atom_Mesh methods
 
-	void Set_MonteCarlo_Constrained(DBL3 cmc_n_);
-
 	//----------------------------------- ENABLED MESH PROPERTIES CHECKERS
 
 	//get exchange_couple_to_meshes status flag from the cpu version
@@ -80,6 +72,17 @@ public:
 	//compute topological charge density spatial dependence and have it available in aux_vec_sca
 	//Use formula Qdensity = m.(dm/dx x dm/dy) / 4PI
 	void Compute_TopoChargeDensity(void);
+
+	//----------------------------------- CALCULATION METHODS
+
+	//calculate thermodynamic average of magnetization
+	cuReal3 GetThermodynamicAverageMagnetization(cuRect rectangle);
+
+	//As for Get_Histogram, but use thermal averaging in each macrocell
+	bool Get_ThAvHistogram(std::vector<double>& histogram_x, std::vector<double>& histogram_p, int num_bins, double& min, double& max, cuINT3 macrocell_dims);
+
+	//As for Get_AngHistogram, but use thermal averaging in each macrocell
+	bool Get_ThAvAngHistogram(std::vector<double>& histogram_x, std::vector<double>& histogram_p, int num_bins, double& min, double& max, cuINT3 macrocell_dims, cuReal3 ndir);
 
 	//----------------------------------- ODE METHODS IN MAGNETIC MESH : Atom_Mesh_CubicCUDA.cu
 

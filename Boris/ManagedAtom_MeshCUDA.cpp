@@ -14,12 +14,15 @@ BError ManagedAtom_MeshCUDA::set_pointers(Atom_MeshCUDA* paMeshCUDA)
 
 	//-----------SIMPLE CUBIC
 
+	if (set_gpu_value(pgrel, paMeshCUDA->grel.get_managed_object()) != cudaSuccess) error(BERROR_GPUERROR_CRIT);
+
 	if (set_gpu_value(palpha, paMeshCUDA->alpha.get_managed_object()) != cudaSuccess) error(BERROR_GPUERROR_CRIT);
 
 	if (set_gpu_value(pmu_s, paMeshCUDA->mu_s.get_managed_object()) != cudaSuccess) error(BERROR_GPUERROR_CRIT);
 
 	if (set_gpu_value(pJ, paMeshCUDA->J.get_managed_object()) != cudaSuccess) error(BERROR_GPUERROR_CRIT);
 	if (set_gpu_value(pD, paMeshCUDA->D.get_managed_object()) != cudaSuccess) error(BERROR_GPUERROR_CRIT);
+	if (set_gpu_value(pJs, paMeshCUDA->Js.get_managed_object()) != cudaSuccess) error(BERROR_GPUERROR_CRIT);
 
 	if (set_gpu_value(pK1, paMeshCUDA->K1.get_managed_object()) != cudaSuccess) error(BERROR_GPUERROR_CRIT);
 	if (set_gpu_value(pK2, paMeshCUDA->K2.get_managed_object()) != cudaSuccess) error(BERROR_GPUERROR_CRIT);

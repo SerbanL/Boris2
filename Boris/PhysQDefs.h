@@ -42,6 +42,7 @@ enum VEC3REP_ { VEC3REP_FULL = 0, VEC3REP_X, VEC3REP_Y, VEC3REP_Z, VEC3REP_DIREC
 
 //reduce the fit by scaling the meter to logical units conversion constant - makes the mesh to view window fit looser (UNITSSCALEBACK = 1 for exact fit)
 #define UNITSSCALEBACK	0.75f
+#define UNITSSCALEBACK_ZOOMED 0.9f
 
 //Refresh time for animations (in ms)
 #define ANIMATIONREFRESH_MS	10.0f

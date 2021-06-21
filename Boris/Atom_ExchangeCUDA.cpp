@@ -42,6 +42,13 @@ BError Atom_ExchangeCUDA::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 	return error;
 }
 
+//-------------------Torque methods
+
+cuReal3 Atom_ExchangeCUDA::GetTorque(cuRect avRect)
+{
+	return CalculateTorque(paMeshCUDA->M1, avRect);
+}
+
 #endif
 
 #endif

@@ -41,6 +41,10 @@ public:
 	//calculate exchange field at coupled cells in this mesh; accumulate energy density contribution in energy
 	void CalculateExchangeCoupling(cu_obj<cuBReal>& energy);
 
+	//-------------------Torque methods
+
+	cuReal3 GetTorque(cuRect avRect);
+
 };
 
 #else

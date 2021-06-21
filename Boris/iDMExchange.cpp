@@ -98,7 +98,7 @@ double iDMExchange::UpdateField(void)
 {
 	double energy = 0;
 
-	INT3 n = pMesh->n;
+	SZ3 n = pMesh->n;
 
 	///////////////////////////////////////////////////////////////////////////////////////////////
 	////////////////////////////////////// FERROMAGNETIC MESH /////////////////////////////////////
@@ -126,7 +126,23 @@ double iDMExchange::UpdateField(void)
 					//interior point : can use cheaper neu versions
 
 					//direct exchange contribution
-					Hexch_A = Aconst * pMesh->M.delsq_neu(idx);
+					if (pMesh->base_temperature > 0.0 && pMesh->T_Curie > 0.0) {
+
+						//for finite temperature simulations the magnetization length may have a spatial variation
+						//this will not affect the transverse torque (mxH), but will affect the longitudinal term in the sLLB equation (m.H) and cannot be neglected when close to Tc.
+
+						DBL33 Mg = pMesh->M.grad_neu(idx);
+						DBL3 dMdx = Mg.x, dMdy = Mg.y, dMdz = Mg.z;
+
+						double delsq_Msq = 2 * pMesh->M[idx] * (pMesh->M.dxx_neu(idx) + pMesh->M.dyy_neu(idx) + pMesh->M.dzz_neu(idx)) + 2 * (dMdx * dMdx + dMdy * dMdy + dMdz * dMdz);
+						double Mnorm = pMesh->M[idx].norm();
+						Hexch_A = Aconst * (pMesh->M.delsq_neu(idx) - pMesh->M[idx] * delsq_Msq / (2 * Mnorm*Mnorm));
+					}
+					else {
+
+						//zero temperature simulations : magnetization length could still vary but will only affect mxH term, so not needed for 0K simulations.
+						Hexch_A = Aconst * pMesh->M.delsq_neu(idx);
+					}
 
 					//Dzyaloshinskii-Moriya interfacial exchange contribution
 
@@ -145,7 +161,23 @@ double iDMExchange::UpdateField(void)
 
 					//direct exchange contribution
 					//cells marked with cmbnd are calculated using exchange coupling to other ferromagnetic meshes - see below; the delsq_nneu evaluates to zero in the CMBND coupling direction.
-					Hexch_A = Aconst * pMesh->M.delsq_nneu(idx, bnd_nneu);
+					if (pMesh->base_temperature > 0.0 && pMesh->T_Curie > 0.0) {
+
+						//for finite temperature simulations the magnetization length may have a spatial variation
+						//this will not affect the transverse torque (mxH), but will affect the longitudinal term in the sLLB equation (m.H) and cannot be neglected when close to Tc.
+
+						DBL33 Mg = pMesh->M.grad_nneu(idx, bnd_nneu);
+						DBL3 dMdx = Mg.x, dMdy = Mg.y, dMdz = Mg.z;
+
+						double delsq_Msq = 2 * pMesh->M[idx] * (pMesh->M.dxx_nneu(idx, bnd_nneu) + pMesh->M.dyy_nneu(idx, bnd_nneu) + pMesh->M.dzz_nneu(idx, bnd_nneu)) + 2 * (dMdx * dMdx + dMdy * dMdy + dMdz * dMdz);
+						double Mnorm = pMesh->M[idx].norm();
+						Hexch_A = Aconst * (pMesh->M.delsq_nneu(idx, bnd_nneu) - pMesh->M[idx] * delsq_Msq / (2 * Mnorm*Mnorm));
+					}
+					else {
+
+						//zero temperature simulations : magnetization length could still vary but will only affect mxH term, so not needed for 0K simulations.
+						Hexch_A = Aconst * pMesh->M.delsq_nneu(idx, bnd_nneu);
+					}
 
 					//Dzyaloshinskii-Moriya interfacial exchange contribution
 
@@ -473,6 +505,155 @@ double iDMExchange::UpdateField(void)
 	this->energy = energy;
 
 	return this->energy;
+}
+
+//-------------------Energy methods
+
+double iDMExchange::Get_EnergyChange(int spin_index, DBL3 Mnew)
+{
+	//For CUDA there are separate device functions used by CUDA kernels.
+
+	//NOTE : here we only need the change in energy due to spin rotation only. Thus the longitudinal part, which is dependent on spin length only, cancels out. Enforce this by making Mnew length same as old one.
+	Mnew.renormalize(pMesh->M[spin_index].norm());
+
+	if (pMesh->M.is_not_empty(spin_index)) {
+
+		double Ms = pMesh->Ms;
+		double A = pMesh->A;
+		double D = pMesh->D;
+		pMesh->update_parameters_mcoarse(spin_index, pMesh->A, A, pMesh->D, D, pMesh->Ms, Ms);
+
+		double Aconst = 2 * A / (MU0 * Ms * Ms);
+		double Dconst = -2 * D / (MU0 * Ms * Ms);
+
+		auto Get_Energy = [&](void) -> double
+		{
+			DBL3 Hexch_A, Hexch_D;
+
+			if (pMesh->M.is_plane_interior(spin_index)) {
+
+				//interior point : can use cheaper neu versions
+
+				//direct exchange contribution
+				Hexch_A = Aconst * pMesh->M.delsq_neu(spin_index);
+
+				//Dzyaloshinskii-Moriya interfacial exchange contribution
+
+				//Differentials of M components (we only need 4, not all 9 so this could be optimised). First index is the differential direction, second index is the M component
+				DBL33 Mdiff = pMesh->M.grad_neu(spin_index);
+
+				//Hdm, ex = -2D / (mu0*Ms) * (dmz / dx, dmz / dy, -dmx / dx - dmy / dy)
+				Hexch_D = Dconst * DBL3(Mdiff.x.z, Mdiff.y.z, -Mdiff.x.x - Mdiff.y.y);
+			}
+			else {
+
+				//Non-homogeneous Neumann boundary conditions apply when using DMI. Required to ensure Brown's condition is fulfilled, i.e. m x h -> 0 when relaxing.
+				DBL3 bnd_dm_dx = (D / (2 * A)) * DBL3(pMesh->M[spin_index].z, 0, -pMesh->M[spin_index].x);
+				DBL3 bnd_dm_dy = (D / (2 * A)) * DBL3(0, pMesh->M[spin_index].z, -pMesh->M[spin_index].y);
+				DBL33 bnd_nneu = DBL33(bnd_dm_dx, bnd_dm_dy, DBL3());
+
+				//direct exchange contribution
+				//cells marked with cmbnd are calculated using exchange coupling to other ferromagnetic meshes - see below; the delsq_nneu evaluates to zero in the CMBND coupling direction.
+				Hexch_A = Aconst * pMesh->M.delsq_nneu(spin_index, bnd_nneu);
+
+				//Dzyaloshinskii-Moriya interfacial exchange contribution
+
+				//Differentials of M components (we only need 4, not all 9 so this could be optimised). First index is the differential direction, second index is the M component
+				//For cmbnd cells grad_nneu does not evaluate to zero in the CMBND coupling direction, but sided differentials are used - when setting values at CMBND cells for exchange coupled meshes must correct for this.
+				DBL33 Mdiff = pMesh->M.grad_nneu(spin_index, bnd_nneu);
+
+				//Hdm, ex = -2D / (mu0*Ms) * (dmz / dx, dmz / dy, -dmx / dx - dmy / dy)
+				Hexch_D = Dconst * DBL3(Mdiff.x.z, Mdiff.y.z, -Mdiff.x.x - Mdiff.y.y);
+			}
+
+			return pMesh->M[spin_index] * (Hexch_A + Hexch_D);
+		};
+
+		//new spin energy
+		DBL3 Mold = pMesh->M[spin_index];
+		pMesh->M[spin_index] = Mnew;
+		double energy_delta = Get_Energy();
+
+		//minus old spin energy
+		pMesh->M[spin_index] = Mold;
+		energy_delta -= Get_Energy();
+
+		//do not divide by 2 as we are not double-counting here
+		return -MU0 * pMesh->h.dim() * energy_delta;
+	}
+	else return 0.0;
+}
+
+double iDMExchange::Get_Energy(int spin_index)
+{
+	if (pMesh->M.is_not_empty(spin_index)) {
+
+		double Ms = pMesh->Ms;
+		double A = pMesh->A;
+		double D = pMesh->D;
+		pMesh->update_parameters_mcoarse(spin_index, pMesh->A, A, pMesh->D, D, pMesh->Ms, Ms);
+
+		double Aconst = 2 * A / (MU0 * Ms * Ms);
+		double Dconst = -2 * D / (MU0 * Ms * Ms);
+
+		auto Get_Energy = [&](void) -> double
+		{
+			DBL3 Hexch_A, Hexch_D;
+
+			if (pMesh->M.is_plane_interior(spin_index)) {
+
+				//interior point : can use cheaper neu versions
+
+				//direct exchange contribution
+				Hexch_A = Aconst * pMesh->M.delsq_neu(spin_index);
+
+				//Dzyaloshinskii-Moriya interfacial exchange contribution
+
+				//Differentials of M components (we only need 4, not all 9 so this could be optimised). First index is the differential direction, second index is the M component
+				DBL33 Mdiff = pMesh->M.grad_neu(spin_index);
+
+				//Hdm, ex = -2D / (mu0*Ms) * (dmz / dx, dmz / dy, -dmx / dx - dmy / dy)
+				Hexch_D = Dconst * DBL3(Mdiff.x.z, Mdiff.y.z, -Mdiff.x.x - Mdiff.y.y);
+			}
+			else {
+
+				//Non-homogeneous Neumann boundary conditions apply when using DMI. Required to ensure Brown's condition is fulfilled, i.e. m x h -> 0 when relaxing.
+				DBL3 bnd_dm_dx = (D / (2 * A)) * DBL3(pMesh->M[spin_index].z, 0, -pMesh->M[spin_index].x);
+				DBL3 bnd_dm_dy = (D / (2 * A)) * DBL3(0, pMesh->M[spin_index].z, -pMesh->M[spin_index].y);
+				DBL33 bnd_nneu = DBL33(bnd_dm_dx, bnd_dm_dy, DBL3());
+
+				//direct exchange contribution
+				//cells marked with cmbnd are calculated using exchange coupling to other ferromagnetic meshes - see below; the delsq_nneu evaluates to zero in the CMBND coupling direction.
+				Hexch_A = Aconst * pMesh->M.delsq_nneu(spin_index, bnd_nneu);
+
+				//Dzyaloshinskii-Moriya interfacial exchange contribution
+
+				//Differentials of M components (we only need 4, not all 9 so this could be optimised). First index is the differential direction, second index is the M component
+				//For cmbnd cells grad_nneu does not evaluate to zero in the CMBND coupling direction, but sided differentials are used - when setting values at CMBND cells for exchange coupled meshes must correct for this.
+				DBL33 Mdiff = pMesh->M.grad_nneu(spin_index, bnd_nneu);
+
+				//Hdm, ex = -2D / (mu0*Ms) * (dmz / dx, dmz / dy, -dmx / dx - dmy / dy)
+				Hexch_D = Dconst * DBL3(Mdiff.x.z, Mdiff.y.z, -Mdiff.x.x - Mdiff.y.y);
+			}
+
+			return pMesh->M[spin_index] * (Hexch_A + Hexch_D);
+		};
+
+		//do not divide by 2 as we are not double-counting here
+		return -MU0 * pMesh->h.dim() * Get_Energy();
+	}
+	else return 0.0;
+}
+
+//-------------------Torque methods
+
+DBL3 iDMExchange::GetTorque(Rect& avRect)
+{
+#if COMPILECUDA == 1
+	if (pModuleCUDA) return reinterpret_cast<iDMExchangeCUDA*>(pModuleCUDA)->GetTorque(avRect);
+#endif
+
+	return CalculateTorque(pMesh->M, avRect);
 }
 
 #endif

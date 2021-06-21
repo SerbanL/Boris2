@@ -60,13 +60,7 @@ inline std::vector<std::string> GetFilesInDirectory(std::string directory, std::
 	// Find the first file in the directory.
 	hFind = FindFirstFile(szDir, &ffd);
 
-	if (INVALID_HANDLE_VALUE == hFind) {
-
-		//extract and return fileNames only
-		std::vector<std::string> fileNames(fileNames_creationTimes.size());
-		std::transform(fileNames_creationTimes.begin(), fileNames_creationTimes.end(), fileNames.begin(), [](auto const& pair) { return pair.first; });
-		return fileNames;
-	}
+	if (INVALID_HANDLE_VALUE == hFind) return {};
 
 	// Get all the files in the directory.
 	do {
@@ -113,11 +107,13 @@ inline std::vector<std::string> GetFilesInDirectory(std::string directory, std::
 		}
 	} while (FindNextFile(hFind, &ffd) != 0);			//get next file in directory
 
-														//finish
+	//finish
 	FindClose(hFind);
 
+	auto compare = [&](const std::pair<std::string, double>& first, const std::pair<std::string, double>& second) -> bool { return first.second < second.second; };
+
 	//sort by creation time order
-	std::sort(std::execution::par_unseq, fileNames_creationTimes.begin(), fileNames_creationTimes.end());
+	std::sort(std::execution::par_unseq, fileNames_creationTimes.begin(), fileNames_creationTimes.end(), compare);
 
 	//extract and return fileNames only
 	std::vector<std::string> fileNames(fileNames_creationTimes.size());

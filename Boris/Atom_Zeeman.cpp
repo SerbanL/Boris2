@@ -190,7 +190,7 @@ double Atom_Zeeman::UpdateField(void)
 //-------------------Energy methods
 
 //For simple cubic mesh spin_index coincides with index in M1
-double Atom_Zeeman::Get_Atomistic_EnergyChange(int spin_index, DBL3 Mnew)
+double Atom_Zeeman::Get_EnergyChange(int spin_index, DBL3 Mnew)
 {
 	//For CUDA there are separate device functions used by CUDA kernels.
 
@@ -227,6 +227,48 @@ double Atom_Zeeman::Get_Atomistic_EnergyChange(int spin_index, DBL3 Mnew)
 			DBL3 H = H_equation.evaluate_vector(relpos.x, relpos.y, relpos.z, pSMesh->GetStageTime());
 
 			return -MUB * (Mnew - paMesh->M1[spin_index]) * MU0 * (cHA * H);
+		}
+	}
+	else return 0.0;
+}
+
+double Atom_Zeeman::Get_Energy(int spin_index)
+{
+	//For CUDA there are separate device functions used by CUDA kernels.
+
+	if (paMesh->M1.is_not_empty(spin_index)) {
+
+		/////////////////////////////////////////
+		// Fixed set field
+		/////////////////////////////////////////
+
+		if (!H_equation.is_set()) {
+
+			if (IsZ(Ha.norm())) {
+
+				return 0.0;
+			}
+
+			double cHA = paMesh->cHA;
+			paMesh->update_parameters_mcoarse(spin_index, paMesh->cHA, cHA);
+
+			return -MUB * paMesh->M1[spin_index] * MU0 * (cHA * Ha);
+		}
+
+		/////////////////////////////////////////
+		// Field set from user equation
+		/////////////////////////////////////////
+
+		else {
+
+			//on top of spatial dependence specified through an equation, also allow spatial dependence through the cHA parameter
+			double cHA = paMesh->cHA;
+			paMesh->update_parameters_mcoarse(spin_index, paMesh->cHA, cHA);
+
+			DBL3 relpos = paMesh->M1.cellidx_to_position(spin_index);
+			DBL3 H = H_equation.evaluate_vector(relpos.x, relpos.y, relpos.z, pSMesh->GetStageTime());
+
+			return -MUB * paMesh->M1[spin_index] * MU0 * (cHA * H);
 		}
 	}
 	else return 0.0;
@@ -323,6 +365,17 @@ void Atom_Zeeman::SetBaseTemperature(double Temperature)
 #if COMPILECUDA == 1
 	if (pModuleCUDA) dynamic_cast<Atom_ZeemanCUDA*>(pModuleCUDA)->SetFieldEquation(H_equation.get_vector_fspec());
 #endif
+}
+
+//-------------------Torque methods
+
+DBL3 Atom_Zeeman::GetTorque(Rect& avRect)
+{
+#if COMPILECUDA == 1
+	if (pModuleCUDA) return reinterpret_cast<Atom_ZeemanCUDA*>(pModuleCUDA)->GetTorque(avRect);
+#endif
+
+	return CalculateTorque(paMesh->M1, avRect);
 }
 
 #endif

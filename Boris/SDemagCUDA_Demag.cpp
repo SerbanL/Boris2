@@ -10,6 +10,7 @@
 #include "SDemag.h"
 #include "SDemag_Demag.h"
 #include "MeshDefs.h"
+#include "SuperMesh.h"
 
 SDemagCUDA_Demag::SDemagCUDA_Demag(MeshCUDA* pMeshCUDA_, SDemag_Demag *pSDemag_Demag_) :
 	ModulesCUDA(),
@@ -49,9 +50,9 @@ BError SDemagCUDA_Demag::Initialize(void)
 	cuReal3 h_common = convolution_rect / (cuSZ3)pSDemag->n_common;
 
 	if (!initialized) {
-
+		
 		//calculate kernels for super-mesh convolution.
-		if (!error) error = Calculate_Demag_Kernels(pSDemagCUDA->kernel_collection);
+		if (!error) error = Calculate_Demag_Kernels(pSDemagCUDA->kernel_collection, pSDemag_Demag->pSDemag->pSMesh->Get_Kernel_Initialize_on_GPU());
 		if (error) return error(BERROR_OUTOFMEMORY_CRIT);
 
 		//setup mesh transfer?

@@ -2,15 +2,18 @@
 
 #if COMPILECUDA == 1
 
-__global__ void ZeroEnergy_kernel(cuBReal& energy, size_t& points_count)
+#include "BorisCUDALib.cuh"
+
+__global__ void ZeroEnergy_kernel(cuBReal& energy, cuReal3& torque, size_t& points_count)
 {
 	if (threadIdx.x == 0) energy = 0.0;
-	if (threadIdx.x == 1) points_count = 0;
+	if (threadIdx.x == 1) torque = 0.0;
+	if (threadIdx.x == 2) points_count = 0;
 }
 
 void ModulesCUDA::ZeroEnergy(void)
 {
-	ZeroEnergy_kernel <<< 1, CUDATHREADS >>> (energy, points_count);
+	ZeroEnergy_kernel <<< 1, CUDATHREADS >>> (energy, torque, points_count);
 }
 
 __global__ void ZeroModuleVECs_kernel(size_t size, cuVEC<cuReal3>& Module_Heff, cuVEC<cuReal3>& Module_Heff2, cuVEC<cuBReal>& Module_energy, cuVEC<cuBReal>& Module_energy2)
@@ -96,6 +99,47 @@ BError ModulesCUDA::Update_Module_Display_VECs(cuReal3 h, cuRect meshRect, bool 
 	Module_energy2_size = Module_energy2()->linear_size_cpu();
 
 	return error;
+}
+
+//-------------------------- Torque
+
+__global__ void CalculateTorque_kernel(cuVEC_VC<cuReal3>& M, cuVEC<cuReal3>& Module_Heff, cuRect avRect, cuReal3& torque, size_t& points_count)
+{
+	int idx = blockIdx.x * blockDim.x + threadIdx.x;
+
+	cuSZ3& n = M.n;
+
+	cuReal3 torque_ = cuReal3();
+	bool include_in_average = false;
+
+	if (idx < M.linear_size()) {
+
+		cuINT3 ijk = cuINT3(idx % n.x, (idx / n.x) % n.y, idx / (n.x*n.y));
+
+		if (M.box_from_rect_max(avRect + M.rect.s).Contains(ijk) && M.is_not_empty(ijk)) {
+
+			torque_ = M[ijk] ^ Module_Heff[ijk];
+			include_in_average = true;
+		}
+	}
+
+	//need the idx < n.dim() check before cuvec.is_not_empty(ijk) to avoid bad memory access
+	reduction_avg(0, 1, &torque_, torque, points_count, include_in_average);
+}
+
+//return cross product of M with Module_Heff, averaged in given rect (relative)
+cuReal3 ModulesCUDA::CalculateTorque(cu_obj<cuVEC_VC<cuReal3>>& M, cuRect& avRect)
+{
+	if (!Module_Heff_size) return cuReal3();
+
+	ZeroEnergy();
+
+	CalculateTorque_kernel <<< (Module_Heff_size + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (M, Module_Heff, avRect, torque, points_count);
+
+	size_t points_count_cpu = points_count.to_cpu();
+
+	if (points_count_cpu) return torque.to_cpu() / points_count_cpu;
+	else return cuReal3();
 }
 
 #endif

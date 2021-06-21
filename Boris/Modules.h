@@ -17,6 +17,8 @@ class Modules {
 
 private:
 
+	OmpReduction<DBL3> reduction;
+
 protected:
 
 	//if the object couldn't be created properly in the constructor an error is set here
@@ -44,6 +46,9 @@ protected:
 
 	//zero the VECs if not empty
 	void ZeroModuleVECs(void);
+
+	//return cross product of M with Module_Heff, averaged in given rect (relative)
+	DBL3 CalculateTorque(VEC_VC<DBL3>& M, Rect& avRect);
 
 public:
 
@@ -163,7 +168,7 @@ public:
 		return initialized;
 	}
 
-	//-------------------------- Energies
+	//-------------------------- Energies and Torques
 
 	//Get energy density averaged over the entire mesh during the UpdateField call
 	double GetEnergyDensity(void);
@@ -171,8 +176,14 @@ public:
 	//Calculate the energy density in the given rect only
 	double GetEnergyDensity(Rect& avRect);
 
-	//return atomistic energy change from current spin to new spin (for a simple cubic mesh current spin coincides with the index in M1, but for other crystal structures it does not - individual mesh modules will know what to do).
+	//implement as needed : this is normally the torque obtained as M cross Module_Heff
+	virtual DBL3 GetTorque(Rect& avRect) { return DBL3(); }
+
+	//return energy change from current spin to new spin (for a simple cubic mesh current spin coincides with the index in M1, but for other crystal structures it does not - individual mesh modules will know what to do).
 	//Implement as appropriate.
 	//Return new - old energy to be used with monte Carlo methods
-	virtual double Get_Atomistic_EnergyChange(int spin_index, DBL3 Mnew) { return 0.0; }
+	virtual double Get_EnergyChange(int spin_index, DBL3 Mnew) { return 0.0; }
+
+	//implement as needed : get energy value at the given spin index; similar to Get_EnergyChange, but not a change, just the indicated spin energy; implement alongside Get_EnergyChange.
+	virtual double Get_Energy(int spin_index) { return 0.0; }
 };

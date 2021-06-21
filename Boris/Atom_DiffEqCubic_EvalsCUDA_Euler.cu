@@ -58,8 +58,11 @@ __global__ void RunEuler_Kernel_withReductions(ManagedAtom_DiffEqCubicCUDA& cuaD
 		}
 	}
 
-	reduction_avg(0, 1, &mxh, *cuaDiffEq.pmxh_av, *cuaDiffEq.pavpoints, include_in_average);
-	reduction_avg(0, 1, &dmdt, *cuaDiffEq.pdmdt_av, *cuaDiffEq.pavpoints2, include_in_average);
+	if (cuaMesh.pgrel->get0()) {
+
+		reduction_avg(0, 1, &mxh, *cuaDiffEq.pmxh_av, *cuaDiffEq.pavpoints, include_in_average);
+		reduction_avg(0, 1, &dmdt, *cuaDiffEq.pdmdt_av, *cuaDiffEq.pavpoints2, include_in_average);
+	}
 }
 
 __global__ void RunEuler_Kernel(ManagedAtom_DiffEqCubicCUDA& cuaDiffEq, ManagedAtom_MeshCUDA& cuaMesh)

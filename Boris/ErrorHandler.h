@@ -56,6 +56,7 @@ enum BWARNING_
 {
 	BWARNING_NONE = 0,
 	BWARNING_INCORRECTCELLSIZE,				//cellsize set is incorrect
+	BWARNING_NOGPUINITIALIZATION,			//could not initialize on GPU ... initialized on CPU instead
 	BWARNING_ENUMSIZE
 };
 
@@ -397,6 +398,7 @@ ErrorHandler<Owner>::ErrorHandler(Owner* pOwner_) :
 	warnings.resize(BWARNING_ENUMSIZE);
 
 	warnings[BWARNING_INCORRECTCELLSIZE] = std::string("Working with incorrect cellsize.");
+	warnings[BWARNING_NOGPUINITIALIZATION] = std::string("Could not initialize on GPU. Initialized on CPU instead.");
 
 	/////////////////////////////////////////////////////////////////////////////////////
 }

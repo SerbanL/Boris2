@@ -119,7 +119,7 @@ double Atom_Demag_N::UpdateField(void)
 //-------------------Energy methods
 
 //For simple cubic mesh spin_index coincides with index in M1
-double Atom_Demag_N::Get_Atomistic_EnergyChange(int spin_index, DBL3 Mnew)
+double Atom_Demag_N::Get_EnergyChange(int spin_index, DBL3 Mnew)
 {
 	//For CUDA there are separate device functions used by CUDA kernels.
 
@@ -134,6 +134,25 @@ double Atom_Demag_N::Get_Atomistic_EnergyChange(int spin_index, DBL3 Mnew)
 		DBL3 S = paMesh->M1[spin_index];
 
 		return (MUB_MU0 / 2) * r * (Nxy.x * (Mnew.x*Mnew.x - S.x*S.x) + Nxy.y * (Mnew.y*Mnew.y - S.y*S.y) + Nz * (Mnew.z*Mnew.z - S.z*S.z));
+	}
+	else return 0.0;
+}
+
+double Atom_Demag_N::Get_Energy(int spin_index)
+{
+	//For CUDA there are separate device functions used by CUDA kernels.
+
+	if (paMesh->M1.is_not_empty(spin_index)) {
+
+		//Nxy shouldn't have a temperature (or spatial) dependence so not using update_parameters_mcoarse here
+		DBL2 Nxy = paMesh->Nxy;
+
+		double Nz = (1 - Nxy.x - Nxy.y);
+
+		double r = MUB / paMesh->h.dim();
+		DBL3 S = paMesh->M1[spin_index];
+
+		return (MUB_MU0 / 2) * r * (Nxy.x * S.x*S.x + Nxy.y * S.y*S.y + Nz * S.z*S.z);
 	}
 	else return 0.0;
 }

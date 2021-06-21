@@ -396,18 +396,15 @@ __global__ void extract_profile_component_x_reduction_kernel(
 		int k = idx / (n.x * n.y);
 
 		//position in mesh for this kernel thread - this is where we have to get value from for reduction
-		cuReal3 ker_position = position - stencil / 2 + (cuINT3(i, j, k) & cuvec.h);
+		cuReal3 ker_position = position - stencil / 2 + (cuReal3(i + 0.5, j + 0.5, k + 0.5) & cuvec.h);
 
 		//ker_position must be inside mesh
 		cuReal3 meshDim = cuvec.rect.size();
 		if (ker_position >= cuReal3() && ker_position <= meshDim) {
 
-			//form cell index in cuvec
-			int cell_idx = cuvec.position_to_cellidx(ker_position);
+			if (cuIsNZ(cu_GetMagnitude(cuvec[ker_position]))) {
 
-			if (cuIsNZ(cu_GetMagnitude(cuvec[cell_idx]))) {
-
-				value = cuvec[cell_idx].x;
+				value = cuvec[ker_position].x;
 				include_in_reduction = true;
 			}
 		}
@@ -441,18 +438,15 @@ __global__ void extract_profile_component_x_reduction_kernel(
 		int k = idx / (n.x * n.y);
 
 		//position in mesh for this kernel thread - this is where we have to get value from for reduction
-		cuReal3 ker_position = position - stencil / 2 + (cuINT3(i, j, k) & cuvec.h);
+		cuReal3 ker_position = position - stencil / 2 + (cuReal3(i + 0.5, j + 0.5, k + 0.5) & cuvec.h);
 
 		//ker_position must be inside mesh
 		cuReal3 meshDim = cuvec.rect.size();
 		if (ker_position >= cuReal3() && ker_position <= meshDim) {
 
-			//form cell index in cuvec
-			int cell_idx = cuvec.position_to_cellidx(ker_position);
+			if (cuIsNZ(cu_GetMagnitude(cuvec[ker_position]))) {
 
-			if (cuIsNZ(cu_GetMagnitude(cuvec[cell_idx]))) {
-
-				value = cuvec[cell_idx].x;
+				value = cuvec[ker_position].x;
 				include_in_reduction = true;
 			}
 		}
@@ -487,18 +481,15 @@ __global__ void extract_profile_component_y_reduction_kernel(
 		int k = idx / (n.x * n.y);
 
 		//position in mesh for this kernel thread - this is where we have to get value from for reduction
-		cuReal3 ker_position = position - stencil / 2 + (cuINT3(i, j, k) & cuvec.h);
+		cuReal3 ker_position = position - stencil / 2 + (cuReal3(i + 0.5, j + 0.5, k + 0.5) & cuvec.h);
 
 		//ker_position must be inside mesh
 		cuReal3 meshDim = cuvec.rect.size();
 		if (ker_position >= cuReal3() && ker_position <= meshDim) {
 
-			//form cell index in cuvec
-			int cell_idx = cuvec.position_to_cellidx(ker_position);
+			if (cuIsNZ(cu_GetMagnitude(cuvec[ker_position]))) {
 
-			if (cuIsNZ(cu_GetMagnitude(cuvec[cell_idx]))) {
-
-				value = cuvec[cell_idx].y;
+				value = cuvec[ker_position].y;
 				include_in_reduction = true;
 			}
 		}
@@ -532,18 +523,15 @@ __global__ void extract_profile_component_y_reduction_kernel(
 		int k = idx / (n.x * n.y);
 
 		//position in mesh for this kernel thread - this is where we have to get value from for reduction
-		cuReal3 ker_position = position - stencil / 2 + (cuINT3(i, j, k) & cuvec.h);
+		cuReal3 ker_position = position - stencil / 2 + (cuReal3(i + 0.5, j + 0.5, k + 0.5) & cuvec.h);
 
 		//ker_position must be inside mesh
 		cuReal3 meshDim = cuvec.rect.size();
 		if (ker_position >= cuReal3() && ker_position <= meshDim) {
 
-			//form cell index in cuvec
-			int cell_idx = cuvec.position_to_cellidx(ker_position);
+			if (cuIsNZ(cu_GetMagnitude(cuvec[ker_position]))) {
 
-			if (cuIsNZ(cu_GetMagnitude(cuvec[cell_idx]))) {
-
-				value = cuvec[cell_idx].y;
+				value = cuvec[ker_position].y;
 				include_in_reduction = true;
 			}
 		}
@@ -578,18 +566,15 @@ __global__ void extract_profile_component_z_reduction_kernel(
 		int k = idx / (n.x * n.y);
 
 		//position in mesh for this kernel thread - this is where we have to get value from for reduction
-		cuReal3 ker_position = position - stencil / 2 + (cuINT3(i, j, k) & cuvec.h);
+		cuReal3 ker_position = position - stencil / 2 + (cuReal3(i + 0.5, j + 0.5, k + 0.5) & cuvec.h);
 
 		//ker_position must be inside mesh
 		cuReal3 meshDim = cuvec.rect.size();
 		if (ker_position >= cuReal3() && ker_position <= meshDim) {
 
-			//form cell index in cuvec
-			int cell_idx = cuvec.position_to_cellidx(ker_position);
+			if (cuIsNZ(cu_GetMagnitude(cuvec[ker_position]))) {
 
-			if (cuIsNZ(cu_GetMagnitude(cuvec[cell_idx]))) {
-
-				value = cuvec[cell_idx].z;
+				value = cuvec[ker_position].z;
 				include_in_reduction = true;
 			}
 		}
@@ -623,19 +608,15 @@ __global__ void extract_profile_component_z_reduction_kernel(
 		int k = idx / (n.x * n.y);
 
 		//position in mesh for this kernel thread - this is where we have to get value from for reduction
-		cuReal3 ker_position = position - stencil / 2 + (cuINT3(i, j, k) & cuvec.h);
+		cuReal3 ker_position = position - stencil / 2 + (cuReal3(i + 0.5, j + 0.5, k + 0.5) & cuvec.h);
 
 		//ker_position must be inside mesh
 		cuReal3 meshDim = cuvec.rect.size();
 		if (ker_position >= cuReal3() && ker_position <= meshDim) {
 
-			//form cell index in cuvec
-			//int cell_idx = cuvec.position_to_cellidx(position - stencil / 2) + i + j * cuvec.n.x + k * cuvec.n.x*cuvec.n.y;
-			int cell_idx = cuvec.position_to_cellidx(ker_position);
+			if (cuIsNZ(cu_GetMagnitude(cuvec[ker_position]))) {
 
-			if (cuIsNZ(cu_GetMagnitude(cuvec[cell_idx]))) {
-
-				value = cuvec[cell_idx].z;
+				value = cuvec[ker_position].z;
 				include_in_reduction = true;
 			}
 		}
@@ -667,14 +648,7 @@ __global__ void extract_profile_component_max_kernel(
 		line_profile_component_y[idx].i = (cuBReal)idx * step;
 		line_profile_component_z[idx].i = (cuBReal)idx * step;
 
-		VType value = VType();
-
-		//position must be inside mesh
-		cuReal3 meshDim = cuvec.rect.size();
-		if (position >= cuReal3() && position <= meshDim) {
-
-			value = cuvec.average_nonempty(cuRect(position - stencil / 2, position + stencil / 2));
-		}
+		VType value = cuvec.average_nonempty(cuRect(position - stencil / 2, position + stencil / 2));
 		
 		line_profile_component_x[idx].j = value.x;
 		line_profile_component_y[idx].j = value.y;
@@ -715,19 +689,15 @@ __global__ void extract_profilevalues_reduction_kernel(
 		int k = idx / (n.x * n.y);
 
 		//position in mesh for this kernel thread - this is where we have to get value from for reduction
-		cuReal3 ker_position = position - stencil / 2 + (cuINT3(i, j, k) & cuvec.h);
+		cuReal3 ker_position = position - stencil / 2 + (cuReal3(i + 0.5, j + 0.5, k + 0.5) & cuvec.h);
 
 		//ker_position must be inside mesh
 		cuReal3 meshDim = cuvec.rect.size();
 		if (ker_position >= cuReal3() && ker_position <= meshDim) {
 
-			//form cell index in cuvec
-			//int cell_idx = cuvec.position_to_cellidx(position - stencil / 2) + i + j * cuvec.n.x + k * cuvec.n.x*cuvec.n.y;
-			int cell_idx = cuvec.position_to_cellidx(ker_position);
+			if (cuIsNZ(cu_GetMagnitude(cuvec[ker_position]))) {
 
-			if (cuIsNZ(cu_GetMagnitude(cuvec[cell_idx]))) {
-
-				value = cuvec[cell_idx];
+				value = cuvec[ker_position];
 				include_in_reduction = true;
 			}
 		}
@@ -758,19 +728,15 @@ __global__ void extract_profilevalues_reduction_kernel(
 		int k = idx / (n.x * n.y);
 
 		//position in mesh for this kernel thread - this is where we have to get value from for reduction
-		cuReal3 ker_position = position - stencil / 2 + (cuINT3(i, j, k) & cuvec.h);
+		cuReal3 ker_position = position - stencil / 2 + (cuReal3(i + 0.5, j + 0.5, k + 0.5) & cuvec.h);
 
 		//ker_position must be inside mesh
 		cuReal3 meshDim = cuvec.rect.size();
 		if (ker_position >= cuReal3() && ker_position <= meshDim) {
 
-			//form cell index in cuvec
-			//int cell_idx = cuvec.position_to_cellidx(position - stencil / 2) + i + j * cuvec.n.x + k * cuvec.n.x*cuvec.n.y;
-			int cell_idx = cuvec.position_to_cellidx(ker_position);
+			if (cuIsNZ(cu_GetMagnitude(cuvec[ker_position]))) {
 
-			if (cuIsNZ(cu_GetMagnitude(cuvec[cell_idx]))) {
-
-				value = cuvec[cell_idx];
+				value = cuvec[ker_position];
 				include_in_reduction = true;
 			}
 		}
@@ -793,13 +759,7 @@ __global__ void extract_profilevalues_cuarr_kernel(
 
 		cuReal3 position = start + (cuBReal)idx * step * (end - start).normalized();
 
-		//position must be inside mesh
-		cuReal3 meshDim = cuvec.rect.size();
-		if (position >= cuReal3() && position <= meshDim) {
-
-			profile[idx] = cuvec.average_nonempty(cuRect(position - stencil / 2, position + stencil / 2));
-		}
-		else profile[idx] = VType();
+		profile[idx] = cuvec.average_nonempty(cuRect(position - stencil / 2, position + stencil / 2));
 	}
 }
 
@@ -813,16 +773,7 @@ __global__ void extract_profilevalues_kernel(
 
 		cuReal3 position = start + (cuBReal)idx * step * (end - start).normalized();
 
-		//position must be inside mesh
-		cuReal3 meshDim = cuvec.rect.size();
-		if (position >= cuReal3() && position <= meshDim) {
-
-			cuvec.get_line_profile()[idx] = cuvec.average_nonempty(cuRect(position - stencil / 2, position + stencil / 2));
-		}
-		else {
-
-			cuvec.get_line_profile()[idx] = VType();
-		}
+		cuvec.get_line_profile()[idx] = cuvec.average_nonempty(cuRect(position - stencil / 2, position + stencil / 2));
 	}
 }
 
@@ -1538,6 +1489,12 @@ __host__ bool cuVEC<VType>::extract_profile_component_max(cuReal3 start, cuReal3
 	else return false;
 }
 
+template bool cuVEC<float>::extract_profile(cuReal3 start, cuReal3 end, cuBReal step, cuReal3 stencil, cu_arr<float>& profile_gpu);
+template bool cuVEC<double>::extract_profile(cuReal3 start, cuReal3 end, cuBReal step, cuReal3 stencil, cu_arr<double>& profile_gpu);
+
+template bool cuVEC<cuFLT3>::extract_profile(cuReal3 start, cuReal3 end, cuBReal step, cuReal3 stencil, cu_arr<cuFLT3>& profile_gpu);
+template bool cuVEC<cuDBL3>::extract_profile(cuReal3 start, cuReal3 end, cuBReal step, cuReal3 stencil, cu_arr<cuDBL3>& profile_gpu);
+
 template <typename VType>
 __host__ bool cuVEC<VType>::extract_profile(cuReal3 start, cuReal3 end, cuBReal step, cuReal3 stencil, cu_arr<VType>& profile_gpu)
 {
@@ -1568,25 +1525,89 @@ __host__ bool cuVEC<VType>::extract_profile(cuReal3 start, cuReal3 end, cuBReal 
 			num_stencil_points_gpu.from_cpu(num_stencil_points);
 
 			//zero values for reduction
-			zero_profilevalues_cuarr_kernel <<< (size + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>>
+			zero_profilevalues_cuarr_kernel<VType> <<< (size + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>>
 				(profile_gpu, line_profile_avpoints, line_profile_component_size);
 
 			//extract
 			for (int idx = 0; idx < size; idx++) {
 
-				extract_profilevalues_reduction_kernel <<< (num_stencil_points + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>>
+				extract_profilevalues_reduction_kernel<VType> <<< (num_stencil_points + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>>
 					(*this, start_gpu, end_gpu, step_gpu, stencil_gpu, num_stencil_points_gpu, line_profile_avpoints, profile_gpu, idx);
 			}
 
 			//divide by number of averaging points to finish off
-			finish_profileaveragevalues_cuarr_kernel <<< (size + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>>
+			finish_profileaveragevalues_cuarr_kernel<VType> <<< (size + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>>
 				(profile_gpu, line_profile_avpoints, line_profile_component_size);
 		}
 		else {
 
 			//extract profile
-			extract_profilevalues_cuarr_kernel <<< (size + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>>
+			extract_profilevalues_cuarr_kernel<VType> <<< (size + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>>
 				(*this, start, end, step, stencil, profile_gpu, profile_gpu.size());
+		}
+
+		//all done
+		return true;
+	}
+	else return false;
+}
+
+template bool cuVEC<float>::extract_profile(cuReal3 start, cuReal3 end, cuBReal step, cuReal3 stencil);
+template bool cuVEC<double>::extract_profile(cuReal3 start, cuReal3 end, cuBReal step, cuReal3 stencil);
+
+template bool cuVEC<cuFLT3>::extract_profile(cuReal3 start, cuReal3 end, cuBReal step, cuReal3 stencil);
+template bool cuVEC<cuDBL3>::extract_profile(cuReal3 start, cuReal3 end, cuBReal step, cuReal3 stencil);
+
+//as above, but only store profile in internal memory (line_profile) so we can read it out later as needed
+template <typename VType>
+__host__ bool cuVEC<VType>::extract_profile(cuReal3 start, cuReal3 end, cuBReal step, cuReal3 stencil)
+{
+	if (step > 0) {
+
+		size_t size = round((end - start).norm() / step) + 1;
+
+		//make sure memory is allocated correctly for auxiliary arrays
+		if (!allocate_profile_component_memory(size)) return false;
+
+		cuReal3 h_cpu = get_gpu_value(h);
+		cuINT3 nstencil = stencil / h_cpu;
+		int num_stencil_points = nstencil.dim();
+
+		//if stencil has more points than the profile, then better to launch multiple reduction kernels : one per each profile point
+		if (num_stencil_points > size) {
+
+			//set data in gpu memory once so we don't have to do it every iteration
+			cu_obj<cuReal3> start_gpu;
+			start_gpu.from_cpu(start);
+			cu_obj<cuReal3> end_gpu;
+			end_gpu.from_cpu(end);
+			cu_obj<cuBReal> step_gpu;
+			step_gpu.from_cpu(step);
+			cu_obj<cuReal3> stencil_gpu;
+			stencil_gpu.from_cpu(stencil);
+			cu_obj<int> num_stencil_points_gpu;
+			num_stencil_points_gpu.from_cpu(num_stencil_points);
+
+			//zero values for reduction
+			zero_profilevalues_kernel <<< (size + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>>
+				(line_profile, line_profile_avpoints, line_profile_component_size);
+
+			//extract
+			for (int idx = 0; idx < size; idx++) {
+
+				extract_profilevalues_reduction_kernel <<< (num_stencil_points + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>>
+					(*this, start_gpu, end_gpu, step_gpu, stencil_gpu, num_stencil_points_gpu, line_profile_avpoints, idx);
+			}
+
+			//divide by number of averaging points to finish off
+			finish_profileaveragevalues_kernel <<< (size + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>>
+				(line_profile, line_profile_avpoints, line_profile_component_size);
+		}
+		else {
+
+			//extract profile
+			extract_profilevalues_kernel <<< (size + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>>
+				(*this, start, end, step, stencil, line_profile_component_size);
 		}
 
 		//all done

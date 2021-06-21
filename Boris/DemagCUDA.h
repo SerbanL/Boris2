@@ -43,6 +43,8 @@ private:
 
 private:
 
+	void set_DemagCUDA_pointers(void);
+
 	//Add newly computed field to Heff and Heff2, then subtract self demag contribution from it : AFM
 	void Demag_EvalSpeedup_AddField_SubSelf(
 		cu_obj<cuVEC<cuReal3>>& Heff, cu_obj<cuVEC<cuReal3>>& Heff2, 

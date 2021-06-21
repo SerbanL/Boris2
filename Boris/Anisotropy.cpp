@@ -190,4 +190,61 @@ double Anisotropy_Uniaxial::UpdateField(void)
 	return this->energy;
 }
 
+//-------------------Energy methods
+
+double Anisotropy_Uniaxial::Get_EnergyChange(int spin_index, DBL3 Mnew)
+{
+	//For CUDA there are separate device functions used by CUDA kernels.
+
+	if (pMesh->M.is_not_empty(spin_index)) {
+
+		double K1 = pMesh->K1;
+		double K2 = pMesh->K2;
+		double Ms = pMesh->Ms;
+		DBL3 mcanis_ea1 = pMesh->mcanis_ea1;
+		pMesh->update_parameters_mcoarse(spin_index, pMesh->Ms, Ms, pMesh->K1, K1, pMesh->K2, K2, pMesh->mcanis_ea1, mcanis_ea1);
+
+		//calculate m.ea dot product
+		double dotprod = (pMesh->M[spin_index] * mcanis_ea1) / Ms;
+		double dotprod_new = Mnew * mcanis_ea1 / Ms;
+		double dpsq = dotprod * dotprod;
+		double dpsq_new = dotprod_new * dotprod_new;
+
+		return pMesh->h.dim() * ((K1 + K2 * (1 - dpsq_new)) * (1 - dpsq_new) - (K1 + K2 * (1 - dpsq)) * (1 - dpsq));
+	}
+	else return 0.0;
+}
+
+double Anisotropy_Uniaxial::Get_Energy(int spin_index)
+{
+	//For CUDA there are separate device functions used by CUDA kernels.
+
+	if (pMesh->M.is_not_empty(spin_index)) {
+
+		double K1 = pMesh->K1;
+		double K2 = pMesh->K2;
+		double Ms = pMesh->Ms;
+		DBL3 mcanis_ea1 = pMesh->mcanis_ea1;
+		pMesh->update_parameters_mcoarse(spin_index, pMesh->Ms, Ms, pMesh->K1, K1, pMesh->K2, K2, pMesh->mcanis_ea1, mcanis_ea1);
+
+		//calculate m.ea dot product
+		double dotprod = (pMesh->M[spin_index] * mcanis_ea1) / Ms;
+		double dpsq = dotprod * dotprod;
+
+		return pMesh->h.dim() * (K1 + K2 * (1 - dpsq)) * (1 - dpsq);
+	}
+	else return 0.0;
+}
+
+//-------------------Torque methods
+
+DBL3 Anisotropy_Uniaxial::GetTorque(Rect& avRect)
+{
+#if COMPILECUDA == 1
+	if (pModuleCUDA) return reinterpret_cast<Anisotropy_UniaxialCUDA*>(pModuleCUDA)->GetTorque(avRect);
+#endif
+
+	return CalculateTorque(pMesh->M, avRect);
+}
+
 #endif

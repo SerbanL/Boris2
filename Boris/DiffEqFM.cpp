@@ -30,13 +30,13 @@ void DifferentialEquationFM::RestoreMagnetization(void)
 void DifferentialEquationFM::RenormalizeMagnetization(void)
 {
 #pragma omp parallel for
-	for (int idx = 0; idx < pMesh->n.dim(); idx++) {
+	for (int idx = 0; idx < pMesh->M.linear_size(); idx++) {
 
 		if (pMesh->M.is_not_empty(idx)) {
 
 			double Ms = pMesh->Ms;
 			pMesh->update_parameters_mcoarse(idx, pMesh->Ms, Ms);
-
+ 
 			pMesh->M[idx].renormalize(Ms);
 		}
 	}
@@ -240,6 +240,8 @@ BError DifferentialEquationFM::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 
 		if (!error) {
 
+			/*
+			//REMOVED : not really necessary, especially if you have ends coupled to dipoles, which freeze end cells only
 			//set skip cells flags for moving mesh if enabled
 			if (moving_mesh) {
 
@@ -257,6 +259,7 @@ BError DifferentialEquationFM::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 
 				pMesh->M.clear_skipcells();
 			}
+			*/
 		}
 	}
 

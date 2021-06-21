@@ -44,6 +44,13 @@ BError Anisotropy_CubicCUDA::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 	return error;
 }
 
+//-------------------Torque methods
+
+cuReal3 Anisotropy_CubicCUDA::GetTorque(cuRect avRect)
+{
+	return CalculateTorque(pMeshCUDA->M, avRect);
+}
+
 #endif
 
 #endif

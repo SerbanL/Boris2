@@ -34,9 +34,6 @@ __global__ void SurfExchangeCUDA_AFM_TopFM_UpdateField(ManagedMeshCUDA& cuMesh, 
 		int j = idx / n.x;
 		int cell_idx_top = i + j * n.x + (n.z - 1) * n.x*n.y;
 
-		cuReal3 Hsurfexh, Hsurfexh2;
-		cuBReal energy1_ = 0.0, energy2_ = 0.0;
-
 		//skip empty cells
 		if (M.is_not_empty(cell_idx_top)) {
 
@@ -67,28 +64,33 @@ __global__ void SurfExchangeCUDA_AFM_TopFM_UpdateField(ManagedMeshCUDA& cuMesh, 
 				cuReal3 m_i2 = M2[cell_idx_top] / Ms_AFM.j;
 
 				//total surface exchange field in coupling cells, including bilinear and biquadratic terms
-				Hsurfexh += (m_j / ((cuBReal)MU0 * Ms_AFM.i * thickness)) * J1;
-				Hsurfexh2 += (m_j / ((cuBReal)MU0 * Ms_AFM.j * thickness)) * J2;
+				cuReal3 Hsurfexh = (m_j / ((cuBReal)MU0 * Ms_AFM.i * thickness)) * J1;
+				cuReal3 Hsurfexh2 = (m_j / ((cuBReal)MU0 * Ms_AFM.j * thickness)) * J2;
+
+				cuBReal energy1_ = 0.0, energy2_ = 0.0;
 
 				if (do_reduction) {
 
-					energy1_ += (-J1 * (m_i1 * m_j)) / (thickness * coupled_cells);
-					energy2_ += (-J2 * (m_i2 * m_j)) / (thickness * coupled_cells);
+					energy1_ = (-J1 * (m_i1 * m_j)) / (thickness * coupled_cells);
+					energy2_ = (-J2 * (m_i2 * m_j)) / (thickness * coupled_cells);
 					energy_ = (energy1_ + energy2_) / 2;
 				}
-			}
 
-			//couple all cells through the layer thickness : the surface exchange field is applicable for effectively 2D layers, but the simulation allows 3D meshes.
-			for (int k = 0; k < n.z; k++) {
+				//couple all cells through the layer thickness : the surface exchange field is applicable for effectively 2D layers, but the simulation allows 3D meshes.
+				for (int k = 0; k < n.z; k++) {
 
-				int cell_idx = i + j * n.x + k * n.x*n.y;
-				Heff[cell_idx] += Hsurfexh;
-				Heff2[cell_idx] += Hsurfexh2;
+					int cell_idx = i + j * n.x + k * n.x*n.y;
+					Heff[cell_idx] += Hsurfexh;
+					Heff2[cell_idx] += Hsurfexh2;
 
-				if (do_reduction && cuModule.pModule_Heff->linear_size()) (*cuModule.pModule_Heff)[cell_idx] += Hsurfexh;
-				if (do_reduction && cuModule.pModule_Heff2->linear_size()) (*cuModule.pModule_Heff2)[cell_idx] += Hsurfexh2;
-				if (do_reduction && cuModule.pModule_energy->linear_size()) (*cuModule.pModule_energy)[cell_idx] += energy1_ * coupled_cells;
-				if (do_reduction && cuModule.pModule_energy2->linear_size()) (*cuModule.pModule_energy2)[cell_idx] += energy2_ * coupled_cells;
+					if (do_reduction && cuModule.pModule_Heff->linear_size()) (*cuModule.pModule_Heff)[cell_idx] += Hsurfexh;
+					if (do_reduction && cuModule.pModule_Heff2->linear_size()) (*cuModule.pModule_Heff2)[cell_idx] += Hsurfexh2;
+					if (do_reduction && cuModule.pModule_energy->linear_size()) (*cuModule.pModule_energy)[cell_idx] += energy1_ * coupled_cells;
+					if (do_reduction && cuModule.pModule_energy2->linear_size()) (*cuModule.pModule_energy2)[cell_idx] += energy2_ * coupled_cells;
+				}
+
+				//for each cell, either it's not coupled to any other mesh cell (so we never get here), or else it's coupled to exactly one cell on this surface (thus can stop looping over meshes now)
+				break;
 			}
 		}
 	}
@@ -119,9 +121,6 @@ __global__ void SurfExchangeCUDA_AFM_TopAFM_UpdateField(ManagedMeshCUDA& cuMesh,
 		int i = idx % n.x;
 		int j = idx / n.x;
 		int cell_idx_top = i + j * n.x + (n.z - 1) * n.x*n.y;
-
-		cuReal3 Hsurfexh, Hsurfexh2;
-		cuBReal energy1_ = 0.0, energy2_ = 0.0;
 
 		//skip empty cells
 		if (M.is_not_empty(cell_idx_top)) {
@@ -155,28 +154,33 @@ __global__ void SurfExchangeCUDA_AFM_TopAFM_UpdateField(ManagedMeshCUDA& cuMesh,
 				cuReal3 m_i2 = M2[cell_idx_top] / Ms_AFM.j;
 
 				//total surface exchange field in coupling cells, including bilinear and biquadratic terms
-				Hsurfexh += (m_j1 / ((cuBReal)MU0 * Ms_AFM.i * thickness)) * J1;
-				Hsurfexh2 += (m_j2 / ((cuBReal)MU0 * Ms_AFM.j * thickness)) * J2;
+				cuReal3 Hsurfexh = (m_j1 / ((cuBReal)MU0 * Ms_AFM.i * thickness)) * J1;
+				cuReal3 Hsurfexh2 = (m_j2 / ((cuBReal)MU0 * Ms_AFM.j * thickness)) * J2;
+
+				cuBReal energy1_ = 0.0, energy2_ = 0.0;
 
 				if (do_reduction) {
 
-					energy1_ += (-J1 * (m_i1 * m_j1)) / (thickness * coupled_cells);
-					energy2_ += (-J2 * (m_i2 * m_j2)) / (thickness * coupled_cells);
+					energy1_ = (-J1 * (m_i1 * m_j1)) / (thickness * coupled_cells);
+					energy2_ = (-J2 * (m_i2 * m_j2)) / (thickness * coupled_cells);
 					energy_ = (energy1_ + energy2_) / 2;
 				}
-			}
 
-			//couple all cells through the layer thickness : the surface exchange field is applicable for effectively 2D layers, but the simulation allows 3D meshes.
-			for (int k = 0; k < n.z; k++) {
+				//couple all cells through the layer thickness : the surface exchange field is applicable for effectively 2D layers, but the simulation allows 3D meshes.
+				for (int k = 0; k < n.z; k++) {
 
-				int cell_idx = i + j * n.x + k * n.x*n.y;
-				Heff[cell_idx] += Hsurfexh;
-				Heff2[cell_idx] += Hsurfexh2;
+					int cell_idx = i + j * n.x + k * n.x*n.y;
+					Heff[cell_idx] += Hsurfexh;
+					Heff2[cell_idx] += Hsurfexh2;
 
-				if (do_reduction && cuModule.pModule_Heff->linear_size()) (*cuModule.pModule_Heff)[cell_idx] += Hsurfexh;
-				if (do_reduction && cuModule.pModule_Heff2->linear_size()) (*cuModule.pModule_Heff2)[cell_idx] += Hsurfexh2;
-				if (do_reduction && cuModule.pModule_energy->linear_size()) (*cuModule.pModule_energy)[cell_idx] += energy1_ * coupled_cells;
-				if (do_reduction && cuModule.pModule_energy2->linear_size()) (*cuModule.pModule_energy2)[cell_idx] += energy2_ * coupled_cells;
+					if (do_reduction && cuModule.pModule_Heff->linear_size()) (*cuModule.pModule_Heff)[cell_idx] += Hsurfexh;
+					if (do_reduction && cuModule.pModule_Heff2->linear_size()) (*cuModule.pModule_Heff2)[cell_idx] += Hsurfexh2;
+					if (do_reduction && cuModule.pModule_energy->linear_size()) (*cuModule.pModule_energy)[cell_idx] += energy1_ * coupled_cells;
+					if (do_reduction && cuModule.pModule_energy2->linear_size()) (*cuModule.pModule_energy2)[cell_idx] += energy2_ * coupled_cells;
+				}
+
+				//for each cell, either it's not coupled to any other mesh cell (so we never get here), or else it's coupled to exactly one cell on this surface (thus can stop looping over meshes now)
+				break;
 			}
 		}
 	}
@@ -208,9 +212,6 @@ __global__ void SurfExchangeCUDA_AFM_BotFM_UpdateField(ManagedMeshCUDA& cuMesh, 
 		int j = idx / n.x;
 		int cell_idx_bot = i + j * n.x;
 
-		cuReal3 Hsurfexh, Hsurfexh2;
-		cuBReal energy1_ = 0.0, energy2_ = 0.0;
-
 		//skip empty cells
 		if (M.is_not_empty(cell_idx_bot)) {
 
@@ -239,28 +240,33 @@ __global__ void SurfExchangeCUDA_AFM_BotFM_UpdateField(ManagedMeshCUDA& cuMesh, 
 				cuReal3 m_i2 = M2[cell_idx_bot] / Ms_AFM.j;
 
 				//total surface exchange field in coupling cells, including bilinear and biquadratic terms
-				Hsurfexh += (m_j / ((cuBReal)MU0 * Ms_AFM.i * thickness)) * J1;
-				Hsurfexh2 += (m_j / ((cuBReal)MU0 * Ms_AFM.j * thickness)) * J2;
+				cuReal3 Hsurfexh = (m_j / ((cuBReal)MU0 * Ms_AFM.i * thickness)) * J1;
+				cuReal3 Hsurfexh2 = (m_j / ((cuBReal)MU0 * Ms_AFM.j * thickness)) * J2;
+
+				cuBReal energy1_ = 0.0, energy2_ = 0.0;
 
 				if (do_reduction) {
 
-					energy1_ += (-J1 * (m_i1 * m_j)) / (thickness * coupled_cells);
-					energy2_ += (-J2 * (m_i2 * m_j)) / (thickness * coupled_cells);
+					energy1_ = (-J1 * (m_i1 * m_j)) / (thickness * coupled_cells);
+					energy2_ = (-J2 * (m_i2 * m_j)) / (thickness * coupled_cells);
 					energy_ = (energy1_ + energy2_) / 2;
 				}
-			}
 
-			//couple all cells through the layer thickness : the surface exchange field is applicable for effectively 2D layers, but the simulation allows 3D meshes.
-			for (int k = 0; k < n.z; k++) {
+				//couple all cells through the layer thickness : the surface exchange field is applicable for effectively 2D layers, but the simulation allows 3D meshes.
+				for (int k = 0; k < n.z; k++) {
 
-				int cell_idx = i + j * n.x + k * n.x*n.y;
-				Heff[cell_idx] += Hsurfexh;
-				Heff2[cell_idx] += Hsurfexh2;
+					int cell_idx = i + j * n.x + k * n.x*n.y;
+					Heff[cell_idx] += Hsurfexh;
+					Heff2[cell_idx] += Hsurfexh2;
 
-				if (do_reduction && cuModule.pModule_Heff->linear_size()) (*cuModule.pModule_Heff)[cell_idx] += Hsurfexh;
-				if (do_reduction && cuModule.pModule_Heff2->linear_size()) (*cuModule.pModule_Heff2)[cell_idx] += Hsurfexh2;
-				if (do_reduction && cuModule.pModule_energy->linear_size()) (*cuModule.pModule_energy)[cell_idx] += energy1_ * coupled_cells;
-				if (do_reduction && cuModule.pModule_energy2->linear_size()) (*cuModule.pModule_energy2)[cell_idx] += energy2_ * coupled_cells;
+					if (do_reduction && cuModule.pModule_Heff->linear_size()) (*cuModule.pModule_Heff)[cell_idx] += Hsurfexh;
+					if (do_reduction && cuModule.pModule_Heff2->linear_size()) (*cuModule.pModule_Heff2)[cell_idx] += Hsurfexh2;
+					if (do_reduction && cuModule.pModule_energy->linear_size()) (*cuModule.pModule_energy)[cell_idx] += energy1_ * coupled_cells;
+					if (do_reduction && cuModule.pModule_energy2->linear_size()) (*cuModule.pModule_energy2)[cell_idx] += energy2_ * coupled_cells;
+				}
+
+				//for each cell, either it's not coupled to any other mesh cell (so we never get here), or else it's coupled to exactly one cell on this surface (thus can stop looping over meshes now)
+				break;
 			}
 		}
 	}
@@ -292,9 +298,6 @@ __global__ void SurfExchangeCUDA_AFM_BotAFM_UpdateField(ManagedMeshCUDA& cuMesh,
 		int j = idx / n.x;
 		int cell_idx_bot = i + j * n.x;
 
-		cuReal3 Hsurfexh, Hsurfexh2;
-		cuBReal energy1_ = 0.0, energy2_ = 0.0;
-
 		//skip empty cells
 		if (M.is_not_empty(cell_idx_bot)) {
 
@@ -325,28 +328,33 @@ __global__ void SurfExchangeCUDA_AFM_BotAFM_UpdateField(ManagedMeshCUDA& cuMesh,
 				cuReal3 m_i2 = M2[cell_idx_bot] / Ms_AFM.j;
 
 				//total surface exchange field in coupling cells, including bilinear and biquadratic terms
-				Hsurfexh += (m_j1 / ((cuBReal)MU0 * Ms_AFM.i * thickness)) * J1;
-				Hsurfexh2 += (m_j2 / ((cuBReal)MU0 * Ms_AFM.j * thickness)) * J2;
+				cuReal3 Hsurfexh = (m_j1 / ((cuBReal)MU0 * Ms_AFM.i * thickness)) * J1;
+				cuReal3 Hsurfexh2 = (m_j2 / ((cuBReal)MU0 * Ms_AFM.j * thickness)) * J2;
+
+				cuBReal energy1_ = 0.0, energy2_ = 0.0;
 
 				if (do_reduction) {
 
-					energy1_ += (-J1 * (m_i1 * m_j1)) / (thickness * coupled_cells);
-					energy2_ += (-J2 * (m_i2 * m_j2)) / (thickness * coupled_cells);
+					energy1_ = (-J1 * (m_i1 * m_j1)) / (thickness * coupled_cells);
+					energy2_ = (-J2 * (m_i2 * m_j2)) / (thickness * coupled_cells);
 					energy_ = (energy1_ + energy2_) / 2;
 				}
-			}
 
-			//couple all cells through the layer thickness : the surface exchange field is applicable for effectively 2D layers, but the simulation allows 3D meshes.
-			for (int k = 0; k < n.z; k++) {
+				//couple all cells through the layer thickness : the surface exchange field is applicable for effectively 2D layers, but the simulation allows 3D meshes.
+				for (int k = 0; k < n.z; k++) {
 
-				int cell_idx = i + j * n.x + k * n.x*n.y;
-				Heff[cell_idx] += Hsurfexh;
-				Heff2[cell_idx] += Hsurfexh2;
+					int cell_idx = i + j * n.x + k * n.x*n.y;
+					Heff[cell_idx] += Hsurfexh;
+					Heff2[cell_idx] += Hsurfexh2;
 
-				if (do_reduction && cuModule.pModule_Heff->linear_size()) (*cuModule.pModule_Heff)[cell_idx] += Hsurfexh;
-				if (do_reduction && cuModule.pModule_Heff2->linear_size()) (*cuModule.pModule_Heff2)[cell_idx] += Hsurfexh2;
-				if (do_reduction && cuModule.pModule_energy->linear_size()) (*cuModule.pModule_energy)[cell_idx] += energy1_ * coupled_cells;
-				if (do_reduction && cuModule.pModule_energy2->linear_size()) (*cuModule.pModule_energy2)[cell_idx] += energy2_ * coupled_cells;
+					if (do_reduction && cuModule.pModule_Heff->linear_size()) (*cuModule.pModule_Heff)[cell_idx] += Hsurfexh;
+					if (do_reduction && cuModule.pModule_Heff2->linear_size()) (*cuModule.pModule_Heff2)[cell_idx] += Hsurfexh2;
+					if (do_reduction && cuModule.pModule_energy->linear_size()) (*cuModule.pModule_energy)[cell_idx] += energy1_ * coupled_cells;
+					if (do_reduction && cuModule.pModule_energy2->linear_size()) (*cuModule.pModule_energy2)[cell_idx] += energy2_ * coupled_cells;
+				}
+
+				//for each cell, either it's not coupled to any other mesh cell (so we never get here), or else it's coupled to exactly one cell on this surface (thus can stop looping over meshes now)
+				break;
 			}
 		}
 	}

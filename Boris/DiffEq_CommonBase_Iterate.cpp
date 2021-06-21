@@ -11,38 +11,42 @@
 
 //calculate time step for adaptive methods based on current error values and evaluation method settings
 //return true if current time step is good, else false if we must repeat it
-//this uses a 2 level error threshold -> above the high threshold fail, adjust step based on max_error / error ratio. Below the low error threshold increase step by a small constant factor.
+
 bool ODECommon_Base::SetAdaptiveTimeStep(void)
 {
-	//adaptive time step based on lte - is lte over acceptable relative error?
-	if (lte > err_high) {
+	//fixed time step if limits same
+	if (dT_min == dT_max) return true;
 
-		//failed - try again. Restore state to start of evaluation and try again with smaller time step - output not available yet.
-		//do not redo if time step is at or below the minimum value allowed - this is used as a "timeout" to stop the solver from getting stuck on the same iteration; in this case the method is not good enough for the problem.
-		if (lte > err_high_fail && dT > dT_min) {
+	//Integral controller adaptive time step.
 
-			time -= dT;
-			stagetime -= dT;
+	if (lte > err_high_fail && dT > dT_min) {
+		
+		//reject. The dT > dT_min check needed to stop solver getting stuck.
+		time -= dT;
+		stagetime -= dT;
+		
+		//Use I controller only when rejecting
+		double c = pow(err_high_fail * 0.8 / lte, 1.0 / (eval_method_order + 1));
 
-			//reduce time step based on error ratio
-			dT *= sqrt(err_high_fail / (2 * lte));
-
-			//failed - must repeat
-			available = false;
-			return false;
-		}
-
-		//not failed but still need to reduce time step
-		dT *= pow(err_high / (2 * lte), 0.25);
+		if (c < 0.01) c = 0.01;
+		dT *= c;
 
 		//must not go below minimum time step
 		if (dT < dT_min) dT = dT_min;
+
+		//failed - must repeat
+		available = false;
+		return false;
 	}
+	else if (lte > 0) {
 
-	//is lte below minimum relative error ? If yes we can go quicker
-	if (lte < err_low) {
+		double c = pow(err_high_fail * 0.8 / lte, 1.0 / (eval_method_order + 1));
+		if (c > dT_increase) c = dT_increase;
+		if (c < 0.01) c = 0.01;
+		dT *= c;
 
-		dT *= dT_increase;
+		//must not go below minimum time step
+		if (dT < dT_min) dT = dT_min;
 
 		//must not go above maximum time step
 		if (dT > dT_max) dT = dT_max;

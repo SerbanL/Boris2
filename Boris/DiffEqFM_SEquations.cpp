@@ -182,7 +182,7 @@ DBL3 DifferentialEquationFM::SLLB(int idx)
 	//the longitudinal relaxation field - an effective field contribution, but only need to add it to the longitudinal relaxation term as the others involve cross products with pMesh->M[idx]
 	DBL3 Hl;
 
-	if (Temperature < T_Curie) {
+	if (Temperature <= T_Curie) {
 
 		if (Temperature > T_Curie - TCURIE_EPSILON) {
 
@@ -211,7 +211,7 @@ DBL3 DifferentialEquationFM::SLLB(int idx)
 		alpha_par = alpha;
 
 		//Note, the parallel susceptibility is related to susrel by : susrel = suspar / mu0Ms
-		Hl = -1.0 * pMesh->M[idx] / (susrel * MU0 * Ms0);
+		Hl = -1.0 * (pMesh->M[idx] / (susrel * MU0 * Ms0)) * (1 + 3 * msq * T_Curie / (5 * (Temperature - T_Curie)));
 	}
 
 	DBL3 H_Thermal_Value = H_Thermal[position] * sqrt(alpha - alpha_par) / alpha;
@@ -270,7 +270,7 @@ DBL3 DifferentialEquationFM::SLLBSTT(int idx)
 	//the longitudinal relaxation field - an effective field contribution, but only need to add it to the longitudinal relaxation term as the others involve cross products with pMesh->M[idx]
 	DBL3 Hl;
 
-	if (Temperature < T_Curie) {
+	if (Temperature <= T_Curie) {
 
 		if (Temperature > T_Curie - TCURIE_EPSILON) {
 
@@ -303,7 +303,7 @@ DBL3 DifferentialEquationFM::SLLBSTT(int idx)
 		alpha_par = alpha;
 
 		//Note, the parallel susceptibility is related to susrel by : susrel = suspar / mu0Ms
-		Hl = -1 * pMesh->M[idx] / (susrel * MU0 * Ms0);
+		Hl = -1.0 * (pMesh->M[idx] / (susrel * MU0 * Ms0)) * (1 + 3 * msq * T_Curie / (5 * (Temperature - T_Curie)));
 	}
 
 	DBL3 H_Thermal_Value = H_Thermal[position] * sqrt(alpha - alpha_par) / alpha;
@@ -317,7 +317,7 @@ DBL3 DifferentialEquationFM::SLLBSTT(int idx)
 
 		DBL33 grad_M = pMesh->M.grad_neu(idx);
 
-		DBL3 u = (pMesh->elC[position] * pMesh->E.weighted_average(position), pMesh->h * P * GMUB_2E) / (Ms * (1 + beta * beta));
+		DBL3 u = (pMesh->elC[position] * pMesh->E.weighted_average(position, pMesh->h), pMesh->h * P * GMUB_2E) / (Ms * (1 + beta * beta));
 
 		DBL3 u_dot_del_M = (u.x * grad_M.x) + (u.y * grad_M.y) + (u.z * grad_M.z);
 

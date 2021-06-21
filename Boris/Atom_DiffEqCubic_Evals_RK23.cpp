@@ -47,7 +47,15 @@ void Atom_DifferentialEquationCubic::RunRK23_Step0_withReductions(void)
 	}
 
 	lte_reduction.maximum();
-	mxh_reduction.maximum();
+	
+	if (paMesh->grel.get0()) {
+
+		mxh_reduction.maximum();
+	}
+	else {
+
+		mxh_reduction.max = 0.0;
+	}
 }
 
 void Atom_DifferentialEquationCubic::RunRK23_Step0(void)
@@ -151,7 +159,14 @@ void Atom_DifferentialEquationCubic::RunRK23_Step2_withReductions(void)
 		}
 	}
 
-	dmdt_reduction.maximum();
+	if (paMesh->grel.get0()) {
+
+		dmdt_reduction.maximum();
+	}
+	else {
+	
+		dmdt_reduction.max = 0.0;
+	}
 }
 
 void Atom_DifferentialEquationCubic::RunRK23_Step2(void)

@@ -5,10 +5,13 @@
 
 #if defined(MODULE_COMPILATION_DEMAG) && ATOMISTIC == 1
 
+#include "SimScheduleDefs.h"
+
 #include "Atom_MeshCUDA.h"
 #include "Atom_Mesh.h"
 #include "Atom_Demag.h"
 #include "DataDefs.h"
+#include "SuperMesh.h"
 
 Atom_DemagCUDA::Atom_DemagCUDA(Atom_MeshCUDA* paMeshCUDA_, Atom_Demag *paDemag_) :
 	ModulesCUDA(),
@@ -31,10 +34,10 @@ BError Atom_DemagCUDA::Initialize(void)
 
 	if (!initialized) {
 
-		error = Calculate_Demag_Kernels();
+		error = Calculate_Demag_Kernels(true, paDemag->paMesh->pSMesh->Get_Kernel_Initialize_on_GPU());
 
 		selfDemagCoeff.from_cpu(DemagTFunc().SelfDemag_PBC(paMeshCUDA->h_dm, paMeshCUDA->n_dm, paDemag->Get_PBC()));
-
+		
 		if (!M()->resize(paMeshCUDA->h_dm, paMeshCUDA->meshRect)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
 		if (!Hd()->resize(paMeshCUDA->h_dm, paMeshCUDA->meshRect)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
 
@@ -72,13 +75,18 @@ BError Atom_DemagCUDA::Initialize(void)
 	}
 
 	num_Hdemag_saved = 0;
-
+	
 	//Make sure display data has memory allocated (or freed) as required
 	error = Update_Module_Display_VECs(
-		(cuReal3)paMeshCUDA->h, (cuRect)paMeshCUDA->meshRect, 
-		(MOD_)paMeshCUDA->Get_Module_Heff_Display() == MOD_DEMAG || paMeshCUDA->IsOutputDataSet_withRect(DATA_E_DEMAG),
-		(MOD_)paMeshCUDA->Get_Module_Energy_Display() == MOD_DEMAG || paMeshCUDA->IsOutputDataSet_withRect(DATA_E_DEMAG));
+		(cuReal3)paMeshCUDA->h_dm, (cuRect)paMeshCUDA->meshRect, 
+		(MOD_)paMeshCUDA->Get_Module_Heff_Display() == MOD_DEMAG || paMeshCUDA->IsOutputDataSet_withRect(DATA_E_DEMAG) || paMeshCUDA->IsStageSet(SS_MONTECARLO),
+		(MOD_)paMeshCUDA->Get_Module_Energy_Display() == MOD_DEMAG || paMeshCUDA->IsOutputDataSet_withRect(DATA_E_DEMAG) || paMeshCUDA->IsStageSet(SS_MONTECARLO));
 	if (error)	initialized = false;
+
+	if (initialized) set_Atom_DemagCUDA_pointers();
+
+	//if a Monte Carlo stage is set then we need to compute fields
+	if (paMeshCUDA->IsStageSet(SS_MONTECARLO)) paMeshCUDA->Set_Force_MonteCarlo_ComputeFields(true);
 
 	return error;
 }
@@ -88,7 +96,7 @@ BError Atom_DemagCUDA::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 	BError error(CLASS_STR(Atom_DemagCUDA));
 
 	//only need to uninitialize if n or h have changed, or pbc settings have changed
-	if (!CheckDimensions(paMeshCUDA->n_dm, paMeshCUDA->h_dm, paDemag->Get_PBC()) || cfgMessage == UPDATECONFIG_MESHCHANGE) {
+	if (!CheckDimensions(paMeshCUDA->n_dm, paMeshCUDA->h_dm, paDemag->Get_PBC()) || cfgMessage == UPDATECONFIG_MESHCHANGE || cfgMessage == UPDATECONFIG_DEMAG_CONVCHANGE) {
 
 		Uninitialize();
 

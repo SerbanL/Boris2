@@ -20,6 +20,7 @@ FMesh::FMesh(SuperMesh *pSMesh_) :
 			VINFO(exclude_from_multiconvdemag),
 			//Members in this derived class
 			VINFO(move_mesh_trigger), VINFO(skyShift), VINFO(exchange_couple_to_meshes),
+			VINFO(mc_cone_angledeg), VINFO(mc_acceptance_rate), VINFO(mc_parallel), VINFO(mc_disabled), VINFO(mc_constrain), VINFO(cmc_n),
 			//Material Parameters
 			VINFO(grel), VINFO(alpha), VINFO(Ms), VINFO(Nxy), 
 			VINFO(A), VINFO(D), VINFO(J1), VINFO(J2), 
@@ -62,6 +63,7 @@ FMesh::FMesh(Rect meshRect_, DBL3 h_, SuperMesh *pSMesh_) :
 			VINFO(exclude_from_multiconvdemag),
 			//Members in this derived class
 			VINFO(move_mesh_trigger), VINFO(skyShift), VINFO(exchange_couple_to_meshes),
+			VINFO(mc_cone_angledeg), VINFO(mc_acceptance_rate), VINFO(mc_parallel), VINFO(mc_disabled), VINFO(mc_constrain), VINFO(cmc_n),
 			//Material Parameters
 			VINFO(grel), VINFO(alpha), VINFO(Ms), VINFO(Nxy),
 			VINFO(A), VINFO(D), VINFO(J1), VINFO(J2),
@@ -188,6 +190,13 @@ BError FMesh::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 
 	//erase any unused skyrmion trackers in this mesh
 	skyShift.UpdateConfiguration(saveDataList);
+
+	if (cfgMessage == UPDATECONFIG_PARAMVALUECHANGED_MLENGTH) {
+
+		//renormalization of magnetization length done in meshODE. Here we need to check Ms has not been set to zero for non-empty cells if a spatial variation is set.
+		//This can happen e.g. when shape_setparam is used for the first time.
+		Ms.fix_s_scaling_zeros(M, Ms.get0());
+	}
 
 	//------------------------ CUDA UpdateConfiguration if set
 	
@@ -378,7 +387,7 @@ void FMesh::CoupleToDipoles(bool status)
 				if (status) {
 
 					//set interface cells to have magnetization direction along the touching dipole direction
-					DBL3 Mdipole_direction = dynamic_cast<Mesh*>((*pSMesh)[idx])->GetAveragemagnetization().normalized();
+					DBL3 Mdipole_direction = dynamic_cast<Mesh*>((*pSMesh)[idx])->GetAverageMagnetization().normalized();
 
 					Box box = M.box_from_rect_max(mesh_intersection);
 

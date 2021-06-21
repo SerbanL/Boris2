@@ -133,52 +133,19 @@ BError SuperMesh::SaveOnScreenPhysicalQuantity(std::string fileName, std::string
 	return error;
 }
 
-//Before calling a run of GetDisplayedMeshValue, make sure to call PrepareDisplayedMeshValue : this calculates and stores in displayVEC storage and quantities which don't have memory allocated directly, but require computation and temporary storage.
-void SuperMesh::PrepareDisplayedMeshValue(void)
-{
-	switch (displayedPhysicalQuantity) {
-
-		////////////////
-		//no quantity displayed on the supermesh, so use individual mesh displayed quantities
-		////////////////
-
-	case MESHDISPLAY_NONE:
-	{
-		for (int idx = 0; idx < pMesh.size(); idx++) {
-
-			pMesh[idx]->PrepareDisplayedMeshValue();
-		}
-	}
-	break;
-
-	default:
-
-		////////////////
-		//use a quantity displayed on the supermesh
-		////////////////
-
-#if COMPILECUDA == 1
-		if (pSMeshCUDA) {
-
-			pSMeshCUDA->PrepareDisplayedMeshValue();
-		}
-#endif
-		break;
-	}
-}
-
-//return value of currently displayed mesh quantity at the given absolute position; the value is read directly from the storage VEC, not from the displayed PhysQ.
-//Return an Any as the displayed quantity could be either a scalar or a vector.
-Any SuperMesh::GetDisplayedMeshValue(DBL3 abs_pos)
+//extract profile from named mesh, from currently display mesh quantity, but reading directly from the quantity
+//Displayed mesh quantity can be scalar or a vector; pass in std::vector pointers, then check for nullptr to determine what type is displayed
+//if do_average = true then build average and don't return anything, else return just a single-shot profile. If read_average = true then simply read out the internally stored averaged profile by assigning to pointer.
+void SuperMesh::GetPhysicalQuantityProfile(DBL3 start, DBL3 end, double step, DBL3 stencil, std::vector<DBL3>*& pprofile_dbl3, std::vector<double>*& pprofile_dbl, std::string meshName, bool do_average, bool read_average)
 {
 #if COMPILECUDA == 1
 	if (pSMeshCUDA) {
 
 		//if super-mesh display quantities are set with CUDA enabled then get value from pSMeshCUDA
-		return pSMeshCUDA->GetDisplayedMeshValue(abs_pos);
+		return pSMeshCUDA->GetPhysicalQuantityProfile(start, end, step, stencil, pprofile_dbl3, pprofile_dbl, meshName, do_average, read_average);
 	}
 #endif
-	
+
 	//get anything displayed on super-mesh
 	switch (displayedPhysicalQuantity) {
 
@@ -187,24 +154,19 @@ Any SuperMesh::GetDisplayedMeshValue(DBL3 abs_pos)
 		////////////////
 
 	case MESHDISPLAY_NONE:
-	{
-		//find which mesh holds abs_pos, if any, and return value displayed for that mesh
-		for (int idx = 0; idx < pMesh.size(); idx++) {
-
-			if (pMesh[idx]->meshRect.contains(abs_pos)) return pMesh[idx]->GetDisplayedMeshValue(abs_pos);
-		}
-	}
+		if (contains(meshName)) pMesh[meshName]->GetPhysicalQuantityProfile(start, end, step, stencil, pprofile_dbl3, pprofile_dbl, do_average, read_average);
 		break;
 
-		////////////////
-		//use a quantity displayed on the supermesh
-		////////////////
+	////////////////
+	//use a quantity displayed on the supermesh
+	////////////////
 
 	case MESHDISPLAY_SM_DEMAG:
 
 		if (IsSuperMeshModuleSet(MODS_SDEMAG)) {
 
-			return dynamic_cast<SDemag*>(pSMod(MODS_SDEMAG))->GetDemagField()[abs_pos - sMeshRect_fm.s];
+			profile_storage_dbl3 = dynamic_cast<SDemag*>(pSMod(MODS_SDEMAG))->GetDemagField().extract_profile(start, end, step, stencil);
+			pprofile_dbl3 = &profile_storage_dbl3;
 		}
 		break;
 
@@ -212,7 +174,8 @@ Any SuperMesh::GetDisplayedMeshValue(DBL3 abs_pos)
 
 		if (IsSuperMeshModuleSet(MODS_OERSTED)) {
 
-			return dynamic_cast<Oersted*>(pSMod(MODS_OERSTED))->GetOerstedField()[abs_pos - sMeshRect_e.s];
+			profile_storage_dbl3 = dynamic_cast<Oersted*>(pSMod(MODS_OERSTED))->GetOerstedField().extract_profile(start, end, step, stencil);
+			pprofile_dbl3 = &profile_storage_dbl3;
 		}
 		break;
 
@@ -220,12 +183,11 @@ Any SuperMesh::GetDisplayedMeshValue(DBL3 abs_pos)
 
 		if (IsSuperMeshModuleSet(MODS_STRAYFIELD)) {
 
-			return dynamic_cast<StrayField*>(pSMod(MODS_STRAYFIELD))->GetStrayField()[abs_pos - sMeshRect_fm.s];
+			profile_storage_dbl3 = dynamic_cast<StrayField*>(pSMod(MODS_STRAYFIELD))->GetStrayField().extract_profile(start, end, step, stencil);
+			pprofile_dbl3 = &profile_storage_dbl3;
 		}
 		break;
 	}
-
-	return Any();
 }
 
 //return average value for currently displayed mesh quantity in the given relative rectangle

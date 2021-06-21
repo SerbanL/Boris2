@@ -28,7 +28,8 @@ void Atom_DifferentialEquationCubic::RunSD_Start(void)
 				/////////////////////////
 
 				double mu_s = paMesh->mu_s;
-				paMesh->update_parameters_mcoarse(idx, paMesh->mu_s, mu_s);
+				double grel = paMesh->grel;
+				paMesh->update_parameters_mcoarse(idx, paMesh->mu_s, mu_s, paMesh->grel, grel);
 
 				DBL3 m = paMesh->M1[idx] / mu_s;
 				DBL3 H = paMesh->Heff1[idx];
@@ -60,7 +61,8 @@ void Atom_DifferentialEquationCubic::RunSD_Start(void)
 
 				//The above equation can be solved for m_next explicitly.
 
-				double s = dT * GAMMA / 4.0;
+				//multiplication by grel important : can set grel to zero in entire mesh, or parts of mesh, which results in spins freezing.
+				double s = dT * GAMMA * grel / 4.0;
 
 				DBL3 mxH = m ^ H;
 				m = ((1 - s*s*(mxH*mxH)) * m - 2*s*(m ^ mxH)) / (1 + s*s*(mxH*mxH));
@@ -163,14 +165,18 @@ void Atom_DifferentialEquationCubic::RunSD_Advance_withReductions(void)
 				/////////////////////////
 
 				double mu_s = paMesh->mu_s;
-				paMesh->update_parameters_mcoarse(idx, paMesh->mu_s, mu_s);
+				double grel = paMesh->grel;
+				paMesh->update_parameters_mcoarse(idx, paMesh->mu_s, mu_s, paMesh->grel, grel);
 
 				DBL3 m = paMesh->M1[idx] / mu_s;
 				DBL3 H = paMesh->Heff1[idx];
 
 				//obtained maximum normalized torque term
-				double _mxh = GetMagnitude(m ^ H) / (conversion * paMesh->M1[idx].norm());
-				mxh_reduction.reduce_max(_mxh);
+				if (IsNZ(grel)) {
+
+					double _mxh = GetMagnitude(m ^ H) / (conversion * paMesh->M1[idx].norm());
+					mxh_reduction.reduce_max(_mxh);
+				}
 
 				//The updating equation is (see https://doi.org/10.1063/1.4862839):
 
@@ -181,7 +187,8 @@ void Atom_DifferentialEquationCubic::RunSD_Advance_withReductions(void)
 
 				//The above equation can be solved for m_next explicitly.
 
-				double s = dT * GAMMA / 4.0;
+				//multiplication by grel important : can set grel to zero in entire mesh, or parts of mesh, which results in spins freezing.
+				double s = dT * GAMMA * grel / 4.0;
 
 				DBL3 mxH = m ^ H;
 				m = ((1 - s*s*(mxH*mxH)) * m - 2*s*(m ^ mxH)) / (1 + s*s*(mxH*mxH));
@@ -193,11 +200,11 @@ void Atom_DifferentialEquationCubic::RunSD_Advance_withReductions(void)
 				paMesh->M1[idx].renormalize(mu_s);
 
 				//use the flag check here to avoid doing dmdt reduction if not enabled (mxh and dmdt conditions are equivalent here, mxh is more likely to be used - at least by me!)
-				if (calculate_dmdt) {
+				if (calculate_dmdt && IsNZ(grel)) {
 
 					//obtained maximum dmdt term
 					double Mnorm = paMesh->M1[idx].norm();
-					double _dmdt = GetMagnitude(paMesh->M1[idx] - sM1[idx]) / (dT * GAMMA * Mnorm * conversion * Mnorm);
+					double _dmdt = GetMagnitude(paMesh->M1[idx] - sM1[idx]) / (dT * GAMMA * grel * Mnorm * conversion * Mnorm);
 					dmdt_reduction.reduce_max(_dmdt);
 				}
 			}
@@ -221,7 +228,8 @@ void Atom_DifferentialEquationCubic::RunSD_Advance(void)
 				/////////////////////////
 
 				double mu_s = paMesh->mu_s;
-				paMesh->update_parameters_mcoarse(idx, paMesh->mu_s, mu_s);
+				double grel = paMesh->grel;
+				paMesh->update_parameters_mcoarse(idx, paMesh->mu_s, mu_s, paMesh->grel, grel);
 
 				DBL3 m = paMesh->M1[idx] / mu_s;
 				DBL3 H = paMesh->Heff1[idx];
@@ -235,7 +243,8 @@ void Atom_DifferentialEquationCubic::RunSD_Advance(void)
 
 				//The above equation can be solved for m_next explicitly.
 
-				double s = dT * GAMMA / 4.0;
+				//multiplication by grel important : can set grel to zero in entire mesh, or parts of mesh, which results in spins freezing.
+				double s = dT * GAMMA * grel / 4.0;
 
 				DBL3 mxH = m ^ H;
 				m = ((1 - s*s*(mxH*mxH)) * m - 2*s*(m ^ mxH)) / (1 + s*s*(mxH*mxH));

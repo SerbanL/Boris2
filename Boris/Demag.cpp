@@ -4,6 +4,8 @@
 
 #ifdef MODULE_COMPILATION_DEMAG
 
+#include "SimScheduleDefs.h"
+
 #include "Mesh.h"
 
 #if COMPILECUDA == 1
@@ -77,9 +79,12 @@ BError Demag::Initialize(void)
 	//Make sure display data has memory allocated (or freed) as required
 	error = Update_Module_Display_VECs(
 		pMesh->h, pMesh->meshRect, 
-		(MOD_)pMesh->Get_Module_Heff_Display() == MOD_DEMAG || pMesh->IsOutputDataSet_withRect(DATA_E_DEMAG),
-		(MOD_)pMesh->Get_Module_Energy_Display() == MOD_DEMAG || pMesh->IsOutputDataSet_withRect(DATA_E_DEMAG));
+		(MOD_)pMesh->Get_Module_Heff_Display() == MOD_DEMAG || pMesh->IsOutputDataSet_withRect(DATA_E_DEMAG) || pMesh->IsStageSet(SS_MONTECARLO),
+		(MOD_)pMesh->Get_Module_Energy_Display() == MOD_DEMAG || pMesh->IsOutputDataSet_withRect(DATA_E_DEMAG) || pMesh->IsStageSet(SS_MONTECARLO));
 	if (error) initialized = false;
+
+	//if a Monte Carlo stage is set then we need to compute fields
+	if (pMesh->IsStageSet(SS_MONTECARLO)) pMesh->Set_Force_MonteCarlo_ComputeFields(true);
 
 	return error;
 }
@@ -89,7 +94,7 @@ BError Demag::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 	BError error(CLASS_STR(Demag));
 
 	//only need to uninitialize if n or h have changed, or pbc settings have changed
-	if (!CheckDimensions(pMesh->n, pMesh->h, demag_pbc_images)) {
+	if (!CheckDimensions(pMesh->n, pMesh->h, demag_pbc_images) || cfgMessage == UPDATECONFIG_DEMAG_CONVCHANGE) {
 		
 		Uninitialize();
 
@@ -398,6 +403,32 @@ double Demag::UpdateField(void)
 	return energy;
 }
 
+//-------------------Energy methods
+
+//For simple cubic mesh spin_index coincides with index in M1
+double Demag::Get_EnergyChange(int spin_index, DBL3 Mnew)
+{
+	//Module_Heff needs to be calculated (done during a Monte Carlo simulation, where this method would be used)
+	if (Module_Heff.linear_size()) {
+
+		//do not divide by 2 as we are not double-counting here
+		return -pMesh->h.dim() * MU0 * Module_Heff[pMesh->M.cellidx_to_position(spin_index)] * (Mnew - pMesh->M[spin_index]);
+	}
+	else return 0.0;
+}
+
+double Demag::Get_Energy(int spin_index)
+{
+	//Module_Heff needs to be calculated (done during a Monte Carlo simulation, where this method would be used)
+	if (Module_Heff.linear_size()) {
+
+		//do not divide by 2 as we are not double-counting here
+		return -pMesh->h.dim() * MU0 * Module_Heff[pMesh->M.cellidx_to_position(spin_index)] * pMesh->M[spin_index];
+	}
+	else return 0.0;
+}
+
 #endif
+
 
 

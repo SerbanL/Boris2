@@ -197,6 +197,12 @@ public:
 		return false;
 	}
 
+	bool SaveImage(std::string fileName)
+	{
+		std::cout << "Not available in console-only mode" << std::endl;
+		return false;
+	}
+
 	//Set mesh display detail level directly (N/A in non-graphics mode)
 	void SetDetailLevel(double detail_level) {}
 	double GetDetailLevel(void) { return 0.0; }

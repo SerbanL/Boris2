@@ -8,8 +8,8 @@
 //return average dm/dt in the given avRect (relative rect). Here m is the direction vector.
 DBL3 Atom_Mesh_Cubic::Average_dmdt(Rect avRect)
 {
-	if (avRect.IsNull()) avRect = meshRect;
-	Box box = M1.box_from_rect_max(avRect);
+	if (avRect.IsNull()) avRect = meshRect - meshRect.s;
+	Box box = M1.box_from_rect_max(avRect + meshRect.s);
 
 #if COMPILECUDA == 1
 	if (paMeshCUDA) return reinterpret_cast<Atom_Mesh_CubicCUDA*>(paMeshCUDA)->Average_dmdt(box);
@@ -39,8 +39,8 @@ DBL3 Atom_Mesh_Cubic::Average_dmdt(Rect avRect)
 //return average m x dm/dt in the given avRect (relative rect). Here m is the direction vector.
 DBL3 Atom_Mesh_Cubic::Average_mxdmdt(Rect avRect)
 {
-	if (avRect.IsNull()) avRect = meshRect;
-	Box box = M1.box_from_rect_max(avRect);
+	if (avRect.IsNull()) avRect = meshRect - meshRect.s;
+	Box box = M1.box_from_rect_max(avRect + meshRect.s);
 
 #if COMPILECUDA == 1
 	if (paMeshCUDA) return reinterpret_cast<Atom_Mesh_CubicCUDA*>(paMeshCUDA)->Average_mxdmdt(box);

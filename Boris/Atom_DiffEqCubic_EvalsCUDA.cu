@@ -40,7 +40,7 @@ __global__ void RenormalizeMoments_Cubic_kernel(ManagedAtom_MeshCUDA& cuaMesh)
 			cuBReal mu_s = *cuaMesh.pmu_s;
 			cuaMesh.update_parameters_mcoarse(idx, *cuaMesh.pmu_s, mu_s);
 
-			(*cuaMesh.pM1)[idx].renormalize(mu_s);
+			if (mu_s) (*cuaMesh.pM1)[idx].renormalize(mu_s);
 		}
 	}
 }
@@ -48,7 +48,7 @@ __global__ void RenormalizeMoments_Cubic_kernel(ManagedAtom_MeshCUDA& cuaMesh)
 //Restore magnetization after a failed step for adaptive time-step methods
 void Atom_DifferentialEquationCubicCUDA::RenormalizeMoments(void)
 {
-	RenormalizeMoments_Cubic_kernel <<< (paMeshCUDA->n.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (paMeshCUDA->cuaMesh);
+	RenormalizeMoments_Cubic_kernel <<< (paMeshCUDA->M1()->linear_size_cpu() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (paMeshCUDA->cuaMesh);
 }
 
 //-----------------------------------------

@@ -33,15 +33,16 @@ DBL3 DifferentialEquationAFM::LLG(int idx)
 DBL3 DifferentialEquationAFM::LLGStatic(int idx)
 {
 	DBL2 Ms_AFM = pMesh->Ms_AFM;
-	pMesh->update_parameters_mcoarse(idx, pMesh->Ms_AFM, Ms_AFM);
+	DBL2 grel_AFM = pMesh->grel_AFM;
+	pMesh->update_parameters_mcoarse(idx, pMesh->Ms_AFM, Ms_AFM, pMesh->grel_AFM, grel_AFM);
 
 	int tn = omp_get_thread_num();
 
 	//sub-lattice B value so we can read it after
-	Equation_Eval_2[tn] = (-GAMMA / 2) * ((pMesh->M2[idx] / Ms_AFM.j) ^ (pMesh->M2[idx] ^ pMesh->Heff2[idx]));
+	Equation_Eval_2[tn] = (-GAMMA * grel_AFM.j / 2) * ((pMesh->M2[idx] / Ms_AFM.j) ^ (pMesh->M2[idx] ^ pMesh->Heff2[idx]));
 
 	//return the sub-lattice A value as normal
-	return (-GAMMA / 2) * ((pMesh->M[idx] / Ms_AFM.i) ^ (pMesh->M[idx] ^ pMesh->Heff[idx]));
+	return (-GAMMA * grel_AFM.i / 2) * ((pMesh->M[idx] / Ms_AFM.i) ^ (pMesh->M[idx] ^ pMesh->Heff[idx]));
 }
 
 //------------------------------------------------------------------------------------------------------

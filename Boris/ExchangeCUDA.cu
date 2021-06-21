@@ -31,7 +31,23 @@ __global__ void ExchangeCUDA_FM_UpdateField(ManagedMeshCUDA& cuMesh, ManagedModu
 			cuBReal A = *cuMesh.pA;
 			cuMesh.update_parameters_mcoarse(idx, *cuMesh.pMs, Ms, *cuMesh.pA, A);
 
-			Hexch = 2 * A * M.delsq_neu(idx) / ((cuBReal)MU0 * Ms * Ms);
+			if (*cuMesh.pbase_temperature > 0.0 && *cuMesh.pT_Curie > 0.0) {
+
+				//for finite temperature simulations the magnetization length may have a spatial variation
+				//this will not affect the transverse torque (mxH), but will affect the longitudinal term in the sLLB equation (m.H) and cannot be neglected when close to Tc.
+
+				cuReal33 Mg = M.grad_neu(idx);
+				cuReal3 dMdx = Mg.x, dMdy = Mg.y, dMdz = Mg.z;
+
+				cuBReal delsq_Msq = 2 * M[idx] * (M.dxx_neu(idx) + M.dyy_neu(idx) + M.dzz_neu(idx)) + 2 * (dMdx * dMdx + dMdy * dMdy + dMdz * dMdz);
+				cuBReal Mnorm = M[idx].norm();
+				Hexch = (2 * A / (MU0*Ms*Ms)) * (M.delsq_neu(idx) - M[idx] * delsq_Msq / (2 * Mnorm*Mnorm));
+			}
+			else {
+
+				//zero temperature simulations : magnetization length could still vary but will only affect mxH term, so not needed for 0K simulations.
+				Hexch = 2 * A * M.delsq_neu(idx) / ((cuBReal)MU0 * Ms * Ms);
+			}
 
 			if (do_reduction) {
 

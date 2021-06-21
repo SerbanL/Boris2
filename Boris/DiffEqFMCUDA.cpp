@@ -283,6 +283,8 @@ BError DifferentialEquationFMCUDA::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 
 	if (ucfg::check_cfgflags(cfgMessage, UPDATECONFIG_ODE_MOVEMESH)) {
 
+		/*
+		//REMOVED : not really necessary, especially if you have ends coupled to dipoles, which freeze end cells only
 		if (!error) {
 
 			//set skip cells flags for moving mesh if enabled
@@ -303,6 +305,7 @@ BError DifferentialEquationFMCUDA::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 				pMeshCUDA->M()->clear_skipcells();
 			}
 		}
+		*/
 	}
 
 	if (cfgMessage == UPDATECONFIG_PARAMVALUECHANGED_MLENGTH) RenormalizeMagnetization();

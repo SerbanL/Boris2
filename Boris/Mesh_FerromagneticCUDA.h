@@ -36,6 +36,9 @@ public:
 	BError UpdateConfiguration(UPDATECONFIG_ cfgMessage);
 	void UpdateConfiguration_Values(UPDATECONFIG_ cfgMessage) {}
 	
+	//Take a Monte Carlo Metropolis step in this atomistic mesh
+	cuBReal Iterate_MonteCarloCUDA_Classic(cuBReal mc_cone_angledeg, double target_acceptance_rate);
+
 	//----------------------------------- OTHER IMPORTANT CONTROL METHODS
 
 	//Check if mesh needs to be moved (using the MoveMesh method) - return amount of movement required (i.e. parameter to use when calling MoveMesh).
@@ -53,6 +56,17 @@ public:
 
 	//return average m x dm/dt in the given avRect (relative rect). Here m is the direction vector.
 	DBL3 Average_mxdmdt(cuBox avBox);
+
+	//----------------------------------- CALCULATION METHODS
+
+	//calculate thermodynamic average of magnetization
+	cuReal3 GetThermodynamicAverageMagnetization(cuRect rectangle);
+
+	//As for Get_Histogram, but use thermal averaging in each macrocell
+	bool Get_ThAvHistogram(std::vector<double>& histogram_x, std::vector<double>& histogram_p, int num_bins, double& min, double& max, cuINT3 macrocell_dims);
+
+	//As for Get_AngHistogram, but use thermal averaging in each macrocell
+	bool Get_ThAvAngHistogram(std::vector<double>& histogram_x, std::vector<double>& histogram_p, int num_bins, double& min, double& max, cuINT3 macrocell_dims, cuReal3 ndir);
 
 	//-----------------------------------OBJECT GETTERS
 

@@ -417,192 +417,264 @@ BError Mesh::SaveOnScreenPhysicalQuantity(std::string fileName, std::string ovf2
 	return error;
 }
 
-//Before calling a run of GetDisplayedMeshValue, make sure to call PrepareDisplayedMeshValue : this calculates and stores in displayVEC storage and quantities which don't have memory allocated directly, but require computation and temporary storage.
-void Mesh::PrepareDisplayedMeshValue(void)
+//extract profile from focused mesh, from currently display mesh quantity, but reading directly from the quantity
+//Displayed	mesh quantity can be scalar or a vector; pass in std::vector pointers, then check for nullptr to determine what type is displayed
+//if do_average = true then build average and don't return anything, else return just a single-shot profile. If read_average = true then simply read out the internally stored averaged profile by assigning to pointer.
+void Mesh::GetPhysicalQuantityProfile(DBL3 start, DBL3 end, double step, DBL3 stencil, std::vector<DBL3>*& pprofile_dbl3, std::vector<double>*& pprofile_dbl, bool do_average, bool read_average)
 {
-#if COMPILECUDA == 1
-	if (pMeshCUDA) { 
+	auto setup_profile_vec_dbl3 = [&](VEC<DBL3>& vec) -> void
+	{
+		vec.extract_profile(start, end, step, stencil);
+		if (do_average) average_mesh_profile(vec.get_last_profile());
+		else pprofile_dbl3 = &vec.get_last_profile();
+	};
 
-		pMeshCUDA->PrepareDisplayedMeshValue(); 
-		return;
-	}
+	auto setup_profile_vecvc_dbl3 = [&](VEC_VC<DBL3>& vec) -> void
+	{
+		vec.extract_profile(start, end, step, stencil);
+		if (do_average) average_mesh_profile(vec.get_last_profile());
+		else pprofile_dbl3 = &vec.get_last_profile();
+	};
+
+	auto setup_profile_vec_dbl = [&](VEC<double>& vec) -> void
+	{
+		vec.extract_profile(start, end, step, stencil);
+		if (do_average) average_mesh_profile(vec.get_last_profile());
+		else pprofile_dbl = &vec.get_last_profile();
+	};
+
+	auto setup_profile_vecvc_dbl = [&](VEC_VC<double>& vec) -> void
+	{
+		vec.extract_profile(start, end, step, stencil);
+		if (do_average) average_mesh_profile(vec.get_last_profile());
+		else pprofile_dbl = &vec.get_last_profile();
+	};
+
+	if (stencil.IsNull()) stencil = h;
+
+	if (read_average) num_profile_averages = 0;
+
+#if COMPILECUDA == 1
+	if (pMeshCUDA) { pMeshCUDA->GetPhysicalQuantityProfile(start, end, step, stencil, pprofile_dbl3, pprofile_dbl, do_average, read_average); return; }
 #endif
 
 	switch (displayedPhysicalQuantity) {
-
-	case MESHDISPLAY_CURRDENSITY:
-		if (IsModuleSet(MOD_TRANSPORT)) {
-
-			//charge current calculated internally in the Transport module, ready to be read out when needed
-			dynamic_cast<Transport*>(pMod(MOD_TRANSPORT))->GetChargeCurrent();
-		}
-		break;
-
-	case MESHDISPLAY_JSX:
-		if (IsModuleSet(MOD_TRANSPORT)) {
-
-			//spin current calculated internally in the Transport module, ready to be read out when needed
-			dynamic_cast<Transport*>(pMod(MOD_TRANSPORT))->GetSpinCurrent(0);
-		}
-		break;
-
-	case MESHDISPLAY_JSY:
-		if (IsModuleSet(MOD_TRANSPORT)) {
-
-			//spin current calculated internally in the Transport module, ready to be read out when needed
-			dynamic_cast<Transport*>(pMod(MOD_TRANSPORT))->GetSpinCurrent(1);
-		}
-		break;
-
-	case MESHDISPLAY_JSZ:
-		if (IsModuleSet(MOD_TRANSPORT)) {
-
-			//spin current calculated internally in the Transport module, ready to be read out when needed
-			dynamic_cast<Transport*>(pMod(MOD_TRANSPORT))->GetSpinCurrent(2);
-		}
-		break;
-
-	case MESHDISPLAY_TS:
-		if (IsModuleSet(MOD_TRANSPORT)) {
-
-			//spin torque calculated internally in the Transport module, ready to be read out when needed
-			dynamic_cast<Transport*>(pMod(MOD_TRANSPORT))->GetSpinTorque();
-		}
-		break;
-
-	case MESHDISPLAY_TSI:
-		if (pSMesh->IsSuperMeshModuleSet(MODS_STRANSPORT) && IsModuleSet(MOD_TRANSPORT)) {
-
-			//spin torque calculated internally in the Transport module, ready to be read out when needed
-			dynamic_cast<STransport*>(pSMesh->pSMod(MODS_STRANSPORT))->GetInterfacialSpinTorque(dynamic_cast<Transport*>(pMod(MOD_TRANSPORT)));
-		}
-		break;
 
 	default:
-		break;
-	}
-}
-
-//return value of currently displayed mesh quantity at the given absolute position; the value is read directly from the storage VEC, not from the displayed PhysQ.
-//Return an Any as the displayed quantity could be either a scalar or a vector.
-Any Mesh::GetDisplayedMeshValue(DBL3 abs_pos)
-{
-	if (!meshRect.contains(abs_pos)) return Any();
-
-#if COMPILECUDA == 1
-	if (pMeshCUDA) { return pMeshCUDA->GetDisplayedMeshValue(abs_pos); }
-#endif
-
-	DBL3 rel_pos = abs_pos - meshRect.s;
-
-	switch (displayedPhysicalQuantity) {
-
 	case MESHDISPLAY_NONE:
-		return (double)0.0;
 		break;
 
 	case MESHDISPLAY_MAGNETIZATION:
-		if (M.linear_size()) return M[rel_pos];
-		break;
-
-	case MESHDISPLAY_MAGNETIZATION2:
-		if (M2.linear_size()) return M2[rel_pos];
-		break;
-
 	case MESHDISPLAY_MAGNETIZATION12:
-		if (M.linear_size()) return M[rel_pos];
+		if (read_average) { pprofile_dbl3 = &profile_storage_dbl3; return; }
+		setup_profile_vecvc_dbl3(M);
 		break;
-
-	case MESHDISPLAY_EFFECTIVEFIELD:
-		if (Heff.linear_size()) return Heff[rel_pos];
-		break;
-
-	case MESHDISPLAY_EFFECTIVEFIELD2:
-		if (Heff2.linear_size()) return Heff2[rel_pos];
+		
+	case MESHDISPLAY_MAGNETIZATION2:
+		if (read_average) { pprofile_dbl3 = &profile_storage_dbl3; return; }
+		setup_profile_vecvc_dbl3(M2);
 		break;
 
 	case MESHDISPLAY_EFFECTIVEFIELD12:
-		if (Heff.linear_size()) return Heff[rel_pos];
+	case MESHDISPLAY_EFFECTIVEFIELD:
+		if (read_average) { pprofile_dbl3 = &profile_storage_dbl3; return; }
+		if (Module_Heff_Display == MOD_ALL || Module_Heff_Display == MOD_ERROR) {
+
+			setup_profile_vec_dbl3(Heff);
+		}
+		else {
+
+			MOD_ Module_Heff = (MOD_)Get_ActualModule_Heff_Display();
+			if (IsModuleSet(Module_Heff)) {
+
+				setup_profile_vec_dbl3(pMod(Module_Heff)->Get_Module_Heff());
+			}
+		}
 		break;
 
+	case MESHDISPLAY_EFFECTIVEFIELD2:
+		if (read_average) { pprofile_dbl3 = &profile_storage_dbl3; return; }
+		if (Module_Heff_Display == MOD_ALL || Module_Heff_Display == MOD_ERROR) {
+
+			setup_profile_vec_dbl3(Heff2);
+		}
+		else {
+
+			MOD_ Module_Heff = (MOD_)Get_ActualModule_Heff_Display();
+			if (IsModuleSet(Module_Heff)) {
+
+				setup_profile_vec_dbl3(pMod(Module_Heff)->Get_Module_Heff2());
+			}
+		}
+		break;
+
+	case MESHDISPLAY_ENERGY:
+	{
+		if (read_average) { pprofile_dbl = &profile_storage_dbl; return; }
+		MOD_ Module_Energy = (MOD_)Get_ActualModule_Energy_Display();
+		if (IsModuleSet(Module_Energy)) {
+
+			setup_profile_vec_dbl(pMod(Module_Energy)->Get_Module_Energy());
+		}
+	}
+	break;
+
+	case MESHDISPLAY_ENERGY2:
+	{
+		if (read_average) { pprofile_dbl = &profile_storage_dbl; return; }
+		MOD_ Module_Energy = (MOD_)Get_ActualModule_Energy_Display();
+		if (IsModuleSet(Module_Energy)) {
+
+			setup_profile_vec_dbl(pMod(Module_Energy)->Get_Module_Energy2());
+		}
+	}
+	break;
+
 	case MESHDISPLAY_CURRDENSITY:
+		if (read_average) { pprofile_dbl3 = &profile_storage_dbl3; return; }
 		if (IsModuleSet(MOD_TRANSPORT)) {
 
-			return dynamic_cast<Transport*>(pMod(MOD_TRANSPORT))->GetCalculatedChargeCurrentValue(rel_pos);
+			setup_profile_vecvc_dbl3(dynamic_cast<Transport*>(pMod(MOD_TRANSPORT))->GetChargeCurrent());
 		}
 		break;
 
 	case MESHDISPLAY_VOLTAGE:
-		if (V.linear_size()) return V[rel_pos];
+		if (read_average) { pprofile_dbl = &profile_storage_dbl; return; }
+		setup_profile_vecvc_dbl(V);
 		break;
 
 	case MESHDISPLAY_ELCOND:
-		if (elC.linear_size()) return elC[rel_pos];
+		if (read_average) { pprofile_dbl = &profile_storage_dbl; return; }
+		setup_profile_vecvc_dbl(elC);
 		break;
 
 	case MESHDISPLAY_SACCUM:
-		if (S.linear_size()) return S[rel_pos];
+		if (read_average) { pprofile_dbl3 = &profile_storage_dbl3; return; }
+		setup_profile_vecvc_dbl3(S);
 		break;
 
 	case MESHDISPLAY_JSX:
-	case MESHDISPLAY_JSY:
-	case MESHDISPLAY_JSZ:
+		if (read_average) { pprofile_dbl3 = &profile_storage_dbl3; return; }
 		if (IsModuleSet(MOD_TRANSPORT)) {
 
-			return dynamic_cast<Transport*>(pMod(MOD_TRANSPORT))->GetCalculatedSpinCurrentValue(rel_pos);
+			setup_profile_vec_dbl3(dynamic_cast<Transport*>(pMod(MOD_TRANSPORT))->GetSpinCurrent(0));
+		}
+		break;
+
+	case MESHDISPLAY_JSY:
+		if (read_average) { pprofile_dbl3 = &profile_storage_dbl3; return; }
+		if (IsModuleSet(MOD_TRANSPORT)) {
+
+			setup_profile_vec_dbl3(dynamic_cast<Transport*>(pMod(MOD_TRANSPORT))->GetSpinCurrent(1));
+		}
+		break;
+
+	case MESHDISPLAY_JSZ:
+		if (read_average) { pprofile_dbl3 = &profile_storage_dbl3; return; }
+		if (IsModuleSet(MOD_TRANSPORT)) {
+
+			setup_profile_vec_dbl3(dynamic_cast<Transport*>(pMod(MOD_TRANSPORT))->GetSpinCurrent(2));
 		}
 		break;
 
 	case MESHDISPLAY_TS:
+		if (read_average) { pprofile_dbl3 = &profile_storage_dbl3; return; }
 		if (IsModuleSet(MOD_TRANSPORT)) {
 
-			return dynamic_cast<Transport*>(pMod(MOD_TRANSPORT))->GetCalculatedSpinTorqueValue(rel_pos);
+			setup_profile_vec_dbl3(dynamic_cast<Transport*>(pMod(MOD_TRANSPORT))->GetSpinTorque());
 		}
 		break;
 
 	case MESHDISPLAY_TSI:
+		if (read_average) { pprofile_dbl3 = &profile_storage_dbl3; return; }
 		if (pSMesh->IsSuperMeshModuleSet(MODS_STRANSPORT) && IsModuleSet(MOD_TRANSPORT)) {
 
-			return dynamic_cast<Transport*>(pMod(MOD_TRANSPORT))->GetCalculatedSpinTorqueValue(rel_pos);
+			setup_profile_vec_dbl3(dynamic_cast<STransport*>(pSMesh->pSMod(MODS_STRANSPORT))->GetInterfacialSpinTorque(dynamic_cast<Transport*>(pMod(MOD_TRANSPORT))));
 		}
 		break;
 
 	case MESHDISPLAY_TEMPERATURE:
-		if (Temp.linear_size()) return Temp[rel_pos];
+		if (read_average) { pprofile_dbl = &profile_storage_dbl; return; }
+		setup_profile_vecvc_dbl(Temp);
 		break;
 
 	case MESHDISPLAY_UDISP:
-		if (u_disp.linear_size()) return u_disp[rel_pos];
+		if (read_average) { pprofile_dbl3 = &profile_storage_dbl3; return; }
+		setup_profile_vecvc_dbl3(u_disp);
 		break;
 
 	case MESHDISPLAY_STRAINDIAG:
-		if (strain_diag.linear_size()) return strain_diag[rel_pos];
+		if (read_average) { pprofile_dbl3 = &profile_storage_dbl3; return; }
+		setup_profile_vecvc_dbl3(strain_diag);
 		break;
 
 	case MESHDISPLAY_STRAINODIAG:
-		if (strain_odiag.linear_size()) return strain_odiag[rel_pos];
+		if (read_average) { pprofile_dbl3 = &profile_storage_dbl3; return; }
+		setup_profile_vecvc_dbl3(strain_odiag);
 		break;
 
 	case MESHDISPLAY_PARAMVAR:
 	{
-		return get_meshparam_s_scaling_value((PARAM_)displayedParamVar, rel_pos, pSMesh->GetStageTime());
+		void* s_scaling;
+
+		if (is_paramvarequation_set((PARAM_)displayedParamVar)) {
+
+			if (is_paramvar_scalar((PARAM_)displayedParamVar)) {
+
+				//first make sure the display VEC has the right rectangle and cellsize (cellsize appropriate to the type of mesh parameter being displayed - e.g. magnetic, electric, etc..)
+				displayVEC_SCA.resize(get_paramtype_cellsize((PARAM_)displayedParamVar), meshRect);
+				//now calculate it based on the set text equation
+				calculate_meshparam_s_scaling((PARAM_)displayedParamVar, displayVEC_SCA, pSMesh->GetStageTime());
+				//finally set it in s_scaling - come code for setting the PhysQ below
+				s_scaling = &displayVEC_SCA;
+			}
+			else {
+
+				//first make sure the display VEC has the right rectangle and cellsize (cellsize appropriate to the type of mesh parameter being displayed - e.g. magnetic, electric, etc..)
+				displayVEC_VEC.resize(get_paramtype_cellsize((PARAM_)displayedParamVar), meshRect);
+				//now calculate it based on the set text equation
+				calculate_meshparam_s_scaling((PARAM_)displayedParamVar, displayVEC_VEC, pSMesh->GetStageTime());
+				//finally set it in s_scaling - come code for setting the PhysQ below
+				s_scaling = &displayVEC_VEC;
+			}
+		}
+		else {
+
+			//..otherwise we can just get the s_scaling VEC from the MatP object directly.
+			s_scaling = get_meshparam_s_scaling((PARAM_)displayedParamVar);
+		}
+
+		if (is_paramvar_scalar((PARAM_)displayedParamVar)) {
+
+			profile_storage_dbl = reinterpret_cast<VEC<double>*>(s_scaling)->extract_profile(start, end, step, stencil);
+			pprofile_dbl = &profile_storage_dbl;
+		}
+		else {
+
+			profile_storage_dbl3 = reinterpret_cast<VEC<DBL3>*>(s_scaling)->extract_profile(start, end, step, stencil);
+			pprofile_dbl3 = &profile_storage_dbl3;
+		}
 	}
 	break;
 
 	case MESHDISPLAY_ROUGHNESS:
-		return dynamic_cast<Roughness*>(pMod(MOD_ROUGHNESS))->GetRoughness()[rel_pos];
+		if (IsModuleSet(MOD_ROUGHNESS)) {
+
+			profile_storage_dbl = dynamic_cast<Roughness*>(pMod(MOD_ROUGHNESS))->GetRoughness().extract_profile(start, end, step, stencil);
+			pprofile_dbl = &profile_storage_dbl;
+		}
 		break;
 
 	case MESHDISPLAY_CUSTOM_VEC:
-		if (displayVEC_VEC.linear_size()) return displayVEC_VEC[rel_pos];
+		profile_storage_dbl3 = displayVEC_VEC.extract_profile(start, end, step, stencil);
+		pprofile_dbl3 = &profile_storage_dbl3;
 		break;
 
 	case MESHDISPLAY_CUSTOM_SCA:
-		if (displayVEC_SCA.linear_size()) return displayVEC_SCA[rel_pos];
+		profile_storage_dbl = displayVEC_SCA.extract_profile(start, end, step, stencil);
+		pprofile_dbl = &profile_storage_dbl;
 		break;
 	}
-
-	return (double)0.0;
 }
 
 //return average value for currently displayed mesh quantity in the given relative rectangle
@@ -618,6 +690,7 @@ Any Mesh::GetAverageDisplayedMeshValue(Rect rel_rect)
 		return (double)0.0;
 		break;
 
+	case MESHDISPLAY_MAGNETIZATION12:
 	case MESHDISPLAY_MAGNETIZATION:
 		if (M.linear_size()) return M.average_nonempty_omp(rel_rect);
 		break;
@@ -626,10 +699,7 @@ Any Mesh::GetAverageDisplayedMeshValue(Rect rel_rect)
 		if (M2.linear_size()) return M2.average_nonempty_omp(rel_rect);
 		break;
 
-	case MESHDISPLAY_MAGNETIZATION12:
-		if (M.linear_size()) return M.average_nonempty_omp(rel_rect);
-		break;
-
+	case MESHDISPLAY_EFFECTIVEFIELD12:
 	case MESHDISPLAY_EFFECTIVEFIELD:
 		if (Heff.linear_size()) return Heff.average_nonempty_omp(rel_rect);
 		break;
@@ -638,9 +708,25 @@ Any Mesh::GetAverageDisplayedMeshValue(Rect rel_rect)
 		if (Heff2.linear_size()) return Heff2.average_nonempty_omp(rel_rect);
 		break;
 
-	case MESHDISPLAY_EFFECTIVEFIELD12:
-		if (Heff.linear_size()) return Heff.average_nonempty_omp(rel_rect);
-		break;
+	case MESHDISPLAY_ENERGY:
+	{
+		MOD_ Module_Energy = (MOD_)Get_ActualModule_Energy_Display();
+		if (IsModuleSet(Module_Energy)) {
+
+			return pMod(Module_Energy)->Get_Module_Energy().average_nonempty_omp(rel_rect);
+		}
+	}
+	break;
+
+	case MESHDISPLAY_ENERGY2:
+	{
+		MOD_ Module_Energy = (MOD_)Get_ActualModule_Energy_Display();
+		if (IsModuleSet(Module_Energy)) {
+
+			return pMod(Module_Energy)->Get_Module_Energy2().average_nonempty_omp(rel_rect);
+		}
+	}
+	break;
 
 	case MESHDISPLAY_CURRDENSITY:
 		if (IsModuleSet(MOD_TRANSPORT)) {

@@ -41,9 +41,9 @@ bool DemagTFunc::CalcDiagTens2D_PBC(VEC<DBL3> &Ddiag, INT3 N, DBL3 hRatios, bool
 
 						//Diagonal elements are symmetric so take modulus of the indexes without any change in sign for the tensor elements
 						//There is significant redundancy remaining, could be optimized further.
-						int i = mod(i_img * N.x + i0);
-						int j = mod(j_img * N.y + j0);
-						int k = mod(k_img);
+						int i = abs(i_img * N.x + i0);
+						int j = abs(j_img * N.y + j0);
+						int k = abs(k_img);
 
 						//apply asymptotic equations?
 						if (asymptotic_distance > 0 && (i >= asymptotic_distance || j >= asymptotic_distance || k >= asymptotic_distance || i * i + j * j + k * k >= asymptotic_distance * asymptotic_distance)) {
@@ -70,17 +70,17 @@ bool DemagTFunc::CalcDiagTens2D_PBC(VEC<DBL3> &Ddiag, INT3 N, DBL3 hRatios, bool
 
 			if (!x_images) {
 
-				Ddiag[INT3((N.x - i0) % N.x, j0, 0)] = val;
+				if (i0) Ddiag[INT3((N.x - i0) % N.x, j0, 0)] = val;
 
 				if (!y_images) {
 
-					Ddiag[INT3((N.x - i0) % N.x, (N.y - j0) % N.y, 0)] = val;
+					if (i0 && j0) Ddiag[INT3((N.x - i0) % N.x, (N.y - j0) % N.y, 0)] = val;
 				}
 			}
 
 			if (!y_images) {
 
-				Ddiag[INT3(i0, (N.y - j0) % N.y, 0)] = val;
+				if (j0) Ddiag[INT3(i0, (N.y - j0) % N.y, 0)] = val;
 			}
 		}
 	}
@@ -112,8 +112,6 @@ bool DemagTFunc::CalcOffDiagTens2D_PBC(std::vector<double> &Dodiag, INT3 N, DBL3
 
 	//Setup asymptotic approximation settings
 	DemagAsymptoticOffDiag demagAsymptoticOffDiag_xy(hRatios.x, hRatios.y, hRatios.z);
-	DemagAsymptoticOffDiag demagAsymptoticOffDiag_xz(hRatios.x, hRatios.z, hRatios.y);
-	DemagAsymptoticOffDiag demagAsymptoticOffDiag_yz(hRatios.y, hRatios.z, hRatios.x);
 
 	//1. D13(n, m, k) = D12(n, k, m) and D23(n, m, k) = D12(m, k, n)
 	//2. D12(n, m, k) = sign(n) * sign(m) D12(|n|, |m|, |k|)
@@ -141,10 +139,9 @@ bool DemagTFunc::CalcOffDiagTens2D_PBC(std::vector<double> &Dodiag, INT3 N, DBL3
 						//use modulus of indexes and adjust for tensor element signs based on symmetries
 						int sign_i = get_sign(i);
 						int sign_j = get_sign(j);
-						int sign_k = get_sign(k);
-						i = mod(i);
-						j = mod(j);
-						k = mod(k);
+						i = abs(i);
+						j = abs(j);
+						k = abs(k);
 
 						//apply asymptotic equations?
 						if (asymptotic_distance > 0 && (i >= asymptotic_distance || j >= asymptotic_distance || k >= asymptotic_distance || i * i + j * j + k * k >= asymptotic_distance * asymptotic_distance)) {
@@ -165,17 +162,17 @@ bool DemagTFunc::CalcOffDiagTens2D_PBC(std::vector<double> &Dodiag, INT3 N, DBL3
 
 			if (!x_images) {
 
-				Dodiag[((N.x - i0) % N.x) + j0 * N.x] = -val;
+				if (i0) Dodiag[((N.x - i0) % N.x) + j0 * N.x] = -val;
 
 				if (!y_images) {
 
-					Dodiag[((N.x - i0) % N.x) + ((N.y - j0) % N.y) * N.x] = val;
+					if (i0 && j0) Dodiag[((N.x - i0) % N.x) + ((N.y - j0) % N.y) * N.x] = val;
 				}
 			}
 
 			if (!y_images) {
 
-				Dodiag[i0 + ((N.y - j0) % N.y) * N.x] = -val;
+				if (j0) Dodiag[i0 + ((N.y - j0) % N.y) * N.x] = -val;
 			}
 		}
 	}
@@ -227,9 +224,9 @@ bool DemagTFunc::CalcDiagTens3D_PBC(VEC<DBL3> &Ddiag, INT3 N, DBL3 hRatios, bool
 
 							//Diagonal elements are symmetric so take modulus of the indexes without any change in sign for the tensor elements
 							//There is significant redundancy remaining, could be optimized further.
-							int i = mod(i_img * N.x + i0);
-							int j = mod(j_img * N.y + j0);
-							int k = mod(k_img * N.z + k0);
+							int i = abs(i_img * N.x + i0);
+							int j = abs(j_img * N.y + j0);
+							int k = abs(k_img * N.z + k0);
 
 							//apply asymptotic equations?
 							if (asymptotic_distance > 0 && (i >= asymptotic_distance || j >= asymptotic_distance || k >= asymptotic_distance || i * i + j * j + k * k >= asymptotic_distance * asymptotic_distance)) {
@@ -256,33 +253,37 @@ bool DemagTFunc::CalcDiagTens3D_PBC(VEC<DBL3> &Ddiag, INT3 N, DBL3 hRatios, bool
 
 				if (!x_images) {
 
-					Ddiag[INT3((N.x - i0) % N.x, j0, k0)] = val;
+					if (i0) Ddiag[INT3((N.x - i0) % N.x, j0, k0)] = val;
 
 					if (!y_images) {
 
-						Ddiag[INT3((N.x - i0) % N.x, (N.y - j0) % N.y, k0)] = val;
+						if (i0 && j0) Ddiag[INT3((N.x - i0) % N.x, (N.y - j0) % N.y, k0)] = val;
 
-						if (!z_images)
-							Ddiag[INT3((N.x - i0) % N.x, (N.y - j0) % N.y, (N.z - k0) % N.z)] = val;
+						if (!z_images) {
+
+							if (i0 && j0 && k0) Ddiag[INT3((N.x - i0) % N.x, (N.y - j0) % N.y, (N.z - k0) % N.z)] = val;
+						}
 					}
 
 					if (!z_images) {
 
-						Ddiag[INT3((N.x - i0) % N.x, j0, (N.z - k0) % N.z)] = val;
+						if (i0 && k0) Ddiag[INT3((N.x - i0) % N.x, j0, (N.z - k0) % N.z)] = val;
 					}
 				}
 
 				if (!y_images) {
 
-					Ddiag[INT3(i0, (N.y - j0) % N.y, k0)] = val;
+					if (j0) Ddiag[INT3(i0, (N.y - j0) % N.y, k0)] = val;
 
-					if (!z_images)
-						Ddiag[INT3(i0, (N.y - j0) % N.y, (N.z - k0) % N.z)] = val;
+					if (!z_images) {
+
+						if (j0 && k0) Ddiag[INT3(i0, (N.y - j0) % N.y, (N.z - k0) % N.z)] = val;
+					}
 				}
 
 				if (!z_images) {
 
-					Ddiag[INT3(i0, j0, (N.z - k0) % N.z)] = val;
+					if (k0) Ddiag[INT3(i0, j0, (N.z - k0) % N.z)] = val;
 				}
 			}
 		}
@@ -346,9 +347,9 @@ bool DemagTFunc::CalcOffDiagTens3D_PBC(VEC<DBL3> &Dodiag, INT3 N, DBL3 hRatios, 
 							int sign_i = get_sign(i);
 							int sign_j = get_sign(j);
 							int sign_k = get_sign(k);
-							i = mod(i);
-							j = mod(j);
-							k = mod(k);
+							i = abs(i);
+							j = abs(j);
+							k = abs(k);
 
 							//apply asymptotic equations?
 							if (asymptotic_distance > 0 && (i >= asymptotic_distance || j >= asymptotic_distance || k >= asymptotic_distance || i * i + j * j + k * k >= asymptotic_distance * asymptotic_distance)) {
@@ -377,33 +378,37 @@ bool DemagTFunc::CalcOffDiagTens3D_PBC(VEC<DBL3> &Dodiag, INT3 N, DBL3 hRatios, 
 
 				if (!x_images) {
 
-					Dodiag[INT3((N.x - i0) % N.x, j0, k0)] = val & DBL3(-1, -1, +1);
+					if (i0) Dodiag[INT3((N.x - i0) % N.x, j0, k0)] = val & DBL3(-1, -1, +1);
 
 					if (!y_images) {
 
-						Dodiag[INT3((N.x - i0) % N.x, (N.y - j0) % N.y, k0)] = val & DBL3(+1, -1, -1);
+						if (i0 && j0) Dodiag[INT3((N.x - i0) % N.x, (N.y - j0) % N.y, k0)] = val & DBL3(+1, -1, -1);
 
-						if (!z_images)
-							Dodiag[INT3((N.x - i0) % N.x, (N.y - j0) % N.y, (N.z - k0) % N.z)] = val;
+						if (!z_images) {
+
+							if (i0 && j0 && k0) Dodiag[INT3((N.x - i0) % N.x, (N.y - j0) % N.y, (N.z - k0) % N.z)] = val;
+						}
 					}
 
 					if (!z_images) {
 
-						Dodiag[INT3((N.x - i0) % N.x, j0, (N.z - k0) % N.z)] = val & DBL3(-1, +1, -1);
+						if (i0 && k0) Dodiag[INT3((N.x - i0) % N.x, j0, (N.z - k0) % N.z)] = val & DBL3(-1, +1, -1);
 					}
 				}
 
 				if (!y_images) {
 
-					Dodiag[INT3(i0, (N.y - j0) % N.y, k0)] = val & DBL3(-1, +1, -1);
+					if (j0) Dodiag[INT3(i0, (N.y - j0) % N.y, k0)] = val & DBL3(-1, +1, -1);
 
-					if (!z_images)
-						Dodiag[INT3(i0, (N.y - j0) % N.y, (N.z - k0) % N.z)] = val & DBL3(-1, -1, +1);
+					if (!z_images) {
+
+						if (j0 && k0) Dodiag[INT3(i0, (N.y - j0) % N.y, (N.z - k0) % N.z)] = val & DBL3(-1, -1, +1);
+					}
 				}
 
 				if (!z_images) {
 
-					Dodiag[INT3(i0, j0, (N.z - k0) % N.z)] = val & DBL3(+1, -1, -1);
+					if (k0) Dodiag[INT3(i0, j0, (N.z - k0) % N.z)] = val & DBL3(+1, -1, -1);
 				}
 			}
 		}

@@ -27,7 +27,8 @@ __global__ void RunSD_Start_Kernel(ManagedAtom_DiffEqCubicCUDA& cuaDiffEq, Manag
 				/////////////////////////
 
 				cuBReal mu_s = *cuaMesh.pmu_s;
-				cuaMesh.update_parameters_mcoarse(idx, *cuaMesh.pmu_s, mu_s);
+				cuBReal grel = *cuaMesh.pgrel;
+				cuaMesh.update_parameters_mcoarse(idx, *cuaMesh.pmu_s, mu_s, *cuaMesh.pgrel, grel);
 
 				/////////////////////////
 
@@ -59,7 +60,7 @@ __global__ void RunSD_Start_Kernel(ManagedAtom_DiffEqCubicCUDA& cuaDiffEq, Manag
 
 				//The above equation can be solved for m_next explicitly.
 
-				cuBReal s = dT * (cuBReal)GAMMA / 4.0;
+				cuBReal s = dT * (cuBReal)GAMMA * grel / 4.0;
 
 				cuReal3 mxH = m ^ H;
 				m = ((1 - s*s*(mxH*mxH)) * m - 2*s*(m ^ mxH)) / (1 + s*s*(mxH*mxH));
@@ -164,14 +165,15 @@ __global__ void RunSD_Advance_withReductions_Kernel(ManagedAtom_DiffEqCubicCUDA&
 				/////////////////////////
 
 				cuBReal mu_s = *cuaMesh.pmu_s;
-				cuaMesh.update_parameters_mcoarse(idx, *cuaMesh.pmu_s, mu_s);
+				cuBReal grel = *cuaMesh.pgrel;
+				cuaMesh.update_parameters_mcoarse(idx, *cuaMesh.pmu_s, mu_s, *cuaMesh.pgrel, grel);
 
 				cuReal3 m = (*cuaMesh.pM1)[idx] / mu_s;
 				cuReal3 H = (*cuaMesh.pHeff1)[idx];
 
 				//obtained maximum normalized torque term
 				cuBReal Mnorm = (*cuaMesh.pM1)[idx].norm();
-				mxh = cu_GetMagnitude(m ^ H) / (conversion * Mnorm);
+				if (cuIsNZ(grel)) mxh = cu_GetMagnitude(m ^ H) / (conversion * Mnorm);
 
 				//The updating equation is (see https://doi.org/10.1063/1.4862839):
 
@@ -182,7 +184,7 @@ __global__ void RunSD_Advance_withReductions_Kernel(ManagedAtom_DiffEqCubicCUDA&
 
 				//The above equation can be solved for m_next explicitly.
 
-				cuBReal s = dT * (cuBReal)GAMMA / 4.0;
+				cuBReal s = dT * (cuBReal)GAMMA * grel / 4.0;
 
 				cuReal3 mxH = m ^ H;
 				m = ((1 - s*s*(mxH*mxH)) * m - 2*s*(m ^ mxH)) / (1 + s*s*(mxH*mxH));
@@ -194,7 +196,7 @@ __global__ void RunSD_Advance_withReductions_Kernel(ManagedAtom_DiffEqCubicCUDA&
 				(*cuaMesh.pM1)[idx].renormalize(mu_s);
 
 				//obtain maximum normalized dmdt term
-				dmdt = cu_GetMagnitude((*cuaMesh.pM1)[idx] - (*cuaDiffEq.psM1)[idx]) / (dT * (cuBReal)GAMMA * conversion * Mnorm * Mnorm);
+				if (cuIsNZ(grel)) dmdt = cu_GetMagnitude((*cuaMesh.pM1)[idx] - (*cuaDiffEq.psM1)[idx]) / (dT * (cuBReal)GAMMA * conversion * Mnorm * Mnorm);
 			}
 		}
 	}
@@ -223,13 +225,14 @@ __global__ void RunSD_Advance_withReduction_mxh_Kernel(ManagedAtom_DiffEqCubicCU
 				/////////////////////////
 
 				cuBReal mu_s = *cuaMesh.pmu_s;
-				cuaMesh.update_parameters_mcoarse(idx, *cuaMesh.pmu_s, mu_s);
+				cuBReal grel = *cuaMesh.pgrel;
+				cuaMesh.update_parameters_mcoarse(idx, *cuaMesh.pmu_s, mu_s, *cuaMesh.pgrel, grel);
 
 				cuReal3 m = (*cuaMesh.pM1)[idx] / mu_s;
 				cuReal3 H = (*cuaMesh.pHeff1)[idx];
 
 				//obtained maximum normalized torque term
-				mxh = cu_GetMagnitude(m ^ H) / (conversion * (*cuaMesh.pM1)[idx].norm());
+				if (cuIsNZ(grel)) mxh = cu_GetMagnitude(m ^ H) / (conversion * (*cuaMesh.pM1)[idx].norm());
 
 				//The updating equation is (see https://doi.org/10.1063/1.4862839):
 
@@ -240,7 +243,7 @@ __global__ void RunSD_Advance_withReduction_mxh_Kernel(ManagedAtom_DiffEqCubicCU
 
 				//The above equation can be solved for m_next explicitly.
 
-				cuBReal s = dT * (cuBReal)GAMMA / 4.0;
+				cuBReal s = dT * (cuBReal)GAMMA * grel / 4.0;
 
 				cuReal3 mxH = m ^ H;
 				m = ((1 - s*s*(mxH*mxH)) * m - 2*s*(m ^ mxH)) / (1 + s*s*(mxH*mxH));
@@ -278,7 +281,8 @@ __global__ void RunSD_Advance_withReduction_dmdt_Kernel(ManagedAtom_DiffEqCubicC
 				/////////////////////////
 
 				cuBReal mu_s = *cuaMesh.pmu_s;
-				cuaMesh.update_parameters_mcoarse(idx, *cuaMesh.pmu_s, mu_s);
+				cuBReal grel = *cuaMesh.pgrel;
+				cuaMesh.update_parameters_mcoarse(idx, *cuaMesh.pmu_s, mu_s, *cuaMesh.pgrel, grel);
 
 				cuReal3 m = (*cuaMesh.pM1)[idx] / mu_s;
 				cuReal3 H = (*cuaMesh.pHeff1)[idx];
@@ -292,7 +296,7 @@ __global__ void RunSD_Advance_withReduction_dmdt_Kernel(ManagedAtom_DiffEqCubicC
 
 				//The above equation can be solved for m_next explicitly.
 
-				cuBReal s = dT * (cuBReal)GAMMA / 4.0;
+				cuBReal s = dT * (cuBReal)GAMMA * grel / 4.0;
 
 				cuReal3 mxH = m ^ H;
 				m = ((1 - s*s*(mxH*mxH)) * m - 2*s*(m ^ mxH)) / (1 + s*s*(mxH*mxH));
@@ -304,8 +308,11 @@ __global__ void RunSD_Advance_withReduction_dmdt_Kernel(ManagedAtom_DiffEqCubicC
 				(*cuaMesh.pM1)[idx].renormalize(mu_s);
 
 				//obtain maximum normalized dmdt term
-				cuBReal Mnorm = (*cuaMesh.pM1)[idx].norm();
-				dmdt = cu_GetMagnitude((*cuaMesh.pM1)[idx] - (*cuaDiffEq.psM1)[idx]) / (dT * (cuBReal)GAMMA * conversion * Mnorm * Mnorm);
+				if (cuIsNZ(grel)) {
+
+					cuBReal Mnorm = (*cuaMesh.pM1)[idx].norm();
+					dmdt = cu_GetMagnitude((*cuaMesh.pM1)[idx] - (*cuaDiffEq.psM1)[idx]) / (dT * (cuBReal)GAMMA * conversion * Mnorm * Mnorm);
+				}
 			}
 		}
 	}
@@ -328,7 +335,8 @@ __global__ void RunSD_Advance_Kernel(ManagedAtom_DiffEqCubicCUDA& cuaDiffEq, Man
 				/////////////////////////
 
 				cuBReal mu_s = *cuaMesh.pmu_s;
-				cuaMesh.update_parameters_mcoarse(idx, *cuaMesh.pmu_s, mu_s);
+				cuBReal grel = *cuaMesh.pgrel;
+				cuaMesh.update_parameters_mcoarse(idx, *cuaMesh.pmu_s, mu_s, *cuaMesh.pgrel, grel);
 
 				cuReal3 m = (*cuaMesh.pM1)[idx] / mu_s;
 				cuReal3 H = (*cuaMesh.pHeff1)[idx];
@@ -342,7 +350,7 @@ __global__ void RunSD_Advance_Kernel(ManagedAtom_DiffEqCubicCUDA& cuaDiffEq, Man
 
 				//The above equation can be solved for m_next explicitly.
 
-				cuBReal s = dT * (cuBReal)GAMMA / 4.0;
+				cuBReal s = dT * (cuBReal)GAMMA * grel / 4.0;
 
 				cuReal3 mxH = m ^ H;
 				m = ((1 - s*s*(mxH*mxH)) * m - 2*s*(m ^ mxH)) / (1 + s*s*(mxH*mxH));

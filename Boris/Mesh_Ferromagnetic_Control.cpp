@@ -241,8 +241,8 @@ void FMesh::SetRandomMag(int seed)
 
 		if (M.is_not_empty(idx)) {
 
-			double theta = prng.rand() * TWO_PI;
-			double phi = prng.rand() * TWO_PI;
+			double theta = acos(1 - 2 * prng.rand());
+			double phi = prng.rand() * 2 * PI;
 
 			M[idx] = M[idx].norm() * DBL3(cos(phi)*sin(theta), sin(phi)*sin(theta), cos(theta));
 		}

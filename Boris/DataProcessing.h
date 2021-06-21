@@ -43,6 +43,30 @@ private:
 		return true;
 	}
 
+	//value setters
+	void push_value(int arr_idx, double value) { dpA[arr_idx].push_back(value); }
+	void push_value(int arr_idx, DBL3 value)
+	{
+		dpA[arr_idx].push_back(value.x);
+		dpA[arr_idx + 1].push_back(value.y);
+		dpA[arr_idx + 2].push_back(value.z);
+	}
+
+public:
+
+	//--------------------- CTOR/DTOR
+
+	DPArrays(int _max_arrays);
+	~DPArrays() {}
+
+	//--------------------- General
+
+	//Get size methods
+	int size(void) { return max_arrays; }
+
+	//Indexing
+	std::vector<double>& operator[](int arr_idx) { return dpA[arr_idx]; }
+
 	//check if the array indexes are good and unique (>= 0 and < max_arrays and all different)
 	template <typename ... Arrs>
 	bool GoodArrays_Unique(Arrs ... dp_idx)
@@ -61,27 +85,14 @@ private:
 		return true;
 	}
 
-public:
-
-	DPArrays(int _max_arrays);
-	~DPArrays() {}
-
-	//Get size methods
-	int size(void) { return max_arrays; }
-
-	//Indexing
-	std::vector<double>& operator[](int arr_idx) { return dpA[arr_idx]; }
-
-	//value setters
-	void push_value(int arr_idx, double value) { dpA[arr_idx].push_back(value); }
-	void push_value(int arr_idx, DBL3 value)
+	bool set_array(int arr_idx, std::vector<double>& data) 
 	{
-		dpA[arr_idx].push_back(value.x);
-		dpA[arr_idx + 1].push_back(value.y);
-		dpA[arr_idx + 2].push_back(value.z);
+		if (arr_idx < max_arrays) { dpA[arr_idx] = data; return true; }
+		else return false;
 	}
 
-	void set_array(int arr_idx, std::vector<double>& data) { if (arr_idx < max_arrays) dpA[arr_idx] = data; }
+	//set 3 consecutive arrays by extracting from DBL3 in vector
+	BError set_arrays(int arr_idx, std::vector<DBL3>& data);
 
 	//
 	//Various data processing methods accessible externally (corresponding to console commands for data processing)
@@ -111,13 +122,10 @@ public:
 		}
 	}
 
-	void resize(int arr_idx, size_t newSize)
+	bool resize(int arr_idx, size_t newSize)
 	{
-		if (GoodIdx(dpA.size() - 1, arr_idx)) {
-
-			dpA[arr_idx].resize(newSize);
-			dpA[arr_idx].shrink_to_fit();
-		}
+		if (GoodIdx(dpA.size() - 1, arr_idx)) return malloc_vector(dpA[arr_idx], newSize);		
+		else return false;
 	}
 
 	//load a number of arrays from a file with given name : the file should contain columns of data
@@ -141,11 +149,8 @@ public:
 	//count skyrmions in M and given rect, using equation Q = Integral(|m.(dm/dx x dm/dy)| dxdy) / 4PI
 	BError count_skyrmions(VEC_VC<DBL3>& M, double x, double y, double radius, double* pQ);
 
-	//calculate histogram for |M| using given parameters
-	BError calculate_histogram(VEC_VC<DBL3>& M, int dp_x, int dp_y, double bin, double min, double max);
-
 	//calculate histogram for |M1| using given parameters if the corresponding value on |M2| is within specified bounds of [M2val - deltaM2val, M2val + deltaM2val]
-	BError calculate_histogram2(VEC_VC<DBL3>& M1, VEC_VC<DBL3>& M2, int dp_x, int dp_y, double bin, double min, double max, double M2val, double deltaM2val);
+	BError calculate_histogram2(VEC_VC<DBL3>& M1, VEC_VC<DBL3>& M2, int dp_x, int dp_y, int num_bins, double min, double max, double M2val, double deltaM2val);
 
 	//--------------------- dp array manipulation
 
@@ -192,6 +197,8 @@ public:
 	BError get_min_max(int dp_source, DBL2* pmin_max_values, INT2* pmin_max_indexes = nullptr);
 
 	BError get_mean(int dp_source, DBL2* pmean_err, double exclusion_ratio = 0.0);
+
+	BError get_sum(int dp_source, double* psum);
 
 	//find standard deviation on the mean in chunks: i.e. obtain it from every chunk number of values in dp_source, then average them to obtain final std
 	//in the limit chunk = dp_source number of points (set chunk = 0) for this special case, the std is the usual std on the mean

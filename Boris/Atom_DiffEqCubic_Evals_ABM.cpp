@@ -50,7 +50,15 @@ void Atom_DifferentialEquationCubic::RunABM_Predictor_withReductions(void)
 		}
 	}
 
-	mxh_reduction.maximum();
+	if (paMesh->grel.get0()) {
+
+		//only reduce if grel is not zero (if it's zero this means magnetization dynamics are disabled in this mesh)
+		mxh_reduction.maximum();
+	}
+	else {
+
+		mxh_reduction.max = 0.0;
+	}
 }
 
 void Atom_DifferentialEquationCubic::RunABM_Predictor(void)
@@ -135,7 +143,16 @@ void Atom_DifferentialEquationCubic::RunABM_Corrector_withReductions(void)
 	}
 
 	lte_reduction.maximum();
-	dmdt_reduction.maximum();
+
+	if (paMesh->grel.get0()) {
+
+		//only reduce for dmdt if grel is not zero (if it's zero this means magnetization dynamics are disabled in this mesh)
+		dmdt_reduction.maximum();
+	}
+	else {
+
+		dmdt_reduction.max = 0.0;
+	}
 }
 
 void Atom_DifferentialEquationCubic::RunABM_Corrector(void)

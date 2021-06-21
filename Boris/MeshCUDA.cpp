@@ -666,242 +666,320 @@ BError MeshCUDA::SaveOnScreenPhysicalQuantity(std::string fileName, std::string 
 	return error;
 }
 
-//Before calling a run of GetDisplayedMeshValue, make sure to call PrepareDisplayedMeshValue : this calculates and stores in displayVEC storage and quantities which don't have memory allocated directly, but require computation and temporary storage.
-void MeshCUDA::PrepareDisplayedMeshValue(void)
+//extract profile from focused mesh, from currently display mesh quantity, but reading directly from the quantity
+//Displayed	mesh quantity can be scalar or a vector; pass in std::vector pointers, then check for nullptr to determine what type is displayed
+//if do_average = true then build average and don't return anything, else return just a single-shot profile. If read_average = true then simply read out the internally stored averaged profile by assigning to pointer.
+void MeshCUDA::GetPhysicalQuantityProfile(DBL3 start, DBL3 end, double step, DBL3 stencil, std::vector<DBL3>*& pprofile_dbl3, std::vector<double>*& pprofile_dbl, bool do_average, bool read_average)
 {
+	size_t size = round((end - start).norm() / step) + 1;
+
+	auto read_profile_vec = [&](void) -> void
+	{
+		if (pMesh->profile_storage_dbl3.size() != profile_storage_vec.size()) { pMesh->profile_storage_dbl3.resize(profile_storage_vec.size()); }
+		profile_storage_vec.copy_to_vector(pMesh->profile_storage_dbl3);
+		pprofile_dbl3 = &pMesh->profile_storage_dbl3;
+	};
+
+	auto read_profile_sca = [&](void) -> void
+	{
+		if (pMesh->profile_storage_dbl.size() != profile_storage_sca.size()) { pMesh->profile_storage_dbl.resize(profile_storage_sca.size()); }
+		profile_storage_sca.copy_to_vector(pMesh->profile_storage_dbl);
+		pprofile_dbl = &pMesh->profile_storage_dbl;
+	};
+
+	auto setup_profile_cuvecvc_vec = [&](cu_obj<cuVEC_VC<cuReal3>>& vec) -> void
+	{
+		if (profile_storage_vec.size() != size) { if (!profile_storage_vec.resize(size)) return; }
+		if (do_average) {
+
+			vec()->extract_profile((cuReal3)start, (cuReal3)end, (cuBReal)step, (cuReal3)stencil);
+			average_mesh_profile(vec, pMesh->num_profile_averages);
+		}
+		else {
+
+			vec()->extract_profile((cuReal3)start, (cuReal3)end, (cuBReal)step, (cuReal3)stencil, profile_storage_vec);
+			if (pMesh->profile_storage_dbl3.size() != size) { pMesh->profile_storage_dbl3.resize(size); }
+			profile_storage_vec.copy_to_vector(pMesh->profile_storage_dbl3);
+			pprofile_dbl3 = &pMesh->profile_storage_dbl3;
+		}
+	};
+
+	auto setup_profile_cuvec_vec = [&](cu_obj<cuVEC<cuReal3>>& vec) -> void
+	{
+		if (profile_storage_vec.size() != size) { if (!profile_storage_vec.resize(size)) return; }
+		if (do_average) {
+
+			vec()->extract_profile((cuReal3)start, (cuReal3)end, (cuBReal)step, (cuReal3)stencil);
+			average_mesh_profile(vec, pMesh->num_profile_averages);
+		}
+		else {
+
+			vec()->extract_profile((cuReal3)start, (cuReal3)end, (cuBReal)step, (cuReal3)stencil, profile_storage_vec);
+			if (pMesh->profile_storage_dbl3.size() != size) { pMesh->profile_storage_dbl3.resize(size); }
+			profile_storage_vec.copy_to_vector(pMesh->profile_storage_dbl3);
+			pprofile_dbl3 = &pMesh->profile_storage_dbl3;
+		}
+	};
+
+	auto setup_profile_cuvecvc_sca = [&](cu_obj<cuVEC_VC<cuBReal>>& vec) -> void
+	{
+		if (profile_storage_sca.size() != size) { if (!profile_storage_sca.resize(size)) return; }
+		if (do_average) {
+
+			vec()->extract_profile((cuReal3)start, (cuReal3)end, (cuBReal)step, (cuReal3)stencil);
+			average_mesh_profile(vec, pMesh->num_profile_averages);
+		}
+		else {
+
+			vec()->extract_profile((cuReal3)start, (cuReal3)end, (cuBReal)step, (cuReal3)stencil, profile_storage_sca);
+			if (pMesh->profile_storage_dbl.size() != size) { pMesh->profile_storage_dbl.resize(size); }
+			profile_storage_sca.copy_to_vector(pMesh->profile_storage_dbl);
+			pprofile_dbl = &pMesh->profile_storage_dbl;
+		}
+	};
+
+	auto setup_profile_cuvec_sca = [&](cu_obj<cuVEC<cuBReal>>& vec) -> void
+	{
+		if (profile_storage_sca.size() != size) { if (!profile_storage_sca.resize(size)) return; }
+		if (do_average) {
+
+			vec()->extract_profile((cuReal3)start, (cuReal3)end, (cuBReal)step, (cuReal3)stencil);
+			average_mesh_profile(vec, pMesh->num_profile_averages);
+		}
+		else {
+
+			vec()->extract_profile((cuReal3)start, (cuReal3)end, (cuBReal)step, (cuReal3)stencil, profile_storage_sca);
+			if (pMesh->profile_storage_dbl.size() != size) { pMesh->profile_storage_dbl.resize(size); }
+			profile_storage_sca.copy_to_vector(pMesh->profile_storage_dbl);
+			pprofile_dbl = &pMesh->profile_storage_dbl;
+		}
+	};
+
+	if (read_average) pMesh->num_profile_averages = 0;
+
 	switch (pMesh->displayedPhysicalQuantity) {
 
-	case MESHDISPLAY_MAGNETIZATION:
-
-		//pdisplay_vec_vc_vec at maximum resolution
-		prepare_display(n, meshRect, h.mindim(), M);
-		break;
-
-	case MESHDISPLAY_MAGNETIZATION2:
-
-		//pdisplay_vec_vc_vec at maximum resolution
-		prepare_display(n, meshRect, h.mindim(), M2);
+	default:
+	case MESHDISPLAY_NONE:
 		break;
 
 	case MESHDISPLAY_MAGNETIZATION12:
-
-		//pdisplay_vec_vc_vec at maximum resolution
-		prepare_display(n, meshRect, h.mindim(), M);
+	case MESHDISPLAY_MAGNETIZATION:
+		if (read_average) { read_profile_vec(); return; }
+		setup_profile_cuvecvc_vec(M);
 		break;
-
-	case MESHDISPLAY_EFFECTIVEFIELD:
-
-		//pdisplay_vec_vec at maximum resolution
-		prepare_display(n, meshRect, h.mindim(), Heff);
-		break;
-
-	case MESHDISPLAY_EFFECTIVEFIELD2:
-
-		//pdisplay_vec_vec at maximum resolution
-		prepare_display(n, meshRect, h.mindim(), Heff2);
+		
+	case MESHDISPLAY_MAGNETIZATION2:
+		if (read_average) { read_profile_vec(); return; }
+		setup_profile_cuvecvc_vec(M2);
 		break;
 
 	case MESHDISPLAY_EFFECTIVEFIELD12:
+	case MESHDISPLAY_EFFECTIVEFIELD:
+		if (read_average) { read_profile_vec(); return; }
+		if ((MOD_)pMesh->Get_Module_Heff_Display() == MOD_ALL || (MOD_)pMesh->Get_Module_Heff_Display() == MOD_ERROR) {
 
-		//pdisplay_vec_vec at maximum resolution
-		prepare_display(n, meshRect, h.mindim(), Heff);
+			setup_profile_cuvec_vec(Heff);
+		}
+		else {
+
+			MOD_ Module_Heff = (MOD_)pMesh->Get_ActualModule_Heff_Display();
+			if (pMesh->IsModuleSet(Module_Heff)) {
+
+				setup_profile_cuvec_vec(pMesh->pMod(Module_Heff)->Get_Module_HeffCUDA());
+			}
+		}
 		break;
 
-	case MESHDISPLAY_CURRDENSITY:
+	case MESHDISPLAY_EFFECTIVEFIELD2:
+		if (read_average) { read_profile_vec(); return; }
+		if ((MOD_)pMesh->Get_Module_Heff_Display() == MOD_ALL || (MOD_)pMesh->Get_Module_Heff_Display() == MOD_ERROR) {
 
-		//pdisplay_vec_vc_vec at maximum resolution
+			setup_profile_cuvec_vec(Heff2);
+		}
+		else {
+
+			MOD_ Module_Heff = (MOD_)pMesh->Get_ActualModule_Heff_Display();
+			if (pMesh->IsModuleSet(Module_Heff)) {
+
+				setup_profile_cuvec_vec(pMesh->pMod(Module_Heff)->Get_Module_Heff2CUDA());
+			}
+		}
+		break;
+
+	case MESHDISPLAY_ENERGY:
+	{
+		if (read_average) { read_profile_sca(); return; }
+		MOD_ Module_Energy = (MOD_)pMesh->Get_ActualModule_Energy_Display();
+		if (pMesh->IsModuleSet(Module_Energy)) {
+
+			setup_profile_cuvec_sca(pMesh->pMod(Module_Energy)->Get_Module_EnergyCUDA());
+		}
+	}
+	break;
+
+	case MESHDISPLAY_ENERGY2:
+	{
+		if (read_average) { read_profile_sca(); return; }
+		MOD_ Module_Energy = (MOD_)pMesh->Get_ActualModule_Energy_Display();
+		if (pMesh->IsModuleSet(Module_Energy)) {
+
+			setup_profile_cuvec_sca(pMesh->pMod(Module_Energy)->Get_Module_Energy2CUDA());
+		}
+	}
+	break;
+
+	case MESHDISPLAY_CURRDENSITY:
+		if (read_average) { read_profile_vec(); return; }
 		if (pMesh->IsModuleSet(MOD_TRANSPORT)) {
 
-			prepare_display(n_e, meshRect, h_e.mindim(), dynamic_cast<Transport*>(pMesh->pMod(MOD_TRANSPORT))->GetChargeCurrentCUDA());
+			setup_profile_cuvecvc_vec(dynamic_cast<Transport*>(pMesh->pMod(MOD_TRANSPORT))->GetChargeCurrentCUDA());
 		}
 		break;
 
 	case MESHDISPLAY_VOLTAGE:
-
-		//pdisplay_vec_vc_sca at maximum resolution
-		prepare_display(n_e, meshRect, h_e.mindim(), V);
+		if (read_average) { read_profile_sca(); return; }
+		setup_profile_cuvecvc_sca(V);
 		break;
 
 	case MESHDISPLAY_ELCOND:
-
-		//pdisplay_vec_vc_sca at maximum resolution
-		prepare_display(n_e, meshRect, h_e.mindim(), elC);
+		if (read_average) { read_profile_sca(); return; }
+		setup_profile_cuvecvc_sca(elC);
 		break;
 
 	case MESHDISPLAY_SACCUM:
-
-		//pdisplay_vec_vc_vec at maximum resolution
-		prepare_display(n_e, meshRect, h_e.mindim(), S);
+		if (read_average) { read_profile_vec(); return; }
+		setup_profile_cuvecvc_vec(S);
 		break;
 
 	case MESHDISPLAY_JSX:
-
-		//pdisplay_vec_vec at maximum resolution
+		if (read_average) { read_profile_vec(); return; }
 		if (pMesh->IsModuleSet(MOD_TRANSPORT)) {
 
-			prepare_display(n_e, meshRect, h_e.mindim(), dynamic_cast<Transport*>(pMesh->pMod(MOD_TRANSPORT))->GetSpinCurrentCUDA(0));
+			setup_profile_cuvec_vec(dynamic_cast<Transport*>(pMesh->pMod(MOD_TRANSPORT))->GetSpinCurrentCUDA(0));
 		}
 		break;
 
 	case MESHDISPLAY_JSY:
-
-		//pdisplay_vec_vec at maximum resolution
+		if (read_average) { read_profile_vec(); return; }
 		if (pMesh->IsModuleSet(MOD_TRANSPORT)) {
 
-			prepare_display(n_e, meshRect, h_e.mindim(), dynamic_cast<Transport*>(pMesh->pMod(MOD_TRANSPORT))->GetSpinCurrentCUDA(1));
+			setup_profile_cuvec_vec(dynamic_cast<Transport*>(pMesh->pMod(MOD_TRANSPORT))->GetSpinCurrentCUDA(1));
 		}
 		break;
 
 	case MESHDISPLAY_JSZ:
-
-		//pdisplay_vec_vec at maximum resolution
+		if (read_average) { read_profile_vec(); return; }
 		if (pMesh->IsModuleSet(MOD_TRANSPORT)) {
 
-			prepare_display(n_e, meshRect, h_e.mindim(), dynamic_cast<Transport*>(pMesh->pMod(MOD_TRANSPORT))->GetSpinCurrentCUDA(2));
+			setup_profile_cuvec_vec(dynamic_cast<Transport*>(pMesh->pMod(MOD_TRANSPORT))->GetSpinCurrentCUDA(2));
 		}
 		break;
 
 	case MESHDISPLAY_TS:
 
-		//pdisplay_vec_vec at maximumresolution
+		if (read_average) { read_profile_vec(); return; }
 		if (pMesh->IsModuleSet(MOD_TRANSPORT)) {
 
-			prepare_display(n, meshRect, h.mindim(), dynamic_cast<Transport*>(pMesh->pMod(MOD_TRANSPORT))->GetSpinTorqueCUDA());
+			setup_profile_cuvec_vec(dynamic_cast<Transport*>(pMesh->pMod(MOD_TRANSPORT))->GetSpinTorqueCUDA());
 		}
 		break;
 
 	case MESHDISPLAY_TSI:
-
-		//pdisplay_vec_vec at maximumresolution
+		if (read_average) { read_profile_vec(); return; }
 		if (pMesh->pSMesh->IsSuperMeshModuleSet(MODS_STRANSPORT) && pMesh->IsModuleSet(MOD_TRANSPORT)) {
 
-			prepare_display(n, meshRect, h.mindim(), dynamic_cast<STransport*>(pMesh->pSMesh->pSMod(MODS_STRANSPORT))->GetInterfacialSpinTorqueCUDA(dynamic_cast<Transport*>(pMesh->pMod(MOD_TRANSPORT))));
+			setup_profile_cuvec_vec(dynamic_cast<STransport*>(pMesh->pSMesh->pSMod(MODS_STRANSPORT))->GetInterfacialSpinTorqueCUDA(dynamic_cast<Transport*>(pMesh->pMod(MOD_TRANSPORT))));
 		}
 		break;
 
 	case MESHDISPLAY_TEMPERATURE:
-
-		//pdisplay_vec_vc_sca at maximum resolution
-		prepare_display(n_t, meshRect, h_t.mindim(), Temp);
+		if (read_average) { read_profile_sca(); return; }
+		setup_profile_cuvecvc_sca(Temp);
 		break;
 
 	case MESHDISPLAY_UDISP:
-
-		//pdisplay_vec_vc_vec at maximum resolution
-		prepare_display(n_m, meshRect, h_m.mindim(), u_disp);
+		if (read_average) { read_profile_vec(); return; }
+		setup_profile_cuvecvc_vec(u_disp);
 		break;
 
 	case MESHDISPLAY_STRAINDIAG:
-
-		//pdisplay_vec_vc_vec at maximum resolution
-		prepare_display(n_m, meshRect, h_m.mindim(), strain_diag);
+		if (read_average) { read_profile_vec(); return; }
+		setup_profile_cuvecvc_vec(strain_diag);
 		break;
 
 	case MESHDISPLAY_STRAINODIAG:
-
-		//pdisplay_vec_vc_vec at maximum resolution
-		prepare_display(n_m, meshRect, h_m.mindim(), strain_odiag);
-		break;
-	}
-}
-
-//return value of currently displayed mesh quantity at the given absolute position; the value is read directly from the storage VEC, not from the displayed PhysQ.
-//Return an Any as the displayed quantity could be either a scalar or a vector.
-Any MeshCUDA::GetDisplayedMeshValue(DBL3 abs_pos)
-{
-	DBL3 rel_pos = abs_pos - meshRect.s;
-
-	switch (pMesh->displayedPhysicalQuantity) {
-
-	case MESHDISPLAY_NONE:
-		return (double)0.0;
-		break;
-
-	case MESHDISPLAY_MAGNETIZATION:
-		return (*pdisplay_vec_vc_vec)[rel_pos];
-		break;
-
-	case MESHDISPLAY_MAGNETIZATION2:
-		return (*pdisplay_vec_vc_vec)[rel_pos];
-		break;
-
-	case MESHDISPLAY_MAGNETIZATION12:
-		return (*pdisplay_vec_vc_vec)[rel_pos];
-		break;
-
-	case MESHDISPLAY_EFFECTIVEFIELD:
-		return (*pdisplay_vec_vec)[rel_pos];
-		break;
-
-	case MESHDISPLAY_EFFECTIVEFIELD2:
-		return (*pdisplay_vec_vec)[rel_pos];
-		break;
-
-	case MESHDISPLAY_EFFECTIVEFIELD12:
-		return (*pdisplay_vec_vec)[rel_pos];
-		break;
-
-	case MESHDISPLAY_CURRDENSITY:
-		return (*pdisplay_vec_vc_vec)[rel_pos];
-		break;
-
-	case MESHDISPLAY_VOLTAGE:
-		return (*pdisplay_vec_vc_sca)[rel_pos];
-		break;
-
-	case MESHDISPLAY_ELCOND:
-		return (*pdisplay_vec_vc_sca)[rel_pos];
-		break;
-
-	case MESHDISPLAY_SACCUM:
-		return (*pdisplay_vec_vc_vec)[rel_pos];
-		break;
-
-	case MESHDISPLAY_JSX:
-	case MESHDISPLAY_JSY:
-	case MESHDISPLAY_JSZ:
-		return (*pdisplay_vec_vec)[rel_pos];
-		break;
-
-	case MESHDISPLAY_TS:
-	case MESHDISPLAY_TSI:
-		return (*pdisplay_vec_vec)[rel_pos];
-		break;
-
-	case MESHDISPLAY_TEMPERATURE:
-		return (*pdisplay_vec_vc_sca)[rel_pos];
-		break;
-
-	case MESHDISPLAY_UDISP:
-		return (*pdisplay_vec_vc_vec)[rel_pos];
-		break;
-
-	case MESHDISPLAY_STRAINDIAG:
-		return (*pdisplay_vec_vc_vec)[rel_pos];
-		break;
-
-	case MESHDISPLAY_STRAINODIAG:
-		return (*pdisplay_vec_vc_vec)[rel_pos];
+		if (read_average) { read_profile_vec(); return; }
+		setup_profile_cuvecvc_vec(strain_odiag);
 		break;
 
 	case MESHDISPLAY_PARAMVAR:
-		return pMesh->get_meshparam_s_scaling_value((PARAM_)pMesh->displayedParamVar, rel_pos, pMesh->pSMesh->GetStageTime());
-		break;
+	{
+		void* s_scaling;
+
+		if (pMesh->is_paramvarequation_set((PARAM_)pMesh->displayedParamVar)) {
+
+			//if text equation is set, then we need to calculate the output into a display VEC
+			//We could of course calculate this inside the MatP object in its s_scaling VEC, then get it here through reference
+			//This is wasteful however as without some nasty book-keeping we could end up with many s_scaling VECs allocated when they are not needed
+			//better to just use the single VEC in Mesh intended for display purposes - just means a little bit more work here.
+
+			if (pMesh->is_paramvar_scalar((PARAM_)pMesh->displayedParamVar)) {
+
+				//first make sure the display VEC has the right rectangle and cellsize (cellsize appropriate to the type of mesh parameter being displayed - e.g. magnetic, electric, etc..)
+				pMesh->displayVEC_SCA.resize(pMesh->get_paramtype_cellsize((PARAM_)pMesh->displayedParamVar), pMesh->meshRect);
+				//now calculate it based on the set text equation
+				pMesh->calculate_meshparam_s_scaling((PARAM_)pMesh->displayedParamVar, pMesh->displayVEC_SCA, pMesh->pSMesh->GetStageTime());
+				//finally set it in s_scaling - come code for setting the PhysQ below
+				s_scaling = &pMesh->displayVEC_SCA;
+			}
+			else {
+
+				//first make sure the display VEC has the right rectangle and cellsize (cellsize appropriate to the type of mesh parameter being displayed - e.g. magnetic, electric, etc..)
+				pMesh->displayVEC_VEC.resize(pMesh->get_paramtype_cellsize((PARAM_)pMesh->displayedParamVar), pMesh->meshRect);
+				//now calculate it based on the set text equation
+				pMesh->calculate_meshparam_s_scaling((PARAM_)pMesh->displayedParamVar, pMesh->displayVEC_VEC, pMesh->pSMesh->GetStageTime());
+				//finally set it in s_scaling - come code for setting the PhysQ below
+				s_scaling = &pMesh->displayVEC_VEC;
+			}
+		}
+		else {
+
+			//..otherwise we can just get the s_scaling VEC from the MatP object directly.
+			s_scaling = pMesh->get_meshparam_s_scaling((PARAM_)pMesh->displayedParamVar);
+		}
+
+		if (pMesh->is_paramvar_scalar((PARAM_)pMesh->displayedParamVar)) {
+
+			pMesh->profile_storage_dbl = reinterpret_cast<VEC<double>*>(s_scaling)->extract_profile(start, end, step, stencil);
+			pprofile_dbl = &pMesh->profile_storage_dbl;
+		}
+		else {
+
+			pMesh->profile_storage_dbl3 = reinterpret_cast<VEC<DBL3>*>(s_scaling)->extract_profile(start, end, step, stencil);
+			pprofile_dbl3 = &pMesh->profile_storage_dbl3;
+		}
+	}
+	break;
 
 	case MESHDISPLAY_ROUGHNESS:
-		return dynamic_cast<Roughness*>(pMesh->pMod(MOD_ROUGHNESS))->GetRoughness()[rel_pos];
+		if (pMesh->IsModuleSet(MOD_ROUGHNESS)) {
+
+			pMesh->profile_storage_dbl = dynamic_cast<Roughness*>(pMesh->pMod(MOD_ROUGHNESS))->GetRoughness().extract_profile(start, end, step, stencil);
+			pprofile_dbl = &pMesh->profile_storage_dbl;
+		}
 		break;
 
 	case MESHDISPLAY_CUSTOM_VEC:
-		if (pMesh->displayVEC_VEC.linear_size()) return pMesh->displayVEC_VEC[rel_pos];
+		pMesh->profile_storage_dbl3 = pMesh->displayVEC_VEC.extract_profile(start, end, step, stencil);
+		pprofile_dbl3 = &pMesh->profile_storage_dbl3;
 		break;
 
 	case MESHDISPLAY_CUSTOM_SCA:
-		if (pMesh->displayVEC_SCA.linear_size()) return pMesh->displayVEC_SCA[rel_pos];
+		pMesh->profile_storage_dbl = pMesh->displayVEC_SCA.extract_profile(start, end, step, stencil);
+		pprofile_dbl = &pMesh->profile_storage_dbl;
 		break;
 	}
-
-	return (double)0.0;
 }
 
 //return average value for currently displayed mesh quantity in the given relative rectangle
@@ -909,80 +987,67 @@ Any MeshCUDA::GetAverageDisplayedMeshValue(Rect rel_rect)
 {
 	switch (pMesh->displayedPhysicalQuantity) {
 
+	default:
 	case MESHDISPLAY_NONE:
 		break;
 
+	case MESHDISPLAY_MAGNETIZATION12:
 	case MESHDISPLAY_MAGNETIZATION:
-
-		//pdisplay_vec_vc_vec at maximum resolution
-		prepare_display(n, meshRect, h.mindim(), M);
-		return pdisplay_vec_vc_vec->average_nonempty_omp(rel_rect);
+		return (DBL3)M()->average_nonempty(pMesh->M.linear_size(), (cuRect)rel_rect);
 		break;
 
 	case MESHDISPLAY_MAGNETIZATION2:
-
-		//pdisplay_vec_vc_vec at maximum resolution
-		prepare_display(n, meshRect, h.mindim(), M2);
-		return pdisplay_vec_vc_vec->average_nonempty_omp(rel_rect);
-		break;
-
-	case MESHDISPLAY_MAGNETIZATION12:
-
-		//pdisplay_vec_vc_vec at maximum resolution
-		prepare_display(n, meshRect, h.mindim(), M);
-		return pdisplay_vec_vc_vec->average_nonempty_omp(rel_rect);
-		break;
-
-	case MESHDISPLAY_EFFECTIVEFIELD:
-
-		//pdisplay_vec_vec at maximum resolution
-		prepare_display(n, meshRect, h.mindim(), Heff);
-		return pdisplay_vec_vec->average_nonempty_omp(rel_rect);
-		break;
-
-	case MESHDISPLAY_EFFECTIVEFIELD2:
-
-		//pdisplay_vec_vec at maximum resolution
-		prepare_display(n, meshRect, h.mindim(), Heff2);
-		return pdisplay_vec_vec->average_nonempty_omp(rel_rect);
+		return (DBL3)M2()->average_nonempty(pMesh->M2.linear_size(), (cuRect)rel_rect);
 		break;
 
 	case MESHDISPLAY_EFFECTIVEFIELD12:
-
-		//pdisplay_vec_vec at maximum resolution
-		prepare_display(n, meshRect, h.mindim(), Heff);
-		return pdisplay_vec_vec->average_nonempty_omp(rel_rect);
+	case MESHDISPLAY_EFFECTIVEFIELD:
+		return (DBL3)Heff()->average_nonempty(pMesh->Heff.linear_size(), (cuRect)rel_rect);
 		break;
+
+	case MESHDISPLAY_EFFECTIVEFIELD2:
+		return (DBL3)Heff2()->average_nonempty(pMesh->Heff2.linear_size(), (cuRect)rel_rect);
+		break;
+
+	case MESHDISPLAY_ENERGY:
+	{
+		MOD_ Module_Energy = (MOD_)pMesh->Get_ActualModule_Energy_Display();
+		if (pMesh->IsModuleSet(Module_Energy)) {
+
+			return (double)pMesh->pMod(Module_Energy)->Get_Module_EnergyCUDA()()->average_nonempty(pMesh->pMod(Module_Energy)->Get_Module_Energy().linear_size(), rel_rect);
+		}
+	}
+	break;
+
+	case MESHDISPLAY_ENERGY2:
+	{
+		MOD_ Module_Energy = (MOD_)pMesh->Get_ActualModule_Energy_Display();
+		if (pMesh->IsModuleSet(Module_Energy)) {
+
+			return (double)pMesh->pMod(Module_Energy)->Get_Module_Energy2CUDA()()->average_nonempty(pMesh->pMod(Module_Energy)->Get_Module_Energy2().linear_size(), rel_rect);
+		}
+	}
+	break;
 
 	case MESHDISPLAY_CURRDENSITY:
 
 		//pdisplay_vec_vc_vec at maximum resolution
 		if (pMesh->IsModuleSet(MOD_TRANSPORT)) {
-
-			prepare_display(n_e, meshRect, h_e.mindim(), dynamic_cast<Transport*>(pMesh->pMod(MOD_TRANSPORT))->GetChargeCurrentCUDA());
-			return pdisplay_vec_vc_vec->average_nonempty_omp(rel_rect);
+			
+			return dynamic_cast<Transport*>(pMesh->pMod(MOD_TRANSPORT))->GetAverageChargeCurrent(rel_rect);
 		}
 		break;
 
 	case MESHDISPLAY_VOLTAGE:
-
-		//pdisplay_vec_vc_sca at maximum resolution
-		prepare_display(n_e, meshRect, h_e.mindim(), V);
-		return pdisplay_vec_vc_sca->average_nonempty_omp(rel_rect);
+		return (double)V()->average_nonempty(pMesh->V.linear_size(), (cuRect)rel_rect);
 		break;
 
 	case MESHDISPLAY_ELCOND:
-
-		//pdisplay_vec_vc_sca at maximum resolution
-		prepare_display(n_e, meshRect, h_e.mindim(), elC);
-		return pdisplay_vec_vc_sca->average_nonempty_omp(rel_rect);
+		return (double)elC()->average_nonempty(pMesh->elC.linear_size(), (cuRect)rel_rect);
 		break;
 
 	case MESHDISPLAY_SACCUM:
-
-		//pdisplay_vec_vc_vec at maximum resolution
-		prepare_display(n_e, meshRect, h_e.mindim(), S);
-		return pdisplay_vec_vc_vec->average_nonempty_omp(rel_rect);
+		return (DBL3)S()->average_nonempty(pMesh->S.linear_size(), (cuRect)rel_rect);
 		break;
 
 	case MESHDISPLAY_JSX:
@@ -990,8 +1055,7 @@ Any MeshCUDA::GetAverageDisplayedMeshValue(Rect rel_rect)
 		//pdisplay_vec_vec at maximum resolution
 		if (pMesh->IsModuleSet(MOD_TRANSPORT)) {
 
-			prepare_display(n_e, meshRect, h_e.mindim(), dynamic_cast<Transport*>(pMesh->pMod(MOD_TRANSPORT))->GetSpinCurrentCUDA(0));
-			return pdisplay_vec_vec->average_nonempty_omp(rel_rect);
+			return dynamic_cast<Transport*>(pMesh->pMod(MOD_TRANSPORT))->GetAverageSpinCurrent(0, rel_rect);
 		}
 		break;
 
@@ -1000,8 +1064,7 @@ Any MeshCUDA::GetAverageDisplayedMeshValue(Rect rel_rect)
 		//pdisplay_vec_vec at maximum resolution
 		if (pMesh->IsModuleSet(MOD_TRANSPORT)) {
 
-			prepare_display(n_e, meshRect, h_e.mindim(), dynamic_cast<Transport*>(pMesh->pMod(MOD_TRANSPORT))->GetSpinCurrentCUDA(1));
-			return pdisplay_vec_vec->average_nonempty_omp(rel_rect);
+			return dynamic_cast<Transport*>(pMesh->pMod(MOD_TRANSPORT))->GetAverageSpinCurrent(1, rel_rect);
 		}
 		break;
 
@@ -1010,8 +1073,7 @@ Any MeshCUDA::GetAverageDisplayedMeshValue(Rect rel_rect)
 		//pdisplay_vec_vec at maximum resolution
 		if (pMesh->IsModuleSet(MOD_TRANSPORT)) {
 
-			prepare_display(n_e, meshRect, h_e.mindim(), dynamic_cast<Transport*>(pMesh->pMod(MOD_TRANSPORT))->GetSpinCurrentCUDA(2));
-			return pdisplay_vec_vec->average_nonempty_omp(rel_rect);
+			return dynamic_cast<Transport*>(pMesh->pMod(MOD_TRANSPORT))->GetAverageSpinCurrent(2, rel_rect);
 		}
 		break;
 
@@ -1020,8 +1082,7 @@ Any MeshCUDA::GetAverageDisplayedMeshValue(Rect rel_rect)
 		//pdisplay_vec_vec at maximumresolution
 		if (pMesh->IsModuleSet(MOD_TRANSPORT)) {
 
-			prepare_display(n, meshRect, h.mindim(), dynamic_cast<Transport*>(pMesh->pMod(MOD_TRANSPORT))->GetSpinTorqueCUDA());
-			return pdisplay_vec_vec->average_nonempty_omp(rel_rect);
+			return dynamic_cast<Transport*>(pMesh->pMod(MOD_TRANSPORT))->GetAverageSpinTorque(rel_rect);
 		}
 		break;
 
@@ -1030,38 +1091,74 @@ Any MeshCUDA::GetAverageDisplayedMeshValue(Rect rel_rect)
 		//pdisplay_vec_vec at maximumresolution
 		if (pMesh->pSMesh->IsSuperMeshModuleSet(MODS_STRANSPORT) && pMesh->IsModuleSet(MOD_TRANSPORT)) {
 
-			prepare_display(n, meshRect, h.mindim(), dynamic_cast<STransport*>(pMesh->pSMesh->pSMod(MODS_STRANSPORT))->GetInterfacialSpinTorqueCUDA(dynamic_cast<Transport*>(pMesh->pMod(MOD_TRANSPORT))));
-			return pdisplay_vec_vec->average_nonempty_omp(rel_rect);
+			//spin torque calculated internally in the Transport module, ready to be read out when needed
+			dynamic_cast<STransport*>(pMesh->pSMesh->pSMod(MODS_STRANSPORT))->GetInterfacialSpinTorque(dynamic_cast<Transport*>(pMesh->pMod(MOD_TRANSPORT)));
+			return dynamic_cast<Transport*>(pMesh->pMod(MOD_TRANSPORT))->GetAverageInterfacialSpinTorque(rel_rect);
 		}
 		break;
 
 	case MESHDISPLAY_TEMPERATURE:
-
-		//pdisplay_vec_vc_sca at maximum resolution
-		prepare_display(n_t, meshRect, h_t.mindim(), Temp);
-		return pdisplay_vec_vc_sca->average_nonempty_omp(rel_rect);
+		return (double)Temp()->average_nonempty(pMesh->Temp.linear_size(), (cuRect)rel_rect);
 		break;
 
 	case MESHDISPLAY_UDISP:
-
-		//pdisplay_vec_vc_sca at maximum resolution
-		prepare_display(n_m, meshRect, h_m.mindim(), u_disp);
-		return pdisplay_vec_vc_vec->average_nonempty_omp(rel_rect);
+		return (DBL3)u_disp()->average_nonempty(pMesh->u_disp.linear_size(), (cuRect)rel_rect);
 		break;
 
 	case MESHDISPLAY_STRAINDIAG:
-
-		//pdisplay_vec_vc_sca at maximum resolution
-		prepare_display(n_m, meshRect, h_m.mindim(), strain_diag);
-		return pdisplay_vec_vc_vec->average_nonempty_omp(rel_rect);
+		return (DBL3)strain_diag()->average_nonempty(pMesh->strain_diag.linear_size(), (cuRect)rel_rect);
 		break;
 
 	case MESHDISPLAY_STRAINODIAG:
-
-		//pdisplay_vec_vc_sca at maximum resolution
-		prepare_display(n_m, meshRect, h_m.mindim(), strain_odiag);
-		return pdisplay_vec_vc_vec->average_nonempty_omp(rel_rect);
+		return (DBL3)strain_odiag()->average_nonempty(pMesh->strain_odiag.linear_size(), (cuRect)rel_rect);
 		break;
+
+	case MESHDISPLAY_PARAMVAR:
+	{
+		void* s_scaling;
+
+		if (pMesh->is_paramvarequation_set((PARAM_)pMesh->displayedParamVar)) {
+
+			//if text equation is set, then we need to calculate the output into a display VEC
+			//We could of course calculate this inside the MatP object in its s_scaling VEC, then get it here through reference
+			//This is wasteful however as without some nasty book-keeping we could end up with many s_scaling VECs allocated when they are not needed
+			//better to just use the single VEC in Mesh intended for display purposes - just means a little bit more work here.
+
+			if (pMesh->is_paramvar_scalar((PARAM_)pMesh->displayedParamVar)) {
+
+				//first make sure the display VEC has the right rectangle and cellsize (cellsize appropriate to the type of mesh parameter being displayed - e.g. magnetic, electric, etc..)
+				pMesh->displayVEC_SCA.resize(pMesh->get_paramtype_cellsize((PARAM_)pMesh->displayedParamVar), pMesh->meshRect);
+				//now calculate it based on the set text equation
+				pMesh->calculate_meshparam_s_scaling((PARAM_)pMesh->displayedParamVar, pMesh->displayVEC_SCA, pMesh->pSMesh->GetStageTime());
+				//finally set it in s_scaling - come code for setting the PhysQ below
+				s_scaling = &pMesh->displayVEC_SCA;
+			}
+			else {
+
+				//first make sure the display VEC has the right rectangle and cellsize (cellsize appropriate to the type of mesh parameter being displayed - e.g. magnetic, electric, etc..)
+				pMesh->displayVEC_VEC.resize(pMesh->get_paramtype_cellsize((PARAM_)pMesh->displayedParamVar), pMesh->meshRect);
+				//now calculate it based on the set text equation
+				pMesh->calculate_meshparam_s_scaling((PARAM_)pMesh->displayedParamVar, pMesh->displayVEC_VEC, pMesh->pSMesh->GetStageTime());
+				//finally set it in s_scaling - come code for setting the PhysQ below
+				s_scaling = &pMesh->displayVEC_VEC;
+			}
+		}
+		else {
+
+			//..otherwise we can just get the s_scaling VEC from the MatP object directly.
+			s_scaling = pMesh->get_meshparam_s_scaling((PARAM_)pMesh->displayedParamVar);
+		}
+
+		if (pMesh->is_paramvar_scalar((PARAM_)pMesh->displayedParamVar)) {
+
+			return reinterpret_cast<VEC<double>*>(s_scaling)->average_nonempty_omp(rel_rect);
+		}
+		else {
+
+			return reinterpret_cast<VEC<DBL3>*>(s_scaling)->average_nonempty_omp(rel_rect);
+		}
+	}
+	break;
 
 	case MESHDISPLAY_ROUGHNESS:
 		if (pMesh->IsModuleSet(MOD_ROUGHNESS)) {

@@ -2,10 +2,6 @@
 
 #include "BorisLib.h"
 
-#include <math.h>
-
-#include "DemagTFunc_Defs.h"
-
 /////////////////////////////////////////// ASYMPTOTIC EXPANSION APPROXIMATIONS FOR LONGER DISTANCES
 
 class DemagAsymptoticDiag

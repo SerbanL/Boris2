@@ -493,7 +493,7 @@ BError DemagKernel::Calculate_Demag_Kernels_3D(bool include_self_demag)
 	if (pbc_images.IsNull()) {
 
 		//no pbcs in any dimension -> use these
-		if (!dtf.CalcOffDiagTens3D(D, n, N, h / maximum(h.x, h.y, h.z), include_self_demag)) return error(BERROR_OUTOFMEMORY_NCRIT);
+		if (!dtf.CalcOffDiagTens3D(D, n, N, h / maximum(h.x, h.y, h.z))) return error(BERROR_OUTOFMEMORY_NCRIT);
 	}
 	else {
 

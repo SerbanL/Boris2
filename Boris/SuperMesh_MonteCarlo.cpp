@@ -13,21 +13,16 @@ BError SuperMesh::Set_MonteCarlo_Serial(bool status, std::string meshName)
 
 	if (meshName == superMeshHandle) {
 
-		//all atomistic meshes
+		//all meshes
 		for (int idx = 0; idx < pMesh.size(); idx++) {
 
-			if (pMesh[idx]->is_atomistic()) {
-
-				dynamic_cast<Atom_Mesh*>(pMesh[idx])->Set_MonteCarlo_Serial(status);
-			}
+			pMesh[idx]->Set_MonteCarlo_Serial(status);
 		}
 	}
 	else {
 
 		//named mesh only
-		if(!pMesh[meshName]->is_atomistic()) return error(BERROR_INCORRECTCONFIG);
-
-		dynamic_cast<Atom_Mesh*>(pMesh[meshName])->Set_MonteCarlo_Serial(status);
+		pMesh[meshName]->Set_MonteCarlo_Serial(status);
 	}
 
 	return error;
@@ -46,21 +41,28 @@ BError SuperMesh::Set_MonteCarlo_Constrained(bool status, DBL3 cmc_n, std::strin
 		//all atomistic meshes
 		for (int idx = 0; idx < pMesh.size(); idx++) {
 
-			if (pMesh[idx]->is_atomistic()) {
-
-				if (status && !cmc_n.IsNull()) dynamic_cast<Atom_Mesh*>(pMesh[idx])->Set_MonteCarlo_Constrained(cmc_n);
-				else dynamic_cast<Atom_Mesh*>(pMesh[idx])->Set_MonteCarlo_Constrained(DBL3());
-			}
+			if (status && !cmc_n.IsNull()) pMesh[idx]->Set_MonteCarlo_Constrained(cmc_n);
+			else pMesh[idx]->Set_MonteCarlo_Constrained(DBL3());
 		}
 	}
 	else {
 
 		//named mesh only
-		if (!pMesh[meshName]->is_atomistic()) return error(BERROR_INCORRECTCONFIG);
-
-		if (status && !cmc_n.IsNull()) dynamic_cast<Atom_Mesh*>(pMesh[meshName])->Set_MonteCarlo_Constrained(cmc_n);
-		else dynamic_cast<Atom_Mesh*>(pMesh[meshName])->Set_MonteCarlo_Constrained(DBL3());
+		if (status && !cmc_n.IsNull()) pMesh[meshName]->Set_MonteCarlo_Constrained(cmc_n);
+		else pMesh[meshName]->Set_MonteCarlo_Constrained(DBL3());
 	}
+
+	return error;
+}
+
+//Disable/enable MC iteration in named mesh
+BError SuperMesh::Set_MonteCarlo_Disabled(bool status, std::string meshName)
+{
+	BError error(__FUNCTION__);
+
+	if (!contains(meshName)) return error(BERROR_INCORRECTNAME);
+
+	pMesh[meshName]->Set_MonteCarlo_Disabled(status);
 
 	return error;
 }

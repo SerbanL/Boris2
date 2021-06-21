@@ -78,9 +78,11 @@ BError SurfExchangeCUDA::Initialize(void)
 	//Make sure display data has memory allocated (or freed) as required
 	error = Update_Module_Display_VECs(
 		(cuReal3)pMeshCUDA->h, (cuRect)pMeshCUDA->meshRect, 
-		(MOD_)pMeshCUDA->Get_Module_Heff_Display() == MOD_SURFEXCHANGE || pMeshCUDA->IsOutputDataSet_withRect(DATA_E_SURFEXCH),
+		(MOD_)pMeshCUDA->Get_Module_Heff_Display() == MOD_SURFEXCHANGE || pMeshCUDA->IsOutputDataSet_withRect(DATA_E_SURFEXCH) || pMeshCUDA->IsOutputDataSet(DATA_T_SURFEXCH),
 		(MOD_)pMeshCUDA->Get_Module_Energy_Display() == MOD_SURFEXCHANGE || pMeshCUDA->IsOutputDataSet_withRect(DATA_E_SURFEXCH));
 	if (error) initialized = false;
+
+	if (initialized) set_SurfExchangeCUDA_pointers();
 
 	return error;
 }
@@ -92,6 +94,13 @@ BError SurfExchangeCUDA::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 	Uninitialize();
 
 	return error;
+}
+
+//-------------------Torque methods
+
+cuReal3 SurfExchangeCUDA::GetTorque(cuRect avRect)
+{
+	return CalculateTorque(pMeshCUDA->M, avRect);
 }
 
 #endif

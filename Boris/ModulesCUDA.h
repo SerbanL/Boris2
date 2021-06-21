@@ -29,6 +29,9 @@ protected:
 	//energy value for this effective field term
 	cu_obj<cuBReal> energy;
 
+	//used to obtain average torque value
+	cu_obj<cuReal3> torque;
+
 	//auxiliary for obtaining average energy in a custom rectangle : count non-zero points for average.
 	cu_obj<size_t> points_count;
 
@@ -54,6 +57,9 @@ protected:
 
 	//zero the cuVECs if not empty
 	void ZeroModuleVECs(void);
+
+	//return cross product of M with Module_Heff, averaged in given rect (relative)
+	cuReal3 CalculateTorque(cu_obj<cuVEC_VC<cuReal3>>& M, cuRect& avRect);
 
 public:
 

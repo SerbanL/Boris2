@@ -19,6 +19,12 @@ __host__ void cuVEC<VType>::alloc_initialize_data(void)
 	nullgpuptr(line_profile_avpoints);
 	set_gpu_value(line_profile_component_size, (size_t)0);
 
+	nullgpuptr(histogram);
+	set_gpu_value(histogram_size, (size_t)0);
+
+	nullgpuptr(histogram_preaverage);
+	set_gpu_value(histogram_preaverage_size, (size_t)0);
+
 	set_n(cuSZ3());
 	set_h(cuReal3());
 	set_rect(cuRect());
@@ -99,6 +105,51 @@ __host__ bool cuVEC<VType>::allocate_profile_component_memory(size_t size)
 	if (error != cudaSuccess) { fail_memory_allocation(); return false; }
 
 	set_gpu_value(line_profile_component_size, size);
+	return true;
+}
+
+//memory management for histogram array : attempt to resize to new size if not already exactly given size
+template <typename VType>
+__host__ bool cuVEC<VType>::allocate_histogram_memory(size_t histogram_size_cpu, size_t histogram_preaverage_size_cpu)
+{
+	if (histogram_size_cpu == get_gpu_value(histogram_size) && histogram_preaverage_size_cpu == get_gpu_value(histogram_preaverage_size)) return true;
+
+	auto fail_memory_allocation = [&]() {
+
+		gpu_free_managed(histogram);
+		set_gpu_value(histogram_size, (size_t)0);
+
+		gpu_free_managed(histogram_preaverage);
+		set_gpu_value(histogram_preaverage_size, (size_t)0);
+	};
+
+	//try to allocate required memory for profile component array
+	cudaError_t error = cudaSuccess;
+		
+	if (histogram_size_cpu != get_gpu_value(histogram_size)) {
+
+		if (histogram_size_cpu > 0) {
+
+			error = gpu_alloc_managed(histogram, histogram_size_cpu);
+			if (error != cudaSuccess) { fail_memory_allocation(); return false; }
+		}
+		else gpu_free_managed(histogram);
+
+		set_gpu_value(histogram_size, histogram_size_cpu);
+	}
+	
+	if (histogram_preaverage_size_cpu != get_gpu_value(histogram_preaverage_size)) {
+
+		if (histogram_preaverage_size_cpu > 0) {
+
+			error = gpu_alloc_managed(histogram_preaverage, histogram_preaverage_size_cpu);
+			if (error != cudaSuccess) { fail_memory_allocation(); return false; }
+		}
+		else gpu_free_managed(histogram_preaverage);
+
+		set_gpu_value(histogram_preaverage_size, histogram_preaverage_size_cpu);
+	}
+
 	return true;
 }
 
@@ -262,6 +313,12 @@ __host__ void cuVEC<VType>::destruct_cu_obj(void)
 	gpu_free_managed(line_profile_avpoints);
 	set_gpu_value(line_profile_component_size, (size_t)0);
 
+	gpu_free_managed(histogram);
+	set_gpu_value(histogram_size, (size_t)0);
+
+	gpu_free_managed(histogram_preaverage);
+	set_gpu_value(histogram_preaverage_size, (size_t)0);
+
 	transfer.destruct_cu_obj();
 }
 
@@ -396,6 +453,12 @@ __host__ void cuVEC<VType>::clear(void)
 	gpu_free_managed(line_profile_component_z);
 	gpu_free_managed(line_profile_avpoints);
 	set_gpu_value(line_profile_component_size, (size_t)0);
+
+	gpu_free_managed(histogram);
+	set_gpu_value(histogram_size, (size_t)0);
+
+	gpu_free_managed(histogram_preaverage);
+	set_gpu_value(histogram_preaverage_size, (size_t)0);
 
 	SetMeshRect(); 
 }

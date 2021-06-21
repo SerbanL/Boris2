@@ -58,6 +58,12 @@ public:
 
 	double UpdateField(void);
 
+	//-------------------Energy methods
+
+	double Get_EnergyChange(int spin_index, DBL3 Mnew);
+
+	double Get_Energy(int spin_index);
+
 	//-------------------
 
 	void SetField(DBL3 Hxyz);
@@ -69,6 +75,10 @@ public:
 
 	//if base temperature changes we need to adjust Tb in H_equation if it's used.
 	void SetBaseTemperature(double Temperature);
+
+	//-------------------Torque methods
+
+	DBL3 GetTorque(Rect& avRect);
 };
 
 #else

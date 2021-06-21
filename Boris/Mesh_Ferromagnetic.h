@@ -53,6 +53,7 @@ class FMesh :
 	bool,
 	//Members in this derived class
 	bool, SkyrmionTrack, bool,
+	double, double, bool, bool, bool, DBL3,
 	//Material Parameters
 	MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<DBL2, double>, 
 	MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, 
@@ -111,6 +112,11 @@ private:
 	//this is precisely what it is intended for; if two dissimilar materials are in contact then you probably shouldn't be using this mechanism.
 	bool exchange_couple_to_meshes = false;
 
+private:
+
+	//Take a Monte Carlo step in this mesh : these functions implement the actual algorithms
+	void Iterate_MonteCarlo_Parallel_Classic(void);
+
 public:
 
 	//constructor taking only a SuperMesh pointer (SuperMesh is the owner) only needed for loading : all required values will be set by LoadObjectState method in ProgramState
@@ -138,6 +144,14 @@ public:
 
 #if COMPILECUDA == 1
 	void PrepareNewIterationCUDA(void) { if (pMeshCUDA && !pMod.is_ID_set(MOD_ZEEMAN)) pMeshCUDA->Heff()->set(n.dim(), cuReal3()); }
+#endif
+
+	//Take a Monte Carlo step in this mesh
+	void Iterate_MonteCarlo(double acceptance_rate);
+
+#if COMPILECUDA == 1
+	//Take a Monte Carlo step in this mesh
+	void Iterate_MonteCarloCUDA(double acceptance_rate);
 #endif
 
 	//Check if mesh needs to be moved (using the MoveMesh method) - return amount of movement required (i.e. parameter to use when calling MoveMesh).
@@ -242,6 +256,24 @@ public:
 	DBL2 FitDomainWall_Y(Rect rectangle);
 	//Fit domain wall along the z direction through centre of rectangle : fit the component which matches a tanh profile. Return centre position and width.
 	DBL2 FitDomainWall_Z(Rect rectangle);
+
+	//compute magnitude histogram data
+	//extract histogram between magnitudes min and max with given number of bins. if min max not given (set them to zero) then determine them first. 
+	//output probabilities in histogram_p, corresponding to values set in histogram_x min, min + bin, ..., max, where bin = (max - min) / (num_bins - 1)
+	//if macrocell_dims is not INT3(1) then first average in macrocells containing given number of individual mesh cells, then obtain histogram
+	bool Get_Histogram(std::vector<double>& histogram_x, std::vector<double>& histogram_p, int num_bins, double& min, double& max, INT3 macrocell_dims);
+
+	//As for Get_Histogram, but use thermal averaging in each macrocell
+	bool Get_ThAvHistogram(std::vector<double>& histogram_x, std::vector<double>& histogram_p, int num_bins, double& min, double& max, INT3 macrocell_dims);
+
+	//angular deviation histogram computed from ndir unit vector direction. If ndir not given (DBL3()), then angular deviation computed from average magnetization direction
+	bool Get_AngHistogram(std::vector<double>& histogram_x, std::vector<double>& histogram_p, int num_bins, double& min, double& max, INT3 macrocell_dims, DBL3 ndir);
+
+	//As for Get_AngHistogram, but use thermal averaging in each macrocell
+	bool Get_ThAvAngHistogram(std::vector<double>& histogram_x, std::vector<double>& histogram_p, int num_bins, double& min, double& max, INT3 macrocell_dims, DBL3 ndir);
+
+	//calculate thermodynamic average of magnetization
+	DBL3 GetThermodynamicAverageMagnetization(Rect rectangle);
 
 	//set/get exchange_couple_to_meshes status flag
 	void SetMeshExchangeCoupling(bool status) { exchange_couple_to_meshes = status; }

@@ -42,6 +42,16 @@ private:
 	//line_profile_component memory size, stored in GPU memory : transfer to CPU before checking if correct size
 	size_t line_profile_component_size;
 
+	//Histogram extraction data
+
+	//used for extracting histogram data from mesh
+	cuBReal* histogram;
+	size_t histogram_size;
+
+	//used if we need to pre-average mesh values with a macrocell before extracting histogram
+	VType* histogram_preaverage;
+	size_t histogram_preaverage_size;
+
 protected:
 
 	//the actual mesh quantity: addresses gpu memory
@@ -90,6 +100,9 @@ private:
 
 	//memory management for line_profile_component array : attempt to resize to new size if not already exactly given size
 	__host__ bool allocate_profile_component_memory(size_t size);
+
+	//memory management for histogram array : attempt to resize to new size if not already exactly given size
+	__host__ bool allocate_histogram_memory(size_t histogram_size_cpu, size_t histogram_preaverage_size_cpu);
 
 protected:
 
@@ -177,6 +190,8 @@ public:
 	__device__ cuReal2*& get_line_profile_component_y(void) { return line_profile_component_y; }
 	__device__ cuReal2*& get_line_profile_component_z(void) { return line_profile_component_z; }
 
+	__device__ size_t get_line_profile_size(void) { return line_profile_component_size; }
+
 	//1. Profile values only, without stencil operation, and with mesh wrap-around
 
 	//extract profile to a cu_arr : extract size points starting at start in the direction step for the given number of points (size); use weighted average to extract profile with h stencil only
@@ -192,6 +207,9 @@ public:
 	//extract profile components: extract starting at start in the direction end - step, with given step; use weighted average to extract profile with given stencil
 	//all coordinates are relative positions. Return profile values in profile_gpu.
 	__host__ bool extract_profile(cuReal3 start, cuReal3 end, cuBReal step, cuReal3 stencil, cu_arr<VType>& profile_gpu);
+
+	//as above, but only store profile in internal memory (line_profile) so we can read it out later as needed
+	__host__ bool extract_profile(cuReal3 start, cuReal3 end, cuBReal step, cuReal3 stencil);
 
 	//extract profile components: extract starting at start in the direction end - step, with given step; use weighted average to extract profile with given stencil
 	//all coordinates are relative positions. Return profile values in profile_cpu.
@@ -219,6 +237,23 @@ public:
 	__host__ bool extract_profile_component_max(cuReal3 start, cuReal3 end, cuBReal step, cuReal3 stencil, cu_arr<cuReal2>& profile_gpu);
 	//as above but only component which has largest value for the first point and pack in profile position too (after stencil averaging) (for VAL3 floating types only). Return data in profile_cpu. profile_cpu resized as needed.
 	__host__ bool extract_profile_component_max(cuReal3 start, cuReal3 end, cuBReal step, cuReal3 stencil, std::vector<DBL2>& profile_cpu);
+
+	//--------------------------------------------HISTOGRAMS : cuVEC_histo.cuh
+
+	//compute magnitude histogram data
+	//extract histogram between magnitudes min and max with given number of bins. if min max not given (set them to zero) then determine them first.
+	//if num_bins not given then use default value of 100
+	//if macrocell_dims greater than 1 in any dimension then first average mesh data in macrocells of given size
+	//without macrocell then pass in num_nonempty_cells (number of nonempty cells); if this is not passed it it's counted first (costs another kernel launch)
+	//output transferred to cpu in histogram_cpu
+	__host__ bool get_mag_histogram(
+		std::vector<double>& histogram_x_cpu, std::vector<double>& histogram_p_cpu, 
+		int num_bins, double& min, double& max, size_t num_nonempty_cells = 0, cuINT3 macrocell_dims = cuINT3(1));
+
+	//get angular deviation histogram. deviation from ndir direction is calculated, or the average direction if ndir not specified (IsNull)
+	__host__ bool get_ang_histogram(
+		std::vector<double>& histogram_x_cpu, std::vector<double>& histogram_p_cpu, 
+		int num_bins, double& min, double& max, size_t num_nonempty_cells = 0, cuINT3 macrocell_dims = cuINT3(1), VType ndir = VType());
 
 	//--------------------------------------------INDEXING
 
@@ -361,17 +396,18 @@ public:
 	//the weights vary linearly with distance from coord
 	__device__ VType weighted_average(const cuReal3& coord, const cuReal3& stencil);
 	
-	//weighted average in given rectangle (absolute coordinates). weighted_average with coord and stencil is slightly faster.
-	__device__ VType weighted_average(const cuRect& rectangle);
-
 	//ijk is the cell index in a mesh with cellsize cs and same rect as this cuVEC; if cs is same as h then just read the value at ijk - much faster! If not then get the usual weighted average.
 	__device__ VType weighted_average(const cuINT3& ijk, const cuReal3& cs);
 
-	//full average in given rectangle (absolute coordinates).
+	//full average in given rectangle (relative coordinates).
 	__device__ VType average(const cuRect& rectangle);
 
-	//average in given rectangle (absolute coordinates), excluding zero points (assumed empty).
+	//average in given rectangle (relative coordinates), excluding zero points (assumed empty).
 	__device__ VType average_nonempty(const cuRect& rectangle);
+
+	//find "chunked" average magnitude in entire VEC. This means, first find magnitude in each macrocell (size macrocell_dims & h), then average macrocell magnitudes.
+	//Found in cuVEC_histo.h
+	__host__ double chunked_averagemag(cuINT3 macrocell_dims = cuINT3(1));
 
 	//--------------------------------------------NUMERICAL PROPERTIES : cuVEC_nprops.cuhj
 

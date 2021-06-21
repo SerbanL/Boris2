@@ -309,17 +309,14 @@ enum IOI_
 	//Shows n_common for multi-layered convolution. auxId is the status (-1 : N/A, otherwise available). textId is the value as a SZ3.
 	IOI_NCOMMON,
 
+	//Shows status of gpu kernels demag initialization. auxId is the status (0 : Off, 1 : On)
+	IOI_GPUKERNELS,
+
 	//Shows materials database in use. textId is the name of the database, including the path.
 	IOI_LOCALMDB,
 
 	//Shows relative error fail threshold for ode eval. textId is the value.
 	IOI_ODERELERRFAIL,
-
-	//Shows relative error high threshold for decreasing dT. textId is the value.
-	IOI_ODERELERRHIGH,
-
-	//Shows relative error low threshold for increasing dT. textId is the value.
-	IOI_ODERELERRLOW,
 
 	//Shows dT increase factor. textId is the value.
 	IOI_ODEDTINCR,
@@ -367,6 +364,9 @@ enum IOI_
 	
 	//Shows Monte-Carlo algorithm type : minorId is the unique mesh id number, auxId is the type (0 : classical, 1 : constrained, -1 : N/A), textId is the constrained DBL3 direction.
 	IOI_MCTYPE,
+
+	//Shows Monte-Carlo disabled/enabled status : minorId is the unique mesh id number, auxId is the status (1 : disabled, 0 : enabled).
+	IOI_MCDISABLED,
 
 	//Shows Monte-Carlo computefields state flag : auxId is the state (0: disabled, 1: enabled)
 	IOI_MCCOMPUTEFIELDS,

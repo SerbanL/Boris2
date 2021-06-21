@@ -1968,6 +1968,15 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 	}
 	break;
 
+	//Shows status of gpu kernels demag initialization. auxId is the status (0 : Off, 1 : On)
+	case IOI_GPUKERNELS:
+	{
+		int status = iop.auxId;
+
+		if (actionCode == AC_MOUSERIGHTDOWN || actionCode == AC_MOUSELEFTDOWN) sendCommand_verbose(CMD_GPUKERNELS, !status);
+	}
+	break;
+
 	//Shows status of force 2D multi-layered convolution. auxId is the status (-1 : N/A, 0 : Off, 1 : On)
 	case IOI_2DMULTICONV:
 	{
@@ -2038,50 +2047,7 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 			//the actual text returned by the popup edit box
 			std::string to_text = trim(trimendspaces(pTO->GetText()), ",");
 
-			double y = SMesh.Get_AStepRelErrCtrl().y;
-			double z = SMesh.Get_AStepRelErrCtrl().z;
-
-			sendCommand_verbose(CMD_ASTEPCTRL, to_text, ToString(y), ToString(z), SMesh.Get_AStepdTCtrl());
-		}
-	}
-	break;
-
-	//Shows relative error high threshold for decreasing dT. textId is the value.
-	case IOI_ODERELERRHIGH:
-	{
-		//on double-click make popup edit box to edit the currently displayed value
-		if (actionCode == AC_DOUBLECLICK) { actionOutcome = AO_STARTPOPUPEDITBOX; }
-
-		//popup edit box has returned some text - try to set value from it
-		else if (actionCode == AC_POPUPEDITTEXTBOXRETURNEDTEXT) {
-
-			//the actual text returned by the popup edit box
-			std::string to_text = trim(trimendspaces(pTO->GetText()), ",");
-
-			double x = SMesh.Get_AStepRelErrCtrl().x;
-			double z = SMesh.Get_AStepRelErrCtrl().z;
-
-			sendCommand_verbose(CMD_ASTEPCTRL, ToString(x), to_text, ToString(z), SMesh.Get_AStepdTCtrl());
-		}
-	}
-	break;
-
-	//Shows relative error low threshold for increasing dT. textId is the value.
-	case IOI_ODERELERRLOW:
-	{
-		//on double-click make popup edit box to edit the currently displayed value
-		if (actionCode == AC_DOUBLECLICK) { actionOutcome = AO_STARTPOPUPEDITBOX; }
-
-		//popup edit box has returned some text - try to set value from it
-		else if (actionCode == AC_POPUPEDITTEXTBOXRETURNEDTEXT) {
-
-			//the actual text returned by the popup edit box
-			std::string to_text = trim(trimendspaces(pTO->GetText()), ",");
-
-			double x = SMesh.Get_AStepRelErrCtrl().x;
-			double y = SMesh.Get_AStepRelErrCtrl().y;
-
-			sendCommand_verbose(CMD_ASTEPCTRL, ToString(x), ToString(y), to_text, SMesh.Get_AStepdTCtrl());
+			sendCommand_verbose(CMD_ASTEPCTRL, to_text, SMesh.Get_AStepdTCtrl());
 		}
 	}
 	break;
@@ -2431,6 +2397,17 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 		}
 	}
 	break;
+
+	//Shows Monte-Carlo disabled/enabled status : minorId is the unique mesh id number, auxId is the status (1 : disabled, 0 : enabled).
+	case IOI_MCDISABLED:
+	{
+		int meshId = iop.minorId;
+		int status = iop.auxId;
+
+		if (actionCode == AC_MOUSERIGHTDOWN || actionCode == AC_MOUSELEFTDOWN) sendCommand_verbose(CMD_MCDISABLE, !status, SMesh.key_from_meshId(meshId));
+	}
+	break;
+
 	//Shows shape rotation setting: textId is the value as text (DBL3)
 	case IOI_SHAPEROT:
 	{

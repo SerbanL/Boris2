@@ -30,25 +30,6 @@ class Atom_Mesh :
 
 protected:
 
-	// MONTE-CARLO DATA
-
-	//random number generator - used by Monte Carlo methods
-	BorisRand prng;
-
-	//Monte-Carlo current cone angle (vary to reach MONTECARLO_TARGETACCEPTANCE)
-	double mc_cone_angledeg = 30.0;
-
-	//last Monte-Carlo step acceptance probability (save it so we can read it out)
-	double mc_acceptance_rate = 0.0;
-
-	//use parallel Monte-Carlo algorithms?
-	bool mc_parallel = true;
-
-	// Constrained MONTE-CARLO DATA
-
-	//use constrained Monte-Carlo?
-	bool mc_constrain = false;
-
 public:
 
 #if COMPILECUDA == 1
@@ -207,14 +188,6 @@ public:
 	BError Set_Magnetic_PBC(INT3 pbc_images);
 	INT3 Get_Magnetic_PBC(void) { return INT3(M1.is_pbc_x(), M1.is_pbc_y(), M1.is_pbc_z()); }
 
-	void Set_MonteCarlo_Serial(bool status) { mc_parallel = !status; }
-	bool Get_MonteCarlo_Serial(void) { return !mc_parallel; }
-
-	bool Get_MonteCarlo_Constrained(void) { return mc_constrain; }
-
-	virtual void Set_MonteCarlo_Constrained(DBL3 cmc_n_) = 0;
-	virtual DBL3 Get_MonteCarlo_Constrained_Direction(void) = 0;
-
 	//----------------------------------- MODULES CONTROL (implement MeshBase) : Atom_MeshModules.cpp
 
 	//Add module to list of set modules, also deleting any exclusive modules to this one
@@ -280,12 +253,10 @@ public:
 	//save the quantity currently displayed on screen in an ovf2 file using the specified format
 	BError SaveOnScreenPhysicalQuantity(std::string fileName, std::string ovf2_dataType);
 
-	//Before calling a run of GetDisplayedMeshValue, make sure to call PrepareDisplayedMeshValue : this calculates and stores in displayVEC storage and quantities which don't have memory allocated directly, but require computation and temporary storage.
-	void PrepareDisplayedMeshValue(void);
-
-	//return value of currently displayed mesh quantity at the given absolute position; the value is read directly from the storage VEC, not from the displayed PhysQ.
-	//Return an Any as the displayed quantity could be either a scalar or a vector.
-	Any GetDisplayedMeshValue(DBL3 abs_pos);
+	//extract profile from focused mesh, from currently display mesh quantity, but reading directly from the quantity
+	//Displayed	mesh quantity can be scalar or a vector; pass in std::vector pointers, then check for nullptr to determine what type is displayed
+	//if do_average = true then build average and don't return anything, else return just a single-shot profile. If read_average = true then simply read out the internally stored averaged profile by assigning to pointer.
+	void GetPhysicalQuantityProfile(DBL3 start, DBL3 end, double step, DBL3 stencil, std::vector<DBL3>*& pprofile_dbl3, std::vector<double>*& pprofile_dbl, bool do_average, bool read_average);
 
 	//return average value for currently displayed mesh quantity in the given relative rectangle
 	Any GetAverageDisplayedMeshValue(Rect rel_rect);
@@ -359,8 +330,6 @@ public:
 	virtual DBL2 GetMomentXMinMax(Rect rectangle = Rect()) = 0;
 	virtual DBL2 GetMomentYMinMax(Rect rectangle = Rect()) = 0;
 	virtual DBL2 GetMomentZMinMax(Rect rectangle = Rect()) = 0;
-
-	DBL2 Get_MonteCarlo_Params(void) { return DBL2(mc_cone_angledeg, mc_acceptance_rate); }
 
 	//------Implementing MeshBase
 

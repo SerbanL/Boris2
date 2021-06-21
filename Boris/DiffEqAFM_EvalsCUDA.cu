@@ -32,7 +32,6 @@ __global__ void RenormalizeMagnetization_AFM_kernel(ManagedMeshCUDA& cuMesh)
 {
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
 
-
 	if (idx < cuMesh.pM->linear_size()) {
 
 		if (cuMesh.pM->is_not_empty(idx)) {
@@ -40,8 +39,8 @@ __global__ void RenormalizeMagnetization_AFM_kernel(ManagedMeshCUDA& cuMesh)
 			cuReal2 Ms_AFM = *cuMesh.pMs_AFM;
 			cuMesh.update_parameters_mcoarse(idx, *cuMesh.pMs_AFM, Ms_AFM);
 
-			(*cuMesh.pM)[idx].renormalize(Ms_AFM.i);
-			(*cuMesh.pM2)[idx].renormalize(Ms_AFM.j);
+			if (Ms_AFM.i) (*cuMesh.pM)[idx].renormalize(Ms_AFM.i);
+			if (Ms_AFM.j) (*cuMesh.pM2)[idx].renormalize(Ms_AFM.j);
 		}
 	}
 }
@@ -49,7 +48,7 @@ __global__ void RenormalizeMagnetization_AFM_kernel(ManagedMeshCUDA& cuMesh)
 //Restore magnetization after a failed step for adaptive time-step methods
 void DifferentialEquationAFMCUDA::RenormalizeMagnetization(void)
 {
-	RenormalizeMagnetization_AFM_kernel <<< (pMeshCUDA->n.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (pMeshCUDA->cuMesh);
+	RenormalizeMagnetization_AFM_kernel <<< (pMeshCUDA->M()->linear_size_cpu() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (pMeshCUDA->cuMesh);
 }
 
 //-----------------------------------------

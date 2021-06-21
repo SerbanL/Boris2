@@ -99,6 +99,29 @@ void Modules::ZeroModuleVECs(void)
 	if (Module_energy2.linear_size()) Module_energy2.set();
 }
 
+//return cross product of M with Module_Heff, averaged in given rect (relative)
+DBL3 Modules::CalculateTorque(VEC_VC<DBL3>& M, Rect& avRect)
+{
+	if (Module_Heff.size() != M.size()) return DBL3();
+
+	Box box = M.box_from_rect_max(avRect + M.rect.s);
+
+	reduction.new_average_reduction();
+
+	for (int k = box.s.k; k < box.e.k; k++) {
+#pragma omp parallel for
+		for (int j = box.s.j; j < box.e.j; j++) {
+			for (int i = box.s.i; i < box.e.i; i++) {
+
+				int idx = i + j * M.n.x + k * M.n.x*M.n.y;
+				if (M.is_not_empty(idx)) reduction.reduce_average(M[idx] ^ Module_Heff[idx]);
+			}
+		}
+	}
+
+	return reduction.average();
+}
+
 //-------------------------- Energy density calculation
 
 //Get energy density averaged over the entire mesh during the UpdateField call

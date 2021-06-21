@@ -41,7 +41,14 @@ void Atom_DifferentialEquationCubic::RunRKCK45_Step0_withReductions(void)
 		}
 	}
 
-	mxh_reduction.maximum();
+	if (paMesh->grel.get0()) {
+
+		mxh_reduction.maximum();
+	}
+	else {
+
+		mxh_reduction.max = 0.0;
+	}
 }
 
 void Atom_DifferentialEquationCubic::RunRKCK45_Step0(void)
@@ -173,8 +180,16 @@ void Atom_DifferentialEquationCubic::RunRKCK45_Step5_withReductions(void)
 		}
 	}
 
-	dmdt_reduction.maximum();
 	lte_reduction.maximum();
+
+	if (paMesh->grel.get0()) {
+
+		dmdt_reduction.maximum();
+	}
+	else {
+
+		dmdt_reduction.max = 0.0;
+	}
 }
 
 void Atom_DifferentialEquationCubic::RunRKCK45_Step5(void)

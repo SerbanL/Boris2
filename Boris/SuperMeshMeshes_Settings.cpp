@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "SuperMesh.h"
+#include "SimSchedule.h"
 
 //--------------------------------------------------------- MESH HANDLING - SETTINGS
 
@@ -21,6 +22,9 @@ BError SuperMesh::SetMagAngle(std::string meshName, double polar, double azim)
 		}
 	}
 
+	//Need to renormalize magnetization
+	error = UpdateConfiguration(UPDATECONFIG_PARAMVALUECHANGED_MLENGTH);
+
 	return error;
 }
 
@@ -34,6 +38,9 @@ BError SuperMesh::SetMagAngle_Rect(std::string meshName, double polar, double az
 	if (!mesh_relrect.contains(rectangle)) return error(BERROR_PARAMOUTOFBOUNDS);
 
 	pMesh[meshName]->SetMagAngle(polar, azim, rectangle);
+
+	//Need to renormalize magnetization
+	error = UpdateConfiguration(UPDATECONFIG_PARAMVALUECHANGED_MLENGTH);
 
 	return error;
 }
@@ -57,6 +64,9 @@ BError SuperMesh::SetMagAngle_Shape(std::string meshName, double polar, double a
 		}
 	}
 
+	//Need to renormalize magnetization
+	error = UpdateConfiguration(UPDATECONFIG_PARAMVALUECHANGED_MLENGTH);
+
 	return error;
 }
 
@@ -78,6 +88,9 @@ BError SuperMesh::SetMagAngle_Object(std::string meshName, double polar, double 
 			pMesh[idx]->SetMagAngle_Object(polar, azim, position);
 		}
 	}
+
+	//Need to renormalize magnetization
+	error = UpdateConfiguration(UPDATECONFIG_PARAMVALUECHANGED_MLENGTH);
 
 	return error;
 }
@@ -761,6 +774,43 @@ bool SuperMesh::IsOutputDataSet_withRect(int datumId, MeshBase* pmesh)
 			saveDataList[idx].meshName == meshName &&
 			!saveDataList[idx].rectangle.IsNull() &&
 			saveDataList[idx].rectangle != pmesh->meshRect) return true;
+	}
+
+	return false;
+}
+
+//return true if data is set (with any rectangle)
+bool SuperMesh::IsOutputDataSet(int datumId, MeshBase* pmesh)
+{
+	//first get mesh name from mesh pointer	
+	std::string meshName;
+	for (int idx = 0; idx < pMesh.size(); idx++) {
+
+		if (pMesh[idx] == pmesh) {
+
+			meshName = pMesh.get_key_from_index(idx);
+			break;
+		}
+	}
+
+	if (!meshName.length()) return false;
+
+	//now search output data for match
+	for (int idx = 0; idx < saveDataList.size(); idx++) {
+
+		if (saveDataList[idx].datumId == (int)datumId &&
+			saveDataList[idx].meshName == meshName) return true;
+	}
+
+	return false;
+}
+
+//check if given stage is set
+bool SuperMesh::IsStageSet(int stageType)
+{
+	for (int idx = 0; idx < simStages.size(); idx++) {
+		
+		if (simStages[idx].stage_type() == stageType) return true;
 	}
 
 	return false;

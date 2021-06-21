@@ -242,8 +242,8 @@ void Atom_Mesh_Cubic::SetRandomMag(int seed)
 
 		if (M1.is_not_empty(idx)) {
 
-			double theta = prng.rand() * TWO_PI;
-			double phi = prng.rand() * TWO_PI;
+			double theta = acos(1 - 2 * prng.rand());
+			double phi = prng.rand() * 2 * PI;
 
 			M1[idx] = M1[idx].norm() * DBL3(cos(phi)*sin(theta), sin(phi)*sin(theta), cos(theta));
 		}

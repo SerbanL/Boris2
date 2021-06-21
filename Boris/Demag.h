@@ -12,12 +12,20 @@ class Mesh;
 #include "Convolution.h"
 #include "DemagKernel.h"
 
+#if COMPILECUDA == 1
+#include "DemagCUDA.h"
+#endif
+
 class Demag : 
 	public Modules,
 	public DemagBase,
 	public Convolution<Demag, DemagKernel>,
 	public ProgramState<Demag, std::tuple<INT3>, std::tuple<>>
 {
+
+#if COMPILECUDA == 1
+	friend DemagCUDA;
+#endif
 
 private:
 
@@ -50,6 +58,12 @@ public:
 
 	//Set PBC
 	BError Set_PBC(INT3 demag_pbc_images_);
+
+	//-------------------Energy methods
+
+	double Get_EnergyChange(int spin_index, DBL3 Mnew);
+
+	double Get_Energy(int spin_index);
 };
 
 #else

@@ -244,12 +244,67 @@ bool BorisMeshWindow::SaveMeshImage(std::string fileName, DBL4 image_cropping)
 	double left = spaceRectDims.width * image_cropping.i + spaceRect.left;
 	double right = spaceRectDims.width * image_cropping.k + spaceRect.left;
 
-	double top = spaceRectDims.height * (1 - image_cropping.l) + spaceRect.top;
-	double bottom = spaceRectDims.height * (1 - image_cropping.j) + spaceRect.top;
+	double top = spaceRectDims.height * image_cropping.l + spaceRect.top;
+	double bottom = spaceRectDims.height * image_cropping.j + spaceRect.top;
 
 	D2D1_RECT_F saveRect = D2D1::RectF(left, top, right, bottom);
 
 	return pBG->SaveScreenToFile(fileName, saveRect);
+}
+
+bool BorisMeshWindow::SaveImage(std::string fileName, std::vector<PhysQ> physQ)
+{
+	//save current display settings
+	PhysQRepSettings start_settings = physQRep.get_current_settings();
+
+	//calculate centered display settings
+	PhysQRepSettings settings(physQ, pBG->wndWidth, spaceRect);
+	
+	//set maximum detail level and zoom on displayed quantity
+	settings.detail_level = DETAILVALUEMIN;
+	settings.m_to_l *= UNITSSCALEBACK_ZOOMED / UNITSSCALEBACK;
+	physQRep.CalculateRepresentation_NewSettings(physQ, settings);
+
+	//now draw centered physQ only
+	pBG->BeginD3DDraw();
+
+	//clear the drawing area
+	pBG->FillRectangle(spaceRect, bgrndColor);
+
+	//draw the physical quantity set to be displayed in the mesh
+	physQRep.DrawPhysQRep();
+
+	//save rendered display to file cropping to have only the mesh display centered
+	float image_cropping_i = 0.5 * (1.0 - spaceRectDims.height / spaceRectDims.width);
+	if (image_cropping_i < 0) image_cropping_i = 0;
+
+	float image_cropping_k = 0.5 * (1.0 + spaceRectDims.height / spaceRectDims.width);
+	if (image_cropping_k > 1) image_cropping_k = 1;
+
+	float image_cropping_l = 0.5 * (1.0 - spaceRectDims.width / spaceRectDims.height);
+	if (image_cropping_l < 0) image_cropping_l = 0;
+
+	float image_cropping_j = 0.5 * (1.0 + spaceRectDims.width / spaceRectDims.height);
+	if (image_cropping_j > 1) image_cropping_j = 1;
+
+	double left = spaceRectDims.width * image_cropping_i + spaceRect.left;
+	double right = spaceRectDims.width * image_cropping_k + spaceRect.left;
+	double top = spaceRectDims.height * image_cropping_l + spaceRect.top;
+	double bottom = spaceRectDims.height * image_cropping_j + spaceRect.top;
+
+	D2D1_RECT_F saveRect = D2D1::RectF(left, top, right, bottom);
+
+	bool success = pBG->SaveScreenToFile(fileName, saveRect);
+
+	//revert to previous settings
+	physQRep.CalculateRepresentation_NewSettings(physQ, start_settings);
+
+	//redraw with previous settings
+	DrawWindow();
+
+	pBG->EndD3DDraw();
+
+	return success;
 }
 
 void BorisMeshWindow::ZoomNotchUp(void)

@@ -13,7 +13,7 @@
 void Atom_Mesh_Cubic::Iterate_MonteCarlo(double acceptance_rate)
 {
 	//Not applicable at zero temperature
-	if (IsZ(base_temperature)) return;
+	if (IsZ(base_temperature) || mc_disabled) return;
 
 	if (mc_constrain) {
 
@@ -29,21 +29,7 @@ void Atom_Mesh_Cubic::Iterate_MonteCarlo(double acceptance_rate)
 	///////////////////////////////////////////////////////////////
 	// ADAPTIVE CONE ANGLE
 
-	if (acceptance_rate < 0 || acceptance_rate > 1) acceptance_rate = MONTECARLO_TARGETACCEPTANCE;
-
-	//adaptive cone angle - nice and simple, efficient for all temperatures; much better than MCM fixed cone angle variants, or cone angle set using a formula.
-	if (mc_acceptance_rate < acceptance_rate) {
-
-		//acceptance probability too low : decrease cone angle
-		mc_cone_angledeg -= MONTECARLO_CONEANGLEDEG_DELTA;
-		if (mc_cone_angledeg < pSMesh->Get_MonteCarlo_ConeAngleLimits().i) mc_cone_angledeg = pSMesh->Get_MonteCarlo_ConeAngleLimits().i;
-	}
-	else if (mc_acceptance_rate > acceptance_rate) {
-
-		//acceptance probability too high : increase cone angle
-		mc_cone_angledeg += MONTECARLO_CONEANGLEDEG_DELTA;
-		if (mc_cone_angledeg > pSMesh->Get_MonteCarlo_ConeAngleLimits().j) mc_cone_angledeg = pSMesh->Get_MonteCarlo_ConeAngleLimits().j;
-	}
+	MonteCarlo_AdaptiveAngle(mc_cone_angledeg, acceptance_rate);
 }
 
 #if COMPILECUDA == 1
@@ -51,7 +37,7 @@ void Atom_Mesh_Cubic::Iterate_MonteCarlo(double acceptance_rate)
 void Atom_Mesh_Cubic::Iterate_MonteCarloCUDA(double acceptance_rate)
 { 
 	//Not applicable at zero temperature
-	if (IsZ(base_temperature)) return;
+	if (IsZ(base_temperature) || mc_disabled) return;
 
 	if (paMeshCUDA && mc_parallel) {
 
@@ -62,21 +48,7 @@ void Atom_Mesh_Cubic::Iterate_MonteCarloCUDA(double acceptance_rate)
 	///////////////////////////////////////////////////////////////
 	// ADAPTIVE CONE ANGLE
 
-	if (acceptance_rate < 0 || acceptance_rate > 1) acceptance_rate = MONTECARLO_TARGETACCEPTANCE;
-
-	//adaptive cone angle - nice and simple, efficient for all temperatures; much better than MCM fixed cone angle variants, or cone angle set using a formula.
-	if (mc_acceptance_rate < acceptance_rate) {
-
-		//acceptance probability too low : decrease cone angle
-		mc_cone_angledeg -= MONTECARLO_CONEANGLEDEG_DELTA;
-		if (mc_cone_angledeg < pSMesh->Get_MonteCarlo_ConeAngleLimits().i) mc_cone_angledeg = pSMesh->Get_MonteCarlo_ConeAngleLimits().i;
-	}
-	else if (mc_acceptance_rate > acceptance_rate) {
-
-		//acceptance probability too high : increase cone angle
-		mc_cone_angledeg += MONTECARLO_CONEANGLEDEG_DELTA;
-		if (mc_cone_angledeg > pSMesh->Get_MonteCarlo_ConeAngleLimits().j) mc_cone_angledeg = pSMesh->Get_MonteCarlo_ConeAngleLimits().j;
-	}
+	MonteCarlo_AdaptiveAngle(mc_cone_angledeg, acceptance_rate);
 }
 #endif
 
@@ -132,7 +104,7 @@ void Atom_Mesh_Cubic::Iterate_MonteCarlo_Serial_Classic(void)
 			double energy_delta = 0.0;
 			for (int mod_idx = 0; mod_idx < pMod.size(); mod_idx++) {
 
-				energy_delta += pMod[mod_idx]->Get_Atomistic_EnergyChange(spin_idx, M1_new);
+				energy_delta += pMod[mod_idx]->Get_EnergyChange(spin_idx, M1_new);
 			}
 
 			//Compute acceptance probability
@@ -236,7 +208,7 @@ void Atom_Mesh_Cubic::Iterate_MonteCarlo_Serial_Constrained(void)
 				double energy_delta = 0.0;
 				for (int mod_idx = 0; mod_idx < pMod.size(); mod_idx++) {
 
-					energy_delta += pMod[mod_idx]->Get_Atomistic_EnergyChange(spin_idx1, M_new1) + pMod[mod_idx]->Get_Atomistic_EnergyChange(spin_idx2, M_new2);
+					energy_delta += pMod[mod_idx]->Get_EnergyChange(spin_idx1, M_new1) + pMod[mod_idx]->Get_EnergyChange(spin_idx2, M_new2);
 				}
 
 				double cmc_M_new = cmc_M + Mrot_new1.x + Mrot_new2.x - Mrot_old1.x - Mrot_old2.x;
@@ -326,7 +298,7 @@ void Atom_Mesh_Cubic::Iterate_MonteCarlo_Parallel_Classic(void)
 					double energy_delta = 0.0;
 					for (int mod_idx = 0; mod_idx < pMod.size(); mod_idx++) {
 
-						energy_delta += pMod[mod_idx]->Get_Atomistic_EnergyChange(spin_idx, M1_new);
+						energy_delta += pMod[mod_idx]->Get_EnergyChange(spin_idx, M1_new);
 					}
 
 					//Compute acceptance probability
@@ -522,7 +494,7 @@ void Atom_Mesh_Cubic::Iterate_MonteCarlo_Parallel_Constrained(void)
 					double energy_delta = 0.0;
 					for (int mod_idx = 0; mod_idx < pMod.size(); mod_idx++) {
 
-						energy_delta += pMod[mod_idx]->Get_Atomistic_EnergyChange(spin_idx1, M_new1) + pMod[mod_idx]->Get_Atomistic_EnergyChange(spin_idx2, M_new2);
+						energy_delta += pMod[mod_idx]->Get_EnergyChange(spin_idx1, M_new1) + pMod[mod_idx]->Get_EnergyChange(spin_idx2, M_new2);
 					}
 
 					//use abs: since we're not updating cmc_M after every spin it can become negative above the Curie temperature. with the cmc_M_new > 0.0 check this will result in solver getting stuck

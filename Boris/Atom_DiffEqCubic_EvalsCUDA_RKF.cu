@@ -45,7 +45,7 @@ __global__ void RunRKF45_Step0_withReductions_Kernel(ManagedAtom_DiffEqCubicCUDA
 		}
 	}
 
-	reduction_max(0, 1, &mxh, *cuaDiffEq.pmxh);
+	if (cuaMesh.pgrel->get0()) reduction_max(0, 1, &mxh, *cuaDiffEq.pmxh);
 }
 
 __global__ void RunRKF45_Step0_Kernel(ManagedAtom_DiffEqCubicCUDA& cuaDiffEq, ManagedAtom_MeshCUDA& cuaMesh)
@@ -193,7 +193,7 @@ __global__ void RunRKF45_Step5_withReductions_Kernel(ManagedAtom_DiffEqCubicCUDA
 		}
 	}
 
-	reduction_max(0, 1, &dmdt, *cuaDiffEq.pdmdt);
+	if (cuaMesh.pgrel->get0()) reduction_max(0, 1, &dmdt, *cuaDiffEq.pdmdt);
 	reduction_max(0, 1, &lte, *cuaDiffEq.plte);
 }
 

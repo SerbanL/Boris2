@@ -42,6 +42,13 @@ BError Atom_Anisotropy_UniaxialCUDA::UpdateConfiguration(UPDATECONFIG_ cfgMessag
 	return error;
 }
 
+//-------------------Torque methods
+
+cuReal3 Atom_Anisotropy_UniaxialCUDA::GetTorque(cuRect avRect)
+{
+	return CalculateTorque(paMeshCUDA->M1, avRect);
+}
+
 #endif
 
 #endif

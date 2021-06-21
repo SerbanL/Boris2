@@ -275,9 +275,14 @@ bool DemagTFunc::fill_g_vals(INT3 n, DBL3 hRatios, int asymptotic_distance)
 
 bool DemagTFunc::fill_g2D_vals(INT3 n, DBL3 hRatios, int asymptotic_distance)
 {
-	int nx_dist = minimum(n.x, asymptotic_distance);
-	int ny_dist = minimum(n.y, asymptotic_distance);
-	int nz_dist = minimum(n.z, asymptotic_distance);
+	int nx_dist = n.x, ny_dist = n.y, nz_dist = n.z;
+
+	if (asymptotic_distance > 0) {
+
+		nx_dist = minimum(n.x, asymptotic_distance);
+		ny_dist = minimum(n.y, asymptotic_distance);
+		nz_dist = minimum(n.z, asymptotic_distance);
+	}
 
 	if (!g_vals_xy.assign(SZ3(nx_dist + 2, ny_dist + 2, nz_dist + 2), 0.0)) return false;
 

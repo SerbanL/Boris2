@@ -23,20 +23,25 @@ void Atom_DifferentialEquationCubic::GenerateThermalField(void)
 	double deltaT = (link_dTstoch ? dT : GetTime() - time_stoch);
 	time_stoch = GetTime();
 
-	double Temperature = paMesh->GetBaseTemperature();
+	double grel = paMesh->grel.get0();
+
+	if (IsNZ(grel)) {
+
+		double Temperature = paMesh->GetBaseTemperature();
 
 #pragma omp parallel for
-	for (int idx = 0; idx < paMesh->n.dim(); idx++) {
+		for (int idx = 0; idx < paMesh->n.dim(); idx++) {
 
-		if (paMesh->Temp.linear_size()) Temperature = paMesh->Temp[H_Thermal.cellidx_to_position(idx)];
+			if (paMesh->Temp.linear_size()) Temperature = paMesh->Temp[H_Thermal.cellidx_to_position(idx)];
 
-		double mu_s = paMesh->mu_s;
-		paMesh->update_parameters_mcoarse(idx, paMesh->mu_s, mu_s);
+			double mu_s = paMesh->mu_s;
+			paMesh->update_parameters_mcoarse(idx, paMesh->mu_s, mu_s);
 
-		//do not include any damping here - this will be included in the stochastic equations
-		double Hth_const = sqrt(2 * BOLTZMANN * Temperature / (MUB_MU0 * GAMMA * mu_s * deltaT));
-				
-		H_Thermal[idx] = Hth_const * DBL3(prng.rand_gauss(0, 1), prng.rand_gauss(0, 1), prng.rand_gauss(0, 1));
+			//do not include any damping here - this will be included in the stochastic equations
+			double Hth_const = sqrt(2 * BOLTZMANN * Temperature / (MUB_MU0 * GAMMA * grel * mu_s * deltaT));
+
+			H_Thermal[idx] = Hth_const * DBL3(prng.rand_gauss(0, 1), prng.rand_gauss(0, 1), prng.rand_gauss(0, 1));
+		}
 	}
 }
 
@@ -52,12 +57,13 @@ DBL3 Atom_DifferentialEquationCubic::SLLG(int idx)
 
 	double mu_s = paMesh->mu_s;
 	double alpha = paMesh->alpha;
-	paMesh->update_parameters_mcoarse(idx, paMesh->mu_s, mu_s, paMesh->alpha, alpha);
+	double grel = paMesh->grel;
+	paMesh->update_parameters_mcoarse(idx, paMesh->mu_s, mu_s, paMesh->alpha, alpha, paMesh->grel, grel);
 
 	//H_Thermal has same dimensions as M1 in atomistic meshes
 	DBL3 H_Thermal_Value = H_Thermal[idx] * sqrt(alpha);
 
-	return (-GAMMA / (1 + alpha * alpha)) * ((paMesh->M1[idx] ^ (paMesh->Heff1[idx] + H_Thermal_Value)) + alpha * ((paMesh->M1[idx] / mu_s) ^ (paMesh->M1[idx] ^ (paMesh->Heff1[idx] + H_Thermal_Value))));
+	return (-GAMMA * grel / (1 + alpha * alpha)) * ((paMesh->M1[idx] ^ (paMesh->Heff1[idx] + H_Thermal_Value)) + alpha * ((paMesh->M1[idx] / mu_s) ^ (paMesh->M1[idx] ^ (paMesh->Heff1[idx] + H_Thermal_Value))));
 }
 
 DBL3 Atom_DifferentialEquationCubic::SLLGSTT(int idx)
@@ -72,12 +78,13 @@ DBL3 Atom_DifferentialEquationCubic::SLLGSTT(int idx)
 
 	double mu_s = paMesh->mu_s;
 	double alpha = paMesh->alpha;
-	paMesh->update_parameters_mcoarse(idx, paMesh->mu_s, mu_s, paMesh->alpha, alpha);
+	double grel = paMesh->grel;
+	paMesh->update_parameters_mcoarse(idx, paMesh->mu_s, mu_s, paMesh->alpha, alpha, paMesh->grel, grel);
 
 	//H_Thermal has same dimensions as M1 in atomistic meshes
 	DBL3 H_Thermal_Value = H_Thermal[idx] * sqrt(alpha);
 
-	return (-GAMMA / (1 + alpha * alpha)) * ((paMesh->M1[idx] ^ (paMesh->Heff1[idx] + H_Thermal_Value)) + alpha * ((paMesh->M1[idx] / mu_s) ^ (paMesh->M1[idx] ^ (paMesh->Heff1[idx] + H_Thermal_Value))));
+	return (-GAMMA * grel / (1 + alpha * alpha)) * ((paMesh->M1[idx] ^ (paMesh->Heff1[idx] + H_Thermal_Value)) + alpha * ((paMesh->M1[idx] / mu_s) ^ (paMesh->M1[idx] ^ (paMesh->Heff1[idx] + H_Thermal_Value))));
 }
 #endif
 #endif

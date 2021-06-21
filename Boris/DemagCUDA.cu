@@ -7,6 +7,22 @@
 #include "BorisCUDALib.cuh"
 #include "MeshCUDA.h"
 
+//----------------------- Initialization
+
+__global__ void set_DemagCUDA_pointers_kernel(
+	ManagedMeshCUDA& cuMesh, cuVEC<cuReal3>& Module_Heff)
+{
+	if (threadIdx.x == 0) cuMesh.pDemag_Heff = &Module_Heff;
+}
+
+void DemagCUDA::set_DemagCUDA_pointers(void)
+{
+	set_DemagCUDA_pointers_kernel <<< 1, CUDATHREADS >>>
+		(pMeshCUDA->cuMesh, Module_Heff);
+}
+
+//----------------------- LAUNCHERS
+
 //Add newly computed field to Heff and Heff2, then subtract self demag contribution from it : AFM
 __global__ void Demag_EvalSpeedup_AddField_SubSelf_Kernel(
 	cuVEC<cuReal3>& Heff, cuVEC<cuReal3>& Heff2,

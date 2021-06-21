@@ -4,7 +4,6 @@
 #include "SuperMesh.h"
 
 Atom_Mesh::Atom_Mesh(MESH_ meshType, SuperMesh *pSMesh_) :
-	prng(GetSystemTickCount()),
 	MeshBase(meshType, pSMesh_),
 	//MeshParams constructor after Meshbase, since they both have virtual inheritance from MeshParamsBase : we want MeshParams to control setting values in MeshParamsBase
 	Atom_MeshParams(params_for_meshtype(meshType))

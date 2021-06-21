@@ -42,6 +42,24 @@ BError AFMeshCUDA::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 
 		if (!Heff()->assign((cuReal3)h, (cuRect)meshRect, cuReal3())) return error(BERROR_OUTOFGPUMEMORY_CRIT);
 		if (!Heff2()->assign((cuReal3)h, (cuRect)meshRect, cuReal3())) return error(BERROR_OUTOFGPUMEMORY_CRIT);
+
+		//setup prng for MC methods
+		if (prng()->initialize(GetSystemTickCount(), n.dim() / 128) != cudaSuccess) error(BERROR_OUTOFGPUMEMORY_NCRIT);
+
+		//Setup cuModules and cuNumModules so they can be used at runtime by Monte-Carlo methods
+		if (ucfg::check_cfgflags(cfgMessage, UPDATECONFIG_MODULEADDED, UPDATECONFIG_MODULEDELETED)) {
+
+			std::vector<int> modules_ids(pAFMesh->pMod.size());
+
+			for (int idx = 0; idx < modules_ids.size(); idx++) {
+
+				modules_ids[idx] = pAFMesh->pMod.get_ID_from_index(idx);
+			}
+
+			cuModules.resize(modules_ids.size());
+			cuModules.copy_from_vector(modules_ids);
+			cuNumModules.from_cpu((int)modules_ids.size());
+		}
 	}
 
 	return error;

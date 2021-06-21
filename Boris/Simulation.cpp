@@ -20,7 +20,8 @@ Simulation::Simulation(HWND hWnd, int Program_Version, std::string server_port_,
 			VINFO(static_transport_solver), VINFO(disabled_transport_solver),
 			VINFO(image_cropping), VINFO(displayTransparency), VINFO(displayThresholds), VINFO(displayThresholdTrigger),
 			VINFO(shape_rotation), VINFO(shape_repetitions), VINFO(shape_displacement), VINFO(shape_method),
-			VINFO(userConstants)
+			VINFO(userConstants),
+			VINFO(command_buffer)
 		}, {})
 #else
 Simulation::Simulation(int Program_Version, std::string server_port_, std::string server_pwd_, int cudaDevice) :
@@ -41,7 +42,8 @@ Simulation::Simulation(int Program_Version, std::string server_port_, std::strin
 			VINFO(static_transport_solver), VINFO(disabled_transport_solver),
 			VINFO(image_cropping), VINFO(displayTransparency), VINFO(displayThresholds), VINFO(displayThresholdTrigger),
 			VINFO(shape_rotation), VINFO(shape_repetitions), VINFO(shape_displacement), VINFO(shape_method),
-			VINFO(userConstants)
+			VINFO(userConstants),
+			VINFO(command_buffer)
 		}, {})
 #endif
 {
@@ -449,7 +451,11 @@ Simulation::Simulation(int Program_Version, std::string server_port_, std::strin
 	commands.insert(CMD_EXCLUDEMULTICONVDEMAG, CommandSpecifier(CMD_EXCLUDEMULTICONVDEMAG), "excludemulticonvdemag");
 	commands[CMD_EXCLUDEMULTICONVDEMAG].usage = "[tc0,0.5,0,1/tc]USAGE : <b>excludemulticonvdemag</b> <i>status meshname</i>";
 	commands[CMD_EXCLUDEMULTICONVDEMAG].descr = "[tc0,0.5,0.5,1/tc]Set exclusion status (0 or 1) of named mesh from multi-layered demag convolution.";
-	commands[CMD_EXCLUDEMULTICONVDEMAG].return_descr = "[tc0,0.5,0,1/tc]Script return values: <i>status</i>";
+
+	commands.insert(CMD_GPUKERNELS, CommandSpecifier(CMD_GPUKERNELS), "gpukernels");
+	commands[CMD_GPUKERNELS].usage = "[tc0,0.5,0,1/tc]USAGE : <b>gpukernels</b> <i>status</i>";
+	commands[CMD_GPUKERNELS].descr = "[tc0,0.5,0.5,1/tc]When in CUDA mode calculate demagnetization kernels initialization on the GPU (1) or on the CPU (0).";
+	commands[CMD_GPUKERNELS].return_descr = "[tc0,0.5,0,1/tc]Script return values: <i>status</i>";
 
 	commands.insert(CMD_ODE, CommandSpecifier(CMD_ODE), "ode");
 	commands[CMD_ODE].usage = "[tc0,0.5,0,1/tc]USAGE : <b>ode</b>";
@@ -481,15 +487,14 @@ Simulation::Simulation(int Program_Version, std::string server_port_, std::strin
 	commands[CMD_SETDT].return_descr = "[tc0,0.5,0,1/tc]Script return values: <i>dT</i>";
 
 	commands.insert(CMD_ASTEPCTRL, CommandSpecifier(CMD_ASTEPCTRL), "astepctrl");
-	commands[CMD_ASTEPCTRL].usage = "[tc0,0.5,0,1/tc]USAGE : <b>astepctrl</b> <i>err_fail err_high err_low dT_incr dT_min dT_max</i>";
+	commands[CMD_ASTEPCTRL].usage = "[tc0,0.5,0,1/tc]USAGE : <b>astepctrl</b> <i>err_fail dT_incr dT_min dT_max</i>";
 	commands[CMD_ASTEPCTRL].limits = { 
 		{double(MINODERELERROR), double(MAXODERELERROR)},
-		{double(MINODERELERROR), double(MAXODERELERROR)}, 
-		{double(MINODERELERROR), double(MAXODERELERROR)},
-		{double(1.0), double(2.0)},
+		{double(1.0), double(100.0)},
 		{double(MINTIMESTEP), double(MAXTIMESTEP)},
 		{double(MINTIMESTEP), double(MAXTIMESTEP)} };
-	commands[CMD_ASTEPCTRL].descr = "[tc0,0.5,0.5,1/tc]Set parameters for adaptive time step control: err_fail - repeat step above this, err_high - decrease dT above this, err_low - increase dT below this, dT_incr - increase dT using fixed multiplier, dT_min, dT_max - dT bounds.";
+	commands[CMD_ASTEPCTRL].descr = "[tc0,0.5,0.5,1/tc]Set parameters for adaptive time step control: err_fail - repeat step above this (the tolerance), dT_incr - limit multiplicative increase in dT using this, dT_min, dT_max - dT bounds.";
+	commands[CMD_ASTEPCTRL].return_descr = "[tc0,0.5,0,1/tc]Script return values: <i>err_fail dT_incr dT_min dT_max</i>";
 
 	commands.insert(CMD_SHOWDATA, CommandSpecifier(CMD_SHOWDATA), "showdata");
 	commands[CMD_SHOWDATA].usage = "[tc0,0.5,0,1/tc]USAGE : <b>showdata</b> <i>dataname (meshname, (rectangle))</i>";
@@ -718,6 +723,10 @@ Simulation::Simulation(int Program_Version, std::string server_port_, std::strin
 	commands.insert(CMD_SAVEMESHIMAGE, CommandSpecifier(CMD_SAVEMESHIMAGE), "savemeshimage");
 	commands[CMD_SAVEMESHIMAGE].usage = "[tc0,0.5,0,1/tc]USAGE : <b>savemeshimage</b> <i>((directory/)filename)</i>";
 	commands[CMD_SAVEMESHIMAGE].descr = "[tc0,0.5,0.5,1/tc]Save currently displayed mesh image to given file (as .png). If directory not specified then default directory is used. If filename not specified then default image save file name is used.";
+
+	commands.insert(CMD_SAVEIMAGE, CommandSpecifier(CMD_SAVEIMAGE), "saveimage");
+	commands[CMD_SAVEIMAGE].usage = "[tc0,0.5,0,1/tc]USAGE : <b>saveimage</b> <i>((directory/)filename)</i>";
+	commands[CMD_SAVEIMAGE].descr = "[tc0,0.5,0.5,1/tc]Save currently displayed mesh image, with a centered view of displayed quantity only, to given file (as .png). If directory not specified then default directory is used. If filename not specified then default image save file name is used.";
 
 	commands.insert(CMD_MAKEVIDEO, CommandSpecifier(CMD_MAKEVIDEO), "makevideo");
 	commands[CMD_MAKEVIDEO].usage = "[tc0,0.5,0,1/tc]USAGE : <b>makevideo</b> <i>(directory/)filebase fps quality</i>";
@@ -1220,6 +1229,11 @@ Simulation::Simulation(int Program_Version, std::string server_port_, std::strin
 	commands[CMD_MCCONSTRAIN].descr = "[tc0,0.5,0.5,1/tc]Set value 0 to revert to classic Monte-Carlo Metropolis for ASD. Set a unit vector direction value (x y z) to switch to constrained Monte Carlo as described in PRB 82, 054415 (2010). If meshname not specified setting is applied to all atomistic meshes.";
 	commands[CMD_MCCONSTRAIN].limits = { { DBL3(), Any() }, {Any(), Any()} };
 
+	commands.insert(CMD_MCDISABLE, CommandSpecifier(CMD_MCDISABLE), "mcdisable");
+	commands[CMD_MCDISABLE].usage = "[tc0,0.5,0,1/tc]USAGE : <b>mcdisable</b> <i>status meshname</i>";
+	commands[CMD_MCDISABLE].descr = "[tc0,0.5,0.5,1/tc]Disable or enable Monte Carlo algorithm for given mesh.";
+	commands[CMD_MCDISABLE].limits = { { int(0), int(1) }, {Any(), Any()} };
+
 	commands.insert(CMD_MCCOMPUTEFIELDS, CommandSpecifier(CMD_MCCOMPUTEFIELDS), "mccomputefields");
 	commands[CMD_MCCOMPUTEFIELDS].usage = "[tc0,0.5,0,1/tc]USAGE : <b>mccomputefields</b> <i>status</i>";
 	commands[CMD_MCCOMPUTEFIELDS].descr = "[tc0,0.5,0.5,1/tc]Enable/disable modules update during Monte Carlo stages. Disabled by default, but if you want to save energy density terms you need to enabled this - equivalent to running ComputeFields after every Monte Carlo step.";
@@ -1229,7 +1243,7 @@ Simulation::Simulation(int Program_Version, std::string server_port_, std::strin
 	commands.insert(CMD_MCCONEANGLELIMITS, CommandSpecifier(CMD_MCCONEANGLELIMITS), "mcconeangle");
 	commands[CMD_MCCONEANGLELIMITS].usage = "[tc0,0.5,0,1/tc]USAGE : <b>mcconeangle</b> <i>min_angle max_angle</i>";
 	commands[CMD_MCCONEANGLELIMITS].descr = "[tc0,0.5,0.5,1/tc]Set Monte Carlo cone angle limits (1 to 180 degrees). Setting min and max values the same results in a fixed cone angle Monte Carlo algorithm.";
-	commands[CMD_MCCONEANGLELIMITS].limits = { {INT2(1, 1), INT2(180, 180)} };
+	commands[CMD_MCCONEANGLELIMITS].limits = { {DBL2(), DBL2(180, 180)} };
 	commands[CMD_MCCONEANGLELIMITS].return_descr = "[tc0,0.5,0,1/tc]Script return values: <i>min_angle max_angle</i>";
 
 	commands.insert(CMD_SHAPEMOD_ROT, CommandSpecifier(CMD_SHAPEMOD_ROT), "shape_rotation");
@@ -1314,7 +1328,7 @@ Simulation::Simulation(int Program_Version, std::string server_port_, std::strin
 
 	commands.insert(CMD_SHAPE_SET, CommandSpecifier(CMD_SHAPE_SET), "shape_set");
 	commands[CMD_SHAPE_SET].usage = "[tc0,0.5,0,1/tc]USAGE : <b>shape_set</b> <i>name dim_x dim_y dim_z cpos_x cpos_y cpos_z rot_psi rot_theta rot_phi repeat_x repeat_y repeat_z disp_x disp_y disp_z method ...</i>";
-	commands[CMD_SHAPE_SET].descr = "[tc0,0.5,0.5,1/tc]General command for setting a shape: mean to be used with scripted simulations, not directly from the console. Can be used with the return data frome shape_... commands, and can take multiple elementary shapes to form a composite object. Set a named shape in focused mesh with given dimensions (x, y, z) at given centre position coordinates (x, y, z).";
+	commands[CMD_SHAPE_SET].descr = "[tc0,0.5,0.5,1/tc]General command for setting a shape: meant to be used with scripted simulations, not directly from the console. Can be used with the return data from shape_... commands, and can take multiple elementary shapes to form a composite object. Set a named shape in focused mesh with given dimensions (x, y, z) at given centre position coordinates (x, y, z).";
 	commands[CMD_SHAPE_SET].unit = "m";
 	commands[CMD_SHAPE_SET].limits = { { Any(), Any() },  { DBL3(), Any() }, { DBL3(-MAXSIMSPACE), DBL3(+MAXSIMSPACE) }, { DBL3(-360), DBL3(360) }, { INT3(1), Any() }, { DBL3(), Any() }, { Any(), Any() } };
 
@@ -1326,9 +1340,22 @@ Simulation::Simulation(int Program_Version, std::string server_port_, std::strin
 
 	commands.insert(CMD_SHAPE_SETPARAM, CommandSpecifier(CMD_SHAPE_SETPARAM), "shape_setparam");
 	commands[CMD_SHAPE_SETPARAM].usage = "[tc0,0.5,0,1/tc]USAGE : <b>shape_setparam</b> <i>paramname name dim_x dim_y dim_z cpos_x cpos_y cpos_z rot_psi rot_theta rot_phi repeat_x repeat_y repeat_z disp_x disp_y disp_z method ... scaling_value</i>";
-	commands[CMD_SHAPE_SETPARAM].descr = "[tc0,0.5,0.5,1/tc].Set material parameter scaling value in given shape only. If you want to set effective parameter value directly, not as a scaling value, then set base parameter value (setparam) to 1 and the real parameter value through this command. Once a shape is set, other spatial variation generators will only generate in non-empty cells.";
+	commands[CMD_SHAPE_SETPARAM].descr = "[tc0,0.5,0.5,1/tc]Set material parameter scaling value in given shape only. If you want to set effective parameter value directly, not as a scaling value, then set base parameter value (setparam) to 1 and the real parameter value through this command.";
 	commands[CMD_SHAPE_SETPARAM].unit = "m";
 	commands[CMD_SHAPE_SETPARAM].limits = { { Any(), Any() }, { Any(), Any() },  { DBL3(), Any() }, { DBL3(-MAXSIMSPACE), DBL3(+MAXSIMSPACE) }, { DBL3(-360), DBL3(360) }, { INT3(1), Any() }, { DBL3(), Any() }, { Any(), Any() }, { Any(), Any() } };
+
+	commands.insert(CMD_RUNCOMMBUFFER, CommandSpecifier(CMD_RUNCOMMBUFFER), "runcommbuffer");
+	commands[CMD_RUNCOMMBUFFER].usage = "[tc0,0.5,0,1/tc]USAGE : <b>runcommbuffer</b>";
+	commands[CMD_RUNCOMMBUFFER].descr = "[tc0,0.5,0.5,1/tc]Execute commands stored in command buffer.";
+
+	commands.insert(CMD_CLEARCOMMBUFFER, CommandSpecifier(CMD_CLEARCOMMBUFFER), "clearcommbuffer");
+	commands[CMD_CLEARCOMMBUFFER].usage = "[tc0,0.5,0,1/tc]USAGE : <b>clearcommbuffer</b>";
+	commands[CMD_CLEARCOMMBUFFER].descr = "[tc0,0.5,0.5,1/tc]Clear commands stored in command buffer.";
+
+	commands.insert(CMD_BUFFERCOMMAND, CommandSpecifier(CMD_BUFFERCOMMAND), "buffercommand");
+	commands[CMD_BUFFERCOMMAND].usage = "[tc0,0.5,0,1/tc]USAGE : <b>buffercommand</b> <i>command (params...)</i>";
+	commands[CMD_BUFFERCOMMAND].descr = "[tc0,0.5,0.5,1/tc]Append command with parameters to command buffer.";
+	commands[CMD_BUFFERCOMMAND].limits = { { Any(), Any() } };
 
 	commands.insert(CMD_DP_CLEARALL, CommandSpecifier(CMD_DP_CLEARALL), "dp_clearall");
 	commands[CMD_DP_CLEARALL].usage = "[tc0,0.5,0,1/tc]USAGE : <b>dp_clearall</b>";
@@ -1393,17 +1420,17 @@ Simulation::Simulation(int Program_Version, std::string server_port_, std::strin
 	commands[CMD_DP_GETPROFILE].unit = "m";
 
 	commands.insert(CMD_DP_GETEXACTPROFILE, CommandSpecifier(CMD_DP_GETEXACTPROFILE), "dp_getexactprofile");
-	commands[CMD_DP_GETEXACTPROFILE].usage = "[tc0,0.5,0,1/tc]USAGE : <b>dp_getexactprofile</b> <i>start end step dp_index (stencil)</i>";
-	commands[CMD_DP_GETEXACTPROFILE].limits = { { DBL3(-MAXSIMSPACE), DBL3(MAXSIMSPACE) }, { DBL3(-MAXSIMSPACE), DBL3(MAXSIMSPACE) }, { MINMESHSPACE, Any() }, { int(0), int(MAX_ARRAYS - 1) }, { DBL3(MINMESHSPACE), Any() } };
-	commands[CMD_DP_GETEXACTPROFILE].descr = "[tc0,0.5,0.5,1/tc]Extract profile of physical quantity displayed on screen, directly from the mesh (so using the exact mesh resolution not the displayed resolution), along the line specified with given start and end cartesian absolute coordinates (m), and with the given step size (m). If stencil specified - as x y z (m) - then obtain profile values using weighted averaging with stencil centered on profile point. Place profile in given dp arrays: up to 4 consecutive dp arrays are used, first for distance along line, the next 3 for physical quantity components (e.g. Mx, My, Mz) so allow space for these starting at dp_index.";
+	commands[CMD_DP_GETEXACTPROFILE].usage = "[tc0,0.5,0,1/tc]USAGE : <b>dp_getexactprofile</b> <i>start end step dp_index meshname (stencil)</i>";
+	commands[CMD_DP_GETEXACTPROFILE].limits = { { DBL3(-MAXSIMSPACE), DBL3(MAXSIMSPACE) }, { DBL3(-MAXSIMSPACE), DBL3(MAXSIMSPACE) }, { MINMESHSPACE, Any() }, { int(-1), int(MAX_ARRAYS - 1) }, { Any(), Any() }, { DBL3(MINMESHSPACE), Any() } };
+	commands[CMD_DP_GETEXACTPROFILE].descr = "[tc0,0.5,0.5,1/tc]Extract profile of physical quantity displayed on screen for named mesh, directly from the mesh (so using the exact mesh resolution not the displayed resolution), along the line specified with given start and end relative cartesian coordinates (m) and with the given step size (m). If stencil specified - as x y z (m) - then obtain profile values using weighted averaging with stencil centered on profile point. If dp_index >= 0 then place profile in given dp arrays: up to 4 consecutive dp arrays are used, first for distance along line, the next 3 for physical quantity components (e.g. Mx, My, Mz) so allow space for these starting at dp_index. If dp_index = -1 then just average profile in internal memory, to be read out with dp_getaveragedprofile.";
 	commands[CMD_DP_GETEXACTPROFILE].unit = "m";
 
-	commands.insert(CMD_GETVALUE, CommandSpecifier(CMD_GETVALUE), "getvalue");
-	commands[CMD_GETVALUE].usage = "[tc0,0.5,0,1/tc]USAGE : <b>getvalue</b> <i>abspos</i>";
-	commands[CMD_GETVALUE].limits = { { DBL3(-MAXSIMSPACE), DBL3(MAXSIMSPACE) } };
-	commands[CMD_GETVALUE].descr = "[tc0,0.5,0.5,1/tc]Get data value at abspos (absolute position in Cartesian coordinates) depending on currently displayed quantities.";
-	commands[CMD_GETVALUE].unit = "m";
-	commands[CMD_GETVALUE].return_descr = "[tc0,0.5,0,1/tc]Script return values: <i>value</i>";
+	commands.insert(CMD_DP_GETAVERAGEDPROFILE, CommandSpecifier(CMD_DP_GETAVERAGEDPROFILE), "dp_getaveragedprofile");
+	commands[CMD_DP_GETAVERAGEDPROFILE].usage = "[tc0,0.5,0,1/tc]USAGE : <b>dp_getaveragedprofile</b> <i>start end step dp_index meshname</i>";
+	commands[CMD_DP_GETAVERAGEDPROFILE].limits = { { DBL3(-MAXSIMSPACE), DBL3(MAXSIMSPACE) }, { DBL3(-MAXSIMSPACE), DBL3(MAXSIMSPACE) }, { MINMESHSPACE, Any() }, { int(0), int(MAX_ARRAYS - 1) }, { Any(), Any() } };
+	commands[CMD_DP_GETAVERAGEDPROFILE].descr = "[tc0,0.5,0.5,1/tc]This is used in conjuction with dp_getexactprofile. Get in dp arays starting at dp_index the averaged profile built with dp_getexactprofile. start, end and step are the same parameters used by dp_getexactprofile. Calling this command causes the average counter to be reset to zero. Thus a sequence consists of 1) dp_getexactprofile executed as many times as needed (e.g. to average stochasticity), called with dp_index = -1, 2) dp_getaveragedprofile to read out the profile and reset averaging counter, ready for next batch of dp_getexactprofile calls.";
+	commands[CMD_DP_GETAVERAGEDPROFILE].unit = "m";
+	commands[CMD_DP_GETAVERAGEDPROFILE].return_descr = "[tc0,0.5,0,1/tc]Script return values: <i>number of averages</i>";
 
 	commands.insert(CMD_AVERAGEMESHRECT, CommandSpecifier(CMD_AVERAGEMESHRECT), "averagemeshrect");
 	commands[CMD_AVERAGEMESHRECT].usage = "[tc0,0.5,0,1/tc]USAGE : <b>averagemeshrect</b> <i>(rectangle)</i>";
@@ -1427,15 +1454,39 @@ Simulation::Simulation(int Program_Version, std::string server_port_, std::strin
 	commands[CMD_DP_COUNTSKYRMIONS].unit = "m";
 
 	commands.insert(CMD_DP_HISTOGRAM, CommandSpecifier(CMD_DP_HISTOGRAM), "dp_histogram");
-	commands[CMD_DP_HISTOGRAM].usage = "[tc0,0.5,0,1/tc]USAGE : <b>dp_histogram</b> <i>dp_x dp_y (bin min max)</i>";
-	commands[CMD_DP_HISTOGRAM].descr = "[tc0,0.5,0.5,1/tc]Calculate a histogram with given bin, minimum and maximum values, from the magnetization magnitude of the focused mesh (must be magnetic). Save histogram in dp arrays at dp_x, dp_y. If histogram parameters not given use a bin with 100 steps between minimum and maximum magnetization magnitude.";
-	commands[CMD_DP_HISTOGRAM].limits = { { int(0), int(MAX_ARRAYS - 1) }, { int(0), int(MAX_ARRAYS - 1) }, {double(0), Any()}, {double(0), Any()}, {double(0), Any()} };
+	commands[CMD_DP_HISTOGRAM].usage = "[tc0,0.5,0,1/tc]USAGE : <b>dp_histogram</b> <i>dp_x dp_y (cx cy cz (numbins min max))</i>";
+	commands[CMD_DP_HISTOGRAM].descr = "[tc0,0.5,0.5,1/tc]Calculate a histogram with given number of bins, minimum and maximum bin values, from the magnetization magnitude of the focused mesh (must be magnetic). Save histogram in dp arrays at dp_x, dp_y.If cx cy cz values given, then first average in macrocells containing (cx, cy, cz) individual cells. If histogram parameters not given use 100 bins with minimum and maximum magnetization magnitude values.";
+	commands[CMD_DP_HISTOGRAM].limits = { { int(0), int(MAX_ARRAYS - 1) }, { int(0), int(MAX_ARRAYS - 1) }, {INT3(1), Any()}, {int(2), Any()}, {double(0), Any()}, {double(0), Any()} };
 	commands[CMD_DP_HISTOGRAM].unit = "A/m";
+	
+	commands.insert(CMD_DP_THAVHISTOGRAM, CommandSpecifier(CMD_DP_THAVHISTOGRAM), "dp_thavhistogram");
+	commands[CMD_DP_THAVHISTOGRAM].usage = "[tc0,0.5,0,1/tc]USAGE : <b>dp_thavhistogram</b> <i>dp_x dp_y cx cy cz (numbins min max)</i>";
+	commands[CMD_DP_THAVHISTOGRAM].descr = "[tc0,0.5,0.5,1/tc]Calculate a histogram with given number of bins, using thermal averaging in each macrocell containing (cx, cy, cz) individual cells, minimum and maximum bin values, from the magnetization magnitude of the focused mesh (must be magnetic). Save histogram in dp arrays at dp_x, dp_y. If histogram parameters not given use 100 bins with minimum and maximum magnetization magnitude values.";
+	commands[CMD_DP_THAVHISTOGRAM].limits = { { int(0), int(MAX_ARRAYS - 1) }, { int(0), int(MAX_ARRAYS - 1) }, {INT3(1), Any()}, {int(2), Any()}, {double(0), Any()}, {double(0), Any()} };
+	commands[CMD_DP_THAVHISTOGRAM].unit = "A/m";
+
+	commands.insert(CMD_DP_ANGHISTOGRAM, CommandSpecifier(CMD_DP_ANGHISTOGRAM), "dp_anghistogram");
+	commands[CMD_DP_ANGHISTOGRAM].usage = "[tc0,0.5,0,1/tc]USAGE : <b>dp_anghistogram</b> <i>dp_x dp_y (cx cy cz (nx ny nz (numbins min max)))</i>";
+	commands[CMD_DP_ANGHISTOGRAM].descr = "[tc0,0.5,0.5,1/tc]Calculate an angular deviation histogram with given number of bins, minimum and maximum bin values, from the magnetization of the focused mesh (must be magnetic). Save histogram in dp arrays at dp_x, dp_y. If cx cy cz values given, then first average in macrocells containing (cx, cy, cz) individual cells. If unit vector direction nx ny nz not given, then angular deviation is calculated from the average magnetization direction. If histogram parameters not given use 100 bins with minimum and maximum magnetization magnitude values.";
+	commands[CMD_DP_ANGHISTOGRAM].limits = { { int(0), int(MAX_ARRAYS - 1) }, { int(0), int(MAX_ARRAYS - 1) }, {INT3(1), Any()}, {DBL3(-1, -1, -1), DBL3(1, 1, 1)}, {int(2), Any()}, {double(0), Any()}, {double(0), Any()} };
+	commands[CMD_DP_ANGHISTOGRAM].unit = "A/m";
+
+	commands.insert(CMD_DP_THAVANGHISTOGRAM, CommandSpecifier(CMD_DP_THAVANGHISTOGRAM), "dp_thavanghistogram");
+	commands[CMD_DP_THAVANGHISTOGRAM].usage = "[tc0,0.5,0,1/tc]USAGE : <b>dp_thavanghistogram</b> <i>dp_x dp_y cx cy cz (nx ny nz (numbins min max))</i>";
+	commands[CMD_DP_THAVANGHISTOGRAM].descr = "[tc0,0.5,0.5,1/tc]Calculate an angular deviation histogram with given number of bins, using thermal averaging in each macrocell containing (cx, cy, cz) individual cells, minimum and maximum bin values, from the magnetization of the focused mesh (must be magnetic). Save histogram in dp arrays at dp_x, dp_y. If unit vector direction nx ny nz not given, then angular deviation is calculated from the average magnetization direction. If histogram parameters not given use 100 bins with minimum and maximum magnetization magnitude values.";
+	commands[CMD_DP_THAVANGHISTOGRAM].limits = { { int(0), int(MAX_ARRAYS - 1) }, { int(0), int(MAX_ARRAYS - 1) }, {INT3(1), Any()}, {DBL3(-1, -1, -1), DBL3(1, 1, 1)}, {int(2), Any()}, {double(0), Any()}, {double(0), Any()} };
+	commands[CMD_DP_THAVANGHISTOGRAM].unit = "A/m";
+
+	commands.insert(CMD_AVERAGECHUNKEDMAGLENGTH, CommandSpecifier(CMD_AVERAGECHUNKEDMAGLENGTH), "averagechunkedmaglength");
+	commands[CMD_AVERAGECHUNKEDMAGLENGTH].usage = "[tc0,0.5,0,1/tc]USAGE : <b>averagechunkedmaglength</b> <i>nx ny nz (dp)</i>";
+	commands[CMD_AVERAGECHUNKEDMAGLENGTH].descr = "[tc0,0.5,0.5,1/tc]Calculate average magnetization length from an atomistic mesh, by averaging over magnetization length of macro-cells (chunked), where each macrocell contains (nx, ny, nz) spins. If dp array given then save value in it.";
+	commands[CMD_AVERAGECHUNKEDMAGLENGTH].limits = { {INT3(1), Any()}, { int(0), int(MAX_ARRAYS - 1) } };
+	commands[CMD_AVERAGECHUNKEDMAGLENGTH].return_descr = "[tc0,0.5,0,1/tc]Script return values: <i><|M|>c</i> - the chunked average magnetization length.";
 
 	commands.insert(CMD_DP_HISTOGRAM2, CommandSpecifier(CMD_DP_HISTOGRAM2), "dp_histogram2");
-	commands[CMD_DP_HISTOGRAM2].usage = "[tc0,0.5,0,1/tc]USAGE : <b>dp_histogram2</b> <i>dp_x dp_y (bin min max M2 deltaM2)</i>";
-	commands[CMD_DP_HISTOGRAM2].descr = "[tc0,0.5,0.5,1/tc]Calculate a histogram for a 2-sublattice mesh with given bin, minimum and maximum values for sub-lattice A, if the corresponding magnetization magnitude in sub-lattice B equals M2 within the given deltaM2. Save histogram in dp arrays at dp_x, dp_y. If histogram parameters not given use a bin with 100 steps between minimum and maximum magnetization magnitude, with M2 set to MeB and deltaM2 set 0.01*MeB respectively.";
-	commands[CMD_DP_HISTOGRAM2].limits = { { int(0), int(MAX_ARRAYS - 1) }, { int(0), int(MAX_ARRAYS - 1) }, {double(0), Any()}, {double(0), Any()}, {double(0), Any()}, {double(0), Any()}, {double(0), Any()} };
+	commands[CMD_DP_HISTOGRAM2].usage = "[tc0,0.5,0,1/tc]USAGE : <b>dp_histogram2</b> <i>dp_x dp_y (numbins min max M2 deltaM2)</i>";
+	commands[CMD_DP_HISTOGRAM2].descr = "[tc0,0.5,0.5,1/tc]Calculate a histogram for a 2-sublattice mesh with given number of bins, minimum and maximum bin values for sub-lattice A, if the corresponding magnetization magnitude in sub-lattice B equals M2 within the given deltaM2. Save histogram in dp arrays at dp_x, dp_y. If histogram parameters not given use 100 bins with minimum and maximum magnetization magnitude values, with M2 set to MeB and deltaM2 set 0.01*MeB respectively.";
+	commands[CMD_DP_HISTOGRAM2].limits = { { int(0), int(MAX_ARRAYS - 1) }, { int(0), int(MAX_ARRAYS - 1) }, {int(2), Any()}, {double(0), Any()}, {double(0), Any()}, {double(0), Any()}, {double(0), Any()} };
 	commands[CMD_DP_HISTOGRAM2].unit = "A/m";
 
 	commands.insert(CMD_DP_APPEND, CommandSpecifier(CMD_DP_APPEND), "dp_append");
@@ -1529,6 +1580,12 @@ Simulation::Simulation(int Program_Version, std::string server_port_, std::strin
 	commands[CMD_DP_MEAN].limits = { { int(0), int(MAX_ARRAYS - 1) }, { double(0), Any() } };
 	commands[CMD_DP_MEAN].descr = "[tc0,0.5,0.5,1/tc]Obtain mean value with standard deviation. If exclusion_ratio (>0) included, then exclude any points which are greater than exclusion_ratio normalised distance away from the mean.";
 	commands[CMD_DP_MEAN].return_descr = "[tc0,0.5,0,1/tc]Script return values: <i>mean stdev</i>.";
+
+	commands.insert(CMD_DP_SUM, CommandSpecifier(CMD_DP_SUM), "dp_sum");
+	commands[CMD_DP_SUM].usage = "[tc0,0.5,0,1/tc]USAGE : <b>dp_sum</b> <i>dp_index</i>";
+	commands[CMD_DP_SUM].limits = { { int(0), int(MAX_ARRAYS - 1) } };
+	commands[CMD_DP_SUM].descr = "[tc0,0.5,0.5,1/tc]Obtain sum of all elements in dp array.";
+	commands[CMD_DP_SUM].return_descr = "[tc0,0.5,0,1/tc]Script return values: <i>sum</i>.";
 
 	commands.insert(CMD_DP_CHUNKEDSTD, CommandSpecifier(CMD_DP_CHUNKEDSTD), "dp_chunkedstd");
 	commands[CMD_DP_CHUNKEDSTD].usage = "[tc0,0.5,0,1/tc]USAGE : <b>dp_chunkedstd</b> <i>dp_index chunk</i>";
@@ -1693,6 +1750,7 @@ Simulation::Simulation(int Program_Version, std::string server_port_, std::strin
 	dataDescriptor.push_back("dmdt", DatumSpecifier("|dm/dt| : ", 1), DATA_DMDT);
 	dataDescriptor.push_back("Ha", DatumSpecifier("Applied Field : ", 3, "A/m", false), DATA_HA);
 	dataDescriptor.push_back("<M>", DatumSpecifier("<M> : ", 3, "A/m", false, false), DATA_AVM);
+	dataDescriptor.push_back("<M>th", DatumSpecifier("<M>th : ", 3, "A/m", false, false), DATA_THAVM);
 	dataDescriptor.push_back("<M2>", DatumSpecifier("<M2> : ", 3, "A/m", false, false), DATA_AVM2);
 	dataDescriptor.push_back("|M|mm", DatumSpecifier("|M|mm : ", 2, "A/m", false, false), DATA_M_MINMAX);
 	dataDescriptor.push_back("Mx_mm", DatumSpecifier("Mx_mm : ", 2, "A/m", false, false), DATA_MX_MINMAX);
@@ -1717,11 +1775,15 @@ Simulation::Simulation(int Program_Version, std::string server_port_, std::strin
 	dataDescriptor.push_back("R", DatumSpecifier("Resistance : ", 1, "Ohm"), DATA_RESISTANCE);
 	dataDescriptor.push_back("e_demag", DatumSpecifier("Demag e : ", 1, "J/m3", false, false), DATA_E_DEMAG);
 	dataDescriptor.push_back("e_exch", DatumSpecifier("Exchange e : ", 1, "J/m3", false, false), DATA_E_EXCH);
+	dataDescriptor.push_back("t_exch", DatumSpecifier("Exchange torque : ", 3, "au", false, false), DATA_T_EXCH);
 	dataDescriptor.push_back("e_surfexch", DatumSpecifier("Surface exchange e : ", 1, "J/m3", false, false), DATA_E_SURFEXCH);
+	dataDescriptor.push_back("t_surfexch", DatumSpecifier("Surface exchange torque : ", 3, "au", false, false), DATA_T_SURFEXCH);
 	dataDescriptor.push_back("e_zee", DatumSpecifier("Zeeman e : ", 1, "J/m3", false, false), DATA_E_ZEE);
+	dataDescriptor.push_back("t_zee", DatumSpecifier("Zeeman torque : ", 3, "au", false, false), DATA_T_ZEE);
 	dataDescriptor.push_back("e_mo", DatumSpecifier("Magneto-optical e : ", 1, "J/m3", false, false), DATA_E_MOPTICAL);
 	dataDescriptor.push_back("e_mel", DatumSpecifier("Magnetoelastic e : ", 1, "J/m3", false, false), DATA_E_MELASTIC);
 	dataDescriptor.push_back("e_anis", DatumSpecifier("Anisotropy e : ", 1, "J/m3", false, false), DATA_E_ANIS);
+	dataDescriptor.push_back("t_anis", DatumSpecifier("Anisotropy torque : ", 3, "au", false, false), DATA_T_ANIS);
 	dataDescriptor.push_back("e_rough", DatumSpecifier("Roughness e : ", 1, "J/m3", false, false), DATA_E_ROUGH);
 	dataDescriptor.push_back("e_total", DatumSpecifier("Total e : ", 1, "J/m3", true), DATA_E_TOTAL);
 	dataDescriptor.push_back("dwshift", DatumSpecifier("DW shift : ", 1, "m"), DATA_DWSHIFT);
@@ -1734,7 +1796,8 @@ Simulation::Simulation(int Program_Version, std::string server_port_, std::strin
 	dataDescriptor.push_back("v_iter", DatumSpecifier("V Solver Iterations : ", 1), DATA_TRANSPORT_ITERSTOCONV);
 	dataDescriptor.push_back("s_iter", DatumSpecifier("S Solver Iterations : ", 1), DATA_TRANSPORT_SITERSTOCONV);
 	dataDescriptor.push_back("ts_err", DatumSpecifier("Transport Solver Error : ", 1), DATA_TRANSPORT_CONVERROR);
-	
+	dataDescriptor.push_back("commbuf", DatumSpecifier("Command Buffer : ", 1), DATA_COMMBUFFER);
+
 	//---------------------------------------------------------------- MODULES
 
 	//Modules
@@ -1881,6 +1944,8 @@ Simulation::Simulation(int Program_Version, std::string server_port_, std::strin
 	stageStopDescriptors.push_back("mxh", StageStopDescriptor(STOP_MXH), STOP_MXH);
 	stageStopDescriptors.push_back("dmdt", StageStopDescriptor(STOP_DMDT), STOP_DMDT);
 	stageStopDescriptors.push_back("time", StageStopDescriptor(STOP_TIME, "s"), STOP_TIME);
+	stageStopDescriptors.push_back("mxh_iter", StageStopDescriptor(STOP_MXH_ITER), STOP_MXH_ITER);
+	stageStopDescriptors.push_back("dmdt_iter", StageStopDescriptor(STOP_DMDT_ITER), STOP_DMDT_ITER);
 
 	dataSaveDescriptors.push_back("none", DataSaveDescriptor(DSAVE_NONE), DSAVE_NONE);
 	dataSaveDescriptors.push_back("stage", DataSaveDescriptor(DSAVE_STAGE), DSAVE_STAGE);
@@ -1961,8 +2026,6 @@ Simulation::Simulation(int Program_Version, std::string server_port_, std::strin
 	BD.DisplayFormattedConsoleMessage("[tc0,0.5,0,1/tc]To open manual use the <b>manual</b> command.");
 
 	//---------------------------------------------------------------- SAVE DEFAULT and CTOR FINISH
-
-	Save_Startup_Flags();
 
 	//save the default state in program directory for loading with "default" command (update this automatically in case the program version has changed)
 	SaveSimulation(directory + "default");

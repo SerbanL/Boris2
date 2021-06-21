@@ -54,7 +54,7 @@ __global__ void RunABM_Predictor_withReductions_Kernel(ManagedAtom_DiffEqCubicCU
 		}
 	}
 
-	reduction_max(0, 1, &mxh, *cuaDiffEq.pmxh);
+	if (cuaMesh.pgrel->get0()) reduction_max(0, 1, &mxh, *cuaDiffEq.pmxh);
 }
 
 __global__ void RunABM_Predictor_Kernel(ManagedAtom_DiffEqCubicCUDA& cuaDiffEq, ManagedAtom_MeshCUDA& cuaMesh)
@@ -142,7 +142,7 @@ __global__ void RunABM_Corrector_withReductions_Kernel(ManagedAtom_DiffEqCubicCU
 		}
 	}
 
-	reduction_max(0, 1, &dmdt, *cuaDiffEq.pdmdt);
+	if (cuaMesh.pgrel->get0()) reduction_max(0, 1, &dmdt, *cuaDiffEq.pdmdt);
 	reduction_max(0, 1, &lte, *cuaDiffEq.plte);
 }
 

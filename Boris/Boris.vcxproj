@@ -268,9 +268,14 @@
     <ClInclude Include="Atom_iDMExchangeCUDA.h" />
     <ClInclude Include="Atom_MOptical.h" />
     <ClInclude Include="Atom_MOpticalCUDA.h" />
+    <ClInclude Include="Atom_SurfExchange.h" />
+    <ClInclude Include="Atom_SurfExchangeCUDA.h" />
     <ClInclude Include="DataDefs.h" />
     <ClInclude Include="DemagBase.h" />
+    <ClInclude Include="DemagTFuncCUDA.h" />
+    <ClInclude Include="DemagTFunc_AsymptCUDA.h" />
     <ClInclude Include="DemagTFunc_Defs.h" />
+    <ClInclude Include="DemagTFunc_fgCUDA.cuh" />
     <ClInclude Include="DiffEq_CommonBaseCUDA.h" />
     <ClInclude Include="DipoleDipoleKernel.h" />
     <ClInclude Include="DipoleDipoleKernelCUDA.h" />
@@ -393,10 +398,24 @@
     <CudaCompile Include="Atom_MeshCUDA.cu" />
     <CudaCompile Include="Atom_Mesh_CubicCUDA.cu" />
     <CudaCompile Include="Atom_Mesh_CubicCUDA_Compute.cu" />
+    <CudaCompile Include="Atom_Mesh_CubicCUDA_Histo.cu" />
     <CudaCompile Include="Atom_Mesh_CubicCUDA_MonteCarlo.cu" />
     <CudaCompile Include="Atom_MOpticalCUDA.cu" />
+    <CudaCompile Include="Atom_SurfExchangeCUDA.cu" />
     <CudaCompile Include="Atom_ZeemanCUDA.cu" />
     <CudaCompile Include="DemagCUDA.cu" />
+    <CudaCompile Include="DemagKernelCalcAuxCUDA.cu" />
+    <CudaCompile Include="DemagKernelCollectionCUDA_CalcAux.cu" />
+    <CudaCompile Include="DemagKernelCollectionCUDA_KerType.cu" />
+    <CudaCompile Include="DemagTFuncCUDA.cu" />
+    <CudaCompile Include="DemagTFunc_AsymptCUDA.cu" />
+    <CudaCompile Include="DemagTFunc_fgCUDA.cu" />
+    <CudaCompile Include="DemagTFunc_IrregularCUDA.cu" />
+    <CudaCompile Include="DemagTFunc_Irregular_PBCCUDA.cu" />
+    <CudaCompile Include="DemagTFunc_LCUDA.cuh" />
+    <CudaCompile Include="DemagTFunc_PBCCUDA.cu" />
+    <CudaCompile Include="DemagTFunc_ShiftedCUDA.cu" />
+    <CudaCompile Include="DemagTFunc_Shifted_PBCCUDA.cu" />
     <CudaCompile Include="DiffEqDMCUDA.cu" />
     <CudaCompile Include="DiffEqDM_EvalsCUDA.cu" />
     <CudaCompile Include="DiffEqDM_EvalsCUDA_ABM.cu" />
@@ -415,6 +434,7 @@
     <CudaCompile Include="DWRunTimeFitCUDA.cu" />
     <CudaCompile Include="HeatBaseCUDA.cu" />
     <CudaCompile Include="ManagedAtom_MeshCUDA_MonteCarlo_SC.cu" />
+    <CudaCompile Include="ManagedMeshCUDA_MonteCarlo_FM.cu" />
     <CudaCompile Include="MaterialParameterCUDA.cu">
       <FileType>Document</FileType>
     </CudaCompile>
@@ -474,6 +494,7 @@
     <ClInclude Include="SHeat.h" />
     <ClInclude Include="SHeatCUDA.h" />
     <ClInclude Include="SimSchedule.h" />
+    <ClInclude Include="SimScheduleDefs.h" />
     <ClInclude Include="SimSharedData.h" />
     <ClInclude Include="SimulationData.h" />
     <ClInclude Include="SkyrmionTrack.h" />
@@ -568,11 +589,21 @@
     <ClCompile Include="Atom_iDMExchange.cpp" />
     <ClCompile Include="Atom_iDMExchangeCUDA.cpp" />
     <ClCompile Include="Atom_Mesh_Cubic_Compute.cpp" />
+    <ClCompile Include="Atom_Mesh_Cubic_Histo.cpp" />
     <ClCompile Include="Atom_Mesh_Cubic_MonteCarlo.cpp" />
     <ClCompile Include="Atom_Mesh_Cubic_ODEControl.cpp" />
     <ClCompile Include="Atom_MOptical.cpp" />
     <ClCompile Include="Atom_MOpticalCUDA.cpp" />
+    <ClCompile Include="Atom_SurfExchange.cpp" />
+    <ClCompile Include="Atom_SurfExchangeCUDA.cpp" />
+    <ClCompile Include="DemagKernelCollectionCUDA_Calc_GPU.cpp" />
+    <ClCompile Include="DemagTFuncCUDA.cpp" />
+    <ClCompile Include="DemagTFunc_IrregularCUDA.cpp" />
+    <ClCompile Include="DemagTFunc_Irregular_PBCCUDA.cpp" />
+    <ClCompile Include="DemagTFunc_PBCCUDA.cpp" />
     <ClCompile Include="DemagTFunc_Self.cpp" />
+    <ClCompile Include="DemagTFunc_ShiftedCUDA.cpp" />
+    <ClCompile Include="DemagTFunc_Shifted_PBCCUDA.cpp" />
     <ClCompile Include="DiffEq_CommonBaseCUDA.cpp" />
     <ClCompile Include="DipoleDipoleKernel.cpp" />
     <ClCompile Include="DipoleDipoleKernelCUDA.cpp" />
@@ -722,7 +753,9 @@
     <ClCompile Include="Mesh.cpp" />
     <ClCompile Include="MeshBase.cpp" />
     <ClCompile Include="MeshBaseCUDA.cpp" />
+    <ClCompile Include="MeshBaseDisplay.cpp" />
     <ClCompile Include="MeshBaseModules.cpp" />
+    <ClCompile Include="MeshBaseMonteCarlo.cpp" />
     <ClCompile Include="MeshBaseParamsControl.cpp" />
     <ClCompile Include="MeshBaseQuantities.cpp" />
     <ClCompile Include="MeshCompute.cpp" />
@@ -742,6 +775,7 @@
     <ClCompile Include="Mesh_AntiFerromagnetic.cpp" />
     <ClCompile Include="Mesh_AntiFerromagnetic_Compute.cpp" />
     <ClCompile Include="Mesh_AntiFerromagnetic_Control.cpp" />
+    <ClCompile Include="Mesh_AntiFerromagnetic_Histo.cpp" />
     <ClCompile Include="Mesh_AntiFerromagnetic_ODEControl.cpp" />
     <ClCompile Include="Mesh_Diamagnetic.cpp" />
     <ClCompile Include="Mesh_DiamagneticCUDA.cpp" />
@@ -751,6 +785,8 @@
     <ClCompile Include="Mesh_Ferromagnetic.cpp" />
     <ClCompile Include="Mesh_FerromagneticCUDA.cpp" />
     <ClCompile Include="Mesh_Ferromagnetic_Control.cpp" />
+    <ClCompile Include="Mesh_Ferromagnetic_Histo.cpp" />
+    <ClCompile Include="Mesh_Ferromagnetic_MonteCarlo.cpp" />
     <ClCompile Include="Mesh_Ferromagnetic_ODEControl.cpp" />
     <ClCompile Include="Mesh_Insulator.cpp" />
     <ClCompile Include="Mesh_InsulatorCUDA.cpp" />
@@ -931,6 +967,8 @@
     <CudaCompile Include="MeshCUDA.cu" />
     <CudaCompile Include="Mesh_AntiFerromagneticCUDA.cu" />
     <CudaCompile Include="Mesh_FerromagneticCUDA.cu" />
+    <CudaCompile Include="Mesh_FerromagneticCUDA_Histo.cu" />
+    <CudaCompile Include="Mesh_FerromagneticCUDA_MonteCarlo.cu" />
     <CudaCompile Include="ModulesCUDA.cu" />
     <CudaCompile Include="MOpticalCUDA.cu" />
     <CudaCompile Include="OerstedKernelCUDA.cu" />

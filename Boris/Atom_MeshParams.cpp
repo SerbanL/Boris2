@@ -12,6 +12,10 @@ Atom_MeshParams::Atom_MeshParams(std::vector<PARAM_>& enabledParams)
 		//List all parameters here, but only add them if configured to
 		switch (enabledParams[idx]) {
 			
+		case PARAM_GREL:
+			meshParams.push_back("grel", MeshParamDescriptor(PARAMTYPE_MAGNETIC), PARAM_GREL);
+			break;
+
 		case PARAM_ATOM_SC_DAMPING:
 			meshParams.push_back("damping", MeshParamDescriptor(PARAMTYPE_MAGNETIC), PARAM_ATOM_SC_DAMPING);
 			break;
@@ -26,6 +30,10 @@ Atom_MeshParams::Atom_MeshParams(std::vector<PARAM_>& enabledParams)
 
 		case PARAM_ATOM_SC_D:
 			meshParams.push_back("D", MeshParamDescriptor(PARAMTYPE_MAGNETIC, "J"), PARAM_ATOM_SC_D);
+			break;
+
+		case PARAM_ATOM_JS:
+			meshParams.push_back("Js", MeshParamDescriptor(PARAMTYPE_MAGNETIC, "J"), PARAM_ATOM_JS);
 			break;
 
 		case PARAM_ATOM_SC_K1:

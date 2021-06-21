@@ -14,6 +14,7 @@
 #include "Atom_Exchange.h"
 #include "Atom_DMExchange.h"
 #include "Atom_iDMExchange.h"
+#include "Atom_SurfExchange.h"
 #include "Atom_MOptical.h"
 #include "Atom_Anisotropy.h"
 #include "Atom_AnisotropyCubi.h"
@@ -46,7 +47,7 @@ class Atom_Mesh_Cubic :
 	bool,
 	//Members in this derived class
 	bool, SkyrmionTrack, bool,
-	double, double, bool, bool, DBL3,
+	double, double, bool, bool, bool, DBL3,
 	//Material Parameters
 	MatP<double, double>, MatP<double, double>, MatP<DBL2, double>,
 	MatP<double, double>, MatP<double, double>, 
@@ -62,7 +63,7 @@ class Atom_Mesh_Cubic :
 	std::tuple<
 	Atom_Demag_N, Atom_Demag, Atom_DipoleDipole, 
 	Atom_Zeeman, Atom_MOptical,
-	Atom_Exchange, Atom_DMExchange, Atom_iDMExchange, 
+	Atom_Exchange, Atom_DMExchange, Atom_iDMExchange, Atom_SurfExchange,
 	Atom_Anisotropy_Uniaxial, Atom_Anisotropy_Cubic, Atom_Anisotropy_Biaxial, Atom_Anisotropy_Tensorial,
 	Atom_Heat> >
 {
@@ -104,15 +105,17 @@ private:
 
 	// Constrained MONTE-CARLO DATA
 
-	//Constrained Monte-Carlo direction
-	DBL3 cmc_n = DBL3(1.0, 0.0, 0.0);
-
 	//used for parallel constrained MC algorithm
-	//Need to shuffle the mc indices every iteration (this must surely be important, can't have the same spin pairings every step)
+	//Need to shuffle the mc indices every iteration (this is important, can't have the same spin pairings every step)
 	//define as double, unsigned pair so we can use a sort-based shuffle algorithm, with sort from std::sort : generate random doubles, then sort them, with the mc indices moved in the same way, so result is shuffling.
 	//std::sort can be executed as a parallel algorithm with C++17 stl, and random doubles also generated in parallel, so this is a fully parallel shuffle algorithm.
 	//TO DO : Direct parallel shuffling is possible but a bit of a pain - probably best to use a bijective hash function to generate random permutations but need to look into this carefully. Probably not worth the effort for CPU code.
 	std::vector<std::pair<double, unsigned>> mc_indices_red, mc_indices_black;
+
+	// PARALLEL TEMPERING MONTE-CARLO DATA
+
+	//parallel ensemble
+	VEC_VC<DBL3> M1_ptmc;
 
 private:
 
@@ -238,6 +241,27 @@ public:
 	//Fit domain wall along the z direction through centre of rectangle : fit the component which matches a tanh profile. Return centre position and width.
 	DBL2 FitDomainWall_Z(Rect rectangle);
 
+	//compute magnitude histogram data
+	//extract histogram between magnitudes min and max with given number of bins. if min max not given (set them to zero) then determine them first. 
+	//output probabilities in histogram_p, corresponding to values set in histogram_x min, min + bin, ..., max, where bin = (max - min) / (num_bins - 1)
+	//if macrocell_dims is not INT3(1) then first average in macrocells containing given number of individual mesh cells, then obtain histogram
+	bool Get_Histogram(std::vector<double>& histogram_x, std::vector<double>& histogram_p, int num_bins, double& min, double& max, INT3 macrocell_dims);
+
+	//As for Get_Histogram, but use thermal averaging in each macrocell
+	bool Get_ThAvHistogram(std::vector<double>& histogram_x, std::vector<double>& histogram_p, int num_bins, double& min, double& max, INT3 macrocell_dims);
+
+	//angular deviation histogram computed from ndir unit vector direction. If ndir not given (DBL3()), then angular deviation computed from average magnetization direction
+	bool Get_AngHistogram(std::vector<double>& histogram_x, std::vector<double>& histogram_p, int num_bins, double& min, double& max, INT3 macrocell_dims, DBL3 ndir);
+
+	//As for Get_AngHistogram, but use thermal averaging in each macrocell
+	bool Get_ThAvAngHistogram(std::vector<double>& histogram_x, std::vector<double>& histogram_p, int num_bins, double& min, double& max, INT3 macrocell_dims, DBL3 ndir);
+
+	//Find average magnetization length by averaging values in macrocells
+	double Get_ChunkedAverageMagnetizationLength(INT3 macrocell_dims);
+
+	//calculate thermodynamic average of magnetization
+	DBL3 GetThermodynamicAverageMagnetization(Rect rectangle);
+
 	//get skyrmion shift for a skyrmion initially in the given rectangle (works only with data in data box or output data, not with ShowData)
 	//the rectangle must use relative coordinates
 	DBL2 Get_skyshift(Rect skyRect)
@@ -258,9 +282,6 @@ public:
 	}
 
 	//----------------------------------- OTHER CONTROL METHODS : implement pure virtual Atom_Mesh methods
-
-	void Set_MonteCarlo_Constrained(DBL3 cmc_n_);
-	DBL3 Get_MonteCarlo_Constrained_Direction(void) { return cmc_n; }
 
 	//----------------------------------- OTHER CALCULATION METHODS : Atom_Mesh_Cubic_Compute.cpp
 
@@ -368,9 +389,6 @@ public:
 	bool GetMeshExchangeCoupling(void) { return false; }
 
 	//----------------------------------- OTHER CONTROL METHODS : implement pure virtual Atom_Mesh methods
-
-	void Set_MonteCarlo_Constrained(DBL3 cmc_n_) {}
-	DBL3 Get_MonteCarlo_Constrained_Direction(void) { return DBL3(); }
 
 	//----------------------------------- OTHER CALCULATION METHODS : Atom_Mesh_Cubic_Compute.cpp
 

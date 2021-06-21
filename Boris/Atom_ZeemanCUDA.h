@@ -51,6 +51,10 @@ public:
 	cu_obj<cuReal3>& GetField_cu_obj(void) { return Ha; }
 
 	BError SetFieldEquation(const std::vector<std::vector< std::vector<EqComp::FSPEC> >>& fspec);
+
+	//-------------------Torque methods
+
+	cuReal3 GetTorque(cuRect avRect);
 };
 
 #else

@@ -47,6 +47,9 @@ private:
 
 private:
 
+	//Set pointers in ManagedAtom_MeshCUDA so we can access them in device code. This is used by MonteCarlo algorithm.
+	void set_Atom_DemagCUDA_pointers(void);
+
 	void Atom_Demag_EvalSpeedup_SubSelf(cu_obj<cuVEC<cuReal3>>& H);
 
 	void Atom_Demag_EvalSpeedup_SetExtrapField_AddSelf(cu_obj<cuVEC<cuReal3>>& H, cuBReal a1, cuBReal a2, cuBReal a3);

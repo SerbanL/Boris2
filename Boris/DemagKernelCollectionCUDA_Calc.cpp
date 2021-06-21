@@ -10,7 +10,7 @@
 //-------------------------- KERNEL CALCULATION
 
 //this initializes all the convolution kernels for the given mesh dimensions. 2D is for n.z == 1.
-BError DemagKernelCollectionCUDA::Calculate_Demag_Kernels(std::vector<DemagKernelCollectionCUDA*>& kernelCollection)
+BError DemagKernelCollectionCUDA::Calculate_Demag_Kernels(std::vector<DemagKernelCollectionCUDA*>& kernelCollection, bool initialize_on_gpu)
 {
 	BError error(__FUNCTION__);
 
@@ -77,8 +77,8 @@ BError DemagKernelCollectionCUDA::Calculate_Demag_Kernels(std::vector<DemagKerne
 					(*kernels[index])()->Set_Shift_and_Cellsizes(cuReal3(), h, h);
 
 					//use self versions
-					if (n.z == 1) error = Calculate_Demag_Kernels_2D_Self(index);
-					else error = Calculate_Demag_Kernels_3D_Self(index);
+					if (n.z == 1) error = Calculate_Demag_Kernels_2D_Self(index, initialize_on_gpu);
+					else error = Calculate_Demag_Kernels_3D_Self(index, initialize_on_gpu);
 				}
 				else {
 
@@ -97,13 +97,13 @@ BError DemagKernelCollectionCUDA::Calculate_Demag_Kernels(std::vector<DemagKerne
 						if (cuIsZ((*kernels[index])()->Get_shift().x) && cuIsZ((*kernels[index])()->Get_shift().y)) {
 
 							//z-shifted kernels for 2D
-							error = Calculate_Demag_Kernels_2D_zShifted(index);
+							error = Calculate_Demag_Kernels_2D_zShifted(index, initialize_on_gpu);
 						}
 						
 						else {
 
 							//general 2D kernels (not z-shifted)
-							error = Calculate_Demag_Kernels_2D_Complex_Full(index);
+							error = Calculate_Demag_Kernels_2D_Complex_Full(index, initialize_on_gpu);
 						}
 					}
 					else {
@@ -111,13 +111,13 @@ BError DemagKernelCollectionCUDA::Calculate_Demag_Kernels(std::vector<DemagKerne
 						if (cuIsZ((*kernels[index])()->Get_shift().x) && cuIsZ((*kernels[index])()->Get_shift().y)) {
 
 							//z-shifted kernels for 3D
-							error = Calculate_Demag_Kernels_3D_zShifted(index);
+							error = Calculate_Demag_Kernels_3D_zShifted(index, initialize_on_gpu);
 						}
 						
 						else {
 
 							//general 3D kernels (not z-shifted)
-							error = Calculate_Demag_Kernels_3D_Complex_Full(index);
+							error = Calculate_Demag_Kernels_3D_Complex_Full(index, initialize_on_gpu);
 						}
 					}
 				}
@@ -179,10 +179,20 @@ std::shared_ptr<cu_obj<cuKerType>> DemagKernelCollectionCUDA::KernelAlreadyCompu
 }
 
 //2D kernels (Kdiag_real, and K2D_odiag, with full use of kernel symmetries)
-BError DemagKernelCollectionCUDA::Calculate_Demag_Kernels_2D_Self(int index)
+BError DemagKernelCollectionCUDA::Calculate_Demag_Kernels_2D_Self(int index, bool initialize_on_gpu)
 {
 	BError error(__FUNCTION__);
+	
+	if (initialize_on_gpu) {
 
+		//first attempt to compute kernels on GPU
+		error = Calculate_Demag_Kernels_2D_Self_onGPU(index);
+
+		//if it fails (out of GPU memory) then next attempt to initialize on CPU
+		if (error) { error.reset(); error(BWARNING_NOGPUINITIALIZATION); }
+		else return error;
+	}
+	
 	//-------------- CALCULATE DEMAG TENSOR
 
 	//Demag tensor components
@@ -360,10 +370,20 @@ BError DemagKernelCollectionCUDA::Calculate_Demag_Kernels_2D_Self(int index)
 }
 
 //2D layers, z shift only : Kernels can be stored as real with use of kernel symmetries. Kxx, Kyy, Kzz, Kxy real, Kxz, Kyz imaginary
-BError DemagKernelCollectionCUDA::Calculate_Demag_Kernels_2D_zShifted(int index)
+BError DemagKernelCollectionCUDA::Calculate_Demag_Kernels_2D_zShifted(int index, bool initialize_on_gpu)
 {
 	BError error(__FUNCTION__);
+	
+	if (initialize_on_gpu) {
 
+		//first attempt to compute kernels on GPU
+		error = Calculate_Demag_Kernels_2D_zShifted_onGPU(index);
+
+		//if it fails (out of GPU memory) then next attempt to initialize on CPU
+		if (error) { error.reset(); error(BWARNING_NOGPUINITIALIZATION); }
+		else return error;
+	}
+	
 	//-------------- DEMAG TENSOR
 
 	//Demag tensor components
@@ -548,10 +568,20 @@ BError DemagKernelCollectionCUDA::Calculate_Demag_Kernels_2D_zShifted(int index)
 }
 
 //2D layers, complex kernels most general case (Kdiag_cmpl, and Kodiag_cmpl, without any kernel symmetries)
-BError DemagKernelCollectionCUDA::Calculate_Demag_Kernels_2D_Complex_Full(int index)
+BError DemagKernelCollectionCUDA::Calculate_Demag_Kernels_2D_Complex_Full(int index, bool initialize_on_gpu)
 {
 	BError error(__FUNCTION__);
+	
+	if (initialize_on_gpu) {
 
+		//first attempt to compute kernels on GPU
+		error = Calculate_Demag_Kernels_2D_Complex_Full_onGPU(index);
+
+		//if it fails (out of GPU memory) then next attempt to initialize on CPU
+		if (error) { error.reset(); error(BWARNING_NOGPUINITIALIZATION); }
+		else return error;
+	}
+	
 	//-------------- DEMAG TENSOR
 
 	//Demag tensor components
@@ -709,9 +739,19 @@ BError DemagKernelCollectionCUDA::Calculate_Demag_Kernels_2D_Complex_Full(int in
 }
 
 //3D real kernels (Kdiag_real, and Kodiag_real, with full use of kernel symmetries)
-BError DemagKernelCollectionCUDA::Calculate_Demag_Kernels_3D_Self(int index)
+BError DemagKernelCollectionCUDA::Calculate_Demag_Kernels_3D_Self(int index, bool initialize_on_gpu)
 {
 	BError error(__FUNCTION__);
+
+	if (initialize_on_gpu) {
+
+		//first attempt to compute kernels on GPU
+		error = Calculate_Demag_Kernels_3D_Self_onGPU(index);
+
+		//if it fails (out of GPU memory) then next attempt to initialize on CPU
+		if (error) { error.reset(); error(BWARNING_NOGPUINITIALIZATION); }
+		else return error;
+	}
 
 	//-------------- DEMAG TENSOR
 
@@ -950,9 +990,19 @@ BError DemagKernelCollectionCUDA::Calculate_Demag_Kernels_3D_Self(int index)
 }
 
 //3D layers, z shift only : Kernels can be stored with use of kernel symmetries (but still complex).
-BError DemagKernelCollectionCUDA::Calculate_Demag_Kernels_3D_zShifted(int index)
+BError DemagKernelCollectionCUDA::Calculate_Demag_Kernels_3D_zShifted(int index, bool initialize_on_gpu)
 {
 	BError error(__FUNCTION__);
+
+	if (initialize_on_gpu) {
+
+		//first attempt to compute kernels on GPU
+		error = Calculate_Demag_Kernels_3D_zShifted_onGPU(index);
+
+		//if it fails (out of GPU memory) then next attempt to initialize on CPU
+		if (error) { error.reset(); error(BWARNING_NOGPUINITIALIZATION); }
+		else return error;
+	}
 
 	//-------------- DEMAG TENSOR
 
@@ -1154,9 +1204,19 @@ BError DemagKernelCollectionCUDA::Calculate_Demag_Kernels_3D_zShifted(int index)
 }
 
 //3D complex kernels (Kdiag_cmpl, and Kodiag_cmpl, without any kernel symmetries)
-BError DemagKernelCollectionCUDA::Calculate_Demag_Kernels_3D_Complex_Full(int index)
+BError DemagKernelCollectionCUDA::Calculate_Demag_Kernels_3D_Complex_Full(int index, bool initialize_on_gpu)
 {
 	BError error(__FUNCTION__);
+
+	if (initialize_on_gpu) {
+
+		//first attempt to compute kernels on GPU
+		error = Calculate_Demag_Kernels_3D_Complex_Full_onGPU(index);
+
+		//if it fails (out of GPU memory) then next attempt to initialize on CPU
+		if (error) { error.reset(); error(BWARNING_NOGPUINITIALIZATION); }
+		else return error;
+	}
 
 	//-------------- DEMAG TENSOR
 

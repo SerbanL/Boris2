@@ -11,8 +11,6 @@
 
 #include "ErrorHandler.h"
 
-
-
 ////////////////////////////////////////////////////////////////////////////////////////////////
 //
 // Demag Kernel calculated from demag tensor
@@ -36,8 +34,27 @@ private:
 
 	//-------------------------- KERNEL CALCULATION
 
-	BError Calculate_Demag_Kernels_2D(bool include_self_demag);
-	BError Calculate_Demag_Kernels_3D(bool include_self_demag);
+	BError Calculate_Demag_Kernels_2D(bool include_self_demag, bool initialize_on_gpu);
+	BError Calculate_Demag_Kernels_3D(bool include_self_demag, bool initialize_on_gpu);
+
+	//these versions compute the kernels entirely on the GPU, but in double precision
+	BError Calculate_Demag_Kernels_2D_onGPU(bool include_self_demag);
+	BError Calculate_Demag_Kernels_3D_onGPU(bool include_self_demag);
+
+	//Auxiliary for kernel computations on the GPU
+
+	//copy Re or Im parts of cuOut to cuIn
+	void cuOut_to_cuIn_Re(size_t size, cu_arr<cufftDoubleReal>& cuIn, cu_arr<cufftDoubleComplex>& cuOut);
+	void cuOut_to_cuIn_Im(size_t size, cu_arr<cufftDoubleReal>& cuIn, cu_arr<cufftDoubleComplex>& cuOut);
+
+	//Copy Re parts of cuOut to Kdiag component (1: Kx, 2: Ky, 3: Kz). Takes into account transpose_xy flag.
+	void cuOut_to_Kdiagcomponent(cu_arr<cufftDoubleComplex>& cuOut, int component);
+
+	//Copy -(Re, Im, Im) parts of cuOut to Kodiag component (1: Kxy, 2: Kxz, 3: Kyz). Takes into account transpose_xy flag.
+	void cuOut_to_Kodiagcomponent(cu_arr<cufftDoubleComplex>& cuOut, int component);
+	
+	//Copy -Im parts of cuOut to K2D_odiag. Takes into account transpose_xy flag.
+	void cuOut_to_K2D_odiag(cu_arr<cufftDoubleComplex>& cuOut);
 
 protected:
 
@@ -55,10 +72,10 @@ protected:
 	//-------------------------- KERNEL CALCULATION
 
 	//this initializes the convolution kernels for the given mesh dimensions. 2D is for n.z == 1.
-	BError Calculate_Demag_Kernels(bool include_self_demag = true)
+	BError Calculate_Demag_Kernels(bool include_self_demag = true, bool initialize_on_gpu = true)
 	{
-		if (n.z == 1) return Calculate_Demag_Kernels_2D(include_self_demag);
-		else return Calculate_Demag_Kernels_3D(include_self_demag);
+		if (n.z == 1) return Calculate_Demag_Kernels_2D(include_self_demag, initialize_on_gpu);
+		else return Calculate_Demag_Kernels_3D(include_self_demag, initialize_on_gpu);
 	}
 
 	//-------------------------- RUN-TIME KERNEL MULTIPLICATION

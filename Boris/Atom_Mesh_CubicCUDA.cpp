@@ -102,11 +102,6 @@ bool Atom_Mesh_CubicCUDA::GetMeshExchangeCoupling(void)
 
 //----------------------------------- OTHER CONTROL METHODS : implement pure virtual Atom_Mesh methods
 
-void Atom_Mesh_CubicCUDA::Set_MonteCarlo_Constrained(DBL3 cmc_n_)
-{
-	cmc_n.from_cpu(cmc_n_);
-}
-
 //-----------------------------------OBJECT GETTERS
 
 cu_obj<ManagedAtom_DiffEqCubicCUDA>& Atom_Mesh_CubicCUDA::Get_ManagedAtom_DiffEqCUDA(void)

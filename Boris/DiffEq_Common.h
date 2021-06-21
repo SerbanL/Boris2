@@ -30,7 +30,7 @@ class ODECommon :
 	double, double, int, int, 
 	double, double, double, bool,
 	double, double, bool,
-	double, double, double, double, double, double, 
+	double, double, double, double, double, double, int,
 	int,
 	bool, bool, double, double>,
 	std::tuple<>>,

@@ -19,11 +19,15 @@ ZeemanCUDA::ZeemanCUDA(MeshCUDA* pMeshCUDA_, Zeeman* pZeeman_) :
 	//copy over any other data in holder module
 	Ha.from_cpu(pZeeman->GetField());
 
+	pMeshCUDA->pHa = &Ha;
+
 	if (pZeeman->H_equation.is_set()) SetFieldEquation(pZeeman->H_equation.get_vector_fspec());
 }
 
 ZeemanCUDA::~ZeemanCUDA()
-{}
+{
+	pMeshCUDA->pHa = nullptr;
+}
 
 BError ZeemanCUDA::Initialize(void)
 {
@@ -86,6 +90,13 @@ void ZeemanCUDA::SetField(cuReal3 Hxyz)
 
 	//Note : this method is called from the CPU version, which makes any changes associated with non-zero Curie temperature and non-zero atomic moment, including in gpu memory, so not necessary to do anything else here.
 	//This happens because the MatP parameters are updated, which automatically results in the corresponding MatPCUDA parameters being updated.
+}
+
+//-------------------Torque methods
+
+cuReal3 ZeemanCUDA::GetTorque(cuRect avRect)
+{
+	return CalculateTorque(pMeshCUDA->M, avRect);
 }
 
 #endif

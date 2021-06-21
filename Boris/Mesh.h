@@ -254,12 +254,10 @@ public:
 	//save the quantity currently displayed on screen in an ovf2 file using the specified format
 	BError SaveOnScreenPhysicalQuantity(std::string fileName, std::string ovf2_dataType);
 
-	//Before calling a run of GetDisplayedMeshValue, make sure to call PrepareDisplayedMeshValue : this calculates and stores in displayVEC storage and quantities which don't have memory allocated directly, but require computation and temporary storage.
-	void PrepareDisplayedMeshValue(void);
-
-	//return value of currently displayed mesh quantity at the given absolute position; the value is read directly from the storage VEC, not from the displayed PhysQ.
-	//Return an Any as the displayed quantity could be either a scalar or a vector.
-	Any GetDisplayedMeshValue(DBL3 abs_pos);
+	//extract profile from focused mesh, from currently display mesh quantity, but reading directly from the quantity
+	//Displayed	mesh quantity can be scalar or a vector; pass in std::vector pointers, then check for nullptr to determine what type is displayed
+	//if do_average = true then build average and don't return anything, else return just a single-shot profile. If read_average = true then simply read out the internally stored averaged profile by assigning to pointer.
+	void GetPhysicalQuantityProfile(DBL3 start, DBL3 end, double step, DBL3 stencil, std::vector<DBL3>*& pprofile_dbl3, std::vector<double>*& pprofile_dbl, bool do_average, bool read_average);
 
 	//return average value for currently displayed mesh quantity in the given relative rectangle
 	Any GetAverageDisplayedMeshValue(Rect rel_rect);
@@ -326,7 +324,7 @@ public:
 	//get average magnetization in given rectangle (entire mesh if none specified)
 	//1: ferromagnetic or antiferromagnetic sub-lattice A
 	//2: antiferromagnetic only, sub-lattice B
-	DBL3 GetAveragemagnetization(Rect rectangle = Rect());
+	DBL3 GetAverageMagnetization(Rect rectangle = Rect());
 	DBL3 GetAveragemagnetization2(Rect rectangle = Rect());
 
 	//get magnetization magnitude min-max in given rectangle (entire mesh if none specified)

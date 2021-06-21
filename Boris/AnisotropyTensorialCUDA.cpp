@@ -58,6 +58,13 @@ BError Anisotropy_TensorialCUDA::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 	return error;
 }
 
+//-------------------Torque methods
+
+cuReal3 Anisotropy_TensorialCUDA::GetTorque(cuRect avRect)
+{
+	return CalculateTorque(pMeshCUDA->M, avRect);
+}
+
 #endif
 
 #endif

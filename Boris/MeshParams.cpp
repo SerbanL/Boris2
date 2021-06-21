@@ -370,10 +370,10 @@ void MeshParams::copy_parameters(MeshParams& copy_this)
 		run_on_param<void>(paramID, copy_from, copy_this);
 	};
 
-	//copy all MatP parameters
-	for (int index = 0; index < meshParams.size(); index++) {
+	//copy all MatP parameters from copy_this
+	for (int index = 0; index < copy_this.meshParams.size(); index++) {
 
-		PARAM_ paramID = (PARAM_)meshParams.get_ID_from_index(index);
+		PARAM_ paramID = (PARAM_)copy_this.meshParams.get_ID_from_index(index);
 
 		copy_param(paramID);
 	}

@@ -42,6 +42,10 @@ public:
 	void UpdateConfiguration_Values(UPDATECONFIG_ cfgMessage) {}
 
 	void UpdateField(void);
+
+	//-------------------Torque methods
+
+	cuReal3 GetTorque(cuRect avRect);
 };
 
 #else

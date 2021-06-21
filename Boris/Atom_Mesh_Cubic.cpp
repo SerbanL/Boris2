@@ -20,7 +20,7 @@ Atom_Mesh_Cubic::Atom_Mesh_Cubic(SuperMesh *pSMesh_) :
 			VINFO(exclude_from_multiconvdemag),
 			//Members in this derived class
 			VINFO(move_mesh_trigger), VINFO(skyShift), VINFO(exchange_couple_to_meshes),
-			VINFO(mc_cone_angledeg), VINFO(mc_acceptance_rate), VINFO(mc_parallel), VINFO(mc_constrain), VINFO(cmc_n),
+			VINFO(mc_cone_angledeg), VINFO(mc_acceptance_rate), VINFO(mc_parallel), VINFO(mc_disabled), VINFO(mc_constrain), VINFO(cmc_n),
 			//Material Parameters
 			VINFO(alpha), VINFO(mu_s), VINFO(Nxy),
 			VINFO(J), VINFO(D),
@@ -36,7 +36,7 @@ Atom_Mesh_Cubic::Atom_Mesh_Cubic(SuperMesh *pSMesh_) :
 			//Modules Implementations
 			IINFO(Atom_Demag_N), IINFO(Atom_Demag), IINFO(Atom_DipoleDipole), 
 			IINFO(Atom_Zeeman), IINFO(Atom_MOptical),
-			IINFO(Atom_Exchange), IINFO(Atom_DMExchange), IINFO(Atom_iDMExchange), 
+			IINFO(Atom_Exchange), IINFO(Atom_DMExchange), IINFO(Atom_iDMExchange), IINFO(Atom_SurfExchange),
 			IINFO(Atom_Anisotropy_Uniaxial), IINFO(Atom_Anisotropy_Cubic), IINFO(Atom_Anisotropy_Biaxial), IINFO(Atom_Anisotropy_Tensorial),
 			IINFO(Atom_Heat)
 		}),
@@ -57,7 +57,7 @@ Atom_Mesh_Cubic::Atom_Mesh_Cubic(Rect meshRect_, DBL3 h_, SuperMesh *pSMesh_) :
 			VINFO(exclude_from_multiconvdemag),
 			//Members in this derived class
 			VINFO(move_mesh_trigger), VINFO(skyShift), VINFO(exchange_couple_to_meshes),
-			VINFO(mc_cone_angledeg), VINFO(mc_acceptance_rate), VINFO(mc_parallel), VINFO(mc_constrain), VINFO(cmc_n),
+			VINFO(mc_cone_angledeg), VINFO(mc_acceptance_rate), VINFO(mc_parallel), VINFO(mc_disabled), VINFO(mc_constrain), VINFO(cmc_n),
 			//Material Parameters
 			VINFO(alpha), VINFO(mu_s), VINFO(Nxy),
 			VINFO(J), VINFO(D),
@@ -73,7 +73,7 @@ Atom_Mesh_Cubic::Atom_Mesh_Cubic(Rect meshRect_, DBL3 h_, SuperMesh *pSMesh_) :
 			//Modules Implementations
 			IINFO(Atom_Demag_N), IINFO(Atom_Demag), IINFO(Atom_DipoleDipole),
 			IINFO(Atom_Zeeman), IINFO(Atom_MOptical),
-			IINFO(Atom_Exchange), IINFO(Atom_DMExchange), IINFO(Atom_iDMExchange),
+			IINFO(Atom_Exchange), IINFO(Atom_DMExchange), IINFO(Atom_iDMExchange), IINFO(Atom_SurfExchange),
 			IINFO(Atom_Anisotropy_Uniaxial), IINFO(Atom_Anisotropy_Cubic), IINFO(Atom_Anisotropy_Biaxial), IINFO(Atom_Anisotropy_Tensorial),
 			IINFO(Atom_Heat)
 		}),
@@ -161,6 +161,13 @@ BError Atom_Mesh_Cubic::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 
 		//update any text equations used in mesh parameters (dependence on mesh dimensions possible)
 		if (!error) update_all_meshparam_equations();
+	}
+
+	if (cfgMessage == UPDATECONFIG_PARAMVALUECHANGED_MLENGTH) {
+
+		//renormalization of magnetization length done in meshODE. Here we need to check mu_s has not been set to zero for non-empty cells if a spatial variation is set.
+		//This can happen e.g. when shape_setparam is used for the first time.
+		mu_s.fix_s_scaling_zeros(M1, mu_s.get0());
 	}
 
 	//------------------------ CUDA UpdateConfiguration if set
@@ -352,7 +359,7 @@ void Atom_Mesh_Cubic::CoupleToDipoles(bool status)
 				if (status) {
 
 					//set interface cells to have magnetization direction along the touching dipole direction
-					DBL3 Mdipole_direction = dynamic_cast<Mesh*>((*pSMesh)[idx])->GetAveragemagnetization().normalized();
+					DBL3 Mdipole_direction = dynamic_cast<Mesh*>((*pSMesh)[idx])->GetAverageMagnetization().normalized();
 
 					Box box = M1.box_from_rect_max(mesh_intersection);
 
@@ -413,15 +420,5 @@ double Atom_Mesh_Cubic::CheckMoveMesh(void)
 //----------------------------------- OVERLOAD MESH VIRTUAL METHODS
 
 //----------------------------------- OTHER CONTROL METHODS : implement pure virtual Atom_Mesh methods
-
-void Atom_Mesh_Cubic::Set_MonteCarlo_Constrained(DBL3 cmc_n_)
-{
-	if (cmc_n_.IsNull()) mc_constrain = false;
-	else { mc_constrain = true; cmc_n = cmc_n_; }
-
-#if COMPILECUDA == 1
-	if (paMeshCUDA) paMeshCUDA->Set_MonteCarlo_Constrained(cmc_n);
-#endif
-}
 
 #endif

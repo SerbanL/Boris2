@@ -23,7 +23,7 @@ enum PARAM_ {
 	//Exchange : AFM
 	PARAM_A_AFM = 42, PARAM_A_AFH = 54, PARAM_A_AFNH = 43, PARAM_D_AFM = 44,
 	//Exchange : Atomistic
-	PARAM_ATOM_SC_J = 64, PARAM_ATOM_SC_D = 65, 
+	PARAM_ATOM_SC_J = 64, PARAM_ATOM_SC_D = 65, PARAM_ATOM_JS = 78,
 
 	//Anisotropy : FM
 	PARAM_K1 = 8, PARAM_K2 = 9, PARAM_K3 = 75, PARAM_EA1 = 10, PARAM_EA2 = 11, PARAM_EA3 = 72,
@@ -59,7 +59,7 @@ enum PARAM_ {
 	//Mechanical
 	PARAM_MECOEFF = 48, PARAM_YOUNGSMOD = 49, PARAM_POISSONRATIO = 50
 	
-}; //Current maximum : 77
+}; //Current maximum : 78
 
 //classification of parameter
 enum PARAMTYPE_ { PARAMTYPE_NONE, PARAMTYPE_MAGNETIC, PARAMTYPE_ELECTRIC, PARAMTYPE_THERMAL, PARAMTYPE_MECHANICAL };

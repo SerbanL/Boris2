@@ -311,6 +311,28 @@ public:
 	//set spatial scaling text equation
 	void set_s_scaling_equation(const std::string& equationText, const vector_key<double>& userConstants, DBL3 meshDimensions);
 
+	//if s_scaling is set, then check there are no zero values for non-empty cells in M. Only enabled for SType fundamental types (double), since GetMagnitude(M[idx]) is a fundamental type.
+	//if any zeroes found, then set s_scaling value to match the magnitude of the value held in M at that cell, where the 0K value is passed in as Ms.
+	template <typename VType, typename SType_ = SType, std::enable_if_t<std::is_fundamental<SType_>::value>* = nullptr>
+	void fix_s_scaling_zeros(VEC_VC<VType>& M, double Ms)
+	{
+		//s_scaling must have same size as M
+		if (s_scaling.size() != M.size()) return;
+
+#pragma omp parallel for
+		for (int idx = 0; idx < M.linear_size(); idx++) {
+
+			if (M.is_not_empty(idx) && s_scaling.is_empty(idx)) {
+
+				s_scaling[idx] = GetMagnitude(M[idx]) / Ms;
+			}
+		}
+
+#if COMPILECUDA == 1
+		if (p_cu_obj_mpcuda) update_cuda_object();
+#endif
+	}
+
 	//---------Get temperature dependence
 
 	//get temperature scaling coefficients as an array from 0K up to and including max_temperature
@@ -1651,6 +1673,30 @@ void MatP<PType, SType>::set_s_scaling_equation(const std::string& equationText,
 	if (p_cu_obj_mpcuda) update_cuda_object();
 #endif
 }
+
+/*
+//if s_scaling is set, then check there are no zero values for non-empty cells in M.
+//if any zeroes found, then set s_scaling value to match the magnitude of the value held in M at that cell.
+template <typename PType, typename SType>
+void MatP<PType, SType>::fix_s_scaling_zeros(VEC_VC<DBL3>& M)
+{
+	//s_scaling must have same size as M
+	if (s_scaling.size() != M.size()) return;
+
+#pragma omp parallel for
+	for (int idx = 0; idx < M.linear_size(); idx++) {
+
+		if (M.is_not_empty(idx) && s_scaling.is_empty(idx)) {
+
+			s_scaling[idx] = GetMagnitude(M[idx]) / value_at_0K;
+		}
+	}
+
+#if COMPILECUDA == 1
+	if (p_cu_obj_mpcuda) update_cuda_object();
+#endif
+}
+*/
 
 //---------Set spatial dependence : generator methods
 

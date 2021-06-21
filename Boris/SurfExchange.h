@@ -7,8 +7,6 @@
 #include "SurfExchangeCUDA.h"
 #endif
 
-
-
 class Mesh;
 
 #ifdef MODULE_COMPILATION_SURFEXCHANGE
@@ -56,6 +54,10 @@ public:
 	BError MakeCUDAModule(void);
 
 	double UpdateField(void);
+
+	//-------------------Torque methods
+
+	DBL3 GetTorque(Rect& avRect);
 };
 
 #else
