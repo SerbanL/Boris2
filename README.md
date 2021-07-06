@@ -1,7 +1,7 @@
 # Boris2
 Boris Computational Spintronics.
 
-C++17 used. The codebase is contained in 864 files (.h, .cpp, .cu, .cuh, .py) and can be compiled on Windows or Linux-based OS with MSVC compiler or g++ compiler respectively.
+C++17 used. The codebase is currently contained in 878 files (.h, .cpp, .cu, .cuh, .py), ~160k non-trivial loc, and can be compiled on Windows or Linux-based OS with MSVC compiler or g++ compiler respectively.
 
 # Download
 Latest compiled version with installer, including source code with makefile for Linux-based OS, found here : https://boris-spintronics.uk/download
