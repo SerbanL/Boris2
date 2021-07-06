@@ -85,6 +85,10 @@ public:
 
 	double UpdateField(void);
 
+	//-------------------Energy methods
+
+	double Get_EnergyChange(int spin_index, DBL3 Mnew);
+
 	//-------------------Setters
 
 	//change cellsize refinement

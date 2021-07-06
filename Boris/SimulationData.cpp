@@ -246,25 +246,37 @@ Any Simulation::GetDataValue(DatumConfig dConfig)
 
 	case DATA_JC:
 	{
-		return Any(SMesh[dConfig.meshName]->GetAverageChargeCurrentDensity(dConfig.rectangle));
+		if (SMesh[dConfig.meshName]->IsModuleSet(MOD_TRANSPORT)) {
+
+			return Any(SMesh[dConfig.meshName]->CallModuleMethod(&Transport::GetAverageChargeCurrent, dConfig.rectangle, {}));
+		}
 	}
 	break;
 
 	case DATA_JSX:
 	{
-		return Any(SMesh[dConfig.meshName]->GetAverageSpinCurrentX(dConfig.rectangle));
+		if (SMesh[dConfig.meshName]->IsModuleSet(MOD_TRANSPORT)) {
+
+			return Any(SMesh[dConfig.meshName]->CallModuleMethod(&Transport::GetAverageSpinCurrent, 0, dConfig.rectangle, {}));
+		}
 	}
 	break;
 
 	case DATA_JSY:
 	{
-		return Any(SMesh[dConfig.meshName]->GetAverageSpinCurrentY(dConfig.rectangle));
+		if (SMesh[dConfig.meshName]->IsModuleSet(MOD_TRANSPORT)) {
+
+			return Any(SMesh[dConfig.meshName]->CallModuleMethod(&Transport::GetAverageSpinCurrent, 1, dConfig.rectangle, {}));
+		}
 	}
 	break;
 
 	case DATA_JSZ:
 	{
-		return Any(SMesh[dConfig.meshName]->GetAverageSpinCurrentZ(dConfig.rectangle));
+		if (SMesh[dConfig.meshName]->IsModuleSet(MOD_TRANSPORT)) {
+
+			return Any(SMesh[dConfig.meshName]->CallModuleMethod(&Transport::GetAverageSpinCurrent, 2, dConfig.rectangle, {}));
+		}
 	}
 	break;
 
@@ -635,7 +647,7 @@ void Simulation::SaveData(void)
 		UpdateMeshDisplay();
 
 		std::string imageFile = directory + imageSaveFileBase + ToString(SMesh.GetIteration()) + ".png";
-		BD.SaveImage(imageFile, SMesh.FetchOnScreenPhysicalQuantity(BD.Get_MeshDisplay_DetailLevel()));
+		BD.SaveMeshImage(imageFile, image_cropping);
 	}
 }
 

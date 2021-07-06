@@ -81,7 +81,7 @@ BError Atom_DifferentialEquationCubicCUDA::AllocateMemory(bool copy_from_cpu)
 		else if (copy_from_cpu) sEval2()->copy_from_cpuvec(pameshODE->sEval2);
 		break;
 
-	case EVAL_RKF:
+	case EVAL_RKF45:
 		if (!sEval0()->resize((cuSZ3)paMesh->n)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
 		else if(copy_from_cpu) sEval0()->copy_from_cpuvec(pameshODE->sEval0);
 
@@ -98,7 +98,7 @@ BError Atom_DifferentialEquationCubicCUDA::AllocateMemory(bool copy_from_cpu)
 		else if (copy_from_cpu) sEval4()->copy_from_cpuvec(pameshODE->sEval4);
 		break;
 
-	case EVAL_RKCK:
+	case EVAL_RKCK45:
 		if (!sEval0()->resize((cuSZ3)paMesh->n)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
 		else if (copy_from_cpu) sEval0()->copy_from_cpuvec(pameshODE->sEval0);
 
@@ -115,7 +115,7 @@ BError Atom_DifferentialEquationCubicCUDA::AllocateMemory(bool copy_from_cpu)
 		else if (copy_from_cpu) sEval4()->copy_from_cpuvec(pameshODE->sEval4);
 		break;
 
-	case EVAL_RKDP:
+	case EVAL_RKDP54:
 		if (!sEval0()->resize((cuSZ3)paMesh->n)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
 		else if (copy_from_cpu) sEval0()->copy_from_cpuvec(pameshODE->sEval0);
 
@@ -181,9 +181,9 @@ void Atom_DifferentialEquationCubicCUDA::CleanupMemory(bool copy_to_cpu)
 		pameshODE->evalMethod != EVAL_RK4 &&
 		pameshODE->evalMethod != EVAL_ABM &&
 		pameshODE->evalMethod != EVAL_RK23 &&
-		pameshODE->evalMethod != EVAL_RKF &&
-		pameshODE->evalMethod != EVAL_RKCK &&
-		pameshODE->evalMethod != EVAL_RKDP &&
+		pameshODE->evalMethod != EVAL_RKF45 &&
+		pameshODE->evalMethod != EVAL_RKCK45 &&
+		pameshODE->evalMethod != EVAL_RKDP54 &&
 		pameshODE->evalMethod != EVAL_SD) {
 
 		if (copy_to_cpu && sEval0()->size_cpu() == pameshODE->sEval0.size()) sEval0()->copy_to_cpuvec(pameshODE->sEval0);
@@ -193,9 +193,9 @@ void Atom_DifferentialEquationCubicCUDA::CleanupMemory(bool copy_to_cpu)
 	if (pameshODE->evalMethod != EVAL_RK4 &&
 		pameshODE->evalMethod != EVAL_ABM &&
 		pameshODE->evalMethod != EVAL_RK23 &&
-		pameshODE->evalMethod != EVAL_RKF &&
-		pameshODE->evalMethod != EVAL_RKCK &&
-		pameshODE->evalMethod != EVAL_RKDP) {
+		pameshODE->evalMethod != EVAL_RKF45 &&
+		pameshODE->evalMethod != EVAL_RKCK45 &&
+		pameshODE->evalMethod != EVAL_RKDP54) {
 
 		if (copy_to_cpu && sEval1()->size_cpu() == pameshODE->sEval1.size()) sEval1()->copy_to_cpuvec(pameshODE->sEval1);
 		sEval1()->clear();
@@ -203,18 +203,18 @@ void Atom_DifferentialEquationCubicCUDA::CleanupMemory(bool copy_to_cpu)
 
 	if (pameshODE->evalMethod != EVAL_RK4 &&
 		pameshODE->evalMethod != EVAL_RK23 &&
-		pameshODE->evalMethod != EVAL_RKF &&
-		pameshODE->evalMethod != EVAL_RKCK &&
-		pameshODE->evalMethod != EVAL_RKDP) {
+		pameshODE->evalMethod != EVAL_RKF45 &&
+		pameshODE->evalMethod != EVAL_RKCK45 &&
+		pameshODE->evalMethod != EVAL_RKDP54) {
 
 		if (copy_to_cpu && sEval2()->size_cpu() == pameshODE->sEval2.size()) sEval2()->copy_to_cpuvec(pameshODE->sEval2);
 		sEval2()->clear();
 	}
 
 	if (pameshODE->evalMethod != EVAL_RK4 &&
-		pameshODE->evalMethod != EVAL_RKF &&
-		pameshODE->evalMethod != EVAL_RKCK &&
-		pameshODE->evalMethod != EVAL_RKDP) {
+		pameshODE->evalMethod != EVAL_RKF45 &&
+		pameshODE->evalMethod != EVAL_RKCK45 &&
+		pameshODE->evalMethod != EVAL_RKDP54) {
 
 		if (copy_to_cpu && sEval3()->size_cpu() == pameshODE->sEval3.size()) sEval3()->copy_to_cpuvec(pameshODE->sEval3);
 		sEval3()->clear();
@@ -223,7 +223,7 @@ void Atom_DifferentialEquationCubicCUDA::CleanupMemory(bool copy_to_cpu)
 		sEval4()->clear();
 	}
 
-	if (pameshODE->evalMethod != EVAL_RKDP) {
+	if (pameshODE->evalMethod != EVAL_RKDP54) {
 
 		if (copy_to_cpu && sEval5()->size_cpu() == pameshODE->sEval5.size()) sEval5()->copy_to_cpuvec(pameshODE->sEval5);
 		sEval5()->clear();

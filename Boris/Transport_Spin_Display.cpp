@@ -136,7 +136,7 @@ VEC<DBL3>& Transport::GetSpinCurrent(int component)
 	return displayVEC;
 }
 
-DBL3 Transport::GetAverageSpinCurrent(int component, Rect rectangle)
+DBL3 Transport::GetAverageSpinCurrent(int component, Rect rectangle, std::vector<MeshShape> shapes)
 {
 #if COMPILECUDA == 1
 	if (pModuleCUDA) {
@@ -154,7 +154,33 @@ DBL3 Transport::GetAverageSpinCurrent(int component, Rect rectangle)
 	GetSpinCurrent(component);
 
 	//average spin current in displayVEC
-	return displayVEC.average_nonempty_omp(rectangle);
+	if (!shapes.size()) return displayVEC.average_nonempty_omp(rectangle);
+	else return displayVEC.shape_getaverage(shapes);
+}
+
+//Get average bulk spin torque in given rectangle - calculate it first
+DBL3 Transport::GetAverageSpinTorque(Rect rectangle, std::vector<MeshShape> shapes)
+{
+	GetSpinTorque();
+	if (displayVEC.linear_size()) {
+
+		if (!shapes.size()) return displayVEC.average_nonempty_omp(rectangle);
+		else return displayVEC.shape_getaverage(shapes);
+	}
+
+	return DBL3();
+}
+
+//Get average interfacial spin torque in given rectangle - must have been calculated already in displayVEC through the supermesh transport module
+DBL3 Transport::GetAverageInterfacialSpinTorque(Rect rectangle, std::vector<MeshShape> shapes)
+{ 
+	if (displayVEC.linear_size()) {
+
+		if (!shapes.size()) return displayVEC.average_nonempty_omp(rectangle);
+		else return displayVEC.shape_getaverage(shapes);
+	}
+
+	return DBL3();
 }
 
 //return spin torque computed from spin accumulation

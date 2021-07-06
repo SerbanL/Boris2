@@ -30,7 +30,7 @@ __global__ void GetThermodynamicAverageMagnetization_kernel(ManagedMeshCUDA& cuM
 
 			pos = M.cellidx_to_position(idx);
 
-			cuBReal Ei = cuMesh.Get_Energy_FM(idx, cuModules, numModules, Ha);
+			cuBReal Ei = cuMesh.Get_EnergyChange_FM(idx, cuReal3(), cuModules, numModules, Ha);
 
 			cuBReal Temperature;
 			if (Temp.linear_size()) Temperature = Temp[M.cellidx_to_position(idx)];
@@ -137,7 +137,7 @@ __global__ void Get_ThAvHistogram_FM_preaverage_kernel(
 
 		if (idx < M.linear_size() && M.is_not_empty(idx)) {
 
-			cuBReal Ei = cuMesh.Get_Energy_FM(idx, cuModules, numModules, Ha);
+			cuBReal Ei = cuMesh.Get_EnergyChange_FM(idx, cuReal3(), cuModules, numModules, Ha);
 
 			cuBReal Temperature;
 			if (Temp.linear_size()) Temperature = Temp[M.cellidx_to_position(idx)];

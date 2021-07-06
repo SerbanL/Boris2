@@ -31,7 +31,7 @@ void BorisMeshWindow::DrawWindow(void)
 
 	//draw coordinate system
 	pBG->DrawCoordinateSystem(spaceRect);
-
+	
 	//draw the physical quantity set to be displayed in the mesh
 	physQRep.DrawPhysQRep();
 
@@ -242,10 +242,10 @@ bool BorisMeshWindow::SaveMeshImage(std::string fileName, DBL4 image_cropping)
 {
 	//here remember D2D wants 0, 0 point as the left, top points of screen, so need to invert role of bottom and top in image_cropping.
 	double left = spaceRectDims.width * image_cropping.i + spaceRect.left;
-	double right = spaceRectDims.width * image_cropping.k + spaceRect.left;
+	double top = spaceRectDims.height * image_cropping.j + spaceRect.top;
 
-	double top = spaceRectDims.height * image_cropping.l + spaceRect.top;
-	double bottom = spaceRectDims.height * image_cropping.j + spaceRect.top;
+	double right = spaceRectDims.width * image_cropping.k + spaceRect.left;
+	double bottom = spaceRectDims.height * image_cropping.l + spaceRect.top;
 
 	D2D1_RECT_F saveRect = D2D1::RectF(left, top, right, bottom);
 
@@ -288,8 +288,9 @@ bool BorisMeshWindow::SaveImage(std::string fileName, std::vector<PhysQ> physQ)
 	if (image_cropping_j > 1) image_cropping_j = 1;
 
 	double left = spaceRectDims.width * image_cropping_i + spaceRect.left;
-	double right = spaceRectDims.width * image_cropping_k + spaceRect.left;
 	double top = spaceRectDims.height * image_cropping_l + spaceRect.top;
+
+	double right = spaceRectDims.width * image_cropping_k + spaceRect.left;
 	double bottom = spaceRectDims.height * image_cropping_j + spaceRect.top;
 
 	D2D1_RECT_F saveRect = D2D1::RectF(left, top, right, bottom);

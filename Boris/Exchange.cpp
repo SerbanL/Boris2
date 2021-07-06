@@ -317,34 +317,6 @@ double Exch_6ngbr_Neu::Get_EnergyChange(int spin_index, DBL3 Mnew)
 	//For CUDA there are separate device functions used by CUDA kernels.
 
 	if (pMesh->M.is_not_empty(spin_index)) {
-		
-		double Ms = pMesh->Ms;
-		double A = pMesh->A;
-		pMesh->update_parameters_mcoarse(spin_index, pMesh->A, A, pMesh->Ms, Ms);
-
-		//NOTE : here we only need the change in energy due to spin rotation only. Thus the longitudinal part, which is dependent on spin length only, cancels out. Enforce this by making Mnew length same as old one.
-		Mnew.renormalize(pMesh->M[spin_index].norm());
-
-		DBL3 Hexch = (2 * A / (MU0*Ms*Ms)) * pMesh->M.delsq_neu(spin_index);
-		double energy_ = -MU0 * pMesh->M[spin_index] * Hexch / 2;
-
-		DBL3 Mold = pMesh->M[spin_index];
-		pMesh->M[spin_index] = Mnew;
-		Hexch = (2 * A / (MU0*Ms*Ms)) * pMesh->M.delsq_neu(spin_index);
-		double energynew_ = -MU0 * pMesh->M[spin_index] * Hexch / 2;
-		pMesh->M[spin_index] = Mold;
-
-		//multiply by 2 as we are not double-counting here (same as for Demag)
-		return pMesh->h.dim() * (energynew_ - energy_) * 2;		
-	}
-	else return 0.0;
-}
-
-double Exch_6ngbr_Neu::Get_Energy(int spin_index)
-{
-	//For CUDA there are separate device functions used by CUDA kernels.
-
-	if (pMesh->M.is_not_empty(spin_index)) {
 
 		double Ms = pMesh->Ms;
 		double A = pMesh->A;
@@ -353,12 +325,25 @@ double Exch_6ngbr_Neu::Get_Energy(int spin_index)
 		DBL3 Hexch = (2 * A / (MU0*Ms*Ms)) * pMesh->M.delsq_neu(spin_index);
 		double energy_ = -MU0 * pMesh->M[spin_index] * Hexch / 2;
 
-		//multiply by 2 as we are not double-counting here (same as for Demag)
-		return pMesh->h.dim() * energy_ * 2;
+		if (Mnew != DBL3()) {
+
+			//NOTE : here we only need the change in energy due to spin rotation only. Thus the longitudinal part, which is dependent on spin length only, cancels out. Enforce this by making Mnew length same as old one.
+			Mnew.renormalize(pMesh->M[spin_index].norm());
+
+			DBL3 Mold = pMesh->M[spin_index];
+			pMesh->M[spin_index] = Mnew;
+			Hexch = (2 * A / (MU0*Ms*Ms)) * pMesh->M.delsq_neu(spin_index);
+			double energynew_ = -MU0 * pMesh->M[spin_index] * Hexch / 2;
+			pMesh->M[spin_index] = Mold;
+
+			//multiply by 2 as we are not double-counting here (same as for Demag)
+			return pMesh->h.dim() * (energynew_ - energy_) * 2;
+		}
+		//If Mnew is null then this method is used to obtain current energy only, not energy change
+		else return pMesh->h.dim() * energy_ * 2;
 	}
 	else return 0.0;
 }
-
 
 //-------------------Torque methods
 

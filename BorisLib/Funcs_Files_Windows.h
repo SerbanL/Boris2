@@ -43,6 +43,21 @@ inline std::string GetExeDirectory(void)
 	return directory;
 }
 
+//Get executable file name
+inline std::string GetExeFilename(void)
+{
+	TCHAR path[FILEROWCHARS];
+	GetModuleFileName(NULL, path, FILEROWCHARS);
+	std::string fullPath = std::string(CW2A(path));
+	
+	std::string fileName;
+	
+	size_t pos = fullPath.find_last_of("\\/");
+	if (pos != std::string::npos) fileName = fullPath.substr(pos + 1);
+
+	return fileName;
+}
+
 //return all files sharing the given base (in specified directory) and termination. Return them ordered (including full path) by creation time
 inline std::vector<std::string> GetFilesInDirectory(std::string directory, std::string baseFileName, std::string termination)
 {

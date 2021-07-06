@@ -27,6 +27,10 @@ private:
 	cu_obj<cuVEC<cuReal3>> Fmul_rough;
 	cu_obj<cuVEC<cuReal3>> Fomul_rough;
 
+private:
+
+	void set_RoughnessCUDA_pointers(void);
+
 public:
 
 	RoughnessCUDA(MeshCUDA* pMeshCUDA_, Roughness* pRough_);

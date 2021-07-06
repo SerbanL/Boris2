@@ -54,6 +54,9 @@ public:
 	//DMI exchange constant : (units of J)
 	MatP<double, double> D = 5e-23;
 
+	//Interfacial DMI symmetry axis direction, used by vector interfacial DMI module
+	MatP<DBL3, DBL3> D_dir = DBL3(0, 0, 1);
+
 	//Surface exchange coupling, used by the surfexchange module to couple two spins on different meshes at the surface (units of J)
 	MatP<double, double> Js = -1e-21;
 
@@ -170,6 +173,10 @@ RType Atom_MeshParams::run_on_param(PARAM_ paramID, Lambda& run_this, PType& ...
 
 	case PARAM_ATOM_SC_D:
 		return run_this(D, run_this_args...);
+		break;
+
+	case PARAM_DMI_DIR:
+		return run_this(D_dir, run_this_args...);
 		break;
 
 	case PARAM_ATOM_JS:

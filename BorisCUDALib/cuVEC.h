@@ -405,10 +405,6 @@ public:
 	//average in given rectangle (relative coordinates), excluding zero points (assumed empty).
 	__device__ VType average_nonempty(const cuRect& rectangle);
 
-	//find "chunked" average magnitude in entire VEC. This means, first find magnitude in each macrocell (size macrocell_dims & h), then average macrocell magnitudes.
-	//Found in cuVEC_histo.h
-	__host__ double chunked_averagemag(cuINT3 macrocell_dims = cuINT3(1));
-
 	//--------------------------------------------NUMERICAL PROPERTIES : cuVEC_nprops.cuhj
 
 	template <typename PType = decltype(cu_GetMagnitude(std::declval<VType>()))>

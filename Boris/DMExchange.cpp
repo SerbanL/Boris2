@@ -224,10 +224,13 @@ double DMExchange::UpdateField(void)
 				DBL2 Ah = pMesh->Ah;
 				DBL2 Anh = pMesh->Anh;
 				DBL2 D_AFM = pMesh->D_AFM;
-				pMesh->update_parameters_mcoarse(idx, pMesh->A_AFM, A_AFM, pMesh->Ah, Ah, pMesh->Anh, Anh, pMesh->D_AFM, D_AFM, pMesh->Ms_AFM, Ms_AFM);
+				double Dh = pMesh->Dh;
+				DBL3 dh_dir = pMesh->dh_dir;
+				pMesh->update_parameters_mcoarse(idx, pMesh->A_AFM, A_AFM, pMesh->Ah, Ah, pMesh->Anh, Anh, pMesh->D_AFM, D_AFM, pMesh->Ms_AFM, Ms_AFM, pMesh->Dh, Dh, pMesh->dh_dir, dh_dir);
 
 				DBL2 Aconst = 2 * A_AFM / (MU0 * (Ms_AFM & Ms_AFM));
 				DBL2 Dconst = -2 * D_AFM / (MU0 * (Ms_AFM & Ms_AFM));
+				double Dhconst = (Dh / (MU0*Ms_AFM.i*Ms_AFM.j));
 
 				DBL3 Hexch_A, Hexch_D, Hexch_A2, Hexch_D2;
 
@@ -249,6 +252,10 @@ double DMExchange::UpdateField(void)
 					//Hdm, ex = -2D / (mu0*Ms) * curl m
 					Hexch_D = Dconst.i * pMesh->M.curl_neu(idx);
 					Hexch_D2 = Dconst.j * pMesh->M2.curl_neu(idx);
+
+					//3. Homogeneous DMI contribution
+					Hexch_D += Dhconst * (dh_dir ^ pMesh->M2[idx]);
+					Hexch_D2 += -Dhconst * (dh_dir ^ pMesh->M[idx]);
 				}
 				else {
 
@@ -280,6 +287,10 @@ double DMExchange::UpdateField(void)
 					//For cmbnd cells curl_nneu does not evaluate to zero in the CMBND coupling direction, but sided differentials are used - when setting values at CMBND cells for exchange coupled meshes must correct for this.
 					Hexch_D = Dconst.i * pMesh->M.curl_nneu(idx, bndA_nneu);
 					Hexch_D2 = Dconst.j * pMesh->M2.curl_nneu(idx, bndB_nneu);
+
+					//3. Homogeneous DMI contribution
+					Hexch_D += Dhconst * (dh_dir ^ pMesh->M2[idx]);
+					Hexch_D2 += -Dhconst * (dh_dir ^ pMesh->M[idx]);
 				}
 
 				pMesh->Heff[idx] += Hexch_A + Hexch_D;
@@ -487,9 +498,6 @@ double DMExchange::Get_EnergyChange(int spin_index, DBL3 Mnew)
 {
 	//For CUDA there are separate device functions used by CUDA kernels.
 
-	//NOTE : here we only need the change in energy due to spin rotation only. Thus the longitudinal part, which is dependent on spin length only, cancels out. Enforce this by making Mnew length same as old one.
-	Mnew.renormalize(pMesh->M[spin_index].norm());
-
 	if (pMesh->M.is_not_empty(spin_index)) {
 
 		double Ms = pMesh->Ms;
@@ -538,77 +546,26 @@ double DMExchange::Get_EnergyChange(int spin_index, DBL3 Mnew)
 			return pMesh->M[spin_index] * (Hexch_A + Hexch_D);
 		};
 
-		//new spin energy
-		DBL3 Mold = pMesh->M[spin_index];
-		pMesh->M[spin_index] = Mnew;
-		double energy_delta = Get_Energy();
+		double energy_ = Get_Energy();
 
-		//minus old spin energy
-		pMesh->M[spin_index] = Mold;
-		energy_delta -= Get_Energy();
+		if (Mnew != DBL3()) {
 
-		//do not divide by 2 as we are not double-counting here
-		return -MU0 * pMesh->h.dim() * energy_delta;
+			//NOTE : here we only need the change in energy due to spin rotation only. Thus the longitudinal part, which is dependent on spin length only, cancels out. Enforce this by making Mnew length same as old one.
+			Mnew.renormalize(pMesh->M[spin_index].norm());
+
+			//new spin energy
+			DBL3 Mold = pMesh->M[spin_index];
+			pMesh->M[spin_index] = Mnew;
+			double energynew_ = Get_Energy();
+			pMesh->M[spin_index] = Mold;
+
+			//do not divide by 2 as we are not double-counting here
+			return -MU0 * pMesh->h.dim() * (energynew_ - energy_);
+		}
+		else return -MU0 * pMesh->h.dim() * energy_;
 	}
 	else return 0.0;
 }
-
-double DMExchange::Get_Energy(int spin_index)
-{
-	if (pMesh->M.is_not_empty(spin_index)) {
-
-		double Ms = pMesh->Ms;
-		double A = pMesh->A;
-		double D = pMesh->D;
-		pMesh->update_parameters_mcoarse(spin_index, pMesh->A, A, pMesh->D, D, pMesh->Ms, Ms);
-
-		double Aconst = 2 * A / (MU0 * Ms * Ms);
-		double Dconst = -2 * D / (MU0 * Ms * Ms);
-
-		auto Get_Energy = [&](void) -> double
-		{
-			DBL3 Hexch_A, Hexch_D;
-
-			if (pMesh->M.is_interior(spin_index)) {
-
-				//interior point : can use cheaper neu versions
-
-				//direct exchange contribution
-				Hexch_A = Aconst * pMesh->M.delsq_neu(spin_index);
-
-				//Dzyaloshinskii-Moriya exchange contribution
-
-				//Hdm, ex = -2D / (mu0*Ms) * curl m
-				Hexch_D = Dconst * pMesh->M.curl_neu(spin_index);
-			}
-			else {
-
-				//Non-homogeneous Neumann boundary conditions apply when using DMI. Required to ensure Brown's condition is fulfilled, i.e. equivalent to m x h -> 0 when relaxing.
-				DBL3 bnd_dm_dx = (D / (2 * A)) * DBL3(0, -pMesh->M[spin_index].z, pMesh->M[spin_index].y);
-				DBL3 bnd_dm_dy = (D / (2 * A)) * DBL3(pMesh->M[spin_index].z, 0, -pMesh->M[spin_index].x);
-				DBL3 bnd_dm_dz = (D / (2 * A)) * DBL3(-pMesh->M[spin_index].y, pMesh->M[spin_index].x, 0);
-				DBL33 bnd_nneu = DBL33(bnd_dm_dx, bnd_dm_dy, bnd_dm_dz);
-
-				//direct exchange contribution
-				//cells marked with cmbnd are calculated using exchange coupling to other ferromagnetic meshes - see below; the delsq_nneu evaluates to zero in the CMBND coupling direction.
-				Hexch_A = Aconst * pMesh->M.delsq_nneu(spin_index, bnd_nneu);
-
-				//Dzyaloshinskii-Moriya exchange contribution
-
-				//Hdm, ex = -2D / (mu0*Ms) * curl m
-				//For cmbnd cells curl_nneu does not evaluate to zero in the CMBND coupling direction, but sided differentials are used - when setting values at CMBND cells for exchange coupled meshes must correct for this.
-				Hexch_D = Dconst * pMesh->M.curl_nneu(spin_index, bnd_nneu);
-			}
-
-			return pMesh->M[spin_index] * (Hexch_A + Hexch_D);
-		};
-
-		//do not divide by 2 as we are not double-counting here
-		return -MU0 * pMesh->h.dim() * Get_Energy();
-	}
-	else return 0.0;
-}
-
 
 //-------------------Torque methods
 

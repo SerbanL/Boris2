@@ -35,7 +35,7 @@ BError Atom_iDMExchangeCUDA::Initialize(void)
 
 BError Atom_iDMExchangeCUDA::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 {
-	BError error(CLASS_STR(Atom_DMExchangeCUDA));
+	BError error(CLASS_STR(Atom_iDMExchangeCUDA));
 
 	Uninitialize();
 

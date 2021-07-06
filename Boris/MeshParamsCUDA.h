@@ -66,6 +66,14 @@ public:
 	cu_obj<MatPCUDA<cuBReal, cuBReal>> D;
 	cu_obj<MatPCUDA<cuReal2, cuBReal>> D_AFM;
 
+	//Homogeneous DMI constant for 2-sublattice models (J/m^3)
+	cu_obj<MatPCUDA<cuBReal, cuBReal>> Dh;
+	//Homogeneous DMI term orientation
+	cu_obj<MatPCUDA<cuReal3, cuReal3>> dh_dir;
+
+	//Interfacial DMI symmetry axis direction, used by vector interfacial DMI module
+	cu_obj<MatPCUDA<cuReal3, cuReal3>> D_dir;
+
 	//Coupling between exchange integral and critical temperature (Neel or Curie temperature) for 2-sublattice model : intra-lattice term, 0.5 for ideal antiferromagnet
 	//J = 3 * tau * kB * Tc
 	cu_obj<MatPCUDA<cuReal2, cuBReal>> tau_ii;
@@ -78,9 +86,6 @@ public:
 	//biquadratic surface exchange coupling (J/m^2) : J2, bottom and top layer values
 	cu_obj<MatPCUDA<cuBReal, cuBReal>> J1;
 	cu_obj<MatPCUDA<cuBReal, cuBReal>> J2;
-
-	//surface exchange coupling per magnetization from a diamagnet (J/Am) - EXPERIMENTAL : Hse = neta * sus * Hext / mu0 * Ms * tF
-	cu_obj<MatPCUDA<cuBReal, cuBReal>> neta_dia;
 
 	//Magneto-crystalline anisotropy K1 and K2 constants (J/m^3) and easy axes directions. For uniaxial anisotropy only ea1 is needed, for cubic ea1 and ea2 should be orthogonal.
 	cu_obj<MatPCUDA<cuBReal, cuBReal>> K1;
@@ -154,7 +159,7 @@ public:
 	cu_obj<MatPCUDA<cuReal2, cuBReal>> STa;
 
 	//Slonczewski macrospin torques spin polarization unit vector as in PRB 72, 014446 (2005) (unitless)
-	cu_obj<MatPCUDA<cuReal3, cuBReal>> STp;
+	cu_obj<MatPCUDA<cuReal3, cuReal3>> STp;
 
 	//spin-flip length (m)
 	cu_obj<MatPCUDA<cuBReal, cuBReal>> l_sf;

@@ -34,7 +34,7 @@ __global__ void GetThermodynamicAverageMagnetization_kernel(ManagedAtom_MeshCUDA
 			cuaMesh.update_parameters_mcoarse(idx, *cuaMesh.pJ, J);
 			cuBReal E0 = -6 * J;
 
-			cuBReal Ei = cuaMesh.Get_Atomistic_Energy_SC(idx, cuaModules, numModules, Ha);
+			cuBReal Ei = cuaMesh.Get_Atomistic_EnergyChange_SC(idx, cuReal3(), cuaModules, numModules, Ha);
 
 			cuBReal Temperature;
 			if (Temp.linear_size()) Temperature = Temp[M1.cellidx_to_position(idx)];
@@ -123,7 +123,7 @@ __global__ void Get_ThAvHistogram_preaverage_kernel(
 			cuaMesh.update_parameters_mcoarse(idx, *cuaMesh.pJ, J);
 			cuBReal E0 = -6 * J;
 
-			cuBReal Ei = cuaMesh.Get_Atomistic_Energy_SC(idx, cuaModules, numModules, Ha);
+			cuBReal Ei = cuaMesh.Get_Atomistic_EnergyChange_SC(idx, cuReal3(), cuaModules, numModules, Ha);
 
 			cuBReal Temperature;
 			if (Temp.linear_size()) Temperature = Temp[M1.cellidx_to_position(idx)];

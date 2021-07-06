@@ -635,12 +635,11 @@ BError SuperMesh::Set_PBC(std::string meshName, std::string flag, int images)
 
 	if (!contains(meshName) && meshName != superMeshHandle) return error(BERROR_INCORRECTNAME);
 
-	if (meshName != superMeshHandle) {
+	auto set_mesh_pbc = [&](std::string meshName, BError& error) -> BError {
 
 		if (!pMesh[meshName]->MComputation_Enabled()) return error(BERROR_INCORRECTNAME);
 
 		//pbc setting for individual mesh demag module
-
 		if (pMesh[meshName]->Is_Demag_Enabled()) {
 
 			INT3 pbc_images = pMesh[meshName]->CallModuleMethod(&DemagBase::Get_PBC);
@@ -664,10 +663,17 @@ BError SuperMesh::Set_PBC(std::string meshName, std::string flag, int images)
 
 			pMesh[meshName]->Set_Magnetic_PBC(pbc_images);
 		}
+
+		return error;
+	};
+
+	if (meshName != superMeshHandle) {
+
+		error = set_mesh_pbc(meshName, error);
 	}
 	else {
 
-		//pbc setting for supermesh demag module
+		//pbc setting for supermesh demag module if set
 		if (IsSuperMeshModuleSet(MODS_SDEMAG)) {
 
 			INT3 pbc_images = dynamic_cast<SDemag*>(pSMod(MODS_SDEMAG))->Get_PBC();
@@ -679,7 +685,14 @@ BError SuperMesh::Set_PBC(std::string meshName, std::string flag, int images)
 
 			error = dynamic_cast<SDemag*>(pSMod(MODS_SDEMAG))->Set_PBC(pbc_images);
 		}
-		else return error(BERROR_INCORRECTNAME);
+		else {
+
+			//if supermesh demag module not set then set pbc for all applicable meshes
+			for (int idx = 0; idx < pMesh.size(); idx++) {
+
+				error = set_mesh_pbc(pMesh.get_key_from_index(idx), error);
+			}
+		}
 	}
 
 	return error;

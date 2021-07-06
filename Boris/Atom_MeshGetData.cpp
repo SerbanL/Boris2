@@ -3,34 +3,6 @@
 
 //----------------------------------- VALUE GETTERS
 
-DBL3 Atom_Mesh::GetAverageChargeCurrentDensity(Rect rectangle)
-{
-	//TO DO
-	return DBL3();
-	//return CallModuleMethod(&Transport::GetAverageChargeCurrent, rectangle);
-}
-
-DBL3 Atom_Mesh::GetAverageSpinCurrentX(Rect rectangle)
-{
-	//TO DO
-	return DBL3();
-	//return CallModuleMethod(&Transport::GetAverageSpinCurrent, 0, rectangle);
-}
-
-DBL3 Atom_Mesh::GetAverageSpinCurrentY(Rect rectangle)
-{
-	//TO DO
-	return DBL3();
-	//return CallModuleMethod(&Transport::GetAverageSpinCurrent, 1, rectangle);
-}
-
-DBL3 Atom_Mesh::GetAverageSpinCurrentZ(Rect rectangle)
-{
-	//TO DO
-	return DBL3();
-	//return CallModuleMethod(&Transport::GetAverageSpinCurrent, 2, rectangle);
-}
-
 double Atom_Mesh::GetAverageElectricalPotential(Rect rectangle)
 {
 #if COMPILECUDA == 1

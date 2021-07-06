@@ -21,7 +21,7 @@ static std::string window_startup_option = "front";
 ////////////////////////////////////
 //Version
 
-static int Program_Version = 300;
+static int Program_Version = 340;
 
 ////////////////////////////////////
 //Program master object

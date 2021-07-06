@@ -32,6 +32,10 @@ Atom_MeshParams::Atom_MeshParams(std::vector<PARAM_>& enabledParams)
 			meshParams.push_back("D", MeshParamDescriptor(PARAMTYPE_MAGNETIC, "J"), PARAM_ATOM_SC_D);
 			break;
 
+		case PARAM_DMI_DIR:
+			meshParams.push_back("Ddir", MeshParamDescriptor(PARAMTYPE_MAGNETIC), PARAM_DMI_DIR);
+			break;
+
 		case PARAM_ATOM_JS:
 			meshParams.push_back("Js", MeshParamDescriptor(PARAMTYPE_MAGNETIC, "J"), PARAM_ATOM_JS);
 			break;

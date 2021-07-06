@@ -184,6 +184,6 @@ public:
 	//Return new - old energy to be used with monte Carlo methods
 	virtual double Get_EnergyChange(int spin_index, DBL3 Mnew) { return 0.0; }
 
-	//implement as needed : get energy value at the given spin index; similar to Get_EnergyChange, but not a change, just the indicated spin energy; implement alongside Get_EnergyChange.
-	virtual double Get_Energy(int spin_index) { return 0.0; }
+	//Get energy value at the given spin index; This can reuse code from Get_EnergyChange by passing in Mnew as DBL3() - Get_EnergyChange will handle this eventuality.
+	double Get_Energy(int spin_index) { return Get_EnergyChange(spin_index, DBL3()); }
 };

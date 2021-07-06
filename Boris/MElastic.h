@@ -58,6 +58,10 @@ public:
 
 	double UpdateField(void);
 
+	//-------------------Energy methods
+
+	double Get_EnergyChange(int spin_index, DBL3 Mnew);
+
 	//------------------- STRAIN GENERATION without SOLVER
 
 	//Set/Get uniform stress

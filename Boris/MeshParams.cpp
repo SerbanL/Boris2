@@ -74,16 +74,24 @@ MeshParams::MeshParams(std::vector<PARAM_>& enabledParams)
 			meshParams.push_back("D_AFM", MeshParamDescriptor(PARAMTYPE_MAGNETIC, "J/m2"), PARAM_D_AFM);
 			break;
 
+		case PARAM_DMI_DH:
+			meshParams.push_back("Dh", MeshParamDescriptor(PARAMTYPE_MAGNETIC, "J/m3"), PARAM_DMI_DH);
+			break;
+
+		case PARAM_DMI_DH_DIR:
+			meshParams.push_back("dh_dir", MeshParamDescriptor(PARAMTYPE_MAGNETIC), PARAM_DMI_DH_DIR);
+			break;
+
+		case PARAM_DMI_DIR:
+			meshParams.push_back("Ddir", MeshParamDescriptor(PARAMTYPE_MAGNETIC), PARAM_DMI_DIR);
+			break;
+
 		case PARAM_J1:
 			meshParams.push_back("J1", MeshParamDescriptor(PARAMTYPE_MAGNETIC, "J/m2"), PARAM_J1);
 			break;
 
 		case PARAM_J2:
 			meshParams.push_back("J2", MeshParamDescriptor(PARAMTYPE_MAGNETIC, "J/m2"), PARAM_J2);
-			break;
-
-		case PARAM_NETADIA:
-			meshParams.push_back("neta", MeshParamDescriptor(PARAMTYPE_MAGNETIC, "J/Am"), PARAM_NETADIA);
 			break;
 
 		case PARAM_K1:

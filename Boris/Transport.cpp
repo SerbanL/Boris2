@@ -60,7 +60,6 @@ void Transport::Set_STSolveType(void)
 			break;
 
 		case MESH_METAL:
-		case MESH_DIAMAGNETIC:
 			stsolve = STSOLVE_NORMALMETAL;
 			break;
 

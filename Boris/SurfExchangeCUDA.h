@@ -32,10 +32,6 @@ private:
 	cu_arr<ManagedMeshCUDA> pMeshAFM_Bot;
 	cu_arr<ManagedMeshCUDA> pMeshAFM_Top;
 
-	//cu arrays with pointers to diamagnetic meshes in surface exchange coupling with the mesh holding this module
-	cu_arr<ManagedMeshCUDA> pMeshDia_Bot;
-	cu_arr<ManagedMeshCUDA> pMeshDia_Top;
-
 	//coupled cells in gpu memory
 	cu_obj<int> coupled_cells;
 

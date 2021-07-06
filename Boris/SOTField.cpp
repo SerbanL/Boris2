@@ -96,14 +96,15 @@ double SOTField::UpdateField(void)
 			double Ms = pMesh->Ms;
 			double SHA = pMesh->SHA;
 			double flSOT = pMesh->flSOT;
-			pMesh->update_parameters_mcoarse(idx, pMesh->grel, grel, pMesh->Ms, Ms, pMesh->SHA, SHA, pMesh->flSOT, flSOT);
+			DBL3 STp = pMesh->STp;
+			pMesh->update_parameters_mcoarse(idx, pMesh->grel, grel, pMesh->Ms, Ms, pMesh->SHA, SHA, pMesh->flSOT, flSOT, pMesh->STp, STp);
 
 			if (IsNZ(grel)) {
 
 				double a_const = -(SHA * MUB_E / (GAMMA * grel)) / (Ms * Ms * pMesh->GetMeshDimensions().z);
 
 				int idx_E = pMesh->E.position_to_cellidx(pMesh->M.cellidx_to_position(idx));
-				DBL3 p_vec = (DBL3(0, 0, 1) ^ pMesh->E[idx_E]) * pMesh->elC[idx_E];
+				DBL3 p_vec = (STp ^ pMesh->E[idx_E]) * pMesh->elC[idx_E];
 
 				DBL3 SOTField = a_const * ((pMesh->M[idx] ^ p_vec) + flSOT * Ms * p_vec);
 				pMesh->Heff[idx] += SOTField;
@@ -126,7 +127,8 @@ double SOTField::UpdateField(void)
 			DBL2 Ms_AFM = pMesh->Ms_AFM;
 			double SHA = pMesh->SHA;
 			double flSOT = pMesh->flSOT;
-			pMesh->update_parameters_mcoarse(idx, pMesh->grel_AFM, grel_AFM, pMesh->Ms_AFM, Ms_AFM, pMesh->SHA, SHA, pMesh->flSOT, flSOT);
+			DBL3 STp = pMesh->STp;
+			pMesh->update_parameters_mcoarse(idx, pMesh->grel_AFM, grel_AFM, pMesh->Ms_AFM, Ms_AFM, pMesh->SHA, SHA, pMesh->flSOT, flSOT, pMesh->STp, STp);
 
 			if (IsNZ(grel_AFM.i + grel_AFM.j)) {
 
@@ -134,7 +136,7 @@ double SOTField::UpdateField(void)
 				double a_const_B = -(SHA * MUB_E / (GAMMA * grel_AFM.j)) / (Ms_AFM.j * Ms_AFM.j * pMesh->GetMeshDimensions().z);
 
 				int idx_E = pMesh->E.position_to_cellidx(pMesh->M.cellidx_to_position(idx));
-				DBL3 p_vec = (DBL3(0, 0, 1) ^ pMesh->E[idx_E]) * pMesh->elC[idx_E];
+				DBL3 p_vec = (STp ^ pMesh->E[idx_E]) * pMesh->elC[idx_E];
 
 				DBL3 SOTField_A = a_const_A * ((pMesh->M[idx] ^ p_vec) + flSOT * Ms_AFM.i * p_vec);
 				DBL3 SOTField_B = a_const_B * ((pMesh->M2[idx] ^ p_vec) + flSOT * Ms_AFM.j * p_vec);

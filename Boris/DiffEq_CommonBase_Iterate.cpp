@@ -691,9 +691,9 @@ void ODECommon_Base::Iterate(void)
 	}
 	break;
 
-	case EVAL_RKF:
+	case EVAL_RKF45:
 	{
-#ifdef ODE_EVAL_COMPILATION_RKF
+#ifdef ODE_EVAL_COMPILATION_RKF45
 		switch (evalStep) {
 
 		case 0:
@@ -853,7 +853,7 @@ void ODECommon_Base::Iterate(void)
 	}
 	break;
 
-	case EVAL_RKCK:
+	case EVAL_RKCK45:
 	{
 #ifdef ODE_EVAL_COMPILATION_RKCK
 		switch (evalStep) {
@@ -1015,7 +1015,7 @@ void ODECommon_Base::Iterate(void)
 	}
 	break;
 
-	case EVAL_RKDP:
+	case EVAL_RKDP54:
 	{
 #ifdef ODE_EVAL_COMPILATION_RKDP
 		switch (evalStep) {
@@ -1454,19 +1454,19 @@ double ODECommon_Base::Get_EvalStep_Time(void)
 	}
 	break;
 
-	case EVAL_RKF:
+	case EVAL_RKF45:
 	{
 		return time + dT * evaltime_rkf45[evalStep];
 	}
 	break;
 
-	case EVAL_RKCK:
+	case EVAL_RKCK45:
 	{
 		return time + dT * evaltime_rkck45[evalStep];
 	}
 	break;
 
-	case EVAL_RKDP:
+	case EVAL_RKDP54:
 	{
 		return time + dT * evaltime_rkdp54[evalStep];
 	}

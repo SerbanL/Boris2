@@ -27,13 +27,22 @@ enum MESH_ {
 	MESH_SUPERMESH = 0,
 
 	//Micromagnetic
-	MESH_FERROMAGNETIC, 
-	MESH_DIPOLE,
-	MESH_METAL, 
-	MESH_INSULATOR, 
-	MESH_ANTIFERROMAGNETIC, 
-	MESH_DIAMAGNETIC,
+	MESH_FERROMAGNETIC = 1, 
+	MESH_ANTIFERROMAGNETIC = 5,
+
+	//Special micromagnetic
+	MESH_DIPOLE = 2,
+
+	//Electrical conductor
+	MESH_METAL = 3, 
+
+	//Electrical insulator
+	MESH_INSULATOR = 4, 
 
 	//Atomistic
-	MESH_ATOM_CUBIC
+	MESH_ATOM_CUBIC = 7,
+
+	//Reserved
+	MESH_RESERVED1 = 6
 };
+//Current maximum : 7

@@ -553,3 +553,149 @@ void VEC<VType>::shape_setvalue(std::vector<MeshShape> shapes, VType value)
 
 	shape_valuesetter(shape_methods, shapes, value);
 }
+
+//--------------------------------------------GET AVERAGE VALUE IN SHAPE 
+
+//similar to shape_setter, but sets value in composite shape where both the mesh and composite shapes are not empty
+template <typename VType>
+VType VEC<VType>::shape_valuegetter(std::vector<std::function<bool(DBL3, DBL3)>> shape_methods, std::vector<MeshShape> shapes)
+{
+	if (!shapes.size()) return VType();
+
+	//all shapes must have same number of repetitions, and central position given by first shape
+	MeshShape& shape = shapes[0];
+
+	if (!(shape.repetitions >= INT3())) return VType();
+	if (!(shape.dimensions >= DBL3())) return VType();
+
+	//limit number of repetitions if exceeding mesh size, otherwise they're wasted (and user might have entered something not sensible)
+	if (shape.repetitions.x * shape.displacements.x > rect.length() + shape.displacements.x) shape.repetitions.x = round((rect.length() + shape.displacements.x) / shape.displacements.x);
+	if (shape.repetitions.y * shape.displacements.y > rect.width() + shape.displacements.y) shape.repetitions.y = round((rect.width() + shape.displacements.y) / shape.displacements.y);
+	if (shape.repetitions.z * shape.displacements.z > rect.height() + shape.displacements.z) shape.repetitions.z = round((rect.height() + shape.displacements.z) / shape.displacements.z);
+
+	std::vector<DBL3> centre_pos_vec;
+	if (!malloc_vector(centre_pos_vec, shape.repetitions.dim())) return VType();
+
+	//vector of start and end indexes which contain each element repetition, capped to mesh size
+	std::vector<Box> idx_vec;
+	if (!malloc_vector(idx_vec, shape.repetitions.dim())) return VType();
+
+	double centre_maxdist = shape.dimensions.norm() / 2;
+	for (int shape_idx = 1; shape_idx < shapes.size(); shape_idx++) {
+
+		double distance = (shape.centre_pos - shapes[shape_idx].centre_pos).norm() + shapes[shape_idx].dimensions.norm() / 2;
+		centre_maxdist = (centre_maxdist > distance ? centre_maxdist : distance);
+	}
+
+#pragma omp parallel for
+	for (int j = 0; j < shape.repetitions.j; j++) {
+		for (int k = 0; k < shape.repetitions.k; k++) {
+			for (int i = 0; i < shape.repetitions.i; i++) {
+
+				//centre position of element in array
+				int idx = i + j * shape.repetitions.i + k * shape.repetitions.i * shape.repetitions.j;
+				centre_pos_vec[idx] = (shape.displacements & DBL3(i, j, k)) + shape.centre_pos;
+
+				//start and end indexes of element in array
+				DBL3 pos_ll = centre_pos_vec[idx] - DBL3(centre_maxdist) + rect.s;
+				DBL3 pos_ur = centre_pos_vec[idx] + DBL3(centre_maxdist) + rect.s;
+				idx_vec[idx] = Box(cellidx_from_position(pos_ll), cellidx_from_position(pos_ur));
+			}
+		}
+	}
+
+	reduction.new_average_reduction();
+
+	for (int obidx = 0; obidx < centre_pos_vec.size(); obidx++) {
+
+#pragma omp parallel for
+		for (int j = idx_vec[obidx].s.j; j < idx_vec[obidx].e.j; j++) {
+			for (int k = idx_vec[obidx].s.k; k < idx_vec[obidx].e.k; k++) {
+				for (int i = idx_vec[obidx].s.i; i < idx_vec[obidx].e.i; i++) {
+
+					int idx = i + j * n.x + k * n.x*n.y;
+
+					DBL3 position = cellidx_to_position(INT3(i, j, k));
+
+					bool set_value = false;
+
+					//check composite shape
+					for (int shape_idx = 0; shape_idx < shapes.size(); shape_idx++) {
+
+						if (shape_methods[shape_idx](rotate_object_yxz(position - (centre_pos_vec[obidx] + shapes[shape_idx].centre_pos - shape.centre_pos), -shapes[shape_idx].rotation.x, -shapes[shape_idx].rotation.y, -shapes[shape_idx].rotation.z), shapes[shape_idx].dimensions)) {
+
+							switch (shapes[shape_idx].method) {
+
+							case MSHAPEMETHOD_ADD:
+								set_value = true;
+								break;
+
+							case MSHAPEMETHOD_SUB:
+								set_value = false;
+								break;
+
+							case MSHAPEMETHOD_XOR:
+								set_value = !set_value;
+								break;
+
+							default:
+							case MSHAPEMETHOD_AND:
+								//do nothing
+								break;
+							}
+						}
+					}
+
+					if (set_value) reduction.reduce_average(quantity[idx]);
+				}
+			}
+		}
+	}
+
+	return reduction.average();
+}
+
+//get average value in composite shape (defined in VEC_VEC_shapemask.h)
+template <typename VType>
+VType VEC<VType>::shape_getaverage(std::vector<MeshShape> shapes)
+{
+	std::vector<std::function<bool(DBL3, DBL3)>> shape_methods;
+
+	for (int idx = 0; idx < shapes.size(); idx++) {
+
+		if (shapes[idx].id == MSHAPE_DISK) {
+
+			shape_methods.push_back(shape_disk(shapes[idx], VType(), false));
+		}
+		else if (shapes[idx].id == MSHAPE_RECT) {
+
+			shape_methods.push_back(shape_rect(shapes[idx], VType(), false));
+		}
+		else if (shapes[idx].id == MSHAPE_TRIANGLE) {
+
+			shape_methods.push_back(shape_triangle(shapes[idx], VType(), false));
+		}
+		else if (shapes[idx].id == MSHAPE_ELLIPSOID) {
+
+			shape_methods.push_back(shape_ellipsoid(shapes[idx], VType(), false));
+		}
+		else if (shapes[idx].id == MSHAPE_PYRAMID) {
+
+			shape_methods.push_back(shape_pyramid(shapes[idx], VType(), false));
+		}
+		else if (shapes[idx].id == MSHAPE_TETRAHEDRON) {
+
+			shape_methods.push_back(shape_tetrahedron(shapes[idx], VType(), false));
+		}
+		else if (shapes[idx].id == MSHAPE_CONE) {
+
+			shape_methods.push_back(shape_cone(shapes[idx], VType(), false));
+		}
+		else if (shapes[idx].id == MSHAPE_TORUS) {
+
+			shape_methods.push_back(shape_torus(shapes[idx], VType(), false));
+		}
+	}
+
+	return shape_valuegetter(shape_methods, shapes);
+}

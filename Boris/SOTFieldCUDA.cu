@@ -31,14 +31,15 @@ __global__ void SOTFieldCUDA_FM_UpdateField(ManagedMeshCUDA& cuMesh, ManagedModu
 			cuBReal Ms = *cuMesh.pMs;
 			cuBReal SHA = *cuMesh.pSHA;
 			cuBReal flSOT = *cuMesh.pflSOT;
-			cuMesh.update_parameters_mcoarse(idx, *cuMesh.pgrel, grel, *cuMesh.pMs, Ms, *cuMesh.pSHA, SHA, *cuMesh.pflSOT, flSOT);
+			cuReal3 STp = *cuMesh.pSTp;
+			cuMesh.update_parameters_mcoarse(idx, *cuMesh.pgrel, grel, *cuMesh.pMs, Ms, *cuMesh.pSHA, SHA, *cuMesh.pflSOT, flSOT, *cuMesh.pSTp, STp);
 
 			if (cuIsNZ(grel)) {
 
 				cuBReal a_const = -(SHA * MUB_E / (GAMMA * grel)) / (Ms * Ms * (M.rect.e.z - M.rect.s.z));
 
 				int idx_E = E.position_to_cellidx(M.cellidx_to_position(idx));
-				cuReal3 p_vec = cuReal3(0, 0, 1) ^ (elC[idx_E] * E[idx_E]);
+				cuReal3 p_vec = STp ^ (elC[idx_E] * E[idx_E]);
 
 				SOTField = a_const * ((M[idx] ^ p_vec) + flSOT * Ms * p_vec);
 				Heff[idx] += SOTField;
@@ -70,7 +71,8 @@ __global__ void SOTFieldCUDA_AFM_UpdateField(ManagedMeshCUDA& cuMesh, ManagedMod
 			cuReal2 Ms_AFM = *cuMesh.pMs_AFM;
 			cuBReal SHA = *cuMesh.pSHA;
 			cuBReal flSOT = *cuMesh.pflSOT;
-			cuMesh.update_parameters_mcoarse(idx, *cuMesh.pgrel_AFM, grel_AFM, *cuMesh.pMs_AFM, Ms_AFM, *cuMesh.pSHA, SHA, *cuMesh.pflSOT, flSOT);
+			cuReal3 STp = *cuMesh.pSTp;
+			cuMesh.update_parameters_mcoarse(idx, *cuMesh.pgrel_AFM, grel_AFM, *cuMesh.pMs_AFM, Ms_AFM, *cuMesh.pSHA, SHA, *cuMesh.pflSOT, flSOT, *cuMesh.pSTp, STp);
 
 			if (cuIsNZ(grel_AFM.i + grel_AFM.j)) {
 
@@ -78,7 +80,7 @@ __global__ void SOTFieldCUDA_AFM_UpdateField(ManagedMeshCUDA& cuMesh, ManagedMod
 				cuBReal a_const_B = -(SHA * (cuBReal)MUB_E / ((cuBReal)GAMMA * grel_AFM.j)) / (Ms_AFM.j * Ms_AFM.j * (M.rect.e.z - M.rect.s.z));
 
 				int idx_E = E.position_to_cellidx(M.cellidx_to_position(idx));
-				cuReal3 p_vec = cuReal3(0, 0, 1) ^ (elC[idx_E] * E[idx_E]);
+				cuReal3 p_vec = STp ^ (elC[idx_E] * E[idx_E]);
 
 				SOTField_A = a_const_A * ((M[idx] ^ p_vec) + flSOT * Ms_AFM.i * p_vec);
 				SOTField_B = a_const_B * ((M2[idx] ^ p_vec) + flSOT * Ms_AFM.j * p_vec);

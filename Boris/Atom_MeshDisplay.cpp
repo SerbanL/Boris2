@@ -353,7 +353,7 @@ void Atom_Mesh::GetPhysicalQuantityProfile(DBL3 start, DBL3 end, double step, DB
 }
 
 //return average value for currently displayed mesh quantity in the given relative rectangle
-Any Atom_Mesh::GetAverageDisplayedMeshValue(Rect rel_rect)
+Any Atom_Mesh::GetAverageDisplayedMeshValue(Rect rel_rect, std::vector<MeshShape> shapes)
 {
 #if COMPILECUDA == 1
 	if (paMeshCUDA) { return paMeshCUDA->GetAverageDisplayedMeshValue(rel_rect); }
@@ -366,11 +366,19 @@ Any Atom_Mesh::GetAverageDisplayedMeshValue(Rect rel_rect)
 		break;
 
 	case MESHDISPLAY_MOMENT:
-		if (M1.linear_size()) return M1.average_nonempty_omp(rel_rect);
+		if (M1.linear_size()) {
+
+			if (!shapes.size()) return M1.average_nonempty_omp(rel_rect);
+			else return M1.shape_getaverage(shapes);
+		}
 		break;
 
 	case MESHDISPLAY_EFFECTIVEFIELD:
-		if (Heff1.linear_size()) return Heff1.average_nonempty_omp(rel_rect);
+		if (Heff1.linear_size()) {
+
+			if (!shapes.size()) return Heff1.average_nonempty_omp(rel_rect);
+			else return Heff1.shape_getaverage(shapes);
+		}
 		break;
 
 	case MESHDISPLAY_ENERGY:
@@ -378,13 +386,18 @@ Any Atom_Mesh::GetAverageDisplayedMeshValue(Rect rel_rect)
 		MOD_ Module_Energy = (MOD_)Get_ActualModule_Energy_Display();
 		if (IsModuleSet(Module_Energy)) {
 
-			return pMod(Module_Energy)->Get_Module_Energy().average_nonempty_omp(rel_rect);
+			if (!shapes.size()) return pMod(Module_Energy)->Get_Module_Energy().average_nonempty_omp(rel_rect);
+			else return pMod(Module_Energy)->Get_Module_Energy().shape_getaverage(shapes);
 		}
 	}
 	break;
 
 	case MESHDISPLAY_TEMPERATURE:
-		if (Temp.linear_size()) return Temp.average_nonempty_omp(rel_rect);
+		if (Temp.linear_size()) {
+
+			if (!shapes.size()) return Temp.average_nonempty_omp(rel_rect);
+			else return Temp.shape_getaverage(shapes);
+		}
 		break;
 
 	case MESHDISPLAY_PARAMVAR:
@@ -435,11 +448,19 @@ Any Atom_Mesh::GetAverageDisplayedMeshValue(Rect rel_rect)
 	break;
 
 	case MESHDISPLAY_CUSTOM_VEC:
-		if (displayVEC_VEC.linear_size()) return displayVEC_VEC.average_nonempty_omp(rel_rect);
+		if (displayVEC_VEC.linear_size()) {
+
+			if (!shapes.size()) return displayVEC_VEC.average_nonempty_omp(rel_rect);
+			else return displayVEC_VEC.shape_getaverage(shapes);
+		}
 		break;
 
 	case MESHDISPLAY_CUSTOM_SCA:
-		if (displayVEC_SCA.linear_size()) return displayVEC_SCA.average_nonempty_omp(rel_rect);
+		if (displayVEC_SCA.linear_size()) {
+
+			if (!shapes.size()) return displayVEC_SCA.average_nonempty_omp(rel_rect);
+			else return displayVEC_SCA.shape_getaverage(shapes);
+		}
 		break;
 	}
 

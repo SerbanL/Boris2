@@ -51,6 +51,14 @@ public:
 	MatPCUDA<cuBReal, cuBReal>* pD;
 	MatPCUDA<cuReal2, cuBReal>* pD_AFM;
 
+	//Homogeneous DMI constant for 2-sublattice models (J/m^3)
+	MatPCUDA<cuBReal, cuBReal>* pDh;
+	//Homogeneous DMI term orientation
+	MatPCUDA<cuReal3, cuReal3>* pdh_dir;
+
+	//Interfacial DMI symmetry axis direction, used by vector interfacial DMI module
+	MatPCUDA<cuReal3, cuReal3>* pD_dir;
+
 	//Coupling between exchange integral and critical temperature (Neel or Curie temperature) for 2-sublattice model : intra-lattice term, 0.5 for ideal antiferromagnet
 	//J = 3 * tau * kB * Tc
 	MatPCUDA<cuReal2, cuBReal>* ptau_ii;
@@ -63,9 +71,6 @@ public:
 	//biquadratic surface exchange coupling (J/m^2) : J2, bottom and top layer values
 	MatPCUDA<cuBReal, cuBReal>* pJ1;
 	MatPCUDA<cuBReal, cuBReal>* pJ2;
-
-	//surface exchange coupling per magnetization from a diamagnet (J/Am) - EXPERIMENTAL : Hse = neta * sus * Hext / mu0 * Ms * tF
-	MatPCUDA<cuBReal, cuBReal>* pneta_dia;
 
 	//Magneto-crystalline anisotropy K1 and K2 constants (J/m^3) and easy axes directions. For uniaxial anisotropy only ea1 is needed, for cubic ea1 and ea2 should be orthogonal.
 	MatPCUDA<cuBReal, cuBReal>* pK1;
@@ -125,7 +130,7 @@ public:
 	MatPCUDA<cuReal2, cuBReal>* pSTa;
 
 	//Slonczewski macrospin torques spin polarization unit vector as in PRB 72, 014446 (2005) (unitless)
-	MatPCUDA<cuReal3, cuBReal>* pSTp;
+	MatPCUDA<cuReal3, cuReal3>* pSTp;
 
 	MatPCUDA<cuBReal, cuBReal>* pl_sf;
 	MatPCUDA<cuBReal, cuBReal>* pl_ex;
@@ -244,6 +249,13 @@ public:
 
 	//DemagCUDA
 	cuVEC<cuReal3>*  pDemag_Heff;
+
+	//RoughnessCUDA
+	cuVEC<cuReal3>* pFmul_rough;
+	cuVEC<cuReal3>* pFomul_rough;
+
+	//ZeemanCUDA
+	cuVEC<cuReal3>* pHavec;
 
 private:
 
@@ -376,6 +388,7 @@ public:
 	//Ferromagnetic
 
 	//switch function which adds all assigned energy contributions in this mesh to calculate energy change from current spin to Mnew spin : return energy change as new - old
+	//If Mnew is passed in as cuReal3(), then this function returns the current spin energy only - all functions in the switch statement implement this eventuality.
 	__device__ cuBReal Get_EnergyChange_FM(int spin_index, cuReal3 Mnew, int*& cuModules, int numModules, cuReal3& Ha);
 
 	//Demag_N
@@ -393,11 +406,17 @@ public:
 	//iDMExchangeCUDA
 	__device__ cuBReal Get_EnergyChange_FM_iDMExchangeCUDA(int spin_index, cuReal3 Mnew);
 
+	//viDMExchangeCUDA
+	__device__ cuBReal Get_EnergyChange_FM_viDMExchangeCUDA(int spin_index, cuReal3 Mnew);
+
 	//SurfExchangeCUDA
 	__device__ cuBReal Get_EnergyChange_FM_SurfExchangeCUDA(int spin_index, cuReal3 Mnew);
 
 	//ZeemanCUDA
 	__device__ cuBReal Get_EnergyChange_FM_ZeemanCUDA(int spin_index, cuReal3 Mnew, cuReal3& Ha);
+
+	//MOpticalCUDA
+	__device__ cuBReal Get_EnergyChange_FM_MOpticalCUDA(int spin_index, cuReal3 Mnew);
 
 	//AnisotropyCUDA
 	__device__ cuBReal Get_EnergyChange_FM_AnisotropyCUDA(int spin_index, cuReal3 Mnew);
@@ -411,45 +430,11 @@ public:
 	//AnisotropyTensorialCUDA
 	__device__ cuBReal Get_EnergyChange_FM_AnisotropyTensorialCUDA(int spin_index, cuReal3 Mnew);
 
-	//Spin Energy
+	//RoughnessCUDA
+	__device__ cuBReal Get_EnergyChange_FM_RoughnessCUDA(int spin_index, cuReal3 Mnew);
 
-	//Ferromagnetic
-
-	//switch function which adds all assigned energy contributions in this mesh to calculate energy change from current spin to Mnew spin : return energy change as new - old
-	__device__ cuBReal Get_Energy_FM(int spin_index, int*& cuModules, int numModules, cuReal3& Ha);
-
-	//Demag_N
-	__device__ cuBReal Get_Energy_FM_DemagNCUDA(int spin_index);
-
-	//Demag
-	__device__ cuBReal Get_Energy_FM_DemagCUDA(int spin_index);
-
-	//Exch_6ngbr_Neu
-	__device__ cuBReal Get_Energy_FM_ExchangeCUDA(int spin_index);
-
-	//DMExchangeCUDA
-	__device__ cuBReal Get_Energy_FM_DMExchangeCUDA(int spin_index);
-
-	//iDMExchangeCUDA
-	__device__ cuBReal Get_Energy_FM_iDMExchangeCUDA(int spin_index);
-
-	//SurfExchangeCUDA
-	__device__ cuBReal Get_Energy_FM_SurfExchangeCUDA(int spin_index);
-
-	//ZeemanCUDA
-	__device__ cuBReal Get_Energy_FM_ZeemanCUDA(int spin_index, cuReal3& Ha);
-
-	//AnisotropyCUDA
-	__device__ cuBReal Get_Energy_FM_AnisotropyCUDA(int spin_index);
-
-	//AnisotropyCubiCUDA
-	__device__ cuBReal Get_Energy_FM_AnisotropyCubiCUDA(int spin_index);
-
-	//AnisotropyBiaxialCUDA
-	__device__ cuBReal Get_Energy_FM_AnisotropyBiaxialCUDA(int spin_index);
-
-	//AnisotropyTensorialCUDA
-	__device__ cuBReal Get_Energy_FM_AnisotropyTensorialCUDA(int spin_index);
+	//MElasticCUDA
+	__device__ cuBReal Get_EnergyChange_FM_MElasticCUDA(int spin_index, cuReal3 Mnew);
 };
 
 #endif

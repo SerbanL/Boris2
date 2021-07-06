@@ -78,6 +78,14 @@ public:
 	MatP<double, double> D = 3e-3;
 	MatP<DBL2, double> D_AFM = DBL2(3e-3);
 
+	//Interfacial DMI symmetry axis direction, used by vector interfacial DMI module
+	MatP<DBL3, DBL3> D_dir = DBL3(0, 0, 1);
+
+	//Homogeneous DMI constant for 2-sublattice models (J/m^3)
+	MatP<double, double> Dh = 0.0;
+	//Homogeneous DMI term orientation
+	MatP<DBL3, DBL3> dh_dir = DBL3(1, 0, 0);
+
 	//Coupling between exchange integral and critical temperature (Neel or Curie temperature) for 2-sublattice model : intra-lattice term, 0.5 for ideal antiferromagnet
 	//J = 3 * tau * kB * Tc
 	MatP<DBL2, double> tau_ii = DBL2(0.5);
@@ -91,9 +99,6 @@ public:
 	//For coupled meshes it is the top mesh that sets the J values.
 	MatP<double, double> J1 = -1e-3;
 	MatP<double, double> J2 = 0;
-
-	//surface exchange coupling per magnetization from a diamagnet (J/Am) - EXPERIMENTAL : Hse = neta * sus * Hext / mu0 * Ms * tF
-	MatP<double, double> neta_dia = 2e-5;
 
 	//Magneto-crystalline anisotropy K1 and K2 constants (J/m^3) and easy axes directions. For uniaxial anisotropy only ea1 is needed, for cubic ea1 and ea2 should be orthogonal.
 	MatP<double, double> K1 = 1e4;
@@ -165,8 +170,8 @@ public:
 	//Slonczewski macrospin torques A, B parameters as in PRB 72, 014446 (2005) (unitless)
 	MatP<DBL2, double> STa = DBL2(0.6, 0.4);
 
-	//Slonczewski macrospin torques spin polarization unit vector as in PRB 72, 014446 (2005) (unitless)
-	MatP<DBL3, double> STp = DBL3(-1.0, 0.0, 0.0);
+	//Slonczewski macrospin torques spin polarization unit vector as in PRB 72, 014446 (2005) (unitless); or SOT symmetry axis direction (e.g. z direction for HM/FM bilayer).
+	MatP<DBL3, DBL3> STp = DBL3(0, 0, 1);
 
 	//spin-flip length (m)
 	MatP<double, double> l_sf = 10e-9;
@@ -353,16 +358,24 @@ RType MeshParams::run_on_param(PARAM_ paramID, Lambda& run_this, PType& ... run_
 		return run_this(D_AFM, run_this_args...);
 		break;
 
+	case PARAM_DMI_DH:
+		return run_this(Dh, run_this_args...);
+		break;
+
+	case PARAM_DMI_DH_DIR:
+		return run_this(dh_dir, run_this_args...);
+		break;
+
+	case PARAM_DMI_DIR:
+		return run_this(D_dir, run_this_args...);
+		break;
+
 	case PARAM_J1:
 		return run_this(J1, run_this_args...);
 		break;
 
 	case PARAM_J2:
 		return run_this(J2, run_this_args...);
-		break;
-
-	case PARAM_NETADIA:
-		return run_this(neta_dia, run_this_args...);
 		break;
 
 	case PARAM_K1:

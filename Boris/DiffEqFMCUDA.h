@@ -62,10 +62,10 @@ public:
 
 #ifdef ODE_EVAL_COMPILATION_RK4
 	//RK4 evaluation of ODE
-	void RunRK4(int step, bool calculate_mxh = false, bool calculate_dmdt = false);
+	void RunRK4(int step, bool calculate_mxh = false, bool calculate_dmdt = false, bool stochastic = false);
 #endif
 
-#ifdef ODE_EVAL_COMPILATION_RKF
+#ifdef ODE_EVAL_COMPILATION_RKF45
 	//RKF45
 	void RunRKF45(int step, bool calculate_mxh = false, bool calculate_dmdt = false);
 #endif
@@ -196,10 +196,10 @@ public:
 
 #ifdef ODE_EVAL_COMPILATION_RK4
 	//RK4 evaluation of ODE
-	void RunRK4(int step, bool calculate_mxh = false, bool calculate_dmdt = false) {}
+	void RunRK4(int step, bool calculate_mxh = false, bool calculate_dmdt = false, bool stochastic = false) {}
 #endif
 
-#ifdef ODE_EVAL_COMPILATION_RKF
+#ifdef ODE_EVAL_COMPILATION_RKF45
 	//RKF45
 	void RunRKF45(int step, bool calculate_mxh = false, bool calculate_dmdt = false) {}
 #endif

@@ -14,6 +14,7 @@
 #include "Atom_Exchange.h"
 #include "Atom_DMExchange.h"
 #include "Atom_iDMExchange.h"
+#include "Atom_viDMExchange.h"
 #include "Atom_SurfExchange.h"
 #include "Atom_MOptical.h"
 #include "Atom_Anisotropy.h"
@@ -50,7 +51,7 @@ class Atom_Mesh_Cubic :
 	double, double, bool, bool, bool, DBL3,
 	//Material Parameters
 	MatP<double, double>, MatP<double, double>, MatP<DBL2, double>,
-	MatP<double, double>, MatP<double, double>, 
+	MatP<double, double>, MatP<double, double>, MatP<DBL3, DBL3>,
 	MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<DBL3, DBL3>, MatP<DBL3, DBL3>, MatP<DBL3, DBL3>,
 	std::vector<DBL4>,
 	MatP<double, double>, MatP<double, double>,
@@ -63,7 +64,7 @@ class Atom_Mesh_Cubic :
 	std::tuple<
 	Atom_Demag_N, Atom_Demag, Atom_DipoleDipole, 
 	Atom_Zeeman, Atom_MOptical,
-	Atom_Exchange, Atom_DMExchange, Atom_iDMExchange, Atom_SurfExchange,
+	Atom_Exchange, Atom_DMExchange, Atom_iDMExchange, Atom_viDMExchange, Atom_SurfExchange,
 	Atom_Anisotropy_Uniaxial, Atom_Anisotropy_Cubic, Atom_Anisotropy_Biaxial, Atom_Anisotropy_Tensorial,
 	Atom_Heat> >
 {
@@ -255,9 +256,6 @@ public:
 
 	//As for Get_AngHistogram, but use thermal averaging in each macrocell
 	bool Get_ThAvAngHistogram(std::vector<double>& histogram_x, std::vector<double>& histogram_p, int num_bins, double& min, double& max, INT3 macrocell_dims, DBL3 ndir);
-
-	//Find average magnetization length by averaging values in macrocells
-	double Get_ChunkedAverageMagnetizationLength(INT3 macrocell_dims);
 
 	//calculate thermodynamic average of magnetization
 	DBL3 GetThermodynamicAverageMagnetization(Rect rectangle);

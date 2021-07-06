@@ -170,7 +170,7 @@ __global__ void iDMExchangeCUDA_AFM_UpdateField(ManagedMeshCUDA& cuMesh, Managed
 				Hexch_A = 2 * A_AFM.i * delsq_M_A / ((cuBReal)MU0 * Ms_AFM.i * Ms_AFM.i) + (-4 * Ah.i * (M[idx] ^ (M[idx] ^ M2[idx])) / (Mmag.i*Mmag.i) + Anh.i * delsq_M_B) / ((cuBReal)MU0*Ms_AFM.i*Ms_AFM.j);
 				Hexch_A2 = 2 * A_AFM.j * delsq_M_B / ((cuBReal)MU0 * Ms_AFM.j * Ms_AFM.j) + (-4 * Ah.j * (M2[idx] ^ (M2[idx] ^ M[idx])) / (Mmag.j*Mmag.j) + Anh.j * delsq_M_A) / ((cuBReal)MU0*Ms_AFM.i*Ms_AFM.j);
 
-				//Dzyaloshinskii-Moriya interfacial exchange contribution
+				//2. Dzyaloshinskii-Moriya interfacial exchange contribution
 
 				//Differentials of M components (we only need 4, not all 9 so this could be optimised). First index is the differential direction, second index is the M component
 				cuReal33 Mdiff = M.grad_neu(idx);

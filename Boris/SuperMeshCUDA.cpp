@@ -70,17 +70,19 @@ std::vector<PhysQ> SuperMeshCUDA::FetchOnScreenPhysicalQuantity(double detail_le
 	return physQ;
 }
 
-//save the quantity currently displayed on screen in an ovf2 file using the specified format
-BError SuperMeshCUDA::SaveOnScreenPhysicalQuantity(std::string fileName, std::string ovf2_dataType)
+//save the quantity currently displayed on screen for named mesh in an ovf2 file using the specified format
+BError SuperMeshCUDA::SaveOnScreenPhysicalQuantity(std::string meshName, std::string fileName, std::string ovf2_dataType)
 {
 	BError error(__FUNCTION__);
+
+	if (!pSMesh->contains(meshName) && meshName != pSMesh->superMeshHandle) return error(BERROR_INCORRECTNAME);
 
 	OVF2 ovf2;
 
 	switch (pSMesh->displayedPhysicalQuantity) {
 
 	case MESHDISPLAY_NONE:
-		error = pSMesh->active_mesh()->SaveOnScreenPhysicalQuantity(fileName, ovf2_dataType);
+		if (meshName != pSMesh->superMeshHandle) error = pSMesh->pMesh[meshName]->SaveOnScreenPhysicalQuantity(fileName, ovf2_dataType);
 		break;
 
 	case MESHDISPLAY_SM_DEMAG:
@@ -183,9 +185,11 @@ void SuperMeshCUDA::GetPhysicalQuantityProfile(DBL3 start, DBL3 end, double step
 	}
 }
 
-//return average value for currently displayed mesh quantity in the given relative rectangle
-Any SuperMeshCUDA::GetAverageDisplayedMeshValue(Rect rel_rect)
+//return average value for currently displayed mesh quantity for named mesh in the given relative rectangle
+Any SuperMeshCUDA::GetAverageDisplayedMeshValue(std::string meshName, Rect rel_rect, std::vector<MeshShape> shapes)
 {
+	if (!pSMesh->contains(meshName) && meshName != pSMesh->superMeshHandle) return Any();
+
 	//get anything displayed on super-mesh
 	switch (pSMesh->displayedPhysicalQuantity) {
 
@@ -195,8 +199,7 @@ Any SuperMeshCUDA::GetAverageDisplayedMeshValue(Rect rel_rect)
 
 	case MESHDISPLAY_NONE:
 	{
-		//get average value from currently focused mesh instead
-		return pSMesh->active_mesh()->GetAverageDisplayedMeshValue(rel_rect);
+		if (pSMesh->contains(meshName)) return pSMesh->pMesh[meshName]->GetAverageDisplayedMeshValue(rel_rect, shapes);
 	}
 	break;
 

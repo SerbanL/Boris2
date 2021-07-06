@@ -12,6 +12,8 @@
 #include "TextFormatting.h"
 #include "BorisLib.h"
 
+#include "PhysQ.h"
+
 #include <SFML/System.hpp>
 #include <SFML/Graphics/Texture.hpp>
 
@@ -170,6 +172,8 @@ public:
 
 	void RepairObjectState(void) {}
 	
+	double Get_MeshDisplay_DetailLevel(void) { return 0.0; }
+
 	//-----------------------------------------------Thread-safe access points to BorisDisplay
 
 	void ClearDataBox(void) {}
@@ -197,7 +201,7 @@ public:
 		return false;
 	}
 
-	bool SaveImage(std::string fileName)
+	bool SaveImage(std::string fileName, std::vector<PhysQ> physQ)
 	{
 		std::cout << "Not available in console-only mode" << std::endl;
 		return false;

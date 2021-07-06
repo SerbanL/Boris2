@@ -6,6 +6,7 @@
 #include <sstream>
 #include <fstream>
 #include <vector>
+#include <algorithm>
 
 #include "Funcs_Conv.h"
 #include "Funcs_Strings.h"
@@ -15,6 +16,29 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 // GENERAL
+
+//replace all backslashes with forward slashes
+inline std::string FixedDirectorySlashes(std::string path)
+{
+	std::replace(path.begin(), path.end(), '\\', '/');
+
+	//now also replace any consecutive forward slashes with a single forward slash
+	size_t start = 0, end = 0;
+	while (true) {
+
+		start = path.find_first_of('/', start);
+		if (start != std::string::npos) {
+
+			end = path.find_first_not_of('/', start);
+			if (end != std::string::npos && end - start > 1) path.replace(start, end - start, "/");
+		}
+		else break;
+		
+		start++;
+	}
+
+	return path;
+}
 
 //return termination including the dot. If no proper termination found then return empty std::string.
 inline std::string GetFileTermination(const std::string& fileName)
@@ -32,7 +56,7 @@ inline std::string GetFilenameDirectory(const std::string& fileName)
 	size_t found = fileName.find_last_of("\\/");
 
 	if (found == std::string::npos) return "";
-	else return fileName.substr(0, found + 1);
+	else return FixedDirectorySlashes(fileName.substr(0, found + 1));
 }
 
 //return directory from fileName, if any, and also modify fileName by removing the directory
@@ -45,7 +69,7 @@ inline std::string ExtractFilenameDirectory(std::string& fileName)
 
 		std::string directory = fileName.substr(0, found + 1);
 		fileName = fileName.substr(found + 1);
-		return directory;
+		return FixedDirectorySlashes(directory);
 	}
 }
 

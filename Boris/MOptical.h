@@ -48,6 +48,10 @@ public:
 	BError MakeCUDAModule(void);
 
 	double UpdateField(void);
+
+	//-------------------Energy methods
+
+	double Get_EnergyChange(int spin_index, DBL3 Mnew);
 };
 
 #else

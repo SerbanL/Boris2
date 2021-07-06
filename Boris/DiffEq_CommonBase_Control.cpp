@@ -84,7 +84,7 @@ BError ODECommon_Base::SetEvaluationMethod(EVAL_ evalMethod_)
 	break;
 
 	default:
-	case EVAL_RKF:
+	case EVAL_RKF45:
 	{
 		dT = RKF_DEFAULT_DT;
 
@@ -96,7 +96,7 @@ BError ODECommon_Base::SetEvaluationMethod(EVAL_ evalMethod_)
 	}
 	break;
 
-	case EVAL_RKCK:
+	case EVAL_RKCK45:
 	{
 		dT = RKCK_DEFAULT_DT;
 
@@ -108,7 +108,7 @@ BError ODECommon_Base::SetEvaluationMethod(EVAL_ evalMethod_)
 	}
 	break;
 
-	case EVAL_RKDP:
+	case EVAL_RKDP54:
 	{
 		dT = RKDP_DEFAULT_DT;
 

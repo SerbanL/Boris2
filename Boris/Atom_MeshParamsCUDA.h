@@ -37,6 +37,9 @@ public:
 	//DMI exchange constant : (units of J)
 	cu_obj<MatPCUDA<cuBReal, cuBReal>> D;
 
+	//Interfacial DMI symmetry axis direction, used by vector interfacial DMI module
+	cu_obj<MatPCUDA<cuReal3, cuReal3>> D_dir;
+
 	//Surface exchange coupling, used by the surfexchange module to couple two spins on different meshes at the surface (units of J)
 	cu_obj<MatPCUDA<cuBReal, cuBReal>> Js;
 

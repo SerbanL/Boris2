@@ -418,13 +418,15 @@ double Atom_SurfExchange::Get_EnergyChange(int spin_index, DBL3 Mnew)
 				//get magnetization value in top mesh cell to couple with
 				DBL3 m_j = paMesh_Top[mesh_idx]->M1[cell_rel_pos].normalized();
 				DBL3 m_i = paMesh->M1[spin_index].normalized();
-				DBL3 mnew_i = Mnew.normalized();
-
 				double dot_prod = m_i * m_j;
-				double dot_prod_new = mnew_i * m_j;
-
 				energy_old = -Js * dot_prod;
-				energy_new = -Js * dot_prod_new;
+
+				if (Mnew != DBL3()) {
+
+					DBL3 mnew_i = Mnew.normalized();
+					double dot_prod_new = mnew_i * m_j;
+					energy_new = -Js * dot_prod_new;
+				}
 
 				//for each cell, either it's not coupled to any other mesh cell (so we never get here), or else it's coupled to exactly one cell on this surface (thus can stop looping over meshes now)
 				break;
@@ -460,13 +462,15 @@ double Atom_SurfExchange::Get_EnergyChange(int spin_index, DBL3 Mnew)
 				//get magnetization value in top mesh cell to couple with
 				DBL3 m_j = paMesh_Bot[mesh_idx]->M1[cell_rel_pos].normalized();
 				DBL3 m_i = paMesh->M1[spin_index].normalized();
-				DBL3 mnew_i = Mnew.normalized();
-
 				double dot_prod = m_i * m_j;
-				double dot_prod_new = mnew_i * m_j;
-
 				energy_old = -Js * dot_prod;
-				energy_new = -Js * dot_prod_new;
+
+				if (Mnew != DBL3()) {
+
+					DBL3 mnew_i = Mnew.normalized();
+					double dot_prod_new = mnew_i * m_j;
+					energy_new = -Js * dot_prod_new;
+				}
 
 				//for each cell, either it's not coupled to any other mesh cell (so we never get here), or else it's coupled to exactly one cell on this surface (thus can stop looping over meshes now)
 				break;
@@ -474,95 +478,8 @@ double Atom_SurfExchange::Get_EnergyChange(int spin_index, DBL3 Mnew)
 		}
 	}
 
-	return energy_new - energy_old;
-}
-
-double Atom_SurfExchange::Get_Energy(int spin_index)
-{
-	double energy_ = 0;
-
-	SZ3 n = paMesh->n;
-
-	//if spin is on top surface then look at paMesh_Top
-	if (spin_index / (n.x * n.y) == n.z - 1 && paMesh_Top.size()) {
-
-		if (!paMesh->M1.is_empty(spin_index)) {
-
-			int i = spin_index % n.x;
-			int j = (spin_index / n.x) % n.y;
-
-			//check all meshes for coupling
-			for (int mesh_idx = 0; mesh_idx < (int)paMesh_Top.size(); mesh_idx++) {
-
-				Rect tmeshRect = paMesh_Top[mesh_idx]->GetMeshRect();
-
-				//relative coordinates to read value from top mesh (the one we're coupling to here) - relative to top mesh
-				DBL3 cell_rel_pos = DBL3(
-					(i + 0.5) * paMesh->h.x + paMesh->meshRect.s.x - tmeshRect.s.x,
-					(j + 0.5) * paMesh->h.y + paMesh->meshRect.s.y - tmeshRect.s.y,
-					paMesh_Top[mesh_idx]->h.z / 2);
-
-				//can't couple to an empty cell
-				if (!tmeshRect.contains(cell_rel_pos + tmeshRect.s) || paMesh_Top[mesh_idx]->M1.is_empty(cell_rel_pos)) continue;
-
-				//Top mesh sets Js
-				double Js = paMesh_Top[mesh_idx]->Js;
-				paMesh_Top[mesh_idx]->update_parameters_atposition(cell_rel_pos, paMesh_Top[mesh_idx]->Js, Js);
-
-				//get magnetization value in top mesh cell to couple with
-				DBL3 m_j = paMesh_Top[mesh_idx]->M1[cell_rel_pos].normalized();
-				DBL3 m_i = paMesh->M1[spin_index].normalized();
-
-				double dot_prod = m_i * m_j;
-
-				energy_ = -Js * dot_prod;
-
-				//for each cell, either it's not coupled to any other mesh cell (so we never get here), or else it's coupled to exactly one cell on this surface (thus can stop looping over meshes now)
-				break;
-			}
-		}
-	}
-
-	//if spin is on bottom surface then look at paMesh_Top
-	if (spin_index / (n.x * n.y) == 0 && paMesh_Bot.size()) {
-
-		if (!paMesh->M1.is_empty(spin_index)) {
-
-			int i = spin_index % n.x;
-			int j = (spin_index / n.x) % n.y;
-
-			double Js = paMesh->Js;
-			paMesh->update_parameters_mcoarse(spin_index, paMesh->Js, Js);
-
-			//check all meshes for coupling
-			for (int mesh_idx = 0; mesh_idx < (int)paMesh_Bot.size(); mesh_idx++) {
-
-				Rect bmeshRect = paMesh_Bot[mesh_idx]->GetMeshRect();
-
-				//relative coordinates to read value from bottom mesh (the one we're coupling to here) - relative to bottom mesh
-				DBL3 cell_rel_pos = DBL3(
-					(i + 0.5) * paMesh->h.x + paMesh->meshRect.s.x - bmeshRect.s.x,
-					(j + 0.5) * paMesh->h.y + paMesh->meshRect.s.y - bmeshRect.s.y,
-					paMesh_Bot[mesh_idx]->meshRect.e.z - paMesh_Bot[mesh_idx]->meshRect.s.z - (paMesh_Bot[mesh_idx]->h.z / 2));
-
-				//can't couple to an empty cell
-				if (!bmeshRect.contains(cell_rel_pos + bmeshRect.s) || paMesh_Bot[mesh_idx]->M1.is_empty(cell_rel_pos)) continue;
-
-				//get magnetization value in top mesh cell to couple with
-				DBL3 m_j = paMesh_Bot[mesh_idx]->M1[cell_rel_pos].normalized();
-				DBL3 m_i = paMesh->M1[spin_index].normalized();
-
-				double dot_prod = m_i * m_j;
-
-				energy_ = -Js * dot_prod;
-
-				//for each cell, either it's not coupled to any other mesh cell (so we never get here), or else it's coupled to exactly one cell on this surface (thus can stop looping over meshes now)
-				break;
-			}
-		}
-	}
-
-	return energy_;
+	if (Mnew != DBL3()) return energy_new - energy_old;
+	else return energy_old;
 }
 
 #endif

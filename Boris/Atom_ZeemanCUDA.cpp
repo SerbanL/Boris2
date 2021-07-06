@@ -39,6 +39,18 @@ BError Atom_ZeemanCUDA::Initialize(void)
 		(MOD_)paMeshCUDA->Get_Module_Energy_Display() == MOD_ZEEMAN || paMeshCUDA->IsOutputDataSet_withRect(DATA_E_ZEE));
 	if (!error)	initialized = true;
 
+	//If using Havec make sure size and resolution matches M1
+	if (Havec()->size_cpu().dim()) {
+		if (!Havec()->resize((cuReal3)paMeshCUDA->h, (cuRect)paMeshCUDA->meshRect)) {
+
+			Havec()->clear();
+			return error(BERROR_OUTOFGPUMEMORY_NCRIT);
+			initialized = false;
+		}
+	}
+
+	if (initialized) set_Atom_ZeemanCUDA_pointers();
+
 	return error;
 }
 
@@ -81,8 +93,18 @@ void Atom_ZeemanCUDA::UpdateConfiguration_Values(UPDATECONFIG_ cfgMessage)
 void Atom_ZeemanCUDA::SetField(cuReal3 Hxyz)
 {
 	if (H_equation.is_set()) H_equation.clear();
+	if (Havec()->size_cpu().dim()) Havec()->clear();
 
 	Ha.from_cpu(Hxyz);
+}
+
+BError Atom_ZeemanCUDA::SetFieldVEC(VEC<DBL3>& Havec_cpu)
+{
+	BError error(CLASS_STR(Atom_ZeemanCUDA));
+
+	if (!Havec()->set_from_cpuvec(Havec_cpu)) error_on_create(BERROR_OUTOFGPUMEMORY_NCRIT);
+
+	return error;
 }
 
 //-------------------Torque methods

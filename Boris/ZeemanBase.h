@@ -30,6 +30,9 @@ protected:
 	//A number of constants are always present : mesh dimensions in m (Lx, Ly, Lz)
 	TEquation<double, double, double, double> H_equation;
 
+	//Applied field but as a VEC (e.g. loaded from file), with same resolution as M.
+	VEC<DBL3> Havec;
+
 protected:
 
 	//Update TEquation object with user constants values
@@ -51,6 +54,8 @@ public:
 	virtual DBL3 GetField(void) = 0;
 
 	virtual BError SetFieldEquation(std::string equation_string, int step) = 0;
+
+	virtual BError SetFieldVEC_FromOVF2(std::string fileName) = 0;
 
 	//if base temperature changes we need to adjust Tb in H_equation if it's used.
 	virtual void SetBaseTemperature(double Temperature) = 0;

@@ -1,7 +1,7 @@
 #include "DiffEqAFMCUDA.h"
 
 #if COMPILECUDA == 1
-#ifdef ODE_EVAL_COMPILATION_RKF
+#ifdef ODE_EVAL_COMPILATION_RKF45
 #ifdef MESH_COMPILATION_ANTIFERROMAGNETIC
 
 #include "MeshParamsControlCUDA.h"

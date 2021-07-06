@@ -2,7 +2,7 @@
 #include "Atom_DiffEqCubic.h"
 
 #ifdef MESH_COMPILATION_ATOM_CUBIC
-#ifdef ODE_EVAL_COMPILATION_RKF
+#ifdef ODE_EVAL_COMPILATION_RKF45
 
 #include "Atom_Mesh_Cubic.h"
 #include "SuperMesh.h"

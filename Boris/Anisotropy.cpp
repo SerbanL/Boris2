@@ -35,8 +35,6 @@
 //
 //Hk = 2K1/(MU0*Ms) * ea * (ea.m)
 //
-//Thus best to specify K1 with 4 components : K1, eax, eay, eaz
-//
 //For uniaxial anisotropy with 4th order term : (E/V) = K1 * sin^2(theta) + K2 * sin^4(theta) = K1 * (1 - (m.ea)^2) + K2 * (1 - (m.ea)^2)^2 (J/m^3)
 //
 //As above, calculate the anisotropy field as :
@@ -206,32 +204,16 @@ double Anisotropy_Uniaxial::Get_EnergyChange(int spin_index, DBL3 Mnew)
 
 		//calculate m.ea dot product
 		double dotprod = (pMesh->M[spin_index] * mcanis_ea1) / Ms;
-		double dotprod_new = Mnew * mcanis_ea1 / Ms;
-		double dpsq = dotprod * dotprod;
-		double dpsq_new = dotprod_new * dotprod_new;
-
-		return pMesh->h.dim() * ((K1 + K2 * (1 - dpsq_new)) * (1 - dpsq_new) - (K1 + K2 * (1 - dpsq)) * (1 - dpsq));
-	}
-	else return 0.0;
-}
-
-double Anisotropy_Uniaxial::Get_Energy(int spin_index)
-{
-	//For CUDA there are separate device functions used by CUDA kernels.
-
-	if (pMesh->M.is_not_empty(spin_index)) {
-
-		double K1 = pMesh->K1;
-		double K2 = pMesh->K2;
-		double Ms = pMesh->Ms;
-		DBL3 mcanis_ea1 = pMesh->mcanis_ea1;
-		pMesh->update_parameters_mcoarse(spin_index, pMesh->Ms, Ms, pMesh->K1, K1, pMesh->K2, K2, pMesh->mcanis_ea1, mcanis_ea1);
-
-		//calculate m.ea dot product
-		double dotprod = (pMesh->M[spin_index] * mcanis_ea1) / Ms;
 		double dpsq = dotprod * dotprod;
 
-		return pMesh->h.dim() * (K1 + K2 * (1 - dpsq)) * (1 - dpsq);
+		if (Mnew != DBL3()) {
+
+			double dotprod_new = Mnew * mcanis_ea1 / Ms;
+			double dpsq_new = dotprod_new * dotprod_new;
+
+			return pMesh->h.dim() * ((K1 + K2 * (1 - dpsq_new)) * (1 - dpsq_new) - (K1 + K2 * (1 - dpsq)) * (1 - dpsq));
+		}
+		else return pMesh->h.dim() * (K1 + K2 * (1 - dpsq)) * (1 - dpsq);
 	}
 	else return 0.0;
 }

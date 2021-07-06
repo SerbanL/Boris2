@@ -16,7 +16,7 @@ SuperMesh::SuperMesh(void) :
 		}, 
 		{
 			//Mesh implementations
-			IINFO(FMesh), IINFO(DipoleMesh), IINFO(MetalMesh), IINFO(InsulatorMesh), IINFO(AFMesh), IINFO(DiaMesh),
+			IINFO(FMesh), IINFO(DipoleMesh), IINFO(MetalMesh), IINFO(InsulatorMesh), IINFO(AFMesh),
 			IINFO(Atom_Mesh_Cubic),
 			//Super-mesh modules implementations (for pSMod)
 			IINFO(SDemag), IINFO(StrayField), IINFO(STransport), IINFO(Oersted), IINFO(SHeat)
@@ -26,10 +26,10 @@ SuperMesh::SuperMesh(void) :
 	odeSolver.set_pointers(odeSolver, atom_odeSolver);
 
 	//default ODE settings
-	SetODE(ODE_LLG, EVAL_RKF);
+	SetODE(ODE_LLG, EVAL_RKF45);
 
 	//default atomistic ODE settings
-	SetAtomisticODE(ODE_LLG, EVAL_RKF);
+	SetAtomisticODE(ODE_LLG, EVAL_RKF45);
 
 	AddMesh(activeMeshName, MESH_FERROMAGNETIC, Rect(DBL3(80e-9, 80e-9, 10e-9)));
 }

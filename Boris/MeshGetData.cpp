@@ -2,8 +2,6 @@
 #include "Mesh.h"
 
 #include "Transport.h"
-#include "DMExchange.h"
-#include "iDMExchange.h"
 
 //----------------------------------- VALUE GETTERS
 
@@ -133,26 +131,6 @@ double Mesh::GetTopologicalCharge(Rect rectangle)
 		return Q / (4 * PI * M.n.z);
 	}
 	else return 0.0;
-}
-
-DBL3 Mesh::GetAverageChargeCurrentDensity(Rect rectangle)
-{
-	return CallModuleMethod(&Transport::GetAverageChargeCurrent, rectangle);
-}
-
-DBL3 Mesh::GetAverageSpinCurrentX(Rect rectangle)
-{
-	return CallModuleMethod(&Transport::GetAverageSpinCurrent, 0, rectangle);
-}
-
-DBL3 Mesh::GetAverageSpinCurrentY(Rect rectangle)
-{
-	return CallModuleMethod(&Transport::GetAverageSpinCurrent, 1, rectangle);
-}
-
-DBL3 Mesh::GetAverageSpinCurrentZ(Rect rectangle)
-{
-	return CallModuleMethod(&Transport::GetAverageSpinCurrent, 2, rectangle);
 }
 
 double Mesh::GetAverageElectricalPotential(Rect rectangle)

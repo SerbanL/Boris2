@@ -5,6 +5,21 @@
 #ifdef MODULE_COMPILATION_SDEMAG
 
 #include "BorisCUDALib.cuh"
+#include "MeshCUDA.h"
+
+//----------------------- Initialization
+
+__global__ void set_SDemag_DemagCUDA_pointers_kernel(
+	ManagedMeshCUDA& cuMesh, cuVEC<cuReal3>& Module_Heff)
+{
+	if (threadIdx.x == 0) cuMesh.pDemag_Heff = &Module_Heff;
+}
+
+void SDemagCUDA_Demag::set_SDemag_DemagCUDA_pointers(void)
+{
+	set_SDemag_DemagCUDA_pointers_kernel <<< 1, CUDATHREADS >>>
+		(pMeshCUDA->cuMesh, Module_Heff);
+}
 
 //-------------------Getters
 

@@ -194,6 +194,10 @@ __global__ void set_ManagedFunctionCUDA_Unary(ManagedFunctionCUDA<BVarType...>& 
 			cuFunc.func = &ManagedFunctionCUDA<BVarType...>::F_abs;
 			break;
 
+		case EqComp::FUNC_SGN:
+			cuFunc.func = &ManagedFunctionCUDA<BVarType...>::F_sgn;
+			break;
+
 		case EqComp::FUNC_ABS_PMUL:
 			cuFunc.func = &ManagedFunctionCUDA<BVarType...>::F_abs_pmul;
 			break;

@@ -45,7 +45,8 @@ __global__ void RunEuler_LLG_withReductions_Kernel(ManagedAtom_DiffEqCubicCUDA& 
 
 				//obtain average normalized torque term
 				cuBReal Mnorm = M1[idx].norm();
-				mxh = (M1[idx] ^ Heff1[idx]) / (conversion * Mnorm * Mnorm);
+				mxh = ((*cuaMesh.pM1)[idx] ^ (*cuaMesh.pHeff1)[idx]) / (conversion * Mnorm * Mnorm);
+				include_in_average = true;
 
 				//Now estimate moment for the next time step
 				M1[idx] += rhs * dT;
@@ -54,7 +55,7 @@ __global__ void RunEuler_LLG_withReductions_Kernel(ManagedAtom_DiffEqCubicCUDA& 
 
 					M1[idx].renormalize(mu_s);
 				}
-				
+
 				//obtain maximum normalized dmdt term
 				dmdt = ((*cuaMesh.pM1)[idx] - (*cuaDiffEq.psM1)[idx]) / (dT * (cuBReal)GAMMA * conversion * Mnorm * Mnorm);
 				include_in_average = true;
@@ -62,8 +63,11 @@ __global__ void RunEuler_LLG_withReductions_Kernel(ManagedAtom_DiffEqCubicCUDA& 
 		}
 	}
 
-	reduction_avg(0, 1, &mxh, *cuaDiffEq.pmxh_av, *cuaDiffEq.pavpoints, include_in_average);
-	reduction_avg(0, 1, &dmdt, *cuaDiffEq.pdmdt_av, *cuaDiffEq.pavpoints2, include_in_average);
+	if (cuaMesh.pgrel->get0()) {
+
+		reduction_avg(0, 1, &mxh, *cuaDiffEq.pmxh_av, *cuaDiffEq.pavpoints, include_in_average);
+		reduction_avg(0, 1, &dmdt, *cuaDiffEq.pdmdt_av, *cuaDiffEq.pavpoints2, include_in_average);
+	}
 }
 
 __global__ void RunEuler_LLG_Kernel(ManagedAtom_DiffEqCubicCUDA& cuaDiffEq, ManagedAtom_MeshCUDA& cuaMesh)
@@ -147,7 +151,7 @@ __global__ void RunTEuler_Step0_LLG_withReductions_Kernel(ManagedAtom_DiffEqCubi
 		}
 	}
 
-	reduction_avg(0, 1, &mxh, *cuaDiffEq.pmxh_av, *cuaDiffEq.pavpoints, include_in_average);
+	if (cuaMesh.pgrel->get0()) reduction_avg(0, 1, &mxh, *cuaDiffEq.pmxh_av, *cuaDiffEq.pavpoints, include_in_average);
 }
 
 __global__ void RunTEuler_Step0_LLG_Kernel(ManagedAtom_DiffEqCubicCUDA& cuaDiffEq, ManagedAtom_MeshCUDA& cuaMesh)
@@ -226,7 +230,7 @@ __global__ void RunTEuler_Step1_LLG_withReductions_Kernel(ManagedAtom_DiffEqCubi
 		}
 	}
 
-	reduction_avg(0, 1, &dmdt, *cuaDiffEq.pdmdt_av, *cuaDiffEq.pavpoints2, include_in_average);
+	if (cuaMesh.pgrel->get0()) reduction_avg(0, 1, &dmdt, *cuaDiffEq.pdmdt_av, *cuaDiffEq.pavpoints2, include_in_average);
 }
 
 __global__ void RunTEuler_Step1_LLG_Kernel(ManagedAtom_DiffEqCubicCUDA& cuaDiffEq, ManagedAtom_MeshCUDA& cuaMesh)
@@ -319,7 +323,8 @@ __global__ void RunAHeun_Step1_LLG_withReductions_Kernel(ManagedAtom_DiffEqCubic
 		}
 	}
 
-	reduction_avg(0, 1, &dmdt, *cuaDiffEq.pdmdt_av, *cuaDiffEq.pavpoints2, include_in_average);
+	if (cuaMesh.pgrel->get0()) reduction_avg(0, 1, &dmdt, *cuaDiffEq.pdmdt_av, *cuaDiffEq.pavpoints2, include_in_average);
+
 	reduction_max(0, 1, &lte, *cuaDiffEq.plte);
 }
 
@@ -410,7 +415,7 @@ __global__ void RunRK4_Step0_LLG_withReductions_Kernel(ManagedAtom_DiffEqCubicCU
 		}
 	}
 
-	reduction_max(0, 1, &mxh, *cuaDiffEq.pmxh);
+	if (cuaMesh.pgrel->get0()) reduction_max(0, 1, &mxh, *cuaDiffEq.pmxh);
 }
 
 __global__ void RunRK4_Step0_LLG_Kernel(ManagedAtom_DiffEqCubicCUDA& cuaDiffEq, ManagedAtom_MeshCUDA& cuaMesh)
@@ -540,7 +545,7 @@ __global__ void RunRK4_Step3_LLG_withReductions_Kernel(ManagedAtom_DiffEqCubicCU
 		}
 	}
 
-	reduction_max(0, 1, &dmdt, *cuaDiffEq.pdmdt);
+	if (cuaMesh.pgrel->get0()) reduction_max(0, 1, &dmdt, *cuaDiffEq.pdmdt);
 }
 
 __global__ void RunRK4_Step3_LLG_Kernel(ManagedAtom_DiffEqCubicCUDA& cuaDiffEq, ManagedAtom_MeshCUDA& cuaMesh)
@@ -629,7 +634,7 @@ __global__ void RunABM_Predictor_LLG_withReductions_Kernel(ManagedAtom_DiffEqCub
 		}
 	}
 
-	reduction_max(0, 1, &mxh, *cuaDiffEq.pmxh);
+	if (cuaMesh.pgrel->get0()) reduction_max(0, 1, &mxh, *cuaDiffEq.pmxh);
 }
 
 __global__ void RunABM_Predictor_LLG_Kernel(ManagedAtom_DiffEqCubicCUDA& cuaDiffEq, ManagedAtom_MeshCUDA& cuaMesh)
@@ -730,7 +735,7 @@ __global__ void RunABM_Corrector_LLG_withReductions_Kernel(ManagedAtom_DiffEqCub
 		}
 	}
 
-	reduction_max(0, 1, &dmdt, *cuaDiffEq.pdmdt);
+	if (cuaMesh.pgrel->get0()) reduction_max(0, 1, &dmdt, *cuaDiffEq.pdmdt);
 	reduction_max(0, 1, &lte, *cuaDiffEq.plte);
 }
 
@@ -893,7 +898,7 @@ __global__ void RunRKF45_Step0_LLG_withReductions_Kernel(ManagedAtom_DiffEqCubic
 		}
 	}
 
-	reduction_max(0, 1, &mxh, *cuaDiffEq.pmxh);
+	if (cuaMesh.pgrel->get0()) reduction_max(0, 1, &mxh, *cuaDiffEq.pmxh);
 }
 
 __global__ void RunRKF45_Step0_LLG_Kernel(ManagedAtom_DiffEqCubicCUDA& cuaDiffEq, ManagedAtom_MeshCUDA& cuaMesh)
@@ -1082,7 +1087,8 @@ __global__ void RunRKF45_Step5_LLG_withReductions_Kernel(ManagedAtom_DiffEqCubic
 		}
 	}
 
-	reduction_max(0, 1, &dmdt, *cuaDiffEq.pdmdt);
+	if (cuaMesh.pgrel->get0()) reduction_max(0, 1, &dmdt, *cuaDiffEq.pdmdt);
+
 	reduction_max(0, 1, &lte, *cuaDiffEq.plte);
 }
 

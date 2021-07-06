@@ -398,7 +398,7 @@ public:
 	int GetProfileAverages(void) { return num_profile_averages; }
 
 	//return average value for currently displayed mesh quantity in the given relative rectangle
-	virtual Any GetAverageDisplayedMeshValue(Rect rel_rect) = 0;
+	virtual Any GetAverageDisplayedMeshValue(Rect rel_rect, std::vector<MeshShape> shapes) = 0;
 
 	int GetDisplayedPhysicalQuantity(void) { return displayedPhysicalQuantity; }
 	int GetDisplayedBackgroundPhysicalQuantity(void) { return displayedBackgroundPhysicalQuantity; }
@@ -440,6 +440,7 @@ public:
 		if (Module_Heff_Display == MOD_EXCHANGE) {
 			if (IsModuleSet(MOD_DMEXCHANGE)) return MOD_DMEXCHANGE;
 			else if (IsModuleSet(MOD_IDMEXCHANGE)) return MOD_IDMEXCHANGE;
+			else if (IsModuleSet(MOD_VIDMEXCHANGE)) return MOD_VIDMEXCHANGE;
 		}
 		if (Module_Heff_Display == MOD_DEMAG) {
 			if (IsModuleSet(MOD_SDEMAG_DEMAG)) return MOD_SDEMAG_DEMAG;
@@ -453,6 +454,7 @@ public:
 		if (Module_Energy_Display == MOD_EXCHANGE) {
 			if (IsModuleSet(MOD_DMEXCHANGE)) return MOD_DMEXCHANGE;
 			else if (IsModuleSet(MOD_IDMEXCHANGE)) return MOD_IDMEXCHANGE;
+			else if (IsModuleSet(MOD_VIDMEXCHANGE)) return MOD_VIDMEXCHANGE;
 		}
 		if (Module_Energy_Display == MOD_DEMAG) {
 			if (IsModuleSet(MOD_SDEMAG_DEMAG)) return MOD_SDEMAG_DEMAG;
@@ -564,12 +566,6 @@ public:
 
 	//get topological charge using formula Q = Integral(m.(dm/dx x dm/dy) dxdy) / 4PI
 	virtual double GetTopologicalCharge(Rect rectangle = Rect()) = 0;
-
-	virtual DBL3 GetAverageChargeCurrentDensity(Rect rectangle = Rect()) = 0;
-
-	virtual DBL3 GetAverageSpinCurrentX(Rect rectangle = Rect()) = 0;
-	virtual DBL3 GetAverageSpinCurrentY(Rect rectangle = Rect()) = 0;
-	virtual DBL3 GetAverageSpinCurrentZ(Rect rectangle = Rect()) = 0;
 
 	virtual double GetAverageElectricalPotential(Rect rectangle = Rect()) = 0;
 	virtual DBL3 GetAverageSpinAccumulation(Rect rectangle = Rect()) = 0;
@@ -691,9 +687,6 @@ public:
 
 	//As for Get_AngHistogram, but use thermal averaging in each macrocell
 	virtual bool Get_ThAvAngHistogram(std::vector<double>& histogram_x, std::vector<double>& histogram_p, int num_bins, double& min, double& max, INT3 macrocell_dims, DBL3 ndir) { return true; }
-
-	//Find average magnetization length by averaging values in macrocells
-	virtual double Get_ChunkedAverageMagnetizationLength(INT3 macrocell_dims) { return 0.0; }
 
 	virtual DBL3 GetThermodynamicAverageMagnetization(Rect rectangle) { return 0.0; }
 

@@ -192,7 +192,6 @@ double Anisotropy_Biaxial::Get_EnergyChange(int spin_index, DBL3 Mnew)
 		DBL3 mcanis_ea3 = pMesh->mcanis_ea3;
 		pMesh->update_parameters_mcoarse(spin_index, pMesh->Ms, Ms, pMesh->K1, K1, pMesh->K2, K2, pMesh->mcanis_ea1, mcanis_ea1, pMesh->mcanis_ea2, mcanis_ea2, pMesh->mcanis_ea3, mcanis_ea3);
 
-		//OLD
 		//calculate m.ea1 dot product (uniaxial contribution)
 		double u1 = pMesh->M[spin_index] * mcanis_ea1 / Ms;
 
@@ -200,41 +199,18 @@ double Anisotropy_Biaxial::Get_EnergyChange(int spin_index, DBL3 Mnew)
 		double b1 = pMesh->M[spin_index] * mcanis_ea2 / Ms;
 		double b2 = pMesh->M[spin_index] * mcanis_ea3 / Ms;
 
-		//NEW
-		//calculate m.ea1 dot product (uniaxial contribution)
-		double u1new = Mnew * mcanis_ea1 / Ms;
+		if (Mnew != DBL3()) {
 
-		//calculate m.ea2 and m.ea3 dot products (biaxial contribution)
-		double b1new = Mnew * mcanis_ea2 / Ms;
-		double b2new = Mnew * mcanis_ea3 / Ms;
+			//calculate m.ea1 dot product (uniaxial contribution)
+			double u1new = Mnew * mcanis_ea1 / Ms;
 
-		return pMesh->h.dim() * ((K1 * (1 - u1new * u1new) + K2 * b1new*b1new*b2new*b2new) - (K1 * (1 - u1 * u1) + K2 * b1*b1*b2*b2));
-	}
-	else return 0.0;
-}
+			//calculate m.ea2 and m.ea3 dot products (biaxial contribution)
+			double b1new = Mnew * mcanis_ea2 / Ms;
+			double b2new = Mnew * mcanis_ea3 / Ms;
 
-double Anisotropy_Biaxial::Get_Energy(int spin_index)
-{
-	//For CUDA there are separate device functions used by CUDA kernels.
-
-	if (pMesh->M.is_not_empty(spin_index)) {
-
-		double Ms = pMesh->Ms;
-		double K1 = pMesh->K1;
-		double K2 = pMesh->K2;
-		DBL3 mcanis_ea1 = pMesh->mcanis_ea1;
-		DBL3 mcanis_ea2 = pMesh->mcanis_ea2;
-		DBL3 mcanis_ea3 = pMesh->mcanis_ea3;
-		pMesh->update_parameters_mcoarse(spin_index, pMesh->Ms, Ms, pMesh->K1, K1, pMesh->K2, K2, pMesh->mcanis_ea1, mcanis_ea1, pMesh->mcanis_ea2, mcanis_ea2, pMesh->mcanis_ea3, mcanis_ea3);
-
-		//calculate m.ea1 dot product (uniaxial contribution)
-		double u1 = pMesh->M[spin_index] * mcanis_ea1 / Ms;
-
-		//calculate m.ea2 and m.ea3 dot products (biaxial contribution)
-		double b1 = pMesh->M[spin_index] * mcanis_ea2 / Ms;
-		double b2 = pMesh->M[spin_index] * mcanis_ea3 / Ms;
-
-		return pMesh->h.dim() * ((K1 * (1 - u1 * u1) + K2 * b1*b1*b2*b2));
+			return pMesh->h.dim() * ((K1 * (1 - u1new * u1new) + K2 * b1new*b1new*b2new*b2new) - (K1 * (1 - u1 * u1) + K2 * b1*b1*b2*b2));
+		}
+		else return pMesh->h.dim() * (K1 * (1 - u1 * u1) + K2 * b1*b1*b2*b2);
 	}
 	else return 0.0;
 }

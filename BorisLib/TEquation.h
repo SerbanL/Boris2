@@ -110,6 +110,7 @@ private:
 		{"ln(", EqComp::FSPEC(EqComp::FUNC_LN)},
 		{"log(", EqComp::FSPEC(EqComp::FUNC_LOG)},
 		{"abs(", EqComp::FSPEC(EqComp::FUNC_ABS)},
+		{"sgn(", EqComp::FSPEC(EqComp::FUNC_SGN)},
 		{"step(", EqComp::FSPEC(EqComp::FUNC_STEP)},
 		{"swav(", EqComp::FSPEC(EqComp::FUNC_SWAV)},
 		{"twav(", EqComp::FSPEC(EqComp::FUNC_TWAV)},

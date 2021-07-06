@@ -75,8 +75,6 @@ public:
 
 	//For simple cubic mesh spin_index coincides with index in M1
 	double Get_EnergyChange(int spin_index, DBL3 Mnew);
-
-	double Get_Energy(int spin_index);
 };
 
 #else

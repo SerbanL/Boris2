@@ -3,58 +3,6 @@
 #include "BorisIO_Make.h"
 #include "Boris.h"
 
-//-------------------------------------Program update checker (in BorisIOGenerators.cpp)
-
-//Check with "www.boris-spintronics.uk" if program version is up to date
-void Simulation::CheckUpdate(void)
-{
-	std::string response_message;
-
-	std::string console_update_message = "[tc0,0.5,0,1/tc]Program version update status : "  + MakeIO(IOI_PROGRAMUPDATESTATUS);
-
-	console_update_message += "</c>[tc0,0.5,0,1/tc] Check for updates on startup : " + MakeIO(IOI_UPDATESTATUSCHECKSTARTUP, start_check_updates);
-
-	BD.DisplayFormattedConsoleMessage(console_update_message);
-
-	//trying to connect
-	version_checking = -1;
-
-	HTTP httpComms(domain_name);
-
-	if (httpComms.is_available() && httpComms.http_post(version_checker, std::string("version=") + ToString(Program_Version), response_message)) {
-
-		int latest_version = ToNum(response_message);
-
-		if (latest_version == Program_Version) {
-
-			//program up to date
-			version_checking = 1;
-		}
-		else {
-
-			//update available
-			version_checking = 2;
-		}
-
-		if (httpComms.is_available() && httpComms.http_get(mdb_lastupdate, response_message)) {
-
-			BD.DisplayConsoleMessage("Online materials database last updated on (PT) : " + response_message);
-		}
-	}
-	else {
-
-		//connection failure
-		version_checking = 0;
-	}
-
-	RefreshScreen();
-}
-
-void Simulation::OpenDownloadPage(void)
-{
-	open_web_page(domain_name + download_page);
-}
-
 //---------------------------------------------------- MESH LIST
 
 void Simulation::Print_Mesh_List(void) 

@@ -86,14 +86,16 @@ std::vector<PhysQ> SuperMesh::FetchOnScreenPhysicalQuantity(double detail_level)
 	return physQ;
 }
 
-//save the quantity currently displayed on screen in an ovf2 file using the specified format
-BError SuperMesh::SaveOnScreenPhysicalQuantity(std::string fileName, std::string ovf2_dataType)
+//save the quantity currently displayed on screen for named mesh in an ovf2 file using the specified format
+BError SuperMesh::SaveOnScreenPhysicalQuantity(std::string meshName, std::string fileName, std::string ovf2_dataType)
 {
 #if COMPILECUDA == 1
-	if (pSMeshCUDA) { return pSMeshCUDA->SaveOnScreenPhysicalQuantity(fileName, ovf2_dataType); }
+	if (pSMeshCUDA) { return pSMeshCUDA->SaveOnScreenPhysicalQuantity(meshName, fileName, ovf2_dataType); }
 #endif
 
 	BError error(__FUNCTION__);
+
+	if (!contains(meshName) && meshName != superMeshHandle) return error(BERROR_INCORRECTNAME);
 
 	OVF2 ovf2;
 
@@ -101,8 +103,7 @@ BError SuperMesh::SaveOnScreenPhysicalQuantity(std::string fileName, std::string
 	switch (displayedPhysicalQuantity) {
 
 	case MESHDISPLAY_NONE:
-		//get anything displayed in active mesh
-		error = active_mesh()->SaveOnScreenPhysicalQuantity(fileName, ovf2_dataType);
+		if (contains(meshName)) error = pMesh[meshName]->SaveOnScreenPhysicalQuantity(fileName, ovf2_dataType);
 		break;
 
 	case MESHDISPLAY_SM_DEMAG:
@@ -190,14 +191,16 @@ void SuperMesh::GetPhysicalQuantityProfile(DBL3 start, DBL3 end, double step, DB
 	}
 }
 
-//return average value for currently displayed mesh quantity in the given relative rectangle
-Any  SuperMesh::GetAverageDisplayedMeshValue(Rect rel_rect)
+//return average value for currently displayed mesh quantity for named mesh in the given relative rectangle
+Any SuperMesh::GetAverageDisplayedMeshValue(std::string meshName, Rect rel_rect, std::vector<MeshShape> shapes)
 {
+	if (!contains(meshName) && meshName != superMeshHandle) return Any();
+
 #if COMPILECUDA == 1
 	if (pSMeshCUDA) {
 
 		//if super-mesh display quantities are set with CUDA enabled then get value from pSMeshCUDA
-		return pSMeshCUDA->GetAverageDisplayedMeshValue(rel_rect);
+		return pSMeshCUDA->GetAverageDisplayedMeshValue(meshName, rel_rect, shapes);
 	}
 #endif
 
@@ -210,8 +213,7 @@ Any  SuperMesh::GetAverageDisplayedMeshValue(Rect rel_rect)
 
 	case MESHDISPLAY_NONE:
 	{
-		//get average value from currently focused mesh instead
-		return active_mesh()->GetAverageDisplayedMeshValue(rel_rect);
+		if (contains(meshName)) return pMesh[meshName]->GetAverageDisplayedMeshValue(rel_rect, shapes);
 	}
 	break;
 

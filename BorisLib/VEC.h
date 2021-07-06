@@ -90,6 +90,9 @@ private:
 	//similar to shape_setter, but sets value in composite shape composite shape is not empty
 	void shape_valuesetter(std::vector<std::function<bool(DBL3, DBL3)>> shape_methods, std::vector<MeshShape> shapes, VType value);
 
+	//get average value from composite shape
+	VType shape_valuegetter(std::vector<std::function<bool(DBL3, DBL3)>> shape_methods, std::vector<MeshShape> shapes);
+
 protected:
 
 	//from h_ and rect_ calculate what n value results - but do not make any changes
@@ -490,9 +493,8 @@ public:
 	//ijk is the cell index in a mesh with cellsize cs and same rect as this VEC; if cs is same as h then just read the value at ijk - much faster! If not then get the usual weighted average.
 	VType weighted_average(const INT3& ijk, const DBL3& cs) const;
 
-	//find "chunked" average magnitude in entire VEC. This means, first find magnitude in each macrocell (size macrocell_dims & h), then average macrocell magnitudes.
-	//Found in VEC_histo.h
-	double chunked_averagemag(INT3 macrocell_dims = INT3(1));
+	//get average value in composite shape (defined in VEC_shapemask.h)
+	VType shape_getaverage(std::vector<MeshShape> shapes);
 
 	//--------------------------------------------NUMERICAL PROPERTIES : VEC_nprops.h
 

@@ -1,7 +1,7 @@
 #include "Atom_DiffEqCubicCUDA.h"
 
 #if COMPILECUDA == 1
-#ifdef ODE_EVAL_COMPILATION_RKF
+#ifdef ODE_EVAL_COMPILATION_RKF45
 #ifdef MESH_COMPILATION_ATOM_CUBIC
 
 #include "Atom_MeshParamsControlCUDA.h"

@@ -247,6 +247,9 @@ private:
 	//similar to shape_setter, but sets value in composite shape where both the mesh and composite shapes are not empty
 	void shape_valuesetter(std::vector<std::function<bool(DBL3, DBL3)>> shape_methods, std::vector<MeshShape> shapes, VType value);
 
+	//get average value from composite shape
+	VType shape_valuegetter(std::vector<std::function<bool(DBL3, DBL3)>> shape_methods, std::vector<MeshShape> shapes);
+
 public:
 
 	//--------------------------------------------CONSTRUCTORS : VEC_VC_mng.h
@@ -588,6 +591,9 @@ public:
 	VType average_nonempty_omp(const Box& box) const;
 	VType average_nonempty_omp(const Rect& rectangle = Rect()) const;
 
+	//get average value in composite shape (defined in VEC_VC_shapemask.h)
+	VType shape_getaverage(std::vector<MeshShape> shapes);
+
 	//--------------------------------------------NUMERICAL PROPERTIES : VEC_VC_nprops.h
 
 	template <typename PType = decltype(GetMagnitude(std::declval<VType>()))>
@@ -800,9 +806,15 @@ public:
 	//missing neighbors not added, including at boundaries, but taking into account pbc
 	//only used if VType is a VAL3
 	VType zanisotropic_ngbr_sum(int idx) const;
+	//calculate 6-point anisotropic neighbor sum at given index as (rij x y) x Vj over j points neighboring the point i at this index.
+	VType yanisotropic_ngbr_sum(int idx) const;
+	//calculate 6-point anisotropic neighbor sum at given index as (rij x x) x Vj over j points neighboring the point i at this index.
+	VType xanisotropic_ngbr_sum(int idx) const;
 
 	//same as zanisotropic_ngbr_sum but sum normalised values only; for scalar values this is a trivial operation, but for vectors it's not.
 	VType zanisotropic_ngbr_dirsum(int idx) const;
+	VType yanisotropic_ngbr_dirsum(int idx) const;
+	VType xanisotropic_ngbr_dirsum(int idx) const;
 
 	//----LAPLACE / POISSON EQUATION : VEC_VC_solve.h
 

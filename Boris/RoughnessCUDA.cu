@@ -9,6 +9,21 @@
 #include "Mesh_FerromagneticCUDA.h"
 #include "MeshDefs.h"
 
+//----------------------- Initialization
+
+__global__ void set_RoughnessCUDA_pointers_kernel(
+	ManagedMeshCUDA& cuMesh, cuVEC<cuReal3>& Fmul_rough, cuVEC<cuReal3>& Fomul_rough)
+{
+	if (threadIdx.x == 0) cuMesh.pFmul_rough = &Fmul_rough;
+	if (threadIdx.x == 1) cuMesh.pFomul_rough = &Fomul_rough;
+}
+
+void RoughnessCUDA::set_RoughnessCUDA_pointers(void)
+{
+	set_RoughnessCUDA_pointers_kernel <<< 1, CUDATHREADS >>>
+		(pMeshCUDA->cuMesh, Fmul_rough, Fomul_rough);
+}
+
 __global__ void RoughnessCUDA_FM_UpdateField_Kernel(ManagedMeshCUDA& cuMesh, cuVEC<cuReal3>& Fmul_rough, cuVEC<cuReal3>& Fomul_rough, ManagedModulesCUDA& cuModule, bool do_reduction)
 {
 	cuVEC_VC<cuReal3>& M = *cuMesh.pM;

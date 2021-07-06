@@ -42,7 +42,7 @@ enum IDM_ {
 	//SIMULATION
 	IDM_SIM_RUN, IDM_SIM_COMPUTEFIELDS, IDM_SIM_STOP, IDM_SIM_RESET, IDM_SIM_CUDA, IDM_SIM_SERVER, IDM_SIM_SCHEDULE, IDM_SIM_DATA, IDM_SIM_SHOWDATA, IDM_SIM_BENCHTIME,
 	//MESH
-	IDM_MESH_SHOW, IDM_MESH_LOADMASK, IDM_MESH_MASKALL, IDM_MESH_SCALERECTS, IDM_MESH_RESET, IDM_MESH_ADDMATERIAL, IDM_MESH_ADDFERROMAGNET, IDM_MESH_ADDANTIFERROMAGNET, IDM_MESH_ADDMETAL, IDM_MESH_ADDINSULATOR, IDM_MESH_ADDDIPOLE, IDM_MESH_DIAMAGNET, IDM_MESH_ATOMSIMPLECUBIC, IDM_MESH_EXCHANGECOUPLED, IDM_MESH_COUPLETODIPOLES, IDM_MESH_COPY,
+	IDM_MESH_SHOW, IDM_MESH_LOADMASK, IDM_MESH_MASKALL, IDM_MESH_SCALERECTS, IDM_MESH_RESET, IDM_MESH_ADDMATERIAL, IDM_MESH_ADDFERROMAGNET, IDM_MESH_ADDANTIFERROMAGNET, IDM_MESH_ADDMETAL, IDM_MESH_ADDINSULATOR, IDM_MESH_ADDDIPOLE, IDM_MESH_ATOMSIMPLECUBIC, IDM_MESH_EXCHANGECOUPLED, IDM_MESH_COUPLETODIPOLES, IDM_MESH_COPY,
 	//SHAPES
 	IDM_SHAPES_MODIFIERS, IDM_SHAPES_DELRECT, IDM_SHAPES_RECT, IDM_SHAPES_DISK, IDM_SHAPES_TRIANGLE, IDM_SHAPES_TETRAHEDRON, IDM_SHAPES_PYRAMID, IDM_SHAPES_CONE, IDM_SHAPES_ELLIPSOID, IDM_SHAPES_TORUS,
 	//CONFIGURATION
@@ -141,7 +141,6 @@ void AddMenus(HWND hwnd)
 	AppendMenuW(hMenu_Mesh, MF_STRING, IDM_MESH_ADDDIPOLE, L"&Add Dipole");
 	AppendMenuW(hMenu_Mesh, MF_STRING, IDM_MESH_ADDMETAL, L"&Add Metal");
 	AppendMenuW(hMenu_Mesh, MF_STRING, IDM_MESH_ADDINSULATOR, L"&Add Insulator");
-	AppendMenuW(hMenu_Mesh, MF_STRING, IDM_MESH_DIAMAGNET, L"&Add Diamagnet");
 	AppendMenuW(hMenu_Mesh, MF_STRING, IDM_MESH_ATOMSIMPLECUBIC, L"&Add Atomistic Simple Cubic");
 	AppendMenuW(hMenu_Mesh, MF_SEPARATOR, 0, NULL);
 	AppendMenuW(hMenu_Mesh, MF_STRING, IDM_MESH_EXCHANGECOUPLED, L"&Exchange Coupling");
@@ -385,7 +384,7 @@ int APIENTRY _tWinMain(_In_ HINSTANCE hInstance,
 	//////////////////////
 	//overwrite the title bar
 
-	std::string sTitle = std::string("Boris v") + ToString((double)Program_Version / 100.0 + 0.01);
+	std::string sTitle = std::string("Boris v") + ToString((double)Program_Version / 100.0);
 
 #if COMPILECUDA == 1
 	sTitle += std::string(" CUDA ") + ToString((double)__CUDA_ARCH__ / 100);
@@ -551,7 +550,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
    //See https://stackoverflow.com/questions/64988525/bug-related-to-g-openmp-when-using-stdthread/65001887#65001887
    std::thread simulation_instantiation_thread(&make_Simulation, hWnd);
    simulation_instantiation_thread.join();
-   
+
    //Add menus - this needs to be after creating Simulation as we need to get status flags to disable some menu items (e.g. CUDA available)
    AddMenus(hWnd);
 
@@ -691,8 +690,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		break;
 
 	case WM_DESTROY:
+	{
 		//Quit program : WM_QUIT will be issued
 		PostQuitMessage(0);
+	}
 		break;
 
 	case WM_MENUSELECT:
@@ -872,10 +873,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 		case IDM_MESH_ADDDIPOLE:
 			if (pSim) pSim->NewMessage(AC_CONSOLECOMMAND_ENTRY, INT2(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam)), ToString(CMD_ADDDIPOLEMESH));
-			break;
-
-		case IDM_MESH_DIAMAGNET:
-			if (pSim) pSim->NewMessage(AC_CONSOLECOMMAND_ENTRY, INT2(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam)), ToString(CMD_ADDDIAMAGNETICMESH));
 			break;
 
 		case IDM_MESH_ATOMSIMPLECUBIC:

@@ -46,6 +46,10 @@ BError Mesh::AddModule(MOD_ moduleID, bool force_add)
 		pMod.push_back(new iDMExchange(this), MOD_IDMEXCHANGE);
 		break;
 
+	case MOD_VIDMEXCHANGE:
+		pMod.push_back(new viDMExchange(this), MOD_VIDMEXCHANGE);
+		break;
+
 	case MOD_SURFEXCHANGE:
 		if (meshType == MESH_FERROMAGNETIC) pMod.push_back(new SurfExchange(this), MOD_SURFEXCHANGE);
 		else if (meshType == MESH_ANTIFERROMAGNETIC) pMod.push_back(new SurfExchange_AFM(this), MOD_SURFEXCHANGE);

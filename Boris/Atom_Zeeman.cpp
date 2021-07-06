@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "Atom_Zeeman.h"
+#include "OVF2_Handlers.h"
 
 #if defined(MODULE_COMPILATION_ZEEMAN) && ATOMISTIC == 1
 
@@ -15,7 +16,7 @@
 Atom_Zeeman::Atom_Zeeman(Atom_Mesh *paMesh_) :
 	Modules(),
 	ZeemanBase(),
-	ProgramStateNames(this, { VINFO(Ha), VINFO(H_equation) }, {})
+	ProgramStateNames(this, { VINFO(Ha), VINFO(H_equation), VINFO(Havec) }, {})
 {
 	paMesh = paMesh_;
 
@@ -48,6 +49,16 @@ BError Atom_Zeeman::Initialize(void)
 	if (!error)	initialized = true;
 
 	non_empty_volume = paMesh->Get_NonEmpty_Magnetic_Volume();
+
+	//If using Havec make sure size and resolution matches M1
+	if (Havec.linear_size() && (Havec.size() != paMesh->M1.size())) {
+		if (!Havec.resize(paMesh->h, paMesh->meshRect)) {
+
+			Havec.clear();
+			error(BERROR_OUTOFMEMORY_NCRIT);
+			initialized = false;
+		}
+	}
 
 	return error;
 }
@@ -124,26 +135,46 @@ BError Atom_Zeeman::MakeCUDAModule(void)
 
 double Atom_Zeeman::UpdateField(void)
 {
-	/////////////////////////////////////////
-	// Fixed set field
-	/////////////////////////////////////////
-
 	double energy = 0;
 
 	if (!H_equation.is_set()) {
 
+		if (Havec.linear_size()) {
+
+			/////////////////////////////////////////
+			// Field VEC set
+			/////////////////////////////////////////
+
 #pragma omp parallel for reduction(+:energy)
-		for (int idx = 0; idx < paMesh->n.dim(); idx++) {
+			for (int idx = 0; idx < paMesh->n.dim(); idx++) {
 
-			double cHA = paMesh->cHA;
-			paMesh->update_parameters_mcoarse(idx, paMesh->cHA, cHA);
+				paMesh->Heff1[idx] = Havec[idx];
 
-			paMesh->Heff1[idx] = cHA * Ha;
+				energy += -MUB_MU0 * paMesh->M1[idx] * Havec[idx];
 
-			energy += -MUB * paMesh->M1[idx] * MU0 * (cHA * Ha);
+				if (Module_Heff.linear_size()) Module_Heff[idx] = Havec[idx];
+				if (Module_energy.linear_size()) Module_energy[idx] = -MUB_MU0 * paMesh->M1[idx] * Havec[idx] / paMesh->M1.h.dim();
+			}
+		}
+		else {
 
-			if (Module_Heff.linear_size()) Module_Heff[idx] = cHA * Ha;
-			if (Module_energy.linear_size()) Module_energy[idx] = -MUB * paMesh->M1[idx] * MU0 * (cHA * Ha) / paMesh->M1.h.dim();
+			/////////////////////////////////////////
+			// Fixed set field
+			/////////////////////////////////////////
+
+#pragma omp parallel for reduction(+:energy)
+			for (int idx = 0; idx < paMesh->n.dim(); idx++) {
+
+				double cHA = paMesh->cHA;
+				paMesh->update_parameters_mcoarse(idx, paMesh->cHA, cHA);
+
+				paMesh->Heff1[idx] = cHA * Ha;
+
+				energy += -MUB_MU0 * paMesh->M1[idx] * (cHA * Ha);
+
+				if (Module_Heff.linear_size()) Module_Heff[idx] = cHA * Ha;
+				if (Module_energy.linear_size()) Module_energy[idx] = -MUB_MU0 * paMesh->M1[idx] * (cHA * Ha) / paMesh->M1.h.dim();
+			}
 		}
 	}
 
@@ -171,10 +202,10 @@ double Atom_Zeeman::UpdateField(void)
 
 					paMesh->Heff1[idx] = cHA * H;
 
-					energy += -MUB * paMesh->M1[idx] * MU0 * (cHA * H);
+					energy += -MUB_MU0 * paMesh->M1[idx] * (cHA * H);
 
 					if (Module_Heff.linear_size()) Module_Heff[idx] = cHA * H;
-					if (Module_energy.linear_size()) Module_energy[idx] = -MUB * paMesh->M1[idx] * MU0 * (cHA * H) / paMesh->M1.h.dim();
+					if (Module_energy.linear_size()) Module_energy[idx] = -MUB_MU0 * paMesh->M1[idx] * (cHA * H) / paMesh->M1.h.dim();
 				}
 			}
 		}
@@ -196,21 +227,31 @@ double Atom_Zeeman::Get_EnergyChange(int spin_index, DBL3 Mnew)
 
 	if (paMesh->M1.is_not_empty(spin_index)) {
 
-		/////////////////////////////////////////
-		// Fixed set field
-		/////////////////////////////////////////
-
 		if (!H_equation.is_set()) {
 
-			if (IsZ(Ha.norm())) {
+			if (Havec.linear_size()) {
 
-				return 0.0;
+				/////////////////////////////////////////
+				// Field VEC set
+				/////////////////////////////////////////
+
+				if (Mnew != DBL3()) return -MUB_MU0 * (Mnew - paMesh->M1[spin_index]) * Havec[spin_index];
+				else return -MUB_MU0 * paMesh->M1[spin_index] * Havec[spin_index];
 			}
+			else {
 
-			double cHA = paMesh->cHA;
-			paMesh->update_parameters_mcoarse(spin_index, paMesh->cHA, cHA);
+				/////////////////////////////////////////
+				// Fixed set field
+				/////////////////////////////////////////
 
-			return -MUB * (Mnew - paMesh->M1[spin_index]) * MU0 * (cHA * Ha);
+				if (IsZ(Ha.norm())) return 0.0;
+
+				double cHA = paMesh->cHA;
+				paMesh->update_parameters_mcoarse(spin_index, paMesh->cHA, cHA);
+
+				if (Mnew != DBL3()) return -MUB_MU0 * (Mnew - paMesh->M1[spin_index]) * (cHA * Ha);
+				else return -MUB_MU0 * paMesh->M1[spin_index] * (cHA * Ha);
+			}
 		}
 
 		/////////////////////////////////////////
@@ -226,49 +267,8 @@ double Atom_Zeeman::Get_EnergyChange(int spin_index, DBL3 Mnew)
 			DBL3 relpos = paMesh->M1.cellidx_to_position(spin_index);
 			DBL3 H = H_equation.evaluate_vector(relpos.x, relpos.y, relpos.z, pSMesh->GetStageTime());
 
-			return -MUB * (Mnew - paMesh->M1[spin_index]) * MU0 * (cHA * H);
-		}
-	}
-	else return 0.0;
-}
-
-double Atom_Zeeman::Get_Energy(int spin_index)
-{
-	//For CUDA there are separate device functions used by CUDA kernels.
-
-	if (paMesh->M1.is_not_empty(spin_index)) {
-
-		/////////////////////////////////////////
-		// Fixed set field
-		/////////////////////////////////////////
-
-		if (!H_equation.is_set()) {
-
-			if (IsZ(Ha.norm())) {
-
-				return 0.0;
-			}
-
-			double cHA = paMesh->cHA;
-			paMesh->update_parameters_mcoarse(spin_index, paMesh->cHA, cHA);
-
-			return -MUB * paMesh->M1[spin_index] * MU0 * (cHA * Ha);
-		}
-
-		/////////////////////////////////////////
-		// Field set from user equation
-		/////////////////////////////////////////
-
-		else {
-
-			//on top of spatial dependence specified through an equation, also allow spatial dependence through the cHA parameter
-			double cHA = paMesh->cHA;
-			paMesh->update_parameters_mcoarse(spin_index, paMesh->cHA, cHA);
-
-			DBL3 relpos = paMesh->M1.cellidx_to_position(spin_index);
-			DBL3 H = H_equation.evaluate_vector(relpos.x, relpos.y, relpos.z, pSMesh->GetStageTime());
-
-			return -MUB * paMesh->M1[spin_index] * MU0 * (cHA * H);
+			if (Mnew != DBL3()) return -MUB_MU0 * (Mnew - paMesh->M1[spin_index]) * (cHA * H);
+			else return -MUB_MU0 * paMesh->M1[spin_index] * (cHA * H);
 		}
 	}
 	else return 0.0;
@@ -280,6 +280,8 @@ void Atom_Zeeman::SetField(DBL3 Hxyz)
 {
 	//fixed field is being set - remove any equation settings
 	if (H_equation.is_set()) H_equation.clear();
+	//also release any memory in field VEC
+	if (Havec.linear_size()) Havec.clear();
 
 	Ha = Hxyz;
 
@@ -322,10 +324,50 @@ BError Atom_Zeeman::SetFieldEquation(std::string equation_string, int step)
 		UpdateTEquationUserConstants(false);
 	}
 
+	//also release any memory in field VEC
+	if (Havec.linear_size()) Havec.clear();
+
 	//-------------------------- CUDA mirroring
 
 #if COMPILECUDA == 1
 	if (pModuleCUDA) error = dynamic_cast<Atom_ZeemanCUDA*>(pModuleCUDA)->SetFieldEquation(H_equation.get_vector_fspec());
+#endif
+
+	return error;
+}
+
+BError Atom_Zeeman::SetFieldVEC_FromOVF2(std::string fileName)
+{
+	BError error(CLASS_STR(Atom_Zeeman));
+
+	//Load data from file
+	OVF2 ovf2;
+	error = ovf2.Read_OVF2_VEC(fileName, Havec);
+	if (error) {
+
+		Havec.clear();
+		return error;
+	}
+
+	//Make sure size and resolution matches M
+	if (Havec.size() != paMesh->M1.size()) {
+		if (!Havec.resize(paMesh->h, paMesh->meshRect)) {
+
+			Havec.clear();
+			return error(BERROR_OUTOFMEMORY_NCRIT);
+		}
+	}
+
+	//all good, clear any equation settings
+	if (H_equation.is_set()) H_equation.clear();
+
+	//if displaying module effective field also need to update these
+	if (Module_Heff.linear_size()) Module_Heff.copy_values(Havec);
+
+	//-------------------------- CUDA mirroring
+
+#if COMPILECUDA == 1
+	if (pModuleCUDA) error = dynamic_cast<Atom_ZeemanCUDA*>(pModuleCUDA)->SetFieldVEC(Havec);
 #endif
 
 	return error;

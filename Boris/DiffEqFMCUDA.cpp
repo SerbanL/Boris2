@@ -81,7 +81,7 @@ BError DifferentialEquationFMCUDA::AllocateMemory(bool copy_from_cpu)
 		else if (copy_from_cpu) sEval2()->copy_from_cpuvec(pmeshODE->sEval2);
 		break;
 
-	case EVAL_RKF:
+	case EVAL_RKF45:
 		if (!sEval0()->resize((cuSZ3)pMesh->n)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
 		else if(copy_from_cpu) sEval0()->copy_from_cpuvec(pmeshODE->sEval0);
 
@@ -98,7 +98,7 @@ BError DifferentialEquationFMCUDA::AllocateMemory(bool copy_from_cpu)
 		else if (copy_from_cpu) sEval4()->copy_from_cpuvec(pmeshODE->sEval4);
 		break;
 
-	case EVAL_RKCK:
+	case EVAL_RKCK45:
 		if (!sEval0()->resize((cuSZ3)pMesh->n)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
 		else if (copy_from_cpu) sEval0()->copy_from_cpuvec(pmeshODE->sEval0);
 
@@ -115,7 +115,7 @@ BError DifferentialEquationFMCUDA::AllocateMemory(bool copy_from_cpu)
 		else if (copy_from_cpu) sEval4()->copy_from_cpuvec(pmeshODE->sEval4);
 		break;
 
-	case EVAL_RKDP:
+	case EVAL_RKDP54:
 		if (!sEval0()->resize((cuSZ3)pMesh->n)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
 		else if (copy_from_cpu) sEval0()->copy_from_cpuvec(pmeshODE->sEval0);
 
@@ -192,9 +192,9 @@ void DifferentialEquationFMCUDA::CleanupMemory(bool copy_to_cpu)
 		pmeshODE->evalMethod != EVAL_RK4 &&
 		pmeshODE->evalMethod != EVAL_ABM &&
 		pmeshODE->evalMethod != EVAL_RK23 &&
-		pmeshODE->evalMethod != EVAL_RKF &&
-		pmeshODE->evalMethod != EVAL_RKCK &&
-		pmeshODE->evalMethod != EVAL_RKDP &&
+		pmeshODE->evalMethod != EVAL_RKF45 &&
+		pmeshODE->evalMethod != EVAL_RKCK45 &&
+		pmeshODE->evalMethod != EVAL_RKDP54 &&
 		pmeshODE->evalMethod != EVAL_SD) {
 
 		if (copy_to_cpu && sEval0()->size_cpu() == pmeshODE->sEval0.size()) sEval0()->copy_to_cpuvec(pmeshODE->sEval0);
@@ -204,9 +204,9 @@ void DifferentialEquationFMCUDA::CleanupMemory(bool copy_to_cpu)
 	if (pmeshODE->evalMethod != EVAL_RK4 &&
 		pmeshODE->evalMethod != EVAL_ABM &&
 		pmeshODE->evalMethod != EVAL_RK23 &&
-		pmeshODE->evalMethod != EVAL_RKF &&
-		pmeshODE->evalMethod != EVAL_RKCK &&
-		pmeshODE->evalMethod != EVAL_RKDP) {
+		pmeshODE->evalMethod != EVAL_RKF45 &&
+		pmeshODE->evalMethod != EVAL_RKCK45 &&
+		pmeshODE->evalMethod != EVAL_RKDP54) {
 
 		if (copy_to_cpu && sEval1()->size_cpu() == pmeshODE->sEval1.size()) sEval1()->copy_to_cpuvec(pmeshODE->sEval1);
 		sEval1()->clear();
@@ -214,18 +214,18 @@ void DifferentialEquationFMCUDA::CleanupMemory(bool copy_to_cpu)
 
 	if (pmeshODE->evalMethod != EVAL_RK4 &&
 		pmeshODE->evalMethod != EVAL_RK23 &&
-		pmeshODE->evalMethod != EVAL_RKF &&
-		pmeshODE->evalMethod != EVAL_RKCK &&
-		pmeshODE->evalMethod != EVAL_RKDP) {
+		pmeshODE->evalMethod != EVAL_RKF45 &&
+		pmeshODE->evalMethod != EVAL_RKCK45 &&
+		pmeshODE->evalMethod != EVAL_RKDP54) {
 
 		if (copy_to_cpu && sEval2()->size_cpu() == pmeshODE->sEval2.size()) sEval2()->copy_to_cpuvec(pmeshODE->sEval2);
 		sEval2()->clear();
 	}
 
 	if (pmeshODE->evalMethod != EVAL_RK4 &&
-		pmeshODE->evalMethod != EVAL_RKF &&
-		pmeshODE->evalMethod != EVAL_RKCK &&
-		pmeshODE->evalMethod != EVAL_RKDP) {
+		pmeshODE->evalMethod != EVAL_RKF45 &&
+		pmeshODE->evalMethod != EVAL_RKCK45 &&
+		pmeshODE->evalMethod != EVAL_RKDP54) {
 
 		if (copy_to_cpu && sEval3()->size_cpu() == pmeshODE->sEval3.size()) sEval3()->copy_to_cpuvec(pmeshODE->sEval3);
 		sEval3()->clear();
@@ -234,7 +234,7 @@ void DifferentialEquationFMCUDA::CleanupMemory(bool copy_to_cpu)
 		sEval4()->clear();
 	}
 
-	if (pmeshODE->evalMethod != EVAL_RKDP) {
+	if (pmeshODE->evalMethod != EVAL_RKDP54) {
 
 		if (copy_to_cpu && sEval5()->size_cpu() == pmeshODE->sEval5.size()) sEval5()->copy_to_cpuvec(pmeshODE->sEval5);
 		sEval5()->clear();

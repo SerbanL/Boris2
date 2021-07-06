@@ -40,6 +40,13 @@ MeshParamsCUDA::MeshParamsCUDA(MeshParams *pmeshParams)
 	pmeshParams->D.set_p_cu_obj_mpcuda(&D);
 	D_AFM()->set_from_cpu(pmeshParams->D_AFM);
 	pmeshParams->D_AFM.set_p_cu_obj_mpcuda(&D_AFM);
+	Dh()->set_from_cpu(pmeshParams->Dh);
+	pmeshParams->Dh.set_p_cu_obj_mpcuda(&Dh);
+	dh_dir()->set_from_cpu(pmeshParams->dh_dir);
+	pmeshParams->dh_dir.set_p_cu_obj_mpcuda(&dh_dir);
+	
+	D_dir()->set_from_cpu(pmeshParams->D_dir);
+	pmeshParams->D_dir.set_p_cu_obj_mpcuda(&D_dir);
 
 	tau_ii()->set_from_cpu(pmeshParams->tau_ii);
 	pmeshParams->tau_ii.set_p_cu_obj_mpcuda(&tau_ii);
@@ -50,8 +57,6 @@ MeshParamsCUDA::MeshParamsCUDA(MeshParams *pmeshParams)
 	pmeshParams->J1.set_p_cu_obj_mpcuda(&J1);
 	J2()->set_from_cpu(pmeshParams->J2);
 	pmeshParams->J2.set_p_cu_obj_mpcuda(&J2);
-	neta_dia()->set_from_cpu(pmeshParams->neta_dia);
-	pmeshParams->neta_dia.set_p_cu_obj_mpcuda(&neta_dia);
 
 	K1()->set_from_cpu(pmeshParams->K1);
 	pmeshParams->K1.set_p_cu_obj_mpcuda(&K1);
@@ -247,13 +252,16 @@ MeshParamsCUDA::~MeshParamsCUDA()
 
 	pmeshParams->D.null_p_cu_obj_mpcuda();
 	pmeshParams->D_AFM.null_p_cu_obj_mpcuda();
+	pmeshParams->Dh.null_p_cu_obj_mpcuda();
+	pmeshParams->dh_dir.null_p_cu_obj_mpcuda();
+
+	pmeshParams->D_dir.null_p_cu_obj_mpcuda();
 
 	pmeshParams->tau_ii.null_p_cu_obj_mpcuda();
 	pmeshParams->tau_ij.null_p_cu_obj_mpcuda();
 
 	pmeshParams->J1.null_p_cu_obj_mpcuda();
 	pmeshParams->J2.null_p_cu_obj_mpcuda();
-	pmeshParams->neta_dia.null_p_cu_obj_mpcuda();
 
 	pmeshParams->K1.null_p_cu_obj_mpcuda();
 	pmeshParams->K2.null_p_cu_obj_mpcuda();

@@ -179,19 +179,6 @@ bool Atom_Mesh_Cubic::Get_ThAvAngHistogram(std::vector<double>& histogram_x, std
 //
 // Averaging data
 
-//Find average magnetization length by averaging values in macrocells
-double Atom_Mesh_Cubic::Get_ChunkedAverageMagnetizationLength(INT3 macrocell_dims)
-{
-#if COMPILECUDA == 1
-	if (paMeshCUDA) {
-
-		return paMeshCUDA->M1()->chunked_averagemag(macrocell_dims) * (MUB / h.dim());
-	}
-#endif
-
-	return M1.chunked_averagemag(macrocell_dims) * (MUB / h.dim());
-}
-
 DBL3 Atom_Mesh_Cubic::GetThermodynamicAverageMagnetization(Rect rectangle)
 {
 	//M = (1 / h^3) * sum( exp(-Ei / kBT) * Si ) / Z, where Z is the partition function, Si is the atomistic moment, Ei total energy for spin i

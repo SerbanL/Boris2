@@ -152,22 +152,8 @@ double Atom_DMExchange::Get_EnergyChange(int spin_index, DBL3 Mnew)
 		//Now anisotropic_ngbr_dirsum returns rij x Sj, and Si . (rij x Sj) = -Si. (Sj x rij) = -rij . (Si x Sj)
 		//Thus compute: -D * (paMesh->M1[spin_index].normalized() * paMesh->M1.anisotropic_ngbr_dirsum(spin_index));
 
-		return (Mnew.normalized() - paMesh->M1[spin_index].normalized()) * (-J * paMesh->M1.ngbr_dirsum(spin_index) - D * paMesh->M1.anisotropic_ngbr_dirsum(spin_index));
-	}
-	else return 0.0;
-}
-
-double Atom_DMExchange::Get_Energy(int spin_index)
-{
-	//For CUDA there are separate device functions used by CUDA kernels.
-
-	if (paMesh->M1.is_not_empty(spin_index)) {
-
-		double J = paMesh->J;
-		double D = paMesh->D;
-		paMesh->update_parameters_mcoarse(spin_index, paMesh->J, J, paMesh->D, D);
-
-		return paMesh->M1[spin_index].normalized() * (-J * paMesh->M1.ngbr_dirsum(spin_index) - D * paMesh->M1.anisotropic_ngbr_dirsum(spin_index));
+		if (Mnew != DBL3()) return (Mnew.normalized() - paMesh->M1[spin_index].normalized()) * (-J * paMesh->M1.ngbr_dirsum(spin_index) - D * paMesh->M1.anisotropic_ngbr_dirsum(spin_index));
+		else return paMesh->M1[spin_index].normalized() * (-J * paMesh->M1.ngbr_dirsum(spin_index) - D * paMesh->M1.anisotropic_ngbr_dirsum(spin_index));
 	}
 	else return 0.0;
 }

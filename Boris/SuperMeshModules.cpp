@@ -9,49 +9,22 @@ BError SuperMesh::AddModule(std::string meshName, MOD_ moduleId)
 
 	if (moduleId <= MOD_ERROR) return error(BERROR_INCORRECTNAME);
 
-	if (!contains(meshName) && meshName != superMeshHandle) return error(BERROR_INCORRECTNAME);
+	//can either a module to a specific mesh, or to all applicable meshes if meshName is empty, or a supermesh module
+	if (!contains(meshName) && meshName != superMeshHandle && meshName.length()) return error(BERROR_INCORRECTNAME);
 
-	//add module to given mesh
-	if (meshName != superMeshHandle) {
+	auto adjust_mesh_modules = [&](std::string meshName, BError& error) -> BError {
+		
+		//check any super-mesh module was created correctly - if not, delete it
+		if (pSMod.size() && meshName == superMeshHandle) {
 
-		error = pMesh[meshName]->AddModule(moduleId);
-	}
-	//add module to supermesh. If module is already set then don't add another one : only one module of each type allowed on the supermesh
-	else if (!IsSuperMeshModuleSet(moduleId)) {
+			error = pSMod.back()->Error_On_Create();
+			if (error) {
 
-		//add module to super-mesh
-		switch (moduleId) {
-
-		case MODS_SDEMAG:
-			pSMod.push_back(new SDemag(this), MODS_SDEMAG);
-			break;
-
-		case MODS_STRAYFIELD:
-			pSMod.push_back(new StrayField(this), MODS_STRAYFIELD);
-			break;
-
-		case MODS_STRANSPORT:
-			pSMod.push_back(new STransport(this), MODS_STRANSPORT);
-			break;
-
-		case MODS_OERSTED:
-			pSMod.push_back(new Oersted(this), MODS_OERSTED);
-			break;
-
-		case MODS_SHEAT:
-			pSMod.push_back(new SHeat(this), MODS_SHEAT);
-			break;
+				pSMod.pop_back();
+				return error;
+			}
 		}
-
-		//check the super-mesh module was created correctly - if not, delete it
-		error = pSMod.back()->Error_On_Create();
-
-		if (error) pSMod.pop_back();
-	}
-	//else return error(BERROR_INCORRECTACTION_SILENT);
-
-	if (!error) {
-
+		
 		//now check list of exclusive super-mesh modules : any that are exclusive to the module just added must be removed from the list of active modules
 		for (int idx = 0; idx < (int)superMeshExclusiveModules[moduleId].size(); idx++) {
 
@@ -66,16 +39,70 @@ BError SuperMesh::AddModule(std::string meshName, MOD_ moduleId)
 			}
 			else if (IsSuperMeshModuleSet(module)) { delete pSMod[pSMod.get_index_from_ID(module)]; pSMod.erase(INT2(module, 0)); }
 		}
-
+		
 		//check companion modules : if a module was added on a normal mesh, make sure any companion supermesh modules are also set
-		for (int idx = 0; idx < (int)superMeshCompanionModules[moduleId].size(); idx++) {
+		if (meshName != superMeshHandle && meshName.length()) {
 
-			MOD_ module = superMeshCompanionModules[moduleId][idx];
+			for (int idx = 0; idx < (int)superMeshCompanionModules[moduleId].size(); idx++) {
 
-			if (meshName != superMeshHandle) {
-
+				MOD_ module = superMeshCompanionModules[moduleId][idx];
 				if (!error) error = AddModule(superMeshHandle, module);
 			}
+		}
+		
+		return error;
+	};
+
+	//add module to given mesh
+	if (meshName != superMeshHandle && meshName.length()) {
+
+		error = pMesh[meshName]->AddModule(moduleId);
+		if (!error) error = adjust_mesh_modules(meshName, error);
+
+		error = UpdateConfiguration(UPDATECONFIG_MODULEADDED);
+	}
+	//add module to supermesh. If module is already set then don't add another one : only one module of each type allowed on the supermesh
+	else if (meshName == superMeshHandle && !IsSuperMeshModuleSet(moduleId)) {
+
+		//add module to super-mesh
+		switch (moduleId) {
+
+		case MODS_SDEMAG:
+			pSMod.push_back(new SDemag(this), MODS_SDEMAG);
+			error = adjust_mesh_modules(superMeshHandle, error);
+			break;
+
+		case MODS_STRAYFIELD:
+			pSMod.push_back(new StrayField(this), MODS_STRAYFIELD);
+			error = adjust_mesh_modules(superMeshHandle, error);
+			break;
+
+		case MODS_STRANSPORT:
+			pSMod.push_back(new STransport(this), MODS_STRANSPORT);
+			error = adjust_mesh_modules(superMeshHandle, error);
+			break;
+
+		case MODS_OERSTED:
+			pSMod.push_back(new Oersted(this), MODS_OERSTED);
+			error = adjust_mesh_modules(superMeshHandle, error);
+			break;
+
+		case MODS_SHEAT:
+			pSMod.push_back(new SHeat(this), MODS_SHEAT);
+			error = adjust_mesh_modules(superMeshHandle, error);
+			break;
+		}
+
+		error = UpdateConfiguration(UPDATECONFIG_MODULEADDED);
+	}
+	else if (!meshName.length()) {
+
+		//try to add module to all meshes
+		for (int idx = 0; idx < pMesh.size(); idx++) {
+
+			error = pMesh[idx]->AddModule(moduleId);
+			if (!error) error = adjust_mesh_modules(pMesh.get_key_from_index(idx), error);
+			else error.reset();
 		}
 
 		error = UpdateConfiguration(UPDATECONFIG_MODULEADDED);

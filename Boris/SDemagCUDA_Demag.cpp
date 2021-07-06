@@ -171,6 +171,8 @@ BError SDemagCUDA_Demag::Initialize(void)
 
 		error = Update_Module_Display_VECs((cuReal3)pMeshCUDA->h, (cuRect)pMeshCUDA->meshRect, true, true);
 		if (error) return error(BERROR_OUTOFGPUMEMORY_CRIT);
+
+		set_SDemag_DemagCUDA_pointers();
 	}
 
 	//allocate memory and copy transfer info for module display transfer objects if needed

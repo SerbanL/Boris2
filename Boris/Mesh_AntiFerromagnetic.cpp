@@ -23,18 +23,18 @@ AFMesh::AFMesh(SuperMesh *pSMesh_) :
 			VINFO(mc_cone_angledeg), VINFO(mc_acceptance_rate), VINFO(mc_parallel), VINFO(mc_disabled), VINFO(mc_constrain), VINFO(cmc_n),
 			//Material Parameters
 			VINFO(grel_AFM), VINFO(alpha_AFM), VINFO(Ms_AFM), VINFO(Nxy), 
-			VINFO(A_AFM), VINFO(Ah), VINFO(Anh), VINFO(D_AFM), VINFO(tau_ii), VINFO(tau_ij),
+			VINFO(A_AFM), VINFO(Ah), VINFO(Anh), VINFO(D_AFM), VINFO(Dh), VINFO(dh_dir), VINFO(D_dir), VINFO(tau_ii), VINFO(tau_ij),
 			VINFO(K1_AFM), VINFO(K2_AFM), VINFO(K3_AFM), VINFO(mcanis_ea1), VINFO(mcanis_ea2), VINFO(mcanis_ea3),
 			VINFO(Kt), VINFO(Kt2),
 			VINFO(susrel_AFM), VINFO(cHA), VINFO(cHmo),
-			VINFO(elecCond), VINFO(P), VINFO(beta), VINFO(SHA), VINFO(flSOT),
+			VINFO(elecCond), VINFO(P), VINFO(beta), VINFO(SHA), VINFO(flSOT), VINFO(STp),
 			VINFO(base_temperature), VINFO(T_equation), VINFO(T_Curie), VINFO(T_Curie_material), VINFO(atomic_moment_AFM), 
 			VINFO(density),
 			VINFO(thermCond), VINFO(shc), VINFO(shc_e), VINFO(G_e), VINFO(cT), VINFO(Q)
 		},
 		{
 			IINFO(Demag_N), IINFO(Demag), IINFO(SDemag_Demag), 
-			IINFO(Exch_6ngbr_Neu), IINFO(DMExchange), IINFO(iDMExchange), IINFO(SurfExchange_AFM),
+			IINFO(Exch_6ngbr_Neu), IINFO(DMExchange), IINFO(iDMExchange), IINFO(viDMExchange), IINFO(SurfExchange_AFM),
 			IINFO(Zeeman), IINFO(MOptical), IINFO(Roughness),
 			IINFO(Anisotropy_Uniaxial), IINFO(Anisotropy_Cubic), IINFO(Anisotropy_Biaxial), IINFO(Anisotropy_Tensorial),
 			IINFO(Transport), IINFO(Heat),
@@ -59,18 +59,18 @@ AFMesh::AFMesh(Rect meshRect_, DBL3 h_, SuperMesh *pSMesh_) :
 			VINFO(mc_cone_angledeg), VINFO(mc_acceptance_rate), VINFO(mc_parallel), VINFO(mc_disabled), VINFO(mc_constrain), VINFO(cmc_n),
 			//Material Parameters
 			VINFO(grel_AFM), VINFO(alpha_AFM), VINFO(Ms_AFM), VINFO(Nxy),
-			VINFO(A_AFM), VINFO(Ah), VINFO(Anh), VINFO(D_AFM), VINFO(tau_ii), VINFO(tau_ij),
+			VINFO(A_AFM), VINFO(Ah), VINFO(Anh), VINFO(D_AFM), VINFO(Dh), VINFO(dh_dir), VINFO(D_dir), VINFO(tau_ii), VINFO(tau_ij),
 			VINFO(K1_AFM), VINFO(K2_AFM), VINFO(K3_AFM), VINFO(mcanis_ea1), VINFO(mcanis_ea2), VINFO(mcanis_ea3),
 			VINFO(Kt), VINFO(Kt2),
 			VINFO(susrel_AFM), VINFO(cHA), VINFO(cHmo),
-			VINFO(elecCond), VINFO(P), VINFO(beta), VINFO(SHA), VINFO(flSOT),
+			VINFO(elecCond), VINFO(P), VINFO(beta), VINFO(SHA), VINFO(flSOT), VINFO(STp),
 			VINFO(base_temperature), VINFO(T_equation), VINFO(T_Curie), VINFO(T_Curie_material), VINFO(atomic_moment_AFM),
 			VINFO(density),
 			VINFO(thermCond), VINFO(shc), VINFO(shc_e), VINFO(G_e), VINFO(cT), VINFO(Q)
 		},
 		{
 			IINFO(Demag_N), IINFO(Demag), IINFO(SDemag_Demag),
-			IINFO(Exch_6ngbr_Neu), IINFO(DMExchange), IINFO(iDMExchange), IINFO(SurfExchange_AFM),
+			IINFO(Exch_6ngbr_Neu), IINFO(DMExchange), IINFO(iDMExchange), IINFO(viDMExchange), IINFO(SurfExchange_AFM),
 			IINFO(Zeeman), IINFO(MOptical), IINFO(Roughness),
 			IINFO(Anisotropy_Uniaxial), IINFO(Anisotropy_Cubic), IINFO(Anisotropy_Biaxial), IINFO(Anisotropy_Tensorial),
 			IINFO(Transport), IINFO(Heat),
@@ -489,6 +489,7 @@ void AFMesh::SetCurieTemperature(double Tc, bool set_default_dependences)
 			Ah.set_t_scaling_equation(std::string("me1(T/Tc)*me2(T/Tc)"), userConstants, T_Curie, base_temperature);
 			Anh.set_t_scaling_equation(std::string("me1(T/Tc)*me2(T/Tc)"), userConstants, T_Curie, base_temperature);
 			D_AFM.set_t_scaling_equation(std::string("me1(T/Tc)^2, me2(T/Tc)^2"), userConstants, T_Curie, base_temperature);
+			Dh.set_t_scaling_equation(std::string("me1(T/Tc)*me2(T/Tc)"), userConstants, T_Curie, base_temperature);
 			K1_AFM.set_t_scaling_equation(std::string("me1(T/Tc)^3, me2(T/Tc)^3"), userConstants, T_Curie, base_temperature);
 			K2_AFM.set_t_scaling_equation(std::string("me1(T/Tc)^3, me2(T/Tc)^3"), userConstants, T_Curie, base_temperature);
 
@@ -502,6 +503,7 @@ void AFMesh::SetCurieTemperature(double Tc, bool set_default_dependences)
 		Ah.update(base_temperature);
 		Anh.update(base_temperature);
 		D_AFM.update(base_temperature);
+		Dh.update(base_temperature);
 		K1_AFM.update(base_temperature);
 		K2_AFM.update(base_temperature);
 		susrel_AFM.update(base_temperature);
@@ -520,6 +522,7 @@ void AFMesh::SetCurieTemperature(double Tc, bool set_default_dependences)
 			Ah.clear_t_scaling();
 			Anh.clear_t_scaling();
 			D_AFM.clear_t_scaling();
+			Dh.clear_t_scaling();
 			K1_AFM.clear_t_scaling();
 			K2_AFM.clear_t_scaling();
 			susrel_AFM.clear_t_scaling();

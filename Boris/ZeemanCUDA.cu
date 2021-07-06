@@ -11,7 +11,23 @@
 #include "MeshCUDA.h"
 #include "MeshParamsControlCUDA.h"
 
-__global__ void ZeemanCUDA_UpdateField_FMDM(ManagedMeshCUDA& cuMesh, cuReal3& Ha, ManagedModulesCUDA& cuModule, bool do_reduction)
+//----------------------- Initialization
+
+__global__ void set_ZeemanCUDA_pointers_kernel(
+	ManagedMeshCUDA& cuMesh, cuVEC<cuReal3>& Havec)
+{
+	if (threadIdx.x == 0) cuMesh.pHavec = &Havec;
+}
+
+void ZeemanCUDA::set_ZeemanCUDA_pointers(void)
+{
+	set_ZeemanCUDA_pointers_kernel <<< 1, CUDATHREADS >>>
+		(pMeshCUDA->cuMesh, Havec);
+}
+
+//----------------------- Computation
+
+__global__ void ZeemanCUDA_UpdateField_FM(ManagedMeshCUDA& cuMesh, cuReal3& Ha, cuVEC<cuReal3>& Havec, ManagedModulesCUDA& cuModule, bool do_reduction)
 {
 	cuVEC_VC<cuReal3>& M = *cuMesh.pM;
 	cuVEC<cuReal3>& Heff = *cuMesh.pHeff;
@@ -22,25 +38,33 @@ __global__ void ZeemanCUDA_UpdateField_FMDM(ManagedMeshCUDA& cuMesh, cuReal3& Ha
 
 	if (idx < Heff.linear_size()) {
 
-		cuBReal cHA = *cuMesh.pcHA;
-		cuMesh.update_parameters_mcoarse(idx, *cuMesh.pcHA, cHA);
+		cuReal3 Hext = cuReal3();
 
-		Heff[idx] = (cHA * Ha);
+		if (Havec.linear_size()) Hext = Havec[idx];
+		else {
+
+			cuBReal cHA = *cuMesh.pcHA;
+			cuMesh.update_parameters_mcoarse(idx, *cuMesh.pcHA, cHA);
+
+			Hext = cHA * Ha;
+		}
+
+		Heff[idx] = Hext;
 
 		if (do_reduction) {
 
 			int non_empty_cells = M.get_nonempty_cells();
-			if (non_empty_cells) energy_ = -(cuBReal)MU0 * M[idx] * (cHA * Ha) / non_empty_cells;
+			if (non_empty_cells) energy_ = -(cuBReal)MU0 * M[idx] * Hext / non_empty_cells;
 		}
 
-		if (do_reduction && cuModule.pModule_Heff->linear_size()) (*cuModule.pModule_Heff)[idx] = cHA * Ha;
-		if (do_reduction && cuModule.pModule_energy->linear_size()) (*cuModule.pModule_energy)[idx] = -(cuBReal)MU0 * M[idx] * (cHA * Ha);
+		if (do_reduction && cuModule.pModule_Heff->linear_size()) (*cuModule.pModule_Heff)[idx] = Hext;
+		if (do_reduction && cuModule.pModule_energy->linear_size()) (*cuModule.pModule_energy)[idx] = -(cuBReal)MU0 * M[idx] * Hext;
 	}
 
 	if (do_reduction) reduction_sum(0, 1, &energy_, *cuModule.penergy);
 }
 
-__global__ void ZeemanCUDA_UpdateField_Equation_FMDM(
+__global__ void ZeemanCUDA_UpdateField_Equation_FM(
 	ManagedMeshCUDA& cuMesh, 
 	ManagedFunctionCUDA<cuBReal, cuBReal, cuBReal, cuBReal>& H_equation_x,
 	ManagedFunctionCUDA<cuBReal, cuBReal, cuBReal, cuBReal>& H_equation_y,
@@ -81,7 +105,7 @@ __global__ void ZeemanCUDA_UpdateField_Equation_FMDM(
 	if (do_reduction) reduction_sum(0, 1, &energy_, *cuModule.penergy);
 }
 
-__global__ void ZeemanCUDA_UpdateField_AFM(ManagedMeshCUDA& cuMesh, cuReal3& Ha, ManagedModulesCUDA& cuModule, bool do_reduction)
+__global__ void ZeemanCUDA_UpdateField_AFM(ManagedMeshCUDA& cuMesh, cuReal3& Ha, cuVEC<cuReal3>& Havec, ManagedModulesCUDA& cuModule, bool do_reduction)
 {
 	cuVEC_VC<cuReal3>& M = *cuMesh.pM;
 	cuVEC_VC<cuReal3>& M2 = *cuMesh.pM2;
@@ -94,22 +118,30 @@ __global__ void ZeemanCUDA_UpdateField_AFM(ManagedMeshCUDA& cuMesh, cuReal3& Ha,
 
 	if (idx < Heff.linear_size()) {
 
-		cuBReal cHA = *cuMesh.pcHA;
-		cuMesh.update_parameters_mcoarse(idx, *cuMesh.pcHA, cHA);
+		cuReal3 Hext = cuReal3();
 
-		Heff[idx] = (cHA * Ha);
-		Heff2[idx] = (cHA * Ha);
+		if (Havec.linear_size()) Hext = Havec[idx];
+		else {
+
+			cuBReal cHA = *cuMesh.pcHA;
+			cuMesh.update_parameters_mcoarse(idx, *cuMesh.pcHA, cHA);
+
+			Hext = cHA * Ha;
+		}
+
+		Heff[idx] = Hext;
+		Heff2[idx] = Hext;
 
 		if (do_reduction) {
 
 			int non_empty_cells = M.get_nonempty_cells();
-			if (non_empty_cells) energy_ = -(cuBReal)MU0 * (M[idx] + M2[idx]) * (cHA * Ha) / (2 * non_empty_cells);
+			if (non_empty_cells) energy_ = -(cuBReal)MU0 * (M[idx] + M2[idx]) * Hext / (2 * non_empty_cells);
 		}
 
-		if (do_reduction && cuModule.pModule_Heff->linear_size()) (*cuModule.pModule_Heff)[idx] = cHA * Ha;
-		if (do_reduction && cuModule.pModule_Heff2->linear_size()) (*cuModule.pModule_Heff2)[idx] = cHA * Ha;
-		if (do_reduction && cuModule.pModule_energy->linear_size()) (*cuModule.pModule_energy)[idx] = -MU0 * M[idx] * (cHA * Ha);
-		if (do_reduction && cuModule.pModule_energy2->linear_size()) (*cuModule.pModule_energy2)[idx] = -MU0 * M2[idx] * (cHA * Ha);
+		if (do_reduction && cuModule.pModule_Heff->linear_size()) (*cuModule.pModule_Heff)[idx] = Hext;
+		if (do_reduction && cuModule.pModule_Heff2->linear_size()) (*cuModule.pModule_Heff2)[idx] = Hext;
+		if (do_reduction && cuModule.pModule_energy->linear_size()) (*cuModule.pModule_energy)[idx] = -MU0 * M[idx] * Hext;
+		if (do_reduction && cuModule.pModule_energy2->linear_size()) (*cuModule.pModule_energy2)[idx] = -MU0 * M2[idx] * Hext;
 	}
 
 	if (do_reduction) reduction_sum(0, 1, &energy_, *cuModule.penergy);
@@ -177,9 +209,9 @@ void ZeemanCUDA::UpdateField(void)
 
 				ZeroEnergy();
 
-				ZeemanCUDA_UpdateField_AFM <<< (pMeshCUDA->n.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (pMeshCUDA->cuMesh, Ha, cuModule, true);
+				ZeemanCUDA_UpdateField_AFM <<< (pMeshCUDA->n.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (pMeshCUDA->cuMesh, Ha, Havec, cuModule, true);
 			}
-			else ZeemanCUDA_UpdateField_AFM <<< (pMeshCUDA->n.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (pMeshCUDA->cuMesh, Ha, cuModule, false);
+			else ZeemanCUDA_UpdateField_AFM <<< (pMeshCUDA->n.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (pMeshCUDA->cuMesh, Ha, Havec, cuModule, false);
 		}
 
 		else {
@@ -188,9 +220,9 @@ void ZeemanCUDA::UpdateField(void)
 
 				ZeroEnergy();
 
-				ZeemanCUDA_UpdateField_FMDM <<< (pMeshCUDA->n.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (pMeshCUDA->cuMesh, Ha, cuModule, true);
+				ZeemanCUDA_UpdateField_FM <<< (pMeshCUDA->n.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (pMeshCUDA->cuMesh, Ha, Havec, cuModule, true);
 			}
-			else ZeemanCUDA_UpdateField_FMDM <<< (pMeshCUDA->n.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (pMeshCUDA->cuMesh, Ha, cuModule, false);
+			else ZeemanCUDA_UpdateField_FM <<< (pMeshCUDA->n.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (pMeshCUDA->cuMesh, Ha, Havec, cuModule, false);
 		}
 	}
 
@@ -225,13 +257,13 @@ void ZeemanCUDA::UpdateField(void)
 
 				ZeroEnergy();
 
-				ZeemanCUDA_UpdateField_Equation_FMDM <<< (pMeshCUDA->n.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (
+				ZeemanCUDA_UpdateField_Equation_FM <<< (pMeshCUDA->n.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (
 					pMeshCUDA->cuMesh,
 					H_equation.get_x(), H_equation.get_y(), H_equation.get_z(),
 					pMeshCUDA->GetStageTime(),
 					cuModule, true);
 			}
-			else ZeemanCUDA_UpdateField_Equation_FMDM <<< (pMeshCUDA->n.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (
+			else ZeemanCUDA_UpdateField_Equation_FM <<< (pMeshCUDA->n.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (
 				pMeshCUDA->cuMesh,
 				H_equation.get_x(), H_equation.get_y(), H_equation.get_z(),
 				pMeshCUDA->GetStageTime(),
@@ -247,6 +279,7 @@ BError ZeemanCUDA::SetFieldEquation(const std::vector<std::vector< std::vector<E
 	BError error(CLASS_STR(ZeemanCUDA));
 
 	if (!H_equation.make_vector(fspec)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
+	if (Havec()->size_cpu().dim()) Havec()->clear();
 
 	return error;
 }

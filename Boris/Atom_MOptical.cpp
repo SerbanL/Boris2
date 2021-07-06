@@ -123,4 +123,22 @@ double Atom_MOptical::UpdateField(void)
 	return this->energy;
 }
 
+//-------------------Energy methods
+
+//For simple cubic mesh spin_index coincides with index in M1
+double Atom_MOptical::Get_EnergyChange(int spin_index, DBL3 Mnew)
+{
+	//For CUDA there are separate device functions used by CUDA kernels.
+
+	if (paMesh->M1.is_not_empty(spin_index)) {
+
+		double cHmo = paMesh->cHmo;
+		paMesh->update_parameters_mcoarse(spin_index, paMesh->cHmo, cHmo);
+
+		if (Mnew != DBL3()) return -MUB * (Mnew - paMesh->M1[spin_index]) * MU0 * DBL3(0, 0, cHmo);
+		else return -MUB * paMesh->M1[spin_index] * MU0 * DBL3(0, 0, cHmo);
+	}
+	else return 0.0;
+}
+
 #endif

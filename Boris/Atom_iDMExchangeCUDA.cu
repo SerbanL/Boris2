@@ -34,8 +34,8 @@ __global__ void Atom_iDMExchangeCUDA_Cubic_UpdateField(ManagedAtom_MeshCUDA& cua
 			cuaMesh.update_parameters_mcoarse(idx, *cuaMesh.pmu_s, mu_s, *cuaMesh.pJ, J, *cuaMesh.pD, D);
 
 			//update effective field with the Heisenberg and DMI exchange field
-			Hexch_A = J * M1.ngbr_dirsum(idx) / (MUB_MU0*mu_s);
-			Hexch_D = D * M1.zanisotropic_ngbr_dirsum(idx) / (MUB_MU0*mu_s);
+			Hexch_A = J * M1.ngbr_dirsum(idx) / ((cuBReal)MUB_MU0*mu_s);
+			Hexch_D = D * M1.zanisotropic_ngbr_dirsum(idx) / ((cuBReal)MUB_MU0*mu_s);
 
 			if (do_reduction) {
 

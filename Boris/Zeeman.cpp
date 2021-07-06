@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "Zeeman.h"
+#include "OVF2_Handlers.h"
 
 #ifdef MODULE_COMPILATION_ZEEMAN
 
@@ -15,7 +16,7 @@
 Zeeman::Zeeman(Mesh *pMesh_) : 
 	Modules(),
 	ZeemanBase(),
-	ProgramStateNames(this, { VINFO(Ha), VINFO(H_equation) }, {})
+	ProgramStateNames(this, { VINFO(Ha), VINFO(H_equation), VINFO(Havec) }, {})
 {
 	pMesh = pMesh_;
 
@@ -47,6 +48,16 @@ BError Zeeman::Initialize(void)
 		(MOD_)pMesh->Get_Module_Energy_Display() == MOD_ZEEMAN || pMesh->IsOutputDataSet_withRect(DATA_E_ZEE),
 		pMesh->GetMeshType() == MESH_ANTIFERROMAGNETIC);
 	if (!error) initialized = true;
+
+	//If using Havec make sure size and resolution matches M
+	if (Havec.linear_size() && (Havec.size() != pMesh->M.size())) {
+		if (!Havec.resize(pMesh->h, pMesh->meshRect)) {
+
+			Havec.clear();
+			error(BERROR_OUTOFMEMORY_NCRIT);
+			initialized = false;
+		}
+	}
 
 	return error;
 }
@@ -123,48 +134,88 @@ BError Zeeman::MakeCUDAModule(void)
 
 double Zeeman::UpdateField(void) 
 {
-	/////////////////////////////////////////
-	// Fixed set field
-	/////////////////////////////////////////
-
 	double energy = 0;
 
 	if (!H_equation.is_set()) {
 
-		if (pMesh->GetMeshType() == MESH_ANTIFERROMAGNETIC) {
+		if (Havec.linear_size()) {
+
+			/////////////////////////////////////////
+			// Field VEC set
+			/////////////////////////////////////////
+
+			if (pMesh->GetMeshType() == MESH_ANTIFERROMAGNETIC) {
 
 #pragma omp parallel for reduction(+:energy)
-			for (int idx = 0; idx < pMesh->n.dim(); idx++) {
+				for (int idx = 0; idx < pMesh->n.dim(); idx++) {
 
-				double cHA = pMesh->cHA;
-				pMesh->update_parameters_mcoarse(idx, pMesh->cHA, cHA);
+					pMesh->Heff[idx] = Havec[idx];
+					pMesh->Heff2[idx] = Havec[idx];
 
-				pMesh->Heff[idx] = (cHA * Ha);
-				pMesh->Heff2[idx] = (cHA * Ha);
+					energy += (pMesh->M[idx] + pMesh->M2[idx]) * Havec[idx] / 2;
 
-				energy += (pMesh->M[idx] + pMesh->M2[idx]) * (cHA * Ha) / 2;
+					if (Module_Heff.linear_size()) Module_Heff[idx] = Havec[idx];
+					if (Module_Heff2.linear_size()) Module_Heff2[idx] = Havec[idx];
+					if (Module_energy.linear_size()) Module_energy[idx] = -MU0 * pMesh->M[idx] * Havec[idx];
+					if (Module_energy2.linear_size()) Module_energy2[idx] = -MU0 * pMesh->M2[idx] * Havec[idx];
+				}
+			}
 
-				if (Module_Heff.linear_size()) Module_Heff[idx] = cHA * Ha;
-				if (Module_Heff2.linear_size()) Module_Heff2[idx] = cHA * Ha;
-				if (Module_energy.linear_size()) Module_energy[idx] = -MU0 * pMesh->M[idx] * (cHA * Ha);
-				if (Module_energy2.linear_size()) Module_energy2[idx] = -MU0 * pMesh->M2[idx] * (cHA * Ha);
+			else {
+
+#pragma omp parallel for reduction(+:energy)
+				for (int idx = 0; idx < pMesh->n.dim(); idx++) {
+
+					pMesh->Heff[idx] = Havec[idx];
+
+					energy += pMesh->M[idx] * Havec[idx];
+
+					if (Module_Heff.linear_size()) Module_Heff[idx] = Havec[idx];
+					if (Module_energy.linear_size()) Module_energy[idx] = -MU0 * pMesh->M[idx] * Havec[idx];
+				}
 			}
 		}
-
 		else {
 
+			/////////////////////////////////////////
+			// Fixed set field
+			/////////////////////////////////////////
+
+			if (pMesh->GetMeshType() == MESH_ANTIFERROMAGNETIC) {
+
 #pragma omp parallel for reduction(+:energy)
-			for (int idx = 0; idx < pMesh->n.dim(); idx++) {
+				for (int idx = 0; idx < pMesh->n.dim(); idx++) {
 
-				double cHA = pMesh->cHA;
-				pMesh->update_parameters_mcoarse(idx, pMesh->cHA, cHA);
+					double cHA = pMesh->cHA;
+					pMesh->update_parameters_mcoarse(idx, pMesh->cHA, cHA);
 
-				pMesh->Heff[idx] = (cHA * Ha);
+					pMesh->Heff[idx] = (cHA * Ha);
+					pMesh->Heff2[idx] = (cHA * Ha);
 
-				energy += pMesh->M[idx] * (cHA * Ha);
+					energy += (pMesh->M[idx] + pMesh->M2[idx]) * (cHA * Ha) / 2;
 
-				if (Module_Heff.linear_size()) Module_Heff[idx] = cHA * Ha;
-				if (Module_energy.linear_size()) Module_energy[idx] = -MU0 * pMesh->M[idx] * (cHA * Ha);
+					if (Module_Heff.linear_size()) Module_Heff[idx] = cHA * Ha;
+					if (Module_Heff2.linear_size()) Module_Heff2[idx] = cHA * Ha;
+					if (Module_energy.linear_size()) Module_energy[idx] = -MU0 * pMesh->M[idx] * (cHA * Ha);
+					if (Module_energy2.linear_size()) Module_energy2[idx] = -MU0 * pMesh->M2[idx] * (cHA * Ha);
+				}
+			}
+
+			else {
+
+#pragma omp parallel for reduction(+:energy)
+				for (int idx = 0; idx < pMesh->n.dim(); idx++) {
+
+					double cHA = pMesh->cHA;
+					pMesh->update_parameters_mcoarse(idx, pMesh->cHA, cHA);
+
+					pMesh->Heff[idx] = (cHA * Ha);
+
+					energy += pMesh->M[idx] * (cHA * Ha);
+
+					if (Module_Heff.linear_size()) Module_Heff[idx] = cHA * Ha;
+					if (Module_energy.linear_size()) Module_energy[idx] = -MU0 * pMesh->M[idx] * (cHA * Ha);
+				}
 			}
 		}
 	}
@@ -251,21 +302,31 @@ double Zeeman::Get_EnergyChange(int spin_index, DBL3 Mnew)
 
 	if (pMesh->M.is_not_empty(spin_index)) {
 
-		/////////////////////////////////////////
-		// Fixed set field
-		/////////////////////////////////////////
-
 		if (!H_equation.is_set()) {
 
-			if (IsZ(Ha.norm())) {
+			if (Havec.linear_size()) {
 
-				return 0.0;
+				/////////////////////////////////////////
+				// Field VEC set
+				/////////////////////////////////////////
+
+				if (Mnew != DBL3()) return -pMesh->h.dim() * (Mnew - pMesh->M[spin_index]) * MU0 * Havec[spin_index];
+				else return -pMesh->h.dim() * pMesh->M[spin_index] * MU0 * Havec[spin_index];
 			}
+			else {
 
-			double cHA = pMesh->cHA;
-			pMesh->update_parameters_mcoarse(spin_index, pMesh->cHA, cHA);
+				/////////////////////////////////////////
+				// Fixed set field
+				/////////////////////////////////////////
 
-			return -pMesh->h.dim() * (Mnew - pMesh->M[spin_index]) * MU0 * (cHA * Ha);
+				if (IsZ(Ha.norm())) return 0.0;
+
+				double cHA = pMesh->cHA;
+				pMesh->update_parameters_mcoarse(spin_index, pMesh->cHA, cHA);
+
+				if (Mnew != DBL3()) return -pMesh->h.dim() * (Mnew - pMesh->M[spin_index]) * MU0 * (cHA * Ha);
+				else return -pMesh->h.dim() * pMesh->M[spin_index] * MU0 * (cHA * Ha);
+			}
 		}
 
 		/////////////////////////////////////////
@@ -281,49 +342,8 @@ double Zeeman::Get_EnergyChange(int spin_index, DBL3 Mnew)
 			DBL3 relpos = pMesh->M.cellidx_to_position(spin_index);
 			DBL3 H = H_equation.evaluate_vector(relpos.x, relpos.y, relpos.z, pSMesh->GetStageTime());
 
-			return -pMesh->h.dim() * (Mnew - pMesh->M[spin_index]) * MU0 * (cHA * H);
-		}
-	}
-	else return 0.0;
-}
-
-double Zeeman::Get_Energy(int spin_index)
-{
-	//For CUDA there are separate device functions used by CUDA kernels.
-
-	if (pMesh->M.is_not_empty(spin_index)) {
-
-		/////////////////////////////////////////
-		// Fixed set field
-		/////////////////////////////////////////
-
-		if (!H_equation.is_set()) {
-
-			if (IsZ(Ha.norm())) {
-
-				return 0.0;
-			}
-
-			double cHA = pMesh->cHA;
-			pMesh->update_parameters_mcoarse(spin_index, pMesh->cHA, cHA);
-
-			return -pMesh->h.dim() * pMesh->M[spin_index] * MU0 * (cHA * Ha);
-		}
-
-		/////////////////////////////////////////
-		// Field set from user equation
-		/////////////////////////////////////////
-
-		else {
-
-			//on top of spatial dependence specified through an equation, also allow spatial dependence through the cHA parameter
-			double cHA = pMesh->cHA;
-			pMesh->update_parameters_mcoarse(spin_index, pMesh->cHA, cHA);
-
-			DBL3 relpos = pMesh->M.cellidx_to_position(spin_index);
-			DBL3 H = H_equation.evaluate_vector(relpos.x, relpos.y, relpos.z, pSMesh->GetStageTime());
-
-			return -pMesh->h.dim() * pMesh->M[spin_index] * MU0 * (cHA * H);
+			if (Mnew != DBL3()) return -pMesh->h.dim() * (Mnew - pMesh->M[spin_index]) * MU0 * (cHA * H);
+			else return -pMesh->h.dim() * pMesh->M[spin_index] * MU0 * (cHA * H);
 		}
 	}
 	else return 0.0;
@@ -335,6 +355,8 @@ void Zeeman::SetField(DBL3 Hxyz)
 {
 	//fixed field is being set - remove any equation settings
 	if (H_equation.is_set()) H_equation.clear();
+	//also release any memory in field VEC
+	if (Havec.linear_size()) Havec.clear();
 
 	Ha = Hxyz;
 
@@ -390,10 +412,51 @@ BError Zeeman::SetFieldEquation(std::string equation_string, int step)
 		UpdateTEquationUserConstants(false);
 	}
 
+	//also release any memory in field VEC
+	if (Havec.linear_size()) Havec.clear();
+
 	//-------------------------- CUDA mirroring
 
 #if COMPILECUDA == 1
 	if (pModuleCUDA) error = dynamic_cast<ZeemanCUDA*>(pModuleCUDA)->SetFieldEquation(H_equation.get_vector_fspec());
+#endif
+
+	return error;
+}
+
+BError Zeeman::SetFieldVEC_FromOVF2(std::string fileName)
+{
+	BError error(CLASS_STR(Zeeman));
+
+	//Load data from file
+	OVF2 ovf2;
+	error = ovf2.Read_OVF2_VEC(fileName, Havec);
+	if (error) {
+
+		Havec.clear();
+		return error;
+	}
+
+	//Make sure size and resolution matches M
+	if (Havec.size() != pMesh->M.size()) {
+		if (!Havec.resize(pMesh->h, pMesh->meshRect)) {
+
+			Havec.clear();
+			return error(BERROR_OUTOFMEMORY_NCRIT);
+		}
+	}
+
+	//all good, clear any equation settings
+	if (H_equation.is_set()) H_equation.clear();
+
+	//if displaying module effective field also need to update these
+	if (Module_Heff.linear_size()) Module_Heff.copy_values(Havec);
+	if (Module_Heff2.linear_size()) Module_Heff2.copy_values(Havec);
+
+	//-------------------------- CUDA mirroring
+
+#if COMPILECUDA == 1
+	if (pModuleCUDA) error = dynamic_cast<ZeemanCUDA*>(pModuleCUDA)->SetFieldVEC(Havec);
 #endif
 
 	return error;

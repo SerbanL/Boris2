@@ -221,19 +221,38 @@ void ODECommon_Base::IterateCUDA(void)
 		{
 			if (calculate_mxh) podeSolver->pODECUDA->Zero_mxh_lte_values();
 
+			bool stochastic = false;
+
+			for (int idx = 0; idx < podeSolver->pODE.size(); idx++) {
+
+				//RK4 can be used for stochastic equations
+				if (podeSolver->pODE[idx]->H_Thermal.linear_size() && podeSolver->pODE[idx]->Torque_Thermal.linear_size()) { podeSolver->pODE[idx]->pmeshODECUDA->GenerateThermalField_and_Torque(); stochastic = true; }
+				else if (podeSolver->pODE[idx]->H_Thermal.linear_size()) { podeSolver->pODE[idx]->pmeshODECUDA->GenerateThermalField(); stochastic = true; }
+			}
+
+			for (int idx = 0; idx < patom_odeSolver->pODE.size(); idx++) {
+
+				//RK4 can be used for stochastic equations
+				if (patom_odeSolver->pODE[idx]->H_Thermal.linear_size()) { patom_odeSolver->pODE[idx]->pameshODECUDA->GenerateThermalField(); stochastic = true; }
+			}
+
 			for (int idx = 0; idx < podeSolver->pODE.size(); idx++) {
 
 				if (podeSolver->setODE == ODE_LLG) podeSolver->pODE[idx]->pmeshODECUDA->RunRK4_LLG(0, calculate_mxh, calculate_dmdt);
-				else podeSolver->pODE[idx]->pmeshODECUDA->RunRK4(0, calculate_mxh, calculate_dmdt);
+				else podeSolver->pODE[idx]->pmeshODECUDA->RunRK4(0, calculate_mxh, calculate_dmdt, stochastic);
 			}
 
 			for (int idx = 0; idx < patom_odeSolver->pODE.size(); idx++) {
 
 				if (patom_odeSolver->setODE == ODE_LLG) patom_odeSolver->pODE[idx]->pameshODECUDA->RunRK4_LLG(0, calculate_mxh, calculate_dmdt);
-				else patom_odeSolver->pODE[idx]->pameshODECUDA->RunRK4(0, calculate_mxh, calculate_dmdt);
+				else patom_odeSolver->pODE[idx]->pameshODECUDA->RunRK4(0, calculate_mxh, calculate_dmdt, stochastic);
 			}
 
-			calculate_mxh = false;
+			if (calculate_mxh) {
+
+				calculate_mxh = false;
+				if (stochastic) podeSolver->pODECUDA->mxhav_to_mxh();
+			}
 
 			evalStep++;
 			available = false;
@@ -280,19 +299,28 @@ void ODECommon_Base::IterateCUDA(void)
 		{
 			if (calculate_dmdt) podeSolver->pODECUDA->Zero_dmdt_lte_values();
 
+			bool stochastic = false;
+
+			for (int idx = 0; idx < podeSolver->pODE.size(); idx++) stochastic |= podeSolver->pODE[idx]->H_Thermal.linear_size() != 0;
+			for (int idx = 0; idx < patom_odeSolver->pODE.size(); idx++) stochastic |= patom_odeSolver->pODE[idx]->H_Thermal.linear_size() != 0;
+
 			for (int idx = 0; idx < podeSolver->pODE.size(); idx++) {
 
 				if (podeSolver->setODE == ODE_LLG) podeSolver->pODE[idx]->pmeshODECUDA->RunRK4_LLG(3, calculate_mxh, calculate_dmdt);
-				else podeSolver->pODE[idx]->pmeshODECUDA->RunRK4(3, calculate_mxh, calculate_dmdt);
+				else podeSolver->pODE[idx]->pmeshODECUDA->RunRK4(3, calculate_mxh, calculate_dmdt, stochastic);
 			}
 
 			for (int idx = 0; idx < patom_odeSolver->pODE.size(); idx++) {
 
 				if (patom_odeSolver->setODE == ODE_LLG) patom_odeSolver->pODE[idx]->pameshODECUDA->RunRK4_LLG(3, calculate_mxh, calculate_dmdt);
-				else patom_odeSolver->pODE[idx]->pameshODECUDA->RunRK4(3, calculate_mxh, calculate_dmdt);
+				else patom_odeSolver->pODE[idx]->pameshODECUDA->RunRK4(3, calculate_mxh, calculate_dmdt, stochastic);
 			}
 
-			calculate_dmdt = false;
+			if (calculate_dmdt) {
+
+				calculate_dmdt = false;
+				if (stochastic) podeSolver->pODECUDA->dmdtav_to_dmdt();
+			}
 
 			time += dT;
 			stagetime += dT;
@@ -539,9 +567,9 @@ void ODECommon_Base::IterateCUDA(void)
 	}
 	break;
 
-	case EVAL_RKF:
+	case EVAL_RKF45:
 	{
-#ifdef ODE_EVAL_COMPILATION_RKF
+#ifdef ODE_EVAL_COMPILATION_RKF45
 		switch (evalStep) {
 
 		case 0:
@@ -684,7 +712,7 @@ void ODECommon_Base::IterateCUDA(void)
 	}
 	break;
 
-	case EVAL_RKCK:
+	case EVAL_RKCK45:
 	{
 #ifdef ODE_EVAL_COMPILATION_RKCK
 		switch (evalStep) {
@@ -817,7 +845,7 @@ void ODECommon_Base::IterateCUDA(void)
 	}
 	break;
 
-	case EVAL_RKDP:
+	case EVAL_RKDP54:
 	{
 #ifdef ODE_EVAL_COMPILATION_RKDP
 		switch (evalStep) {

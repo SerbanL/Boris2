@@ -49,6 +49,10 @@ BError Atom_Mesh::AddModule(MOD_ moduleID, bool force_add)
 		pMod.push_back(new Atom_iDMExchange(this), MOD_IDMEXCHANGE);
 		break;
 
+	case MOD_VIDMEXCHANGE:
+		pMod.push_back(new Atom_viDMExchange(this), MOD_VIDMEXCHANGE);
+		break;
+
 	case MOD_SURFEXCHANGE:
 		pMod.push_back(new Atom_SurfExchange(this), MOD_SURFEXCHANGE);
 		break;

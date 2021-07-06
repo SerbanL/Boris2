@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
       <Configuration>Debug</Configuration>
@@ -30,14 +30,14 @@
     <ProjectGuid>{06C58E6B-9051-4D2D-BB44-FF942864B5F1}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>Boris</RootNamespace>
-    <WindowsTargetPlatformVersion>10.0.16299.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0.17763.0</WindowsTargetPlatformVersion>
     <ProjectName>Boris</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v110</PlatformToolset>
+    <PlatformToolset>v141</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
@@ -49,7 +49,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v110</PlatformToolset>
+    <PlatformToolset>v141</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
@@ -61,10 +61,10 @@
     <PlatformToolset>v141</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Label="Configuration" Condition="'$(Configuration)|$(Platform)'=='test|Win32'">
-    <PlatformToolset>v110</PlatformToolset>
+    <PlatformToolset>v141</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Label="Configuration" Condition="'$(Configuration)|$(Platform)'=='test|x64'">
-    <PlatformToolset>v110</PlatformToolset>
+    <PlatformToolset>v141</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
@@ -270,6 +270,8 @@
     <ClInclude Include="Atom_MOpticalCUDA.h" />
     <ClInclude Include="Atom_SurfExchange.h" />
     <ClInclude Include="Atom_SurfExchangeCUDA.h" />
+    <ClInclude Include="Atom_viDMExchange.h" />
+    <ClInclude Include="Atom_viDMExchangeCUDA.h" />
     <ClInclude Include="DataDefs.h" />
     <ClInclude Include="DemagBase.h" />
     <ClInclude Include="DemagTFuncCUDA.h" />
@@ -326,10 +328,6 @@
     <ClInclude Include="DiffEqAFM_EquationsCUDA.h" />
     <ClInclude Include="DiffEqAFM_SEquationsCUDA.h" />
     <ClInclude Include="DiffEqCUDA.h" />
-    <ClInclude Include="DiffEqDM.h" />
-    <ClInclude Include="DiffEqDMCUDA.h" />
-    <ClInclude Include="DiffEqDM_EquationsCUDA.h" />
-    <ClInclude Include="DiffEqDM_SEquationsCUDA.h" />
     <ClInclude Include="DiffEqFM.h" />
     <ClInclude Include="DiffEqFMCUDA.h" />
     <ClInclude Include="DiffEq_Common.h" />
@@ -361,7 +359,6 @@
     <ClInclude Include="iDMExchangeCUDA.h" />
     <ClInclude Include="ManagedAtom_DiffEq_CommonCUDA.h" />
     <ClInclude Include="ManagedDiffEqAFMCUDA.h" />
-    <ClInclude Include="ManagedDiffEqDMCUDA.h" />
     <ClInclude Include="ManagedDiffEqFMCUDA.h" />
     <ClInclude Include="ManagedDiffEq_CommonCUDA.h" />
     <ClInclude Include="ManagedMeshCUDA.h" />
@@ -402,6 +399,7 @@
     <CudaCompile Include="Atom_Mesh_CubicCUDA_MonteCarlo.cu" />
     <CudaCompile Include="Atom_MOpticalCUDA.cu" />
     <CudaCompile Include="Atom_SurfExchangeCUDA.cu" />
+    <CudaCompile Include="Atom_viDMExchangeCUDA.cu" />
     <CudaCompile Include="Atom_ZeemanCUDA.cu" />
     <CudaCompile Include="DemagCUDA.cu" />
     <CudaCompile Include="DemagKernelCalcAuxCUDA.cu" />
@@ -416,19 +414,6 @@
     <CudaCompile Include="DemagTFunc_PBCCUDA.cu" />
     <CudaCompile Include="DemagTFunc_ShiftedCUDA.cu" />
     <CudaCompile Include="DemagTFunc_Shifted_PBCCUDA.cu" />
-    <CudaCompile Include="DiffEqDMCUDA.cu" />
-    <CudaCompile Include="DiffEqDM_EvalsCUDA.cu" />
-    <CudaCompile Include="DiffEqDM_EvalsCUDA_ABM.cu" />
-    <CudaCompile Include="DiffEqDM_EvalsCUDA_AHeun.cu" />
-    <CudaCompile Include="DiffEqDM_EvalsCUDA_Euler.cu" />
-    <CudaCompile Include="DiffEqDM_EvalsCUDA_RK23.cu" />
-    <CudaCompile Include="DiffEqDM_EvalsCUDA_RK4.cu" />
-    <CudaCompile Include="DiffEqDM_EvalsCUDA_RKCK45.cu" />
-    <CudaCompile Include="DiffEqDM_EvalsCUDA_RKDP54.cu" />
-    <CudaCompile Include="DiffEqDM_EvalsCUDA_RKF.cu" />
-    <CudaCompile Include="DiffEqDM_EvalsCUDA_SD.cu" />
-    <CudaCompile Include="DiffEqDM_EvalsCUDA_TEuler.cu" />
-    <CudaCompile Include="DiffEqDM_EvalsLLGCUDA.cu" />
     <CudaCompile Include="DiffEq_CommonBaseCUDA.cu" />
     <CudaCompile Include="DipoleDipoleKernelCUDA.cu" />
     <CudaCompile Include="DWRunTimeFitCUDA.cu" />
@@ -453,8 +438,6 @@
     <ClInclude Include="MeshParamsCUDA.h" />
     <ClInclude Include="Mesh_AntiFerromagnetic.h" />
     <ClInclude Include="Mesh_AntiFerromagneticCUDA.h" />
-    <ClInclude Include="Mesh_Diamagnetic.h" />
-    <ClInclude Include="Mesh_DiamagneticCUDA.h" />
     <ClInclude Include="Mesh_Dipole.h" />
     <ClInclude Include="Mesh_DipoleCUDA.h" />
     <ClInclude Include="Mesh_Ferromagnetic.h" />
@@ -521,6 +504,8 @@
     <ClInclude Include="TransportCUDA_Poisson_Spin_S.h" />
     <ClInclude Include="TransportCUDA_Poisson_Spin_V.h" />
     <ClInclude Include="Transport_Defs.h" />
+    <ClInclude Include="viDMExchange.h" />
+    <ClInclude Include="vIDMExchangeCUDA.h" />
     <ClInclude Include="WinSpaces.h" />
     <ClInclude Include="BorisDisplay.h" />
     <ClInclude Include="BorisGraphics.h" />
@@ -596,6 +581,9 @@
     <ClCompile Include="Atom_MOpticalCUDA.cpp" />
     <ClCompile Include="Atom_SurfExchange.cpp" />
     <ClCompile Include="Atom_SurfExchangeCUDA.cpp" />
+    <ClCompile Include="Atom_viDMExchange.cpp" />
+    <ClCompile Include="Atom_viDMExchangeCUDA.cpp" />
+    <ClCompile Include="BorisUpdate.cpp" />
     <ClCompile Include="DemagKernelCollectionCUDA_Calc_GPU.cpp" />
     <ClCompile Include="DemagTFuncCUDA.cpp" />
     <ClCompile Include="DemagTFunc_IrregularCUDA.cpp" />
@@ -680,20 +668,6 @@
     <ClCompile Include="DiffEqAFM_Evals_SD.cpp" />
     <ClCompile Include="DiffEqAFM_Evals_TEuler.cpp" />
     <ClCompile Include="DiffEqAFM_SEquations.cpp" />
-    <ClCompile Include="DiffEqDM.cpp" />
-    <ClCompile Include="DiffEqDMCUDA.cpp" />
-    <ClCompile Include="DiffEqDM_Equations.cpp" />
-    <ClCompile Include="DiffEqDM_Evals_ABM.cpp" />
-    <ClCompile Include="DiffEqDM_Evals_AHeun.cpp" />
-    <ClCompile Include="DiffEqDM_Evals_Euler.cpp" />
-    <ClCompile Include="DiffEqDM_Evals_RK23.cpp" />
-    <ClCompile Include="DiffEqDM_Evals_RK4.cpp" />
-    <ClCompile Include="DiffEqDM_Evals_RKCK45.cpp" />
-    <ClCompile Include="DiffEqDM_Evals_RKDP54.cpp" />
-    <ClCompile Include="DiffEqDM_Evals_RKF.cpp" />
-    <ClCompile Include="DiffEqDM_Evals_SD.cpp" />
-    <ClCompile Include="DiffEqDM_Evals_TEuler.cpp" />
-    <ClCompile Include="DiffEqDM_SEquations.cpp" />
     <ClCompile Include="DiffEqFM.cpp" />
     <ClCompile Include="DiffEqFMCUDA.cpp" />
     <ClCompile Include="DiffEq_Common.cpp" />
@@ -741,7 +715,6 @@
     <ClCompile Include="iDMExchangeCUDA.cpp" />
     <ClCompile Include="ManagedAtom_DiffEq_CommonCUDA.cpp" />
     <ClCompile Include="ManagedDiffEqAFMCUDA.cpp" />
-    <ClCompile Include="ManagedDiffEqDMCUDA.cpp" />
     <ClCompile Include="ManagedDiffEqFMCUDA.cpp" />
     <ClCompile Include="ManagedDiffEq_CommonCUDA.cpp" />
     <ClCompile Include="ManagedMeshCUDA.cpp" />
@@ -777,8 +750,6 @@
     <ClCompile Include="Mesh_AntiFerromagnetic_Control.cpp" />
     <ClCompile Include="Mesh_AntiFerromagnetic_Histo.cpp" />
     <ClCompile Include="Mesh_AntiFerromagnetic_ODEControl.cpp" />
-    <ClCompile Include="Mesh_Diamagnetic.cpp" />
-    <ClCompile Include="Mesh_DiamagneticCUDA.cpp" />
     <ClCompile Include="Mesh_Dipole.cpp" />
     <ClCompile Include="Mesh_DipoleCUDA.cpp" />
     <ClCompile Include="Mesh_Ferromagnetic_Compute.cpp" />
@@ -866,6 +837,8 @@
     <ClCompile Include="Transport_Charge_Display.cpp" />
     <ClCompile Include="Transport_Spin.cpp" />
     <ClCompile Include="Transport_Spin_Display.cpp" />
+    <ClCompile Include="viDMExchange.cpp" />
+    <ClCompile Include="viDMExchangeCUDA.cpp" />
     <ClCompile Include="WinSpaces.cpp" />
     <ClCompile Include="BorisGraphics.cpp" />
     <ClCompile Include="BorisWinapi.cpp" />
@@ -989,6 +962,7 @@
     <CudaCompile Include="TransportCUDA_Charge_Display.cu" />
     <CudaCompile Include="TransportCUDA_Spin.cu" />
     <CudaCompile Include="TransportCUDA_Spin_Display.cu" />
+    <CudaCompile Include="viDMExchangeCUDA.cu" />
     <CudaCompile Include="ZeemanCUDA.cu" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

@@ -115,6 +115,10 @@ public:
 
 	double UpdateField(void);
 
+	//-------------------Energy methods
+
+	double Get_EnergyChange(int spin_index, DBL3 Mnew);
+
 	//-------------------Setters
 
 	void Set_SDemag_Pointer(SDemag *pSDemag_);

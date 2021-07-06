@@ -153,25 +153,13 @@ double Demag_N::Get_EnergyChange(int spin_index, DBL3 Mnew)
 
 		double Nz = (1 - Nxy.x - Nxy.y);
 
-		return -(MU0/2) * pMesh->h.dim() * (
-			(Mnew * DBL3(-Nxy.x * Mnew.x, -Nxy.y * Mnew.y, -(1 - Nxy.x - Nxy.y) * Mnew.z)) -
-			(pMesh->M[spin_index] * DBL3(-Nxy.x * pMesh->M[spin_index].x, -Nxy.y * pMesh->M[spin_index].y, -(1 - Nxy.x - Nxy.y) * pMesh->M[spin_index].z)));
+		if (Mnew != DBL3()) {
 
-	}
-	else return 0.0;
-}
-
-double Demag_N::Get_Energy(int spin_index)
-{
-	if (pMesh->M.is_not_empty(spin_index)) {
-
-		//Nxy shouldn't have a temperature (or spatial) dependence so not using update_parameters_mcoarse here
-		DBL2 Nxy = pMesh->Nxy;
-
-		double Nz = (1 - Nxy.x - Nxy.y);
-
-		return -(MU0/2) * pMesh->h.dim() * (pMesh->M[spin_index] * DBL3(-Nxy.x * pMesh->M[spin_index].x, -Nxy.y * pMesh->M[spin_index].y, -(1 - Nxy.x - Nxy.y) * pMesh->M[spin_index].z));
-
+			return -(MU0 / 2) * pMesh->h.dim() * (
+				(Mnew * DBL3(-Nxy.x * Mnew.x, -Nxy.y * Mnew.y, -(1 - Nxy.x - Nxy.y) * Mnew.z)) -
+				(pMesh->M[spin_index] * DBL3(-Nxy.x * pMesh->M[spin_index].x, -Nxy.y * pMesh->M[spin_index].y, -(1 - Nxy.x - Nxy.y) * pMesh->M[spin_index].z)));
+		}
+		else return -(MU0 / 2) * pMesh->h.dim() * (pMesh->M[spin_index] * DBL3(-Nxy.x * pMesh->M[spin_index].x, -Nxy.y * pMesh->M[spin_index].y, -(1 - Nxy.x - Nxy.y) * pMesh->M[spin_index].z));
 	}
 	else return 0.0;
 }

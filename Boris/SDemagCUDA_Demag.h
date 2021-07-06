@@ -55,6 +55,10 @@ private:
 	//-Nxx, -Nyy, -Nzz values at r = r0
 	cu_obj<cuReal3> selfDemagCoeff;
 
+private:
+
+	void set_SDemag_DemagCUDA_pointers(void);
+
 public:
 
 	SDemagCUDA_Demag(MeshCUDA* pMeshCUDA_, SDemag_Demag *pSDemag_Demag_);

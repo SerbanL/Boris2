@@ -40,10 +40,6 @@ BError SuperMesh::AddMesh(std::string meshName, MESH_ meshType, Rect meshRect)
 		pMesh.push_back(new AFMesh(meshRect, make_cellsize(DEFAULTCELLSIZE, meshRect), this), meshName);
 		break;
 
-	case MESH_DIAMAGNETIC:
-		pMesh.push_back(new DiaMesh(meshRect, make_cellsize(DEFAULTCELLSIZE, meshRect), this), meshName);
-		break;
-
 	case MESH_DIPOLE:
 		pMesh.push_back(new DipoleMesh(meshRect, make_cellsize(DEFAULTCELLSIZE, meshRect), this), meshName);
 		break;

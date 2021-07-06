@@ -10,7 +10,7 @@ enum MOD_ {
 	MOD_DEMAG_N = 1, MOD_DEMAG = 2, MODS_SDEMAG = 3, MOD_SDEMAG_DEMAG = 19,
 
 	//exchange
-	MOD_EXCHANGE = 4, MOD_DMEXCHANGE = 5, MOD_IDMEXCHANGE = 6, MOD_SURFEXCHANGE = 7,
+	MOD_EXCHANGE = 4, MOD_DMEXCHANGE = 5, MOD_IDMEXCHANGE = 6, MOD_VIDMEXCHANGE = 26, MOD_SURFEXCHANGE = 7,
 	
 	//others
 	MOD_ZEEMAN = 8, MOD_ROUGHNESS = 18, MOD_MELASTIC = 20, MOD_MOPTICAL = 21,
@@ -32,4 +32,5 @@ enum MOD_ {
 	
 	//atomistic dipole-dipole
 	MOD_ATOM_DIPOLEDIPOLE = 22
-}; //highest integer : 25
+}; 
+//highest integer : 26

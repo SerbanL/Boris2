@@ -7,6 +7,7 @@
 #include "SuperMesh.h"
 #include "SDemag.h"
 #include "MeshDefs.h"
+#include "SimScheduleDefs.h"
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -167,9 +168,12 @@ BError SDemag_Demag::Initialize_Module_Display(void)
 
 		error = Update_Module_Display_VECs(
 			pMesh->h, pMesh->meshRect, 
-			(MOD_)pMesh->Get_ActualModule_Heff_Display() == MOD_SDEMAG_DEMAG || pMesh->IsOutputDataSet_withRect(DATA_E_DEMAG),
-			(MOD_)pMesh->Get_ActualModule_Energy_Display() == MOD_SDEMAG_DEMAG || pMesh->IsOutputDataSet_withRect(DATA_E_DEMAG));
+			(MOD_)pMesh->Get_ActualModule_Heff_Display() == MOD_SDEMAG_DEMAG || pMesh->IsOutputDataSet_withRect(DATA_E_DEMAG) || pMesh->IsStageSet(SS_MONTECARLO),
+			(MOD_)pMesh->Get_ActualModule_Energy_Display() == MOD_SDEMAG_DEMAG || pMesh->IsOutputDataSet_withRect(DATA_E_DEMAG) || pMesh->IsStageSet(SS_MONTECARLO));
 		if (error) return error(BERROR_OUTOFMEMORY_CRIT);
+
+		//if a Monte Carlo stage is set then we need to compute fields
+		if (pMesh->IsStageSet(SS_MONTECARLO)) pMesh->Set_Force_MonteCarlo_ComputeFields(true);
 	}
 
 	//set correct size for module Heff and energy transfers, if needed
@@ -346,5 +350,18 @@ double SDemag_Demag::UpdateField(void)
 	return 0.0;
 }
 
+//-------------------Energy methods
+
+double SDemag_Demag::Get_EnergyChange(int spin_index, DBL3 Mnew)
+{
+	//Module_Heff needs to be calculated (done during a Monte Carlo simulation, where this method would be used)
+	if (Module_Heff.linear_size()) {
+
+		//do not divide by 2 as we are not double-counting here
+		if (Mnew != DBL3()) return -pMesh->h.dim() * MU0 * Module_Heff[pMesh->M.cellidx_to_position(spin_index)] * (Mnew - pMesh->M[spin_index]);
+		else return -pMesh->h.dim() * MU0 * Module_Heff[pMesh->M.cellidx_to_position(spin_index)] * pMesh->M[spin_index];
+	}
+	else return 0.0;
+}
 
 #endif

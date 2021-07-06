@@ -48,6 +48,8 @@ BError RoughnessCUDA::Initialize(void)
 		pMeshCUDA->GetMeshType() == MESH_ANTIFERROMAGNETIC);
 	if (!error)	initialized = true;
 
+	if (initialized) set_RoughnessCUDA_pointers();
+
 	return error;
 }
 

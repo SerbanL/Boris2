@@ -131,19 +131,8 @@ double Atom_Exchange::Get_EnergyChange(int spin_index, DBL3 Mnew)
 		paMesh->update_parameters_mcoarse(spin_index, paMesh->J, J);
 
 		//local spin energy given -J * Sum_over_neighbors_j (Si . Sj), where Si, Sj are unit vectors
-		return -J * ((Mnew.normalized() - paMesh->M1[spin_index].normalized()) * paMesh->M1.ngbr_dirsum(spin_index));
-	}
-	else return 0.0;
-}
-
-double Atom_Exchange::Get_Energy(int spin_index)
-{
-	if (paMesh->M1.is_not_empty(spin_index)) {
-
-		double J = paMesh->J;
-		paMesh->update_parameters_mcoarse(spin_index, paMesh->J, J);
-
-		return -J * paMesh->M1[spin_index].normalized() * paMesh->M1.ngbr_dirsum(spin_index);
+		if (Mnew != DBL3()) return -J * ((Mnew.normalized() - paMesh->M1[spin_index].normalized()) * paMesh->M1.ngbr_dirsum(spin_index));
+		else return -J * (paMesh->M1[spin_index].normalized() * paMesh->M1.ngbr_dirsum(spin_index));
 	}
 	else return 0.0;
 }

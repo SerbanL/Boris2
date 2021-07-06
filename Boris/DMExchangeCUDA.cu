@@ -150,7 +150,11 @@ __global__ void DMExchangeCUDA_AFM_UpdateField(ManagedMeshCUDA& cuMesh, ManagedM
 			cuReal2 Ah = *cuMesh.pAh;
 			cuReal2 Anh = *cuMesh.pAnh;
 			cuReal2 D_AFM = *cuMesh.pD_AFM;
-			cuMesh.update_parameters_mcoarse(idx, *cuMesh.pMs_AFM, Ms_AFM, *cuMesh.pA_AFM, A_AFM, *cuMesh.pAh, Ah, *cuMesh.pAnh, Anh, *cuMesh.pD_AFM, D_AFM);
+			cuBReal Dh = *cuMesh.pDh;
+			cuReal3 dh_dir = *cuMesh.pdh_dir;
+			cuMesh.update_parameters_mcoarse(idx, *cuMesh.pMs_AFM, Ms_AFM, *cuMesh.pA_AFM, A_AFM, *cuMesh.pAh, Ah, *cuMesh.pAnh, Anh, *cuMesh.pD_AFM, D_AFM, *cuMesh.pDh, Dh, *cuMesh.pdh_dir, dh_dir);
+
+			cuBReal Dhconst = (Dh / ((cuBReal)MU0*Ms_AFM.i*Ms_AFM.j));
 
 			if (M.is_interior(idx)) {
 
@@ -170,6 +174,10 @@ __global__ void DMExchangeCUDA_AFM_UpdateField(ManagedMeshCUDA& cuMesh, ManagedM
 				//Hdm, ex = -2D / (mu0*Ms) * curl m
 				Hexch_D = -2 * D_AFM.i * M.curl_neu(idx) / ((cuBReal)MU0 * Ms_AFM.i * Ms_AFM.i);
 				Hexch_D2 = -2 * D_AFM.j * M2.curl_neu(idx) / ((cuBReal)MU0 * Ms_AFM.j * Ms_AFM.j);
+
+				//3. Homogeneous DMI contribution
+				Hexch_D += Dhconst * (dh_dir ^ M2[idx]);
+				Hexch_D2 += -Dhconst * (dh_dir ^ M[idx]);
 			}
 			else {
 
@@ -201,6 +209,10 @@ __global__ void DMExchangeCUDA_AFM_UpdateField(ManagedMeshCUDA& cuMesh, ManagedM
 				//For cmbnd cells curl_nneu does not evaluate to zero in the CMBND coupling direction, but sided differentials are used - when setting values at CMBND cells for exchange coupled meshes must correct for this.
 				Hexch_D = -2 * D_AFM.i * M.curl_nneu(idx, bndA_nneu) / ((cuBReal)MU0 * Ms_AFM.i * Ms_AFM.i);
 				Hexch_D2 = -2 * D_AFM.j * M2.curl_nneu(idx, bndB_nneu) / ((cuBReal)MU0 * Ms_AFM.j * Ms_AFM.j);
+
+				//3. Homogeneous DMI contribution
+				Hexch_D += Dhconst * (dh_dir ^ M2[idx]);
+				Hexch_D2 += -Dhconst * (dh_dir ^ M[idx]);
 			}
 
 			if (do_reduction) {

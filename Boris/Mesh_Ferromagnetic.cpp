@@ -23,7 +23,7 @@ FMesh::FMesh(SuperMesh *pSMesh_) :
 			VINFO(mc_cone_angledeg), VINFO(mc_acceptance_rate), VINFO(mc_parallel), VINFO(mc_disabled), VINFO(mc_constrain), VINFO(cmc_n),
 			//Material Parameters
 			VINFO(grel), VINFO(alpha), VINFO(Ms), VINFO(Nxy), 
-			VINFO(A), VINFO(D), VINFO(J1), VINFO(J2), 
+			VINFO(A), VINFO(D), VINFO(D_dir), VINFO(J1), VINFO(J2),
 			VINFO(K1), VINFO(K2), VINFO(K3), VINFO(mcanis_ea1), VINFO(mcanis_ea2), VINFO(mcanis_ea3),
 			VINFO(Kt),
 			VINFO(susrel), VINFO(susprel), VINFO(cHA), VINFO(cHmo),
@@ -41,7 +41,7 @@ FMesh::FMesh(SuperMesh *pSMesh_) :
 		{
 			//Modules Implementations
 			IINFO(Demag_N), IINFO(Demag), IINFO(SDemag_Demag),
-			IINFO(Exch_6ngbr_Neu), IINFO(DMExchange), IINFO(iDMExchange), IINFO(SurfExchange),
+			IINFO(Exch_6ngbr_Neu), IINFO(DMExchange), IINFO(iDMExchange), IINFO(viDMExchange), IINFO(SurfExchange),
 			IINFO(Zeeman), IINFO(MOptical), IINFO(MElastic), IINFO(Roughness),
 			IINFO(Anisotropy_Uniaxial), IINFO(Anisotropy_Cubic), IINFO(Anisotropy_Biaxial), IINFO(Anisotropy_Tensorial),
 			IINFO(Transport), IINFO(Heat),
@@ -66,7 +66,7 @@ FMesh::FMesh(Rect meshRect_, DBL3 h_, SuperMesh *pSMesh_) :
 			VINFO(mc_cone_angledeg), VINFO(mc_acceptance_rate), VINFO(mc_parallel), VINFO(mc_disabled), VINFO(mc_constrain), VINFO(cmc_n),
 			//Material Parameters
 			VINFO(grel), VINFO(alpha), VINFO(Ms), VINFO(Nxy),
-			VINFO(A), VINFO(D), VINFO(J1), VINFO(J2),
+			VINFO(A), VINFO(D), VINFO(D_dir), VINFO(J1), VINFO(J2),
 			VINFO(K1), VINFO(K2), VINFO(K3), VINFO(mcanis_ea1), VINFO(mcanis_ea2), VINFO(mcanis_ea3),
 			VINFO(Kt),
 			VINFO(susrel), VINFO(susprel), VINFO(cHA), VINFO(cHmo),
@@ -84,7 +84,7 @@ FMesh::FMesh(Rect meshRect_, DBL3 h_, SuperMesh *pSMesh_) :
 		{
 			//Modules Implementations
 			IINFO(Demag_N), IINFO(Demag), IINFO(SDemag_Demag),
-			IINFO(Exch_6ngbr_Neu), IINFO(DMExchange), IINFO(iDMExchange), IINFO(SurfExchange),
+			IINFO(Exch_6ngbr_Neu), IINFO(DMExchange), IINFO(iDMExchange), IINFO(viDMExchange), IINFO(SurfExchange),
 			IINFO(Zeeman), IINFO(MOptical), IINFO(MElastic), IINFO(Roughness),
 			IINFO(Anisotropy_Uniaxial), IINFO(Anisotropy_Cubic), IINFO(Anisotropy_Biaxial), IINFO(Anisotropy_Tensorial),
 			IINFO(Transport), IINFO(Heat),

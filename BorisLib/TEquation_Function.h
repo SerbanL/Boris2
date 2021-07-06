@@ -404,6 +404,17 @@ namespace EqComp {
 			return param * fabs(pFunc1->func(*pFunc1, bvars...));
 		}
 
+		//sign
+		double F_sgn(BVarType... bvars) const
+		{
+			return get_sign(pFunc1->func(*pFunc1, bvars...));
+		}
+
+		double F_sgn_pmul(BVarType... bvars) const
+		{
+			return param * get_sign(pFunc1->func(*pFunc1, bvars...));
+		}
+
 		//step function: step(t) = 0 for t < 0, = 1 to t>= 0
 		double F_step(BVarType... bvars) const
 		{
@@ -774,6 +785,10 @@ namespace EqComp {
 
 			case FUNC_ABS:
 				func = &Function::F_abs;
+				break;
+
+			case FUNC_SGN:
+				func = &Function::F_sgn;
 				break;
 
 			case FUNC_ABS_PMUL:

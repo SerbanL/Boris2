@@ -504,7 +504,7 @@ void BorisDisplay::Refresh(int winIdMajor)
 	//Need the { pBG->BeginD3DDraw(); ... pBG->EndD3DDraw(); } pair. Graphical updates should not be called from anywhere else.
 
 	pBG->BeginD3DDraw();
-
+	
 	//reset tranformation
 	pBG->ResetTransformation();
 

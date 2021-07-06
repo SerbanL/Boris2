@@ -260,7 +260,7 @@ public:
 	void GetPhysicalQuantityProfile(DBL3 start, DBL3 end, double step, DBL3 stencil, std::vector<DBL3>*& pprofile_dbl3, std::vector<double>*& pprofile_dbl, bool do_average, bool read_average);
 
 	//return average value for currently displayed mesh quantity in the given relative rectangle
-	Any GetAverageDisplayedMeshValue(Rect rel_rect);
+	Any GetAverageDisplayedMeshValue(Rect rel_rect, std::vector<MeshShape> shapes = {});
 
 	//----------------------------------- MESH INFO AND SIZE GET/SET METHODS : MeshDimensions.cpp
 
@@ -350,12 +350,6 @@ public:
 
 	//get topological charge using formula Q = Integral(m.(dm/dx x dm/dy) dxdy) / 4PI
 	double GetTopologicalCharge(Rect rectangle = Rect());
-
-	DBL3 GetAverageChargeCurrentDensity(Rect rectangle = Rect());
-
-	DBL3 GetAverageSpinCurrentX(Rect rectangle = Rect());
-	DBL3 GetAverageSpinCurrentY(Rect rectangle = Rect());
-	DBL3 GetAverageSpinCurrentZ(Rect rectangle = Rect());
 
 	double GetAverageElectricalPotential(Rect rectangle = Rect());
 	DBL3 GetAverageSpinAccumulation(Rect rectangle = Rect());

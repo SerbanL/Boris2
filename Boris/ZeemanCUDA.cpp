@@ -41,6 +41,18 @@ BError ZeemanCUDA::Initialize(void)
 		pMeshCUDA->GetMeshType() == MESH_ANTIFERROMAGNETIC);
 	if (!error)	initialized = true;
 
+	//If using Havec make sure size and resolution matches M
+	if (Havec()->size_cpu().dim()) {
+		if (!Havec()->resize((cuReal3)pMeshCUDA->h, (cuRect)pMeshCUDA->meshRect)) {
+			
+			Havec()->clear();
+			return error(BERROR_OUTOFGPUMEMORY_NCRIT);
+			initialized = false;
+		}
+	}
+
+	if (initialized) set_ZeemanCUDA_pointers();
+
 	return error;
 }
 
@@ -85,11 +97,21 @@ void ZeemanCUDA::UpdateConfiguration_Values(UPDATECONFIG_ cfgMessage)
 void ZeemanCUDA::SetField(cuReal3 Hxyz)
 {
 	if (H_equation.is_set()) H_equation.clear();
+	if (Havec()->size_cpu().dim()) Havec()->clear();
 
 	Ha.from_cpu(Hxyz);
 
 	//Note : this method is called from the CPU version, which makes any changes associated with non-zero Curie temperature and non-zero atomic moment, including in gpu memory, so not necessary to do anything else here.
 	//This happens because the MatP parameters are updated, which automatically results in the corresponding MatPCUDA parameters being updated.
+}
+
+BError ZeemanCUDA::SetFieldVEC(VEC<DBL3>& Havec_cpu)
+{
+	BError error(CLASS_STR(ZeemanCUDA));
+
+	if (!Havec()->set_from_cpuvec(Havec_cpu)) error_on_create(BERROR_OUTOFGPUMEMORY_NCRIT);
+
+	return error;
 }
 
 //-------------------Torque methods

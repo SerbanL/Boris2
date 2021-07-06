@@ -49,6 +49,11 @@ public:
 	BError MakeCUDAModule(void);
 
 	double UpdateField(void);
+
+	//-------------------Energy methods
+
+	//For simple cubic mesh spin_index coincides with index in M1
+	double Get_EnergyChange(int spin_index, DBL3 Mnew);
 };
 
 #else

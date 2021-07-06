@@ -1193,7 +1193,7 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 			sendCommand_verbose(CMD_SETPARAMVAR, meshName, to_text);
 		}
 
-		else if (actionCode == AC_MOUSERIGHTDOWN) sendCommand_verbose(CMD_CLEARPARAMVAR, meshName, paramName);
+		else if (actionCode == AC_MOUSERIGHTDOWN) sendCommand_verbose(CMD_CLEARPARAMSVAR, meshName, paramName);
 		else if (actionCode == AC_DROPINTERACTOBJECTS) {
 
 			if (iop.interactingObjectId.major == IOI_MESHPARAMVARGENERATOR) {

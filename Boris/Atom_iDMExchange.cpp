@@ -152,20 +152,8 @@ double Atom_iDMExchange::Get_EnergyChange(int spin_index, DBL3 Mnew)
 		//Now zanisotropic_ngbr_dirsum returns (rij x z) x Sj, and Si . ((rij x z) x Sj) = -Si. (Sj x (rij x z)) = -(rij x z) . (Si x Sj)
 		//Thus compute: -D * (paMesh->M1[spin_index].normalized() * paMesh->M1.zanisotropic_ngbr_dirsum(spin_index));
 
-		return (Mnew.normalized() - paMesh->M1[spin_index].normalized()) * (-J * paMesh->M1.ngbr_dirsum(spin_index) - D * paMesh->M1.zanisotropic_ngbr_dirsum(spin_index));
-	}
-	else return 0.0;
-}
-
-double Atom_iDMExchange::Get_Energy(int spin_index)
-{
-	if (paMesh->M1.is_not_empty(spin_index)) {
-
-		double J = paMesh->J;
-		double D = paMesh->D;
-		paMesh->update_parameters_mcoarse(spin_index, paMesh->J, J, paMesh->D, D);
-
-		return paMesh->M1[spin_index].normalized() * (-J * paMesh->M1.ngbr_dirsum(spin_index) - D * paMesh->M1.zanisotropic_ngbr_dirsum(spin_index));
+		if (Mnew != DBL3()) return (Mnew.normalized() - paMesh->M1[spin_index].normalized()) * (-J * paMesh->M1.ngbr_dirsum(spin_index) - D * paMesh->M1.zanisotropic_ngbr_dirsum(spin_index));
+		else return paMesh->M1[spin_index].normalized() * (-J * paMesh->M1.ngbr_dirsum(spin_index) - D * paMesh->M1.zanisotropic_ngbr_dirsum(spin_index));
 	}
 	else return 0.0;
 }

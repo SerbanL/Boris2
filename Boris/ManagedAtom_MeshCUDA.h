@@ -38,6 +38,9 @@ public:
 	//DMI exchange constant : (units of J)
 	MatPCUDA<cuBReal, cuBReal>* pD;
 
+	//Interfacial DMI symmetry axis direction, used by vector interfacial DMI module
+	MatPCUDA<cuReal3, cuReal3>* pD_dir;
+
 	//Surface exchange coupling, used by the surfexchange module to couple two spins on different meshes at the surface (units of J)
 	MatPCUDA<cuBReal, cuBReal>* pJs;
 
@@ -154,6 +157,9 @@ public:
 
 	//Atom_DipoleDipoleCUDA / Atom_DemagCUDA
 	cuVEC<cuReal3>*  pAtom_Demag_Heff;
+
+	//Atom_ZeemanCUDA
+	cuVEC<cuReal3>* pHavec;
 
 private:
 
@@ -286,6 +292,7 @@ public:
 	//SIMPLE CUBIC
 
 	//switch function which adds all assigned energy contributions in this mesh to calculate energy change from current spin to Mnew spin : return energy change as new - old
+	//If Mnew is passed in as cuReal3(), then this function returns the current spin energy only - all functions in the switch statement implement this eventuality.
 	__device__ cuBReal Get_Atomistic_EnergyChange_SC(int spin_index, cuReal3 Mnew, int*& cuaModules, int numModules, cuReal3& Ha);
 
 	//Atom_Demag_N
@@ -306,11 +313,17 @@ public:
 	//Atom_iDMExchangeCUDA
 	__device__ cuBReal Get_Atomistic_EnergyChange_SC_iDMExchangeCUDA(int spin_index, cuReal3 Mnew);
 
+	//Atom_viDMExchangeCUDA
+	__device__ cuBReal Get_Atomistic_EnergyChange_SC_viDMExchangeCUDA(int spin_index, cuReal3 Mnew);
+
 	//Atom_SurfExchangeCUDA
 	__device__ cuBReal Get_Atomistic_EnergyChange_SC_SurfExchangeCUDA(int spin_index, cuReal3 Mnew);
 
 	//Atom_ZeemanCUDA
 	__device__ cuBReal Get_Atomistic_EnergyChange_SC_ZeemanCUDA(int spin_index, cuReal3 Mnew, cuReal3& Ha);
+
+	//Atom_MOpticalCUDA
+	__device__ cuBReal Get_Atomistic_EnergyChange_SC_MOpticalCUDA(int spin_index, cuReal3 Mnew);
 
 	//Atom_AnisotropyCUDA
 	__device__ cuBReal Get_Atomistic_EnergyChange_SC_AnisotropyCUDA(int spin_index, cuReal3 Mnew);
@@ -323,49 +336,6 @@ public:
 
 	//Atom_AnisotropyTensorialCUDA
 	__device__ cuBReal Get_Atomistic_EnergyChange_SC_AnisotropyTensorialCUDA(int spin_index, cuReal3 Mnew);
-
-	//Spin Energy
-
-	//SIMPLE CUBIC
-
-	//switch function which adds all assigned energy contributions in this mesh to calculate energy change from current spin to Mnew spin : return energy change as new - old
-	__device__ cuBReal Get_Atomistic_Energy_SC(int spin_index, int*& cuaModules, int numModules, cuReal3& Ha);
-
-	//Atom_Demag_N
-	__device__ cuBReal Get_Atomistic_Energy_SC_DemagNCUDA(int spin_index);
-
-	//Atom_Demag
-	__device__ cuBReal Get_Atomistic_Energy_SC_DemagCUDA(int spin_index);
-
-	//Atom_DipoleDipole
-	__device__ cuBReal Get_Atomistic_Energy_SC_DipoleDipoleCUDA(int spin_index);
-
-	//Atom_ExchangeCUDA
-	__device__ cuBReal Get_Atomistic_Energy_SC_ExchangeCUDA(int spin_index);
-
-	//Atom_DMExchangeCUDA
-	__device__ cuBReal Get_Atomistic_Energy_SC_DMExchangeCUDA(int spin_index);
-
-	//Atom_iDMExchangeCUDA
-	__device__ cuBReal Get_Atomistic_Energy_SC_iDMExchangeCUDA(int spin_index);
-
-	//Atom_SurfExchangeCUDA
-	__device__ cuBReal Get_Atomistic_Energy_SC_SurfExchangeCUDA(int spin_index);
-
-	//Atom_ZeemanCUDA
-	__device__ cuBReal Get_Atomistic_Energy_SC_ZeemanCUDA(int spin_index, cuReal3& Ha);
-
-	//Atom_AnisotropyCUDA
-	__device__ cuBReal Get_Atomistic_Energy_SC_AnisotropyCUDA(int spin_index);
-
-	//Atom_AnisotropyCubiCUDA
-	__device__ cuBReal Get_Atomistic_Energy_SC_AnisotropyCubiCUDA(int spin_index);
-
-	//Atom_AnisotropyBiaxialCUDA
-	__device__ cuBReal Get_Atomistic_Energy_SC_AnisotropyBiaxialCUDA(int spin_index);
-
-	//Atom_AnisotropyTensorialCUDA
-	__device__ cuBReal Get_Atomistic_Energy_SC_AnisotropyTensorialCUDA(int spin_index);
 };
 
 #endif

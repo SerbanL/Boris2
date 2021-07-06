@@ -450,6 +450,19 @@ public:
 		return param * fabs((cuFunc1.*(cuFunc1.func))(bvars...));
 	}
 
+	//sign
+	__device__ cuBReal F_sgn(BVarType... bvars)
+	{
+		ManagedFunctionCUDA<BVarType...>& cuFunc1 = *pFunc1;
+		return cu_get_sign((cuFunc1.*(cuFunc1.func))(bvars...));
+	}
+
+	__device__ cuBReal F_sgn_pmul(BVarType... bvars)
+	{
+		ManagedFunctionCUDA<BVarType...>& cuFunc1 = *pFunc1;
+		return param * cu_get_sign((cuFunc1.*(cuFunc1.func))(bvars...));
+	}
+
 	//step function: step(t) = 0 for t < 0, = 1 to t>= 0
 	__device__ cuBReal F_step(BVarType... bvars)
 	{

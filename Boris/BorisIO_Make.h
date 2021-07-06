@@ -33,6 +33,7 @@ void Simulation::MakeIOInfo(void)
 	ioInfo.set(modulegeneric_info + std::string("<i><b>Direct exchange interaction"), INT2(IOI_MODULE, MOD_EXCHANGE));
 	ioInfo.set(modulegeneric_info + std::string("<i><b>Dzyaloshinskii-Moriya interaction - bulk"), INT2(IOI_MODULE, MOD_DMEXCHANGE));
 	ioInfo.set(modulegeneric_info + std::string("<i><b>Dzyaloshinskii-Moriya interaction - interfacial"), INT2(IOI_MODULE, MOD_IDMEXCHANGE));
+	ioInfo.set(modulegeneric_info + std::string("<i><b>Dzyaloshinskii-Moriya interaction - vector interfacial"), INT2(IOI_MODULE, MOD_VIDMEXCHANGE));
 	ioInfo.set(modulegeneric_info + std::string("<i><b>Surface exchange interaction\n<i><b>Couple to adjacent meshes along z\n<i><b>with surfexchange module enabled"), INT2(IOI_MODULE, MOD_SURFEXCHANGE));
 	ioInfo.set(modulegeneric_info + std::string("<i><b>Applied field term"), INT2(IOI_MODULE, MOD_ZEEMAN));
 	ioInfo.set(modulegeneric_info + std::string("<i><b>Magneto-Optical term"), INT2(IOI_MODULE, MOD_MOPTICAL));
@@ -685,9 +686,11 @@ void Simulation::MakeIOInfo(void)
 	ioInfo.set(param_generic_info + std::string("<i><b>Exchange parameter to critical temperature ratio\n<i><b>Used with 2-sublattice model, cross-coupling"), INT2(IOI_MESHPARAM, PARAM_AFTAUCROSS));
 	ioInfo.set(param_generic_info + std::string("<i><b>Dzyaloshinskii-Moriya exchange"), INT2(IOI_MESHPARAM, PARAM_D));
 	ioInfo.set(param_generic_info + std::string("<i><b>Dzyaloshinskii-Moriya exchange"), INT2(IOI_MESHPARAM, PARAM_D_AFM));
+	ioInfo.set(param_generic_info + std::string("<i><b>Homogeneous DMI constant"), INT2(IOI_MESHPARAM, PARAM_DMI_DH));
+	ioInfo.set(param_generic_info + std::string("<i><b>Homogeneous DMI direction unit vector"), INT2(IOI_MESHPARAM, PARAM_DMI_DH_DIR));
+	ioInfo.set(param_generic_info + std::string("<i><b>Interfacial DMI symmetry axis\n<i><b>Cartesian unit vector"), INT2(IOI_MESHPARAM, PARAM_DMI_DIR));
 	ioInfo.set(param_generic_info + std::string("<i><b>Bilinear surface exchange\n<i><b>Top mesh sets value"), INT2(IOI_MESHPARAM, PARAM_J1));
 	ioInfo.set(param_generic_info + std::string("<i><b>Biquadratic surface exchange\n<i><b>Top mesh sets value"), INT2(IOI_MESHPARAM, PARAM_J2));
-	ioInfo.set(param_generic_info + std::string("<i><b>Surface exchange from diamagnet\n<i><b>Diamagnetic mesh sets value"), INT2(IOI_MESHPARAM, PARAM_NETADIA));
 	ioInfo.set(param_generic_info + std::string("<i><b>Magnetocrystalline anisotropy"), INT2(IOI_MESHPARAM, PARAM_K1));
 	ioInfo.set(param_generic_info + std::string("<i><b>Magnetocrystalline anisotropy"), INT2(IOI_MESHPARAM, PARAM_K2));
 	ioInfo.set(param_generic_info + std::string("<i><b>Magnetocrystalline anisotropy"), INT2(IOI_MESHPARAM, PARAM_K3));
@@ -714,7 +717,7 @@ void Simulation::MakeIOInfo(void)
 	ioInfo.set(param_generic_info + std::string("<i><b>Field-like spin torque coefficient\n<i><b>Used for SOTField and STField modules in FM meshes"), INT2(IOI_MESHPARAM, PARAM_FLSOT));
 	ioInfo.set(param_generic_info + std::string("<i><b>Slonczewski macrospin torques parameters."), INT2(IOI_MESHPARAM, PARAM_STQ));
 	ioInfo.set(param_generic_info + std::string("<i><b>Slonczewski macrospin torques parameters."), INT2(IOI_MESHPARAM, PARAM_STA));
-	ioInfo.set(param_generic_info + std::string("<i><b>Slonczewski macrospin torques polarization vector."), INT2(IOI_MESHPARAM, PARAM_STP));
+	ioInfo.set(param_generic_info + std::string("<i><b>Slonczewski macrospin torques polarization vector; or SOT symmetry axis."), INT2(IOI_MESHPARAM, PARAM_STP));
 	ioInfo.set(param_generic_info + std::string("<i><b>Inverse spin-Hall angle"), INT2(IOI_MESHPARAM, PARAM_ISHA));
 	ioInfo.set(param_generic_info + std::string("<i><b>Spin-flip length"), INT2(IOI_MESHPARAM, PARAM_LSF));
 	ioInfo.set(param_generic_info + std::string("<i><b>Exchange rotation length"), INT2(IOI_MESHPARAM, PARAM_LEX));

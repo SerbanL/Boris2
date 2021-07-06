@@ -20,7 +20,7 @@ class SuperMesh;
 class Atom_Zeeman : 
 	public Modules,
 	public ZeemanBase,
-	public ProgramState<Atom_Zeeman, std::tuple<DBL3, TEquation<double, double, double, double>>, std::tuple<>>
+	public ProgramState<Atom_Zeeman, std::tuple<DBL3, TEquation<double, double, double, double>, VEC<DBL3>>, std::tuple<>>
 {
 
 #if COMPILECUDA == 1
@@ -70,8 +70,6 @@ public:
 	//For simple cubic mesh spin_index coincides with index in M1
 	double Get_EnergyChange(int spin_index, DBL3 Mnew);
 
-	double Get_Energy(int spin_index);
-
 	//-------------------
 
 	void SetField(DBL3 Hxyz);
@@ -80,6 +78,8 @@ public:
 	DBL3 GetField(void);
 
 	BError SetFieldEquation(std::string equation_string, int step);
+
+	BError SetFieldVEC_FromOVF2(std::string fileName);
 
 	//if base temperature changes we need to adjust Tb in H_equation if it's used.
 	void SetBaseTemperature(double Temperature);
@@ -125,6 +125,8 @@ public:
 	DBL3 GetField(void) { return DBL3(); }
 
 	BError SetFieldEquation(std::string equation_string, int step = 0) { return BError(); }
+
+	BError SetFieldVEC_FromOVF2(std::string fileName) { return BError(); }
 
 	//if base temperature changes we need to adjust Tb in H_equation if it's used.
 	void SetBaseTemperature(double Temperature) {}

@@ -25,6 +25,9 @@ Atom_MeshParamsCUDA::Atom_MeshParamsCUDA(Atom_MeshParams *pameshParams)
 	D()->set_from_cpu(pameshParams->D);
 	pameshParams->D.set_p_cu_obj_mpcuda(&D);
 
+	D_dir()->set_from_cpu(pameshParams->D_dir);
+	pameshParams->D_dir.set_p_cu_obj_mpcuda(&D_dir);
+
 	Js()->set_from_cpu(pameshParams->Js);
 	pameshParams->Js.set_p_cu_obj_mpcuda(&Js);
 
@@ -91,7 +94,10 @@ Atom_MeshParamsCUDA::~Atom_MeshParamsCUDA()
 	pameshParams->mu_s.null_p_cu_obj_mpcuda();
 
 	pameshParams->J.null_p_cu_obj_mpcuda();
+	
 	pameshParams->D.null_p_cu_obj_mpcuda();
+	pameshParams->D_dir.null_p_cu_obj_mpcuda();
+
 	pameshParams->Js.null_p_cu_obj_mpcuda();
 
 	pameshParams->K1.null_p_cu_obj_mpcuda();

@@ -79,7 +79,7 @@ BError DifferentialEquationFM::AllocateMemory(void)
 		if (!sEval2.resize(pMesh->n)) return error(BERROR_OUTOFMEMORY_CRIT);
 		break;
 
-	case EVAL_RKF:
+	case EVAL_RKF45:
 		if (!sEval0.resize(pMesh->n)) return error(BERROR_OUTOFMEMORY_CRIT);
 		if (!sEval1.resize(pMesh->n)) return error(BERROR_OUTOFMEMORY_CRIT);
 		if (!sEval2.resize(pMesh->n)) return error(BERROR_OUTOFMEMORY_CRIT);
@@ -87,7 +87,7 @@ BError DifferentialEquationFM::AllocateMemory(void)
 		if (!sEval4.resize(pMesh->n)) return error(BERROR_OUTOFMEMORY_CRIT);
 		break;
 
-	case EVAL_RKCK:
+	case EVAL_RKCK45:
 		if (!sEval0.resize(pMesh->n)) return error(BERROR_OUTOFMEMORY_CRIT);
 		if (!sEval1.resize(pMesh->n)) return error(BERROR_OUTOFMEMORY_CRIT);
 		if (!sEval2.resize(pMesh->n)) return error(BERROR_OUTOFMEMORY_CRIT);
@@ -95,7 +95,7 @@ BError DifferentialEquationFM::AllocateMemory(void)
 		if (!sEval4.resize(pMesh->n)) return error(BERROR_OUTOFMEMORY_CRIT);
 		break;
 
-	case EVAL_RKDP:
+	case EVAL_RKDP54:
 		if (!sEval0.resize(pMesh->n)) return error(BERROR_OUTOFMEMORY_CRIT);
 		if (!sEval1.resize(pMesh->n)) return error(BERROR_OUTOFMEMORY_CRIT);
 		if (!sEval2.resize(pMesh->n)) return error(BERROR_OUTOFMEMORY_CRIT);
@@ -147,9 +147,9 @@ void DifferentialEquationFM::CleanupMemory(void)
 	if (evalMethod != EVAL_RK4 &&
 		evalMethod != EVAL_ABM &&
 		evalMethod != EVAL_RK23 &&
-		evalMethod != EVAL_RKF &&
-		evalMethod != EVAL_RKCK &&
-		evalMethod != EVAL_RKDP &&
+		evalMethod != EVAL_RKF45 &&
+		evalMethod != EVAL_RKCK45 &&
+		evalMethod != EVAL_RKDP54 &&
 		evalMethod != EVAL_SD) {
 
 		sEval0.clear();
@@ -158,32 +158,32 @@ void DifferentialEquationFM::CleanupMemory(void)
 	if (evalMethod != EVAL_RK4 &&
 		evalMethod != EVAL_ABM &&
 		evalMethod != EVAL_RK23 &&
-		evalMethod != EVAL_RKF &&
-		evalMethod != EVAL_RKCK &&
-		evalMethod != EVAL_RKDP) {
+		evalMethod != EVAL_RKF45 &&
+		evalMethod != EVAL_RKCK45 &&
+		evalMethod != EVAL_RKDP54) {
 
 		sEval1.clear();
 	}
 
 	if (evalMethod != EVAL_RK4 &&
 		evalMethod != EVAL_RK23 &&
-		evalMethod != EVAL_RKF &&
-		evalMethod != EVAL_RKCK &&
-		evalMethod != EVAL_RKDP) {
+		evalMethod != EVAL_RKF45 &&
+		evalMethod != EVAL_RKCK45 &&
+		evalMethod != EVAL_RKDP54) {
 
 		sEval2.clear();
 	}
 
 	if (evalMethod != EVAL_RK4 &&
-		evalMethod != EVAL_RKF &&
-		evalMethod != EVAL_RKCK &&
-		evalMethod != EVAL_RKDP) {
+		evalMethod != EVAL_RKF45 &&
+		evalMethod != EVAL_RKCK45 &&
+		evalMethod != EVAL_RKDP54) {
 
 		sEval3.clear();
 		sEval4.clear();
 	}
 
-	if (evalMethod != EVAL_RKDP) {
+	if (evalMethod != EVAL_RKDP54) {
 
 		sEval5.clear();
 	}
@@ -234,33 +234,6 @@ BError DifferentialEquationFM::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 		}
 
 		error = AllocateMemory();
-	}
-
-	if (ucfg::check_cfgflags(cfgMessage, UPDATECONFIG_ODE_MOVEMESH)) {
-
-		if (!error) {
-
-			/*
-			//REMOVED : not really necessary, especially if you have ends coupled to dipoles, which freeze end cells only
-			//set skip cells flags for moving mesh if enabled
-			if (moving_mesh) {
-
-				Rect mesh_rect = pMesh->GetMeshRect();
-
-				DBL3 end_size = mesh_rect.size() & DBL3(MOVEMESH_ENDRATIO, 1, 1);
-
-				Rect end_rect_left = Rect(mesh_rect.s, mesh_rect.s + end_size);
-				Rect end_rect_right = Rect(mesh_rect.e - end_size, mesh_rect.e);
-
-				pMesh->M.set_skipcells(end_rect_left);
-				pMesh->M.set_skipcells(end_rect_right);
-			}
-			else {
-
-				pMesh->M.clear_skipcells();
-			}
-			*/
-		}
 	}
 
 	if (cfgMessage == UPDATECONFIG_PARAMVALUECHANGED_MLENGTH) RenormalizeMagnetization();

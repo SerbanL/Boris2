@@ -101,10 +101,10 @@ protected:
 
 #ifdef ODE_EVAL_COMPILATION_RK4
 	//RK4 evaluation of ODE
-	virtual void RunRK4(int step, bool calculate_mxh = false, bool calculate_dmdt = false) = 0;
+	virtual void RunRK4(int step, bool calculate_mxh = false, bool calculate_dmdt = false, bool stochastic = false) = 0;
 #endif
 
-#ifdef ODE_EVAL_COMPILATION_RKF
+#ifdef ODE_EVAL_COMPILATION_RKF45
 	//RKF45
 	virtual void RunRKF45(int step, bool calculate_mxh = false, bool calculate_dmdt = false) = 0;
 #endif

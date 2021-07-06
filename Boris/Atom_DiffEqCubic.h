@@ -74,7 +74,7 @@ public:
 	void RunRK4_Step3(void);
 #endif
 
-#ifdef ODE_EVAL_COMPILATION_RKF
+#ifdef ODE_EVAL_COMPILATION_RKF45
 	//RKF45
 	void RunRKF45_Step0_withReductions(void);
 	void RunRKF45_Step0(void);
@@ -243,7 +243,7 @@ public:
 	void RunRK4_Step3(void) {}
 #endif
 
-#ifdef ODE_EVAL_COMPILATION_RKF
+#ifdef ODE_EVAL_COMPILATION_RKF45
 	//RKF45
 	void RunRKF45_Step0_withReductions(void) {}
 	void RunRKF45_Step0(void) {}

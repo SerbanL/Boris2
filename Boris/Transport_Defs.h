@@ -8,7 +8,7 @@
 
 //0. no spin transport (just charge transport)
 
-//1. normal metal (applicable to metal and diamagnetic meshes)
+//1. normal metal (applicable to metal meshes)
 
 //2. ferromagnetic (applicable to ferromagnetic meshes, and also dipole meshes)
 

@@ -180,7 +180,7 @@ VEC_VC<DBL3>& Transport::GetChargeCurrent(void)
 	return displayVEC_VC;
 }
 
-DBL3 Transport::GetAverageChargeCurrent(Rect rectangle)
+DBL3 Transport::GetAverageChargeCurrent(Rect rectangle, std::vector<MeshShape> shapes)
 {
 #if COMPILECUDA == 1
 	if (pModuleCUDA) {
@@ -197,7 +197,8 @@ DBL3 Transport::GetAverageChargeCurrent(Rect rectangle)
 	GetChargeCurrent();
 
 	//average charge current in displayVEC_VC
-	return displayVEC_VC.average_nonempty_omp(rectangle);
+	if (!shapes.size()) return displayVEC_VC.average_nonempty_omp(rectangle);
+	else return displayVEC_VC.shape_getaverage(shapes);
 }
 
 #if COMPILECUDA == 1

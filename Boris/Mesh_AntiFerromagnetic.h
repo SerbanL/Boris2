@@ -16,6 +16,7 @@
 #include "Exchange.h"
 #include "DMExchange.h"
 #include "iDMExchange.h"
+#include "viDMExchange.h"
 #include "SurfExchange.h"
 #include "SurfExchange_AFM.h"
 #include "Demag.h"
@@ -54,18 +55,18 @@ class AFMesh :
 	double, double, bool, bool, bool, DBL3,
 	//Material Parameters
 	MatP<DBL2, double>, MatP<DBL2, double>, MatP<DBL2, double>, MatP<DBL2, double>, 
-	MatP<DBL2, double>, MatP<DBL2, double>, MatP<DBL2, double>, MatP<DBL2, double>, MatP<DBL2, double>, MatP<DBL2, double>,
+	MatP<DBL2, double>, MatP<DBL2, double>, MatP<DBL2, double>, MatP<DBL2, double>, MatP<double, double>, MatP<DBL3, DBL3>, MatP<DBL3, DBL3>, MatP<DBL2, double>, MatP<DBL2, double>,
 	MatP<DBL2, double>, MatP<DBL2, double>, MatP<DBL2, double>, MatP<DBL3, DBL3>, MatP<DBL3, DBL3>, MatP<DBL3, DBL3>,
 	std::vector<DBL4>, std::vector<DBL4>,
 	MatP<DBL2, double>, MatP<double, double>, MatP<double, double>,
-	MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>,
+	MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<DBL3, DBL3>,
 	double, TEquation<double>, double, MatP<double, double>, MatP<DBL2, double>, 
 	MatP<double, double>, 
 	MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>>,
 	//Module Implementations
 	std::tuple<
 	Demag_N, Demag, SDemag_Demag, 
-	Exch_6ngbr_Neu, DMExchange, iDMExchange, SurfExchange_AFM, 
+	Exch_6ngbr_Neu, DMExchange, iDMExchange, viDMExchange, SurfExchange_AFM,
 	Zeeman, MOptical, Roughness,
 	Anisotropy_Uniaxial, Anisotropy_Cubic, Anisotropy_Biaxial, Anisotropy_Tensorial, 
 	Transport, Heat, 

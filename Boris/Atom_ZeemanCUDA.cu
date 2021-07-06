@@ -11,7 +11,23 @@
 #include "Atom_MeshCUDA.h"
 #include "Atom_MeshParamsControlCUDA.h"
 
-__global__ void Atom_ZeemanCUDA_UpdateField_Cubic(ManagedAtom_MeshCUDA& cuMesh, cuReal3& Ha, ManagedModulesCUDA& cuModule, bool do_reduction)
+//----------------------- Initialization
+
+__global__ void set_Atom_ZeemanCUDA_pointers_kernel(
+	ManagedAtom_MeshCUDA& cuaMesh, cuVEC<cuReal3>& Havec)
+{
+	if (threadIdx.x == 0) cuaMesh.pHavec = &Havec;
+}
+
+void Atom_ZeemanCUDA::set_Atom_ZeemanCUDA_pointers(void)
+{
+	set_Atom_ZeemanCUDA_pointers_kernel <<< 1, CUDATHREADS >>>
+		(paMeshCUDA->cuaMesh, Havec);
+}
+
+//----------------------- Computation
+
+__global__ void Atom_ZeemanCUDA_UpdateField_Cubic(ManagedAtom_MeshCUDA& cuMesh, cuReal3& Ha, cuVEC<cuReal3>& Havec, ManagedModulesCUDA& cuModule, bool do_reduction)
 {
 	cuVEC_VC<cuReal3>& M1 = *cuMesh.pM1;
 	cuVEC<cuReal3>& Heff1 = *cuMesh.pHeff1;
@@ -22,20 +38,28 @@ __global__ void Atom_ZeemanCUDA_UpdateField_Cubic(ManagedAtom_MeshCUDA& cuMesh, 
 
 	if (idx < Heff1.linear_size()) {
 
-		cuBReal cHA = *cuMesh.pcHA;
-		cuMesh.update_parameters_mcoarse(idx, *cuMesh.pcHA, cHA);
+		cuReal3 Hext = cuReal3();
 
-		Heff1[idx] = (cHA * Ha);
+		if (Havec.linear_size()) Hext = Havec[idx];
+		else {
+
+			cuBReal cHA = *cuMesh.pcHA;
+			cuMesh.update_parameters_mcoarse(idx, *cuMesh.pcHA, cHA);
+
+			Hext = cHA * Ha;
+		}
+
+		Heff1[idx] = Hext;
 
 		if (do_reduction) {
 
 			//energy density
 			int non_empty_cells = M1.get_nonempty_cells();
-			if (non_empty_cells) energy_ = -(cuBReal)MUB * M1[idx] * (cuBReal)MU0 * (cHA * Ha) / (non_empty_cells * M1.h.dim());
+			if (non_empty_cells) energy_ = -(cuBReal)MUB_MU0 * M1[idx] * Hext / (non_empty_cells * M1.h.dim());
 		}
 
-		if (do_reduction && cuModule.pModule_Heff->linear_size()) (*cuModule.pModule_Heff)[idx] = cHA * Ha;
-		if (do_reduction && cuModule.pModule_energy->linear_size()) (*cuModule.pModule_energy)[idx] = -(cuBReal)MUB * M1[idx] * (cuBReal)MU0 * (cHA * Ha) / M1.h.dim();
+		if (do_reduction && cuModule.pModule_Heff->linear_size()) (*cuModule.pModule_Heff)[idx] = Hext;
+		if (do_reduction && cuModule.pModule_energy->linear_size()) (*cuModule.pModule_energy)[idx] = -(cuBReal)MUB_MU0 * M1[idx] * Hext / M1.h.dim();
 	}
 
 	if (do_reduction) reduction_sum(0, 1, &energy_, *cuModule.penergy);
@@ -73,11 +97,11 @@ __global__ void Atom_ZeemanCUDA_UpdateField_Equation_Cubic(
 
 			//energy density
 			int non_empty_cells = M1.get_nonempty_cells();
-			if (non_empty_cells) energy_ = -(cuBReal)MUB * M1[idx] * (cuBReal)MU0 * (cHA * H) / (non_empty_cells * M1.h.dim());
+			if (non_empty_cells) energy_ = -(cuBReal)MUB_MU0 * M1[idx] * (cHA * H) / (non_empty_cells * M1.h.dim());
 		}
 
 		if (do_reduction && cuModule.pModule_Heff->linear_size()) (*cuModule.pModule_Heff)[idx] = cHA * H;
-		if (do_reduction && cuModule.pModule_energy->linear_size()) (*cuModule.pModule_energy)[idx] = -(cuBReal)MUB * M1[idx] * (cuBReal)MU0 * (cHA * H) / M1.h.dim();
+		if (do_reduction && cuModule.pModule_energy->linear_size()) (*cuModule.pModule_energy)[idx] = -(cuBReal)MUB_MU0 * M1[idx] * (cHA * H) / M1.h.dim();
 	}
 
 	if (do_reduction) reduction_sum(0, 1, &energy_, *cuModule.penergy);
@@ -99,9 +123,9 @@ void Atom_ZeemanCUDA::UpdateField(void)
 
 				ZeroEnergy();
 
-				Atom_ZeemanCUDA_UpdateField_Cubic <<< (paMeshCUDA->n.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (paMeshCUDA->cuaMesh, Ha, cuModule, true);
+				Atom_ZeemanCUDA_UpdateField_Cubic <<< (paMeshCUDA->n.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (paMeshCUDA->cuaMesh, Ha, Havec, cuModule, true);
 			}
-			else Atom_ZeemanCUDA_UpdateField_Cubic <<< (paMeshCUDA->n.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (paMeshCUDA->cuaMesh, Ha, cuModule, false);
+			else Atom_ZeemanCUDA_UpdateField_Cubic <<< (paMeshCUDA->n.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (paMeshCUDA->cuaMesh, Ha, Havec, cuModule, false);
 		}
 	}
 
@@ -139,6 +163,7 @@ BError Atom_ZeemanCUDA::SetFieldEquation(const std::vector<std::vector< std::vec
 	BError error(CLASS_STR(Atom_ZeemanCUDA));
 
 	if (!H_equation.make_vector(fspec)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
+	if (Havec()->size_cpu().dim()) Havec()->clear();
 
 	return error;
 }

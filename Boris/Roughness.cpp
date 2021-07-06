@@ -411,4 +411,29 @@ double Roughness::UpdateField(void)
 	return this->energy;
 }
 
+//-------------------Energy methods
+
+double Roughness::Get_EnergyChange(int spin_index, DBL3 Mnew)
+{
+	//For CUDA there are separate device functions used by CUDA kernels.
+
+	if (pMesh->M.is_not_empty(spin_index)) {
+
+		DBL33 Fmat = DBL33(
+			DBL3(Fmul_rough[spin_index].x, Fomul_rough[spin_index].x, Fomul_rough[spin_index].y),
+			DBL3(Fomul_rough[spin_index].x, Fmul_rough[spin_index].y, Fomul_rough[spin_index].z),
+			DBL3(Fomul_rough[spin_index].y, Fomul_rough[spin_index].z, Fmul_rough[spin_index].z));
+
+		DBL3 Hrough = Fmat * pMesh->M[spin_index];
+
+		if (Mnew != DBL3()) {
+
+			DBL3 Hrough_new = Fmat * Mnew;
+			return -pMesh->h.dim() * MU0 * (Hrough_new * Mnew - Hrough * pMesh->M[spin_index]);
+		} 
+		else return -pMesh->h.dim() * MU0 * Hrough * pMesh->M[spin_index];
+	}
+	else return 0.0;
+}
+
 #endif

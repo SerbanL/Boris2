@@ -14,7 +14,6 @@
 #if COMPILECUDA == 1
 #include "DiffEqFMCUDA.h"
 #include "DiffEqAFMCUDA.h"
-#include "DiffEqDMCUDA.h"
 #endif
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -31,7 +30,6 @@ class DifferentialEquation :
 	friend DifferentialEquationCUDA;
 	friend DifferentialEquationFMCUDA;
 	friend DifferentialEquationAFMCUDA;
-	friend DifferentialEquationDMCUDA;
 #endif
 
 protected:
@@ -128,7 +126,7 @@ protected:
 	virtual void RunRK4_Step3(void) = 0;
 #endif
 
-#ifdef ODE_EVAL_COMPILATION_RKF
+#ifdef ODE_EVAL_COMPILATION_RKF45
 	//RKF45
 	virtual void RunRKF45_Step0_withReductions(void) = 0;
 	virtual void RunRKF45_Step0(void) = 0;

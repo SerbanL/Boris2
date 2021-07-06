@@ -71,10 +71,53 @@
 #define TCURIE_EPSILON	0.5
 
 //Available equations to solve enum - to keep bsm files backward compatible add new entries at the end
-enum ODE_ { ODE_ERROR = -1, ODE_LLG, ODE_LLGSTT, ODE_LLB, ODE_LLBSTT, ODE_SLLG, ODE_SLLGSTT, ODE_SLLB, ODE_SLLBSTT, ODE_LLGSA, ODE_SLLGSA, ODE_LLBSA, ODE_SLLBSA, ODE_LLGSTATIC };
+enum ODE_ {
+
+	ODE_ERROR = -1, 
+	
+	ODE_LLG, ODE_LLGSTT, 
+	
+	ODE_LLB, ODE_LLBSTT, 
+	
+	ODE_SLLG, ODE_SLLGSTT, 
+	
+	ODE_SLLB, ODE_SLLBSTT, 
+	
+	ODE_LLGSA, ODE_SLLGSA, 
+	
+	ODE_LLBSA, ODE_SLLBSA, 
+	
+	ODE_LLGSTATIC 
+
+};
 
 //ODE evaluation methods enum - to keep bsm files backward compatible add new entries at the end
-enum EVAL_ { EVAL_ERROR = -1, EVAL_EULER, EVAL_TEULER, EVAL_RK4, EVAL_ABM, EVAL_RKF, EVAL_RK23, EVAL_SD, EVAL_AHEUN, EVAL_RKCK, EVAL_RKDP };
+enum EVAL_ { 
+
+	EVAL_ERROR = -1, 
+	
+	//Fixed time-step methods
+	EVAL_EULER = 0, EVAL_TEULER = 1, EVAL_RK4 = 2, 
+	
+	//Adpative 2nd order
+	EVAL_AHEUN = 7,
+	
+	//Adaptive linear multistep 2nd order
+	EVAL_ABM = 3,
+
+	//Adaptive embedded error estimator, 2nd order
+	EVAL_RK23 = 5, 
+
+	//Adaptive embedded error estimator, 4th order
+	EVAL_RKF45 = 4, EVAL_RKCK45 = 8, 
+
+	//Adaptive embedded error estimator, 5th order
+	EVAL_RKDP54 = 9, EVAL_RKF56 = 10,
+
+	//Energy minimizers
+	EVAL_SD = 6
+
+}; //Current maximum : 10
 
 //EVALSPEEDUP_NONE : evaluate all fields every step (default)
 //EVALSPEEDUP_STEP : use previously computed demag field

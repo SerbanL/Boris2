@@ -88,13 +88,27 @@ class Simulation :
 {
 private:
 
+#if GRAPHICS == 1 && OPERATING_SYSTEM == OS_WIN
+	//Save window handle if in graphics mode on windows
+	HWND hWnd;
+#endif
+
 	//saved simulation file header and program version number
 	std::string simfile_header = "Boris simulation file version ";
 	
 	std::string domain_name = "www.boris-spintronics.uk";
 	std::string download_page = "/download";
+	
 	//check if current program version is the latest
 	std::string version_checker = "version.php";
+	
+	//check latest avilable incremental update for current program version
+	std::string delta_update_checker = "delta_update_check.php";
+	std::string installers_dir = "/installers";
+
+	//patcher program utility
+	std::string patch_utility = "PatchApply.exe";
+
 	//allow users to send a new entry for the online materials database
 	std::string mdb_entry_handler = "mdbentry.php";
 	//update the local materials database from the online materials database
@@ -262,11 +276,22 @@ private:
 	void Load_Startup_Flags(void);
 	void Save_Startup_Flags(void);
 
-	//-------------------------------------Program update checker (in BorisIOGenerators.cpp)
+	//-------------------------------------Program update checker (in BorisUpdate.cpp)
 
 	//Check with "www.boris-spintronics.uk" if program version is up to date
 	void CheckUpdate(void);
 	void OpenDownloadPage(void);
+
+	//check latest version available
+	int CheckLatestVersion(void);
+	//for current program version check available incremental update versions
+	std::vector<int> CheckDeltaUpdate(void);
+	//check and download incremental update files; if target_version specified download only incremental update files up to target_version
+	std::vector<std::string> DownloadDeltaUpdate(int target_version = 0);
+	//check, download, and install latest update file
+	int InstallDeltaUpdate(int target_version = 0);
+	//Roll back to a backup version using the PatchApply.exe utility
+	void RollbackUpdate(int target_version);
 
 	//-------------------------------------Communication with interactive console objects (TextObject with action handler set)
 

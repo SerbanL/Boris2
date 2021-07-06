@@ -40,13 +40,29 @@ BError SuperMesh::set_meshparam_t_equation(std::string meshName, std::string par
 {
 	BError error(__FUNCTION__);
 
-	if (!contains(meshName) || !pMesh[meshName]->contains_param(paramHandle)) return error(BERROR_INCORRECTNAME);
+	if (meshName.length() && (!contains(meshName) || !pMesh[meshName]->contains_param(paramHandle))) return error(BERROR_INCORRECTNAME);
 
-	PARAM_ paramID = (PARAM_)pMesh[meshName]->get_meshparam_id(paramHandle);
+	if (meshName.length()) {
 
-	pMesh[meshName]->set_meshparam_t_equation(paramID, equationText, userConstants);
+		PARAM_ paramID = (PARAM_)pMesh[meshName]->get_meshparam_id(paramHandle);
+		pMesh[meshName]->set_meshparam_t_equation(paramID, equationText, userConstants);
 
-	error = UpdateConfiguration(UPDATECONFIG_PARAMCHANGED);
+		error = UpdateConfiguration(UPDATECONFIG_PARAMCHANGED);
+	}
+	else {
+
+		for (int idx = 0; idx < pMesh.size(); idx++) {
+			
+			meshName = pMesh.get_key_from_index(idx);
+			if (pMesh[meshName]->contains_param(paramHandle)) {
+
+				PARAM_ paramID = (PARAM_)pMesh[meshName]->get_meshparam_id(paramHandle);
+				pMesh[meshName]->set_meshparam_t_equation(paramID, equationText, userConstants);
+			}
+		}
+
+		error = UpdateConfiguration(UPDATECONFIG_PARAMCHANGED);
+	}
 
 	return error;
 }
@@ -55,22 +71,40 @@ BError SuperMesh::set_meshparam_tscaling_array(std::string meshName, std::string
 {
 	BError error(__FUNCTION__);
 
-	if (!contains(meshName) || !pMesh[meshName]->contains_param(paramHandle)) return error(BERROR_INCORRECTNAME);
+	if (meshName.length() && (!contains(meshName) || !pMesh[meshName]->contains_param(paramHandle))) return error(BERROR_INCORRECTNAME);
 
-	PARAM_ paramID = (PARAM_)pMesh[meshName]->get_meshparam_id(paramHandle);
+	//set fileName as the temperature scaling info for console display purposes
+	ExtractFilenameDirectory(fileName_info);
+	ExtractFilenameTermination(fileName_info);
 
-	if (pMesh[meshName]->set_meshparam_tscaling_array(paramID, temp, scaling_x, scaling_y, scaling_z)) {
+	if (meshName.length()) {
 
-		//set fileName as the temperature scaling info for console display purposes
-		ExtractFilenameDirectory(fileName_info);
-		ExtractFilenameTermination(fileName_info);
-		pMesh[meshName]->set_meshparam_tscaling_info(paramID, fileName_info);
+		PARAM_ paramID = (PARAM_)pMesh[meshName]->get_meshparam_id(paramHandle);
+		if (pMesh[meshName]->set_meshparam_tscaling_array(paramID, temp, scaling_x, scaling_y, scaling_z)) {
 
-		error = UpdateConfiguration(UPDATECONFIG_PARAMCHANGED);
-
-		return error;
+			pMesh[meshName]->set_meshparam_tscaling_info(paramID, fileName_info);
+		}
+		else return error(BERROR_INCORRECTARRAYS);
 	}
-	else return error(BERROR_INCORRECTARRAYS);
+	else {
+
+		for (int idx = 0; idx < pMesh.size(); idx++) {
+
+			meshName = pMesh.get_key_from_index(idx);
+			if (pMesh[meshName]->contains_param(paramHandle)) {
+
+				PARAM_ paramID = (PARAM_)pMesh[meshName]->get_meshparam_id(paramHandle);
+				if (pMesh[meshName]->set_meshparam_tscaling_array(paramID, temp, scaling_x, scaling_y, scaling_z)) {
+
+					pMesh[meshName]->set_meshparam_tscaling_info(paramID, fileName_info);
+				}
+				else return error(BERROR_INCORRECTARRAYS);
+			}
+		}
+	}
+
+	error = UpdateConfiguration(UPDATECONFIG_PARAMCHANGED);
+	return error;
 }
 
 //clear parameters temperature dependence in given mesh for given parameter (all meshes and parameters if empty std::string, all parameters in given mesh if empty std::string)
@@ -112,53 +146,66 @@ BError SuperMesh::set_meshparam_s_equation(std::string meshName, std::string par
 {
 	BError error(__FUNCTION__);
 
-	if (!contains(meshName) || !pMesh[meshName]->contains_param(paramHandle)) return error(BERROR_INCORRECTNAME);
+	if (meshName.length() && (!contains(meshName) || !pMesh[meshName]->contains_param(paramHandle))) return error(BERROR_INCORRECTNAME);
 
-	PARAM_ paramID = (PARAM_)pMesh[meshName]->get_meshparam_id(paramHandle);
+	if (meshName.length()) {
 
-	pMesh[meshName]->set_meshparam_s_equation(paramID, equationText, userConstants, pMesh[meshName]->meshRect.size());
+		PARAM_ paramID = (PARAM_)pMesh[meshName]->get_meshparam_id(paramHandle);
+		pMesh[meshName]->set_meshparam_s_equation(paramID, equationText, userConstants, pMesh[meshName]->meshRect.size());
 
-	if (pMesh[meshName]->param_changes_mlength(paramID)) error = UpdateConfiguration(UPDATECONFIG_PARAMVALUECHANGED_MLENGTH);
-	else error = UpdateConfiguration(UPDATECONFIG_PARAMCHANGED);
+		if (pMesh[meshName]->param_changes_mlength(paramID)) error = UpdateConfiguration(UPDATECONFIG_PARAMVALUECHANGED_MLENGTH);
+		else error = UpdateConfiguration(UPDATECONFIG_PARAMCHANGED);
+	}
+	else {
+
+		bool mlength_changed = false;
+
+		for (int idx = 0; idx < pMesh.size(); idx++) {
+
+			meshName = pMesh.get_key_from_index(idx);
+			if (pMesh[meshName]->contains_param(paramHandle)) {
+
+				PARAM_ paramID = (PARAM_)pMesh[meshName]->get_meshparam_id(paramHandle);
+				pMesh[meshName]->set_meshparam_s_equation(paramID, equationText, userConstants, pMesh[meshName]->meshRect.size());
+
+				if (pMesh[meshName]->param_changes_mlength(paramID)) mlength_changed = true;
+			}
+		}
+
+		if (mlength_changed) error = UpdateConfiguration(UPDATECONFIG_PARAMVALUECHANGED_MLENGTH);
+		else error = UpdateConfiguration(UPDATECONFIG_PARAMCHANGED);
+	}
 
 	return error;
 }
 
-//clear parameters spatial dependence (variation) in given mesh (all meshes if empty std::string)
-BError SuperMesh::clear_meshparam_variation(std::string meshName)
+//clear parameter spatial dependence (variation) in given mesh for named parameter only (if meshName empty then in all meshes; if paramHandle empty then for all parameters)
+BError SuperMesh::clear_meshparam_variation(std::string meshName, std::string paramHandle)
 {
 	BError error(__FUNCTION__);
 
 	if (meshName.length() && !contains(meshName)) return error(BERROR_INCORRECTNAME);
 
+	PARAM_ paramID = PARAM_ALL;
+
+	if (meshName.length() && paramHandle.length()) {
+
+		if (!pMesh[meshName]->contains_param(paramHandle)) return error(BERROR_INCORRECTNAME);
+
+		paramID = (PARAM_)pMesh[meshName]->get_meshparam_id(paramHandle);
+	}
+
 	if (meshName.length()) {
 
-		pMesh[meshName]->clear_meshparam_variation(PARAM_ALL);
-	
+		pMesh[meshName]->clear_meshparam_variation(paramID);
 	}
 	else {
 
 		for (int idx = 0; idx < pMesh.size(); idx++) {
 
-			pMesh[idx]->clear_meshparam_variation(PARAM_ALL);
+			pMesh[idx]->clear_meshparam_variation(paramID);
 		}
 	}
-
-	error = UpdateConfiguration(UPDATECONFIG_PARAMVALUECHANGED_MLENGTH);
-
-	return error;
-}
-
-//clear parameter spatial dependence (variation) in given mesh for named parameter only
-BError SuperMesh::clear_meshparam_variation(std::string meshName, std::string paramHandle)
-{
-	BError error(__FUNCTION__);
-
-	if (!contains(meshName) || !pMesh[meshName]->contains_param(paramHandle)) return error(BERROR_INCORRECTNAME);
-
-	PARAM_ paramID = (PARAM_)pMesh[meshName]->get_meshparam_id(paramHandle);
-
-	pMesh[meshName]->clear_meshparam_variation(paramID);
 
 	error = UpdateConfiguration(UPDATECONFIG_PARAMVALUECHANGED_MLENGTH);
 
@@ -170,9 +217,21 @@ BError SuperMesh::set_meshparamvar_display(std::string meshName, std::string par
 {
 	BError error(__FUNCTION__);
 
-	if (!contains(meshName) || !pMesh[meshName]->contains_param(paramHandle)) return error(BERROR_INCORRECTNAME);
+	if (meshName.length() && !contains(meshName)) return error(BERROR_INCORRECTNAME);
 
-	pMesh[meshName]->SetDisplayedParamVar(pMesh[meshName]->get_meshparam_id(paramHandle));
+	if (meshName.length()) {
+
+		if (!pMesh[meshName]->contains_param(paramHandle)) return error(BERROR_INCORRECTNAME);
+
+		pMesh[meshName]->SetDisplayedParamVar(pMesh[meshName]->get_meshparam_id(paramHandle));
+	}
+	else {
+
+		for (int idx = 0; idx < pMesh.size(); idx++) {
+
+			if (pMesh[idx]->contains_param(paramHandle)) pMesh[idx]->SetDisplayedParamVar(pMesh[idx]->get_meshparam_id(paramHandle));
+		}
+	}
 
 	return error;
 }
@@ -182,18 +241,35 @@ BError SuperMesh::set_meshparam_var(std::string meshName, std::string paramHandl
 {
 	BError error(__FUNCTION__);
 
-	if (!contains(meshName) || !pMesh[meshName]->contains_param(paramHandle) || !vargenerator_descriptor.has_key(generatorHandle)) return error(BERROR_INCORRECTNAME);
+	if ((meshName.length() && (!contains(meshName) || !pMesh[meshName]->contains_param(paramHandle))) || !vargenerator_descriptor.has_key(generatorHandle)) return error(BERROR_INCORRECTNAME);
 
-	PARAM_ paramID = (PARAM_)pMesh[meshName]->get_meshparam_id(paramHandle);
 	MATPVAR_ generatorID = (MATPVAR_)vargenerator_descriptor.get_ID_from_key(generatorHandle);
-
 	if (!generatorArgs.length()) generatorArgs = vargenerator_descriptor[generatorHandle];
 
-	error = pMesh[meshName]->set_meshparam_var(paramID, generatorID, generatorArgs, bitmap_loader);
+	if (meshName.length()) {
 
-	if (!error) {
+		PARAM_ paramID = (PARAM_)pMesh[meshName]->get_meshparam_id(paramHandle);
+		error = pMesh[meshName]->set_meshparam_var(paramID, generatorID, generatorArgs, bitmap_loader);
 
-		if (pMesh[meshName]->param_changes_mlength(paramID)) error = UpdateConfiguration(UPDATECONFIG_PARAMVALUECHANGED_MLENGTH);
+		if (!error) {
+
+			if (pMesh[meshName]->param_changes_mlength(paramID)) error = UpdateConfiguration(UPDATECONFIG_PARAMVALUECHANGED_MLENGTH);
+			else error = UpdateConfiguration(UPDATECONFIG_PARAMCHANGED);
+		}
+	}
+	else {
+
+		bool mlength_changed = false;
+
+		for (int idx = 0; idx < pMesh.size(); idx++) {
+
+			PARAM_ paramID = (PARAM_)pMesh[idx]->get_meshparam_id(paramHandle);
+			if (pMesh[idx]->contains_param(paramHandle)) error = pMesh[idx]->set_meshparam_var(paramID, generatorID, generatorArgs, bitmap_loader);
+
+			if (pMesh[idx]->param_changes_mlength(paramID)) mlength_changed = true;
+		}
+
+		if (mlength_changed) error = UpdateConfiguration(UPDATECONFIG_PARAMVALUECHANGED_MLENGTH);
 		else error = UpdateConfiguration(UPDATECONFIG_PARAMCHANGED);
 	}
 

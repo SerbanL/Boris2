@@ -3,9 +3,6 @@
 
 #ifdef MESH_COMPILATION_ATOM_CUBIC
 
-#include "Atom_DMExchange.h"
-#include "Atom_iDMExchange.h"
-
 //----------------------------------- VALUE GETTERS
 
 //get topological charge using formula Q = Integral(m.(dm/dx x dm/dy) dxdy) / 4PI

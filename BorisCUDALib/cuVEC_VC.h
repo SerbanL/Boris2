@@ -761,9 +761,15 @@ public:
 	//missing neighbors not added, including at boundaries, but taking into account pbc
 	//only used if VType is a cuVAL3
 	__device__ VType zanisotropic_ngbr_sum(int idx) const;
+	//calculate 6-point anisotropic neighbor sum at given index as (rij x y) x Vj over j points neighboring the point i at this index.
+	__device__ VType yanisotropic_ngbr_sum(int idx) const;
+	//calculate 6-point anisotropic neighbor sum at given index as (rij x x) x Vj over j points neighboring the point i at this index.
+	__device__ VType xanisotropic_ngbr_sum(int idx) const;
 
 	//same as zanisotropic_ngbr_sum but sum normalised values only; for scalar values this is a trivial operation, but for vectors it's not.
 	__device__ VType zanisotropic_ngbr_dirsum(int idx) const;
+	__device__ VType yanisotropic_ngbr_dirsum(int idx) const;
+	__device__ VType xanisotropic_ngbr_dirsum(int idx) const;
 
 	//----LAPLACE / POISSON EQUATION : cuVEC_VC_solve.cuh
 	

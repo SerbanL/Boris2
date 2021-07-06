@@ -244,6 +244,56 @@ double MElastic::UpdateField(void)
 	return this->energy;
 }
 
+//-------------------Energy methods
+
+double MElastic::Get_EnergyChange(int spin_index, DBL3 Mnew)
+{
+	//For CUDA there are separate device functions used by CUDA kernels.
+
+	if (pMesh->M.is_not_empty(spin_index)) {
+
+		double Ms = pMesh->Ms;
+		DBL3 mcanis_ea1 = pMesh->mcanis_ea1;
+		DBL3 mcanis_ea2 = pMesh->mcanis_ea2;
+		DBL3 mcanis_ea3 = pMesh->mcanis_ea3;
+		DBL2 MEc = pMesh->MEc;
+		pMesh->update_parameters_mcoarse(spin_index, pMesh->Ms, Ms, pMesh->MEc, MEc, pMesh->mcanis_ea1, mcanis_ea1, pMesh->mcanis_ea2, mcanis_ea2, pMesh->mcanis_ea3, mcanis_ea3);
+
+		DBL3 position = pMesh->M.cellidx_to_position(spin_index);
+		//xx, yy, zz
+		DBL3 Sd = pMesh->strain_diag[position];
+		//yz, xz, xy
+		DBL3 Sod = pMesh->strain_odiag[position];
+
+		//normalised magnetization
+		//Magneto-elastic term here applicable for a cubic crystal. We use the mcanis_ea1 and mcanis_ea2 axes to fix the cubic lattice orientation, thus rotate the m, Sd and Sod vectors.
+
+		Sd = DBL3(Sd * mcanis_ea1, Sd * mcanis_ea2, Sd * mcanis_ea3);
+		Sod = DBL3(Sod * mcanis_ea1, Sod * mcanis_ea2, Sod * mcanis_ea3);
+
+		auto Get_Energy = [&](DBL3 M) -> double
+		{
+			DBL3 m = DBL3(M * mcanis_ea1, M * mcanis_ea2, M * mcanis_ea3) / Ms;
+
+			DBL3 Hmel_1 = (-2.0 * MEc.i / (MU0 * Ms)) * DBL3(
+				m.x*Sd.x*mcanis_ea1.x + m.y*Sd.y*mcanis_ea2.x + m.z*Sd.z*mcanis_ea3.x,
+				m.x*Sd.x*mcanis_ea1.y + m.y*Sd.y*mcanis_ea2.y + m.z*Sd.z*mcanis_ea3.y,
+				m.x*Sd.x*mcanis_ea1.z + m.y*Sd.y*mcanis_ea2.z + m.z*Sd.z*mcanis_ea3.z);
+
+			DBL3 Hmel_2 = (-2.0 * MEc.j / (MU0 * Ms)) * DBL3(
+				Sod.z * (mcanis_ea1.x*m.y + mcanis_ea2.x*m.x) + Sod.y * (mcanis_ea1.x*m.z + mcanis_ea3.x*m.x) + Sod.x * (mcanis_ea2.x*m.z + mcanis_ea3.x*m.y),
+				Sod.z * (mcanis_ea1.y*m.y + mcanis_ea2.y*m.x) + Sod.y * (mcanis_ea1.y*m.z + mcanis_ea3.y*m.x) + Sod.x * (mcanis_ea2.y*m.z + mcanis_ea3.y*m.y),
+				Sod.z * (mcanis_ea1.z*m.y + mcanis_ea2.z*m.x) + Sod.y * (mcanis_ea1.z*m.z + mcanis_ea3.z*m.x) + Sod.x * (mcanis_ea2.z*m.z + mcanis_ea3.z*m.y));
+
+			return -MU0 * M * (Hmel_1 + Hmel_2) / 2;
+		};
+		
+		if (Mnew != DBL3()) return pMesh->h.dim() * (Get_Energy(Mnew) - Get_Energy(pMesh->M[spin_index]));
+		else return pMesh->h.dim() *  Get_Energy(pMesh->M[spin_index]);
+	}
+	else return 0.0;
+}
+
 //------------------- STRAIN GENERATION without SOLVER
 
 void MElastic::SetUniformStress(DBL3 Tsig_xyz)

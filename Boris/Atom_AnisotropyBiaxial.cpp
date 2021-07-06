@@ -146,7 +146,6 @@ double Atom_Anisotropy_Biaxial::Get_EnergyChange(int spin_index, DBL3 Mnew)
 		DBL3 mcanis_ea3 = paMesh->mcanis_ea3;
 		paMesh->update_parameters_mcoarse(spin_index, paMesh->K1, K1, paMesh->K2, K2, paMesh->mcanis_ea1, mcanis_ea1, paMesh->mcanis_ea2, mcanis_ea2, paMesh->mcanis_ea3, mcanis_ea3);
 
-		//OLD
 		//calculate m.ea1 dot product (uniaxial contribution)
 		double u1 = paMesh->M1[spin_index].normalized() * mcanis_ea1;
 
@@ -154,40 +153,18 @@ double Atom_Anisotropy_Biaxial::Get_EnergyChange(int spin_index, DBL3 Mnew)
 		double b1 = paMesh->M1[spin_index].normalized() * mcanis_ea2;
 		double b2 = paMesh->M1[spin_index].normalized() * mcanis_ea3;
 
-		//NEW
-		//calculate m.ea1 dot product (uniaxial contribution)
-		double u1new = Mnew.normalized() * mcanis_ea1;
+		if (Mnew != DBL3()) {
 
-		//calculate m.ea2 and m.ea3 dot products (biaxial contribution)
-		double b1new = Mnew.normalized() * mcanis_ea2;
-		double b2new = Mnew.normalized() * mcanis_ea3;
+			//calculate m.ea1 dot product (uniaxial contribution)
+			double u1new = Mnew.normalized() * mcanis_ea1;
 
-		return (K1 * (1 - u1new*u1new) + K2 * b1new*b1new*b2new*b2new) - (K1 * (1 - u1*u1) + K2 * b1*b1*b2*b2);
-	}
-	else return 0.0;
-}
+			//calculate m.ea2 and m.ea3 dot products (biaxial contribution)
+			double b1new = Mnew.normalized() * mcanis_ea2;
+			double b2new = Mnew.normalized() * mcanis_ea3;
 
-double Atom_Anisotropy_Biaxial::Get_Energy(int spin_index)
-{
-	//For CUDA there are separate device functions used by CUDA kernels.
-
-	if (paMesh->M1.is_not_empty(spin_index)) {
-
-		double K1 = paMesh->K1;
-		double K2 = paMesh->K2;
-		DBL3 mcanis_ea1 = paMesh->mcanis_ea1;
-		DBL3 mcanis_ea2 = paMesh->mcanis_ea2;
-		DBL3 mcanis_ea3 = paMesh->mcanis_ea3;
-		paMesh->update_parameters_mcoarse(spin_index, paMesh->K1, K1, paMesh->K2, K2, paMesh->mcanis_ea1, mcanis_ea1, paMesh->mcanis_ea2, mcanis_ea2, paMesh->mcanis_ea3, mcanis_ea3);
-
-		//calculate m.ea1 dot product (uniaxial contribution)
-		double u1 = paMesh->M1[spin_index].normalized() * mcanis_ea1;
-
-		//calculate m.ea2 and m.ea3 dot products (biaxial contribution)
-		double b1 = paMesh->M1[spin_index].normalized() * mcanis_ea2;
-		double b2 = paMesh->M1[spin_index].normalized() * mcanis_ea3;
-
-		return K1 * (1 - u1*u1) + K2 * b1*b1*b2*b2;
+			return (K1 * (1 - u1new * u1new) + K2 * b1new*b1new*b2new*b2new) - (K1 * (1 - u1 * u1) + K2 * b1*b1*b2*b2);
+		}
+		else return (K1 * (1 - u1 * u1) + K2 * b1*b1*b2*b2);
 	}
 	else return 0.0;
 }

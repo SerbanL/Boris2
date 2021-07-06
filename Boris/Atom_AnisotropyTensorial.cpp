@@ -164,70 +164,44 @@ double Atom_Anisotropy_Tensorial::Get_EnergyChange(int spin_index, DBL3 Mnew)
 		DBL3 mcanis_ea2 = paMesh->mcanis_ea2;
 		DBL3 mcanis_ea3 = paMesh->mcanis_ea3;
 		paMesh->update_parameters_mcoarse(spin_index, paMesh->K1, K1, paMesh->K2, K2, paMesh->K3, K3, paMesh->mcanis_ea1, mcanis_ea1, paMesh->mcanis_ea2, mcanis_ea2, paMesh->mcanis_ea3, mcanis_ea3);
-
-		//calculate dot products
-		double a = paMesh->M1[spin_index].normalized() * mcanis_ea1;
-		double b = paMesh->M1[spin_index].normalized() * mcanis_ea2;
-		double c = paMesh->M1[spin_index].normalized() * mcanis_ea3;
 		
-		double anew = Mnew.normalized() * mcanis_ea1;
-		double bnew = Mnew.normalized() * mcanis_ea2;
-		double cnew = Mnew.normalized() * mcanis_ea3;
+		auto Get_Energy = [&](double a, double b, double c) -> double {
 
-		double energy_ = 0.0, energynew_ = 0.0;
+			double energy_ = 0.0;
 
-		for (int tidx = 0; tidx < paMesh->Kt.size(); tidx++) {
+			for (int tidx = 0; tidx < paMesh->Kt.size(); tidx++) {
 
-			double coeff;
-			int order = paMesh->Kt[tidx].j + paMesh->Kt[tidx].k + paMesh->Kt[tidx].l;
-			if (order == 2) coeff = K1 * paMesh->Kt[tidx].i;
-			else if (order == 4) coeff = K2 * paMesh->Kt[tidx].i;
-			else if (order == 6) coeff = K3 * paMesh->Kt[tidx].i;
-			else coeff = paMesh->Kt[tidx].i;
+				double coeff;
+				int order = paMesh->Kt[tidx].j + paMesh->Kt[tidx].k + paMesh->Kt[tidx].l;
+				if (order == 2) coeff = K1 * paMesh->Kt[tidx].i;
+				else if (order == 4) coeff = K2 * paMesh->Kt[tidx].i;
+				else if (order == 6) coeff = K3 * paMesh->Kt[tidx].i;
+				else coeff = paMesh->Kt[tidx].i;
 
-			energy_ += coeff * pow(a, paMesh->Kt[tidx].j)*pow(b, paMesh->Kt[tidx].k)*pow(c, paMesh->Kt[tidx].l);
-			energynew_ += coeff * pow(anew, paMesh->Kt[tidx].j)*pow(bnew, paMesh->Kt[tidx].k)*pow(cnew, paMesh->Kt[tidx].l);
-		}
+				energy_ += coeff * pow(a, paMesh->Kt[tidx].j)*pow(b, paMesh->Kt[tidx].k)*pow(c, paMesh->Kt[tidx].l);
+			}
 
-		return energynew_ - energy_;
-	}
-	else return 0.0;
-}
-
-double Atom_Anisotropy_Tensorial::Get_Energy(int spin_index)
-{
-	//For CUDA there are separate device functions used by CUDA kernels.
-
-	if (paMesh->M1.is_not_empty(spin_index)) {
-
-		double K1 = paMesh->K1;
-		double K2 = paMesh->K2;
-		double K3 = paMesh->K3;
-		DBL3 mcanis_ea1 = paMesh->mcanis_ea1;
-		DBL3 mcanis_ea2 = paMesh->mcanis_ea2;
-		DBL3 mcanis_ea3 = paMesh->mcanis_ea3;
-		paMesh->update_parameters_mcoarse(spin_index, paMesh->K1, K1, paMesh->K2, K2, paMesh->K3, K3, paMesh->mcanis_ea1, mcanis_ea1, paMesh->mcanis_ea2, mcanis_ea2, paMesh->mcanis_ea3, mcanis_ea3);
+			return energy_;
+		};
 
 		//calculate dot products
 		double a = paMesh->M1[spin_index].normalized() * mcanis_ea1;
 		double b = paMesh->M1[spin_index].normalized() * mcanis_ea2;
 		double c = paMesh->M1[spin_index].normalized() * mcanis_ea3;
 
-		double energy_ = 0.0;
+		double energy_ = Get_Energy(a, b, c);
 
-		for (int tidx = 0; tidx < paMesh->Kt.size(); tidx++) {
+		if (Mnew != DBL3()) {
 
-			double coeff;
-			int order = paMesh->Kt[tidx].j + paMesh->Kt[tidx].k + paMesh->Kt[tidx].l;
-			if (order == 2) coeff = K1 * paMesh->Kt[tidx].i;
-			else if (order == 4) coeff = K2 * paMesh->Kt[tidx].i;
-			else if (order == 6) coeff = K3 * paMesh->Kt[tidx].i;
-			else coeff = paMesh->Kt[tidx].i;
+			double anew = Mnew.normalized() * mcanis_ea1;
+			double bnew = Mnew.normalized() * mcanis_ea2;
+			double cnew = Mnew.normalized() * mcanis_ea3;
 
-			energy_ += coeff * pow(a, paMesh->Kt[tidx].j)*pow(b, paMesh->Kt[tidx].k)*pow(c, paMesh->Kt[tidx].l);
+			double energynew_ = Get_Energy(anew, bnew, cnew);
+
+			return energynew_ - energy_;
 		}
-
-		return energy_;
+		else return energy_;
 	}
 	else return 0.0;
 }

@@ -30,6 +30,8 @@ namespace EqComp {
 
 		//modulus
 		FUNC_ABS, FUNC_ABS_PMUL,
+		//sign
+		FUNC_SGN, FUNC_SGN_PMUL,
 		//step function: step(t) = 0 for t < 0, = 1 to t>= 0
 		FUNC_STEP, FUNC_STEP_PMUL,
 		//square and triangular waves (period 2*PI, range -1 to 1)

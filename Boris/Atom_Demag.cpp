@@ -386,17 +386,8 @@ double Atom_Demag::Get_EnergyChange(int spin_index, DBL3 Mnew)
 	//Module_Heff needs to be calculated (done during a Monte Carlo simulation, where this method would be used)
 	if (Module_Heff.linear_size()) {
 
-		return -MUB_MU0 * Module_Heff[paMesh->M1.cellidx_to_position(spin_index)] * (Mnew - paMesh->M1[spin_index]);
-	}
-	else return 0.0;
-}
-
-double Atom_Demag::Get_Energy(int spin_index)
-{
-	//Module_Heff needs to be calculated (done during a Monte Carlo simulation, where this method would be used)
-	if (Module_Heff.linear_size()) {
-
-		return -MUB_MU0 * Module_Heff[paMesh->M1.cellidx_to_position(spin_index)] * paMesh->M1[spin_index];
+		if (Mnew != DBL3()) return -MUB_MU0 * Module_Heff[paMesh->M1.cellidx_to_position(spin_index)] * (Mnew - paMesh->M1[spin_index]);
+		else return -MUB_MU0 * Module_Heff[paMesh->M1.cellidx_to_position(spin_index)] * paMesh->M1[spin_index];
 	}
 	else return 0.0;
 }

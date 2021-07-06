@@ -2,7 +2,7 @@
 #include "DiffEqFM.h"
 
 #ifdef MESH_COMPILATION_FERROMAGNETIC
-#ifdef ODE_EVAL_COMPILATION_RKF
+#ifdef ODE_EVAL_COMPILATION_RKF45
 
 #include "Mesh_Ferromagnetic.h"
 #include "SuperMesh.h"

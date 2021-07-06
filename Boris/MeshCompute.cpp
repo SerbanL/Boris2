@@ -1,10 +1,6 @@
 #include "stdafx.h"
 #include "Mesh.h"
 
-#include "Exchange.h"
-#include "DMExchange.h"
-#include "iDMExchange.h"
-
 //compute topological charge density spatial dependence and have it available to display in Cust_S
 //Use formula Qdensity = m.(dm/dx x dm/dy) / 4PI
 void Mesh::Compute_TopoChargeDensity(void)

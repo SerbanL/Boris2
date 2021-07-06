@@ -3,8 +3,6 @@
 #include "BorisLib.h"
 #include "Modules.h"
 
-
-
 class Atom_Mesh;
 
 #if defined(MODULE_COMPILATION_IDMEXCHANGE) && ATOMISTIC == 1
@@ -49,8 +47,6 @@ public:
 
 	//For simple cubic mesh spin_index coincides with index in M1
 	double Get_EnergyChange(int spin_index, DBL3 Mnew);
-
-	double Get_Energy(int spin_index);
 
 	//-------------------Torque methods
 

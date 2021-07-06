@@ -678,7 +678,7 @@ void Mesh::GetPhysicalQuantityProfile(DBL3 start, DBL3 end, double step, DBL3 st
 }
 
 //return average value for currently displayed mesh quantity in the given relative rectangle
-Any Mesh::GetAverageDisplayedMeshValue(Rect rel_rect)
+Any Mesh::GetAverageDisplayedMeshValue(Rect rel_rect, std::vector<MeshShape> shapes)
 {
 #if COMPILECUDA == 1
 	if (pMeshCUDA) { return pMeshCUDA->GetAverageDisplayedMeshValue(rel_rect); }
@@ -692,20 +692,36 @@ Any Mesh::GetAverageDisplayedMeshValue(Rect rel_rect)
 
 	case MESHDISPLAY_MAGNETIZATION12:
 	case MESHDISPLAY_MAGNETIZATION:
-		if (M.linear_size()) return M.average_nonempty_omp(rel_rect);
+		if (M.linear_size()) {
+
+			if (!shapes.size()) return M.average_nonempty_omp(rel_rect);
+			else return M.shape_getaverage(shapes);
+		}
 		break;
 
 	case MESHDISPLAY_MAGNETIZATION2:
-		if (M2.linear_size()) return M2.average_nonempty_omp(rel_rect);
+		if (M2.linear_size()) {
+
+			if (!shapes.size()) return M2.average_nonempty_omp(rel_rect);
+			else return M2.shape_getaverage(shapes);
+		}
 		break;
 
 	case MESHDISPLAY_EFFECTIVEFIELD12:
 	case MESHDISPLAY_EFFECTIVEFIELD:
-		if (Heff.linear_size()) return Heff.average_nonempty_omp(rel_rect);
+		if (Heff.linear_size()) {
+
+			if (!shapes.size()) return Heff.average_nonempty_omp(rel_rect);
+			else Heff.shape_getaverage(shapes);
+		}
 		break;
 
 	case MESHDISPLAY_EFFECTIVEFIELD2:
-		if (Heff2.linear_size()) return Heff2.average_nonempty_omp(rel_rect);
+		if (Heff2.linear_size()) {
+
+			if (!shapes.size()) return Heff2.average_nonempty_omp(rel_rect);
+			else Heff2.shape_getaverage(shapes);
+		}
 		break;
 
 	case MESHDISPLAY_ENERGY:
@@ -713,7 +729,8 @@ Any Mesh::GetAverageDisplayedMeshValue(Rect rel_rect)
 		MOD_ Module_Energy = (MOD_)Get_ActualModule_Energy_Display();
 		if (IsModuleSet(Module_Energy)) {
 
-			return pMod(Module_Energy)->Get_Module_Energy().average_nonempty_omp(rel_rect);
+			if (!shapes.size()) return pMod(Module_Energy)->Get_Module_Energy().average_nonempty_omp(rel_rect);
+			else pMod(Module_Energy)->Get_Module_Energy().shape_getaverage(shapes);
 		}
 	}
 	break;
@@ -723,7 +740,8 @@ Any Mesh::GetAverageDisplayedMeshValue(Rect rel_rect)
 		MOD_ Module_Energy = (MOD_)Get_ActualModule_Energy_Display();
 		if (IsModuleSet(Module_Energy)) {
 
-			return pMod(Module_Energy)->Get_Module_Energy2().average_nonempty_omp(rel_rect);
+			if (!shapes.size()) return pMod(Module_Energy)->Get_Module_Energy2().average_nonempty_omp(rel_rect);
+			else pMod(Module_Energy)->Get_Module_Energy2().shape_getaverage(shapes);
 		}
 	}
 	break;
@@ -731,47 +749,59 @@ Any Mesh::GetAverageDisplayedMeshValue(Rect rel_rect)
 	case MESHDISPLAY_CURRDENSITY:
 		if (IsModuleSet(MOD_TRANSPORT)) {
 
-			return dynamic_cast<Transport*>(pMod(MOD_TRANSPORT))->GetAverageChargeCurrent(rel_rect);
+			return dynamic_cast<Transport*>(pMod(MOD_TRANSPORT))->GetAverageChargeCurrent(rel_rect, shapes);
 		}
 		break;
 
 	case MESHDISPLAY_VOLTAGE:
-		if (V.linear_size()) return V.average_nonempty_omp(rel_rect);
+		if (V.linear_size()) {
+
+			if (!shapes.size()) return V.average_nonempty_omp(rel_rect);
+			else return V.shape_getaverage(shapes);
+		}
 		break;
 
 	case MESHDISPLAY_ELCOND:
-		if (elC.linear_size()) return elC.average_nonempty_omp(rel_rect);
+		if (elC.linear_size()) {
+
+			if (!shapes.size()) return elC.average_nonempty_omp(rel_rect);
+			else return elC.shape_getaverage(shapes);
+		}
 		break;
 
 	case MESHDISPLAY_SACCUM:
-		if (S.linear_size()) return S.average_nonempty_omp(rel_rect);
+		if (S.linear_size()) {
+
+			if (!shapes.size()) return S.average_nonempty_omp(rel_rect);
+			else return S.shape_getaverage(shapes);
+		}
 		break;
 
 	case MESHDISPLAY_JSX:
 		if (IsModuleSet(MOD_TRANSPORT)) {
 
-			return dynamic_cast<Transport*>(pMod(MOD_TRANSPORT))->GetAverageSpinCurrent(0, rel_rect);
+			return dynamic_cast<Transport*>(pMod(MOD_TRANSPORT))->GetAverageSpinCurrent(0, rel_rect, shapes);
 		}
 		break;
 
 	case MESHDISPLAY_JSY:
 		if (IsModuleSet(MOD_TRANSPORT)) {
 
-			return dynamic_cast<Transport*>(pMod(MOD_TRANSPORT))->GetAverageSpinCurrent(1, rel_rect);
+			return dynamic_cast<Transport*>(pMod(MOD_TRANSPORT))->GetAverageSpinCurrent(1, rel_rect, shapes);
 		}
 		break;
 
 	case MESHDISPLAY_JSZ:
 		if (IsModuleSet(MOD_TRANSPORT)) {
 
-			return dynamic_cast<Transport*>(pMod(MOD_TRANSPORT))->GetAverageSpinCurrent(2, rel_rect);
+			return dynamic_cast<Transport*>(pMod(MOD_TRANSPORT))->GetAverageSpinCurrent(2, rel_rect, shapes);
 		}
 		break;
 
 	case MESHDISPLAY_TS:
 		if (IsModuleSet(MOD_TRANSPORT)) {
 
-			return dynamic_cast<Transport*>(pMod(MOD_TRANSPORT))->GetAverageSpinTorque(rel_rect);
+			return dynamic_cast<Transport*>(pMod(MOD_TRANSPORT))->GetAverageSpinTorque(rel_rect, shapes);
 		}
 		break;
 
@@ -780,24 +810,40 @@ Any Mesh::GetAverageDisplayedMeshValue(Rect rel_rect)
 
 			//spin torque calculated internally in the Transport module, ready to be read out when needed
 			dynamic_cast<STransport*>(pSMesh->pSMod(MODS_STRANSPORT))->GetInterfacialSpinTorque(dynamic_cast<Transport*>(pMod(MOD_TRANSPORT)));
-			return dynamic_cast<Transport*>(pMod(MOD_TRANSPORT))->GetAverageInterfacialSpinTorque(rel_rect);
+			return dynamic_cast<Transport*>(pMod(MOD_TRANSPORT))->GetAverageInterfacialSpinTorque(rel_rect, shapes);
 		}
 		break;
 
 	case MESHDISPLAY_TEMPERATURE:
-		if (Temp.linear_size()) return Temp.average_nonempty_omp(rel_rect);
+		if (Temp.linear_size()) {
+
+			if (!shapes.size()) return Temp.average_nonempty_omp(rel_rect);
+			else return Temp.shape_getaverage(shapes);
+		}
 		break;
 
 	case MESHDISPLAY_UDISP:
-		if (u_disp.linear_size()) return u_disp.average_nonempty_omp(rel_rect);
+		if (u_disp.linear_size()) {
+
+			if (!shapes.size()) return u_disp.average_nonempty_omp(rel_rect);
+			else return u_disp.shape_getaverage(shapes);
+		}
 		break;
 
 	case MESHDISPLAY_STRAINDIAG:
-		if (strain_diag.linear_size()) return strain_diag.average_nonempty_omp(rel_rect);
+		if (strain_diag.linear_size()) {
+
+			if (!shapes.size()) return strain_diag.average_nonempty_omp(rel_rect);
+			else return strain_diag.shape_getaverage(shapes);
+		}
 		break;
 
 	case MESHDISPLAY_STRAINODIAG:
-		if (strain_odiag.linear_size()) return strain_odiag.average_nonempty_omp(rel_rect);
+		if (strain_odiag.linear_size()) {
+
+			if (!shapes.size()) return strain_odiag.average_nonempty_omp(rel_rect);
+			else return strain_odiag.shape_getaverage(shapes);
+		}
 		break;
 
 	case MESHDISPLAY_PARAMVAR:
@@ -848,15 +894,24 @@ Any Mesh::GetAverageDisplayedMeshValue(Rect rel_rect)
 	break;
 
 	case MESHDISPLAY_ROUGHNESS:
-		return dynamic_cast<Roughness*>(pMod(MOD_ROUGHNESS))->GetRoughness().average_nonempty_omp(rel_rect);
+		if (!shapes.size()) return dynamic_cast<Roughness*>(pMod(MOD_ROUGHNESS))->GetRoughness().average_nonempty_omp(rel_rect);
+		else return dynamic_cast<Roughness*>(pMod(MOD_ROUGHNESS))->GetRoughness().shape_getaverage(shapes);
 		break;
 
 	case MESHDISPLAY_CUSTOM_VEC:
-		if (displayVEC_VEC.linear_size()) return displayVEC_VEC.average_nonempty_omp(rel_rect);
+		if (displayVEC_VEC.linear_size()) {
+
+			if (!shapes.size()) return displayVEC_VEC.average_nonempty_omp(rel_rect);
+			else return displayVEC_VEC.shape_getaverage(shapes);
+		}
 		break;
 
 	case MESHDISPLAY_CUSTOM_SCA:
-		if (displayVEC_SCA.linear_size()) return displayVEC_SCA.average_nonempty_omp(rel_rect);
+		if (displayVEC_SCA.linear_size()) {
+
+			if (!shapes.size()) return displayVEC_SCA.average_nonempty_omp(rel_rect);
+			else return displayVEC_SCA.shape_getaverage(shapes);
+		}
 		break;
 	}
 

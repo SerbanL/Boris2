@@ -113,6 +113,46 @@ void Simulation::HandleCommand(std::string command_string)
 		}
 	};
 
+	//ivoked by commands where the command has meshName as an optional parameter, with default value of focused mesh
+	//adjust command fields so the meshName appears at the start explicitly
+	//This lambda guarantees the first entry in command_fields will be an existing meshname
+	//If check_supermesh is true, then include supermesh handle in possible mesh names
+	auto optional_meshname_check_focusedmeshdefault = [&](std::vector<std::string>& command_fields, bool check_supermesh = false) -> bool {
+
+		for (int idx = 0; idx < command_fields.size(); idx++) {
+
+			if (SMesh.contains(command_fields[idx]) || (check_supermesh && command_fields[idx] == SMesh.superMeshHandle)) {
+
+				if (idx) {
+
+					std::string meshName = command_fields[idx];
+					command_fields.erase(command_fields.begin() + idx);
+					command_fields.insert(command_fields.begin(), meshName);
+				}
+
+				//return true to indicate mesh name was included already
+				return true;
+			}
+
+			if (idx == command_fields.size() - 1 && !SMesh.contains(command_fields[idx]) && !(check_supermesh && command_fields[idx] == SMesh.superMeshHandle)) {
+
+				command_fields.insert(command_fields.begin(), SMesh.GetMeshFocus());
+				
+				//return false to indicate mesh name was not previously included
+				return false;
+			}
+		}
+
+		if (!command_fields.size()) {
+
+			command_fields.push_back(SMesh.GetMeshFocus());
+			return false;
+		}
+
+		//will never get here but compiler doesn't know that
+		return true;
+	};
+
 	////////////////////////////////////////////////////////////////////////////
 	////////////////////////////////////////////////////////////////////////////
 	////////////////////////////////////////////////////////////////////////////
@@ -250,8 +290,10 @@ void Simulation::HandleCommand(std::string command_string)
 		case CMD_MESHRECT:
 		{
 			Rect meshRect;
+			std::string meshName = SMesh.GetMeshFocus();
 
-			error = commandSpec.GetParameters(command_fields, meshRect);
+			optional_meshname_check_focusedmeshdefault(command_fields);
+			error = commandSpec.GetParameters(command_fields, meshName, meshRect);
 
 			if (!error) {
 
@@ -265,14 +307,11 @@ void Simulation::HandleCommand(std::string command_string)
 					UpdateDataBoxEntries(meshRect_old, SMesh[meshName]->GetMeshRect(), meshName);
 				};
 
-				if (!err_hndl.call(error, &SuperMesh::SetMeshRect, &SMesh, SMesh.GetMeshFocus(), meshRect, save_data_updater)) {
-
-					UpdateScreen_AutoSet();
-				}
+				if (!err_hndl.call(error, &SuperMesh::SetMeshRect, &SMesh, meshName, meshRect, save_data_updater)) UpdateScreen_AutoSet();
 			}
 			else if (verbose) PrintCommandUsage(command_name);
 
-			if (script_client_connected) commSocket.SetSendData(commandSpec.PrepareReturnParameters(SMesh.active_mesh()->GetMeshRect()));
+			if (script_client_connected) commSocket.SetSendData(commandSpec.PrepareReturnParameters(SMesh[meshName]->GetMeshRect()));
 		}
 		break;
 
@@ -303,103 +342,95 @@ void Simulation::HandleCommand(std::string command_string)
 		case CMD_CELLSIZE:
 		{
 			DBL3 h;
-			error = commandSpec.GetParameters(command_fields, h);
+			std::string meshName = SMesh.GetMeshFocus();
+
+			optional_meshname_check_focusedmeshdefault(command_fields);
+			error = commandSpec.GetParameters(command_fields, meshName, h);
 
 			if (!error) {
 
 				StopSimulation();
-
-				if (!err_hndl.call(error, &MeshBase::SetMeshCellsize, SMesh.active_mesh(), h)) {
-
-					UpdateScreen();
-				}
+				if (!err_hndl.call(error, &MeshBase::SetMeshCellsize, SMesh[meshName], h)) UpdateScreen();
 			}
 			else if (verbose) PrintCommandUsage(command_name);
 
-			if (script_client_connected) commSocket.SetSendData(commandSpec.PrepareReturnParameters(SMesh.active_mesh()->GetMeshCellsize()));
+			if (script_client_connected) commSocket.SetSendData(commandSpec.PrepareReturnParameters(SMesh[meshName]->GetMeshCellsize()));
 		}
 		break;
 
 		case CMD_ECELLSIZE:
 		{
 			DBL3 h_e;
-			error = commandSpec.GetParameters(command_fields, h_e);
+			std::string meshName = SMesh.GetMeshFocus();
+
+			optional_meshname_check_focusedmeshdefault(command_fields);
+			error = commandSpec.GetParameters(command_fields, meshName, h_e);
 
 			if (!error) {
 
 				StopSimulation();
-
-				if (!err_hndl.call(error, &MeshBase::SetMeshECellsize, SMesh.active_mesh(), h_e)) {
-
-					UpdateScreen();
-				}
+				if (!err_hndl.call(error, &MeshBase::SetMeshECellsize, SMesh[meshName], h_e)) UpdateScreen();
 			}
 			else if (verbose) PrintCommandUsage(command_name);
 
-			if (script_client_connected) commSocket.SetSendData(commandSpec.PrepareReturnParameters(SMesh.active_mesh()->GetMeshECellsize()));
+			if (script_client_connected) commSocket.SetSendData(commandSpec.PrepareReturnParameters(SMesh[meshName]->GetMeshECellsize()));
 		}
 		break;
 
 		case CMD_TCELLSIZE:
 		{
 			DBL3 h_t;
-			error = commandSpec.GetParameters(command_fields, h_t);
+			std::string meshName = SMesh.GetMeshFocus();
+
+			optional_meshname_check_focusedmeshdefault(command_fields);
+			error = commandSpec.GetParameters(command_fields, meshName, h_t);
 
 			if (!error) {
 
 				StopSimulation();
-
-				if (!err_hndl.call(error, &MeshBase::SetMeshTCellsize, SMesh.active_mesh(), h_t)) {
-
-					UpdateScreen();
-				}
+				if (!err_hndl.call(error, &MeshBase::SetMeshTCellsize, SMesh[meshName], h_t)) UpdateScreen();
 			}
 			else if (verbose) PrintCommandUsage(command_name);
 
-			if (script_client_connected) commSocket.SetSendData(commandSpec.PrepareReturnParameters(SMesh.active_mesh()->GetMeshTCellsize()));
+			if (script_client_connected) commSocket.SetSendData(commandSpec.PrepareReturnParameters(SMesh[meshName]->GetMeshTCellsize()));
 		}
 		break;
 
 		case CMD_SCELLSIZE:
 		{
 			DBL3 h_s;
-			error = commandSpec.GetParameters(command_fields, h_s);
+			std::string meshName = SMesh.GetMeshFocus();
 
-			if (!error && !SMesh.active_mesh()->is_atomistic()) {
+			optional_meshname_check_focusedmeshdefault(command_fields);
+			error = commandSpec.GetParameters(command_fields, meshName, h_s);
+
+			if (!error && !SMesh[meshName]->is_atomistic()) {
 
 				StopSimulation();
-
-				if (!err_hndl.call(error, &Mesh::SetMeshSCellsize, dynamic_cast<Mesh*>(SMesh.active_mesh()), h_s, false)) {
-
-					UpdateScreen();
-				}
+				if (!err_hndl.call(error, &Mesh::SetMeshSCellsize, dynamic_cast<Mesh*>(SMesh[meshName]), h_s, false)) UpdateScreen();
 			}
 			else if (verbose) PrintCommandUsage(command_name);
 
-			if (script_client_connected && !SMesh.active_mesh()->is_atomistic()) {
-
-				commSocket.SetSendData(commandSpec.PrepareReturnParameters(dynamic_cast<Mesh*>(SMesh.active_mesh())->GetMeshSCellsize()));
-			}
+			if (script_client_connected && !SMesh[meshName]->is_atomistic()) commSocket.SetSendData(commandSpec.PrepareReturnParameters(dynamic_cast<Mesh*>(SMesh[meshName])->GetMeshSCellsize()));
 		}
 		break;
 
 		case CMD_MCELLSIZE:
 		{
 			DBL3 h_m;
-			error = commandSpec.GetParameters(command_fields, h_m);
+			std::string meshName = SMesh.GetMeshFocus();
+
+			optional_meshname_check_focusedmeshdefault(command_fields);
+			error = commandSpec.GetParameters(command_fields, meshName, h_m);
 
 			if (!error) {
 
 				StopSimulation();
-
-				if (!err_hndl.call(error, &MeshBase::SetMeshMCellsize, SMesh.active_mesh(), h_m)) {
-
-					UpdateScreen();
-				}
+				if (!err_hndl.call(error, &MeshBase::SetMeshMCellsize, SMesh[meshName], h_m)) UpdateScreen();
 			}
 			else if (verbose) PrintCommandUsage(command_name);
 
-			if (script_client_connected) commSocket.SetSendData(commandSpec.PrepareReturnParameters(SMesh.active_mesh()->GetMeshMCellsize()));
+			if (script_client_connected) commSocket.SetSendData(commandSpec.PrepareReturnParameters(SMesh[meshName]->GetMeshMCellsize()));
 		}
 		break;
 
@@ -446,34 +477,20 @@ void Simulation::HandleCommand(std::string command_string)
 		case CMD_ATOMDMCELLSIZE:
 		{
 			DBL3 h_dm;
-			error = commandSpec.GetParameters(command_fields, h_dm);
+			std::string meshName = SMesh.GetMeshFocus();
 
-			if (!error) {
+			optional_meshname_check_focusedmeshdefault(command_fields);
+			error = commandSpec.GetParameters(command_fields, meshName, h_dm);
+
+			if (!error && SMesh[meshName]->is_atomistic()) {
 
 				StopSimulation();
-
-				Atom_Mesh *pMesh = dynamic_cast<Atom_Mesh*>(SMesh.active_mesh());
-
-				if (pMesh) {
-
-					if (!err_hndl.call(error, &Atom_Mesh::Set_Demag_Cellsize, pMesh, h_dm)) {
-
-						UpdateScreen();
-					}
-				}
+				if (!err_hndl.call(error, &Atom_Mesh::Set_Demag_Cellsize, dynamic_cast<Atom_Mesh*>(SMesh[meshName]), h_dm)) UpdateScreen();
 				else if (verbose) error(BERROR_NOTATOMISTIC);
 			}
 			else if (verbose) Print_Speedup_List();
 
-			if (script_client_connected) {
-
-				Atom_Mesh *pMesh = dynamic_cast<Atom_Mesh*>(SMesh.active_mesh());
-
-				if (pMesh) {
-
-					commSocket.SetSendData(commandSpec.PrepareReturnParameters(pMesh->Get_Demag_Cellsize()));
-				}
-			}
+			if (script_client_connected && SMesh[meshName]->is_atomistic()) commSocket.SetSendData(commandSpec.PrepareReturnParameters(dynamic_cast<Atom_Mesh*>(SMesh[meshName])->Get_Demag_Cellsize()));
 		}
 		break;
 
@@ -646,27 +663,6 @@ void Simulation::HandleCommand(std::string command_string)
 		}
 		break;
 
-		case CMD_ADDDIAMAGNETICMESH:
-		{
-			std::string meshName;
-			Rect meshRect;
-
-			//note, mesh name is not allowed to have any spaces - needs to be a single word
-			error = commandSpec.GetParameters(command_fields, meshName, meshRect);
-
-			if (!error) {
-
-				StopSimulation();
-
-				if (!err_hndl.call(error, &SuperMesh::AddMesh, &SMesh, meshName, MESH_DIAMAGNETIC, meshRect)) {
-
-					UpdateScreen();
-				}
-			}
-			else if (verbose) PrintCommandUsage(command_name);
-		}
-		break;
-
 		case CMD_ADDAMESHCUBIC:
 		{
 			std::string meshName;
@@ -825,18 +821,14 @@ void Simulation::HandleCommand(std::string command_string)
 			Rect rectangle;
 			std::string meshName = SMesh.GetMeshFocus();
 
-			error = commandSpec.GetParameters(command_fields, rectangle, meshName);
-			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, rectangle); meshName = SMesh.GetMeshFocus(); }
-			if (error == BERROR_PARAMMISMATCH) { error.reset(); meshName = SMesh.GetMeshFocus(); rectangle = Rect(DBL3(), SMesh[meshName]->GetMeshDimensions()); }
+			optional_meshname_check_focusedmeshdefault(command_fields);
+			error = commandSpec.GetParameters(command_fields, meshName, rectangle);
+			if (error == BERROR_PARAMMISMATCH) { error.reset(); rectangle = Rect(DBL3(), SMesh[meshName]->GetMeshDimensions()); }
 
 			if (!error) {
 
 				StopSimulation();
-
-				if (!err_hndl.qcall(error, &SuperMesh::delrect, &SMesh, meshName, rectangle)) {
-
-					UpdateScreen();
-				}
+				if (!err_hndl.qcall(error, &SuperMesh::delrect, &SMesh, meshName, rectangle)) UpdateScreen();
 			}
 			else if (verbose) PrintCommandUsage(command_name);
 		}
@@ -847,17 +839,13 @@ void Simulation::HandleCommand(std::string command_string)
 			Rect rectangle;
 			std::string meshName = SMesh.GetMeshFocus();
 
-			error = commandSpec.GetParameters(command_fields, rectangle, meshName);
-			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, rectangle); meshName = SMesh.GetMeshFocus(); }
+			optional_meshname_check_focusedmeshdefault(command_fields);
+			error = commandSpec.GetParameters(command_fields, meshName, rectangle);
 
 			if (!error) {
 
 				StopSimulation();
-
-				if (!err_hndl.qcall(error, &SuperMesh::setrect, &SMesh, meshName, rectangle)) {
-
-					UpdateScreen();
-				}
+				if (!err_hndl.qcall(error, &SuperMesh::setrect, &SMesh, meshName, rectangle)) UpdateScreen();
 			}
 			else if (verbose) PrintCommandUsage(command_name);
 		}
@@ -867,36 +855,42 @@ void Simulation::HandleCommand(std::string command_string)
 		{
 			std::string meshName;
 
+			optional_meshname_check_focusedmeshdefault(command_fields);
 			error = commandSpec.GetParameters(command_fields, meshName);
-			if (error == BERROR_PARAMMISMATCH) { meshName = SMesh.GetMeshFocus(); error.reset(); }
 
 			if (!error) {
 
 				StopSimulation();
-
-				if (!err_hndl.qcall(error, &SuperMesh::resetrect, &SMesh, meshName)) {
-
-					UpdateScreen();
-				}
+				if (!err_hndl.qcall(error, &SuperMesh::resetrect, &SMesh, meshName)) UpdateScreen();
 			}
 		}
 		break;
 
 		case CMD_LOADMASKFILE:
 		{
-			double zDepth;
-			std::string fileName;
+			std::string meshName, params_string;
 
-			error = commandSpec.GetParameters(command_fields, zDepth, fileName);
-			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, fileName); zDepth = 0; }
+			optional_meshname_check_focusedmeshdefault(command_fields);
+			error = commandSpec.GetParameters(command_fields, meshName, params_string);
 
 			if (!error) {
 
 				StopSimulation();
 
-				if (GetFileTermination(fileName) != ".png")
-					fileName += ".png";
+				double zDepth;
+				std::string fileName;
 
+				//using split_numeric approach since the file name path can contain spaces.
+				std::vector<std::string> entries = split_numeric(params_string);
+
+				if (entries.size() == 2) {
+
+					zDepth = ToNum(entries[0]);
+					fileName = entries[1];
+				}
+				else fileName = params_string;
+
+				if (GetFileTermination(fileName) != ".png") fileName += ".png";
 				if (!GetFilenameDirectory(fileName).length()) fileName = directory + fileName;
 
 				//define code required to load the bitmap - this will be passed for the mesh to use
@@ -908,27 +902,7 @@ void Simulation::HandleCommand(std::string command_string)
 					return bitmap;
 				};
 
-				error = SMesh[SMesh.GetMeshFocus()]->applymask(zDepth, fileName, bitmap_loader);
-
-				if (error) {
-
-					//If fileName has spaces then the above won't work if a zDepth value was not specified by the user.
-					//This happens since after the first space the GetParameters command converts to a zDepth value then gets the rest as a file name.
-					//In this case the mask file loading will throw an error (couldn't load file), so try again without getting a zDepth value and see if it works.
-					error.reset();
-					error = commandSpec.GetParameters(command_fields, fileName);
-
-					if (!error) {
-
-						if (GetFileTermination(fileName) != ".png")
-							fileName += ".png";
-
-						if (!GetFilenameDirectory(fileName).length()) fileName = directory + fileName;
-
-						error = SMesh[SMesh.GetMeshFocus()]->applymask(0, fileName, bitmap_loader);
-					}
-				}
-
+				error = SMesh[meshName]->applymask(zDepth, fileName, bitmap_loader);
 				UpdateScreen();
 			}
 			else if (verbose) PrintCommandUsage(command_name);
@@ -958,16 +932,13 @@ void Simulation::HandleCommand(std::string command_string)
 			double polar, azim;
 			std::string meshName;
 
-			error = commandSpec.GetParameters(command_fields, polar, azim, meshName);
-			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, polar, azim); meshName = ""; }
+			bool meshName_specified = optional_meshname_check_focusedmeshdefault(command_fields);
+			error = commandSpec.GetParameters(command_fields, meshName, polar, azim);
+			if (!meshName_specified) meshName = "";
 
 			if (!error) {
 
-				if (!err_hndl.qcall(error, &SuperMesh::SetMagAngle, &SMesh, meshName, polar, azim)) {
-
-					UpdateScreen();
-				}
-
+				if (!err_hndl.qcall(error, &SuperMesh::SetMagAngle, &SMesh, meshName, polar, azim)) UpdateScreen();
 			}
 			else if (verbose) PrintCommandUsage(command_name);
 		}
@@ -978,13 +949,13 @@ void Simulation::HandleCommand(std::string command_string)
 			int direction;
 			DBL3 centre;
 			double radius, thickness;
-			std::string meshName;
+			std::string meshName = SMesh.GetMeshFocus();
 
-			error = commandSpec.GetParameters(command_fields, direction, radius, thickness, centre, meshName);
-			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, direction, radius, thickness, centre); meshName = SMesh.GetMeshFocus(); }
+			optional_meshname_check_focusedmeshdefault(command_fields);
+			error = commandSpec.GetParameters(command_fields, meshName, direction, radius, thickness, centre);
 			if (error == BERROR_PARAMMISMATCH) { 
 
-				error.reset() = commandSpec.GetParameters(command_fields, direction);
+				error.reset() = commandSpec.GetParameters(command_fields, meshName, direction);
 				if (error == BERROR_PARAMMISMATCH) { error.reset(); direction = 1; }
 
 				//entire mesh
@@ -992,15 +963,12 @@ void Simulation::HandleCommand(std::string command_string)
 				//entire thickness
 				thickness = 0.0;
 				//centered
-				centre = SMesh.active_mesh()->GetMeshDimensions() / 2;
+				centre = SMesh[meshName]->GetMeshDimensions() / 2;
 			}
 
 			if (!error) {
 
-				if (!err_hndl.qcall(error, &SuperMesh::SetMagFlower, &SMesh, meshName, direction, centre, radius, thickness)) {
-
-					UpdateScreen();
-				}
+				if (!err_hndl.qcall(error, &SuperMesh::SetMagFlower, &SMesh, meshName, direction, centre, radius, thickness)) UpdateScreen();
 			}
 			else if (verbose) PrintCommandUsage(command_name);
 		}
@@ -1011,13 +979,13 @@ void Simulation::HandleCommand(std::string command_string)
 			int direction;
 			DBL3 centre;
 			double radius1, radius2, thickness;
-			std::string meshName;
+			std::string meshName = SMesh.GetMeshFocus();
 
-			error = commandSpec.GetParameters(command_fields, direction, radius1, radius2, thickness, centre, meshName);
-			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, direction, radius1, radius2, thickness, centre); meshName = SMesh.GetMeshFocus(); }
+			optional_meshname_check_focusedmeshdefault(command_fields);
+			error = commandSpec.GetParameters(command_fields, meshName, direction, radius1, radius2, thickness, centre);
 			if (error == BERROR_PARAMMISMATCH) {
 
-				error.reset() = commandSpec.GetParameters(command_fields, direction);
+				error.reset() = commandSpec.GetParameters(command_fields, meshName, direction);
 				if (error == BERROR_PARAMMISMATCH) { error.reset(); direction = 1; }
 				
 				//entire mesh
@@ -1025,15 +993,12 @@ void Simulation::HandleCommand(std::string command_string)
 				//entire thickness
 				thickness = 0.0;
 				//centered
-				centre = SMesh.active_mesh()->GetMeshDimensions() / 2;
+				centre = SMesh[meshName]->GetMeshDimensions() / 2;
 			}
 
 			if (!error) {
 
-				if (!err_hndl.qcall(error, &SuperMesh::SetMagOnion, &SMesh, meshName, direction, centre, radius1, radius2, thickness)) {
-
-					UpdateScreen();
-				}
+				if (!err_hndl.qcall(error, &SuperMesh::SetMagOnion, &SMesh, meshName, direction, centre, radius1, radius2, thickness)) UpdateScreen();
 			}
 			else if (verbose) PrintCommandUsage(command_name);
 		}
@@ -1044,13 +1009,13 @@ void Simulation::HandleCommand(std::string command_string)
 			int direction;
 			DBL3 centre;
 			double radius, thickness;
-			std::string meshName;
+			std::string meshName = SMesh.GetMeshFocus();
 
-			error = commandSpec.GetParameters(command_fields, direction, radius, thickness, centre, meshName);
-			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, direction, radius, thickness, centre); meshName = SMesh.GetMeshFocus(); }
+			optional_meshname_check_focusedmeshdefault(command_fields);
+			error = commandSpec.GetParameters(command_fields, meshName, direction, radius, thickness, centre);
 			if (error == BERROR_PARAMMISMATCH) {
 
-				error.reset() = commandSpec.GetParameters(command_fields, direction);
+				error.reset() = commandSpec.GetParameters(command_fields, meshName, direction);
 				if (error == BERROR_PARAMMISMATCH) { error.reset(); direction = 1; }
 
 				//entire mesh
@@ -1058,15 +1023,12 @@ void Simulation::HandleCommand(std::string command_string)
 				//entire thickness
 				thickness = 0.0;
 				//centered
-				centre = SMesh.active_mesh()->GetMeshDimensions() / 2;
+				centre = SMesh[meshName]->GetMeshDimensions() / 2;
 			}
 
 			if (!error) {
 
-				if (!err_hndl.qcall(error, &SuperMesh::SetMagCrosstie, &SMesh, meshName, direction, centre, radius, thickness)) {
-
-					UpdateScreen();
-				}
+				if (!err_hndl.qcall(error, &SuperMesh::SetMagCrosstie, &SMesh, meshName, direction, centre, radius, thickness)) UpdateScreen();
 			}
 			else if (verbose) PrintCommandUsage(command_name);
 		}
@@ -1076,18 +1038,14 @@ void Simulation::HandleCommand(std::string command_string)
 		{
 			double polar, azim;
 			DBL3 position;
-			std::string meshName;
+			std::string meshName = SMesh.GetMeshFocus();
 
-			error = commandSpec.GetParameters(command_fields, polar, azim, position, meshName);
-			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, polar, azim, position); meshName = SMesh.GetMeshFocus(); }
+			optional_meshname_check_focusedmeshdefault(command_fields);
+			error = commandSpec.GetParameters(command_fields, meshName, polar, azim, position);
 
 			if (!error) {
 
-				if (!err_hndl.qcall(error, &SuperMesh::SetMagAngle_Object, &SMesh, meshName, polar, azim, position)) {
-
-					UpdateScreen();
-				}
-
+				if (!err_hndl.qcall(error, &SuperMesh::SetMagAngle_Object, &SMesh, meshName, polar, azim, position)) UpdateScreen();
 			}
 			else if (verbose) PrintCommandUsage(command_name);
 		}
@@ -1095,20 +1053,16 @@ void Simulation::HandleCommand(std::string command_string)
 
 		case CMD_RANDOM:
 		{
-			std::string meshName;
 			int seed;
+			std::string meshName = SMesh.GetMeshFocus();
 
+			optional_meshname_check_focusedmeshdefault(command_fields);
 			error = commandSpec.GetParameters(command_fields, meshName, seed);
-			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, meshName); seed = 1; }
-			if (error == BERROR_PARAMMISMATCH) { error.reset(); meshName = SMesh.GetMeshFocus(); seed = 1; }
+			if (error == BERROR_PARAMMISMATCH) { error.reset(); seed = 1; }
 
 			if (!error) {
 
-				if (!err_hndl.qcall(error, &SuperMesh::SetRandomMag, &SMesh, meshName, seed)) {
-
-					UpdateScreen();
-				}
-
+				if (!err_hndl.qcall(error, &SuperMesh::SetRandomMag, &SMesh, meshName, seed)) UpdateScreen();
 			}
 			else if (verbose) PrintCommandUsage(command_name);
 		}
@@ -1116,20 +1070,16 @@ void Simulation::HandleCommand(std::string command_string)
 
 		case CMD_RANDOMXY:
 		{
-			std::string meshName;
 			int seed;
+			std::string meshName = SMesh.GetMeshFocus();
 
+			optional_meshname_check_focusedmeshdefault(command_fields);
 			error = commandSpec.GetParameters(command_fields, meshName, seed);
-			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, meshName); seed = 1; }
-			if (error == BERROR_PARAMMISMATCH) { error.reset(); meshName = SMesh.GetMeshFocus(); seed = 1; }
+			if (error == BERROR_PARAMMISMATCH) { error.reset(); seed = 1; }
 
 			if (!error) {
 
-				if (!err_hndl.qcall(error, &SuperMesh::SetRandomXYMag, &SMesh, meshName, seed)) {
-
-					UpdateScreen();
-				}
-
+				if (!err_hndl.qcall(error, &SuperMesh::SetRandomXYMag, &SMesh, meshName, seed)) UpdateScreen();
 			}
 			else if (verbose) PrintCommandUsage(command_name);
 		}
@@ -1137,53 +1087,31 @@ void Simulation::HandleCommand(std::string command_string)
 
 		case CMD_INVERTMAG:
 		{
-			std::string meshName;
-			std::string inputString;
-			bool x = true, y = true, z = true;
+			std::string meshName = SMesh.GetMeshFocus();
+			std::string components;
 
-			error = commandSpec.GetParameters(command_fields, inputString);
-			if (error == BERROR_PARAMMISMATCH) { error.reset(); meshName = SMesh.GetMeshFocus(); }
+			optional_meshname_check_focusedmeshdefault(command_fields);
+			error = commandSpec.GetParameters(command_fields, meshName, components);
+			if (error == BERROR_PARAMMISMATCH) error.reset();
 
 			if (!error) {
 
-				if (inputString.length()) {
+				bool x = true, y = true, z = true;
 
-					std::vector<std::string> fields = split(inputString, " ");
+				if (components.length()) {
 
-					int num_options;
+					std::vector<std::string> fields = split(components, " ");
 
-					if (fields.back() != "x" && fields.back() != "y" && fields.back() != "z") {
+					x = false; y = false; z = false;
+					for (int idx = 0; idx < fields.size(); idx++) {
 
-						meshName = fields.back();
-						num_options = fields.size() - 1;
-					}
-					else {
-
-						meshName = SMesh.GetMeshFocus();
-						num_options = fields.size();
-					}
-
-					if (num_options > 0) {
-
-						x = false; 
-						y = false;
-						z = false;
-
-						for (int idx = 0; idx < num_options; idx++) {
-
-							if (fields[idx] == "x") x = true;
-							if (fields[idx] == "y") y = true;
-							if (fields[idx] == "z") z = true;
-						}
+						if (fields[idx] == "x") x = true;
+						if (fields[idx] == "y") y = true;
+						if (fields[idx] == "z") z = true;
 					}
 				}
-				else meshName = SMesh.GetMeshFocus();
 				
-				if (!err_hndl.qcall(error, &SuperMesh::SetInvertedMag, &SMesh, meshName, x, y, z)) {
-
-					UpdateScreen();
-				}
-
+				if (!err_hndl.qcall(error, &SuperMesh::SetInvertedMag, &SMesh, meshName, x, y, z)) UpdateScreen();
 			}
 			else if (verbose) PrintCommandUsage(command_name);
 		}
@@ -1191,19 +1119,15 @@ void Simulation::HandleCommand(std::string command_string)
 
 		case CMD_MIRRORMAG:
 		{
-			std::string meshName;
+			std::string meshName = SMesh.GetMeshFocus();
 			std::string axis;
 
-			error = commandSpec.GetParameters(command_fields, axis, meshName);
-			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, axis); meshName = SMesh.GetMeshFocus(); }
+			optional_meshname_check_focusedmeshdefault(command_fields);
+			error = commandSpec.GetParameters(command_fields, meshName, axis);
 
 			if (!error) {
 
-				if (!err_hndl.qcall(error, &SuperMesh::SetMirroredMag, &SMesh, meshName, axis)) {
-
-					UpdateScreen();
-				}
-
+				if (!err_hndl.qcall(error, &SuperMesh::SetMirroredMag, &SMesh, meshName, axis)) UpdateScreen();
 			}
 			else if (verbose) PrintCommandUsage(command_name);
 		}
@@ -1213,17 +1137,14 @@ void Simulation::HandleCommand(std::string command_string)
 		{
 			Rect rectangle;
 			double polar, azim;
-			std::string meshName;
+			std::string meshName = SMesh.GetMeshFocus();
 
-			error = commandSpec.GetParameters(command_fields, polar, azim, rectangle, meshName);
-			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, polar, azim, rectangle); meshName = SMesh.GetMeshFocus(); }
+			optional_meshname_check_focusedmeshdefault(command_fields);
+			error = commandSpec.GetParameters(command_fields, meshName, polar, azim, rectangle);
 
 			if (!error) {
 
-				if (!err_hndl.qcall(error, &SuperMesh::SetMagAngle_Rect, &SMesh, meshName, polar, azim, rectangle)) {
-
-					UpdateScreen();
-				}
+				if (!err_hndl.qcall(error, &SuperMesh::SetMagAngle_Rect, &SMesh, meshName, polar, azim, rectangle)) UpdateScreen();
 			}
 			else if (verbose) PrintCommandUsage(command_name);
 		}
@@ -1233,17 +1154,14 @@ void Simulation::HandleCommand(std::string command_string)
 		{
 			std::string longitudinal, transverse;
 			double width, position;
-			std::string meshName;
+			std::string meshName = SMesh.GetMeshFocus();
 
-			error = commandSpec.GetParameters(command_fields, longitudinal, transverse, width, position, meshName);
-			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, longitudinal, transverse, width, position); meshName = SMesh.GetMeshFocus(); }
+			optional_meshname_check_focusedmeshdefault(command_fields);
+			error = commandSpec.GetParameters(command_fields, meshName, longitudinal, transverse, width, position);
 
 			if (!error) {
 
-				if (!err_hndl.qcall(error, &SuperMesh::SetMagDomainWall, &SMesh, meshName, longitudinal, transverse, width, position)) {
-
-					UpdateScreen();
-				}
+				if (!err_hndl.qcall(error, &SuperMesh::SetMagDomainWall, &SMesh, meshName, longitudinal, transverse, width, position)) UpdateScreen();
 			}
 			else if (verbose) PrintCommandUsage(command_name);
 		}
@@ -1253,11 +1171,11 @@ void Simulation::HandleCommand(std::string command_string)
 		{
 			int longitudinal, rotation, core;
 			Rect rect;
-			std::string meshName;
+			std::string meshName = SMesh.GetMeshFocus();
 
-			error = commandSpec.GetParameters(command_fields, longitudinal, rotation, core, rect, meshName);
-			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, longitudinal, rotation, core, rect); meshName = SMesh.GetMeshFocus(); }
-			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, longitudinal, rotation, core); rect = Rect(); meshName = SMesh.GetMeshFocus(); }
+			optional_meshname_check_focusedmeshdefault(command_fields);
+			error = commandSpec.GetParameters(command_fields, meshName, longitudinal, rotation, core, rect);
+			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, meshName, longitudinal, rotation, core); rect = Rect(); }
 
 			if (!error && longitudinal && rotation && core) {
 
@@ -1301,20 +1219,20 @@ void Simulation::HandleCommand(std::string command_string)
 				if (!error) {
 
 					//data loaded correctly, so resize currently focused mesh (if ferromagnetic) then copy magnetization data to it.
-					if (SMesh.active_mesh()->is_atomistic()) {
+					if (SMesh[meshName]->is_atomistic()) {
 
-						data.renormalize(dynamic_cast<Atom_Mesh*>(SMesh.active_mesh())->mu_s.get0());
+						data.renormalize(dynamic_cast<Atom_Mesh*>(SMesh[meshName])->mu_s.get0());
 					}
 					else {
 
-						data.renormalize(dynamic_cast<Mesh*>(SMesh.active_mesh())->Ms.get0());
+						data.renormalize(dynamic_cast<Mesh*>(SMesh[meshName])->Ms.get0());
 					}
 
 					if (invertMag) data *= -1.0;
 
-					if (SMesh.active_mesh()->Magnetism_Enabled()) {
+					if (SMesh[meshName]->Magnetism_Enabled()) {
 
-						SMesh.active_mesh()->SetMagFromData(data, rect);
+						SMesh[meshName]->SetMagFromData(data, rect);
 						UpdateScreen();
 					}
 					else err_hndl.show_error(BERROR_NOTMAGNETIC, verbose);
@@ -1329,17 +1247,14 @@ void Simulation::HandleCommand(std::string command_string)
 			int core, chirality;
 			double diameter;
 			DBL2 position;
-			std::string meshName;
+			std::string meshName = SMesh.GetMeshFocus();
 
-			error = commandSpec.GetParameters(command_fields, core, chirality, diameter, position, meshName);
-			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, core, chirality, diameter, position); meshName = SMesh.GetMeshFocus(); }
+			optional_meshname_check_focusedmeshdefault(command_fields);
+			error = commandSpec.GetParameters(command_fields, meshName, core, chirality, diameter, position);
 
 			if (!error) {
 
-				if (!err_hndl.qcall(error, &SuperMesh::SetSkyrmion, &SMesh, meshName, core, chirality, diameter, position)) {
-
-					UpdateScreen();
-				}
+				if (!err_hndl.qcall(error, &SuperMesh::SetSkyrmion, &SMesh, meshName, core, chirality, diameter, position)) UpdateScreen();
 			}
 			else if (verbose) PrintCommandUsage(command_name);
 		}
@@ -1350,17 +1265,14 @@ void Simulation::HandleCommand(std::string command_string)
 			int core, chirality;
 			double diameter;
 			DBL2 position;
-			std::string meshName;
+			std::string meshName = SMesh.GetMeshFocus();
 
-			error = commandSpec.GetParameters(command_fields, core, chirality, diameter, position, meshName);
-			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, core, chirality, diameter, position); meshName = SMesh.GetMeshFocus(); }
+			optional_meshname_check_focusedmeshdefault(command_fields);
+			error = commandSpec.GetParameters(command_fields, meshName, core, chirality, diameter, position);
 
 			if (!error) {
 
-				if (!err_hndl.qcall(error, &SuperMesh::SetSkyrmionBloch, &SMesh, meshName, core, chirality, diameter, position)) {
-
-					UpdateScreen();
-				}
+				if (!err_hndl.qcall(error, &SuperMesh::SetSkyrmionBloch, &SMesh, meshName, core, chirality, diameter, position)) UpdateScreen();
 			}
 			else if (verbose) PrintCommandUsage(command_name);
 		}
@@ -1372,16 +1284,14 @@ void Simulation::HandleCommand(std::string command_string)
 			std::string flag;
 			int images;
 
+			bool meshName_specified = optional_meshname_check_focusedmeshdefault(command_fields, true);
 			error = commandSpec.GetParameters(command_fields, meshName, flag, images);
+			if (!meshName_specified) meshName = SMesh.superMeshHandle;
 
 			if (!error) {
 
 				StopSimulation();
-
-				if (!err_hndl.qcall(error, &SuperMesh::Set_PBC, &SMesh, meshName, flag, images)) {
-
-					UpdateScreen();
-				}
+				if (!err_hndl.qcall(error, &SuperMesh::Set_PBC, &SMesh, meshName, flag, images)) UpdateScreen();
 			}
 			else if (verbose) Print_PBC();
 		}
@@ -1390,42 +1300,46 @@ void Simulation::HandleCommand(std::string command_string)
 		case CMD_SETFIELD:
 		{
 			DBL3 field_polar;
-			std::string meshName = "";
+			std::string meshName;
 
-			error = commandSpec.GetParameters(command_fields, field_polar, meshName);
-			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, field_polar); meshName = ""; }
+			bool meshName_specified = optional_meshname_check_focusedmeshdefault(command_fields);
+			error = commandSpec.GetParameters(command_fields, meshName, field_polar);
+			if (!meshName_specified) meshName = "";
 
 			if (!error) {
 
-				if (!err_hndl.qcall(error, &SuperMesh::SetField, &SMesh, meshName, Polar_to_Cartesian(field_polar))) {
-
-					UpdateScreen();
-				}
+				if (!err_hndl.qcall(error, &SuperMesh::SetField, &SMesh, meshName, Polar_to_Cartesian(field_polar))) UpdateScreen();
 			}
 			else if (verbose) PrintCommandUsage(command_name);
 
-			if (script_client_connected) commSocket.SetSendData(commandSpec.PrepareReturnParameters(SMesh.active_mesh()->CallModuleMethod(&ZeemanBase::GetField)));
+			if (script_client_connected) {
+
+				if (!meshName_specified) meshName = SMesh.GetMeshFocus();
+				commSocket.SetSendData(commandSpec.PrepareReturnParameters(SMesh[meshName]->CallModuleMethod(&ZeemanBase::GetField)));
+			}
 		}
 		break;
 
 		case CMD_SETSTRESS:
 		{
 			DBL3 stress_polar;
-			std::string meshName = "";
+			std::string meshName;
 
-			error = commandSpec.GetParameters(command_fields, stress_polar, meshName);
-			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, stress_polar); meshName = ""; }
+			bool meshName_specified = optional_meshname_check_focusedmeshdefault(command_fields);
+			error = commandSpec.GetParameters(command_fields, meshName, stress_polar);
+			if (!meshName_specified) meshName = "";
 
 			if (!error) {
 
-				if (!err_hndl.qcall(error, &SuperMesh::SetUniformStress, &SMesh, meshName, Polar_to_Cartesian(stress_polar))) {
-
-					UpdateScreen();
-				}
+				if (!err_hndl.qcall(error, &SuperMesh::SetUniformStress, &SMesh, meshName, Polar_to_Cartesian(stress_polar))) UpdateScreen();
 			}
 			else if (verbose) PrintCommandUsage(command_name);
 
-			if (script_client_connected) commSocket.SetSendData(commandSpec.PrepareReturnParameters(SMesh.active_mesh()->CallModuleMethod(&MElastic::GetUniformStress)));
+			if (script_client_connected) {
+
+				if (!meshName_specified) meshName = SMesh.GetMeshFocus();
+				commSocket.SetSendData(commandSpec.PrepareReturnParameters(SMesh[meshName]->CallModuleMethod(&MElastic::GetUniformStress)));
+			}
 		}
 		break;
 
@@ -1439,18 +1353,14 @@ void Simulation::HandleCommand(std::string command_string)
 		{
 			std::string moduleHandle, meshName;
 
+			bool meshName_specified = optional_meshname_check_focusedmeshdefault(command_fields, true);
 			error = commandSpec.GetParameters(command_fields, meshName, moduleHandle);
+			if (!meshName_specified) meshName = "";
 
 			if (!error) {
 
 				StopSimulation();
-
-				MOD_ moduleID = (MOD_)moduleHandles.get_ID_from_value(moduleHandle);
-
-				if(!err_hndl.call(error, &SuperMesh::AddModule, &SMesh, meshName, moduleID)) {
-
-					RefreshScreen();
-				}
+				if(!err_hndl.call(error, &SuperMesh::AddModule, &SMesh, meshName, (MOD_)moduleHandles.get_ID_from_value(moduleHandle))) RefreshScreen();
 			}
 			else if (verbose) Print_Modules_List();
 		}
@@ -1460,18 +1370,13 @@ void Simulation::HandleCommand(std::string command_string)
 		{
 			std::string moduleHandle, meshName;
 			
+			optional_meshname_check_focusedmeshdefault(command_fields);
 			error = commandSpec.GetParameters(command_fields, meshName, moduleHandle);
 
 			if (!error) {
 
 				StopSimulation();
-
-				MOD_ moduleID = (MOD_)moduleHandles.get_ID_from_value(moduleHandle);
-
-				if (!err_hndl.qcall(error, &SuperMesh::DelModule, &SMesh, meshName, moduleID)) {
-
-					RefreshScreen();
-				}
+				if (!err_hndl.qcall(error, &SuperMesh::DelModule, &SMesh, meshName, (MOD_)moduleHandles.get_ID_from_value(moduleHandle))) RefreshScreen();
 			}
 			else if (verbose) Print_Modules_List();
 		}
@@ -1486,9 +1391,7 @@ void Simulation::HandleCommand(std::string command_string)
 			if (!error) {
 
 				StopSimulation();
-
 				error = SMesh.CallModuleMethod(&SDemag::Set_Multilayered_Convolution, status);
-
 				RefreshScreen();
 			}
 			else if (verbose) Print_MultiConvolution_Config();
@@ -1504,9 +1407,7 @@ void Simulation::HandleCommand(std::string command_string)
 			if (!error) {
 
 				StopSimulation();
-
 				error = SMesh.CallModuleMethod(&SDemag::Set_2D_Multilayered_Convolution, status);
-
 				RefreshScreen();
 			}
 			else if (verbose) PrintCommandUsage(command_name);
@@ -1522,9 +1423,7 @@ void Simulation::HandleCommand(std::string command_string)
 			if (!error) {
 
 				StopSimulation();
-
 				error = SMesh.CallModuleMethod(&SDemag::Set_Default_n_status, status);
-
 				RefreshScreen();
 			}
 			else if (verbose) PrintCommandUsage(command_name);
@@ -1540,9 +1439,7 @@ void Simulation::HandleCommand(std::string command_string)
 			if (!error) {
 
 				StopSimulation();
-
 				error = SMesh.CallModuleMethod(&SDemag::Set_n_common, (SZ3)n_common);
-
 				RefreshScreen();
 			}
 			else if (verbose) PrintCommandUsage(command_name);
@@ -1554,14 +1451,13 @@ void Simulation::HandleCommand(std::string command_string)
 			bool status;
 			std::string meshName;
 
-			error = commandSpec.GetParameters(command_fields, status, meshName);
+			optional_meshname_check_focusedmeshdefault(command_fields);
+			error = commandSpec.GetParameters(command_fields, meshName, status);
 
 			if (!error) {
 
 				StopSimulation();
-
-				error = SMesh.Set_Demag_Exclusion(status, meshName);
-
+				if (!err_hndl.qcall(error, &SuperMesh::Set_Demag_Exclusion, &SMesh, status, meshName)) RefreshScreen();
 				RefreshScreen();
 			}
 			else if (verbose) PrintCommandUsage(command_name);
@@ -1577,9 +1473,7 @@ void Simulation::HandleCommand(std::string command_string)
 			if (!error) {
 
 				StopSimulation();
-
-				error = SMesh.Set_Kernel_Initialize_on_GPU(status);
-
+				if (!err_hndl.qcall(error, &SuperMesh::Set_Kernel_Initialize_on_GPU, &SMesh, status)) RefreshScreen();
 				RefreshScreen();
 			}
 			else if (verbose) Print_GPUKernels_Config();
@@ -1741,9 +1635,9 @@ void Simulation::HandleCommand(std::string command_string)
 			std::string meshName = SMesh.GetMeshFocus();
 			Rect dataRect;
 
-			error = commandSpec.GetParameters(command_fields, dataName, meshName, dataRect);
-			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, dataName, meshName); dataRect = Rect(); }
-			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, dataName); meshName = SMesh.GetMeshFocus(); dataRect = Rect(); }
+			optional_meshname_check_focusedmeshdefault(command_fields);
+			error = commandSpec.GetParameters(command_fields, meshName, dataName, dataRect);
+			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, meshName, dataName); dataRect = Rect(); }
 
 			if (!error && dataDescriptor.has_key(dataName) && SMesh.contains(meshName)) {
 
@@ -1752,16 +1646,10 @@ void Simulation::HandleCommand(std::string command_string)
 					std::string text;
 
 					//mesh name if applicable
-					if (!dataDescriptor[dataName].meshless) {
-
-						text += "<b><" + meshName + "> ";
-					}
+					if (!dataDescriptor[dataName].meshless) text += "<b><" + meshName + "> ";
 
 					//box dimensions if applicable
-					if (!dataDescriptor[dataName].boxless && !dataRect.IsNull()) {
-
-						text += "<b>(" + ToString(dataRect, "m") + ") ";
-					}
+					if (!dataDescriptor[dataName].boxless && !dataRect.IsNull()) text += "<b>(" + ToString(dataRect, "m") + ") ";
 
 					//Label
 					text += "<b>" + dataDescriptor[dataName].Label;
@@ -1772,8 +1660,7 @@ void Simulation::HandleCommand(std::string command_string)
 				}
 
 				//for script return the number of returned data fields is variable. This is done by obtaining the a std::string using GetDataValueString, then splitting it using the usual separators (, or ;)
-				if (script_client_connected)
-					commSocket.SetSendData(commandSpec.PrepareReturnParameters(GetDataValue(DatumConfig((DATA_)dataDescriptor.get_ID_from_key(dataName), meshName, dataRect))));
+				if (script_client_connected) commSocket.SetSendData(commandSpec.PrepareReturnParameters(GetDataValue(DatumConfig((DATA_)dataDescriptor.get_ID_from_key(dataName), meshName, dataRect))));
 
 			}
 			else if (verbose) Print_ShowData();
@@ -1823,9 +1710,9 @@ void Simulation::HandleCommand(std::string command_string)
 			std::string meshName = SMesh.GetMeshFocus();
 			Rect dataRect;
 
-			error = commandSpec.GetParameters(command_fields, dataName, meshName, dataRect);
-			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, dataName, meshName); dataRect = Rect(); }
-			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, dataName); meshName = SMesh.GetMeshFocus(); dataRect = Rect(); }
+			optional_meshname_check_focusedmeshdefault(command_fields);
+			error = commandSpec.GetParameters(command_fields, meshName, dataName, dataRect);
+			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, meshName, dataName); dataRect = Rect(); }
 
 			if (!error && dataDescriptor.has_key(dataName) && SMesh.contains(meshName)) {
 
@@ -1848,9 +1735,9 @@ void Simulation::HandleCommand(std::string command_string)
 			std::string meshName = SMesh.GetMeshFocus();
 			Rect dataRect;
 
-			error = commandSpec.GetParameters(command_fields, dataName, meshName, dataRect);
-			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, dataName, meshName); dataRect = Rect(); }
-			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, dataName); meshName = SMesh.GetMeshFocus(); dataRect = Rect(); }
+			optional_meshname_check_focusedmeshdefault(command_fields);
+			error = commandSpec.GetParameters(command_fields, meshName, dataName, dataRect);
+			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, meshName, dataName); dataRect = Rect(); }
 
 			if (!error && dataDescriptor.has_key(dataName) && SMesh.contains(meshName)) {
 
@@ -1879,9 +1766,9 @@ void Simulation::HandleCommand(std::string command_string)
 			std::string meshName = SMesh.GetMeshFocus();
 			Rect dataRect;
 
-			error = commandSpec.GetParameters(command_fields, index, dataName, meshName, dataRect);
-			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, index, dataName, meshName); dataRect = Rect(); }
-			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, index, dataName); meshName = SMesh.GetMeshFocus(); dataRect = Rect(); }
+			optional_meshname_check_focusedmeshdefault(command_fields);
+			error = commandSpec.GetParameters(command_fields, meshName, index, dataName, dataRect);
+			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, meshName, index, dataName); dataRect = Rect(); }
 
 			if (!error && dataDescriptor.has_key(dataName) && SMesh.contains(meshName)) {
 
@@ -1907,20 +1794,14 @@ void Simulation::HandleCommand(std::string command_string)
 			std::string dataName, meshName = SMesh.GetMeshFocus();
 			Rect dataRect;
 
-			error = commandSpec.GetParameters(command_fields, dataName, meshName, dataRect);
-			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, dataName, meshName); dataRect = Rect(); }
-			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, dataName); meshName = SMesh.GetMeshFocus(); }
+			optional_meshname_check_focusedmeshdefault(command_fields);
+			error = commandSpec.GetParameters(command_fields, meshName, dataName, dataRect);
+			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, meshName, dataName); dataRect = Rect(); }
 
 			if (!error && dataDescriptor.has_key(dataName) && SMesh.contains(meshName)) {
 
-				if (dataDescriptor[dataName].meshless) {
-
-					NewDataBoxField(DatumConfig((DATA_)dataDescriptor.get_ID_from_key(dataName)));
-				}
-				else {
-
-					NewDataBoxField(DatumConfig((DATA_)dataDescriptor.get_ID_from_key(dataName), meshName, dataRect));
-				}
+				if (dataDescriptor[dataName].meshless) NewDataBoxField(DatumConfig((DATA_)dataDescriptor.get_ID_from_key(dataName)));
+				else NewDataBoxField(DatumConfig((DATA_)dataDescriptor.get_ID_from_key(dataName), meshName, dataRect));
 
 				RefreshScreen();
 			}
@@ -1951,7 +1832,7 @@ void Simulation::HandleCommand(std::string command_string)
 
 			if (!error) {
 
-				directory = directory_;
+				directory = FixedDirectorySlashes(directory_);
 
 				if (directory.substr(directory.length() - 1) != "/" && directory.substr(directory.length() - 1) != "/") {
 
@@ -2131,8 +2012,8 @@ void Simulation::HandleCommand(std::string command_string)
 			std::string stageTypeName;
 			std::string meshName = SMesh.GetMeshFocus();
 
-			error = commandSpec.GetParameters(command_fields, stageTypeName, meshName);
-			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, stageTypeName); meshName = SMesh.GetMeshFocus(); }
+			optional_meshname_check_focusedmeshdefault(command_fields, true);
+			error = commandSpec.GetParameters(command_fields, meshName, stageTypeName);
 
 			if (!error && stageDescriptors.has_key(stageTypeName) && (SMesh.contains(meshName) || meshName == SMesh.superMeshHandle)) {
 
@@ -2149,8 +2030,8 @@ void Simulation::HandleCommand(std::string command_string)
 			std::string stageTypeName;
 			std::string meshName = SMesh.GetMeshFocus();
 
-			error = commandSpec.GetParameters(command_fields, stageTypeName, meshName);
-			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, stageTypeName); meshName = SMesh.GetMeshFocus(); }
+			optional_meshname_check_focusedmeshdefault(command_fields, true);
+			error = commandSpec.GetParameters(command_fields, meshName, stageTypeName);
 
 			if (!error && stageDescriptors.has_key(stageTypeName) && (SMesh.contains(meshName) || meshName == SMesh.superMeshHandle)) {
 
@@ -2196,8 +2077,8 @@ void Simulation::HandleCommand(std::string command_string)
 			std::string stageTypeName;
 			std::string meshName = SMesh.GetMeshFocus();
 
-			error = commandSpec.GetParameters(command_fields, index, stageTypeName, meshName);
-			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, index, stageTypeName); meshName = SMesh.GetMeshFocus(); }
+			optional_meshname_check_focusedmeshdefault(command_fields, true);
+			error = commandSpec.GetParameters(command_fields, meshName, index, stageTypeName);
 
 			if (!error && GoodIdx(simStages.last(), index) && stageDescriptors.has_key(stageTypeName) && (SMesh.contains(meshName) || meshName == SMesh.superMeshHandle)) {
 
@@ -2277,13 +2158,8 @@ void Simulation::HandleCommand(std::string command_string)
 		{
 			std::string meshName;
 
+			optional_meshname_check_focusedmeshdefault(command_fields);
 			error = commandSpec.GetParameters(command_fields, meshName);
-			
-			if (error == BERROR_PARAMMISMATCH) {
-
-				error.reset(); 
-				meshName = SMesh.GetMeshFocus();
-			}
 
 			if (SMesh.contains(meshName) && verbose) Print_MeshParams(meshName);
 		}
@@ -2294,17 +2170,14 @@ void Simulation::HandleCommand(std::string command_string)
 			std::string paramName, paramValue, meshName;
 			bool set_value = true;
 
+			optional_meshname_check_focusedmeshdefault(command_fields);
 			error = commandSpec.GetParameters(command_fields, meshName, paramName, paramValue);
 			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, meshName, paramName); set_value = false; }
 
 			if (!error && set_value) {
 
 				StopSimulation();
-
-				if (!err_hndl.qcall(error, &SuperMesh::set_meshparam_value, &SMesh, meshName, paramName, paramValue)) {
-
-					UpdateScreen();
-				}
+				if (!err_hndl.qcall(error, &SuperMesh::set_meshparam_value, &SMesh, meshName, paramName, paramValue)) UpdateScreen();
 			}
 			else if (verbose && set_value) PrintCommandUsage(command_name);
 
@@ -2368,13 +2241,8 @@ void Simulation::HandleCommand(std::string command_string)
 		{
 			std::string meshName;
 			
+			optional_meshname_check_focusedmeshdefault(command_fields);
 			error = commandSpec.GetParameters(command_fields, meshName);
-
-			if (error == BERROR_PARAMMISMATCH) {
-
-				error.reset();
-				meshName = SMesh.GetMeshFocus();
-			}
 
 			if (SMesh.contains(meshName) && verbose) Print_MeshParamsTemperature(meshName);
 		}
@@ -2384,21 +2252,13 @@ void Simulation::HandleCommand(std::string command_string)
 		{
 			std::string meshName, paramName;
 
+			bool meshName_specified = optional_meshname_check_focusedmeshdefault(command_fields);
 			error = commandSpec.GetParameters(command_fields, meshName, paramName);
-			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, meshName); paramName = ""; }
-
-			if (error == BERROR_PARAMMISMATCH) {
-
-				error.reset();
-				meshName = "";
-			}
+			if (error == BERROR_PARAMMISMATCH && meshName_specified) { error.reset(); paramName = ""; }
+			if (!meshName_specified) { meshName = ""; }
 
 			StopSimulation();
-
-			if (!err_hndl.qcall(error, &SuperMesh::clear_meshparam_temp, &SMesh, meshName, paramName)) {
-
-				UpdateScreen();
-			}
+			if (!err_hndl.qcall(error, &SuperMesh::clear_meshparam_temp, &SMesh, meshName, paramName)) UpdateScreen();
 		}
 		break;
 
@@ -2406,16 +2266,14 @@ void Simulation::HandleCommand(std::string command_string)
 		{
 			std::string meshName, paramName, equationText;
 
+			bool meshName_specified = optional_meshname_check_focusedmeshdefault(command_fields);
 			error = commandSpec.GetParameters(command_fields, meshName, paramName, equationText);
+			if (!meshName_specified) { meshName = ""; }
 
 			if (!error) {
 
 				StopSimulation();
-
-				if (!err_hndl.qcall(error, &SuperMesh::set_meshparam_t_equation, &SMesh, meshName, paramName, equationText)) {
-
-					UpdateScreen();
-				}
+				if (!err_hndl.qcall(error, &SuperMesh::set_meshparam_t_equation, &SMesh, meshName, paramName, equationText)) UpdateScreen();
 			}
 			else if (verbose) PrintCommandUsage(command_name);
 		}
@@ -2425,8 +2283,10 @@ void Simulation::HandleCommand(std::string command_string)
 		{
 			std::string meshName, paramName, fileName;
 
+			bool meshName_specified = optional_meshname_check_focusedmeshdefault(command_fields);
 			error = commandSpec.GetParameters(command_fields, meshName, paramName, fileName);
 			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, meshName, paramName); fileName = ""; }
+			if (!meshName_specified) { meshName = ""; }
 
 			//setting parameter with arrays loaded form file
 			if (!error) {
@@ -2437,9 +2297,7 @@ void Simulation::HandleCommand(std::string command_string)
 				if (fileName.length()) {
 
 					if (!GetFilenameDirectory(fileName).length()) fileName = directory + fileName;
-
-					if (GetFileTermination(fileName) != ".txt")
-						fileName += ".txt";
+					if (GetFileTermination(fileName) != ".txt") fileName += ".txt";
 
 					std::vector<std::vector<double>> load_arrays;
 					if (ReadDataColumns(fileName, "\t", load_arrays, { 0, 1 })) {
@@ -2483,9 +2341,9 @@ void Simulation::HandleCommand(std::string command_string)
 
 					std::vector<double> empty;
 
-					if (GoodIdx(dpArr.size(), dp_c_iy, dp_c_iz)) error = SMesh.set_meshparam_tscaling_array(SMesh.GetMeshFocus(), paramName, dpArr[dp_T_idx], dpArr[dp_c_ix], dpArr[dp_c_iy], dpArr[dp_c_iz]);
-					else if (GoodIdx(dpArr.size(), dp_c_iy)) error = SMesh.set_meshparam_tscaling_array(SMesh.GetMeshFocus(), paramName, dpArr[dp_T_idx], dpArr[dp_c_ix], dpArr[dp_c_iy], empty);
-					else error = SMesh.set_meshparam_tscaling_array(SMesh.GetMeshFocus(), paramName, dpArr[dp_T_idx], dpArr[dp_c_ix], empty, empty);
+					if (GoodIdx(dpArr.size(), dp_c_iy, dp_c_iz)) error = SMesh.set_meshparam_tscaling_array(meshName, paramName, dpArr[dp_T_idx], dpArr[dp_c_ix], dpArr[dp_c_iy], dpArr[dp_c_iz]);
+					else if (GoodIdx(dpArr.size(), dp_c_iy)) error = SMesh.set_meshparam_tscaling_array(meshName, paramName, dpArr[dp_T_idx], dpArr[dp_c_ix], dpArr[dp_c_iy], empty);
+					else error = SMesh.set_meshparam_tscaling_array(meshName, paramName, dpArr[dp_T_idx], dpArr[dp_c_ix], empty, empty);
 
 					UpdateScreen();
 				}
@@ -2551,13 +2409,8 @@ void Simulation::HandleCommand(std::string command_string)
 		{
 			std::string meshName;
 
+			optional_meshname_check_focusedmeshdefault(command_fields);
 			error = commandSpec.GetParameters(command_fields, meshName);
-
-			if (error == BERROR_PARAMMISMATCH) {
-
-				error.reset();
-				meshName = SMesh.GetMeshFocus();
-			}
 
 			if (SMesh.contains(meshName) && verbose) Print_MeshParamsVariation(meshName);
 		}
@@ -2567,14 +2420,12 @@ void Simulation::HandleCommand(std::string command_string)
 		{
 			std::string meshName, paramName;
 
+			optional_meshname_check_focusedmeshdefault(command_fields);
 			error = commandSpec.GetParameters(command_fields, meshName, paramName);
 
 			if (!error) {
 
-				if (!err_hndl.qcall(error, &SuperMesh::set_meshparamvar_display, &SMesh, meshName, paramName)) {
-
-					UpdateScreen();
-				}
+				if (!err_hndl.qcall(error, &SuperMesh::set_meshparamvar_display, &SMesh, meshName, paramName)) UpdateScreen();
 			}
 			else if (verbose) PrintCommandUsage(command_name);
 		}
@@ -2582,40 +2433,15 @@ void Simulation::HandleCommand(std::string command_string)
 
 		case CMD_CLEARPARAMSVAR:
 		{
-			std::string meshName;
-
-			error = commandSpec.GetParameters(command_fields, meshName);
-
-			if (error == BERROR_PARAMMISMATCH) {
-
-				error.reset();
-				meshName = "";
-			}
-
-			StopSimulation();
-
-			if (!err_hndl.qcall(error, &SuperMesh::clear_meshparam_variation, &SMesh, meshName)) {
-
-				UpdateScreen();
-			}
-		}
-		break;
-
-		case CMD_CLEARPARAMVAR:
-		{
 			std::string meshName, paramName;
 
+			bool meshName_specified = optional_meshname_check_focusedmeshdefault(command_fields);
 			error = commandSpec.GetParameters(command_fields, meshName, paramName);
+			if (error == BERROR_PARAMMISMATCH && meshName_specified) { error.reset(); paramName = ""; }
+			if (!meshName_specified) { meshName = ""; }
 
-			if (!error) {
-
-				StopSimulation();
-
-				if (!err_hndl.qcall(error, &SuperMesh::clear_meshparam_variation, &SMesh, meshName, paramName)) {
-
-					UpdateScreen();
-				}
-			}
+			StopSimulation();
+			if (!err_hndl.qcall(error, &SuperMesh::clear_meshparam_variation, &SMesh, meshName, paramName)) UpdateScreen();
 		}
 		break;
 
@@ -2623,8 +2449,10 @@ void Simulation::HandleCommand(std::string command_string)
 		{
 			std::string meshName, paramName, generatorName, generatorArgs;
 
+			bool meshName_specified = optional_meshname_check_focusedmeshdefault(command_fields);
 			error = commandSpec.GetParameters(command_fields, meshName, paramName, generatorName, generatorArgs);
 			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, meshName, paramName, generatorName); generatorArgs = ""; }
+			if (!meshName_specified) meshName = "";
 
 			if (!error) {
 
@@ -2666,7 +2494,6 @@ void Simulation::HandleCommand(std::string command_string)
 
 						return bitmap;
 					};
-
 
 					error = SMesh.set_meshparam_var(meshName, paramName, generatorName, generatorArgs, bitmap_loader);
 					if (!error) SMesh.set_meshparamvar_display(meshName, paramName);
@@ -2726,17 +2553,13 @@ void Simulation::HandleCommand(std::string command_string)
 		{
 			std::string name, meshName;
 
-			error = commandSpec.GetParameters(command_fields, name, meshName);
-			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, name); meshName = SMesh.GetMeshFocus(); }
+			optional_meshname_check_focusedmeshdefault(command_fields, true);
+			error = commandSpec.GetParameters(command_fields, meshName, name);
 
 			if (!error) {
 
 				MESHDISPLAY_ display = (MESHDISPLAY_)displayHandles.get_ID_from_value(name);
-				
-				if (!err_hndl.qcall(error, &SuperMesh::SetDisplayedPhysicalQuantity, &SMesh, meshName, (int)display)) {
-
-					UpdateScreen();
-				}
+				if (!err_hndl.qcall(error, &SuperMesh::SetDisplayedPhysicalQuantity, &SMesh, meshName, (int)display)) UpdateScreen();
 			}
 			else if(verbose) Print_MeshDisplay_List();
 		}
@@ -2746,8 +2569,8 @@ void Simulation::HandleCommand(std::string command_string)
 		{
 			std::string moduleName, meshName;
 
-			error = commandSpec.GetParameters(command_fields, moduleName, meshName);
-			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, moduleName); meshName = SMesh.GetMeshFocus(); }
+			optional_meshname_check_focusedmeshdefault(command_fields);
+			error = commandSpec.GetParameters(command_fields, meshName, moduleName);
 
 			if (!error) {
 
@@ -2804,17 +2627,13 @@ void Simulation::HandleCommand(std::string command_string)
 		{
 			std::string name, meshName;
 
-			error = commandSpec.GetParameters(command_fields, name, meshName);
-			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, name); meshName = SMesh.GetMeshFocus(); }
+			optional_meshname_check_focusedmeshdefault(command_fields);
+			error = commandSpec.GetParameters(command_fields, meshName, name);
 
 			if (!error) {
 
 				MESHDISPLAY_ display = (MESHDISPLAY_)displayHandles.get_ID_from_value(name);
-
-				if (!err_hndl.qcall(error, &SuperMesh::SetDisplayedBackgroundPhysicalQuantity, &SMesh, meshName, (int)display)) {
-
-					UpdateScreen();
-				}
+				if (!err_hndl.qcall(error, &SuperMesh::SetDisplayedBackgroundPhysicalQuantity, &SMesh, meshName, (int)display)) UpdateScreen();
 			}
 			else if (verbose) Print_MeshDisplay_List();
 		}
@@ -2825,14 +2644,12 @@ void Simulation::HandleCommand(std::string command_string)
 			std::string meshName;
 			int vecreptype;
 
+			optional_meshname_check_focusedmeshdefault(command_fields, true);
 			error = commandSpec.GetParameters(command_fields, meshName, vecreptype);
 
 			if (!error) {
 
-				if (!err_hndl.qcall(error, &SuperMesh::SetVEC3Rep, &SMesh, meshName, (int)vecreptype)) {
-
-					UpdateScreen();
-				}
+				if (!err_hndl.qcall(error, &SuperMesh::SetVEC3Rep, &SMesh, meshName, (int)vecreptype)) UpdateScreen();
 			}
 			else if (verbose) Print_MeshDisplay_List();
 		}
@@ -3061,13 +2878,12 @@ void Simulation::HandleCommand(std::string command_string)
 		{
 			std::string meshName;
 
+			optional_meshname_check_focusedmeshdefault(command_fields);
 			error = commandSpec.GetParameters(command_fields, meshName);
-			if (error) { error.reset(); meshName = SMesh.GetMeshFocus(); }
 
 			if (!error) {
 
 				StopSimulation();
-
 				err_hndl.call(error, &SuperMesh::PrepareMovingMesh, &SMesh, meshName);				
 				UpdateScreen();
 			}
@@ -3079,13 +2895,12 @@ void Simulation::HandleCommand(std::string command_string)
 		{
 			std::string meshName;
 
+			optional_meshname_check_focusedmeshdefault(command_fields);
 			error = commandSpec.GetParameters(command_fields, meshName);
-			if (error) { error.reset(); meshName = SMesh.GetMeshFocus(); }
 
 			if (!error) {
 
 				StopSimulation();
-
 				err_hndl.call(error, &SuperMesh::PrepareMovingMesh_Bloch, &SMesh, meshName);
 				UpdateScreen();
 			}
@@ -3097,13 +2912,12 @@ void Simulation::HandleCommand(std::string command_string)
 		{
 			std::string meshName;
 
+			optional_meshname_check_focusedmeshdefault(command_fields);
 			error = commandSpec.GetParameters(command_fields, meshName);
-			if (error) { error.reset(); meshName = SMesh.GetMeshFocus(); }
 
 			if (!error) {
 
 				StopSimulation();
-
 				err_hndl.call(error, &SuperMesh::PrepareMovingMesh_Neel, &SMesh, meshName);
 				UpdateScreen();
 			}
@@ -3115,13 +2929,12 @@ void Simulation::HandleCommand(std::string command_string)
 		{
 			std::string meshName;
 
+			optional_meshname_check_focusedmeshdefault(command_fields);
 			error = commandSpec.GetParameters(command_fields, meshName);
-			if (error) { error.reset(); meshName = SMesh.GetMeshFocus(); }
 
 			if (!error) {
 
 				StopSimulation();
-
 				err_hndl.call(error, &SuperMesh::PrepareMovingMesh_Skyrmion, &SMesh, meshName);
 				UpdateScreen();
 			}
@@ -3152,20 +2965,18 @@ void Simulation::HandleCommand(std::string command_string)
 			bool status;
 			std::string meshName;
 
-			error = commandSpec.GetParameters(command_fields, status, meshName);
-			if (error) { error.reset() = commandSpec.GetParameters(command_fields, status); meshName = SMesh.GetMeshFocus(); }
+			optional_meshname_check_focusedmeshdefault(command_fields);
+			error = commandSpec.GetParameters(command_fields, meshName, status);
 
 			if (!error) {
 
 				StopSimulation();
-
 				SMesh.Set_ExchangeCoupledMeshes(status, meshName);
-
 				UpdateScreen();
 			}
 			else if (verbose) Print_ExchangeCoupledMeshes_List();
 
-			if (script_client_connected) commSocket.SetSendData(commandSpec.PrepareReturnParameters(SMesh.active_mesh()->GetMeshExchangeCoupling()));
+			if (script_client_connected) commSocket.SetSendData(commandSpec.PrepareReturnParameters(SMesh[meshName]->GetMeshExchangeCoupling()));
 		}
 		break;
 
@@ -3331,8 +3142,8 @@ void Simulation::HandleCommand(std::string command_string)
 				DBL3 Jcvalue;
 				std::string meshName;
 
-				error = commandSpec.GetParameters(command_fields, Jcvalue, meshName);
-				if (error) { error.reset() = commandSpec.GetParameters(command_fields, Jcvalue); meshName = SMesh.GetMeshFocus(); }
+				optional_meshname_check_focusedmeshdefault(command_fields);
+				error = commandSpec.GetParameters(command_fields, meshName, Jcvalue);
 
 				if (!error) {
 
@@ -3462,7 +3273,6 @@ void Simulation::HandleCommand(std::string command_string)
 				if (!error) {
 
 					SMesh.CallModuleMethod(&STransport::SetSConvergenceError, conv_error, iters_timeout);
-
 					UpdateScreen();
 				}
 				else if (verbose) PrintTransportSolverConfig();
@@ -3487,7 +3297,6 @@ void Simulation::HandleCommand(std::string command_string)
 				if (!error) {
 
 					SMesh.CallModuleMethod(&STransport::SetSORDamping, SOR_damping);
-
 					UpdateScreen();
 				}
 				else if (verbose) PrintTransportSolverConfig();
@@ -3510,7 +3319,6 @@ void Simulation::HandleCommand(std::string command_string)
 				if (!error) {
 
 					static_transport_solver = status;
-
 					UpdateScreen();
 				}
 				else if (verbose) PrintTransportSolverConfig();
@@ -3533,11 +3341,8 @@ void Simulation::HandleCommand(std::string command_string)
 				if (!error) {
 
 					StopSimulation();
-
 					disabled_transport_solver = status;
-
 					SMesh.UpdateConfiguration(UPDATECONFIG_TRANSPORT);
-
 					UpdateScreen();
 				}
 				else if (verbose) PrintTransportSolverConfig();
@@ -3554,20 +3359,21 @@ void Simulation::HandleCommand(std::string command_string)
 			double Temperature;
 			std::string meshName;
 
-			error = commandSpec.GetParameters(command_fields, Temperature, meshName);
-			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, Temperature); meshName = SMesh.superMeshHandle; }
+			bool meshName_specified = optional_meshname_check_focusedmeshdefault(command_fields, true);
+			error = commandSpec.GetParameters(command_fields, meshName, Temperature);
+			if (!meshName_specified) meshName = SMesh.superMeshHandle;
 
 			if (!error) {
 
-				if (!err_hndl.qcall(error, &SuperMesh::SetBaseTemperature, &SMesh, meshName, Temperature)) {
-
-					UpdateScreen();
-				}
+				if (!err_hndl.qcall(error, &SuperMesh::SetBaseTemperature, &SMesh, meshName, Temperature)) UpdateScreen();
 			}
 			else if (verbose) Print_MeshTemperature_List();
 
-			if (script_client_connected)
-				commSocket.SetSendData(commandSpec.PrepareReturnParameters(SMesh.active_mesh()->GetBaseTemperature()));
+			if (script_client_connected) {
+
+				if (!SMesh.contains(meshName)) meshName = SMesh.GetMeshFocus();
+				commSocket.SetSendData(commandSpec.PrepareReturnParameters(SMesh[meshName]->GetBaseTemperature()));
+			}
 		}
 		break;
 
@@ -3580,9 +3386,7 @@ void Simulation::HandleCommand(std::string command_string)
 			if (!error) {
 
 				StopSimulation();
-
 				SMesh.CallModuleMethod(&SHeat::set_heat_dT, dT);
-
 				UpdateScreen();
 			}
 			else if (verbose) {
@@ -3601,20 +3405,21 @@ void Simulation::HandleCommand(std::string command_string)
 			double T_ambient;
 			std::string meshName;
 
-			error = commandSpec.GetParameters(command_fields, T_ambient, meshName);
-			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, T_ambient); meshName = SMesh.superMeshHandle; }
+			bool meshName_specified = optional_meshname_check_focusedmeshdefault(command_fields, true);
+			error = commandSpec.GetParameters(command_fields, meshName, T_ambient);
+			if (!meshName_specified) meshName = SMesh.superMeshHandle;
 
 			if (!error) {
 
-				if (!err_hndl.qcall(error, &SuperMesh::SetAmbientTemperature, &SMesh, meshName, T_ambient)) {
-
-					UpdateScreen();
-				}
+				if (!err_hndl.qcall(error, &SuperMesh::SetAmbientTemperature, &SMesh, meshName, T_ambient)) UpdateScreen();
 			}
 			else if (verbose) Print_HeatBoundaries_List();
 
-			if (script_client_connected)
-				commSocket.SetSendData(commandSpec.PrepareReturnParameters(SMesh.active_mesh()->CallModuleMethod(&HeatBase::GetAmbientTemperature)));
+			if (script_client_connected) {
+
+				if (!SMesh.contains(meshName)) meshName = SMesh.GetMeshFocus();
+				commSocket.SetSendData(commandSpec.PrepareReturnParameters(SMesh[meshName]->CallModuleMethod(&HeatBase::GetAmbientTemperature)));
+			}
 		}
 		break;
 
@@ -3623,22 +3428,22 @@ void Simulation::HandleCommand(std::string command_string)
 			double alpha_boundary;
 			std::string meshName;
 
-			error = commandSpec.GetParameters(command_fields, alpha_boundary, meshName);
-			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, alpha_boundary); meshName = SMesh.superMeshHandle; }
+			bool meshName_specified = optional_meshname_check_focusedmeshdefault(command_fields, true);
+			error = commandSpec.GetParameters(command_fields, meshName, alpha_boundary);
+			if (!meshName_specified) meshName = SMesh.superMeshHandle;
 
 			if (!error) {
 
 				StopSimulation();
-
-				if (!err_hndl.qcall(error, &SuperMesh::SetAlphaHeatBoundary, &SMesh, meshName, alpha_boundary)) {
-
-					UpdateScreen();
-				}
+				if (!err_hndl.qcall(error, &SuperMesh::SetAlphaHeatBoundary, &SMesh, meshName, alpha_boundary)) UpdateScreen();
 			}
 			else if (verbose) Print_HeatBoundaries_List();
 
-			if (script_client_connected)
-				commSocket.SetSendData(commandSpec.PrepareReturnParameters(SMesh.active_mesh()->CallModuleMethod(&HeatBase::GetAlphaBoundary)));
+			if (script_client_connected) {
+
+				if (!SMesh.contains(meshName)) meshName = SMesh.GetMeshFocus();
+				commSocket.SetSendData(commandSpec.PrepareReturnParameters(SMesh[meshName]->CallModuleMethod(&HeatBase::GetAlphaBoundary)));
+			}
 		}
 		break;
 
@@ -3648,24 +3453,20 @@ void Simulation::HandleCommand(std::string command_string)
 			bool status;
 			std::string meshName;
 
-			error = commandSpec.GetParameters(command_fields, literal, status, meshName);
-			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, literal, status); meshName = SMesh.GetMeshFocus(); }
+			optional_meshname_check_focusedmeshdefault(command_fields);
+			error = commandSpec.GetParameters(command_fields, meshName, literal, status);
 
 			if (!error) {
 
 				StopSimulation();
-
-				if (!err_hndl.qcall(error, &SuperMesh::SetInsulatingSides, &SMesh, meshName, literal, status)) {
-
-					UpdateScreen();
-				}
+				if (!err_hndl.qcall(error, &SuperMesh::SetInsulatingSides, &SMesh, meshName, literal, status)) UpdateScreen();
 			}
 			else if (verbose) Print_HeatBoundaries_List();
 
 			if (script_client_connected) {
-				if (SMesh.active_mesh()->IsModuleSet(MOD_HEAT)) {
+				if (SMesh[meshName]->IsModuleSet(MOD_HEAT)) {
 
-					std::vector<bool> insulating = SMesh.active_mesh()->CallModuleMethod(&HeatBase::GetInsulatingSides);
+					std::vector<bool> insulating = SMesh[meshName]->CallModuleMethod(&HeatBase::GetInsulatingSides);
 					commSocket.SetSendData(commandSpec.PrepareReturnParameters(insulating[0], insulating[1], insulating[2], insulating[3], insulating[4], insulating[5]));
 				}
 			}
@@ -3677,22 +3478,22 @@ void Simulation::HandleCommand(std::string command_string)
 			double T_Curie;
 			std::string meshName;
 
-			error = commandSpec.GetParameters(command_fields, T_Curie, meshName);
-			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, T_Curie); meshName = SMesh.superMeshHandle; }
+			bool meshName_specified = optional_meshname_check_focusedmeshdefault(command_fields, true);
+			error = commandSpec.GetParameters(command_fields, meshName, T_Curie);
+			if (!meshName_specified) meshName = SMesh.superMeshHandle;
 
 			if (!error) {
 
 				StopSimulation();
-
-				if (!err_hndl.qcall(error, &SuperMesh::SetCurieTemperature, &SMesh, meshName, T_Curie)) {
-
-					UpdateScreen();
-				}
+				if (!err_hndl.qcall(error, &SuperMesh::SetCurieTemperature, &SMesh, meshName, T_Curie)) UpdateScreen();
 			}
 			else if (verbose) Print_CurieandMoment_List();
 
-			if (script_client_connected && !SMesh.active_mesh()->is_atomistic())
-				commSocket.SetSendData(commandSpec.PrepareReturnParameters(dynamic_cast<Mesh*>(SMesh.active_mesh())->GetCurieTemperature()));
+			if (script_client_connected) {
+
+				if (!SMesh.contains(meshName)) meshName = SMesh.GetMeshFocus();
+				if (!SMesh[meshName]->is_atomistic()) commSocket.SetSendData(commandSpec.PrepareReturnParameters(dynamic_cast<Mesh*>(SMesh[meshName])->GetCurieTemperature()));
+			}
 		}
 		break;
 
@@ -3701,22 +3502,17 @@ void Simulation::HandleCommand(std::string command_string)
 			double T_Curie_material;
 			std::string meshName;
 
-			error = commandSpec.GetParameters(command_fields, T_Curie_material, meshName);
-			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, T_Curie_material); meshName = SMesh.GetMeshFocus(); }
+			optional_meshname_check_focusedmeshdefault(command_fields);
+			error = commandSpec.GetParameters(command_fields, meshName, T_Curie_material);
 
 			if (!error) {
 
 				StopSimulation();
-
-				if (!err_hndl.qcall(error, &SuperMesh::SetCurieTemperatureMaterial, &SMesh, meshName, T_Curie_material)) {
-
-					UpdateScreen();
-				}
+				if (!err_hndl.qcall(error, &SuperMesh::SetCurieTemperatureMaterial, &SMesh, meshName, T_Curie_material)) UpdateScreen();
 			}
 			else if (verbose) Print_CurieandMoment_List();
 
-			if (script_client_connected && !SMesh.active_mesh()->is_atomistic())
-				commSocket.SetSendData(commandSpec.PrepareReturnParameters(dynamic_cast<Mesh*>(SMesh.active_mesh())->GetCurieTemperatureMaterial()));
+			if (script_client_connected && !SMesh[meshName]->is_atomistic()) commSocket.SetSendData(commandSpec.PrepareReturnParameters(dynamic_cast<Mesh*>(SMesh[meshName])->GetCurieTemperatureMaterial()));
 		}
 		break;
 
@@ -3726,86 +3522,54 @@ void Simulation::HandleCommand(std::string command_string)
 			DBL2 atomic_moment_AFM;
 			std::string meshName;
 
-			error = commandSpec.GetParameters(command_fields, atomic_moment_AFM, meshName);
-			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, atomic_moment, meshName); atomic_moment_AFM = DBL2(atomic_moment); }
-			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, atomic_moment_AFM); meshName = SMesh.superMeshHandle; }
+			bool meshName_specified = optional_meshname_check_focusedmeshdefault(command_fields, true);
+			error = commandSpec.GetParameters(command_fields, meshName, atomic_moment_AFM);
+			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, meshName, atomic_moment); atomic_moment_AFM = DBL2(atomic_moment); }
+			if (!meshName_specified) meshName = SMesh.superMeshHandle;
 
 			if (!error) {
 
 				StopSimulation();
-
-				if (!err_hndl.qcall(error, &SuperMesh::SetAtomicMagneticMoment, &SMesh, meshName, atomic_moment_AFM)) {
-
-					UpdateScreen();
-				}
+				if (!err_hndl.qcall(error, &SuperMesh::SetAtomicMagneticMoment, &SMesh, meshName, atomic_moment_AFM)) UpdateScreen();
 			}
 			else if (verbose) Print_CurieandMoment_List();
 
 			if (script_client_connected) {
-
-				if (SMesh.active_mesh()->GetMeshType() == MESH_ANTIFERROMAGNETIC) 
-					commSocket.SetSendData(commandSpec.PrepareReturnParameters(dynamic_cast<Mesh*>(SMesh.active_mesh())->GetAtomicMoment_AFM()));
-				else if (!SMesh.active_mesh()->is_atomistic()) 
-					commSocket.SetSendData(commandSpec.PrepareReturnParameters(dynamic_cast<Mesh*>(SMesh.active_mesh())->GetAtomicMoment()));
+				if (!SMesh.contains(meshName)) meshName = SMesh.GetMeshFocus();
+				if (SMesh[meshName]->GetMeshType() == MESH_ANTIFERROMAGNETIC) commSocket.SetSendData(commandSpec.PrepareReturnParameters(dynamic_cast<Mesh*>(SMesh[meshName])->GetAtomicMoment_AFM()));
+				else if (!SMesh[meshName]->is_atomistic()) commSocket.SetSendData(commandSpec.PrepareReturnParameters(dynamic_cast<Mesh*>(SMesh[meshName])->GetAtomicMoment()));
 			}
 		}
 		break;
 
 		case CMD_TAU:
 		{
-			DBL2 tau_ii;
-			std::string entry;
-			DBL2 tau_ij;
+			DBL2 tau_ii, tau_ij;
 			std::string meshName;
 
-			error = commandSpec.GetParameters(command_fields, tau_ii, entry);
-			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, tau_ii); meshName = SMesh.superMeshHandle; tau_ij = DBL2(-1.0); }
+			bool meshName_specified = optional_meshname_check_focusedmeshdefault(command_fields, true);
+			error = commandSpec.GetParameters(command_fields, meshName, tau_ii, tau_ij);
+			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, meshName, tau_ii); tau_ij = DBL2(-1.0); }
+			if (!meshName_specified) meshName = SMesh.superMeshHandle;
 
 			if (!error) {
-
-				std::vector<std::string> fields = split(entry, " ");
-
-				if (fields.size() == 3) {
-
-					//both tau_ij and meshname specified (at least can assume to be attempted)
-					meshName = fields[2];
-					tau_ij = ToNum(fields[0] + " " + fields[1]);
-				}
-				else if (fields.size() == 2) {
-
-					//only attempted tau_ij entry
-					meshName = SMesh.superMeshHandle;
-					tau_ij = ToNum(fields[0] + " " + fields[1]);
-				}
-				else if (fields.size() == 1) {
-
-					//only attempted meshName entry
-					meshName = fields[0];
-					tau_ij = DBL2(-1.0);
-				}
 
 				StopSimulation();
 
 				if (tau_ij >= DBL2(0.0)) {
 
 					//set both intra and inter terms
-					if (!err_hndl.qcall(error, &SuperMesh::SetTcCoupling, &SMesh, meshName, tau_ii, tau_ij)) {
-
-						UpdateScreen();
-					}
+					if (!err_hndl.qcall(error, &SuperMesh::SetTcCoupling, &SMesh, meshName, tau_ii, tau_ij)) UpdateScreen();
 				}
 
 				//only intra terms
-				else if (!err_hndl.qcall(error, &SuperMesh::SetTcCoupling_Intra, &SMesh, meshName, tau_ii)) {
-
-					UpdateScreen();
-				}
+				else if (!err_hndl.qcall(error, &SuperMesh::SetTcCoupling_Intra, &SMesh, meshName, tau_ii)) UpdateScreen();
 			}
 			else if (verbose) Print_CurieandMoment_List();
 
-			if (script_client_connected && !SMesh.active_mesh()->is_atomistic()) {
-
-				commSocket.SetSendData(commandSpec.PrepareReturnParameters(dynamic_cast<Mesh*>(SMesh.active_mesh())->GetTcCoupling()));
+			if (script_client_connected) {
+				if (!SMesh.contains(meshName)) meshName = SMesh.GetMeshFocus();
+				if (!SMesh[meshName]->is_atomistic()) commSocket.SetSendData(commandSpec.PrepareReturnParameters(dynamic_cast<Mesh*>(SMesh[meshName])->GetTcCoupling()));
 			}
 		}
 		break;
@@ -3815,15 +3579,13 @@ void Simulation::HandleCommand(std::string command_string)
 			int tmodeltype;
 			std::string meshName;
 
-			error = commandSpec.GetParameters(command_fields, tmodeltype, meshName);
-			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, tmodeltype); meshName = SMesh.GetMeshFocus(); }
+			optional_meshname_check_focusedmeshdefault(command_fields);
+			error = commandSpec.GetParameters(command_fields, meshName, tmodeltype);
 
 			if (!error) {
 
 				StopSimulation();
-
 				SMesh.SetTemperatureModel(meshName, tmodeltype);
-				
 				UpdateScreen();
 			}
 			else if (verbose) Print_TemperatureModel_List();
@@ -3841,15 +3603,14 @@ void Simulation::HandleCommand(std::string command_string)
 			bool flag;
 			std::string meshName;
 
-			error = commandSpec.GetParameters(command_fields, flag, meshName);
-			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, flag); meshName = SMesh.superMeshHandle; }
+			bool meshName_specified = optional_meshname_check_focusedmeshdefault(command_fields, true);
+			error = commandSpec.GetParameters(command_fields, meshName, flag);
+			if (!meshName_specified) meshName = SMesh.superMeshHandle;
 
 			if (!error) {
 
 				StopSimulation();
-
 				SMesh.SetLinkStochastic(flag, meshName);
-
 				UpdateScreen();
 			}
 			else if (verbose) Print_Stochasticity_List();
@@ -4035,17 +3796,14 @@ void Simulation::HandleCommand(std::string command_string)
 			std::string meshName;
 			INT3 refine;
 
-			error = commandSpec.GetParameters(command_fields, refine, meshName);
-			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, refine); meshName = SMesh.GetMeshFocus(); }
+			optional_meshname_check_focusedmeshdefault(command_fields);
+			error = commandSpec.GetParameters(command_fields, meshName, refine);
 
 			if (!error) {
 
-				if (!err_hndl.qcall(error, &SuperMesh::SetMeshRoughnessRefinement, &SMesh, meshName, refine)) {
-
-					UpdateScreen();
-				}
+				if (!err_hndl.qcall(error, &SuperMesh::SetMeshRoughnessRefinement, &SMesh, meshName, refine)) UpdateScreen();
 			}
-			else if (verbose) Print_MeshRoughnessRefinement(SMesh.GetMeshFocus());
+			else if (verbose) Print_MeshRoughnessRefinement(meshName);
 		}
 		break;
 
@@ -4053,15 +3811,12 @@ void Simulation::HandleCommand(std::string command_string)
 		{
 			std::string meshName;
 
+			optional_meshname_check_focusedmeshdefault(command_fields);
 			error = commandSpec.GetParameters(command_fields, meshName);
-			if (error == BERROR_PARAMMISMATCH) { error.reset(); meshName = SMesh.GetMeshFocus(); }
 
 			if (!error) {
 
-				if (!err_hndl.qcall(error, &SuperMesh::ClearMeshRoughness, &SMesh, meshName)) {
-
-					UpdateScreen();
-				}
+				if (!err_hndl.qcall(error, &SuperMesh::ClearMeshRoughness, &SMesh, meshName)) UpdateScreen();
 			}
 			else if (verbose) PrintCommandUsage(command_name);
 		}
@@ -4069,30 +3824,19 @@ void Simulation::HandleCommand(std::string command_string)
 
 		case CMD_ROUGHENMESH:
 		{
+			std::string meshName;
 			double depth;
 			std::string side;
 			int seed;
 
-			error = commandSpec.GetParameters(command_fields, depth, side, seed);
-			if (error == BERROR_PARAMMISMATCH) { 
-				
-				error.reset() = commandSpec.GetParameters(command_fields, depth, side);
-				seed = 1;
-
-				if (error == BERROR_PARAMMISMATCH) {
-
-					error.reset() = commandSpec.GetParameters(command_fields, depth);
-					side = "z";
-					seed = 1;
-				}
-			}
+			optional_meshname_check_focusedmeshdefault(command_fields);
+			error = commandSpec.GetParameters(command_fields, meshName, depth, side, seed);
+			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, meshName, depth, side); seed = 1; }
+			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, meshName, depth); side = "z"; seed = 1; }
 
 			if (!error) {
 
-				if (!err_hndl.qcall(error, &SuperMesh::RoughenMeshSides, &SMesh, SMesh.GetMeshFocus(), side, depth, seed)) {
-
-					UpdateScreen();
-				}
+				if (!err_hndl.qcall(error, &SuperMesh::RoughenMeshSides, &SMesh, meshName, side, depth, seed)) UpdateScreen();
 			}
 			else if (verbose) PrintCommandUsage(command_name);
 		}
@@ -4100,28 +3844,19 @@ void Simulation::HandleCommand(std::string command_string)
 		
 		case CMD_SURFROUGHENJAGGED:
 		{
+			std::string meshName;
 			double depth, spacing;
 			std::string sides;
 			int seed;
 
-			error = commandSpec.GetParameters(command_fields, depth, spacing, seed, sides);
-			if (error == BERROR_PARAMMISMATCH) {
-
-				error.reset() = commandSpec.GetParameters(command_fields, depth, spacing, seed);
-
-				if (error == BERROR_PARAMMISMATCH) {
-
-					error.reset() = commandSpec.GetParameters(command_fields, depth, spacing);
-					seed = 1;
-				}
-			}
+			optional_meshname_check_focusedmeshdefault(command_fields);
+			error = commandSpec.GetParameters(command_fields, meshName, depth, spacing, seed, sides);
+			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, meshName, depth, spacing, seed); }
+			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, meshName, depth, spacing); seed = 1; }
 
 			if (!error) {
 
-				if (!err_hndl.qcall(error, &SuperMesh::RoughenMeshSurfaces_Jagged, &SMesh, SMesh.GetMeshFocus(), depth, spacing, seed, sides)) {
-
-					UpdateScreen();
-				}
+				if (!err_hndl.qcall(error, &SuperMesh::RoughenMeshSurfaces_Jagged, &SMesh, meshName, depth, spacing, seed, sides)) UpdateScreen();
 			}
 			else if (verbose) PrintCommandUsage(command_name);
 		}
@@ -4129,18 +3864,17 @@ void Simulation::HandleCommand(std::string command_string)
 
 		case CMD_GENERATE2DGRAINS:
 		{
+			std::string meshName;
 			double spacing;
 			int seed;
 
-			error = commandSpec.GetParameters(command_fields, spacing, seed);
-			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, spacing); seed = 1; }
+			optional_meshname_check_focusedmeshdefault(command_fields);
+			error = commandSpec.GetParameters(command_fields, meshName, spacing, seed);
+			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, meshName, spacing); seed = 1; }
 
 			if (!error) {
 
-				if (!err_hndl.qcall(error, &SuperMesh::GenerateGrains2D, &SMesh, SMesh.GetMeshFocus(), spacing, seed)) {
-
-					UpdateScreen();
-				}
+				if (!err_hndl.qcall(error, &SuperMesh::GenerateGrains2D, &SMesh, meshName, spacing, seed)) UpdateScreen();
 			}
 			else if (verbose) PrintCommandUsage(command_name);
 		}
@@ -4148,18 +3882,17 @@ void Simulation::HandleCommand(std::string command_string)
 
 		case CMD_GENERATE3DGRAINS:
 		{
+			std::string meshName;
 			double spacing;
 			int seed;
 
-			error = commandSpec.GetParameters(command_fields, spacing, seed);
-			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, spacing); seed = 1; }
+			optional_meshname_check_focusedmeshdefault(command_fields);
+			error = commandSpec.GetParameters(command_fields, meshName, spacing, seed);
+			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, meshName, spacing); seed = 1; }
 
 			if (!error) {
 
-				if (!err_hndl.qcall(error, &SuperMesh::GenerateGrains3D, &SMesh, SMesh.GetMeshFocus(), spacing, seed)) {
-
-					UpdateScreen();
-				}
+				if (!err_hndl.qcall(error, &SuperMesh::GenerateGrains3D, &SMesh, meshName, spacing, seed)) UpdateScreen();
 			}
 			else if (verbose) PrintCommandUsage(command_name);
 		}
@@ -4389,14 +4122,18 @@ void Simulation::HandleCommand(std::string command_string)
 
 		case CMD_SHOWLENGHTS:
 		{
+			std::string meshName;
+			optional_meshname_check_focusedmeshdefault(command_fields);
+			error = commandSpec.GetParameters(command_fields, meshName);
+
 			if (verbose) {
 
-				if (SMesh.active_mesh()->Magnetism_Enabled() && !SMesh.active_mesh()->is_atomistic()) {
+				if (SMesh[meshName]->Magnetism_Enabled() && !SMesh[meshName]->is_atomistic()) {
 					
-					double A = dynamic_cast<Mesh*>(SMesh.active_mesh())->A;
-					double Ms = dynamic_cast<Mesh*>(SMesh.active_mesh())->Ms;
-					double Ku = dynamic_cast<Mesh*>(SMesh.active_mesh())->K1;
-					double D = dynamic_cast<Mesh*>(SMesh.active_mesh())->D;
+					double A = dynamic_cast<Mesh*>(SMesh[meshName])->A;
+					double Ms = dynamic_cast<Mesh*>(SMesh[meshName])->Ms;
+					double Ku = dynamic_cast<Mesh*>(SMesh[meshName])->K1;
+					double D = dynamic_cast<Mesh*>(SMesh[meshName])->D;
 
 					std::string l_ex, l_Bloch("N/A"), l_sky("N/A");
 
@@ -4414,84 +4151,27 @@ void Simulation::HandleCommand(std::string command_string)
 
 		case CMD_SHOWMCELLS:
 		{
-			if (SMesh.active_mesh()->Magnetism_Enabled()) {
+			std::string meshName;
+			optional_meshname_check_focusedmeshdefault(command_fields);
+			error = commandSpec.GetParameters(command_fields, meshName);
 
-				if (verbose) BD.DisplayConsoleMessage("M discretisation cells : " + ToString(SMesh.active_mesh()->n) + " Total cells: " + ToString(SMesh.active_mesh()->n.dim()));
+			if (SMesh[meshName]->Magnetism_Enabled()) {
 
-				if (script_client_connected) commSocket.SetSendData(commandSpec.PrepareReturnParameters(SMesh.active_mesh()->n));
+				if (verbose) BD.DisplayConsoleMessage("M discretisation cells : " + ToString(SMesh[meshName]->n) + " Total cells: " + ToString(SMesh[meshName]->n.dim()));
+
+				if (script_client_connected) commSocket.SetSendData(commandSpec.PrepareReturnParameters(SMesh[meshName]->n));
 			}
 			else err_hndl.show_error(BERROR_NOTMAGNETIC, verbose);
 		}
 		break;
 
-		case CMD_LOADOVF2MESH:
-		{
-			std::string params_string;
-
-			error = commandSpec.GetParameters(command_fields, params_string);
-			if (!error) {
-
-				StopSimulation();
-
-				double renormalize_value = 0.0;
-				std::string fileName;
-
-				//using split_numeric approach since the file name path can contain spaces.
-				std::vector<std::string> entries = split_numeric(params_string);
-
-				if (entries.size() == 2) {
-
-					renormalize_value = ToNum(entries[0]);
-					fileName = entries[1];
-				}
-				else fileName = params_string;
-
-				if (GetFileTermination(fileName) != ".ovf")
-					fileName += ".ovf";
-
-				if (!GetFilenameDirectory(fileName).length()) fileName = directory + fileName;
-
-				VEC<DBL3> data;
-
-				OVF2 ovf2;
-				error = ovf2.Read_OVF2_VEC(fileName, data);
-
-				if (!error) {
-
-					//data loaded correctly, so make a ferromagnetic mesh and set M values from data
-
-					if (IsNZ(renormalize_value)) data.renormalize(renormalize_value);
-
-					std::string new_mesh_name = "permalloy";
-
-					int meshnum = 0;
-
-					while (SMesh.contains(new_mesh_name)) {
-
-						meshnum++;
-						new_mesh_name = std::string("permalloy_") + ToString(meshnum);
-					}
-
-					if (!err_hndl.call(error, &SuperMesh::AddMesh, &SMesh, new_mesh_name, MESH_FERROMAGNETIC, data.rect)) {
-
-						if (!err_hndl.call(error, &MeshBase::SetMeshCellsize, SMesh[new_mesh_name], data.h)) {
-
-							SMesh[new_mesh_name]->SetMagFromData(data);
-						}
-					}
-				}
-
-				UpdateScreen();
-			}
-			else if (verbose) PrintCommandUsage(command_name);
-		}
-		break;
-
 		case CMD_LOADOVF2MAG:
 		{
-			std::string params_string;
+			std::string meshName, params_string;
 
-			error = commandSpec.GetParameters(command_fields, params_string);
+			optional_meshname_check_focusedmeshdefault(command_fields);
+			error = commandSpec.GetParameters(command_fields, meshName, params_string);
+
 			if (!error) {
 
 				StopSimulation();
@@ -4509,9 +4189,7 @@ void Simulation::HandleCommand(std::string command_string)
 				}
 				else fileName = params_string;
 
-				if (GetFileTermination(fileName) != ".ovf")
-					fileName += ".ovf";
-
+				if (GetFileTermination(fileName) != ".ovf") fileName += ".ovf";
 				if (!GetFilenameDirectory(fileName).length()) fileName = directory + fileName;
 
 				VEC<DBL3> data;
@@ -4525,9 +4203,9 @@ void Simulation::HandleCommand(std::string command_string)
 
 					if (IsNZ(renormalize_value)) data.renormalize(renormalize_value);
 
-					if (SMesh.active_mesh()->Magnetism_Enabled()) {
+					if (SMesh[meshName]->Magnetism_Enabled()) {
 
-						SMesh.active_mesh()->SetMagFromData(data);
+						SMesh[meshName]->SetMagFromData(data);
 						UpdateScreen();
 					}
 					else err_hndl.show_error(BERROR_NOTMAGNETIC, verbose);
@@ -4537,19 +4215,47 @@ void Simulation::HandleCommand(std::string command_string)
 		}
 		break;
 
-		case CMD_LOADOVF2TEMP:
+		case CMD_LOADOVF2FIELD:
 		{
-			std::string fileName;
+			std::string meshName, fileName;
 
-			error = commandSpec.GetParameters(command_fields, fileName);
+			optional_meshname_check_focusedmeshdefault(command_fields);
+			error = commandSpec.GetParameters(command_fields, meshName, fileName);
 			
 			if (!error) {
 
 				StopSimulation();
 
-				if (GetFileTermination(fileName) != ".ovf")
-					fileName += ".ovf";
+				if (GetFileTermination(fileName) != ".ovf") fileName += ".ovf";
+				if (!GetFilenameDirectory(fileName).length()) fileName = directory + fileName;
 
+				if (SMesh[meshName]->Magnetism_Enabled()) {
+
+					if (SMesh[meshName]->IsModuleSet(MOD_ZEEMAN)) {
+
+						error = SMesh[meshName]->CallModuleMethod(&ZeemanBase::SetFieldVEC_FromOVF2, fileName);
+					}
+					
+					UpdateScreen();
+				}
+				else err_hndl.show_error(BERROR_NOTMAGNETIC, verbose);
+			}
+			else if (verbose) PrintCommandUsage(command_name);
+		}
+		break;
+
+		case CMD_LOADOVF2TEMP:
+		{
+			std::string meshName, fileName;
+
+			optional_meshname_check_focusedmeshdefault(command_fields);
+			error = commandSpec.GetParameters(command_fields, meshName, fileName);
+			
+			if (!error) {
+
+				StopSimulation();
+
+				if (GetFileTermination(fileName) != ".ovf") fileName += ".ovf";
 				if (!GetFilenameDirectory(fileName).length()) fileName = directory + fileName;
 
 				VEC<double> data;
@@ -4560,10 +4266,9 @@ void Simulation::HandleCommand(std::string command_string)
 				if (!error) {
 
 					//data loaded correctly, so set temperature from it
+					if (SMesh[meshName]->TComputation_Enabled()) {
 
-					if (SMesh.active_mesh()->TComputation_Enabled()) {
-
-						SMesh.active_mesh()->SetTempFromData(data);
+						SMesh[meshName]->SetTempFromData(data);
 						UpdateScreen();
 					}
 					else err_hndl.show_error(BERROR_NOHEAT, verbose);
@@ -4575,17 +4280,16 @@ void Simulation::HandleCommand(std::string command_string)
 
 		case CMD_LOADOVF2CURR:
 		{
-			std::string fileName;
+			std::string meshName, fileName;
 
-			error = commandSpec.GetParameters(command_fields, fileName);
+			optional_meshname_check_focusedmeshdefault(command_fields);
+			error = commandSpec.GetParameters(command_fields, meshName, fileName);
 
 			if (!error) {
 
 				StopSimulation();
 
-				if (GetFileTermination(fileName) != ".ovf")
-					fileName += ".ovf";
-
+				if (GetFileTermination(fileName) != ".ovf") fileName += ".ovf";
 				if (!GetFilenameDirectory(fileName).length()) fileName = directory + fileName;
 
 				VEC<DBL3> data;
@@ -4597,9 +4301,9 @@ void Simulation::HandleCommand(std::string command_string)
 
 					//data loaded correctly, so set electric field from it (we've loaded current density so divide by conductivity)
 
-					if (SMesh.active_mesh()->EComputation_Enabled()) {
+					if (SMesh[meshName]->EComputation_Enabled()) {
 
-						SMesh.active_mesh()->SetEFromJcData(data);
+						SMesh[meshName]->SetEFromJcData(data);
 						UpdateScreen();
 					}
 					else err_hndl.show_error(BERROR_NOTRANSPORT, verbose);
@@ -4611,13 +4315,14 @@ void Simulation::HandleCommand(std::string command_string)
 
 		case CMD_SAVEOVF2MAG:
 		{
-			std::string parameters;
+			std::string meshName, parameters;
 
-			error = commandSpec.GetParameters(command_fields, parameters);
+			optional_meshname_check_focusedmeshdefault(command_fields);
+			error = commandSpec.GetParameters(command_fields, meshName, parameters);
 
 			if (!error) {
 
-				if (SMesh.active_mesh()->Magnetism_Enabled() && !SMesh.active_mesh()->is_atomistic()) {
+				if (SMesh[meshName]->Magnetism_Enabled() && !SMesh[meshName]->is_atomistic()) {
 
 					bool normalize = false;
 					std::string data_type = "bin8";
@@ -4648,11 +4353,11 @@ void Simulation::HandleCommand(std::string command_string)
 
 					if (!GetFilenameDirectory(fileName).length()) fileName = directory + fileName;
 
-					double Ms0 = dynamic_cast<Mesh*>(SMesh.active_mesh())->Ms.get0();
+					double Ms0 = dynamic_cast<Mesh*>(SMesh[meshName])->Ms.get0();
 					if (!normalize) Ms0 = 1.0;
 
 					OVF2 ovf2;
-					error = ovf2.Write_OVF2_VEC(fileName, dynamic_cast<Mesh*>(SMesh.active_mesh())->Get_M(), data_type, Ms0);
+					error = ovf2.Write_OVF2_VEC(fileName, dynamic_cast<Mesh*>(SMesh[meshName])->Get_M(), data_type, Ms0);
 				}
 				else err_hndl.show_error(BERROR_NOTMAGNETIC, verbose);
 			}
@@ -4662,9 +4367,10 @@ void Simulation::HandleCommand(std::string command_string)
 
 		case CMD_SAVEOVF2:
 		{
-			std::string parameters;
+			std::string meshName, parameters;
 
-			error = commandSpec.GetParameters(command_fields, parameters);
+			optional_meshname_check_focusedmeshdefault(command_fields, true);
+			error = commandSpec.GetParameters(command_fields, meshName, parameters);
 
 			if (!error) {
 				
@@ -4688,7 +4394,7 @@ void Simulation::HandleCommand(std::string command_string)
 					if (GetFileTermination(fileName) != ".ovf") fileName += ".ovf";
 					if (!GetFilenameDirectory(fileName).length()) fileName = directory + fileName;
 
-					if (!err_hndl.call(error, &SuperMesh::SaveOnScreenPhysicalQuantity, &SMesh, fileName, data_type)) {
+					if (!err_hndl.call(error, &SuperMesh::SaveOnScreenPhysicalQuantity, &SMesh, meshName, fileName, data_type)) {
 
 						BD.DisplayConsoleMessage("Data saved : " + fileName);
 					}
@@ -4700,21 +4406,21 @@ void Simulation::HandleCommand(std::string command_string)
 
 		case CMD_SAVEOVF2PARAMVAR:
 		{
-			std::string parameters;
+			std::string meshName, parameters;
 
-			//expecting (data_type) (meshname) paramname (directory/)filename
-			error = commandSpec.GetParameters(command_fields, parameters);
+			optional_meshname_check_focusedmeshdefault(command_fields);
+			//expecting meshname (data_type) paramname (directory/)filename after meshname
+			error = commandSpec.GetParameters(command_fields, meshName, parameters);
 
 			if (!error) {
 
 				std::string data_type = "bin8";
-				std::string fileName, meshname, paramname;
+				std::string fileName, paramname;
 
 				std::vector<std::string> fields = split(parameters, " ");
 
 				int oparams = 0;
-
-				if (fields[0] == "bin4" || fields[0] == "bin8" || fields[0] == "text") {
+				if (fields.size() && (fields[0] == "bin4" || fields[0] == "bin8" || fields[0] == "text")) {
 
 					//data type specified (if not, default stands)
 					oparams++;
@@ -4723,25 +4429,10 @@ void Simulation::HandleCommand(std::string command_string)
 
 				if (fields.size() > oparams) {
 
-					meshname = fields[oparams];
-					if (SMesh.contains(meshname)) {
-
-						//meshname specified
-						oparams++;
-					}
-					else {
-
-						//meshname not specified : use focused mesh
-						meshname = SMesh.GetMeshFocus();
-					}
-				}
-
-				if (fields.size() > oparams + 1) {
-
 					//get parameter name
 					paramname = fields[oparams];
 
-					if (!SMesh[meshname]->contains_param(paramname)) {
+					if (!SMesh[meshName]->contains_param(paramname)) {
 
 						err_hndl.show_error(BERROR_INCORRECTNAME, verbose);
 						break;
@@ -4757,36 +4448,34 @@ void Simulation::HandleCommand(std::string command_string)
 					break;
 				}
 
-				if (GetFileTermination(fileName) != ".ovf")
-					fileName += ".ovf";
-
+				if (GetFileTermination(fileName) != ".ovf") fileName += ".ovf";
 				if (!GetFilenameDirectory(fileName).length()) fileName = directory + fileName;
 
 				OVF2 ovf2;
-				PARAM_ paramID = (PARAM_)SMesh[meshname]->get_meshparam_id(paramname);
+				PARAM_ paramID = (PARAM_)SMesh[meshName]->get_meshparam_id(paramname);
 
-				if (SMesh[meshname]->is_paramvarequation_set(paramID)) {
+				if (SMesh[meshName]->is_paramvarequation_set(paramID)) {
 
-					if (SMesh[meshname]->is_paramvar_scalar(paramID)) {
+					if (SMesh[meshName]->is_paramvar_scalar(paramID)) {
 
-						VEC<double> s_scaling(SMesh[meshname]->get_paramtype_cellsize(paramID), SMesh[meshname]->meshRect);
-						SMesh[meshname]->calculate_meshparam_s_scaling(paramID, s_scaling, SMesh.GetStageTime());
+						VEC<double> s_scaling(SMesh[meshName]->get_paramtype_cellsize(paramID), SMesh[meshName]->meshRect);
+						SMesh[meshName]->calculate_meshparam_s_scaling(paramID, s_scaling, SMesh.GetStageTime());
 
 						error = ovf2.Write_OVF2_SCA(fileName, s_scaling, data_type);
 					}
 					else {
 
-						VEC<DBL3> s_scaling(SMesh[meshname]->get_paramtype_cellsize(paramID), SMesh[meshname]->meshRect);
-						SMesh[meshname]->calculate_meshparam_s_scaling(paramID, s_scaling, SMesh.GetStageTime());
+						VEC<DBL3> s_scaling(SMesh[meshName]->get_paramtype_cellsize(paramID), SMesh[meshName]->meshRect);
+						SMesh[meshName]->calculate_meshparam_s_scaling(paramID, s_scaling, SMesh.GetStageTime());
 
 						error = ovf2.Write_OVF2_VEC(fileName, s_scaling, data_type);
 					}
 				}
 				else {
 
-					void* s_scaling = SMesh[meshname]->get_meshparam_s_scaling(paramID);
+					void* s_scaling = SMesh[meshName]->get_meshparam_s_scaling(paramID);
 
-					if (SMesh[meshname]->is_paramvar_scalar(paramID)) error = ovf2.Write_OVF2_SCA(fileName, *reinterpret_cast<VEC<double>*>(s_scaling), data_type);
+					if (SMesh[meshName]->is_paramvar_scalar(paramID)) error = ovf2.Write_OVF2_SCA(fileName, *reinterpret_cast<VEC<double>*>(s_scaling), data_type);
 					else error = ovf2.Write_OVF2_VEC(fileName, *reinterpret_cast<VEC<DBL3>*>(s_scaling), data_type);
 				}
 			}
@@ -4796,23 +4485,23 @@ void Simulation::HandleCommand(std::string command_string)
 
 		case CMD_LOADOVF2DISP:
 		{
-			std::string fileName;
+			std::string meshName, fileName;
 
-			error = commandSpec.GetParameters(command_fields, fileName);
+			optional_meshname_check_focusedmeshdefault(command_fields);
+			error = commandSpec.GetParameters(command_fields, meshName, fileName);
 			if (!error) {
 
 				StopSimulation();
 
-				if (SMesh.active_mesh()->Magnetism_Enabled() && SMesh.active_mesh()->IsModuleSet(MOD_MELASTIC)) {
+				if (SMesh[meshName]->Magnetism_Enabled() && SMesh[meshName]->IsModuleSet(MOD_MELASTIC)) {
 
-					if (GetFileTermination(fileName) != ".ovf")
-						fileName += ".ovf";
+					if (GetFileTermination(fileName) != ".ovf") fileName += ".ovf";
 
 					if (!GetFilenameDirectory(fileName).length()) fileName = directory + fileName;
 
 					if (!error) {
 
-						error = SMesh.active_mesh()->CallModuleMethod(&MElastic::Load_Displacement_OVF2, fileName);
+						error = SMesh[meshName]->CallModuleMethod(&MElastic::Load_Displacement_OVF2, fileName);
 						UpdateScreen();
 					}
 				}
@@ -4824,14 +4513,15 @@ void Simulation::HandleCommand(std::string command_string)
 
 		case CMD_LOADOVF2STRAIN:
 		{
-			std::string parameters;
+			std::string meshName, parameters;
 
-			error = commandSpec.GetParameters(command_fields, parameters);
+			optional_meshname_check_focusedmeshdefault(command_fields);
+			error = commandSpec.GetParameters(command_fields, meshName, parameters);
 			if (!error) {
 
 				StopSimulation();
 
-				if (SMesh.active_mesh()->Magnetism_Enabled() && SMesh.active_mesh()->IsModuleSet(MOD_MELASTIC)) {
+				if (SMesh[meshName]->Magnetism_Enabled() && SMesh[meshName]->IsModuleSet(MOD_MELASTIC)) {
 
 					std::vector<std::string> fields = split(parameters, ".ovf");
 
@@ -4847,7 +4537,7 @@ void Simulation::HandleCommand(std::string command_string)
 
 						if (!error) {
 
-							error = SMesh.active_mesh()->CallModuleMethod(&MElastic::Load_Strain_OVF2, fileName_diag, fileName_odiag);
+							error = SMesh[meshName]->CallModuleMethod(&MElastic::Load_Strain_OVF2, fileName_diag, fileName_odiag);
 							UpdateScreen();
 						}
 					}
@@ -4862,7 +4552,6 @@ void Simulation::HandleCommand(std::string command_string)
 		case CMD_SCRIPTSERVER:
 		{
 			bool status;
-
 			error = commandSpec.GetParameters(command_fields, status);
 
 			if (!error) {
@@ -4884,7 +4573,6 @@ void Simulation::HandleCommand(std::string command_string)
 		{
 			std::string userconstant_name;
 			double value;
-
 			error = commandSpec.GetParameters(command_fields, userconstant_name, value);
 			
 			if (error) {
@@ -4917,7 +4605,6 @@ void Simulation::HandleCommand(std::string command_string)
 		case CMD_DELEQUATIONCONSTANT:
 		{
 			std::string userconstant_name;
-
 			error = commandSpec.GetParameters(command_fields, userconstant_name);
 
 			if (!error) {
@@ -5113,12 +4800,37 @@ void Simulation::HandleCommand(std::string command_string)
 		}
 		break;
 
+		//-------------------------------------------VERSION UPDATE-------------------------------------------
+
+		case CMD_VERSIONUPDATE:
+		{
+			std::string action;
+			int targetver = 0;
+
+			error = commandSpec.GetParameters(command_fields, action, targetver);
+			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, action); targetver = 0; }
+
+			if (!error) {
+
+				if (action == "check") CheckDeltaUpdate();
+				if (action == "download") DownloadDeltaUpdate(targetver);
+				if (action == "install") InstallDeltaUpdate(targetver);
+				if (action == "rollback") RollbackUpdate(targetver);
+			}
+			else if (verbose) PrintCommandUsage(command_name);
+		}
+		break;
+
 		case CMD_SHOWTC:
 		{
-			if (SMesh.active_mesh()->Magnetism_Enabled() && SMesh.active_mesh()->is_atomistic()) {
+			std::string meshName;
 
-				double Tc = dynamic_cast<Atom_Mesh*>(SMesh.active_mesh())->Show_Transition_Temperature();
+			optional_meshname_check_focusedmeshdefault(command_fields);
+			error = commandSpec.GetParameters(command_fields, meshName);
 
+			if (SMesh[meshName]->Magnetism_Enabled() && SMesh[meshName]->is_atomistic()) {
+
+				double Tc = dynamic_cast<Atom_Mesh*>(SMesh[meshName])->Show_Transition_Temperature();
 				if (verbose) BD.DisplayConsoleMessage("Tc = " + ToString(Tc));
 
 				if (script_client_connected) commSocket.SetSendData(commandSpec.PrepareReturnParameters(Tc));
@@ -5129,10 +4841,14 @@ void Simulation::HandleCommand(std::string command_string)
 
 		case CMD_SHOWMS:
 		{
-			if (SMesh.active_mesh()->Magnetism_Enabled() && SMesh.active_mesh()->is_atomistic()) {
+			std::string meshName;
 
-				double Ms = dynamic_cast<Atom_Mesh*>(SMesh.active_mesh())->Show_Ms();
+			optional_meshname_check_focusedmeshdefault(command_fields);
+			error = commandSpec.GetParameters(command_fields, meshName);
 
+			if (SMesh[meshName]->Magnetism_Enabled() && SMesh[meshName]->is_atomistic()) {
+
+				double Ms = dynamic_cast<Atom_Mesh*>(SMesh[meshName])->Show_Ms();
 				if (verbose) BD.DisplayConsoleMessage("Ms = " + ToString(Ms));
 
 				if (script_client_connected) commSocket.SetSendData(commandSpec.PrepareReturnParameters(Ms));
@@ -5143,10 +4859,14 @@ void Simulation::HandleCommand(std::string command_string)
 
 		case CMD_SHOWA:
 		{
-			if (SMesh.active_mesh()->Magnetism_Enabled() && SMesh.active_mesh()->is_atomistic()) {
+			std::string meshName;
 
-				double A = dynamic_cast<Atom_Mesh*>(SMesh.active_mesh())->Show_A();
+			optional_meshname_check_focusedmeshdefault(command_fields);
+			error = commandSpec.GetParameters(command_fields, meshName);
 
+			if (SMesh[meshName]->Magnetism_Enabled() && SMesh[meshName]->is_atomistic()) {
+
+				double A = dynamic_cast<Atom_Mesh*>(SMesh[meshName])->Show_A();
 				if (verbose) BD.DisplayConsoleMessage("A = " + ToString(A));
 
 				if (script_client_connected) commSocket.SetSendData(commandSpec.PrepareReturnParameters(A));
@@ -5157,10 +4877,14 @@ void Simulation::HandleCommand(std::string command_string)
 
 		case CMD_SHOWK:
 		{
-			if (SMesh.active_mesh()->Magnetism_Enabled() && SMesh.active_mesh()->is_atomistic()) {
+			std::string meshName;
 
-				double Ku = dynamic_cast<Atom_Mesh*>(SMesh.active_mesh())->Show_Ku();
+			optional_meshname_check_focusedmeshdefault(command_fields);
+			error = commandSpec.GetParameters(command_fields, meshName);
 
+			if (SMesh[meshName]->Magnetism_Enabled() && SMesh[meshName]->is_atomistic()) {
+
+				double Ku = dynamic_cast<Atom_Mesh*>(SMesh[meshName])->Show_Ku();
 				if (verbose) BD.DisplayConsoleMessage("Ku = " + ToString(Ku));
 
 				if (script_client_connected) commSocket.SetSendData(commandSpec.PrepareReturnParameters(Ku));
@@ -5174,13 +4898,13 @@ void Simulation::HandleCommand(std::string command_string)
 			double multiplier;
 			std::string meshName;
 
-			error = commandSpec.GetParameters(command_fields, multiplier, meshName);
-			if (error) { error.reset() = commandSpec.GetParameters(command_fields, multiplier); meshName = SMesh.GetMeshFocus(); }
+			optional_meshname_check_focusedmeshdefault(command_fields);
+			error = commandSpec.GetParameters(command_fields, meshName, multiplier);
 
 			if (!error) {
 
 				SMesh[meshName]->Set_skypos_dmul(multiplier);
-
+				UpdateScreen();
 			}
 			else if (verbose) Print_skypos_dmul();
 
@@ -5197,7 +4921,7 @@ void Simulation::HandleCommand(std::string command_string)
 			if (!error) {
 
 				SMesh.Set_DWPos_Component(component);
-
+				UpdateScreen();
 			}
 			else if (verbose) Print_DWPos_Component();
 
@@ -5210,15 +4934,12 @@ void Simulation::HandleCommand(std::string command_string)
 			int status;
 			std::string meshName;
 
-			error = commandSpec.GetParameters(command_fields, status, meshName);
-			if (error) { error.reset() = commandSpec.GetParameters(command_fields, status); meshName = SMesh.superMeshHandle; }
+			optional_meshname_check_focusedmeshdefault(command_fields);
+			error = commandSpec.GetParameters(command_fields, meshName, status);
 
 			if (!error) {
 
-				if (!err_hndl.qcall(error, &SuperMesh::Set_MonteCarlo_Serial, &SMesh, (bool)status, meshName)) {
-
-					UpdateScreen();
-				}
+				if (!err_hndl.qcall(error, &SuperMesh::Set_MonteCarlo_Serial, &SMesh, (bool)status, meshName)) UpdateScreen();
 			}
 			else if (verbose) Print_MCSettings();
 		}
@@ -5229,15 +4950,12 @@ void Simulation::HandleCommand(std::string command_string)
 			DBL3 value;
 			std::string meshName;
 
-			error = commandSpec.GetParameters(command_fields, value, meshName);
-			if (error) { error.reset() = commandSpec.GetParameters(command_fields, value); meshName = SMesh.superMeshHandle; }
+			optional_meshname_check_focusedmeshdefault(command_fields);
+			error = commandSpec.GetParameters(command_fields, meshName, value);
 
 			if (!error) {
 
-				if (!err_hndl.qcall(error, &SuperMesh::Set_MonteCarlo_Constrained, &SMesh, !value.IsNull(), value, meshName)) {
-
-					UpdateScreen();
-				}
+				if (!err_hndl.qcall(error, &SuperMesh::Set_MonteCarlo_Constrained, &SMesh, !value.IsNull(), value, meshName)) UpdateScreen();
 			}
 			else if (verbose) Print_MCSettings();
 		}
@@ -5248,14 +4966,12 @@ void Simulation::HandleCommand(std::string command_string)
 			bool status;
 			std::string meshName;
 
-			error = commandSpec.GetParameters(command_fields, status, meshName);
+			optional_meshname_check_focusedmeshdefault(command_fields);
+			error = commandSpec.GetParameters(command_fields, meshName, status);
 
 			if (!error) {
 
-				if (!err_hndl.qcall(error, &SuperMesh::Set_MonteCarlo_Disabled, &SMesh, status, meshName)) {
-
-					UpdateScreen();
-				}
+				if (!err_hndl.qcall(error, &SuperMesh::Set_MonteCarlo_Disabled, &SMesh, status, meshName)) UpdateScreen();
 			}
 			else if (verbose) Print_MCSettings();
 		}
@@ -5375,26 +5091,20 @@ void Simulation::HandleCommand(std::string command_string)
 			DBL2 diameters;
 			DBL2 position;
 			DBL2 z_coords;
-			std::string meshName = SMesh.GetMeshFocus();
-
+			std::string meshName;
 			DBL3 dimensions, centre_pos;
 
-			error = commandSpec.GetParameters(command_fields, diameters, position, z_coords);
-			if (error) { error.reset() = commandSpec.GetParameters(command_fields, diameters, position); z_coords = DBL2(0, SMesh[meshName]->GetMeshDimensions().z); }
+			optional_meshname_check_focusedmeshdefault(command_fields);
+			error = commandSpec.GetParameters(command_fields, meshName, diameters, position, z_coords);
+			if (error) { error.reset() = commandSpec.GetParameters(command_fields, meshName, diameters, position); z_coords = DBL2(0, SMesh[meshName]->GetMeshDimensions().z); }
 
 			if (!error) {
 
-				StopSimulation();
-
 				dimensions = DBL3(diameters.x, diameters.y, z_coords.j - z_coords.i);
 				centre_pos = DBL3(position.x, position.y, (z_coords.j + z_coords.i) / 2);
-				
-				if (!err_hndl.qcall(error, &MeshBase::shape_disk, SMesh[meshName], MeshShape(MSHAPE_DISK, dimensions, centre_pos, shape_rotation * PI / 180, shape_repetitions, shape_displacement, MeshShape().set_method(shape_method)))) {
 
-					UpdateScreen();
-				}
-
-				UpdateScreen();
+				StopSimulation();
+				if (!err_hndl.qcall(error, &MeshBase::shape_disk, SMesh[meshName], MeshShape(MSHAPE_DISK, dimensions, centre_pos, shape_rotation * PI / 180, shape_repetitions, shape_displacement, MeshShape().set_method(shape_method)))) UpdateScreen();
 			}
 			else if (verbose) PrintCommandUsage(command_name);
 
@@ -5408,25 +5118,19 @@ void Simulation::HandleCommand(std::string command_string)
 			DBL2 position;
 			DBL2 z_coords;
 			std::string meshName = SMesh.GetMeshFocus();
-
 			DBL3 dimensions, centre_pos;
 
-			error = commandSpec.GetParameters(command_fields, lengths, position, z_coords);
-			if (error) { error.reset() = commandSpec.GetParameters(command_fields, lengths, position); z_coords = DBL2(0, SMesh[meshName]->GetMeshDimensions().z); }
+			optional_meshname_check_focusedmeshdefault(command_fields);
+			error = commandSpec.GetParameters(command_fields, meshName, lengths, position, z_coords);
+			if (error) { error.reset() = commandSpec.GetParameters(command_fields, meshName, lengths, position); z_coords = DBL2(0, SMesh[meshName]->GetMeshDimensions().z); }
 
 			if (!error) {
-
-				StopSimulation();
 
 				dimensions = DBL3(lengths.x, lengths.y, z_coords.j - z_coords.i);
 				centre_pos = DBL3(position.x, position.y, (z_coords.j + z_coords.i) / 2);
 
-				if (!err_hndl.qcall(error, &MeshBase::shape_rect, SMesh[meshName], MeshShape(MSHAPE_DISK, dimensions, centre_pos, shape_rotation * PI / 180, shape_repetitions, shape_displacement, MeshShape().set_method(shape_method)))) {
-
-					UpdateScreen();
-				}
-
-				UpdateScreen();
+				StopSimulation();
+				if (!err_hndl.qcall(error, &MeshBase::shape_rect, SMesh[meshName], MeshShape(MSHAPE_DISK, dimensions, centre_pos, shape_rotation * PI / 180, shape_repetitions, shape_displacement, MeshShape().set_method(shape_method)))) UpdateScreen();
 			}
 			else if (verbose) PrintCommandUsage(command_name);
 
@@ -5440,25 +5144,19 @@ void Simulation::HandleCommand(std::string command_string)
 			DBL2 position;
 			DBL2 z_coords;
 			std::string meshName = SMesh.GetMeshFocus();
-
 			DBL3 dimensions, centre_pos;
 
-			error = commandSpec.GetParameters(command_fields, lengths, position, z_coords);
-			if (error) { error.reset() = commandSpec.GetParameters(command_fields, lengths, position); z_coords = DBL2(0, SMesh[meshName]->GetMeshDimensions().z); }
+			optional_meshname_check_focusedmeshdefault(command_fields);
+			error = commandSpec.GetParameters(command_fields, meshName, lengths, position, z_coords);
+			if (error) { error.reset() = commandSpec.GetParameters(command_fields, meshName, lengths, position); z_coords = DBL2(0, SMesh[meshName]->GetMeshDimensions().z); }
 
 			if (!error) {
-
-				StopSimulation();
 
 				dimensions = DBL3(lengths.x, lengths.y, z_coords.j - z_coords.i);
 				centre_pos = DBL3(position.x, position.y, (z_coords.j + z_coords.i) / 2);
 
-				if (!err_hndl.qcall(error, &MeshBase::shape_triangle, SMesh[meshName], MeshShape(MSHAPE_TRIANGLE, dimensions, centre_pos, shape_rotation * PI / 180, shape_repetitions, shape_displacement, MeshShape().set_method(shape_method)))) {
-
-					UpdateScreen();
-				}
-
-				UpdateScreen();
+				StopSimulation();
+				if (!err_hndl.qcall(error, &MeshBase::shape_triangle, SMesh[meshName], MeshShape(MSHAPE_TRIANGLE, dimensions, centre_pos, shape_rotation * PI / 180, shape_repetitions, shape_displacement, MeshShape().set_method(shape_method)))) UpdateScreen();
 			}
 			else if (verbose) PrintCommandUsage(command_name);
 
@@ -5472,18 +5170,13 @@ void Simulation::HandleCommand(std::string command_string)
 			DBL3 centre_pos;
 			std::string meshName = SMesh.GetMeshFocus();
 
-			error = commandSpec.GetParameters(command_fields, dimensions, centre_pos);
+			optional_meshname_check_focusedmeshdefault(command_fields);
+			error = commandSpec.GetParameters(command_fields, meshName, dimensions, centre_pos);
 
 			if (!error) {
 
 				StopSimulation();
-
-				if (!err_hndl.qcall(error, &MeshBase::shape_ellipsoid, SMesh[meshName], MeshShape(MSHAPE_ELLIPSOID, dimensions, centre_pos, shape_rotation * PI / 180, shape_repetitions, shape_displacement, MeshShape().set_method(shape_method)))) {
-
-					UpdateScreen();
-				}
-
-				UpdateScreen();
+				if (!err_hndl.qcall(error, &MeshBase::shape_ellipsoid, SMesh[meshName], MeshShape(MSHAPE_ELLIPSOID, dimensions, centre_pos, shape_rotation * PI / 180, shape_repetitions, shape_displacement, MeshShape().set_method(shape_method)))) UpdateScreen();
 			}
 			else if (verbose) PrintCommandUsage(command_name);
 
@@ -5497,18 +5190,13 @@ void Simulation::HandleCommand(std::string command_string)
 			DBL3 centre_pos;
 			std::string meshName = SMesh.GetMeshFocus();
 
-			error = commandSpec.GetParameters(command_fields, dimensions, centre_pos);
+			optional_meshname_check_focusedmeshdefault(command_fields);
+			error = commandSpec.GetParameters(command_fields, meshName, dimensions, centre_pos);
 
 			if (!error) {
 
 				StopSimulation();
-
-				if (!err_hndl.qcall(error, &MeshBase::shape_pyramid, SMesh[meshName], MeshShape(MSHAPE_PYRAMID, dimensions, centre_pos, shape_rotation * PI / 180, shape_repetitions, shape_displacement, MeshShape().set_method(shape_method)))) {
-
-					UpdateScreen();
-				}
-
-				UpdateScreen();
+				if (!err_hndl.qcall(error, &MeshBase::shape_pyramid, SMesh[meshName], MeshShape(MSHAPE_PYRAMID, dimensions, centre_pos, shape_rotation * PI / 180, shape_repetitions, shape_displacement, MeshShape().set_method(shape_method)))) UpdateScreen();
 			}
 			else if (verbose) PrintCommandUsage(command_name);
 
@@ -5522,18 +5210,13 @@ void Simulation::HandleCommand(std::string command_string)
 			DBL3 centre_pos;
 			std::string meshName = SMesh.GetMeshFocus();
 
-			error = commandSpec.GetParameters(command_fields, dimensions, centre_pos);
+			optional_meshname_check_focusedmeshdefault(command_fields);
+			error = commandSpec.GetParameters(command_fields, meshName, dimensions, centre_pos);
 
 			if (!error) {
 
 				StopSimulation();
-
-				if (!err_hndl.qcall(error, &MeshBase::shape_tetrahedron, SMesh[meshName], MeshShape(MSHAPE_TETRAHEDRON, dimensions, centre_pos, shape_rotation * PI / 180, shape_repetitions, shape_displacement, MeshShape().set_method(shape_method)))) {
-
-					UpdateScreen();
-				}
-
-				UpdateScreen();
+				if (!err_hndl.qcall(error, &MeshBase::shape_tetrahedron, SMesh[meshName], MeshShape(MSHAPE_TETRAHEDRON, dimensions, centre_pos, shape_rotation * PI / 180, shape_repetitions, shape_displacement, MeshShape().set_method(shape_method)))) UpdateScreen();
 			}
 			else if (verbose) PrintCommandUsage(command_name);
 
@@ -5547,18 +5230,13 @@ void Simulation::HandleCommand(std::string command_string)
 			DBL3 centre_pos;
 			std::string meshName = SMesh.GetMeshFocus();
 
-			error = commandSpec.GetParameters(command_fields, dimensions, centre_pos);
+			optional_meshname_check_focusedmeshdefault(command_fields);
+			error = commandSpec.GetParameters(command_fields, meshName, dimensions, centre_pos);
 
 			if (!error) {
 
 				StopSimulation();
-
-				if (!err_hndl.qcall(error, &MeshBase::shape_cone, SMesh[meshName], MeshShape(MSHAPE_CONE, dimensions, centre_pos, shape_rotation * PI / 180, shape_repetitions, shape_displacement, MeshShape().set_method(shape_method)))) {
-
-					UpdateScreen();
-				}
-
-				UpdateScreen();
+				if (!err_hndl.qcall(error, &MeshBase::shape_cone, SMesh[meshName], MeshShape(MSHAPE_CONE, dimensions, centre_pos, shape_rotation * PI / 180, shape_repetitions, shape_displacement, MeshShape().set_method(shape_method)))) UpdateScreen();
 			}
 			else if (verbose) PrintCommandUsage(command_name);
 
@@ -5572,18 +5250,13 @@ void Simulation::HandleCommand(std::string command_string)
 			DBL3 centre_pos;
 			std::string meshName = SMesh.GetMeshFocus();
 
-			error = commandSpec.GetParameters(command_fields, dimensions, centre_pos);
+			optional_meshname_check_focusedmeshdefault(command_fields);
+			error = commandSpec.GetParameters(command_fields, meshName, dimensions, centre_pos);
 
 			if (!error) {
 
 				StopSimulation();
-
-				if (!err_hndl.qcall(error, &MeshBase::shape_torus, SMesh[meshName], MeshShape(MSHAPE_TORUS, dimensions, centre_pos, shape_rotation * PI / 180, shape_repetitions, shape_displacement, MeshShape().set_method(shape_method)))) {
-
-					UpdateScreen();
-				}
-
-				UpdateScreen();
+				if (!err_hndl.qcall(error, &MeshBase::shape_torus, SMesh[meshName], MeshShape(MSHAPE_TORUS, dimensions, centre_pos, shape_rotation * PI / 180, shape_repetitions, shape_displacement, MeshShape().set_method(shape_method)))) UpdateScreen();
 			}
 			else if (verbose) PrintCommandUsage(command_name);
 
@@ -5593,6 +5266,12 @@ void Simulation::HandleCommand(std::string command_string)
 
 		case CMD_SHAPE_SET:
 		{
+			//first get meshName, then remove it
+			std::string meshName;
+			optional_meshname_check_focusedmeshdefault(command_fields);
+			meshName = command_fields[0];
+			command_fields.erase(command_fields.begin());
+
 			//name : 1, dimensions: 3, centre_pos: 3, shape_rotation: 3, shape_repetitions: 3, shape_displacement: 3, shape_method: 1. Total space-sparated fields per shape: 17
 			int num_fields_per_shape = 17;
 			int num_shapes = command_fields.size() / num_fields_per_shape;
@@ -5600,8 +5279,6 @@ void Simulation::HandleCommand(std::string command_string)
 			if (num_shapes >= 1) {
 				
 				StopSimulation();
-
-				std::string meshName = SMesh.GetMeshFocus();
 
 				std::string shape_name;
 				DBL3 dimensions;
@@ -5633,9 +5310,80 @@ void Simulation::HandleCommand(std::string command_string)
 
 				if (!error) {
 				
-					if (!err_hndl.qcall(error, &MeshBase::shape_set, SMesh[meshName], shapes)) {
+					if (!err_hndl.qcall(error, &MeshBase::shape_set, SMesh[meshName], shapes)) UpdateScreen();
+				}
+				else if (verbose) PrintCommandUsage(command_name);
+			}
+			else if (verbose) PrintCommandUsage(command_name);
+		}
+		break;
 
-						UpdateScreen();
+		case CMD_SHAPE_GET:
+		{
+			//first get meshName, then remove it
+			std::string meshName;
+			optional_meshname_check_focusedmeshdefault(command_fields);
+			meshName = command_fields[0];
+			command_fields.erase(command_fields.begin());
+
+			//name : 1, dimensions: 3, centre_pos: 3, shape_rotation: 3, shape_repetitions: 3, shape_displacement: 3, shape_method: 1. Total space-sparated fields per shape: 17
+			int num_fields_per_shape = 17;
+			int num_shapes = command_fields.size() / num_fields_per_shape;
+
+			if (num_shapes >= 1) {
+
+				StopSimulation();
+
+				std::string shape_name;
+				DBL3 dimensions;
+				DBL3 centre_pos;
+				DBL3 rotation;
+				INT3 repetitions;
+				DBL3 displacement;
+				std::string method;
+
+				std::vector<MeshShape> shapes;
+				for (int shape_idx = 0; shape_idx < num_shapes; shape_idx++) {
+
+					std::vector<std::string> shape_fields = subvec(command_fields, shape_idx * num_fields_per_shape, (shape_idx + 1) * num_fields_per_shape);
+					error = commandSpec.GetParameters(shape_fields, shape_name, dimensions, centre_pos, rotation, repetitions, displacement, method);
+
+					MSHAPE_ shape_id = MeshShape().set_shape(shape_name);
+					MSHAPEMETHOD_ method_id = MeshShape().set_method(method);
+
+					//make sure shape and method names are correct
+					if (shape_id == MSHAPE_NONE || method_id == MSHAPEMETHOD_NONE) {
+
+						error(BERROR_INCORRECTNAME);
+						break;
+					}
+
+					if (!error) shapes.push_back(MeshShape(shape_id, dimensions, centre_pos, rotation * PI / 180, repetitions, displacement, method_id));
+					else break;
+				}
+
+				if (!error) {
+
+					Any value = SMesh.GetAverageDisplayedMeshValue(meshName, Rect(), shapes);
+
+					if (script_client_connected) {
+
+						//Longer version so it compiles with C++14
+						if (value.is_type(btype_info<double>()) || value.is_type(btype_info<float>())) {
+
+							double value_converted = value;
+							commSocket.SetSendData(commandSpec.PrepareReturnParameters(value_converted));
+						}
+						else if (value.is_type(btype_info<DBL2>()) || value.is_type(btype_info<FLT2>())) {
+
+							DBL2 value_converted = value;
+							commSocket.SetSendData(commandSpec.PrepareReturnParameters(value_converted));
+						}
+						else if (value.is_type(btype_info<DBL3>()) || value.is_type(btype_info<FLT3>())) {
+
+							DBL3 value_converted = value;
+							commSocket.SetSendData(commandSpec.PrepareReturnParameters(value_converted));
+						}
 					}
 				}
 				else if (verbose) PrintCommandUsage(command_name);
@@ -5646,6 +5394,12 @@ void Simulation::HandleCommand(std::string command_string)
 
 		case CMD_SETSHAPEANGLE:
 		{
+			//first get meshName, then remove it
+			std::string meshName;
+			optional_meshname_check_focusedmeshdefault(command_fields);
+			meshName = command_fields[0];
+			command_fields.erase(command_fields.begin());
+
 			//name : 1, dimensions: 3, centre_pos: 3, shape_rotation: 3, shape_repetitions: 3, shape_displacement: 3, shape_method: 1. Total space-sparated fields per shape: 17
 			//two extra parameters for angle values
 			int num_fields_per_shape = 17;
@@ -5655,8 +5409,6 @@ void Simulation::HandleCommand(std::string command_string)
 
 				StopSimulation();
 
-				std::string meshName = SMesh.GetMeshFocus();
-
 				std::string shape_name;
 				DBL3 dimensions;
 				DBL3 centre_pos;
@@ -5665,7 +5417,7 @@ void Simulation::HandleCommand(std::string command_string)
 				DBL3 displacement;
 				std::string method;
 				DBL2 angle;
-				
+
 				std::vector<MeshShape> shapes;
 				for (int shape_idx = 0; shape_idx < num_shapes; shape_idx++) {
 
@@ -5702,6 +5454,12 @@ void Simulation::HandleCommand(std::string command_string)
 
 		case CMD_SHAPE_SETPARAM:
 		{
+			//first get meshName, then remove it
+			std::string meshName;
+			optional_meshname_check_focusedmeshdefault(command_fields);
+			meshName = command_fields[0];
+			command_fields.erase(command_fields.begin());
+
 			//name : 1, dimensions: 3, centre_pos: 3, shape_rotation: 3, shape_repetitions: 3, shape_displacement: 3, shape_method: 1. Total space-sparated fields per shape: 17
 			//extra parameter for paramName and also for value
 			int num_fields_per_shape = 17;
@@ -5711,8 +5469,6 @@ void Simulation::HandleCommand(std::string command_string)
 			if (num_shapes >= 1 && num_fields_value >= 1) {
 
 				StopSimulation();
-
-				std::string meshName = SMesh.GetMeshFocus();
 
 				std::string paramName;
 				std::string shape_name;
@@ -6088,8 +5844,9 @@ void Simulation::HandleCommand(std::string command_string)
 			int arr_idx;
 			std::string meshName;
 
-			error = commandSpec.GetParameters(command_fields, start, end, step, arr_idx, meshName, stencil);
-			if (error) { error.reset() = commandSpec.GetParameters(command_fields, start, end, step, arr_idx, meshName); stencil = DBL3(); }
+			optional_meshname_check_focusedmeshdefault(command_fields);
+			error = commandSpec.GetParameters(command_fields, meshName, start, end, step, arr_idx, stencil);
+			if (error) { error.reset() = commandSpec.GetParameters(command_fields, meshName, start, end, step, arr_idx); stencil = DBL3(); }
 
 			if (!error && start != end) {
 
@@ -6123,7 +5880,8 @@ void Simulation::HandleCommand(std::string command_string)
 			int arr_idx;
 			std::string meshName;
 
-			error = commandSpec.GetParameters(command_fields, start, end, step, arr_idx, meshName);
+			optional_meshname_check_focusedmeshdefault(command_fields);
+			error = commandSpec.GetParameters(command_fields, meshName, start, end, step, arr_idx);
 
 			if (!error && start != end) {
 
@@ -6143,9 +5901,9 @@ void Simulation::HandleCommand(std::string command_string)
 				else if (pprofile_dbl3) { error = dpArr.set_arrays(arr_idx + 1, *pprofile_dbl3); }
 				if (verbose && !error && (pprofile_dbl || pprofile_dbl3)) BD.DisplayConsoleMessage("Average path extracted. Averaging reset.");
 			}
-			else if (verbose) BD.DisplayConsoleMessage("Current number of averages : " + ToString(SMesh.active_mesh()->GetProfileAverages()));
+			else if (verbose) BD.DisplayConsoleMessage("Current number of averages : " + ToString(SMesh[meshName]->GetProfileAverages()));
 
-			if (script_client_connected) commSocket.SetSendData(commandSpec.PrepareReturnParameters(SMesh.active_mesh()->GetProfileAverages()));
+			if (script_client_connected) commSocket.SetSendData(commandSpec.PrepareReturnParameters(SMesh[meshName]->GetProfileAverages()));
 		}
 		break;
 
@@ -6224,14 +5982,16 @@ void Simulation::HandleCommand(std::string command_string)
 
 		case CMD_AVERAGEMESHRECT:
 		{
+			std::string meshName;
 			Rect rect;
 
-			error = commandSpec.GetParameters(command_fields, rect);
+			optional_meshname_check_focusedmeshdefault(command_fields);
+			error = commandSpec.GetParameters(command_fields, meshName, rect);
 			if (error == BERROR_PARAMMISMATCH) { error.reset(); rect = Rect(); }
 
 			if (!error) {
 				
-				Any value = SMesh.GetAverageDisplayedMeshValue(rect);
+				Any value = SMesh.GetAverageDisplayedMeshValue(meshName, rect);
 				if (verbose) BD.DisplayConsoleMessage("Average value = " + value.convert_to_string());
 
 				if (script_client_connected) {
@@ -6261,37 +6021,38 @@ void Simulation::HandleCommand(std::string command_string)
 		case CMD_DP_TOPOCHARGE:
 		{
 			double x, y, radius;
+			std::string meshName;
 
-			error = commandSpec.GetParameters(command_fields, x, y, radius);
+			optional_meshname_check_focusedmeshdefault(command_fields);
+			error = commandSpec.GetParameters(command_fields, meshName, x, y, radius);
 			if (error == BERROR_PARAMMISMATCH) { 
 				
 				error.reset(); 
 				x = 0.0; y = 0.0;
-				DBL3 meshDims = SMesh.active_mesh()->GetMeshDimensions();
+				DBL3 meshDims = SMesh[meshName]->GetMeshDimensions();
 				radius = sqrt(meshDims.x * meshDims.x + meshDims.y * meshDims.y);
 			}
 
 			if (!error) {
 
-				if (SMesh.active_mesh()->Magnetism_Enabled()) {
+				if (SMesh[meshName]->Magnetism_Enabled()) {
 
 					double Q = 0.0;
 
-					if (!SMesh.active_mesh()->is_atomistic()) {
+					if (!SMesh[meshName]->is_atomistic()) {
 
-						error = dpArr.get_topological_charge(dynamic_cast<Mesh*>(SMesh.active_mesh())->Get_M(), x, y, radius, &Q);
+						error = dpArr.get_topological_charge(dynamic_cast<Mesh*>(SMesh[meshName])->Get_M(), x, y, radius, &Q);
 					}
 					else {
 
-						error = dpArr.get_topological_charge(dynamic_cast<Atom_Mesh*>(SMesh.active_mesh())->Get_M1(), x, y, radius, &Q);
+						error = dpArr.get_topological_charge(dynamic_cast<Atom_Mesh*>(SMesh[meshName])->Get_M1(), x, y, radius, &Q);
 					}
 
 					if (!error) {
 
 						if (verbose) BD.DisplayConsoleMessage("Q = " + ToString(Q));
 
-						if (script_client_connected)
-							commSocket.SetSendData(commandSpec.PrepareReturnParameters(Q));
+						if (script_client_connected) commSocket.SetSendData(commandSpec.PrepareReturnParameters(Q));
 					}
 				}
 				else err_hndl.show_error(BERROR_NOTMAGNETIC, verbose);
@@ -6303,37 +6064,38 @@ void Simulation::HandleCommand(std::string command_string)
 		case CMD_DP_COUNTSKYRMIONS:
 		{
 			double x, y, radius;
+			std::string meshName;
 
-			error = commandSpec.GetParameters(command_fields, x, y, radius);
+			optional_meshname_check_focusedmeshdefault(command_fields);
+			error = commandSpec.GetParameters(command_fields, meshName, x, y, radius);
 			if (error == BERROR_PARAMMISMATCH) {
 
 				error.reset();
 				x = 0.0; y = 0.0;
-				DBL3 meshDims = SMesh.active_mesh()->GetMeshDimensions();
+				DBL3 meshDims = SMesh[meshName]->GetMeshDimensions();
 				radius = sqrt(meshDims.x * meshDims.x + meshDims.y * meshDims.y);
 			}
 
 			if (!error) {
 
-				if (SMesh.active_mesh()->Magnetism_Enabled()) {
+				if (SMesh[meshName]->Magnetism_Enabled()) {
 
 					double Q = 0.0;
 
-					if (!SMesh.active_mesh()->is_atomistic()) {
+					if (!SMesh[meshName]->is_atomistic()) {
 
-						error = dpArr.count_skyrmions(dynamic_cast<Mesh*>(SMesh.active_mesh())->Get_M(), x, y, radius, &Q);
+						error = dpArr.count_skyrmions(dynamic_cast<Mesh*>(SMesh[meshName])->Get_M(), x, y, radius, &Q);
 					}
 					else {
 
-						error = dpArr.count_skyrmions(dynamic_cast<Atom_Mesh*>(SMesh.active_mesh())->Get_M1(), x, y, radius, &Q);
+						error = dpArr.count_skyrmions(dynamic_cast<Atom_Mesh*>(SMesh[meshName])->Get_M1(), x, y, radius, &Q);
 					}
 
 					if (!error) {
 
 						if (verbose) BD.DisplayConsoleMessage("Qmag = " + ToString(Q));
 
-						if (script_client_connected)
-							commSocket.SetSendData(commandSpec.PrepareReturnParameters(Q));
+						if (script_client_connected) commSocket.SetSendData(commandSpec.PrepareReturnParameters(Q));
 					}
 				}
 				else err_hndl.show_error(BERROR_NOTMAGNETIC, verbose);
@@ -6348,19 +6110,21 @@ void Simulation::HandleCommand(std::string command_string)
 			INT3 macrocell_dims = INT3(1);
 			double min = 0.0, max = 0.0;
 			int dp_x, dp_y;
+			std::string meshName;
 
-			error = commandSpec.GetParameters(command_fields, dp_x, dp_y, macrocell_dims, num_bins, min, max);
-			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, dp_x, dp_y, macrocell_dims); num_bins = 0; min = 0.0; max = 0.0; }
-			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, dp_x, dp_y); macrocell_dims = INT3(1); num_bins = 0; min = 0.0; max = 0.0; }
+			optional_meshname_check_focusedmeshdefault(command_fields);
+			error = commandSpec.GetParameters(command_fields, meshName, dp_x, dp_y, macrocell_dims, num_bins, min, max);
+			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, meshName, dp_x, dp_y, macrocell_dims); num_bins = 0; min = 0.0; max = 0.0; }
+			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, meshName, dp_x, dp_y); macrocell_dims = INT3(1); num_bins = 0; min = 0.0; max = 0.0; }
 			
 			if (!error) {
 
-				if (SMesh.active_mesh()->Magnetism_Enabled()) {
+				if (SMesh[meshName]->Magnetism_Enabled()) {
 
 					if (!dpArr.GoodArrays_Unique(dp_x, dp_y)) error(BERROR_INCORRECTARRAYS);
 					else {
 
-						if (SMesh.active_mesh()->Get_Histogram(dpArr[dp_x], dpArr[dp_y], num_bins, min, max, macrocell_dims))
+						if (SMesh[meshName]->Get_Histogram(dpArr[dp_x], dpArr[dp_y], num_bins, min, max, macrocell_dims))
 							if (verbose) BD.DisplayConsoleMessage("Histogram calculated.");
 					}
 				}
@@ -6376,18 +6140,20 @@ void Simulation::HandleCommand(std::string command_string)
 			INT3 macrocell_dims = INT3(1);
 			double min = 0.0, max = 0.0;
 			int dp_x, dp_y;
+			std::string meshName;
 
-			error = commandSpec.GetParameters(command_fields, dp_x, dp_y, macrocell_dims, num_bins, min, max);
-			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, dp_x, dp_y, macrocell_dims); num_bins = 0; min = 0.0; max = 0.0; }
+			optional_meshname_check_focusedmeshdefault(command_fields);
+			error = commandSpec.GetParameters(command_fields, meshName, dp_x, dp_y, macrocell_dims, num_bins, min, max);
+			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, meshName, dp_x, dp_y, macrocell_dims); num_bins = 0; min = 0.0; max = 0.0; }
 
 			if (!error) {
 
-				if (SMesh.active_mesh()->Magnetism_Enabled()) {
+				if (SMesh[meshName]->Magnetism_Enabled()) {
 
 					if (!dpArr.GoodArrays_Unique(dp_x, dp_y)) error(BERROR_INCORRECTARRAYS);
 					else {
 
-						if (SMesh.active_mesh()->Get_ThAvHistogram(dpArr[dp_x], dpArr[dp_y], num_bins, min, max, macrocell_dims))
+						if (SMesh[meshName]->Get_ThAvHistogram(dpArr[dp_x], dpArr[dp_y], num_bins, min, max, macrocell_dims))
 							if (verbose) BD.DisplayConsoleMessage("Histogram calculated.");
 					}
 				}
@@ -6404,20 +6170,22 @@ void Simulation::HandleCommand(std::string command_string)
 			DBL3 ndir;
 			double min = 0.0, max = 0.0;
 			int dp_x, dp_y;
+			std::string meshName;
 
-			error = commandSpec.GetParameters(command_fields, dp_x, dp_y, macrocell_dims, ndir, num_bins, min, max);
-			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, dp_x, dp_y, macrocell_dims, ndir); num_bins = 0; min = 0.0; max = 0.0; }
-			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, dp_x, dp_y, macrocell_dims); ndir = DBL3(); num_bins = 0; min = 0.0; max = 0.0; }
-			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, dp_x, dp_y); macrocell_dims = INT3(1); ndir = DBL3(); num_bins = 0; min = 0.0; max = 0.0; }
+			optional_meshname_check_focusedmeshdefault(command_fields);
+			error = commandSpec.GetParameters(command_fields, meshName, dp_x, dp_y, macrocell_dims, ndir, num_bins, min, max);
+			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, meshName, dp_x, dp_y, macrocell_dims, ndir); num_bins = 0; min = 0.0; max = 0.0; }
+			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, meshName, dp_x, dp_y, macrocell_dims); ndir = DBL3(); num_bins = 0; min = 0.0; max = 0.0; }
+			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, meshName, dp_x, dp_y); macrocell_dims = INT3(1); ndir = DBL3(); num_bins = 0; min = 0.0; max = 0.0; }
 
 			if (!error) {
 
-				if (SMesh.active_mesh()->Magnetism_Enabled()) {
+				if (SMesh[meshName]->Magnetism_Enabled()) {
 
 					if (!dpArr.GoodArrays_Unique(dp_x, dp_y)) error(BERROR_INCORRECTARRAYS);
 					else {
 
-						if (SMesh.active_mesh()->Get_AngHistogram(dpArr[dp_x], dpArr[dp_y], num_bins, min, max, macrocell_dims, ndir))
+						if (SMesh[meshName]->Get_AngHistogram(dpArr[dp_x], dpArr[dp_y], num_bins, min, max, macrocell_dims, ndir))
 							if (verbose) BD.DisplayConsoleMessage("Angular deviation histogram calculated.");
 					}
 				}
@@ -6434,19 +6202,21 @@ void Simulation::HandleCommand(std::string command_string)
 			DBL3 ndir;
 			double min = 0.0, max = 0.0;
 			int dp_x, dp_y;
+			std::string meshName;
 
-			error = commandSpec.GetParameters(command_fields, dp_x, dp_y, macrocell_dims, ndir, num_bins, min, max);
-			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, dp_x, dp_y, macrocell_dims, ndir); num_bins = 0; min = 0.0; max = 0.0; }
-			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, dp_x, dp_y, macrocell_dims); ndir = DBL3(); num_bins = 0; min = 0.0; max = 0.0; }
+			optional_meshname_check_focusedmeshdefault(command_fields);
+			error = commandSpec.GetParameters(command_fields, meshName, dp_x, dp_y, macrocell_dims, ndir, num_bins, min, max);
+			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, meshName, dp_x, dp_y, macrocell_dims, ndir); num_bins = 0; min = 0.0; max = 0.0; }
+			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, meshName, dp_x, dp_y, macrocell_dims); ndir = DBL3(); num_bins = 0; min = 0.0; max = 0.0; }
 
 			if (!error) {
 
-				if (SMesh.active_mesh()->Magnetism_Enabled()) {
+				if (SMesh[meshName]->Magnetism_Enabled()) {
 
 					if (!dpArr.GoodArrays_Unique(dp_x, dp_y)) error(BERROR_INCORRECTARRAYS);
 					else {
 
-						if (SMesh.active_mesh()->Get_ThAvAngHistogram(dpArr[dp_x], dpArr[dp_y], num_bins, min, max, macrocell_dims, ndir))
+						if (SMesh[meshName]->Get_ThAvAngHistogram(dpArr[dp_x], dpArr[dp_y], num_bins, min, max, macrocell_dims, ndir))
 							if (verbose) BD.DisplayConsoleMessage("Angular deviation histogram calculated.");
 					}
 				}
@@ -6456,50 +6226,25 @@ void Simulation::HandleCommand(std::string command_string)
 		}
 		break;
 
-		case CMD_AVERAGECHUNKEDMAGLENGTH:
-		{
-			INT3 macrocell_dims = INT3(1);
-			int dp_arr = -1;
-			double M_av = 0.0;
-
-			error = commandSpec.GetParameters(command_fields, macrocell_dims, dp_arr);
-			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, macrocell_dims); dp_arr = -1; }
-
-			if (!error) {
-
-				if (SMesh.active_mesh()->Magnetism_Enabled() && SMesh.active_mesh()->is_atomistic()) {
-
-					M_av = SMesh.active_mesh()->Get_ChunkedAverageMagnetizationLength(macrocell_dims);
-
-					if (verbose) BD.DisplayConsoleMessage("Average chunked M length = " + ToString(M_av) + " (A/m)");
-
-					if (dp_arr >= 0) dpArr[dp_arr] = { M_av };
-				}
-				else err_hndl.show_error(BERROR_NOTATOMISTIC, verbose);
-			}
-			else if (verbose) PrintCommandUsage(command_name);
-
-			if (script_client_connected) commSocket.SetSendData(commandSpec.PrepareReturnParameters(M_av));
-		}
-		break;
-
 		case CMD_DP_HISTOGRAM2:
 		{
 			int num_bins = 0;
 			double min = 0.0, max = 0.0;
 			double M2 = 0.0, deltaM2 = 0.0;
 			int dp_x, dp_y;
+			std::string meshName;
 
-			error = commandSpec.GetParameters(command_fields, dp_x, dp_y, num_bins, min, max, M2, deltaM2);
-			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, dp_x, dp_y); num_bins = 0; min = 0.0; max = 0.0; M2 = 0.0; deltaM2 = 0.0; }
+			optional_meshname_check_focusedmeshdefault(command_fields);
+			error = commandSpec.GetParameters(command_fields, meshName, dp_x, dp_y, num_bins, min, max, M2, deltaM2);
+			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, meshName, dp_x, dp_y); num_bins = 0; min = 0.0; max = 0.0; M2 = 0.0; deltaM2 = 0.0; }
 
 			if (!error) {
 				
-				if (SMesh.active_mesh()->GetMeshType() == MESH_ANTIFERROMAGNETIC && !SMesh.active_mesh()->is_atomistic()) {
+				if (SMesh[meshName]->GetMeshType() == MESH_ANTIFERROMAGNETIC && !SMesh[meshName]->is_atomistic()) {
 
 					if (IsZ(M2) && IsZ(deltaM2)) {
 
-						Mesh* pMesh = dynamic_cast<Mesh*>(SMesh.active_mesh());
+						Mesh* pMesh = dynamic_cast<Mesh*>(SMesh[meshName]);
 						if (pMesh) {
 
 							DBL2 Ms_AFM = pMesh->Ms_AFM;
@@ -6510,8 +6255,8 @@ void Simulation::HandleCommand(std::string command_string)
 					}
 
 					error = dpArr.calculate_histogram2(
-						dynamic_cast<Mesh*>(SMesh.active_mesh())->Get_M(), 
-						dynamic_cast<Mesh*>(SMesh.active_mesh())->Get_M2(),
+						dynamic_cast<Mesh*>(SMesh[meshName])->Get_M(),
+						dynamic_cast<Mesh*>(SMesh[meshName])->Get_M2(),
 						dp_x, dp_y, 
 						num_bins, min, max, M2, deltaM2);
 
@@ -7005,13 +6750,13 @@ void Simulation::HandleCommand(std::string command_string)
 		case CMD_DP_FITSTT:
 		{
 			Rect rectangle;
+			std::string meshName;
 
-			error = commandSpec.GetParameters(command_fields, rectangle);
-			if (error == BERROR_PARAMMISMATCH) { error.reset(); rectangle = SMesh.active_mesh()->GetMeshRect() - SMesh.active_mesh()->GetOrigin(); }
+			optional_meshname_check_focusedmeshdefault(command_fields);
+			error = commandSpec.GetParameters(command_fields, meshName, rectangle);
+			if (error == BERROR_PARAMMISMATCH) { error.reset(); rectangle = SMesh[meshName]->GetMeshRect() - SMesh[meshName]->GetOrigin(); }
 
 			if (!error) {
-
-				std::string meshName = SMesh.GetMeshFocus();
 
 				if (SMesh[meshName]->GetMeshType() == MESH_FERROMAGNETIC && SMesh[meshName]->IsModuleSet(MOD_TRANSPORT) && SMesh.SolveSpinCurrent() && 
 					(IsNZ(dynamic_cast<Mesh*>(SMesh[meshName])->ts_eff.get0()) || IsNZ(dynamic_cast<Mesh*>(SMesh[meshName])->tsi_eff.get0()))) {
@@ -7079,14 +6824,14 @@ void Simulation::HandleCommand(std::string command_string)
 		case CMD_DP_FITADIABATIC:
 		case CMD_DP_FITNONADIABATIC:
 		{
-			std::string meshName = SMesh.GetMeshFocus();
-
 			double abs_error_threshold, Rsq_threshold, T_ratio_threshold;
 			int stencil = 3;
 			bool user_thresholds = true;
+			std::string meshName;
 
-			error = commandSpec.GetParameters(command_fields, abs_error_threshold, Rsq_threshold, T_ratio_threshold, stencil);
-			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, abs_error_threshold, Rsq_threshold, T_ratio_threshold);  stencil = 3; }
+			optional_meshname_check_focusedmeshdefault(command_fields);
+			error = commandSpec.GetParameters(command_fields, meshName, abs_error_threshold, Rsq_threshold, T_ratio_threshold, stencil);
+			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, meshName, abs_error_threshold, Rsq_threshold, T_ratio_threshold);  stencil = 3; }
 			if (error == BERROR_PARAMMISMATCH) { error.reset(); user_thresholds = false; }
 
 			if (SMesh[meshName]->GetMeshType() == MESH_FERROMAGNETIC && SMesh[meshName]->IsModuleSet(MOD_TRANSPORT) && SMesh.SolveSpinCurrent() &&
@@ -7165,13 +6910,13 @@ void Simulation::HandleCommand(std::string command_string)
 		{
 			Rect rectangle;
 			std::string hm_mesh;
+			std::string meshName;
 
-			error = commandSpec.GetParameters(command_fields, hm_mesh, rectangle);
-			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, hm_mesh); rectangle = SMesh.active_mesh()->GetMeshRect() - SMesh.active_mesh()->GetOrigin(); }
+			optional_meshname_check_focusedmeshdefault(command_fields);
+			error = commandSpec.GetParameters(command_fields, meshName, hm_mesh, rectangle);
+			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, meshName, hm_mesh); rectangle = SMesh[meshName]->GetMeshRect() - SMesh[meshName]->GetOrigin(); }
 
 			if (!error) {
-
-				std::string meshName = SMesh.GetMeshFocus();
 
 				if (SMesh[meshName]->GetMeshType() == MESH_FERROMAGNETIC && SMesh[meshName]->IsModuleSet(MOD_TRANSPORT) && SMesh.SolveSpinCurrent()
 					&& SMesh.contains(hm_mesh) && SMesh[hm_mesh]->GetMeshType() == MESH_METAL && SMesh[hm_mesh]->IsModuleSet(MOD_TRANSPORT)) {
@@ -7204,13 +6949,13 @@ void Simulation::HandleCommand(std::string command_string)
 		{
 			Rect rectangle;
 			std::string hm_mesh;
+			std::string meshName;
 
-			error = commandSpec.GetParameters(command_fields, hm_mesh, rectangle);
-			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, hm_mesh); rectangle = SMesh.active_mesh()->GetMeshRect() - SMesh.active_mesh()->GetOrigin(); }
+			optional_meshname_check_focusedmeshdefault(command_fields);
+			error = commandSpec.GetParameters(command_fields, meshName, hm_mesh, rectangle);
+			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, meshName, hm_mesh); rectangle = SMesh[meshName]->GetMeshRect() - SMesh[meshName]->GetOrigin(); }
 
 			if (!error) {
-
-				std::string meshName = SMesh.GetMeshFocus();
 
 				if (SMesh[meshName]->GetMeshType() == MESH_FERROMAGNETIC && SMesh[meshName]->IsModuleSet(MOD_TRANSPORT) && SMesh.SolveSpinCurrent()
 					&& SMesh.contains(hm_mesh) && SMesh[hm_mesh]->GetMeshType() == MESH_METAL && SMesh[hm_mesh]->IsModuleSet(MOD_TRANSPORT)) {
@@ -7331,7 +7076,10 @@ void Simulation::HandleCommand(std::string command_string)
 
 		case CMD_DP_CALCTOPOCHARGEDENSITY:
 		{
-			std::string meshName = SMesh.GetMeshFocus();
+			std::string meshName;
+
+			optional_meshname_check_focusedmeshdefault(command_fields);
+			meshName = command_fields[0];
 
 			if (SMesh[meshName]->Magnetism_Enabled()) {
 

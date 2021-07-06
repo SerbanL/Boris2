@@ -23,7 +23,7 @@ Atom_Mesh_Cubic::Atom_Mesh_Cubic(SuperMesh *pSMesh_) :
 			VINFO(mc_cone_angledeg), VINFO(mc_acceptance_rate), VINFO(mc_parallel), VINFO(mc_disabled), VINFO(mc_constrain), VINFO(cmc_n),
 			//Material Parameters
 			VINFO(alpha), VINFO(mu_s), VINFO(Nxy),
-			VINFO(J), VINFO(D),
+			VINFO(J), VINFO(D), VINFO(D_dir),
 			VINFO(K1), VINFO(K2),  VINFO(K3), VINFO(mcanis_ea1), VINFO(mcanis_ea2), VINFO(mcanis_ea3),
 			VINFO(Kt),
 			VINFO(cHA), VINFO(cHmo),
@@ -36,7 +36,7 @@ Atom_Mesh_Cubic::Atom_Mesh_Cubic(SuperMesh *pSMesh_) :
 			//Modules Implementations
 			IINFO(Atom_Demag_N), IINFO(Atom_Demag), IINFO(Atom_DipoleDipole), 
 			IINFO(Atom_Zeeman), IINFO(Atom_MOptical),
-			IINFO(Atom_Exchange), IINFO(Atom_DMExchange), IINFO(Atom_iDMExchange), IINFO(Atom_SurfExchange),
+			IINFO(Atom_Exchange), IINFO(Atom_DMExchange), IINFO(Atom_iDMExchange), IINFO(Atom_viDMExchange),IINFO(Atom_SurfExchange),
 			IINFO(Atom_Anisotropy_Uniaxial), IINFO(Atom_Anisotropy_Cubic), IINFO(Atom_Anisotropy_Biaxial), IINFO(Atom_Anisotropy_Tensorial),
 			IINFO(Atom_Heat)
 		}),
@@ -60,7 +60,7 @@ Atom_Mesh_Cubic::Atom_Mesh_Cubic(Rect meshRect_, DBL3 h_, SuperMesh *pSMesh_) :
 			VINFO(mc_cone_angledeg), VINFO(mc_acceptance_rate), VINFO(mc_parallel), VINFO(mc_disabled), VINFO(mc_constrain), VINFO(cmc_n),
 			//Material Parameters
 			VINFO(alpha), VINFO(mu_s), VINFO(Nxy),
-			VINFO(J), VINFO(D),
+			VINFO(J), VINFO(D), VINFO(D_dir),
 			VINFO(K1), VINFO(K2),  VINFO(K3), VINFO(mcanis_ea1), VINFO(mcanis_ea2), VINFO(mcanis_ea3),
 			VINFO(Kt),
 			VINFO(cHA), VINFO(cHmo),
@@ -73,7 +73,7 @@ Atom_Mesh_Cubic::Atom_Mesh_Cubic(Rect meshRect_, DBL3 h_, SuperMesh *pSMesh_) :
 			//Modules Implementations
 			IINFO(Atom_Demag_N), IINFO(Atom_Demag), IINFO(Atom_DipoleDipole),
 			IINFO(Atom_Zeeman), IINFO(Atom_MOptical),
-			IINFO(Atom_Exchange), IINFO(Atom_DMExchange), IINFO(Atom_iDMExchange), IINFO(Atom_SurfExchange),
+			IINFO(Atom_Exchange), IINFO(Atom_DMExchange), IINFO(Atom_iDMExchange), IINFO(Atom_viDMExchange), IINFO(Atom_SurfExchange),
 			IINFO(Atom_Anisotropy_Uniaxial), IINFO(Atom_Anisotropy_Cubic), IINFO(Atom_Anisotropy_Biaxial), IINFO(Atom_Anisotropy_Tensorial),
 			IINFO(Atom_Heat)
 		}),

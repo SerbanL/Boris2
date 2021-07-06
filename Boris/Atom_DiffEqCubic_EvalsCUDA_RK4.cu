@@ -47,6 +47,42 @@ __global__ void RunRK4_Step0_withReductions_Kernel(ManagedAtom_DiffEqCubicCUDA& 
 	if (cuaMesh.pgrel->get0()) reduction_max(0, 1, &mxh, *cuaDiffEq.pmxh);
 }
 
+__global__ void RunRK4_Step0_withAverageReductions_Kernel(ManagedAtom_DiffEqCubicCUDA& cuaDiffEq, ManagedAtom_MeshCUDA& cuaMesh)
+{
+	int idx = blockIdx.x * blockDim.x + threadIdx.x;
+
+	cuBReal dT = *cuaDiffEq.pdT;
+
+	cuReal3 mxh = cuReal3();
+	bool include_in_average = false;
+
+	//multiplicative conversion factor from atomic moment (units of muB) to A/m
+	cuBReal conversion = (cuBReal)MUB / cuaMesh.pM1->h.dim();
+
+	if (idx < cuaMesh.pM1->linear_size()) {
+
+		if (cuaMesh.pM1->is_not_empty(idx)) {
+
+			//Save current moment for later use
+			(*cuaDiffEq.psM1)[idx] = (*cuaMesh.pM1)[idx];
+
+			if (!cuaMesh.pM1->is_skipcell(idx)) {
+
+				//obtain maximum normalized torque term
+				cuBReal Mnorm = (*cuaMesh.pM1)[idx].norm();
+				mxh = cu_GetMagnitude((*cuaMesh.pM1)[idx] ^ (*cuaMesh.pHeff1)[idx]) / (conversion * Mnorm * Mnorm);
+
+				(*cuaDiffEq.psEval0)[idx] = (cuaDiffEq.*(cuaDiffEq.pODEFunc))(idx);
+
+				//Now estimate moment using RK4 midle step
+				(*cuaMesh.pM1)[idx] += (*cuaDiffEq.psEval0)[idx] * (dT / 2);
+			}
+		}
+	}
+
+	if (cuaMesh.pgrel->get0()) reduction_avg(0, 1, &mxh, *cuaDiffEq.pmxh_av, *cuaDiffEq.pavpoints, include_in_average);
+}
+
 __global__ void RunRK4_Step0_Kernel(ManagedAtom_DiffEqCubicCUDA& cuaDiffEq, ManagedAtom_MeshCUDA& cuaMesh)
 {
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
@@ -147,6 +183,48 @@ __global__ void RunRK4_Step3_withReductions_Kernel(ManagedAtom_DiffEqCubicCUDA& 
 	if (cuaMesh.pgrel->get0()) reduction_max(0, 1, &dmdt, *cuaDiffEq.pdmdt);
 }
 
+__global__ void RunRK4_Step3_withAverageReductions_Kernel(ManagedAtom_DiffEqCubicCUDA& cuaDiffEq, ManagedAtom_MeshCUDA& cuaMesh)
+{
+	int idx = blockIdx.x * blockDim.x + threadIdx.x;
+
+	cuBReal dT = *cuaDiffEq.pdT;
+
+	cuReal3 dmdt = cuReal3();
+	bool include_in_average = false;
+
+	//multiplicative conversion factor from atomic moment (units of muB) to A/m
+	cuBReal conversion = (cuBReal)MUB / cuaMesh.pM1->h.dim();
+
+	if (idx < cuaMesh.pM1->linear_size()) {
+
+		if (cuaMesh.pM1->is_not_empty(idx)) {
+
+			if (!cuaMesh.pM1->is_skipcell(idx)) {
+
+				//First evaluate RHS of set equation at the current time step
+				cuReal3 rhs = (cuaDiffEq.*(cuaDiffEq.pODEFunc))(idx);
+
+				//Now estimate moment using previous RK4 evaluations
+				(*cuaMesh.pM1)[idx] = (*cuaDiffEq.psM1)[idx] + ((*cuaDiffEq.psEval0)[idx] + 2 * (*cuaDiffEq.psEval1)[idx] + 2 * (*cuaDiffEq.psEval2)[idx] + rhs) * (dT / 6);
+
+				if (*cuaDiffEq.prenormalize) {
+
+					cuBReal mu_s = *cuaMesh.pmu_s;
+					cuaMesh.update_parameters_mcoarse(idx, *cuaMesh.pmu_s, mu_s);
+					(*cuaMesh.pM1)[idx].renormalize(mu_s);
+				}
+
+				//obtain maximum normalized dmdt term
+				cuBReal Mnorm = (*cuaMesh.pM1)[idx].norm();
+				dmdt = ((*cuaMesh.pM1)[idx] - (*cuaDiffEq.psM1)[idx]) / (dT * (cuBReal)GAMMA * conversion * Mnorm * Mnorm);
+				include_in_average = true;
+			}
+		}
+	}
+
+	if (cuaMesh.pgrel->get0()) reduction_avg(0, 1, &dmdt, *cuaDiffEq.pdmdt_av, *cuaDiffEq.pavpoints2, include_in_average);
+}
+
 __global__ void RunRK4_Step3_Kernel(ManagedAtom_DiffEqCubicCUDA& cuaDiffEq, ManagedAtom_MeshCUDA& cuaMesh)
 {
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
@@ -180,7 +258,7 @@ __global__ void RunRK4_Step3_Kernel(ManagedAtom_DiffEqCubicCUDA& cuaDiffEq, Mana
 
 //RUNGE KUTTA 4th order
 
-void Atom_DifferentialEquationCubicCUDA::RunRK4(int step, bool calculate_mxh, bool calculate_dmdt)
+void Atom_DifferentialEquationCubicCUDA::RunRK4(int step, bool calculate_mxh, bool calculate_dmdt, bool stochastic)
 {
 	switch (step) {
 
@@ -188,7 +266,8 @@ void Atom_DifferentialEquationCubicCUDA::RunRK4(int step, bool calculate_mxh, bo
 
 		if (calculate_mxh) {
 
-			RunRK4_Step0_withReductions_Kernel <<< (paMeshCUDA->n.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (cuaDiffEq, paMeshCUDA->cuaMesh);
+			if (stochastic) RunRK4_Step0_withAverageReductions_Kernel <<< (paMeshCUDA->n.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (cuaDiffEq, paMeshCUDA->cuaMesh);
+			else RunRK4_Step0_withReductions_Kernel <<< (paMeshCUDA->n.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (cuaDiffEq, paMeshCUDA->cuaMesh);
 		}
 		else {
 
@@ -213,7 +292,8 @@ void Atom_DifferentialEquationCubicCUDA::RunRK4(int step, bool calculate_mxh, bo
 
 		if (calculate_dmdt) {
 
-			RunRK4_Step3_withReductions_Kernel <<< (paMeshCUDA->n.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (cuaDiffEq, paMeshCUDA->cuaMesh);
+			if (stochastic) RunRK4_Step3_withAverageReductions_Kernel <<< (paMeshCUDA->n.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (cuaDiffEq, paMeshCUDA->cuaMesh);
+			else RunRK4_Step3_withReductions_Kernel <<< (paMeshCUDA->n.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (cuaDiffEq, paMeshCUDA->cuaMesh);
 		}
 		else {
 
