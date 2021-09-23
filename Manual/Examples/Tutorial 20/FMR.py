@@ -1,16 +1,16 @@
 """
-This script is part of Boris Computational Spintronics v3.0
+This script is part of Boris Computational Spintronics
 
 @author: Serban Lepadatu, 2020
 """
 
-from NetSocks import NSClient
+from NetSocks import NSClient, customize_plots
 import matplotlib.pyplot as plt
 import numpy as np
 
 #setup communication with server
-ns = NSClient()
-ns.configure(True)
+ns = NSClient(); ns.configure(True)
+customize_plots()
 
 ########################################
 
@@ -154,10 +154,11 @@ lorentz = [func_lorentz(H, lorentz_params[3], lorentz_params[0], lorentz_params[
 data = ns.Get_Data_Columns(output_file, [0, 1])
 fmr_signal = [amplitude**2 for amplitude in data[1]]
 
-plt.axes(xlabel = 'H (A/m)', ylabel = 'FMR Signal (a.u.)', title = 'Field-swept FMR')
-plt.plot(Hrange, fmr_signal, 'o', label = 'simulated FMR')
-plt.plot(Hrange, lorentz, '--', label = 'Lorentz fit')
+plt.axes(xlabel = 'H (kA/m)', ylabel = 'FMR Signal (a.u.)')
+plt.plot(np.array(Hrange) / 1e3, fmr_signal, 'o', label = 'simulated FMR')
+plt.plot(np.array(Hrange) / 1e3, lorentz, '--', label = 'Lorentz fit')
 plt.legend()
+plt.savefig('Figure20.1.png')
 plt.show()
 
 

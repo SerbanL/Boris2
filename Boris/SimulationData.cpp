@@ -248,7 +248,7 @@ Any Simulation::GetDataValue(DatumConfig dConfig)
 	{
 		if (SMesh[dConfig.meshName]->IsModuleSet(MOD_TRANSPORT)) {
 
-			return Any(SMesh[dConfig.meshName]->CallModuleMethod(&Transport::GetAverageChargeCurrent, dConfig.rectangle, {}));
+			return Any(SMesh[dConfig.meshName]->CallModuleMethod(&Transport::GetAverageChargeCurrent, dConfig.rectangle, std::vector<MeshShape>()));
 		}
 	}
 	break;
@@ -257,7 +257,7 @@ Any Simulation::GetDataValue(DatumConfig dConfig)
 	{
 		if (SMesh[dConfig.meshName]->IsModuleSet(MOD_TRANSPORT)) {
 
-			return Any(SMesh[dConfig.meshName]->CallModuleMethod(&Transport::GetAverageSpinCurrent, 0, dConfig.rectangle, {}));
+			return Any(SMesh[dConfig.meshName]->CallModuleMethod(&Transport::GetAverageSpinCurrent, 0, dConfig.rectangle, std::vector<MeshShape>()));
 		}
 	}
 	break;
@@ -266,7 +266,7 @@ Any Simulation::GetDataValue(DatumConfig dConfig)
 	{
 		if (SMesh[dConfig.meshName]->IsModuleSet(MOD_TRANSPORT)) {
 
-			return Any(SMesh[dConfig.meshName]->CallModuleMethod(&Transport::GetAverageSpinCurrent, 1, dConfig.rectangle, {}));
+			return Any(SMesh[dConfig.meshName]->CallModuleMethod(&Transport::GetAverageSpinCurrent, 1, dConfig.rectangle, std::vector<MeshShape>()));
 		}
 	}
 	break;
@@ -275,7 +275,7 @@ Any Simulation::GetDataValue(DatumConfig dConfig)
 	{
 		if (SMesh[dConfig.meshName]->IsModuleSet(MOD_TRANSPORT)) {
 
-			return Any(SMesh[dConfig.meshName]->CallModuleMethod(&Transport::GetAverageSpinCurrent, 2, dConfig.rectangle, {}));
+			return Any(SMesh[dConfig.meshName]->CallModuleMethod(&Transport::GetAverageSpinCurrent, 2, dConfig.rectangle, std::vector<MeshShape>()));
 		}
 	}
 	break;
@@ -613,7 +613,7 @@ void Simulation::SaveData(void)
 		row_text += value_string;
 		if (idx != saveDataList.size() - 1) row_text += "\t";
 	}
-
+	
 	if (!is_thread_running(THREAD_DISKACCESS)) {
 		
 		if (savedata_diskbuffer_position < savedata_diskbuffer_size) savedata_diskbuffer[savedata_diskbuffer_position++] = row_text;
@@ -629,12 +629,16 @@ void Simulation::SaveData(void)
 	else {
 
 		//regular buffer still being written: add entries in overflow buffer
-		if (savedata_diskoverflowbuffer_position < savedata_diskbuffer_size) savedata_diskoverflowbuffer[savedata_diskoverflowbuffer_position++] = row_text;
+		if (savedata_diskoverflowbuffer_position < savedata_diskbuffer_size - 1) savedata_diskoverflowbuffer[savedata_diskoverflowbuffer_position++] = row_text;
 		else {
+
+			//don't lose last element before overflow buffer full!
+			savedata_diskoverflowbuffer[savedata_diskoverflowbuffer_position++] = row_text;
 
 			//overflow buffer also full : flush it synchronously when the previous write operation finishes
 			//stop disk thread: this command will complete when the writing operation finishes
 			stop_thread(THREAD_DISKACCESS);
+			
 			//now flush overflow buffer synchronously when previous operation finishes
 			SaveData_DiskBufferFlush(&savedata_diskoverflowbuffer, &savedata_diskoverflowbuffer_position);
 		}

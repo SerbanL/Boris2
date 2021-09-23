@@ -79,6 +79,15 @@ BError Atom_DipoleDipole::Initialize_Mesh_Transfer(void)
 	if (paMesh->pSMesh->GetEvaluationSpeedup()) {
 
 		//make sure to allocate memory for Hdemag if we need it
+		if (paMesh->pSMesh->GetEvaluationSpeedup() >= 6) { if (!Hdemag6.resize(paMesh->h_dm, paMesh->meshRect)) return error(BERROR_OUTOFMEMORY_CRIT); }
+		else Hdemag6.clear();
+
+		if (paMesh->pSMesh->GetEvaluationSpeedup() >= 5) { if (!Hdemag5.resize(paMesh->h_dm, paMesh->meshRect)) return error(BERROR_OUTOFMEMORY_CRIT); }
+		else Hdemag5.clear();
+
+		if (paMesh->pSMesh->GetEvaluationSpeedup() >= 4) { if (!Hdemag4.resize(paMesh->h_dm, paMesh->meshRect)) return error(BERROR_OUTOFMEMORY_CRIT); }
+		else Hdemag4.clear();
+
 		if (paMesh->pSMesh->GetEvaluationSpeedup() >= 3) { if (!Hdemag3.resize(paMesh->h_dm, paMesh->meshRect)) return error(BERROR_OUTOFMEMORY_CRIT); }
 		else Hdemag3.clear();
 
@@ -97,6 +106,9 @@ BError Atom_DipoleDipole::Initialize_Mesh_Transfer(void)
 		Hdemag.clear();
 		Hdemag2.clear();
 		Hdemag3.clear();
+		Hdemag4.clear();
+		Hdemag5.clear();
+		Hdemag6.clear();
 	}
 
 	num_Hdemag_saved = 0;
@@ -182,6 +194,9 @@ BError Atom_DipoleDipole::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 		Hdemag.clear();
 		Hdemag2.clear();
 		Hdemag3.clear();
+		Hdemag4.clear();
+		Hdemag5.clear();
+		Hdemag6.clear();
 	}
 
 	num_Hdemag_saved = 0;
@@ -300,6 +315,18 @@ double Atom_DipoleDipole::UpdateField(void)
 					pHdemag = &Hdemag3;
 					time_demag3 = paMesh->pSMesh->Get_EvalStep_Time();
 					break;
+				case 3:
+					pHdemag = &Hdemag4;
+					time_demag4 = paMesh->pSMesh->Get_EvalStep_Time();
+					break;
+				case 4:
+					pHdemag = &Hdemag5;
+					time_demag5 = paMesh->pSMesh->Get_EvalStep_Time();
+					break;
+				case 5:
+					pHdemag = &Hdemag6;
+					time_demag6 = paMesh->pSMesh->Get_EvalStep_Time();
+					break;
 				}
 
 				num_Hdemag_saved++;
@@ -308,8 +335,107 @@ double Atom_DipoleDipole::UpdateField(void)
 
 				//have enough evaluations saved, so just cycle between them now
 
+				//QUINTIC
+				if (paMesh->pSMesh->GetEvaluationSpeedup() == 6) {
+
+					//1, 2, 3, 4, 5, 6 -> next is 1
+					if (time_demag6 > time_demag5 && time_demag5 > time_demag4 && time_demag4 > time_demag3 && time_demag3 > time_demag2 && time_demag2 > time_demag1) {
+
+						pHdemag = &Hdemag;
+						time_demag1 = paMesh->pSMesh->Get_EvalStep_Time();
+					}
+					//2, 3, 4, 5, 6, 1 -> next is 2
+					else if (time_demag1 > time_demag2) {
+
+						pHdemag = &Hdemag2;
+						time_demag2 = paMesh->pSMesh->Get_EvalStep_Time();
+					}
+					//3, 4, 5, 6, 1, 2 -> next is 3
+					else if (time_demag2 > time_demag3) {
+
+						pHdemag = &Hdemag3;
+						time_demag3 = paMesh->pSMesh->Get_EvalStep_Time();
+					}
+					//4, 5, 6, 1, 2, 3 -> next is 4
+					else if (time_demag3 > time_demag4) {
+
+						pHdemag = &Hdemag4;
+						time_demag4 = paMesh->pSMesh->Get_EvalStep_Time();
+					}
+					//5, 6, 1, 2, 3, 4 -> next is 5
+					else if (time_demag4 > time_demag5) {
+
+						pHdemag = &Hdemag5;
+						time_demag5 = paMesh->pSMesh->Get_EvalStep_Time();
+					}
+					else {
+
+						pHdemag = &Hdemag6;
+						time_demag6 = paMesh->pSMesh->Get_EvalStep_Time();
+					}
+				}
+				//QUARTIC
+				else if (paMesh->pSMesh->GetEvaluationSpeedup() == 5) {
+
+					//1, 2, 3, 4, 5 -> next is 1
+					if (time_demag5 > time_demag4 && time_demag4 > time_demag3 && time_demag3 > time_demag2 && time_demag2 > time_demag1) {
+
+						pHdemag = &Hdemag;
+						time_demag1 = paMesh->pSMesh->Get_EvalStep_Time();
+					}
+					//2, 3, 4, 5, 1 -> next is 2
+					else if (time_demag1 > time_demag2) {
+
+						pHdemag = &Hdemag2;
+						time_demag2 = paMesh->pSMesh->Get_EvalStep_Time();
+					}
+					//3, 4, 5, 1, 2 -> next is 3
+					else if (time_demag2 > time_demag3) {
+
+						pHdemag = &Hdemag3;
+						time_demag3 = paMesh->pSMesh->Get_EvalStep_Time();
+					}
+					//4, 5, 1, 2, 3 -> next is 4
+					else if (time_demag3 > time_demag4) {
+
+						pHdemag = &Hdemag4;
+						time_demag4 = paMesh->pSMesh->Get_EvalStep_Time();
+					}
+					else {
+
+						pHdemag = &Hdemag5;
+						time_demag5 = paMesh->pSMesh->Get_EvalStep_Time();
+					}
+				}
+				//CUBIC
+				else if (paMesh->pSMesh->GetEvaluationSpeedup() == 4) {
+
+					//1, 2, 3, 4 -> next is 1
+					if (time_demag4 > time_demag3 && time_demag3 > time_demag2 && time_demag2 > time_demag1) {
+
+						pHdemag = &Hdemag;
+						time_demag1 = paMesh->pSMesh->Get_EvalStep_Time();
+					}
+					//2, 3, 4, 1 -> next is 2
+					else if (time_demag1 > time_demag2) {
+
+						pHdemag = &Hdemag2;
+						time_demag2 = paMesh->pSMesh->Get_EvalStep_Time();
+					}
+					//3, 4, 1, 2 -> next is 3
+					else if (time_demag2 > time_demag3) {
+
+						pHdemag = &Hdemag3;
+						time_demag3 = paMesh->pSMesh->Get_EvalStep_Time();
+					}
+					else {
+
+						pHdemag = &Hdemag4;
+						time_demag4 = paMesh->pSMesh->Get_EvalStep_Time();
+					}
+				}
 				//QUADRATIC
-				if (paMesh->pSMesh->GetEvaluationSpeedup() == 3) {
+				else if (paMesh->pSMesh->GetEvaluationSpeedup() == 3) {
 
 					//1, 2, 3 -> next is 1
 					if (time_demag3 > time_demag2 && time_demag2 > time_demag1) {
@@ -393,18 +519,105 @@ double Atom_DipoleDipole::UpdateField(void)
 
 			//not required to update, and we have enough previous evaluations: use previous Hdemag saves to extrapolate for current evaluation
 
-			double a1 = 1.0, a2 = 0.0, a3 = 0.0;
+			double a1 = 1.0, a2 = 0.0, a3 = 0.0, a4 = 0.0, a5 = 0.0, a6 = 0.0;
 			double time = paMesh->pSMesh->Get_EvalStep_Time();
 
-			//QUADRATIC
-			if (paMesh->pSMesh->GetEvaluationSpeedup() == 3) {
+			//QUINTIC
+			if (paMesh->pSMesh->GetEvaluationSpeedup() == 6) {
 
-				if (time_demag2 != time_demag1 && time_demag2 != time_demag3 && time_demag1 != time_demag3) {
+				a1 = (time - time_demag2) * (time - time_demag3) * (time - time_demag4) * (time - time_demag5) * (time - time_demag6) / ((time_demag1 - time_demag2) * (time_demag1 - time_demag3) * (time_demag1 - time_demag4) * (time_demag1 - time_demag5) * (time_demag1 - time_demag6));
+				a2 = (time - time_demag1) * (time - time_demag3) * (time - time_demag4) * (time - time_demag5) * (time - time_demag6) / ((time_demag2 - time_demag1) * (time_demag2 - time_demag3) * (time_demag2 - time_demag4) * (time_demag2 - time_demag5) * (time_demag2 - time_demag6));
+				a3 = (time - time_demag1) * (time - time_demag2) * (time - time_demag4) * (time - time_demag5) * (time - time_demag6) / ((time_demag3 - time_demag1) * (time_demag3 - time_demag2) * (time_demag3 - time_demag4) * (time_demag3 - time_demag5) * (time_demag3 - time_demag6));
+				a4 = (time - time_demag1) * (time - time_demag2) * (time - time_demag3) * (time - time_demag5) * (time - time_demag6) / ((time_demag4 - time_demag1) * (time_demag4 - time_demag2) * (time_demag4 - time_demag3) * (time_demag4 - time_demag5) * (time_demag4 - time_demag6));
+				a5 = (time - time_demag1) * (time - time_demag2) * (time - time_demag3) * (time - time_demag4) * (time - time_demag6) / ((time_demag5 - time_demag1) * (time_demag5 - time_demag2) * (time_demag5 - time_demag3) * (time_demag5 - time_demag4) * (time_demag5 - time_demag6));
+				a6 = (time - time_demag1) * (time - time_demag2) * (time - time_demag3) * (time - time_demag4) * (time - time_demag5) / ((time_demag6 - time_demag1) * (time_demag6 - time_demag2) * (time_demag6 - time_demag3) * (time_demag6 - time_demag4) * (time_demag6 - time_demag5));
 
-					a1 = (time - time_demag2) * (time - time_demag3) / ((time_demag1 - time_demag2) * (time_demag1 - time_demag3));
-					a2 = (time - time_demag1) * (time - time_demag3) / ((time_demag2 - time_demag1) * (time_demag2 - time_demag3));
-					a3 = (time - time_demag1) * (time - time_demag2) / ((time_demag3 - time_demag1) * (time_demag3 - time_demag2));
+				//construct effective field approximation
+				if (using_macrocell) {
+
+#pragma omp parallel for
+					for (int idx = 0; idx < Hdemag.linear_size(); idx++) {
+
+						Hd[idx] = Hdemag[idx] * a1 + Hdemag2[idx] * a2 + Hdemag3[idx] * a3 + Hdemag4[idx] * a4 + Hdemag5[idx] * a5 + Hdemag6[idx] * a6 + (selfDemagCoeff & M[idx]);
+					}
+
+					//add to Heff in the atomistic mesh
+					Hd.transfer_out();
 				}
+				else {
+
+#pragma omp parallel for
+					for (int idx = 0; idx < Hdemag.linear_size(); idx++) {
+
+						paMesh->Heff1[idx] += Hdemag[idx] * a1 + Hdemag2[idx] * a2 + Hdemag3[idx] * a3 + Hdemag4[idx] * a4 + Hdemag5[idx] * a5 + Hdemag6[idx] * a6;
+					}
+				}
+			}
+			//QUARTIC
+			else if (paMesh->pSMesh->GetEvaluationSpeedup() == 5) {
+
+				a1 = (time - time_demag2) * (time - time_demag3) * (time - time_demag4) * (time - time_demag5) / ((time_demag1 - time_demag2) * (time_demag1 - time_demag3) * (time_demag1 - time_demag4) * (time_demag1 - time_demag5));
+				a2 = (time - time_demag1) * (time - time_demag3) * (time - time_demag4) * (time - time_demag5) / ((time_demag2 - time_demag1) * (time_demag2 - time_demag3) * (time_demag2 - time_demag4) * (time_demag2 - time_demag5));
+				a3 = (time - time_demag1) * (time - time_demag2) * (time - time_demag4) * (time - time_demag5) / ((time_demag3 - time_demag1) * (time_demag3 - time_demag2) * (time_demag3 - time_demag4) * (time_demag3 - time_demag5));
+				a4 = (time - time_demag1) * (time - time_demag2) * (time - time_demag3) * (time - time_demag5) / ((time_demag4 - time_demag1) * (time_demag4 - time_demag2) * (time_demag4 - time_demag3) * (time_demag4 - time_demag5));
+				a5 = (time - time_demag1) * (time - time_demag2) * (time - time_demag3) * (time - time_demag4) / ((time_demag5 - time_demag1) * (time_demag5 - time_demag2) * (time_demag5 - time_demag3) * (time_demag5 - time_demag4));
+
+				//construct effective field approximation
+				if (using_macrocell) {
+
+#pragma omp parallel for
+					for (int idx = 0; idx < Hdemag.linear_size(); idx++) {
+
+						Hd[idx] = Hdemag[idx] * a1 + Hdemag2[idx] * a2 + Hdemag3[idx] * a3 + Hdemag4[idx] * a4 + Hdemag5[idx] * a5 + (selfDemagCoeff & M[idx]);
+					}
+
+					//add to Heff in the atomistic mesh
+					Hd.transfer_out();
+				}
+				else {
+
+#pragma omp parallel for
+					for (int idx = 0; idx < Hdemag.linear_size(); idx++) {
+
+						paMesh->Heff1[idx] += Hdemag[idx] * a1 + Hdemag2[idx] * a2 + Hdemag3[idx] * a3 + Hdemag4[idx] * a4 + Hdemag5[idx] * a5;
+					}
+				}
+			}
+			//CUBIC
+			else if (paMesh->pSMesh->GetEvaluationSpeedup() == 4) {
+
+				a1 = (time - time_demag2) * (time - time_demag3) * (time - time_demag4) / ((time_demag1 - time_demag2) * (time_demag1 - time_demag3) * (time_demag1 - time_demag4));
+				a2 = (time - time_demag1) * (time - time_demag3) * (time - time_demag4) / ((time_demag2 - time_demag1) * (time_demag2 - time_demag3) * (time_demag2 - time_demag4));
+				a3 = (time - time_demag1) * (time - time_demag2) * (time - time_demag4) / ((time_demag3 - time_demag1) * (time_demag3 - time_demag2) * (time_demag3 - time_demag4));
+				a4 = (time - time_demag1) * (time - time_demag2) * (time - time_demag3) / ((time_demag4 - time_demag1) * (time_demag4 - time_demag2) * (time_demag4 - time_demag3));
+
+				//construct effective field approximation
+				if (using_macrocell) {
+
+#pragma omp parallel for
+					for (int idx = 0; idx < Hdemag.linear_size(); idx++) {
+
+						Hd[idx] = Hdemag[idx] * a1 + Hdemag2[idx] * a2 + Hdemag3[idx] * a3 + Hdemag4[idx] * a4 + (selfDemagCoeff & M[idx]);
+					}
+
+					//add to Heff in the atomistic mesh
+					Hd.transfer_out();
+				}
+				else {
+
+#pragma omp parallel for
+					for (int idx = 0; idx < Hdemag.linear_size(); idx++) {
+
+						paMesh->Heff1[idx] += Hdemag[idx] * a1 + Hdemag2[idx] * a2 + Hdemag3[idx] * a3 + Hdemag4[idx] * a4;
+					}
+				}
+			}
+			//QUADRATIC
+			else if (paMesh->pSMesh->GetEvaluationSpeedup() == 3) {
+
+				a1 = (time - time_demag2) * (time - time_demag3) / ((time_demag1 - time_demag2) * (time_demag1 - time_demag3));
+				a2 = (time - time_demag1) * (time - time_demag3) / ((time_demag2 - time_demag1) * (time_demag2 - time_demag3));
+				a3 = (time - time_demag1) * (time - time_demag2) / ((time_demag3 - time_demag1) * (time_demag3 - time_demag2));
 
 				//construct effective field approximation
 				if (using_macrocell) {
@@ -430,11 +643,8 @@ double Atom_DipoleDipole::UpdateField(void)
 			//LINEAR
 			else if (paMesh->pSMesh->GetEvaluationSpeedup() == 2) {
 
-				if (time_demag2 != time_demag1) {
-
-					a1 = (time - time_demag2) / (time_demag1 - time_demag2);
-					a2 = (time - time_demag1) / (time_demag2 - time_demag1);
-				}
+				a1 = (time - time_demag2) / (time_demag1 - time_demag2);
+				a2 = (time - time_demag1) / (time_demag2 - time_demag1);
 
 				//construct effective field approximation
 				if (using_macrocell) {

@@ -237,7 +237,7 @@ void Atom_Mesh_Cubic::SetRandomMag(int seed)
 
 	BorisRand prng(seed);
 
-#pragma omp parallel for
+	//don't use a parallel loop, so same sequence is generated on different computers
 	for (int idx = 0; idx < M1.linear_size(); idx++) {
 
 		if (M1.is_not_empty(idx)) {
@@ -264,7 +264,7 @@ void Atom_Mesh_Cubic::SetRandomXYMag(int seed)
 
 	BorisRand prng(seed);
 
-#pragma omp parallel for
+	//don't use a parallel loop, so same sequence is generated on different computers
 	for (int idx = 0; idx < M1.linear_size(); idx++) {
 
 		if (M1.is_not_empty(idx)) {

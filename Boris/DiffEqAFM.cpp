@@ -136,6 +136,23 @@ BError DifferentialEquationAFM::AllocateMemory(void)
 		if (!sEval5_2.resize(pMesh->n)) return error(BERROR_OUTOFMEMORY_CRIT);
 		break;
 
+	case EVAL_RKF56:
+		if (!sEval0.resize(pMesh->n)) return error(BERROR_OUTOFMEMORY_CRIT);
+		if (!sEval1.resize(pMesh->n)) return error(BERROR_OUTOFMEMORY_CRIT);
+		if (!sEval2.resize(pMesh->n)) return error(BERROR_OUTOFMEMORY_CRIT);
+		if (!sEval3.resize(pMesh->n)) return error(BERROR_OUTOFMEMORY_CRIT);
+		if (!sEval4.resize(pMesh->n)) return error(BERROR_OUTOFMEMORY_CRIT);
+		if (!sEval5.resize(pMesh->n)) return error(BERROR_OUTOFMEMORY_CRIT);
+		if (!sEval6.resize(pMesh->n)) return error(BERROR_OUTOFMEMORY_CRIT);
+		if (!sEval0_2.resize(pMesh->n)) return error(BERROR_OUTOFMEMORY_CRIT);
+		if (!sEval1_2.resize(pMesh->n)) return error(BERROR_OUTOFMEMORY_CRIT);
+		if (!sEval2_2.resize(pMesh->n)) return error(BERROR_OUTOFMEMORY_CRIT);
+		if (!sEval3_2.resize(pMesh->n)) return error(BERROR_OUTOFMEMORY_CRIT);
+		if (!sEval4_2.resize(pMesh->n)) return error(BERROR_OUTOFMEMORY_CRIT);
+		if (!sEval5_2.resize(pMesh->n)) return error(BERROR_OUTOFMEMORY_CRIT);
+		if (!sEval6_2.resize(pMesh->n)) return error(BERROR_OUTOFMEMORY_CRIT);
+		break;
+
 	case EVAL_SD:
 		if (!sEval0.resize(pMesh->n)) return error(BERROR_OUTOFMEMORY_CRIT);
 		if (!sEval0_2.resize(pMesh->n)) return error(BERROR_OUTOFMEMORY_CRIT);
@@ -187,6 +204,7 @@ void DifferentialEquationAFM::CleanupMemory(void)
 		evalMethod != EVAL_RKF45 &&
 		evalMethod != EVAL_RKCK45 &&
 		evalMethod != EVAL_RKDP54 &&
+		evalMethod != EVAL_RKF56 &&
 		evalMethod != EVAL_SD) {
 
 		sEval0.clear();
@@ -198,7 +216,8 @@ void DifferentialEquationAFM::CleanupMemory(void)
 		evalMethod != EVAL_RK23 &&
 		evalMethod != EVAL_RKF45 &&
 		evalMethod != EVAL_RKCK45 &&
-		evalMethod != EVAL_RKDP54) {
+		evalMethod != EVAL_RKDP54 &&
+		evalMethod != EVAL_RKF56) {
 
 		sEval1.clear();
 		sEval1_2.clear();
@@ -208,7 +227,8 @@ void DifferentialEquationAFM::CleanupMemory(void)
 		evalMethod != EVAL_RK23 &&
 		evalMethod != EVAL_RKF45 &&
 		evalMethod != EVAL_RKCK45 &&
-		evalMethod != EVAL_RKDP54) {
+		evalMethod != EVAL_RKDP54 &&
+		evalMethod != EVAL_RKF56) {
 
 		sEval2.clear();
 		sEval2_2.clear();
@@ -217,7 +237,8 @@ void DifferentialEquationAFM::CleanupMemory(void)
 	if (evalMethod != EVAL_RK4 &&
 		evalMethod != EVAL_RKF45 &&
 		evalMethod != EVAL_RKCK45 &&
-		evalMethod != EVAL_RKDP54) {
+		evalMethod != EVAL_RKDP54 &&
+		evalMethod != EVAL_RKF56) {
 
 		sEval3.clear();
 		sEval4.clear();
@@ -225,10 +246,17 @@ void DifferentialEquationAFM::CleanupMemory(void)
 		sEval4_2.clear();
 	}
 
-	if (evalMethod != EVAL_RKDP54) {
+	if (evalMethod != EVAL_RKDP54 &&
+		evalMethod != EVAL_RKF56) {
 
 		sEval5.clear();
 		sEval5_2.clear();
+	}
+
+	if (evalMethod != EVAL_RKF56) {
+
+		sEval6.clear();
+		sEval6_2.clear();
 	}
 
 	//For thermal vecs only clear if not used for current set ODE

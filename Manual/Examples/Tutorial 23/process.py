@@ -4,13 +4,12 @@ This script is part of Boris Computational Spintronics v3.0
 @author: Serban Lepadatu, 2020
 """
 
-from NetSocks import NSClient
+from NetSocks import NSClient, customize_plots
 import matplotlib.pyplot as plt
 import numpy as np
 
 #setup communication with server
-ns = NSClient()
-ns.configure(True)
+ns = NSClient(); ns.configure(True); customize_plots()
 
 ########################################
 
@@ -67,6 +66,7 @@ skypath_theta = [np.radians(theta) for theta in data[1]]
 plt.polar(skypath_theta, skypath_r, '.', label = output_file, zorder = 0)
 
 plt.legend()
+plt.savefig('skyrmion.png')
 plt.show()
 
 

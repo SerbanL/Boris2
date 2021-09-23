@@ -47,8 +47,8 @@ __device__ VType cuVEC_VC<VType>::curl_neu(int idx) const
 			}
 			else {
 
-				curl.y -= 0.5 * (cuVEC<VType>::quantity[idx + 1].z - cuVEC<VType>::quantity[idx].z) / cuVEC<VType>::h.x;
-				curl.z += 0.5 * (cuVEC<VType>::quantity[idx + 1].y - cuVEC<VType>::quantity[idx].y) / cuVEC<VType>::h.x;
+				curl.y -= (cuVEC<VType>::quantity[idx + 1].z - cuVEC<VType>::quantity[idx].z) / (2 * cuVEC<VType>::h.x);
+				curl.z += (cuVEC<VType>::quantity[idx + 1].y - cuVEC<VType>::quantity[idx].y) / (2 * cuVEC<VType>::h.x);
 			}
 		}
 
@@ -62,8 +62,8 @@ __device__ VType cuVEC_VC<VType>::curl_neu(int idx) const
 			}
 			else {
 
-				curl.y -= 0.5 * (cuVEC<VType>::quantity[idx].z - cuVEC<VType>::quantity[idx - 1].z) / cuVEC<VType>::h.x;
-				curl.z += 0.5 * (cuVEC<VType>::quantity[idx].y - cuVEC<VType>::quantity[idx - 1].y) / cuVEC<VType>::h.x;
+				curl.y -= (cuVEC<VType>::quantity[idx].z - cuVEC<VType>::quantity[idx - 1].z) / (2 * cuVEC<VType>::h.x);
+				curl.z += (cuVEC<VType>::quantity[idx].y - cuVEC<VType>::quantity[idx - 1].y) / (2 * cuVEC<VType>::h.x);
 			}
 		}
 	}
@@ -101,8 +101,8 @@ __device__ VType cuVEC_VC<VType>::curl_neu(int idx) const
 			}
 			else {
 
-				curl.x += 0.5 * (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x].z - cuVEC<VType>::quantity[idx].z) / cuVEC<VType>::h.y;
-				curl.z -= 0.5 * (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x].x - cuVEC<VType>::quantity[idx].x) / cuVEC<VType>::h.y;
+				curl.x += (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x].z - cuVEC<VType>::quantity[idx].z) / (2 * cuVEC<VType>::h.y);
+				curl.z -= (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x].x - cuVEC<VType>::quantity[idx].x) / (2 * cuVEC<VType>::h.y);
 			}
 		}
 
@@ -116,8 +116,8 @@ __device__ VType cuVEC_VC<VType>::curl_neu(int idx) const
 			}
 			else {
 
-				curl.x += 0.5 * (cuVEC<VType>::quantity[idx].z - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x].z) / cuVEC<VType>::h.y;
-				curl.z -= 0.5 * (cuVEC<VType>::quantity[idx].x - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x].x) / cuVEC<VType>::h.y;
+				curl.x += (cuVEC<VType>::quantity[idx].z - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x].z) / (2 * cuVEC<VType>::h.y);
+				curl.z -= (cuVEC<VType>::quantity[idx].x - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x].x) / (2 * cuVEC<VType>::h.y);
 			}
 		}
 	}
@@ -155,8 +155,8 @@ __device__ VType cuVEC_VC<VType>::curl_neu(int idx) const
 			}
 			else {
 
-				curl.x -= 0.5 * (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x*cuVEC<VType>::n.y].y - cuVEC<VType>::quantity[idx].y) / cuVEC<VType>::h.z;
-				curl.y += 0.5 * (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x*cuVEC<VType>::n.y].x - cuVEC<VType>::quantity[idx].x) / cuVEC<VType>::h.z;
+				curl.x -= (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x*cuVEC<VType>::n.y].y - cuVEC<VType>::quantity[idx].y) / (2 * cuVEC<VType>::h.z);
+				curl.y += (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x*cuVEC<VType>::n.y].x - cuVEC<VType>::quantity[idx].x) / (2 * cuVEC<VType>::h.z);
 			}
 		}
 
@@ -170,8 +170,8 @@ __device__ VType cuVEC_VC<VType>::curl_neu(int idx) const
 			}
 			else {
 
-				curl.x -= 0.5 * (cuVEC<VType>::quantity[idx].y - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x*cuVEC<VType>::n.y].y) / cuVEC<VType>::h.z;
-				curl.y += 0.5 * (cuVEC<VType>::quantity[idx].x - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x*cuVEC<VType>::n.y].x) / cuVEC<VType>::h.z;
+				curl.x -= (cuVEC<VType>::quantity[idx].y - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x*cuVEC<VType>::n.y].y) / (2 * cuVEC<VType>::h.z);
+				curl.y += (cuVEC<VType>::quantity[idx].x - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x*cuVEC<VType>::n.y].x) / (2 * cuVEC<VType>::h.z);
 			}
 		}
 	}
@@ -227,8 +227,8 @@ __device__ VType cuVEC_VC<VType>::curl_nneu(int idx, const Class_BDiff& bdiff_cl
 			}
 			else {
 
-				curl.y -= 0.5 * ((cuVEC<VType>::quantity[idx + 1].z - cuVEC<VType>::quantity[idx].z) / cuVEC<VType>::h.x + bdiff_val.x.z);
-				curl.z += 0.5 * ((cuVEC<VType>::quantity[idx + 1].y - cuVEC<VType>::quantity[idx].y) / cuVEC<VType>::h.x + bdiff_val.x.y);
+				curl.y -= ((cuVEC<VType>::quantity[idx + 1].z - cuVEC<VType>::quantity[idx].z) / cuVEC<VType>::h.x + bdiff_val.x.z) / 2;
+				curl.z += ((cuVEC<VType>::quantity[idx + 1].y - cuVEC<VType>::quantity[idx].y) / cuVEC<VType>::h.x + bdiff_val.x.y) / 2;
 			}
 		}
 
@@ -242,8 +242,8 @@ __device__ VType cuVEC_VC<VType>::curl_nneu(int idx, const Class_BDiff& bdiff_cl
 			}
 			else {
 
-				curl.y -= 0.5 * ((cuVEC<VType>::quantity[idx].z - cuVEC<VType>::quantity[idx - 1].z) / cuVEC<VType>::h.x + bdiff_val.x.z);
-				curl.z += 0.5 * ((cuVEC<VType>::quantity[idx].y - cuVEC<VType>::quantity[idx - 1].y) / cuVEC<VType>::h.x + bdiff_val.x.y);
+				curl.y -= ((cuVEC<VType>::quantity[idx].z - cuVEC<VType>::quantity[idx - 1].z) / cuVEC<VType>::h.x + bdiff_val.x.z) / 2;
+				curl.z += ((cuVEC<VType>::quantity[idx].y - cuVEC<VType>::quantity[idx - 1].y) / cuVEC<VType>::h.x + bdiff_val.x.y) / 2;
 			}
 		}
 	}
@@ -283,8 +283,8 @@ __device__ VType cuVEC_VC<VType>::curl_nneu(int idx, const Class_BDiff& bdiff_cl
 			}
 			else {
 
-				curl.x += 0.5 * ((cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x].z - cuVEC<VType>::quantity[idx].z) / cuVEC<VType>::h.y + bdiff_val.y.z);
-				curl.z -= 0.5 * ((cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x].x - cuVEC<VType>::quantity[idx].x) / cuVEC<VType>::h.y + bdiff_val.y.x);
+				curl.x += ((cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x].z - cuVEC<VType>::quantity[idx].z) / cuVEC<VType>::h.y + bdiff_val.y.z) / 2;
+				curl.z -= ((cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x].x - cuVEC<VType>::quantity[idx].x) / cuVEC<VType>::h.y + bdiff_val.y.x) / 2;
 			}
 		}
 
@@ -298,8 +298,8 @@ __device__ VType cuVEC_VC<VType>::curl_nneu(int idx, const Class_BDiff& bdiff_cl
 			}
 			else {
 
-				curl.x += 0.5 * ((cuVEC<VType>::quantity[idx].z - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x].z) / cuVEC<VType>::h.y + bdiff_val.y.z);
-				curl.z -= 0.5 * ((cuVEC<VType>::quantity[idx].x - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x].x) / cuVEC<VType>::h.y + bdiff_val.y.x);
+				curl.x += ((cuVEC<VType>::quantity[idx].z - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x].z) / cuVEC<VType>::h.y + bdiff_val.y.z) / 2;
+				curl.z -= ((cuVEC<VType>::quantity[idx].x - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x].x) / cuVEC<VType>::h.y + bdiff_val.y.x) / 2;
 			}
 		}
 	}
@@ -339,8 +339,8 @@ __device__ VType cuVEC_VC<VType>::curl_nneu(int idx, const Class_BDiff& bdiff_cl
 			}
 			else {
 
-				curl.x -= 0.5 * ((cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x*cuVEC<VType>::n.y].y - cuVEC<VType>::quantity[idx].y) / cuVEC<VType>::h.z + bdiff_val.z.y);
-				curl.y += 0.5 * ((cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x*cuVEC<VType>::n.y].x - cuVEC<VType>::quantity[idx].x) / cuVEC<VType>::h.z + bdiff_val.z.x);
+				curl.x -= ((cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x*cuVEC<VType>::n.y].y - cuVEC<VType>::quantity[idx].y) / cuVEC<VType>::h.z + bdiff_val.z.y) / 2;
+				curl.y += ((cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x*cuVEC<VType>::n.y].x - cuVEC<VType>::quantity[idx].x) / cuVEC<VType>::h.z + bdiff_val.z.x) / 2;
 			}
 		}
 		else {
@@ -353,8 +353,8 @@ __device__ VType cuVEC_VC<VType>::curl_nneu(int idx, const Class_BDiff& bdiff_cl
 			}
 			else {
 
-				curl.x -= 0.5 * ((cuVEC<VType>::quantity[idx].y - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x*cuVEC<VType>::n.y].y) / cuVEC<VType>::h.z + bdiff_val.z.y);
-				curl.y += 0.5 * ((cuVEC<VType>::quantity[idx].x - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x*cuVEC<VType>::n.y].x) / cuVEC<VType>::h.z + bdiff_val.z.x);
+				curl.x -= ((cuVEC<VType>::quantity[idx].y - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x*cuVEC<VType>::n.y].y) / cuVEC<VType>::h.z + bdiff_val.z.y) / 2;
+				curl.y += ((cuVEC<VType>::quantity[idx].x - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x*cuVEC<VType>::n.y].x) / cuVEC<VType>::h.z + bdiff_val.z.x) / 2;
 			}
 		}
 	}
@@ -403,8 +403,8 @@ __device__ VType cuVEC_VC<VType>::curl_nneu(int idx, const cuVAL3<VType>& bdiff)
 			}
 			else {
 
-				curl.y -= 0.5 * ((cuVEC<VType>::quantity[idx + 1].z - cuVEC<VType>::quantity[idx].z) / cuVEC<VType>::h.x + bdiff.x.z);
-				curl.z += 0.5 * ((cuVEC<VType>::quantity[idx + 1].y - cuVEC<VType>::quantity[idx].y) / cuVEC<VType>::h.x + bdiff.x.y);
+				curl.y -= ((cuVEC<VType>::quantity[idx + 1].z - cuVEC<VType>::quantity[idx].z) / cuVEC<VType>::h.x + bdiff.x.z) / 2;
+				curl.z += ((cuVEC<VType>::quantity[idx + 1].y - cuVEC<VType>::quantity[idx].y) / cuVEC<VType>::h.x + bdiff.x.y) / 2;
 			}
 		}
 
@@ -418,8 +418,8 @@ __device__ VType cuVEC_VC<VType>::curl_nneu(int idx, const cuVAL3<VType>& bdiff)
 			}
 			else {
 
-				curl.y -= 0.5 * ((cuVEC<VType>::quantity[idx].z - cuVEC<VType>::quantity[idx - 1].z) / cuVEC<VType>::h.x + bdiff.x.z);
-				curl.z += 0.5 * ((cuVEC<VType>::quantity[idx].y - cuVEC<VType>::quantity[idx - 1].y) / cuVEC<VType>::h.x + bdiff.x.y);
+				curl.y -= ((cuVEC<VType>::quantity[idx].z - cuVEC<VType>::quantity[idx - 1].z) / cuVEC<VType>::h.x + bdiff.x.z) / 2;
+				curl.z += ((cuVEC<VType>::quantity[idx].y - cuVEC<VType>::quantity[idx - 1].y) / cuVEC<VType>::h.x + bdiff.x.y) / 2;
 			}
 		}
 	}
@@ -457,8 +457,8 @@ __device__ VType cuVEC_VC<VType>::curl_nneu(int idx, const cuVAL3<VType>& bdiff)
 			}
 			else {
 
-				curl.x += 0.5 * ((cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x].z - cuVEC<VType>::quantity[idx].z) / cuVEC<VType>::h.y + bdiff.y.z);
-				curl.z -= 0.5 * ((cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x].x - cuVEC<VType>::quantity[idx].x) / cuVEC<VType>::h.y + bdiff.y.x);
+				curl.x += ((cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x].z - cuVEC<VType>::quantity[idx].z) / cuVEC<VType>::h.y + bdiff.y.z) / 2;
+				curl.z -= ((cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x].x - cuVEC<VType>::quantity[idx].x) / cuVEC<VType>::h.y + bdiff.y.x) / 2;
 			}
 		}
 
@@ -472,8 +472,8 @@ __device__ VType cuVEC_VC<VType>::curl_nneu(int idx, const cuVAL3<VType>& bdiff)
 			}
 			else {
 
-				curl.x += 0.5 * ((cuVEC<VType>::quantity[idx].z - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x].z) / cuVEC<VType>::h.y + bdiff.y.z);
-				curl.z -= 0.5 * ((cuVEC<VType>::quantity[idx].x - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x].x) / cuVEC<VType>::h.y + bdiff.y.x);
+				curl.x += ((cuVEC<VType>::quantity[idx].z - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x].z) / cuVEC<VType>::h.y + bdiff.y.z) / 2;
+				curl.z -= ((cuVEC<VType>::quantity[idx].x - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x].x) / cuVEC<VType>::h.y + bdiff.y.x) / 2;
 			}
 		}
 	}
@@ -511,8 +511,8 @@ __device__ VType cuVEC_VC<VType>::curl_nneu(int idx, const cuVAL3<VType>& bdiff)
 			}
 			else {
 
-				curl.x -= 0.5 * ((cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x*cuVEC<VType>::n.y].y - cuVEC<VType>::quantity[idx].y) / cuVEC<VType>::h.z + bdiff.z.y);
-				curl.y += 0.5 * ((cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x*cuVEC<VType>::n.y].x - cuVEC<VType>::quantity[idx].x) / cuVEC<VType>::h.z + bdiff.z.x);
+				curl.x -= ((cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x*cuVEC<VType>::n.y].y - cuVEC<VType>::quantity[idx].y) / cuVEC<VType>::h.z + bdiff.z.y) / 2;
+				curl.y += ((cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x*cuVEC<VType>::n.y].x - cuVEC<VType>::quantity[idx].x) / cuVEC<VType>::h.z + bdiff.z.x) / 2;
 			}
 		}
 		else {
@@ -525,8 +525,8 @@ __device__ VType cuVEC_VC<VType>::curl_nneu(int idx, const cuVAL3<VType>& bdiff)
 			}
 			else {
 
-				curl.x -= 0.5 * ((cuVEC<VType>::quantity[idx].y - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x*cuVEC<VType>::n.y].y) / cuVEC<VType>::h.z + bdiff.z.y);
-				curl.y += 0.5 * ((cuVEC<VType>::quantity[idx].x - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x*cuVEC<VType>::n.y].x) / cuVEC<VType>::h.z + bdiff.z.x);
+				curl.x -= ((cuVEC<VType>::quantity[idx].y - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x*cuVEC<VType>::n.y].y) / cuVEC<VType>::h.z + bdiff.z.y) / 2;
+				curl.y += ((cuVEC<VType>::quantity[idx].x - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x*cuVEC<VType>::n.y].x) / cuVEC<VType>::h.z + bdiff.z.x) / 2;
 			}
 		}
 	}
@@ -555,13 +555,13 @@ __device__ VType cuVEC_VC<VType>::curl_diri(int idx) const
 
 		if (ngbrFlags2[idx] & NF2_DIRICHLETPX) {
 
-			curl.y -= 0.5 * (cuVEC<VType>::quantity[idx + 1].z + cuVEC<VType>::quantity[idx].z - 2 * get_dirichlet_value(NF2_DIRICHLETPX, idx).z) / cuVEC<VType>::h.x;
-			curl.z += 0.5 * (cuVEC<VType>::quantity[idx + 1].y + cuVEC<VType>::quantity[idx].y - 2 * get_dirichlet_value(NF2_DIRICHLETPX, idx).y) / cuVEC<VType>::h.x;
+			curl.y -= (cuVEC<VType>::quantity[idx + 1].z + cuVEC<VType>::quantity[idx].z - 2 * get_dirichlet_value(NF2_DIRICHLETPX, idx).z) / (2 * cuVEC<VType>::h.x);
+			curl.z += (cuVEC<VType>::quantity[idx + 1].y + cuVEC<VType>::quantity[idx].y - 2 * get_dirichlet_value(NF2_DIRICHLETPX, idx).y) / (2 * cuVEC<VType>::h.x);
 		}
 		else {
 
-			curl.y -= 0.5 * (2 * get_dirichlet_value(NF2_DIRICHLETNX, idx).z - cuVEC<VType>::quantity[idx].z - cuVEC<VType>::quantity[idx - 1].z) / cuVEC<VType>::h.x;
-			curl.z += 0.5 * (2 * get_dirichlet_value(NF2_DIRICHLETNX, idx).y - cuVEC<VType>::quantity[idx].y - cuVEC<VType>::quantity[idx - 1].y) / cuVEC<VType>::h.x;
+			curl.y -= (2 * get_dirichlet_value(NF2_DIRICHLETNX, idx).z - cuVEC<VType>::quantity[idx].z - cuVEC<VType>::quantity[idx - 1].z) / (2 * cuVEC<VType>::h.x);
+			curl.z += (2 * get_dirichlet_value(NF2_DIRICHLETNX, idx).y - cuVEC<VType>::quantity[idx].y - cuVEC<VType>::quantity[idx - 1].y) / (2 * cuVEC<VType>::h.x);
 		}
 	}
 	//Is it a CMBND boundary? - if not then use homogeneous Neumann condition (differential zero at the boundary)
@@ -591,8 +591,8 @@ __device__ VType cuVEC_VC<VType>::curl_diri(int idx) const
 			}
 			else {
 
-				curl.y -= 0.5 * (cuVEC<VType>::quantity[idx + 1].z - cuVEC<VType>::quantity[idx].z) / cuVEC<VType>::h.x;
-				curl.z += 0.5 * (cuVEC<VType>::quantity[idx + 1].y - cuVEC<VType>::quantity[idx].y) / cuVEC<VType>::h.x;
+				curl.y -= (cuVEC<VType>::quantity[idx + 1].z - cuVEC<VType>::quantity[idx].z) / (2 * cuVEC<VType>::h.x);
+				curl.z += (cuVEC<VType>::quantity[idx + 1].y - cuVEC<VType>::quantity[idx].y) / (2 * cuVEC<VType>::h.x);
 			}
 		}
 
@@ -606,8 +606,8 @@ __device__ VType cuVEC_VC<VType>::curl_diri(int idx) const
 			}
 			else {
 
-				curl.y -= 0.5 * (cuVEC<VType>::quantity[idx].z - cuVEC<VType>::quantity[idx - 1].z) / cuVEC<VType>::h.x;
-				curl.z += 0.5 * (cuVEC<VType>::quantity[idx].y - cuVEC<VType>::quantity[idx - 1].y) / cuVEC<VType>::h.x;
+				curl.y -= (cuVEC<VType>::quantity[idx].z - cuVEC<VType>::quantity[idx - 1].z) / (2 * cuVEC<VType>::h.x);
+				curl.z += (cuVEC<VType>::quantity[idx].y - cuVEC<VType>::quantity[idx - 1].y) / (2 * cuVEC<VType>::h.x);
 			}
 		}
 	}
@@ -622,13 +622,13 @@ __device__ VType cuVEC_VC<VType>::curl_diri(int idx) const
 
 		if (ngbrFlags2[idx] & NF2_DIRICHLETPY) {
 
-			curl.x += 0.5 * (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x].z + cuVEC<VType>::quantity[idx].z - 2 * get_dirichlet_value(NF2_DIRICHLETPY, idx).z) / cuVEC<VType>::h.y;
-			curl.z -= 0.5 * (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x].x + cuVEC<VType>::quantity[idx].x - 2 * get_dirichlet_value(NF2_DIRICHLETPY, idx).x) / cuVEC<VType>::h.y;
+			curl.x += (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x].z + cuVEC<VType>::quantity[idx].z - 2 * get_dirichlet_value(NF2_DIRICHLETPY, idx).z) / (2 * cuVEC<VType>::h.y);
+			curl.z -= (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x].x + cuVEC<VType>::quantity[idx].x - 2 * get_dirichlet_value(NF2_DIRICHLETPY, idx).x) / (2 * cuVEC<VType>::h.y);
 		}
 		else {
 
-			curl.x += 0.5 * (2 * get_dirichlet_value(NF2_DIRICHLETNY, idx).z - cuVEC<VType>::quantity[idx].z - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x].z) / cuVEC<VType>::h.y;
-			curl.z -= 0.5 * (2 * get_dirichlet_value(NF2_DIRICHLETNY, idx).x - cuVEC<VType>::quantity[idx].x - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x].x) / cuVEC<VType>::h.y;
+			curl.x += (2 * get_dirichlet_value(NF2_DIRICHLETNY, idx).z - cuVEC<VType>::quantity[idx].z - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x].z) / (2 * cuVEC<VType>::h.y);
+			curl.z -= (2 * get_dirichlet_value(NF2_DIRICHLETNY, idx).x - cuVEC<VType>::quantity[idx].x - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x].x) / (2 * cuVEC<VType>::h.y);
 		}
 	}
 	//Is it a CMBND boundary? - if not then use homogeneous Neumann condition (differential zero at the boundary)
@@ -658,8 +658,8 @@ __device__ VType cuVEC_VC<VType>::curl_diri(int idx) const
 			}
 			else {
 
-				curl.x += 0.5 * (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x].z - cuVEC<VType>::quantity[idx].z) / cuVEC<VType>::h.y;
-				curl.z -= 0.5 * (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x].x - cuVEC<VType>::quantity[idx].x) / cuVEC<VType>::h.y;
+				curl.x += (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x].z - cuVEC<VType>::quantity[idx].z) / (2 * cuVEC<VType>::h.y);
+				curl.z -= (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x].x - cuVEC<VType>::quantity[idx].x) / (2 * cuVEC<VType>::h.y);
 			}
 		}
 
@@ -673,8 +673,8 @@ __device__ VType cuVEC_VC<VType>::curl_diri(int idx) const
 			}
 			else {
 
-				curl.x += 0.5 * (cuVEC<VType>::quantity[idx].z - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x].z) / cuVEC<VType>::h.y;
-				curl.z -= 0.5 * (cuVEC<VType>::quantity[idx].x - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x].x) / cuVEC<VType>::h.y;
+				curl.x += (cuVEC<VType>::quantity[idx].z - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x].z) / (2 * cuVEC<VType>::h.y);
+				curl.z -= (cuVEC<VType>::quantity[idx].x - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x].x) / (2 * cuVEC<VType>::h.y);
 			}
 		}
 	}
@@ -689,13 +689,13 @@ __device__ VType cuVEC_VC<VType>::curl_diri(int idx) const
 
 		if (ngbrFlags2[idx] & NF2_DIRICHLETPZ) {
 
-			curl.x -= 0.5 * (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x*cuVEC<VType>::n.y].y + cuVEC<VType>::quantity[idx].y - 2 * get_dirichlet_value(NF2_DIRICHLETPZ, idx).y) / cuVEC<VType>::h.z;
-			curl.y += 0.5 * (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x*cuVEC<VType>::n.y].x + cuVEC<VType>::quantity[idx].x - 2 * get_dirichlet_value(NF2_DIRICHLETPZ, idx).x) / cuVEC<VType>::h.z;
+			curl.x -= (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x*cuVEC<VType>::n.y].y + cuVEC<VType>::quantity[idx].y - 2 * get_dirichlet_value(NF2_DIRICHLETPZ, idx).y) / (2 * cuVEC<VType>::h.z);
+			curl.y += (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x*cuVEC<VType>::n.y].x + cuVEC<VType>::quantity[idx].x - 2 * get_dirichlet_value(NF2_DIRICHLETPZ, idx).x) / (2 * cuVEC<VType>::h.z);
 		}
 		else {
 
-			curl.x -= 0.5 * (2 * get_dirichlet_value(NF2_DIRICHLETNZ, idx).y - cuVEC<VType>::quantity[idx].y - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x*cuVEC<VType>::n.y].y) / cuVEC<VType>::h.z;
-			curl.y += 0.5 * (2 * get_dirichlet_value(NF2_DIRICHLETNZ, idx).x - cuVEC<VType>::quantity[idx].x - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x*cuVEC<VType>::n.y].x) / cuVEC<VType>::h.z;
+			curl.x -= (2 * get_dirichlet_value(NF2_DIRICHLETNZ, idx).y - cuVEC<VType>::quantity[idx].y - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x*cuVEC<VType>::n.y].y) / (2 * cuVEC<VType>::h.z);
+			curl.y += (2 * get_dirichlet_value(NF2_DIRICHLETNZ, idx).x - cuVEC<VType>::quantity[idx].x - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x*cuVEC<VType>::n.y].x) / (2 * cuVEC<VType>::h.z);
 		}
 	}
 	//Is it a CMBND boundary? - if not then use homogeneous Neumann condition (differential zero at the boundary)
@@ -725,8 +725,8 @@ __device__ VType cuVEC_VC<VType>::curl_diri(int idx) const
 			}
 			else {
 
-				curl.x -= 0.5 * (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x*cuVEC<VType>::n.y].y - cuVEC<VType>::quantity[idx].y) / cuVEC<VType>::h.z;
-				curl.y += 0.5 * (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x*cuVEC<VType>::n.y].x - cuVEC<VType>::quantity[idx].x) / cuVEC<VType>::h.z;
+				curl.x -= (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x*cuVEC<VType>::n.y].y - cuVEC<VType>::quantity[idx].y) / (2 * cuVEC<VType>::h.z);
+				curl.y += (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x*cuVEC<VType>::n.y].x - cuVEC<VType>::quantity[idx].x) / (2 * cuVEC<VType>::h.z);
 			}
 		}
 		else {
@@ -739,8 +739,8 @@ __device__ VType cuVEC_VC<VType>::curl_diri(int idx) const
 			}
 			else {
 
-				curl.x -= 0.5 * (cuVEC<VType>::quantity[idx].y - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x*cuVEC<VType>::n.y].y) / cuVEC<VType>::h.z;
-				curl.y += 0.5 * (cuVEC<VType>::quantity[idx].x - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x*cuVEC<VType>::n.y].x) / cuVEC<VType>::h.z;
+				curl.x -= (cuVEC<VType>::quantity[idx].y - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x*cuVEC<VType>::n.y].y) / (2 * cuVEC<VType>::h.z);
+				curl.y += (cuVEC<VType>::quantity[idx].x - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x*cuVEC<VType>::n.y].x) / (2 * cuVEC<VType>::h.z);
 			}
 		}
 	}
@@ -771,13 +771,13 @@ __device__ VType cuVEC_VC<VType>::curl_diri_nneu(int idx, const Class_BDiff& bdi
 
 		if (ngbrFlags2[idx] & NF2_DIRICHLETPX) {
 
-			curl.y -= 0.5 * (cuVEC<VType>::quantity[idx + 1].z + cuVEC<VType>::quantity[idx].z - 2 * get_dirichlet_value(NF2_DIRICHLETPX, idx).z) / cuVEC<VType>::h.x;
-			curl.z += 0.5 * (cuVEC<VType>::quantity[idx + 1].y + cuVEC<VType>::quantity[idx].y - 2 * get_dirichlet_value(NF2_DIRICHLETPX, idx).y) / cuVEC<VType>::h.x;
+			curl.y -= (cuVEC<VType>::quantity[idx + 1].z + cuVEC<VType>::quantity[idx].z - 2 * get_dirichlet_value(NF2_DIRICHLETPX, idx).z) / (2 * cuVEC<VType>::h.x);
+			curl.z += (cuVEC<VType>::quantity[idx + 1].y + cuVEC<VType>::quantity[idx].y - 2 * get_dirichlet_value(NF2_DIRICHLETPX, idx).y) / (2 * cuVEC<VType>::h.x);
 		}
 		else {
 
-			curl.y -= 0.5 * (2 * get_dirichlet_value(NF2_DIRICHLETNX, idx).z - cuVEC<VType>::quantity[idx].z - cuVEC<VType>::quantity[idx - 1].z) / cuVEC<VType>::h.x;
-			curl.z += 0.5 * (2 * get_dirichlet_value(NF2_DIRICHLETNX, idx).y - cuVEC<VType>::quantity[idx].y - cuVEC<VType>::quantity[idx - 1].y) / cuVEC<VType>::h.x;
+			curl.y -= (2 * get_dirichlet_value(NF2_DIRICHLETNX, idx).z - cuVEC<VType>::quantity[idx].z - cuVEC<VType>::quantity[idx - 1].z) / (2 * cuVEC<VType>::h.x);
+			curl.z += (2 * get_dirichlet_value(NF2_DIRICHLETNX, idx).y - cuVEC<VType>::quantity[idx].y - cuVEC<VType>::quantity[idx - 1].y) / (2 * cuVEC<VType>::h.x);
 		}
 	}
 	//Is it a CMBND boundary? - if not then use homogeneous Neumann condition (differential zero at the boundary)
@@ -809,8 +809,8 @@ __device__ VType cuVEC_VC<VType>::curl_diri_nneu(int idx, const Class_BDiff& bdi
 			}
 			else {
 
-				curl.y -= 0.5 * ((cuVEC<VType>::quantity[idx + 1].z - cuVEC<VType>::quantity[idx].z) / cuVEC<VType>::h.x + bdiff_val.x.z);
-				curl.z += 0.5 * ((cuVEC<VType>::quantity[idx + 1].y - cuVEC<VType>::quantity[idx].y) / cuVEC<VType>::h.x + bdiff_val.x.y);
+				curl.y -= ((cuVEC<VType>::quantity[idx + 1].z - cuVEC<VType>::quantity[idx].z) / cuVEC<VType>::h.x + bdiff_val.x.z) / 2;
+				curl.z += ((cuVEC<VType>::quantity[idx + 1].y - cuVEC<VType>::quantity[idx].y) / cuVEC<VType>::h.x + bdiff_val.x.y) / 2;
 			}
 		}
 
@@ -824,8 +824,8 @@ __device__ VType cuVEC_VC<VType>::curl_diri_nneu(int idx, const Class_BDiff& bdi
 			}
 			else {
 
-				curl.y -= 0.5 * ((cuVEC<VType>::quantity[idx].z - cuVEC<VType>::quantity[idx - 1].z) / cuVEC<VType>::h.x + bdiff_val.x.z);
-				curl.z += 0.5 * ((cuVEC<VType>::quantity[idx].y - cuVEC<VType>::quantity[idx - 1].y) / cuVEC<VType>::h.x + bdiff_val.x.y);
+				curl.y -= ((cuVEC<VType>::quantity[idx].z - cuVEC<VType>::quantity[idx - 1].z) / cuVEC<VType>::h.x + bdiff_val.x.z) / 2;
+				curl.z += ((cuVEC<VType>::quantity[idx].y - cuVEC<VType>::quantity[idx - 1].y) / cuVEC<VType>::h.x + bdiff_val.x.y) / 2;
 			}
 		}
 	}
@@ -840,13 +840,13 @@ __device__ VType cuVEC_VC<VType>::curl_diri_nneu(int idx, const Class_BDiff& bdi
 
 		if (ngbrFlags2[idx] & NF2_DIRICHLETPY) {
 
-			curl.x += 0.5 * (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x].z + cuVEC<VType>::quantity[idx].z - 2 * get_dirichlet_value(NF2_DIRICHLETPY, idx).z) / cuVEC<VType>::h.y;
-			curl.z -= 0.5 * (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x].x + cuVEC<VType>::quantity[idx].x - 2 * get_dirichlet_value(NF2_DIRICHLETPY, idx).x) / cuVEC<VType>::h.y;
+			curl.x += (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x].z + cuVEC<VType>::quantity[idx].z - 2 * get_dirichlet_value(NF2_DIRICHLETPY, idx).z) / (2 * cuVEC<VType>::h.y);
+			curl.z -= (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x].x + cuVEC<VType>::quantity[idx].x - 2 * get_dirichlet_value(NF2_DIRICHLETPY, idx).x) / (2 * cuVEC<VType>::h.y);
 		}
 		else {
 
-			curl.x += 0.5 * (2 * get_dirichlet_value(NF2_DIRICHLETNY, idx).z - cuVEC<VType>::quantity[idx].z - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x].z) / cuVEC<VType>::h.y;
-			curl.z -= 0.5 * (2 * get_dirichlet_value(NF2_DIRICHLETNY, idx).x - cuVEC<VType>::quantity[idx].x - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x].x) / cuVEC<VType>::h.y;
+			curl.x += (2 * get_dirichlet_value(NF2_DIRICHLETNY, idx).z - cuVEC<VType>::quantity[idx].z - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x].z) / (2 * cuVEC<VType>::h.y);
+			curl.z -= (2 * get_dirichlet_value(NF2_DIRICHLETNY, idx).x - cuVEC<VType>::quantity[idx].x - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x].x) / (2 * cuVEC<VType>::h.y);
 		}
 	}
 	//Is it a CMBND boundary? - if not then use homogeneous Neumann condition (differential zero at the boundary)
@@ -878,8 +878,8 @@ __device__ VType cuVEC_VC<VType>::curl_diri_nneu(int idx, const Class_BDiff& bdi
 			}
 			else {
 
-				curl.x += 0.5 * ((cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x].z - cuVEC<VType>::quantity[idx].z) / cuVEC<VType>::h.y + bdiff_val.y.z);
-				curl.z -= 0.5 * ((cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x].x - cuVEC<VType>::quantity[idx].x) / cuVEC<VType>::h.y + bdiff_val.y.x);
+				curl.x += ((cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x].z - cuVEC<VType>::quantity[idx].z) / cuVEC<VType>::h.y + bdiff_val.y.z) / 2;
+				curl.z -= ((cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x].x - cuVEC<VType>::quantity[idx].x) / cuVEC<VType>::h.y + bdiff_val.y.x) / 2;
 			}
 		}
 
@@ -893,8 +893,8 @@ __device__ VType cuVEC_VC<VType>::curl_diri_nneu(int idx, const Class_BDiff& bdi
 			}
 			else {
 
-				curl.x += 0.5 * ((cuVEC<VType>::quantity[idx].z - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x].z) / cuVEC<VType>::h.y + bdiff_val.y.z);
-				curl.z -= 0.5 * ((cuVEC<VType>::quantity[idx].x - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x].x) / cuVEC<VType>::h.y + bdiff_val.y.x);
+				curl.x += ((cuVEC<VType>::quantity[idx].z - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x].z) / cuVEC<VType>::h.y + bdiff_val.y.z) / 2;
+				curl.z -= ((cuVEC<VType>::quantity[idx].x - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x].x) / cuVEC<VType>::h.y + bdiff_val.y.x) / 2;
 			}
 		}
 	}
@@ -909,13 +909,13 @@ __device__ VType cuVEC_VC<VType>::curl_diri_nneu(int idx, const Class_BDiff& bdi
 
 		if (ngbrFlags2[idx] & NF2_DIRICHLETPZ) {
 
-			curl.x -= 0.5 * (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x*cuVEC<VType>::n.y].y + cuVEC<VType>::quantity[idx].y - 2 * get_dirichlet_value(NF2_DIRICHLETPZ, idx).y) / cuVEC<VType>::h.z;
-			curl.y += 0.5 * (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x*cuVEC<VType>::n.y].x + cuVEC<VType>::quantity[idx].x - 2 * get_dirichlet_value(NF2_DIRICHLETPZ, idx).x) / cuVEC<VType>::h.z;
+			curl.x -= (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x*cuVEC<VType>::n.y].y + cuVEC<VType>::quantity[idx].y - 2 * get_dirichlet_value(NF2_DIRICHLETPZ, idx).y) / (2 * cuVEC<VType>::h.z);
+			curl.y += (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x*cuVEC<VType>::n.y].x + cuVEC<VType>::quantity[idx].x - 2 * get_dirichlet_value(NF2_DIRICHLETPZ, idx).x) / (2 * cuVEC<VType>::h.z);
 		}
 		else {
 
-			curl.x -= 0.5 * (2 * get_dirichlet_value(NF2_DIRICHLETNZ, idx).y - cuVEC<VType>::quantity[idx].y - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x*cuVEC<VType>::n.y].y) / cuVEC<VType>::h.z;
-			curl.y += 0.5 * (2 * get_dirichlet_value(NF2_DIRICHLETNZ, idx).x - cuVEC<VType>::quantity[idx].x - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x*cuVEC<VType>::n.y].x) / cuVEC<VType>::h.z;
+			curl.x -= (2 * get_dirichlet_value(NF2_DIRICHLETNZ, idx).y - cuVEC<VType>::quantity[idx].y - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x*cuVEC<VType>::n.y].y) / (2 * cuVEC<VType>::h.z);
+			curl.y += (2 * get_dirichlet_value(NF2_DIRICHLETNZ, idx).x - cuVEC<VType>::quantity[idx].x - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x*cuVEC<VType>::n.y].x) / (2 * cuVEC<VType>::h.z);
 		}
 	}
 	//Is it a CMBND boundary? - if not then use homogeneous Neumann condition (differential zero at the boundary)
@@ -947,8 +947,8 @@ __device__ VType cuVEC_VC<VType>::curl_diri_nneu(int idx, const Class_BDiff& bdi
 			}
 			else {
 
-				curl.x -= 0.5 * ((cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x*cuVEC<VType>::n.y].y - cuVEC<VType>::quantity[idx].y) / cuVEC<VType>::h.z + bdiff_val.z.y);
-				curl.y += 0.5 * ((cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x*cuVEC<VType>::n.y].x - cuVEC<VType>::quantity[idx].x) / cuVEC<VType>::h.z + bdiff_val.z.x);
+				curl.x -= ((cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x*cuVEC<VType>::n.y].y - cuVEC<VType>::quantity[idx].y) / cuVEC<VType>::h.z + bdiff_val.z.y) / 2;
+				curl.y += ((cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x*cuVEC<VType>::n.y].x - cuVEC<VType>::quantity[idx].x) / cuVEC<VType>::h.z + bdiff_val.z.x) / 2;
 			}
 		}
 		else {
@@ -961,8 +961,8 @@ __device__ VType cuVEC_VC<VType>::curl_diri_nneu(int idx, const Class_BDiff& bdi
 			}
 			else {
 
-				curl.x -= 0.5 * ((cuVEC<VType>::quantity[idx].y - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x*cuVEC<VType>::n.y].y) / cuVEC<VType>::h.z + bdiff_val.z.y);
-				curl.y += 0.5 * ((cuVEC<VType>::quantity[idx].x - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x*cuVEC<VType>::n.y].x) / cuVEC<VType>::h.z + bdiff_val.z.x);
+				curl.x -= ((cuVEC<VType>::quantity[idx].y - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x*cuVEC<VType>::n.y].y) / cuVEC<VType>::h.z + bdiff_val.z.y) / 2;
+				curl.y += ((cuVEC<VType>::quantity[idx].x - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x*cuVEC<VType>::n.y].x) / cuVEC<VType>::h.z + bdiff_val.z.x) / 2;
 			}
 		}
 	}
@@ -989,13 +989,13 @@ __device__ VType cuVEC_VC<VType>::curl_diri_nneu(int idx, const cuVAL3<VType>& b
 
 		if (ngbrFlags2[idx] & NF2_DIRICHLETPX) {
 
-			curl.y -= 0.5 * (cuVEC<VType>::quantity[idx + 1].z + cuVEC<VType>::quantity[idx].z - 2 * get_dirichlet_value(NF2_DIRICHLETPX, idx).z) / cuVEC<VType>::h.x;
-			curl.z += 0.5 * (cuVEC<VType>::quantity[idx + 1].y + cuVEC<VType>::quantity[idx].y - 2 * get_dirichlet_value(NF2_DIRICHLETPX, idx).y) / cuVEC<VType>::h.x;
+			curl.y -= (cuVEC<VType>::quantity[idx + 1].z + cuVEC<VType>::quantity[idx].z - 2 * get_dirichlet_value(NF2_DIRICHLETPX, idx).z) / (2 * cuVEC<VType>::h.x);
+			curl.z += (cuVEC<VType>::quantity[idx + 1].y + cuVEC<VType>::quantity[idx].y - 2 * get_dirichlet_value(NF2_DIRICHLETPX, idx).y) / (2 * cuVEC<VType>::h.x);
 		}
 		else {
 
-			curl.y -= 0.5 * (2 * get_dirichlet_value(NF2_DIRICHLETNX, idx).z - cuVEC<VType>::quantity[idx].z - cuVEC<VType>::quantity[idx - 1].z) / cuVEC<VType>::h.x;
-			curl.z += 0.5 * (2 * get_dirichlet_value(NF2_DIRICHLETNX, idx).y - cuVEC<VType>::quantity[idx].y - cuVEC<VType>::quantity[idx - 1].y) / cuVEC<VType>::h.x;
+			curl.y -= (2 * get_dirichlet_value(NF2_DIRICHLETNX, idx).z - cuVEC<VType>::quantity[idx].z - cuVEC<VType>::quantity[idx - 1].z) / (2 * cuVEC<VType>::h.x);
+			curl.z += (2 * get_dirichlet_value(NF2_DIRICHLETNX, idx).y - cuVEC<VType>::quantity[idx].y - cuVEC<VType>::quantity[idx - 1].y) / (2 * cuVEC<VType>::h.x);
 		}
 	}
 	//Is it a CMBND boundary? - if not then use homogeneous Neumann condition (differential zero at the boundary)
@@ -1025,8 +1025,8 @@ __device__ VType cuVEC_VC<VType>::curl_diri_nneu(int idx, const cuVAL3<VType>& b
 			}
 			else {
 
-				curl.y -= 0.5 * ((cuVEC<VType>::quantity[idx + 1].z - cuVEC<VType>::quantity[idx].z) / cuVEC<VType>::h.x + bdiff.x.z);
-				curl.z += 0.5 * ((cuVEC<VType>::quantity[idx + 1].y - cuVEC<VType>::quantity[idx].y) / cuVEC<VType>::h.x + bdiff.x.y);
+				curl.y -= ((cuVEC<VType>::quantity[idx + 1].z - cuVEC<VType>::quantity[idx].z) / cuVEC<VType>::h.x + bdiff.x.z) / 2;
+				curl.z += ((cuVEC<VType>::quantity[idx + 1].y - cuVEC<VType>::quantity[idx].y) / cuVEC<VType>::h.x + bdiff.x.y) / 2;
 			}
 		}
 
@@ -1040,8 +1040,8 @@ __device__ VType cuVEC_VC<VType>::curl_diri_nneu(int idx, const cuVAL3<VType>& b
 			}
 			else {
 
-				curl.y -= 0.5 * ((cuVEC<VType>::quantity[idx].z - cuVEC<VType>::quantity[idx - 1].z) / cuVEC<VType>::h.x + bdiff.x.z);
-				curl.z += 0.5 * ((cuVEC<VType>::quantity[idx].y - cuVEC<VType>::quantity[idx - 1].y) / cuVEC<VType>::h.x + bdiff.x.y);
+				curl.y -= ((cuVEC<VType>::quantity[idx].z - cuVEC<VType>::quantity[idx - 1].z) / cuVEC<VType>::h.x + bdiff.x.z) / 2;
+				curl.z += ((cuVEC<VType>::quantity[idx].y - cuVEC<VType>::quantity[idx - 1].y) / cuVEC<VType>::h.x + bdiff.x.y) / 2;
 			}
 		}
 	}
@@ -1056,13 +1056,13 @@ __device__ VType cuVEC_VC<VType>::curl_diri_nneu(int idx, const cuVAL3<VType>& b
 
 		if (ngbrFlags2[idx] & NF2_DIRICHLETPY) {
 
-			curl.x += 0.5 * (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x].z + cuVEC<VType>::quantity[idx].z - 2 * get_dirichlet_value(NF2_DIRICHLETPY, idx).z) / cuVEC<VType>::h.y;
-			curl.z -= 0.5 * (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x].x + cuVEC<VType>::quantity[idx].x - 2 * get_dirichlet_value(NF2_DIRICHLETPY, idx).x) / cuVEC<VType>::h.y;
+			curl.x += (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x].z + cuVEC<VType>::quantity[idx].z - 2 * get_dirichlet_value(NF2_DIRICHLETPY, idx).z) / (2 * cuVEC<VType>::h.y);
+			curl.z -= (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x].x + cuVEC<VType>::quantity[idx].x - 2 * get_dirichlet_value(NF2_DIRICHLETPY, idx).x) / (2 * cuVEC<VType>::h.y);
 		}
 		else {
 
-			curl.x += 0.5 * (2 * get_dirichlet_value(NF2_DIRICHLETNY, idx).z - cuVEC<VType>::quantity[idx].z - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x].z) / cuVEC<VType>::h.y;
-			curl.z -= 0.5 * (2 * get_dirichlet_value(NF2_DIRICHLETNY, idx).x - cuVEC<VType>::quantity[idx].x - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x].x) / cuVEC<VType>::h.y;
+			curl.x += (2 * get_dirichlet_value(NF2_DIRICHLETNY, idx).z - cuVEC<VType>::quantity[idx].z - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x].z) / (2 * cuVEC<VType>::h.y);
+			curl.z -= (2 * get_dirichlet_value(NF2_DIRICHLETNY, idx).x - cuVEC<VType>::quantity[idx].x - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x].x) / (2 * cuVEC<VType>::h.y);
 		}
 	}
 	//Is it a CMBND boundary? - if not then use homogeneous Neumann condition (differential zero at the boundary)
@@ -1092,8 +1092,8 @@ __device__ VType cuVEC_VC<VType>::curl_diri_nneu(int idx, const cuVAL3<VType>& b
 			}
 			else {
 
-				curl.x += 0.5 * ((cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x].z - cuVEC<VType>::quantity[idx].z) / cuVEC<VType>::h.y + bdiff.y.z);
-				curl.z -= 0.5 * ((cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x].x - cuVEC<VType>::quantity[idx].x) / cuVEC<VType>::h.y + bdiff.y.x);
+				curl.x += ((cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x].z - cuVEC<VType>::quantity[idx].z) / cuVEC<VType>::h.y + bdiff.y.z) / 2;
+				curl.z -= ((cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x].x - cuVEC<VType>::quantity[idx].x) / cuVEC<VType>::h.y + bdiff.y.x) / 2;
 			}
 		}
 
@@ -1107,8 +1107,8 @@ __device__ VType cuVEC_VC<VType>::curl_diri_nneu(int idx, const cuVAL3<VType>& b
 			}
 			else {
 
-				curl.x += 0.5 * ((cuVEC<VType>::quantity[idx].z - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x].z) / cuVEC<VType>::h.y + bdiff.y.z);
-				curl.z -= 0.5 * ((cuVEC<VType>::quantity[idx].x - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x].x) / cuVEC<VType>::h.y + bdiff.y.x);
+				curl.x += ((cuVEC<VType>::quantity[idx].z - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x].z) / cuVEC<VType>::h.y + bdiff.y.z) / 2;
+				curl.z -= ((cuVEC<VType>::quantity[idx].x - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x].x) / cuVEC<VType>::h.y + bdiff.y.x) / 2;
 			}
 		}
 	}
@@ -1123,13 +1123,13 @@ __device__ VType cuVEC_VC<VType>::curl_diri_nneu(int idx, const cuVAL3<VType>& b
 
 		if (ngbrFlags2[idx] & NF2_DIRICHLETPZ) {
 
-			curl.x -= 0.5 * (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x*cuVEC<VType>::n.y].y + cuVEC<VType>::quantity[idx].y - 2 * get_dirichlet_value(NF2_DIRICHLETPZ, idx).y) / cuVEC<VType>::h.z;
-			curl.y += 0.5 * (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x*cuVEC<VType>::n.y].x + cuVEC<VType>::quantity[idx].x - 2 * get_dirichlet_value(NF2_DIRICHLETPZ, idx).x) / cuVEC<VType>::h.z;
+			curl.x -= (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x*cuVEC<VType>::n.y].y + cuVEC<VType>::quantity[idx].y - 2 * get_dirichlet_value(NF2_DIRICHLETPZ, idx).y) / (2 * cuVEC<VType>::h.z);
+			curl.y += (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x*cuVEC<VType>::n.y].x + cuVEC<VType>::quantity[idx].x - 2 * get_dirichlet_value(NF2_DIRICHLETPZ, idx).x) / (2 * cuVEC<VType>::h.z);
 		}
 		else {
 
-			curl.x -= 0.5 * (2 * get_dirichlet_value(NF2_DIRICHLETNZ, idx).y - cuVEC<VType>::quantity[idx].y - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x*cuVEC<VType>::n.y].y) / cuVEC<VType>::h.z;
-			curl.y += 0.5 * (2 * get_dirichlet_value(NF2_DIRICHLETNZ, idx).x - cuVEC<VType>::quantity[idx].x - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x*cuVEC<VType>::n.y].x) / cuVEC<VType>::h.z;
+			curl.x -= (2 * get_dirichlet_value(NF2_DIRICHLETNZ, idx).y - cuVEC<VType>::quantity[idx].y - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x*cuVEC<VType>::n.y].y) / (2 * cuVEC<VType>::h.z);
+			curl.y += (2 * get_dirichlet_value(NF2_DIRICHLETNZ, idx).x - cuVEC<VType>::quantity[idx].x - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x*cuVEC<VType>::n.y].x) / (2 * cuVEC<VType>::h.z);
 		}
 	}
 	//Is it a CMBND boundary? - if not then use homogeneous Neumann condition (differential zero at the boundary)
@@ -1159,8 +1159,8 @@ __device__ VType cuVEC_VC<VType>::curl_diri_nneu(int idx, const cuVAL3<VType>& b
 			}
 			else {
 
-				curl.x -= 0.5 * ((cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x*cuVEC<VType>::n.y].y - cuVEC<VType>::quantity[idx].y) / cuVEC<VType>::h.z + bdiff.z.y);
-				curl.y += 0.5 * ((cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x*cuVEC<VType>::n.y].x - cuVEC<VType>::quantity[idx].x) / cuVEC<VType>::h.z + bdiff.z.x);
+				curl.x -= ((cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x*cuVEC<VType>::n.y].y - cuVEC<VType>::quantity[idx].y) / cuVEC<VType>::h.z + bdiff.z.y) / 2;
+				curl.y += ((cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x*cuVEC<VType>::n.y].x - cuVEC<VType>::quantity[idx].x) / cuVEC<VType>::h.z + bdiff.z.x) / 2;
 			}
 		}
 		else {
@@ -1173,8 +1173,8 @@ __device__ VType cuVEC_VC<VType>::curl_diri_nneu(int idx, const cuVAL3<VType>& b
 			}
 			else {
 
-				curl.x -= 0.5 * ((cuVEC<VType>::quantity[idx].y - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x*cuVEC<VType>::n.y].y) / cuVEC<VType>::h.z + bdiff.z.y);
-				curl.y += 0.5 * ((cuVEC<VType>::quantity[idx].x - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x*cuVEC<VType>::n.y].x) / cuVEC<VType>::h.z + bdiff.z.x);
+				curl.x -= ((cuVEC<VType>::quantity[idx].y - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x*cuVEC<VType>::n.y].y) / cuVEC<VType>::h.z + bdiff.z.y) / 2;
+				curl.y += ((cuVEC<VType>::quantity[idx].x - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x*cuVEC<VType>::n.y].x) / cuVEC<VType>::h.z + bdiff.z.x) / 2;
 			}
 		}
 	}

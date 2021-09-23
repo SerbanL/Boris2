@@ -4,7 +4,7 @@ This script is part of Boris Computational Spintronics v3.0
 @author: Serban Lepadatu, 2020
 """
 
-from NetSocks import NSClient
+from NetSocks import NSClient, customize_plots
 import matplotlib.pyplot as plt
 import numpy as np
 import scipy as sp
@@ -12,8 +12,7 @@ import scipy.fftpack
 import scipy.signal
 
 #setup communication with server
-ns = NSClient()
-ns.configure(True)
+ns = NSClient(); ns.configure(True); customize_plots()
 
 ########################################
 
@@ -121,6 +120,7 @@ def simulate_fmr_peak(H0, show_result = False):
         plt.axes(xlabel = 'f (Hz)', ylabel = 'FMR Signal (a.u.)', title = 'Frequency-swept FMR')
         plt.plot(freq[0:len(result)], result, '.')
         plt.plot(freq[0:len(result)], lorentz)
+        plt.savefig('AF_FMR.png')
         plt.show()
         
     return lorentz_params[2], lorentz_params[3]

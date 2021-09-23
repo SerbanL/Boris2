@@ -562,6 +562,18 @@ void SDemagCUDA::UpdateField(void)
 							pHdemag = &pSDemagCUDA_Demag[idx_mesh]->Hdemag3;
 							if (idx_mesh == pSDemagCUDA_Demag.size() - 1) time_demag3 = pSMesh->Get_EvalStep_Time();
 							break;
+						case 3:
+							pHdemag = &pSDemagCUDA_Demag[idx_mesh]->Hdemag4;
+							if (idx_mesh == pSDemagCUDA_Demag.size() - 1) time_demag4 = pSMesh->Get_EvalStep_Time();
+							break;
+						case 4:
+							pHdemag = &pSDemagCUDA_Demag[idx_mesh]->Hdemag5;
+							if (idx_mesh == pSDemagCUDA_Demag.size() - 1) time_demag5 = pSMesh->Get_EvalStep_Time();
+							break;
+						case 5:
+							pHdemag = &pSDemagCUDA_Demag[idx_mesh]->Hdemag6;
+							if (idx_mesh == pSDemagCUDA_Demag.size() - 1) time_demag6 = pSMesh->Get_EvalStep_Time();
+							break;
 						}
 
 						if (idx_mesh == pSDemagCUDA_Demag.size() - 1) num_Hdemag_saved++;
@@ -570,8 +582,107 @@ void SDemagCUDA::UpdateField(void)
 
 						//have enough evaluations saved, so just cycle between them now
 
+						//QUINTIC
+						if (pSMesh->GetEvaluationSpeedup() == 6) {
+
+							//1, 2, 3, 4, 5, 6 -> next is 1
+							if (time_demag6 > time_demag5 && time_demag5 > time_demag4 && time_demag4 > time_demag3 && time_demag3 > time_demag2 && time_demag2 > time_demag1) {
+
+								pHdemag = &pSDemagCUDA_Demag[idx_mesh]->Hdemag;
+								if (idx_mesh == pSDemagCUDA_Demag.size() - 1) time_demag1 = pSMesh->Get_EvalStep_Time();
+							}
+							//2, 3, 4, 5, 6, 1 -> next is 2
+							else if (time_demag1 > time_demag2) {
+
+								pHdemag = &pSDemagCUDA_Demag[idx_mesh]->Hdemag2;
+								if (idx_mesh == pSDemagCUDA_Demag.size() - 1) time_demag2 = pSMesh->Get_EvalStep_Time();
+							}
+							//3, 4, 5, 6, 1, 2 -> next is 3
+							else if (time_demag2 > time_demag3) {
+
+								pHdemag = &pSDemagCUDA_Demag[idx_mesh]->Hdemag3;
+								if (idx_mesh == pSDemagCUDA_Demag.size() - 1) time_demag3 = pSMesh->Get_EvalStep_Time();
+							}
+							//4, 5, 6, 1, 2, 3 -> next is 4
+							else if (time_demag3 > time_demag4) {
+
+								pHdemag = &pSDemagCUDA_Demag[idx_mesh]->Hdemag4;
+								if (idx_mesh == pSDemagCUDA_Demag.size() - 1) time_demag4 = pSMesh->Get_EvalStep_Time();
+							}
+							//5, 6, 1, 2, 3, 4 -> next is 5
+							else if (time_demag4 > time_demag5) {
+
+								pHdemag = &pSDemagCUDA_Demag[idx_mesh]->Hdemag5;
+								if (idx_mesh == pSDemagCUDA_Demag.size() - 1) time_demag5 = pSMesh->Get_EvalStep_Time();
+							}
+							else {
+
+								pHdemag = &pSDemagCUDA_Demag[idx_mesh]->Hdemag6;
+								if (idx_mesh == pSDemagCUDA_Demag.size() - 1) time_demag6 = pSMesh->Get_EvalStep_Time();
+							}
+						}
+						//QUARTIC
+						else if (pSMesh->GetEvaluationSpeedup() == 5) {
+
+							//1, 2, 3, 4, 5 -> next is 1
+							if (time_demag5 > time_demag4 && time_demag4 > time_demag3 && time_demag3 > time_demag2 && time_demag2 > time_demag1) {
+
+								pHdemag = &pSDemagCUDA_Demag[idx_mesh]->Hdemag;
+								if (idx_mesh == pSDemagCUDA_Demag.size() - 1) time_demag1 = pSMesh->Get_EvalStep_Time();
+							}
+							//2, 3, 4, 5, 1 -> next is 2
+							else if (time_demag1 > time_demag2) {
+
+								pHdemag = &pSDemagCUDA_Demag[idx_mesh]->Hdemag2;
+								if (idx_mesh == pSDemagCUDA_Demag.size() - 1) time_demag2 = pSMesh->Get_EvalStep_Time();
+							}
+							//3, 4, 5, 1, 2 -> next is 3
+							else if (time_demag2 > time_demag3) {
+
+								pHdemag = &pSDemagCUDA_Demag[idx_mesh]->Hdemag3;
+								if (idx_mesh == pSDemagCUDA_Demag.size() - 1) time_demag3 = pSMesh->Get_EvalStep_Time();
+							}
+							//4, 5, 1, 2, 3 -> next is 4
+							else if (time_demag3 > time_demag4) {
+
+								pHdemag = &pSDemagCUDA_Demag[idx_mesh]->Hdemag4;
+								if (idx_mesh == pSDemagCUDA_Demag.size() - 1) time_demag4 = pSMesh->Get_EvalStep_Time();
+							}
+							else {
+
+								pHdemag = &pSDemagCUDA_Demag[idx_mesh]->Hdemag5;
+								if (idx_mesh == pSDemagCUDA_Demag.size() - 1) time_demag5 = pSMesh->Get_EvalStep_Time();
+							}
+						}
+						//CUBIC
+						else if (pSMesh->GetEvaluationSpeedup() == 4) {
+
+							//1, 2, 3, 4 -> next is 1
+							if (time_demag4 > time_demag3 && time_demag3 > time_demag2 && time_demag2 > time_demag1) {
+
+								pHdemag = &pSDemagCUDA_Demag[idx_mesh]->Hdemag;
+								if (idx_mesh == pSDemagCUDA_Demag.size() - 1) time_demag1 = pSMesh->Get_EvalStep_Time();
+							}
+							//2, 3, 4, 1 -> next is 2
+							else if (time_demag1 > time_demag2) {
+
+								pHdemag = &pSDemagCUDA_Demag[idx_mesh]->Hdemag2;
+								if (idx_mesh == pSDemagCUDA_Demag.size() - 1) time_demag2 = pSMesh->Get_EvalStep_Time();
+							}
+							//3, 4, 1, 2 -> next is 3
+							else if (time_demag2 > time_demag3) {
+
+								pHdemag = &pSDemagCUDA_Demag[idx_mesh]->Hdemag3;
+								if (idx_mesh == pSDemagCUDA_Demag.size() - 1) time_demag3 = pSMesh->Get_EvalStep_Time();
+							}
+							else {
+
+								pHdemag = &pSDemagCUDA_Demag[idx_mesh]->Hdemag4;
+								if (idx_mesh == pSDemagCUDA_Demag.size() - 1) time_demag4 = pSMesh->Get_EvalStep_Time();
+							}
+						}
 						//QUADRATIC
-						if (pSMesh->GetEvaluationSpeedup() == 3) {
+						else if (pSMesh->GetEvaluationSpeedup() == 3) {
 
 							//1, 2, 3 -> next is 1
 							if (time_demag3 > time_demag2 && time_demag2 > time_demag1) {
@@ -733,11 +844,200 @@ void SDemagCUDA::UpdateField(void)
 
 				//not required to update, and we have enough previous evaluations: use previous Hdemag saves to extrapolate for current evaluation
 
-				double a1 = 1.0, a2 = 0.0, a3 = 0.0;
+				double a1 = 1.0, a2 = 0.0, a3 = 0.0, a4 = 0.0, a5 = 0.0, a6 = 0.0;
 				double time = pSMesh->Get_EvalStep_Time();
 
+				//QUINTIC
+				if (pSMesh->GetEvaluationSpeedup() == 6) {
+
+					a1 = (time - time_demag2) * (time - time_demag3) * (time - time_demag4) * (time - time_demag5) * (time - time_demag6) / ((time_demag1 - time_demag2) * (time_demag1 - time_demag3) * (time_demag1 - time_demag4) * (time_demag1 - time_demag5) * (time_demag1 - time_demag6));
+					a2 = (time - time_demag1) * (time - time_demag3) * (time - time_demag4) * (time - time_demag5) * (time - time_demag6) / ((time_demag2 - time_demag1) * (time_demag2 - time_demag3) * (time_demag2 - time_demag4) * (time_demag2 - time_demag5) * (time_demag2 - time_demag6));
+					a3 = (time - time_demag1) * (time - time_demag2) * (time - time_demag4) * (time - time_demag5) * (time - time_demag6) / ((time_demag3 - time_demag1) * (time_demag3 - time_demag2) * (time_demag3 - time_demag4) * (time_demag3 - time_demag5) * (time_demag3 - time_demag6));
+					a4 = (time - time_demag1) * (time - time_demag2) * (time - time_demag3) * (time - time_demag5) * (time - time_demag6) / ((time_demag4 - time_demag1) * (time_demag4 - time_demag2) * (time_demag4 - time_demag3) * (time_demag4 - time_demag5) * (time_demag4 - time_demag6));
+					a5 = (time - time_demag1) * (time - time_demag2) * (time - time_demag3) * (time - time_demag4) * (time - time_demag6) / ((time_demag5 - time_demag1) * (time_demag5 - time_demag2) * (time_demag5 - time_demag3) * (time_demag5 - time_demag4) * (time_demag5 - time_demag6));
+					a6 = (time - time_demag1) * (time - time_demag2) * (time - time_demag3) * (time - time_demag4) * (time - time_demag5) / ((time_demag6 - time_demag1) * (time_demag6 - time_demag2) * (time_demag6 - time_demag3) * (time_demag6 - time_demag4) * (time_demag6 - time_demag5));
+
+					for (int idx_mesh = 0; idx_mesh < pSDemagCUDA_Demag.size(); idx_mesh++) {
+
+						//ANTIFERROMAGNETIC
+						if (pSDemagCUDA_Demag[idx_mesh]->pMeshCUDA->GetMeshType() == MESH_ANTIFERROMAGNETIC) {
+
+							if (pSDemagCUDA_Demag[idx_mesh]->do_transfer) {
+
+								//construct demag field approximation, including self demag contribution
+								SDemag_EvalSpeedup_SetExtrapField_AddSelf(pSDemag->n_common.dim(),
+									pSDemagCUDA_Demag[idx_mesh]->transfer,
+									pSDemagCUDA_Demag[idx_mesh]->Hdemag, pSDemagCUDA_Demag[idx_mesh]->Hdemag2, pSDemagCUDA_Demag[idx_mesh]->Hdemag3, pSDemagCUDA_Demag[idx_mesh]->Hdemag4, pSDemagCUDA_Demag[idx_mesh]->Hdemag5, pSDemagCUDA_Demag[idx_mesh]->Hdemag6,
+									a1, a2, a3, a4, a5, a6,
+									pSDemagCUDA_Demag[idx_mesh]->selfDemagCoeff);
+
+								//transfer to Heff in each mesh
+								pSDemagCUDA_Demag[idx_mesh]->transfer()->transfer_out_duplicated(pSDemag->pSDemag_Demag[idx_mesh]->transfer.size_transfer_out());
+							}
+							else {
+
+								//add demag field approximation, including self demag contribution
+								SDemag_EvalSpeedup_AddExtrapField_AddSelf(pSDemag->n_common.dim(),
+									pSDemagCUDA_Demag[idx_mesh]->pMeshCUDA->Heff, pSDemagCUDA_Demag[idx_mesh]->pMeshCUDA->Heff2,
+									pSDemagCUDA_Demag[idx_mesh]->Hdemag, pSDemagCUDA_Demag[idx_mesh]->Hdemag2, pSDemagCUDA_Demag[idx_mesh]->Hdemag3, pSDemagCUDA_Demag[idx_mesh]->Hdemag4, pSDemagCUDA_Demag[idx_mesh]->Hdemag5, pSDemagCUDA_Demag[idx_mesh]->Hdemag6,
+									a1, a2, a3, a4, a5, a6,
+									pSDemagCUDA_Demag[idx_mesh]->pMeshCUDA->M, pSDemagCUDA_Demag[idx_mesh]->pMeshCUDA->M2, pSDemagCUDA_Demag[idx_mesh]->selfDemagCoeff);
+							}
+						}
+						//FERROMAGNETIC
+						else {
+
+							if (pSDemagCUDA_Demag[idx_mesh]->do_transfer) {
+
+								//construct demag field approximation, including self demag contribution
+								SDemag_EvalSpeedup_SetExtrapField_AddSelf(pSDemag->n_common.dim(),
+									pSDemagCUDA_Demag[idx_mesh]->transfer,
+									pSDemagCUDA_Demag[idx_mesh]->Hdemag, pSDemagCUDA_Demag[idx_mesh]->Hdemag2, pSDemagCUDA_Demag[idx_mesh]->Hdemag3, pSDemagCUDA_Demag[idx_mesh]->Hdemag4, pSDemagCUDA_Demag[idx_mesh]->Hdemag5, pSDemagCUDA_Demag[idx_mesh]->Hdemag6,
+									a1, a2, a3, a4, a5, a6,
+									pSDemagCUDA_Demag[idx_mesh]->selfDemagCoeff);
+
+								//transfer to Heff in each mesh
+								pSDemagCUDA_Demag[idx_mesh]->transfer()->transfer_out(pSDemag->pSDemag_Demag[idx_mesh]->transfer.size_transfer_out());
+							}
+							else {
+
+								//add demag field approximation, including self demag contribution
+								SDemag_EvalSpeedup_AddExtrapField_AddSelf(pSDemag->n_common.dim(),
+									pSDemagCUDA_Demag[idx_mesh]->pMeshCUDA->Heff,
+									pSDemagCUDA_Demag[idx_mesh]->Hdemag, pSDemagCUDA_Demag[idx_mesh]->Hdemag2, pSDemagCUDA_Demag[idx_mesh]->Hdemag3, pSDemagCUDA_Demag[idx_mesh]->Hdemag4, pSDemagCUDA_Demag[idx_mesh]->Hdemag5, pSDemagCUDA_Demag[idx_mesh]->Hdemag6,
+									a1, a2, a3, a4, a5, a6,
+									pSDemagCUDA_Demag[idx_mesh]->pMeshCUDA->M, pSDemagCUDA_Demag[idx_mesh]->selfDemagCoeff);
+							}
+						}
+					}
+				}
+				//QUARTIC
+				else if (pSMesh->GetEvaluationSpeedup() == 5) {
+
+					a1 = (time - time_demag2) * (time - time_demag3) * (time - time_demag4) * (time - time_demag5) / ((time_demag1 - time_demag2) * (time_demag1 - time_demag3) * (time_demag1 - time_demag4) * (time_demag1 - time_demag5));
+					a2 = (time - time_demag1) * (time - time_demag3) * (time - time_demag4) * (time - time_demag5) / ((time_demag2 - time_demag1) * (time_demag2 - time_demag3) * (time_demag2 - time_demag4) * (time_demag2 - time_demag5));
+					a3 = (time - time_demag1) * (time - time_demag2) * (time - time_demag4) * (time - time_demag5) / ((time_demag3 - time_demag1) * (time_demag3 - time_demag2) * (time_demag3 - time_demag4) * (time_demag3 - time_demag5));
+					a4 = (time - time_demag1) * (time - time_demag2) * (time - time_demag3) * (time - time_demag5) / ((time_demag4 - time_demag1) * (time_demag4 - time_demag2) * (time_demag4 - time_demag3) * (time_demag4 - time_demag5));
+					a5 = (time - time_demag1) * (time - time_demag2) * (time - time_demag3) * (time - time_demag4) / ((time_demag5 - time_demag1) * (time_demag5 - time_demag2) * (time_demag5 - time_demag3) * (time_demag5 - time_demag4));
+
+					for (int idx_mesh = 0; idx_mesh < pSDemagCUDA_Demag.size(); idx_mesh++) {
+
+						//ANTIFERROMAGNETIC
+						if (pSDemagCUDA_Demag[idx_mesh]->pMeshCUDA->GetMeshType() == MESH_ANTIFERROMAGNETIC) {
+
+							if (pSDemagCUDA_Demag[idx_mesh]->do_transfer) {
+
+								//construct demag field approximation, including self demag contribution
+								SDemag_EvalSpeedup_SetExtrapField_AddSelf(pSDemag->n_common.dim(),
+									pSDemagCUDA_Demag[idx_mesh]->transfer,
+									pSDemagCUDA_Demag[idx_mesh]->Hdemag, pSDemagCUDA_Demag[idx_mesh]->Hdemag2, pSDemagCUDA_Demag[idx_mesh]->Hdemag3, pSDemagCUDA_Demag[idx_mesh]->Hdemag4, pSDemagCUDA_Demag[idx_mesh]->Hdemag5,
+									a1, a2, a3, a4, a5,
+									pSDemagCUDA_Demag[idx_mesh]->selfDemagCoeff);
+
+								//transfer to Heff in each mesh
+								pSDemagCUDA_Demag[idx_mesh]->transfer()->transfer_out_duplicated(pSDemag->pSDemag_Demag[idx_mesh]->transfer.size_transfer_out());
+							}
+							else {
+
+								//add demag field approximation, including self demag contribution
+								SDemag_EvalSpeedup_AddExtrapField_AddSelf(pSDemag->n_common.dim(),
+									pSDemagCUDA_Demag[idx_mesh]->pMeshCUDA->Heff, pSDemagCUDA_Demag[idx_mesh]->pMeshCUDA->Heff2,
+									pSDemagCUDA_Demag[idx_mesh]->Hdemag, pSDemagCUDA_Demag[idx_mesh]->Hdemag2, pSDemagCUDA_Demag[idx_mesh]->Hdemag3, pSDemagCUDA_Demag[idx_mesh]->Hdemag4, pSDemagCUDA_Demag[idx_mesh]->Hdemag5,
+									a1, a2, a3, a4, a5,
+									pSDemagCUDA_Demag[idx_mesh]->pMeshCUDA->M, pSDemagCUDA_Demag[idx_mesh]->pMeshCUDA->M2, pSDemagCUDA_Demag[idx_mesh]->selfDemagCoeff);
+							}
+						}
+						//FERROMAGNETIC
+						else {
+
+							if (pSDemagCUDA_Demag[idx_mesh]->do_transfer) {
+
+								//construct demag field approximation, including self demag contribution
+								SDemag_EvalSpeedup_SetExtrapField_AddSelf(pSDemag->n_common.dim(),
+									pSDemagCUDA_Demag[idx_mesh]->transfer,
+									pSDemagCUDA_Demag[idx_mesh]->Hdemag, pSDemagCUDA_Demag[idx_mesh]->Hdemag2, pSDemagCUDA_Demag[idx_mesh]->Hdemag3, pSDemagCUDA_Demag[idx_mesh]->Hdemag4, pSDemagCUDA_Demag[idx_mesh]->Hdemag5,
+									a1, a2, a3, a4, a5,
+									pSDemagCUDA_Demag[idx_mesh]->selfDemagCoeff);
+
+								//transfer to Heff in each mesh
+								pSDemagCUDA_Demag[idx_mesh]->transfer()->transfer_out(pSDemag->pSDemag_Demag[idx_mesh]->transfer.size_transfer_out());
+							}
+							else {
+
+								//add demag field approximation, including self demag contribution
+								SDemag_EvalSpeedup_AddExtrapField_AddSelf(pSDemag->n_common.dim(),
+									pSDemagCUDA_Demag[idx_mesh]->pMeshCUDA->Heff,
+									pSDemagCUDA_Demag[idx_mesh]->Hdemag, pSDemagCUDA_Demag[idx_mesh]->Hdemag2, pSDemagCUDA_Demag[idx_mesh]->Hdemag3, pSDemagCUDA_Demag[idx_mesh]->Hdemag4, pSDemagCUDA_Demag[idx_mesh]->Hdemag5,
+									a1, a2, a3, a4, a5,
+									pSDemagCUDA_Demag[idx_mesh]->pMeshCUDA->M, pSDemagCUDA_Demag[idx_mesh]->selfDemagCoeff);
+							}
+						}
+					}
+				}
+				//CUBIC
+				else if (pSMesh->GetEvaluationSpeedup() == 4) {
+
+					a1 = (time - time_demag2) * (time - time_demag3) * (time - time_demag4) / ((time_demag1 - time_demag2) * (time_demag1 - time_demag3) * (time_demag1 - time_demag4));
+					a2 = (time - time_demag1) * (time - time_demag3) * (time - time_demag4) / ((time_demag2 - time_demag1) * (time_demag2 - time_demag3) * (time_demag2 - time_demag4));
+					a3 = (time - time_demag1) * (time - time_demag2) * (time - time_demag4) / ((time_demag3 - time_demag1) * (time_demag3 - time_demag2) * (time_demag3 - time_demag4));
+					a4 = (time - time_demag1) * (time - time_demag2) * (time - time_demag3) / ((time_demag4 - time_demag1) * (time_demag4 - time_demag2) * (time_demag4 - time_demag3));
+
+					for (int idx_mesh = 0; idx_mesh < pSDemagCUDA_Demag.size(); idx_mesh++) {
+
+						//ANTIFERROMAGNETIC
+						if (pSDemagCUDA_Demag[idx_mesh]->pMeshCUDA->GetMeshType() == MESH_ANTIFERROMAGNETIC) {
+
+							if (pSDemagCUDA_Demag[idx_mesh]->do_transfer) {
+
+								//construct demag field approximation, including self demag contribution
+								SDemag_EvalSpeedup_SetExtrapField_AddSelf(pSDemag->n_common.dim(),
+									pSDemagCUDA_Demag[idx_mesh]->transfer,
+									pSDemagCUDA_Demag[idx_mesh]->Hdemag, pSDemagCUDA_Demag[idx_mesh]->Hdemag2, pSDemagCUDA_Demag[idx_mesh]->Hdemag3, pSDemagCUDA_Demag[idx_mesh]->Hdemag4,
+									a1, a2, a3, a4,
+									pSDemagCUDA_Demag[idx_mesh]->selfDemagCoeff);
+
+								//transfer to Heff in each mesh
+								pSDemagCUDA_Demag[idx_mesh]->transfer()->transfer_out_duplicated(pSDemag->pSDemag_Demag[idx_mesh]->transfer.size_transfer_out());
+							}
+							else {
+
+								//add demag field approximation, including self demag contribution
+								SDemag_EvalSpeedup_AddExtrapField_AddSelf(pSDemag->n_common.dim(),
+									pSDemagCUDA_Demag[idx_mesh]->pMeshCUDA->Heff, pSDemagCUDA_Demag[idx_mesh]->pMeshCUDA->Heff2,
+									pSDemagCUDA_Demag[idx_mesh]->Hdemag, pSDemagCUDA_Demag[idx_mesh]->Hdemag2, pSDemagCUDA_Demag[idx_mesh]->Hdemag3, pSDemagCUDA_Demag[idx_mesh]->Hdemag4,
+									a1, a2, a3, a4,
+									pSDemagCUDA_Demag[idx_mesh]->pMeshCUDA->M, pSDemagCUDA_Demag[idx_mesh]->pMeshCUDA->M2, pSDemagCUDA_Demag[idx_mesh]->selfDemagCoeff);
+							}
+						}
+						//FERROMAGNETIC
+						else {
+
+							if (pSDemagCUDA_Demag[idx_mesh]->do_transfer) {
+
+								//construct demag field approximation, including self demag contribution
+								SDemag_EvalSpeedup_SetExtrapField_AddSelf(pSDemag->n_common.dim(),
+									pSDemagCUDA_Demag[idx_mesh]->transfer,
+									pSDemagCUDA_Demag[idx_mesh]->Hdemag, pSDemagCUDA_Demag[idx_mesh]->Hdemag2, pSDemagCUDA_Demag[idx_mesh]->Hdemag3, pSDemagCUDA_Demag[idx_mesh]->Hdemag4,
+									a1, a2, a3, a4,
+									pSDemagCUDA_Demag[idx_mesh]->selfDemagCoeff);
+
+								//transfer to Heff in each mesh
+								pSDemagCUDA_Demag[idx_mesh]->transfer()->transfer_out(pSDemag->pSDemag_Demag[idx_mesh]->transfer.size_transfer_out());
+							}
+							else {
+
+								//add demag field approximation, including self demag contribution
+								SDemag_EvalSpeedup_AddExtrapField_AddSelf(pSDemag->n_common.dim(),
+									pSDemagCUDA_Demag[idx_mesh]->pMeshCUDA->Heff,
+									pSDemagCUDA_Demag[idx_mesh]->Hdemag, pSDemagCUDA_Demag[idx_mesh]->Hdemag2, pSDemagCUDA_Demag[idx_mesh]->Hdemag3, pSDemagCUDA_Demag[idx_mesh]->Hdemag4,
+									a1, a2, a3, a4,
+									pSDemagCUDA_Demag[idx_mesh]->pMeshCUDA->M, pSDemagCUDA_Demag[idx_mesh]->selfDemagCoeff);
+							}
+						}
+					}
+				}
 				//QUADRATIC
-				if (pSMesh->GetEvaluationSpeedup() == 3) {
+				else if (pSMesh->GetEvaluationSpeedup() == 3) {
 
 					if (time_demag2 != time_demag1 && time_demag2 != time_demag3 && time_demag1 != time_demag3) {
 

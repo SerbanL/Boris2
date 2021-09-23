@@ -30,26 +30,26 @@
     <ProjectGuid>{06C58E6B-9051-4D2D-BB44-FF942864B5F1}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>Boris</RootNamespace>
-    <WindowsTargetPlatformVersion>10.0.17763.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0.16299.0</WindowsTargetPlatformVersion>
     <ProjectName>Boris</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v141</PlatformToolset>
+    <PlatformToolset>v142</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v141</PlatformToolset>
+    <PlatformToolset>v142</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v141</PlatformToolset>
+    <PlatformToolset>v142</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
@@ -61,10 +61,10 @@
     <PlatformToolset>v141</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Label="Configuration" Condition="'$(Configuration)|$(Platform)'=='test|Win32'">
-    <PlatformToolset>v141</PlatformToolset>
+    <PlatformToolset>v142</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Label="Configuration" Condition="'$(Configuration)|$(Platform)'=='test|x64'">
-    <PlatformToolset>v141</PlatformToolset>
+    <PlatformToolset>v142</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
@@ -153,7 +153,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
-      <WarningLevel>Level1</WarningLevel>
+      <WarningLevel>TurnOffAllWarnings</WarningLevel>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>false</FunctionLevelLinking>
@@ -382,6 +382,7 @@
     <CudaCompile Include="Atom_DiffEqCubic_EvalsCUDA_RKCK45.cu" />
     <CudaCompile Include="Atom_DiffEqCubic_EvalsCUDA_RKDP54.cu" />
     <CudaCompile Include="Atom_DiffEqCubic_EvalsCUDA_RKF.cu" />
+    <CudaCompile Include="Atom_DiffEqCubic_EvalsCUDA_RKF56.cu" />
     <CudaCompile Include="Atom_DiffEqCubic_EvalsCUDA_SD.cu" />
     <CudaCompile Include="Atom_DiffEqCubic_EvalsCUDA_TEuler.cu" />
     <CudaCompile Include="Atom_DiffEqCubic_EvalsLLGCUDA.cu" />
@@ -414,6 +415,8 @@
     <CudaCompile Include="DemagTFunc_PBCCUDA.cu" />
     <CudaCompile Include="DemagTFunc_ShiftedCUDA.cu" />
     <CudaCompile Include="DemagTFunc_Shifted_PBCCUDA.cu" />
+    <CudaCompile Include="DiffEqAFM_EvalsCUDA_RKF56.cu" />
+    <CudaCompile Include="DiffEqFM_EvalsCUDA_RKF56.cu" />
     <CudaCompile Include="DiffEq_CommonBaseCUDA.cu" />
     <CudaCompile Include="DipoleDipoleKernelCUDA.cu" />
     <CudaCompile Include="DWRunTimeFitCUDA.cu" />
@@ -552,6 +555,7 @@
     <ClCompile Include="Atom_DiffEqCubic_Evals_RKCK45.cpp" />
     <ClCompile Include="Atom_DiffEqCubic_Evals_RKDP54.cpp" />
     <ClCompile Include="Atom_DiffEqCubic_Evals_RKF.cpp" />
+    <ClCompile Include="Atom_DiffEqCubic_Evals_RKF56.cpp" />
     <ClCompile Include="Atom_DiffEqCubic_Evals_SD.cpp" />
     <ClCompile Include="Atom_DiffEqCubic_Evals_TEuler.cpp" />
     <ClCompile Include="Atom_DiffEqCubic_SEquations.cpp" />
@@ -592,6 +596,8 @@
     <ClCompile Include="DemagTFunc_Self.cpp" />
     <ClCompile Include="DemagTFunc_ShiftedCUDA.cpp" />
     <ClCompile Include="DemagTFunc_Shifted_PBCCUDA.cpp" />
+    <ClCompile Include="DiffEqAFM_Evals_RKF56.cpp" />
+    <ClCompile Include="DiffEqFM_Evals_RKF56.cpp" />
     <ClCompile Include="DiffEq_CommonBaseCUDA.cpp" />
     <ClCompile Include="DipoleDipoleKernel.cpp" />
     <ClCompile Include="DipoleDipoleKernelCUDA.cpp" />

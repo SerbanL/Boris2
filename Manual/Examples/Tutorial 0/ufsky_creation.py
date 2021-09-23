@@ -1,5 +1,5 @@
 """
-This script is part of Boris Computational Spintronics v3.0
+This script is part of Boris Computational Spintronics
 
 @author: Serban Lepadatu, 2020
 """
@@ -8,12 +8,13 @@ from NetSocks import NSClient
 import matplotlib.pyplot as plt
 import numpy as np
 
-ns = NSClient()
-ns.configure(True)
+ns = NSClient(); ns.configure(True)
 
 ########################################
 
-ns.setode('sLLB', 'TEuler')
+#RK4 with quartic polynomial extrapolation of demag field
+ns.setode('sLLB', 'RK4')
+ns.evalspeedup(5)
 
 #Co layer
 ns.setmaterial('Co/Pt', [512e-9, 512e-9, 2e-9])
@@ -75,13 +76,13 @@ ns.savesim('ufsky_fm')
 
 #0 to 10ps
 ns.editstagestop(0, 'time', 10e-12)
-ns.setdt(1e-15)
+ns.setdt(2e-15)
 ns.setheatdt(1e-15)
 ns.Run()
 
 #10ps to 20ps
 ns.editstagestop(0, 'time', 20e-12)
-ns.setdt(2e-15)
+ns.setdt(4e-15)
 ns.setheatdt(2e-15)
 ns.Run()
 
@@ -90,14 +91,14 @@ ns.editstagestop(0, 'time', 60e-12)
 #mid-simulation re-meshing! 1nm cellsize only needed around the Curie temperature.
 #finely tuned simulations of this type means you can run thousands of these events in a reasonable time-scale and still keep accuracy
 ns.cellsize([2e-9, 2e-9, 2e-9])
-ns.setdt(10e-15)
+ns.setdt(20e-15)
 ns.setheatdt(2e-15)
 ns.Run()
 
 #60ps to 800ps
 ns.editstagestop(0, 'time', 800e-12)
 ns.tcellsize([4e-9, 4e-9, 1e-9])
-ns.setdt(50e-15)
+ns.setdt(100e-15)
 #could do with Crank-Nicolson method in next version
 ns.setheatdt(5e-15)
 ns.editdatasave(0, 'time', 250e-15)

@@ -211,7 +211,8 @@ DBL3 DifferentialEquationFM::SLLB(int idx)
 		alpha_par = alpha;
 
 		//Note, the parallel susceptibility is related to susrel by : susrel = suspar / mu0Ms
-		Hl = -1.0 * (pMesh->M[idx] / (susrel * MU0 * Ms0)) * (1 + 3 * msq * T_Curie / (5 * (Temperature - T_Curie)));
+		if (Temperature < T_Curie + TCURIE_EPSILON) Hl = -1.0 * (pMesh->M[idx] / (susrel * MU0 * Ms0));
+		else Hl = -1.0 * (pMesh->M[idx] / (susrel * MU0 * Ms0)) * (1 + 3 * msq * T_Curie / (5 * (Temperature - T_Curie)));
 	}
 
 	DBL3 H_Thermal_Value = H_Thermal[position] * sqrt(alpha - alpha_par) / alpha;
@@ -303,7 +304,8 @@ DBL3 DifferentialEquationFM::SLLBSTT(int idx)
 		alpha_par = alpha;
 
 		//Note, the parallel susceptibility is related to susrel by : susrel = suspar / mu0Ms
-		Hl = -1.0 * (pMesh->M[idx] / (susrel * MU0 * Ms0)) * (1 + 3 * msq * T_Curie / (5 * (Temperature - T_Curie)));
+		if (Temperature < T_Curie + TCURIE_EPSILON) Hl = -1.0 * (pMesh->M[idx] / (susrel * MU0 * Ms0));
+		else Hl = -1.0 * (pMesh->M[idx] / (susrel * MU0 * Ms0)) * (1 + 3 * msq * T_Curie / (5 * (Temperature - T_Curie)));
 	}
 
 	DBL3 H_Thermal_Value = H_Thermal[position] * sqrt(alpha - alpha_par) / alpha;

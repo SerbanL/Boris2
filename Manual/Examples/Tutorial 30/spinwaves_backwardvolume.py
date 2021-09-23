@@ -4,19 +4,17 @@ This script is part of Boris Computational Spintronics v3.0
 @author: Serban Lepadatu, 2020
 """
 
-from NetSocks import NSClient
+from NetSocks import NSClient, customize_plots
 import matplotlib.pyplot as plt
 import numpy as np
 import scipy as sp
 import scipy.fftpack
 import scipy.signal
 
-
 #setup communication with server
-ns = NSClient()
-ns.configure(True)
+ns = NSClient(); ns.configure(True); customize_plots()
 
-########################################
+##############################################################
 
 #Simulation script here
 
@@ -45,7 +43,7 @@ mesh_step = 4e-9
 #mesh dimensions specified in IEEETM 49, 524 (2013)
 meshdim = [1e-6, 50e-9, 1e-9]
 #cellsize set to a small enough value: 1 nm along length is sufficient
-#if this value is too high (2 nm) significant discrepancy between simulations and analytical lines results
+#if this value is too high (2 nm) significant discrepancy between simulations and analytical lines results (Brillouin zone smaller)
 cellsize = [1e-9, 2e-9, 1e-9]
 
 #sinc pulse time centre (s) and total time to simulate (s)
@@ -99,33 +97,30 @@ ns.setparam('permalloy', 'Ms', Ms)
 ns.setparam('permalloy', 'A', A)
 ns.setparam('permalloy', 'grel', gamma / 2.212761569e5)
 
-#make sure output file is wiped clean
-ns.dp_newfile(output_file)
-
 #set fixed time-step RK4 method with a small enough time step (50 fs is sufficient - small value due to 1 nm cellsize)
 ns.setode('LLG', 'RK4')
 ns.setdt(50e-15)
+
+#setup data extraction in command buffer : need to extract a normalized magnetization profile at each time_step and append it to output file
+ns.setdata('commbuf')
+ns.editstagestop(0, 'time', total_time)
+ns.editdatasave(0, 'time', time_step)
+
+ns.clearcommbuffer()
+#the following 3 commands are not executed now, but buffered so they can be executed at runtime every time_step ('commbuf' output data set)
+ns.dp_getexactprofile([0, meshdim[1]/2, meshdim[2]/2], [meshdim[0], meshdim[1]/2, meshdim[2]/2], mesh_step, 0, bufferCommand = True)
+ns.dp_div(2, Ms, bufferCommand = True)
+ns.dp_saveappendasrow(output_file, 2, bufferCommand = True)
 
 ########################################
 
 #Run
 
-time = 0.0
-ns.cuda(1)
+#make sure output file is wiped clean
+ns.dp_newfile(output_file)
 
-#simulate, saving data every time_step
-while time < total_time:
-    
-    ns.editstagestop(0, 'time', time + time_step)
-    ns.Run()
-    
-    #get magnetisation profile along length through center
-    ns.dp_getexactprofile([cellsize[0]/2, meshdim[1]/2 + cellsize[1]/2, 0], [meshdim[0] - cellsize[0]/2, meshdim[1]/2 + cellsize[1]/2, 0], mesh_step, 0)
-    #save only the y component of magnetisation at time_step intervals
-    ns.dp_div(2, Ms)
-    ns.dp_saveappendasrow(output_file, 2)
-    
-    time += time_step
+ns.cuda(1)
+ns.Run()
 
 ########################################
 

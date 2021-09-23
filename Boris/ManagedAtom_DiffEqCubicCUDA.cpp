@@ -47,6 +47,7 @@ BError ManagedAtom_DiffEqCubicCUDA::set_pointers(Atom_DifferentialEquationCubicC
 	if (set_gpu_value(psEval3, paDiffEqCUDA->sEval3.get_managed_object()) != cudaSuccess) error(BERROR_GPUERROR_CRIT);
 	if (set_gpu_value(psEval4, paDiffEqCUDA->sEval4.get_managed_object()) != cudaSuccess) error(BERROR_GPUERROR_CRIT);
 	if (set_gpu_value(psEval5, paDiffEqCUDA->sEval5.get_managed_object()) != cudaSuccess) error(BERROR_GPUERROR_CRIT);
+	if (set_gpu_value(psEval6, paDiffEqCUDA->sEval6.get_managed_object()) != cudaSuccess) error(BERROR_GPUERROR_CRIT);
 
 	if (set_gpu_value(pH_Thermal, paDiffEqCUDA->H_Thermal.get_managed_object()) != cudaSuccess) error(BERROR_GPUERROR_CRIT);
 	

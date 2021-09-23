@@ -4,12 +4,11 @@ This script is part of Boris Computational Spintronics v3.0
 @author: Serban Lepadatu, 2020
 """
 
-from NetSocks import NSClient
+from NetSocks import NSClient, customize_plots
 import matplotlib.pyplot as plt
 
 #setup communication with server
-ns = NSClient()
-ns.configure(True)
+ns = NSClient(); ns.configure(True); customize_plots()
 
 ########################################
 

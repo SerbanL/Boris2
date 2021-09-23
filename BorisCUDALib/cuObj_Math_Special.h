@@ -67,7 +67,7 @@ public:
 		cuBReal findex = (x - start) * resolution;
 		int index = (int)cu_floor_epsilon(findex);
 
-		if (index + 1 < size && index >= 0) {
+		if (index + 1 < (int)size && index >= 0) {
 
 			return values[index] * (cuBReal(index + 1) - findex) + values[index + 1] * (findex - cuBReal(index));
 		}

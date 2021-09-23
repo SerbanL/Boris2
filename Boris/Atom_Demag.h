@@ -29,7 +29,7 @@ class Atom_Demag :
 private:
 
 	//pointer to mesh object holding this effective field module
-	Atom_Mesh *paMesh;
+	Atom_Mesh *paMesh = nullptr;
 
 	//need to calculate non-empty cells here so we don't waste time during computations (M is a VEC, not a VEC_VC, which means non-empty cells need to be calculated on every call)
 	//obtained at initialization
@@ -87,7 +87,7 @@ class Atom_Demag :
 private:
 
 	//pointer to mesh object holding this effective field module
-	Atom_Mesh* paMesh;
+	Atom_Mesh* paMesh = nullptr;
 
 public:
 

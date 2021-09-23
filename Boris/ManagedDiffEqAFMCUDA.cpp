@@ -52,6 +52,7 @@ BError ManagedDiffEqAFMCUDA::set_pointers(DifferentialEquationAFMCUDA* pDiffEqCU
 	if (set_gpu_value(psEval3, pDiffEqCUDA->sEval3.get_managed_object()) != cudaSuccess) error(BERROR_GPUERROR_CRIT);
 	if (set_gpu_value(psEval4, pDiffEqCUDA->sEval4.get_managed_object()) != cudaSuccess) error(BERROR_GPUERROR_CRIT);
 	if (set_gpu_value(psEval5, pDiffEqCUDA->sEval5.get_managed_object()) != cudaSuccess) error(BERROR_GPUERROR_CRIT);
+	if (set_gpu_value(psEval6, pDiffEqCUDA->sEval6.get_managed_object()) != cudaSuccess) error(BERROR_GPUERROR_CRIT);
 
 	if (set_gpu_value(psEval0_2, pDiffEqCUDA->sEval0_2.get_managed_object()) != cudaSuccess) error(BERROR_GPUERROR_CRIT);
 	if (set_gpu_value(psEval1_2, pDiffEqCUDA->sEval1_2.get_managed_object()) != cudaSuccess) error(BERROR_GPUERROR_CRIT);
@@ -59,6 +60,7 @@ BError ManagedDiffEqAFMCUDA::set_pointers(DifferentialEquationAFMCUDA* pDiffEqCU
 	if (set_gpu_value(psEval3_2, pDiffEqCUDA->sEval3_2.get_managed_object()) != cudaSuccess) error(BERROR_GPUERROR_CRIT);
 	if (set_gpu_value(psEval4_2, pDiffEqCUDA->sEval4_2.get_managed_object()) != cudaSuccess) error(BERROR_GPUERROR_CRIT);
 	if (set_gpu_value(psEval5_2, pDiffEqCUDA->sEval5_2.get_managed_object()) != cudaSuccess) error(BERROR_GPUERROR_CRIT);
+	if (set_gpu_value(psEval6_2, pDiffEqCUDA->sEval6_2.get_managed_object()) != cudaSuccess) error(BERROR_GPUERROR_CRIT);
 
 	if (set_gpu_value(pH_Thermal, pDiffEqCUDA->H_Thermal.get_managed_object()) != cudaSuccess) error(BERROR_GPUERROR_CRIT);
 	if (set_gpu_value(pTorque_Thermal, pDiffEqCUDA->Torque_Thermal.get_managed_object()) != cudaSuccess) error(BERROR_GPUERROR_CRIT);
@@ -75,4 +77,5 @@ BError ManagedDiffEqAFMCUDA::set_pointers(DifferentialEquationAFMCUDA* pDiffEqCU
 
 #endif
 #endif
+
 

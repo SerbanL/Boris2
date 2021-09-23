@@ -77,10 +77,8 @@ private:
 
 	//Evaluation speedup mode data
 
-	//1 Hdemag: no extrapolation, just save evaluation and reuse
-	//2 Hdemag: linear extrapolation, need 2
-	//3 Hdemag: quadratic extrapolation, need 3
-	VEC<DBL3> Hdemag, Hdemag2, Hdemag3;
+	//vec for demagnetizing field polynomial extrapolation
+	VEC<DBL3> Hdemag, Hdemag2, Hdemag3, Hdemag4, Hdemag5, Hdemag6;
 
 	//-Nxx, -Nyy, -Nzz values at r = r0
 	DBL3 selfDemagCoeff = DBL3();

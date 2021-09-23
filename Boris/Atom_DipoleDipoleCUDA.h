@@ -36,13 +36,11 @@ private:
 
 	//Evaluation speedup mode data
 
-	//1 Hdemag: no extrapolation, just save evaluation and reuse
-	//2 Hdemag: linear extrapolation, need 2
-	//3 Hdemag: quadratic extrapolation, need 3
-	cu_obj<cuVEC<cuReal3>> Hdemag, Hdemag2, Hdemag3;
+	//vec for demagnetizing field polynomial extrapolation
+	cu_obj<cuVEC<cuReal3>> Hdemag, Hdemag2, Hdemag3, Hdemag4, Hdemag5, Hdemag6;
 
 	//times at which evaluations were done, used for extrapolation
-	double time_demag1 = 0.0, time_demag2 = 0.0, time_demag3 = 0.0;
+	double time_demag1 = 0.0, time_demag2 = 0.0, time_demag3 = 0.0, time_demag4 = 0.0, time_demag5 = 0.0, time_demag6 = 0.0;
 
 	int num_Hdemag_saved = 0;
 
@@ -60,6 +58,12 @@ private:
 	//Macrocell mode: subtract self contribution from calculated field
 	void Atom_DipoleDipole_EvalSpeedup_SubSelf(cu_obj<cuVEC<cuReal3>>& H);
 
+	//Macrocell mode, QUINTIC: extrapolate field and add self contribution
+	void Atom_DipoleDipole_EvalSpeedup_SetExtrapField_AddSelf(cu_obj<cuVEC<cuReal3>>& H, cuBReal a1, cuBReal a2, cuBReal a3, cuBReal a4, cuBReal a5, cuBReal a6);
+	//Macrocell mode, QUARTIC: extrapolate field and add self contribution
+	void Atom_DipoleDipole_EvalSpeedup_SetExtrapField_AddSelf(cu_obj<cuVEC<cuReal3>>& H, cuBReal a1, cuBReal a2, cuBReal a3, cuBReal a4, cuBReal a5);
+	//Macrocell mode, CUBIC: extrapolate field and add self contribution
+	void Atom_DipoleDipole_EvalSpeedup_SetExtrapField_AddSelf(cu_obj<cuVEC<cuReal3>>& H, cuBReal a1, cuBReal a2, cuBReal a3, cuBReal a4);
 	//Macrocell mode, QUADRATIC: extrapolate field and add self contribution
 	void Atom_DipoleDipole_EvalSpeedup_SetExtrapField_AddSelf(cu_obj<cuVEC<cuReal3>>& H, cuBReal a1, cuBReal a2, cuBReal a3);
 	//Macrocell mode, LINEAR: extrapolate field and add self contribution
@@ -67,6 +71,12 @@ private:
 	//Macrocell mode, STEP: extrapolate field and add self contribution
 	void Atom_DipoleDipole_EvalSpeedup_SetExtrapField_AddSelf(cu_obj<cuVEC<cuReal3>>& H);
 
+	//QUNITIC: extrapolate field
+	void Atom_DipoleDipole_EvalSpeedup_AddExtrapField(cu_obj<cuVEC<cuReal3>>& H, cuBReal a1, cuBReal a2, cuBReal a3, cuBReal a4, cuBReal a5, cuBReal a6);
+	//QUARTIC: extrapolate field
+	void Atom_DipoleDipole_EvalSpeedup_AddExtrapField(cu_obj<cuVEC<cuReal3>>& H, cuBReal a1, cuBReal a2, cuBReal a3, cuBReal a4, cuBReal a5);
+	//CUBIC: extrapolate field
+	void Atom_DipoleDipole_EvalSpeedup_AddExtrapField(cu_obj<cuVEC<cuReal3>>& H, cuBReal a1, cuBReal a2, cuBReal a3, cuBReal a4);
 	//QUADRATIC: extrapolate field
 	void Atom_DipoleDipole_EvalSpeedup_AddExtrapField(cu_obj<cuVEC<cuReal3>>& H, cuBReal a1, cuBReal a2, cuBReal a3);
 	//LINEAR: extrapolate field

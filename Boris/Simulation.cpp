@@ -470,7 +470,7 @@ Simulation::Simulation(int Program_Version, std::string server_port_, std::strin
 	commands.insert(CMD_EVALSPEEDUP, CommandSpecifier(CMD_EVALSPEEDUP), "evalspeedup");
 	commands[CMD_EVALSPEEDUP].usage = "[tc0,0.5,0,1/tc]USAGE : <b>evalspeedup</b> <i>level</i>";
 	commands[CMD_EVALSPEEDUP].limits = { { int(EVALSPEEDUP_NONE), int(EVALSPEEDUP_NUMENTRIES) - 1 } };
-	commands[CMD_EVALSPEEDUP].descr = "[tc0,0.5,0.5,1/tc]Enable/disable evaluation speedup by extrapolating demag field at evaluation substeps from previous field updates. Status levels: 0 (no speedup), 1 (step), 2 (linear), 3 (quadratic). If enabling speedup strongly recommended to always use quadratic type.";
+	commands[CMD_EVALSPEEDUP].descr = "[tc0,0.5,0.5,1/tc]Enable/disable evaluation speedup by extrapolating demag field at evaluation substeps from previous field updates. Status levels: 0 (no speedup), 1 (step), 2 (linear), 3 (quadratic), 4 (cubic). If enabling speedup strongly recommended to always use quadratic type.";
 	commands[CMD_EVALSPEEDUP].return_descr = "[tc0,0.5,0,1/tc]Script return values: <i>level</i>";
 
 	commands.insert(CMD_SETODE, CommandSpecifier(CMD_SETODE), "setode");
@@ -1377,7 +1377,7 @@ Simulation::Simulation(int Program_Version, std::string server_port_, std::strin
 
 	commands.insert(CMD_SHAPE_GET, CommandSpecifier(CMD_SHAPE_GET), "shape_get");
 	commands[CMD_SHAPE_GET].usage = "[tc0,0.5,0,1/tc]USAGE : <b>shape_get</b> <i>(meshname) name dim_x dim_y dim_z cpos_x cpos_y cpos_z rot_psi rot_theta rot_phi repeat_x repeat_y repeat_z disp_x disp_y disp_z method ...</i>";
-	commands[CMD_SHAPE_GET].descr = "[tc0,0.5,0.5,1/tc]Get average value from a shape in given mesh (focused mesh if not specified), where shape definition is shown in shape_set command help.";
+	commands[CMD_SHAPE_GET].descr = "[tc0,0.5,0.5,1/tc]Get average value from a shape in given mesh (focused mesh if not specified), where shape definition is shown in shape_set command help. NOTE: this command does not work yet with CUDA enabled, will be finished in a future version.";
 	commands[CMD_SHAPE_GET].unit = "m";
 	commands[CMD_SHAPE_GET].limits = { { Any(), Any() },  { DBL3(), Any() }, { DBL3(-MAXSIMSPACE), DBL3(+MAXSIMSPACE) }, { DBL3(-360), DBL3(360) }, { INT3(1), Any() }, { DBL3(), Any() }, { Any(), Any() } };
 
@@ -1482,9 +1482,9 @@ Simulation::Simulation(int Program_Version, std::string server_port_, std::strin
 	commands[CMD_DP_GETAVERAGEDPROFILE].return_descr = "[tc0,0.5,0,1/tc]Script return values: <i>number of averages</i>";
 
 	commands.insert(CMD_AVERAGEMESHRECT, CommandSpecifier(CMD_AVERAGEMESHRECT), "averagemeshrect");
-	commands[CMD_AVERAGEMESHRECT].usage = "[tc0,0.5,0,1/tc]USAGE : <b>averagemeshrect</b> <i>(meshname) (rectangle)</i>";
-	commands[CMD_AVERAGEMESHRECT].descr = "[tc0,0.5,0.5,1/tc]Calculate the average value depending on currently displayed quantities. The rectangle is specified in relative coordinates to the named mesh (focused mesh if not specified); if not specified average the entire focused mesh.";
-	commands[CMD_AVERAGEMESHRECT].limits = { { Any(), Any() }, { Rect(DBL3(-MAXSIMSPACE / 2), DBL3(-MAXSIMSPACE / 2) + DBL3(MINMESHSPACE)), Rect(DBL3(-MAXSIMSPACE / 2), DBL3(MAXSIMSPACE / 2)) } };
+	commands[CMD_AVERAGEMESHRECT].usage = "[tc0,0.5,0,1/tc]USAGE : <b>averagemeshrect</b> <i>(meshname) (rectangle (dp_index))</i>";
+	commands[CMD_AVERAGEMESHRECT].descr = "[tc0,0.5,0.5,1/tc]Calculate the average value depending on currently displayed quantities. The rectangle is specified in relative coordinates to the named mesh (focused mesh if not specified); if not specified average the entire focused mesh. If dp_index is specified then also append value to dp array.";
+	commands[CMD_AVERAGEMESHRECT].limits = { { Any(), Any() }, { Rect(DBL3(-MAXSIMSPACE / 2), DBL3(-MAXSIMSPACE / 2) + DBL3(MINMESHSPACE)), Rect(DBL3(-MAXSIMSPACE / 2), DBL3(MAXSIMSPACE / 2)) }, { int(0), int(MAX_ARRAYS - 1) } };
 	commands[CMD_AVERAGEMESHRECT].unit = "m";
 	commands[CMD_AVERAGEMESHRECT].return_descr = "[tc0,0.5,0,1/tc]Script return values: <i>value</i>";
 
@@ -1907,18 +1907,19 @@ Simulation::Simulation(int Program_Version, std::string server_port_, std::strin
 	odeEvalHandles.push_back("ABM", EVAL_ABM);
 	odeEvalHandles.push_back("RK23", EVAL_RK23);
 	odeEvalHandles.push_back("RKF45", EVAL_RKF45);
+	odeEvalHandles.push_back("RKF56", EVAL_RKF56);
 	odeEvalHandles.push_back("RKCK45", EVAL_RKCK45);
 	odeEvalHandles.push_back("RKDP54", EVAL_RKDP54);
 	odeEvalHandles.push_back("SDesc", EVAL_SD);
 
 	//Allowed evaluation methods for given ODE
-	odeAllowedEvals.push_back(make_vector(EVAL_EULER, EVAL_TEULER, EVAL_AHEUN, EVAL_RK4, EVAL_ABM, EVAL_RK23, EVAL_RKF45, EVAL_RKCK45, EVAL_RKDP54), ODE_LLG);
-	odeAllowedEvals.push_back(make_vector(EVAL_EULER, EVAL_TEULER, EVAL_AHEUN, EVAL_RK4, EVAL_ABM, EVAL_RK23, EVAL_RKF45, EVAL_RKCK45, EVAL_RKDP54, EVAL_SD), ODE_LLGSTATIC);
-	odeAllowedEvals.push_back(make_vector(EVAL_EULER, EVAL_TEULER, EVAL_AHEUN, EVAL_RK4, EVAL_ABM, EVAL_RK23, EVAL_RKF45, EVAL_RKCK45, EVAL_RKDP54), ODE_LLGSTT);
-	odeAllowedEvals.push_back(make_vector(EVAL_EULER, EVAL_TEULER, EVAL_AHEUN, EVAL_RK4, EVAL_ABM, EVAL_RK23, EVAL_RKF45, EVAL_RKCK45, EVAL_RKDP54), ODE_LLB);
-	odeAllowedEvals.push_back(make_vector(EVAL_EULER, EVAL_TEULER, EVAL_AHEUN, EVAL_RK4, EVAL_ABM, EVAL_RK23, EVAL_RKF45, EVAL_RKCK45, EVAL_RKDP54), ODE_LLBSTT);
-	odeAllowedEvals.push_back(make_vector(EVAL_EULER, EVAL_TEULER, EVAL_AHEUN, EVAL_RK4, EVAL_ABM, EVAL_RK23, EVAL_RKF45, EVAL_RKCK45, EVAL_RKDP54), ODE_LLGSA);
-	odeAllowedEvals.push_back(make_vector(EVAL_EULER, EVAL_TEULER, EVAL_AHEUN, EVAL_RK4, EVAL_ABM, EVAL_RK23, EVAL_RKF45, EVAL_RKCK45, EVAL_RKDP54), ODE_LLBSA);
+	odeAllowedEvals.push_back(make_vector(EVAL_EULER, EVAL_TEULER, EVAL_AHEUN, EVAL_RK4, EVAL_ABM, EVAL_RK23, EVAL_RKF45, EVAL_RKF56, EVAL_RKCK45, EVAL_RKDP54), ODE_LLG);
+	odeAllowedEvals.push_back(make_vector(EVAL_EULER, EVAL_TEULER, EVAL_AHEUN, EVAL_RK4, EVAL_ABM, EVAL_RK23, EVAL_RKF45, EVAL_RKF56, EVAL_RKCK45, EVAL_RKDP54, EVAL_SD), ODE_LLGSTATIC);
+	odeAllowedEvals.push_back(make_vector(EVAL_EULER, EVAL_TEULER, EVAL_AHEUN, EVAL_RK4, EVAL_ABM, EVAL_RK23, EVAL_RKF45, EVAL_RKF56, EVAL_RKCK45, EVAL_RKDP54), ODE_LLGSTT);
+	odeAllowedEvals.push_back(make_vector(EVAL_EULER, EVAL_TEULER, EVAL_AHEUN, EVAL_RK4, EVAL_ABM, EVAL_RK23, EVAL_RKF45, EVAL_RKF56, EVAL_RKCK45, EVAL_RKDP54), ODE_LLB);
+	odeAllowedEvals.push_back(make_vector(EVAL_EULER, EVAL_TEULER, EVAL_AHEUN, EVAL_RK4, EVAL_ABM, EVAL_RK23, EVAL_RKF45, EVAL_RKF56, EVAL_RKCK45, EVAL_RKDP54), ODE_LLBSTT);
+	odeAllowedEvals.push_back(make_vector(EVAL_EULER, EVAL_TEULER, EVAL_AHEUN, EVAL_RK4, EVAL_ABM, EVAL_RK23, EVAL_RKF45, EVAL_RKF56, EVAL_RKCK45, EVAL_RKDP54), ODE_LLGSA);
+	odeAllowedEvals.push_back(make_vector(EVAL_EULER, EVAL_TEULER, EVAL_AHEUN, EVAL_RK4, EVAL_ABM, EVAL_RK23, EVAL_RKF45, EVAL_RKF56, EVAL_RKCK45, EVAL_RKDP54), ODE_LLBSA);
 	odeAllowedEvals.push_back(make_vector(EVAL_EULER, EVAL_TEULER, EVAL_AHEUN, EVAL_RK4), ODE_SLLG);
 	odeAllowedEvals.push_back(make_vector(EVAL_EULER, EVAL_TEULER, EVAL_AHEUN, EVAL_RK4), ODE_SLLGSTT);
 	odeAllowedEvals.push_back(make_vector(EVAL_EULER, EVAL_TEULER, EVAL_AHEUN, EVAL_RK4), ODE_SLLB);

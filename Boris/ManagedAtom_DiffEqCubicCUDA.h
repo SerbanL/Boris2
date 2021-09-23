@@ -77,6 +77,7 @@ public:
 	cuVEC<cuReal3>* psEval3;
 	cuVEC<cuReal3>* psEval4;
 	cuVEC<cuReal3>* psEval5;
+	cuVEC<cuReal3>* psEval6;
 
 	//Thermal field and torques, enabled only for the stochastic equations
 	cuVEC<cuReal3>* pH_Thermal;

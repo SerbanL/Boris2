@@ -35,8 +35,8 @@ void DifferentialEquationAFM::RunRKF45_Step0_withReductions(void)
 				sEval0_2[idx] = Equation_Eval_2[omp_get_thread_num()];
 
 				//Now estimate magnetization using RKF first step
-				pMesh->M[idx] += sEval0[idx] * (dT / 4);
-				pMesh->M2[idx] += sEval0_2[idx] * (dT / 4);
+				pMesh->M[idx] += sEval0[idx] * (2 * dT / 9);
+				pMesh->M2[idx] += sEval0_2[idx] * (2 * dT / 9);
 			}
 		}
 	}
@@ -70,8 +70,8 @@ void DifferentialEquationAFM::RunRKF45_Step0(void)
 				sEval0_2[idx] = Equation_Eval_2[omp_get_thread_num()];
 
 				//Now estimate magnetization using RKF first step
-				pMesh->M[idx] += sEval0[idx] * (dT / 4);
-				pMesh->M2[idx] += sEval0_2[idx] * (dT / 4);
+				pMesh->M[idx] += sEval0[idx] * (2 * dT / 9);
+				pMesh->M2[idx] += sEval0_2[idx] * (2 * dT / 9);
 			}
 		}
 	}
@@ -89,8 +89,8 @@ void DifferentialEquationAFM::RunRKF45_Step1(void)
 			sEval1_2[idx] = Equation_Eval_2[omp_get_thread_num()];
 
 			//Now estimate magnetization using RKF midle step 1
-			pMesh->M[idx] = sM1[idx] + (3 * sEval0[idx] + 9 * sEval1[idx]) * dT / 32;
-			pMesh->M2[idx] = sM1_2[idx] + (3 * sEval0_2[idx] + 9 * sEval1_2[idx]) * dT / 32;
+			pMesh->M[idx] = sM1[idx] + (sEval0[idx] / 12 + sEval1[idx] / 4) * dT;
+			pMesh->M2[idx] = sM1_2[idx] + (sEval0_2[idx] / 12 + sEval1_2[idx] / 4) * dT;
 		}
 	}
 }
@@ -107,8 +107,8 @@ void DifferentialEquationAFM::RunRKF45_Step2(void)
 			sEval2_2[idx] = Equation_Eval_2[omp_get_thread_num()];
 
 			//Now estimate magnetization using RKF midle step 2
-			pMesh->M[idx] = sM1[idx] + (1932 * sEval0[idx] - 7200 * sEval1[idx] + 7296 * sEval2[idx]) * dT / 2197;
-			pMesh->M2[idx] = sM1_2[idx] + (1932 * sEval0_2[idx] - 7200 * sEval1_2[idx] + 7296 * sEval2_2[idx]) * dT / 2197;
+			pMesh->M[idx] = sM1[idx] + (69 * sEval0[idx] / 128 - 243 * sEval1[idx] / 128 + 135 * sEval2[idx] / 64) * dT;
+			pMesh->M2[idx] = sM1_2[idx] + (69 * sEval0_2[idx] / 128 - 243 * sEval1_2[idx] / 128 + 135 * sEval2_2[idx] / 64) * dT;
 		}
 	}
 }
@@ -125,8 +125,8 @@ void DifferentialEquationAFM::RunRKF45_Step3(void)
 			sEval3_2[idx] = Equation_Eval_2[omp_get_thread_num()];
 
 			//Now estimate magnetization using RKF midle step 3
-			pMesh->M[idx] = sM1[idx] + (439 * sEval0[idx] / 216 - 8 * sEval1[idx] + 3680 * sEval2[idx] / 513 - 845 * sEval3[idx] / 4104) * dT;
-			pMesh->M2[idx] = sM1_2[idx] + (439 * sEval0_2[idx] / 216 - 8 * sEval1_2[idx] + 3680 * sEval2_2[idx] / 513 - 845 * sEval3_2[idx] / 4104) * dT;
+			pMesh->M[idx] = sM1[idx] + (-17 * sEval0[idx] / 12 + 27 * sEval1[idx] / 4 - 27 * sEval2[idx] / 5 + 16 * sEval3[idx] / 15) * dT;
+			pMesh->M2[idx] = sM1_2[idx] + (-17 * sEval0_2[idx] / 12 + 27 * sEval1_2[idx] / 4 - 27 * sEval2_2[idx] / 5 + 16 * sEval3_2[idx] / 15) * dT;
 		}
 	}
 }
@@ -143,8 +143,8 @@ void DifferentialEquationAFM::RunRKF45_Step4(void)
 			sEval4_2[idx] = Equation_Eval_2[omp_get_thread_num()];
 
 			//Now estimate magnetization using RKF midle step 4
-			pMesh->M[idx] = sM1[idx] + (-8 * sEval0[idx] / 27 + 2 * sEval1[idx] - 3544 * sEval2[idx] / 2565 + 1859 * sEval3[idx] / 4104 - 11 * sEval4[idx] / 40) * dT;
-			pMesh->M2[idx] = sM1_2[idx] + (-8 * sEval0_2[idx] / 27 + 2 * sEval1_2[idx] - 3544 * sEval2_2[idx] / 2565 + 1859 * sEval3_2[idx] / 4104 - 11 * sEval4_2[idx] / 40) * dT;
+			pMesh->M[idx] = sM1[idx] + (65 * sEval0[idx] / 432 - 5 * sEval1[idx] / 16 + 13 * sEval2[idx] / 16 + 4 * sEval3[idx] / 27 + 5 * sEval4[idx] / 144) * dT;
+			pMesh->M2[idx] = sM1_2[idx] + (65 * sEval0_2[idx] / 432 - 5 * sEval1_2[idx] / 16 + 13 * sEval2_2[idx] / 16 + 4 * sEval3_2[idx] / 27 + 5 * sEval4_2[idx] / 144) * dT;
 		}
 	}
 }
@@ -166,11 +166,11 @@ void DifferentialEquationAFM::RunRKF45_Step5_withReductions(void)
 				DBL3 rhs_2 = Equation_Eval_2[omp_get_thread_num()];
 
 				//4th order evaluation
-				DBL3 prediction = sM1[idx] + (25 * sEval0[idx] / 216 + 1408 * sEval2[idx] / 2565 + 2197 * sEval3[idx] / 4101 - sEval4[idx] / 5) * dT;
+				pMesh->M[idx] = sM1[idx] + (sEval0[idx] / 9 + 9 * sEval2[idx] / 20 + 16 * sEval3[idx] / 45 + sEval4[idx] / 12) * dT;
+				pMesh->M2[idx] = sM1_2[idx] + (sEval0_2[idx] / 9 + 9 * sEval2_2[idx] / 20 + 16 * sEval3_2[idx] / 45 + sEval4_2[idx] / 12) * dT;
 
-				//5th order evaluation -> keep this as the new value, not the 4th order; relaxation doesn't work well the other way around.
-				pMesh->M[idx] = sM1[idx] + (16 * sEval0[idx] / 135 + 6656 * sEval2[idx] / 12825 + 28561 * sEval3[idx] / 56430 - 9 * sEval4[idx] / 50 + 2 * rhs / 55) * dT;
-				pMesh->M2[idx] = sM1_2[idx] + (16 * sEval0_2[idx] / 135 + 6656 * sEval2_2[idx] / 12825 + 28561 * sEval3_2[idx] / 56430 - 9 * sEval4_2[idx] / 50 + 2 * rhs_2 / 55) * dT;
+				//5th order evaluation
+				DBL3 prediction = sM1[idx] + (47 * sEval0[idx] / 450 + 12 * sEval2[idx] / 25 + 32 * sEval3[idx] / 225 + 1 * sEval4[idx] / 30 + 6 * rhs / 25) * dT;
 
 				if (renormalize) {
 
@@ -228,11 +228,11 @@ void DifferentialEquationAFM::RunRKF45_Step5(void)
 				DBL3 rhs_2 = Equation_Eval_2[omp_get_thread_num()];
 
 				//4th order evaluation
-				DBL3 prediction = sM1[idx] + (25 * sEval0[idx] / 216 + 1408 * sEval2[idx] / 2565 + 2197 * sEval3[idx] / 4101 - sEval4[idx] / 5) * dT;
+				pMesh->M[idx] = sM1[idx] + (sEval0[idx] / 9 + 9 * sEval2[idx] / 20 + 16 * sEval3[idx] / 45 + sEval4[idx] / 12) * dT;
+				pMesh->M2[idx] = sM1_2[idx] + (sEval0_2[idx] / 9 + 9 * sEval2_2[idx] / 20 + 16 * sEval3_2[idx] / 45 + sEval4_2[idx] / 12) * dT;
 
-				//5th order evaluation -> keep this as the new value, not the 4th order; relaxation doesn't work well the other way around.
-				pMesh->M[idx] = sM1[idx] + (16 * sEval0[idx] / 135 + 6656 * sEval2[idx] / 12825 + 28561 * sEval3[idx] / 56430 - 9 * sEval4[idx] / 50 + 2 * rhs / 55) * dT;
-				pMesh->M2[idx] = sM1_2[idx] + (16 * sEval0_2[idx] / 135 + 6656 * sEval2_2[idx] / 12825 + 28561 * sEval3_2[idx] / 56430 - 9 * sEval4_2[idx] / 50 + 2 * rhs_2 / 55) * dT;
+				//5th order evaluation
+				DBL3 prediction = sM1[idx] + (47 * sEval0[idx] / 450 + 12 * sEval2[idx] / 25 + 32 * sEval3[idx] / 225 + 1 * sEval4[idx] / 30 + 6 * rhs / 25) * dT;
 
 				if (renormalize) {
 

@@ -853,6 +853,200 @@ void ODECommon_Base::Iterate(void)
 	}
 	break;
 
+	case EVAL_RKF56:
+	{
+#ifdef ODE_EVAL_COMPILATION_RKF56
+		switch (evalStep) {
+
+		case 0:
+		{
+			if (calculate_mxh) {
+
+				for (int idx = 0; idx < podeSolver->pODE.size(); idx++) {
+
+					podeSolver->pODE[idx]->RunRKF56_Step0_withReductions();
+				}
+
+				for (int idx = 0; idx < patom_odeSolver->pODE.size(); idx++) {
+
+					patom_odeSolver->pODE[idx]->RunRKF56_Step0_withReductions();
+				}
+
+				calculate_mxh = false;
+				mxh = 0.0;
+				podeSolver->Set_mxh();
+				patom_odeSolver->Set_mxh();
+			}
+			else {
+
+				for (int idx = 0; idx < podeSolver->pODE.size(); idx++) {
+
+					podeSolver->pODE[idx]->RunRKF56_Step0();
+				}
+
+				for (int idx = 0; idx < patom_odeSolver->pODE.size(); idx++) {
+
+					patom_odeSolver->pODE[idx]->RunRKF56_Step0();
+				}
+			}
+
+			evalStep++;
+			available = false;
+		}
+		break;
+
+		case 1:
+		{
+			for (int idx = 0; idx < podeSolver->pODE.size(); idx++) {
+
+				podeSolver->pODE[idx]->RunRKF56_Step1();
+			}
+
+			for (int idx = 0; idx < patom_odeSolver->pODE.size(); idx++) {
+
+				patom_odeSolver->pODE[idx]->RunRKF56_Step1();
+			}
+
+			evalStep++;
+		}
+		break;
+
+		case 2:
+		{
+			for (int idx = 0; idx < podeSolver->pODE.size(); idx++) {
+
+				podeSolver->pODE[idx]->RunRKF56_Step2();
+			}
+
+			for (int idx = 0; idx < patom_odeSolver->pODE.size(); idx++) {
+
+				patom_odeSolver->pODE[idx]->RunRKF56_Step2();
+			}
+
+			evalStep++;
+		}
+		break;
+
+		case 3:
+		{
+			for (int idx = 0; idx < podeSolver->pODE.size(); idx++) {
+
+				podeSolver->pODE[idx]->RunRKF56_Step3();
+			}
+
+			for (int idx = 0; idx < patom_odeSolver->pODE.size(); idx++) {
+
+				patom_odeSolver->pODE[idx]->RunRKF56_Step3();
+			}
+
+			evalStep++;
+		}
+		break;
+
+		case 4:
+		{
+			for (int idx = 0; idx < podeSolver->pODE.size(); idx++) {
+
+				podeSolver->pODE[idx]->RunRKF56_Step4();
+			}
+
+			for (int idx = 0; idx < patom_odeSolver->pODE.size(); idx++) {
+
+				patom_odeSolver->pODE[idx]->RunRKF56_Step4();
+			}
+
+			evalStep++;
+		}
+		break;
+
+		case 5:
+		{
+			for (int idx = 0; idx < podeSolver->pODE.size(); idx++) {
+
+				podeSolver->pODE[idx]->RunRKF56_Step5();
+			}
+
+			for (int idx = 0; idx < patom_odeSolver->pODE.size(); idx++) {
+
+				patom_odeSolver->pODE[idx]->RunRKF56_Step5();
+			}
+
+			evalStep++;
+		}
+		break;
+
+		case 6:
+		{
+			for (int idx = 0; idx < podeSolver->pODE.size(); idx++) {
+
+				podeSolver->pODE[idx]->RunRKF56_Step6();
+			}
+
+			for (int idx = 0; idx < patom_odeSolver->pODE.size(); idx++) {
+
+				patom_odeSolver->pODE[idx]->RunRKF56_Step6();
+			}
+
+			evalStep++;
+		}
+		break;
+
+		case 7:
+		{
+			if (calculate_dmdt) {
+
+				for (int idx = 0; idx < podeSolver->pODE.size(); idx++) {
+
+					podeSolver->pODE[idx]->RunRKF56_Step7_withReductions();
+				}
+
+				for (int idx = 0; idx < patom_odeSolver->pODE.size(); idx++) {
+
+					patom_odeSolver->pODE[idx]->RunRKF56_Step7_withReductions();
+				}
+
+				calculate_dmdt = false;
+				dmdt = 0.0;
+				podeSolver->Set_dmdt();
+				patom_odeSolver->Set_dmdt();
+			}
+			else {
+
+				for (int idx = 0; idx < podeSolver->pODE.size(); idx++) {
+
+					podeSolver->pODE[idx]->RunRKF56_Step7();
+				}
+
+				for (int idx = 0; idx < patom_odeSolver->pODE.size(); idx++) {
+
+					patom_odeSolver->pODE[idx]->RunRKF56_Step7();
+				}
+			}
+
+			evalStep = 0;
+			time += dT;
+			stagetime += dT;
+			iteration++;
+			stageiteration++;
+			available = true;
+
+			dT_last = dT;
+			lte = 0.0;
+			podeSolver->Set_lte();
+			patom_odeSolver->Set_lte();
+
+			if (!SetAdaptiveTimeStep()) {
+
+				podeSolver->Restore();
+				patom_odeSolver->Restore();
+			}
+		}
+		break;
+		}
+#endif
+	}
+	break;
+
 	case EVAL_RKCK45:
 	{
 #ifdef ODE_EVAL_COMPILATION_RKCK
@@ -1390,7 +1584,7 @@ double ODECommon_Base::Get_EvalStep_Time(void)
 	//Define c values in Butcher tableaux
 
 	//Trapezoidal Euler
-	static double evaltime_teuler[4] = { 0.0, 0.5 };
+	static double evaltime_teuler[4] = { 0.0, 1.0 };
 
 	//RK4
 	static double evaltime_rk4[4] = { 0.0, 0.5, 0.5, 1.0 };
@@ -1402,7 +1596,11 @@ double ODECommon_Base::Get_EvalStep_Time(void)
 	static double evaltime_rk23[4] = { 0.0, 0.5, 0.75 };
 
 	//RKF45
-	static double evaltime_rkf45[6] = { 0.0, 0.25, 0.375, 12.0/13, 1.0, 0.5 };
+	//static double evaltime_rkf45[6] = { 0.0, 0.25, 0.375, 12.0/13, 1.0, 0.5 };
+	static double evaltime_rkf45[6] = { 0.0, 2.0/9, 1.0/3, 3.0/4, 1.0, 5.0/6 };
+
+	//RKF56
+	static double evaltime_rkf56[8] = { 0.0, 1.0/6, 4.0/15, 2.0/3, 4.0/5, 1.0, 0.0, 1.0 };
 
 	//RKCK45
 	static double evaltime_rkck45[6] = { 0.0, 0.2, 0.3, 0.6, 1.0, 0.875 };
@@ -1457,6 +1655,12 @@ double ODECommon_Base::Get_EvalStep_Time(void)
 	case EVAL_RKF45:
 	{
 		return time + dT * evaltime_rkf45[evalStep];
+	}
+	break;
+
+	case EVAL_RKF56:
+	{
+		return time + dT * evaltime_rkf56[evalStep];
 	}
 	break;
 

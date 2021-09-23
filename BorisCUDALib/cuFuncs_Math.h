@@ -347,7 +347,7 @@ __device__ inline cuReal3 solve_crossprod_perp(cuBReal a, cuBReal b, const cuRea
 {
 	cuBReal ab = a * a + b + b * b;
 
-	return (1.0 / (a*a + ab * ab)) * ((a*a + b * ab) * m + a * (a*a + b * b) * (m ^ f));
+	return ((cuBReal)1.0 / (a*a + ab * ab)) * ((a*a + b * ab) * m + a * (a*a + b * b) * (m ^ f));
 }
 
 ///////////////////////////////////////////////////////////////////////////////

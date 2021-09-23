@@ -109,6 +109,30 @@ BError SDemag_Demag::Initialize_Mesh_Transfer(void)
 					{ &pMesh->M }, { &pMesh->M2 }, { &pMesh->Heff }, { &pMesh->Heff2 },
 					MESHTRANSFERTYPE_WEIGHTED)) return error(BERROR_OUTOFMEMORY_CRIT);
 			}
+
+			if (pMesh->pSMesh->GetEvaluationSpeedup() >= 4 && Hdemag4.size() == transfer.size()) {
+
+				//initialize mesh transfer for Hdemag as well if we are using evaluation speedup
+				if (!Hdemag4.Initialize_MeshTransfer_AveragedInputs_DuplicatedOutputs(
+					{ &pMesh->M }, { &pMesh->M2 }, { &pMesh->Heff }, { &pMesh->Heff2 },
+					MESHTRANSFERTYPE_WEIGHTED)) return error(BERROR_OUTOFMEMORY_CRIT);
+			}
+
+			if (pMesh->pSMesh->GetEvaluationSpeedup() >= 5 && Hdemag5.size() == transfer.size()) {
+
+				//initialize mesh transfer for Hdemag as well if we are using evaluation speedup
+				if (!Hdemag5.Initialize_MeshTransfer_AveragedInputs_DuplicatedOutputs(
+					{ &pMesh->M }, { &pMesh->M2 }, { &pMesh->Heff }, { &pMesh->Heff2 },
+					MESHTRANSFERTYPE_WEIGHTED)) return error(BERROR_OUTOFMEMORY_CRIT);
+			}
+
+			if (pMesh->pSMesh->GetEvaluationSpeedup() >= 6 && Hdemag6.size() == transfer.size()) {
+
+				//initialize mesh transfer for Hdemag as well if we are using evaluation speedup
+				if (!Hdemag6.Initialize_MeshTransfer_AveragedInputs_DuplicatedOutputs(
+					{ &pMesh->M }, { &pMesh->M2 }, { &pMesh->Heff }, { &pMesh->Heff2 },
+					MESHTRANSFERTYPE_WEIGHTED)) return error(BERROR_OUTOFMEMORY_CRIT);
+			}
 		}
 
 		//transfer values from M - we need this to get number of non-empty cells
@@ -143,6 +167,24 @@ BError SDemag_Demag::Initialize_Mesh_Transfer(void)
 
 				//initialize mesh transfer for Hdemag as well if we are using evaluation speedup
 				if (!Hdemag3.Initialize_MeshTransfer({ &pMesh->M }, { &pMesh->Heff }, MESHTRANSFERTYPE_WEIGHTED)) return error(BERROR_OUTOFMEMORY_CRIT);
+			}
+
+			if (pMesh->pSMesh->GetEvaluationSpeedup() >= 4 && Hdemag4.size() == transfer.size()) {
+
+				//initialize mesh transfer for Hdemag as well if we are using evaluation speedup
+				if (!Hdemag4.Initialize_MeshTransfer({ &pMesh->M }, { &pMesh->Heff }, MESHTRANSFERTYPE_WEIGHTED)) return error(BERROR_OUTOFMEMORY_CRIT);
+			}
+
+			if (pMesh->pSMesh->GetEvaluationSpeedup() >= 5 && Hdemag5.size() == transfer.size()) {
+
+				//initialize mesh transfer for Hdemag as well if we are using evaluation speedup
+				if (!Hdemag5.Initialize_MeshTransfer({ &pMesh->M }, { &pMesh->Heff }, MESHTRANSFERTYPE_WEIGHTED)) return error(BERROR_OUTOFMEMORY_CRIT);
+			}
+
+			if (pMesh->pSMesh->GetEvaluationSpeedup() >= 6 && Hdemag6.size() == transfer.size()) {
+
+				//initialize mesh transfer for Hdemag as well if we are using evaluation speedup
+				if (!Hdemag6.Initialize_MeshTransfer({ &pMesh->M }, { &pMesh->Heff }, MESHTRANSFERTYPE_WEIGHTED)) return error(BERROR_OUTOFMEMORY_CRIT);
 			}
 		}
 
@@ -240,6 +282,15 @@ BError SDemag_Demag::Initialize(void)
 		if (pMesh->pSMesh->GetEvaluationSpeedup() >= 3) Hdemag3.resize(h_common, convolution_rect);
 		else Hdemag3.clear();
 
+		if (pMesh->pSMesh->GetEvaluationSpeedup() >= 4) Hdemag4.resize(h_common, convolution_rect);
+		else Hdemag4.clear();
+
+		if (pMesh->pSMesh->GetEvaluationSpeedup() >= 5) Hdemag5.resize(h_common, convolution_rect);
+		else Hdemag5.clear();
+
+		if (pMesh->pSMesh->GetEvaluationSpeedup() >= 6) Hdemag6.resize(h_common, convolution_rect);
+		else Hdemag6.clear();
+
 		if (convolution_rect == meshRect && h_common == h) {
 
 			//no transfer required
@@ -290,6 +341,9 @@ BError SDemag_Demag::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 	Hdemag.clear();
 	Hdemag2.clear();
 	Hdemag3.clear();
+	Hdemag4.clear();
+	Hdemag5.clear();
+	Hdemag6.clear();
 
 	if (layer_number_2d >= 0) {
 

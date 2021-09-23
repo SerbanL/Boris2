@@ -28,14 +28,6 @@
 //Don't set the number of CUDA threads per block too large. Currently using 128.
 //If the amount of code that is included in a CUDA kernel is too large (through inlining of various functions, etc. etc.) the program will start to exhibit very strange bugs.
 
-//BUGS
-
-//NOT SOLVED:
-//1. Drag and drop simulation file sometimes crashes program.
-
-//LIKELY SOLVED:
-//SOLVED:
-
 #pragma once
 
 #include "BorisLib.h"
@@ -126,7 +118,7 @@ private:
 	std::string boris_simulations_directory = "Simulations/";
 
 	//check for updates on program startup?
-	bool start_check_updates = true;
+	bool start_check_updates = false;
 
 	//start script server on program startup?
 	bool start_scriptserver = true;

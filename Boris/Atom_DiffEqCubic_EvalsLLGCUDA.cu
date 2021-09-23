@@ -893,7 +893,7 @@ __global__ void RunRKF45_Step0_LLG_withReductions_Kernel(ManagedAtom_DiffEqCubic
 				mxh = cu_GetMagnitude(M1[idx] ^ Heff1[idx]) / (conversion * Mnorm * Mnorm);
 
 				//Now estimate moment using RKF first step
-				M1[idx] += (*cuaDiffEq.psEval0)[idx] * (dT / 4);
+				M1[idx] += (*cuaDiffEq.psEval0)[idx] * (2 * dT / 9);
 			}
 		}
 	}
@@ -927,7 +927,7 @@ __global__ void RunRKF45_Step0_LLG_Kernel(ManagedAtom_DiffEqCubicCUDA& cuaDiffEq
 				(*cuaDiffEq.psEval0)[idx] = (-(cuBReal)GAMMA / (1 + alpha * alpha)) * ((M1[idx] ^ Heff1[idx]) + alpha * ((M1[idx] / mu_s) ^ (M1[idx] ^ Heff1[idx])));
 
 				//Now estimate moment using RKF first step
-				M1[idx] += (*cuaDiffEq.psEval0)[idx] * (dT / 4);
+				M1[idx] += (*cuaDiffEq.psEval0)[idx] * (2 * dT / 9);
 			}
 		}
 	}
@@ -954,7 +954,7 @@ __global__ void RunRKF45_Step1_LLG_Kernel(ManagedAtom_DiffEqCubicCUDA& cuaDiffEq
 			(*cuaDiffEq.psEval1)[idx] = (-(cuBReal)GAMMA / (1 + alpha * alpha)) * ((M1[idx] ^ Heff1[idx]) + alpha * ((M1[idx] / mu_s) ^ (M1[idx] ^ Heff1[idx])));
 
 			//Now estimate moment using RKF midle step 1
-			M1[idx] = (*cuaDiffEq.psM1)[idx] + (3 * (*cuaDiffEq.psEval0)[idx] + 9 * (*cuaDiffEq.psEval1)[idx]) * dT / 32;
+			M1[idx] = (*cuaDiffEq.psM1)[idx] + ((*cuaDiffEq.psEval0)[idx] / 12 + (*cuaDiffEq.psEval1)[idx] / 4) * dT;
 		}
 	}
 }
@@ -980,7 +980,7 @@ __global__ void RunRKF45_Step2_LLG_Kernel(ManagedAtom_DiffEqCubicCUDA& cuaDiffEq
 			(*cuaDiffEq.psEval2)[idx] = (-(cuBReal)GAMMA / (1 + alpha * alpha)) * ((M1[idx] ^ Heff1[idx]) + alpha * ((M1[idx] / mu_s) ^ (M1[idx] ^ Heff1[idx])));
 
 			//Now estimate moment using RKF midle step 2
-			M1[idx] = (*cuaDiffEq.psM1)[idx] + (1932 * (*cuaDiffEq.psEval0)[idx] - 7200 * (*cuaDiffEq.psEval1)[idx] + 7296 * (*cuaDiffEq.psEval2)[idx]) * dT / 2197;
+			M1[idx] = (*cuaDiffEq.psM1)[idx] + (69 * (*cuaDiffEq.psEval0)[idx] / 128 - 243 * (*cuaDiffEq.psEval1)[idx] / 128 + 135 * (*cuaDiffEq.psEval2)[idx] / 64) * dT;
 		}
 	}
 }
@@ -1006,7 +1006,7 @@ __global__ void RunRKF45_Step3_LLG_Kernel(ManagedAtom_DiffEqCubicCUDA& cuaDiffEq
 			(*cuaDiffEq.psEval3)[idx] = (-(cuBReal)GAMMA / (1 + alpha * alpha)) * ((M1[idx] ^ Heff1[idx]) + alpha * ((M1[idx] / mu_s) ^ (M1[idx] ^ Heff1[idx])));
 
 			//Now estimate moment using RKF midle step 3
-			M1[idx] = (*cuaDiffEq.psM1)[idx] + (439 * (*cuaDiffEq.psEval0)[idx] / 216 - 8 * (*cuaDiffEq.psEval1)[idx] + 3680 * (*cuaDiffEq.psEval2)[idx] / 513 - 845 * (*cuaDiffEq.psEval3)[idx] / 4104) * dT;
+			M1[idx] = (*cuaDiffEq.psM1)[idx] + (-17 * (*cuaDiffEq.psEval0)[idx] / 12 + 27 * (*cuaDiffEq.psEval1)[idx] / 4 - 27 * (*cuaDiffEq.psEval2)[idx] / 5 + 16 * (*cuaDiffEq.psEval3)[idx] / 15) * dT;
 		}
 	}
 }
@@ -1032,7 +1032,7 @@ __global__ void RunRKF45_Step4_LLG_Kernel(ManagedAtom_DiffEqCubicCUDA& cuaDiffEq
 			(*cuaDiffEq.psEval4)[idx] = (-(cuBReal)GAMMA / (1 + alpha * alpha)) * ((M1[idx] ^ Heff1[idx]) + alpha * ((M1[idx] / mu_s) ^ (M1[idx] ^ Heff1[idx])));
 
 			//Now estimate moment using RKF midle step 4
-			M1[idx] = (*cuaDiffEq.psM1)[idx] + (-8 * (*cuaDiffEq.psEval0)[idx] / 27 + 2 * (*cuaDiffEq.psEval1)[idx] - 3544 * (*cuaDiffEq.psEval2)[idx] / 2565 + 1859 * (*cuaDiffEq.psEval3)[idx] / 4104 - 11 * (*cuaDiffEq.psEval4)[idx] / 40) * dT;
+			M1[idx] = (*cuaDiffEq.psM1)[idx] + (65 * (*cuaDiffEq.psEval0)[idx] / 432 - 5 * (*cuaDiffEq.psEval1)[idx] / 16 + 13 * (*cuaDiffEq.psEval2)[idx] / 16 + 4 * (*cuaDiffEq.psEval3)[idx] / 27 + 5 * (*cuaDiffEq.psEval4)[idx] / 144) * dT;
 		}
 	}
 }
@@ -1067,10 +1067,10 @@ __global__ void RunRKF45_Step5_LLG_withReductions_Kernel(ManagedAtom_DiffEqCubic
 				cuReal3 rhs = (-(cuBReal)GAMMA / (1 + alpha * alpha)) * ((M1[idx] ^ Heff1[idx]) + alpha * ((M1[idx] / mu_s) ^ (M1[idx] ^ Heff1[idx])));
 
 				//4th order evaluation
-				cuReal3 prediction = (*cuaDiffEq.psM1)[idx] + (25 * (*cuaDiffEq.psEval0)[idx] / 216 + 1408 * (*cuaDiffEq.psEval2)[idx] / 2565 + 2197 * (*cuaDiffEq.psEval3)[idx] / 4101 - (*cuaDiffEq.psEval4)[idx] / 5) * dT;
+				M1[idx] = (*cuaDiffEq.psM1)[idx] + ((*cuaDiffEq.psEval0)[idx] / 9 + 9 * (*cuaDiffEq.psEval2)[idx] / 20 + 16 * (*cuaDiffEq.psEval3)[idx] / 45 + (*cuaDiffEq.psEval4)[idx] / 12) * dT;
 
-				//5th order evaluation -> keep this as the new value, not the 4th order; relaxation doesn't work well the other way around.
-				M1[idx] = (*cuaDiffEq.psM1)[idx] + (16 * (*cuaDiffEq.psEval0)[idx] / 135 + 6656 * (*cuaDiffEq.psEval2)[idx] / 12825 + 28561 * (*cuaDiffEq.psEval3)[idx] / 56430 - 9 * (*cuaDiffEq.psEval4)[idx] / 50 + 2 * rhs / 55) * dT;
+				//5th order evaluation
+				cuReal3 prediction = (*cuaDiffEq.psM1)[idx] + (47 * (*cuaDiffEq.psEval0)[idx] / 450 + 12 * (*cuaDiffEq.psEval2)[idx] / 25 + 32 * (*cuaDiffEq.psEval3)[idx] / 225 + 1 * (*cuaDiffEq.psEval4)[idx] / 30 + 6 * rhs / 25) * dT;
 
 				if (*cuaDiffEq.prenormalize) {
 
@@ -1117,10 +1117,10 @@ __global__ void RunRKF45_Step5_LLG_Kernel(ManagedAtom_DiffEqCubicCUDA& cuaDiffEq
 				cuReal3 rhs = (-(cuBReal)GAMMA / (1 + alpha * alpha)) * ((M1[idx] ^ Heff1[idx]) + alpha * ((M1[idx] / mu_s) ^ (M1[idx] ^ Heff1[idx])));
 
 				//4th order evaluation
-				cuReal3 prediction = (*cuaDiffEq.psM1)[idx] + (25 * (*cuaDiffEq.psEval0)[idx] / 216 + 1408 * (*cuaDiffEq.psEval2)[idx] / 2565 + 2197 * (*cuaDiffEq.psEval3)[idx] / 4101 - (*cuaDiffEq.psEval4)[idx] / 5) * dT;
+				M1[idx] = (*cuaDiffEq.psM1)[idx] + ((*cuaDiffEq.psEval0)[idx] / 9 + 9 * (*cuaDiffEq.psEval2)[idx] / 20 + 16 * (*cuaDiffEq.psEval3)[idx] / 45 + (*cuaDiffEq.psEval4)[idx] / 12) * dT;
 
-				//5th order evaluation -> keep this as the new value, not the 4th order; relaxation doesn't work well the other way around.
-				M1[idx] = (*cuaDiffEq.psM1)[idx] + (16 * (*cuaDiffEq.psEval0)[idx] / 135 + 6656 * (*cuaDiffEq.psEval2)[idx] / 12825 + 28561 * (*cuaDiffEq.psEval3)[idx] / 56430 - 9 * (*cuaDiffEq.psEval4)[idx] / 50 + 2 * rhs / 55) * dT;
+				//5th order evaluation
+				cuReal3 prediction = (*cuaDiffEq.psM1)[idx] + (47 * (*cuaDiffEq.psEval0)[idx] / 450 + 12 * (*cuaDiffEq.psEval2)[idx] / 25 + 32 * (*cuaDiffEq.psEval3)[idx] / 225 + 1 * (*cuaDiffEq.psEval4)[idx] / 30 + 6 * rhs / 25) * dT;
 
 				if (*cuaDiffEq.prenormalize) {
 

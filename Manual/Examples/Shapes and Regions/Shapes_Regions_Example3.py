@@ -1,8 +1,7 @@
 from NetSocks import NSClient
 from NetSocks import Shape
 
-ns = NSClient()
-ns.configure(True)
+ns = NSClient(); ns.configure(True)
 
 ########################################
 

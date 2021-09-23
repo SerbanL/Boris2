@@ -48,7 +48,7 @@ protected:
 	VEC<DBL3> sM1;
 
 	//evaluation scratch spaces
-	VEC<DBL3> sEval0, sEval1, sEval2, sEval3, sEval4, sEval5;
+	VEC<DBL3> sEval0, sEval1, sEval2, sEval3, sEval4, sEval5, sEval6;
 
 	//Thermal field, enabled only for the stochastic equations
 	VEC<DBL3> H_Thermal;
@@ -56,7 +56,7 @@ protected:
 	//random number generator
 	BorisRand prng;
 
-	Atom_Mesh *paMesh;
+	Atom_Mesh *paMesh = nullptr;
 
 	//unique odeId generated when a new entry is made in the pODE vector : used to delete it in the destructor.
 	INT2 odeId;
@@ -136,6 +136,20 @@ protected:
 	virtual void RunRKF45_Step4(void) = 0;
 	virtual void RunRKF45_Step5_withReductions(void) = 0;
 	virtual void RunRKF45_Step5(void) = 0;
+#endif
+
+#ifdef ODE_EVAL_COMPILATION_RKF56
+	//RKF56
+	virtual void RunRKF56_Step0_withReductions(void) = 0;
+	virtual void RunRKF56_Step0(void) = 0;
+	virtual void RunRKF56_Step1(void) = 0;
+	virtual void RunRKF56_Step2(void) = 0;
+	virtual void RunRKF56_Step3(void) = 0;
+	virtual void RunRKF56_Step4(void) = 0;
+	virtual void RunRKF56_Step5(void) = 0;
+	virtual void RunRKF56_Step6(void) = 0;
+	virtual void RunRKF56_Step7_withReductions(void) = 0;
+	virtual void RunRKF56_Step7(void) = 0;
 #endif
 
 #ifdef ODE_EVAL_COMPILATION_RKCK

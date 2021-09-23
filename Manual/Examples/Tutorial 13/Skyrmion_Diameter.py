@@ -1,15 +1,16 @@
 """
-This script is part of Boris Computational Spintronics v3.0
+This script is part of Boris Computational Spintronics
 
 @author: Serban Lepadatu, 2020
 """
 
-from NetSocks import NSClient
+from NetSocks import NSClient, customize_plots
 import matplotlib.pyplot as plt
+import numpy as np
 
 #setup communication with server
-ns = NSClient()
-ns.configure(True)
+ns = NSClient(); ns.configure(True)
+customize_plots()
 
 ########################################
 
@@ -51,8 +52,9 @@ for i in range(0, steps + 1):
     ns.SaveDataToFile(outputfile, [field, diameter, diameter_std])
 
 data = ns.Get_Data_Columns(outputfile, [0, 1])
-plt.axes(xlabel = 'H (A/m)', ylabel = 'diameter (m)', title = 'skyrmion diameter vs H')
-plt.plot(data[0], data[1], 'o-')
+plt.axes(xlabel = 'H (kA/m)', ylabel = 'Skyrmion Diameter (nm)')
+plt.plot(np.array(data[0]) / 1e3, np.array(data[1]) / 1e-9, 'o-')
+plt.savefig('Figure13.2.png')
 plt.show()
 
     

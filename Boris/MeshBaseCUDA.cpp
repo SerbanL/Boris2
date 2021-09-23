@@ -99,6 +99,11 @@ int MeshBaseCUDA::GetStageStep(void)
 	return pMeshBase->pSMesh->stage_step.minor;
 }
 
+cuBReal MeshBaseCUDA::GetTimeStep(void)
+{
+	return pMeshBase->pSMesh->GetTimeStep();
+}
+
 //----------------------------------- DISPLAY-ASSOCIATED GET/SET METHODS
 
 //Get settings for module display data 

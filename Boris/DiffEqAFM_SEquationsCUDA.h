@@ -135,7 +135,7 @@ __device__ cuReal3 ManagedDiffEqAFMCUDA::SLLB(int idx, cuReal3& value_B)
 	//the longitudinal relaxation field - an effective field contribution, but only need to add it to the longitudinal relaxation term as the others involve cross products with pMesh->M[idx]
 	cuReal3 Hl_1, Hl_2;
 
-	if (Temperature < T_Curie) {
+	if (Temperature <= T_Curie) {
 
 		if (Temperature > T_Curie - (cuBReal)TCURIE_EPSILON) {
 
@@ -240,7 +240,7 @@ __device__ cuReal3 ManagedDiffEqAFMCUDA::SLLBSTT(int idx, cuReal3& value_B)
 	//the longitudinal relaxation field - an effective field contribution, but only need to add it to the longitudinal relaxation term as the others involve cross products with pMesh->M[idx]
 	cuReal3 Hl_1, Hl_2;
 
-	if (Temperature < T_Curie) {
+	if (Temperature <= T_Curie) {
 
 		if (Temperature > T_Curie - (cuBReal)TCURIE_EPSILON) {
 

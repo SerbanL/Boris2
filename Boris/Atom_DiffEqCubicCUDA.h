@@ -69,6 +69,11 @@ public:
 	void RunRKF45(int step, bool calculate_mxh = false, bool calculate_dmdt = false);
 #endif
 
+#ifdef ODE_EVAL_COMPILATION_RKF56
+	//RKF56
+	void RunRKF56(int step, bool calculate_mxh = false, bool calculate_dmdt = false);
+#endif
+
 #ifdef ODE_EVAL_COMPILATION_RKCK
 	//RKCK45
 	void RunRKCK45(int step, bool calculate_mxh = false, bool calculate_dmdt = false);
@@ -200,6 +205,11 @@ public:
 #ifdef ODE_EVAL_COMPILATION_RKF45
 	//RKF45
 	void RunRKF45(int step, bool calculate_mxh = false, bool calculate_dmdt = false) {}
+#endif
+
+#ifdef ODE_EVAL_COMPILATION_RKF56
+	//RKF56
+	void RunRKF56(int step, bool calculate_mxh = false, bool calculate_dmdt = false) {}
 #endif
 
 #ifdef ODE_EVAL_COMPILATION_RKCK

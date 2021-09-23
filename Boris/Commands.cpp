@@ -3102,7 +3102,7 @@ void Simulation::HandleCommand(std::string command_string)
 				if (!error) {
 
 					SMesh.CallModuleMethod(&STransport::SetPotential, potential, true);
-
+					disabled_transport_solver = false;
 					UpdateScreen();
 				}
 				else if (verbose) PrintCommandUsage(command_name);
@@ -3124,7 +3124,7 @@ void Simulation::HandleCommand(std::string command_string)
 				if (!error) {
 
 					SMesh.CallModuleMethod(&STransport::SetCurrent, current, true);
-
+					disabled_transport_solver = false;
 					UpdateScreen();
 				}
 				else if (verbose) PrintCommandUsage(command_name);
@@ -5984,33 +5984,41 @@ void Simulation::HandleCommand(std::string command_string)
 		{
 			std::string meshName;
 			Rect rect;
+			int dp_index;
 
 			optional_meshname_check_focusedmeshdefault(command_fields);
-			error = commandSpec.GetParameters(command_fields, meshName, rect);
-			if (error == BERROR_PARAMMISMATCH) { error.reset(); rect = Rect(); }
+			error = commandSpec.GetParameters(command_fields, meshName, rect, dp_index);
+			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, meshName, rect); dp_index = -1; }
+			if (error == BERROR_PARAMMISMATCH) { error.reset(); rect = Rect(); dp_index = -1; }
 
 			if (!error) {
 				
 				Any value = SMesh.GetAverageDisplayedMeshValue(meshName, rect);
 				if (verbose) BD.DisplayConsoleMessage("Average value = " + value.convert_to_string());
 
-				if (script_client_connected) {
+				if (script_client_connected || dp_index >= 0) {
 
 					//Longer version so it compiles with C++14
 					if (value.is_type(btype_info<double>()) || value.is_type(btype_info<float>())) {
 						
 						double value_converted = value;
-						commSocket.SetSendData(commandSpec.PrepareReturnParameters(value_converted));
+
+						if (dp_index >= 0) dpArr.push_value(dp_index, value_converted);
+						if (script_client_connected) commSocket.SetSendData(commandSpec.PrepareReturnParameters(value_converted));
 					}
 					else if (value.is_type(btype_info<DBL2>()) || value.is_type(btype_info<FLT2>())) {
 						
 						DBL2 value_converted = value;
-						commSocket.SetSendData(commandSpec.PrepareReturnParameters(value_converted));
+
+						if (dp_index >= 0) dpArr.push_value(dp_index, value_converted);
+						if (script_client_connected) commSocket.SetSendData(commandSpec.PrepareReturnParameters(value_converted));
 					}
 					else if (value.is_type(btype_info<DBL3>()) || value.is_type(btype_info<FLT3>())) {
 						
 						DBL3 value_converted = value;
-						commSocket.SetSendData(commandSpec.PrepareReturnParameters(value_converted));
+
+						if (dp_index >= 0) dpArr.push_value(dp_index, value_converted);
+						if (script_client_connected) commSocket.SetSendData(commandSpec.PrepareReturnParameters(value_converted));
 					}
 				}
 			}

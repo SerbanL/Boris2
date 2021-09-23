@@ -275,6 +275,8 @@ public:
 	cuBReal GetStageTime(void);
 	int GetStageStep(void);
 
+	cuBReal GetTimeStep(void);
+
 	//----------------------------------- MESH SHAPE CONTROL
 
 	//copy all meshes controlled using change_mesh_shape from cpu to gpu versions

@@ -28,13 +28,11 @@ private:
 
 	//Evaluation speedup mode data
 
-	//1 Hdemag: no extrapolation, just save evaluation and reuse
-	//2 Hdemag: linear extrapolation, need 2
-	//3 Hdemag: quadratic extrapolation, need 3
-	cu_obj<cuVEC<cuReal3>> Hdemag, Hdemag2, Hdemag3;
+	//vec for demagnetizing field polynomial extrapolation
+	cu_obj<cuVEC<cuReal3>> Hdemag, Hdemag2, Hdemag3, Hdemag4, Hdemag5, Hdemag6;
 
 	//times at which evaluations were done, used for extrapolation
-	double time_demag1 = 0.0, time_demag2 = 0.0, time_demag3 = 0.0;
+	double time_demag1 = 0.0, time_demag2 = 0.0, time_demag3 = 0.0, time_demag4 = 0.0, time_demag5 = 0.0, time_demag6 = 0.0;
 
 	int num_Hdemag_saved = 0;
 
@@ -55,6 +53,42 @@ private:
 	void Demag_EvalSpeedup_AddField_SubSelf(
 		cu_obj<cuVEC<cuReal3>>& Heff,
 		cu_obj<cuVEC<cuReal3>>& HField,
+		cu_obj<cuVEC_VC<cuReal3>>& M);
+
+	//Add extrapolated field together with self demag contribution : AFM, QUINTIC
+	void Demag_EvalSpeedup_AddExtrapField_AddSelf(
+		cu_obj<cuVEC<cuReal3>>& Heff, cu_obj<cuVEC<cuReal3>>& Heff2,
+		cuBReal a1, cuBReal a2, cuBReal a3, cuBReal a4, cuBReal a5, cuBReal a6,
+		cu_obj<cuVEC_VC<cuReal3>>& M, cu_obj<cuVEC_VC<cuReal3>>& M2);
+
+	//Add extrapolated field together with self demag contribution : FM, QUINTIC
+	void Demag_EvalSpeedup_AddExtrapField_AddSelf(
+		cu_obj<cuVEC<cuReal3>>& Heff,
+		cuBReal a1, cuBReal a2, cuBReal a3, cuBReal a4, cuBReal a5, cuBReal a6,
+		cu_obj<cuVEC_VC<cuReal3>>& M);
+
+	//Add extrapolated field together with self demag contribution : AFM, QUARTIC
+	void Demag_EvalSpeedup_AddExtrapField_AddSelf(
+		cu_obj<cuVEC<cuReal3>>& Heff, cu_obj<cuVEC<cuReal3>>& Heff2,
+		cuBReal a1, cuBReal a2, cuBReal a3, cuBReal a4, cuBReal a5,
+		cu_obj<cuVEC_VC<cuReal3>>& M, cu_obj<cuVEC_VC<cuReal3>>& M2);
+
+	//Add extrapolated field together with self demag contribution : FM, QUARTIC
+	void Demag_EvalSpeedup_AddExtrapField_AddSelf(
+		cu_obj<cuVEC<cuReal3>>& Heff,
+		cuBReal a1, cuBReal a2, cuBReal a3, cuBReal a4, cuBReal a5,
+		cu_obj<cuVEC_VC<cuReal3>>& M);
+
+	//Add extrapolated field together with self demag contribution : AFM, CUBIC
+	void Demag_EvalSpeedup_AddExtrapField_AddSelf(
+		cu_obj<cuVEC<cuReal3>>& Heff, cu_obj<cuVEC<cuReal3>>& Heff2,
+		cuBReal a1, cuBReal a2, cuBReal a3, cuBReal a4,
+		cu_obj<cuVEC_VC<cuReal3>>& M, cu_obj<cuVEC_VC<cuReal3>>& M2);
+
+	//Add extrapolated field together with self demag contribution : FM, CUBIC
+	void Demag_EvalSpeedup_AddExtrapField_AddSelf(
+		cu_obj<cuVEC<cuReal3>>& Heff,
+		cuBReal a1, cuBReal a2, cuBReal a3, cuBReal a4,
 		cu_obj<cuVEC_VC<cuReal3>>& M);
 
 	//Add extrapolated field together with self demag contribution : AFM, QUADRATIC

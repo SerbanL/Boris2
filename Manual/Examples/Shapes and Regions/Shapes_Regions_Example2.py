@@ -1,14 +1,13 @@
 from NetSocks import NSClient
 from NetSocks import Shape
 
-ns = NSClient()
-ns.configure(True)
+ns = NSClient(); ns.configure(True)
 
 ########################################
 
 l, w, t = 800e-9, 800e-9, 200e-9
 ns.meshrect([l, w, t])
-ns.cellsize([2e-9, 2e-9, 2e-9])
+ns.cellsize([4e-9, 4e-9, 4e-9])
 ns.delrect()
 
 #define hollow half-torus

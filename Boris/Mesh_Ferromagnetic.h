@@ -49,7 +49,7 @@ class FMesh :
 	int, int, int, 
 	int, int, int, int, int, int,
 	Rect, SZ3, DBL3, SZ3, DBL3, SZ3, DBL3, SZ3, DBL3, SZ3, DBL3, bool,
-	VEC_VC<DBL3>, VEC_VC<double>, VEC_VC<DBL3>, VEC_VC<double>, VEC_VC<double>, VEC_VC<double>, VEC_VC<DBL3>, VEC_VC<DBL3>, VEC_VC<DBL3>, 
+	VEC_VC<DBL3>, VEC_VC<double>, VEC_VC<DBL3>, VEC_VC<DBL3>, VEC_VC<double>, VEC_VC<double>, VEC_VC<double>, VEC_VC<DBL3>, VEC_VC<DBL3>, VEC_VC<DBL3>,
 	vector_lut<Modules*>, 
 	bool,
 	//Members in this derived class

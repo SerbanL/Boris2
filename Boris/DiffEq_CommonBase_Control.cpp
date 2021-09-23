@@ -92,7 +92,7 @@ BError ODECommon_Base::SetEvaluationMethod(EVAL_ evalMethod_)
 		dT_increase = RKF_DTINCREASE;
 		dT_max = RKF_MAXDT;
 		dT_min = RKF_MINDT;
-		eval_method_order = 5;
+		eval_method_order = 4;
 	}
 	break;
 
@@ -117,6 +117,18 @@ BError ODECommon_Base::SetEvaluationMethod(EVAL_ evalMethod_)
 		dT_max = RKDP_MAXDT;
 		dT_min = RKDP_MINDT;
 		eval_method_order = 5;
+	}
+	break;
+
+	case EVAL_RKF56:
+	{
+		dT = RKF_DEFAULT_DT;
+
+		err_high_fail = RKF_RELERRFAIL;
+		dT_increase = RKF_DTINCREASE;
+		dT_max = RKF_MAXDT;
+		dT_min = RKF_MINDT;
+		eval_method_order = 6;
 	}
 	break;
 	}

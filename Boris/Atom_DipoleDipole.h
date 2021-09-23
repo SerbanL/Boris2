@@ -31,7 +31,7 @@ class Atom_DipoleDipole :
 private:
 
 	//pointer to mesh object holding this effective field module
-	Atom_Mesh *paMesh;
+	Atom_Mesh *paMesh = nullptr;
 
 	//divide energy by this to obtain energy density : this is the energy density in the entire mesh, which may not be rectangular.
 	double non_empty_volume = 0.0;
@@ -92,7 +92,7 @@ class Atom_DipoleDipole :
 private:
 
 	//pointer to mesh object holding this effective field module
-	Atom_Mesh* paMesh;
+	Atom_Mesh* paMesh = nullptr;
 
 public:
 

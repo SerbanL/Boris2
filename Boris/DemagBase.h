@@ -30,13 +30,11 @@ protected:
 
 	//Evaluation speedup mode data
 
-	//1 Hdemag: no extrapolation, just save evaluation and reuse
-	//2 Hdemag: linear extrapolation, need 2
-	//3 Hdemag: quadratic extrapolation, need 3
-	VEC<DBL3> Hdemag, Hdemag2, Hdemag3;
+	//vec for demagnetizing field polynomial extrapolation
+	VEC<DBL3> Hdemag, Hdemag2, Hdemag3, Hdemag4, Hdemag5, Hdemag6;
 
 	//times at which evaluations were done, used for extrapolation
-	double time_demag1 = 0.0, time_demag2 = 0.0, time_demag3 = 0.0;
+	double time_demag1 = 0.0, time_demag2 = 0.0, time_demag3 = 0.0, time_demag4 = 0.0, time_demag5 = 0.0, time_demag6 = 0.0;
 
 	int num_Hdemag_saved = 0;
 

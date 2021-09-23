@@ -39,7 +39,7 @@ __device__ cuBReal cuVEC_VC<VType>::div_neu(int idx) const
 			}
 			else {
 
-				div += 0.5 * (cuVEC<VType>::quantity[idx + 1].x - cuVEC<VType>::quantity[idx].x) / cuVEC<VType>::h.x;
+				div += (cuVEC<VType>::quantity[idx + 1].x - cuVEC<VType>::quantity[idx].x) / (2 * cuVEC<VType>::h.x);
 			}
 		}
 		else {
@@ -51,7 +51,7 @@ __device__ cuBReal cuVEC_VC<VType>::div_neu(int idx) const
 			}
 			else {
 
-				div += 0.5 * (cuVEC<VType>::quantity[idx].x - cuVEC<VType>::quantity[idx - 1].x) / cuVEC<VType>::h.x;
+				div += (cuVEC<VType>::quantity[idx].x - cuVEC<VType>::quantity[idx - 1].x) / (2 * cuVEC<VType>::h.x);
 			}
 		}
 	}
@@ -77,7 +77,7 @@ __device__ cuBReal cuVEC_VC<VType>::div_neu(int idx) const
 			}
 			else {
 
-				div += 0.5 * (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x].y - cuVEC<VType>::quantity[idx].y) / cuVEC<VType>::h.y;
+				div += (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x].y - cuVEC<VType>::quantity[idx].y) / (2 * cuVEC<VType>::h.y);
 			}
 		}
 		else {
@@ -89,7 +89,7 @@ __device__ cuBReal cuVEC_VC<VType>::div_neu(int idx) const
 			}
 			else {
 
-				div += 0.5 * (cuVEC<VType>::quantity[idx].y - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x].y) / cuVEC<VType>::h.y;
+				div += (cuVEC<VType>::quantity[idx].y - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x].y) / (2 * cuVEC<VType>::h.y);
 			}
 		}
 	}
@@ -115,7 +115,7 @@ __device__ cuBReal cuVEC_VC<VType>::div_neu(int idx) const
 			}
 			else {
 
-				div += 0.5 * (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x*cuVEC<VType>::n.y].z - cuVEC<VType>::quantity[idx].z) / cuVEC<VType>::h.z;
+				div += (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x*cuVEC<VType>::n.y].z - cuVEC<VType>::quantity[idx].z) / (2 * cuVEC<VType>::h.z);
 			}
 		}
 		else {
@@ -127,7 +127,7 @@ __device__ cuBReal cuVEC_VC<VType>::div_neu(int idx) const
 			}
 			else {
 
-				div += 0.5 * (cuVEC<VType>::quantity[idx].z - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x*cuVEC<VType>::n.y].z) / cuVEC<VType>::h.z;
+				div += (cuVEC<VType>::quantity[idx].z - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x*cuVEC<VType>::n.y].z) / (2 * cuVEC<VType>::h.z);
 			}
 		}
 	}
@@ -172,7 +172,7 @@ __device__ cuBReal cuVEC_VC<VType>::div_nneu(int idx, const Class_BDiff& bdiff_c
 			}
 			else {
 
-				div += 0.5 * ((cuVEC<VType>::quantity[idx + 1].x - cuVEC<VType>::quantity[idx].x) / cuVEC<VType>::h.x + bdiff_val.x.x);
+				div += ((cuVEC<VType>::quantity[idx + 1].x - cuVEC<VType>::quantity[idx].x) / cuVEC<VType>::h.x + bdiff_val.x.x) / 2;
 			}
 		}
 		else {
@@ -184,7 +184,7 @@ __device__ cuBReal cuVEC_VC<VType>::div_nneu(int idx, const Class_BDiff& bdiff_c
 			}
 			else {
 
-				div += 0.5 * ((cuVEC<VType>::quantity[idx].x - cuVEC<VType>::quantity[idx - 1].x) / cuVEC<VType>::h.x + bdiff_val.x.x);
+				div += ((cuVEC<VType>::quantity[idx].x - cuVEC<VType>::quantity[idx - 1].x) / cuVEC<VType>::h.x + bdiff_val.x.x) / 2;
 			}
 		}
 	}
@@ -212,7 +212,7 @@ __device__ cuBReal cuVEC_VC<VType>::div_nneu(int idx, const Class_BDiff& bdiff_c
 			}
 			else {
 
-				div += 0.5 * ((cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x].y - cuVEC<VType>::quantity[idx].y) / cuVEC<VType>::h.y + bdiff_val.y.y);
+				div += ((cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x].y - cuVEC<VType>::quantity[idx].y) / cuVEC<VType>::h.y + bdiff_val.y.y) / 2;
 			}
 		}
 		else {
@@ -224,7 +224,7 @@ __device__ cuBReal cuVEC_VC<VType>::div_nneu(int idx, const Class_BDiff& bdiff_c
 			}
 			else {
 
-				div += 0.5 * ((cuVEC<VType>::quantity[idx].y - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x].y) / cuVEC<VType>::h.y + bdiff_val.y.y);
+				div += ((cuVEC<VType>::quantity[idx].y - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x].y) / cuVEC<VType>::h.y + bdiff_val.y.y) / 2;
 			}
 		}
 	}
@@ -252,7 +252,7 @@ __device__ cuBReal cuVEC_VC<VType>::div_nneu(int idx, const Class_BDiff& bdiff_c
 			}
 			else {
 
-				div += 0.5 * ((cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x*cuVEC<VType>::n.y].z - cuVEC<VType>::quantity[idx].z) / cuVEC<VType>::h.z + bdiff_val.z.z);
+				div += ((cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x*cuVEC<VType>::n.y].z - cuVEC<VType>::quantity[idx].z) / cuVEC<VType>::h.z + bdiff_val.z.z) / 2;
 			}
 		}
 		else {
@@ -264,7 +264,7 @@ __device__ cuBReal cuVEC_VC<VType>::div_nneu(int idx, const Class_BDiff& bdiff_c
 			}
 			else {
 
-				div += 0.5 * ((cuVEC<VType>::quantity[idx].z - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x*cuVEC<VType>::n.y].z) / cuVEC<VType>::h.z + bdiff_val.z.z);
+				div += ((cuVEC<VType>::quantity[idx].z - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x*cuVEC<VType>::n.y].z) / cuVEC<VType>::h.z + bdiff_val.z.z) / 2;
 			}
 		}
 	}
@@ -303,7 +303,7 @@ __device__ cuBReal cuVEC_VC<VType>::div_nneu(int idx, const cuVAL3<VType>& bdiff
 			}
 			else {
 
-				div += 0.5 * ((cuVEC<VType>::quantity[idx + 1].x - cuVEC<VType>::quantity[idx].x) / cuVEC<VType>::h.x + bdiff.x.x);
+				div += ((cuVEC<VType>::quantity[idx + 1].x - cuVEC<VType>::quantity[idx].x) / cuVEC<VType>::h.x + bdiff.x.x) / 2;
 			}
 		}
 		else {
@@ -315,7 +315,7 @@ __device__ cuBReal cuVEC_VC<VType>::div_nneu(int idx, const cuVAL3<VType>& bdiff
 			}
 			else {
 
-				div += 0.5 * ((cuVEC<VType>::quantity[idx].x - cuVEC<VType>::quantity[idx - 1].x) / cuVEC<VType>::h.x + bdiff.x.x);
+				div += ((cuVEC<VType>::quantity[idx].x - cuVEC<VType>::quantity[idx - 1].x) / cuVEC<VType>::h.x + bdiff.x.x) / 2;
 			}
 		}
 	}
@@ -341,7 +341,7 @@ __device__ cuBReal cuVEC_VC<VType>::div_nneu(int idx, const cuVAL3<VType>& bdiff
 			}
 			else {
 
-				div += 0.5 * ((cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x].y - cuVEC<VType>::quantity[idx].y) / cuVEC<VType>::h.y + bdiff.y.y);
+				div += ((cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x].y - cuVEC<VType>::quantity[idx].y) / cuVEC<VType>::h.y + bdiff.y.y) / 2;
 			}
 		}
 		else {
@@ -353,7 +353,7 @@ __device__ cuBReal cuVEC_VC<VType>::div_nneu(int idx, const cuVAL3<VType>& bdiff
 			}
 			else {
 
-				div += 0.5 * ((cuVEC<VType>::quantity[idx].y - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x].y) / cuVEC<VType>::h.y + bdiff.y.y);
+				div +=  ((cuVEC<VType>::quantity[idx].y - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x].y) / cuVEC<VType>::h.y + bdiff.y.y) / 2;
 			}
 		}
 	}
@@ -379,7 +379,7 @@ __device__ cuBReal cuVEC_VC<VType>::div_nneu(int idx, const cuVAL3<VType>& bdiff
 			}
 			else {
 
-				div += 0.5 * ((cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x*cuVEC<VType>::n.y].z - cuVEC<VType>::quantity[idx].z) / cuVEC<VType>::h.z + bdiff.z.z);
+				div += ((cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x*cuVEC<VType>::n.y].z - cuVEC<VType>::quantity[idx].z) / cuVEC<VType>::h.z + bdiff.z.z) / 2;
 			}
 		}
 		else {
@@ -391,7 +391,7 @@ __device__ cuBReal cuVEC_VC<VType>::div_nneu(int idx, const cuVAL3<VType>& bdiff
 			}
 			else {
 
-				div += 0.5 * ((cuVEC<VType>::quantity[idx].z - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x*cuVEC<VType>::n.y].z) / cuVEC<VType>::h.z + bdiff.z.z);
+				div += ((cuVEC<VType>::quantity[idx].z - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x*cuVEC<VType>::n.y].z) / cuVEC<VType>::h.z + bdiff.z.z) / 2;
 			}
 		}
 	}
@@ -440,7 +440,7 @@ __device__ cuBReal cuVEC_VC<VType>::div_diri(int idx) const
 			}
 			else {
 
-				div += 0.5 * (cuVEC<VType>::quantity[idx + 1].x - cuVEC<VType>::quantity[idx].x) / cuVEC<VType>::h.x;
+				div += (cuVEC<VType>::quantity[idx + 1].x - cuVEC<VType>::quantity[idx].x) / (2 * cuVEC<VType>::h.x);
 			}
 		}
 		else {
@@ -452,7 +452,7 @@ __device__ cuBReal cuVEC_VC<VType>::div_diri(int idx) const
 			}
 			else {
 
-				div += 0.5 * (cuVEC<VType>::quantity[idx].x - cuVEC<VType>::quantity[idx - 1].x) / cuVEC<VType>::h.x;
+				div += (cuVEC<VType>::quantity[idx].x - cuVEC<VType>::quantity[idx - 1].x) / (2 * cuVEC<VType>::h.x);
 			}
 		}
 	}
@@ -483,7 +483,7 @@ __device__ cuBReal cuVEC_VC<VType>::div_diri(int idx) const
 			}
 			else {
 
-				div += 0.5 * (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x].y - cuVEC<VType>::quantity[idx].y) / cuVEC<VType>::h.y;
+				div += (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x].y - cuVEC<VType>::quantity[idx].y) / (2 * cuVEC<VType>::h.y);
 			}
 		}
 		else {
@@ -495,7 +495,7 @@ __device__ cuBReal cuVEC_VC<VType>::div_diri(int idx) const
 			}
 			else {
 
-				div += 0.5 * (cuVEC<VType>::quantity[idx].y - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x].y) / cuVEC<VType>::h.y;
+				div += (cuVEC<VType>::quantity[idx].y - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x].y) / (2 * cuVEC<VType>::h.y);
 			}
 		}
 	}
@@ -526,7 +526,7 @@ __device__ cuBReal cuVEC_VC<VType>::div_diri(int idx) const
 			}
 			else {
 
-				div += 0.5 * (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x*cuVEC<VType>::n.y].z - cuVEC<VType>::quantity[idx].z) / cuVEC<VType>::h.z;
+				div += (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x*cuVEC<VType>::n.y].z - cuVEC<VType>::quantity[idx].z) / (2 * cuVEC<VType>::h.z);
 			}
 		}
 		else {
@@ -538,7 +538,7 @@ __device__ cuBReal cuVEC_VC<VType>::div_diri(int idx) const
 			}
 			else {
 
-				div += 0.5 * (cuVEC<VType>::quantity[idx].z - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x*cuVEC<VType>::n.y].z) / cuVEC<VType>::h.z;
+				div += (cuVEC<VType>::quantity[idx].z - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x*cuVEC<VType>::n.y].z) / (2 * cuVEC<VType>::h.z);
 			}
 		}
 	}
@@ -589,7 +589,7 @@ __device__ cuBReal cuVEC_VC<VType>::div_diri_nneu(int idx, const Class_BDiff& bd
 			}
 			else {
 
-				div += 0.5 * ((cuVEC<VType>::quantity[idx + 1].x - cuVEC<VType>::quantity[idx].x) / cuVEC<VType>::h.x + bdiff_val.x.x);
+				div += ((cuVEC<VType>::quantity[idx + 1].x - cuVEC<VType>::quantity[idx].x) / cuVEC<VType>::h.x + bdiff_val.x.x) / 2;
 			}
 		}
 		else {
@@ -601,7 +601,7 @@ __device__ cuBReal cuVEC_VC<VType>::div_diri_nneu(int idx, const Class_BDiff& bd
 			}
 			else {
 
-				div += 0.5 * ((cuVEC<VType>::quantity[idx].x - cuVEC<VType>::quantity[idx - 1].x) / cuVEC<VType>::h.x + bdiff_val.x.x);
+				div +=  ((cuVEC<VType>::quantity[idx].x - cuVEC<VType>::quantity[idx - 1].x) / cuVEC<VType>::h.x + bdiff_val.x.x) / 2;
 			}
 		}
 	}
@@ -634,7 +634,7 @@ __device__ cuBReal cuVEC_VC<VType>::div_diri_nneu(int idx, const Class_BDiff& bd
 			}
 			else {
 
-				div += 0.5 * ((cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x].y - cuVEC<VType>::quantity[idx].y) / cuVEC<VType>::h.y + bdiff_val.y.y);
+				div += ((cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x].y - cuVEC<VType>::quantity[idx].y) / cuVEC<VType>::h.y + bdiff_val.y.y) / 2;
 			}
 		}
 		else {
@@ -646,7 +646,7 @@ __device__ cuBReal cuVEC_VC<VType>::div_diri_nneu(int idx, const Class_BDiff& bd
 			}
 			else {
 
-				div += 0.5 * ((cuVEC<VType>::quantity[idx].y - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x].y) / cuVEC<VType>::h.y + bdiff_val.y.y);
+				div += ((cuVEC<VType>::quantity[idx].y - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x].y) / cuVEC<VType>::h.y + bdiff_val.y.y) / 2;
 			}
 		}
 	}
@@ -679,7 +679,7 @@ __device__ cuBReal cuVEC_VC<VType>::div_diri_nneu(int idx, const Class_BDiff& bd
 			}
 			else {
 
-				div += 0.5 * ((cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x*cuVEC<VType>::n.y].z - cuVEC<VType>::quantity[idx].z) / cuVEC<VType>::h.z + bdiff_val.z.z);
+				div += ((cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x*cuVEC<VType>::n.y].z - cuVEC<VType>::quantity[idx].z) / cuVEC<VType>::h.z + bdiff_val.z.z) / 2;
 			}
 		}
 		else {
@@ -691,7 +691,7 @@ __device__ cuBReal cuVEC_VC<VType>::div_diri_nneu(int idx, const Class_BDiff& bd
 			}
 			else {
 
-				div += 0.5 * ((cuVEC<VType>::quantity[idx].z - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x*cuVEC<VType>::n.y].z) / cuVEC<VType>::h.z + bdiff_val.z.z);
+				div += ((cuVEC<VType>::quantity[idx].z - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x*cuVEC<VType>::n.y].z) / cuVEC<VType>::h.z + bdiff_val.z.z) / 2;
 			}
 		}
 	}
@@ -736,7 +736,7 @@ __device__ cuBReal cuVEC_VC<VType>::div_diri_nneu(int idx, const cuVAL3<VType>& 
 			}
 			else {
 
-				div += 0.5 * ((cuVEC<VType>::quantity[idx + 1].x - cuVEC<VType>::quantity[idx].x) / cuVEC<VType>::h.x + bdiff.x.x);
+				div += ((cuVEC<VType>::quantity[idx + 1].x - cuVEC<VType>::quantity[idx].x) / cuVEC<VType>::h.x + bdiff.x.x) / 2;
 			}
 		}
 		else {
@@ -748,7 +748,7 @@ __device__ cuBReal cuVEC_VC<VType>::div_diri_nneu(int idx, const cuVAL3<VType>& 
 			}
 			else {
 
-				div += 0.5 * ((cuVEC<VType>::quantity[idx].x - cuVEC<VType>::quantity[idx - 1].x) / cuVEC<VType>::h.x + bdiff.x.x);
+				div += ((cuVEC<VType>::quantity[idx].x - cuVEC<VType>::quantity[idx - 1].x) / cuVEC<VType>::h.x + bdiff.x.x) / 2;
 			}
 		}
 	}
@@ -779,7 +779,7 @@ __device__ cuBReal cuVEC_VC<VType>::div_diri_nneu(int idx, const cuVAL3<VType>& 
 			}
 			else {
 
-				div += 0.5 * ((cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x].y - cuVEC<VType>::quantity[idx].y) / cuVEC<VType>::h.y + bdiff.y.y);
+				div += ((cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x].y - cuVEC<VType>::quantity[idx].y) / cuVEC<VType>::h.y + bdiff.y.y) / 2;
 			}
 		}
 		else {
@@ -791,7 +791,7 @@ __device__ cuBReal cuVEC_VC<VType>::div_diri_nneu(int idx, const cuVAL3<VType>& 
 			}
 			else {
 
-				div += 0.5 * ((cuVEC<VType>::quantity[idx].y - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x].y) / cuVEC<VType>::h.y + bdiff.y.y);
+				div += ((cuVEC<VType>::quantity[idx].y - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x].y) / cuVEC<VType>::h.y + bdiff.y.y) / 2;
 			}
 		}
 	}
@@ -822,7 +822,7 @@ __device__ cuBReal cuVEC_VC<VType>::div_diri_nneu(int idx, const cuVAL3<VType>& 
 			}
 			else {
 
-				div += 0.5 * ((cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x*cuVEC<VType>::n.y].z - cuVEC<VType>::quantity[idx].z) / cuVEC<VType>::h.z + bdiff.z.z);
+				div += ((cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x*cuVEC<VType>::n.y].z - cuVEC<VType>::quantity[idx].z) / cuVEC<VType>::h.z + bdiff.z.z) / 2;
 			}
 		}
 		else {
@@ -834,7 +834,7 @@ __device__ cuBReal cuVEC_VC<VType>::div_diri_nneu(int idx, const cuVAL3<VType>& 
 			}
 			else {
 
-				div += 0.5 * ((cuVEC<VType>::quantity[idx].z - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x*cuVEC<VType>::n.y].z) / cuVEC<VType>::h.z + bdiff.z.z);
+				div += ((cuVEC<VType>::quantity[idx].z - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x*cuVEC<VType>::n.y].z) / cuVEC<VType>::h.z + bdiff.z.z) / 2;
 			}
 		}
 	}
@@ -997,7 +997,7 @@ __device__ VType cuVEC_VC<VType>::diveps3_neu(int idx) const
 			}
 			else {
 
-				diffx = 0.5 * (cuVEC<VType>::quantity[idx + 1] - cuVEC<VType>::quantity[idx]) / cuVEC<VType>::h.x;
+				diffx = (cuVEC<VType>::quantity[idx + 1] - cuVEC<VType>::quantity[idx]) / (2 * cuVEC<VType>::h.x);
 			}
 		}
 		else {
@@ -1009,7 +1009,7 @@ __device__ VType cuVEC_VC<VType>::diveps3_neu(int idx) const
 			}
 			else {
 
-				diffx = 0.5 * (cuVEC<VType>::quantity[idx] - cuVEC<VType>::quantity[idx - 1]) / cuVEC<VType>::h.x;
+				diffx = (cuVEC<VType>::quantity[idx] - cuVEC<VType>::quantity[idx - 1]) / (2 * cuVEC<VType>::h.x);
 			}
 		}
 	}
@@ -1035,7 +1035,7 @@ __device__ VType cuVEC_VC<VType>::diveps3_neu(int idx) const
 			}
 			else {
 
-				diffy = 0.5 * (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x] - cuVEC<VType>::quantity[idx]) / cuVEC<VType>::h.y;
+				diffy = (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x] - cuVEC<VType>::quantity[idx]) / (2 * cuVEC<VType>::h.y);
 			}
 		}
 		else {
@@ -1047,7 +1047,7 @@ __device__ VType cuVEC_VC<VType>::diveps3_neu(int idx) const
 			}
 			else {
 
-				diffy = 0.5 * (cuVEC<VType>::quantity[idx] - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x]) / cuVEC<VType>::h.y;
+				diffy = (cuVEC<VType>::quantity[idx] - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x]) / (2 * cuVEC<VType>::h.y);
 			}
 		}
 	}
@@ -1073,7 +1073,7 @@ __device__ VType cuVEC_VC<VType>::diveps3_neu(int idx) const
 			}
 			else {
 
-				diffz = 0.5 * (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x*cuVEC<VType>::n.y] - cuVEC<VType>::quantity[idx]) / cuVEC<VType>::h.z;
+				diffz = (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x*cuVEC<VType>::n.y] - cuVEC<VType>::quantity[idx]) / (2 * cuVEC<VType>::h.z);
 			}
 		}
 		else {
@@ -1085,7 +1085,7 @@ __device__ VType cuVEC_VC<VType>::diveps3_neu(int idx) const
 			}
 			else {
 
-				diffz = 0.5 * (cuVEC<VType>::quantity[idx] - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x*cuVEC<VType>::n.y]) / cuVEC<VType>::h.z;
+				diffz = (cuVEC<VType>::quantity[idx] - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x*cuVEC<VType>::n.y]) / (2 * cuVEC<VType>::h.z);
 			}
 		}
 	}
@@ -1139,7 +1139,7 @@ __device__ VType cuVEC_VC<VType>::diveps3_diri(int idx) const
 			}
 			else {
 
-				diffx = 0.5 * (cuVEC<VType>::quantity[idx + 1] - cuVEC<VType>::quantity[idx]) / cuVEC<VType>::h.x;
+				diffx = (cuVEC<VType>::quantity[idx + 1] - cuVEC<VType>::quantity[idx]) / (2 * cuVEC<VType>::h.x);
 			}
 		}
 		else {
@@ -1151,7 +1151,7 @@ __device__ VType cuVEC_VC<VType>::diveps3_diri(int idx) const
 			}
 			else {
 
-				diffx = 0.5 * (cuVEC<VType>::quantity[idx] - cuVEC<VType>::quantity[idx - 1]) / cuVEC<VType>::h.x;
+				diffx = (cuVEC<VType>::quantity[idx] - cuVEC<VType>::quantity[idx - 1]) / (2 * cuVEC<VType>::h.x);
 			}
 		}
 	}
@@ -1182,7 +1182,7 @@ __device__ VType cuVEC_VC<VType>::diveps3_diri(int idx) const
 			}
 			else {
 
-				diffy = 0.5 * (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x] - cuVEC<VType>::quantity[idx]) / cuVEC<VType>::h.y;
+				diffy = (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x] - cuVEC<VType>::quantity[idx]) / (2 * cuVEC<VType>::h.y);
 			}
 		}
 		else {
@@ -1194,7 +1194,7 @@ __device__ VType cuVEC_VC<VType>::diveps3_diri(int idx) const
 			}
 			else {
 
-				diffy = 0.5 * (cuVEC<VType>::quantity[idx] - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x]) / cuVEC<VType>::h.y;
+				diffy = (cuVEC<VType>::quantity[idx] - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x]) / (2 * cuVEC<VType>::h.y);
 			}
 		}
 	}
@@ -1225,7 +1225,7 @@ __device__ VType cuVEC_VC<VType>::diveps3_diri(int idx) const
 			}
 			else {
 
-				diffz = 0.5 * (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x*cuVEC<VType>::n.y] - cuVEC<VType>::quantity[idx]) / cuVEC<VType>::h.z;
+				diffz = (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x*cuVEC<VType>::n.y] - cuVEC<VType>::quantity[idx]) / (2 * cuVEC<VType>::h.z);
 			}
 		}
 		else {
@@ -1236,7 +1236,7 @@ __device__ VType cuVEC_VC<VType>::diveps3_diri(int idx) const
 			}
 			else {
 
-				diffz = 0.5 * (cuVEC<VType>::quantity[idx] - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x*cuVEC<VType>::n.y]) / cuVEC<VType>::h.z;
+				diffz = (cuVEC<VType>::quantity[idx] - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x*cuVEC<VType>::n.y]) / (2 * cuVEC<VType>::h.z);
 			}
 		}
 	}

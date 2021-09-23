@@ -7,8 +7,7 @@
 //Very simple pseudo-random number generator based on LCG (linear congruential generator) with textbook values (modulus 2^32 used). Can be used in multi-threaded code.
 //This is much faster than the standard random number generator in <random> (over 5 times faster in testing)
 
-//To run without multi-threading set the flag in the constructor. This is useful if you want to generate random numbers reproducibly for the same seed on different computers.
-//In multithreaded mode, computers with different number of corse will generate different
+//NOTE : if you want to generate the same sequence of random numbers on different computers for the same seed, don't generate them in a parallel loop.
 
 //linear congruential generator values obtained from "Numerical Recipes" - W.H. Press et al., Cambridge University Press, 3rd edition (2007) :
 //Xn+1 = (a * Xn + c) mod m, where:

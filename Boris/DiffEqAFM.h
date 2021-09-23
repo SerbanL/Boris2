@@ -28,7 +28,7 @@ private:
 	VEC<DBL3> sM1_2;
 
 	//evalution scratch spaces
-	VEC<DBL3> sEval0_2, sEval1_2, sEval2_2, sEval3_2, sEval4_2, sEval5_2;
+	VEC<DBL3> sEval0_2, sEval1_2, sEval2_2, sEval3_2, sEval4_2, sEval5_2, sEval6_2;
 
 	//Thermal field and torques, enabled only for the stochastic equations
 	VEC<DBL3> H_Thermal_2, Torque_Thermal_2;
@@ -106,6 +106,20 @@ public:
 	void RunRKF45_Step4(void);
 	void RunRKF45_Step5_withReductions(void);
 	void RunRKF45_Step5(void);
+#endif
+
+#ifdef ODE_EVAL_COMPILATION_RKF56
+	//RKF56
+	void RunRKF56_Step0_withReductions(void);
+	void RunRKF56_Step0(void);
+	void RunRKF56_Step1(void);
+	void RunRKF56_Step2(void);
+	void RunRKF56_Step3(void);
+	void RunRKF56_Step4(void);
+	void RunRKF56_Step5(void);
+	void RunRKF56_Step6(void);
+	void RunRKF56_Step7_withReductions(void);
+	void RunRKF56_Step7(void);
 #endif
 
 #ifdef ODE_EVAL_COMPILATION_RKCK
@@ -287,6 +301,20 @@ public:
 	void RunRKF45_Step4(void) {}
 	void RunRKF45_Step5_withReductions(void) {}
 	void RunRKF45_Step5(void) {}
+#endif
+
+#ifdef ODE_EVAL_COMPILATION_RKF56
+	//RKF56
+	void RunRKF56_Step0_withReductions(void) {}
+	void RunRKF56_Step0(void) {}
+	void RunRKF56_Step1(void) {}
+	void RunRKF56_Step2(void) {}
+	void RunRKF56_Step3(void) {}
+	void RunRKF56_Step4(void) {}
+	void RunRKF56_Step5(void) {}
+	void RunRKF56_Step6(void) {}
+	void RunRKF56_Step7_withReductions(void) {}
+	void RunRKF56_Step7(void) {}
 #endif
 
 #ifdef ODE_EVAL_COMPILATION_RKCK

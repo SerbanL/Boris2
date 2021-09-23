@@ -43,20 +43,20 @@
 
 //fixed parameters for RKF45 adaptive time step
 #define RKF_RELERRFAIL	1e-4
-#define RKF_DTINCREASE	1.001
+#define RKF_DTINCREASE	2
 #define RKF_MAXDT	3e-12
 #define RKF_MINDT	1e-15
 #define RKF_DEFAULT_DT	0.5e-12
 
 //fixed parameters for RKCK45 adaptive time step
-#define RKCK_RELERRFAIL	1e-5
+#define RKCK_RELERRFAIL	1e-4
 #define RKCK_DTINCREASE	2
 #define RKCK_MAXDT	3e-12
 #define RKCK_MINDT	1e-15
 #define RKCK_DEFAULT_DT	0.5e-12
 
 //fixed parameters for RKDP54 adaptive time step
-#define RKDP_RELERRFAIL	1e-5
+#define RKDP_RELERRFAIL	1e-4
 #define RKDP_DTINCREASE	2
 #define RKDP_MAXDT	3e-12
 #define RKDP_MINDT	1e-15
@@ -123,4 +123,4 @@ enum EVAL_ {
 //EVALSPEEDUP_STEP : use previously computed demag field
 //EVALSPEEDUP_LINEAR : linear interpolation using 2 previously computed demag fields
 //EVALSPEEDUP_QUADRATIC : quadratic (polynomial) interpolation using 3 previously computed demag fields
-enum EVALSPEEDUP_ { EVALSPEEDUP_NONE = 0, EVALSPEEDUP_STEP, EVALSPEEDUP_LINEAR, EVALSPEEDUP_QUADRATIC, EVALSPEEDUP_NUMENTRIES };
+enum EVALSPEEDUP_ { EVALSPEEDUP_NONE = 0, EVALSPEEDUP_STEP, EVALSPEEDUP_LINEAR, EVALSPEEDUP_QUADRATIC, EVALSPEEDUP_CUBIC, EVALSPEEDUP_QUARTIC, EVALSPEEDUP_QUINTIC, EVALSPEEDUP_NUMENTRIES };

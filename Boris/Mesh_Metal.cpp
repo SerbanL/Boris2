@@ -15,7 +15,7 @@ MetalMesh::MetalMesh(SuperMesh *pSMesh_) :
 			VINFO(meshType), VINFO(meshIdCounter), VINFO(meshId), 
 			VINFO(displayedPhysicalQuantity), VINFO(displayedBackgroundPhysicalQuantity), VINFO(vec3rep), VINFO(displayedParamVar), VINFO(Module_Heff_Display), VINFO(Module_Energy_Display),
 			VINFO(meshRect), VINFO(n_e), VINFO(h_e), VINFO(n_t), VINFO(h_t), VINFO(n_m), VINFO(h_m), 
-			VINFO(V), VINFO(S), VINFO(elC), VINFO(Temp), VINFO(Temp_l), 
+			VINFO(V), VINFO(E), VINFO(S), VINFO(elC), VINFO(Temp), VINFO(Temp_l),
 			VINFO(pMod),
 			//Members in this derived class
 
@@ -37,7 +37,7 @@ MetalMesh::MetalMesh(Rect meshRect_, DBL3 h_, SuperMesh *pSMesh_) :
 			VINFO(meshType), VINFO(meshIdCounter), VINFO(meshId),
 			VINFO(displayedPhysicalQuantity), VINFO(displayedBackgroundPhysicalQuantity), VINFO(vec3rep), VINFO(displayedParamVar), VINFO(Module_Heff_Display), VINFO(Module_Energy_Display),
 			VINFO(meshRect), VINFO(n_e), VINFO(h_e), VINFO(n_t), VINFO(h_t), VINFO(n_m), VINFO(h_m),
-			VINFO(V), VINFO(S), VINFO(elC), VINFO(Temp), VINFO(Temp_l),
+			VINFO(V), VINFO(E), VINFO(S), VINFO(elC), VINFO(Temp), VINFO(Temp_l),
 			VINFO(pMod),
 			//Members in this derived class
 

@@ -12,8 +12,7 @@ from mpl_toolkits.mplot3d import Axes3D
 from scipy.optimize import curve_fit
 
 #setup communication with server
-ns = NSClient()
-ns.configure(True)
+ns = NSClient(); ns.configure(True)
 
 ########################################
 

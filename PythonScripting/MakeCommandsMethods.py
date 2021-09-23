@@ -57,25 +57,32 @@ for line in lines:
             for param in params_list:
                 method_header += ", " + param + " = ''"
             
-            method_header += "):\n"
+            method_header += ", bufferCommand = False):\n"
             
             #write completed header
             f_methods.write(method_header)
             
             #make method code
-            method_code = "\treturn self.SendCommand(" + '"' + command_name + '"'
+            #if bufferCommand: self.SendCommand("buffercommand", ['dp_getexactprofile', start, end, step, dp_index, stencil])
+            method_code_l1 = '\tif not bufferCommand: return self.SendCommand("%s"' % command_name
+            method_code_l2 = '\tself.SendCommand("buffercommand", ["%s"' % command_name
             
-            if len(params_list): method_code += ", ["
+            if len(params_list): method_code_l1 += ", ["
             
             for param in params_list:
-                method_code += param + ', '
+                method_code_l1 += param + ', '
+                method_code_l2 += ', ' + param
                 
-            if len(params_list):
-                method_code = method_code.rstrip(', ') + "]"
-                
-            method_code += ")\n\n"
+            method_code_l2 += "]"    
             
-            f_methods.write(method_code)
+            if len(params_list):
+                method_code_l1 = method_code_l1.rstrip(', ') + "]"
+                
+            method_code_l1 += ")\n"
+            method_code_l2 += ")\n\n"
+            
+            f_methods.write(method_code_l1)
+            f_methods.write(method_code_l2)
         
 f_methods.close()
 f_commandslist.close()

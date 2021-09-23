@@ -43,15 +43,6 @@ private:
 		return true;
 	}
 
-	//value setters
-	void push_value(int arr_idx, double value) { dpA[arr_idx].push_back(value); }
-	void push_value(int arr_idx, DBL3 value)
-	{
-		dpA[arr_idx].push_back(value.x);
-		dpA[arr_idx + 1].push_back(value.y);
-		dpA[arr_idx + 2].push_back(value.z);
-	}
-
 public:
 
 	//--------------------- CTOR/DTOR
@@ -63,6 +54,22 @@ public:
 
 	//Get size methods
 	int size(void) { return max_arrays; }
+
+	//value setters
+	void push_value(int arr_idx, double value) { dpA[arr_idx].push_back(value); }
+	
+	void push_value(int arr_idx, DBL2 value)
+	{
+		dpA[arr_idx].push_back(value.x);
+		dpA[arr_idx + 1].push_back(value.y);
+	}
+
+	void push_value(int arr_idx, DBL3 value)
+	{
+		dpA[arr_idx].push_back(value.x);
+		dpA[arr_idx + 1].push_back(value.y);
+		dpA[arr_idx + 2].push_back(value.z);
+	}
 
 	//Indexing
 	std::vector<double>& operator[](int arr_idx) { return dpA[arr_idx]; }

@@ -1,8 +1,7 @@
 from NetSocks import NSClient
 from NetSocks import Shape
 
-ns = NSClient()
-ns.configure(True)
+ns = NSClient(); ns.configure(True)
 
 ########################################
 
@@ -23,7 +22,7 @@ ns.shape_setangle(disk, [180, 0])
 ns.shape_setangle(tor, [90, 90])
 
 #set material parameter values of regions defined by shapes
-ns.setparam(ns.meshfocus(), 'Ms', 1)
+ns.setparam('Ms', 1)
 ns.shape_setparam('Ms', disk, 600e3)
 ns.shape_setparam('Ms', tor, 1200e3)
 

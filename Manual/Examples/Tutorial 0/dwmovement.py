@@ -1,5 +1,5 @@
 """
-This script is part of Boris Computational Spintronics v3.0
+This script is part of Boris Computational Spintronics
 
 @author: Serban Lepadatu, 2020
 """
@@ -8,8 +8,7 @@ from NetSocks import NSClient
 import matplotlib.pyplot as plt
 import numpy as np
 
-ns = NSClient()
-ns.configure(True)
+ns = NSClient(); ns.configure(True)
 
 ########################################
 
@@ -27,6 +26,7 @@ ns.preparemovingmesh()
 
 #relax dw in zero field to |mxh| < 10^-5
 ns.editstagestop(0, 'mxh', 1e-5)
+ns.setode('LLGStatic', 'SDesc')
 ns.Run()
 
 #setup 2 field stages, each 5 ns long, but only second one saves data at 1 ps time intervals
@@ -44,9 +44,6 @@ ns.savedatafile('dwmovement_temp.txt')
 #set fixed time-step RK4 method with 500fs time step
 ns.setode('LLG', 'RK4')
 ns.setdt(500e-15)
-
-#save setup simulation file (next time you can just load it using ns.loadsim('dwmovement'))
-ns.savesim('dwmovement')
 
 Hrange = np.arange(100, 2400, 200)
 dwvelocity = np.array([])

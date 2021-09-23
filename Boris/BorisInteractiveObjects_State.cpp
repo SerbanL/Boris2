@@ -1083,6 +1083,15 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 			case 3:
 				pTO->set(" Quadratic ");
 				break;
+			case 4:
+				pTO->set(" Cubic ");
+				break;
+			case 5:
+				pTO->set(" Quartic ");
+				break;
+			case 6:
+				pTO->set(" Quintic ");
+				break;
 			}
 
 			stateChanged = true;

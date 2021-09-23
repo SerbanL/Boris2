@@ -2026,6 +2026,15 @@
     <ClCompile Include="BorisUpdate.cpp">
       <Filter>19. UPDATE</Filter>
     </ClCompile>
+    <ClCompile Include="DiffEqFM_Evals_RKF56.cpp">
+      <Filter>01. DIFFERENTIAL EQUATIONS\__MICROMAGNETIC\CPU\DIFF EQUATIONS FM - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="DiffEqAFM_Evals_RKF56.cpp">
+      <Filter>01. DIFFERENTIAL EQUATIONS\__MICROMAGNETIC\CPU\DIFF EQUATIONS AFM - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="Atom_DiffEqCubic_Evals_RKF56.cpp">
+      <Filter>01. DIFFERENTIAL EQUATIONS\__ATOMISTIC\CPU\ATOM DIFF EQUATIONS CUBIC - CPU</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="BorisWinapi.rc">
@@ -2435,6 +2444,15 @@
     </CudaCompile>
     <CudaCompile Include="Atom_viDMExchangeCUDA.cu">
       <Filter>07. EXCHANGE\__ATOMISTIC\ATOM EXCHANGE - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="DiffEqFM_EvalsCUDA_RKF56.cu">
+      <Filter>01. DIFFERENTIAL EQUATIONS\__MICROMAGNETIC\CUDA\DIFF EQUATIONS FM - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="DiffEqAFM_EvalsCUDA_RKF56.cu">
+      <Filter>01. DIFFERENTIAL EQUATIONS\__MICROMAGNETIC\CUDA\DIFF EQUATIONS AFM - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="Atom_DiffEqCubic_EvalsCUDA_RKF56.cu">
+      <Filter>01. DIFFERENTIAL EQUATIONS\__ATOMISTIC\CUDA\ATOM DIFF EQUATIONS CUBIC - CUDA</Filter>
     </CudaCompile>
   </ItemGroup>
 </Project>

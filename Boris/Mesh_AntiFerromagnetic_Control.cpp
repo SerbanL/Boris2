@@ -319,7 +319,7 @@ void AFMesh::SetRandomMag(int seed)
 
 	BorisRand prng(seed);
 
-#pragma omp parallel for
+	//don't use a parallel loop, so same sequence is generated on different computers
 	for (int idx = 0; idx < M.linear_size(); idx++) {
 
 		if (M.is_not_empty(idx)) {
@@ -355,7 +355,7 @@ void AFMesh::SetRandomXYMag(int seed)
 
 	BorisRand prng(seed);
 
-#pragma omp parallel for
+	//don't use a parallel loop, so same sequence is generated on different computers
 	for (int idx = 0; idx < M.linear_size(); idx++) {
 
 		if (M.is_not_empty(idx)) {

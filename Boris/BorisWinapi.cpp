@@ -575,7 +575,7 @@ static int CALLBACK BrowseCallbackProc(HWND hwnd, UINT uMsg, LPARAM lParam, LPAR
 
 std::string BrowseFolder(void)
 {
-	WCHAR path[MAX_PATH];
+	char path[MAX_PATH];
 
 	BROWSEINFO bi = { 0 };
 	bi.lpszTitle = L"Set default directory";
@@ -587,7 +587,7 @@ std::string BrowseFolder(void)
 	if (pidl != 0)
 	{
 		//get the name of the folder and put it in path
-		SHGetPathFromIDList(pidl, path);
+		SHGetPathFromIDListA(pidl, path);
 
 		//free memory used
 		IMalloc * imalloc = 0;
@@ -597,7 +597,7 @@ std::string BrowseFolder(void)
 			imalloc->Release();
 		}
 
-		return WideStringtoString(std::wstring(path));
+		return std::string(path);
 	}
 
 	return "";
@@ -609,8 +609,8 @@ std::string BrowseFolder(void)
 
 std::string OpenFileDialog(HWND hWnd, std::string initial_dir = "")
 {
-	OPENFILENAME ofn;
-	WCHAR szFile[260] = { 0 };
+	OPENFILENAMEA ofn;
+	char szFile[260] = { 0 };
 
 	// Initialize OPENFILENAME
 	ZeroMemory(&ofn, sizeof(ofn));
@@ -618,16 +618,16 @@ std::string OpenFileDialog(HWND hWnd, std::string initial_dir = "")
 	ofn.hwndOwner = hWnd;
 	ofn.lpstrFile = szFile;
 	ofn.nMaxFile = sizeof(szFile);
-	ofn.lpstrFilter = L"All\0*.*\0Text\0*.TXT\0";
+	ofn.lpstrFilter = "All\0*.*\0Text\0*.TXT\0";
 	ofn.nFilterIndex = 1;
 	ofn.lpstrFileTitle = nullptr;
 	ofn.nMaxFileTitle = 0;
 	ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST;
 
-	if (initial_dir.length()) ofn.lpstrInitialDir = StringtoWCHARPointer(initial_dir);
+	if (initial_dir.length()) ofn.lpstrInitialDir = initial_dir.c_str();
 	else ofn.lpstrInitialDir = nullptr;
 
-	if (GetOpenFileName(&ofn) == TRUE) return WideStringtoString(std::wstring(szFile));
+	if (GetOpenFileNameA(&ofn) == TRUE) return std::string(szFile);
 	else return "";
 }
 
@@ -635,8 +635,8 @@ std::string OpenFileDialog(HWND hWnd, std::string initial_dir = "")
 
 std::string SaveFileDialog(HWND hWnd, std::string initial_dir = "")
 {
-	OPENFILENAME ofn;
-	WCHAR szFile[260] = { 0 };
+	OPENFILENAMEA ofn;
+	char szFile[260] = { 0 };
 
 	// Initialize OPENFILENAME
 	ZeroMemory(&ofn, sizeof(ofn));
@@ -644,16 +644,16 @@ std::string SaveFileDialog(HWND hWnd, std::string initial_dir = "")
 	ofn.hwndOwner = hWnd;
 	ofn.lpstrFile = szFile;
 	ofn.nMaxFile = sizeof(szFile);
-	ofn.lpstrFilter = L"All\0*.*\0Text\0*.TXT\0";
+	ofn.lpstrFilter = "All\0*.*\0Text\0*.TXT\0";
 	ofn.nFilterIndex = 1;
 	ofn.lpstrFileTitle = nullptr;
 	ofn.nMaxFileTitle = 0;
 	ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST;
 
-	if (initial_dir.length()) ofn.lpstrInitialDir = StringtoWCHARPointer(initial_dir);
+	if (initial_dir.length()) ofn.lpstrInitialDir = initial_dir.c_str();
 	else ofn.lpstrInitialDir = nullptr;
 
-	if (GetSaveFileName(&ofn) == TRUE) return WideStringtoString(std::wstring(szFile));
+	if (GetSaveFileNameA(&ofn) == TRUE) return std::string(szFile);
 	else return "";
 }
 
@@ -1697,28 +1697,28 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		
 	case WM_DROPFILES:
 		{
-			WCHAR lpszFile[MAX_LOADSTRING] = { 0 };
+			char lpszFile[MAX_LOADSTRING] = { 0 };
 			UINT uFile = 0;
 			HDROP hDrop = (HDROP)wParam;
 
 			uFile = DragQueryFile(hDrop, 0xFFFFFFFF, NULL, NULL);
 			if (uFile != 1) {
-			
+
 				//need only one dropped file
 				DragFinish(hDrop);
 				break;
 			}
 
 			lpszFile[0] = '\0';
-		
-			if (DragQueryFile(hDrop, 0, lpszFile, MAX_LOADSTRING)) {
-			
+
+			if (DragQueryFileA(hDrop, 0, lpszFile, MAX_LOADSTRING)) {
+
 				if (pSim) {
 
 					POINT dropPoint;
 					DragQueryPoint(hDrop, &dropPoint);
 
-					std::string fileName = WideStringtoString(std::wstring(lpszFile));
+					std::string fileName(lpszFile);
 
 					pSim->NewMessage(AC_DROPFILES, INT2((int)dropPoint.x, (int)dropPoint.y), fileName);
 				}

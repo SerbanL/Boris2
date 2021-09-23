@@ -175,7 +175,8 @@ __device__ cuReal3 ManagedDiffEqFMCUDA::SLLB(int idx)
 		alpha_par = alpha;
 
 		//Note, the parallel susceptibility is related to susrel by : susrel = suspar / mu0Ms
-		Hl = -1.0 * (M[idx] / (susrel * (cuBReal)MU0 * Ms0)) * (1 + 3 * msq * T_Curie / (5 * (Temperature - T_Curie)));
+		if (Temperature < T_Curie + (cuBReal)TCURIE_EPSILON) Hl = -1.0 * (M[idx] / (susrel * (cuBReal)MU0 * Ms0));
+		else Hl = -1.0 * (M[idx] / (susrel * (cuBReal)MU0 * Ms0)) * (1 + 3 * msq * T_Curie / (5 * (Temperature - T_Curie)));
 	}
 
 	cuReal3 H_Thermal_Value = (*pH_Thermal)[position] * sqrt(alpha - alpha_par) / alpha;
@@ -279,7 +280,8 @@ __device__ cuReal3 ManagedDiffEqFMCUDA::SLLBSTT(int idx)
 		alpha_par = alpha;
 
 		//Note, the parallel susceptibility is related to susrel by : susrel = suspar / mu0Ms
-		Hl = -1.0 * (M[idx] / (susrel * (cuBReal)MU0 * Ms0)) * (1 + 3 * msq * T_Curie / (5 * (Temperature - T_Curie)));
+		if (Temperature < T_Curie + (cuBReal)TCURIE_EPSILON) Hl = -1.0 * (M[idx] / (susrel * (cuBReal)MU0 * Ms0));
+		else Hl = -1.0 * (M[idx] / (susrel * (cuBReal)MU0 * Ms0)) * (1 + 3 * msq * T_Curie / (5 * (Temperature - T_Curie)));
 	}
 
 	cuReal3 H_Thermal_Value = (*pH_Thermal)[position] * sqrt(alpha - alpha_par) / alpha;

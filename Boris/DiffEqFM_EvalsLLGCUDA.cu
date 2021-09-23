@@ -970,7 +970,7 @@ __global__ void RunRKF45_Step0_LLG_withReductions_Kernel(ManagedDiffEqFMCUDA& cu
 				mxh = cu_GetMagnitude(M[idx] ^ Heff[idx]) / (Mnorm * Mnorm);
 
 				//Now estimate magnetization using RKF first step
-				M[idx] += (*cuDiffEq.psEval0)[idx] * (dT / 4);
+				M[idx] += (*cuDiffEq.psEval0)[idx] * (2 * dT / 9);
 			}
 		}
 	}
@@ -1009,7 +1009,7 @@ __global__ void RunRKF45_Step0_LLG_Kernel(ManagedDiffEqFMCUDA& cuDiffEq, Managed
 				(*cuDiffEq.psEval0)[idx] = (-(cuBReal)GAMMA * grel / (1 + alpha * alpha)) * ((M[idx] ^ Heff[idx]) + alpha * ((M[idx] / Ms) ^ (M[idx] ^ Heff[idx])));
 
 				//Now estimate magnetization using RKF first step
-				M[idx] += (*cuDiffEq.psEval0)[idx] * (dT / 4);
+				M[idx] += (*cuDiffEq.psEval0)[idx] * (2 * dT / 9);
 			}
 		}
 	}
@@ -1037,7 +1037,7 @@ __global__ void RunRKF45_Step1_LLG_Kernel(ManagedDiffEqFMCUDA& cuDiffEq, Managed
 			(*cuDiffEq.psEval1)[idx] = (-(cuBReal)GAMMA * grel / (1 + alpha * alpha)) * ((M[idx] ^ Heff[idx]) + alpha * ((M[idx] / Ms) ^ (M[idx] ^ Heff[idx])));
 
 			//Now estimate magnetization using RKF midle step 1
-			M[idx] = (*cuDiffEq.psM1)[idx] + (3 * (*cuDiffEq.psEval0)[idx] + 9 * (*cuDiffEq.psEval1)[idx]) * dT / 32;
+			M[idx] = (*cuDiffEq.psM1)[idx] + ((*cuDiffEq.psEval0)[idx] / 12 + (*cuDiffEq.psEval1)[idx] / 4) * dT;
 		}
 	}
 }
@@ -1064,7 +1064,7 @@ __global__ void RunRKF45_Step2_LLG_Kernel(ManagedDiffEqFMCUDA& cuDiffEq, Managed
 			(*cuDiffEq.psEval2)[idx] = (-(cuBReal)GAMMA * grel / (1 + alpha * alpha)) * ((M[idx] ^ Heff[idx]) + alpha * ((M[idx] / Ms) ^ (M[idx] ^ Heff[idx])));
 
 			//Now estimate magnetization using RKF midle step 2
-			M[idx] = (*cuDiffEq.psM1)[idx] + (1932 * (*cuDiffEq.psEval0)[idx] - 7200 * (*cuDiffEq.psEval1)[idx] + 7296 * (*cuDiffEq.psEval2)[idx]) * dT / 2197;
+			M[idx] = (*cuDiffEq.psM1)[idx] + (69 * (*cuDiffEq.psEval0)[idx] / 128 - 243 * (*cuDiffEq.psEval1)[idx] / 128 + 135 * (*cuDiffEq.psEval2)[idx] / 64) * dT;
 		}
 	}
 }
@@ -1091,7 +1091,7 @@ __global__ void RunRKF45_Step3_LLG_Kernel(ManagedDiffEqFMCUDA& cuDiffEq, Managed
 			(*cuDiffEq.psEval3)[idx] = (-(cuBReal)GAMMA * grel / (1 + alpha * alpha)) * ((M[idx] ^ Heff[idx]) + alpha * ((M[idx] / Ms) ^ (M[idx] ^ Heff[idx])));
 
 			//Now estimate magnetization using RKF midle step 3
-			M[idx] = (*cuDiffEq.psM1)[idx] + (439 * (*cuDiffEq.psEval0)[idx] / 216 - 8 * (*cuDiffEq.psEval1)[idx] + 3680 * (*cuDiffEq.psEval2)[idx] / 513 - 845 * (*cuDiffEq.psEval3)[idx] / 4104) * dT;
+			M[idx] = (*cuDiffEq.psM1)[idx] + (-17 * (*cuDiffEq.psEval0)[idx] / 12 + 27 * (*cuDiffEq.psEval1)[idx] / 4 - 27 * (*cuDiffEq.psEval2)[idx] / 5 + 16 * (*cuDiffEq.psEval3)[idx] / 15) * dT;
 		}
 	}
 }
@@ -1118,7 +1118,7 @@ __global__ void RunRKF45_Step4_LLG_Kernel(ManagedDiffEqFMCUDA& cuDiffEq, Managed
 			(*cuDiffEq.psEval4)[idx] = (-(cuBReal)GAMMA * grel / (1 + alpha * alpha)) * ((M[idx] ^ Heff[idx]) + alpha * ((M[idx] / Ms) ^ (M[idx] ^ Heff[idx])));
 
 			//Now estimate magnetization using RKF midle step 4
-			M[idx] = (*cuDiffEq.psM1)[idx] + (-8 * (*cuDiffEq.psEval0)[idx] / 27 + 2 * (*cuDiffEq.psEval1)[idx] - 3544 * (*cuDiffEq.psEval2)[idx] / 2565 + 1859 * (*cuDiffEq.psEval3)[idx] / 4104 - 11 * (*cuDiffEq.psEval4)[idx] / 40) * dT;
+			M[idx] = (*cuDiffEq.psM1)[idx] + (65 * (*cuDiffEq.psEval0)[idx] / 432 - 5 * (*cuDiffEq.psEval1)[idx] / 16 + 13 * (*cuDiffEq.psEval2)[idx] / 16 + 4 * (*cuDiffEq.psEval3)[idx] / 27 + 5 * (*cuDiffEq.psEval4)[idx] / 144) * dT;
 		}
 	}
 }
@@ -1150,10 +1150,10 @@ __global__ void RunRKF45_Step5_LLG_withReductions_Kernel(ManagedDiffEqFMCUDA& cu
 				cuReal3 rhs = (-(cuBReal)GAMMA * grel / (1 + alpha * alpha)) * ((M[idx] ^ Heff[idx]) + alpha * ((M[idx] / Ms) ^ (M[idx] ^ Heff[idx])));
 
 				//4th order evaluation
-				cuReal3 prediction = (*cuDiffEq.psM1)[idx] + (25 * (*cuDiffEq.psEval0)[idx] / 216 + 1408 * (*cuDiffEq.psEval2)[idx] / 2565 + 2197 * (*cuDiffEq.psEval3)[idx] / 4101 - (*cuDiffEq.psEval4)[idx] / 5) * dT;
+				M[idx] = (*cuDiffEq.psM1)[idx] + ((*cuDiffEq.psEval0)[idx] / 9 + 9 * (*cuDiffEq.psEval2)[idx] / 20 + 16 * (*cuDiffEq.psEval3)[idx] / 45 + (*cuDiffEq.psEval4)[idx] / 12) * dT;
 
-				//5th order evaluation -> keep this as the new value, not the 4th order; relaxation doesn't work well the other way around.
-				M[idx] = (*cuDiffEq.psM1)[idx] + (16 * (*cuDiffEq.psEval0)[idx] / 135 + 6656 * (*cuDiffEq.psEval2)[idx] / 12825 + 28561 * (*cuDiffEq.psEval3)[idx] / 56430 - 9 * (*cuDiffEq.psEval4)[idx] / 50 + 2 * rhs / 55) * dT;
+				//5th order evaluation
+				cuReal3 prediction = (*cuDiffEq.psM1)[idx] + (47 * (*cuDiffEq.psEval0)[idx] / 450 + 12 * (*cuDiffEq.psEval2)[idx] / 25 + 32 * (*cuDiffEq.psEval3)[idx] / 225 + 1 * (*cuDiffEq.psEval4)[idx] / 30 + 6 * rhs / 25) * dT;
 
 				if (*cuDiffEq.prenormalize) {
 
@@ -1210,10 +1210,10 @@ __global__ void RunRKF45_Step5_LLG_Kernel(ManagedDiffEqFMCUDA& cuDiffEq, Managed
 				cuReal3 rhs = (-(cuBReal)GAMMA * grel / (1 + alpha * alpha)) * ((M[idx] ^ Heff[idx]) + alpha * ((M[idx] / Ms) ^ (M[idx] ^ Heff[idx])));
 
 				//4th order evaluation
-				cuReal3 prediction = (*cuDiffEq.psM1)[idx] + (25 * (*cuDiffEq.psEval0)[idx] / 216 + 1408 * (*cuDiffEq.psEval2)[idx] / 2565 + 2197 * (*cuDiffEq.psEval3)[idx] / 4101 - (*cuDiffEq.psEval4)[idx] / 5) * dT;
+				M[idx] = (*cuDiffEq.psM1)[idx] + ((*cuDiffEq.psEval0)[idx] / 9 + 9 * (*cuDiffEq.psEval2)[idx] / 20 + 16 * (*cuDiffEq.psEval3)[idx] / 45 + (*cuDiffEq.psEval4)[idx] / 12) * dT;
 
-				//5th order evaluation -> keep this as the new value, not the 4th order; relaxation doesn't work well the other way around.
-				M[idx] = (*cuDiffEq.psM1)[idx] + (16 * (*cuDiffEq.psEval0)[idx] / 135 + 6656 * (*cuDiffEq.psEval2)[idx] / 12825 + 28561 * (*cuDiffEq.psEval3)[idx] / 56430 - 9 * (*cuDiffEq.psEval4)[idx] / 50 + 2 * rhs / 55) * dT;
+				//5th order evaluation
+				cuReal3 prediction = (*cuDiffEq.psM1)[idx] + (47 * (*cuDiffEq.psEval0)[idx] / 450 + 12 * (*cuDiffEq.psEval2)[idx] / 25 + 32 * (*cuDiffEq.psEval3)[idx] / 225 + 1 * (*cuDiffEq.psEval4)[idx] / 30 + 6 * rhs / 25) * dT;
 
 				if (*cuDiffEq.prenormalize) {
 

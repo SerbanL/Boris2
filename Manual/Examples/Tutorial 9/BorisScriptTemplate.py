@@ -1,8 +1,10 @@
-from NetSocks import NSClient
+from NetSocks import NSClient, NSClientConfig
 
-ns = NSClient()
-ns.configure(True)
+def simulate(Ms, nscfg = NSClientConfig()):
 
-########################################
-
-ns.Run()
+    ns = NSClient(nscfg); ns.configure(True, False)
+    
+    ns.setparam(ns.meshfocus(), 'Ms', Ms)
+    
+    ns.cuda(1)
+    ns.Run()

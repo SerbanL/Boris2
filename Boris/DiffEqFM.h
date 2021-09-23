@@ -86,6 +86,20 @@ public:
 	void RunRKF45_Step5(void);
 #endif
 
+#ifdef ODE_EVAL_COMPILATION_RKF56
+	//RKF56
+	void RunRKF56_Step0_withReductions(void);
+	void RunRKF56_Step0(void);
+	void RunRKF56_Step1(void);
+	void RunRKF56_Step2(void);
+	void RunRKF56_Step3(void);
+	void RunRKF56_Step4(void);
+	void RunRKF56_Step5(void);
+	void RunRKF56_Step6(void);
+	void RunRKF56_Step7_withReductions(void);
+	void RunRKF56_Step7(void);
+#endif
+
 #ifdef ODE_EVAL_COMPILATION_RKCK
 	//RKCK45
 	void RunRKCK45_Step0_withReductions(void);
@@ -263,6 +277,20 @@ public:
 	void RunRKF45_Step4(void) {}
 	void RunRKF45_Step5_withReductions(void) {}
 	void RunRKF45_Step5(void) {}
+#endif
+
+#ifdef ODE_EVAL_COMPILATION_RKF56
+	//RKF56
+	void RunRKF56_Step0_withReductions(void) {}
+	void RunRKF56_Step0(void) {}
+	void RunRKF56_Step1(void) {}
+	void RunRKF56_Step2(void) {}
+	void RunRKF56_Step3(void) {}
+	void RunRKF56_Step4(void) {}
+	void RunRKF56_Step5(void) {}
+	void RunRKF56_Step6(void) {}
+	void RunRKF56_Step7_withReductions(void) {}
+	void RunRKF56_Step7(void) {}
 #endif
 
 #ifdef ODE_EVAL_COMPILATION_RKCK

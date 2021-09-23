@@ -188,7 +188,7 @@ DBL3 DifferentialEquationAFM::SLLB(int idx)
 	//the longitudinal relaxation field - an effective field contribution, but only need to add it to the longitudinal relaxation term as the others involve cross products with pMesh->M[idx]
 	DBL3 Hl_1, Hl_2;
 
-	if (Temperature < T_Curie) {
+	if (Temperature <= T_Curie) {
 
 		if (Temperature > T_Curie - TCURIE_EPSILON) {
 
@@ -280,7 +280,7 @@ DBL3 DifferentialEquationAFM::SLLBSTT(int idx)
 	//the longitudinal relaxation field - an effective field contribution, but only need to add it to the longitudinal relaxation term as the others involve cross products with pMesh->M[idx]
 	DBL3 Hl_1, Hl_2;
 
-	if (Temperature < T_Curie) {
+	if (Temperature <= T_Curie) {
 
 		if (Temperature > T_Curie - TCURIE_EPSILON) {
 

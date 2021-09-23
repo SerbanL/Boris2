@@ -15,7 +15,7 @@ AFMesh::AFMesh(SuperMesh *pSMesh_) :
 			VINFO(meshType), VINFO(meshIdCounter), VINFO(meshId),
 			VINFO(displayedPhysicalQuantity), VINFO(displayedBackgroundPhysicalQuantity), VINFO(vec3rep), VINFO(displayedParamVar), VINFO(Module_Heff_Display), VINFO(Module_Energy_Display),
 			VINFO(meshRect), VINFO(n), VINFO(h), VINFO(n_e), VINFO(h_e), VINFO(n_t), VINFO(h_t), VINFO(n_m), VINFO(h_m), VINFO(n_s), VINFO(h_s), VINFO(link_stochastic),
-			VINFO(M), VINFO(M2), VINFO(V), VINFO(elC), VINFO(Temp), VINFO(Temp_l), 
+			VINFO(M), VINFO(M2), VINFO(V), VINFO(E), VINFO(elC), VINFO(Temp), VINFO(Temp_l),
 			VINFO(pMod), 
 			VINFO(exclude_from_multiconvdemag),
 			//Members in this derived class
@@ -51,7 +51,7 @@ AFMesh::AFMesh(Rect meshRect_, DBL3 h_, SuperMesh *pSMesh_) :
 			VINFO(meshType), VINFO(meshIdCounter), VINFO(meshId),
 			VINFO(displayedPhysicalQuantity), VINFO(displayedBackgroundPhysicalQuantity), VINFO(vec3rep), VINFO(displayedParamVar), VINFO(Module_Heff_Display), VINFO(Module_Energy_Display),
 			VINFO(meshRect), VINFO(n), VINFO(h), VINFO(n_e), VINFO(h_e), VINFO(n_t), VINFO(h_t), VINFO(n_m), VINFO(h_m), VINFO(n_s), VINFO(h_s), VINFO(link_stochastic),
-			VINFO(M), VINFO(M2), VINFO(V), VINFO(elC), VINFO(Temp), VINFO(Temp_l),
+			VINFO(M), VINFO(M2), VINFO(V), VINFO(E), VINFO(elC), VINFO(Temp), VINFO(Temp_l),
 			VINFO(pMod),
 			VINFO(exclude_from_multiconvdemag),
 			//Members in this derived class

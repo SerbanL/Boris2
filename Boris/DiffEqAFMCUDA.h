@@ -22,7 +22,7 @@ private:
 
 	cu_obj<cuVEC<cuReal3>> sM1_2;
 	
-	cu_obj<cuVEC<cuReal3>> sEval0_2, sEval1_2, sEval2_2, sEval3_2, sEval4_2, sEval5_2;
+	cu_obj<cuVEC<cuReal3>> sEval0_2, sEval1_2, sEval2_2, sEval3_2, sEval4_2, sEval5_2, sEval6_2;
 
 	//Thermal field and torques, enabled only for the stochastic equations
 	cu_obj<cuVEC<cuReal3>> H_Thermal_2, Torque_Thermal_2;
@@ -79,6 +79,11 @@ public:
 #ifdef ODE_EVAL_COMPILATION_RKF45
 	//RKF45
 	void RunRKF45(int step, bool calculate_mxh = false, bool calculate_dmdt = false);
+#endif
+
+#ifdef ODE_EVAL_COMPILATION_RKF56
+	//RKF56
+	void RunRKF56(int step, bool calculate_mxh = false, bool calculate_dmdt = false);
 #endif
 
 #ifdef ODE_EVAL_COMPILATION_RKCK
@@ -213,6 +218,11 @@ public:
 #ifdef ODE_EVAL_COMPILATION_RKF45
 	//RKF45
 	void RunRKF45(int step, bool calculate_mxh = false, bool calculate_dmdt = false) {}
+#endif
+
+#ifdef ODE_EVAL_COMPILATION_RKF56
+	//RKF56
+	void RunRKF56(int step, bool calculate_mxh = false, bool calculate_dmdt = false) {}
 #endif
 
 #ifdef ODE_EVAL_COMPILATION_RKCK

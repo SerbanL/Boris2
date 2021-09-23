@@ -1,19 +1,16 @@
-from NetSocks import NSClient
+from NetSocks import NSClientConfig
 import threading
 
+#example script
+from BorisScriptTemplate import simulate
+
 #edit as needed
-ports = [1000, 1001]
-nsc = [NSClient('localhost', port) for port in ports]
-for ns in nsc: ns.configure(True, False)
+nscfglist = [NSClientConfig(scriptserverport = 1000, cudaDevice = 0), NSClientConfig(scriptserverport = 1001, cudaDevice = 1)]
 
-########################################
-
-def Simulate(ns, idx):
-    print("Simulation number : ", idx)
-    #simulation configuration goes here
-    ns.Run()
+#example parameters passed to simulate function
+Mslist = [750e3, 775e3]
     
-########################################
-    
-sims = [threading.Thread(target = Simulate, args=(ns,idx)) for (ns, idx) in zip(nsc, range(len(nsc)))]
+##############################################################
+ 
+sims = [threading.Thread(target = simulate, args=(Ms, nscfg)) for (Ms, nscfg) in zip(Mslist, nscfglist)]
 for sim in sims: sim.start()

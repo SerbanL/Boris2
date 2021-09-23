@@ -36,7 +36,7 @@ protected:
 	cu_obj<cuVEC<cuReal3>> sM1;
 
 	//evalution scratch spaces
-	cu_obj<cuVEC<cuReal3>> sEval0, sEval1, sEval2, sEval3, sEval4, sEval5;
+	cu_obj<cuVEC<cuReal3>> sEval0, sEval1, sEval2, sEval3, sEval4, sEval5, sEval6;
 
 	//Thermal field, enabled only for the stochastic equations
 	cu_obj<cuVEC<cuReal3>> H_Thermal;
@@ -48,7 +48,7 @@ protected:
 	cu_obj<cuBReal> deltaTstoch;
 
 	//pointer to mesh with this ODE set
-	Atom_Mesh *paMesh;
+	Atom_Mesh *paMesh = nullptr;
 
 	//pointer to CUDA version of mesh with this ODE set
 	Atom_MeshCUDA *paMeshCUDA;
@@ -107,6 +107,11 @@ protected:
 #ifdef ODE_EVAL_COMPILATION_RKF45
 	//RKF45
 	virtual void RunRKF45(int step, bool calculate_mxh = false, bool calculate_dmdt = false) = 0;
+#endif
+
+#ifdef ODE_EVAL_COMPILATION_RKF56
+	//RKF56
+	virtual void RunRKF56(int step, bool calculate_mxh = false, bool calculate_dmdt = false) = 0;
 #endif
 
 #ifdef ODE_EVAL_COMPILATION_RKCK

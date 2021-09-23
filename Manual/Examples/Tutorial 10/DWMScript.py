@@ -1,5 +1,5 @@
 """
-This script is part of Boris Computational Spintronics v3.0
+This script is part of Boris Computational Spintronics
 
 @author: Serban Lepadatu, 2020
 """
@@ -9,8 +9,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 #setup communication with server
-ns = NSClient('localhost')
-ns.configure(True)
+ns = NSClient(); ns.configure(True)
 
 ########################################
 
@@ -31,6 +30,7 @@ ns.setparam('permalloy', 'beta', 0.04)
 ns.preparemovingmesh()
 
 #relax dw in zero field to |mxh| < 10^-5
+ns.setode('LLGStatic', 'SDesc')
 ns.editstagestop(0, 'mxh', 1e-5)
 ns.Run()
 

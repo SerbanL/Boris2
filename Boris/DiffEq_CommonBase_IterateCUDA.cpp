@@ -260,35 +260,18 @@ void ODECommon_Base::IterateCUDA(void)
 		break;
 
 		case 1:
-		{
-			for (int idx = 0; idx < podeSolver->pODE.size(); idx++) {
-
-				if (podeSolver->setODE == ODE_LLG) podeSolver->pODE[idx]->pmeshODECUDA->RunRK4_LLG(1);
-				else podeSolver->pODE[idx]->pmeshODECUDA->RunRK4(1);
-			}
-
-			for (int idx = 0; idx < patom_odeSolver->pODE.size(); idx++) {
-
-				if (patom_odeSolver->setODE == ODE_LLG) patom_odeSolver->pODE[idx]->pameshODECUDA->RunRK4_LLG(1);
-				else patom_odeSolver->pODE[idx]->pameshODECUDA->RunRK4(1);
-			}
-
-			evalStep++;
-		}
-		break;
-
 		case 2:
 		{
 			for (int idx = 0; idx < podeSolver->pODE.size(); idx++) {
 
-				if (podeSolver->setODE == ODE_LLG) podeSolver->pODE[idx]->pmeshODECUDA->RunRK4_LLG(2);
-				else podeSolver->pODE[idx]->pmeshODECUDA->RunRK4(2);
+				if (podeSolver->setODE == ODE_LLG) podeSolver->pODE[idx]->pmeshODECUDA->RunRK4_LLG(evalStep);
+				else podeSolver->pODE[idx]->pmeshODECUDA->RunRK4(evalStep);
 			}
 
 			for (int idx = 0; idx < patom_odeSolver->pODE.size(); idx++) {
 
-				if (patom_odeSolver->setODE == ODE_LLG) patom_odeSolver->pODE[idx]->pameshODECUDA->RunRK4_LLG(2);
-				else patom_odeSolver->pODE[idx]->pameshODECUDA->RunRK4(2);
+				if (patom_odeSolver->setODE == ODE_LLG) patom_odeSolver->pODE[idx]->pameshODECUDA->RunRK4_LLG(evalStep);
+				else patom_odeSolver->pODE[idx]->pameshODECUDA->RunRK4(evalStep);
 			}
 
 			evalStep++;
@@ -596,71 +579,20 @@ void ODECommon_Base::IterateCUDA(void)
 		break;
 
 		case 1:
-		{
-			for (int idx = 0; idx < podeSolver->pODE.size(); idx++) {
-
-				if (podeSolver->setODE == ODE_LLG) podeSolver->pODE[idx]->pmeshODECUDA->RunRKF45_LLG(1);
-				else podeSolver->pODE[idx]->pmeshODECUDA->RunRKF45(1);
-			}
-
-			for (int idx = 0; idx < patom_odeSolver->pODE.size(); idx++) {
-
-				if (patom_odeSolver->setODE == ODE_LLG) patom_odeSolver->pODE[idx]->pameshODECUDA->RunRKF45_LLG(1);
-				else patom_odeSolver->pODE[idx]->pameshODECUDA->RunRKF45(1);
-			}
-
-			evalStep++;
-		}
-		break;
-
 		case 2:
-		{
-			for (int idx = 0; idx < podeSolver->pODE.size(); idx++) {
-
-				if (podeSolver->setODE == ODE_LLG) podeSolver->pODE[idx]->pmeshODECUDA->RunRKF45_LLG(2);
-				else podeSolver->pODE[idx]->pmeshODECUDA->RunRKF45(2);
-			}
-
-			for (int idx = 0; idx < patom_odeSolver->pODE.size(); idx++) {
-
-				if (patom_odeSolver->setODE == ODE_LLG) patom_odeSolver->pODE[idx]->pameshODECUDA->RunRKF45_LLG(2);
-				else patom_odeSolver->pODE[idx]->pameshODECUDA->RunRKF45(2);
-			}
-
-			evalStep++;
-		}
-		break;
-
 		case 3:
-		{
-			for (int idx = 0; idx < podeSolver->pODE.size(); idx++) {
-
-				if (podeSolver->setODE == ODE_LLG) podeSolver->pODE[idx]->pmeshODECUDA->RunRKF45_LLG(3);
-				else podeSolver->pODE[idx]->pmeshODECUDA->RunRKF45(3);
-			}
-
-			for (int idx = 0; idx < patom_odeSolver->pODE.size(); idx++) {
-
-				if (patom_odeSolver->setODE == ODE_LLG) patom_odeSolver->pODE[idx]->pameshODECUDA->RunRKF45_LLG(3);
-				else patom_odeSolver->pODE[idx]->pameshODECUDA->RunRKF45(3);
-			}
-
-			evalStep++;
-		}
-		break;
-
 		case 4:
 		{
 			for (int idx = 0; idx < podeSolver->pODE.size(); idx++) {
 
-				if (podeSolver->setODE == ODE_LLG) podeSolver->pODE[idx]->pmeshODECUDA->RunRKF45_LLG(4);
-				else podeSolver->pODE[idx]->pmeshODECUDA->RunRKF45(4);
+				if (podeSolver->setODE == ODE_LLG) podeSolver->pODE[idx]->pmeshODECUDA->RunRKF45_LLG(evalStep);
+				else podeSolver->pODE[idx]->pmeshODECUDA->RunRKF45(evalStep);
 			}
 
 			for (int idx = 0; idx < patom_odeSolver->pODE.size(); idx++) {
 
-				if (patom_odeSolver->setODE == ODE_LLG) patom_odeSolver->pODE[idx]->pameshODECUDA->RunRKF45_LLG(4);
-				else patom_odeSolver->pODE[idx]->pameshODECUDA->RunRKF45(4);
+				if (patom_odeSolver->setODE == ODE_LLG) patom_odeSolver->pODE[idx]->pameshODECUDA->RunRKF45_LLG(evalStep);
+				else patom_odeSolver->pODE[idx]->pameshODECUDA->RunRKF45(evalStep);
 			}
 
 			evalStep++;
@@ -683,6 +615,96 @@ void ODECommon_Base::IterateCUDA(void)
 
 				if (patom_odeSolver->setODE == ODE_LLG) patom_odeSolver->pODE[idx]->pameshODECUDA->RunRKF45_LLG(5, calculate_mxh, calculate_dmdt);
 				else patom_odeSolver->pODE[idx]->pameshODECUDA->RunRKF45(5, calculate_mxh, calculate_dmdt);
+			}
+
+			calculate_dmdt = false;
+
+			evalStep = 0;
+			time += dT;
+			stagetime += dT;
+			iteration++;
+			stageiteration++;
+			available = true;
+
+			dT_last = dT;
+			podeSolver->pODECUDA->Sync_dT_last();
+			lte = podeSolver->pODECUDA->Get_lte();
+
+			if (!SetAdaptiveTimeStep()) {
+
+				podeSolver->RestoreCUDA();
+				patom_odeSolver->RestoreCUDA();
+			}
+
+			podeSolver->pODECUDA->Sync_dT();
+		}
+		break;
+		}
+#endif
+	}
+	break;
+
+	case EVAL_RKF56:
+	{
+#ifdef ODE_EVAL_COMPILATION_RKF56
+		switch (evalStep) {
+
+		case 0:
+		{
+			if (calculate_mxh) podeSolver->pODECUDA->Zero_mxh_lte_values();
+
+			for (int idx = 0; idx < podeSolver->pODE.size(); idx++) {
+
+				podeSolver->pODE[idx]->pmeshODECUDA->RunRKF56(0, calculate_mxh, calculate_dmdt);
+			}
+
+			for (int idx = 0; idx < patom_odeSolver->pODE.size(); idx++) {
+
+				patom_odeSolver->pODE[idx]->pameshODECUDA->RunRKF56(0, calculate_mxh, calculate_dmdt);
+			}
+
+			calculate_mxh = false;
+
+			evalStep++;
+			available = false;
+		}
+		break;
+
+		case 1:
+		case 2:
+		case 3:
+		case 4:
+		case 5:
+		case 6:
+		{
+			for (int idx = 0; idx < podeSolver->pODE.size(); idx++) {
+
+				podeSolver->pODE[idx]->pmeshODECUDA->RunRKF56(evalStep);
+			}
+
+			for (int idx = 0; idx < patom_odeSolver->pODE.size(); idx++) {
+
+				patom_odeSolver->pODE[idx]->pameshODECUDA->RunRKF56(evalStep);
+			}
+
+			evalStep++;
+		}
+		break;
+
+		case 7:
+		{
+			if (calculate_dmdt) podeSolver->pODECUDA->Zero_dmdt_lte_values();
+			//need this for lte reduction
+			else podeSolver->pODECUDA->Zero_lte_value();
+
+			for (int idx = 0; idx < podeSolver->pODE.size(); idx++) {
+
+				podeSolver->pODE[idx]->pmeshODECUDA->RunRKF56(7, calculate_mxh, calculate_dmdt);
+			}
+
+			for (int idx = 0; idx < patom_odeSolver->pODE.size(); idx++) {
+
+				patom_odeSolver->pODE[idx]->pameshODECUDA->RunRKF56(7, calculate_mxh, calculate_dmdt);
 			}
 
 			calculate_dmdt = false;
@@ -739,63 +761,18 @@ void ODECommon_Base::IterateCUDA(void)
 		break;
 
 		case 1:
-		{
-			for (int idx = 0; idx < podeSolver->pODE.size(); idx++) {
-
-				podeSolver->pODE[idx]->pmeshODECUDA->RunRKCK45(1);
-			}
-
-			for (int idx = 0; idx < patom_odeSolver->pODE.size(); idx++) {
-
-				patom_odeSolver->pODE[idx]->pameshODECUDA->RunRKCK45(1);
-			}
-
-			evalStep++;
-		}
-		break;
-
 		case 2:
-		{
-			for (int idx = 0; idx < podeSolver->pODE.size(); idx++) {
-
-				podeSolver->pODE[idx]->pmeshODECUDA->RunRKCK45(2);
-			}
-
-			for (int idx = 0; idx < patom_odeSolver->pODE.size(); idx++) {
-
-				patom_odeSolver->pODE[idx]->pameshODECUDA->RunRKCK45(2);
-			}
-
-			evalStep++;
-		}
-		break;
-
 		case 3:
-		{
-			for (int idx = 0; idx < podeSolver->pODE.size(); idx++) {
-
-				podeSolver->pODE[idx]->pmeshODECUDA->RunRKCK45(3);
-			}
-
-			for (int idx = 0; idx < patom_odeSolver->pODE.size(); idx++) {
-
-				patom_odeSolver->pODE[idx]->pameshODECUDA->RunRKCK45(3);
-			}
-
-			evalStep++;
-		}
-		break;
-
 		case 4:
 		{
 			for (int idx = 0; idx < podeSolver->pODE.size(); idx++) {
 
-				podeSolver->pODE[idx]->pmeshODECUDA->RunRKCK45(4);
+				podeSolver->pODE[idx]->pmeshODECUDA->RunRKCK45(evalStep);
 			}
 
 			for (int idx = 0; idx < patom_odeSolver->pODE.size(); idx++) {
 
-				patom_odeSolver->pODE[idx]->pameshODECUDA->RunRKCK45(4);
+				patom_odeSolver->pODE[idx]->pameshODECUDA->RunRKCK45(evalStep);
 			}
 
 			evalStep++;
@@ -910,63 +887,18 @@ void ODECommon_Base::IterateCUDA(void)
 		break;
 
 		case 1:
-		{
-			for (int idx = 0; idx < podeSolver->pODE.size(); idx++) {
-
-				podeSolver->pODE[idx]->pmeshODECUDA->RunRKDP54(1);
-			}
-
-			for (int idx = 0; idx < patom_odeSolver->pODE.size(); idx++) {
-
-				patom_odeSolver->pODE[idx]->pameshODECUDA->RunRKDP54(1);
-			}
-
-			evalStep++;
-		}
-		break;
-
 		case 2:
-		{
-			for (int idx = 0; idx < podeSolver->pODE.size(); idx++) {
-
-				podeSolver->pODE[idx]->pmeshODECUDA->RunRKDP54(2);
-			}
-
-			for (int idx = 0; idx < patom_odeSolver->pODE.size(); idx++) {
-
-				patom_odeSolver->pODE[idx]->pameshODECUDA->RunRKDP54(2);
-			}
-
-			evalStep++;
-		}
-		break;
-
 		case 3:
-		{
-			for (int idx = 0; idx < podeSolver->pODE.size(); idx++) {
-
-				podeSolver->pODE[idx]->pmeshODECUDA->RunRKDP54(3);
-			}
-
-			for (int idx = 0; idx < patom_odeSolver->pODE.size(); idx++) {
-
-				patom_odeSolver->pODE[idx]->pameshODECUDA->RunRKDP54(3);
-			}
-
-			evalStep++;
-		}
-		break;
-
 		case 4:
 		{
 			for (int idx = 0; idx < podeSolver->pODE.size(); idx++) {
 
-				podeSolver->pODE[idx]->pmeshODECUDA->RunRKDP54(4);
+				podeSolver->pODE[idx]->pmeshODECUDA->RunRKDP54(evalStep);
 			}
 
 			for (int idx = 0; idx < patom_odeSolver->pODE.size(); idx++) {
 
-				patom_odeSolver->pODE[idx]->pameshODECUDA->RunRKDP54(4);
+				patom_odeSolver->pODE[idx]->pameshODECUDA->RunRKDP54(evalStep);
 			}
 
 			evalStep++;
