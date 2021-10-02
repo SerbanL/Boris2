@@ -97,7 +97,7 @@ double STField::UpdateField(void)
 		if (IsNZ(grel)) {
 
 			double dotprod = (pMesh->M[idx] * STp) / Ms;
-			double neta = STq.i / (STa.i + STq.j * dotprod) + STq.j / (STa.i - STq.j * dotprod);
+			double neta = STq.i / (STa.i + STa.j * dotprod) + STq.j / (STa.i - STa.j * dotprod);
 
 			int idx_E = pMesh->E.position_to_cellidx(pMesh->M.cellidx_to_position(idx));
 			//z component of J

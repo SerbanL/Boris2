@@ -189,6 +189,12 @@ public:
 	void SetDetailLevel(double detail_level) { displayMutex.lock(); pbMeshWin->SetDetailLevel(detail_level); displayMutex.unlock(); }
 	double GetDetailLevel(void) { return pbMeshWin->GetDetailLevel();	}
 
+	//camera control using methods rather than mouse messages
+	void RotateCameraAboutOrigin(float dAzim, float dPolar) { displayMutex.lock(); pBG->RotateCameraAboutOrigin(dAzim, dPolar); displayMutex.unlock(); }
+	void AdjustCameraDistanceFromOrigin(float dZ) { displayMutex.lock(); pBG->AdjustCameraDistanceFromOrigin(dZ); displayMutex.unlock(); }
+	void RotateCameraView(float dAngle) { displayMutex.lock(); pBG->RotateCameraView(dAngle); displayMutex.unlock(); }
+	void Shift3DOriginPixelPosition(float dX, float dY) { displayMutex.lock(); pBG->Shift3DOriginPixelPosition(dX, dY); displayMutex.unlock(); }
+
 	//Set mesh display render threshold values for faster rendering when we have many cells
 	void SetRenderThresholds(INT3 renderthresholds) { displayMutex.lock(); pbMeshWin->SetRenderThresholds(renderthresholds); displayMutex.unlock(); }
 	INT3 GetRenderThresholds(void) { return pbMeshWin->GetRenderThresholds(); }

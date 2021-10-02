@@ -267,7 +267,7 @@ struct CBObjectTransform {
 
 class D3D {
 
-private: //Private data
+private:
 
 	//world, viewspace and projection space matrices
 	XMMATRIX g_World, g_View, g_Projection;
@@ -297,7 +297,7 @@ private: //Private data
 	//depth buffer : enabled to allow depth rendering (i.e. farther away objects are always obscured by closer objects, irrespective of order of drawing)
 	ID3D11DepthStencilView* pDepthStencilView;
 
-protected: //Protected data
+protected:
 
 	//camera position, distance from origin and fov in degrees
 	float camX, camY, camZ, camDistance, fovDeg;
@@ -421,7 +421,11 @@ public:  //Public methods
 	////////////////Getters
 
 	float GetPixPerUnit(void) { return pixperUnit; }
+
+	FLT3 GetCameraPosition(void) { return FLT3(camX, camY, camZ); }
+	FLT3 GetCameraUp(void) { return FLT3(camUx, camUy, camUz); }
 	float GetCameraFOV(void) { return fovDeg; }
+	float GetCameraDistance(void) { return camDistance; }
 
 	//from mouse coordinates on screen return corresponding world position on far clipping plane (in logical units)
 	DBL3 Pick_FarPlane_Point(INT2 mouse);

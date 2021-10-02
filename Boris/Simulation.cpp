@@ -470,7 +470,7 @@ Simulation::Simulation(int Program_Version, std::string server_port_, std::strin
 	commands.insert(CMD_EVALSPEEDUP, CommandSpecifier(CMD_EVALSPEEDUP), "evalspeedup");
 	commands[CMD_EVALSPEEDUP].usage = "[tc0,0.5,0,1/tc]USAGE : <b>evalspeedup</b> <i>level</i>";
 	commands[CMD_EVALSPEEDUP].limits = { { int(EVALSPEEDUP_NONE), int(EVALSPEEDUP_NUMENTRIES) - 1 } };
-	commands[CMD_EVALSPEEDUP].descr = "[tc0,0.5,0.5,1/tc]Enable/disable evaluation speedup by extrapolating demag field at evaluation substeps from previous field updates. Status levels: 0 (no speedup), 1 (step), 2 (linear), 3 (quadratic), 4 (cubic). If enabling speedup strongly recommended to always use quadratic type.";
+	commands[CMD_EVALSPEEDUP].descr = "[tc0,0.5,0.5,1/tc]Enable/disable evaluation speedup by extrapolating demag field at evaluation substeps from previous field updates. Status levels: 0 (no speedup), 1 (step), 2 (linear), 3 (quadratic), 4 (cubic), 5 (quartic), 6 (quintic). If enabling speedup strongly recommended to always use quadratic type.";
 	commands[CMD_EVALSPEEDUP].return_descr = "[tc0,0.5,0,1/tc]Script return values: <i>level</i>";
 
 	commands.insert(CMD_SETODE, CommandSpecifier(CMD_SETODE), "setode");
@@ -711,6 +711,26 @@ Simulation::Simulation(int Program_Version, std::string server_port_, std::strin
 	commands[CMD_DISPLAYMODULE].usage = "[tc0,0.5,0,1/tc]USAGE : <b>displaymodule</b> <i>(meshname) modulename</i>";
 	commands[CMD_DISPLAYMODULE].descr = "[tc0,0.5,0.5,1/tc]Select module for effective field and energy density display (focused mesh if not specified). If modulename is none then display total effective field.";
 	commands[CMD_DISPLAYMODULE].limits = { { Any(), Any() }, { Any(), Any() } };
+
+	commands.insert(CMD_ROTCAMABOUTORIGIN, CommandSpecifier(CMD_ROTCAMABOUTORIGIN), "rotcamaboutorigin");
+	commands[CMD_ROTCAMABOUTORIGIN].usage = "[tc0,0.5,0,1/tc]USAGE : <b>rotcamaboutorigin</b> <i>dAzim dPolar</i>";
+	commands[CMD_ROTCAMABOUTORIGIN].descr = "[tc0,0.5,0.5,1/tc]Rotate camera about origin using a delta azimuthal and delta polar angle change. This is the same as middle mouse hold and drag on mesh viewer.";
+	commands[CMD_ROTCAMABOUTORIGIN].limits = { { Any(), Any() }, { Any(), Any() } };
+
+	commands.insert(CMD_ROTCAMABOUTAXIS, CommandSpecifier(CMD_ROTCAMABOUTAXIS), "rotcamaboutaxis");
+	commands[CMD_ROTCAMABOUTAXIS].usage = "[tc0,0.5,0,1/tc]USAGE : <b>rotcamaboutaxis</b> <i>dAngle</i>";
+	commands[CMD_ROTCAMABOUTAXIS].descr = "[tc0,0.5,0.5,1/tc]Rotate camera about its axis using an angle change. This is the same as right mouse hold and left-right drag on mesh viewer.";
+	commands[CMD_ROTCAMABOUTAXIS].limits = { { Any(), Any() } };
+
+	commands.insert(CMD_ADJUSTCAMDISTANCE, CommandSpecifier(CMD_ADJUSTCAMDISTANCE), "adjustcamdistance");
+	commands[CMD_ADJUSTCAMDISTANCE].usage = "[tc0,0.5,0,1/tc]USAGE : <b>adjustcamdistance</b> <i>dZ</i>";
+	commands[CMD_ADJUSTCAMDISTANCE].descr = "[tc0,0.5,0.5,1/tc]Adjust camera distance from origin using dZ. This is the same as right mouse hold and up-down drag on mesh viewer.";
+	commands[CMD_ADJUSTCAMDISTANCE].limits = { { Any(), Any() } };
+
+	commands.insert(CMD_SHIFTCAMORIGIN, CommandSpecifier(CMD_SHIFTCAMORIGIN), "shiftcamorigin");
+	commands[CMD_SHIFTCAMORIGIN].usage = "[tc0,0.5,0,1/tc]USAGE : <b>shiftcamorigin</b> <i>dX dY</i>";
+	commands[CMD_SHIFTCAMORIGIN].descr = "[tc0,0.5,0.5,1/tc]Shift camera origin using dX dY. This is the same as left mouse hold and drag on mesh viewer.";
+	commands[CMD_SHIFTCAMORIGIN].limits = { { Any(), Any() }, { Any(), Any() } };
 
 	commands.insert(CMD_DISPLAYDETAILLEVEL, CommandSpecifier(CMD_DISPLAYDETAILLEVEL), "displaydetail");
 	commands[CMD_DISPLAYDETAILLEVEL].usage = "[tc0,0.5,0,1/tc]USAGE : <b>displaydetail</b> <i>size</i>";

@@ -37,7 +37,7 @@ __global__ void STFieldCUDA_UpdateField(ManagedMeshCUDA& cuMesh, ManagedModulesC
 			if (cuIsNZ(grel)) {
 
 				cuBReal dotprod = (M[idx] * STp) / Ms;
-				cuBReal neta = STq.i / (STa.i + STq.j * dotprod) + STq.j / (STa.i - STq.j * dotprod);
+				cuBReal neta = STq.i / (STa.i + STa.j * dotprod) + STq.j / (STa.i - STa.j * dotprod);
 
 				int idx_E = E.position_to_cellidx(M.cellidx_to_position(idx));
 				//z component of Jc

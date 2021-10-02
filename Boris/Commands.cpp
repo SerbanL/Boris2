@@ -893,6 +893,8 @@ void Simulation::HandleCommand(std::string command_string)
 				if (GetFileTermination(fileName) != ".png") fileName += ".png";
 				if (!GetFilenameDirectory(fileName).length()) fileName = directory + fileName;
 
+				ScanFileNameData(fileName);
+
 				//define code required to load the bitmap - this will be passed for the mesh to use
 				std::function<std::vector<unsigned char>(std::string, INT2)> bitmap_loader = [&](std::string fileName, INT2 n_plane) -> std::vector<unsigned char> {
 
@@ -1888,9 +1890,9 @@ void Simulation::HandleCommand(std::string command_string)
 				std::string directory_ = ExtractFilenameDirectory(fileName);
 				if (!directory_.length()) fileName = directory + fileName;
 				if (!GetFileTermination(fileName).length()) fileName += ".txt";
-
+				
 				std::ofstream bdout;
-				bdout.open(fileName, std::ios::out | std::ios::app);
+				bdout.open(ScanFileNameData(fileName), std::ios::out | std::ios::app);
 				if (bdout.is_open()) {
 
 					bdout << comment << std::endl;
@@ -2299,6 +2301,8 @@ void Simulation::HandleCommand(std::string command_string)
 					if (!GetFilenameDirectory(fileName).length()) fileName = directory + fileName;
 					if (GetFileTermination(fileName) != ".txt") fileName += ".txt";
 
+					ScanFileNameData(fileName);
+
 					std::vector<std::vector<double>> load_arrays;
 					if (ReadDataColumns(fileName, "\t", load_arrays, { 0, 1 })) {
 
@@ -2511,6 +2515,8 @@ void Simulation::HandleCommand(std::string command_string)
 
 			error = commandSpec.GetParameters(command_fields, simFileName);
 
+			ScanFileNameData(simFileName);
+
 			if (error) {
 
 				error.reset();
@@ -2530,6 +2536,8 @@ void Simulation::HandleCommand(std::string command_string)
 			std::string simFileName;
 
 			error = commandSpec.GetParameters(command_fields, simFileName);
+
+			ScanFileNameData(simFileName);
 
 			if (!error) {
 
@@ -2586,6 +2594,66 @@ void Simulation::HandleCommand(std::string command_string)
 				}
 			}
 			else if (verbose) Print_DisplayModules_List();
+		}
+		break;
+
+		case CMD_ROTCAMABOUTORIGIN:
+		{
+			double dAzim, dPolar;
+
+			error = commandSpec.GetParameters(command_fields, dAzim, dPolar);
+
+			if (!error) {
+
+				BD.RotateCameraAboutOrigin(dAzim, dPolar);
+				RefreshScreen();
+			}
+			else if (verbose) PrintCommandUsage(command_name);
+		}
+		break;
+
+		case CMD_ROTCAMABOUTAXIS:
+		{
+			double dAngle;
+
+			error = commandSpec.GetParameters(command_fields, dAngle);
+
+			if (!error) {
+
+				BD.RotateCameraView(dAngle);
+				RefreshScreen();
+			}
+			else if (verbose) PrintCommandUsage(command_name);
+		}
+		break;
+
+		case CMD_ADJUSTCAMDISTANCE:
+		{
+			double dZ;
+
+			error = commandSpec.GetParameters(command_fields, dZ);
+
+			if (!error) {
+
+				BD.AdjustCameraDistanceFromOrigin(dZ);
+				RefreshScreen();
+			}
+			else if (verbose) PrintCommandUsage(command_name);
+		}
+		break;
+
+		case CMD_SHIFTCAMORIGIN:
+		{
+			double dX, dY;
+
+			error = commandSpec.GetParameters(command_fields, dX, dY);
+
+			if (!error) {
+
+				BD.Shift3DOriginPixelPosition(dX, dY);
+				RefreshScreen();
+			}
+			else if (verbose) PrintCommandUsage(command_name);
 		}
 		break;
 
@@ -2709,6 +2777,8 @@ void Simulation::HandleCommand(std::string command_string)
 
 			error = commandSpec.GetParameters(command_fields, fileName);
 
+			ScanFileNameData(fileName);
+
 			if (error == BERROR_PARAMMISMATCH) {
 
 				error.reset();
@@ -2735,6 +2805,8 @@ void Simulation::HandleCommand(std::string command_string)
 			std::string fileName;
 
 			error = commandSpec.GetParameters(command_fields, fileName);
+
+			ScanFileNameData(fileName);
 
 			if (error == BERROR_PARAMMISMATCH) {
 
@@ -2783,7 +2855,7 @@ void Simulation::HandleCommand(std::string command_string)
 				}
 				else if (verbose) error(BERROR_COULDNOTSAVEFILE);
 			}
-			else if(verbose) PrintCommandUsage(command_name);
+			else if (verbose) PrintCommandUsage(command_name);
 		}
 		break;
 
@@ -4195,7 +4267,7 @@ void Simulation::HandleCommand(std::string command_string)
 				VEC<DBL3> data;
 
 				OVF2 ovf2;
-				error = ovf2.Read_OVF2_VEC(fileName, data);
+				error = ovf2.Read_OVF2_VEC(ScanFileNameData(fileName), data);
 
 				if (!error) {
 
@@ -4233,7 +4305,7 @@ void Simulation::HandleCommand(std::string command_string)
 
 					if (SMesh[meshName]->IsModuleSet(MOD_ZEEMAN)) {
 
-						error = SMesh[meshName]->CallModuleMethod(&ZeemanBase::SetFieldVEC_FromOVF2, fileName);
+						error = SMesh[meshName]->CallModuleMethod(&ZeemanBase::SetFieldVEC_FromOVF2, ScanFileNameData(fileName));
 					}
 					
 					UpdateScreen();
@@ -4261,7 +4333,7 @@ void Simulation::HandleCommand(std::string command_string)
 				VEC<double> data;
 
 				OVF2 ovf2;
-				error = ovf2.Read_OVF2_SCA(fileName, data);
+				error = ovf2.Read_OVF2_SCA(ScanFileNameData(fileName), data);
 
 				if (!error) {
 
@@ -4295,7 +4367,7 @@ void Simulation::HandleCommand(std::string command_string)
 				VEC<DBL3> data;
 
 				OVF2 ovf2;
-				error = ovf2.Read_OVF2_VEC(fileName, data);
+				error = ovf2.Read_OVF2_VEC(ScanFileNameData(fileName), data);
 
 				if (!error) {
 
@@ -4357,7 +4429,7 @@ void Simulation::HandleCommand(std::string command_string)
 					if (!normalize) Ms0 = 1.0;
 
 					OVF2 ovf2;
-					error = ovf2.Write_OVF2_VEC(fileName, dynamic_cast<Mesh*>(SMesh[meshName])->Get_M(), data_type, Ms0);
+					error = ovf2.Write_OVF2_VEC(ScanFileNameData(fileName), dynamic_cast<Mesh*>(SMesh[meshName])->Get_M(), data_type, Ms0);
 				}
 				else err_hndl.show_error(BERROR_NOTMAGNETIC, verbose);
 			}
@@ -4394,7 +4466,7 @@ void Simulation::HandleCommand(std::string command_string)
 					if (GetFileTermination(fileName) != ".ovf") fileName += ".ovf";
 					if (!GetFilenameDirectory(fileName).length()) fileName = directory + fileName;
 
-					if (!err_hndl.call(error, &SuperMesh::SaveOnScreenPhysicalQuantity, &SMesh, meshName, fileName, data_type)) {
+					if (!err_hndl.call(error, &SuperMesh::SaveOnScreenPhysicalQuantity, &SMesh, meshName, ScanFileNameData(fileName), data_type)) {
 
 						BD.DisplayConsoleMessage("Data saved : " + fileName);
 					}
@@ -4451,6 +4523,8 @@ void Simulation::HandleCommand(std::string command_string)
 				if (GetFileTermination(fileName) != ".ovf") fileName += ".ovf";
 				if (!GetFilenameDirectory(fileName).length()) fileName = directory + fileName;
 
+				ScanFileNameData(fileName);
+
 				OVF2 ovf2;
 				PARAM_ paramID = (PARAM_)SMesh[meshName]->get_meshparam_id(paramname);
 
@@ -4496,8 +4570,9 @@ void Simulation::HandleCommand(std::string command_string)
 				if (SMesh[meshName]->Magnetism_Enabled() && SMesh[meshName]->IsModuleSet(MOD_MELASTIC)) {
 
 					if (GetFileTermination(fileName) != ".ovf") fileName += ".ovf";
-
 					if (!GetFilenameDirectory(fileName).length()) fileName = directory + fileName;
+
+					ScanFileNameData(fileName);
 
 					if (!error) {
 
@@ -4537,7 +4612,7 @@ void Simulation::HandleCommand(std::string command_string)
 
 						if (!error) {
 
-							error = SMesh[meshName]->CallModuleMethod(&MElastic::Load_Strain_OVF2, fileName_diag, fileName_odiag);
+							error = SMesh[meshName]->CallModuleMethod(&MElastic::Load_Strain_OVF2, ScanFileNameData(fileName_diag), ScanFileNameData(fileName_odiag));
 							UpdateScreen();
 						}
 					}
@@ -5669,13 +5744,11 @@ void Simulation::HandleCommand(std::string command_string)
 				std::string indexes_string = entries.back();
 
 				if (!GetFilenameDirectory(fileName).length()) fileName = directory + fileName;
-
-				if (GetFileTermination(fileName) != ".txt")
-					fileName += ".txt";
+				if (GetFileTermination(fileName) != ".txt") fileName += ".txt";
 
 				int rows_read;
 
-				error = dpArr.load_arrays(fileName, vec_convert<int, std::string>(split(indexes_string)), &rows_read);
+				error = dpArr.load_arrays(ScanFileNameData(fileName), vec_convert<int, std::string>(split(indexes_string)), &rows_read);
 
 				if (verbose && !error) BD.DisplayConsoleMessage("Number of rows read : " + ToString(rows_read));
 			}
@@ -5699,11 +5772,9 @@ void Simulation::HandleCommand(std::string command_string)
 				std::string indexes_string = entries.back();
 
 				if (!GetFilenameDirectory(fileName).length()) fileName = directory + fileName;
+				if (GetFileTermination(fileName) != ".txt") fileName += ".txt";
 
-				if (GetFileTermination(fileName) != ".txt")
-					fileName += ".txt";
-
-				error = dpArr.save_arrays(fileName, vec_convert<int, std::string>(split(indexes_string)));
+				error = dpArr.save_arrays(ScanFileNameData(fileName), vec_convert<int, std::string>(split(indexes_string)));
 
 				if (verbose && !error) BD.DisplayConsoleMessage("Data saved in : " + fileName);
 			}
@@ -5729,11 +5800,9 @@ void Simulation::HandleCommand(std::string command_string)
 				int dp_index = ToNum(index_string);
 
 				if (!GetFilenameDirectory(fileName).length()) fileName = directory + fileName;
+				if (GetFileTermination(fileName) != ".txt") fileName += ".txt";
 
-				if (GetFileTermination(fileName) != ".txt")
-					fileName += ".txt";
-
-				error = dpArr.save_array_transposed(fileName, dp_index);
+				error = dpArr.save_array_transposed(ScanFileNameData(fileName), dp_index);
 
 				if (verbose && !error) BD.DisplayConsoleMessage("Data saved in : " + fileName);
 			}
@@ -5759,11 +5828,9 @@ void Simulation::HandleCommand(std::string command_string)
 				int dp_index = ToNum(index_string);
 
 				if (!GetFilenameDirectory(fileName).length()) fileName = directory + fileName;
+				if (GetFileTermination(fileName) != ".txt") fileName += ".txt";
 
-				if (GetFileTermination(fileName) != ".txt")
-					fileName += ".txt";
-
-				error = dpArr.save_array_transposed(fileName, dp_index, true);
+				error = dpArr.save_array_transposed(ScanFileNameData(fileName), dp_index, true);
 
 				if (verbose && !error) BD.DisplayConsoleMessage("Data saved in : " + fileName);
 			}
@@ -5780,12 +5847,10 @@ void Simulation::HandleCommand(std::string command_string)
 			if (!error) {
 
 				if (!GetFilenameDirectory(fileName).length()) fileName = directory + fileName;
-
-				if (GetFileTermination(fileName) != ".txt")
-					fileName += ".txt";
+				if (GetFileTermination(fileName) != ".txt") fileName += ".txt";
 
 				std::ofstream bdout;
-				bdout.open(fileName, std::ios::out);
+				bdout.open(ScanFileNameData(fileName), std::ios::out);
 				bdout.close();
 			}
 			else if (verbose) PrintCommandUsage(command_name);
@@ -5808,11 +5873,9 @@ void Simulation::HandleCommand(std::string command_string)
 				std::string indexes_string = entries.back();
 
 				if (!GetFilenameDirectory(fileName).length()) fileName = directory + fileName;
+				if (GetFileTermination(fileName) != ".txt") fileName += ".txt";
 
-				if (GetFileTermination(fileName) != ".txt")
-					fileName += ".txt";
-
-				error = dpArr.save_arrays(fileName, vec_convert<int, std::string>(split(indexes_string)), true);
+				error = dpArr.save_arrays(ScanFileNameData(fileName), vec_convert<int, std::string>(split(indexes_string)), true);
 
 				if (verbose && !error) BD.DisplayConsoleMessage("Data saved in : " + fileName);
 			}

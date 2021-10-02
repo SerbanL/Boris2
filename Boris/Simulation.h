@@ -374,6 +374,9 @@ private:
 	//show usage for given console command
 	void PrintCommandUsage(std::string command_name) { BD.DisplayFormattedConsoleMessage(commands[command_name].usage); BD.DisplayFormattedConsoleMessage(commands[command_name].descr); BD.DisplayFormattedConsoleMessage(commands[command_name].return_descr); }
 
+	//file name can have data specifiers, e.g. %iter% means '%iter%' should be replaced by the actual value of the iter data field, etc.
+	std::string ScanFileNameData(std::string& fileName);
+
 	//---------------------------------------------------- MESH LIST
 
 	//NOTE, in general we have two main types of methods:

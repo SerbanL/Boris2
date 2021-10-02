@@ -323,7 +323,7 @@ double SurfExchange::UpdateField(void)
 
 						//total surface exchange field in coupling cells, including contributions from both sub-lattices
 						Hsurfexh = (m_j1 / (MU0 * Ms * thickness)) * J1;
-						Hsurfexh = (m_j2 / (MU0 * Ms * thickness)) * J2;
+						Hsurfexh += (m_j2 / (MU0 * Ms * thickness)) * J2;
 						cell_energy = (-J1 * (m_i * m_j1) - J2 * (m_i * m_j2)) / thickness;
 					}
 
@@ -406,7 +406,7 @@ double SurfExchange::UpdateField(void)
 
 						//total surface exchange field in coupling cells, including contributions from both sub-lattices
 						Hsurfexh = (m_j1 / (MU0 * Ms * thickness)) * J1;
-						Hsurfexh = (m_j2 / (MU0 * Ms * thickness)) * J2;
+						Hsurfexh += (m_j2 / (MU0 * Ms * thickness)) * J2;
 						cell_energy = (-J1 * (m_i * m_j1) - J2 * (m_i * m_j2)) / thickness;
 					}
 

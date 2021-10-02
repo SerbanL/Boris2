@@ -1,4 +1,4 @@
-#NetSocks Module Updated on : 16/07/2021
+#NetSocks Module Updated on : 29/09/2021
 #Boris version : 3.4
 import sys
 import os
@@ -949,6 +949,10 @@ class NSClient:
     	if not bufferCommand: return self.SendCommand("addstage", [meshname, stagetype])
     	self.SendCommand("buffercommand", ["addstage", meshname, stagetype])
     
+    def adjustcamdistance(self, dZ = '', bufferCommand = False):
+    	if not bufferCommand: return self.SendCommand("adjustcamdistance", [dZ])
+    	self.SendCommand("buffercommand", ["adjustcamdistance", dZ])
+    
     def ambient(self, meshname = '', ambient_temperature = '', bufferCommand = False):
     	if not bufferCommand: return self.SendCommand("ambient", [meshname, ambient_temperature])
     	self.SendCommand("buffercommand", ["ambient", meshname, ambient_temperature])
@@ -1733,6 +1737,14 @@ class NSClient:
     	if not bufferCommand: return self.SendCommand("robinalpha", [meshname, robin_alpha])
     	self.SendCommand("buffercommand", ["robinalpha", meshname, robin_alpha])
     
+    def rotcamaboutaxis(self, dAngle = '', bufferCommand = False):
+    	if not bufferCommand: return self.SendCommand("rotcamaboutaxis", [dAngle])
+    	self.SendCommand("buffercommand", ["rotcamaboutaxis", dAngle])
+    
+    def rotcamaboutorigin(self, dAzim = '', dPolar = '', bufferCommand = False):
+    	if not bufferCommand: return self.SendCommand("rotcamaboutorigin", [dAzim, dPolar])
+    	self.SendCommand("buffercommand", ["rotcamaboutorigin", dAzim, dPolar])
+    
     def roughenmesh(self, meshname = '', depth = '', side = '', seed = '', bufferCommand = False):
     	if not bufferCommand: return self.SendCommand("roughenmesh", [meshname, depth, side, seed])
     	self.SendCommand("buffercommand", ["roughenmesh", meshname, depth, side, seed])
@@ -2002,6 +2014,10 @@ class NSClient:
     def shape_triangle(self, meshname = '', len_x = '', len_y = '', cpos_x = '', cpos_y = '', z_start = '', z_end = '', bufferCommand = False):
     	if not bufferCommand: return self.SendCommand("shape_triangle", [meshname, len_x, len_y, cpos_x, cpos_y, z_start, z_end])
     	self.SendCommand("buffercommand", ["shape_triangle", meshname, len_x, len_y, cpos_x, cpos_y, z_start, z_end])
+    
+    def shiftcamorigin(self, dX = '', dY = '', bufferCommand = False):
+    	if not bufferCommand: return self.SendCommand("shiftcamorigin", [dX, dY])
+    	self.SendCommand("buffercommand", ["shiftcamorigin", dX, dY])
     
     def showa(self, meshname = '', bufferCommand = False):
     	if not bufferCommand: return self.SendCommand("showa", [meshname])

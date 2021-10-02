@@ -211,6 +211,12 @@ public:
 	void SetDetailLevel(double detail_level) {}
 	double GetDetailLevel(void) { return 0.0; }
 
+	//camera control using methods rather than mouse messages
+	void RotateCameraAboutOrigin(float dAzim, float dPolar) {}
+	void AdjustCameraDistanceFromOrigin(float dZ) {}
+	void RotateCameraView(float dAngle) {}
+	void Shift3DOriginPixelPosition(float dX, float dY) {}
+
 	//Set mesh display render threshold values for faster rendering when we have many cells
 	void SetRenderThresholds(INT3 renderthresholds) {}
 	INT3 GetRenderThresholds(void) { return INT3(); }

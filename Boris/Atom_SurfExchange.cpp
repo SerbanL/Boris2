@@ -35,7 +35,7 @@ BError Atom_SurfExchange::Initialize(void)
 	BError error(CLASS_STR(Atom_SurfExchange));
 
 	//Need to identify all magnetic meshes participating in surface exchange coupling with this module:
-	//1. Must be ferromagnetic or anti-ferromagnetic and have the SurfExchange module set -> this results in surface exchange coupling (or equivalently exchange bias - same formula, except in this case you should have J2 set to zero)
+	//1. Must be atomistic and have the SurfExchange module set -> this results in surface exchange coupling
 	//2. Must overlap in the x-y plane only with the mesh holding this module (either top or bottom) but not along z (i.e. mesh rectangles must not intersect)
 	//3. No other magnetic meshes can be sandwiched in between - there could be other types of non-magnetic meshes in between of course (e.g. insulator, conductive layers etc).
 

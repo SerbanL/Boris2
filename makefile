@@ -15,7 +15,7 @@ ifndef sprec
 endif
 
 #Boris program version
-BVERSION := 300
+BVERSION := 340
 
 #Working directories
 BORIS_DATA_DIR := Boris_Data
@@ -59,15 +59,17 @@ configure:
 #compile both cpp and cu files
 compile: $(OBJ_FILES) $(CUOBJ_FILES)
 	@echo Done
- 
+  
 install:
 	nvcc -arch=sm_$(arch) -dlink -w $(CUOBJ_DIR)/*.o -o $(CUOBJ_DIR)/rdc_link.o 
 	g++ $(OBJ_DIR)/*.o $(CUOBJ_DIR)/*.o -fopenmp -ltbb -lsfml-graphics -lsfml-window -lsfml-system -lfftw3 -lX11 -lcudart -lcufft -lcudadevrt -o BorisLin
 	rm -f $(OBJ_FILES) $(CUOBJ_FILES) $(CUOBJ_DIR)/rdc_link.o
 	mkdir -p ~/Documents/$(BORIS_DATA_DIR)
 	mkdir -p ~/Documents/$(BORIS_SIM_DIR)
-	cp -f Manual/BorisManual-v$(BVERSION).pdf ~/Documents/$(BORIS_DATA_DIR)/BorisManual-v$(BVERSION).pdf
+	cp -r BorisPythonScripts/ ~/Documents/$(BORIS_DATA_DIR)
+	cp -r Examples/ ~/Documents/$(BORIS_DATA_DIR)
 	cp -f BorisMDB.txt ~/Documents/$(BORIS_DATA_DIR)/BorisMDB.txt
+	cp -f Manual/BorisManual-v$(BVERSION).pdf ~/Documents/$(BORIS_DATA_DIR)/BorisManual-v$(BVERSION).pdf
 	@echo Done
  
 Boris/Boris_o/%.o: Boris/%.cpp

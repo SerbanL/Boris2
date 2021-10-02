@@ -735,3 +735,32 @@ void Simulation::SaveData_DiskBufferFlush(std::vector<std::string>* pdiskbuffer,
 		}
 	}
 }
+
+//file name can have data specifiers, e.g. %iter% means '%iter%' should be replaced by the actual value of the iter data field, etc.
+std::string Simulation::ScanFileNameData(std::string& fileName)
+{
+	//dataDescriptor
+
+	size_t pos = 0;
+
+	while ((pos = fileName.find('%', pos)) != std::string::npos) {
+
+		//found %. there should be another one now.
+		size_t pos1 = ++pos;
+		if ((pos = fileName.find('%', pos)) == std::string::npos) break;
+
+		//found a matching %. Get string in between
+		size_t len = pos++ - pos1;
+		std::string specifier = fileName.substr(pos1, len);
+		
+		if (dataDescriptor.has_key(specifier)) {
+			
+			std::string value_string = GetDataValueString(DatumConfig(dataDescriptor.get_ID_from_key(specifier)));
+
+			fileName.replace(pos1 - 1, len + 2, value_string);
+			pos += value_string.length() - len;
+		}
+	}
+
+	return fileName;
+}
