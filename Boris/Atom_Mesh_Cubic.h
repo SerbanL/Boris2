@@ -21,7 +21,10 @@
 #include "Atom_AnisotropyCubi.h"
 #include "Atom_AnisotropyBiaxial.h"
 #include "Atom_AnisotropyTensorial.h"
+#include "Atom_Transport.h"
 #include "Atom_Heat.h"
+#include "Atom_SOTField.h"
+#include "Atom_STField.h"
 
 #if COMPILECUDA == 1
 #include "Atom_Mesh_CubicCUDA.h"
@@ -43,7 +46,9 @@ class Atom_Mesh_Cubic :
 	int, int, int, 
 	int, int, int, int, int, int,
 	Rect, SZ3, DBL3, SZ3, DBL3, SZ3, DBL3, SZ3, DBL3, SZ3, DBL3,
-	VEC_VC<DBL3>, VEC_VC<double>, VEC_VC<double>,
+	VEC_VC<DBL3>, 
+	VEC_VC<double>, VEC_VC<DBL3>, VEC_VC<DBL3>, VEC_VC<double>,
+	VEC_VC<double>, VEC_VC<double>,
 	vector_lut<Modules*>, 
 	bool,
 	//Members in this derived class
@@ -55,7 +60,10 @@ class Atom_Mesh_Cubic :
 	MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<DBL3, DBL3>, MatP<DBL3, DBL3>, MatP<DBL3, DBL3>,
 	std::vector<DBL4>,
 	MatP<double, double>, MatP<double, double>,
-	MatP<double, double>,
+	MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>,
+	MatP<double, double>, MatP<double, double>, MatP<DBL2, double>, MatP<DBL2, double>, MatP<DBL3, DBL3>,
+	MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<DBL2, double>, MatP<DBL2, double>,
+	MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>,
 	double, TEquation<double>,
 	MatP<double, double>,
 	MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>
@@ -66,7 +74,9 @@ class Atom_Mesh_Cubic :
 	Atom_Zeeman, Atom_MOptical,
 	Atom_Exchange, Atom_DMExchange, Atom_iDMExchange, Atom_viDMExchange, Atom_SurfExchange,
 	Atom_Anisotropy_Uniaxial, Atom_Anisotropy_Cubic, Atom_Anisotropy_Biaxial, Atom_Anisotropy_Tensorial,
-	Atom_Heat> >
+	Atom_Transport,
+	Atom_Heat,
+	Atom_SOTField, Atom_STField> >
 {
 #if COMPILECUDA == 1
 	friend Atom_Mesh_CubicCUDA;
@@ -112,11 +122,6 @@ private:
 	//std::sort can be executed as a parallel algorithm with C++17 stl, and random doubles also generated in parallel, so this is a fully parallel shuffle algorithm.
 	//TO DO : Direct parallel shuffling is possible but a bit of a pain - probably best to use a bijective hash function to generate random permutations but need to look into this carefully. Probably not worth the effort for CPU code.
 	std::vector<std::pair<double, unsigned>> mc_indices_red, mc_indices_black;
-
-	// PARALLEL TEMPERING MONTE-CARLO DATA
-
-	//parallel ensemble
-	VEC_VC<DBL3> M1_ptmc;
 
 private:
 

@@ -8,6 +8,8 @@
 #include "BorisCUDALib.h"
 #include "ModulesCUDA.h"
 
+#include "TransportBaseCUDA.h"
+
 #include "TransportCUDA_Poisson.h"
 #include "TransportCUDA_Poisson_Spin_V.h"
 #include "TransportCUDA_Poisson_Spin_S.h"
@@ -23,7 +25,8 @@ class Transport;
 class STransportCUDA;
 
 class TransportCUDA :
-	public ModulesCUDA
+	public ModulesCUDA,
+	public TransportBaseCUDA
 {
 
 	friend Transport;
@@ -33,18 +36,11 @@ class TransportCUDA :
 
 private:
 
-	//spin transport solver type (see Transport_Defs.h)
-	int stsolve;
-
 	//pointer to CUDA version of mesh object holding the effective field module holding this CUDA module
 	MeshCUDA* pMeshCUDA;
 
 	//pointer to cpu version of MeshCUDA
 	Mesh* pMesh;
-
-	//Same for the supermesh
-	SuperMeshCUDA* pSMeshCUDA;
-	SuperMesh* pSMesh;
 
 	//pointer to cpu version of this module
 	Transport* pTransport;
@@ -83,6 +79,8 @@ private:
 	bool SetFixedPotentialCells(cuRect rectangle, cuBReal potential);
 
 	void ClearFixedPotentialCells(void);
+
+	void Set_Linear_PotentialDrop(cuReal3 ground_electrode_center, cuBReal ground_potential, cuReal3 electrode_center, cuBReal electrode_potential);
 
 	//prepare displayVEC ready for calculation of display quantity
 	bool PrepareDisplayVEC(DBL3 cellsize);

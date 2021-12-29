@@ -316,6 +316,10 @@ public:
 	//is there a demag-type module set for this mesh? (SDemag not included as this is a SuperMesh module)
 	bool Is_Demag_Enabled(void) { return IsModuleSet(MOD_DEMAG) || IsModuleSet(MOD_ATOM_DIPOLEDIPOLE); }
 
+	//TO DO : spin transport solver not enabled for Atomistic meshes
+	bool iSHA_nonzero(void) { return false; }
+	bool SHA_nonzero(void) { return false; }
+
 	//----------------------------------- VALUE GETTERS : Atom_MeshGetData.cpp
 
 	//------Specific to Atom_Mesh

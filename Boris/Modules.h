@@ -184,6 +184,9 @@ public:
 	//Return new - old energy to be used with monte Carlo methods
 	virtual double Get_EnergyChange(int spin_index, DBL3 Mnew) { return 0.0; }
 
+	//as above but for 2-sublattice model
+	virtual DBL2 Get_EnergyChange(int spin_index, DBL3 Mnew_A, DBL3 Mnew_B) { return DBL2(); }
+
 	//Get energy value at the given spin index; This can reuse code from Get_EnergyChange by passing in Mnew as DBL3() - Get_EnergyChange will handle this eventuality.
 	double Get_Energy(int spin_index) { return Get_EnergyChange(spin_index, DBL3()); }
 };

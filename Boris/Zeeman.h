@@ -62,6 +62,9 @@ public:
 
 	double Get_EnergyChange(int spin_index, DBL3 Mnew);
 
+	//AFM mesh
+	DBL2 Get_EnergyChange(int spin_index, DBL3 Mnew_A, DBL3 Mnew_B);
+
 	//-------------------
 
 	void SetField(DBL3 Hxyz);

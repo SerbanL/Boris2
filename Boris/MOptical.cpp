@@ -149,6 +149,7 @@ double MOptical::UpdateField(void)
 
 //-------------------Energy methods
 
+//FM Mesh
 double MOptical::Get_EnergyChange(int spin_index, DBL3 Mnew)
 {
 	//For CUDA there are separate device functions used by CUDA kernels.
@@ -162,6 +163,20 @@ double MOptical::Get_EnergyChange(int spin_index, DBL3 Mnew)
 		else return -pMesh->h.dim() * pMesh->M[spin_index] * MU0 * DBL3(0, 0, cHmo);
 	}
 	else return 0.0;
+}
+
+//AFM mesh
+DBL2 MOptical::Get_EnergyChange(int spin_index, DBL3 Mnew_A, DBL3 Mnew_B)
+{
+	if (pMesh->M.is_not_empty(spin_index) && pMesh->M2.is_not_empty(spin_index)) {
+
+		double cHmo = pMesh->cHmo;
+		pMesh->update_parameters_mcoarse(spin_index, pMesh->cHmo, cHmo);
+
+		if (Mnew_A != DBL3() && Mnew_B != DBL3()) return -MU0 * pMesh->h.dim() * DBL2((Mnew_A - pMesh->M[spin_index]) * DBL3(0, 0, cHmo), (Mnew_B - pMesh->M2[spin_index]) * DBL3(0, 0, cHmo));
+		else return -MU0 * pMesh->h.dim() * DBL2(pMesh->M[spin_index] * DBL3(0, 0, cHmo), pMesh->M2[spin_index] * DBL3(0, 0, cHmo));
+	}
+	else return DBL2();
 }
 
 #endif

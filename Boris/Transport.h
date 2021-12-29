@@ -2,8 +2,7 @@
 
 #include "BorisLib.h"
 #include "Modules.h"
-
-
+#include "TransportBase.h"
 
 class Mesh;
 class SuperMesh;
@@ -11,17 +10,15 @@ class STransport;
 
 #ifdef MODULE_COMPILATION_TRANSPORT
 
-#include "Transport_Defs.h"
-
 #if COMPILECUDA == 1
 #include "TransportCUDA.h"
 #endif
 
 class Transport :
 	public Modules,
+	public TransportBase,
 	public ProgramState<Transport, std::tuple<>,	std::tuple<>>
 {
-	
 	friend STransport;
 
 #if COMPILECUDA == 1
@@ -35,13 +32,8 @@ class Transport :
 
 private:
 
-	//spin transport solver type (see Transport_Defs.h)
-	STSOLVE_ stsolve;
-
 	//pointer to mesh object holding this effective field module
 	Mesh* pMesh;
-
-	SuperMesh* pSMesh;
 
 	//used to compute spin current components and spin torque for display purposes - only calculated and memory allocated when asked to do so.
 	VEC<DBL3> displayVEC;
@@ -117,6 +109,8 @@ private:
 	bool SetFixedPotentialCells(Rect rectangle, double potential);
 
 	void ClearFixedPotentialCells(void);
+
+	void Set_Linear_PotentialDrop(DBL3 ground_electrode_center, double ground_potential, DBL3 electrode_center, double electrode_potential);
 
 	//prepare displayVEC ready for calculation of display quantity - used for spin current
 	bool PrepareDisplayVEC(DBL3 cellsize);
@@ -197,6 +191,10 @@ public:
 	double cfunc_sec(DBL3 relpos, DBL3 stencil) const;
 	double cfunc_pri(int cell_idx) const;
 
+	//-------------------Properties
+
+	bool GInterface_Enabled(void);
+
 	//-------------------Others
 
 	//called by MoveMesh method in this mesh - move relevant transport quantities
@@ -256,7 +254,8 @@ public:
 #else
 
 class Transport :
-	public Modules
+	public Modules,
+	public TransportBase
 {
 	friend STransport;
 

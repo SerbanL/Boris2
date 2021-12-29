@@ -15,7 +15,10 @@ FMesh::FMesh(SuperMesh *pSMesh_) :
 			VINFO(meshType), VINFO(meshIdCounter), VINFO(meshId), 
 			VINFO(displayedPhysicalQuantity), VINFO(displayedBackgroundPhysicalQuantity), VINFO(vec3rep), VINFO(displayedParamVar), VINFO(Module_Heff_Display), VINFO(Module_Energy_Display),
 			VINFO(meshRect), VINFO(n), VINFO(h), VINFO(n_e), VINFO(h_e), VINFO(n_t), VINFO(h_t), VINFO(n_m), VINFO(h_m), VINFO(n_s), VINFO(h_s), VINFO(link_stochastic),
-			VINFO(M), VINFO(V), VINFO(E), VINFO(S), VINFO(elC), VINFO(Temp), VINFO(Temp_l), VINFO(u_disp), VINFO(strain_diag), VINFO(strain_odiag),
+			VINFO(M), 
+			VINFO(V), VINFO(E), VINFO(S), VINFO(elC), 
+			VINFO(Temp), VINFO(Temp_l), 
+			VINFO(u_disp), VINFO(strain_diag), VINFO(strain_odiag),
 			VINFO(pMod), 
 			VINFO(exclude_from_multiconvdemag),
 			//Members in this derived class
@@ -58,7 +61,10 @@ FMesh::FMesh(Rect meshRect_, DBL3 h_, SuperMesh *pSMesh_) :
 			VINFO(meshType), VINFO(meshIdCounter), VINFO(meshId),
 			VINFO(displayedPhysicalQuantity), VINFO(displayedBackgroundPhysicalQuantity), VINFO(vec3rep), VINFO(displayedParamVar), VINFO(Module_Heff_Display), VINFO(Module_Energy_Display),
 			VINFO(meshRect), VINFO(n), VINFO(h), VINFO(n_e), VINFO(h_e), VINFO(n_t), VINFO(h_t), VINFO(n_m), VINFO(h_m), VINFO(n_s), VINFO(h_s), VINFO(link_stochastic),
-			VINFO(M), VINFO(V), VINFO(E), VINFO(S), VINFO(elC), VINFO(Temp), VINFO(Temp_l), VINFO(u_disp), VINFO(strain_diag), VINFO(strain_odiag),
+			VINFO(M), 
+			VINFO(V), VINFO(E), VINFO(S), VINFO(elC), 
+			VINFO(Temp), VINFO(Temp_l), 
+			VINFO(u_disp), VINFO(strain_diag), VINFO(strain_odiag),
 			VINFO(pMod),
 			VINFO(exclude_from_multiconvdemag),
 			//Members in this derived class

@@ -4,6 +4,8 @@
 //MAIN SIMULATION LOOP. Runs in SimulationThread
 void Simulation::Simulate(void)
 {
+	//if simulation is being stopped (done from THREAD_LOOP_STOP), then stop doing any more work/saving etc.
+	if (is_thread_running(THREAD_LOOP_STOP)) return;
 
 	//stop other parts of the program from changing simulation parameters in the middle of an interation
 	//non-blocking std::mutex is needed here so we can stop the simulation from HandleCommand - it also uses the simulationMutex. If Simulation thread gets blocked by this std::mutex they'll wait on each other forever.

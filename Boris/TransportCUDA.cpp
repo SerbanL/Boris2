@@ -15,7 +15,11 @@ TransportCUDA::TransportCUDA(Mesh* pMesh_, SuperMesh* pSMesh_, Transport* pTrans
 	: ModulesCUDA()
 {
 	pMesh = pMesh_;
+	pMeshBase = pMesh;
+
 	pMeshCUDA = pMesh->pMeshCUDA;
+	pMeshBaseCUDA = pMeshCUDA;
+
 	pSMesh = pSMesh_;
 	pSMeshCUDA = pSMesh->pSMeshCUDA;
 
@@ -85,6 +89,11 @@ bool TransportCUDA::SetFixedPotentialCells(cuRect rectangle, cuBReal potential)
 void TransportCUDA::ClearFixedPotentialCells(void)
 {
 	pMeshCUDA->V()->clear_dirichlet_flags();
+}
+
+void TransportCUDA::Set_Linear_PotentialDrop(cuReal3 ground_electrode_center, cuBReal ground_potential, cuReal3 electrode_center, cuBReal electrode_potential)
+{
+	pMeshCUDA->V()->set_linear(ground_electrode_center, ground_potential, electrode_center, electrode_potential);
 }
 
 //check if dM_dt Calculation should be enabled

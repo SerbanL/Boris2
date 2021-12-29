@@ -275,9 +275,9 @@ cu_obj<cuVEC<cuReal3>>& TransportCUDA::GetSpinTorque(void)
 void TransportCUDA::CalculateDisplaySAInterfaceTorque(TransportCUDA* ptrans_sec, CMBNDInfoCUDA& contactCUDA, bool primary_top)
 {
 	//the top contacting mesh sets G values
-	bool GInterface_Enabled = ((primary_top && pMeshCUDA->GInterface_Enabled()) || (!primary_top && ptrans_sec->pMeshCUDA->GInterface_Enabled()));
+	bool isGInterface_Enabled = ((primary_top && pMeshCUDA->GInterface_Enabled()) || (!primary_top && ptrans_sec->pMeshCUDA->GInterface_Enabled()));
 
-	if (stsolve == STSOLVE_FERROMAGNETIC && ptrans_sec->stsolve == STSOLVE_NORMALMETAL && GInterface_Enabled) {
+	if (stsolve == STSOLVE_FERROMAGNETIC && ptrans_sec->Get_STSolveType() == STSOLVE_NORMALMETAL && isGInterface_Enabled) {
 
 		CalculateDisplaySAInterfaceTorque_Kernel << < (pMeshCUDA->n.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >> > (contactCUDA, ptrans_sec->poisson_Spin_S, poisson_Spin_S, displayVEC);
 	}

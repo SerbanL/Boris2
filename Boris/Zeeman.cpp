@@ -296,6 +296,7 @@ double Zeeman::UpdateField(void)
 
 //-------------------Energy methods
 
+//FM mesh
 double Zeeman::Get_EnergyChange(int spin_index, DBL3 Mnew)
 {
 	//For CUDA there are separate device functions used by CUDA kernels.
@@ -347,6 +348,69 @@ double Zeeman::Get_EnergyChange(int spin_index, DBL3 Mnew)
 		}
 	}
 	else return 0.0;
+}
+
+//AFM mesh
+DBL2 Zeeman::Get_EnergyChange(int spin_index, DBL3 Mnew_A, DBL3 Mnew_B)
+{
+	//For CUDA there are separate device functions used by CUDA kernels.
+
+	if (pMesh->M.is_not_empty(spin_index)) {
+
+		if (!H_equation.is_set()) {
+
+			if (Havec.linear_size()) {
+
+				/////////////////////////////////////////
+				// Field VEC set
+				/////////////////////////////////////////
+
+				if (Mnew_A != DBL3() && Mnew_B != DBL3()) {
+
+					return -pMesh->h.dim() * DBL2((Mnew_A - pMesh->M[spin_index]) * MU0 * Havec[spin_index], (Mnew_B - pMesh->M2[spin_index]) * MU0 * Havec[spin_index]);
+				}
+				else return -pMesh->h.dim() * DBL2(pMesh->M[spin_index] * MU0 * Havec[spin_index], pMesh->M2[spin_index] * MU0 * Havec[spin_index]);
+			}
+			else {
+
+				/////////////////////////////////////////
+				// Fixed set field
+				/////////////////////////////////////////
+
+				if (IsZ(Ha.norm())) return 0.0;
+
+				double cHA = pMesh->cHA;
+				pMesh->update_parameters_mcoarse(spin_index, pMesh->cHA, cHA);
+
+				if (Mnew_A != DBL3() && Mnew_B != DBL3()) {
+
+					return -pMesh->h.dim() * DBL2((Mnew_A - pMesh->M[spin_index]) * MU0 * (cHA * Ha), (Mnew_B - pMesh->M2[spin_index]) * MU0 * (cHA * Ha));
+				}
+				else return -pMesh->h.dim() * DBL2(pMesh->M[spin_index] * MU0 * (cHA * Ha), pMesh->M2[spin_index] * MU0 * (cHA * Ha));
+			}
+		}
+
+		/////////////////////////////////////////
+		// Field set from user equation
+		/////////////////////////////////////////
+
+		else {
+
+			//on top of spatial dependence specified through an equation, also allow spatial dependence through the cHA parameter
+			double cHA = pMesh->cHA;
+			pMesh->update_parameters_mcoarse(spin_index, pMesh->cHA, cHA);
+
+			DBL3 relpos = pMesh->M.cellidx_to_position(spin_index);
+			DBL3 H = H_equation.evaluate_vector(relpos.x, relpos.y, relpos.z, pSMesh->GetStageTime());
+
+			if (Mnew_A != DBL3() && Mnew_B != DBL3()) {
+
+				return -pMesh->h.dim() * DBL2((Mnew_A - pMesh->M[spin_index]) * MU0 * (cHA * H), (Mnew_B - pMesh->M2[spin_index]) * MU0 * (cHA * H));
+			}
+			else return -pMesh->h.dim() * DBL2(pMesh->M[spin_index] * MU0 * (cHA * H), pMesh->M2[spin_index] * MU0 * (cHA * H));
+		}
+	}
+	else return DBL2();
 }
 
 //----------------------------------------------- Others

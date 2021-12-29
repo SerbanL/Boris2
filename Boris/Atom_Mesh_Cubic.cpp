@@ -15,7 +15,9 @@ Atom_Mesh_Cubic::Atom_Mesh_Cubic(SuperMesh *pSMesh_) :
 			VINFO(meshType), VINFO(meshIdCounter), VINFO(meshId), 
 			VINFO(displayedPhysicalQuantity), VINFO(displayedBackgroundPhysicalQuantity), VINFO(vec3rep), VINFO(displayedParamVar), VINFO(Module_Heff_Display), VINFO(Module_Energy_Display),
 			VINFO(meshRect), VINFO(n), VINFO(h), VINFO(n_e), VINFO(h_e), VINFO(n_t), VINFO(h_t), VINFO(n_m), VINFO(h_m), VINFO(n_dm), VINFO(h_dm),
-			VINFO(M1), VINFO(Temp), VINFO(Temp_l),
+			VINFO(M1), 
+			VINFO(V), VINFO(E), VINFO(S), VINFO(elC),
+			VINFO(Temp), VINFO(Temp_l),
 			VINFO(pMod), 
 			VINFO(exclude_from_multiconvdemag),
 			//Members in this derived class
@@ -27,7 +29,10 @@ Atom_Mesh_Cubic::Atom_Mesh_Cubic(SuperMesh *pSMesh_) :
 			VINFO(K1), VINFO(K2),  VINFO(K3), VINFO(mcanis_ea1), VINFO(mcanis_ea2), VINFO(mcanis_ea3),
 			VINFO(Kt),
 			VINFO(cHA), VINFO(cHmo),
-			VINFO(elecCond),
+			VINFO(elecCond), VINFO(amrPercentage), VINFO(P), VINFO(beta), VINFO(De), VINFO(n_density),
+			VINFO(SHA), VINFO(flSOT), VINFO(STq), VINFO(STa), VINFO(STp),
+			VINFO(betaD), VINFO(l_sf), VINFO(l_ex), VINFO(l_ph), VINFO(Gi), VINFO(Gmix),
+			VINFO(ts_eff), VINFO(tsi_eff), VINFO(pump_eff), VINFO(cpump_eff), VINFO(the_eff),
 			VINFO(base_temperature), VINFO(T_equation), 
 			VINFO(density),
 			VINFO(thermCond), VINFO(shc), VINFO(shc_e), VINFO(G_e), VINFO(cT), VINFO(Q)
@@ -38,7 +43,9 @@ Atom_Mesh_Cubic::Atom_Mesh_Cubic(SuperMesh *pSMesh_) :
 			IINFO(Atom_Zeeman), IINFO(Atom_MOptical),
 			IINFO(Atom_Exchange), IINFO(Atom_DMExchange), IINFO(Atom_iDMExchange), IINFO(Atom_viDMExchange),IINFO(Atom_SurfExchange),
 			IINFO(Atom_Anisotropy_Uniaxial), IINFO(Atom_Anisotropy_Cubic), IINFO(Atom_Anisotropy_Biaxial), IINFO(Atom_Anisotropy_Tensorial),
-			IINFO(Atom_Heat)
+			IINFO(Atom_Transport),
+			IINFO(Atom_Heat),
+			IINFO(Atom_SOTField), IINFO(Atom_STField)
 		}),
 	meshODE(this)
 {
@@ -52,7 +59,9 @@ Atom_Mesh_Cubic::Atom_Mesh_Cubic(Rect meshRect_, DBL3 h_, SuperMesh *pSMesh_) :
 			VINFO(meshType), VINFO(meshIdCounter), VINFO(meshId),
 			VINFO(displayedPhysicalQuantity), VINFO(displayedBackgroundPhysicalQuantity), VINFO(vec3rep), VINFO(displayedParamVar), VINFO(Module_Heff_Display), VINFO(Module_Energy_Display),
 			VINFO(meshRect), VINFO(n), VINFO(h), VINFO(n_e), VINFO(h_e), VINFO(n_t), VINFO(h_t), VINFO(n_m), VINFO(h_m), VINFO(n_dm), VINFO(h_dm),
-			VINFO(M1), VINFO(Temp), VINFO(Temp_l),
+			VINFO(M1), 
+			VINFO(V), VINFO(E), VINFO(S), VINFO(elC),
+			VINFO(Temp), VINFO(Temp_l),
 			VINFO(pMod),
 			VINFO(exclude_from_multiconvdemag),
 			//Members in this derived class
@@ -64,7 +73,10 @@ Atom_Mesh_Cubic::Atom_Mesh_Cubic(Rect meshRect_, DBL3 h_, SuperMesh *pSMesh_) :
 			VINFO(K1), VINFO(K2),  VINFO(K3), VINFO(mcanis_ea1), VINFO(mcanis_ea2), VINFO(mcanis_ea3),
 			VINFO(Kt),
 			VINFO(cHA), VINFO(cHmo),
-			VINFO(elecCond),
+			VINFO(elecCond), VINFO(amrPercentage), VINFO(P), VINFO(beta), VINFO(De), VINFO(n_density),
+			VINFO(SHA), VINFO(flSOT), VINFO(STq), VINFO(STa), VINFO(STp),
+			VINFO(betaD), VINFO(l_sf), VINFO(l_ex), VINFO(l_ph), VINFO(Gi), VINFO(Gmix),
+			VINFO(ts_eff), VINFO(tsi_eff), VINFO(pump_eff), VINFO(cpump_eff), VINFO(the_eff),
 			VINFO(base_temperature), VINFO(T_equation),
 			VINFO(density),
 			VINFO(thermCond), VINFO(shc), VINFO(shc_e), VINFO(G_e), VINFO(cT), VINFO(Q)
@@ -75,7 +87,9 @@ Atom_Mesh_Cubic::Atom_Mesh_Cubic(Rect meshRect_, DBL3 h_, SuperMesh *pSMesh_) :
 			IINFO(Atom_Zeeman), IINFO(Atom_MOptical),
 			IINFO(Atom_Exchange), IINFO(Atom_DMExchange), IINFO(Atom_iDMExchange), IINFO(Atom_viDMExchange), IINFO(Atom_SurfExchange),
 			IINFO(Atom_Anisotropy_Uniaxial), IINFO(Atom_Anisotropy_Cubic), IINFO(Atom_Anisotropy_Biaxial), IINFO(Atom_Anisotropy_Tensorial),
-			IINFO(Atom_Heat)
+			IINFO(Atom_Transport),
+			IINFO(Atom_Heat),
+			IINFO(Atom_SOTField), IINFO(Atom_STField)
 		}),
 	meshODE(this)
 {

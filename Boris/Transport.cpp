@@ -12,6 +12,7 @@ Transport::Transport(Mesh *pMesh_) :
 	ProgramStateNames(this, {}, {})
 {
 	pMesh = pMesh_;
+	pMeshBase = pMesh;
 
 	pSMesh = pMesh->pSMesh;
 
@@ -96,6 +97,11 @@ void Transport::ClearFixedPotentialCells(void)
 #if COMPILECUDA == 1
 	if (pModuleCUDA) pTransportCUDA->ClearFixedPotentialCells();
 #endif
+}
+
+void Transport::Set_Linear_PotentialDrop(DBL3 ground_electrode_center, double ground_potential, DBL3 electrode_center, double electrode_potential)
+{
+	pMesh->V.set_linear(ground_electrode_center, ground_potential, electrode_center, electrode_potential);
 }
 
 //check if dM_dt Calculation should be enabled
@@ -521,6 +527,13 @@ void Transport::CalculateElectricalConductivity(bool force_recalculate)
 		//set flag to force transport solver recalculation (note, the SuperMesh modules always update after the Mesh modules) - elC has changed
 		pSMesh->CallModuleMethod(&STransport::Flag_Recalculate_Transport);
 	}
+}
+
+//-------------------Properties
+
+bool Transport::GInterface_Enabled(void)
+{
+	return pMesh->GInterface_Enabled();
 }
 
 //-------------------Others

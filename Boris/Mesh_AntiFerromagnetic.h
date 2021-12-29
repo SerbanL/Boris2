@@ -96,6 +96,11 @@ private:
 	//this is precisely what it is intended for; if two dissimilar materials are in contact then you probably shouldn't be using this mechanism.
 	bool exchange_couple_to_meshes = false;
 
+private:
+
+	//Take a Monte Carlo step in this mesh : these functions implement the actual algorithms
+	void Iterate_MonteCarlo_Parallel_Classic(void);
+
 public:
 
 	//constructor taking only a SuperMesh pointer (SuperMesh is the owner) only needed for loading : all required values will be set by LoadObjectState method in ProgramState
@@ -130,6 +135,14 @@ public:
 			pMeshCUDA->Heff2()->set(n.dim(), cuReal3());
 		}
 	}
+#endif
+
+	//Take a Monte Carlo step in this mesh
+	void Iterate_MonteCarlo(double acceptance_rate);
+
+#if COMPILECUDA == 1
+	//Take a Monte Carlo step in this mesh
+	void Iterate_MonteCarloCUDA(double acceptance_rate);
 #endif
 
 	//Check if mesh needs to be moved (using the MoveMesh method) - return amount of movement required (i.e. parameter to use when calling MoveMesh).

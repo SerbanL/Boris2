@@ -36,6 +36,9 @@ public:
 	BError UpdateConfiguration(UPDATECONFIG_ cfgMessage);
 	void UpdateConfiguration_Values(UPDATECONFIG_ cfgMessage) {}
 
+	//Take a Monte Carlo Metropolis step in this mesh
+	cuBReal Iterate_MonteCarloCUDA_Classic(cuBReal mc_cone_angledeg, double target_acceptance_rate);
+
 	//----------------------------------- OTHER IMPORTANT CONTROL METHODS
 
 	//Check if mesh needs to be moved (using the MoveMesh method) - return amount of movement required (i.e. parameter to use when calling MoveMesh).

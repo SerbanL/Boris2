@@ -439,6 +439,36 @@ void SurfExchangeCUDA_AFM::UpdateField(void)
 	}
 }
 
+//----------------------- Initialization
+
+//Current mesh is anti-ferromagnetic
+__global__ void set_SurfExchangeCUDA_AFM_pointers_kernel(
+	ManagedMeshCUDA& cuMesh,
+	ManagedMeshCUDA* pMeshFM_Bot, size_t coupledFM_bot_meshes,
+	ManagedMeshCUDA* pMeshFM_Top, size_t coupledFM_top_meshes,
+	ManagedMeshCUDA* pMeshAFM_Bot, size_t coupledAFM_bot_meshes,
+	ManagedMeshCUDA* pMeshAFM_Top, size_t coupledAFM_top_meshes)
+{
+	if (threadIdx.x == 0) cuMesh.pMeshFM_Bot = pMeshFM_Bot;
+	if (threadIdx.x == 1) cuMesh.pMeshFM_Bot_size = coupledFM_bot_meshes;
+	if (threadIdx.x == 2) cuMesh.pMeshFM_Top = pMeshFM_Top;
+	if (threadIdx.x == 3) cuMesh.pMeshFM_Top_size = coupledFM_top_meshes;
+
+	if (threadIdx.x == 4) cuMesh.pMeshAFM_Bot = pMeshAFM_Bot;
+	if (threadIdx.x == 5) cuMesh.pMeshAFM_Bot_size = coupledAFM_bot_meshes;
+	if (threadIdx.x == 6) cuMesh.pMeshAFM_Top = pMeshAFM_Top;
+	if (threadIdx.x == 7) cuMesh.pMeshAFM_Top_size = coupledAFM_top_meshes;
+}
+
+//Called by SurfExchangeCUDA module
+void SurfExchangeCUDA_AFM::set_SurfExchangeCUDA_AFM_pointers(void)
+{
+	set_SurfExchangeCUDA_AFM_pointers_kernel <<< 1, CUDATHREADS >>>
+		(pMeshCUDA->cuMesh,
+		pMeshFM_Bot, pMeshFM_Bot.size(), pMeshFM_Top, pMeshFM_Top.size(),
+		pMeshAFM_Bot, pMeshAFM_Bot.size(), pMeshAFM_Top, pMeshAFM_Top.size());
+}
+
 #endif
 
 #endif

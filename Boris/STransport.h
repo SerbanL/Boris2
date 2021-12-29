@@ -3,12 +3,11 @@
 #include "BorisLib.h"
 #include "Modules.h"
 #include "Transport.h"
+#include "Atom_Transport.h"
 
 #if COMPILECUDA == 1
 #include "STransportCUDA.h"
 #endif
-
-
 
 class SuperMesh;
 
@@ -40,7 +39,7 @@ private:
 	std::vector< std::vector<CMBNDInfo> > CMBNDcontacts;
 
 	//list of all transport modules in transport meshes (same ordering as first vector in CMBNDcontacts)
-	std::vector<Transport*> pTransport;
+	std::vector<TransportBase*> pTransport;
 
 	//vector of pointers to all V - need this to set cmbnd flags (same ordering as first vector in CMBNDcontacts)
 	std::vector<VEC_VC<double>*> pV;
@@ -124,15 +123,15 @@ private:
 	void set_cmbnd_spin_transport_S(void);
 
 	//functions to specify boundary conditions for interface conductance approach for charge : Jc_N = Jc_F = A + B * dV
-	double Afunc_V(int cell1_idx, int cell2_idx, DBL3 relpos_m1, DBL3 shift, DBL3 stencil, Transport& trans_sec, Transport& trans_pri) const;
-	double Bfunc_V(int cell1_idx, int cell2_idx, DBL3 relpos_m1, DBL3 shift, DBL3 stencil, Transport& trans_sec, Transport& trans_pri) const;
+	double Afunc_V(int cell1_idx, int cell2_idx, DBL3 relpos_m1, DBL3 shift, DBL3 stencil, TransportBase& trans_sec, TransportBase& trans_pri) const;
+	double Bfunc_V(int cell1_idx, int cell2_idx, DBL3 relpos_m1, DBL3 shift, DBL3 stencil, TransportBase& trans_sec, TransportBase& trans_pri) const;
 
 	//functions to specify boundary conditions for interface conductance approach for spin : Js_N = A_N + B_N * dVs, Js_F = A_F + B_F * dVs
-	DBL3 Afunc_N_S(int cell1_idx, int cell2_idx, DBL3 relpos_m1, DBL3 shift, DBL3 stencil, Transport& trans_sec, Transport& trans_pri) const;
-	DBL3 Afunc_F_S(int cell1_idx, int cell2_idx, DBL3 relpos_m1, DBL3 shift, DBL3 stencil, Transport& trans_sec, Transport& trans_pri) const;
+	DBL3 Afunc_N_S(int cell1_idx, int cell2_idx, DBL3 relpos_m1, DBL3 shift, DBL3 stencil, TransportBase& trans_sec, TransportBase& trans_pri) const;
+	DBL3 Afunc_F_S(int cell1_idx, int cell2_idx, DBL3 relpos_m1, DBL3 shift, DBL3 stencil, TransportBase& trans_sec, TransportBase& trans_pri) const;
 
-	DBL33 Bfunc_N_S(int cell1_idx, int cell2_idx, DBL3 relpos_m1, DBL3 shift, DBL3 stencil, Transport& trans_sec, Transport& trans_pri) const;
-	DBL33 Bfunc_F_S(int cell1_idx, int cell2_idx, DBL3 relpos_m1, DBL3 shift, DBL3 stencil, Transport& trans_sec, Transport& trans_pri) const;
+	DBL33 Bfunc_N_S(int cell1_idx, int cell2_idx, DBL3 relpos_m1, DBL3 shift, DBL3 stencil, TransportBase& trans_sec, TransportBase& trans_pri) const;
+	DBL33 Bfunc_F_S(int cell1_idx, int cell2_idx, DBL3 relpos_m1, DBL3 shift, DBL3 stencil, TransportBase& trans_sec, TransportBase& trans_pri) const;
 
 	//Calculate interface spin accumulation torque (in magnetic meshes for NF interfaces with G interface conductance set)
 	void CalculateSAInterfaceField(void);

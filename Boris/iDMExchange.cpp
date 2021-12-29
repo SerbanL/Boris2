@@ -509,6 +509,7 @@ double iDMExchange::UpdateField(void)
 
 //-------------------Energy methods
 
+//FM Mesh
 double iDMExchange::Get_EnergyChange(int spin_index, DBL3 Mnew)
 {
 	//For CUDA there are separate device functions used by CUDA kernels.
@@ -585,6 +586,135 @@ double iDMExchange::Get_EnergyChange(int spin_index, DBL3 Mnew)
 		else return -MU0 * pMesh->h.dim() * energy_;
 	}
 	else return 0.0;
+}
+
+//AFM mesh
+DBL2 iDMExchange::Get_EnergyChange(int spin_index, DBL3 Mnew_A, DBL3 Mnew_B)
+{	
+	if (pMesh->M.is_not_empty(spin_index) && pMesh->M2.is_not_empty(spin_index)) {
+
+		DBL2 Ms_AFM = pMesh->Ms_AFM;
+		DBL2 A_AFM = pMesh->A_AFM;
+		DBL2 Ah = pMesh->Ah;
+		DBL2 Anh = pMesh->Anh;
+		DBL2 D_AFM = pMesh->D_AFM;
+		pMesh->update_parameters_mcoarse(spin_index, pMesh->A_AFM, A_AFM, pMesh->Ah, Ah, pMesh->Anh, Anh, pMesh->Ms_AFM, Ms_AFM, pMesh->D_AFM, D_AFM);
+
+		DBL2 Aconst = 2 * A_AFM / (MU0 * (Ms_AFM & Ms_AFM));
+		DBL2 Dconst = -2 * D_AFM / (MU0 * (Ms_AFM & Ms_AFM));
+
+		auto Get_Energy = [&](void) -> DBL2
+		{
+			DBL3 Hexch_A, Hexch_A2, Hexch_D, Hexch_D2;
+
+			if (pMesh->M.is_plane_interior(spin_index)) {
+
+				//interior point : can use cheaper neu versions
+
+				//1. direct exchange contribution + AFM contribution
+				DBL3 delsq_M_A = pMesh->M.delsq_neu(spin_index);
+				DBL3 delsq_M_B = pMesh->M2.delsq_neu(spin_index);
+
+				Hexch_A = Aconst.i * delsq_M_A + (4 * Ah.i * pMesh->M2[spin_index] + Anh.i * delsq_M_B) / (MU0*Ms_AFM.i*Ms_AFM.j);
+				Hexch_A2 = Aconst.j * delsq_M_B + (4 * Ah.j * pMesh->M[spin_index] + Anh.j * delsq_M_A) / (MU0*Ms_AFM.i*Ms_AFM.j);
+
+				//2. Dzyaloshinskii-Moriya interfacial exchange contribution
+
+				//Differentials of M components (we only need 4, not all 9 so this could be optimised). First index is the differential direction, second index is the M component
+				DBL33 Mdiff_A = pMesh->M.grad_neu(spin_index);
+				DBL33 Mdiff_B = pMesh->M2.grad_neu(spin_index);
+
+				//Hdm, ex = -2D / (mu0*Ms) * (dmz / dx, dmz / dy, -dmx / dx - dmy / dy)
+				Hexch_D = Dconst.i * DBL3(Mdiff_A.x.z, Mdiff_A.y.z, -Mdiff_A.x.x - Mdiff_A.y.y);
+				Hexch_D2 = Dconst.j * DBL3(Mdiff_B.x.z, Mdiff_B.y.z, -Mdiff_B.x.x - Mdiff_B.y.y);
+			}
+			else {
+
+				DBL33 bndA_nneu, bndB_nneu;
+
+				DBL2 nhconst = Anh / (2 * A_AFM);
+
+				if (fabs(nhconst.i) != 1.0) {
+
+					//Non-homogeneous Neumann boundary conditions apply when using DMI. Required to ensure Brown's condition is fulfilled, i.e. m x h -> 0 when relaxing.
+					DBL3 bnd_dm_dx = (D_AFM.i / (2 * A_AFM.i * (1 - nhconst.i * nhconst.i))) * DBL3(pMesh->M[spin_index].z - nhconst.i * pMesh->M2[spin_index].z, 0, -pMesh->M[spin_index].x + nhconst.i * pMesh->M2[spin_index].x);
+					DBL3 bnd_dm_dy = (D_AFM.i / (2 * A_AFM.i * (1 - nhconst.i * nhconst.i))) * DBL3(0, pMesh->M[spin_index].z - nhconst.i * pMesh->M2[spin_index].z, -pMesh->M[spin_index].y + nhconst.i * pMesh->M2[spin_index].y);
+
+					bndA_nneu = DBL33(bnd_dm_dx, bnd_dm_dy, DBL3());
+				}
+				else {
+
+					DBL3 bnd_dm_dx = (D_AFM.i / (4 * A_AFM.i)) * DBL3(pMesh->M[spin_index].z, 0, -pMesh->M[spin_index].x);
+					DBL3 bnd_dm_dy = (D_AFM.i / (4 * A_AFM.i)) * DBL3(0, pMesh->M[spin_index].z, -pMesh->M[spin_index].y);
+
+					bndA_nneu = DBL33(bnd_dm_dx, bnd_dm_dy, DBL3());
+				}
+
+				if (fabs(nhconst.j) != 1.0) {
+
+					DBL3 bnd_dm_dx = (D_AFM.j / (2 * A_AFM.j * (1 - nhconst.j * nhconst.j))) * DBL3(pMesh->M2[spin_index].z - nhconst.j * pMesh->M[spin_index].z, 0, -pMesh->M2[spin_index].x + nhconst.j * pMesh->M[spin_index].x);
+					DBL3 bnd_dm_dy = (D_AFM.j / (2 * A_AFM.j * (1 - nhconst.j * nhconst.j))) * DBL3(0, pMesh->M2[spin_index].z - nhconst.j * pMesh->M[spin_index].z, -pMesh->M2[spin_index].y + nhconst.j * pMesh->M[spin_index].y);
+
+					bndB_nneu = DBL33(bnd_dm_dx, bnd_dm_dy, DBL3());
+				}
+				else {
+
+					DBL3 bnd_dm_dx = (D_AFM.j / (4 * A_AFM.j)) * DBL3(pMesh->M2[spin_index].z, 0, -pMesh->M2[spin_index].x);
+					DBL3 bnd_dm_dy = (D_AFM.j / (4 * A_AFM.j)) * DBL3(0, pMesh->M2[spin_index].z, -pMesh->M2[spin_index].y);
+
+					bndB_nneu = DBL33(bnd_dm_dx, bnd_dm_dy, DBL3());
+				}
+
+				DBL3 delsq_M_A = pMesh->M.delsq_nneu(spin_index, bndA_nneu);
+				DBL3 delsq_M_B = pMesh->M2.delsq_nneu(spin_index, bndB_nneu);
+
+				//1. direct exchange contribution + AFM contribution
+
+				//cells marked with cmbnd are calculated using exchange coupling to other ferromagnetic meshes - see below; the delsq_nneu evaluates to zero in the CMBND coupling direction.
+				Hexch_A = Aconst.i * delsq_M_A + (4 * Ah.i * pMesh->M2[spin_index] + Anh.i * delsq_M_B) / (MU0*Ms_AFM.i*Ms_AFM.j);
+				Hexch_A2 = Aconst.j * delsq_M_B + (4 * Ah.j * pMesh->M[spin_index] + Anh.j * delsq_M_A) / (MU0*Ms_AFM.i*Ms_AFM.j);
+
+				//2. Dzyaloshinskii-Moriya interfacial exchange contribution
+
+				//Differentials of M components (we only need 4, not all 9 so this could be optimised). First index is the differential direction, second index is the M component
+				//For cmbnd cells grad_nneu does not evaluate to zero in the CMBND coupling direction, but sided differentials are used - when setting values at CMBND cells for exchange coupled meshes must correct for this.
+				DBL33 Mdiff_A = pMesh->M.grad_nneu(spin_index, bndA_nneu);
+				DBL33 Mdiff_B = pMesh->M2.grad_nneu(spin_index, bndB_nneu);
+
+				//Hdm, ex = -2D / (mu0*Ms) * (dmz / dx, dmz / dy, -dmx / dx - dmy / dy)
+				Hexch_D = Dconst.i * DBL3(Mdiff_A.x.z, Mdiff_A.y.z, -Mdiff_A.x.x - Mdiff_A.y.y);
+				Hexch_D2 = Dconst.j * DBL3(Mdiff_B.x.z, Mdiff_B.y.z, -Mdiff_B.x.x - Mdiff_B.y.y);
+			}
+
+			return DBL2(pMesh->M[spin_index] * (Hexch_A + Hexch_D), pMesh->M2[spin_index] * (Hexch_A2 + Hexch_D2));
+		};
+
+		DBL2 energy_ = Get_Energy();
+
+		if (Mnew_A != DBL3() && Mnew_B != DBL3()) {
+
+			//NOTE : here we only need the change in energy due to spin rotation only. Thus the longitudinal part, which is dependent on spin length only, cancels out. Enforce this by making Mnew length same as old one.
+			Mnew_A.renormalize(pMesh->M[spin_index].norm());
+			Mnew_B.renormalize(pMesh->M2[spin_index].norm());
+
+			DBL3 Mold_A = pMesh->M[spin_index];
+			DBL3 Mold_B = pMesh->M2[spin_index];
+
+			pMesh->M[spin_index] = Mnew_A;
+			pMesh->M2[spin_index] = Mnew_B;
+
+			DBL2 energynew_ = Get_Energy();
+			
+			pMesh->M[spin_index] = Mold_A;
+			pMesh->M2[spin_index] = Mold_B;
+
+			//do not divide by 2 as we are not double-counting here
+			return -MU0 * pMesh->h.dim() * (energynew_ - energy_);
+		}
+		//If Mnew is null then this method is used to obtain current energy only, not energy change
+		else return -MU0 * pMesh->h.dim() * energy_;
+	}
+	else return DBL2();
 }
 
 //-------------------Torque methods

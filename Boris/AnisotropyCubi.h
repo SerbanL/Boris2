@@ -3,8 +3,6 @@
 #include "BorisLib.h"
 #include "Modules.h"
 
-
-
 class Mesh;
 
 #ifdef MODULE_COMPILATION_ANICUBI
@@ -42,7 +40,11 @@ public:
 
 	//-------------------Energy methods
 
+	//FM Mesh
 	double Get_EnergyChange(int spin_index, DBL3 Mnew);
+
+	//AFM mesh
+	DBL2 Get_EnergyChange(int spin_index, DBL3 Mnew_A, DBL3 Mnew_B);
 
 	//-------------------Torque methods
 

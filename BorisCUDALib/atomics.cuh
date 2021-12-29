@@ -160,7 +160,7 @@ inline __device__ void atomicAdd(Type_* address, Type_ val)
 }
 #endif
 
-#if __CUDA_ARCH__ <= 700
+#if __CUDA_ARCH__ <= 800
 //atomicAdd is not defined for unsigned long at least up to and including compute_70, so using atomicAdd for unsigned long long instead
 //it's worse than this though, size_t is unsigned long long on Windows, and unsigned long on Linux, so without this on Linux, compilation throws an error (undefined for size_t)
 inline __device__ void atomicAdd(unsigned long* address, unsigned long val)

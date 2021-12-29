@@ -62,11 +62,11 @@ void STransport::set_cmbnd_charge_transport(void)
 			int idx_sec = CMBNDcontacts[idx1][idx2].mesh_idx.i;
 			int idx_pri = CMBNDcontacts[idx1][idx2].mesh_idx.j;
 
-			pV[idx_pri]->set_cmbnd_continuous<Transport>(
+			pV[idx_pri]->set_cmbnd_continuous<TransportBase>(
 				*pV[idx_sec], CMBNDcontacts[idx1][idx2],
-				&Transport::afunc_V_sec, &Transport::afunc_V_pri,
-				&Transport::bfunc_V_sec, &Transport::bfunc_V_pri,
-				&Transport::diff2_V_sec, &Transport::diff2_V_pri,
+				&TransportBase::afunc_V_sec, &TransportBase::afunc_V_pri,
+				&TransportBase::bfunc_V_sec, &TransportBase::bfunc_V_pri,
+				&TransportBase::diff2_V_sec, &TransportBase::diff2_V_pri,
 				*pTransport[idx_sec], *pTransport[idx_pri]);
 		}
 	}

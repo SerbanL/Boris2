@@ -57,6 +57,7 @@ public:
 
 	//-------------------Energy methods
 
+	//FM mesh
 	double Get_EnergyChange(int spin_index, DBL3 Mnew);
 
 	//-------------------Torque methods

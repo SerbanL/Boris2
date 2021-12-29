@@ -126,7 +126,7 @@ double Exch_6ngbr_Neu::UpdateField(void)
 
 				//cells marked with cmbnd are calculated using exchange coupling to other ferromagnetic meshes - see below; the delsq_neu evaluates to zero in the CMBND coupling direction.
 				DBL3 Hexch;
-				
+
 				if (pMesh->base_temperature > 0.0 && pMesh->T_Curie > 0.0) {
 
 					//for finite temperature simulations the magnetization length may have a spatial variation
@@ -140,6 +140,7 @@ double Exch_6ngbr_Neu::UpdateField(void)
 					Hexch = (2 * A / (MU0*Ms*Ms)) * (pMesh->M.delsq_neu(idx) - pMesh->M[idx] * delsq_Msq / (2 * Mnorm*Mnorm));
 				}
 				else {
+
 					//zero temperature simulations : magnetization length could still vary but will only affect mxH term, so not needed for 0K simulations.
 					Hexch = (2 * A / (MU0*Ms*Ms)) * pMesh->M.delsq_neu(idx);
 				}
@@ -180,8 +181,6 @@ double Exch_6ngbr_Neu::UpdateField(void)
 
 				DBL3 Hexch = (2 * A_AFM.i / (MU0*Ms_AFM.i*Ms_AFM.i)) * delsq_M_A + (-4 * Ah.i * (pMesh->M[idx] ^ (pMesh->M[idx] ^ pMesh->M2[idx])) / (M.i*M.i) + Anh.i * delsq_M_B) / (MU0*Ms_AFM.i*Ms_AFM.j);
 				DBL3 Hexch2 = (2 * A_AFM.j / (MU0*Ms_AFM.j*Ms_AFM.j)) * delsq_M_B + (-4 * Ah.j * (pMesh->M2[idx] ^ (pMesh->M2[idx] ^ pMesh->M[idx])) / (M.j*M.j) + Anh.j * delsq_M_A) / (MU0*Ms_AFM.i*Ms_AFM.j);
-
-				//TO DO : investigate correction due to non-constant magnetization length.
 
 				pMesh->Heff[idx] += Hexch;
 				pMesh->Heff2[idx] += Hexch2;
@@ -312,6 +311,7 @@ double Exch_6ngbr_Neu::UpdateField(void)
 
 //-------------------Energy methods
 
+//FM mesh
 double Exch_6ngbr_Neu::Get_EnergyChange(int spin_index, DBL3 Mnew)
 {
 	//For CUDA there are separate device functions used by CUDA kernels.
@@ -323,7 +323,7 @@ double Exch_6ngbr_Neu::Get_EnergyChange(int spin_index, DBL3 Mnew)
 		pMesh->update_parameters_mcoarse(spin_index, pMesh->A, A, pMesh->Ms, Ms);
 
 		DBL3 Hexch = (2 * A / (MU0*Ms*Ms)) * pMesh->M.delsq_neu(spin_index);
-		double energy_ = -MU0 * pMesh->M[spin_index] * Hexch / 2;
+		double energy_ = pMesh->M[spin_index] * Hexch;
 
 		if (Mnew != DBL3()) {
 
@@ -333,16 +333,66 @@ double Exch_6ngbr_Neu::Get_EnergyChange(int spin_index, DBL3 Mnew)
 			DBL3 Mold = pMesh->M[spin_index];
 			pMesh->M[spin_index] = Mnew;
 			Hexch = (2 * A / (MU0*Ms*Ms)) * pMesh->M.delsq_neu(spin_index);
-			double energynew_ = -MU0 * pMesh->M[spin_index] * Hexch / 2;
+			double energynew_ = pMesh->M[spin_index] * Hexch;
 			pMesh->M[spin_index] = Mold;
 
-			//multiply by 2 as we are not double-counting here (same as for Demag)
-			return pMesh->h.dim() * (energynew_ - energy_) * 2;
+			//do not divide by 2 as we are not double-counting here
+			return -MU0 * pMesh->h.dim() * (energynew_ - energy_);
 		}
 		//If Mnew is null then this method is used to obtain current energy only, not energy change
-		else return pMesh->h.dim() * energy_ * 2;
+		else return -MU0 * pMesh->h.dim() * energy_;
 	}
 	else return 0.0;
+}
+
+//AFM mesh
+DBL2 Exch_6ngbr_Neu::Get_EnergyChange(int spin_index, DBL3 Mnew_A, DBL3 Mnew_B)
+{
+	if (pMesh->M.is_not_empty(spin_index) && pMesh->M2.is_not_empty(spin_index)) {
+
+		DBL2 Ms_AFM = pMesh->Ms_AFM;
+		DBL2 A_AFM = pMesh->A_AFM;
+		DBL2 Ah = pMesh->Ah;
+		DBL2 Anh = pMesh->Anh;
+		pMesh->update_parameters_mcoarse(spin_index, pMesh->A_AFM, A_AFM, pMesh->Ah, Ah, pMesh->Anh, Anh, pMesh->Ms_AFM, Ms_AFM);
+
+		auto Get_Energy = [&](void) -> DBL2
+		{
+			DBL3 delsq_M_A = pMesh->M.delsq_neu(spin_index);
+			DBL3 delsq_M_B = pMesh->M2.delsq_neu(spin_index);
+
+			DBL3 Hexch = (2 * A_AFM.i / (MU0*Ms_AFM.i*Ms_AFM.i)) * delsq_M_A + (4 * Ah.i * pMesh->M2[spin_index] + Anh.i * delsq_M_B) / (MU0*Ms_AFM.i*Ms_AFM.j);
+			DBL3 Hexch2 = (2 * A_AFM.j / (MU0*Ms_AFM.j*Ms_AFM.j)) * delsq_M_B + (4 * Ah.j * pMesh->M[spin_index] + Anh.j * delsq_M_A) / (MU0*Ms_AFM.i*Ms_AFM.j);
+
+			return DBL2(pMesh->M[spin_index] * Hexch, pMesh->M2[spin_index] * Hexch2);
+		};
+
+		DBL2 energy_ = Get_Energy();
+
+		if (Mnew_A != DBL3() && Mnew_B != DBL3()) {
+
+			//NOTE : here we only need the change in energy due to spin rotation only. Thus the longitudinal part, which is dependent on spin length only, cancels out. Enforce this by making Mnew length same as old one.
+			Mnew_A.renormalize(pMesh->M[spin_index].norm());
+			Mnew_B.renormalize(pMesh->M2[spin_index].norm());
+
+			DBL3 Mold_A = pMesh->M[spin_index];
+			DBL3 Mold_B = pMesh->M2[spin_index];
+
+			pMesh->M[spin_index] = Mnew_A;
+			pMesh->M2[spin_index] = Mnew_B;
+			
+			DBL2 energynew_ = Get_Energy();
+
+			pMesh->M[spin_index] = Mold_A;
+			pMesh->M2[spin_index] = Mold_B;
+
+			//do not divide by 2 as we are not double-counting here
+			return -MU0 * pMesh->h.dim() * (energynew_ - energy_);
+		}
+		//If Mnew is null then this method is used to obtain current energy only, not energy change
+		else return -MU0 * pMesh->h.dim() * energy_;
+	}
+	else return DBL2();
 }
 
 //-------------------Torque methods

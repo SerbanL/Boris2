@@ -55,16 +55,39 @@ __device__ cuReal3 ManagedAtom_DiffEqCubicCUDA::SLLGSTT(int idx)
 
 	cuVEC_VC<cuReal3>& M1 = *pcuaMesh->pM1;
 	cuVEC<cuReal3>& Heff1 = *pcuaMesh->pHeff1;
+	cuVEC_VC<cuReal3>& E = *pcuaMesh->pE;
+	cuVEC_VC<cuBReal>& elC = *pcuaMesh->pelC;
 
 	cuBReal mu_s = *pcuaMesh->pmu_s;
 	cuBReal alpha = *pcuaMesh->palpha;
 	cuBReal grel = *pcuaMesh->pgrel;
-	pcuaMesh->update_parameters_mcoarse(idx, *pcuaMesh->pmu_s, mu_s, *pcuaMesh->palpha, alpha, *pcuaMesh->pgrel, grel);
+	cuBReal P = *pcuaMesh->pP;
+	cuBReal beta = *pcuaMesh->pbeta;
+	pcuaMesh->update_parameters_mcoarse(idx, *pcuaMesh->pmu_s, mu_s, *pcuaMesh->palpha, alpha, *pcuaMesh->pgrel, grel, *pcuaMesh->pP, P, *pcuaMesh->pbeta, beta);
 
 	//H_Thermal has same dimensions as M1 in atomistic meshes
 	cuReal3 H_Thermal_Value = (*pH_Thermal)[idx] * sqrt(alpha);
 
-	return (-(cuBReal)GAMMA * grel / (1 + alpha * alpha)) * ((M1[idx] ^ (Heff1[idx] + H_Thermal_Value)) + alpha * ((M1[idx] / mu_s) ^ (M1[idx] ^ (Heff1[idx] + H_Thermal_Value))));
+	cuReal3 LLGSTT_Eval = (-(cuBReal)GAMMA * grel / (1 + alpha * alpha)) * ((M1[idx] ^ (Heff1[idx] + H_Thermal_Value)) + alpha * ((M1[idx] / mu_s) ^ (M1[idx] ^ (Heff1[idx] + H_Thermal_Value))));
+
+	if (E.linear_size()) {
+
+		cuSZ3 n = M1.n;
+		cuReal3 h = M1.h;
+
+		cuReal33 grad_M1 = M1.grad_neu(idx);
+
+		cuReal3 position = M1.cellidx_to_position(idx);
+
+		cuBReal conv = h.dim() / MUB;
+		cuReal3 u = (elC[position] * E.weighted_average(position, h) * P * (cuBReal)GMUB_2E * conv) / (mu_s * (1 + beta * beta));
+
+		cuReal3 u_dot_del_M1 = (u.x * grad_M1.x) + (u.y * grad_M1.y) + (u.z * grad_M1.z);
+
+		LLGSTT_Eval += (((1 + alpha * beta) * u_dot_del_M1) - ((beta - alpha) * ((M1[idx] / mu_s) ^ u_dot_del_M1))) / (1 + alpha * alpha);
+	}
+
+	return LLGSTT_Eval;
 }
 
 #endif

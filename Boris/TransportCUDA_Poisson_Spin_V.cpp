@@ -19,7 +19,7 @@ BError TransportCUDA_Spin_V_Funcs::set_pointers(MeshCUDA* pMeshCUDA, TransportCU
 	if (set_gpu_value(pdM_dt, pTransportCUDA->dM_dt.get_managed_object()) != cudaSuccess) error(BERROR_GPUERROR_CRIT);
 	if (set_gpu_value(pdelsq_V_fixed, pTransportCUDA->delsq_V_fixed.get_managed_object()) != cudaSuccess) error(BERROR_GPUERROR_CRIT);
 
-	if (set_gpu_value(stsolve, pTransportCUDA->stsolve) != cudaSuccess) error(BERROR_GPUERROR_CRIT);
+	if (set_gpu_value(stsolve, pTransportCUDA->Get_STSolveType()) != cudaSuccess) error(BERROR_GPUERROR_CRIT);
 
 	return error;
 }

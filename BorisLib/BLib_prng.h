@@ -21,17 +21,42 @@ private:
 
 	std::vector<unsigned> prn;
 
+	//count number of random numbers generated between calls to check_periodicity : if this divides the LCG period it could be problematic so need to adjust
+	std::vector<unsigned> period;
+	//set to true on first call to check_periodicity
+	bool calculate_period = false;
+
 public:
 
 	BorisRand(unsigned seed, bool multithreaded_ = true)
 	{
 		int OmpThreads = omp_get_num_procs();
 		prn.resize(OmpThreads);
+		period.resize(OmpThreads);
 
 		//seed all threads
 		for (int idx = 0; idx < OmpThreads; idx++) {
 
 			prn[idx] = seed * (idx + 1);
+			period[idx] = 0;
+		}
+	}
+
+	void check_periodicity(void)
+	{
+		calculate_period = true;
+
+		for (int idx = 0; idx < period.size(); idx++) {
+
+			//if the generation period at this point matches the LCG period then notch generation by 1 point, i.e. increase period by 1.
+			if (period[idx] && (unsigned)4294967295 % period[idx] == period[idx] - 1) {
+
+				prn[idx] = ((unsigned)1664525 * prn[idx] + (unsigned)1013904223);
+
+				//reset period : set to 1 since a point has already been generated
+				period[idx] = 1;
+			}
+			else period[idx] = 0;
 		}
 	}
 
@@ -43,6 +68,9 @@ public:
 		//LCG equation used to generate next number in sequence : the modulo operation is free since unsigned is 32 bits wide
 		prn[tn] = ((unsigned)1664525 * prn[tn] + (unsigned)1013904223);
 
+		//count number of points generated on this thread since last call to check_periodicity
+		if (calculate_period) period[tn]++;
+
 		return prn[tn];
 	}
 
@@ -52,6 +80,9 @@ public:
 		int tn = omp_get_thread_num();
 
 		prn[tn] = ((unsigned)1664525 * prn[tn] + (unsigned)1013904223);
+
+		//count number of points generated on this thread since last call to check_periodicity
+		if (calculate_period) period[tn]++;
 
 		return (double)prn[tn] / (unsigned)4294967295;
 	}

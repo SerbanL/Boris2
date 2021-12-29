@@ -113,7 +113,7 @@ void Simulation::HandleCommand(std::string command_string)
 		}
 	};
 
-	//ivoked by commands where the command has meshName as an optional parameter, with default value of focused mesh
+	//invoked by commands where the command has meshName as an optional parameter, with default value of focused mesh
 	//adjust command fields so the meshName appears at the start explicitly
 	//This lambda guarantees the first entry in command_fields will be an existing meshname
 	//If check_supermesh is true, then include supermesh handle in possible mesh names
@@ -1360,7 +1360,7 @@ void Simulation::HandleCommand(std::string command_string)
 			if (!meshName_specified) meshName = "";
 
 			if (!error) {
-
+				
 				StopSimulation();
 				if(!err_hndl.call(error, &SuperMesh::AddModule, &SMesh, meshName, (MOD_)moduleHandles.get_ID_from_value(moduleHandle))) RefreshScreen();
 			}
@@ -1372,11 +1372,14 @@ void Simulation::HandleCommand(std::string command_string)
 		{
 			std::string moduleHandle, meshName;
 			
-			optional_meshname_check_focusedmeshdefault(command_fields);
+			//optional_meshname_check_focusedmeshdefault(command_fields, true);
+			//error = commandSpec.GetParameters(command_fields, meshName, moduleHandle);
+			bool meshName_specified = optional_meshname_check_focusedmeshdefault(command_fields, true);
 			error = commandSpec.GetParameters(command_fields, meshName, moduleHandle);
+			if (!meshName_specified) meshName = "";
 
 			if (!error) {
-
+				
 				StopSimulation();
 				if (!err_hndl.qcall(error, &SuperMesh::DelModule, &SMesh, meshName, (MOD_)moduleHandles.get_ID_from_value(moduleHandle))) RefreshScreen();
 			}
@@ -3782,7 +3785,6 @@ void Simulation::HandleCommand(std::string command_string)
 						else {
 							
 							SMesh.SwitchCUDAState(false, cudaDeviceSelect);
-							cudaEnabled = false;
 						}
 						
 						UpdateScreen();
@@ -3826,14 +3828,10 @@ void Simulation::HandleCommand(std::string command_string)
 
 								//first switch off with current device still selected
 								err_hndl.qcall(error, &SuperMesh::SwitchCUDAState, &SMesh, false, cudaDeviceSelect);
-								cudaEnabled = false;
 
 								//now select new device and turn cuda back on
 								cudaDeviceSelect = device;
-								if (!err_hndl.qcall(error, &SuperMesh::SwitchCUDAState, &SMesh, true, cudaDeviceSelect)) {
-
-									cudaEnabled = true;
-								}
+								err_hndl.qcall(error, &SuperMesh::SwitchCUDAState, &SMesh, true, cudaDeviceSelect);
 							}
 							else {
 

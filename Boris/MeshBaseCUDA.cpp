@@ -63,6 +63,13 @@ void MeshBaseCUDA::Set_Force_MonteCarlo_ComputeFields(bool status)
 	pMeshBase->Set_Force_MonteCarlo_ComputeFields(status);
 }
 
+//others
+
+bool MeshBaseCUDA::is_atomistic(void)
+{
+	return pMeshBase->is_atomistic();
+}
+
 //----------------------------------- VALUE GETTERS
 
 //check if the ODECommon::available flag is true (ode step solved)

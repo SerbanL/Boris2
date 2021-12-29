@@ -100,6 +100,9 @@ BError Atom_DipoleDipole::Initialize_Mesh_Transfer(void)
 		if (Hdemag.linear_size()) if (!Hdemag.Initialize_MeshTransfer({}, { &paMesh->Heff1 }, MESHTRANSFERTYPE_ENLARGED)) return error(BERROR_OUTOFMEMORY_CRIT);
 		if (Hdemag2.linear_size()) if (!Hdemag2.Initialize_MeshTransfer({}, { &paMesh->Heff1 }, MESHTRANSFERTYPE_ENLARGED)) return error(BERROR_OUTOFMEMORY_CRIT);
 		if (Hdemag3.linear_size()) if (!Hdemag3.Initialize_MeshTransfer({}, { &paMesh->Heff1 }, MESHTRANSFERTYPE_ENLARGED)) return error(BERROR_OUTOFMEMORY_CRIT);
+		if (Hdemag4.linear_size()) if (!Hdemag4.Initialize_MeshTransfer({}, { &paMesh->Heff1 }, MESHTRANSFERTYPE_ENLARGED)) return error(BERROR_OUTOFMEMORY_CRIT);
+		if (Hdemag5.linear_size()) if (!Hdemag5.Initialize_MeshTransfer({}, { &paMesh->Heff1 }, MESHTRANSFERTYPE_ENLARGED)) return error(BERROR_OUTOFMEMORY_CRIT);
+		if (Hdemag6.linear_size()) if (!Hdemag6.Initialize_MeshTransfer({}, { &paMesh->Heff1 }, MESHTRANSFERTYPE_ENLARGED)) return error(BERROR_OUTOFMEMORY_CRIT);
 	}
 	else {
 

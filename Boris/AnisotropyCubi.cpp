@@ -248,6 +248,7 @@ double Anisotropy_Cubic::UpdateField(void)
 
 //-------------------Energy methods
 
+//FM Mesh
 double Anisotropy_Cubic::Get_EnergyChange(int spin_index, DBL3 Mnew)
 {
 	//For CUDA there are separate device functions used by CUDA kernels.
@@ -285,6 +286,60 @@ double Anisotropy_Cubic::Get_EnergyChange(int spin_index, DBL3 Mnew)
 		else return pMesh->h.dim() * (K1 * (d1*d1*d2*d2 + d1*d1*d3*d3 + d2*d2*d3*d3) + K2 * d123*d123);
 	}
 	else return 0.0;
+}
+
+//AFM mesh
+DBL2 Anisotropy_Cubic::Get_EnergyChange(int spin_index, DBL3 Mnew_A, DBL3 Mnew_B)
+{
+	if (pMesh->M.is_not_empty(spin_index) && pMesh->M2.is_not_empty(spin_index)) {
+
+		DBL2 Ms_AFM = pMesh->Ms_AFM;
+		DBL2 K1_AFM = pMesh->K1_AFM;
+		DBL2 K2_AFM = pMesh->K2_AFM;
+		DBL3 mcanis_ea1 = pMesh->mcanis_ea1;
+		DBL3 mcanis_ea2 = pMesh->mcanis_ea2;
+		DBL3 mcanis_ea3 = pMesh->mcanis_ea3;
+		pMesh->update_parameters_mcoarse(spin_index, pMesh->Ms_AFM, Ms_AFM, pMesh->K1_AFM, K1_AFM, pMesh->K2_AFM, K2_AFM, pMesh->mcanis_ea1, mcanis_ea1, pMesh->mcanis_ea2, mcanis_ea2, pMesh->mcanis_ea3, mcanis_ea3);
+
+		//calculate m.ea1, m.ea2 and m.ea3 dot products
+		double d1 = (pMesh->M[spin_index] * mcanis_ea1) / Ms_AFM.i;
+		double d2 = (pMesh->M[spin_index] * mcanis_ea2) / Ms_AFM.i;
+		double d3 = (pMesh->M[spin_index] * mcanis_ea3) / Ms_AFM.i;
+		double d123 = d1*d2*d3;
+
+		//same thing for sub-lattice B
+
+		double d1B = (pMesh->M2[spin_index] * mcanis_ea1) / Ms_AFM.j;
+		double d2B = (pMesh->M2[spin_index] * mcanis_ea2) / Ms_AFM.j;
+		double d3B = (pMesh->M2[spin_index] * mcanis_ea3) / Ms_AFM.j;
+		double d123B = d1B*d2B*d3B;
+
+		double energyA = K1_AFM.i * (d1*d1*d2*d2 + d1*d1*d3*d3 + d2*d2*d3*d3) + K2_AFM.i * d123*d123;
+		double energyB = K1_AFM.j * (d1B*d1B*d2B*d2B + d1B*d1B*d3B*d3B + d2B*d2B*d3B*d3B) + K2_AFM.j * d123B*d123B;
+
+		if (Mnew_A != DBL3() && Mnew_B != DBL3()) {
+
+			//calculate m.ea1, m.ea2 and m.ea3 dot products
+			double d1new = (pMesh->M[spin_index] * mcanis_ea1) / Ms_AFM.i;
+			double d2new = (pMesh->M[spin_index] * mcanis_ea2) / Ms_AFM.i;
+			double d3new = (pMesh->M[spin_index] * mcanis_ea3) / Ms_AFM.i;
+			double d123new = d1new*d2new*d3new;
+
+			//same thing for sub-lattice B
+
+			double d1Bnew = (pMesh->M2[spin_index] * mcanis_ea1) / Ms_AFM.j;
+			double d2Bnew = (pMesh->M2[spin_index] * mcanis_ea2) / Ms_AFM.j;
+			double d3Bnew = (pMesh->M2[spin_index] * mcanis_ea3) / Ms_AFM.j;
+			double d123Bnew = d1Bnew*d2Bnew*d3Bnew;
+
+			double energyAnew = K1_AFM.i * (d1new*d1new*d2new*d2new + d1new*d1new*d3new*d3new + d2new*d2new*d3new*d3new) + K2_AFM.i * d123new*d123new;
+			double energyBnew = K1_AFM.j * (d1Bnew*d1Bnew*d2Bnew*d2Bnew + d1Bnew*d1Bnew*d3Bnew*d3Bnew + d2Bnew*d2Bnew*d3Bnew*d3Bnew) + K2_AFM.j * d123Bnew*d123Bnew;
+
+			return pMesh->h.dim() * DBL2(energyAnew - energyA, energyBnew - energyB);
+		}
+		else return pMesh->h.dim() * DBL2(energyA, energyB);
+	}
+	else return DBL2();
 }
 
 //-------------------Torque methods

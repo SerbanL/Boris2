@@ -230,6 +230,10 @@ public:
 	//set computefields_if_MC flag on SuperMesh
 	void Set_Force_MonteCarlo_ComputeFields(bool status);
 
+	//others
+
+	bool is_atomistic(void);
+
 	//----------------------------------- ENABLED MESH PROPERTIES CHECKERS
 
 	//magnetization dynamics computation enabled

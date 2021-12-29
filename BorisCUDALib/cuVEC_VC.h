@@ -503,23 +503,23 @@ public:
 	//b_func_pri takes indexes for cells 1 and 2
 	//diff2_pri takes index for cell 1. It also takes a position shift vector perpendicular to the interface and pointing from primary to secondary.
 	//also need instances for the secondary and primary objects whose classes contain the above methods
-	template <typename Class_CMBND>
-	__host__ void set_cmbnd_continuous(size_t size, cuVEC_VC<VType>& V_sec, Class_CMBND& cmbndFuncs_sec, Class_CMBND& cmbndFuncs_pri, CMBNDInfoCUDA& contact);
+	template <typename Class_CMBNDs, typename Class_CMBNDp>
+	__host__ void set_cmbnd_continuous(size_t size, cuVEC_VC<VType>& V_sec, Class_CMBNDs& cmbndFuncs_sec, Class_CMBNDp& cmbndFuncs_pri, CMBNDInfoCUDA& contact);
 
 	//calculate cmbnd values based on continuity of flux only. The potential is allowed to drop across the interface as:
 	//f_sec(V) = f_pri(V) = A + B * delV, where f_sec and f_pri are the fluxes on the secondary and primary sides of the interface, and delV = V_pri - V_sec, the drop in potential across the interface.
 	//Thus in addition to the functions in set_cmbnd_continuous we need two extra functions A_func, B_func, defined in Class_CMBND_S
 	//Note, this reduces to the fully continuous case for B tending to infinity and A = VType(0)
-	template <typename Class_CMBND, typename Class_CMBND_S>
-	__host__ void set_cmbnd_continuousflux(size_t size, cuVEC_VC<VType>& V_sec, Class_CMBND& cmbndFuncs_sec, Class_CMBND& cmbndFuncs_pri, Class_CMBND_S& cmbndFuncs_s, CMBNDInfoCUDA& contact);
+	template <typename Class_CMBNDs, typename Class_CMBNDp, typename Class_CMBND_S>
+	__host__ void set_cmbnd_continuousflux(size_t size, cuVEC_VC<VType>& V_sec, Class_CMBNDs& cmbndFuncs_sec, Class_CMBNDp& cmbndFuncs_pri, Class_CMBND_S& cmbndFuncs_s, CMBNDInfoCUDA& contact);
 
 	//most general case of composite media boundary conditions
 	//calculate cmbnd values based on set boundary flux values; both the flux and potential is allowed to be discontinuous across the interface.
 	//Fluxes at the interface are specified as: f_sec(V) = A_sec + B_sec * delVs, f_pri(V) = A_pri + B_pri * delVs, with directions from secondary to primary
 	//B functions may return a double, or a DBL33 (3x3 matrix) if VType is DBL3 (Cartesian vector).
 	//delVs = c_pri * V_pri - c_sec * V_sec, c are double values specified by given functions
-	template <typename Class_CMBND, typename Class_CMBND_S>
-	__host__ void set_cmbnd_discontinuous(size_t size, cuVEC_VC<VType>& V_sec, Class_CMBND& cmbndFuncs_sec, Class_CMBND& cmbndFuncs_pri, Class_CMBND_S& cmbndFuncs_s, CMBNDInfoCUDA& contact);
+	template <typename Class_CMBNDs, typename Class_CMBNDp, typename Class_CMBND_S>
+	__host__ void set_cmbnd_discontinuous(size_t size, cuVEC_VC<VType>& V_sec, Class_CMBNDs& cmbndFuncs_sec, Class_CMBNDp& cmbndFuncs_pri, Class_CMBND_S& cmbndFuncs_s, CMBNDInfoCUDA& contact);
 
 	//--------------------------------------------OPERATORS and ALGORITHMS
 

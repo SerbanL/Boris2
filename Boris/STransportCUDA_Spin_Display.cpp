@@ -24,8 +24,12 @@ cu_obj<cuVEC<cuReal3>>& STransportCUDA::GetInterfacialSpinTorque(TransportCUDA* 
 			int idx_sec = CMBNDcontacts[idx1][idx2].mesh_idx.i;
 			int idx_pri = CMBNDcontacts[idx1][idx2].mesh_idx.j;
 
-			if (pTransport[idx_pri] == pMeshTrans)
-				pTransport[idx_pri]->CalculateDisplaySAInterfaceTorque(pTransport[idx_sec], CMBNDcontactsCUDA[idx1][idx2], CMBNDcontacts[idx1][idx2].IsPrimaryTop());
+			//Interface Spin Torque currently only from micromagnetic to micromagnetic meshes
+			if (!pTransport[idx_pri]->pMeshBase->is_atomistic() && !pTransport[idx_sec]->pMeshBase->is_atomistic()) {
+
+				if (dynamic_cast<TransportCUDA*>(pTransport[idx_pri]) == pMeshTrans)
+					dynamic_cast<TransportCUDA*>(pTransport[idx_pri])->CalculateDisplaySAInterfaceTorque(dynamic_cast<TransportCUDA*>(pTransport[idx_sec]), CMBNDcontactsCUDA[idx1][idx2], CMBNDcontacts[idx1][idx2].IsPrimaryTop());
+			}
 		}
 	}
 

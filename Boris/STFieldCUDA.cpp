@@ -34,7 +34,7 @@ BError STFieldCUDA::Initialize(void)
 
 BError STFieldCUDA::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 {
-	BError error(CLASS_STR(SOTFieldCUDA));
+	BError error(CLASS_STR(STFieldCUDA));
 
 	Uninitialize();
 

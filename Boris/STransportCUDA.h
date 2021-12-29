@@ -12,13 +12,12 @@
 #include "ModulesCUDA.h"
 
 #include "TransportCUDA.h"
+#include "Atom_TransportCUDA.h"
 #include "STransportCUDA_GInterf_V.h"
 #include "STransportCUDA_GInterf_S.h"
 
 class SuperMesh;
 class STransport;
-
-
 
 class STransportCUDA :
 	public ModulesCUDA
@@ -47,7 +46,7 @@ private:
 	std::vector< std::vector<CMBNDInfoCUDA> > CMBNDcontacts;
 
 	//list of all transport modules in transport meshes (same ordering as first vector in CMBNDcontacts)
-	std::vector<TransportCUDA*> pTransport;
+	std::vector<TransportBaseCUDA*> pTransport;
 
 	//vector of pointers to all V - need this to set cmbnd flags (same ordering as first vector in CMBNDcontacts)
 	std::vector<cu_obj<cuVEC_VC<cuBReal>>*> pV;

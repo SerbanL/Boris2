@@ -246,6 +246,7 @@ double Anisotropy_Tensorial::UpdateField(void)
 
 //-------------------Energy methods
 
+//FM Mesh
 double Anisotropy_Tensorial::Get_EnergyChange(int spin_index, DBL3 Mnew)
 {
 	//For CUDA there are separate device functions used by CUDA kernels.
@@ -281,9 +282,9 @@ double Anisotropy_Tensorial::Get_EnergyChange(int spin_index, DBL3 Mnew)
 		};
 
 		//calculate dot products
-		double a = pMesh->M[spin_index].normalized() * mcanis_ea1 / Ms;
-		double b = pMesh->M[spin_index].normalized() * mcanis_ea2 / Ms;
-		double c = pMesh->M[spin_index].normalized() * mcanis_ea3 / Ms;
+		double a = pMesh->M[spin_index] * mcanis_ea1 / Ms;
+		double b = pMesh->M[spin_index] * mcanis_ea2 / Ms;
+		double c = pMesh->M[spin_index] * mcanis_ea3 / Ms;
 
 		double energy_ = Get_Energy(a, b, c);
 
@@ -300,6 +301,81 @@ double Anisotropy_Tensorial::Get_EnergyChange(int spin_index, DBL3 Mnew)
 		else return pMesh->h.dim() * energy_;
 	}
 	else return 0.0;
+}
+
+//AFM mesh
+DBL2 Anisotropy_Tensorial::Get_EnergyChange(int spin_index, DBL3 Mnew_A, DBL3 Mnew_B)
+{
+	if (pMesh->M.is_not_empty(spin_index) && pMesh->M2.is_not_empty(spin_index)) {
+
+		DBL2 Ms_AFM = pMesh->Ms_AFM;
+		DBL2 K1_AFM = pMesh->K1_AFM;
+		DBL2 K2_AFM = pMesh->K2_AFM;
+		DBL2 K3_AFM = pMesh->K3_AFM;
+		DBL3 mcanis_ea1 = pMesh->mcanis_ea1;
+		DBL3 mcanis_ea2 = pMesh->mcanis_ea2;
+		DBL3 mcanis_ea3 = pMesh->mcanis_ea3;
+		pMesh->update_parameters_mcoarse(spin_index, pMesh->Ms_AFM, Ms_AFM, pMesh->K1_AFM, K1_AFM, pMesh->K2_AFM, K2_AFM, pMesh->K3_AFM, K3_AFM, pMesh->mcanis_ea1, mcanis_ea1, pMesh->mcanis_ea2, mcanis_ea2, pMesh->mcanis_ea3, mcanis_ea3);
+
+		auto Get_Energy = [&](double a, double b, double c, double a2, double b2, double c2) -> DBL2 {
+
+			double energyA = 0.0, energyB = 0.0;
+
+			for (int tidx = 0; tidx < pMesh->Kt.size(); tidx++) {
+
+				double coeff;
+				int order = pMesh->Kt[tidx].j + pMesh->Kt[tidx].k + pMesh->Kt[tidx].l;
+				if (order == 2) coeff = K1_AFM.i * pMesh->Kt[tidx].i;
+				else if (order == 4) coeff = K2_AFM.i * pMesh->Kt[tidx].i;
+				else if (order == 6) coeff = K3_AFM.i * pMesh->Kt[tidx].i;
+				else coeff = pMesh->Kt[tidx].i;
+
+				energyA += coeff * pow(a, pMesh->Kt[tidx].j)*pow(b, pMesh->Kt[tidx].k)*pow(c, pMesh->Kt[tidx].l);
+			}
+
+			for (int tidx = 0; tidx < pMesh->Kt2.size(); tidx++) {
+
+				double coeff;
+				int order = pMesh->Kt2[tidx].j + pMesh->Kt2[tidx].k + pMesh->Kt2[tidx].l;
+				if (order == 2) coeff = K1_AFM.j * pMesh->Kt2[tidx].i;
+				else if (order == 4) coeff = K2_AFM.j * pMesh->Kt2[tidx].i;
+				else if (order == 6) coeff = K3_AFM.j * pMesh->Kt2[tidx].i;
+				else coeff = pMesh->Kt2[tidx].i;
+
+				energyB += coeff * pow(a2, pMesh->Kt2[tidx].j)*pow(b2, pMesh->Kt2[tidx].k)*pow(c2, pMesh->Kt2[tidx].l);
+			}
+
+			return DBL2(energyA, energyB);
+		};
+
+		//calculate dot products
+		double a = (pMesh->M[spin_index] * mcanis_ea1) / Ms_AFM.i;
+		double b = (pMesh->M[spin_index] * mcanis_ea2) / Ms_AFM.i;
+		double c = (pMesh->M[spin_index] * mcanis_ea3) / Ms_AFM.i;
+
+		double a2 = (pMesh->M2[spin_index] * mcanis_ea1) / Ms_AFM.j;
+		double b2 = (pMesh->M2[spin_index] * mcanis_ea2) / Ms_AFM.j;
+		double c2 = (pMesh->M2[spin_index] * mcanis_ea3) / Ms_AFM.j;
+
+		DBL2 energy_ = Get_Energy(a, b, c, a2, b2, c2);
+
+		if (Mnew_A != DBL3() && Mnew_B != DBL3()) {
+
+			double anew = Mnew_A * mcanis_ea1 / Ms_AFM.j;
+			double bnew = Mnew_A * mcanis_ea2 / Ms_AFM.j;
+			double cnew = Mnew_A * mcanis_ea3 / Ms_AFM.j;
+
+			double a2new = Mnew_B * mcanis_ea1 / Ms_AFM.j;
+			double b2new = Mnew_B * mcanis_ea2 / Ms_AFM.j;
+			double c2new = Mnew_B * mcanis_ea3 / Ms_AFM.j;
+
+			DBL2 energynew_ = Get_Energy(anew, bnew, cnew, a2new, b2new, c2new);
+
+			return pMesh->h.dim() * (energynew_ - energy_);
+		}
+		else return pMesh->h.dim() * energy_;
+	}
+	else return DBL2();
 }
 
 //-------------------Torque methods

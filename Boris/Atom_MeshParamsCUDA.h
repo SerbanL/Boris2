@@ -79,6 +79,69 @@ public:
 	//this is the value at RT for Ni80Fe20.
 	cu_obj<MatPCUDA<cuBReal, cuBReal>> elecCond;
 
+	//anisotropic magnetoresistance as a percentage (of base resistance)
+	cu_obj<MatPCUDA<cuBReal, cuBReal>> amrPercentage;
+
+	//spin current polarization and non-adiabaticity (for Zhang-Li STT).
+	cu_obj<MatPCUDA<cuBReal, cuBReal>> P;
+	cu_obj<MatPCUDA<cuBReal, cuBReal>> beta;
+
+	//parameters for spin current solver
+
+	//electron diffusion constant (m^2/s)
+	cu_obj<MatPCUDA<cuBReal, cuBReal>> De;
+
+	//electron carrier density (1/m^3)
+	cu_obj<MatPCUDA<cuBReal, cuBReal>> n_density;
+
+	//diffusion spin polarization (unitless)
+	cu_obj<MatPCUDA<cuBReal, cuBReal>> betaD;
+
+	//spin Hall angle (unitless)
+	cu_obj<MatPCUDA<cuBReal, cuBReal>> SHA;
+
+	//field-like spin torque coefficient (unitless)
+	cu_obj<MatPCUDA<cuBReal, cuBReal>> flSOT;
+
+	//Slonczewski macrospin torques q+, q- parameters as in PRB 72, 014446 (2005) (unitless)
+	cu_obj<MatPCUDA<cuReal2, cuBReal>> STq;
+
+	//Slonczewski macrospin torques A, B parameters as in PRB 72, 014446 (2005) (unitless)
+	cu_obj<MatPCUDA<cuReal2, cuBReal>> STa;
+
+	//Slonczewski macrospin torques spin polarization unit vector as in PRB 72, 014446 (2005) (unitless)
+	cu_obj<MatPCUDA<cuReal3, cuReal3>> STp;
+
+	//spin-flip length (m)
+	cu_obj<MatPCUDA<cuBReal, cuBReal>> l_sf;
+
+	//spin exchange rotation length (m)
+	cu_obj<MatPCUDA<cuBReal, cuBReal>> l_ex;
+
+	//spin dephasing length (m)
+	cu_obj<MatPCUDA<cuBReal, cuBReal>> l_ph;
+
+	//interface spin-dependent conductivity (spin-up and spin-down) (S/m^2)
+	cu_obj<MatPCUDA<cuReal2, cuBReal>> Gi;
+
+	//interface spin-mixing conductivity (real and imaginary parts) (S/m^2)
+	cu_obj<MatPCUDA<cuReal2, cuBReal>> Gmix;
+
+	//spin accumulation torque efficiency in the bulk (unitless, varies from 0 : no torque, up to 1 : full torque)
+	cu_obj<MatPCUDA<cuBReal, cuBReal>> ts_eff;
+
+	//spin accumulation torque efficiency at interfaces (unitless, varies from 0 : no torque, up to 1 : full torque)
+	cu_obj<MatPCUDA<cuBReal, cuBReal>> tsi_eff;
+
+	//spin pumping efficiency (unitless, varies from 0 : no spin pumping, up to 1 : full strength)
+	cu_obj<MatPCUDA<cuBReal, cuBReal>> pump_eff;
+
+	//charge pumping efficiency (unitless, varies from 0 : no charge pumping, up to 1 : full strength)
+	cu_obj<MatPCUDA<cuBReal, cuBReal>> cpump_eff;
+
+	//topological Hall effect efficiency (unitless, varies from 0 : none, up to 1 : full strength)
+	cu_obj<MatPCUDA<cuBReal, cuBReal>> the_eff;
+
 	//the mesh base temperature (K)
 	cu_obj<cuBReal> base_temperature;
 

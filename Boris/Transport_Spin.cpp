@@ -909,9 +909,9 @@ void Transport::CalculateSAField(void)
 void Transport::CalculateSAInterfaceField(Transport* ptrans_sec, CMBNDInfo& contact)
 {
 	//the top contacting mesh sets G values
-	bool GInterface_Enabled = ((contact.IsPrimaryTop() && pMesh->GInterface_Enabled()) || (!contact.IsPrimaryTop() && ptrans_sec->pMesh->GInterface_Enabled()));
+	bool isGInterface_Enabled = ((contact.IsPrimaryTop() && pMesh->GInterface_Enabled()) || (!contact.IsPrimaryTop() && ptrans_sec->GInterface_Enabled()));
 
-	if (GInterface_Enabled && stsolve == STSOLVE_FERROMAGNETIC && ptrans_sec->stsolve == STSOLVE_NORMALMETAL) {
+	if (isGInterface_Enabled && stsolve == STSOLVE_FERROMAGNETIC && ptrans_sec->Get_STSolveType() == STSOLVE_NORMALMETAL) {
 
 		//interface conductance method with F being the primary mesh (N-F) contact : calculate and set spin torque
 

@@ -57,6 +57,60 @@ Atom_MeshParamsCUDA::Atom_MeshParamsCUDA(Atom_MeshParams *pameshParams)
 
 	elecCond()->set_from_cpu(pameshParams->elecCond);
 	pameshParams->elecCond.set_p_cu_obj_mpcuda(&elecCond);
+	amrPercentage()->set_from_cpu(pameshParams->amrPercentage);
+	pameshParams->amrPercentage.set_p_cu_obj_mpcuda(&amrPercentage);
+
+	P()->set_from_cpu(pameshParams->P);
+	pameshParams->P.set_p_cu_obj_mpcuda(&P);
+	beta()->set_from_cpu(pameshParams->beta);
+	pameshParams->beta.set_p_cu_obj_mpcuda(&beta);
+
+	De()->set_from_cpu(pameshParams->De);
+	pameshParams->De.set_p_cu_obj_mpcuda(&De);
+
+	n_density()->set_from_cpu(pameshParams->n_density);
+	pameshParams->n_density.set_p_cu_obj_mpcuda(&n_density);
+
+	betaD()->set_from_cpu(pameshParams->betaD);
+	pameshParams->betaD.set_p_cu_obj_mpcuda(&betaD);
+
+	SHA()->set_from_cpu(pameshParams->SHA);
+	pameshParams->SHA.set_p_cu_obj_mpcuda(&SHA);
+	flSOT()->set_from_cpu(pameshParams->flSOT);
+	pameshParams->flSOT.set_p_cu_obj_mpcuda(&flSOT);
+
+	STq()->set_from_cpu(pameshParams->STq);
+	pameshParams->STq.set_p_cu_obj_mpcuda(&STq);
+	STa()->set_from_cpu(pameshParams->STa);
+	pameshParams->STa.set_p_cu_obj_mpcuda(&STa);
+	STp()->set_from_cpu(pameshParams->STp);
+	pameshParams->STp.set_p_cu_obj_mpcuda(&STp);
+
+	l_sf()->set_from_cpu(pameshParams->l_sf);
+	pameshParams->l_sf.set_p_cu_obj_mpcuda(&l_sf);
+	l_ex()->set_from_cpu(pameshParams->l_ex);
+	pameshParams->l_ex.set_p_cu_obj_mpcuda(&l_ex);
+	l_ph()->set_from_cpu(pameshParams->l_ph);
+	pameshParams->l_ph.set_p_cu_obj_mpcuda(&l_ph);
+
+	Gi()->set_from_cpu(pameshParams->Gi);
+	pameshParams->Gi.set_p_cu_obj_mpcuda(&Gi);
+	Gmix()->set_from_cpu(pameshParams->Gmix);
+	pameshParams->Gmix.set_p_cu_obj_mpcuda(&Gmix);
+
+	ts_eff()->set_from_cpu(pameshParams->ts_eff);
+	pameshParams->ts_eff.set_p_cu_obj_mpcuda(&ts_eff);
+	tsi_eff()->set_from_cpu(pameshParams->tsi_eff);
+	pameshParams->tsi_eff.set_p_cu_obj_mpcuda(&tsi_eff);
+
+	pump_eff()->set_from_cpu(pameshParams->pump_eff);
+	pameshParams->pump_eff.set_p_cu_obj_mpcuda(&pump_eff);
+
+	cpump_eff()->set_from_cpu(pameshParams->cpump_eff);
+	pameshParams->cpump_eff.set_p_cu_obj_mpcuda(&cpump_eff);
+
+	the_eff()->set_from_cpu(pameshParams->the_eff);
+	pameshParams->the_eff.set_p_cu_obj_mpcuda(&the_eff);
 
 	thermCond()->set_from_cpu(pameshParams->thermCond);
 	pameshParams->thermCond.set_p_cu_obj_mpcuda(&thermCond);
@@ -116,6 +170,35 @@ Atom_MeshParamsCUDA::~Atom_MeshParamsCUDA()
 	pameshParams->cHmo.null_p_cu_obj_mpcuda();
 
 	pameshParams->elecCond.null_p_cu_obj_mpcuda();
+	pameshParams->amrPercentage.null_p_cu_obj_mpcuda();
+
+	pameshParams->P.null_p_cu_obj_mpcuda();
+	pameshParams->beta.null_p_cu_obj_mpcuda();
+
+	pameshParams->De.null_p_cu_obj_mpcuda();
+	pameshParams->n_density.null_p_cu_obj_mpcuda();
+	pameshParams->betaD.null_p_cu_obj_mpcuda();
+
+	pameshParams->SHA.null_p_cu_obj_mpcuda();
+	pameshParams->flSOT.null_p_cu_obj_mpcuda();
+
+	pameshParams->STq.null_p_cu_obj_mpcuda();
+	pameshParams->STa.null_p_cu_obj_mpcuda();
+	pameshParams->STp.null_p_cu_obj_mpcuda();
+
+	pameshParams->l_sf.null_p_cu_obj_mpcuda();
+	pameshParams->l_ex.null_p_cu_obj_mpcuda();
+	pameshParams->l_ph.null_p_cu_obj_mpcuda();
+
+	pameshParams->Gi.null_p_cu_obj_mpcuda();
+	pameshParams->Gmix.null_p_cu_obj_mpcuda();
+
+	pameshParams->ts_eff.null_p_cu_obj_mpcuda();
+	pameshParams->tsi_eff.null_p_cu_obj_mpcuda();
+
+	pameshParams->pump_eff.null_p_cu_obj_mpcuda();
+	pameshParams->cpump_eff.null_p_cu_obj_mpcuda();
+	pameshParams->the_eff.null_p_cu_obj_mpcuda();
 
 	pameshParams->thermCond.null_p_cu_obj_mpcuda();
 	

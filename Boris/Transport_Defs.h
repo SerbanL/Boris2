@@ -16,13 +16,16 @@
 
 //4. tunneling (to be implemented eventually - will be applicable to insulator meshes)
 
+//5. ferromagnetic in atomistic mesh
+
 enum STSOLVE_ {
 
 	STSOLVE_NONE,
 	STSOLVE_NORMALMETAL, 
 	STSOLVE_FERROMAGNETIC, 
 	STSOLVE_ANTIFERROMAGNETIC,
-	STSOLVE_TUNNELING
+	STSOLVE_TUNNELING,
+	STSOLVE_FERROMAGNETIC_ATOM
 };
 
 #endif

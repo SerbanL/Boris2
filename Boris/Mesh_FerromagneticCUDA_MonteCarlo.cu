@@ -9,10 +9,9 @@
 #include "MeshCUDA.h"
 #include "MeshParamsControlCUDA.h"
 
-__global__ void Zero_MCAux_Atom_Mesh_FMCUDA(cuBReal& aux_real, cuBReal& aux_real2)
+__global__ void Zero_MCAux_Atom_Mesh_FMCUDA(cuBReal& aux_real)
 {
 	if (threadIdx.x == 0) aux_real = 0.0;
-	else if (threadIdx.x == 1) aux_real2 = 0.0;
 }
 
 ///////////////////////////////////////////////////////////////
@@ -78,9 +77,12 @@ __global__ void Iterate_MonteCarloCUDA_Classic_FM_red_kernel(ManagedMeshCUDA& cu
 		cuReal3 M_new = relrotate_polar(M_old, theta_rot, phi_rot);
 
 		//now allow magnetization length to change slightly with a Gaussian pdf around current value with sigma value from the normal distribution of P(m^2).
-		cuBReal sigma = 2 * me*sqrt(susrel_val*(cuBReal)BOLTZMANN*Temperature / (M.h.dim() * Ms0));
-		if (Temperature >= *cuMesh.pT_Curie || sigma > 0.03) sigma = 0.03;
-		M_new *= 1 + (prng.rand() * 2 * sigma - sigma);
+		if (Temperature > 0.0) {
+
+			cuBReal sigma = 2 * me*sqrt(susrel_val*(cuBReal)BOLTZMANN*Temperature / (M.h.dim() * Ms0));
+			if (Temperature >= *cuMesh.pT_Curie || sigma > 0.03) sigma = 0.03;
+			M_new *= 1 + (prng.rand() * 2 * sigma - sigma);
+		}
 
 		//1. Find energy change
 		cuBReal energy_delta = cuMesh.Get_EnergyChange_FM(spin_idx, M_new, cuModules, numModules, Ha);
@@ -89,14 +91,14 @@ __global__ void Iterate_MonteCarloCUDA_Classic_FM_red_kernel(ManagedMeshCUDA& cu
 		cuReal3 m = M_old / Ms0;
 		cuReal3 m_new = M_new / Ms0;
 
-		if (Temperature <= *cuMesh.pT_Curie) {
+		if (Temperature > 0.0 && Temperature <= *cuMesh.pT_Curie) {
 
 			cuBReal diff = m * m - me * me;
 			cuBReal diff_new = m_new * m_new - me * me;
 
 			energy_delta += M.h.dim() * (Ms0 / (8 * susrel_val * me*me)) * (diff_new * diff_new - diff * diff);
 		}
-		else {
+		else if (Temperature > 0.0) {
 
 			cuBReal r = 3 * *cuMesh.pT_Curie / (10 * (Temperature - *cuMesh.pT_Curie));
 			cuBReal m_new_sq = m_new * m_new;
@@ -106,11 +108,17 @@ __global__ void Iterate_MonteCarloCUDA_Classic_FM_red_kernel(ManagedMeshCUDA& cu
 
 		//Compute acceptance probability.
 		//Target pdf is proportional to M^2 * exp(-E/kBT), however spin picking probability is not uniform, but proportional to M^2. Thus acceptance probability required to satisfy detailed balance is min{1, (M_new^4 / M_old^4) * exp(-dE/kBT)}
-		cuBReal Mratio = (M_new*M_new) / (M_old*M_old);
-		cuBReal P_accept = Mratio * Mratio * exp(-energy_delta / ((cuBReal)BOLTZMANN * Temperature));
+		cuBReal P_accept = 0.0, P = 1.0;
+		if (Temperature > 0.0) {
 
-		//uniform random number between 0 and 1
-		cuBReal P = prng.rand();
+			//Target pdf is proportional to M^2 * exp(-E/kBT), however spin picking probability is not uniform, but proportional to M^2. Thus acceptance probability required to satisfy detailed balance is min{1, (M_new^4 / M_old^4) * exp(-dE/kBT)}
+			cuBReal Mratio = (M_new*M_new) / (M_old*M_old);
+			P_accept = Mratio * Mratio * exp(-energy_delta / ((cuBReal)BOLTZMANN * Temperature));
+			//uniform random number between 0 and 1
+			P = prng.rand();
+		}
+		else if (energy_delta < 0) P_accept = 1.0;
+		
 		if (P <= P_accept) {
 
 			acceptance_rate = 1.0 / num_moves;
@@ -187,9 +195,12 @@ __global__ void Iterate_MonteCarloCUDA_Classic_FM_black_kernel(ManagedMeshCUDA& 
 		cuReal3 M_new = relrotate_polar(M_old, theta_rot, phi_rot);
 
 		//now allow magnetization length to change slightly with a Gaussian pdf around current value with sigma value from the normal distribution of P(m^2).
-		cuBReal sigma = 2 * me*sqrt(susrel_val*(cuBReal)BOLTZMANN*Temperature / (M.h.dim() * Ms0));
-		if (Temperature >= *cuMesh.pT_Curie || sigma > 0.03) sigma = 0.03;
-		M_new *= 1 + (prng.rand() * 2 * sigma - sigma);
+		if (Temperature > 0.0) {
+
+			cuBReal sigma = 2 * me*sqrt(susrel_val*(cuBReal)BOLTZMANN*Temperature / (M.h.dim() * Ms0));
+			if (Temperature >= *cuMesh.pT_Curie || sigma > 0.03) sigma = 0.03;
+			M_new *= 1 + (prng.rand() * 2 * sigma - sigma);
+		}
 
 		//1. Find energy change
 		cuBReal energy_delta = cuMesh.Get_EnergyChange_FM(spin_idx, M_new, cuModules, numModules, Ha);
@@ -198,14 +209,14 @@ __global__ void Iterate_MonteCarloCUDA_Classic_FM_black_kernel(ManagedMeshCUDA& 
 		cuReal3 m = M_old / Ms0;
 		cuReal3 m_new = M_new / Ms0;
 
-		if (Temperature <= *cuMesh.pT_Curie) {
+		if (Temperature > 0.0 && Temperature <= *cuMesh.pT_Curie) {
 
 			cuBReal diff = m * m - me * me;
 			cuBReal diff_new = m_new * m_new - me * me;
 
 			energy_delta += M.h.dim() * (Ms0 / (8 * susrel_val * me*me)) * (diff_new * diff_new - diff * diff);
 		}
-		else {
+		else if (Temperature > 0.0) {
 
 			cuBReal r = 3 * *cuMesh.pT_Curie / (10 * (Temperature - *cuMesh.pT_Curie));
 			cuBReal m_new_sq = m_new * m_new;
@@ -215,11 +226,17 @@ __global__ void Iterate_MonteCarloCUDA_Classic_FM_black_kernel(ManagedMeshCUDA& 
 
 		//Compute acceptance probability.
 		//Target pdf is proportional to M^2 * exp(-E/kBT), however spin picking probability is not uniform, but proportional to M^2. Thus acceptance probability required to satisfy detailed balance is min{1, (M_new^4 / M_old^4) * exp(-dE/kBT)}
-		cuBReal Mratio = (M_new*M_new) / (M_old*M_old);
-		cuBReal P_accept = Mratio * Mratio * exp(-energy_delta / ((cuBReal)BOLTZMANN * Temperature));
+		cuBReal P_accept = 0.0, P = 1.0;
+		if (Temperature > 0.0) {
 
-		//uniform random number between 0 and 1
-		cuBReal P = prng.rand();
+			//Target pdf is proportional to M^2 * exp(-E/kBT), however spin picking probability is not uniform, but proportional to M^2. Thus acceptance probability required to satisfy detailed balance is min{1, (M_new^4 / M_old^4) * exp(-dE/kBT)}
+			cuBReal Mratio = (M_new*M_new) / (M_old*M_old);
+			P_accept = Mratio * Mratio * exp(-energy_delta / ((cuBReal)BOLTZMANN * Temperature));
+			//uniform random number between 0 and 1
+			P = prng.rand();
+		}
+		else if (energy_delta < 0) P_accept = 1.0;
+
 		if (P <= P_accept) {
 
 			acceptance_rate = 1.0 / num_moves;
@@ -293,9 +310,12 @@ __global__ void Iterate_MonteCarloCUDA_Classic_FM_red_kernel(ManagedMeshCUDA& cu
 		cuReal3 M_new = relrotate_polar(M_old, theta_rot, phi_rot);
 
 		//now allow magnetization length to change slightly with a Gaussian pdf around current value with sigma value from the normal distribution of P(m^2).
-		cuBReal sigma = 2 * me*sqrt(susrel_val*(cuBReal)BOLTZMANN*Temperature / (M.h.dim() * Ms0));
-		if (Temperature >= *cuMesh.pT_Curie || sigma > 0.03) sigma = 0.03;
-		M_new *= 1 + (prng.rand() * 2 * sigma - sigma);
+		if (Temperature > 0.0) {
+
+			cuBReal sigma = 2 * me*sqrt(susrel_val*(cuBReal)BOLTZMANN*Temperature / (M.h.dim() * Ms0));
+			if (Temperature >= *cuMesh.pT_Curie || sigma > 0.03) sigma = 0.03;
+			M_new *= 1 + (prng.rand() * 2 * sigma - sigma);
+		}
 
 		//1. Find energy change
 		cuBReal energy_delta = cuMesh.Get_EnergyChange_FM(spin_idx, M_new, cuModules, numModules, Ha);
@@ -304,14 +324,14 @@ __global__ void Iterate_MonteCarloCUDA_Classic_FM_red_kernel(ManagedMeshCUDA& cu
 		cuReal3 m = M_old / Ms0;
 		cuReal3 m_new = M_new / Ms0;
 
-		if (Temperature <= *cuMesh.pT_Curie) {
+		if (Temperature > 0.0 && Temperature <= *cuMesh.pT_Curie) {
 
 			cuBReal diff = m * m - me * me;
 			cuBReal diff_new = m_new * m_new - me * me;
 
 			energy_delta += M.h.dim() * (Ms0 / (8 * susrel_val * me*me)) * (diff_new * diff_new - diff * diff);
 		}
-		else {
+		else if (Temperature > 0.0) {
 
 			cuBReal r = 3 * *cuMesh.pT_Curie / (10 * (Temperature - *cuMesh.pT_Curie));
 			cuBReal m_new_sq = m_new * m_new;
@@ -321,11 +341,17 @@ __global__ void Iterate_MonteCarloCUDA_Classic_FM_red_kernel(ManagedMeshCUDA& cu
 
 		//Compute acceptance probability.
 		//Target pdf is proportional to M^2 * exp(-E/kBT), however spin picking probability is not uniform, but proportional to M^2. Thus acceptance probability required to satisfy detailed balance is min{1, (M_new^4 / M_old^4) * exp(-dE/kBT)}
-		cuBReal Mratio = (M_new*M_new) / (M_old*M_old);
-		cuBReal P_accept = Mratio * Mratio * exp(-energy_delta / ((cuBReal)BOLTZMANN * Temperature));
+		cuBReal P_accept = 0.0, P = 1.0;
+		if (Temperature > 0.0) {
 
-		//uniform random number between 0 and 1
-		cuBReal P = prng.rand();
+			//Target pdf is proportional to M^2 * exp(-E/kBT), however spin picking probability is not uniform, but proportional to M^2. Thus acceptance probability required to satisfy detailed balance is min{1, (M_new^4 / M_old^4) * exp(-dE/kBT)}
+			cuBReal Mratio = (M_new*M_new) / (M_old*M_old);
+			P_accept = Mratio * Mratio * exp(-energy_delta / ((cuBReal)BOLTZMANN * Temperature));
+			//uniform random number between 0 and 1
+			P = prng.rand();
+		}
+		else if (energy_delta < 0) P_accept = 1.0;
+
 		if (P <= P_accept) {
 
 			//set new spin
@@ -396,9 +422,12 @@ __global__ void Iterate_MonteCarloCUDA_Classic_FM_black_kernel(ManagedMeshCUDA& 
 		cuReal3 M_new = relrotate_polar(M_old, theta_rot, phi_rot);
 
 		//now allow magnetization length to change slightly with a Gaussian pdf around current value with sigma value from the normal distribution of P(m^2).
-		cuBReal sigma = 2 * me*sqrt(susrel_val*(cuBReal)BOLTZMANN*Temperature / (M.h.dim() * Ms0));
-		if (Temperature >= *cuMesh.pT_Curie || sigma > 0.03) sigma = 0.03;
-		M_new *= 1 + (prng.rand() * 2 * sigma - sigma);
+		if (Temperature > 0.0) {
+
+			cuBReal sigma = 2 * me*sqrt(susrel_val*(cuBReal)BOLTZMANN*Temperature / (M.h.dim() * Ms0));
+			if (Temperature >= *cuMesh.pT_Curie || sigma > 0.03) sigma = 0.03;
+			M_new *= 1 + (prng.rand() * 2 * sigma - sigma);
+		}
 
 		//1. Find energy change
 		cuBReal energy_delta = cuMesh.Get_EnergyChange_FM(spin_idx, M_new, cuModules, numModules, Ha);
@@ -407,14 +436,14 @@ __global__ void Iterate_MonteCarloCUDA_Classic_FM_black_kernel(ManagedMeshCUDA& 
 		cuReal3 m = M_old / Ms0;
 		cuReal3 m_new = M_new / Ms0;
 
-		if (Temperature <= *cuMesh.pT_Curie) {
+		if (Temperature > 0.0 && Temperature <= *cuMesh.pT_Curie) {
 
 			cuBReal diff = m * m - me * me;
 			cuBReal diff_new = m_new * m_new - me * me;
 
 			energy_delta += M.h.dim() * (Ms0 / (8 * susrel_val * me*me)) * (diff_new * diff_new - diff * diff);
 		}
-		else {
+		else if (Temperature > 0.0) {
 
 			cuBReal r = 3 * *cuMesh.pT_Curie / (10 * (Temperature - *cuMesh.pT_Curie));
 			cuBReal m_new_sq = m_new * m_new;
@@ -424,11 +453,17 @@ __global__ void Iterate_MonteCarloCUDA_Classic_FM_black_kernel(ManagedMeshCUDA& 
 
 		//Compute acceptance probability.
 		//Target pdf is proportional to M^2 * exp(-E/kBT), however spin picking probability is not uniform, but proportional to M^2. Thus acceptance probability required to satisfy detailed balance is min{1, (M_new^4 / M_old^4) * exp(-dE/kBT)}
-		cuBReal Mratio = (M_new*M_new) / (M_old*M_old);
-		cuBReal P_accept = Mratio * Mratio * exp(-energy_delta / ((cuBReal)BOLTZMANN * Temperature));
+		cuBReal P_accept = 0.0, P = 1.0;
+		if (Temperature > 0.0) {
 
-		//uniform random number between 0 and 1
-		cuBReal P = prng.rand();
+			//Target pdf is proportional to M^2 * exp(-E/kBT), however spin picking probability is not uniform, but proportional to M^2. Thus acceptance probability required to satisfy detailed balance is min{1, (M_new^4 / M_old^4) * exp(-dE/kBT)}
+			cuBReal Mratio = (M_new*M_new) / (M_old*M_old);
+			P_accept = Mratio * Mratio * exp(-energy_delta / ((cuBReal)BOLTZMANN * Temperature));
+			//uniform random number between 0 and 1
+			P = prng.rand();
+		}
+		else if (energy_delta < 0) P_accept = 1.0;
+
 		if (P <= P_accept) {
 
 			//set new spin
@@ -439,7 +474,7 @@ __global__ void Iterate_MonteCarloCUDA_Classic_FM_black_kernel(ManagedMeshCUDA& 
 
 cuBReal FMeshCUDA::Iterate_MonteCarloCUDA_Classic(cuBReal mc_cone_angledeg, double target_acceptance_rate)
 {
-	if (mc_acceptance_reduction_counter == 0) Zero_MCAux_Atom_Mesh_FMCUDA <<< 1, CUDATHREADS >>> (mc_acceptance_rate, cmc_M);
+	if (mc_acceptance_reduction_counter == 0) Zero_MCAux_Atom_Mesh_FMCUDA <<< 1, CUDATHREADS >>> (mc_acceptance_rate);
 
 	//Field set
 	if (pHa) {

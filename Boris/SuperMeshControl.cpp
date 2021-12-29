@@ -146,23 +146,62 @@ void SuperMesh::UpdateConfiguration_Values(UPDATECONFIG_ cfgMessage)
 
 
 //switch CUDA state on/off; when switching on set selected cuda device number (from 0 up)
-BError SuperMesh::SwitchCUDAState(bool cudaState, int cudaDeviceSelect)
+//Enforce these rules here:
+//1. If CUDA is on, then before device can be changed turn cuda off (free memory for currently selected device), reset device.
+//2. If CUDA is off, when turning on set device, then allocate memory.
+BError SuperMesh::SwitchCUDAState(bool cudaState, int __cudaDeviceSelect)
 {
 	BError error(CLASS_STR(SuperMesh));
 
 #if COMPILECUDA == 1
 
-	//Switch for SuperMesh
+	auto update_configuration = [&](bool __cudaState, BError& error) -> BError {
 
-	//Select indicated CUDA device if possible
-	if (cudaDeviceSelect < cudaDeviceVersions.size() && cudaDeviceVersions[cudaDeviceSelect].first == __CUDA_ARCH__) {
+		//Switch for ODECommon
+		if (!error) error = odeSolver.SwitchCUDAState(__cudaState);
 
-		cudaSetDevice(cudaDeviceSelect);
-	}
-	else return error(BERROR_CUDAVERSIONMISMATCH_NCRIT);
+		//Switch for Atom_ODECommon
+		if (!error) error = atom_odeSolver.SwitchCUDAState(__cudaState);
 
-	if (cudaState) {
-	
+		//Switch for Meshes and their modules
+		for (int idx = 0; idx < (int)pMesh.size(); idx++) {
+
+			if (!error) error = pMesh[idx]->SwitchCUDAState(__cudaState);
+		}
+
+		//Switch for super-mesh modules
+		for (int idx = 0; idx < (int)pSMod.size(); idx++) {
+
+			if (!error) error = pSMod[idx]->SwitchCUDAState(__cudaState);
+		}
+
+		//make sure configuration is updated for the new mode
+		error = UpdateConfiguration(UPDATECONFIG_SWITCHCUDASTATE);
+
+		return error;
+	};
+
+	//call only if CUDA currently on
+	auto turn_cuda_off_for_current_device = [&](BError& error) -> BError {
+
+		if (pSMeshCUDA) delete pSMeshCUDA;
+		pSMeshCUDA = nullptr;
+
+		error = update_configuration(false, error);
+
+		cudaDeviceReset();
+
+		if (!error) cudaEnabled = false;
+
+		return error;
+	};
+
+	//call only if CUDA currently off
+	auto turn_cuda_on_for_selected_device = [&](int __cudaDeviceSelect, BError& error) -> BError {
+
+		cudaSetDevice(__cudaDeviceSelect);
+		cudaDeviceReset();
+
 		if (!pSMeshCUDA) {
 
 			pSMeshCUDA = new SuperMeshCUDA(this);
@@ -170,29 +209,42 @@ BError SuperMesh::SwitchCUDAState(bool cudaState, int cudaDeviceSelect)
 
 		//Monte-Carlo serial mode not possible with cuda on
 		Set_MonteCarlo_Serial(false, superMeshHandle);
+
+		error = update_configuration(true, error);
+
+		if (!error) {
+
+			cudaEnabled = true;
+			cudaDeviceSelect = __cudaDeviceSelect;
+		}
+
+		return error;
+	};
+
+	if (cudaState) {
+
+		//switching CUDA on
+
+		//If currently off, then proceed
+		if (!cudaEnabled) error = turn_cuda_on_for_selected_device(__cudaDeviceSelect, error);
+		else {
+
+			//currently on, so this action only makes sense if switching device; if not switching device then action is pointless so do nothing
+			if (cudaDeviceSelect != __cudaDeviceSelect) {
+
+				//In this case, first switch off for current device
+				error = turn_cuda_off_for_current_device(error);
+				//Now it's off, so if all fine then proceed to switch device
+				if (!error) error = turn_cuda_on_for_selected_device(__cudaDeviceSelect, error);
+			}
+		}
 	}
 	else {
 
-		if (pSMeshCUDA) delete pSMeshCUDA;
-		pSMeshCUDA = nullptr;
-	}
+		//switching CUDA off - just do it!
+		error = turn_cuda_off_for_current_device(error);
 
-	//Switch for ODECommon
-	if (!error) error = odeSolver.SwitchCUDAState(cudaState);
-
-	//Switch for Atom_ODECommon
-	if (!error) error = atom_odeSolver.SwitchCUDAState(cudaState);
-
-	//Switch for Meshes and their modules
-	for (int idx = 0; idx < (int)pMesh.size(); idx++) {
-
-		if (!error) error = pMesh[idx]->SwitchCUDAState(cudaState);
-	}
-
-	//Switch for super-mesh modules
-	for (int idx = 0; idx < (int)pSMod.size(); idx++) {
-
-		if (!error) error = pSMod[idx]->SwitchCUDAState(cudaState);
+		cudaDeviceSelect = __cudaDeviceSelect;
 	}
 
 	gpuMemFree_MB = cudaMemGetFree() / (1024 * 1024);
@@ -200,14 +252,6 @@ BError SuperMesh::SwitchCUDAState(bool cudaState, int cudaDeviceSelect)
 
 	cpuMemFree_MB = MemGetFreeMB() / (1024 * 1024);
 	cpuMemTotal_MB = MemGetTotalMB() / (1024 * 1024);
-
-	//make sure configuration is updated for the new mode
-	error = UpdateConfiguration(UPDATECONFIG_SWITCHCUDASTATE);
-
-	//This can cause problems when switching CUDA off then on again. Reason unknown, should investigate.
-	//I had this command in to solve a CUDA bug where memory allocation failed sometimes, as a quick and dirty fix.
-	//Later it turned out this was due to a routine in cuVEC_VC with bad memory access (really subtle and hard to spot!), solved now.
-	//if (!cudaState) cudaDeviceReset();
 
 #endif
 

@@ -23,12 +23,22 @@ BError Simulation::SaveSimulation(std::string fileName)
 		bdout.precision(CONVERSIONPRECISION);
 
 		//before saving, switch CUDA off, so everything is stored and up to date in cpu memory
-		if (cudaEnabled) error = SMesh.SwitchCUDAState(false, cudaDeviceSelect);
+		if (cudaEnabled) {
 
-		if(!error) SaveObjectState(bdout);
+			error = SMesh.SwitchCUDAState(false, cudaDeviceSelect);
 
-		//switch CUDA back on if it was on before
-		if (cudaEnabled && !error) error = SMesh.SwitchCUDAState(true, cudaDeviceSelect);
+			if (!error) {
+
+				//Set cudaEnabled to true so it's saved with the right value
+				cudaEnabled = true;
+				SaveObjectState(bdout);
+
+				//switch CUDA back on if it was on before (cudaEnabled = false s function takes effect)
+				cudaEnabled = false;
+				error = SMesh.SwitchCUDAState(true, cudaDeviceSelect);
+			}
+		}
+		else SaveObjectState(bdout);
 
 		bdout.close();
 
@@ -86,7 +96,6 @@ BError Simulation::LoadSimulation(std::string fileName)
 				bdin.open(default_file.c_str(), std::ios::in | std::ios::binary);
 
 				if (cudaAvailable && cudaEnabled) error = SMesh.SwitchCUDAState(false, cudaDeviceSelect);
-				cudaEnabled = false;
 
 				if (!error) success = LoadObjectState(bdin);
 
@@ -119,8 +128,6 @@ BError Simulation::LoadSimulation(std::string fileName)
 
 		//before loading make sure CUDA is switched off so it doesn't cause problems with loading
 		if (cudaAvailable && cudaEnabled) error = SMesh.SwitchCUDAState(false, cudaDeviceSelect);
-		//also make sure cudaEnabled flag is false, so when objects are made they are first made on the host only : trying to make them on the device too in parallel can cause problems.
-		cudaEnabled = false;
 
 		if (!error) success = LoadObjectState(bdin);
 
@@ -135,7 +142,7 @@ BError Simulation::LoadSimulation(std::string fileName)
 		//cudaEnabled will have been modified depending on what was stored in the simulation file, but CUDA is still switched off at this point; switch CUDA on if indicated
 #if COMPILECUDA == 1
 		if (cudaEnabled && !error) {
-
+		
 			//a previous simulation file might have been configured for a cuda device != on a multi-GPU machine; might not be available on current machine
 			if (cudaDeviceSelect >= cudaDeviceVersions.size() || cudaDeviceVersions[cudaDeviceSelect].first != __CUDA_ARCH__) {
 
@@ -145,6 +152,8 @@ BError Simulation::LoadSimulation(std::string fileName)
 
 			if (cudaDeviceVersions[cudaDeviceSelect].first == __CUDA_ARCH__) {
 
+				//cudaEnabled will be set to true by SwitchCUDAState, but need to set it to false first to take effect
+				cudaEnabled = false;
 				error = SMesh.SwitchCUDAState(true, cudaDeviceSelect);
 			}
 		}

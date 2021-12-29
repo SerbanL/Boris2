@@ -248,7 +248,7 @@ public:
 	virtual void PrepareNewIterationCUDA(void) = 0;
 #endif
 
-	//Take a Monte Carlo step in this mesh if atomistic (overloaded by atomistic mesh implementation) using settings in each mesh
+	//Take a Monte Carlo step in this mesh (overloaded by mesh implementations) using settings in each mesh
 	virtual void Iterate_MonteCarlo(double acceptance_rate) {}
 
 #if COMPILECUDA == 1
@@ -554,6 +554,9 @@ public:
 
 	//is there a demag-type module set for this mesh? (SDemag not included as this is a SuperMesh module)
 	virtual bool Is_Demag_Enabled(void) = 0;
+
+	virtual bool iSHA_nonzero(void) = 0;
+	virtual bool SHA_nonzero(void) = 0;
 
 	//----------------------------------- VALUE GETTERS
 

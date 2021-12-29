@@ -44,6 +44,65 @@ PhysQ Atom_Mesh::FetchOnScreenPhysicalQuantity(double detail_level, bool getBack
 	}
 		break;
 
+	case MESHDISPLAY_CURRDENSITY:
+		if (IsModuleSet(MOD_TRANSPORT)) {
+
+			return PhysQ(&dynamic_cast<Atom_Transport*>(pMod(MOD_TRANSPORT))->GetChargeCurrent(), physicalQuantity, (VEC3REP_)vec3rep);
+		}
+		break;
+
+	case MESHDISPLAY_VOLTAGE:
+		return PhysQ(&V, physicalQuantity);
+		break;
+
+	case MESHDISPLAY_ELCOND:
+		return PhysQ(&elC, physicalQuantity);
+		break;
+
+	case MESHDISPLAY_SACCUM:
+		return PhysQ(&S, physicalQuantity, (VEC3REP_)vec3rep);
+		break;
+
+	case MESHDISPLAY_JSX:
+		if (IsModuleSet(MOD_TRANSPORT)) {
+
+			return PhysQ(&dynamic_cast<Atom_Transport*>(pMod(MOD_TRANSPORT))->GetSpinCurrent(0), physicalQuantity, (VEC3REP_)vec3rep);
+		}
+		break;
+
+	case MESHDISPLAY_JSY:
+		if (IsModuleSet(MOD_TRANSPORT)) {
+
+			return PhysQ(&dynamic_cast<Atom_Transport*>(pMod(MOD_TRANSPORT))->GetSpinCurrent(1), physicalQuantity, (VEC3REP_)vec3rep);
+		}
+		break;
+
+	case MESHDISPLAY_JSZ:
+		if (IsModuleSet(MOD_TRANSPORT)) {
+
+			return PhysQ(&dynamic_cast<Atom_Transport*>(pMod(MOD_TRANSPORT))->GetSpinCurrent(2), physicalQuantity, (VEC3REP_)vec3rep);
+		}
+		break;
+
+	case MESHDISPLAY_TS:
+		if (IsModuleSet(MOD_TRANSPORT)) {
+
+			return PhysQ(&dynamic_cast<Atom_Transport*>(pMod(MOD_TRANSPORT))->GetSpinTorque(), physicalQuantity, (VEC3REP_)vec3rep);
+		}
+		break;
+
+	case MESHDISPLAY_TSI:
+		if (pSMesh->IsSuperMeshModuleSet(MODS_STRANSPORT) && IsModuleSet(MOD_TRANSPORT)) {
+
+			//TO DO
+			/*
+			return PhysQ(
+				&dynamic_cast<STransport*>(pSMesh->pSMod(MODS_STRANSPORT))->GetInterfacialSpinTorque(dynamic_cast<Atom_Transport*>(pMod(MOD_TRANSPORT))),
+				physicalQuantity, (VEC3REP_)vec3rep);
+				*/
+		}
+		break;
+
 	case MESHDISPLAY_TEMPERATURE:
 		return PhysQ(&Temp, physicalQuantity);
 		break;
@@ -142,6 +201,61 @@ BError Atom_Mesh::SaveOnScreenPhysicalQuantity(std::string fileName, std::string
 		MOD_ Module_Energy = (MOD_)Get_ActualModule_Energy_Display();
 		if (IsModuleSet(Module_Energy)) error = ovf2.Write_OVF2_SCA(fileName, pMod(Module_Energy)->Get_Module_Energy(), ovf2_dataType);
 	}
+		break;
+
+	case MESHDISPLAY_CURRDENSITY:
+		if (IsModuleSet(MOD_TRANSPORT)) {
+
+			error = ovf2.Write_OVF2_VEC(fileName, dynamic_cast<Atom_Transport*>(pMod(MOD_TRANSPORT))->GetChargeCurrent(), ovf2_dataType);
+		}
+		break;
+
+	case MESHDISPLAY_VOLTAGE:
+		error = ovf2.Write_OVF2_SCA(fileName, V, ovf2_dataType);
+		break;
+
+	case MESHDISPLAY_ELCOND:
+		error = ovf2.Write_OVF2_SCA(fileName, elC, ovf2_dataType);
+		break;
+
+	case MESHDISPLAY_SACCUM:
+		error = ovf2.Write_OVF2_VEC(fileName, S, ovf2_dataType);
+		break;
+
+	case MESHDISPLAY_JSX:
+		if (IsModuleSet(MOD_TRANSPORT)) {
+
+			error = ovf2.Write_OVF2_VEC(fileName, dynamic_cast<Atom_Transport*>(pMod(MOD_TRANSPORT))->GetSpinCurrent(0), ovf2_dataType);
+		}
+		break;
+
+	case MESHDISPLAY_JSY:
+		if (IsModuleSet(MOD_TRANSPORT)) {
+
+			error = ovf2.Write_OVF2_VEC(fileName, dynamic_cast<Atom_Transport*>(pMod(MOD_TRANSPORT))->GetSpinCurrent(1), ovf2_dataType);
+		}
+		break;
+
+	case MESHDISPLAY_JSZ:
+		if (IsModuleSet(MOD_TRANSPORT)) {
+
+			error = ovf2.Write_OVF2_VEC(fileName, dynamic_cast<Atom_Transport*>(pMod(MOD_TRANSPORT))->GetSpinCurrent(2), ovf2_dataType);
+		}
+		break;
+
+	case MESHDISPLAY_TS:
+		if (IsModuleSet(MOD_TRANSPORT)) {
+
+			error = ovf2.Write_OVF2_VEC(fileName, dynamic_cast<Atom_Transport*>(pMod(MOD_TRANSPORT))->GetSpinTorque(), ovf2_dataType);
+		}
+		break;
+
+	case MESHDISPLAY_TSI:
+		if (pSMesh->IsSuperMeshModuleSet(MODS_STRANSPORT) && IsModuleSet(MOD_TRANSPORT)) {
+
+			//TO DO
+			//error = ovf2.Write_OVF2_VEC(fileName, dynamic_cast<STransport*>(pSMesh->pSMod(MODS_STRANSPORT))->GetInterfacialSpinTorque(dynamic_cast<Atom_Transport*>(pMod(MOD_TRANSPORT))), ovf2_dataType);
+		}
 		break;
 
 	case MESHDISPLAY_TEMPERATURE:
@@ -286,6 +400,70 @@ void Atom_Mesh::GetPhysicalQuantityProfile(DBL3 start, DBL3 end, double step, DB
 	}
 	break;
 
+	case MESHDISPLAY_CURRDENSITY:
+		if (read_average) { pprofile_dbl3 = &profile_storage_dbl3; return; }
+		if (IsModuleSet(MOD_TRANSPORT)) {
+
+			setup_profile_vecvc_dbl3(dynamic_cast<Atom_Transport*>(pMod(MOD_TRANSPORT))->GetChargeCurrent());
+		}
+		break;
+
+	case MESHDISPLAY_VOLTAGE:
+		if (read_average) { pprofile_dbl = &profile_storage_dbl; return; }
+		setup_profile_vecvc_dbl(V);
+		break;
+
+	case MESHDISPLAY_ELCOND:
+		if (read_average) { pprofile_dbl = &profile_storage_dbl; return; }
+		setup_profile_vecvc_dbl(elC);
+		break;
+
+	case MESHDISPLAY_SACCUM:
+		if (read_average) { pprofile_dbl3 = &profile_storage_dbl3; return; }
+		setup_profile_vecvc_dbl3(S);
+		break;
+
+	case MESHDISPLAY_JSX:
+		if (read_average) { pprofile_dbl3 = &profile_storage_dbl3; return; }
+		if (IsModuleSet(MOD_TRANSPORT)) {
+
+			setup_profile_vec_dbl3(dynamic_cast<Atom_Transport*>(pMod(MOD_TRANSPORT))->GetSpinCurrent(0));
+		}
+		break;
+
+	case MESHDISPLAY_JSY:
+		if (read_average) { pprofile_dbl3 = &profile_storage_dbl3; return; }
+		if (IsModuleSet(MOD_TRANSPORT)) {
+
+			setup_profile_vec_dbl3(dynamic_cast<Atom_Transport*>(pMod(MOD_TRANSPORT))->GetSpinCurrent(1));
+		}
+		break;
+
+	case MESHDISPLAY_JSZ:
+		if (read_average) { pprofile_dbl3 = &profile_storage_dbl3; return; }
+		if (IsModuleSet(MOD_TRANSPORT)) {
+
+			setup_profile_vec_dbl3(dynamic_cast<Atom_Transport*>(pMod(MOD_TRANSPORT))->GetSpinCurrent(2));
+		}
+		break;
+
+	case MESHDISPLAY_TS:
+		if (read_average) { pprofile_dbl3 = &profile_storage_dbl3; return; }
+		if (IsModuleSet(MOD_TRANSPORT)) {
+
+			setup_profile_vec_dbl3(dynamic_cast<Atom_Transport*>(pMod(MOD_TRANSPORT))->GetSpinTorque());
+		}
+		break;
+
+	case MESHDISPLAY_TSI:
+		if (read_average) { pprofile_dbl3 = &profile_storage_dbl3; return; }
+		if (pSMesh->IsSuperMeshModuleSet(MODS_STRANSPORT) && IsModuleSet(MOD_TRANSPORT)) {
+
+			//TO DO
+			//setup_profile_vec_dbl3(dynamic_cast<STransport*>(pSMesh->pSMod(MODS_STRANSPORT))->GetInterfacialSpinTorque(dynamic_cast<Atom_Transport*>(pMod(MOD_TRANSPORT))));
+		}
+		break;
+
 	case MESHDISPLAY_TEMPERATURE:
 		if (read_average) { pprofile_dbl = &profile_storage_dbl; return; }
 		setup_profile_vecvc_dbl(Temp);
@@ -391,6 +569,75 @@ Any Atom_Mesh::GetAverageDisplayedMeshValue(Rect rel_rect, std::vector<MeshShape
 		}
 	}
 	break;
+
+	case MESHDISPLAY_CURRDENSITY:
+		if (IsModuleSet(MOD_TRANSPORT)) {
+
+			return dynamic_cast<Atom_Transport*>(pMod(MOD_TRANSPORT))->GetAverageChargeCurrent(rel_rect, shapes);
+		}
+		break;
+
+	case MESHDISPLAY_VOLTAGE:
+		if (V.linear_size()) {
+
+			if (!shapes.size()) return V.average_nonempty_omp(rel_rect);
+			else return V.shape_getaverage(shapes);
+		}
+		break;
+
+	case MESHDISPLAY_ELCOND:
+		if (elC.linear_size()) {
+
+			if (!shapes.size()) return elC.average_nonempty_omp(rel_rect);
+			else return elC.shape_getaverage(shapes);
+		}
+		break;
+
+	case MESHDISPLAY_SACCUM:
+		if (S.linear_size()) {
+
+			if (!shapes.size()) return S.average_nonempty_omp(rel_rect);
+			else return S.shape_getaverage(shapes);
+		}
+		break;
+
+	case MESHDISPLAY_JSX:
+		if (IsModuleSet(MOD_TRANSPORT)) {
+
+			return dynamic_cast<Atom_Transport*>(pMod(MOD_TRANSPORT))->GetAverageSpinCurrent(0, rel_rect, shapes);
+		}
+		break;
+
+	case MESHDISPLAY_JSY:
+		if (IsModuleSet(MOD_TRANSPORT)) {
+
+			return dynamic_cast<Atom_Transport*>(pMod(MOD_TRANSPORT))->GetAverageSpinCurrent(1, rel_rect, shapes);
+		}
+		break;
+
+	case MESHDISPLAY_JSZ:
+		if (IsModuleSet(MOD_TRANSPORT)) {
+
+			return dynamic_cast<Atom_Transport*>(pMod(MOD_TRANSPORT))->GetAverageSpinCurrent(2, rel_rect, shapes);
+		}
+		break;
+
+	case MESHDISPLAY_TS:
+		if (IsModuleSet(MOD_TRANSPORT)) {
+
+			return dynamic_cast<Atom_Transport*>(pMod(MOD_TRANSPORT))->GetAverageSpinTorque(rel_rect, shapes);
+		}
+		break;
+
+	case MESHDISPLAY_TSI:
+		if (pSMesh->IsSuperMeshModuleSet(MODS_STRANSPORT) && IsModuleSet(MOD_TRANSPORT)) {
+
+			//TO DO
+			//spin torque calculated internally in the Transport module, ready to be read out when needed
+			//dynamic_cast<STransport*>(pSMesh->pSMod(MODS_STRANSPORT))->GetInterfacialSpinTorque(dynamic_cast<Atom_Transport*>(pMod(MOD_TRANSPORT)));
+			//return dynamic_cast<Atom_Transport*>(pMod(MOD_TRANSPORT))->GetAverageInterfacialSpinTorque(rel_rect, shapes);
+		}
+		break;
 
 	case MESHDISPLAY_TEMPERATURE:
 		if (Temp.linear_size()) {

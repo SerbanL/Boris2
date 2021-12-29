@@ -103,16 +103,15 @@ __device__ cuBReal ManagedMeshCUDA::Get_EnergyChange_FM_DemagNCUDA(int spin_inde
 
 	//Nxy shouldn't have a temperature (or spatial) dependence so not using update_parameters_mcoarse here
 	cuReal2 Nxy = *pNxy;
-
 	cuBReal Nz = (1 - Nxy.x - Nxy.y);
 
 	if (Mnew != cuReal3()) {
 
-		return -((cuBReal)MU0 / 2) * M.h.dim() * (
-			(Mnew * cuReal3(-Nxy.x * Mnew.x, -Nxy.y * Mnew.y, -(1 - Nxy.x - Nxy.y) * Mnew.z)) 
-			- (M[spin_index] * cuReal3(-Nxy.x * M[spin_index].x, -Nxy.y * M[spin_index].y, -(1 - Nxy.x - Nxy.y) * M[spin_index].z)));
+		return ((cuBReal)MU0 / 2) * M.h.dim() * (
+			(Mnew * cuReal3(Nxy.x * Mnew.x, Nxy.y * Mnew.y, Nz * Mnew.z)) 
+			- (M[spin_index] * cuReal3(Nxy.x * M[spin_index].x, Nxy.y * M[spin_index].y, Nz * M[spin_index].z)));
 	}
-	else return -((cuBReal)MU0 / 2) * M.h.dim() * (M[spin_index] * cuReal3(-Nxy.x * M[spin_index].x, -Nxy.y * M[spin_index].y, -(1 - Nxy.x - Nxy.y) * M[spin_index].z));
+	else return ((cuBReal)MU0 / 2) * M.h.dim() * (M[spin_index] * cuReal3(Nxy.x * M[spin_index].x, Nxy.y * M[spin_index].y, Nz * M[spin_index].z));
 }
 
 //Demag
@@ -752,9 +751,9 @@ __device__ cuBReal ManagedMeshCUDA::Get_EnergyChange_FM_AnisotropyTensorialCUDA(
 	};
 	
 	//calculate dot products
-	cuBReal a = M[spin_index].normalized() * mcanis_ea1 / Ms;
-	cuBReal b = M[spin_index].normalized() * mcanis_ea2 / Ms;
-	cuBReal c = M[spin_index].normalized() * mcanis_ea3 / Ms;
+	cuBReal a = M[spin_index] * mcanis_ea1 / Ms;
+	cuBReal b = M[spin_index] * mcanis_ea2 / Ms;
+	cuBReal c = M[spin_index] * mcanis_ea3 / Ms;
 
 	cuBReal energy_ = Get_Energy(a, b, c);
 

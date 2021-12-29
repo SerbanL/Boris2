@@ -12,10 +12,10 @@
 
 //-------------------- GLOBAL
 
-template <typename VType, typename Class_CMBND>
+template <typename VType, typename Class_CMBNDs, typename Class_CMBNDp>
 __global__ void set_cmbnd_continuous_kernel(
 	cuVEC_VC<VType>& V_sec, cuVEC_VC<VType>& V_pri, 
-	Class_CMBND& cmbndFuncs_sec, Class_CMBND& cmbndFuncs_pri, 
+	Class_CMBNDs& cmbndFuncs_sec, Class_CMBNDp& cmbndFuncs_pri, 
 	CMBNDInfoCUDA& contact)
 {
 	int box_idx = blockIdx.x * blockDim.x + threadIdx.x;
@@ -79,8 +79,8 @@ __global__ void set_cmbnd_continuous_kernel(
 //-------------------- LAUNCHER
 
 template <typename VType>
-template <typename Class_CMBND>
-__host__ void cuVEC_VC<VType>::set_cmbnd_continuous(size_t size, cuVEC_VC<VType>& V_sec, Class_CMBND& cmbndFuncs_sec, Class_CMBND& cmbndFuncs_pri, CMBNDInfoCUDA& contact)
+template <typename Class_CMBNDs, typename Class_CMBNDp>
+__host__ void cuVEC_VC<VType>::set_cmbnd_continuous(size_t size, cuVEC_VC<VType>& V_sec, Class_CMBNDs& cmbndFuncs_sec, Class_CMBNDp& cmbndFuncs_pri, CMBNDInfoCUDA& contact)
 {	
 	set_cmbnd_continuous_kernel <<< (size + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (V_sec, *this, cmbndFuncs_sec, cmbndFuncs_pri, contact);
 }
@@ -89,10 +89,10 @@ __host__ void cuVEC_VC<VType>::set_cmbnd_continuous(size_t size, cuVEC_VC<VType>
 
 //-------------------- GLOBAL
 
-template <typename VType, typename Class_CMBND, typename Class_CMBND_S>
+template <typename VType, typename Class_CMBNDs, typename Class_CMBNDp, typename Class_CMBND_S>
 __global__ void set_cmbnd_continuousflux_kernel(
 	cuVEC_VC<VType>& V_sec, cuVEC_VC<VType>& V_pri,
-	Class_CMBND& cmbndFuncs_sec, Class_CMBND& cmbndFuncs_pri,
+	Class_CMBNDs& cmbndFuncs_sec, Class_CMBNDp& cmbndFuncs_pri,
 	Class_CMBND_S& cmbndFuncs_s,
 	CMBNDInfoCUDA& contact)
 {
@@ -166,8 +166,8 @@ __global__ void set_cmbnd_continuousflux_kernel(
 //-------------------- LAUNCHER
 
 template <typename VType>
-template <typename Class_CMBND, typename Class_CMBND_S>
-__host__ void cuVEC_VC<VType>::set_cmbnd_continuousflux(size_t size, cuVEC_VC<VType>& V_sec, Class_CMBND& cmbndFuncs_sec, Class_CMBND& cmbndFuncs_pri, Class_CMBND_S& cmbndFuncs_s, CMBNDInfoCUDA& contact)
+template <typename Class_CMBNDs, typename Class_CMBNDp, typename Class_CMBND_S>
+__host__ void cuVEC_VC<VType>::set_cmbnd_continuousflux(size_t size, cuVEC_VC<VType>& V_sec, Class_CMBNDs& cmbndFuncs_sec, Class_CMBNDp& cmbndFuncs_pri, Class_CMBND_S& cmbndFuncs_s, CMBNDInfoCUDA& contact)
 {
 	set_cmbnd_continuousflux_kernel <<< (size + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (V_sec, *this, cmbndFuncs_sec, cmbndFuncs_pri, cmbndFuncs_s, contact);
 }
@@ -176,10 +176,10 @@ __host__ void cuVEC_VC<VType>::set_cmbnd_continuousflux(size_t size, cuVEC_VC<VT
 
 //-------------------- GLOBAL
 
-template <typename VType, typename Class_CMBND, typename Class_CMBND_S>
+template <typename VType, typename Class_CMBNDs, typename Class_CMBNDp, typename Class_CMBND_S>
 __global__ void set_cmbnd_discontinuous_kernel(
 	cuVEC_VC<VType>& V_sec, cuVEC_VC<VType>& V_pri,
-	Class_CMBND& cmbndFuncs_sec, Class_CMBND& cmbndFuncs_pri,
+	Class_CMBNDs& cmbndFuncs_sec, Class_CMBNDp& cmbndFuncs_pri,
 	Class_CMBND_S& cmbndFuncs_s,
 	CMBNDInfoCUDA& contact)
 {
@@ -269,8 +269,8 @@ __global__ void set_cmbnd_discontinuous_kernel(
 //-------------------- LAUNCHER
 
 template <typename VType>
-template <typename Class_CMBND, typename Class_CMBND_S>
-__host__ void cuVEC_VC<VType>::set_cmbnd_discontinuous(size_t size, cuVEC_VC<VType>& V_sec, Class_CMBND& cmbndFuncs_sec, Class_CMBND& cmbndFuncs_pri, Class_CMBND_S& cmbndFuncs_s, CMBNDInfoCUDA& contact)
+template <typename Class_CMBNDs, typename Class_CMBNDp, typename Class_CMBND_S>
+__host__ void cuVEC_VC<VType>::set_cmbnd_discontinuous(size_t size, cuVEC_VC<VType>& V_sec, Class_CMBNDs& cmbndFuncs_sec, Class_CMBNDp& cmbndFuncs_pri, Class_CMBND_S& cmbndFuncs_s, CMBNDInfoCUDA& contact)
 {
 	set_cmbnd_discontinuous_kernel <<< (size + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (V_sec, *this, cmbndFuncs_sec, cmbndFuncs_pri, cmbndFuncs_s, contact);
 }

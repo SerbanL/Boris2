@@ -17,7 +17,42 @@ void STransportCUDA::set_cmbnd_charge_transport(void)
 			int idx_pri = CMBNDcontacts[idx1][idx2].mesh_idx.j;
 			size_t size = CMBNDcontacts[idx1][idx2].cells_box.size().dim();
 
-			(*pV[idx_pri])()->set_cmbnd_continuous(size, *pV[idx_sec], (TransportCUDA_V_Funcs&)pTransport[idx_sec]->poisson_V, (TransportCUDA_V_Funcs&)pTransport[idx_pri]->poisson_V, (CMBNDInfoCUDA&)CMBNDcontactsCUDA[idx1][idx2]);
+			//1. Micromagnetic to micromagnetic meshes
+			if (!pTransport[idx_pri]->pMeshBaseCUDA->is_atomistic() && !pTransport[idx_sec]->pMeshBaseCUDA->is_atomistic()) {
+
+				(*pV[idx_pri])()->set_cmbnd_continuous(
+					size, *pV[idx_sec], 
+					(TransportCUDA_V_Funcs&)dynamic_cast<TransportCUDA*>(pTransport[idx_sec])->poisson_V, 
+					(TransportCUDA_V_Funcs&)dynamic_cast<TransportCUDA*>(pTransport[idx_pri])->poisson_V, 
+					(CMBNDInfoCUDA&)CMBNDcontactsCUDA[idx1][idx2]);
+			}
+			//2. Micromagnetic to atomistic meshes
+			else if (!pTransport[idx_pri]->pMeshBaseCUDA->is_atomistic() && pTransport[idx_sec]->pMeshBaseCUDA->is_atomistic()) {
+
+				(*pV[idx_pri])()->set_cmbnd_continuous(
+					size, *pV[idx_sec],
+					(Atom_TransportCUDA_V_Funcs&)dynamic_cast<Atom_TransportCUDA*>(pTransport[idx_sec])->poisson_V,
+					(TransportCUDA_V_Funcs&)dynamic_cast<TransportCUDA*>(pTransport[idx_pri])->poisson_V,
+					(CMBNDInfoCUDA&)CMBNDcontactsCUDA[idx1][idx2]);
+			}
+			//3. atomistic to micromagnetic meshes
+			else if (pTransport[idx_pri]->pMeshBaseCUDA->is_atomistic() && !pTransport[idx_sec]->pMeshBaseCUDA->is_atomistic()) {
+
+				(*pV[idx_pri])()->set_cmbnd_continuous(
+					size, *pV[idx_sec],
+					(TransportCUDA_V_Funcs&)dynamic_cast<TransportCUDA*>(pTransport[idx_sec])->poisson_V,
+					(Atom_TransportCUDA_V_Funcs&)dynamic_cast<Atom_TransportCUDA*>(pTransport[idx_pri])->poisson_V,
+					(CMBNDInfoCUDA&)CMBNDcontactsCUDA[idx1][idx2]);
+			}
+			//4. atomistic to atomistic meshes
+			else if (pTransport[idx_pri]->pMeshBaseCUDA->is_atomistic() && pTransport[idx_sec]->pMeshBaseCUDA->is_atomistic()) {
+
+				(*pV[idx_pri])()->set_cmbnd_continuous(
+					size, *pV[idx_sec],
+					(Atom_TransportCUDA_V_Funcs&)dynamic_cast<Atom_TransportCUDA*>(pTransport[idx_sec])->poisson_V, 
+					(Atom_TransportCUDA_V_Funcs&)dynamic_cast<Atom_TransportCUDA*>(pTransport[idx_pri])->poisson_V,
+					(CMBNDInfoCUDA&)CMBNDcontactsCUDA[idx1][idx2]);
+			}
 		}
 	}
 }

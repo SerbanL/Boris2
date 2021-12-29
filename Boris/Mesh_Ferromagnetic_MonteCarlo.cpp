@@ -12,8 +12,7 @@
 //Take a Monte Carlo step in this mesh
 void FMesh::Iterate_MonteCarlo(double acceptance_rate)
 {
-	//Not applicable at zero temperature
-	if (IsZ(base_temperature) || mc_disabled) return;
+	if (mc_disabled) return;
 
 	Iterate_MonteCarlo_Parallel_Classic();
 
@@ -27,8 +26,7 @@ void FMesh::Iterate_MonteCarlo(double acceptance_rate)
 //Take a Monte Carlo step in this mesh
 void FMesh::Iterate_MonteCarloCUDA(double acceptance_rate)
 {
-	//Not applicable at zero temperature
-	if (IsZ(base_temperature) || mc_disabled) return;
+	if (mc_disabled) return;
 
 	if (pMeshCUDA) {
 
@@ -56,6 +54,9 @@ void FMesh::Iterate_MonteCarlo_Parallel_Classic(void)
 	///////////////////////////////////////////////////////////////
 	// PARALLEL MONTE-CARLO METROPOLIS
 
+	//make sure number of calls to rand doesn't match the prng period or we're asking for trouble with MC.
+	prng.check_periodicity();
+
 	//red-black : two passes will be taken
 	int rb = 0;
 	while (rb < 2) {
@@ -64,6 +65,8 @@ void FMesh::Iterate_MonteCarlo_Parallel_Classic(void)
 
 #pragma omp parallel for reduction(+:acceptance_rate)
 		for (int idx_jk = 0; idx_jk < M.n.y * M.n.z; idx_jk++) {
+
+			if (rb == 0) prng.rand();
 
 			int j = idx_jk % M.n.y;
 			int k = (idx_jk / M.n.y) % M.n.z;
@@ -75,7 +78,7 @@ void FMesh::Iterate_MonteCarlo_Parallel_Classic(void)
 			for (int i = (1 - rb) * red_nudge + rb * (!red_nudge); i < M.n.x; i += 2) {
 
 				int spin_idx = i + j * M.n.x + k * M.n.x*M.n.y;
-
+				
 				//only consider non-empty and non-frozen cells
 				if (M.is_not_empty(spin_idx) && !M.is_skipcell(spin_idx)) {
 
@@ -100,9 +103,12 @@ void FMesh::Iterate_MonteCarlo_Parallel_Classic(void)
 					DBL3 M_new = relrotate_polar(M_old, theta_rot, phi_rot);
 
 					//now allow magnetization length to change slightly with a Gaussian pdf around current value with sigma value from the normal distribution of P(m^2).
-					double sigma = 2 * me*sqrt(susrel_val*BOLTZMANN*Temperature / (h.dim() * Ms0));
-					if (Temperature >= T_Curie || sigma > 0.03) sigma = 0.03;
-					M_new *= 1 + (prng.rand() * 2 * sigma - sigma);
+					if (Temperature > 0.0) {
+
+						double sigma = 2 * me*sqrt(susrel_val*BOLTZMANN*Temperature / (h.dim() * Ms0));
+						if (Temperature >= T_Curie || sigma > 0.03) sigma = 0.03;
+						M_new *= 1 + (prng.rand() * 2 * sigma - sigma);
+					}
 
 					//1. Find energy change
 					double energy_delta = 0.0;
@@ -115,14 +121,14 @@ void FMesh::Iterate_MonteCarlo_Parallel_Classic(void)
 					DBL3 m = M_old / Ms0;
 					DBL3 m_new = M_new / Ms0;
 
-					if (Temperature <= T_Curie) {
+					if (Temperature > 0.0 && Temperature <= T_Curie) {
 
 						double diff = m * m - me * me;
 						double diff_new = m_new * m_new - me * me;
 
 						energy_delta += h.dim() * (Ms0 / (8 * susrel_val * me*me)) * (diff_new * diff_new - diff * diff);
 					}
-					else {
+					else if (Temperature > 0.0) {
 
 						double r = 3 * T_Curie / (10 * (Temperature - T_Curie));
 						double m_new_sq = m_new * m_new;
@@ -130,13 +136,19 @@ void FMesh::Iterate_MonteCarlo_Parallel_Classic(void)
 						energy_delta += h.dim() * (Ms0 / (2 * susrel_val)) * (m_new_sq * (1 + r * m_new_sq)- m_sq * (1 + r*m_sq));
 					}
 
-					//Compute acceptance probability.
+					//Compute acceptance probability
 					//Target pdf is proportional to M^2 * exp(-E/kBT), however spin picking probability is not uniform, but proportional to M^2. Thus acceptance probability required to satisfy detailed balance is min{1, (M_new^4 / M_old^4) * exp(-dE/kBT)}
-					double Mratio = (M_new*M_new) / (M_old*M_old);
-					double P_accept = Mratio * Mratio * exp(-energy_delta / (BOLTZMANN * Temperature));
+					double P_accept = 0.0, P = 1.0;
+					if (Temperature > 0.0) {
 
-					//uniform random number between 0 and 1
-					double P = prng.rand();
+						//Target pdf is proportional to M^2 * exp(-E/kBT), however spin picking probability is not uniform, but proportional to M^2. Thus acceptance probability required to satisfy detailed balance is min{1, (M_new^4 / M_old^4) * exp(-dE/kBT)}
+						double Mratio = (M_new*M_new) / (M_old*M_old);
+						P_accept = Mratio * Mratio * exp(-energy_delta / (BOLTZMANN * Temperature));
+						//uniform random number between 0 and 1
+						P = prng.rand();
+					}
+					else if (energy_delta < 0) P_accept = 1.0;
+
 					if (P <= P_accept) {
 
 						acceptance_rate += 1.0 / num_moves;
@@ -144,7 +156,7 @@ void FMesh::Iterate_MonteCarlo_Parallel_Classic(void)
 						//set new spin
 						M[spin_idx] = M_new;
 					}
-				}
+				}	
 			}
 		}
 

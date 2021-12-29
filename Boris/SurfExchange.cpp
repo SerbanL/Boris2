@@ -486,7 +486,6 @@ double SurfExchange::Get_EnergyChange(int spin_index, DBL3 Mnew)
 					DBL3 m_j = pMesh_Top[mesh_idx]->M[cell_rel_pos].normalized();
 					DBL3 m_i = pMesh->M[spin_index] / Ms;
 					
-					//total surface exchange field in coupling cells, including bilinear and biquadratic terms
 					double dot_prod = m_i * m_j;
 					energy_old = (-1 * J1 - 2 * J2 * dot_prod) * dot_prod / thickness;
 
@@ -511,7 +510,6 @@ double SurfExchange::Get_EnergyChange(int spin_index, DBL3 Mnew)
 					DBL3 m_j2 = pMesh_Top[mesh_idx]->M2[cell_rel_pos].normalized();
 					DBL3 m_i = pMesh->M[spin_index] / Ms;
 
-					//total surface exchange field in coupling cells, including contributions from both sub-lattices
 					energy_old = (-J1 * (m_i * m_j1) - J2 * (m_i * m_j2)) / thickness;
 
 					if (Mnew != DBL3()) {
@@ -564,7 +562,6 @@ double SurfExchange::Get_EnergyChange(int spin_index, DBL3 Mnew)
 					DBL3 m_i = pMesh->M[spin_index] / Ms;
 					DBL3 mnew_i = Mnew / Ms;
 
-					//total surface exchange field in coupling cells, including bilinear and biquadratic terms
 					double dot_prod = m_i * m_j;
 					energy_old += (-1 * J1 - 2 * J2 * dot_prod) * dot_prod / thickness;
 
@@ -583,7 +580,6 @@ double SurfExchange::Get_EnergyChange(int spin_index, DBL3 Mnew)
 					DBL3 m_j2 = pMesh_Bot[mesh_idx]->M2[cell_rel_pos].normalized();
 					DBL3 m_i = pMesh->M[spin_index] / Ms;
 
-					//total surface exchange field in coupling cells, including contributions from both sub-lattices
 					energy_old += (-J1 * (m_i * m_j1) - J2 * (m_i * m_j2)) / thickness;
 
 					if (Mnew != DBL3()) {

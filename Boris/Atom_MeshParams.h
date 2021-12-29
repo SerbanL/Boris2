@@ -12,8 +12,6 @@
 #include "Atom_MeshParamsCUDA.h"
 #endif
 
-
-
 /////////////////////////////////////////////////////////////////////////////////////////////////
 //
 //	The Atom_Mesh material parameters
@@ -95,6 +93,72 @@ public:
 	//electrical conductivity (units S/m).
 	//this is the value at RT for Ni80Fe20.
 	MatP<double, double> elecCond = 7e6;
+
+	//anisotropic magnetoresistance as a percentage (of base resistance)
+	MatP<double, double> amrPercentage = 0.0;
+
+	//spin current polarization (also the charge current spin polarization for the spin current solver) and non-adiabaticity (for Zhang-Li STT). (unitless)
+	MatP<double, double> P = 0.4;
+	MatP<double, double> beta = 0.04;
+
+	//parameters for spin current solver
+
+	//electron diffusion constant (m^2/s)
+	MatP<double, double> De = 1e-2;
+
+	//electron carrier density (1/m^3)
+	MatP<double, double> n_density = 1.8e29;
+
+	//diffusion spin polarization (unitless)
+	MatP<double, double> betaD = 0.5;
+
+	//spin Hall angle (unitless)
+	MatP<double, double> SHA = 0.1;
+
+	//field-like spin torque coefficient (unitless)
+	MatP<double, double> flSOT = 0.0;
+
+	//Slonczewski macrospin torques q+, q- parameters as in PRB 72, 014446 (2005) (unitless)
+	MatP<DBL2, double> STq = DBL2(1.0, 0.0);
+
+	//Slonczewski macrospin torques A, B parameters as in PRB 72, 014446 (2005) (unitless)
+	MatP<DBL2, double> STa = DBL2(0.6, 0.4);
+
+	//Slonczewski macrospin torques spin polarization unit vector as in PRB 72, 014446 (2005) (unitless); or SOT symmetry axis direction (e.g. z direction for HM/FM bilayer).
+	MatP<DBL3, DBL3> STp = DBL3(0, 0, 1);
+
+	//spin-flip length (m)
+	MatP<double, double> l_sf = 10e-9;
+
+	//spin exchange rotation length (m)
+	MatP<double, double> l_ex = 2e-9;
+
+	//spin dephasing length (m)
+	MatP<double, double> l_ph = 4e-9;
+
+	//interface spin-dependent conductivity (spin-up and spin-down) (S/m^2)
+	MatP<DBL2, double> Gi = DBL2(1e15, 1e14);
+
+	//interface spin-mixing conductivity (real and imaginary parts) (S/m^2)
+	MatP<DBL2, double> Gmix = DBL2(1e15, 1e14);
+
+	//spin accumulation torque efficiency in the bulk (unitless, varies from 0 : no torque, up to 1 : full torque)
+	MatP<double, double> ts_eff = 1;
+
+	//spin accumulation torque efficiency at interfaces (unitless, varies from 0 : no torque, up to 1 : full torque)
+	MatP<double, double> tsi_eff = 1;
+
+	//spin pumping efficiency (unitless, varies from 0 : no spin pumping, up to 1 : full strength)
+	//disabled by default
+	MatP<double, double> pump_eff = 0;
+
+	//charge pumping efficiency (unitless, varies from 0 : no charge pumping, up to 1 : full strength)
+	//disabled by default
+	MatP<double, double> cpump_eff = 0;
+
+	//topological Hall effect efficiency (unitless, varies from 0 : none, up to 1 : full strength)
+	//disabled by default
+	MatP<double, double> the_eff = 0;
 
 	//thermal conductivity (W/mK) - default for permalloy
 	MatP<double, double> thermCond = 46.4;
@@ -222,7 +286,91 @@ RType Atom_MeshParams::run_on_param(PARAM_ paramID, Lambda& run_this, PType& ...
 	case PARAM_ELC:
 		return run_this(elecCond, run_this_args...);
 		break;
+		
+	case PARAM_AMR:
+		return run_this(amrPercentage, run_this_args...);
+		break;
 
+	case PARAM_P:
+		return run_this(P, run_this_args...);
+		break;
+
+	case PARAM_BETA:
+		return run_this(beta, run_this_args...);
+		break;
+
+	case PARAM_DE:
+		return run_this(De, run_this_args...);
+		break;
+
+	case PARAM_BETAD:
+		return run_this(betaD, run_this_args...);
+		break;
+
+	case PARAM_SHA:
+		return run_this(SHA, run_this_args...);
+		break;
+
+	case PARAM_FLSOT:
+		return run_this(flSOT, run_this_args...);
+		break;
+
+	case PARAM_STQ:
+		return run_this(STq, run_this_args...);
+		break;
+
+	case PARAM_STA:
+		return run_this(STa, run_this_args...);
+		break;
+
+	case PARAM_STP:
+		return run_this(STp, run_this_args...);
+		break;
+
+	case PARAM_LSF:
+		return run_this(l_sf, run_this_args...);
+		break;
+
+	case PARAM_LEX:
+		return run_this(l_ex, run_this_args...);
+		break;
+
+	case PARAM_LPH:
+		return run_this(l_ph, run_this_args...);
+		break;
+
+	case PARAM_GI:
+		return run_this(Gi, run_this_args...);
+		break;
+
+	case PARAM_GMIX:
+		return run_this(Gmix, run_this_args...);
+		break;
+
+	case PARAM_TSEFF:
+		return run_this(ts_eff, run_this_args...);
+		break;
+
+	case PARAM_TSIEFF:
+		return run_this(tsi_eff, run_this_args...);
+		break;
+
+	case PARAM_PUMPEFF:
+		return run_this(pump_eff, run_this_args...);
+		break;
+
+	case PARAM_CPUMP_EFF:
+		return run_this(cpump_eff, run_this_args...);
+		break;
+
+	case PARAM_THE_EFF:
+		return run_this(the_eff, run_this_args...);
+		break;
+
+	case PARAM_NDENSITY:
+		return run_this(n_density, run_this_args...);
+		break;
+		
 	case PARAM_THERMCOND:
 		return run_this(thermCond, run_this_args...);
 		break;

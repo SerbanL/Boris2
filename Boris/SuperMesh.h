@@ -249,7 +249,7 @@ public:
 	void UpdateConfiguration_Values(UPDATECONFIG_ cfgMessage);
 
 	//switch CUDA state on/off; when switching on set selected cuda device number (from 1 up)
-	BError SwitchCUDAState(bool cudaState, int cudaDeviceSelect);
+	BError SwitchCUDAState(bool cudaState, int __cudaDeviceSelect);
 
 	//---------------------------------------------------------MULTI-MESH CONTROL METHODS : SuperMeshControl.cpp
 

@@ -612,7 +612,7 @@ double Demag::UpdateField(void)
 
 //-------------------Energy methods
 
-//For simple cubic mesh spin_index coincides with index in M1
+//FM mesh
 double Demag::Get_EnergyChange(int spin_index, DBL3 Mnew)
 {
 	//Module_Heff needs to be calculated (done during a Monte Carlo simulation, where this method would be used)
@@ -623,6 +623,32 @@ double Demag::Get_EnergyChange(int spin_index, DBL3 Mnew)
 		else return -pMesh->h.dim() * MU0 * Module_Heff[pMesh->M.cellidx_to_position(spin_index)] * pMesh->M[spin_index];
 	}
 	else return 0.0;
+}
+
+//AFM mesh
+DBL2 Demag::Get_EnergyChange(int spin_index, DBL3 Mnew_A, DBL3 Mnew_B)
+{
+	//Module_Heff needs to be calculated (done during a Monte Carlo simulation, where this method would be used)
+	if (Module_Heff.linear_size() && Module_Heff2.linear_size()) {
+
+		DBL3 M = (pMesh->M[spin_index] + pMesh->M2[spin_index]) / 2;
+		DBL3 Mnew = (Mnew_A + Mnew_B) / 2;
+
+		double energy_ = 0.0;
+
+		//do not divide by 2 as we are not double-counting here
+		if (Mnew_A != DBL3() && Mnew_B != DBL3()) {
+
+			energy_ = -pMesh->h.dim() * MU0 * Module_Heff[pMesh->M.cellidx_to_position(spin_index)] * (Mnew - M);
+		}
+		else {
+
+			energy_ = -pMesh->h.dim() * MU0 * Module_Heff[pMesh->M.cellidx_to_position(spin_index)] * M;
+		}
+
+		return DBL2(energy_, energy_);
+	}
+	else return DBL2();
 }
 
 #endif

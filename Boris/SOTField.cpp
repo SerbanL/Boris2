@@ -36,7 +36,11 @@ BError SOTField::Initialize(void)
 	BError error(CLASS_STR(SOTField));
 
 	//Make sure display data has memory allocated (or freed) as required
-	error = Update_Module_Display_VECs(pMesh->h, pMesh->meshRect, (MOD_)pMesh->Get_Module_Heff_Display() == MOD_SOTFIELD, (MOD_)pMesh->Get_Module_Energy_Display() == MOD_SOTFIELD, pMesh->GetMeshType() == MESH_ANTIFERROMAGNETIC);
+	error = Update_Module_Display_VECs(
+		pMesh->h, pMesh->meshRect, 
+		(MOD_)pMesh->Get_Module_Heff_Display() == MOD_SOTFIELD, 
+		(MOD_)pMesh->Get_Module_Energy_Display() == MOD_SOTFIELD, 
+		pMesh->GetMeshType() == MESH_ANTIFERROMAGNETIC);
 	if (!error)	initialized = true;
 
 	return error;

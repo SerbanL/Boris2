@@ -317,6 +317,9 @@ public:
 	//is there a demag-type module set for this mesh? (SDemag not included as this is a SuperMesh module)
 	bool Is_Demag_Enabled(void) { return IsModuleSet(MOD_DEMAG); }
 
+	bool iSHA_nonzero(void) { return IsNZ(iSHA.get0()); }
+	bool SHA_nonzero(void) { return IsNZ(SHA.get0()); }
+
 	//----------------------------------- VALUE GETTERS : MeshGetData.cpp
 
 	//------Specific to Mesh

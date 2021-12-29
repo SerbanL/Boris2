@@ -76,10 +76,6 @@ Atom_MeshParams::Atom_MeshParams(std::vector<PARAM_>& enabledParams)
 			meshParams.push_back("cHmo", MeshParamDescriptor(PARAMTYPE_MAGNETIC), PARAM_HMO);
 			break;
 
-		case PARAM_ELC:
-			meshParams.push_back("elC", MeshParamDescriptor(PARAMTYPE_ELECTRIC, "S/m"), PARAM_ELC);
-			break;
-
 		case PARAM_T:
 			meshParams.push_back("cT", MeshParamDescriptor(PARAMTYPE_THERMAL), PARAM_T);
 			break;
@@ -88,6 +84,94 @@ Atom_MeshParams::Atom_MeshParams(std::vector<PARAM_>& enabledParams)
 			meshParams.push_back("Q", MeshParamDescriptor(PARAMTYPE_THERMAL, "W/m3"), PARAM_Q);
 			break;
 
+		case PARAM_ELC:
+			meshParams.push_back("elC", MeshParamDescriptor(PARAMTYPE_ELECTRIC, "S/m"), PARAM_ELC);
+			break;
+			
+		case PARAM_AMR:
+			meshParams.push_back("amr", MeshParamDescriptor(PARAMTYPE_ELECTRIC, "%"), PARAM_AMR);
+			break;
+
+		case PARAM_P:
+			meshParams.push_back("P", MeshParamDescriptor(PARAMTYPE_ELECTRIC), PARAM_P);
+			break;
+
+		case PARAM_BETA:
+			meshParams.push_back("beta", MeshParamDescriptor(PARAMTYPE_ELECTRIC), PARAM_BETA);
+			break;
+
+		case PARAM_DE:
+			meshParams.push_back("De", MeshParamDescriptor(PARAMTYPE_ELECTRIC, "m2/s"), PARAM_DE);
+			break;
+
+		case PARAM_BETAD:
+			meshParams.push_back("betaD", MeshParamDescriptor(PARAMTYPE_ELECTRIC), PARAM_BETAD);
+			break;
+
+		case PARAM_SHA:
+			meshParams.push_back("SHA", MeshParamDescriptor(PARAMTYPE_ELECTRIC), PARAM_SHA);
+			break;
+
+		case PARAM_FLSOT:
+			meshParams.push_back("flST", MeshParamDescriptor(PARAMTYPE_ELECTRIC), PARAM_FLSOT);
+			break;
+
+		case PARAM_STQ:
+			meshParams.push_back("STq", MeshParamDescriptor(PARAMTYPE_ELECTRIC), PARAM_STQ);
+			break;
+
+		case PARAM_STA:
+			meshParams.push_back("STa", MeshParamDescriptor(PARAMTYPE_ELECTRIC), PARAM_STA);
+			break;
+
+		case PARAM_STP:
+			meshParams.push_back("STp", MeshParamDescriptor(PARAMTYPE_ELECTRIC), PARAM_STP);
+			break;
+
+		case PARAM_LSF:
+			meshParams.push_back("l_sf", MeshParamDescriptor(PARAMTYPE_ELECTRIC, "m"), PARAM_LSF);
+			break;
+
+		case PARAM_LEX:
+			meshParams.push_back("l_J", MeshParamDescriptor(PARAMTYPE_ELECTRIC, "m"), PARAM_LEX);
+			break;
+
+		case PARAM_LPH:
+			meshParams.push_back("l_phi", MeshParamDescriptor(PARAMTYPE_ELECTRIC, "m"), PARAM_LPH);
+			break;
+
+		case PARAM_GI:
+			meshParams.push_back("Gi", MeshParamDescriptor(PARAMTYPE_ELECTRIC, "S/m2"), PARAM_GI);
+			break;
+
+		case PARAM_GMIX:
+			meshParams.push_back("Gmix", MeshParamDescriptor(PARAMTYPE_ELECTRIC, "S/m2"), PARAM_GMIX);
+			break;
+
+		case PARAM_TSEFF:
+			meshParams.push_back("ts_eff", MeshParamDescriptor(PARAMTYPE_ELECTRIC), PARAM_TSEFF);
+			break;
+
+		case PARAM_TSIEFF:
+			meshParams.push_back("tsi_eff", MeshParamDescriptor(PARAMTYPE_ELECTRIC), PARAM_TSIEFF);
+			break;
+
+		case PARAM_PUMPEFF:
+			meshParams.push_back("pump_eff", MeshParamDescriptor(PARAMTYPE_ELECTRIC), PARAM_PUMPEFF);
+			break;
+
+		case PARAM_CPUMP_EFF:
+			meshParams.push_back("cpump_eff", MeshParamDescriptor(PARAMTYPE_ELECTRIC), PARAM_CPUMP_EFF);
+			break;
+
+		case PARAM_THE_EFF:
+			meshParams.push_back("the_eff", MeshParamDescriptor(PARAMTYPE_ELECTRIC), PARAM_THE_EFF);
+			break;
+
+		case PARAM_NDENSITY:
+			meshParams.push_back("n", MeshParamDescriptor(PARAMTYPE_ELECTRIC, "m-3"), PARAM_NDENSITY);
+			break;
+			
 		case PARAM_THERMCOND:
 			meshParams.push_back("thermK", MeshParamDescriptor(PARAMTYPE_THERMAL, "W/mK"), PARAM_THERMCOND);
 			break;

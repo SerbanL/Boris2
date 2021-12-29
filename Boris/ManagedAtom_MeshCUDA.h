@@ -78,6 +78,43 @@ public:
 	//this is the value at RT for Ni80Fe20.
 	MatPCUDA<cuBReal, cuBReal>* pelecCond;
 
+	//anisotropic magnetoresistance as a percentage (of base resistance)
+	MatPCUDA<cuBReal, cuBReal>* pamrPercentage;
+
+	//spin current polarization and non-adiabaticity (for Zhang-Li STT).
+	MatPCUDA<cuBReal, cuBReal>* pP;
+	MatPCUDA<cuBReal, cuBReal>* pbeta;
+
+	MatPCUDA<cuBReal, cuBReal>* pDe;
+	MatPCUDA<cuBReal, cuBReal>* pn_density;
+	MatPCUDA<cuBReal, cuBReal>* pbetaD;
+
+	MatPCUDA<cuBReal, cuBReal>* pSHA;
+	MatPCUDA<cuBReal, cuBReal>* pflSOT;
+
+	//Slonczewski macrospin torques q+, q- parameters as in PRB 72, 014446 (2005) (unitless)
+	MatPCUDA<cuReal2, cuBReal>* pSTq;
+
+	//Slonczewski macrospin torques A, B parameters as in PRB 72, 014446 (2005) (unitless)
+	MatPCUDA<cuReal2, cuBReal>* pSTa;
+
+	//Slonczewski macrospin torques spin polarization unit vector as in PRB 72, 014446 (2005) (unitless)
+	MatPCUDA<cuReal3, cuReal3>* pSTp;
+
+	MatPCUDA<cuBReal, cuBReal>* pl_sf;
+	MatPCUDA<cuBReal, cuBReal>* pl_ex;
+	MatPCUDA<cuBReal, cuBReal>* pl_ph;
+
+	MatPCUDA<cuReal2, cuBReal>* pGi;
+	MatPCUDA<cuReal2, cuBReal>* pGmix;
+
+	MatPCUDA<cuBReal, cuBReal>* pts_eff;
+	MatPCUDA<cuBReal, cuBReal>* ptsi_eff;
+
+	MatPCUDA<cuBReal, cuBReal>* ppump_eff;
+	MatPCUDA<cuBReal, cuBReal>* pcpump_eff;
+	MatPCUDA<cuBReal, cuBReal>* pthe_eff;
+
 	//thermal conductivity (W/mK) - default for permalloy
 	MatPCUDA<cuBReal, cuBReal>* pthermCond;
 

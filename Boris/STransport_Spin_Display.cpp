@@ -29,7 +29,12 @@ VEC<DBL3>& STransport::GetInterfacialSpinTorque(Transport* pMeshTrans)
 			int idx_sec = CMBNDcontacts[idx1][idx2].mesh_idx.i;
 			int idx_pri = CMBNDcontacts[idx1][idx2].mesh_idx.j;
 
-			if (pTransport[idx_pri] == pMeshTrans) pTransport[idx_pri]->CalculateDisplaySAInterfaceTorque(pTransport[idx_sec], CMBNDcontacts[idx1][idx2]);
+			//Interface Spin Torque currently only from micromagnetic to micromagnetic meshes
+			if (!pTransport[idx_pri]->pMeshBase->is_atomistic() && !pTransport[idx_sec]->pMeshBase->is_atomistic()) {
+
+				if (dynamic_cast<Transport*>(pTransport[idx_pri]) == pMeshTrans) 
+					dynamic_cast<Transport*>(pTransport[idx_pri])->CalculateDisplaySAInterfaceTorque(dynamic_cast<Transport*>(pTransport[idx_sec]), CMBNDcontacts[idx1][idx2]);
+			}
 		}
 	}
 

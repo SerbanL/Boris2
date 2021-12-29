@@ -246,6 +246,7 @@ double MElastic::UpdateField(void)
 
 //-------------------Energy methods
 
+//FM mesh
 double MElastic::Get_EnergyChange(int spin_index, DBL3 Mnew)
 {
 	//For CUDA there are separate device functions used by CUDA kernels.
@@ -292,6 +293,13 @@ double MElastic::Get_EnergyChange(int spin_index, DBL3 Mnew)
 		else return pMesh->h.dim() *  Get_Energy(pMesh->M[spin_index]);
 	}
 	else return 0.0;
+}
+
+//AFM mesh
+DBL2 MElastic::Get_EnergyChange(int spin_index, DBL3 Mnew_A, DBL3 Mnew_B)
+{
+	//Not available for AFM
+	return DBL2();
 }
 
 //------------------- STRAIN GENERATION without SOLVER

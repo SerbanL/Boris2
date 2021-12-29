@@ -91,11 +91,24 @@ BError STransportCUDA::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 		//now build pTransport (and pV)
 		for (int idx = 0; idx < pSMesh->size(); idx++) {
 
-			if ((*pSMesh)[idx]->IsModuleSet(MOD_TRANSPORT) && !(*pSMesh)[idx]->is_atomistic()) {
+			if ((*pSMesh)[idx]->IsModuleSet(MOD_TRANSPORT)) {
 
-				pTransport.push_back(dynamic_cast<TransportCUDA*>((*pSMesh)[idx]->GetCUDAModule(MOD_TRANSPORT)));
-				pV.push_back(&dynamic_cast<Mesh*>((*pSMesh)[idx])->pMeshCUDA->V);
-				pS.push_back(&dynamic_cast<Mesh*>((*pSMesh)[idx])->pMeshCUDA->S);
+				ModulesCUDA* pModuleCUDA = (*pSMesh)[idx]->GetCUDAModule(MOD_TRANSPORT);
+
+				if (dynamic_cast<TransportCUDA*>(pModuleCUDA)) {
+
+					pTransport.push_back(dynamic_cast<TransportCUDA*>(pModuleCUDA));
+
+					pV.push_back(&dynamic_cast<Mesh*>((*pSMesh)[idx])->pMeshCUDA->V);
+					pS.push_back(&dynamic_cast<Mesh*>((*pSMesh)[idx])->pMeshCUDA->S);
+				}
+				else if (dynamic_cast<Atom_TransportCUDA*>(pModuleCUDA)) {
+					
+					pTransport.push_back(dynamic_cast<Atom_TransportCUDA*>(pModuleCUDA));
+
+					pV.push_back(&dynamic_cast<Atom_Mesh*>((*pSMesh)[idx])->paMeshCUDA->V);
+					pS.push_back(&dynamic_cast<Atom_Mesh*>((*pSMesh)[idx])->paMeshCUDA->S);
+				}
 			}
 		}
 		
@@ -183,7 +196,7 @@ void STransportCUDA::initialize_potential_values(void)
 
 			for (int idx = 0; idx < pTransport.size(); idx++) {
 
-				pTransport[idx]->pMeshCUDA->V()->set_linear(ground_electrode_center, ground_potential, electrode_center, electrode_potential);
+				pTransport[idx]->Set_Linear_PotentialDrop(ground_electrode_center, ground_potential, electrode_center, electrode_potential);
 			}
 		}
 	}

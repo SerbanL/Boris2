@@ -190,6 +190,7 @@ double Anisotropy_Uniaxial::UpdateField(void)
 
 //-------------------Energy methods
 
+//FM Mesh
 double Anisotropy_Uniaxial::Get_EnergyChange(int spin_index, DBL3 Mnew)
 {
 	//For CUDA there are separate device functions used by CUDA kernels.
@@ -216,6 +217,39 @@ double Anisotropy_Uniaxial::Get_EnergyChange(int spin_index, DBL3 Mnew)
 		else return pMesh->h.dim() * (K1 + K2 * (1 - dpsq)) * (1 - dpsq);
 	}
 	else return 0.0;
+}
+
+//AFM mesh
+DBL2 Anisotropy_Uniaxial::Get_EnergyChange(int spin_index, DBL3 Mnew_A, DBL3 Mnew_B)
+{
+	if (pMesh->M.is_not_empty(spin_index) && pMesh->M2.is_not_empty(spin_index)) {
+
+		DBL2 Ms_AFM = pMesh->Ms_AFM;
+		DBL2 K1_AFM = pMesh->K1_AFM;
+		DBL2 K2_AFM = pMesh->K2_AFM;
+		DBL3 mcanis_ea1 = pMesh->mcanis_ea1;
+		pMesh->update_parameters_mcoarse(spin_index, pMesh->Ms_AFM, Ms_AFM, pMesh->K1_AFM, K1_AFM, pMesh->K2_AFM, K2_AFM, pMesh->mcanis_ea1, mcanis_ea1);
+
+		//calculate m.ea dot product
+		double dotprod = (pMesh->M[spin_index] * mcanis_ea1) / Ms_AFM.i;
+		double dotprod2 = (pMesh->M2[spin_index] * mcanis_ea1) / Ms_AFM.j;
+
+		double energyA = (K1_AFM.i + K2_AFM.i * (1 - dotprod * dotprod)) * (1 - dotprod * dotprod);
+		double energyB = (K1_AFM.j + K2_AFM.j * (1 - dotprod2 * dotprod2)) * (1 - dotprod2 * dotprod2);
+
+		if (Mnew_A != DBL3() && Mnew_B != DBL3()) {
+
+			dotprod = (Mnew_A * mcanis_ea1) / Ms_AFM.i;
+			dotprod2 = (Mnew_B * mcanis_ea1) / Ms_AFM.j;
+
+			double energynewA = (K1_AFM.i + K2_AFM.i * (1 - dotprod * dotprod)) * (1 - dotprod * dotprod);
+			double energynewB = (K1_AFM.j + K2_AFM.j * (1 - dotprod2 * dotprod2)) * (1 - dotprod2 * dotprod2);
+
+			return pMesh->h.dim() * DBL2(energynewA - energyA, energynewB - energyB);
+		}
+		else return pMesh->h.dim() * DBL2(energyA, energyB);
+	}
+	else return DBL2();
 }
 
 //-------------------Torque methods

@@ -6,7 +6,7 @@
 BError SuperMesh::AddModule(std::string meshName, MOD_ moduleId)
 {
 	BError error(__FUNCTION__);
-
+	
 	if (moduleId <= MOD_ERROR) return error(BERROR_INCORRECTNAME);
 
 	//can either a module to a specific mesh, or to all applicable meshes if meshName is empty, or a supermesh module

@@ -12,8 +12,7 @@
 //Take a Monte Carlo step in this atomistic mesh
 void Atom_Mesh_Cubic::Iterate_MonteCarlo(double acceptance_rate)
 {
-	//Not applicable at zero temperature
-	if (IsZ(base_temperature) || mc_disabled) return;
+	if (mc_disabled) return;
 
 	if (mc_constrain) {
 
@@ -36,8 +35,7 @@ void Atom_Mesh_Cubic::Iterate_MonteCarlo(double acceptance_rate)
 //Take a Monte Carlo step in this atomistic mesh
 void Atom_Mesh_Cubic::Iterate_MonteCarloCUDA(double acceptance_rate)
 { 
-	//Not applicable at zero temperature
-	if (IsZ(base_temperature) || mc_disabled) return;
+	if (mc_disabled) return;
 
 	if (paMeshCUDA && mc_parallel) {
 
@@ -75,6 +73,9 @@ void Atom_Mesh_Cubic::Iterate_MonteCarlo_Serial_Classic(void)
 	///////////////////////////////////////////////////////////////
 	// SERIAL MONTE-CARLO METROPOLIS
 
+	//make sure number of calls to rand doesn't match the prng period or we're asking for trouble with MC.
+	prng.check_periodicity();
+
 	for (int idx = N - 1; idx >= 0; idx--) {
 
 		//pick spin index in a random order, but guarantee each spin is given the chance to move exactly once per MCM step.
@@ -108,10 +109,15 @@ void Atom_Mesh_Cubic::Iterate_MonteCarlo_Serial_Classic(void)
 			}
 
 			//Compute acceptance probability
-			double P_accept = exp(-energy_delta / (BOLTZMANN * base_temperature));
+			double P_accept = 0.0, P = 1.0;
+			if (base_temperature > 0.0) {
 
-			//uniform random number between 0 and 1
-			double P = prng.rand();
+				P_accept = exp(-energy_delta / (BOLTZMANN * base_temperature));
+				//uniform random number between 0 and 1
+				P = prng.rand();
+			}
+			else if (energy_delta < 0) P_accept = 1.0;
+
 			if (P <= P_accept) {
 
 				mc_acceptance_rate += 1.0 / num_moves;
@@ -160,6 +166,9 @@ void Atom_Mesh_Cubic::Iterate_MonteCarlo_Serial_Constrained(void)
 	// 1) adaptive cone angle for target acceptance of 0.5
 	// 2) move spins in a cone using uniform pdf polar and azimuthal angles
 	// 3) pick spin pairs exactly once in a random order per CMC step
+
+	//make sure number of calls to rand doesn't match the prng period or we're asking for trouble with MC.
+	prng.check_periodicity();
 
 	for (int idx = N - 1; idx >= 0; idx -= 2) {
 
@@ -216,10 +225,15 @@ void Atom_Mesh_Cubic::Iterate_MonteCarlo_Serial_Constrained(void)
 				if (cmc_M_new > 0.0) {
 
 					//Compute acceptance probability
-					double P_accept = (cmc_M_new / cmc_M) * (cmc_M_new / cmc_M) * (abs(Mrot_old2.x) / abs(Mrot_new2.x)) * exp(-energy_delta / (BOLTZMANN * base_temperature));
+					double P_accept = 0.0, P = 1.0;
+					if (base_temperature > 0.0) {
 
-					//uniform random number between 0 and 1
-					double P = prng.rand();
+						P_accept = (cmc_M_new / cmc_M) * (cmc_M_new / cmc_M) * (abs(Mrot_old2.x) / abs(Mrot_new2.x)) * exp(-energy_delta / (BOLTZMANN * base_temperature));
+						//uniform random number between 0 and 1
+						P = prng.rand();
+					}
+					else if (energy_delta < 0) P_accept = 1.0;
+
 					if (P <= P_accept) {
 
 						//move accepted (x2 since we moved 2 spins)
@@ -260,6 +274,9 @@ void Atom_Mesh_Cubic::Iterate_MonteCarlo_Parallel_Classic(void)
 
 	///////////////////////////////////////////////////////////////
 	// PARALLEL MONTE-CARLO METROPOLIS
+
+	//make sure number of calls to rand doesn't match the prng period or we're asking for trouble with MC.
+	prng.check_periodicity();
 
 	//red-black : two passes will be taken
 	int rb = 0;
@@ -302,10 +319,15 @@ void Atom_Mesh_Cubic::Iterate_MonteCarlo_Parallel_Classic(void)
 					}
 
 					//Compute acceptance probability
-					double P_accept = exp(-energy_delta / (BOLTZMANN * base_temperature));
+					double P_accept = 0.0, P = 1.0;
+					if (base_temperature > 0.0) {
 
-					//uniform random number between 0 and 1
-					double P = prng.rand();
+						P_accept = exp(-energy_delta / (BOLTZMANN * base_temperature));
+						//uniform random number between 0 and 1
+						P = prng.rand();
+					}
+					else if (energy_delta < 0) P_accept = 1.0;
+
 					if (P <= P_accept) {
 
 						acceptance_rate += 1.0 / num_moves;
@@ -367,6 +389,9 @@ void Atom_Mesh_Cubic::Iterate_MonteCarlo_Parallel_Constrained(void)
 
 	//red-black : two passes will be taken : first generate red and black indices for these passes, together with random doubles so we can shuffle them using sort-based shuffle
 	
+	//make sure number of calls to rand doesn't match the prng period or we're asking for trouble with MC.
+	prng.check_periodicity();
+
 	for (int k = 0; k < n.z; k++) {
 #pragma omp parallel for
 		for (int j = 0; j < n.y; j++) {
@@ -503,12 +528,16 @@ void Atom_Mesh_Cubic::Iterate_MonteCarlo_Parallel_Constrained(void)
 					if (cmc_M_new > 0.0) {
 
 						//Compute acceptance probability; make sure cmc_M is not zero otherwise we'll stop accepting anything and solver gets stuck
-						double P_accept;
-						if (cmc_M) P_accept = (cmc_M_new / cmc_M) * (cmc_M_new / cmc_M) * (abs(Mrot_old2.x) / abs(Mrot_new2.x)) * exp(-energy_delta / (BOLTZMANN * base_temperature));
-						else P_accept = (abs(Mrot_old2.x) / abs(Mrot_new2.x)) * exp(-energy_delta / (BOLTZMANN * base_temperature));
+						double P_accept = 0.0, P = 1.0;
+						if (base_temperature > 0.0) {
 
-						//uniform random number between 0 and 1
-						double P = prng.rand();
+							if (cmc_M) P_accept = (cmc_M_new / cmc_M) * (cmc_M_new / cmc_M) * (abs(Mrot_old2.x) / abs(Mrot_new2.x)) * exp(-energy_delta / (BOLTZMANN * base_temperature));
+							else P_accept = (abs(Mrot_old2.x) / abs(Mrot_new2.x)) * exp(-energy_delta / (BOLTZMANN * base_temperature));
+							//uniform random number between 0 and 1
+							P = prng.rand();
+						}
+						else if (energy_delta < 0) P_accept = 1.0;
+
 						if (P <= P_accept) {
 
 							//move accepted (x2 since we moved 2 spins)

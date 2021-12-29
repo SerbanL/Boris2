@@ -55,6 +55,11 @@ public:
 
 	double UpdateField(void);
 
+	//-------------------Energy methods
+
+	//AFM mesh
+	DBL2 Get_EnergyChange(int spin_index, DBL3 Mnew_A, DBL3 Mnew_B);
+
 	//-------------------Torque methods
 
 	DBL3 GetTorque(Rect& avRect);

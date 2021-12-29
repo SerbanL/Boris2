@@ -154,10 +154,9 @@ __device__ cuReal3 ManagedDiffEqAFMCUDA::SLLB(int idx, cuReal3& value_B)
 
 		cuReal2 me = Ms / Ms0;
 		cuReal2 r = m / me;
-		cuBReal proj = M[idx].normalized() * M2[idx].normalized();
 
-		Hl_1 = (M[idx] / (2 * (cuBReal)MU0 * Ms0.i)) * ((1.0 - r.i * r.i) / susrel.i + (3 * tau_ij.i * T_Curie * ((cuBReal)BOLTZMANN / (cuBReal)MUB) / mu.i) * ((susrel.j / susrel.i) * (1 - r.i * r.i) - proj * (me.j / me.i) * (1 - r.j * r.j)));
-		Hl_2 = (M2[idx] / (2 * (cuBReal)MU0 * Ms0.j)) * ((1.0 - r.j * r.j) / susrel.j + (3 * tau_ij.j * T_Curie * ((cuBReal)BOLTZMANN / (cuBReal)MUB) / mu.j) * ((susrel.i / susrel.j) * (1 - r.j * r.j) - proj * (me.i / me.j) * (1 - r.i * r.i)));
+		Hl_1 = (M[idx] / (2 * (cuBReal)MU0 * Ms0.i)) * ((1.0 - r.i * r.i) / susrel.i + (3 * tau_ij.i * T_Curie * ((cuBReal)BOLTZMANN / (cuBReal)MUB) / mu.i) * ((susrel.j / susrel.i) * (1 - r.i * r.i) + (me.j / me.i) * (1 - r.j * r.j)));
+		Hl_2 = (M2[idx] / (2 * (cuBReal)MU0 * Ms0.j)) * ((1.0 - r.j * r.j) / susrel.j + (3 * tau_ij.j * T_Curie * ((cuBReal)BOLTZMANN / (cuBReal)MUB) / mu.j) * ((susrel.i / susrel.j) * (1 - r.j * r.j) + (me.i / me.j) * (1 - r.i * r.i)));
 	}
 	else {
 
@@ -176,11 +175,10 @@ __device__ cuReal3 ManagedDiffEqAFMCUDA::SLLB(int idx, cuReal3& value_B)
 		alpha_par = alpha;
 
 		cuReal2 me = Ms / Ms0;
-		cuBReal proj = M[idx].normalized() * M2[idx].normalized();
 
 		//Note, the parallel susceptibility is related to susrel by : susrel = suspar / mu0Ms
-		Hl_1 = -1 * (M[idx] / ((cuBReal)MU0 * Ms0.i)) * ((1.0 / susrel.i) + (3 * tau_ij.i * T_Curie * ((cuBReal)BOLTZMANN / (cuBReal)MUB) / mu.i) * ((susrel.j / susrel.i) - proj * (me.j / me.i)));
-		Hl_2 = -1 * (M2[idx] / ((cuBReal)MU0 * Ms0.j)) * ((1.0 / susrel.j) + (3 * tau_ij.j * T_Curie * ((cuBReal)BOLTZMANN / (cuBReal)MUB) / mu.j) * ((susrel.i / susrel.j) - proj * (me.i / me.j)));
+		Hl_1 = -1 * (M[idx] / ((cuBReal)MU0 * Ms0.i)) * ((1.0 / susrel.i) + (3 * tau_ij.i * T_Curie * ((cuBReal)BOLTZMANN / (cuBReal)MUB) / mu.i) * ((susrel.j / susrel.i) + 1));
+		Hl_2 = -1 * (M2[idx] / ((cuBReal)MU0 * Ms0.j)) * ((1.0 / susrel.j) + (3 * tau_ij.j * T_Curie * ((cuBReal)BOLTZMANN / (cuBReal)MUB) / mu.j) * ((susrel.i / susrel.j) + 1));
 	}
 
 	cuReal3 H_Thermal_Value = (*pH_Thermal)[position] * sqrt(alpha.i - alpha_par.i) / alpha.i;
@@ -261,10 +259,9 @@ __device__ cuReal3 ManagedDiffEqAFMCUDA::SLLBSTT(int idx, cuReal3& value_B)
 
 		cuReal2 me = Ms / Ms0;
 		cuReal2 r = m / me;
-		cuBReal proj = M[idx].normalized() * M2[idx].normalized();
 
-		Hl_1 = (M[idx] / (2 * (cuBReal)MU0 * Ms0.i)) * ((1.0 - r.i * r.i) / susrel.i + (3 * tau_ij.i * T_Curie * ((cuBReal)BOLTZMANN / (cuBReal)MUB) / mu.i) * ((susrel.j / susrel.i) * (1 - r.i * r.i) - proj * (me.j / me.i) * (1 - r.j * r.j)));
-		Hl_2 = (M2[idx] / (2 * (cuBReal)MU0 * Ms0.j)) * ((1.0 - r.j * r.j) / susrel.j + (3 * tau_ij.j * T_Curie * ((cuBReal)BOLTZMANN / (cuBReal)MUB) / mu.j) * ((susrel.i / susrel.j) * (1 - r.j * r.j) - proj * (me.i / me.j) * (1 - r.i * r.i)));
+		Hl_1 = (M[idx] / (2 * (cuBReal)MU0 * Ms0.i)) * ((1.0 - r.i * r.i) / susrel.i + (3 * tau_ij.i * T_Curie * ((cuBReal)BOLTZMANN / (cuBReal)MUB) / mu.i) * ((susrel.j / susrel.i) * (1 - r.i * r.i) + (me.j / me.i) * (1 - r.j * r.j)));
+		Hl_2 = (M2[idx] / (2 * (cuBReal)MU0 * Ms0.j)) * ((1.0 - r.j * r.j) / susrel.j + (3 * tau_ij.j * T_Curie * ((cuBReal)BOLTZMANN / (cuBReal)MUB) / mu.j) * ((susrel.i / susrel.j) * (1 - r.j * r.j) + (me.i / me.j) * (1 - r.i * r.i)));
 	}
 	else {
 
@@ -285,11 +282,10 @@ __device__ cuReal3 ManagedDiffEqAFMCUDA::SLLBSTT(int idx, cuReal3& value_B)
 		alpha_par = alpha;
 
 		cuReal2 me = Ms / Ms0;
-		cuBReal proj = M[idx].normalized() * M2[idx].normalized();
 
 		//Note, the parallel susceptibility is related to susrel by : susrel = suspar / mu0Ms
-		Hl_1 = -1 * (M[idx] / ((cuBReal)MU0 * Ms0.i)) * ((1.0 / susrel.i) + (3 * tau_ij.i * T_Curie * ((cuBReal)BOLTZMANN / (cuBReal)MUB) / mu.i) * ((susrel.j / susrel.i) - proj * (me.j / me.i)));
-		Hl_2 = -1 * (M2[idx] / ((cuBReal)MU0 * Ms0.j)) * ((1.0 / susrel.j) + (3 * tau_ij.j * T_Curie * ((cuBReal)BOLTZMANN / (cuBReal)MUB) / mu.j) * ((susrel.i / susrel.j) - proj * (me.i / me.j)));
+		Hl_1 = -1 * (M[idx] / ((cuBReal)MU0 * Ms0.i)) * ((1.0 / susrel.i) + (3 * tau_ij.i * T_Curie * ((cuBReal)BOLTZMANN / (cuBReal)MUB) / mu.i) * ((susrel.j / susrel.i) + 1));
+		Hl_2 = -1 * (M2[idx] / ((cuBReal)MU0 * Ms0.j)) * ((1.0 / susrel.j) + (3 * tau_ij.j * T_Curie * ((cuBReal)BOLTZMANN / (cuBReal)MUB) / mu.j) * ((susrel.i / susrel.j) + 1));
 	}
 
 	cuReal3 H_Thermal_Value = (*pH_Thermal)[position] * sqrt(alpha.i - alpha_par.i) / alpha.i;

@@ -744,7 +744,7 @@ void Simulation::AdvanceSimulationSchedule(void)
 		else {
 
 			//schedule reached end: stop simulation. Note, since this routine is called from Simulate routine, which runs on the THREAD_LOOP thread, cannot stop THREAD_LOOP from within it: stop it from another thread.
-			//use a dedicated thread id to stop loop, since we need to be sure it's not blocking (alternatively could configure it iwth set_nonblocking_thread). Better to use dedicated thread just to make sure we don't have to wait for some other thread to finish.
+			//use a dedicated thread id to stop loop, since we need to be sure it's not blocking (alternatively could configure it with set_nonblocking_thread). Better to use dedicated thread just to make sure we don't have to wait for some other thread to finish.
 			single_call_launch(&Simulation::StopSimulation, THREAD_LOOP_STOP);
 
 			//set stage step to start of last stage but without resetting anything : the idea is user can edit the stopping value for the last stage, e.g. add more time to it, then run simulation some more

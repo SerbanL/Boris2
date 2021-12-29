@@ -178,6 +178,7 @@ double Anisotropy_Biaxial::UpdateField(void)
 
 //-------------------Energy methods
 
+//FM Mesh
 double Anisotropy_Biaxial::Get_EnergyChange(int spin_index, DBL3 Mnew)
 {
 	//For CUDA there are separate device functions used by CUDA kernels.
@@ -213,6 +214,56 @@ double Anisotropy_Biaxial::Get_EnergyChange(int spin_index, DBL3 Mnew)
 		else return pMesh->h.dim() * (K1 * (1 - u1 * u1) + K2 * b1*b1*b2*b2);
 	}
 	else return 0.0;
+}
+
+//AFM mesh
+DBL2 Anisotropy_Biaxial::Get_EnergyChange(int spin_index, DBL3 Mnew_A, DBL3 Mnew_B)
+{
+	if (pMesh->M.is_not_empty(spin_index) && pMesh->M2.is_not_empty(spin_index)) {
+
+		DBL2 Ms_AFM = pMesh->Ms_AFM;
+		DBL2 K1_AFM = pMesh->K1_AFM;
+		DBL2 K2_AFM = pMesh->K2_AFM;
+		DBL3 mcanis_ea1 = pMesh->mcanis_ea1;
+		DBL3 mcanis_ea2 = pMesh->mcanis_ea2;
+		DBL3 mcanis_ea3 = pMesh->mcanis_ea3;
+		pMesh->update_parameters_mcoarse(spin_index, pMesh->Ms_AFM, Ms_AFM, pMesh->K1_AFM, K1_AFM, pMesh->K2_AFM, K2_AFM, pMesh->mcanis_ea1, mcanis_ea1, pMesh->mcanis_ea2, mcanis_ea2, pMesh->mcanis_ea3, mcanis_ea3);
+
+		//calculate m.ea1 dot product (uniaxial contribution)
+		double u1_A = (pMesh->M[spin_index] * mcanis_ea1) / Ms_AFM.i;
+		double u1_B = (pMesh->M2[spin_index] * mcanis_ea1) / Ms_AFM.j;
+
+		//calculate m.ea2 and m.ea3 dot products (biaxial contribution)
+		double b1_A = (pMesh->M[spin_index] * mcanis_ea2) / Ms_AFM.i;
+		double b1_B = (pMesh->M2[spin_index] * mcanis_ea2) / Ms_AFM.j;
+
+		double b2_A = (pMesh->M[spin_index] * mcanis_ea3) / Ms_AFM.i;
+		double b2_B = (pMesh->M2[spin_index] * mcanis_ea3) / Ms_AFM.j;
+
+		double energyA = K1_AFM.i * (1 - u1_A * u1_A) + K2_AFM.i * b1_A*b1_A*b2_A*b2_A;
+		double energyB = K1_AFM.j * (1 - u1_B * u1_B) + K2_AFM.j * b1_B*b1_B*b2_B*b2_B;
+
+		if (Mnew_A != DBL3() && Mnew_B != DBL3()) {
+
+			//calculate m.ea1 dot product (uniaxial contribution)
+			double u1_Anew = (Mnew_A * mcanis_ea1) / Ms_AFM.i;
+			double u1_Bnew = (Mnew_B * mcanis_ea1) / Ms_AFM.j;
+
+			//calculate m.ea2 and m.ea3 dot products (biaxial contribution)
+			double b1_Anew = (Mnew_A * mcanis_ea2) / Ms_AFM.i;
+			double b1_Bnew = (Mnew_B * mcanis_ea2) / Ms_AFM.j;
+
+			double b2_Anew = (Mnew_A * mcanis_ea3) / Ms_AFM.i;
+			double b2_Bnew = (Mnew_B * mcanis_ea3) / Ms_AFM.j;
+
+			double energyAnew = K1_AFM.i * (1 - u1_Anew * u1_Anew) + K2_AFM.i * b1_Anew*b1_Anew*b2_Anew*b2_Anew;
+			double energyBnew = K1_AFM.j * (1 - u1_Bnew * u1_Bnew) + K2_AFM.j * b1_Bnew*b1_Bnew*b2_Bnew*b2_Bnew;
+
+			return pMesh->h.dim() * DBL2(energyAnew - energyA, energyBnew - energyB);
+		}
+		else return pMesh->h.dim() * DBL2(energyA, energyB);
+	}
+	else return DBL2();
 }
 
 //-------------------Torque methods

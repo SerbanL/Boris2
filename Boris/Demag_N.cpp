@@ -142,6 +142,7 @@ double Demag_N::UpdateField(void)
 
 //-------------------Energy methods
 
+//FM mesh
 double Demag_N::Get_EnergyChange(int spin_index, DBL3 Mnew)
 {
 	//For CUDA there are separate device functions used by CUDA kernels.
@@ -150,18 +151,46 @@ double Demag_N::Get_EnergyChange(int spin_index, DBL3 Mnew)
 
 		//Nxy shouldn't have a temperature (or spatial) dependence so not using update_parameters_mcoarse here
 		DBL2 Nxy = pMesh->Nxy;
-
 		double Nz = (1 - Nxy.x - Nxy.y);
 
 		if (Mnew != DBL3()) {
 
-			return -(MU0 / 2) * pMesh->h.dim() * (
-				(Mnew * DBL3(-Nxy.x * Mnew.x, -Nxy.y * Mnew.y, -(1 - Nxy.x - Nxy.y) * Mnew.z)) -
-				(pMesh->M[spin_index] * DBL3(-Nxy.x * pMesh->M[spin_index].x, -Nxy.y * pMesh->M[spin_index].y, -(1 - Nxy.x - Nxy.y) * pMesh->M[spin_index].z)));
+			return (MU0 / 2) * pMesh->h.dim() * (
+				(Mnew * DBL3(Nxy.x * Mnew.x, Nxy.y * Mnew.y, Nz * Mnew.z)) -
+				(pMesh->M[spin_index] * DBL3(Nxy.x * pMesh->M[spin_index].x, Nxy.y * pMesh->M[spin_index].y, Nz * pMesh->M[spin_index].z)));
 		}
-		else return -(MU0 / 2) * pMesh->h.dim() * (pMesh->M[spin_index] * DBL3(-Nxy.x * pMesh->M[spin_index].x, -Nxy.y * pMesh->M[spin_index].y, -(1 - Nxy.x - Nxy.y) * pMesh->M[spin_index].z));
+		else return (MU0 / 2) * pMesh->h.dim() * (pMesh->M[spin_index] * DBL3(Nxy.x * pMesh->M[spin_index].x, Nxy.y * pMesh->M[spin_index].y, Nz * pMesh->M[spin_index].z));
 	}
 	else return 0.0;
+}
+
+//AFM mesh
+DBL2 Demag_N::Get_EnergyChange(int spin_index, DBL3 Mnew_A, DBL3 Mnew_B)
+{
+	//For CUDA there are separate device functions used by CUDA kernels.
+
+	if (pMesh->M.is_not_empty(spin_index) && pMesh->M2.is_not_empty(spin_index)) {
+
+		//Nxy shouldn't have a temperature (or spatial) dependence so not using update_parameters_mcoarse here
+		DBL2 Nxy = pMesh->Nxy;
+		double Nz = (1 - Nxy.x - Nxy.y);
+
+		DBL3 M = (pMesh->M[spin_index] + pMesh->M2[spin_index]) / 2;
+		DBL3 Mnew = (Mnew_A + Mnew_B) / 2;
+
+		double energy_ = 0.0;
+
+		if (Mnew_A != DBL3() && Mnew_B != DBL3()) {
+
+			energy_ = (MU0 / 2) * pMesh->h.dim() * (
+				(Mnew * DBL3(Nxy.x * Mnew.x, Nxy.y * Mnew.y, Nz * Mnew.z)) -
+				(M * DBL3(Nxy.x * M.x, Nxy.y * M.y, Nz * M.z)));
+		}
+		else energy_ = (MU0 / 2) * pMesh->h.dim() * (M * DBL3(Nxy.x * M.x, Nxy.y * M.y, Nz * M.z));
+
+		return DBL2(energy_, energy_);
+	}
+	else return DBL2();
 }
 
 #endif

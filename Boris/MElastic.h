@@ -60,7 +60,11 @@ public:
 
 	//-------------------Energy methods
 
+	//FM Mesh
 	double Get_EnergyChange(int spin_index, DBL3 Mnew);
+
+	//AFM Mesh
+	DBL2 Get_EnergyChange(int spin_index, DBL3 Mnew_A, DBL3 Mnew_B);
 
 	//------------------- STRAIN GENERATION without SOLVER
 

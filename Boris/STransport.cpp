@@ -94,7 +94,11 @@ BError STransport::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 
 			if ((*pSMesh)[idx]->IsModuleSet(MOD_TRANSPORT)) {
 
-				pTransport.push_back(dynamic_cast<Transport*>((*pSMesh)[idx]->GetModule(MOD_TRANSPORT)));
+				Modules* pModule = (*pSMesh)[idx]->GetModule(MOD_TRANSPORT);
+
+				if (dynamic_cast<Transport*>(pModule)) pTransport.push_back(dynamic_cast<Transport*>(pModule));
+				else if (dynamic_cast<Atom_Transport*>(pModule)) pTransport.push_back(dynamic_cast<Atom_Transport*>(pModule));
+
 				pV.push_back(&(*pSMesh)[idx]->V);
 				pS.push_back(&(*pSMesh)[idx]->S);
 			}
@@ -167,7 +171,7 @@ BError STransport::MakeCUDAModule(void)
 
 double STransport::UpdateField(void)
 {
-	//skip any transport solver computations if static_transport_solver is enabled : transport solver will be interated only at the end of a step or stage
+	//skip any transport solver computations if static_transport_solver is enabled : transport solver will be iterated only at the end of a step or stage
 	if (pSMesh->static_transport_solver || pSMesh->disabled_transport_solver) return 0.0;
 
 	//only need to update this after an entire magnetization equation time step is solved (but always update spin accumulation field if spin current solver enabled)
@@ -477,7 +481,7 @@ void STransport::initialize_potential_values(void)
 
 			for (int idx = 0; idx < pTransport.size(); idx++) {
 
-				pTransport[idx]->pMesh->V.set_linear(ground_electrode_center, ground_potential, electrode_center, electrode_potential);
+				pTransport[idx]->Set_Linear_PotentialDrop(ground_electrode_center, ground_potential, electrode_center, electrode_potential);
 			}
 		}
 	}

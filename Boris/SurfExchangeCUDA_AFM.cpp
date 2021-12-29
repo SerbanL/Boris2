@@ -72,6 +72,8 @@ BError SurfExchangeCUDA_AFM::Initialize(void)
 		(MOD_)pMeshCUDA->Get_Module_Energy_Display() == MOD_SURFEXCHANGE || pMeshCUDA->IsOutputDataSet_withRect(DATA_E_SURFEXCH));
 	if (error) initialized = false;
 
+	if (initialized) set_SurfExchangeCUDA_AFM_pointers();
+
 	return error;
 }
 

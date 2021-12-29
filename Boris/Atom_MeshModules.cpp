@@ -77,8 +77,20 @@ BError Atom_Mesh::AddModule(MOD_ moduleID, bool force_add)
 		pMod.push_back(new Atom_Anisotropy_Tensorial(this), MOD_ANITENS);
 		break;
 
+	case MOD_TRANSPORT:
+		pMod.push_back(new Atom_Transport(this), MOD_TRANSPORT);
+		break;
+
 	case MOD_HEAT:
 		pMod.push_back(new Atom_Heat(this), MOD_HEAT);
+		break;
+
+	case MOD_SOTFIELD:
+		pMod.push_back(new Atom_SOTField(this), MOD_SOTFIELD);
+		break;
+
+	case MOD_STFIELD:
+		pMod.push_back(new Atom_STField(this), MOD_STFIELD);
 		break;
 	}
 
@@ -108,16 +120,15 @@ BError Atom_Mesh::AddModule(MOD_ moduleID, bool force_add)
 	return error;
 }
 
-//TO DO
-//update MOD_TRANSPORT module only if set
+///update MOD_TRANSPORT module only if set
 void Atom_Mesh::UpdateTransportSolver(void)
 {
-	//if (IsModuleSet(MOD_TRANSPORT)) pMod(MOD_TRANSPORT)->UpdateField();
+	if (IsModuleSet(MOD_TRANSPORT)) pMod(MOD_TRANSPORT)->UpdateField();
 }
 
 #if COMPILECUDA == 1
 void Atom_Mesh::UpdateTransportSolverCUDA(void)
 {
-	//if (IsModuleSet(MOD_TRANSPORT)) pMod(MOD_TRANSPORT)->UpdateFieldCUDA();
+	if (IsModuleSet(MOD_TRANSPORT)) pMod(MOD_TRANSPORT)->UpdateFieldCUDA();
 }
 #endif

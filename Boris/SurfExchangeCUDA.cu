@@ -404,7 +404,7 @@ void SurfExchangeCUDA::UpdateField(void)
 
 //----------------------- Initialization
 
-//Top mesh is ferromagnetic
+//Current mesh is ferromagnetic
 __global__ void set_SurfExchangeCUDA_pointers_kernel(
 	ManagedMeshCUDA& cuMesh,
 	ManagedMeshCUDA* pMeshFM_Bot, size_t coupledFM_bot_meshes,

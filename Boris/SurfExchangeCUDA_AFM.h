@@ -35,6 +35,11 @@ private:
 	//coupled cells in gpu memory
 	cu_obj<int> coupled_cells;
 
+private:
+
+	//Set pointers in ManagedMeshCUDA so we can access them in device code. This is used by MonteCarlo algorithm.
+	void set_SurfExchangeCUDA_AFM_pointers(void);
+
 public:
 
 	SurfExchangeCUDA_AFM(MeshCUDA* pMeshCUDA_, SurfExchange_AFM* pSurfExch_);

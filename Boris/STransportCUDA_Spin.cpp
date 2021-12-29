@@ -19,7 +19,7 @@ void STransportCUDA::solve_spin_transport_sor(void)
 	//Prime the spin solver for the charge part
 	for (int idx = 0; idx < (int)pTransport.size(); idx++) {
 
-		if (pTransport[idx]->stsolve != STSOLVE_NONE) pTransport[idx]->PrimeSpinSolver_Charge();
+		if (pTransport[idx]->Get_STSolveType() != STSOLVE_NONE) pTransport[idx]->PrimeSpinSolver_Charge();
 	}
 
 	//1. Solve V everywhere for current S until convergence criteria hit
@@ -33,9 +33,9 @@ void STransportCUDA::solve_spin_transport_sor(void)
 		for (int idx = 0; idx < (int)pTransport.size(); idx++) {
 
 			//use non-homogeneous Neumann boundary conditions for V? Only use them if iSHE is enabled and not a magnetic mesh
-			bool use_NNeu = IsNZ((double)pTransport[idx]->pMesh->iSHA) && !pTransport[idx]->pMesh->M.linear_size();
+			bool use_NNeu = pTransport[idx]->pMeshBase->iSHA_nonzero() && !pTransport[idx]->pMeshBase->Magnetism_Enabled();
 
-			if (pTransport[idx]->stsolve != STSOLVE_NONE) pTransport[idx]->IterateSpinSolver_Charge_SOR(SOR_damping_V, max_error, max_value, use_NNeu);
+			if (pTransport[idx]->Get_STSolveType() != STSOLVE_NONE) pTransport[idx]->IterateSpinSolver_Charge_SOR(SOR_damping_V, max_error, max_value, use_NNeu);
 			else pTransport[idx]->IterateChargeSolver_SOR(SOR_damping_V, max_error, max_value);
 		}
 
@@ -69,7 +69,7 @@ void STransportCUDA::solve_spin_transport_sor(void)
 	//Prime the spin solver for the spin part
 	for (int idx = 0; idx < (int)pTransport.size(); idx++) {
 
-		if (pTransport[idx]->stsolve != STSOLVE_NONE) pTransport[idx]->PrimeSpinSolver_Spin();
+		if (pTransport[idx]->Get_STSolveType() != STSOLVE_NONE) pTransport[idx]->PrimeSpinSolver_Spin();
 	}
 
 	do {
@@ -81,9 +81,9 @@ void STransportCUDA::solve_spin_transport_sor(void)
 		for (int idx = 0; idx < (int)pTransport.size(); idx++) {
 
 			//use non-homogeneous Neumann boundary conditions for S? Only use them if SHE is enabled and not a magnetic mesh
-			bool use_NNeu = IsNZ((double)pTransport[idx]->pMesh->SHA) && !pTransport[idx]->pMesh->M.linear_size();
+			bool use_NNeu = pTransport[idx]->pMeshBase->SHA_nonzero() && !pTransport[idx]->pMeshBase->Magnetism_Enabled();
 
-			if (pTransport[idx]->stsolve != STSOLVE_NONE) pTransport[idx]->IterateSpinSolver_Spin_SOR(SOR_damping_S, max_error, max_value, use_NNeu);
+			if (pTransport[idx]->Get_STSolveType() != STSOLVE_NONE) pTransport[idx]->IterateSpinSolver_Spin_SOR(SOR_damping_S, max_error, max_value, use_NNeu);
 		}
 
 		//normalize error to maximum change in cpu memory
@@ -119,7 +119,11 @@ void STransportCUDA::CalculateSAInterfaceField(void)
 			int idx_sec = CMBNDcontacts[idx1][idx2].mesh_idx.i;
 			int idx_pri = CMBNDcontacts[idx1][idx2].mesh_idx.j;
 
-			pTransport[idx_pri]->CalculateSAInterfaceField(pTransport[idx_sec], CMBNDcontactsCUDA[idx1][idx2], CMBNDcontacts[idx1][idx2].IsPrimaryTop());
+			//SA Interface Field currently only from micromagnetic to micromagnetic meshes
+			if (!pTransport[idx_pri]->pMeshBase->is_atomistic() && !pTransport[idx_sec]->pMeshBase->is_atomistic()) {
+
+				dynamic_cast<TransportCUDA*>(pTransport[idx_pri])->CalculateSAInterfaceField(dynamic_cast<TransportCUDA*>(pTransport[idx_sec]), CMBNDcontactsCUDA[idx1][idx2], CMBNDcontacts[idx1][idx2].IsPrimaryTop());
+			}
 		}
 	}
 }
