@@ -1,7 +1,7 @@
 # Boris2
 Boris Computational Spintronics.
 
-C++17 used. The codebase is currently contained in 878 files (.h, .cpp, .cu, .cuh, .py), ~160k non-trivial loc, and can be compiled on Windows or Linux-based OS with MSVC compiler or g++ compiler respectively.
+C++17 used. The codebase is currently contained in 918 files (.h, .cpp, .cu, .cuh, .py), ~164k non-trivial loc, and can be compiled on Windows or Linux-based OS with MSVC compiler or g++ compiler respectively.
 
 # Download
 Latest compiled version with installer, including source code with makefile for Linux-based OS, found here : https://boris-spintronics.uk/download
@@ -59,6 +59,7 @@ Possible values for arch are:
 <li>arch=50 is required for Maxwell architecture; translates to                              -arch=sm_50 in nvcc compilation.</li>
 <li>arch=60 is required for Pascal architecture; translates to                                 -arch=sm_60 in nvcc compilation.</li>
 <li>arch=70 is required for Volta (and Turing) architecture; translates to                 -arch=sm_70 in nvcc compilation.</li>
+<li>arch=80 is required for Ampere architecture; translates to                 -arch=sm_80 in nvcc compilation.</li>
 
 
 Example: $ make configure arch=70
