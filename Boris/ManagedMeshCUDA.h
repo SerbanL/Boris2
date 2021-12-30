@@ -247,7 +247,7 @@ public:
 	ManagedMeshCUDA* pMeshAFM_Bot;
 	size_t pMeshAFM_Top_size, pMeshAFM_Bot_size;
 
-	//DemagCUDA
+	//DemagCUDA (or SDemag_DemagCUDA)
 	cuVEC<cuReal3>*  pDemag_Heff;
 
 	//RoughnessCUDA
@@ -447,22 +447,22 @@ public:
 	__device__ cuReal2 Get_EnergyChange_AFM(int spin_index, cuReal3 Mnew_A, cuReal3 Mnew_B, int*& cuModules, int numModules, cuReal3& Ha);
 
 	//Demag_N
-	//__device__ cuBReal Get_EnergyChange_FM_DemagNCUDA(int spin_index, cuReal3 Mnew);
+	__device__ cuReal2 Get_EnergyChange_AFM_DemagNCUDA(int spin_index, cuReal3 Mnew_A, cuReal3 Mnew_B);
 
 	//Demag
-	//__device__ cuReal2 Get_EnergyChange_AFM_DemagCUDA(int spin_index, cuReal3 Mnew_A, cuReal3 Mnew_B);
+	__device__ cuReal2 Get_EnergyChange_AFM_DemagCUDA(int spin_index, cuReal3 Mnew_A, cuReal3 Mnew_B);
 
 	//Exch_6ngbr_Neu
 	__device__ cuReal2 Get_EnergyChange_AFM_ExchangeCUDA(int spin_index, cuReal3 Mnew_A, cuReal3 Mnew_B);
 
 	//DMExchangeCUDA
-	//__device__ cuBReal Get_EnergyChange_FM_DMExchangeCUDA(int spin_index, cuReal3 Mnew);
+	__device__ cuReal2 Get_EnergyChange_AFM_DMExchangeCUDA(int spin_index, cuReal3 Mnew_A, cuReal3 Mnew_B);
 
 	//iDMExchangeCUDA
-	//__device__ cuBReal Get_EnergyChange_FM_iDMExchangeCUDA(int spin_index, cuReal3 Mnew);
+	__device__ cuReal2 Get_EnergyChange_AFM_iDMExchangeCUDA(int spin_index, cuReal3 Mnew_A, cuReal3 Mnew_B);
 
 	//viDMExchangeCUDA
-	//__device__ cuBReal Get_EnergyChange_FM_viDMExchangeCUDA(int spin_index, cuReal3 Mnew);
+	__device__ cuReal2 Get_EnergyChange_AFM_viDMExchangeCUDA(int spin_index, cuReal3 Mnew_A, cuReal3 Mnew_B);
 
 	//SurfExchangeCUDA
 	__device__ cuReal2 Get_EnergyChange_AFM_SurfExchangeCUDA(int spin_index, cuReal3 Mnew_A, cuReal3 Mnew_B);
@@ -471,25 +471,22 @@ public:
 	__device__ cuReal2 Get_EnergyChange_AFM_ZeemanCUDA(int spin_index, cuReal3 Mnew_A, cuReal3 Mnew_B, cuReal3& Ha);
 
 	//MOpticalCUDA
-	//__device__ cuBReal Get_EnergyChange_FM_MOpticalCUDA(int spin_index, cuReal3 Mnew);
+	__device__ cuReal2 Get_EnergyChange_AFM_MOpticalCUDA(int spin_index, cuReal3 Mnew_A, cuReal3 Mnew_B);
 
 	//AnisotropyCUDA
 	__device__ cuReal2 Get_EnergyChange_AFM_AnisotropyCUDA(int spin_index, cuReal3 Mnew_A, cuReal3 Mnew_B);
 
 	//AnisotropyCubiCUDA
-	//__device__ cuBReal Get_EnergyChange_FM_AnisotropyCubiCUDA(int spin_index, cuReal3 Mnew);
+	__device__ cuReal2 Get_EnergyChange_AFM_AnisotropyCubiCUDA(int spin_index, cuReal3 Mnew_A, cuReal3 Mnew_B);
 
 	//AnisotropyBiaxialCUDA
-	//__device__ cuBReal Get_EnergyChange_FM_AnisotropyBiaxialCUDA(int spin_index, cuReal3 Mnew);
+	__device__ cuReal2 Get_EnergyChange_AFM_AnisotropyBiaxialCUDA(int spin_index, cuReal3 Mnew_A, cuReal3 Mnew_B);
 
 	//AnisotropyTensorialCUDA
-	//__device__ cuBReal Get_EnergyChange_FM_AnisotropyTensorialCUDA(int spin_index, cuReal3 Mnew);
+	__device__ cuReal2 Get_EnergyChange_AFM_AnisotropyTensorialCUDA(int spin_index, cuReal3 Mnew_A, cuReal3 Mnew_B);
 
 	//RoughnessCUDA
-	//__device__ cuBReal Get_EnergyChange_FM_RoughnessCUDA(int spin_index, cuReal3 Mnew);
-
-	//MElasticCUDA
-	//__device__ cuBReal Get_EnergyChange_FM_MElasticCUDA(int spin_index, cuReal3 Mnew);
+	__device__ cuReal2 Get_EnergyChange_AFM_RoughnessCUDA(int spin_index, cuReal3 Mnew_A, cuReal3 Mnew_B);
 };
 
 #endif

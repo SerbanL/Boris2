@@ -627,8 +627,6 @@ DBL2 DMExchange::Get_EnergyChange(int spin_index, DBL3 Mnew_A, DBL3 Mnew_B)
 				DBL3 delsq_M_A = pMesh->M.delsq_nneu(spin_index, bndA_nneu);
 				DBL3 delsq_M_B = pMesh->M2.delsq_nneu(spin_index, bndB_nneu);
 
-				DBL2 M = DBL2(pMesh->M[spin_index].norm(), pMesh->M2[spin_index].norm());
-
 				//1. direct exchange contribution + AFM contribution
 
 				//cells marked with cmbnd are calculated using exchange coupling to other ferromagnetic meshes - see below; the delsq_nneu evaluates to zero in the CMBND coupling direction.

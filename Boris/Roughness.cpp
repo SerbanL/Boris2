@@ -413,6 +413,7 @@ double Roughness::UpdateField(void)
 
 //-------------------Energy methods
 
+//FM mesh
 double Roughness::Get_EnergyChange(int spin_index, DBL3 Mnew)
 {
 	//For CUDA there are separate device functions used by CUDA kernels.
@@ -434,6 +435,37 @@ double Roughness::Get_EnergyChange(int spin_index, DBL3 Mnew)
 		else return -pMesh->h.dim() * MU0 * Hrough * pMesh->M[spin_index];
 	}
 	else return 0.0;
+}
+
+//AFM mesh
+DBL2 Roughness::Get_EnergyChange(int spin_index, DBL3 Mnew_A, DBL3 Mnew_B)
+{
+	//For CUDA there are separate device functions used by CUDA kernels.
+
+	if (pMesh->M.is_not_empty(spin_index) && pMesh->M2.is_not_empty(spin_index)) {
+
+		DBL33 Fmat = DBL33(
+			DBL3(Fmul_rough[spin_index].x, Fomul_rough[spin_index].x, Fomul_rough[spin_index].y),
+			DBL3(Fomul_rough[spin_index].x, Fmul_rough[spin_index].y, Fomul_rough[spin_index].z),
+			DBL3(Fomul_rough[spin_index].y, Fomul_rough[spin_index].z, Fmul_rough[spin_index].z));
+
+		double energy_ = 0.0;
+
+		DBL3 M = (pMesh->M[spin_index] + pMesh->M2[spin_index]) / 2;
+		DBL3 Hrough = Fmat * M;
+
+		if (Mnew_A != DBL3() && Mnew_B != DBL3()) {
+
+			DBL3 Mnew = (Mnew_A + Mnew_B) / 2;
+			DBL3 Hrough_new = Fmat * Mnew;
+
+			energy_ = -pMesh->h.dim() * MU0 * (Hrough_new * Mnew - Hrough * M);
+		}
+		else energy_ = -pMesh->h.dim() * MU0 * Hrough * M;
+
+		return DBL2(energy_, energy_);
+	}
+	else return DBL2();
 }
 
 #endif

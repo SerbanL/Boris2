@@ -137,7 +137,7 @@ __device__ cuBReal ManagedMeshCUDA::Get_EnergyChange_FM_ExchangeCUDA(int spin_in
 	update_parameters_mcoarse(spin_index, *pA, A, *pMs, Ms);
 
 	cuReal3 Hexch = (2 * A / ((cuBReal)MU0*Ms*Ms)) * M.delsq_neu(spin_index);
-	cuBReal energy_ = -(cuBReal)MU0 * M[spin_index] * Hexch / 2;
+	cuBReal energy_ = M[spin_index] * Hexch;
 
 	if (Mnew != cuReal3()) {
 
@@ -147,13 +147,13 @@ __device__ cuBReal ManagedMeshCUDA::Get_EnergyChange_FM_ExchangeCUDA(int spin_in
 		cuReal3 Mold = M[spin_index];
 		M[spin_index] = Mnew;
 		Hexch = (2 * A / ((cuBReal)MU0*Ms*Ms)) * M.delsq_neu(spin_index);
-		cuBReal energynew_ = -(cuBReal)MU0 * M[spin_index] * Hexch / 2;
+		cuBReal energynew_ = M[spin_index] * Hexch;
 		M[spin_index] = Mold;
 
-		//multiply by 2 as we are not double-counting here (same as for Demag)
-		return M.h.dim() * (energynew_ - energy_) * 2;
+		//do not divide by 2 as we are not double-counting here
+		return -(cuBReal)MU0 * M.h.dim() * (energynew_ - energy_);
 	}
-	else return M.h.dim() * energy_ * 2;
+	else return -(cuBReal)MU0 * M.h.dim() * energy_;
 }
 
 //DMExchangeCUDA

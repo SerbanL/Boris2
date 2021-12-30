@@ -629,7 +629,7 @@ double Demag::Get_EnergyChange(int spin_index, DBL3 Mnew)
 DBL2 Demag::Get_EnergyChange(int spin_index, DBL3 Mnew_A, DBL3 Mnew_B)
 {
 	//Module_Heff needs to be calculated (done during a Monte Carlo simulation, where this method would be used)
-	if (Module_Heff.linear_size() && Module_Heff2.linear_size()) {
+	if (Module_Heff.linear_size()) {
 
 		DBL3 M = (pMesh->M[spin_index] + pMesh->M2[spin_index]) / 2;
 		DBL3 Mnew = (Mnew_A + Mnew_B) / 2;

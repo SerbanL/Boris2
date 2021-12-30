@@ -196,12 +196,6 @@
     <Filter Include="09. FUNCS">
       <UniqueIdentifier>{7b22956b-af24-4fc0-a133-b3405ef9b4a5}</UniqueIdentifier>
     </Filter>
-    <Filter Include="10. TRANSPORT SOLVER\TRANSPORT SOLVER - CPU">
-      <UniqueIdentifier>{796a1bcc-c359-4ec8-ab9d-e25000a3cdbe}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="10. TRANSPORT SOLVER\TRANSPORT SOLVER - CUDA">
-      <UniqueIdentifier>{290cb31c-6d3d-4421-a200-d10dd39b5e9d}</UniqueIdentifier>
-    </Filter>
     <Filter Include="11. HEAT SOLVER">
       <UniqueIdentifier>{3b1e967f-860e-4a94-97b4-3c9d4d41a271}</UniqueIdentifier>
     </Filter>
@@ -341,6 +335,33 @@
     </Filter>
     <Filter Include="19. UPDATE">
       <UniqueIdentifier>{1d0b6562-5823-467c-9d9d-c3482317e4ca}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="10. TRANSPORT SOLVER\_ATOMISTIC">
+      <UniqueIdentifier>{b2c4dd7b-d926-4f00-b186-470e4f289e37}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="10. TRANSPORT SOLVER\_MICROMAGNETIC">
+      <UniqueIdentifier>{e2ae10c8-02f5-474b-99b3-fd09953e1166}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="10. TRANSPORT SOLVER\_MICROMAGNETIC\TRANSPORT SOLVER - CPU">
+      <UniqueIdentifier>{796a1bcc-c359-4ec8-ab9d-e25000a3cdbe}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="10. TRANSPORT SOLVER\_MICROMAGNETIC\TRANSPORT SOLVER - CUDA">
+      <UniqueIdentifier>{290cb31c-6d3d-4421-a200-d10dd39b5e9d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="10. TRANSPORT SOLVER\STRANSPORT - CPU">
+      <UniqueIdentifier>{8496443b-8daa-48ae-b433-ea7ad5c1e83c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="10. TRANSPORT SOLVER\STRANSPORT - CUDA">
+      <UniqueIdentifier>{caa144c8-d2da-4961-9be9-da16ae90ed53}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="10. TRANSPORT SOLVER\_ATOMISTIC\TRANSPORT SOLVER - CPU">
+      <UniqueIdentifier>{81d3975f-a62c-4e52-ae89-c210196f5853}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="10. TRANSPORT SOLVER\_ATOMISTIC\TRANSPORT SOLVER - CUDA">
+      <UniqueIdentifier>{9fcf5f94-2908-4e5d-a30e-b37eeaedbc0b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="10. TRANSPORT SOLVER\COMMON">
+      <UniqueIdentifier>{4be4c0ff-1cfb-450b-8edc-688f4ad45950}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -492,25 +513,16 @@
       <Filter>03. MODULES\__MICROMAGNETIC\MM MODULES - CUDA</Filter>
     </ClInclude>
     <ClInclude Include="TransportCUDA.h">
-      <Filter>10. TRANSPORT SOLVER\TRANSPORT SOLVER - CUDA</Filter>
+      <Filter>10. TRANSPORT SOLVER\_MICROMAGNETIC\TRANSPORT SOLVER - CUDA</Filter>
     </ClInclude>
     <ClInclude Include="TransportCUDA_Poisson.h">
-      <Filter>10. TRANSPORT SOLVER\TRANSPORT SOLVER - CUDA</Filter>
-    </ClInclude>
-    <ClInclude Include="STransportCUDA.h">
-      <Filter>10. TRANSPORT SOLVER\TRANSPORT SOLVER - CUDA</Filter>
+      <Filter>10. TRANSPORT SOLVER\_MICROMAGNETIC\TRANSPORT SOLVER - CUDA</Filter>
     </ClInclude>
     <ClInclude Include="TransportCUDA_Poisson_Spin_V.h">
-      <Filter>10. TRANSPORT SOLVER\TRANSPORT SOLVER - CUDA</Filter>
+      <Filter>10. TRANSPORT SOLVER\_MICROMAGNETIC\TRANSPORT SOLVER - CUDA</Filter>
     </ClInclude>
     <ClInclude Include="TransportCUDA_Poisson_Spin_S.h">
-      <Filter>10. TRANSPORT SOLVER\TRANSPORT SOLVER - CUDA</Filter>
-    </ClInclude>
-    <ClInclude Include="STransportCUDA_GInterf_V.h">
-      <Filter>10. TRANSPORT SOLVER\TRANSPORT SOLVER - CUDA</Filter>
-    </ClInclude>
-    <ClInclude Include="STransportCUDA_GInterf_S.h">
-      <Filter>10. TRANSPORT SOLVER\TRANSPORT SOLVER - CUDA</Filter>
+      <Filter>10. TRANSPORT SOLVER\_MICROMAGNETIC\TRANSPORT SOLVER - CUDA</Filter>
     </ClInclude>
     <ClInclude Include="InteractiveObject.h">
       <Filter>15. GRAPHICS\INTERACTIVE OBJ</Filter>
@@ -824,14 +836,8 @@
     <ClInclude Include="DipoleTFunc.h">
       <Filter>09. FUNCS\SINGLE DIPOLE FUNCS - CPU</Filter>
     </ClInclude>
-    <ClInclude Include="STransport.h">
-      <Filter>10. TRANSPORT SOLVER\TRANSPORT SOLVER - CPU</Filter>
-    </ClInclude>
     <ClInclude Include="Transport.h">
-      <Filter>10. TRANSPORT SOLVER\TRANSPORT SOLVER - CPU</Filter>
-    </ClInclude>
-    <ClInclude Include="Transport_Defs.h">
-      <Filter>10. TRANSPORT SOLVER\TRANSPORT SOLVER - CPU</Filter>
+      <Filter>10. TRANSPORT SOLVER\_MICROMAGNETIC\TRANSPORT SOLVER - CPU</Filter>
     </ClInclude>
     <ClInclude Include="Atom_AnisotropyCUDA.h">
       <Filter>03. MODULES\__ATOMISTIC\ATOM MODULES - CUDA</Filter>
@@ -1043,6 +1049,54 @@
     <ClInclude Include="Atom_viDMExchangeCUDA.h">
       <Filter>07. EXCHANGE\__ATOMISTIC\ATOM EXCHANGE - CUDA</Filter>
     </ClInclude>
+    <ClInclude Include="STransport.h">
+      <Filter>10. TRANSPORT SOLVER\STRANSPORT - CPU</Filter>
+    </ClInclude>
+    <ClInclude Include="STransportCUDA.h">
+      <Filter>10. TRANSPORT SOLVER\STRANSPORT - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="STransportCUDA_GInterf_S.h">
+      <Filter>10. TRANSPORT SOLVER\STRANSPORT - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="STransportCUDA_GInterf_V.h">
+      <Filter>10. TRANSPORT SOLVER\STRANSPORT - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="TransportBase.h">
+      <Filter>10. TRANSPORT SOLVER\COMMON</Filter>
+    </ClInclude>
+    <ClInclude Include="TransportBaseCUDA.h">
+      <Filter>10. TRANSPORT SOLVER\COMMON</Filter>
+    </ClInclude>
+    <ClInclude Include="Transport_Defs.h">
+      <Filter>10. TRANSPORT SOLVER\COMMON</Filter>
+    </ClInclude>
+    <ClInclude Include="Atom_Transport.h">
+      <Filter>10. TRANSPORT SOLVER\_ATOMISTIC\TRANSPORT SOLVER - CPU</Filter>
+    </ClInclude>
+    <ClInclude Include="Atom_SOTField.h">
+      <Filter>03. MODULES\__ATOMISTIC\ATOM MODULES - CPU</Filter>
+    </ClInclude>
+    <ClInclude Include="Atom_SOTFieldCUDA.h">
+      <Filter>03. MODULES\__ATOMISTIC\ATOM MODULES - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="Atom_TransportCUDA_Poisson_Spin_S.h">
+      <Filter>10. TRANSPORT SOLVER\_ATOMISTIC\TRANSPORT SOLVER - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="Atom_TransportCUDA_Poisson_Spin_V.h">
+      <Filter>10. TRANSPORT SOLVER\_ATOMISTIC\TRANSPORT SOLVER - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="Atom_TransportCUDA.h">
+      <Filter>10. TRANSPORT SOLVER\_ATOMISTIC\TRANSPORT SOLVER - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="Atom_TransportCUDA_Poisson.h">
+      <Filter>10. TRANSPORT SOLVER\_ATOMISTIC\TRANSPORT SOLVER - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="Atom_STField.h">
+      <Filter>03. MODULES\__ATOMISTIC\ATOM MODULES - CPU</Filter>
+    </ClInclude>
+    <ClInclude Include="Atom_STFieldCUDA.h">
+      <Filter>03. MODULES\__ATOMISTIC\ATOM MODULES - CUDA</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="BorisGraphics.cpp">
@@ -1169,25 +1223,16 @@
       <Filter>03. MODULES\__MICROMAGNETIC\MM MODULES - CUDA</Filter>
     </ClCompile>
     <ClCompile Include="TransportCUDA.cpp">
-      <Filter>10. TRANSPORT SOLVER\TRANSPORT SOLVER - CUDA</Filter>
+      <Filter>10. TRANSPORT SOLVER\_MICROMAGNETIC\TRANSPORT SOLVER - CUDA</Filter>
     </ClCompile>
     <ClCompile Include="TransportCUDA_Poisson.cpp">
-      <Filter>10. TRANSPORT SOLVER\TRANSPORT SOLVER - CUDA</Filter>
-    </ClCompile>
-    <ClCompile Include="STransportCUDA.cpp">
-      <Filter>10. TRANSPORT SOLVER\TRANSPORT SOLVER - CUDA</Filter>
-    </ClCompile>
-    <ClCompile Include="STransportCUDA_Charge.cpp">
-      <Filter>10. TRANSPORT SOLVER\TRANSPORT SOLVER - CUDA</Filter>
-    </ClCompile>
-    <ClCompile Include="STransportCUDA_Spin.cpp">
-      <Filter>10. TRANSPORT SOLVER\TRANSPORT SOLVER - CUDA</Filter>
+      <Filter>10. TRANSPORT SOLVER\_MICROMAGNETIC\TRANSPORT SOLVER - CUDA</Filter>
     </ClCompile>
     <ClCompile Include="TransportCUDA_Poisson_Spin_V.cpp">
-      <Filter>10. TRANSPORT SOLVER\TRANSPORT SOLVER - CUDA</Filter>
+      <Filter>10. TRANSPORT SOLVER\_MICROMAGNETIC\TRANSPORT SOLVER - CUDA</Filter>
     </ClCompile>
     <ClCompile Include="TransportCUDA_Poisson_Spin_S.cpp">
-      <Filter>10. TRANSPORT SOLVER\TRANSPORT SOLVER - CUDA</Filter>
+      <Filter>10. TRANSPORT SOLVER\_MICROMAGNETIC\TRANSPORT SOLVER - CUDA</Filter>
     </ClCompile>
     <ClCompile Include="SOTFieldCUDA.cpp">
       <Filter>03. MODULES\__MICROMAGNETIC\MM MODULES - CUDA</Filter>
@@ -1365,9 +1410,6 @@
     </ClCompile>
     <ClCompile Include="Mesh_AntiFerromagnetic_ODEControl.cpp">
       <Filter>02. MESHES\__MICROMAGNETIC\CPU\MM MESHES - CPU</Filter>
-    </ClCompile>
-    <ClCompile Include="STransportCUDA_Spin_Display.cpp">
-      <Filter>10. TRANSPORT SOLVER\TRANSPORT SOLVER - CUDA</Filter>
     </ClCompile>
     <ClCompile Include="Display_BorisConsole.cpp">
       <Filter>15. GRAPHICS\INTERFACE</Filter>
@@ -1705,35 +1747,20 @@
     <ClCompile Include="DipoleTFunc.cpp">
       <Filter>09. FUNCS\SINGLE DIPOLE FUNCS - CPU</Filter>
     </ClCompile>
-    <ClCompile Include="STransport.cpp">
-      <Filter>10. TRANSPORT SOLVER\TRANSPORT SOLVER - CPU</Filter>
-    </ClCompile>
-    <ClCompile Include="STransport_Charge.cpp">
-      <Filter>10. TRANSPORT SOLVER\TRANSPORT SOLVER - CPU</Filter>
-    </ClCompile>
-    <ClCompile Include="STransport_Spin.cpp">
-      <Filter>10. TRANSPORT SOLVER\TRANSPORT SOLVER - CPU</Filter>
-    </ClCompile>
-    <ClCompile Include="STransport_Spin_Display.cpp">
-      <Filter>10. TRANSPORT SOLVER\TRANSPORT SOLVER - CPU</Filter>
-    </ClCompile>
-    <ClCompile Include="STransport_Spin_GInterf.cpp">
-      <Filter>10. TRANSPORT SOLVER\TRANSPORT SOLVER - CPU</Filter>
-    </ClCompile>
     <ClCompile Include="Transport.cpp">
-      <Filter>10. TRANSPORT SOLVER\TRANSPORT SOLVER - CPU</Filter>
+      <Filter>10. TRANSPORT SOLVER\_MICROMAGNETIC\TRANSPORT SOLVER - CPU</Filter>
     </ClCompile>
     <ClCompile Include="Transport_Charge.cpp">
-      <Filter>10. TRANSPORT SOLVER\TRANSPORT SOLVER - CPU</Filter>
+      <Filter>10. TRANSPORT SOLVER\_MICROMAGNETIC\TRANSPORT SOLVER - CPU</Filter>
     </ClCompile>
     <ClCompile Include="Transport_Charge_Display.cpp">
-      <Filter>10. TRANSPORT SOLVER\TRANSPORT SOLVER - CPU</Filter>
+      <Filter>10. TRANSPORT SOLVER\_MICROMAGNETIC\TRANSPORT SOLVER - CPU</Filter>
     </ClCompile>
     <ClCompile Include="Transport_Spin.cpp">
-      <Filter>10. TRANSPORT SOLVER\TRANSPORT SOLVER - CPU</Filter>
+      <Filter>10. TRANSPORT SOLVER\_MICROMAGNETIC\TRANSPORT SOLVER - CPU</Filter>
     </ClCompile>
     <ClCompile Include="Transport_Spin_Display.cpp">
-      <Filter>10. TRANSPORT SOLVER\TRANSPORT SOLVER - CPU</Filter>
+      <Filter>10. TRANSPORT SOLVER\_MICROMAGNETIC\TRANSPORT SOLVER - CPU</Filter>
     </ClCompile>
     <ClCompile Include="Atom_AnisotropyCUDA.cpp">
       <Filter>03. MODULES\__ATOMISTIC\ATOM MODULES - CUDA</Filter>
@@ -2035,6 +2062,78 @@
     <ClCompile Include="Atom_DiffEqCubic_Evals_RKF56.cpp">
       <Filter>01. DIFFERENTIAL EQUATIONS\__ATOMISTIC\CPU\ATOM DIFF EQUATIONS CUBIC - CPU</Filter>
     </ClCompile>
+    <ClCompile Include="Mesh_AntiFerromagnetic_MonteCarlo.cpp">
+      <Filter>02. MESHES\__MICROMAGNETIC\CPU\MM MESHES - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="STransport.cpp">
+      <Filter>10. TRANSPORT SOLVER\STRANSPORT - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="STransport_Charge.cpp">
+      <Filter>10. TRANSPORT SOLVER\STRANSPORT - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="STransport_Spin.cpp">
+      <Filter>10. TRANSPORT SOLVER\STRANSPORT - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="STransport_Spin_Display.cpp">
+      <Filter>10. TRANSPORT SOLVER\STRANSPORT - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="STransport_Spin_GInterf.cpp">
+      <Filter>10. TRANSPORT SOLVER\STRANSPORT - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="STransportCUDA.cpp">
+      <Filter>10. TRANSPORT SOLVER\STRANSPORT - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="STransportCUDA_Charge.cpp">
+      <Filter>10. TRANSPORT SOLVER\STRANSPORT - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="STransportCUDA_Spin.cpp">
+      <Filter>10. TRANSPORT SOLVER\STRANSPORT - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="STransportCUDA_Spin_Display.cpp">
+      <Filter>10. TRANSPORT SOLVER\STRANSPORT - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="TransportBase.cpp">
+      <Filter>10. TRANSPORT SOLVER\COMMON</Filter>
+    </ClCompile>
+    <ClCompile Include="Atom_Transport.cpp">
+      <Filter>10. TRANSPORT SOLVER\_ATOMISTIC\TRANSPORT SOLVER - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="Atom_Transport_Spin_Display.cpp">
+      <Filter>10. TRANSPORT SOLVER\_ATOMISTIC\TRANSPORT SOLVER - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="Atom_Transport_Spin.cpp">
+      <Filter>10. TRANSPORT SOLVER\_ATOMISTIC\TRANSPORT SOLVER - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="Atom_Transport_Charge_Display.cpp">
+      <Filter>10. TRANSPORT SOLVER\_ATOMISTIC\TRANSPORT SOLVER - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="Atom_Transport_Charge.cpp">
+      <Filter>10. TRANSPORT SOLVER\_ATOMISTIC\TRANSPORT SOLVER - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="Atom_SOTField.cpp">
+      <Filter>03. MODULES\__ATOMISTIC\ATOM MODULES - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="Atom_SOTFieldCUDA.cpp">
+      <Filter>03. MODULES\__ATOMISTIC\ATOM MODULES - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="Atom_TransportCUDA_Poisson_Spin_S.cpp">
+      <Filter>10. TRANSPORT SOLVER\_ATOMISTIC\TRANSPORT SOLVER - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="Atom_TransportCUDA_Poisson_Spin_V.cpp">
+      <Filter>10. TRANSPORT SOLVER\_ATOMISTIC\TRANSPORT SOLVER - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="Atom_TransportCUDA.cpp">
+      <Filter>10. TRANSPORT SOLVER\_ATOMISTIC\TRANSPORT SOLVER - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="Atom_TransportCUDA_Poisson.cpp">
+      <Filter>10. TRANSPORT SOLVER\_ATOMISTIC\TRANSPORT SOLVER - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="Atom_STField.cpp">
+      <Filter>03. MODULES\__ATOMISTIC\ATOM MODULES - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="Atom_STFieldCUDA.cpp">
+      <Filter>03. MODULES\__ATOMISTIC\ATOM MODULES - CUDA</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="BorisWinapi.rc">
@@ -2086,19 +2185,13 @@
       <Filter>03. MODULES\__MICROMAGNETIC\MM MODULES - CUDA</Filter>
     </CudaCompile>
     <CudaCompile Include="TransportCUDA.cu">
-      <Filter>10. TRANSPORT SOLVER\TRANSPORT SOLVER - CUDA</Filter>
-    </CudaCompile>
-    <CudaCompile Include="STransportCUDA_Charge.cu">
-      <Filter>10. TRANSPORT SOLVER\TRANSPORT SOLVER - CUDA</Filter>
-    </CudaCompile>
-    <CudaCompile Include="STransportCUDA_Spin.cu">
-      <Filter>10. TRANSPORT SOLVER\TRANSPORT SOLVER - CUDA</Filter>
+      <Filter>10. TRANSPORT SOLVER\_MICROMAGNETIC\TRANSPORT SOLVER - CUDA</Filter>
     </CudaCompile>
     <CudaCompile Include="TransportCUDA_Charge.cu">
-      <Filter>10. TRANSPORT SOLVER\TRANSPORT SOLVER - CUDA</Filter>
+      <Filter>10. TRANSPORT SOLVER\_MICROMAGNETIC\TRANSPORT SOLVER - CUDA</Filter>
     </CudaCompile>
     <CudaCompile Include="TransportCUDA_Spin.cu">
-      <Filter>10. TRANSPORT SOLVER\TRANSPORT SOLVER - CUDA</Filter>
+      <Filter>10. TRANSPORT SOLVER\_MICROMAGNETIC\TRANSPORT SOLVER - CUDA</Filter>
     </CudaCompile>
     <CudaCompile Include="SOTFieldCUDA.cu">
       <Filter>03. MODULES\__MICROMAGNETIC\MM MODULES - CUDA</Filter>
@@ -2108,9 +2201,6 @@
     </CudaCompile>
     <CudaCompile Include="SDemagCUDA_Demag.cu">
       <Filter>06. SUPERMESH DEMAG\DEMAG - SUPERMESH - CUDA</Filter>
-    </CudaCompile>
-    <CudaCompile Include="STransportCUDA.cu">
-      <Filter>10. TRANSPORT SOLVER\TRANSPORT SOLVER - CUDA</Filter>
     </CudaCompile>
     <CudaCompile Include="DMExchangeCUDA.cu">
       <Filter>07. EXCHANGE\__MICROMAGNETIC\EXCHANGE - CUDA</Filter>
@@ -2218,10 +2308,10 @@
       <Filter>07. EXCHANGE\__MICROMAGNETIC\EXCHANGE - CUDA</Filter>
     </CudaCompile>
     <CudaCompile Include="TransportCUDA_Spin_Display.cu">
-      <Filter>10. TRANSPORT SOLVER\TRANSPORT SOLVER - CUDA</Filter>
+      <Filter>10. TRANSPORT SOLVER\_MICROMAGNETIC\TRANSPORT SOLVER - CUDA</Filter>
     </CudaCompile>
     <CudaCompile Include="TransportCUDA_Charge_Display.cu">
-      <Filter>10. TRANSPORT SOLVER\TRANSPORT SOLVER - CUDA</Filter>
+      <Filter>10. TRANSPORT SOLVER\_MICROMAGNETIC\TRANSPORT SOLVER - CUDA</Filter>
     </CudaCompile>
     <CudaCompile Include="MaterialParameterCUDA.cu">
       <Filter>02. MESHES\MAT PARAMS - CUDA</Filter>
@@ -2453,6 +2543,42 @@
     </CudaCompile>
     <CudaCompile Include="Atom_DiffEqCubic_EvalsCUDA_RKF56.cu">
       <Filter>01. DIFFERENTIAL EQUATIONS\__ATOMISTIC\CUDA\ATOM DIFF EQUATIONS CUBIC - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="Mesh_AntiFerromagneticCUDA_MonteCarlo.cu">
+      <Filter>02. MESHES\__MICROMAGNETIC\CUDA\MM MESHES - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="ManagedMeshCUDA_MonteCarlo_AFM.cu">
+      <Filter>02. MESHES\__MICROMAGNETIC\CUDA\MM MESHES INTERFACE - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="STransportCUDA.cu">
+      <Filter>10. TRANSPORT SOLVER\STRANSPORT - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="STransportCUDA_Charge.cu">
+      <Filter>10. TRANSPORT SOLVER\STRANSPORT - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="STransportCUDA_Spin.cu">
+      <Filter>10. TRANSPORT SOLVER\STRANSPORT - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="Atom_SOTFieldCUDA.cu">
+      <Filter>03. MODULES\__ATOMISTIC\ATOM MODULES - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="Atom_TransportCUDA_Spin.cu">
+      <Filter>10. TRANSPORT SOLVER\_ATOMISTIC\TRANSPORT SOLVER - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="Atom_TransportCUDA_Spin_Display.cu">
+      <Filter>10. TRANSPORT SOLVER\_ATOMISTIC\TRANSPORT SOLVER - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="Atom_TransportCUDA.cu">
+      <Filter>10. TRANSPORT SOLVER\_ATOMISTIC\TRANSPORT SOLVER - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="Atom_TransportCUDA_Charge.cu">
+      <Filter>10. TRANSPORT SOLVER\_ATOMISTIC\TRANSPORT SOLVER - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="Atom_TransportCUDA_Charge_Display.cu">
+      <Filter>10. TRANSPORT SOLVER\_ATOMISTIC\TRANSPORT SOLVER - CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="Atom_STFieldCUDA.cu">
+      <Filter>03. MODULES\__ATOMISTIC\ATOM MODULES - CUDA</Filter>
     </CudaCompile>
   </ItemGroup>
 </Project>

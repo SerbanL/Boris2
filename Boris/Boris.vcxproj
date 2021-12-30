@@ -30,7 +30,7 @@
     <ProjectGuid>{06C58E6B-9051-4D2D-BB44-FF942864B5F1}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>Boris</RootNamespace>
-    <WindowsTargetPlatformVersion>10.0.16299.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0.17763.0</WindowsTargetPlatformVersion>
     <ProjectName>Boris</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -69,7 +69,7 @@
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
-    <Import Project="$(VCTargetsPath)\BuildCustomizations\CUDA 11.0.props" />
+    <Import Project="$(VCTargetsPath)\BuildCustomizations\CUDA 11.5.props" />
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
@@ -188,7 +188,7 @@
       <AdditionalDependencies>cudart_static.lib;cufft.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <CudaCompile>
-      <CodeGeneration>compute_50,sm_50</CodeGeneration>
+      <CodeGeneration>compute_80,sm_80</CodeGeneration>
       <GenerateRelocatableDeviceCode>true</GenerateRelocatableDeviceCode>
       <TargetMachinePlatform>64</TargetMachinePlatform>
       <Warning>W0</Warning>
@@ -268,8 +268,17 @@
     <ClInclude Include="Atom_iDMExchangeCUDA.h" />
     <ClInclude Include="Atom_MOptical.h" />
     <ClInclude Include="Atom_MOpticalCUDA.h" />
+    <ClInclude Include="Atom_SOTField.h" />
+    <ClInclude Include="Atom_SOTFieldCUDA.h" />
+    <ClInclude Include="Atom_STField.h" />
+    <ClInclude Include="Atom_STFieldCUDA.h" />
     <ClInclude Include="Atom_SurfExchange.h" />
     <ClInclude Include="Atom_SurfExchangeCUDA.h" />
+    <ClInclude Include="Atom_Transport.h" />
+    <ClInclude Include="Atom_TransportCUDA.h" />
+    <ClInclude Include="Atom_TransportCUDA_Poisson.h" />
+    <ClInclude Include="Atom_TransportCUDA_Poisson_Spin_S.h" />
+    <ClInclude Include="Atom_TransportCUDA_Poisson_Spin_V.h" />
     <ClInclude Include="Atom_viDMExchange.h" />
     <ClInclude Include="Atom_viDMExchangeCUDA.h" />
     <ClInclude Include="DataDefs.h" />
@@ -399,7 +408,14 @@
     <CudaCompile Include="Atom_Mesh_CubicCUDA_Histo.cu" />
     <CudaCompile Include="Atom_Mesh_CubicCUDA_MonteCarlo.cu" />
     <CudaCompile Include="Atom_MOpticalCUDA.cu" />
+    <CudaCompile Include="Atom_SOTFieldCUDA.cu" />
+    <CudaCompile Include="Atom_STFieldCUDA.cu" />
     <CudaCompile Include="Atom_SurfExchangeCUDA.cu" />
+    <CudaCompile Include="Atom_TransportCUDA.cu" />
+    <CudaCompile Include="Atom_TransportCUDA_Charge.cu" />
+    <CudaCompile Include="Atom_TransportCUDA_Charge_Display.cu" />
+    <CudaCompile Include="Atom_TransportCUDA_Spin.cu" />
+    <CudaCompile Include="Atom_TransportCUDA_Spin_Display.cu" />
     <CudaCompile Include="Atom_viDMExchangeCUDA.cu" />
     <CudaCompile Include="Atom_ZeemanCUDA.cu" />
     <CudaCompile Include="DemagCUDA.cu" />
@@ -422,6 +438,7 @@
     <CudaCompile Include="DWRunTimeFitCUDA.cu" />
     <CudaCompile Include="HeatBaseCUDA.cu" />
     <CudaCompile Include="ManagedAtom_MeshCUDA_MonteCarlo_SC.cu" />
+    <CudaCompile Include="ManagedMeshCUDA_MonteCarlo_AFM.cu" />
     <CudaCompile Include="ManagedMeshCUDA_MonteCarlo_FM.cu" />
     <CudaCompile Include="MaterialParameterCUDA.cu">
       <FileType>Document</FileType>
@@ -502,6 +519,8 @@
     <ClInclude Include="SurfExchange_AFM.h" />
     <ClInclude Include="TextFormatting.h" />
     <ClInclude Include="Transport.h" />
+    <ClInclude Include="TransportBase.h" />
+    <ClInclude Include="TransportBaseCUDA.h" />
     <ClInclude Include="TransportCUDA.h" />
     <ClInclude Include="TransportCUDA_Poisson.h" />
     <ClInclude Include="TransportCUDA_Poisson_Spin_S.h" />
@@ -583,8 +602,21 @@
     <ClCompile Include="Atom_Mesh_Cubic_ODEControl.cpp" />
     <ClCompile Include="Atom_MOptical.cpp" />
     <ClCompile Include="Atom_MOpticalCUDA.cpp" />
+    <ClCompile Include="Atom_SOTField.cpp" />
+    <ClCompile Include="Atom_SOTFieldCUDA.cpp" />
+    <ClCompile Include="Atom_STField.cpp" />
+    <ClCompile Include="Atom_STFieldCUDA.cpp" />
     <ClCompile Include="Atom_SurfExchange.cpp" />
     <ClCompile Include="Atom_SurfExchangeCUDA.cpp" />
+    <ClCompile Include="Atom_Transport.cpp" />
+    <ClCompile Include="Atom_TransportCUDA.cpp" />
+    <ClCompile Include="Atom_TransportCUDA_Poisson.cpp" />
+    <ClCompile Include="Atom_TransportCUDA_Poisson_Spin_S.cpp" />
+    <ClCompile Include="Atom_TransportCUDA_Poisson_Spin_V.cpp" />
+    <ClCompile Include="Atom_Transport_Charge.cpp" />
+    <ClCompile Include="Atom_Transport_Charge_Display.cpp" />
+    <ClCompile Include="Atom_Transport_Spin.cpp" />
+    <ClCompile Include="Atom_Transport_Spin_Display.cpp" />
     <ClCompile Include="Atom_viDMExchange.cpp" />
     <ClCompile Include="Atom_viDMExchangeCUDA.cpp" />
     <ClCompile Include="BorisUpdate.cpp" />
@@ -755,6 +787,7 @@
     <ClCompile Include="Mesh_AntiFerromagnetic_Compute.cpp" />
     <ClCompile Include="Mesh_AntiFerromagnetic_Control.cpp" />
     <ClCompile Include="Mesh_AntiFerromagnetic_Histo.cpp" />
+    <ClCompile Include="Mesh_AntiFerromagnetic_MonteCarlo.cpp" />
     <ClCompile Include="Mesh_AntiFerromagnetic_ODEControl.cpp" />
     <ClCompile Include="Mesh_Dipole.cpp" />
     <ClCompile Include="Mesh_DipoleCUDA.cpp" />
@@ -835,6 +868,7 @@
     <ClCompile Include="SurfExchangeCUDA_AFM.cpp" />
     <ClCompile Include="SurfExchange_AFM.cpp" />
     <ClCompile Include="Transport.cpp" />
+    <ClCompile Include="TransportBase.cpp" />
     <ClCompile Include="TransportCUDA_Poisson_Spin_S.cpp" />
     <ClCompile Include="TransportCUDA_Poisson_Spin_V.cpp" />
     <ClCompile Include="Transport_Charge.cpp" />
@@ -945,6 +979,7 @@
     <CudaCompile Include="MeshBaseCUDA.cu" />
     <CudaCompile Include="MeshCUDA.cu" />
     <CudaCompile Include="Mesh_AntiFerromagneticCUDA.cu" />
+    <CudaCompile Include="Mesh_AntiFerromagneticCUDA_MonteCarlo.cu" />
     <CudaCompile Include="Mesh_FerromagneticCUDA.cu" />
     <CudaCompile Include="Mesh_FerromagneticCUDA_Histo.cu" />
     <CudaCompile Include="Mesh_FerromagneticCUDA_MonteCarlo.cu" />
@@ -973,6 +1008,6 @@
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
-    <Import Project="$(VCTargetsPath)\BuildCustomizations\CUDA 11.0.targets" />
+    <Import Project="$(VCTargetsPath)\BuildCustomizations\CUDA 11.5.targets" />
   </ImportGroup>
 </Project>
