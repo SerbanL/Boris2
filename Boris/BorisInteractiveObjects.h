@@ -74,6 +74,8 @@ enum IOI_
 	IOI_MESH_FORSPEEDUP,
 	IOI_MESH_FORSKYPOSDMUL,
 	IOI_MESH_FORMC,
+	IOI_MESH_FORDIPOLESHIFT,
+	IOI_MESH_FORTMR,
 
 	//Shows ferromagnetic super-mesh rectangle (unit m) : textId is the mesh rectangle for the ferromagnetic super-mesh
 	IOI_FMSMESHRECTANGLE,
@@ -222,6 +224,9 @@ enum IOI_
 	//Shows SOR damping values when used in fixed damping mode. textId is the DBL2 damping value as a std::string. (DBL2 since we need different damping values for V and S solvers)
 	IOI_SORDAMPING,
 
+	//Shows tmr type setting. minorId is the unique mesh id number, auxId is the value.
+	IOI_TMRTYPE,
+
 	//Shows mesh temperature. minorId is the unique mesh id number, textId is the temperature value
 	IOI_BASETEMPERATURE,
 
@@ -275,6 +280,11 @@ enum IOI_
 		
 	//Shows coupled_to_dipoles enabled/disabled state. auxId is enabled (1)/disabled(0) status.
 	IOI_COUPLEDTODIPOLESSTATUS,
+
+	//Shows dipole velocity value. minorId is the unique mesh id number. textId is the value
+	IOI_DIPOLEVELOCITY,
+	//Shows dipole shift clipping value. minorId is the unique mesh id number. textId is the value
+	IOI_DIPOLESHIFTCLIP,
 
 	//Shows log_errors enabled/disabled state. auxId is enabled (1)/disabled(0) status.
 	IOI_ERRORLOGSTATUS,

@@ -1,9 +1,5 @@
 #pragma once
 
-#include "Boris_Enums_Defs.h"
-
-#ifdef MODULE_COMPILATION_TRANSPORT
-
 //spin transport solver type : 
 
 //0. no spin transport (just charge transport)
@@ -28,4 +24,15 @@ enum STSOLVE_ {
 	STSOLVE_FERROMAGNETIC_ATOM
 };
 
-#endif
+enum TMR_ {
+
+	TMR_NONE = -1,
+
+	//simple (1-cos) dependence of resistance
+	TMR_COS = 0,
+	//cos dependence of conductance
+	TMR_SLONCZEWSKI = 1,
+
+	//number of options in this enum
+	TMR_NUMOPTIONS
+};

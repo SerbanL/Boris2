@@ -73,9 +73,25 @@ void DipoleMeshCUDA::SetMagAngle(cuBReal polar, cuBReal azim)
 	recalculateStrayField = true;
 }
 
+//shift dipole mesh rectangle by given amount
+void DipoleMeshCUDA::Shift_Dipole(void)
+{
+	//meshRect is already shifted at this point (since this method is called from the CPU version). Thus all we need to do it set it in cuVECs
+	cuRect meshRect_cpu = (cuRect)meshRect;
+	
+	M()->set_rect(meshRect_cpu);
+
+	if (pDipoleMesh->V.linear_size()) V()->set_rect(meshRect_cpu);
+	if (pDipoleMesh->S.linear_size()) S()->set_rect(meshRect_cpu);
+	if (pDipoleMesh->elC.linear_size()) elC()->set_rect(meshRect_cpu);
+	if (pDipoleMesh->Temp.linear_size()) Temp()->set_rect(meshRect_cpu);
+
+	recalculateStrayField = true;
+}
+
 //----------------------------------- VARIOUS GET METHODS
 
-bool DipoleMeshCUDA::Check_recalculateStrayField(void)
+bool DipoleMeshCUDA::CheckRecalculateStrayField(void)
 {
 	//recalculate stray field if flag is set (Mdipole has changed) or non-uniform temperature is enabled and Ms has a temperature dependence (in this case always recalculate)
 

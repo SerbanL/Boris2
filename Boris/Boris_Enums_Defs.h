@@ -178,6 +178,11 @@ namespace ucfg {
 #define MINTIMESTEP		1e-18						//Minimum time step that can be entered (s)
 #define MAXTIMESTEP		1e-6						//Maximum time step that can be entered (s)
 
+//default clipping distance for dipole shifting algorithm
+#define DIPOLESHIFTCLIP 0.5e-9
+//maximum velocity allowed for dipole shifting algorithm
+#define DIPOLEMAXVELOCITY 3e8
+
 //when creating a mesh limit the number of cells. The mesh can exceed these values but user will have to adjust the cellsize manually.
 #define MAXSTARTINGCELLS_X	2048
 #define MAXSTARTINGCELLS_Y	2048

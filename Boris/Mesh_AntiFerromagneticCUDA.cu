@@ -145,10 +145,84 @@ __global__ void Average_mxdmdt2_AFM_kernel(cuBox box, ManagedMeshCUDA& cuMesh, M
 	reduction_avg(0, 1, &average_, average, points_count, include_in_average);
 }
 
+__global__ void Average_mxdm2dt_AFM_kernel(cuBox box, ManagedMeshCUDA& cuMesh, ManagedDiffEqAFMCUDA& cuDiffEq, cuReal3& average, size_t& points_count)
+{
+	cuVEC_VC<cuReal3>& M = *cuMesh.pM;
+	cuVEC_VC<cuReal3>& M2 = *cuMesh.pM2;
+
+	int idxbox = blockIdx.x * blockDim.x + threadIdx.x;
+
+	cuReal3 average_ = cuReal3();
+	bool include_in_average = false;
+
+	if (idxbox < box.size().dim()) {
+
+		//indexes of this threads in box
+		int ibox = idxbox % box.size().i;
+		int jbox = (idxbox / box.size().i) % box.size().j;
+		int kbox = idxbox / (box.size().i * box.size().j);
+
+		//indexes of box start in mesh
+		int i = box.s.i % M2.n.i;
+		int j = (box.s.j / M2.n.i) % M2.n.j;
+		int k = box.s.k / (M2.n.i * M2.n.j);
+
+		//total index in mesh
+		int idx = i + ibox + (j + jbox) * M2.n.x + (k + kbox) * M2.n.x*M2.n.y;
+
+		if (M.is_not_empty(idx) && M2.is_not_empty(idx)) {
+
+			cuBReal normA = M[idx].norm();
+			cuBReal normB = M2[idx].norm();
+			average_ = (M[idx] / normA) ^ (cuDiffEq.dMdt2(idx) / normB);
+			include_in_average = true;
+		}
+	}
+
+	reduction_avg(0, 1, &average_, average, points_count, include_in_average);
+}
+
+__global__ void Average_m2xdmdt_AFM_kernel(cuBox box, ManagedMeshCUDA& cuMesh, ManagedDiffEqAFMCUDA& cuDiffEq, cuReal3& average, size_t& points_count)
+{
+	cuVEC_VC<cuReal3>& M = *cuMesh.pM;
+	cuVEC_VC<cuReal3>& M2 = *cuMesh.pM2;
+
+	int idxbox = blockIdx.x * blockDim.x + threadIdx.x;
+
+	cuReal3 average_ = cuReal3();
+	bool include_in_average = false;
+
+	if (idxbox < box.size().dim()) {
+
+		//indexes of this threads in box
+		int ibox = idxbox % box.size().i;
+		int jbox = (idxbox / box.size().i) % box.size().j;
+		int kbox = idxbox / (box.size().i * box.size().j);
+
+		//indexes of box start in mesh
+		int i = box.s.i % M2.n.i;
+		int j = (box.s.j / M2.n.i) % M2.n.j;
+		int k = box.s.k / (M2.n.i * M2.n.j);
+
+		//total index in mesh
+		int idx = i + ibox + (j + jbox) * M2.n.x + (k + kbox) * M2.n.x*M2.n.y;
+
+		if (M.is_not_empty(idx) && M2.is_not_empty(idx)) {
+
+			cuBReal normA = M[idx].norm();
+			cuBReal normB = M2[idx].norm();
+			average_ = (M2[idx] / normB) ^ (cuDiffEq.dMdt(idx) / normA);
+			include_in_average = true;
+		}
+	}
+
+	reduction_avg(0, 1, &average_, average, points_count, include_in_average);
+}
+
 //----------------------------------- ODE METHODS IN (ANTI)FERROMAGNETIC MESH : Mesh_AntiFerromagneticCUDA.cu
 
 //return average dm/dt in the given avRect (relative rect). Here m is the direction vector.
-DBL3 AFMeshCUDA::Average_dmdt(cuBox avBox)
+cuReal3 AFMeshCUDA::Average_dmdt(cuBox avBox)
 {
 	Zero_aux_values();
 
@@ -157,10 +231,10 @@ DBL3 AFMeshCUDA::Average_dmdt(cuBox avBox)
 	int num_points = aux_int.to_cpu();
 
 	if (num_points) return aux_real3.to_cpu() / num_points;
-	else return DBL3();
+	else return cuReal3();
 }
 
-DBL3 AFMeshCUDA::Average_dmdt2(cuBox avBox)
+cuReal3 AFMeshCUDA::Average_dmdt2(cuBox avBox)
 {
 	Zero_aux_values();
 
@@ -169,11 +243,11 @@ DBL3 AFMeshCUDA::Average_dmdt2(cuBox avBox)
 	int num_points = aux_int.to_cpu();
 
 	if (num_points) return aux_real3.to_cpu() / num_points;
-	else return DBL3();
+	else return cuReal3();
 }
 
 //return average m x dm/dt in the given avRect (relative rect). Here m is the direction vector.
-DBL3 AFMeshCUDA::Average_mxdmdt(cuBox avBox)
+cuReal3 AFMeshCUDA::Average_mxdmdt(cuBox avBox)
 {
 	Zero_aux_values();
 
@@ -182,10 +256,11 @@ DBL3 AFMeshCUDA::Average_mxdmdt(cuBox avBox)
 	int num_points = aux_int.to_cpu();
 
 	if (num_points) return aux_real3.to_cpu() / num_points;
-	else return DBL3();
+	else return cuReal3();
 }
 
-DBL3 AFMeshCUDA::Average_mxdmdt2(cuBox avBox)
+//sub-lattice B
+cuReal3 AFMeshCUDA::Average_mxdmdt2(cuBox avBox)
 {
 	Zero_aux_values();
 
@@ -194,7 +269,32 @@ DBL3 AFMeshCUDA::Average_mxdmdt2(cuBox avBox)
 	int num_points = aux_int.to_cpu();
 
 	if (num_points) return aux_real3.to_cpu() / num_points;
-	else return DBL3();
+	else return cuReal3();
+}
+
+//mixed sub-lattices A and B
+cuReal3 AFMeshCUDA::Average_mxdm2dt(cuBox avBox)
+{
+	Zero_aux_values();
+
+	Average_mxdm2dt_AFM_kernel <<< (avBox.size().dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (avBox, cuMesh, Get_ManagedDiffEqCUDA(), aux_real3, aux_int);
+
+	int num_points = aux_int.to_cpu();
+
+	if (num_points) return aux_real3.to_cpu() / num_points;
+	else return cuReal3();
+}
+
+cuReal3 AFMeshCUDA::Average_m2xdmdt(cuBox avBox)
+{
+	Zero_aux_values();
+
+	Average_m2xdmdt_AFM_kernel <<< (avBox.size().dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (avBox, cuMesh, Get_ManagedDiffEqCUDA(), aux_real3, aux_int);
+
+	int num_points = aux_int.to_cpu();
+
+	if (num_points) return aux_real3.to_cpu() / num_points;
+	else return cuReal3();
 }
 
 #endif

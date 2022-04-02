@@ -6,18 +6,17 @@
 #include "SuperMesh.h"
 
 //Calculate interface spin accumulation torque only in mesh with matching transport module
-VEC<DBL3>& STransport::GetInterfacialSpinTorque(Transport* pMeshTrans)
+VEC<DBL3>& STransport::GetInterfacialSpinTorque(TransportBase* pTransportBase)
 {
-	if (!pMeshTrans->PrepareDisplayVEC(pMeshTrans->pMesh->h))
-		return pMeshTrans->displayVEC;
+	if (!pTransportBase->PrepareDisplayVEC(pTransportBase->pMeshBase->h)) return pTransportBase->displayVEC;
 
 #if COMPILECUDA == 1
 	if (pModuleCUDA) {
 
-		cu_obj<cuVEC<cuReal3>>& cudisplayVEC = GetInterfacialSpinTorqueCUDA(pMeshTrans);
-		cudisplayVEC()->copy_to_cpuvec(pMeshTrans->displayVEC);
+		cu_obj<cuVEC<cuReal3>>& cudisplayVEC = GetInterfacialSpinTorqueCUDA(pTransportBase);
+		cudisplayVEC()->copy_to_cpuvec(pTransportBase->displayVEC);
 
-		return pMeshTrans->displayVEC;
+		return pTransportBase->displayVEC;
 	}
 #endif
 
@@ -29,23 +28,19 @@ VEC<DBL3>& STransport::GetInterfacialSpinTorque(Transport* pMeshTrans)
 			int idx_sec = CMBNDcontacts[idx1][idx2].mesh_idx.i;
 			int idx_pri = CMBNDcontacts[idx1][idx2].mesh_idx.j;
 
-			//Interface Spin Torque currently only from micromagnetic to micromagnetic meshes
-			if (!pTransport[idx_pri]->pMeshBase->is_atomistic() && !pTransport[idx_sec]->pMeshBase->is_atomistic()) {
-
-				if (dynamic_cast<Transport*>(pTransport[idx_pri]) == pMeshTrans) 
-					dynamic_cast<Transport*>(pTransport[idx_pri])->CalculateDisplaySAInterfaceTorque(dynamic_cast<Transport*>(pTransport[idx_sec]), CMBNDcontacts[idx1][idx2]);
-			}
+			if (pTransport[idx_pri] == pTransportBase)
+				pTransport[idx_pri]->CalculateDisplaySAInterfaceTorque(pTransport[idx_sec], CMBNDcontacts[idx1][idx2]);
 		}
 	}
 
-	return pMeshTrans->displayVEC;
+	return pTransportBase->displayVEC;
 }
 
 #if COMPILECUDA == 1
 //return interfacial spin torque in given mesh with matching transport module
-cu_obj<cuVEC<cuReal3>>& STransport::GetInterfacialSpinTorqueCUDA(Transport* pMeshTrans)
+cu_obj<cuVEC<cuReal3>>& STransport::GetInterfacialSpinTorqueCUDA(TransportBase* pTransportBase)
 {
-	return dynamic_cast<STransportCUDA*>(pModuleCUDA)->GetInterfacialSpinTorque(dynamic_cast<TransportCUDA*>(pMeshTrans->pModuleCUDA));
+	return dynamic_cast<STransportCUDA*>(pModuleCUDA)->GetInterfacialSpinTorque(pTransportBase->pTransportBaseCUDA);
 }
 #endif
 

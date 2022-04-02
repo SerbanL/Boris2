@@ -11,12 +11,15 @@
 
 #include "Modules.h"
 #include "ParametersDefs.h"
+#include "Transport_Defs.h"
 
 #include "MeshParamsBase.h"
 
 #if COMPILECUDA == 1
 #include "MeshBaseCUDA.h"
 #endif
+
+#include "MeshDefs.h"
 
 class SuperMesh;
 
@@ -315,6 +318,9 @@ public:
 	//The return addess is still valid as it will be stored on the stack.
 	void DelModule(Modules* pModule);
 
+	//get all set modules IDs
+	std::vector<MOD_> GetModulesIDs(void);
+
 	//---- INITIALIZE MODULES -> Calls Modules::Initialize
 
 	//initialize all modules prior to computations starting
@@ -388,17 +394,21 @@ public:
 	virtual PhysQ FetchOnScreenPhysicalQuantity(double detail_level = 0.0, bool getBackground = false) = 0;
 
 	//save the quantity currently displayed on screen in an ovf2 file using the specified format
-	virtual BError SaveOnScreenPhysicalQuantity(std::string fileName, std::string ovf2_dataType) = 0;
+	virtual BError SaveOnScreenPhysicalQuantity(std::string fileName, std::string ovf2_dataType, MESHDISPLAY_ quantity) = 0;
 
 	//extract profile from focused mesh, from currently display mesh quantity, but reading directly from the quantity
 	//Displayed	mesh quantity can be scalar or a vector; pass in std::vector pointers, then check for nullptr to determine what type is displayed
 	//if do_average = true then build average and don't return anything, else return just a single-shot profile. If read_average = true then simply read out the internally stored averaged profile by assigning to pointer.
-	virtual void GetPhysicalQuantityProfile(DBL3 start, DBL3 end, double step, DBL3 stencil, std::vector<DBL3>*& pprofile_dbl3, std::vector<double>*& pprofile_dbl, bool do_average, bool read_average) = 0;
+	virtual void GetPhysicalQuantityProfile(
+		DBL3 start, DBL3 end, double step, DBL3 stencil, 
+		std::vector<DBL3>*& pprofile_dbl3, std::vector<double>*& pprofile_dbl, 
+		bool do_average, bool read_average, MESHDISPLAY_ quantity) = 0;
+	
 	//read number of averages performed on profile
 	int GetProfileAverages(void) { return num_profile_averages; }
 
 	//return average value for currently displayed mesh quantity in the given relative rectangle
-	virtual Any GetAverageDisplayedMeshValue(Rect rel_rect, std::vector<MeshShape> shapes) = 0;
+	virtual Any GetAverageDisplayedMeshValue(Rect rel_rect, std::vector<MeshShape> shapes, MESHDISPLAY_ quantity) = 0;
 
 	int GetDisplayedPhysicalQuantity(void) { return displayedPhysicalQuantity; }
 	int GetDisplayedBackgroundPhysicalQuantity(void) { return displayedBackgroundPhysicalQuantity; }
@@ -674,7 +684,11 @@ public:
 
 	//return average m x dm/dt in the given avRect (relative rect). Here m is the direction vector.
 	virtual DBL3 Average_mxdmdt(Rect avRect) { return DBL3(); }
+	//for sub-lattice B
 	virtual DBL3 Average_mxdmdt2(Rect avRect) { return DBL3(); }
+	//mixed sub-lattices A and B
+	virtual DBL3 Average_mxdm2dt(Rect avRect) { return DBL3(); }
+	virtual DBL3 Average_m2xdmdt(Rect avRect) { return DBL3(); }
 
 	//compute magnitude histogram data
 	//extract histogram between magnitudes min and max with given number of bins. if min max not given (set them to zero) then determine them first. 
@@ -692,6 +706,17 @@ public:
 	virtual bool Get_ThAvAngHistogram(std::vector<double>& histogram_x, std::vector<double>& histogram_p, int num_bins, double& min, double& max, INT3 macrocell_dims, DBL3 ndir) { return true; }
 
 	virtual DBL3 GetThermodynamicAverageMagnetization(Rect rectangle) { return 0.0; }
+
+	//shift a dipole mesh rectangle by given amount (only overload in dipole meshes)
+	virtual void Shift_Dipole(DBL3 shift) {}
+
+	//methods for dipole shifting algorithm
+	virtual void Set_Dipole_Velocity(DBL3 velocity, DBL3 clipping) {}
+	virtual DBL3 Get_Dipole_Velocity(void) { return DBL3(); }
+	virtual DBL3 Get_Dipole_Clipping(void) { return DBL3(); }
+
+	virtual void SetTMRType(TMR_ type) {}
+	virtual TMR_ GetTMRType(void) { return TMR_NONE; }
 
 	//----------------------------------- MESH QUANTITIES CONTROL
 

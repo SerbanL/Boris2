@@ -31,6 +31,12 @@ VType VEC<VType>::average(const Rect& rectangle) const
 	//if empty rectangle then average ove the entire mesh
 	if (rectangle.IsNull()) return average(Box(n));
 
+	//if rect start and end point are the same, then just read single value
+	if (rectangle.s == rectangle.e && rect.contains(rectangle.s)) {
+
+		return (*this)[rectangle.s];
+	}
+
 	//... otherwise rectangle must intersect with this mesh
 	if (!rect.intersects(rectangle + rect.s)) return VType();
 

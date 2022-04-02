@@ -43,8 +43,6 @@ public:
 
 	//----------------------------------- OTHER IMPORTANT CONTROL METHODS
 
-	cuBReal CheckMoveMesh(bool antisymmetric, double threshold) { return 0.0; }
-
 	//----------------------------------- VARIOUS SET METHODS
 
 	//set magnitude for Mdipole
@@ -52,12 +50,13 @@ public:
 
 	void SetMagAngle(cuBReal polar, cuBReal azim);
 
-	void Reset_recalculateStrayField(void) { recalculateStrayField = false; }
+	//shift dipole mesh rectangle by given amount
+	void Shift_Dipole(void);
 
 	//----------------------------------- VARIOUS GET METHODS
 
 	//check if stray field needs to be recalculated depending on current settings, and prepare Mdipole for stray field recalculation (set to required value)
-	bool Check_recalculateStrayField(void);
+	bool CheckRecalculateStrayField(void);
 };
 
 #else
@@ -91,12 +90,10 @@ public:
 	//set magnitude for Mdipole
 	void Reset_Mdipole(void) {}
 
-	void Reset_recalculateStrayField(void) {}
-
 	//----------------------------------- VARIOUS GET METHODS
 
 	//check if stray field needs to be recalculated depending on current settings, and prepare Mdipole for stray field recalculation (set to required value)
-	bool Check_recalculateStrayField(void) { return false; }
+	bool CheckRecalculateStrayField(void) { return false; }
 };
 
 #endif

@@ -9,12 +9,10 @@
 
 Transport::Transport(Mesh *pMesh_) :
 	Modules(),
+	TransportBase(pMesh_),
 	ProgramStateNames(this, {}, {})
 {
 	pMesh = pMesh_;
-	pMeshBase = pMesh;
-
-	pSMesh = pMesh->pSMesh;
 
 	Set_STSolveType();
 
@@ -38,80 +36,14 @@ Transport::~Transport()
 	pMesh->S.clear();
 }
 
-//set the stsolve indicator depending on current configuration
-void Transport::Set_STSolveType(void)
-{
-	if (!pSMesh->SolveSpinCurrent()) {
-
-		//no spin transport required
-		stsolve = STSOLVE_NONE;
-	}
-	else {
-
-		switch (pMesh->GetMeshType()) {
-
-		case MESH_FERROMAGNETIC:
-		case MESH_DIPOLE:
-			stsolve = STSOLVE_FERROMAGNETIC;
-			break;
-
-		case MESH_ANTIFERROMAGNETIC:
-			//to be implemented
-			stsolve = STSOLVE_NONE;
-			break;
-
-		case MESH_METAL:
-			stsolve = STSOLVE_NORMALMETAL;
-			break;
-
-		case MESH_INSULATOR:
-			//to be implemented - currently insulator meshes do not even allow a Transport module
-			stsolve = STSOLVE_TUNNELING;
-			break;
-		}
-	}
-
-#if COMPILECUDA == 1
-	//copy over to TransportCUDA module - need to use it in .cu files
-	if (pModuleCUDA) pTransportCUDA->Set_STSolveType();
-#endif
-}
-
-bool Transport::SetFixedPotentialCells(Rect rectangle, double potential)
-{ 
-	bool success = true;
-
-#if COMPILECUDA == 1
-	if (pModuleCUDA) success &= pTransportCUDA->SetFixedPotentialCells(rectangle, potential);
-#endif
-
-	success &= pMesh->V.set_dirichlet_conditions(rectangle, potential);
-
-	return success;
-}
-
-void Transport::ClearFixedPotentialCells(void)
-{
-	pMesh->V.clear_dirichlet_flags();
-
-#if COMPILECUDA == 1
-	if (pModuleCUDA) pTransportCUDA->ClearFixedPotentialCells();
-#endif
-}
-
-void Transport::Set_Linear_PotentialDrop(DBL3 ground_electrode_center, double ground_potential, DBL3 electrode_center, double electrode_potential)
-{
-	pMesh->V.set_linear(ground_electrode_center, ground_potential, electrode_center, electrode_potential);
-}
-
 //check if dM_dt Calculation should be enabled
 bool Transport::Need_dM_dt_Calculation(void)
 {
 	//enabled for ferromagnetic st solver only
 	if (stsolve == STSOLVE_FERROMAGNETIC) {
 
-		//enabled for charge pumping (for spin pumping we can just read it cell by cell, don't need vector calculus in this case).
-		if (IsNZ((double)pMesh->cpump_eff.get0())) return true;
+		//enabled for charge pumping and spin pumping
+		if (IsNZ((double)pMesh->cpump_eff.get0()) || IsNZ((double)pMesh->pump_eff.get0())) return true;
 	}
 
 	return false;
@@ -302,8 +234,10 @@ BError Transport::MakeCUDAModule(void)
 
 		//Note : it is posible pMeshCUDA has not been allocated yet, but this module has been created whilst cuda is switched on. This will happen when a new mesh is being made which adds this module by default.
 		//In this case, after the mesh has been fully made, it will call SwitchCUDAState on the mesh, which in turn will call this SwitchCUDAState method; then pMeshCUDA will not be nullptr and we can make the cuda module version
-		pModuleCUDA = new TransportCUDA(pMesh, pSMesh, this);
+		
+		pModuleCUDA = new TransportCUDA(this);
 		pTransportCUDA = dynamic_cast<TransportCUDA*>(pModuleCUDA);
+		pTransportBaseCUDA = pTransportCUDA;
 		error = pModuleCUDA->Error_On_Create();
 	}
 
@@ -318,8 +252,7 @@ double Transport::UpdateField(void)
 	if (!pMesh->static_transport_solver && !pSMesh->disabled_transport_solver) {
 
 		//update elC (AMR and temperature)
-		if (pSMesh->CurrentTimeStepSolved())
-			CalculateElectricalConductivity();
+		if (pSMesh->CurrentTimeStepSolved()) CalculateElectricalConductivity();
 	}
 
 	//no contribution to total energy density
@@ -377,95 +310,6 @@ void Transport::CalculateElectricField(void)
 	}
 }
 
-double Transport::CalculateElectrodeCurrent(Rect &electrode_rect)
-{
-	if (!pMesh->meshRect.intersects(electrode_rect)) return 0.0;
-
-	Box electrode_box = pMesh->V.box_from_rect_max(electrode_rect);
-
-#if COMPILECUDA == 1
-	if (pModuleCUDA) return pTransportCUDA->CalculateElectrodeCurrent(electrode_box);
-#endif
-
-	//look at all cells surrounding the electrode
-
-	double current = 0;
-
-	//cells on -x side
-	if (electrode_box.s.i > 1) {
-#pragma omp parallel for reduction(+:current)
-		for (int j = electrode_box.s.j; j < electrode_box.e.j; j++) {
-			for (int k = electrode_box.s.k; k < electrode_box.e.k; k++) {
-
-				current += -pMesh->elC[INT3(electrode_box.s.i - 1, j, k)] *
-					(pMesh->V[INT3(electrode_box.s.i - 1, j, k)] - pMesh->V[INT3(electrode_box.s.i - 2, j, k)]) * pMesh->h_e.y * pMesh->h_e.z / pMesh->h_e.x;
-			}
-		}
-	}
-
-	//cells on +x side
-	if (electrode_box.e.i + 1 < pMesh->n_e.i) {
-#pragma omp parallel for reduction(+:current)
-		for (int j = electrode_box.s.j; j < electrode_box.e.j; j++) {
-			for (int k = electrode_box.s.k; k < electrode_box.e.k; k++) {
-
-				current -= -pMesh->elC[INT3(electrode_box.e.i, j, k)] *
-					(pMesh->V[INT3(electrode_box.e.i + 1, j, k)] - pMesh->V[INT3(electrode_box.e.i, j, k)]) * pMesh->h_e.y * pMesh->h_e.z / pMesh->h_e.x;
-			}
-		}
-	}
-
-	//cells on -y side
-	if (electrode_box.s.j > 1) {
-#pragma omp parallel for reduction(+:current)
-		for (int i = electrode_box.s.i; i < electrode_box.e.i; i++) {
-			for (int k = electrode_box.s.k; k < electrode_box.e.k; k++) {
-
-				current += -pMesh->elC[INT3(i, electrode_box.s.j - 1, k)] *
-					(pMesh->V[INT3(i, electrode_box.s.j - 1, k)] - pMesh->V[INT3(i, electrode_box.s.j - 2, k)]) * pMesh->h_e.x * pMesh->h_e.z / pMesh->h_e.y;
-			}
-		}
-	}
-
-	//cells on +y side
-	if (electrode_box.e.j + 1 < pMesh->n_e.j) {
-#pragma omp parallel for reduction(+:current)
-		for (int i = electrode_box.s.i; i < electrode_box.e.i; i++) {
-			for (int k = electrode_box.s.k; k < electrode_box.e.k; k++) {
-
-				current -= -pMesh->elC[INT3(i, electrode_box.e.j, k)] *
-					(pMesh->V[INT3(i, electrode_box.e.j + 1, k)] - pMesh->V[INT3(i, electrode_box.e.j, k)]) * pMesh->h_e.x * pMesh->h_e.z / pMesh->h_e.y;
-			}
-		}
-	}
-
-	//cells on -z side
-	if (electrode_box.s.k > 1) {
-#pragma omp parallel for reduction(+:current)
-		for (int j = electrode_box.s.j; j < electrode_box.e.j; j++) {
-			for (int i = electrode_box.s.i; i < electrode_box.e.i; i++) {
-
-				current += -pMesh->elC[INT3(i, j, electrode_box.s.k - 1)] *
-					(pMesh->V[INT3(i, j, electrode_box.s.k - 1)] - pMesh->V[INT3(i, j, electrode_box.s.k - 2)]) * pMesh->h_e.x * pMesh->h_e.y / pMesh->h_e.z;
-			}
-		}
-	}
-
-	//cells on +z side
-	if (electrode_box.e.k + 1 < pMesh->n_e.k) {
-#pragma omp parallel for reduction(+:current)
-		for (int j = electrode_box.s.j; j < electrode_box.e.j; j++) {
-			for (int i = electrode_box.s.i; i < electrode_box.e.i; i++) {
-
-				current -= -pMesh->elC[INT3(i, j, electrode_box.e.k)] *
-					(pMesh->V[INT3(i, j, electrode_box.e.k + 1)] - pMesh->V[INT3(i, j, electrode_box.e.k)]) * pMesh->h_e.x * pMesh->h_e.y / pMesh->h_e.z;
-			}
-		}
-	}
-
-	return current;
-}
-
 //-------------------Other Calculation Methods
 
 void Transport::CalculateElectricalConductivity(bool force_recalculate)
@@ -479,7 +323,7 @@ void Transport::CalculateElectricalConductivity(bool force_recalculate)
 #endif
 
 	//Include AMR?
-	if (pMesh->M.linear_size() && (IsNZ((double)pMesh->amrPercentage))) {
+	if (pMesh->M.linear_size() && IsNZ((double)pMesh->amrPercentage)) {
 
 		//with amr
 		#pragma omp parallel for
@@ -492,15 +336,12 @@ void Transport::CalculateElectricalConductivity(bool force_recalculate)
 				pMesh->update_parameters_ecoarse(idx, pMesh->elecCond, elecCond, pMesh->amrPercentage, amrPercentage);
 
 				//get current density value at this conductivity cell
-				DBL3 Jc_value = pMesh->elC[idx] * pMesh->E[idx];
+				DBL3 jc_value = normalize(pMesh->elC[idx] * pMesh->E[idx]);
 
 				//get M value (M is on n, h mesh so could be different)
-				DBL3 M_value = pMesh->M[pMesh->elC.cellidx_to_position(idx)];
+				DBL3 m_value = normalize(pMesh->M[pMesh->elC.cellidx_to_position(idx)]);
 
-				double magnitude = Jc_value.norm() * M_value.norm();
-				double dotproduct = 0.0;
-
-				if (IsNZ(magnitude)) dotproduct = (Jc_value * M_value) / magnitude;
+				double dotproduct = jc_value * m_value;
 
 				pMesh->elC[idx] = elecCond / (1 + amrPercentage*dotproduct*dotproduct / 100);
 			}
@@ -527,47 +368,6 @@ void Transport::CalculateElectricalConductivity(bool force_recalculate)
 		//set flag to force transport solver recalculation (note, the SuperMesh modules always update after the Mesh modules) - elC has changed
 		pSMesh->CallModuleMethod(&STransport::Flag_Recalculate_Transport);
 	}
-}
-
-//-------------------Properties
-
-bool Transport::GInterface_Enabled(void)
-{
-	return pMesh->GInterface_Enabled();
-}
-
-//-------------------Others
-
-//called by MoveMesh method in this mesh - move relevant transport quantities
-void Transport::MoveMesh_Transport(double x_shift)
-{
-	double mesh_end_size = pMesh->meshRect.size().x * MOVEMESH_ENDRATIO;
-
-	Rect shift_rect = Rect(pMesh->meshRect.s + DBL3(mesh_end_size, 0, 0), pMesh->meshRect.e - DBL3(mesh_end_size, 0, 0));
-
-#if COMPILECUDA == 1
-	if (pModuleCUDA) {
-
-		pMesh->pMeshCUDA->elC()->shift_x(pMesh->elC.linear_size(), x_shift, shift_rect);
-
-		//shift spin accumulation if present
-		if (pMesh->S.linear_size()) pMesh->pMeshCUDA->S()->shift_x(pMesh->S.linear_size(), x_shift, shift_rect);
-
-		//set flag to force transport solver recalculation (note, the SuperMesh modules always update after the Mesh modules) - elC has changed
-		pSMesh->CallModuleMethod(&STransport::Flag_Recalculate_Transport);
-
-		return;
-	}
-#endif
-
-	//1. electrical conductivity
-	pMesh->elC.shift_x(x_shift, shift_rect);
-
-	//shift spin accumulation if present
-	if(pMesh->S.linear_size()) pMesh->S.shift_x(x_shift, shift_rect);
-
-	//set flag to force transport solver recalculation (note, the SuperMesh modules always update after the Mesh modules) - elC has changed
-	pSMesh->CallModuleMethod(&STransport::Flag_Recalculate_Transport);
 }
 
 #endif

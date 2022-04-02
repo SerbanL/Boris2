@@ -172,7 +172,7 @@ std::vector<std::string> Simulation::DownloadDeltaUpdate(int target_version)
 
 		if (res == S_OK) BD.DisplayConsoleMessage("Patch file downloaded : " + update_file);
 		else if (res == INET_E_DOWNLOAD_FAILURE) { BD.DisplayConsoleError("Could not download file from : " + url); return ""; }
-		else { BD.DisplayConsoleError("Error downloading file : " + url); return ""; }
+		else { BD.DisplayConsoleError("Download available, but error saving file (make sure you have privileges for writing to program folder): " + url); return ""; }
 
 		return update_file;
 	};

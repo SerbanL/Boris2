@@ -116,13 +116,15 @@ protected:
 	//set h in gpu memory from cpu memory value - can take both l-values and r-values
 	__host__ void set_h(const cuReal3& h_);
 
-	//set rect gpu memory from cpu memory value - can take both l-values and r-values
-	__host__ void set_rect(const cuRect& rect_);
-
 	//from h_ and rect_ (in cpu memory) calculate what n value results (in cpu memory) - but do not make any changes
 	__host__ cuSZ3 get_n_from_h_and_rect(const cuReal3& h_, const cuRect& rect_);
 
 public:
+
+	//--------------------------------------------Special public access GET/SET FROM/TO GPU MEMORY : cuVEC_mng.h
+
+	//set rect gpu memory from cpu memory value - can take both l-values and r-values
+	__host__ void set_rect(const cuRect& rect_);
 
 	//--------------------------------------------CONSTRUCTORS : cu_obj "managed constructors" only. Real constructors are never called since you should never make a real instance of a cuVEC. : cuVEC_mng.h
 
@@ -184,6 +186,8 @@ public:
 
 	//--------------------------------------------EXTRACT A LINE PROFILE : cuVEC_extract.cuh
 
+	//for all these methods use wrap-around when extracting profiles if points on profile exceed mesh boundaries
+
 	//auxiliary access
 	__device__ VType*& get_line_profile(void) { return line_profile; }
 	__device__ cuReal2*& get_line_profile_component_x(void) { return line_profile_component_x; }
@@ -192,7 +196,7 @@ public:
 
 	__device__ size_t get_line_profile_size(void) { return line_profile_component_size; }
 
-	//1. Profile values only, without stencil operation, and with mesh wrap-around
+	//1. Profile values only, without stencil operation
 
 	//extract profile to a cu_arr : extract size points starting at start in the direction step for the given number of points (size); use weighted average to extract profile with h stencil only
 	__host__ void extract_profilevalues(size_t size, cu_arr<VType>& profile_gpu, cuReal3 start, cuReal3 step);
@@ -202,7 +206,7 @@ public:
 	__host__ void extract_profilevalues_component_y(size_t size, cu_arr<cuBReal>& profile_gpu, cuReal3 start, cuReal3 step);
 	__host__ void extract_profilevalues_component_z(size_t size, cu_arr<cuBReal>& profile_gpu, cuReal3 start, cuReal3 step);
 
-	//2. Profile values only, with stencil operation around profile point (capped to mesh size), and without mesh wrap-around
+	//2. Profile values only, with stencil operation around profile point
 
 	//extract profile components: extract starting at start in the direction end - step, with given step; use weighted average to extract profile with given stencil
 	//all coordinates are relative positions. Return profile values in profile_gpu.
@@ -216,7 +220,7 @@ public:
 	template <typename SType>
 	__host__ bool extract_profile(cuReal3 start, cuReal3 end, cuBReal step, cuReal3 stencil, std::vector<SType>& profile_cpu);
 
-	//3. Profile values for individual components together with profile position returned in cuReal2/DBL2, with stencil operation around profile point (capped to mesh size), and without mesh wrap-around
+	//3. Profile values for individual components together with profile position returned in cuReal2/DBL2, with stencil operation around profile point (capped to mesh size)
 
 	//as above but only component x and pack in profile position too (for VAL3 floating types only). Return data as extracted component in profile_gpu. profile_gpu must have correct size: (end - start).norm() / step + 1.
 	__host__ bool extract_profile_component_x(cuReal3 start, cuReal3 end, cuBReal step, cuReal3 stencil, cu_arr<cuReal2>& profile_gpu);
@@ -321,10 +325,12 @@ public:
 	//--------------------------------------------VEC GENERATORS : cuVEC_generate.cuh
 
 	//linear : use interpolation to set values in this VEC based on projected distance between position1 and position2 and given fixed end values.
-	__host__ bool generate_linear(cuReal3 new_h, cuRect new_rect, cuReal3 position1, VType value1, cuReal3 position2, VType value2);
+	__host__ bool generate_linear(cuReal3 new_h, cuRect new_rect, cuRect contact1, VType value1, cuRect contact2, VType value2);
 
 	//similar to generate_linear except new dimensions not set
-	__host__ void set_linear(cuReal3 position1, VType value1, cuReal3 position2, VType value2);
+	//also allow 'degeneracy' : multiple linear generators may be superimposed with use of degeneracy : degeneracy.first is index, degeneracy.second is number of geenerators
+	//if using degeneracy make sure these are called in order, or at least index 0 goes first
+	__host__ void set_linear(cuRect contact1, VType value1, cuRect contact2, VType value2, cuReal2 degeneracy = cuReal2());
 
 	//--------------------------------------------GETTERS : cuVEC_aux.h
 
@@ -345,6 +351,7 @@ public:
 
 	//return cell index from relative position : the inverse of cellidx_to_position
 	__device__ int position_to_cellidx(const cuReal3& position) const { return cu_floor_epsilon(position.x / h.x) + cu_floor_epsilon(position.y / h.y) * n.x + cu_floor_epsilon(position.z / h.z) * n.x*n.y; }
+	__host__ int position_to_cellidx_cpu(const cuReal3& position);
 
 	//get index of cell which contains position (absolute value, not relative to start of rectangle), capped to mesh size
 	__device__ cuINT3 cellidx_from_position(const cuReal3& absolute_position)  const;

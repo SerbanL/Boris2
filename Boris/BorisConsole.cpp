@@ -1,16 +1,50 @@
 #include "stdafx.h"
 #include "Boris.h"
 
+#include "CommandLineArgs.h"
+
 #include "CompileFlags.h"
 #if GRAPHICS == 0
+
+#if PYTHON_EMBEDDING == 1
+#include "PythonScripting.h"
+#endif
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 //Separate function to make the Simulation object, so it can be called on a separate std::thread.
 //See https://stackoverflow.com/questions/64988525/bug-related-to-g-openmp-when-using-stdthread/65001887#65001887 for reason
-void make_Simulation(void)
+void make_Simulation(CLArgs clargs)
 {
-	pSim = new Simulation(Program_Version, server_port, server_pwd, cudaDevice);
+	pSim = new Simulation(
+		Program_Version, clargs.progName,
+		clargs.server_port, clargs.server_pwd,
+		clargs.cudaDevice,
+		clargs.python_script, clargs.python_script_mGPU, clargs.python_script_parallel, clargs.python_script_terminate, clargs.python_script_deletesource);
+
+#if PYTHON_EMBEDDING == 1
+	//Startup embedded Python interpreter on this thread
+	PyImport_AppendInittab("BPython", &PyInit_PythonEmbeddedModule);
+	Py_Initialize();
+
+	//Append to path standard working directories (the Simulations, BorisPythonScripts, and current executable directories)
+	PyObject* sysPath = PySys_GetObject((char*)"path");
+
+	//Simulations directory in documents
+	std::string pathToModuleDirectory = pSim->Get_Simulations_Directory();
+	PyList_Append(sysPath, (PyUnicode_FromString(pathToModuleDirectory.c_str())));
+
+	//the executable directory
+	pathToModuleDirectory = GetExeDirectory();
+	PyList_Append(sysPath, (PyUnicode_FromString(pathToModuleDirectory.c_str())));
+
+	//BorisPythonScripts directory, found in Documents/Boris Data/ (this is where NetSocks is found)
+	pathToModuleDirectory = pSim->Get_BorisPythonScripts_Directory();
+	PyList_Append(sysPath, (PyUnicode_FromString(pathToModuleDirectory.c_str())));
+#endif
+
+	//Run embedded Python script specified on command line?
+	if (clargs.python_script.length()) pSim->NewMessage("runscript " + clargs.python_script);
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -57,30 +91,29 @@ int main(int argc, char *argv[])
 	//////////////////////
 	//Arguments
 
-	for (int i = 1; i < argc; i++) {
+	CLArgs clargs;
+	clargs.process_command_line_args(argc, argv);
 
-		//First argument: server port
-		if (i == 1) {
+	if (argc > 1) {
 
-			server_port = std::string(argv[i]);
+		if (clargs.show_version) {
+
+			//show version instead of launching
+
+			std::stringstream version;
+			version << "BORIS Computational Spintronics 2022, version " << (double)Program_Version / 100.0;
+			std::cout << version.str() << std::endl;
+
+			return 0;
 		}
 
-		//Second argument: cuda device
-		if (i == 2) {
+		if (clargs.show_help) {
 
-			cudaDevice = ToNum(std::string(argv[i]));
-		}
+			//show help instead of launching
 
-		//Third argument: window options (front/back)
-		if (i == 3) {
+			std::cout << clargs.show_help_text() << std::endl;
 
-			window_startup_option = std::string(argv[i]);
-		}
-
-		//Fourth argument: server password
-		if (i == 4) {
-
-			server_pwd = std::string(argv[i]);
+			return 0;
 		}
 	}
 
@@ -94,7 +127,7 @@ int main(int argc, char *argv[])
 	//Instantiate Simulation object and start main simulation loop thread (non-blocking)
 	
 	//See https://stackoverflow.com/questions/64988525/bug-related-to-g-openmp-when-using-stdthread/65001887#65001887
-	std::thread simulation_instantiation_thread(&make_Simulation);
+	std::thread simulation_instantiation_thread(&make_Simulation, clargs);
 	simulation_instantiation_thread.join();
 
 	//////////////////////

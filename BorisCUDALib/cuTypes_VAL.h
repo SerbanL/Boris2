@@ -134,6 +134,18 @@ struct cuVAL2 {
 	>
 	__host__ __device__ cuVAL2<RType> operator&(const cuVAL2<VType_> &rhs) const { return cuVAL2<RType>(x * rhs.x, y * rhs.y); }
 
+	//DIVISION REMAINDER
+	template <
+		typename VType_,
+		typename RType = typename std::conditional<std::is_floating_point<VType_>::value && std::is_integral<VType>::value, VType_, VType>::type
+	>
+		__host__ __device__ cuVAL2<RType> operator%(const cuVAL2<VType_> &rhs) const 
+	{ 
+		return cuVAL2<RType>(
+			(x < rhs.x ? (x < 0.0 ? fmod(x, rhs.x) + rhs.x : x) : fmod(x, rhs.x)),
+			(y < rhs.y ? (y < 0.0 ? fmod(y, rhs.y) + rhs.y : y) : fmod(y, rhs.y)));
+	}
+
 	//PRODUCTS WITH A CONSTANT
 
 	//product with a constant (must be fundamental type) on the RHS
@@ -397,6 +409,19 @@ struct cuVAL3 {
 	>
 	__host__ __device__ cuVAL3<RType> operator&(const cuVAL3<VType_> &rhs) const { return cuVAL3<RType>(x * rhs.x, y * rhs.y, z * rhs.z); }
 
+	//DIVISION REMAINDER
+	template <
+		typename VType_,
+		typename RType = typename std::conditional<std::is_floating_point<VType_>::value && std::is_integral<VType>::value, VType_, VType>::type
+	>
+		__host__ __device__ cuVAL3<RType> operator%(const cuVAL3<VType_> &rhs) const 
+	{ 
+		return cuVAL3<RType>(
+			(x < rhs.x ? (x < 0.0 ? fmod(x, rhs.x) + rhs.x : x) : fmod(x, rhs.x)),
+			(y < rhs.y ? (y < 0.0 ? fmod(y, rhs.y) + rhs.y : y) : fmod(y, rhs.y)),
+			(z < rhs.z ? (z < 0.0 ? fmod(z, rhs.z) + rhs.z : z) : fmod(z, rhs.z)));
+	}
+
 	//PRODUCTS WITH A CONSTANT
 
 	//product with a constant (must be fundamental type) on the RHS
@@ -611,6 +636,20 @@ struct cuVAL4 {
 		std::enable_if_t<std::is_same<VType, VType_>::value && std::is_fundamental<VType>::value>* = nullptr
 	>
 		__host__ __device__ cuBReal operator*(const cuVAL4<VType_> &rhs) const { return cuBReal(x * rhs.x + y * rhs.y + z * rhs.z + t * rhs.t); }
+
+	//DIVISION REMAINDER
+	template <
+		typename VType_,
+		typename RType = typename std::conditional<std::is_floating_point<VType_>::value && std::is_integral<VType>::value, VType_, VType>::type
+	>
+		__host__ __device__ cuVAL4<RType> operator%(const cuVAL4<VType_> &rhs) const 
+	{ 
+		return cuVAL4<RType>(
+			(x < rhs.x ? (x < 0.0 ? fmod(x, rhs.x) + rhs.x : x) : fmod(x, rhs.x)),
+			(y < rhs.y ? (y < 0.0 ? fmod(y, rhs.y) + rhs.y : y) : fmod(y, rhs.y)),
+			(z < rhs.z ? (z < 0.0 ? fmod(z, rhs.z) + rhs.z : z) : fmod(z, rhs.z)),
+			(t < rhs.t ? (t < 0.0 ? fmod(t, rhs.t) + rhs.t : t) : fmod(t, rhs.t)));
+	}
 
 	//PRODUCTS WITH A CONSTANT
 

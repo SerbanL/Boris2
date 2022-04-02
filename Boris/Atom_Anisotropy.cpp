@@ -153,7 +153,7 @@ double Atom_Anisotropy_Uniaxial::Get_EnergyChange(int spin_index, DBL3 Mnew)
 DBL3 Atom_Anisotropy_Uniaxial::GetTorque(Rect& avRect)
 {
 #if COMPILECUDA == 1
-	if (pModuleCUDA) return reinterpret_cast<Atom_Anisotropy_UniaxialCUDA*>(pModuleCUDA)->GetTorque(avRect);
+	if (pModuleCUDA) return pModuleCUDA->GetTorque(avRect);
 #endif
 
 	return CalculateTorque(paMesh->M1, avRect);

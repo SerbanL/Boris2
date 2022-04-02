@@ -182,6 +182,9 @@ public:
 	//used by move mesh algorithm : shift mesh quantities (e.g. magnetization) by the given shift (metric units) value within this mesh. The shift is along the x-axis direction only (+ve or -ve).
 	void MoveMesh(double x_shift);
 
+	//Check if mesh needs to be moved (using the MoveMesh method) - return amount of movement required (i.e. parameter to use when calling MoveMesh).
+	double CheckMoveMesh(void) { return 0.0; }
+
 	//set PBC for required VECs : should only be called from a demag module
 	BError Set_Magnetic_PBC(INT3 pbc_images);
 	INT3 Get_Magnetic_PBC(void) { return INT3(M.is_pbc_x(), M.is_pbc_y(), M.is_pbc_z()); }
@@ -252,15 +255,18 @@ public:
 	PhysQ FetchOnScreenPhysicalQuantity(double detail_level = 0.0, bool getBackground = false);
 
 	//save the quantity currently displayed on screen in an ovf2 file using the specified format
-	BError SaveOnScreenPhysicalQuantity(std::string fileName, std::string ovf2_dataType);
+	BError SaveOnScreenPhysicalQuantity(std::string fileName, std::string ovf2_dataType, MESHDISPLAY_ quantity);
 
 	//extract profile from focused mesh, from currently display mesh quantity, but reading directly from the quantity
 	//Displayed	mesh quantity can be scalar or a vector; pass in std::vector pointers, then check for nullptr to determine what type is displayed
 	//if do_average = true then build average and don't return anything, else return just a single-shot profile. If read_average = true then simply read out the internally stored averaged profile by assigning to pointer.
-	void GetPhysicalQuantityProfile(DBL3 start, DBL3 end, double step, DBL3 stencil, std::vector<DBL3>*& pprofile_dbl3, std::vector<double>*& pprofile_dbl, bool do_average, bool read_average);
+	void GetPhysicalQuantityProfile(
+		DBL3 start, DBL3 end, double step, DBL3 stencil, 
+		std::vector<DBL3>*& pprofile_dbl3, std::vector<double>*& pprofile_dbl, 
+		bool do_average, bool read_average, MESHDISPLAY_ quantity);
 
 	//return average value for currently displayed mesh quantity in the given relative rectangle
-	Any GetAverageDisplayedMeshValue(Rect rel_rect, std::vector<MeshShape> shapes = {});
+	Any GetAverageDisplayedMeshValue(Rect rel_rect, std::vector<MeshShape> shapes = {}, MESHDISPLAY_ quantity = MESHDISPLAY_NONE);
 
 	//----------------------------------- MESH INFO AND SIZE GET/SET METHODS : MeshDimensions.cpp
 
@@ -298,7 +304,7 @@ public:
 	bool Magnetism_Enabled(void) { return M.linear_size(); }
 
 	//electrical conduction computation enabled
-	bool EComputation_Enabled(void) { return V.linear_size(); }
+	bool EComputation_Enabled(void) { return elC.linear_size(); }
 
 	//thermal conduction computation enabled
 	bool TComputation_Enabled(void) { return Temp.linear_size(); }

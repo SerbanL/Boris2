@@ -14,14 +14,6 @@
 
 #include "PhysQ.h"
 
-#include <SFML/System.hpp>
-#include <SFML/Graphics/Texture.hpp>
-
-#pragma comment(lib, "sfml-system.lib")
-#pragma comment(lib, "sfml-graphics.lib")
-
-
-
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
 // Basic functionality in console-only mode. Portable. Still need to shape meshes using mask files in console-only mode.
@@ -49,12 +41,14 @@ public:
 	{}
 
 	//from image file extract a raw bitmap (BYTE array with 4 BYTE-sized entries as B-G-R-A for each pixel) to specified pixel size (so image file is rescaled to specified size)
-	void GetBitmapFromImage(std::string fileName, std::vector<unsigned char>& bitmap, INT2 n_plane);
+	void GetBitmapFromImage(std::string fileName, std::vector<unsigned char>& bitmap, INT2 n_plane)
+	{
+		std::cout << "Not available in console-only mode" << std::endl;
+	}
 
 	bool MakeVideoFromFileSequence(std::string directory, std::vector<std::string>& fileNames, unsigned int fps, double scaling, int quality)
 	{
 		std::cout << "Not available in console-only mode" << std::endl;
-
 		return false;
 	}
 

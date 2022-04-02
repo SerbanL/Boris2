@@ -10,6 +10,8 @@
 
 class Atom_Mesh;
 
+class ManagedAtom_DiffEqCubicCUDA;
+
 //Store Atom_Mesh quantities as cu_obj managed cuda VECs
 class Atom_MeshCUDA :
 	public MeshBaseCUDA,
@@ -75,20 +77,28 @@ public:
 
 	virtual ~Atom_MeshCUDA();
 
+	//----------------------------------- OTHER IMPORTANT CONTROL METHODS
+
+	//Check if mesh needs to be moved (using the MoveMesh method) - return amount of movement required (i.e. parameter to use when calling MoveMesh).
+	cuBReal CheckMoveMesh(bool antisymmetric, double threshold) { return 0.0; }
+
 	//----------------------------------- DISPLAY-ASSOCIATED GET/SET METHODS
 
 	PhysQ FetchOnScreenPhysicalQuantity(double detail_level, bool getBackground);
 
 	//save the quantity currently displayed on screen in an ovf2 file using the specified format
-	BError SaveOnScreenPhysicalQuantity(std::string fileName, std::string ovf2_dataType);
+	BError SaveOnScreenPhysicalQuantity(std::string fileName, std::string ovf2_dataType, MESHDISPLAY_ quantity);
 
 	//extract profile from focused mesh, from currently display mesh quantity, but reading directly from the quantity
 	//Displayed	mesh quantity can be scalar or a vector; pass in std::vector pointers, then check for nullptr to determine what type is displayed
 	//if do_average = true then build average and don't return anything, else return just a single-shot profile. If read_average = true then simply read out the internally stored averaged profile by assigning to pointer.
-	void GetPhysicalQuantityProfile(DBL3 start, DBL3 end, double step, DBL3 stencil, std::vector<DBL3>*& pprofile_dbl3, std::vector<double>*& pprofile_dbl, bool do_average, bool read_average);
+	void GetPhysicalQuantityProfile(
+		DBL3 start, DBL3 end, double step, DBL3 stencil, 
+		std::vector<DBL3>*& pprofile_dbl3, std::vector<double>*& pprofile_dbl, 
+		bool do_average, bool read_average, MESHDISPLAY_ quantity);
 
 	//return average value for currently displayed mesh quantity in the given relative rectangle
-	Any GetAverageDisplayedMeshValue(Rect rel_rect);
+	Any GetAverageDisplayedMeshValue(Rect rel_rect, MESHDISPLAY_ quantity);
 
 	//copy aux_vec_sca in GPU memory to displayVEC in CPU memory
 	void copy_aux_vec_sca(VEC<double>& displayVEC);
@@ -136,6 +146,8 @@ public:
 	//-----------------------------------OBJECT GETTERS
 
 	cu_obj<ManagedAtom_DiffEq_CommonCUDA>& Get_ManagedAtom_DiffEq_CommonCUDA(void);
+
+	cu_obj<ManagedAtom_DiffEqCubicCUDA>& Get_ManagedAtom_DiffEqCubicCUDA(void);
 
 	std::vector<DBL4>& get_tensorial_anisotropy(void);
 };

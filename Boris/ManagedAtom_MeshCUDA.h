@@ -12,6 +12,7 @@
 #include "ManagedAtom_DiffEq_CommonCUDA.h"
 
 class Atom_MeshCUDA;
+class ManagedMeshCUDA;
 
 //This holds pointers to managed objects in Atom_MeshCUDA (and inherited Atom_MeshParamsCUDA) : set and forget. They are available for use in cuda kernels by passing a cu_obj-managed object ManagedAtom_MeshCUDA
 
@@ -43,6 +44,8 @@ public:
 
 	//Surface exchange coupling, used by the surfexchange module to couple two spins on different meshes at the surface (units of J)
 	MatPCUDA<cuBReal, cuBReal>* pJs;
+	//Secondary surface exchange coupling constant, used for coupling atomistic meshes to micromagnetic 2-sublattice meshes.
+	MatPCUDA<cuBReal, cuBReal>* pJs2;
 
 	//Magneto-crystalline anisotropy constants (J) and easy axes directions. For uniaxial anisotropy only ea1 is needed.
 	MatPCUDA<cuBReal, cuBReal>* pK1;
@@ -74,9 +77,16 @@ public:
 	//Magneto-Optical field strength (A/m)
 	MatPCUDA<cuBReal, cuBReal>* pcHmo;
 
+	//Stochasticity efficiency parameter
+	MatPCUDA<cuBReal, cuBReal>* ps_eff;
+
 	//electrical conductivity (units S/m).
 	//this is the value at RT for Ni80Fe20.
 	MatPCUDA<cuBReal, cuBReal>* pelecCond;
+
+	//TMR RA products for parallel and antiparallel states (Ohms m^2)
+	MatPCUDA<cuBReal, cuBReal>* pRAtmr_p;
+	MatPCUDA<cuBReal, cuBReal>* pRAtmr_ap;
 
 	//anisotropic magnetoresistance as a percentage (of base resistance)
 	MatPCUDA<cuBReal, cuBReal>* pamrPercentage;
@@ -192,11 +202,22 @@ public:
 	ManagedAtom_MeshCUDA* paMesh_Bot;
 	size_t paMesh_Top_size, paMesh_Bot_size;
 
+	ManagedMeshCUDA* pMeshFM_Top;
+	ManagedMeshCUDA* pMeshFM_Bot;
+	size_t pMeshFM_Top_size, pMeshFM_Bot_size;
+
+	ManagedMeshCUDA* pMeshAFM_Top;
+	ManagedMeshCUDA* pMeshAFM_Bot;
+	size_t pMeshAFM_Top_size, pMeshAFM_Bot_size;
+
 	//Atom_DipoleDipoleCUDA / Atom_DemagCUDA
 	cuVEC<cuReal3>*  pAtom_Demag_Heff;
 
 	//Atom_ZeemanCUDA
 	cuVEC<cuReal3>* pHavec;
+
+	//StrayField_AtomMeshCUDA
+	cuVEC<cuReal3>* pstrayField;
 
 private:
 
@@ -340,6 +361,9 @@ public:
 
 	//Atom_DipoleDipole
 	__device__ cuBReal Get_Atomistic_EnergyChange_SC_DipoleDipoleCUDA(int spin_index, cuReal3 Mnew);
+
+	//StrayField_AtomMesh
+	__device__ cuBReal Get_Atomistic_EnergyChange_SC_StrayField_AtomMeshCUDA(int spin_index, cuReal3 Mnew);
 
 	//Atom_ExchangeCUDA
 	__device__ cuBReal Get_Atomistic_EnergyChange_SC_ExchangeCUDA(int spin_index, cuReal3 Mnew);

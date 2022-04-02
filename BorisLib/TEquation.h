@@ -29,7 +29,7 @@
 //Boltzmann constant : kB
 //mu0 * |gamma_e|, gamma_e is the electron gyromagnetic ratio : gamma
 
-//Example use 1:
+//Example use 1 (variables in variadic list, so known at compile time):
 
 /*
 
@@ -44,6 +44,24 @@ equation.set_constant("H", 2e6);
 
 //evaluate the equation for particular values of x, y, z, t (in this order)
 double value = equation.evaluate(5, 10, 15, 3.5)
+
+*/
+
+//Example use 2 (variables in vector, so can be adjusted at run-time):
+
+/*
+
+//define a TEquation object without specifying user variables
+TEquation<> equation;
+
+//next define user variables using a vector
+equation.create_user_variables({"x", "y", "w"});
+
+//create equation from string
+equation.make_from_string("x + 2*y + w^2");
+
+//evaluate the equation by passing in the user variables using a vector
+double value = equation.evaluate({1, 2, 3});
 
 */
 
@@ -136,6 +154,9 @@ private:
 
 	//text specifiers for user-defined function variables
 	std::vector<std::string> variables;
+
+	//values of user variables if not using a variadic list (empty variadic list)
+	std::vector<double> varvec;
 
 	///////////////////////////////////////////////////////////
 
@@ -622,12 +643,14 @@ public:
 	// CONSTRUCTOR
 
 	TEquation(void) :
+		eq_component_1(varvec), eq_component_2(varvec), eq_component_3(varvec),
 		ProgramState<TEquation<BVarType...>, std::tuple<std::string, std::vector<std::string>, std::vector<std::string>, std::vector<double>>, std::tuple<>>
 		(this, { VINFO(text_equation), VINFO(variables), VINFO(userconstants), VINFO(userconstants_values) }, {})
 	{}
 
 	//make equation object with names of user variables
 	TEquation(const std::vector<std::string>& bvar_names) :
+		eq_component_1(varvec), eq_component_2(varvec), eq_component_3(varvec),
 		ProgramState<TEquation<BVarType...>, std::tuple<std::string, std::vector<std::string>, std::vector<std::string>, std::vector<double>>, std::tuple<>>
 		(this, { VINFO(text_equation), VINFO(variables), VINFO(userconstants), VINFO(userconstants_values) }, {})
 	{
@@ -639,6 +662,7 @@ public:
 	}
 
 	TEquation(const TEquation& copy_this) :
+		eq_component_1(varvec), eq_component_2(varvec), eq_component_3(varvec),
 		ProgramState<TEquation<BVarType...>, std::tuple<std::string, std::vector<std::string>, std::vector<std::string>, std::vector<double>>, std::tuple<>>
 		(this, { VINFO(text_equation), VINFO(variables), VINFO(userconstants), VINFO(userconstants_values) }, {})
 	{
@@ -646,6 +670,15 @@ public:
 	}
 
 	~TEquation() { clear_Funcs(); }
+
+	//if not using variadic list for user variables, then create them using a vector
+	void create_user_variables(std::vector<std::string> variables_)
+	{
+		//variable names
+		variables = variables_;
+		//variable values, to be set before evaluating function
+		varvec.resize(variables.size());
+	}
 
 	//---------Assignment operator
 
@@ -655,6 +688,7 @@ public:
 
 		text_equation = copy_this.text_equation;
 		variables = copy_this.variables;
+		varvec = copy_this.varvec;
 		userconstants = copy_this.userconstants;
 		userconstants_values = copy_this.userconstants_values;
 
@@ -687,6 +721,9 @@ public:
 		}
 
 		make_from_string(text_equation, constants_and_values);
+
+		//variable values, to be set before evaluating function, if not using variadic list to specify them
+		if (sizeof...(BVarType) == 0) varvec.resize(variables.size());
 	}
 
 	/////////////////////////////////////////////////////////
@@ -983,6 +1020,13 @@ public:
 	double evaluate(BVarType... bvars) const
 	{
 		return eq_component_1.evaluate(bvars...);
+	}
+
+	//evaluate scalar equation when not using variadic list to specify user variables
+	double evaluate(std::vector<double> varvecvals)
+	{
+		varvec = varvecvals;
+		return eq_component_1.evaluate();
 	}
 
 	//evaluate dual equation

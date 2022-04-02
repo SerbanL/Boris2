@@ -22,13 +22,13 @@ bool Atom_ODECommon::renormalize = true;
 
 //-----------------------------------Steepest Descent Solver
 
-double Atom_ODECommon::delta_M_sq = 0.0;
+double Atom_ODECommon::delta_m_sq = 0.0;
 double Atom_ODECommon::delta_G_sq = 0.0;
-double Atom_ODECommon::delta_M_dot_delta_G = 0.0;
+double Atom_ODECommon::delta_m_dot_delta_G = 0.0;
 
-double Atom_ODECommon::delta_M2_sq = 0.0;
+double Atom_ODECommon::delta_m2_sq = 0.0;
 double Atom_ODECommon::delta_G2_sq = 0.0;
-double Atom_ODECommon::delta_M2_dot_delta_G2 = 0.0;
+double Atom_ODECommon::delta_m2_dot_delta_G2 = 0.0;
 
 //-----------------------------------CUDA version
 
@@ -85,57 +85,66 @@ BError Atom_ODECommon::SetODE(ODE_ setODE_, EVAL_ evalMethod_, bool set_eval_met
 	//tests for typical problems show this has virtually no impact on performance! Maybe the compiler has inlined the code for all the different equations used? (could check this)
 	//Or maybe the overhead from function calls is just insignificant for typical problems
 
-	setODE = setODE_;
-
-	switch (setODE) {
+	switch (setODE_) {
 
 	case ODE_LLG:
+		setODE = setODE_;
 		equation = &Atom_DifferentialEquation::LLG;
 		renormalize = true;
-		solve_spin_current = false;
+		solve_spin_current_a = false;
 		break;
 
 	case ODE_LLGSTATIC:
+		setODE = setODE_;
 		equation = &Atom_DifferentialEquation::LLGStatic;
 		renormalize = true;
-		solve_spin_current = false;
+		solve_spin_current_a = false;
+		break;
+
+	case ODE_LLGSTATICSA:
+		setODE = setODE_;
+		equation = &Atom_DifferentialEquation::LLGStatic;
+		renormalize = true;
+		solve_spin_current_a = true;
 		break;
 
 	case ODE_LLGSTT:
+		setODE = setODE_;
 		equation = &Atom_DifferentialEquation::LLGSTT;
 		renormalize = true;
-		solve_spin_current = false;
+		solve_spin_current_a = false;
 		break;
 
 	case ODE_SLLG:
+		setODE = setODE_;
 		equation = &Atom_DifferentialEquation::SLLG;
 		renormalize = true;
-		solve_spin_current = false;
+		solve_spin_current_a = false;
 		break;
 
 	case ODE_SLLGSTT:
+		setODE = setODE_;
 		equation = &Atom_DifferentialEquation::SLLGSTT;
 		renormalize = true;
-		solve_spin_current = false;
+		solve_spin_current_a = false;
 		break;
 
 	case ODE_LLGSA:
+		setODE = setODE_;
 		equation = &Atom_DifferentialEquation::LLG;
 		renormalize = true;
-		solve_spin_current = true;
+		solve_spin_current_a = true;
 		break;
 
 	case ODE_SLLGSA:
+		setODE = setODE_;
 		equation = &Atom_DifferentialEquation::SLLG;
 		renormalize = true;
-		solve_spin_current = true;
+		solve_spin_current_a = true;
 		break;
 
 	default:
-		equation = &Atom_DifferentialEquation::LLG;
-		renormalize = true;
-		solve_spin_current = false;
-		setODE = ODE_LLG;
+		//no change
 		break;
 	}
 

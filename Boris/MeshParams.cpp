@@ -165,6 +165,10 @@ MeshParams::MeshParams(std::vector<PARAM_>& enabledParams)
 			meshParams.push_back("Hmo", MeshParamDescriptor(PARAMTYPE_MAGNETIC, "A/m"), PARAM_HMO);
 			break;
 
+		case PARAM_S_EFF:
+			meshParams.push_back("s_eff", MeshParamDescriptor(PARAMTYPE_MAGNETIC), PARAM_S_EFF);
+			break;
+
 		case PARAM_T:
 			meshParams.push_back("cT", MeshParamDescriptor(PARAMTYPE_THERMAL), PARAM_T);
 			break;
@@ -175,6 +179,14 @@ MeshParams::MeshParams(std::vector<PARAM_>& enabledParams)
 
 		case PARAM_ELC:
 			meshParams.push_back("elC", MeshParamDescriptor(PARAMTYPE_ELECTRIC, "S/m"), PARAM_ELC);
+			break;
+
+		case PARAM_RATMR_P:
+			meshParams.push_back("RAtmr_p", MeshParamDescriptor(PARAMTYPE_ELECTRIC, "Om2"), PARAM_RATMR_P);
+			break;
+
+		case PARAM_RATMR_AP:
+			meshParams.push_back("RAtmr_ap", MeshParamDescriptor(PARAMTYPE_ELECTRIC, "Om2"), PARAM_RATMR_AP);
 			break;
 
 		case PARAM_AMR:

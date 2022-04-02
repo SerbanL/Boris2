@@ -12,10 +12,7 @@
 #define CUEPSILON_POSITIVE 1e-11F	
 #define CUEPSILON_NEGATIVE -1e-11F
 
-//Used for floor and ceil functions to define a non-fixed epsilon : the epsilon depends on the value the function is used on.
-#define CUFLOOR_CEIL_RATIO	1e-6
-
-//Fixed epsilon value used for floor and ceil functions with fixed precision. Also acts as a limit on variable epsilon use (CUFLOOR_CEIL_RATIO).
+//Fixed epsilon value used for floor and ceil functions with fixed precision.
 #define CUEPSILON_ROUNDING	1e-4
 
 ///////////////////////////////////////////////////////////////////////////////

@@ -11,39 +11,23 @@
 #include "SuperMeshCUDA.h"
 #include "SuperMesh.h"
 
-TransportCUDA::TransportCUDA(Mesh* pMesh_, SuperMesh* pSMesh_, Transport* pTransport_)
-	: ModulesCUDA()
+TransportCUDA::TransportCUDA(Transport* pTransport_) : 
+	ModulesCUDA(),
+	TransportBaseCUDA(pTransport_)
 {
-	pMesh = pMesh_;
-	pMeshBase = pMesh;
-
-	pMeshCUDA = pMesh->pMeshCUDA;
-	pMeshBaseCUDA = pMeshCUDA;
-
-	pSMesh = pSMesh_;
-	pSMeshCUDA = pSMesh->pSMeshCUDA;
-
 	pTransport = pTransport_;
-
-	stsolve = pTransport->stsolve;
-
+	pMesh = pTransport->pMesh;
+	pMeshCUDA = pMesh->pMeshCUDA;
+	
+	Set_STSolveType();
+	
 	error_on_create = UpdateConfiguration(UPDATECONFIG_FORCEUPDATE);
 	
 	//setup objects with methods used for Poisson equation solvers
 	
-	if (!error_on_create) error_on_create = poisson_V()->set_pointers(pMeshCUDA);
-	if (!error_on_create) {
-
-		if (stsolve == STSOLVE_FERROMAGNETIC) {
-
-			error_on_create = poisson_Spin_S()->set_pointers(
-				pMeshCUDA,
-				dynamic_cast<DifferentialEquationFMCUDA*>(dynamic_cast<FMesh*>(pMesh)->Get_DifferentialEquation().Get_DifferentialEquationCUDA_ptr()),
-				this);
-		}
-		else error_on_create = poisson_Spin_S()->set_pointers(pMeshCUDA, nullptr, this);
-	}
-	if (!error_on_create) error_on_create = poisson_Spin_V()->set_pointers(pMeshCUDA, this);
+	if (!error_on_create) error_on_create = poisson_V()->set_pointers_transport(pMeshCUDA);
+	if (!error_on_create) error_on_create = poisson_Spin_S()->set_pointers_transport(pMeshCUDA, this);
+	if (!error_on_create) error_on_create = poisson_Spin_V()->set_pointers_transport(pMeshCUDA, this);
 }
 
 TransportCUDA::~TransportCUDA()
@@ -65,35 +49,6 @@ TransportCUDA::~TransportCUDA()
 		pMeshCUDA->E()->clear();
 		pMeshCUDA->S()->clear();
 	}
-}
-
-//-------------------Auxiliary
-
-//set the stsolve indicator depending on current configuration
-void TransportCUDA::Set_STSolveType(void)
-{
-	stsolve = pTransport->stsolve;
-
-	poisson_Spin_V()->set_stsolve(stsolve);
-	poisson_Spin_S()->set_stsolve(stsolve);
-}
-
-//------------------Others
-
-//set fixed potential cells in this mesh for given rectangle
-bool TransportCUDA::SetFixedPotentialCells(cuRect rectangle, cuBReal potential)
-{
-	return pMeshCUDA->V()->set_dirichlet_conditions(rectangle, potential);
-}
-
-void TransportCUDA::ClearFixedPotentialCells(void)
-{
-	pMeshCUDA->V()->clear_dirichlet_flags();
-}
-
-void TransportCUDA::Set_Linear_PotentialDrop(cuReal3 ground_electrode_center, cuBReal ground_potential, cuReal3 electrode_center, cuBReal electrode_potential)
-{
-	pMeshCUDA->V()->set_linear(ground_electrode_center, ground_potential, electrode_center, electrode_potential);
 }
 
 //check if dM_dt Calculation should be enabled

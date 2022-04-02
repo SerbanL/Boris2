@@ -11,8 +11,7 @@
 #include "BorisCUDALib.h"
 #include "ModulesCUDA.h"
 
-#include "TransportCUDA.h"
-#include "Atom_TransportCUDA.h"
+#include "TransportBaseCUDA.h"
 #include "STransportCUDA_GInterf_V.h"
 #include "STransportCUDA_GInterf_S.h"
 
@@ -41,7 +40,7 @@ private:
 	//CMBND contacts for all contacting transport meshes - these are ordered by first vector index; for each transport mesh there could be multiple contacting meshes and these are ordered by second vector index
 	//CMBNDInfo describes the contact between 2 meshes, allowing calculation of values at cmbnd cells based on continuity of a potential and flux
 	//we need a cu_obj managed copy of CMBNDcontacts from STransport so we can pass it to cuda kernels efficiently
-	std::vector< std::vector< cu_obj<CMBNDInfoCUDA> > > CMBNDcontactsCUDA;
+	std::vector< std::vector<cu_obj<CMBNDInfoCUDA>> > CMBNDcontactsCUDA;
 	//...and we also need a cpu-memory version, even though we can access it using pSTrans - the problem is, we need the cpu data in .cu files where we cannot define STransport (as nvcc will then attempt to compile BorisLib)
 	std::vector< std::vector<CMBNDInfoCUDA> > CMBNDcontacts;
 
@@ -114,7 +113,7 @@ public:
 	//-------------------Display Calculation Methods
 
 	//return interfacial spin torque in given mesh with matching transport module
-	cu_obj<cuVEC<cuReal3>>& GetInterfacialSpinTorque(TransportCUDA* pMeshTrans);
+	cu_obj<cuVEC<cuReal3>>& GetInterfacialSpinTorque(TransportBaseCUDA* pTransportBaseCUDA);
 
 	//-------------------Getters
 

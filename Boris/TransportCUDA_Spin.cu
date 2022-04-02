@@ -10,6 +10,8 @@
 #include "SuperMeshCUDA.h"
 #include "MeshParamsControlCUDA.h"
 
+#include "ManagedDiffEqFMCUDA.h"
+
 //-------------------Calculation Methods : Iterate Spin-Charge Solver
 
 void TransportCUDA::IterateSpinSolver_Charge_SOR(cu_obj<cuBReal>& damping, cu_obj<cuBReal>& max_error, cu_obj<cuBReal>& max_value, bool use_NNeu)
@@ -28,7 +30,7 @@ void TransportCUDA::IterateSpinSolver_Charge_SOR(cu_obj<cuBReal>& damping, cu_ob
 
 //------------------- PRIME SPIN-CHARGE SOLVER
 
-__global__ void Get_dM_dt_Kernel(TransportCUDA_Spin_S_Funcs& poisson_Spin_S)
+__global__ void Get_dM_dt_Kernel(TransportCUDA_Spin_S_Funcs& poisson_Spin_S, ManagedDiffEqFMCUDA& cuDiffEq)
 {
 	cuVEC_VC<cuReal3>& dM_dt = *poisson_Spin_S.pdM_dt;
 
@@ -38,7 +40,7 @@ __global__ void Get_dM_dt_Kernel(TransportCUDA_Spin_S_Funcs& poisson_Spin_S)
 
 		if (dM_dt.is_not_empty(idx)) {
 
-			dM_dt[idx] = poisson_Spin_S.pcuDiffEq->dMdt(idx);
+			dM_dt[idx] = cuDiffEq.dMdt(idx);
 		}
 	}
 }
@@ -67,12 +69,9 @@ __global__ void PrimeSpinSolver_Charge_Kernel(ManagedMeshCUDA& cuMesh, Transport
 
 			if (cppgmr_enabled || cpump_enabled) {
 
-				cuBReal Ms = *cuMesh.pMs;
-				cuMesh.update_parameters_ecoarse(idx, *cuMesh.pMs, Ms);
-
 				int idx_M = M.position_to_cellidx(V.cellidx_to_position(idx));
-				cuReal33 grad_m = M.grad_neu(idx_M) / Ms;
-				cuReal3 m = M[idx_M] / Ms;
+				cuReal33 grad_m = cu_normalize(M.grad_neu(idx_M), M[idx_M]);
+				cuReal3 m = cu_normalize(M[idx_M]);
 
 				//CPP-GMR contribution
 				if (cppgmr_enabled) {
@@ -91,16 +90,16 @@ __global__ void PrimeSpinSolver_Charge_Kernel(ManagedMeshCUDA& cuMesh, Transport
 				//Charge pumping pre-calculation
 				if (cpump_enabled) {
 
-					cuReal33 grad_dm_dt = dM_dt.grad_neu(idx_M) / Ms;
-					cuReal3 dm_dt = dM_dt[idx_M] / Ms;
+					cuReal33 grad_dm_dt = cu_normalize(dM_dt.grad_neu(idx_M), M[idx_M]);
+					cuReal3 dm_dt = cu_normalize(dM_dt[idx_M], M[idx_M]);
 
 					cuBReal P = *cuMesh.pP;
 					cuMesh.update_parameters_ecoarse(idx, *cuMesh.pP, P);
 
 					cuReal3 dx_m = grad_m.x;
 					cuReal3 dy_m = grad_m.y;
-					cuReal3 dxx_m = M.dxx_neu(idx_M) / Ms;
-					cuReal3 dyy_m = M.dyy_neu(idx_M) / Ms;
+					cuReal3 dxx_m = cu_normalize(M.dxx_neu(idx_M), M[idx_M]);
+					cuReal3 dyy_m = cu_normalize(M.dyy_neu(idx_M), M[idx_M]);
 
 					delsq_V_fixed[idx] += (cuMesh.pcpump_eff->get0() * P * (cuBReal)HBAR_E / 2) * ((grad_dm_dt.x ^ dx_m) + (grad_dm_dt.y ^ dy_m) + (dm_dt ^ (dxx_m + dyy_m))) * m;
 				}
@@ -115,7 +114,7 @@ void TransportCUDA::PrimeSpinSolver_Charge(void)
 	//Update dM_dt values if needed
 	if (Need_dM_dt_Calculation()) {
 
-		Get_dM_dt_Kernel <<< (pMeshCUDA->n.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (poisson_Spin_S);
+		Get_dM_dt_Kernel <<< (pMeshCUDA->n.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (poisson_Spin_S, pMeshCUDA->Get_ManagedDiffEqFMCUDA());
 	}
 
 	//the rest are terms to calculate in delsq_V_fixed
@@ -171,18 +170,17 @@ __global__ void PrimeSpinSolver_Spin_Kernel(ManagedMeshCUDA& cuMesh, TransportCU
 
 				//magnetic mesh
 
-				cuBReal Ms = *cuMesh.pMs;
 				cuBReal P = *cuMesh.pP;
 				cuBReal De = *cuMesh.pDe;
-				cuMesh.update_parameters_ecoarse(idx, *cuMesh.pMs, Ms, *cuMesh.pP, P, *cuMesh.pDe, De);
+				cuMesh.update_parameters_ecoarse(idx, *cuMesh.pP, P, *cuMesh.pDe, De);
 
 				//term due to drift (non-uniformity of M term, and delsq V contribution - non-uniformity of E term)
 
 				//find grad M and M at the M cell in which the current S cell center is
 				int idx_M = M.position_to_cellidx(V.cellidx_to_position(idx));
 
-				cuReal3 m = M[idx_M] / Ms;
-				cuReal33 grad_m = M.grad_neu(idx_M) / Ms;
+				cuReal3 m = cu_normalize(M[idx_M]);
+				cuReal33 grad_m = cu_normalize(M.grad_neu(idx_M), M[idx_M]);
 				cuReal3 E_dot_del_m = grad_m | E[idx];
 
 				//E_dot_del_m term is very important, but Evaluate_SpinSolver_delsqV_RHS term could be neglected in most cases especially if E is uniform.
@@ -193,14 +191,14 @@ __global__ void PrimeSpinSolver_Spin_Kernel(ManagedMeshCUDA& cuMesh, TransportCU
 
 					cuReal3 dx_m = grad_m.x;
 					cuReal3 dy_m = grad_m.y;
-					cuReal3 dxy_m = M.dxy_neu(idx_M) / Ms;
-					cuReal3 dxx_m = M.dxx_neu(idx_M) / Ms;
-					cuReal3 dyy_m = M.dyy_neu(idx_M) / Ms;
+					cuReal3 dxy_m = cu_normalize(M.dxy_neu(idx_M), M[idx_M]);
+					cuReal3 dxx_m = cu_normalize(M.dxx_neu(idx_M), M[idx_M]);
+					cuReal3 dyy_m = cu_normalize(M.dyy_neu(idx_M), M[idx_M]);
 
 					if (cpump_enabled) {
 
-						cuReal3 dmdt = dM_dt[idx_M] / Ms;
-						cuReal33 grad_dm_dt = dM_dt.grad_neu(idx_M) / Ms;
+						cuReal3 dmdt = cu_normalize(dM_dt[idx_M], M[idx_M]);
+						cuReal33 grad_dm_dt = cu_normalize(dM_dt.grad_neu(idx_M), M[idx_M]);
 
 						delsq_S_fixed[idx] += cuMesh.pcpump_eff->get0() * (elC[idx] * (cuBReal)HBAR_E * (cuBReal)MUB_E / (2 * De)) * ((grad_dm_dt.x ^ dx_m) + (grad_dm_dt.y ^ dy_m) + (dmdt ^ (dxx_m + dyy_m)));
 					}
@@ -259,16 +257,16 @@ __global__ void CalculateSAField_Kernel(ManagedMeshCUDA& cuMesh)
 			cuBReal De = *cuMesh.pDe;
 			cuBReal ts_eff = *cuMesh.pts_eff;
 			cuBReal grel = *cuMesh.pgrel;
-			cuBReal Ms = *cuMesh.pMs;
 			cuBReal l_ex = *cuMesh.pl_ex;
 			cuBReal l_ph = *cuMesh.pl_ph;
-			cuMesh.update_parameters_mcoarse(idx, *cuMesh.pgrel, grel, *cuMesh.pMs, Ms, *cuMesh.pDe, De, *cuMesh.pts_eff, ts_eff, *cuMesh.pl_ex, l_ex, *cuMesh.pl_ph, l_ph);
-
-			if (cuIsNZ((cuBReal)grel)) {
+			cuMesh.update_parameters_mcoarse(idx, *cuMesh.pgrel, grel, *cuMesh.pDe, De, *cuMesh.pts_eff, ts_eff, *cuMesh.pl_ex, l_ex, *cuMesh.pl_ph, l_ph);
+			
+			cuBReal Mnorm = M[idx].norm();
+			if (cuIsNZ((cuBReal)grel) && Mnorm > 0.0) {
 
 				cuReal3 Sa = S.weighted_average(M.cellidx_to_position(idx), M.h);
 
-				Heff[idx] += (De * ts_eff / ((cuBReal)GAMMA * grel * Ms)) * (Sa / (l_ex * l_ex) + (M[idx] ^ Sa) / (l_ph * l_ph * Ms));
+				Heff[idx] += (De * ts_eff / ((cuBReal)GAMMA * grel * Mnorm)) * (Sa / (l_ex * l_ex) + (M[idx] ^ Sa) / (l_ph * l_ph * Mnorm));
 			}
 		}
 	}
@@ -321,9 +319,8 @@ __global__ void CalculateSAInterfaceField_Kernel(CMBNDInfoCUDA& contact, Transpo
 		if (M.is_empty(mcell1_idx)) return;
 
 		cuBReal grel = *cmbndFuncs_pri.pcuMesh->pgrel;
-		cuBReal Ms = *cmbndFuncs_pri.pcuMesh->pMs;
 		cuBReal tsi_eff = *cmbndFuncs_pri.pcuMesh->ptsi_eff;
-		cmbndFuncs_pri.pcuMesh->update_parameters_mcoarse(mcell1_idx, *cmbndFuncs_pri.pcuMesh->pgrel, grel, *cmbndFuncs_pri.pcuMesh->pMs, Ms, *cmbndFuncs_pri.pcuMesh->ptsi_eff, tsi_eff);
+		cmbndFuncs_pri.pcuMesh->update_parameters_mcoarse(mcell1_idx, *cmbndFuncs_pri.pcuMesh->pgrel, grel, *cmbndFuncs_pri.pcuMesh->ptsi_eff, tsi_eff);
 
 		if (cuIsNZ((cuBReal)grel)) {
 
@@ -335,19 +332,20 @@ __global__ void CalculateSAInterfaceField_Kernel(CMBNDInfoCUDA& contact, Transpo
 
 			cuReal3 relpos_m1 = S_pri.rect.s - S_sec.rect.s + relpos_interf + contact.hshift_secondary / 2;
 
-			cuReal3 stencil = M.h - cu_mod(mhshift_primary) + cu_mod(contact.hshift_secondary);
+			cuReal3 stencil_pri = M.h - cu_mod(mhshift_primary) + cu_mod(contact.hshift_primary);
+			cuReal3 stencil_sec = M.h - cu_mod(mhshift_primary) + cu_mod(contact.hshift_secondary);
 
 			//S values
-			cuReal3 S_1 = S_pri.weighted_average(relpos_1, stencil);
-			cuReal3 S_2 = S_pri.weighted_average(relpos_1 - contact.hshift_primary, stencil);
-			cuReal3 S_m1 = S_sec.weighted_average(relpos_m1, stencil);
-			cuReal3 S_m2 = S_sec.weighted_average(relpos_m1 + contact.hshift_secondary, stencil);
+			cuReal3 S_1 = S_pri.weighted_average(relpos_1, stencil_pri);
+			cuReal3 S_2 = S_pri.weighted_average(relpos_1 - contact.hshift_primary, stencil_pri);
+			cuReal3 S_m1 = S_sec.weighted_average(relpos_m1, stencil_sec);
+			cuReal3 S_m2 = S_sec.weighted_average(relpos_m1 + contact.hshift_secondary, stencil_sec);
 
 			//c values
-			cuBReal c_m1 = cmbndFuncs_sec.c_func_sec(relpos_m1, stencil);
-			cuBReal c_m2 = cmbndFuncs_sec.c_func_sec(relpos_m1 + contact.hshift_secondary, stencil);
-			cuBReal c_1 = cmbndFuncs_pri.c_func_sec(relpos_1, stencil);
-			cuBReal c_2 = cmbndFuncs_pri.c_func_sec(relpos_1 - contact.hshift_primary, stencil);
+			cuBReal c_1 = cmbndFuncs_pri.c_func_sec(relpos_1, stencil_pri);
+			cuBReal c_2 = cmbndFuncs_pri.c_func_sec(relpos_1 - contact.hshift_primary, stencil_pri);
+			cuBReal c_m1 = cmbndFuncs_sec.c_func_sec(relpos_m1, stencil_sec);
+			cuBReal c_m2 = cmbndFuncs_sec.c_func_sec(relpos_m1 + contact.hshift_secondary, stencil_sec);
 
 			//Calculate S drop at the interface
 			cuReal3 Vs_F = 1.5 * c_1 * S_1 - 0.5 * c_2 * S_2;
@@ -367,23 +365,28 @@ __global__ void CalculateSAInterfaceField_Kernel(CMBNDInfoCUDA& contact, Transpo
 				cmbndFuncs_sec.pcuMesh->update_parameters_atposition(relpos_m1, *cmbndFuncs_sec.pcuMesh->pGmix, Gmix);
 			}
 
-			cuBReal gI = (2.0 * (cuBReal)GMUB_2E / dh) * cuReal2(Gmix).j / (-(cuBReal)GAMMA * grel * Ms);
-			cuBReal gR = (2.0 * (cuBReal)GMUB_2E / dh) * cuReal2(Gmix).i / (-(cuBReal)GAMMA * grel * Ms);
+			cuBReal Mnorm = M[mcell1_idx].norm();
+			if (Mnorm > 0.0) {
 
-			Heff[mcell1_idx] += tsi_eff * (gI * dVs + gR * (M[mcell1_idx] ^ dVs) / Ms);
+				cuBReal gI = (2.0 * (cuBReal)GMUB_2E / dh) * cuReal2(Gmix).j / (-(cuBReal)GAMMA * grel * Mnorm);
+				cuBReal gR = (2.0 * (cuBReal)GMUB_2E / dh) * cuReal2(Gmix).i / (-(cuBReal)GAMMA * grel * Mnorm);
+
+				Heff[mcell1_idx] += tsi_eff * (gI * dVs + gR * (M[mcell1_idx] ^ dVs) / Mnorm);
+			}
 		}
 	}
 }
 
 //Calculate the field resulting from interface spin accumulation torque for a given contact (in magnetic meshes for NF interfaces with G interface conductance set)
-void TransportCUDA::CalculateSAInterfaceField(TransportCUDA* ptrans_sec, CMBNDInfoCUDA& contactCUDA, bool primary_top)
+void TransportCUDA::CalculateSAInterfaceField(TransportBaseCUDA* ptrans_sec, CMBNDInfoCUDA& contactCUDA, bool primary_top)
 {
 	//the top contacting mesh sets G values
-	bool isGInterface_Enabled = ((primary_top && pMeshCUDA->GInterface_Enabled()) || (!primary_top && ptrans_sec->pMeshCUDA->GInterface_Enabled()));
+	bool isGInterface_Enabled = ((primary_top && GInterface_Enabled()) || (!primary_top && ptrans_sec->GInterface_Enabled()));
 	
-	if (stsolve == STSOLVE_FERROMAGNETIC && ptrans_sec->Get_STSolveType() == STSOLVE_NORMALMETAL && isGInterface_Enabled) {
+	if (isGInterface_Enabled && stsolve == STSOLVE_FERROMAGNETIC && (ptrans_sec->Get_STSolveType() == STSOLVE_NORMALMETAL || ptrans_sec->Get_STSolveType() == STSOLVE_TUNNELING)) {
 
-		CalculateSAInterfaceField_Kernel <<< (pMeshCUDA->n.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (contactCUDA, ptrans_sec->poisson_Spin_S, poisson_Spin_S);
+		CalculateSAInterfaceField_Kernel <<< (pMeshCUDA->n.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> 
+			(contactCUDA, ptrans_sec->poisson_Spin_S, poisson_Spin_S);
 	}
 }
 

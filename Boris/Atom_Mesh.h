@@ -184,6 +184,9 @@ public:
 	//used by move mesh algorithm : shift mesh quantities (e.g. atomic moments) by the given shift (metric units) value within this mesh. The shift is along the x-axis direction only (+ve or -ve).
 	void MoveMesh(double x_shift);
 
+	//Check if mesh needs to be moved (using the MoveMesh method) - return amount of movement required (i.e. parameter to use when calling MoveMesh).
+	double CheckMoveMesh(void) { return 0.0; }
+
 	//set PBC for required VECs : should only be called from a demag module
 	BError Set_Magnetic_PBC(INT3 pbc_images);
 	INT3 Get_Magnetic_PBC(void) { return INT3(M1.is_pbc_x(), M1.is_pbc_y(), M1.is_pbc_z()); }
@@ -251,15 +254,18 @@ public:
 	PhysQ FetchOnScreenPhysicalQuantity(double detail_level = 0.0, bool getBackground = false);
 
 	//save the quantity currently displayed on screen in an ovf2 file using the specified format
-	BError SaveOnScreenPhysicalQuantity(std::string fileName, std::string ovf2_dataType);
+	BError SaveOnScreenPhysicalQuantity(std::string fileName, std::string ovf2_dataType, MESHDISPLAY_ quantity);
 
 	//extract profile from focused mesh, from currently display mesh quantity, but reading directly from the quantity
 	//Displayed	mesh quantity can be scalar or a vector; pass in std::vector pointers, then check for nullptr to determine what type is displayed
 	//if do_average = true then build average and don't return anything, else return just a single-shot profile. If read_average = true then simply read out the internally stored averaged profile by assigning to pointer.
-	void GetPhysicalQuantityProfile(DBL3 start, DBL3 end, double step, DBL3 stencil, std::vector<DBL3>*& pprofile_dbl3, std::vector<double>*& pprofile_dbl, bool do_average, bool read_average);
+	void GetPhysicalQuantityProfile(
+		DBL3 start, DBL3 end, double step, DBL3 stencil, 
+		std::vector<DBL3>*& pprofile_dbl3, std::vector<double>*& pprofile_dbl, 
+		bool do_average, bool read_average, MESHDISPLAY_ quantity);
 
 	//return average value for currently displayed mesh quantity in the given relative rectangle
-	Any GetAverageDisplayedMeshValue(Rect rel_rect, std::vector<MeshShape> shapes = {});
+	Any GetAverageDisplayedMeshValue(Rect rel_rect, std::vector<MeshShape> shapes = {}, MESHDISPLAY_ quantity = MESHDISPLAY_NONE);
 
 	//----------------------------------- MESH INFO AND SIZE GET/SET METHODS : Atom_MeshDimensions.cpp
 
@@ -301,12 +307,7 @@ public:
 	bool MechComputation_Enabled(void) { return strain_diag.linear_size(); }
 
 	//check if interface conductance is enabled (for spin transport solver)
-	//TO DO
-	bool GInterface_Enabled(void)
-	{
-		return false;
-		//return (DBL2(Gmix.get0()).norm() > 0); 
-	}
+	bool GInterface_Enabled(void) { return (DBL2(Gmix.get0()).norm() > 0); }
 
 	//are periodic boundary conditions set for atomic moments?
 	int Is_PBC_x(void) { return M1.is_pbc_x(); }
@@ -316,7 +317,7 @@ public:
 	//is there a demag-type module set for this mesh? (SDemag not included as this is a SuperMesh module)
 	bool Is_Demag_Enabled(void) { return IsModuleSet(MOD_DEMAG) || IsModuleSet(MOD_ATOM_DIPOLEDIPOLE); }
 
-	//TO DO : spin transport solver not enabled for Atomistic meshes
+	//SHA and iSHA not available in Atomistic meshes, as these are only used in non-magnetic meshes for spin transport solver
 	bool iSHA_nonzero(void) { return false; }
 	bool SHA_nonzero(void) { return false; }
 
@@ -423,7 +424,10 @@ public:
 	//general shape setting function, can set composite shape using combination of the above elementary shapes
 	BError shape_set(std::vector<MeshShape> shapes);
 
-	//----------------------------------- METHODS REDEFINED IN SOME IMPLEMENTATIONS (virtual here - with exceptions)
+	//----------------------------------- ODE METHODS IN MAGNETIC MESH : Atom_Mesh_..._ODEControl.cpp
+
+	//get rate of change of magnetic moment (overloaded by magnetic meshes)
+	virtual DBL3 dMdt(int idx) { return DBL3(); }
 };
 
 //!!!NOTES!!!

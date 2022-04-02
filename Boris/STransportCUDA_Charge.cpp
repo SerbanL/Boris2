@@ -14,8 +14,6 @@ void STransportCUDA::solve_charge_transport_sor(void)
 
 	pSTrans->iters_to_conv = 0;
 
-	bool start_iters = true;
-
 	do {
 
 		Zero_Errors();
@@ -30,8 +28,6 @@ void STransportCUDA::solve_charge_transport_sor(void)
 		//normalize error to maximum change in cpu memory
 		normalized_max_error = cuReal2(max_error.to_cpu(), max_value.to_cpu());
 		normalized_max_error.first = (normalized_max_error.second > 0 ? normalized_max_error.first / normalized_max_error.second : normalized_max_error.first);
-
-		start_iters = false;
 
 		//2. now set CMBND cells
 		set_cmbnd_charge_transport();

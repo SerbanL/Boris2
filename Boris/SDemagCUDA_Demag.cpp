@@ -251,13 +251,18 @@ BError SDemagCUDA_Demag::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 	//just mirror the initialization flag in the cpu version module
 	if (!pSDemag_Demag->IsInitialized()) Uninitialize();
 
+	if (ucfg::check_cfgflags(cfgMessage, UPDATECONFIG_DEMAG_CONVCHANGE)) Uninitialize();
+
 	//if memory needs to be allocated for Hdemag, it will be done through Initialize 
-	Hdemag()->clear();
-	Hdemag2()->clear();
-	Hdemag3()->clear();
-	Hdemag4()->clear();
-	Hdemag5()->clear();
-	Hdemag6()->clear();
+	if (!initialized) {
+
+		Hdemag()->clear();
+		Hdemag2()->clear();
+		Hdemag3()->clear();
+		Hdemag4()->clear();
+		Hdemag5()->clear();
+		Hdemag6()->clear();
+	}
 
 	return error;
 }

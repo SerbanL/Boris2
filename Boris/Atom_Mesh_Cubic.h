@@ -10,6 +10,7 @@
 #include "Atom_Demag.h"
 #include "Atom_Demag_N.h"
 #include "Atom_DipoleDipole.h"
+#include "StrayField_AtomMesh.h"
 #include "Atom_Zeeman.h"
 #include "Atom_Exchange.h"
 #include "Atom_DMExchange.h"
@@ -55,11 +56,12 @@ class Atom_Mesh_Cubic :
 	bool, SkyrmionTrack, bool,
 	double, double, bool, bool, bool, DBL3,
 	//Material Parameters
-	MatP<double, double>, MatP<double, double>, MatP<DBL2, double>,
-	MatP<double, double>, MatP<double, double>, MatP<DBL3, DBL3>,
+	MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<DBL2, double>,
+	MatP<double, double>, MatP<double, double>, MatP<DBL3, DBL3>, MatP<double, double>, MatP<double, double>,
 	MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<DBL3, DBL3>, MatP<DBL3, DBL3>, MatP<DBL3, DBL3>,
 	std::vector<DBL4>,
 	MatP<double, double>, MatP<double, double>,
+	MatP<double, double>,
 	MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>,
 	MatP<double, double>, MatP<double, double>, MatP<DBL2, double>, MatP<DBL2, double>, MatP<DBL3, DBL3>,
 	MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<DBL2, double>, MatP<DBL2, double>,
@@ -76,7 +78,8 @@ class Atom_Mesh_Cubic :
 	Atom_Anisotropy_Uniaxial, Atom_Anisotropy_Cubic, Atom_Anisotropy_Biaxial, Atom_Anisotropy_Tensorial,
 	Atom_Transport,
 	Atom_Heat,
-	Atom_SOTField, Atom_STField> >
+	Atom_SOTField, Atom_STField,
+	StrayField_AtomMesh> >
 {
 #if COMPILECUDA == 1
 	friend Atom_Mesh_CubicCUDA;
@@ -180,6 +183,9 @@ public:
 	void SetMoveMeshTrigger(bool status) { move_mesh_trigger = status; }
 
 	//----------------------------------- ODE METHODS : Atom_Mesh_Cubic_ODEControl.cpp
+
+	//get rate of change of magnetic moment (overloaded by magnetic meshes)
+	DBL3 dMdt(int idx);
 
 	//return average dm/dt in the given avRect (relative rect). Here m is the direction vector.
 	DBL3 Average_dmdt(Rect avRect);
@@ -368,9 +374,6 @@ public:
 #if COMPILECUDA == 1
 	void PrepareNewIterationCUDA(void) {}
 #endif
-
-	//Check if mesh needs to be moved (using the MoveMesh method) - return amount of movement required (i.e. parameter to use when calling MoveMesh).
-	double CheckMoveMesh(void) { return 0.0; }
 
 	//couple this mesh to touching dipoles by setting skip cells as required : used for domain wall moving mesh algorithms
 	void CoupleToDipoles(bool status) {}

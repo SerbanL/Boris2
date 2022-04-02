@@ -16,6 +16,7 @@ DipoleMesh::DipoleMesh(SuperMesh *pSMesh_) :
 			VINFO(displayedPhysicalQuantity), VINFO(displayedBackgroundPhysicalQuantity), VINFO(vec3rep), VINFO(displayedParamVar), 
 			VINFO(meshRect), VINFO(n), VINFO(h), VINFO(n_e), VINFO(h_e), VINFO(n_t), VINFO(h_t), VINFO(M), VINFO(V), VINFO(S), VINFO(elC), VINFO(Temp), VINFO(pMod),
 			//Members in this derived class
+			VINFO(dipole_velocity), VINFO(dipole_shift_debt), VINFO(dipole_shift_clip), VINFO(dipole_last_time),
 			//Material Parameters
 			VINFO(Ms), VINFO(elecCond), VINFO(amrPercentage), VINFO(P), VINFO(De), VINFO(n_density), VINFO(betaD), VINFO(l_sf), VINFO(l_ex), VINFO(l_ph), VINFO(Gi), VINFO(Gmix), 
 			VINFO(base_temperature), VINFO(T_equation), VINFO(T_Curie), VINFO(T_Curie_material), VINFO(thermCond), VINFO(density), VINFO(shc), VINFO(cT), VINFO(Q)
@@ -38,6 +39,7 @@ DipoleMesh::DipoleMesh(Rect meshRect_, DBL3 h_, SuperMesh *pSMesh_) :
 			VINFO(displayedPhysicalQuantity), VINFO(displayedBackgroundPhysicalQuantity), VINFO(vec3rep), VINFO(displayedParamVar), 
 			VINFO(meshRect), VINFO(n), VINFO(h), VINFO(n_e), VINFO(h_e), VINFO(n_t), VINFO(h_t), VINFO(M), VINFO(V), VINFO(S), VINFO(elC), VINFO(Temp), VINFO(pMod),
 			//Members in this derived class
+			VINFO(dipole_velocity), VINFO(dipole_shift_debt), VINFO(dipole_shift_clip), VINFO(dipole_last_time),
 			//Material Parameters
 			VINFO(Ms), VINFO(elecCond), VINFO(amrPercentage), VINFO(P), VINFO(De), VINFO(n_density), VINFO(betaD), VINFO(l_sf), VINFO(l_ex), VINFO(l_ph), VINFO(Gi), VINFO(Gmix), 
 			VINFO(base_temperature), VINFO(T_equation), VINFO(T_Curie), VINFO(T_Curie_material), VINFO(thermCond), VINFO(density), VINFO(shc), VINFO(cT), VINFO(Q)
@@ -90,6 +92,7 @@ BError DipoleMesh::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 
 	n = SZ3(1);
 	h = meshRect.size();
+	dipole_last_time = pSMesh->GetTime();
 
 	///////////////////////////////////////////////////////
 	//Mesh specific configuration
@@ -106,6 +109,9 @@ BError DipoleMesh::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 
 	//set dipole value from Ms - this could have changed
 	Reset_Mdipole();
+
+	//reset time for dipole shifting algorithm
+	dipole_last_time = pSMesh->GetTime();
 
 	//------------------------ CUDA UpdateConfiguration if set
 
@@ -130,6 +136,15 @@ BError DipoleMesh::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 	}
 
 	return error;
+}
+
+//called at the start of each iteration
+void DipoleMesh::PrepareNewIteration(void)
+{
+	Dipole_Shifting_Algorithm();
+
+	if (recalculateStrayField && !strayField_recalculated) strayField_recalculated = true;
+	else if (strayField_recalculated) { strayField_recalculated = false; recalculateStrayField = false; }
 }
 
 void DipoleMesh::UpdateConfiguration_Values(UPDATECONFIG_ cfgMessage)
@@ -293,9 +308,72 @@ void DipoleMesh::SetCurieTemperature(double Tc, bool set_default_dependences)
 #endif
 }
 
+//shift dipole mesh rectangle by given amount
+void DipoleMesh::Shift_Dipole(DBL3 shift)
+{
+	meshRect += shift;
+
+	M.rect += shift;
+	if (V.linear_size()) V.rect += shift;
+	if (S.linear_size()) S.rect += shift;
+	if (elC.linear_size()) elC.rect += shift;
+	if (Temp.linear_size()) Temp.rect += shift;
+
+#if COMPILECUDA == 1
+	if (pMeshCUDA) dynamic_cast<DipoleMeshCUDA*>(pMeshCUDA)->Shift_Dipole();
+#endif
+
+	recalculateStrayField = true;
+	strayField_recalculated = false;
+}
+
+//at the start of each iteration see if we need to implement a moving dipole
+void DipoleMesh::Dipole_Shifting_Algorithm(void)
+{
+	if (dipole_velocity != DBL3() && pSMesh->CurrentTimeStepSolved()) {
+
+		//current time so we can calculate required shift
+		double dipole_current_time = pSMesh->GetTime();
+
+		//if current time less than stored previous time then something is wrong (e.g. ode was reset - reset shifting debt as well)
+		if (dipole_current_time < dipole_last_time) {
+
+			dipole_last_time = dipole_current_time;
+			dipole_shift_debt = DBL3();
+		}
+
+		//add to total amount of shiting which hasn't yet been executed (the shift debt)
+		dipole_shift_debt += (dipole_current_time - dipole_last_time) * dipole_velocity;
+
+		//clip the shift to execute if required
+		DBL3 shift = DBL3(
+			dipole_shift_clip.x > 0.0 ? 0.0 : dipole_shift_debt.x,
+			dipole_shift_clip.y > 0.0 ? 0.0 : dipole_shift_debt.y,
+			dipole_shift_clip.z > 0.0 ? 0.0 : dipole_shift_debt.z);
+
+		if (dipole_shift_clip.x > 0.0 && fabs(dipole_shift_debt.x) > dipole_shift_clip.x)
+			shift.x = floor(fabs(dipole_shift_debt.x) / dipole_shift_clip.x) * dipole_shift_clip.x * get_sign(dipole_shift_debt.x);
+
+		if (dipole_shift_clip.y > 0.0 && fabs(dipole_shift_debt.y) > dipole_shift_clip.y)
+			shift.y = floor(fabs(dipole_shift_debt.y) / dipole_shift_clip.y) * dipole_shift_clip.y * get_sign(dipole_shift_debt.y);
+
+		if (dipole_shift_clip.z > 0.0 && fabs(dipole_shift_debt.z) > dipole_shift_clip.z)
+			shift.z = floor(fabs(dipole_shift_debt.z) / dipole_shift_clip.z) * dipole_shift_clip.z * get_sign(dipole_shift_debt.z);
+
+		//execute shift if needed
+		if (shift != DBL3()) {
+
+			Shift_Dipole(shift);
+			dipole_shift_debt -= shift;
+		}
+
+		dipole_last_time = dipole_current_time;
+	}
+}
+
 //----------------------------------- VARIOUS GET METHODS
 
-bool DipoleMesh::Check_recalculateStrayField(void)
+bool DipoleMesh::CheckRecalculateStrayField(void)
 {
 	//recalculate stray field if flag is set (Mdipole has changed) or non-uniform temperature is enabled and Ms has a temperature dependence (in this case always recalculate)
 

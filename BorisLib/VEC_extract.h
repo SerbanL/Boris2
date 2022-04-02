@@ -22,7 +22,8 @@ std::vector<VType>& VEC<VType>::extract_profile(DBL3 start, DBL3 end, double ste
 #pragma omp parallel for
 		for (int idx = 0; idx < size; idx++) {
 
-			DBL3 position = start + (double)idx * step * (end - start).normalized();
+			//position wrapped-around
+			DBL3 position = (start + (double)idx * step * (end - start).normalized()) % meshDim;
 
 			VType value = average_nonempty(Rect(position - stencil / 2, position + stencil / 2));
 			line_profile_storage[idx] = value;
@@ -54,7 +55,8 @@ std::vector<DBL2>& VEC<VType>::extract_profile_component_x(DBL3 start, DBL3 end,
 #pragma omp parallel for
 		for (int idx = 0; idx < size; idx++) {
 
-			DBL3 position = start + (double)idx * step * (end - start).normalized();
+			//position wrapped-around
+			DBL3 position = (start + (double)idx * step * (end - start).normalized()) % meshDim;
 			line_profile_component[idx].i = (double)idx * step;
 
 			VType value = average_nonempty(Rect(position - stencil / 2, position + stencil / 2));
@@ -87,7 +89,8 @@ std::vector<DBL2>& VEC<VType>::extract_profile_component_y(DBL3 start, DBL3 end,
 #pragma omp parallel for
 		for (int idx = 0; idx < size; idx++) {
 
-			DBL3 position = start + (double)idx * step * (end - start).normalized();
+			//position wrapped-around
+			DBL3 position = (start + (double)idx * step * (end - start).normalized()) % meshDim;
 			line_profile_component[idx].i = (double)idx * step;
 
 			VType value = average_nonempty(Rect(position - stencil / 2, position + stencil / 2));
@@ -120,7 +123,8 @@ std::vector<DBL2>& VEC<VType>::extract_profile_component_z(DBL3 start, DBL3 end,
 #pragma omp parallel for
 		for (int idx = 0; idx < size; idx++) {
 
-			DBL3 position = start + (double)idx * step * (end - start).normalized();
+			//position wrapped-around
+			DBL3 position = (start + (double)idx * step * (end - start).normalized()) % meshDim;
 			line_profile_component[idx].i = (double)idx * step;
 
 			VType value = average_nonempty(Rect(position - stencil / 2, position + stencil / 2));

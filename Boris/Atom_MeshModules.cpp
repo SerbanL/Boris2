@@ -33,6 +33,10 @@ BError Atom_Mesh::AddModule(MOD_ moduleID, bool force_add)
 		pMod.push_back(new Atom_DipoleDipole(this), MOD_ATOM_DIPOLEDIPOLE);
 		break;
 
+	case MOD_STRAYFIELD_MESH:
+		pMod.push_back(new StrayField_AtomMesh(this), MOD_STRAYFIELD_MESH);
+		break;
+
 	case MOD_ZEEMAN:
 		pMod.push_back(new Atom_Zeeman(this), MOD_ZEEMAN);
 		break;

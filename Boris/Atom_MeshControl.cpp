@@ -1,5 +1,7 @@
 #include "stdafx.h"
 #include "Atom_Mesh.h"
+
+#include "Atom_Transport.h"
 #include "HeatBase.h"
 
 //----------------------------------- MESH QUANTITIES CONTROL
@@ -19,9 +21,8 @@ void Atom_Mesh::MoveMesh(double x_shift)
 		//1. shift M1
 		if (M1.linear_size()) paMeshCUDA->M1()->shift_x(M1.linear_size(), x_shift, shift_rect);
 
-		//TO DO
 		//2. shift elC
-		//if (elC.linear_size()) CallModuleMethod(&Transport::MoveMesh_Transport, x_shift);
+		if (elC.linear_size()) CallModuleMethod(&TransportBase::MoveMesh_Transport, x_shift);
 
 		//3. shift Temp
 		if (Temp.linear_size()) CallModuleMethod(&HeatBase::MoveMesh_Heat, x_shift);
@@ -35,9 +36,8 @@ void Atom_Mesh::MoveMesh(double x_shift)
 	//1. shift M1
 	if (M1.linear_size()) M1.shift_x(x_shift, shift_rect);
 
-	//TO DO
 	//2. shift elC
-	//if (elC.linear_size()) CallModuleMethod(&Transport::MoveMesh_Transport, x_shift);
+	if (elC.linear_size()) CallModuleMethod(&TransportBase::MoveMesh_Transport, x_shift);
 
 	//3. shift Temp
 	if (Temp.linear_size()) CallModuleMethod(&HeatBase::MoveMesh_Heat, x_shift);

@@ -124,6 +124,11 @@ BError HeatCUDA::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 				error = (*pMesh)(MOD_TRANSPORT)->UpdateConfiguration(cfgMessage);
 				if (error) return error;
 			}
+			else if (pMesh->IsModuleSet(MOD_TMR)) {
+
+				error = (*pMesh)(MOD_TMR)->UpdateConfiguration(cfgMessage);
+				if (error) return error;
+			}
 
 			if (success) {
 

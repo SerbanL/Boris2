@@ -115,3 +115,16 @@ DBL3 MeshBase::GetTorque(MOD_ moduleType, Rect avRect)
 
 	return DBL3();
 }
+
+//get all set modules IDs
+std::vector<MOD_> MeshBase::GetModulesIDs(void)
+{
+	std::vector<MOD_> set_modules;
+
+	for (int idx = 0; idx < pMod.size(); idx++) {
+
+		set_modules.push_back((MOD_)pMod.get_ID_from_index(idx));
+	}
+
+	return set_modules;
+}

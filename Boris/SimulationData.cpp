@@ -250,6 +250,10 @@ Any Simulation::GetDataValue(DatumConfig dConfig)
 
 			return Any(SMesh[dConfig.meshName]->CallModuleMethod(&Transport::GetAverageChargeCurrent, dConfig.rectangle, std::vector<MeshShape>()));
 		}
+		else if (SMesh[dConfig.meshName]->IsModuleSet(MOD_TMR)) {
+
+			return Any(SMesh[dConfig.meshName]->CallModuleMethod(&TMR::GetAverageChargeCurrent, dConfig.rectangle, std::vector<MeshShape>()));
+		}
 	}
 	break;
 
@@ -289,6 +293,18 @@ Any Simulation::GetDataValue(DatumConfig dConfig)
 	case DATA_RESPUMP2:
 	{
 		return Any(SMesh[dConfig.meshName]->Average_mxdmdt2(dConfig.rectangle));
+	}
+	break;
+
+	case DATA_RESPUMP12:
+	{
+		return Any(SMesh[dConfig.meshName]->Average_mxdm2dt(dConfig.rectangle));
+	}
+	break;
+
+	case DATA_RESPUMP21:
+	{
+		return Any(SMesh[dConfig.meshName]->Average_m2xdmdt(dConfig.rectangle));
 	}
 	break;
 
@@ -392,6 +408,18 @@ Any Simulation::GetDataValue(DatumConfig dConfig)
 	}
 	break;
 
+	case DATA_E_STRAY:
+	{
+		return Any(SMesh[dConfig.meshName]->GetEnergyDensity(MOD_STRAYFIELD_MESH, dConfig.rectangle));
+	}
+	break;
+
+	case DATA_T_STRAY:
+	{
+		return Any(SMesh[dConfig.meshName]->GetTorque(MOD_STRAYFIELD_MESH, dConfig.rectangle));
+	}
+	break;
+
 	case DATA_E_MOPTICAL:
 	{
 		return Any(SMesh[dConfig.meshName]->GetEnergyDensity(MOD_MOPTICAL, dConfig.rectangle));
@@ -485,6 +513,15 @@ Any Simulation::GetDataValue(DatumConfig dConfig)
 	case DATA_TRANSPORT_CONVERROR:
 	{
 		return Any(SMesh.CallModuleMethod<double, STransport>(&STransport::GetEnergyDensity));
+	}
+	break;
+
+	case DATA_TMR:
+	{
+		if (SMesh[dConfig.meshName]->IsModuleSet(MOD_TMR)) {
+
+			return Any(SMesh[dConfig.meshName]->CallModuleMethod(&TMR::GetResistance, dConfig.rectangle));
+		}
 	}
 	break;
 
@@ -599,7 +636,7 @@ void Simulation::DeleteSaveDataEntries(std::string meshName)
 	}
 }
 
-void Simulation::SaveData(void) 
+void Simulation::SaveData(void)
 {
 	//First build text to write to data file as a single row
 	std::string row_text;
@@ -613,35 +650,14 @@ void Simulation::SaveData(void)
 		row_text += value_string;
 		if (idx != saveDataList.size() - 1) row_text += "\t";
 	}
-	
-	if (!is_thread_running(THREAD_DISKACCESS)) {
-		
-		if (savedata_diskbuffer_position < savedata_diskbuffer_size) savedata_diskbuffer[savedata_diskbuffer_position++] = row_text;
-		if (savedata_diskbuffer_position == savedata_diskbuffer_size) {
 
-			//flush overflow buffer synchronously if we have to: this contains entries written before the regular buffer could be completely flushed asynchronously, so come before any new entries in the regular buffer
-			if (savedata_diskoverflowbuffer_position) SaveData_DiskBufferFlush(&savedata_diskoverflowbuffer, &savedata_diskoverflowbuffer_position);
+	while (is_thread_running(THREAD_DISKACCESS)) {}
+	//at this point diskacess thread is guaranteed to not be accessing the diskbuffer - more efficient this way than using a mutex
+	if (savedata_diskbuffer_position < savedata_diskbuffer_size) savedata_diskbuffer[savedata_diskbuffer_position++] = row_text;
+	if (savedata_diskbuffer_position == savedata_diskbuffer_size) {
 
-			//flush regular buffer asynchronously
-			while (single_call_launch<std::vector<std::string>*, int*>(&Simulation::SaveData_DiskBufferFlush, &savedata_diskbuffer, &savedata_diskbuffer_position, THREAD_DISKACCESS) != THREAD_DISKACCESS);
-		}
-	}
-	else {
-
-		//regular buffer still being written: add entries in overflow buffer
-		if (savedata_diskoverflowbuffer_position < savedata_diskbuffer_size - 1) savedata_diskoverflowbuffer[savedata_diskoverflowbuffer_position++] = row_text;
-		else {
-
-			//don't lose last element before overflow buffer full!
-			savedata_diskoverflowbuffer[savedata_diskoverflowbuffer_position++] = row_text;
-
-			//overflow buffer also full : flush it synchronously when the previous write operation finishes
-			//stop disk thread: this command will complete when the writing operation finishes
-			stop_thread(THREAD_DISKACCESS);
-			
-			//now flush overflow buffer synchronously when previous operation finishes
-			SaveData_DiskBufferFlush(&savedata_diskoverflowbuffer, &savedata_diskoverflowbuffer_position);
-		}
+		//flush regular buffer asynchronously
+		while (single_call_launch<std::vector<std::string>*, int*>(&Simulation::SaveData_DiskBufferFlush, &savedata_diskbuffer, &savedata_diskbuffer_position, THREAD_DISKACCESS) != THREAD_DISKACCESS);
 	}
 
 	//Image saving:
@@ -658,6 +674,9 @@ void Simulation::SaveData(void)
 //This method does the actual writing to disk : can be launched asynchronously from SaveData method
 void Simulation::SaveData_DiskBufferFlush(std::vector<std::string>* pdiskbuffer, int* pdiskbuffer_position)
 {
+	//must use mutex to stop shennanigans when disk buffers fills quicker than we can empty it
+	diskMutex.lock();
+
 	if (saveDataFlag) {
 
 		//we need a file name to save to
@@ -734,6 +753,8 @@ void Simulation::SaveData_DiskBufferFlush(std::vector<std::string>* pdiskbuffer,
 			bdout.close();
 		}
 	}
+
+	diskMutex.unlock();
 }
 
 //file name can have data specifiers, e.g. %iter% means '%iter%' should be replaced by the actual value of the iter data field, etc.

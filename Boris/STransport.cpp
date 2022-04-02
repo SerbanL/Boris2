@@ -5,6 +5,12 @@
 
 #include "SuperMesh.h"
 
+#include "Transport.h"
+#include "Atom_Transport.h"
+#include "TMR.h"
+
+#include "STransport_Graph.h"
+
 STransport::STransport(SuperMesh *pSMesh_) :
 	Modules(),
 	V_equation({ "t" }),
@@ -69,7 +75,7 @@ BError STransport::Initialize(void)
 BError STransport::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 {
 	BError error(CLASS_STR(STransport));
-
+	
 	Uninitialize();
 	
 	if (ucfg::check_cfgflags(cfgMessage,
@@ -88,16 +94,25 @@ BError STransport::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 		CMBNDcontacts.clear();
 		pV.clear();
 		pS.clear();
-
+		
 		//now build pTransport (and pV)
 		for (int idx = 0; idx < pSMesh->size(); idx++) {
 
-			if ((*pSMesh)[idx]->IsModuleSet(MOD_TRANSPORT)) {
+			if ((*pSMesh)[idx]->IsModuleSet(MOD_TRANSPORT) || (*pSMesh)[idx]->IsModuleSet(MOD_TMR)) {
 
-				Modules* pModule = (*pSMesh)[idx]->GetModule(MOD_TRANSPORT);
+				if ((*pSMesh)[idx]->IsModuleSet(MOD_TRANSPORT)) {
 
-				if (dynamic_cast<Transport*>(pModule)) pTransport.push_back(dynamic_cast<Transport*>(pModule));
-				else if (dynamic_cast<Atom_Transport*>(pModule)) pTransport.push_back(dynamic_cast<Atom_Transport*>(pModule));
+					Modules* pModule = (*pSMesh)[idx]->GetModule(MOD_TRANSPORT);
+					if (dynamic_cast<Transport*>(pModule)) pTransport.push_back(dynamic_cast<Transport*>(pModule));
+#if ATOMISTIC == 1
+					else if (dynamic_cast<Atom_Transport*>(pModule)) pTransport.push_back(dynamic_cast<Atom_Transport*>(pModule));
+#endif
+				}
+				else if ((*pSMesh)[idx]->IsModuleSet(MOD_TMR)) {
+
+					Modules* pModule = (*pSMesh)[idx]->GetModule(MOD_TMR);
+					pTransport.push_back(dynamic_cast<TMR*>(pModule));
+				}
 
 				pV.push_back(&(*pSMesh)[idx]->V);
 				pS.push_back(&(*pSMesh)[idx]->S);
@@ -171,11 +186,13 @@ BError STransport::MakeCUDAModule(void)
 
 double STransport::UpdateField(void)
 {
+	if (pSMesh->disabled_transport_solver) return 0.0;
+
 	//skip any transport solver computations if static_transport_solver is enabled : transport solver will be iterated only at the end of a step or stage
-	if (pSMesh->static_transport_solver || pSMesh->disabled_transport_solver) return 0.0;
+	//however, we still want to compute self-consistent spin torques if SolveSpinCurrent()
 
 	//only need to update this after an entire magnetization equation time step is solved (but always update spin accumulation field if spin current solver enabled)
-	if (pSMesh->CurrentTimeStepSolved()) {
+	if (pSMesh->CurrentTimeStepSolved() && !pSMesh->static_transport_solver) {
 
 		//use V or I equation to set electrode potentials? time dependence only
 		if (V_equation.is_set() || I_equation.is_set()) {
@@ -222,7 +239,7 @@ double STransport::UpdateField(void)
 		}
 		else iters_to_conv = 0;
 	}
-
+	
 	if (pSMesh->SolveSpinCurrent()) {
 		
 		//Calculate the spin accumulation field so a torque is generated when used in the LLG (or LLB) equation
@@ -234,7 +251,7 @@ double STransport::UpdateField(void)
 		//Calculate effective field from interface spin accumulation torque (in magnetic meshes for NF interfaces with G interface conductance set)
 		CalculateSAInterfaceField();
 	}
-
+	
 	//no contribution to total energy density
 	return 0.0;
 }
@@ -464,25 +481,72 @@ void STransport::initialize_potential_values(void)
 		V_average += pV[idx]->average_nonempty();
 	}
 	
-	if (IsZ(V_average)) {
+	if (IsZ(V_average)) set_linear_potential_drops();
+}
 
-		//initialize V with a linear slope between ground and another electrode (in most problems there are only 2 electrodes setup) - do this for all transport meshes
-		if (ground_electrode_index >= 0 && electrode_rects.size() >= 2) {
+//auxiliary used by initialize_potential_values for setting potential drops in all required meshes
+void STransport::set_linear_potential_drops(void)
+{
+	//need a ground electrode and at least 2 electrodes overall
+	if (ground_electrode_index < 0 || electrode_rects.size() < 2) return;
 
-			DBL3 ground_electrode_center = electrode_rects[ground_electrode_index].get_c();
-			double ground_potential = electrode_potentials[ground_electrode_index];
+	//mRects : available mesh rectangles; eRects : available electrode rectangles, other than ground
+	std::vector<Rect> mRects(pTransport.size()), eRects;
+	//ground electrode rectangle
+	Rect gndRect = electrode_rects[ground_electrode_index];
 
-			//pick another electrode that is not the ground electrode
-			int electrode_idx = (ground_electrode_index < electrode_rects.size() - 1 ? electrode_rects.size() - 1 : electrode_rects.size() - 2);
+	//ground and elecrode potentials
+	std::vector<double> eV;
+	double gndV = electrode_potentials[ground_electrode_index];
 
-			//not get its center and potential
-			DBL3 electrode_center = electrode_rects[electrode_idx].get_c();
-			double electrode_potential = electrode_potentials[electrode_idx];
+	//mesh conductivities
+	std::vector<double> mCond(pTransport.size());
 
-			for (int idx = 0; idx < pTransport.size(); idx++) {
+	//collect all relevant mesh rectangles, and make sure each is initialized and get average conductivities
+	for (int idx = 0; idx < pTransport.size(); idx++) {
 
-				pTransport[idx]->Set_Linear_PotentialDrop(ground_electrode_center, ground_potential, electrode_center, electrode_potential);
-			}
+		//make sure modules are initialized before obtaining conductivities (as in some, e.g. TMR this needs to be computed)
+		if (pTransport[idx]->pMeshBase->GetMeshType() == MESH_INSULATOR) {
+
+#if COMPILECUDA == 1
+			if (!dynamic_cast<TMR*>(pTransport[idx])->IsInitialized()) dynamic_cast<TMR*>(pTransport[idx])->InitializeCUDA();
+#else
+			if (!dynamic_cast<TMR*>(pTransport[idx])->IsInitialized()) dynamic_cast<TMR*>(pTransport[idx])->Initialize();
+#endif
+		}
+		else {
+
+#if COMPILECUDA == 1
+			if (!dynamic_cast<Transport*>(pTransport[idx])->IsInitialized()) dynamic_cast<Transport*>(pTransport[idx])->InitializeCUDA();
+#else
+			if (!dynamic_cast<Transport*>(pTransport[idx])->IsInitialized()) dynamic_cast<Transport*>(pTransport[idx])->Initialize();
+#endif
+		}
+
+		mRects[idx] = pTransport[idx]->pMeshBase->meshRect;
+		mCond[idx] = pTransport[idx]->pMeshBase->GetAverageElectricalConductivity();
+	}
+
+	//collect electrode rectangles and potentials
+	for (int idx = 0; idx < electrode_rects.size(); idx++) {
+
+		if (idx != ground_electrode_index) {
+
+			eRects.push_back(electrode_rects[idx]);
+			eV.push_back(electrode_potentials[idx]);
+		}
+	}
+
+	//make graph and calculate potentials for each node in each path
+	Graph graph(mRects, eRects, gndRect);
+	graph.calculate_potentials(mCond, eV, gndV);
+
+	//traverse graph and set potentials
+	for (int pidx = 0; pidx < graph.num_paths(); pidx++) {
+		for (int nidx = 0; nidx < graph.path_size(pidx); nidx++) {
+
+			int idx = graph.get_node_mesh_idx(pidx, nidx);
+			graph.set_potential_drop<TransportBase>(pidx, nidx, &TransportBase::Set_Linear_PotentialDrop, *pTransport[idx]);
 		}
 	}
 }

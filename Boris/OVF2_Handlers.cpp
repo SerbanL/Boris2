@@ -1,7 +1,6 @@
 #include "stdafx.h"
 #include "OVF2_Handlers.h"
 
-
 OVF2::OVF2(void)
 {
 	headers.push_back("# OOMMF OVF 2.0", OVF2_HEADER);

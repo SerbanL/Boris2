@@ -8,6 +8,10 @@
 #include "STransport.h"
 #include "SuperMesh.h"
 
+#include "TransportCUDA.h"
+#include "Atom_TransportCUDA.h"
+#include "TMRCUDA.h"
+
 STransportCUDA::STransportCUDA(SuperMesh* pSMesh_, STransport* pSTrans_) :
 	ModulesCUDA()
 {
@@ -67,7 +71,7 @@ BError STransportCUDA::Initialize(void)
 BError STransportCUDA::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 {
 	BError error(CLASS_STR(STransportCUDA));
-
+	
 	Uninitialize();
 	
 	if (ucfg::check_cfgflags(cfgMessage,
@@ -91,24 +95,31 @@ BError STransportCUDA::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 		//now build pTransport (and pV)
 		for (int idx = 0; idx < pSMesh->size(); idx++) {
 
-			if ((*pSMesh)[idx]->IsModuleSet(MOD_TRANSPORT)) {
+			if ((*pSMesh)[idx]->IsModuleSet(MOD_TRANSPORT) || (*pSMesh)[idx]->IsModuleSet(MOD_TMR)) {
 
-				ModulesCUDA* pModuleCUDA = (*pSMesh)[idx]->GetCUDAModule(MOD_TRANSPORT);
+				if ((*pSMesh)[idx]->IsModuleSet(MOD_TRANSPORT)) {
 
-				if (dynamic_cast<TransportCUDA*>(pModuleCUDA)) {
+					ModulesCUDA* pModuleCUDA = (*pSMesh)[idx]->GetCUDAModule(MOD_TRANSPORT);
 
-					pTransport.push_back(dynamic_cast<TransportCUDA*>(pModuleCUDA));
+					if (dynamic_cast<TransportCUDA*>(pModuleCUDA)) {
 
-					pV.push_back(&dynamic_cast<Mesh*>((*pSMesh)[idx])->pMeshCUDA->V);
-					pS.push_back(&dynamic_cast<Mesh*>((*pSMesh)[idx])->pMeshCUDA->S);
+						pTransport.push_back(dynamic_cast<TransportCUDA*>(pModuleCUDA));
+					}
+#if ATOMISTIC == 1
+					else if (dynamic_cast<Atom_TransportCUDA*>(pModuleCUDA)) {
+
+						pTransport.push_back(dynamic_cast<Atom_TransportCUDA*>(pModuleCUDA));
+					}
+#endif
 				}
-				else if (dynamic_cast<Atom_TransportCUDA*>(pModuleCUDA)) {
-					
-					pTransport.push_back(dynamic_cast<Atom_TransportCUDA*>(pModuleCUDA));
+				else if ((*pSMesh)[idx]->IsModuleSet(MOD_TMR)) {
 
-					pV.push_back(&dynamic_cast<Atom_Mesh*>((*pSMesh)[idx])->paMeshCUDA->V);
-					pS.push_back(&dynamic_cast<Atom_Mesh*>((*pSMesh)[idx])->paMeshCUDA->S);
+					ModulesCUDA* pModuleCUDA = (*pSMesh)[idx]->GetCUDAModule(MOD_TMR);
+					pTransport.push_back(dynamic_cast<TMRCUDA*>(pModuleCUDA));
 				}
+
+				pV.push_back(&(*pSMesh)[idx]->pMeshBaseCUDA->V);
+				pS.push_back(&(*pSMesh)[idx]->pMeshBaseCUDA->S);
 			}
 		}
 		
@@ -128,7 +139,7 @@ BError STransportCUDA::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 				if (!(*pS[idx])()->copyflags_from_cpuvec(*pSTrans->pS[idx])) error(BERROR_GPUERROR_CRIT);
 			}
 		}
-
+		
 		for (int idx = 0; idx < pSTrans->CMBNDcontacts.size(); idx++) {
 
 			std::vector<cu_obj<CMBNDInfoCUDA>> mesh_contacts;
@@ -180,35 +191,18 @@ void STransportCUDA::initialize_potential_values(void)
 		V_average += (*pV[idx])()->average_nonempty((*pV[idx])()->size_cpu().dim());
 	}
 
-	if (IsZ(V_average)) {
-
-		if (pSTrans->ground_electrode_index >= 0 && pSTrans->electrode_rects.size() >= 2) {
-
-			DBL3 ground_electrode_center = pSTrans->electrode_rects[pSTrans->ground_electrode_index].get_c();
-			double ground_potential = pSTrans->electrode_potentials[pSTrans->ground_electrode_index];
-
-			//pick another electrode that is not the ground electrode
-			int electrode_idx = (pSTrans->ground_electrode_index < pSTrans->electrode_rects.size() - 1 ? pSTrans->electrode_rects.size() - 1 : pSTrans->electrode_rects.size() - 2);
-
-			//not get its center and potential
-			DBL3 electrode_center = pSTrans->electrode_rects[electrode_idx].get_c();
-			double electrode_potential = pSTrans->electrode_potentials[electrode_idx];
-
-			for (int idx = 0; idx < pTransport.size(); idx++) {
-
-				pTransport[idx]->Set_Linear_PotentialDrop(ground_electrode_center, ground_potential, electrode_center, electrode_potential);
-			}
-		}
-	}
+	if (IsZ(V_average)) pSTrans->set_linear_potential_drops();
 }
 
 void STransportCUDA::UpdateField(void)
 {
-	//skip any transport solver computations if static_transport_solver is enabled : transport solver will be interated only at the end of a step or stage
-	if (pSMesh->static_transport_solver || pSMesh->disabled_transport_solver) return;
+	if (pSMesh->disabled_transport_solver) return;
+
+	//skip any transport solver computations if static_transport_solver is enabled : transport solver will be iterated only at the end of a step or stage
+	//however, we still want to compute self-consistent spin torques if SolveSpinCurrent()
 
 	//only need to update this after an entire magnetization equation time step is solved (but always update spin accumulation field if spin current solver enabled)
-	if (pSMesh->CurrentTimeStepSolved()) {
+	if (pSMesh->CurrentTimeStepSolved() && !pSMesh->static_transport_solver) {
 
 		//use V or I equation to set electrode potentials? time dependence only
 		if (pSTrans->V_equation.is_set() || pSTrans->I_equation.is_set()) {

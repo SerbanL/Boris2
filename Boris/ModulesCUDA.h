@@ -130,12 +130,15 @@ public:
 
 	bool IsInitialized(void) { return initialized; }
 
-	//-------------------------- Energies
+	//-------------------------- Energies and Torques
 
 	cuBReal GetEnergyDensity(void) { return energy.to_cpu(); }
 	
 	//Calculate the energy density in the given rect only
 	cuBReal GetEnergyDensity(cuRect avRect);
+
+	//implement as needed : this is normally the torque obtained as M cross Module_Heff
+	virtual cuReal3 GetTorque(cuRect avRect) { return cuReal3(); }
 };
 
 #endif

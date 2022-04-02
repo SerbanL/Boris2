@@ -7,34 +7,20 @@
 
 #include "ModulesCUDA.h"
 
-class SuperMesh;
-class DipoleMeshCUDA;
+#include "StrayField_BaseCUDA.h"
 
+class SuperMesh;
 class StrayField;
 
 class StrayFieldCUDA :
+	public StrayField_BaseCUDA,
 	public ModulesCUDA
 {
 
 private:
 
-	//pointer to CUDA version of mesh object holding the effective field module holding this CUDA module
-	SuperMesh* pSMesh;
-
-	//the SDemag module (cpu version) holding this CUDA version
+	//the cpu version module holding this CUDA version
 	StrayField* pStrayField;
-
-	//strayField cuVEC taking values on the supermesh - transfer to and from ferromagnetic meshes
-	cu_obj<cuVEC<cuReal3>> strayField;
-	size_t strayField_size;
-
-	//all currently set dipole meshes - get pointers to cuda M so we can pass them to a cuda kernel 
-	cu_arr<cuVEC_VC<cuReal3>> Mdipoles;
-
-private:
-
-	//calculate stray field from all dipoles
-	void CalculateStrayField(void);
 
 public:
 

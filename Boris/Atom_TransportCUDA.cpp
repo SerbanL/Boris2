@@ -11,41 +11,23 @@
 #include "SuperMeshCUDA.h"
 #include "SuperMesh.h"
 
-Atom_TransportCUDA::Atom_TransportCUDA(Atom_Mesh* paMesh_, SuperMesh* pSMesh_, Atom_Transport* pTransport_)
-	: ModulesCUDA()
+Atom_TransportCUDA::Atom_TransportCUDA(Atom_Transport* pTransport_) : 
+	ModulesCUDA(),
+	TransportBaseCUDA(pTransport_)
 {
-	paMesh = paMesh_;
-	pMeshBase = paMesh;
-
-	paMeshCUDA = paMesh->paMeshCUDA;
-	pMeshBaseCUDA = paMeshCUDA;
-
-	pSMesh = pSMesh_;
-	pSMeshCUDA = pSMesh->pSMeshCUDA;
-
 	pTransport = pTransport_;
+	paMesh = pTransport->paMesh;
+	paMeshCUDA = paMesh->paMeshCUDA;
 
-	stsolve = pTransport->stsolve;
+	Set_STSolveType();
 
 	error_on_create = UpdateConfiguration(UPDATECONFIG_FORCEUPDATE);
 	
 	//setup objects with methods used for Poisson equation solvers
 	
-	if (!error_on_create) error_on_create = poisson_V()->set_pointers(paMeshCUDA);
-	if (!error_on_create) {
-
-		if (stsolve == STSOLVE_FERROMAGNETIC_ATOM) {
-			//TO DO
-			/*
-			error_on_create = poisson_Spin_S()->set_pointers(
-				paMeshCUDA,
-				dynamic_cast<DifferentialEquationFMCUDA*>(dynamic_cast<FMesh*>(paMesh)->Get_DifferentialEquation().Get_DifferentialEquationCUDA_ptr()),
-				this);
-				*/
-		}
-		else error_on_create = poisson_Spin_S()->set_pointers(paMeshCUDA, nullptr, this);
-	}
-	if (!error_on_create) error_on_create = poisson_Spin_V()->set_pointers(paMeshCUDA, this);
+	if (!error_on_create) error_on_create = poisson_V()->set_pointers_atomtransport(paMeshCUDA);
+	if (!error_on_create) error_on_create = poisson_Spin_S()->set_pointers_atomtransport(paMeshCUDA, this);
+	if (!error_on_create) error_on_create = poisson_Spin_V()->set_pointers_atomtransport(paMeshCUDA, this);
 }
 
 Atom_TransportCUDA::~Atom_TransportCUDA()
@@ -69,34 +51,7 @@ Atom_TransportCUDA::~Atom_TransportCUDA()
 	}
 }
 
-//-------------------Auxiliary
-
-//set the stsolve indicator depending on current configuration
-void Atom_TransportCUDA::Set_STSolveType(void)
-{
-	stsolve = pTransport->stsolve;
-
-	poisson_Spin_V()->set_stsolve(stsolve);
-	poisson_Spin_S()->set_stsolve(stsolve);
-}
-
 //------------------Others
-
-//set fixed potential cells in this mesh for given rectangle
-bool Atom_TransportCUDA::SetFixedPotentialCells(cuRect rectangle, cuBReal potential)
-{
-	return paMeshCUDA->V()->set_dirichlet_conditions(rectangle, potential);
-}
-
-void Atom_TransportCUDA::ClearFixedPotentialCells(void)
-{
-	paMeshCUDA->V()->clear_dirichlet_flags();
-}
-
-void Atom_TransportCUDA::Set_Linear_PotentialDrop(cuReal3 ground_electrode_center, cuBReal ground_potential, cuReal3 electrode_center, cuBReal electrode_potential)
-{
-	paMeshCUDA->V()->set_linear(ground_electrode_center, ground_potential, electrode_center, electrode_potential);
-}
 
 //check if dM_dt Calculation should be enabled
 bool Atom_TransportCUDA::Need_dM_dt_Calculation(void)
@@ -249,8 +204,7 @@ void Atom_TransportCUDA::UpdateField(void)
 	if (!paMesh->static_transport_solver && !pSMesh->disabled_transport_solver) {
 
 		//update elC (AMR and temperature)
-		if (pSMesh->CurrentTimeStepSolved())
-			CalculateElectricalConductivity();
+		if (pSMesh->CurrentTimeStepSolved()) CalculateElectricalConductivity();
 	}
 }
 
@@ -258,8 +212,6 @@ void Atom_TransportCUDA::UpdateField(void)
 
 void Atom_TransportCUDA::CalculateElectricalConductivity(bool force_recalculate)
 {
-	//TO DO
-	/*
 	//Include AMR?
 	if (paMesh->M1.linear_size() && (IsNZ((double)paMesh->amrPercentage))) {
 
@@ -276,7 +228,6 @@ void Atom_TransportCUDA::CalculateElectricalConductivity(bool force_recalculate)
 		//set flag to force transport solver recalculation (note, the SuperMesh modules always update after the Mesh modules) - elC has changed
 		pSMesh->CallModuleMethod(&STransport::Flag_Recalculate_Transport);
 	}
-	*/
 }
 
 #endif

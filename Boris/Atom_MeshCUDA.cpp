@@ -8,6 +8,8 @@
 
 #if COMPILECUDA == 1
 
+#include "ManagedAtom_DiffEqCubicCUDA.h"
+
 Atom_MeshCUDA::Atom_MeshCUDA(Atom_Mesh* paMesh) :
 	MeshBaseCUDA(paMesh),
 	Atom_MeshParamsCUDA(dynamic_cast<Atom_MeshParams*>(paMesh)),
@@ -145,7 +147,7 @@ PhysQ Atom_MeshCUDA::FetchOnScreenPhysicalQuantity(double detail_level, bool get
 		break;
 
 	case MESHDISPLAY_CURRDENSITY:
-
+#if defined(MODULE_COMPILATION_TRANSPORT) && ATOMISTIC == 1
 		if (paMesh->IsModuleSet(MOD_TRANSPORT)) {
 
 			if (prepare_display(n_e, meshRect, detail_level, dynamic_cast<Atom_Transport*>(paMesh->pMod(MOD_TRANSPORT))->GetChargeCurrentCUDA())) {
@@ -154,6 +156,7 @@ PhysQ Atom_MeshCUDA::FetchOnScreenPhysicalQuantity(double detail_level, bool get
 				return PhysQ(pdisplay_vec_vc_vec, physicalQuantity, (VEC3REP_)paMesh->vec3rep);
 			}
 		}
+#endif
 		break;
 
 	case MESHDISPLAY_VOLTAGE:
@@ -184,7 +187,7 @@ PhysQ Atom_MeshCUDA::FetchOnScreenPhysicalQuantity(double detail_level, bool get
 		break;
 
 	case MESHDISPLAY_JSX:
-
+#if defined(MODULE_COMPILATION_TRANSPORT) && ATOMISTIC == 1
 		if (paMesh->IsModuleSet(MOD_TRANSPORT)) {
 
 			if (prepare_display(n_e, meshRect, detail_level, dynamic_cast<Atom_Transport*>(paMesh->pMod(MOD_TRANSPORT))->GetSpinCurrentCUDA(0))) {
@@ -193,10 +196,11 @@ PhysQ Atom_MeshCUDA::FetchOnScreenPhysicalQuantity(double detail_level, bool get
 				return PhysQ(pdisplay_vec_vec, physicalQuantity, (VEC3REP_)paMesh->vec3rep);
 			}
 		}
+#endif
 		break;
 
 	case MESHDISPLAY_JSY:
-
+#if defined(MODULE_COMPILATION_TRANSPORT) && ATOMISTIC == 1
 		if (paMesh->IsModuleSet(MOD_TRANSPORT)) {
 
 			if (prepare_display(n_e, meshRect, detail_level, dynamic_cast<Atom_Transport*>(paMesh->pMod(MOD_TRANSPORT))->GetSpinCurrentCUDA(1))) {
@@ -205,10 +209,11 @@ PhysQ Atom_MeshCUDA::FetchOnScreenPhysicalQuantity(double detail_level, bool get
 				return PhysQ(pdisplay_vec_vec, physicalQuantity, (VEC3REP_)paMesh->vec3rep);
 			}
 		}
+#endif
 		break;
 
 	case MESHDISPLAY_JSZ:
-
+#if defined(MODULE_COMPILATION_TRANSPORT) && ATOMISTIC == 1
 		if (paMesh->IsModuleSet(MOD_TRANSPORT)) {
 
 			if (prepare_display(n_e, meshRect, detail_level, dynamic_cast<Atom_Transport*>(paMesh->pMod(MOD_TRANSPORT))->GetSpinCurrentCUDA(2))) {
@@ -217,10 +222,11 @@ PhysQ Atom_MeshCUDA::FetchOnScreenPhysicalQuantity(double detail_level, bool get
 				return PhysQ(pdisplay_vec_vec, physicalQuantity, (VEC3REP_)paMesh->vec3rep);
 			}
 		}
+#endif
 		break;
 
 	case MESHDISPLAY_TS:
-
+#if defined(MODULE_COMPILATION_TRANSPORT) && ATOMISTIC == 1
 		if (paMesh->IsModuleSet(MOD_TRANSPORT)) {
 
 			if (prepare_display(n, meshRect, detail_level, dynamic_cast<Atom_Transport*>(paMesh->pMod(MOD_TRANSPORT))->GetSpinTorqueCUDA())) {
@@ -229,21 +235,21 @@ PhysQ Atom_MeshCUDA::FetchOnScreenPhysicalQuantity(double detail_level, bool get
 				return PhysQ(pdisplay_vec_vec, physicalQuantity, (VEC3REP_)paMesh->vec3rep);
 			}
 		}
+#endif
 		break;
 
 	case MESHDISPLAY_TSI:
-
+#if defined(MODULE_COMPILATION_TRANSPORT) && ATOMISTIC == 1
 		if (paMesh->pSMesh->IsSuperMeshModuleSet(MODS_STRANSPORT) && paMesh->IsModuleSet(MOD_TRANSPORT)) {
-			//TO DO
-			/*
+
 			if (prepare_display(n, meshRect, detail_level,
 				dynamic_cast<STransport*>(paMesh->pSMesh->pSMod(MODS_STRANSPORT))->GetInterfacialSpinTorqueCUDA(dynamic_cast<Atom_Transport*>(paMesh->pMod(MOD_TRANSPORT))))) {
 
 				//return PhysQ made from the cpu version of coarse mesh display.
 				return PhysQ(pdisplay_vec_vec, physicalQuantity, (VEC3REP_)paMesh->vec3rep);
 			}
-			*/
 		}
+#endif
 		break;
 
 	case MESHDISPLAY_TEMPERATURE:
@@ -315,13 +321,13 @@ PhysQ Atom_MeshCUDA::FetchOnScreenPhysicalQuantity(double detail_level, bool get
 }
 
 //save the quantity currently displayed on screen in an ovf2 file using the specified format
-BError Atom_MeshCUDA::SaveOnScreenPhysicalQuantity(std::string fileName, std::string ovf2_dataType)
+BError Atom_MeshCUDA::SaveOnScreenPhysicalQuantity(std::string fileName, std::string ovf2_dataType, MESHDISPLAY_ quantity)
 {
 	BError error(__FUNCTION__);
 
 	OVF2 ovf2;
 
-	switch (paMesh->displayedPhysicalQuantity) {
+	switch ((quantity == MESHDISPLAY_NONE ? paMesh->displayedPhysicalQuantity : quantity)) {
 
 	case MESHDISPLAY_NONE:
 		return error(BERROR_COULDNOTSAVEFILE);
@@ -363,13 +369,14 @@ BError Atom_MeshCUDA::SaveOnScreenPhysicalQuantity(std::string fileName, std::st
 		break;
 
 	case MESHDISPLAY_CURRDENSITY:
-
+#if defined(MODULE_COMPILATION_TRANSPORT) && ATOMISTIC == 1
 		//pdisplay_vec_vc_vec at maximum resolution
 		if (paMesh->IsModuleSet(MOD_TRANSPORT)) {
 
 			prepare_display(n_e, meshRect, h_e.mindim(), dynamic_cast<Atom_Transport*>(paMesh->pMod(MOD_TRANSPORT))->GetChargeCurrentCUDA());
 			error = ovf2.Write_OVF2_VEC(fileName, *pdisplay_vec_vc_vec, ovf2_dataType);
 		}
+#endif
 		break;
 
 	case MESHDISPLAY_VOLTAGE:
@@ -394,54 +401,58 @@ BError Atom_MeshCUDA::SaveOnScreenPhysicalQuantity(std::string fileName, std::st
 		break;
 
 	case MESHDISPLAY_JSX:
-
+#if defined(MODULE_COMPILATION_TRANSPORT) && ATOMISTIC == 1
 		//pdisplay_vec_vec at maximum resolution
 		if (paMesh->IsModuleSet(MOD_TRANSPORT)) {
 
 			prepare_display(n_e, meshRect, h_e.mindim(), dynamic_cast<Atom_Transport*>(paMesh->pMod(MOD_TRANSPORT))->GetSpinCurrentCUDA(0));
 			error = ovf2.Write_OVF2_VEC(fileName, *pdisplay_vec_vec, ovf2_dataType);
 		}
+#endif
 		break;
 
 	case MESHDISPLAY_JSY:
-
+#if defined(MODULE_COMPILATION_TRANSPORT) && ATOMISTIC == 1
 		//pdisplay_vec_vec at maximum resolution
 		if (paMesh->IsModuleSet(MOD_TRANSPORT)) {
 
 			prepare_display(n_e, meshRect, h_e.mindim(), dynamic_cast<Atom_Transport*>(paMesh->pMod(MOD_TRANSPORT))->GetSpinCurrentCUDA(1));
 			error = ovf2.Write_OVF2_VEC(fileName, *pdisplay_vec_vec, ovf2_dataType);
 		}
+#endif
 		break;
 
 	case MESHDISPLAY_JSZ:
-
+#if defined(MODULE_COMPILATION_TRANSPORT) && ATOMISTIC == 1
 		//pdisplay_vec_vec at maximum resolution
 		if (paMesh->IsModuleSet(MOD_TRANSPORT)) {
 
 			prepare_display(n_e, meshRect, h_e.mindim(), dynamic_cast<Atom_Transport*>(paMesh->pMod(MOD_TRANSPORT))->GetSpinCurrentCUDA(2));
 			error = ovf2.Write_OVF2_VEC(fileName, *pdisplay_vec_vec, ovf2_dataType);
 		}
+#endif
 		break;
 
 	case MESHDISPLAY_TS:
-
+#if defined(MODULE_COMPILATION_TRANSPORT) && ATOMISTIC == 1
 		//pdisplay_vec_vec at maximumresolution
 		if (paMesh->IsModuleSet(MOD_TRANSPORT)) {
 
 			prepare_display(n, meshRect, h.mindim(), dynamic_cast<Atom_Transport*>(paMesh->pMod(MOD_TRANSPORT))->GetSpinTorqueCUDA());
 			error = ovf2.Write_OVF2_VEC(fileName, *pdisplay_vec_vec, ovf2_dataType);
 		}
+#endif
 		break;
 
 	case MESHDISPLAY_TSI:
-
+#if defined(MODULE_COMPILATION_TRANSPORT) && ATOMISTIC == 1
 		//pdisplay_vec_vec at maximumresolution
 		if (paMesh->pSMesh->IsSuperMeshModuleSet(MODS_STRANSPORT) && paMesh->IsModuleSet(MOD_TRANSPORT)) {
 
-			//TO DO
-			//prepare_display(n, meshRect, h.mindim(), dynamic_cast<STransport*>(paMesh->pSMesh->pSMod(MODS_STRANSPORT))->GetInterfacialSpinTorqueCUDA(dynamic_cast<Atom_Transport*>(paMesh->pMod(MOD_TRANSPORT))));
-			//error = ovf2.Write_OVF2_VEC(fileName, *pdisplay_vec_vec, ovf2_dataType);
+			prepare_display(n, meshRect, h.mindim(), dynamic_cast<STransport*>(paMesh->pSMesh->pSMod(MODS_STRANSPORT))->GetInterfacialSpinTorqueCUDA(dynamic_cast<Atom_Transport*>(paMesh->pMod(MOD_TRANSPORT))));
+			error = ovf2.Write_OVF2_VEC(fileName, *pdisplay_vec_vec, ovf2_dataType);
 		}
+#endif
 		break;
 
 	case MESHDISPLAY_TEMPERATURE:
@@ -466,7 +477,10 @@ BError Atom_MeshCUDA::SaveOnScreenPhysicalQuantity(std::string fileName, std::st
 //extract profile from focused mesh, from currently display mesh quantity, but reading directly from the quantity
 //Displayed	mesh quantity can be scalar or a vector; pass in std::vector pointers, then check for nullptr to determine what type is displayed
 //if do_average = true then build average and don't return anything, else return just a single-shot profile. If read_average = true then simply read out the internally stored averaged profile by assigning to pointer.
-void Atom_MeshCUDA::GetPhysicalQuantityProfile(DBL3 start, DBL3 end, double step, DBL3 stencil, std::vector<DBL3>*& pprofile_dbl3, std::vector<double>*& pprofile_dbl, bool do_average, bool read_average)
+void Atom_MeshCUDA::GetPhysicalQuantityProfile(
+	DBL3 start, DBL3 end, double step, DBL3 stencil, 
+	std::vector<DBL3>*& pprofile_dbl3, std::vector<double>*& pprofile_dbl, 
+	bool do_average, bool read_average, MESHDISPLAY_ quantity)
 {
 	size_t size = round((end - start).norm() / step) + 1;
 
@@ -554,7 +568,7 @@ void Atom_MeshCUDA::GetPhysicalQuantityProfile(DBL3 start, DBL3 end, double step
 
 	if (read_average) paMesh->num_profile_averages = 0;
 
-	switch (paMesh->displayedPhysicalQuantity) {
+	switch ((quantity == MESHDISPLAY_NONE ? paMesh->displayedPhysicalQuantity : quantity)) {
 
 	default:
 	case MESHDISPLAY_NONE:
@@ -593,11 +607,13 @@ void Atom_MeshCUDA::GetPhysicalQuantityProfile(DBL3 start, DBL3 end, double step
 	break;
 
 	case MESHDISPLAY_CURRDENSITY:
+#if defined(MODULE_COMPILATION_TRANSPORT) && ATOMISTIC == 1
 		if (read_average) { read_profile_vec(); return; }
 		if (paMesh->IsModuleSet(MOD_TRANSPORT)) {
 
 			setup_profile_cuvecvc_vec(dynamic_cast<Atom_Transport*>(paMesh->pMod(MOD_TRANSPORT))->GetChargeCurrentCUDA());
 		}
+#endif
 		break;
 
 	case MESHDISPLAY_VOLTAGE:
@@ -616,19 +632,23 @@ void Atom_MeshCUDA::GetPhysicalQuantityProfile(DBL3 start, DBL3 end, double step
 		break;
 
 	case MESHDISPLAY_JSX:
+#if defined(MODULE_COMPILATION_TRANSPORT) && ATOMISTIC == 1
 		if (read_average) { read_profile_vec(); return; }
 		if (paMesh->IsModuleSet(MOD_TRANSPORT)) {
 
 			setup_profile_cuvec_vec(dynamic_cast<Atom_Transport*>(paMesh->pMod(MOD_TRANSPORT))->GetSpinCurrentCUDA(0));
 		}
+#endif
 		break;
 
 	case MESHDISPLAY_JSY:
+#if defined(MODULE_COMPILATION_TRANSPORT) && ATOMISTIC == 1
 		if (read_average) { read_profile_vec(); return; }
 		if (paMesh->IsModuleSet(MOD_TRANSPORT)) {
 
 			setup_profile_cuvec_vec(dynamic_cast<Atom_Transport*>(paMesh->pMod(MOD_TRANSPORT))->GetSpinCurrentCUDA(1));
 		}
+#endif
 		break;
 
 	case MESHDISPLAY_JSZ:
@@ -640,23 +660,24 @@ void Atom_MeshCUDA::GetPhysicalQuantityProfile(DBL3 start, DBL3 end, double step
 		break;
 
 	case MESHDISPLAY_TS:
-
+#if defined(MODULE_COMPILATION_TRANSPORT) && ATOMISTIC == 1
 		if (read_average) { read_profile_vec(); return; }
 		if (paMesh->IsModuleSet(MOD_TRANSPORT)) {
 
 			setup_profile_cuvec_vec(dynamic_cast<Atom_Transport*>(paMesh->pMod(MOD_TRANSPORT))->GetSpinTorqueCUDA());
 		}
+#endif
 		break;
 
 	case MESHDISPLAY_TSI:
+#if defined(MODULE_COMPILATION_TRANSPORT) && ATOMISTIC == 1
 		if (read_average) { read_profile_vec(); return; }
-		//TO DO
-		/*
+
 		if (paMesh->pSMesh->IsSuperMeshModuleSet(MODS_STRANSPORT) && paMesh->IsModuleSet(MOD_TRANSPORT)) {
 
 			setup_profile_cuvec_vec(dynamic_cast<STransport*>(paMesh->pSMesh->pSMod(MODS_STRANSPORT))->GetInterfacialSpinTorqueCUDA(dynamic_cast<Atom_Transport*>(paMesh->pMod(MOD_TRANSPORT))));
 		}
-		*/
+#endif
 		break;
 
 	case MESHDISPLAY_TEMPERATURE:
@@ -726,9 +747,9 @@ void Atom_MeshCUDA::GetPhysicalQuantityProfile(DBL3 start, DBL3 end, double step
 }
 
 //return average value for currently displayed mesh quantity in the given relative rectangle
-Any Atom_MeshCUDA::GetAverageDisplayedMeshValue(Rect rel_rect)
+Any Atom_MeshCUDA::GetAverageDisplayedMeshValue(Rect rel_rect, MESHDISPLAY_ quantity)
 {
-	switch (paMesh->displayedPhysicalQuantity) {
+	switch ((quantity == MESHDISPLAY_NONE ? paMesh->displayedPhysicalQuantity : quantity)) {
 
 	default:
 	case MESHDISPLAY_NONE:
@@ -739,7 +760,18 @@ Any Atom_MeshCUDA::GetAverageDisplayedMeshValue(Rect rel_rect)
 		break;
 
 	case MESHDISPLAY_EFFECTIVEFIELD:
-		return (DBL3)Heff1()->average_nonempty(paMesh->Heff1.linear_size(), (cuRect)rel_rect);
+		if ((MOD_)paMesh->Get_Module_Heff_Display() == MOD_ALL || (MOD_)paMesh->Get_Module_Heff_Display() == MOD_ERROR) {
+
+			return (DBL3)Heff1()->average_nonempty(paMesh->Heff1.linear_size(), (cuRect)rel_rect);
+		}
+		else {
+
+			MOD_ Module_Heff = (MOD_)paMesh->Get_ActualModule_Heff_Display();
+			if (paMesh->IsModuleSet(Module_Heff)) {
+
+				return (DBL3)paMesh->pMod(Module_Heff)->Get_Module_HeffCUDA()()->average_nonempty(paMesh->pMod(Module_Heff)->Get_Module_Heff().linear_size(), (cuRect)rel_rect);
+			}
+		}
 		break;
 
 	case MESHDISPLAY_ENERGY:
@@ -753,12 +785,13 @@ Any Atom_MeshCUDA::GetAverageDisplayedMeshValue(Rect rel_rect)
 	break;
 
 	case MESHDISPLAY_CURRDENSITY:
-
+#if defined(MODULE_COMPILATION_TRANSPORT) && ATOMISTIC == 1
 		//pdisplay_vec_vc_vec at maximum resolution
 		if (paMesh->IsModuleSet(MOD_TRANSPORT)) {
 
 			return dynamic_cast<Atom_Transport*>(paMesh->pMod(MOD_TRANSPORT))->GetAverageChargeCurrent(rel_rect);
 		}
+#endif
 		break;
 
 	case MESHDISPLAY_VOLTAGE:
@@ -774,53 +807,55 @@ Any Atom_MeshCUDA::GetAverageDisplayedMeshValue(Rect rel_rect)
 		break;
 
 	case MESHDISPLAY_JSX:
-
+#if defined(MODULE_COMPILATION_TRANSPORT) && ATOMISTIC == 1
 		//pdisplay_vec_vec at maximum resolution
 		if (paMesh->IsModuleSet(MOD_TRANSPORT)) {
 
 			return dynamic_cast<Atom_Transport*>(paMesh->pMod(MOD_TRANSPORT))->GetAverageSpinCurrent(0, rel_rect);
 		}
+#endif
 		break;
 
 	case MESHDISPLAY_JSY:
-
+#if defined(MODULE_COMPILATION_TRANSPORT) && ATOMISTIC == 1
 		//pdisplay_vec_vec at maximum resolution
 		if (paMesh->IsModuleSet(MOD_TRANSPORT)) {
 
 			return dynamic_cast<Atom_Transport*>(paMesh->pMod(MOD_TRANSPORT))->GetAverageSpinCurrent(1, rel_rect);
 		}
+#endif
 		break;
 
 	case MESHDISPLAY_JSZ:
-
+#if defined(MODULE_COMPILATION_TRANSPORT) && ATOMISTIC == 1
 		//pdisplay_vec_vec at maximum resolution
 		if (paMesh->IsModuleSet(MOD_TRANSPORT)) {
 
 			return dynamic_cast<Atom_Transport*>(paMesh->pMod(MOD_TRANSPORT))->GetAverageSpinCurrent(2, rel_rect);
 		}
+#endif
 		break;
 
 	case MESHDISPLAY_TS:
-
+#if defined(MODULE_COMPILATION_TRANSPORT) && ATOMISTIC == 1
 		//pdisplay_vec_vec at maximumresolution
 		if (paMesh->IsModuleSet(MOD_TRANSPORT)) {
 
 			return dynamic_cast<Atom_Transport*>(paMesh->pMod(MOD_TRANSPORT))->GetAverageSpinTorque(rel_rect);
 		}
+#endif
 		break;
 
 	case MESHDISPLAY_TSI:
-
+#if defined(MODULE_COMPILATION_TRANSPORT) && ATOMISTIC == 1
 		//pdisplay_vec_vec at maximumresolution
 		if (paMesh->pSMesh->IsSuperMeshModuleSet(MODS_STRANSPORT) && paMesh->IsModuleSet(MOD_TRANSPORT)) {
 
-			//TO DO
-			/*
 			//spin torque calculated internally in the Transport module, ready to be read out when needed
 			dynamic_cast<STransport*>(paMesh->pSMesh->pSMod(MODS_STRANSPORT))->GetInterfacialSpinTorque(dynamic_cast<Atom_Transport*>(paMesh->pMod(MOD_TRANSPORT)));
 			return dynamic_cast<Atom_Transport*>(paMesh->pMod(MOD_TRANSPORT))->GetAverageInterfacialSpinTorque(rel_rect);
-			*/
 		}
+#endif
 		break;
 
 	case MESHDISPLAY_TEMPERATURE:
@@ -925,9 +960,7 @@ bool Atom_MeshCUDA::MechComputation_Enabled(void)
 
 bool Atom_MeshCUDA::GInterface_Enabled(void)
 {
-	//TO DO
-	return false;
-	//return (DBL2(paMesh->Gmix.get0()).norm() > 0);
+	return (DBL2(paMesh->Gmix.get0()).norm() > 0);
 }
 
 //----------------------------------- OTHER MESH SHAPE CONTROL
@@ -991,6 +1024,11 @@ BError Atom_MeshCUDA::copy_shapes_to_cpu(void)
 cu_obj<ManagedAtom_DiffEq_CommonCUDA>& Atom_MeshCUDA::Get_ManagedAtom_DiffEq_CommonCUDA(void)
 {
 	return paMesh->pSMesh->Get_ManagedAtom_DiffEq_CommonCUDA();
+}
+
+cu_obj<ManagedAtom_DiffEqCubicCUDA>& Atom_MeshCUDA::Get_ManagedAtom_DiffEqCubicCUDA(void)
+{
+	return dynamic_cast<Atom_DifferentialEquationCubicCUDA*>(dynamic_cast<Atom_Mesh_Cubic*>(paMesh)->Get_DifferentialEquation().Get_DifferentialEquationCUDA_ptr())->Get_ManagedAtom_DiffEqCUDA();
 }
 
 std::vector<DBL4>& Atom_MeshCUDA::get_tensorial_anisotropy(void)

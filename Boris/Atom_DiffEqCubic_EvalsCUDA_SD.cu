@@ -35,19 +35,19 @@ __global__ void RunSD_Start_Kernel(ManagedAtom_DiffEqCubicCUDA& cuaDiffEq, Manag
 				cuReal3 m = (*cuaMesh.pM1)[idx] / mu_s;
 				cuReal3 H = (*cuaMesh.pHeff1)[idx];
 
-				//calculate M cross Heff (multiplication by GAMMA/2 not necessary as this could be absorbed in the stepsize, but keep it for a more natural step size value from the user point of view - i.e. a time step).
-				cuReal3 MxHeff = ((cuBReal)GAMMA / 2) * ((*cuaMesh.pM1)[idx] ^ H);
+				//calculate m cross Heff (multiplication by GAMMA/2 not necessary as this could be absorbed in the stepsize, but keep it for a more natural step size value from the user point of view - i.e. a time step).
+				cuReal3 mxHeff = ((cuBReal)GAMMA / 2) * (m ^ H);
 
 				/////////////////////////
 
-				//current torque value G = m x (M x H)
-				cuReal3 G = m ^ MxHeff;
+				//current torque value G = m x (m x H)
+				cuReal3 G = m ^ mxHeff;
 
 				//save calculated torque for next time
 				(*cuaDiffEq.psEval0)[idx] = G;
 
-				//save current M for next time
-				(*cuaDiffEq.psM1)[idx] = (*cuaMesh.pM1)[idx];
+				//save current m for next time
+				(*cuaDiffEq.psM1)[idx] = m;
 
 				/////////////////////////
 
@@ -62,8 +62,8 @@ __global__ void RunSD_Start_Kernel(ManagedAtom_DiffEqCubicCUDA& cuaDiffEq, Manag
 
 				cuBReal s = dT * (cuBReal)GAMMA * grel / 4.0;
 
-				cuReal3 mxH = m ^ H;
-				m = ((1 - s*s*(mxH*mxH)) * m - 2*s*(m ^ mxH)) / (1 + s*s*(mxH*mxH));
+				cuReal3 s_mxH = m ^ (s*H);
+				m = ((1 - (s_mxH * s_mxH)) * m - 2 * (m ^ s_mxH)) / (1 + (s_mxH * s_mxH));
 
 				//set new M
 				(*cuaMesh.pM1)[idx] = m * mu_s;
@@ -81,9 +81,9 @@ __global__ void RunSD_BB_Kernel(ManagedAtom_DiffEqCubicCUDA& cuaDiffEq, ManagedA
 {
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
 
-	cuBReal _delta_M_sq = 0.0;
+	cuBReal _delta_m_sq = 0.0;
 	cuBReal _delta_G_sq = 0.0;
-	cuBReal _delta_M_dot_delta_G = 0.0;
+	cuBReal _delta_m_dot_delta_G = 0.0;
 
 	if (idx < cuaMesh.pM1->linear_size()) {
 
@@ -99,17 +99,16 @@ __global__ void RunSD_BB_Kernel(ManagedAtom_DiffEqCubicCUDA& cuaDiffEq, ManagedA
 				cuReal3 m = (*cuaMesh.pM1)[idx] / mu_s;
 				cuReal3 H = (*cuaMesh.pHeff1)[idx];
 
-				//calculate M cross Heff (multiplication by GAMMA/2 not necessary as this could be absorbed in the stepsize, but keep it for a more natural step size value from the user point of view - i.e. a time step).
-				cuReal3 MxHeff = ((cuBReal)GAMMA / 2) * ((*cuaMesh.pM1)[idx] ^ H);
+				//calculate m cross Heff (multiplication by GAMMA/2 not necessary as this could be absorbed in the stepsize, but keep it for a more natural step size value from the user point of view - i.e. a time step).
+				cuReal3 mxHeff = ((cuBReal)GAMMA / 2) * (m ^ H);
 
 				/////////////////////////
 
-				//current torque value G = m x (M x H)
-				cuReal3 G = m ^ MxHeff;
+				//current torque value G = m x (m x H)
+				cuReal3 G = m ^ mxHeff;
 
 				//change in torque
 				//divide by 1e6 to stop the accumulated value having a large exponent -> both num and denom are divided by same value; if exponent too large when dividing num by denom significant loss of precision can occur.
-				//Also you don't want to normalize to Ms since Ms can vary between different meshes, or even in this same mesh.
 				cuReal3 delta_G = (G - (*cuaDiffEq.psEval0)[idx]) / 1e6;
 
 				//save calculated torque for next time
@@ -119,18 +118,17 @@ __global__ void RunSD_BB_Kernel(ManagedAtom_DiffEqCubicCUDA& cuaDiffEq, ManagedA
 
 				//change in m
 				//divide by 1e6 to stop the accumulated value having a large exponent -> both num and denom are divided by same value; if exponent too large when dividing num by denom significant loss of precision can occur.
-				//Also you don't want to normalize to Ms since Ms can vary between different meshes, or even in this same mesh.
-				cuReal3 delta_M = ((*cuaMesh.pM1)[idx] - (*cuaDiffEq.psM1)[idx]) / 1e6;
+				cuReal3 delta_m = (m - (*cuaDiffEq.psM1)[idx]) / 1e6;
 
-				//save current M for next time
-				(*cuaDiffEq.psM1)[idx] = (*cuaMesh.pM1)[idx];
+				//save current m for next time
+				(*cuaDiffEq.psM1)[idx] = m;
 
 				/////////////////////////
 
 				//calculate num and denom for the two Barzilai-Borwein stepsize solutions (see Journal of Numerical Analysis (1988) 8, 141-148) so we can find new stepsize
-				_delta_M_sq = delta_M * delta_M;
+				_delta_m_sq = delta_m * delta_m;
 				_delta_G_sq = delta_G * delta_G;
-				_delta_M_dot_delta_G = delta_M * delta_G;
+				_delta_m_dot_delta_G = delta_m * delta_G;
 			}
 		}
 	}
@@ -139,9 +137,9 @@ __global__ void RunSD_BB_Kernel(ManagedAtom_DiffEqCubicCUDA& cuaDiffEq, ManagedA
 	//Bear in mind this could potentially cause catastrophic loss of precision for large simulations even though we normalized to 1e6*1e6 - unlikely however so leave them like this for now.
 	//e.g. when I used these quantities as not normalized the stepsize calculation was all wrong even for medium sized meshes.
 	//If you ever have problems then this is the likely culprit
-	reduction_sum(0, 1, &_delta_M_sq, *cuaDiffEq.pdelta_M_sq);
+	reduction_sum(0, 1, &_delta_m_sq, *cuaDiffEq.pdelta_M_sq);
 	reduction_sum(0, 1, &_delta_G_sq, *cuaDiffEq.pdelta_G_sq);
-	reduction_sum(0, 1, &_delta_M_dot_delta_G, *cuaDiffEq.pdelta_M_dot_delta_G);
+	reduction_sum(0, 1, &_delta_m_dot_delta_G, *cuaDiffEq.pdelta_M_dot_delta_G);
 }
 
 __global__ void RunSD_Advance_withReductions_Kernel(ManagedAtom_DiffEqCubicCUDA& cuaDiffEq, ManagedAtom_MeshCUDA& cuaMesh)
@@ -186,8 +184,8 @@ __global__ void RunSD_Advance_withReductions_Kernel(ManagedAtom_DiffEqCubicCUDA&
 
 				cuBReal s = dT * (cuBReal)GAMMA * grel / 4.0;
 
-				cuReal3 mxH = m ^ H;
-				m = ((1 - s*s*(mxH*mxH)) * m - 2*s*(m ^ mxH)) / (1 + s*s*(mxH*mxH));
+				cuReal3 s_mxH = m ^ (s*H);
+				m = ((1 - (s_mxH * s_mxH)) * m - 2 * (m ^ s_mxH)) / (1 + (s_mxH * s_mxH));
 
 				//set new M
 				(*cuaMesh.pM1)[idx] = m * mu_s;
@@ -245,8 +243,8 @@ __global__ void RunSD_Advance_withReduction_mxh_Kernel(ManagedAtom_DiffEqCubicCU
 
 				cuBReal s = dT * (cuBReal)GAMMA * grel / 4.0;
 
-				cuReal3 mxH = m ^ H;
-				m = ((1 - s*s*(mxH*mxH)) * m - 2*s*(m ^ mxH)) / (1 + s*s*(mxH*mxH));
+				cuReal3 s_mxH = m ^ (s*H);
+				m = ((1 - (s_mxH * s_mxH)) * m - 2 * (m ^ s_mxH)) / (1 + (s_mxH * s_mxH));
 
 				//set new M
 				(*cuaMesh.pM1)[idx] = m * mu_s;
@@ -298,8 +296,8 @@ __global__ void RunSD_Advance_withReduction_dmdt_Kernel(ManagedAtom_DiffEqCubicC
 
 				cuBReal s = dT * (cuBReal)GAMMA * grel / 4.0;
 
-				cuReal3 mxH = m ^ H;
-				m = ((1 - s*s*(mxH*mxH)) * m - 2*s*(m ^ mxH)) / (1 + s*s*(mxH*mxH));
+				cuReal3 s_mxH = m ^ (s*H);
+				m = ((1 - (s_mxH * s_mxH)) * m - 2 * (m ^ s_mxH)) / (1 + (s_mxH * s_mxH));
 
 				//set new M
 				(*cuaMesh.pM1)[idx] = m * mu_s;
@@ -352,8 +350,8 @@ __global__ void RunSD_Advance_Kernel(ManagedAtom_DiffEqCubicCUDA& cuaDiffEq, Man
 
 				cuBReal s = dT * (cuBReal)GAMMA * grel / 4.0;
 
-				cuReal3 mxH = m ^ H;
-				m = ((1 - s*s*(mxH*mxH)) * m - 2*s*(m ^ mxH)) / (1 + s*s*(mxH*mxH));
+				cuReal3 s_mxH = m ^ (s*H);
+				m = ((1 - (s_mxH * s_mxH)) * m - 2 * (m ^ s_mxH)) / (1 + (s_mxH * s_mxH));
 
 				//set new M
 				(*cuaMesh.pM1)[idx] = m * mu_s;

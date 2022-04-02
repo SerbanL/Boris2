@@ -275,7 +275,7 @@ void PhysQRep::CalculateRepresentation(std::vector<PhysQ> physQ)
 				AdjustMagnitude_SCA(physQRep[idx], DBL2(minimum[type], maximum[type]));
 			}
 		}
-
+		
 		//are we going to use transformBatch_render instead of transformBatch for rendering? If so copy elements over from transformBatch to transformBatch_render
 		//Note the calculation routines determine which one to use, and clears transformBatch_render if not needed, or sets required size for it
 		if (physQRep[idx].transformBatch_render.size()) {
@@ -311,6 +311,7 @@ DBL2 PhysQRep::CalculateRepresentation_VEC(VECType* pQ, PhysQRepComponent& physQ
 
 	//number of cells for display, and adjust display cell size (must have an integer number of cells to display)
 	INT3 ndisp = round(meshRect / hdisp);
+
 	if (ndisp.x < 1) ndisp.x = 1;
 	if (ndisp.y < 1) ndisp.y = 1;
 	if (ndisp.z < 1) ndisp.z = 1;
@@ -614,7 +615,6 @@ DBL2 PhysQRep::CalculateRepresentation_VEC(VECType* pQ, VECType* pQ2, PhysQRepCo
 
 	//double the number of cells along z to fit in the dual representation : this will also halve the z cellsize
 	ndisp.z *= 2;
-
 	hdisp = meshRect / ndisp;
 
 	physQRepComponent.transformBatch.resize(hdisp, meshRect);
@@ -1010,20 +1010,21 @@ DBL2 PhysQRep::CalculateRepresentation_SCA(VECType* pQ, PhysQRepComponent& physQ
 {
 	Rect meshRect = pQ->rect;
 	DBL3 h = pQ->h;
-	INT3 n = meshRect.size() / h;
+	INT3 n = pQ->n;
 
 	//display cell size - this sets the level of displayed detail
 	DBL3 hdisp(detail_level);
 
 	//number of cells for display, and adjust display cell size (must have an integer number of cells to display)
-	INT3 ndisp = round(meshRect.size() / hdisp);
+	INT3 ndisp = round(meshRect / hdisp);
+
 	if (ndisp.x < 1) ndisp.x = 1;
 	if (ndisp.y < 1) ndisp.y = 1;
 	if (ndisp.z < 1) ndisp.z = 1;
 	if (ndisp.x > n.x)  ndisp.x = n.x;
 	if (ndisp.y > n.y)  ndisp.y = n.y;
 	if (ndisp.z > n.z)  ndisp.z = n.z;
-	hdisp = meshRect.size() / ndisp;
+	hdisp = meshRect / ndisp;
 
 	if (physQRepComponent.transformBatch.size() != ndisp) physQRepComponent.transformBatch.assign(hdisp, meshRect, CBObjectTransform());
 	if (physQRepComponent.emptyCell.size() != ndisp.dim()) physQRepComponent.emptyCell.assign(physQRepComponent.transformBatch.linear_size(), false);

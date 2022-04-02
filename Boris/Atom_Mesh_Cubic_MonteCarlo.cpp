@@ -4,7 +4,7 @@
 #ifdef MESH_COMPILATION_ATOM_CUBIC
 
 //defines std::execution::par_unseq used for parallel std::sort
-#include <execution>
+//#include <execution>
 
 #include "Atom_MeshParamsControl.h"
 #include "SuperMesh.h"
@@ -456,8 +456,12 @@ void Atom_Mesh_Cubic::Iterate_MonteCarlo_Parallel_Constrained(void)
 	}
 
 	//Now do the truffle shuffle!
-	std::sort(std::execution::par_unseq, mc_indices_red.begin(), mc_indices_red.end());
-	std::sort(std::execution::par_unseq, mc_indices_black.begin(), mc_indices_black.end());
+	//Versions with parallel sort (requries <execution>)
+	//std::sort(std::execution::par_unseq, mc_indices_red.begin(), mc_indices_red.end());
+	//std::sort(std::execution::par_unseq, mc_indices_black.begin(), mc_indices_black.end());
+	//Without parallel sort
+	std::sort(mc_indices_red.begin(), mc_indices_red.end());
+	std::sort(mc_indices_black.begin(), mc_indices_black.end());
 
 	//Finally run the algorithm in parallel using two passes
 	int rb = 0;

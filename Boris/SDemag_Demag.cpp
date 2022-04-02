@@ -337,13 +337,19 @@ BError SDemag_Demag::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 		meshRect = pMesh->meshRect;
 	}
 
+	//...or if convolution settings have changed
+	if (ucfg::check_cfgflags(cfgMessage, UPDATECONFIG_DEMAG_CONVCHANGE)) Uninitialize();
+
 	//if memory needs to be allocated for Hdemag, it will be done through Initialize 
-	Hdemag.clear();
-	Hdemag2.clear();
-	Hdemag3.clear();
-	Hdemag4.clear();
-	Hdemag5.clear();
-	Hdemag6.clear();
+	if (!initialized) {
+
+		Hdemag.clear();
+		Hdemag2.clear();
+		Hdemag3.clear();
+		Hdemag4.clear();
+		Hdemag5.clear();
+		Hdemag6.clear();
+	}
 
 	if (layer_number_2d >= 0) {
 

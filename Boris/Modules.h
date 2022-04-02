@@ -86,11 +86,12 @@ public:
 	virtual BError Initialize(void) = 0;
 
 #if COMPILECUDA == 1
-	//Only call this if cuda is switched on : if cuda on call InitializeCUDA chain, if cuda off call Initialize chain.
+	//Normally only call this if cuda is switched on : if cuda on call InitializeCUDA chain, if cuda off call Initialize chain.
+	//If CUDA is off, then the non-cuda version of Initialize is called instead here.
 	BError InitializeCUDA(void) 
 	{ 
 		if (pModuleCUDA) return pModuleCUDA->Initialize(); 
-		else return BError();
+		else return Initialize();
 	}
 #endif
 

@@ -383,7 +383,7 @@ DBL2 Anisotropy_Tensorial::Get_EnergyChange(int spin_index, DBL3 Mnew_A, DBL3 Mn
 DBL3 Anisotropy_Tensorial::GetTorque(Rect& avRect)
 {
 #if COMPILECUDA == 1
-	if (pModuleCUDA) return reinterpret_cast<Anisotropy_TensorialCUDA*>(pModuleCUDA)->GetTorque(avRect);
+	if (pModuleCUDA) return pModuleCUDA->GetTorque(avRect);
 #endif
 
 	return CalculateTorque(pMesh->M, avRect);

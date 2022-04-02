@@ -377,6 +377,19 @@ struct __Rect {
 	double height(void) const { return (e.z - s.z); }
 	double volume(void) const { return length()*width()*height(); }
 
+	//get positive unit vector normal to largest area face
+	DBL3 get_normal(void) const
+	{
+		double area_xy = length() * width();
+		double area_xz = length() * height();
+		double area_yz = width() * height();
+
+		DBL3 normal = DBL3(1.0, 0.0, 0.0);
+		if (area_yz < area_xz) normal = DBL3(0.0, 1.0, 0.0);
+		if (area_xz < area_xy && area_yz < area_xy) normal = DBL3(0.0, 0.0, 1.0);
+		return normal;
+	}
+
 	//get maximum dimension (from length, width, height)
 	double maxDimension(void) const
 	{
@@ -387,6 +400,9 @@ struct __Rect {
 
 		return maxDim;
 	}
+
+	//get maximum face area
+	double max_area(void) const { return maximum(length() * width(), length() * height(), width() * height()); }
 
 	//get bottom-left quadrant as seen in xy-plane
 	__Rect get_quadrant_bl(void) const
@@ -522,6 +538,15 @@ struct __Rect {
 	bool has_contained_face(const __Rect &rect) const { return (get_contained_face(rect).second >= 0); }
 
 	//----------------------------- GET OTHER PROPERTIES
+
+	//return closest distance between point and any point in this rectangle (considered as a solid rectangle)
+	double get_closest_distance(DBL3 point)
+	{
+		double dx = (point.x > s.x && point.x < e.x ? 0.0 : (point.x <= s.x ? s.x - point.x : point.x - e.x));
+		double dy = (point.y > s.y && point.y < e.y ? 0.0 : (point.y <= s.y ? s.y - point.y : point.y - e.y));
+		double dz = (point.z > s.z && point.z < e.z ? 0.0 : (point.z <= s.z ? s.z - point.z : point.z - e.z));
+		return sqrt(dx*dx + dy*dy + dz*dz);
+	}
 
 	//test intersection with a line from start to end and get intersection point closest to start
 	bool intersection_test(const DBL3& start, const DBL3& end, DBL3* pIntersection) const

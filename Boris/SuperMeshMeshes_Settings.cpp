@@ -762,6 +762,59 @@ BError SuperMesh::SetEFromJcValue(DBL3 Jcvalue, std::string meshName)
 	return error;
 }
 
+//Set TMR type in named mesh (must be an insulator mesh, or leave blank to apply to all meshes)
+BError SuperMesh::SetTMRType(std::string meshName, TMR_ TMR_type)
+{
+	BError error(__FUNCTION__);
+
+	if (meshName == "") {
+
+		for (int idx = 0; idx < pMesh.size(); idx++) {
+
+			if (pMesh[idx]->GetMeshType() == MESH_INSULATOR) {
+
+				pMesh[idx]->SetTMRType(TMR_type);
+			}
+		}
+
+		return error;
+	}
+
+	if (!contains(meshName)) return error(BERROR_INCORRECTNAME);
+	if (pMesh[meshName]->GetMeshType() != MESH_INSULATOR) return error(BERROR_NOTINSULATOR);
+
+	pMesh[meshName]->SetTMRType(TMR_type);
+
+	return error;
+}
+
+//set tyext equation for RAp and RAap in insulator mesh with tmr module added
+BError SuperMesh::SetTMR_BiasEquationParallel(std::string meshName, std::string equation_string)
+{
+	BError error(__FUNCTION__);
+
+	if (!contains(meshName)) return error(BERROR_INCORRECTNAME);
+	if (pMesh[meshName]->GetMeshType() != MESH_INSULATOR) return error(BERROR_NOTINSULATOR);
+	if (!pMesh[meshName]->IsModuleSet(MOD_TMR)) return error(BERROR_NOTMR);
+
+	pMesh[meshName]->CallModuleMethod(&TMR::SetBiasEquation_Parallel, equation_string);
+
+	return error;
+}
+
+BError SuperMesh::SetTMR_BiasEquationAntiParallel(std::string meshName, std::string equation_string)
+{
+	BError error(__FUNCTION__);
+
+	if (!contains(meshName)) return error(BERROR_INCORRECTNAME);
+	if (pMesh[meshName]->GetMeshType() != MESH_INSULATOR) return error(BERROR_NOTINSULATOR);
+	if (!pMesh[meshName]->IsModuleSet(MOD_TMR)) return error(BERROR_NOTMR);
+
+	pMesh[meshName]->CallModuleMethod(&TMR::SetBiasEquation_AntiParallel, equation_string);
+
+	return error;
+}
+
 //--------------------------------------------------------- GET/SET PROPERTIES / VALUES at SuperMesh level
 
 //search save data list (saveDataList) for given dataID set for given mesh. Return true if found and its rectangle is not Null (or equal to the mesh rect); else return false.

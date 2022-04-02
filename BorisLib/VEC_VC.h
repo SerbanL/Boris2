@@ -580,7 +580,7 @@ public:
 	void operator*=(double constant);
 	void operator/=(double constant);
 
-	//--------------------------------------------AVERAGING OPERATIONS : VEC_VC_avg.h
+	//--------------------------------------------AVERAGING/SUMMING OPERATIONS : VEC_VC_avg.h
 
 	//overload VEC method : use NF_NOTEMPTY flags instead here
 	VType average_nonempty(const Box& box) const;
@@ -590,6 +590,10 @@ public:
 	//parallel processing versions - do not call from parallel code!!!
 	VType average_nonempty_omp(const Box& box) const;
 	VType average_nonempty_omp(const Rect& rectangle = Rect()) const;
+
+	//summing functions - do not call from parallel code!!!
+	VType sum_nonempty_omp(const Box& box) const;
+	VType sum_nonempty_omp(const Rect& rectangle = Rect()) const;
 
 	//get average value in composite shape (defined in VEC_VC_shapemask.h)
 	VType shape_getaverage(std::vector<MeshShape> shapes);

@@ -535,10 +535,10 @@ void SDemagCUDA::UpdateField(void)
 		///////////////////////////////////////////////////////////////////////////////////////////////
 
 		else {
-
+		
 			//update if required by ODE solver or if we don't have enough previous evaluations saved to extrapolate
 			if (pSMesh->Check_Step_Update() || num_Hdemag_saved < pSMesh->GetEvaluationSpeedup()) {
-
+				
 				double energy_cpu = 0.0;
 
 				for (int idx_mesh = 0; idx_mesh < pSDemagCUDA_Demag.size(); idx_mesh++) {
@@ -725,15 +725,15 @@ void SDemagCUDA::UpdateField(void)
 							pHdemag = &pSDemagCUDA_Demag[idx_mesh]->Hdemag;
 						}
 					}
-
+					
 					//Inverse FFT
-
+					
 					///////////////////////////////////////////////////////////////////////////////////////////////
 					//////////////////////////////////// ANTIFERROMAGNETIC MESH ///////////////////////////////////
 					///////////////////////////////////////////////////////////////////////////////////////////////
 
 					if (pSDemagCUDA_Demag[idx_mesh]->pMeshCUDA->GetMeshType() == MESH_ANTIFERROMAGNETIC) {
-
+						
 						if (pSDemagCUDA_Demag[idx_mesh]->do_transfer) {
 
 							//do inverse FFT and accumulate energy
@@ -750,7 +750,7 @@ void SDemagCUDA::UpdateField(void)
 								pSDemagCUDA_Demag[idx_mesh]->InverseFFT(pSDemagCUDA_Demag[idx_mesh]->transfer, *pHdemag, pSDemagCUDA_Demag[idx_mesh]->energy, true, true);
 							}
 
-							//transfer to Heff in each mesh
+							//transfer to Heff in each mesh.
 							(*pHdemag)()->transfer_out_duplicated(pSDemag->pSDemag_Demag[idx_mesh]->transfer.size_transfer_out());
 							
 							//remove self demag contribution
@@ -788,9 +788,9 @@ void SDemagCUDA::UpdateField(void)
 					///////////////////////////////////////////////////////////////////////////////////////////////
 
 					else {
-
+						
 						if (pSDemagCUDA_Demag[idx_mesh]->do_transfer) {
-
+							
 							//do inverse FFT and accumulate energy
 							if (pSDemag->pSDemag_Demag[idx_mesh]->transfer_Module_Heff.linear_size()) {
 
@@ -805,14 +805,14 @@ void SDemagCUDA::UpdateField(void)
 								pSDemagCUDA_Demag[idx_mesh]->InverseFFT(pSDemagCUDA_Demag[idx_mesh]->transfer, *pHdemag, pSDemagCUDA_Demag[idx_mesh]->energy, true, true);
 							}
 
-							//transfer to Heff in each mesh
+							//transfer to Heff in each mesh.
 							(*pHdemag)()->transfer_out(pSDemag->pSDemag_Demag[idx_mesh]->transfer.size_transfer_out());
 
 							//remove self demag contribution
 							SDemag_EvalSpeedup_SubSelf(pSDemag->n_common.dim(), *pHdemag, pSDemagCUDA_Demag[idx_mesh]->transfer, pSDemagCUDA_Demag[idx_mesh]->selfDemagCoeff);
 						}
 						else {
-	
+							
 							//do inverse FFT and accumulate energy
 							if (pSDemag->pSDemag_Demag[idx_mesh]->Module_Heff.linear_size()) {
 
@@ -832,7 +832,7 @@ void SDemagCUDA::UpdateField(void)
 								pSDemagCUDA_Demag[idx_mesh]->pMeshCUDA->M, pSDemagCUDA_Demag[idx_mesh]->selfDemagCoeff);
 						}
 					}
-
+					
 					//build total energy
 					energy_cpu += pSDemagCUDA_Demag[idx_mesh]->energy.to_cpu() * pSDemag->pSDemag_Demag[idx_mesh]->energy_density_weight;
 				}
@@ -841,9 +841,9 @@ void SDemagCUDA::UpdateField(void)
 			}
 
 			else {
-
+			
 				//not required to update, and we have enough previous evaluations: use previous Hdemag saves to extrapolate for current evaluation
-
+				
 				double a1 = 1.0, a2 = 0.0, a3 = 0.0, a4 = 0.0, a5 = 0.0, a6 = 0.0;
 				double time = pSMesh->Get_EvalStep_Time();
 

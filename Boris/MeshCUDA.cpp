@@ -8,6 +8,8 @@
 
 #if COMPILECUDA == 1
 
+#include "ManagedDiffEqFMCUDA.h"
+
 MeshCUDA::MeshCUDA(Mesh* pMesh) :
 	MeshBaseCUDA(pMesh),
 	MeshParamsCUDA(dynamic_cast<MeshParams*>(pMesh)),
@@ -239,6 +241,14 @@ PhysQ MeshCUDA::FetchOnScreenPhysicalQuantity(double detail_level, bool getBackg
 				return PhysQ(pdisplay_vec_vc_vec, physicalQuantity, (VEC3REP_)pMesh->vec3rep);
 			}
 		}
+		else if (pMesh->IsModuleSet(MOD_TMR)) {
+
+			if (prepare_display(n_e, meshRect, detail_level, dynamic_cast<TMR*>(pMesh->pMod(MOD_TMR))->GetChargeCurrentCUDA())) {
+
+				//return PhysQ made from the cpu version of coarse mesh display.
+				return PhysQ(pdisplay_vec_vc_vec, physicalQuantity, (VEC3REP_)pMesh->vec3rep);
+			}
+		}
 		break;
 
 	case MESHDISPLAY_VOLTAGE:
@@ -317,7 +327,7 @@ PhysQ MeshCUDA::FetchOnScreenPhysicalQuantity(double detail_level, bool getBackg
 		break;
 
 	case MESHDISPLAY_TSI:
-		
+#ifdef MODULE_COMPILATION_TRANSPORT
 		if (pMesh->pSMesh->IsSuperMeshModuleSet(MODS_STRANSPORT) && pMesh->IsModuleSet(MOD_TRANSPORT)) {
 
 			if (prepare_display(n, meshRect, detail_level, 
@@ -327,6 +337,7 @@ PhysQ MeshCUDA::FetchOnScreenPhysicalQuantity(double detail_level, bool getBackg
 				return PhysQ(pdisplay_vec_vec, physicalQuantity, (VEC3REP_)pMesh->vec3rep);
 			}
 		}
+#endif
 		break;
 
 	case MESHDISPLAY_TEMPERATURE:
@@ -432,13 +443,13 @@ PhysQ MeshCUDA::FetchOnScreenPhysicalQuantity(double detail_level, bool getBackg
 }
 
 //save the quantity currently displayed on screen in an ovf2 file using the specified format
-BError MeshCUDA::SaveOnScreenPhysicalQuantity(std::string fileName, std::string ovf2_dataType)
+BError MeshCUDA::SaveOnScreenPhysicalQuantity(std::string fileName, std::string ovf2_dataType, MESHDISPLAY_ quantity)
 {
 	BError error(__FUNCTION__);
 
 	OVF2 ovf2;
 
-	switch (pMesh->displayedPhysicalQuantity) {
+	switch ((quantity == MESHDISPLAY_NONE ? pMesh->displayedPhysicalQuantity : quantity)) {
 
 	case MESHDISPLAY_NONE:
 		return error(BERROR_COULDNOTSAVEFILE);
@@ -546,6 +557,11 @@ BError MeshCUDA::SaveOnScreenPhysicalQuantity(std::string fileName, std::string 
 			prepare_display(n_e, meshRect, h_e.mindim(), dynamic_cast<Transport*>(pMesh->pMod(MOD_TRANSPORT))->GetChargeCurrentCUDA());
 			error = ovf2.Write_OVF2_VEC(fileName, *pdisplay_vec_vc_vec, ovf2_dataType);
 		}
+		else if (pMesh->IsModuleSet(MOD_TMR)) {
+
+			prepare_display(n_e, meshRect, h_e.mindim(), dynamic_cast<TMR*>(pMesh->pMod(MOD_TMR))->GetChargeCurrentCUDA());
+			error = ovf2.Write_OVF2_VEC(fileName, *pdisplay_vec_vc_vec, ovf2_dataType);
+		}
 		break;
 
 	case MESHDISPLAY_VOLTAGE:
@@ -610,13 +626,14 @@ BError MeshCUDA::SaveOnScreenPhysicalQuantity(std::string fileName, std::string 
 		break;
 
 	case MESHDISPLAY_TSI:
-
+#ifdef MODULE_COMPILATION_TRANSPORT
 		//pdisplay_vec_vec at maximumresolution
 		if (pMesh->pSMesh->IsSuperMeshModuleSet(MODS_STRANSPORT) && pMesh->IsModuleSet(MOD_TRANSPORT)) {
 
 			prepare_display(n, meshRect, h.mindim(), dynamic_cast<STransport*>(pMesh->pSMesh->pSMod(MODS_STRANSPORT))->GetInterfacialSpinTorqueCUDA(dynamic_cast<Transport*>(pMesh->pMod(MOD_TRANSPORT))));
 			error = ovf2.Write_OVF2_VEC(fileName, *pdisplay_vec_vec, ovf2_dataType);
 		}
+#endif
 		break;
 
 	case MESHDISPLAY_TEMPERATURE:
@@ -669,7 +686,10 @@ BError MeshCUDA::SaveOnScreenPhysicalQuantity(std::string fileName, std::string 
 //extract profile from focused mesh, from currently display mesh quantity, but reading directly from the quantity
 //Displayed	mesh quantity can be scalar or a vector; pass in std::vector pointers, then check for nullptr to determine what type is displayed
 //if do_average = true then build average and don't return anything, else return just a single-shot profile. If read_average = true then simply read out the internally stored averaged profile by assigning to pointer.
-void MeshCUDA::GetPhysicalQuantityProfile(DBL3 start, DBL3 end, double step, DBL3 stencil, std::vector<DBL3>*& pprofile_dbl3, std::vector<double>*& pprofile_dbl, bool do_average, bool read_average)
+void MeshCUDA::GetPhysicalQuantityProfile(
+	DBL3 start, DBL3 end, double step, DBL3 stencil, 
+	std::vector<DBL3>*& pprofile_dbl3, std::vector<double>*& pprofile_dbl, 
+	bool do_average, bool read_average, MESHDISPLAY_ quantity)
 {
 	size_t size = round((end - start).norm() / step) + 1;
 
@@ -757,7 +777,7 @@ void MeshCUDA::GetPhysicalQuantityProfile(DBL3 start, DBL3 end, double step, DBL
 
 	if (read_average) pMesh->num_profile_averages = 0;
 
-	switch (pMesh->displayedPhysicalQuantity) {
+	switch ((quantity == MESHDISPLAY_NONE ? pMesh->displayedPhysicalQuantity : quantity)) {
 
 	default:
 	case MESHDISPLAY_NONE:
@@ -835,6 +855,10 @@ void MeshCUDA::GetPhysicalQuantityProfile(DBL3 start, DBL3 end, double step, DBL
 
 			setup_profile_cuvecvc_vec(dynamic_cast<Transport*>(pMesh->pMod(MOD_TRANSPORT))->GetChargeCurrentCUDA());
 		}
+		else if (pMesh->IsModuleSet(MOD_TMR)) {
+
+			setup_profile_cuvecvc_vec(dynamic_cast<TMR*>(pMesh->pMod(MOD_TMR))->GetChargeCurrentCUDA());
+		}
 		break;
 
 	case MESHDISPLAY_VOLTAGE:
@@ -886,11 +910,13 @@ void MeshCUDA::GetPhysicalQuantityProfile(DBL3 start, DBL3 end, double step, DBL
 		break;
 
 	case MESHDISPLAY_TSI:
+#ifdef MODULE_COMPILATION_TRANSPORT
 		if (read_average) { read_profile_vec(); return; }
 		if (pMesh->pSMesh->IsSuperMeshModuleSet(MODS_STRANSPORT) && pMesh->IsModuleSet(MOD_TRANSPORT)) {
 
 			setup_profile_cuvec_vec(dynamic_cast<STransport*>(pMesh->pSMesh->pSMod(MODS_STRANSPORT))->GetInterfacialSpinTorqueCUDA(dynamic_cast<Transport*>(pMesh->pMod(MOD_TRANSPORT))));
 		}
+#endif
 		break;
 
 	case MESHDISPLAY_TEMPERATURE:
@@ -983,9 +1009,9 @@ void MeshCUDA::GetPhysicalQuantityProfile(DBL3 start, DBL3 end, double step, DBL
 }
 
 //return average value for currently displayed mesh quantity in the given relative rectangle
-Any MeshCUDA::GetAverageDisplayedMeshValue(Rect rel_rect)
+Any MeshCUDA::GetAverageDisplayedMeshValue(Rect rel_rect, MESHDISPLAY_ quantity)
 {
-	switch (pMesh->displayedPhysicalQuantity) {
+	switch ((quantity == MESHDISPLAY_NONE ? pMesh->displayedPhysicalQuantity : quantity)) {
 
 	default:
 	case MESHDISPLAY_NONE:
@@ -1002,11 +1028,33 @@ Any MeshCUDA::GetAverageDisplayedMeshValue(Rect rel_rect)
 
 	case MESHDISPLAY_EFFECTIVEFIELD12:
 	case MESHDISPLAY_EFFECTIVEFIELD:
-		return (DBL3)Heff()->average_nonempty(pMesh->Heff.linear_size(), (cuRect)rel_rect);
+		if ((MOD_)pMesh->Get_Module_Heff_Display() == MOD_ALL || (MOD_)pMesh->Get_Module_Heff_Display() == MOD_ERROR) {
+
+			return (DBL3)Heff()->average_nonempty(pMesh->Heff.linear_size(), (cuRect)rel_rect);
+		}
+		else {
+
+			MOD_ Module_Heff = (MOD_)pMesh->Get_ActualModule_Heff_Display();
+			if (pMesh->IsModuleSet(Module_Heff)) {
+
+				return (DBL3)pMesh->pMod(Module_Heff)->Get_Module_HeffCUDA()()->average_nonempty(pMesh->pMod(Module_Heff)->Get_Module_Heff().linear_size(), (cuRect)rel_rect);
+			}
+		}
 		break;
 
 	case MESHDISPLAY_EFFECTIVEFIELD2:
-		return (DBL3)Heff2()->average_nonempty(pMesh->Heff2.linear_size(), (cuRect)rel_rect);
+		if ((MOD_)pMesh->Get_Module_Heff_Display() == MOD_ALL || (MOD_)pMesh->Get_Module_Heff_Display() == MOD_ERROR) {
+
+			return (DBL3)Heff2()->average_nonempty(pMesh->Heff2.linear_size(), (cuRect)rel_rect);
+		}
+		else {
+
+			MOD_ Module_Heff = (MOD_)pMesh->Get_ActualModule_Heff_Display();
+			if (pMesh->IsModuleSet(Module_Heff)) {
+
+				return (DBL3)pMesh->pMod(Module_Heff)->Get_Module_Heff2CUDA()()->average_nonempty(pMesh->pMod(Module_Heff)->Get_Module_Heff2().linear_size(), (cuRect)rel_rect);
+			}
+		}
 		break;
 
 	case MESHDISPLAY_ENERGY:
@@ -1035,6 +1083,10 @@ Any MeshCUDA::GetAverageDisplayedMeshValue(Rect rel_rect)
 		if (pMesh->IsModuleSet(MOD_TRANSPORT)) {
 			
 			return dynamic_cast<Transport*>(pMesh->pMod(MOD_TRANSPORT))->GetAverageChargeCurrent(rel_rect);
+		}
+		else if (pMesh->IsModuleSet(MOD_TMR)) {
+
+			return dynamic_cast<TMR*>(pMesh->pMod(MOD_TMR))->GetAverageChargeCurrent(rel_rect);
 		}
 		break;
 
@@ -1087,7 +1139,7 @@ Any MeshCUDA::GetAverageDisplayedMeshValue(Rect rel_rect)
 		break;
 
 	case MESHDISPLAY_TSI:
-
+#ifdef MODULE_COMPILATION_TRANSPORT
 		//pdisplay_vec_vec at maximumresolution
 		if (pMesh->pSMesh->IsSuperMeshModuleSet(MODS_STRANSPORT) && pMesh->IsModuleSet(MOD_TRANSPORT)) {
 
@@ -1095,6 +1147,7 @@ Any MeshCUDA::GetAverageDisplayedMeshValue(Rect rel_rect)
 			dynamic_cast<STransport*>(pMesh->pSMesh->pSMod(MODS_STRANSPORT))->GetInterfacialSpinTorque(dynamic_cast<Transport*>(pMesh->pMod(MOD_TRANSPORT)));
 			return dynamic_cast<Transport*>(pMesh->pMod(MOD_TRANSPORT))->GetAverageInterfacialSpinTorque(rel_rect);
 		}
+#endif
 		break;
 
 	case MESHDISPLAY_TEMPERATURE:
@@ -1288,6 +1341,11 @@ BError MeshCUDA::copy_shapes_to_cpu(void)
 cu_obj<ManagedDiffEq_CommonCUDA>& MeshCUDA::Get_ManagedDiffEq_CommonCUDA(void)
 { 
 	return pMesh->pSMesh->Get_ManagedDiffEq_CommonCUDA(); 
+}
+
+cu_obj<ManagedDiffEqFMCUDA>& MeshCUDA::Get_ManagedDiffEqFMCUDA(void)
+{
+	return dynamic_cast<DifferentialEquationFMCUDA*>(dynamic_cast<FMesh*>(pMesh)->Get_DifferentialEquation().Get_DifferentialEquationCUDA_ptr())->Get_ManagedDiffEqCUDA();
 }
 
 std::vector<DBL4>& MeshCUDA::get_tensorial_anisotropy(void)

@@ -25,6 +25,10 @@ __global__ void set_ODEFunc_pointers(ManagedDiffEqFMCUDA& cuDiffEq)
 			cuDiffEq.pODEFunc = &ManagedDiffEqFMCUDA::LLGStatic;
 			break;
 
+		case ODE_LLGSTATICSA:
+			cuDiffEq.pODEFunc = &ManagedDiffEqFMCUDA::LLGStatic;
+			break;
+
 		case ODE_LLGSTT:
 			cuDiffEq.pODEFunc = &ManagedDiffEqFMCUDA::LLGSTT;
 			break;

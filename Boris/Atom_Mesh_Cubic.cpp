@@ -24,11 +24,12 @@ Atom_Mesh_Cubic::Atom_Mesh_Cubic(SuperMesh *pSMesh_) :
 			VINFO(move_mesh_trigger), VINFO(skyShift), VINFO(exchange_couple_to_meshes),
 			VINFO(mc_cone_angledeg), VINFO(mc_acceptance_rate), VINFO(mc_parallel), VINFO(mc_disabled), VINFO(mc_constrain), VINFO(cmc_n),
 			//Material Parameters
-			VINFO(alpha), VINFO(mu_s), VINFO(Nxy),
-			VINFO(J), VINFO(D), VINFO(D_dir),
+			VINFO(grel), VINFO(alpha), VINFO(mu_s), VINFO(Nxy),
+			VINFO(J), VINFO(D), VINFO(D_dir), VINFO(Js), VINFO(Js2),
 			VINFO(K1), VINFO(K2),  VINFO(K3), VINFO(mcanis_ea1), VINFO(mcanis_ea2), VINFO(mcanis_ea3),
 			VINFO(Kt),
 			VINFO(cHA), VINFO(cHmo),
+			VINFO(s_eff),
 			VINFO(elecCond), VINFO(amrPercentage), VINFO(P), VINFO(beta), VINFO(De), VINFO(n_density),
 			VINFO(SHA), VINFO(flSOT), VINFO(STq), VINFO(STa), VINFO(STp),
 			VINFO(betaD), VINFO(l_sf), VINFO(l_ex), VINFO(l_ph), VINFO(Gi), VINFO(Gmix),
@@ -45,7 +46,8 @@ Atom_Mesh_Cubic::Atom_Mesh_Cubic(SuperMesh *pSMesh_) :
 			IINFO(Atom_Anisotropy_Uniaxial), IINFO(Atom_Anisotropy_Cubic), IINFO(Atom_Anisotropy_Biaxial), IINFO(Atom_Anisotropy_Tensorial),
 			IINFO(Atom_Transport),
 			IINFO(Atom_Heat),
-			IINFO(Atom_SOTField), IINFO(Atom_STField)
+			IINFO(Atom_SOTField), IINFO(Atom_STField),
+			IINFO(StrayField_AtomMesh)
 		}),
 	meshODE(this)
 {
@@ -68,11 +70,12 @@ Atom_Mesh_Cubic::Atom_Mesh_Cubic(Rect meshRect_, DBL3 h_, SuperMesh *pSMesh_) :
 			VINFO(move_mesh_trigger), VINFO(skyShift), VINFO(exchange_couple_to_meshes),
 			VINFO(mc_cone_angledeg), VINFO(mc_acceptance_rate), VINFO(mc_parallel), VINFO(mc_disabled), VINFO(mc_constrain), VINFO(cmc_n),
 			//Material Parameters
-			VINFO(alpha), VINFO(mu_s), VINFO(Nxy),
-			VINFO(J), VINFO(D), VINFO(D_dir),
+			VINFO(grel), VINFO(alpha), VINFO(mu_s), VINFO(Nxy),
+			VINFO(J), VINFO(D), VINFO(D_dir), VINFO(Js), VINFO(Js2),
 			VINFO(K1), VINFO(K2),  VINFO(K3), VINFO(mcanis_ea1), VINFO(mcanis_ea2), VINFO(mcanis_ea3),
 			VINFO(Kt),
 			VINFO(cHA), VINFO(cHmo),
+			VINFO(s_eff),
 			VINFO(elecCond), VINFO(amrPercentage), VINFO(P), VINFO(beta), VINFO(De), VINFO(n_density),
 			VINFO(SHA), VINFO(flSOT), VINFO(STq), VINFO(STa), VINFO(STp),
 			VINFO(betaD), VINFO(l_sf), VINFO(l_ex), VINFO(l_ph), VINFO(Gi), VINFO(Gmix),
@@ -89,7 +92,8 @@ Atom_Mesh_Cubic::Atom_Mesh_Cubic(Rect meshRect_, DBL3 h_, SuperMesh *pSMesh_) :
 			IINFO(Atom_Anisotropy_Uniaxial), IINFO(Atom_Anisotropy_Cubic), IINFO(Atom_Anisotropy_Biaxial), IINFO(Atom_Anisotropy_Tensorial),
 			IINFO(Atom_Transport),
 			IINFO(Atom_Heat),
-			IINFO(Atom_SOTField), IINFO(Atom_STField)
+			IINFO(Atom_SOTField), IINFO(Atom_STField),
+			IINFO(StrayField_AtomMesh)
 		}),
 	meshODE(this)
 {
@@ -106,7 +110,7 @@ Atom_Mesh_Cubic::Atom_Mesh_Cubic(Rect meshRect_, DBL3 h_, SuperMesh *pSMesh_) :
 	error_on_create = UpdateConfiguration(UPDATECONFIG_FORCEUPDATE);
 
 	//default modules configuration
-	if (!error_on_create) error_on_create = AddModule(MOD_DEMAG);
+	if (!error_on_create) error_on_create = AddModule(MOD_ATOM_DIPOLEDIPOLE);
 	if (!error_on_create) error_on_create = AddModule(MOD_EXCHANGE);
 	if (!error_on_create) error_on_create = AddModule(MOD_ZEEMAN);
 

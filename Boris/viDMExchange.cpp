@@ -740,7 +740,7 @@ DBL2 viDMExchange::Get_EnergyChange(int spin_index, DBL3 Mnew_A, DBL3 Mnew_B)
 DBL3 viDMExchange::GetTorque(Rect& avRect)
 {
 #if COMPILECUDA == 1
-	if (pModuleCUDA) return reinterpret_cast<viDMExchangeCUDA*>(pModuleCUDA)->GetTorque(avRect);
+	if (pModuleCUDA) return pModuleCUDA->GetTorque(avRect);
 #endif
 
 	return CalculateTorque(pMesh->M, avRect);

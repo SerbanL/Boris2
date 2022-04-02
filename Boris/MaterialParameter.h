@@ -1203,7 +1203,10 @@ bool MatP<PType, SType>::set_t_scaling_array(std::vector<double> temp_arr, std::
 	}
 
 	//make sure temperature is in increasing order
-	std::sort(std::execution::par_unseq, arr_bundle.begin(), arr_bundle.end());
+	//Version with parallel sort requires <execution>
+	//std::sort(std::execution::par_unseq, arr_bundle.begin(), arr_bundle.end());
+	//Without parallel sort
+	std::sort(arr_bundle.begin(), arr_bundle.end());
 
 	//extract from tuple back to vectors
 	std::transform(arr_bundle.begin(), arr_bundle.end(), temp_arr.begin(), [](auto const& tup) { return std::get<0>(tup); });
@@ -1897,7 +1900,7 @@ bool MatP<PType, SType>::set_s_ablexp(DBL3 h, Rect rect, DBL2 abl_x, DBL2 abl_y,
 template <typename PType, typename SType>
 bool MatP<PType, SType>::set_s_defects(DBL3 h, Rect rect, DBL2 range, DBL2 diameter_range, double spacing, int seed)
 {
-	bool success = s_scaling.generate_defects(h, rect, range, 1.0, diameter_range, spacing, seed);
+	bool success = s_scaling.generate_defects(h, rect, range, range.i, diameter_range, spacing, seed);
 
 	if (success) {
 

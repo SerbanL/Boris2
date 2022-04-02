@@ -20,9 +20,12 @@ enum MOD_ {
 	
 	//transport or transport-related
 	MOD_TRANSPORT = 11, MODS_STRANSPORT = 12, MODS_OERSTED = 13,
+
+	//insulator mesh specific
+	MOD_TMR = 27,
 	
 	//stray field
-	MODS_STRAYFIELD = 14,
+	MODS_STRAYFIELD = 14, MOD_STRAYFIELD_MESH = 28,
 	
 	//heat
 	MOD_HEAT = 15, MODS_SHEAT = 16,
@@ -33,4 +36,4 @@ enum MOD_ {
 	//atomistic dipole-dipole
 	MOD_ATOM_DIPOLEDIPOLE = 22
 }; 
-//highest integer : 26
+//highest integer : 28

@@ -34,6 +34,10 @@ BError Mesh::AddModule(MOD_ moduleID, bool force_add)
 		if (!exclude_from_multiconvdemag) pMod.push_back(new SDemag_Demag(this), MOD_SDEMAG_DEMAG);
 		break;
 
+	case MOD_STRAYFIELD_MESH:
+		pMod.push_back(new StrayField_Mesh(this), MOD_STRAYFIELD_MESH);
+		break;
+
 	case MOD_EXCHANGE:
 		pMod.push_back(new Exch_6ngbr_Neu(this), MOD_EXCHANGE);
 		break;
@@ -87,6 +91,10 @@ BError Mesh::AddModule(MOD_ moduleID, bool force_add)
 		pMod.push_back(new Transport(this), MOD_TRANSPORT);
 		break;
 
+	case MOD_TMR:
+		pMod.push_back(new TMR(this), MOD_TMR);
+		break;
+
 	case MOD_HEAT:
 		pMod.push_back(new Heat(this), MOD_HEAT);
 		break;
@@ -134,11 +142,13 @@ BError Mesh::AddModule(MOD_ moduleID, bool force_add)
 void Mesh::UpdateTransportSolver(void)
 {
 	if (IsModuleSet(MOD_TRANSPORT)) pMod(MOD_TRANSPORT)->UpdateField();
+	else if (IsModuleSet(MOD_TMR)) pMod(MOD_TMR)->UpdateField();
 }
 
 #if COMPILECUDA == 1
 void Mesh::UpdateTransportSolverCUDA(void)
 {
 	if (IsModuleSet(MOD_TRANSPORT)) pMod(MOD_TRANSPORT)->UpdateFieldCUDA();
+	else if (IsModuleSet(MOD_TMR)) pMod(MOD_TMR)->UpdateFieldCUDA();
 }
 #endif

@@ -87,10 +87,10 @@ std::vector<PhysQ> SuperMesh::FetchOnScreenPhysicalQuantity(double detail_level)
 }
 
 //save the quantity currently displayed on screen for named mesh in an ovf2 file using the specified format
-BError SuperMesh::SaveOnScreenPhysicalQuantity(std::string meshName, std::string fileName, std::string ovf2_dataType)
+BError SuperMesh::SaveOnScreenPhysicalQuantity(std::string meshName, std::string fileName, std::string ovf2_dataType, MESHDISPLAY_ quantity)
 {
 #if COMPILECUDA == 1
-	if (pSMeshCUDA) { return pSMeshCUDA->SaveOnScreenPhysicalQuantity(meshName, fileName, ovf2_dataType); }
+	if (pSMeshCUDA) { return pSMeshCUDA->SaveOnScreenPhysicalQuantity(meshName, fileName, ovf2_dataType, quantity); }
 #endif
 
 	BError error(__FUNCTION__);
@@ -99,11 +99,13 @@ BError SuperMesh::SaveOnScreenPhysicalQuantity(std::string meshName, std::string
 
 	OVF2 ovf2;
 
-	//get anything displayed on super-mesh
-	switch (displayedPhysicalQuantity) {
+	//If quantity is MESHDISPLAY_NONE (default) then use displayedPhysicalQuantity instead, which could be a supermesh quantity or an individual mesh one.
+	//If quantity is not MESHDISPLAY_NONE then get that quantity from the indicated mesh (individual one, or supermesh)
+	switch ((quantity == MESHDISPLAY_NONE ? displayedPhysicalQuantity : quantity)) {
 
+	default:
 	case MESHDISPLAY_NONE:
-		if (contains(meshName)) error = pMesh[meshName]->SaveOnScreenPhysicalQuantity(fileName, ovf2_dataType);
+		if (contains(meshName)) error = pMesh[meshName]->SaveOnScreenPhysicalQuantity(fileName, ovf2_dataType, quantity);
 		break;
 
 	case MESHDISPLAY_SM_DEMAG:
@@ -137,25 +139,36 @@ BError SuperMesh::SaveOnScreenPhysicalQuantity(std::string meshName, std::string
 //extract profile from named mesh, from currently display mesh quantity, but reading directly from the quantity
 //Displayed mesh quantity can be scalar or a vector; pass in std::vector pointers, then check for nullptr to determine what type is displayed
 //if do_average = true then build average and don't return anything, else return just a single-shot profile. If read_average = true then simply read out the internally stored averaged profile by assigning to pointer.
-void SuperMesh::GetPhysicalQuantityProfile(DBL3 start, DBL3 end, double step, DBL3 stencil, std::vector<DBL3>*& pprofile_dbl3, std::vector<double>*& pprofile_dbl, std::string meshName, bool do_average, bool read_average)
+void SuperMesh::GetPhysicalQuantityProfile(
+	DBL3 start, DBL3 end, double step, DBL3 stencil, 
+	std::vector<DBL3>*& pprofile_dbl3, std::vector<double>*& pprofile_dbl, 
+	std::string meshName, bool do_average, bool read_average, MESHDISPLAY_ quantity)
 {
 #if COMPILECUDA == 1
 	if (pSMeshCUDA) {
 
 		//if super-mesh display quantities are set with CUDA enabled then get value from pSMeshCUDA
-		return pSMeshCUDA->GetPhysicalQuantityProfile(start, end, step, stencil, pprofile_dbl3, pprofile_dbl, meshName, do_average, read_average);
+		return pSMeshCUDA->GetPhysicalQuantityProfile(
+			start, end, step, stencil, 
+			pprofile_dbl3, pprofile_dbl, 
+			meshName, do_average, read_average, quantity);
 	}
 #endif
 
-	//get anything displayed on super-mesh
-	switch (displayedPhysicalQuantity) {
+	//If quantity is MESHDISPLAY_NONE (default) then use displayedPhysicalQuantity instead, which could be a supermesh quantity or an individual mesh one.
+	//If quantity is not MESHDISPLAY_NONE then get that quantity from the indicated mesh (individual one, or supermesh)
+	switch ((quantity == MESHDISPLAY_NONE ? displayedPhysicalQuantity : quantity)) {
 
 		////////////////
 		//no quantity displayed on the supermesh, so use individual mesh displayed quantities
 		////////////////
 
+	default:
 	case MESHDISPLAY_NONE:
-		if (contains(meshName)) pMesh[meshName]->GetPhysicalQuantityProfile(start, end, step, stencil, pprofile_dbl3, pprofile_dbl, do_average, read_average);
+		if (contains(meshName)) pMesh[meshName]->GetPhysicalQuantityProfile(
+			start, end, step, stencil, 
+			pprofile_dbl3, pprofile_dbl, 
+			do_average, read_average, quantity);
 		break;
 
 	////////////////
@@ -192,7 +205,7 @@ void SuperMesh::GetPhysicalQuantityProfile(DBL3 start, DBL3 end, double step, DB
 }
 
 //return average value for currently displayed mesh quantity for named mesh in the given relative rectangle
-Any SuperMesh::GetAverageDisplayedMeshValue(std::string meshName, Rect rel_rect, std::vector<MeshShape> shapes)
+Any SuperMesh::GetAverageDisplayedMeshValue(std::string meshName, Rect rel_rect, std::vector<MeshShape> shapes, MESHDISPLAY_ quantity)
 {
 	if (!contains(meshName) && meshName != superMeshHandle) return Any();
 
@@ -200,20 +213,22 @@ Any SuperMesh::GetAverageDisplayedMeshValue(std::string meshName, Rect rel_rect,
 	if (pSMeshCUDA) {
 
 		//if super-mesh display quantities are set with CUDA enabled then get value from pSMeshCUDA
-		return pSMeshCUDA->GetAverageDisplayedMeshValue(meshName, rel_rect, shapes);
+		return pSMeshCUDA->GetAverageDisplayedMeshValue(meshName, rel_rect, shapes, quantity);
 	}
 #endif
 
-	//get anything displayed on super-mesh
-	switch (displayedPhysicalQuantity) {
+	//If quantity is MESHDISPLAY_NONE (default) then use displayedPhysicalQuantity instead, which could be a supermesh quantity or an individual mesh one.
+	//If quantity is not MESHDISPLAY_NONE then get that quantity from the indicated mesh (individual one, or supermesh)
+	switch ((quantity == MESHDISPLAY_NONE ? displayedPhysicalQuantity : quantity)) {
 
 		////////////////
 		//no quantity displayed on the supermesh, so use individual mesh displayed quantities
 		////////////////
 
+	default:
 	case MESHDISPLAY_NONE:
 	{
-		if (contains(meshName)) return pMesh[meshName]->GetAverageDisplayedMeshValue(rel_rect, shapes);
+		if (contains(meshName)) return pMesh[meshName]->GetAverageDisplayedMeshValue(rel_rect, shapes, quantity);
 	}
 	break;
 
@@ -245,7 +260,7 @@ Any SuperMesh::GetAverageDisplayedMeshValue(std::string meshName, Rect rel_rect,
 		}
 		break;
 	}
-
+	
 	return Any();
 }
 

@@ -42,6 +42,8 @@ public:
 
 	//Surface exchange coupling, used by the surfexchange module to couple two spins on different meshes at the surface (units of J)
 	cu_obj<MatPCUDA<cuBReal, cuBReal>> Js;
+	//Secondary surface exchange coupling constant, used for coupling atomistic meshes to micromagnetic 2-sublattice meshes.
+	cu_obj<MatPCUDA<cuBReal, cuBReal>> Js2;
 
 	//Magneto-crystalline anisotropy constants (J) and easy axes directions. For uniaxial anisotropy only ea1 is needed.
 	cu_obj<MatPCUDA<cuBReal, cuBReal>> K1;
@@ -75,9 +77,16 @@ public:
 	//Magneto-Optical field strength (A/m)
 	cu_obj<MatPCUDA<cuBReal, cuBReal>> cHmo;
 
+	//Stochasticity efficiency parameter
+	cu_obj<MatPCUDA<cuBReal, cuBReal>> s_eff;
+
 	//electrical conductivity (units S/m).
 	//this is the value at RT for Ni80Fe20.
 	cu_obj<MatPCUDA<cuBReal, cuBReal>> elecCond;
+
+	//TMR RA products for parallel and antiparallel states (Ohms m^2)
+	cu_obj<MatPCUDA<cuBReal, cuBReal>> RAtmr_p;
+	cu_obj<MatPCUDA<cuBReal, cuBReal>> RAtmr_ap;
 
 	//anisotropic magnetoresistance as a percentage (of base resistance)
 	cu_obj<MatPCUDA<cuBReal, cuBReal>> amrPercentage;

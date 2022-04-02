@@ -15,6 +15,9 @@ private:
 	//the equation component with Function objects ready for run-time evaluation
 	std::vector< std::vector<EqComp::Function<BVarType...>*> > Funcs;
 
+	//text specifiers for user-defined function variables
+	std::vector<double>& varvec;
+
 private:
 
 	//check if branch in eq_fspec at idx index is just a constant
@@ -212,6 +215,10 @@ private:
 
 public:
 
+	Equation_Component(std::vector<double>& varvec_) :
+		varvec(varvec_)
+	{}
+
 	/////////////////////////////////////////////////////////
 	//
 	// CLEAR MEMORY
@@ -277,16 +284,16 @@ public:
 
 				if (bin_idx1 >= Funcs.size() || bin_idx2 >= Funcs.size()) return false;
 
-				Funcs.back().push_back(new EqComp::Function<BVarType...>(eq_fspec[idx][0], *Funcs[bin_idx1].back(), *Funcs[bin_idx2].back()));
+				Funcs.back().push_back(new EqComp::Function<BVarType...>(eq_fspec[idx][0], *Funcs[bin_idx1].back(), *Funcs[bin_idx2].back(), varvec));
 			}
 			else {
 
-				Funcs.back().push_back(new EqComp::Function<BVarType...>(eq_fspec[idx][0]));
+				Funcs.back().push_back(new EqComp::Function<BVarType...>(eq_fspec[idx][0], varvec));
 			}
 
 			for (int idx_tree = 1; idx_tree < eq_fspec[idx].size(); idx_tree++) {
 
-				Funcs.back().push_back(new EqComp::Function<BVarType...>(eq_fspec[idx][idx_tree], *Funcs.back()[idx_tree - 1]));
+				Funcs.back().push_back(new EqComp::Function<BVarType...>(eq_fspec[idx][idx_tree], *Funcs.back()[idx_tree - 1], varvec));
 			}
 		}
 

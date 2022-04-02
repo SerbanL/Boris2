@@ -6,7 +6,7 @@
 #include <libgen.h>
 #include <unistd.h>
 #include <pwd.h>
-#include <filesystem>
+//#include <filesystem>
 #include <limits.h>
 #include <X11/Xlib.h>
 #include "Funcs_Files.h"
@@ -18,7 +18,7 @@
 //Get current directory (initially this will be the executable directory but can change if you load/save files through a windows dialog : on Linux this is the same as GetExeDirectory)
 inline std::string GetDirectory(void)
 {
-	char result[ FILEROWCHARS ];
+	char result[FILEROWCHARS] = {};
   	ssize_t count = readlink( "/proc/self/exe", result, FILEROWCHARS );
 
 	if (count != -1) return std::string(dirname(result)) + "/";
@@ -28,7 +28,7 @@ inline std::string GetDirectory(void)
 //Get executable file directory
 inline std::string GetExeDirectory(void)
 {
-	char result[ FILEROWCHARS ];
+	char result[FILEROWCHARS] = {};
   	ssize_t count = readlink( "/proc/self/exe", result, FILEROWCHARS );
 
 	if (count != -1) return std::string(dirname(result)) + "/";
@@ -79,7 +79,7 @@ inline std::string GetUserDocumentsPath(void)
 inline bool MakeDirectory(std::string directory)
 {
 	//available in C++17
-	std::filesystem::create_directories(directory);
+	//std::filesystem::create_directories(directory);
 
 	//TO DO: check if directory already exists and return true; for all other errors return false
 	return true;

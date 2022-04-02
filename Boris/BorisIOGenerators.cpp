@@ -684,6 +684,37 @@ void Simulation::PrintTransportSolverConfig(void)
 	BD.DisplayFormattedConsoleMessage(tsolver_text);
 }
 
+//---------------------------------------------------- TMR SETTINGS
+
+void Simulation::Print_TMRType_List(void)
+{
+	std::string tmr_list;
+
+	for (int idxMesh = 0; idxMesh < (int)SMesh().size(); idxMesh++) {
+
+		if (SMesh[idxMesh]->GetMeshType() == MESH_INSULATOR)
+			tmr_list += Print_TMRType_ListLine(idxMesh) + "\n";
+	}
+
+	BD.DisplayFormattedConsoleMessage(tmr_list);
+}
+
+std::string Simulation::Print_TMRType_ListLine(int meshIndex)
+{
+	if (meshIndex < SMesh.size()) {
+
+		if (SMesh[meshIndex]->GetMeshType() == MESH_INSULATOR) {
+
+			std::string tmr_line = MakeIO(IOI_MESH_FORTMR, meshIndex) +
+				"</c>[tc1,1,1,1/tc] [sa0/sa]TMR type : [sa1/sa]" + MakeIO(IOI_TMRTYPE, meshIndex);
+
+			return tmr_line;
+		}
+	}
+
+	return "";
+}
+
 //---------------------------------------------------- TEMPERATURE
 
 void Simulation::Print_MeshTemperature_List(void)
@@ -886,6 +917,38 @@ void Simulation::Print_CoupledToDipoles_Settings(void)
 	std::string coupled_to_dipoles_info = "[tc1,1,1,1/tc]Exchange coupling to dipoles : " + MakeIO(IOI_COUPLEDTODIPOLESSTATUS, SMesh.Get_Coupled_To_Dipoles());
 
 	BD.DisplayFormattedConsoleMessage(coupled_to_dipoles_info);
+}
+
+//---------------------------------------------------- DIPOLE SHIFTING ALGORITHM
+
+void Simulation::Print_DipoleShiftingAlgorithm_List(void)
+{
+	std::string dipole_shifting_list;
+
+	for (int idxMesh = 0; idxMesh < (int)SMesh().size(); idxMesh++) {
+
+		if (SMesh[idxMesh]->GetMeshType() == MESH_DIPOLE)
+			dipole_shifting_list += Build_DipoleShiftingAlgorithm_ListLine(idxMesh) + "\n";
+	}
+
+	BD.DisplayFormattedConsoleMessage(dipole_shifting_list);
+}
+
+std::string Simulation::Build_DipoleShiftingAlgorithm_ListLine(int meshIndex)
+{
+	if (meshIndex < SMesh.size()) {
+
+		if (SMesh[meshIndex]->GetMeshType() == MESH_DIPOLE) {
+
+			std::string dipole_shifting_line = MakeIO(IOI_MESH_FORDIPOLESHIFT, meshIndex) +
+				"</c>[tc1,1,1,1/tc] [sa0/sa]Velocity : [sa1/sa]" + MakeIO(IOI_DIPOLEVELOCITY, meshIndex) +
+				"</c>[tc1,1,1,1/tc] [sa2/sa]Position clipping : [sa3/sa]" + MakeIO(IOI_DIPOLESHIFTCLIP, meshIndex);
+
+			return dipole_shifting_line;
+		}
+	}
+
+	return "";
 }
 
 //---------------------------------------------------- ERROR LOG STATUS and other STARTUP OPTIONS

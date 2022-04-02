@@ -87,7 +87,8 @@ double ODECommon_Base::moving_mesh_dwshift = 0.0;
 
 //-----------------------------------Special Properties
 
-bool ODECommon_Base::solve_spin_current = false;
+bool ODECommon_Base::solve_spin_current_mm = false;
+bool ODECommon_Base::solve_spin_current_a = false;
 
 //----------------------------------- Setup
 

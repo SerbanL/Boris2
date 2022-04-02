@@ -30,6 +30,7 @@ FMesh::FMesh(SuperMesh *pSMesh_) :
 			VINFO(K1), VINFO(K2), VINFO(K3), VINFO(mcanis_ea1), VINFO(mcanis_ea2), VINFO(mcanis_ea3),
 			VINFO(Kt),
 			VINFO(susrel), VINFO(susprel), VINFO(cHA), VINFO(cHmo),
+			VINFO(s_eff),
 			VINFO(elecCond), VINFO(amrPercentage), VINFO(P), VINFO(beta), VINFO(De), VINFO(n_density), 
 			VINFO(SHA), VINFO(flSOT), VINFO(STq), VINFO(STa), VINFO(STp), 
 			VINFO(betaD), VINFO(l_sf), VINFO(l_ex), VINFO(l_ph), VINFO(Gi), VINFO(Gmix),
@@ -48,7 +49,8 @@ FMesh::FMesh(SuperMesh *pSMesh_) :
 			IINFO(Zeeman), IINFO(MOptical), IINFO(MElastic), IINFO(Roughness),
 			IINFO(Anisotropy_Uniaxial), IINFO(Anisotropy_Cubic), IINFO(Anisotropy_Biaxial), IINFO(Anisotropy_Tensorial),
 			IINFO(Transport), IINFO(Heat),
-			IINFO(SOTField), IINFO(STField)
+			IINFO(SOTField), IINFO(STField),
+			IINFO(StrayField_Mesh)
 		}),
 	meshODE(this)
 {}
@@ -76,6 +78,7 @@ FMesh::FMesh(Rect meshRect_, DBL3 h_, SuperMesh *pSMesh_) :
 			VINFO(K1), VINFO(K2), VINFO(K3), VINFO(mcanis_ea1), VINFO(mcanis_ea2), VINFO(mcanis_ea3),
 			VINFO(Kt),
 			VINFO(susrel), VINFO(susprel), VINFO(cHA), VINFO(cHmo),
+			VINFO(s_eff),
 			VINFO(elecCond), VINFO(amrPercentage), VINFO(P), VINFO(beta), VINFO(De), VINFO(n_density), 
 			VINFO(SHA), VINFO(flSOT), VINFO(STq), VINFO(STa), VINFO(STp), 
 			VINFO(betaD), VINFO(l_sf), VINFO(l_ex), VINFO(l_ph), VINFO(Gi), VINFO(Gmix),
@@ -94,7 +97,8 @@ FMesh::FMesh(Rect meshRect_, DBL3 h_, SuperMesh *pSMesh_) :
 			IINFO(Zeeman), IINFO(MOptical), IINFO(MElastic), IINFO(Roughness),
 			IINFO(Anisotropy_Uniaxial), IINFO(Anisotropy_Cubic), IINFO(Anisotropy_Biaxial), IINFO(Anisotropy_Tensorial),
 			IINFO(Transport), IINFO(Heat),
-			IINFO(SOTField), IINFO(STField)
+			IINFO(SOTField), IINFO(STField),
+			IINFO(StrayField_Mesh)
 		}),
 	meshODE(this)
 {
@@ -316,7 +320,7 @@ BError FMesh::SwitchCUDAState(bool cudaState)
 
 	//SwitchCUDA state for differential equation
 	if (!error) error = meshODE.SwitchCUDAState(cudaState);
-
+	
 	//--------------------------------------------
 
 	//SwitchCUDA state for all active modules in this mesh

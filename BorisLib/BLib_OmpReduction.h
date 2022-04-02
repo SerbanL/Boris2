@@ -49,10 +49,13 @@ class OmpReduction {
 	std::vector<Type> average_reduction;
 	std::vector<int> average_reduction_points;
 
+	//plain reduction (sum all values) but works for any Type with addition operator
+	std::vector<Type> sum_reduction;
+
 public:
 
 	//values available after reduction
-	Type min, max, av;
+	Type min, max, av, total;
 
 	int min_idx, max_idx;
 
@@ -73,9 +76,12 @@ public:
 		average_reduction.assign(OmpThreads, Type());
 		average_reduction_points.assign(OmpThreads, 0);
 
+		sum_reduction.assign(OmpThreads, Type());
+
 		min = Type();
 		max = Type();
 		av = Type();
+		total = Type();
 
 		min_idx = 0;
 		max_idx = 0;
@@ -454,5 +460,39 @@ public:
 		}
 
 		return av;
+	}
+
+	//--------------------- SUM
+
+	//call this before starting a new sum reduction - place before the #pragma omp parallel for
+	void new_sum_reduction(void)
+	{
+#pragma omp parallel for
+		for (int idx = 0; idx < OmpThreads; idx++) {
+
+			sum_reduction[idx] = Type();
+		}
+	}
+
+	//reduce during a loop
+	void reduce_sum(Type value)
+	{
+		int tn = omp_get_thread_num();
+
+		//get running average on this thread
+		sum_reduction[tn] += value;
+	}
+
+	//call this after a loop to get the final average
+	Type sum(void)
+	{
+		total = Type();
+
+		for (int idx = 0; idx < OmpThreads; idx++) {
+
+			total += sum_reduction[idx];
+		}
+
+		return total;
 	}
 };

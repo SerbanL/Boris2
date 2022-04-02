@@ -92,10 +92,17 @@ MeshParamsCUDA::MeshParamsCUDA(MeshParams *pmeshParams)
 	cHmo()->set_from_cpu(pmeshParams->cHmo);
 	pmeshParams->cHmo.set_p_cu_obj_mpcuda(&cHmo);
 
+	s_eff()->set_from_cpu(pmeshParams->s_eff);
+	pmeshParams->s_eff.set_p_cu_obj_mpcuda(&s_eff);
+
 	elecCond()->set_from_cpu(pmeshParams->elecCond);
 	pmeshParams->elecCond.set_p_cu_obj_mpcuda(&elecCond);
 	amrPercentage()->set_from_cpu(pmeshParams->amrPercentage);
 	pmeshParams->amrPercentage.set_p_cu_obj_mpcuda(&amrPercentage);
+	RAtmr_p()->set_from_cpu(pmeshParams->RAtmr_p);
+	pmeshParams->RAtmr_p.set_p_cu_obj_mpcuda(&RAtmr_p);
+	RAtmr_ap()->set_from_cpu(pmeshParams->RAtmr_ap);
+	pmeshParams->RAtmr_ap.set_p_cu_obj_mpcuda(&RAtmr_ap);
 
 	P()->set_from_cpu(pmeshParams->P);
 	pmeshParams->P.set_p_cu_obj_mpcuda(&P);
@@ -282,8 +289,12 @@ MeshParamsCUDA::~MeshParamsCUDA()
 	pmeshParams->cHA.null_p_cu_obj_mpcuda();
 	pmeshParams->cHmo.null_p_cu_obj_mpcuda();
 
+	pmeshParams->s_eff.null_p_cu_obj_mpcuda();
+
 	pmeshParams->elecCond.null_p_cu_obj_mpcuda();
 	pmeshParams->amrPercentage.null_p_cu_obj_mpcuda();
+	pmeshParams->RAtmr_p.null_p_cu_obj_mpcuda();
+	pmeshParams->RAtmr_ap.null_p_cu_obj_mpcuda();
 
 	pmeshParams->P.null_p_cu_obj_mpcuda();
 	pmeshParams->beta.null_p_cu_obj_mpcuda();

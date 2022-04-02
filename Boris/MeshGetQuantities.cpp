@@ -44,5 +44,9 @@ VEC<DBL3>& Mesh::Get_SpinTorque(void)
 //returns interfacial self-consistent spin torque on the cpu, assuming transport module is enabled and spin solver is enabled
 VEC<DBL3>& Mesh::Get_InterfacialSpinTorque(void)
 {
-	return dynamic_cast<STransport*>(pSMesh->GetSuperMeshModule(MODS_STRANSPORT))->GetInterfacialSpinTorque(dynamic_cast<Transport*>(pMod(MOD_TRANSPORT)));
+#ifdef MODULE_COMPILATION_TRANSPORT
+	return dynamic_cast<STransport*>(pSMesh->GetSuperMeshModule(MODS_STRANSPORT))->GetInterfacialSpinTorque(dynamic_cast<TransportBase*>(pMod(MOD_TRANSPORT)));
+#else
+	return dynamic_cast<STransport*>(pSMesh->GetSuperMeshModule(MODS_STRANSPORT))->GetInterfacialSpinTorque();
+#endif
 }

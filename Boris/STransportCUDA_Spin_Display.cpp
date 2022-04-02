@@ -11,10 +11,10 @@
 //-------------------Getters
 
 //return interfacial spin torque in given mesh with matching transport module
-cu_obj<cuVEC<cuReal3>>& STransportCUDA::GetInterfacialSpinTorque(TransportCUDA* pMeshTrans)
+cu_obj<cuVEC<cuReal3>>& STransportCUDA::GetInterfacialSpinTorque(TransportBaseCUDA* pTransportBaseCUDA)
 {
-	if (!pMeshTrans->PrepareDisplayVEC(pMeshTrans->pMesh->h))
-		return pMeshTrans->displayVEC;
+	if (!pTransportBaseCUDA->PrepareDisplayVEC(pTransportBaseCUDA->pMeshBaseCUDA->h))
+		return pTransportBaseCUDA->displayVEC;
 
 	//calculate and add Ts values in Ts_interf VECs
 	for (int idx1 = 0; idx1 < (int)CMBNDcontacts.size(); idx1++) {
@@ -24,16 +24,14 @@ cu_obj<cuVEC<cuReal3>>& STransportCUDA::GetInterfacialSpinTorque(TransportCUDA* 
 			int idx_sec = CMBNDcontacts[idx1][idx2].mesh_idx.i;
 			int idx_pri = CMBNDcontacts[idx1][idx2].mesh_idx.j;
 
-			//Interface Spin Torque currently only from micromagnetic to micromagnetic meshes
-			if (!pTransport[idx_pri]->pMeshBase->is_atomistic() && !pTransport[idx_sec]->pMeshBase->is_atomistic()) {
+			if (pTransport[idx_pri] == pTransportBaseCUDA) {
 
-				if (dynamic_cast<TransportCUDA*>(pTransport[idx_pri]) == pMeshTrans)
-					dynamic_cast<TransportCUDA*>(pTransport[idx_pri])->CalculateDisplaySAInterfaceTorque(dynamic_cast<TransportCUDA*>(pTransport[idx_sec]), CMBNDcontactsCUDA[idx1][idx2], CMBNDcontacts[idx1][idx2].IsPrimaryTop());
+				pTransport[idx_pri]->CalculateDisplaySAInterfaceTorque(pTransport[idx_sec], CMBNDcontactsCUDA[idx1][idx2], CMBNDcontacts[idx1][idx2].IsPrimaryTop());
 			}
 		}
 	}
 
-	return pMeshTrans->displayVEC;
+	return pTransportBaseCUDA->displayVEC;
 }
 
 #endif

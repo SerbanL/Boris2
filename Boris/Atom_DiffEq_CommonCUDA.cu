@@ -8,11 +8,11 @@
 
 //-----------------------------------------
 
-__global__ void Zero_SD_Solver_BB_Values_Atom_kernel(cuBReal& delta_M_sq, cuBReal& delta_G_sq, cuBReal& delta_M_dot_delta_G)
+__global__ void Zero_SD_Solver_BB_Values_Atom_kernel(cuBReal& delta_m_sq, cuBReal& delta_G_sq, cuBReal& delta_m_dot_delta_G)
 {
-	if (threadIdx.x == 0) delta_M_sq = 0.0;
+	if (threadIdx.x == 0) delta_m_sq = 0.0;
 	else if (threadIdx.x == 1) delta_G_sq = 0.0;
-	else if (threadIdx.x == 2) delta_M_dot_delta_G = 0.0;
+	else if (threadIdx.x == 2) delta_m_dot_delta_G = 0.0;
 }
 
 void Atom_ODECommonCUDA::Zero_SD_Solver_BB_Values(void)

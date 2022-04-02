@@ -27,6 +27,7 @@ AFMesh::AFMesh(SuperMesh *pSMesh_) :
 			VINFO(K1_AFM), VINFO(K2_AFM), VINFO(K3_AFM), VINFO(mcanis_ea1), VINFO(mcanis_ea2), VINFO(mcanis_ea3),
 			VINFO(Kt), VINFO(Kt2),
 			VINFO(susrel_AFM), VINFO(cHA), VINFO(cHmo),
+			VINFO(s_eff),
 			VINFO(elecCond), VINFO(P), VINFO(beta), VINFO(SHA), VINFO(flSOT), VINFO(STp),
 			VINFO(base_temperature), VINFO(T_equation), VINFO(T_Curie), VINFO(T_Curie_material), VINFO(atomic_moment_AFM), 
 			VINFO(density),
@@ -38,7 +39,8 @@ AFMesh::AFMesh(SuperMesh *pSMesh_) :
 			IINFO(Zeeman), IINFO(MOptical), IINFO(Roughness),
 			IINFO(Anisotropy_Uniaxial), IINFO(Anisotropy_Cubic), IINFO(Anisotropy_Biaxial), IINFO(Anisotropy_Tensorial),
 			IINFO(Transport), IINFO(Heat),
-			IINFO(SOTField)
+			IINFO(SOTField),
+			IINFO(StrayField_Mesh)
 		}),
 	meshODE(this)
 {}
@@ -63,6 +65,7 @@ AFMesh::AFMesh(Rect meshRect_, DBL3 h_, SuperMesh *pSMesh_) :
 			VINFO(K1_AFM), VINFO(K2_AFM), VINFO(K3_AFM), VINFO(mcanis_ea1), VINFO(mcanis_ea2), VINFO(mcanis_ea3),
 			VINFO(Kt), VINFO(Kt2),
 			VINFO(susrel_AFM), VINFO(cHA), VINFO(cHmo),
+			VINFO(s_eff),
 			VINFO(elecCond), VINFO(P), VINFO(beta), VINFO(SHA), VINFO(flSOT), VINFO(STp),
 			VINFO(base_temperature), VINFO(T_equation), VINFO(T_Curie), VINFO(T_Curie_material), VINFO(atomic_moment_AFM),
 			VINFO(density),
@@ -74,7 +77,8 @@ AFMesh::AFMesh(Rect meshRect_, DBL3 h_, SuperMesh *pSMesh_) :
 			IINFO(Zeeman), IINFO(MOptical), IINFO(Roughness),
 			IINFO(Anisotropy_Uniaxial), IINFO(Anisotropy_Cubic), IINFO(Anisotropy_Biaxial), IINFO(Anisotropy_Tensorial),
 			IINFO(Transport), IINFO(Heat),
-			IINFO(SOTField)
+			IINFO(SOTField),
+			IINFO(StrayField_Mesh)
 		}),
 	meshODE(this)
 {
@@ -95,6 +99,16 @@ AFMesh::AFMesh(Rect meshRect_, DBL3 h_, SuperMesh *pSMesh_) :
 	if (!error_on_create) error_on_create = AddModule(MOD_EXCHANGE);
 	if (!error_on_create) error_on_create = AddModule(MOD_ANIUNI);
 	if (!error_on_create) error_on_create = AddModule(MOD_ZEEMAN);
+
+	//special default parameter values
+	SHA = 0.0;
+	iSHA = 0.0;
+	Gmix = DBL2(0.0, 0.0);
+	Gi = DBL2(0.0, 0.0);
+	amrPercentage = 0.0;
+	betaD = 0.0;
+	cpump_eff = 0.0;
+	the_eff = 0.0;
 
 	//--------------------------
 

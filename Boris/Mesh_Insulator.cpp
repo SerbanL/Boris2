@@ -14,15 +14,20 @@ InsulatorMesh::InsulatorMesh(SuperMesh *pSMesh_) :
 			//Mesh members
 			VINFO(meshType), VINFO(meshIdCounter), VINFO(meshId), 
 			VINFO(displayedPhysicalQuantity), VINFO(displayedBackgroundPhysicalQuantity), VINFO(vec3rep), VINFO(displayedParamVar), VINFO(Module_Heff_Display), VINFO(Module_Energy_Display),
-			VINFO(meshRect), VINFO(n_t), VINFO(h_t), VINFO(n_m), VINFO(h_m), VINFO(Temp), VINFO(pMod),
+			VINFO(meshRect), VINFO(n_e), VINFO(h_e), VINFO(n_t), VINFO(h_t), VINFO(n_m), VINFO(h_m), 
+			VINFO(V), VINFO(E), VINFO(S), VINFO(elC),
+			VINFO(Temp), 
+			VINFO(pMod),
 			//Members in this derived class
-
+			VINFO(TMR_type),
 			//Material Parameters
-			VINFO(base_temperature), VINFO(T_equation), VINFO(thermCond), VINFO(density), VINFO(shc), VINFO(cT), VINFO(Q)
+			VINFO(base_temperature), VINFO(T_equation), 
+			VINFO(Gi), VINFO(Gmix), VINFO(RAtmr_p), VINFO(RAtmr_ap), VINFO(elecCond), VINFO(De), VINFO(l_sf),
+			VINFO(thermCond), VINFO(density), VINFO(shc), VINFO(cT), VINFO(Q)
 		},
 		{
 			//Modules Implementations
-			IINFO(Heat)
+			IINFO(Heat), IINFO(TMR)
 		})
 {}
 
@@ -33,15 +38,20 @@ InsulatorMesh::InsulatorMesh(Rect meshRect_, DBL3 h_, SuperMesh *pSMesh_) :
 			//Mesh members
 			VINFO(meshType), VINFO(meshIdCounter), VINFO(meshId), 
 			VINFO(displayedPhysicalQuantity), VINFO(displayedBackgroundPhysicalQuantity), VINFO(vec3rep), VINFO(displayedParamVar), VINFO(Module_Heff_Display), VINFO(Module_Energy_Display),
-			VINFO(meshRect), VINFO(n_t), VINFO(h_t), VINFO(n_m), VINFO(h_m), VINFO(Temp), VINFO(pMod),
+			VINFO(meshRect), VINFO(n_e), VINFO(h_e), VINFO(n_t), VINFO(h_t), VINFO(n_m), VINFO(h_m), 
+			VINFO(V), VINFO(E), VINFO(S), VINFO(elC),
+			VINFO(Temp), 
+			VINFO(pMod),
 			//Members in this derived class
-
+			VINFO(TMR_type),
 			//Material Parameters
-			VINFO(base_temperature), VINFO(T_equation), VINFO(thermCond), VINFO(density), VINFO(shc), VINFO(cT), VINFO(Q)
+			VINFO(base_temperature), VINFO(T_equation), 
+			VINFO(Gi), VINFO(Gmix), VINFO(RAtmr_p), VINFO(RAtmr_ap), VINFO(elecCond), VINFO(De), VINFO(l_sf),
+			VINFO(thermCond), VINFO(density), VINFO(shc), VINFO(cT), VINFO(Q)
 		},
 		{
 			//Modules Implementations
-			IINFO(Heat)
+			IINFO(Heat), IINFO(TMR)
 		})
 {
 	//default settings
@@ -51,6 +61,11 @@ InsulatorMesh::InsulatorMesh(Rect meshRect_, DBL3 h_, SuperMesh *pSMesh_) :
 
 	h_t = h_;
 	h_m = h_;
+	h_e = h_;
+
+	//special default parameter values
+	Gmix = DBL2(0.0, 0.0);
+	elecCond = 0.0;
 
 	error_on_create = UpdateConfiguration(UPDATECONFIG_FORCEUPDATE);
 

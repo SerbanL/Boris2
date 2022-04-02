@@ -83,6 +83,18 @@ __host__ __device__ void cu_NormalizeVector(Type &Vx, Type &Vy, Type &Vz)
 	}
 }
 
+//normalize a VAL3 if possible, else return zero value
+template <typename cuVAL3Type, std::enable_if_t<std::is_convertible<cuINT3, cuVAL3Type>::value>* = nullptr>
+__host__ __device__ cuVAL3Type cu_normalize(const cuVAL3Type& val3) { return (val3 != cuVAL3Type() ? val3.normalized() : cuVAL3Type()); }
+
+//normalize a VAL3 to the norm of another VAL3
+template <typename cuVAL3Type, std::enable_if_t<std::is_convertible<cuINT3, cuVAL3Type>::value>* = nullptr>
+__host__ __device__ cuVAL3Type cu_normalize(const cuVAL3Type& val3, const cuVAL3Type& val3_2) { return (val3_2 != cuVAL3Type() ? val3 / val3_2.norm() : cuVAL3Type()); }
+
+//normalize a VAL33 to the norm of a VAL3
+template <typename cuVAL33Type, typename cuVAL3Type, std::enable_if_t<std::is_convertible<cuINT33, cuVAL33Type>::value>* = nullptr>
+__host__ __device__ cuVAL33Type cu_normalize(const cuVAL33Type& val33, const cuVAL3Type& val3) { return (val3 != cuVAL3Type() ? val33 / val3.norm() : cuVAL33Type()); }
+
 ///////////////////////////////////////////////////////////////////////////////
 
 template <typename RType>
@@ -128,21 +140,12 @@ __host__ __device__ cuVAL4Type cu_round(const cuVAL4Type& val4) { return cuVAL4T
 //Note, using just the standard floor is not good enough : if the floating point value is very close to the upper integer value then its value should be equal to it.
 //The standard floor function will result in "wrong" behaviour by returning the lower integer.
 //This problem typically arises when using floor and ceil on result of arithmetic operations as floating point errors are introduced, and is much worse in single precision.
-//For this reason do not use a fixed epsilon as with comparison operations, but a ratio of the value modulus.
 template <typename Type, std::enable_if_t<std::is_floating_point<Type>::value>* = nullptr>
-__host__ __device__ Type cu_floor_epsilon(const Type& fval) { return floor(fval + (fabs(fval) * CUFLOOR_CEIL_RATIO < CUEPSILON_ROUNDING ? fabs(fval) * CUFLOOR_CEIL_RATIO : CUEPSILON_ROUNDING)); }
-
-//in some cases you may want to use a fixed epsilon value
-template <typename Type, std::enable_if_t<std::is_floating_point<Type>::value>* = nullptr>
-__host__ __device__ Type cu_floor_fixedepsilon(const Type& fval) { return floor(fval + 1e-5); }
+__host__ __device__ Type cu_floor_epsilon(const Type& fval) { return floor(fval + CUEPSILON_ROUNDING); }
 
 //as above but with ceil
 template <typename Type, std::enable_if_t<std::is_floating_point<Type>::value>* = nullptr>
-__host__ __device__ Type cu_ceil_epsilon(const Type& fval) { return ceil(fval - (fabs(fval) * CUFLOOR_CEIL_RATIO < CUEPSILON_ROUNDING ? fabs(fval) * CUFLOOR_CEIL_RATIO : CUEPSILON_ROUNDING)); }
-
-//in some cases you may want to use a fixed epsilon value
-template <typename Type, std::enable_if_t<std::is_floating_point<Type>::value>* = nullptr>
-__host__ __device__ Type cu_ceil_fixedepsilon(const Type& fval) { return ceil(fval - 1e-5); }
+__host__ __device__ Type cu_ceil_epsilon(const Type& fval) { return ceil(fval - CUEPSILON_ROUNDING); }
 
 //return "fixed" floor of each VAL3 component
 template <typename cuVAL3Type, std::enable_if_t<std::is_convertible<cuINT3, cuVAL3Type>::value>* = nullptr>

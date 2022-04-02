@@ -22,6 +22,7 @@
 #include "Demag.h"
 #include "Demag_N.h"
 #include "SDemag_Demag.h"
+#include "StrayField_Mesh.h"
 #include "Zeeman.h"
 #include "MOptical.h"
 #include "Anisotropy.h"
@@ -64,6 +65,7 @@ class FMesh :
 	MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<DBL3, DBL3>, MatP<DBL3, DBL3>, MatP<DBL3, DBL3>,
 	std::vector<DBL4>,
 	MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>,
+	MatP<double, double>,
 	MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, 
 	MatP<double, double>, MatP<double, double>, MatP<DBL2, double>, MatP<DBL2, double>, MatP<DBL3, DBL3>, 
 	MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<DBL2, double>, MatP<DBL2, double>,
@@ -90,7 +92,8 @@ class FMesh :
 	Zeeman, MOptical, MElastic, Roughness,
 	Anisotropy_Uniaxial, Anisotropy_Cubic, Anisotropy_Biaxial, Anisotropy_Tensorial, 
 	Transport, Heat, 
-	SOTField, STField> >
+	SOTField, STField,
+	StrayField_Mesh> >
 {
 #if COMPILECUDA == 1
 	friend FMeshCUDA;
@@ -333,9 +336,6 @@ public:
 #if COMPILECUDA == 1
 	void PrepareNewIterationCUDA(void) {}
 #endif
-
-	//Check if mesh needs to be moved (using the MoveMesh method) - return amount of movement required (i.e. parameter to use when calling MoveMesh).
-	double CheckMoveMesh(void) { return 0.0; }
 
 	//----------------------------------- GETTERS
 

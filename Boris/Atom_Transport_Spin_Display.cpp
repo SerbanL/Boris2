@@ -4,6 +4,7 @@
 #if defined(MODULE_COMPILATION_TRANSPORT) && ATOMISTIC == 1
 
 #include "Atom_Mesh.h"
+#include "Mesh.h"
 #include "SuperMesh.h"
 #include "Atom_MeshParamsControl.h"
 
@@ -12,21 +13,6 @@
 #endif
 
 //-------------------Display Calculation Methods
-
-//prepare displayVEC ready for calculation of display quantity
-bool Atom_Transport::PrepareDisplayVEC(DBL3 cellsize)
-{
-	if (pSMesh->SolveSpinCurrent() && paMesh->EComputation_Enabled()) {
-
-		//make sure memory is allocated to the correct size
-		displayVEC.assign(cellsize, paMesh->meshRect, DBL3(0.0));
-
-		return true;
-	}
-	else displayVEC.clear();
-
-	return false;
-}
 
 //return x, y, or z component of spin current (component = 0, 1, or 2)
 //VERIFIED - CORRECT
@@ -44,8 +30,7 @@ VEC<DBL3>& Atom_Transport::GetSpinCurrent(int component)
 		return displayVEC;
 	}
 #endif
-	//TO DO
-	/*
+
 	//compute spin current and store result in displayVEC depending on required component
 
 	bool cpump_enabled = IsNZ(paMesh->cpump_eff.get0());
@@ -58,22 +43,22 @@ VEC<DBL3>& Atom_Transport::GetSpinCurrent(int component)
 
 		if (paMesh->S.is_not_empty(idx)) {
 
-			if (stsolve == STSOLVE_FERROMAGNETIC) {
+			if (stsolve == STSOLVE_FERROMAGNETIC_ATOM) {
 
 				//magnetic mesh terms
 
-				double Ms = paMesh->Ms;
+				double mu_s = paMesh->mu_s;
 				double P = paMesh->P;
 				double De = paMesh->De;
-				paMesh->update_parameters_ecoarse(idx, paMesh->Ms, Ms, paMesh->P, P, paMesh->De, De);
+				paMesh->update_parameters_ecoarse(idx, paMesh->mu_s, mu_s, paMesh->P, P, paMesh->De, De);
 
 				//1. drift
-				int idx_M = paMesh->M.position_to_cellidx(paMesh->S.cellidx_to_position(idx));
+				int idx_M = paMesh->M1.position_to_cellidx(paMesh->S.cellidx_to_position(idx));
 
-				DBL3 Mval = paMesh->M[idx_M];
+				DBL3 Mval = paMesh->M1[idx_M];
 				DBL33 grad_S = paMesh->S.grad_neu(idx);
 
-				Js = (paMesh->E[idx] | Mval) * (P * paMesh->elC[idx] / Ms) * (-MUB_E);
+				Js = (paMesh->E[idx] | Mval) * (P * paMesh->elC[idx] / mu_s) * (-MUB_E);
 
 				//2. diffusion with homogeneous Neumann boundary condition
 				Js -= grad_S * De;
@@ -83,7 +68,7 @@ VEC<DBL3>& Atom_Transport::GetSpinCurrent(int component)
 
 				if (component != 2 && (cpump_enabled || the_enabled)) {
 
-					DBL33 grad_m = paMesh->M.grad_neu(idx_M) / Ms;
+					DBL33 grad_m = paMesh->M1.grad_neu(idx_M) / mu_s;
 
 					//topological Hall effect contribution
 					if (the_enabled) {
@@ -99,24 +84,10 @@ VEC<DBL3>& Atom_Transport::GetSpinCurrent(int component)
 					if (cpump_enabled) {
 
 						//value a1
-						DBL3 dm_dt = dM_dt[idx_M] / Ms;
+						DBL3 dm_dt = dM_dt[idx_M] / mu_s;
 						Js += paMesh->cpump_eff.get0() * (HBAR_E * MUB_E * paMesh->elC[idx] / 2) * DBL33(dm_dt ^ grad_m.x, dm_dt ^ grad_m.y, DBL3());
 					}
 				}
-			}
-			else if (stsolve != STSOLVE_NONE) {
-
-				//non-magnetic mesh terms
-
-				double De = paMesh->De;
-				double SHA = paMesh->SHA;
-				paMesh->update_parameters_ecoarse(idx, paMesh->De, De, paMesh->SHA, SHA);
-
-				//1. SHE contribution
-				Js = epsilon3(paMesh->E[idx]) * SHA * paMesh->elC[idx] * MUB_E;
-
-				//2. diffusion with non-homogeneous Neumann boundary condition
-				Js -= paMesh->S.grad_nneu(idx, epsilon3(paMesh->E[idx]) * (SHA * paMesh->elC[idx] * MUB_E / De)) * De;
 			}
 		}
 
@@ -133,55 +104,8 @@ VEC<DBL3>& Atom_Transport::GetSpinCurrent(int component)
 			break;
 		}
 	}
-	*/
+
 	return displayVEC;
-}
-
-DBL3 Atom_Transport::GetAverageSpinCurrent(int component, Rect rectangle, std::vector<MeshShape> shapes)
-{
-#if COMPILECUDA == 1
-	if (pModuleCUDA) {
-
-		//update displayVEC with spin current in TransportCUDA
-		GetSpinCurrentCUDA(component);
-
-		//average spin current in displayVEC in TransportCUDA
-		if (pSMesh->SolveSpinCurrent()) return cuReal3(pTransportCUDA->displayVEC()->average_nonempty(paMesh->n_e.dim(), rectangle));
-		else return cuReal3(0.0);
-	}
-#endif
-
-	//update displayVEC with spin current
-	GetSpinCurrent(component);
-
-	//average spin current in displayVEC
-	if (!shapes.size()) return displayVEC.average_nonempty_omp(rectangle);
-	else return displayVEC.shape_getaverage(shapes);
-}
-
-//Get average bulk spin torque in given rectangle - calculate it first
-DBL3 Atom_Transport::GetAverageSpinTorque(Rect rectangle, std::vector<MeshShape> shapes)
-{
-	GetSpinTorque();
-	if (displayVEC.linear_size()) {
-
-		if (!shapes.size()) return displayVEC.average_nonempty_omp(rectangle);
-		else return displayVEC.shape_getaverage(shapes);
-	}
-
-	return DBL3();
-}
-
-//Get average interfacial spin torque in given rectangle - must have been calculated already in displayVEC through the supermesh transport module
-DBL3 Atom_Transport::GetAverageInterfacialSpinTorque(Rect rectangle, std::vector<MeshShape> shapes)
-{
-	if (displayVEC.linear_size()) {
-
-		if (!shapes.size()) return displayVEC.average_nonempty_omp(rectangle);
-		else return displayVEC.shape_getaverage(shapes);
-	}
-
-	return DBL3();
 }
 
 //return spin torque computed from spin accumulation
@@ -202,62 +126,47 @@ VEC<DBL3>& Atom_Transport::GetSpinTorque(void)
 #endif
 
 	if (stsolve != STSOLVE_FERROMAGNETIC_ATOM) return displayVEC;
-	//TO DO
-	/*
-#pragma omp parallel for
-	for (int idx = 0; idx < paMesh->M.linear_size(); idx++) {
 
-		if (paMesh->M.is_empty(idx)) {
+#pragma omp parallel for
+	for (int idx = 0; idx < paMesh->M1.linear_size(); idx++) {
+
+		if (paMesh->M1.is_empty(idx)) {
 
 			displayVEC[idx] = DBL3();
 			continue;
 		}
 
-		double Ms = paMesh->Ms;
+		double mu_s = paMesh->mu_s;
 		double De = paMesh->De;
 		double ts_eff = paMesh->ts_eff;
 		double l_ex = paMesh->l_ex;
 		double l_ph = paMesh->l_ph;
-		paMesh->update_parameters_mcoarse(idx, paMesh->Ms, Ms, paMesh->De, De, paMesh->ts_eff, ts_eff, paMesh->l_ex, l_ex, paMesh->l_ph, l_ph);
+		paMesh->update_parameters_mcoarse(idx, paMesh->mu_s, mu_s, paMesh->De, De, paMesh->ts_eff, ts_eff, paMesh->l_ex, l_ex, paMesh->l_ph, l_ph);
 
 		//average S in the magnetization cell with index idx
-		DBL3 Sav = paMesh->S.weighted_average(paMesh->M.cellidx_to_position(idx), paMesh->h);
-		DBL3 M = paMesh->M[idx];
+		DBL3 Sav = paMesh->S.weighted_average(paMesh->M1.cellidx_to_position(idx), paMesh->h);
+		DBL3 M = paMesh->M1[idx];
 
-		displayVEC[idx] = ts_eff * ((Sav ^ M) * De / (Ms * l_ex * l_ex) + (M ^ (Sav ^ M)) * De / (Ms * Ms * l_ph * l_ph));
+		displayVEC[idx] = ts_eff * ((Sav ^ M) * De / (mu_s * l_ex * l_ex) + (M ^ (Sav ^ M)) * De / (mu_s * mu_s * l_ph * l_ph));
 	}
-	*/
+
 	return displayVEC;
 }
 
-#if COMPILECUDA == 1
-cu_obj<cuVEC<cuReal3>>& Atom_Transport::GetSpinCurrentCUDA(int component)
-{
-	return pTransportCUDA->GetSpinCurrent(component);
-}
-
-cu_obj<cuVEC<cuReal3>>& Atom_Transport::GetSpinTorqueCUDA(void)
-{
-	return pTransportCUDA->GetSpinTorque();
-}
-#endif
-
 //Calculate the interface spin accumulation torque for a given contact (in magnetic meshes for NF interfaces with G interface conductance set), accumulating result in displayVEC
 //VERIFIED - CORRECT
-void Atom_Transport::CalculateDisplaySAInterfaceTorque(Atom_Transport* ptrans_sec, CMBNDInfo& contact)
+void Atom_Transport::CalculateDisplaySAInterfaceTorque(TransportBase* ptrans_sec, CMBNDInfo& contact)
 {
-	//TO DO
-	/*
 	//the top contacting mesh sets G values
 	bool isGInterface_Enabled = ((contact.IsPrimaryTop() && paMesh->GInterface_Enabled()) || (!contact.IsPrimaryTop() && ptrans_sec->GInterface_Enabled()));
 
-	if (isGInterface_Enabled && stsolve == STSOLVE_FERROMAGNETIC && ptrans_sec->Get_STSolveType() == STSOLVE_NORMALMETAL) {
+	if (isGInterface_Enabled && stsolve == STSOLVE_FERROMAGNETIC_ATOM && (ptrans_sec->Get_STSolveType() == STSOLVE_NORMALMETAL || ptrans_sec->Get_STSolveType() == STSOLVE_TUNNELING)) {
 
 		//interface conductance method with F being the primary mesh (N-F contact): calculate and set spin torque
 
 		//convert the cells box from S mesh to M mesh
-		INT3 mbox_start = paMesh->M.cellidx_from_position(paMesh->S.cellidx_to_position(contact.cells_box.s) + paMesh->meshRect.s);
-		INT3 mbox_end = paMesh->M.cellidx_from_position(paMesh->S.cellidx_to_position(contact.cells_box.e - INT3(1)) + paMesh->meshRect.s) + INT3(1);
+		INT3 mbox_start = paMesh->M1.cellidx_from_position(paMesh->S.cellidx_to_position(contact.cells_box.s) + paMesh->meshRect.s);
+		INT3 mbox_end = paMesh->M1.cellidx_from_position(paMesh->S.cellidx_to_position(contact.cells_box.e - INT3(1)) + paMesh->meshRect.s) + INT3(1);
 
 		if ((mbox_end.i - mbox_start.i) == 0) mbox_end.i = mbox_start.i + 1;
 		if ((mbox_end.j - mbox_start.j) == 0) mbox_end.j = mbox_start.j + 1;
@@ -268,7 +177,8 @@ void Atom_Transport::CalculateDisplaySAInterfaceTorque(Atom_Transport* ptrans_se
 		//the cellsize perpendicular to the contact (in the M mesh)
 		double dh = (DBL3(contact.cell_shift) & paMesh->h).norm();
 
-		Mesh* pMesh_sec = ptrans_sec->pMesh;
+		//we've identified secondary as either N or T, so this can only be found in a Mesh
+		Mesh* pMesh_sec = dynamic_cast<Mesh*>(ptrans_sec->pMeshBase);
 
 		//primary cells in this contact
 #pragma omp parallel for
@@ -281,11 +191,11 @@ void Atom_Transport::CalculateDisplaySAInterfaceTorque(Atom_Transport* ptrans_se
 			//index of magnetic cell 1
 			int mcell1_idx = i + j * paMesh->n.x + k * paMesh->n.x * paMesh->n.y;
 
-			if (paMesh->M.is_empty(mcell1_idx)) continue;
+			if (paMesh->M1.is_empty(mcell1_idx)) continue;
 
-			double Ms = paMesh->Ms;
+			double mu_s = paMesh->mu_s;
 			double tsi_eff = paMesh->tsi_eff;
-			paMesh->update_parameters_mcoarse(mcell1_idx, paMesh->Ms, Ms, paMesh->tsi_eff, tsi_eff);
+			paMesh->update_parameters_mcoarse(mcell1_idx, paMesh->mu_s, mu_s, paMesh->tsi_eff, tsi_eff);
 
 			//position at interface relative to primary mesh
 			DBL3 mhshift_primary = contact.hshift_primary.normalized() & paMesh->h;
@@ -295,19 +205,20 @@ void Atom_Transport::CalculateDisplaySAInterfaceTorque(Atom_Transport* ptrans_se
 
 			DBL3 relpos_m1 = paMesh->meshRect.s - pMesh_sec->meshRect.s + relpos_interf + contact.hshift_secondary / 2;
 
-			DBL3 stencil = paMesh->h - mod(mhshift_primary) + mod(contact.hshift_secondary);
+			DBL3 stencil_pri = paMesh->h - mod(mhshift_primary) + mod(contact.hshift_primary);
+			DBL3 stencil_sec = paMesh->h - mod(mhshift_primary) + mod(contact.hshift_secondary);
 
 			//S values
-			DBL3 S_1 = paMesh->S.weighted_average(relpos_1, stencil);
-			DBL3 S_2 = paMesh->S.weighted_average(relpos_1 - contact.hshift_primary, stencil);
-			DBL3 S_m1 = pMesh_sec->S.weighted_average(relpos_m1, stencil);
-			DBL3 S_m2 = pMesh_sec->S.weighted_average(relpos_m1 + contact.hshift_secondary, stencil);
+			DBL3 S_1 = paMesh->S.weighted_average(relpos_1, stencil_pri);
+			DBL3 S_2 = paMesh->S.weighted_average(relpos_1 - contact.hshift_primary, stencil_pri);
+			DBL3 S_m1 = pMesh_sec->S.weighted_average(relpos_m1, stencil_sec);
+			DBL3 S_m2 = pMesh_sec->S.weighted_average(relpos_m1 + contact.hshift_secondary, stencil_sec);
 
 			//c values
-			double c_m1 = ptrans_sec->cfunc_sec(relpos_m1, stencil);
-			double c_m2 = ptrans_sec->cfunc_sec(relpos_m1 + contact.hshift_secondary, stencil);
-			double c_1 = cfunc_sec(relpos_1, stencil);
-			double c_2 = cfunc_sec(relpos_1 - contact.hshift_primary, stencil);
+			double c_1 = cfunc_sec(relpos_1, stencil_pri);
+			double c_2 = cfunc_sec(relpos_1 - contact.hshift_primary, stencil_pri);
+			double c_m1 = ptrans_sec->cfunc_sec(relpos_m1, stencil_sec);
+			double c_m2 = ptrans_sec->cfunc_sec(relpos_m1 + contact.hshift_secondary, stencil_sec);
 
 			//Calculate S drop at the interface
 			DBL3 Vs_F = 1.5 * c_1 * S_1 - 0.5 * c_2 * S_2;
@@ -327,13 +238,12 @@ void Atom_Transport::CalculateDisplaySAInterfaceTorque(Atom_Transport* ptrans_se
 				pMesh_sec->update_parameters_atposition(relpos_m1, pMesh_sec->Gmix, Gmix);
 			}
 
-			double gI = (2.0 * GMUB_2E / dh) * Gmix.j / Ms;
-			double gR = (2.0 * GMUB_2E / dh) * Gmix.i / Ms;
+			double gI = (2.0 * GMUB_2E / dh) * Gmix.j / mu_s;
+			double gR = (2.0 * GMUB_2E / dh) * Gmix.i / mu_s;
 
-			displayVEC[mcell1_idx] += tsi_eff * (gI * (paMesh->M[mcell1_idx] ^ dVs) + gR * (paMesh->M[mcell1_idx] ^ (paMesh->M[mcell1_idx] ^ dVs)) / Ms);
+			displayVEC[mcell1_idx] += tsi_eff * (gI * (paMesh->M1[mcell1_idx] ^ dVs) + gR * (paMesh->M1[mcell1_idx] ^ (paMesh->M1[mcell1_idx] ^ dVs)) / mu_s);
 		}
 	}
-	*/
 }
 
 #endif

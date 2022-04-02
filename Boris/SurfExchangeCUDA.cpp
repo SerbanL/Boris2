@@ -6,8 +6,13 @@
 #ifdef MODULE_COMPILATION_SURFEXCHANGE
 
 #include "SurfExchange.h"
+
 #include "Mesh_Ferromagnetic.h"
 #include "Mesh_FerromagneticCUDA.h"
+
+#include "Atom_Mesh.h"
+#include "Atom_MeshCUDA.h"
+
 #include "DataDefs.h"
 
 SurfExchangeCUDA::SurfExchangeCUDA(MeshCUDA* pMeshCUDA_, SurfExchange* pSurfExch_)
@@ -29,6 +34,8 @@ BError SurfExchangeCUDA::Initialize(void)
 	pMeshFM_Top.clear();
 	pMeshAFM_Bot.clear();
 	pMeshAFM_Top.clear();
+	pMeshAtom_Bot.clear();
+	pMeshAtom_Top.clear();
 
 	//make sure information in SurfExchange module is up to date
 	error = pSurfExch->Initialize();
@@ -59,8 +66,15 @@ BError SurfExchangeCUDA::Initialize(void)
 			}
 		}
 
-		//copy number of coupled cells to gpu memory : SurfExchange has been initialized so the count is correct
-		coupled_cells.from_cpu(pSurfExch->coupled_cells);
+		for (int idx = 0; idx < pSurfExch->paMesh_Bot.size(); idx++) {
+
+			pMeshAtom_Bot.push_back(pSurfExch->paMesh_Bot[idx]->paMeshCUDA->cuaMesh.get_managed_object());
+		}
+
+		for (int idx = 0; idx < pSurfExch->paMesh_Top.size(); idx++) {
+
+			pMeshAtom_Top.push_back(pSurfExch->paMesh_Top[idx]->paMeshCUDA->cuaMesh.get_managed_object());
+		}
 
 		initialized = true;
 	}
@@ -72,6 +86,7 @@ BError SurfExchangeCUDA::Initialize(void)
 		(MOD_)pMeshCUDA->Get_Module_Energy_Display() == MOD_SURFEXCHANGE || pMeshCUDA->IsOutputDataSet_withRect(DATA_E_SURFEXCH));
 	if (error) initialized = false;
 
+	//need to set pointers in ManagedMeshCUDA for Monte Carlo usage
 	if (initialized) set_SurfExchangeCUDA_pointers();
 
 	return error;

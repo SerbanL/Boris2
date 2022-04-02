@@ -1,6 +1,17 @@
 #include "stdafx.h"
 #include "Simulation.h"
 
+#if PYTHON_EMBEDDING == 1
+#include "PythonScripting.h"
+#endif
+
+//a dummy function which does no work, to keep THREAD_LOOP busy when needed
+void Simulation::Simulate_Dummy(void)
+{
+	if (is_thread_running(THREAD_LOOP_STOP)) return;
+	std::this_thread::sleep_for(std::chrono::milliseconds(10));
+}
+
 //MAIN SIMULATION LOOP. Runs in SimulationThread
 void Simulation::Simulate(void)
 {
@@ -109,13 +120,10 @@ void Simulation::ComputeFields(void)
 	BD.DisplayConsoleMessage("Fields updated.");
 }
 
-void Simulation::RunSimulation(void)
+void Simulation::PrepareRunSimulation(void)
 {
-	//make sure the disk buffer has the correct size
-	if (savedata_diskbuffer.size() != savedata_diskbuffer_size) savedata_diskbuffer.resize(savedata_diskbuffer_size);
-	if (savedata_diskoverflowbuffer.size() != savedata_diskbuffer_size) savedata_diskoverflowbuffer.resize(savedata_diskbuffer_size);
+	//reset buffers
 	savedata_diskbuffer_position = 0;
-	savedata_diskoverflowbuffer_position = 0;
 
 	if (is_thread_running(THREAD_LOOP)) {
 
@@ -158,10 +166,14 @@ void Simulation::RunSimulation(void)
 		}
 	}
 
-	infinite_loop_launch(&Simulation::Simulate, &Simulation::SetupRunSimulation, THREAD_LOOP);
 	BD.DisplayConsoleMessage("Initialized. Simulation running. Started at: " + Get_Date_Time());
-
 	sim_start_ms = GetSystemTickCount();
+}
+
+void Simulation::RunSimulation(void)
+{
+	PrepareRunSimulation();
+	infinite_loop_launch(&Simulation::Simulate, &Simulation::SetupRunSimulation, THREAD_LOOP);
 }
 
 //SetupRunSimulation sets cuda device and number of OpenMP threads for the RunSimulation, called on the same thread as RunSimulation
@@ -180,13 +192,14 @@ void Simulation::StopSimulation(void)
 {
 	if (is_thread_running(THREAD_LOOP)) {
 
+		single_stage_run = false;
+
+		//flush disk buffer
+		if (savedata_diskbuffer_position) SaveData_DiskBufferFlush(&savedata_diskbuffer, &savedata_diskbuffer_position);
+
 		stop_thread(THREAD_LOOP);
 
 		sim_end_ms = GetSystemTickCount();
-
-		//flush disk buffer
-		if (savedata_diskoverflowbuffer_position) SaveData_DiskBufferFlush(&savedata_diskoverflowbuffer, &savedata_diskoverflowbuffer_position);
-		if (savedata_diskbuffer_position) SaveData_DiskBufferFlush(&savedata_diskbuffer, &savedata_diskbuffer_position);
 
 		BD.DisplayConsoleMessage("Simulation stopped. " + Get_Date_Time());
 

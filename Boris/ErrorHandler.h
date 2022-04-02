@@ -36,11 +36,13 @@ enum BERROR_
 	BERROR_COULDNOTSAVEFILE,				//A file couldn't be saved
 	BERROR_COULDNOTCONNECT,					//Could not connect to a server
 	BERROR_NOTAVAILABLE,					//Requested configuration not available for this program version / workstation (e.g. no cuda-enabled gpu)
-	BERROR_NOTMAGNETIC,						//Focused mesh must be magnetic.
-	BERROR_NOTANTIFERROMAGNETIC,			//Focused mesh must be anti-ferromagnetic.
-	BERROR_NOTATOMISTIC,					//Focused mesh must be atomistic.
+	BERROR_NOTMAGNETIC,						//Mesh must be magnetic.
+	BERROR_NOTANTIFERROMAGNETIC,			//Mesh must be anti-ferromagnetic.
+	BERROR_NOTATOMISTIC,					//Mesh must be atomistic.
+	BERROR_NOTINSULATOR,					//Mesh must be insulator.
 	BERROR_NOHEAT,							//Heat computation not enabled
 	BERROR_NOTRANSPORT,						//Transport computation not enabled
+	BERROR_NOTMR,							//Transport computation not enabled
 	BERROR_MESHNAMEINEXISTENT,				//Mesh name doesn't exist.
 	BERROR_NOTCOMPUTED,						//Not computed.
 	BERROR_SPINSOLVER_FIT,					//Must be ferromagnetic mesh with transport module added and spin transport solver enabled.Must also have either Ts or Tsi computed.
@@ -245,19 +247,15 @@ private:
 	//warnings messages
 	std::vector<std::string> warnings;
 
-private:
+public:
 
-	//std::string get_error_string(BError error) const { return errors[error.code()].first; }
+	ErrorHandler(Owner* pOwner_);
 
 	bool is_critical_error(BError error) const { return (errors[error.code()].second == ERRLEV_CRIT); }
 
 	bool is_silent_error(BError error) const { return (errors[error.code()].second == ERRLEV_SILENT); }
 
 	bool is_warning(BError error) const { return (error.wcode() != BWARNING_NONE); }
-
-public:
-
-	ErrorHandler(Owner* pOwner_);
 
 	void show_error(BError error, bool verbose = true) const
 	{
@@ -380,11 +378,13 @@ ErrorHandler<Owner>::ErrorHandler(Owner* pOwner_) :
 	errors[BERROR_COULDNOTSAVEFILE] = std::pair<std::string, ERRLEV_>( "Could not save file.", ERRLEV_NCRIT);
 	errors[BERROR_NOTAVAILABLE] = std::pair<std::string, ERRLEV_>( "Hardware not available or not enabled.", ERRLEV_NCRIT);
 	errors[BERROR_COULDNOTCONNECT] = std::pair<std::string, ERRLEV_>("Couldn't connect.", ERRLEV_NCRIT);
-	errors[BERROR_NOTMAGNETIC] = std::pair<std::string, ERRLEV_>("Focused mesh must be magnetic.", ERRLEV_NCRIT);
-	errors[BERROR_NOTANTIFERROMAGNETIC] = std::pair<std::string, ERRLEV_>("Focused mesh must be antiferromagnetic (or use 2 sub-lattice model).", ERRLEV_NCRIT);
-	errors[BERROR_NOTATOMISTIC] = std::pair<std::string, ERRLEV_>("Focused mesh must be atomistic.", ERRLEV_NCRIT);
+	errors[BERROR_NOTMAGNETIC] = std::pair<std::string, ERRLEV_>("Mesh must be magnetic.", ERRLEV_NCRIT);
+	errors[BERROR_NOTANTIFERROMAGNETIC] = std::pair<std::string, ERRLEV_>("Mesh must be antiferromagnetic (or use 2 sub-lattice model).", ERRLEV_NCRIT);
+	errors[BERROR_NOTATOMISTIC] = std::pair<std::string, ERRLEV_>("Mesh must be atomistic.", ERRLEV_NCRIT);
+	errors[BERROR_NOTINSULATOR] = std::pair<std::string, ERRLEV_>("Mesh must be insulator.", ERRLEV_NCRIT);
 	errors[BERROR_NOHEAT] = std::pair<std::string, ERRLEV_>("Heat module not enabled.", ERRLEV_NCRIT);
 	errors[BERROR_NOTRANSPORT] = std::pair<std::string, ERRLEV_>("Transport module not enabled.", ERRLEV_NCRIT);
+	errors[BERROR_NOTMR] = std::pair<std::string, ERRLEV_>("TMR module not enabled.", ERRLEV_NCRIT);
 	errors[BERROR_MESHNAMEINEXISTENT] = std::pair<std::string, ERRLEV_>("Mesh name doesn't exist.", ERRLEV_NCRIT);
 	errors[BERROR_NOTCOMPUTED] = std::pair<std::string, ERRLEV_>("Not computed.", ERRLEV_NCRIT);
 	errors[BERROR_SPINSOLVER_FIT] = std::pair<std::string, ERRLEV_>("Must be ferromagnetic mesh with transport module added and spin transport solver enabled. Must also have either Ts or Tsi computed.", ERRLEV_NCRIT);

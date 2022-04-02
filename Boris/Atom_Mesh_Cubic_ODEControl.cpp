@@ -5,6 +5,12 @@
 
 //----------------------------------- ODE METHODS : Atom_Mesh_Cubic_ODEControl.cpp
 
+//get rate of change of magnetic moment (overloaded by Ferromagnetic meshes)
+DBL3 Atom_Mesh_Cubic::dMdt(int idx)
+{
+	return meshODE.dMdt(idx);
+}
+
 //return average dm/dt in the given avRect (relative rect). Here m is the direction vector.
 DBL3 Atom_Mesh_Cubic::Average_dmdt(Rect avRect)
 {

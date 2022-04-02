@@ -427,6 +427,8 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 	case IOI_MESH_FORSPEEDUP:
 	case IOI_MESH_FORSKYPOSDMUL:
 	case IOI_MESH_FORMC:
+	case IOI_MESH_FORDIPOLESHIFT:
+	case IOI_MESH_FORTMR:
 	{
 		//parameters from iop
 		std::string meshName = iop.textId;
@@ -1567,6 +1569,23 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 	}
 	break;
 
+	//Shows tmr type setting. minorId is the unique mesh id number, auxId is the value.
+	case IOI_TMRTYPE:
+	{
+		int meshId = iop.minorId;
+		int TMR_type = iop.auxId;
+
+		if (actionCode == AC_MOUSELEFTDOWN) sendCommand_verbose(CMD_TMRTYPE, SMesh.key_from_meshId(meshId), (TMR_type + 1) % (int)TMR_NUMOPTIONS);
+		else if (actionCode == AC_MOUSERIGHTDOWN) {
+
+			if (TMR_type > 0) TMR_type--;
+			else TMR_type = (int)TMR_NUMOPTIONS - 1;
+
+			sendCommand_verbose(CMD_TMRTYPE, SMesh.key_from_meshId(meshId), TMR_type);
+		}
+	}
+	break;
+
 	//Static transport solver state. auxId is the value (0/1)
 	case IOI_STATICTRANSPORT:
 	{
@@ -1827,6 +1846,46 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 		bool status = iop.auxId;
 
 		if (actionCode == AC_MOUSERIGHTDOWN || actionCode == AC_MOUSELEFTDOWN) sendCommand_verbose(CMD_COUPLETODIPOLES, !status);
+	}
+	break;
+
+	//Shows dipole velocity value. minorId is the unique mesh id number. textId is the value
+	case IOI_DIPOLEVELOCITY:
+	{
+		int meshId = iop.minorId;
+		std::string value_string = iop.textId;
+
+		//on double-click make popup edit box to edit the currently displayed value
+		if (actionCode == AC_DOUBLECLICK) { actionOutcome = AO_STARTPOPUPEDITBOX; }
+
+		//popup edit box has returned some text - try to set value from it
+		else if (actionCode == AC_POPUPEDITTEXTBOXRETURNEDTEXT) {
+
+			//the actual text returned by the popup edit box
+			std::string to_text = trimendspaces(pTO->GetText());
+
+			sendCommand_verbose(CMD_DIPOLEVELOCITY, SMesh.key_from_meshId(meshId), (DBL3)ToNum(to_text, "m/s"), SMesh[SMesh.key_from_meshId(meshId)]->Get_Dipole_Clipping());
+		}
+	}
+	break;
+	
+	//Shows dipole shift clipping value. minorId is the unique mesh id number. textId is the value
+	case IOI_DIPOLESHIFTCLIP:
+	{
+		int meshId = iop.minorId;
+		std::string value_string = iop.textId;
+
+		//on double-click make popup edit box to edit the currently displayed value
+		if (actionCode == AC_DOUBLECLICK) { actionOutcome = AO_STARTPOPUPEDITBOX; }
+
+		//popup edit box has returned some text - try to set value from it
+		else if (actionCode == AC_POPUPEDITTEXTBOXRETURNEDTEXT) {
+
+			//the actual text returned by the popup edit box
+			std::string to_text = trimendspaces(pTO->GetText());
+
+			sendCommand_verbose(CMD_DIPOLEVELOCITY, SMesh.key_from_meshId(meshId), SMesh[SMesh.key_from_meshId(meshId)]->Get_Dipole_Velocity(), (DBL3)ToNum(to_text, "m"));
+		}
 	}
 	break;
 

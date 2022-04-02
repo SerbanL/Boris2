@@ -86,7 +86,11 @@ public:
 	void SetSendData(const std::vector<std::string>& newdataParams);
 	void SetSendData(std::vector<std::string>&& newdataParams);
 
+	//send prepared data to client
 	void SendDataParams(void);
+
+	//get prepared data as a string (this is the string which SendDataParams will send)
+	std::string GetDataParams_String(void);
 
 	//if something went wrong with a received command then set the first data field as the '!' symbol - this will let the client know something is not right
 	void SignalClientError(std::string message);
@@ -315,17 +319,10 @@ inline void NetSocks::SendDataParams(void)
 	if (clientConnected) {
 
 		//form message std::string : tab value tab value tab value etc. If no values then just a tab
-		std::stringstream ss;
-
-		if (!dataParams.size()) ss << "\t";
-
-		for (int n = 0; n < dataParams.size(); n++) {
-
-			ss << "\t" << dataParams[n];
-		}
+		std::string message = GetDataParams_String();
 
 		//message client
-		int iSendResult = send(ClientSocket, ss.str().c_str(), (int)ss.str().length(), 0);
+		int iSendResult = send(ClientSocket, message.c_str(), (int)message.length(), 0);
 		if (iSendResult == SOCKET_ERROR) {
 			
 			//error
@@ -335,6 +332,22 @@ inline void NetSocks::SendDataParams(void)
 
 	//done so reset std::vector to zero size
 	dataParams.resize(0);
+}
+
+//get prepare data as a string (this is the string which SendDataParams will send)
+inline std::string NetSocks::GetDataParams_String(void)
+{
+	//form message std::string : tab value tab value tab value etc. If no values then just a tab
+	std::stringstream ss;
+
+	if (!dataParams.size()) ss << "\t";
+
+	for (int n = 0; n < dataParams.size(); n++) {
+
+		ss << "\t" << dataParams[n];
+	}
+
+	return ss.str();
 }
 
 inline void NetSocks::SignalClientError(std::string message) 

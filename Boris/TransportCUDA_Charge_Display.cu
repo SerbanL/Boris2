@@ -12,23 +12,6 @@
 
 //-------------------Display Calculation Methods
 
-//Launchers
-
-//prepare displayVEC_VC ready for calculation of display quantity - used for charge current
-bool TransportCUDA::PrepareDisplayVEC_VC(DBL3 cellsize)
-{
-	if (pMeshCUDA->EComputation_Enabled()) {
-
-		//make sure memory is allocated to the correct size
-		displayVEC_VC()->assign(cellsize, pMeshCUDA->meshRect, cuReal3(0.0));
-
-		return true;
-	}
-	else displayVEC_VC()->clear();
-
-	return false;
-}
-
 //--------------------------------------------------------------- Current Density
 
 //Current density when only charge solver is used
@@ -117,12 +100,9 @@ __global__ void CalculateCurrentDensity_Spin_Kernel(cuVEC_VC<cuReal3>& Jc, Manag
 				//additional contributions if enabled
 				if (cppgmr_enabled || cpump_enabled || the_enabled) {
 
-					cuBReal Ms = *cuMesh.pMs;
-					cuMesh.update_parameters_ecoarse(idx, *cuMesh.pMs, Ms);
-
 					int idx_M = M.position_to_cellidx(S.cellidx_to_position(idx));
 
-					cuReal3 m = M[idx_M] / Ms;
+					cuReal3 m = cu_normalize(M[idx_M]);
 					cuReal33 grad_S = S.grad_neu(idx);		//homogeneous Neumann since SHA = 0 in magnetic meshes
 
 					//2. CPP-GMR contribution
@@ -144,8 +124,8 @@ __global__ void CalculateCurrentDensity_Spin_Kernel(cuVEC_VC<cuReal3>& Jc, Manag
 						cuMesh.update_parameters_ecoarse(idx, *cuMesh.pP, P, *cuMesh.pn_density, n_density);
 
 						cuReal33 grad_M = M.grad_neu(idx_M);
-						cuReal3 dx_m = grad_M.x / Ms;
-						cuReal3 dy_m = grad_M.y / Ms;
+						cuReal3 dx_m = cu_normalize(grad_M.x, M[idx_M]);
+						cuReal3 dy_m = cu_normalize(grad_M.y, M[idx_M]);
 
 						//topological Hall effect contribution
 						if (the_enabled) {
@@ -157,7 +137,7 @@ __global__ void CalculateCurrentDensity_Spin_Kernel(cuVEC_VC<cuReal3>& Jc, Manag
 						//charge pumping contribution
 						if (cpump_enabled) {
 
-							cuReal3 dm_dt = (*poisson_Spin_V.pdM_dt)[idx_M] / Ms;
+							cuReal3 dm_dt = cu_normalize((*poisson_Spin_V.pdM_dt)[idx_M], M[idx_M]);
 							Jc[idx] += cuMesh.pcpump_eff->get0() * (P * elC[idx] * (cuBReal)HBAR_E / 2) * cuReal3((dm_dt ^ dx_m) * m, (dm_dt ^ dy_m) * m, 0.0);
 						}
 					}

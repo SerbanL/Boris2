@@ -106,7 +106,7 @@ struct VAL2 {
 	>
 	VAL2<RType> operator-(const VAL2<VType_> &rhs) const { return VAL2<RType>(x - rhs.x, y - rhs.y); }
 
-	//SCALAR PRODUCT : (same ofundamental types, e.g. DBL2 with a DBL2 -> double)
+	//SCALAR PRODUCT : (same fundamental types, e.g. DBL2 with a DBL2 -> double)
 	template <
 		typename VType_,
 		std::enable_if_t<std::is_same<VType, VType_>::value>* = nullptr
@@ -119,6 +119,18 @@ struct VAL2 {
 		typename RType = typename std::conditional<std::is_floating_point<VType_>::value && std::is_integral<VType>::value, VType_, VType>::type
 	>
 	VAL2<RType> operator&(const VAL2<VType_> &rhs) const { return VAL2<RType>(x * rhs.x, y * rhs.y); }
+
+	//DIVISION REMAINDER
+	template <
+		typename VType_,
+		typename RType = typename std::conditional<std::is_floating_point<VType_>::value && std::is_integral<VType>::value, VType_, VType>::type
+	>
+		VAL2<RType> operator%(const VAL2<VType_> &rhs) const 
+	{ 
+		return VAL2<RType>(
+			(x < rhs.x ? (x < 0.0 ? fmod(x, rhs.x) + rhs.x : x) : fmod(x, rhs.x)), 
+			(y < rhs.y ? (y < 0.0 ? fmod(y, rhs.y) + rhs.y : y) : fmod(y, rhs.y)));
+	}
 
 	//PRODUCTS WITH A CONSTANT
 
@@ -406,6 +418,19 @@ struct VAL3 {
 	>
 	VAL3<RType> operator&(const VAL3<VType_> &rhs) const { return VAL3<RType>(x * rhs.x, y * rhs.y, z * rhs.z); }
 
+	//DIVISION REMAINDER
+	template <
+		typename VType_,
+		typename RType = typename std::conditional<std::is_floating_point<VType_>::value && std::is_integral<VType>::value, VType_, VType>::type
+	>
+		VAL3<RType> operator%(const VAL3<VType_> &rhs) const 
+	{ 
+		return VAL3<RType>(
+			(x < rhs.x ? (x < 0.0 ? fmod(x, rhs.x) + rhs.x : x) : fmod(x, rhs.x)),
+			(y < rhs.y ? (y < 0.0 ? fmod(y, rhs.y) + rhs.y : y) : fmod(y, rhs.y)),
+			(z < rhs.z ? (z < 0.0 ? fmod(z, rhs.z) + rhs.z : z) : fmod(z, rhs.z)));
+	}
+
 	//PRODUCTS WITH A CONSTANT
 
 	//product with a constant (must be fundamental type) on the RHS
@@ -650,6 +675,20 @@ struct VAL4 {
 		std::enable_if_t<std::is_same<VType, VType_>::value && std::is_fundamental<VType>::value>* = nullptr
 	>
 		double operator*(const VAL4<VType_> &rhs) const { return double(x * rhs.x + y * rhs.y + z * rhs.z + t * rhs.t); }
+
+	//DIVISION REMAINDER
+	template <
+		typename VType_,
+		typename RType = typename std::conditional<std::is_floating_point<VType_>::value && std::is_integral<VType>::value, VType_, VType>::type
+	>
+		VAL4<RType> operator%(const VAL4<VType_> &rhs) const 
+	{ 
+		return VAL4<RType>(
+			(x < rhs.x ? (x < 0.0 ? fmod(x, rhs.x) + rhs.x : x) : fmod(x, rhs.x)),
+			(y < rhs.y ? (y < 0.0 ? fmod(y, rhs.y) + rhs.y : y) : fmod(y, rhs.y)),
+			(z < rhs.z ? (z < 0.0 ? fmod(z, rhs.z) + rhs.z : z) : fmod(z, rhs.z)),
+			(t < rhs.t ? (t < 0.0 ? fmod(t, rhs.t) + rhs.t : t) : fmod(t, rhs.t)));
+	}
 
 	//PRODUCTS WITH A CONSTANT
 

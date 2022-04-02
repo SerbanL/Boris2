@@ -35,6 +35,14 @@ __host__ cuReal3 cuVEC<VType>::cellidx_to_position_cpu(cuINT3 ijk)
 	return (get_gpu_value(h) & ijk_pos);
 }
 
+template <typename VType>
+__host__ int cuVEC<VType>::position_to_cellidx_cpu(const cuReal3& position)
+{
+	cuReal3 h_cpu = cellsize_cpu();
+	cuSZ3 n_cpu = size_cpu();
+	return (int)cu_floor_epsilon(position.x / h_cpu.x) + (int)cu_floor_epsilon(position.y / h_cpu.y) * n_cpu.x + (int)cu_floor_epsilon(position.z / h_cpu.z) * n_cpu.x * n_cpu.y;
+}
+
 //get index of cell which contains position (absolute value, not relative to start of rectangle), capped to mesh size
 template <typename VType>
 __device__ cuINT3 cuVEC<VType>::cellidx_from_position(const cuReal3& absolute_position) const

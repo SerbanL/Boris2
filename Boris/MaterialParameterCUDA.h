@@ -9,8 +9,6 @@
 
 #include "ParametersDefs.h"
 
-
-
 /////////////////////////////////////////////////////////////////////////////////////////////////
 //Class holding a single material parameter with any associated temperature dependence.
 //This is designed to be used just as the type stored (PType) would be used on its own in mathematical equations.

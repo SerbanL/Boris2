@@ -32,15 +32,19 @@ void Atom_DifferentialEquationCubic::GenerateThermalField(void)
 #pragma omp parallel for
 		for (int idx = 0; idx < paMesh->n.dim(); idx++) {
 
-			if (paMesh->Temp.linear_size()) Temperature = paMesh->Temp[H_Thermal.cellidx_to_position(idx)];
+			if (paMesh->M1.is_not_empty(idx) && !paMesh->M1.is_skipcell(idx)) {
 
-			double mu_s = paMesh->mu_s;
-			paMesh->update_parameters_mcoarse(idx, paMesh->mu_s, mu_s);
+				if (paMesh->Temp.linear_size()) Temperature = paMesh->Temp[H_Thermal.cellidx_to_position(idx)];
 
-			//do not include any damping here - this will be included in the stochastic equations
-			double Hth_const = sqrt(2 * BOLTZMANN * Temperature / (MUB_MU0 * GAMMA * grel * mu_s * deltaT));
+				double mu_s = paMesh->mu_s;
+				double s_eff = paMesh->s_eff;
+				paMesh->update_parameters_mcoarse(idx, paMesh->mu_s, mu_s, paMesh->s_eff, s_eff);
 
-			H_Thermal[idx] = Hth_const * DBL3(prng.rand_gauss(0, 1), prng.rand_gauss(0, 1), prng.rand_gauss(0, 1));
+				//do not include any damping here - this will be included in the stochastic equations
+				double Hth_const = s_eff * sqrt(2 * BOLTZMANN * Temperature / (MUB_MU0 * GAMMA * grel * mu_s * deltaT));
+
+				H_Thermal[idx] = Hth_const * DBL3(prng.rand_gauss(0, 1), prng.rand_gauss(0, 1), prng.rand_gauss(0, 1));
+			}
 		}
 	}
 }

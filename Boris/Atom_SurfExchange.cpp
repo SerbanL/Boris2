@@ -3,13 +3,34 @@
 
 #if defined(MODULE_COMPILATION_SURFEXCHANGE) && ATOMISTIC == 1
 
-#include "Atom_Mesh.h"
 #include "SuperMesh.h"
+#include "Atom_Mesh.h"
 #include "Atom_MeshParamsControl.h"
+#include "Mesh.h"
+#include "MeshParamsControl.h"
 
 /////////////////////////////////////////////////////////////////
 //SurfExchange
 //
+
+//this mesh : mesh in which we set coupling field
+//coupling mesh : mesh from which we obtain coupling direction
+
+// Atom to Atom : top mesh along z sets coupling constants
+// e.g.
+// Hs = m * Js / mu0 mu_s
+//
+// Here m is direction from coupling mesh, Js (J) is coupling constant, mu_s is magnetic moment in this mesh
+
+// FM to Atom : atomistic mesh sets coupling constant irrespective of z order
+// e.g.
+// Hs = m * Js / mu0 mu_s
+//
+// Here m is direction from coupling mesh, Js (J) is coupling constant, mu_s is magnetic moment in this mesh
+//
+// AFM to Atom : 
+// e.g.
+// 
 
 Atom_SurfExchange::Atom_SurfExchange(Atom_Mesh *paMesh_) :
 	Modules(),
@@ -43,8 +64,8 @@ BError Atom_SurfExchange::Initialize(void)
 
 	paMesh_Bot.clear();
 	paMesh_Top.clear();
-
-	coupled_cells = 0;
+	pMesh_Bot.clear();
+	pMesh_Top.clear();
 
 	//---
 
@@ -88,7 +109,7 @@ BError Atom_SurfExchange::Initialize(void)
 	for (int idx = 0; idx < pSMesh->size(); idx++) {
 
 		//consider all meshes in turn - condition 1 first
-		if ((*pSMesh)[idx]->MComputation_Enabled() && (*pSMesh)[idx]->IsModuleSet(MOD_SURFEXCHANGE) && (*pSMesh)[idx]->is_atomistic()) {
+		if ((*pSMesh)[idx]->MComputation_Enabled() && (*pSMesh)[idx]->IsModuleSet(MOD_SURFEXCHANGE)) {
 
 			Rect candidate_meshRect = (*pSMesh)[idx]->GetMeshRect();
 
@@ -104,7 +125,8 @@ BError Atom_SurfExchange::Initialize(void)
 					//passes condition 2 - identified a candidate mesh at idx index. Does it pass condition 3?
 					if (check_candidate(candidate_meshRect.get_intersection(xy_meshRect), z1, z2)) {
 
-						paMesh_Top.push_back(dynamic_cast<Atom_Mesh*>((*pSMesh)[idx]));
+						if ((*pSMesh)[idx]->is_atomistic()) paMesh_Top.push_back(dynamic_cast<Atom_Mesh*>((*pSMesh)[idx]));
+						else pMesh_Top.push_back(dynamic_cast<Mesh*>((*pSMesh)[idx]));
 					}
 				}
 			}
@@ -121,76 +143,9 @@ BError Atom_SurfExchange::Initialize(void)
 					//passes condition 2 - identified a candidate mesh at idx index. Does it pass condition 3?
 					if (check_candidate(candidate_meshRect.get_intersection(xy_meshRect), z1, z2)) {
 
-						paMesh_Bot.push_back(dynamic_cast<Atom_Mesh*>((*pSMesh)[idx]));
+						if ((*pSMesh)[idx]->is_atomistic()) paMesh_Bot.push_back(dynamic_cast<Atom_Mesh*>((*pSMesh)[idx]));
+						else pMesh_Bot.push_back(dynamic_cast<Mesh*>((*pSMesh)[idx]));
 					}
-				}
-			}
-		}
-	}
-
-	//count number of coupled cells (either top or bottom) in this mesh
-
-	SZ3 n = paMesh->n;
-
-	if (paMesh_Top.size()) {
-
-		//surface exchange coupling at the top
-		for (int j = 0; j < n.y; j++) {
-			for (int i = 0; i < n.x; i++) {
-
-				int cell_idx = i + j * n.x + (n.z - 1) * n.x*n.y;
-
-				//empty cell here ... next
-				if (paMesh->M1.is_empty(cell_idx)) continue;
-
-				//check all meshes for coupling
-				for (int mesh_idx = 0; mesh_idx < (int)paMesh_Top.size(); mesh_idx++) {
-
-					Rect tmeshRect = paMesh_Top[mesh_idx]->GetMeshRect();
-
-					//relative coordinates to read value from top mesh (the one we're coupling to here) - relative to top mesh
-					DBL3 cell_rel_pos = DBL3(
-						(i + 0.5) * paMesh->h.x + meshRect.s.x - tmeshRect.s.x,
-						(j + 0.5) * paMesh->h.y + meshRect.s.y - tmeshRect.s.y,
-						paMesh_Top[mesh_idx]->h.z / 2);
-
-					//can't couple to an empty cell
-					if (!tmeshRect.contains(cell_rel_pos + tmeshRect.s) || paMesh_Top[mesh_idx]->M1.is_empty(cell_rel_pos)) continue;
-
-					//if we are here then the cell in this mesh at cell_idx has something to couple to so count it : it will contribute to the surface exchange energy density
-					coupled_cells++;
-				}
-			}
-		}
-	}
-
-	if (paMesh_Bot.size()) {
-
-		//surface exchange coupling at the bottom
-		for (int j = 0; j < n.y; j++) {
-			for (int i = 0; i < n.x; i++) {
-
-				int cell_idx = i + j * n.x;
-
-				//empty cell here ... next
-				if (paMesh->M1.is_empty(cell_idx)) continue;
-
-				//check all meshes for coupling
-				for (int mesh_idx = 0; mesh_idx < (int)paMesh_Bot.size(); mesh_idx++) {
-
-					Rect bmeshRect = paMesh_Bot[mesh_idx]->GetMeshRect();
-
-					//relative coordinates to read value from bottom mesh (the one we're coupling to here) - relative to bottom mesh
-					DBL3 cell_rel_pos = DBL3(
-						(i + 0.5) * paMesh->h.x + meshRect.s.x - bmeshRect.s.x,
-						(j + 0.5) * paMesh->h.y + meshRect.s.y - bmeshRect.s.y,
-						paMesh_Bot[mesh_idx]->meshRect.e.z - paMesh_Bot[mesh_idx]->meshRect.s.z - (paMesh_Bot[mesh_idx]->h.z / 2));
-
-					//can't couple to an empty cell
-					if (!bmeshRect.contains(cell_rel_pos + bmeshRect.s) || paMesh_Bot[mesh_idx]->M1.is_empty(cell_rel_pos)) continue;
-
-					//if we are here then the cell in this mesh at cell_idx has something to couple to so count it : it will contribute to the surface exchange energy density
-					coupled_cells++;
 				}
 			}
 		}
@@ -252,7 +207,7 @@ double Atom_SurfExchange::UpdateField(void)
 	//zero module display VECs if needed, since contributions must be added into them to account for possiblility of 2 contributions (top and bottom)
 	ZeroModuleVECs();
 
-	if (paMesh_Top.size()) {
+	if (paMesh_Top.size() || pMesh_Top.size()) {
 
 		//surface exchange coupling at the top
 #pragma omp parallel for reduction(+:energy)
@@ -267,7 +222,13 @@ double Atom_SurfExchange::UpdateField(void)
 				double mu_s = paMesh->mu_s;
 				paMesh->update_parameters_mcoarse(cell_idx, paMesh->mu_s, mu_s);
 
+				//effective field and energy for this cell
+				DBL3 Hsurfexch = DBL3();
+				double cell_energy = 0.0;
+				bool cell_coupled = false;
+
 				//check all meshes for coupling
+				//1. coupling from other atomistic meshes
 				for (int mesh_idx = 0; mesh_idx < (int)paMesh_Top.size(); mesh_idx++) {
 
 					Rect tmeshRect = paMesh_Top[mesh_idx]->GetMeshRect();
@@ -291,24 +252,81 @@ double Atom_SurfExchange::UpdateField(void)
 
 					double dot_prod = m_i * m_j;
 
-					DBL3 Hsurfexh = m_j * Js / (MUB_MU0 * mu_s);
-					double cell_energy = -Js * dot_prod / paMesh->M1.h.dim();
-
-					paMesh->Heff1[cell_idx] += Hsurfexh;
-
-					if (Module_Heff.linear_size()) Module_Heff[cell_idx] += Hsurfexh;
-					if (Module_energy.linear_size()) Module_energy[cell_idx] += cell_energy;
-
-					energy += cell_energy;
+					Hsurfexch = m_j * Js / (MUB_MU0 * mu_s);
+					cell_energy = -Js * dot_prod / paMesh->M1.h.dim();
 
 					//for each cell, either it's not coupled to any other mesh cell (so we never get here), or else it's coupled to exactly one cell on this surface (thus can stop looping over meshes now)
+					cell_coupled = true;
 					break;
 				}
+
+				if (!cell_coupled) {
+
+					//2. coupling from micromagnetic meshes
+					for (int mesh_idx = 0; mesh_idx < (int)pMesh_Top.size(); mesh_idx++) {
+
+						Rect tmeshRect = pMesh_Top[mesh_idx]->GetMeshRect();
+
+						//relative coordinates to read value from top mesh (the one we're coupling to here) - relative to top mesh
+						DBL3 cell_rel_pos = DBL3(
+							(i + 0.5) * paMesh->h.x + paMesh->meshRect.s.x - tmeshRect.s.x,
+							(j + 0.5) * paMesh->h.y + paMesh->meshRect.s.y - tmeshRect.s.y,
+							pMesh_Top[mesh_idx]->h.z / 2);
+
+						//can't couple to an empty cell
+						if (!tmeshRect.contains(cell_rel_pos + tmeshRect.s) || pMesh_Top[mesh_idx]->M.is_empty(cell_rel_pos)) continue;
+
+						if (pMesh_Top[mesh_idx]->GetMeshType() == MESH_FERROMAGNETIC) {
+
+							//atomistic mesh sets coupling
+							double Js = paMesh->Js;
+							paMesh->update_parameters_mcoarse(cell_idx, paMesh->Js, Js);
+
+							//get magnetization value in top mesh cell to couple with
+							DBL3 m_j = pMesh_Top[mesh_idx]->M[cell_rel_pos].normalized();
+							DBL3 m_i = paMesh->M1[cell_idx] / mu_s;
+
+							double dot_prod = m_i * m_j;
+
+							Hsurfexch = m_j * Js / (MUB_MU0 * mu_s);
+							cell_energy = -Js * dot_prod / paMesh->M1.h.dim();
+						}
+						else if (pMesh_Top[mesh_idx]->GetMeshType() == MESH_ANTIFERROMAGNETIC) {
+
+							//atomistic mesh sets coupling
+							double Js = paMesh->Js;
+							double Js2 = paMesh->Js2;
+							paMesh->update_parameters_mcoarse(cell_idx, paMesh->Js, Js, paMesh->Js2, Js2);
+
+							//get magnetization value in top mesh cell to couple with
+							DBL3 m_j1 = pMesh_Top[mesh_idx]->M[cell_rel_pos].normalized();
+							DBL3 m_j2 = pMesh_Top[mesh_idx]->M2[cell_rel_pos].normalized();
+							DBL3 m_i = paMesh->M1[cell_idx] / mu_s;
+
+							double dot_prod1 = m_i * m_j1;
+							double dot_prod2 = m_i * m_j2;
+
+							Hsurfexch = m_j1 * Js / (MUB_MU0 * mu_s);
+							Hsurfexch += m_j2 * Js2 / (MUB_MU0 * mu_s);
+							cell_energy = -Js * dot_prod1 / paMesh->M1.h.dim();
+							cell_energy += -Js2 * dot_prod2 / paMesh->M1.h.dim();
+						}
+
+						//for each cell, either it's not coupled to any other mesh cell (so we never get here), or else it's coupled to exactly one cell on this surface (thus can stop looping over meshes now)
+						break;
+					}
+				}
+
+				paMesh->Heff1[cell_idx] += Hsurfexch;
+				energy += cell_energy;
+
+				if (Module_Heff.linear_size()) Module_Heff[cell_idx] += Hsurfexch;
+				if (Module_energy.linear_size()) Module_energy[cell_idx] += cell_energy;
 			}
 		}
 	}
 
-	if (paMesh_Bot.size()) {
+	if (paMesh_Bot.size() || pMesh_Bot.size()) {
 
 		//surface exchange coupling at the bottom
 #pragma omp parallel for reduction(+:energy)
@@ -324,7 +342,13 @@ double Atom_SurfExchange::UpdateField(void)
 				double Js = paMesh->Js;
 				paMesh->update_parameters_mcoarse(cell_idx, paMesh->mu_s, mu_s, paMesh->Js, Js);
 
+				//effective field and energy for this cell
+				DBL3 Hsurfexch = DBL3();
+				double cell_energy = 0.0;
+				bool cell_coupled = false;
+
 				//check all meshes for coupling
+				//1. coupling from other atomistic meshes
 				for (int mesh_idx = 0; mesh_idx < (int)paMesh_Bot.size(); mesh_idx++) {
 
 					Rect bmeshRect = paMesh_Bot[mesh_idx]->GetMeshRect();
@@ -333,7 +357,7 @@ double Atom_SurfExchange::UpdateField(void)
 					DBL3 cell_rel_pos = DBL3(
 						(i + 0.5) * paMesh->h.x + paMesh->meshRect.s.x - bmeshRect.s.x,
 						(j + 0.5) * paMesh->h.y + paMesh->meshRect.s.y - bmeshRect.s.y,
-						paMesh_Bot[mesh_idx]->meshRect.e.z - paMesh_Bot[mesh_idx]->meshRect.s.z - (paMesh_Bot[mesh_idx]->h.z / 2));
+						bmeshRect.height() - (paMesh_Bot[mesh_idx]->h.z / 2));
 
 					//can't couple to an empty cell
 					if (!bmeshRect.contains(cell_rel_pos + bmeshRect.s) || paMesh_Bot[mesh_idx]->M1.is_empty(cell_rel_pos)) continue;
@@ -344,26 +368,75 @@ double Atom_SurfExchange::UpdateField(void)
 
 					double dot_prod = m_i * m_j;
 
-					DBL3 Hsurfexh = m_j * Js / (MUB_MU0 * mu_s);
-					double cell_energy = -Js * dot_prod / paMesh->M1.h.dim();
-
-					paMesh->Heff1[cell_idx] += Hsurfexh;
-
-					energy += cell_energy;
-
-					if (Module_Heff.linear_size()) Module_Heff[cell_idx] = Hsurfexh;
-					if (Module_energy.linear_size()) Module_energy[cell_idx] = cell_energy;
+					Hsurfexch = m_j * Js / (MUB_MU0 * mu_s);
+					cell_energy = -Js * dot_prod / paMesh->M1.h.dim();
 
 					//for each cell, either it's not coupled to any other mesh cell (so we never get here), or else it's coupled to exactly one cell on this surface (thus can stop looping over meshes now)
+					cell_coupled = true;
 					break;
 				}
+
+				if (!cell_coupled) {
+
+					//2. coupling from micromagnetic meshes
+					for (int mesh_idx = 0; mesh_idx < (int)pMesh_Bot.size(); mesh_idx++) {
+
+						Rect bmeshRect = pMesh_Bot[mesh_idx]->GetMeshRect();
+
+						//relative coordinates to read value from bottom mesh (the one we're coupling to here) - relative to bottom mesh
+						DBL3 cell_rel_pos = DBL3(
+							(i + 0.5) * paMesh->h.x + paMesh->meshRect.s.x - bmeshRect.s.x,
+							(j + 0.5) * paMesh->h.y + paMesh->meshRect.s.y - bmeshRect.s.y,
+							bmeshRect.height() - pMesh_Bot[mesh_idx]->h.z / 2);
+
+						//can't couple to an empty cell
+						if (!bmeshRect.contains(cell_rel_pos + bmeshRect.s) || pMesh_Bot[mesh_idx]->M.is_empty(cell_rel_pos)) continue;
+
+						if (pMesh_Bot[mesh_idx]->GetMeshType() == MESH_FERROMAGNETIC) {
+
+							//get magnetization value in top mesh cell to couple with
+							DBL3 m_j = pMesh_Bot[mesh_idx]->M[cell_rel_pos].normalized();
+							DBL3 m_i = paMesh->M1[cell_idx] / mu_s;
+
+							double dot_prod = m_i * m_j;
+
+							Hsurfexch = m_j * Js / (MUB_MU0 * mu_s);
+							cell_energy = -Js * dot_prod / paMesh->M1.h.dim();
+						}
+						else if (pMesh_Bot[mesh_idx]->GetMeshType() == MESH_ANTIFERROMAGNETIC) {
+
+							double Js2 = paMesh->Js2;
+							paMesh->update_parameters_mcoarse(cell_idx, paMesh->Js2, Js2);
+
+							//get magnetization value in top mesh cell to couple with
+							DBL3 m_j1 = pMesh_Bot[mesh_idx]->M[cell_rel_pos].normalized();
+							DBL3 m_j2 = pMesh_Bot[mesh_idx]->M2[cell_rel_pos].normalized();
+							DBL3 m_i = paMesh->M1[cell_idx] / mu_s;
+
+							double dot_prod1 = m_i * m_j1;
+							double dot_prod2 = m_i * m_j2;
+
+							Hsurfexch = m_j1 * Js / (MUB_MU0 * mu_s);
+							Hsurfexch += m_j2 * Js2 / (MUB_MU0 * mu_s);
+							cell_energy = -Js * dot_prod1 / paMesh->M1.h.dim();
+							cell_energy += -Js2 * dot_prod2 / paMesh->M1.h.dim();
+						}
+
+						//for each cell, either it's not coupled to any other mesh cell (so we never get here), or else it's coupled to exactly one cell on this surface (thus can stop looping over meshes now)
+						break;
+					}
+				}
+
+				paMesh->Heff1[cell_idx] += Hsurfexch;
+				energy += cell_energy;
+
+				if (Module_Heff.linear_size()) Module_Heff[cell_idx] = Hsurfexch;
+				if (Module_energy.linear_size()) Module_energy[cell_idx] = cell_energy;
 			}
 		}
 	}
 
-	if (coupled_cells) energy /= coupled_cells;
-	else energy = 0.0;
-	
+	energy /= paMesh->M1.get_nonempty_cells();
 	this->energy = energy;
 
 	return this->energy;
@@ -374,7 +447,7 @@ double Atom_SurfExchange::UpdateField(void)
 DBL3 Atom_SurfExchange::GetTorque(Rect& avRect)
 {
 #if COMPILECUDA == 1
-	if (pModuleCUDA) return reinterpret_cast<Atom_SurfExchangeCUDA*>(pModuleCUDA)->GetTorque(avRect);
+	if (pModuleCUDA) return pModuleCUDA->GetTorque(avRect);
 #endif
 
 	return CalculateTorque(paMesh->M1, avRect);
@@ -390,14 +463,16 @@ double Atom_SurfExchange::Get_EnergyChange(int spin_index, DBL3 Mnew)
 	SZ3 n = paMesh->n;
 
 	//if spin is on top surface then look at paMesh_Top
-	if (spin_index / (n.x * n.y) == n.z - 1 && paMesh_Top.size()) {
+	if (spin_index / (n.x * n.y) == n.z - 1 && (paMesh_Top.size() || pMesh_Top.size())) {
 
 		if (!paMesh->M1.is_empty(spin_index)) {
 
 			int i = spin_index % n.x;
 			int j = (spin_index / n.x) % n.y;
+			bool cell_coupled = false;
 
 			//check all meshes for coupling
+			//1. coupling from other atomistic meshes
 			for (int mesh_idx = 0; mesh_idx < (int)paMesh_Top.size(); mesh_idx++) {
 
 				Rect tmeshRect = paMesh_Top[mesh_idx]->GetMeshRect();
@@ -429,18 +504,88 @@ double Atom_SurfExchange::Get_EnergyChange(int spin_index, DBL3 Mnew)
 				}
 
 				//for each cell, either it's not coupled to any other mesh cell (so we never get here), or else it's coupled to exactly one cell on this surface (thus can stop looping over meshes now)
+				cell_coupled = true;
 				break;
+			}
+
+			if (!cell_coupled) {
+
+				//2. coupling from micromagnetic meshes
+				for (int mesh_idx = 0; mesh_idx < (int)pMesh_Top.size(); mesh_idx++) {
+
+					Rect tmeshRect = pMesh_Top[mesh_idx]->GetMeshRect();
+
+					//relative coordinates to read value from top mesh (the one we're coupling to here) - relative to top mesh
+					DBL3 cell_rel_pos = DBL3(
+						(i + 0.5) * paMesh->h.x + paMesh->meshRect.s.x - tmeshRect.s.x,
+						(j + 0.5) * paMesh->h.y + paMesh->meshRect.s.y - tmeshRect.s.y,
+						pMesh_Top[mesh_idx]->h.z / 2);
+
+					//can't couple to an empty cell
+					if (!tmeshRect.contains(cell_rel_pos + tmeshRect.s) || pMesh_Top[mesh_idx]->M.is_empty(cell_rel_pos)) continue;
+
+					if (pMesh_Top[mesh_idx]->GetMeshType() == MESH_FERROMAGNETIC) {
+
+						//atomistic mesh sets coupling
+						double Js = paMesh->Js;
+						paMesh->update_parameters_mcoarse(spin_index, paMesh->Js, Js);
+
+						//get magnetization value in top mesh cell to couple with
+						DBL3 m_j = pMesh_Top[mesh_idx]->M[cell_rel_pos].normalized();
+						DBL3 m_i = paMesh->M1[spin_index].normalized();
+
+						double dot_prod = m_i * m_j;
+						energy_old = -Js * dot_prod;
+
+						if (Mnew != DBL3()) {
+
+							DBL3 mnew_i = Mnew.normalized();
+							double dot_prod_new = mnew_i * m_j;
+							energy_new = -Js * dot_prod_new;
+						}
+					}
+					else if (pMesh_Top[mesh_idx]->GetMeshType() == MESH_ANTIFERROMAGNETIC) {
+
+						//atomistic mesh sets coupling
+						double Js = paMesh->Js;
+						double Js2 = paMesh->Js2;
+						paMesh->update_parameters_mcoarse(spin_index, paMesh->Js, Js, paMesh->Js2, Js2);
+
+						//get magnetization value in top mesh cell to couple with
+						DBL3 m_j1 = pMesh_Top[mesh_idx]->M[cell_rel_pos].normalized();
+						DBL3 m_j2 = pMesh_Top[mesh_idx]->M2[cell_rel_pos].normalized();
+						DBL3 m_i = paMesh->M1[spin_index].normalized();
+
+						double dot_prod1 = m_i * m_j1;
+						double dot_prod2 = m_i * m_j2;
+						energy_old = -Js * dot_prod1;
+						energy_old += -Js2 * dot_prod2;
+
+						if (Mnew != DBL3()) {
+
+							DBL3 mnew_i = Mnew.normalized();
+							double dot_prod_new1 = mnew_i * m_j1;
+							double dot_prod_new2 = mnew_i * m_j2;
+							energy_new = -Js * dot_prod_new1;
+							energy_new += -Js2 * dot_prod_new2;
+						}
+					}
+
+					//for each cell, either it's not coupled to any other mesh cell (so we never get here), or else it's coupled to exactly one cell on this surface (thus can stop looping over meshes now)
+					break;
+				}
 			}
 		}
 	}
 
 	//if spin is on bottom surface then look at paMesh_Top
-	if (spin_index / (n.x * n.y) == 0 && paMesh_Bot.size()) {
+	if (spin_index / (n.x * n.y) == 0 && (paMesh_Bot.size() || pMesh_Bot.size())) {
 
 		if (!paMesh->M1.is_empty(spin_index)) {
 
 			int i = spin_index % n.x;
 			int j = (spin_index / n.x) % n.y;
+			bool cell_coupled = false;
 
 			double Js = paMesh->Js;
 			paMesh->update_parameters_mcoarse(spin_index, paMesh->Js, Js);
@@ -463,17 +608,80 @@ double Atom_SurfExchange::Get_EnergyChange(int spin_index, DBL3 Mnew)
 				DBL3 m_j = paMesh_Bot[mesh_idx]->M1[cell_rel_pos].normalized();
 				DBL3 m_i = paMesh->M1[spin_index].normalized();
 				double dot_prod = m_i * m_j;
-				energy_old = -Js * dot_prod;
+				energy_old += -Js * dot_prod;
 
 				if (Mnew != DBL3()) {
 
 					DBL3 mnew_i = Mnew.normalized();
 					double dot_prod_new = mnew_i * m_j;
-					energy_new = -Js * dot_prod_new;
+					energy_new += -Js * dot_prod_new;
 				}
 
 				//for each cell, either it's not coupled to any other mesh cell (so we never get here), or else it's coupled to exactly one cell on this surface (thus can stop looping over meshes now)
+				cell_coupled = true;
 				break;
+			}
+
+			if (!cell_coupled) {
+
+				//2. coupling from micromagnetic meshes
+				for (int mesh_idx = 0; mesh_idx < (int)pMesh_Bot.size(); mesh_idx++) {
+
+					Rect bmeshRect = pMesh_Bot[mesh_idx]->GetMeshRect();
+
+					//relative coordinates to read value from bottom mesh (the one we're coupling to here) - relative to bottom mesh
+					DBL3 cell_rel_pos = DBL3(
+						(i + 0.5) * paMesh->h.x + paMesh->meshRect.s.x - bmeshRect.s.x,
+						(j + 0.5) * paMesh->h.y + paMesh->meshRect.s.y - bmeshRect.s.y,
+						bmeshRect.height() - pMesh_Bot[mesh_idx]->h.z / 2);
+
+					//can't couple to an empty cell
+					if (!bmeshRect.contains(cell_rel_pos + bmeshRect.s) || pMesh_Bot[mesh_idx]->M.is_empty(cell_rel_pos)) continue;
+
+					if (pMesh_Bot[mesh_idx]->GetMeshType() == MESH_FERROMAGNETIC) {
+
+						//get magnetization value in top mesh cell to couple with
+						DBL3 m_j = pMesh_Bot[mesh_idx]->M[cell_rel_pos].normalized();
+						DBL3 m_i = paMesh->M1[spin_index].normalized();
+
+						double dot_prod = m_i * m_j;
+						energy_old += -Js * dot_prod;
+
+						if (Mnew != DBL3()) {
+
+							DBL3 mnew_i = Mnew.normalized();
+							double dot_prod_new = mnew_i * m_j;
+							energy_new += -Js * dot_prod_new;
+						}
+					}
+					else if (pMesh_Bot[mesh_idx]->GetMeshType() == MESH_ANTIFERROMAGNETIC) {
+
+						double Js2 = paMesh->Js2;
+						paMesh->update_parameters_mcoarse(spin_index, paMesh->Js2, Js2);
+
+						//get magnetization value in top mesh cell to couple with
+						DBL3 m_j1 = pMesh_Bot[mesh_idx]->M[cell_rel_pos].normalized();
+						DBL3 m_j2 = pMesh_Bot[mesh_idx]->M2[cell_rel_pos].normalized();
+						DBL3 m_i = paMesh->M1[spin_index].normalized();
+
+						double dot_prod1 = m_i * m_j1;
+						double dot_prod2 = m_i * m_j2;
+						energy_old += -Js * dot_prod1;
+						energy_old += -Js2 * dot_prod2;
+
+						if (Mnew != DBL3()) {
+
+							DBL3 mnew_i = Mnew.normalized();
+							double dot_prod_new1 = mnew_i * m_j1;
+							double dot_prod_new2 = mnew_i * m_j2;
+							energy_new += -Js * dot_prod_new1;
+							energy_new += -Js2 * dot_prod_new2;
+						}
+					}
+
+					//for each cell, either it's not coupled to any other mesh cell (so we never get here), or else it's coupled to exactly one cell on this surface (thus can stop looping over meshes now)
+					break;
+				}
 			}
 		}
 	}

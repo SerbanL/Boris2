@@ -12,6 +12,7 @@
 #include "ManagedDiffEq_CommonCUDA.h"
 
 class MeshCUDA;
+class ManagedAtom_MeshCUDA;
 
 //This holds pointers to managed objects in MeshCUDA (and inherited MeshParamsCUDA) : set and forget. They are available for use in cuda kernels by passing a cu_obj-managed object ManagedMeshCUDA
 
@@ -103,10 +104,17 @@ public:
 	//Magneto-Optical field strength (A/m)
 	MatPCUDA<cuBReal, cuBReal>* pcHmo;
 
+	//Stochasticity efficiency parameter
+	MatPCUDA<cuBReal, cuBReal>* ps_eff;
+
 	//electrical conductivity (units S/m).
 	//this is the value at 0K for Ni80Fe20. Temperature dependence typically scaled by 1 / (1 + alpha*(T-T0)), where alpha = 0.003, T0 = 293K with sigma = 1.7e6 S/m and 293K.
 	//Using scaling 1 / (1 + alpha0 * T) on the zero-temperature conductivity gives sigma0 = sigmaT0 / (1 - alpha*T0), alpha0 = alpha / (1 - alpha*T0), so alpha0 = 0.025.
 	MatPCUDA<cuBReal, cuBReal>* pelecCond;
+
+	//TMR RA products for parallel and antiparallel states (Ohms m^2)
+	MatPCUDA<cuBReal, cuBReal>* pRAtmr_p;
+	MatPCUDA<cuBReal, cuBReal>* pRAtmr_ap;
 
 	//anisotropic magnetoresistance as a percentage (of base resistance)
 	MatPCUDA<cuBReal, cuBReal>* pamrPercentage;
@@ -247,6 +255,10 @@ public:
 	ManagedMeshCUDA* pMeshAFM_Bot;
 	size_t pMeshAFM_Top_size, pMeshAFM_Bot_size;
 
+	ManagedAtom_MeshCUDA* pMeshAtom_Top;
+	ManagedAtom_MeshCUDA* pMeshAtom_Bot;
+	size_t pMeshAtom_Top_size, pMeshAtom_Bot_size;
+
 	//DemagCUDA (or SDemag_DemagCUDA)
 	cuVEC<cuReal3>*  pDemag_Heff;
 
@@ -256,6 +268,9 @@ public:
 
 	//ZeemanCUDA
 	cuVEC<cuReal3>* pHavec;
+
+	//StrayField_MeshCUDA
+	cuVEC<cuReal3>* pstrayField;
 
 private:
 
@@ -399,6 +414,9 @@ public:
 	//Demag
 	__device__ cuBReal Get_EnergyChange_FM_DemagCUDA(int spin_index, cuReal3 Mnew);
 
+	//StrayField_Mesh
+	__device__ cuBReal Get_EnergyChange_FM_StrayField_MeshCUDA(int spin_index, cuReal3 Mnew);
+
 	//Exch_6ngbr_Neu
 	__device__ cuBReal Get_EnergyChange_FM_ExchangeCUDA(int spin_index, cuReal3 Mnew);
 
@@ -451,6 +469,9 @@ public:
 
 	//Demag
 	__device__ cuReal2 Get_EnergyChange_AFM_DemagCUDA(int spin_index, cuReal3 Mnew_A, cuReal3 Mnew_B);
+
+	//StrayField_Mesh
+	__device__ cuReal2 Get_EnergyChange_AFM_StrayField_MeshCUDA(int spin_index, cuReal3 Mnew_A, cuReal3 Mnew_B);
 
 	//Exch_6ngbr_Neu
 	__device__ cuReal2 Get_EnergyChange_AFM_ExchangeCUDA(int spin_index, cuReal3 Mnew_A, cuReal3 Mnew_B);

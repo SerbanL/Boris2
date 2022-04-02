@@ -55,13 +55,15 @@ double Atom_Transport::bfunc_V_pri(int cell1_idx, int cell2_idx) const
 double Atom_Transport::diff2_V_sec(DBL3 relpos_m1, DBL3 stencil, DBL3 shift) const
 {
 	int cellm1_idx = paMesh->V.position_to_cellidx(relpos_m1);
-
-	return Evaluate_ChargeSolver_delsqV_RHS(cellm1_idx);
+	return diff2_V_pri(cellm1_idx, shift);
 }
 
 double Atom_Transport::diff2_V_pri(int cell1_idx, DBL3 shift) const
 {
-	return Evaluate_ChargeSolver_delsqV_RHS(cell1_idx);
+	//normalized, positive shift: use * operator (dot product) with nshift to eliminate differentials orthogonal to the shift axis
+	DBL3 nshift = mod(normalize(shift));
+
+	return -((paMesh->V.grad_diri(cell1_idx) * nshift) * (paMesh->elC.grad_sided(cell1_idx) * nshift)) / paMesh->elC[cell1_idx];
 }
 
 #endif

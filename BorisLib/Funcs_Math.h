@@ -132,6 +132,18 @@ void NormalizeVector(Type &Vx, Type &Vy, Type &Vz)
 	} 
 }
 
+//normalize a VAL3 if possible, else return zero value
+template <typename VAL3Type, std::enable_if_t<std::is_convertible<INT3, VAL3Type>::value>* = nullptr>
+VAL3Type normalize(const VAL3Type& val3) { return (val3 != VAL3Type() ? val3.normalized() : VAL3Type()); }
+
+//normalize a VAL3 to the norm of another VAL3
+template <typename VAL3Type, std::enable_if_t<std::is_convertible<INT3, VAL3Type>::value>* = nullptr>
+VAL3Type normalize(const VAL3Type& val3, const VAL3Type& val3_2) { return (val3_2 != VAL3Type() ? val3 / val3_2.norm() : VAL3Type()); }
+
+//normalize a VAL33 to the norm of a VAL3
+template <typename VAL33Type, typename VAL3Type, std::enable_if_t<std::is_convertible<INT33, VAL33Type>::value>* = nullptr>
+VAL33Type normalize(const VAL33Type& val33, const VAL3Type& val3) { return (val3 != VAL3Type() ? val33 / val3.norm() : VAL33Type()); }
+
 ///////////////////////////////////////////////////////////////////////////////
 
 //Note : round is now a standard function since C++14 (in math.h), so no need to define it here as per previous C++ standards
@@ -146,19 +158,11 @@ VAL3Type round(const VAL3Type& val3) { return VAL3Type( round(val3.x), round(val
 //Note, using just the standard floor is not good enough : if the floating point value is very close to the upper integer value (closer than the defined floating point accuracy) then its value should be equal to it.
 //The standard floor function will result in "wrong" behaviour by returning the lower integer
 template <typename Type, std::enable_if_t<std::is_floating_point<Type>::value>* = nullptr>
-Type floor_epsilon(const Type& fval) { return floor(fval + (fabs(fval) * FLOOR_CEIL_RATIO < EPSILON_ROUNDING ? fabs(fval) * FLOOR_CEIL_RATIO : EPSILON_ROUNDING)); }
-
-//in some cases you may want to use a fixed epsilon value
-template <typename Type, std::enable_if_t<std::is_floating_point<Type>::value>* = nullptr>
-Type floor_fixedepsilon(const Type& fval) { return floor(fval + EPSILON_ROUNDING); }
+Type floor_epsilon(const Type& fval) { return floor(fval + EPSILON_ROUNDING); }
 
 //as above but with ceil
 template <typename Type, std::enable_if_t<std::is_floating_point<Type>::value>* = nullptr>
-Type ceil_epsilon(const Type& fval) { return ceil(fval - (fabs(fval) * FLOOR_CEIL_RATIO < EPSILON_ROUNDING ? fabs(fval) * FLOOR_CEIL_RATIO : EPSILON_ROUNDING)); }
-
-//in some cases you may want to use a fixed epsilon value
-template <typename Type, std::enable_if_t<std::is_floating_point<Type>::value>* = nullptr>
-Type ceil_fixedepsilon(const Type& fval) { return ceil(fval - EPSILON_ROUNDING); }
+Type ceil_epsilon(const Type& fval) { return ceil(fval - EPSILON_ROUNDING); }
 
 //return "fixed" floor of each VAL3 component
 template <typename VAL3Type, std::enable_if_t<std::is_convertible<INT3, VAL3Type>::value>* = nullptr>

@@ -79,7 +79,7 @@ __global__ void Average_mxdmdt_Atom_Cubic_kernel(cuBox box, ManagedAtom_MeshCUDA
 //----------------------------------- ODE METHODS IN (ANTI)FERROMAGNETIC MESH : Mesh_FerromagneticCUDA.cu
 
 //return average dm/dt in the given avRect (relative rect). Here m is the direction vector.
-DBL3 Atom_Mesh_CubicCUDA::Average_dmdt(cuBox avBox)
+cuReal3 Atom_Mesh_CubicCUDA::Average_dmdt(cuBox avBox)
 {
 	Zero_aux_values();
 
@@ -88,11 +88,11 @@ DBL3 Atom_Mesh_CubicCUDA::Average_dmdt(cuBox avBox)
 	int num_points = aux_int.to_cpu();
 
 	if (num_points) return aux_real3.to_cpu() / num_points;
-	else return DBL3();
+	else return cuReal3();
 }
 
 //return average m x dm/dt in the given avRect (relative rect). Here m is the direction vector.
-DBL3 Atom_Mesh_CubicCUDA::Average_mxdmdt(cuBox avBox)
+cuReal3 Atom_Mesh_CubicCUDA::Average_mxdmdt(cuBox avBox)
 {
 	Zero_aux_values();
 
@@ -101,7 +101,7 @@ DBL3 Atom_Mesh_CubicCUDA::Average_mxdmdt(cuBox avBox)
 	int num_points = aux_int.to_cpu();
 
 	if (num_points) return aux_real3.to_cpu() / num_points;
-	else return DBL3();
+	else return cuReal3();
 }
 
 #endif

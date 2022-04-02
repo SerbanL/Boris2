@@ -271,7 +271,7 @@ DBL2 Anisotropy_Biaxial::Get_EnergyChange(int spin_index, DBL3 Mnew_A, DBL3 Mnew
 DBL3 Anisotropy_Biaxial::GetTorque(Rect& avRect)
 {
 #if COMPILECUDA == 1
-	if (pModuleCUDA) return reinterpret_cast<Anisotropy_BiaxialCUDA*>(pModuleCUDA)->GetTorque(avRect);
+	if (pModuleCUDA) return pModuleCUDA->GetTorque(avRect);
 #endif
 
 	return CalculateTorque(pMesh->M, avRect);

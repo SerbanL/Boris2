@@ -168,7 +168,7 @@
       <WholeProgramOptimization>false</WholeProgramOptimization>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <CompileAsManaged>false</CompileAsManaged>
-      <AdditionalIncludeDirectories>$(SolutionDir)\BorisLib; $(SolutionDir)\BorisCUDALib;$(CudaToolkitIncludeDir)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)\BorisLib; $(SolutionDir)\BorisCUDALib;$(CudaToolkitIncludeDir); C:\Users\Serban\AppData\Local\Programs\Python\Python310\include; C:\Users\slg13\AppData\Local\Programs\Python\Python310\include</AdditionalIncludeDirectories>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <AdditionalOptions>-Bv %(AdditionalOptions)</AdditionalOptions>
@@ -186,6 +186,7 @@
       <AdditionalOptions>/FORCE:MULTIPLE %(AdditionalOptions)</AdditionalOptions>
       <LinkTimeCodeGeneration>Default</LinkTimeCodeGeneration>
       <AdditionalDependencies>cudart_static.lib;cufft.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories);$(CudaToolkitLibDir); C:\Users\Serban\AppData\Local\Programs\Python\Python310\libs; C:\Users\slg13\AppData\Local\Programs\Python\Python310\libs</AdditionalLibraryDirectories>
     </Link>
     <CudaCompile>
       <CodeGeneration>compute_80,sm_80</CodeGeneration>
@@ -276,11 +277,9 @@
     <ClInclude Include="Atom_SurfExchangeCUDA.h" />
     <ClInclude Include="Atom_Transport.h" />
     <ClInclude Include="Atom_TransportCUDA.h" />
-    <ClInclude Include="Atom_TransportCUDA_Poisson.h" />
-    <ClInclude Include="Atom_TransportCUDA_Poisson_Spin_S.h" />
-    <ClInclude Include="Atom_TransportCUDA_Poisson_Spin_V.h" />
     <ClInclude Include="Atom_viDMExchange.h" />
     <ClInclude Include="Atom_viDMExchangeCUDA.h" />
+    <ClInclude Include="CommandLineArgs.h" />
     <ClInclude Include="DataDefs.h" />
     <ClInclude Include="DemagBase.h" />
     <ClInclude Include="DemagTFuncCUDA.h" />
@@ -485,6 +484,7 @@
     <ClInclude Include="PhysQ.h" />
     <ClInclude Include="PhysQDefs.h" />
     <ClInclude Include="PhysQRep.h" />
+    <ClInclude Include="PythonScripting.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="Roughness.h" />
     <ClInclude Include="RoughnessCUDA.h" />
@@ -509,8 +509,15 @@
     <ClInclude Include="STransportCUDA.h" />
     <ClInclude Include="STransportCUDA_GInterf_S.h" />
     <ClInclude Include="STransportCUDA_GInterf_V.h" />
+    <ClInclude Include="STransport_Graph.h" />
     <ClInclude Include="StrayField.h" />
     <ClInclude Include="StrayFieldCUDA.h" />
+    <ClInclude Include="StrayField_AtomMesh.h" />
+    <ClInclude Include="StrayField_AtomMeshCUDA.h" />
+    <ClInclude Include="StrayField_Base.h" />
+    <ClInclude Include="StrayField_BaseCUDA.h" />
+    <ClInclude Include="StrayField_Mesh.h" />
+    <ClInclude Include="StrayField_MeshCUDA.h" />
     <ClInclude Include="SuperMesh.h" />
     <ClInclude Include="SuperMeshCUDA.h" />
     <ClInclude Include="SurfExchange.h" />
@@ -518,6 +525,8 @@
     <ClInclude Include="SurfExchangeCUDA_AFM.h" />
     <ClInclude Include="SurfExchange_AFM.h" />
     <ClInclude Include="TextFormatting.h" />
+    <ClInclude Include="TMR.h" />
+    <ClInclude Include="TMRCUDA.h" />
     <ClInclude Include="Transport.h" />
     <ClInclude Include="TransportBase.h" />
     <ClInclude Include="TransportBaseCUDA.h" />
@@ -610,9 +619,6 @@
     <ClCompile Include="Atom_SurfExchangeCUDA.cpp" />
     <ClCompile Include="Atom_Transport.cpp" />
     <ClCompile Include="Atom_TransportCUDA.cpp" />
-    <ClCompile Include="Atom_TransportCUDA_Poisson.cpp" />
-    <ClCompile Include="Atom_TransportCUDA_Poisson_Spin_S.cpp" />
-    <ClCompile Include="Atom_TransportCUDA_Poisson_Spin_V.cpp" />
     <ClCompile Include="Atom_Transport_Charge.cpp" />
     <ClCompile Include="Atom_Transport_Charge_Display.cpp" />
     <ClCompile Include="Atom_Transport_Spin.cpp" />
@@ -620,6 +626,8 @@
     <ClCompile Include="Atom_viDMExchange.cpp" />
     <ClCompile Include="Atom_viDMExchangeCUDA.cpp" />
     <ClCompile Include="BorisUpdate.cpp" />
+    <ClCompile Include="CommandLineArgs.cpp" />
+    <ClCompile Include="Commands_PythonScripting.cpp" />
     <ClCompile Include="DemagKernelCollectionCUDA_Calc_GPU.cpp" />
     <ClCompile Include="DemagTFuncCUDA.cpp" />
     <ClCompile Include="DemagTFunc_IrregularCUDA.cpp" />
@@ -849,6 +857,12 @@
     <ClCompile Include="STransport_Spin_GInterf.cpp" />
     <ClCompile Include="StrayField.cpp" />
     <ClCompile Include="StrayFieldCUDA.cpp" />
+    <ClCompile Include="StrayField_AtomMesh.cpp" />
+    <ClCompile Include="StrayField_AtomMeshCUDA.cpp" />
+    <ClCompile Include="StrayField_Base.cpp" />
+    <ClCompile Include="StrayField_BaseCUDA.cpp" />
+    <ClCompile Include="StrayField_Mesh.cpp" />
+    <ClCompile Include="StrayField_MeshCUDA.cpp" />
     <ClCompile Include="SuperMesh.cpp" />
     <ClCompile Include="SuperMeshControl.cpp" />
     <ClCompile Include="SuperMeshCUDA.cpp" />
@@ -867,8 +881,15 @@
     <ClCompile Include="SurfExchangeCUDA.cpp" />
     <ClCompile Include="SurfExchangeCUDA_AFM.cpp" />
     <ClCompile Include="SurfExchange_AFM.cpp" />
+    <ClCompile Include="TMR.cpp" />
+    <ClCompile Include="TMRCUDA.cpp" />
+    <ClCompile Include="TMR_Charge.cpp" />
+    <ClCompile Include="TMR_Charge_Display.cpp" />
+    <ClCompile Include="TMR_Spin.cpp" />
+    <ClCompile Include="TMR_Spin_Display.cpp" />
     <ClCompile Include="Transport.cpp" />
     <ClCompile Include="TransportBase.cpp" />
+    <ClCompile Include="TransportBaseCUDA.cpp" />
     <ClCompile Include="TransportCUDA_Poisson_Spin_S.cpp" />
     <ClCompile Include="TransportCUDA_Poisson_Spin_V.cpp" />
     <ClCompile Include="Transport_Charge.cpp" />
@@ -996,8 +1017,17 @@
     <CudaCompile Include="STransportCUDA_Charge.cu" />
     <CudaCompile Include="STransportCUDA_Spin.cu" />
     <CudaCompile Include="StrayFieldCUDA.cu" />
+    <CudaCompile Include="StrayField_AtomMeshCUDA.cu" />
+    <CudaCompile Include="StrayField_BaseCUDA.cu" />
+    <CudaCompile Include="StrayField_MeshCUDA.cu" />
     <CudaCompile Include="SurfExchangeCUDA.cu" />
     <CudaCompile Include="SurfExchangeCUDA_AFM.cu" />
+    <CudaCompile Include="TMRCUDA.cu" />
+    <CudaCompile Include="TMRCUDA_Charge.cu" />
+    <CudaCompile Include="TMRCUDA_Charge_Display.cu" />
+    <CudaCompile Include="TMRCUDA_Spin.cu" />
+    <CudaCompile Include="TMRCUDA_Spin_Display.cu" />
+    <CudaCompile Include="TransportBaseCUDA.cu" />
     <CudaCompile Include="TransportCUDA.cu" />
     <CudaCompile Include="TransportCUDA_Charge.cu" />
     <CudaCompile Include="TransportCUDA_Charge_Display.cu" />

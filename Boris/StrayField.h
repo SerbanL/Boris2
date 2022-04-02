@@ -7,14 +7,12 @@
 #include "StrayFieldCUDA.h"
 #endif
 
-
-
-class SuperMesh;
-class DipoleMesh;
-
 #ifdef MODULE_COMPILATION_STRAYFIELD
 
+#include "StrayField_Base.h"
+
 class StrayField :
+	public StrayField_Base,
 	public Modules,
 	public ProgramState<StrayField, std::tuple<>, std::tuple<>>
 {
@@ -25,27 +23,10 @@ class StrayField :
 
 private:
 
-	//pointer to mesh object holding this effective field module (supermesh)
-	SuperMesh *pSMesh;
-
-	//strayField VEC taking values on the supermesh - transfer to and from ferromagnetic meshes
-	VEC<DBL3> strayField;
-
-	//all currently set dipole meshes
-	std::vector<DipoleMesh*> dipoles;
-
-private:
-
-	//calculate stray field from all dipoles
-	void CalculateStrayField(void);
-
-	//check if stray field needs to be recalculated
-	bool CheckRecalculateStrayField(void);
-
 public:
 
 	StrayField(SuperMesh *pSMesh_);
-	~StrayField() {}
+	~StrayField();
 
 	//-------------------Implement ProgramState method
 

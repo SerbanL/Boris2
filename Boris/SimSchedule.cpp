@@ -664,23 +664,20 @@ void Simulation::CheckSaveDataConditions()
 
 	case DSAVE_TIME:
 	{
-		
 		double stime = SMesh.GetStageTime();
 		double tsave = (double)simStages[stage_step.major].get_dsavevalue();
 		double dT = SMesh.GetTimeStep();
 
-		//the floor_fixedepsilon is important - don't use floor!
+		//the floor_epsilon is important - don't use floor!
 		//the reason for this, if time / tsave ends up being very close, but slightly less, than an integer, e.g. 1.9999999999 due to a floating point error, then floor will round it down, whereas really we want it rounded up.
 		//thus with floor only you can end up not saving data points where you should be.
 		//Also delta < dT * 0.99 check below is important : if using just delta < dT check, delta can be slightly smaller than dT but within a floating point error close to it - thus we end up double-saving some data points!
 		//this happens especially if tsave / dT is an integer -> thus most of the time.
-		
-		//Also use floor_fixedepsilon instead of floor_epsilon:
 		//the epsilon value used in floor_epsilon for small time/tsave values is too small, meaning the time/tsave will again round down when it should be rounding up -> SaveData() will never be called
 		//for large time/tsave value the floor_epsilon value is too coarse, meaning you can save data when you don't want to
-		//The epsilon in floor_fixedepsilon is coarse, but not too coarse, which results in correct behaviour over a wide range of time/tsave values -> covers the relevant range.
+		//The epsilon in floor_epsilon is coarse, but not too coarse, which results in correct behaviour over a wide range of time/tsave values -> covers the relevant range.
 
-		double delta = stime - floor_fixedepsilon(stime / tsave) * tsave;
+		double delta = stime - floor_epsilon(stime / tsave) * tsave;
 		if (delta < dT * 0.99) SaveData();
 	}
 		break;
@@ -733,34 +730,41 @@ void Simulation::AdvanceSimulationSchedule(void)
 			SaveData();
 
 		//next stage
-		stage_step.major++;
 		stage_step.minor = 0;
+		if (!single_stage_run) {
 
-		//if not at the end then set stage value for given stage_step
-		if(stage_step.major < simStages.size()) {
+			stage_step.major++;
 
-			SetSimulationStageValue();
+			//if not at the end then set stage value for given stage_step
+			if (stage_step.major < simStages.size()) {
+
+				SetSimulationStageValue();
+			}
+			else {
+
+				//schedule reached end: stop simulation. Note, since this routine is called from Simulate routine, which runs on the THREAD_LOOP thread, cannot stop THREAD_LOOP from within it: stop it from another thread.
+				//use a dedicated thread id to stop loop, since we need to be sure it's not blocking (alternatively could configure it with set_nonblocking_thread). Better to use dedicated thread just to make sure we don't have to wait for some other thread to finish.
+				single_call_launch(&Simulation::StopSimulation, THREAD_LOOP_STOP);
+
+				//set stage step to start of last stage but without resetting anything : the idea is user can edit the stopping value for the last stage, e.g. add more time to it, then run simulation some more
+				//if you want a complete reset then reset command must be issued in console
+				stage_step = INT2(stage_step.major - 1, 0);
+			}
 		}
-		else {
-
-			//schedule reached end: stop simulation. Note, since this routine is called from Simulate routine, which runs on the THREAD_LOOP thread, cannot stop THREAD_LOOP from within it: stop it from another thread.
-			//use a dedicated thread id to stop loop, since we need to be sure it's not blocking (alternatively could configure it with set_nonblocking_thread). Better to use dedicated thread just to make sure we don't have to wait for some other thread to finish.
-			single_call_launch(&Simulation::StopSimulation, THREAD_LOOP_STOP);
-
-			//set stage step to start of last stage but without resetting anything : the idea is user can edit the stopping value for the last stage, e.g. add more time to it, then run simulation some more
-			//if you want a complete reset then reset command must be issued in console
-			stage_step = INT2(stage_step.major - 1, 0);
-		}
+		else single_call_launch(&Simulation::StopSimulation, THREAD_LOOP_STOP);
 	}
 }
 
-void Simulation::SetSimulationStageValue(void) 
+void Simulation::SetSimulationStageValue(int stage_index) 
 {
-	SMesh.NewStageODE();
+	if (stage_index < 0) SMesh.NewStageODE();
+
+	int stage = (stage_index >= 0 ? stage_index : stage_step.major);
+	int step = (stage_index >= 0 ? 0 : stage_step.minor);
 
 	//assume stage_step is correct (if called from AdvanceSimulationSchedule it will be. could also be called directly at the start of a simulation with stage_step reset, so it's also correct).
 
-	switch(simStages[stage_step.major].stage_type()) {
+	switch(simStages[stage].stage_type()) {
 
 	case SS_RELAX:
 	case SS_MONTECARLO:
@@ -772,9 +776,9 @@ void Simulation::SetSimulationStageValue(void)
 	case SS_HFMR:
 	case SS_HFIELDFILE:
 	{
-		std::string meshName = simStages[stage_step.major].meshname();
+		std::string meshName = simStages[stage].meshname();
 
-		DBL3 appliedField = simStages[stage_step.major].get_value<DBL3>(stage_step.minor);
+		DBL3 appliedField = simStages[stage].get_value<DBL3>(step);
 
 		if (SMesh.contains(meshName)) SMesh[meshName]->CallModuleMethod(&ZeemanBase::SetField, appliedField);
 		else if (meshName == SMesh.superMeshHandle) {
@@ -788,9 +792,9 @@ void Simulation::SetSimulationStageValue(void)
 
 	case SS_TSIGPOLAR:
 	{
-		std::string meshName = simStages[stage_step.major].meshname();
+		std::string meshName = simStages[stage].meshname();
 
-		DBL3 appliedStress = simStages[stage_step.major].get_value<DBL3>(stage_step.minor);
+		DBL3 appliedStress = simStages[stage].get_value<DBL3>(step);
 
 		if (SMesh.contains(meshName)) SMesh[meshName]->CallModuleMethod(&MElastic::SetUniformStress, appliedStress);
 		else if (meshName == SMesh.superMeshHandle) {
@@ -804,9 +808,9 @@ void Simulation::SetSimulationStageValue(void)
 
 	case SS_HFIELDEQUATION:
 	{
-		std::string meshName = simStages[stage_step.major].meshname();
+		std::string meshName = simStages[stage].meshname();
 
-		std::string equation_text = simStages[stage_step.major].get_value<std::string>(stage_step.minor);
+		std::string equation_text = simStages[stage].get_value<std::string>(step);
 
 		if (SMesh.contains(meshName)) SMesh[meshName]->CallModuleMethod(&ZeemanBase::SetFieldEquation, equation_text, 0);
 		else if (meshName == SMesh.superMeshHandle) {
@@ -820,17 +824,17 @@ void Simulation::SetSimulationStageValue(void)
 
 	case SS_HFIELDEQUATIONSEQ:
 	{
-		std::string meshName = simStages[stage_step.major].meshname();
+		std::string meshName = simStages[stage].meshname();
 
-		std::string equation_text = simStages[stage_step.major].get_value<std::string>(stage_step.minor);
+		std::string equation_text = simStages[stage].get_value<std::string>(step);
 		//for a equation sequence we have "n: actual equation", where n is the number of steps
 		std::string equation_equation_text = equation_text.substr(equation_text.find_first_of(':') + 1);
 
-		if (SMesh.contains(meshName)) SMesh[meshName]->CallModuleMethod(&ZeemanBase::SetFieldEquation, equation_equation_text, stage_step.minor);
+		if (SMesh.contains(meshName)) SMesh[meshName]->CallModuleMethod(&ZeemanBase::SetFieldEquation, equation_equation_text, step);
 		else if (meshName == SMesh.superMeshHandle) {
 
 			for (int idx = 0; idx < SMesh.size(); idx++) {
-				SMesh[idx]->CallModuleMethod(&ZeemanBase::SetFieldEquation, equation_equation_text, stage_step.minor);
+				SMesh[idx]->CallModuleMethod(&ZeemanBase::SetFieldEquation, equation_equation_text, step);
 			}
 		}
 	}
@@ -838,7 +842,7 @@ void Simulation::SetSimulationStageValue(void)
 
 	case SS_VEQUATION:
 	{
-		std::string equation_text = simStages[stage_step.major].get_value<std::string>(stage_step.minor);
+		std::string equation_text = simStages[stage].get_value<std::string>(step);
 
 		SMesh.CallModuleMethod(&STransport::SetPotentialEquation, equation_text, 0);
 	}
@@ -846,12 +850,12 @@ void Simulation::SetSimulationStageValue(void)
 
 	case SS_VEQUATIONSEQ:
 	{
-		std::string equation_text = simStages[stage_step.major].get_value<std::string>(stage_step.minor);
+		std::string equation_text = simStages[stage].get_value<std::string>(step);
 
 		//for a equation sequence we have "n: actual equation", where n is the number of steps
 		std::string equation_equation_text = equation_text.substr(equation_text.find_first_of(':') + 1);
 
-		SMesh.CallModuleMethod(&STransport::SetPotentialEquation, equation_equation_text, stage_step.minor);
+		SMesh.CallModuleMethod(&STransport::SetPotentialEquation, equation_equation_text, step);
 	}
 	break;
 
@@ -859,7 +863,7 @@ void Simulation::SetSimulationStageValue(void)
 	case SS_VSEQ:
 	case SS_VFILE:
 	{
-		double potential = simStages[stage_step.major].get_value<double>(stage_step.minor);
+		double potential = simStages[stage].get_value<double>(step);
 
 		SMesh.CallModuleMethod(&STransport::SetPotential, potential, true);
 	}
@@ -869,7 +873,7 @@ void Simulation::SetSimulationStageValue(void)
 	case SS_ISEQ:
 	case SS_IFILE:
 	{
-		double current = simStages[stage_step.major].get_value<double>(stage_step.minor);
+		double current = simStages[stage].get_value<double>(step);
 
 		SMesh.CallModuleMethod(&STransport::SetCurrent, current, true);
 	}
@@ -877,7 +881,7 @@ void Simulation::SetSimulationStageValue(void)
 
 	case SS_IEQUATION:
 	{
-		std::string equation_text = simStages[stage_step.major].get_value<std::string>(stage_step.minor);
+		std::string equation_text = simStages[stage].get_value<std::string>(step);
 
 		SMesh.CallModuleMethod(&STransport::SetCurrentEquation, equation_text, 0);
 	}
@@ -885,12 +889,12 @@ void Simulation::SetSimulationStageValue(void)
 
 	case SS_IEQUATIONSEQ:
 	{
-		std::string equation_text = simStages[stage_step.major].get_value<std::string>(stage_step.minor);
+		std::string equation_text = simStages[stage].get_value<std::string>(step);
 
 		//for a equation sequence we have "n: actual equation", where n is the number of steps
 		std::string equation_equation_text = equation_text.substr(equation_text.find_first_of(':') + 1);
 
-		SMesh.CallModuleMethod(&STransport::SetCurrentEquation, equation_equation_text, stage_step.minor);
+		SMesh.CallModuleMethod(&STransport::SetCurrentEquation, equation_equation_text, step);
 	}
 	break;
 
@@ -898,9 +902,9 @@ void Simulation::SetSimulationStageValue(void)
 	case SS_TSEQ:
 	case SS_TFILE:
 	{
-		std::string meshName = simStages[stage_step.major].meshname();
+		std::string meshName = simStages[stage].meshname();
 
-		double temperature = simStages[stage_step.major].get_value<double>(stage_step.minor);
+		double temperature = simStages[stage].get_value<double>(step);
 
 		if (SMesh.contains(meshName)) SMesh[meshName]->SetBaseTemperature(temperature);
 		else if (meshName == SMesh.superMeshHandle) {
@@ -916,9 +920,9 @@ void Simulation::SetSimulationStageValue(void)
 
 	case SS_TEQUATION:
 	{
-		std::string meshName = simStages[stage_step.major].meshname();
+		std::string meshName = simStages[stage].meshname();
 
-		std::string equation_text = simStages[stage_step.major].get_value<std::string>(stage_step.minor);
+		std::string equation_text = simStages[stage].get_value<std::string>(step);
 
 		if (SMesh.contains(meshName)) SMesh[meshName]->SetBaseTemperatureEquation(equation_text, 0);
 		else if (meshName == SMesh.superMeshHandle) {
@@ -934,20 +938,20 @@ void Simulation::SetSimulationStageValue(void)
 
 	case SS_TEQUATIONSEQ:
 	{
-		std::string meshName = simStages[stage_step.major].meshname();
+		std::string meshName = simStages[stage].meshname();
 
-		std::string equation_text = simStages[stage_step.major].get_value<std::string>(stage_step.minor);
+		std::string equation_text = simStages[stage].get_value<std::string>(step);
 
 		//for a equation sequence we have "n: actual equation", where n is the number of steps
 		std::string equation_equation_text = equation_text.substr(equation_text.find_first_of(':') + 1);
 
-		if (SMesh.contains(meshName)) SMesh[meshName]->SetBaseTemperatureEquation(equation_text, stage_step.minor);
+		if (SMesh.contains(meshName)) SMesh[meshName]->SetBaseTemperatureEquation(equation_text, step);
 		else if (meshName == SMesh.superMeshHandle) {
 
 			//all meshes
 			for (int idx = 0; idx < SMesh.size(); idx++) {
 
-				SMesh[idx]->SetBaseTemperatureEquation(equation_text, stage_step.minor);
+				SMesh[idx]->SetBaseTemperatureEquation(equation_text, step);
 			}
 		}
 	}
@@ -957,9 +961,9 @@ void Simulation::SetSimulationStageValue(void)
 	case SS_QSEQ:
 	case SS_QFILE:
 	{
-		std::string meshName = simStages[stage_step.major].meshname();
+		std::string meshName = simStages[stage].meshname();
 
-		double Qvalue = simStages[stage_step.major].get_value<double>(stage_step.minor);
+		double Qvalue = simStages[stage].get_value<double>(step);
 
 		if (SMesh.contains(meshName)) SMesh[meshName]->Q = Qvalue;
 		else if (meshName == SMesh.superMeshHandle) {
@@ -975,9 +979,9 @@ void Simulation::SetSimulationStageValue(void)
 
 	case SS_QEQUATION:
 	{
-		std::string meshName = simStages[stage_step.major].meshname();
+		std::string meshName = simStages[stage].meshname();
 
-		std::string equation_text = simStages[stage_step.major].get_value<std::string>(stage_step.minor);
+		std::string equation_text = simStages[stage].get_value<std::string>(step);
 
 		if (SMesh.contains(meshName)) SMesh[meshName]->CallModuleMethod(&HeatBase::SetQEquation, equation_text, 0);
 		else if (meshName == SMesh.superMeshHandle) {
@@ -991,18 +995,18 @@ void Simulation::SetSimulationStageValue(void)
 
 	case SS_QEQUATIONSEQ:
 	{
-		std::string meshName = simStages[stage_step.major].meshname();
+		std::string meshName = simStages[stage].meshname();
 
-		std::string equation_text = simStages[stage_step.major].get_value<std::string>(stage_step.minor);
+		std::string equation_text = simStages[stage].get_value<std::string>(step);
 
 		//for a equation sequence we have "n: actual equation", where n is the number of steps
 		std::string equation_equation_text = equation_text.substr(equation_text.find_first_of(':') + 1);
 
-		if (SMesh.contains(meshName)) SMesh[meshName]->CallModuleMethod(&HeatBase::SetQEquation, equation_text, stage_step.minor);
+		if (SMesh.contains(meshName)) SMesh[meshName]->CallModuleMethod(&HeatBase::SetQEquation, equation_text, step);
 		else if (meshName == SMesh.superMeshHandle) {
 
 			for (int idx = 0; idx < SMesh.size(); idx++) {
-				SMesh[idx]->CallModuleMethod(&HeatBase::SetQEquation, equation_text, stage_step.minor);
+				SMesh[idx]->CallModuleMethod(&HeatBase::SetQEquation, equation_text, step);
 			}
 		}
 	}

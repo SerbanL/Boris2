@@ -133,9 +133,16 @@ public:
 	//Magneto-Optical field strength (A/m)
 	MatP<double, double> cHmo = 0.0;
 
+	//Stochasticity efficiency parameter
+	MatP<double, double> s_eff = 1.0;
+
 	//electrical conductivity (units S/m).
 	//this is the value at RT for Ni80Fe20.
 	MatP<double, double> elecCond = 7e6;
+
+	//TMR RA products for parallel and antiparallel states (Ohms m^2)
+	MatP<double, double> RAtmr_p = 0.075e-12;
+	MatP<double, double> RAtmr_ap = 0.225e-12;
 
 	//anisotropic magnetoresistance as a percentage (of base resistance)
 	MatP<double, double> amrPercentage = 0.0;
@@ -446,8 +453,20 @@ RType MeshParams::run_on_param(PARAM_ paramID, Lambda& run_this, PType& ... run_
 		return run_this(cHmo, run_this_args...);
 		break;
 
+	case PARAM_S_EFF:
+		return run_this(s_eff, run_this_args...);
+		break;
+
 	case PARAM_ELC:
 		return run_this(elecCond, run_this_args...);
+		break;
+
+	case PARAM_RATMR_P:
+		return run_this(RAtmr_p, run_this_args...);
+		break;
+
+	case PARAM_RATMR_AP:
+		return run_this(RAtmr_ap, run_this_args...);
 		break;
 
 	case PARAM_AMR:

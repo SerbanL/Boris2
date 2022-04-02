@@ -40,6 +40,10 @@ Atom_MeshParams::Atom_MeshParams(std::vector<PARAM_>& enabledParams)
 			meshParams.push_back("Js", MeshParamDescriptor(PARAMTYPE_MAGNETIC, "J"), PARAM_ATOM_JS);
 			break;
 
+		case PARAM_ATOM_JS2:
+			meshParams.push_back("Js2", MeshParamDescriptor(PARAMTYPE_MAGNETIC, "J"), PARAM_ATOM_JS2);
+			break;
+
 		case PARAM_ATOM_SC_K1:
 			meshParams.push_back("K1", MeshParamDescriptor(PARAMTYPE_MAGNETIC, "J"), PARAM_ATOM_SC_K1);
 			break;
@@ -76,6 +80,10 @@ Atom_MeshParams::Atom_MeshParams(std::vector<PARAM_>& enabledParams)
 			meshParams.push_back("cHmo", MeshParamDescriptor(PARAMTYPE_MAGNETIC), PARAM_HMO);
 			break;
 
+		case PARAM_S_EFF:
+			meshParams.push_back("s_eff", MeshParamDescriptor(PARAMTYPE_MAGNETIC), PARAM_S_EFF);
+			break;
+
 		case PARAM_T:
 			meshParams.push_back("cT", MeshParamDescriptor(PARAMTYPE_THERMAL), PARAM_T);
 			break;
@@ -86,6 +94,14 @@ Atom_MeshParams::Atom_MeshParams(std::vector<PARAM_>& enabledParams)
 
 		case PARAM_ELC:
 			meshParams.push_back("elC", MeshParamDescriptor(PARAMTYPE_ELECTRIC, "S/m"), PARAM_ELC);
+			break;
+
+		case PARAM_RATMR_P:
+			meshParams.push_back("RAtmr_p", MeshParamDescriptor(PARAMTYPE_ELECTRIC, "Om2"), PARAM_RATMR_P);
+			break;
+
+		case PARAM_RATMR_AP:
+			meshParams.push_back("RAtmr_ap", MeshParamDescriptor(PARAMTYPE_ELECTRIC, "Om2"), PARAM_RATMR_AP);
 			break;
 			
 		case PARAM_AMR:

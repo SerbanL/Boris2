@@ -120,10 +120,17 @@ public:
 	//Magneto-Optical field strength (A/m)
 	cu_obj<MatPCUDA<cuBReal, cuBReal>> cHmo;
 
+	//Stochasticity efficiency parameter
+	cu_obj<MatPCUDA<cuBReal, cuBReal>> s_eff;
+
 	//electrical conductivity (units S/m).
 	//this is the value at 0K for Ni80Fe20. Temperature dependence typically scaled by 1 / (1 + alpha*(T-T0)), where alpha = 0.003, T0 = 293K with sigma = 1.7e6 S/m and 293K.
 	//Using scaling 1 / (1 + alpha0 * T) on the zero-temperature conductivity gives sigma0 = sigmaT0 / (1 - alpha*T0), alpha0 = alpha / (1 - alpha*T0), so alpha0 = 0.025.
 	cu_obj<MatPCUDA<cuBReal, cuBReal>> elecCond;
+
+	//TMR RA products for parallel and antiparallel states (Ohms m^2)
+	cu_obj<MatPCUDA<cuBReal, cuBReal>> RAtmr_p;
+	cu_obj<MatPCUDA<cuBReal, cuBReal>> RAtmr_ap;
 
 	//anisotropic magnetoresistance as a percentage (of base resistance)
 	cu_obj<MatPCUDA<cuBReal, cuBReal>> amrPercentage;

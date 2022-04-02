@@ -87,10 +87,10 @@ public:
 	//----------------------------------- ODE METHODS IN MAGNETIC MESH : Atom_Mesh_CubicCUDA.cu
 
 	//return average dm/dt in the given avRect (relative rect). Here m is the direction vector.
-	DBL3 Average_dmdt(cuBox avBox);
+	cuReal3 Average_dmdt(cuBox avBox);
 
 	//return average m x dm/dt in the given avRect (relative rect). Here m is the direction vector.
-	DBL3 Average_mxdmdt(cuBox avBox);
+	cuReal3 Average_mxdmdt(cuBox avBox);
 
 	//-----------------------------------OBJECT GETTERS
 
@@ -128,9 +128,6 @@ public:
 
 	//----------------------------------- OTHER IMPORTANT CONTROL METHODS
 
-	//Check if mesh needs to be moved (using the MoveMesh method) - return amount of movement required (i.e. parameter to use when calling MoveMesh).
-	cuBReal CheckMoveMesh(bool antisymmetric, double threshold) { return 0.0; }
-
 	//----------------------------------- VALUE GETTERS
 
 	//get topological charge using formula Q = Integral(m.(dm/dx x dm/dy) dxdy) / 4PI
@@ -143,10 +140,10 @@ public:
 	//----------------------------------- ODE METHODS IN MAGNETIC MESH : Atom_Mesh_CubicCUDA.cu
 
 	//return average dm/dt in the given avRect (relative rect). Here m is the direction vector.
-	DBL3 Average_dmdt(cuBox avBox) { return DBL3(); }
+	cuReal3 Average_dmdt(cuBox avBox) { return DBL3(); }
 
 	//return average m x dm/dt in the given avRect (relative rect). Here m is the direction vector.
-	DBL3 Average_mxdmdt(cuBox avBox) { return DBL3(); }
+	cuReal3 Average_mxdmdt(cuBox avBox) { return DBL3(); }
 };
 
 #endif

@@ -12,7 +12,7 @@
 
 #include "MeshDisplayCUDA.h"
 
-
+#include "MeshDefs.h"
 
 class MeshBase;
 class PhysQ;
@@ -190,15 +190,18 @@ public:
 	virtual PhysQ FetchOnScreenPhysicalQuantity(double detail_level, bool getBackground) = 0;
 
 	//save the quantity currently displayed on screen in an ovf2 file using the specified format
-	virtual BError SaveOnScreenPhysicalQuantity(std::string fileName, std::string ovf2_dataType) = 0;
+	virtual BError SaveOnScreenPhysicalQuantity(std::string fileName, std::string ovf2_dataType, MESHDISPLAY_ quantity) = 0;
 
 	//extract profile from focused mesh, from currently display mesh quantity, but reading directly from the quantity
 	//Displayed	mesh quantity can be scalar or a vector; pass in std::vector pointers, then check for nullptr to determine what type is displayed
 	//if do_average = true then build average and don't return anything, else return just a single-shot profile. If read_average = true then simply read out the internally stored averaged profile by assigning to pointer.
-	virtual void GetPhysicalQuantityProfile(DBL3 start, DBL3 end, double step, DBL3 stencil, std::vector<DBL3>*& pprofile_dbl3, std::vector<double>*& pprofile_dbl, bool do_average, bool read_average) = 0;
+	virtual void GetPhysicalQuantityProfile(
+		DBL3 start, DBL3 end, double step, DBL3 stencil, 
+		std::vector<DBL3>*& pprofile_dbl3, std::vector<double>*& pprofile_dbl, 
+		bool do_average, bool read_average, MESHDISPLAY_ quantity) = 0;
 
 	//return average value for currently displayed mesh quantity in the given relative rectangle
-	virtual Any GetAverageDisplayedMeshValue(Rect rel_rect) = 0;
+	virtual Any GetAverageDisplayedMeshValue(Rect rel_rect, MESHDISPLAY_ quantity) = 0;
 
 	//copy aux_vec_sca in GPU memory to displayVEC in CPU memory
 	virtual void copy_aux_vec_sca(VEC<double>& displayVEC) = 0;

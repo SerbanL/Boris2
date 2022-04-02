@@ -128,6 +128,11 @@ BError Heat::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 				error = pMesh->CallModuleMethod(&Transport::UpdateConfiguration, cfgMessage);
 				if (error) return error;
 			}
+			else if (pMesh->IsModuleSet(MOD_TMR)) {
+
+				error = pMesh->CallModuleMethod(&TMR::UpdateConfiguration, cfgMessage);
+				if (error) return error;
+			}
 
 			if (success) {
 

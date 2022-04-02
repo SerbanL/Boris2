@@ -11,6 +11,7 @@
 class MeshCUDA;
 class SurfExchange_AFM;
 class ManagedMeshCUDA;
+class ManagedAtom_MeshCUDA;
 
 class SurfExchangeCUDA_AFM :
 	public ModulesCUDA
@@ -32,8 +33,9 @@ private:
 	cu_arr<ManagedMeshCUDA> pMeshAFM_Bot;
 	cu_arr<ManagedMeshCUDA> pMeshAFM_Top;
 
-	//coupled cells in gpu memory
-	cu_obj<int> coupled_cells;
+	//cu arrays with pointers to other meshes in surface exchange coupling with the mesh holding this module, top and bottom, (atomistic)
+	cu_arr<ManagedAtom_MeshCUDA> pMeshAtom_Bot;
+	cu_arr<ManagedAtom_MeshCUDA> pMeshAtom_Top;
 
 private:
 

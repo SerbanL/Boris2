@@ -459,13 +459,18 @@ public:
 	__host__ void scale_values(size_t size, cuBReal constant);
 	__host__ void scale_values(cuBReal constant) { scale_values(get_gpu_value(cuVEC<VType>::n).dim(), constant); }
 
-	//--------------------------------------------OPERATIONS : cuVEC_VC_avg.cuh
+	//--------------------------------------------AVERAGING / SUMMING OPERATIONS : cuVEC_VC_avg.cuh
 
 	//overload VEC method : use NF_NOTEMPTY flags instead here
 	//Launch it with arr_size = cuVEC<VType>::n.dim() : quicker to pass in this value rather than get it internally using get_gpu_value(cuVEC<VType>::n).dim()
 	__host__ VType average_nonempty(size_t arr_size, cuBox box);
 	//average over non-empty cells over given rectangle (relative to this VEC's rect)
 	__host__ VType average_nonempty(size_t arr_size, cuRect rectangle = cuRect());
+
+	//Launch it with arr_size = cuVEC<VType>::n.dim() : quicker to pass in this value rather than get it internally using get_gpu_value(cuVEC<VType>::n).dim()
+	__host__ VType sum_nonempty(size_t arr_size, cuBox box);
+	//sum over non-empty cells over given rectangle (relative to this VEC's rect)
+	__host__ VType sum_nonempty(size_t arr_size, cuRect rectangle = cuRect());
 
 	//--------------------------------------------NUMERICAL PROPERTIES : cuVEC_VC_nprops.cuh
 	

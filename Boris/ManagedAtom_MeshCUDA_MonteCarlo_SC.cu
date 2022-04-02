@@ -5,6 +5,9 @@
 #include "BorisCUDALib.cuh"
 #include "Atom_MeshParamsControlCUDA.h"
 
+#include "ManagedMeshCUDA.h"
+#include "MeshParamsControlCUDA.h"
+
 #include "ModulesDefs.h"
 
 //----------------------------------- MONTE-CARLO METHODS FOR ENERGY COMPUTATION
@@ -33,6 +36,10 @@ __device__ cuBReal ManagedAtom_MeshCUDA::Get_Atomistic_EnergyChange_SC(int spin_
 
 		case MOD_ATOM_DIPOLEDIPOLE:
 			energy += Get_Atomistic_EnergyChange_SC_DipoleDipoleCUDA(spin_index, Mnew);
+			break;
+
+		case MOD_STRAYFIELD_MESH:
+			energy += Get_Atomistic_EnergyChange_SC_StrayField_AtomMeshCUDA(spin_index, Mnew);
 			break;
 
 		case MOD_EXCHANGE:
@@ -130,6 +137,22 @@ __device__ cuBReal ManagedAtom_MeshCUDA::Get_Atomistic_EnergyChange_SC_DipoleDip
 	else return 0.0;
 }
 
+//StrayField_AtomMesh
+__device__ cuBReal ManagedAtom_MeshCUDA::Get_Atomistic_EnergyChange_SC_StrayField_AtomMeshCUDA(int spin_index, cuReal3 Mnew)
+{
+	cuVEC_VC<cuReal3>& M1 = *pM1;
+
+	cuReal3 Hstray = cuReal3();
+
+	if (pstrayField && pstrayField->linear_size()) {
+
+		Hstray = (*pstrayField)[spin_index];
+	}
+
+	if (Mnew != cuReal3()) return -(cuBReal)MUB_MU0 * (Mnew - M1[spin_index]) * Hstray;
+	else return -(cuBReal)MUB_MU0 * M1[spin_index] * Hstray;
+}
+
 //Atom_ExchangeCUDA
 __device__ cuBReal ManagedAtom_MeshCUDA::Get_Atomistic_EnergyChange_SC_ExchangeCUDA(int spin_index, cuReal3 Mnew)
 {
@@ -212,14 +235,16 @@ __device__ cuBReal ManagedAtom_MeshCUDA::Get_Atomistic_EnergyChange_SC_SurfExcha
 	cuReal3 h = M1.h;
 
 	//if spin is on top surface then look at paMesh_Top
-	if (spin_index / (n.x * n.y) == n.z - 1 && paMesh_Top_size) {
+	if (spin_index / (n.x * n.y) == n.z - 1 && (paMesh_Top_size || pMeshFM_Top_size)) {
 
 		if (!M1.is_empty(spin_index)) {
 
 			int i = spin_index % n.x;
 			int j = (spin_index / n.x) % n.y;
+			bool cell_coupled = false;
 
 			//check all meshes for coupling
+			//1. coupling from other atomistic meshes
 			for (int mesh_idx = 0; mesh_idx < paMesh_Top_size; mesh_idx++) {
 
 				cuVEC_VC<cuReal3>& M1_Top = *(paMesh_Top[mesh_idx].pM1);
@@ -251,23 +276,114 @@ __device__ cuBReal ManagedAtom_MeshCUDA::Get_Atomistic_EnergyChange_SC_SurfExcha
 				}
 
 				//for each cell, either it's not coupled to any other mesh cell (so we never get here), or else it's coupled to exactly one cell on this surface (thus can stop looping over meshes now)
+				cell_coupled = true;
 				break;
+			}
+
+			if (!cell_coupled) {
+
+				//2. coupling from micromagnetic meshes - ferromagnetic
+				for (int mesh_idx = 0; mesh_idx < pMeshFM_Top_size; mesh_idx++) {
+
+					cuVEC_VC<cuReal3>& M = *(pMeshFM_Top[mesh_idx].pM);
+
+					cuRect tmeshRect = M.rect;
+
+					//relative coordinates to read value from top mesh (the one we're coupling to here) - relative to top mesh
+					cuReal3 cell_rel_pos = cuReal3(
+						(i + 0.5) * h.x + M1.rect.s.x - tmeshRect.s.x,
+						(j + 0.5) * h.y + M1.rect.s.y - tmeshRect.s.y,
+						M.h.z / 2);
+
+					//can't couple to an empty cell
+					if (!tmeshRect.contains(cell_rel_pos + tmeshRect.s) || M.is_empty(cell_rel_pos)) continue;
+
+					cuBReal Js = *pJs;
+					update_parameters_mcoarse(spin_index, *pJs, Js);
+
+					//get magnetization value in top mesh cell to couple with
+					cuReal3 m_j = M[cell_rel_pos].normalized();
+					cuReal3 m_i = M1[spin_index].normalized();
+
+					cuBReal dot_prod = m_i * m_j;
+					energy_old = -Js * dot_prod;
+
+					if (Mnew != cuReal3()) {
+
+						cuReal3 mnew_i = Mnew.normalized();
+						cuBReal dot_prod_new = mnew_i * m_j;
+						energy_new = -Js * dot_prod_new;
+					}
+
+					//for each cell, either it's not coupled to any other mesh cell (so we never get here), or else it's coupled to exactly one cell on this surface (thus can stop looping over meshes now)
+					cell_coupled = true;
+					break;
+				}
+			}
+
+			if (!cell_coupled) {
+
+				//2. coupling from micromagnetic meshes - antiferromagnetic
+				for (int mesh_idx = 0; mesh_idx < pMeshAFM_Top_size; mesh_idx++) {
+
+					cuVEC_VC<cuReal3>& M = *(pMeshAFM_Top[mesh_idx].pM);
+					cuVEC_VC<cuReal3>& M2 = *(pMeshAFM_Top[mesh_idx].pM2);
+
+					cuRect tmeshRect = M.rect;
+
+					//relative coordinates to read value from top mesh (the one we're coupling to here) - relative to top mesh
+					cuReal3 cell_rel_pos = cuReal3(
+						(i + 0.5) * h.x + M1.rect.s.x - tmeshRect.s.x,
+						(j + 0.5) * h.y + M1.rect.s.y - tmeshRect.s.y,
+						M.h.z / 2);
+
+					//can't couple to an empty cell
+					if (!tmeshRect.contains(cell_rel_pos + tmeshRect.s) || M.is_empty(cell_rel_pos)) continue;
+
+					cuBReal Js = *pJs;
+					cuBReal Js2 = *pJs2;
+					update_parameters_mcoarse(spin_index, *pJs, Js, *pJs2, Js2);
+
+					//get magnetization value in top mesh cell to couple with
+					cuReal3 m_j1 = M[cell_rel_pos].normalized();
+					cuReal3 m_j2 = M2[cell_rel_pos].normalized();
+					cuReal3 m_i = M1[spin_index].normalized();
+
+					cuBReal dot_prod1 = m_i * m_j1;
+					cuBReal dot_prod2 = m_i * m_j2;
+					energy_old = -Js * dot_prod1;
+					energy_old += -Js2 * dot_prod2;
+
+					if (Mnew != cuReal3()) {
+
+						cuReal3 mnew_i = Mnew.normalized();
+						cuBReal dot_prod_new1 = mnew_i * m_j1;
+						cuBReal dot_prod_new2 = mnew_i * m_j2;
+						energy_new = -Js * dot_prod_new1;
+						energy_new += -Js2 * dot_prod_new2;
+					}
+
+					//for each cell, either it's not coupled to any other mesh cell (so we never get here), or else it's coupled to exactly one cell on this surface (thus can stop looping over meshes now)
+					break;
+				}
 			}
 		}
 	}
 
 	//if spin is on bottom surface then look at paMesh_Top
-	if (spin_index / (n.x * n.y) == 0 && paMesh_Bot_size) {
+	if (spin_index / (n.x * n.y) == 0 && (paMesh_Bot_size || pMeshFM_Bot_size)) {
 
 		if (!M1.is_empty(spin_index)) {
 
 			int i = spin_index % n.x;
 			int j = (spin_index / n.x) % n.y;
+			bool cell_coupled = false;
 
 			cuBReal Js = *pJs;
 			update_parameters_mcoarse(spin_index, *pJs, Js);
 
 			//check all meshes for coupling
+			//1. coupling from other atomistic meshes
 			for (int mesh_idx = 0; mesh_idx < paMesh_Bot_size; mesh_idx++) {
 
 				cuVEC_VC<cuReal3>& M1_Bot = *(paMesh_Bot[mesh_idx].pM1);
@@ -287,17 +403,104 @@ __device__ cuBReal ManagedAtom_MeshCUDA::Get_Atomistic_EnergyChange_SC_SurfExcha
 
 				cuBReal dot_prod = m_i * m_j;
 
-				energy_old = -Js * dot_prod;
+				energy_old += -Js * dot_prod;
 
 				if (Mnew != cuReal3()) {
 
 					cuReal3 mnew_i = Mnew.normalized();
 					cuBReal dot_prod_new = mnew_i * m_j;
-					energy_new = -Js * dot_prod_new;
+					energy_new += -Js * dot_prod_new;
 				}
 				
 				//for each cell, either it's not coupled to any other mesh cell (so we never get here), or else it's coupled to exactly one cell on this surface (thus can stop looping over meshes now)
+				cell_coupled = true;
 				break;
+			}
+
+			if (!cell_coupled) {
+
+				//2. coupling from micromagnetic meshes - ferromagnetic
+				for (int mesh_idx = 0; mesh_idx < pMeshFM_Bot_size; mesh_idx++) {
+
+					cuVEC_VC<cuReal3>& M = *pMeshFM_Bot[mesh_idx].pM;
+
+					cuRect bmeshRect = M.rect;
+
+					//relative coordinates to read value from bottom mesh (the one we're coupling to here) - relative to bottom mesh
+					cuReal3 cell_rel_pos = cuReal3(
+						(i + 0.5) * h.x + M1.rect.s.x - bmeshRect.s.x,
+						(j + 0.5) * h.y + M1.rect.s.y - bmeshRect.s.y,
+						bmeshRect.height() - M.h.z / 2);
+
+					//can't couple to an empty cell
+					if (!bmeshRect.contains(cell_rel_pos + bmeshRect.s) || M.is_empty(cell_rel_pos)) continue;
+
+					//get magnetization value in top mesh cell to couple with
+					cuReal3 m_j = M[cell_rel_pos].normalized();
+					cuReal3 m_i = M1[spin_index].normalized();
+
+					cuBReal dot_prod = m_i * m_j;
+
+					energy_old += -Js * dot_prod;
+
+					if (Mnew != cuReal3()) {
+
+						cuReal3 mnew_i = Mnew.normalized();
+						cuBReal dot_prod_new = mnew_i * m_j;
+						energy_new += -Js * dot_prod_new;
+					}
+
+					//for each cell, either it's not coupled to any other mesh cell (so we never get here), or else it's coupled to exactly one cell on this surface (thus can stop looping over meshes now)
+					cell_coupled = true;
+					break;
+				}
+			}
+
+			if (!cell_coupled) {
+
+				//2. coupling from micromagnetic meshes - antiferromagnetic
+				for (int mesh_idx = 0; mesh_idx < pMeshAFM_Bot_size; mesh_idx++) {
+
+					cuVEC_VC<cuReal3>& M = *pMeshAFM_Bot[mesh_idx].pM;
+					cuVEC_VC<cuReal3>& M2 = *pMeshAFM_Bot[mesh_idx].pM2;
+
+					cuRect bmeshRect = M.rect;
+
+					//relative coordinates to read value from bottom mesh (the one we're coupling to here) - relative to bottom mesh
+					cuReal3 cell_rel_pos = cuReal3(
+						(i + 0.5) * h.x + M1.rect.s.x - bmeshRect.s.x,
+						(j + 0.5) * h.y + M1.rect.s.y - bmeshRect.s.y,
+						bmeshRect.height() - M.h.z / 2);
+
+					//can't couple to an empty cell
+					if (!bmeshRect.contains(cell_rel_pos + bmeshRect.s) || M.is_empty(cell_rel_pos)) continue;
+
+					cuBReal Js2 = *pJs2;
+					update_parameters_mcoarse(spin_index, *pJs2, Js2);
+
+					//get magnetization value in top mesh cell to couple with
+					cuReal3 m_j1 = M[cell_rel_pos].normalized();
+					cuReal3 m_j2 = M2[cell_rel_pos].normalized();
+					cuReal3 m_i = M1[spin_index].normalized();
+
+					cuBReal dot_prod1 = m_i * m_j1;
+					cuBReal dot_prod2 = m_i * m_j2;
+
+					energy_old += -Js * dot_prod1;
+					energy_old += -Js2 * dot_prod2;
+
+					if (Mnew != cuReal3()) {
+
+						cuReal3 mnew_i = Mnew.normalized();
+						cuBReal dot_prod_new1 = mnew_i * m_j1;
+						cuBReal dot_prod_new2 = mnew_i * m_j2;
+						energy_new += -Js * dot_prod_new1;
+						energy_new += -Js2 * dot_prod_new2;
+					}
+
+					//for each cell, either it's not coupled to any other mesh cell (so we never get here), or else it's coupled to exactly one cell on this surface (thus can stop looping over meshes now)
+					break;
+				}
 			}
 		}
 	}

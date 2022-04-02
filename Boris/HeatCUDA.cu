@@ -129,7 +129,7 @@ void HeatCUDA::IterateHeatEquation_1TM(cuBReal dT)
 	if (!Q_equation.is_set()) {
 
 		//1. First solve the RHS of the heat equation (centered space) : dT/dt = k del_sq T + j^2, where k = K/ c*ro , j^2 = Jc^2 / (c*ro*sigma)
-		IterateHeatEquation_1TM_Kernel << < (pMeshCUDA->n_t.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >> > (pMeshCUDA->cuMesh, heatEq_RHS);
+		IterateHeatEquation_1TM_Kernel <<< (pMeshCUDA->n_t.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (pMeshCUDA->cuMesh, heatEq_RHS);
 	}
 
 	/////////////////////////////////////////

@@ -23,7 +23,7 @@ enum PARAM_ {
 	//Exchange : AFM
 	PARAM_A_AFM = 42, PARAM_A_AFH = 54, PARAM_A_AFNH = 43, PARAM_D_AFM = 44, PARAM_DMI_DH = 80, PARAM_DMI_DH_DIR = 81,
 	//Exchange : Atomistic
-	PARAM_ATOM_SC_J = 64, PARAM_ATOM_SC_D = 65, PARAM_ATOM_JS = 78,
+	PARAM_ATOM_SC_J = 64, PARAM_ATOM_SC_D = 65, PARAM_ATOM_JS = 78, PARAM_ATOM_JS2 = 84,
 	//Exchange : special
 	PARAM_DMI_DIR = 79,
 
@@ -49,6 +49,9 @@ enum PARAM_ {
 	//Transport : drift-diffusion model spin torque efficiencies 
 	PARAM_TSEFF = 27, PARAM_TSIEFF = 28, PARAM_PUMPEFF = 29, PARAM_CPUMP_EFF = 45, PARAM_THE_EFF = 46, 
 
+	//Transport - special
+	PARAM_RATMR_P = 82, PARAM_RATMR_AP = 83,
+
 	//Heat
 	PARAM_THERMCOND = 30, PARAM_DENSITY = 31, PARAM_SHC = 32, PARAM_SHC_E = 52, PARAM_G_E = 53, PARAM_T = 37, PARAM_Q = 38,
 	
@@ -59,9 +62,12 @@ enum PARAM_ {
 	PARAM_TC = 35, PARAM_MUB = 36, PARAM_MUB_AFM = 58, PARAM_AFTAU = 56, PARAM_AFTAUCROSS = 57, 
 	
 	//Mechanical
-	PARAM_MECOEFF = 48, PARAM_YOUNGSMOD = 49, PARAM_POISSONRATIO = 50
+	PARAM_MECOEFF = 48, PARAM_YOUNGSMOD = 49, PARAM_POISSONRATIO = 50,
+
+	//Stochasticity special
+	PARAM_S_EFF = 85
 	
-}; //Current maximum : 81
+}; //Current maximum : 85
 
 //classification of parameter
 enum PARAMTYPE_ { PARAMTYPE_NONE, PARAMTYPE_MAGNETIC, PARAMTYPE_ELECTRIC, PARAMTYPE_THERMAL, PARAMTYPE_MECHANICAL };

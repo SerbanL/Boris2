@@ -2,8 +2,8 @@
 
 #include "BorisLib.h"
 #include "Modules.h"
-#include "Transport.h"
-#include "Atom_Transport.h"
+
+#include "TransportBase.h"
 
 #if COMPILECUDA == 1
 #include "STransportCUDA.h"
@@ -103,6 +103,10 @@ private:
 	//set potential values using a slope between the potential values of ground and another electrode (if set)
 	void initialize_potential_values(void);
 
+	//auxiliary used by initialize_potential_values for setting potential drops in all required meshes
+	//this method works for both cuda 0/1, as it can be called by cuda version of STransport
+	void set_linear_potential_drops(void);
+
 	//-----Charge Transport only
 
 	//solve for V and Jc in all meshes using SOR
@@ -164,11 +168,11 @@ public:
 	//-------------------Display Calculation Methods
 
 	//return interfacial spin torque in given mesh with matching transport module
-	VEC<DBL3>& GetInterfacialSpinTorque(Transport* pMeshTrans);
+	VEC<DBL3>& GetInterfacialSpinTorque(TransportBase* pTransportBase);
 
 #if COMPILECUDA == 1
 	//return interfacial spin torque in given mesh with matching transport module
-	cu_obj<cuVEC<cuReal3>>& GetInterfacialSpinTorqueCUDA(Transport* pMeshTrans);
+	cu_obj<cuVEC<cuReal3>>& GetInterfacialSpinTorqueCUDA(TransportBase* pTransportBase);
 #endif
 
 	//-------------------Getters
@@ -268,6 +272,8 @@ class STransport :
 
 private:
 
+	VEC<DBL3> displayVEC;
+
 private:
 
 public:
@@ -289,14 +295,8 @@ public:
 	double UpdateField(void) { return 0.0; }
 
 	//-------------------Display Calculation Methods
-
-	//return interfacial spin torque in given mesh with matching transport module
-	VEC<DBL3>& GetInterfacialSpinTorque(Transport* pMeshTrans) { return pMeshTrans->displayVEC; }
-
-#if COMPILECUDA == 1
-	//return interfacial spin torque in given mesh with matching transport module
-	cu_obj<cuVEC<cuReal3>>& GetInterfacialSpinTorqueCUDA(Transport* pMeshTrans) { return pMeshTrans->displayVEC_CUDA; }
-#endif
+	
+	VEC<DBL3>& GetInterfacialSpinTorque(void) { return displayVEC; }
 
 	//-------------------Getters
 

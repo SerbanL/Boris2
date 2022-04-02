@@ -6,8 +6,13 @@
 #ifdef MODULE_COMPILATION_SURFEXCHANGE
 
 #include "SurfExchange_AFM.h"
+
 #include "Mesh_AntiFerromagnetic.h"
 #include "Mesh_AntiFerromagneticCUDA.h"
+
+#include "Atom_Mesh.h"
+#include "Atom_MeshCUDA.h"
+
 #include "DataDefs.h"
 
 SurfExchangeCUDA_AFM::SurfExchangeCUDA_AFM(MeshCUDA* pMeshCUDA_, SurfExchange_AFM* pSurfExch_)
@@ -29,12 +34,15 @@ BError SurfExchangeCUDA_AFM::Initialize(void)
 	pMeshFM_Top.clear();
 	pMeshAFM_Bot.clear();
 	pMeshAFM_Top.clear();
+	pMeshAtom_Bot.clear();
+	pMeshAtom_Top.clear();
 
 	//make sure information in SurfExchange module is up to date
 	error = pSurfExch->Initialize();
 
 	if (!error) {
 
+		//micromagnetic meshes BOTTOM
 		for (int idx = 0; idx < pSurfExch->pMesh_Bot.size(); idx++) {
 
 			if (pSurfExch->pMesh_Bot[idx]->GetMeshType() == MESH_FERROMAGNETIC) {
@@ -47,6 +55,13 @@ BError SurfExchangeCUDA_AFM::Initialize(void)
 			}
 		}
 
+		//atomistic meshes BOTTOM
+		for (int idx = 0; idx < pSurfExch->paMesh_Bot.size(); idx++) {
+
+			pMeshAtom_Bot.push_back(pSurfExch->paMesh_Bot[idx]->paMeshCUDA->cuaMesh.get_managed_object());
+		}
+
+		//micromagnetic meshes TOP
 		for (int idx = 0; idx < pSurfExch->pMesh_Top.size(); idx++) {
 
 			if (pSurfExch->pMesh_Top[idx]->GetMeshType() == MESH_FERROMAGNETIC) {
@@ -59,8 +74,11 @@ BError SurfExchangeCUDA_AFM::Initialize(void)
 			}
 		}
 
-		//copy number of coupled cells to gpu memory : SurfExchange has been initialized so the count is correct
-		coupled_cells.from_cpu(pSurfExch->coupled_cells);
+		//atomistic meshes TOP
+		for (int idx = 0; idx < pSurfExch->paMesh_Top.size(); idx++) {
+
+			pMeshAtom_Top.push_back(pSurfExch->paMesh_Top[idx]->paMeshCUDA->cuaMesh.get_managed_object());
+		}
 
 		initialized = true;
 	}

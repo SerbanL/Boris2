@@ -3,13 +3,36 @@
 
 #ifdef MODULE_COMPILATION_SURFEXCHANGE
 
-#include "Mesh_Ferromagnetic.h"
 #include "SuperMesh.h"
+#include "Mesh_Ferromagnetic.h"
 #include "MeshParamsControl.h"
+
+#include "Atom_Mesh.h"
+#include "Atom_MeshParamsControl.h"
 
 /////////////////////////////////////////////////////////////////
 //SurfExchange
 //
+
+//this mesh : mesh in which we set coupling field
+//coupling mesh : mesh from which we obtain coupling direction
+
+// FM to FM : top mesh along z sets coupling constants (this is to allow different coupling constant at top and bottom if needed)
+// e.g.
+// Hs = m * Ji / mu0 Ms * hz
+//
+// Here m is direction from coupling mesh, Ji (J/m^2) is coupling constant - energy per surface area, Ms is saturation magnetization in this mesh, hz is z cellsize in this mesh
+
+// Atom to FM : atomistic mesh sets coupling constant irrespective of z order (can set different values at top and bottom sides of atomistic mesh, unless 2D)
+// e.g.
+// Hs = (sum(mj * Jsj) / (hx * hy)) / mu0 Ms * hz
+//
+// Here we sum all atomistic moments with their couplings in the interface cell contact area of hx*hy (h is the micromagnetic cellsize). Js is coupling energy from atomistic mesh.
+//
+// AFM to FM : 
+// e.g.
+// Hs = (m1 * J1 + m2 * J2) / mu0 Ms * hz
+// Here m1 and m2 are directions from AFM mesh in sub-lattices A and B respectively. J1 and J2 (J/m^2) are coupling constants from sub-lattices A and B respectively.
 
 SurfExchange::SurfExchange(Mesh *pMesh_) :
 	Modules(),
@@ -35,7 +58,7 @@ BError SurfExchange::Initialize(void)
 	BError error(CLASS_STR(SurfExchange));
 
 	//Need to identify all magnetic meshes participating in surface exchange coupling with this module:
-	//1. Must be ferromagnetic or anti-ferromagnetic and have the SurfExchange module set -> this results in surface exchange coupling (or equivalently exchange bias - same formula, except in this case you should have J2 set to zero)
+	//1. Must be ferromagnetic (micromagnetic or atomistic) or anti-ferromagnetic and have the SurfExchange module set -> this results in surface exchange coupling (or equivalently exchange bias - same formula, except in this case you should have J2 set to zero)
 	//2. Must overlap in the x-y plane only with the mesh holding this module (either top or bottom) but not along z (i.e. mesh rectangles must not intersect)
 	//3. No other magnetic meshes can be sandwiched in between - there could be other types of non-magnetic meshes in between of course (e.g. insulator, conductive layers etc).
 
@@ -43,8 +66,8 @@ BError SurfExchange::Initialize(void)
 
 	pMesh_Bot.clear();
 	pMesh_Top.clear();
-
-	coupled_cells = 0;
+	paMesh_Bot.clear();
+	paMesh_Top.clear();
 
 	//---
 
@@ -88,7 +111,7 @@ BError SurfExchange::Initialize(void)
 	for (int idx = 0; idx < pSMesh->size(); idx++) {
 
 		//consider all meshes in turn - condition 1 first
-		if ((*pSMesh)[idx]->MComputation_Enabled() && (*pSMesh)[idx]->IsModuleSet(MOD_SURFEXCHANGE) && !(*pSMesh)[idx]->is_atomistic()) {
+		if ((*pSMesh)[idx]->MComputation_Enabled() && (*pSMesh)[idx]->IsModuleSet(MOD_SURFEXCHANGE)) {
 
 			Rect candidate_meshRect = (*pSMesh)[idx]->GetMeshRect();
 
@@ -104,7 +127,8 @@ BError SurfExchange::Initialize(void)
 					//passes condition 2 - identified a candidate mesh at idx index. Does it pass condition 3?
 					if (check_candidate(candidate_meshRect.get_intersection(xy_meshRect), z1, z2)) {
 
-						pMesh_Top.push_back(dynamic_cast<Mesh*>((*pSMesh)[idx]));
+						if (!(*pSMesh)[idx]->is_atomistic()) pMesh_Top.push_back(dynamic_cast<Mesh*>((*pSMesh)[idx]));
+						else paMesh_Top.push_back(dynamic_cast<Atom_Mesh*>((*pSMesh)[idx]));
 					}
 				}
 			}
@@ -121,76 +145,9 @@ BError SurfExchange::Initialize(void)
 					//passes condition 2 - identified a candidate mesh at idx index. Does it pass condition 3?
 					if (check_candidate(candidate_meshRect.get_intersection(xy_meshRect), z1, z2)) {
 
-						pMesh_Bot.push_back(dynamic_cast<Mesh*>((*pSMesh)[idx]));
+						if (!(*pSMesh)[idx]->is_atomistic()) pMesh_Bot.push_back(dynamic_cast<Mesh*>((*pSMesh)[idx]));
+						else paMesh_Bot.push_back(dynamic_cast<Atom_Mesh*>((*pSMesh)[idx]));
 					}
-				}
-			}
-		}
-	}
-	
-	//count number of coupled cells (either top or bottom) in this mesh
-
-	SZ3 n = pMesh->n;
-	
-	if (pMesh_Top.size()) {
-
-		//surface exchange coupling at the top
-		for (int j = 0; j < n.y; j++) {
-			for (int i = 0; i < n.x; i++) {
-
-				int cell_idx = i + j * n.x + (n.z - 1) * n.x*n.y;
-
-				//empty cell here ... next
-				if (pMesh->M.is_empty(cell_idx)) continue;
-
-				//check all meshes for coupling
-				for (int mesh_idx = 0; mesh_idx < (int)pMesh_Top.size(); mesh_idx++) {
-
-					Rect tmeshRect = pMesh_Top[mesh_idx]->GetMeshRect();
-
-					//relative coordinates to read value from top mesh (the one we're coupling to here) - relative to top mesh
-					DBL3 cell_rel_pos = DBL3(
-						(i + 0.5) * pMesh->h.x + meshRect.s.x - tmeshRect.s.x, 
-						(j + 0.5) * pMesh->h.y + meshRect.s.y - tmeshRect.s.y, 
-						pMesh_Top[mesh_idx]->h.z / 2);
-
-					//can't couple to an empty cell
-					if (!tmeshRect.contains(cell_rel_pos + tmeshRect.s) || pMesh_Top[mesh_idx]->M.is_empty(cell_rel_pos)) continue;
-
-					//if we are here then the cell in this mesh at cell_idx has something to couple to so count it : it will contribute to the surface exchange energy density
-					coupled_cells++;
-				}
-			}
-		}
-	}
-
-	if (pMesh_Bot.size()) {
-
-		//surface exchange coupling at the bottom
-		for (int j = 0; j < n.y; j++) {
-			for (int i = 0; i < n.x; i++) {
-
-				int cell_idx = i + j * n.x;
-
-				//empty cell here ... next
-				if (pMesh->M.is_empty(cell_idx)) continue;
-
-				//check all meshes for coupling
-				for (int mesh_idx = 0; mesh_idx < (int)pMesh_Bot.size(); mesh_idx++) {
-
-					Rect bmeshRect = pMesh_Bot[mesh_idx]->GetMeshRect();
-
-					//relative coordinates to read value from bottom mesh (the one we're coupling to here) - relative to bottom mesh
-					DBL3 cell_rel_pos = DBL3(
-						(i + 0.5) * pMesh->h.x + meshRect.s.x - bmeshRect.s.x,
-						(j + 0.5) * pMesh->h.y + meshRect.s.y - bmeshRect.s.y,
-						pMesh_Bot[mesh_idx]->meshRect.e.z - pMesh_Bot[mesh_idx]->meshRect.s.z - (pMesh_Bot[mesh_idx]->h.z / 2));
-
-					//can't couple to an empty cell
-					if (!bmeshRect.contains(cell_rel_pos + bmeshRect.s) || pMesh_Bot[mesh_idx]->M.is_empty(cell_rel_pos)) continue;
-
-					//if we are here then the cell in this mesh at cell_idx has something to couple to so count it : it will contribute to the surface exchange energy density
-					coupled_cells++;
 				}
 			}
 		}
@@ -249,13 +206,10 @@ double SurfExchange::UpdateField(void)
 
 	SZ3 n = pMesh->n;
 
-	//thickness of layer - SurfExchange applies for layers in the xy plane
-	double thickness = pMesh->meshRect.e.z - pMesh->meshRect.s.z;
-
 	//zero module display VECs if needed, since contributions must be added into them to account for possiblility of 2 contributions (top and bottom)
 	ZeroModuleVECs();
 
-	if (pMesh_Top.size()) {
+	if (pMesh_Top.size() || paMesh_Top.size()) {
 
 		//surface exchange coupling at the top
 		#pragma omp parallel for reduction(+:energy)
@@ -270,23 +224,22 @@ double SurfExchange::UpdateField(void)
 				double Ms = pMesh->Ms;
 				pMesh->update_parameters_mcoarse(cell_idx, pMesh->Ms, Ms);
 
+				//effective field and energy for this cell
+				DBL3 Hsurfexch = DBL3();
+				double cell_energy = 0.0;
+				bool cell_coupled = false;
+
 				//check all meshes for coupling
+				//1 : coupling into this micromagnetic mesh from other micromagnetic meshes (FM or AFM)
 				for (int mesh_idx = 0; mesh_idx < (int)pMesh_Top.size(); mesh_idx++) {
+					
+					if (!check_cell_coupling(pMesh->M, pMesh_Top[mesh_idx]->M,
+						(i + 0.5) * pMesh->h.x, (j + 0.5) * pMesh->h.y, pMesh_Top[mesh_idx]->h.z / 2)) continue;
 
-					Rect tmeshRect = pMesh_Top[mesh_idx]->GetMeshRect();
-
-					//relative coordinates to read value from top mesh (the one we're coupling to here) - relative to top mesh
 					DBL3 cell_rel_pos = DBL3(
-						(i + 0.5) * pMesh->h.x + pMesh->meshRect.s.x - tmeshRect.s.x,
-						(j + 0.5) * pMesh->h.y + pMesh->meshRect.s.y - tmeshRect.s.y,
+						(i + 0.5) * pMesh->h.x + pMesh->M.rect.s.x - pMesh_Top[mesh_idx]->M.rect.s.x, 
+						(j + 0.5) * pMesh->h.y + pMesh->M.rect.s.y - pMesh_Top[mesh_idx]->M.rect.s.y, 
 						pMesh_Top[mesh_idx]->h.z / 2);
-
-					//can't couple to an empty cell
-					if (!tmeshRect.contains(cell_rel_pos + tmeshRect.s) || pMesh_Top[mesh_idx]->M.is_empty(cell_rel_pos)) continue;
-
-					//effective field and energy for this cell
-					DBL3 Hsurfexh;
-					double cell_energy = 0.0;
 
 					if (pMesh_Top[mesh_idx]->GetMeshType() == MESH_FERROMAGNETIC) {
 
@@ -298,14 +251,14 @@ double SurfExchange::UpdateField(void)
 						pMesh_Top[mesh_idx]->update_parameters_atposition(cell_rel_pos, pMesh_Top[mesh_idx]->J1, J1, pMesh_Top[mesh_idx]->J2, J2);
 
 						//get magnetization value in top mesh cell to couple with
-						DBL3 m_j = pMesh_Top[mesh_idx]->M[cell_rel_pos].normalized();
-						DBL3 m_i = pMesh->M[cell_idx] / Ms;
+						DBL3 m_j = normalize(pMesh_Top[mesh_idx]->M[cell_rel_pos]);
+						DBL3 m_i = normalize(pMesh->M[cell_idx]);
 
 						double dot_prod = m_i * m_j;
 
 						//total surface exchange field in coupling cells, including bilinear and biquadratic terms
-						Hsurfexh = (m_j / (MU0 * Ms * thickness)) * (J1 + 2 * J2 * dot_prod);
-						cell_energy = (-1 * J1 - 2 * J2 * dot_prod) * dot_prod / thickness;
+						Hsurfexch = (m_j / (MU0 * Ms * pMesh->h.z)) * (J1 + 2 * J2 * dot_prod);
+						cell_energy = (-1 * J1 - 2 * J2 * dot_prod) * dot_prod / pMesh->h.z;
 					}
 					else if (pMesh_Top[mesh_idx]->GetMeshType() == MESH_ANTIFERROMAGNETIC) {
 
@@ -317,36 +270,74 @@ double SurfExchange::UpdateField(void)
 						pMesh_Top[mesh_idx]->update_parameters_atposition(cell_rel_pos, pMesh_Top[mesh_idx]->J1, J1, pMesh_Top[mesh_idx]->J2, J2);
 
 						//get magnetization values in top mesh cell to couple with
-						DBL3 m_j1 = pMesh_Top[mesh_idx]->M[cell_rel_pos].normalized();
-						DBL3 m_j2 = pMesh_Top[mesh_idx]->M2[cell_rel_pos].normalized();
-						DBL3 m_i = pMesh->M[cell_idx] / Ms;
+						DBL3 m_j1 = normalize(pMesh_Top[mesh_idx]->M[cell_rel_pos]);
+						DBL3 m_j2 = normalize(pMesh_Top[mesh_idx]->M2[cell_rel_pos]);
+						DBL3 m_i = normalize(pMesh->M[cell_idx]);
 
 						//total surface exchange field in coupling cells, including contributions from both sub-lattices
-						Hsurfexh = (m_j1 / (MU0 * Ms * thickness)) * J1;
-						Hsurfexh += (m_j2 / (MU0 * Ms * thickness)) * J2;
-						cell_energy = (-J1 * (m_i * m_j1) - J2 * (m_i * m_j2)) / thickness;
+						Hsurfexch = (m_j1 / (MU0 * Ms * pMesh->h.z)) * J1;
+						Hsurfexch += (m_j2 / (MU0 * Ms * pMesh->h.z)) * J2;
+						cell_energy = (-J1 * (m_i * m_j1) - J2 * (m_i * m_j2)) / pMesh->h.z;
 					}
-
-					//couple all cells through the layer thickness : the surface exchange field is applicable for effectively 2D layers, but the simulation allows 3D meshes.
-					for (int k = 0; k < n.z; k++) {
-
-						int idx = i + j * n.x + k * n.x*n.y;
-						pMesh->Heff[idx] += Hsurfexh;
-
-						if (Module_Heff.linear_size()) Module_Heff[idx] += Hsurfexh;
-						if (Module_energy.linear_size()) Module_energy[idx] += cell_energy;
-					}
-
-					energy += cell_energy;
 
 					//for each cell, either it's not coupled to any other mesh cell (so we never get here), or else it's coupled to exactly one cell on this surface (thus can stop looping over meshes now)
+					cell_coupled = true;
 					break;
 				}
+
+				if (!cell_coupled) {
+
+					//2 : coupling into this micromagnetic mesh from atomistic meshes
+					for (int mesh_idx = 0; mesh_idx < (int)paMesh_Top.size(); mesh_idx++) {
+
+						VEC_VC<DBL3>& M1 = paMesh_Top[mesh_idx]->M1;
+
+						//coupling rectangle in atomistic mesh in absolute coordinates
+						Rect rect_c = Rect(
+							DBL3(i * pMesh->h.x, j * pMesh->h.y, pMesh->M.rect.e.z),
+							DBL3((i + 1) * pMesh->h.x, (j + 1) * pMesh->h.y, M1.h.z + pMesh->M.rect.e.z));
+						rect_c += DBL3(pMesh->M.rect.s.x, pMesh->M.rect.s.y, 0.0);
+
+						//cells box in atomistic mesh
+						Box acells = M1.box_from_rect_min(rect_c);
+
+						//find total "directed energy" contribution from atomistic mesh : i.e. sum all mj * Js contributions from atomistic moments in the coupling area at the interface
+						DBL3 total_directed_coupling_energy = DBL3();
+						for (int ai = acells.s.i; ai < acells.e.i; ai++) {
+							for (int aj = acells.s.j; aj < acells.e.j; aj++) {
+
+								int acell_idx = ai + aj * M1.n.x;
+
+								if (M1.is_empty(acell_idx)) continue;
+
+								//Js value from atomistic mesh
+								double Js = paMesh_Top[mesh_idx]->Js;
+								double mu_s = paMesh_Top[mesh_idx]->mu_s;
+								paMesh_Top[mesh_idx]->update_parameters_mcoarse(acell_idx, paMesh_Top[mesh_idx]->Js, Js, paMesh_Top[mesh_idx]->mu_s, mu_s);
+
+								total_directed_coupling_energy += M1[acell_idx] * Js / mu_s;
+							}
+						}
+
+						//now obtain coupling field from atomistic mesh at micromagnetic cell
+						Hsurfexch = (total_directed_coupling_energy / (pMesh->h.x * pMesh->h.y)) / (MU0 * Ms * pMesh->h.z);
+						cell_energy = -MU0 * pMesh->M[cell_idx] * Hsurfexch;
+
+						//for each cell, either it's not coupled to any other mesh cell (so we never get here), or else it's coupled to exactly one cell on this surface (thus can stop looping over meshes now)
+						break;
+					}
+				}
+				
+				pMesh->Heff[cell_idx] += Hsurfexch;
+				energy += cell_energy;
+
+				if (Module_Heff.linear_size()) Module_Heff[cell_idx] += Hsurfexch;
+				if (Module_energy.linear_size()) Module_energy[cell_idx] += cell_energy;
 			}
 		}
 	}
 
-	if (pMesh_Bot.size()) {
+	if (pMesh_Bot.size() || paMesh_Bot.size()) {
 
 		//surface exchange coupling at the bottom
 		#pragma omp parallel for reduction(+:energy)
@@ -363,75 +354,111 @@ double SurfExchange::UpdateField(void)
 				double J2 = pMesh->J2;
 				pMesh->update_parameters_mcoarse(cell_idx, pMesh->Ms, Ms, pMesh->J1, J1, pMesh->J2, J2);
 
+				//effective field and energy for this cell
+				DBL3 Hsurfexch = DBL3();
+				double cell_energy = 0.0;
+				bool cell_coupled = false;
+
 				//check all meshes for coupling
+				//1 : coupling into this micromagnetic mesh from other micromagnetic meshes (FM or AFM)
 				for (int mesh_idx = 0; mesh_idx < (int)pMesh_Bot.size(); mesh_idx++) {
 
-					Rect bmeshRect = pMesh_Bot[mesh_idx]->GetMeshRect();
+					if (!check_cell_coupling(pMesh->M, pMesh_Bot[mesh_idx]->M,
+						(i + 0.5) * pMesh->h.x, (j + 0.5) * pMesh->h.y, pMesh_Bot[mesh_idx]->meshRect.height() - pMesh_Bot[mesh_idx]->h.z / 2)) continue;
 
-					//relative coordinates to read value from bottom mesh (the one we're coupling to here) - relative to bottom mesh
 					DBL3 cell_rel_pos = DBL3(
-						(i + 0.5) * pMesh->h.x + pMesh->meshRect.s.x - bmeshRect.s.x,
-						(j + 0.5) * pMesh->h.y + pMesh->meshRect.s.y - bmeshRect.s.y,
-						pMesh_Bot[mesh_idx]->meshRect.e.z - pMesh_Bot[mesh_idx]->meshRect.s.z - (pMesh_Bot[mesh_idx]->h.z / 2));
-
-					//can't couple to an empty cell
-					if (!bmeshRect.contains(cell_rel_pos + bmeshRect.s) || pMesh_Bot[mesh_idx]->M.is_empty(cell_rel_pos)) continue;
-
-					//effective field and energy for this cell
-					DBL3 Hsurfexh;
-					double cell_energy = 0.0;
+						(i + 0.5) * pMesh->h.x + pMesh->M.rect.s.x - pMesh_Bot[mesh_idx]->M.rect.s.x, 
+						(j + 0.5) * pMesh->h.y + pMesh->M.rect.s.y - pMesh_Bot[mesh_idx]->M.rect.s.y, 
+						pMesh_Bot[mesh_idx]->meshRect.height() - pMesh_Bot[mesh_idx]->h.z / 2);
 
 					if (pMesh_Bot[mesh_idx]->GetMeshType() == MESH_FERROMAGNETIC) {
 
 						//Surface exchange field from a ferromagnetic mesh (RKKY)
 
 						//get magnetization value in top mesh cell to couple with
-						DBL3 m_j = pMesh_Bot[mesh_idx]->M[cell_rel_pos].normalized();
-						DBL3 m_i = pMesh->M[cell_idx] / Ms;
+						DBL3 m_j = normalize(pMesh_Bot[mesh_idx]->M[cell_rel_pos]);
+						DBL3 m_i = normalize(pMesh->M[cell_idx]);
 
 						double dot_prod = m_i * m_j;
 
 						//total surface exchange field in coupling cells, including bilinear and biquadratic terms
-						Hsurfexh = (m_j / (MU0 * Ms * thickness)) * (J1 + 2 * J2 * dot_prod);
-						cell_energy = (-1 * J1 - 2 * J2 * dot_prod) * dot_prod / thickness;
+						Hsurfexch = (m_j / (MU0 * Ms * pMesh->h.z)) * (J1 + 2 * J2 * dot_prod);
+						cell_energy = (-1 * J1 - 2 * J2 * dot_prod) * dot_prod / pMesh->h.z;
 					}
 					else if (pMesh_Bot[mesh_idx]->GetMeshType() == MESH_ANTIFERROMAGNETIC) {
 
 						//Surface exchange field from an antiferromagnetic mesh (exchange bias)
 
 						//get magnetization value in top mesh cell to couple with
-						DBL3 m_j1 = pMesh_Bot[mesh_idx]->M[cell_rel_pos].normalized();
-						DBL3 m_j2 = pMesh_Bot[mesh_idx]->M2[cell_rel_pos].normalized();
-						DBL3 m_i = pMesh->M[cell_idx] / Ms;
+						DBL3 m_j1 = normalize(pMesh_Bot[mesh_idx]->M[cell_rel_pos]);
+						DBL3 m_j2 = normalize(pMesh_Bot[mesh_idx]->M2[cell_rel_pos]);
+						DBL3 m_i = normalize(pMesh->M[cell_idx]);
 
 						//total surface exchange field in coupling cells, including contributions from both sub-lattices
-						Hsurfexh = (m_j1 / (MU0 * Ms * thickness)) * J1;
-						Hsurfexh += (m_j2 / (MU0 * Ms * thickness)) * J2;
-						cell_energy = (-J1 * (m_i * m_j1) - J2 * (m_i * m_j2)) / thickness;
+						Hsurfexch = (m_j1 / (MU0 * Ms * pMesh->h.z)) * J1;
+						Hsurfexch += (m_j2 / (MU0 * Ms * pMesh->h.z)) * J2;
+						cell_energy = (-J1 * (m_i * m_j1) - J2 * (m_i * m_j2)) / pMesh->h.z;
 					}
-
-					//couple all cells through the layer thickness : the surface exchange field is applicable for effectively 2D layers, but the simulation allows 3D meshes.
-					for (int k = 0; k < n.z; k++) {
-
-						int idx = i + j * n.x + k * n.x*n.y;
-						pMesh->Heff[idx] += Hsurfexh;
-
-						if (Module_Heff.linear_size()) Module_Heff[idx] += Hsurfexh;
-						if (Module_energy.linear_size()) Module_energy[idx] += cell_energy;
-					}
-
-					energy += cell_energy;
 
 					//for each cell, either it's not coupled to any other mesh cell (so we never get here), or else it's coupled to exactly one cell on this surface (thus can stop looping over meshes now)
+					cell_coupled = true;
 					break;
 				}
+				
+				if (!cell_coupled) {
+
+					//2 : coupling into this micromagnetic mesh from atomistic meshes
+					for (int mesh_idx = 0; mesh_idx < (int)paMesh_Bot.size(); mesh_idx++) {
+
+						VEC_VC<DBL3>& M1 = paMesh_Bot[mesh_idx]->M1;
+
+						//coupling rectangle in atomistic mesh in absolute coordinates
+						Rect rect_c = Rect(
+							DBL3(i * pMesh->h.x, j * pMesh->h.y, M1.rect.e.z - M1.h.z),
+							DBL3((i + 1) * pMesh->h.x, (j + 1) * pMesh->h.y, M1.rect.e.z));
+						rect_c += DBL3(pMesh->M.rect.s.x, pMesh->M.rect.s.y, 0.0);
+
+						//cells box in atomistic mesh
+						Box acells = M1.box_from_rect_min(rect_c);
+
+						//find total "directed energy" contribution from atomistic mesh : i.e. sum all mj * Js contributions from atomistic moments in the coupling area at the interface
+						//NOTE : at atomistic/micromagnetic coupling, it's the atomistic mesh which sets coupling constant, not the top mesh
+						DBL3 total_directed_coupling_energy = DBL3();
+						for (int ai = acells.s.i; ai < acells.e.i; ai++) {
+							for (int aj = acells.s.j; aj < acells.e.j; aj++) {
+
+								int acell_idx = ai + aj * M1.n.x + (M1.n.z - 1) * M1.n.x * M1.n.y;
+
+								if (M1.is_empty(acell_idx)) continue;
+
+								//Js value from atomistic mesh
+								double Js = paMesh_Bot[mesh_idx]->Js;
+								double mu_s = paMesh_Bot[mesh_idx]->mu_s;
+								paMesh_Bot[mesh_idx]->update_parameters_mcoarse(acell_idx, paMesh_Bot[mesh_idx]->Js, Js, paMesh_Bot[mesh_idx]->mu_s, mu_s);
+
+								total_directed_coupling_energy += M1[acell_idx] * Js / mu_s;
+							}
+						}
+
+						//now obtain coupling field from atomistic mesh at micromagnetic cell
+						Hsurfexch = (total_directed_coupling_energy / (pMesh->h.x * pMesh->h.y)) / (MU0 * Ms * pMesh->h.z);
+						cell_energy = -MU0 * pMesh->M[cell_idx] * Hsurfexch;
+
+						//for each cell, either it's not coupled to any other mesh cell (so we never get here), or else it's coupled to exactly one cell on this surface (thus can stop looping over meshes now)
+						break;
+					}
+				}
+
+				pMesh->Heff[cell_idx] += Hsurfexch;
+				energy += cell_energy;
+
+				if (Module_Heff.linear_size()) Module_Heff[cell_idx] += Hsurfexch;
+				if (Module_energy.linear_size()) Module_energy[cell_idx] += cell_energy;
 			}
 		}
 	}
-
-	if (coupled_cells) energy /= coupled_cells;
-	else energy = 0.0;
-
+	
+	energy /= pMesh->M.get_nonempty_cells();
 	this->energy = energy;
 
 	return this->energy;
@@ -445,11 +472,8 @@ double SurfExchange::Get_EnergyChange(int spin_index, DBL3 Mnew)
 
 	SZ3 n = pMesh->n;
 
-	//thickness of layer - SurfExchange applies for layers in the xy plane
-	double thickness = pMesh->meshRect.e.z - pMesh->meshRect.s.z;
-
 	//if spin is on top surface then look at paMesh_Top
-	if (spin_index / (n.x * n.y) == n.z - 1 && pMesh_Top.size()) {
+	if (spin_index / (n.x * n.y) == n.z - 1 && (pMesh_Top.size() || paMesh_Top.size())) {
 
 		if (!pMesh->M.is_empty(spin_index)) {
 
@@ -459,19 +483,18 @@ double SurfExchange::Get_EnergyChange(int spin_index, DBL3 Mnew)
 			double Ms = pMesh->Ms;
 			pMesh->update_parameters_mcoarse(spin_index, pMesh->Ms, Ms);
 
+			bool cell_coupled = false;
+
 			//check all meshes for coupling
 			for (int mesh_idx = 0; mesh_idx < (int)pMesh_Top.size(); mesh_idx++) {
 
-				Rect tmeshRect = pMesh_Top[mesh_idx]->GetMeshRect();
+				if (!check_cell_coupling(pMesh->M, pMesh_Top[mesh_idx]->M,
+					(i + 0.5) * pMesh->h.x, (j + 0.5) * pMesh->h.y, pMesh_Top[mesh_idx]->h.z / 2)) continue;
 
-				//relative coordinates to read value from top mesh (the one we're coupling to here) - relative to top mesh
 				DBL3 cell_rel_pos = DBL3(
-					(i + 0.5) * pMesh->h.x + pMesh->meshRect.s.x - tmeshRect.s.x,
-					(j + 0.5) * pMesh->h.y + pMesh->meshRect.s.y - tmeshRect.s.y,
+					(i + 0.5) * pMesh->h.x + pMesh->M.rect.s.x - pMesh_Top[mesh_idx]->M.rect.s.x,
+					(j + 0.5) * pMesh->h.y + pMesh->M.rect.s.y - pMesh_Top[mesh_idx]->M.rect.s.y,
 					pMesh_Top[mesh_idx]->h.z / 2);
-
-				//can't couple to an empty cell
-				if (!tmeshRect.contains(cell_rel_pos + tmeshRect.s) || pMesh_Top[mesh_idx]->M.is_empty(cell_rel_pos)) continue;
 
 				if (pMesh_Top[mesh_idx]->GetMeshType() == MESH_FERROMAGNETIC) {
 
@@ -483,17 +506,17 @@ double SurfExchange::Get_EnergyChange(int spin_index, DBL3 Mnew)
 					pMesh_Top[mesh_idx]->update_parameters_atposition(cell_rel_pos, pMesh_Top[mesh_idx]->J1, J1, pMesh_Top[mesh_idx]->J2, J2);
 
 					//get magnetization value in top mesh cell to couple with
-					DBL3 m_j = pMesh_Top[mesh_idx]->M[cell_rel_pos].normalized();
-					DBL3 m_i = pMesh->M[spin_index] / Ms;
+					DBL3 m_j = normalize(pMesh_Top[mesh_idx]->M[cell_rel_pos]);
+					DBL3 m_i = normalize(pMesh->M[spin_index]);
 					
 					double dot_prod = m_i * m_j;
-					energy_old = (-1 * J1 - 2 * J2 * dot_prod) * dot_prod / thickness;
+					energy_old = (-1 * J1 - 2 * J2 * dot_prod) * dot_prod / pMesh->h.z;
 
 					if (Mnew != DBL3()) {
 
-						DBL3 mnew_i = Mnew / Ms;
+						DBL3 mnew_i = normalize(Mnew);
 						double dot_prod_new = mnew_i * m_j;
-						energy_new = (-1 * J1 - 2 * J2 * dot_prod_new) * dot_prod_new / thickness;
+						energy_new = (-1 * J1 - 2 * J2 * dot_prod_new) * dot_prod_new / pMesh->h.z;
 					}
 				}
 				else if (pMesh_Top[mesh_idx]->GetMeshType() == MESH_ANTIFERROMAGNETIC) {
@@ -506,26 +529,75 @@ double SurfExchange::Get_EnergyChange(int spin_index, DBL3 Mnew)
 					pMesh_Top[mesh_idx]->update_parameters_atposition(cell_rel_pos, pMesh_Top[mesh_idx]->J1, J1, pMesh_Top[mesh_idx]->J2, J2);
 
 					//get magnetization values in top mesh cell to couple with
-					DBL3 m_j1 = pMesh_Top[mesh_idx]->M[cell_rel_pos].normalized();
-					DBL3 m_j2 = pMesh_Top[mesh_idx]->M2[cell_rel_pos].normalized();
-					DBL3 m_i = pMesh->M[spin_index] / Ms;
+					DBL3 m_j1 = normalize(pMesh_Top[mesh_idx]->M[cell_rel_pos]);
+					DBL3 m_j2 = normalize(pMesh_Top[mesh_idx]->M2[cell_rel_pos]);
+					DBL3 m_i = normalize(pMesh->M[spin_index]);
 
-					energy_old = (-J1 * (m_i * m_j1) - J2 * (m_i * m_j2)) / thickness;
+					energy_old = (-J1 * (m_i * m_j1) - J2 * (m_i * m_j2)) / pMesh->h.z;
 
 					if (Mnew != DBL3()) {
 
-						DBL3 mnew_i = Mnew / Ms;
-						energy_new = (-J1 * (mnew_i * m_j1) - J2 * (mnew_i * m_j2)) / thickness;
+						DBL3 mnew_i = normalize(Mnew);
+						energy_new = (-J1 * (mnew_i * m_j1) - J2 * (mnew_i * m_j2)) / pMesh->h.z;
 					}
 				}
 
 				//for each cell, either it's not coupled to any other mesh cell (so we never get here), or else it's coupled to exactly one cell on this surface (thus can stop looping over meshes now)
+				cell_coupled = true;
 				break;
+			}
+
+			if (!cell_coupled) {
+
+				//2 : coupling into this micromagnetic mesh from atomistic meshes
+				for (int mesh_idx = 0; mesh_idx < (int)paMesh_Top.size(); mesh_idx++) {
+
+					VEC_VC<DBL3>& M1 = paMesh_Top[mesh_idx]->M1;
+
+					//coupling rectangle in atomistic mesh in absolute coordinates
+					Rect rect_c = Rect(
+						DBL3(i * pMesh->h.x, j * pMesh->h.y, pMesh->M.rect.e.z),
+						DBL3((i + 1) * pMesh->h.x, (j + 1) * pMesh->h.y, M1.h.z + pMesh->M.rect.e.z));
+					rect_c += DBL3(pMesh->M.rect.s.x, pMesh->M.rect.s.y, 0.0);
+
+					//cells box in atomistic mesh
+					Box acells = M1.box_from_rect_min(rect_c);
+
+					//find total "directed energy" contribution from atomistic mesh : i.e. sum all mj * Js contributions from atomistic moments in the coupling area at the interface
+					DBL3 total_directed_coupling_energy = DBL3();
+					for (int ai = acells.s.i; ai < acells.e.i; ai++) {
+						for (int aj = acells.s.j; aj < acells.e.j; aj++) {
+
+							int acell_idx = ai + aj * M1.n.x;
+
+							if (M1.is_empty(acell_idx)) continue;
+
+							//Js value from atomistic mesh
+							double Js = paMesh_Top[mesh_idx]->Js;
+							double mu_s = paMesh_Top[mesh_idx]->mu_s;
+							paMesh_Top[mesh_idx]->update_parameters_mcoarse(acell_idx, paMesh_Top[mesh_idx]->Js, Js, paMesh_Top[mesh_idx]->mu_s, mu_s);
+
+							total_directed_coupling_energy += M1[acell_idx] * Js / mu_s;
+						}
+					}
+
+					//now obtain coupling field from atomistic mesh at micromagnetic cell
+					DBL3 Hsurfexch = (total_directed_coupling_energy / (pMesh->h.x * pMesh->h.y)) / (MU0 * Ms * pMesh->h.z);
+					energy_old = -MU0 * pMesh->M[spin_index] * Hsurfexch;
+					
+					if (Mnew != DBL3()) {
+
+						energy_new = -MU0 * Mnew * Hsurfexch;
+					}
+
+					//for each cell, either it's not coupled to any other mesh cell (so we never get here), or else it's coupled to exactly one cell on this surface (thus can stop looping over meshes now)
+					break;
+				}
 			}
 		}
 	}
 
-	if (spin_index / (n.x * n.y) == 0 && pMesh_Bot.size()) {
+	if (spin_index / (n.x * n.y) == 0 && (pMesh_Bot.size() || paMesh_Bot.size())) {
 
 		//surface exchange coupling at the bottom
 
@@ -539,36 +611,35 @@ double SurfExchange::Get_EnergyChange(int spin_index, DBL3 Mnew)
 			double J2 = pMesh->J2;
 			pMesh->update_parameters_mcoarse(spin_index, pMesh->Ms, Ms, pMesh->J1, J1, pMesh->J2, J2);
 
+			bool cell_coupled = false;
+
 			//check all meshes for coupling
 			for (int mesh_idx = 0; mesh_idx < (int)pMesh_Bot.size(); mesh_idx++) {
 
-				Rect bmeshRect = pMesh_Bot[mesh_idx]->GetMeshRect();
+				if (!check_cell_coupling(pMesh->M, pMesh_Bot[mesh_idx]->M,
+					(i + 0.5) * pMesh->h.x, (j + 0.5) * pMesh->h.y, pMesh_Bot[mesh_idx]->meshRect.height() - pMesh_Bot[mesh_idx]->h.z / 2)) continue;
 
-				//relative coordinates to read value from bottom mesh (the one we're coupling to here) - relative to bottom mesh
 				DBL3 cell_rel_pos = DBL3(
-					(i + 0.5) * pMesh->h.x + pMesh->meshRect.s.x - bmeshRect.s.x,
-					(j + 0.5) * pMesh->h.y + pMesh->meshRect.s.y - bmeshRect.s.y,
-					pMesh_Bot[mesh_idx]->meshRect.e.z - pMesh_Bot[mesh_idx]->meshRect.s.z - (pMesh_Bot[mesh_idx]->h.z / 2));
-
-				//can't couple to an empty cell
-				if (!bmeshRect.contains(cell_rel_pos + bmeshRect.s) || pMesh_Bot[mesh_idx]->M.is_empty(cell_rel_pos)) continue;
+					(i + 0.5) * pMesh->h.x + pMesh->M.rect.s.x - pMesh_Bot[mesh_idx]->M.rect.s.x,
+					(j + 0.5) * pMesh->h.y + pMesh->M.rect.s.y - pMesh_Bot[mesh_idx]->M.rect.s.y,
+					pMesh_Bot[mesh_idx]->meshRect.height() - pMesh_Bot[mesh_idx]->h.z / 2);
 
 				if (pMesh_Bot[mesh_idx]->GetMeshType() == MESH_FERROMAGNETIC) {
 
 					//Surface exchange field from a ferromagnetic mesh (RKKY)
 
 					//get magnetization value in top mesh cell to couple with
-					DBL3 m_j = pMesh_Bot[mesh_idx]->M[cell_rel_pos].normalized();
-					DBL3 m_i = pMesh->M[spin_index] / Ms;
-					DBL3 mnew_i = Mnew / Ms;
+					DBL3 m_j = normalize(pMesh_Bot[mesh_idx]->M[cell_rel_pos]);
+					DBL3 m_i = normalize(pMesh->M[spin_index]);
+					DBL3 mnew_i = normalize(Mnew);
 
 					double dot_prod = m_i * m_j;
-					energy_old += (-1 * J1 - 2 * J2 * dot_prod) * dot_prod / thickness;
+					energy_old += (-1 * J1 - 2 * J2 * dot_prod) * dot_prod / pMesh->h.z;
 
 					if (Mnew != DBL3()) {
 
 						double dot_prod_new = mnew_i * m_j;
-						energy_new += (-1 * J1 - 2 * J2 * dot_prod_new) * dot_prod_new / thickness;
+						energy_new += (-1 * J1 - 2 * J2 * dot_prod_new) * dot_prod_new / pMesh->h.z;
 					}
 				}
 				else if (pMesh_Bot[mesh_idx]->GetMeshType() == MESH_ANTIFERROMAGNETIC) {
@@ -576,28 +647,77 @@ double SurfExchange::Get_EnergyChange(int spin_index, DBL3 Mnew)
 					//Surface exchange field from an antiferromagnetic mesh (exchange bias)
 
 					//get magnetization value in top mesh cell to couple with
-					DBL3 m_j1 = pMesh_Bot[mesh_idx]->M[cell_rel_pos].normalized();
-					DBL3 m_j2 = pMesh_Bot[mesh_idx]->M2[cell_rel_pos].normalized();
-					DBL3 m_i = pMesh->M[spin_index] / Ms;
+					DBL3 m_j1 = normalize(pMesh_Bot[mesh_idx]->M[cell_rel_pos]);
+					DBL3 m_j2 = normalize(pMesh_Bot[mesh_idx]->M2[cell_rel_pos]);
+					DBL3 m_i = normalize(pMesh->M[spin_index]);
 
-					energy_old += (-J1 * (m_i * m_j1) - J2 * (m_i * m_j2)) / thickness;
+					energy_old += (-J1 * (m_i * m_j1) - J2 * (m_i * m_j2)) / pMesh->h.z;
 
 					if (Mnew != DBL3()) {
 
-						DBL3 mnew_i = Mnew / Ms;
-						energy_new += (-J1 * (mnew_i * m_j1) - J2 * (mnew_i * m_j2)) / thickness;
+						DBL3 mnew_i = normalize(Mnew);
+						energy_new += (-J1 * (mnew_i * m_j1) - J2 * (mnew_i * m_j2)) / pMesh->h.z;
 					}
 				}
 
 				//for each cell, either it's not coupled to any other mesh cell (so we never get here), or else it's coupled to exactly one cell on this surface (thus can stop looping over meshes now)
+				cell_coupled = true;
 				break;
+			}
+
+			if (!cell_coupled) {
+
+				//2 : coupling into this micromagnetic mesh from atomistic meshes
+				for (int mesh_idx = 0; mesh_idx < (int)paMesh_Bot.size(); mesh_idx++) {
+
+					VEC_VC<DBL3>& M1 = paMesh_Bot[mesh_idx]->M1;
+
+					//coupling rectangle in atomistic mesh in absolute coordinates
+					Rect rect_c = Rect(
+						DBL3(i * pMesh->h.x, j * pMesh->h.y, M1.rect.e.z - M1.h.z),
+						DBL3((i + 1) * pMesh->h.x, (j + 1) * pMesh->h.y, M1.rect.e.z));
+					rect_c += DBL3(pMesh->M.rect.s.x, pMesh->M.rect.s.y, 0.0);
+
+					//cells box in atomistic mesh
+					Box acells = M1.box_from_rect_min(rect_c);
+
+					//find total "directed energy" contribution from atomistic mesh : i.e. sum all mj * Js contributions from atomistic moments in the coupling area at the interface
+					//NOTE : at atomistic/micromagnetic coupling, it's the atomistic mesh which sets coupling constant, not the top mesh
+					DBL3 total_directed_coupling_energy = DBL3();
+					for (int ai = acells.s.i; ai < acells.e.i; ai++) {
+						for (int aj = acells.s.j; aj < acells.e.j; aj++) {
+
+							int acell_idx = ai + aj * M1.n.x + (M1.n.z - 1) * M1.n.x * M1.n.y;
+
+							if (M1.is_empty(acell_idx)) continue;
+
+							//Js value from atomistic mesh
+							double Js = paMesh_Bot[mesh_idx]->Js;
+							double mu_s = paMesh_Bot[mesh_idx]->mu_s;
+							paMesh_Bot[mesh_idx]->update_parameters_mcoarse(acell_idx, paMesh_Bot[mesh_idx]->Js, Js, paMesh_Bot[mesh_idx]->mu_s, mu_s);
+
+							total_directed_coupling_energy += M1[acell_idx] * Js / mu_s;
+						}
+					}
+
+					//now obtain coupling field from atomistic mesh at micromagnetic cell
+					DBL3 Hsurfexch = (total_directed_coupling_energy / (pMesh->h.x * pMesh->h.y)) / (MU0 * Ms * pMesh->h.z);
+					energy_old += -MU0 * pMesh->M[spin_index] * Hsurfexch;
+					
+					if (Mnew != DBL3()) {
+
+						energy_new += -MU0 * Mnew * Hsurfexch;
+					}
+
+					//for each cell, either it's not coupled to any other mesh cell (so we never get here), or else it's coupled to exactly one cell on this surface (thus can stop looping over meshes now)
+					break;
+				}
 			}
 		}
 	}
 
-	//multiply by n.z: the surface exchange field is applicable for effectively 2D layers, but the simulation allows 3D meshes.
-	if (Mnew != DBL3()) return pMesh->h.dim() * n.z * (energy_new - energy_old);
-	else return pMesh->h.dim() * n.z * energy_old;
+	if (Mnew != DBL3()) return pMesh->h.dim() * (energy_new - energy_old);
+	else return pMesh->h.dim() * energy_old;
 }
 
 //-------------------Torque methods
@@ -605,7 +725,7 @@ double SurfExchange::Get_EnergyChange(int spin_index, DBL3 Mnew)
 DBL3 SurfExchange::GetTorque(Rect& avRect)
 {
 #if COMPILECUDA == 1
-	if (pModuleCUDA) return reinterpret_cast<SurfExchangeCUDA*>(pModuleCUDA)->GetTorque(avRect);
+	if (pModuleCUDA) return pModuleCUDA->GetTorque(avRect);
 #endif
 
 	return CalculateTorque(pMesh->M, avRect);

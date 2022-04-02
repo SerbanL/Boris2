@@ -104,6 +104,7 @@ DBL3 AFMesh::Average_mxdmdt(Rect avRect)
 	return reduction.average();
 }
 
+//for sub-lattice B
 DBL3 AFMesh::Average_mxdmdt2(Rect avRect)
 {
 	if (avRect.IsNull()) avRect = meshRect - meshRect.s;
@@ -127,6 +128,71 @@ DBL3 AFMesh::Average_mxdmdt2(Rect avRect)
 
 					double norm = M2[idx].norm();
 					reduction.reduce_average((M2[idx] / norm) ^ (meshODE.dMdt2(idx) / norm));
+				}
+			}
+		}
+	}
+
+	return reduction.average();
+}
+
+//mixed sub-lattices A and B
+DBL3 AFMesh::Average_mxdm2dt(Rect avRect)
+{
+	if (avRect.IsNull()) avRect = meshRect - meshRect.s;
+	Box box = M.box_from_rect_max(avRect + meshRect.s);
+
+#if COMPILECUDA == 1
+	if (pMeshCUDA) return reinterpret_cast<AFMeshCUDA*>(pMeshCUDA)->Average_mxdm2dt(box);
+#endif
+
+	OmpReduction<DBL3> reduction;
+	reduction.new_average_reduction();
+
+	for (int k = box.s.k; k < box.e.k; k++) {
+#pragma omp parallel for
+		for (int j = box.s.j; j < box.e.j; j++) {
+			for (int i = box.s.i; i < box.e.i; i++) {
+
+				int idx = i + j * n.x + k * n.x*n.y;
+
+				if (M.is_not_empty(idx) && M2.is_not_empty(idx)) {
+
+					double normA = M[idx].norm();
+					double normB = M2[idx].norm();
+					reduction.reduce_average((M[idx] / normA) ^ (meshODE.dMdt2(idx) / normB));
+				}
+			}
+		}
+	}
+
+	return reduction.average();
+}
+
+DBL3 AFMesh::Average_m2xdmdt(Rect avRect)
+{
+	if (avRect.IsNull()) avRect = meshRect - meshRect.s;
+	Box box = M.box_from_rect_max(avRect + meshRect.s);
+
+#if COMPILECUDA == 1
+	if (pMeshCUDA) return reinterpret_cast<AFMeshCUDA*>(pMeshCUDA)->Average_m2xdmdt(box);
+#endif
+
+	OmpReduction<DBL3> reduction;
+	reduction.new_average_reduction();
+
+	for (int k = box.s.k; k < box.e.k; k++) {
+#pragma omp parallel for
+		for (int j = box.s.j; j < box.e.j; j++) {
+			for (int i = box.s.i; i < box.e.i; i++) {
+
+				int idx = i + j * n.x + k * n.x*n.y;
+
+				if (M.is_not_empty(idx) && M2.is_not_empty(idx)) {
+
+					double normA = M[idx].norm();
+					double normB = M2[idx].norm();
+					reduction.reduce_average((M2[idx] / normB) ^ (meshODE.dMdt(idx) / normA));
 				}
 			}
 		}

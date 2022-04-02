@@ -14,7 +14,7 @@
 
 //SPIN CURRENT
 
-__global__ void Atom_GetSpinCurrent_Kernel(int component, cuVEC<cuReal3>& displayVEC, ManagedAtom_MeshCUDA& cuaMesh, Atom_TransportCUDA_Spin_S_Funcs& poisson_Spin_S)
+__global__ void Atom_GetSpinCurrent_Kernel(int component, cuVEC<cuReal3>& displayVEC, ManagedAtom_MeshCUDA& cuaMesh, TransportCUDA_Spin_S_Funcs& poisson_Spin_S)
 {
 	cuVEC_VC<cuReal3>& M1 = *cuaMesh.pM1;
 	cuVEC_VC<cuReal3>& S = *cuaMesh.pS;
@@ -25,34 +25,31 @@ __global__ void Atom_GetSpinCurrent_Kernel(int component, cuVEC<cuReal3>& displa
 
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
 	
-	//TO DO
-
-	/*
 	if (idx < S.linear_size()) {
 
-		bool cpump_enabled = cuIsNZ(cuMesh.pcpump_eff->get0());
-		bool the_enabled = cuIsNZ(cuMesh.pthe_eff->get0());
+		bool cpump_enabled = cuIsNZ(cuaMesh.pcpump_eff->get0());
+		bool the_enabled = cuIsNZ(cuaMesh.pthe_eff->get0());
 
 		cuReal33 Js = cuReal33();
 
 		if (S.is_not_empty(idx)) {
 			
-			if (poisson_Spin_S.stsolve == STSOLVE_FERROMAGNETIC) {
+			if (poisson_Spin_S.stsolve == STSOLVE_FERROMAGNETIC_ATOM) {
 
 				//magnetic mesh terms
 
-				cuBReal Ms = *cuaMesh.pMs;
+				cuBReal mu_s = *cuaMesh.pmu_s;
 				cuBReal P = *cuaMesh.pP;
 				cuBReal De = *cuaMesh.pDe;
-				cuMesh.update_parameters_ecoarse(idx, *cuaMesh.pMs, Ms, *cuaMesh.pP, P, *cuaMesh.pDe, De);
+				cuaMesh.update_parameters_ecoarse(idx, *cuaMesh.pmu_s, mu_s, *cuaMesh.pP, P, *cuaMesh.pDe, De);
 
 				//1. drift
-				int idx_M = M.position_to_cellidx(S.cellidx_to_position(idx));
+				int idx_M = M1.position_to_cellidx(S.cellidx_to_position(idx));
 
-				cuReal3 Mval = M[idx_M];
+				cuReal3 Mval = M1[idx_M];
 				cuReal33 grad_S = S.grad_neu(idx);
 
-				Js = (E[idx] | Mval) * (P * elC[idx] / Ms) * (-(cuBReal)MUB_E);
+				Js = (E[idx] | Mval) * (P * elC[idx] / mu_s) * (-(cuBReal)MUB_E);
 
 				//2. diffusion with homogeneous Neumann boundary condition
 				Js -= grad_S * De;
@@ -62,24 +59,24 @@ __global__ void Atom_GetSpinCurrent_Kernel(int component, cuVEC<cuReal3>& displa
 
 				if (component != 2 && (cpump_enabled || the_enabled)) {
 
-					cuReal33 grad_m = M.grad_neu(idx_M) / Ms;
+					cuReal33 grad_m = M1.grad_neu(idx_M) / mu_s;
 
 					//topological Hall effect contribution
 					if (the_enabled) {
 
 						cuBReal n_density = *cuaMesh.pn_density;
-						cuMesh.update_parameters_ecoarse(idx, *cuaMesh.pn_density, n_density);
+						cuaMesh.update_parameters_ecoarse(idx, *cuaMesh.pn_density, n_density);
 
 						cuReal3 B = (grad_m.x ^ grad_m.y);
-						Js += cuMesh.pthe_eff->get0() * ((cuBReal)HBAR_E * (cuBReal)MUB_E * elC[idx] * elC[idx] / ((cuBReal)ECHARGE * n_density)) * cuReal33(-E[idx].y * B, E[idx].x * B, cuReal3());
+						Js += cuaMesh.pthe_eff->get0() * ((cuBReal)HBAR_E * (cuBReal)MUB_E * elC[idx] * elC[idx] / ((cuBReal)ECHARGE * n_density)) * cuReal33(-E[idx].y * B, E[idx].x * B, cuReal3());
 					}
 
 					//charge pumping contribution
 					if (cpump_enabled) {
 
 						//value a1
-						cuReal3 dm_dt = dM_dt[idx_M] / Ms;
-						Js += cuMesh.pcpump_eff->get0() * ((cuBReal)HBAR_E * (cuBReal)MUB_E * elC[idx] / 2) * cuReal33(dm_dt ^ grad_m.x, dm_dt ^ grad_m.y, cuReal3());
+						cuReal3 dm_dt = dM_dt[idx_M] / mu_s;
+						Js += cuaMesh.pcpump_eff->get0() * ((cuBReal)HBAR_E * (cuBReal)MUB_E * elC[idx] / 2) * cuReal33(dm_dt ^ grad_m.x, dm_dt ^ grad_m.y, cuReal3());
 					}
 				}
 			}
@@ -89,7 +86,7 @@ __global__ void Atom_GetSpinCurrent_Kernel(int component, cuVEC<cuReal3>& displa
 
 				cuBReal De = *cuaMesh.pDe;
 				cuBReal SHA = *cuaMesh.pSHA;
-				cuMesh.update_parameters_ecoarse(idx, *cuaMesh.pDe, De, *cuaMesh.pSHA, SHA);
+				cuaMesh.update_parameters_ecoarse(idx, *cuaMesh.pDe, De, *cuaMesh.pSHA, SHA);
 
 				//1. SHE contribution
 				Js = cu_epsilon3(E[idx]) * SHA * elC[idx] * (cuBReal)MUB_E;
@@ -112,7 +109,6 @@ __global__ void Atom_GetSpinCurrent_Kernel(int component, cuVEC<cuReal3>& displa
 			break;
 		}
 	}
-	*/
 }
 
 //SPIN TORQUE
@@ -131,19 +127,17 @@ __global__ void Atom_GetSpinTorque_Kernel(cuVEC<cuReal3>& displayVEC, ManagedAto
 			displayVEC[idx] = cuReal3();
 			return;
 		}
-		//TO DO
-		/*
+
 		cuBReal De = *cuaMesh.pDe;
 		cuBReal ts_eff = *cuaMesh.pts_eff;
-		cuBReal Ms = *cuaMesh.pMs;
+		cuBReal mu_s = *cuaMesh.pmu_s;
 		cuBReal l_ex = *cuaMesh.pl_ex;
 		cuBReal l_ph = *cuaMesh.pl_ph;
-		cuMesh.update_parameters_mcoarse(idx, *cuaMesh.pMs, Ms, *cuaMesh.pDe, De, *cuaMesh.pts_eff, ts_eff, *cuaMesh.pl_ex, l_ex, *cuaMesh.pl_ph, l_ph);
+		cuaMesh.update_parameters_mcoarse(idx, *cuaMesh.pmu_s, mu_s, *cuaMesh.pDe, De, *cuaMesh.pts_eff, ts_eff, *cuaMesh.pl_ex, l_ex, *cuaMesh.pl_ph, l_ph);
 
-		cuReal3 Sav = S.weighted_average(M.cellidx_to_position(idx), M.h);
+		cuReal3 Sav = S.weighted_average(M1.cellidx_to_position(idx), M1.h);
 
-		displayVEC[idx] = ts_eff * ((Sav ^ M[idx]) * De / (Ms * l_ex * l_ex) + (M[idx] ^ (Sav ^ M[idx])) * De / (Ms * Ms * l_ph * l_ph));
-		*/
+		displayVEC[idx] = ts_eff * ((Sav ^ M1[idx]) * De / (mu_s * l_ex * l_ex) + (M1[idx] ^ (Sav ^ M1[idx])) * De / (mu_s * mu_s * l_ph * l_ph));
 	}
 }
 
@@ -151,12 +145,14 @@ __global__ void Atom_GetSpinTorque_Kernel(cuVEC<cuReal3>& displayVEC, ManagedAto
 
 __global__ void Atom_CalculateDisplaySAInterfaceTorque_Kernel(
 	CMBNDInfoCUDA& contact, 
-	Atom_TransportCUDA_Spin_S_Funcs& cmbndFuncs_sec, Atom_TransportCUDA_Spin_S_Funcs& cmbndFuncs_pri, 
+	TransportCUDA_Spin_S_Funcs& cmbndFuncs_sec, TransportCUDA_Spin_S_Funcs& cmbndFuncs_pri, 
 	cuVEC<cuReal3>& displayVEC)
 {
+	//primary mesh is atomistic (cmbndFuncs_pri.pcuaMesh), and secondary is MeshCUDA (cmbndFuncs_sec.pcuMesh) since secondary is non-magnetic
+
 	cuVEC_VC<cuReal3>& M1 = *cmbndFuncs_pri.pcuaMesh->pM1;
 	cuVEC_VC<cuReal3>& S_pri = *cmbndFuncs_pri.pcuaMesh->pS;
-	cuVEC_VC<cuReal3>& S_sec = *cmbndFuncs_sec.pcuaMesh->pS;
+	cuVEC_VC<cuReal3>& S_sec = *cmbndFuncs_sec.pcuMesh->pS;
 
 	int box_idx = blockIdx.x * blockDim.x + threadIdx.x;
 
@@ -172,48 +168,46 @@ __global__ void Atom_CalculateDisplaySAInterfaceTorque_Kernel(
 
 	cuINT3 box_sizes = mbox_end - mbox_start;
 	
-	//TO DO
-
-	/*
 	if (box_idx < box_sizes.dim()) {
 
 		//the cellsize perpendicular to the contact (in the M mesh)
-		cuBReal dh = (cuReal3(contact.cell_shift) & M.h).norm();
+		cuBReal dh = (cuReal3(contact.cell_shift) & M1.h).norm();
 
 		int i = (box_idx % box_sizes.x) + mbox_start.i;
 		int j = ((box_idx / box_sizes.x) % box_sizes.y) + mbox_start.j;
 		int k = (box_idx / (box_sizes.x * box_sizes.y)) + mbox_start.k;
 
 		//index of magnetic cell 1
-		int mcell1_idx = i + j * M.n.x + k * M.n.x*M.n.y;
+		int mcell1_idx = i + j * M1.n.x + k * M1.n.x*M1.n.y;
 
-		if (M.is_empty(mcell1_idx)) return;
+		if (M1.is_empty(mcell1_idx)) return;
 
-		cuBReal Ms = *cmbndFuncs_pri.pcuaMesh->pMs;
+		cuBReal mu_s = *cmbndFuncs_pri.pcuaMesh->pmu_s;
 		cuBReal tsi_eff = *cmbndFuncs_pri.pcuaMesh->ptsi_eff;
-		cmbndFuncs_pri.pcuaMesh->update_parameters_mcoarse(mcell1_idx, *cmbndFuncs_pri.pcuaMesh->pMs, Ms, *cmbndFuncs_pri.pcuaMesh->ptsi_eff, tsi_eff);
+		cmbndFuncs_pri.pcuaMesh->update_parameters_mcoarse(mcell1_idx, *cmbndFuncs_pri.pcuaMesh->pmu_s, mu_s, *cmbndFuncs_pri.pcuaMesh->ptsi_eff, tsi_eff);
 
 		//position at interface relative to primary mesh
-		cuReal3 mhshift_primary = contact.hshift_primary.normalized() & M.h;
-		cuReal3 relpos_interf = ((cuReal3(i, j, k) + cuReal3(0.5)) & M.h) + mhshift_primary / 2;
+		cuReal3 mhshift_primary = contact.hshift_primary.normalized() & M1.h;
+		cuReal3 relpos_interf = ((cuReal3(i, j, k) + cuReal3(0.5)) & M1.h) + mhshift_primary / 2;
 
 		cuReal3 relpos_1 = relpos_interf - contact.hshift_primary / 2;
 
 		cuReal3 relpos_m1 = S_pri.rect.s - S_sec.rect.s + relpos_interf + contact.hshift_secondary / 2;
 
-		cuReal3 stencil = M.h - cu_mod(mhshift_primary) + cu_mod(contact.hshift_secondary);
+		cuReal3 stencil_sec = M1.h - cu_mod(mhshift_primary) + cu_mod(contact.hshift_secondary);
+		cuReal3 stencil_pri = M1.h - cu_mod(mhshift_primary) + cu_mod(contact.hshift_primary);
 
 		//S values
-		cuReal3 S_1 = S_pri.weighted_average(relpos_1, stencil);
-		cuReal3 S_2 = S_pri.weighted_average(relpos_1 - contact.hshift_primary, stencil);
-		cuReal3 S_m1 = S_sec.weighted_average(relpos_m1, stencil);
-		cuReal3 S_m2 = S_sec.weighted_average(relpos_m1 + contact.hshift_secondary, stencil);
+		cuReal3 S_1 = S_pri.weighted_average(relpos_1, stencil_pri);
+		cuReal3 S_2 = S_pri.weighted_average(relpos_1 - contact.hshift_primary, stencil_pri);
+		cuReal3 S_m1 = S_sec.weighted_average(relpos_m1, stencil_sec);
+		cuReal3 S_m2 = S_sec.weighted_average(relpos_m1 + contact.hshift_secondary, stencil_sec);
 
 		//c values
-		cuBReal c_m1 = cmbndFuncs_sec.c_func_sec(relpos_m1, stencil);
-		cuBReal c_m2 = cmbndFuncs_sec.c_func_sec(relpos_m1 + contact.hshift_secondary, stencil);
-		cuBReal c_1 = cmbndFuncs_pri.c_func_sec(relpos_1, stencil);
-		cuBReal c_2 = cmbndFuncs_pri.c_func_sec(relpos_1 - contact.hshift_primary, stencil);
+		cuBReal c_1 = cmbndFuncs_pri.c_func_sec(relpos_1, stencil_pri);
+		cuBReal c_2 = cmbndFuncs_pri.c_func_sec(relpos_1 - contact.hshift_primary, stencil_pri);
+		cuBReal c_m1 = cmbndFuncs_sec.c_func_sec(relpos_m1, stencil_sec);
+		cuBReal c_m2 = cmbndFuncs_sec.c_func_sec(relpos_m1 + contact.hshift_secondary, stencil_sec);
 
 		//Calculate S drop at the interface
 		cuReal3 Vs_F = 1.5 * c_1 * S_1 - 0.5 * c_2 * S_2;
@@ -229,33 +223,15 @@ __global__ void Atom_CalculateDisplaySAInterfaceTorque_Kernel(
 		}
 		else {
 
-			Gmix = *cmbndFuncs_sec.pcuaMesh->pGmix;
-			cmbndFuncs_sec.pcuaMesh->update_parameters_atposition(relpos_m1, *cmbndFuncs_sec.pcuaMesh->pGmix, Gmix);
+			Gmix = *cmbndFuncs_sec.pcuMesh->pGmix;
+			cmbndFuncs_sec.pcuMesh->update_parameters_atposition(relpos_m1, *cmbndFuncs_sec.pcuMesh->pGmix, Gmix);
 		}
 
-		cuBReal gI = (2.0 * (cuBReal)GMUB_2E / dh) * Gmix.j / Ms;
-		cuBReal gR = (2.0 * (cuBReal)GMUB_2E / dh) * Gmix.i / Ms;
+		cuBReal gI = (2.0 * (cuBReal)GMUB_2E / dh) * Gmix.j / mu_s;
+		cuBReal gR = (2.0 * (cuBReal)GMUB_2E / dh) * Gmix.i / mu_s;
 
-		displayVEC[mcell1_idx] += tsi_eff * (gI * (M[mcell1_idx] ^ dVs) + gR * (M[mcell1_idx] ^ (M[mcell1_idx] ^ dVs)) / Ms);
+		displayVEC[mcell1_idx] += tsi_eff * (gI * (M1[mcell1_idx] ^ dVs) + gR * (M1[mcell1_idx] ^ (M1[mcell1_idx] ^ dVs)) / mu_s);
 	}
-	*/
-}
-
-//Launchers
-
-//prepare displayVEC ready for calculation of display quantity
-bool Atom_TransportCUDA::PrepareDisplayVEC(DBL3 cellsize)
-{
-	if (pSMeshCUDA->SolveSpinCurrent() && paMeshCUDA->EComputation_Enabled()) {
-
-		//make sure memory is allocated to the correct size
-		displayVEC()->assign(cellsize, paMeshCUDA->meshRect, cuReal3(0.0));
-
-		return true;
-	}
-	else displayVEC()->clear();
-
-	return false;
 }
 
 //return x, y, or z component of spin current (component = 0, 1, or 2)
@@ -285,17 +261,17 @@ cu_obj<cuVEC<cuReal3>>& Atom_TransportCUDA::GetSpinTorque(void)
 }
 
 //Calculate the interface spin accumulation torque for a given contact (in magnetic meshes for NF interfaces with G interface conductance set), accumulating result in displayVEC
-void Atom_TransportCUDA::CalculateDisplaySAInterfaceTorque(Atom_TransportCUDA* ptrans_sec, CMBNDInfoCUDA& contactCUDA, bool primary_top)
+void Atom_TransportCUDA::CalculateDisplaySAInterfaceTorque(TransportBaseCUDA* ptrans_sec, CMBNDInfoCUDA& contactCUDA, bool primary_top)
 {
 	//the top contacting mesh sets G values
-	bool isGInterface_Enabled = ((primary_top && paMeshCUDA->GInterface_Enabled()) || (!primary_top && ptrans_sec->paMeshCUDA->GInterface_Enabled()));
-	//TO DO
-	/*
-	if (stsolve == STSOLVE_FERROMAGNETIC && ptrans_sec->Get_STSolveType() == STSOLVE_NORMALMETAL && isGInterface_Enabled) {
+	bool isGInterface_Enabled = ((primary_top && GInterface_Enabled()) || (!primary_top && ptrans_sec->GInterface_Enabled()));
 
-		Atom_CalculateDisplaySAInterfaceTorque_Kernel << < (pMeshCUDA->n.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >> > (contactCUDA, ptrans_sec->poisson_Spin_S, poisson_Spin_S, displayVEC);
+	if (isGInterface_Enabled && stsolve == STSOLVE_FERROMAGNETIC_ATOM && (ptrans_sec->Get_STSolveType() == STSOLVE_NORMALMETAL || ptrans_sec->Get_STSolveType() == STSOLVE_TUNNELING)) {
+
+		//primary mesh is atomistic (poisson_Spin_S), and secondary is MeshCUDA (ptrans_sec->poisson_Spin_S) since secondary is non-magnetic
+		Atom_CalculateDisplaySAInterfaceTorque_Kernel <<< (paMeshCUDA->n.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> 
+			(contactCUDA, ptrans_sec->poisson_Spin_S, poisson_Spin_S, displayVEC);
 	}
-	*/
 }
 
 #endif

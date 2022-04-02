@@ -13,21 +13,6 @@
 
 //-------------------Display Calculation Methods
 
-//prepare displayVEC ready for calculation of display quantity
-bool Transport::PrepareDisplayVEC(DBL3 cellsize)
-{
-	if (pSMesh->SolveSpinCurrent() && pMesh->EComputation_Enabled()) {
-
-		//make sure memory is allocated to the correct size
-		displayVEC.assign(cellsize, pMesh->meshRect, DBL3(0.0));
-
-		return true;
-	}
-	else displayVEC.clear();
-
-	return false;
-}
-
 //return x, y, or z component of spin current (component = 0, 1, or 2)
 //VERIFIED - CORRECT
 VEC<DBL3>& Transport::GetSpinCurrent(int component)
@@ -61,18 +46,17 @@ VEC<DBL3>& Transport::GetSpinCurrent(int component)
 
 				//magnetic mesh terms
 
-				double Ms = pMesh->Ms;
 				double P = pMesh->P;
 				double De = pMesh->De;
-				pMesh->update_parameters_ecoarse(idx, pMesh->Ms, Ms, pMesh->P, P, pMesh->De, De);
+				pMesh->update_parameters_ecoarse(idx, pMesh->P, P, pMesh->De, De);
 
 				//1. drift
 				int idx_M = pMesh->M.position_to_cellidx(pMesh->S.cellidx_to_position(idx));
 
-				DBL3 Mval = pMesh->M[idx_M];
+				DBL3 mval = normalize(pMesh->M[idx_M]);
 				DBL33 grad_S = pMesh->S.grad_neu(idx);
 
-				Js = (pMesh->E[idx] | Mval) * (P * pMesh->elC[idx] / Ms) * (-MUB_E);
+				Js = (pMesh->E[idx] | mval) * (P * pMesh->elC[idx]) * (-MUB_E);
 
 				//2. diffusion with homogeneous Neumann boundary condition
 				Js -= grad_S * De;
@@ -82,7 +66,7 @@ VEC<DBL3>& Transport::GetSpinCurrent(int component)
 
 				if (component != 2 && (cpump_enabled || the_enabled)) {
 
-					DBL33 grad_m = pMesh->M.grad_neu(idx_M) / Ms;
+					DBL33 grad_m = normalize(pMesh->M.grad_neu(idx_M), pMesh->M[idx_M]);
 
 					//topological Hall effect contribution
 					if (the_enabled) {
@@ -98,7 +82,7 @@ VEC<DBL3>& Transport::GetSpinCurrent(int component)
 					if (cpump_enabled) {
 
 						//value a1
-						DBL3 dm_dt = dM_dt[idx_M] / Ms;
+						DBL3 dm_dt = normalize(dM_dt[idx_M], pMesh->M[idx_M]);
 						Js += pMesh->cpump_eff.get0() * (HBAR_E * MUB_E * pMesh->elC[idx] / 2) * DBL33(dm_dt ^ grad_m.x, dm_dt ^ grad_m.y, DBL3());
 					}
 				}
@@ -136,53 +120,6 @@ VEC<DBL3>& Transport::GetSpinCurrent(int component)
 	return displayVEC;
 }
 
-DBL3 Transport::GetAverageSpinCurrent(int component, Rect rectangle, std::vector<MeshShape> shapes)
-{
-#if COMPILECUDA == 1
-	if (pModuleCUDA) {
-
-		//update displayVEC with spin current in TransportCUDA
-		GetSpinCurrentCUDA(component);
-
-		//average spin current in displayVEC in TransportCUDA
-		if (pSMesh->SolveSpinCurrent()) return cuReal3(pTransportCUDA->displayVEC()->average_nonempty(pMesh->n_e.dim(), rectangle));
-		else return cuReal3(0.0);
-	}
-#endif
-
-	//update displayVEC with spin current
-	GetSpinCurrent(component);
-
-	//average spin current in displayVEC
-	if (!shapes.size()) return displayVEC.average_nonempty_omp(rectangle);
-	else return displayVEC.shape_getaverage(shapes);
-}
-
-//Get average bulk spin torque in given rectangle - calculate it first
-DBL3 Transport::GetAverageSpinTorque(Rect rectangle, std::vector<MeshShape> shapes)
-{
-	GetSpinTorque();
-	if (displayVEC.linear_size()) {
-
-		if (!shapes.size()) return displayVEC.average_nonempty_omp(rectangle);
-		else return displayVEC.shape_getaverage(shapes);
-	}
-
-	return DBL3();
-}
-
-//Get average interfacial spin torque in given rectangle - must have been calculated already in displayVEC through the supermesh transport module
-DBL3 Transport::GetAverageInterfacialSpinTorque(Rect rectangle, std::vector<MeshShape> shapes)
-{ 
-	if (displayVEC.linear_size()) {
-
-		if (!shapes.size()) return displayVEC.average_nonempty_omp(rectangle);
-		else return displayVEC.shape_getaverage(shapes);
-	}
-
-	return DBL3();
-}
-
 //return spin torque computed from spin accumulation
 //VERIFIED - CORRECT
 VEC<DBL3>& Transport::GetSpinTorque(void)
@@ -211,43 +148,30 @@ VEC<DBL3>& Transport::GetSpinTorque(void)
 			continue;
 		}
 
-		double Ms = pMesh->Ms;
 		double De = pMesh->De;
 		double ts_eff = pMesh->ts_eff;
 		double l_ex = pMesh->l_ex;
 		double l_ph = pMesh->l_ph;
-		pMesh->update_parameters_mcoarse(idx, pMesh->Ms, Ms, pMesh->De, De, pMesh->ts_eff, ts_eff, pMesh->l_ex, l_ex, pMesh->l_ph, l_ph);
+		pMesh->update_parameters_mcoarse(idx, pMesh->De, De, pMesh->ts_eff, ts_eff, pMesh->l_ex, l_ex, pMesh->l_ph, l_ph);
 
 		//average S in the magnetization cell with index idx
 		DBL3 Sav = pMesh->S.weighted_average(pMesh->M.cellidx_to_position(idx), pMesh->h);
-		DBL3 M = pMesh->M[idx];
-
-		displayVEC[idx] = ts_eff * ((Sav ^ M) * De / (Ms * l_ex * l_ex) + (M ^ (Sav ^ M)) * De / (Ms * Ms * l_ph * l_ph));
+		
+		DBL3 m = normalize(pMesh->M[idx]);
+		displayVEC[idx] = ts_eff * ((Sav ^ m) * De / (l_ex * l_ex) + (m ^ (Sav ^ m)) * De / (l_ph * l_ph));
 	}
 
 	return displayVEC;
 }
 
-#if COMPILECUDA == 1
-cu_obj<cuVEC<cuReal3>>& Transport::GetSpinCurrentCUDA(int component)
-{
-	return pTransportCUDA->GetSpinCurrent(component);
-}
-
-cu_obj<cuVEC<cuReal3>>& Transport::GetSpinTorqueCUDA(void)
-{
-	return pTransportCUDA->GetSpinTorque();
-}
-#endif
-
 //Calculate the interface spin accumulation torque for a given contact (in magnetic meshes for NF interfaces with G interface conductance set), accumulating result in displayVEC
 //VERIFIED - CORRECT
-void Transport::CalculateDisplaySAInterfaceTorque(Transport* ptrans_sec, CMBNDInfo& contact)
+void Transport::CalculateDisplaySAInterfaceTorque(TransportBase* ptrans_sec, CMBNDInfo& contact)
 {
 	//the top contacting mesh sets G values
 	bool isGInterface_Enabled = ((contact.IsPrimaryTop() && pMesh->GInterface_Enabled()) || (!contact.IsPrimaryTop() && ptrans_sec->GInterface_Enabled()));
 
-	if (isGInterface_Enabled && stsolve == STSOLVE_FERROMAGNETIC && ptrans_sec->Get_STSolveType() == STSOLVE_NORMALMETAL) {
+	if (isGInterface_Enabled && stsolve == STSOLVE_FERROMAGNETIC && (ptrans_sec->Get_STSolveType() == STSOLVE_NORMALMETAL || ptrans_sec->Get_STSolveType() == STSOLVE_TUNNELING)) {
 
 		//interface conductance method with F being the primary mesh (N-F contact): calculate and set spin torque
 
@@ -264,7 +188,8 @@ void Transport::CalculateDisplaySAInterfaceTorque(Transport* ptrans_sec, CMBNDIn
 		//the cellsize perpendicular to the contact (in the M mesh)
 		double dh = (DBL3(contact.cell_shift) & pMesh->h).norm();
 
-		Mesh* pMesh_sec = ptrans_sec->pMesh;
+		//we've identified secondary as either N or T, so this can only be found in a Mesh
+		Mesh* pMesh_sec = dynamic_cast<Mesh*>(ptrans_sec->pMeshBase);
 
 		//primary cells in this contact
 #pragma omp parallel for
@@ -279,9 +204,8 @@ void Transport::CalculateDisplaySAInterfaceTorque(Transport* ptrans_sec, CMBNDIn
 
 			if (pMesh->M.is_empty(mcell1_idx)) continue;
 
-			double Ms = pMesh->Ms;
 			double tsi_eff = pMesh->tsi_eff;
-			pMesh->update_parameters_mcoarse(mcell1_idx, pMesh->Ms, Ms, pMesh->tsi_eff, tsi_eff);
+			pMesh->update_parameters_mcoarse(mcell1_idx, pMesh->tsi_eff, tsi_eff);
 
 			//position at interface relative to primary mesh
 			DBL3 mhshift_primary = contact.hshift_primary.normalized() & pMesh->h;
@@ -291,19 +215,20 @@ void Transport::CalculateDisplaySAInterfaceTorque(Transport* ptrans_sec, CMBNDIn
 
 			DBL3 relpos_m1 = pMesh->meshRect.s - pMesh_sec->meshRect.s + relpos_interf + contact.hshift_secondary / 2;
 
-			DBL3 stencil = pMesh->h - mod(mhshift_primary) + mod(contact.hshift_secondary);
+			DBL3 stencil_pri = pMesh->h - mod(mhshift_primary) + mod(contact.hshift_primary);
+			DBL3 stencil_sec = pMesh->h - mod(mhshift_primary) + mod(contact.hshift_secondary);
 
 			//S values
-			DBL3 S_1 = pMesh->S.weighted_average(relpos_1, stencil);
-			DBL3 S_2 = pMesh->S.weighted_average(relpos_1 - contact.hshift_primary, stencil);
-			DBL3 S_m1 = pMesh_sec->S.weighted_average(relpos_m1, stencil);
-			DBL3 S_m2 = pMesh_sec->S.weighted_average(relpos_m1 + contact.hshift_secondary, stencil);
+			DBL3 S_1 = pMesh->S.weighted_average(relpos_1, stencil_pri);
+			DBL3 S_2 = pMesh->S.weighted_average(relpos_1 - contact.hshift_primary, stencil_pri);
+			DBL3 S_m1 = pMesh_sec->S.weighted_average(relpos_m1, stencil_sec);
+			DBL3 S_m2 = pMesh_sec->S.weighted_average(relpos_m1 + contact.hshift_secondary, stencil_sec);
 
 			//c values
-			double c_m1 = ptrans_sec->cfunc_sec(relpos_m1, stencil);
-			double c_m2 = ptrans_sec->cfunc_sec(relpos_m1 + contact.hshift_secondary, stencil);
-			double c_1 = cfunc_sec(relpos_1, stencil);
-			double c_2 = cfunc_sec(relpos_1 - contact.hshift_primary, stencil);
+			double c_1 = cfunc_sec(relpos_1, stencil_pri);
+			double c_2 = cfunc_sec(relpos_1 - contact.hshift_primary, stencil_pri);
+			double c_m1 = ptrans_sec->cfunc_sec(relpos_m1, stencil_sec);
+			double c_m2 = ptrans_sec->cfunc_sec(relpos_m1 + contact.hshift_secondary, stencil_sec);
 
 			//Calculate S drop at the interface
 			DBL3 Vs_F = 1.5 * c_1 * S_1 - 0.5 * c_2 * S_2;
@@ -323,10 +248,14 @@ void Transport::CalculateDisplaySAInterfaceTorque(Transport* ptrans_sec, CMBNDIn
 				pMesh_sec->update_parameters_atposition(relpos_m1, pMesh_sec->Gmix, Gmix);
 			}
 
-			double gI = (2.0 * GMUB_2E / dh) * Gmix.j / Ms;
-			double gR = (2.0 * GMUB_2E / dh) * Gmix.i / Ms;
+			if (pMesh->M[mcell1_idx] != DBL3()) {
 
-			displayVEC[mcell1_idx] += tsi_eff * (gI * (pMesh->M[mcell1_idx] ^ dVs) + gR * (pMesh->M[mcell1_idx] ^ (pMesh->M[mcell1_idx] ^ dVs)) / Ms);
+				double Mnorm = pMesh->M[mcell1_idx].norm();
+				double gI = (2.0 * GMUB_2E / dh) * Gmix.j / Mnorm;
+				double gR = (2.0 * GMUB_2E / dh) * Gmix.i / Mnorm;
+
+				displayVEC[mcell1_idx] += tsi_eff * (gI * (pMesh->M[mcell1_idx] ^ dVs) + gR * (pMesh->M[mcell1_idx] ^ (pMesh->M[mcell1_idx] ^ dVs)) / Mnorm);
+			}
 		}
 	}
 }

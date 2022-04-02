@@ -9,10 +9,7 @@
 #define EPSILON_POSITIVE 1e-12F						
 #define EPSILON_NEGATIVE -1e-12F
 
-//Used for floor and ceil functions to define a non-fixed epsilon : the epsilon depends on the value the function is used on.
-#define FLOOR_CEIL_RATIO	1e-7
-
-//Fixed epsilon value used for floor and ceil functions with fixed precision. Also acts as a limit on variable epsilon use (FLOOR_CEIL_RATIO).
+//Fixed epsilon value used for floor and ceil functions with fixed precision.
 #define EPSILON_ROUNDING	1e-4
 
 ///////////////////////////////////////////////////////////////////////////////

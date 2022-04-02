@@ -615,6 +615,18 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 	}
 	break;
 
+	case IOI_MESH_FORDIPOLESHIFT:
+	{
+		display_meshIO(&Simulation::Build_DipoleShiftingAlgorithm_ListLine);
+	}
+	break;
+
+	case IOI_MESH_FORTMR:
+	{
+		display_meshIO(&Simulation::Print_TMRType_ListLine);
+	}
+	break;
+
 	//Shows mesh rectangle (units m) : minorId is the unique mesh id number, textId is the mesh rectangle
 	case IOI_MESHRECTANGLE:
 	{
@@ -1955,6 +1967,42 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 	}
 	break;
 
+
+	//Shows tmr type setting. minorId is the unique mesh id number, auxId is the value.
+	case IOI_TMRTYPE:
+	{
+		int meshId = iop.minorId;
+		int TMR_type = iop.auxId;
+
+		int meshIdx = SMesh.contains_id(meshId);
+
+		if (meshIdx >= 0) {
+
+			if (TMR_type != SMesh[meshIdx]->GetTMRType()) {
+
+				iop.auxId = SMesh[meshIdx]->GetTMRType();
+
+				switch ((TMR_)iop.auxId) {
+
+				case TMR_NONE:
+					pTO->set(" N/A ");
+					break;
+
+				case TMR_COS:
+					pTO->set(" cosine ");
+					break;
+
+				case TMR_SLONCZEWSKI:
+					pTO->set(" Slonczewski ");
+					break;
+				}
+
+				stateChanged = true;
+			}
+		}
+	}
+	break;
+
 	//Static transport solver state. auxId is the value (0/1)
 	case IOI_STATICTRANSPORT:
 	{
@@ -2507,6 +2555,44 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 				pTO->set(" Off ");
 			}
 
+			stateChanged = true;
+		}
+	}
+	break;
+
+	//Shows dipole velocity value. minorId is the unique mesh id number. textId is the value
+	case IOI_DIPOLEVELOCITY:
+	{
+		//parameters from iop
+		int meshId = iop.minorId;
+		std::string value_string = iop.textId;
+
+		int meshIdx = SMesh.contains_id(meshId);
+
+		//is there a value mismatch?
+		if (meshIdx >= 0 && value_string != ToString(SMesh[meshIdx]->Get_Dipole_Velocity(), "m/s")) {
+
+			iop.textId = ToString(SMesh[meshIdx]->Get_Dipole_Velocity(), "m/s");
+			pTO->set(" " + iop.textId + " ");
+			stateChanged = true;
+		}
+	}
+	break;
+
+	//Shows dipole shift clipping value. minorId is the unique mesh id number. textId is the value
+	case IOI_DIPOLESHIFTCLIP:
+	{
+		//parameters from iop
+		int meshId = iop.minorId;
+		std::string value_string = iop.textId;
+
+		int meshIdx = SMesh.contains_id(meshId);
+
+		//is there a value mismatch?
+		if (meshIdx >= 0 && value_string != ToString(SMesh[meshIdx]->Get_Dipole_Clipping(), "m")) {
+
+			iop.textId = ToString(SMesh[meshIdx]->Get_Dipole_Clipping(), "m");
+			pTO->set(" " + iop.textId + " ");
 			stateChanged = true;
 		}
 	}

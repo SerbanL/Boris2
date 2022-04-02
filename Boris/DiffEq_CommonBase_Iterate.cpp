@@ -20,11 +20,13 @@ bool ODECommon_Base::SetAdaptiveTimeStep(void)
 	//Integral controller adaptive time step.
 
 	if (lte > err_high_fail && dT > dT_min) {
-		
+
 		//reject. The dT > dT_min check needed to stop solver getting stuck.
 		time -= dT;
 		stagetime -= dT;
-		
+		iteration--;
+		stageiteration--;
+
 		//Use I controller only when rejecting
 		double c = pow(err_high_fail * 0.8 / lte, 1.0 / (eval_method_order + 1));
 
@@ -1404,17 +1406,17 @@ void ODECommon_Base::Iterate(void)
 
 			//1. calculate parameters for Barzilai-Borwein stepsizes -> solver must be primed with step 0 (after it is primed next loop starts from step 1)
 			//must reset the static delta_... quantities before running these across all meshes
-			podeSolver->delta_M_sq = 0.0;
+			podeSolver->delta_m_sq = 0.0;
 			podeSolver->delta_G_sq = 0.0;
-			podeSolver->delta_M_dot_delta_G = 0.0;
+			podeSolver->delta_m_dot_delta_G = 0.0;
 
-			podeSolver->delta_M2_sq = 0.0;
+			podeSolver->delta_m2_sq = 0.0;
 			podeSolver->delta_G2_sq = 0.0;
-			podeSolver->delta_M2_dot_delta_G2 = 0.0;
+			podeSolver->delta_m2_dot_delta_G2 = 0.0;
 
-			patom_odeSolver->delta_M_sq = 0.0;
+			patom_odeSolver->delta_m_sq = 0.0;
 			patom_odeSolver->delta_G_sq = 0.0;
-			patom_odeSolver->delta_M_dot_delta_G = 0.0;
+			patom_odeSolver->delta_m_dot_delta_G = 0.0;
 
 			for (int idx = 0; idx < podeSolver->pODE.size(); idx++) {
 
@@ -1425,74 +1427,27 @@ void ODECommon_Base::Iterate(void)
 
 				patom_odeSolver->pODE[idx]->RunSD_BB();
 			}
+			
+			double delta_m_sq = podeSolver->delta_m_sq + podeSolver->delta_m2_sq + patom_odeSolver->delta_m_sq;
+			double delta_m_G = podeSolver->delta_m_dot_delta_G + podeSolver->delta_m2_dot_delta_G2 + patom_odeSolver->delta_m_dot_delta_G;
+			double delta_G_sq = podeSolver->delta_G_sq + podeSolver->delta_G2_sq + patom_odeSolver->delta_G_sq;
 
 			//2. Set stepsize - alternate between BB values
 			if (iteration % 2) {
 
-				if (podeSolver->pODE.size()) {
-
-					if (podeSolver->delta_M_dot_delta_G) {
-
-						dT = podeSolver->delta_M_sq / podeSolver->delta_M_dot_delta_G;
-
-						//for antiferromagnetic meshes also consider sub-lattice B, take smallest dT value
-						if (podeSolver->delta_M2_dot_delta_G2) {
-
-							double dT_2 = podeSolver->delta_M2_sq / podeSolver->delta_M2_dot_delta_G2;
-							dT = (dT_2 < dT ? dT_2 : dT);
-						}
-					}
-					else do_sd_reset = true;
-				}
-
-				if (patom_odeSolver->pODE.size()) {
-
-					double atom_dT;
-
-					if (patom_odeSolver->delta_M_dot_delta_G && !do_sd_reset) {
-
-						atom_dT = patom_odeSolver->delta_M_sq / patom_odeSolver->delta_M_dot_delta_G;
-
-						if (podeSolver->pODE.size()) dT = (atom_dT < dT ? atom_dT : dT);
-						else dT = atom_dT;
-					}
-					else do_sd_reset = true;
-				}
+				if (delta_m_G && delta_m_sq * delta_m_G > 0.0) dT = delta_m_sq / delta_m_G;
+				else if (delta_G_sq && delta_m_G * delta_G_sq > 0.0) dT = delta_m_G / delta_G_sq;
+				else do_sd_reset = true;
 			}
 			else {
 
-				if (podeSolver->pODE.size()) {
-
-					if (podeSolver->delta_G_sq) {
-
-						dT = podeSolver->delta_M_dot_delta_G / podeSolver->delta_G_sq;
-
-						//for antiferromagnetic meshes also consider sub-lattice B, take smallest dT value
-						if (podeSolver->delta_G2_sq) {
-
-							double dT_2 = podeSolver->delta_M2_dot_delta_G2 / podeSolver->delta_G2_sq;
-							dT = (dT_2 < dT ? dT_2 : dT);
-						}
-					}
-					else do_sd_reset = true;
-				}
-
-				if (patom_odeSolver->pODE.size()) {
-
-					double atom_dT;
-
-					if (patom_odeSolver->delta_G_sq && !do_sd_reset) {
-
-						atom_dT = patom_odeSolver->delta_M_dot_delta_G / patom_odeSolver->delta_G_sq;
-
-						if (podeSolver->pODE.size()) dT = (atom_dT < dT ? atom_dT : dT);
-						else dT = atom_dT;
-					}
-					else do_sd_reset = true;
-				}
+				if (delta_G_sq && delta_m_G * delta_G_sq > 0.0) dT = delta_m_G / delta_G_sq;
+				else if (delta_m_G && delta_m_sq * delta_m_G > 0.0) dT = delta_m_sq / delta_m_G;
+				else do_sd_reset = true;
 			}
-			
-			if (dT < 0) do_sd_reset = true;
+
+			if (dT < dT_min) dT = dT_min;
+			if (dT > dT_max) dT = dT_max;
 
 			if (do_sd_reset) {
 
@@ -1568,9 +1523,8 @@ void ODECommon_Base::Iterate(void)
 			stageiteration++;
 			time += dT;
 			stagetime += dT;
-
-			primed = true;
 			sd_reset_consecutive_iters = 0;
+			primed = true;
 		}
 #endif
 	}
@@ -1597,16 +1551,16 @@ double ODECommon_Base::Get_EvalStep_Time(void)
 
 	//RKF45
 	//static double evaltime_rkf45[6] = { 0.0, 0.25, 0.375, 12.0/13, 1.0, 0.5 };
-	static double evaltime_rkf45[6] = { 0.0, 2.0/9, 1.0/3, 3.0/4, 1.0, 5.0/6 };
+	static double evaltime_rkf45[6] = { 0.0, 2.0 / 9, 1.0 / 3, 3.0 / 4, 1.0, 5.0 / 6 };
 
 	//RKF56
-	static double evaltime_rkf56[8] = { 0.0, 1.0/6, 4.0/15, 2.0/3, 4.0/5, 1.0, 0.0, 1.0 };
+	static double evaltime_rkf56[8] = { 0.0, 1.0 / 6, 4.0 / 15, 2.0 / 3, 4.0 / 5, 1.0, 0.0, 1.0 };
 
 	//RKCK45
 	static double evaltime_rkck45[6] = { 0.0, 0.2, 0.3, 0.6, 1.0, 0.875 };
 
 	//RKDP54
-	static double evaltime_rkdp54[6] = { 0.0, 0.2, 0.3, 0.8, 8.0/9, 1.0 };
+	static double evaltime_rkdp54[6] = { 0.0, 0.2, 0.3, 0.8, 8.0 / 9, 1.0 };
 
 	switch (evalMethod) {
 
@@ -1687,7 +1641,7 @@ bool ODECommon_Base::Check_Step_Update(void)
 	if (use_evaluation_speedup == EVALSPEEDUP_NONE) return true;
 
 	else if (!link_dTspeedup) {
-		
+
 		double time_eval = Get_EvalStep_Time();
 
 		//recommend skipping (and re-using previous value) if time step from previous evaluation is too small

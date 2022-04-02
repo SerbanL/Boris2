@@ -8,6 +8,7 @@
 #endif
 
 class Atom_Mesh;
+class Mesh;
 
 #if defined(MODULE_COMPILATION_SURFEXCHANGE) && ATOMISTIC == 1
 
@@ -25,11 +26,11 @@ private:
 	//pointer to mesh object holding this effective field module
 	Atom_Mesh* paMesh;
 
-	//magnetic meshes in surface exchange coupling with the mesh holding this module, top and bottom
+	//magnetic meshes in surface exchange coupling with the mesh holding this module, top and bottom (atomistic meshes)
 	std::vector<Atom_Mesh*> paMesh_Bot, paMesh_Top;
 
-	//number of coupled cells (either top or bottom) in this mesh
-	int coupled_cells = 0;
+	//magnetic meshes in surface exchange coupling with the mesh holding this module, top and bottom (micromagnetic meshes)
+	std::vector<Mesh*> pMesh_Bot, pMesh_Top;
 
 public:
 

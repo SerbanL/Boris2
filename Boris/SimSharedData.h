@@ -109,6 +109,8 @@ public:
 
 	//simulation schedule indexes : stage (main index in simStages) and step (sub-index in stage)
 	static INT2 stage_step;
+	//run a single simulation stage? (default is false, but CMD_RUNSTAGE can set this true, and when simulation stops this flag is set back to false)
+	static bool single_stage_run;
 
 	//constants defined by user at runtime to be used with TEquation objects; the key is the user constant name
 	static vector_key<double> userConstants;

@@ -52,12 +52,16 @@ public:
 	//----------------------------------- ODE METHODS IN (ANTI)FERROMAGNETIC MESH : Mesh_AntiFerromagneticCUDA.cu
 
 	//return average dm/dt in the given avRect (relative rect). Here m is the direction vector.
-	DBL3 Average_dmdt(cuBox avBox);
-	DBL3 Average_dmdt2(cuBox avBox);
+	cuReal3 Average_dmdt(cuBox avBox);
+	cuReal3 Average_dmdt2(cuBox avBox);
 
 	//return average m x dm/dt in the given avRect (relative rect). Here m is the direction vector.
-	DBL3 Average_mxdmdt(cuBox avBox);
-	DBL3 Average_mxdmdt2(cuBox avBox);
+	cuReal3 Average_mxdmdt(cuBox avBox);
+	//for sub-lattice B
+	cuReal3 Average_mxdmdt2(cuBox avBox);
+	//mixed sub-lattices A and B
+	cuReal3 Average_mxdm2dt(cuBox avBox);
+	cuReal3 Average_m2xdmdt(cuBox avBox);
 
 	//-----------------------------------OBJECT GETTERS
 
@@ -89,18 +93,18 @@ public:
 
 	//----------------------------------- OTHER IMPORTANT CONTROL METHODS
 
-	//Check if mesh needs to be moved (using the MoveMesh method) - return amount of movement required (i.e. parameter to use when calling MoveMesh).
-	cuBReal CheckMoveMesh(bool antisymmetric, double threshold) { return 0.0; }
-
 	//----------------------------------- ODE METHODS IN (ANTI)FERROMAGNETIC MESH : Mesh_AntiFerromagneticCUDA.cu
 
 	//return average dm/dt in the given avRect (relative rect). Here m is the direction vector.
-	DBL3 Average_dmdt(cuBox avBox) { return DBL3(); }
-	DBL3 Average_dmdt2(cuBox avBox) { return DBL3(); }
+	cuReal3 Average_dmdt(cuBox avBox) { return cuReal3(); }
+	cuReal3 Average_dmdt2(cuBox avBox) { return cuReal3(); }
 
 	//return average m x dm/dt in the given avRect (relative rect). Here m is the direction vector.
-	DBL3 Average_mxdmdt(cuBox avBox) { return DBL3(); }
-	DBL3 Average_mxdmdt2(cuBox avBox) { return DBL3(); }
+	cuReal3 Average_mxdmdt(cuBox avBox) { return cuReal3(); }
+	cuReal3 Average_mxdmdt2(cuBox avBox) { return cuReal3(); }
+	//mixed sub-lattices A and B
+	cuReal3 Average_mxdm2dt(cuBox avBox) { return cuReal3(); }
+	cuReal3 Average_m2xdmdt(cuBox avBox) { return cuReal3(); }
 };
 
 #endif

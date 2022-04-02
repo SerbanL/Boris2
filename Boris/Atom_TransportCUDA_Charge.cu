@@ -12,7 +12,7 @@
 
 void Atom_TransportCUDA::IterateChargeSolver_SOR(cu_obj<cuBReal>& damping, cu_obj<cuBReal>& max_error, cu_obj<cuBReal>& max_value)
 {
-	paMeshCUDA->V()->IteratePoisson_SOR(paMeshCUDA->n_e.dim(), (Atom_TransportCUDA_V_Funcs&)poisson_V, damping, max_error, max_value);
+	paMeshCUDA->V()->IteratePoisson_SOR(paMeshCUDA->n_e.dim(), (TransportCUDA_V_Funcs&)poisson_V, damping, max_error, max_value);
 }
 
 #endif

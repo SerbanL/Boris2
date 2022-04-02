@@ -6,8 +6,13 @@
 #if defined(MODULE_COMPILATION_SURFEXCHANGE) && ATOMISTIC == 1
 
 #include "Atom_SurfExchange.h"
+
 #include "Atom_Mesh.h"
 #include "Atom_MeshCUDA.h"
+
+#include "Mesh.h"
+#include "MeshCUDA.h"
+
 #include "DataDefs.h"
 
 Atom_SurfExchangeCUDA::Atom_SurfExchangeCUDA(Atom_MeshCUDA* paMeshCUDA_, Atom_SurfExchange* paSurfExch_)
@@ -27,6 +32,10 @@ BError Atom_SurfExchangeCUDA::Initialize(void)
 	//clear cu_arrs then rebuild them from information in SurfExchange module
 	paMesh_Bot.clear();
 	paMesh_Top.clear();
+	pMeshFM_Bot.clear();
+	pMeshFM_Top.clear();
+	pMeshAFM_Bot.clear();
+	pMeshAFM_Top.clear();
 
 	//make sure information in SurfExchange module is up to date
 	error = paSurfExch->Initialize();
@@ -38,13 +47,34 @@ BError Atom_SurfExchangeCUDA::Initialize(void)
 			paMesh_Bot.push_back(paSurfExch->paMesh_Bot[idx]->paMeshCUDA->cuaMesh.get_managed_object());
 		}
 
+		for (int idx = 0; idx < paSurfExch->pMesh_Bot.size(); idx++) {
+
+			if (paSurfExch->pMesh_Bot[idx]->GetMeshType() == MESH_FERROMAGNETIC) {
+
+				pMeshFM_Bot.push_back(paSurfExch->pMesh_Bot[idx]->pMeshCUDA->cuMesh.get_managed_object());
+			}
+			else if (paSurfExch->pMesh_Bot[idx]->GetMeshType() == MESH_ANTIFERROMAGNETIC) {
+
+				pMeshAFM_Bot.push_back(paSurfExch->pMesh_Bot[idx]->pMeshCUDA->cuMesh.get_managed_object());
+			}
+		}
+
 		for (int idx = 0; idx < paSurfExch->paMesh_Top.size(); idx++) {
 
 			paMesh_Top.push_back(paSurfExch->paMesh_Top[idx]->paMeshCUDA->cuaMesh.get_managed_object());
 		}
 
-		//copy number of coupled cells to gpu memory : SurfExchange has been initialized so the count is correct
-		coupled_cells.from_cpu(paSurfExch->coupled_cells);
+		for (int idx = 0; idx < paSurfExch->pMesh_Top.size(); idx++) {
+
+			if (paSurfExch->pMesh_Top[idx]->GetMeshType() == MESH_FERROMAGNETIC) {
+
+				pMeshFM_Top.push_back(paSurfExch->pMesh_Top[idx]->pMeshCUDA->cuMesh.get_managed_object());
+			}
+			else if (paSurfExch->pMesh_Top[idx]->GetMeshType() == MESH_ANTIFERROMAGNETIC) {
+
+				pMeshAFM_Top.push_back(paSurfExch->pMesh_Top[idx]->pMeshCUDA->cuMesh.get_managed_object());
+			}
+		}
 
 		initialized = true;
 	}

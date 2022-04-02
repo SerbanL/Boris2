@@ -6,9 +6,10 @@
 #include "Mesh_InsulatorCUDA.h"
 #endif
 
-#ifdef MESH_COMPILATION_INSULATOR
-
 #include "Heat.h"
+#include "TMR.h"
+
+#ifdef MESH_COMPILATION_INSULATOR
 
 /////////////////////////////////////////////////////////////////////
 //
@@ -23,19 +24,29 @@ class InsulatorMesh :
 	//Mesh members
 	int, int, int, 
 	int, int, int, int, int, int,
-	Rect, SZ3, DBL3, SZ3, DBL3, VEC_VC<double>, vector_lut<Modules*>,
+	Rect, SZ3, DBL3, SZ3, DBL3, SZ3, DBL3,
+	VEC_VC<double>, VEC_VC<DBL3>, VEC_VC<DBL3>, VEC_VC<double>,
+	VEC_VC<double>, 
+	vector_lut<Modules*>,
 	//Members in this derived class
-
+	int,
 	//Material Parameters
-	double, TEquation<double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>
+	double, TEquation<double>, 
+	MatP<DBL2, double>, MatP<DBL2, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>,
+	MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>
 	>,
 	//Module Implementations
-	std::tuple<Heat> >
+	std::tuple<Heat, TMR> >
 {
 
 #if COMPILECUDA == 1
 	friend InsulatorMeshCUDA;
 #endif
+
+private:
+
+	//formula selection for TMR
+	int TMR_type = TMR_SLONCZEWSKI;
 
 public:
 
@@ -49,7 +60,10 @@ public:
 	//implement pure virtual method from ProgramState
 	void RepairObjectState(void);
 
-	//----------------------------------- INITIALIZATION
+	//----------------------------------- PROPERTIES
+
+	void SetTMRType(TMR_ type) { TMR_type = type; }
+	TMR_ GetTMRType(void) { return (TMR_)TMR_type; }
 
 	//----------------------------------- IMPORTANT CONTROL METHODS
 
@@ -65,9 +79,6 @@ public:
 #if COMPILECUDA == 1
 	void PrepareNewIterationCUDA(void) {}
 #endif
-
-	//Check if mesh needs to be moved (using the MoveMesh method) - return amount of movement required (i.e. parameter to use when calling MoveMesh).
-	double CheckMoveMesh(void) { return 0.0; }
 };
 
 #else
@@ -105,9 +116,6 @@ public:
 #if COMPILECUDA == 1
 	void PrepareNewIterationCUDA(void) {}
 #endif
-
-	//Check if mesh needs to be moved (using the MoveMesh method) - return amount of movement required (i.e. parameter to use when calling MoveMesh).
-	double CheckMoveMesh(void) { return 0.0; }
 };
 
 #endif

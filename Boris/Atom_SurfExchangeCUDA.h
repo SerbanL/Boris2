@@ -8,9 +8,12 @@
 #include "BorisCUDALib.h"
 #include "ModulesCUDA.h"
 
-class Atom_MeshCUDA;
 class Atom_SurfExchange;
+
+class Atom_MeshCUDA;
 class ManagedAtom_MeshCUDA;
+
+class ManagedMeshCUDA;
 
 class Atom_SurfExchangeCUDA :
 	public ModulesCUDA
@@ -28,8 +31,13 @@ private:
 	cu_arr<ManagedAtom_MeshCUDA> paMesh_Bot;
 	cu_arr<ManagedAtom_MeshCUDA> paMesh_Top;
 
-	//coupled cells in gpu memory
-	cu_obj<int> coupled_cells;
+	//cu arrays with pointers to micromagnetic ferromagnetic meshes in surface exchange coupling with the mesh holding this module, top and bottom
+	cu_arr<ManagedMeshCUDA> pMeshFM_Bot;
+	cu_arr<ManagedMeshCUDA> pMeshFM_Top;
+
+	//cu arrays with pointers to micromagnetic antiferromagnetic meshes in surface exchange coupling with the mesh holding this module, top and bottom
+	cu_arr<ManagedMeshCUDA> pMeshAFM_Bot;
+	cu_arr<ManagedMeshCUDA> pMeshAFM_Top;
 
 private:
 

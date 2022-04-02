@@ -3,9 +3,6 @@
 
 #ifdef MESH_COMPILATION_FERROMAGNETIC
 
-//defines std::execution::par_unseq used for parallel std::sort
-#include <execution>
-
 #include "MeshParamsControl.h"
 #include "SuperMesh.h"
 

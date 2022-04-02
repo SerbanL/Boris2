@@ -400,7 +400,7 @@ DBL2 Exch_6ngbr_Neu::Get_EnergyChange(int spin_index, DBL3 Mnew_A, DBL3 Mnew_B)
 DBL3 Exch_6ngbr_Neu::GetTorque(Rect& avRect)
 {
 #if COMPILECUDA == 1
-	if (pModuleCUDA) return reinterpret_cast<Exch_6ngbr_NeuCUDA*>(pModuleCUDA)->GetTorque(avRect);
+	if (pModuleCUDA) return pModuleCUDA->GetTorque(avRect);
 #endif
 
 	return CalculateTorque(pMesh->M, avRect);

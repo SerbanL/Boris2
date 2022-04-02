@@ -61,8 +61,8 @@ public:
 
 	//quantities used to calculate Barzilai-Borwein stepsizes across multiple meshes
 	//Accumulate values in these quantities, then obtain stepsizes as:
-	//step1 = delta_M_sq / delta_M_dot_delta_G
-	//step2 = delta_M_dot_delta_G / delta_G_sq
+	//step1 = delta_m_sq / delta_m_dot_delta_G
+	//step2 = delta_m_dot_delta_G / delta_G_sq
 	cuBReal* pdelta_M_sq;
 	cuBReal* pdelta_G_sq;
 	cuBReal* pdelta_M_dot_delta_G;

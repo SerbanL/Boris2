@@ -68,9 +68,6 @@ public:
 #if COMPILECUDA == 1
 	void PrepareNewIterationCUDA(void) {}
 #endif
-
-	//Check if mesh needs to be moved (using the MoveMesh method) - return amount of movement required (i.e. parameter to use when calling MoveMesh).
-	double CheckMoveMesh(void) { return 0.0; }
 };
 
 #else
@@ -108,9 +105,6 @@ public:
 #if COMPILECUDA == 1
 	void PrepareNewIterationCUDA(void) {}
 #endif
-
-	//Check if mesh needs to be moved (using the MoveMesh method) - return amount of movement required (i.e. parameter to use when calling MoveMesh).
-	double CheckMoveMesh(void) { return 0.0; }
 };
 
 #endif

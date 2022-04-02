@@ -27,6 +27,7 @@ BError SuperMesh::SetODE(ODE_ setOde, EVAL_ evalMethod)
 	if (setOde <= ODE_ERROR || evalMethod <= EVAL_ERROR) return error(BERROR_INCORRECTNAME);
 
 	error = odeSolver.SetODE(setOde, evalMethod);
+
 	//also try to set atomistic ODE to same equation
 	//easier this way for users only interested in micromagnetics ode, and also for legacy purposes, e.g. if you want SDesc evaluation method enabled you have to have both micromagnetic and atomistic ODE set to LLGStatic
 	//atomistic ODE can be controlled separately using its own command (SetAtomisticODE method).

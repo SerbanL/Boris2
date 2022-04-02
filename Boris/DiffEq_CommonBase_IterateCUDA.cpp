@@ -960,76 +960,29 @@ void ODECommon_Base::IterateCUDA(void)
 
 			//2. Set stepsize - alternate between BB values
 			//first transfer BB values to cpu memory
-			if (podeSolver->pODE.size()) podeSolver->pODECUDA->Get_SD_Solver_BB_Values(&podeSolver->delta_M_sq, &podeSolver->delta_G_sq, &podeSolver->delta_M_dot_delta_G, &podeSolver->delta_M2_sq, &podeSolver->delta_G2_sq, &podeSolver->delta_M2_dot_delta_G2);
-			if (patom_odeSolver->pODE.size()) patom_odeSolver->pODECUDA->Get_SD_Solver_BB_Values(&patom_odeSolver->delta_M_sq, &patom_odeSolver->delta_G_sq, &patom_odeSolver->delta_M_dot_delta_G);
+			if (podeSolver->pODE.size()) podeSolver->pODECUDA->Get_SD_Solver_BB_Values(&podeSolver->delta_m_sq, &podeSolver->delta_G_sq, &podeSolver->delta_m_dot_delta_G, &podeSolver->delta_m2_sq, &podeSolver->delta_G2_sq, &podeSolver->delta_m2_dot_delta_G2);
+			if (patom_odeSolver->pODE.size()) patom_odeSolver->pODECUDA->Get_SD_Solver_BB_Values(&patom_odeSolver->delta_m_sq, &patom_odeSolver->delta_G_sq, &patom_odeSolver->delta_m_dot_delta_G);
+
+			double delta_m_sq = podeSolver->delta_m_sq + podeSolver->delta_m2_sq + patom_odeSolver->delta_m_sq;
+			double delta_m_G = podeSolver->delta_m_dot_delta_G + podeSolver->delta_m2_dot_delta_G2 + patom_odeSolver->delta_m_dot_delta_G;
+			double delta_G_sq = podeSolver->delta_G_sq + podeSolver->delta_G2_sq + patom_odeSolver->delta_G_sq;
 
 			//2. Set stepsize - alternate between BB values
 			if (iteration % 2) {
 
-				if (podeSolver->pODE.size()) {
-
-					if (podeSolver->delta_M_dot_delta_G) {
-
-						dT = podeSolver->delta_M_sq / podeSolver->delta_M_dot_delta_G;
-
-						//for antiferromagnetic meshes also consider sub-lattice B, take smallest dT value
-						if (podeSolver->delta_M2_dot_delta_G2) {
-
-							double dT_2 = podeSolver->delta_M2_sq / podeSolver->delta_M2_dot_delta_G2;
-							dT = (dT_2 < dT ? dT_2 : dT);
-						}
-					}
-					else do_sd_reset = true;
-				}
-
-				if (patom_odeSolver->pODE.size()) {
-
-					double atom_dT;
-
-					if (patom_odeSolver->delta_M_dot_delta_G && !do_sd_reset) {
-
-						atom_dT = patom_odeSolver->delta_M_sq / patom_odeSolver->delta_M_dot_delta_G;
-
-						if (podeSolver->pODE.size()) dT = (atom_dT < dT ? atom_dT : dT);
-						else dT = atom_dT;
-					}
-					else do_sd_reset = true;
-				}
+				if (delta_m_G && delta_m_sq * delta_m_G > 0.0) dT = delta_m_sq / delta_m_G;
+				else if (delta_G_sq && delta_m_G * delta_G_sq > 0.0) dT = delta_m_G / delta_G_sq;
+				else do_sd_reset = true;
 			}
 			else {
 
-				if (podeSolver->pODE.size()) {
-
-					if (podeSolver->delta_G_sq) {
-
-						dT = podeSolver->delta_M_dot_delta_G / podeSolver->delta_G_sq;
-
-						//for antiferromagnetic meshes also consider sub-lattice B, take smallest dT value
-						if (podeSolver->delta_G2_sq) {
-
-							double dT_2 = podeSolver->delta_M2_dot_delta_G2 / podeSolver->delta_G2_sq;
-							dT = (dT_2 < dT ? dT_2 : dT);
-						}
-					}
-					else do_sd_reset = true;
-				}
-
-				if (patom_odeSolver->pODE.size()) {
-
-					double atom_dT;
-
-					if (patom_odeSolver->delta_G_sq && !do_sd_reset) {
-
-						atom_dT = patom_odeSolver->delta_M_dot_delta_G / patom_odeSolver->delta_G_sq;
-
-						if (podeSolver->pODE.size()) dT = (atom_dT < dT ? atom_dT : dT);
-						else dT = atom_dT;
-					}
-					else do_sd_reset = true;
-				}
+				if (delta_G_sq && delta_m_G * delta_G_sq > 0.0) dT = delta_m_G / delta_G_sq;
+				else if (delta_m_G && delta_m_sq * delta_m_G > 0.0) dT = delta_m_sq / delta_m_G;
+				else do_sd_reset = true;
 			}
 
-			if (dT < 0) do_sd_reset = true;
+			if (dT < dT_min) dT = dT_min;
+			if (dT > dT_max) dT = dT_max;
 
 			if (do_sd_reset) {
 

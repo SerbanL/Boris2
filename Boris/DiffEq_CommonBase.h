@@ -161,7 +161,9 @@ protected:
 	//-----------------------------------Special Properties
 
 	//is the currently set equation a SA version? (set by SA ODE versions, which require spin accumulation to evaluate spin torques)
-	static bool solve_spin_current;
+	//separate flags for micromagnetic and atomistic versions
+	static bool solve_spin_current_mm;
+	static bool solve_spin_current_a;
 
 private:
 
@@ -288,7 +290,7 @@ public:
 
 	bool TimeStepSolved(void) { return available; }
 
-	bool SolveSpinCurrent(void) { return solve_spin_current; }
+	bool SolveSpinCurrent(void) { return solve_spin_current_mm || solve_spin_current_a; }
 
 	int GetEvaluationSpeedup(void) { return use_evaluation_speedup; }
 

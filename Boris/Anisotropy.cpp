@@ -10,38 +10,6 @@
 #include "AnisotropyCUDA.h"
 #endif
 
-//
-//
-// Let theta be the angle between magnetization and z axis
-// Let phi be the xy-plane angle between the projection of magnetizaiton on the xy-plane and the x axis
-//
-// Spherical polar coordinates:
-//
-// alpha = cos(phi) * sin (theta)
-// beta = sin(phi) * sin(theta)
-// gamma = cos(theta)
-//
-// Hk = - (1 / MU0) dE/dM = - (1 / MU0 Ms) dE/dm  ( dE/dM = x^ dE/dMx + y^ dE/dMy + z^ dE/dMz )
-
-//Uniaxial anisotropy (simple type):
-//
-//(E/V) = K1 * sin^2(theta) (J/m^3)
-//
-//i.e. theta can be taken as the angle between magnetization and easy axis. Thus in this case we define K1 and an easy axis direction
-//
-//Thus (E/V) = K1 * [ 1 - (M.ea/Ms)^2]  where ea is the easy axis direction. Theta is then the angle between M and the easy axis.
-//
-//Thus can calculate the anisotropy field Hk (which is added into the Heff field) as :
-//
-//Hk = 2K1/(MU0*Ms) * ea * (ea.m)
-//
-//For uniaxial anisotropy with 4th order term : (E/V) = K1 * sin^2(theta) + K2 * sin^4(theta) = K1 * (1 - (m.ea)^2) + K2 * (1 - (m.ea)^2)^2 (J/m^3)
-//
-//As above, calculate the anisotropy field as :
-//
-//Hk = 2/(MU0*Ms) [ K1 * ea * (ea.m) + 2 * K2 * ea * (ea.m) - 2 * K2 * ea * (ea.m)^3 ]
-//
-
 Anisotropy_Uniaxial::Anisotropy_Uniaxial(Mesh *pMesh_) : 
 	Modules(),
 	ProgramStateNames(this, {}, {})
@@ -257,7 +225,7 @@ DBL2 Anisotropy_Uniaxial::Get_EnergyChange(int spin_index, DBL3 Mnew_A, DBL3 Mne
 DBL3 Anisotropy_Uniaxial::GetTorque(Rect& avRect)
 {
 #if COMPILECUDA == 1
-	if (pModuleCUDA) return reinterpret_cast<Anisotropy_UniaxialCUDA*>(pModuleCUDA)->GetTorque(avRect);
+	if (pModuleCUDA) return pModuleCUDA->GetTorque(avRect);
 #endif
 
 	return CalculateTorque(pMesh->M, avRect);

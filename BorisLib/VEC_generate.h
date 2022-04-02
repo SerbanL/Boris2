@@ -37,34 +37,45 @@ inline bool VEC<double>::generate_custom_2D(SZ3 new_n, Rect new_rect, double off
 }
 
 template <>
-inline void VEC<double>::set_linear(DBL3 position1, double value1, DBL3 position2, double value2)
+inline void VEC<double>::set_linear(Rect contact1, double value1, Rect contact2, double value2, DBL2 degeneracy)
 {
-	if (position1 == position2) return;
-
-	DBL3 del_p = position2 - position1;
-	double del_p_sq = del_p * del_p;
-
 #pragma omp parallel for
 	for (int idx = 0; idx < n.dim(); idx++) {
 
 		//the absolute position of this cell center for which we are setting the value
 		DBL3 P = cellidx_to_position(idx) + rect.s;
 
-		//p is the point on the line containing position1 and position2, such that the segment (P - p) is orthogonal to it
-		DBL3 p = (del_p * (P - position1)) * del_p / del_p_sq + position1;
+		//distance to contact 1
+		double d1 = contact1.get_closest_distance(P);
+		//distance to position 2
+		double d2 = contact2.get_closest_distance(P);
+		//total distance
+		double d = d1 + d2;
 
-		//use linear interpolation along the line containing position1 and position2 to set value for this cell
-		quantity[idx] = (value1 * (position2 - p).norm() + value2 * (p - position1).norm()) / sqrt(del_p_sq);
+		//value to set
+		double value = (value1 + value2) / 2;
+		if (d) value = (value1 * (d - d1) + value2 * (d - d2)) / d;
+
+		if (degeneracy.second > 1) {
+			//degeneracy set : unweighted average, and first index (0) sets value, the rest add
+			if (degeneracy.first) quantity[idx] += value / degeneracy.second;
+			//Caller must make sure index 0 goes first
+			else quantity[idx] = value / degeneracy.second;
+		}
+		else {
+			//no degeneracy : just set value
+			quantity[idx] = value;
+		}
 	}
 }
 
 //linear : use interpolation to set values in this VEC based on projected distance between position1 and position2 and given fixed end values.
 template <>
-inline bool VEC<double>::generate_linear(DBL3 new_h, Rect new_rect, DBL3 position1, double value1, DBL3 position2, double value2)
+inline bool VEC<double>::generate_linear(DBL3 new_h, Rect new_rect, Rect contact1, double value1, Rect contact2, double value2)
 {
 	if (!resize(new_h, new_rect)) return false;
 
-	set_linear(position1, value1, position2, value2);
+	set_linear(contact1, value1, contact2, value2);
 
 	return true;
 }
@@ -487,6 +498,9 @@ inline bool VEC<double>::generate_defects(DBL3 new_h, Rect new_rect, DBL2 range,
 
 				//blend in new value since defects may overlap
 				quantity[idx] = current_value * (distance / radius) + new_value * (1 - (distance / radius));
+				//limit set value to given range
+				if (quantity[idx] < range.i) quantity[idx] = range.i;
+				if (quantity[idx] > range.j) quantity[idx] = range.j;
 			}
 		}
 	};

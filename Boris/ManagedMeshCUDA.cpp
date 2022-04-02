@@ -63,8 +63,13 @@ BError ManagedMeshCUDA::set_pointers(MeshCUDA* pMeshCUDA)
 	if (set_gpu_value(pcHA, pMeshCUDA->cHA.get_managed_object()) != cudaSuccess) error(BERROR_GPUERROR_CRIT);
 	if (set_gpu_value(pcHmo, pMeshCUDA->cHmo.get_managed_object()) != cudaSuccess) error(BERROR_GPUERROR_CRIT);
 
+	if (set_gpu_value(ps_eff, pMeshCUDA->s_eff.get_managed_object()) != cudaSuccess) error(BERROR_GPUERROR_CRIT);
+
 	if (set_gpu_value(pelecCond, pMeshCUDA->elecCond.get_managed_object()) != cudaSuccess) error(BERROR_GPUERROR_CRIT);
 	if (set_gpu_value(pamrPercentage, pMeshCUDA->amrPercentage.get_managed_object()) != cudaSuccess) error(BERROR_GPUERROR_CRIT);
+	if (set_gpu_value(pRAtmr_p, pMeshCUDA->RAtmr_p.get_managed_object()) != cudaSuccess) error(BERROR_GPUERROR_CRIT);
+	if (set_gpu_value(pRAtmr_ap, pMeshCUDA->RAtmr_ap.get_managed_object()) != cudaSuccess) error(BERROR_GPUERROR_CRIT);
+	
 	if (set_gpu_value(pP, pMeshCUDA->P.get_managed_object()) != cudaSuccess) error(BERROR_GPUERROR_CRIT);
 	if (set_gpu_value(pbeta, pMeshCUDA->beta.get_managed_object()) != cudaSuccess) error(BERROR_GPUERROR_CRIT);
 

@@ -60,12 +60,9 @@ void Transport::PrimeSpinSolver_Charge(void)
 
 			if (cppgmr_enabled || cpump_enabled) {
 
-				double Ms = pMesh->Ms;
-				pMesh->update_parameters_ecoarse(idx, pMesh->Ms, Ms);
-
 				int idx_M = pMesh->M.position_to_cellidx(pMesh->V.cellidx_to_position(idx));
-				DBL33 grad_m = pMesh->M.grad_neu(idx_M) / Ms;
-				DBL3 m = pMesh->M[idx_M] / Ms;
+				DBL33 grad_m = normalize(pMesh->M.grad_neu(idx_M), pMesh->M[idx_M]);
+				DBL3 m = normalize(pMesh->M[idx_M]);
 
 				//CPP-GMR contribution
 				if (cppgmr_enabled) {
@@ -84,16 +81,16 @@ void Transport::PrimeSpinSolver_Charge(void)
 				//Charge pumping pre-calculation
 				if (cpump_enabled) {
 
-					DBL33 grad_dm_dt = dM_dt.grad_neu(idx_M) / Ms;
-					DBL3 dm_dt = dM_dt[idx_M] / Ms;
+					DBL33 grad_dm_dt = normalize(dM_dt.grad_neu(idx_M), pMesh->M[idx_M]);
+					DBL3 dm_dt = normalize(dM_dt[idx_M], pMesh->M[idx_M]);
 
 					double P = pMesh->P;
 					pMesh->update_parameters_ecoarse(idx, pMesh->P, P);
 
 					DBL3 dx_m = grad_m.x;
 					DBL3 dy_m = grad_m.y;
-					DBL3 dxx_m = pMesh->M.dxx_neu(idx_M) / Ms;
-					DBL3 dyy_m = pMesh->M.dyy_neu(idx_M) / Ms;
+					DBL3 dxx_m = normalize(pMesh->M.dxx_neu(idx_M), pMesh->M[idx_M]);
+					DBL3 dyy_m = normalize(pMesh->M.dyy_neu(idx_M), pMesh->M[idx_M]);
 
 					delsq_V_fixed[idx] += (pMesh->cpump_eff.get0() * P * HBAR_E / 2) * ((grad_dm_dt.x ^ dx_m) + (grad_dm_dt.y ^ dy_m) + (dm_dt ^ (dxx_m + dyy_m))) * m;
 				}
@@ -141,30 +138,29 @@ double Transport::Evaluate_SpinSolver_delsqV_RHS(int idx) const
 		//2. topological Hall effect contribution
 		if (IsNZ(pMesh->the_eff.get0())) {
 
-			double Ms = pMesh->Ms;
 			double P = pMesh->P;
 			double n_density = pMesh->n_density;
-			pMesh->update_parameters_ecoarse(idx, pMesh->Ms, Ms, pMesh->P, P, pMesh->n_density, n_density);
+			pMesh->update_parameters_ecoarse(idx, pMesh->P, P, pMesh->n_density, n_density);
 
 			int idx_M = pMesh->M.position_to_cellidx(pMesh->V.cellidx_to_position(idx));
-			DBL3 m = pMesh->M[idx_M] / Ms;
+			DBL3 m = normalize(pMesh->M[idx_M]);
 
-			DBL33 grad_m = pMesh->M.grad_neu(idx_M) / Ms;
+			DBL33 grad_m = normalize(pMesh->M.grad_neu(idx_M), pMesh->M[idx_M]);
 			DBL3 dx_m = grad_m.x;
 			DBL3 dy_m = grad_m.y;
-			DBL3 dxy_m = pMesh->M.dxy_neu(idx_M) / Ms;
-			DBL3 dxx_m = pMesh->M.dxx_neu(idx_M) / Ms;
-			DBL3 dyy_m = pMesh->M.dyy_neu(idx_M) / Ms;
-			
+			DBL3 dxy_m = normalize(pMesh->M.dxy_neu(idx_M), pMesh->M[idx_M]);
+			DBL3 dxx_m = normalize(pMesh->M.dxx_neu(idx_M), pMesh->M[idx_M]);
+			DBL3 dyy_m = normalize(pMesh->M.dyy_neu(idx_M), pMesh->M[idx_M]);
+
 			DBL3 B_the = DBL3(
 				((dxy_m ^ dy_m) + (dx_m ^ dyy_m)) * m,
 				-1.0 * ((dxx_m ^ dy_m) + (dx_m ^ dxy_m)) * m,
 				0.0);
-					
+
 			value -= (pMesh->the_eff.get0() * P * pMesh->elC[idx] * HBAR_E / (ECHARGE * n_density)) * (grad_V * B_the);
 		}
 	}
-	
+
 	//additional fixed contributions if needed (e.g. CPP-GMR and charge pumping)
 	if (delsq_V_fixed.linear_size()) value += delsq_V_fixed[idx];
 
@@ -209,18 +205,17 @@ void Transport::PrimeSpinSolver_Spin(void)
 
 				//magnetic mesh
 
-				double Ms = pMesh->Ms;
 				double P = pMesh->P;
 				double De = pMesh->De;
-				pMesh->update_parameters_ecoarse(idx, pMesh->Ms, Ms, pMesh->P, P, pMesh->De, De);
+				pMesh->update_parameters_ecoarse(idx, pMesh->P, P, pMesh->De, De);
 
 				//term due to drift (non-uniformity of M term, and delsq V contribution - non-uniformity of E term)
 
 				//find grad M and M at the M cell in which the current S cell center is
 				int idx_M = pMesh->M.position_to_cellidx(pMesh->V.cellidx_to_position(idx));
 
-				DBL3 m = pMesh->M[idx_M] / Ms;
-				DBL33 grad_m = pMesh->M.grad_neu(idx_M) / Ms;
+				DBL3 m = normalize(pMesh->M[idx_M]);
+				DBL33 grad_m = normalize(pMesh->M.grad_neu(idx_M), pMesh->M[idx_M]);
 				DBL3 E_dot_del_m = grad_m | pMesh->E[idx];
 
 				//E_dot_del_m term is very important, but Evaluate_SpinSolver_delsqV_RHS term could be neglected in most cases especially if E is uniform.
@@ -231,14 +226,14 @@ void Transport::PrimeSpinSolver_Spin(void)
 
 					DBL3 dx_m = grad_m.x;
 					DBL3 dy_m = grad_m.y;
-					DBL3 dxy_m = pMesh->M.dxy_neu(idx_M) / Ms;
-					DBL3 dxx_m = pMesh->M.dxx_neu(idx_M) / Ms;
-					DBL3 dyy_m = pMesh->M.dyy_neu(idx_M) / Ms;
+					DBL3 dxy_m = normalize(pMesh->M.dxy_neu(idx_M), pMesh->M[idx_M]);
+					DBL3 dxx_m = normalize(pMesh->M.dxx_neu(idx_M), pMesh->M[idx_M]);
+					DBL3 dyy_m = normalize(pMesh->M.dyy_neu(idx_M), pMesh->M[idx_M]);
 
 					if (cpump_enabled) {
 
-						DBL3 dmdt = dM_dt[idx_M] / Ms;
-						DBL33 grad_dm_dt = dM_dt.grad_neu(idx_M) / Ms;
+						DBL3 dmdt = normalize(dM_dt[idx_M], pMesh->M[idx_M]);
+						DBL33 grad_dm_dt = normalize(dM_dt.grad_neu(idx_M), pMesh->M[idx_M]);
 
 						delsq_S_fixed[idx] += pMesh->cpump_eff.get0() * (pMesh->elC[idx] * HBAR_E * MUB_E / (2 * De)) * ((grad_dm_dt.x ^ dx_m) + (grad_dm_dt.y ^ dy_m) + (dmdt ^ (dxx_m + dyy_m)));
 					}
@@ -287,14 +282,13 @@ DBL3 Transport::Evaluate_SpinSolver_delsqS_RHS(int idx) const
 	//Terms occuring only in magnetic meshes
 	if (stsolve == STSOLVE_FERROMAGNETIC) {
 
-		double Ms = pMesh->Ms;
 		double l_ex = pMesh->l_ex;
 		double l_ph = pMesh->l_ph;
-		pMesh->update_parameters_ecoarse(idx, pMesh->Ms, Ms, pMesh->l_ex, l_ex, pMesh->l_ph, l_ph);
+		pMesh->update_parameters_ecoarse(idx, pMesh->l_ex, l_ex, pMesh->l_ph, l_ph);
 
 		//find grad M and M at the M cell in which the current S cell center is
 		int idx_M = pMesh->M.position_to_cellidx(pMesh->V.cellidx_to_position(idx));
-		DBL3 m = pMesh->M[idx_M] / Ms;
+		DBL3 m = normalize(pMesh->M[idx_M]);
 
 		//transverse S decay terms
 		delsq_S_RHS += ((pMesh->S[idx] ^ m) / (l_ex * l_ex) + (m ^ (pMesh->S[idx] ^ m)) / (l_ph * l_ph));
@@ -358,11 +352,10 @@ double Transport::afunc_st_V_sec(DBL3 relpos_m1, DBL3 shift, DBL3 stencil) const
 
 		//magnetic mesh
 
-		double Ms = pMesh->Ms;
-		pMesh->update_parameters_atposition(relpos_m1, pMesh->Ms, Ms);
-
-		DBL3 m1 = pMesh->M.weighted_average(relpos_m1, stencil) / Ms;
-		DBL3 m2 = pMesh->M.weighted_average(relpos_m1 + shift, stencil) / Ms;
+		DBL3 M1 = pMesh->M.weighted_average(relpos_m1, stencil);
+		DBL3 M2 = pMesh->M.weighted_average(relpos_m1 + shift, stencil);
+		DBL3 m1 = normalize(M1);
+		DBL3 m2 = normalize(M2);
 
 		//1. CPP-GMR contribution
 		if (cppgmr_enabled) {
@@ -399,8 +392,8 @@ double Transport::afunc_st_V_sec(DBL3 relpos_m1, DBL3 shift, DBL3 stencil) const
 			int idx_M1 = pMesh->M.position_to_cellidx(relpos_m1);
 			int idx_M2 = pMesh->M.position_to_cellidx(relpos_m1 + shift);
 
-			DBL33 grad_m1 = pMesh->M.grad_neu(idx_M1) / Ms;
-			DBL33 grad_m2 = pMesh->M.grad_neu(idx_M2) / Ms;
+			DBL33 grad_m1 = normalize(pMesh->M.grad_neu(idx_M1), M1);
+			DBL33 grad_m2 = normalize(pMesh->M.grad_neu(idx_M2), M2);
 
 			int idx_V1 = pMesh->V.position_to_cellidx(relpos_m1);
 			//do not read off the E field directly as it's only calculated after the spin solver (charge part) has relaxed
@@ -431,11 +424,11 @@ double Transport::afunc_st_V_sec(DBL3 relpos_m1, DBL3 shift, DBL3 stencil) const
 			if (cpump_enabled) {
 
 				//value a1
-				DBL3 dm_dt_1 = dM_dt.weighted_average(relpos_m1, stencil) / Ms;
+				DBL3 dm_dt_1 = normalize(dM_dt.weighted_average(relpos_m1, stencil), M1);
 				double a1 = pMesh->cpump_eff.get0() * (P * sigma_1 * HBAR_E / 2) * DBL3((dm_dt_1 ^ grad_m1.x) * m1, (dm_dt_1 ^ grad_m1.y) * m1, 0.0) * u;
 
 				//value a2
-				DBL3 dm_dt_2 = dM_dt.weighted_average(relpos_m1 + shift, stencil) / Ms;
+				DBL3 dm_dt_2 = normalize(dM_dt.weighted_average(relpos_m1 + shift, stencil), M2);
 				double a2 = pMesh->cpump_eff.get0() * (P * sigma_2 * HBAR_E / 2) * DBL3((dm_dt_2 ^ grad_m2.x) * m2, (dm_dt_2 ^ grad_m2.y) * m2, 0.0) * u;
 
 				//final interpolated a value
@@ -499,14 +492,11 @@ double Transport::afunc_st_V_pri(int cell1_idx, int cell2_idx, DBL3 shift) const
 
 		//magnetic mesh
 
-		double Ms = pMesh->Ms;
-		pMesh->update_parameters_ecoarse(cell1_idx, pMesh->Ms, Ms);
-
 		int idx_M1 = pMesh->M.position_to_cellidx(pMesh->V.cellidx_to_position(cell1_idx));
 		int idx_M2 = pMesh->M.position_to_cellidx(pMesh->V.cellidx_to_position(cell2_idx));
 
-		DBL3 m1 = pMesh->M[idx_M1] / Ms;
-		DBL3 m2 = pMesh->M[idx_M2] / Ms;
+		DBL3 m1 = normalize(pMesh->M[idx_M1]);
+		DBL3 m2 = normalize(pMesh->M[idx_M2]);
 
 		//1. CPP-GMR contribution
 		if (cppgmr_enabled) {
@@ -537,8 +527,8 @@ double Transport::afunc_st_V_pri(int cell1_idx, int cell2_idx, DBL3 shift) const
 			double n_density = pMesh->n_density;
 			pMesh->update_parameters_ecoarse(cell1_idx, pMesh->P, P, pMesh->n_density, n_density);
 
-			DBL33 grad_m1 = pMesh->M.grad_neu(idx_M1) / Ms;
-			DBL33 grad_m2 = pMesh->M.grad_neu(idx_M2) / Ms;
+			DBL33 grad_m1 = normalize(pMesh->M.grad_neu(idx_M1), pMesh->M[idx_M1]);
+			DBL33 grad_m2 = normalize(pMesh->M.grad_neu(idx_M2), pMesh->M[idx_M2]);
 
 			//do not read off the E field directly as it's only calculated after the spin solver (charge part) has relaxed
 			DBL3 E1 = -1.0 * pMesh->V.grad_diri(cell1_idx);
@@ -566,11 +556,11 @@ double Transport::afunc_st_V_pri(int cell1_idx, int cell2_idx, DBL3 shift) const
 			if (cpump_enabled) {
 
 				//value a1
-				DBL3 dm_dt_1 = dM_dt[idx_M1] / Ms;
+				DBL3 dm_dt_1 = normalize(dM_dt[idx_M1], pMesh->M[idx_M1]);
 				double a1 = pMesh->cpump_eff.get0() * (P * sigma_1 * HBAR_E / 2) * DBL3((dm_dt_1 ^ grad_m1.x) * m1, (dm_dt_1 ^ grad_m1.y) * m1, 0.0) * u;
 
 				//value a2
-				DBL3 dm_dt_2 = dM_dt[idx_M2] / Ms;
+				DBL3 dm_dt_2 = normalize(dM_dt[idx_M2], pMesh->M[idx_M2]);
 				double a2 = pMesh->cpump_eff.get0() * (P * sigma_2 * HBAR_E / 2) * DBL3((dm_dt_2 ^ grad_m2.x) * m2, (dm_dt_2 ^ grad_m2.y) * m2, 0.0) * u;
 
 				//final interpolated a value
@@ -628,8 +618,7 @@ double Transport::bfunc_st_V_pri(int cell1_idx, int cell2_idx) const
 double Transport::diff2_st_V_sec(DBL3 relpos_m1, DBL3 stencil, DBL3 shift) const
 {
 	int cellm1_idx = pMesh->V.position_to_cellidx(relpos_m1);
-
-	return Evaluate_SpinSolver_delsqV_RHS(cellm1_idx);
+	return diff2_st_V_pri(cellm1_idx, shift);
 }
 
 //second order differential of V along the shift axis
@@ -637,7 +626,112 @@ double Transport::diff2_st_V_sec(DBL3 relpos_m1, DBL3 stencil, DBL3 shift) const
 //VERIFIED - CORRECT
 double Transport::diff2_st_V_pri(int cell1_idx, DBL3 shift) const
 {
-	return Evaluate_SpinSolver_delsqV_RHS(cell1_idx);
+	//The Poisson solver calls this method to evaluate the RHS of this equation
+	double value = 0.0;
+
+	//normalized, positive shift: use * operator (dot product) with nshift to eliminate differentials orthogonal to the shift axis
+	DBL3 nshift = mod(normalize(shift));
+
+	if (stsolve == STSOLVE_NORMALMETAL || stsolve == STSOLVE_NONE) {
+
+		//non-magnetic mesh
+
+		if (IsZ(pMesh->iSHA.get0()) || stsolve == STSOLVE_NONE) {
+
+			//1. no iSHE contribution.
+			value = -((pMesh->V.grad_diri(cell1_idx) * nshift) * (pMesh->elC.grad_sided(cell1_idx) * nshift)) / pMesh->elC[cell1_idx];
+		}
+		else {
+
+			double De = pMesh->De;
+			double iSHA = pMesh->iSHA;
+			pMesh->update_parameters_ecoarse(cell1_idx, pMesh->De, De, pMesh->iSHA, iSHA);
+
+			//1. iSHE enabled, must use non-homogeneous Neumann boundary condition for grad V -> Note homogeneous Neumann boundary conditions apply when calculating S differentials here (due to Jc.n = 0 at boundaries)
+			value = -((pMesh->V.grad_diri_nneu(cell1_idx, (iSHA * De / (MUB_E * pMesh->elC[cell1_idx])) * pMesh->S.curl_neu(cell1_idx)) * nshift) * (pMesh->elC.grad_sided(cell1_idx) * nshift)) / pMesh->elC[cell1_idx];
+		}
+	}
+	else {
+
+		//magnetic mesh
+
+		//homogeneous Neumann boundary condition applies to V in magnetic meshes
+		DBL3 grad_V = pMesh->V.grad_diri(cell1_idx);
+
+		//1. principal term : always present
+		value = -((grad_V * nshift) * (pMesh->elC.grad_sided(cell1_idx) * nshift)) / pMesh->elC[cell1_idx];
+
+		//2. topological Hall effect contribution
+		if (IsNZ(pMesh->the_eff.get0())) {
+
+			double P = pMesh->P;
+			double n_density = pMesh->n_density;
+			pMesh->update_parameters_ecoarse(cell1_idx, pMesh->P, P, pMesh->n_density, n_density);
+
+			int idx_M = pMesh->M.position_to_cellidx(pMesh->V.cellidx_to_position(cell1_idx));
+			DBL3 m = normalize(pMesh->M[idx_M]);
+
+			DBL33 grad_m = normalize(pMesh->M.grad_neu(idx_M), pMesh->M[idx_M]);
+			DBL3 dx_m = grad_m.x;
+			DBL3 dy_m = grad_m.y;
+			DBL3 dxy_m = normalize(pMesh->M.dxy_neu(idx_M), pMesh->M[idx_M]);
+			DBL3 dxx_m = normalize(pMesh->M.dxx_neu(idx_M), pMesh->M[idx_M]);
+			DBL3 dyy_m = normalize(pMesh->M.dyy_neu(idx_M), pMesh->M[idx_M]);
+
+			DBL3 B_the = DBL3(
+				((dxy_m ^ dy_m) + (dx_m ^ dyy_m)) * m,
+				-1.0 * ((dxx_m ^ dy_m) + (dx_m ^ dxy_m)) * m,
+				0.0);
+
+			value -= (pMesh->the_eff.get0() * P * pMesh->elC[cell1_idx] * HBAR_E / (ECHARGE * n_density)) * ((grad_V * nshift) * (B_the * nshift));
+		}
+
+		bool cppgmr_enabled = IsNZ(pMesh->betaD.get0());
+		bool cpump_enabled = IsNZ(pMesh->cpump_eff.get0());
+
+		if (pMesh->V.is_not_empty(cell1_idx)) {
+
+			if (cppgmr_enabled || cpump_enabled) {
+
+				int idx_M = pMesh->M.position_to_cellidx(pMesh->V.cellidx_to_position(cell1_idx));
+				DBL33 grad_m = normalize(pMesh->M.grad_neu(idx_M), pMesh->M[idx_M]);
+				DBL3 m = normalize(pMesh->M[idx_M]);
+
+				//CPP-GMR contribution
+				if (cppgmr_enabled) {
+
+					double De = pMesh->De;
+					double betaD = pMesh->betaD;
+					pMesh->update_parameters_ecoarse(cell1_idx, pMesh->De, De, pMesh->betaD, betaD);
+
+					DBL33 grad_S = pMesh->S.grad_neu(cell1_idx);
+					DBL3 delsq_S = pMesh->S.delsq_neu(cell1_idx);
+					double div_grad_S_m = (DBL3(grad_S.i * grad_m.i, grad_S.j * grad_m.j, grad_S.k * grad_m.k) * nshift) + ((m * nshift) * (delsq_S * nshift));
+
+					value += div_grad_S_m * betaD * De / (MUB_E * pMesh->elC[cell1_idx]);
+				}
+
+				//Charge pumping pre-calculation
+				if (cpump_enabled) {
+
+					DBL33 grad_dm_dt = normalize(dM_dt.grad_neu(idx_M), pMesh->M[idx_M]);
+					DBL3 dm_dt = normalize(dM_dt[idx_M], pMesh->M[idx_M]);
+
+					double P = pMesh->P;
+					pMesh->update_parameters_ecoarse(cell1_idx, pMesh->P, P);
+
+					DBL3 dx_m = grad_m.x;
+					DBL3 dy_m = grad_m.y;
+					DBL3 dxx_m = normalize(pMesh->M.dxx_neu(idx_M), pMesh->M[idx_M]);
+					DBL3 dyy_m = normalize(pMesh->M.dyy_neu(idx_M), pMesh->M[idx_M]);
+
+					value += (pMesh->cpump_eff.get0() * P * HBAR_E / 2) * ((grad_dm_dt.x ^ dx_m) + (grad_dm_dt.y ^ dy_m) + (dm_dt ^ (dxx_m + dyy_m))) * m;
+				}
+			}
+		}
+	}
+
+	return value;
 }
 
 //CMBND for S
@@ -653,13 +747,13 @@ DBL3 Transport::afunc_st_S_sec(DBL3 relpos_m1, DBL3 shift, DBL3 stencil) const
 	//values on secondary side
 	if (stsolve == STSOLVE_FERROMAGNETIC) {
 
-		double Ms = pMesh->Ms;
 		double De = pMesh->De;
 		double P = pMesh->P;
-		pMesh->update_parameters_atposition(relpos_m1, pMesh->Ms, Ms, pMesh->De, De, pMesh->P, P);
+		pMesh->update_parameters_atposition(relpos_m1, pMesh->De, De, pMesh->P, P);
 
 		//a1 value
-		DBL3 m1 = pMesh->M.weighted_average(relpos_m1, stencil) / Ms;
+		DBL3 M1 = pMesh->M.weighted_average(relpos_m1, stencil);
+		DBL3 m1 = normalize(pMesh->M.weighted_average(relpos_m1, stencil), M1);
 		DBL3 E1 = pMesh->E.weighted_average(relpos_m1, stencil);
 		double sigma_1 = pMesh->elC.weighted_average(relpos_m1, stencil);
 
@@ -669,7 +763,8 @@ DBL3 Transport::afunc_st_S_sec(DBL3 relpos_m1, DBL3 shift, DBL3 stencil) const
 		DBL3 a1 = -MUB_E * ((E1 | m1) | u) * (P * sigma_1);
 
 		//a2 value
-		DBL3 m2 = pMesh->M.weighted_average(relpos_m1 + shift, stencil) / Ms;
+		DBL3 M2 = pMesh->M.weighted_average(relpos_m1 + shift, stencil);
+		DBL3 m2 = normalize(pMesh->M.weighted_average(relpos_m1 + shift, stencil), M2);
 		DBL3 E2 = pMesh->E.weighted_average(relpos_m1 + shift, stencil);
 		double sigma_2 = pMesh->elC.weighted_average(relpos_m1 + shift, stencil);
 
@@ -686,8 +781,8 @@ DBL3 Transport::afunc_st_S_sec(DBL3 relpos_m1, DBL3 shift, DBL3 stencil) const
 			int idx_M1 = pMesh->M.position_to_cellidx(relpos_m1);
 			int idx_M2 = pMesh->M.position_to_cellidx(relpos_m1 + shift);
 
-			DBL33 grad_m1 = pMesh->M.grad_neu(idx_M1) / Ms;
-			DBL33 grad_m2 = pMesh->M.grad_neu(idx_M2) / Ms;
+			DBL33 grad_m1 = normalize(pMesh->M.grad_neu(idx_M1), M1);
+			DBL33 grad_m2 = normalize(pMesh->M.grad_neu(idx_M2), M2);
 
 			//topological Hall effect contribution
 			if (the_enabled) {
@@ -697,7 +792,7 @@ DBL3 Transport::afunc_st_S_sec(DBL3 relpos_m1, DBL3 shift, DBL3 stencil) const
 
 				DBL3 B1 = (grad_m1.x ^ grad_m1.y);
 				a1 += pMesh->the_eff.get0() * (HBAR_E * MUB_E * sigma_1 * sigma_1 / (ECHARGE * n_density)) * ((-E1.y * B1 * u.x) + (E1.x * B1 * u.y));
-				
+
 				DBL3 B2 = (grad_m2.x ^ grad_m2.y);
 				a2 += pMesh->the_eff.get0() * (HBAR_E * MUB_E * sigma_2 * sigma_2 / (ECHARGE * n_density)) * ((-E2.y * B2 * u.x) + (E2.x * B2 * u.y));
 			}
@@ -706,10 +801,10 @@ DBL3 Transport::afunc_st_S_sec(DBL3 relpos_m1, DBL3 shift, DBL3 stencil) const
 			if (cpump_enabled) {
 
 				//value a1
-				DBL3 dm_dt_1 = dM_dt.weighted_average(relpos_m1, stencil) / Ms;
+				DBL3 dm_dt_1 = normalize(dM_dt.weighted_average(relpos_m1, stencil), M1);
 				a1 += pMesh->cpump_eff.get0() * (HBAR_E * MUB_E * sigma_1 / 2) * (((dm_dt_1 ^ grad_m1.x) * u.x) + ((dm_dt_1 ^ grad_m1.y) * u.y));
 
-				DBL3 dm_dt_2 = dM_dt.weighted_average(relpos_m1 + shift, stencil) / Ms;
+				DBL3 dm_dt_2 = normalize(dM_dt.weighted_average(relpos_m1 + shift, stencil), M2);
 				a2 += pMesh->cpump_eff.get0() * (HBAR_E * MUB_E * sigma_2 / 2) * (((dm_dt_2 ^ grad_m2.x) * u.x) + ((dm_dt_2 ^ grad_m2.y) * u.y));
 			}
 		}
@@ -741,16 +836,15 @@ DBL3 Transport::afunc_st_S_pri(int cell1_idx, int cell2_idx, DBL3 shift) const
 	//values on secondary side
 	if (stsolve == STSOLVE_FERROMAGNETIC) {
 
-		double Ms = pMesh->Ms;
 		double De = pMesh->De;
 		double P = pMesh->P;
-		pMesh->update_parameters_ecoarse(cell1_idx, pMesh->Ms, Ms, pMesh->De, De, pMesh->P, P);
+		pMesh->update_parameters_ecoarse(cell1_idx, pMesh->De, De, pMesh->P, P);
 
 		int idx_M1 = pMesh->M.position_to_cellidx(pMesh->S.cellidx_to_position(cell1_idx));
 		int idx_M2 = pMesh->M.position_to_cellidx(pMesh->S.cellidx_to_position(cell2_idx));
 
 		//a1 value
-		DBL3 m1 = pMesh->M[idx_M1] / Ms;
+		DBL3 m1 = normalize(pMesh->M[idx_M1]);
 		DBL3 E1 = pMesh->E[cell1_idx];
 		double sigma_1 = pMesh->elC[cell1_idx];
 
@@ -759,7 +853,7 @@ DBL3 Transport::afunc_st_S_pri(int cell1_idx, int cell2_idx, DBL3 shift) const
 		DBL3 a1 = -MUB_E * ((E1 | m1) | u) * (P * sigma_1);
 
 		//a2 value
-		DBL3 m2 = pMesh->M[idx_M2] / Ms;
+		DBL3 m2 = normalize(pMesh->M[idx_M2]);
 		DBL3 E2 = pMesh->E[cell2_idx];
 		double sigma_2 = pMesh->elC[cell2_idx];
 
@@ -772,8 +866,8 @@ DBL3 Transport::afunc_st_S_pri(int cell1_idx, int cell2_idx, DBL3 shift) const
 
 		if (IsZ(shift.z) && (cpump_enabled || the_enabled)) {
 
-			DBL33 grad_m1 = pMesh->M.grad_neu(idx_M1) / Ms;
-			DBL33 grad_m2 = pMesh->M.grad_neu(idx_M2) / Ms;
+			DBL33 grad_m1 = normalize(pMesh->M.grad_neu(idx_M1), pMesh->M[idx_M1]);
+			DBL33 grad_m2 = normalize(pMesh->M.grad_neu(idx_M2), pMesh->M[idx_M2]);
 
 			//topological Hall effect contribution
 			if (the_enabled) {
@@ -792,10 +886,10 @@ DBL3 Transport::afunc_st_S_pri(int cell1_idx, int cell2_idx, DBL3 shift) const
 			if (cpump_enabled) {
 
 				//value a1
-				DBL3 dm_dt_1 = dM_dt[idx_M1] / Ms;
+				DBL3 dm_dt_1 = normalize(dM_dt[idx_M1], pMesh->M[idx_M1]);
 				a1 += pMesh->cpump_eff.get0() * (HBAR_E * MUB_E * sigma_1 / 2) * (((dm_dt_1 ^ grad_m1.x) * u.x) + ((dm_dt_1 ^ grad_m1.y) * u.y));
 
-				DBL3 dm_dt_2 = dM_dt[idx_M2] / Ms;
+				DBL3 dm_dt_2 = normalize(dM_dt[idx_M2], pMesh->M[idx_M2]);
 				a2 += pMesh->cpump_eff.get0() * (HBAR_E * MUB_E * sigma_2 / 2) * (((dm_dt_2 ^ grad_m2.x) * u.x) + ((dm_dt_2 ^ grad_m2.y) * u.y));
 			}
 		}
@@ -841,8 +935,7 @@ double Transport::bfunc_st_S_pri(int cell1_idx, int cell2_idx) const
 DBL3 Transport::diff2_st_S_sec(DBL3 relpos_m1, DBL3 stencil, DBL3 shift) const
 {
 	int cellm1_idx = pMesh->S.position_to_cellidx(relpos_m1);
-
-	return Evaluate_SpinSolver_delsqS_RHS(cellm1_idx);
+	return diff2_st_S_pri(cellm1_idx, shift);
 }
 
 //second order differential of S along the shift axis
@@ -850,7 +943,100 @@ DBL3 Transport::diff2_st_S_sec(DBL3 relpos_m1, DBL3 stencil, DBL3 shift) const
 //VERIFIED - CORRECT
 DBL3 Transport::diff2_st_S_pri(int cell1_idx, DBL3 shift) const
 {
-	return Evaluate_SpinSolver_delsqS_RHS(cell1_idx);
+	DBL3 delsq_S_RHS;
+
+	double l_sf = pMesh->l_sf;
+	pMesh->update_parameters_ecoarse(cell1_idx, pMesh->l_sf, l_sf);
+
+	//Contributions which apply equally in ferromagnetic and non-ferromagnetic meshes
+	//longitudinal S decay term
+	delsq_S_RHS = (pMesh->S[cell1_idx] / (l_sf * l_sf));
+
+	//Terms occuring only in magnetic meshes
+	if (stsolve == STSOLVE_FERROMAGNETIC) {
+
+		double l_ex = pMesh->l_ex;
+		double l_ph = pMesh->l_ph;
+		pMesh->update_parameters_ecoarse(cell1_idx, pMesh->l_ex, l_ex, pMesh->l_ph, l_ph);
+
+		//find grad M and M at the M cell in which the current S cell center is
+		int idx_M = pMesh->M.position_to_cellidx(pMesh->V.cellidx_to_position(cell1_idx));
+		DBL3 m = normalize(pMesh->M[idx_M]);
+
+		//transverse S decay terms
+		delsq_S_RHS += ((pMesh->S[cell1_idx] ^ m) / (l_ex * l_ex) + (m ^ (pMesh->S[cell1_idx] ^ m)) / (l_ph * l_ph));
+	}
+	
+	bool cpump_enabled = IsNZ(pMesh->cpump_eff.get0());
+	bool the_enabled = IsNZ(pMesh->the_eff.get0());
+	bool she_enabled = IsNZ(pMesh->SHA.get0());
+
+	if (pMesh->V.is_not_empty(cell1_idx)) {
+
+		if (stsolve == STSOLVE_FERROMAGNETIC) {
+
+			//magnetic mesh
+
+			double P = pMesh->P;
+			double De = pMesh->De;
+			pMesh->update_parameters_ecoarse(cell1_idx, pMesh->P, P, pMesh->De, De);
+
+			//term due to drift (non-uniformity of M term, and delsq V contribution - non-uniformity of E term)
+
+			//find grad M and M at the M cell in which the current S cell center is
+			int idx_M = pMesh->M.position_to_cellidx(pMesh->V.cellidx_to_position(cell1_idx));
+
+			DBL3 m = normalize(pMesh->M[idx_M]);
+			DBL33 grad_m = normalize(pMesh->M.grad_neu(idx_M), pMesh->M[idx_M]);
+			DBL3 E_dot_del_m = grad_m | pMesh->E[cell1_idx];
+
+			//E_dot_del_m term is very important, but Evaluate_SpinSolver_delsqV_RHS term could be neglected in most cases especially if E is uniform.
+			delsq_S_RHS += (P * MUB_E * pMesh->elC[cell1_idx] / De) * (diff2_st_V_pri(cell1_idx, shift) * m - E_dot_del_m);
+
+			//charge pumping and topological Hall effect
+			if (cpump_enabled || the_enabled) {
+
+				DBL3 dx_m = grad_m.x;
+				DBL3 dy_m = grad_m.y;
+				DBL3 dxy_m = normalize(pMesh->M.dxy_neu(idx_M), pMesh->M[idx_M]);
+				DBL3 dxx_m = normalize(pMesh->M.dxx_neu(idx_M), pMesh->M[idx_M]);
+				DBL3 dyy_m = normalize(pMesh->M.dyy_neu(idx_M), pMesh->M[idx_M]);
+
+				if (cpump_enabled) {
+
+					DBL3 dmdt = normalize(dM_dt[idx_M], pMesh->M[idx_M]);
+					DBL33 grad_dm_dt = normalize(dM_dt.grad_neu(idx_M), pMesh->M[idx_M]);
+
+					delsq_S_RHS += pMesh->cpump_eff.get0() * (pMesh->elC[cell1_idx] * HBAR_E * MUB_E / (2 * De)) * ((grad_dm_dt.x ^ dx_m) + (grad_dm_dt.y ^ dy_m) + (dmdt ^ (dxx_m + dyy_m)));
+				}
+
+				if (the_enabled) {
+
+					double n_density = pMesh->n_density;
+					pMesh->update_parameters_ecoarse(cell1_idx, pMesh->n_density, n_density);
+
+					delsq_S_RHS += pMesh->the_eff.get0() * (HBAR_E * MUB_E * pMesh->elC[cell1_idx] * pMesh->elC[cell1_idx] / (ECHARGE * n_density * De)) * (pMesh->E[cell1_idx].x * ((dxy_m ^ dy_m) + (dx_m ^ dyy_m)) - pMesh->E[cell1_idx].y * ((dxx_m ^ dy_m) + (dx_m ^ dxy_m)));
+				}
+			}
+		}
+
+		//terms occuring only in non-magnetic meshes
+		else {
+
+			//1. SHA term (this is negligible in most cases, even if E is non-uniform, but might as well include it) 
+			if (she_enabled) {
+
+				double SHA = pMesh->SHA;
+				double De = pMesh->De;
+				pMesh->update_parameters_ecoarse(cell1_idx, pMesh->SHA, SHA, pMesh->De, De);
+
+				//Check boundary conditions for this term : should be Dirichlet with 0 Jc value normal to the boundary except for electrodes.
+				delsq_S_RHS += (SHA * pMesh->elC[cell1_idx] * MUB_E / De) * pMesh->E.diveps3_sided(cell1_idx);
+			}
+		}
+	}
+
+	return delsq_S_RHS;
 }
 
 //-------------------
@@ -886,19 +1072,19 @@ void Transport::CalculateSAField(void)
 
 		if (pMesh->M.is_not_empty(idx)) {
 
-			double Ms = pMesh->Ms;
 			double grel = pMesh->grel;
 			double De = pMesh->De;
 			double ts_eff = pMesh->ts_eff;
 			double l_ex = pMesh->l_ex;
 			double l_ph = pMesh->l_ph;
-			pMesh->update_parameters_mcoarse(idx, pMesh->Ms, Ms, pMesh->grel, grel, pMesh->De, De, pMesh->ts_eff, ts_eff, pMesh->l_ex, l_ex, pMesh->l_ph, l_ph);
+			pMesh->update_parameters_mcoarse(idx, pMesh->grel, grel, pMesh->De, De, pMesh->ts_eff, ts_eff, pMesh->l_ex, l_ex, pMesh->l_ph, l_ph);
 
-			if (IsNZ((double)grel)) {
+			if (IsNZ((double)grel) && pMesh->M[idx] != DBL3()) {
 
 				DBL3 Sa = pMesh->S.weighted_average(pMesh->M.cellidx_to_position(idx), pMesh->h);
 
-				pMesh->Heff[idx] += (De * ts_eff / (GAMMA * grel * Ms)) * (Sa / (l_ex * l_ex) + (pMesh->M[idx] ^ Sa) / (l_ph * l_ph * Ms));
+				double Mnorm = pMesh->M[idx].norm();
+				pMesh->Heff[idx] += (De * ts_eff / (GAMMA * grel * Mnorm)) * (Sa / (l_ex * l_ex) + (pMesh->M[idx] ^ Sa) / (l_ph * l_ph * Mnorm));
 			}
 		}
 	}
@@ -906,12 +1092,12 @@ void Transport::CalculateSAField(void)
 
 //Calculate interface spin accumulation torque for a given contact (in magnetic meshes for NF interfaces with G interface conductance set)
 //VERIFIED - CORRECT
-void Transport::CalculateSAInterfaceField(Transport* ptrans_sec, CMBNDInfo& contact)
+void Transport::CalculateSAInterfaceField(TransportBase* ptrans_sec, CMBNDInfo& contact)
 {
 	//the top contacting mesh sets G values
 	bool isGInterface_Enabled = ((contact.IsPrimaryTop() && pMesh->GInterface_Enabled()) || (!contact.IsPrimaryTop() && ptrans_sec->GInterface_Enabled()));
 
-	if (isGInterface_Enabled && stsolve == STSOLVE_FERROMAGNETIC && ptrans_sec->Get_STSolveType() == STSOLVE_NORMALMETAL) {
+	if (isGInterface_Enabled && stsolve == STSOLVE_FERROMAGNETIC && (ptrans_sec->Get_STSolveType() == STSOLVE_NORMALMETAL || ptrans_sec->Get_STSolveType() == STSOLVE_TUNNELING)) {
 
 		//interface conductance method with F being the primary mesh (N-F) contact : calculate and set spin torque
 
@@ -928,7 +1114,8 @@ void Transport::CalculateSAInterfaceField(Transport* ptrans_sec, CMBNDInfo& cont
 		//the cellsize perpendicular to the contact (in the M mesh)
 		double dh = (DBL3(contact.cell_shift) & pMesh->h).norm();
 
-		Mesh* pMesh_sec = ptrans_sec->pMesh;
+		//we've identified secondary as either N or T, so this can only be found in a Mesh
+		Mesh* pMesh_sec = dynamic_cast<Mesh*>(ptrans_sec->pMeshBase);
 
 		//primary cells in this contact
 #pragma omp parallel for
@@ -937,16 +1124,15 @@ void Transport::CalculateSAInterfaceField(Transport* ptrans_sec, CMBNDInfo& cont
 			int i = (box_idx % box_sizes.x) + mbox_start.i;
 			int j = ((box_idx / box_sizes.x) % box_sizes.y) + mbox_start.j;
 			int k = (box_idx / (box_sizes.x * box_sizes.y)) + mbox_start.k;
-			
+
 			//index of magnetic cell 1
 			int mcell1_idx = i + j * pMesh->n.x + k * pMesh->n.x*pMesh->n.y;
 
 			if (pMesh->M.is_empty(mcell1_idx)) continue;
-			
-			double Ms = pMesh->Ms;
+
 			double grel = pMesh->grel;
 			double tsi_eff = pMesh->tsi_eff;
-			pMesh->update_parameters_mcoarse(mcell1_idx, pMesh->grel, grel, pMesh->Ms, Ms, pMesh->tsi_eff, tsi_eff);
+			pMesh->update_parameters_mcoarse(mcell1_idx, pMesh->grel, grel, pMesh->tsi_eff, tsi_eff);
 
 			if (IsNZ((double)grel)) {
 
@@ -958,19 +1144,20 @@ void Transport::CalculateSAInterfaceField(Transport* ptrans_sec, CMBNDInfo& cont
 
 				DBL3 relpos_m1 = pMesh->meshRect.s - pMesh_sec->meshRect.s + relpos_interf + contact.hshift_secondary / 2;
 
-				DBL3 stencil = pMesh->h - mod(mhshift_primary) + mod(contact.hshift_secondary);
+				DBL3 stencil_pri = pMesh->h - mod(mhshift_primary) + mod(contact.hshift_primary);
+				DBL3 stencil_sec = pMesh->h - mod(mhshift_primary) + mod(contact.hshift_secondary);
 
 				//S values
-				DBL3 S_1 = pMesh->S.weighted_average(relpos_1, stencil);
-				DBL3 S_2 = pMesh->S.weighted_average(relpos_1 - contact.hshift_primary, stencil);
-				DBL3 S_m1 = pMesh_sec->S.weighted_average(relpos_m1, stencil);
-				DBL3 S_m2 = pMesh_sec->S.weighted_average(relpos_m1 + contact.hshift_secondary, stencil);
+				DBL3 S_1 = pMesh->S.weighted_average(relpos_1, stencil_pri);
+				DBL3 S_2 = pMesh->S.weighted_average(relpos_1 - contact.hshift_primary, stencil_pri);
+				DBL3 S_m1 = pMesh_sec->S.weighted_average(relpos_m1, stencil_sec);
+				DBL3 S_m2 = pMesh_sec->S.weighted_average(relpos_m1 + contact.hshift_secondary, stencil_sec);
 
 				//c values
-				double c_m1 = ptrans_sec->cfunc_sec(relpos_m1, stencil);
-				double c_m2 = ptrans_sec->cfunc_sec(relpos_m1 + contact.hshift_secondary, stencil);
-				double c_1 = cfunc_sec(relpos_1, stencil);
-				double c_2 = cfunc_sec(relpos_1 - contact.hshift_primary, stencil);
+				double c_1 = cfunc_sec(relpos_1, stencil_pri);
+				double c_2 = cfunc_sec(relpos_1 - contact.hshift_primary, stencil_pri);
+				double c_m1 = ptrans_sec->cfunc_sec(relpos_m1, stencil_sec);
+				double c_m2 = ptrans_sec->cfunc_sec(relpos_m1 + contact.hshift_secondary, stencil_sec);
 
 				//Calculate S drop at the interface
 				DBL3 Vs_F = 1.5 * c_1 * S_1 - 0.5 * c_2 * S_2;
@@ -990,10 +1177,14 @@ void Transport::CalculateSAInterfaceField(Transport* ptrans_sec, CMBNDInfo& cont
 					pMesh_sec->update_parameters_atposition(relpos_m1, pMesh_sec->Gmix, Gmix);
 				}
 
-				double gI = (2.0 * GMUB_2E / dh) * Gmix.j / (-GAMMA * grel * Ms);
-				double gR = (2.0 * GMUB_2E / dh) * Gmix.i / (-GAMMA * grel * Ms);
+				if (pMesh->M[mcell1_idx] != DBL3()) {
 
-				pMesh->Heff[mcell1_idx] += tsi_eff * (gI * dVs + gR * (pMesh->M[mcell1_idx] ^ dVs) / Ms);
+					double Mnorm = pMesh->M[mcell1_idx].norm();
+					double gI = (2.0 * GMUB_2E / dh) * Gmix.j / (-GAMMA * grel * Mnorm);
+					double gR = (2.0 * GMUB_2E / dh) * Gmix.i / (-GAMMA * grel * Mnorm);
+
+					pMesh->Heff[mcell1_idx] += tsi_eff * (gI * dVs + gR * (pMesh->M[mcell1_idx] ^ dVs) / Mnorm);
+				}
 			}
 		}
 	}

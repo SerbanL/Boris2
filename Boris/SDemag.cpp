@@ -38,8 +38,8 @@ SDemag::~SDemag()
 	demag_pbc_images = INT3();
 	Set_Magnetic_PBC();
 
-	//RAII : SDemag_Demag module were created in the constructor, so delete them here in any remaining ferromagnetic meshes 
-	//(some could have been deleted already if any ferromagnetic mesh was deleted in the mean-time)
+	//RAII : SDemag_Demag modules were created in the constructor, so delete them here in any remaining magnetic meshes 
+	//(some could have been deleted already if any magnetic mesh was deleted in the mean-time)
 	for (int idx = 0; idx < (int)pSMesh->pMesh.size(); idx++) {
 
 		if ((*pSMesh)[idx]->MComputation_Enabled()) {

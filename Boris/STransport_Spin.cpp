@@ -115,17 +115,19 @@ void STransport::set_cmbnd_spin_transport_V(void)
 			//use continuity of Jc and V across interface unless the interface is N-F type (normal metal - ferromagnetic) and the spin mixing conductance is not zero (i.e. continuous method disabled).
 
 			//Is it an N-F contact?
-			if ((pTransport[idx_pri]->Get_STSolveType() == STSOLVE_NORMALMETAL && pTransport[idx_sec]->Get_STSolveType() == STSOLVE_FERROMAGNETIC) ||
-				(pTransport[idx_sec]->Get_STSolveType() == STSOLVE_NORMALMETAL && pTransport[idx_pri]->Get_STSolveType() == STSOLVE_FERROMAGNETIC)) {
+			if (((pTransport[idx_pri]->Get_STSolveType() == STSOLVE_NORMALMETAL || pTransport[idx_pri]->Get_STSolveType() == STSOLVE_TUNNELING) &&
+				(pTransport[idx_sec]->Get_STSolveType() == STSOLVE_FERROMAGNETIC || pTransport[idx_sec]->Get_STSolveType() == STSOLVE_FERROMAGNETIC_ATOM)) ||
+				((pTransport[idx_sec]->Get_STSolveType() == STSOLVE_NORMALMETAL || pTransport[idx_sec]->Get_STSolveType() == STSOLVE_TUNNELING) &&
+				(pTransport[idx_pri]->Get_STSolveType() == STSOLVE_FERROMAGNETIC || pTransport[idx_pri]->Get_STSolveType() == STSOLVE_FERROMAGNETIC_ATOM))) {
 
-				//Yes we have an N-F contact. Is G interface enabled for this contact ? (remember top mesh sets G interface values)
+				//Yes we have an N(T)-F contact. Is G interface enabled for this contact ? (remember top mesh sets G interface values)
 
 				//if primary is top then we check GInterface in primary. If primary is bottom then we check GInterface in secondary as it must be top.
 				if ((CMBNDcontacts[idx1][idx2].IsPrimaryTop() && pTransport[idx_pri]->GInterface_Enabled()) ||
 					(!CMBNDcontacts[idx1][idx2].IsPrimaryTop() && pTransport[idx_sec]->GInterface_Enabled())) {
 
 					//G interface method
-					
+
 					pV[idx_pri]->set_cmbnd_continuousflux<TransportBase, STransport>(
 						*pV[idx_sec], CMBNDcontacts[idx1][idx2],
 						&TransportBase::afunc_st_V_sec, &TransportBase::afunc_st_V_pri,
@@ -133,14 +135,13 @@ void STransport::set_cmbnd_spin_transport_V(void)
 						&TransportBase::diff2_st_V_sec, &TransportBase::diff2_st_V_pri,
 						&STransport::Afunc_V, &STransport::Bfunc_V,
 						*pTransport[idx_sec], *pTransport[idx_pri], *this);
-						
+
 					//next contact
 					continue;
 				}
 			}
 
 			//continuous interface method - the G interface method check above didn't pass so this is what we have left
-
 			pV[idx_pri]->set_cmbnd_continuous<TransportBase>(
 				*pV[idx_sec], CMBNDcontacts[idx1][idx2],
 				&TransportBase::afunc_st_V_sec, &TransportBase::afunc_st_V_pri,
@@ -168,10 +169,12 @@ void STransport::set_cmbnd_spin_transport_S(void)
 			//use continuity of Js and S across interface unless the interface is N-F type (normal metal - ferromagnetic) and the spin mixing conductance is not zero (i.e. continuous method disabled).
 
 			//Is it an N-F contact?
-			if ((pTransport[idx_pri]->Get_STSolveType() == STSOLVE_NORMALMETAL && pTransport[idx_sec]->Get_STSolveType() == STSOLVE_FERROMAGNETIC) ||
-				(pTransport[idx_sec]->Get_STSolveType() == STSOLVE_NORMALMETAL && pTransport[idx_pri]->Get_STSolveType() == STSOLVE_FERROMAGNETIC)) {
+			if (((pTransport[idx_pri]->Get_STSolveType() == STSOLVE_NORMALMETAL || pTransport[idx_pri]->Get_STSolveType() == STSOLVE_TUNNELING) &&
+				(pTransport[idx_sec]->Get_STSolveType() == STSOLVE_FERROMAGNETIC || pTransport[idx_sec]->Get_STSolveType() == STSOLVE_FERROMAGNETIC_ATOM)) ||
+				((pTransport[idx_sec]->Get_STSolveType() == STSOLVE_NORMALMETAL || pTransport[idx_sec]->Get_STSolveType() == STSOLVE_TUNNELING) &&
+				(pTransport[idx_pri]->Get_STSolveType() == STSOLVE_FERROMAGNETIC || pTransport[idx_pri]->Get_STSolveType() == STSOLVE_FERROMAGNETIC_ATOM))) {
 
-				//Yes we have an N-F contact. Is G interface enabled for this contact ? (remember top mesh sets G interface values)
+				//Yes we have an N(T)-F contact. Is G interface enabled for this contact ? (remember top mesh sets G interface values)
 
 				//if primary is top then we check GInterface in primary. If primary is bottom then we check GInterface in secondary as it must be top.
 				if ((CMBNDcontacts[idx1][idx2].IsPrimaryTop() && pTransport[idx_pri]->GInterface_Enabled()) ||
@@ -179,7 +182,7 @@ void STransport::set_cmbnd_spin_transport_S(void)
 
 					//G interface method
 
-					if (pTransport[idx_pri]->Get_STSolveType() == STSOLVE_FERROMAGNETIC) {
+					if (pTransport[idx_pri]->Get_STSolveType() == STSOLVE_FERROMAGNETIC || pTransport[idx_pri]->Get_STSolveType() == STSOLVE_FERROMAGNETIC_ATOM) {
 
 						//interface conductance method with F being the primary mesh
 						
@@ -238,11 +241,7 @@ void STransport::CalculateSAInterfaceField(void)
 			int idx_sec = CMBNDcontacts[idx1][idx2].mesh_idx.i;
 			int idx_pri = CMBNDcontacts[idx1][idx2].mesh_idx.j;
 
-			//SA Interface Field currently only from micromagnetic to micromagnetic meshes
-			if (!pTransport[idx_pri]->pMeshBase->is_atomistic() && !pTransport[idx_sec]->pMeshBase->is_atomistic()) {
-
-				dynamic_cast<Transport*>(pTransport[idx_pri])->CalculateSAInterfaceField(dynamic_cast<Transport*>(pTransport[idx_sec]), CMBNDcontacts[idx1][idx2]);
-			}
+			pTransport[idx_pri]->CalculateSAInterfaceField(pTransport[idx_sec], CMBNDcontacts[idx1][idx2]);
 		}
 	}
 }

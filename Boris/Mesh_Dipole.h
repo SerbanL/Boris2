@@ -24,6 +24,7 @@ class DipoleMesh :
 	//Mesh members
 	int, int, int, int, int, int, int, Rect, SZ3, DBL3, SZ3, DBL3, SZ3, DBL3, VEC_VC<DBL3>, VEC_VC<double>, VEC_VC<DBL3>, VEC_VC<double>, VEC_VC<double>, vector_lut<Modules*>,
 	//Members in this derived clas
+	DBL3, DBL3, DBL3, double,
 	//Material Parameters
 	MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<DBL2, double>, MatP<DBL2, double>, double, TEquation<double>, double, MatP<double, double>, MatP<double, double>,
 	MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>>,
@@ -36,9 +37,24 @@ class DipoleMesh :
 
 private:
 
+	//dipole velocity (e.g. for implementing moving dipoles/track scanning etc.)
+	DBL3 dipole_velocity = DBL3();
+	//when a dipole is shifted due to non-zero velocity, if displacement is below the cliping distance (dipole_shift_clip), then add it to the shift_debt
+	//when dipole_shift_debt exceeds clipping distance, then perform shift and reduce debt. This is to limit excessive shifting by small factors, since for non-zero velocity shifting is performed every iteration.
+	DBL3 dipole_shift_debt = DBL3();
+	DBL3 dipole_shift_clip = DBL3();
+	//time at last attempt to shift dipole (i.e. previous iteration - keep a copy of it here, as we can't be sure what the ODE solver is doing, e.g. backtracking etc.)
+	double dipole_last_time = 0.0;
+
 	//dipoles are used to generate stray fields, to be used in ferromagnetic meshes. 
 	//When a dipole value changes (direction or strength) then the stray field generated must be recalculated - this flag is checked by the StrayField module where the recalculation is done.
 	bool recalculateStrayField = true;
+	bool strayField_recalculated = false;
+
+private:
+
+	//at the start of each iteration see if we need to implement a moving dipole
+	void Dipole_Shifting_Algorithm(void);
 
 public:
 
@@ -63,13 +79,11 @@ public:
 	BError SwitchCUDAState(bool cudaState);
 
 	//called at the start of each iteration
-	void PrepareNewIteration(void) {}
+	void PrepareNewIteration(void);
 
 #if COMPILECUDA == 1
-	void PrepareNewIterationCUDA(void) {}
+	void PrepareNewIterationCUDA(void) { PrepareNewIteration(); }
 #endif
-
-	double CheckMoveMesh(void) { return 0.0; }
 
 	//----------------------------------- VARIOUS SET METHODS
 
@@ -78,15 +92,21 @@ public:
 
 	void SetMagAngle(double polar, double azim, Rect rectangle = Rect());
 
-	void Reset_recalculateStrayField(void) { recalculateStrayField = false; }
-
 	//also need to set magnetization temperature dependence in this mesh when a Curie temperature is set - don't need to store Curie temperature here, just set temperature dependence for Ms
 	void SetCurieTemperature(double Tc, bool set_default_dependences);
+
+	//shift dipole mesh rectangle by given amount
+	void Shift_Dipole(DBL3 shift);
+
+	//methods for dipole shifting algorithm
+	void Set_Dipole_Velocity(DBL3 velocity, DBL3 clipping) { dipole_velocity = velocity; dipole_shift_clip = clipping; }
+	DBL3 Get_Dipole_Velocity(void) { return dipole_velocity; }
+	DBL3 Get_Dipole_Clipping(void) { return dipole_shift_clip; }
 
 	//----------------------------------- VARIOUS GET METHODS
 
 	//check if stray field needs to be recalculated depending on current settings, and prepare Mdipole for stray field recalculation (set to required value)
-	bool Check_recalculateStrayField(void);
+	bool CheckRecalculateStrayField(void);
 };
 
 #else
@@ -127,19 +147,15 @@ public:
 	void PrepareNewIterationCUDA(void) {}
 #endif
 
-	double CheckMoveMesh(void) { return 0.0; }
-
 	//----------------------------------- VARIOUS SET METHODS
 
 	//set magnitude for Mdipole (also setting recalculateStrayField flag)
 	void Reset_Mdipole(void) {}
 
-	void Reset_recalculateStrayField(void) {}
-
 	//----------------------------------- VARIOUS GET METHODS
 
 	//check if stray field needs to be recalculated depending on current settings, and prepare Mdipole for stray field recalculation (set to required value)
-	bool Check_recalculateStrayField(void) { return false; }
+	bool CheckRecalculateStrayField(void) { return false; }
 };
 
 #endif

@@ -157,6 +157,15 @@ __host__ VType cuVEC<VType>::average_nonempty(size_t arr_size, cuRect rectangle)
 	//if empty rectangle then average ove the entire mesh
 	if (rectangle.IsNull()) return average_nonempty(arr_size, cuBox());
 
+	//if rect start and end point are the same, then just read single value
+	if (rectangle.s == rectangle.e) {
+
+		VType value = VType();
+		int index = position_to_cellidx_cpu(rectangle.s);
+		if (index < arr_size) gpu_to_cpu_managed(&value, quantity, 1, index);
+		return value;
+	}
+
 	zero_aux_values <<<1, CUDATHREADS >>> (aux_value, aux_value2, aux_value3, aux_real, aux_real2, aux_integer);
 
 	average_nonempty_kernel <<< (arr_size + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (n, rectangle, *this, aux_value, aux_integer);

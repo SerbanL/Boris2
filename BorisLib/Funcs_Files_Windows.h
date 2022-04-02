@@ -13,7 +13,6 @@
 //Others
 #include <string>
 #include <algorithm>
-#include <execution>
 
 #include "Funcs_Files.h"
 #include "Funcs_Conv_Windows.h"
@@ -128,7 +127,7 @@ inline std::vector<std::string> GetFilesInDirectory(std::string directory, std::
 	auto compare = [&](const std::pair<std::string, double>& first, const std::pair<std::string, double>& second) -> bool { return first.second < second.second; };
 
 	//sort by creation time order
-	std::sort(std::execution::par_unseq, fileNames_creationTimes.begin(), fileNames_creationTimes.end(), compare);
+	std::sort(fileNames_creationTimes.begin(), fileNames_creationTimes.end(), compare);
 
 	//extract and return fileNames only
 	std::vector<std::string> fileNames(fileNames_creationTimes.size());

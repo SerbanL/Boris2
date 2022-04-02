@@ -1365,9 +1365,8 @@ BError DPArrays::fit_stt(VEC<DBL3>& T, VEC_VC<DBL3>& M, VEC_VC<DBL3>& J, Rect re
 
 				if (M.is_not_empty(idx_M) && J.is_not_empty(idx_J)) {
 
-					double Mnorm = M[idx_M].norm();
-					DBL3 m = M[idx_M] / Mnorm;
-					DBL33 grad_m = M.grad_neu(idx_M) / Mnorm;
+					DBL3 m = normalize(M[idx_M]);
+					DBL33 grad_m = normalize(M.grad_neu(idx_M), M[idx_M]);
 					DBL3 J_dot_del_m = grad_m.x * J[idx_J].x + grad_m.y * J[idx_J].y + grad_m.z * J[idx_J].z;
 					DBL3 m_cross_J_dot_del_m = m ^ J_dot_del_m;
 
@@ -1435,9 +1434,8 @@ BError DPArrays::fit_stt_variation(VEC<DBL3>& T, VEC_VC<DBL3>& M, VEC_VC<DBL3>& 
 
 				if (M.is_not_empty(idx_M) && J.is_not_empty(idx_J)) {
 
-					double Mnorm = M[idx_M].norm();
-					DBL3 m = M[idx_M] / Mnorm;
-					DBL33 grad_m = M.grad_neu(idx_M) / Mnorm;
+					DBL3 m = normalize(M[idx_M]);
+					DBL33 grad_m = normalize(M.grad_neu(idx_M), M[idx_M]);
 					DBL3 J_dot_del_m = grad_m.x * J[idx_J].x + grad_m.y * J[idx_J].y + grad_m.z * J[idx_J].z;
 					DBL3 m_cross_J_dot_del_m = m ^ J_dot_del_m;
 
@@ -1570,8 +1568,7 @@ BError DPArrays::fit_sot(VEC<DBL3>& T, VEC_VC<DBL3>& M, VEC_VC<DBL3>& J, Rect re
 
 				if (M.is_not_empty(idx_M) && J.is_not_empty(idx_J)) {
 
-					double Mnorm = M[idx_M].norm();
-					DBL3 m = M[idx_M] / Mnorm;
+					DBL3 m = normalize(M[idx_M]);
 					DBL3 p = (DBL3(0, 0, 1) ^ J[idx_J]) / dh;
 
 					DBL3 mxp = m ^ p;
@@ -1664,14 +1661,13 @@ BError DPArrays::fit_sotstt(VEC<DBL3>& T, VEC_VC<DBL3>& M, VEC_VC<DBL3>& J_hm, V
 
 				if (M.is_not_empty(idx_M) && J_hm.is_not_empty(idx_J_hm) && J_fm.is_not_empty(idx_J_fm)) {
 
-					double Mnorm = M[idx_M].norm();
-					DBL3 m = M[idx_M] / Mnorm;
+					DBL3 m = normalize(M[idx_M]);
 					DBL3 p = (DBL3(0, 0, 1) ^ J_hm[idx_J_hm]) / dh;
 
 					DBL3 mxp = m ^ p;
 					DBL3 mxmxp = m ^ mxp;
 
-					DBL33 grad_m = M.grad_neu(idx_M) / Mnorm;
+					DBL33 grad_m = normalize(M.grad_neu(idx_M), M[idx_M]);
 					DBL3 J_dot_del_m = grad_m.x * J_fm[idx_J_fm].x + grad_m.y * J_fm[idx_J_fm].y + grad_m.z * J_fm[idx_J_fm].z;
 					DBL3 m_cross_J_dot_del_m = m ^ J_dot_del_m;
 

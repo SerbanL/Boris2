@@ -232,10 +232,12 @@ public:
 	bool generate_custom_2D(SZ3 new_n, Rect new_rect, double offset, double scale, const std::vector<unsigned char>& bitmap) { return true; }
 
 	//similar to generate_linear except new dimensions not set
-	void set_linear(DBL3 position1, VType value1, DBL3 position2, VType value2) {}
+	//also allow 'degeneracy' : multiple linear generators may be superimposed with use of degeneracy : degeneracy.first is index, degeneracy.second is number of geenerators
+	//if using degeneracy make sure these are called in order, or at least index 0 goes first
+	void set_linear(Rect contact1, VType value1, Rect contact2, VType value2, DBL2 degeneracy = DBL2()) {}
 
 	//linear : set VEC dimensions and use interpolation to set values in this VEC based on projected distance between position1 and position2 and given fixed end values.
-	bool generate_linear(DBL3 new_h, Rect new_rect, DBL3 position1, VType value1, DBL3 position2, VType value2) { return true; }
+	bool generate_linear(DBL3 new_h, Rect new_rect, Rect contact1, VType value1, Rect contact2, VType value2) { return true; }
 
 	//random: set VEC dimensions and generate random values in given range (prng instantiated with given seed)
 	bool generate_random(DBL3 new_h, Rect new_rect, DBL2 range, unsigned seed);

@@ -11,21 +11,6 @@
 #include "Atom_TransportCUDA.h"
 #endif
 
-//prepare displayVEC_VC ready for calculation of display quantity
-bool Atom_Transport::PrepareDisplayVEC_VC(DBL3 cellsize)
-{
-	if (paMesh->EComputation_Enabled()) {
-
-		//make sure memory is allocated to the correct size
-		displayVEC_VC.assign(cellsize, paMesh->meshRect, DBL3(0.0));
-
-		return true;
-	}
-	else displayVEC_VC.clear();
-
-	return false;
-}
-
 //calculate charge current density over the mesh : applies to both charge-only transport and spin transport solvers (if check used inside this method)
 //VERIFIED - CORRECT
 VEC_VC<DBL3>& Atom_Transport::GetChargeCurrent(void)
@@ -61,8 +46,6 @@ VEC_VC<DBL3>& Atom_Transport::GetChargeCurrent(void)
 				else displayVEC_VC[idx] = DBL3(0);
 			}
 		}
-		//TO DO
-		/*
 		else {
 
 			bool cppgmr_enabled = IsNZ(paMesh->betaD.get0());
@@ -76,84 +59,58 @@ VEC_VC<DBL3>& Atom_Transport::GetChargeCurrent(void)
 				//only calculate current on non-empty cells - empty cells have already been assigned 0 at UpdateConfiguration
 				if (paMesh->V.is_not_empty(idx)) {
 
-					if (stsolve == STSOLVE_NORMALMETAL) {
+					//magnetic mesh
 
-						//non-magnetic mesh
+					DBL3 grad_V = paMesh->V.grad_diri(idx);
 
-						if (IsZ(paMesh->iSHA.get0())) {
+					//1. principal term : always present
+					displayVEC_VC[idx] = -paMesh->elC[idx] * grad_V;
 
-							//no iSHE contribution.
-							displayVEC_VC[idx] = -paMesh->elC[idx] * paMesh->V.grad_diri(idx);
-						}
-						else {
+					//additional contributions if enabled
+					if (cppgmr_enabled || cpump_enabled || the_enabled) {
 
-							double SHA = paMesh->SHA;
-							double iSHA = paMesh->iSHA;
+						double mu_s = paMesh->mu_s;
+						paMesh->update_parameters_ecoarse(idx, paMesh->mu_s, mu_s);
+
+						int idx_M = paMesh->M1.position_to_cellidx(paMesh->S.cellidx_to_position(idx));
+
+						DBL3 m = paMesh->M1[idx_M] / mu_s;
+						DBL33 grad_S = paMesh->S.grad_neu(idx);		//homogeneous Neumann since SHA = 0 in magnetic meshes
+
+						//2. CPP-GMR contribution
+						if (cppgmr_enabled) {
+
+							double betaD = paMesh->betaD;
 							double De = paMesh->De;
-							paMesh->update_parameters_ecoarse(idx, paMesh->SHA, SHA, paMesh->iSHA, iSHA, paMesh->De, De);
+							paMesh->update_parameters_ecoarse(idx, paMesh->betaD, betaD, paMesh->De, De);
 
-							//iSHE enabled, must use non-homogeneous Neumann boundary condition for grad V -> Note homogeneous Neumann boundary conditions apply when calculating S differentials here (due to Jc.n = 0 at boundaries)
-							displayVEC_VC[idx] = -paMesh->elC[idx] * paMesh->V.grad_diri_nneu(idx, (iSHA * De / (MUB_E * paMesh->elC[idx])) * paMesh->S.curl_neu(idx));
-
-							//must also add iSHE contribution -> here we must use non-homogeneous Neumann boundary conditions when calculating S differentials
-							displayVEC_VC[idx] += (iSHA * De / MUB_E) * paMesh->S.curl_nneu(idx, epsilon3(paMesh->E[idx]) * (SHA * paMesh->elC[idx] * MUB_E / De));
+							displayVEC_VC[idx] += (grad_S * m) * betaD * De / MUB_E;
 						}
-					}
-					else {
 
-						//magnetic mesh
+						//3. topological Hall effect contribution
+						//4. charge pumping contribution
+						if (cpump_enabled || the_enabled) {
 
-						DBL3 grad_V = paMesh->V.grad_diri(idx);
+							double P = paMesh->P;
+							double n_density = paMesh->n_density;
+							paMesh->update_parameters_ecoarse(idx, paMesh->P, P, paMesh->n_density, n_density);
 
-						//1. principal term : always present
-						displayVEC_VC[idx] = -paMesh->elC[idx] * grad_V;
+							DBL33 grad_M = paMesh->M1.grad_neu(idx_M);
+							DBL3 dx_m = grad_M.x / mu_s;
+							DBL3 dy_m = grad_M.y / mu_s;
 
-						//additional contributions if enabled
-						if (cppgmr_enabled || cpump_enabled || the_enabled) {
+							//topological Hall effect contribution
+							if (the_enabled) {
 
-							double Ms = paMesh->Ms;
-							paMesh->update_parameters_ecoarse(idx, paMesh->Ms, Ms);
-
-							int idx_M = paMesh->M.position_to_cellidx(paMesh->S.cellidx_to_position(idx));
-
-							DBL3 m = paMesh->M[idx_M] / Ms;
-							DBL33 grad_S = paMesh->S.grad_neu(idx);		//homogeneous Neumann since SHA = 0 in magnetic meshes
-
-							//2. CPP-GMR contribution
-							if (cppgmr_enabled) {
-
-								double betaD = paMesh->betaD;
-								double De = paMesh->De;
-								paMesh->update_parameters_ecoarse(idx, paMesh->betaD, betaD, paMesh->De, De);
-
-								displayVEC_VC[idx] += (grad_S * m) * betaD * De / MUB_E;
+								double Bz_the = (dx_m ^ dy_m) * m;
+								displayVEC_VC[idx] += paMesh->the_eff.get0() * (P * paMesh->elC[idx] * HBAR_E / (ECHARGE * n_density)) * paMesh->elC[idx] * DBL3(grad_V.y * Bz_the, -grad_V.x * Bz_the, 0.0);
 							}
 
-							//3. topological Hall effect contribution
-							//4. charge pumping contribution
-							if (cpump_enabled || the_enabled) {
+							//charge pumping contribution
+							if (cpump_enabled) {
 
-								double P = paMesh->P;
-								double n_density = paMesh->n_density;
-								paMesh->update_parameters_ecoarse(idx, paMesh->P, P, paMesh->n_density, n_density);
-
-								DBL33 grad_M = paMesh->M.grad_neu(idx_M);
-								DBL3 dx_m = grad_M.x / Ms;
-								DBL3 dy_m = grad_M.y / Ms;
-
-								//topological Hall effect contribution
-								if (the_enabled) {
-
-									double Bz_the = (dx_m ^ dy_m) * m;
-									displayVEC_VC[idx] += paMesh->the_eff.get0() * (P * paMesh->elC[idx] * HBAR_E / (ECHARGE * n_density)) * paMesh->elC[idx] * DBL3(grad_V.y * Bz_the, -grad_V.x * Bz_the, 0.0);
-								}
-
-								//charge pumping contribution
-								if (cpump_enabled) {
-
-									DBL3 dm_dt = dM_dt[idx_M] / Ms;
-									displayVEC_VC[idx] += paMesh->cpump_eff.get0() * (P * paMesh->elC[idx] * HBAR_E / 2) * DBL3((dm_dt ^ dx_m) * m, (dm_dt ^ dy_m) * m, 0.0);
-								}
+								DBL3 dm_dt = dM_dt[idx_M] / mu_s;
+								displayVEC_VC[idx] += paMesh->cpump_eff.get0() * (P * paMesh->elC[idx] * HBAR_E / 2) * DBL3((dm_dt ^ dx_m) * m, (dm_dt ^ dy_m) * m, 0.0);
 							}
 						}
 					}
@@ -161,7 +118,6 @@ VEC_VC<DBL3>& Atom_Transport::GetChargeCurrent(void)
 				else displayVEC_VC[idx] = DBL3(0);
 			}
 		}
-		*/
 	}
 	else {
 
@@ -182,33 +138,5 @@ VEC_VC<DBL3>& Atom_Transport::GetChargeCurrent(void)
 
 	return displayVEC_VC;
 }
-
-DBL3 Atom_Transport::GetAverageChargeCurrent(Rect rectangle, std::vector<MeshShape> shapes)
-{
-#if COMPILECUDA == 1
-	if (pModuleCUDA) {
-
-		//update displayVEC_VC with charge current in TransportCUDA
-		GetChargeCurrentCUDA();
-
-		//average charge current in displayVEC_VC in TransportCUDA
-		return cuReal3(pTransportCUDA->displayVEC_VC()->average_nonempty(paMesh->n_e.dim(), rectangle));
-	}
-#endif
-
-	//update displayVEC_VC with charge current
-	GetChargeCurrent();
-
-	//average charge current in displayVEC_VC
-	if (!shapes.size()) return displayVEC_VC.average_nonempty_omp(rectangle);
-	else return displayVEC_VC.shape_getaverage(shapes);
-}
-
-#if COMPILECUDA == 1
-cu_obj<cuVEC_VC<cuReal3>>& Atom_Transport::GetChargeCurrentCUDA(void)
-{
-	return pTransportCUDA->GetChargeCurrent();
-}
-#endif
 
 #endif

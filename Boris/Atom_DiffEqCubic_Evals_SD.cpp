@@ -36,19 +36,19 @@ void Atom_DifferentialEquationCubic::RunSD_Start(void)
 
 				/////////////////////////
 
-				//calculate M1 cross Heff1 (multiplication by GAMMA/2 not necessary as this could be absorbed in the stepsize, but keep it for a more natural step size value from the user point of view - i.e. a time step).
-				DBL3 MxHeff = (GAMMA / 2) * (paMesh->M1[idx] ^ H);
+				//calculate m cross Heff1 (multiplication by GAMMA/2 not necessary as this could be absorbed in the stepsize, but keep it for a more natural step size value from the user point of view - i.e. a time step).
+				DBL3 mxHeff = (GAMMA / 2) * (m ^ H);
 
 				/////////////////////////
 
-				//current torque value G = m x (M1 x H)
-				DBL3 G = m ^ MxHeff;
+				//current torque value G = m x (m x H)
+				DBL3 G = m ^ mxHeff;
 
 				//save calculated torque for next time
 				sEval0[idx] = G;
 
-				//save current M1 for next time
-				sM1[idx] = paMesh->M1[idx];
+				//save current m for next time
+				sM1[idx] = m;
 
 				/////////////////////////
 
@@ -64,8 +64,8 @@ void Atom_DifferentialEquationCubic::RunSD_Start(void)
 				//multiplication by grel important : can set grel to zero in entire mesh, or parts of mesh, which results in spins freezing.
 				double s = dT * GAMMA * grel / 4.0;
 
-				DBL3 mxH = m ^ H;
-				m = ((1 - s*s*(mxH*mxH)) * m - 2*s*(m ^ mxH)) / (1 + s*s*(mxH*mxH));
+				DBL3 s_mxH = m ^ (s * H);
+				m = ((1 - (s_mxH*s_mxH)) * m - 2 * (m ^ s_mxH)) / (1 + (s_mxH*s_mxH));
 
 				//set new M1
 				paMesh->M1[idx] = m * mu_s;
@@ -83,12 +83,12 @@ void Atom_DifferentialEquationCubic::RunSD_Start(void)
 //must reset the static delta_... quantities before running these across all meshes
 void Atom_DifferentialEquationCubic::RunSD_BB(void)
 {
-	double _delta_M_sq = 0.0;
+	double _delta_m_sq = 0.0;
 	double _delta_G_sq = 0.0;
-	double _delta_M_dot_delta_G = 0.0;
+	double _delta_m_dot_delta_G = 0.0;
 
 	//set new magnetization vectors
-#pragma omp parallel for reduction(+:_delta_M_sq, _delta_G_sq, _delta_M_dot_delta_G)
+#pragma omp parallel for reduction(+:_delta_m_sq, _delta_G_sq, _delta_m_dot_delta_G)
 	for (int idx = 0; idx < paMesh->n.dim(); idx++) {
 
 		if (paMesh->M1.is_not_empty(idx)) {
@@ -103,17 +103,16 @@ void Atom_DifferentialEquationCubic::RunSD_BB(void)
 				DBL3 m = paMesh->M1[idx] / mu_s;
 				DBL3 H = paMesh->Heff1[idx];
 
-				//calculate M1 cross Heff1 (multiplication by GAMMA/2 not necessary as this could be absorbed in the stepsize, but keep it for a more natural step size value from the user point of view - i.e. a time step).
-				DBL3 MxHeff = (GAMMA / 2) * (paMesh->M1[idx] ^ H);
+				//calculate m cross Heff1 (multiplication by GAMMA/2 not necessary as this could be absorbed in the stepsize, but keep it for a more natural step size value from the user point of view - i.e. a time step).
+				DBL3 mxHeff = (GAMMA / 2) * (m ^ H);
 
 				/////////////////////////
 
-				//current torque value G = m x (M1 x H)
-				DBL3 G = m ^ MxHeff;
+				//current torque value G = m x (m x H)
+				DBL3 G = m ^ mxHeff;
 
 				//change in torque
 				//divide by 1e6 to stop the accumulated value having a large exponent -> both num and denom are divided by same value; if exponent too large when dividing num by denom significant loss of precision can occur
-				//Also you don't want to normalize to Ms since Ms can vary between different meshes, or even in this same mesh.
 				DBL3 delta_G = (G - sEval0[idx]) / 1e6;
 
 				//save calculated torque for next time
@@ -123,26 +122,25 @@ void Atom_DifferentialEquationCubic::RunSD_BB(void)
 
 				//change in M1
 				//divide by 1e6 to stop the accumulated value having a large exponent -> both num and denom are divided by same value; if exponent too large when dividing num by denom significant loss of precision can occur.
-				//Also you don't want to normalize to Ms since Ms can vary between different meshes, or even in this same mesh.
-				DBL3 delta_M = (paMesh->M1[idx] - sM1[idx]) / 1e6;
+				DBL3 delta_m = (m - sM1[idx]) / 1e6;
 
-				//save current M1 for next time
-				sM1[idx] = paMesh->M1[idx];
+				//save current m for next time
+				sM1[idx] = m;
 
 				/////////////////////////
 
 				//calculate num and denom for the two Barzilai-Borwein stepsize solutions (see Journal of Numerical Analysis (1988) 8, 141-148) so we can find new stepsize
-				_delta_M_sq += delta_M * delta_M;
+				_delta_m_sq += delta_m * delta_m;
 				_delta_G_sq += delta_G * delta_G;
-				_delta_M_dot_delta_G += delta_M * delta_G;
+				_delta_m_dot_delta_G += delta_m * delta_G;
 			}
 		}
 	}
 
 	//accumulate across all meshes -> remember these should have been set to zero before starting a run across all meshes
-	delta_M_sq += _delta_M_sq;
+	delta_m_sq += _delta_m_sq;
 	delta_G_sq += _delta_G_sq;
-	delta_M_dot_delta_G += _delta_M_dot_delta_G;
+	delta_m_dot_delta_G += _delta_m_dot_delta_G;
 }
 
 //3. set new moment vectors
@@ -190,8 +188,8 @@ void Atom_DifferentialEquationCubic::RunSD_Advance_withReductions(void)
 				//multiplication by grel important : can set grel to zero in entire mesh, or parts of mesh, which results in spins freezing.
 				double s = dT * GAMMA * grel / 4.0;
 
-				DBL3 mxH = m ^ H;
-				m = ((1 - s*s*(mxH*mxH)) * m - 2*s*(m ^ mxH)) / (1 + s*s*(mxH*mxH));
+				DBL3 s_mxH = m ^ (s * H);
+				m = ((1 - (s_mxH*s_mxH)) * m - 2 * (m ^ s_mxH)) / (1 + (s_mxH*s_mxH));
 
 				//set new M1
 				paMesh->M1[idx] = m * mu_s;
@@ -246,8 +244,8 @@ void Atom_DifferentialEquationCubic::RunSD_Advance(void)
 				//multiplication by grel important : can set grel to zero in entire mesh, or parts of mesh, which results in spins freezing.
 				double s = dT * GAMMA * grel / 4.0;
 
-				DBL3 mxH = m ^ H;
-				m = ((1 - s*s*(mxH*mxH)) * m - 2*s*(m ^ mxH)) / (1 + s*s*(mxH*mxH));
+				DBL3 s_mxH = m ^ (s * H);
+				m = ((1 - (s_mxH*s_mxH)) * m - 2 * (m ^ s_mxH)) / (1 + (s_mxH*s_mxH));
 
 				//set new M1
 				paMesh->M1[idx] = m * mu_s;

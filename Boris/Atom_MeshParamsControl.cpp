@@ -33,9 +33,8 @@ void Atom_Mesh::SetBaseTemperature(double Temperature, bool clear_equation)
 	//NOTE : do not call UpdateConfiguration here - this is to allow Temperature sequences in simulation stages
 	//Instead deal with any adjustments required on a module by module basis (e.g. StrayField)
 
-	//TO DO
 	//2. electrical conductivity might also need updating so force it here - if Transport module not set then nothing happens (note elC will have zero size in this case)
-	//CallModuleMethod(&Transport::CalculateElectricalConductivity, true);
+	CallModuleMethod(&Atom_Transport::CalculateElectricalConductivity, true);
 }
 
 //----------------------------------- OTHERS

@@ -22,6 +22,7 @@
 #include "Demag.h"
 #include "Demag_N.h"
 #include "SDemag_Demag.h"
+#include "StrayField_Mesh.h"
 #include "Zeeman.h"
 #include "MOptical.h"
 #include "Anisotropy.h"
@@ -59,6 +60,7 @@ class AFMesh :
 	MatP<DBL2, double>, MatP<DBL2, double>, MatP<DBL2, double>, MatP<DBL3, DBL3>, MatP<DBL3, DBL3>, MatP<DBL3, DBL3>,
 	std::vector<DBL4>, std::vector<DBL4>,
 	MatP<DBL2, double>, MatP<double, double>, MatP<double, double>,
+	MatP<double, double>,
 	MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<DBL3, DBL3>,
 	double, TEquation<double>, double, MatP<double, double>, MatP<DBL2, double>, 
 	MatP<double, double>, 
@@ -70,7 +72,8 @@ class AFMesh :
 	Zeeman, MOptical, Roughness,
 	Anisotropy_Uniaxial, Anisotropy_Cubic, Anisotropy_Biaxial, Anisotropy_Tensorial, 
 	Transport, Heat, 
-	SOTField> >
+	SOTField,
+	StrayField_Mesh> >
 {
 #if COMPILECUDA == 1
 	friend AFMeshCUDA;
@@ -167,7 +170,11 @@ public:
 
 	//return average m x dm/dt in the given avRect (relative rect). Here m is the direction vector.
 	DBL3 Average_mxdmdt(Rect avRect);
+	//for sub-lattice B
 	DBL3 Average_mxdmdt2(Rect avRect);
+	//mixed sub-lattices A and B
+	DBL3 Average_mxdm2dt(Rect avRect);
+	DBL3 Average_m2xdmdt(Rect avRect);
 
 	//----------------------------------- ANTIFERROMAGNETIC MESH QUANTITIES CONTROL : Mesh_Ferromagnetic_Control.cpp
 
@@ -329,9 +336,6 @@ public:
 #if COMPILECUDA == 1
 	void PrepareNewIterationCUDA(void) {}
 #endif
-
-	//Check if mesh needs to be moved (using the MoveMesh method) - return amount of movement required (i.e. parameter to use when calling MoveMesh).
-	double CheckMoveMesh(void) { return 0.0; }
 
 	//----------------------------------- GETTERS
 

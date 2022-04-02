@@ -319,14 +319,12 @@ struct __cuRect {
 	__host__ __device__ bool operator<=(const __cuRect &rhs) const { return (e <= rhs.e && size() <= rhs.size()); }
 	__host__ __device__ bool operator<(const __cuRect &rhs) const { return (e < rhs.e && size() < rhs.size()); }
 
-	//----------------------------- OTHERS
+	//----------------------------- GEOMETRY-RELATED CHECKS
 
 	//check if the rectangle contains the given coordinate
 	__host__ __device__ bool contains(const cuReal3& position) const { return (position >= s && position <= e); }
 	//check if the rectangle contains the given rectangle
 	__host__ __device__ bool contains(const __cuRect& rectangle) const { return (rectangle.s >= s && rectangle.e <= e); }
-
-	__host__ __device__ bool IsNull(void) const { return (s == cuReal3() && e == cuReal3()); }
 
 	__host__ __device__ bool IsPlane(void) const
 	{
@@ -335,40 +333,66 @@ struct __cuRect {
 			(cuIsZ(s.z - e.z) && cuIsNZ(s.x - e.x) && cuIsNZ(s.y - e.y)));
 	}
 
+	__host__ __device__ bool IsLine(void) const { return (cuIsZ(cu_mod(e.x - s.x) + cu_mod(e.y - s.y)) || cuIsZ(cu_mod(e.x - s.x) + cu_mod(e.z - s.z)) || cuIsZ(cu_mod(e.z - s.z) + cu_mod(e.y - s.y))); }
+
+	__host__ __device__ bool IsPoint(void) const { return (s == e); }
+
+	__host__ __device__ bool IsNull(void) const { return (s == cuReal3() && e == cuReal3()); }
+
 	//check if the rectangle intersects with the given rectangle
 	__host__ __device__ bool intersects(const __cuRect& rect) const { return (get_intersection(rect) != __cuRect()); }
 
-	//get intersection rectangle
-	__host__ __device__ __cuRect get_intersection(const __cuRect& rect) const
+	//are all the rectangle dimensions integer divisible by the given cuReal3 (direction by direction)?
+	__host__ __device__ bool divisible(const cuReal3& rhs) const
 	{
-		//construct start point using largest coordinate values from the 2 rect start points
-		cuReal3 start = cuReal3((rect.s.x > s.x ? rect.s.x : s.x), (rect.s.y > s.y ? rect.s.y : s.y), (rect.s.z > s.z ? rect.s.z : s.z));
-
-		//construct end point using smallest coordinate values from the 2 rect end points
-		cuReal3 end = cuReal3((rect.e.x < e.x ? rect.e.x : e.x), (rect.e.y < e.y ? rect.e.y : e.y), (rect.e.z < e.z ? rect.e.z : e.z));
-
-		if (end >= start) return __cuRect(start, end);
-
-		return __cuRect();
+		return cuIsNZ(rhs.x) && cuIsNZ(rhs.y) && cuIsNZ(rhs.z) &&
+			cuIsZ((e.x - s.x) / rhs.x - (cuBReal)round((e.x - s.x) / rhs.x)) &&
+			cuIsZ((e.y - s.y) / rhs.y - (cuBReal)round((e.y - s.y) / rhs.y)) &&
+			cuIsZ((e.z - s.z) / rhs.z - (cuBReal)round((e.z - s.z) / rhs.z));
 	}
 
-	//get union rectangle
-	__host__ __device__ __cuRect get_union(const __cuRect& rect) const
+	//----------------------------- GET PROPERTIES
+
+	//get rectangle size
+	__host__ __device__ cuReal3 size(void) const { return (e - s); }
+
+	//these are used to get an lvalue for s and e
+	__host__ __device__ cuReal3 get_s(void) const { return s; }
+	__host__ __device__ cuReal3 get_e(void) const { return e; }
+
+	//get the center point of the rect
+	__host__ __device__ cuReal3 get_c(void) const { return (s + e) / 2; }
+
+	__host__ __device__ cuBReal length(void) const { return (e.x - s.x); }
+	__host__ __device__ cuBReal width(void) const { return (e.y - s.y); }
+	__host__ __device__ cuBReal height(void) const { return (e.z - s.z); }
+	__host__ __device__ cuBReal volume(void) const { return length()*width()*height(); }
+
+	//get positive unit vector normal to largest area face
+	__host__ __device__ cuReal3 get_normal(void) const
 	{
-		if (IsNull()) return rect;
-		if (rect.IsNull()) return *this;
+		cuBReal area_xy = length() * width();
+		cuBReal area_xz = length() * height();
+		cuBReal area_yz = width() * height();
 
-		//construct start point using smaller coordinate values from the 2 rect start points
-		cuReal3 start = cuReal3((rect.s.x < s.x ? rect.s.x : s.x), (rect.s.y < s.y ? rect.s.y : s.y), (rect.s.z < s.z ? rect.s.z : s.z));
-
-		//construct end point using largest coordinate values from the 2 rect end points
-		cuReal3 end = cuReal3((rect.e.x > e.x ? rect.e.x : e.x), (rect.e.y > e.y ? rect.e.y : e.y), (rect.e.z > e.z ? rect.e.z : e.z));
-
-		return __cuRect(start, end);
+		cuReal3 normal = cuReal3(1.0, 0.0, 0.0);
+		if (area_yz < area_xz) normal = cuReal3(0.0, 1.0, 0.0);
+		if (area_xz < area_xy && area_yz < area_xy) normal = cuReal3(0.0, 0.0, 1.0);
+		return normal;
 	}
 
-	//return the intersection volume
-	__host__ __device__ cuBReal intersection_volume(const __cuRect &rect) const { return get_intersection(rect).volume(); }
+	__host__ __device__ cuBReal maxDimension(void) const
+	{
+		cuBReal maxDim = length();
+
+		maxDim = (width() > maxDim ? width() : maxDim);
+		maxDim = (height() > maxDim ? height() : maxDim);
+
+		return maxDim;
+	}
+
+	//get maximum face area
+	__host__ __device__ cuBReal max_area(void) const { return cu_maximum(length() * width(), length() * height(), width() * height()); }
 
 	//get bottom-left quadrant as seen in xy-plane
 	__host__ __device__ __cuRect get_quadrant_bl(void) const
@@ -438,14 +462,50 @@ struct __cuRect {
 		return __cuRect(cuReal3(s.x, s.y, e.z - thickness), e);
 	}
 
-	//are all the rectangle dimensions integer divisible by the given cuReal3 (direction by direction)?
-	__host__ __device__ bool divisible(const cuReal3& rhs) const
+	//----------------------------- GET PROPERTIES INVOLVING ANOTHER RECT
+
+	//get intersection rectangle
+	__host__ __device__ __cuRect get_intersection(const __cuRect& rect) const
 	{
-		return cuIsNZ(rhs.x) && cuIsNZ(rhs.y) && cuIsNZ(rhs.z) &&
-			cuIsZ((e.x - s.x) / rhs.x - (cuBReal)round((e.x - s.x) / rhs.x)) &&
-			cuIsZ((e.y - s.y) / rhs.y - (cuBReal)round((e.y - s.y) / rhs.y)) &&
-			cuIsZ((e.z - s.z) / rhs.z - (cuBReal)round((e.z - s.z) / rhs.z));
+		//construct start point using largest coordinate values from the 2 rect start points
+		cuReal3 start = cuReal3((rect.s.x > s.x ? rect.s.x : s.x), (rect.s.y > s.y ? rect.s.y : s.y), (rect.s.z > s.z ? rect.s.z : s.z));
+
+		//construct end point using smallest coordinate values from the 2 rect end points
+		cuReal3 end = cuReal3((rect.e.x < e.x ? rect.e.x : e.x), (rect.e.y < e.y ? rect.e.y : e.y), (rect.e.z < e.z ? rect.e.z : e.z));
+
+		if (end >= start) return __cuRect(start, end);
+
+		return __cuRect();
 	}
+
+	//get union rectangle
+	__host__ __device__ __cuRect get_union(const __cuRect& rect) const
+	{
+		if (IsNull()) return rect;
+		if (rect.IsNull()) return *this;
+
+		//construct start point using smaller coordinate values from the 2 rect start points
+		cuReal3 start = cuReal3((rect.s.x < s.x ? rect.s.x : s.x), (rect.s.y < s.y ? rect.s.y : s.y), (rect.s.z < s.z ? rect.s.z : s.z));
+
+		//construct end point using largest coordinate values from the 2 rect end points
+		cuReal3 end = cuReal3((rect.e.x > e.x ? rect.e.x : e.x), (rect.e.y > e.y ? rect.e.y : e.y), (rect.e.z > e.z ? rect.e.z : e.z));
+
+		return __cuRect(start, end);
+	}
+
+	//return the intersection volume
+	__host__ __device__ cuBReal intersection_volume(const __cuRect &rect) const { return get_intersection(rect).volume(); }
+
+	//return closest distance between point and any point in this rectangle (considered as a solid rectangle)
+	__host__ __device__ cuBReal get_closest_distance(cuReal3 point)
+	{
+		cuBReal dx = (point.x > s.x && point.x < e.x ? 0.0 : (point.x <= s.x ? s.x - point.x : point.x - e.x));
+		cuBReal dy = (point.y > s.y && point.y < e.y ? 0.0 : (point.y <= s.y ? s.y - point.y : point.y - e.y));
+		cuBReal dz = (point.z > s.z && point.z < e.z ? 0.0 : (point.z <= s.z ? s.z - point.z : point.z - e.z));
+		return sqrt(dx*dx + dy*dy + dz*dz);
+	}
+
+	//----------------------------- GET OTHER PROPERTIES
 
 	//test intersection with a line from start to end and get intersection point closest to start
 	__host__ __device__ bool intersection_test(const cuReal3& start, const cuReal3& end, cuReal3* pIntersection) const
@@ -498,30 +558,7 @@ struct __cuRect {
 		return false;
 	}
 
-	//get rectangle size
-	__host__ __device__ cuReal3 size(void) const { return (e - s); }
-
-	//these are used to get an lvalue for s and e
-	__host__ __device__ cuReal3 get_s(void) const { return s; }
-	__host__ __device__ cuReal3 get_e(void) const { return e; }
-
-	//get the center point of the rect
-	__host__ __device__ cuReal3 get_c(void) const { return (s + e) / 2; }
-
-	__host__ __device__ cuBReal length(void) const { return (e.x - s.x); }
-	__host__ __device__ cuBReal width(void) const { return (e.y - s.y); }
-	__host__ __device__ cuBReal height(void) const { return (e.z - s.z); }
-	__host__ __device__ cuBReal volume(void) const { return length()*width()*height(); }
-
-	__host__ __device__ cuBReal maxDimension(void) const
-	{
-		cuBReal maxDim = length();
-
-		maxDim = (width() > maxDim ? width() : maxDim);
-		maxDim = (height() > maxDim ? height() : maxDim);
-
-		return maxDim;
-	}
+	//----------------------------- MODIFIERS
 
 	//resize rect according to change in rectangle sizes from old to new (i.e. the cuRect(s,e) is relative to the external rectangle which is changing from old to new)
 	__host__ __device__ void resize(const cuReal3& size_old, const cuReal3& size_new)

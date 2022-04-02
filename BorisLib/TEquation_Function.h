@@ -20,6 +20,9 @@ namespace EqComp {
 		Function* pFunc1 = nullptr;
 		Function* pFunc2 = nullptr;
 
+		//user variables, but not in variadic list but in a vector (in this case variadic list will be empty and varlevel is used as index in this vector)
+		std::vector<double>& varvec;
+
 		//for functions of an equation variable (user variable) we need to know which one it is out of a variadic list; count from 0 up.
 		//used by F_bvar to return the correct value from a template parameter pack
 		int varlevel = 0;
@@ -45,6 +48,9 @@ namespace EqComp {
 	private:
 
 		//BASIS FUNCTIONS
+
+		//no variables defined in variadic list, so use varvec instead ...  this is a dummy to satisfy compiler
+		double __F_bvar(int varlevelsearch) const { return 0.0; }
 
 		double __F_bvar(int varlevelsearch, double bvar) const
 		{
@@ -131,6 +137,13 @@ namespace EqComp {
 		//user variable : search and return the correct one depending on varlevel value
 		double F_bvar(BVarType... bvars) const
 		{
+			//no variables in variadic list, so use varvec instead
+			if (sizeof...(BVarType) == 0) {
+
+				if (varlevel < varvec.size()) return varvec[varlevel];
+				else return 0.0;
+			}
+
 			//hard-coded up to 10 variables; anything above this (really!?) you'll need function recursion (slower) to get them.
 			switch (varlevel) {
 
@@ -171,6 +184,13 @@ namespace EqComp {
 
 		double F_bvar_pmul(BVarType... bvars) const
 		{
+			//no variables in variadic list, so use varvec instead
+			if (sizeof...(BVarType) == 0) {
+
+				if (varlevel < varvec.size()) return param * varvec[varlevel];
+				else return 0.0;
+			}
+
 			//hard-coded up to 10 variables; anything above this (really!?) you'll need function recursion (slower) to get them.
 			switch (varlevel) {
 
@@ -616,7 +636,8 @@ namespace EqComp {
 	public:
 
 		//BASIS FUNCTIONS
-		Function(FSPEC fspec)
+		Function(FSPEC fspec, std::vector<double>& variables) :
+			varvec(variables)
 		{
 			param = fspec.param;
 			varlevel = fspec.varlevel;
@@ -638,7 +659,8 @@ namespace EqComp {
 		}
 
 		//UNARY FUNCTIONS or SPECIAL FUNCTIONS
-		Function(FSPEC fspec, Function& Func)
+		Function(FSPEC fspec, Function& Func, std::vector<double>& variables) :
+			varvec(variables)
 		{
 			pFunc1 = &Func;
 
@@ -870,7 +892,8 @@ namespace EqComp {
 		}
 
 		//BINARY FUNCTIONS
-		Function(FSPEC fspec, Function& Func1, Function& Func2)
+		Function(FSPEC fspec, Function& Func1, Function& Func2, std::vector<double>& variables) :
+			varvec(variables)
 		{
 			pFunc1 = &Func1;
 			pFunc2 = &Func2;

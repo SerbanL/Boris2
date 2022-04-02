@@ -30,6 +30,8 @@ Atom_MeshParamsCUDA::Atom_MeshParamsCUDA(Atom_MeshParams *pameshParams)
 
 	Js()->set_from_cpu(pameshParams->Js);
 	pameshParams->Js.set_p_cu_obj_mpcuda(&Js);
+	Js2()->set_from_cpu(pameshParams->Js2);
+	pameshParams->Js2.set_p_cu_obj_mpcuda(&Js2);
 
 	K1()->set_from_cpu(pameshParams->K1);
 	pameshParams->K1.set_p_cu_obj_mpcuda(&K1);
@@ -55,10 +57,17 @@ Atom_MeshParamsCUDA::Atom_MeshParamsCUDA(Atom_MeshParams *pameshParams)
 	cHmo()->set_from_cpu(pameshParams->cHmo);
 	pameshParams->cHmo.set_p_cu_obj_mpcuda(&cHmo);
 
+	s_eff()->set_from_cpu(pameshParams->s_eff);
+	pameshParams->s_eff.set_p_cu_obj_mpcuda(&s_eff);
+
 	elecCond()->set_from_cpu(pameshParams->elecCond);
 	pameshParams->elecCond.set_p_cu_obj_mpcuda(&elecCond);
 	amrPercentage()->set_from_cpu(pameshParams->amrPercentage);
 	pameshParams->amrPercentage.set_p_cu_obj_mpcuda(&amrPercentage);
+	RAtmr_p()->set_from_cpu(pameshParams->RAtmr_p);
+	pameshParams->RAtmr_p.set_p_cu_obj_mpcuda(&RAtmr_p);
+	RAtmr_ap()->set_from_cpu(pameshParams->RAtmr_ap);
+	pameshParams->RAtmr_ap.set_p_cu_obj_mpcuda(&RAtmr_ap);
 
 	P()->set_from_cpu(pameshParams->P);
 	pameshParams->P.set_p_cu_obj_mpcuda(&P);
@@ -153,6 +162,7 @@ Atom_MeshParamsCUDA::~Atom_MeshParamsCUDA()
 	pameshParams->D_dir.null_p_cu_obj_mpcuda();
 
 	pameshParams->Js.null_p_cu_obj_mpcuda();
+	pameshParams->Js2.null_p_cu_obj_mpcuda();
 
 	pameshParams->K1.null_p_cu_obj_mpcuda();
 	pameshParams->K2.null_p_cu_obj_mpcuda();
@@ -169,8 +179,12 @@ Atom_MeshParamsCUDA::~Atom_MeshParamsCUDA()
 	pameshParams->cHA.null_p_cu_obj_mpcuda();
 	pameshParams->cHmo.null_p_cu_obj_mpcuda();
 
+	pameshParams->s_eff.null_p_cu_obj_mpcuda();
+
 	pameshParams->elecCond.null_p_cu_obj_mpcuda();
 	pameshParams->amrPercentage.null_p_cu_obj_mpcuda();
+	pameshParams->RAtmr_p.null_p_cu_obj_mpcuda();
+	pameshParams->RAtmr_ap.null_p_cu_obj_mpcuda();
 
 	pameshParams->P.null_p_cu_obj_mpcuda();
 	pameshParams->beta.null_p_cu_obj_mpcuda();

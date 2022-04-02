@@ -39,23 +39,23 @@ void DifferentialEquationAFM::RunSD_Start(void)
 
 				/////////////////////////
 
-				//calculate M cross Heff (multiplication by GAMMA/2 not necessary as this could be absorbed in the stepsize, but keep it for a more natural step size value from the user point of view - i.e. a time step).
-				DBL3 MxHeff = (GAMMA / 2) * (pMesh->M[idx] ^ H);
-				DBL3 MxHeff2 = (GAMMA / 2) * (pMesh->M2[idx] ^ H2);
+				//calculate m cross Heff (multiplication by GAMMA/2 not necessary as this could be absorbed in the stepsize, but keep it for a more natural step size value from the user point of view - i.e. a time step).
+				DBL3 mxHeff = (GAMMA / 2) * (m ^ H);
+				DBL3 mxHeff2 = (GAMMA / 2) * (m2 ^ H2);
 
 				/////////////////////////
 
-				//current torque value G = m x (M x H)
-				DBL3 G = m ^ MxHeff;
-				DBL3 G2 = m2 ^ MxHeff2;
+				//current torque value G = m x (m x H)
+				DBL3 G = m ^ mxHeff;
+				DBL3 G2 = m2 ^ mxHeff2;
 
 				//save calculated torque for next time
 				sEval0[idx] = G;
 				sEval0_2[idx] = G2;
 
-				//save current M for next time
-				sM1[idx] = pMesh->M[idx];
-				sM1_2[idx] = pMesh->M2[idx];
+				//save current m for next time
+				sM1[idx] = m;
+				sM1_2[idx] = m2;
 
 				/////////////////////////
 
@@ -70,10 +70,10 @@ void DifferentialEquationAFM::RunSD_Start(void)
 
 				double s = dT * GAMMA * grel_AFM.i / 4.0;
 
-				DBL3 mxH = m ^ H;
-				DBL3 mxH2 = m2 ^ H2;
-				m = ((1 - s*s*(mxH*mxH)) * m - 2*s*(m ^ mxH)) / (1 + s*s*(mxH*mxH));
-				m2 = ((1 - s*s*(mxH2*mxH2)) * m2 - 2*s*(m2 ^ mxH2)) / (1 + s*s*(mxH2*mxH2));
+				DBL3 s_mxH = m ^ (s * H);
+				DBL3 s_mxH2 = m2 ^ (s * H2);
+				m = ((1 - (s_mxH*s_mxH)) * m - 2 * (m ^ s_mxH)) / (1 + (s_mxH*s_mxH));
+				m2 = ((1 - (s_mxH2*s_mxH2)) * m2 - 2 * (m2 ^ s_mxH2)) / (1 + (s_mxH2*s_mxH2));
 
 				//set new M
 				pMesh->M[idx] = m * Ms_AFM.i;
@@ -100,16 +100,16 @@ void DifferentialEquationAFM::RunSD_Start(void)
 //must reset the static delta_... quantities before running these across all meshes
 void DifferentialEquationAFM::RunSD_BB(void)
 {
-	double _delta_M_sq = 0.0;
+	double _delta_m_sq = 0.0;
 	double _delta_G_sq = 0.0;
-	double _delta_M_dot_delta_G = 0.0;
+	double _delta_m_dot_delta_G = 0.0;
 
-	double _delta_M2_sq = 0.0;
+	double _delta_m2_sq = 0.0;
 	double _delta_G2_sq = 0.0;
-	double _delta_M2_dot_delta_G2 = 0.0;
+	double _delta_m2_dot_delta_G2 = 0.0;
 
 	//set new magnetization vectors
-#pragma omp parallel for reduction(+:_delta_M_sq, _delta_G_sq, _delta_M_dot_delta_G, _delta_M2_sq, _delta_G2_sq, _delta_M2_dot_delta_G2)
+#pragma omp parallel for reduction(+:_delta_m_sq, _delta_G_sq, _delta_m_dot_delta_G, _delta_m2_sq, _delta_G2_sq, _delta_m2_dot_delta_G2)
 	for (int idx = 0; idx < pMesh->n.dim(); idx++) {
 
 		if (pMesh->M.is_not_empty(idx)) {
@@ -127,19 +127,18 @@ void DifferentialEquationAFM::RunSD_BB(void)
 				DBL3 m2 = pMesh->M2[idx] / Ms_AFM.j;
 				DBL3 H2 = pMesh->Heff2[idx];
 
-				//calculate M cross Heff (multiplication by GAMMA/2 not necessary as this could be absorbed in the stepsize, but keep it for a more natural step size value from the user point of view - i.e. a time step).
-				DBL3 MxHeff = (GAMMA / 2) * (pMesh->M[idx] ^ H);
-				DBL3 MxHeff2 = (GAMMA / 2) * (pMesh->M2[idx] ^ H2);
+				//calculate m cross Heff (multiplication by GAMMA/2 not necessary as this could be absorbed in the stepsize, but keep it for a more natural step size value from the user point of view - i.e. a time step).
+				DBL3 mxHeff = (GAMMA / 2) * (m ^ H);
+				DBL3 mxHeff2 = (GAMMA / 2) * (m2 ^ H2);
 
 				/////////////////////////
 
-				//current torque value G = m x (M x H)
-				DBL3 G = m ^ MxHeff;
-				DBL3 G2 = m2 ^ MxHeff2;
+				//current torque value G = m x (m x H)
+				DBL3 G = m ^ mxHeff;
+				DBL3 G2 = m2 ^ mxHeff2;
 
 				//change in torque
 				//divide by 1e6 to stop the accumulated value having a large exponent -> both num and denom are divided by same value; if exponent too large when dividing num by denom significant loss of precision can occur
-				//Also you don't want to normalize to Ms since Ms can vary between different meshes, or even in this same mesh.
 				DBL3 delta_G = (G - sEval0[idx]) / 1e6;
 				DBL3 delta_G2 = (G2 - sEval0_2[idx]) / 1e6;
 
@@ -149,38 +148,37 @@ void DifferentialEquationAFM::RunSD_BB(void)
 
 				/////////////////////////
 
-				//change in M
+				//change in m
 				//divide by 1e6 to stop the accumulated value having a large exponent -> both num and denom are divided by same value; if exponent too large when dividing num by denom significant loss of precision can occur.
-				//Also you don't want to normalize to Ms since Ms can vary between different meshes, or even in this same mesh.
-				DBL3 delta_M = (pMesh->M[idx] - sM1[idx]) / 1e6;
-				DBL3 delta_M2 = (pMesh->M2[idx] - sM1_2[idx]) / 1e6;
+				DBL3 delta_m = (m - sM1[idx]) / 1e6;
+				DBL3 delta_m2 = (m2 - sM1_2[idx]) / 1e6;
 
-				//save current M for next time
-				sM1[idx] = pMesh->M[idx];
-				sM1_2[idx] = pMesh->M2[idx];
+				//save current m for next time
+				sM1[idx] = m;
+				sM1_2[idx] = m2;
 
 				/////////////////////////
 
 				//calculate num and denom for the two Barzilai-Borwein stepsize solutions (see Journal of Numerical Analysis (1988) 8, 141-148) so we can find new stepsize
-				_delta_M_sq += delta_M * delta_M;
+				_delta_m_sq += delta_m * delta_m;
 				_delta_G_sq += delta_G * delta_G;
-				_delta_M_dot_delta_G += delta_M * delta_G;
+				_delta_m_dot_delta_G += delta_m * delta_G;
 
-				_delta_M2_sq += delta_M2 * delta_M2;
+				_delta_m2_sq += delta_m2 * delta_m2;
 				_delta_G2_sq += delta_G2 * delta_G2;
-				_delta_M2_dot_delta_G2 += delta_M2 * delta_G2;
+				_delta_m2_dot_delta_G2 += delta_m2 * delta_G2;
 			}
 		}
 	}
 
 	//accumulate across all meshes -> remember these should have been set to zero before starting a run across all meshes
-	delta_M_sq += _delta_M_sq;
+	delta_m_sq += _delta_m_sq;
 	delta_G_sq += _delta_G_sq;
-	delta_M_dot_delta_G += _delta_M_dot_delta_G;
+	delta_m_dot_delta_G += _delta_m_dot_delta_G;
 
-	delta_M2_sq += _delta_M2_sq;
+	delta_m2_sq += _delta_m2_sq;
 	delta_G2_sq += _delta_G2_sq;
-	delta_M2_dot_delta_G2 += _delta_M2_dot_delta_G2;
+	delta_m2_dot_delta_G2 += _delta_m2_dot_delta_G2;
 }
 
 //3. set new magnetization vectors
@@ -227,10 +225,10 @@ void DifferentialEquationAFM::RunSD_Advance_withReductions(void)
 
 				double s = dT * GAMMA * grel_AFM.i / 4.0;
 
-				DBL3 mxH = m ^ H;
-				DBL3 mxH2 = m2 ^ H2;
-				m = ((1 - s*s*(mxH*mxH)) * m - 2*s*(m ^ mxH)) / (1 + s*s*(mxH*mxH));
-				m2 = ((1 - s*s*(mxH2*mxH2)) * m2 - 2*s*(m2 ^ mxH2)) / (1 + s*s*(mxH2*mxH2));
+				DBL3 s_mxH = m ^ (s * H);
+				DBL3 s_mxH2 = m2 ^ (s * H2);
+				m = ((1 - (s_mxH*s_mxH)) * m - 2 * (m ^ s_mxH)) / (1 + (s_mxH*s_mxH));
+				m2 = ((1 - (s_mxH2*s_mxH2)) * m2 - 2 * (m2 ^ s_mxH2)) / (1 + (s_mxH2*s_mxH2));
 
 				//set new M
 				pMesh->M[idx] = m * Ms_AFM.i;
@@ -296,10 +294,10 @@ void DifferentialEquationAFM::RunSD_Advance(void)
 
 				double s = dT * GAMMA * grel_AFM.i / 4.0;
 
-				DBL3 mxH = m ^ H;
-				DBL3 mxH2 = m2 ^ H2;
-				m = ((1 - s*s*(mxH*mxH)) * m - 2*s*(m ^ mxH)) / (1 + s*s*(mxH*mxH));
-				m2 = ((1 - s*s*(mxH2*mxH2)) * m2 - 2*s*(m2 ^ mxH2)) / (1 + s*s*(mxH2*mxH2));
+				DBL3 s_mxH = m ^ (s * H);
+				DBL3 s_mxH2 = m2 ^ (s * H2);
+				m = ((1 - (s_mxH*s_mxH)) * m - 2 * (m ^ s_mxH)) / (1 + (s_mxH*s_mxH));
+				m2 = ((1 - (s_mxH2*s_mxH2)) * m2 - 2 * (m2 ^ s_mxH2)) / (1 + (s_mxH2*s_mxH2));
 
 				//set new M
 				pMesh->M[idx] = m * Ms_AFM.i;

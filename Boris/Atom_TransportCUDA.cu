@@ -20,8 +20,7 @@ __global__ void Atom_CalculateElectricalConductivity_AMR_Kernel(ManagedAtom_Mesh
 	cuVEC_VC<cuReal3>& M1 = *cuMesh.pM1;
 
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
-	//TO DO
-	/*
+
 	if (idx < elC.linear_size()) {
 
 		if (elC.is_not_empty(idx)) {
@@ -34,7 +33,7 @@ __global__ void Atom_CalculateElectricalConductivity_AMR_Kernel(ManagedAtom_Mesh
 			cuReal3 Jc_value = elC[idx] * E[idx];
 
 			//get M value (M is on n, h mesh so could be different)
-			cuReal3 M_value = M[elC.cellidx_to_position(idx)];
+			cuReal3 M_value = M1[elC.cellidx_to_position(idx)];
 
 			cuBReal magnitude = Jc_value.norm() * M_value.norm();
 			cuBReal dotproduct = 0.0;
@@ -44,7 +43,6 @@ __global__ void Atom_CalculateElectricalConductivity_AMR_Kernel(ManagedAtom_Mesh
 			elC[idx] = elecCond / (1 + amrPercentage * dotproduct*dotproduct / 100);
 		}
 	}
-	*/
 }
 
 //calculate electrical conductivity with AMR present
@@ -103,198 +101,6 @@ __global__ void Atom_CalculateElectricField_Charge_Kernel(cuVEC<cuReal3>& E, cuV
 void Atom_TransportCUDA::CalculateElectricField(void)
 {
 	Atom_CalculateElectricField_Charge_Kernel <<< (paMeshCUDA->n_e.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (paMeshCUDA->E, paMeshCUDA->V);
-}
-
-//--------------------------------------------------------------- Electrode Current
-
-__global__ void Atom_CalculateElectrodeCurrent_nX_Side_Kernel(cuVEC_VC<cuBReal>& elC, cuVEC_VC<cuBReal>& V, cuBReal& current, cuBox electrode_box)
-{
-	int idx = blockIdx.x * blockDim.x + threadIdx.x;
-
-	int stride = electrode_box.e.j - electrode_box.s.j;
-
-	//negative x side of box, parse j and k
-	cuINT3 ijk = cuINT3(electrode_box.s.i - 1, (idx % stride) + electrode_box.s.j, (idx / stride) + electrode_box.s.k);
-
-	cuReal3 h_e = V.h;
-
-	cuBReal current_ = 0.0;
-
-	if (idx < stride * (electrode_box.e.k - electrode_box.s.k)) {
-
-		current_ = -elC[ijk] * (V[ijk] - V[ijk - cuINT3(1, 0, 0)]) * h_e.y * h_e.z / h_e.x;
-	}
-
-	reduction_sum(0, 1, &current_, current);
-}
-
-__global__ void Atom_CalculateElectrodeCurrent_pX_Side_Kernel(cuVEC_VC<cuBReal>& elC, cuVEC_VC<cuBReal>& V, cuBReal& current, cuBox electrode_box)
-{
-	int idx = blockIdx.x * blockDim.x + threadIdx.x;
-
-	int stride = electrode_box.e.j - electrode_box.s.j;
-
-	//positive x side of box, parse j and k
-	cuINT3 ijk = cuINT3(electrode_box.e.i, (idx % stride) + electrode_box.s.j, (idx / stride) + electrode_box.s.k);
-
-	cuReal3 h_e = V.h;
-
-	cuBReal current_ = 0.0;
-
-	if (idx < stride * (electrode_box.e.k - electrode_box.s.k)) {
-
-		current_ = elC[ijk] * (V[ijk + cuINT3(1, 0, 0)] - V[ijk]) * h_e.y * h_e.z / h_e.x;
-	}
-
-	reduction_sum(0, 1, &current_, current);
-}
-
-__global__ void Atom_CalculateElectrodeCurrent_nY_Side_Kernel(cuVEC_VC<cuBReal>& elC, cuVEC_VC<cuBReal>& V, cuBReal& current, cuBox electrode_box)
-{
-	int idx = blockIdx.x * blockDim.x + threadIdx.x;
-
-	int stride = electrode_box.e.i - electrode_box.s.i;
-
-	//negative y side of box, parse i and k
-	cuINT3 ijk = cuINT3((idx % stride) + electrode_box.s.i, electrode_box.s.j - 1, (idx / stride) + electrode_box.s.k);
-
-	cuReal3 h_e = V.h;
-
-	cuBReal current_ = 0.0;
-
-	if (idx < stride * (electrode_box.e.k - electrode_box.s.k)) {
-
-		current_ = -elC[ijk] * (V[ijk] - V[ijk - cuINT3(0, 1, 0)]) * h_e.x * h_e.z / h_e.y;
-	}
-
-	reduction_sum(0, 1, &current_, current);
-}
-
-__global__ void Atom_CalculateElectrodeCurrent_pY_Side_Kernel(cuVEC_VC<cuBReal>& elC, cuVEC_VC<cuBReal>& V, cuBReal& current, cuBox electrode_box)
-{
-	int idx = blockIdx.x * blockDim.x + threadIdx.x;
-
-	int stride = electrode_box.e.i - electrode_box.s.i;
-
-	//positive y side of box, parse i and k
-	cuINT3 ijk = cuINT3((idx % stride) + electrode_box.s.i, electrode_box.e.j, (idx / stride) + electrode_box.s.k);
-
-	cuReal3 h_e = V.h;
-
-	cuBReal current_ = 0.0;
-
-	if (idx < stride * (electrode_box.e.k - electrode_box.s.k)) {
-
-		current_ = elC[ijk] * (V[ijk + cuINT3(0, 1, 0)] - V[ijk]) * h_e.x * h_e.z / h_e.y;
-	}
-
-	reduction_sum(0, 1, &current_, current);
-}
-
-__global__ void Atom_CalculateElectrodeCurrent_nZ_Side_Kernel(cuVEC_VC<cuBReal>& elC, cuVEC_VC<cuBReal>& V, cuBReal& current, cuBox electrode_box)
-{
-	int idx = blockIdx.x * blockDim.x + threadIdx.x;
-
-	int stride = electrode_box.e.i - electrode_box.s.i;
-
-	//negative z side of box, parse i and j
-	cuINT3 ijk = cuINT3((idx % stride) + electrode_box.s.i, (idx / stride) + electrode_box.s.j, electrode_box.s.k - 1);
-
-	cuReal3 h_e = V.h;
-
-	cuBReal current_ = 0.0;
-
-	if (idx < stride * (electrode_box.e.j - electrode_box.s.j)) {
-
-		current_ = -elC[ijk] * (V[ijk] - V[ijk - cuINT3(0, 0, 1)]) * h_e.x * h_e.y / h_e.z;
-	}
-
-	reduction_sum(0, 1, &current_, current);
-}
-
-__global__ void Atom_CalculateElectrodeCurrent_pZ_Side_Kernel(cuVEC_VC<cuBReal>& elC, cuVEC_VC<cuBReal>& V, cuBReal& current, cuBox electrode_box)
-{
-	int idx = blockIdx.x * blockDim.x + threadIdx.x;
-
-	int stride = electrode_box.e.i - electrode_box.s.i;
-
-	//positive z side of box, parse i and j
-	cuINT3 ijk = cuINT3((idx % stride) + electrode_box.s.i, (idx / stride) + electrode_box.s.j, electrode_box.e.k);
-
-	cuReal3 h_e = V.h;
-
-	cuBReal current_ = 0.0;
-
-	if (idx < stride * (electrode_box.e.j - electrode_box.s.j)) {
-
-		current_ = elC[ijk] * (V[ijk + cuINT3(0, 0, 1)] - V[ijk]) * h_e.x * h_e.y / h_e.z;
-	}
-
-	reduction_sum(0, 1, &current_, current);
-}
-
-cuBReal Atom_TransportCUDA::CalculateElectrodeCurrent(cuBox electrode_box)
-{
-	//calculate current from current density in cells just next to the box
-	//Normally there is only one side of the box we can use so it's easier to separate into multiple kernels - one per side.
-
-	//Obtain the current by reduction in the energy value
-
-	ZeroEnergy();
-
-	//cells on -x side
-	if (electrode_box.s.i > 1) {
-
-		size_t ker_size = (electrode_box.e.j - electrode_box.s.j) * (electrode_box.e.k - electrode_box.s.k);
-
-		Atom_CalculateElectrodeCurrent_nX_Side_Kernel <<< (ker_size + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (paMeshCUDA->elC, paMeshCUDA->V, energy, electrode_box);
-	}
-
-	//cells on +x side
-	if (electrode_box.e.i + 1 < paMeshCUDA->n_e.i) {
-
-		size_t ker_size = (electrode_box.e.j - electrode_box.s.j) * (electrode_box.e.k - electrode_box.s.k);
-
-		Atom_CalculateElectrodeCurrent_pX_Side_Kernel <<< (ker_size + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (paMeshCUDA->elC, paMeshCUDA->V, energy, electrode_box);
-	}
-	
-	//cells on -y side
-	if (electrode_box.s.j > 1) {
-
-		size_t ker_size = (electrode_box.e.i - electrode_box.s.i) * (electrode_box.e.k - electrode_box.s.k);
-
-		Atom_CalculateElectrodeCurrent_nY_Side_Kernel <<< (ker_size + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (paMeshCUDA->elC, paMeshCUDA->V, energy, electrode_box);
-	}
-
-	//cells on +y side
-	if (electrode_box.e.j + 1 < paMeshCUDA->n_e.j) {
-
-		size_t ker_size = (electrode_box.e.i - electrode_box.s.i) * (electrode_box.e.k - electrode_box.s.k);
-
-		Atom_CalculateElectrodeCurrent_pY_Side_Kernel <<< (ker_size + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (paMeshCUDA->elC, paMeshCUDA->V, energy, electrode_box);
-	}
-
-	//cells on -z side
-	if (electrode_box.s.k > 1) {
-
-		size_t ker_size = (electrode_box.e.i - electrode_box.s.i) * (electrode_box.e.j - electrode_box.s.j);
-
-		Atom_CalculateElectrodeCurrent_nZ_Side_Kernel <<< (ker_size + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (paMeshCUDA->elC, paMeshCUDA->V, energy, electrode_box);
-	}
-
-	//cells on +z side
-	if (electrode_box.e.k + 1 < paMeshCUDA->n_e.k) {
-
-		size_t ker_size = (electrode_box.e.i - electrode_box.s.i) * (electrode_box.e.j - electrode_box.s.j);
-
-		Atom_CalculateElectrodeCurrent_pZ_Side_Kernel <<< (ker_size + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (paMeshCUDA->elC, paMeshCUDA->V, energy, electrode_box);
-	}
-	
-	//energy has the current value; reset it after as we don't want to count it to the total energy density
-	double current = energy.to_cpu();
-	ZeroEnergy();
-
-	return current;
 }
 
 #endif

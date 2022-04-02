@@ -1,6 +1,8 @@
 #include "stdafx.h"
 #include "Boris.h"
 
+#include "CommandLineArgs.h"
+
 #include "CompileFlags.h"
 #if GRAPHICS == 1
 
@@ -8,13 +10,46 @@
 
 #define MAX_LOADSTRING 2000
 
+#if PYTHON_EMBEDDING == 1
+#include "PythonScripting.h"
+#endif
+
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 //Separate function to make the Simulation object, so it can be called on a separate std::thread.
 //See https://stackoverflow.com/questions/64988525/bug-related-to-g-openmp-when-using-stdthread/65001887#65001887 for reason
-void make_Simulation(HWND hWnd)
+void make_Simulation(HWND hWnd, CLArgs& clargs)
 {
-	pSim = new Simulation(hWnd, Program_Version, server_port, server_pwd, cudaDevice);
+	pSim = new Simulation(
+		hWnd, 
+		Program_Version, clargs.progName,
+		clargs.server_port, clargs.server_pwd,
+		clargs.cudaDevice,
+		clargs.python_script, clargs.python_script_mGPU, clargs.python_script_parallel, clargs.python_script_terminate, clargs.python_script_deletesource);
+	
+#if PYTHON_EMBEDDING == 1
+	//Startup embedded Python interpreter on this thread
+	PyImport_AppendInittab("BPython", &PyInit_PythonEmbeddedModule);
+	Py_Initialize();
+
+	//Append to path standard working directories (the Simulations, BorisPythonScripts, and current executable directories)
+	PyObject* sysPath = PySys_GetObject((char*)"path");
+	
+	//Simulations directory in documents
+	std::string pathToModuleDirectory = pSim->Get_Simulations_Directory();
+	PyList_Append(sysPath, (PyUnicode_FromString(pathToModuleDirectory.c_str())));
+
+	//the executable directory
+	pathToModuleDirectory = GetExeDirectory();
+	PyList_Append(sysPath, (PyUnicode_FromString(pathToModuleDirectory.c_str())));
+
+	//BorisPythonScripts directory, found in Documents/Boris Data/ (this is where NetSocks is found)
+	pathToModuleDirectory = pSim->Get_BorisPythonScripts_Directory();
+	PyList_Append(sysPath, (PyUnicode_FromString(pathToModuleDirectory.c_str())));
+#endif
+
+	//Run embedded Python script specified on command line?
+	if (clargs.python_script.length()) pSim->NewMessage(AC_CONSOLECOMMAND, INT2(), ToString(CMD_RUNSCRIPT) + " " + clargs.python_script);
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -28,7 +63,7 @@ HMENU hMenubar;
 
 // Forward declarations of functions included in this code module:
 ATOM				MyRegisterClass(HINSTANCE hInstance);
-BOOL				InitInstance(HINSTANCE, int);
+BOOL				InitInstance(HINSTANCE, int, CLArgs&);
 LRESULT CALLBACK	WndProc(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK	About(HWND, UINT, WPARAM, LPARAM);
 
@@ -370,6 +405,34 @@ int APIENTRY _tWinMain(_In_ HINSTANCE hInstance,
 					   _In_ int       nCmdShow)
 {
 	//////////////////////
+	//Arguments
+
+	LPWSTR *szArgList;
+	int argc;
+	szArgList = CommandLineToArgvW(GetCommandLine(), &argc);
+
+	CLArgs clargs;
+
+	char **argv = new char*[argc];
+
+	for (int i = 0; i < argc; i++) {
+
+		argv[i] = new char[MAX_LOADSTRING];
+		wcstombs(argv[i], szArgList[i], MAX_LOADSTRING);
+	}
+
+	clargs.process_command_line_args(argc, argv);
+
+	for (int i = 0; i < argc; i++) {
+
+		delete argv[i];
+	}
+
+	delete[] argv;
+
+	LocalFree(szArgList);
+
+	//////////////////////
 
 	UNREFERENCED_PARAMETER(hPrevInstance);
 	UNREFERENCED_PARAMETER(lpCmdLine);
@@ -384,7 +447,7 @@ int APIENTRY _tWinMain(_In_ HINSTANCE hInstance,
 	//////////////////////
 	//overwrite the title bar
 
-	std::string sTitle = std::string("Boris v") + ToString((double)Program_Version / 100.0);
+	std::string sTitle = std::string("BORIS v") + ToString((double)Program_Version / 100.0);
 
 #if COMPILECUDA == 1
 	sTitle += std::string(" CUDA ") + ToString((double)__CUDA_ARCH__ / 100);
@@ -401,49 +464,12 @@ int APIENTRY _tWinMain(_In_ HINSTANCE hInstance,
 	szTitle[sTitle.size()] = 0;
 
 	//////////////////////
-	//Arguments
-
-	LPWSTR *szArgList;
-	int argc;
-
-	szArgList = CommandLineToArgvW(GetCommandLine(), &argc);
-
-	for (int i = 1; i < argc; i++)
-	{
-		//First argument: server port
-		if (i == 1) {
-
-			server_port = WideStringtoString(szArgList[i]);
-		}
-
-		//Second argument: cuda device
-		if (i == 2) {
-
-			cudaDevice = ToNum(WideStringtoString(szArgList[i]));
-		}
-
-		//Third argument: window options (front/back)
-		if (i == 3) {
-
-			window_startup_option = WideStringtoString(szArgList[i]);
-		}
-
-		//Fourth argument: server password
-		if (i == 4) {
-
-			server_pwd = WideStringtoString(szArgList[i]);
-		}
-	}
-
-	LocalFree(szArgList);
-
-	//////////////////////
 	//Startup
 
 	MyRegisterClass(hInstance);
 
 	// Perform application initialization: (use SW_MAXIMIZE to have the base window maximized)
-	if (!InitInstance (hInstance, nCmdShow))
+	if (!InitInstance (hInstance, nCmdShow, clargs))
 	{
 		return FALSE;
 	}
@@ -494,7 +520,7 @@ ATOM MyRegisterClass(HINSTANCE hInstance)
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 //
-//   FUNCTION: InitInstance(HINSTANCE, int)
+//   FUNCTION: InitInstance(HINSTANCE, int, CLArgs&)
 //
 //   PURPOSE: Saves instance handle and creates main window
 //
@@ -503,7 +529,7 @@ ATOM MyRegisterClass(HINSTANCE hInstance)
 //        In this function, we save the instance handle in a global variable and
 //        create and display the main program window.
 //
-BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
+BOOL InitInstance(HINSTANCE hInstance, int nCmdShow, CLArgs& clargs)
 {
    HWND hWnd;
 
@@ -519,7 +545,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 
    ShowWindow(hWnd, SW_SHOWMAXIMIZED);
 
-   if (window_startup_option == "back") {
+   if (clargs.window_startup_option == "back") {
 
 	   SetWindowPos(hWnd, HWND_BOTTOM, 0, 0, 0, 0, SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOSIZE);
    }
@@ -548,7 +574,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
    //Instantiate Simulation object and start main simulation loop thread (non-blocking)
    
    //See https://stackoverflow.com/questions/64988525/bug-related-to-g-openmp-when-using-stdthread/65001887#65001887
-   std::thread simulation_instantiation_thread(&make_Simulation, hWnd);
+   std::thread simulation_instantiation_thread(&make_Simulation, hWnd, clargs);
    simulation_instantiation_thread.join();
 
    //Add menus - this needs to be after creating Simulation as we need to get status flags to disable some menu items (e.g. CUDA available)

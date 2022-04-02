@@ -11,21 +11,6 @@
 #include "TransportCUDA.h"
 #endif
 
-//prepare displayVEC_VC ready for calculation of display quantity
-bool Transport::PrepareDisplayVEC_VC(DBL3 cellsize)
-{
-	if (pMesh->EComputation_Enabled()) {
-
-		//make sure memory is allocated to the correct size
-		displayVEC_VC.assign(cellsize, pMesh->meshRect, DBL3(0.0));
-
-		return true;
-	}
-	else displayVEC_VC.clear();
-
-	return false;
-}
-
 //calculate charge current density over the mesh : applies to both charge-only transport and spin transport solvers (if check used inside this method)
 //VERIFIED - CORRECT
 VEC_VC<DBL3>& Transport::GetChargeCurrent(void)
@@ -109,12 +94,9 @@ VEC_VC<DBL3>& Transport::GetChargeCurrent(void)
 						//additional contributions if enabled
 						if (cppgmr_enabled || cpump_enabled || the_enabled) {
 
-							double Ms = pMesh->Ms;
-							pMesh->update_parameters_ecoarse(idx, pMesh->Ms, Ms);
-
 							int idx_M = pMesh->M.position_to_cellidx(pMesh->S.cellidx_to_position(idx));
 
-							DBL3 m = pMesh->M[idx_M] / Ms;
+							DBL3 m = normalize(pMesh->M[idx_M]);
 							DBL33 grad_S = pMesh->S.grad_neu(idx);		//homogeneous Neumann since SHA = 0 in magnetic meshes
 
 							//2. CPP-GMR contribution
@@ -135,9 +117,9 @@ VEC_VC<DBL3>& Transport::GetChargeCurrent(void)
 								double n_density = pMesh->n_density;
 								pMesh->update_parameters_ecoarse(idx, pMesh->P, P, pMesh->n_density, n_density);
 
-								DBL33 grad_M = pMesh->M.grad_neu(idx_M);
-								DBL3 dx_m = grad_M.x / Ms;
-								DBL3 dy_m = grad_M.y / Ms;
+								DBL33 grad_m = normalize(pMesh->M.grad_neu(idx_M), pMesh->M[idx_M]);
+								DBL3 dx_m = grad_m.x;
+								DBL3 dy_m = grad_m.y;
 
 								//topological Hall effect contribution
 								if (the_enabled) {
@@ -149,7 +131,7 @@ VEC_VC<DBL3>& Transport::GetChargeCurrent(void)
 								//charge pumping contribution
 								if (cpump_enabled) {
 
-									DBL3 dm_dt = dM_dt[idx_M] / Ms;
+									DBL3 dm_dt = normalize(dM_dt[idx_M], pMesh->M[idx_M]);
 									displayVEC_VC[idx] += pMesh->cpump_eff.get0() * (P * pMesh->elC[idx] * HBAR_E / 2) * DBL3((dm_dt ^ dx_m) * m, (dm_dt ^ dy_m) * m, 0.0);
 								}
 							}
@@ -179,33 +161,5 @@ VEC_VC<DBL3>& Transport::GetChargeCurrent(void)
 
 	return displayVEC_VC;
 }
-
-DBL3 Transport::GetAverageChargeCurrent(Rect rectangle, std::vector<MeshShape> shapes)
-{
-#if COMPILECUDA == 1
-	if (pModuleCUDA) {
-
-		//update displayVEC_VC with charge current in TransportCUDA
-		GetChargeCurrentCUDA();
-
-		//average charge current in displayVEC_VC in TransportCUDA
-		return cuReal3(pTransportCUDA->displayVEC_VC()->average_nonempty(pMesh->n_e.dim(), rectangle));
-	}
-#endif
-
-	//update displayVEC_VC with charge current
-	GetChargeCurrent();
-
-	//average charge current in displayVEC_VC
-	if (!shapes.size()) return displayVEC_VC.average_nonempty_omp(rectangle);
-	else return displayVEC_VC.shape_getaverage(shapes);
-}
-
-#if COMPILECUDA == 1
-cu_obj<cuVEC_VC<cuReal3>>& Transport::GetChargeCurrentCUDA(void)
-{
-	return pTransportCUDA->GetChargeCurrent();
-}
-#endif
 
 #endif

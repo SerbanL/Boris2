@@ -119,14 +119,11 @@ BError Atom_HeatCUDA::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 
 			//before doing this must make sure elC was itself set in the Transport module (it could be this module is being updated before the Transport module)
 			//Transport module is guaranteed to be set otherwise elC would have zero size - it does mean Transport has UpdateConfiguration called twice but it doesn't matter.
-			//TO DO
-			/*
 			if (paMesh->IsModuleSet(MOD_TRANSPORT)) {
 
-				error = (*pMesh)(MOD_TRANSPORT)->UpdateConfiguration(cfgMessage);
+				error = (*paMesh)(MOD_TRANSPORT)->UpdateConfiguration(cfgMessage);
 				if (error) return error;
 			}
-			*/
 
 			if (success) {
 

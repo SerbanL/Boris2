@@ -22,13 +22,13 @@ bool ODECommon::renormalize = true;
 
 //-----------------------------------Steepest Descent Solver
 
-double ODECommon::delta_M_sq = 0.0;
+double ODECommon::delta_m_sq = 0.0;
 double ODECommon::delta_G_sq = 0.0;
-double ODECommon::delta_M_dot_delta_G = 0.0;
+double ODECommon::delta_m_dot_delta_G = 0.0;
 
-double ODECommon::delta_M2_sq = 0.0;
+double ODECommon::delta_m2_sq = 0.0;
 double ODECommon::delta_G2_sq = 0.0;
-double ODECommon::delta_M2_dot_delta_G2 = 0.0;
+double ODECommon::delta_m2_dot_delta_G2 = 0.0;
 
 //-----------------------------------CUDA version
 
@@ -85,92 +85,108 @@ BError ODECommon::SetODE(ODE_ setODE_, EVAL_ evalMethod_, bool set_eval_method)
 	//tests for typical problems show this has virtually no impact on performance! Maybe the compiler has inlined the code for all the different equations used? (could check this)
 	//Or maybe the overhead from function calls is just insignificant for typical problems
 
-	setODE = setODE_;
-
-	switch (setODE) {
+	switch (setODE_) {
 
 	case ODE_LLG:
+		setODE = setODE_;
 		equation = &DifferentialEquation::LLG;
 		renormalize = true;
-		solve_spin_current = false;
+		solve_spin_current_mm = false;
 		break;
 
 	case ODE_LLGSTATIC:
+		setODE = setODE_;
 		equation = &DifferentialEquation::LLGStatic;
 		renormalize = true;
-		solve_spin_current = false;
+		solve_spin_current_mm = false;
+		break;
+
+	case ODE_LLGSTATICSA:
+		setODE = setODE_;
+		equation = &DifferentialEquation::LLGStatic;
+		renormalize = true;
+		solve_spin_current_mm = true;
 		break;
 
 	case ODE_LLGSTT:
+		setODE = setODE_;
 		equation = &DifferentialEquation::LLGSTT;
 		renormalize = true;
-		solve_spin_current = false;
+		solve_spin_current_mm = false;
 		break;
 
 	case ODE_LLB:
+		setODE = setODE_;
 		equation = &DifferentialEquation::LLB;
 		renormalize = false;
-		solve_spin_current = false;
+		solve_spin_current_mm = false;
 		break;
 
 	case ODE_LLBSTT:
+		setODE = setODE_;
 		equation = &DifferentialEquation::LLBSTT;
 		renormalize = false;
-		solve_spin_current = false;
+		solve_spin_current_mm = false;
 		break;
 
 	case ODE_SLLG:
+		setODE = setODE_;
 		equation = &DifferentialEquation::SLLG;
 		renormalize = true;
-		solve_spin_current = false;
+		solve_spin_current_mm = false;
 		break;
 
 	case ODE_SLLGSTT:
+		setODE = setODE_;
 		equation = &DifferentialEquation::SLLGSTT;
 		renormalize = true;
-		solve_spin_current = false;
+		solve_spin_current_mm = false;
 		break;
 
 	case ODE_SLLB:
+		setODE = setODE_;
 		equation = &DifferentialEquation::SLLB;
 		renormalize = false;
-		solve_spin_current = false;
+		solve_spin_current_mm = false;
 		break;
 
 	case ODE_SLLBSTT:
+		setODE = setODE_;
 		equation = &DifferentialEquation::SLLBSTT;
 		renormalize = false;
-		solve_spin_current = false;
+		solve_spin_current_mm = false;
 		break;
 
 	case ODE_LLGSA:
+		setODE = setODE_;
 		equation = &DifferentialEquation::LLG;
 		renormalize = true;
-		solve_spin_current = true;
+		solve_spin_current_mm = true;
 		break;
 
 	case ODE_SLLGSA:
+		setODE = setODE_;
 		equation = &DifferentialEquation::SLLG;
 		renormalize = true;
-		solve_spin_current = true;
+		solve_spin_current_mm = true;
 		break;
 
 	case ODE_LLBSA:
+		setODE = setODE_;
 		equation = &DifferentialEquation::LLB;
 		renormalize = false;
-		solve_spin_current = true;
+		solve_spin_current_mm = true;
 		break;
 
 	case ODE_SLLBSA:
+		setODE = setODE_;
 		equation = &DifferentialEquation::SLLB;
 		renormalize = false;
-		solve_spin_current = true;
+		solve_spin_current_mm = true;
 		break;
 
 	default:
-		equation = &DifferentialEquation::LLG;
-		renormalize = true;
-		solve_spin_current = false;
+		//no change
 		break;
 	}
 

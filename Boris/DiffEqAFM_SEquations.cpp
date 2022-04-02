@@ -26,14 +26,22 @@ void DifferentialEquationAFM::GenerateThermalField(void)
 #pragma omp parallel for
 		for (int idx = 0; idx < pMesh->n_s.dim(); idx++) {
 
-			if (pMesh->Temp.linear_size()) Temperature = pMesh->Temp[H_Thermal.cellidx_to_position(idx)];
+			DBL3 position = H_Thermal.cellidx_to_position(idx);
 
-			//do not include any damping here - this will be included in the stochastic equations
-			double Hth_const = sqrt(2 * BOLTZMANN * Temperature / (GAMMA * grel.i * pMesh->h_s.dim() * MU0 * pMesh->Ms_AFM.get0().i * deltaT));
-			double Hth_const_2 = sqrt(2 * BOLTZMANN * Temperature / (GAMMA * grel.j * pMesh->h_s.dim() * MU0 * pMesh->Ms_AFM.get0().j * deltaT));
+			if (pMesh->M.is_not_empty(position) && !pMesh->M.is_skipcell(position)) {
 
-			H_Thermal[idx] = Hth_const * DBL3(prng.rand_gauss(0, 1), prng.rand_gauss(0, 1), prng.rand_gauss(0, 1));
-			H_Thermal_2[idx] = Hth_const_2 * DBL3(prng.rand_gauss(0, 1), prng.rand_gauss(0, 1), prng.rand_gauss(0, 1));
+				if (pMesh->Temp.linear_size()) Temperature = pMesh->Temp[position];
+
+				double s_eff = pMesh->s_eff;
+				pMesh->update_parameters_atposition(position, pMesh->s_eff, s_eff);
+
+				//do not include any damping here - this will be included in the stochastic equations
+				double Hth_const = s_eff * sqrt(2 * BOLTZMANN * Temperature / (GAMMA * grel.i * pMesh->h_s.dim() * MU0 * pMesh->Ms_AFM.get0().i * deltaT));
+				double Hth_const_2 = s_eff * sqrt(2 * BOLTZMANN * Temperature / (GAMMA * grel.j * pMesh->h_s.dim() * MU0 * pMesh->Ms_AFM.get0().j * deltaT));
+
+				H_Thermal[idx] = Hth_const * DBL3(prng.rand_gauss(0, 1), prng.rand_gauss(0, 1), prng.rand_gauss(0, 1));
+				H_Thermal_2[idx] = Hth_const_2 * DBL3(prng.rand_gauss(0, 1), prng.rand_gauss(0, 1), prng.rand_gauss(0, 1));
+			}
 		}
 	}
 }
@@ -55,25 +63,33 @@ void DifferentialEquationAFM::GenerateThermalField_and_Torque(void)
 #pragma omp parallel for
 		for (int idx = 0; idx < pMesh->n_s.dim(); idx++) {
 
-			if (pMesh->Temp.linear_size()) Temperature = pMesh->Temp[H_Thermal.cellidx_to_position(idx)];
+			DBL3 position = H_Thermal.cellidx_to_position(idx);
 
-			//1. Thermal Field
+			if (pMesh->M.is_not_empty(position) && !pMesh->M.is_skipcell(position)) {
 
-			//do not include any damping here - this will be included in the stochastic equations
-			double Hth_const = sqrt(2 * BOLTZMANN * Temperature / (GAMMA * grel.i * pMesh->h_s.dim() * MU0 * pMesh->Ms_AFM.get0().i * deltaT));
-			double Hth_const_2 = sqrt(2 * BOLTZMANN * Temperature / (GAMMA * grel.j * pMesh->h_s.dim() * MU0 * pMesh->Ms_AFM.get0().j * deltaT));
+				if (pMesh->Temp.linear_size()) Temperature = pMesh->Temp[position];
 
-			H_Thermal[idx] = Hth_const * DBL3(prng.rand_gauss(0, 1), prng.rand_gauss(0, 1), prng.rand_gauss(0, 1));
-			H_Thermal_2[idx] = Hth_const_2 * DBL3(prng.rand_gauss(0, 1), prng.rand_gauss(0, 1), prng.rand_gauss(0, 1));
+				double s_eff = pMesh->s_eff;
+				pMesh->update_parameters_atposition(position, pMesh->s_eff, s_eff);
 
-			//2. Thermal Torque
+				//1. Thermal Field
 
-			//do not include any damping here - this will be included in the stochastic equations
-			double Tth_const = sqrt(2 * BOLTZMANN * Temperature * GAMMA * grel.i * pMesh->Ms_AFM.get0().i / (MU0 * pMesh->h_s.dim() * deltaT));
-			double Tth_const_2 = sqrt(2 * BOLTZMANN * Temperature * GAMMA * grel.j * pMesh->Ms_AFM.get0().j / (MU0 * pMesh->h_s.dim() * deltaT));
+				//do not include any damping here - this will be included in the stochastic equations
+				double Hth_const = s_eff * sqrt(2 * BOLTZMANN * Temperature / (GAMMA * grel.i * pMesh->h_s.dim() * MU0 * pMesh->Ms_AFM.get0().i * deltaT));
+				double Hth_const_2 = s_eff * sqrt(2 * BOLTZMANN * Temperature / (GAMMA * grel.j * pMesh->h_s.dim() * MU0 * pMesh->Ms_AFM.get0().j * deltaT));
 
-			Torque_Thermal[idx] = Tth_const * DBL3(prng.rand_gauss(0, 1), prng.rand_gauss(0, 1), prng.rand_gauss(0, 1));
-			Torque_Thermal_2[idx] = Tth_const_2 * DBL3(prng.rand_gauss(0, 1), prng.rand_gauss(0, 1), prng.rand_gauss(0, 1));
+				H_Thermal[idx] = Hth_const * DBL3(prng.rand_gauss(0, 1), prng.rand_gauss(0, 1), prng.rand_gauss(0, 1));
+				H_Thermal_2[idx] = Hth_const_2 * DBL3(prng.rand_gauss(0, 1), prng.rand_gauss(0, 1), prng.rand_gauss(0, 1));
+
+				//2. Thermal Torque
+
+				//do not include any damping here - this will be included in the stochastic equations
+				double Tth_const = s_eff * sqrt(2 * BOLTZMANN * Temperature * GAMMA * grel.i * pMesh->Ms_AFM.get0().i / (MU0 * pMesh->h_s.dim() * deltaT));
+				double Tth_const_2 = s_eff * sqrt(2 * BOLTZMANN * Temperature * GAMMA * grel.j * pMesh->Ms_AFM.get0().j / (MU0 * pMesh->h_s.dim() * deltaT));
+
+				Torque_Thermal[idx] = Tth_const * DBL3(prng.rand_gauss(0, 1), prng.rand_gauss(0, 1), prng.rand_gauss(0, 1));
+				Torque_Thermal_2[idx] = Tth_const_2 * DBL3(prng.rand_gauss(0, 1), prng.rand_gauss(0, 1), prng.rand_gauss(0, 1));
+			}
 		}
 	}
 }

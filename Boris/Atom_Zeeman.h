@@ -7,8 +7,6 @@
 
 #include "ZeemanBase.h"
 
-
-
 class Atom_Mesh;
 
 #if defined(MODULE_COMPILATION_ZEEMAN) && ATOMISTIC == 1
