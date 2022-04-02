@@ -14,8 +14,6 @@ CUDA 9.2 or newer : https://developer.nvidia.com/cuda-92-download-archive
 
 FFTW3 : http://www.fftw.org/download.html
 
-SFML : https://www.sfml-dev.org/download.php
-
 # OS
 The full code can be compiled on Windows 7 or Windows 10 using the MSVC compiler.
 The code has also been ported to Linux (I've tested on Ubuntu 20.04) and compiled with g++, but with restrictions:
@@ -41,8 +39,8 @@ Updates:
 2.	Get OpenMP: $ sudo apt-get install libomp-dev
 3.  Get LibTBB: $ sudo apt-get install libtbb-dev
 3.	Get CUDA: $ sudo apt install nvidia-cuda-toolkit
-4.	Get SFML: $ sudo apt-get install libsfml-dev
-5.	Get FFTW3: Instructions at http://www.fftw.org/fftw2_doc/fftw_6.html
+4.	Get FFTW3: Instructions at http://www.fftw.org/fftw2_doc/fftw_6.html
+5.	Python3 development version: $ sudo apt-get install python-dev
 
 Open terminal and go to extracted BorisLin directory.
 
