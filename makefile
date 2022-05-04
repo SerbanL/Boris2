@@ -62,8 +62,8 @@ compile: $(OBJ_FILES) $(CUOBJ_FILES)
   
 install:
 	nvcc -arch=sm_$(arch) -dlink -w $(CUOBJ_DIR)/*.o -o $(CUOBJ_DIR)/rdc_link.o 
-	g++ $(OBJ_DIR)/*.o $(CUOBJ_DIR)/*.o -fopenmp -ltbb -lsfml-graphics -lsfml-window -lsfml-system -lfftw3 -lX11 -lcudart -lcufft -lcudadevrt -o BorisLin
-	rm -f $(OBJ_FILES) $(CUOBJ_FILES) $(CUOBJ_DIR)/rdc_link.o
+	g++ $(OBJ_DIR)/*.o $(CUOBJ_DIR)/*.o -fopenmp -lpython3.8 -ltbb -lfftw3 -lX11 -lcudart -lcufft -lcudadevrt -o BorisLin
+	#rm -f $(OBJ_FILES) $(CUOBJ_FILES) $(CUOBJ_DIR)/rdc_link.o
 	mkdir -p ~/Documents/$(BORIS_DATA_DIR)
 	mkdir -p ~/Documents/$(BORIS_SIM_DIR)
 	cp -r BorisPythonScripts/ ~/Documents/$(BORIS_DATA_DIR)
@@ -72,9 +72,9 @@ install:
 	cp -f Manual/BorisManual-v$(BVERSION).pdf ~/Documents/$(BORIS_DATA_DIR)/BorisManual-v$(BVERSION).pdf
 	@echo Done
  
+#for python3.8 make sure to get dev version : sudo apt-get install python3.8-dev
 Boris/Boris_o/%.o: Boris/%.cpp
-	g++ -c -Ofast -std=c++17 -IBorisLib -IBorisCUDALib -fopenmp $< -o $@
+	g++ -c -Ofast -std=c++17 -I/usr/include/python3.8/ -IBorisLib -IBorisCUDALib -fopenmp $< -o $@
 
 Boris/Boris_cuo/%.o: Boris/%.cu
 	nvcc -rdc=true -c -std=c++14 -IBorisLib -IBorisCUDALib -w -arch=sm_$(arch) $< -o $@
-	
