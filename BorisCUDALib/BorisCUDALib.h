@@ -21,7 +21,6 @@
 #include "cuArray_sizing.h"
 #include "cuArray_transfer.h"
 
-
 #include "TEquationCUDA.h"
 #include "cuObj_Math_Special.h"
 
@@ -47,3 +46,30 @@
 #include "cuVEC_VC_div.h"
 #include "cuVEC_VC_curl.h"
 #include "cuVEC_VC_ngbrsum.h"
+
+#include "mcuObject.h"
+
+#include "mGPU.h"
+
+#include "mcuVEC.h"
+#include "mcuVEC_aux.h"
+#include "mcuVEC_mng.h"
+#include "mcuVEC_halo.h"
+#include "mcuVEC_arith.h"
+#include "mcuVEC_avg.h"
+#include "mcuVEC_histo.h"
+#include "mcuVEC_oper.h"
+#include "mcuVEC_nprops.h"
+#include "mcuVEC_generate.h"
+#include "mcuVEC_extract.h"
+#include "mcuVEC_flags.h"
+#include "mcuVEC_solve.h"
+
+#include "mcuArray.h"
+#include "mcuArray_aux.h"
+#include "mcuArray_sizing.h"
+#include "mcuArray_transfer.h"
+
+#include "mcuValue.h"
+
+#include "mcu_prng.h"

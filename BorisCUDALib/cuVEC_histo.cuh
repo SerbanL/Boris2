@@ -33,7 +33,8 @@ __global__ void zero_histogram_preaverage_values_kernel(VType*& histogram_preave
 	}
 }
 
-inline __global__ void get_minmax_angles_kernel(cuVEC<cuReal3>& vec, cuReal3 ndir, cuBReal& min, cuBReal& max)
+template <typename VType>
+inline __global__ void get_minmax_angles_kernel(cuVEC<VType>& vec, VType ndir, cuBReal& min, cuBReal& max)
 {
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
 
@@ -135,7 +136,7 @@ __global__ void preaveraged_minmax(
 
 template <typename VType>
 __global__ void preaveraged_minmax_angles(
-	VType*& histogram_preaverage, size_t& histogram_preaverage_size, cuReal3 ndir, cuBReal& min, cuBReal& max)
+	VType*& histogram_preaverage, size_t& histogram_preaverage_size, VType ndir, cuBReal& min, cuBReal& max)
 {
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
 
@@ -227,8 +228,10 @@ __global__ void get_mag_histogram_kernel(
 //-------------------------------------------- Histogram kernels (angle)
 
 //extract histogram directly from mesh without pre-averaging
-inline __global__ void get_ang_histogram_kernel(
-	cuVEC<cuReal3>& vec, cuReal3 ndir, int num_bins, cuBReal bin, cuBReal min, cuBReal max, cuBReal*& histogram, size_t num_nonempty_cells)
+
+template <typename VType>
+__global__ void get_ang_histogram_kernel(
+	cuVEC<VType>& vec, VType ndir, int num_bins, cuBReal bin, cuBReal min, cuBReal max, cuBReal*& histogram, size_t num_nonempty_cells)
 {
 	//launched with one block per bin, and each block has blockDim.x threads (set it to 1024 if needed)
 
@@ -265,7 +268,7 @@ inline __global__ void get_ang_histogram_kernel(
 //extract histogram after pre-averaging
 template <typename VType>
 __global__ void get_ang_histogram_kernel(
-	VType*& histogram_preaverage, size_t& histogram_preaverage_size, cuReal3 ndir, int num_bins, cuBReal bin, cuBReal min, cuBReal max, cuBReal*& histogram, size_t num_nonempty_cells)
+	VType*& histogram_preaverage, size_t& histogram_preaverage_size, VType ndir, int num_bins, cuBReal bin, cuBReal min, cuBReal max, cuBReal*& histogram, size_t num_nonempty_cells)
 {
 	//launched with one block per bin, and each block has blockDim.x threads (set it to 1024 if needed)
 
@@ -303,11 +306,11 @@ __global__ void get_ang_histogram_kernel(
 
 // Magnitude
 
-template bool cuVEC<float>::get_mag_histogram(std::vector<double>& histogram_x_cpu, std::vector<double>& histogram_p_cpu, int num_bins, double& min, double& max, size_t num_nonempty_cells, cuINT3 macrocell_dims);
-template bool cuVEC<double>::get_mag_histogram(std::vector<double>& histogram_x_cpu, std::vector<double>& histogram_p_cpu, int num_bins, double& min, double& max, size_t num_nonempty_cells, cuINT3 macrocell_dims);
+template bool cuVEC<float>::get_mag_histogram(std::vector<double>& histogram_x_cpu, std::vector<double>& histogram_p_cpu, int num_bins, double& min, double& max, size_t num_nonempty_cells, cuINT3 macrocell_dims, bool set_output, int stage_control);
+template bool cuVEC<double>::get_mag_histogram(std::vector<double>& histogram_x_cpu, std::vector<double>& histogram_p_cpu, int num_bins, double& min, double& max, size_t num_nonempty_cells, cuINT3 macrocell_dims, bool set_output, int stage_control);
 
-template bool cuVEC<cuFLT3>::get_mag_histogram(std::vector<double>& histogram_x_cpu, std::vector<double>& histogram_p_cpu, int num_bins, double& min, double& max, size_t num_nonempty_cells, cuINT3 macrocell_dims);
-template bool cuVEC<cuDBL3>::get_mag_histogram(std::vector<double>& histogram_x_cpu, std::vector<double>& histogram_p_cpu, int num_bins, double& min, double& max, size_t num_nonempty_cells, cuINT3 macrocell_dims);
+template bool cuVEC<cuFLT3>::get_mag_histogram(std::vector<double>& histogram_x_cpu, std::vector<double>& histogram_p_cpu, int num_bins, double& min, double& max, size_t num_nonempty_cells, cuINT3 macrocell_dims, bool set_output, int stage_control);
+template bool cuVEC<cuDBL3>::get_mag_histogram(std::vector<double>& histogram_x_cpu, std::vector<double>& histogram_p_cpu, int num_bins, double& min, double& max, size_t num_nonempty_cells, cuINT3 macrocell_dims, bool set_output, int stage_control);
 
 //compute magnitude histogram data
 //extract histogram between magnitudes min and max with given number of bins. if min max not given (set them to zero) then determine them first.
@@ -319,7 +322,8 @@ template <typename VType>
 __host__ bool cuVEC<VType>::get_mag_histogram(
 	std::vector<double>& histogram_x_cpu, std::vector<double>& histogram_p_cpu,
 	int num_bins, double& min, double& max,
-	size_t num_nonempty_cells, cuINT3 macrocell_dims)
+	size_t num_nonempty_cells, cuINT3 macrocell_dims, 
+	bool set_output, int stage_control)
 {
 	cuSZ3 n_cpu = size_cpu();
 
@@ -331,6 +335,8 @@ __host__ bool cuVEC<VType>::get_mag_histogram(
 
 	//make sure there's enough memory allocated
 	if (!allocate_histogram_memory(num_bins, num_av_cells.dim())) return false;
+	if (histogram_x_cpu.size() != num_bins) if (!malloc_vector(histogram_x_cpu, num_bins)) return false;
+	if (histogram_p_cpu.size() != num_bins) if (!malloc_vector(histogram_p_cpu, num_bins)) return false;
 
 	//bin size : will be adjusted below
 	double bin = 0.0;
@@ -368,27 +374,34 @@ __host__ bool cuVEC<VType>::get_mag_histogram(
 
 		//build histogram by first averaging in macrocells
 
-		//zero pre-average data
-		zero_histogram_preaverage_values_kernel <<< (num_av_cells.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (histogram_preaverage, histogram_preaverage_size, aux_real, aux_real2);
+		//if stage_control is 2, then skip initialization (method called with stage_control 1 previously)
+		if (stage_control != 2) {
 
-		//zero reduction data
-		zero_histogramvalues_kernel <<< (num_bins + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (histogram, histogram_size, aux_real, aux_real2);
+			//zero pre-average data
+			zero_histogram_preaverage_values_kernel <<< (num_av_cells.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (histogram_preaverage, histogram_preaverage_size, aux_real, aux_real2);
 
-		//do pre-averaging
-		if (macrocell_dims.dim() < 1024)
-			preaverage_kernel <<< num_av_cells.dim(), CUDATHREADS >>> (*this, histogram_preaverage, num_av_cells, macrocell_dims);
-		else
-			preaverage_kernel <<< num_av_cells.dim(), 1024 >>> (*this, histogram_preaverage, num_av_cells, macrocell_dims);
+			//zero reduction data
+			zero_histogramvalues_kernel <<< (num_bins + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (histogram, histogram_size, aux_real, aux_real2);
 
-		//first determine minimum and maximum values if we need to
-		if ((min <= 0.0 && max <= 0.0) || max <= 0.0) {
+			//do pre-averaging
+			if (macrocell_dims.dim() < 1024)
+				preaverage_kernel <<< num_av_cells.dim(), CUDATHREADS >>> (*this, histogram_preaverage, num_av_cells, macrocell_dims);
+			else
+				preaverage_kernel <<< num_av_cells.dim(), 1024 >>> (*this, histogram_preaverage, num_av_cells, macrocell_dims);
 
-			preaveraged_minmax <<< (num_av_cells.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>>
-				(histogram_preaverage, histogram_preaverage_size, aux_real, aux_real2);
+			//first determine minimum and maximum values if we need to
+			if ((min <= 0.0 && max <= 0.0) || max <= 0.0) {
 
-			min = get_gpu_value(aux_real);
-			max = get_gpu_value(aux_real2);
+				preaveraged_minmax <<< (num_av_cells.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>>
+					(histogram_preaverage, histogram_preaverage_size, aux_real, aux_real2);
+
+				min = get_gpu_value(aux_real);
+				max = get_gpu_value(aux_real2);
+			}
 		}
+
+		//for stage_control 1 skip final calculation
+		if (stage_control == 1) return true;
 
 		//size of bin
 		bin = (max - min) / (num_bins - 1);
@@ -401,18 +414,18 @@ __host__ bool cuVEC<VType>::get_mag_histogram(
 			(histogram_preaverage, histogram_preaverage_size, num_bins, (cuBReal)bin, (cuBReal)min, (cuBReal)max, histogram, num_cells);
 	}
 
-	//copy over to histogram_cpu
-	if (histogram_x_cpu.size() != num_bins) if (!malloc_vector(histogram_x_cpu, num_bins)) return false;
-	if (histogram_p_cpu.size() != num_bins) if (!malloc_vector(histogram_p_cpu, num_bins)) return false;
+	if (set_output) {
 
+		//copy over to histogram_cpu
 #pragma omp parallel for
-	for (int idx = 0; idx < num_bins; idx++) {
+		for (int idx = 0; idx < num_bins; idx++) {
 
-		histogram_x_cpu[idx] = min + idx * bin;
+			histogram_x_cpu[idx] = min + idx * bin;
+		}
+
+		cudaError_t error = gpu_to_cpu_managed(histogram_p_cpu.data(), histogram, num_bins);
+		if (error != cudaSuccess) return false;
 	}
-
-	cudaError_t error = gpu_to_cpu_managed(histogram_p_cpu.data(), histogram, num_bins);
-	if (error != cudaSuccess) return false;
 
 	return true;
 }
@@ -421,7 +434,8 @@ __host__ bool cuVEC<VType>::get_mag_histogram(
 
 //Angular
 
-template bool cuVEC<cuReal3>::get_ang_histogram(std::vector<double>& histogram_x_cpu, std::vector<double>& histogram_p_cpu, int num_bins, double& min, double& max, size_t num_nonempty_cells, cuINT3 macrocell_dims, cuReal3 ndir);
+template bool cuVEC<cuFLT3>::get_ang_histogram(std::vector<double>& histogram_x_cpu, std::vector<double>& histogram_p_cpu, int num_bins, double& min, double& max, size_t num_nonempty_cells, cuINT3 macrocell_dims, cuFLT3 ndir, bool set_output, int stage_control);
+template bool cuVEC<cuDBL3>::get_ang_histogram(std::vector<double>& histogram_x_cpu, std::vector<double>& histogram_p_cpu, int num_bins, double& min, double& max, size_t num_nonempty_cells, cuINT3 macrocell_dims, cuDBL3 ndir, bool set_output, int stage_control);
 
 //compute magnitude histogram data
 //extract histogram between magnitudes min and max with given number of bins. if min max not given (set them to zero) then determine them first.
@@ -433,7 +447,8 @@ template <typename VType>
 __host__ bool cuVEC<VType>::get_ang_histogram(
 	std::vector<double>& histogram_x_cpu, std::vector<double>& histogram_p_cpu,
 	int num_bins, double& min, double& max,
-	size_t num_nonempty_cells, cuINT3 macrocell_dims, VType ndir)
+	size_t num_nonempty_cells, cuINT3 macrocell_dims, VType ndir,
+	bool set_output, int stage_control)
 {
 	cuSZ3 n_cpu = size_cpu();
 
@@ -447,6 +462,8 @@ __host__ bool cuVEC<VType>::get_ang_histogram(
 
 	//make sure there's enough memory allocated
 	if (!allocate_histogram_memory(num_bins, num_av_cells.dim())) return false;
+	if (histogram_x_cpu.size() != num_bins) if (!malloc_vector(histogram_x_cpu, num_bins)) return false;
+	if (histogram_p_cpu.size() != num_bins) if (!malloc_vector(histogram_p_cpu, num_bins)) return false;
 
 	//bin size : will be adjusted below
 	double bin = 0.0;
@@ -464,17 +481,24 @@ __host__ bool cuVEC<VType>::get_ang_histogram(
 
 		//build histogram from all cells separately
 
-		//zero reduction data
-		zero_histogramvalues_kernel <<< (num_bins + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (histogram, histogram_size, aux_real, aux_real2);
+		//if stage_control is 2, then skip initialization (method called with stage_control 1 previously)
+		if (stage_control != 2) {
 
-		//determine minimum and maximum values if we need to
-		if ((min <= 0.0 && max <= 0.0) || max <= 0.0) {
+			//zero reduction data
+			zero_histogramvalues_kernel <<< (num_bins + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (histogram, histogram_size, aux_real, aux_real2);
 
-			get_minmax_angles_kernel <<< (n_cpu.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (*this, ndir, aux_real, aux_real2);
-			
-			min = get_gpu_value(aux_real);
-			max = get_gpu_value(aux_real2);
+			//determine minimum and maximum values if we need to
+			if ((min <= 0.0 && max <= 0.0) || max <= 0.0) {
+
+				get_minmax_angles_kernel << < (n_cpu.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >> > (*this, ndir, aux_real, aux_real2);
+
+				min = get_gpu_value(aux_real);
+				max = get_gpu_value(aux_real2);
+			}
 		}
+
+		//for stage_control 1 skip final calculation
+		if (stage_control == 1) return true;
 
 		//size of bin
 		bin = (max - min) / (num_bins - 1);
@@ -492,29 +516,36 @@ __host__ bool cuVEC<VType>::get_ang_histogram(
 	}
 	else {
 
-		//build histogram by first averaging in macrocells
+		//if stage_control is 2, then skip initialization (method called with stage_control 1 previously)
+		if (stage_control != 2) {
 
-		//zero pre-average data
-		zero_histogram_preaverage_values_kernel <<< (num_av_cells.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (histogram_preaverage, histogram_preaverage_size, aux_real, aux_real2);
+			//build histogram by first averaging in macrocells
 
-		//zero reduction data
-		zero_histogramvalues_kernel <<< (num_bins + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (histogram, histogram_size, aux_real, aux_real2);
+			//zero pre-average data
+			zero_histogram_preaverage_values_kernel <<< (num_av_cells.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (histogram_preaverage, histogram_preaverage_size, aux_real, aux_real2);
 
-		//do pre-averaging
-		if (macrocell_dims.dim() < 1024)
-			preaverage_kernel <<< num_av_cells.dim(), CUDATHREADS >>> (*this, histogram_preaverage, num_av_cells, macrocell_dims);
-		else
-			preaverage_kernel <<< num_av_cells.dim(), 1024 >>> (*this, histogram_preaverage, num_av_cells, macrocell_dims);
+			//zero reduction data
+			zero_histogramvalues_kernel << < (num_bins + CUDATHREADS) / CUDATHREADS, CUDATHREADS >> > (histogram, histogram_size, aux_real, aux_real2);
 
-		//determine minimum and maximum values if we need to
-		if ((min <= 0.0 && max <= 0.0) || max <= 0.0) {
+			//do pre-averaging
+			if (macrocell_dims.dim() < 1024)
+				preaverage_kernel <<< num_av_cells.dim(), CUDATHREADS >>> (*this, histogram_preaverage, num_av_cells, macrocell_dims);
+			else
+				preaverage_kernel <<< num_av_cells.dim(), 1024 >>> (*this, histogram_preaverage, num_av_cells, macrocell_dims);
 
-			preaveraged_minmax_angles <<< (num_av_cells.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>>
-				(histogram_preaverage, histogram_preaverage_size, ndir, aux_real, aux_real2);
+			//determine minimum and maximum values if we need to
+			if ((min <= 0.0 && max <= 0.0) || max <= 0.0) {
 
-			min = get_gpu_value(aux_real);
-			max = get_gpu_value(aux_real2);
+				preaveraged_minmax_angles <<< (num_av_cells.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>>
+					(histogram_preaverage, histogram_preaverage_size, ndir, aux_real, aux_real2);
+
+				min = get_gpu_value(aux_real);
+				max = get_gpu_value(aux_real2);
+			}
 		}
+
+		//for stage_control 1 skip final calculation
+		if (stage_control == 1) return true;
 
 		//size of bin
 		bin = (max - min) / (num_bins - 1);
@@ -527,18 +558,18 @@ __host__ bool cuVEC<VType>::get_ang_histogram(
 			(histogram_preaverage, histogram_preaverage_size, ndir, num_bins, (cuBReal)bin, (cuBReal)min, (cuBReal)max, histogram, num_cells);
 	}
 
-	//copy over to histogram_cpu
-	if (histogram_x_cpu.size() != num_bins) if (!malloc_vector(histogram_x_cpu, num_bins)) return false;
-	if (histogram_p_cpu.size() != num_bins) if (!malloc_vector(histogram_p_cpu, num_bins)) return false;
+	if (set_output) {
 
+		//copy over to histogram_cpu
 #pragma omp parallel for
-	for (int idx = 0; idx < num_bins; idx++) {
+		for (int idx = 0; idx < num_bins; idx++) {
 
-		histogram_x_cpu[idx] = min + idx * bin;
+			histogram_x_cpu[idx] = min + idx * bin;
+		}
+
+		cudaError_t error = gpu_to_cpu_managed(histogram_p_cpu.data(), histogram, num_bins);
+		if (error != cudaSuccess) return false;
 	}
-
-	cudaError_t error = gpu_to_cpu_managed(histogram_p_cpu.data(), histogram, num_bins);
-	if (error != cudaSuccess) return false;
 
 	return true;
 }

@@ -41,13 +41,19 @@ __global__ void IterateHeatEquation_1TM_Kernel(ManagedAtom_MeshCUDA& cuaMesh, cu
 		//add Joule heating if set
 		if (E.linear_size()) {
 
-			cuReal3 position = Temp.cellidx_to_position(idx);
+			cuBReal joule_eff = *cuaMesh.pjoule_eff;
+			cuaMesh.update_parameters_tcoarse(idx, *cuaMesh.pjoule_eff, joule_eff);
 
-			cuReal3 E_value = E.weighted_average(position, Temp.h);
-			cuBReal elC_value = elC.weighted_average(position, Temp.h);
+			if (cuIsNZ(joule_eff)) {
 
-			//add Joule heating source term
-			heatEq_RHS[idx] += (elC_value * E_value * E_value) / cro;
+				cuReal3 position = Temp.cellidx_to_position(idx);
+
+				cuReal3 E_value = E.weighted_average(position, Temp.h);
+				cuBReal elC_value = elC.weighted_average(position, Temp.h);
+
+				//add Joule heating source term
+				heatEq_RHS[idx] += joule_eff * (elC_value * E_value * E_value) / cro;
+			}
 		}
 
 		//add heat source contribution if set
@@ -90,13 +96,19 @@ __global__ void IterateHeatEquation_1TM_Equation_Kernel(
 		//add Joule heating if set
 		if (E.linear_size()) {
 
-			cuReal3 position = Temp.cellidx_to_position(idx);
+			cuBReal joule_eff = *cuaMesh.pjoule_eff;
+			cuaMesh.update_parameters_tcoarse(idx, *cuaMesh.pjoule_eff, joule_eff);
 
-			cuReal3 E_value = E.weighted_average(position, Temp.h);
-			cuBReal elC_value = elC.weighted_average(position, Temp.h);
+			if (cuIsNZ(joule_eff)) {
 
-			//add Joule heating source term
-			heatEq_RHS[idx] += (elC_value * E_value * E_value) / cro;
+				cuReal3 position = Temp.cellidx_to_position(idx);
+
+				cuReal3 E_value = E.weighted_average(position, Temp.h);
+				cuBReal elC_value = elC.weighted_average(position, Temp.h);
+
+				//add Joule heating source term
+				heatEq_RHS[idx] += joule_eff * (elC_value * E_value * E_value) / cro;
+			}
 		}
 
 		//add heat source contribution
@@ -185,13 +197,19 @@ __global__ void IterateHeatEquation_2TM_Kernel(ManagedAtom_MeshCUDA& cuaMesh, cu
 			//add Joule heating if set
 			if (E.linear_size()) {
 
-				cuReal3 position = Temp.cellidx_to_position(idx);
+				cuBReal joule_eff = *cuaMesh.pjoule_eff;
+				cuaMesh.update_parameters_tcoarse(idx, *cuaMesh.pjoule_eff, joule_eff);
 
-				cuBReal elC_value = elC.weighted_average(position, Temp.h);
-				cuReal3 E_value = E.weighted_average(position, Temp.h);
+				if (cuIsNZ(joule_eff)) {
 
-				//add Joule heating source term
-				heatEq_RHS[idx] += (elC_value * E_value * E_value) / cro_e;
+					cuReal3 position = Temp.cellidx_to_position(idx);
+
+					cuBReal elC_value = elC.weighted_average(position, Temp.h);
+					cuReal3 E_value = E.weighted_average(position, Temp.h);
+
+					//add Joule heating source term
+					heatEq_RHS[idx] += joule_eff * (elC_value * E_value * E_value) / cro_e;
+				}
 			}
 
 			//add heat source contribution if set
@@ -249,13 +267,19 @@ __global__ void IterateHeatEquation_2TM_Equation_Kernel(
 			//add Joule heating if set
 			if (E.linear_size()) {
 
-				cuReal3 position = Temp.cellidx_to_position(idx);
+				cuBReal joule_eff = *cuaMesh.pjoule_eff;
+				cuaMesh.update_parameters_tcoarse(idx, *cuaMesh.pjoule_eff, joule_eff);
 
-				cuBReal elC_value = elC.weighted_average(position, Temp.h);
-				cuReal3 E_value = E.weighted_average(position, Temp.h);
+				if (cuIsNZ(joule_eff)) {
 
-				//add Joule heating source term
-				heatEq_RHS[idx] += (elC_value * E_value * E_value) / cro_e;
+					cuReal3 position = Temp.cellidx_to_position(idx);
+
+					cuBReal elC_value = elC.weighted_average(position, Temp.h);
+					cuReal3 E_value = E.weighted_average(position, Temp.h);
+
+					//add Joule heating source term
+					heatEq_RHS[idx] += joule_eff * (elC_value * E_value * E_value) / cro_e;
+				}
 			}
 
 			//add heat source contribution

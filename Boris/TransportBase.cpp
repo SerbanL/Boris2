@@ -6,7 +6,8 @@
 #include "SuperMesh.h"
 
 TransportBase::TransportBase(MeshBase* pMeshBase_) :
-	pMeshBase(pMeshBase_)
+	pMeshBase(pMeshBase_),
+	TAMR_conductivity_equation({ "TAMR", "d1", "d2", "d3" })
 {
 	pSMesh = pMeshBase->pSMesh;
 }
@@ -100,6 +101,31 @@ bool TransportBase::iSHA_nonzero(void)
 bool TransportBase::SHA_nonzero(void)
 {
 	return pMeshBase->SHA_nonzero();
+}
+
+bool TransportBase::IsOpenPotential(void)
+{
+	return pSTrans->IsOpenPotential();
+}
+
+//-------------------TAMR
+
+BError TransportBase::Set_TAMR_Conductivity_Equation(std::string equation_string)
+{
+	BError error(CLASS_STR(TransportBase));
+	
+	if (!equation_string.length()) TAMR_conductivity_equation.clear();
+	else if (!TAMR_conductivity_equation.make_from_string(equation_string)) return error(BERROR_INCORRECTSTRING);
+
+#if COMPILECUDA == 1
+	if (pTransportBaseCUDA) {
+		
+		if (!TAMR_conductivity_equation.is_set()) pTransportBaseCUDA->Clear_TAMR_Conductivity_Equation();
+		else error = pTransportBaseCUDA->Set_TAMR_Conductivity_Equation(TAMR_conductivity_equation.get_scalar_fspec());
+	}
+#endif
+
+	return error;
 }
 
 //------------------Others

@@ -25,15 +25,16 @@ class InsulatorMesh :
 	int, int, int, 
 	int, int, int, int, int, int,
 	Rect, SZ3, DBL3, SZ3, DBL3, SZ3, DBL3,
-	VEC_VC<double>, VEC_VC<DBL3>, VEC_VC<DBL3>, VEC_VC<double>,
-	VEC_VC<double>, 
+	VEC_VC<double>, VEC_VC<DBL3>, VEC_VC<DBL3>, VEC_VC<double>, VEC_VC<double>, 
 	vector_lut<Modules*>,
+	unsigned,
 	//Members in this derived class
 	int,
 	//Material Parameters
 	double, TEquation<double>, 
 	MatP<DBL2, double>, MatP<DBL2, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>,
-	MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>
+	MatP<double, double>, MatP<double, double>, MatP<DBL2, double>, MatP<double, double>, MatP<double, double>, MatP<DBL3, double>, MatP<double, double>,
+	MatP<double, double>, MatP<double, double>, MatP<double, double>
 	>,
 	//Module Implementations
 	std::tuple<Heat, TMR> >

@@ -22,6 +22,7 @@
 
 #include "cuVEC_VC_mng.cuh"
 #include "cuVEC_VC_flags.cuh"
+#include "cuVEC_VC_halo.cuh"
 #include "cuVEC_VC_shape.cuh"
 #include "cuVEC_VC_oper.cuh"
 #include "cuVEC_VC_avg.cuh"
@@ -29,3 +30,8 @@
 #include "cuVEC_VC_arith.cuh"
 #include "cuVEC_VC_cmbnd.cuh"
 #include "cuVEC_VC_solve.cuh"
+
+#include "mGPU_transfer.cuh"
+
+#include "mcuVEC_solve.cuh"
+#include "mcuVEC_histo.cuh"

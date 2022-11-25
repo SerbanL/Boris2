@@ -193,6 +193,10 @@ MeshParams::MeshParams(std::vector<PARAM_>& enabledParams)
 			meshParams.push_back("amr", MeshParamDescriptor(PARAMTYPE_ELECTRIC, "%"), PARAM_AMR);
 			break;
 
+		case PARAM_TAMR:
+			meshParams.push_back("tamr", MeshParamDescriptor(PARAMTYPE_ELECTRIC, "%"), PARAM_TAMR);
+			break;
+
 		case PARAM_P:
 			meshParams.push_back("P", MeshParamDescriptor(PARAMTYPE_ELECTRIC), PARAM_P);
 			break;
@@ -217,12 +221,24 @@ MeshParams::MeshParams(std::vector<PARAM_>& enabledParams)
 			meshParams.push_back("flST", MeshParamDescriptor(PARAMTYPE_ELECTRIC), PARAM_FLSOT);
 			break;
 
+		case PARAM_FLSOT2:
+			meshParams.push_back("flST2", MeshParamDescriptor(PARAMTYPE_ELECTRIC), PARAM_FLSOT2);
+			break;
+
 		case PARAM_STQ:
 			meshParams.push_back("STq", MeshParamDescriptor(PARAMTYPE_ELECTRIC), PARAM_STQ);
 			break;
 
+		case PARAM_STQ2:
+			meshParams.push_back("STq2", MeshParamDescriptor(PARAMTYPE_ELECTRIC), PARAM_STQ2);
+			break;
+
 		case PARAM_STA:
 			meshParams.push_back("STa", MeshParamDescriptor(PARAMTYPE_ELECTRIC), PARAM_STA);
+			break;
+
+		case PARAM_STA2:
+			meshParams.push_back("STa2", MeshParamDescriptor(PARAMTYPE_ELECTRIC), PARAM_STA2);
 			break;
 
 		case PARAM_STP:
@@ -277,16 +293,25 @@ MeshParams::MeshParams(std::vector<PARAM_>& enabledParams)
 			meshParams.push_back("n", MeshParamDescriptor(PARAMTYPE_ELECTRIC, "m-3"), PARAM_NDENSITY);
 			break;
 
+		case PARAM_SEEBECK:
+			meshParams.push_back("S", MeshParamDescriptor(PARAMTYPE_ELECTRIC, "V/K"), PARAM_SEEBECK);
+			break;
+
+		case PARAM_JOULE_EFF:
+			meshParams.push_back("joule_eff", MeshParamDescriptor(PARAMTYPE_THERMAL), PARAM_JOULE_EFF);
+			break;
+
 		case PARAM_THERMCOND:
 			meshParams.push_back("thermK", MeshParamDescriptor(PARAMTYPE_THERMAL, "W/mK"), PARAM_THERMCOND);
 			break;
 
 		case PARAM_DENSITY:
-			meshParams.push_back("density", MeshParamDescriptor(PARAMTYPE_MECHANICAL, "kg/m3"), PARAM_DENSITY);
+			//special : define this as a thermal parameter, not mechanical, as it's used mostly in the Heat module. Special handling in MElastic module.
+			meshParams.push_back("density", MeshParamDescriptor(PARAMTYPE_THERMAL, "kg/m3"), PARAM_DENSITY);
 			break;
 
 		case PARAM_MECOEFF:
-			meshParams.push_back("MEc", MeshParamDescriptor(PARAMTYPE_MECHANICAL, "J/m3"), PARAM_MECOEFF);
+			meshParams.push_back("MEc", MeshParamDescriptor(PARAMTYPE_MAGNETIC, "J/m3"), PARAM_MECOEFF);
 			break;
 
 		case PARAM_YOUNGSMOD:
@@ -297,6 +322,14 @@ MeshParams::MeshParams(std::vector<PARAM_>& enabledParams)
 			meshParams.push_back("Pr", MeshParamDescriptor(PARAMTYPE_MECHANICAL), PARAM_POISSONRATIO);
 			break;
 
+		case PARAM_STIFFC_CUBIC:
+			meshParams.push_back("cC", MeshParamDescriptor(PARAMTYPE_MECHANICAL, "N/m2"), PARAM_STIFFC_CUBIC);
+			break;
+
+		case PARAM_MDAMPING: 
+			meshParams.push_back("mdamping", MeshParamDescriptor(PARAMTYPE_MECHANICAL, "kg/m3s"), PARAM_MDAMPING);
+			break;
+			
 		case PARAM_SHC:
 			meshParams.push_back("shc", MeshParamDescriptor(PARAMTYPE_THERMAL, "J/kgK"), PARAM_SHC);
 			break;

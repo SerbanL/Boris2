@@ -21,7 +21,7 @@ __global__ void normalize_error_kernel(cuBReal& max_error, cuBReal& max_val)
 template <typename VType>
 __global__ void IterateLaplace_SOR_red_kernel(cuVEC_VC<VType>& vec, cuBReal& damping)
 {
-	vec.IterateLaplace_SOR_red(damping);
+	vec.IterateLaplace_SOR_red_ondevice(damping);
 }
 
 //-------------------- GLOBAL BLACK
@@ -29,13 +29,13 @@ __global__ void IterateLaplace_SOR_red_kernel(cuVEC_VC<VType>& vec, cuBReal& dam
 template <typename VType>
 __global__ void IterateLaplace_SOR_black_kernel(cuVEC_VC<VType>& vec, cuBReal& damping, cuBReal& max_error, cuBReal& max_val)
 {
-	vec.IterateLaplace_SOR_black(damping, max_error, max_val);
+	vec.IterateLaplace_SOR_black_ondevice(damping, max_error, max_val);
 }
 
 //-------------------- DEVICE RED
 
 template <typename VType>
-__device__ void cuVEC_VC<VType>::IterateLaplace_SOR_red(cuBReal damping)
+__device__ void cuVEC_VC<VType>::IterateLaplace_SOR_red_ondevice(cuBReal damping)
 {
 	//this method must be called with half-size : arr_size / 2 = cuVEC<VType>::n.dim() / 2, i.e. <<< (arr_size / 2 + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>>
 	//double idx : idx values will now take on even values
@@ -43,7 +43,7 @@ __device__ void cuVEC_VC<VType>::IterateLaplace_SOR_red(cuBReal damping)
 	
 	//ijk coordinates corresponding to idx
 	cuINT3 ijk = cuINT3(idx % cuVEC<VType>::n.x, (idx / cuVEC<VType>::n.x) % cuVEC<VType>::n.y, idx / (cuVEC<VType>::n.x*cuVEC<VType>::n.y));
-	
+
 	//for red-black passes must adjust the even idx values so we keep to a 3D checkerboard pattern
 	//"red" : start at 0, "black" : start at 1
 	//The following rules can be easily checked (remember i is the column number, j is the row number, k is the plane number)
@@ -98,6 +98,39 @@ __device__ void cuVEC_VC<VType>::IterateLaplace_SOR_red(cuBReal damping)
 			total_weight += 2 * w_x;
 			weighted_sum += w_x * (cuVEC<VType>::quantity[idx - 1] + cuVEC<VType>::quantity[idx + 1]);
 		}
+		//use halo region?
+		else if (using_extended_flags && (ngbrFlags2[idx] & NF2_HALOX)) {
+			
+			//halo index
+			int hidx = ((idx / cuVEC<VType>::n.x) % cuVEC<VType>::n.y) + (idx / (cuVEC<VType>::n.x*cuVEC<VType>::n.y))*cuVEC<VType>::n.y;
+
+			if (ngbrFlags2[idx] & NF2_HALOPX) {
+				
+				if (ngbrFlags[idx] & NF_NNX) {
+
+					total_weight += 2 * w_x;
+					weighted_sum += w_x * (cuVEC<VType>::quantity[idx - 1] + halo_px[hidx]);
+				}
+				else {
+
+					total_weight += w_x;
+					weighted_sum += w_x * halo_px[hidx];
+				}
+			}
+			else {
+
+				if (ngbrFlags[idx] & NF_NPX) {
+
+					total_weight += 2 * w_x;
+					weighted_sum += w_x * (halo_nx[hidx] + cuVEC<VType>::quantity[idx + 1]);
+				}
+				else {
+
+					total_weight += w_x;
+					weighted_sum += w_x * halo_nx[hidx];
+				}
+			}
+		}
 		else if (using_extended_flags && (ngbrFlags2[idx] & NF2_DIRICHLETX)) {
 
 			total_weight += 6 * w_x;
@@ -125,6 +158,39 @@ __device__ void cuVEC_VC<VType>::IterateLaplace_SOR_red(cuBReal damping)
 			total_weight += 2 * w_y;
 			weighted_sum += w_y * (cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x] + cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x]);
 		}
+		//use halo region?
+		else if (using_extended_flags && (ngbrFlags2[idx] & NF2_HALOY)) {
+
+			//halo index
+			int hidx = (idx % cuVEC<VType>::n.x) + (idx / (cuVEC<VType>::n.x*cuVEC<VType>::n.y))*cuVEC<VType>::n.x;
+
+			if (ngbrFlags2[idx] & NF2_HALOPY) {
+
+				if (ngbrFlags[idx] & NF_NNY) {
+
+					total_weight += 2 * w_y;
+					weighted_sum += w_y * (cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x] + halo_py[hidx]);
+				}
+				else {
+
+					total_weight += w_y;
+					weighted_sum += w_y * halo_py[hidx];
+				}
+			}
+			else {
+
+				if (ngbrFlags[idx] & NF_NPY) {
+
+					total_weight += 2 * w_y;
+					weighted_sum += w_y * (halo_ny[hidx] + cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x]);
+				}
+				else {
+
+					total_weight += w_y;
+					weighted_sum += w_y * halo_ny[hidx];
+				}
+			}
+		}
 		else if (using_extended_flags && (ngbrFlags2[idx] & NF2_DIRICHLETY)) {
 
 			total_weight += 6 * w_y;
@@ -151,6 +217,39 @@ __device__ void cuVEC_VC<VType>::IterateLaplace_SOR_red(cuBReal damping)
 
 			total_weight += 2 * w_z;
 			weighted_sum += w_z * (cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x*cuVEC<VType>::n.y] + cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x*cuVEC<VType>::n.y]);
+		}
+		//use halo region?
+		else if (using_extended_flags && (ngbrFlags2[idx] & NF2_HALOZ)) {
+
+			//halo index
+			int hidx = (idx % cuVEC<VType>::n.x) + ((idx / cuVEC<VType>::n.x) % cuVEC<VType>::n.y)*cuVEC<VType>::n.x;
+
+			if (ngbrFlags2[idx] & NF2_HALOPZ) {
+
+				if (ngbrFlags[idx] & NF_NNZ) {
+
+					total_weight += 2 * w_z;
+					weighted_sum += w_z * (cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x*cuVEC<VType>::n.y] + halo_pz[hidx]);
+				}
+				else {
+
+					total_weight += w_z;
+					weighted_sum += w_z * halo_pz[hidx];
+				}
+			}
+			else {
+
+				if (ngbrFlags[idx] & NF_NPZ) {
+
+					total_weight += 2 * w_z;
+					weighted_sum += w_z * (halo_nz[hidx] + cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x*cuVEC<VType>::n.y]);
+				}
+				else {
+
+					total_weight += w_z;
+					weighted_sum += w_z * halo_nz[hidx];
+				}
+			}
 		}
 		else if (using_extended_flags && (ngbrFlags2[idx] & NF2_DIRICHLETZ)) {
 
@@ -181,7 +280,7 @@ __device__ void cuVEC_VC<VType>::IterateLaplace_SOR_red(cuBReal damping)
 //-------------------- DEVICE BLACK
 
 template <typename VType>
-__device__ void cuVEC_VC<VType>::IterateLaplace_SOR_black(cuBReal damping, cuBReal& max_error, cuBReal& max_val)
+__device__ void cuVEC_VC<VType>::IterateLaplace_SOR_black_ondevice(cuBReal damping, cuBReal& max_error, cuBReal& max_val)
 {
 	//this method must be called with half-size : arr_size / 2 = cuVEC<VType>::n.dim() / 2, i.e. <<< (arr_size / 2 + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>>
 	//double idx : idx values will now take on even values
@@ -250,6 +349,39 @@ __device__ void cuVEC_VC<VType>::IterateLaplace_SOR_black(cuBReal damping, cuBRe
 			total_weight += 2 * w_x;
 			weighted_sum += w_x * (cuVEC<VType>::quantity[idx - 1] + cuVEC<VType>::quantity[idx + 1]);
 		}
+		//use halo region?
+		else if (using_extended_flags && (ngbrFlags2[idx] & NF2_HALOX)) {
+			
+			//halo index
+			int hidx = ((idx / cuVEC<VType>::n.x) % cuVEC<VType>::n.y) + (idx / (cuVEC<VType>::n.x*cuVEC<VType>::n.y))*cuVEC<VType>::n.y;
+
+			if (ngbrFlags2[idx] & NF2_HALOPX) {
+
+				if (ngbrFlags[idx] & NF_NNX) {
+
+					total_weight += 2 * w_x;
+					weighted_sum += w_x * (cuVEC<VType>::quantity[idx - 1] + halo_px[hidx]);
+				}
+				else {
+
+					total_weight += w_x;
+					weighted_sum += w_x * halo_px[hidx];
+				}
+			}
+			else {
+
+				if (ngbrFlags[idx] & NF_NPX) {
+
+					total_weight += 2 * w_x;
+					weighted_sum += w_x * (halo_nx[hidx] + cuVEC<VType>::quantity[idx + 1]);
+				}
+				else {
+
+					total_weight += w_x;
+					weighted_sum += w_x * halo_nx[hidx];
+				}
+			}
+		}
 		else if (using_extended_flags && (ngbrFlags2[idx] & NF2_DIRICHLETX)) {
 
 			total_weight += 6 * w_x;
@@ -277,6 +409,39 @@ __device__ void cuVEC_VC<VType>::IterateLaplace_SOR_black(cuBReal damping, cuBRe
 			total_weight += 2 * w_y;
 			weighted_sum += w_y * (cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x] + cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x]);
 		}
+		//use halo region?
+		else if (using_extended_flags && (ngbrFlags2[idx] & NF2_HALOY)) {
+
+			//halo index
+			int hidx = (idx % cuVEC<VType>::n.x) + (idx / (cuVEC<VType>::n.x*cuVEC<VType>::n.y))*cuVEC<VType>::n.x;
+
+			if (ngbrFlags2[idx] & NF2_HALOPY) {
+
+				if (ngbrFlags[idx] & NF_NNY) {
+
+					total_weight += 2 * w_y;
+					weighted_sum += w_y * (cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x] + halo_py[hidx]);
+				}
+				else {
+
+					total_weight += w_y;
+					weighted_sum += w_y * halo_py[hidx];
+				}
+			}
+			else {
+
+				if (ngbrFlags[idx] & NF_NPY) {
+
+					total_weight += 2 * w_y;
+					weighted_sum += w_y * (halo_ny[hidx] + cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x]);
+				}
+				else {
+
+					total_weight += w_y;
+					weighted_sum += w_y * halo_ny[hidx];
+				}
+			}
+		}
 		else if (using_extended_flags && (ngbrFlags2[idx] & NF2_DIRICHLETY)) {
 
 			total_weight += 6 * w_y;
@@ -303,6 +468,39 @@ __device__ void cuVEC_VC<VType>::IterateLaplace_SOR_black(cuBReal damping, cuBRe
 
 			total_weight += 2 * w_z;
 			weighted_sum += w_z * (cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x*cuVEC<VType>::n.y] + cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x*cuVEC<VType>::n.y]);
+		}
+		//use halo region?
+		else if (using_extended_flags && (ngbrFlags2[idx] & NF2_HALOZ)) {
+
+			//halo index
+			int hidx = (idx % cuVEC<VType>::n.x) + ((idx / cuVEC<VType>::n.x) % cuVEC<VType>::n.y)*cuVEC<VType>::n.x;
+
+			if (ngbrFlags2[idx] & NF2_HALOPZ) {
+
+				if (ngbrFlags[idx] & NF_NNZ) {
+
+					total_weight += 2 * w_z;
+					weighted_sum += w_z * (cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x*cuVEC<VType>::n.y] + halo_pz[hidx]);
+				}
+				else {
+
+					total_weight += w_z;
+					weighted_sum += w_z * halo_pz[hidx];
+				}
+			}
+			else {
+
+				if (ngbrFlags[idx] & NF_NPZ) {
+
+					total_weight += 2 * w_z;
+					weighted_sum += w_z * (halo_nz[hidx] + cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x*cuVEC<VType>::n.y]);
+				}
+				else {
+
+					total_weight += w_z;
+					weighted_sum += w_z * halo_nz[hidx];
+				}
+			}
 		}
 		else if (using_extended_flags && (ngbrFlags2[idx] & NF2_DIRICHLETZ)) {
 
@@ -343,6 +541,32 @@ __host__ void cuVEC_VC<VType>::IterateLaplace_SOR(size_t arr_size, cuBReal& damp
 	IterateLaplace_SOR_black_kernel <<< (arr_size / 2 + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (*this, damping, max_error, max_val);
 }
 
+template void cuVEC_VC<float>::IterateLaplace_SOR_red(size_t arr_size, cuBReal& damping);
+template void cuVEC_VC<double>::IterateLaplace_SOR_red(size_t arr_size, cuBReal& damping);
+
+template void cuVEC_VC<cuFLT3>::IterateLaplace_SOR_red(size_t arr_size, cuBReal& damping);
+template void cuVEC_VC<cuDBL3>::IterateLaplace_SOR_red(size_t arr_size, cuBReal& damping);
+
+//as above, but allow separate control of red and black passes launch
+template <typename VType>
+__host__ void cuVEC_VC<VType>::IterateLaplace_SOR_red(size_t arr_size, cuBReal& damping)
+{
+	IterateLaplace_SOR_red_kernel <<< (arr_size / 2 + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (*this, damping);
+}
+
+template void cuVEC_VC<float>::IterateLaplace_SOR_black(size_t arr_size, cuBReal& damping, cuBReal& max_error, cuBReal& max_val);
+template void cuVEC_VC<double>::IterateLaplace_SOR_black(size_t arr_size, cuBReal& damping, cuBReal& max_error, cuBReal& max_val);
+
+template void cuVEC_VC<cuFLT3>::IterateLaplace_SOR_black(size_t arr_size, cuBReal& damping, cuBReal& max_error, cuBReal& max_val);
+template void cuVEC_VC<cuDBL3>::IterateLaplace_SOR_black(size_t arr_size, cuBReal& damping, cuBReal& max_error, cuBReal& max_val);
+
+template <typename VType>
+__host__ void cuVEC_VC<VType>::IterateLaplace_SOR_black(size_t arr_size, cuBReal& damping, cuBReal& max_error, cuBReal& max_val)
+{
+	IterateLaplace_SOR_black_kernel <<< (arr_size / 2 + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (*this, damping, max_error, max_val);
+}
+
+
 //---------------------------------------------------- POISSON
 
 //-------------------- GLOBAL RED
@@ -350,7 +574,7 @@ __host__ void cuVEC_VC<VType>::IterateLaplace_SOR(size_t arr_size, cuBReal& damp
 template <typename VType, typename Class_Poisson_RHS>
 __global__ void IteratePoisson_SOR_red_kernel(cuVEC_VC<VType>& vec, Class_Poisson_RHS& obj, cuBReal& damping)
 {
-	vec.IteratePoisson_SOR_red(obj, damping);
+	vec.IteratePoisson_SOR_red_ondevice(obj, damping);
 }
 
 //-------------------- GLOBAL BLACK
@@ -358,14 +582,14 @@ __global__ void IteratePoisson_SOR_red_kernel(cuVEC_VC<VType>& vec, Class_Poisso
 template <typename VType, typename Class_Poisson_RHS>
 __global__ void IteratePoisson_SOR_black_kernel(cuVEC_VC<VType>& vec, Class_Poisson_RHS& obj, cuBReal& damping, cuBReal& max_error, cuBReal& max_val)
 {
-	vec.IteratePoisson_SOR_black(obj, damping, max_error, max_val);
+	vec.IteratePoisson_SOR_black_ondevice(obj, damping, max_error, max_val);
 }
 
 //-------------------- DEVICE RED
 
 template <typename VType>
 template <typename Class_Poisson_RHS>
-__device__ void cuVEC_VC<VType>::IteratePoisson_SOR_red(Class_Poisson_RHS& obj, cuBReal damping)
+__device__ void cuVEC_VC<VType>::IteratePoisson_SOR_red_ondevice(Class_Poisson_RHS& obj, cuBReal damping)
 {
 	//this method must be called with half-size : arr_size / 2 = cuVEC<VType>::n.dim() / 2, i.e. <<< (arr_size / 2 + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>>
 	//double idx : idx values will now take on even values
@@ -428,6 +652,39 @@ __device__ void cuVEC_VC<VType>::IteratePoisson_SOR_red(Class_Poisson_RHS& obj, 
 			total_weight += 2 * w_x;
 			weighted_sum += w_x * (cuVEC<VType>::quantity[idx - 1] + cuVEC<VType>::quantity[idx + 1]);
 		}
+		//use halo region?
+		else if (using_extended_flags && (ngbrFlags2[idx] & NF2_HALOX)) {
+
+			//halo index
+			int hidx = ((idx / cuVEC<VType>::n.x) % cuVEC<VType>::n.y) + (idx / (cuVEC<VType>::n.x*cuVEC<VType>::n.y))*cuVEC<VType>::n.y;
+
+			if (ngbrFlags2[idx] & NF2_HALOPX) {
+
+				if (ngbrFlags[idx] & NF_NNX) {
+
+					total_weight += 2 * w_x;
+					weighted_sum += w_x * (cuVEC<VType>::quantity[idx - 1] + halo_px[hidx]);
+				}
+				else {
+
+					total_weight += w_x;
+					weighted_sum += w_x * halo_px[hidx];
+				}
+			}
+			else {
+
+				if (ngbrFlags[idx] & NF_NPX) {
+
+					total_weight += 2 * w_x;
+					weighted_sum += w_x * (halo_nx[hidx] + cuVEC<VType>::quantity[idx + 1]);
+				}
+				else {
+
+					total_weight += w_x;
+					weighted_sum += w_x * halo_nx[hidx];
+				}
+			}
+		}
 		else if (using_extended_flags && (ngbrFlags2[idx] & NF2_DIRICHLETX)) {
 
 			total_weight += 6 * w_x;
@@ -455,6 +712,39 @@ __device__ void cuVEC_VC<VType>::IteratePoisson_SOR_red(Class_Poisson_RHS& obj, 
 			total_weight += 2 * w_y;
 			weighted_sum += w_y * (cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x] + cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x]);
 		}
+		//use halo region?
+		else if (using_extended_flags && (ngbrFlags2[idx] & NF2_HALOY)) {
+
+			//halo index
+			int hidx = (idx % cuVEC<VType>::n.x) + (idx / (cuVEC<VType>::n.x*cuVEC<VType>::n.y))*cuVEC<VType>::n.x;
+
+			if (ngbrFlags2[idx] & NF2_HALOPY) {
+
+				if (ngbrFlags[idx] & NF_NNY) {
+
+					total_weight += 2 * w_y;
+					weighted_sum += w_y * (cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x] + halo_py[hidx]);
+				}
+				else {
+
+					total_weight += w_y;
+					weighted_sum += w_y * halo_py[hidx];
+				}
+			}
+			else {
+
+				if (ngbrFlags[idx] & NF_NPY) {
+
+					total_weight += 2 * w_y;
+					weighted_sum += w_y * (halo_ny[hidx] + cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x]);
+				}
+				else {
+
+					total_weight += w_y;
+					weighted_sum += w_y * halo_ny[hidx];
+				}
+			}
+		}
 		else if (using_extended_flags && (ngbrFlags2[idx] & NF2_DIRICHLETY)) {
 
 			total_weight += 6 * w_y;
@@ -481,6 +771,39 @@ __device__ void cuVEC_VC<VType>::IteratePoisson_SOR_red(Class_Poisson_RHS& obj, 
 
 			total_weight += 2 * w_z;
 			weighted_sum += w_z * (cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x*cuVEC<VType>::n.y] + cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x*cuVEC<VType>::n.y]);
+		}
+		//use halo region?
+		else if (using_extended_flags && (ngbrFlags2[idx] & NF2_HALOZ)) {
+
+			//halo index
+			int hidx = (idx % cuVEC<VType>::n.x) + ((idx / cuVEC<VType>::n.x) % cuVEC<VType>::n.y)*cuVEC<VType>::n.x;
+
+			if (ngbrFlags2[idx] & NF2_HALOPZ) {
+
+				if (ngbrFlags[idx] & NF_NNZ) {
+
+					total_weight += 2 * w_z;
+					weighted_sum += w_z * (cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x*cuVEC<VType>::n.y] + halo_pz[hidx]);
+				}
+				else {
+
+					total_weight += w_z;
+					weighted_sum += w_z * halo_pz[hidx];
+				}
+			}
+			else {
+
+				if (ngbrFlags[idx] & NF_NPZ) {
+
+					total_weight += 2 * w_z;
+					weighted_sum += w_z * (halo_nz[hidx] + cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x*cuVEC<VType>::n.y]);
+				}
+				else {
+
+					total_weight += w_z;
+					weighted_sum += w_z * halo_nz[hidx];
+				}
+			}
 		}
 		else if (using_extended_flags && ngbrFlags2[idx] & NF2_DIRICHLETZ) {
 
@@ -511,7 +834,7 @@ __device__ void cuVEC_VC<VType>::IteratePoisson_SOR_red(Class_Poisson_RHS& obj, 
 
 template <typename VType>
 template <typename Class_Poisson_RHS>
-__device__ void cuVEC_VC<VType>::IteratePoisson_SOR_black(Class_Poisson_RHS& obj, cuBReal damping, cuBReal& max_error, cuBReal& max_val)
+__device__ void cuVEC_VC<VType>::IteratePoisson_SOR_black_ondevice(Class_Poisson_RHS& obj, cuBReal damping, cuBReal& max_error, cuBReal& max_val)
 {
 	//this method must be called with half-size : arr_size / 2 = cuVEC<VType>::n.dim() / 2, i.e. <<< (arr_size / 2 + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>>
 	//double idx : idx values will now take on even values
@@ -580,6 +903,39 @@ __device__ void cuVEC_VC<VType>::IteratePoisson_SOR_black(Class_Poisson_RHS& obj
 			total_weight += 2 * w_x;
 			weighted_sum += w_x * (cuVEC<VType>::quantity[idx - 1] + cuVEC<VType>::quantity[idx + 1]);
 		}
+		//use halo region?
+		else if (using_extended_flags && (ngbrFlags2[idx] & NF2_HALOX)) {
+
+			//halo index
+			int hidx = ((idx / cuVEC<VType>::n.x) % cuVEC<VType>::n.y) + (idx / (cuVEC<VType>::n.x*cuVEC<VType>::n.y))*cuVEC<VType>::n.y;
+
+			if (ngbrFlags2[idx] & NF2_HALOPX) {
+
+				if (ngbrFlags[idx] & NF_NNX) {
+
+					total_weight += 2 * w_x;
+					weighted_sum += w_x * (cuVEC<VType>::quantity[idx - 1] + halo_px[hidx]);
+				}
+				else {
+
+					total_weight += w_x;
+					weighted_sum += w_x * halo_px[hidx];
+				}
+			}
+			else {
+
+				if (ngbrFlags[idx] & NF_NPX) {
+
+					total_weight += 2 * w_x;
+					weighted_sum += w_x * (halo_nx[hidx] + cuVEC<VType>::quantity[idx + 1]);
+				}
+				else {
+
+					total_weight += w_x;
+					weighted_sum += w_x * halo_nx[hidx];
+				}
+			}
+		}
 		else if (using_extended_flags && (ngbrFlags2[idx] & NF2_DIRICHLETX)) {
 
 			total_weight += 6 * w_x;
@@ -607,6 +963,39 @@ __device__ void cuVEC_VC<VType>::IteratePoisson_SOR_black(Class_Poisson_RHS& obj
 			total_weight += 2 * w_y;
 			weighted_sum += w_y * (cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x] + cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x]);
 		}
+		//use halo region?
+		else if (using_extended_flags && (ngbrFlags2[idx] & NF2_HALOY)) {
+
+			//halo index
+			int hidx = (idx % cuVEC<VType>::n.x) + (idx / (cuVEC<VType>::n.x*cuVEC<VType>::n.y))*cuVEC<VType>::n.x;
+
+			if (ngbrFlags2[idx] & NF2_HALOPY) {
+
+				if (ngbrFlags[idx] & NF_NNY) {
+
+					total_weight += 2 * w_y;
+					weighted_sum += w_y * (cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x] + halo_py[hidx]);
+				}
+				else {
+
+					total_weight += w_y;
+					weighted_sum += w_y * halo_py[hidx];
+				}
+			}
+			else {
+
+				if (ngbrFlags[idx] & NF_NPY) {
+
+					total_weight += 2 * w_y;
+					weighted_sum += w_y * (halo_ny[hidx] + cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x]);
+				}
+				else {
+
+					total_weight += w_y;
+					weighted_sum += w_y * halo_ny[hidx];
+				}
+			}
+		}
 		else if (using_extended_flags && (ngbrFlags2[idx] & NF2_DIRICHLETY)) {
 
 			total_weight += 6 * w_y;
@@ -633,6 +1022,39 @@ __device__ void cuVEC_VC<VType>::IteratePoisson_SOR_black(Class_Poisson_RHS& obj
 
 			total_weight += 2 * w_z;
 			weighted_sum += w_z * (cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x*cuVEC<VType>::n.y] + cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x*cuVEC<VType>::n.y]);
+		}
+		//use halo region?
+		else if (using_extended_flags && (ngbrFlags2[idx] & NF2_HALOZ)) {
+
+			//halo index
+			int hidx = (idx % cuVEC<VType>::n.x) + ((idx / cuVEC<VType>::n.x) % cuVEC<VType>::n.y)*cuVEC<VType>::n.x;
+
+			if (ngbrFlags2[idx] & NF2_HALOPZ) {
+
+				if (ngbrFlags[idx] & NF_NNZ) {
+
+					total_weight += 2 * w_z;
+					weighted_sum += w_z * (cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x*cuVEC<VType>::n.y] + halo_pz[hidx]);
+				}
+				else {
+
+					total_weight += w_z;
+					weighted_sum += w_z * halo_pz[hidx];
+				}
+			}
+			else {
+
+				if (ngbrFlags[idx] & NF_NPZ) {
+
+					total_weight += 2 * w_z;
+					weighted_sum += w_z * (halo_nz[hidx] + cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x*cuVEC<VType>::n.y]);
+				}
+				else {
+
+					total_weight += w_z;
+					weighted_sum += w_z * halo_nz[hidx];
+				}
+			}
 		}
 		else if (using_extended_flags && (ngbrFlags2[idx] & NF2_DIRICHLETZ)) {
 
@@ -674,6 +1096,22 @@ __host__ void cuVEC_VC<VType>::IteratePoisson_SOR(size_t arr_size, Class_Poisson
 	IteratePoisson_SOR_black_kernel <<< (arr_size / 2 + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (*this, obj, damping, max_error, max_val);
 }
 
+//as above, but allow separate control of red and black passes launch
+
+template <typename VType>
+template <typename Class_Poisson_RHS>
+__host__ void cuVEC_VC<VType>::IteratePoisson_SOR_red(size_t arr_size, Class_Poisson_RHS& obj, cuBReal& damping)
+{
+	IteratePoisson_SOR_red_kernel <<< (arr_size / 2 + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (*this, obj, damping);
+}
+
+template <typename VType>
+template <typename Class_Poisson_RHS>
+__host__ void cuVEC_VC<VType>::IteratePoisson_SOR_black(size_t arr_size, Class_Poisson_RHS& obj, cuBReal& damping, cuBReal& max_error, cuBReal& max_val)
+{
+	IteratePoisson_SOR_black_kernel <<< (arr_size / 2 + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (*this, obj, damping, max_error, max_val);
+}
+
 //---------------------------------------------------- POISSON with non-homogeneous Neumann boundaries
 
 //-------------------- GLOBAL RED
@@ -681,7 +1119,7 @@ __host__ void cuVEC_VC<VType>::IteratePoisson_SOR(size_t arr_size, Class_Poisson
 template <typename VType, typename Class_Poisson_NNeu>
 __global__ void IteratePoisson_NNeu_SOR_red_kernel(cuVEC_VC<VType>& vec, Class_Poisson_NNeu& obj, cuBReal& damping)
 {
-	vec.IteratePoisson_NNeu_SOR_red(obj, damping);
+	vec.IteratePoisson_NNeu_SOR_red_ondevice(obj, damping);
 }
 
 //-------------------- GLOBAL BLACK
@@ -689,14 +1127,14 @@ __global__ void IteratePoisson_NNeu_SOR_red_kernel(cuVEC_VC<VType>& vec, Class_P
 template <typename VType, typename Class_Poisson_NNeu>
 __global__ void IteratePoisson_NNeu_SOR_black_kernel(cuVEC_VC<VType>& vec, Class_Poisson_NNeu& obj, cuBReal& damping, cuBReal& max_error, cuBReal& max_val)
 {
-	vec.IteratePoisson_NNeu_SOR_black(obj, damping, max_error, max_val);
+	vec.IteratePoisson_NNeu_SOR_black_ondevice(obj, damping, max_error, max_val);
 }
 
 //-------------------- DEVICE RED
 
 template <typename VType>
 template <typename Class_Poisson_NNeu>
-__device__ void cuVEC_VC<VType>::IteratePoisson_NNeu_SOR_red(Class_Poisson_NNeu& obj, cuBReal damping)
+__device__ void cuVEC_VC<VType>::IteratePoisson_NNeu_SOR_red_ondevice(Class_Poisson_NNeu& obj, cuBReal damping)
 {
 	//this method must be called with half-size : arr_size / 2 = cuVEC<VType>::n.dim() / 2, i.e. <<< (arr_size / 2 + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>>
 	//double idx : idx values will now take on even values
@@ -759,6 +1197,39 @@ __device__ void cuVEC_VC<VType>::IteratePoisson_NNeu_SOR_red(Class_Poisson_NNeu&
 			total_weight += 2 * w_x;
 			weighted_sum += w_x * (cuVEC<VType>::quantity[idx - 1] + cuVEC<VType>::quantity[idx + 1]);
 		}
+		//use halo region?
+		else if (using_extended_flags && (ngbrFlags2[idx] & NF2_HALOX)) {
+
+			//halo index
+			int hidx = ((idx / cuVEC<VType>::n.x) % cuVEC<VType>::n.y) + (idx / (cuVEC<VType>::n.x*cuVEC<VType>::n.y))*cuVEC<VType>::n.y;
+
+			if (ngbrFlags2[idx] & NF2_HALOPX) {
+
+				if (ngbrFlags[idx] & NF_NNX) {
+
+					total_weight += 2 * w_x;
+					weighted_sum += w_x * (cuVEC<VType>::quantity[idx - 1] + halo_px[hidx]);
+				}
+				else {
+
+					total_weight += w_x;
+					weighted_sum += w_x * halo_px[hidx];
+				}
+			}
+			else {
+
+				if (ngbrFlags[idx] & NF_NPX) {
+
+					total_weight += 2 * w_x;
+					weighted_sum += w_x * (halo_nx[hidx] + cuVEC<VType>::quantity[idx + 1]);
+				}
+				else {
+
+					total_weight += w_x;
+					weighted_sum += w_x * halo_nx[hidx];
+				}
+			}
+		}
 		else if (using_extended_flags && (ngbrFlags2[idx] & NF2_DIRICHLETX)) {
 
 			total_weight += 6 * w_x;
@@ -786,6 +1257,39 @@ __device__ void cuVEC_VC<VType>::IteratePoisson_NNeu_SOR_red(Class_Poisson_NNeu&
 			total_weight += 2 * w_y;
 			weighted_sum += w_y * (cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x] + cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x]);
 		}
+		//use halo region?
+		else if (using_extended_flags && (ngbrFlags2[idx] & NF2_HALOY)) {
+
+			//halo index
+			int hidx = (idx % cuVEC<VType>::n.x) + (idx / (cuVEC<VType>::n.x*cuVEC<VType>::n.y))*cuVEC<VType>::n.x;
+
+			if (ngbrFlags2[idx] & NF2_HALOPY) {
+
+				if (ngbrFlags[idx] & NF_NNY) {
+
+					total_weight += 2 * w_y;
+					weighted_sum += w_y * (cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x] + halo_py[hidx]);
+				}
+				else {
+
+					total_weight += w_y;
+					weighted_sum += w_y * halo_py[hidx];
+				}
+			}
+			else {
+
+				if (ngbrFlags[idx] & NF_NPY) {
+
+					total_weight += 2 * w_y;
+					weighted_sum += w_y * (halo_ny[hidx] + cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x]);
+				}
+				else {
+
+					total_weight += w_y;
+					weighted_sum += w_y * halo_ny[hidx];
+				}
+			}
+		}
 		else if (using_extended_flags && (ngbrFlags2[idx] & NF2_DIRICHLETY)) {
 
 			total_weight += 6 * w_y;
@@ -812,6 +1316,39 @@ __device__ void cuVEC_VC<VType>::IteratePoisson_NNeu_SOR_red(Class_Poisson_NNeu&
 
 			total_weight += 2 * w_z;
 			weighted_sum += w_z * (cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x*cuVEC<VType>::n.y] + cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x*cuVEC<VType>::n.y]);
+		}
+		//use halo region?
+		else if (using_extended_flags && (ngbrFlags2[idx] & NF2_HALOZ)) {
+
+			//halo index
+			int hidx = (idx % cuVEC<VType>::n.x) + ((idx / cuVEC<VType>::n.x) % cuVEC<VType>::n.y)*cuVEC<VType>::n.x;
+
+			if (ngbrFlags2[idx] & NF2_HALOPZ) {
+
+				if (ngbrFlags[idx] & NF_NNZ) {
+
+					total_weight += 2 * w_z;
+					weighted_sum += w_z * (cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x*cuVEC<VType>::n.y] + halo_pz[hidx]);
+				}
+				else {
+
+					total_weight += w_z;
+					weighted_sum += w_z * halo_pz[hidx];
+				}
+			}
+			else {
+
+				if (ngbrFlags[idx] & NF_NPZ) {
+
+					total_weight += 2 * w_z;
+					weighted_sum += w_z * (halo_nz[hidx] + cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x*cuVEC<VType>::n.y]);
+				}
+				else {
+
+					total_weight += w_z;
+					weighted_sum += w_z * halo_nz[hidx];
+				}
+			}
 		}
 		else if (using_extended_flags && (ngbrFlags2[idx] & NF2_DIRICHLETZ)) {
 
@@ -842,7 +1379,7 @@ __device__ void cuVEC_VC<VType>::IteratePoisson_NNeu_SOR_red(Class_Poisson_NNeu&
 
 template <typename VType>
 template <typename Class_Poisson_NNeu>
-__device__ void cuVEC_VC<VType>::IteratePoisson_NNeu_SOR_black(Class_Poisson_NNeu& obj, cuBReal damping, cuBReal& max_error, cuBReal& max_val)
+__device__ void cuVEC_VC<VType>::IteratePoisson_NNeu_SOR_black_ondevice(Class_Poisson_NNeu& obj, cuBReal damping, cuBReal& max_error, cuBReal& max_val)
 {
 	//this method must be called with half-size : arr_size / 2 = cuVEC<VType>::n.dim() / 2, i.e. <<< (arr_size / 2 + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>>
 	//double idx : idx values will now take on even values
@@ -911,6 +1448,39 @@ __device__ void cuVEC_VC<VType>::IteratePoisson_NNeu_SOR_black(Class_Poisson_NNe
 			total_weight += 2 * w_x;
 			weighted_sum += w_x * (cuVEC<VType>::quantity[idx - 1] + cuVEC<VType>::quantity[idx + 1]);
 		}
+		//use halo region?
+		else if (using_extended_flags && (ngbrFlags2[idx] & NF2_HALOX)) {
+
+			//halo index
+			int hidx = ((idx / cuVEC<VType>::n.x) % cuVEC<VType>::n.y) + (idx / (cuVEC<VType>::n.x*cuVEC<VType>::n.y))*cuVEC<VType>::n.y;
+
+			if (ngbrFlags2[idx] & NF2_HALOPX) {
+
+				if (ngbrFlags[idx] & NF_NNX) {
+
+					total_weight += 2 * w_x;
+					weighted_sum += w_x * (cuVEC<VType>::quantity[idx - 1] + halo_px[hidx]);
+				}
+				else {
+
+					total_weight += w_x;
+					weighted_sum += w_x * halo_px[hidx];
+				}
+			}
+			else {
+
+				if (ngbrFlags[idx] & NF_NPX) {
+
+					total_weight += 2 * w_x;
+					weighted_sum += w_x * (halo_nx[hidx] + cuVEC<VType>::quantity[idx + 1]);
+				}
+				else {
+
+					total_weight += w_x;
+					weighted_sum += w_x * halo_nx[hidx];
+				}
+			}
+		}
 		else if (using_extended_flags && (ngbrFlags2[idx] & NF2_DIRICHLETX)) {
 
 			total_weight += 6 * w_x;
@@ -938,6 +1508,39 @@ __device__ void cuVEC_VC<VType>::IteratePoisson_NNeu_SOR_black(Class_Poisson_NNe
 			total_weight += 2 * w_y;
 			weighted_sum += w_y * (cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x] + cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x]);
 		}
+		//use halo region?
+		else if (using_extended_flags && (ngbrFlags2[idx] & NF2_HALOY)) {
+
+			//halo index
+			int hidx = (idx % cuVEC<VType>::n.x) + (idx / (cuVEC<VType>::n.x*cuVEC<VType>::n.y))*cuVEC<VType>::n.x;
+
+			if (ngbrFlags2[idx] & NF2_HALOPY) {
+
+				if (ngbrFlags[idx] & NF_NNY) {
+
+					total_weight += 2 * w_y;
+					weighted_sum += w_y * (cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x] + halo_py[hidx]);
+				}
+				else {
+
+					total_weight += w_y;
+					weighted_sum += w_y * halo_py[hidx];
+				}
+			}
+			else {
+
+				if (ngbrFlags[idx] & NF_NPY) {
+
+					total_weight += 2 * w_y;
+					weighted_sum += w_y * (halo_ny[hidx] + cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x]);
+				}
+				else {
+
+					total_weight += w_y;
+					weighted_sum += w_y * halo_ny[hidx];
+				}
+			}
+		}
 		else if (using_extended_flags && (ngbrFlags2[idx] & NF2_DIRICHLETY)) {
 
 			total_weight += 6 * w_y;
@@ -964,6 +1567,39 @@ __device__ void cuVEC_VC<VType>::IteratePoisson_NNeu_SOR_black(Class_Poisson_NNe
 
 			total_weight += 2 * w_z;
 			weighted_sum += w_z * (cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x*cuVEC<VType>::n.y] + cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x*cuVEC<VType>::n.y]);
+		}
+		//use halo region?
+		else if (using_extended_flags && (ngbrFlags2[idx] & NF2_HALOZ)) {
+
+			//halo index
+			int hidx = (idx % cuVEC<VType>::n.x) + ((idx / cuVEC<VType>::n.x) % cuVEC<VType>::n.y)*cuVEC<VType>::n.x;
+
+			if (ngbrFlags2[idx] & NF2_HALOPZ) {
+
+				if (ngbrFlags[idx] & NF_NNZ) {
+
+					total_weight += 2 * w_z;
+					weighted_sum += w_z * (cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x*cuVEC<VType>::n.y] + halo_pz[hidx]);
+				}
+				else {
+
+					total_weight += w_z;
+					weighted_sum += w_z * halo_pz[hidx];
+				}
+			}
+			else {
+
+				if (ngbrFlags[idx] & NF_NPZ) {
+
+					total_weight += 2 * w_z;
+					weighted_sum += w_z * (halo_nz[hidx] + cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x*cuVEC<VType>::n.y]);
+				}
+				else {
+
+					total_weight += w_z;
+					weighted_sum += w_z * halo_nz[hidx];
+				}
+			}
 		}
 		else if (using_extended_flags && (ngbrFlags2[idx] & NF2_DIRICHLETZ)) {
 
@@ -1002,5 +1638,20 @@ __host__ void cuVEC_VC<VType>::IteratePoisson_NNeu_SOR(size_t arr_size, Class_Po
 {
 	IteratePoisson_NNeu_SOR_red_kernel <<< (arr_size / 2 + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (*this, obj, damping);
 
+	IteratePoisson_NNeu_SOR_black_kernel <<< (arr_size / 2 + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (*this, obj, damping, max_error, max_val);
+}
+
+//as above, but allow separate control of red and black passes launch
+template <typename VType>
+template <typename Class_Poisson_NNeu>
+__host__ void cuVEC_VC<VType>::IteratePoisson_NNeu_SOR_red(size_t arr_size, Class_Poisson_NNeu& obj, cuBReal& damping)
+{
+	IteratePoisson_NNeu_SOR_red_kernel <<< (arr_size / 2 + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (*this, obj, damping);
+}
+
+template <typename VType>
+template <typename Class_Poisson_NNeu>
+__host__ void cuVEC_VC<VType>::IteratePoisson_NNeu_SOR_black(size_t arr_size, Class_Poisson_NNeu& obj, cuBReal& damping, cuBReal& max_error, cuBReal& max_val)
+{
 	IteratePoisson_NNeu_SOR_black_kernel <<< (arr_size / 2 + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (*this, obj, damping, max_error, max_val);
 }

@@ -8,6 +8,8 @@
 #include "ManagedDiffEqFMCUDA.h"
 #include "DiffEqFMCUDA.h"
 
+#include "SimScheduleDefs.h"
+
 FMeshCUDA::FMeshCUDA(FMesh* pMesh) :
 	MeshCUDA(pMesh)
 {
@@ -26,7 +28,7 @@ BError FMeshCUDA::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 {
 	BError error(CLASS_STR(FMeshCUDA));
 
-	if (ucfg::check_cfgflags(cfgMessage, UPDATECONFIG_MESHCHANGE)) {
+	if (ucfg::check_cfgflags(cfgMessage, UPDATECONFIG_MESHCHANGE, UPDATECONFIG_PRNG)) {
 
 		//resize arrays held in Mesh - if changing mesh to new size then use resize : this maps values from old mesh to new mesh size (keeping magnitudes). Otherwise assign magnetization along x in whole mesh.
 		if (M()->size_cpu().dim()) {
@@ -38,7 +40,11 @@ BError FMeshCUDA::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 		if (!Heff()->assign((cuReal3)h, (cuRect)meshRect, cuReal3())) return error(BERROR_OUTOFGPUMEMORY_CRIT);
 
 		//setup prng for MC methods
-		if (prng()->initialize(GetSystemTickCount(), n.dim() / 128) != cudaSuccess) error(BERROR_OUTOFGPUMEMORY_NCRIT);
+		if (IsStageSet(SS_MONTECARLO)) {
+
+			if (prng()->initialize((pFMesh->prng_seed == 0 ? GetSystemTickCount() : pFMesh->prng_seed), n.dim(), (pFMesh->prng_seed == 0 ? 0 : 1)) != cudaSuccess) error(BERROR_OUTOFGPUMEMORY_NCRIT);
+		}
+		else prng()->clear();
 
 		//Setup cuModules and cuNumModules so they can be used at runtime by Monte-Carlo methods
 		if (ucfg::check_cfgflags(cfgMessage, UPDATECONFIG_MODULEADDED, UPDATECONFIG_MODULEDELETED)) {

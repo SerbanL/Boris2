@@ -168,7 +168,7 @@
       <WholeProgramOptimization>false</WholeProgramOptimization>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <CompileAsManaged>false</CompileAsManaged>
-      <AdditionalIncludeDirectories>$(SolutionDir)\BorisLib; $(SolutionDir)\BorisCUDALib;$(CudaToolkitIncludeDir); C:\Users\Serban\AppData\Local\Programs\Python\Python310\include; C:\Users\slg13\AppData\Local\Programs\Python\Python310\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)\BorisLib; $(SolutionDir)\BorisCUDALib;$(CudaToolkitIncludeDir); C:\Users\Serban\AppData\Local\Programs\Python\Python310\include; C:\Users\Serban\AppData\Local\Programs\Python\Python38\include; C:\Users\slg13\AppData\Local\Programs\Python\Python38\include</AdditionalIncludeDirectories>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <AdditionalOptions>-Bv %(AdditionalOptions)</AdditionalOptions>
@@ -186,7 +186,7 @@
       <AdditionalOptions>/FORCE:MULTIPLE %(AdditionalOptions)</AdditionalOptions>
       <LinkTimeCodeGeneration>Default</LinkTimeCodeGeneration>
       <AdditionalDependencies>cudart_static.lib;cufft.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories);$(CudaToolkitLibDir); C:\Users\Serban\AppData\Local\Programs\Python\Python310\libs; C:\Users\slg13\AppData\Local\Programs\Python\Python310\libs</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories);$(CudaToolkitLibDir); C:\Users\Serban\AppData\Local\Programs\Python\Python310\libs; C:\Users\Serban\AppData\Local\Programs\Python\Python38\libs; C:\Users\slg13\AppData\Local\Programs\Python\Python38\libs</AdditionalLibraryDirectories>
     </Link>
     <CudaCompile>
       <CodeGeneration>compute_80,sm_80</CodeGeneration>
@@ -446,6 +446,8 @@
     <ClInclude Include="MaterialsDataBase.h" />
     <ClInclude Include="MElastic.h" />
     <ClInclude Include="MElasticCUDA.h" />
+    <ClInclude Include="MElastic_Boundaries.h" />
+    <ClInclude Include="MElastic_BoundariesCUDA.h" />
     <ClInclude Include="MeshBase.h" />
     <ClInclude Include="MeshBaseCUDA.h" />
     <ClInclude Include="MeshCUDA.h" />
@@ -501,6 +503,8 @@
     <ClInclude Include="SimSharedData.h" />
     <ClInclude Include="SimulationData.h" />
     <ClInclude Include="SkyrmionTrack.h" />
+    <ClInclude Include="SMElastic.h" />
+    <ClInclude Include="SMElasticCUDA.h" />
     <ClInclude Include="SOTField.h" />
     <ClInclude Include="SOTFieldCUDA.h" />
     <ClInclude Include="STField.h" />
@@ -769,6 +773,8 @@
     <ClCompile Include="MaterialsDataBase.cpp" />
     <ClCompile Include="MElastic.cpp" />
     <ClCompile Include="MElasticCUDA.cpp" />
+    <ClCompile Include="MElastic_Solve.cpp" />
+    <ClCompile Include="MElastic_NoSolve.cpp" />
     <ClCompile Include="Mesh.cpp" />
     <ClCompile Include="MeshBase.cpp" />
     <ClCompile Include="MeshBaseCUDA.cpp" />
@@ -840,6 +846,8 @@
     <ClCompile Include="SimulationData.cpp" />
     <ClCompile Include="SkyrmionTrack.cpp" />
     <ClCompile Include="SkyrmionTrackCUDA.cpp" />
+    <ClCompile Include="SMElastic.cpp" />
+    <ClCompile Include="SMElasticCUDA.cpp" />
     <ClCompile Include="SOTField.cpp" />
     <ClCompile Include="SOTFieldCUDA.cpp" />
     <ClCompile Include="DemagTFunc_fg.cpp" />
@@ -867,6 +875,7 @@
     <ClCompile Include="SuperMeshControl.cpp" />
     <ClCompile Include="SuperMeshCUDA.cpp" />
     <ClCompile Include="SuperMeshDisplay.cpp" />
+    <ClCompile Include="SuperMeshElastodynamics.cpp" />
     <ClCompile Include="SuperMeshMeshes.cpp" />
     <ClCompile Include="SuperMeshMeshes_Settings.cpp" />
     <ClCompile Include="SuperMeshMeshes_Shapes.cpp" />
@@ -997,6 +1006,8 @@
     <CudaCompile Include="iDMExchangeCoupling_CUDA.cu" />
     <CudaCompile Include="iDMExchangeCUDA.cu" />
     <CudaCompile Include="MElasticCUDA.cu" />
+    <CudaCompile Include="MElastic_NoSolveCUDA.cu" />
+    <CudaCompile Include="MElastic_SolveCUDA.cu" />
     <CudaCompile Include="MeshBaseCUDA.cu" />
     <CudaCompile Include="MeshCUDA.cu" />
     <CudaCompile Include="Mesh_AntiFerromagneticCUDA.cu" />

@@ -56,6 +56,8 @@ public:
 
 #else
 
+class SuperMesh;
+
 class StrayField :
 	public Modules
 {

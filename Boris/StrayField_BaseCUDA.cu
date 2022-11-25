@@ -53,9 +53,9 @@ __global__ void CalculateStrayField_kernel(cuVEC<cuReal3>& strayField, ManagedMe
 			//the Mdipole for this mesh (already correctly set for the mesh temperature)
 			cuReal3 Mdipole = (*Mdipoles[idx].pM)[0];
 
-			strayField[cell_idx].x -= p11 * Mdipole.x + p12 * Mdipole.y + p13 * Mdipole.z;
-			strayField[cell_idx].y -= p12 * Mdipole.x + p22 * Mdipole.y + p23 * Mdipole.z;
-			strayField[cell_idx].z -= p13 * Mdipole.x + p23 * Mdipole.y + p33 * Mdipole.z;
+			strayField[cell_idx].x += -(p11 * Mdipole.x + p12 * Mdipole.y + p13 * Mdipole.z);
+			strayField[cell_idx].y += -(p12 * Mdipole.x + p22 * Mdipole.y - p23 * Mdipole.z);
+			strayField[cell_idx].z += -(p13 * Mdipole.x - p23 * Mdipole.y + p33 * Mdipole.z);
 		}
 	}
 }

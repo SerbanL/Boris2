@@ -1942,7 +1942,7 @@ bool MatP<PType, SType>::set_s_faults(DBL3 h, Rect rect, DBL2 range, DBL2 length
 template <typename PType, typename SType>
 bool MatP<PType, SType>::set_s_voronoi2d(DBL3 h, Rect rect, DBL2 range, double spacing, int seed)
 {
-	bool success = s_scaling.generate_voronoi2d(h, rect, range, spacing, seed);
+	bool success = s_scaling.generate_Voronoi2D(h, rect, range, spacing, seed);
 
 	if (success) {
 
@@ -1963,7 +1963,7 @@ bool MatP<PType, SType>::set_s_voronoi2d(DBL3 h, Rect rect, DBL2 range, double s
 template <typename PType, typename SType>
 bool MatP<PType, SType>::set_s_voronoi3d(DBL3 h, Rect rect, DBL2 range, double spacing, int seed)
 {
-	bool success = s_scaling.generate_voronoi3d(h, rect, range, spacing, seed);
+	bool success = s_scaling.generate_Voronoi3D(h, rect, range, spacing, seed);
 
 	if (success) {
 
@@ -1984,7 +1984,7 @@ bool MatP<PType, SType>::set_s_voronoi3d(DBL3 h, Rect rect, DBL2 range, double s
 template <typename PType, typename SType>
 bool MatP<PType, SType>::set_s_voronoiboundary2d(DBL3 h, Rect rect, DBL2 range, double spacing, int seed)
 {
-	bool success = s_scaling.generate_voronoiboundary2d(h, rect, range, SType(1), spacing, seed);
+	bool success = s_scaling.generate_VoronoiBoundary2D(h, rect, range, SType(1), spacing, seed);
 
 	if (success) {
 
@@ -2005,7 +2005,7 @@ bool MatP<PType, SType>::set_s_voronoiboundary2d(DBL3 h, Rect rect, DBL2 range, 
 template <typename PType, typename SType>
 bool MatP<PType, SType>::set_s_voronoiboundary3d(DBL3 h, Rect rect, DBL2 range, double spacing, int seed)
 {
-	bool success = s_scaling.generate_voronoiboundary3d(h, rect, range, SType(1), spacing, seed);
+	bool success = s_scaling.generate_VoronoiBoundary3D(h, rect, range, SType(1), spacing, seed);
 
 	if (success) {
 
@@ -2027,7 +2027,7 @@ bool MatP<PType, SType>::set_s_voronoiboundary3d(DBL3 h, Rect rect, DBL2 range, 
 template <typename PType, typename SType>
 bool MatP<PType, SType>::set_s_voronoirotation2d(DBL3 h, Rect rect, DBL2 theta, DBL2 phi, double spacing, int seed)
 {
-	bool success = s_scaling.generate_voronoirotation2d(h, rect, theta, phi, spacing, seed);
+	bool success = s_scaling.generate_VoronoiRotation2D(h, rect, theta, phi, spacing, seed);
 
 	if (success) {
 
@@ -2049,7 +2049,7 @@ bool MatP<PType, SType>::set_s_voronoirotation2d(DBL3 h, Rect rect, DBL2 theta, 
 template <typename PType, typename SType>
 bool MatP<PType, SType>::set_s_voronoirotation3d(DBL3 h, Rect rect, DBL2 theta, DBL2 phi, double spacing, int seed)
 {
-	bool success = s_scaling.generate_voronoirotation3d(h, rect, theta, phi, spacing, seed);
+	bool success = s_scaling.generate_VoronoiRotation3D(h, rect, theta, phi, spacing, seed);
 
 	if (success) {
 

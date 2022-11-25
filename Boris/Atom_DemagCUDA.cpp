@@ -72,15 +72,15 @@ BError Atom_DemagCUDA::Initialize(void)
 			pVal_to_H.push_back((cuVEC<cuReal3>*&)paMeshCUDA->Heff1.get_managed_object());
 
 			//initialize mesh transfer for M and Hd in GPU memory as well
-			if (!M()->copy_transfer_info(pVal_from_M, pVal_to_M, paDemag->M)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
-			if (!Hd()->copy_transfer_info(pVal_from_H, pVal_to_H, paDemag->Hd)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
+			if (!M()->copy_transfer_info(pVal_from_M, pVal_to_M, paDemag->M.get_transfer())) return error(BERROR_OUTOFGPUMEMORY_CRIT);
+			if (!Hd()->copy_transfer_info(pVal_from_H, pVal_to_H, paDemag->Hd.get_transfer())) return error(BERROR_OUTOFGPUMEMORY_CRIT);
 
-			if (paMeshCUDA->GetEvaluationSpeedup() >= 1) if (!Hdemag()->copy_transfer_info(pVal_from_H, pVal_to_H, paDemag->Hdemag)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
-			if (paMeshCUDA->GetEvaluationSpeedup() >= 2) if (!Hdemag2()->copy_transfer_info(pVal_from_H, pVal_to_H, paDemag->Hdemag2)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
-			if (paMeshCUDA->GetEvaluationSpeedup() >= 3) if (!Hdemag3()->copy_transfer_info(pVal_from_H, pVal_to_H, paDemag->Hdemag3)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
-			if (paMeshCUDA->GetEvaluationSpeedup() >= 4) if (!Hdemag4()->copy_transfer_info(pVal_from_H, pVal_to_H, paDemag->Hdemag4)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
-			if (paMeshCUDA->GetEvaluationSpeedup() >= 5) if (!Hdemag5()->copy_transfer_info(pVal_from_H, pVal_to_H, paDemag->Hdemag5)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
-			if (paMeshCUDA->GetEvaluationSpeedup() >= 6) if (!Hdemag6()->copy_transfer_info(pVal_from_H, pVal_to_H, paDemag->Hdemag6)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
+			if (paMeshCUDA->GetEvaluationSpeedup() >= 1) if (!Hdemag()->copy_transfer_info(pVal_from_H, pVal_to_H, paDemag->Hdemag.get_transfer())) return error(BERROR_OUTOFGPUMEMORY_CRIT);
+			if (paMeshCUDA->GetEvaluationSpeedup() >= 2) if (!Hdemag2()->copy_transfer_info(pVal_from_H, pVal_to_H, paDemag->Hdemag2.get_transfer())) return error(BERROR_OUTOFGPUMEMORY_CRIT);
+			if (paMeshCUDA->GetEvaluationSpeedup() >= 3) if (!Hdemag3()->copy_transfer_info(pVal_from_H, pVal_to_H, paDemag->Hdemag3.get_transfer())) return error(BERROR_OUTOFGPUMEMORY_CRIT);
+			if (paMeshCUDA->GetEvaluationSpeedup() >= 4) if (!Hdemag4()->copy_transfer_info(pVal_from_H, pVal_to_H, paDemag->Hdemag4.get_transfer())) return error(BERROR_OUTOFGPUMEMORY_CRIT);
+			if (paMeshCUDA->GetEvaluationSpeedup() >= 5) if (!Hdemag5()->copy_transfer_info(pVal_from_H, pVal_to_H, paDemag->Hdemag5.get_transfer())) return error(BERROR_OUTOFGPUMEMORY_CRIT);
+			if (paMeshCUDA->GetEvaluationSpeedup() >= 6) if (!Hdemag6()->copy_transfer_info(pVal_from_H, pVal_to_H, paDemag->Hdemag6.get_transfer())) return error(BERROR_OUTOFGPUMEMORY_CRIT);
 		}
 
 		if (!error) initialized = true;

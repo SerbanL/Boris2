@@ -5,20 +5,21 @@
 
 #ifdef MODULE_COMPILATION_SDEMAG
 
-#include "MeshCUDA.h"
-#include "Mesh.h"
 #include "SDemag.h"
 #include "SDemag_Demag.h"
 #include "MeshDefs.h"
 #include "SuperMesh.h"
 
-SDemagCUDA_Demag::SDemagCUDA_Demag(MeshCUDA* pMeshCUDA_, SDemag_Demag *pSDemag_Demag_) :
+SDemagCUDA_Demag::SDemagCUDA_Demag(MeshBaseCUDA* pMeshBaseCUDA_, SDemag_Demag *pSDemag_Demag_) :
 	ModulesCUDA(),
 	ConvolutionCUDA<SDemagCUDA_Demag, DemagKernelCollectionCUDA>()
 {
 	Uninitialize();
 
-	pMeshCUDA = pMeshCUDA_;
+	pMeshBaseCUDA = pMeshBaseCUDA_;
+
+	if (!pMeshBaseCUDA->is_atomistic()) pMeshCUDA = dynamic_cast<MeshCUDA*>(pMeshBaseCUDA);
+	else paMeshCUDA = dynamic_cast<Atom_MeshCUDA*>(pMeshBaseCUDA);
 
 	pSDemag_Demag = pSDemag_Demag_;
 }
@@ -60,29 +61,29 @@ BError SDemagCUDA_Demag::Initialize(void)
 		selfDemagCoeff.from_cpu(DemagTFunc().SelfDemag_PBC(h_common, (cuSZ3)pSDemag->n_common, pSDemag->demag_pbc_images));
 
 		//make sure to allocate memory for Hdemag if we need it
-		if (pMeshCUDA->GetEvaluationSpeedup() >= 1) Hdemag()->resize(h_common, convolution_rect);
+		if (pMeshBaseCUDA->GetEvaluationSpeedup() >= 1) Hdemag()->resize(h_common, convolution_rect);
 		else Hdemag()->clear();
 
-		if (pMeshCUDA->GetEvaluationSpeedup() >= 2) Hdemag2()->resize(h_common, convolution_rect);
+		if (pMeshBaseCUDA->GetEvaluationSpeedup() >= 2) Hdemag2()->resize(h_common, convolution_rect);
 		else Hdemag2()->clear();
 
-		if (pMeshCUDA->GetEvaluationSpeedup() >= 3) Hdemag3()->resize(h_common, convolution_rect);
+		if (pMeshBaseCUDA->GetEvaluationSpeedup() >= 3) Hdemag3()->resize(h_common, convolution_rect);
 		else Hdemag3()->clear();
 
-		if (pMeshCUDA->GetEvaluationSpeedup() >= 4) Hdemag4()->resize(h_common, convolution_rect);
+		if (pMeshBaseCUDA->GetEvaluationSpeedup() >= 4) Hdemag4()->resize(h_common, convolution_rect);
 		else Hdemag4()->clear();
 
-		if (pMeshCUDA->GetEvaluationSpeedup() >= 5) Hdemag5()->resize(h_common, convolution_rect);
+		if (pMeshBaseCUDA->GetEvaluationSpeedup() >= 5) Hdemag5()->resize(h_common, convolution_rect);
 		else Hdemag5()->clear();
 
-		if (pMeshCUDA->GetEvaluationSpeedup() >= 6) Hdemag6()->resize(h_common, convolution_rect);
+		if (pMeshBaseCUDA->GetEvaluationSpeedup() >= 6) Hdemag6()->resize(h_common, convolution_rect);
 		else Hdemag6()->clear();
 
 		int non_empty_cells = 0;
 
-		if (convolution_rect == (cuRect)pSDemag_Demag->meshRect && h_common == (cuReal3)pSDemag_Demag->h) {
+		if (!pMeshBaseCUDA->is_atomistic() && convolution_rect == (cuRect)pSDemag_Demag->meshRect && h_common == (cuReal3)pSDemag_Demag->h) {
 
-			//no transfer required
+			//no transfer required (always force transfer for atomistic meshes)
 			do_transfer = false;
 			transfer()->clear();
 			non_empty_cells = pMeshCUDA->M()->get_nonempty_cells_cpu();
@@ -101,53 +102,63 @@ BError SDemagCUDA_Demag::Initialize(void)
 			cu_arr<cuVEC<cuReal3>> pVal_from, pVal_from2;
 			cu_arr<cuVEC<cuReal3>> pVal_to, pVal_to2;
 
-			pVal_from.push_back((cuVEC<cuReal3>*&)pMeshCUDA->M.get_managed_object());
-			pVal_to.push_back((cuVEC<cuReal3>*&)pMeshCUDA->Heff.get_managed_object());
-			pVal_from2.push_back((cuVEC<cuReal3>*&)pMeshCUDA->M2.get_managed_object());
-			pVal_to2.push_back((cuVEC<cuReal3>*&)pMeshCUDA->Heff2.get_managed_object());
+			cu_arr<cuVEC<cuReal3>> pVal_afrom, pVal_ato;
+
+			if (!pMeshBaseCUDA->is_atomistic()) {
+
+				pVal_from.push_back((cuVEC<cuReal3>*&)pMeshCUDA->M.get_managed_object());
+				pVal_to.push_back((cuVEC<cuReal3>*&)pMeshCUDA->Heff.get_managed_object());
+				pVal_from2.push_back((cuVEC<cuReal3>*&)pMeshCUDA->M2.get_managed_object());
+				pVal_to2.push_back((cuVEC<cuReal3>*&)pMeshCUDA->Heff2.get_managed_object());
+			}
+			else {
+
+				pVal_afrom.push_back((cuVEC<cuReal3>*&)paMeshCUDA->M1.get_managed_object());
+				pVal_ato.push_back((cuVEC<cuReal3>*&)paMeshCUDA->Heff1.get_managed_object());
+			}
 
 			///////////////////////////////////////////////////////////////////////////////////////////////
 			////////////////////////////////////// FERROMAGNETIC MESH /////////////////////////////////////
 			///////////////////////////////////////////////////////////////////////////////////////////////
 
-			if (pMeshCUDA->GetMeshType() == MESH_FERROMAGNETIC) {
+			if (pMeshBaseCUDA->GetMeshType() == MESH_FERROMAGNETIC) {
 
-				if (!transfer()->copy_transfer_info(pVal_from, pVal_to, pSDemag_Demag->transfer)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
+				if (!transfer()->copy_transfer_info(pVal_from, pVal_to, pSDemag_Demag->transfer.get_transfer())) return error(BERROR_OUTOFGPUMEMORY_CRIT);
 
-				if (pMeshCUDA->GetEvaluationSpeedup() >= 1) {
+				if (pMeshBaseCUDA->GetEvaluationSpeedup() >= 1) {
 
 					//initialize mesh transfer for Hdemag as well if we are using evaluation speedup
-					if (!Hdemag()->copy_transfer_info(pVal_from, pVal_to, pSDemag_Demag->transfer)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
+					if (!Hdemag()->copy_transfer_info(pVal_from, pVal_to, pSDemag_Demag->transfer.get_transfer())) return error(BERROR_OUTOFGPUMEMORY_CRIT);
 				}
 
-				if (pMeshCUDA->GetEvaluationSpeedup() >= 2) {
+				if (pMeshBaseCUDA->GetEvaluationSpeedup() >= 2) {
 
 					//initialize mesh transfer for Hdemag as well if we are using evaluation speedup
-					if (!Hdemag2()->copy_transfer_info(pVal_from, pVal_to, pSDemag_Demag->transfer)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
+					if (!Hdemag2()->copy_transfer_info(pVal_from, pVal_to, pSDemag_Demag->transfer.get_transfer())) return error(BERROR_OUTOFGPUMEMORY_CRIT);
 				}
 
-				if (pMeshCUDA->GetEvaluationSpeedup() >= 3) {
+				if (pMeshBaseCUDA->GetEvaluationSpeedup() >= 3) {
 
 					//initialize mesh transfer for Hdemag as well if we are using evaluation speedup
-					if (!Hdemag3()->copy_transfer_info(pVal_from, pVal_to, pSDemag_Demag->transfer)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
+					if (!Hdemag3()->copy_transfer_info(pVal_from, pVal_to, pSDemag_Demag->transfer.get_transfer())) return error(BERROR_OUTOFGPUMEMORY_CRIT);
 				}
 
-				if (pMeshCUDA->GetEvaluationSpeedup() >= 4) {
+				if (pMeshBaseCUDA->GetEvaluationSpeedup() >= 4) {
 
 					//initialize mesh transfer for Hdemag as well if we are using evaluation speedup
-					if (!Hdemag4()->copy_transfer_info(pVal_from, pVal_to, pSDemag_Demag->transfer)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
+					if (!Hdemag4()->copy_transfer_info(pVal_from, pVal_to, pSDemag_Demag->transfer.get_transfer())) return error(BERROR_OUTOFGPUMEMORY_CRIT);
 				}
 
-				if (pMeshCUDA->GetEvaluationSpeedup() >= 5) {
+				if (pMeshBaseCUDA->GetEvaluationSpeedup() >= 5) {
 
 					//initialize mesh transfer for Hdemag as well if we are using evaluation speedup
-					if (!Hdemag5()->copy_transfer_info(pVal_from, pVal_to, pSDemag_Demag->transfer)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
+					if (!Hdemag5()->copy_transfer_info(pVal_from, pVal_to, pSDemag_Demag->transfer.get_transfer())) return error(BERROR_OUTOFGPUMEMORY_CRIT);
 				}
 
-				if (pMeshCUDA->GetEvaluationSpeedup() >= 6) {
+				if (pMeshBaseCUDA->GetEvaluationSpeedup() >= 6) {
 
 					//initialize mesh transfer for Hdemag as well if we are using evaluation speedup
-					if (!Hdemag6()->copy_transfer_info(pVal_from, pVal_to, pSDemag_Demag->transfer)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
+					if (!Hdemag6()->copy_transfer_info(pVal_from, pVal_to, pSDemag_Demag->transfer.get_transfer())) return error(BERROR_OUTOFGPUMEMORY_CRIT);
 				}
 			}
 
@@ -155,44 +166,89 @@ BError SDemagCUDA_Demag::Initialize(void)
 			//////////////////////////////////// ANTIFERROMAGNETIC MESH ///////////////////////////////////
 			///////////////////////////////////////////////////////////////////////////////////////////////
 
-			else if (pMeshCUDA->GetMeshType() == MESH_ANTIFERROMAGNETIC) {
+			else if (pMeshBaseCUDA->GetMeshType() == MESH_ANTIFERROMAGNETIC) {
 
-				if (!transfer()->copy_transfer_info_averagedinputs_duplicatedoutputs(pVal_from, pVal_from2, pVal_to, pVal_to2, pSDemag_Demag->transfer)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
+				if (!transfer()->copy_transfer_info_averagedinputs_duplicatedoutputs(pVal_from, pVal_from2, pVal_to, pVal_to2, pSDemag_Demag->transfer.get_transfer())) return error(BERROR_OUTOFGPUMEMORY_CRIT);
 
-				if (pMeshCUDA->GetEvaluationSpeedup() >= 1) {
+				if (pMeshBaseCUDA->GetEvaluationSpeedup() >= 1) {
 
 					//initialize mesh transfer for Hdemag as well if we are using evaluation speedup
-					if (!Hdemag()->copy_transfer_info_averagedinputs_duplicatedoutputs(pVal_from, pVal_from2, pVal_to, pVal_to2, pSDemag_Demag->transfer)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
+					if (!Hdemag()->copy_transfer_info_averagedinputs_duplicatedoutputs(pVal_from, pVal_from2, pVal_to, pVal_to2, pSDemag_Demag->transfer.get_transfer())) return error(BERROR_OUTOFGPUMEMORY_CRIT);
 				}
 
-				if (pMeshCUDA->GetEvaluationSpeedup() >= 2) {
+				if (pMeshBaseCUDA->GetEvaluationSpeedup() >= 2) {
 
 					//initialize mesh transfer for Hdemag as well if we are using evaluation speedup
-					if (!Hdemag2()->copy_transfer_info_averagedinputs_duplicatedoutputs(pVal_from, pVal_from2, pVal_to, pVal_to2, pSDemag_Demag->transfer)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
+					if (!Hdemag2()->copy_transfer_info_averagedinputs_duplicatedoutputs(pVal_from, pVal_from2, pVal_to, pVal_to2, pSDemag_Demag->transfer.get_transfer())) return error(BERROR_OUTOFGPUMEMORY_CRIT);
 				}
 
-				if (pMeshCUDA->GetEvaluationSpeedup() >= 3) {
+				if (pMeshBaseCUDA->GetEvaluationSpeedup() >= 3) {
 
 					//initialize mesh transfer for Hdemag as well if we are using evaluation speedup
-					if (!Hdemag3()->copy_transfer_info_averagedinputs_duplicatedoutputs(pVal_from, pVal_from2, pVal_to, pVal_to2, pSDemag_Demag->transfer)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
+					if (!Hdemag3()->copy_transfer_info_averagedinputs_duplicatedoutputs(pVal_from, pVal_from2, pVal_to, pVal_to2, pSDemag_Demag->transfer.get_transfer())) return error(BERROR_OUTOFGPUMEMORY_CRIT);
 				}
 
-				if (pMeshCUDA->GetEvaluationSpeedup() >= 4) {
+				if (pMeshBaseCUDA->GetEvaluationSpeedup() >= 4) {
 
 					//initialize mesh transfer for Hdemag as well if we are using evaluation speedup
-					if (!Hdemag4()->copy_transfer_info_averagedinputs_duplicatedoutputs(pVal_from, pVal_from2, pVal_to, pVal_to2, pSDemag_Demag->transfer)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
+					if (!Hdemag4()->copy_transfer_info_averagedinputs_duplicatedoutputs(pVal_from, pVal_from2, pVal_to, pVal_to2, pSDemag_Demag->transfer.get_transfer())) return error(BERROR_OUTOFGPUMEMORY_CRIT);
 				}
 
-				if (pMeshCUDA->GetEvaluationSpeedup() >= 5) {
+				if (pMeshBaseCUDA->GetEvaluationSpeedup() >= 5) {
 
 					//initialize mesh transfer for Hdemag as well if we are using evaluation speedup
-					if (!Hdemag5()->copy_transfer_info_averagedinputs_duplicatedoutputs(pVal_from, pVal_from2, pVal_to, pVal_to2, pSDemag_Demag->transfer)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
+					if (!Hdemag5()->copy_transfer_info_averagedinputs_duplicatedoutputs(pVal_from, pVal_from2, pVal_to, pVal_to2, pSDemag_Demag->transfer.get_transfer())) return error(BERROR_OUTOFGPUMEMORY_CRIT);
 				}
 
-				if (pMeshCUDA->GetEvaluationSpeedup() >= 6) {
+				if (pMeshBaseCUDA->GetEvaluationSpeedup() >= 6) {
 
 					//initialize mesh transfer for Hdemag as well if we are using evaluation speedup
-					if (!Hdemag6()->copy_transfer_info_averagedinputs_duplicatedoutputs(pVal_from, pVal_from2, pVal_to, pVal_to2, pSDemag_Demag->transfer)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
+					if (!Hdemag6()->copy_transfer_info_averagedinputs_duplicatedoutputs(pVal_from, pVal_from2, pVal_to, pVal_to2, pSDemag_Demag->transfer.get_transfer())) return error(BERROR_OUTOFGPUMEMORY_CRIT);
+				}
+			}
+
+			///////////////////////////////////////////////////////////////////////////////////////////////
+			//////////////////////////////////////// ATOMISTIC MESH ///////////////////////////////////////
+			///////////////////////////////////////////////////////////////////////////////////////////////
+
+			else {
+
+				if (!transfer()->copy_transfer_info(pVal_afrom, pVal_ato, pSDemag_Demag->transfer.get_transfer())) return error(BERROR_OUTOFGPUMEMORY_CRIT);
+
+				if (pMeshBaseCUDA->GetEvaluationSpeedup() >= 1) {
+
+					//initialize mesh transfer for Hdemag as well if we are using evaluation speedup
+					if (!Hdemag()->copy_transfer_info(pVal_afrom, pVal_ato, pSDemag_Demag->transfer.get_transfer())) return error(BERROR_OUTOFGPUMEMORY_CRIT);
+				}
+
+				if (pMeshBaseCUDA->GetEvaluationSpeedup() >= 2) {
+
+					//initialize mesh transfer for Hdemag as well if we are using evaluation speedup
+					if (!Hdemag2()->copy_transfer_info(pVal_afrom, pVal_ato, pSDemag_Demag->transfer.get_transfer())) return error(BERROR_OUTOFGPUMEMORY_CRIT);
+				}
+
+				if (pMeshBaseCUDA->GetEvaluationSpeedup() >= 3) {
+
+					//initialize mesh transfer for Hdemag as well if we are using evaluation speedup
+					if (!Hdemag3()->copy_transfer_info(pVal_afrom, pVal_ato, pSDemag_Demag->transfer.get_transfer())) return error(BERROR_OUTOFGPUMEMORY_CRIT);
+				}
+
+				if (pMeshBaseCUDA->GetEvaluationSpeedup() >= 4) {
+
+					//initialize mesh transfer for Hdemag as well if we are using evaluation speedup
+					if (!Hdemag4()->copy_transfer_info(pVal_afrom, pVal_ato, pSDemag_Demag->transfer.get_transfer())) return error(BERROR_OUTOFGPUMEMORY_CRIT);
+				}
+
+				if (pMeshBaseCUDA->GetEvaluationSpeedup() >= 5) {
+
+					//initialize mesh transfer for Hdemag as well if we are using evaluation speedup
+					if (!Hdemag5()->copy_transfer_info(pVal_afrom, pVal_ato, pSDemag_Demag->transfer.get_transfer())) return error(BERROR_OUTOFGPUMEMORY_CRIT);
+				}
+
+				if (pMeshBaseCUDA->GetEvaluationSpeedup() >= 6) {
+
+					//initialize mesh transfer for Hdemag as well if we are using evaluation speedup
+					if (!Hdemag6()->copy_transfer_info(pVal_afrom, pVal_ato, pSDemag_Demag->transfer.get_transfer())) return error(BERROR_OUTOFGPUMEMORY_CRIT);
 				}
 			}
 
@@ -214,7 +270,7 @@ BError SDemagCUDA_Demag::Initialize(void)
 
 	if (pSDemag_Demag->Get_Module_Heff().linear_size()) {
 
-		error = Update_Module_Display_VECs((cuReal3)pMeshCUDA->h, (cuRect)pMeshCUDA->meshRect, true, true);
+		error = Update_Module_Display_VECs((cuReal3)pMeshBaseCUDA->h, (cuRect)pMeshBaseCUDA->meshRect, true, true);
 		if (error) return error(BERROR_OUTOFGPUMEMORY_CRIT);
 
 		set_SDemag_DemagCUDA_pointers();
@@ -227,8 +283,17 @@ BError SDemagCUDA_Demag::Initialize(void)
 
 		cu_arr<cuVEC<cuReal3>> pVal_from;
 		cu_arr<cuVEC<cuReal3>> pVal_to;
-		pVal_to.push_back((cuVEC<cuReal3>*&)(*(pSDemag_Demag->pMesh))(MOD_SDEMAG_DEMAG)->Get_Module_HeffCUDA().get_managed_object());
-		if (!transfer_Module_Heff()->copy_transfer_info(pVal_from, pVal_to, pSDemag_Demag->transfer_Module_Heff)) { initialized = false; return error(BERROR_OUTOFGPUMEMORY_CRIT); }
+
+		if (!pMeshBaseCUDA->is_atomistic()) {
+
+			pVal_to.push_back((cuVEC<cuReal3>*&)(*(pSDemag_Demag->pMesh))(MOD_SDEMAG_DEMAG)->Get_Module_HeffCUDA().get_managed_object());
+		}
+		else {
+
+			pVal_to.push_back((cuVEC<cuReal3>*&)(*(pSDemag_Demag->paMesh))(MOD_SDEMAG_DEMAG)->Get_Module_HeffCUDA().get_managed_object());
+		}
+
+		if (!transfer_Module_Heff()->copy_transfer_info(pVal_from, pVal_to, pSDemag_Demag->transfer_Module_Heff.get_transfer())) { initialized = false; return error(BERROR_OUTOFGPUMEMORY_CRIT); }
 	}
 
 	if (pSDemag_Demag->transfer_Module_energy.linear_size()) {
@@ -237,8 +302,17 @@ BError SDemagCUDA_Demag::Initialize(void)
 
 		cu_arr<cuVEC<cuBReal>> pVal_from;
 		cu_arr<cuVEC<cuBReal>> pVal_to;
-		pVal_to.push_back((cuVEC<cuBReal>*&)(*(pSDemag_Demag->pMesh))(MOD_SDEMAG_DEMAG)->Get_Module_EnergyCUDA().get_managed_object());
-		if (!transfer_Module_energy()->copy_transfer_info(pVal_from, pVal_to, pSDemag_Demag->transfer_Module_energy)) { initialized = false; return error(BERROR_OUTOFGPUMEMORY_CRIT); }
+
+		if (!pMeshBaseCUDA->is_atomistic()) {
+
+			pVal_to.push_back((cuVEC<cuBReal>*&)(*(pSDemag_Demag->pMesh))(MOD_SDEMAG_DEMAG)->Get_Module_EnergyCUDA().get_managed_object());
+		}
+		else {
+
+			pVal_to.push_back((cuVEC<cuBReal>*&)(*(pSDemag_Demag->paMesh))(MOD_SDEMAG_DEMAG)->Get_Module_EnergyCUDA().get_managed_object());
+		}
+
+		if (!transfer_Module_energy()->copy_transfer_info(pVal_from, pVal_to, pSDemag_Demag->transfer_Module_energy.get_transfer())) { initialized = false; return error(BERROR_OUTOFGPUMEMORY_CRIT); }
 	}
 
 	return error;

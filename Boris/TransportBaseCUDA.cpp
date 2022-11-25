@@ -63,6 +63,22 @@ bool TransportBaseCUDA::PrepareDisplayVEC_VC(DBL3 cellsize)
 	return false;
 }
 
+//-------------------TAMR
+
+BError TransportBaseCUDA::Set_TAMR_Conductivity_Equation(std::vector<std::vector< EqComp::FSPEC >> fspec)
+{
+	BError error(CLASS_STR(TransportBaseCUDA));
+
+	if (!TAMR_conductivity_equation.make_scalar(fspec)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
+
+	return error;
+}
+
+void TransportBaseCUDA::Clear_TAMR_Conductivity_Equation(void)
+{
+	TAMR_conductivity_equation.clear();
+}
+
 //------------------Others
 
 //set fixed potential cells in this mesh for given rectangle

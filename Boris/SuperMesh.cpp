@@ -6,6 +6,7 @@ SuperMesh::SuperMesh(void) :
 		{
 			VINFO(displayedPhysicalQuantity), VINFO(vec3rep), 
 			VINFO(n_fm), VINFO(h_fm), VINFO(sMeshRect_fm), VINFO(n_e), VINFO(h_e), VINFO(sMeshRect_e),
+			VINFO(globalField),
 			VINFO(odeSolver), VINFO(atom_odeSolver),
 			VINFO(pMesh),
 			VINFO(pSMod),
@@ -19,7 +20,7 @@ SuperMesh::SuperMesh(void) :
 			IINFO(FMesh), IINFO(DipoleMesh), IINFO(MetalMesh), IINFO(InsulatorMesh), IINFO(AFMesh),
 			IINFO(Atom_Mesh_Cubic),
 			//Super-mesh modules implementations (for pSMod)
-			IINFO(SDemag), IINFO(StrayField), IINFO(STransport), IINFO(Oersted), IINFO(SHeat)
+			IINFO(SDemag), IINFO(StrayField), IINFO(STransport), IINFO(Oersted), IINFO(SHeat), IINFO(SMElastic)
 		})
 {
 	//set pointers in ODECommon_Base SBC

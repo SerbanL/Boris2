@@ -26,25 +26,20 @@ BError DemagKernelCollectionCUDA::AllocateKernelMemory(void)
 
 	inverse_shifted_gpu.clear();
 
-	for (int idx = 0; idx < num_meshes; idx++) {
-
-		//identify self contribution index
-		if (Rect_collection[idx] == this_rect) self_contribution_index = idx;
-	}
-
 	return error;
 }
 
 //-------------------------- SETTERS
 
 //Set all the rectangles participating in convolution. This determines the number of kernels needed : one for each mesh.
-BError DemagKernelCollectionCUDA::Set_Rect_Collection(std::vector<cuRect>& Rect_collection_, cuRect this_rect_, cuBReal h_max_)
+BError DemagKernelCollectionCUDA::Set_Rect_Collection(std::vector<cuRect>& Rect_collection_, cuRect this_rect_, cuBReal h_max_, int self_contribution_index_)
 {
 	BError error(__FUNCTION__);
 
 	Rect_collection = Rect_collection_;
 	this_rect = this_rect_;
 	h_max = h_max_;
+	self_contribution_index = self_contribution_index_;
 
 	error = AllocateKernelMemory();
 

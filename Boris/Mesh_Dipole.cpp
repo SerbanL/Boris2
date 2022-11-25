@@ -14,11 +14,16 @@ DipoleMesh::DipoleMesh(SuperMesh *pSMesh_) :
 			//Mesh members
 			VINFO(meshType), VINFO(meshIdCounter), VINFO(meshId), 
 			VINFO(displayedPhysicalQuantity), VINFO(displayedBackgroundPhysicalQuantity), VINFO(vec3rep), VINFO(displayedParamVar), 
-			VINFO(meshRect), VINFO(n), VINFO(h), VINFO(n_e), VINFO(h_e), VINFO(n_t), VINFO(h_t), VINFO(M), VINFO(V), VINFO(S), VINFO(elC), VINFO(Temp), VINFO(pMod),
+			VINFO(meshRect), VINFO(n), VINFO(h), VINFO(n_e), VINFO(h_e), VINFO(n_t), VINFO(h_t), 
+			VINFO(M), VINFO(V), VINFO(S), VINFO(elC), VINFO(Temp), 
+			VINFO(pMod),
+			VINFO(prng_seed),
 			//Members in this derived class
 			VINFO(dipole_velocity), VINFO(dipole_shift_debt), VINFO(dipole_shift_clip), VINFO(dipole_last_time),
 			//Material Parameters
-			VINFO(Ms), VINFO(elecCond), VINFO(amrPercentage), VINFO(P), VINFO(De), VINFO(n_density), VINFO(betaD), VINFO(l_sf), VINFO(l_ex), VINFO(l_ph), VINFO(Gi), VINFO(Gmix), 
+			VINFO(Ms), 
+			VINFO(elecCond), VINFO(amrPercentage), VINFO(tamrPercentage), 
+			VINFO(P), VINFO(De), VINFO(n_density), VINFO(betaD), VINFO(l_sf), VINFO(l_ex), VINFO(l_ph), VINFO(Gi), VINFO(Gmix),
 			VINFO(base_temperature), VINFO(T_equation), VINFO(T_Curie), VINFO(T_Curie_material), VINFO(thermCond), VINFO(density), VINFO(shc), VINFO(cT), VINFO(Q)
 		},
 		{
@@ -28,6 +33,7 @@ DipoleMesh::DipoleMesh(SuperMesh *pSMesh_) :
 	M.assign(SZ3(1), DBL3(-Ms, 0, 0));
 
 	recalculateStrayField = true;
+	strayField_recalculated = false;
 }
 
 DipoleMesh::DipoleMesh(Rect meshRect_, DBL3 h_, SuperMesh *pSMesh_) :
@@ -37,11 +43,14 @@ DipoleMesh::DipoleMesh(Rect meshRect_, DBL3 h_, SuperMesh *pSMesh_) :
 			//Mesh members
 			VINFO(meshType), VINFO(meshIdCounter), VINFO(meshId), 
 			VINFO(displayedPhysicalQuantity), VINFO(displayedBackgroundPhysicalQuantity), VINFO(vec3rep), VINFO(displayedParamVar), 
-			VINFO(meshRect), VINFO(n), VINFO(h), VINFO(n_e), VINFO(h_e), VINFO(n_t), VINFO(h_t), VINFO(M), VINFO(V), VINFO(S), VINFO(elC), VINFO(Temp), VINFO(pMod),
+			VINFO(meshRect), VINFO(n), VINFO(h), VINFO(n_e), VINFO(h_e), VINFO(n_t), VINFO(h_t), 
+			VINFO(M), VINFO(V), VINFO(S), VINFO(elC), VINFO(Temp), 
+			VINFO(pMod),
+			VINFO(prng_seed),
 			//Members in this derived class
 			VINFO(dipole_velocity), VINFO(dipole_shift_debt), VINFO(dipole_shift_clip), VINFO(dipole_last_time),
 			//Material Parameters
-			VINFO(Ms), VINFO(elecCond), VINFO(amrPercentage), VINFO(P), VINFO(De), VINFO(n_density), VINFO(betaD), VINFO(l_sf), VINFO(l_ex), VINFO(l_ph), VINFO(Gi), VINFO(Gmix), 
+			VINFO(Ms), VINFO(elecCond), VINFO(amrPercentage), VINFO(tamrPercentage), VINFO(P), VINFO(De), VINFO(n_density), VINFO(betaD), VINFO(l_sf), VINFO(l_ex), VINFO(l_ph), VINFO(Gi), VINFO(Gmix),
 			VINFO(base_temperature), VINFO(T_equation), VINFO(T_Curie), VINFO(T_Curie_material), VINFO(thermCond), VINFO(density), VINFO(shc), VINFO(cT), VINFO(Q)
 		},
 		{
@@ -247,6 +256,7 @@ void DipoleMesh::Reset_Mdipole(void)
 	}
 
 	recalculateStrayField = true;
+	strayField_recalculated = false;
 
 #if COMPILECUDA == 1
 	if (pMeshCUDA) dynamic_cast<DipoleMeshCUDA*>(pMeshCUDA)->Reset_Mdipole();
@@ -265,6 +275,7 @@ void DipoleMesh::SetMagAngle(double polar, double azim, Rect rectangle)
 
 	M[0] = Polar_to_Cartesian(DBL3(Ms, polar, azim)); 
 	recalculateStrayField = true;
+	strayField_recalculated = false;
 }
 
 void DipoleMesh::SetCurieTemperature(double Tc, bool set_default_dependences)

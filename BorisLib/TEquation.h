@@ -1051,4 +1051,20 @@ public:
 
 		return value;
 	}
+
+	//evaluate vector equation but each component with separate calls
+	double evaluate_vector_x(BVarType... bvars)
+	{
+		return eq_component_1.evaluate(bvars...);
+	}
+
+	double evaluate_vector_y(BVarType... bvars)
+	{
+		return eq_component_2.evaluate(bvars...);
+	}
+
+	double evaluate_vector_z(BVarType... bvars)
+	{
+		return eq_component_3.evaluate(bvars...);
+	}
 };

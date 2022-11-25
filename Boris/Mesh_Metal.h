@@ -27,10 +27,15 @@ class MetalMesh :
 	Rect, SZ3, DBL3, SZ3, DBL3, SZ3, DBL3, 
 	VEC_VC<double>, VEC_VC<DBL3>, VEC_VC<DBL3>, VEC_VC<double>, VEC_VC<double>, VEC_VC<double>,
 	vector_lut<Modules*>,
+	unsigned,
 	//Members in this derived class
 	
 	//Material Parameters
-	MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<DBL2, double>, MatP<DBL2, double>, double, TEquation<double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>
+	MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<DBL2, double>, MatP<DBL2, double>, 
+	double, TEquation<double>, 
+	MatP<double, double>, MatP<double, double>,
+	MatP<double, double>, MatP<double, double>, MatP<DBL2, double>, MatP<double, double>, MatP<double, double>, MatP<DBL3, double>, MatP<double, double>,
+	MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>
 	>,
 	//Module Implementations
 	std::tuple<Transport, Heat> >

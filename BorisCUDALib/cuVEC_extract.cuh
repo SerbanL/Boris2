@@ -21,21 +21,15 @@ __global__ void extract_profilevalues_kernel(size_t size, cuVEC<VType>& cuvec, V
 	}
 }
 
-template void cuVEC<char>::extract_profilevalues(size_t size, cu_arr<char>& profile_gpu, cuReal3 start, cuReal3 step);
 template void cuVEC<int>::extract_profilevalues(size_t size, cu_arr<int>& profile_gpu, cuReal3 start, cuReal3 step);
-template void cuVEC<unsigned>::extract_profilevalues(size_t size, cu_arr<unsigned>& profile_gpu, cuReal3 start, cuReal3 step);
-template void cuVEC<long>::extract_profilevalues(size_t size, cu_arr<long>& profile_gpu, cuReal3 start, cuReal3 step);
-template void cuVEC<size_t>::extract_profilevalues(size_t size, cu_arr<size_t>& profile_gpu, cuReal3 start, cuReal3 step);
 template void cuVEC<float>::extract_profilevalues(size_t size, cu_arr<float>& profile_gpu, cuReal3 start, cuReal3 step);
 template void cuVEC<double>::extract_profilevalues(size_t size, cu_arr<double>& profile_gpu, cuReal3 start, cuReal3 step);
 
 template void cuVEC<cuINT3>::extract_profilevalues(size_t size, cu_arr<cuINT3>& profile_gpu, cuReal3 start, cuReal3 step);
-template void cuVEC<cuSZ3>::extract_profilevalues(size_t size, cu_arr<cuSZ3>& profile_gpu, cuReal3 start, cuReal3 step);
 template void cuVEC<cuFLT3>::extract_profilevalues(size_t size, cu_arr<cuFLT3>& profile_gpu, cuReal3 start, cuReal3 step);
 template void cuVEC<cuDBL3>::extract_profilevalues(size_t size, cu_arr<cuDBL3>& profile_gpu, cuReal3 start, cuReal3 step);
 
 template void cuVEC<cuINT4>::extract_profilevalues(size_t size, cu_arr<cuINT4>& profile_gpu, cuReal3 start, cuReal3 step);
-template void cuVEC<cuSZ4>::extract_profilevalues(size_t size, cu_arr<cuSZ4>& profile_gpu, cuReal3 start, cuReal3 step);
 template void cuVEC<cuFLT4>::extract_profilevalues(size_t size, cu_arr<cuFLT4>& profile_gpu, cuReal3 start, cuReal3 step);
 template void cuVEC<cuDBL4>::extract_profilevalues(size_t size, cu_arr<cuDBL4>& profile_gpu, cuReal3 start, cuReal3 step);
 
@@ -43,7 +37,9 @@ template void cuVEC<cuDBL4>::extract_profilevalues(size_t size, cu_arr<cuDBL4>& 
 template <typename VType>
 __host__ void cuVEC<VType>::extract_profilevalues(size_t size, cu_arr<VType>& profile_gpu, cuReal3 start, cuReal3 step)
 {
-	extract_profilevalues_kernel <<< (size + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>>
+	profile_gpu.resize(size);
+
+	extract_profilevalues_kernel << < (size + CUDATHREADS) / CUDATHREADS, CUDATHREADS >> >
 		(size, *this, (VType*)profile_gpu, start, step);
 }
 
@@ -64,12 +60,10 @@ __global__ void extract_profilevalues_component_x_kernel(size_t size, cuVEC<VTyp
 }
 
 template void cuVEC<cuINT3>::extract_profilevalues_component_x(size_t size, cu_arr<cuBReal>& profile_gpu, cuReal3 start, cuReal3 step);
-template void cuVEC<cuSZ3>::extract_profilevalues_component_x(size_t size, cu_arr<cuBReal>& profile_gpu, cuReal3 start, cuReal3 step);
 template void cuVEC<cuFLT3>::extract_profilevalues_component_x(size_t size, cu_arr<cuBReal>& profile_gpu, cuReal3 start, cuReal3 step);
 template void cuVEC<cuDBL3>::extract_profilevalues_component_x(size_t size, cu_arr<cuBReal>& profile_gpu, cuReal3 start, cuReal3 step);
 
 template void cuVEC<cuINT4>::extract_profilevalues_component_x(size_t size, cu_arr<cuBReal>& profile_gpu, cuReal3 start, cuReal3 step);
-template void cuVEC<cuSZ4>::extract_profilevalues_component_x(size_t size, cu_arr<cuBReal>& profile_gpu, cuReal3 start, cuReal3 step);
 template void cuVEC<cuFLT4>::extract_profilevalues_component_x(size_t size, cu_arr<cuBReal>& profile_gpu, cuReal3 start, cuReal3 step);
 template void cuVEC<cuDBL4>::extract_profilevalues_component_x(size_t size, cu_arr<cuBReal>& profile_gpu, cuReal3 start, cuReal3 step);
 
@@ -77,7 +71,9 @@ template void cuVEC<cuDBL4>::extract_profilevalues_component_x(size_t size, cu_a
 template <typename VType>
 __host__ void cuVEC<VType>::extract_profilevalues_component_x(size_t size, cu_arr<cuBReal>& profile_gpu, cuReal3 start, cuReal3 step)
 {
-	extract_profilevalues_component_x_kernel <<< (size + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>>
+	profile_gpu.resize(size);
+
+	extract_profilevalues_component_x_kernel << < (size + CUDATHREADS) / CUDATHREADS, CUDATHREADS >> >
 		(size, *this, profile_gpu, start, step);
 }
 
@@ -98,19 +94,19 @@ __global__ void extract_profilevalues_component_y_kernel(size_t size, cuVEC<VTyp
 }
 
 template void cuVEC<cuINT3>::extract_profilevalues_component_y(size_t size, cu_arr<cuBReal>& profile_gpu, cuReal3 start, cuReal3 step);
-template void cuVEC<cuSZ3>::extract_profilevalues_component_y(size_t size, cu_arr<cuBReal>& profile_gpu, cuReal3 start, cuReal3 step);
 template void cuVEC<cuFLT3>::extract_profilevalues_component_y(size_t size, cu_arr<cuBReal>& profile_gpu, cuReal3 start, cuReal3 step);
 template void cuVEC<cuDBL3>::extract_profilevalues_component_y(size_t size, cu_arr<cuBReal>& profile_gpu, cuReal3 start, cuReal3 step);
 
 template void cuVEC<cuINT4>::extract_profilevalues_component_y(size_t size, cu_arr<cuBReal>& profile_gpu, cuReal3 start, cuReal3 step);
-template void cuVEC<cuSZ4>::extract_profilevalues_component_y(size_t size, cu_arr<cuBReal>& profile_gpu, cuReal3 start, cuReal3 step);
 template void cuVEC<cuFLT4>::extract_profilevalues_component_y(size_t size, cu_arr<cuBReal>& profile_gpu, cuReal3 start, cuReal3 step);
 template void cuVEC<cuDBL4>::extract_profilevalues_component_y(size_t size, cu_arr<cuBReal>& profile_gpu, cuReal3 start, cuReal3 step);
 
 template <typename VType>
 __host__ void cuVEC<VType>::extract_profilevalues_component_y(size_t size, cu_arr<cuBReal>& profile_gpu, cuReal3 start, cuReal3 step)
 {
-	extract_profilevalues_component_y_kernel <<< (size + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>>
+	profile_gpu.resize(size);
+
+	extract_profilevalues_component_y_kernel << < (size + CUDATHREADS) / CUDATHREADS, CUDATHREADS >> >
 		(size, *this, profile_gpu, start, step);
 }
 
@@ -131,19 +127,19 @@ __global__ void extract_profilevalues_component_z_kernel(size_t size, cuVEC<VTyp
 }
 
 template void cuVEC<cuINT3>::extract_profilevalues_component_z(size_t size, cu_arr<cuBReal>& profile_gpu, cuReal3 start, cuReal3 step);
-template void cuVEC<cuSZ3>::extract_profilevalues_component_z(size_t size, cu_arr<cuBReal>& profile_gpu, cuReal3 start, cuReal3 step);
 template void cuVEC<cuFLT3>::extract_profilevalues_component_z(size_t size, cu_arr<cuBReal>& profile_gpu, cuReal3 start, cuReal3 step);
 template void cuVEC<cuDBL3>::extract_profilevalues_component_z(size_t size, cu_arr<cuBReal>& profile_gpu, cuReal3 start, cuReal3 step);
 
 template void cuVEC<cuINT4>::extract_profilevalues_component_z(size_t size, cu_arr<cuBReal>& profile_gpu, cuReal3 start, cuReal3 step);
-template void cuVEC<cuSZ4>::extract_profilevalues_component_z(size_t size, cu_arr<cuBReal>& profile_gpu, cuReal3 start, cuReal3 step);
 template void cuVEC<cuFLT4>::extract_profilevalues_component_z(size_t size, cu_arr<cuBReal>& profile_gpu, cuReal3 start, cuReal3 step);
 template void cuVEC<cuDBL4>::extract_profilevalues_component_z(size_t size, cu_arr<cuBReal>& profile_gpu, cuReal3 start, cuReal3 step);
 
 template <typename VType>
 __host__ void cuVEC<VType>::extract_profilevalues_component_z(size_t size, cu_arr<cuBReal>& profile_gpu, cuReal3 start, cuReal3 step)
 {
-	extract_profilevalues_component_z_kernel <<< (size + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>>
+	profile_gpu.resize(size);
+
+	extract_profilevalues_component_z_kernel << < (size + CUDATHREADS) / CUDATHREADS, CUDATHREADS >> >
 		(size, *this, profile_gpu, start, step);
 }
 
@@ -728,6 +724,9 @@ __host__ bool cuVEC<VType>::extract_profile_component_x(cuReal3 start, cuReal3 e
 		//make sure memory is allocated correctly for auxiliary arrays
 		if (!allocate_profile_component_memory(size)) return false;
 
+		//make sure profile_gpu has correct size
+		if (!profile_gpu.resize(size)) return false;
+
 		cuReal3 h_cpu = get_gpu_value(h);
 		cuINT3 nstencil = stencil / h_cpu;
 		int num_stencil_points = nstencil.dim();
@@ -869,6 +868,9 @@ __host__ bool cuVEC<VType>::extract_profile_component_y(cuReal3 start, cuReal3 e
 
 		//make sure memory is allocated correctly for auxiliary arrays
 		if (!allocate_profile_component_memory(size)) return false;
+
+		//make sure profile_gpu has correct size
+		if (!profile_gpu.resize(size)) return false;
 
 		cuReal3 h_cpu = get_gpu_value(h);
 		cuINT3 nstencil = stencil / h_cpu;
@@ -1012,6 +1014,9 @@ __host__ bool cuVEC<VType>::extract_profile_component_z(cuReal3 start, cuReal3 e
 		//make sure memory is allocated correctly for auxiliary arrays
 		if (!allocate_profile_component_memory(size)) return false;
 
+		//make sure profile_gpu has correct size
+		if (!profile_gpu.resize(size)) return false;
+
 		cuReal3 h_cpu = get_gpu_value(h);
 		cuINT3 nstencil = stencil / h_cpu;
 		int num_stencil_points = nstencil.dim();
@@ -1153,6 +1158,9 @@ __host__ bool cuVEC<VType>::extract_profile_component_max(cuReal3 start, cuReal3
 
 		//make sure memory is allocated correctly
 		if (!allocate_profile_component_memory(size)) return false;
+
+		//make sure profile_gpu has correct size
+		if (!profile_gpu.resize(size)) return false;
 
 		cuReal3 h_cpu = get_gpu_value(h);
 		cuINT3 nstencil = stencil / h_cpu;
@@ -1440,6 +1448,9 @@ __host__ bool cuVEC<VType>::extract_profile(cuReal3 start, cuReal3 end, cuBReal 
 
 		//make sure memory is allocated correctly for auxiliary arrays
 		if (!allocate_profile_component_memory(size)) return false;
+
+		//make sure profile_gpu has correct size
+		if (!profile_gpu.resize(size)) return false;
 
 		cuReal3 h_cpu = get_gpu_value(h);
 		cuINT3 nstencil = stencil / h_cpu;

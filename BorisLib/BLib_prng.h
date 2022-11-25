@@ -19,6 +19,7 @@ class BorisRand {
 
 private:
 
+	//the random numbers: one per thread (prn size is equal to number of threads)
 	std::vector<unsigned> prn;
 
 	//count number of random numbers generated between calls to check_periodicity : if this divides the LCG period it could be problematic so need to adjust
@@ -28,7 +29,7 @@ private:
 
 public:
 
-	BorisRand(unsigned seed, bool multithreaded_ = true)
+	BorisRand(unsigned seed)
 	{
 		int OmpThreads = omp_get_num_procs();
 		prn.resize(OmpThreads);

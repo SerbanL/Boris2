@@ -4,8 +4,6 @@
 #include "Boris_Enums_Defs.h"
 #include "ErrorHandler.h"
 
-
-
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
 //	Abstract base class for Zeeman modules (there are more than one: micromagnetic, atomistic)
@@ -33,10 +31,17 @@ protected:
 	//Applied field but as a VEC (e.g. loaded from file), with same resolution as M.
 	VEC<DBL3> Havec;
 
+	//global field as obtained in this mesh
+	//When a global field is set in supermesh, then globalField VEC is initialized here with mesh transfered values
+	VEC<DBL3> globalField;
+
 protected:
 
 	//Update TEquation object with user constants values
 	virtual void UpdateTEquationUserConstants(bool makeCuda = true) = 0;
+
+	//setup globalField transfer
+	virtual BError InitializeGlobalField(void) = 0;
 
 public:
 

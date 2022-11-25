@@ -119,7 +119,7 @@ protected:
 	//-------------------------- SETTERS
 
 	//Set all the rectangles participating in convolution. This determines the number of kernels needed : one for each mesh.
-	BError Set_Rect_Collection(std::vector<cuRect>& Rect_collection_, cuRect this_rect_, cuBReal h_max_);
+	BError Set_Rect_Collection(std::vector<cuRect>& Rect_collection_, cuRect this_rect_, cuBReal h_max_, int self_contribution_index_);
 
 	//-------------------------- GETTERS
 

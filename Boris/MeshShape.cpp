@@ -183,7 +183,7 @@ BError Mesh::GenerateGrains2D(double spacing, int seed)
 
 		bool success = true;
 
-		success = VEC_VC_quantity.generate_Voronoi2D(spacing, seed);
+		success = VEC_VC_quantity.generate_Voronoi2D_Grains(spacing, seed);
 
 		if (success) return BError();
 		else {
@@ -209,7 +209,7 @@ BError Mesh::GenerateGrains3D(double spacing, int seed)
 
 		bool success = true;
 
-		success = VEC_VC_quantity.generate_Voronoi3D(spacing, seed);
+		success = VEC_VC_quantity.generate_Voronoi3D_Grains(spacing, seed);
 
 		if (success) return BError();
 		else {

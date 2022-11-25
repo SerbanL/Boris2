@@ -17,7 +17,7 @@ class STransport;
 class Atom_Transport :
 	public Modules,
 	public TransportBase,
-	public ProgramState<Atom_Transport, std::tuple<>, std::tuple<>>
+	public ProgramState<Atom_Transport, std::tuple<TEquation<double, double, double, double>>, std::tuple<>>
 {
 	friend STransport;
 
@@ -51,6 +51,9 @@ private:
 	//call-back method for Poisson equation to evaluate RHS
 	double Evaluate_ChargeSolver_delsqV_RHS(int idx) const;
 
+	//call-back method for Poisson equation to evaluate RHS (with thermoelectric effect included)
+	double Evaluate_ChargeSolver_delsqV_Thermoelectric_RHS(int idx) const;
+
 	//Calculation Methods used by Spin Current Solver only
 
 	//before iterating the spin solver (charge part) we need to prime it : pre-compute values which do not change as the spin solver relaxes.
@@ -75,6 +78,9 @@ private:
 
 	//Non-homogeneous Neumann boundary condition for V' - call-back method for Poisson equation for V
 	DBL3 NHNeumann_Vdiff(int idx) const;
+
+	//Non-homogeneous Neumann boundary condition for V' when solving with thermoelectric effect included - call-back method for Poisson equation for V, charge solver only
+	DBL3 NHNeumann_Vdiff_Thermoelectric(int idx) const;
 
 	//Non-homogeneous Neumann boundary condition for S' - call-back method for Poisson equation for S
 	DBL33 NHNeumann_Sdiff(int idx) const;

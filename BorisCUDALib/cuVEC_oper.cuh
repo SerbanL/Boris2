@@ -20,29 +20,15 @@ __global__ void setbox_kernel(cuSZ3& n, cuBox box, VType value, VType*& quantity
 	}
 }
 
-template void cuVEC<char>::setbox(cuBox box, char value);
-template void cuVEC<int>::setbox(cuBox box, int value);
-template void cuVEC<unsigned>::setbox(cuBox box, unsigned value);
-template void cuVEC<long>::setbox(cuBox box, long value);
-template void cuVEC<size_t>::setbox(cuBox box, size_t value);
 template void cuVEC<float>::setbox(cuBox box, float value);
 template void cuVEC<double>::setbox(cuBox box, double value);
 
-template void cuVEC<cuINT3>::setbox(cuBox box, cuINT3 value);
-template void cuVEC<cuSZ3>::setbox(cuBox box, cuSZ3 value);
 template void cuVEC<cuFLT3>::setbox(cuBox box, cuFLT3 value);
 template void cuVEC<cuDBL3>::setbox(cuBox box, cuDBL3 value);
 
-template void cuVEC<cuINT4>::setbox(cuBox box, cuINT4 value);
-template void cuVEC<cuSZ4>::setbox(cuBox box, cuSZ4 value);
 template void cuVEC<cuFLT4>::setbox(cuBox box, cuFLT4 value);
 template void cuVEC<cuDBL4>::setbox(cuBox box, cuDBL4 value);
 
-template void cuVEC<cuINT33>::setbox(cuBox box, cuINT33 value);
-template void cuVEC<cuFLT33>::setbox(cuBox box, cuFLT33 value);
-template void cuVEC<cuDBL33>::setbox(cuBox box, cuDBL33 value);
-
-template void cuVEC<cuReIm>::setbox(cuBox box, cuReIm value);
 template void cuVEC<cuReIm3>::setbox(cuBox box, cuReIm3 value);
 
 template <typename VType>
@@ -64,29 +50,15 @@ __global__ void set_kernel(size_t size, VType value, VType*& quantity)
 	}
 }
 
-template void cuVEC<char>::set(size_t size, char value);
-template void cuVEC<int>::set(size_t size, int value);
-template void cuVEC<unsigned>::set(size_t size, unsigned value);
-template void cuVEC<long>::set(size_t size, long value);
-template void cuVEC<size_t>::set(size_t size, size_t value);
 template void cuVEC<float>::set(size_t size, float value);
 template void cuVEC<double>::set(size_t size, double value);
 
-template void cuVEC<cuINT3>::set(size_t size, cuINT3 value);
-template void cuVEC<cuSZ3>::set(size_t size, cuSZ3 value);
 template void cuVEC<cuFLT3>::set(size_t size, cuFLT3 value);
 template void cuVEC<cuDBL3>::set(size_t size, cuDBL3 value);
 
-template void cuVEC<cuINT4>::set(size_t size, cuINT4 value);
-template void cuVEC<cuSZ4>::set(size_t size, cuSZ4 value);
 template void cuVEC<cuFLT4>::set(size_t size, cuFLT4 value);
 template void cuVEC<cuDBL4>::set(size_t size, cuDBL4 value);
 
-template void cuVEC<cuINT33>::set(size_t size, cuINT33 value);
-template void cuVEC<cuFLT33>::set(size_t size, cuFLT33 value);
-template void cuVEC<cuDBL33>::set(size_t size, cuDBL33 value);
-
-template void cuVEC<cuReIm>::set(size_t size, cuReIm value);
 template void cuVEC<cuReIm3>::set(size_t size, cuReIm3 value);
 
 template <typename VType>

@@ -12,7 +12,7 @@
 
 //----------------------------------------
 
-__global__ void GenerateThermalField_Kernel(cuBorisRand& prng, ManagedDiffEqAFMCUDA& cuDiffEq, ManagedMeshCUDA& cuMesh, cuBReal& deltaT)
+__global__ void GenerateThermalField_Kernel(cuBorisRand<>& prng, ManagedDiffEqAFMCUDA& cuDiffEq, ManagedMeshCUDA& cuMesh, cuBReal& deltaT)
 {
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
 
@@ -58,7 +58,7 @@ void DifferentialEquationAFMCUDA::GenerateThermalField_CUDA(cu_obj<cuBReal>& del
 
 //----------------------------------------
 
-__global__ void GenerateThermalField_and_Torque_Kernel(cuBorisRand& prng, ManagedDiffEqAFMCUDA& cuDiffEq, ManagedMeshCUDA& cuMesh, cuBReal& deltaT)
+__global__ void GenerateThermalField_and_Torque_Kernel(cuBorisRand<>& prng, ManagedDiffEqAFMCUDA& cuDiffEq, ManagedMeshCUDA& cuMesh, cuBReal& deltaT)
 {
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
 

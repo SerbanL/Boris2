@@ -228,3 +228,12 @@ __host__ cuBox cuVEC<VType>::box_from_rect_min_cpu(cuRect rectangle)
 
 	return cuBox(start, end);
 }
+
+template <typename VType>
+__host__ int cuVEC<VType>::get_nonempty_cells_cpu(size_t arr_size)
+{
+	if (!arr_size) count_nonempty_cells(linear_size_cpu());
+	else count_nonempty_cells(arr_size);
+	
+	return get_gpu_value(aux_integer);
+}

@@ -21,6 +21,7 @@ FMesh::FMesh(SuperMesh *pSMesh_) :
 			VINFO(u_disp), VINFO(strain_diag), VINFO(strain_odiag),
 			VINFO(pMod), 
 			VINFO(exclude_from_multiconvdemag),
+			VINFO(prng_seed),
 			//Members in this derived class
 			VINFO(move_mesh_trigger), VINFO(skyShift), VINFO(exchange_couple_to_meshes),
 			VINFO(mc_cone_angledeg), VINFO(mc_acceptance_rate), VINFO(mc_parallel), VINFO(mc_disabled), VINFO(mc_constrain), VINFO(cmc_n),
@@ -31,12 +32,13 @@ FMesh::FMesh(SuperMesh *pSMesh_) :
 			VINFO(Kt),
 			VINFO(susrel), VINFO(susprel), VINFO(cHA), VINFO(cHmo),
 			VINFO(s_eff),
-			VINFO(elecCond), VINFO(amrPercentage), VINFO(P), VINFO(beta), VINFO(De), VINFO(n_density), 
-			VINFO(SHA), VINFO(flSOT), VINFO(STq), VINFO(STa), VINFO(STp), 
+			VINFO(elecCond), VINFO(amrPercentage), VINFO(tamrPercentage), VINFO(P), VINFO(beta), VINFO(De), VINFO(n_density),
+			VINFO(SHA), VINFO(flSOT), VINFO(STq), VINFO(STa), VINFO(STp), VINFO(flSOT2), VINFO(STq2), VINFO(STa2),
 			VINFO(betaD), VINFO(l_sf), VINFO(l_ex), VINFO(l_ph), VINFO(Gi), VINFO(Gmix),
 			VINFO(ts_eff), VINFO(tsi_eff), VINFO(pump_eff), VINFO(cpump_eff), VINFO(the_eff),
 			VINFO(base_temperature), VINFO(T_equation), VINFO(T_Curie), VINFO(T_Curie_material), VINFO(atomic_moment), 
-			VINFO(density), VINFO(MEc), VINFO(Ym), VINFO(Pr),
+			VINFO(density), VINFO(MEc), VINFO(Ym), VINFO(Pr), VINFO(cC), VINFO(mdamping),
+			VINFO(Sc), VINFO(joule_eff),
 			VINFO(thermCond), VINFO(shc), VINFO(shc_e), VINFO(G_e), VINFO(cT), VINFO(Q),
 			
 			//OBSOLETE - must keep to allow older simulation files to load if they have these defined
@@ -69,6 +71,7 @@ FMesh::FMesh(Rect meshRect_, DBL3 h_, SuperMesh *pSMesh_) :
 			VINFO(u_disp), VINFO(strain_diag), VINFO(strain_odiag),
 			VINFO(pMod),
 			VINFO(exclude_from_multiconvdemag),
+			VINFO(prng_seed),
 			//Members in this derived class
 			VINFO(move_mesh_trigger), VINFO(skyShift), VINFO(exchange_couple_to_meshes),
 			VINFO(mc_cone_angledeg), VINFO(mc_acceptance_rate), VINFO(mc_parallel), VINFO(mc_disabled), VINFO(mc_constrain), VINFO(cmc_n),
@@ -79,12 +82,13 @@ FMesh::FMesh(Rect meshRect_, DBL3 h_, SuperMesh *pSMesh_) :
 			VINFO(Kt),
 			VINFO(susrel), VINFO(susprel), VINFO(cHA), VINFO(cHmo),
 			VINFO(s_eff),
-			VINFO(elecCond), VINFO(amrPercentage), VINFO(P), VINFO(beta), VINFO(De), VINFO(n_density), 
-			VINFO(SHA), VINFO(flSOT), VINFO(STq), VINFO(STa), VINFO(STp), 
+			VINFO(elecCond), VINFO(amrPercentage), VINFO(tamrPercentage), VINFO(P), VINFO(beta), VINFO(De), VINFO(n_density),
+			VINFO(SHA), VINFO(flSOT), VINFO(STq), VINFO(STa), VINFO(STp), VINFO(flSOT2), VINFO(STq2), VINFO(STa2),
 			VINFO(betaD), VINFO(l_sf), VINFO(l_ex), VINFO(l_ph), VINFO(Gi), VINFO(Gmix),
 			VINFO(ts_eff), VINFO(tsi_eff), VINFO(pump_eff), VINFO(cpump_eff), VINFO(the_eff),
 			VINFO(base_temperature), VINFO(T_equation), VINFO(T_Curie), VINFO(T_Curie_material), VINFO(atomic_moment),
-			VINFO(density), VINFO(MEc), VINFO(Ym), VINFO(Pr),
+			VINFO(density), VINFO(MEc), VINFO(Ym), VINFO(Pr), VINFO(cC), VINFO(mdamping),
+			VINFO(Sc), VINFO(joule_eff),
 			VINFO(thermCond), VINFO(shc), VINFO(shc_e), VINFO(G_e), VINFO(cT), VINFO(Q),
 			
 			//OBSOLETE - must keep to allow older simulation files to load if they have these defined

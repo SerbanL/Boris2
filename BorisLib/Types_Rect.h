@@ -18,10 +18,10 @@ struct __Box {
 	//----------------------------- VALUE CONSTRUCTORS
 
 	__Box(void) {}
-	
+
 	__Box(const INT3& e) { this->e = e; }
 	__Box(int ex, int ey, int ez) { s = INT3(); e = INT3(ex, ey, ez); }
-	
+
 	__Box(const INT3& s, const INT3& e) { this->s = s; this->e = e; }
 	__Box(int sx, int sy, int sz, int ex, int ey, int ez) { s = INT3(sx, sy, sz); e = INT3(ex, ey, ez); }
 
@@ -43,11 +43,11 @@ struct __Box {
 
 	//allows conversions from std::string to Box
 	friend __Box& operator>>(const std::stringstream &ss, __Box &rhs)
-	{ 
+	{
 		//normally the values in std::string representation are as: "sx, sy, sz; ex, ey, ez"
 		std::vector<std::string> components = split(ss.str(), ",", ";");
 		//it could be they are also given as: "sx sy sz ex ey ez"
-		if(components.size() == 1) components = split(ss.str(), " ");
+		if (components.size() == 1) components = split(ss.str(), " ");
 
 		//now set values from strings as would be done in the available constructors if the values were passed directly
 		switch (components.size()) {
@@ -78,6 +78,15 @@ struct __Box {
 
 		return rhs;
 	}
+
+	//----------------------------- ARITHMETIC OPERATORS
+
+	//shift the box : add a INT3
+	void operator+=(const INT3 &shift) { s += shift; e += shift; }
+
+	//sum and difference with a INT3 : return shifted box
+	__Box operator+(const INT3 &rhs) const { return __Box(s + rhs, e + rhs); }
+	__Box operator-(const INT3 &rhs) const { return __Box(s - rhs, e - rhs); }
 
 	//----------------------------- COMPARISON OPERATORS
 
@@ -121,11 +130,11 @@ struct __Box {
 	bool IsPlane(void) const
 	{
 		return ((s.x == e.x && s.y != e.y && s.z != e.z) ||
-				(s.y == e.y && s.x != e.x && s.z != e.z) ||
-				(s.z == e.z && s.x != e.x && s.y != e.y));
+			(s.y == e.y && s.x != e.x && s.z != e.z) ||
+			(s.z == e.z && s.x != e.x && s.y != e.y));
 	}
 
-	bool IsLine(void) const { return ((mod(e.x-s.x) + mod(e.y-s.y) == 0) || (mod(e.x-s.x) + mod(e.z-s.z) == 0) || (mod(e.z-s.z) + mod(e.y-s.y) == 0)); }
+	bool IsLine(void) const { return ((mod(e.x - s.x) + mod(e.y - s.y) == 0) || (mod(e.x - s.x) + mod(e.z - s.z) == 0) || (mod(e.z - s.z) + mod(e.y - s.y) == 0)); }
 
 	bool IsPoint(void) const { return (e == s); }
 
@@ -551,9 +560,11 @@ struct __Rect {
 	//test intersection with a line from start to end and get intersection point closest to start
 	bool intersection_test(const DBL3& start, const DBL3& end, DBL3* pIntersection) const
 	{
-		//Note, only up to 3 faces need to be tested, hence the if checks below
-		//also only one intersection is possible with the checked faces : the other intersection point (which is further from start) is on the "shadowed" faces and these are not checked.
-		
+		//rule out that start is contained in rectangle
+		if (contains(start)) { *pIntersection = start; return true; }
+
+		//test closest faces to start in turn
+
 		//test start x face
 		if (start.x <= s.x) {
 
@@ -595,6 +606,72 @@ struct __Rect {
 			(*pIntersection).z = e.z;
 			if (solve_line_equation_fixed_z(start, end, pIntersection) && *pIntersection >= s && *pIntersection <= e) return true;
 		}
+
+		return false;
+	}
+
+	//test intersection with a line from start to end and get intersection point closest to start in pIntersection_s, and the one closest to end in pIntersection_e
+	bool intersection_test(const DBL3& start, const DBL3& end, DBL3* pIntersection_s, DBL3* pIntersection_e) const
+	{
+		bool start_found = false;
+		bool end_found = false;
+
+		//rule out that start is contained in rectangle
+		if (contains(start)) { *pIntersection_s = start; start_found = true; }
+		if (contains(end)) { *pIntersection_e = end; end_found = true; }
+
+		//test closest faces to start in turn
+
+		//check point (either start or end) for intersection, returning closest intersection coordinate
+		auto check_faces = [&](const DBL3& point, DBL3*& pIntersection) -> bool
+		{
+			//test start x face
+			if (point.x <= s.x) {
+
+				(*pIntersection).x = s.x;
+				if (solve_line_equation_fixed_x(start, end, pIntersection) && *pIntersection >= s && *pIntersection <= e) return true;
+			}
+
+			//test end x face
+			if (point.x >= e.x) {
+
+				(*pIntersection).x = e.x;
+				if (solve_line_equation_fixed_x(start, end, pIntersection) && *pIntersection >= s && *pIntersection <= e) return true;
+			}
+
+			//test start y face
+			if (point.y <= s.y) {
+
+				(*pIntersection).y = s.y;
+				if (solve_line_equation_fixed_y(start, end, pIntersection) && *pIntersection >= s && *pIntersection <= e) return true;
+			}
+
+			//test end y face
+			if (point.y >= e.y) {
+
+				(*pIntersection).y = e.y;
+				if (solve_line_equation_fixed_y(start, end, pIntersection) && *pIntersection >= s && *pIntersection <= e) return true;
+			}
+
+			//test start z face
+			if (point.z <= s.z) {
+
+				(*pIntersection).z = s.z;
+				if (solve_line_equation_fixed_z(start, end, pIntersection) && *pIntersection >= s && *pIntersection <= e) return true;
+			}
+
+			//test end z face
+			if (point.z >= e.z) {
+
+				(*pIntersection).z = e.z;
+				if (solve_line_equation_fixed_z(start, end, pIntersection) && *pIntersection >= s && *pIntersection <= e) return true;
+			}
+
+			return false;
+		};
+
+		//if one returns true, then so does the other, but use && operator to force execution of both
+		if (check_faces(start, pIntersection_s) && check_faces(end, pIntersection_e)) return true;
 
 		return false;
 	}

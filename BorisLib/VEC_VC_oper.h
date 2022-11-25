@@ -186,9 +186,6 @@ void VEC_VC<VType>::copy_values(const VEC_VC<VType>& copy_this, Rect dstRect, Re
 
 	DBL3 sourceIdx = (DBL3)src_n / dst_n;
 
-	//first clear current flags
-	ngbrFlags.assign(VEC<VType>::n.dim(), 0);
-
 	//now map shape from copy_this.ngbrFlags to ngbrFlags
 
 #pragma omp parallel for
@@ -198,17 +195,17 @@ void VEC_VC<VType>::copy_values(const VEC_VC<VType>& copy_this, Rect dstRect, Re
 
 				int idx_box_dst = i + j * dst_n.x + k * dst_n.x*dst_n.y;
 
-				int _x = (int)floor((idx_box_dst % dst_n.x) * sourceIdx.x);
-				int _y = (int)floor(((idx_box_dst / dst_n.x) % dst_n.y) * sourceIdx.y);
-				int _z = (int)floor((idx_box_dst / (dst_n.x*dst_n.y)) * sourceIdx.z);
+				int _x = (int)floor(i * sourceIdx.x);
+				int _y = (int)floor(j * sourceIdx.y);
+				int _z = (int)floor(k * sourceIdx.z);
 
 				int idx_out = (i + cells_box_dst.s.i) + (j + cells_box_dst.s.j) * VEC<VType>::n.x + (k + cells_box_dst.s.k) * VEC<VType>::n.x*VEC<VType>::n.y;
 				int idx_in = (_x + cells_box_src.s.i) + (_y + cells_box_src.s.j) * copy_this.n.x + (_z + cells_box_src.s.k) * (copy_this.n.x*copy_this.n.y);
 
 				if (idx_out < VEC<VType>::n.dim() && idx_in < copy_this.n.dim()) {
 
-					if (copy_this.ngbrFlags[idx_in] & NF_NOTEMPTY)
-						ngbrFlags[idx_out] = NF_NOTEMPTY;
+					if (copy_this.is_empty(idx_in)) mark_empty(idx_out);
+					else mark_not_empty(idx_out);
 				}
 			}
 		}

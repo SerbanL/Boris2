@@ -34,14 +34,13 @@ VEC_VC<DBL3>& Atom_Transport::GetChargeCurrent(void)
 
 		if (stsolve == STSOLVE_NONE) {
 
-			//calculate current density using Jc = -sigma * grad V
 #pragma omp parallel for
 			for (int idx = 0; idx < displayVEC_VC.linear_size(); idx++) {
 
 				//only calculate current on non-empty cells - empty cells have already been assigned 0 at UpdateConfiguration
 				if (paMesh->V.is_not_empty(idx)) {
 
-					displayVEC_VC[idx] = -paMesh->elC[idx] * paMesh->V.grad_diri(idx);
+					displayVEC_VC[idx] = paMesh->elC[idx] * paMesh->E[idx];
 				}
 				else displayVEC_VC[idx] = DBL3(0);
 			}

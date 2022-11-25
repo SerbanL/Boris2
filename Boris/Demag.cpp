@@ -103,7 +103,7 @@ BError Demag::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 	BError error(CLASS_STR(Demag));
 
 	//only need to uninitialize if n or h have changed, or pbc settings have changed
-	if (!CheckDimensions(pMesh->n, pMesh->h, demag_pbc_images) || cfgMessage == UPDATECONFIG_DEMAG_CONVCHANGE) {
+	if (!CheckDimensions(pMesh->n, pMesh->h, demag_pbc_images) || cfgMessage == UPDATECONFIG_DEMAG_CONVCHANGE || cfgMessage == UPDATECONFIG_MESHCHANGE) {
 		
 		Uninitialize();
 

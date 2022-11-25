@@ -3,7 +3,12 @@
 #include "BorisLib.h"
 #include "Modules.h"
 
+#if COMPILECUDA == 1
+#include "Atom_STFieldCUDA.h"
+#endif
+
 class Atom_Mesh;
+class Mesh;
 
 #if defined(MODULE_COMPILATION_STFIELD) && ATOMISTIC == 1
 
@@ -12,10 +17,20 @@ class Atom_STField :
 	public ProgramState<Atom_STField, std::tuple<>, std::tuple<>>
 {
 
+#if COMPILECUDA == 1
+	friend Atom_STFieldCUDA;
+#endif
+
 private:
 
 	//pointer to mesh object holding this effective field module
 	Atom_Mesh * paMesh;
+
+	//If STp is set to zero, these are the magnetic meshes which provide polarization vectors, top and bottom
+	std::vector<Atom_Mesh*> paMesh_Bot, paMesh_Top;
+
+	//as above for micromagnetic meshes top and bottom
+	std::vector<Mesh*> pMesh_Bot, pMesh_Top;
 
 public:
 

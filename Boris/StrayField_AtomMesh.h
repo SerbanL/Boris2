@@ -86,8 +86,8 @@ private:
 
 public:
 
-	StrayField(Atom_Mesh *paMesh_) {}
-	~StrayField() {}
+	StrayField_AtomMesh(Atom_Mesh *paMesh_) {}
+	~StrayField_AtomMesh() {}
 
 	//-------------------Abstract base class method implementations
 

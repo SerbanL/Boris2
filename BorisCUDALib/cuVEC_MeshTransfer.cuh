@@ -3,6 +3,24 @@
 #include "cuVEC_MeshTransfer.h"
 #include "launchers.h"
 
+//------------------------------------------------------------------- AUXILIARY
+
+template <typename VType>
+__global__ void zero_mesh_out_kernel(int mesh_out_num, cuVEC<VType>*& mesh_out)
+{
+	int idx = blockIdx.x * blockDim.x + threadIdx.x;
+
+	for (int idxMesh = 0; idxMesh < mesh_out_num; idxMesh++) {
+
+		cuVEC<VType>& cuvec_out = mesh_out[idxMesh];
+
+		if (idx < cuvec_out.linear_size()) {
+
+			cuvec_out[idx] = VType();
+		}
+	}
+}
+
 //------------------------------------------------------------------- MESH TRANSFER IN : SINGLE INPUT
 
 template <typename VType>
@@ -36,9 +54,6 @@ template void cuTransfer<double>::transfer_in(size_t size_transfer, double*& sMe
 template void cuTransfer<cuFLT3>::transfer_in(size_t size_transfer, cuFLT3*& sMesh_quantity);
 template void cuTransfer<cuDBL3>::transfer_in(size_t size_transfer, cuDBL3*& sMesh_quantity);
 
-template void cuTransfer<cuFLT33>::transfer_in(size_t size_transfer, cuFLT33*& sMesh_quantity);
-template void cuTransfer<cuDBL33>::transfer_in(size_t size_transfer, cuDBL33*& sMesh_quantity);
-
 //transfer values from mesh_in meshes using transfer_info into sMesh_quantity which has given size
 template <typename VType>
 __host__ void cuTransfer<VType>::transfer_in(size_t size_transfer, VType*& sMesh_quantity)
@@ -47,22 +62,6 @@ __host__ void cuTransfer<VType>::transfer_in(size_t size_transfer, VType*& sMesh
 }
 
 //------------------------------------------------------------------- MESH TRANSFER OUT : SINGLE OUTPUT
-
-template <typename VType>
-__global__ void zero_mesh_out_kernel(int mesh_out_num, cuVEC<VType>*& mesh_out)
-{
-	int idx = blockIdx.x * blockDim.x + threadIdx.x;
-
-	for (int idxMesh = 0; idxMesh < mesh_out_num; idxMesh++) {
-
-		cuVEC<VType>& cuvec_out = mesh_out[idxMesh];
-
-		if (idx < cuvec_out.linear_size()) {
-
-			cuvec_out[idx] = VType();
-		}
-	}
-}
 
 template <typename VType>
 __global__ void transfer_out_kernel(size_t transfer_info_size, VType*& sMesh_quantity, cuVEC<VType>*& mesh_out, cuPair<cuINT3, cuBReal>*& transfer_info)
@@ -94,9 +93,6 @@ template void cuTransfer<double>::transfer_out(size_t size_transfer, double*& sM
 
 template void cuTransfer<cuFLT3>::transfer_out(size_t size_transfer, cuFLT3*& sMesh_quantity, int mesh_out_num);
 template void cuTransfer<cuDBL3>::transfer_out(size_t size_transfer, cuDBL3*& sMesh_quantity, int mesh_out_num);
-
-template void cuTransfer<cuFLT33>::transfer_out(size_t size_transfer, cuFLT33*& sMesh_quantity, int mesh_out_num);
-template void cuTransfer<cuDBL33>::transfer_out(size_t size_transfer, cuDBL33*& sMesh_quantity, int mesh_out_num);
 
 template <typename VType>
 __host__ void cuTransfer<VType>::transfer_out(size_t size_transfer, VType*& sMesh_quantity, int mesh_out_num)
@@ -151,9 +147,6 @@ template void cuTransfer<double>::transfer_in_averaged(size_t size_transfer, dou
 template void cuTransfer<cuFLT3>::transfer_in_averaged(size_t size_transfer, cuFLT3*& sMesh_quantity);
 template void cuTransfer<cuDBL3>::transfer_in_averaged(size_t size_transfer, cuDBL3*& sMesh_quantity);
 
-template void cuTransfer<cuFLT33>::transfer_in_averaged(size_t size_transfer, cuFLT33*& sMesh_quantity);
-template void cuTransfer<cuDBL33>::transfer_in_averaged(size_t size_transfer, cuDBL33*& sMesh_quantity);
-
 //transfer values from mesh_in meshes using transfer_info into sMesh_quantity which has given size
 template <typename VType>
 __host__ void cuTransfer<VType>::transfer_in_averaged(size_t size_transfer, VType*& sMesh_quantity)
@@ -198,9 +191,6 @@ template void cuTransfer<double>::transfer_in_multiplied(size_t size_transfer, d
 
 template void cuTransfer<cuFLT3>::transfer_in_multiplied(size_t size_transfer, cuFLT3*& sMesh_quantity);
 template void cuTransfer<cuDBL3>::transfer_in_multiplied(size_t size_transfer, cuDBL3*& sMesh_quantity);
-
-template void cuTransfer<cuFLT33>::transfer_in_multiplied(size_t size_transfer, cuFLT33*& sMesh_quantity);
-template void cuTransfer<cuDBL33>::transfer_in_multiplied(size_t size_transfer, cuDBL33*& sMesh_quantity);
 
 //transfer values from mesh_in meshes using transfer_info into sMesh_quantity which has given size
 template <typename VType>
@@ -271,9 +261,6 @@ template void cuTransfer<double>::transfer_out_duplicated(size_t size_transfer, 
 
 template void cuTransfer<cuFLT3>::transfer_out_duplicated(size_t size_transfer, cuFLT3*& sMesh_quantity, int mesh_out_num);
 template void cuTransfer<cuDBL3>::transfer_out_duplicated(size_t size_transfer, cuDBL3*& sMesh_quantity, int mesh_out_num);
-
-template void cuTransfer<cuFLT33>::transfer_out_duplicated(size_t size_transfer, cuFLT33*& sMesh_quantity, int mesh_out_num);
-template void cuTransfer<cuDBL33>::transfer_out_duplicated(size_t size_transfer, cuDBL33*& sMesh_quantity, int mesh_out_num);
 
 template <typename VType>
 __host__ void cuTransfer<VType>::transfer_out_duplicated(size_t size_transfer, VType*& sMesh_quantity, int mesh_out_num)

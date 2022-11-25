@@ -44,14 +44,16 @@ std::vector<std::string> make_strings_vector(const PType&... values) { return { 
 //----------------------------------------
 
 //check if std::vector contains value
-template <typename VType> bool vector_contains(const std::vector<VType> &searchVector, const VType& value) 
+template <typename VType> 
+bool vector_contains(const std::vector<VType> &searchVector, const VType& value) 
 {	
 	if(find(searchVector.begin(), searchVector.end(), value) != searchVector.end()) return true;
 	else return false;
 }
 
 //check if std::vector contains value and return index of found element (-1 if not found)
-template <typename VType> int search_vector(const std::vector<VType> &searchVector, const VType& value)
+template <typename VType> 
+int search_vector(const std::vector<VType> &searchVector, const VType& value)
 {
 	auto it = find(searchVector.begin(), searchVector.end(), value);
 
@@ -62,7 +64,8 @@ template <typename VType> int search_vector(const std::vector<VType> &searchVect
 //----------------------------------------
 
 //return subvector as a new copy. subvector starts from startIdx and is endIdx - startIdx elements long. Leave endIdx out to return the rest of the std::vector.
-template <typename VType> std::vector<VType> subvec(const std::vector<VType> &vec, int startIdx, int endIdx = -1) 
+template <typename VType> 
+std::vector<VType> subvec(const std::vector<VType> &vec, int startIdx, int endIdx = -1) 
 {
 	if(endIdx < 0) {
 
@@ -74,6 +77,58 @@ template <typename VType> std::vector<VType> subvec(const std::vector<VType> &ve
 		std::vector<VType> newVec(vec.begin() + startIdx, vec.begin() + endIdx);
 		return newVec;
 	}
+}
+
+//return subvector as a new copy, where vec is a linear mapping of 3D memory with dimensions ni, nj, nk
+//extract sub-vector starting at cell coordinates si, sj, sk, up to cell (not including) with coordinates ei, ej, ek.
+template <typename VType> 
+std::vector<VType> subvec(
+	const std::vector<VType> &vec, 
+	int si, int sj, int sk, 
+	int ei, int ej, int ek, 
+	int ni, int nj, int nk)
+{
+	std::vector<VType> newVec((ei - si)*(ej - sj)*(ek - sk));
+
+	for (int k = sk; k < ek; k++) {
+#pragma omp parallel for
+		for (int j = sj; j < ej; j++) {
+			for (int i = si; i < ei; i++) {
+			
+				newVec[(i - si) + (j - sj)*(ei - si) + (k - sk)*(ei - si)*(ej - sj)] = vec[i + j*ni + k*ni*nj];
+			}
+		}
+	}
+
+	return newVec;
+}
+
+//----------------------------------------
+
+//copy values from vec_from to vec_to using strides
+//vec_to is a linear mapping of 3D memory with dimensions ni, nj, nk
+//copy starting at coordinates si, sj, sk in vec_to, up to ei, ej, ek in vec_to
+//here vec_from must have dimensions (ei - si), (ej - sj), (ek - sk)
+template <typename VType>
+bool strided_copy(
+	std::vector<VType> &vec_to, std::vector<VType> &vec_from,
+	int si, int sj, int sk,
+	int ei, int ej, int ek,
+	int ni, int nj, int nk)
+{
+	if (vec_from.size() != (ei - si)*(ej - sj)*(ek - sk) || vec_to.size() != ni*nj*nk) return false;
+
+	for (int k = sk; k < ek; k++) {
+#pragma omp parallel for
+		for (int j = sj; j < ej; j++) {
+			for (int i = si; i < ei; i++) {
+
+				vec_to[i + j*ni + k*ni*nj] = vec_from[(i - si) + (j - sj)*(ei - si) + (k - sk)*(ei - si)*(ej - sj)];
+			}
+		}
+	}
+
+	return true;
 }
 
 //----------------------------------------
@@ -106,7 +161,6 @@ void swap(int j, int k, std::vector<VType>& vec, std::vector<PType>&... further_
 	swap(j, k, vec);
 	swap(j, k, further_vec...);
 }
-
 
 //----------------------------------------
 

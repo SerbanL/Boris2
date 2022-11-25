@@ -56,7 +56,7 @@ BError DemagKernelCollection::Calculate_Demag_Kernels(std::vector<DemagKernelCol
 				if (error) return error;
 
 				//now compute it
-				if (kernels[index]->internal_demag) {
+				if (Rect_collection[index] == this_rect) {
 
 					kernels[index]->shift = DBL3();
 					kernels[index]->h_dst = h;
@@ -67,12 +67,12 @@ BError DemagKernelCollection::Calculate_Demag_Kernels(std::vector<DemagKernelCol
 					else error = Calculate_Demag_Kernels_3D_Self(index);
 				}
 				else {
-
+					
 					//shift for source as Rect_collection[index] and destination as this_rect
 					kernels[index]->shift = (this_rect.s - Rect_collection[index].s);
 					kernels[index]->h_dst = h;
 					kernels[index]->h_src = kernelCollection[index]->h;
-
+					
 					if (n.z == 1) {
 
 						if (IsZ(kernels[index]->shift.x) && IsZ(kernels[index]->shift.y)) {
@@ -87,14 +87,14 @@ BError DemagKernelCollection::Calculate_Demag_Kernels(std::vector<DemagKernelCol
 						}
 					}
 					else {
-
+					
 						if (IsZ(kernels[index]->shift.x) && IsZ(kernels[index]->shift.y)) {
 
 							//z-shifted kernels for 3D
 							error = Calculate_Demag_Kernels_3D_zShifted(index);
 						}
 						else {
-
+						
 							//general 3D kernels (not z-shifted)
 							error = Calculate_Demag_Kernels_3D_Complex_Full(index);
 						}
@@ -964,7 +964,7 @@ BError DemagKernelCollection::Calculate_Demag_Kernels_3D_zShifted(int index)
 BError DemagKernelCollection::Calculate_Demag_Kernels_3D_Complex_Full(int index)
 {
 	BError error(__FUNCTION__);
-
+	
 	//-------------- DEMAG TENSOR
 
 	//Demag tensor components

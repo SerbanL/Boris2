@@ -10,7 +10,7 @@
 Atom_Transport::Atom_Transport(Atom_Mesh *paMesh_) :
 	Modules(),
 	TransportBase(paMesh_),
-	ProgramStateNames(this, {}, {})
+	ProgramStateNames(this, { VINFO(TAMR_conductivity_equation) }, {})
 {
 	paMesh = paMesh_;
 
@@ -67,6 +67,9 @@ bool Atom_Transport::Need_delsq_S_fixed_Precalculation(void)
 BError Atom_Transport::Initialize(void)
 {
 	BError error(CLASS_STR(Atom_Transport));
+
+	//is this a "thermoelectric mesh"?
+	is_thermoelectric_mesh = (paMesh->Temp.linear_size() && IsNZ(paMesh->Sc.get0()));
 
 	//do we need to enable dM_dt calculation?
 	if (Need_dM_dt_Calculation()) {
@@ -142,7 +145,7 @@ BError Atom_Transport::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 		if (paMesh->M1.linear_size()) {
 
 			//for magnetic meshes set empty cells using information in M (empty cells have zero electrical conductivity) only on initialization. If already initialized then shape already set.
-			if (paMesh->elC.linear_size() && cfgMessage != UPDATECONFIG_MESHSHAPECHANGE) {
+			if (paMesh->elC.linear_size()) {
 
 				success = paMesh->elC.resize(paMesh->h_e, paMesh->meshRect);
 			}
@@ -153,7 +156,7 @@ BError Atom_Transport::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 		}
 
 		//electrical potential - set empty cells using information in elC (empty cells have zero electrical conductivity)
-		if (paMesh->V.linear_size() && cfgMessage != UPDATECONFIG_MESHSHAPECHANGE) {
+		if (paMesh->V.linear_size()) {
 
 			success &= paMesh->V.resize(paMesh->h_e, paMesh->meshRect, paMesh->elC);
 		}
@@ -163,7 +166,7 @@ BError Atom_Transport::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 		}
 
 		//electric field - set empty cells using information in elC (empty cells have zero electrical conductivity)
-		if (paMesh->E.linear_size() && cfgMessage != UPDATECONFIG_MESHSHAPECHANGE) {
+		if (paMesh->E.linear_size()) {
 
 			success &= paMesh->E.resize(paMesh->h_e, paMesh->meshRect, paMesh->elC);
 		}
@@ -179,7 +182,7 @@ BError Atom_Transport::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 		//spin accumulation if needed - set empty cells using information in elC (empty cells have zero electrical conductivity)
 		if (success && stsolve != STSOLVE_NONE) {
 
-			if (paMesh->S.linear_size() && cfgMessage != UPDATECONFIG_MESHSHAPECHANGE) {
+			if (paMesh->S.linear_size()) {
 
 				success &= paMesh->S.resize(paMesh->h_e, paMesh->meshRect, paMesh->elC);
 			}
@@ -253,14 +256,73 @@ void Atom_Transport::CalculateElectricField(void)
 {
 	if (stsolve == STSOLVE_NONE || stsolve == STSOLVE_FERROMAGNETIC_ATOM) {
 
-		//calculate electric field using E = - grad V
-#pragma omp parallel for
+		//reset counter so we can accumulate total thermoelectric current if needed
+		double mesh_thermoelectric_net_current_ = 0.0;
+
+#pragma omp parallel for reduction(+:mesh_thermoelectric_net_current_)
 		for (int idx = 0; idx < paMesh->E.linear_size(); idx++) {
 
 			//only calculate current on non-empty cells - empty cells have already been assigned 0 at UpdateConfiguration
 			if (paMesh->V.is_not_empty(idx)) {
 
-				paMesh->E[idx] = -1.0 * paMesh->V.grad_diri(idx);
+				//include thermoelectric effect?
+				if (is_thermoelectric_mesh) {
+
+					double Sc = paMesh->Sc;
+					paMesh->update_parameters_ecoarse(idx, paMesh->Sc, Sc);
+
+					//corresponding index in Temp
+					int idx_temp = paMesh->Temp.position_to_cellidx(paMesh->V.cellidx_to_position(idx));
+
+					if (!pSTrans->IsOpenPotential()) {
+
+						//include thermoelectric effect, but no net current generated
+
+						DBL3 shift = paMesh->V.get_shift_to_emptycell(idx);
+						if (!shift.IsNull()) {
+
+							//use sided differentials if both neighbors not available
+							paMesh->E[idx] = -1 * (paMesh->V.grad_sided(idx) + Sc * paMesh->Temp.grad_sided(idx_temp));
+						}
+						else paMesh->E[idx] = -1 * (paMesh->V.grad_neu(idx) + Sc * paMesh->Temp.grad_neu(idx_temp));
+					}
+					else {
+
+						//thermoelectric effect but with open potential, so a net current is generated - must count total current coming out of this mesh
+
+						paMesh->E[idx] = Sc * paMesh->Temp.grad_sided(idx_temp);
+
+						if (paMesh->V.is_cmbnd(idx) || paMesh->V.is_dirichlet(idx)) {
+
+							DBL3 therm_current_density = paMesh->elC[idx] * paMesh->E[idx];
+
+							//below divide by 2 since we want net current, not twice the current come into or out of the mesh
+
+							//x
+							if (paMesh->V.is_cmbnd_x(idx) || paMesh->V.is_dirichlet_x(idx)) {
+
+								double cmbnd_current_density = therm_current_density.x;
+								mesh_thermoelectric_net_current_ -= cmbnd_current_density * paMesh->V.h.y * paMesh->V.h.z / 2;
+							}
+
+							//y
+							else if (paMesh->V.is_cmbnd_y(idx) || paMesh->V.is_dirichlet_y(idx)) {
+
+								double cmbnd_current_density = therm_current_density.y;
+								mesh_thermoelectric_net_current_ -= cmbnd_current_density * paMesh->V.h.x * paMesh->V.h.z / 2;
+							}
+
+							//z
+							if (paMesh->V.is_cmbnd_z(idx) || paMesh->V.is_dirichlet_z(idx)) {
+
+								double cmbnd_current_density = therm_current_density.z;
+								mesh_thermoelectric_net_current_ -= cmbnd_current_density * paMesh->V.h.x * paMesh->V.h.y / 2;
+							}
+						}
+					}
+				}
+				//no thermoelectric effect
+				else paMesh->E[idx] = -1.0 * paMesh->V.grad_diri(idx);
 			}
 			else paMesh->E[idx] = DBL3(0);
 		}
@@ -279,31 +341,109 @@ void Atom_Transport::CalculateElectricalConductivity(bool force_recalculate)
 	}
 #endif
 
-	//Include AMR?
-	if (IsNZ((double)paMesh->amrPercentage)) {
+	//Include AMR or TAMR?
+	if (IsNZ((double)paMesh->amrPercentage) || IsNZ((double)paMesh->tamrPercentage)) {
 
-		//with amr
+		if (IsZ((double)paMesh->tamrPercentage)) {
+
+			//only amr
 #pragma omp parallel for
-		for (int idx = 0; idx < paMesh->elC.linear_size(); idx++) {
+			for (int idx = 0; idx < paMesh->elC.linear_size(); idx++) {
 
-			if (paMesh->elC.is_not_empty(idx)) {
+				if (paMesh->elC.is_not_empty(idx)) {
 
-				double elecCond = paMesh->elecCond;
-				double amrPercentage = paMesh->amrPercentage;
-				paMesh->update_parameters_ecoarse(idx, paMesh->elecCond, elecCond, paMesh->amrPercentage, amrPercentage);
+					double elecCond = paMesh->elecCond;
+					double amrPercentage = paMesh->amrPercentage;
+					paMesh->update_parameters_ecoarse(idx, paMesh->elecCond, elecCond, paMesh->amrPercentage, amrPercentage);
 
-				//get current density value at this conductivity cell
-				DBL3 Jc_value = paMesh->elC[idx] * paMesh->E[idx];
+					//get current density value at this conductivity cell
+					DBL3 jc_value = normalize(paMesh->elC[idx] * paMesh->E[idx]);
 
-				//get M value (M is on n, h mesh so could be different) - only direction is important here
-				DBL3 M_value = paMesh->M1[paMesh->elC.cellidx_to_position(idx)];
+					//get M value (M is on n, h mesh so could be different)
+					DBL3 m_value = normalize(paMesh->M1[paMesh->elC.cellidx_to_position(idx)]);
 
-				double magnitude = Jc_value.norm() * M_value.norm();
-				double dotproduct = 0.0;
+					double dotproduct = jc_value * m_value;
 
-				if (IsNZ(magnitude)) dotproduct = (Jc_value * M_value) / magnitude;
+					paMesh->elC[idx] = elecCond / (1 + amrPercentage * dotproduct*dotproduct / 100);
+				}
+			}
+		}
+		else if (IsZ((double)paMesh->amrPercentage)) {
 
-				paMesh->elC[idx] = elecCond / (1 + amrPercentage * dotproduct*dotproduct / 100);
+			bool use_custom_formula = TAMR_conductivity_equation.is_set();
+
+			//only tamr
+#pragma omp parallel for
+			for (int idx = 0; idx < paMesh->elC.linear_size(); idx++) {
+
+				if (paMesh->elC.is_not_empty(idx)) {
+
+					double elecCond = paMesh->elecCond;
+					double tamrPercentage = paMesh->tamrPercentage;
+					DBL3 mcanis_ea1 = paMesh->mcanis_ea1;
+					DBL3 mcanis_ea2 = paMesh->mcanis_ea2;
+					DBL3 mcanis_ea3 = paMesh->mcanis_ea3;
+					paMesh->update_parameters_ecoarse(idx, paMesh->elecCond, elecCond, paMesh->tamrPercentage, tamrPercentage, paMesh->mcanis_ea1, mcanis_ea1, paMesh->mcanis_ea2, mcanis_ea2, paMesh->mcanis_ea3, mcanis_ea3);
+
+					//get M value (M is on n, h mesh so could be different)
+					DBL3 m_value = normalize(paMesh->M1[paMesh->elC.cellidx_to_position(idx)]);
+
+					double dotprod1 = m_value * mcanis_ea1;
+					double dotprod2 = m_value * mcanis_ea2;
+					double dotprod3 = m_value * mcanis_ea3;
+
+					if (use_custom_formula) {
+
+						paMesh->elC[idx] = elecCond * TAMR_conductivity_equation.evaluate(tamrPercentage / 100, dotprod1, dotprod2, dotprod3);
+					}
+					else {
+
+						//default formula : ro = ro0 * (1 + TAMR * sin^2(theta)), TAMR is the ratio.
+						paMesh->elC[idx] = elecCond / (1 + (tamrPercentage / 100) * (1 - dotprod1 * dotprod1));
+					}
+				}
+			}
+		}
+		else {
+
+			bool use_custom_formula = TAMR_conductivity_equation.is_set();
+
+			//both amr and tamr
+#pragma omp parallel for
+			for (int idx = 0; idx < paMesh->elC.linear_size(); idx++) {
+
+				if (paMesh->elC.is_not_empty(idx)) {
+
+					double elecCond = paMesh->elecCond;
+					double amrPercentage = paMesh->amrPercentage;
+					double tamrPercentage = paMesh->tamrPercentage;
+					DBL3 mcanis_ea1 = paMesh->mcanis_ea1;
+					DBL3 mcanis_ea2 = paMesh->mcanis_ea2;
+					DBL3 mcanis_ea3 = paMesh->mcanis_ea3;
+					paMesh->update_parameters_ecoarse(idx, paMesh->elecCond, elecCond, paMesh->amrPercentage, amrPercentage, paMesh->tamrPercentage, tamrPercentage, paMesh->mcanis_ea1, mcanis_ea1, paMesh->mcanis_ea2, mcanis_ea2, paMesh->mcanis_ea3, mcanis_ea3);
+
+					//get current density value at this conductivity cell
+					DBL3 jc_value = normalize(paMesh->elC[idx] * paMesh->E[idx]);
+
+					//get M value (M is on n, h mesh so could be different)
+					DBL3 m_value = normalize(paMesh->M1[paMesh->elC.cellidx_to_position(idx)]);
+
+					double dotproduct = jc_value * m_value;
+					double dotprod1 = m_value * mcanis_ea1;
+					double dotprod2 = m_value * mcanis_ea2;
+					double dotprod3 = m_value * mcanis_ea3;
+
+					if (use_custom_formula) {
+
+						double resistivity_ratio = (1 / TAMR_conductivity_equation.evaluate(tamrPercentage / 100, dotprod1, dotprod2, dotprod3) + (1 + amrPercentage * dotproduct*dotproduct / 100));
+						paMesh->elC[idx] = elecCond / resistivity_ratio;
+					}
+					else {
+						
+						double resistivity_ratio = (1 + (tamrPercentage / 100) * (1 - dotprod1 * dotprod1)) + (1 + amrPercentage * dotproduct*dotproduct / 100);
+						paMesh->elC[idx] = elecCond / resistivity_ratio;
+					}
+				}
 			}
 		}
 

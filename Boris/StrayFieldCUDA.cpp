@@ -79,7 +79,7 @@ BError StrayFieldCUDA::Initialize(void)
 		if (!pStrayField->strayField.Initialize_MeshTransfer(std::vector< VEC<DBL3>* >(), meshes_out_cpu, MESHTRANSFERTYPE_WEIGHTED)) return error(BERROR_OUTOFMEMORY_CRIT);
 
 		//Now copy mesh transfer object to cuda version
-		if (!strayField()->copy_transfer_info(meshes_out, meshes_out, pStrayField->strayField)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
+		if (!strayField()->copy_transfer_info(meshes_out, meshes_out, pStrayField->strayField.get_transfer())) return error(BERROR_OUTOFGPUMEMORY_CRIT);
 
 		//initialize and calculate the stray field using the base class method
 		InitializeStrayField();

@@ -70,17 +70,31 @@ BError SDemagCUDA::Initialize(void)
 			//array of pointers to input meshes (M) and oputput meshes (Heff) to transfer from and to
 			cu_arr<cuVEC<cuReal3>> pVal_from, pVal_from2;
 			cu_arr<cuVEC<cuReal3>> pVal_to, pVal_to2;
+			//atomistic meshes input / output
+			cu_arr<cuVEC<cuReal3>> pVal_afrom, pVal_ato;
 
 			//identify all existing ferrommagnetic meshes (magnetic computation enabled)
 			for (int idx = 0; idx < (int)pSMesh->pMesh.size(); idx++) {
 
-				if ((*pSMesh)[idx]->MComputation_Enabled() && !(*pSMesh)[idx]->is_atomistic()) {
+				if ((*pSMesh)[idx]->MComputation_Enabled()) {
 
-					pVal_from.push_back((cuVEC<cuReal3>*&)dynamic_cast<Mesh*>((*pSMesh)[idx])->pMeshCUDA->M.get_managed_object());
-					pVal_to.push_back((cuVEC<cuReal3>*&)dynamic_cast<Mesh*>((*pSMesh)[idx])->pMeshCUDA->Heff.get_managed_object());
+					if (!(*pSMesh)[idx]->is_atomistic()) {
 
-					pVal_from2.push_back((cuVEC<cuReal3>*&)dynamic_cast<Mesh*>((*pSMesh)[idx])->pMeshCUDA->M2.get_managed_object());
-					pVal_to2.push_back((cuVEC<cuReal3>*&)dynamic_cast<Mesh*>((*pSMesh)[idx])->pMeshCUDA->Heff2.get_managed_object());
+						//micromagnetic mesh
+
+						pVal_from.push_back((cuVEC<cuReal3>*&)dynamic_cast<Mesh*>((*pSMesh)[idx])->pMeshCUDA->M.get_managed_object());
+						pVal_to.push_back((cuVEC<cuReal3>*&)dynamic_cast<Mesh*>((*pSMesh)[idx])->pMeshCUDA->Heff.get_managed_object());
+
+						pVal_from2.push_back((cuVEC<cuReal3>*&)dynamic_cast<Mesh*>((*pSMesh)[idx])->pMeshCUDA->M2.get_managed_object());
+						pVal_to2.push_back((cuVEC<cuReal3>*&)dynamic_cast<Mesh*>((*pSMesh)[idx])->pMeshCUDA->Heff2.get_managed_object());
+					}
+					else {
+
+						//atomistic mesh
+						
+						pVal_afrom.push_back((cuVEC<cuReal3>*&)dynamic_cast<Atom_Mesh*>((*pSMesh)[idx])->paMeshCUDA->M1.get_managed_object());
+						pVal_ato.push_back((cuVEC<cuReal3>*&)dynamic_cast<Atom_Mesh*>((*pSMesh)[idx])->paMeshCUDA->Heff1.get_managed_object());
+					}
 				}
 			}
 
@@ -88,15 +102,37 @@ BError SDemagCUDA::Initialize(void)
 			error = pSDemag->Initialize_Mesh_Transfer();
 			if (error) return error;
 
-			if (!pSDemag->antiferromagnetic_meshes_present) {
+			if (pVal_from.size()) {
 
-				//Now copy mesh transfer object to cuda version
-				if (!sm_Vals()->copy_transfer_info(pVal_from, pVal_to, pSDemag->sm_Vals)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
+				///////////////////////////////////////////////////////////////////////////////////////////////
+				/////////////////////////////////// ALL FERROMAGNETIC MESHES //////////////////////////////////
+				///////////////////////////////////////////////////////////////////////////////////////////////
+
+				if (!pSDemag->antiferromagnetic_meshes_present) {
+
+					//Now copy mesh transfer object to cuda version
+					if (!sm_Vals()->copy_transfer_info(pVal_from, pVal_to, pSDemag->sm_Vals.get_transfer())) return error(BERROR_OUTOFGPUMEMORY_CRIT);
+				}
+
+				///////////////////////////////////////////////////////////////////////////////////////////////
+				/////////////////////////// AT LEAST ONE ANTIFERROMAGNETIC MESH ///////////////////////////////
+				///////////////////////////////////////////////////////////////////////////////////////////////
+
+				else {
+
+					//Now copy mesh transfer object to cuda version
+					if (!sm_Vals()->copy_transfer_info_averagedinputs_duplicatedoutputs(pVal_from, pVal_from2, pVal_to, pVal_to2, pSDemag->sm_Vals.get_transfer())) return error(BERROR_OUTOFGPUMEMORY_CRIT);
+				}
 			}
-			else {
+
+			///////////////////////////////////////////////////////////////////////////////////////////////
+			/////////////////////////////////////// ATOMISTIC MESHES //////////////////////////////////////
+			///////////////////////////////////////////////////////////////////////////////////////////////
+
+			if (pVal_afrom.size()) {
 
 				//Now copy mesh transfer object to cuda version
-				if (!sm_Vals()->copy_transfer_info_averagedinputs_duplicatedoutputs(pVal_from, pVal_from2, pVal_to, pVal_to2, pSDemag->sm_Vals)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
+				if (!sm_Vals()->copy_transfer2_info(pVal_afrom, pVal_ato, pSDemag->sm_Vals.get_transfer2())) return error(BERROR_OUTOFGPUMEMORY_CRIT);
 			}
 		}
 
@@ -141,7 +177,7 @@ BError SDemagCUDA::Initialize(void)
 				}
 
 				//set all rect collections
-				error = pSDemagCUDA_Demag[idx]->Set_Rect_Collection(Rect_collection, Rect_collection[idx], h_max);
+				error = pSDemagCUDA_Demag[idx]->Set_Rect_Collection(Rect_collection, Rect_collection[idx], h_max, idx);
 				if (error) return error;
 			}
 
@@ -183,7 +219,7 @@ BError SDemagCUDA::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 		if (!pSDemag->use_multilayered_convolution) {
 
 			//only need to uninitialize if n or h have changed
-			if (!CheckDimensions(pSMesh->n_fm, pSMesh->h_fm, pSDemag->Get_PBC())) {
+			if (!CheckDimensions(pSMesh->n_fm, pSMesh->h_fm, pSDemag->Get_PBC()) || cfgMessage == UPDATECONFIG_DEMAG_CONVCHANGE || cfgMessage == UPDATECONFIG_MESHCHANGE) {
 
 				Uninitialize();
 				error = SetDimensions(pSMesh->n_fm, pSMesh->h_fm, true, pSDemag->Get_PBC());
@@ -247,28 +283,34 @@ void SDemagCUDA::UpdateField(void)
 		if (!pSDemag->antiferromagnetic_meshes_present) {
 
 			//transfer values from invidual M meshes to sm_Vals
-			sm_Vals()->transfer_in(pSDemag->sm_Vals.linear_size(), pSDemag->sm_Vals.size_transfer_in());
+			if (pSDemag->sm_Vals.size_transfer_in()) sm_Vals()->transfer_in(pSDemag->sm_Vals.linear_size(), pSDemag->sm_Vals.size_transfer_in());
+			//transfer from atomistic mesh (if any) - clear input only if there was no transfer from micromagnetic meshes, else add in
+			if (pSDemag->sm_Vals.size_transfer2_in()) sm_Vals()->transfer2_in(pSDemag->sm_Vals.linear_size(), pSDemag->sm_Vals.size_transfer2_in(), pSDemag->sm_Vals.size_transfer_in() == 0);
 
 			//only need energy after ode solver step finished
 			if (pSMesh->CurrentTimeStepSolved()) ZeroEnergy();
 
 			Convolute(sm_Vals, sm_Vals, energy, pSMesh->CurrentTimeStepSolved(), true);
 
-			//transfer to individual Heff meshes
-			sm_Vals()->transfer_out(pSDemag->sm_Vals.size_transfer_out());
+			//transfer to individual Heff meshes (micromagnetic and atomistc meshes)
+			if (pSDemag->sm_Vals.size_transfer_out()) sm_Vals()->transfer_out(pSDemag->sm_Vals.size_transfer_out());
+			if (pSDemag->sm_Vals.size_transfer2_out()) sm_Vals()->transfer2_out(pSDemag->sm_Vals.size_transfer2_out());
 		}
 		else {
 
 			//transfer values from invidual M meshes to sm_Vals
-			sm_Vals()->transfer_in_averaged(pSDemag->sm_Vals.linear_size(), pSDemag->sm_Vals.size_transfer_in());
+			if (pSDemag->sm_Vals.size_transfer_in()) sm_Vals()->transfer_in_averaged(pSDemag->sm_Vals.linear_size(), pSDemag->sm_Vals.size_transfer_in());
+			//transfer from atomistic mesh (if any) - clear input only if there was no transfer from micromagnetic meshes, else add in
+			if (pSDemag->sm_Vals.size_transfer2_in()) sm_Vals()->transfer2_in(pSDemag->sm_Vals.linear_size(), pSDemag->sm_Vals.size_transfer2_in(), pSDemag->sm_Vals.size_transfer_in() == 0);
 
 			//only need energy after ode solver step finished
 			if (pSMesh->CurrentTimeStepSolved()) ZeroEnergy();
 
 			Convolute(sm_Vals, sm_Vals, energy, pSMesh->CurrentTimeStepSolved(), true);
 
-			//transfer to individual Heff meshes
-			sm_Vals()->transfer_out_duplicated(pSDemag->sm_Vals.size_transfer_out());
+			//transfer to individual Heff meshes (micromagnetic and atomistc meshes)
+			if (pSDemag->sm_Vals.size_transfer_out()) sm_Vals()->transfer_out_duplicated(pSDemag->sm_Vals.size_transfer_out());
+			if (pSDemag->sm_Vals.size_transfer2_out()) sm_Vals()->transfer2_out(pSDemag->sm_Vals.size_transfer2_out());
 		}
 	}
 
@@ -285,7 +327,7 @@ void SDemagCUDA::UpdateField(void)
 			//////////////////////////////////// ANTIFERROMAGNETIC MESH ///////////////////////////////////
 			///////////////////////////////////////////////////////////////////////////////////////////////
 
-			if (pSDemagCUDA_Demag[idx]->pMeshCUDA->GetMeshType() == MESH_ANTIFERROMAGNETIC) {
+			if (pSDemagCUDA_Demag[idx]->pMeshBaseCUDA->GetMeshType() == MESH_ANTIFERROMAGNETIC) {
 
 				if (pSDemagCUDA_Demag[idx]->do_transfer) {
 
@@ -302,7 +344,7 @@ void SDemagCUDA::UpdateField(void)
 			}
 
 			///////////////////////////////////////////////////////////////////////////////////////////////
-			////////////////////////////////////// FERROMAGNETIC MESH /////////////////////////////////////
+			///////////////////////////////////// OTHER MAGNETIC MESH /////////////////////////////////////
 			///////////////////////////////////////////////////////////////////////////////////////////////
 
 			else {
@@ -317,6 +359,7 @@ void SDemagCUDA::UpdateField(void)
 				}
 				else {
 
+					//transfer is forced for atomistic meshes, so if no transfer required, this must mean a micromagnetic mesh
 					pSDemagCUDA_Demag[idx]->ForwardFFT(pSDemagCUDA_Demag[idx]->pMeshCUDA->M);
 				}
 			}
@@ -346,7 +389,7 @@ void SDemagCUDA::UpdateField(void)
 					//////////////////////////////////// ANTIFERROMAGNETIC MESH ///////////////////////////////////
 					///////////////////////////////////////////////////////////////////////////////////////////////
 
-					if (pSDemagCUDA_Demag[idx]->pMeshCUDA->GetMeshType() == MESH_ANTIFERROMAGNETIC) {
+					if (pSDemagCUDA_Demag[idx]->pMeshBaseCUDA->GetMeshType() == MESH_ANTIFERROMAGNETIC) {
 
 						if (pSDemagCUDA_Demag[idx]->do_transfer) {
 
@@ -389,7 +432,7 @@ void SDemagCUDA::UpdateField(void)
 					}
 
 					///////////////////////////////////////////////////////////////////////////////////////////////
-					////////////////////////////////////// FERROMAGNETIC MESH /////////////////////////////////////
+					///////////////////////////////////// OTHER MAGNETIC MESH /////////////////////////////////////
 					///////////////////////////////////////////////////////////////////////////////////////////////
 
 					else {
@@ -414,6 +457,8 @@ void SDemagCUDA::UpdateField(void)
 							pSDemagCUDA_Demag[idx]->transfer()->transfer_out(pSDemag->pSDemag_Demag[idx]->transfer.size_transfer_out());
 						}
 						else {
+
+							//transfer is forced for atomistic meshes, so if no transfer required, this must mean a micromagnetic mesh
 
 							//do inverse FFT and accumulate energy. Add to Heff in each mesh
 							if (pSDemag->pSDemag_Demag[idx]->Module_Heff.linear_size()) {
@@ -445,7 +490,7 @@ void SDemagCUDA::UpdateField(void)
 					//////////////////////////////////// ANTIFERROMAGNETIC MESH ///////////////////////////////////
 					///////////////////////////////////////////////////////////////////////////////////////////////
 
-					if (pSDemagCUDA_Demag[idx]->pMeshCUDA->GetMeshType() == MESH_ANTIFERROMAGNETIC) {
+					if (pSDemagCUDA_Demag[idx]->pMeshBaseCUDA->GetMeshType() == MESH_ANTIFERROMAGNETIC) {
 
 						if (pSDemagCUDA_Demag[idx]->do_transfer) {
 
@@ -488,7 +533,7 @@ void SDemagCUDA::UpdateField(void)
 					}
 
 					///////////////////////////////////////////////////////////////////////////////////////////////
-					////////////////////////////////////// FERROMAGNETIC MESH /////////////////////////////////////
+					///////////////////////////////////// OTHER MAGNETIC MESH /////////////////////////////////////
 					///////////////////////////////////////////////////////////////////////////////////////////////
 
 					else {
@@ -513,6 +558,8 @@ void SDemagCUDA::UpdateField(void)
 							pSDemagCUDA_Demag[idx]->transfer()->transfer_out(pSDemag->pSDemag_Demag[idx]->transfer.size_transfer_out());
 						}
 						else {
+
+							//transfer is forced for atomistic meshes, so if no transfer required, this must mean a micromagnetic mesh
 
 							//do inverse FFT and accumulate energy. Add to Heff in each mesh
 							if (pSDemag->pSDemag_Demag[idx]->Module_Heff.linear_size()) {
@@ -732,7 +779,7 @@ void SDemagCUDA::UpdateField(void)
 					//////////////////////////////////// ANTIFERROMAGNETIC MESH ///////////////////////////////////
 					///////////////////////////////////////////////////////////////////////////////////////////////
 
-					if (pSDemagCUDA_Demag[idx_mesh]->pMeshCUDA->GetMeshType() == MESH_ANTIFERROMAGNETIC) {
+					if (pSDemagCUDA_Demag[idx_mesh]->pMeshBaseCUDA->GetMeshType() == MESH_ANTIFERROMAGNETIC) {
 						
 						if (pSDemagCUDA_Demag[idx_mesh]->do_transfer) {
 
@@ -784,7 +831,7 @@ void SDemagCUDA::UpdateField(void)
 					}
 
 					///////////////////////////////////////////////////////////////////////////////////////////////
-					////////////////////////////////////// FERROMAGNETIC MESH /////////////////////////////////////
+					///////////////////////////////////// OTHER MAGNETIC MESH /////////////////////////////////////
 					///////////////////////////////////////////////////////////////////////////////////////////////
 
 					else {
@@ -813,6 +860,8 @@ void SDemagCUDA::UpdateField(void)
 						}
 						else {
 							
+							//transfer is forced for atomistic meshes, so if no transfer required, this must mean a micromagnetic mesh
+
 							//do inverse FFT and accumulate energy
 							if (pSDemag->pSDemag_Demag[idx_mesh]->Module_Heff.linear_size()) {
 
@@ -859,8 +908,11 @@ void SDemagCUDA::UpdateField(void)
 
 					for (int idx_mesh = 0; idx_mesh < pSDemagCUDA_Demag.size(); idx_mesh++) {
 
-						//ANTIFERROMAGNETIC
-						if (pSDemagCUDA_Demag[idx_mesh]->pMeshCUDA->GetMeshType() == MESH_ANTIFERROMAGNETIC) {
+						///////////////////////////////////////////////////////////////////////////////////////////////
+						//////////////////////////////////// ANTIFERROMAGNETIC MESH ///////////////////////////////////
+						///////////////////////////////////////////////////////////////////////////////////////////////
+						
+						if (pSDemagCUDA_Demag[idx_mesh]->pMeshBaseCUDA->GetMeshType() == MESH_ANTIFERROMAGNETIC) {
 
 							if (pSDemagCUDA_Demag[idx_mesh]->do_transfer) {
 
@@ -884,7 +936,11 @@ void SDemagCUDA::UpdateField(void)
 									pSDemagCUDA_Demag[idx_mesh]->pMeshCUDA->M, pSDemagCUDA_Demag[idx_mesh]->pMeshCUDA->M2, pSDemagCUDA_Demag[idx_mesh]->selfDemagCoeff);
 							}
 						}
-						//FERROMAGNETIC
+						
+						///////////////////////////////////////////////////////////////////////////////////////////////
+						///////////////////////////////////// OTHER MAGNETIC MESH /////////////////////////////////////
+						///////////////////////////////////////////////////////////////////////////////////////////////
+
 						else {
 
 							if (pSDemagCUDA_Demag[idx_mesh]->do_transfer) {
@@ -900,6 +956,8 @@ void SDemagCUDA::UpdateField(void)
 								pSDemagCUDA_Demag[idx_mesh]->transfer()->transfer_out(pSDemag->pSDemag_Demag[idx_mesh]->transfer.size_transfer_out());
 							}
 							else {
+
+								//transfer is forced for atomistic meshes, so if no transfer required, this must mean a micromagnetic mesh
 
 								//add demag field approximation, including self demag contribution
 								SDemag_EvalSpeedup_AddExtrapField_AddSelf(pSDemag->n_common.dim(),
@@ -922,8 +980,11 @@ void SDemagCUDA::UpdateField(void)
 
 					for (int idx_mesh = 0; idx_mesh < pSDemagCUDA_Demag.size(); idx_mesh++) {
 
-						//ANTIFERROMAGNETIC
-						if (pSDemagCUDA_Demag[idx_mesh]->pMeshCUDA->GetMeshType() == MESH_ANTIFERROMAGNETIC) {
+						///////////////////////////////////////////////////////////////////////////////////////////////
+						//////////////////////////////////// ANTIFERROMAGNETIC MESH ///////////////////////////////////
+						///////////////////////////////////////////////////////////////////////////////////////////////
+
+						if (pSDemagCUDA_Demag[idx_mesh]->pMeshBaseCUDA->GetMeshType() == MESH_ANTIFERROMAGNETIC) {
 
 							if (pSDemagCUDA_Demag[idx_mesh]->do_transfer) {
 
@@ -947,7 +1008,11 @@ void SDemagCUDA::UpdateField(void)
 									pSDemagCUDA_Demag[idx_mesh]->pMeshCUDA->M, pSDemagCUDA_Demag[idx_mesh]->pMeshCUDA->M2, pSDemagCUDA_Demag[idx_mesh]->selfDemagCoeff);
 							}
 						}
-						//FERROMAGNETIC
+
+						///////////////////////////////////////////////////////////////////////////////////////////////
+						///////////////////////////////////// OTHER MAGNETIC MESH /////////////////////////////////////
+						///////////////////////////////////////////////////////////////////////////////////////////////
+
 						else {
 
 							if (pSDemagCUDA_Demag[idx_mesh]->do_transfer) {
@@ -963,6 +1028,8 @@ void SDemagCUDA::UpdateField(void)
 								pSDemagCUDA_Demag[idx_mesh]->transfer()->transfer_out(pSDemag->pSDemag_Demag[idx_mesh]->transfer.size_transfer_out());
 							}
 							else {
+
+								//transfer is forced for atomistic meshes, so if no transfer required, this must mean a micromagnetic mesh
 
 								//add demag field approximation, including self demag contribution
 								SDemag_EvalSpeedup_AddExtrapField_AddSelf(pSDemag->n_common.dim(),
@@ -984,8 +1051,11 @@ void SDemagCUDA::UpdateField(void)
 
 					for (int idx_mesh = 0; idx_mesh < pSDemagCUDA_Demag.size(); idx_mesh++) {
 
-						//ANTIFERROMAGNETIC
-						if (pSDemagCUDA_Demag[idx_mesh]->pMeshCUDA->GetMeshType() == MESH_ANTIFERROMAGNETIC) {
+						///////////////////////////////////////////////////////////////////////////////////////////////
+						//////////////////////////////////// ANTIFERROMAGNETIC MESH ///////////////////////////////////
+						///////////////////////////////////////////////////////////////////////////////////////////////
+
+						if (pSDemagCUDA_Demag[idx_mesh]->pMeshBaseCUDA->GetMeshType() == MESH_ANTIFERROMAGNETIC) {
 
 							if (pSDemagCUDA_Demag[idx_mesh]->do_transfer) {
 
@@ -1009,7 +1079,11 @@ void SDemagCUDA::UpdateField(void)
 									pSDemagCUDA_Demag[idx_mesh]->pMeshCUDA->M, pSDemagCUDA_Demag[idx_mesh]->pMeshCUDA->M2, pSDemagCUDA_Demag[idx_mesh]->selfDemagCoeff);
 							}
 						}
-						//FERROMAGNETIC
+
+						///////////////////////////////////////////////////////////////////////////////////////////////
+						///////////////////////////////////// OTHER MAGNETIC MESH /////////////////////////////////////
+						///////////////////////////////////////////////////////////////////////////////////////////////
+
 						else {
 
 							if (pSDemagCUDA_Demag[idx_mesh]->do_transfer) {
@@ -1025,6 +1099,8 @@ void SDemagCUDA::UpdateField(void)
 								pSDemagCUDA_Demag[idx_mesh]->transfer()->transfer_out(pSDemag->pSDemag_Demag[idx_mesh]->transfer.size_transfer_out());
 							}
 							else {
+
+								//transfer is forced for atomistic meshes, so if no transfer required, this must mean a micromagnetic mesh
 
 								//add demag field approximation, including self demag contribution
 								SDemag_EvalSpeedup_AddExtrapField_AddSelf(pSDemag->n_common.dim(),
@@ -1048,8 +1124,11 @@ void SDemagCUDA::UpdateField(void)
 
 					for (int idx_mesh = 0; idx_mesh < pSDemagCUDA_Demag.size(); idx_mesh++) {
 
-						//ANTIFERROMAGNETIC
-						if (pSDemagCUDA_Demag[idx_mesh]->pMeshCUDA->GetMeshType() == MESH_ANTIFERROMAGNETIC) {
+						///////////////////////////////////////////////////////////////////////////////////////////////
+						//////////////////////////////////// ANTIFERROMAGNETIC MESH ///////////////////////////////////
+						///////////////////////////////////////////////////////////////////////////////////////////////
+
+						if (pSDemagCUDA_Demag[idx_mesh]->pMeshBaseCUDA->GetMeshType() == MESH_ANTIFERROMAGNETIC) {
 
 							if (pSDemagCUDA_Demag[idx_mesh]->do_transfer) {
 
@@ -1073,7 +1152,11 @@ void SDemagCUDA::UpdateField(void)
 									pSDemagCUDA_Demag[idx_mesh]->pMeshCUDA->M, pSDemagCUDA_Demag[idx_mesh]->pMeshCUDA->M2, pSDemagCUDA_Demag[idx_mesh]->selfDemagCoeff);
 							}
 						}
-						//FERROMAGNETIC
+
+						///////////////////////////////////////////////////////////////////////////////////////////////
+						///////////////////////////////////// OTHER MAGNETIC MESH /////////////////////////////////////
+						///////////////////////////////////////////////////////////////////////////////////////////////
+
 						else {
 
 							if (pSDemagCUDA_Demag[idx_mesh]->do_transfer) {
@@ -1089,6 +1172,8 @@ void SDemagCUDA::UpdateField(void)
 								pSDemagCUDA_Demag[idx_mesh]->transfer()->transfer_out(pSDemag->pSDemag_Demag[idx_mesh]->transfer.size_transfer_out());
 							}
 							else {
+
+								//transfer is forced for atomistic meshes, so if no transfer required, this must mean a micromagnetic mesh
 
 								//add demag field approximation, including self demag contribution
 								SDemag_EvalSpeedup_AddExtrapField_AddSelf(pSDemag->n_common.dim(),
@@ -1111,8 +1196,11 @@ void SDemagCUDA::UpdateField(void)
 
 					for (int idx_mesh = 0; idx_mesh < pSDemagCUDA_Demag.size(); idx_mesh++) {
 
-						//ANTIFERROMAGNETIC
-						if (pSDemagCUDA_Demag[idx_mesh]->pMeshCUDA->GetMeshType() == MESH_ANTIFERROMAGNETIC) {
+						///////////////////////////////////////////////////////////////////////////////////////////////
+						//////////////////////////////////// ANTIFERROMAGNETIC MESH ///////////////////////////////////
+						///////////////////////////////////////////////////////////////////////////////////////////////
+
+						if (pSDemagCUDA_Demag[idx_mesh]->pMeshBaseCUDA->GetMeshType() == MESH_ANTIFERROMAGNETIC) {
 
 							if (pSDemagCUDA_Demag[idx_mesh]->do_transfer) {
 
@@ -1136,7 +1224,11 @@ void SDemagCUDA::UpdateField(void)
 									pSDemagCUDA_Demag[idx_mesh]->pMeshCUDA->M, pSDemagCUDA_Demag[idx_mesh]->pMeshCUDA->M2, pSDemagCUDA_Demag[idx_mesh]->selfDemagCoeff);
 							}
 						}
-						//FERROMAGNETIC
+						
+						///////////////////////////////////////////////////////////////////////////////////////////////
+						///////////////////////////////////// OTHER MAGNETIC MESH /////////////////////////////////////
+						///////////////////////////////////////////////////////////////////////////////////////////////
+
 						else {
 
 							if (pSDemagCUDA_Demag[idx_mesh]->do_transfer) {
@@ -1152,6 +1244,8 @@ void SDemagCUDA::UpdateField(void)
 								pSDemagCUDA_Demag[idx_mesh]->transfer()->transfer_out(pSDemag->pSDemag_Demag[idx_mesh]->transfer.size_transfer_out());
 							}
 							else {
+
+								//transfer is forced for atomistic meshes, so if no transfer required, this must mean a micromagnetic mesh
 
 								//add demag field approximation, including self demag contribution
 								SDemag_EvalSpeedup_AddExtrapField_AddSelf(pSDemag->n_common.dim(),
@@ -1168,8 +1262,11 @@ void SDemagCUDA::UpdateField(void)
 
 					for (int idx_mesh = 0; idx_mesh < pSDemagCUDA_Demag.size(); idx_mesh++) {
 
-						//ANTIFERROMAGNETIC
-						if (pSDemagCUDA_Demag[idx_mesh]->pMeshCUDA->GetMeshType() == MESH_ANTIFERROMAGNETIC) {
+						///////////////////////////////////////////////////////////////////////////////////////////////
+						//////////////////////////////////// ANTIFERROMAGNETIC MESH ///////////////////////////////////
+						///////////////////////////////////////////////////////////////////////////////////////////////
+
+						if (pSDemagCUDA_Demag[idx_mesh]->pMeshBaseCUDA->GetMeshType() == MESH_ANTIFERROMAGNETIC) {
 
 							if (pSDemagCUDA_Demag[idx_mesh]->do_transfer) {
 
@@ -1191,7 +1288,11 @@ void SDemagCUDA::UpdateField(void)
 									pSDemagCUDA_Demag[idx_mesh]->pMeshCUDA->M, pSDemagCUDA_Demag[idx_mesh]->pMeshCUDA->M2, pSDemagCUDA_Demag[idx_mesh]->selfDemagCoeff);
 							}
 						}
-						//FERROMAGNETIC
+						
+						///////////////////////////////////////////////////////////////////////////////////////////////
+						///////////////////////////////////// OTHER MAGNETIC MESH /////////////////////////////////////
+						///////////////////////////////////////////////////////////////////////////////////////////////
+
 						else {
 
 							if (pSDemagCUDA_Demag[idx_mesh]->do_transfer) {
@@ -1206,6 +1307,8 @@ void SDemagCUDA::UpdateField(void)
 								pSDemagCUDA_Demag[idx_mesh]->transfer()->transfer_out(pSDemag->pSDemag_Demag[idx_mesh]->transfer.size_transfer_out());
 							}
 							else {
+
+								//transfer is forced for atomistic meshes, so if no transfer required, this must mean a micromagnetic mesh
 
 								//add demag field approximation, including self demag contribution
 								SDemag_EvalSpeedup_AddExtrapField_AddSelf(pSDemag->n_common.dim(),

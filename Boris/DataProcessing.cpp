@@ -1520,7 +1520,7 @@ BError DPArrays::fit_sot(VEC<DBL3>& T, VEC_VC<DBL3>& M, VEC_VC<DBL3>& J, Rect re
 
 	//change the rectangle to absolute coordinates
 	rectangle += M.rect.s;
-
+	
 	//get contacting rectangle between J and M, as well as intersection with the user specified rectangle
 	Rect contact_rect = M.rect.get_intersection(J.rect).get_intersection(rectangle);
 
@@ -1532,10 +1532,10 @@ BError DPArrays::fit_sot(VEC<DBL3>& T, VEC_VC<DBL3>& M, VEC_VC<DBL3>& J, Rect re
 
 	if (!contact_rect.IsPlane() || IsNZ(contact_rect.height())) {
 
-		//ERROR: contacting meshes must be stacked in the z direction.
-		return error(BERROR_INCORRECTCONFIG);
+		//ERROR: contacting meshes must be stacked in the z direction; special case where M and J have same rectangle (same mesh) is valid
+		if (M.rect != J.rect) return error(BERROR_INCORRECTCONFIG);
 	}
-
+	
 	double dh = M.h.z;
 
 	Box cells_box = M.box_from_rect_max(contact_rect);
@@ -1553,13 +1553,20 @@ BError DPArrays::fit_sot(VEC<DBL3>& T, VEC_VC<DBL3>& M, VEC_VC<DBL3>& J, Rect re
 				DBL3 position = M.cellidx_to_position(INT3(i, j, k));
 				DBL3 position_J;
 
-				if (M.rect.s.z > J.rect.s.z) {
+				if (M.rect != J.rect) {
 
-					position_J = position + M.rect.s - J.rect.s - DBL3(0, 0, M.h.z / 2) - DBL3(0, 0, J.h.z / 2);
+					if (M.rect.s.z > J.rect.s.z) {
+
+						position_J = position + M.rect.s - J.rect.s - DBL3(0, 0, M.h.z / 2) - DBL3(0, 0, J.h.z / 2);
+					}
+					else {
+
+						position_J = position + M.rect.s - J.rect.s + DBL3(0, 0, M.h.z / 2) + DBL3(0, 0, J.h.z / 2);
+					}
 				}
 				else {
 
-					position_J = position + M.rect.s - J.rect.s + DBL3(0, 0, M.h.z / 2) + DBL3(0, 0, J.h.z / 2);
+					position_J = position;
 				}
 
 				int idx_M = M.position_to_cellidx(position);
@@ -1619,8 +1626,8 @@ BError DPArrays::fit_sotstt(VEC<DBL3>& T, VEC_VC<DBL3>& M, VEC_VC<DBL3>& J_hm, V
 
 	if (!contact_rect.IsPlane() || IsNZ(contact_rect.height())) {
 
-		//ERROR: contacting meshes must be stacked in the z direction.
-		return error(BERROR_INCORRECTCONFIG);
+		//ERROR: contacting meshes must be stacked in the z direction; special case where M and J have same rectangle (same mesh) is valid
+		if (M.rect != J_hm.rect) return error(BERROR_INCORRECTCONFIG);
 	}
 
 	double dh = M.h.z;
@@ -1645,13 +1652,20 @@ BError DPArrays::fit_sotstt(VEC<DBL3>& T, VEC_VC<DBL3>& M, VEC_VC<DBL3>& J_hm, V
 				DBL3 position = M.cellidx_to_position(INT3(i, j, k));
 				DBL3 position_J_hm;
 				
-				if (M.rect.s.z > J_hm.rect.s.z) {
+				if (M.rect != J_hm.rect) {
 
-					position_J_hm = position + M.rect.s - J_hm.rect.s - DBL3(0, 0, M.h.z / 2) - DBL3(0, 0, J_hm.h.z / 2);
+					if (M.rect.s.z > J_hm.rect.s.z) {
+
+						position_J_hm = position + M.rect.s - J_hm.rect.s - DBL3(0, 0, M.h.z / 2) - DBL3(0, 0, J_hm.h.z / 2);
+					}
+					else {
+
+						position_J_hm = position + M.rect.s - J_hm.rect.s + DBL3(0, 0, M.h.z / 2) + DBL3(0, 0, J_hm.h.z / 2);
+					}
 				}
 				else {
 
-					position_J_hm = position + M.rect.s - J_hm.rect.s + DBL3(0, 0, M.h.z / 2) + DBL3(0, 0, J_hm.h.z / 2);
+					position_J_hm = position;
 				}
 
 				int idx_M = M.position_to_cellidx(position);

@@ -13,7 +13,7 @@ enum MOD_ {
 	MOD_EXCHANGE = 4, MOD_DMEXCHANGE = 5, MOD_IDMEXCHANGE = 6, MOD_VIDMEXCHANGE = 26, MOD_SURFEXCHANGE = 7,
 	
 	//others
-	MOD_ZEEMAN = 8, MOD_ROUGHNESS = 18, MOD_MELASTIC = 20, MOD_MOPTICAL = 21,
+	MOD_ZEEMAN = 8, MOD_ROUGHNESS = 18, MOD_MOPTICAL = 21,
 	
 	//anisotropy
 	MOD_ANIUNI = 9, MOD_ANICUBI = 10, MOD_ANIBI = 24, MOD_ANITENS = 25,
@@ -30,10 +30,13 @@ enum MOD_ {
 	//heat
 	MOD_HEAT = 15, MODS_SHEAT = 16,
 	
+	//elastodynamics
+	MOD_MELASTIC = 20, MODS_SMELASTIC = 29,
+
 	//spin torque
 	MOD_SOTFIELD = 17, MOD_STFIELD = 23,
 	
 	//atomistic dipole-dipole
 	MOD_ATOM_DIPOLEDIPOLE = 22
 }; 
-//highest integer : 28
+//highest integer : 29

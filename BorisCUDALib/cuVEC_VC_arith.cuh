@@ -27,9 +27,6 @@ template void cuVEC_VC<double>::scale_values(size_t size, cuBReal constant);
 template void cuVEC_VC<cuFLT3>::scale_values(size_t size, cuBReal constant);
 template void cuVEC_VC<cuDBL3>::scale_values(size_t size, cuBReal constant);
 
-template void cuVEC_VC<cuFLT33>::scale_values(size_t size, cuBReal constant);
-template void cuVEC_VC<cuDBL33>::scale_values(size_t size, cuBReal constant);
-
 //scale all stored values by the given constant
 template <typename VType>
 void cuVEC_VC<VType>::scale_values(size_t size, cuBReal constant)

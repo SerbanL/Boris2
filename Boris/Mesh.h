@@ -168,6 +168,28 @@ private:
 	//update parameters in the list for spatial dependence only - single parameter version
 	template <typename PType, typename SType>
 	void update_parameters_tcoarse_full(int tcell_idx, MatP<PType, SType>& matp, PType& matp_value);
+	
+	//UPDATER S COARSENESS - PRIVATE
+
+	//SPATIAL DEPENDENCE ONLY - NO POSITION YET
+
+	//update parameters in the list for spatial dependence only
+	template <typename PType, typename SType, typename ... MeshParam_List>
+	void update_parameters_scoarse_spatial(int scell_idx, MatP<PType, SType>& matp, PType& matp_value, MeshParam_List& ... params);
+
+	//update parameters in the list for spatial dependence only - single parameter version; position not calculated
+	template <typename PType, typename SType>
+	void update_parameters_scoarse_spatial(int scell_idx, MatP<PType, SType>& matp, PType& matp_value);
+
+	//SPATIAL AND TEMPERATURE DEPENDENCE - NO POSITION YET
+
+	//update parameters in the list for spatial dependence only
+	template <typename PType, typename SType, typename ... MeshParam_List>
+	void update_parameters_scoarse_full(int scell_idx, MatP<PType, SType>& matp, PType& matp_value, MeshParam_List& ... params);
+
+	//update parameters in the list for spatial dependence only - single parameter version
+	template <typename PType, typename SType>
+	void update_parameters_scoarse_full(int scell_idx, MatP<PType, SType>& matp, PType& matp_value);
 
 public:
 	
@@ -224,25 +246,31 @@ public:
 
 	//UPDATER M COARSENESS - PUBLIC
 
-	//Update parameter values if temperature dependent at the given cell index - M cell index; position not calculated
+	//Update parameter values if temperature and/or spatially dependent at the given cell index - M cell index; position not calculated
 	template <typename ... MeshParam_List>
 	void update_parameters_mcoarse(int mcell_idx, MeshParam_List& ... params);
 
 	//UPDATER E COARSENESS - PUBLIC
 
-	//Update parameter values if temperature dependent at the given cell index - M cell index; position not calculated
+	//Update parameter values if temperature and/or spatially dependent at the given cell index - V cell index; position not calculated
 	template <typename ... MeshParam_List>
 	void update_parameters_ecoarse(int ecell_idx, MeshParam_List& ... params);
 
 	//UPDATER T COARSENESS - PUBLIC
 
-	//Update parameter values if temperature dependent at the given cell index - M cell index; position not calculated
+	//Update parameter values if temperature and/or spatially dependent at the given cell index - Temp cell index; position not calculated
 	template <typename ... MeshParam_List>
 	void update_parameters_tcoarse(int tcell_idx, MeshParam_List& ... params);
 
+	//UPDATER S COARSENESS - PUBLIC
+
+	//Update parameter values if temperature and/or spatially dependent at the given cell index - u_disp cell index; position not calculated
+	template <typename ... MeshParam_List>
+	void update_parameters_scoarse(int scell_idx, MeshParam_List& ... params);
+
 	//UPDATER POSITION KNOWN - PUBLIC
 
-	//Update parameter values if temperature dependent at the given cell index - M cell index; position not calculated
+	//Update parameter values if temperature and/or spatially dependent at the given position
 	template <typename ... MeshParam_List>
 	void update_parameters_atposition(const DBL3& position, MeshParam_List& ... params);
 
@@ -294,6 +322,7 @@ public:
 	BError SetMeshMCellsize(DBL3 h_m_);
 
 	double Get_NonEmpty_Magnetic_Volume(void) { return M.get_nonempty_cells() * M.h.dim(); }
+	int Get_NonEmpty_Magnetic_Cells(void) { return M.get_nonempty_cells(); }
 
 	//----------------------------------- ENABLED MESH PROPERTIES CHECKERS
 
@@ -354,6 +383,10 @@ public:
 	DBL2 GetAtomicMoment_AFM(void) { return atomic_moment_AFM; }
 
 	DBL4 GetTcCoupling(void) { DBL2 tau_intra = tau_ii; DBL2 tau_inter = tau_ij; return DBL4(tau_intra.i, tau_intra.j, tau_inter.i, tau_inter.j); }
+
+	//get set strain equations (from MElastic module)
+	std::string Get_StrainEquation(void);
+	std::string Get_ShearStrainEquation(void);
 
 	//------Implementing MeshBase
 

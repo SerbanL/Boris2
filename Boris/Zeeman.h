@@ -36,6 +36,9 @@ private:
 	//Update TEquation object with user constants values
 	void UpdateTEquationUserConstants(bool makeCuda = true);
 
+	//setup globalField transfer
+	BError InitializeGlobalField(void);
+
 public:
 
 	Zeeman(Mesh *pMesh_);

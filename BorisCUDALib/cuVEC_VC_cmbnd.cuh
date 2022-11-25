@@ -12,9 +12,9 @@
 
 //-------------------- GLOBAL
 
-template <typename VType, typename Class_CMBNDs, typename Class_CMBNDp>
+template <typename VType, typename cuVEC_sec, typename Class_CMBNDs, typename Class_CMBNDp>
 __global__ void set_cmbnd_continuous_kernel(
-	cuVEC_VC<VType>& V_sec, cuVEC_VC<VType>& V_pri, 
+	cuVEC_sec& V_sec, cuVEC_VC<VType>& V_pri,
 	Class_CMBNDs& cmbndFuncs_sec, Class_CMBNDp& cmbndFuncs_pri, 
 	CMBNDInfoCUDA& contact)
 {
@@ -79,10 +79,10 @@ __global__ void set_cmbnd_continuous_kernel(
 //-------------------- LAUNCHER
 
 template <typename VType>
-template <typename Class_CMBNDs, typename Class_CMBNDp>
-__host__ void cuVEC_VC<VType>::set_cmbnd_continuous(size_t size, cuVEC_VC<VType>& V_sec, Class_CMBNDs& cmbndFuncs_sec, Class_CMBNDp& cmbndFuncs_pri, CMBNDInfoCUDA& contact)
+template <typename cuVEC_sec, typename Class_CMBNDs, typename Class_CMBNDp>
+__host__ void cuVEC_VC<VType>::set_cmbnd_continuous(size_t size, cu_obj<cuVEC_sec>& V_sec, Class_CMBNDs& cmbndFuncs_sec, Class_CMBNDp& cmbndFuncs_pri, CMBNDInfoCUDA& contact)
 {	
-	set_cmbnd_continuous_kernel <<< (size + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (V_sec, *this, cmbndFuncs_sec, cmbndFuncs_pri, contact);
+	set_cmbnd_continuous_kernel <<< (size + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> ((cuVEC_sec&)V_sec, *this, cmbndFuncs_sec, cmbndFuncs_pri, contact);
 }
 
 //--------------------------------------------CALCULATE COMPOSITE MEDIA BOUNDARY VALUES : CONTINUOUS FLUX ONLY

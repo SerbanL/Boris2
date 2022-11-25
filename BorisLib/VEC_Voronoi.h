@@ -12,14 +12,14 @@
 //----------------------------------------------------- GENERATE 2D
 
 template <typename VType>
-void VEC<VType>::GenerateVoronoi2D(double spacing, BorisRand& prng, std::function<VType(void)>& value_generator)
+void VEC<VType>::aux_generate_Voronoi2D(double spacing, BorisRand& prng, std::function<VType(void)>& value_generator)
 {
 	//spacing determines number of voronoi cells
 	int num_cells = round((rect.e.x - rect.s.x) * (rect.e.y - rect.s.y) / (spacing * spacing));
 
 	//generate voronoi cell sites and coefficients for each cell
 	std::vector<std::pair<DBL2, VType>> sites;
-	if (!malloc_vector(sites, num_cells)) return;
+	if (!num_cells || !malloc_vector(sites, num_cells)) return;
 
 	//generate sites first
 	for (int idx = 0; idx < sites.size(); idx++) {
@@ -72,14 +72,14 @@ void VEC<VType>::GenerateVoronoi2D(double spacing, BorisRand& prng, std::functio
 //----------------------------------------------------- GENERATE 3D
 
 template <typename VType>
-void VEC<VType>::GenerateVoronoi3D(double spacing, BorisRand& prng, std::function<VType(void)>& value_generator)
+void VEC<VType>::aux_generate_Voronoi3D(double spacing, BorisRand& prng, std::function<VType(void)>& value_generator)
 {
 	//spacing determines number of voronoi cells
 	int num_cells = round((rect.e.x - rect.s.x) * (rect.e.y - rect.s.y) * (rect.e.z - rect.s.z) / (spacing * spacing * spacing));
 
 	//generate voronoi cell sites and coefficients for each cell
 	std::vector<std::pair<DBL3, VType>> sites;
-	if (!malloc_vector(sites, num_cells)) return;
+	if (!num_cells || !malloc_vector(sites, num_cells)) return;
 
 	//generate sites first
 	for (int idx = 0; idx < sites.size(); idx++) {
@@ -135,7 +135,7 @@ void VEC<VType>::GenerateVoronoi3D(double spacing, BorisRand& prng, std::functio
 //----------------------------------------------------- GENERATE 2D BOUNDARY
 
 template <typename VType>
-void VEC<VType>::GenerateVoronoiBoundary2D(double spacing, VType base_value, BorisRand& prng, std::function<VType(void)>& value_generator)
+void VEC<VType>::aux_generate_VoronoiBoundary2D(double spacing, VType base_value, BorisRand& prng, std::function<VType(void)>& value_generator)
 {
 	//spacing determines number of voronoi cells
 	int num_cells = round((rect.e.x - rect.s.x) * (rect.e.y - rect.s.y) / (spacing * spacing));
@@ -225,7 +225,7 @@ void VEC<VType>::GenerateVoronoiBoundary2D(double spacing, VType base_value, Bor
 //----------------------------------------------------- GENERATE 3D BOUNDARY
 
 template <typename VType>
-void VEC<VType>::GenerateVoronoiBoundary3D(double spacing, VType base_value, BorisRand& prng, std::function<VType(void)>& value_generator)
+void VEC<VType>::aux_generate_VoronoiBoundary3D(double spacing, VType base_value, BorisRand& prng, std::function<VType(void)>& value_generator)
 {
 	//spacing determines number of voronoi cells
 	int num_cells = round((rect.e.x - rect.s.x) * (rect.e.y - rect.s.y) * (rect.e.z - rect.s.z) / (spacing * spacing * spacing));
@@ -320,7 +320,7 @@ void VEC<VType>::GenerateVoronoiBoundary3D(double spacing, VType base_value, Bor
 
 //voronoi 2D: set VEC dimensions (force 2D in xy plane) and generate random values in the given range with each value fixed in a voronoi cell, and average spacing (prng instantiated with given seed).
 template <typename VType>
-bool VEC<VType>::generate_voronoi2d(DBL3 new_h, Rect new_rect, DBL2 range, double spacing, unsigned seed)
+bool VEC<VType>::generate_Voronoi2D(DBL3 new_h, Rect new_rect, DBL2 range, double spacing, unsigned seed)
 {
 	//force 2D in xy plane
 	new_h.k = new_rect.size().k;
@@ -334,14 +334,14 @@ bool VEC<VType>::generate_voronoi2d(DBL3 new_h, Rect new_rect, DBL2 range, doubl
 		return prng.rand() * (range.j - range.i) + range.i;
 	};
 
-	GenerateVoronoi2D(spacing, prng, value_generator);
+	aux_generate_Voronoi2D(spacing, prng, value_generator);
 
 	return true;
 }
 
 //voronoi 3D: set VEC dimensions and generate random values in the given range with each value fixed in a voronoi cell, and average spacing (prng instantiated with given seed).
 template <typename VType>
-bool VEC<VType>::generate_voronoi3d(DBL3 new_h, Rect new_rect, DBL2 range, double spacing, unsigned seed)
+bool VEC<VType>::generate_Voronoi3D(DBL3 new_h, Rect new_rect, DBL2 range, double spacing, unsigned seed)
 {
 	if (!resize(new_h, new_rect) || !spacing) return false;
 
@@ -352,14 +352,14 @@ bool VEC<VType>::generate_voronoi3d(DBL3 new_h, Rect new_rect, DBL2 range, doubl
 		return prng.rand() * (range.j - range.i) + range.i;
 	};
 
-	GenerateVoronoi3D(spacing, prng, value_generator);
+	aux_generate_Voronoi3D(spacing, prng, value_generator);
 
 	return true;
 }
 
 //voronoi boundary 2D: set VEC dimensions (force 2D in xy plane) and generate voronoi 2d tessellation with average spacing. Set coefficient values randomly in the given range only at the Voronoi cell boundaries (prng instantiated with given seed).
 template <typename VType>
-bool VEC<VType>::generate_voronoiboundary2d(DBL3 new_h, Rect new_rect, DBL2 range, VType base_value, double spacing, unsigned seed)
+bool VEC<VType>::generate_VoronoiBoundary2D(DBL3 new_h, Rect new_rect, DBL2 range, VType base_value, double spacing, unsigned seed)
 {
 	//force 2D in xy plane
 	new_h.k = new_rect.size().k;
@@ -373,14 +373,14 @@ bool VEC<VType>::generate_voronoiboundary2d(DBL3 new_h, Rect new_rect, DBL2 rang
 		return prng.rand() * (range.j - range.i) + range.i;
 	};
 
-	GenerateVoronoiBoundary2D(spacing, base_value, prng, value_generator);
+	aux_generate_VoronoiBoundary2D(spacing, base_value, prng, value_generator);
 
 	return true;
 }
 
 //voronoi boundary 3D: set VEC dimensions and generate voronoi 3d tessellation with average spacing. Set coefficient values randomly in the given range only at the Voronoi cell boundaries (prng instantiated with given seed).
 template <typename VType>
-bool VEC<VType>::generate_voronoiboundary3d(DBL3 new_h, Rect new_rect, DBL2 range, VType base_value, double spacing, unsigned seed)
+bool VEC<VType>::generate_VoronoiBoundary3D(DBL3 new_h, Rect new_rect, DBL2 range, VType base_value, double spacing, unsigned seed)
 {
 	if (!resize(new_h, new_rect) || !spacing) return false;
 
@@ -391,7 +391,7 @@ bool VEC<VType>::generate_voronoiboundary3d(DBL3 new_h, Rect new_rect, DBL2 rang
 		return prng.rand() * (range.j - range.i) + range.i;
 	};
 
-	GenerateVoronoiBoundary3D(spacing, base_value, prng, value_generator);
+	aux_generate_VoronoiBoundary3D(spacing, base_value, prng, value_generator);
 
 	return true;
 }
@@ -399,7 +399,7 @@ bool VEC<VType>::generate_voronoiboundary3d(DBL3 new_h, Rect new_rect, DBL2 rang
 //voronoi rotations 2D: set VEC dimensions (force 2D in xy plane) and generate voronoi 2d tessellation with average spacing. This method is applicable only to DBL3 PType, where a rotation operation is applied, fixed in each Voronoi cell. 
 //The rotation uses the values for polar (theta) and azimuthal (phi) angles specified in given ranges. prng instantiated with given seed.
 template <>
-inline bool VEC<DBL3>::generate_voronoirotation2d(DBL3 new_h, Rect new_rect, DBL2 theta, DBL2 phi, double spacing, unsigned seed)
+inline bool VEC<DBL3>::generate_VoronoiRotation2D(DBL3 new_h, Rect new_rect, DBL2 theta, DBL2 phi, double spacing, unsigned seed)
 {
 	//force 2D in xy plane
 	new_h.k = new_rect.size().k;
@@ -418,7 +418,7 @@ inline bool VEC<DBL3>::generate_voronoirotation2d(DBL3 new_h, Rect new_rect, DBL
 		return unit_vector;
 	};
 
-	GenerateVoronoi2D(spacing, prng, value_generator);
+	aux_generate_Voronoi2D(spacing, prng, value_generator);
 	
 	return true;
 }
@@ -426,7 +426,7 @@ inline bool VEC<DBL3>::generate_voronoirotation2d(DBL3 new_h, Rect new_rect, DBL
 //voronoi rotations 3D: set VEC dimensions and generate voronoi 3d tessellation with average spacing. This method is applicable only to DBL3 PType, where a rotation operation is applied, fixed in each Voronoi cell. 
 //The rotation uses the values for polar (theta) and azimuthal (phi) angles specified in given ranges in degrees. prng instantiated with given seed.
 template <>
-inline bool VEC<DBL3>::generate_voronoirotation3d(DBL3 new_h, Rect new_rect, DBL2 theta, DBL2 phi, double spacing, unsigned seed)
+inline bool VEC<DBL3>::generate_VoronoiRotation3D(DBL3 new_h, Rect new_rect, DBL2 theta, DBL2 phi, double spacing, unsigned seed)
 {
 	if (!resize(new_h, new_rect) || !spacing) return false;
 
@@ -442,7 +442,7 @@ inline bool VEC<DBL3>::generate_voronoirotation3d(DBL3 new_h, Rect new_rect, DBL
 		return unit_vector;
 	};
 
-	GenerateVoronoi3D(spacing, prng, value_generator);
+	aux_generate_Voronoi3D(spacing, prng, value_generator);
 
 	return true;
 }

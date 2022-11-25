@@ -322,6 +322,38 @@ VType VEC_VC<VType>::get_dirichlet_value(int dirichlet_flag, int cell_idx) const
 	return VType();
 }
 
+//set dirichlet value depending on flag, only for this cell
+template <typename VType>
+void VEC_VC<VType>::set_dirichlet_value(int dirichlet_flag, int cell_idx, VType value)
+{
+	switch (dirichlet_flag) {
+
+	case NF2_DIRICHLETPX:
+		dirichlet_nx[((cell_idx / VEC<VType>::n.x) % VEC<VType>::n.y) + (cell_idx / (VEC<VType>::n.x*VEC<VType>::n.y))*VEC<VType>::n.y] = value;
+		break;
+
+	case NF2_DIRICHLETNX:
+		dirichlet_px[((cell_idx / VEC<VType>::n.x) % VEC<VType>::n.y) + (cell_idx / (VEC<VType>::n.x*VEC<VType>::n.y))*VEC<VType>::n.y] = value;
+		break;
+
+	case NF2_DIRICHLETPY:
+		dirichlet_ny[(cell_idx % VEC<VType>::n.x) + (cell_idx / (VEC<VType>::n.x*VEC<VType>::n.y))*VEC<VType>::n.x] = value;
+		break;
+
+	case NF2_DIRICHLETNY:
+		dirichlet_py[(cell_idx % VEC<VType>::n.x) + (cell_idx / (VEC<VType>::n.x*VEC<VType>::n.y))*VEC<VType>::n.x] = value;
+		break;
+
+	case NF2_DIRICHLETPZ:
+		dirichlet_nz[(cell_idx % VEC<VType>::n.x) + ((cell_idx / VEC<VType>::n.x) % VEC<VType>::n.y)*VEC<VType>::n.x] = value;
+		break;
+
+	case NF2_DIRICHLETNZ:
+		dirichlet_pz[(cell_idx % VEC<VType>::n.x) + ((cell_idx / VEC<VType>::n.x) % VEC<VType>::n.y)*VEC<VType>::n.x] = value;
+		break;
+	}
+}
+
 //set robin flags from robin values and shape. Doesn't affect any other flags. Call from set_ngbrFlags after counting neighbors, and after setting robin values
 template <typename VType>
 void VEC_VC<VType>::set_robin_flags(void)
@@ -440,7 +472,6 @@ bool VEC_VC<VType>::set_dirichlet_conditions(const Rect& surface_rect, VType val
 	if (!VEC<VType>::rect.intersects(surface_rect)) return true;
 
 	Rect intersection = VEC<VType>::rect.get_intersection(surface_rect);
-	//if (!intersection.IsPlane()) return true;
 
 	auto set_dirichlet_value = [&](Rect intersection, VType value, int flag_value) -> void {
 
@@ -632,6 +663,172 @@ void VEC_VC<VType>::clear_dirichlet_flags(void)
 
 		ngbrFlags2.clear();
 		ngbrFlags2.shrink_to_fit();
+	}
+}
+
+//clear Dirichlet flags only for cells corresponding to given surface_rect (almost a reverse operation of set_dirichlet_conditions, but here we simply unmark these cells, so Dirichlet condition evaluation does not take place)
+template <typename VType>
+void VEC_VC<VType>::clear_dirichlet_flags(const Rect& surface_rect)
+{
+	//surface_rect must intersect with rect, and must be using extended flags for this method to make sense
+	if (!VEC<VType>::rect.intersects(surface_rect) || !use_extended_flags()) return;
+
+	Rect intersection = VEC<VType>::rect.get_intersection(surface_rect);
+
+	auto clear_dirichlet_flags = [&](Rect intersection, int flag_value) -> void {
+
+		INT3 start = VEC<VType>::box_from_rect_max(intersection).s;
+		INT3 end = VEC<VType>::box_from_rect_max(intersection).e;
+
+		//clear flags
+#pragma omp parallel for
+		for (int j = (start.y >= 0 ? start.y : 0); j < (end.y < VEC<VType>::n.y ? end.y : VEC<VType>::n.y); j++) {
+			for (int k = (start.z >= 0 ? start.z : 0); k < (end.z < VEC<VType>::n.z ? end.z : VEC<VType>::n.z); k++) {
+				for (int i = (start.x >= 0 ? start.x : 0); i < (end.x < VEC<VType>::n.x ? end.x : VEC<VType>::n.x); i++) {
+
+					int cell_idx = i + j * VEC<VType>::n.x + k * VEC<VType>::n.x*VEC<VType>::n.y;
+
+					ngbrFlags2[cell_idx] &= ~flag_value;
+				}
+			}
+		}
+	};
+
+	//y-z plane
+	if (IsZ(intersection.s.x - intersection.e.x)) {
+
+		//on lower x side
+		if (IsZ(VEC<VType>::rect.s.x - intersection.s.x)) {
+
+			intersection.e.x += VEC<VType>::h.x;
+			clear_dirichlet_flags(intersection, NF2_DIRICHLETPX);
+		}
+		//on upper x side
+		else if (IsZ(VEC<VType>::rect.e.x - intersection.s.x)) {
+
+			intersection.s.x -= VEC<VType>::h.x;
+			clear_dirichlet_flags(intersection, NF2_DIRICHLETNX);
+		}
+	}
+	//x-z plane
+	else if (IsZ(intersection.s.y - intersection.e.y)) {
+
+		//on lower y side
+		if (IsZ(VEC<VType>::rect.s.y - intersection.s.y)) {
+
+			intersection.e.y += VEC<VType>::h.y;
+			clear_dirichlet_flags(intersection, NF2_DIRICHLETPY);
+		}
+		//on upper y side
+		else if (IsZ(VEC<VType>::rect.e.y - intersection.s.y)) {
+
+			intersection.s.y -= VEC<VType>::h.y;
+			clear_dirichlet_flags(intersection, NF2_DIRICHLETNY);
+		}
+	}
+	//x-y plane
+	else if (IsZ(intersection.s.z - intersection.e.z)) {
+
+		//on lower z side
+		if (IsZ(VEC<VType>::rect.s.z - intersection.s.z)) {
+
+			intersection.e.z += VEC<VType>::h.z;
+			clear_dirichlet_flags(intersection, NF2_DIRICHLETPZ);
+		}
+		//on upper z side
+		else if (IsZ(VEC<VType>::rect.e.z - intersection.s.z)) {
+
+			intersection.s.z -= VEC<VType>::h.z;
+			clear_dirichlet_flags(intersection, NF2_DIRICHLETNZ);
+		}
+	}
+}
+
+//depending on dirichlet flag set in this cell, set dirichlet value
+template <typename VType>
+void VEC_VC<VType>::set_dirichlet_value(int idx, VType value)
+{
+	if (ngbrFlags2.size()) {
+		
+		//cell on +x side
+		if ((ngbrFlags2[idx] & NF2_DIRICHLETPX) && (ngbrFlags[idx] & NF_NPX)) {
+
+			set_dirichlet_value(NF2_DIRICHLETPX, idx, value);
+		}
+
+		//cell on -x side
+		if ((ngbrFlags2[idx] & NF2_DIRICHLETNX) && (ngbrFlags[idx] & NF_NNX)) {
+
+			set_dirichlet_value(NF2_DIRICHLETNX, idx, value);
+		}
+
+		//cell on +y side
+		if ((ngbrFlags2[idx] & NF2_DIRICHLETPY) && (ngbrFlags[idx] & NF_NPY)) {
+
+			set_dirichlet_value(NF2_DIRICHLETPY, idx, value);
+		}
+
+		//cell on -y side
+		if ((ngbrFlags2[idx] & NF2_DIRICHLETNY) && (ngbrFlags[idx] & NF_NNY)) {
+
+			set_dirichlet_value(NF2_DIRICHLETNY, idx, value);
+		}
+		
+		//cell on +z side
+		if ((ngbrFlags2[idx] & NF2_DIRICHLETPZ) && (ngbrFlags[idx] & NF_NPZ)) {
+
+			set_dirichlet_value(NF2_DIRICHLETPZ, idx, value);
+		}
+
+		//cell on -z side
+		if ((ngbrFlags2[idx] & NF2_DIRICHLETNZ) && (ngbrFlags[idx] & NF_NNZ)) {
+
+			set_dirichlet_value(NF2_DIRICHLETNZ, idx, value);
+		}
+	}
+}
+
+//depending on dirichlet flag set in this cell, compute dirichlet value at boundary by extrapolation to boundary
+template <typename VType>
+void VEC_VC<VType>::autoset_dirichlet_value(int idx)
+{
+	if (ngbrFlags2.size()) {
+
+		//cell on +x side
+		if ((ngbrFlags2[idx] & NF2_DIRICHLETPX) && (ngbrFlags[idx] & NF_NPX)) {
+
+			set_dirichlet_value(NF2_DIRICHLETPX, idx, 1.5 * VEC<VType>::quantity[idx] - 0.5 * VEC<VType>::quantity[idx + 1]);
+		}
+
+		//cell on -x side
+		if ((ngbrFlags2[idx] & NF2_DIRICHLETNX) && (ngbrFlags[idx] & NF_NNX)) {
+
+			set_dirichlet_value(NF2_DIRICHLETNX, idx, 1.5 * VEC<VType>::quantity[idx] - 0.5 * VEC<VType>::quantity[idx - 1]);
+		}
+
+		//cell on +y side
+		if ((ngbrFlags2[idx] & NF2_DIRICHLETPY) && (ngbrFlags[idx] & NF_NPY)) {
+
+			set_dirichlet_value(NF2_DIRICHLETPY, idx, 1.5 * VEC<VType>::quantity[idx] - 0.5 * VEC<VType>::quantity[idx + VEC<VType>::n.x]);
+		}
+
+		//cell on -y side
+		if ((ngbrFlags2[idx] & NF2_DIRICHLETNY) && (ngbrFlags[idx] & NF_NNY)) {
+
+			set_dirichlet_value(NF2_DIRICHLETNY, idx, 1.5 * VEC<VType>::quantity[idx] - 0.5 * VEC<VType>::quantity[idx - VEC<VType>::n.x]);
+		}
+
+		//cell on +z side
+		if ((ngbrFlags2[idx] & NF2_DIRICHLETPZ) && (ngbrFlags[idx] & NF_NPZ)) {
+
+			set_dirichlet_value(NF2_DIRICHLETPZ, idx, 1.5 * VEC<VType>::quantity[idx] - 0.5 * VEC<VType>::quantity[idx + VEC<VType>::n.x*VEC<VType>::n.y]);
+		}
+
+		//cell on -z side
+		if ((ngbrFlags2[idx] & NF2_DIRICHLETNZ) && (ngbrFlags[idx] & NF_NNZ)) {
+
+			set_dirichlet_value(NF2_DIRICHLETNZ, idx, 1.5 * VEC<VType>::quantity[idx] - 0.5 * VEC<VType>::quantity[idx - VEC<VType>::n.x*VEC<VType>::n.y]);
+		}
 	}
 }
 

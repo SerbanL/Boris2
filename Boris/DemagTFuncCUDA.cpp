@@ -39,9 +39,9 @@ bool DemagTFuncCUDA::CalcDiagTens2D(
 
 	if (!include_self_demag) {
 
-		D11.set(0, 0.0);
-		D22.set(0, 0.0);
-		D33.set(0, 0.0);
+		D11.setvalue(0, 0.0);
+		D22.setvalue(0, 0.0);
+		D33.setvalue(0, 0.0);
 	}
 
 	return true;
@@ -111,9 +111,9 @@ bool DemagTFuncCUDA::CalcDiagTens3D(
 
 	if (!include_self_demag) {
 
-		D11.set(0, 0.0);
-		D22.set(0, 0.0);
-		D33.set(0, 0.0);
+		D11.setvalue(0, 0.0);
+		D22.setvalue(0, 0.0);
+		D33.setvalue(0, 0.0);
 	}
 
 	return true;

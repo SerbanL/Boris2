@@ -3,8 +3,6 @@
 #include "BorisLib.h"
 #include "Modules.h"
 
-
-
 class SuperMesh;
 class HeatBase;
 

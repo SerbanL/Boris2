@@ -6,6 +6,7 @@
 
 #include "BorisCUDALib.cuh"
 #include "MeshCUDA.h"
+#include "Atom_MeshCUDA.h"
 
 //----------------------- Initialization
 
@@ -15,10 +16,24 @@ __global__ void set_SDemag_DemagCUDA_pointers_kernel(
 	if (threadIdx.x == 0) cuMesh.pDemag_Heff = &Module_Heff;
 }
 
+__global__ void set_SDemag_DemagCUDA_pointers_atomistic_kernel(
+	ManagedAtom_MeshCUDA& cuaMesh, cuVEC<cuReal3>& Module_Heff)
+{
+	if (threadIdx.x == 0) cuaMesh.pAtom_Demag_Heff = &Module_Heff;
+}
+
 void SDemagCUDA_Demag::set_SDemag_DemagCUDA_pointers(void)
 {
-	set_SDemag_DemagCUDA_pointers_kernel <<< 1, CUDATHREADS >>>
-		(pMeshCUDA->cuMesh, Module_Heff);
+	if (pMeshCUDA) {
+
+		set_SDemag_DemagCUDA_pointers_kernel <<< 1, CUDATHREADS >>>
+			(pMeshCUDA->cuMesh, Module_Heff);
+	}
+	else if (paMeshCUDA) {
+
+		set_SDemag_DemagCUDA_pointers_atomistic_kernel <<< 1, CUDATHREADS >>>
+			(paMeshCUDA->cuaMesh, Module_Heff);
+	}
 }
 
 //-------------------Getters

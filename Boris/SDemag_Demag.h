@@ -3,7 +3,9 @@
 #include "BorisLib.h"
 #include "Modules.h"
 
+class MeshBase;
 class Mesh;
+class Atom_Mesh;
 class SDemag;
 
 #ifdef MODULE_COMPILATION_SDEMAG
@@ -38,8 +40,11 @@ class SDemag_Demag :
 
 private:
 
-	//pointer to mesh object holding this effective field module
-	Mesh* pMesh;
+	MeshBase *pMeshBase = nullptr;
+
+	//pointer to mesh object holding this effective field module (either micromagnetic or atomistic - only one will be not nullptr, so check)
+	Mesh* pMesh = nullptr;
+	Atom_Mesh* paMesh = nullptr;
 
 	//pointer to managing SDemag module
 	SDemag *pSDemag = nullptr;
@@ -91,7 +96,7 @@ private:
 
 public:
 
-	SDemag_Demag(Mesh *pMesh_);
+	SDemag_Demag(MeshBase *pMeshBase_);
 	~SDemag_Demag() {}
 
 	//-------------------Implement ProgramState method
@@ -139,7 +144,7 @@ private:
 
 public:
 
-	SDemag_Demag(Mesh *pMesh_) {}
+	SDemag_Demag(MeshBase *pMeshBase_) {}
 	~SDemag_Demag() {}
 
 	//-------------------Abstract base class method implementations

@@ -4,8 +4,38 @@
 
 //-----------------------------------------
 
-__device__ inline unsigned cuBorisRand::atomicLCG(unsigned* address)
+__global__ inline void seed_array_kernel(unsigned*& prn, size_t& prn_size, unsigned seed)
 {
+	int idx = blockIdx.x * blockDim.x + threadIdx.x;
+
+	if (idx < prn_size) {
+
+		prn[idx] = seed * (idx + 1);
+	}
+}
+
+template void cuBorisRand<void>::seed_array(unsigned seed);
+
+template <typename Dummy>
+__host__ void cuBorisRand<Dummy>::seed_array(unsigned seed)
+{
+	seed_array_kernel <<< (get_gpu_value(prn_size) + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (prn, prn_size, seed);
+}
+
+//-----------------------------------------
+
+template unsigned cuBorisRand<void>::atomicLCG(unsigned* address);
+
+template <typename Dummy>
+__device__ unsigned cuBorisRand<Dummy>::atomicLCG(unsigned* address)
+{
+	if (!use_atomics) {
+
+		//special case where atomic operation not required
+		*address = (unsigned)1664525 * *address + (unsigned)1013904223;
+		return *address;
+	}
+
 	unsigned old = *address, assumed;
 
 	do {
@@ -22,24 +52,33 @@ __device__ inline unsigned cuBorisRand::atomicLCG(unsigned* address)
 
 //-----------------------------------------
 
+template unsigned cuBorisRand<void>::randi(void);
+
 //unsigned integer value out : 0 to 2^32 - 1
-__device__ inline unsigned cuBorisRand::randi(void)
+template <typename Dummy>
+__device__ unsigned cuBorisRand<Dummy>::randi(void)
 {
 	int idx = (blockIdx.x * blockDim.x + threadIdx.x) % prn_size;
 
 	return atomicLCG(prn + idx);
 }
 
+template float cuBorisRand<void>::rand(void);
+
 //floating point value out in interval [0, 1]
-__device__ inline float cuBorisRand::rand(void)
+template <typename Dummy>
+__device__ float cuBorisRand<Dummy>::rand(void)
 {
 	int idx = (blockIdx.x * blockDim.x + threadIdx.x) % prn_size;
 
 	return (float)atomicLCG(prn + idx) / (unsigned)4294967295;
 }
 
+template float cuBorisRand<void>::rand_gauss(float mean, float std);
+
 //Box-Muller transform to generate Gaussian distribution from uniform distribution
-__device__ inline float cuBorisRand::rand_gauss(float mean, float std)
+template <typename Dummy>
+__device__ float cuBorisRand<Dummy>::rand_gauss(float mean, float std)
 {
 	//Not exactly the usual Box-Muller transform : generate a value every time, still Gaussian distribution.
 	//This saves having to allocate extra spaces

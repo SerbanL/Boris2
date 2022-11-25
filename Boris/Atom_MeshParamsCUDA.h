@@ -91,6 +91,9 @@ public:
 	//anisotropic magnetoresistance as a percentage (of base resistance)
 	cu_obj<MatPCUDA<cuBReal, cuBReal>> amrPercentage;
 
+	//tunneling anisotropic magnetoresistance as a percentage
+	cu_obj<MatPCUDA<cuBReal, cuBReal>> tamrPercentage;
+
 	//spin current polarization and non-adiabaticity (for Zhang-Li STT).
 	cu_obj<MatPCUDA<cuBReal, cuBReal>> P;
 	cu_obj<MatPCUDA<cuBReal, cuBReal>> beta;
@@ -111,12 +114,15 @@ public:
 
 	//field-like spin torque coefficient (unitless)
 	cu_obj<MatPCUDA<cuBReal, cuBReal>> flSOT;
+	cu_obj<MatPCUDA<cuBReal, cuBReal>> flSOT2;
 
 	//Slonczewski macrospin torques q+, q- parameters as in PRB 72, 014446 (2005) (unitless)
 	cu_obj<MatPCUDA<cuReal2, cuBReal>> STq;
+	cu_obj<MatPCUDA<cuReal2, cuBReal>> STq2;
 
 	//Slonczewski macrospin torques A, B parameters as in PRB 72, 014446 (2005) (unitless)
 	cu_obj<MatPCUDA<cuReal2, cuBReal>> STa;
+	cu_obj<MatPCUDA<cuReal2, cuBReal>> STa2;
 
 	//Slonczewski macrospin torques spin polarization unit vector as in PRB 72, 014446 (2005) (unitless)
 	cu_obj<MatPCUDA<cuReal3, cuReal3>> STp;
@@ -153,6 +159,13 @@ public:
 
 	//the mesh base temperature (K)
 	cu_obj<cuBReal> base_temperature;
+
+	//Seebeck coefficient (V/K). Set to zero to disable thermoelectric effect (disabled by default).
+	cu_obj<MatPCUDA<cuBReal, cuBReal>> Sc;
+
+	//Joule heating effect efficiency (unitless, varies from 0 : none, up to 1 : full strength)
+	//enabled by default
+	cu_obj<MatPCUDA<cuBReal, cuBReal>> joule_eff;
 
 	//thermal conductivity (W/mK) - default for permalloy
 	cu_obj<MatPCUDA<cuBReal, cuBReal>> thermCond;

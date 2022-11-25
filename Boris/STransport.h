@@ -15,7 +15,11 @@ class SuperMesh;
 
 class STransport :
 	public Modules,
-	public ProgramState<STransport, std::tuple<vector_lut<Rect>, std::vector<double>, int, double, double, double, double, bool, double, int, double, int, DBL2, TEquation<double>, TEquation<double>>, std::tuple<>>
+	public ProgramState<STransport, 
+	std::tuple<vector_lut<Rect>, std::vector<double>, int, 
+	double, double, double, double, bool, double,
+	double, int, double, int, DBL2, 
+	TEquation<double>, TEquation<double>>, std::tuple<>>
 {
 
 #if COMPILECUDA == 1
@@ -47,7 +51,7 @@ private:
 	//vector of pointers to all S - need this to set cmbnd flags (same ordering as first vector in CMBNDcontacts)
 	std::vector<VEC_VC<DBL3>*> pS;
 
-	//----------------------
+	//---------------------- Electrodes
 
 	//electrodes set Dirichlet boundary conditions : use Rects (metric values) to mark these (only cells intersecting with these Rects on mesh surfaces will be marked).
 	vector_lut<Rect> electrode_rects;
@@ -67,7 +71,15 @@ private:
 	//sample resistance defined as potential / current
 	double resistance = 0.0;
 
+	//if true then keep adjusting voltage on electrodes to maintain constant current
 	bool constant_current_source = false;
+
+	//if not zero then potential on electrodes is determined by current generated inside meshes, as current * open_potential_resistance
+	//this is for simulations with thermoelectric effect, where a thermoelectric is generated from a thermal gradient
+	//if open_potential_resistance is zero, then net thermoelectric current is zero (but there will be a thermoelectric potential still)
+	double open_potential_resistance = 0.0;
+
+	//---------------------- Solver
 
 	//threshold for considering laplace (or Poisson) equation solved : should actually be lower than this in host code (cuda device code struggles to relax below this value so setting this higher value instead).
 	double errorMaxLaplace = 1e-6;
@@ -202,6 +214,10 @@ public:
 	//get fixed SOR damping values (for V and S solvers)
 	DBL2 GetSORDamping(void) { return SOR_damping; }
 
+	bool IsOpenPotential(void) { return open_potential_resistance > 0.0; }
+
+	double GetOpenPotentialResistance(void) { return open_potential_resistance; }
+
 	//-------------------Setters
 
 	void Flag_Recalculate_Transport(void) { recalculate_transport = true; }
@@ -211,6 +227,9 @@ public:
 
 	//set current value, also reset any constant potential source settings; by default clear the text equation setting, unless we set the value from the equation evaluation (set flag to false then)
 	void SetCurrent(double current_, bool clear_equation = true);
+
+	//set open_potential_resistance value and associated settings
+	BError SetOpenPotentialResistance(double open_potential_resistance_);
 
 	void SetConvergenceError(double errorMaxLaplace_, int maxLaplaceIterations_);
 	void SetSConvergenceError(double s_errorMax_, int s_maxIterations_);

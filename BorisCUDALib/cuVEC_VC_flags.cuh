@@ -44,9 +44,6 @@ template cudaError_t cuVEC_VC<double>::resize_ngbrFlags(cuSZ3 new_n);
 template cudaError_t cuVEC_VC<cuFLT3>::resize_ngbrFlags(cuSZ3 new_n);
 template cudaError_t cuVEC_VC<cuDBL3>::resize_ngbrFlags(cuSZ3 new_n);
 
-template cudaError_t cuVEC_VC<cuFLT33>::resize_ngbrFlags(cuSZ3 new_n);
-template cudaError_t cuVEC_VC<cuDBL33>::resize_ngbrFlags(cuSZ3 new_n);
-
 //set size of ngbrFlags to new_n also mapping shape from current size to new size (if current zero size set solid shape). Memory must be reserved in ngbrFlags to guarantee success. Also n should still have the old value : call this before changing it.
 template <typename VType>
 __host__ cudaError_t cuVEC_VC<VType>::resize_ngbrFlags(cuSZ3 new_n)
@@ -284,9 +281,6 @@ template void cuVEC_VC<double>::set_ngbrFlags(void);
 template void cuVEC_VC<cuFLT3>::set_ngbrFlags(void);
 template void cuVEC_VC<cuDBL3>::set_ngbrFlags(void);
 
-template void cuVEC_VC<cuFLT33>::set_ngbrFlags(void);
-template void cuVEC_VC<cuDBL33>::set_ngbrFlags(void);
-
 //initialization method for neighbor flags : set flags at size n, counting neighbors etc. Use current shape in ngbrFlags
 template <typename VType>
 __host__ void cuVEC_VC<VType>::set_ngbrFlags(void)
@@ -296,8 +290,11 @@ __host__ void cuVEC_VC<VType>::set_ngbrFlags(void)
 	//clear any shift debt as mesh has been resized so not valid anymore
 	set_gpu_value(shift_debt, cuReal3());
 
-	//dirichlet flags will be cleared from ngbrFlags, so also clear the dirichlet vectors
+	//dirichlet flags will be cleared from ngbrFlags2, so also clear the dirichlet vectors
 	clear_dirichlet_flags();
+
+	//halo flags will be cleared from ngbrFlags2, so also clear the halo vectors
+	clear_halo_flags();
 
 	//1. Count all the neighbors
 	set_gpu_value(nonempty_cells, (int)0);
@@ -410,9 +407,6 @@ template void cuVEC_VC<double>::set_ngbrFlags(const cuSZ3& linked_n, const cuRea
 template void cuVEC_VC<cuFLT3>::set_ngbrFlags(const cuSZ3& linked_n, const cuReal3& linked_h, const cuRect& linked_rect, int*& linked_ngbrFlags);
 template void cuVEC_VC<cuDBL3>::set_ngbrFlags(const cuSZ3& linked_n, const cuReal3& linked_h, const cuRect& linked_rect, int*& linked_ngbrFlags);
 
-template void cuVEC_VC<cuFLT33>::set_ngbrFlags(const cuSZ3& linked_n, const cuReal3& linked_h, const cuRect& linked_rect, int*& linked_ngbrFlags);
-template void cuVEC_VC<cuDBL33>::set_ngbrFlags(const cuSZ3& linked_n, const cuReal3& linked_h, const cuRect& linked_rect, int*& linked_ngbrFlags);
-
 //initialization method for neighbor flags : set flags at size n, counting neighbors etc. Use current shape in ngbrFlags
 template <typename VType>
 __host__ void cuVEC_VC<VType>::set_ngbrFlags(const cuSZ3& linked_n, const cuReal3& linked_h, const cuRect& linked_rect, int*& linked_ngbrFlags)
@@ -482,9 +476,6 @@ template bool cuVEC_VC<double>::set_dirichlet_conditions(cuRect surface_rect, do
 
 template bool cuVEC_VC<cuFLT3>::set_dirichlet_conditions(cuRect surface_rect, cuFLT3 value);
 template bool cuVEC_VC<cuDBL3>::set_dirichlet_conditions(cuRect surface_rect, cuDBL3 value);
-
-template bool cuVEC_VC<cuFLT33>::set_dirichlet_conditions(cuRect surface_rect, cuFLT33 value);
-template bool cuVEC_VC<cuDBL33>::set_dirichlet_conditions(cuRect surface_rect, cuDBL33 value);
 
 //set dirichlet boundary conditions from surface_rect (must be a rectangle intersecting with one of the surfaces of this mesh) and value
 ////return false on memory allocation failure only, otherwise return true even if surface_rect was not valid
@@ -612,6 +603,122 @@ __host__ bool cuVEC_VC<VType>::set_dirichlet_conditions(cuRect surface_rect, VTy
 	return true;
 }
 
+//------------------------------------------------------------------- SET HALO FLAGS
+
+inline __global__ void set_halo_conditions_kernel(
+	const cuSZ3& n, int*& ngbrFlags, int*& ngbrFlags2,
+	int* halo_ngbrFlags, size_t halo_size, int halo_flag, int halo_depth)
+{
+	//NOTE : code below assumes halo_depth is 1 (and currently unused below). In the future halo_depth > 1 may be used, in which case code below needs rethinking.
+
+	//index halo_ngbrFlags
+	int halo_idx = blockIdx.x * blockDim.x + threadIdx.x;
+
+	//index in ngbrFlags(2)
+	int ngbr_idx = 0;
+
+	if (halo_idx < halo_size) {
+
+		switch (halo_flag) {
+
+		case NF2_HALOPX:
+			ngbr_idx = (n.x - 1) + (halo_idx % n.y) * n.x + (halo_idx / n.y) * n.x*n.y;
+			break;
+		
+		case NF2_HALONX:
+			ngbr_idx = (halo_idx % n.y) * n.x + (halo_idx / n.y) * n.x*n.y;
+			break;
+
+		case NF2_HALOPY:
+			ngbr_idx = n.x * (n.y - 1) + (halo_idx % n.x) + (halo_idx / n.x) * n.x*n.y;
+			break;
+
+		case NF2_HALONY:
+			ngbr_idx = (halo_idx % n.x) + (halo_idx / n.x) * n.x*n.y;
+			break;
+
+		case NF2_HALOPZ:
+			ngbr_idx = n.x*n.y*(n.z - 1) + (halo_idx % n.x) + (halo_idx / n.x) * n.x;
+			break;
+
+		case NF2_HALONZ:
+			ngbr_idx = (halo_idx % n.x) + (halo_idx / n.x) * n.x;
+			break;
+		}
+	}
+
+	//mark with halo flag if both this cell and halo cell are not empty
+	if ((ngbrFlags[ngbr_idx] & NF_NOTEMPTY) && (halo_ngbrFlags[halo_idx] & NF_NOTEMPTY)) {
+
+		ngbrFlags2[ngbr_idx] |= halo_flag;
+	}
+}
+
+template bool cuVEC_VC<float>::set_halo_conditions(cu_arr<int>& halo_ngbrFlags, int halo_flag, int halo_depth);
+template bool cuVEC_VC<double>::set_halo_conditions(cu_arr<int>& halo_ngbrFlags, int halo_flag, int halo_depth);
+
+template bool cuVEC_VC<cuFLT3>::set_halo_conditions(cu_arr<int>& halo_ngbrFlags, int halo_flag, int halo_depth);
+template bool cuVEC_VC<cuDBL3>::set_halo_conditions(cu_arr<int>& halo_ngbrFlags, int halo_flag, int halo_depth);
+
+//set halo boundary conditions depending on halo_flag value (one of the 6 NF2_HALO.. flags)
+//also allocate memory and set size for respective hallo array (return false if memory allocation fails)
+//set halo flags using the halo_ngbrFlags values (this is an array with ngbrFlags values matching the halo region, so must be same size as halo array allocated here)
+//a halo flag is set if cell in halo is not empty (and current cell also not empty)
+//halo management is done externally (in policy class for mcuObject - mcuVEC - used to manage a cuVEC_VC across multiple GPUs).
+//This means halos are always cleared whenever set_ngbrFlags is triggered, so must be reset (e.g. after dimensions change or shape change, etc.) as managed by policy class
+//NOTE: this method does not set values in halo array, which is initialized to zero - halo values refresh must be done externally by computation routines as needed, through the policy class
+template <typename VType>
+__host__ bool cuVEC_VC<VType>::set_halo_conditions(cu_arr<int>& halo_ngbrFlags, int halo_flag, int halo_depth)
+{
+	//TO DO : currently halo works only with a halo_depth of 1. In the future this may be extended to use halo_depth > 1.
+	if (halo_depth != 1) return false;
+
+	//find required size (size should match halo_ngbrFlags size)
+	size_t halo_size = 0;
+
+	cuSZ3 n_cpu = get_gpu_value(cuVEC<VType>::n);
+	switch (halo_flag) {
+
+	case NF2_HALOPX:
+	case NF2_HALONX:
+		halo_size = halo_depth * n_cpu.y*n_cpu.z;
+		break;
+
+	case NF2_HALOPY:
+	case NF2_HALONY:
+		halo_size = halo_depth * n_cpu.x*n_cpu.z;
+		break;
+
+	case NF2_HALOPZ:
+	case NF2_HALONZ:
+		halo_size = halo_depth * n_cpu.x*n_cpu.y;
+		break;
+	}
+
+	//error: size mismatch
+	if (halo_size != halo_ngbrFlags.size()) return false;
+
+	//allocate halo array (if needed)
+	cudaError_t error = set_halo_size(halo_size, halo_flag);
+	if (error != cudaSuccess) {
+
+		set_halo_size(0, halo_flag);
+		return false;
+	}
+
+	if (halo_size > 0) {
+
+		//HALO flags used with extended ngbrFlags so make sure it has memory allocated now
+		use_extended_flags();
+
+		//setup halo ngbrFlags
+		set_halo_conditions_kernel <<< (halo_size + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>>
+			(cuVEC<VType>::n, ngbrFlags, ngbrFlags2, halo_ngbrFlags, halo_size, halo_flag, halo_depth);
+	}
+
+	return true;
+}
+
 //------------------------------------------------------------------- SET ROBIN FLAGS
 
 __global__ static void set_robin_flags_kernel(
@@ -686,9 +793,6 @@ template void cuVEC_VC<double>::set_robin_flags(void);
 template void cuVEC_VC<cuFLT3>::set_robin_flags(void);
 template void cuVEC_VC<cuDBL3>::set_robin_flags(void);
 
-template void cuVEC_VC<cuFLT33>::set_robin_flags(void);
-template void cuVEC_VC<cuDBL33>::set_robin_flags(void);
-
 //set robin flags from robin values and shape. Doesn't affect any other flags. Call from set_ngbrFlags after counting neighbors, and after setting robin values
 template <typename VType>
 __host__ void cuVEC_VC<VType>::set_robin_flags(void)
@@ -752,9 +856,6 @@ template void cuVEC_VC<double>::set_pbc_flags(void);
 template void cuVEC_VC<cuFLT3>::set_pbc_flags(void);
 template void cuVEC_VC<cuDBL3>::set_pbc_flags(void);
 
-template void cuVEC_VC<cuFLT33>::set_pbc_flags(void);
-template void cuVEC_VC<cuDBL33>::set_pbc_flags(void);
-
 //set pbc flags depending on set conditions and currently calculated flags - ngbrFlags must already be calculated before using this
 template <typename VType>
 __host__ void cuVEC_VC<VType>::set_pbc_flags(void)
@@ -782,9 +883,6 @@ template void cuVEC_VC<double>::set_skipcells(cuRect rectangle, bool status);
 
 template void cuVEC_VC<cuFLT3>::set_skipcells(cuRect rectangle, bool status);
 template void cuVEC_VC<cuDBL3>::set_skipcells(cuRect rectangle, bool status);
-
-template void cuVEC_VC<cuFLT33>::set_skipcells(cuRect rectangle, bool status);
-template void cuVEC_VC<cuDBL33>::set_skipcells(cuRect rectangle, bool status);
 
 //mark cells included in this rectangle (absolute coordinates) to be skipped during some computations
 template <typename VType>

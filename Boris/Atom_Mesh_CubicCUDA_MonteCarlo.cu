@@ -25,7 +25,7 @@ __global__ void Zero_MCAux_Atom_Mesh_CubicCUDA(cuBReal& aux_real, cuBReal& aux_r
 ///////////////////////////////////////////////////////////////
 // PARALLEL MONTE-CARLO METROPOLIS - WITH REDUCTION
 
-__global__ void Iterate_MonteCarloCUDA_Classic_Cubic_red_kernel(ManagedAtom_MeshCUDA& cuaMesh, int* cuaModules, int& numModules, cuReal3& Ha, cuBorisRand& prng, cuBReal mc_cone_angledeg, cuBReal& mc_acceptance_rate)
+__global__ void Iterate_MonteCarloCUDA_Classic_Cubic_red_kernel(ManagedAtom_MeshCUDA& cuaMesh, int* cuaModules, int& numModules, cuReal3& Ha, cuBorisRand<>& prng, cuBReal mc_cone_angledeg, cuBReal& mc_acceptance_rate)
 {
 	cuVEC_VC<cuReal3>& M1 = *cuaMesh.pM1;
 
@@ -105,7 +105,7 @@ __global__ void Iterate_MonteCarloCUDA_Classic_Cubic_red_kernel(ManagedAtom_Mesh
 	reduction_sum(0, 1, &acceptance_rate, mc_acceptance_rate);
 }
 
-__global__ void Iterate_MonteCarloCUDA_Classic_Cubic_black_kernel(ManagedAtom_MeshCUDA& cuaMesh, int* cuaModules, int& numModules, cuReal3& Ha, cuBorisRand& prng, cuBReal mc_cone_angledeg, cuBReal& mc_acceptance_rate)
+__global__ void Iterate_MonteCarloCUDA_Classic_Cubic_black_kernel(ManagedAtom_MeshCUDA& cuaMesh, int* cuaModules, int& numModules, cuReal3& Ha, cuBorisRand<>& prng, cuBReal mc_cone_angledeg, cuBReal& mc_acceptance_rate)
 {
 	cuVEC_VC<cuReal3>& M1 = *cuaMesh.pM1;
 
@@ -192,7 +192,7 @@ __global__ void Iterate_MonteCarloCUDA_Classic_Cubic_black_kernel(ManagedAtom_Me
 ///////////////////////////////////////////////////////////////
 // PARALLEL MONTE-CARLO METROPOLIS - WITHOUT REDUCTION
 
-__global__ void Iterate_MonteCarloCUDA_Classic_Cubic_red_kernel(ManagedAtom_MeshCUDA& cuaMesh, int* cuaModules, int& numModules, cuReal3& Ha, cuBorisRand& prng, cuBReal mc_cone_angledeg)
+__global__ void Iterate_MonteCarloCUDA_Classic_Cubic_red_kernel(ManagedAtom_MeshCUDA& cuaMesh, int* cuaModules, int& numModules, cuReal3& Ha, cuBorisRand<>& prng, cuBReal mc_cone_angledeg)
 {
 	cuVEC_VC<cuReal3>& M1 = *cuaMesh.pM1;
 
@@ -266,7 +266,7 @@ __global__ void Iterate_MonteCarloCUDA_Classic_Cubic_red_kernel(ManagedAtom_Mesh
 	}
 }
 
-__global__ void Iterate_MonteCarloCUDA_Classic_Cubic_black_kernel(ManagedAtom_MeshCUDA& cuaMesh, int* cuaModules, int& numModules, cuReal3& Ha, cuBorisRand& prng, cuBReal mc_cone_angledeg)
+__global__ void Iterate_MonteCarloCUDA_Classic_Cubic_black_kernel(ManagedAtom_MeshCUDA& cuaMesh, int* cuaModules, int& numModules, cuReal3& Ha, cuBorisRand<>& prng, cuBReal mc_cone_angledeg)
 {
 	cuVEC_VC<cuReal3>& M1 = *cuaMesh.pM1;
 
@@ -439,7 +439,7 @@ __global__ void MonteCarloCUDA_Constrained_Cubic_SetIndices(
 	ManagedAtom_MeshCUDA& cuaMesh, 
 	size_t num_reds, unsigned* mc_indices_red, unsigned* mc_shuf_red,
 	size_t num_blacks, unsigned* mc_indices_black, unsigned* mc_shuf_black,
-	cuBorisRand& prng)
+	cuBorisRand<>& prng)
 {
 	cuSZ3& n = cuaMesh.pM1->n;
 
@@ -517,7 +517,7 @@ __global__ void Iterate_MonteCarloCUDA_Constrained_Cubic_redblack_kernel(
 	ManagedAtom_MeshCUDA& cuaMesh, 
 	size_t num_points, unsigned* mc_indices, 
 	int* cuaModules, int& numModules,
-	cuReal3& Ha, cuBorisRand& prng,
+	cuReal3& Ha, cuBorisRand<>& prng,
 	cuBReal& cmc_M, cuReal3& cmc_n,
 	cuBReal mc_cone_angledeg, cuBReal& mc_acceptance_rate)
 {
@@ -622,7 +622,7 @@ __global__ void Iterate_MonteCarloCUDA_Constrained_Cubic_redblack_kernel(
 	ManagedAtom_MeshCUDA& cuaMesh,
 	size_t num_points, unsigned* mc_indices,
 	int* cuaModules, int& numModules,
-	cuReal3& Ha, cuBorisRand& prng,
+	cuReal3& Ha, cuBorisRand<>& prng,
 	cuBReal& cmc_M, cuReal3& cmc_n,
 	cuBReal mc_cone_angledeg)
 {

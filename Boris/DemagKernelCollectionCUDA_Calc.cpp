@@ -72,7 +72,7 @@ BError DemagKernelCollectionCUDA::Calculate_Demag_Kernels(std::vector<DemagKerne
 				zshifted[index] = (*kernels[index])()->GetFlag_zShifted();
 
 				//now compute it
-				if ((*kernels[index])()->GetFlag_InternalDemag()) {
+				if (Rect_collection[index] == this_rect) {
 
 					(*kernels[index])()->Set_Shift_and_Cellsizes(cuReal3(), h, h);
 

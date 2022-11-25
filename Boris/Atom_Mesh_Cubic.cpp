@@ -20,6 +20,7 @@ Atom_Mesh_Cubic::Atom_Mesh_Cubic(SuperMesh *pSMesh_) :
 			VINFO(Temp), VINFO(Temp_l),
 			VINFO(pMod), 
 			VINFO(exclude_from_multiconvdemag),
+			VINFO(prng_seed),
 			//Members in this derived class
 			VINFO(move_mesh_trigger), VINFO(skyShift), VINFO(exchange_couple_to_meshes),
 			VINFO(mc_cone_angledeg), VINFO(mc_acceptance_rate), VINFO(mc_parallel), VINFO(mc_disabled), VINFO(mc_constrain), VINFO(cmc_n),
@@ -30,17 +31,18 @@ Atom_Mesh_Cubic::Atom_Mesh_Cubic(SuperMesh *pSMesh_) :
 			VINFO(Kt),
 			VINFO(cHA), VINFO(cHmo),
 			VINFO(s_eff),
-			VINFO(elecCond), VINFO(amrPercentage), VINFO(P), VINFO(beta), VINFO(De), VINFO(n_density),
-			VINFO(SHA), VINFO(flSOT), VINFO(STq), VINFO(STa), VINFO(STp),
+			VINFO(elecCond), VINFO(amrPercentage), VINFO(tamrPercentage), VINFO(P), VINFO(beta), VINFO(De), VINFO(n_density),
+			VINFO(SHA), VINFO(flSOT), VINFO(STq), VINFO(STa), VINFO(STp), VINFO(flSOT2), VINFO(STq2), VINFO(STa2),
 			VINFO(betaD), VINFO(l_sf), VINFO(l_ex), VINFO(l_ph), VINFO(Gi), VINFO(Gmix),
 			VINFO(ts_eff), VINFO(tsi_eff), VINFO(pump_eff), VINFO(cpump_eff), VINFO(the_eff),
 			VINFO(base_temperature), VINFO(T_equation), 
 			VINFO(density),
+			VINFO(Sc), VINFO(joule_eff),
 			VINFO(thermCond), VINFO(shc), VINFO(shc_e), VINFO(G_e), VINFO(cT), VINFO(Q)
 		},
 		{
 			//Modules Implementations
-			IINFO(Atom_Demag_N), IINFO(Atom_Demag), IINFO(Atom_DipoleDipole), 
+			IINFO(Atom_Demag_N), IINFO(Atom_Demag), IINFO(Atom_DipoleDipole), IINFO(SDemag_Demag),
 			IINFO(Atom_Zeeman), IINFO(Atom_MOptical),
 			IINFO(Atom_Exchange), IINFO(Atom_DMExchange), IINFO(Atom_iDMExchange), IINFO(Atom_viDMExchange),IINFO(Atom_SurfExchange),
 			IINFO(Atom_Anisotropy_Uniaxial), IINFO(Atom_Anisotropy_Cubic), IINFO(Atom_Anisotropy_Biaxial), IINFO(Atom_Anisotropy_Tensorial),
@@ -66,6 +68,7 @@ Atom_Mesh_Cubic::Atom_Mesh_Cubic(Rect meshRect_, DBL3 h_, SuperMesh *pSMesh_) :
 			VINFO(Temp), VINFO(Temp_l),
 			VINFO(pMod),
 			VINFO(exclude_from_multiconvdemag),
+			VINFO(prng_seed),
 			//Members in this derived class
 			VINFO(move_mesh_trigger), VINFO(skyShift), VINFO(exchange_couple_to_meshes),
 			VINFO(mc_cone_angledeg), VINFO(mc_acceptance_rate), VINFO(mc_parallel), VINFO(mc_disabled), VINFO(mc_constrain), VINFO(cmc_n),
@@ -76,17 +79,18 @@ Atom_Mesh_Cubic::Atom_Mesh_Cubic(Rect meshRect_, DBL3 h_, SuperMesh *pSMesh_) :
 			VINFO(Kt),
 			VINFO(cHA), VINFO(cHmo),
 			VINFO(s_eff),
-			VINFO(elecCond), VINFO(amrPercentage), VINFO(P), VINFO(beta), VINFO(De), VINFO(n_density),
-			VINFO(SHA), VINFO(flSOT), VINFO(STq), VINFO(STa), VINFO(STp),
+			VINFO(elecCond), VINFO(amrPercentage), VINFO(tamrPercentage), VINFO(P), VINFO(beta), VINFO(De), VINFO(n_density),
+			VINFO(SHA), VINFO(flSOT), VINFO(STq), VINFO(STa), VINFO(STp), VINFO(flSOT2), VINFO(STq2), VINFO(STa2),
 			VINFO(betaD), VINFO(l_sf), VINFO(l_ex), VINFO(l_ph), VINFO(Gi), VINFO(Gmix),
 			VINFO(ts_eff), VINFO(tsi_eff), VINFO(pump_eff), VINFO(cpump_eff), VINFO(the_eff),
 			VINFO(base_temperature), VINFO(T_equation),
 			VINFO(density),
+			VINFO(Sc), VINFO(joule_eff),
 			VINFO(thermCond), VINFO(shc), VINFO(shc_e), VINFO(G_e), VINFO(cT), VINFO(Q)
 		},
 		{
 			//Modules Implementations
-			IINFO(Atom_Demag_N), IINFO(Atom_Demag), IINFO(Atom_DipoleDipole),
+			IINFO(Atom_Demag_N), IINFO(Atom_Demag), IINFO(Atom_DipoleDipole), IINFO(SDemag_Demag),
 			IINFO(Atom_Zeeman), IINFO(Atom_MOptical),
 			IINFO(Atom_Exchange), IINFO(Atom_DMExchange), IINFO(Atom_iDMExchange), IINFO(Atom_viDMExchange), IINFO(Atom_SurfExchange),
 			IINFO(Atom_Anisotropy_Uniaxial), IINFO(Atom_Anisotropy_Cubic), IINFO(Atom_Anisotropy_Biaxial), IINFO(Atom_Anisotropy_Tensorial),

@@ -2,6 +2,7 @@
 #include "Mesh.h"
 
 #include "Transport.h"
+#include "MElastic.h"
 
 //----------------------------------- VALUE GETTERS
 
@@ -201,4 +202,17 @@ double Mesh::GetAverageLatticeTemperature(Rect rectangle)
 
 	if (Temp_l.linear_size()) return Temp_l.average_nonempty_omp(rectangle);
 	else return base_temperature;
+}
+
+//get set strain equations (from MElastic module)
+std::string Mesh::Get_StrainEquation(void)
+{
+	if (IsModuleSet(MOD_MELASTIC)) return CallModuleMethod(&MElastic::Get_Sd_Equation);
+	else return "";
+}
+
+std::string Mesh::Get_ShearStrainEquation(void)
+{
+	if (IsModuleSet(MOD_MELASTIC)) return CallModuleMethod(&MElastic::Get_Sod_Equation);
+	else return "";
 }

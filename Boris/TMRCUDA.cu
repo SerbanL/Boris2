@@ -390,7 +390,7 @@ __global__ void CalculateElectricField_TMR_Kernel(cuVEC<cuReal3>& E, cuVEC_VC<cu
 }
 
 //calculate electric field as the negative gradient of V
-void TMRCUDA::CalculateElectricField(void)
+void TMRCUDA::CalculateElectricField(bool open_potential)
 {
 	CalculateElectricField_TMR_Kernel <<< (pMeshCUDA->n_e.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (pMeshCUDA->E, pMeshCUDA->V);
 }

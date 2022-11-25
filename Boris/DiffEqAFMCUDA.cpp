@@ -299,8 +299,8 @@ BError DifferentialEquationAFMCUDA::AllocateMemory(bool copy_from_cpu)
 
 	if (prng_used) {
 
-		//initialize the pseudo-random number generator with a seed and memory size - recommended use kernel size divided by 128
-		if (prng()->initialize(GetSystemTickCount(), pMesh->n_s.dim() / 128) != cudaSuccess) error(BERROR_OUTOFGPUMEMORY_NCRIT);
+		//initialize the pseudo-random number generator with a seed and memory size (if seed > 0 then ensure same sequence is generated every time by setting divisor to 1, else use 0 for default behavior)
+		if (prng()->initialize((pMesh->prng_seed == 0 ? GetSystemTickCount() : pMesh->prng_seed), pMesh->n_s.dim(), (pMesh->prng_seed == 0 ? 0 : 1)) != cudaSuccess) error(BERROR_OUTOFGPUMEMORY_NCRIT);
 	}
 
 	return error;
@@ -446,7 +446,7 @@ BError DifferentialEquationAFMCUDA::UpdateConfiguration(UPDATECONFIG_ cfgMessage
 		cuDiffEq()->set_pointers(this);
 	}
 
-	if (ucfg::check_cfgflags(cfgMessage, UPDATECONFIG_MESHCHANGE, UPDATECONFIG_ODE_SOLVER)) {
+	if (ucfg::check_cfgflags(cfgMessage, UPDATECONFIG_MESHCHANGE, UPDATECONFIG_ODE_SOLVER, UPDATECONFIG_PRNG)) {
 
 		error = AllocateMemory();
 	}

@@ -117,6 +117,15 @@ BError TMRCUDA::Initialize(void)
 	//make sure information in TMR module is up to date
 	error = pTMR->Initialize();
 
+	//now update flags information in gpu versions
+	if (!pMeshCUDA->elC()->copyflags_from_cpuvec(pMesh->elC)) error(BERROR_GPUERROR_CRIT);
+	if (!pMeshCUDA->V()->copyflags_from_cpuvec(pMesh->V)) error(BERROR_GPUERROR_CRIT);
+	if (!pMeshCUDA->E()->copyflags_from_cpuvec(pMesh->E)) error(BERROR_GPUERROR_CRIT);
+	if (pMesh->S.linear_size()) {
+
+		if (!pMeshCUDA->S()->copyflags_from_cpuvec(pMesh->S)) error(BERROR_GPUERROR_CRIT);
+	}
+
 	if (!error) {
 
 		for (int idx = 0; idx < pTMR->pMeshFM_Bot.size(); idx++) {
@@ -166,7 +175,7 @@ BError TMRCUDA::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 
 	if (ucfg::check_cfgflags(cfgMessage, UPDATECONFIG_MESHSHAPECHANGE, UPDATECONFIG_MESHCHANGE)) {
 
-		if (pMeshCUDA->elC()->size_cpu().dim() && cfgMessage != UPDATECONFIG_MESHSHAPECHANGE) {
+		if (pMeshCUDA->elC()->size_cpu().dim()) {
 
 			success &= pMeshCUDA->elC()->resize(pMeshCUDA->h_e, pMeshCUDA->meshRect);
 		}
@@ -176,7 +185,7 @@ BError TMRCUDA::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 		}
 
 		//electrical potential - set empty cells using information in elC (empty cells have zero electrical conductivity)
-		if (pMeshCUDA->V()->size_cpu().dim() && cfgMessage != UPDATECONFIG_MESHSHAPECHANGE) {
+		if (pMeshCUDA->V()->size_cpu().dim()) {
 
 			success &= pMeshCUDA->V()->resize(pMeshCUDA->h_e, pMeshCUDA->meshRect, (cuVEC_VC<cuBReal>&)pMeshCUDA->elC);
 		}
@@ -186,7 +195,7 @@ BError TMRCUDA::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 		}
 
 		//electrical field - set empty cells using information in elC (empty cells have zero electrical conductivity)
-		if (pMeshCUDA->E()->size_cpu().dim() && cfgMessage != UPDATECONFIG_MESHSHAPECHANGE) {
+		if (pMeshCUDA->E()->size_cpu().dim()) {
 
 			success &= pMeshCUDA->E()->resize(pMeshCUDA->h_e, pMeshCUDA->meshRect, (cuVEC_VC<cuBReal>&)pMeshCUDA->elC);
 		}
@@ -202,7 +211,7 @@ BError TMRCUDA::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 		//spin accumulation if needed - set empty cells using information in elC (empty cells have zero electrical conductivity)
 		if (success && stsolve != STSOLVE_NONE) {
 
-			if (pMeshCUDA->S()->size_cpu().dim() && cfgMessage != UPDATECONFIG_MESHSHAPECHANGE) {
+			if (pMeshCUDA->S()->size_cpu().dim()) {
 
 				success &= pMeshCUDA->S()->resize(pMeshCUDA->h_e, pMeshCUDA->meshRect, (cuVEC_VC<cuBReal>&)pMeshCUDA->elC);
 			}

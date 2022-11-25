@@ -33,9 +33,16 @@ class Atom_ZeemanCUDA :
 	//Applied field but as a cuVEC (e.g. loaded from file), with same resolution as M.
 	cu_obj<cuVEC<cuReal3>> Havec;
 
+	//global field as obtained in this mesh
+	//When a global field is set in supermesh, then globalField VEC is initialized here with mesh transfered values
+	cu_obj<cuVEC<cuReal3>> globalField;
+
 private:
 
 	void set_Atom_ZeemanCUDA_pointers(void);
+
+	//setup globalField transfer
+	BError InitializeGlobalField(void);
 
 public:
 

@@ -19,6 +19,23 @@ __device__ cuVAL3<VType> cuVEC_VC<VType>::grad_neu(int idx) const
 		//inner point along this direction
 		diff.x = (cuVEC<VType>::quantity[idx + 1] - cuVEC<VType>::quantity[idx - 1]) / (2 * cuVEC<VType>::h.x);
 	}
+	//use halo region?
+	else if (using_extended_flags && (ngbrFlags2[idx] & NF2_HALOX)) {
+
+		//halo index
+		int hidx = ((idx / cuVEC<VType>::n.x) % cuVEC<VType>::n.y) + (idx / (cuVEC<VType>::n.x*cuVEC<VType>::n.y))*cuVEC<VType>::n.y;
+
+		if (ngbrFlags2[idx] & NF2_HALOPX) {
+
+			if (ngbrFlags[idx] & NF_NNX) diff.x = (halo_px[hidx] - cuVEC<VType>::quantity[idx - 1]) / (2 * cuVEC<VType>::h.x);
+			else diff.x = (halo_px[hidx] - cuVEC<VType>::quantity[idx]) / (2 * cuVEC<VType>::h.x);
+		}
+		else {
+
+			if (ngbrFlags[idx] & NF_NPX) diff.x = (cuVEC<VType>::quantity[idx + 1] - halo_nx[hidx]) / (2 * cuVEC<VType>::h.x);
+			else diff.x = (cuVEC<VType>::quantity[idx] - halo_nx[hidx]) / (2 * cuVEC<VType>::h.x);
+		}
+	}
 	//Is it a CMBND boundary? - if not then use homogeneous Neumann condition (differential zero at the boundary)
 	else if (ngbrFlags[idx] & NF_CMBNDX) {
 
@@ -58,6 +75,23 @@ __device__ cuVAL3<VType> cuVEC_VC<VType>::grad_neu(int idx) const
 
 		diff.y = (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x] - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x]) / (2 * cuVEC<VType>::h.y);
 	}
+	//use halo region?
+	else if (using_extended_flags && (ngbrFlags2[idx] & NF2_HALOY)) {
+
+		//halo index
+		int hidx = (idx % cuVEC<VType>::n.x) + (idx / (cuVEC<VType>::n.x*cuVEC<VType>::n.y))*cuVEC<VType>::n.x;
+
+		if (ngbrFlags2[idx] & NF2_HALOPY) {
+
+			if (ngbrFlags[idx] & NF_NNY) diff.y = (halo_py[hidx] - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x]) / (2 * cuVEC<VType>::h.y);
+			else diff.y = (halo_py[hidx] - cuVEC<VType>::quantity[idx]) / (2 * cuVEC<VType>::h.y);
+		}
+		else {
+
+			if (ngbrFlags[idx] & NF_NPY) diff.y = (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x] - halo_ny[hidx]) / (2 * cuVEC<VType>::h.y);
+			else diff.y = (cuVEC<VType>::quantity[idx] - halo_ny[hidx]) / (2 * cuVEC<VType>::h.y);
+		}
+	}
 	else if (ngbrFlags[idx] & NF_CMBNDY) {
 
 		if (ngbrFlags[idx] & NF_NPY) diff.y = (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x] - cuVEC<VType>::quantity[idx]) / cuVEC<VType>::h.y;
@@ -95,6 +129,23 @@ __device__ cuVAL3<VType> cuVEC_VC<VType>::grad_neu(int idx) const
 	if ((ngbrFlags[idx] & NF_BOTHZ) == NF_BOTHZ) {
 
 		diff.z = (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x*cuVEC<VType>::n.y] - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x*cuVEC<VType>::n.y]) / (2 * cuVEC<VType>::h.z);
+	}
+	//use halo region?
+	else if (using_extended_flags && (ngbrFlags2[idx] & NF2_HALOZ)) {
+
+		//halo index
+		int hidx = (idx % cuVEC<VType>::n.x) + ((idx / cuVEC<VType>::n.x) % cuVEC<VType>::n.y)*cuVEC<VType>::n.x;
+
+		if (ngbrFlags2[idx] & NF2_HALOPZ) {
+
+			if (ngbrFlags[idx] & NF_NNZ) diff.z = (halo_pz[hidx] - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x*cuVEC<VType>::n.y]) / (2 * cuVEC<VType>::h.z);
+			else diff.z = (halo_pz[hidx] - cuVEC<VType>::quantity[idx]) / (2 * cuVEC<VType>::h.z);
+		}
+		else {
+
+			if (ngbrFlags[idx] & NF_NPZ) diff.z = (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x*cuVEC<VType>::n.y] - halo_nz[hidx]) / (2 * cuVEC<VType>::h.z);
+			else diff.z = (cuVEC<VType>::quantity[idx] - halo_nz[hidx]) / (2 * cuVEC<VType>::h.z);
+		}
 	}
 	else if (ngbrFlags[idx] & NF_CMBNDZ) {
 
@@ -149,6 +200,23 @@ __device__ cuVAL3<VType> cuVEC_VC<VType>::grad_nneu(int idx, const Class_BDiff& 
 		//inner point along this direction
 		diff.x = (cuVEC<VType>::quantity[idx + 1] - cuVEC<VType>::quantity[idx - 1]) / (2 * cuVEC<VType>::h.x);
 	}
+	//use halo region?
+	else if (using_extended_flags && (ngbrFlags2[idx] & NF2_HALOX)) {
+
+		//halo index
+		int hidx = ((idx / cuVEC<VType>::n.x) % cuVEC<VType>::n.y) + (idx / (cuVEC<VType>::n.x*cuVEC<VType>::n.y))*cuVEC<VType>::n.y;
+
+		if (ngbrFlags2[idx] & NF2_HALOPX) {
+
+			if (ngbrFlags[idx] & NF_NNX) diff.x = (halo_px[hidx] - cuVEC<VType>::quantity[idx - 1]) / (2 * cuVEC<VType>::h.x);
+			else diff.x = (halo_px[hidx] - cuVEC<VType>::quantity[idx]) / (2 * cuVEC<VType>::h.x);
+		}
+		else {
+
+			if (ngbrFlags[idx] & NF_NPX) diff.x = (cuVEC<VType>::quantity[idx + 1] - halo_nx[hidx]) / (2 * cuVEC<VType>::h.x);
+			else diff.x = (cuVEC<VType>::quantity[idx] - halo_nx[hidx]) / (2 * cuVEC<VType>::h.x);
+		}
+	}
 	//Is it a CMBND boundary? - if not then use non-homogeneous Neumann condition
 	else if (ngbrFlags[idx] & NF_CMBNDX) {
 
@@ -190,6 +258,23 @@ __device__ cuVAL3<VType> cuVEC_VC<VType>::grad_nneu(int idx, const Class_BDiff& 
 
 		diff.y = (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x] - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x]) / (2 * cuVEC<VType>::h.y);
 	}
+	//use halo region?
+	else if (using_extended_flags && (ngbrFlags2[idx] & NF2_HALOY)) {
+
+		//halo index
+		int hidx = (idx % cuVEC<VType>::n.x) + (idx / (cuVEC<VType>::n.x*cuVEC<VType>::n.y))*cuVEC<VType>::n.x;
+
+		if (ngbrFlags2[idx] & NF2_HALOPY) {
+
+			if (ngbrFlags[idx] & NF_NNY) diff.y = (halo_py[hidx] - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x]) / (2 * cuVEC<VType>::h.y);
+			else diff.y = (halo_py[hidx] - cuVEC<VType>::quantity[idx]) / (2 * cuVEC<VType>::h.y);
+		}
+		else {
+
+			if (ngbrFlags[idx] & NF_NPY) diff.y = (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x] - halo_ny[hidx]) / (2 * cuVEC<VType>::h.y);
+			else diff.y = (cuVEC<VType>::quantity[idx] - halo_ny[hidx]) / (2 * cuVEC<VType>::h.y);
+		}
+	}
 	else if (ngbrFlags[idx] & NF_CMBNDY) {
 
 		if (ngbrFlags[idx] & NF_NPY) diff.y = (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x] - cuVEC<VType>::quantity[idx]) / cuVEC<VType>::h.y;
@@ -229,6 +314,23 @@ __device__ cuVAL3<VType> cuVEC_VC<VType>::grad_nneu(int idx, const Class_BDiff& 
 	if ((ngbrFlags[idx] & NF_BOTHZ) == NF_BOTHZ) {
 
 		diff.z = (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x*cuVEC<VType>::n.y] - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x*cuVEC<VType>::n.y]) / (2 * cuVEC<VType>::h.z);
+	}
+	//use halo region?
+	else if (using_extended_flags && (ngbrFlags2[idx] & NF2_HALOZ)) {
+
+		//halo index
+		int hidx = (idx % cuVEC<VType>::n.x) + ((idx / cuVEC<VType>::n.x) % cuVEC<VType>::n.y)*cuVEC<VType>::n.x;
+
+		if (ngbrFlags2[idx] & NF2_HALOPZ) {
+
+			if (ngbrFlags[idx] & NF_NNZ) diff.z = (halo_pz[hidx] - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x*cuVEC<VType>::n.y]) / (2 * cuVEC<VType>::h.z);
+			else diff.z = (halo_pz[hidx] - cuVEC<VType>::quantity[idx]) / (2 * cuVEC<VType>::h.z);
+		}
+		else {
+
+			if (ngbrFlags[idx] & NF_NPZ) diff.z = (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x*cuVEC<VType>::n.y] - halo_nz[hidx]) / (2 * cuVEC<VType>::h.z);
+			else diff.z = (cuVEC<VType>::quantity[idx] - halo_nz[hidx]) / (2 * cuVEC<VType>::h.z);
+		}
 	}
 	else if (ngbrFlags[idx] & NF_CMBNDZ) {
 
@@ -282,6 +384,23 @@ __device__ cuVAL3<VType> cuVEC_VC<VType>::grad_nneu(int idx, const cuVAL3<VType>
 		//inner point along this direction
 		diff.x = (cuVEC<VType>::quantity[idx + 1] - cuVEC<VType>::quantity[idx - 1]) / (2 * cuVEC<VType>::h.x);
 	}
+	//use halo region?
+	else if (using_extended_flags && (ngbrFlags2[idx] & NF2_HALOX)) {
+
+		//halo index
+		int hidx = ((idx / cuVEC<VType>::n.x) % cuVEC<VType>::n.y) + (idx / (cuVEC<VType>::n.x*cuVEC<VType>::n.y))*cuVEC<VType>::n.y;
+
+		if (ngbrFlags2[idx] & NF2_HALOPX) {
+
+			if (ngbrFlags[idx] & NF_NNX) diff.x = (halo_px[hidx] - cuVEC<VType>::quantity[idx - 1]) / (2 * cuVEC<VType>::h.x);
+			else diff.x = (halo_px[hidx] - cuVEC<VType>::quantity[idx]) / (2 * cuVEC<VType>::h.x);
+		}
+		else {
+
+			if (ngbrFlags[idx] & NF_NPX) diff.x = (cuVEC<VType>::quantity[idx + 1] - halo_nx[hidx]) / (2 * cuVEC<VType>::h.x);
+			else diff.x = (cuVEC<VType>::quantity[idx] - halo_nx[hidx]) / (2 * cuVEC<VType>::h.x);
+		}
+	}
 	//Is it a CMBND boundary? - if not then use non-homogeneous Neumann condition
 	else if (ngbrFlags[idx] & NF_CMBNDX) {
 
@@ -321,6 +440,23 @@ __device__ cuVAL3<VType> cuVEC_VC<VType>::grad_nneu(int idx, const cuVAL3<VType>
 
 		diff.y = (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x] - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x]) / (2 * cuVEC<VType>::h.y);
 	}
+	//use halo region?
+	else if (using_extended_flags && (ngbrFlags2[idx] & NF2_HALOY)) {
+
+		//halo index
+		int hidx = (idx % cuVEC<VType>::n.x) + (idx / (cuVEC<VType>::n.x*cuVEC<VType>::n.y))*cuVEC<VType>::n.x;
+
+		if (ngbrFlags2[idx] & NF2_HALOPY) {
+
+			if (ngbrFlags[idx] & NF_NNY) diff.y = (halo_py[hidx] - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x]) / (2 * cuVEC<VType>::h.y);
+			else diff.y = (halo_py[hidx] - cuVEC<VType>::quantity[idx]) / (2 * cuVEC<VType>::h.y);
+		}
+		else {
+
+			if (ngbrFlags[idx] & NF_NPY) diff.y = (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x] - halo_ny[hidx]) / (2 * cuVEC<VType>::h.y);
+			else diff.y = (cuVEC<VType>::quantity[idx] - halo_ny[hidx]) / (2 * cuVEC<VType>::h.y);
+		}
+	}
 	else if (ngbrFlags[idx] & NF_CMBNDY) {
 
 		if (ngbrFlags[idx] & NF_NPY) diff.y = (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x] - cuVEC<VType>::quantity[idx]) / cuVEC<VType>::h.y;
@@ -358,6 +494,23 @@ __device__ cuVAL3<VType> cuVEC_VC<VType>::grad_nneu(int idx, const cuVAL3<VType>
 	if ((ngbrFlags[idx] & NF_BOTHZ) == NF_BOTHZ) {
 
 		diff.z = (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x*cuVEC<VType>::n.y] - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x*cuVEC<VType>::n.y]) / (2 * cuVEC<VType>::h.z);
+	}
+	//use halo region?
+	else if (using_extended_flags && (ngbrFlags2[idx] & NF2_HALOZ)) {
+
+		//halo index
+		int hidx = (idx % cuVEC<VType>::n.x) + ((idx / cuVEC<VType>::n.x) % cuVEC<VType>::n.y)*cuVEC<VType>::n.x;
+
+		if (ngbrFlags2[idx] & NF2_HALOPZ) {
+
+			if (ngbrFlags[idx] & NF_NNZ) diff.z = (halo_pz[hidx] - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x*cuVEC<VType>::n.y]) / (2 * cuVEC<VType>::h.z);
+			else diff.z = (halo_pz[hidx] - cuVEC<VType>::quantity[idx]) / (2 * cuVEC<VType>::h.z);
+		}
+		else {
+
+			if (ngbrFlags[idx] & NF_NPZ) diff.z = (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x*cuVEC<VType>::n.y] - halo_nz[hidx]) / (2 * cuVEC<VType>::h.z);
+			else diff.z = (cuVEC<VType>::quantity[idx] - halo_nz[hidx]) / (2 * cuVEC<VType>::h.z);
+		}
 	}
 	else if (ngbrFlags[idx] & NF_CMBNDZ) {
 
@@ -410,6 +563,23 @@ __device__ cuVAL3<VType> cuVEC_VC<VType>::grad_diri(int idx) const
 		//inner point along this direction
 		diff.x = (cuVEC<VType>::quantity[idx + 1] - cuVEC<VType>::quantity[idx - 1]) / (2 * cuVEC<VType>::h.x);
 	}
+	//use halo region?
+	else if (using_extended_flags && (ngbrFlags2[idx] & NF2_HALOX)) {
+
+		//halo index
+		int hidx = ((idx / cuVEC<VType>::n.x) % cuVEC<VType>::n.y) + (idx / (cuVEC<VType>::n.x*cuVEC<VType>::n.y))*cuVEC<VType>::n.y;
+
+		if (ngbrFlags2[idx] & NF2_HALOPX) {
+
+			if (ngbrFlags[idx] & NF_NNX) diff.x = (halo_px[hidx] - cuVEC<VType>::quantity[idx - 1]) / (2 * cuVEC<VType>::h.x);
+			else diff.x = (halo_px[hidx] - cuVEC<VType>::quantity[idx]) / (2 * cuVEC<VType>::h.x);
+		}
+		else {
+
+			if (ngbrFlags[idx] & NF_NPX) diff.x = (cuVEC<VType>::quantity[idx + 1] - halo_nx[hidx]) / (2 * cuVEC<VType>::h.x);
+			else diff.x = (cuVEC<VType>::quantity[idx] - halo_nx[hidx]) / (2 * cuVEC<VType>::h.x);
+		}
+	}
 	//not an inner point along this direction - Use Dirichlet?
 	else if (using_extended_flags && (ngbrFlags2[idx] & NF2_DIRICHLETX)) {
 
@@ -455,6 +625,23 @@ __device__ cuVAL3<VType> cuVEC_VC<VType>::grad_diri(int idx) const
 
 		diff.y = (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x] - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x]) / (2 * cuVEC<VType>::h.y);
 	}
+	//use halo region?
+	else if (using_extended_flags && (ngbrFlags2[idx] & NF2_HALOY)) {
+
+		//halo index
+		int hidx = (idx % cuVEC<VType>::n.x) + (idx / (cuVEC<VType>::n.x*cuVEC<VType>::n.y))*cuVEC<VType>::n.x;
+
+		if (ngbrFlags2[idx] & NF2_HALOPY) {
+
+			if (ngbrFlags[idx] & NF_NNY) diff.y = (halo_py[hidx] - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x]) / (2 * cuVEC<VType>::h.y);
+			else diff.y = (halo_py[hidx] - cuVEC<VType>::quantity[idx]) / (2 * cuVEC<VType>::h.y);
+		}
+		else {
+
+			if (ngbrFlags[idx] & NF_NPY) diff.y = (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x] - halo_ny[hidx]) / (2 * cuVEC<VType>::h.y);
+			else diff.y = (cuVEC<VType>::quantity[idx] - halo_ny[hidx]) / (2 * cuVEC<VType>::h.y);
+		}
+	}
 	else if (using_extended_flags && (ngbrFlags2[idx] & NF2_DIRICHLETY)) {
 
 		if (ngbrFlags2[idx] & NF2_DIRICHLETPY) diff.y = (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x] + cuVEC<VType>::quantity[idx] - 2 * get_dirichlet_value(NF2_DIRICHLETPY, idx)) / (2 * cuVEC<VType>::h.y);
@@ -497,6 +684,23 @@ __device__ cuVAL3<VType> cuVEC_VC<VType>::grad_diri(int idx) const
 	if ((ngbrFlags[idx] & NF_BOTHZ) == NF_BOTHZ) {
 
 		diff.z = (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x*cuVEC<VType>::n.y] - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x*cuVEC<VType>::n.y]) / (2 * cuVEC<VType>::h.z);
+	}
+	//use halo region?
+	else if (using_extended_flags && (ngbrFlags2[idx] & NF2_HALOZ)) {
+
+		//halo index
+		int hidx = (idx % cuVEC<VType>::n.x) + ((idx / cuVEC<VType>::n.x) % cuVEC<VType>::n.y)*cuVEC<VType>::n.x;
+
+		if (ngbrFlags2[idx] & NF2_HALOPZ) {
+
+			if (ngbrFlags[idx] & NF_NNZ) diff.z = (halo_pz[hidx] - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x*cuVEC<VType>::n.y]) / (2 * cuVEC<VType>::h.z);
+			else diff.z = (halo_pz[hidx] - cuVEC<VType>::quantity[idx]) / (2 * cuVEC<VType>::h.z);
+		}
+		else {
+
+			if (ngbrFlags[idx] & NF_NPZ) diff.z = (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x*cuVEC<VType>::n.y] - halo_nz[hidx]) / (2 * cuVEC<VType>::h.z);
+			else diff.z = (cuVEC<VType>::quantity[idx] - halo_nz[hidx]) / (2 * cuVEC<VType>::h.z);
+		}
 	}
 	else if (using_extended_flags && (ngbrFlags2[idx] & NF2_DIRICHLETZ)) {
 
@@ -556,6 +760,23 @@ __device__ cuVAL3<VType> cuVEC_VC<VType>::grad_diri_nneu(int idx, const Class_BD
 		//inner point along this direction
 		diff.x = (cuVEC<VType>::quantity[idx + 1] - cuVEC<VType>::quantity[idx - 1]) / (2 * cuVEC<VType>::h.x);
 	}
+	//use halo region?
+	else if (using_extended_flags && (ngbrFlags2[idx] & NF2_HALOX)) {
+
+		//halo index
+		int hidx = ((idx / cuVEC<VType>::n.x) % cuVEC<VType>::n.y) + (idx / (cuVEC<VType>::n.x*cuVEC<VType>::n.y))*cuVEC<VType>::n.y;
+
+		if (ngbrFlags2[idx] & NF2_HALOPX) {
+
+			if (ngbrFlags[idx] & NF_NNX) diff.x = (halo_px[hidx] - cuVEC<VType>::quantity[idx - 1]) / (2 * cuVEC<VType>::h.x);
+			else diff.x = (halo_px[hidx] - cuVEC<VType>::quantity[idx]) / (2 * cuVEC<VType>::h.x);
+		}
+		else {
+
+			if (ngbrFlags[idx] & NF_NPX) diff.x = (cuVEC<VType>::quantity[idx + 1] - halo_nx[hidx]) / (2 * cuVEC<VType>::h.x);
+			else diff.x = (cuVEC<VType>::quantity[idx] - halo_nx[hidx]) / (2 * cuVEC<VType>::h.x);
+		}
+	}
 	//not an inner point along this direction - Use Dirichlet?
 	else if (using_extended_flags && (ngbrFlags2[idx] & NF2_DIRICHLETX)) {
 
@@ -603,6 +824,23 @@ __device__ cuVAL3<VType> cuVEC_VC<VType>::grad_diri_nneu(int idx, const Class_BD
 
 		diff.y = (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x] - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x]) / (2 * cuVEC<VType>::h.y);
 	}
+	//use halo region?
+	else if (using_extended_flags && (ngbrFlags2[idx] & NF2_HALOY)) {
+
+		//halo index
+		int hidx = (idx % cuVEC<VType>::n.x) + (idx / (cuVEC<VType>::n.x*cuVEC<VType>::n.y))*cuVEC<VType>::n.x;
+
+		if (ngbrFlags2[idx] & NF2_HALOPY) {
+
+			if (ngbrFlags[idx] & NF_NNY) diff.y = (halo_py[hidx] - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x]) / (2 * cuVEC<VType>::h.y);
+			else diff.y = (halo_py[hidx] - cuVEC<VType>::quantity[idx]) / (2 * cuVEC<VType>::h.y);
+		}
+		else {
+
+			if (ngbrFlags[idx] & NF_NPY) diff.y = (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x] - halo_ny[hidx]) / (2 * cuVEC<VType>::h.y);
+			else diff.y = (cuVEC<VType>::quantity[idx] - halo_ny[hidx]) / (2 * cuVEC<VType>::h.y);
+		}
+	}
 	else if (using_extended_flags && (ngbrFlags2[idx] & NF2_DIRICHLETY)) {
 
 		if (ngbrFlags2[idx] & NF2_DIRICHLETPY) diff.y = (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x] + cuVEC<VType>::quantity[idx] - 2 * get_dirichlet_value(NF2_DIRICHLETPY, idx)) / (2 * cuVEC<VType>::h.y);
@@ -647,6 +885,23 @@ __device__ cuVAL3<VType> cuVEC_VC<VType>::grad_diri_nneu(int idx, const Class_BD
 	if ((ngbrFlags[idx] & NF_BOTHZ) == NF_BOTHZ) {
 
 		diff.z = (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x*cuVEC<VType>::n.y] - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x*cuVEC<VType>::n.y]) / (2 * cuVEC<VType>::h.z);
+	}
+	//use halo region?
+	else if (using_extended_flags && (ngbrFlags2[idx] & NF2_HALOZ)) {
+
+		//halo index
+		int hidx = (idx % cuVEC<VType>::n.x) + ((idx / cuVEC<VType>::n.x) % cuVEC<VType>::n.y)*cuVEC<VType>::n.x;
+
+		if (ngbrFlags2[idx] & NF2_HALOPZ) {
+
+			if (ngbrFlags[idx] & NF_NNZ) diff.z = (halo_pz[hidx] - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x*cuVEC<VType>::n.y]) / (2 * cuVEC<VType>::h.z);
+			else diff.z = (halo_pz[hidx] - cuVEC<VType>::quantity[idx]) / (2 * cuVEC<VType>::h.z);
+		}
+		else {
+
+			if (ngbrFlags[idx] & NF_NPZ) diff.z = (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x*cuVEC<VType>::n.y] - halo_nz[hidx]) / (2 * cuVEC<VType>::h.z);
+			else diff.z = (cuVEC<VType>::quantity[idx] - halo_nz[hidx]) / (2 * cuVEC<VType>::h.z);
+		}
 	}
 	else if (using_extended_flags && (ngbrFlags2[idx] & NF2_DIRICHLETZ)) {
 
@@ -705,6 +960,23 @@ __device__ cuVAL3<VType> cuVEC_VC<VType>::grad_diri_nneu(int idx, const cuVAL3<V
 		//inner point along this direction
 		diff.x = (cuVEC<VType>::quantity[idx + 1] - cuVEC<VType>::quantity[idx - 1]) / (2 * cuVEC<VType>::h.x);
 	}
+	//use halo region?
+	else if (using_extended_flags && (ngbrFlags2[idx] & NF2_HALOX)) {
+
+		//halo index
+		int hidx = ((idx / cuVEC<VType>::n.x) % cuVEC<VType>::n.y) + (idx / (cuVEC<VType>::n.x*cuVEC<VType>::n.y))*cuVEC<VType>::n.y;
+
+		if (ngbrFlags2[idx] & NF2_HALOPX) {
+
+			if (ngbrFlags[idx] & NF_NNX) diff.x = (halo_px[hidx] - cuVEC<VType>::quantity[idx - 1]) / (2 * cuVEC<VType>::h.x);
+			else diff.x = (halo_px[hidx] - cuVEC<VType>::quantity[idx]) / (2 * cuVEC<VType>::h.x);
+		}
+		else {
+
+			if (ngbrFlags[idx] & NF_NPX) diff.x = (cuVEC<VType>::quantity[idx + 1] - halo_nx[hidx]) / (2 * cuVEC<VType>::h.x);
+			else diff.x = (cuVEC<VType>::quantity[idx] - halo_nx[hidx]) / (2 * cuVEC<VType>::h.x);
+		}
+	}
 	//not an inner point along this direction - Use Dirichlet?
 	else if (using_extended_flags && (ngbrFlags2[idx] & NF2_DIRICHLETX)) {
 
@@ -750,6 +1022,23 @@ __device__ cuVAL3<VType> cuVEC_VC<VType>::grad_diri_nneu(int idx, const cuVAL3<V
 
 		diff.y = (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x] - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x]) / (2 * cuVEC<VType>::h.y);
 	}
+	//use halo region?
+	else if (using_extended_flags && (ngbrFlags2[idx] & NF2_HALOY)) {
+
+		//halo index
+		int hidx = (idx % cuVEC<VType>::n.x) + (idx / (cuVEC<VType>::n.x*cuVEC<VType>::n.y))*cuVEC<VType>::n.x;
+
+		if (ngbrFlags2[idx] & NF2_HALOPY) {
+
+			if (ngbrFlags[idx] & NF_NNY) diff.y = (halo_py[hidx] - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x]) / (2 * cuVEC<VType>::h.y);
+			else diff.y = (halo_py[hidx] - cuVEC<VType>::quantity[idx]) / (2 * cuVEC<VType>::h.y);
+		}
+		else {
+
+			if (ngbrFlags[idx] & NF_NPY) diff.y = (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x] - halo_ny[hidx]) / (2 * cuVEC<VType>::h.y);
+			else diff.y = (cuVEC<VType>::quantity[idx] - halo_ny[hidx]) / (2 * cuVEC<VType>::h.y);
+		}
+	}
 	else if (using_extended_flags && (ngbrFlags2[idx] & NF2_DIRICHLETY)) {
 
 		if (ngbrFlags2[idx] & NF2_DIRICHLETPY) diff.y = (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x] + cuVEC<VType>::quantity[idx] - 2 * get_dirichlet_value(NF2_DIRICHLETPY, idx)) / (2 * cuVEC<VType>::h.y);
@@ -792,6 +1081,23 @@ __device__ cuVAL3<VType> cuVEC_VC<VType>::grad_diri_nneu(int idx, const cuVAL3<V
 	if ((ngbrFlags[idx] & NF_BOTHZ) == NF_BOTHZ) {
 
 		diff.z = (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x*cuVEC<VType>::n.y] - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x*cuVEC<VType>::n.y]) / (2 * cuVEC<VType>::h.z);
+	}
+	//use halo region?
+	else if (using_extended_flags && (ngbrFlags2[idx] & NF2_HALOZ)) {
+
+		//halo index
+		int hidx = (idx % cuVEC<VType>::n.x) + ((idx / cuVEC<VType>::n.x) % cuVEC<VType>::n.y)*cuVEC<VType>::n.x;
+
+		if (ngbrFlags2[idx] & NF2_HALOPZ) {
+
+			if (ngbrFlags[idx] & NF_NNZ) diff.z = (halo_pz[hidx] - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x*cuVEC<VType>::n.y]) / (2 * cuVEC<VType>::h.z);
+			else diff.z = (halo_pz[hidx] - cuVEC<VType>::quantity[idx]) / (2 * cuVEC<VType>::h.z);
+		}
+		else {
+
+			if (ngbrFlags[idx] & NF_NPZ) diff.z = (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x*cuVEC<VType>::n.y] - halo_nz[hidx]) / (2 * cuVEC<VType>::h.z);
+			else diff.z = (cuVEC<VType>::quantity[idx] - halo_nz[hidx]) / (2 * cuVEC<VType>::h.z);
+		}
 	}
 	else if (using_extended_flags && (ngbrFlags2[idx] & NF2_DIRICHLETZ)) {
 
@@ -848,6 +1154,23 @@ __device__ cuVAL3<VType> cuVEC_VC<VType>::grad_sided(int idx) const
 		//inner point along this direction
 		diff.x = (cuVEC<VType>::quantity[idx + 1] - cuVEC<VType>::quantity[idx - 1]) / (2 * cuVEC<VType>::h.x);
 	}
+	//use halo region?
+	else if (using_extended_flags && (ngbrFlags2[idx] & NF2_HALOX)) {
+
+		//halo index
+		int hidx = ((idx / cuVEC<VType>::n.x) % cuVEC<VType>::n.y) + (idx / (cuVEC<VType>::n.x*cuVEC<VType>::n.y))*cuVEC<VType>::n.y;
+
+		if (ngbrFlags2[idx] & NF2_HALOPX) {
+
+			if (ngbrFlags[idx] & NF_NNX) diff.x = (halo_px[hidx] - cuVEC<VType>::quantity[idx - 1]) / (2 * cuVEC<VType>::h.x);
+			else diff.x = (halo_px[hidx] - cuVEC<VType>::quantity[idx]) / (cuVEC<VType>::h.x);
+		}
+		else {
+
+			if (ngbrFlags[idx] & NF_NPX) diff.x = (cuVEC<VType>::quantity[idx + 1] - halo_nx[hidx]) / (2 * cuVEC<VType>::h.x);
+			else diff.x = (cuVEC<VType>::quantity[idx] - halo_nx[hidx]) / (cuVEC<VType>::h.x);
+		}
+	}
 	//use sided differentials if one of the neighbors is present
 	else if (ngbrFlags[idx] & NF_NGBRX) {
 
@@ -882,6 +1205,23 @@ __device__ cuVAL3<VType> cuVEC_VC<VType>::grad_sided(int idx) const
 
 		diff.y = (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x] - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x]) / (2 * cuVEC<VType>::h.y);
 	}
+	//use halo region?
+	else if (using_extended_flags && (ngbrFlags2[idx] & NF2_HALOY)) {
+
+		//halo index
+		int hidx = (idx % cuVEC<VType>::n.x) + (idx / (cuVEC<VType>::n.x*cuVEC<VType>::n.y))*cuVEC<VType>::n.x;
+
+		if (ngbrFlags2[idx] & NF2_HALOPY) {
+
+			if (ngbrFlags[idx] & NF_NNY) diff.y = (halo_py[hidx] - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x]) / (2 * cuVEC<VType>::h.y);
+			else diff.y = (halo_py[hidx] - cuVEC<VType>::quantity[idx]) / (cuVEC<VType>::h.y);
+		}
+		else {
+
+			if (ngbrFlags[idx] & NF_NPY) diff.y = (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x] - halo_ny[hidx]) / (2 * cuVEC<VType>::h.y);
+			else diff.y = (cuVEC<VType>::quantity[idx] - halo_ny[hidx]) / (cuVEC<VType>::h.y);
+		}
+	}
 	else if (ngbrFlags[idx] & NF_NGBRY) {
 
 		if (ngbrFlags[idx] & NF_NPY) {
@@ -914,6 +1254,23 @@ __device__ cuVAL3<VType> cuVEC_VC<VType>::grad_sided(int idx) const
 	if ((ngbrFlags[idx] & NF_BOTHZ) == NF_BOTHZ) {
 
 		diff.z = (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x*cuVEC<VType>::n.y] - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x*cuVEC<VType>::n.y]) / (2 * cuVEC<VType>::h.z);
+	}
+	//use halo region?
+	else if (using_extended_flags && (ngbrFlags2[idx] & NF2_HALOZ)) {
+
+		//halo index
+		int hidx = (idx % cuVEC<VType>::n.x) + ((idx / cuVEC<VType>::n.x) % cuVEC<VType>::n.y)*cuVEC<VType>::n.x;
+
+		if (ngbrFlags2[idx] & NF2_HALOPZ) {
+
+			if (ngbrFlags[idx] & NF_NNZ) diff.z = (halo_pz[hidx] - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x*cuVEC<VType>::n.y]) / (2 * cuVEC<VType>::h.z);
+			else diff.z = (halo_pz[hidx] - cuVEC<VType>::quantity[idx]) / (cuVEC<VType>::h.z);
+		}
+		else {
+
+			if (ngbrFlags[idx] & NF_NPZ) diff.z = (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x*cuVEC<VType>::n.y] - halo_nz[hidx]) / (2 * cuVEC<VType>::h.z);
+			else diff.z = (cuVEC<VType>::quantity[idx] - halo_nz[hidx]) / (cuVEC<VType>::h.z);
+		}
 	}
 	else if (ngbrFlags[idx] & NF_NGBRZ) {
 

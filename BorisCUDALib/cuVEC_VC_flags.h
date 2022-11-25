@@ -12,6 +12,7 @@ __host__ bool cuVEC_VC<VType>::use_extended_flags(void)
 
 	//ROBIN
 	//DIRICHLET
+	//HALO
 
 	bool using_dirichlet = (
 		get_dirichlet_size(NF2_DIRICHLETNX) 
@@ -20,6 +21,11 @@ __host__ bool cuVEC_VC<VType>::use_extended_flags(void)
 		|| get_dirichlet_size(NF2_DIRICHLETPY) 
 		|| get_dirichlet_size(NF2_DIRICHLETNZ) 
 		|| get_dirichlet_size(NF2_DIRICHLETPZ));
+
+	bool using_halo = (
+		get_halo_size(NF2_HALOX)
+		|| get_halo_size(NF2_HALOY)
+		|| get_halo_size(NF2_HALOZ));
 
 	bool using_robin = (
 		get_gpu_value(robin_px) != cuReal2() 
@@ -30,7 +36,7 @@ __host__ bool cuVEC_VC<VType>::use_extended_flags(void)
 		|| get_gpu_value(robin_nz) != cuReal2()
 		|| get_gpu_value(robin_v) != cuReal2());
 
-	bool using_extended_flags_cpu = (using_dirichlet || using_robin);
+	bool using_extended_flags_cpu = (using_dirichlet || using_robin || using_halo);
 
 	//make sure ngbrFlags2 has the correct memory allocated only if currently empty
 	if (using_extended_flags_cpu && isnullgpuptr(ngbrFlags2)) {
@@ -146,6 +152,33 @@ __host__ void cuVEC_VC<VType>::clear_dirichlet_flags(void)
 		set_dirichlet_size(0, NF2_DIRICHLETNY);
 		set_dirichlet_size(0, NF2_DIRICHLETPZ);
 		set_dirichlet_size(0, NF2_DIRICHLETNZ);
+
+		//clear memory for extended ngbrFlags if now not used for anything else
+		if (!use_extended_flags()) {
+
+			gpu_free_managed(ngbrFlags2);
+			set_gpu_value(using_extended_flags, false);
+		}
+	}
+	else {
+
+		gpu_free_managed(ngbrFlags2);
+		set_gpu_value(using_extended_flags, false);
+	}
+}
+
+//clear all halo flags and vectors
+template <typename VType>
+__host__ void cuVEC_VC<VType>::clear_halo_flags(void)
+{
+	//HALO flags used with extended ngbrFlags only.
+	if (use_extended_flags()) {
+
+		gpu_and_managed(ngbrFlags2, ~NF2_HALO, get_ngbrFlags2_size());
+
+		set_halo_size(0, NF2_HALOX);
+		set_halo_size(0, NF2_HALOY);
+		set_halo_size(0, NF2_HALOZ);
 
 		//clear memory for extended ngbrFlags if now not used for anything else
 		if (!use_extended_flags()) {

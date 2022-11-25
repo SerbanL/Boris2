@@ -80,6 +80,11 @@ BError Atom_TransportCUDA::Initialize(void)
 	//no energy density contribution here
 	ZeroEnergy();
 
+	//is this a "thermoelectric mesh"?
+	is_thermoelectric_mesh = (paMesh->Temp.linear_size() && IsNZ(paMesh->Sc.get0()));
+	poisson_V()->set_thermoelectric_mesh_flag(is_thermoelectric_mesh);
+	poisson_V()->set_open_potential_flag(pTransport->IsOpenPotential());
+
 	//do we need to enable dM_dt calculation?
 	if (Need_dM_dt_Calculation()) {
 
@@ -141,7 +146,7 @@ BError Atom_TransportCUDA::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 
 	if (ucfg::check_cfgflags(cfgMessage, UPDATECONFIG_MESHSHAPECHANGE, UPDATECONFIG_MESHCHANGE)) {
 
-		if (paMeshCUDA->elC()->size_cpu().dim() && cfgMessage != UPDATECONFIG_MESHSHAPECHANGE) {
+		if (paMeshCUDA->elC()->size_cpu().dim()) {
 
 			success &= paMeshCUDA->elC()->resize(paMeshCUDA->h_e, paMeshCUDA->meshRect);
 		}
@@ -151,7 +156,7 @@ BError Atom_TransportCUDA::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 		}
 
 		//electrical potential - set empty cells using information in elC (empty cells have zero electrical conductivity)
-		if (paMeshCUDA->V()->size_cpu().dim() && cfgMessage != UPDATECONFIG_MESHSHAPECHANGE) {
+		if (paMeshCUDA->V()->size_cpu().dim()) {
 
 			success &= paMeshCUDA->V()->resize(paMeshCUDA->h_e, paMeshCUDA->meshRect, (cuVEC_VC<cuBReal>&)paMeshCUDA->elC);
 		}
@@ -161,7 +166,7 @@ BError Atom_TransportCUDA::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 		}
 		
 		//electrical field - set empty cells using information in elC (empty cells have zero electrical conductivity)
-		if (paMeshCUDA->E()->size_cpu().dim() && cfgMessage != UPDATECONFIG_MESHSHAPECHANGE) {
+		if (paMeshCUDA->E()->size_cpu().dim()) {
 
 			success &= paMeshCUDA->E()->resize(paMeshCUDA->h_e, paMeshCUDA->meshRect, (cuVEC_VC<cuBReal>&)paMeshCUDA->elC);
 		}
@@ -177,7 +182,7 @@ BError Atom_TransportCUDA::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 		//spin accumulation if needed - set empty cells using information in elC (empty cells have zero electrical conductivity)
 		if (success && stsolve != STSOLVE_NONE) {
 
-			if (paMeshCUDA->S()->size_cpu().dim() && cfgMessage != UPDATECONFIG_MESHSHAPECHANGE) {
+			if (paMeshCUDA->S()->size_cpu().dim()) {
 
 				success &= paMeshCUDA->S()->resize(paMeshCUDA->h_e, paMeshCUDA->meshRect, (cuVEC_VC<cuBReal>&)paMeshCUDA->elC);
 			}
@@ -213,9 +218,23 @@ void Atom_TransportCUDA::UpdateField(void)
 void Atom_TransportCUDA::CalculateElectricalConductivity(bool force_recalculate)
 {
 	//Include AMR?
-	if (paMesh->M1.linear_size() && (IsNZ((double)paMesh->amrPercentage))) {
+	if (paMesh->M1.linear_size() && (IsNZ((double)paMesh->amrPercentage) || IsNZ((double)paMesh->tamrPercentage))) {
 
-		CalculateElectricalConductivity_AMR();
+		if (IsZ((double)paMesh->tamrPercentage)) {
+
+			//only amr
+			CalculateElectricalConductivity_AMR();
+		}
+		else if (IsZ((double)paMesh->amrPercentage)) {
+
+			//only tamr
+			CalculateElectricalConductivity_TAMR();
+		}
+		else {
+
+			//both amr and tamr
+			CalculateElectricalConductivity_TAMR_and_AMR();
+		}
 
 		//set flag to force transport solver recalculation (note, the SuperMesh modules always update after the Mesh modules) - elC has changed
 		pSMesh->CallModuleMethod(&STransport::Flag_Recalculate_Transport);

@@ -38,10 +38,11 @@ enum PARAM_ {
 	PARAM_SUSREL = 12, PARAM_SUSPREL = 13, PARAM_SUSREL_AFM = 55, 
 	
 	//Transport : general
-	PARAM_ELC = 14, PARAM_AMR = 15, PARAM_P = 16, PARAM_BETA = 17, PARAM_FLSOT = 33,
+	PARAM_ELC = 14, PARAM_AMR = 15, PARAM_TAMR = 93, PARAM_P = 16, PARAM_BETA = 17, PARAM_FLSOT = 33,
 	
 	//Transport : other spin torque coefficients
 	PARAM_STQ = 69, PARAM_STA = 70, PARAM_STP = 71,
+	PARAM_FLSOT2 = 86, PARAM_STQ2 = 87, PARAM_STA2 = 88,
 
 	//Transport : drift-diffusion
 	PARAM_DE = 18, PARAM_BETAD = 19, PARAM_SHA = 20, PARAM_ISHA = 21, PARAM_LSF = 22, PARAM_LEX = 23, PARAM_LPH = 24, PARAM_GI = 25, PARAM_GMIX = 26, PARAM_NDENSITY = 47,
@@ -51,6 +52,9 @@ enum PARAM_ {
 
 	//Transport - special
 	PARAM_RATMR_P = 82, PARAM_RATMR_AP = 83,
+
+	//Transport and Heat combination
+	PARAM_SEEBECK = 89, PARAM_JOULE_EFF = 90,
 
 	//Heat
 	PARAM_THERMCOND = 30, PARAM_DENSITY = 31, PARAM_SHC = 32, PARAM_SHC_E = 52, PARAM_G_E = 53, PARAM_T = 37, PARAM_Q = 38,
@@ -63,11 +67,13 @@ enum PARAM_ {
 	
 	//Mechanical
 	PARAM_MECOEFF = 48, PARAM_YOUNGSMOD = 49, PARAM_POISSONRATIO = 50,
+	PARAM_STIFFC_CUBIC = 91,
+	PARAM_MDAMPING = 92,
 
 	//Stochasticity special
 	PARAM_S_EFF = 85
 	
-}; //Current maximum : 85
+}; //Current maximum : 93
 
 //classification of parameter
 enum PARAMTYPE_ { PARAMTYPE_NONE, PARAMTYPE_MAGNETIC, PARAMTYPE_ELECTRIC, PARAMTYPE_THERMAL, PARAMTYPE_MECHANICAL };

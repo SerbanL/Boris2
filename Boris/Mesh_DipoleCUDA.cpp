@@ -9,7 +9,8 @@
 
 DipoleMeshCUDA::DipoleMeshCUDA(DipoleMesh* pDipoleMesh_) :
 	MeshCUDA(pDipoleMesh_),
-	recalculateStrayField(pDipoleMesh_->recalculateStrayField)
+	recalculateStrayField(pDipoleMesh_->recalculateStrayField),
+	strayField_recalculated(pDipoleMesh_->strayField_recalculated)
 {
 	pDipoleMesh = pDipoleMesh_;
 
@@ -62,6 +63,7 @@ void DipoleMeshCUDA::Reset_Mdipole(void)
 	}
 
 	recalculateStrayField = true;
+	strayField_recalculated = false;
 }
 
 void DipoleMeshCUDA::SetMagAngle(cuBReal polar, cuBReal azim)
@@ -71,22 +73,23 @@ void DipoleMeshCUDA::SetMagAngle(cuBReal polar, cuBReal azim)
 	M()->copy_from_cpuvec(pDipoleMesh->M);
 
 	recalculateStrayField = true;
+	strayField_recalculated = false;
 }
 
 //shift dipole mesh rectangle by given amount
 void DipoleMeshCUDA::Shift_Dipole(void)
 {
-	//meshRect is already shifted at this point (since this method is called from the CPU version). Thus all we need to do it set it in cuVECs
-	cuRect meshRect_cpu = (cuRect)meshRect;
+	//meshRect is already shifted at this point (since this method is called from the CPU version). Thus all we need to do it set the new mesh rect starting point in cuVECs
 	
-	M()->set_rect(meshRect_cpu);
+	M()->set_rect_start((cuReal3)meshRect.s);
 
-	if (pDipoleMesh->V.linear_size()) V()->set_rect(meshRect_cpu);
-	if (pDipoleMesh->S.linear_size()) S()->set_rect(meshRect_cpu);
-	if (pDipoleMesh->elC.linear_size()) elC()->set_rect(meshRect_cpu);
-	if (pDipoleMesh->Temp.linear_size()) Temp()->set_rect(meshRect_cpu);
+	if (pDipoleMesh->V.linear_size()) V()->set_rect_start((cuReal3)meshRect.s);
+	if (pDipoleMesh->S.linear_size()) S()->set_rect_start((cuReal3)meshRect.s);
+	if (pDipoleMesh->elC.linear_size()) elC()->set_rect_start((cuReal3)meshRect.s);
+	if (pDipoleMesh->Temp.linear_size()) Temp()->set_rect_start((cuReal3)meshRect.s);
 
 	recalculateStrayField = true;
+	strayField_recalculated = false;
 }
 
 //----------------------------------- VARIOUS GET METHODS

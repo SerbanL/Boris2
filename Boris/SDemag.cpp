@@ -57,7 +57,7 @@ BError SDemag::Create_SDemag_Demag_Modules(void)
 {
 	BError error(CLASS_STR(SDemag));
 
-	//identify all existing ferrommagnetic meshes (magnetic computation enabled)
+	//identify all existing magnetic meshes (magnetic computation enabled)
 	for (int idx = 0; idx < (int)pSMesh->pMesh.size(); idx++) {
 
 		if ((*pSMesh)[idx]->MComputation_Enabled() && !(*pSMesh)[idx]->Get_Demag_Exclusion()) {
@@ -264,6 +264,7 @@ void SDemag::set_Rect_collection(void)
 	//now enlarge rectangles so they all have sizes max_sizes (except in 2D where they keep their thickness)
 	//enlarge them by setting the starting points as close as possible to the smallest starting points found above, along each axis
 	//ideally they all start at the same point, thus making multi-layered convolution most efficient
+	
 	for (int idx = 0; idx < Rect_collection.size(); idx++) {
 		
 		if (Rect_collection[idx].e.x - max_sizes.x < min_x) {
@@ -481,7 +482,7 @@ BError SDemag::Initialize(void)
 				}
 
 				//set all rect collections
-				error = pSDemag_Demag[idx]->Set_Rect_Collection(Rect_collection, Rect_collection[idx], h_max);
+				error = pSDemag_Demag[idx]->Set_Rect_Collection(Rect_collection, Rect_collection[idx], h_max, idx);
 				if (error) return error;
 			}
 			
@@ -516,60 +517,97 @@ BError SDemag::Initialize_Mesh_Transfer(void)
 {
 	BError error(CLASS_STR(SDemag));
 
+	//clear transfer objects before remaking them
+	sm_Vals.clear_transfer();
+	sm_Vals.clear_transfer2();
+	non_empty_cells = 0;
+
 	//now calculate data required for mesh transfers, as well as demag corrections
 	std::vector< VEC<DBL3>* > pVal_from, pVal_from2;
 	std::vector< VEC<DBL3>* > pVal_to, pVal_to2;
+	//atomistic meshes input / output
+	std::vector< VEC<DBL3>* > pVal_afrom, pVal_ato;
 
 	antiferromagnetic_meshes_present = false;
 
 	//identify all existing (anti)ferrommagnetic meshes (magnetic computation enabled)
 	for (int idx = 0; idx < (int)pSMesh->pMesh.size(); idx++) {
 
-		if ((*pSMesh)[idx]->MComputation_Enabled() && !(*pSMesh)[idx]->is_atomistic()) {
+		if ((*pSMesh)[idx]->MComputation_Enabled()) {
 
-			pVal_from.push_back(&(dynamic_cast<Mesh*>((*pSMesh)[idx])->M));
-			pVal_to.push_back(&(dynamic_cast<Mesh*>((*pSMesh)[idx])->Heff));
+			if (!(*pSMesh)[idx]->is_atomistic()) {
 
-			pVal_from2.push_back(&(dynamic_cast<Mesh*>((*pSMesh)[idx])->M2));
-			pVal_to2.push_back(&(dynamic_cast<Mesh*>((*pSMesh)[idx])->Heff2));
+				//micromagnetic mesh
 
-			if ((*pSMesh)[idx]->GetMeshType() == MESH_ANTIFERROMAGNETIC) antiferromagnetic_meshes_present = true;
+				pVal_from.push_back(&(dynamic_cast<Mesh*>((*pSMesh)[idx])->M));
+				pVal_to.push_back(&(dynamic_cast<Mesh*>((*pSMesh)[idx])->Heff));
+
+				pVal_from2.push_back(&(dynamic_cast<Mesh*>((*pSMesh)[idx])->M2));
+				pVal_to2.push_back(&(dynamic_cast<Mesh*>((*pSMesh)[idx])->Heff2));
+
+				if ((*pSMesh)[idx]->GetMeshType() == MESH_ANTIFERROMAGNETIC) antiferromagnetic_meshes_present = true;
+			}
+			else {
+
+				//atomistic mesh
+
+				pVal_afrom.push_back(&(dynamic_cast<Atom_Mesh*>((*pSMesh)[idx])->M1));
+				pVal_ato.push_back(&(dynamic_cast<Atom_Mesh*>((*pSMesh)[idx])->Heff1));
+			}
+		}
+	}
+
+	if (pVal_from.size()) {
+
+		///////////////////////////////////////////////////////////////////////////////////////////////
+		/////////////////////////////////// ALL FERROMAGNETIC MESHES //////////////////////////////////
+		///////////////////////////////////////////////////////////////////////////////////////////////
+
+		if (!antiferromagnetic_meshes_present) {
+
+			//Initialize the mesh transfer object for convolution on the super-mesh
+
+			//use built-in corrections based on interpolation
+			if (!sm_Vals.Initialize_MeshTransfer(pVal_from, pVal_to, MESHTRANSFERTYPE_WEIGHTED)) return error(BERROR_OUTOFMEMORY_CRIT);
+
+			//transfer values from invidual M meshes to sm_Vals - we need this to get number of non-empty cells
+			sm_Vals.transfer_in();
+
+			non_empty_cells = sm_Vals.get_nonempty_cells();
+		}
+
+		///////////////////////////////////////////////////////////////////////////////////////////////
+		/////////////////////////// AT LEAST ONE ANTIFERROMAGNETIC MESH ///////////////////////////////
+		///////////////////////////////////////////////////////////////////////////////////////////////
+
+		else {
+
+			//Initialize the mesh transfer object for convolution on the super-mesh
+
+			//use built-in corrections based on interpolation
+			if (!sm_Vals.Initialize_MeshTransfer_AveragedInputs_DuplicatedOutputs(pVal_from, pVal_from2, pVal_to, pVal_to2, MESHTRANSFERTYPE_WEIGHTED)) return error(BERROR_OUTOFMEMORY_CRIT);
+
+			//transfer values from invidual M meshes to sm_Vals - we need this to get number of non-empty cells
+			//NOTE : do not use transfer_in_averaged here as for antiferromagnetic meshes in the ground state this will result in zero values everywhere, looking like there are no non-empty cells
+			sm_Vals.transfer_in();
+
+			non_empty_cells = sm_Vals.get_nonempty_cells();
 		}
 	}
 
 	///////////////////////////////////////////////////////////////////////////////////////////////
-	/////////////////////////////////// ALL FERROMAGNETIC MESHES //////////////////////////////////
+	/////////////////////////////////////// ATOMISTIC MESHES //////////////////////////////////////
 	///////////////////////////////////////////////////////////////////////////////////////////////
 
-	if (!antiferromagnetic_meshes_present) {
+	if (pVal_afrom.size()) {
 
-		//Initialize the mesh transfer object for convolution on the super-mesh
+		//secondary transfer object for atomistic meshes
+		if (!sm_Vals.Initialize_MeshTransfer2(pVal_afrom, pVal_ato, MESHTRANSFERTYPE_WDENSITY, MUB)) return error(BERROR_OUTOFMEMORY_CRIT);
 
-		//use built-in corrections based on interpolation
-		if (!sm_Vals.Initialize_MeshTransfer(pVal_from, pVal_to, MESHTRANSFERTYPE_WEIGHTED)) return error(BERROR_OUTOFMEMORY_CRIT);
+		//transfer in, adding to current values if primary transfer object also present, else clear input
+		sm_Vals.transfer2_in(sm_Vals.size_transfer_in() == 0);
 
-		//transfer values from invidual M meshes to sm_Vals - we need this to get number of non-empty cells
-		sm_Vals.transfer_in();
-
-		non_empty_cells = sm_Vals.get_nonempty_cells();
-	}
-
-	///////////////////////////////////////////////////////////////////////////////////////////////
-	/////////////////////////// AT LEAST ONE ANTIFERROMAGNETIC MESH ///////////////////////////////
-	///////////////////////////////////////////////////////////////////////////////////////////////
-
-	else {
-
-		//Initialize the mesh transfer object for convolution on the super-mesh
-
-		//use built-in corrections based on interpolation
-		if (!sm_Vals.Initialize_MeshTransfer_AveragedInputs_DuplicatedOutputs(pVal_from, pVal_from2, pVal_to, pVal_to2, MESHTRANSFERTYPE_WEIGHTED)) return error(BERROR_OUTOFMEMORY_CRIT);
-
-		//transfer values from invidual M meshes to sm_Vals - we need this to get number of non-empty cells
-		//NOTE : do not use transfer_in_averaged here as for antiferromagnetic meshes in the ground state this will result in zero values everywhere, looking like there are no non-empty cells
-		sm_Vals.transfer_in();
-
-		non_empty_cells = sm_Vals.get_nonempty_cells();
+		non_empty_cells += sm_Vals.get_nonempty_cells();
 	}
 
 	//avoid division by zero
@@ -615,7 +653,7 @@ BError SDemag::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 			//for super-mesh convolution just need a single convolution and sm_Vals to be sized correctly
 
 			//only need to uninitialize if n_fm or h_fm have changed
-			if (!CheckDimensions(pSMesh->n_fm, pSMesh->h_fm, demag_pbc_images) || cfgMessage == UPDATECONFIG_DEMAG_CONVCHANGE) {
+			if (!CheckDimensions(pSMesh->n_fm, pSMesh->h_fm, demag_pbc_images) || cfgMessage == UPDATECONFIG_DEMAG_CONVCHANGE || cfgMessage == UPDATECONFIG_MESHCHANGE) {
 
 				Uninitialize();
 				error = SetDimensions(pSMesh->n_fm, pSMesh->h_fm, true, demag_pbc_images);
@@ -626,10 +664,10 @@ BError SDemag::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 			//Check if h_fm.z divides each magnetic mesh thickness exactly - if not issue a warning to user
 			for (int idx = 0; idx < (int)pSMesh->pMesh.size(); idx++) {
 
-				if ((*pSMesh)[idx]->MComputation_Enabled() && !(*pSMesh)[idx]->is_atomistic()) {
+				if ((*pSMesh)[idx]->MComputation_Enabled()) {
 
-					double start = dynamic_cast<Mesh*>((*pSMesh)[idx])->meshRect.s.z;
-					double end = dynamic_cast<Mesh*>((*pSMesh)[idx])->meshRect.e.z;
+					double start = (*pSMesh)[idx]->meshRect.s.z;
+					double end = (*pSMesh)[idx]->meshRect.e.z;
 
 					if (IsNZ(round(start / pSMesh->h_fm.z) - start / pSMesh->h_fm.z)) { error(BWARNING_INCORRECTCELLSIZE); break; }
 					if (IsNZ(round(end / pSMesh->h_fm.z) - end / pSMesh->h_fm.z)) { error(BWARNING_INCORRECTCELLSIZE); break; }
@@ -645,7 +683,7 @@ BError SDemag::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 			if (use_default_n) set_default_n_common();
 
 			//for multi-layered convolution need a convolution object for each mesh (make modules) - or multiple if the 2D layering option is enabled.
-
+			
 			//new (anti)ferromagnetic meshes could have been added
 			Create_SDemag_Demag_Modules();
 
@@ -710,7 +748,9 @@ double SDemag::UpdateField(void)
 		if (!antiferromagnetic_meshes_present) {
 
 			//transfer values from invidual M meshes to sm_Vals
-			sm_Vals.transfer_in();
+			if (sm_Vals.size_transfer_in()) sm_Vals.transfer_in();
+			//transfer from atomistic mesh (if any) - clear input only if there was no transfer from micromagnetic meshes, else add in
+			if (sm_Vals.size_transfer2_in()) sm_Vals.transfer2_in(sm_Vals.size_transfer_in() == 0);
 
 			//convolution with demag kernels, output overwrites in sm_Vals
 			energy = Convolute(sm_Vals, sm_Vals, true);
@@ -718,13 +758,16 @@ double SDemag::UpdateField(void)
 			//finish off energy value
 			energy *= -MU0 / (2 * non_empty_cells);
 
-			//transfer to individual Heff meshes
-			sm_Vals.transfer_out();
+			//transfer to individual Heff meshes (micromagnetic and atomistc meshes)
+			if (sm_Vals.size_transfer_out()) sm_Vals.transfer_out();
+			if (sm_Vals.size_transfer2_out()) sm_Vals.transfer2_out();
 		}
 		else {
 
 			//transfer values from invidual M meshes to sm_Vals
-			sm_Vals.transfer_in_averaged();
+			if (sm_Vals.size_transfer_in()) sm_Vals.transfer_in_averaged();
+			//transfer from atomistic mesh (if any) - clear input only if there was no transfer from micromagnetic meshes, else add in
+			if (sm_Vals.size_transfer2_in()) sm_Vals.transfer_in(sm_Vals.size_transfer_in() == 0);
 
 			//convolution with demag kernels, output overwrites in sm_Vals
 			energy = Convolute(sm_Vals, sm_Vals, true);
@@ -733,7 +776,8 @@ double SDemag::UpdateField(void)
 			energy *= -MU0 / (2 * non_empty_cells);
 
 			//transfer to individual Heff meshes
-			sm_Vals.transfer_out_duplicated();
+			if (sm_Vals.size_transfer_out()) sm_Vals.transfer_out_duplicated();
+			if (sm_Vals.size_transfer2_out()) sm_Vals.transfer2_out();
 		}
 	}
 
@@ -750,7 +794,7 @@ double SDemag::UpdateField(void)
 			//////////////////////////////////// ANTIFERROMAGNETIC MESH ///////////////////////////////////
 			///////////////////////////////////////////////////////////////////////////////////////////////
 
-			if (pSDemag_Demag[idx]->pMesh->GetMeshType() == MESH_ANTIFERROMAGNETIC) {
+			if (pSDemag_Demag[idx]->pMeshBase->GetMeshType() == MESH_ANTIFERROMAGNETIC) {
 
 				if (pSDemag_Demag[idx]->do_transfer) {
 
@@ -782,6 +826,7 @@ double SDemag::UpdateField(void)
 				}
 				else {
 
+					//transfer is forced for atomistic meshes, so if no transfer required, this must mean a micromagnetic mesh
 					pSDemag_Demag[idx]->ForwardFFT(pSDemag_Demag[idx]->pMesh->M);
 				}
 			}
@@ -810,7 +855,7 @@ double SDemag::UpdateField(void)
 				//////////////////////////////////// ANTIFERROMAGNETIC MESH ///////////////////////////////////
 				///////////////////////////////////////////////////////////////////////////////////////////////
 
-				if (pSDemag_Demag[idx]->pMesh->GetMeshType() == MESH_ANTIFERROMAGNETIC) {
+				if (pSDemag_Demag[idx]->pMeshBase->GetMeshType() == MESH_ANTIFERROMAGNETIC) {
 
 					if (pSDemag_Demag[idx]->do_transfer) {
 
@@ -866,6 +911,8 @@ double SDemag::UpdateField(void)
 					}
 					else {
 						
+						//transfer is forced for atomistic meshes, so if no transfer required, this must mean a micromagnetic mesh
+
 						//do inverse FFT and accumulate energy
 						if (pSDemag_Demag[idx]->Module_Heff.linear_size()) {
 
@@ -1086,7 +1133,7 @@ double SDemag::UpdateField(void)
 					//////////////////////////////////// ANTIFERROMAGNETIC MESH ///////////////////////////////////
 					///////////////////////////////////////////////////////////////////////////////////////////////
 
-					if (pSDemag_Demag[idx_mesh]->pMesh->GetMeshType() == MESH_ANTIFERROMAGNETIC) {
+					if (pSDemag_Demag[idx_mesh]->pMeshBase->GetMeshType() == MESH_ANTIFERROMAGNETIC) {
 
 						if (pSDemag_Demag[idx_mesh]->do_transfer) {
 
@@ -1178,6 +1225,8 @@ double SDemag::UpdateField(void)
 						}
 						else {
 
+							//transfer is forced for atomistic meshes, so if no transfer required, this must mean a micromagnetic mesh
+
 							//do inverse FFT and accumulate energy
 							if (pSDemag_Demag[idx_mesh]->Module_Heff.linear_size()) {
 
@@ -1225,7 +1274,7 @@ double SDemag::UpdateField(void)
 					for (int idx_mesh = 0; idx_mesh < pSDemag_Demag.size(); idx_mesh++) {
 
 						//ANTIFERROMAGNETIC
-						if (pSDemag_Demag[idx_mesh]->pMesh->GetMeshType() == MESH_ANTIFERROMAGNETIC) {
+						if (pSDemag_Demag[idx_mesh]->pMeshBase->GetMeshType() == MESH_ANTIFERROMAGNETIC) {
 
 							if (pSDemag_Demag[idx_mesh]->do_transfer) {
 
@@ -1276,6 +1325,8 @@ double SDemag::UpdateField(void)
 								pSDemag_Demag[idx_mesh]->transfer.transfer_out();
 							}
 							else {
+
+								//transfer is forced for atomistic meshes, so if no transfer required, this must mean a micromagnetic mesh
 
 								//add contribution to Heff
 								#pragma omp parallel for
@@ -1301,7 +1352,7 @@ double SDemag::UpdateField(void)
 					for (int idx_mesh = 0; idx_mesh < pSDemag_Demag.size(); idx_mesh++) {
 
 						//ANTIFERROMAGNETIC
-						if (pSDemag_Demag[idx_mesh]->pMesh->GetMeshType() == MESH_ANTIFERROMAGNETIC) {
+						if (pSDemag_Demag[idx_mesh]->pMeshBase->GetMeshType() == MESH_ANTIFERROMAGNETIC) {
 
 							if (pSDemag_Demag[idx_mesh]->do_transfer) {
 
@@ -1353,6 +1404,8 @@ double SDemag::UpdateField(void)
 							}
 							else {
 
+								//transfer is forced for atomistic meshes, so if no transfer required, this must mean a micromagnetic mesh
+
 								//add contribution to Heff
 								#pragma omp parallel for
 								for (int idx = 0; idx < pSDemag_Demag[idx_mesh]->Hdemag.linear_size(); idx++) {
@@ -1376,7 +1429,7 @@ double SDemag::UpdateField(void)
 					for (int idx_mesh = 0; idx_mesh < pSDemag_Demag.size(); idx_mesh++) {
 
 						//ANTIFERROMAGNETIC
-						if (pSDemag_Demag[idx_mesh]->pMesh->GetMeshType() == MESH_ANTIFERROMAGNETIC) {
+						if (pSDemag_Demag[idx_mesh]->pMeshBase->GetMeshType() == MESH_ANTIFERROMAGNETIC) {
 
 							if (pSDemag_Demag[idx_mesh]->do_transfer) {
 
@@ -1428,6 +1481,8 @@ double SDemag::UpdateField(void)
 							}
 							else {
 
+								//transfer is forced for atomistic meshes, so if no transfer required, this must mean a micromagnetic mesh
+
 								//add contribution to Heff
 								#pragma omp parallel for
 								for (int idx = 0; idx < pSDemag_Demag[idx_mesh]->Hdemag.linear_size(); idx++) {
@@ -1450,7 +1505,7 @@ double SDemag::UpdateField(void)
 					for (int idx_mesh = 0; idx_mesh < pSDemag_Demag.size(); idx_mesh++) {
 
 						//ANTIFERROMAGNETIC
-						if (pSDemag_Demag[idx_mesh]->pMesh->GetMeshType() == MESH_ANTIFERROMAGNETIC) {
+						if (pSDemag_Demag[idx_mesh]->pMeshBase->GetMeshType() == MESH_ANTIFERROMAGNETIC) {
 
 							if (pSDemag_Demag[idx_mesh]->do_transfer) {
 
@@ -1501,6 +1556,8 @@ double SDemag::UpdateField(void)
 								pSDemag_Demag[idx_mesh]->transfer.transfer_out();
 							}
 							else {
+
+								//transfer is forced for atomistic meshes, so if no transfer required, this must mean a micromagnetic mesh
 
 								//add contribution to Heff
 								#pragma omp parallel for
@@ -1523,7 +1580,7 @@ double SDemag::UpdateField(void)
 					for (int idx_mesh = 0; idx_mesh < pSDemag_Demag.size(); idx_mesh++) {
 
 						//ANTIFERROMAGNETIC
-						if (pSDemag_Demag[idx_mesh]->pMesh->GetMeshType() == MESH_ANTIFERROMAGNETIC) {
+						if (pSDemag_Demag[idx_mesh]->pMeshBase->GetMeshType() == MESH_ANTIFERROMAGNETIC) {
 
 							if (pSDemag_Demag[idx_mesh]->do_transfer) {
 
@@ -1574,6 +1631,8 @@ double SDemag::UpdateField(void)
 								pSDemag_Demag[idx_mesh]->transfer.transfer_out();
 							}
 							else {
+
+								//transfer is forced for atomistic meshes, so if no transfer required, this must mean a micromagnetic mesh
 
 								//add contribution to Heff
 								#pragma omp parallel for
@@ -1593,7 +1652,7 @@ double SDemag::UpdateField(void)
 					for (int idx_mesh = 0; idx_mesh < pSDemag_Demag.size(); idx_mesh++) {
 
 						//ANTIFERROMAGNETIC
-						if (pSDemag_Demag[idx_mesh]->pMesh->GetMeshType() == MESH_ANTIFERROMAGNETIC) {
+						if (pSDemag_Demag[idx_mesh]->pMeshBase->GetMeshType() == MESH_ANTIFERROMAGNETIC) {
 
 							if (pSDemag_Demag[idx_mesh]->do_transfer) {
 
@@ -1644,6 +1703,8 @@ double SDemag::UpdateField(void)
 								pSDemag_Demag[idx_mesh]->transfer.transfer_out();
 							}
 							else {
+
+								//transfer is forced for atomistic meshes, so if no transfer required, this must mean a micromagnetic mesh
 
 								//add contribution to Heff
 								#pragma omp parallel for

@@ -40,10 +40,18 @@ void STransportCUDA::solve_charge_transport_sor(void)
 	if (pSTrans->iters_to_conv == pSTrans->maxLaplaceIterations) pSTrans->recalculate_transport = true;
 
 	//2. update E in all meshes
+	double total_current_out = 0.0;
+
 	for (int idx = 0; idx < (int)pTransport.size(); idx++) {
 
-		pTransport[idx]->CalculateElectricField();
+		pTransport[idx]->CalculateElectricField(pSTrans->IsOpenPotential());
+
+		//in open potential mode count total thermoelectric current generated
+		if (pSTrans->IsOpenPotential()) total_current_out += pTransport[idx]->mesh_thermoelectric_net_current.to_cpu();
 	}
+
+	//in open potential mode count total thermoelectric current generated and set potential depending on open potential resistance set
+	if (pSTrans->IsOpenPotential()) pSTrans->SetPotential(total_current_out * pSTrans->open_potential_resistance);
 
 	//store the current max error in the energy term so it can be read if requested
 	energy.from_cpu(normalized_max_error.first);

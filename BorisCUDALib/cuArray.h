@@ -180,9 +180,9 @@ public:
 	template <typename Type>
 	__host__ void copy_from_vector(std::vector<Type>& cpuvec);
 
-	//copy values to a std::vector into cpu memory. Doesn't set size, but copies up to currently allocated size.
+	//copy values to a std::vector into cpu memory. Doesn't set size, but copies up to currently allocated size, starting at given offset in cpuvec
 	template <typename Type>
-	__host__ void copy_to_vector(std::vector<Type>& cpuvec);
+	__host__ void copy_to_vector(std::vector<Type>& cpuvec, size_t offset = 0);
 
 	//------------------------------------------- SET VALUE : cuArray_aux.h
 
@@ -190,7 +190,7 @@ public:
 	__host__ void set(VType value);
 
 	//set single value from cpu memory at given index
-	__host__ void set(int index, VType value);
+	__host__ void setvalue(int index, VType value);
 
 	//------------------------------------------- GET SIZE : cuArray_aux.h
 

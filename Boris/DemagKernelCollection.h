@@ -8,8 +8,6 @@
 
 #include "ConvolutionData.h"
 
-
-
 //NOTES:
 
 //Multiple options available for kernel multiplications:
@@ -47,10 +45,6 @@ struct KerType {
 
 	//3D Real
 	VEC<DBL3> Kdiag_real, Kodiag_real;
-
-	//internal_demag == true -> use real kernels with reduced memory usage, 2D or 3D.
-	//internal_demag == false -> use complex kernels 3D only.
-	bool internal_demag = false;
 
 	//if z shifted only then kernel multiplications and storage can be made more efficient for 2D. For 3D we can make storage more efficient.
 	bool zshifted = false;
@@ -132,9 +126,9 @@ private:
 	//-------------------------- RUN-TIME KERNEL MULTIPLICATION
 
 	//These compute the self contributions using the real kernels with full use of symmetries
-	//These set the output, not add into it, so always call it first -> each kernel collection has exactly one self contribution
-	void KernelMultiplication_2D_Self(VEC<ReIm3>& In, VEC<ReIm3>& Out);
-	void KernelMultiplication_3D_Self(VEC<ReIm3>& In, VEC<ReIm3>& Out);
+	//These set the output (unless specified otherwise), not add into it, so always call it first -> each kernel collection has exactly one self contribution
+	void KernelMultiplication_2D_Self(VEC<ReIm3>& In, VEC<ReIm3>& Out, bool set_output = true);
+	void KernelMultiplication_3D_Self(VEC<ReIm3>& In, VEC<ReIm3>& Out, bool set_output = true);
 
 	//z shifted regular version
 	void KernelMultiplication_2D_zShifted(VEC<ReIm3>& In, VEC<ReIm3>& Out, VEC<DBL3>& Kdiag, VEC<DBL3>& Kodiag);
@@ -160,7 +154,7 @@ protected:
 	//-------------------------- SETTERS
 
 	//Set all the rectangles participating in convolution. This determines the number of kernels needed : one for each mesh.
-	BError Set_Rect_Collection(std::vector<Rect>& Rect_collection_, Rect this_rect_, double h_max_);
+	BError Set_Rect_Collection(std::vector<Rect>& Rect_collection_, Rect this_rect_, double h_max_, int self_contribution_index_);
 
 	//-------------------------- GETTERS
 

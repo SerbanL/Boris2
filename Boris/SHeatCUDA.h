@@ -14,8 +14,6 @@
 #include "HeatBaseCUDA.h"
 #include "MeshParamsCUDA.h"
 
-
-
 class SuperMesh;
 class SHeat;
 

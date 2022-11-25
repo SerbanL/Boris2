@@ -11,7 +11,9 @@
 #include "ConvolutionCUDA.h"
 #include "DemagKernelCollectionCUDA.h"
 
+class MeshBaseCUDA;
 class MeshCUDA;
+class Atom_MeshCUDA;
 class ManagedMeshCUDA;
 class SDemag_Demag;
 class SDemagCUDA;
@@ -24,11 +26,14 @@ class SDemagCUDA_Demag :
 
 private:
 
-	//pointer to CUDA version of mesh object holding the effective field module holding this CUDA module
-	MeshCUDA * pMeshCUDA;
+	MeshBaseCUDA *pMeshBaseCUDA = nullptr;
+
+	//pointer to CUDA version of mesh object holding the effective field module holding this CUDA module (either micromagnetic or atomistic - only one will be not nullptr, so check)
+	MeshCUDA * pMeshCUDA = nullptr;
+	Atom_MeshCUDA * paMeshCUDA = nullptr;
 
 	//pointer to cpu version of this module
-	SDemag_Demag *pSDemag_Demag;
+	SDemag_Demag *pSDemag_Demag = nullptr;
 
 	//transfer values from M of this mesh to a cuVEC with fixed number of cells -> use same meshing for all layers.
 	cu_obj<cuVEC<cuReal3>> transfer;
@@ -59,7 +64,7 @@ private:
 
 public:
 
-	SDemagCUDA_Demag(MeshCUDA* pMeshCUDA_, SDemag_Demag *pSDemag_Demag_);
+	SDemagCUDA_Demag(MeshBaseCUDA* pMeshBaseCUDA_, SDemag_Demag *pSDemag_Demag_);
 	~SDemagCUDA_Demag();
 
 	//-------------------Abstract base class method implementations

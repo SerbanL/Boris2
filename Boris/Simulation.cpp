@@ -985,6 +985,13 @@ Simulation::Simulation(
 	commands[CMD_SETCURRENTDENSITY].unit = "A/m2";
 	commands[CMD_SETCURRENTDENSITY].limits = { { Any(), Any() }, { Any(), Any() } };
 
+	commands.insert(CMD_OPENPOTENTIAL, CommandSpecifier(CMD_OPENPOTENTIAL), "openpotentialresistance");
+	commands[CMD_OPENPOTENTIAL].usage = "[tc0,0.5,0,1/tc]USAGE : <b>openpotentialresistance</b> <i>resistance</i>";
+	commands[CMD_OPENPOTENTIAL].descr = "[tc0,0.5,0.5,1/tc]Set open potential mode for electrodes, by setting a resistance value - set zero to disable open potential mode. In this mode the electrode potential is determined during the simulation, e.g. if thermoelectric effect is enabled, then setting electrodes in open potential mode allows a thermoelectric current to flow through the electrodes, with potential determined as thermoelectric current generated times resistance set.";
+	commands[CMD_OPENPOTENTIAL].unit = "Ohm";
+	commands[CMD_OPENPOTENTIAL].limits = { { double(0.0), Any() } };
+	commands[CMD_OPENPOTENTIAL].return_descr = "[tc0,0.5,0,1/tc]Script return values: <i>resistance</i>";
+
 	commands.insert(CMD_TSOLVERCONFIG, CommandSpecifier(CMD_TSOLVERCONFIG), "tsolverconfig");
 	commands[CMD_TSOLVERCONFIG].usage = "[tc0,0.5,0,1/tc]USAGE : <b>tsolverconfig</b> <i>convergence_error (iters_timeout)</i>";
 	commands[CMD_TSOLVERCONFIG].limits = { { double(0.0), double(1.0) }, { int(1), Any() } };
@@ -1022,14 +1029,19 @@ Simulation::Simulation(
 	commands[CMD_TMRTYPE].return_descr = "[tc0,0.5,0,1/tc]Script return values: <i>setting</i>";
 
 	commands.insert(CMD_RAPBIAS_EQUATION, CommandSpecifier(CMD_RAPBIAS_EQUATION), "rapbiasequation");
-	commands[CMD_RAPBIAS_EQUATION].usage = "[tc0,0.5,0,1/tc]USAGE : <b>rapbiasequation</b> <i>(meshname) text_equation</i>";
+	commands[CMD_RAPBIAS_EQUATION].usage = "[tc0,0.5,0,1/tc]USAGE : <b>rapbiasequation</b> <i>meshname text_equation</i>";
 	commands[CMD_RAPBIAS_EQUATION].limits = { {Any(), Any()}, {Any(), Any()} };
 	commands[CMD_RAPBIAS_EQUATION].descr = "[tc0,0.5,0.5,1/tc]Set equation for bias dependence of TMR parallel RA value in given mesh (must be insulator with tmr module added) - the text equation variables are RAp (parallel TMR RA), RAap (antiparallel TMR RA), and V (bias across insulator mesh). Call with empty equation string to clear any currently set equation.";
 
 	commands.insert(CMD_RAAPBIAS_EQUATION, CommandSpecifier(CMD_RAAPBIAS_EQUATION), "raapbiasequation");
-	commands[CMD_RAAPBIAS_EQUATION].usage = "[tc0,0.5,0,1/tc]USAGE : <b>raapbiasequation</b> <i>(meshname) text_equation</i>";
+	commands[CMD_RAAPBIAS_EQUATION].usage = "[tc0,0.5,0,1/tc]USAGE : <b>raapbiasequation</b> <i>meshname text_equation</i>";
 	commands[CMD_RAAPBIAS_EQUATION].limits = { {Any(), Any()}, {Any(), Any()} };
 	commands[CMD_RAAPBIAS_EQUATION].descr = "[tc0,0.5,0.5,1/tc]Set equation for bias dependence of TMR anti-parallel RA value in given mesh (must be insulator with tmr module added) - the text equation uses V for the bias value. Call with empty equation string to clear any currently set equation.";
+
+	commands.insert(CMD_TAMREQUATION, CommandSpecifier(CMD_TAMREQUATION), "tamrequation");
+	commands[CMD_TAMREQUATION].usage = "[tc0,0.5,0,1/tc]USAGE : <b>tamrequation</b> <i>meshname text_equation</i>";
+	commands[CMD_TAMREQUATION].limits = { {Any(), Any()}, {Any(), Any()} };
+	commands[CMD_TAMREQUATION].descr = "[tc0,0.5,0.5,1/tc]Set conductivity equation for TAMR effect (must be a mesh with transport module added) - the text equation uses parameters TAMR, d1, d2, d3. Here TAMR = tamr / 100 is the ratio, where tamr is the material parameter set as a percentage value. di = eai.m, i = 1, 2, 3, where eai is the crystalline axis and m is the magnetization direction. Call with empty equation string to clear any currently set equation and use default conductivity formula: cond / elC = 1 / (1 + TAMR * (1 - d1*d1)), where elC is the base conductivity (material parameter). Note, the formula set always multiplies elC to obtain conductivity due to TAMR.";
 
 	commands.insert(CMD_TEMPERATURE, CommandSpecifier(CMD_TEMPERATURE), "temperature");
 	commands[CMD_TEMPERATURE].usage = "[tc0,0.5,0,1/tc]USAGE : <b>temperature</b> <i>(meshname) value</i>";
@@ -1041,7 +1053,7 @@ Simulation::Simulation(
 	commands.insert(CMD_SETHEATDT, CommandSpecifier(CMD_SETHEATDT), "setheatdt");
 	commands[CMD_SETHEATDT].usage = "[tc0,0.5,0,1/tc]USAGE : <b>setheatdt</b> <i>value</i>";
 	commands[CMD_SETHEATDT].limits = { { double(0), double(MAXTIMESTEP) } };
-	commands[CMD_SETHEATDT].descr = "[tc0,0.5,0.5,1/tc]Set heat equation solver time step.";
+	commands[CMD_SETHEATDT].descr = "[tc0,0.5,0.5,1/tc]Set heat equation solver time step. Zero value disables solver.";
 	commands[CMD_SETHEATDT].unit = "s";
 	commands[CMD_SETHEATDT].return_descr = "[tc0,0.5,0,1/tc]Script return values: <i>value</i> - heat equation time step.";
 
@@ -1096,6 +1108,73 @@ Simulation::Simulation(
 	commands[CMD_TMODEL].usage = "[tc0,0.5,0,1/tc]USAGE : <b>tmodel</b> <i>(meshname) num_temperatures</i>";
 	commands[CMD_TMODEL].limits = { { Any(), Any() }, { int(1), Any() } };
 	commands[CMD_TMODEL].descr = "[tc0,0.5,0.5,1/tc]Set temperature model (determined by number of temperatures) in given meshname (focused mesh if not specified). Note insulating meshes only allow a 1-temperature model.";
+
+	commands.insert(CMD_RESETELSOLVER, CommandSpecifier(CMD_RESETELSOLVER), "resetelsolver");
+	commands[CMD_RESETELSOLVER].usage = "[tc0,0.5,0,1/tc]USAGE : <b>resetelsolver</b>";
+	commands[CMD_RESETELSOLVER].descr = "[tc0,0.5,0.5,1/tc]Reset the elastodynamics solver to unstrained state.";
+
+	commands.insert(CMD_STRAINEQUATION, CommandSpecifier(CMD_STRAINEQUATION), "strainequation");
+	commands[CMD_STRAINEQUATION].usage = "[tc0,0.5,0,1/tc]USAGE : <b>strainequation</b> <i>(meshname) text_equation</i>";
+	commands[CMD_STRAINEQUATION].limits = { { Any(), Any() }, { Any(), Any() } };
+	commands[CMD_STRAINEQUATION].descr = "[tc0,0.5,0.5,1/tc]Set equation for diagonal strain components, using a vector text equation (3 equations separated by commas) in given meshname (focused mesh if not specified). This will disable the elastodynamics solver in all meshes.";
+
+	commands.insert(CMD_SHEARSTRAINEQUATION, CommandSpecifier(CMD_SHEARSTRAINEQUATION), "shearstrainequation");
+	commands[CMD_SHEARSTRAINEQUATION].usage = "[tc0,0.5,0,1/tc]USAGE : <b>shearstrainequation</b> <i>(meshname) text_equation</i>";
+	commands[CMD_SHEARSTRAINEQUATION].limits = { { Any(), Any() }, { Any(), Any() } };
+	commands[CMD_SHEARSTRAINEQUATION].descr = "[tc0,0.5,0.5,1/tc]Set equation for shear strain components, using a vector text equation (3 equations separated by commas) in given meshname (focused mesh if not specified). This will disable the elastodynamics solver in all meshes.";
+	
+	commands.insert(CMD_CLEARSTRAINEQUATIONS, CommandSpecifier(CMD_CLEARSTRAINEQUATIONS), "clearstrainequations");
+	commands[CMD_CLEARSTRAINEQUATIONS].usage = "[tc0,0.5,0,1/tc]USAGE : <b>clearstrainequations</b>";
+	commands[CMD_CLEARSTRAINEQUATIONS].descr = "[tc0,0.5,0.5,1/tc]Clear strain equations from all meshes.";
+
+	commands.insert(CMD_SETELDT, CommandSpecifier(CMD_SETELDT), "seteldt");
+	commands[CMD_SETELDT].usage = "[tc0,0.5,0,1/tc]USAGE : <b>seteldt</b> <i>value</i>";
+	commands[CMD_SETELDT].limits = { { double(0), double(MAXTIMESTEP) } };
+	commands[CMD_SETELDT].descr = "[tc0,0.5,0.5,1/tc]Set elastodynamics equation solver time step. Zero value disables solver.";
+	commands[CMD_SETELDT].unit = "s";
+	commands[CMD_SETELDT].return_descr = "[tc0,0.5,0,1/tc]Script return values: <i>value</i> - elastodynamics equation time step.";
+
+	commands.insert(CMD_LINKDTELASTIC, CommandSpecifier(CMD_LINKDTELASTIC), "linkdtelastic");
+	commands[CMD_LINKDTELASTIC].usage = "[tc0,0.5,0,1/tc]USAGE : <b>linkdtelastic</b> <i>flag</i>";
+	commands[CMD_LINKDTELASTIC].limits = { { int(0), int(1) } };
+	commands[CMD_LINKDTELASTIC].descr = "[tc0,0.5,0.5,1/tc]Links elastodynamics solver time-step to magnetic ODE time-step if set, else elastodynamics time-step is independently controlled.";
+
+	commands.insert(CMD_SURFACEFIX, CommandSpecifier(CMD_SURFACEFIX), "surfacefix");
+	commands[CMD_SURFACEFIX].usage = "[tc0,0.5,0,1/tc]USAGE : <b>surfacefix</b> <i>(meshname) rect_or_face</i>";
+	commands[CMD_SURFACEFIX].unit = "m";
+	commands[CMD_SURFACEFIX].descr = "[tc0,0.5,0.5,1/tc]Add a fixed surface for the elastodynamics solver. A plane rectangle may be specified in absolute coordinates, which should intersect at least one mesh face, which will then be set as fixed. Alternatively an entire mesh face may be specified using a string literal: -x, x, -y, y, -z, or z. In this case a named mesh will also be required (focused mesh if not given).";
+
+	commands.insert(CMD_SURFACESTRESS, CommandSpecifier(CMD_SURFACESTRESS), "surfacestress");
+	commands[CMD_SURFACESTRESS].usage = "[tc0,0.5,0,1/tc]USAGE : <b>surfacestress</b> <i>(meshname) rect_or_face vector_equation</i>";
+	commands[CMD_SURFACESTRESS].unit = "m";
+	commands[CMD_SURFACESTRESS].descr = "[tc0,0.5,0.5,1/tc]Add an external stress surface for the elastodynamics solver. A plane rectangle may be specified in absolute coordinates, which should intersect at least one mesh face, which will then be set as fixed. Alternatively an entire mesh face may be specified using a string literal: -x, x, -y, y, -z, or z. In this case a named mesh will also be required (focused mesh if not given). The external stress is specified using a vector equation, with variables x, y, t. Coordinates x, y are relative to specified rectangle, and t is the time.";
+
+	commands.insert(CMD_DELSURFACEFIX, CommandSpecifier(CMD_DELSURFACEFIX), "delsurfacefix");
+	commands[CMD_DELSURFACEFIX].usage = "[tc0,0.5,0,1/tc]USAGE : <b>delsurfacefix</b> <i>index</i>";
+	commands[CMD_DELSURFACEFIX].limits = { {int(-1), Any()} };
+	commands[CMD_DELSURFACEFIX].descr = "[tc0,0.5,0.5,1/tc]Delete a fixed surface with given index (previously added with surfacefix). Use index -1 to delete all fixed surfaces.";
+
+	commands.insert(CMD_DELSURFACESTRESS, CommandSpecifier(CMD_DELSURFACESTRESS), "delsurfacestress");
+	commands[CMD_DELSURFACESTRESS].usage = "[tc0,0.5,0,1/tc]USAGE : <b>delsurfacestress</b> <i>index</i>";
+	commands[CMD_DELSURFACESTRESS].limits = { {int(-1), Any()}  };
+	commands[CMD_DELSURFACESTRESS].descr = "[tc0,0.5,0.5,1/tc]Delete an external stress surface with given index (previously added with surfacestress). Use index -1 to delete all external stress surfaces.";
+
+	commands.insert(CMD_EDITSURFACEFIX, CommandSpecifier(CMD_EDITSURFACEFIX), "editsurfacefix");
+	commands[CMD_EDITSURFACEFIX].usage = "[tc0,0.5,0,1/tc]USAGE : <b>editsurfacefix</b> <i>index rect</i>";
+	commands[CMD_EDITSURFACEFIX].limits = { {int(0), Any()},  { Any(), Any() } };
+	commands[CMD_EDITSURFACEFIX].unit = "m";
+	commands[CMD_EDITSURFACEFIX].descr = "[tc0,0.5,0.5,1/tc]Edit rectangle of fixed surface with given index.";
+
+	commands.insert(CMD_EDITSURFACESTRESS, CommandSpecifier(CMD_EDITSURFACESTRESS), "editsurfacestress");
+	commands[CMD_EDITSURFACESTRESS].usage = "[tc0,0.5,0,1/tc]USAGE : <b>editsurfacestress</b> <i>index rect</i>";
+	commands[CMD_EDITSURFACESTRESS].limits = { {int(0), Any()},  { Any(), Any() } };
+	commands[CMD_EDITSURFACESTRESS].unit = "m";
+	commands[CMD_EDITSURFACESTRESS].descr = "[tc0,0.5,0.5,1/tc]Edit rectangle of stress surface with given index.";
+
+	commands.insert(CMD_EDITSURFACESTRESSEQUATION, CommandSpecifier(CMD_EDITSURFACESTRESSEQUATION), "editsurfacestressequation");
+	commands[CMD_EDITSURFACESTRESSEQUATION].usage = "[tc0,0.5,0,1/tc]USAGE : <b>editsurfacestressequation</b> <i>index equation</i>";
+	commands[CMD_EDITSURFACESTRESSEQUATION].limits = { {int(0), Any()},  { Any(), Any() } };
+	commands[CMD_EDITSURFACESTRESSEQUATION].descr = "[tc0,0.5,0.5,1/tc]Edit equation of stress surface with given index.";
 
 	commands.insert(CMD_STOCHASTIC, CommandSpecifier(CMD_STOCHASTIC), "stochastic");
 	commands[CMD_STOCHASTIC].usage = "[tc0,0.5,0,1/tc]USAGE : <b>stochastic</b>";
@@ -1246,8 +1325,19 @@ Simulation::Simulation(
 
 	commands.insert(CMD_LOADOVF2FIELD, CommandSpecifier(CMD_LOADOVF2FIELD), "loadovf2field");
 	commands[CMD_LOADOVF2FIELD].usage = "[tc0,0.5,0,1/tc]USAGE : <b>loadovf2field</b> <i>(meshname) (directory/)filename</i>";
-	commands[CMD_LOADOVF2FIELD].descr = "[tc0,0.5,0.5,1/tc]Load an OOMMF-style OVF 2.0 file containing applied field data, into the given mesh (which must be magnetic; focused mesh if not specified), mapping the data to the current mesh dimensions.";
+	commands[CMD_LOADOVF2FIELD].descr = "[tc0,0.5,0.5,1/tc]Load an OOMMF-style OVF 2.0 file containing applied field data, into the given mesh (which must be magnetic; focused mesh if not specified), mapping the data to the current mesh dimensions. Alternatively if meshname is supermesh, then load a global field with absolute rectangle coordinates and its own discretization.";
 	commands[CMD_LOADOVF2FIELD].limits = { { Any(), Any() }, { Any(), Any() } };
+
+	commands.insert(CMD_CLEARGLOBALFIELD, CommandSpecifier(CMD_CLEARGLOBALFIELD), "clearglobalfield");
+	commands[CMD_CLEARGLOBALFIELD].usage = "[tc0,0.5,0,1/tc]USAGE : <b>clearglobalfield</b>";
+	commands[CMD_CLEARGLOBALFIELD].descr = "[tc0,0.5,0.5,1/tc]Clear a set global field (previously loaded with loadovf2field on supermesh).";
+
+	commands.insert(CMD_SHIFTGLOBALFIELD, CommandSpecifier(CMD_SHIFTGLOBALFIELD), "shiftglobalfield");
+	commands[CMD_SHIFTGLOBALFIELD].usage = "[tc0,0.5,0,1/tc]USAGE : <b>shiftglobalfield</b> <i>shift</i>";
+	commands[CMD_SHIFTGLOBALFIELD].unit = "m";
+	commands[CMD_SHIFTGLOBALFIELD].limits = { { DBL3(-MAXSIMSPACE), DBL3(MAXSIMSPACE) } };
+	commands[CMD_SHIFTGLOBALFIELD].descr = "[tc0,0.5,0.5,1/tc]Shift rectangle of global field (previously loaded with loadovf2field on supermesh).";
+	commands[CMD_SHIFTGLOBALFIELD].return_descr = "[tc0,0.5,0,1/tc]Script return values: <i>rect</i> (global field rectangle)";
 
 	commands.insert(CMD_LOADOVF2TEMP, CommandSpecifier(CMD_LOADOVF2TEMP), "loadovf2temp");
 	commands[CMD_LOADOVF2TEMP].usage = "[tc0,0.5,0,1/tc]USAGE : <b>loadovf2temp</b> <i>(meshname) (directory/)filename</i>";
@@ -1415,6 +1505,12 @@ Simulation::Simulation(
 	commands[CMD_MCCONEANGLELIMITS].descr = "[tc0,0.5,0.5,1/tc]Set Monte Carlo cone angle limits (1 to 180 degrees). Setting min and max values the same results in a fixed cone angle Monte Carlo algorithm.";
 	commands[CMD_MCCONEANGLELIMITS].limits = { {DBL2(), DBL2(180, 180)} };
 	commands[CMD_MCCONEANGLELIMITS].return_descr = "[tc0,0.5,0,1/tc]Script return values: <i>min_angle max_angle</i>";
+
+	commands.insert(CMD_PRNGSEED, CommandSpecifier(CMD_PRNGSEED), "prngseed");
+	commands[CMD_PRNGSEED].usage = "[tc0,0.5,0,1/tc]USAGE : <b>prngseed</b> <i>(meshname) seed</i>";
+	commands[CMD_PRNGSEED].descr = "[tc0,0.5,0.5,1/tc]Set PRNG seed, for computations with stochasticity, in given mesh (all meshes if name not given). If seed = 0 then system tick count is used as seed (default behavior), otherwise the fixed set value is used. NOTE: seed values > 0 only take effect for computations with cuda 1.";
+	commands[CMD_PRNGSEED].limits = { {Any(), Any()}, {int(0), Any()} };
+	commands[CMD_PRNGSEED].return_descr = "[tc0,0.5,0,1/tc]Script return values: <i>seed</i>";
 
 	commands.insert(CMD_SHAPEMOD_ROT, CommandSpecifier(CMD_SHAPEMOD_ROT), "shape_rotation");
 	commands[CMD_SHAPEMOD_ROT].usage = "[tc0,0.5,0,1/tc]USAGE : <b>shape_rotation</b> <i>psi theta phi</i>";
@@ -1836,14 +1932,14 @@ Simulation::Simulation(
 	commands[CMD_DP_FITSTT].return_descr = "[tc0,0.5,0,1/tc]Script return values: <i>P, beta, std_P, std_beta, Rsq</i>.";
 
 	commands.insert(CMD_DP_FITSOT, CommandSpecifier(CMD_DP_FITSOT), "dp_fitsot");
-	commands[CMD_DP_FITSOT].usage = "[tc0,0.5,0,1/tc]USAGE : <b>dp_fitsot</b> <i>(meshname) hm_mesh (rectangle)</i>";
+	commands[CMD_DP_FITSOT].usage = "[tc0,0.5,0,1/tc]USAGE : <b>dp_fitsot</b> <i>(meshname) (hm_mesh) (rectangle)</i>";
 	commands[CMD_DP_FITSOT].limits = { { Any(), Any() }, { Any(), Any() }, {Rect(), Any()} };
-	commands[CMD_DP_FITSOT].descr = "[tc0,0.5,0.5,1/tc]Fit the computed self-consistent interfacial spin torque using SOT with fitting parameters SHAeff and flST (field-like torque coefficient). hm_mesh specifies the heavy metal mesh from which to obtain the current density. The fitting is done inside the specified rectangle for the given mesh (focused mesh if not specified), with the rectangle specified using relative coordinates as sx sy sz ex ey ez (entire mesh if not specified). The focused mesh must be ferromagnetic, have the transport module set with spin solver enabled, and we also require Jc and Tsi to have been computed.";
+	commands[CMD_DP_FITSOT].descr = "[tc0,0.5,0.5,1/tc]Fit the computed self-consistent interfacial spin torque using SOT with fitting parameters SHAeff and flST (field-like torque coefficient). hm_mesh specifies the heavy metal mesh from which to obtain the current density - if not specified, then the current density in meshname is used instead. The fitting is done inside the specified rectangle for the given mesh (focused mesh if not specified), with the rectangle specified using relative coordinates as sx sy sz ex ey ez (entire mesh if not specified). This mesh must be ferromagnetic, have the transport module set with spin solver enabled, and we also require Jc and Tsi to have been computed.";
 	commands[CMD_DP_FITSOT].unit = "m";
 	commands[CMD_DP_FITSOT].return_descr = "[tc0,0.5,0,1/tc]Script return values: <i>SHAeff, flST, std_SHAeff, std_flST, Rsq</i>.";
 
 	commands.insert(CMD_DP_FITSOTSTT, CommandSpecifier(CMD_DP_FITSOTSTT), "dp_fitsotstt");
-	commands[CMD_DP_FITSOTSTT].usage = "[tc0,0.5,0,1/tc]USAGE : <b>dp_fitsotstt</b> <i>(meshname) hm_mesh (rectangle)</i>";
+	commands[CMD_DP_FITSOTSTT].usage = "[tc0,0.5,0,1/tc]USAGE : <b>dp_fitsotstt</b> <i>(meshname) (hm_mesh) (rectangle)</i>";
 	commands[CMD_DP_FITSOTSTT].limits = { {Any(), Any()}, {Any(), Any()}, {Rect(), Any()} };
 	commands[CMD_DP_FITSOTSTT].descr = "[tc0,0.5,0.5,1/tc]Fit the computed self-consistent spin torque (see below) using Zhang-Li STT with fitting parameters P and beta (non-adiabaticity), and simultaneously also using SOT with fitting parameters SHAeff and flST (field-like torque coefficient). hm_mesh specifies the heavy metal mesh from which to obtain the current density for SOT. The fitting is done inside the specified rectangle for the given mesh (focused mesh if not specified), with the rectangle specified using relative coordinates as sx sy sz ex ey ez (entire mesh if not specified). The focused mesh must be ferromagnetic, have the transport module set with spin solver enabled, and we also require Jc and either Ts or Tsi to have been computed to have been computed. The fitting is done on Ts, Tsi, or on their sum depending if they’ve been enabled or not.";
 	commands[CMD_DP_FITSOTSTT].unit = "m";
@@ -2021,6 +2117,7 @@ Simulation::Simulation(
 	moduleHandles.push_back("strayfield", MODS_STRAYFIELD);
 	moduleHandles.push_back("stransport", MODS_STRANSPORT);
 	moduleHandles.push_back("sheat", MODS_SHEAT);
+	moduleHandles.push_back("smelastic", MODS_SMELASTIC);
 	moduleHandles.push_back("Oersted", MODS_OERSTED);
 
 	//---------------------------------------------------------------- ODEs

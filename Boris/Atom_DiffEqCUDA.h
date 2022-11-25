@@ -42,7 +42,7 @@ protected:
 	cu_obj<cuVEC<cuReal3>> H_Thermal;
 
 	//pseudo-random number generator for use in cuda kernels
-	cu_obj<cuBorisRand> prng;
+	cu_obj<cuBorisRand<>> prng;
 
 	//deltaT to use for stochastic field generation : set before generating stochastic fields if not linked to dT
 	cu_obj<cuBReal> deltaTstoch;

@@ -102,6 +102,24 @@ void Simulation::MakeIOInfo(void)
 
 	ioInfo.push_back(odeheatdt_info, IOI_HEATDT);
 
+	//Set elastodynamics equation time step: textId is the value
+	//IOI_ELDT
+
+	std::string odeeldt_info =
+		std::string("[tc1,1,0,1/tc]<b>Elastodynamics Equation Time Step</b>") +
+		std::string("\n[tc1,1,0,1/tc]double-click: edit\n");
+
+	ioInfo.push_back(odeeldt_info, IOI_ELDT);
+
+	//Link elastodynamics time-step to ODE dT flag : auxId is the value
+	//IOI_LINKELDT
+
+	std::string linkeldt_info =
+		std::string("[tc1,1,0,1/tc]<b>Link eldT to ODE dT</b>") +
+		std::string("\n[tc1,1,0,1/tc]click: change\n");
+
+	ioInfo.push_back(linkeldt_info, IOI_LINKELDT);
+
 	//Set stochastic time-step: textId is the value
 	//IOI_STOCHDT
 
@@ -163,6 +181,7 @@ void Simulation::MakeIOInfo(void)
 	//IOI_MESH_FORPBC
 	//IOI_MESH_FOREXCHCOUPLING
 	//IOI_MESH_FORSTOCHASTICITY
+	//IOI_MESH_FORELASTICITY
 	//IOI_MESH_FORSPEEDUP
 
 	std::string mesh_info =
@@ -186,6 +205,7 @@ void Simulation::MakeIOInfo(void)
 	ioInfo.push_back(mesh_info, IOI_MESH_FORPBC);
 	ioInfo.push_back(mesh_info, IOI_MESH_FOREXCHCOUPLING);
 	ioInfo.push_back(mesh_info, IOI_MESH_FORSTOCHASTICITY);
+	ioInfo.push_back(mesh_info, IOI_MESH_FORELASTICITY);
 	ioInfo.push_back(mesh_info, IOI_MESH_FORSPEEDUP);
 	ioInfo.push_back(mesh_info, IOI_MESH_FORSKYPOSDMUL);
 	ioInfo.push_back(mesh_info, IOI_MESH_FORMC);
@@ -725,6 +745,7 @@ void Simulation::MakeIOInfo(void)
 	ioInfo.set(param_generic_info + std::string("<i><b>TMR RA product for parallel state"), INT2(IOI_MESHPARAM, PARAM_RATMR_P));
 	ioInfo.set(param_generic_info + std::string("<i><b>TMR RA product for antiparallel state"), INT2(IOI_MESHPARAM, PARAM_RATMR_AP));
 	ioInfo.set(param_generic_info + std::string("<i><b>Anisotropic magnetoresistance"), INT2(IOI_MESHPARAM, PARAM_AMR));
+	ioInfo.set(param_generic_info + std::string("<i><b>Tunnelling anisotropic magnetoresistance"), INT2(IOI_MESHPARAM, PARAM_TAMR));
 	ioInfo.set(param_generic_info + std::string("<i><b>Current spin polarization"), INT2(IOI_MESHPARAM, PARAM_P));
 	ioInfo.set(param_generic_info + std::string("<i><b>Zhang-Li non-adiabaticity"), INT2(IOI_MESHPARAM, PARAM_BETA));
 	ioInfo.set(param_generic_info + std::string("<i><b>Electron diffusion"), INT2(IOI_MESHPARAM, PARAM_DE));
@@ -746,11 +767,15 @@ void Simulation::MakeIOInfo(void)
 	ioInfo.set(param_generic_info + std::string("<i><b>Charge pumping efficiency"), INT2(IOI_MESHPARAM, PARAM_CPUMP_EFF));
 	ioInfo.set(param_generic_info + std::string("<i><b>Topological Hall efficiency"), INT2(IOI_MESHPARAM, PARAM_THE_EFF));
 	ioInfo.set(param_generic_info + std::string("<i><b>Carrier density"), INT2(IOI_MESHPARAM, PARAM_NDENSITY));
+	ioInfo.set(param_generic_info + std::string("<i><b>Seebeck coefficient"), INT2(IOI_MESHPARAM, PARAM_SEEBECK));
+	ioInfo.set(param_generic_info + std::string("<i><b>Joule heating effect efficiency"), INT2(IOI_MESHPARAM, PARAM_JOULE_EFF));
 	ioInfo.set(param_generic_info + std::string("<i><b>Thermal conductivity"), INT2(IOI_MESHPARAM, PARAM_THERMCOND));
 	ioInfo.set(param_generic_info + std::string("<i><b>Mass density"), INT2(IOI_MESHPARAM, PARAM_DENSITY));
 	ioInfo.set(param_generic_info + std::string("<i><b>Magnetoelastic coefficients (B1, B2)"), INT2(IOI_MESHPARAM, PARAM_MECOEFF));
 	ioInfo.set(param_generic_info + std::string("<i><b>Young's modulus"), INT2(IOI_MESHPARAM, PARAM_YOUNGSMOD));
 	ioInfo.set(param_generic_info + std::string("<i><b>Poisson's ratio"), INT2(IOI_MESHPARAM, PARAM_POISSONRATIO));
+	ioInfo.set(param_generic_info + std::string("<i><b>Stiffness constants - cubic"), INT2(IOI_MESHPARAM, PARAM_STIFFC_CUBIC));
+	ioInfo.set(param_generic_info + std::string("<i><b>Mechanical damping"), INT2(IOI_MESHPARAM, PARAM_MDAMPING));
 	ioInfo.set(param_generic_info + std::string("<i><b>Specific heat capacity"), INT2(IOI_MESHPARAM, PARAM_SHC));
 	ioInfo.set(param_generic_info + std::string("<i><b>Electronic specific heat capacity"), INT2(IOI_MESHPARAM, PARAM_SHC_E));
 	ioInfo.set(param_generic_info + std::string("<i><b>Electron coupling constant\n<i><b>2TM : electron-lattice"), INT2(IOI_MESHPARAM, PARAM_G_E));
@@ -1292,6 +1317,52 @@ void Simulation::MakeIOInfo(void)
 		std::string("\n[tc1,1,0,1/tc]dbl-click: edit\n");
 
 	ioInfo.push_back(dipoleclipping_info, IOI_DIPOLESHIFTCLIP);
+
+	//Shows strain set equation. minorId is the unique mesh id number. textId is the equation. auxId is enabled(1)/disabled(0) status.
+	//IOI_STRAINEQUATION:
+	//IOI_SHEARSTRAINEQUATION:
+
+	std::string strainequation_info =
+		std::string("[tc1,1,0,1/tc]<b>User set strain equations") +
+		std::string("\n[tc1,1,0,1/tc]dbl-click: edit\n") +
+		std::string("\n[tc1,1,0,1/tc]right-click: disable\n");
+
+	ioInfo.push_back(strainequation_info, IOI_STRAINEQUATION);
+	ioInfo.push_back(strainequation_info, IOI_SHEARSTRAINEQUATION);
+
+	//Shows fixed surface rectangle. minorId is the minor Id in SMElastic::fixed_u_surfaces, auxId is the number of the interactive object in the list (electrode index), textId is the surface rect as a std::string
+	//IOI_SURFACEFIX
+
+	std::string surfacefix_info =
+		std::string("[tc1,1,0,1/tc]<b>Fixed surface rectangle") +
+		std::string("\n[tc1,1,0,1/tc]<i>Sets fixed surface for") +
+		std::string("\n[tc1,1,0,1/tc]<i>elastodynamics solver") +
+		std::string("\n[tc1,1,0,1/tc]dbl-click: edit\n") +
+		std::string("\n[tc1,1,0,1/tc]right-click: delete\n");
+
+	ioInfo.push_back(surfacefix_info, IOI_SURFACEFIX);
+
+	//Shows stress surface rectangle. minorId is the minor Id in SMElastic::stress_surfaces_rect, auxId is the number of the interactive object in the list (electrode index), textId is the surface rect as a std::string
+	//IOI_SURFACESTRESS
+
+	std::string surfacestress_info =
+		std::string("[tc1,1,0,1/tc]<b>Stress surface rectangle") +
+		std::string("\n[tc1,1,0,1/tc]<i>Sets stress surface for") +
+		std::string("\n[tc1,1,0,1/tc]<i>elastodynamics solver") +
+		std::string("\n[tc1,1,0,1/tc]dbl-click: edit\n") +
+		std::string("\n[tc1,1,0,1/tc]right-click: delete\n");
+
+	ioInfo.push_back(surfacestress_info, IOI_SURFACESTRESS);
+
+	//Shows stress surface equation. minorId is the index in SMElastic::stress_surfaces_equations, auxId is the number of the interactive object in the list (electrode index), textId is the equation
+	//IOI_SURFACESTRESSEQ
+
+	std::string surfacestresseq_info =
+		std::string("[tc1,1,0,1/tc]<b>Stress surface equation") +
+		std::string("\n[tc1,1,0,1/tc]dbl-click: edit\n") +
+		std::string("\n[tc1,1,0,1/tc]right-click: delete\n");
+
+	ioInfo.push_back(surfacestresseq_info, IOI_SURFACESTRESSEQ);
 
 	//Shows log_errors enabled/disabled state. auxId is enabled (1)/disabled(0) status.
 	//IOI_ERRORLOGSTATUS:
@@ -1973,6 +2044,14 @@ std::string Simulation::MakeIO(IOI_ identifier, PType ... params)
 		return MakeInteractiveObject("0", IOI_HEATDT, 0, 0, "0");
 		break;
 
+	case IOI_ELDT:
+		return MakeInteractiveObject("0", IOI_ELDT, 0, 0, "0");
+		break;
+
+	case IOI_LINKELDT:
+		return MakeInteractiveObject("On", IOI_LINKELDT, 0, 1);
+		break;
+
 	case IOI_STOCHDT:
 		return MakeInteractiveObject("0", IOI_STOCHDT, 0, 0, "0");
 		break;
@@ -2236,6 +2315,7 @@ std::string Simulation::MakeIO(IOI_ identifier, PType ... params)
 	case IOI_MESH_FORPBC:
 	case IOI_MESH_FOREXCHCOUPLING:
 	case IOI_MESH_FORSTOCHASTICITY:
+	case IOI_MESH_FORELASTICITY:
 	case IOI_MESH_FORSPEEDUP:
 	case IOI_MESH_FORSKYPOSDMUL:
 	case IOI_MESH_FORMC:
@@ -2626,6 +2706,61 @@ std::string Simulation::MakeIO(IOI_ identifier, PType ... params)
 			int meshIndex = ToNum(params_str[0]);
 
 			return MakeInteractiveObject(" ", IOI_DIPOLEVELOCITY, SMesh[meshIndex]->get_id(), 0, "", ONCOLOR);
+		}
+		break;
+
+	//Shows diagonal strain set equation. minorId is the unique mesh id number. textId is the equation. auxId is enabled(1)/disabled(0) status.
+	case IOI_STRAINEQUATION:
+		if (params_str.size() == 1) {
+
+			int meshIndex = ToNum(params_str[0]);
+
+			return MakeInteractiveObject(" None ", IOI_STRAINEQUATION, SMesh[meshIndex]->get_id(), 0, "", OFFCOLOR);
+		}
+		break;
+
+	//Shows shear strain set equation. minorId is the unique mesh id number. textId is the equation. auxId is enabled(1)/disabled(0) status.
+	case IOI_SHEARSTRAINEQUATION:
+		if (params_str.size() == 1) {
+
+			int meshIndex = ToNum(params_str[0]);
+
+			return MakeInteractiveObject(" None ", IOI_SHEARSTRAINEQUATION, SMesh[meshIndex]->get_id(), 0, "", OFFCOLOR);
+		}
+		break;
+
+	case IOI_SURFACEFIX:
+		if (params_str.size() == 1) {
+
+			int surface_index = ToNum(params_str[0]);
+
+			Rect rect = SMesh.CallModuleMethod(&SMElastic::Get_Fixed_Surface, surface_index);
+			int surface_id = SMesh.CallModuleMethod(&SMElastic::Get_Fixed_Surface_id, surface_index);
+
+			return MakeInteractiveObject(ToString(rect, "m"), IOI_SURFACEFIX, surface_id, surface_index, ToString(rect, "m"));
+		}
+		break;
+
+	case IOI_SURFACESTRESS:
+		if (params_str.size() == 1) {
+
+			int surface_index = ToNum(params_str[0]);
+
+			Rect rect = SMesh.CallModuleMethod(&SMElastic::Get_Stress_Surface, surface_index);
+			int surface_id = SMesh.CallModuleMethod(&SMElastic::Get_Stress_Surface_id, surface_index);
+
+			return MakeInteractiveObject(ToString(rect, "m"), IOI_SURFACESTRESS, surface_id, surface_index, ToString(rect, "m"));
+		}
+		break;
+
+	case IOI_SURFACESTRESSEQ:
+		if (params_str.size() == 1) {
+
+			int surface_index = ToNum(params_str[0]);
+
+			std::string equation = SMesh.CallModuleMethod(&SMElastic::Get_Stress_Surface_Equation, surface_index);
+
+			return MakeInteractiveObject(equation, IOI_SURFACESTRESSEQ, surface_index, 0, equation);
 		}
 		break;
 
@@ -3046,3 +3181,4 @@ std::string Simulation::MakeIO(IOI_ identifier, PType ... params)
 
 	return "";
 }
+

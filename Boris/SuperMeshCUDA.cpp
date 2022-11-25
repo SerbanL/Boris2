@@ -14,6 +14,8 @@ SuperMeshCUDA::SuperMeshCUDA(SuperMesh* pSMesh_) :
 	sMeshRect_e(pSMesh_->sMeshRect_e), n_e(pSMesh_->n_e), h_e(pSMesh_->h_e)
 {
 	pSMesh = pSMesh_;
+
+	if (pSMesh->GetGlobalField().linear_size()) globalField()->set_from_cpuvec(pSMesh->GetGlobalField());
 }
 
 SuperMeshCUDA::~SuperMeshCUDA()

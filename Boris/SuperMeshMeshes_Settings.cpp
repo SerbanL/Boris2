@@ -268,6 +268,30 @@ BError SuperMesh::SetField(std::string meshName, DBL3 field_cartesian)
 	return error;
 }
 
+//set prng_seed value in given mesh (all meshes if name empty)
+BError SuperMesh::Set_PRNG_Seed(std::string meshName, unsigned seed)
+{
+	BError error(__FUNCTION__);
+
+	if (meshName.length() && !contains(meshName)) return error(BERROR_INCORRECTNAME);
+
+	if (meshName.length()) {
+
+		pMesh[meshName]->prng_seed = seed;
+	}
+	else {
+
+		for (int idx = 0; idx < pMesh.size(); idx++) {
+
+			pMesh[idx]->prng_seed = seed;
+		}
+	}
+
+	error = UpdateConfiguration(UPDATECONFIG_PRNG);
+
+	return error;
+}
+
 //Set uniform applied mechanical stress
 BError SuperMesh::SetUniformStress(std::string meshName, DBL3 stress_cartesian)
 {
@@ -813,6 +837,89 @@ BError SuperMesh::SetTMR_BiasEquationAntiParallel(std::string meshName, std::str
 	pMesh[meshName]->CallModuleMethod(&TMR::SetBiasEquation_AntiParallel, equation_string);
 
 	return error;
+}
+
+//set text equation for TAMR conductivity in transport module
+BError SuperMesh::Set_TAMR_Conductivity_Equation(std::string meshName, std::string equation_string)
+{
+	BError error(__FUNCTION__);
+
+	if (!contains(meshName)) return error(BERROR_INCORRECTNAME);
+	if (!pMesh[meshName]->IsModuleSet(MOD_TRANSPORT)) return error(BERROR_NOTRANSPORT);
+
+	pMesh[meshName]->CallModuleMethod(&Transport::Set_TAMR_Conductivity_Equation, equation_string);
+
+	return error;
+}
+
+//load field in supermesh (globalField) or in named mesh
+BError SuperMesh::LoadOVF2Field(std::string meshName, std::string fileName)
+{
+	BError error(__FUNCTION__);
+
+	if (!contains(meshName) && meshName != superMeshHandle) return error(BERROR_INCORRECTNAME);
+
+	if (meshName != superMeshHandle) {
+
+		//field in individual mesh
+		if (pMesh[meshName]->Magnetism_Enabled() && pMesh[meshName]->IsModuleSet(MOD_ZEEMAN)) {
+
+			pMesh[meshName]->CallModuleMethod(&ZeemanBase::SetFieldVEC_FromOVF2, fileName);
+		}
+		else return error(BERROR_INCORRECTMODCONFIG);
+	}
+	else {
+
+		//global supermesh field
+		OVF2 ovf2;
+		error = ovf2.Read_OVF2_VEC(fileName, globalField);
+		if (error) return error;
+
+#if COMPILECUDA == 1
+		if (pSMeshCUDA) {
+
+			if (!(pSMeshCUDA->GetGlobalField())()->set_from_cpuvec(globalField)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
+		}
+#endif
+
+		//now that global field is set, must update configuration so each Zeeman module can uninitialize (on reinitialization correct settings will be made in Zeeman modules)
+		error = UpdateConfiguration(UPDATECONFIG_SMESH_GLOBALFIELD);
+	}
+
+	return error;
+}
+
+BError SuperMesh::ClearGlobalField(void)
+{
+	BError error(__FUNCTION__);
+
+	globalField.clear();
+
+#if COMPILECUDA == 1
+	if (pSMeshCUDA) {
+
+		(pSMeshCUDA->GetGlobalField())()->clear();
+	}
+#endif
+
+	error = UpdateConfiguration(UPDATECONFIG_SMESH_GLOBALFIELD);
+
+	return error;
+}
+
+//shift globalField rectangle
+void SuperMesh::ShiftGlobalField(DBL3 shift)
+{
+	globalField.shift_rect_start(shift);
+
+#if COMPILECUDA == 1
+	if (pSMeshCUDA) {
+
+		(pSMeshCUDA->GetGlobalField())()->shift_rect_start(shift);
+	}
+#endif
+
+	UpdateConfiguration(UPDATECONFIG_SMESH_GLOBALFIELD);
 }
 
 //--------------------------------------------------------- GET/SET PROPERTIES / VALUES at SuperMesh level

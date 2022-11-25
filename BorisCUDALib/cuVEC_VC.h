@@ -58,9 +58,9 @@ class cuVEC_VC :
 #define NF_SKIPCELL	1024
 
 //composite media boundary cells (used to flag cells where boundary conditions must be applied). These flags are not set using set_ngbrFlags, but must be externally set
-//cell on positive x side of boundary : bit 11 -> use dirichlet_nx values
+//cell on positive x side of boundary : bit 11
 #define NF_CMBNDPX	2048
-//cell on negative x side of boundary : bit 12 -> use dirichlet_px values, etc.
+//cell on negative x side of boundary : bit 12
 #define NF_CMBNDNX	4096
 //cell on positive y side of boundary : bit 13
 #define NF_CMBNDPY	8192
@@ -163,6 +163,25 @@ class cuVEC_VC :
 #define NF2_DIRICHLETZ (NF2_DIRICHLETPZ + NF2_DIRICHLETNZ)
 #define NF2_DIRICHLET (NF2_DIRICHLETX + NF2_DIRICHLETY + NF2_DIRICHLETZ)
 
+//halo on +x side of boundary, and halo cell not empty : bit 13
+#define NF2_HALOPX	8192
+//halo on -x side of boundary, and halo cell not empty : bit 14
+#define NF2_HALONX	16384
+//halo on +y side of boundary, and halo cell not empty : bit 15
+#define NF2_HALOPY	32768
+//halo on -y side of boundary, and halo cell not empty : bit 16
+#define NF2_HALONY	65536
+//halo on +z side of boundary, and halo cell not empty : bit 17
+#define NF2_HALOPZ	131072
+//halo on -z side of boundary, and halo cell not empty : bit 18
+#define NF2_HALONZ	262144
+
+//masks for x, y, z directions for halo cells
+#define NF2_HALOX (NF2_HALOPX + NF2_HALONX)
+#define NF2_HALOY (NF2_HALOPY + NF2_HALONY)
+#define NF2_HALOZ (NF2_HALOPZ + NF2_HALONZ)
+#define NF2_HALO (NF2_HALOX + NF2_HALOY + NF2_HALOZ)
+
 private:
 
 	//mark cells with various flags to indicate properties of neighboring cells
@@ -210,13 +229,25 @@ private:
 	//when used with moving mesh algorithms calls to shift... functions may be used. If the shift requested is smaller than the cellsize then we cannot perform the shift. 
 	//Add it to shift_debt and on next shift call we might be able to shift the mesh values.
 	cuReal3 shift_debt;
-	
-private:
 
 	//Periodic boundary conditions for evaluating differential operators. If these are set then neighbor flags are calculated accordingly, and applied when evaluating operators.
 	int pbc_x;
 	int pbc_y;
 	int pbc_z;
+
+	//halo arrays applicable to boundaries of mesh at each respective side. either empty or at least 1 cell deep.
+	//halos for each axis are allocated in pairs, i.e. both n and p sides are allocated
+	VType* halo_px;
+	VType* halo_nx;
+	VType* halo_py;
+	VType* halo_ny;
+	VType* halo_pz;
+	VType* halo_nz;
+
+	//allocated sizes for halo arrays for each axis (size values stored on gpu) - n and p halos have same dimensions
+	size_t halo_x_size;
+	size_t halo_y_size;
+	size_t halo_z_size;
 
 private:
 
@@ -242,6 +273,16 @@ private:
 
 	//get dirichlet array size
 	__host__ size_t get_dirichlet_size(int dirichlet_id) const;
+
+	//set halo array size, allocating memory as required
+	//halo_id is one of NF2_HALOX, NF2_HALOY, NF2_HALOZ, since both n and p halos are allocated for a given axis.
+	//also accepts individual halo flags for halo_id
+	__host__ cudaError_t set_halo_size(size_t size, int halo_id);
+
+	//get halo array size
+	//halo_id is one of NF2_HALOX, NF2_HALOY, NF2_HALOZ, since both n and p halos are allocated for a given axis.
+	//also accepts individual halo flags for halo_id
+	__host__ size_t get_halo_size(int halo_id) const;
 
 	//--------------------------------------------IMPORTANT FLAG MANIPULATION METHODS : in cuVEC_VC_flags.cuh and cuVEC_VC_flags.h
 	
@@ -301,6 +342,13 @@ public:
 
 	__host__ int*& ngbrFlags_ref(void) { return ngbrFlags; }
 
+	__host__ VType*& halo_px_ref(void) { return halo_px; }
+	__host__ VType*& halo_nx_ref(void) { return halo_nx; }
+	__host__ VType*& halo_py_ref(void) { return halo_py; }
+	__host__ VType*& halo_ny_ref(void) { return halo_ny; }
+	__host__ VType*& halo_pz_ref(void) { return halo_pz; }
+	__host__ VType*& halo_nz_ref(void) { return halo_nz; }
+
 	//--------------------------------------------COPY TO / FROM VEC_VC
 
 	//copy everything from a VEC_VC - type must be convertible. Return false if failed (memory could not be allocated)
@@ -311,11 +359,11 @@ public:
 	template <typename cpuVEC_VC>
 	__host__ bool set_cpuvec(cpuVEC_VC& vec_vc);
 
-	//faster version of set_from_cpuvec, where it is assumed the cpu vec already has the same sizes as this cuVEC : only quantity is copied.
+	//faster version of set_from_cpuvec, where it is assumed the cpu vec already has the same sizes as this cuVEC_VC
 	template <typename cpuVEC_VC>
 	__host__ bool copy_from_cpuvec(cpuVEC_VC& vec_vc);
 
-	//faster version of set_cpuvec, where it is assumed the cpu vec already has the same sizes as this cuVEC_VC : only quantity and ngbrFlags are copied.
+	//faster version of set_cpuvec, where it is assumed the cpu vec already has the same sizes as this cuVEC_VC
 	template <typename cpuVEC_VC>
 	__host__ bool copy_to_cpuvec(cpuVEC_VC& vec_vc);
 
@@ -325,8 +373,19 @@ public:
 
 	//--------------------------------------------COPY TO ANOTHER cuVEC :  cuVEC_VC_mng.cuh
 
-	//extract values from this and place them in cuvec : both must have same rectangle, but can differ in cuVEC<VType>::h - cuvec.h <= this->cuVEC<VType>::h needed (and hence cuVEC<VType>::n, where cuvec.cuVEC<VType>::n.dim() = size); e.g. this method allows extraction of a coarser cuvec.
+	//extract values from this and place them in cuvec : both must have same rectangle, but can differ in cuVEC<VType>::h: cuvec.h <= this->cuVEC<VType>::h needed (and hence cuVEC<VType>::n, where cuvec.cuVEC<VType>::n.dim() = size); e.g. this method allows extraction of a coarser cuvec.
 	__host__ void extract_cuvec(size_t size, cuVEC_VC<VType>& cuvec);
+
+	//--------------------------------------------EXTRACT REGION (useful for halo management):  cuVEC_VC_halo.cuh
+
+	//extract ngbrFlags values within the given cells_box (end point not included, so e.g. cuBox(n) is the entire mesh), and place them inside the provided linear_storage space
+	__host__ bool extract_ngbrFlags(cuBox cells_box, cu_arr<int>& linear_storage);
+
+	//extract values from quantity into halo arrays as specified by halo_id
+	//halo_id can be an individual flag, and identifies the required halos to extract values to, e.g. NF2_HALOPX, NF2_HALONX
+	//values from p side of quantity are extracted to n halo and values from n side are extracted to p halo
+	//e.g. if called with NF2_HALOPX, then values from n side are extracted to halo_px; if called with NF2_HALONX then values from p side are extracted to halo_nx
+	__host__ void extract_halo(int halo_id, size_t size_transfer);
 
 	//--------------------------------------------SIZING : cuVEC_VC_shape.h and cuVEC_VC_shape.cuh
 
@@ -381,9 +440,33 @@ public:
 	__device__ bool is_cmbnd(const cuINT3& ijk) const { return (ngbrFlags[ijk.i + ijk.j*cuVEC<VType>::n.x + ijk.k*cuVEC<VType>::n.x*cuVEC<VType>::n.y] & NF_CMBND); }
 	__device__ bool is_cmbnd(const cuReal3& rel_pos) const { return (ngbrFlags[int(rel_pos.x / cuVEC<VType>::h.x) + int(rel_pos.y / cuVEC<VType>::h.y) * cuVEC<VType>::n.x + int(rel_pos.z / cuVEC<VType>::h.z) * cuVEC<VType>::n.x * cuVEC<VType>::n.y] & NF_CMBND); }
 
+	__device__ bool is_cmbnd_px(int index) const { return (ngbrFlags[index] & NF_CMBNDPX); }
+	__device__ bool is_cmbnd_nx(int index) const { return (ngbrFlags[index] & NF_CMBNDNX); }
+	__device__ bool is_cmbnd_py(int index) const { return (ngbrFlags[index] & NF_CMBNDPY); }
+	__device__ bool is_cmbnd_ny(int index) const { return (ngbrFlags[index] & NF_CMBNDNY); }
+	__device__ bool is_cmbnd_pz(int index) const { return (ngbrFlags[index] & NF_CMBNDPZ); }
+	__device__ bool is_cmbnd_nz(int index) const { return (ngbrFlags[index] & NF_CMBNDNZ); }
+
+	__device__ bool is_cmbnd_x(int index) const { return (ngbrFlags[index] & NF_CMBNDX); }
+	__device__ bool is_cmbnd_y(int index) const { return (ngbrFlags[index] & NF_CMBNDY); }
+	__device__ bool is_cmbnd_z(int index) const { return (ngbrFlags[index] & NF_CMBNDZ); }
+
 	__device__ bool is_skipcell(int index) const { return (ngbrFlags[index] & NF_SKIPCELL); }
 	__device__ bool is_skipcell(const cuINT3& ijk) const { return (ngbrFlags[ijk.i + ijk.j*cuVEC<VType>::n.x + ijk.k*cuVEC<VType>::n.x*cuVEC<VType>::n.y] & NF_SKIPCELL); }
 	__device__ bool is_skipcell(const cuReal3& rel_pos) const { return (ngbrFlags[int(rel_pos.x / cuVEC<VType>::h.x) + int(rel_pos.y / cuVEC<VType>::h.y) * cuVEC<VType>::n.x + int(rel_pos.z / cuVEC<VType>::h.z) * cuVEC<VType>::n.x * cuVEC<VType>::n.y] & NF_SKIPCELL); }
+
+	__device__ bool is_dirichlet(int index) const { return using_extended_flags && (ngbrFlags2[index] & NF2_DIRICHLET); }
+
+	__device__ bool is_dirichlet_px(int index) const { return using_extended_flags && (ngbrFlags2[index] & NF2_DIRICHLETPX); }
+	__device__ bool is_dirichlet_nx(int index) const { return using_extended_flags && (ngbrFlags2[index] & NF2_DIRICHLETNX); }
+	__device__ bool is_dirichlet_py(int index) const { return using_extended_flags && (ngbrFlags2[index] & NF2_DIRICHLETPY); }
+	__device__ bool is_dirichlet_ny(int index) const { return using_extended_flags && (ngbrFlags2[index] & NF2_DIRICHLETNY); }
+	__device__ bool is_dirichlet_pz(int index) const { return using_extended_flags && (ngbrFlags2[index] & NF2_DIRICHLETPZ); }
+	__device__ bool is_dirichlet_nz(int index) const { return using_extended_flags && (ngbrFlags2[index] & NF2_DIRICHLETNZ); }
+
+	__device__ bool is_dirichlet_x(int index) const { return using_extended_flags && (ngbrFlags2[index] & NF2_DIRICHLETX); }
+	__device__ bool is_dirichlet_y(int index) const { return using_extended_flags && (ngbrFlags2[index] & NF2_DIRICHLETY); }
+	__device__ bool is_dirichlet_z(int index) const { return using_extended_flags && (ngbrFlags2[index] & NF2_DIRICHLETZ); }
 
 	//are all neighbors available? (for 2D don't check the z neighbors)
 	__device__ bool is_interior(int index) const { return (((ngbrFlags[index] & NF_BOTHX) == NF_BOTHX) && ((ngbrFlags[index] & NF_BOTHY) == NF_BOTHY) && (cuVEC<VType>::n.z == 1 || ((ngbrFlags[index] & NF_BOTHZ) == NF_BOTHZ))); }
@@ -402,6 +485,18 @@ public:
 
 	//clear all dirichlet flags and vectors
 	__host__ void clear_dirichlet_flags(void);
+
+	//set halo boundary conditions depending on halo_flag value (one of the 6 NF2_HALO.. flags); halo_depth is number of cells deep
+	//also allocate memory and set size for respective hallo array (return false if memory allocation fails)
+	//set halo flags using the halo_ngbrFlags values (this is an array with ngbrFlags values matching the halo region, so must be same size as halo array allocated here)
+	//a halo flag is set if cell in halo is not empty (and current cell also not empty)
+	//halo management is done externally (in policy class for mcuObject - mcuVEC - used to manage a cuVEC_VC across multiple GPUs).
+	//This means halos are always cleared whenever set_ngbrFlags is triggered, so must be reset (e.g. after dimensions change or shape change, etc.) as managed by policy class
+	//NOTE: this method does not set values in halo array, which is initialized to zero - halo values refresh must be done externally by computation routines as needed, through the policy class
+	__host__ bool set_halo_conditions(cu_arr<int>& halo_ngbrFlags, int halo_flag, int halo_depth);
+
+	//clear all halo flags and vectors
+	__host__ void clear_halo_flags(void);
 
 	//set pbc conditions : setting any to false clears flags
 	__host__ void set_pbc(int pbc_x_, int pbc_y_, int pbc_z_);
@@ -455,7 +550,7 @@ public:
 
 	//--------------------------------------------ARITHMETIC OPERATIONS ON ENTIRE VEC : cuVEC_VC_arith.cuh
 
-		//scale all stored values by the given constant
+	//scale all stored values by the given constant
 	__host__ void scale_values(size_t size, cuBReal constant);
 	__host__ void scale_values(cuBReal constant) { scale_values(get_gpu_value(cuVEC<VType>::n).dim(), constant); }
 
@@ -463,17 +558,18 @@ public:
 
 	//overload VEC method : use NF_NOTEMPTY flags instead here
 	//Launch it with arr_size = cuVEC<VType>::n.dim() : quicker to pass in this value rather than get it internally using get_gpu_value(cuVEC<VType>::n).dim()
-	__host__ VType average_nonempty(size_t arr_size, cuBox box);
+	__host__ VType average_nonempty(size_t arr_size, cuBox box, bool transfer_to_cpu = true);
 	//average over non-empty cells over given rectangle (relative to this VEC's rect)
-	__host__ VType average_nonempty(size_t arr_size, cuRect rectangle = cuRect());
+	__host__ VType average_nonempty(size_t arr_size, cuRect rectangle = cuRect(), bool transfer_to_cpu = true);
 
 	//Launch it with arr_size = cuVEC<VType>::n.dim() : quicker to pass in this value rather than get it internally using get_gpu_value(cuVEC<VType>::n).dim()
-	__host__ VType sum_nonempty(size_t arr_size, cuBox box);
+	__host__ VType sum_nonempty(size_t arr_size, cuBox box, bool transfer_to_cpu = true);
 	//sum over non-empty cells over given rectangle (relative to this VEC's rect)
-	__host__ VType sum_nonempty(size_t arr_size, cuRect rectangle = cuRect());
+	__host__ VType sum_nonempty(size_t arr_size, cuRect rectangle = cuRect(), bool transfer_to_cpu = true);
 
 	//--------------------------------------------NUMERICAL PROPERTIES : cuVEC_VC_nprops.cuh
 	
+	//Find min and max values from non-empty points. rectangles are relative to this VEC.
 	template <typename PType = decltype(cu_GetMagnitude(std::declval<VType>()))>
 	__host__ cuVAL2<PType> get_minmax(size_t arr_size, cuBox box);
 	template <typename PType = decltype(cu_GetMagnitude(std::declval<VType>()))>
@@ -494,6 +590,18 @@ public:
 	template <typename PType = decltype(cu_GetMagnitude(std::declval<VType>()))>
 	__host__ cuVAL2<PType> get_minmax_component_z(size_t arr_size, cuRect rectangle = cuRect());
 
+	//--------------------------------------------SPECIAL NUMERICAL PROPERTIES : cuVEC_VC_nprops.cuh
+
+	//Robin value is of the form alpha * (Tb - Ta). alpha and Ta are known from values set robin_nx, robin_px, ...
+	//Tb is quantity value at boundary. Here we will return Robin value for x, y, z axes for which any shift component is nonzero (otherwise zero for that component)
+	//e.g. if shift.x is non-zero then Tb value is obtained at rel_pos + (shift.x, 0, 0) using extrapolation from values at rel_pos and rel_pos - (shift.x, 0, 0) -> both these values should be inside the mesh, else return zero.
+	__device__ cuReal3 get_robin_value(const cuReal3& rel_pos, const cuReal3& shift);
+
+	//for given cell index, find if any neighboring cells are empty and get distance (shift) valuer to them along each axis
+	//if any shift is zero this means both cells are present either side, or both are missing
+	//NOTE : this is intended to be used with get_robin_value method to determine the shift value, and rel_pos will be position corresponding to idx
+	__device__ cuReal3 get_shift_to_emptycell(int idx);
+
 	//--------------------------------------------CALCULATE COMPOSITE MEDIA BOUNDARY VALUES : cuVEC_VC_cmbnd.h
 
 	//calculate and set values at composite media boundary cells in this mesh for a given contacting mesh (the "secondary" V_sec) and given contact description (previously calculated using set_cmbnd_flags)
@@ -508,8 +616,8 @@ public:
 	//b_func_pri takes indexes for cells 1 and 2
 	//diff2_pri takes index for cell 1. It also takes a position shift vector perpendicular to the interface and pointing from primary to secondary.
 	//also need instances for the secondary and primary objects whose classes contain the above methods
-	template <typename Class_CMBNDs, typename Class_CMBNDp>
-	__host__ void set_cmbnd_continuous(size_t size, cuVEC_VC<VType>& V_sec, Class_CMBNDs& cmbndFuncs_sec, Class_CMBNDp& cmbndFuncs_pri, CMBNDInfoCUDA& contact);
+	template <typename cuVEC_sec, typename Class_CMBNDs, typename Class_CMBNDp>
+	__host__ void set_cmbnd_continuous(size_t size, cu_obj<cuVEC_sec>& V_sec, Class_CMBNDs& cmbndFuncs_sec, Class_CMBNDp& cmbndFuncs_pri, CMBNDInfoCUDA& contact);
 
 	//calculate cmbnd values based on continuity of flux only. The potential is allowed to drop across the interface as:
 	//f_sec(V) = f_pri(V) = A + B * delV, where f_sec and f_pri are the fluxes on the secondary and primary sides of the interface, and delV = V_pri - V_sec, the drop in potential across the interface.
@@ -776,7 +884,7 @@ public:
 	__device__ VType yanisotropic_ngbr_dirsum(int idx) const;
 	__device__ VType xanisotropic_ngbr_dirsum(int idx) const;
 
-	//----LAPLACE / POISSON EQUATION : cuVEC_VC_solve.cuh
+	//--------------------------------------------LAPLACE / POISSON EQUATION : cuVEC_VC_solve.cuh
 	
 	//LAPLACE
 
@@ -785,13 +893,19 @@ public:
 	//Launch it with arr_size = cuVEC<VType>::n.dim() : quicker to pass in this value rather than get it internally using get_gpu_value(cuVEC<VType>::n).dim()
 	__host__ void IterateLaplace_SOR(size_t arr_size, cuBReal& damping, cuBReal& max_error, cuBReal& max_val);
 
+	//as above, but allow separate control of red and black passes launch
+	__host__ void IterateLaplace_SOR_red(size_t arr_size, cuBReal& damping);
+	__host__ void IterateLaplace_SOR_black(size_t arr_size, cuBReal& damping, cuBReal& max_error, cuBReal& max_val);
+
 	//red and black SOR passes launched from kernels : the flow is : 
-	//IterateLaplace_SOR -> 1. global red pass kernel with *this as parameter -> call IterateLaplace_SOR_red, 
-	//2. global black pass kernel with *this as parameter -> call IterateLaplace_SOR_black
-	__device__ void IterateLaplace_SOR_red(cuBReal damping);
-	__device__ void IterateLaplace_SOR_black(cuBReal damping, cuBReal& max_error, cuBReal& max_val);
+	//IterateLaplace_SOR -> 1. global red pass kernel with *this as parameter -> call IterateLaplace_SOR_red_ondevice, 
+	//2. global black pass kernel with *this as parameter -> call IterateLaplace_SOR_black_ondevice
+	__device__ void IterateLaplace_SOR_red_ondevice(cuBReal damping);
+	__device__ void IterateLaplace_SOR_black_ondevice(cuBReal damping, cuBReal& max_error, cuBReal& max_val);
 
 	//POISSON with homogeneous Neumann boundaries
+
+	//NOTE : Poisson variants can only be called in cu files (where it is possible to include cuVEC_VC_solve.cuh), otherwise explicit template parameters would have to be declared, which is too restrictive.
 
 	//For Poisson equation we need a function to specify the RHS of the equation delsq V = Poisson_RHS
 	//Poisson_RHS must be a member const method of Class_Poisson_RHS taking an index value (the index ranges over this VEC) and returning a cuBReal value : Poisson_RHS(index) evaluated at the index-th cell.
@@ -801,13 +915,19 @@ public:
 	template <typename Class_Poisson_RHS>
 	__host__ void IteratePoisson_SOR(size_t arr_size, Class_Poisson_RHS& obj, cuBReal& damping, cuBReal& max_error, cuBReal& max_val);
 
+	//as above, but allow separate control of red and black passes launch
+	template <typename Class_Poisson_RHS>
+	__host__ void IteratePoisson_SOR_red(size_t arr_size, Class_Poisson_RHS& obj, cuBReal& damping);
+	template <typename Class_Poisson_RHS>
+	__host__ void IteratePoisson_SOR_black(size_t arr_size, Class_Poisson_RHS& obj, cuBReal& damping, cuBReal& max_error, cuBReal& max_val);
+
 	//red and black SOR passes launched from kernels : the flow is : 
-	//IteratePoisson_SOR -> 1. global red pass kernel with *this as parameter -> call IteratePoisson_SOR_red, 
-	//2. global black pass kernel with *this as parameter -> call IteratePoisson_SOR_black
+	//IteratePoisson_SOR -> 1. global red pass kernel with *this as parameter -> call IteratePoisson_SOR_red_ondevice, 
+	//2. global black pass kernel with *this as parameter -> call IteratePoisson_SOR_black_ondevice
 	template <typename Class_Poisson_RHS>
-	__device__ void IteratePoisson_SOR_red(Class_Poisson_RHS& obj, cuBReal damping);
+	__device__ void IteratePoisson_SOR_red_ondevice(Class_Poisson_RHS& obj, cuBReal damping);
 	template <typename Class_Poisson_RHS>
-	__device__ void IteratePoisson_SOR_black(Class_Poisson_RHS& obj, cuBReal damping, cuBReal& max_error, cuBReal& max_val);
+	__device__ void IteratePoisson_SOR_black_ondevice(Class_Poisson_RHS& obj, cuBReal damping, cuBReal& max_error, cuBReal& max_val);
 
 	//POISSON with non-homogeneous Neumann boundaries
 
@@ -820,11 +940,18 @@ public:
 	template <typename Class_Poisson_NNeu>
 	__host__ void IteratePoisson_NNeu_SOR(size_t arr_size, Class_Poisson_NNeu& obj, cuBReal& damping, cuBReal& max_error, cuBReal& max_val);
 
+	//as above, but allow separate control of red and black passes launch
+	template <typename Class_Poisson_NNeu>
+	__host__ void IteratePoisson_NNeu_SOR_red(size_t arr_size, Class_Poisson_NNeu& obj, cuBReal& damping);
+	template <typename Class_Poisson_NNeu>
+	__host__ void IteratePoisson_NNeu_SOR_black(size_t arr_size, Class_Poisson_NNeu& obj, cuBReal& damping, cuBReal& max_error, cuBReal& max_val);
+
 	//red and black SOR passes launched from kernels : the flow is : 
-	//IteratePoisson_NNeu_SOR -> 1. global red pass kernel with *this as parameter -> call IteratePoisson_NNeu_SOR_red, 
-	//2. global black pass kernel with *this as parameter -> call IteratePoisson_NNeu_SOR_black
+	//IteratePoisson_NNeu_SOR -> 1. global red pass kernel with *this as parameter -> call IteratePoisson_NNeu_SOR_red_ondevice, 
+	//2. global black pass kernel with *this as parameter -> call IteratePoisson_NNeu_SOR_black_ondevice
 	template <typename Class_Poisson_NNeu>
-	__device__ void IteratePoisson_NNeu_SOR_red(Class_Poisson_NNeu& obj, cuBReal damping);
+	__device__ void IteratePoisson_NNeu_SOR_red_ondevice(Class_Poisson_NNeu& obj, cuBReal damping);
 	template <typename Class_Poisson_NNeu>
-	__device__ void IteratePoisson_NNeu_SOR_black(Class_Poisson_NNeu& obj, cuBReal damping, cuBReal& max_error, cuBReal& max_val);
+	__device__ void IteratePoisson_NNeu_SOR_black_ondevice(Class_Poisson_NNeu& obj, cuBReal damping, cuBReal& max_error, cuBReal& max_val);
 };
+

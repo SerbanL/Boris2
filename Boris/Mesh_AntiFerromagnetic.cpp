@@ -18,6 +18,7 @@ AFMesh::AFMesh(SuperMesh *pSMesh_) :
 			VINFO(M), VINFO(M2), VINFO(V), VINFO(E), VINFO(elC), VINFO(Temp), VINFO(Temp_l),
 			VINFO(pMod), 
 			VINFO(exclude_from_multiconvdemag),
+			VINFO(prng_seed),
 			//Members in this derived class
 			VINFO(move_mesh_trigger), VINFO(skyShift), VINFO(exchange_couple_to_meshes),
 			VINFO(mc_cone_angledeg), VINFO(mc_acceptance_rate), VINFO(mc_parallel), VINFO(mc_disabled), VINFO(mc_constrain), VINFO(cmc_n),
@@ -30,13 +31,14 @@ AFMesh::AFMesh(SuperMesh *pSMesh_) :
 			VINFO(s_eff),
 			VINFO(elecCond), VINFO(P), VINFO(beta), VINFO(SHA), VINFO(flSOT), VINFO(STp),
 			VINFO(base_temperature), VINFO(T_equation), VINFO(T_Curie), VINFO(T_Curie_material), VINFO(atomic_moment_AFM), 
-			VINFO(density),
+			VINFO(density), VINFO(MEc), VINFO(Ym), VINFO(Pr), VINFO(cC), VINFO(mdamping),
+			VINFO(Sc), VINFO(joule_eff),
 			VINFO(thermCond), VINFO(shc), VINFO(shc_e), VINFO(G_e), VINFO(cT), VINFO(Q)
 		},
 		{
 			IINFO(Demag_N), IINFO(Demag), IINFO(SDemag_Demag), 
 			IINFO(Exch_6ngbr_Neu), IINFO(DMExchange), IINFO(iDMExchange), IINFO(viDMExchange), IINFO(SurfExchange_AFM),
-			IINFO(Zeeman), IINFO(MOptical), IINFO(Roughness),
+			IINFO(Zeeman), IINFO(MOptical), IINFO(MElastic), IINFO(Roughness),
 			IINFO(Anisotropy_Uniaxial), IINFO(Anisotropy_Cubic), IINFO(Anisotropy_Biaxial), IINFO(Anisotropy_Tensorial),
 			IINFO(Transport), IINFO(Heat),
 			IINFO(SOTField),
@@ -56,6 +58,7 @@ AFMesh::AFMesh(Rect meshRect_, DBL3 h_, SuperMesh *pSMesh_) :
 			VINFO(M), VINFO(M2), VINFO(V), VINFO(E), VINFO(elC), VINFO(Temp), VINFO(Temp_l),
 			VINFO(pMod),
 			VINFO(exclude_from_multiconvdemag),
+			VINFO(prng_seed),
 			//Members in this derived class
 			VINFO(move_mesh_trigger), VINFO(skyShift), VINFO(exchange_couple_to_meshes),
 			VINFO(mc_cone_angledeg), VINFO(mc_acceptance_rate), VINFO(mc_parallel), VINFO(mc_disabled), VINFO(mc_constrain), VINFO(cmc_n),
@@ -68,13 +71,14 @@ AFMesh::AFMesh(Rect meshRect_, DBL3 h_, SuperMesh *pSMesh_) :
 			VINFO(s_eff),
 			VINFO(elecCond), VINFO(P), VINFO(beta), VINFO(SHA), VINFO(flSOT), VINFO(STp),
 			VINFO(base_temperature), VINFO(T_equation), VINFO(T_Curie), VINFO(T_Curie_material), VINFO(atomic_moment_AFM),
-			VINFO(density),
+			VINFO(density), VINFO(MEc), VINFO(Ym), VINFO(Pr), VINFO(cC), VINFO(mdamping),
+			VINFO(Sc), VINFO(joule_eff),
 			VINFO(thermCond), VINFO(shc), VINFO(shc_e), VINFO(G_e), VINFO(cT), VINFO(Q)
 		},
 		{
 			IINFO(Demag_N), IINFO(Demag), IINFO(SDemag_Demag),
 			IINFO(Exch_6ngbr_Neu), IINFO(DMExchange), IINFO(iDMExchange), IINFO(viDMExchange), IINFO(SurfExchange_AFM),
-			IINFO(Zeeman), IINFO(MOptical), IINFO(Roughness),
+			IINFO(Zeeman), IINFO(MOptical), IINFO(MElastic), IINFO(Roughness),
 			IINFO(Anisotropy_Uniaxial), IINFO(Anisotropy_Cubic), IINFO(Anisotropy_Biaxial), IINFO(Anisotropy_Tensorial),
 			IINFO(Transport), IINFO(Heat),
 			IINFO(SOTField),
@@ -106,6 +110,7 @@ AFMesh::AFMesh(Rect meshRect_, DBL3 h_, SuperMesh *pSMesh_) :
 	Gmix = DBL2(0.0, 0.0);
 	Gi = DBL2(0.0, 0.0);
 	amrPercentage = 0.0;
+	tamrPercentage = 0.0;
 	betaD = 0.0;
 	cpump_eff = 0.0;
 	the_eff = 0.0;

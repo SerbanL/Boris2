@@ -13,7 +13,7 @@ __host__ void cu_arr<VType>::set(VType value)
 
 //set single value at given index
 template <typename VType>
-__host__ void cu_arr<VType>::set(int index, VType value)
+__host__ void cu_arr<VType>::setvalue(int index, VType value)
 {
 	cpu_to_gpu(cu_array + index, &value);
 }

@@ -15,10 +15,11 @@ STransport::STransport(SuperMesh *pSMesh_) :
 	Modules(),
 	V_equation({ "t" }),
 	I_equation({ "t" }),
-	ProgramStateNames(this, { VINFO(electrode_rects), VINFO(electrode_potentials), 
-							  VINFO(ground_electrode_index), VINFO(potential), VINFO(current), VINFO(net_current), VINFO(resistance), VINFO(constant_current_source), 
-							  VINFO(errorMaxLaplace), VINFO(maxLaplaceIterations), VINFO(s_errorMax), VINFO(s_maxIterations), VINFO(SOR_damping),
-							  VINFO(V_equation), VINFO(I_equation) }, {})
+	ProgramStateNames(this, 
+		{ VINFO(electrode_rects), VINFO(electrode_potentials), VINFO(ground_electrode_index), 
+		VINFO(potential), VINFO(current), VINFO(net_current), VINFO(resistance), VINFO(constant_current_source), VINFO(open_potential_resistance),
+		VINFO(errorMaxLaplace), VINFO(maxLaplaceIterations), VINFO(s_errorMax), VINFO(s_maxIterations), VINFO(SOR_damping),
+		VINFO(V_equation), VINFO(I_equation) }, {})
 {
 	pSMesh = pSMesh_;
 
@@ -38,6 +39,16 @@ STransport::STransport(SuperMesh *pSMesh_) :
 BError STransport::Initialize(void)
 {
 	BError error(CLASS_STR(STransport));
+
+	//re-set cmbnd flags (also building contacts), as TMR initialization could have changed available cells in insulator meshes
+	for (int idx = 0; idx < (int)pTransport.size(); idx++) {
+
+		//build CMBND contacts and set flags for V
+		pV[idx]->set_cmbnd_flags(idx, pV);
+
+		//set flags for S also (same mesh dimensions as V so CMBNDcontacts are the same)
+		if (pSMesh->SolveSpinCurrent()) pS[idx]->set_cmbnd_flags(idx, pS);
+	}
 
 	if (!initialized) {
 
@@ -108,11 +119,13 @@ BError STransport::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 					else if (dynamic_cast<Atom_Transport*>(pModule)) pTransport.push_back(dynamic_cast<Atom_Transport*>(pModule));
 #endif
 				}
+#ifdef MODULE_COMPILATION_TMR
 				else if ((*pSMesh)[idx]->IsModuleSet(MOD_TMR)) {
 
 					Modules* pModule = (*pSMesh)[idx]->GetModule(MOD_TMR);
 					pTransport.push_back(dynamic_cast<TMR*>(pModule));
 				}
+#endif
 
 				pV.push_back(&(*pSMesh)[idx]->V);
 				pS.push_back(&(*pSMesh)[idx]->S);
@@ -122,9 +135,12 @@ BError STransport::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 		//set fixed potential cells and cmbnd flags (also building contacts)
 		for (int idx = 0; idx < (int)pTransport.size(); idx++) {
 
+			//setup STransport pointer in each Transport module
+			pTransport[idx]->pSTrans = this;
+
 			//1. Dirichlet conditions
 
-			//make sure all fixed potential cells are marked
+			//make sure all fixed potential cells are marked with dirichlet boundary conditions - clear first
 			pTransport[idx]->ClearFixedPotentialCells();
 
 			for (int el_idx = 0; el_idx < electrode_rects.size(); el_idx++) {
@@ -346,6 +362,18 @@ void STransport::SetCurrent(double current_, bool clear_equation)
 
 	//get_current will now also adjust the potential depending on the sample resistance
 	GetCurrent();
+}
+
+//set open_potential_resistance value and associated settings
+BError STransport::SetOpenPotentialResistance(double open_potential_resistance_)
+{
+	BError error(CLASS_STR(STransport));
+
+	open_potential_resistance = open_potential_resistance_;
+
+	error = UpdateConfiguration(UPDATECONFIG_TRANSPORT);
+
+	return error;
 }
 
 //set text equation from std::string

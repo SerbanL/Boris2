@@ -8,6 +8,8 @@
 #include "ManagedAtom_DiffEqCubicCUDA.h"
 #include "Atom_DiffEqCubicCUDA.h"
 
+#include "SimScheduleDefs.h"
+
 Atom_Mesh_CubicCUDA::Atom_Mesh_CubicCUDA(Atom_Mesh_Cubic* paMesh) :
 	Atom_MeshCUDA(paMesh)
 {
@@ -28,7 +30,7 @@ BError Atom_Mesh_CubicCUDA::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 {
 	BError error(CLASS_STR(Atom_Mesh_CubicCUDA));
 
-	if (ucfg::check_cfgflags(cfgMessage, UPDATECONFIG_MESHCHANGE, UPDATECONFIG_MODULEADDED, UPDATECONFIG_MODULEDELETED)) {
+	if (ucfg::check_cfgflags(cfgMessage, UPDATECONFIG_MESHCHANGE, UPDATECONFIG_MODULEADDED, UPDATECONFIG_MODULEDELETED, UPDATECONFIG_PRNG)) {
 
 		//resize arrays held in Mesh - if changing mesh to new size then use resize : this maps values from old mesh to new mesh size (keeping magnitudes). Otherwise assign magnetization along x in whole mesh.
 		if (M1()->size_cpu().dim()) {
@@ -40,7 +42,11 @@ BError Atom_Mesh_CubicCUDA::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 		if (!Heff1()->assign((cuReal3)h, (cuRect)meshRect, cuReal3())) return error(BERROR_OUTOFGPUMEMORY_CRIT);
 
 		//setup prng for MC methods
-		if (prng()->initialize(GetSystemTickCount(), n.dim() / 128) != cudaSuccess) error(BERROR_OUTOFGPUMEMORY_NCRIT);
+		if (IsStageSet(SS_MONTECARLO)) {
+
+			if (prng()->initialize((paMeshCubic->prng_seed == 0 ? GetSystemTickCount() : paMeshCubic->prng_seed), n.dim(), (paMeshCubic->prng_seed == 0 ? 0 : 1)) != cudaSuccess) error(BERROR_OUTOFGPUMEMORY_NCRIT);
+		}
+		else prng()->clear();
 
 		//Setup cuaModules and cuaNumModules so they cann be used at runtime by Monte-Carlo methods
 		if (ucfg::check_cfgflags(cfgMessage, UPDATECONFIG_MODULEADDED, UPDATECONFIG_MODULEDELETED)) {

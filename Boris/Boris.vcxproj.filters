@@ -212,45 +212,9 @@
     <Filter Include="RESOURCES\Shaders">
       <UniqueIdentifier>{a3b40781-eab9-4598-b738-83c968d4aba7}</UniqueIdentifier>
     </Filter>
-    <Filter Include="12. COMMANDS">
-      <UniqueIdentifier>{a85f3c82-83d5-45a0-8c03-09663855462e}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="13. AUXILIARY">
-      <UniqueIdentifier>{c3b28997-ade9-48a5-97a1-eddab94966a5}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="14. ERROR HANDLER">
-      <UniqueIdentifier>{d4132933-59f9-435a-bd85-57d5a4f3e86f}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="15. GRAPHICS">
-      <UniqueIdentifier>{e5f5cfd6-6b2e-4bb1-b4ad-e52334f8e4cd}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="15. GRAPHICS\GRAPHICS_D3D">
-      <UniqueIdentifier>{fb91c83f-fdcb-45dc-90c6-770f221986d3}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="15. GRAPHICS\GRAPHICS_SFML">
-      <UniqueIdentifier>{8c2bebca-0d01-4cde-bb02-e881c26dbcc6}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="15. GRAPHICS\INTERACTIVE OBJ">
-      <UniqueIdentifier>{d7c3a65b-96a9-46d5-b64f-fd87a2a0426c}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="15. GRAPHICS\INTERFACE">
-      <UniqueIdentifier>{57dbe11c-6842-40e3-a013-01cf62769742}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="15. GRAPHICS\INTERFACE_CONSOLEONLY">
-      <UniqueIdentifier>{1c907210-696e-4f5b-8616-20aabec84860}</UniqueIdentifier>
-    </Filter>
     <Filter Include="RESOURCES\Header Files">
       <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
       <Extensions>h;hpp;hxx;hm;inl;inc;xsd</Extensions>
-    </Filter>
-    <Filter Include="16. DATA PROC">
-      <UniqueIdentifier>{6f5dd0b6-ffc1-494c-9d8d-e2c68336a8d0}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="17. MATERIALS DB">
-      <UniqueIdentifier>{15c6ac17-c957-40e5-836a-a253dc2733b8}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="18. MAIN">
-      <UniqueIdentifier>{9106dcb4-2f4b-45f5-a9e2-77dc7ccbbbb4}</UniqueIdentifier>
     </Filter>
     <Filter Include="07. EXCHANGE\__ATOMISTIC\ATOM EXCHANGE - CUDA">
       <UniqueIdentifier>{b995fc29-0b77-4528-a36c-b12a46eea80a}</UniqueIdentifier>
@@ -333,9 +297,6 @@
     <Filter Include="09. FUNCS\DEMAG FUNCS - CUDA">
       <UniqueIdentifier>{f6dbec4a-0ac6-46ea-8ed6-a7796ef706e5}</UniqueIdentifier>
     </Filter>
-    <Filter Include="19. UPDATE">
-      <UniqueIdentifier>{1d0b6562-5823-467c-9d9d-c3482317e4ca}</UniqueIdentifier>
-    </Filter>
     <Filter Include="10. TRANSPORT SOLVER\STRANSPORT - CPU">
       <UniqueIdentifier>{8496443b-8daa-48ae-b433-ea7ad5c1e83c}</UniqueIdentifier>
     </Filter>
@@ -344,9 +305,6 @@
     </Filter>
     <Filter Include="10. TRANSPORT SOLVER\COMMON">
       <UniqueIdentifier>{4be4c0ff-1cfb-450b-8edc-688f4ad45950}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="20. PYTHON EMBEDDING">
-      <UniqueIdentifier>{5836e32d-dc98-4ea7-83e6-fea15ea2afe2}</UniqueIdentifier>
     </Filter>
     <Filter Include="10. TRANSPORT SOLVER\__ATOMISTIC">
       <UniqueIdentifier>{b2c4dd7b-d926-4f00-b186-470e4f289e37}</UniqueIdentifier>
@@ -387,31 +345,88 @@
     <Filter Include="05. SUPERMESH MODULES\MODULES - SUPERMESH - CUDA\__MICROMAGNETIC">
       <UniqueIdentifier>{27e787cd-b5b9-494c-aa10-1aaa61f505af}</UniqueIdentifier>
     </Filter>
+    <Filter Include="13. COMMANDS">
+      <UniqueIdentifier>{a85f3c82-83d5-45a0-8c03-09663855462e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="14. AUXILIARY">
+      <UniqueIdentifier>{c3b28997-ade9-48a5-97a1-eddab94966a5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="15. ERROR HANDLER">
+      <UniqueIdentifier>{d4132933-59f9-435a-bd85-57d5a4f3e86f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="16. GRAPHICS">
+      <UniqueIdentifier>{e5f5cfd6-6b2e-4bb1-b4ad-e52334f8e4cd}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="16. GRAPHICS\GRAPHICS_D3D">
+      <UniqueIdentifier>{fb91c83f-fdcb-45dc-90c6-770f221986d3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="16. GRAPHICS\GRAPHICS_SFML">
+      <UniqueIdentifier>{8c2bebca-0d01-4cde-bb02-e881c26dbcc6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="16. GRAPHICS\INTERACTIVE OBJ">
+      <UniqueIdentifier>{d7c3a65b-96a9-46d5-b64f-fd87a2a0426c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="16. GRAPHICS\INTERFACE">
+      <UniqueIdentifier>{57dbe11c-6842-40e3-a013-01cf62769742}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="16. GRAPHICS\INTERFACE_CONSOLEONLY">
+      <UniqueIdentifier>{1c907210-696e-4f5b-8616-20aabec84860}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="17. DATA PROC">
+      <UniqueIdentifier>{6f5dd0b6-ffc1-494c-9d8d-e2c68336a8d0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="18. MATERIALS DB">
+      <UniqueIdentifier>{15c6ac17-c957-40e5-836a-a253dc2733b8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="19. MAIN">
+      <UniqueIdentifier>{9106dcb4-2f4b-45f5-a9e2-77dc7ccbbbb4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="20. UPDATE">
+      <UniqueIdentifier>{1d0b6562-5823-467c-9d9d-c3482317e4ca}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="21. PYTHON EMBEDDING">
+      <UniqueIdentifier>{5836e32d-dc98-4ea7-83e6-fea15ea2afe2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="12. ELASTIC SOLVER">
+      <UniqueIdentifier>{e9f31c37-2120-436d-b6df-98eaf3b1fcb7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="12. ELASTIC SOLVER\CPU">
+      <UniqueIdentifier>{c80f83d9-f467-47d1-a2af-70bd433d974a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="12. ELASTIC SOLVER\CUDA">
+      <UniqueIdentifier>{a57d0232-9361-4062-8a54-dc9988a8ec15}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="12. ELASTIC SOLVER\ELASTIC SUPERMESH - CPU">
+      <UniqueIdentifier>{adb38034-4081-4f00-b34d-3a9d30efc8b8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="12. ELASTIC SOLVER\ELASTIC SUPERMESH - CUDA">
+      <UniqueIdentifier>{a45861f4-cf81-456d-90c8-031b814e4ea7}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <Text Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="BorisGraphics.h">
-      <Filter>15. GRAPHICS\GRAPHICS_D3D</Filter>
+      <Filter>16. GRAPHICS\GRAPHICS_D3D</Filter>
     </ClInclude>
     <ClInclude Include="D3D.h">
-      <Filter>15. GRAPHICS\GRAPHICS_D3D</Filter>
+      <Filter>16. GRAPHICS\GRAPHICS_D3D</Filter>
     </ClInclude>
     <ClInclude Include="BorisDisplay.h">
-      <Filter>15. GRAPHICS\INTERFACE</Filter>
+      <Filter>16. GRAPHICS\INTERFACE</Filter>
     </ClInclude>
     <ClInclude Include="BorisInteractiveObjects.h">
-      <Filter>15. GRAPHICS\INTERACTIVE OBJ</Filter>
+      <Filter>16. GRAPHICS\INTERACTIVE OBJ</Filter>
     </ClInclude>
     <ClInclude Include="BorisIO_Make.h">
-      <Filter>15. GRAPHICS\INTERACTIVE OBJ</Filter>
+      <Filter>16. GRAPHICS\INTERACTIVE OBJ</Filter>
     </ClInclude>
     <ClInclude Include="WinSpaces.h">
-      <Filter>15. GRAPHICS\INTERFACE</Filter>
+      <Filter>16. GRAPHICS\INTERFACE</Filter>
     </ClInclude>
     <ClInclude Include="TextObject.h">
-      <Filter>15. GRAPHICS\INTERFACE</Filter>
+      <Filter>16. GRAPHICS\INTERFACE</Filter>
     </ClInclude>
     <ClInclude Include="Mesh_Dipole.h">
       <Filter>02. MESHES\__MICROMAGNETIC\CPU\MM MESHES - CPU</Filter>
@@ -429,31 +444,31 @@
       <Filter>02. MESHES\__MICROMAGNETIC\CUDA\MM MESHES - CUDA</Filter>
     </ClInclude>
     <ClInclude Include="PhysQRep.h">
-      <Filter>15. GRAPHICS\GRAPHICS_D3D</Filter>
+      <Filter>16. GRAPHICS\GRAPHICS_D3D</Filter>
     </ClInclude>
     <ClInclude Include="ZeemanCUDA.h">
       <Filter>03. MODULES\__MICROMAGNETIC\MM MODULES - CUDA</Filter>
     </ClInclude>
     <ClInclude Include="DataProcessing.h">
-      <Filter>16. DATA PROC</Filter>
+      <Filter>17. DATA PROC</Filter>
     </ClInclude>
     <ClInclude Include="ErrorHandler.h">
-      <Filter>14. ERROR HANDLER</Filter>
+      <Filter>15. ERROR HANDLER</Filter>
     </ClInclude>
     <ClInclude Include="Commands.h">
-      <Filter>12. COMMANDS</Filter>
+      <Filter>13. COMMANDS</Filter>
     </ClInclude>
     <ClInclude Include="ScreenGrab.h">
-      <Filter>13. AUXILIARY</Filter>
+      <Filter>14. AUXILIARY</Filter>
     </ClInclude>
     <ClInclude Include="Boris_Enums_Defs.h">
-      <Filter>13. AUXILIARY</Filter>
+      <Filter>14. AUXILIARY</Filter>
     </ClInclude>
     <ClInclude Include="stdafx.h">
-      <Filter>13. AUXILIARY</Filter>
+      <Filter>14. AUXILIARY</Filter>
     </ClInclude>
     <ClInclude Include="targetver.h">
-      <Filter>13. AUXILIARY</Filter>
+      <Filter>14. AUXILIARY</Filter>
     </ClInclude>
     <ClInclude Include="SimSchedule.h">
       <Filter>00. SIMULATION</Filter>
@@ -471,7 +486,7 @@
       <Filter>02. MESHES\MAT PARAMS - CUDA</Filter>
     </ClInclude>
     <ClInclude Include="PhysQ.h">
-      <Filter>15. GRAPHICS\GRAPHICS_D3D</Filter>
+      <Filter>16. GRAPHICS\GRAPHICS_D3D</Filter>
     </ClInclude>
     <ClInclude Include="Modules.h">
       <Filter>03. MODULES\MODULES INTERFACE</Filter>
@@ -480,7 +495,7 @@
       <Filter>03. MODULES\MODULES INTERFACE - CUDA</Filter>
     </ClInclude>
     <ClInclude Include="PhysQDefs.h">
-      <Filter>15. GRAPHICS\GRAPHICS_D3D</Filter>
+      <Filter>16. GRAPHICS\GRAPHICS_D3D</Filter>
     </ClInclude>
     <ClInclude Include="AnisotropyCUDA.h">
       <Filter>03. MODULES\__MICROMAGNETIC\MM MODULES - CUDA</Filter>
@@ -549,7 +564,7 @@
       <Filter>10. TRANSPORT SOLVER\__MICROMAGNETIC\TRANSPORT SOLVER - CUDA</Filter>
     </ClInclude>
     <ClInclude Include="InteractiveObject.h">
-      <Filter>15. GRAPHICS\INTERACTIVE OBJ</Filter>
+      <Filter>16. GRAPHICS\INTERACTIVE OBJ</Filter>
     </ClInclude>
     <ClInclude Include="SOTFieldCUDA.h">
       <Filter>03. MODULES\__MICROMAGNETIC\MM MODULES - CUDA</Filter>
@@ -573,25 +588,25 @@
       <Filter>06. SUPERMESH DEMAG\DEMAG - SUPERMESH - CUDA</Filter>
     </ClInclude>
     <ClInclude Include="CompileFlags.h">
-      <Filter>13. AUXILIARY</Filter>
+      <Filter>14. AUXILIARY</Filter>
     </ClInclude>
     <ClInclude Include="AnisotropyCubiCUDA.h">
       <Filter>03. MODULES\__MICROMAGNETIC\MM MODULES - CUDA</Filter>
     </ClInclude>
     <ClInclude Include="ColorDefs.h">
-      <Filter>15. GRAPHICS\INTERFACE</Filter>
+      <Filter>16. GRAPHICS\INTERFACE</Filter>
     </ClInclude>
     <ClInclude Include="TextFormatting.h">
-      <Filter>15. GRAPHICS\INTERFACE</Filter>
+      <Filter>16. GRAPHICS\INTERFACE</Filter>
     </ClInclude>
     <ClInclude Include="BorisGraphicsSFML.h">
-      <Filter>15. GRAPHICS\GRAPHICS_SFML</Filter>
+      <Filter>16. GRAPHICS\GRAPHICS_SFML</Filter>
     </ClInclude>
     <ClInclude Include="BorisDisplayNonGraphical.h">
-      <Filter>15. GRAPHICS\INTERFACE_CONSOLEONLY</Filter>
+      <Filter>16. GRAPHICS\INTERFACE_CONSOLEONLY</Filter>
     </ClInclude>
     <ClInclude Include="MaterialsDataBase.h">
-      <Filter>17. MATERIALS DB</Filter>
+      <Filter>18. MATERIALS DB</Filter>
     </ClInclude>
     <ClInclude Include="OVF2_Handlers.h">
       <Filter>00. SIMULATION</Filter>
@@ -663,31 +678,28 @@
       <Filter>01. DIFFERENTIAL EQUATIONS\__MICROMAGNETIC\CUDA\DIFF EQUATIONS AFM - CUDA</Filter>
     </ClInclude>
     <ClInclude Include="Display_BorisConsole.h">
-      <Filter>15. GRAPHICS\INTERFACE</Filter>
+      <Filter>16. GRAPHICS\INTERFACE</Filter>
     </ClInclude>
     <ClInclude Include="Display_BorisTextBox.h">
-      <Filter>15. GRAPHICS\INTERFACE</Filter>
+      <Filter>16. GRAPHICS\INTERFACE</Filter>
     </ClInclude>
     <ClInclude Include="Display_BorisIOIPopupTextBox.h">
-      <Filter>15. GRAPHICS\INTERFACE</Filter>
+      <Filter>16. GRAPHICS\INTERFACE</Filter>
     </ClInclude>
     <ClInclude Include="Display_BorisIOIPopupEditBox.h">
-      <Filter>15. GRAPHICS\INTERFACE</Filter>
+      <Filter>16. GRAPHICS\INTERFACE</Filter>
     </ClInclude>
     <ClInclude Include="Display_BorisHoverInfoTextBox.h">
-      <Filter>15. GRAPHICS\INTERFACE</Filter>
+      <Filter>16. GRAPHICS\INTERFACE</Filter>
     </ClInclude>
     <ClInclude Include="Display_BorisMeshWindow.h">
-      <Filter>15. GRAPHICS\INTERFACE</Filter>
+      <Filter>16. GRAPHICS\INTERFACE</Filter>
     </ClInclude>
     <ClInclude Include="Display_Defs.h">
-      <Filter>15. GRAPHICS\INTERFACE</Filter>
+      <Filter>16. GRAPHICS\INTERFACE</Filter>
     </ClInclude>
     <ClInclude Include="ManagedDiffEq_CommonCUDA.h">
       <Filter>01. DIFFERENTIAL EQUATIONS\__MICROMAGNETIC\CUDA\DIFF EQUATIONS INTERFACE - CUDA</Filter>
-    </ClInclude>
-    <ClInclude Include="MElasticCUDA.h">
-      <Filter>03. MODULES\__MICROMAGNETIC\MM MODULES - CUDA</Filter>
     </ClInclude>
     <ClInclude Include="Heat.h">
       <Filter>11. HEAT SOLVER\__MICROMAGNETIC\MM HEAT SOLVER - CPU</Filter>
@@ -813,9 +825,6 @@
       <Filter>03. MODULES\__MICROMAGNETIC\MM MODULES - CPU</Filter>
     </ClInclude>
     <ClInclude Include="Demag_N.h">
-      <Filter>03. MODULES\__MICROMAGNETIC\MM MODULES - CPU</Filter>
-    </ClInclude>
-    <ClInclude Include="MElastic.h">
       <Filter>03. MODULES\__MICROMAGNETIC\MM MODULES - CPU</Filter>
     </ClInclude>
     <ClInclude Include="MOptical.h">
@@ -987,7 +996,7 @@
       <Filter>03. MODULES\MODULES INTERFACE</Filter>
     </ClInclude>
     <ClInclude Include="Boris.h">
-      <Filter>18. MAIN</Filter>
+      <Filter>19. MAIN</Filter>
     </ClInclude>
     <ClInclude Include="STField.h">
       <Filter>03. MODULES\__MICROMAGNETIC\MM MODULES - CPU</Filter>
@@ -1113,10 +1122,10 @@
       <Filter>03. MODULES\__ATOMISTIC\ATOM MODULES - CUDA</Filter>
     </ClInclude>
     <ClInclude Include="PythonScripting.h">
-      <Filter>20. PYTHON EMBEDDING</Filter>
+      <Filter>21. PYTHON EMBEDDING</Filter>
     </ClInclude>
     <ClInclude Include="CommandLineArgs.h">
-      <Filter>18. MAIN</Filter>
+      <Filter>19. MAIN</Filter>
     </ClInclude>
     <ClInclude Include="TMR.h">
       <Filter>10. TRANSPORT SOLVER\__INSULATOR\CPU</Filter>
@@ -1145,25 +1154,43 @@
     <ClInclude Include="STransport_Graph.h">
       <Filter>10. TRANSPORT SOLVER\STRANSPORT - CPU</Filter>
     </ClInclude>
+    <ClInclude Include="MElastic.h">
+      <Filter>12. ELASTIC SOLVER\CPU</Filter>
+    </ClInclude>
+    <ClInclude Include="MElasticCUDA.h">
+      <Filter>12. ELASTIC SOLVER\CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="MElastic_Boundaries.h">
+      <Filter>12. ELASTIC SOLVER\CPU</Filter>
+    </ClInclude>
+    <ClInclude Include="SMElasticCUDA.h">
+      <Filter>12. ELASTIC SOLVER\ELASTIC SUPERMESH - CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="MElastic_BoundariesCUDA.h">
+      <Filter>12. ELASTIC SOLVER\CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="SMElastic.h">
+      <Filter>12. ELASTIC SOLVER\ELASTIC SUPERMESH - CPU</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="BorisGraphics.cpp">
-      <Filter>15. GRAPHICS\GRAPHICS_D3D</Filter>
+      <Filter>16. GRAPHICS\GRAPHICS_D3D</Filter>
     </ClCompile>
     <ClCompile Include="D3D.cpp">
-      <Filter>15. GRAPHICS\GRAPHICS_D3D</Filter>
+      <Filter>16. GRAPHICS\GRAPHICS_D3D</Filter>
     </ClCompile>
     <ClCompile Include="BorisDisplay.cpp">
-      <Filter>15. GRAPHICS\INTERFACE</Filter>
+      <Filter>16. GRAPHICS\INTERFACE</Filter>
     </ClCompile>
     <ClCompile Include="BorisIOGenerators.cpp">
-      <Filter>15. GRAPHICS\INTERACTIVE OBJ</Filter>
+      <Filter>16. GRAPHICS\INTERACTIVE OBJ</Filter>
     </ClCompile>
     <ClCompile Include="WinSpaces.cpp">
-      <Filter>15. GRAPHICS\INTERFACE</Filter>
+      <Filter>16. GRAPHICS\INTERFACE</Filter>
     </ClCompile>
     <ClCompile Include="TextObject.cpp">
-      <Filter>15. GRAPHICS\INTERFACE</Filter>
+      <Filter>16. GRAPHICS\INTERFACE</Filter>
     </ClCompile>
     <ClCompile Include="Mesh_Dipole.cpp">
       <Filter>02. MESHES\__MICROMAGNETIC\CPU\MM MESHES - CPU</Filter>
@@ -1181,25 +1208,25 @@
       <Filter>02. MESHES\__MICROMAGNETIC\CUDA\MM MESHES - CUDA</Filter>
     </ClCompile>
     <ClCompile Include="PhysQRep.cpp">
-      <Filter>15. GRAPHICS\GRAPHICS_D3D</Filter>
+      <Filter>16. GRAPHICS\GRAPHICS_D3D</Filter>
     </ClCompile>
     <ClCompile Include="ZeemanCUDA.cpp">
       <Filter>03. MODULES\__MICROMAGNETIC\MM MODULES - CUDA</Filter>
     </ClCompile>
     <ClCompile Include="DataProcessing.cpp">
-      <Filter>16. DATA PROC</Filter>
+      <Filter>17. DATA PROC</Filter>
     </ClCompile>
     <ClCompile Include="ErrorHandler.cpp">
-      <Filter>14. ERROR HANDLER</Filter>
+      <Filter>15. ERROR HANDLER</Filter>
     </ClCompile>
     <ClCompile Include="BorisWinapi.cpp">
-      <Filter>18. MAIN</Filter>
+      <Filter>19. MAIN</Filter>
     </ClCompile>
     <ClCompile Include="Commands.cpp">
-      <Filter>12. COMMANDS</Filter>
+      <Filter>13. COMMANDS</Filter>
     </ClCompile>
     <ClCompile Include="stdafx.cpp">
-      <Filter>13. AUXILIARY</Filter>
+      <Filter>14. AUXILIARY</Filter>
     </ClCompile>
     <ClCompile Include="SimFiles.cpp">
       <Filter>00. SIMULATION</Filter>
@@ -1235,7 +1262,7 @@
       <Filter>03. MODULES\__MICROMAGNETIC\MM MODULES - CUDA</Filter>
     </ClCompile>
     <ClCompile Include="PhysQ.cpp">
-      <Filter>15. GRAPHICS\GRAPHICS_D3D</Filter>
+      <Filter>16. GRAPHICS\GRAPHICS_D3D</Filter>
     </ClCompile>
     <ClCompile Include="ConvolutionDataCUDA.cpp">
       <Filter>08. CONVOLUTION\CONVOLUTION - CUDA</Filter>
@@ -1307,22 +1334,22 @@
       <Filter>03. MODULES\__MICROMAGNETIC\MM MODULES - CUDA</Filter>
     </ClCompile>
     <ClCompile Include="BorisConsole.cpp">
-      <Filter>18. MAIN</Filter>
+      <Filter>19. MAIN</Filter>
     </ClCompile>
     <ClCompile Include="BorisDisplayNonGraphical.cpp">
-      <Filter>15. GRAPHICS\INTERFACE_CONSOLEONLY</Filter>
+      <Filter>16. GRAPHICS\INTERFACE_CONSOLEONLY</Filter>
     </ClCompile>
     <ClCompile Include="MaterialsDataBase.cpp">
-      <Filter>17. MATERIALS DB</Filter>
+      <Filter>18. MATERIALS DB</Filter>
     </ClCompile>
     <ClCompile Include="OVF2_Handlers.cpp">
       <Filter>00. SIMULATION</Filter>
     </ClCompile>
     <ClCompile Include="BorisInteractiveObjects_Ctrl.cpp">
-      <Filter>15. GRAPHICS\INTERACTIVE OBJ</Filter>
+      <Filter>16. GRAPHICS\INTERACTIVE OBJ</Filter>
     </ClCompile>
     <ClCompile Include="BorisInteractiveObjects_State.cpp">
-      <Filter>15. GRAPHICS\INTERACTIVE OBJ</Filter>
+      <Filter>16. GRAPHICS\INTERACTIVE OBJ</Filter>
     </ClCompile>
     <ClCompile Include="DMExchangeCUDA.cpp">
       <Filter>07. EXCHANGE\__MICROMAGNETIC\EXCHANGE - CUDA</Filter>
@@ -1460,22 +1487,22 @@
       <Filter>02. MESHES\__MICROMAGNETIC\CPU\MM MESHES - CPU</Filter>
     </ClCompile>
     <ClCompile Include="Display_BorisConsole.cpp">
-      <Filter>15. GRAPHICS\INTERFACE</Filter>
+      <Filter>16. GRAPHICS\INTERFACE</Filter>
     </ClCompile>
     <ClCompile Include="Display_BorisTextBox.cpp">
-      <Filter>15. GRAPHICS\INTERFACE</Filter>
+      <Filter>16. GRAPHICS\INTERFACE</Filter>
     </ClCompile>
     <ClCompile Include="Display_BorisIOIPopupTextBox.cpp">
-      <Filter>15. GRAPHICS\INTERFACE</Filter>
+      <Filter>16. GRAPHICS\INTERFACE</Filter>
     </ClCompile>
     <ClCompile Include="Display_BorisIOIPopupEditBox.cpp">
-      <Filter>15. GRAPHICS\INTERFACE</Filter>
+      <Filter>16. GRAPHICS\INTERFACE</Filter>
     </ClCompile>
     <ClCompile Include="Display_BorisHoverInfoTextBox.cpp">
-      <Filter>15. GRAPHICS\INTERFACE</Filter>
+      <Filter>16. GRAPHICS\INTERFACE</Filter>
     </ClCompile>
     <ClCompile Include="Display_BorisMeshWindow.cpp">
-      <Filter>15. GRAPHICS\INTERFACE</Filter>
+      <Filter>16. GRAPHICS\INTERFACE</Filter>
     </ClCompile>
     <ClCompile Include="ManagedDiffEq_CommonCUDA.cpp">
       <Filter>01. DIFFERENTIAL EQUATIONS\__MICROMAGNETIC\CUDA\DIFF EQUATIONS INTERFACE - CUDA</Filter>
@@ -1488,9 +1515,6 @@
     </ClCompile>
     <ClCompile Include="SimMessages.cpp">
       <Filter>00. SIMULATION</Filter>
-    </ClCompile>
-    <ClCompile Include="MElasticCUDA.cpp">
-      <Filter>03. MODULES\__MICROMAGNETIC\MM MODULES - CUDA</Filter>
     </ClCompile>
     <ClCompile Include="Heat.cpp">
       <Filter>11. HEAT SOLVER\__MICROMAGNETIC\MM HEAT SOLVER - CPU</Filter>
@@ -1721,9 +1745,6 @@
       <Filter>03. MODULES\__MICROMAGNETIC\MM MODULES - CPU</Filter>
     </ClCompile>
     <ClCompile Include="Demag_N.cpp">
-      <Filter>03. MODULES\__MICROMAGNETIC\MM MODULES - CPU</Filter>
-    </ClCompile>
-    <ClCompile Include="MElastic.cpp">
       <Filter>03. MODULES\__MICROMAGNETIC\MM MODULES - CPU</Filter>
     </ClCompile>
     <ClCompile Include="MOptical.cpp">
@@ -2099,7 +2120,7 @@
       <Filter>07. EXCHANGE\__ATOMISTIC\ATOM EXCHANGE - CUDA</Filter>
     </ClCompile>
     <ClCompile Include="BorisUpdate.cpp">
-      <Filter>19. UPDATE</Filter>
+      <Filter>20. UPDATE</Filter>
     </ClCompile>
     <ClCompile Include="DiffEqFM_Evals_RKF56.cpp">
       <Filter>01. DIFFERENTIAL EQUATIONS\__MICROMAGNETIC\CPU\DIFF EQUATIONS FM - CPU</Filter>
@@ -2174,10 +2195,10 @@
       <Filter>03. MODULES\__ATOMISTIC\ATOM MODULES - CUDA</Filter>
     </ClCompile>
     <ClCompile Include="Commands_PythonScripting.cpp">
-      <Filter>20. PYTHON EMBEDDING</Filter>
+      <Filter>21. PYTHON EMBEDDING</Filter>
     </ClCompile>
     <ClCompile Include="CommandLineArgs.cpp">
-      <Filter>18. MAIN</Filter>
+      <Filter>19. MAIN</Filter>
     </ClCompile>
     <ClCompile Include="TMR.cpp">
       <Filter>10. TRANSPORT SOLVER\__INSULATOR\CPU</Filter>
@@ -2217,6 +2238,27 @@
     </ClCompile>
     <ClCompile Include="TMR_Spin_Display.cpp">
       <Filter>10. TRANSPORT SOLVER\__INSULATOR\CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="MElastic.cpp">
+      <Filter>12. ELASTIC SOLVER\CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="MElasticCUDA.cpp">
+      <Filter>12. ELASTIC SOLVER\CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="MElastic_Solve.cpp">
+      <Filter>12. ELASTIC SOLVER\CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="MElastic_NoSolve.cpp">
+      <Filter>12. ELASTIC SOLVER\CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="SuperMeshElastodynamics.cpp">
+      <Filter>04. SUPERMESH\SUPERMESH - CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="SMElasticCUDA.cpp">
+      <Filter>12. ELASTIC SOLVER\ELASTIC SUPERMESH - CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="SMElastic.cpp">
+      <Filter>12. ELASTIC SOLVER\ELASTIC SUPERMESH - CPU</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -2399,9 +2441,6 @@
     </CudaCompile>
     <CudaCompile Include="MaterialParameterCUDA.cu">
       <Filter>02. MESHES\MAT PARAMS - CUDA</Filter>
-    </CudaCompile>
-    <CudaCompile Include="MElasticCUDA.cu">
-      <Filter>03. MODULES\__MICROMAGNETIC\MM MODULES - CUDA</Filter>
     </CudaCompile>
     <CudaCompile Include="HeatCUDA.cu">
       <Filter>11. HEAT SOLVER\__MICROMAGNETIC\MM HEAT SOLVER - CUDA</Filter>
@@ -2690,6 +2729,15 @@
     </CudaCompile>
     <CudaCompile Include="TransportBaseCUDA.cu">
       <Filter>10. TRANSPORT SOLVER\COMMON</Filter>
+    </CudaCompile>
+    <CudaCompile Include="MElasticCUDA.cu">
+      <Filter>12. ELASTIC SOLVER\CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="MElastic_NoSolveCUDA.cu">
+      <Filter>12. ELASTIC SOLVER\CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="MElastic_SolveCUDA.cu">
+      <Filter>12. ELASTIC SOLVER\CUDA</Filter>
     </CudaCompile>
   </ItemGroup>
 </Project>

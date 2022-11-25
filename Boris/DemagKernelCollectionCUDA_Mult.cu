@@ -57,6 +57,46 @@ __global__ void cu_KernelMultiplication_2D_Self(
 	}
 }
 
+//as above, but add to output, not set it
+__global__ void cu_KernelMultiplication_2D_Self_add(
+	cuKerType& kernel,
+	cuBComplex* cuSx, cuBComplex* cuSy, cuBComplex* cuSz,
+	cuBComplex* cuS2x, cuBComplex* cuS2y, cuBComplex* cuS2z,
+	cuSZ3& N)
+{
+	//above N.y/2 use kernel symmetries to recover kernel values
+	//diagonal components are even about the N.y/2 point
+	//off-diagonal values are odd about the N.y/2 point
+
+	int idx = blockDim.x * blockIdx.x + threadIdx.x;
+
+	if (idx < (N.x / 2 + 1) * N.y) {
+
+		cuReIm FMx = cuSx[idx];
+		cuReIm FMy = cuSy[idx];
+		cuReIm FMz = cuSz[idx];
+
+		int j = (idx / (N.x / 2 + 1)) % N.y;
+
+		if (j <= N.y / 2) {
+
+			cuS2x[idx] = (cuReIm)cuS2x[idx] + (kernel.Kdiag_real[idx].x  * FMx) + (kernel.K2D_odiag[idx] * FMy);
+			cuS2y[idx] = (cuReIm)cuS2y[idx] + (kernel.K2D_odiag[idx] * FMx) + (kernel.Kdiag_real[idx].y  * FMy);
+			cuS2z[idx] = (cuReIm)cuS2z[idx] + (kernel.Kdiag_real[idx].z  * FMz);
+		}
+		else {
+
+			int i = idx % (N.x / 2 + 1);
+
+			int ker_idx = i + (N.y - j) * (N.x / 2 + 1);
+
+			cuS2x[idx] = (cuReIm)cuS2x[idx] + (kernel.Kdiag_real[ker_idx].x  * FMx) + (-kernel.K2D_odiag[ker_idx] * FMy);
+			cuS2y[idx] = (cuReIm)cuS2y[idx] + (-kernel.K2D_odiag[ker_idx] * FMx) + (kernel.Kdiag_real[ker_idx].y  * FMy);
+			cuS2z[idx] = (cuReIm)cuS2z[idx] + (kernel.Kdiag_real[ker_idx].z  * FMz);
+		}
+	}
+}
+
 //Self demag kernel multiplication - real and use symmetries
 __global__ void cu_KernelMultiplication_2D_Self_transpose_xy(
 	cuKerType& kernel,
@@ -94,6 +134,47 @@ __global__ void cu_KernelMultiplication_2D_Self_transpose_xy(
 			cuS2x[idx] = (kernel.Kdiag_real[ker_idx].x  * FMx) + (-kernel.K2D_odiag[ker_idx] * FMy);
 			cuS2y[idx] = (-kernel.K2D_odiag[ker_idx] * FMx) + (kernel.Kdiag_real[ker_idx].y  * FMy);
 			cuS2z[idx] = (kernel.Kdiag_real[ker_idx].z  * FMz);
+		}
+	}
+}
+
+//as above, but add to output, not set it
+__global__ void cu_KernelMultiplication_2D_Self_transpose_xy_add(
+	cuKerType& kernel,
+	cuBComplex* cuSx, cuBComplex* cuSy, cuBComplex* cuSz,
+	cuBComplex* cuS2x, cuBComplex* cuS2y, cuBComplex* cuS2z,
+	cuSZ3& N)
+{
+	//above N.y/2 use kernel symmetries to recover kernel values
+	//diagonal components are even about the N.y/2 point
+	//off-diagonal values are odd about the N.y/2 point
+
+	int idx = blockDim.x * blockIdx.x + threadIdx.x;
+
+	if (idx < (N.x / 2 + 1) * N.y) {
+
+		cuReIm FMx = cuSx[idx];
+		cuReIm FMy = cuSy[idx];
+		cuReIm FMz = cuSz[idx];
+
+		int i = idx % N.y;
+		int j = (idx / N.y) % (N.x / 2 + 1);
+
+		if (i <= N.y / 2) {
+
+			int ker_idx = i + j * (N.y / 2 + 1);
+
+			cuS2x[idx] = (cuReIm)cuS2x[idx] + (kernel.Kdiag_real[ker_idx].x  * FMx) + (kernel.K2D_odiag[ker_idx] * FMy);
+			cuS2y[idx] = (cuReIm)cuS2y[idx] + (kernel.K2D_odiag[ker_idx] * FMx) + (kernel.Kdiag_real[ker_idx].y  * FMy);
+			cuS2z[idx] = (cuReIm)cuS2z[idx] + (kernel.Kdiag_real[ker_idx].z  * FMz);
+		}
+		else {
+
+			int ker_idx = (N.y - i) + j * (N.y / 2 + 1);
+
+			cuS2x[idx] = (cuReIm)cuS2x[idx] + (kernel.Kdiag_real[ker_idx].x  * FMx) + (-kernel.K2D_odiag[ker_idx] * FMy);
+			cuS2y[idx] = (cuReIm)cuS2y[idx] + (-kernel.K2D_odiag[ker_idx] * FMx) + (kernel.Kdiag_real[ker_idx].y  * FMy);
+			cuS2z[idx] = (cuReIm)cuS2z[idx] + (kernel.Kdiag_real[ker_idx].z  * FMz);
 		}
 	}
 }
@@ -352,6 +433,75 @@ __global__ void cu_KernelMultiplication_3D_Self_transpose_xy(
 	}
 }
 
+//as above, but add to output, not set
+__global__ void cu_KernelMultiplication_3D_Self_transpose_xy_add(
+	cuKerType& kernel,
+	cuBComplex* cuSx, cuBComplex* cuSy, cuBComplex* cuSz,
+	cuBComplex* cuS2x, cuBComplex* cuS2y, cuBComplex* cuS2z,
+	cuSZ3& N)
+{
+	//above N.z/2 and N.y/2 use kernel symmetries to recover kernel values
+	//diagonal components are even about the N.z/2 and N.y/2 points
+	//Kxy is even about N.z/2 and odd about N.y/2
+	//Kxz is odd about N.z/2 and even about N.y/2
+	//Kyz is odd about N.z/2 and odd about N.y/2
+
+	int idx = blockDim.x * blockIdx.x + threadIdx.x;
+
+	if (idx < (N.x / 2 + 1) * N.y * N.z) {
+
+		cuReIm FMx = cuSx[idx];
+		cuReIm FMy = cuSy[idx];
+		cuReIm FMz = cuSz[idx];
+
+		int i = idx % N.y;
+		int j = (idx / N.y) % (N.x / 2 + 1);
+		int k = idx / ((N.x / 2 + 1) * N.y);
+
+		cuVEC<cuReal3>& Kdiag = kernel.Kdiag_real;
+		cuVEC<cuReal3>& Kodiag = kernel.Kodiag_real;
+
+		if (k <= N.z / 2) {
+
+			if (i <= N.y / 2) {
+
+				int ker_idx = i + j * (N.y / 2 + 1) + k * (N.x / 2 + 1) * (N.y / 2 + 1);
+
+				cuS2x[idx] = (cuReIm)cuS2x[idx] + (Kdiag[ker_idx].x * FMx) + (Kodiag[ker_idx].x * FMy) + (Kodiag[ker_idx].y * FMz);
+				cuS2y[idx] = (cuReIm)cuS2y[idx] + (Kodiag[ker_idx].x * FMx) + (Kdiag[ker_idx].y * FMy) + (Kodiag[ker_idx].z * FMz);
+				cuS2z[idx] = (cuReIm)cuS2z[idx] + (Kodiag[ker_idx].y * FMx) + (Kodiag[ker_idx].z * FMy) + (Kdiag[ker_idx].z * FMz);
+			}
+			else {
+
+				int ker_idx = (N.y - i) + j * (N.y / 2 + 1) + k * (N.x / 2 + 1) * (N.y / 2 + 1);
+
+				cuS2x[idx] = (cuReIm)cuS2x[idx] + (Kdiag[ker_idx].x * FMx) + (-Kodiag[ker_idx].x * FMy) + (Kodiag[ker_idx].y * FMz);
+				cuS2y[idx] = (cuReIm)cuS2y[idx] + (-Kodiag[ker_idx].x * FMx) + (Kdiag[ker_idx].y * FMy) + (-Kodiag[ker_idx].z * FMz);
+				cuS2z[idx] = (cuReIm)cuS2z[idx] + (Kodiag[ker_idx].y * FMx) + (-Kodiag[ker_idx].z * FMy) + (Kdiag[ker_idx].z * FMz);
+			}
+		}
+		else {
+
+			if (i <= N.y / 2) {
+
+				int ker_idx = i + j * (N.y / 2 + 1) + (N.z - k) * (N.x / 2 + 1) * (N.y / 2 + 1);
+
+				cuS2x[idx] = (cuReIm)cuS2x[idx] + (Kdiag[ker_idx].x * FMx) + (Kodiag[ker_idx].x * FMy) + (-Kodiag[ker_idx].y * FMz);
+				cuS2y[idx] = (cuReIm)cuS2y[idx] + (Kodiag[ker_idx].x * FMx) + (Kdiag[ker_idx].y * FMy) + (-Kodiag[ker_idx].z * FMz);
+				cuS2z[idx] = (cuReIm)cuS2z[idx] + (-Kodiag[ker_idx].y * FMx) + (-Kodiag[ker_idx].z * FMy) + (Kdiag[ker_idx].z * FMz);
+			}
+			else {
+
+				int ker_idx = (N.y - i) + j * (N.y / 2 + 1) + (N.z - k) * (N.x / 2 + 1) * (N.y / 2 + 1);
+
+				cuS2x[idx] = (cuReIm)cuS2x[idx] + (Kdiag[ker_idx].x * FMx) + (-Kodiag[ker_idx].x * FMy) + (-Kodiag[ker_idx].y * FMz);
+				cuS2y[idx] = (cuReIm)cuS2y[idx] + (-Kodiag[ker_idx].x * FMx) + (Kdiag[ker_idx].y * FMy) + (Kodiag[ker_idx].z * FMz);
+				cuS2z[idx] = (cuReIm)cuS2z[idx] + (-Kodiag[ker_idx].y * FMx) + (Kodiag[ker_idx].z * FMy) + (Kdiag[ker_idx].z * FMz);
+			}
+		}
+	}
+}
+
 //z shifted for 3D : complex kernels, but use kernel symmetries
 //N = (N.x/2 + 1, N.y, N.z)
 __global__ void cu_KernelMultiplication_3D_zShifted_transpose_xy(
@@ -480,6 +630,9 @@ void DemagKernelCollectionCUDA::KernelMultiplication_2D(
 	//the rest add to Out
 	for (int mesh_index = 0; mesh_index < Incol_x.size(); mesh_index++) {
 
+		//now compute the other contributions by adding to Out, but skip the self contribution already included
+		if (self_contribution_index == mesh_index) continue;
+
 		//z-shifted : use symmetries
 		if (zshifted[mesh_index]) {
 
@@ -520,7 +673,24 @@ void DemagKernelCollectionCUDA::KernelMultiplication_2D(
 				}
 			}
 		}
+		//it's possible this rect coincides with another rect in the collection (and not self contribution), in which case use 2D Self multiplication
+		else if (Rect_collection[mesh_index] == this_rect) {
 
+			if (transpose_xy) {
+
+				cu_KernelMultiplication_2D_Self_transpose_xy_add <<< ((N.x / 2 + 1)*N.y + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (
+					*kernels[mesh_index],
+					*Incol_x[mesh_index], *Incol_y[mesh_index], *Incol_z[mesh_index],
+					Out_x, Out_y, Out_z, cuN);
+			}
+			else {
+
+				cu_KernelMultiplication_2D_Self_add <<< ((N.x / 2 + 1)*N.y + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (
+					*kernels[mesh_index],
+					*Incol_x[mesh_index], *Incol_y[mesh_index], *Incol_z[mesh_index],
+					Out_x, Out_y, Out_z, cuN);
+			}
+		}
 		//now compute the other contributions by adding to Out : general kernel multiplication without any symmetries used
 		else if (Rect_collection[mesh_index] != this_rect) {
 			
@@ -547,6 +717,9 @@ void DemagKernelCollectionCUDA::KernelMultiplication_3D(
 	//now compute the other contribution by adding to Out
 	for (int mesh_index = 0; mesh_index < Incol_x.size(); mesh_index++) {
 
+		//now compute the other contributions by adding to Out, but skip the self contribution already included
+		if (self_contribution_index == mesh_index) continue;
+
 		//z-shifted : use symmetries
 		if (zshifted[mesh_index]) {
 			
@@ -555,9 +728,16 @@ void DemagKernelCollectionCUDA::KernelMultiplication_3D(
 				*Incol_x[mesh_index], *Incol_y[mesh_index], *Incol_z[mesh_index],
 				Out_x, Out_y, Out_z, cuN);
 		}
+		//it's possible this rect coincides with another rect in the collection (and not self contribution), in which case use 3D Self multiplication
+		else if (Rect_collection[mesh_index] == this_rect) {
 
-		//now compute the other contributions by adding to Out : general kernel multiplication without any symmetries used
-		else if (Rect_collection[mesh_index] != this_rect) {
+			cu_KernelMultiplication_3D_Self_transpose_xy_add <<< ((N.x / 2 + 1)*N.y*N.z + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (
+				*kernels[mesh_index],
+				*Incol_x[mesh_index], *Incol_y[mesh_index], *Incol_z[mesh_index],
+				Out_x, Out_y, Out_z, cuN);
+		}
+		//general kernel multiplication without any symmetries used
+		else {
 			
 			cu_KernelMultiplication_3D_Regular <<< ((N.x / 2 + 1)*N.y*N.z + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (
 				*kernels[mesh_index],

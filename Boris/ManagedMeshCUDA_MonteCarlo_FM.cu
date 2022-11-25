@@ -737,6 +737,8 @@ __device__ cuBReal ManagedMeshCUDA::Get_EnergyChange_FM_ZeemanCUDA(int spin_inde
 		Hext = cHA * Ha;
 	}
 
+	if (pglobalField->linear_size()) Hext += (*pglobalField)[spin_index];
+
 	if (Mnew != cuReal3()) return -M.h.dim() * (Mnew - M[spin_index]) * (cuBReal)MU0 * Hext;
 	else return -M.h.dim() * M[spin_index] * (cuBReal)MU0 * Hext;
 }

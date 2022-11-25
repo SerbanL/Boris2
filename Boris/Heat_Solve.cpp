@@ -50,13 +50,19 @@ void Heat::IterateHeatEquation_1TM(double dT)
 			//add Joule heating if set
 			if (pMesh->E.linear_size()) {
 
-				DBL3 position = pMesh->Temp.cellidx_to_position(idx);
+				double joule_eff = pMesh->joule_eff;
+				pMesh->update_parameters_tcoarse(idx, pMesh->joule_eff, joule_eff);
 
-				double elC_value = pMesh->elC.weighted_average(position, pMesh->Temp.h);
-				DBL3 E_value = pMesh->E.weighted_average(position, pMesh->Temp.h);
+				if (IsNZ(joule_eff)) {
 
-				//add Joule heating source term
-				heatEq_RHS[idx] += (elC_value * E_value * E_value) / cro;
+					DBL3 position = pMesh->Temp.cellidx_to_position(idx);
+
+					double elC_value = pMesh->elC.weighted_average(position, pMesh->Temp.h);
+					DBL3 E_value = pMesh->E.weighted_average(position, pMesh->Temp.h);
+
+					//add Joule heating source term
+					heatEq_RHS[idx] += joule_eff * (elC_value * E_value * E_value) / cro;
+				}
 			}
 
 			//add heat source contribution if set
@@ -101,13 +107,19 @@ void Heat::IterateHeatEquation_1TM(double dT)
 					//add Joule heating if set
 					if (pMesh->E.linear_size()) {
 
-						DBL3 position = pMesh->Temp.cellidx_to_position(idx);
+						double joule_eff = pMesh->joule_eff;
+						pMesh->update_parameters_tcoarse(idx, pMesh->joule_eff, joule_eff);
 
-						double elC_value = pMesh->elC.weighted_average(position, pMesh->Temp.h);
-						DBL3 E_value = pMesh->E.weighted_average(position, pMesh->Temp.h);
+						if (IsNZ(joule_eff)) {
 
-						//add Joule heating source term
-						heatEq_RHS[idx] += (elC_value * E_value * E_value) / cro;
+							DBL3 position = pMesh->Temp.cellidx_to_position(idx);
+
+							double elC_value = pMesh->elC.weighted_average(position, pMesh->Temp.h);
+							DBL3 E_value = pMesh->E.weighted_average(position, pMesh->Temp.h);
+
+							//add Joule heating source term
+							heatEq_RHS[idx] += joule_eff * (elC_value * E_value * E_value) / cro;
+						}
 					}
 
 					//add heat source contribution
@@ -171,13 +183,19 @@ void Heat::IterateHeatEquation_2TM(double dT)
 				//add Joule heating if set
 				if (pMesh->E.linear_size()) {
 
-					DBL3 position = pMesh->Temp.cellidx_to_position(idx);
+					double joule_eff = pMesh->joule_eff;
+					pMesh->update_parameters_tcoarse(idx, pMesh->joule_eff, joule_eff);
 
-					double elC_value = pMesh->elC.weighted_average(position, pMesh->Temp.h);
-					DBL3 E_value = pMesh->E.weighted_average(position, pMesh->Temp.h);
+					if (IsNZ(joule_eff)) {
 
-					//add Joule heating source term
-					heatEq_RHS[idx] += (elC_value * E_value * E_value) / cro_e;
+						DBL3 position = pMesh->Temp.cellidx_to_position(idx);
+
+						double elC_value = pMesh->elC.weighted_average(position, pMesh->Temp.h);
+						DBL3 E_value = pMesh->E.weighted_average(position, pMesh->Temp.h);
+
+						//add Joule heating source term
+						heatEq_RHS[idx] += joule_eff * (elC_value * E_value * E_value) / cro_e;
+					}
 				}
 
 				//add heat source contribution if set
@@ -236,13 +254,19 @@ void Heat::IterateHeatEquation_2TM(double dT)
 						//add Joule heating if set
 						if (pMesh->E.linear_size()) {
 
-							DBL3 position = pMesh->Temp.cellidx_to_position(idx);
+							double joule_eff = pMesh->joule_eff;
+							pMesh->update_parameters_tcoarse(idx, pMesh->joule_eff, joule_eff);
 
-							double elC_value = pMesh->elC.weighted_average(position, pMesh->Temp.h);
-							DBL3 E_value = pMesh->E.weighted_average(position, pMesh->Temp.h);
+							if (IsNZ(joule_eff)) {
 
-							//add Joule heating source term
-							heatEq_RHS[idx] += (elC_value * E_value * E_value) / cro_e;
+								DBL3 position = pMesh->Temp.cellidx_to_position(idx);
+
+								double elC_value = pMesh->elC.weighted_average(position, pMesh->Temp.h);
+								DBL3 E_value = pMesh->E.weighted_average(position, pMesh->Temp.h);
+
+								//add Joule heating source term
+								heatEq_RHS[idx] += joule_eff * (elC_value * E_value * E_value) / cro_e;
+							}
 						}
 
 						//add heat source contribution
@@ -320,9 +344,15 @@ double Heat::diff2_sec(DBL3 relpos_m1, DBL3 stencil, DBL3 shift) const
 	//Joule heating
 	if (pMesh->E.linear_size()) {
 
-		double elCval = pMesh->elC.weighted_average(relpos_m1, stencil);
-		DBL3 Eval = pMesh->E.weighted_average(relpos_m1, stencil);
-		value = -(elCval * Eval * Eval) / thermCond;
+		double joule_eff = pMesh->joule_eff;
+		pMesh->update_parameters_atposition(relpos_m1, pMesh->joule_eff, joule_eff);
+
+		if (IsNZ(joule_eff)) {
+
+			double elCval = pMesh->elC.weighted_average(relpos_m1, stencil);
+			DBL3 Eval = pMesh->E.weighted_average(relpos_m1, stencil);
+			value = -joule_eff * (elCval * Eval * Eval) / thermCond;
+		}
 	}
 
 	if (!Q_equation.is_set()) {
@@ -369,8 +399,14 @@ double Heat::diff2_pri(int cell1_idx, DBL3 shift) const
 	//Joule heating
 	if (pMesh->E.linear_size()) {
 
-		int idx1_E = pMesh->E.position_to_cellidx(pMesh->Temp.cellidx_to_position(cell1_idx));
-		value = -(pMesh->elC[idx1_E] * pMesh->E[idx1_E] * pMesh->E[idx1_E]) / thermCond;
+		double joule_eff = pMesh->joule_eff;
+		pMesh->update_parameters_tcoarse(cell1_idx, pMesh->joule_eff, joule_eff);
+
+		if (IsNZ(joule_eff)) {
+
+			int idx1_E = pMesh->E.position_to_cellidx(pMesh->Temp.cellidx_to_position(cell1_idx));
+			value = -joule_eff * (pMesh->elC[idx1_E] * pMesh->E[idx1_E] * pMesh->E[idx1_E]) / thermCond;
+		}
 	}
 
 	if (!Q_equation.is_set()) {

@@ -27,30 +27,15 @@ __global__ void mapmesh_newdims_kernel(cuSZ3 new_n, cuSZ3& old_n, VType*& new_qu
 	}
 }
 
-template bool cuVEC<char>::mapmesh_newdims(const cuSZ3& new_n);
-template bool cuVEC<int>::mapmesh_newdims(const cuSZ3& new_n);
-template bool cuVEC<unsigned>::mapmesh_newdims(const cuSZ3& new_n);
-template bool cuVEC<long>::mapmesh_newdims(const cuSZ3& new_n);
-template bool cuVEC<size_t>::mapmesh_newdims(const cuSZ3& new_n);
 template bool cuVEC<float>::mapmesh_newdims(const cuSZ3& new_n);
 template bool cuVEC<double>::mapmesh_newdims(const cuSZ3& new_n);
 
-template bool cuVEC<cuINT3>::mapmesh_newdims(const cuSZ3& new_n);
-template bool cuVEC<cuSZ3>::mapmesh_newdims(const cuSZ3& new_n);
 template bool cuVEC<cuFLT3>::mapmesh_newdims(const cuSZ3& new_n);
 template bool cuVEC<cuDBL3>::mapmesh_newdims(const cuSZ3& new_n);
 
-template bool cuVEC<cuINT4>::mapmesh_newdims(const cuSZ3& new_n);
-template bool cuVEC<cuSZ4>::mapmesh_newdims(const cuSZ3& new_n);
 template bool cuVEC<cuFLT4>::mapmesh_newdims(const cuSZ3& new_n);
 template bool cuVEC<cuDBL4>::mapmesh_newdims(const cuSZ3& new_n);
 
-template bool cuVEC<cuINT33>::mapmesh_newdims(const cuSZ3& new_n);
-template bool cuVEC<cuFLT33>::mapmesh_newdims(const cuSZ3& new_n);
-template bool cuVEC<cuDBL33>::mapmesh_newdims(const cuSZ3& new_n);
-
-template bool cuVEC<cuBComplex>::mapmesh_newdims(const cuSZ3& new_n);
-template bool cuVEC<cuReIm>::mapmesh_newdims(const cuSZ3& new_n);
 template bool cuVEC<cuReIm3>::mapmesh_newdims(const cuSZ3& new_n);
 
 template <typename VType>
@@ -179,30 +164,15 @@ __global__ void strided_copy_3d(VType*& quantity_in, cuSZ3& n, VType*& quantity_
 	}
 }
 
-template void cuVEC<char>::extract_cuvec(size_t size, cuVEC<char>& cuvec);
-template void cuVEC<int>::extract_cuvec(size_t size, cuVEC<int>& cuvec);
-template void cuVEC<unsigned>::extract_cuvec(size_t size, cuVEC<unsigned>& cuvec);
-template void cuVEC<long>::extract_cuvec(size_t size, cuVEC<long>& cuvec);
-template void cuVEC<size_t>::extract_cuvec(size_t size, cuVEC<size_t>& cuvec);
 template void cuVEC<float>::extract_cuvec(size_t size, cuVEC<float>& cuvec);
 template void cuVEC<double>::extract_cuvec(size_t size, cuVEC<double>& cuvec);
 
-template void cuVEC<cuINT3>::extract_cuvec(size_t size, cuVEC<cuINT3>& cuvec);
-template void cuVEC<cuSZ3>::extract_cuvec(size_t size, cuVEC<cuSZ3>& cuvec);
 template void cuVEC<cuFLT3>::extract_cuvec(size_t size, cuVEC<cuFLT3>& cuvec);
 template void cuVEC<cuDBL3>::extract_cuvec(size_t size, cuVEC<cuDBL3>& cuvec);
 
-template void cuVEC<cuINT4>::extract_cuvec(size_t size, cuVEC<cuINT4>& cuvec);
-template void cuVEC<cuSZ4>::extract_cuvec(size_t size, cuVEC<cuSZ4>& cuvec);
 template void cuVEC<cuFLT4>::extract_cuvec(size_t size, cuVEC<cuFLT4>& cuvec);
 template void cuVEC<cuDBL4>::extract_cuvec(size_t size, cuVEC<cuDBL4>& cuvec);
 
-template void cuVEC<cuINT33>::extract_cuvec(size_t size, cuVEC<cuINT33>& cuvec);
-template void cuVEC<cuFLT33>::extract_cuvec(size_t size, cuVEC<cuFLT33>& cuvec);
-template void cuVEC<cuDBL33>::extract_cuvec(size_t size, cuVEC<cuDBL33>& cuvec);
-
-template void cuVEC<cuBComplex>::extract_cuvec(size_t size, cuVEC<cuBComplex>& cuvec);
-template void cuVEC<cuReIm>::extract_cuvec(size_t size, cuVEC<cuReIm>& cuvec);
 template void cuVEC<cuReIm3>::extract_cuvec(size_t size, cuVEC<cuReIm3>& cuvec);
 
 template <typename VType>
@@ -224,30 +194,15 @@ __global__ void load_cuarr_kernel(VType*& quantity, VType* input, cuSZ3& n)
 	}
 }
 
-template void cuVEC<char>::load_cuarr(size_t size, cu_arr<char>& input);
-template void cuVEC<int>::load_cuarr(size_t size, cu_arr<int>& input);
-template void cuVEC<unsigned>::load_cuarr(size_t size, cu_arr<unsigned>& input);
-template void cuVEC<long>::load_cuarr(size_t size, cu_arr<long>& input);
-template void cuVEC<size_t>::load_cuarr(size_t size, cu_arr<size_t>& input);
 template void cuVEC<float>::load_cuarr(size_t size, cu_arr<float>& input);
 template void cuVEC<double>::load_cuarr(size_t size, cu_arr<double>& input);
 
-template void cuVEC<cuINT3>::load_cuarr(size_t size, cu_arr<cuINT3>& input);
-template void cuVEC<cuSZ3>::load_cuarr(size_t size, cu_arr<cuSZ3>& input);
 template void cuVEC<cuFLT3>::load_cuarr(size_t size, cu_arr<cuFLT3>& input);
 template void cuVEC<cuDBL3>::load_cuarr(size_t size, cu_arr<cuDBL3>& input);
 
-template void cuVEC<cuINT4>::load_cuarr(size_t size, cu_arr<cuINT4>& input);
-template void cuVEC<cuSZ4>::load_cuarr(size_t size, cu_arr<cuSZ4>& input);
 template void cuVEC<cuFLT4>::load_cuarr(size_t size, cu_arr<cuFLT4>& input);
 template void cuVEC<cuDBL4>::load_cuarr(size_t size, cu_arr<cuDBL4>& input);
 
-template void cuVEC<cuINT33>::load_cuarr(size_t size, cu_arr<cuINT33>& input);
-template void cuVEC<cuFLT33>::load_cuarr(size_t size, cu_arr<cuFLT33>& input);
-template void cuVEC<cuDBL33>::load_cuarr(size_t size, cu_arr<cuDBL33>& input);
-
-template void cuVEC<cuBComplex>::load_cuarr(size_t size, cu_arr<cuBComplex>& input);
-template void cuVEC<cuReIm>::load_cuarr(size_t size, cu_arr<cuReIm>& input);
 template void cuVEC<cuReIm3>::load_cuarr(size_t size, cu_arr<cuReIm3>& input);
 
 //copy values from a cu_arr of same type -> sizes must match
@@ -268,30 +223,15 @@ __global__ void store_cuarr_kernel(VType*& quantity, VType* output, cuSZ3& n)
 	}
 }
 
-template void cuVEC<char>::store_cuarr(size_t size, cu_arr<char>& output);
-template void cuVEC<int>::store_cuarr(size_t size, cu_arr<int>& output);
-template void cuVEC<unsigned>::store_cuarr(size_t size, cu_arr<unsigned>& output);
-template void cuVEC<long>::store_cuarr(size_t size, cu_arr<long>& output);
-template void cuVEC<size_t>::store_cuarr(size_t size, cu_arr<size_t>& output);
 template void cuVEC<float>::store_cuarr(size_t size, cu_arr<float>& output);
 template void cuVEC<double>::store_cuarr(size_t size, cu_arr<double>& output);
 
-template void cuVEC<cuINT3>::store_cuarr(size_t size, cu_arr<cuINT3>& output);
-template void cuVEC<cuSZ3>::store_cuarr(size_t size, cu_arr<cuSZ3>& output);
 template void cuVEC<cuFLT3>::store_cuarr(size_t size, cu_arr<cuFLT3>& output);
 template void cuVEC<cuDBL3>::store_cuarr(size_t size, cu_arr<cuDBL3>& output);
 
-template void cuVEC<cuINT4>::store_cuarr(size_t size, cu_arr<cuINT4>& output);
-template void cuVEC<cuSZ4>::store_cuarr(size_t size, cu_arr<cuSZ4>& output);
 template void cuVEC<cuFLT4>::store_cuarr(size_t size, cu_arr<cuFLT4>& output);
 template void cuVEC<cuDBL4>::store_cuarr(size_t size, cu_arr<cuDBL4>& output);
 
-template void cuVEC<cuINT33>::store_cuarr(size_t size, cu_arr<cuINT33>& output);
-template void cuVEC<cuFLT33>::store_cuarr(size_t size, cu_arr<cuFLT33>& output);
-template void cuVEC<cuDBL33>::store_cuarr(size_t size, cu_arr<cuDBL33>& output);
-
-template void cuVEC<cuBComplex>::store_cuarr(size_t size, cu_arr<cuBComplex>& output);
-template void cuVEC<cuReIm>::store_cuarr(size_t size, cu_arr<cuReIm>& output);
 template void cuVEC<cuReIm3>::store_cuarr(size_t size, cu_arr<cuReIm3>& output);
 
 //copy values to a cu_arr of same type -> sizes must match

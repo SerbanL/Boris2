@@ -65,9 +65,9 @@ class VEC_VC :
 #define NF_SKIPCELL	1024
 
 //composite media boundary cells (used to flag cells where boundary conditions must be applied). These flags are not set using set_ngbrFlags, but must be externally set
-//cell on positive x side of boundary : bit 11 -> use dirichlet_nx values
+//cell on positive x side of boundary : bit 11
 #define NF_CMBNDPX	2048
-//cell on negative x side of boundary : bit 12 -> use dirichlet_px values, etc.
+//cell on negative x side of boundary : bit 12
 #define NF_CMBNDNX	4096
 //cell on positive y side of boundary : bit 13
 #define NF_CMBNDPY	8192
@@ -170,6 +170,9 @@ class VEC_VC :
 #define NF2_DIRICHLETZ (NF2_DIRICHLETPZ + NF2_DIRICHLETNZ)
 #define NF2_DIRICHLET (NF2_DIRICHLETX + NF2_DIRICHLETY + NF2_DIRICHLETZ)
 
+//Halo bits 13 - 18 not used with VEC_VC, only with cuVEC_VC.
+//If adding new bits, then add them from bit 19 onwards.
+
 private:
 
 	//mark cells with various flags to indicate properties of neighboring cells
@@ -182,9 +185,9 @@ private:
 	//these vectors are of sizes equal to 1 cell deep at each respective side. dirichlet_nx are the dirichlet values at the -x side of the mesh, etc.
 	std::vector<VType> dirichlet_nx, dirichlet_px, dirichlet_ny, dirichlet_py, dirichlet_nz, dirichlet_pz;
 
-	//Robin boundary conditions values : diff_norm(u) = alpha * (u - VEC<VType>::h), where diff_norm means differential along surface normal (e.g. positive sign at +x boundary, negative sign at -x boundary).
-	//alpha is a positive constant : robins_nx.i. Note, if this is zero then homogeneous Neumann boundary condition results.
-	//h is a value (e.g. ambient temperature for heat equation): robins_nx.j
+	//Robin boundary conditions values : diff_norm(u) = alpha * (u - h), where diff_norm means differential along surface normal (e.g. positive sign at +x boundary, negative sign at -x boundary).
+	//alpha is a positive constant : robin_nx.i etc. Note, if this is zero then homogeneous Neumann boundary condition results.
+	//h is a value (e.g. ambient temperature for heat equation): robin_nx.j
 	//nx, px, etc... for mesh boundaries - use these when flagged with NF2_ROBINNX etc. and not flagged with NF2_ROBINV
 	DBL2 robin_px, robin_nx;
 	DBL2 robin_py, robin_ny;
@@ -219,15 +222,14 @@ private:
 	//from NF2_DIRICHLET type flag and cell_idx return boundary value from one of the dirichlet vectors
 	VType get_dirichlet_value(int dirichlet_flag, int cell_idx) const;
 
+	//set dirichlet value depending on flag, only for this cell
+	void set_dirichlet_value(int dirichlet_flag, int cell_idx, VType value);
+
 	//set robin flags from robin values and shape. Doesn't affect any other flags. Call from set_ngbrFlags after counting neighbors, and after setting robin values
 	void set_robin_flags(void);
 
 	//set pbc flags depending on set conditions and currently calculated flags - ngbrFlags must already be calculated before using this
 	void set_pbc_flags(void);
-
-	//mark cell as not empty / empty : internal use only; routines that use these must finish with recalculating ngbrflags as neighbours will have changed
-	void mark_not_empty(int index) { ngbrFlags[index] |= NF_NOTEMPTY; }
-	void mark_empty(int index) { ngbrFlags[index] &= ~NF_NOTEMPTY; VEC<VType>::quantity[index] = VType(); }
 
 	//check if we need to use ngbrFlags2 (allocate memory etc.)
 	bool use_extended_flags(void);
@@ -265,10 +267,10 @@ public:
 	~VEC_VC() {}
 
 	//implement ProgramState method
-	void RepairObjectState() 
-	{ 
+	void RepairObjectState()
+	{
 		//any mesh VEC<VType>::transfer info will have to be remade
-		VEC<VType>::transfer.clear(); 
+		VEC<VType>::transfer.clear();
 	}
 
 	//--------------------------------------------SPECIAL DATA ACCESS (typically used for copy to/from cuVECs)
@@ -331,6 +333,12 @@ public:
 
 	void shrink_to_fit(void);
 
+	//--------------------------------------------SUB-VECS : VEC_VC_subvec.h
+
+	//get a copy from this VEC_VC, as a sub-VEC_VC defined by box; same cellsize maintained; any transfer data not copied.
+	//dirichlet conditions not copied
+	VEC_VC<VType> subvec(Box box);
+
 	//--------------------------------------------PROPERTY CHECHING
 
 	int is_pbc_x(void) const { return pbc_x; }
@@ -362,9 +370,33 @@ public:
 	bool is_cmbnd(const DBL3& rel_pos) const { return (ngbrFlags[int(rel_pos.x / VEC<VType>::h.x) + int(rel_pos.y / VEC<VType>::h.y) * VEC<VType>::n.x + int(rel_pos.z / VEC<VType>::h.z) * VEC<VType>::n.x * VEC<VType>::n.y] & NF_CMBND); }
 	bool is_cmbnd(const INT3& ijk) const { return (ngbrFlags[ijk.i + ijk.j*VEC<VType>::n.x + ijk.k*VEC<VType>::n.x*VEC<VType>::n.y] & NF_CMBND); }
 
+	bool is_cmbnd_px(int index) const { return (ngbrFlags[index] & NF_CMBNDPX); }
+	bool is_cmbnd_nx(int index) const { return (ngbrFlags[index] & NF_CMBNDNX); }
+	bool is_cmbnd_py(int index) const { return (ngbrFlags[index] & NF_CMBNDPY); }
+	bool is_cmbnd_ny(int index) const { return (ngbrFlags[index] & NF_CMBNDNY); }
+	bool is_cmbnd_pz(int index) const { return (ngbrFlags[index] & NF_CMBNDPZ); }
+	bool is_cmbnd_nz(int index) const { return (ngbrFlags[index] & NF_CMBNDNZ); }
+
+	bool is_cmbnd_x(int index) const { return (ngbrFlags[index] & NF_CMBNDX); }
+	bool is_cmbnd_y(int index) const { return (ngbrFlags[index] & NF_CMBNDY); }
+	bool is_cmbnd_z(int index) const { return (ngbrFlags[index] & NF_CMBNDZ); }
+
 	bool is_skipcell(int index) const { return (ngbrFlags[index] & NF_SKIPCELL); }
 	bool is_skipcell(const DBL3& rel_pos) const { return (ngbrFlags[int(rel_pos.x / VEC<VType>::h.x) + int(rel_pos.y / VEC<VType>::h.y) * VEC<VType>::n.x + int(rel_pos.z / VEC<VType>::h.z) * VEC<VType>::n.x * VEC<VType>::n.y] & NF_SKIPCELL); }
 	bool is_skipcell(const INT3& ijk) const { return (ngbrFlags[ijk.i + ijk.j*VEC<VType>::n.x + ijk.k*VEC<VType>::n.x*VEC<VType>::n.y] & NF_SKIPCELL); }
+
+	bool is_dirichlet(int index) const { return ngbrFlags2.size() && (ngbrFlags2[index] & NF2_DIRICHLET); }
+
+	bool is_dirichlet_px(int index) const { return ngbrFlags2.size() && (ngbrFlags2[index] & NF2_DIRICHLETPX); }
+	bool is_dirichlet_nx(int index) const { return ngbrFlags2.size() && (ngbrFlags2[index] & NF2_DIRICHLETNX); }
+	bool is_dirichlet_py(int index) const { return ngbrFlags2.size() && (ngbrFlags2[index] & NF2_DIRICHLETPY); }
+	bool is_dirichlet_ny(int index) const { return ngbrFlags2.size() && (ngbrFlags2[index] & NF2_DIRICHLETNY); }
+	bool is_dirichlet_pz(int index) const { return ngbrFlags2.size() && (ngbrFlags2[index] & NF2_DIRICHLETPZ); }
+	bool is_dirichlet_nz(int index) const { return ngbrFlags2.size() && (ngbrFlags2[index] & NF2_DIRICHLETNZ); }
+
+	bool is_dirichlet_x(int index) const { return ngbrFlags2.size() && (ngbrFlags2[index] & NF2_DIRICHLETX); }
+	bool is_dirichlet_y(int index) const { return ngbrFlags2.size() && (ngbrFlags2[index] & NF2_DIRICHLETY); }
+	bool is_dirichlet_z(int index) const { return ngbrFlags2.size() && (ngbrFlags2[index] & NF2_DIRICHLETZ); }
 
 	//are all neighbors available? (for 2D don't check the z neighbors)
 	bool is_interior(int index) const { return (((ngbrFlags[index] & NF_BOTHX) == NF_BOTHX) && ((ngbrFlags[index] & NF_BOTHY) == NF_BOTHY) && (VEC<VType>::n.z == 1 || ((ngbrFlags[index] & NF_BOTHZ) == NF_BOTHZ))); }
@@ -381,12 +413,21 @@ public:
 
 	//--------------------------------------------SET CELL FLAGS - EXTERNAL USE : VEC_VC_flags.h
 
-	//set dirichlet boundary conditions from surface_rect (must be a rectangle intersecting with one of the surfaces of this mesh) and value
+	//set Dirichlet boundary conditions from surface_rect (must be a rectangle intersecting with one of the surfaces of this mesh) and value
 	//return false on memory allocation failure only, otherwise return true even if surface_rect was not valid
 	bool set_dirichlet_conditions(const Rect& surface_rect, VType value);
 
-	//clear all dirichlet flags and vectors
+	//clear all Dirichlet flags and vectors
 	void clear_dirichlet_flags(void);
+
+	//clear Dirichlet flags only for cells corresponding to given surface_rect (almost a reverse operation of set_dirichlet_conditions, but here we simply unmark these cells, so Dirichlet condition evaluation does not take place)
+	void clear_dirichlet_flags(const Rect& surface_rect);
+
+	//depending on dirichlet flag set in this cell, set dirichlet value
+	void set_dirichlet_value(int idx, VType value);
+
+	//depending on dirichlet flag set in this cell, compute dirichlet value at boundary by extrapolation to boundary
+	void autoset_dirichlet_value(int idx);
 
 	//set pbc conditions : setting any to false clears flags
 	void set_pbc(int pbc_x_, int pbc_y_, int pbc_z_);
@@ -407,6 +448,10 @@ public:
 
 	//clear all Robin boundary conditions and values
 	void clear_robin_conditions(void);
+
+	//mark cell as not empty / empty : internal use only; routines that use these must finish with recalculating ngbrflags as neighbours will have changed
+	void mark_not_empty(int index) { ngbrFlags[index] |= NF_NOTEMPTY; }
+	void mark_empty(int index) { ngbrFlags[index] &= ~NF_NOTEMPTY; VEC<VType>::quantity[index] = VType(); }
 
 	//--------------------------------------------CALCULATE COMPOSITE MEDIA BOUNDARY VALUES : VEC_VC_cmbnd.h
 
@@ -487,10 +532,10 @@ public:
 	bool generate_jagged_surfaces(double depth, double spacing, unsigned seed, std::string sides);
 
 	//Generate 2D Voronoi cells with boundaries between cells set to empty
-	bool generate_Voronoi2D(double spacing, unsigned seed);
+	bool generate_Voronoi2D_Grains(double spacing, unsigned seed);
 
 	//Generate 3D Voronoi cells with boundaries between cells set to empty
-	bool generate_Voronoi3D(double spacing, unsigned seed);
+	bool generate_Voronoi3D_Grains(double spacing, unsigned seed);
 
 	//---------------------------------------------MULTIPLE ENTRIES SETTERS - VEC SHAPE MASKS : VEC_VEC_shapemask.h
 
@@ -619,6 +664,18 @@ public:
 	VAL2<PType> get_minmax_component_z(const Box& box) const;
 	template <typename PType = decltype(GetMagnitude(std::declval<VType>()))>
 	VAL2<PType> get_minmax_component_z(const Rect& rectangle = Rect()) const;
+
+	//--------------------------------------------SPECIAL NUMERICAL PROPERTIES : VEC_VC_nprops.h
+
+	//Robin value is of the form alpha * (Tb - Ta). alpha and Ta are known from values set robin_nx, robin_px, ...
+	//Tb is quantity value at boundary. Here we will return Robin value for x, y, z axes for which any shift component is nonzero (otherwise zero for that component)
+	//e.g. if shift.x is non-zero then Tb value is obtained at rel_pos + (shift.x, 0, 0) using extrapolation from values at rel_pos and rel_pos - (shift.x, 0, 0) -> both these values should be inside the mesh, else return zero.
+	DBL3 get_robin_value(const DBL3& rel_pos, const DBL3& shift);
+
+	//for given cell index, find if any neighboring cells are empty and get distance (shift) valuer to them along each axis
+	//if any shift is zero this means both cells are present either side, or both are missing
+	//NOTE : this is intended to be used with get_robin_value method to determine the shift value, and rel_pos will be position corresponding to idx
+	DBL3 get_shift_to_emptycell(int idx);
 
 	//--------------------------------------------OPERATORS and ALGORITHMS
 

@@ -10,6 +10,8 @@
 #include "MeshDefs.h"
 #include "DataDefs.h"
 
+#include "SuperMesh.h"
+
 ZeemanCUDA::ZeemanCUDA(MeshCUDA* pMeshCUDA_, Zeeman* pZeeman_) :
 	ModulesCUDA()
 {
@@ -29,17 +31,35 @@ ZeemanCUDA::~ZeemanCUDA()
 	pMeshCUDA->pHa = nullptr;
 }
 
+//setup globalField transfer
+BError ZeemanCUDA::InitializeGlobalField(void)
+{
+	BError error(__FUNCTION__);
+
+	error = pZeeman->InitializeGlobalField();
+
+	if (!error && pZeeman->globalField.linear_size()) {
+
+		if (!globalField()->resize(pMeshCUDA->h, pMeshCUDA->meshRect)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
+
+		cu_arr<cuVEC<cuReal3>> pVal_from;
+		cu_arr<cuVEC<cuReal3>> pVal_to;
+		
+		pVal_from.push_back((cuVEC<cuReal3>*&)pZeeman->pSMesh->GetGlobalFieldCUDA().get_managed_object());
+
+		//Now copy mesh transfer object to cuda version
+		if (!globalField()->copy_transfer_info(pVal_from, pVal_to, pZeeman->globalField.get_transfer())) return error(BERROR_OUTOFGPUMEMORY_CRIT);
+
+		globalField()->transfer_in(pZeeman->globalField.linear_size(), pZeeman->globalField.size_transfer_in());
+	}
+	else globalField()->clear();
+
+	return error;
+}
+
 BError ZeemanCUDA::Initialize(void)
 {
 	BError error(CLASS_STR(ZeemanCUDA));
-
-	//Make sure display data has memory allocated (or freed) as required
-	error = Update_Module_Display_VECs(
-		(cuReal3)pMeshCUDA->h, (cuRect)pMeshCUDA->meshRect, 
-		(MOD_)pMeshCUDA->Get_Module_Heff_Display() == MOD_ZEEMAN || pMeshCUDA->IsOutputDataSet_withRect(DATA_E_ZEE),
-		(MOD_)pMeshCUDA->Get_Module_Energy_Display() == MOD_ZEEMAN || pMeshCUDA->IsOutputDataSet_withRect(DATA_E_ZEE),
-		pMeshCUDA->GetMeshType() == MESH_ANTIFERROMAGNETIC);
-	if (!error)	initialized = true;
 
 	//If using Havec make sure size and resolution matches M
 	if (Havec()->size_cpu().dim()) {
@@ -50,6 +70,17 @@ BError ZeemanCUDA::Initialize(void)
 			initialized = false;
 		}
 	}
+
+	//if using global field, then initialize mesh transfer if needed
+	error = InitializeGlobalField();
+
+	//Make sure display data has memory allocated (or freed) as required
+	error = Update_Module_Display_VECs(
+		(cuReal3)pMeshCUDA->h, (cuRect)pMeshCUDA->meshRect,
+		(MOD_)pMeshCUDA->Get_Module_Heff_Display() == MOD_ZEEMAN || pMeshCUDA->IsOutputDataSet_withRect(DATA_E_ZEE),
+		(MOD_)pMeshCUDA->Get_Module_Energy_Display() == MOD_ZEEMAN || pMeshCUDA->IsOutputDataSet_withRect(DATA_E_ZEE),
+		pMeshCUDA->GetMeshType() == MESH_ANTIFERROMAGNETIC);
+	if (!error)	initialized = true;
 
 	if (initialized) set_ZeemanCUDA_pointers();
 
@@ -63,7 +94,7 @@ BError ZeemanCUDA::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 	//need this when we switch cuda mode
 	if (!H_equation.is_set() && pZeeman->H_equation.is_set()) error = SetFieldEquation(pZeeman->H_equation.get_vector_fspec());
 
-	if (ucfg::check_cfgflags(cfgMessage, UPDATECONFIG_MESHCHANGE)) {
+	if (ucfg::check_cfgflags(cfgMessage, UPDATECONFIG_MESHCHANGE, UPDATECONFIG_SMESH_GLOBALFIELD)) {
 
 		Uninitialize();
 
@@ -73,7 +104,8 @@ BError ZeemanCUDA::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 			error = SetFieldEquation(pZeeman->H_equation.get_vector_fspec());
 		}
 
-		Initialize();
+		//if global field not set, then also clear it here
+		if (!pZeeman->globalField.linear_size()) globalField()->clear();
 	}
 
 	return error;

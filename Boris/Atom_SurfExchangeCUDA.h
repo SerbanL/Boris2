@@ -12,7 +12,6 @@ class Atom_SurfExchange;
 
 class Atom_MeshCUDA;
 class ManagedAtom_MeshCUDA;
-
 class ManagedMeshCUDA;
 
 class Atom_SurfExchangeCUDA :

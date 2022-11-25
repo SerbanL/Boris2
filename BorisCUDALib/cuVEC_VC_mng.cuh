@@ -35,22 +35,11 @@ __global__ void strided_copy_3d(VType*& quantity_in, int*& ngbrFlags_in, cuSZ3& 
 	}
 }
 
-template void cuVEC_VC<char>::extract_cuvec(size_t size, cuVEC_VC<char>& cuvec);
-template void cuVEC_VC<int>::extract_cuvec(size_t size, cuVEC_VC<int>& cuvec);
-template void cuVEC_VC<unsigned>::extract_cuvec(size_t size, cuVEC_VC<unsigned>& cuvec);
-template void cuVEC_VC<long>::extract_cuvec(size_t size, cuVEC_VC<long>& cuvec);
-template void cuVEC_VC<size_t>::extract_cuvec(size_t size, cuVEC_VC<size_t>& cuvec);
 template void cuVEC_VC<float>::extract_cuvec(size_t size, cuVEC_VC<float>& cuvec);
 template void cuVEC_VC<double>::extract_cuvec(size_t size, cuVEC_VC<double>& cuvec);
 
-template void cuVEC_VC<cuINT3>::extract_cuvec(size_t size, cuVEC_VC<cuINT3>& cuvec);
-template void cuVEC_VC<cuSZ3>::extract_cuvec(size_t size, cuVEC_VC<cuSZ3>& cuvec);
 template void cuVEC_VC<cuFLT3>::extract_cuvec(size_t size, cuVEC_VC<cuFLT3>& cuvec);
 template void cuVEC_VC<cuDBL3>::extract_cuvec(size_t size, cuVEC_VC<cuDBL3>& cuvec);
-
-template void cuVEC_VC<cuINT33>::extract_cuvec(size_t size, cuVEC_VC<cuINT33>& cuvec);
-template void cuVEC_VC<cuFLT33>::extract_cuvec(size_t size, cuVEC_VC<cuFLT33>& cuvec);
-template void cuVEC_VC<cuDBL33>::extract_cuvec(size_t size, cuVEC_VC<cuDBL33>& cuvec);
 
 template <typename VType>
 __host__ void cuVEC_VC<VType>::extract_cuvec(size_t size, cuVEC_VC<VType>& cuvec)

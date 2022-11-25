@@ -30,6 +30,7 @@ __host__ void cuVEC<VType>::alloc_initialize_data(void)
 	set_rect(cuRect());
 
 	transfer.construct_cu_obj();
+	transfer2.construct_cu_obj();
 }
 
 //--------------------------------------------HELPER METHODS
@@ -298,6 +299,7 @@ __host__ void cuVEC<VType>::assign_cu_obj(const cuVEC<VType>& copyThis)
 
 	//transfer info might not be valid any more
 	transfer.clear_transfer_data();
+	transfer2.clear_transfer_data();
 }
 
 template <typename VType>
@@ -320,6 +322,7 @@ __host__ void cuVEC<VType>::destruct_cu_obj(void)
 	set_gpu_value(histogram_preaverage_size, (size_t)0);
 
 	transfer.destruct_cu_obj();
+	transfer2.destruct_cu_obj();
 }
 
 //--------------------------------------------SIZING
@@ -331,6 +334,7 @@ __host__ bool cuVEC<VType>::resize(cuSZ3 new_n)
 
 	//transfer info might not be valid any more
 	transfer.clear_transfer_data();
+	transfer2.clear_transfer_data();
 
 	//current zero size : set new size and rect
 	if (get_gpu_value(n) == cuSZ3(0)) {
@@ -369,6 +373,7 @@ __host__ bool cuVEC<VType>::resize(cuReal3 new_h, cuRect new_rect)
 
 	//transfer info might not be valid any more
 	transfer.clear_transfer_data();
+	transfer2.clear_transfer_data();
 
 	//save h and rect in case we cannot resize
 	cuReal3 save_h = get_gpu_value(h);
@@ -394,6 +399,7 @@ __host__ bool cuVEC<VType>::assign(cuSZ3 new_n, VType value)
 { 
 	//transfer info might not be valid any more
 	transfer.clear_transfer_data();
+	transfer2.clear_transfer_data();
 
 	//is there enough memory?
 	if (new_n.dim() <= get_gpu_value(n).dim() || new_n.dim() - get_gpu_value(n).dim() <= cudaMemGetFree() / sizeof(VType)) {
@@ -416,6 +422,7 @@ __host__ bool cuVEC<VType>::assign(cuReal3 new_h, cuRect new_rect, VType value)
 { 
 	//transfer info might not be valid any more
 	transfer.clear_transfer_data();
+	transfer2.clear_transfer_data();
 
 	//calculate new n from rect and current h
 	cuSZ3 new_n = get_n_from_h_and_rect(new_h, new_rect);
@@ -442,6 +449,7 @@ template <typename VType>
 __host__ void cuVEC<VType>::clear(void)
 {
 	transfer.clear_transfer_data();
+	transfer2.clear_transfer_data();
 
 	set_n(cuSZ3());
 	gpu_free_managed(quantity);
@@ -463,6 +471,23 @@ __host__ void cuVEC<VType>::clear(void)
 	SetMeshRect(); 
 }
 
+//set rect start (i.e. shift the entire rectangle to align with given absolute starting coordinates
+template <typename VType>
+__host__ void cuVEC<VType>::set_rect_start(const cuReal3& rect_start)
+{
+	cuRect rect_cpu = get_gpu_value(rect);
+	rect_cpu += (rect_start - rect_cpu.s);
+	set_rect(rect_cpu);
+}
+
+template <typename VType>
+__host__ void cuVEC<VType>::shift_rect_start(const cuReal3& shift)
+{
+	cuRect rect_cpu = get_gpu_value(rect);
+	rect_cpu += shift;
+	set_rect(rect_cpu);
+}
+
 //--------------------------------------------COPY FROM VEC
 
 //copy everything from a VEC - type must be convertible. Return false if failed (memory could not be allocated)
@@ -472,6 +497,7 @@ __host__ bool cuVEC<VType>::set_from_cpuvec(cpuVEC& vec)
 {
 	//transfer info might not be valid any more
 	transfer.clear_transfer_data();
+	transfer2.clear_transfer_data();
 
 	//-----------
 

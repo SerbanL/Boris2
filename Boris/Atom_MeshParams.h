@@ -106,6 +106,9 @@ public:
 	//anisotropic magnetoresistance as a percentage (of base resistance)
 	MatP<double, double> amrPercentage = 0.0;
 
+	//tunneling anisotropic magnetoresistance as a percentage
+	MatP<double, double> tamrPercentage = 0.0;
+
 	//spin current polarization (also the charge current spin polarization for the spin current solver) and non-adiabaticity (for Zhang-Li STT). (unitless)
 	MatP<double, double> P = 0.4;
 	MatP<double, double> beta = 0.04;
@@ -126,12 +129,15 @@ public:
 
 	//field-like spin torque coefficient (unitless)
 	MatP<double, double> flSOT = 0.0;
+	MatP<double, double> flSOT2 = 0.0;
 
 	//Slonczewski macrospin torques q+, q- parameters as in PRB 72, 014446 (2005) (unitless)
 	MatP<DBL2, double> STq = DBL2(1.0, 0.0);
+	MatP<DBL2, double> STq2 = DBL2(0.0, 0.0);
 
 	//Slonczewski macrospin torques A, B parameters as in PRB 72, 014446 (2005) (unitless)
 	MatP<DBL2, double> STa = DBL2(0.6, 0.4);
+	MatP<DBL2, double> STa2 = DBL2(0.0, 0.0);
 
 	//Slonczewski macrospin torques spin polarization unit vector as in PRB 72, 014446 (2005) (unitless); or SOT symmetry axis direction (e.g. z direction for HM/FM bilayer).
 	MatP<DBL3, DBL3> STp = DBL3(0, 0, 1);
@@ -168,6 +174,13 @@ public:
 	//topological Hall effect efficiency (unitless, varies from 0 : none, up to 1 : full strength)
 	//disabled by default
 	MatP<double, double> the_eff = 0;
+
+	//Seebeck coefficient (V/K). Set to zero to disable thermoelectric effect (disabled by default).
+	MatP<double, double> Sc = 0.0;
+
+	//Joule heating effect efficiency (unitless, varies from 0 : none, up to 1 : full strength)
+	//enabled by default
+	MatP<double, double> joule_eff = 1;
 
 	//thermal conductivity (W/mK) - default for permalloy
 	MatP<double, double> thermCond = 46.4;
@@ -316,6 +329,10 @@ RType Atom_MeshParams::run_on_param(PARAM_ paramID, Lambda& run_this, PType& ...
 		return run_this(amrPercentage, run_this_args...);
 		break;
 
+	case PARAM_TAMR:
+		return run_this(tamrPercentage, run_this_args...);
+		break;
+
 	case PARAM_P:
 		return run_this(P, run_this_args...);
 		break;
@@ -340,12 +357,24 @@ RType Atom_MeshParams::run_on_param(PARAM_ paramID, Lambda& run_this, PType& ...
 		return run_this(flSOT, run_this_args...);
 		break;
 
+	case PARAM_FLSOT2:
+		return run_this(flSOT2, run_this_args...);
+		break;
+
 	case PARAM_STQ:
 		return run_this(STq, run_this_args...);
 		break;
 
+	case PARAM_STQ2:
+		return run_this(STq2, run_this_args...);
+		break;
+
 	case PARAM_STA:
 		return run_this(STa, run_this_args...);
+		break;
+
+	case PARAM_STA2:
+		return run_this(STa2, run_this_args...);
 		break;
 
 	case PARAM_STP:
@@ -396,6 +425,14 @@ RType Atom_MeshParams::run_on_param(PARAM_ paramID, Lambda& run_this, PType& ...
 		return run_this(n_density, run_this_args...);
 		break;
 		
+	case PARAM_SEEBECK:
+		return run_this(Sc, run_this_args...);
+		break;
+
+	case PARAM_JOULE_EFF:
+		return run_this(joule_eff, run_this_args...);
+		break;
+
 	case PARAM_THERMCOND:
 		return run_this(thermCond, run_this_args...);
 		break;

@@ -181,6 +181,7 @@ __host__ void cuVEC_VC<VType>::clear(void)
 	set_gpu_value(shift_debt, cuReal3());
 
 	clear_dirichlet_flags();
+	clear_halo_flags();
 
 	set_gpu_value(pbc_x, (int)0);
 	set_gpu_value(pbc_y, (int)0);

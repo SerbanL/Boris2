@@ -24,6 +24,7 @@ private:
 	//dipoles are used to generate stray fields, to be used in ferromagnetic meshes. 
 	//When a dipole value changes (direction or strength) then the stray field generated must be recalculated - this flag is checked by the StrayField module where the recalculation is done.
 	bool& recalculateStrayField;
+	bool& strayField_recalculated;
 
 public:
 

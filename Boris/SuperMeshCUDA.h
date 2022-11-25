@@ -60,12 +60,23 @@ private:
 	//electric super-mesh rectangle
 	Rect& sMeshRect_e;
 
+	//-----Special Supermesh Quantities
+
+	//a set global field with its own discretization and rectangle (independent of supermesh, only held by it)
+	//global field is used by Zeeman modules as an additional contribution
+	cu_obj<cuVEC<cuReal3>> globalField;
+
 public:
 
 	//make this object by copying data from the Mesh holding this object
 	SuperMeshCUDA(SuperMesh* pSMesh_);
 
 	~SuperMeshCUDA();
+
+	//--------------------------------------------------------- MESH HANDLING - SETTINGS 
+
+	//called by LoadOVF2Field from SuperMesh : sets globalField from cpu version
+	BError LoadOVF2Field();
 
 	//----------------------------------- DISPLAY-ASSOCIATED GET/SET METHODS
 
@@ -92,6 +103,8 @@ public:
 
 	//check disabled_transport_solver flag
 	bool DisabledTransportSolver(void);
+
+	cu_obj<cuVEC<cuReal3>>& GetGlobalField(void) { return globalField; }
 };
 
 #endif

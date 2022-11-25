@@ -13,10 +13,7 @@ BError TransportCUDA_V_Funcs::set_pointers_transport(MeshCUDA* pMeshCUDA)
 {
 	BError error(__FUNCTION__);
 
-	//Mesh quantities
-	
-	if (set_gpu_value(pV, pMeshCUDA->V.get_managed_object()) != cudaSuccess) error(BERROR_GPUERROR_CRIT);
-	if (set_gpu_value(pelC, pMeshCUDA->elC.get_managed_object()) != cudaSuccess) error(BERROR_GPUERROR_CRIT);
+	if (set_gpu_value(pcuMesh, pMeshCUDA->cuMesh.get_managed_object()) != cudaSuccess) error(BERROR_GPUERROR_CRIT);
 	
 	return error;
 }
@@ -26,10 +23,7 @@ BError TransportCUDA_V_Funcs::set_pointers_atomtransport(Atom_MeshCUDA* paMeshCU
 {
 	BError error(__FUNCTION__);
 
-	//Mesh quantities
-
-	if (set_gpu_value(pV, paMeshCUDA->V.get_managed_object()) != cudaSuccess) error(BERROR_GPUERROR_CRIT);
-	if (set_gpu_value(pelC, paMeshCUDA->elC.get_managed_object()) != cudaSuccess) error(BERROR_GPUERROR_CRIT);
+	if (set_gpu_value(pcuaMesh, paMeshCUDA->cuaMesh.get_managed_object()) != cudaSuccess) error(BERROR_GPUERROR_CRIT);
 
 	return error;
 }

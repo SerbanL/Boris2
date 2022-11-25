@@ -991,6 +991,8 @@ __device__ cuReal2 ManagedMeshCUDA::Get_EnergyChange_AFM_ZeemanCUDA(int spin_ind
 		Hext = cHA * Ha;
 	}
 
+	if (pglobalField->linear_size()) Hext += (*pglobalField)[spin_index];
+
 	if (Mnew_A != cuReal3() && Mnew_B != cuReal3()) return -M.h.dim() * cuReal2((Mnew_A - M[spin_index]) * (cuBReal)MU0 * Hext, (Mnew_B - M2[spin_index]) * (cuBReal)MU0 * Hext);
 	else return -M.h.dim() * cuReal2(M[spin_index] * (cuBReal)MU0 * Hext, M2[spin_index] * (cuBReal)MU0 * Hext);
 }

@@ -34,6 +34,11 @@ __device__ cuBReal ManagedAtom_MeshCUDA::Get_Atomistic_EnergyChange_SC(int spin_
 			energy += Get_Atomistic_EnergyChange_SC_DemagCUDA(spin_index, Mnew);
 			break;
 
+		case MOD_SDEMAG_DEMAG:
+			//same method as for MOD_DEMAG, but the effective field pointer now points to SDemag_DemagCUDA module effective field
+			energy += Get_Atomistic_EnergyChange_SC_DemagCUDA(spin_index, Mnew);
+			break;
+
 		case MOD_ATOM_DIPOLEDIPOLE:
 			energy += Get_Atomistic_EnergyChange_SC_DipoleDipoleCUDA(spin_index, Mnew);
 			break;
@@ -527,6 +532,8 @@ __device__ cuBReal ManagedAtom_MeshCUDA::Get_Atomistic_EnergyChange_SC_ZeemanCUD
 
 		Hext = cHA * Ha;
 	}
+
+	if (pglobalField->linear_size()) Hext += (*pglobalField)[spin_index];
 
 	if (Mnew != cuReal3()) return -(cuBReal)MUB_MU0 * (Mnew - M1[spin_index]) * Hext;
 	else return -(cuBReal)MUB_MU0 * M1[spin_index] * Hext;

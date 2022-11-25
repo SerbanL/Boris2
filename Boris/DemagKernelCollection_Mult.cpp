@@ -8,8 +8,8 @@
 //SELF VERSIONS
 
 //These compute the self contributions using the real kernels with full use of symmetries
-//These set the output, not add into it, so always call it first -> each kernel collection has exactly one self contribution
-void DemagKernelCollection::KernelMultiplication_2D_Self(VEC<ReIm3>& In, VEC<ReIm3>& Out)
+//These set the output (unless specified otherwise), not add into it, so always call it first -> each kernel collection has exactly one self contribution
+void DemagKernelCollection::KernelMultiplication_2D_Self(VEC<ReIm3>& In, VEC<ReIm3>& Out, bool set_output)
 {
 	//Full multiplication with use of kernel symmetries -> re-arranged for better cache use compared to the line versions
 
@@ -21,10 +21,13 @@ void DemagKernelCollection::KernelMultiplication_2D_Self(VEC<ReIm3>& In, VEC<ReI
 	for (int i = 0; i < (N.x / 2 + 1); i++) {
 
 		ReIm3 FM = In[i];
+		ReIm3 Outvalue = Out[i];
 
 		Out[i].x = (Kdiag[i].x  * FM.x) + (K2D_odiag[i] * FM.y);
 		Out[i].y = (K2D_odiag[i] * FM.x) + (Kdiag[i].y  * FM.y);
 		Out[i].z = (Kdiag[i].z  * FM.z);
+
+		if (!set_output) { Out[i].x += Outvalue.x; Out[i].y += Outvalue.y; Out[i].z += Outvalue.z; }
 	}
 
 #pragma omp parallel for
@@ -36,6 +39,8 @@ void DemagKernelCollection::KernelMultiplication_2D_Self(VEC<ReIm3>& In, VEC<ReI
 
 			ReIm3 FM_l = In[idx_l];
 			ReIm3 FM_h = In[idx_h];
+			ReIm3 Outvalue_l = Out[idx_l];
+			ReIm3 Outvalue_h = Out[idx_h];
 
 			Out[idx_l].x = (Kdiag[idx_l].x  * FM_l.x) + (K2D_odiag[idx_l] * FM_l.y);
 			Out[idx_l].y = (K2D_odiag[idx_l] * FM_l.x) + (Kdiag[idx_l].y  * FM_l.y);
@@ -44,6 +49,12 @@ void DemagKernelCollection::KernelMultiplication_2D_Self(VEC<ReIm3>& In, VEC<ReI
 			Out[idx_h].x = (Kdiag[idx_l].x  * FM_h.x) + (-K2D_odiag[idx_l] * FM_h.y);
 			Out[idx_h].y = (-K2D_odiag[idx_l] * FM_h.x) + (Kdiag[idx_l].y  * FM_h.y);
 			Out[idx_h].z = (Kdiag[idx_l].z  * FM_h.z);
+
+			if (!set_output) { 
+
+				Out[idx_l].x += Outvalue_l.x; Out[idx_l].y += Outvalue_l.y; Out[idx_l].z += Outvalue_l.z; 
+				Out[idx_h].x += Outvalue_h.x; Out[idx_h].y += Outvalue_h.y; Out[idx_h].z += Outvalue_h.z;
+			}
 		}
 	}
 
@@ -54,14 +65,17 @@ void DemagKernelCollection::KernelMultiplication_2D_Self(VEC<ReIm3>& In, VEC<ReI
 		int idx = i + (N.y / 2) * (N.x / 2 + 1);
 
 		ReIm3 FM = In[idx];
+		ReIm3 Outvalue = Out[idx];
 
 		Out[idx].x = (Kdiag[idx].x  * FM.x) + (K2D_odiag[idx] * FM.y);
 		Out[idx].y = (K2D_odiag[idx] * FM.x) + (Kdiag[idx].y  * FM.y);
 		Out[idx].z = (Kdiag[idx].z  * FM.z);
+
+		if (!set_output) { Out[idx].x += Outvalue.x; Out[idx].y += Outvalue.y; Out[idx].z += Outvalue.z; }
 	}
 }
 
-void DemagKernelCollection::KernelMultiplication_3D_Self(VEC<ReIm3>& In, VEC<ReIm3>& Out)
+void DemagKernelCollection::KernelMultiplication_3D_Self(VEC<ReIm3>& In, VEC<ReIm3>& Out, bool set_output)
 {
 	VEC<DBL3>& Kdiag = kernels[self_contribution_index]->Kdiag_real;
 	VEC<DBL3>& Kodiag = kernels[self_contribution_index]->Kodiag_real;
@@ -77,12 +91,15 @@ void DemagKernelCollection::KernelMultiplication_3D_Self(VEC<ReIm3>& In, VEC<ReI
 			int idx = i + k * (N.x / 2 + 1) * N.y;
 
 			ReIm3 FM = In[idx];
+			ReIm3 Outvalue = Out[idx];
 
 			int ker_index = i + k * (N.x / 2 + 1) * (N.y / 2 + 1);
 
 			Out[idx].x = (Kdiag[ker_index].x * FM.x) + (Kodiag[ker_index].x * FM.y) + (Kodiag[ker_index].y * FM.z);
 			Out[idx].y = (Kodiag[ker_index].x * FM.x) + (Kdiag[ker_index].y * FM.y) + (Kodiag[ker_index].z * FM.z);
 			Out[idx].z = (Kodiag[ker_index].y * FM.x) + (Kodiag[ker_index].z * FM.y) + (Kdiag[ker_index].z * FM.z);
+
+			if (!set_output) { Out[idx].x += Outvalue.x; Out[idx].y += Outvalue.y; Out[idx].z += Outvalue.z; }
 		}
 
 #pragma omp parallel for
@@ -94,6 +111,8 @@ void DemagKernelCollection::KernelMultiplication_3D_Self(VEC<ReIm3>& In, VEC<ReI
 
 				ReIm3 FM_l = In[idx_l];
 				ReIm3 FM_h = In[idx_h];
+				ReIm3 Outvalue_l = Out[idx_l];
+				ReIm3 Outvalue_h = Out[idx_h];
 
 				int ker_index = i + j * (N.x / 2 + 1) + k * (N.x / 2 + 1) * (N.y / 2 + 1);
 
@@ -104,6 +123,12 @@ void DemagKernelCollection::KernelMultiplication_3D_Self(VEC<ReIm3>& In, VEC<ReI
 				Out[idx_h].x = (Kdiag[ker_index].x * FM_h.x) + (-Kodiag[ker_index].x * FM_h.y) + (Kodiag[ker_index].y * FM_h.z);
 				Out[idx_h].y = (-Kodiag[ker_index].x * FM_h.x) + (Kdiag[ker_index].y * FM_h.y) + (-Kodiag[ker_index].z * FM_h.z);
 				Out[idx_h].z = (Kodiag[ker_index].y * FM_h.x) + (-Kodiag[ker_index].z * FM_h.y) + (Kdiag[ker_index].z * FM_h.z);
+
+				if (!set_output) {
+
+					Out[idx_l].x += Outvalue_l.x; Out[idx_l].y += Outvalue_l.y; Out[idx_l].z += Outvalue_l.z;
+					Out[idx_h].x += Outvalue_h.x; Out[idx_h].y += Outvalue_h.y; Out[idx_h].z += Outvalue_h.z;
+				}
 			}
 		}
 
@@ -113,12 +138,15 @@ void DemagKernelCollection::KernelMultiplication_3D_Self(VEC<ReIm3>& In, VEC<ReI
 			int idx = i + (N.y / 2) * (N.x / 2 + 1) + k * (N.x / 2 + 1) * N.y;
 
 			ReIm3 FM = In[idx];
+			ReIm3 Outvalue = Out[idx];
 
 			int ker_index = i + (N.y / 2) * (N.x / 2 + 1) + k * (N.x / 2 + 1) * (N.y / 2 + 1);
 
 			Out[idx].x = (Kdiag[ker_index].x * FM.x) + (Kodiag[ker_index].x * FM.y) + (Kodiag[ker_index].y * FM.z);
 			Out[idx].y = (Kodiag[ker_index].x * FM.x) + (Kdiag[ker_index].y * FM.y) + (Kodiag[ker_index].z * FM.z);
 			Out[idx].z = (Kodiag[ker_index].y * FM.x) + (Kodiag[ker_index].z * FM.y) + (Kdiag[ker_index].z * FM.z);
+
+			if (!set_output) { Out[idx].x += Outvalue.x; Out[idx].y += Outvalue.y; Out[idx].z += Outvalue.z; }
 		}
 	}
 
@@ -132,12 +160,15 @@ void DemagKernelCollection::KernelMultiplication_3D_Self(VEC<ReIm3>& In, VEC<ReI
 			int idx = i + k * (N.x / 2 + 1) * N.y;
 
 			ReIm3 FM = In[idx];
+			ReIm3 Outvalue = Out[idx];
 
 			int ker_index = i + (N.z - k) * (N.x / 2 + 1) * (N.y / 2 + 1);
 
 			Out[idx].x = (Kdiag[ker_index].x * FM.x) + (Kodiag[ker_index].x * FM.y) + (-Kodiag[ker_index].y * FM.z);
 			Out[idx].y = (Kodiag[ker_index].x * FM.x) + (Kdiag[ker_index].y * FM.y) + (-Kodiag[ker_index].z * FM.z);
 			Out[idx].z = (-Kodiag[ker_index].y * FM.x) + (-Kodiag[ker_index].z * FM.y) + (Kdiag[ker_index].z * FM.z);
+
+			if (!set_output) { Out[idx].x += Outvalue.x; Out[idx].y += Outvalue.y; Out[idx].z += Outvalue.z; }
 		}
 
 #pragma omp parallel for
@@ -149,6 +180,8 @@ void DemagKernelCollection::KernelMultiplication_3D_Self(VEC<ReIm3>& In, VEC<ReI
 
 				ReIm3 FM_l = In[idx_l];
 				ReIm3 FM_h = In[idx_h];
+				ReIm3 Outvalue_l = Out[idx_l];
+				ReIm3 Outvalue_h = Out[idx_h];
 
 				int ker_index = i + j * (N.x / 2 + 1) + (N.z - k) * (N.x / 2 + 1) * (N.y / 2 + 1);
 
@@ -159,6 +192,12 @@ void DemagKernelCollection::KernelMultiplication_3D_Self(VEC<ReIm3>& In, VEC<ReI
 				Out[idx_h].x = (Kdiag[ker_index].x * FM_h.x) + (-Kodiag[ker_index].x * FM_h.y) + (-Kodiag[ker_index].y * FM_h.z);
 				Out[idx_h].y = (-Kodiag[ker_index].x * FM_h.x) + (Kdiag[ker_index].y * FM_h.y) + (Kodiag[ker_index].z * FM_h.z);
 				Out[idx_h].z = (-Kodiag[ker_index].y * FM_h.x) + (Kodiag[ker_index].z * FM_h.y) + (Kdiag[ker_index].z * FM_h.z);
+
+				if (!set_output) {
+
+					Out[idx_l].x += Outvalue_l.x; Out[idx_l].y += Outvalue_l.y; Out[idx_l].z += Outvalue_l.z;
+					Out[idx_h].x += Outvalue_h.x; Out[idx_h].y += Outvalue_h.y; Out[idx_h].z += Outvalue_h.z;
+				}
 			}
 		}
 
@@ -168,12 +207,15 @@ void DemagKernelCollection::KernelMultiplication_3D_Self(VEC<ReIm3>& In, VEC<ReI
 			int idx = i + (N.y / 2) * (N.x / 2 + 1) + k * (N.x / 2 + 1) * N.y;
 
 			ReIm3 FM = In[idx];
+			ReIm3 Outvalue = Out[idx];
 
 			int ker_index = i + (N.y / 2) * (N.x / 2 + 1) + (N.z - k) * (N.x / 2 + 1) * (N.y / 2 + 1);
 
 			Out[idx].x = (Kdiag[ker_index].x * FM.x) + (Kodiag[ker_index].x * FM.y) + (-Kodiag[ker_index].y * FM.z);
 			Out[idx].y = (Kodiag[ker_index].x * FM.x) + (Kdiag[ker_index].y * FM.y) + (-Kodiag[ker_index].z * FM.z);
 			Out[idx].z = (-Kodiag[ker_index].y * FM.x) + (-Kodiag[ker_index].z * FM.y) + (Kdiag[ker_index].z * FM.z);
+
+			if (!set_output) { Out[idx].x += Outvalue.x; Out[idx].y += Outvalue.y; Out[idx].z += Outvalue.z; }
 		}
 	}
 }
@@ -419,6 +461,9 @@ void DemagKernelCollection::KernelMultiplication_2D(std::vector<VEC<ReIm3>*>& In
 
 	for (int mesh_index = 0; mesh_index < Incol.size(); mesh_index++) {
 
+		//now compute the other contributions by adding to Out, but skip the self contribution already included
+		if (self_contribution_index == mesh_index) continue;
+
 		//z-shifted : use symmetries
 		if (kernels[mesh_index]->zshifted) {
 
@@ -433,9 +478,13 @@ void DemagKernelCollection::KernelMultiplication_2D(std::vector<VEC<ReIm3>*>& In
 				KernelMultiplication_2D_zShifted(*Incol[mesh_index], Out, kernels[mesh_index]->Kdiag_real, kernels[mesh_index]->Kodiag_real);
 			}
 		}
+		//it's possible this rect coincides with another rect in the collection (and not self contribution), in which case use 2D Self multiplication
+		else if (Rect_collection[mesh_index] == this_rect) {
 
-		//now compute the other contributions by adding to Out : general kernel multiplication without any symmetries used
-		else if (!kernels[mesh_index]->internal_demag) {
+			KernelMultiplication_2D_Self(*Incol[mesh_index], Out, false);
+		}
+		//general kernel multiplication without any symmetries used
+		else {
 
 #pragma omp parallel for
 			for (int index = 0; index < (N.x / 2 + 1)*N.y; index++) {
@@ -454,18 +503,25 @@ void DemagKernelCollection::KernelMultiplication_3D(std::vector<VEC<ReIm3>*>& In
 {
 	//first compute the self contribution -> this sets Out
 	KernelMultiplication_3D_Self(*Incol[self_contribution_index], Out);
-
+	
 	//now compute the other contribution by adding to Out
 	for (int mesh_index = 0; mesh_index < Incol.size(); mesh_index++) {
+		
+		//now compute the other contributions by adding to Out, but skip the self contribution already included
+		if (self_contribution_index == mesh_index) continue;
 
 		//z-shifted : use symmetries
 		if (kernels[mesh_index]->zshifted) {
 
 			KernelMultiplication_3D_zShifted(*Incol[mesh_index], Out, kernels[mesh_index]->Kdiag_cmpl, kernels[mesh_index]->Kodiag_cmpl);
 		}
+		//it's possible this rect coincides with another rect in the collection (and not self contribution), in which case use 3D Self multiplication
+		else if (Rect_collection[mesh_index] == this_rect) {
 
-		//now compute the other contributions by adding to Out : general kernel multiplication without any symmetries used
-		else if (!kernels[mesh_index]->internal_demag) {
+			KernelMultiplication_3D_Self(*Incol[mesh_index], Out, false);
+		}
+		//general kernel multiplication without any symmetries used
+		else {
 
 #pragma omp parallel for
 			for (int index = 0; index < (N.x / 2 + 1)*N.y*N.z; index++) {

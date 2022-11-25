@@ -21,6 +21,13 @@ __host__ void cuVEC_VC<VType>::alloc_initialize_data(void)
 	nullgpuptr(dirichlet_pz);
 	nullgpuptr(dirichlet_nz);
 
+	nullgpuptr(halo_px);
+	nullgpuptr(halo_nx);
+	nullgpuptr(halo_py);
+	nullgpuptr(halo_ny);
+	nullgpuptr(halo_pz);
+	nullgpuptr(halo_nz);
+
 	set_ngbrFlags_size(0);
 	set_gpu_value(using_extended_flags, false);
 	set_gpu_value(nonempty_cells, (int)0);
@@ -31,6 +38,10 @@ __host__ void cuVEC_VC<VType>::alloc_initialize_data(void)
 	set_dirichlet_size(0, NF2_DIRICHLETNY);
 	set_dirichlet_size(0, NF2_DIRICHLETPZ);
 	set_dirichlet_size(0, NF2_DIRICHLETNZ);
+
+	set_halo_size(0, NF2_HALOX);
+	set_halo_size(0, NF2_HALOY);
+	set_halo_size(0, NF2_HALOZ);
 
 	set_robin(cuReal2(), NF2_ROBINPX);
 	set_robin(cuReal2(), NF2_ROBINNX);
@@ -45,7 +56,6 @@ __host__ void cuVEC_VC<VType>::alloc_initialize_data(void)
 	set_gpu_value(pbc_x, (int)0);
 	set_gpu_value(pbc_y, (int)0);
 	set_gpu_value(pbc_z, (int)0);
-
 }
 
 //set size of ngbrFlags, allocating memory
@@ -126,11 +136,14 @@ __host__ cudaError_t cuVEC_VC<VType>::set_dirichlet_size(size_t size, int dirich
 {
 	//same pattern as in set_ngbrFlags_size method so read comments there
 	cudaError_t error = cudaSuccess;
+	//do not reallocate if array already has requested size
+	if (get_dirichlet_size(dirichlet_id) == size) return error;
 
 	switch (dirichlet_id) {
 
 	case NF2_DIRICHLETPX:
-		error = gpu_alloc_managed(dirichlet_px, size);
+		if (size > 0) error = gpu_alloc_managed(dirichlet_px, size);
+		else error = gpu_free_managed(dirichlet_px);
 		if (error != cudaSuccess) {
 
 			nullgpuptr(dirichlet_px);
@@ -140,7 +153,8 @@ __host__ cudaError_t cuVEC_VC<VType>::set_dirichlet_size(size_t size, int dirich
 		break;
 		
 	case NF2_DIRICHLETNX:
-		error = gpu_alloc_managed(dirichlet_nx, size);
+		if (size > 0) error = gpu_alloc_managed(dirichlet_nx, size);
+		else error = gpu_free_managed(dirichlet_nx);
 		if (error != cudaSuccess) {
 
 			nullgpuptr(dirichlet_nx);
@@ -150,7 +164,8 @@ __host__ cudaError_t cuVEC_VC<VType>::set_dirichlet_size(size_t size, int dirich
 		break;
 		
 	case NF2_DIRICHLETPY:
-		error = gpu_alloc_managed(dirichlet_py, size);
+		if (size > 0) error = gpu_alloc_managed(dirichlet_py, size);
+		else error = gpu_free_managed(dirichlet_py);
 		if (error != cudaSuccess) {
 
 			nullgpuptr(dirichlet_py);
@@ -160,7 +175,8 @@ __host__ cudaError_t cuVEC_VC<VType>::set_dirichlet_size(size_t size, int dirich
 		break;
 		
 	case NF2_DIRICHLETNY:
-		error = gpu_alloc_managed(dirichlet_ny, size);
+		if (size > 0) error = gpu_alloc_managed(dirichlet_ny, size);
+		else error = gpu_free_managed(dirichlet_ny);
 		if (error != cudaSuccess) {
 
 			nullgpuptr(dirichlet_ny);
@@ -170,7 +186,8 @@ __host__ cudaError_t cuVEC_VC<VType>::set_dirichlet_size(size_t size, int dirich
 		break;
 		
 	case NF2_DIRICHLETPZ:
-		error = gpu_alloc_managed(dirichlet_pz, size);
+		if (size > 0) error = gpu_alloc_managed(dirichlet_pz, size);
+		else error = gpu_free_managed(dirichlet_pz);
 		if (error != cudaSuccess) {
 
 			nullgpuptr(dirichlet_pz);
@@ -180,7 +197,8 @@ __host__ cudaError_t cuVEC_VC<VType>::set_dirichlet_size(size_t size, int dirich
 		break;
 		
 	case NF2_DIRICHLETNZ:
-		error = gpu_alloc_managed(dirichlet_nz, size);
+		if (size > 0) error = gpu_alloc_managed(dirichlet_nz, size);
+		else error = gpu_free_managed(dirichlet_nz);
 		if (error != cudaSuccess) {
 
 			nullgpuptr(dirichlet_nz);
@@ -216,6 +234,117 @@ __host__ size_t cuVEC_VC<VType>::get_dirichlet_size(int dirichlet_id) const
 	
 	case NF2_DIRICHLETNZ:
 		return get_gpu_value(dirichlet_nz_size);
+	}
+
+	return 0;
+}
+
+//set halo array size, allocating memory as required
+//halo_id is one of NF2_HALOX, NF2_HALOY, NF2_HALOZ, since both n and p halos are allocated for a given axis.
+//also accepts individual halo flags for halo_id
+template <typename VType>
+__host__ cudaError_t cuVEC_VC<VType>::set_halo_size(size_t size, int halo_id)
+{
+	//same pattern as in set_ngbrFlags_size method so read comments there
+	cudaError_t error = cudaSuccess;
+	
+	//do not reallocate if array already has requested size
+	if (get_halo_size(halo_id) == size) return error;
+	
+	switch (halo_id) {
+
+	case NF2_HALOPX:
+	case NF2_HALONX:
+	case NF2_HALOX:
+		if (size > 0) {
+
+			error = gpu_alloc_managed(halo_px, size);
+			error = gpu_alloc_managed(halo_nx, size);
+		}
+		else {
+
+			error = gpu_free_managed(halo_px);
+			error = gpu_free_managed(halo_nx);
+		}
+		if (error != cudaSuccess) {
+
+			nullgpuptr(halo_px);
+			nullgpuptr(halo_nx);
+			size = 0;
+		}
+		set_gpu_value(halo_x_size, size);
+		break;
+
+	case NF2_HALOPY:
+	case NF2_HALONY:
+	case NF2_HALOY:
+		if (size > 0) {
+
+			error = gpu_alloc_managed(halo_py, size);
+			error = gpu_alloc_managed(halo_ny, size);
+		}
+		else {
+
+			error = gpu_free_managed(halo_py);
+			error = gpu_free_managed(halo_ny);
+		}
+		if (error != cudaSuccess) {
+
+			nullgpuptr(halo_py);
+			nullgpuptr(halo_ny);
+			size = 0;
+		}
+		set_gpu_value(halo_y_size, size);
+		break;
+
+	case NF2_HALOPZ:
+	case NF2_HALONZ:
+	case NF2_HALOZ:
+		if (size > 0) {
+
+			error = gpu_alloc_managed(halo_pz, size);
+			error = gpu_alloc_managed(halo_nz, size);
+		}
+		else {
+
+			error = gpu_free_managed(halo_pz);
+			error = gpu_free_managed(halo_nz);
+		}
+		if (error != cudaSuccess) {
+
+			nullgpuptr(halo_pz);
+			nullgpuptr(halo_nz);
+			size = 0;
+		}
+		set_gpu_value(halo_z_size, size);
+		break;
+	}
+
+	return error;
+}
+
+//get halo array size
+//halo_id is one of NF2_HALOX, NF2_HALOY, NF2_HALOZ, since both n and p halos are allocated for a given axis.
+//also accepts individual halo flags for halo_id
+template <typename VType>
+__host__ size_t cuVEC_VC<VType>::get_halo_size(int halo_id) const
+{
+	switch (halo_id) {
+
+	case NF2_HALOPX:
+	case NF2_HALONX:
+	case NF2_HALOX:
+		return get_gpu_value(halo_x_size);
+
+	case NF2_HALOPY:
+	case NF2_HALONY:
+	case NF2_HALOY:
+		return get_gpu_value(halo_y_size);
+
+	case NF2_HALOPZ:
+	case NF2_HALONZ:
+	case NF2_HALOZ:
+		return get_gpu_value(halo_z_size);
 	}
 
 	return 0;
@@ -368,6 +497,11 @@ __host__ void cuVEC_VC<VType>::assign_cu_obj(const cuVEC_VC<VType>& copyThis)
 	gpu_to_gpu(dirichlet_pz_size, copyThis.dirichlet_pz_size);
 	gpu_to_gpu(dirichlet_nz_size, copyThis.dirichlet_nz_size);
 
+	//copy halo sizes
+	gpu_to_gpu(halo_x_size, copyThis.halo_x_size);
+	gpu_to_gpu(halo_y_size, copyThis.halo_y_size);
+	gpu_to_gpu(halo_z_size, copyThis.halo_z_size);
+
 	//copy robin values
 	gpu_to_gpu(robin_px, copyThis.robin_px);
 	gpu_to_gpu(robin_nx, copyThis.robin_nx);
@@ -443,6 +577,41 @@ __host__ void cuVEC_VC<VType>::assign_cu_obj(const cuVEC_VC<VType>& copyThis)
 		}
 	}
 
+	//copy halo values arrays
+
+	size = get_halo_size(NF2_HALOX);
+	if (size) {
+
+		error = set_halo_size(size, NF2_HALOX);
+		if (error == cudaSuccess) {
+
+			gpu_to_gpu_managed(halo_px, copyThis.halo_px, size);
+			gpu_to_gpu_managed(halo_nx, copyThis.halo_nx, size);
+		}
+	}
+
+	size = get_halo_size(NF2_HALOY);
+	if (size) {
+
+		error = set_halo_size(size, NF2_HALOY);
+		if (error == cudaSuccess) {
+
+			gpu_to_gpu_managed(halo_py, copyThis.halo_py, size);
+			gpu_to_gpu_managed(halo_ny, copyThis.halo_ny, size);
+		}
+	}
+
+	size = get_halo_size(NF2_HALOZ);
+	if (size) {
+
+		error = set_halo_size(size, NF2_HALOZ);
+		if (error == cudaSuccess) {
+
+			gpu_to_gpu_managed(halo_pz, copyThis.halo_pz, size);
+			gpu_to_gpu_managed(halo_nz, copyThis.halo_nz, size);
+		}
+	}
+
 	//copy pbc settings
 	gpu_to_gpu(pbc_x, copyThis.pbc_x);
 	gpu_to_gpu(pbc_y, copyThis.pbc_y);
@@ -464,6 +633,13 @@ __host__ void cuVEC_VC<VType>::destruct_cu_obj(void)
 	gpu_free_managed(dirichlet_ny);
 	gpu_free_managed(dirichlet_pz);
 	gpu_free_managed(dirichlet_nz);
+
+	gpu_free_managed(halo_px);
+	gpu_free_managed(halo_nx);
+	gpu_free_managed(halo_py);
+	gpu_free_managed(halo_ny);
+	gpu_free_managed(halo_pz);
+	gpu_free_managed(halo_nz);
 
 	cuVEC<VType>::destruct_cu_obj();
 }
@@ -643,6 +819,11 @@ __host__ bool cuVEC_VC<VType>::set_from_cpuvec(cpuVEC_VC& vec_vc)
 	
 	//-----------
 
+	//halo not defined for VEC_VC
+	//don't do anything about halos here, these would be managed at policy class level for multi-device management
+
+	//-----------
+
 	//copy robin values
 	set_gpu_value(robin_px, (cuReal2)vec_vc.robin_px_ref());
 	set_gpu_value(robin_nx, (cuReal2)vec_vc.robin_nx_ref());
@@ -778,6 +959,10 @@ __host__ bool cuVEC_VC<VType>::set_cpuvec(cpuVEC_VC& vec_vc)
 
 	//-----------
 
+	//halo not defined for VEC_VC
+
+	//-----------
+
 	//copy robin values
 	vec_vc.robin_px_ref() = get_gpu_value(robin_px);
 	vec_vc.robin_nx_ref() = get_gpu_value(robin_nx);
@@ -798,7 +983,7 @@ __host__ bool cuVEC_VC<VType>::set_cpuvec(cpuVEC_VC& vec_vc)
 	return true;
 }
 
-//faster version of set_from_cpuvec, where it is assumed the cpu vec already has the same sizes as this cuVEC : only quantity is copied.
+//faster version of set_from_cpuvec, where it is assumed the cpu vec already has the same sizes as this cuVEC_VC
 template <typename VType>
 template <typename cpuVEC_VC>
 __host__ bool cuVEC_VC<VType>::copy_from_cpuvec(cpuVEC_VC& vec_vc)
@@ -840,7 +1025,7 @@ __host__ bool cuVEC_VC<VType>::copy_from_cpuvec(cpuVEC_VC& vec_vc)
 	return true;
 }
 
-//faster version of set_cpuvec, where it is assumed the cpu vec already has the same sizes as this cuVEC_VC : only quantity and ngbrFlags are copied.
+//faster version of set_cpuvec, where it is assumed the cpu vec already has the same sizes as this cuVEC_VC
 template <typename VType>
 template <typename cpuVEC_VC>
 __host__ bool cuVEC_VC<VType>::copy_to_cpuvec(cpuVEC_VC& vec_vc)

@@ -29,9 +29,6 @@ template void cuVEC_VC<double>::setnonempty(double value);
 template void cuVEC_VC<cuFLT3>::setnonempty(cuFLT3 value);
 template void cuVEC_VC<cuDBL3>::setnonempty(cuDBL3 value);
 
-template void cuVEC_VC<cuFLT33>::setnonempty(cuFLT33 value);
-template void cuVEC_VC<cuDBL33>::setnonempty(cuDBL33 value);
-
 template <typename VType>
 __host__ void cuVEC_VC<VType>::setnonempty(VType value)
 {
@@ -61,9 +58,6 @@ template void cuVEC_VC<double>::setrectnonempty(const cuRect& rectangle, double 
 
 template void cuVEC_VC<cuFLT3>::setrectnonempty(const cuRect& rectangle, cuFLT3 value);
 template void cuVEC_VC<cuDBL3>::setrectnonempty(const cuRect& rectangle, cuDBL3 value);
-
-template void cuVEC_VC<cuFLT33>::setrectnonempty(const cuRect& rectangle, cuFLT33 value);
-template void cuVEC_VC<cuDBL33>::setrectnonempty(const cuRect& rectangle, cuDBL33 value);
 
 //set value in non-empty cells only in given rectangle (relative coordinates)
 template <typename VType>
@@ -109,7 +103,7 @@ __host__ void cuVEC_VC<VType>::renormalize(size_t arr_size, PType new_norm)
 //------------------------------------------------------------------- SHIFT : x
 
 template <typename VType>
-__global__ void shift_x_left1_kernel(cuRect shift_rect, cuVEC_VC<VType>& cuVEC, VType*& aux_block_values)
+__global__ void shift_x_left1_kernel(cuRect shift_rect, cuVEC_VC<VType>& cuVEC, VType*& aux_block_values, bool& using_extended_flags, int*& ngbrFlags2, VType*& halo_nx, VType*& halo_px)
 {
 	__shared__ VType shared_memory[CUDATHREADS];
 
@@ -119,8 +113,8 @@ __global__ void shift_x_left1_kernel(cuRect shift_rect, cuVEC_VC<VType>& cuVEC, 
 	cuINT3 ijk = cuINT3(idx % n.x, (idx / n.x) % n.y, idx / (n.x*n.y));
 
 	cuBox shift_box = cuVEC.box_from_rect_min(shift_rect);
-	//go from shift_box.s.x to shift_box.e.x - 2 inclusive : shift_box.e.x - 2 takes value from shift_box.e.x - 1
-	shift_box.e.x -= 2;
+	//shift_box.e.x - 2 takes value from shift_box.e.x - 1
+	shift_box.e.x--;
 
 	if (idx < n.dim()) {
 
@@ -136,12 +130,27 @@ __global__ void shift_x_left1_kernel(cuRect shift_rect, cuVEC_VC<VType>& cuVEC, 
 	//Similarly we cannot write the last element in this block since it needs a value from the next block.
 	if (threadIdx.x == 0) aux_block_values[blockIdx.x] = shared_memory[0];
 
-	if (shift_box.Contains(ijk) && cuVEC.is_not_empty(idx) && cuVEC.is_not_empty(idx + 1)) {
+	//special treatment for cells at +x boundary, if halos are being used : get value from halo
+	if (ijk.i == n.x - 1 && using_extended_flags && (ngbrFlags2[idx] & NF2_HALOPX) && cuVEC.is_not_empty(idx)) {
+
+		//halo index
+		int hidx = ((idx / n.x) % n.y) + (idx / (n.x*n.y))*n.y;
+		cuVEC[idx] = halo_px[hidx];
+	}
+	else if (shift_box.Contains(ijk) && cuVEC.is_not_empty(idx) && cuVEC.is_not_empty(idx + 1)) {
 
 		if (threadIdx.x < CUDATHREADS - 1) {
 
 			cuVEC[idx] = shared_memory[threadIdx.x + 1];
 		}
+	}
+
+	//special treatment for cells at -x boundary if halos are being used : shift value into halo
+	if (ijk.i == 0 && using_extended_flags && (ngbrFlags2[idx] & NF2_HALONX) && cuVEC.is_not_empty(idx)) {
+
+		//halo index
+		int hidx = ((idx / n.x) % n.y) + (idx / (n.x*n.y))*n.y;
+		halo_nx[hidx] = cuVEC[idx];
 	}
 }
 
@@ -158,7 +167,7 @@ __global__ void shift_x_left1_stitch_kernel(cuRect shift_rect, cuVEC_VC<VType>& 
 	cuINT3 ijk = cuINT3(cell_idx % n.x, (cell_idx / n.x) % n.y, cell_idx / (n.x*n.y));
 
 	cuBox shift_box = cuVEC.box_from_rect_min(shift_rect);
-	shift_box.e.x -= 2;
+	shift_box.e.x--;
 	
 	if (shift_box.Contains(ijk) && cuVEC.is_not_empty(cell_idx) && cuVEC.is_not_empty(cell_idx + 1)) {
 
@@ -167,7 +176,7 @@ __global__ void shift_x_left1_stitch_kernel(cuRect shift_rect, cuVEC_VC<VType>& 
 }
 
 template <typename VType>
-__global__ void shift_x_right1_kernel(cuRect shift_rect, cuVEC_VC<VType>& cuVEC, VType*& aux_block_values)
+__global__ void shift_x_right1_kernel(cuRect shift_rect, cuVEC_VC<VType>& cuVEC, VType*& aux_block_values, bool& using_extended_flags, int*& ngbrFlags2, VType*& halo_nx, VType*& halo_px)
 {
 	__shared__ VType shared_memory[CUDATHREADS];
 
@@ -177,9 +186,8 @@ __global__ void shift_x_right1_kernel(cuRect shift_rect, cuVEC_VC<VType>& cuVEC,
 	cuINT3 ijk = cuINT3(idx % n.x, (idx / n.x) % n.y, idx / (n.x*n.y));
 
 	cuBox shift_box = cuVEC.box_from_rect_min(shift_rect);
-	//go from shift_box.s.x + 1 to shift_box.e.x - 1 inclusive : shift_box.s.x + 1 takes value from shift_box.s.x
+	//shift_box.s.x + 1 takes value from shift_box.s.x
 	shift_box.s.x++;
-	shift_box.e.x--;
 
 	if (idx < n.dim()) {
 
@@ -195,12 +203,27 @@ __global__ void shift_x_right1_kernel(cuRect shift_rect, cuVEC_VC<VType>& cuVEC,
 	//Similarly we cannot write the first element in this block since it needs a value from the previous block.
 	if (threadIdx.x == CUDATHREADS - 1) aux_block_values[blockIdx.x] = shared_memory[CUDATHREADS - 1];
 
-	if (shift_box.Contains(ijk) && cuVEC.is_not_empty(idx) && cuVEC.is_not_empty(idx - 1)) {
+	//special treatment for cells at -x boundary, if halos are being used : get value from halo
+	if (ijk.i == 0 && using_extended_flags && (ngbrFlags2[idx] & NF2_HALONX) && cuVEC.is_not_empty(idx)) {
+
+		//halo index
+		int hidx = ((idx / n.x) % n.y) + (idx / (n.x*n.y))*n.y;
+		cuVEC[idx] = halo_nx[hidx];
+	}
+	else if (shift_box.Contains(ijk) && cuVEC.is_not_empty(idx) && cuVEC.is_not_empty(idx - 1)) {
 
 		if (threadIdx.x > 0) {
 
 			cuVEC[idx] = shared_memory[threadIdx.x - 1];
 		}
+	}
+
+	//special treatment for cells at +x boundary if halos are being used : shift value into halo
+	if (ijk.i == n.x - 1 && using_extended_flags && (ngbrFlags2[idx] & NF2_HALOPX) && cuVEC.is_not_empty(idx)) {
+
+		//halo index
+		int hidx = ((idx / n.x) % n.y) + (idx / (n.x*n.y))*n.y;
+		halo_px[hidx] = cuVEC[idx];
 	}
 }
 
@@ -218,7 +241,6 @@ __global__ void shift_x_right1_stitch_kernel(cuRect shift_rect, cuVEC_VC<VType>&
 
 	cuBox shift_box = cuVEC.box_from_rect_min(shift_rect);
 	shift_box.s.x++;
-	shift_box.e.x--;
 
 	if (shift_box.Contains(ijk) && cuVEC.is_not_empty(cell_idx) && cuVEC.is_not_empty(cell_idx - 1)) {
 
@@ -259,7 +281,7 @@ __host__ void cuVEC_VC<VType>::shift_x(size_t size, cuBReal delta, cuRect shift_
 		//one-call shift routines for cells_shift > 1 are not straight-forward so not worth implementing for now
 		while (cells_shift < 0) {
 
-			shift_x_left1_kernel <<< (size + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (shift_rect, *this, cuVEC<VType>::aux_block_values);
+			shift_x_left1_kernel <<< (size + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (shift_rect, *this, cuVEC<VType>::aux_block_values, using_extended_flags, ngbrFlags2, halo_nx, halo_px);
 
 			size_t stitch_size = (size + CUDATHREADS) / CUDATHREADS;
 			shift_x_left1_stitch_kernel <<< (stitch_size + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (shift_rect, *this, cuVEC<VType>::aux_block_values);
@@ -271,7 +293,7 @@ __host__ void cuVEC_VC<VType>::shift_x(size_t size, cuBReal delta, cuRect shift_
 
 		while (cells_shift > 0) {
 
-			shift_x_right1_kernel <<< (size + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (shift_rect, *this, cuVEC<VType>::aux_block_values);
+			shift_x_right1_kernel <<< (size + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (shift_rect, *this, cuVEC<VType>::aux_block_values, using_extended_flags, ngbrFlags2, halo_nx, halo_px);
 
 			size_t stitch_size = (size + CUDATHREADS) / CUDATHREADS;
 			shift_x_right1_stitch_kernel <<< (stitch_size + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (shift_rect, *this, cuVEC<VType>::aux_block_values);

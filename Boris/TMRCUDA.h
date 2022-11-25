@@ -60,7 +60,7 @@ private:
 	void CalculateElectricalConductivity_TMR(TMR_ TMR_type);
 
 	//calculate electric field as the negative gradient of V
-	void CalculateElectricField(void);
+	void CalculateElectricField(bool open_potential = false);
 
 	//Charge transport only : V
 

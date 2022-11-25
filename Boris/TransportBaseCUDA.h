@@ -67,8 +67,17 @@ protected:
 	cu_obj<cuVEC_VC<cuReal3>> dM_dt;
 
 	//for Poisson equations for V and S some values are fixed during relaxation, so pre-calculate them and store here to re-use.
-	cu_obj <cuVEC<cuBReal>> delsq_V_fixed;
-	cu_obj <cuVEC<cuReal3>> delsq_S_fixed;
+	cu_obj<cuVEC<cuBReal>> delsq_V_fixed;
+	cu_obj<cuVEC<cuReal3>> delsq_S_fixed;
+
+	//for meshes with thermoelectric effect enabled count net current (A) coming out of the mesh at cmbnd cells, if open potential enabled.
+	cu_obj<cuBReal> mesh_thermoelectric_net_current;
+
+	//does current mesh have thermoelectric effect enabled? (i.e. must have heat module and Sc not zero)
+	bool is_thermoelectric_mesh = false;
+
+	//user test equation for TAMR. If not set use default formula.
+	TEquationCUDA<cuBReal, cuBReal, cuBReal, cuBReal> TAMR_conductivity_equation;
 
 protected:
 
@@ -86,7 +95,7 @@ protected:
 	//-------------------Calculation Methods
 
 	//calculate electric field as the negative gradient of V
-	virtual void CalculateElectricField(void) = 0;
+	virtual void CalculateElectricField(bool open_potential = false) = 0;
 
 	//Charge transport only : V
 
@@ -169,6 +178,11 @@ public:
 
 	//return spin torque computed from spin accumulation
 	virtual cu_obj<cuVEC<cuReal3>>& GetSpinTorque(void) = 0;
+
+	//-------------------TAMR
+
+	BError Set_TAMR_Conductivity_Equation(std::vector<std::vector< EqComp::FSPEC >> fspec);
+	void Clear_TAMR_Conductivity_Equation(void);
 };
 
 #endif

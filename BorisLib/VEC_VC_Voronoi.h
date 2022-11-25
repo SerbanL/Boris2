@@ -13,7 +13,7 @@
 
 //Generate 2D Voronoi cells with boundaries between cells set to empty
 template <typename VType>
-bool VEC_VC<VType>::generate_Voronoi2D(double spacing, unsigned seed)
+bool VEC_VC<VType>::generate_Voronoi2D_Grains(double spacing, unsigned seed)
 {
 	BorisRand prng(seed);
 
@@ -103,7 +103,7 @@ bool VEC_VC<VType>::generate_Voronoi2D(double spacing, unsigned seed)
 
 //Generate 3D Voronoi cells with boundaries between cells set to empty
 template <typename VType>
-bool VEC_VC<VType>::generate_Voronoi3D(double spacing, unsigned seed)
+bool VEC_VC<VType>::generate_Voronoi3D_Grains(double spacing, unsigned seed)
 {
 	BorisRand prng(seed);
 

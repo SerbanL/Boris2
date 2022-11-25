@@ -3,8 +3,6 @@
 #include "BorisLib.h"
 #include "Modules.h"
 
-
-
 class SuperMesh;
 
 #ifdef MODULE_COMPILATION_SDEMAG
@@ -19,7 +17,6 @@ class SuperMesh;
 #include "SDemagCUDA.h"
 #include "SDemagCUDA_Demag.h"
 #endif
-
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 //

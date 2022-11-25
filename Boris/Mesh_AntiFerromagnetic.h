@@ -25,6 +25,7 @@
 #include "StrayField_Mesh.h"
 #include "Zeeman.h"
 #include "MOptical.h"
+#include "MElastic.h"
 #include "Anisotropy.h"
 #include "AnisotropyCubi.h"
 #include "AnisotropyBiaxial.h"
@@ -51,6 +52,7 @@ class AFMesh :
 	VEC_VC<DBL3>, VEC_VC<DBL3>, VEC_VC<double>, VEC_VC<DBL3>, VEC_VC<double>, VEC_VC<double>, VEC_VC<double>,
 	vector_lut<Modules*>, 
 	bool,
+	unsigned,
 	//Members in this derived class
 	bool, SkyrmionTrack, bool,
 	double, double, bool, bool, bool, DBL3,
@@ -63,13 +65,14 @@ class AFMesh :
 	MatP<double, double>,
 	MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<DBL3, DBL3>,
 	double, TEquation<double>, double, MatP<double, double>, MatP<DBL2, double>, 
-	MatP<double, double>, 
+	MatP<double, double>, MatP<DBL2, double>, MatP<double, double>, MatP<double, double>, MatP<DBL3, double>, MatP<double, double>,
+	MatP<double, double>, MatP<double, double>,
 	MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>>,
 	//Module Implementations
 	std::tuple<
 	Demag_N, Demag, SDemag_Demag, 
 	Exch_6ngbr_Neu, DMExchange, iDMExchange, viDMExchange, SurfExchange_AFM,
-	Zeeman, MOptical, Roughness,
+	Zeeman, MOptical, MElastic, Roughness,
 	Anisotropy_Uniaxial, Anisotropy_Cubic, Anisotropy_Biaxial, Anisotropy_Tensorial, 
 	Transport, Heat, 
 	SOTField,

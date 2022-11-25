@@ -4,6 +4,7 @@
 
 #include "VEC_VC.h"
 #include "VEC_VC_mng.h"
+#include "VEC_VC_subvec.h"
 #include "VEC_VC_flags.h"
 #include "VEC_VC_cmbnd.h"
 #include "VEC_VC_shape.h"

@@ -46,11 +46,11 @@ BError Atom_DipoleDipoleCUDA::Initialize(void)
 
 			cu_arr<cuVEC<cuReal3>> pVal_from_M, pVal_to_M;
 			pVal_from_M.push_back((cuVEC<cuReal3>*&)paMeshCUDA->M1.get_managed_object());
-			if (!M()->copy_transfer_info(pVal_from_M, pVal_to_M, paDipoleDipole->M)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
+			if (!M()->copy_transfer_info(pVal_from_M, pVal_to_M, paDipoleDipole->M.get_transfer())) return error(BERROR_OUTOFGPUMEMORY_CRIT);
 
 			cu_arr<cuVEC<cuReal3>> pVal_from_H, pVal_to_H;
 			pVal_to_H.push_back((cuVEC<cuReal3>*&)paMeshCUDA->Heff1.get_managed_object());
-			if (!Hd()->copy_transfer_info(pVal_from_H, pVal_to_H, paDipoleDipole->Hd)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
+			if (!Hd()->copy_transfer_info(pVal_from_H, pVal_to_H, paDipoleDipole->Hd.get_transfer())) return error(BERROR_OUTOFGPUMEMORY_CRIT);
 		}
 		else {
 
@@ -82,12 +82,12 @@ BError Atom_DipoleDipoleCUDA::Initialize(void)
 			cu_arr<cuVEC<cuReal3>> pVal_from_H, pVal_to_H;
 			pVal_to_H.push_back((cuVEC<cuReal3>*&)paMeshCUDA->Heff1.get_managed_object());
 
-			if (paMeshCUDA->GetEvaluationSpeedup() >= 1) if (!Hdemag()->copy_transfer_info(pVal_from_H, pVal_to_H, paDipoleDipole->Hdemag)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
-			if (paMeshCUDA->GetEvaluationSpeedup() >= 2) if (!Hdemag2()->copy_transfer_info(pVal_from_H, pVal_to_H, paDipoleDipole->Hdemag2)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
-			if (paMeshCUDA->GetEvaluationSpeedup() >= 3) if (!Hdemag3()->copy_transfer_info(pVal_from_H, pVal_to_H, paDipoleDipole->Hdemag3)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
-			if (paMeshCUDA->GetEvaluationSpeedup() >= 4) if (!Hdemag4()->copy_transfer_info(pVal_from_H, pVal_to_H, paDipoleDipole->Hdemag4)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
-			if (paMeshCUDA->GetEvaluationSpeedup() >= 5) if (!Hdemag5()->copy_transfer_info(pVal_from_H, pVal_to_H, paDipoleDipole->Hdemag5)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
-			if (paMeshCUDA->GetEvaluationSpeedup() >= 6) if (!Hdemag6()->copy_transfer_info(pVal_from_H, pVal_to_H, paDipoleDipole->Hdemag6)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
+			if (paMeshCUDA->GetEvaluationSpeedup() >= 1) if (!Hdemag()->copy_transfer_info(pVal_from_H, pVal_to_H, paDipoleDipole->Hdemag.get_transfer())) return error(BERROR_OUTOFGPUMEMORY_CRIT);
+			if (paMeshCUDA->GetEvaluationSpeedup() >= 2) if (!Hdemag2()->copy_transfer_info(pVal_from_H, pVal_to_H, paDipoleDipole->Hdemag2.get_transfer())) return error(BERROR_OUTOFGPUMEMORY_CRIT);
+			if (paMeshCUDA->GetEvaluationSpeedup() >= 3) if (!Hdemag3()->copy_transfer_info(pVal_from_H, pVal_to_H, paDipoleDipole->Hdemag3.get_transfer())) return error(BERROR_OUTOFGPUMEMORY_CRIT);
+			if (paMeshCUDA->GetEvaluationSpeedup() >= 4) if (!Hdemag4()->copy_transfer_info(pVal_from_H, pVal_to_H, paDipoleDipole->Hdemag4.get_transfer())) return error(BERROR_OUTOFGPUMEMORY_CRIT);
+			if (paMeshCUDA->GetEvaluationSpeedup() >= 5) if (!Hdemag5()->copy_transfer_info(pVal_from_H, pVal_to_H, paDipoleDipole->Hdemag5.get_transfer())) return error(BERROR_OUTOFGPUMEMORY_CRIT);
+			if (paMeshCUDA->GetEvaluationSpeedup() >= 6) if (!Hdemag6()->copy_transfer_info(pVal_from_H, pVal_to_H, paDipoleDipole->Hdemag6.get_transfer())) return error(BERROR_OUTOFGPUMEMORY_CRIT);
 		}
 		else {
 

@@ -35,6 +35,21 @@ BError STransportCUDA::Initialize(void)
 	//no energy density contribution here
 	ZeroEnergy();
 
+	//re-set cmbnd flags (also building contacts), as TMR initialization could have changed available cells in insulator meshes
+	for (int idx = 0; idx < (int)pSTrans->pTransport.size(); idx++) {
+
+		//build CMBND contacts and set flags for V
+		pSTrans->pV[idx]->set_cmbnd_flags(idx, pSTrans->pV);
+		if (!(*pV[idx])()->copyflags_from_cpuvec(*pSTrans->pV[idx])) error(BERROR_GPUERROR_CRIT);
+
+		//set flags for S also (same mesh dimensions as V so CMBNDcontacts are the same)
+		if (pSMesh->SolveSpinCurrent()) {
+
+			pSTrans->pS[idx]->set_cmbnd_flags(idx, pSTrans->pS);
+			if (!(*pS[idx])()->copyflags_from_cpuvec(*pSTrans->pS[idx])) error(BERROR_GPUERROR_CRIT);
+		}
+	}
+
 	if (!initialized) {
 
 		if (!pSMesh->disabled_transport_solver) {
@@ -112,11 +127,13 @@ BError STransportCUDA::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 					}
 #endif
 				}
+#ifdef MODULE_COMPILATION_TMR
 				else if ((*pSMesh)[idx]->IsModuleSet(MOD_TMR)) {
 
 					ModulesCUDA* pModuleCUDA = (*pSMesh)[idx]->GetCUDAModule(MOD_TMR);
 					pTransport.push_back(dynamic_cast<TMRCUDA*>(pModuleCUDA));
 				}
+#endif
 
 				pV.push_back(&(*pSMesh)[idx]->pMeshBaseCUDA->V);
 				pS.push_back(&(*pSMesh)[idx]->pMeshBaseCUDA->S);

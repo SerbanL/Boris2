@@ -10,6 +10,7 @@
 #include "Atom_Demag.h"
 #include "Atom_Demag_N.h"
 #include "Atom_DipoleDipole.h"
+#include "SDemag_Demag.h"
 #include "StrayField_AtomMesh.h"
 #include "Atom_Zeeman.h"
 #include "Atom_Exchange.h"
@@ -52,6 +53,7 @@ class Atom_Mesh_Cubic :
 	VEC_VC<double>, VEC_VC<double>,
 	vector_lut<Modules*>, 
 	bool,
+	unsigned,
 	//Members in this derived class
 	bool, SkyrmionTrack, bool,
 	double, double, bool, bool, bool, DBL3,
@@ -62,17 +64,18 @@ class Atom_Mesh_Cubic :
 	std::vector<DBL4>,
 	MatP<double, double>, MatP<double, double>,
 	MatP<double, double>,
-	MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>,
-	MatP<double, double>, MatP<double, double>, MatP<DBL2, double>, MatP<DBL2, double>, MatP<DBL3, DBL3>,
+	MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>,
+	MatP<double, double>, MatP<double, double>, MatP<DBL2, double>, MatP<DBL2, double>, MatP<DBL3, DBL3>, MatP<double, double>, MatP<DBL2, double>, MatP<DBL2, double>,
 	MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<DBL2, double>, MatP<DBL2, double>,
 	MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>,
 	double, TEquation<double>,
 	MatP<double, double>,
+	MatP<double, double>, MatP<double, double>,
 	MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>
 	>,
 	//Module Implementations
 	std::tuple<
-	Atom_Demag_N, Atom_Demag, Atom_DipoleDipole, 
+	Atom_Demag_N, Atom_Demag, Atom_DipoleDipole, SDemag_Demag,
 	Atom_Zeeman, Atom_MOptical,
 	Atom_Exchange, Atom_DMExchange, Atom_iDMExchange, Atom_viDMExchange, Atom_SurfExchange,
 	Atom_Anisotropy_Uniaxial, Atom_Anisotropy_Cubic, Atom_Anisotropy_Biaxial, Atom_Anisotropy_Tensorial,
@@ -239,6 +242,7 @@ public:
 	//----------------------------------- MESH INFO AND SIZE GET/SET METHODS
 
 	double Get_NonEmpty_Magnetic_Volume(void) { return M1.get_nonempty_cells() * M1.h.dim(); }
+	int Get_NonEmpty_Magnetic_Cells(void) { return M1.get_nonempty_cells(); }
 
 	//----------------------------------- OVERLOAD MESH VIRTUAL METHODS
 
@@ -387,6 +391,7 @@ public:
 	//----------------------------------- MESH INFO AND SIZE GET/SET METHODS
 
 	double Get_NonEmpty_Magnetic_Volume(void) { return 0.0; }
+	int Get_NonEmpty_Magnetic_Cells(void) { return 0.0; }
 
 	//----------------------------------- OVERLOAD MESH VIRTUAL METHODS
 

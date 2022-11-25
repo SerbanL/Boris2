@@ -2,7 +2,7 @@
 
 #if COMPILECUDA == 1
 
-#ifdef MODULE_COMPILATION_TRANSPORT
+#ifdef MODULE_COMPILATION_TMR
 
 #include "BorisCUDALib.cuh"
 

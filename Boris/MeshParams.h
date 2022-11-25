@@ -147,6 +147,9 @@ public:
 	//anisotropic magnetoresistance as a percentage (of base resistance)
 	MatP<double, double> amrPercentage = 0.0;
 
+	//tunneling anisotropic magnetoresistance as a percentage
+	MatP<double, double> tamrPercentage = 0.0;
+
 	//spin current polarization (also the charge current spin polarization for the spin current solver) and non-adiabaticity (for Zhang-Li STT). (unitless)
 	MatP<double, double> P = 0.4;
 	MatP<double, double> beta = 0.04;
@@ -170,14 +173,21 @@ public:
 
 	//field-like spin torque coefficient (unitless)
 	MatP<double, double> flSOT = 0.0;
+	//second one if STT must be included from top and bottom layers
+	MatP<double, double> flSOT2 = 0.0;
 
 	//Slonczewski macrospin torques q+, q- parameters as in PRB 72, 014446 (2005) (unitless)
 	MatP<DBL2, double> STq = DBL2(1.0, 0.0);
+	//second one if STT must be included from top and bottom layers
+	MatP<DBL2, double> STq2 = DBL2(0.0, 0.0);
 
 	//Slonczewski macrospin torques A, B parameters as in PRB 72, 014446 (2005) (unitless)
 	MatP<DBL2, double> STa = DBL2(0.6, 0.4);
+	//second one if STT must be included from top and bottom layers
+	MatP<DBL2, double> STa2 = DBL2(0.0, 0.0);
 
 	//Slonczewski macrospin torques spin polarization unit vector as in PRB 72, 014446 (2005) (unitless); or SOT symmetry axis direction (e.g. z direction for HM/FM bilayer).
+	//Set to zero to disable fixed polarization, and instead look at top and bottom layers directly
 	MatP<DBL3, DBL3> STp = DBL3(0, 0, 1);
 
 	//spin-flip length (m)
@@ -228,6 +238,13 @@ public:
 	//atomic moments for 2-sublattice model (again multiples of the Bohr magneton)
 	MatP<DBL2, double> atomic_moment_AFM = DBL2(1.0);
 
+	//Seebeck coefficient (V/K). Set to zero to disable thermoelectric effect (disabled by default).
+	MatP<double, double> Sc = 0.0;
+
+	//Joule heating effect efficiency (unitless, varies from 0 : none, up to 1 : full strength)
+	//enabled by default
+	MatP<double, double> joule_eff = 1;
+
 	//thermal conductivity (W/mK) - default for permalloy
 	MatP<double, double> thermCond = 46.4;
 
@@ -251,6 +268,12 @@ public:
 	
 	//Poisson's ratio (unitless) - default for permalloy
 	MatP<double, double> Pr = 0.3;
+
+	//Stiffness constants for a cubic system as c11, c12, c44 (N/m^2)
+	MatP<DBL3, double> cC = DBL3(3e11, 2e11, 5e10);
+
+	//mechanical damping value
+	MatP<double, double> mdamping = 1e14;
 
 	//OBSOLETE - not used anywhere; keep them to be able to load simulation files which might have these defined
 	//There was an oversight in ProgramState code design, fixed now but the price is I have to keep these to maintain compatibility.
@@ -473,6 +496,10 @@ RType MeshParams::run_on_param(PARAM_ paramID, Lambda& run_this, PType& ... run_
 		return run_this(amrPercentage, run_this_args...);
 		break;
 
+	case PARAM_TAMR:
+		return run_this(tamrPercentage, run_this_args...);
+		break;
+
 	case PARAM_P:
 		return run_this(P, run_this_args...);
 		break;
@@ -497,12 +524,24 @@ RType MeshParams::run_on_param(PARAM_ paramID, Lambda& run_this, PType& ... run_
 		return run_this(flSOT, run_this_args...);
 		break;
 
+	case PARAM_FLSOT2:
+		return run_this(flSOT2, run_this_args...);
+		break;
+
 	case PARAM_STQ:
 		return run_this(STq, run_this_args...);
 		break;
 
+	case PARAM_STQ2:
+		return run_this(STq2, run_this_args...);
+		break;
+
 	case PARAM_STA:
 		return run_this(STa, run_this_args...);
+		break;
+
+	case PARAM_STA2:
+		return run_this(STa2, run_this_args...);
 		break;
 
 	case PARAM_STP:
@@ -557,6 +596,14 @@ RType MeshParams::run_on_param(PARAM_ paramID, Lambda& run_this, PType& ... run_
 		return run_this(n_density, run_this_args...);
 		break;
 
+	case PARAM_SEEBECK:
+		return run_this(Sc, run_this_args...);
+		break;
+
+	case PARAM_JOULE_EFF:
+		return run_this(joule_eff, run_this_args...);
+		break;
+
 	case PARAM_THERMCOND:
 		return run_this(thermCond, run_this_args...);
 		break;
@@ -575,6 +622,14 @@ RType MeshParams::run_on_param(PARAM_ paramID, Lambda& run_this, PType& ... run_
 
 	case PARAM_POISSONRATIO:
 		return run_this(Pr, run_this_args...);
+		break;
+
+	case PARAM_STIFFC_CUBIC:
+		return run_this(cC, run_this_args...);
+		break;
+
+	case PARAM_MDAMPING:
+		return run_this(mdamping, run_this_args...);
 		break;
 
 	case PARAM_SHC:

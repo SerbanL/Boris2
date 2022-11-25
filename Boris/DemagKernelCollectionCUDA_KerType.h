@@ -30,10 +30,6 @@ public:
 	//The dimensions of the FFT space (In and Out in the kernel multiplication methods) - determines the size of kernels depending on their type. Set through AllocateKernels method.
 	cuSZ3 N;
 
-	//internal_demag == true -> use real kernels with reduced memory usage, 2D or 3D.
-	//internal_demag == false -> use complex kernels 3D only.
-	bool internal_demag;
-
 	//if z shifted only then kernel multiplications and storage can be made more efficient for 2D. For 3D we can make storage more efficient.
 	bool zshifted;
 
@@ -65,8 +61,6 @@ public:
 	__host__ void Set_Shift_and_Cellsizes(cuReal3 shift_, cuReal3 h_src_, cuReal3 h_dst_);
 
 	//Flags
-	__host__ void SetFlag_InternalDemag(bool status) { set_gpu_value(internal_demag, status); }
-
 	__host__ void SetFlag_zShifted(bool status) { set_gpu_value(zshifted, status); }
 
 	__host__ void SetFlag_Calculated(bool status) { set_gpu_value(kernel_calculated, status); }
@@ -112,8 +106,6 @@ public:
 
 	__host__ cuSZ3 Get_N(void) { return get_gpu_value(N); }
 
-	__host__ bool GetFlag_InternalDemag(void) { return get_gpu_value(internal_demag); }
-
 	__host__ bool GetFlag_zShifted(void) { return get_gpu_value(zshifted); }
 
 	__host__ bool GetFlag_Calculated(void) { return get_gpu_value(kernel_calculated); }
@@ -145,7 +137,6 @@ __host__ inline void cuKerType::construct_cu_obj(void)
 	Kdiag_real.construct_cu_obj();
 	Kodiag_real.construct_cu_obj();
 
-	set_gpu_value(internal_demag, false);
 	set_gpu_value(zshifted, false);
 	set_gpu_value(kernel_calculated, false);
 
@@ -179,7 +170,6 @@ __host__ inline bool cuKerType::AllocateKernels(cuRect from_rect, cuRect this_re
 	//check if internal demag
 	if (from_rect == this_rect) {
 
-		set_gpu_value(internal_demag, true);
 		set_gpu_value(zshifted, false);
 
 		if (N_cpu.z == 1) {
@@ -195,8 +185,6 @@ __host__ inline bool cuKerType::AllocateKernels(cuRect from_rect, cuRect this_re
 	}
 	//not internal demag
 	else {
-
-		set_gpu_value(internal_demag, false);
 
 		//see if we can use z-shifted kernels instead of full kernels
 		cuReal3 shift = from_rect.s - this_rect.s;

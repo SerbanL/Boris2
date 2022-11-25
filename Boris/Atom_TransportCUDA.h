@@ -48,11 +48,17 @@ private:
 	//calculate electrical conductivity with AMR present
 	void CalculateElectricalConductivity_AMR(void);
 
+	//calculate electrical conductivity with TAMR present
+	void CalculateElectricalConductivity_TAMR(void);
+
+	//calculate electrical conductivity with AMR and TAMR present
+	void CalculateElectricalConductivity_TAMR_and_AMR(void);
+
 	//calculate electrical conductivity without AMR
 	void CalculateElectricalConductivity_NoAMR(void);
 
 	//calculate electric field as the negative gradient of V
-	void CalculateElectricField(void);
+	void CalculateElectricField(bool open_potential = false);
 
 	//Charge transport only : V
 

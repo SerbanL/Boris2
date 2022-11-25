@@ -53,7 +53,7 @@ protected:
 	// MONTE-CARLO DATA
 
 	//random number generator - used by Monte Carlo methods
-	cu_obj<cuBorisRand> prng;
+	cu_obj<cuBorisRand<>> prng;
 
 	//last Monte-Carlo step acceptance probability
 	cu_obj<cuBReal> mc_acceptance_rate;

@@ -83,14 +83,14 @@ void StrayField_Base::CalculateStrayField(void)
 						if (idx == 0) {
 
 							strayField[cell_idx].x = -(p11 * Mdipole.x + p12 * Mdipole.y + p13 * Mdipole.z);
-							strayField[cell_idx].y = -(p12 * Mdipole.x + p22 * Mdipole.y + p23 * Mdipole.z);
-							strayField[cell_idx].z = -(p13 * Mdipole.x + p23 * Mdipole.y + p33 * Mdipole.z);
+							strayField[cell_idx].y = -(p12 * Mdipole.x + p22 * Mdipole.y - p23 * Mdipole.z);
+							strayField[cell_idx].z = -(p13 * Mdipole.x - p23 * Mdipole.y + p33 * Mdipole.z);
 						}
 						else {
 
-							strayField[cell_idx].x -= p11 * Mdipole.x + p12 * Mdipole.y + p13 * Mdipole.z;
-							strayField[cell_idx].y -= p12 * Mdipole.x + p22 * Mdipole.y + p23 * Mdipole.z;
-							strayField[cell_idx].z -= p13 * Mdipole.x + p23 * Mdipole.y + p33 * Mdipole.z;
+							strayField[cell_idx].x += -(p11 * Mdipole.x + p12 * Mdipole.y + p13 * Mdipole.z);
+							strayField[cell_idx].y += -(p12 * Mdipole.x + p22 * Mdipole.y - p23 * Mdipole.z);
+							strayField[cell_idx].z += -(p13 * Mdipole.x - p23 * Mdipole.y + p33 * Mdipole.z);
 						}
 					}
 				}

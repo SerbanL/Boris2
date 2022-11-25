@@ -17,7 +17,7 @@ __global__ void Zero_MCAux_Atom_Mesh_FMCUDA(cuBReal& aux_real)
 ///////////////////////////////////////////////////////////////
 // PARALLEL MONTE-CARLO METROPOLIS - WITH REDUCTION
 
-__global__ void Iterate_MonteCarloCUDA_Classic_FM_red_kernel(ManagedMeshCUDA& cuMesh, int* cuModules, int& numModules, cuReal3& Ha, cuBorisRand& prng, cuBReal mc_cone_angledeg, cuBReal& mc_acceptance_rate)
+__global__ void Iterate_MonteCarloCUDA_Classic_FM_red_kernel(ManagedMeshCUDA& cuMesh, int* cuModules, int& numModules, cuReal3& Ha, cuBorisRand<>& prng, cuBReal mc_cone_angledeg, cuBReal& mc_acceptance_rate)
 {
 	cuVEC_VC<cuReal3>& M = *cuMesh.pM;
 	cuVEC_VC<cuBReal>& Temp = *cuMesh.pTemp;
@@ -131,7 +131,7 @@ __global__ void Iterate_MonteCarloCUDA_Classic_FM_red_kernel(ManagedMeshCUDA& cu
 	reduction_sum(0, 1, &acceptance_rate, mc_acceptance_rate);
 }
 
-__global__ void Iterate_MonteCarloCUDA_Classic_FM_black_kernel(ManagedMeshCUDA& cuMesh, int* cuModules, int& numModules, cuReal3& Ha, cuBorisRand& prng, cuBReal mc_cone_angledeg, cuBReal& mc_acceptance_rate)
+__global__ void Iterate_MonteCarloCUDA_Classic_FM_black_kernel(ManagedMeshCUDA& cuMesh, int* cuModules, int& numModules, cuReal3& Ha, cuBorisRand<>& prng, cuBReal mc_cone_angledeg, cuBReal& mc_acceptance_rate)
 {
 	cuVEC_VC<cuReal3>& M = *cuMesh.pM;
 	cuVEC_VC<cuBReal>& Temp = *cuMesh.pTemp;
@@ -252,7 +252,7 @@ __global__ void Iterate_MonteCarloCUDA_Classic_FM_black_kernel(ManagedMeshCUDA& 
 ///////////////////////////////////////////////////////////////
 // PARALLEL MONTE-CARLO METROPOLIS - WITHOUT REDUCTION
 
-__global__ void Iterate_MonteCarloCUDA_Classic_FM_red_kernel(ManagedMeshCUDA& cuMesh, int* cuModules, int& numModules, cuReal3& Ha, cuBorisRand& prng, cuBReal mc_cone_angledeg)
+__global__ void Iterate_MonteCarloCUDA_Classic_FM_red_kernel(ManagedMeshCUDA& cuMesh, int* cuModules, int& numModules, cuReal3& Ha, cuBorisRand<>& prng, cuBReal mc_cone_angledeg)
 {
 	cuVEC_VC<cuReal3>& M = *cuMesh.pM;
 	cuVEC_VC<cuBReal>& Temp = *cuMesh.pTemp;
@@ -360,7 +360,7 @@ __global__ void Iterate_MonteCarloCUDA_Classic_FM_red_kernel(ManagedMeshCUDA& cu
 	}
 }
 
-__global__ void Iterate_MonteCarloCUDA_Classic_FM_black_kernel(ManagedMeshCUDA& cuMesh, int* cuModules, int& numModules, cuReal3& Ha, cuBorisRand& prng, cuBReal mc_cone_angledeg)
+__global__ void Iterate_MonteCarloCUDA_Classic_FM_black_kernel(ManagedMeshCUDA& cuMesh, int* cuModules, int& numModules, cuReal3& Ha, cuBorisRand<>& prng, cuBReal mc_cone_angledeg)
 {
 	cuVEC_VC<cuReal3>& M = *cuMesh.pM;
 	cuVEC_VC<cuBReal>& Temp = *cuMesh.pTemp;

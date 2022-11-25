@@ -41,6 +41,9 @@ private:
 	//Update TEquation object with user constants values
 	void UpdateTEquationUserConstants(bool makeCuda = true);
 
+	//setup globalField transfer
+	BError InitializeGlobalField(void);
+
 public:
 
 	Atom_Zeeman(Atom_Mesh *paMesh_);
@@ -98,6 +101,8 @@ private:
 
 	//Update TEquation object with user constants values
 	void UpdateTEquationUserConstants(bool makeCuda = true) {}
+
+	BError InitializeGlobalField(void) { return BError(); }
 
 public:
 

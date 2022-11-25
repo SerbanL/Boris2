@@ -5,6 +5,33 @@
 
 //--------------------------------------------MESH TRANSFER : VEC_MeshTransfer.h
 
+//GET
+template <typename VType>
+Transfer<VType>& VEC<VType>::get_transfer(void)
+{
+	return transfer;
+}
+
+template <typename VType>
+Transfer<VType>& VEC<VType>::get_transfer2(void)
+{
+	return transfer2;
+}
+
+
+//CLEAR
+template <typename VType>
+void VEC<VType>::clear_transfer(void)
+{
+	transfer.clear();
+}
+
+template <typename VType>
+void VEC<VType>::clear_transfer2(void)
+{
+	transfer2.clear();
+}
+
 //SINGLE INPUT, SINGLE OUTPUT
 
 //set-up mesh transfers, ready to use - return false if failed (not enough memory)
@@ -13,6 +40,12 @@ template <typename VType>
 bool VEC<VType>::Initialize_MeshTransfer(const std::vector< VEC<VType>* >& mesh_in, const std::vector< VEC<VType>* >& mesh_out, int correction_type, double multiplier)
 { 
 	return transfer.initialize_transfer(mesh_in, mesh_out, correction_type, multiplier); 
+}
+
+template <typename VType>
+bool VEC<VType>::Initialize_MeshTransfer2(const std::vector< VEC<VType>* >& mesh_in, const std::vector< VEC<VType>* >& mesh_out, int correction_type, double multiplier)
+{
+	return transfer2.initialize_transfer(mesh_in, mesh_out, correction_type, multiplier);
 }
 
 //MULTIPLE INPUTS, SINGLE OUTPUT
@@ -27,12 +60,24 @@ bool VEC<VType>::Initialize_MeshTransfer_AveragedInputs(const std::vector< VEC<V
 	return transfer.initialize_transfer_averagedinputs(mesh_in, mesh_in2, mesh_out, correction_type, multiplier);
 }
 
+template <typename VType>
+bool VEC<VType>::Initialize_MeshTransfer2_AveragedInputs(const std::vector< VEC<VType>* >& mesh_in, const std::vector< VEC<VType>* >& mesh_in2, const std::vector< VEC<VType>* >& mesh_out, int correction_type, double multiplier)
+{
+	return transfer2.initialize_transfer_averagedinputs(mesh_in, mesh_in2, mesh_out, correction_type, multiplier);
+}
+
 //mesh_in2 must be a vector of VEC<double> inputs
 //can set a multiplier value to apply to all contributions (1.0 by default, so no effect)
 template <typename VType>
 bool VEC<VType>::Initialize_MeshTransfer_MultipliedInputs(const std::vector< VEC<VType>* >& mesh_in, const std::vector< VEC<double>* >& mesh_in2_double, const std::vector< VEC<VType>* >& mesh_out, int correction_type, double multiplier)
 {
 	return transfer.initialize_transfer_multipliedinputs(mesh_in, mesh_in2_double, mesh_out, correction_type, multiplier);
+}
+
+template <typename VType>
+bool VEC<VType>::Initialize_MeshTransfer2_MultipliedInputs(const std::vector< VEC<VType>* >& mesh_in, const std::vector< VEC<double>* >& mesh_in2_double, const std::vector< VEC<VType>* >& mesh_out, int correction_type, double multiplier)
+{
+	return transfer2.initialize_transfer_multipliedinputs(mesh_in, mesh_in2_double, mesh_out, correction_type, multiplier);
 }
 
 //MULTIPLE INPUT, MULTIPLE OUTPUT
@@ -48,13 +93,25 @@ bool VEC<VType>::Initialize_MeshTransfer_AveragedInputs_DuplicatedOutputs(const 
 	return transfer.initialize_transfer_averagedinputs_duplicatedoutputs(mesh_in, mesh_in2, mesh_out, mesh_out2, correction_type, multiplier);
 }
 
+template <typename VType>
+bool VEC<VType>::Initialize_MeshTransfer2_AveragedInputs_DuplicatedOutputs(const std::vector< VEC<VType>* >& mesh_in, const std::vector< VEC<VType>* >& mesh_in2, const std::vector< VEC<VType>* >& mesh_out, const std::vector< VEC<VType>* >& mesh_out2, int correction_type, double multiplier)
+{
+	return transfer2.initialize_transfer_averagedinputs_duplicatedoutputs(mesh_in, mesh_in2, mesh_out, mesh_out2, correction_type, multiplier);
+}
+
 //SINGLE INPUT, SINGLE OUTPUT
 
 //do the actual transfer of values to and from this mesh using these
 template <typename VType>
-void VEC<VType>::transfer_in(void) 
+void VEC<VType>::transfer_in(bool clear_input)
 { 
-	transfer.transfer_from_external_meshes(); 
+	transfer.transfer_from_external_meshes(clear_input);
+}
+
+template <typename VType>
+void VEC<VType>::transfer2_in(bool clear_input)
+{
+	transfer2.transfer_from_external_meshes(clear_input);
 }
 	
 template <typename VType>
@@ -63,21 +120,39 @@ void VEC<VType>::transfer_out(bool setOutput)
 	transfer.transfer_to_external_meshes(setOutput); 
 }
 
+template <typename VType>
+void VEC<VType>::transfer2_out(bool setOutput)
+{
+	transfer2.transfer_to_external_meshes(setOutput);
+}
+
 //AVERAGED INPUTS
 
 template <typename VType>
-void VEC<VType>::transfer_in_averaged(void) 
+void VEC<VType>::transfer_in_averaged(bool clear_input)
 { 
-	transfer.transfer_from_external_meshes_averaged(); 
+	transfer.transfer_from_external_meshes_averaged(clear_input);
+}
+
+template <typename VType>
+void VEC<VType>::transfer2_in_averaged(bool clear_input)
+{
+	transfer2.transfer_from_external_meshes_averaged(clear_input);
 }
 
 //MULTIPLIED INPUTS
 
 //only use this if mesh_in2 was initialized as a vector of VEC<double> inputs : see corresponding Initialize_MeshTransfer_MultipliedInputs
 template <typename VType>
-void VEC<VType>::transfer_in_multiplied(void) 
+void VEC<VType>::transfer_in_multiplied(bool clear_input)
 { 
-	transfer.transfer_from_external_meshes_multiplied(); 
+	transfer.transfer_from_external_meshes_multiplied(clear_input);
+}
+
+template <typename VType>
+void VEC<VType>::transfer2_in_multiplied(bool clear_input)
+{
+	transfer2.transfer_from_external_meshes_multiplied(clear_input);
 }
 
 //DUPLICATED OUTPUTS
@@ -86,6 +161,12 @@ template <typename VType>
 void VEC<VType>::transfer_out_duplicated(bool setOutput) 
 { 
 	transfer.transfer_to_external_meshes_duplicated(setOutput); 
+}
+
+template <typename VType>
+void VEC<VType>::transfer2_out_duplicated(bool setOutput)
+{
+	transfer2.transfer_to_external_meshes_duplicated(setOutput);
 }
 
 //flattened in and out transfer sizes (i.e. total number of cell contributions
@@ -101,18 +182,15 @@ size_t VEC<VType>::size_transfer_out(void)
 	return transfer.size_transfer_out(); 
 }
 
-//this is used to pass transfer information to a cuVEC for copying to gpu memory : for gpu computations we use "flattened" transfers so it can be parallelized better
-//return type: vector of transfers, where INT3 contains : i - input mesh index, j - input mesh cell index, k - super-mesh cell index. the double entry is the weight for the value contribution
+//flattened in and out transfer sizes (i.e. total number of cell contributions
 template <typename VType>
-std::vector<std::pair<INT3, double>> VEC<VType>::get_flattened_transfer_in_info(void) 
-{ 
-	return transfer.get_flattened_transfer_in_info(); 
+size_t VEC<VType>::size_transfer2_in(void)
+{
+	return transfer2.size_transfer_in();
 }
 
-//this is used to pass transfer information to a cuVEC for copying to gpu memory : for gpu computations we use "flattened" transfers so it can be parallelized better
-//return type: vector of transfers, where INT3 contains : i - output mesh index, j - output mesh cell index, k - super-mesh cell index. the double entry is the weight for the value contribution
 template <typename VType>
-std::vector<std::pair<INT3, double>> VEC<VType>::get_flattened_transfer_out_info(void) 
-{ 
-	return transfer.get_flattened_transfer_out_info(); 
+size_t VEC<VType>::size_transfer2_out(void)
+{
+	return transfer2.size_transfer_out();
 }

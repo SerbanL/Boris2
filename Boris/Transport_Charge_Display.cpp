@@ -34,14 +34,13 @@ VEC_VC<DBL3>& Transport::GetChargeCurrent(void)
 
 		if (stsolve == STSOLVE_NONE) {
 
-			//calculate current density using Jc = -sigma * grad V
 #pragma omp parallel for
 			for (int idx = 0; idx < displayVEC_VC.linear_size(); idx++) {
 
 				//only calculate current on non-empty cells - empty cells have already been assigned 0 at UpdateConfiguration
 				if (pMesh->V.is_not_empty(idx)) {
-
-					displayVEC_VC[idx] = -pMesh->elC[idx] * pMesh->V.grad_diri(idx);
+					
+					displayVEC_VC[idx] = pMesh->elC[idx] * pMesh->E[idx];
 				}
 				else displayVEC_VC[idx] = DBL3(0);
 			}
@@ -135,6 +134,20 @@ VEC_VC<DBL3>& Transport::GetChargeCurrent(void)
 									displayVEC_VC[idx] += pMesh->cpump_eff.get0() * (P * pMesh->elC[idx] * HBAR_E / 2) * DBL3((dm_dt ^ dx_m) * m, (dm_dt ^ dy_m) * m, 0.0);
 								}
 							}
+						}
+					}
+
+					//include thermoelectric effect?
+					if (pMesh->Temp.linear_size()) {
+
+						double Sc = pMesh->Sc;
+						pMesh->update_parameters_ecoarse(idx, pMesh->Sc, Sc);
+
+						if (IsNZ(Sc)) {
+
+							//corresponding index in Temp
+							int idx_temp = pMesh->Temp.position_to_cellidx(pMesh->V.cellidx_to_position(idx));
+							displayVEC_VC[idx] += -pMesh->elC[idx] * Sc * pMesh->Temp.grad_neu(idx_temp);
 						}
 					}
 				}

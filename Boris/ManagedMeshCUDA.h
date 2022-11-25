@@ -119,6 +119,9 @@ public:
 	//anisotropic magnetoresistance as a percentage (of base resistance)
 	MatPCUDA<cuBReal, cuBReal>* pamrPercentage;
 
+	//tunneling anisotropic magnetoresistance as a percentage
+	MatPCUDA<cuBReal, cuBReal>* ptamrPercentage;
+
 	//spin current polarization and non-adiabaticity (for Zhang-Li STT).
 	MatPCUDA<cuBReal, cuBReal>* pP;
 	MatPCUDA<cuBReal, cuBReal>* pbeta;
@@ -130,12 +133,15 @@ public:
 	MatPCUDA<cuBReal, cuBReal>* pSHA;
 	MatPCUDA<cuBReal, cuBReal>* piSHA;
 	MatPCUDA<cuBReal, cuBReal>* pflSOT;
+	MatPCUDA<cuBReal, cuBReal>* pflSOT2;
 
 	//Slonczewski macrospin torques q+, q- parameters as in PRB 72, 014446 (2005) (unitless)
 	MatPCUDA<cuReal2, cuBReal>* pSTq;
+	MatPCUDA<cuReal2, cuBReal>* pSTq2;
 
 	//Slonczewski macrospin torques A, B parameters as in PRB 72, 014446 (2005) (unitless)
 	MatPCUDA<cuReal2, cuBReal>* pSTa;
+	MatPCUDA<cuReal2, cuBReal>* pSTa2;
 
 	//Slonczewski macrospin torques spin polarization unit vector as in PRB 72, 014446 (2005) (unitless)
 	MatPCUDA<cuReal3, cuReal3>* pSTp;
@@ -166,6 +172,13 @@ public:
 	//atomic moments for 2-sublattice model (again multiples of the Bohr magneton)
 	MatPCUDA<cuReal2, cuBReal>* patomic_moment_AFM;
 
+	//Seebeck coefficient (V/K). Set to zero to disable thermoelectric effect (disabled by default).
+	MatPCUDA<cuBReal, cuBReal>* pSc;
+
+	//Joule heating effect efficiency (unitless, varies from 0 : none, up to 1 : full strength)
+	//enabled by default
+	MatPCUDA<cuBReal, cuBReal>* pjoule_eff;
+
 	//thermal conductivity (W/mK) - default for permalloy
 	MatPCUDA<cuBReal, cuBReal>* pthermCond;
 
@@ -180,6 +193,12 @@ public:
 
 	//Poisson's ratio (unitless) - default for permalloy
 	MatPCUDA<cuBReal, cuBReal>* pPr;
+
+	//Stiffness constants for a cubic system as c11, c12, c44 (N/m^2)
+	MatPCUDA<cuReal3, cuBReal>* pcC;
+
+	//mechanical damping value
+	MatPCUDA<cuBReal, cuBReal>* pmdamping;
 
 	//specific heat capacity (J/kgK) - default for permalloy
 	MatPCUDA<cuBReal, cuBReal>* pshc;
@@ -268,6 +287,7 @@ public:
 
 	//ZeemanCUDA
 	cuVEC<cuReal3>* pHavec;
+	cuVEC<cuReal3>* pglobalField;
 
 	//StrayField_MeshCUDA
 	cuVEC<cuReal3>* pstrayField;
@@ -342,6 +362,28 @@ private:
 	template <typename PType, typename SType>
 	__device__ void update_parameters_tcoarse_full(int tcell_idx, MatPCUDA<PType, SType>& matp, PType& matp_value);
 
+	//UPDATER S COARSENESS - PRIVATE
+
+	//SPATIAL DEPENDENCE ONLY - NO POSITION YET
+
+	//update parameters in the list for spatial dependence only
+	template <typename PType, typename SType, typename ... MeshParam_List>
+	__device__ void update_parameters_scoarse_spatial(int scell_idx, MatPCUDA<PType, SType>& matp, PType& matp_value, MeshParam_List& ... params);
+
+	//update parameters in the list for spatial dependence only - single parameter version; position not calculated
+	template <typename PType, typename SType>
+	__device__ void update_parameters_scoarse_spatial(int scell_idx, MatPCUDA<PType, SType>& matp, PType& matp_value);
+
+	//SPATIAL AND TEMPERATURE DEPENDENCE - NO POSITION YET
+
+	//update parameters in the list for spatial dependence only
+	template <typename PType, typename SType, typename ... MeshParam_List>
+	__device__ void update_parameters_scoarse_full(int scell_idx, MatPCUDA<PType, SType>& matp, PType& matp_value, MeshParam_List& ... params);
+
+	//update parameters in the list for spatial dependence only - single parameter version
+	template <typename PType, typename SType>
+	__device__ void update_parameters_scoarse_full(int scell_idx, MatPCUDA<PType, SType>& matp, PType& matp_value);
+
 public:
 
 	void construct_cu_obj(void) {}
@@ -374,25 +416,31 @@ public:
 
 	//UPDATER M COARSENESS - PUBLIC
 
-	//Update parameter values if temperature dependent at the given cell index - M cell index; position not calculated
+	//Update parameter values if temperature and/or spatially dependent at the given cell index - M cell index; position not calculated
 	template <typename ... MeshParam_List>
 	__device__ void update_parameters_mcoarse(int mcell_idx, MeshParam_List& ... params);
 
 	//UPDATER E COARSENESS - PUBLIC
 
-	//Update parameter values if temperature dependent at the given cell index - M cell index; position not calculated
+	//Update parameter values if temperature and/or spatially dependent at the given cell index - V cell index; position not calculated
 	template <typename ... MeshParam_List>
 	__device__ void update_parameters_ecoarse(int ecell_idx, MeshParam_List& ... params);
 
 	//UPDATER T COARSENESS - PUBLIC
 
-	//Update parameter values if temperature dependent at the given cell index - M cell index; position not calculated
+	//Update parameter values if temperature and/or spatially dependent at the given cell index - Temp cell index; position not calculated
 	template <typename ... MeshParam_List>
 	__device__ void update_parameters_tcoarse(int tcell_idx, MeshParam_List& ... params);
 
+	//UPDATER S COARSENESS - PUBLIC
+
+	//Update parameter values if temperature and/or spatially dependent at the given cell index - u_disp cell index; position not calculated
+	template <typename ... MeshParam_List>
+	__device__ void update_parameters_scoarse(int scell_idx, MeshParam_List& ... params);
+
 	//UPDATER POSITION KNOWN - PUBLIC
 
-	//Update parameter values if temperature dependent at the given cell index - M cell index; position not calculated
+	//Update parameter values if temperature and/or spatially dependent at the given position
 	template <typename ... MeshParam_List>
 	__device__ void update_parameters_atposition(const cuReal3& position, MeshParam_List& ... params);
 

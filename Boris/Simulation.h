@@ -594,6 +594,19 @@ private:
 	void Print_TemperatureModel_List(void);
 	std::string Build_TemperatureModel_ListLine(int meshIndex);
 
+	//---------------------------------------------------- ELASTODYNAMICS SETIINGS
+
+	void Print_Elastodynamics_TimeStep(void);
+
+	void Print_Elastodynamics_Equations_List(void);
+	std::string Build_Elastodynamics_Equations_ListLine(int meshIndex);
+
+	void Print_FixedSurfaces_List(void);
+	std::string Build_FixedSurfaces_ListLine(int el_index);
+
+	void Print_StressSurfaces_List(void);
+	std::string Build_StressSurfaces_ListLine(int el_index);
+
 	//---------------------------------------------------- STOCHASTICITY SETIINGS
 
 	void Print_Stochasticity_List(void);

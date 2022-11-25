@@ -107,6 +107,7 @@ void Simulation::RunPythonScript(std::string fileName)
 	if (!PythonScript_lines.size()) return;
 	
 	//2. Check for #pragma parallel for directive if we have more than 1 GPU available, or stride is greater than 1 (python_script_parallel)
+	
 	if (python_script_mGPU) {
 
 		int stride = 1;
@@ -189,7 +190,7 @@ void Simulation::RunPythonScript(std::string fileName)
 
 				int script_gpu = offsets[mGPU_idx + 1];
 
-				open_file(GetExeDirectory() + progName, "-g " + ToString(next_gpu) + " -s " + fileName_mGPU + " -st 1 -sm 0 -sd 1 -w back");
+				open_file(GetExeDirectory() + progName, "-g " + ToString(next_gpu) + " -s " + fileName_mGPU + " -st 1 -sm 0 -sd 1");
 				if (cudaDeviceVersions.size() >= 1) next_gpu = (next_gpu + 1) % cudaDeviceVersions.size();
 			}
 		}
@@ -240,8 +241,8 @@ void Simulation::RunPythonScript(std::string fileName)
 
 #if OPERATING_SYSTEM == OS_WIN
 		DeleteFileA(fileName.c_str());
-#else
-		//TO DO
+#elif OPERATING_SYSTEM == OS_LIN
+		remove(fileName.c_str());
 #endif
 	}
 
@@ -354,8 +355,8 @@ void Simulation::RunPythonScript(std::string fileName)
 
 #if OPERATING_SYSTEM == OS_WIN && GRAPHICS == 1
 		PostMessage(hWnd, WM_CLOSE, 0, GetCurrentTime());
-#else
-		//TO DO
+#elif OPERATING_SYSTEM == OS_LIN
+		exit(3);
 #endif
 	}
 }

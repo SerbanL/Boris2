@@ -470,7 +470,7 @@ void Transfer<VType>::transfer_from_external_meshes(bool clear)
 			if (clear) (*pVEC)[idx] = total_weighted_value;
 			else (*pVEC)[idx] += total_weighted_value;
 		}
-		else if(clear) (*pVEC)[idx] = VType();
+		else if (clear) (*pVEC)[idx] = VType();
 	}
 }
 

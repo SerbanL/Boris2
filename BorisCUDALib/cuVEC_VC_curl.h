@@ -20,6 +20,39 @@ __device__ VType cuVEC_VC<VType>::curl_neu(int idx) const
 		curl.y -= (cuVEC<VType>::quantity[idx + 1].z - cuVEC<VType>::quantity[idx - 1].z) / (2 * cuVEC<VType>::h.x);
 		curl.z += (cuVEC<VType>::quantity[idx + 1].y - cuVEC<VType>::quantity[idx - 1].y) / (2 * cuVEC<VType>::h.x);
 	}
+	//use halo region?
+	else if (using_extended_flags && (ngbrFlags2[idx] & NF2_HALOX)) {
+
+		//halo index
+		int hidx = ((idx / cuVEC<VType>::n.x) % cuVEC<VType>::n.y) + (idx / (cuVEC<VType>::n.x*cuVEC<VType>::n.y))*cuVEC<VType>::n.y;
+
+		if (ngbrFlags2[idx] & NF2_HALOPX) {
+
+			if (ngbrFlags[idx] & NF_NNX) {
+
+				curl.y -= (halo_px[hidx].z - cuVEC<VType>::quantity[idx - 1].z) / (2 * cuVEC<VType>::h.x);
+				curl.z += (halo_px[hidx].y - cuVEC<VType>::quantity[idx - 1].y) / (2 * cuVEC<VType>::h.x);
+			}
+			else {
+
+				curl.y -= (halo_px[hidx].z - cuVEC<VType>::quantity[idx].z) / (2 * cuVEC<VType>::h.x);
+				curl.z += (halo_px[hidx].y - cuVEC<VType>::quantity[idx].y) / (2 * cuVEC<VType>::h.x);
+			}
+		}
+		else {
+
+			if (ngbrFlags[idx] & NF_NPX) {
+
+				curl.y -= (cuVEC<VType>::quantity[idx + 1].z - halo_nx[hidx].z) / (2 * cuVEC<VType>::h.x);
+				curl.z += (cuVEC<VType>::quantity[idx + 1].y - halo_nx[hidx].y) / (2 * cuVEC<VType>::h.x);
+			}
+			else {
+
+				curl.y -= (cuVEC<VType>::quantity[idx].z - halo_nx[hidx].z) / (2 * cuVEC<VType>::h.x);
+				curl.z += (cuVEC<VType>::quantity[idx].y - halo_nx[hidx].y) / (2 * cuVEC<VType>::h.x);
+			}
+		}
+	}
 	//Is it a CMBND boundary? - if not then use homogeneous Neumann condition (differential zero at the boundary)
 	else if (ngbrFlags[idx] & NF_CMBNDX) {
 
@@ -74,6 +107,39 @@ __device__ VType cuVEC_VC<VType>::curl_neu(int idx) const
 		curl.x += (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x].z - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x].z) / (2 * cuVEC<VType>::h.y);
 		curl.z -= (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x].x - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x].x) / (2 * cuVEC<VType>::h.y);
 	}
+	//use halo region?
+	else if (using_extended_flags && (ngbrFlags2[idx] & NF2_HALOY)) {
+
+		//halo index
+		int hidx = (idx % cuVEC<VType>::n.x) + (idx / (cuVEC<VType>::n.x*cuVEC<VType>::n.y))*cuVEC<VType>::n.x;
+
+		if (ngbrFlags2[idx] & NF2_HALOPY) {
+
+			if (ngbrFlags[idx] & NF_NNY) {
+
+				curl.x += (halo_py[hidx].z - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x].z) / (2 * cuVEC<VType>::h.y);
+				curl.z -= (halo_py[hidx].x - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x].x) / (2 * cuVEC<VType>::h.y);
+			}
+			else {
+
+				curl.x += (halo_py[hidx].z - cuVEC<VType>::quantity[idx].z) / (2 * cuVEC<VType>::h.y);
+				curl.z -= (halo_py[hidx].x - cuVEC<VType>::quantity[idx].x) / (2 * cuVEC<VType>::h.y);
+			}
+		}
+		else {
+
+			if (ngbrFlags[idx] & NF_NPY) {
+
+				curl.x += (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x].z - halo_ny[hidx].z) / (2 * cuVEC<VType>::h.y);
+				curl.z -= (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x].x - halo_ny[hidx].x) / (2 * cuVEC<VType>::h.y);
+			}
+			else {
+
+				curl.x += (cuVEC<VType>::quantity[idx].z - halo_ny[hidx].z) / (2 * cuVEC<VType>::h.y);
+				curl.z -= (cuVEC<VType>::quantity[idx].x - halo_ny[hidx].x) / (2 * cuVEC<VType>::h.y);
+			}
+		}
+	}
 	//Is it a CMBND boundary? - if not then use homogeneous Neumann condition (differential zero at the boundary)
 	else if (ngbrFlags[idx] & NF_CMBNDY) {
 
@@ -127,6 +193,39 @@ __device__ VType cuVEC_VC<VType>::curl_neu(int idx) const
 
 		curl.x -= (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x*cuVEC<VType>::n.y].y - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x*cuVEC<VType>::n.y].y) / (2 * cuVEC<VType>::h.z);
 		curl.y += (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x*cuVEC<VType>::n.y].x - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x*cuVEC<VType>::n.y].x) / (2 * cuVEC<VType>::h.z);
+	}
+	//use halo region?
+	else if (using_extended_flags && (ngbrFlags2[idx] & NF2_HALOZ)) {
+
+		//halo index
+		int hidx = (idx % cuVEC<VType>::n.x) + ((idx / cuVEC<VType>::n.x) % cuVEC<VType>::n.y)*cuVEC<VType>::n.x;
+
+		if (ngbrFlags2[idx] & NF2_HALOPZ) {
+
+			if (ngbrFlags[idx] & NF_NNZ) {
+
+				curl.x -= (halo_pz[hidx].y - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x*cuVEC<VType>::n.y].y) / (2 * cuVEC<VType>::h.z);
+				curl.y += (halo_pz[hidx].x - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x*cuVEC<VType>::n.y].x) / (2 * cuVEC<VType>::h.z);
+			}
+			else {
+
+				curl.x -= (halo_pz[hidx].y - cuVEC<VType>::quantity[idx].y) / (2 * cuVEC<VType>::h.z);
+				curl.y += (halo_pz[hidx].x - cuVEC<VType>::quantity[idx].x) / (2 * cuVEC<VType>::h.z);
+			}
+		}
+		else {
+
+			if (ngbrFlags[idx] & NF_NPZ) {
+
+				curl.x -= (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x*cuVEC<VType>::n.y].y - halo_nz[hidx].y) / (2 * cuVEC<VType>::h.z);
+				curl.y += (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x*cuVEC<VType>::n.y].x - halo_nz[hidx].x) / (2 * cuVEC<VType>::h.z);
+			}
+			else {
+
+				curl.x -= (cuVEC<VType>::quantity[idx].y - halo_nz[hidx].y) / (2 * cuVEC<VType>::h.z);
+				curl.y += (cuVEC<VType>::quantity[idx].x - halo_nz[hidx].x) / (2 * cuVEC<VType>::h.z);
+			}
+		}
 	}
 	//Is it a CMBND boundary? - if not then use homogeneous Neumann condition (differential zero at the boundary)
 	else if (ngbrFlags[idx] & NF_CMBNDZ) {
@@ -198,6 +297,39 @@ __device__ VType cuVEC_VC<VType>::curl_nneu(int idx, const Class_BDiff& bdiff_cl
 		curl.y -= (cuVEC<VType>::quantity[idx + 1].z - cuVEC<VType>::quantity[idx - 1].z) / (2 * cuVEC<VType>::h.x);
 		curl.z += (cuVEC<VType>::quantity[idx + 1].y - cuVEC<VType>::quantity[idx - 1].y) / (2 * cuVEC<VType>::h.x);
 	}
+	//use halo region?
+	else if (using_extended_flags && (ngbrFlags2[idx] & NF2_HALOX)) {
+
+		//halo index
+		int hidx = ((idx / cuVEC<VType>::n.x) % cuVEC<VType>::n.y) + (idx / (cuVEC<VType>::n.x*cuVEC<VType>::n.y))*cuVEC<VType>::n.y;
+
+		if (ngbrFlags2[idx] & NF2_HALOPX) {
+
+			if (ngbrFlags[idx] & NF_NNX) {
+
+				curl.y -= (halo_px[hidx].z - cuVEC<VType>::quantity[idx - 1].z) / (2 * cuVEC<VType>::h.x);
+				curl.z += (halo_px[hidx].y - cuVEC<VType>::quantity[idx - 1].y) / (2 * cuVEC<VType>::h.x);
+			}
+			else {
+
+				curl.y -= (halo_px[hidx].z - cuVEC<VType>::quantity[idx].z) / (2 * cuVEC<VType>::h.x);
+				curl.z += (halo_px[hidx].y - cuVEC<VType>::quantity[idx].y) / (2 * cuVEC<VType>::h.x);
+			}
+		}
+		else {
+
+			if (ngbrFlags[idx] & NF_NPX) {
+
+				curl.y -= (cuVEC<VType>::quantity[idx + 1].z - halo_nx[hidx].z) / (2 * cuVEC<VType>::h.x);
+				curl.z += (cuVEC<VType>::quantity[idx + 1].y - halo_nx[hidx].y) / (2 * cuVEC<VType>::h.x);
+			}
+			else {
+
+				curl.y -= (cuVEC<VType>::quantity[idx].z - halo_nx[hidx].z) / (2 * cuVEC<VType>::h.x);
+				curl.z += (cuVEC<VType>::quantity[idx].y - halo_nx[hidx].y) / (2 * cuVEC<VType>::h.x);
+			}
+		}
+	}
 	//Is it a CMBND boundary? - if not then use homogeneous Neumann condition (differential zero at the boundary)
 	else if (ngbrFlags[idx] & NF_CMBNDX) {
 
@@ -254,6 +386,39 @@ __device__ VType cuVEC_VC<VType>::curl_nneu(int idx, const Class_BDiff& bdiff_cl
 		curl.x += (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x].z - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x].z) / (2 * cuVEC<VType>::h.y);
 		curl.z -= (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x].x - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x].x) / (2 * cuVEC<VType>::h.y);
 	}
+	//use halo region?
+	else if (using_extended_flags && (ngbrFlags2[idx] & NF2_HALOY)) {
+
+		//halo index
+		int hidx = (idx % cuVEC<VType>::n.x) + (idx / (cuVEC<VType>::n.x*cuVEC<VType>::n.y))*cuVEC<VType>::n.x;
+
+		if (ngbrFlags2[idx] & NF2_HALOPY) {
+
+			if (ngbrFlags[idx] & NF_NNY) {
+
+				curl.x += (halo_py[hidx].z - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x].z) / (2 * cuVEC<VType>::h.y);
+				curl.z -= (halo_py[hidx].x - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x].x) / (2 * cuVEC<VType>::h.y);
+			}
+			else {
+
+				curl.x += (halo_py[hidx].z - cuVEC<VType>::quantity[idx].z) / (2 * cuVEC<VType>::h.y);
+				curl.z -= (halo_py[hidx].x - cuVEC<VType>::quantity[idx].x) / (2 * cuVEC<VType>::h.y);
+			}
+		}
+		else {
+
+			if (ngbrFlags[idx] & NF_NPY) {
+
+				curl.x += (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x].z - halo_ny[hidx].z) / (2 * cuVEC<VType>::h.y);
+				curl.z -= (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x].x - halo_ny[hidx].x) / (2 * cuVEC<VType>::h.y);
+			}
+			else {
+
+				curl.x += (cuVEC<VType>::quantity[idx].z - halo_ny[hidx].z) / (2 * cuVEC<VType>::h.y);
+				curl.z -= (cuVEC<VType>::quantity[idx].x - halo_ny[hidx].x) / (2 * cuVEC<VType>::h.y);
+			}
+		}
+	}
 	//Is it a CMBND boundary? - if not then use homogeneous Neumann condition (differential zero at the boundary)
 	else if (ngbrFlags[idx] & NF_CMBNDY) {
 
@@ -309,6 +474,39 @@ __device__ VType cuVEC_VC<VType>::curl_nneu(int idx, const Class_BDiff& bdiff_cl
 
 		curl.x -= (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x*cuVEC<VType>::n.y].y - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x*cuVEC<VType>::n.y].y) / (2 * cuVEC<VType>::h.z);
 		curl.y += (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x*cuVEC<VType>::n.y].x - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x*cuVEC<VType>::n.y].x) / (2 * cuVEC<VType>::h.z);
+	}
+	//use halo region?
+	else if (using_extended_flags && (ngbrFlags2[idx] & NF2_HALOZ)) {
+
+		//halo index
+		int hidx = (idx % cuVEC<VType>::n.x) + ((idx / cuVEC<VType>::n.x) % cuVEC<VType>::n.y)*cuVEC<VType>::n.x;
+
+		if (ngbrFlags2[idx] & NF2_HALOPZ) {
+
+			if (ngbrFlags[idx] & NF_NNZ) {
+
+				curl.x -= (halo_pz[hidx].y - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x*cuVEC<VType>::n.y].y) / (2 * cuVEC<VType>::h.z);
+				curl.y += (halo_pz[hidx].x - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x*cuVEC<VType>::n.y].x) / (2 * cuVEC<VType>::h.z);
+			}
+			else {
+
+				curl.x -= (halo_pz[hidx].y - cuVEC<VType>::quantity[idx].y) / (2 * cuVEC<VType>::h.z);
+				curl.y += (halo_pz[hidx].x - cuVEC<VType>::quantity[idx].x) / (2 * cuVEC<VType>::h.z);
+			}
+		}
+		else {
+
+			if (ngbrFlags[idx] & NF_NPZ) {
+
+				curl.x -= (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x*cuVEC<VType>::n.y].y - halo_nz[hidx].y) / (2 * cuVEC<VType>::h.z);
+				curl.y += (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x*cuVEC<VType>::n.y].x - halo_nz[hidx].x) / (2 * cuVEC<VType>::h.z);
+			}
+			else {
+
+				curl.x -= (cuVEC<VType>::quantity[idx].y - halo_nz[hidx].y) / (2 * cuVEC<VType>::h.z);
+				curl.y += (cuVEC<VType>::quantity[idx].x - halo_nz[hidx].x) / (2 * cuVEC<VType>::h.z);
+			}
+		}
 	}
 	//Is it a CMBND boundary? - if not then use homogeneous Neumann condition (differential zero at the boundary)
 	else if (ngbrFlags[idx] & NF_CMBNDZ) {
@@ -376,6 +574,39 @@ __device__ VType cuVEC_VC<VType>::curl_nneu(int idx, const cuVAL3<VType>& bdiff)
 		curl.y -= (cuVEC<VType>::quantity[idx + 1].z - cuVEC<VType>::quantity[idx - 1].z) / (2 * cuVEC<VType>::h.x);
 		curl.z += (cuVEC<VType>::quantity[idx + 1].y - cuVEC<VType>::quantity[idx - 1].y) / (2 * cuVEC<VType>::h.x);
 	}
+	//use halo region?
+	else if (using_extended_flags && (ngbrFlags2[idx] & NF2_HALOX)) {
+
+		//halo index
+		int hidx = ((idx / cuVEC<VType>::n.x) % cuVEC<VType>::n.y) + (idx / (cuVEC<VType>::n.x*cuVEC<VType>::n.y))*cuVEC<VType>::n.y;
+
+		if (ngbrFlags2[idx] & NF2_HALOPX) {
+
+			if (ngbrFlags[idx] & NF_NNX) {
+
+				curl.y -= (halo_px[hidx].z - cuVEC<VType>::quantity[idx - 1].z) / (2 * cuVEC<VType>::h.x);
+				curl.z += (halo_px[hidx].y - cuVEC<VType>::quantity[idx - 1].y) / (2 * cuVEC<VType>::h.x);
+			}
+			else {
+
+				curl.y -= (halo_px[hidx].z - cuVEC<VType>::quantity[idx].z) / (2 * cuVEC<VType>::h.x);
+				curl.z += (halo_px[hidx].y - cuVEC<VType>::quantity[idx].y) / (2 * cuVEC<VType>::h.x);
+			}
+		}
+		else {
+
+			if (ngbrFlags[idx] & NF_NPX) {
+
+				curl.y -= (cuVEC<VType>::quantity[idx + 1].z - halo_nx[hidx].z) / (2 * cuVEC<VType>::h.x);
+				curl.z += (cuVEC<VType>::quantity[idx + 1].y - halo_nx[hidx].y) / (2 * cuVEC<VType>::h.x);
+			}
+			else {
+
+				curl.y -= (cuVEC<VType>::quantity[idx].z - halo_nx[hidx].z) / (2 * cuVEC<VType>::h.x);
+				curl.z += (cuVEC<VType>::quantity[idx].y - halo_nx[hidx].y) / (2 * cuVEC<VType>::h.x);
+			}
+		}
+	}
 	//Is it a CMBND boundary? - if not then use homogeneous Neumann condition (differential zero at the boundary)
 	else if (ngbrFlags[idx] & NF_CMBNDX) {
 
@@ -430,6 +661,39 @@ __device__ VType cuVEC_VC<VType>::curl_nneu(int idx, const cuVAL3<VType>& bdiff)
 		curl.x += (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x].z - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x].z) / (2 * cuVEC<VType>::h.y);
 		curl.z -= (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x].x - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x].x) / (2 * cuVEC<VType>::h.y);
 	}
+	//use halo region?
+	else if (using_extended_flags && (ngbrFlags2[idx] & NF2_HALOY)) {
+
+		//halo index
+		int hidx = (idx % cuVEC<VType>::n.x) + (idx / (cuVEC<VType>::n.x*cuVEC<VType>::n.y))*cuVEC<VType>::n.x;
+
+		if (ngbrFlags2[idx] & NF2_HALOPY) {
+
+			if (ngbrFlags[idx] & NF_NNY) {
+
+				curl.x += (halo_py[hidx].z - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x].z) / (2 * cuVEC<VType>::h.y);
+				curl.z -= (halo_py[hidx].x - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x].x) / (2 * cuVEC<VType>::h.y);
+			}
+			else {
+
+				curl.x += (halo_py[hidx].z - cuVEC<VType>::quantity[idx].z) / (2 * cuVEC<VType>::h.y);
+				curl.z -= (halo_py[hidx].x - cuVEC<VType>::quantity[idx].x) / (2 * cuVEC<VType>::h.y);
+			}
+		}
+		else {
+
+			if (ngbrFlags[idx] & NF_NPY) {
+
+				curl.x += (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x].z - halo_ny[hidx].z) / (2 * cuVEC<VType>::h.y);
+				curl.z -= (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x].x - halo_ny[hidx].x) / (2 * cuVEC<VType>::h.y);
+			}
+			else {
+
+				curl.x += (cuVEC<VType>::quantity[idx].z - halo_ny[hidx].z) / (2 * cuVEC<VType>::h.y);
+				curl.z -= (cuVEC<VType>::quantity[idx].x - halo_ny[hidx].x) / (2 * cuVEC<VType>::h.y);
+			}
+		}
+	}
 	//Is it a CMBND boundary? - if not then use homogeneous Neumann condition (differential zero at the boundary)
 	else if (ngbrFlags[idx] & NF_CMBNDY) {
 
@@ -483,6 +747,39 @@ __device__ VType cuVEC_VC<VType>::curl_nneu(int idx, const cuVAL3<VType>& bdiff)
 
 		curl.x -= (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x*cuVEC<VType>::n.y].y - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x*cuVEC<VType>::n.y].y) / (2 * cuVEC<VType>::h.z);
 		curl.y += (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x*cuVEC<VType>::n.y].x - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x*cuVEC<VType>::n.y].x) / (2 * cuVEC<VType>::h.z);
+	}
+	//use halo region?
+	else if (using_extended_flags && (ngbrFlags2[idx] & NF2_HALOZ)) {
+
+		//halo index
+		int hidx = (idx % cuVEC<VType>::n.x) + ((idx / cuVEC<VType>::n.x) % cuVEC<VType>::n.y)*cuVEC<VType>::n.x;
+
+		if (ngbrFlags2[idx] & NF2_HALOPZ) {
+
+			if (ngbrFlags[idx] & NF_NNZ) {
+
+				curl.x -= (halo_pz[hidx].y - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x*cuVEC<VType>::n.y].y) / (2 * cuVEC<VType>::h.z);
+				curl.y += (halo_pz[hidx].x - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x*cuVEC<VType>::n.y].x) / (2 * cuVEC<VType>::h.z);
+			}
+			else {
+
+				curl.x -= (halo_pz[hidx].y - cuVEC<VType>::quantity[idx].y) / (2 * cuVEC<VType>::h.z);
+				curl.y += (halo_pz[hidx].x - cuVEC<VType>::quantity[idx].x) / (2 * cuVEC<VType>::h.z);
+			}
+		}
+		else {
+
+			if (ngbrFlags[idx] & NF_NPZ) {
+
+				curl.x -= (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x*cuVEC<VType>::n.y].y - halo_nz[hidx].y) / (2 * cuVEC<VType>::h.z);
+				curl.y += (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x*cuVEC<VType>::n.y].x - halo_nz[hidx].x) / (2 * cuVEC<VType>::h.z);
+			}
+			else {
+
+				curl.x -= (cuVEC<VType>::quantity[idx].y - halo_nz[hidx].y) / (2 * cuVEC<VType>::h.z);
+				curl.y += (cuVEC<VType>::quantity[idx].x - halo_nz[hidx].x) / (2 * cuVEC<VType>::h.z);
+			}
+		}
 	}
 	//Is it a CMBND boundary? - if not then use homogeneous Neumann condition (differential zero at the boundary)
 	else if (ngbrFlags[idx] & NF_CMBNDZ) {
@@ -549,6 +846,39 @@ __device__ VType cuVEC_VC<VType>::curl_diri(int idx) const
 
 		curl.y -= (cuVEC<VType>::quantity[idx + 1].z - cuVEC<VType>::quantity[idx - 1].z) / (2 * cuVEC<VType>::h.x);
 		curl.z += (cuVEC<VType>::quantity[idx + 1].y - cuVEC<VType>::quantity[idx - 1].y) / (2 * cuVEC<VType>::h.x);
+	}
+	//use halo region?
+	else if (using_extended_flags && (ngbrFlags2[idx] & NF2_HALOX)) {
+
+		//halo index
+		int hidx = ((idx / cuVEC<VType>::n.x) % cuVEC<VType>::n.y) + (idx / (cuVEC<VType>::n.x*cuVEC<VType>::n.y))*cuVEC<VType>::n.y;
+
+		if (ngbrFlags2[idx] & NF2_HALOPX) {
+
+			if (ngbrFlags[idx] & NF_NNX) {
+
+				curl.y -= (halo_px[hidx].z - cuVEC<VType>::quantity[idx - 1].z) / (2 * cuVEC<VType>::h.x);
+				curl.z += (halo_px[hidx].y - cuVEC<VType>::quantity[idx - 1].y) / (2 * cuVEC<VType>::h.x);
+			}
+			else {
+
+				curl.y -= (halo_px[hidx].z - cuVEC<VType>::quantity[idx].z) / (2 * cuVEC<VType>::h.x);
+				curl.z += (halo_px[hidx].y - cuVEC<VType>::quantity[idx].y) / (2 * cuVEC<VType>::h.x);
+			}
+		}
+		else {
+
+			if (ngbrFlags[idx] & NF_NPX) {
+
+				curl.y -= (cuVEC<VType>::quantity[idx + 1].z - halo_nx[hidx].z) / (2 * cuVEC<VType>::h.x);
+				curl.z += (cuVEC<VType>::quantity[idx + 1].y - halo_nx[hidx].y) / (2 * cuVEC<VType>::h.x);
+			}
+			else {
+
+				curl.y -= (cuVEC<VType>::quantity[idx].z - halo_nx[hidx].z) / (2 * cuVEC<VType>::h.x);
+				curl.z += (cuVEC<VType>::quantity[idx].y - halo_nx[hidx].y) / (2 * cuVEC<VType>::h.x);
+			}
+		}
 	}
 	//not an inner point along this direction - Use Dirichlet?
 	else if (using_extended_flags && (ngbrFlags2[idx] & NF2_DIRICHLETX)) {
@@ -618,6 +948,39 @@ __device__ VType cuVEC_VC<VType>::curl_diri(int idx) const
 		curl.x += (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x].z - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x].z) / (2 * cuVEC<VType>::h.y);
 		curl.z -= (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x].x - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x].x) / (2 * cuVEC<VType>::h.y);
 	}
+	//use halo region?
+	else if (using_extended_flags && (ngbrFlags2[idx] & NF2_HALOY)) {
+
+		//halo index
+		int hidx = (idx % cuVEC<VType>::n.x) + (idx / (cuVEC<VType>::n.x*cuVEC<VType>::n.y))*cuVEC<VType>::n.x;
+
+		if (ngbrFlags2[idx] & NF2_HALOPY) {
+
+			if (ngbrFlags[idx] & NF_NNY) {
+
+				curl.x += (halo_py[hidx].z - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x].z) / (2 * cuVEC<VType>::h.y);
+				curl.z -= (halo_py[hidx].x - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x].x) / (2 * cuVEC<VType>::h.y);
+			}
+			else {
+
+				curl.x += (halo_py[hidx].z - cuVEC<VType>::quantity[idx].z) / (2 * cuVEC<VType>::h.y);
+				curl.z -= (halo_py[hidx].x - cuVEC<VType>::quantity[idx].x) / (2 * cuVEC<VType>::h.y);
+			}
+		}
+		else {
+
+			if (ngbrFlags[idx] & NF_NPY) {
+
+				curl.x += (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x].z - halo_ny[hidx].z) / (2 * cuVEC<VType>::h.y);
+				curl.z -= (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x].x - halo_ny[hidx].x) / (2 * cuVEC<VType>::h.y);
+			}
+			else {
+
+				curl.x += (cuVEC<VType>::quantity[idx].z - halo_ny[hidx].z) / (2 * cuVEC<VType>::h.y);
+				curl.z -= (cuVEC<VType>::quantity[idx].x - halo_ny[hidx].x) / (2 * cuVEC<VType>::h.y);
+			}
+		}
+	}
 	else if (using_extended_flags && (ngbrFlags2[idx] & NF2_DIRICHLETY)) {
 
 		if (ngbrFlags2[idx] & NF2_DIRICHLETPY) {
@@ -684,6 +1047,39 @@ __device__ VType cuVEC_VC<VType>::curl_diri(int idx) const
 
 		curl.x -= (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x*cuVEC<VType>::n.y].y - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x*cuVEC<VType>::n.y].y) / (2 * cuVEC<VType>::h.z);
 		curl.y += (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x*cuVEC<VType>::n.y].x - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x*cuVEC<VType>::n.y].x) / (2 * cuVEC<VType>::h.z);
+	}
+	//use halo region?
+	else if (using_extended_flags && (ngbrFlags2[idx] & NF2_HALOZ)) {
+
+		//halo index
+		int hidx = (idx % cuVEC<VType>::n.x) + ((idx / cuVEC<VType>::n.x) % cuVEC<VType>::n.y)*cuVEC<VType>::n.x;
+
+		if (ngbrFlags2[idx] & NF2_HALOPZ) {
+
+			if (ngbrFlags[idx] & NF_NNZ) {
+
+				curl.x -= (halo_pz[hidx].y - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x*cuVEC<VType>::n.y].y) / (2 * cuVEC<VType>::h.z);
+				curl.y += (halo_pz[hidx].x - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x*cuVEC<VType>::n.y].x) / (2 * cuVEC<VType>::h.z);
+			}
+			else {
+
+				curl.x -= (halo_pz[hidx].y - cuVEC<VType>::quantity[idx].y) / (2 * cuVEC<VType>::h.z);
+				curl.y += (halo_pz[hidx].x - cuVEC<VType>::quantity[idx].x) / (2 * cuVEC<VType>::h.z);
+			}
+		}
+		else {
+
+			if (ngbrFlags[idx] & NF_NPZ) {
+
+				curl.x -= (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x*cuVEC<VType>::n.y].y - halo_nz[hidx].y) / (2 * cuVEC<VType>::h.z);
+				curl.y += (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x*cuVEC<VType>::n.y].x - halo_nz[hidx].x) / (2 * cuVEC<VType>::h.z);
+			}
+			else {
+
+				curl.x -= (cuVEC<VType>::quantity[idx].y - halo_nz[hidx].y) / (2 * cuVEC<VType>::h.z);
+				curl.y += (cuVEC<VType>::quantity[idx].x - halo_nz[hidx].x) / (2 * cuVEC<VType>::h.z);
+			}
+		}
 	}
 	else if (using_extended_flags && (ngbrFlags2[idx] & NF2_DIRICHLETZ)) {
 
@@ -766,6 +1162,39 @@ __device__ VType cuVEC_VC<VType>::curl_diri_nneu(int idx, const Class_BDiff& bdi
 		curl.y -= (cuVEC<VType>::quantity[idx + 1].z - cuVEC<VType>::quantity[idx - 1].z) / (2 * cuVEC<VType>::h.x);
 		curl.z += (cuVEC<VType>::quantity[idx + 1].y - cuVEC<VType>::quantity[idx - 1].y) / (2 * cuVEC<VType>::h.x);
 	}
+	//use halo region?
+	else if (using_extended_flags && (ngbrFlags2[idx] & NF2_HALOX)) {
+
+		//halo index
+		int hidx = ((idx / cuVEC<VType>::n.x) % cuVEC<VType>::n.y) + (idx / (cuVEC<VType>::n.x*cuVEC<VType>::n.y))*cuVEC<VType>::n.y;
+
+		if (ngbrFlags2[idx] & NF2_HALOPX) {
+
+			if (ngbrFlags[idx] & NF_NNX) {
+
+				curl.y -= (halo_px[hidx].z - cuVEC<VType>::quantity[idx - 1].z) / (2 * cuVEC<VType>::h.x);
+				curl.z += (halo_px[hidx].y - cuVEC<VType>::quantity[idx - 1].y) / (2 * cuVEC<VType>::h.x);
+			}
+			else {
+
+				curl.y -= (halo_px[hidx].z - cuVEC<VType>::quantity[idx].z) / (2 * cuVEC<VType>::h.x);
+				curl.z += (halo_px[hidx].y - cuVEC<VType>::quantity[idx].y) / (2 * cuVEC<VType>::h.x);
+			}
+		}
+		else {
+
+			if (ngbrFlags[idx] & NF_NPX) {
+
+				curl.y -= (cuVEC<VType>::quantity[idx + 1].z - halo_nx[hidx].z) / (2 * cuVEC<VType>::h.x);
+				curl.z += (cuVEC<VType>::quantity[idx + 1].y - halo_nx[hidx].y) / (2 * cuVEC<VType>::h.x);
+			}
+			else {
+
+				curl.y -= (cuVEC<VType>::quantity[idx].z - halo_nx[hidx].z) / (2 * cuVEC<VType>::h.x);
+				curl.z += (cuVEC<VType>::quantity[idx].y - halo_nx[hidx].y) / (2 * cuVEC<VType>::h.x);
+			}
+		}
+	}
 	//not an inner point along this direction - Use Dirichlet?
 	else if (using_extended_flags && (ngbrFlags2[idx] & NF2_DIRICHLETX)) {
 
@@ -836,6 +1265,39 @@ __device__ VType cuVEC_VC<VType>::curl_diri_nneu(int idx, const Class_BDiff& bdi
 		curl.x += (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x].z - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x].z) / (2 * cuVEC<VType>::h.y);
 		curl.z -= (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x].x - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x].x) / (2 * cuVEC<VType>::h.y);
 	}
+	//use halo region?
+	else if (using_extended_flags && (ngbrFlags2[idx] & NF2_HALOY)) {
+
+		//halo index
+		int hidx = (idx % cuVEC<VType>::n.x) + (idx / (cuVEC<VType>::n.x*cuVEC<VType>::n.y))*cuVEC<VType>::n.x;
+
+		if (ngbrFlags2[idx] & NF2_HALOPY) {
+
+			if (ngbrFlags[idx] & NF_NNY) {
+
+				curl.x += (halo_py[hidx].z - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x].z) / (2 * cuVEC<VType>::h.y);
+				curl.z -= (halo_py[hidx].x - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x].x) / (2 * cuVEC<VType>::h.y);
+			}
+			else {
+
+				curl.x += (halo_py[hidx].z - cuVEC<VType>::quantity[idx].z) / (2 * cuVEC<VType>::h.y);
+				curl.z -= (halo_py[hidx].x - cuVEC<VType>::quantity[idx].x) / (2 * cuVEC<VType>::h.y);
+			}
+		}
+		else {
+
+			if (ngbrFlags[idx] & NF_NPY) {
+
+				curl.x += (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x].z - halo_ny[hidx].z) / (2 * cuVEC<VType>::h.y);
+				curl.z -= (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x].x - halo_ny[hidx].x) / (2 * cuVEC<VType>::h.y);
+			}
+			else {
+
+				curl.x += (cuVEC<VType>::quantity[idx].z - halo_ny[hidx].z) / (2 * cuVEC<VType>::h.y);
+				curl.z -= (cuVEC<VType>::quantity[idx].x - halo_ny[hidx].x) / (2 * cuVEC<VType>::h.y);
+			}
+		}
+	}
 	else if (using_extended_flags && (ngbrFlags2[idx] & NF2_DIRICHLETY)) {
 
 		if (ngbrFlags2[idx] & NF2_DIRICHLETPY) {
@@ -904,6 +1366,39 @@ __device__ VType cuVEC_VC<VType>::curl_diri_nneu(int idx, const Class_BDiff& bdi
 
 		curl.x -= (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x*cuVEC<VType>::n.y].y - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x*cuVEC<VType>::n.y].y) / (2 * cuVEC<VType>::h.z);
 		curl.y += (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x*cuVEC<VType>::n.y].x - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x*cuVEC<VType>::n.y].x) / (2 * cuVEC<VType>::h.z);
+	}
+	//use halo region?
+	else if (using_extended_flags && (ngbrFlags2[idx] & NF2_HALOZ)) {
+
+		//halo index
+		int hidx = (idx % cuVEC<VType>::n.x) + ((idx / cuVEC<VType>::n.x) % cuVEC<VType>::n.y)*cuVEC<VType>::n.x;
+
+		if (ngbrFlags2[idx] & NF2_HALOPZ) {
+
+			if (ngbrFlags[idx] & NF_NNZ) {
+
+				curl.x -= (halo_pz[hidx].y - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x*cuVEC<VType>::n.y].y) / (2 * cuVEC<VType>::h.z);
+				curl.y += (halo_pz[hidx].x - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x*cuVEC<VType>::n.y].x) / (2 * cuVEC<VType>::h.z);
+			}
+			else {
+
+				curl.x -= (halo_pz[hidx].y - cuVEC<VType>::quantity[idx].y) / (2 * cuVEC<VType>::h.z);
+				curl.y += (halo_pz[hidx].x - cuVEC<VType>::quantity[idx].x) / (2 * cuVEC<VType>::h.z);
+			}
+		}
+		else {
+
+			if (ngbrFlags[idx] & NF_NPZ) {
+
+				curl.x -= (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x*cuVEC<VType>::n.y].y - halo_nz[hidx].y) / (2 * cuVEC<VType>::h.z);
+				curl.y += (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x*cuVEC<VType>::n.y].x - halo_nz[hidx].x) / (2 * cuVEC<VType>::h.z);
+			}
+			else {
+
+				curl.x -= (cuVEC<VType>::quantity[idx].y - halo_nz[hidx].y) / (2 * cuVEC<VType>::h.z);
+				curl.y += (cuVEC<VType>::quantity[idx].x - halo_nz[hidx].x) / (2 * cuVEC<VType>::h.z);
+			}
+		}
 	}
 	else if (using_extended_flags && (ngbrFlags2[idx] & NF2_DIRICHLETZ)) {
 
@@ -984,6 +1479,39 @@ __device__ VType cuVEC_VC<VType>::curl_diri_nneu(int idx, const cuVAL3<VType>& b
 		curl.y -= (cuVEC<VType>::quantity[idx + 1].z - cuVEC<VType>::quantity[idx - 1].z) / (2 * cuVEC<VType>::h.x);
 		curl.z += (cuVEC<VType>::quantity[idx + 1].y - cuVEC<VType>::quantity[idx - 1].y) / (2 * cuVEC<VType>::h.x);
 	}
+	//use halo region?
+	else if (using_extended_flags && (ngbrFlags2[idx] & NF2_HALOX)) {
+
+		//halo index
+		int hidx = ((idx / cuVEC<VType>::n.x) % cuVEC<VType>::n.y) + (idx / (cuVEC<VType>::n.x*cuVEC<VType>::n.y))*cuVEC<VType>::n.y;
+
+		if (ngbrFlags2[idx] & NF2_HALOPX) {
+
+			if (ngbrFlags[idx] & NF_NNX) {
+
+				curl.y -= (halo_px[hidx].z - cuVEC<VType>::quantity[idx - 1].z) / (2 * cuVEC<VType>::h.x);
+				curl.z += (halo_px[hidx].y - cuVEC<VType>::quantity[idx - 1].y) / (2 * cuVEC<VType>::h.x);
+			}
+			else {
+
+				curl.y -= (halo_px[hidx].z - cuVEC<VType>::quantity[idx].z) / (2 * cuVEC<VType>::h.x);
+				curl.z += (halo_px[hidx].y - cuVEC<VType>::quantity[idx].y) / (2 * cuVEC<VType>::h.x);
+			}
+		}
+		else {
+
+			if (ngbrFlags[idx] & NF_NPX) {
+
+				curl.y -= (cuVEC<VType>::quantity[idx + 1].z - halo_nx[hidx].z) / (2 * cuVEC<VType>::h.x);
+				curl.z += (cuVEC<VType>::quantity[idx + 1].y - halo_nx[hidx].y) / (2 * cuVEC<VType>::h.x);
+			}
+			else {
+
+				curl.y -= (cuVEC<VType>::quantity[idx].z - halo_nx[hidx].z) / (2 * cuVEC<VType>::h.x);
+				curl.z += (cuVEC<VType>::quantity[idx].y - halo_nx[hidx].y) / (2 * cuVEC<VType>::h.x);
+			}
+		}
+	}
 	//not an inner point along this direction - Use Dirichlet?
 	else if (using_extended_flags && (ngbrFlags2[idx] & NF2_DIRICHLETX)) {
 
@@ -1052,6 +1580,39 @@ __device__ VType cuVEC_VC<VType>::curl_diri_nneu(int idx, const cuVAL3<VType>& b
 		curl.x += (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x].z - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x].z) / (2 * cuVEC<VType>::h.y);
 		curl.z -= (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x].x - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x].x) / (2 * cuVEC<VType>::h.y);
 	}
+	//use halo region?
+	else if (using_extended_flags && (ngbrFlags2[idx] & NF2_HALOY)) {
+
+		//halo index
+		int hidx = (idx % cuVEC<VType>::n.x) + (idx / (cuVEC<VType>::n.x*cuVEC<VType>::n.y))*cuVEC<VType>::n.x;
+
+		if (ngbrFlags2[idx] & NF2_HALOPY) {
+
+			if (ngbrFlags[idx] & NF_NNY) {
+
+				curl.x += (halo_py[hidx].z - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x].z) / (2 * cuVEC<VType>::h.y);
+				curl.z -= (halo_py[hidx].x - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x].x) / (2 * cuVEC<VType>::h.y);
+			}
+			else {
+
+				curl.x += (halo_py[hidx].z - cuVEC<VType>::quantity[idx].z) / (2 * cuVEC<VType>::h.y);
+				curl.z -= (halo_py[hidx].x - cuVEC<VType>::quantity[idx].x) / (2 * cuVEC<VType>::h.y);
+			}
+		}
+		else {
+
+			if (ngbrFlags[idx] & NF_NPY) {
+
+				curl.x += (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x].z - halo_ny[hidx].z) / (2 * cuVEC<VType>::h.y);
+				curl.z -= (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x].x - halo_ny[hidx].x) / (2 * cuVEC<VType>::h.y);
+			}
+			else {
+
+				curl.x += (cuVEC<VType>::quantity[idx].z - halo_ny[hidx].z) / (2 * cuVEC<VType>::h.y);
+				curl.z -= (cuVEC<VType>::quantity[idx].x - halo_ny[hidx].x) / (2 * cuVEC<VType>::h.y);
+			}
+		}
+	}
 	else if (using_extended_flags && (ngbrFlags2[idx] & NF2_DIRICHLETY)) {
 
 		if (ngbrFlags2[idx] & NF2_DIRICHLETPY) {
@@ -1118,6 +1679,39 @@ __device__ VType cuVEC_VC<VType>::curl_diri_nneu(int idx, const cuVAL3<VType>& b
 
 		curl.x -= (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x*cuVEC<VType>::n.y].y - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x*cuVEC<VType>::n.y].y) / (2 * cuVEC<VType>::h.z);
 		curl.y += (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x*cuVEC<VType>::n.y].x - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x*cuVEC<VType>::n.y].x) / (2 * cuVEC<VType>::h.z);
+	}
+	//use halo region?
+	else if (using_extended_flags && (ngbrFlags2[idx] & NF2_HALOZ)) {
+
+		//halo index
+		int hidx = (idx % cuVEC<VType>::n.x) + ((idx / cuVEC<VType>::n.x) % cuVEC<VType>::n.y)*cuVEC<VType>::n.x;
+
+		if (ngbrFlags2[idx] & NF2_HALOPZ) {
+
+			if (ngbrFlags[idx] & NF_NNZ) {
+
+				curl.x -= (halo_pz[hidx].y - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x*cuVEC<VType>::n.y].y) / (2 * cuVEC<VType>::h.z);
+				curl.y += (halo_pz[hidx].x - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x*cuVEC<VType>::n.y].x) / (2 * cuVEC<VType>::h.z);
+			}
+			else {
+
+				curl.x -= (halo_pz[hidx].y - cuVEC<VType>::quantity[idx].y) / (2 * cuVEC<VType>::h.z);
+				curl.y += (halo_pz[hidx].x - cuVEC<VType>::quantity[idx].x) / (2 * cuVEC<VType>::h.z);
+			}
+		}
+		else {
+
+			if (ngbrFlags[idx] & NF_NPZ) {
+
+				curl.x -= (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x*cuVEC<VType>::n.y].y - halo_nz[hidx].y) / (2 * cuVEC<VType>::h.z);
+				curl.y += (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x*cuVEC<VType>::n.y].x - halo_nz[hidx].x) / (2 * cuVEC<VType>::h.z);
+			}
+			else {
+
+				curl.x -= (cuVEC<VType>::quantity[idx].y - halo_nz[hidx].y) / (2 * cuVEC<VType>::h.z);
+				curl.y += (cuVEC<VType>::quantity[idx].x - halo_nz[hidx].x) / (2 * cuVEC<VType>::h.z);
+			}
+		}
 	}
 	else if (using_extended_flags && (ngbrFlags2[idx] & NF2_DIRICHLETZ)) {
 
@@ -1197,6 +1791,39 @@ __device__ VType cuVEC_VC<VType>::curl_sided(int idx) const
 		curl.y -= (cuVEC<VType>::quantity[idx + 1].z - cuVEC<VType>::quantity[idx - 1].z) / (2 * cuVEC<VType>::h.x);
 		curl.z += (cuVEC<VType>::quantity[idx + 1].y - cuVEC<VType>::quantity[idx - 1].y) / (2 * cuVEC<VType>::h.x);
 	}
+	//use halo region?
+	else if (using_extended_flags && (ngbrFlags2[idx] & NF2_HALOX)) {
+
+		//halo index
+		int hidx = ((idx / cuVEC<VType>::n.x) % cuVEC<VType>::n.y) + (idx / (cuVEC<VType>::n.x*cuVEC<VType>::n.y))*cuVEC<VType>::n.y;
+
+		if (ngbrFlags2[idx] & NF2_HALOPX) {
+
+			if (ngbrFlags[idx] & NF_NNX) {
+
+				curl.y -= (halo_px[hidx].z - cuVEC<VType>::quantity[idx - 1].z) / (2 * cuVEC<VType>::h.x);
+				curl.z += (halo_px[hidx].y - cuVEC<VType>::quantity[idx - 1].y) / (2 * cuVEC<VType>::h.x);
+			}
+			else {
+
+				curl.y -= (halo_px[hidx].z - cuVEC<VType>::quantity[idx].z) / (cuVEC<VType>::h.x);
+				curl.z += (halo_px[hidx].y - cuVEC<VType>::quantity[idx].y) / (cuVEC<VType>::h.x);
+			}
+		}
+		else {
+
+			if (ngbrFlags[idx] & NF_NPX) {
+
+				curl.y -= (cuVEC<VType>::quantity[idx + 1].z - halo_nx[hidx].z) / (2 * cuVEC<VType>::h.x);
+				curl.z += (cuVEC<VType>::quantity[idx + 1].y - halo_nx[hidx].y) / (2 * cuVEC<VType>::h.x);
+			}
+			else {
+
+				curl.y -= (cuVEC<VType>::quantity[idx].z - halo_nx[hidx].z) / (cuVEC<VType>::h.x);
+				curl.z += (cuVEC<VType>::quantity[idx].y - halo_nx[hidx].y) / (cuVEC<VType>::h.x);
+			}
+		}
+	}
 	//Is it a CMBND boundary? - if not then use homogeneous Neumann condition (differential zero at the boundary)
 	else if (ngbrFlags[idx] & NF_NGBRX) {
 
@@ -1237,6 +1864,39 @@ __device__ VType cuVEC_VC<VType>::curl_sided(int idx) const
 		curl.x += (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x].z - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x].z) / (2 * cuVEC<VType>::h.y);
 		curl.z -= (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x].x - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x].x) / (2 * cuVEC<VType>::h.y);
 	}
+	//use halo region?
+	else if (using_extended_flags && (ngbrFlags2[idx] & NF2_HALOY)) {
+
+		//halo index
+		int hidx = (idx % cuVEC<VType>::n.x) + (idx / (cuVEC<VType>::n.x*cuVEC<VType>::n.y))*cuVEC<VType>::n.x;
+
+		if (ngbrFlags2[idx] & NF2_HALOPY) {
+
+			if (ngbrFlags[idx] & NF_NNY) {
+
+				curl.x += (halo_py[hidx].z - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x].z) / (2 * cuVEC<VType>::h.y);
+				curl.z -= (halo_py[hidx].x - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x].x) / (2 * cuVEC<VType>::h.y);
+			}
+			else {
+
+				curl.x += (halo_py[hidx].z - cuVEC<VType>::quantity[idx].z) / (cuVEC<VType>::h.y);
+				curl.z -= (halo_py[hidx].x - cuVEC<VType>::quantity[idx].x) / (cuVEC<VType>::h.y);
+			}
+		}
+		else {
+
+			if (ngbrFlags[idx] & NF_NPY) {
+
+				curl.x += (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x].z - halo_ny[hidx].z) / (2 * cuVEC<VType>::h.y);
+				curl.z -= (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x].x - halo_ny[hidx].x) / (2 * cuVEC<VType>::h.y);
+			}
+			else {
+
+				curl.x += (cuVEC<VType>::quantity[idx].z - halo_ny[hidx].z) / (cuVEC<VType>::h.y);
+				curl.z -= (cuVEC<VType>::quantity[idx].x - halo_ny[hidx].x) / (cuVEC<VType>::h.y);
+			}
+		}
+	}
 	//Is it a CMBND boundary? - if not then use homogeneous Neumann condition (differential zero at the boundary)
 	else if (ngbrFlags[idx] & NF_NGBRY) {
 
@@ -1276,6 +1936,39 @@ __device__ VType cuVEC_VC<VType>::curl_sided(int idx) const
 
 		curl.x -= (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x*cuVEC<VType>::n.y].y - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x*cuVEC<VType>::n.y].y) / (2 * cuVEC<VType>::h.z);
 		curl.y += (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x*cuVEC<VType>::n.y].x - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x*cuVEC<VType>::n.y].x) / (2 * cuVEC<VType>::h.z);
+	}
+	//use halo region?
+	else if (using_extended_flags && (ngbrFlags2[idx] & NF2_HALOZ)) {
+
+		//halo index
+		int hidx = (idx % cuVEC<VType>::n.x) + ((idx / cuVEC<VType>::n.x) % cuVEC<VType>::n.y)*cuVEC<VType>::n.x;
+
+		if (ngbrFlags2[idx] & NF2_HALOPZ) {
+
+			if (ngbrFlags[idx] & NF_NNZ) {
+
+				curl.x -= (halo_pz[hidx].y - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x*cuVEC<VType>::n.y].y) / (2 * cuVEC<VType>::h.z);
+				curl.y += (halo_pz[hidx].x - cuVEC<VType>::quantity[idx - cuVEC<VType>::n.x*cuVEC<VType>::n.y].x) / (2 * cuVEC<VType>::h.z);
+			}
+			else {
+
+				curl.x -= (halo_pz[hidx].y - cuVEC<VType>::quantity[idx].y) / (cuVEC<VType>::h.z);
+				curl.y += (halo_pz[hidx].x - cuVEC<VType>::quantity[idx].x) / (cuVEC<VType>::h.z);
+			}
+		}
+		else {
+
+			if (ngbrFlags[idx] & NF_NPZ) {
+
+				curl.x -= (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x*cuVEC<VType>::n.y].y - halo_nz[hidx].y) / (2 * cuVEC<VType>::h.z);
+				curl.y += (cuVEC<VType>::quantity[idx + cuVEC<VType>::n.x*cuVEC<VType>::n.y].x - halo_nz[hidx].x) / (2 * cuVEC<VType>::h.z);
+			}
+			else {
+
+				curl.x -= (cuVEC<VType>::quantity[idx].y - halo_nz[hidx].y) / (cuVEC<VType>::h.z);
+				curl.y += (cuVEC<VType>::quantity[idx].x - halo_nz[hidx].x) / (cuVEC<VType>::h.z);
+			}
+		}
 	}
 	//Is it a CMBND boundary? - if not then use homogeneous Neumann condition (differential zero at the boundary)
 	else if (ngbrFlags[idx] & NF_NGBRZ) {

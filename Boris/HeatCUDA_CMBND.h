@@ -123,8 +123,14 @@ public:
 			//Joule heating
 			if (E.linear_size()) {
 
-				int idx1_E = E.position_to_cellidx(Temp.cellidx_to_position(cell1_idx));
-				value = -(elC[idx1_E] * E[idx1_E] * E[idx1_E]) / thermCond;
+				cuBReal joule_eff = *pcuMesh->pjoule_eff;
+				pcuMesh->update_parameters_tcoarse(cell1_idx, *pcuMesh->pjoule_eff, joule_eff);
+
+				if (cuIsNZ(joule_eff)) {
+
+					int idx1_E = E.position_to_cellidx(Temp.cellidx_to_position(cell1_idx));
+					value = -joule_eff * (elC[idx1_E] * E[idx1_E] * E[idx1_E]) / thermCond;
+				}
 			}
 
 			//heat source contribution if set
@@ -168,8 +174,14 @@ public:
 			//Joule heating
 			if (E.linear_size()) {
 
-				int idx1_E = E.position_to_cellidx(Temp.cellidx_to_position(cell1_idx));
-				value = -(elC[idx1_E] * E[idx1_E] * E[idx1_E]) / thermCond;
+				cuBReal joule_eff = *pcuaMesh->pjoule_eff;
+				pcuaMesh->update_parameters_tcoarse(cell1_idx, *pcuaMesh->pjoule_eff, joule_eff);
+
+				if (cuIsNZ(joule_eff)) {
+
+					int idx1_E = E.position_to_cellidx(Temp.cellidx_to_position(cell1_idx));
+					value = -joule_eff * (elC[idx1_E] * E[idx1_E] * E[idx1_E]) / thermCond;
+				}
 			}
 
 			//heat source contribution if set
@@ -218,8 +230,14 @@ public:
 			//Joule heating
 			if (E.linear_size()) {
 
-				int idx1_E = E.position_to_cellidx(relpos_m1);
-				value = -(elC[idx1_E] * E[idx1_E] * E[idx1_E]) / thermCond;
+				cuBReal joule_eff = *pcuMesh->pjoule_eff;
+				pcuMesh->update_parameters_atposition(relpos_m1, *pcuMesh->pjoule_eff, joule_eff);
+
+				if (cuIsNZ(joule_eff)) {
+
+					int idx1_E = E.position_to_cellidx(relpos_m1);
+					value = -joule_eff * (elC[idx1_E] * E[idx1_E] * E[idx1_E]) / thermCond;
+				}
 			}
 
 			//heat source contribution if set
@@ -263,8 +281,14 @@ public:
 			//Joule heating
 			if (E.linear_size()) {
 
-				int idx1_E = E.position_to_cellidx(relpos_m1);
-				value = -(elC[idx1_E] * E[idx1_E] * E[idx1_E]) / thermCond;
+				cuBReal joule_eff = *pcuaMesh->pjoule_eff;
+				pcuaMesh->update_parameters_atposition(relpos_m1, *pcuaMesh->pjoule_eff, joule_eff);
+
+				if (cuIsNZ(joule_eff)) {
+
+					int idx1_E = E.position_to_cellidx(relpos_m1);
+					value = -joule_eff * (elC[idx1_E] * E[idx1_E] * E[idx1_E]) / thermCond;
+				}
 			}
 
 			//heat source contribution if set

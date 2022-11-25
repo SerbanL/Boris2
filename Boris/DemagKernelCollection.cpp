@@ -16,7 +16,6 @@ BError KerType::AllocateKernels(Rect from_rect, Rect this_rect, SZ3 N_)
 	//check if internal demag
 	if (from_rect == this_rect) {
 
-		internal_demag = true;
 		zshifted = false;
 
 		if (N.z == 1) {
@@ -33,11 +32,9 @@ BError KerType::AllocateKernels(Rect from_rect, Rect this_rect, SZ3 N_)
 	//not internal demag
 	else {
 
-		internal_demag = false;
-
 		//see if we can use z-shifted kernels instead of full kernels
 		DBL3 shift = from_rect.s - this_rect.s;
-		
+
 		if (IsZ(shift.x) && IsZ(shift.y)) {
 
 			zshifted = true;
@@ -68,6 +65,7 @@ BError KerType::AllocateKernels(Rect from_rect, Rect this_rect, SZ3 N_)
 				if (!Kodiag_cmpl.resize(SZ3(N.x / 2 + 1, N.y / 2 + 1, N.z / 2 + 1))) return error(BERROR_OUTOFMEMORY_CRIT);
 			}
 		}
+		
 		else {
 		
 			//full complex kernels
@@ -111,19 +109,13 @@ BError DemagKernelCollection::AllocateKernelMemory(void)
 
 	inverse_shifted.assign(num_meshes, false);
 
-	for (int idx = 0; idx < num_meshes; idx++) {
-
-		//identify self contribution index
-		if (Rect_collection[idx] == this_rect) self_contribution_index = idx;
-	}
-
 	return error;
 }
 
 //-------------------------- SETTERS
 
 //Set all the rectangles participating in convolution. This determines the number of kernels needed : one for each mesh.
-BError DemagKernelCollection::Set_Rect_Collection(std::vector<Rect>& Rect_collection_, Rect this_rect_, double h_max_)
+BError DemagKernelCollection::Set_Rect_Collection(std::vector<Rect>& Rect_collection_, Rect this_rect_, double h_max_, int self_contribution_index_)
 {
 	BError error(__FUNCTION__);
 
@@ -132,6 +124,7 @@ BError DemagKernelCollection::Set_Rect_Collection(std::vector<Rect>& Rect_collec
 	Rect_collection = Rect_collection_;
 	this_rect = this_rect_;
 	h_max = h_max_;
+	self_contribution_index = self_contribution_index_;
 
 	error = AllocateKernelMemory();
 

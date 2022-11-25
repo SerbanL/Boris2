@@ -45,9 +45,9 @@ enum BERROR_
 	BERROR_NOTMR,							//Transport computation not enabled
 	BERROR_MESHNAMEINEXISTENT,				//Mesh name doesn't exist.
 	BERROR_NOTCOMPUTED,						//Not computed.
-	BERROR_SPINSOLVER_FIT,					//Must be ferromagnetic mesh with transport module added and spin transport solver enabled.Must also have either Ts or Tsi computed.
+	BERROR_SPINSOLVER_FIT,					//Must be ferromagnetic mesh with transport module added and spin transport solver enabled. Must also have either Ts or Tsi computed.
 	BERROR_SPINSOLVER_FIT2,					//Must be ferromagnetic mesh with transport module added and spin transport solver enabled.
-	BERROR_SPINSOLVER_FIT3,					//Must be ferromagnetic mesh with transport module added and spin transport solver enabled.hm_mesh must be a metal mesh with transport module added.
+	BERROR_SPINSOLVER_FIT3,					//Not a metal mesh with transport module added.
 	BERROR_SPINSOLVER_FIT4,					//Must give metal and ferromagnetic meshes in this order.
 	BERROR_NOTDEFINED,						//Name not defined
 	BERROR_ENUMSIZE

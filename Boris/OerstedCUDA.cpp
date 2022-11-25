@@ -78,7 +78,7 @@ BError OerstedCUDA::Initialize(void)
 	if (!pOersted->sm_Vals.Initialize_MeshTransfer_MultipliedInputs(pVal_from_cpu_E, pVal_from_cpu_elC, pVal_to_cpu, MESHTRANSFERTYPE_WEIGHTED)) return error(BERROR_OUTOFMEMORY_CRIT);
 
 	//Now copy mesh transfer object to cuda version
-	if (!sm_Vals()->copy_transfer_info_multipliedinputs(pVal_from_E, pVal_from_elC, pVal_to, pOersted->sm_Vals)) return error(BERROR_OUTOFGPUMEMORY_CRIT);
+	if (!sm_Vals()->copy_transfer_info_multipliedinputs(pVal_from_E, pVal_from_elC, pVal_to, pOersted->sm_Vals.get_transfer())) return error(BERROR_OUTOFGPUMEMORY_CRIT);
 
 	//FFT Kernels are not so quick to calculate - if already initialized then we are guaranteed they are correct
 	if (!initialized) {

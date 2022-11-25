@@ -40,6 +40,12 @@ enum IOI_
 	//Set heat equation time step: textId is the value
 	IOI_HEATDT,
 
+	//Set elastodynamics equation time step: textId is the value
+	IOI_ELDT,
+
+	//Link elastodynamics time-step to ODE dT flag : auxId is the value
+	IOI_LINKELDT,
+
 	//Set stochastic time-step: textId is the value
 	IOI_STOCHDT,
 
@@ -71,6 +77,7 @@ enum IOI_
 	IOI_MESH_FORPBC,
 	IOI_MESH_FOREXCHCOUPLING, 
 	IOI_MESH_FORSTOCHASTICITY,
+	IOI_MESH_FORELASTICITY,
 	IOI_MESH_FORSPEEDUP,
 	IOI_MESH_FORSKYPOSDMUL,
 	IOI_MESH_FORMC,
@@ -285,6 +292,20 @@ enum IOI_
 	IOI_DIPOLEVELOCITY,
 	//Shows dipole shift clipping value. minorId is the unique mesh id number. textId is the value
 	IOI_DIPOLESHIFTCLIP,
+
+	//Shows diagonal strain set equation. minorId is the unique mesh id number. textId is the equation. auxId is enabled(1)/disabled(0) status.
+	IOI_STRAINEQUATION,
+	//Shows shear strain set equation. minorId is the unique mesh id number. textId is the equation. auxId is enabled(1)/disabled(0) status.
+	IOI_SHEARSTRAINEQUATION,
+
+	//Shows fixed surface rectangle. minorId is the minor Id in SMElastic::fixed_u_surfaces, auxId is the number of the interactive object in the list (electrode index), textId is the surface rect as a std::string
+	IOI_SURFACEFIX,
+
+	//Shows stress surface rectangle. minorId is the minor Id in SMElastic::stress_surfaces_rect, auxId is the number of the interactive object in the list (electrode index), textId is the surface rect as a std::string
+	IOI_SURFACESTRESS,
+
+	//Shows stress surface equation. minorId is the index in SMElastic::stress_surfaces_equations, auxId is the number of the interactive object in the list (electrode index), textId is the equation
+	IOI_SURFACESTRESSEQ,
 
 	//Shows log_errors enabled/disabled state. auxId is enabled (1)/disabled(0) status.
 	IOI_ERRORLOGSTATUS,

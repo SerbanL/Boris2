@@ -85,8 +85,8 @@ private:
 
 public:
 
-	StrayField(Mesh *pMesh_) {}
-	~StrayField() {}
+	StrayField_Mesh(Mesh *pMesh_) {}
+	~StrayField_Mesh() {}
 
 	//-------------------Abstract base class method implementations
 

@@ -40,12 +40,20 @@ void STransport::solve_charge_transport_sor(void)
 
 	//continue next iteration if iterations timeout reached - with this timeout built in the program doesn't block if errorMaxLaplace cannot be reached. 
 	if (iters_to_conv == maxLaplaceIterations) recalculate_transport = true;
-
+	
 	//2. update E in all meshes
+	double total_current_out = 0.0;
+
 	for (int idx = 0; idx < (int)pTransport.size(); idx++) {
 
 		pTransport[idx]->CalculateElectricField();
+
+		//in open potential mode count total thermoelectric current generated
+		if (IsOpenPotential()) total_current_out += pTransport[idx]->mesh_thermoelectric_net_current;
 	}
+
+	//in open potential mode count total thermoelectric current generated and set potential depending on open potential resistance set
+	if (IsOpenPotential()) SetPotential(total_current_out * open_potential_resistance);
 
 	//store the current max error in the energy term so it can be read if requested
 	energy = max_error.first;

@@ -27,9 +27,6 @@ template void cuVEC_VC<double>::setbox(cuBox box, double value);
 template void cuVEC_VC<cuFLT3>::setbox(cuBox box, cuFLT3 value);
 template void cuVEC_VC<cuDBL3>::setbox(cuBox box, cuDBL3 value);
 
-template void cuVEC_VC<cuFLT33>::setbox(cuBox box, cuFLT33 value);
-template void cuVEC_VC<cuDBL33>::setbox(cuBox box, cuDBL33 value);
-
 //set value in box (i.e. in cells entirely included in box) - all cells become non-empty cells irrespective of value set
 template <typename VType>
 __host__ void cuVEC_VC<VType>::setbox(cuBox box, VType value)
@@ -60,9 +57,6 @@ template void cuVEC_VC<double>::delrect(cuRect rectangle);
 
 template void cuVEC_VC<cuFLT3>::delrect(cuRect rectangle);
 template void cuVEC_VC<cuDBL3>::delrect(cuRect rectangle);
-
-template void cuVEC_VC<cuFLT33>::delrect(cuRect rectangle);
-template void cuVEC_VC<cuDBL33>::delrect(cuRect rectangle);
 
 //delete rectangle, where the rectangle is relative to this VEC's rectangle, by setting empty cell values - all cells become empty cells
 template <typename VType>
@@ -135,9 +129,6 @@ template bool cuVEC_VC<double>::apply_bitmap_mask(std::vector<unsigned char>& bi
 
 template bool cuVEC_VC<cuFLT3>::apply_bitmap_mask(std::vector<unsigned char>& bitmap, int zDepth);
 template bool cuVEC_VC<cuDBL3>::apply_bitmap_mask(std::vector<unsigned char>& bitmap, int zDepth);
-
-template bool cuVEC_VC<cuFLT33>::apply_bitmap_mask(std::vector<unsigned char>& bitmap, int zDepth);
-template bool cuVEC_VC<cuDBL33>::apply_bitmap_mask(std::vector<unsigned char>& bitmap, int zDepth);
 
 template <typename VType>
 bool cuVEC_VC<VType>::apply_bitmap_mask(std::vector<unsigned char>& bitmap, int zDepth)

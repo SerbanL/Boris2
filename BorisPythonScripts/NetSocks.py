@@ -1,9 +1,9 @@
 #BORIS Computational Spintronics 2022
 
-#NetSocks Module Updated on : 11/03/2022
-#Boris version : 3.55
+Update_Date = '22/11/2022'
+Boris_version = 3.70
 
-print("Using NetSocks Module Updated on : 11/03/2022 (v3.55)")
+print("Using NetSocks Module Updated on : %s (v%0.2f)" % (Update_Date, Boris_version))
 
 import sys
 import os
@@ -691,6 +691,111 @@ class NSClient:
                 lineidx += 1
         
         return vec, n, meshRect
+    
+    def Combine_OVF2(self, ovf_files, rect = [], h = [1, 1, 1]):
+        """Combine multiple ovf files to obtain a single array, with rectangle smallest containing all ovf files, 
+        and cellsize either the specified one, or smallest from all ovf files.
+        If rect specified, then obtain array only in given rect.
+        """
+
+        #calculate h or use specified one?
+        find_h = (h == [1, 1, 1])
+        
+        vecs_info = []
+        for ovf_file in ovf_files:
+            vvec, vn, vrect = self.Read_OVF2(ovf_file)
+            vecs_info.append([vvec, vn, vrect])
+        
+        #vecs_info is a list of vecs with n and rect descriptors bundled in a 3-element lists : 
+        # [ [vec, n, rect], ... ]
+        
+        #find smallest rectangle which contains all vec rectangles
+        #if h not specified (i.e. [1, 1, 1]), then set it to smallest value from all vecs
+        srect = deepcopy(vecs_info[0][2])
+        for vec_info in vecs_info:
+            #vec rectangle
+            vrect = vec_info[2]
+            #starting coordinate
+            if vrect[0] < srect[0]: srect[0] = vrect[0]
+            if vrect[1] < srect[1]: srect[1] = vrect[1]
+            if vrect[2] < srect[2]: srect[2] = vrect[2]
+            #ending coordinate
+            if vrect[3] > srect[3]: srect[3] = vrect[3]
+            if vrect[4] > srect[4]: srect[4] = vrect[4]
+            if vrect[5] > srect[5]: srect[5] = vrect[5]
+            #determine cellsize if needed
+            if find_h:
+                #vec n value
+                vn = vec_info[1]
+                #vec cellsize
+                vh = [(vrect[3] - vrect[0])/vn[0], (vrect[4] - vrect[1])/vn[1], (vrect[5] - vrect[2])/vn[2]]
+                if h[0] > vh[0]: h[0] = deepcopy(vh[0])
+                if h[1] > vh[1]: h[1] = deepcopy(vh[1])
+                if h[2] > vh[2]: h[2] = deepcopy(vh[2])
+                
+        if rect == []: rect = srect
+                
+        #number of cells for combined vec
+        n = [int(np.round((rect[3] - rect[0])/h[0])), int(np.round((rect[4] - rect[1])/h[1])), int(np.round((rect[5] - rect[2])/h[2]))]
+        
+        #the combined vec to fill
+        vec = np.zeros((n[0]*n[1]*n[2], 3))
+        
+        for vec_info in vecs_info:
+            vvec = vec_info[0]
+            vn = vec_info[1]
+            vrect = vec_info[2]
+            vh = [(vrect[3] - vrect[0])/vn[0], (vrect[4] - vrect[1])/vn[1], (vrect[5] - vrect[2])/vn[2]]
+            for i, j, k in product(range(vn[0]), range(vn[1]), range(vn[2])):
+                
+                value = vvec[i + j*vn[0] + k*vn[0]*vn[1]]
+                
+                abs_pos_s = [i*vh[0] + vrect[0], j*vh[1] + vrect[1], k*vh[2] + vrect[2]]
+                abs_pos_e = [(i + 1)*vh[0] + vrect[0], (j + 1)*vh[1] + vrect[1], (k + 1)*vh[2] + vrect[2]]
+                
+                ijk_s = [int(np.round((abs_pos_s[0] - rect[0]) / h[0])), int(np.round((abs_pos_s[1] - rect[1]) / h[1])), int(np.round((abs_pos_s[2] - rect[2]) / h[2]))]
+                ijk_e = [int(np.round((abs_pos_e[0] - rect[0]) / h[0])), int(np.round((abs_pos_e[1] - rect[1]) / h[1])), int(np.round((abs_pos_e[2] - rect[2]) / h[2]))]
+                
+                for ii, jj, kk in product(range(ijk_e[0]-ijk_s[0]), range(ijk_e[1]-ijk_s[1]), range(ijk_e[2]-ijk_s[2])):
+                    idx = (ii + ijk_s[0]) + (jj + ijk_s[1])*n[0] + (kk + ijk_s[2])*n[0]*n[1]
+                    if idx < n[0]*n[1]*n[2]: vec[idx] = value
+                
+        return vec, n, rect
+    
+    def Slice_OVF2(self, ovf_file, slice_n = [0, 0, 0]):
+        """Extract a slice from an ovf file, returning sliced array with number of cells in each axis and sliced rectangle.
+            slice_n specifies how slicing should be done: 
+            for yz plane slice set x cell number only, e.g. [x, 0, 0].
+            for xz plane slice set y cell number only, e.g. [0, y, 0].
+            for xy plane slice set z cell number only, e.g. [0, 0, z].
+            default value of [0, 0, 0] returns first xy plane slice.
+            NOTE: plane to slice is determined as the one orthogonal to largest axis value in slice_n, defaulting to xy plane.
+            To obtain first slice in other planes set the other axis values negative, e.g. [-1, 0, -1] extracts first xz plane slice etc.
+        """
+        
+        vec, n, rect = self.Read_OVF2(ovf_file)
+        h = [(rect[3] - rect[0]) / n[0], (rect[4] - rect[1]) / n[1], (rect[5] - rect[2]) / n[2]]
+        
+        #find start and end cell number coordinates
+        n_sx = slice_n[0] if slice_n[0] >= 0 else 0; n_sy = slice_n[1] if slice_n[1] >= 0 else 0; n_sz = slice_n[2] if slice_n[2] >= 0 else 0
+        #yz plane slice
+        if slice_n[0] > slice_n[1] and slice_n[0] > slice_n[2]: n_ex = n_sx + 1; n_ey = n[1]; n_ez = n[2]
+        #xz plane slice
+        elif slice_n[1] > slice_n[0] and slice_n[1] > slice_n[2]: n_ex = n[0]; n_ey = n_sy + 1; n_ez = n[2]
+        #xy plane slice
+        else: n_ex = n[0]; n_ey = n[1]; n_ez = n_sz + 1
+        
+        #number of cells and rectangle of slice
+        sn = [n_ex - n_sx, n_ey - n_sy, n_ez - n_sz]
+        srect = [n_sx * h[0] + rect[0], n_sy * h[1] + rect[1], n_sz * h[2] + rect[2], n_ex * h[0] + rect[0], n_ey * h[1] + rect[1], n_ez * h[2] + rect[2]]
+        
+        #construct sliced array
+        svec = np.zeros((sn[0]*sn[1]*sn[2], 3))
+        
+        for i, j, k in product(range(sn[0]), range(sn[1]), range(sn[2])):
+            svec[i + j*sn[0] + k*sn[0]*sn[1]] = vec[(i + n_sx) + (j + n_sy)*n[0] + (k + n_sz)*n[0]*n[1]]
+        
+        return svec, sn, srect
         
     #################### SPECIAL COMMANDS
 
@@ -910,6 +1015,10 @@ class NSClient:
     	if not bufferCommand: return self.SendCommand("clearequationconstants")
     	self.SendCommand("buffercommand", ["clearequationconstants"])
     
+    def clearglobalfield(self, bufferCommand = False):
+    	if not bufferCommand: return self.SendCommand("clearglobalfield")
+    	self.SendCommand("buffercommand", ["clearglobalfield"])
+    
     def clearmovingmesh(self, bufferCommand = False):
     	if not bufferCommand: return self.SendCommand("clearmovingmesh")
     	self.SendCommand("buffercommand", ["clearmovingmesh"])
@@ -932,6 +1041,10 @@ class NSClient:
     def clearscreen(self, bufferCommand = False):
     	if not bufferCommand: return self.SendCommand("clearscreen")
     	self.SendCommand("buffercommand", ["clearscreen"])
+    
+    def clearstrainequations(self, bufferCommand = False):
+    	if not bufferCommand: return self.SendCommand("clearstrainequations")
+    	self.SendCommand("buffercommand", ["clearstrainequations"])
     
     def computefields(self, bufferCommand = False):
     	if not bufferCommand: return self.SendCommand("computefields")
@@ -1014,14 +1127,22 @@ class NSClient:
     	if not bufferCommand: return self.SendCommand("delstage", [index])
     	self.SendCommand("buffercommand", ["delstage", index])
     
+    def delsurfacefix(self, index = '', bufferCommand = False):
+    	if not bufferCommand: return self.SendCommand("delsurfacefix", [index])
+    	self.SendCommand("buffercommand", ["delsurfacefix", index])
+    
+    def delsurfacestress(self, index = '', bufferCommand = False):
+    	if not bufferCommand: return self.SendCommand("delsurfacestress", [index])
+    	self.SendCommand("buffercommand", ["delsurfacestress", index])
+    
     def designateground(self, electrode_index = '', bufferCommand = False):
     	if not bufferCommand: return self.SendCommand("designateground", [electrode_index])
     	self.SendCommand("buffercommand", ["designateground", electrode_index])
     
     def dipolevelocity(self, meshname = '', velocity = '', clipping = '', bufferCommand = False):
-        if issubclass(type(meshname), self.Mesh): meshname = meshname.meshname
-        if not bufferCommand: return self.SendCommand("dipolevelocity", [meshname, velocity, clipping])
-        self.SendCommand("buffercommand", ["dipolevelocity", meshname, velocity, clipping])
+    	if issubclass(type(meshname), self.Mesh): meshname = meshname.meshname
+    	if not bufferCommand: return self.SendCommand("dipolevelocity", [meshname, velocity, clipping])
+    	self.SendCommand("buffercommand", ["dipolevelocity", meshname, velocity, clipping])
     
     def disabletransportsolver(self, status = '', bufferCommand = False):
     	if not bufferCommand: return self.SendCommand("disabletransportsolver", [status])
@@ -1387,6 +1508,18 @@ class NSClient:
     	if not bufferCommand: return self.SendCommand("editstagevalue", [index, value])
     	self.SendCommand("buffercommand", ["editstagevalue", index, value])
     
+    def editsurfacefix(self, index = '', rect = '', bufferCommand = False):
+    	if not bufferCommand: return self.SendCommand("editsurfacefix", [index, rect])
+    	self.SendCommand("buffercommand", ["editsurfacefix", index, rect])
+    
+    def editsurfacestress(self, index = '', rect = '', bufferCommand = False):
+    	if not bufferCommand: return self.SendCommand("editsurfacestress", [index, rect])
+    	self.SendCommand("buffercommand", ["editsurfacestress", index, rect])
+    
+    def editsurfacestressequation(self, index = '', equation = '', bufferCommand = False):
+    	if not bufferCommand: return self.SendCommand("editsurfacestressequation", [index, equation])
+    	self.SendCommand("buffercommand", ["editsurfacestressequation", index, equation])
+    
     def electrodes(self, bufferCommand = False):
     	if not bufferCommand: return self.SendCommand("electrodes")
     	self.SendCommand("buffercommand", ["electrodes"])
@@ -1479,6 +1612,10 @@ class NSClient:
     def iterupdate(self, iterations = '', bufferCommand = False):
     	if not bufferCommand: return self.SendCommand("iterupdate", [iterations])
     	self.SendCommand("buffercommand", ["iterupdate", iterations])
+    
+    def linkdtelastic(self, flag = '', bufferCommand = False):
+    	if not bufferCommand: return self.SendCommand("linkdtelastic", [flag])
+    	self.SendCommand("buffercommand", ["linkdtelastic", flag])
     
     def linkdtspeedup(self, flag = '', bufferCommand = False):
     	if not bufferCommand: return self.SendCommand("linkdtspeedup", [flag])
@@ -1656,6 +1793,10 @@ class NSClient:
     	if not bufferCommand: return self.SendCommand("onion", [meshname, direction, radius1, radius2, thickness, centre])
     	self.SendCommand("buffercommand", ["onion", meshname, direction, radius1, radius2, thickness, centre])
     
+    def openpotentialresistance(self, resistance = '', bufferCommand = False):
+    	if not bufferCommand: return self.SendCommand("openpotentialresistance", [resistance])
+    	self.SendCommand("buffercommand", ["openpotentialresistance", resistance])
+    
     def params(self, meshname = '', bufferCommand = False):
     	if issubclass(type(meshname), self.Mesh): meshname = meshname.meshname
     	if not bufferCommand: return self.SendCommand("params", [meshname])
@@ -1681,15 +1822,15 @@ class NSClient:
     	if not bufferCommand: return self.SendCommand("preparemovingmesh", [meshname])
     	self.SendCommand("buffercommand", ["preparemovingmesh", meshname])
     
+    def prngseed(self, meshname = '', seed = '', bufferCommand = False):
+    	if issubclass(type(meshname), self.Mesh): meshname = meshname.meshname
+    	if not bufferCommand: return self.SendCommand("prngseed", [meshname, seed])
+    	self.SendCommand("buffercommand", ["prngseed", meshname, seed])
+    
     def raapbiasequation(self, meshname = '', text_equation = '', bufferCommand = False):
     	if issubclass(type(meshname), self.Mesh): meshname = meshname.meshname
     	if not bufferCommand: return self.SendCommand("raapbiasequation", [meshname, text_equation])
     	self.SendCommand("buffercommand", ["raapbiasequation", meshname, text_equation])
-        
-    def rapbiasequation(self, meshname = '', text_equation = '', bufferCommand = False):
-    	if issubclass(type(meshname), self.Mesh): meshname = meshname.meshname
-    	if not bufferCommand: return self.SendCommand("rapbiasequation", [meshname, text_equation])
-    	self.SendCommand("buffercommand", ["rapbiasequation", meshname, text_equation])
     
     def random(self, meshname = '', seed = '', bufferCommand = False):
     	if issubclass(type(meshname), self.Mesh): meshname = meshname.meshname
@@ -1700,6 +1841,11 @@ class NSClient:
     	if issubclass(type(meshname), self.Mesh): meshname = meshname.meshname
     	if not bufferCommand: return self.SendCommand("randomxy", [meshname, seed])
     	self.SendCommand("buffercommand", ["randomxy", meshname, seed])
+    
+    def rapbiasequation(self, meshname = '', text_equation = '', bufferCommand = False):
+    	if issubclass(type(meshname), self.Mesh): meshname = meshname.meshname
+    	if not bufferCommand: return self.SendCommand("rapbiasequation", [meshname, text_equation])
+    	self.SendCommand("buffercommand", ["rapbiasequation", meshname, text_equation])
     
     def refineroughness(self, meshname = '', value = '', bufferCommand = False):
     	if issubclass(type(meshname), self.Mesh): meshname = meshname.meshname
@@ -1725,6 +1871,10 @@ class NSClient:
     def reset(self, bufferCommand = False):
     	if not bufferCommand: return self.SendCommand("reset")
     	self.SendCommand("buffercommand", ["reset"])
+    
+    def resetelsolver(self, bufferCommand = False):
+    	if not bufferCommand: return self.SendCommand("resetelsolver")
+    	self.SendCommand("buffercommand", ["resetelsolver"])
     
     def resetmesh(self, meshname = '', bufferCommand = False):
     	if issubclass(type(meshname), self.Mesh): meshname = meshname.meshname
@@ -1901,6 +2051,10 @@ class NSClient:
     	if not bufferCommand: return self.SendCommand("setdtstoch", [value])
     	self.SendCommand("buffercommand", ["setdtstoch", value])
     
+    def seteldt(self, value = '', bufferCommand = False):
+    	if not bufferCommand: return self.SendCommand("seteldt", [value])
+    	self.SendCommand("buffercommand", ["seteldt", value])
+    
     def setelectrodepotential(self, electrode_index = '', potential = '', bufferCommand = False):
     	if not bufferCommand: return self.SendCommand("setelectrodepotential", [electrode_index, potential])
     	self.SendCommand("buffercommand", ["setelectrodepotential", electrode_index, potential])
@@ -2070,13 +2224,23 @@ class NSClient:
     	if not bufferCommand: return self.SendCommand("shape_triangle", [meshname, len_x, len_y, cpos_x, cpos_y, z_start, z_end])
     	self.SendCommand("buffercommand", ["shape_triangle", meshname, len_x, len_y, cpos_x, cpos_y, z_start, z_end])
     
+    def shearstrainequation(self, meshname = '', text_equation = '', bufferCommand = False):
+    	if issubclass(type(meshname), self.Mesh): meshname = meshname.meshname
+    	if not bufferCommand: return self.SendCommand("shearstrainequation", [meshname, text_equation])
+    	self.SendCommand("buffercommand", ["shearstrainequation", meshname, text_equation])
+    
     def shiftcamorigin(self, dX = '', dY = '', bufferCommand = False):
     	if not bufferCommand: return self.SendCommand("shiftcamorigin", [dX, dY])
     	self.SendCommand("buffercommand", ["shiftcamorigin", dX, dY])
     
-    def shiftdipole(self, meshname = '', shift = '', bufferCommand = False):
-        if not bufferCommand: return self.SendCommand("shiftdipole", [meshname, shift])
-        self.SendCommand("buffercommand", ["shiftdipole", meshname, shift])
+    def meshrect(self, meshname = '', shift = '', bufferCommand = False):
+    	if issubclass(type(meshname), self.Mesh): meshname = meshname.meshname
+    	if not bufferCommand: return self.SendCommand("meshrect", [meshname, shift])
+    	self.SendCommand("buffercommand", ["meshrect", meshname, shift])
+    
+    def shiftglobalfield(self, shift = '', bufferCommand = False):
+    	if not bufferCommand: return self.SendCommand("shiftglobalfield", [shift])
+    	self.SendCommand("buffercommand", ["shiftglobalfield", shift])
     
     def showa(self, meshname = '', bufferCommand = False):
     	if issubclass(type(meshname), self.Mesh): meshname = meshname.meshname
@@ -2165,10 +2329,30 @@ class NSClient:
     	if not bufferCommand: return self.SendCommand("stopscript")
     	self.SendCommand("buffercommand", ["stopscript"])
     
+    def strainequation(self, meshname = '', text_equation = '', bufferCommand = False):
+    	if issubclass(type(meshname), self.Mesh): meshname = meshname.meshname
+    	if not bufferCommand: return self.SendCommand("strainequation", [meshname, text_equation])
+    	self.SendCommand("buffercommand", ["strainequation", meshname, text_equation])
+    
+    def surfacefix(self, meshname = '', rect_or_face = '', bufferCommand = False):
+    	if issubclass(type(meshname), self.Mesh): meshname = meshname.meshname
+    	if not bufferCommand: return self.SendCommand("surfacefix", [meshname, rect_or_face])
+    	self.SendCommand("buffercommand", ["surfacefix", meshname, rect_or_face])
+    
+    def surfacestress(self, meshname = '', rect_or_face = '', vector_equation = '', bufferCommand = False):
+    	if issubclass(type(meshname), self.Mesh): meshname = meshname.meshname
+    	if not bufferCommand: return self.SendCommand("surfacestress", [meshname, rect_or_face, vector_equation])
+    	self.SendCommand("buffercommand", ["surfacestress", meshname, rect_or_face, vector_equation])
+    
     def surfroughenjagged(self, meshname = '', depth = '', spacing = '', seed = '', sides = '', bufferCommand = False):
     	if issubclass(type(meshname), self.Mesh): meshname = meshname.meshname
     	if not bufferCommand: return self.SendCommand("surfroughenjagged", [meshname, depth, spacing, seed, sides])
     	self.SendCommand("buffercommand", ["surfroughenjagged", meshname, depth, spacing, seed, sides])
+    
+    def tamrequation(self, meshname = '', text_equation = '', bufferCommand = False):
+    	if issubclass(type(meshname), self.Mesh): meshname = meshname.meshname
+    	if not bufferCommand: return self.SendCommand("tamrequation", [meshname, text_equation])
+    	self.SendCommand("buffercommand", ["tamrequation", meshname, text_equation])
     
     def tau(self, meshname = '', tau_11 = '', tau_22 = '', tau_12 = '', tau_21 = '', bufferCommand = False):
     	if issubclass(type(meshname), self.Mesh): meshname = meshname.meshname
@@ -3026,8 +3210,10 @@ class NSClient:
         susrel = ''
         cHa = ''
         Hmo = ''
+        s_eff = ''
         elC = ''
         amr = ''
+        tamr = ''
         P = ''
         beta = ''
         De = ''
@@ -3037,6 +3223,9 @@ class NSClient:
         STq = ''
         STa = ''
         STp = ''
+        flST2 = ''
+        STq2 = ''
+        STa2 = ''
         betaD = ''
         l_sf = ''
         l_J = ''
@@ -3048,11 +3237,15 @@ class NSClient:
         the_eff = ''
         ts_eff = ''
         tsi_eff = ''
+        S = ''
+        joule_eff = ''
         thermK = ''
         density = ''
         MEc = ''
         Ym = ''
         Pr = ''
+        cC = ''
+        mdamping = ''
         shc = ''
         shc_e = ''
         G_e = ''
@@ -3093,8 +3286,10 @@ class NSClient:
             self.susrel = ns.Param(ns, 'susrel', meshname)
             self.cHa = ns.Param(ns, 'cHa', meshname)
             self.Hmo = ns.Param(ns, 'Hmo', meshname)
+            self.s_eff = ns.Param(ns, 's_eff', meshname)
             self.elC = ns.Param(ns, 'elC', meshname)
             self.amr = ns.Param(ns, 'amr', meshname)
+            self.tamr = ns.Param(ns, 'tamr', meshname)
             self.P = ns.Param(ns, 'P', meshname)
             self.beta = ns.Param(ns, 'beta', meshname)
             self.De = ns.Param(ns, 'De', meshname)
@@ -3104,6 +3299,9 @@ class NSClient:
             self.STq = ns.Param(ns, 'STq', meshname)
             self.STa = ns.Param(ns, 'STa', meshname)
             self.STp = ns.Param(ns, 'STp', meshname)
+            self.flST2 = ns.Param(ns, 'flST2', meshname)
+            self.STq2 = ns.Param(ns, 'STq2', meshname)
+            self.STa2 = ns.Param(ns, 'STa2', meshname)
             self.betaD = ns.Param(ns, 'betaD', meshname)
             self.l_sf = ns.Param(ns, 'l_sf', meshname)
             self.l_J = ns.Param(ns, 'l_J', meshname)
@@ -3115,11 +3313,15 @@ class NSClient:
             self.the_eff = ns.Param(ns, 'the_eff', meshname)
             self.ts_eff = ns.Param(ns, 'ts_eff', meshname)
             self.tsi_eff = ns.Param(ns, 'tsi_eff', meshname)
+            self.S = ns.Param(ns, 'S', meshname)
+            self.joule_eff = ns.Param(ns, 'joule_eff', meshname)
             self.thermK = ns.Param(ns, 'thermK', meshname)
             self.density = ns.Param(ns, 'density', meshname)
             self.MEc = ns.Param(ns, 'MEc', meshname)
             self.Ym = ns.Param(ns, 'Ym', meshname)
             self.Pr = ns.Param(ns, 'Pr', meshname)
+            self.cC = ns.Param(ns, 'cC', meshname)
+            self.mdamping = ns.Param(ns, 'mdamping', meshname)
             self.shc = ns.Param(ns, 'shc', meshname)
             self.shc_e = ns.Param(ns, 'shc_e', meshname)
             self.G_e = ns.Param(ns, 'G_e', meshname)
@@ -3158,6 +3360,7 @@ class NSClient:
         susrel_AFM = ''
         cHa = ''
         Hmo = ''
+        s_eff = ''
         elC = ''
         P = ''
         beta = ''
@@ -3166,8 +3369,15 @@ class NSClient:
         SHA = ''
         flST = ''
         STp = ''
+        S = ''
+        joule_eff = ''
         thermK = ''
         density = ''
+        MEc = ''
+        Ym = ''
+        Pr = ''
+        cC = ''
+        mdamping = ''
         shc = ''
         shc_e = ''
         G_e = ''
@@ -3214,6 +3424,7 @@ class NSClient:
             self.susrel_AFM = ns.Param(ns, 'susrel_AFM', meshname)
             self.cHa = ns.Param(ns, 'cHa', meshname)
             self.Hmo = ns.Param(ns, 'Hmo', meshname)
+            self.s_eff = ns.Param(ns, 's_eff', meshname)
             self.elC = ns.Param(ns, 'elC', meshname)
             self.P = ns.Param(ns, 'P', meshname)
             self.beta = ns.Param(ns, 'beta', meshname)
@@ -3222,8 +3433,15 @@ class NSClient:
             self.SHA = ns.Param(ns, 'SHA', meshname)
             self.flST = ns.Param(ns, 'flST', meshname)
             self.STp = ns.Param(ns, 'STp', meshname)
+            self.S = ns.Param(ns, 'S', meshname)
+            self.joule_eff = ns.Param(ns, 'joule_eff', meshname)
             self.thermK = ns.Param(ns, 'thermK', meshname)
             self.density = ns.Param(ns, 'density', meshname)
+            self.MEc = ns.Param(ns, 'MEc', meshname)
+            self.Ym = ns.Param(ns, 'Ym', meshname)
+            self.Pr = ns.Param(ns, 'Pr', meshname)
+            self.cC = ns.Param(ns, 'cC', meshname)
+            self.mdamping = ns.Param(ns, 'mdamping', meshname)
             self.shc = ns.Param(ns, 'shc', meshname)
             self.shc_e = ns.Param(ns, 'shc_e', meshname)
             self.G_e = ns.Param(ns, 'G_e', meshname)
@@ -3244,6 +3462,8 @@ class NSClient:
         l_sf = ''
         Gi = ''
         Gmix = ''
+        S = ''
+        joule_eff = ''
         thermK = ''
         density = ''
         shc = ''
@@ -3274,6 +3494,8 @@ class NSClient:
             self.l_sf = ns.Param(ns, 'l_sf', meshname)
             self.Gi = ns.Param(ns, 'Gi', meshname)
             self.Gmix = ns.Param(ns, 'Gmix', meshname)
+            self.S = ns.Param(ns, 'S', meshname)
+            self.joule_eff = ns.Param(ns, 'joule_eff', meshname)
             self.thermK = ns.Param(ns, 'thermK', meshname)
             self.density = ns.Param(ns, 'density', meshname)
             self.shc = ns.Param(ns, 'shc', meshname)
@@ -3293,10 +3515,14 @@ class NSClient:
         elC = ''
         De = ''
         l_sf = ''
-        Gmix = ''
         Gi = ''
+        Gmix = ''
         thermK = ''
         density = ''
+        Ym = ''
+        Pr = ''
+        cC = ''
+        mdamping = ''
         shc = ''
         
         #################### OPERATORS
@@ -3318,10 +3544,14 @@ class NSClient:
             self.elC = ns.Param(ns, 'elC', meshname)
             self.De = ns.Param(ns, 'De', meshname)
             self.l_sf = ns.Param(ns, 'l_sf', meshname)
-            self.Gmix = ns.Param(ns, 'Gmix', meshname)
             self.Gi = ns.Param(ns, 'Gi', meshname)
+            self.Gmix = ns.Param(ns, 'Gmix', meshname)
             self.thermK = ns.Param(ns, 'thermK', meshname)
             self.density = ns.Param(ns, 'density', meshname)
+            self.Ym = ns.Param(ns, 'Ym', meshname)
+            self.Pr = ns.Param(ns, 'Pr', meshname)
+            self.cC = ns.Param(ns, 'cC', meshname)
+            self.mdamping = ns.Param(ns, 'mdamping', meshname)
             self.shc = ns.Param(ns, 'shc', meshname)
             
     #Material parameters for a Dipole mesh
@@ -3334,6 +3564,7 @@ class NSClient:
         Tc = ''
         elC = ''
         amr = ''
+        tamr = ''
         P = ''
         De = ''
         n = ''
@@ -3369,6 +3600,7 @@ class NSClient:
             self.Tc = ns.Param(ns, 'Tc', meshname)
             self.elC = ns.Param(ns, 'elC', meshname)
             self.amr = ns.Param(ns, 'amr', meshname)
+            self.tamr = ns.Param(ns, 'tamr', meshname)
             self.P = ns.Param(ns, 'P', meshname)
             self.De = ns.Param(ns, 'De', meshname)
             self.n = ns.Param(ns, 'n', meshname)
@@ -3409,8 +3641,10 @@ class NSClient:
         ea3 = ''
         cHa = ''
         cHmo = ''
+        s_eff = ''
         elC = ''
         amr = ''
+        tamr = ''
         P = ''
         beta = ''
         De = ''
@@ -3420,6 +3654,9 @@ class NSClient:
         STq = ''
         STa = ''
         STp = ''
+        flST2 = ''
+        STq2 = ''
+        STa2 = ''
         betaD = ''
         l_sf = ''
         l_J = ''
@@ -3431,6 +3668,8 @@ class NSClient:
         the_eff = ''
         ts_eff = ''
         tsi_eff = ''
+        S = ''
+        joule_eff = ''
         thermK = ''
         density = ''
         shc = ''
@@ -3470,8 +3709,10 @@ class NSClient:
             self.ea3 = ns.Param(ns, 'ea3', meshname)
             self.cHa = ns.Param(ns, 'cHa', meshname)
             self.cHmo = ns.Param(ns, 'cHmo', meshname)
+            self.s_eff = ns.Param(ns, 's_eff', meshname)
             self.elC = ns.Param(ns, 'elC', meshname)
             self.amr = ns.Param(ns, 'amr', meshname)
+            self.tamr = ns.Param(ns, 'tamr', meshname)
             self.P = ns.Param(ns, 'P', meshname)
             self.beta = ns.Param(ns, 'beta', meshname)
             self.De = ns.Param(ns, 'De', meshname)
@@ -3481,6 +3722,9 @@ class NSClient:
             self.STq = ns.Param(ns, 'STq', meshname)
             self.STa = ns.Param(ns, 'STa', meshname)
             self.STp = ns.Param(ns, 'STp', meshname)
+            self.flST2 = ns.Param(ns, 'flST2', meshname)
+            self.STq2 = ns.Param(ns, 'STq2', meshname)
+            self.STa2 = ns.Param(ns, 'STa2', meshname)
             self.betaD = ns.Param(ns, 'betaD', meshname)
             self.l_sf = ns.Param(ns, 'l_sf', meshname)
             self.l_J = ns.Param(ns, 'l_J', meshname)
@@ -3492,6 +3736,8 @@ class NSClient:
             self.the_eff = ns.Param(ns, 'the_eff', meshname)
             self.ts_eff = ns.Param(ns, 'ts_eff', meshname)
             self.tsi_eff = ns.Param(ns, 'tsi_eff', meshname)
+            self.S = ns.Param(ns, 'S', meshname)
+            self.joule_eff = ns.Param(ns, 'joule_eff', meshname)
             self.thermK = ns.Param(ns, 'thermK', meshname)
             self.density = ns.Param(ns, 'density', meshname)
             self.shc = ns.Param(ns, 'shc', meshname)
@@ -3819,8 +4065,8 @@ class NSClient:
         def atomicmoment(self, ub_multiple = ''):
         	return self.ns.atomicmoment(self.meshname, ub_multiple)
         
-        def averagemeshrect(self, rectangle = '', dp_index = ''):
-        	return self.ns.averagemeshrect(self.meshname, rectangle, dp_index)
+        def averagemeshrect(self, quantity = '', rectangle = '', dp_index = ''):
+        	return self.ns.averagemeshrect(self.meshname, quantity, rectangle, dp_index)
         
         def blochpreparemovingmesh(self):
         	return self.ns.blochpreparemovingmesh(self.meshname)
@@ -3838,7 +4084,7 @@ class NSClient:
         	return self.ns.curietemperature(self.meshname, curie_temperature)
         
         def delmesh(self):
-            return self.ns.delmesh(self.meshname)
+        	return self.ns.delmesh(self.meshname)
         
         def delmodule(self, handle = ''):
         	return self.ns.delmodule(self.meshname, handle)
@@ -3847,7 +4093,7 @@ class NSClient:
         	return self.ns.delrect(self.meshname, rectangle)
         
         def dipolevelocity(self, velocity = '', clipping = ''):
-            return self.ns.dipolevelocity(self.meshname, velocity, clipping)
+        	return self.ns.dipolevelocity(self.meshname, velocity, clipping)
         
         def display(self, name = ''):
         	return self.ns.display(self.meshname, name)
@@ -3888,8 +4134,8 @@ class NSClient:
         def dp_getaveragedprofile(self, start = '', end = '', step = '', dp_index = ''):
         	return self.ns.dp_getaveragedprofile(self.meshname, start, end, step, dp_index)
         
-        def dp_getexactprofile(self, start = '', end = '', step = '', dp_index = '', stencil = ''):
-        	return self.ns.dp_getexactprofile(self.meshname, start, end, step, dp_index, stencil)
+        def dp_getexactprofile(self, quantity = '', start = '', end = '', step = '', dp_index = '', stencil = ''):
+        	return self.ns.dp_getexactprofile(self.meshname, quantity, start, end, step, dp_index, stencil)
         
         def dp_histogram(self, dp_x = '', dp_y = '', cx = '', cy = '', cz = '', numbins = '', min = '', max = ''):
         	return self.ns.dp_histogram(self.meshname, dp_x, dp_y, cx, cy, cz, numbins, min, max)
@@ -3936,8 +4182,8 @@ class NSClient:
         def getmeshtype(self):
         	return self.ns.getmeshtype(self.meshname)
         
-        def getvalue(self, position = ''):
-        	return self.ns.getvalue(self.meshname, position)
+        def getvalue(self, quantity = '', position = ''):
+        	return self.ns.getvalue(self.meshname, quantity, position)
         
         def insulatingside(self, side_literal = '', status = ''):
         	return self.ns.insulatingside(self.meshname, side_literal, status)
@@ -3997,7 +4243,7 @@ class NSClient:
         	return self.ns.mirrormag(self.meshname, axis)
         
         def modules(self, modules = ''):
-            return self.ns.modules(self.meshname, modules)
+        	return self.ns.modules(self.meshname, modules)
         
         def neelpreparemovingmesh(self):
         	return self.ns.neelpreparemovingmesh(self.meshname)
@@ -4019,6 +4265,9 @@ class NSClient:
         
         def preparemovingmesh(self):
         	return self.ns.preparemovingmesh(self.meshname)
+        
+        def prngseed(self, seed = ''):
+        	return self.ns.prngseed(self.meshname, seed)
         
         def raapbiasequation(self, text_equation = ''):
         	return self.ns.raapbiasequation(self.meshname, text_equation)
@@ -4044,8 +4293,8 @@ class NSClient:
         def roughenmesh(self, depth = '', side = '', seed = ''):
         	return self.ns.roughenmesh(self.meshname, depth, side, seed)
         
-        def saveovf2(self, data_type = '', filename = ''):
-        	return self.ns.saveovf2(self.meshname, data_type, filename)
+        def saveovf2(self, quantity = '', data_type = '', filename = ''):
+        	return self.ns.saveovf2(self.meshname, quantity, data_type, filename)
         
         def saveovf2mag(self, n = '', data_type = '', filename = ''):
         	return self.ns.saveovf2mag(self.meshname, n, data_type, filename)
@@ -4086,8 +4335,8 @@ class NSClient:
         def shape_ellipsoid(self, dia_x = '', dia_y = '', dia_z = '', cpos_x = '', cpos_y = '', cpos_z = ''):
         	return self.ns.shape_ellipsoid(self.meshname, dia_x, dia_y, dia_z, cpos_x, cpos_y, cpos_z)
         
-        def shape_get(self, shape = Shape()):
-        	return self.ns.shape_get(self.meshname, shape)
+        def shape_get(self, quantity = '', shape = Shape()):
+        	return self.ns.shape_get(self.meshname, quantity, shape)
         
         def shape_pyramid(self, len_x = '', len_y = '', len_z = '', cpos_x = '', cpos_y = '', cpos_z = ''):
         	return self.ns.shape_pyramid(self.meshname, len_x, len_y, len_z, cpos_x, cpos_y, cpos_z)
@@ -4110,8 +4359,11 @@ class NSClient:
         def shape_triangle(self, len_x = '', len_y = '', cpos_x = '', cpos_y = '', z_start = '', z_end = ''):
         	return self.ns.shape_triangle(self.meshname, len_x, len_y, cpos_x, cpos_y, z_start, z_end)
         
-        def shiftdipole(self, shift = ''):
-        	return self.ns.shiftdipole(self.meshname, shift)
+        def shearstrainequation(self, text_equation = ''):
+        	return self.ns.shearstrainequation(self.meshname, text_equation)
+        
+        def meshrect(self, shift = ''):
+        	return self.ns.meshrect(self.meshname, shift)
         
         def showa(self):
         	return self.ns.showa(self.meshname)
@@ -4146,8 +4398,20 @@ class NSClient:
         def skyrmionpreparemovingmesh(self):
         	return self.ns.skyrmionpreparemovingmesh(self.meshname)
         
+        def strainequation(self, text_equation = ''):
+        	return self.ns.strainequation(self.meshname, text_equation)
+        
+        def surfacefix(self, rect_or_face = ''):
+        	return self.ns.surfacefix(self.meshname, rect_or_face)
+        
+        def surfacestress(self, rect_or_face = '', vector_equation = ''):
+        	return self.ns.surfacestress(self.meshname, rect_or_face, vector_equation)
+        
         def surfroughenjagged(self, depth = '', spacing = '', seed = '', sides = ''):
         	return self.ns.surfroughenjagged(self.meshname, depth, spacing, seed, sides)
+        
+        def tamrequation(self, text_equation = ''):
+        	return self.ns.tamrequation(self.meshname, text_equation)
         
         def tau(self, tau_11 = '', tau_22 = '', tau_12 = '', tau_21 = ''):
         	return self.ns.tau(self.meshname, tau_11, tau_22, tau_12, tau_21)

@@ -49,6 +49,7 @@ BError ManagedAtom_MeshCUDA::set_pointers(Atom_MeshCUDA* paMeshCUDA)
 
 	if (set_gpu_value(pelecCond, paMeshCUDA->elecCond.get_managed_object()) != cudaSuccess) error(BERROR_GPUERROR_CRIT);
 	if (set_gpu_value(pamrPercentage, paMeshCUDA->amrPercentage.get_managed_object()) != cudaSuccess) error(BERROR_GPUERROR_CRIT);
+	if (set_gpu_value(ptamrPercentage, paMeshCUDA->tamrPercentage.get_managed_object()) != cudaSuccess) error(BERROR_GPUERROR_CRIT);
 	if (set_gpu_value(pRAtmr_p, paMeshCUDA->RAtmr_p.get_managed_object()) != cudaSuccess) error(BERROR_GPUERROR_CRIT);
 	if (set_gpu_value(pRAtmr_ap, paMeshCUDA->RAtmr_ap.get_managed_object()) != cudaSuccess) error(BERROR_GPUERROR_CRIT);
 	
@@ -61,9 +62,12 @@ BError ManagedAtom_MeshCUDA::set_pointers(Atom_MeshCUDA* paMeshCUDA)
 
 	if (set_gpu_value(pSHA, paMeshCUDA->SHA.get_managed_object()) != cudaSuccess) error(BERROR_GPUERROR_CRIT);
 	if (set_gpu_value(pflSOT, paMeshCUDA->flSOT.get_managed_object()) != cudaSuccess) error(BERROR_GPUERROR_CRIT);
+	if (set_gpu_value(pflSOT2, paMeshCUDA->flSOT2.get_managed_object()) != cudaSuccess) error(BERROR_GPUERROR_CRIT);
 
 	if (set_gpu_value(pSTq, paMeshCUDA->STq.get_managed_object()) != cudaSuccess) error(BERROR_GPUERROR_CRIT);
+	if (set_gpu_value(pSTq2, paMeshCUDA->STq2.get_managed_object()) != cudaSuccess) error(BERROR_GPUERROR_CRIT);
 	if (set_gpu_value(pSTa, paMeshCUDA->STa.get_managed_object()) != cudaSuccess) error(BERROR_GPUERROR_CRIT);
+	if (set_gpu_value(pSTa2, paMeshCUDA->STa2.get_managed_object()) != cudaSuccess) error(BERROR_GPUERROR_CRIT);
 	if (set_gpu_value(pSTp, paMeshCUDA->STp.get_managed_object()) != cudaSuccess) error(BERROR_GPUERROR_CRIT);
 
 	if (set_gpu_value(pl_sf, paMeshCUDA->l_sf.get_managed_object()) != cudaSuccess) error(BERROR_GPUERROR_CRIT);
@@ -80,6 +84,9 @@ BError ManagedAtom_MeshCUDA::set_pointers(Atom_MeshCUDA* paMeshCUDA)
 	if (set_gpu_value(pthe_eff, paMeshCUDA->the_eff.get_managed_object()) != cudaSuccess) error(BERROR_GPUERROR_CRIT);
 
 	if (set_gpu_value(pbase_temperature, paMeshCUDA->base_temperature.get_managed_object()) != cudaSuccess) error(BERROR_GPUERROR_CRIT);
+
+	if (set_gpu_value(pSc, paMeshCUDA->Sc.get_managed_object()) != cudaSuccess) error(BERROR_GPUERROR_CRIT);
+	if (set_gpu_value(pjoule_eff, paMeshCUDA->joule_eff.get_managed_object()) != cudaSuccess) error(BERROR_GPUERROR_CRIT);
 
 	if (set_gpu_value(pthermCond, paMeshCUDA->thermCond.get_managed_object()) != cudaSuccess) error(BERROR_GPUERROR_CRIT);
 	

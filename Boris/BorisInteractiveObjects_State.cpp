@@ -429,6 +429,65 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 	}
 	break;
 
+	//Set elastodynamics equation time step: textId is the value
+	case IOI_ELDT:
+	{
+		//parameters from iop
+		std::string dT_string = iop.textId;
+
+		if (SMesh.IsSuperMeshModuleSet(MODS_SMELASTIC)) {
+
+			std::string actualdT_string = ToString(SMesh.CallModuleMethod(&SMElastic::get_el_dT), "s");
+
+			if (dT_string != actualdT_string) {
+
+				iop.textId = actualdT_string;
+
+				pTO->set(" " + iop.textId + " ");
+				if (dT_string == "N/A") pTO->SetBackgroundColor(ONCOLOR);
+
+				stateChanged = true;
+			}
+		}
+		else {
+
+			if (dT_string != "N/A") {
+
+				iop.textId = "N/A";
+				pTO->set(" " + iop.textId + " ");
+				pTO->SetBackgroundColor(UNAVAILABLECOLOR);
+				stateChanged = true;
+			}
+		}
+	}
+	break;
+
+	//Set stochastic time-step: textId is the value
+	case IOI_LINKELDT:
+	{
+		//parameters from iop
+		bool state = (bool)iop.auxId;
+
+		if (state != SMesh.CallModuleMethod(&SMElastic::get_linked_el_dT)) {
+
+			iop.auxId = SMesh.CallModuleMethod(&SMElastic::get_linked_el_dT);
+
+			if (iop.auxId) {
+
+				pTO->set(" On ");
+				pTO->SetBackgroundColor(ONCOLOR);
+			}
+			else {
+
+				pTO->set(" Off ");
+				pTO->SetBackgroundColor(OFFCOLOR);
+			}
+
+			stateChanged = true;
+		}
+	}
+	break;
+
 	//Available/set evaluation method for ode : minorId is an entry from ODE_ as : micromagnetic equation value + 100 * atomistic equation value, auxId is the EVAL_ entry (the evaluation method), textId is the name of the evaluation method
 	case IOI_ODE_EVAL:
 	{
@@ -594,6 +653,12 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 	case IOI_MESH_FORSTOCHASTICITY:
 	{
 		display_meshIO(&Simulation::Build_Stochasticity_ListLine);
+	}
+	break;
+
+	case IOI_MESH_FORELASTICITY:
+	{
+		display_meshIO(&Simulation::Build_Elastodynamics_Equations_ListLine);
 	}
 	break;
 
@@ -2573,6 +2638,148 @@ InteractiveObjectStateChange Simulation::ConsoleInteractiveObjectState(Interacti
 		if (meshIdx >= 0 && value_string != ToString(SMesh[meshIdx]->Get_Dipole_Velocity(), "m/s")) {
 
 			iop.textId = ToString(SMesh[meshIdx]->Get_Dipole_Velocity(), "m/s");
+			pTO->set(" " + iop.textId + " ");
+			stateChanged = true;
+		}
+	}
+	break;
+
+	//Shows diagonal strain set equation. minorId is the unique mesh id number. textId is the equation. auxId is enabled(1)/disabled(0) status.
+	case IOI_STRAINEQUATION:
+	{
+		//parameters from iop
+		int meshId = iop.minorId;
+
+		int meshIdx = SMesh.contains_id(meshId);
+
+		//is there a value mismatch?
+		if (meshIdx >= 0) {
+
+			std::string text_equation = SMesh[meshIdx]->Get_StrainEquation();
+			if (text_equation.length() && iop.textId != text_equation) {
+
+				iop.textId = text_equation;
+				pTO->set(" " + iop.textId + " ");
+				pTO->SetBackgroundColor(ONCOLOR);
+				stateChanged = true;
+			}
+			else if (!text_equation.length() && iop.textId != "") {
+
+				pTO->set(" None ");
+				pTO->SetBackgroundColor(OFFCOLOR);
+				stateChanged = true;
+			}
+		}
+	}
+	break;
+
+	//Shows shear strain set equation. minorId is the unique mesh id number. textId is the equation. auxId is enabled(1)/disabled(0) status.
+	case IOI_SHEARSTRAINEQUATION:
+	{
+		//parameters from iop
+		int meshId = iop.minorId;
+
+		int meshIdx = SMesh.contains_id(meshId);
+
+		//is there a value mismatch?
+		if (meshIdx >= 0) {
+
+			std::string text_equation = SMesh[meshIdx]->Get_ShearStrainEquation();
+			if (text_equation.length() && iop.textId != text_equation) {
+
+				iop.textId = text_equation;
+				pTO->set(" " + iop.textId + " ");
+				pTO->SetBackgroundColor(ONCOLOR);
+				stateChanged = true;
+			}
+			else if (!text_equation.length() && iop.textId != "") {
+
+				pTO->set(" None ");
+				pTO->SetBackgroundColor(OFFCOLOR);
+				stateChanged = true;
+			}
+		}
+	}
+	break;
+
+	//Shows fixed surface rectangle. minorId is the minor Id in SMElastic::fixed_u_surfaces, auxId is the number of the interactive object in the list (electrode index), textId is the surface rect as a std::string
+	case IOI_SURFACEFIX:
+	{
+		//parameters from iop
+		int surfaceId_minor = iop.minorId;
+		int io_index = iop.auxId;
+		std::string rect_string = iop.textId;
+
+		//actual index in surfaces list (should normally be the same as io_index)
+		int index_in_list = SMesh.CallModuleMethod(&SMElastic::Get_Fixed_Surface_Index, surfaceId_minor);
+		int el_last_index = SMesh.CallModuleMethod(&SMElastic::Get_Num_Fixed_Surfaces) - 1;
+
+		//if there's a mismatch between the object number and the actual index then updating is needed - update the entire object so that it corresponds to the entry at io_index.
+		if (io_index <= el_last_index && index_in_list != io_index) {
+
+			//because there are multiple objects on this line, all of them must be replaced. The caller must do this.
+			iop.state = IOS_REPLACINGPARAGRAPH;
+			stateChanged.textMessage = Build_FixedSurfaces_ListLine(io_index);
+			stateChanged = true;
+			break;
+		}
+
+		//this object is part of a list : make sure this list is updated
+		updateList(io_index, el_last_index, &Simulation::Build_FixedSurfaces_ListLine);
+
+		if (rect_string != ToString(SMesh.CallModuleMethod(&SMElastic::Get_Fixed_Surface, io_index), "m")) {
+
+			iop.textId = ToString(SMesh.CallModuleMethod(&SMElastic::Get_Fixed_Surface, io_index), "m");
+			pTO->set(" " + iop.textId + " ");
+			stateChanged = true;
+		}
+	}
+	break;
+
+	//Shows stress surface rectangle. minorId is the minor Id in SMElastic::stress_surfaces_rect, auxId is the number of the interactive object in the list (electrode index), textId is the surface rect as a std::string
+	case IOI_SURFACESTRESS:
+	{
+		//parameters from iop
+		int surfaceId_minor = iop.minorId;
+		int io_index = iop.auxId;
+		std::string rect_string = iop.textId;
+
+		//actual index in surfaces list (should normally be the same as io_index)
+		int index_in_list = SMesh.CallModuleMethod(&SMElastic::Get_Stress_Surface_Index, surfaceId_minor);
+		int el_last_index = SMesh.CallModuleMethod(&SMElastic::Get_Num_Stress_Surfaces) - 1;
+
+		//if there's a mismatch between the object number and the actual index then updating is needed - update the entire object so that it corresponds to the entry at io_index.
+		if (io_index <= el_last_index && index_in_list != io_index) {
+
+			//because there are multiple objects on this line, all of them must be replaced. The caller must do this.
+			iop.state = IOS_REPLACINGPARAGRAPH;
+			stateChanged.textMessage = Build_StressSurfaces_ListLine(io_index);
+			stateChanged = true;
+			break;
+		}
+
+		//this object is part of a list : make sure this list is updated
+		updateList(io_index, el_last_index, &Simulation::Build_StressSurfaces_ListLine);
+
+		if (rect_string != ToString(SMesh.CallModuleMethod(&SMElastic::Get_Stress_Surface, io_index), "m")) {
+
+			iop.textId = ToString(SMesh.CallModuleMethod(&SMElastic::Get_Stress_Surface, io_index), "m");
+			pTO->set(" " + iop.textId + " ");
+			stateChanged = true;
+		}
+	}
+	break;
+
+	//Shows stress surface equation. minorId is the index in SMElastic::stress_surfaces_equations, auxId is the number of the interactive object in the list (electrode index), textId is the equation
+	case IOI_SURFACESTRESSEQ:
+	{
+		//parameters from iop
+		int el_index = iop.minorId;
+		std::string equation = iop.textId;
+
+		if (SMesh.CallModuleMethod(&SMElastic::Get_Stress_Surface_Equation, el_index) != equation) {
+
+			iop.textId = SMesh.CallModuleMethod(&SMElastic::Get_Stress_Surface_Equation, el_index);
 			pTO->set(" " + iop.textId + " ");
 			stateChanged = true;
 		}

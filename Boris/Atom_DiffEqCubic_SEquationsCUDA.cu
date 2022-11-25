@@ -12,7 +12,7 @@
 
 //----------------------------------------
 
-__global__ void GenerateThermalField_Kernel(cuBorisRand& prng, ManagedAtom_DiffEqCubicCUDA& cuaDiffEq, ManagedAtom_MeshCUDA& cuaMesh, cuBReal& deltaT)
+__global__ void GenerateThermalField_Kernel(cuBorisRand<>& prng, ManagedAtom_DiffEqCubicCUDA& cuaDiffEq, ManagedAtom_MeshCUDA& cuaMesh, cuBReal& deltaT)
 {
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
 

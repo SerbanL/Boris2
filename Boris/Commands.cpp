@@ -2350,7 +2350,12 @@ void Simulation::HandleCommand(std::string command_string)
 			if (!error && stageDescriptors.has_key(stageTypeName) && (SMesh.contains(meshName) || meshName == SMesh.superMeshHandle)) {
 
 				//add new simulation stage to the schedule with default settings for this stage type (can be edited separately)
-				AddGenericStage((SS_)stageDescriptors.get_ID_from_key(stageTypeName), meshName);
+				SS_ stage = (SS_)stageDescriptors.get_ID_from_key(stageTypeName);
+				AddGenericStage(stage, meshName);
+				
+				//if MC set, then will need to allocate memory for PRNG when CUDA is used
+				if (stage == SS_MONTECARLO) SMesh.UpdateConfiguration(UPDATECONFIG_PRNG);
+
 				RefreshScreen();
 			}
 			else if (verbose) PrintCommandUsage(command_name);
@@ -2367,10 +2372,14 @@ void Simulation::HandleCommand(std::string command_string)
 
 			if (!error && stageDescriptors.has_key(stageTypeName) && (SMesh.contains(meshName) || meshName == SMesh.superMeshHandle)) {
 
-				//edit stage 0 to new settings (there's always at least one stage)
-				EditStageType(0, (SS_)stageDescriptors.get_ID_from_key(stageTypeName), meshName);
+				//edit stage 0 to new settings (there's always at least one stage
+				SS_ stage = (SS_)stageDescriptors.get_ID_from_key(stageTypeName);
+				EditStageType(0, stage, meshName);
 				//get rid of all other stages
 				while(simStages.size() > 1) DeleteStage(1);
+
+				//if MC set, then will need to allocate memory for PRNG when CUDA is used
+				if (stage == SS_MONTECARLO) SMesh.UpdateConfiguration(UPDATECONFIG_PRNG);
 
 				RefreshScreen();
 			}
@@ -3601,6 +3610,31 @@ void Simulation::HandleCommand(std::string command_string)
 		}
 		break;
 
+		case CMD_OPENPOTENTIAL:
+		{
+			if (SMesh.IsSuperMeshModuleSet(MODS_STRANSPORT)) {
+
+				double open_potential_resistance;
+
+				error = commandSpec.GetParameters(command_fields, open_potential_resistance);
+
+				if (!error) {
+
+					StopSimulation();
+
+					error = SMesh.CallModuleMethod(&STransport::SetOpenPotentialResistance, open_potential_resistance);
+					UpdateScreen();
+				}
+				else if (verbose) PrintCommandUsage(command_name);
+
+				if (script_client_connected) commSocket.SetSendData(commandSpec.PrepareReturnParameters(SMesh.CallModuleMethod(&STransport::GetOpenPotentialResistance)));
+
+				if (verbose) BD.DisplayConsoleListing("Open potential resistance : " + ToString(SMesh.CallModuleMethod(&STransport::GetOpenPotentialResistance)) + " Ohms.");
+			}
+			else error(BERROR_INCORRECTACTION);
+		}
+		break;
+
 		case CMD_ELECTRODES:
 		{
 			Print_Electrodes_List();
@@ -3851,6 +3885,22 @@ void Simulation::HandleCommand(std::string command_string)
 		}
 		break;
 
+		case CMD_TAMREQUATION:
+		{
+			std::string meshName, text_equation;
+
+			bool meshName_specified = optional_meshname_check_focusedmeshdefault(command_fields);
+			error = commandSpec.GetParameters(command_fields, meshName, text_equation);
+			if (error == BERROR_PARAMMISMATCH) { error.reset(); text_equation = ""; }
+
+			if (meshName_specified) {
+
+				if (!err_hndl.qcall(error, &SuperMesh::Set_TAMR_Conductivity_Equation, &SMesh, meshName, text_equation)) UpdateScreen();
+			}
+			else if (verbose) PrintCommandUsage(command_name);
+		}
+		break;
+
 		case CMD_TEMPERATURE:
 		{
 			double Temperature;
@@ -4086,6 +4136,300 @@ void Simulation::HandleCommand(std::string command_string)
 				UpdateScreen();
 			}
 			else if (verbose) Print_TemperatureModel_List();
+		}
+		break;
+
+		case CMD_RESETELSOLVER:
+		{
+			StopSimulation();
+			SMesh.Reset_ElSolver();
+			UpdateScreen();
+		}
+		break;
+
+		case CMD_STRAINEQUATION:
+		{
+			std::string text_equation;
+			std::string meshName;
+
+			optional_meshname_check_focusedmeshdefault(command_fields);
+			error = commandSpec.GetParameters(command_fields, meshName, text_equation);
+
+			if (!error) {
+
+				StopSimulation();
+
+				if (!err_hndl.qcall(error, &SuperMesh::Set_Sd_Equation, &SMesh, meshName, text_equation)) UpdateScreen();
+			}
+			else if (verbose) Print_Elastodynamics_Equations_List();
+		}
+		break;
+		
+		case CMD_SHEARSTRAINEQUATION:
+		{
+			std::string text_equation;
+			std::string meshName;
+
+			optional_meshname_check_focusedmeshdefault(command_fields);
+			error = commandSpec.GetParameters(command_fields, meshName, text_equation);
+
+			if (!error) {
+
+				StopSimulation();
+
+				if (!err_hndl.qcall(error, &SuperMesh::Set_Sod_Equation, &SMesh, meshName, text_equation)) UpdateScreen();
+			}
+			else if (verbose) Print_Elastodynamics_Equations_List();
+		}
+		break;
+		
+		case CMD_CLEARSTRAINEQUATIONS:
+		{
+			std::string meshName;
+
+			bool meshName_specified = optional_meshname_check_focusedmeshdefault(command_fields);
+			error = commandSpec.GetParameters(command_fields, meshName);
+			if (!meshName_specified) meshName = "";
+
+			if (!error) {
+
+				StopSimulation();
+
+				if (!err_hndl.qcall(error, &SuperMesh::Clear_Sd_Sod_Equations, &SMesh, meshName)) UpdateScreen();
+			}
+		}
+		break;
+
+		case CMD_SETELDT:
+		{
+			double dT;
+
+			error = commandSpec.GetParameters(command_fields, dT);
+
+			if (!error) {
+
+				StopSimulation();
+				SMesh.CallModuleMethod(&SMElastic::set_el_dT, dT);
+				UpdateScreen();
+			}
+			else if (verbose) Print_Elastodynamics_TimeStep();
+
+			if (script_client_connected)
+				commSocket.SetSendData(commandSpec.PrepareReturnParameters(SMesh.CallModuleMethod(&SMElastic::get_el_dT)));
+		}
+		break;
+
+		case CMD_LINKDTELASTIC:
+		{
+			bool flag;
+
+			error = commandSpec.GetParameters(command_fields, flag);
+
+			if (!error) {
+
+				StopSimulation();
+
+				SMesh.CallModuleMethod(&SMElastic::set_linked_el_dT, flag);
+				UpdateScreen();
+			}
+			else if (verbose) Print_Elastodynamics_TimeStep();
+		}
+		break;
+
+		case CMD_SURFACEFIX:
+		{
+			if (SMesh.IsSuperMeshModuleSet(MODS_SMELASTIC)) {
+
+				std::string meshName;
+				std::string face;
+				Rect rect;
+
+				optional_meshname_check_focusedmeshdefault(command_fields);
+				//try to get rectangle first
+				commandSpec.GetParameters(command_fields, meshName, rect);
+				//if this fails (rectangle will be null) then get face string literal instead
+				if (rect.IsNull()) { commandSpec.GetParameters(command_fields, meshName, face); }
+
+				if (!rect.IsNull() || face.length()) {
+
+					StopSimulation();
+
+					if (!err_hndl.qcall(error, &SuperMesh::Add_Fixed_Surface, &SMesh, meshName, face, rect)) UpdateScreen();
+				}
+				else if (verbose) {
+
+					Print_FixedSurfaces_List();
+					Print_StressSurfaces_List();
+				}
+			}
+			else error(BERROR_INCORRECTACTION);
+		}
+		break;
+
+		case CMD_SURFACESTRESS:
+		{
+			if (SMesh.IsSuperMeshModuleSet(MODS_SMELASTIC)) {
+
+				std::string text;
+
+				std::string meshName;
+				std::string face, equation;
+				Rect rect;
+				
+				optional_meshname_check_focusedmeshdefault(command_fields);
+				commandSpec.GetParameters(command_fields, meshName, text);
+
+				std::vector<std::string> fields = split(text, ",");
+
+				if (fields.size() >= 3) {
+
+					//last 2 fields have last 2 equation components
+					//now separate first component from everything else before it
+					std::string subtext = combine(subvec(fields, 0, fields.size() - 2), " ");
+
+					std::vector<std::string> subfields = split(subtext, " ");
+
+					if (subfields.size() >= 2) {
+
+						//separate out the equation in full
+						equation = subfields.back() + std::string(", ") + fields[fields.size() - 2] + std::string(", ") + fields.back();
+
+						//remaining fields are either face or the rectangle
+						std::string subsubtext = combine(subvec(subfields, 0, subfields.size() - 1), " ");
+						//try to get rectangle
+						rect = ToNum(subsubtext, "m");
+						//if this fails then it must be a face string literal
+						if (rect.IsNull()) face = subsubtext;
+
+						StopSimulation();
+						if (!err_hndl.qcall(error, &SuperMesh::Add_Stress_Surface, &SMesh, meshName, face, rect, equation)) UpdateScreen();
+					}
+					else if (verbose) {
+
+						Print_FixedSurfaces_List();
+						Print_StressSurfaces_List();
+					}
+				}
+				else if (verbose) {
+
+					Print_FixedSurfaces_List();
+					Print_StressSurfaces_List();
+				}
+			}
+			else error(BERROR_INCORRECTACTION);
+		}
+		break;
+
+		case CMD_DELSURFACEFIX:
+		{
+			if (SMesh.IsSuperMeshModuleSet(MODS_SMELASTIC)) {
+
+				int index;
+
+				error = commandSpec.GetParameters(command_fields, index);
+
+				if (!error) {
+
+					StopSimulation();
+					if (!err_hndl.qcall(error, &SuperMesh::Del_Fixed_Surface, &SMesh, index)) UpdateScreen();
+				}
+				else if (verbose) PrintCommandUsage(command_name);
+			}
+			else error(BERROR_INCORRECTACTION);
+		}
+		break;
+
+		case CMD_DELSURFACESTRESS:
+		{
+			if (SMesh.IsSuperMeshModuleSet(MODS_SMELASTIC)) {
+
+				int index;
+
+				error = commandSpec.GetParameters(command_fields, index);
+
+				if (!error) {
+
+					StopSimulation();
+					if (!err_hndl.qcall(error, &SuperMesh::Del_Stress_Surface, &SMesh, index)) UpdateScreen();
+				}
+				else if (verbose) PrintCommandUsage(command_name);
+			}
+			else error(BERROR_INCORRECTACTION);
+		}
+		break;
+
+		case CMD_EDITSURFACEFIX:
+		{
+			if (SMesh.IsSuperMeshModuleSet(MODS_SMELASTIC)) {
+
+				int index;
+				Rect rect;
+
+				error = commandSpec.GetParameters(command_fields, index, rect);
+
+				if (!error) {
+
+					StopSimulation();
+
+					if (!err_hndl.qcall(error, &SuperMesh::Edit_Fixed_Surface, &SMesh, index, rect)) UpdateScreen();
+				}
+				else if (verbose) {
+
+					Print_FixedSurfaces_List();
+					Print_StressSurfaces_List();
+				}
+			}
+			else error(BERROR_INCORRECTACTION);
+		}
+		break;
+
+		case CMD_EDITSURFACESTRESS:
+		{
+			if (SMesh.IsSuperMeshModuleSet(MODS_SMELASTIC)) {
+
+				int index;
+				Rect rect;
+
+				error = commandSpec.GetParameters(command_fields, index, rect);
+
+				if (!error) {
+
+					StopSimulation();
+
+					if (!err_hndl.qcall(error, &SuperMesh::Edit_Stress_Surface_Rectangle, &SMesh, index, rect)) UpdateScreen();
+				}
+				else if (verbose) {
+
+					Print_FixedSurfaces_List();
+					Print_StressSurfaces_List();
+				}
+			}
+			else error(BERROR_INCORRECTACTION);
+		}
+		break;
+
+		case CMD_EDITSURFACESTRESSEQUATION:
+		{
+			if (SMesh.IsSuperMeshModuleSet(MODS_SMELASTIC)) {
+
+				int index;
+				std::string equation;
+
+				error = commandSpec.GetParameters(command_fields, index, equation);
+
+				if (!error) {
+
+					StopSimulation();
+
+					if (!err_hndl.qcall(error, &SuperMesh::Edit_Stress_Surface_Equation, &SMesh, index, equation)) UpdateScreen();
+				}
+				else if (verbose) {
+
+					Print_FixedSurfaces_List();
+					Print_StressSurfaces_List();
+				}
+			}
+			else error(BERROR_INCORRECTACTION);
 		}
 		break;
 
@@ -4710,9 +5054,10 @@ void Simulation::HandleCommand(std::string command_string)
 		{
 			std::string meshName, fileName;
 
-			optional_meshname_check_focusedmeshdefault(command_fields);
+			bool meshName_specified = optional_meshname_check_focusedmeshdefault(command_fields, true);
 			error = commandSpec.GetParameters(command_fields, meshName, fileName);
-			
+			if (!meshName_specified) meshName = SMesh.superMeshHandle;
+
 			if (!error) {
 
 				StopSimulation();
@@ -4720,18 +5065,36 @@ void Simulation::HandleCommand(std::string command_string)
 				if (GetFileTermination(fileName) != ".ovf") fileName += ".ovf";
 				if (!GetFilenameDirectory(fileName).length()) fileName = directory + fileName;
 
-				if (SMesh[meshName]->Magnetism_Enabled()) {
-
-					if (SMesh[meshName]->IsModuleSet(MOD_ZEEMAN)) {
-
-						error = SMesh[meshName]->CallModuleMethod(&ZeemanBase::SetFieldVEC_FromOVF2, ScanFileNameData(fileName));
-					}
-					
-					UpdateScreen();
-				}
-				else err_hndl.show_error(BERROR_NOTMAGNETIC, verbose);
+				err_hndl.call(error, &SuperMesh::LoadOVF2Field, &SMesh, meshName, ScanFileNameData(fileName));
+				UpdateScreen();
 			}
 			else if (verbose) PrintCommandUsage(command_name);
+		}
+		break;
+
+		case CMD_CLEARGLOBALFIELD:
+		{
+			err_hndl.call(error, &SuperMesh::ClearGlobalField, &SMesh);
+			UpdateScreen();
+		}
+		break;
+
+		case CMD_SHIFTGLOBALFIELD:
+		{
+			DBL3 shift;
+
+			error = commandSpec.GetParameters(command_fields, shift);
+			
+			if (!error) {
+
+				StopSimulation();
+
+				SMesh.ShiftGlobalField(shift);
+				UpdateScreen();
+			}
+			else if (verbose) PrintCommandUsage(command_name);
+
+			if (script_client_connected) commSocket.SetSendData(commandSpec.PrepareReturnParameters(SMesh.GetGlobalField().rect));
 		}
 		break;
 
@@ -5506,6 +5869,35 @@ void Simulation::HandleCommand(std::string command_string)
 			else if (verbose) Print_MCSettings();
 
 			if (script_client_connected) commSocket.SetSendData(commandSpec.PrepareReturnParameters(SMesh.Get_MonteCarlo_ConeAngleLimits()));
+		}
+		break;
+
+		case CMD_PRNGSEED:
+		{
+			int seed;
+			std::string meshName;
+
+			bool meshName_specified = optional_meshname_check_focusedmeshdefault(command_fields);
+			error = commandSpec.GetParameters(command_fields, meshName, seed);
+			if (!meshName_specified) meshName = "";
+
+			if (!error) {
+
+				if (!err_hndl.qcall(error, &SuperMesh::Set_PRNG_Seed, &SMesh, meshName, (unsigned)seed)) UpdateScreen();
+			}
+			else if (verbose) PrintCommandUsage(command_name);
+
+			if (verbose) {
+
+				if (!meshName_specified) meshName = SMesh.GetMeshFocus();
+				BD.DisplayConsoleListing("PRNG seed : " + ToString(SMesh[meshName]->prng_seed));
+			}
+
+			if (script_client_connected) {
+
+				if (!meshName_specified) meshName = SMesh.GetMeshFocus();
+				commSocket.SetSendData(commandSpec.PrepareReturnParameters(SMesh[meshName]->prng_seed));
+			}
 		}
 		break;
 
@@ -7466,31 +7858,35 @@ void Simulation::HandleCommand(std::string command_string)
 			optional_meshname_check_focusedmeshdefault(command_fields);
 			error = commandSpec.GetParameters(command_fields, meshName, hm_mesh, rectangle);
 			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, meshName, hm_mesh); rectangle = SMesh[meshName]->GetMeshRect() - SMesh[meshName]->GetOrigin(); }
+			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, meshName, rectangle); hm_mesh = ""; }
+			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, meshName); rectangle = SMesh[meshName]->GetMeshRect() - SMesh[meshName]->GetOrigin(); }
 
 			if (!error) {
 
-				if (SMesh[meshName]->GetMeshType() == MESH_FERROMAGNETIC && SMesh[meshName]->IsModuleSet(MOD_TRANSPORT) && SMesh.SolveSpinCurrent()
-					&& SMesh.contains(hm_mesh) && SMesh[hm_mesh]->GetMeshType() == MESH_METAL && SMesh[hm_mesh]->IsModuleSet(MOD_TRANSPORT)) {
+				if (SMesh[meshName]->GetMeshType() == MESH_FERROMAGNETIC && SMesh[meshName]->IsModuleSet(MOD_TRANSPORT) && SMesh.SolveSpinCurrent()) {
+					if (hm_mesh == "" || (SMesh.contains(hm_mesh) && SMesh[hm_mesh]->GetMeshType() == MESH_METAL && SMesh[hm_mesh]->IsModuleSet(MOD_TRANSPORT))) {
 
-					VEC<DBL3>& T = dynamic_cast<Mesh*>(SMesh[meshName])->Get_InterfacialSpinTorque();
-					VEC_VC<DBL3>& M = dynamic_cast<Mesh*>(SMesh[meshName])->Get_M();
-					VEC_VC<DBL3>& J = dynamic_cast<Mesh*>(SMesh[hm_mesh])->Get_Jc();
+						VEC<DBL3>& T = dynamic_cast<Mesh*>(SMesh[meshName])->Get_InterfacialSpinTorque();
+						VEC_VC<DBL3>& M = dynamic_cast<Mesh*>(SMesh[meshName])->Get_M();
+						VEC_VC<DBL3>& J = (hm_mesh == "" ? dynamic_cast<Mesh*>(SMesh[meshName])->Get_Jc() : dynamic_cast<Mesh*>(SMesh[hm_mesh])->Get_Jc());
 
-					DBL2 SHAeff, flST;
-					double Rsq = 0.0;
-					error = dpArr.fit_sot(T, M, J, rectangle, &SHAeff, &flST, &Rsq);
+						DBL2 SHAeff, flST;
+						double Rsq = 0.0;
+						error = dpArr.fit_sot(T, M, J, rectangle, &SHAeff, &flST, &Rsq);
 
-					if (verbose && !error) {
+						if (verbose && !error) {
 
-						BD.DisplayConsoleMessage(
-							"SHAeff = " + ToString(SHAeff.major) + " +/- " + ToString(SHAeff.minor) + ", " +
-							"flST = " + ToString(flST.major) + " +/- " + ToString(flST.minor) +
-							", R^2 = " + ToString(Rsq));
+							BD.DisplayConsoleMessage(
+								"SHAeff = " + ToString(SHAeff.major) + " +/- " + ToString(SHAeff.minor) + ", " +
+								"flST = " + ToString(flST.major) + " +/- " + ToString(flST.minor) +
+								", R^2 = " + ToString(Rsq));
+						}
+
+						if (script_client_connected) commSocket.SetSendData(commandSpec.PrepareReturnParameters(SHAeff.major, flST.major, SHAeff.minor, flST.minor, Rsq));
 					}
-
-					if (script_client_connected) commSocket.SetSendData(commandSpec.PrepareReturnParameters(SHAeff.major, flST.major, SHAeff.minor, flST.minor, Rsq));
+					else err_hndl.show_error(BERROR_SPINSOLVER_FIT3, verbose);
 				}
-				else err_hndl.show_error(BERROR_SPINSOLVER_FIT3, verbose);
+				else err_hndl.show_error(BERROR_SPINSOLVER_FIT2, verbose);
 			}
 			else if (verbose) PrintCommandUsage(command_name);
 		}
@@ -7505,70 +7901,74 @@ void Simulation::HandleCommand(std::string command_string)
 			optional_meshname_check_focusedmeshdefault(command_fields);
 			error = commandSpec.GetParameters(command_fields, meshName, hm_mesh, rectangle);
 			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, meshName, hm_mesh); rectangle = SMesh[meshName]->GetMeshRect() - SMesh[meshName]->GetOrigin(); }
+			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, meshName, rectangle); hm_mesh = ""; }
+			if (error == BERROR_PARAMMISMATCH) { error.reset() = commandSpec.GetParameters(command_fields, meshName); rectangle = SMesh[meshName]->GetMeshRect() - SMesh[meshName]->GetOrigin(); }
 
 			if (!error) {
 
-				if (SMesh[meshName]->GetMeshType() == MESH_FERROMAGNETIC && SMesh[meshName]->IsModuleSet(MOD_TRANSPORT) && SMesh.SolveSpinCurrent()
-					&& SMesh.contains(hm_mesh) && SMesh[hm_mesh]->GetMeshType() == MESH_METAL && SMesh[hm_mesh]->IsModuleSet(MOD_TRANSPORT)) {
+				if (SMesh[meshName]->GetMeshType() == MESH_FERROMAGNETIC && SMesh[meshName]->IsModuleSet(MOD_TRANSPORT) && SMesh.SolveSpinCurrent()) {
+					if (hm_mesh == "" || (SMesh.contains(hm_mesh) && SMesh[hm_mesh]->GetMeshType() == MESH_METAL && SMesh[hm_mesh]->IsModuleSet(MOD_TRANSPORT))) {
 
-					VEC_VC<DBL3>& M = dynamic_cast<Mesh*>(SMesh[meshName])->Get_M();
-					VEC_VC<DBL3>& J_hm = dynamic_cast<Mesh*>(SMesh[hm_mesh])->Get_Jc();
-					VEC_VC<DBL3>& J_fm = dynamic_cast<Mesh*>(SMesh[meshName])->Get_Jc();
-					VEC<DBL3> T(M.h, M.rect);
+						VEC_VC<DBL3>& M = dynamic_cast<Mesh*>(SMesh[meshName])->Get_M();
+						VEC_VC<DBL3>& J_hm = (hm_mesh == "" ? dynamic_cast<Mesh*>(SMesh[meshName])->Get_Jc() : dynamic_cast<Mesh*>(SMesh[hm_mesh])->Get_Jc());
+						VEC_VC<DBL3>& J_fm = dynamic_cast<Mesh*>(SMesh[meshName])->Get_Jc();
+						VEC<DBL3> T(M.h, M.rect);
 
-					if (IsZ(dynamic_cast<Mesh*>(SMesh[meshName])->ts_eff.get0())) {
+						if (IsZ(dynamic_cast<Mesh*>(SMesh[meshName])->ts_eff.get0())) {
 
-						//interfacial spin torque only
-						T.copy_values(dynamic_cast<Mesh*>(SMesh[meshName])->Get_InterfacialSpinTorque());
+							//interfacial spin torque only
+							T.copy_values(dynamic_cast<Mesh*>(SMesh[meshName])->Get_InterfacialSpinTorque());
 
-						if (!T.linear_size()) {
+							if (!T.linear_size()) {
 
-							err_hndl.show_error(BERROR_NOTCOMPUTED, verbose);
-							break;
+								err_hndl.show_error(BERROR_NOTCOMPUTED, verbose);
+								break;
+							}
 						}
-					}
-					else if (IsZ(dynamic_cast<Mesh*>(SMesh[meshName])->tsi_eff.get0())) {
+						else if (IsZ(dynamic_cast<Mesh*>(SMesh[meshName])->tsi_eff.get0())) {
 
-						//bulk spin torque only
-						T.copy_values(dynamic_cast<Mesh*>(SMesh[meshName])->Get_SpinTorque());
+							//bulk spin torque only
+							T.copy_values(dynamic_cast<Mesh*>(SMesh[meshName])->Get_SpinTorque());
 
-						if (!T.linear_size()) {
+							if (!T.linear_size()) {
 
-							err_hndl.show_error(BERROR_NOTCOMPUTED, verbose);
-							break;
+								err_hndl.show_error(BERROR_NOTCOMPUTED, verbose);
+								break;
+							}
 						}
-					}
-					else {
+						else {
 
-						//both bulk and interfacial spin torque
-						T.copy_values(dynamic_cast<Mesh*>(SMesh[meshName])->Get_InterfacialSpinTorque());
+							//both bulk and interfacial spin torque
+							T.copy_values(dynamic_cast<Mesh*>(SMesh[meshName])->Get_InterfacialSpinTorque());
 
-						if (!T.linear_size()) {
+							if (!T.linear_size()) {
 
-							err_hndl.show_error(BERROR_NOTCOMPUTED, verbose);
-							break;
+								err_hndl.show_error(BERROR_NOTCOMPUTED, verbose);
+								break;
+							}
+
+							T.add_values(dynamic_cast<Mesh*>(SMesh[meshName])->Get_SpinTorque());
 						}
 
-						T.add_values(dynamic_cast<Mesh*>(SMesh[meshName])->Get_SpinTorque());
+						DBL2 SHAeff, flST, P, beta;
+						double Rsq = 0.0;
+						error = dpArr.fit_sotstt(T, M, J_hm, J_fm, rectangle, &SHAeff, &flST, &P, &beta, &Rsq);
+
+						if (verbose && !error) {
+
+							BD.DisplayConsoleMessage(
+								"SHAeff = " + ToString(SHAeff.major) + " +/- " + ToString(SHAeff.minor) + ", " +
+								"flST = " + ToString(flST.major) + " +/- " + ToString(flST.minor) + ", " +
+								"P = " + ToString(P.major) + " +/- " + ToString(P.minor) + ", " +
+								"beta = " + ToString(beta.major) + " +/- " + ToString(beta.minor) +
+								", R^2 = " + ToString(Rsq));
+						}
+
+						if (script_client_connected) commSocket.SetSendData(commandSpec.PrepareReturnParameters(SHAeff.major, flST.major, P.major, beta.major, SHAeff.minor, flST.minor, P.minor, beta.minor, Rsq));
 					}
-
-					DBL2 SHAeff, flST, P, beta;
-					double Rsq = 0.0;
-					error = dpArr.fit_sotstt(T, M, J_hm, J_fm, rectangle, &SHAeff, &flST, &P, &beta, &Rsq);
-
-					if (verbose && !error) {
-
-						BD.DisplayConsoleMessage(
-							"SHAeff = " + ToString(SHAeff.major) + " +/- " + ToString(SHAeff.minor) + ", " +
-							"flST = " + ToString(flST.major) + " +/- " + ToString(flST.minor) + ", " +
-							"P = " + ToString(P.major) + " +/- " + ToString(P.minor) + ", " +
-							"beta = " + ToString(beta.major) + " +/- " + ToString(beta.minor) +
-							", R^2 = " + ToString(Rsq));
-					}
-
-					if (script_client_connected) commSocket.SetSendData(commandSpec.PrepareReturnParameters(SHAeff.major, flST.major, P.major, beta.major, SHAeff.minor, flST.minor, P.minor, beta.minor, Rsq));
+					else err_hndl.show_error(BERROR_SPINSOLVER_FIT3, verbose);
 				}
-				else err_hndl.show_error(BERROR_SPINSOLVER_FIT3, verbose);
+				else err_hndl.show_error(BERROR_SPINSOLVER_FIT2, verbose);
 			}
 			else if (verbose) PrintCommandUsage(command_name);
 		}
@@ -7774,7 +8174,6 @@ void Simulation::HandleCommand(std::string command_string)
 
 		case CMD_TEST:
 		{
-			/*
 			//DUMP ALL COMMANDS
 			std::vector<std::string> commands_output;
 			commands_output.resize(commands.size());
@@ -7873,7 +8272,6 @@ void Simulation::HandleCommand(std::string command_string)
 			dump_quantities(MESH_METAL, meshtypeHandles(MESH_METAL));
 			dump_quantities(MESH_INSULATOR, meshtypeHandles(MESH_INSULATOR));
 			dump_quantities(MESH_ATOM_CUBIC, meshtypeHandles(MESH_ATOM_CUBIC));
-			*/
 		}
 		break;
 
@@ -7891,3 +8289,4 @@ void Simulation::HandleCommand(std::string command_string)
 	}
 	else err_hndl.show_error(BERROR_COMMAND_NOTRECOGNIZED, verbose);
 }
+

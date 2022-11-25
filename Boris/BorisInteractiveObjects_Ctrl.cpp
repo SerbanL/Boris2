@@ -374,6 +374,34 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 	}
 	break;
 
+	//Set elastodynamics equation time step: textId is the value
+	case IOI_ELDT:
+	{
+		//try to set ODE time step
+		//on double-click make popup edit box to edit the currently displayed value
+		if (actionCode == AC_DOUBLECLICK) { actionOutcome = AO_STARTPOPUPEDITBOX; }
+
+		//popup edit box has returned some text - try to set value from it
+		if (actionCode == AC_POPUPEDITTEXTBOXRETURNEDTEXT) {
+
+			//the actual text returned by the popup edit box
+			std::string to_text = pTO->GetText();
+			sendCommand_verbose(CMD_SETELDT, trimspaces(to_text));
+		}
+	}
+	break;
+
+	//Link elastodynamics time-step to ODE dT flag : auxId is the value
+	case IOI_LINKELDT:
+	{
+		//parameters from iop
+		bool state = (bool)iop.auxId;
+
+		//try to set ODE and its default evaluation method
+		if (actionCode == AC_MOUSELEFTDOWN) sendCommand_verbose(CMD_LINKDTELASTIC, !state);
+	}
+	break;
+
 	//Available/set evaluation method for ode : minorId is an entry from ODE_ as : micromagnetic equation value + 100 * atomistic equation value, auxId is the EVAL_ entry (the evaluation method), textId is the name of the evaluation method
 	case IOI_ODE_EVAL:
 	{
@@ -424,6 +452,7 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 	case IOI_MESH_FORDISPLAYMODULES:
 	case IOI_MESH_FORMESHLIST:
 	case IOI_MESH_FORSTOCHASTICITY:
+	case IOI_MESH_FORELASTICITY:
 	case IOI_MESH_FORSPEEDUP:
 	case IOI_MESH_FORSKYPOSDMUL:
 	case IOI_MESH_FORMC:
@@ -1869,6 +1898,125 @@ InteractiveObjectActionOutcome Simulation::ConsoleActionHandler(int actionCode, 
 	}
 	break;
 	
+	//Shows diagonal strain set equation. minorId is the unique mesh id number. textId is the equation. auxId is enabled(1)/disabled(0) status.
+	case IOI_STRAINEQUATION:
+	{
+		int meshId = iop.minorId;
+		std::string value_string = iop.textId;
+
+		//on double-click make popup edit box to edit the currently displayed value
+		if (actionCode == AC_DOUBLECLICK) { actionOutcome = AO_STARTPOPUPEDITBOX; }
+
+		//on right-click clear the equation
+		if (actionCode == AC_MOUSERIGHTDOWN) { sendCommand_verbose(CMD_CLEARSTRAINEQUATIONS, SMesh.key_from_meshId(meshId)); }
+
+		//popup edit box has returned some text - try to set value from it
+		else if (actionCode == AC_POPUPEDITTEXTBOXRETURNEDTEXT) {
+
+			//the actual text returned by the popup edit box
+			std::string to_text = trimendspaces(pTO->GetText());
+
+			sendCommand_verbose(CMD_STRAINEQUATION, SMesh.key_from_meshId(meshId), to_text);
+		}
+	}
+	break;
+
+	//Shows shear strain set equation. minorId is the unique mesh id number. textId is the equation. auxId is enabled(1)/disabled(0) status.
+	case IOI_SHEARSTRAINEQUATION:
+	{
+		int meshId = iop.minorId;
+		std::string value_string = iop.textId;
+
+		//on double-click make popup edit box to edit the currently displayed value
+		if (actionCode == AC_DOUBLECLICK) { actionOutcome = AO_STARTPOPUPEDITBOX; }
+
+		//on right-click clear the equation
+		if (actionCode == AC_MOUSERIGHTDOWN) { sendCommand_verbose(CMD_CLEARSTRAINEQUATIONS, SMesh.key_from_meshId(meshId)); }
+
+		//popup edit box has returned some text - try to set value from it
+		else if (actionCode == AC_POPUPEDITTEXTBOXRETURNEDTEXT) {
+
+			//the actual text returned by the popup edit box
+			std::string to_text = trimendspaces(pTO->GetText());
+
+			sendCommand_verbose(CMD_SHEARSTRAINEQUATION, SMesh.key_from_meshId(meshId), to_text);
+		}
+	}
+	break;
+
+	//Shows fixed surface rectangle. minorId is the minor Id in SMElastic::fixed_u_surfaces, auxId is the number of the interactive object in the list (electrode index), textId is the surface rect as a std::string
+	case IOI_SURFACEFIX:
+	{
+		//parameters from iop
+		int surfaceId_minor = iop.minorId;
+		int io_index = iop.auxId;
+
+		//on double-click make popup edit box to edit the currently displayed value
+		if (actionCode == AC_DOUBLECLICK) { actionOutcome = AO_STARTPOPUPEDITBOX; }
+
+		//popup edit box has returned some text - try to set value from it
+		else if (actionCode == AC_POPUPEDITTEXTBOXRETURNEDTEXT) {
+
+			//the actual text returned by the popup edit box
+			std::string to_text = trimendspaces(pTO->GetText());
+			replaceall(to_text, ", ", " ");
+			replaceall(to_text, "; ", " ");
+
+			sendCommand_verbose(CMD_EDITSURFACEFIX, io_index, to_text);
+		}
+
+		if (actionCode == AC_MOUSERIGHTDOWN) sendCommand_verbose(CMD_DELSURFACEFIX, io_index);
+	}
+	break;
+
+	//Shows stress surface rectangle. minorId is the minor Id in SMElastic::stress_surfaces_rect, auxId is the number of the interactive object in the list (electrode index), textId is the surface rect as a std::string
+	case IOI_SURFACESTRESS:
+	{
+		//parameters from iop
+		int surfaceId_minor = iop.minorId;
+		int io_index = iop.auxId;
+
+		//on double-click make popup edit box to edit the currently displayed value
+		if (actionCode == AC_DOUBLECLICK) { actionOutcome = AO_STARTPOPUPEDITBOX; }
+
+		//popup edit box has returned some text - try to set value from it
+		else if (actionCode == AC_POPUPEDITTEXTBOXRETURNEDTEXT) {
+
+			//the actual text returned by the popup edit box
+			std::string to_text = trimendspaces(pTO->GetText());
+			replaceall(to_text, ", ", " ");
+			replaceall(to_text, "; ", " ");
+
+			sendCommand_verbose(CMD_EDITSURFACESTRESS, io_index, to_text);
+		}
+
+		if (actionCode == AC_MOUSERIGHTDOWN) sendCommand_verbose(CMD_DELSURFACESTRESS, io_index);
+	}
+	break;
+
+	//Shows stress surface equation. minorId is the index in SMElastic::stress_surfaces_equations, auxId is the number of the interactive object in the list (electrode index), textId is the equation
+	case IOI_SURFACESTRESSEQ:
+	{
+		//parameters from iop
+		int el_index = iop.minorId;
+		std::string equation = iop.textId;
+
+		//on double-click make popup edit box to edit the currently displayed value
+		if (actionCode == AC_DOUBLECLICK) { actionOutcome = AO_STARTPOPUPEDITBOX; }
+
+		//popup edit box has returned some text - try to set value from it
+		else if (actionCode == AC_POPUPEDITTEXTBOXRETURNEDTEXT) {
+
+			//the actual text returned by the popup edit box
+			std::string to_text = trimendspaces(pTO->GetText());
+
+			sendCommand_verbose(CMD_EDITSURFACESTRESSEQUATION, el_index, to_text);
+		}
+
+		if (actionCode == AC_MOUSERIGHTDOWN) sendCommand_verbose(CMD_DELSURFACESTRESS, el_index);
+	}
+	break;
+
 	//Shows dipole shift clipping value. minorId is the unique mesh id number. textId is the value
 	case IOI_DIPOLESHIFTCLIP:
 	{

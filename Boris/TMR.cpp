@@ -69,6 +69,7 @@ BError TMR::Initialize(void)
 {
 	BError error(CLASS_STR(TMR));
 
+	//Make list of contacts for TMR calculation
 	SuperMesh* pSMesh = pMesh->pSMesh;
 
 	pMeshFM_Bot.clear();
@@ -106,9 +107,122 @@ BError TMR::Initialize(void)
 		}
 	}
 
+	//in insulator meshes must mark cells for which magnetic neighbors are not available either side, as empty
+	//NOTE, this will require STransport to recalculate CMBND flags, so this is done in STransport initialization which comes after all mesh modules are initialized
+#pragma omp parallel for
+	for (int j = 0; j < pMesh->n_e.j; j++) {
+		for (int i = 0; i < pMesh->n_e.i; i++) {
+
+			int idx = i + j * pMesh->n_e.x;
+
+			DBL3 m_top = DBL3(), m_bot = DBL3();
+
+			//TOP
+
+			//Look at FM meshes first, if any
+			for (int mesh_idx = 0; mesh_idx < pMeshFM_Top.size(); mesh_idx++) {
+
+				Rect tmeshRect = pMeshFM_Top[mesh_idx]->GetMeshRect();
+
+				//relative coordinates to read value from top mesh (the one we're coupling to here) - relative to top mesh
+				DBL3 cell_rel_pos = DBL3(
+					(i + 0.5) * pMesh->h_e.x + pMesh->meshRect.s.x - tmeshRect.s.x,
+					(j + 0.5) * pMesh->h_e.y + pMesh->meshRect.s.y - tmeshRect.s.y,
+					pMeshFM_Top[mesh_idx]->h.z / 2);
+
+				if (!tmeshRect.contains(cell_rel_pos + tmeshRect.s)) continue;
+
+				m_top = normalize(pMeshFM_Top[mesh_idx]->M.weighted_average(cell_rel_pos, DBL3(pMesh->h_e.x, pMesh->h_e.y, pMeshFM_Top[mesh_idx]->h.z)));
+				break;
+			}
+
+			if (m_top == DBL3()) {
+
+				//Look at Atomistic meshes, if any
+				for (int mesh_idx = 0; mesh_idx < pMeshAtom_Top.size(); mesh_idx++) {
+
+					Rect tmeshRect = pMeshAtom_Top[mesh_idx]->GetMeshRect();
+
+					//relative coordinates to read value from top mesh (the one we're coupling to here) - relative to top mesh
+					DBL3 cell_rel_pos = DBL3(
+						(i + 0.5) * pMesh->h_e.x + pMesh->meshRect.s.x - tmeshRect.s.x,
+						(j + 0.5) * pMesh->h_e.y + pMesh->meshRect.s.y - tmeshRect.s.y,
+						pMeshAtom_Top[mesh_idx]->h.z / 2);
+
+					if (!tmeshRect.contains(cell_rel_pos + tmeshRect.s)) continue;
+
+					m_top = normalize(pMeshAtom_Top[mesh_idx]->M1.weighted_average(cell_rel_pos, DBL3(pMesh->h_e.x, pMesh->h_e.y, pMeshAtom_Top[mesh_idx]->h.z)));
+					break;
+				}
+			}
+
+			//BOTTOM
+
+			//Look at FM meshes first, if any
+			for (int mesh_idx = 0; mesh_idx < pMeshFM_Bot.size(); mesh_idx++) {
+
+				Rect bmeshRect = pMeshFM_Bot[mesh_idx]->GetMeshRect();
+
+				//relative coordinates to read value from bottom mesh (the one we're coupling to here) - relative to bottom mesh
+				DBL3 cell_rel_pos = DBL3(
+					(i + 0.5) * pMesh->h_e.x + pMesh->meshRect.s.x - bmeshRect.s.x,
+					(j + 0.5) * pMesh->h_e.y + pMesh->meshRect.s.y - bmeshRect.s.y,
+					pMeshFM_Bot[mesh_idx]->meshRect.e.z - pMeshFM_Bot[mesh_idx]->meshRect.s.z - (pMeshFM_Bot[mesh_idx]->h.z / 2));
+
+				//can't couple to an empty cell
+				if (!bmeshRect.contains(cell_rel_pos + bmeshRect.s)) continue;
+
+				m_bot = normalize(pMeshFM_Bot[mesh_idx]->M.weighted_average(cell_rel_pos, DBL3(pMesh->h_e.x, pMesh->h_e.y, pMeshFM_Bot[mesh_idx]->h.z)));
+				break;
+			}
+
+			if (m_bot == DBL3()) {
+
+				//Look at Atomistic meshes, if any
+				for (int mesh_idx = 0; mesh_idx < pMeshAtom_Bot.size(); mesh_idx++) {
+
+					Rect bmeshRect = pMeshAtom_Bot[mesh_idx]->GetMeshRect();
+
+					//relative coordinates to read value from bottom mesh (the one we're coupling to here) - relative to bottom mesh
+					DBL3 cell_rel_pos = DBL3(
+						(i + 0.5) * pMesh->h_e.x + pMesh->meshRect.s.x - bmeshRect.s.x,
+						(j + 0.5) * pMesh->h_e.y + pMesh->meshRect.s.y - bmeshRect.s.y,
+						pMeshAtom_Bot[mesh_idx]->meshRect.e.z - pMeshAtom_Bot[mesh_idx]->meshRect.s.z - (pMeshAtom_Bot[mesh_idx]->h.z / 2));
+
+					//can't couple to an empty cell
+					if (!bmeshRect.contains(cell_rel_pos + bmeshRect.s)) continue;
+
+					m_bot = normalize(pMeshAtom_Bot[mesh_idx]->M1.weighted_average(cell_rel_pos, DBL3(pMesh->h_e.x, pMesh->h_e.y, pMeshAtom_Bot[mesh_idx]->h.z)));
+					break;
+				}
+			}
+			
+			if (m_top == DBL3() || m_bot == DBL3()) {
+
+				for (int k = 0; k < pMesh->n_e.k; k++) {
+
+					pMesh->elC.mark_empty(idx + k * pMesh->n_e.x * pMesh->n_e.y);
+					pMesh->elC[idx + k * pMesh->n_e.x * pMesh->n_e.y] = 0.0;
+					
+					pMesh->V.mark_empty(idx + k * pMesh->n_e.x * pMesh->n_e.y);
+					pMesh->V[idx + k * pMesh->n_e.x * pMesh->n_e.y] = 0.0;
+					
+					pMesh->E.mark_empty(idx + k * pMesh->n_e.x * pMesh->n_e.y);
+					pMesh->E[idx + k * pMesh->n_e.x * pMesh->n_e.y] = DBL3();
+					
+					if (pMesh->S.linear_size()) {
+
+						pMesh->S.mark_empty(idx + k * pMesh->n_e.x * pMesh->n_e.y);
+						pMesh->S[idx + k * pMesh->n_e.x * pMesh->n_e.y] = DBL3();
+					}
+				}
+			}
+		}
+	}
+
 	//get a copy of TMR type set and calculate conductivity
 	TMR_type = dynamic_cast<InsulatorMesh*>(pMesh)->GetTMRType();
-	
+
 	initialized = true;
 
 	//If CUDA is on, then skip calculating electrical conductivity on CPU below this - we just want to initialize the CPU version here
@@ -142,7 +256,7 @@ BError TMR::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 		//make sure correct memory is assigned for electrical quantities
 
 		//electrical conductivity
-		if (pMesh->elC.linear_size() && cfgMessage != UPDATECONFIG_MESHSHAPECHANGE) {
+		if (pMesh->elC.linear_size()) {
 
 			success = pMesh->elC.resize(pMesh->h_e, pMesh->meshRect);
 		}
@@ -152,7 +266,7 @@ BError TMR::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 		}
 
 		//electrical potential - set empty cells using information in elC (empty cells have zero electrical conductivity)
-		if (pMesh->V.linear_size() && cfgMessage != UPDATECONFIG_MESHSHAPECHANGE) {
+		if (pMesh->V.linear_size()) {
 
 			success &= pMesh->V.resize(pMesh->h_e, pMesh->meshRect, pMesh->elC);
 		}
@@ -162,7 +276,7 @@ BError TMR::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 		}
 
 		//electric field - set empty cells using information in elC (empty cells have zero electrical conductivity)
-		if (pMesh->E.linear_size() && cfgMessage != UPDATECONFIG_MESHSHAPECHANGE) {
+		if (pMesh->E.linear_size()) {
 
 			success &= pMesh->E.resize(pMesh->h_e, pMesh->meshRect, pMesh->elC);
 		}
@@ -178,7 +292,7 @@ BError TMR::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 		//spin accumulation if needed - set empty cells using information in elC (empty cells have zero electrical conductivity)
 		if (success && stsolve != STSOLVE_NONE) {
 
-			if (pMesh->S.linear_size() && cfgMessage != UPDATECONFIG_MESHSHAPECHANGE) {
+			if (pMesh->S.linear_size()) {
 
 				success &= pMesh->S.resize(pMesh->h_e, pMesh->meshRect, pMesh->elC);
 			}
@@ -458,7 +572,7 @@ void TMR::CalculateElectricalConductivity(bool force_recalculate)
 						else {
 
 							//TMR
-
+	
 							//cos form of RA theta dependence
 							if (TMR_type == TMR_COS) {
 

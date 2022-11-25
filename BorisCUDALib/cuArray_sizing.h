@@ -9,24 +9,29 @@
 template <typename VType>
 __host__ bool cu_arr<VType>::resize(size_t size_)
 {
+	if (size_ == size()) return true;
+
 	if (!size_) clear();
-
-	cudaError_t error = gpu_alloc(cu_array, size_);
-	if (error == cudaSuccess) {
-
-		arr_size = size_;
-
-		if (!pcu_array) gpu_alloc(pcu_array);
-		cpu_to_gpu(pcu_array, &cu_array);
-
-		return true;
-	}
 	else {
-		
-		clear();
 
-		return false;
+		cudaError_t error = gpu_alloc(cu_array, size_);
+		if (error == cudaSuccess) {
+
+			arr_size = size_;
+
+			if (!pcu_array) gpu_alloc(pcu_array);
+			cpu_to_gpu(pcu_array, &cu_array);
+
+			return true;
+		}
+		else {
+
+			clear();
+			return false;
+		}
 	}
+
+	return true;
 }
 
 template <typename VType>

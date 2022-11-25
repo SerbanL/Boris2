@@ -82,7 +82,7 @@ BError DemagCUDA::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 	BError error(CLASS_STR(DemagCUDA));
 
 	//only need to uninitialize if n or h have changed, or pbc settings have changed
-	if (!CheckDimensions(pMeshCUDA->n, pMeshCUDA->h, pDemag->Get_PBC()) || cfgMessage == UPDATECONFIG_DEMAG_CONVCHANGE) {
+	if (!CheckDimensions(pMeshCUDA->n, pMeshCUDA->h, pDemag->Get_PBC()) || cfgMessage == UPDATECONFIG_DEMAG_CONVCHANGE || cfgMessage == UPDATECONFIG_MESHCHANGE) {
 
 		Uninitialize();
 

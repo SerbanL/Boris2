@@ -64,6 +64,8 @@ Atom_MeshParamsCUDA::Atom_MeshParamsCUDA(Atom_MeshParams *pameshParams)
 	pameshParams->elecCond.set_p_cu_obj_mpcuda(&elecCond);
 	amrPercentage()->set_from_cpu(pameshParams->amrPercentage);
 	pameshParams->amrPercentage.set_p_cu_obj_mpcuda(&amrPercentage);
+	tamrPercentage()->set_from_cpu(pameshParams->tamrPercentage);
+	pameshParams->tamrPercentage.set_p_cu_obj_mpcuda(&tamrPercentage);
 	RAtmr_p()->set_from_cpu(pameshParams->RAtmr_p);
 	pameshParams->RAtmr_p.set_p_cu_obj_mpcuda(&RAtmr_p);
 	RAtmr_ap()->set_from_cpu(pameshParams->RAtmr_ap);
@@ -87,11 +89,17 @@ Atom_MeshParamsCUDA::Atom_MeshParamsCUDA(Atom_MeshParams *pameshParams)
 	pameshParams->SHA.set_p_cu_obj_mpcuda(&SHA);
 	flSOT()->set_from_cpu(pameshParams->flSOT);
 	pameshParams->flSOT.set_p_cu_obj_mpcuda(&flSOT);
+	flSOT2()->set_from_cpu(pameshParams->flSOT2);
+	pameshParams->flSOT2.set_p_cu_obj_mpcuda(&flSOT2);
 
 	STq()->set_from_cpu(pameshParams->STq);
 	pameshParams->STq.set_p_cu_obj_mpcuda(&STq);
+	STq2()->set_from_cpu(pameshParams->STq2);
+	pameshParams->STq2.set_p_cu_obj_mpcuda(&STq2);
 	STa()->set_from_cpu(pameshParams->STa);
 	pameshParams->STa.set_p_cu_obj_mpcuda(&STa);
+	STa2()->set_from_cpu(pameshParams->STa2);
+	pameshParams->STa2.set_p_cu_obj_mpcuda(&STa2);
 	STp()->set_from_cpu(pameshParams->STp);
 	pameshParams->STp.set_p_cu_obj_mpcuda(&STp);
 
@@ -120,6 +128,11 @@ Atom_MeshParamsCUDA::Atom_MeshParamsCUDA(Atom_MeshParams *pameshParams)
 
 	the_eff()->set_from_cpu(pameshParams->the_eff);
 	pameshParams->the_eff.set_p_cu_obj_mpcuda(&the_eff);
+
+	Sc()->set_from_cpu(pameshParams->Sc);
+	pameshParams->Sc.set_p_cu_obj_mpcuda(&Sc);
+	joule_eff()->set_from_cpu(pameshParams->joule_eff);
+	pameshParams->joule_eff.set_p_cu_obj_mpcuda(&joule_eff);
 
 	thermCond()->set_from_cpu(pameshParams->thermCond);
 	pameshParams->thermCond.set_p_cu_obj_mpcuda(&thermCond);
@@ -183,6 +196,7 @@ Atom_MeshParamsCUDA::~Atom_MeshParamsCUDA()
 
 	pameshParams->elecCond.null_p_cu_obj_mpcuda();
 	pameshParams->amrPercentage.null_p_cu_obj_mpcuda();
+	pameshParams->tamrPercentage.null_p_cu_obj_mpcuda();
 	pameshParams->RAtmr_p.null_p_cu_obj_mpcuda();
 	pameshParams->RAtmr_ap.null_p_cu_obj_mpcuda();
 
@@ -195,9 +209,12 @@ Atom_MeshParamsCUDA::~Atom_MeshParamsCUDA()
 
 	pameshParams->SHA.null_p_cu_obj_mpcuda();
 	pameshParams->flSOT.null_p_cu_obj_mpcuda();
+	pameshParams->flSOT2.null_p_cu_obj_mpcuda();
 
 	pameshParams->STq.null_p_cu_obj_mpcuda();
+	pameshParams->STq2.null_p_cu_obj_mpcuda();
 	pameshParams->STa.null_p_cu_obj_mpcuda();
+	pameshParams->STa2.null_p_cu_obj_mpcuda();
 	pameshParams->STp.null_p_cu_obj_mpcuda();
 
 	pameshParams->l_sf.null_p_cu_obj_mpcuda();
@@ -213,6 +230,9 @@ Atom_MeshParamsCUDA::~Atom_MeshParamsCUDA()
 	pameshParams->pump_eff.null_p_cu_obj_mpcuda();
 	pameshParams->cpump_eff.null_p_cu_obj_mpcuda();
 	pameshParams->the_eff.null_p_cu_obj_mpcuda();
+
+	pameshParams->Sc.null_p_cu_obj_mpcuda();
+	pameshParams->joule_eff.null_p_cu_obj_mpcuda();
 
 	pameshParams->thermCond.null_p_cu_obj_mpcuda();
 	

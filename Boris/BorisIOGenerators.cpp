@@ -638,7 +638,6 @@ void Simulation::PrintMovingMeshSettings(void)
 
 void Simulation::Print_Electrodes_List(void)
 {
-
 	std::string electrode_list = "[tc1,1,1,1/tc]Using " + MakeIO(IOI_CONSTANTCURRENTSOURCE) + "</c>\n";
 
 	if (SMesh.IsSuperMeshModuleSet(MODS_STRANSPORT)) {
@@ -828,6 +827,88 @@ std::string Simulation::Build_TemperatureModel_ListLine(int meshIndex)
 		"</c>[tc1,1,1,1/tc] [sa0/sa]Temperature model type : " + MakeIO(IOI_TMODEL, meshIndex);
 
 	return tmodel_line;
+}
+
+//---------------------------------------------------- ELASTODYNAMICS SETIINGS
+
+void Simulation::Print_Elastodynamics_TimeStep(void)
+{
+	std::string elastodynamics_timestep = "[tc1,1,1,1/tc]Elastodynamics time-step : " + MakeIO(IOI_ELDT) + "</c> Linked to ODE dT : " + MakeIO(IOI_LINKELDT) + "</c>\n";
+
+	BD.DisplayFormattedConsoleMessage(elastodynamics_timestep);
+}
+
+void Simulation::Print_Elastodynamics_Equations_List(void)
+{
+	std::string elasticity_list;
+
+	for (int idxMesh = 0; idxMesh < (int)SMesh().size(); idxMesh++) {
+
+		elasticity_list += Build_Elastodynamics_Equations_ListLine(idxMesh) + "\n";
+	}
+
+	BD.DisplayFormattedConsoleMessage(elasticity_list);
+}
+
+std::string Simulation::Build_Elastodynamics_Equations_ListLine(int meshIndex)
+{
+	std::string elasticity_line = MakeIO(IOI_MESH_FORELASTICITY, meshIndex) +
+		"</c>[tc1,1,1,1/tc] [sa0/sa]Strain equation : " + MakeIO(IOI_STRAINEQUATION, meshIndex) + "</c>[tc1,1,1,1/tc] [sa1/sa] Shear strain equation : " + MakeIO(IOI_SHEARSTRAINEQUATION, meshIndex);
+
+	return elasticity_line;
+}
+
+void Simulation::Print_FixedSurfaces_List(void)
+{
+	std::string elsurfaces_list = "[tc1,1,1,1/tc]List of fixed surfaces for elastodynamics solver:</c>\n";
+
+	if (SMesh.IsSuperMeshModuleSet(MODS_SMELASTIC)) {
+
+		int num_surfaces = SMesh.CallModuleMethod(&SMElastic::Get_Num_Fixed_Surfaces);
+
+		for (int el_index = 0; el_index < num_surfaces; el_index++) {
+
+			elsurfaces_list += Build_FixedSurfaces_ListLine(el_index) + "\n";
+		}
+	}
+
+	BD.DisplayFormattedConsoleMessage(elsurfaces_list);
+}
+
+std::string Simulation::Build_FixedSurfaces_ListLine(int el_index)
+{
+	//fixed surface
+	std::string elsurfaces_list_line = "[tc1,1,1,1/tc]Fixed surface " + MakeIO(IOI_SURFACEFIX, el_index) + "</c>";
+
+	return elsurfaces_list_line;
+}
+
+void Simulation::Print_StressSurfaces_List(void)
+{
+	std::string elsurfaces_list = "[tc1,1,1,1/tc]List of external stress surfaces, with set vector equation as stimulus, for elastodynamics solver:</c>\n";
+
+	if (SMesh.IsSuperMeshModuleSet(MODS_SMELASTIC)) {
+
+		int num_surfaces = SMesh.CallModuleMethod(&SMElastic::Get_Num_Stress_Surfaces);
+
+		for (int el_index = 0; el_index < num_surfaces; el_index++) {
+
+			elsurfaces_list += Build_StressSurfaces_ListLine(el_index) + "\n";
+		}
+	}
+
+	BD.DisplayFormattedConsoleMessage(elsurfaces_list);
+}
+
+std::string Simulation::Build_StressSurfaces_ListLine(int el_index)
+{
+	//stress surface
+	std::string elsurfaces_list_line = "[tc1,1,1,1/tc]Stress surface " + MakeIO(IOI_SURFACESTRESS, el_index) + "</c>";
+
+	//Stress equation
+	elsurfaces_list_line += "[tc1,1,1,1/tc] [sa0/sa]with stress equation " + MakeIO(IOI_SURFACESTRESSEQ, el_index) + "</c>";
+
+	return elsurfaces_list_line;
 }
 
 //---------------------------------------------------- STOCHASTICITY SETIINGS

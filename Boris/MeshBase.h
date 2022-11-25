@@ -143,6 +143,12 @@ public:
 	//pointer to the supermesh holding this mesh (some modules in this mesh will need to see other meshes).
 	SuperMesh* pSMesh;
 
+	//--------PRNG
+
+	//when a PRNG is used in this mesh, then prng_seed = 0 means seed the PRNG using GetSystemTickCount()
+	//if the same sequence of random numbers is required for every run, then prng_seed >= 1 can be set.
+	unsigned prng_seed = 0;
+
 	//--------Mesh Dimensions
 
 	//the mesh rectangle in meters : this defines the mesh position in the world (in the super-mesh). cellsizes must divide the mesh rectangle, giving the number of cells in each dimension
@@ -518,6 +524,7 @@ public:
 	//others
 
 	virtual double Get_NonEmpty_Magnetic_Volume(void) = 0;
+	virtual int Get_NonEmpty_Magnetic_Cells(void) = 0;
 
 	bool is_atomistic(void) { return meshBaseType == MESHTYPE_ATOMISTIC; }
 
@@ -717,6 +724,10 @@ public:
 
 	virtual void SetTMRType(TMR_ type) {}
 	virtual TMR_ GetTMRType(void) { return TMR_NONE; }
+
+	//get set strain equations (from MElastic module)
+	virtual std::string Get_StrainEquation(void) { return ""; }
+	virtual std::string Get_ShearStrainEquation(void) { return ""; }
 
 	//----------------------------------- MESH QUANTITIES CONTROL
 

@@ -37,17 +37,32 @@ Zeeman::~Zeeman()
 {
 }
 
+//setup globalField transfer
+BError Zeeman::InitializeGlobalField(void)
+{
+	BError error(__FUNCTION__);
+
+	if (pSMesh->GetGlobalField().linear_size()) {
+
+		//globalField here has to have same mesh rectangle and discretization as Heff.
+		//we could initialize mesh transfer directly in Heff, but better not as it could be used for something else in the future
+		if (!globalField.resize(pMesh->h, pMesh->meshRect)) return error(BERROR_OUTOFMEMORY_NCRIT);
+
+		std::vector< VEC<DBL3>* > pVal_from;
+		std::vector< VEC<DBL3>* > pVal_to;
+		pVal_from.push_back(&(pSMesh->GetGlobalField()));
+
+		if (!globalField.Initialize_MeshTransfer(pVal_from, pVal_to, MESHTRANSFERTYPE_WEIGHTED)) return error(BERROR_OUTOFMEMORY_CRIT);
+		globalField.transfer_in();
+	}
+	else globalField.clear();
+
+	return error;
+}
+
 BError Zeeman::Initialize(void)
 {
 	BError error(CLASS_STR(Zeeman));
-
-	//Make sure display data has memory allocated (or freed) as required
-	error = Update_Module_Display_VECs(
-		pMesh->h, pMesh->meshRect, 
-		(MOD_)pMesh->Get_Module_Heff_Display() == MOD_ZEEMAN || pMesh->IsOutputDataSet_withRect(DATA_E_ZEE),
-		(MOD_)pMesh->Get_Module_Energy_Display() == MOD_ZEEMAN || pMesh->IsOutputDataSet_withRect(DATA_E_ZEE),
-		pMesh->GetMeshType() == MESH_ANTIFERROMAGNETIC);
-	if (!error) initialized = true;
 
 	//If using Havec make sure size and resolution matches M
 	if (Havec.linear_size() && (Havec.size() != pMesh->M.size())) {
@@ -59,6 +74,17 @@ BError Zeeman::Initialize(void)
 		}
 	}
 
+	//if using global field, then initialize mesh transfer if needed
+	error = InitializeGlobalField();
+
+	//Make sure display data has memory allocated (or freed) as required
+	error = Update_Module_Display_VECs(
+		pMesh->h, pMesh->meshRect,
+		(MOD_)pMesh->Get_Module_Heff_Display() == MOD_ZEEMAN || pMesh->IsOutputDataSet_withRect(DATA_E_ZEE),
+		(MOD_)pMesh->Get_Module_Energy_Display() == MOD_ZEEMAN || pMesh->IsOutputDataSet_withRect(DATA_E_ZEE),
+		pMesh->GetMeshType() == MESH_ANTIFERROMAGNETIC);
+	if (!error) initialized = true;
+
 	return error;
 }
 
@@ -66,7 +92,7 @@ BError Zeeman::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 {
 	BError error(CLASS_STR(Zeeman));
 
-	if (ucfg::check_cfgflags(cfgMessage, UPDATECONFIG_MESHCHANGE)) {
+	if (ucfg::check_cfgflags(cfgMessage, UPDATECONFIG_MESHCHANGE, UPDATECONFIG_SMESH_GLOBALFIELD)) {
 
 		Uninitialize();
 
@@ -80,6 +106,9 @@ BError Zeeman::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 			H_equation.set_constant("Lz", meshDim.z, false);
 			H_equation.remake_equation();
 		}
+
+		//if global field not set, then also clear it here
+		if (!pSMesh->GetGlobalField().linear_size()) globalField.clear();
 	}
 
 	//------------------------ CUDA UpdateConfiguration if set
@@ -149,15 +178,18 @@ double Zeeman::UpdateField(void)
 #pragma omp parallel for reduction(+:energy)
 				for (int idx = 0; idx < pMesh->n.dim(); idx++) {
 
-					pMesh->Heff[idx] = Havec[idx];
-					pMesh->Heff2[idx] = Havec[idx];
+					DBL3 Hext = Havec[idx];
+					if (globalField.linear_size()) Hext += globalField[idx];
 
-					energy += (pMesh->M[idx] + pMesh->M2[idx]) * Havec[idx] / 2;
+					pMesh->Heff[idx] = Hext;
+					pMesh->Heff2[idx] = Hext;
 
-					if (Module_Heff.linear_size()) Module_Heff[idx] = Havec[idx];
-					if (Module_Heff2.linear_size()) Module_Heff2[idx] = Havec[idx];
-					if (Module_energy.linear_size()) Module_energy[idx] = -MU0 * pMesh->M[idx] * Havec[idx];
-					if (Module_energy2.linear_size()) Module_energy2[idx] = -MU0 * pMesh->M2[idx] * Havec[idx];
+					energy += (pMesh->M[idx] + pMesh->M2[idx]) * Hext / 2;
+
+					if (Module_Heff.linear_size()) Module_Heff[idx] = Hext;
+					if (Module_Heff2.linear_size()) Module_Heff2[idx] = Hext;
+					if (Module_energy.linear_size()) Module_energy[idx] = -MU0 * pMesh->M[idx] * Hext;
+					if (Module_energy2.linear_size()) Module_energy2[idx] = -MU0 * pMesh->M2[idx] * Hext;
 				}
 			}
 
@@ -166,12 +198,15 @@ double Zeeman::UpdateField(void)
 #pragma omp parallel for reduction(+:energy)
 				for (int idx = 0; idx < pMesh->n.dim(); idx++) {
 
-					pMesh->Heff[idx] = Havec[idx];
+					DBL3 Hext = Havec[idx];
+					if (globalField.linear_size()) Hext += globalField[idx];
 
-					energy += pMesh->M[idx] * Havec[idx];
+					pMesh->Heff[idx] = Hext;
 
-					if (Module_Heff.linear_size()) Module_Heff[idx] = Havec[idx];
-					if (Module_energy.linear_size()) Module_energy[idx] = -MU0 * pMesh->M[idx] * Havec[idx];
+					energy += pMesh->M[idx] * Hext;
+
+					if (Module_Heff.linear_size()) Module_Heff[idx] = Hext;
+					if (Module_energy.linear_size()) Module_energy[idx] = -MU0 * pMesh->M[idx] * Hext;
 				}
 			}
 		}
@@ -189,15 +224,18 @@ double Zeeman::UpdateField(void)
 					double cHA = pMesh->cHA;
 					pMesh->update_parameters_mcoarse(idx, pMesh->cHA, cHA);
 
-					pMesh->Heff[idx] = (cHA * Ha);
-					pMesh->Heff2[idx] = (cHA * Ha);
+					DBL3 Hext = cHA * Ha;
+					if (globalField.linear_size()) Hext += globalField[idx];
 
-					energy += (pMesh->M[idx] + pMesh->M2[idx]) * (cHA * Ha) / 2;
+					pMesh->Heff[idx] = Hext;
+					pMesh->Heff2[idx] = Hext;
 
-					if (Module_Heff.linear_size()) Module_Heff[idx] = cHA * Ha;
-					if (Module_Heff2.linear_size()) Module_Heff2[idx] = cHA * Ha;
-					if (Module_energy.linear_size()) Module_energy[idx] = -MU0 * pMesh->M[idx] * (cHA * Ha);
-					if (Module_energy2.linear_size()) Module_energy2[idx] = -MU0 * pMesh->M2[idx] * (cHA * Ha);
+					energy += (pMesh->M[idx] + pMesh->M2[idx]) * Hext / 2;
+
+					if (Module_Heff.linear_size()) Module_Heff[idx] = Hext;
+					if (Module_Heff2.linear_size()) Module_Heff2[idx] = Hext;
+					if (Module_energy.linear_size()) Module_energy[idx] = -MU0 * pMesh->M[idx] * Hext;
+					if (Module_energy2.linear_size()) Module_energy2[idx] = -MU0 * pMesh->M2[idx] * Hext;
 				}
 			}
 
@@ -209,12 +247,15 @@ double Zeeman::UpdateField(void)
 					double cHA = pMesh->cHA;
 					pMesh->update_parameters_mcoarse(idx, pMesh->cHA, cHA);
 
-					pMesh->Heff[idx] = (cHA * Ha);
+					DBL3 Hext = cHA * Ha;
+					if (globalField.linear_size()) Hext += globalField[idx];
 
-					energy += pMesh->M[idx] * (cHA * Ha);
+					pMesh->Heff[idx] = Hext;
 
-					if (Module_Heff.linear_size()) Module_Heff[idx] = cHA * Ha;
-					if (Module_energy.linear_size()) Module_energy[idx] = -MU0 * pMesh->M[idx] * (cHA * Ha);
+					energy += pMesh->M[idx] * Hext;
+
+					if (Module_Heff.linear_size()) Module_Heff[idx] = Hext;
+					if (Module_energy.linear_size()) Module_energy[idx] = -MU0 * pMesh->M[idx] * Hext;
 				}
 			}
 		}
@@ -244,15 +285,18 @@ double Zeeman::UpdateField(void)
 						DBL3 relpos = DBL3(i + 0.5, j + 0.5, k + 0.5) & pMesh->h;
 						DBL3 H = H_equation.evaluate_vector(relpos.x, relpos.y, relpos.z, time);
 
-						pMesh->Heff[idx] = (cHA * H);
-						pMesh->Heff2[idx] = (cHA * H);
+						DBL3 Hext = cHA * H;
+						if (globalField.linear_size()) Hext += globalField[idx];
 
-						energy += (pMesh->M[idx] + pMesh->M2[idx]) * (cHA * H) / 2;
+						pMesh->Heff[idx] = Hext;
+						pMesh->Heff2[idx] = Hext;
 
-						if (Module_Heff.linear_size()) Module_Heff[idx] = cHA * H;
-						if (Module_Heff2.linear_size()) Module_Heff2[idx] = cHA * H;
-						if (Module_energy.linear_size()) Module_energy[idx] = -MU0 * pMesh->M[idx] * (cHA * H);
-						if (Module_energy2.linear_size()) Module_energy2[idx] = -MU0 * pMesh->M2[idx] * (cHA * H);
+						energy += (pMesh->M[idx] + pMesh->M2[idx]) * Hext / 2;
+
+						if (Module_Heff.linear_size()) Module_Heff[idx] = Hext;
+						if (Module_Heff2.linear_size()) Module_Heff2[idx] = Hext;
+						if (Module_energy.linear_size()) Module_energy[idx] = -MU0 * pMesh->M[idx] * Hext;
+						if (Module_energy2.linear_size()) Module_energy2[idx] = -MU0 * pMesh->M2[idx] * Hext;
 					}
 				}
 			}
@@ -274,12 +318,15 @@ double Zeeman::UpdateField(void)
 						DBL3 relpos = DBL3(i + 0.5, j + 0.5, k + 0.5) & pMesh->h;
 						DBL3 H = H_equation.evaluate_vector(relpos.x, relpos.y, relpos.z, time);
 
-						pMesh->Heff[idx] = (cHA * H);
+						DBL3 Hext = cHA * H;
+						if (globalField.linear_size()) Hext += globalField[idx];
 
-						energy += pMesh->M[idx] * (cHA * H);
+						pMesh->Heff[idx] = Hext;
 
-						if (Module_Heff.linear_size()) Module_Heff[idx] = cHA * H;
-						if (Module_energy.linear_size()) Module_energy[idx] = -MU0 * pMesh->M[idx] * (cHA * H);
+						energy += pMesh->M[idx] * Hext;
+
+						if (Module_Heff.linear_size()) Module_Heff[idx] = Hext;
+						if (Module_energy.linear_size()) Module_energy[idx] = -MU0 * pMesh->M[idx] * Hext;
 					}
 				}
 			}
@@ -311,8 +358,11 @@ double Zeeman::Get_EnergyChange(int spin_index, DBL3 Mnew)
 				// Field VEC set
 				/////////////////////////////////////////
 
-				if (Mnew != DBL3()) return -pMesh->h.dim() * (Mnew - pMesh->M[spin_index]) * MU0 * Havec[spin_index];
-				else return -pMesh->h.dim() * pMesh->M[spin_index] * MU0 * Havec[spin_index];
+				DBL3 Hext = Havec[spin_index];
+				if (globalField.linear_size()) Hext += globalField[spin_index];
+
+				if (Mnew != DBL3()) return -pMesh->h.dim() * (Mnew - pMesh->M[spin_index]) * MU0 * Hext;
+				else return -pMesh->h.dim() * pMesh->M[spin_index] * MU0 * Hext;
 			}
 			else {
 
@@ -325,8 +375,11 @@ double Zeeman::Get_EnergyChange(int spin_index, DBL3 Mnew)
 				double cHA = pMesh->cHA;
 				pMesh->update_parameters_mcoarse(spin_index, pMesh->cHA, cHA);
 
-				if (Mnew != DBL3()) return -pMesh->h.dim() * (Mnew - pMesh->M[spin_index]) * MU0 * (cHA * Ha);
-				else return -pMesh->h.dim() * pMesh->M[spin_index] * MU0 * (cHA * Ha);
+				DBL3 Hext = cHA * Ha;
+				if (globalField.linear_size()) Hext += globalField[spin_index];
+
+				if (Mnew != DBL3()) return -pMesh->h.dim() * (Mnew - pMesh->M[spin_index]) * MU0 * Hext;
+				else return -pMesh->h.dim() * pMesh->M[spin_index] * MU0 * Hext;
 			}
 		}
 
@@ -343,8 +396,11 @@ double Zeeman::Get_EnergyChange(int spin_index, DBL3 Mnew)
 			DBL3 relpos = pMesh->M.cellidx_to_position(spin_index);
 			DBL3 H = H_equation.evaluate_vector(relpos.x, relpos.y, relpos.z, pSMesh->GetStageTime());
 
-			if (Mnew != DBL3()) return -pMesh->h.dim() * (Mnew - pMesh->M[spin_index]) * MU0 * (cHA * H);
-			else return -pMesh->h.dim() * pMesh->M[spin_index] * MU0 * (cHA * H);
+			DBL3 Hext = cHA * H;
+			if (globalField.linear_size()) Hext += globalField[spin_index];
+
+			if (Mnew != DBL3()) return -pMesh->h.dim() * (Mnew - pMesh->M[spin_index]) * MU0 * Hext;
+			else return -pMesh->h.dim() * pMesh->M[spin_index] * MU0 * Hext;
 		}
 	}
 	else return 0.0;
@@ -365,11 +421,14 @@ DBL2 Zeeman::Get_EnergyChange(int spin_index, DBL3 Mnew_A, DBL3 Mnew_B)
 				// Field VEC set
 				/////////////////////////////////////////
 
+				DBL3 Hext = Havec[spin_index];
+				if (globalField.linear_size()) Hext += globalField[spin_index];
+
 				if (Mnew_A != DBL3() && Mnew_B != DBL3()) {
 
-					return -pMesh->h.dim() * DBL2((Mnew_A - pMesh->M[spin_index]) * MU0 * Havec[spin_index], (Mnew_B - pMesh->M2[spin_index]) * MU0 * Havec[spin_index]);
+					return -pMesh->h.dim() * DBL2((Mnew_A - pMesh->M[spin_index]) * MU0 * Hext, (Mnew_B - pMesh->M2[spin_index]) * MU0 * Hext);
 				}
-				else return -pMesh->h.dim() * DBL2(pMesh->M[spin_index] * MU0 * Havec[spin_index], pMesh->M2[spin_index] * MU0 * Havec[spin_index]);
+				else return -pMesh->h.dim() * DBL2(pMesh->M[spin_index] * MU0 * Hext, pMesh->M2[spin_index] * MU0 * Hext);
 			}
 			else {
 
@@ -382,11 +441,14 @@ DBL2 Zeeman::Get_EnergyChange(int spin_index, DBL3 Mnew_A, DBL3 Mnew_B)
 				double cHA = pMesh->cHA;
 				pMesh->update_parameters_mcoarse(spin_index, pMesh->cHA, cHA);
 
+				DBL3 Hext = cHA * Ha;
+				if (globalField.linear_size()) Hext += globalField[spin_index];
+
 				if (Mnew_A != DBL3() && Mnew_B != DBL3()) {
 
-					return -pMesh->h.dim() * DBL2((Mnew_A - pMesh->M[spin_index]) * MU0 * (cHA * Ha), (Mnew_B - pMesh->M2[spin_index]) * MU0 * (cHA * Ha));
+					return -pMesh->h.dim() * DBL2((Mnew_A - pMesh->M[spin_index]) * MU0 * Hext, (Mnew_B - pMesh->M2[spin_index]) * MU0 * Hext);
 				}
-				else return -pMesh->h.dim() * DBL2(pMesh->M[spin_index] * MU0 * (cHA * Ha), pMesh->M2[spin_index] * MU0 * (cHA * Ha));
+				else return -pMesh->h.dim() * DBL2(pMesh->M[spin_index] * MU0 * Hext, pMesh->M2[spin_index] * MU0 * Hext);
 			}
 		}
 
@@ -403,11 +465,14 @@ DBL2 Zeeman::Get_EnergyChange(int spin_index, DBL3 Mnew_A, DBL3 Mnew_B)
 			DBL3 relpos = pMesh->M.cellidx_to_position(spin_index);
 			DBL3 H = H_equation.evaluate_vector(relpos.x, relpos.y, relpos.z, pSMesh->GetStageTime());
 
+			DBL3 Hext = cHA * H;
+			if (globalField.linear_size()) Hext += globalField[spin_index];
+
 			if (Mnew_A != DBL3() && Mnew_B != DBL3()) {
 
-				return -pMesh->h.dim() * DBL2((Mnew_A - pMesh->M[spin_index]) * MU0 * (cHA * H), (Mnew_B - pMesh->M2[spin_index]) * MU0 * (cHA * H));
+				return -pMesh->h.dim() * DBL2((Mnew_A - pMesh->M[spin_index]) * MU0 * Hext, (Mnew_B - pMesh->M2[spin_index]) * MU0 * Hext);
 			}
-			else return -pMesh->h.dim() * DBL2(pMesh->M[spin_index] * MU0 * (cHA * H), pMesh->M2[spin_index] * MU0 * (cHA * H));
+			else return -pMesh->h.dim() * DBL2(pMesh->M[spin_index] * MU0 * Hext, pMesh->M2[spin_index] * MU0 * Hext);
 		}
 	}
 	else return DBL2();

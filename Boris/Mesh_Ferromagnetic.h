@@ -56,6 +56,7 @@ class FMesh :
 	VEC_VC<DBL3>, VEC_VC<DBL3>, VEC_VC<DBL3>,
 	vector_lut<Modules*>, 
 	bool,
+	unsigned,
 	//Members in this derived class
 	bool, SkyrmionTrack, bool,
 	double, double, bool, bool, bool, DBL3,
@@ -66,12 +67,13 @@ class FMesh :
 	std::vector<DBL4>,
 	MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>,
 	MatP<double, double>,
-	MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, 
-	MatP<double, double>, MatP<double, double>, MatP<DBL2, double>, MatP<DBL2, double>, MatP<DBL3, DBL3>, 
+	MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>,
+	MatP<double, double>, MatP<double, double>, MatP<DBL2, double>, MatP<DBL2, double>, MatP<DBL3, DBL3>, MatP<double, double>, MatP<DBL2, double>, MatP<DBL2, double>,
 	MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<DBL2, double>, MatP<DBL2, double>,
 	MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, 
 	double, TEquation<double>, double, MatP<double, double>, MatP<double, double>, 
-	MatP<double, double>, MatP<DBL2, double>, MatP<double, double>, MatP<double, double>,
+	MatP<double, double>, MatP<DBL2, double>, MatP<double, double>, MatP<double, double>, MatP<DBL3, double>, MatP<double, double>,
+	MatP<double, double>, MatP<double, double>,
 	MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>,
 	
 	//OBSOLETE

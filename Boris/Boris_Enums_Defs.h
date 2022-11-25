@@ -34,6 +34,9 @@ enum UPDATECONFIG_ {
 	//A supermesh cellsize has changed
 	UPDATECONFIG_SMESH_CELLSIZE,
 
+	//a global field has been set/cleared
+	UPDATECONFIG_SMESH_GLOBALFIELD,
+
 	////////////////////////////
 	//MESHES
 	////////////////////////////
@@ -49,6 +52,13 @@ enum UPDATECONFIG_ {
 
 	//a mesh has been deleted (all meshes deleted through the DelMesh method in supermesh so that method would signal this)
 	UPDATECONFIG_MESHDELETED,
+
+	////////////////////////////
+	//SPECIAL
+	////////////////////////////
+
+	//Change to PRNG settings (seed changed, which requires reinitialization of PRNG)
+	UPDATECONFIG_PRNG,
 
 	////////////////////////////
 	//PARAMETERS
@@ -104,6 +114,9 @@ enum UPDATECONFIG_ {
 
 	//Heat solver temperature model type changed
 	UPDATECONFIG_HEAT_MODELTYPE,
+
+	//Elastodynamics solver settings changes (typically fixed or stress surfaces)
+	UPDATECONFIG_MELASTIC,
 
 	////////////////////////////
 	//UpdateConfiguration_Values MESSAGES

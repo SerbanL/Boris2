@@ -8,6 +8,7 @@
 
 class MeshBase;
 class SuperMesh;
+class STransport;
 
 class TransportBaseCUDA;
 
@@ -28,6 +29,10 @@ protected:
 	//pointer to mesh object holding this effective field module
 	MeshBase* pMeshBase;
 	SuperMesh* pSMesh;
+
+	//pointer to STransport supermesh module; this is set from STransport in its UpdateConfiguration method
+	//need it to access some STransport properties
+	STransport* pSTrans = nullptr;
 
 #if COMPILECUDA == 1
 	friend TransportBaseCUDA;
@@ -50,6 +55,15 @@ protected:
 	//for Poisson equations for V and S some values are fixed during relaxation, so pre-calculate them and store here to re-use.
 	mutable VEC<double> delsq_V_fixed;
 	mutable VEC<DBL3> delsq_S_fixed;
+
+	//for meshes with thermoelectric effect enabled count net current (A) coming out of the mesh at cmbnd cells, if open potential enabled.
+	double mesh_thermoelectric_net_current = 0.0;
+
+	//does current mesh have thermoelectric effect enabled? (i.e. must have heat module and Sc not zero)
+	bool is_thermoelectric_mesh = false;
+
+	//user test equation for TAMR. If not set use default formula.
+	TEquation<double, double, double, double> TAMR_conductivity_equation;
 
 protected:
 
@@ -129,6 +143,10 @@ protected:
 
 public:
 
+	TransportBase(void) :
+		TAMR_conductivity_equation({ "TAMR", "d1", "d2", "d3" })
+	{}
+
 	TransportBase(MeshBase* pMeshBase_);
 
 	virtual ~TransportBase() {}
@@ -141,6 +159,8 @@ public:
 
 	bool iSHA_nonzero(void);
 	bool SHA_nonzero(void);
+
+	bool IsOpenPotential(void);
 
 	//-------------------CMBND computation methods
 	
@@ -183,6 +203,10 @@ public:
 	//multiply spin accumulation by these to obtain spin potential, i.e. Vs = (De / elC) * (e/muB) * S, evaluated at the boundary
 	virtual double cfunc_sec(DBL3 relpos, DBL3 stencil) const = 0;
 	virtual double cfunc_pri(int cell_idx) const = 0;
+
+	//-------------------TAMR
+
+	BError Set_TAMR_Conductivity_Equation(std::string equation_string);
 
 	//-------------------Others
 

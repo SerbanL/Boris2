@@ -81,6 +81,15 @@ struct __cuBox {
 		s = (cuINT3)rhs.s; e = (cuINT3)rhs.e;
 	}
 
+	//----------------------------- ARITHMETIC OPERATORS
+
+	//shift the box : add a cuINT3
+	__host__ __device__ void operator+=(const cuINT3 &shift) { s += shift; e += shift; }
+
+	//sum and difference with a cuINT3 : return shifted box
+	__host__ __device__ __cuBox operator+(const cuINT3 &rhs) const { return __cuBox(s + rhs, e + rhs); }
+	__host__ __device__ __cuBox operator-(const cuINT3 &rhs) const { return __cuBox(s - rhs, e - rhs); }
+
 	//----------------------------- COMPARISON OPERATORS
 
 	//comparison operator
@@ -102,9 +111,9 @@ struct __cuBox {
 	//----------------------------- OTHERS
 
 	//is this box contained in (or equal to) box rect ?
-	__host__ __device__ bool IsContainedIn(const __cuBox& rect) const 
-	{ 
-		return (rect.s <= rect.e && s.x >= rect.s.x && s.y >= rect.s.y && s.z >= rect.s.z && e.x <= rect.e.x && e.y <= rect.e.y && e.z <= rect.e.z); 
+	__host__ __device__ bool IsContainedIn(const __cuBox& rect) const
+	{
+		return (rect.s <= rect.e && s.x >= rect.s.x && s.y >= rect.s.y && s.z >= rect.s.z && e.x <= rect.e.x && e.y <= rect.e.y && e.z <= rect.e.z);
 	}
 
 	__host__ __device__ bool IsPlane(void) const
@@ -510,8 +519,10 @@ struct __cuRect {
 	//test intersection with a line from start to end and get intersection point closest to start
 	__host__ __device__ bool intersection_test(const cuReal3& start, const cuReal3& end, cuReal3* pIntersection) const
 	{
-		//Note, only up to 3 faces need to be tested, hence the if checks below
-		//also only one intersection is possible with the checked faces : the other intersection point (which is further from start) is on the "shadowed" faces and these are not checked.
+		//rule out that start is contained in rectangle
+		if (contains(start)) { *pIntersection = start; return true; }
+
+		//test closest faces to start in turn
 
 		//test start x face
 		if (start.x <= s.x) {
@@ -556,6 +567,73 @@ struct __cuRect {
 		}
 
 		return false;
+	}
+
+	//test intersection with a line from start to end and get intersection point closest to start in pIntersection_s, and the one closest to end in pIntersection_e
+	__host__ __device__ bool intersection_test(const cuReal3& start, const cuReal3& end, cuReal3* pIntersection_s, cuReal3* pIntersection_e) const
+	{
+		bool start_found = false;
+		bool end_found = false;
+
+		//rule out that start is contained in rectangle
+		if (contains(start)) { *pIntersection_s = start; start_found = true; }
+		if (contains(end)) { *pIntersection_e = end; end_found = true; }
+
+		//test closest faces to start in turn
+
+		//check point (either start or end) for intersection, returning closest intersection coordinate
+		auto check_faces = [&](const cuReal3& point, cuReal3*& pIntersection) -> bool
+		{
+			//test start x face
+			if (point.x <= s.x) {
+
+				(*pIntersection).x = s.x;
+				if (cu_solve_line_equation_fixed_x(start, end, pIntersection) && *pIntersection >= s && *pIntersection <= e) return true;
+			}
+
+			//test end x face
+			if (point.x >= e.x) {
+
+				(*pIntersection).x = e.x;
+				if (cu_solve_line_equation_fixed_x(start, end, pIntersection) && *pIntersection >= s && *pIntersection <= e) return true;
+			}
+
+			//test start y face
+			if (point.y <= s.y) {
+
+				(*pIntersection).y = s.y;
+				if (cu_solve_line_equation_fixed_y(start, end, pIntersection) && *pIntersection >= s && *pIntersection <= e) return true;
+			}
+
+			//test end y face
+			if (point.y >= e.y) {
+
+				(*pIntersection).y = e.y;
+				if (cu_solve_line_equation_fixed_y(start, end, pIntersection) && *pIntersection >= s && *pIntersection <= e) return true;
+			}
+
+			//test start z face
+			if (point.z <= s.z) {
+
+				(*pIntersection).z = s.z;
+				if (cu_solve_line_equation_fixed_z(start, end, pIntersection) && *pIntersection >= s && *pIntersection <= e) return true;
+			}
+
+			//test end z face
+			if (point.z >= e.z) {
+
+				(*pIntersection).z = e.z;
+				if (cu_solve_line_equation_fixed_z(start, end, pIntersection) && *pIntersection >= s && *pIntersection <= e) return true;
+			}
+
+			return false;
+		};
+
+		//if one returns true, then so does the other, but use && operator to force execution of both
+		if (!start_found) start_found = check_faces(start, pIntersection_s);
+		if (!end_found) end_found = check_faces(end, pIntersection_e);
+		
+		return (start_found && end_found);
 	}
 
 	//----------------------------- MODIFIERS

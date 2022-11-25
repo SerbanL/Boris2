@@ -74,13 +74,13 @@ bool VEC<VType>::set_n_adjust_h(void)
 
 template <typename VType>
 VEC<VType>::VEC(void) :
-	transfer(this)
+	transfer(this), transfer2(this)
 {
 }
 
 template <typename VType>
 VEC<VType>::VEC(const SZ3& n_) :
-	transfer(this), n(n_)
+	transfer(this), transfer2(this), n(n_)
 {
 	//make sure memory is assigned to set size
 	if (!malloc_vector(quantity, n.dim())) n = SZ3();
@@ -88,7 +88,7 @@ VEC<VType>::VEC(const SZ3& n_) :
 
 template <typename VType>
 VEC<VType>::VEC(const DBL3& h_, const Rect& rect_) :
-	transfer(this), h(h_), rect(rect_)
+	transfer(this), transfer2(this), h(h_), rect(rect_)
 {
 	//make sure memory is assigned to set size
 	if (!set_n_adjust_h()) {
@@ -100,7 +100,7 @@ VEC<VType>::VEC(const DBL3& h_, const Rect& rect_) :
 
 template <typename VType>
 VEC<VType>::VEC(const DBL3& h_, const Rect& rect_, VType value) :
-	transfer(this), h(h_), rect(rect_)
+	transfer(this), transfer2(this), h(h_), rect(rect_)
 {
 	//make sure memory is assigned to set size and value set
 	if (set_n_adjust_h())
@@ -124,6 +124,7 @@ bool VEC<VType>::resize(const SZ3& new_n)
 
 	//always clear any transfer info when VEC changes size
 	transfer.clear();
+	transfer2.clear();
 
 	if (n == SZ3(0)) {
 
@@ -156,6 +157,7 @@ bool VEC<VType>::resize(const DBL3& new_h, const Rect& new_rect)
 
 	//always clear any transfer info when VEC changes size
 	transfer.clear();
+	transfer2.clear();
 
 	//save h and rect in case we cannot resize
 	DBL3 save_h = h;
@@ -182,7 +184,11 @@ bool VEC<VType>::assign(const SZ3& new_n, VType value)
 	if (!mreserve_vector(quantity, new_n.dim())) return false;
 
 	//always clear any transfer info when VEC changes size
-	if (new_n != n) transfer.clear();
+	if (new_n != n) {
+
+		transfer.clear();
+		transfer2.clear();
+	}
 
 	n = new_n;
 	quantity.assign(n.dim(), value);
@@ -202,7 +208,11 @@ bool VEC<VType>::assign(const DBL3& new_h, const Rect& new_rect, VType value)
 	if (!mreserve_vector(quantity, new_n.dim())) return false;
 
 	//always clear any transfer info when VEC changes size
-	if (new_h != h || new_rect != rect) transfer.clear();
+	if (new_h != h || new_rect != rect) {
+
+		transfer.clear();
+		transfer2.clear();
+	}
 
 	//now set dimensions, allocate memory and set value
 	h = new_rect / new_n;
@@ -218,6 +228,7 @@ template <typename VType>
 void VEC<VType>::clear(void)
 {
 	transfer.clear();
+	transfer2.clear();
 
 	n = SZ3(0);
 	quantity.clear();

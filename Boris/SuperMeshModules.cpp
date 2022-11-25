@@ -91,6 +91,11 @@ BError SuperMesh::AddModule(std::string meshName, MOD_ moduleId)
 			pSMod.push_back(new SHeat(this), MODS_SHEAT);
 			error = adjust_mesh_modules(superMeshHandle, error);
 			break;
+
+		case MODS_SMELASTIC:
+			pSMod.push_back(new SMElastic(this), MODS_SMELASTIC);
+			error = adjust_mesh_modules(superMeshHandle, error);
+			break;
 		}
 
 		error = UpdateConfiguration(UPDATECONFIG_MODULEADDED);

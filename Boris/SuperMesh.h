@@ -17,6 +17,7 @@
 #include "STransport.h"
 #include "Oersted.h"
 #include "SHeat.h"
+#include "SMElastic.h"
 
 #if COMPILECUDA == 1
 #include "SuperMeshCUDA.h"
@@ -35,7 +36,8 @@ class SuperMesh :
 	public ProgramState<SuperMesh,
 	std::tuple<
 	int, int, 
-	SZ3, DBL3, Rect, SZ3, DBL3, Rect, 
+	SZ3, DBL3, Rect, SZ3, DBL3, Rect,
+	VEC<DBL3>,
 	ODECommon, Atom_ODECommon,
 	vector_key<MeshBase*>, 
 	vector_lut<Modules*>, 
@@ -49,13 +51,14 @@ class SuperMesh :
 	//Atomistic Meshes
 	Atom_Mesh_Cubic,
 	//supermesh modules
-	SDemag, StrayField, STransport, Oersted, SHeat> >
+	SDemag, StrayField, STransport, Oersted, SHeat, SMElastic> >
 {
 	//all supermesh modules are friends
 	friend SDemag;
 	friend StrayField;
 	friend STransport;
 	friend SHeat;
+	friend SMElastic;
 	friend Oersted;
 
 	friend Mesh;
@@ -126,6 +129,12 @@ private:
 
 	//electric super-mesh rectangle
 	Rect sMeshRect_e;
+
+	//-----Special Supermesh Quantities
+
+	//a set global field with its own discretization and rectangle (independent of supermesh, only held by it)
+	//global field is used by Zeeman modules as an additional contribution
+	VEC<DBL3> globalField;
 
 	//-----Micromagnetics ODE
 
@@ -525,9 +534,21 @@ public:
 	//Set TMR type in named mesh (must be an insulator mesh, or leave blank to apply to all meshes)
 	BError SetTMRType(std::string meshName, TMR_ TMR_type);
 
-	//set tyext equation for RAp and RAap in insulator mesh with tmr module added
+	//set text equation for RAp and RAap in insulator mesh with tmr module added
 	BError SetTMR_BiasEquationParallel(std::string meshName, std::string equation_string);
 	BError SetTMR_BiasEquationAntiParallel(std::string meshName, std::string equation_string);
+
+	//set text equation for TAMR conductivity in transport module
+	BError Set_TAMR_Conductivity_Equation(std::string meshName, std::string equation_string);
+
+	//load field in supermesh (globalField) or in named mesh
+	BError LoadOVF2Field(std::string meshName, std::string fileName);
+	BError ClearGlobalField(void);
+	//shift globalField rectangle
+	void ShiftGlobalField(DBL3 shift);
+
+	//set prng_seed value in given mesh (all meshes if name empty)
+	BError Set_PRNG_Seed(std::string meshName, unsigned seed);
 
 	//--------------------------------------------------------- MESH PARAMETERS : SuperMeshParams.cpp
 
@@ -596,6 +617,37 @@ public:
 	//Set temperature model
 	BError SetTemperatureModel(std::string meshName, int tmtype);
 
+	//--------------------------------------------------------- ELASTODYNAMICS SOLVER CONTROL : SuperMeshElastodynamics.cpp
+
+	//reset elastodynamics solver state
+	BError Reset_ElSolver(void);
+
+	//set text equation in given mesh for diagonal strain
+	BError Set_Sd_Equation(std::string meshName, std::string text_equation);
+
+	//set text equation in given mesh for shear strain
+	BError Set_Sod_Equation(std::string meshName, std::string text_equation);
+
+	//clear text equations in given mesh (or all meshes if meshName is empty)
+	BError Clear_Sd_Sod_Equations(std::string meshName);
+
+	//add a fixed surface for elastodynamics solver (rectangle in absolute coordinates)
+	//can also specify a given face in a given mesh (face -x, x, -y, y, -z, or z)
+	BError Add_Fixed_Surface(std::string meshName, std::string face, Rect surface_rect);
+
+	//add a stress surface for elastodynamics solver (rectangle in absolute coordinates) with set vector equation
+	//can also specify a given face in a given mesh (face -x, x, -y, y, -z, or z)
+	BError Add_Stress_Surface(std::string meshName, std::string face, Rect surface_rect, std::string equation);
+
+	//Delete fixed or stressed surfaces with given index (-1 to delete all)
+	BError Del_Fixed_Surface(int index);
+	BError Del_Stress_Surface(int index);
+
+	//edit values of existing fixed or stress surface
+	BError Edit_Fixed_Surface(int index, Rect rect);
+	BError Edit_Stress_Surface_Rectangle(int index, Rect rect);
+	BError Edit_Stress_Surface_Equation(int index, std::string equation);
+
 	//----------------------------------- MODULES CONTROL : SuperMeshModules.cpp
 
 	//Add module to given mesh (delegate implementation to AddModule in the referenced mesh), checking for super-mesh module clashes
@@ -641,6 +693,12 @@ public:
 
 	//check if given stage is set
 	bool IsStageSet(int stageType);
+
+	VEC<DBL3>& GetGlobalField(void) { return globalField; }
+#if COMPILECUDA == 1
+	//before calling this, make sure cuda is switched on (so pSMeshCUDA not nullptr)
+	cu_obj<cuVEC<cuReal3>>& GetGlobalFieldCUDA(void) { return pSMeshCUDA->GetGlobalField(); }
+#endif
 
 	//--------Getters for supermesh modules specific properties
 
