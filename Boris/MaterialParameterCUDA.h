@@ -482,18 +482,14 @@ __host__ void MatPCUDA<PType, SType>::set_from_cpu_value(MatP_PType_& matp)
 template <>
 __device__ inline cuBReal MatPCUDA<cuBReal, cuBReal>::get(cuBReal Temperature)
 {
+	if (Temperature > MAX_TEMPERATURE || isnan(Temperature)) return value_at_0K;
+
 	if (pTscaling_eq_x) {
 
 		//use pre-set equation
 		return value_at_0K * pTscaling_eq_x->evaluate(Temperature);
 	}
-	//The temperature checks apparently are needed. 
-	//This is a weird bug: the heat solver can diverge if the time step is too large, resulting in NaN values for temperature. This can of course be fixed by reseting the mesh and using a lower time step - no problem there.
-	//The problem is, when in CUDA mode, if temperature dependences are enabled and the above happens the program will start throwing CUDA out of memory errors and will need a restart - not nice!
-	//This usually happens when there's a bad memory access somewhere. It shouldn't happen however since below we use checks on the index value when accessing pt_scaling data. And yet it does!!! 
-	//I really don't understand this, the only way I've found to stop this happening is to include checks on the temperature - all three checks are needed to stop the program crashing in the above situation.
-	//A bit hacky, not happy about this solution, will need to be investigated properly at some point.
-	else if (scaling_arr_size && Temperature > 0 && Temperature < MAX_TEMPERATURE && !isnan(Temperature)) {
+	else if (scaling_arr_size && Temperature > 0) {
 
 		//use custom temperature scaling
 		int index = (int)cu_floor_epsilon(Temperature);
@@ -512,6 +508,8 @@ __device__ inline cuBReal MatPCUDA<cuBReal, cuBReal>::get(cuBReal Temperature)
 template <>
 __device__ inline cuReal2 MatPCUDA<cuReal2, cuBReal>::get(cuBReal Temperature)
 {
+	if (Temperature > MAX_TEMPERATURE || isnan(Temperature)) return value_at_0K;
+
 	if (pTscaling_eq_x) {
 
 		//component-by-component product if dual equation
@@ -520,13 +518,7 @@ __device__ inline cuReal2 MatPCUDA<cuReal2, cuBReal>::get(cuBReal Temperature)
 		//just constant multiplication for a scalar equation
 		else return value_at_0K * pTscaling_eq_x->evaluate(Temperature);
 	}
-	//The temperature checks apparently are needed. 
-	//This is a weird bug: the heat solver can diverge if the time step is too large, resulting in NaN values for temperature. This can of course be fixed by reseting the mesh and using a lower time step - no problem there.
-	//The problem is, when in CUDA mode, if temperature dependences are enabled and the above happens the program will start throwing CUDA out of memory errors and will need a restart - not nice!
-	//This usually happens when there's a bad memory access somewhere. It shouldn't happen however since below we use checks on the index value when accessing pt_scaling data. And yet it does!!! 
-	//I really don't understand this, the only way I've found to stop this happening is to include checks on the temperature - all three checks are needed to stop the program crashing in the above situation.
-	//A bit hacky, not happy about this solution, will need to be investigated properly at some point.
-	else if (scaling_arr_size && Temperature > 0 && Temperature < MAX_TEMPERATURE && !isnan(Temperature)) {
+	else if (scaling_arr_size && Temperature > 0) {
 
 		//use custom temperature scaling
 		int index = (int)cu_floor_epsilon(Temperature);
@@ -554,6 +546,8 @@ __device__ inline cuReal2 MatPCUDA<cuReal2, cuBReal>::get(cuBReal Temperature)
 template <>
 __device__ inline cuReal3 MatPCUDA<cuReal3, cuBReal>::get(cuBReal Temperature)
 {
+	if (Temperature > MAX_TEMPERATURE || isnan(Temperature)) return value_at_0K;
+
 	if (pTscaling_eq_x) {
 
 		//component-by-component product if vector equation
@@ -562,13 +556,7 @@ __device__ inline cuReal3 MatPCUDA<cuReal3, cuBReal>::get(cuBReal Temperature)
 		//just constant multiplication for a scalar equation
 		else return value_at_0K * pTscaling_eq_x->evaluate(Temperature);
 	}
-	//The temperature checks apparently are needed. 
-	//This is a weird bug: the heat solver can diverge if the time step is too large, resulting in NaN values for temperature. This can of course be fixed by reseting the mesh and using a lower time step - no problem there.
-	//The problem is, when in CUDA mode, if temperature dependences are enabled and the above happens the program will start throwing CUDA out of memory errors and will need a restart - not nice!
-	//This usually happens when there's a bad memory access somewhere. It shouldn't happen however since below we use checks on the index value when accessing pt_scaling data. And yet it does!!! 
-	//I really don't understand this, the only way I've found to stop this happening is to include checks on the temperature - all three checks are needed to stop the program crashing in the above situation.
-	//A bit hacky, not happy about this solution, will need to be investigated properly at some point.
-	else if (scaling_arr_size && Temperature > 0 && Temperature < MAX_TEMPERATURE && !isnan(Temperature)) {
+	else if (scaling_arr_size && Temperature > 0) {
 
 		//use custom temperature scaling
 		int index = (int)cu_floor_epsilon(Temperature);
@@ -596,6 +584,8 @@ __device__ inline cuReal3 MatPCUDA<cuReal3, cuBReal>::get(cuBReal Temperature)
 template <>
 __device__ inline cuReal3 MatPCUDA<cuReal3, cuReal3>::get(cuBReal Temperature)
 {
+	if (Temperature > MAX_TEMPERATURE || isnan(Temperature)) return value_at_0K;
+
 	if (pTscaling_eq_x) {
 
 		//component-by-component product if vector equation
@@ -604,13 +594,7 @@ __device__ inline cuReal3 MatPCUDA<cuReal3, cuReal3>::get(cuBReal Temperature)
 		//just constant multiplication for a scalar equation
 		else return value_at_0K * pTscaling_eq_x->evaluate(Temperature);
 	}
-	//The temperature checks apparently are needed. 
-	//This is a weird bug: the heat solver can diverge if the time step is too large, resulting in NaN values for temperature. This can of course be fixed by reseting the mesh and using a lower time step - no problem there.
-	//The problem is, when in CUDA mode, if temperature dependences are enabled and the above happens the program will start throwing CUDA out of memory errors and will need a restart - not nice!
-	//This usually happens when there's a bad memory access somewhere. It shouldn't happen however since below we use checks on the index value when accessing pt_scaling data. And yet it does!!! 
-	//I really don't understand this, the only way I've found to stop this happening is to include checks on the temperature - all three checks are needed to stop the program crashing in the above situation.
-	//A bit hacky, not happy about this solution, will need to be investigated properly at some point.
-	else if (scaling_arr_size && Temperature > 0 && Temperature < MAX_TEMPERATURE && !isnan(Temperature)) {
+	else if (scaling_arr_size && Temperature > 0) {
 
 		//use custom temperature scaling
 		int index = (int)cu_floor_epsilon(Temperature);
@@ -680,12 +664,14 @@ __device__ inline cuReal3 MatPCUDA<cuReal3, cuReal3>::get(const cuReal3& positio
 template <>
 __device__ inline cuBReal MatPCUDA<cuBReal, cuBReal>::get(const cuReal3& position, cuBReal stime, cuBReal Temperature)
 {
+	if (Temperature > MAX_TEMPERATURE || isnan(Temperature)) return value_at_0K;
+
 	if (pTscaling_eq_x) {
 
 		if (pSscaling_eq_x) return (value_at_0K * pTscaling_eq_x->evaluate(Temperature) * pSscaling_eq_x->evaluate(position.x, position.y, position.z, stime));
 		else return (value_at_0K * pTscaling_eq_x->evaluate(Temperature) * s_scaling[position]);
 	}
-	else if (scaling_arr_size && Temperature > 0 && Temperature < MAX_TEMPERATURE && !isnan(Temperature)) {
+	else if (scaling_arr_size && Temperature > 0) {
 
 		//use custom temperature scaling
 		int index = (int)cu_floor_epsilon(Temperature);
@@ -713,6 +699,8 @@ __device__ inline cuBReal MatPCUDA<cuBReal, cuBReal>::get(const cuReal3& positio
 template <>
 __device__ inline cuReal2 MatPCUDA<cuReal2, cuBReal>::get(const cuReal3& position, cuBReal stime, cuBReal Temperature)
 {
+	if (Temperature > MAX_TEMPERATURE || isnan(Temperature)) return value_at_0K;
+
 	if (pTscaling_eq_x) {
 
 		cuBReal s = (pSscaling_eq_x ? pSscaling_eq_x->evaluate(position.x, position.y, position.z, stime) : s_scaling[position]);
@@ -723,7 +711,7 @@ __device__ inline cuReal2 MatPCUDA<cuReal2, cuBReal>::get(const cuReal3& positio
 		//just constant multiplication for a scalar equation
 		else return value_at_0K * pTscaling_eq_x->evaluate(Temperature) * s;
 	}
-	else if (scaling_arr_size && Temperature > 0 && Temperature < MAX_TEMPERATURE && !isnan(Temperature)) {
+	else if (scaling_arr_size && Temperature > 0) {
 
 		cuBReal s = (pSscaling_eq_x ? pSscaling_eq_x->evaluate(position.x, position.y, position.z, stime) : s_scaling[position]);
 
@@ -757,6 +745,8 @@ __device__ inline cuReal2 MatPCUDA<cuReal2, cuBReal>::get(const cuReal3& positio
 template <>
 __device__ inline cuReal3 MatPCUDA<cuReal3, cuBReal>::get(const cuReal3& position, cuBReal stime, cuBReal Temperature)
 {
+	if (Temperature > MAX_TEMPERATURE || isnan(Temperature)) return value_at_0K;
+
 	if (pTscaling_eq_x) {
 
 		cuBReal s = (pSscaling_eq_x ? pSscaling_eq_x->evaluate(position.x, position.y, position.z, stime) : s_scaling[position]);
@@ -767,7 +757,7 @@ __device__ inline cuReal3 MatPCUDA<cuReal3, cuBReal>::get(const cuReal3& positio
 		//just constant multiplication for a scalar equation
 		else return value_at_0K * pTscaling_eq_x->evaluate(Temperature) * s;
 	}
-	else if (scaling_arr_size && Temperature > 0 && Temperature < MAX_TEMPERATURE && !isnan(Temperature)) {
+	else if (scaling_arr_size && Temperature > 0) {
 
 		cuBReal s = (pSscaling_eq_x ? pSscaling_eq_x->evaluate(position.x, position.y, position.z, stime) : s_scaling[position]);
 
@@ -801,6 +791,8 @@ __device__ inline cuReal3 MatPCUDA<cuReal3, cuBReal>::get(const cuReal3& positio
 template <>
 __device__ inline cuReal3 MatPCUDA<cuReal3, cuReal3>::get(const cuReal3& position, cuBReal stime, cuBReal Temperature)
 {
+	if (Temperature > MAX_TEMPERATURE || isnan(Temperature)) return value_at_0K;
+
 	if (pTscaling_eq_x) {
 
 		cuReal3 s = (pSscaling_eq_z ? 
@@ -815,7 +807,7 @@ __device__ inline cuReal3 MatPCUDA<cuReal3, cuReal3>::get(const cuReal3& positio
 		//just constant multiplication for a scalar equation
 		else return rotate_polar(value_at_0K * pTscaling_eq_x->evaluate(Temperature), s);
 	}
-	else if (scaling_arr_size && Temperature > 0 && Temperature < MAX_TEMPERATURE && !isnan(Temperature)) {
+	else if (scaling_arr_size && Temperature > 0) {
 
 		cuReal3 s = (pSscaling_eq_z ?
 			cuReal3(

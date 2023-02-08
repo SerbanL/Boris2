@@ -8,12 +8,11 @@
 #include "BorisCUDALib.h"
 #include "ModulesCUDA.h"
 
-#include "MElastic_BoundariesCUDA.h"
-
 class SMElasticCUDA;
 class MElastic;
 class MeshCUDA;
 class Mesh;
+class MElastic_BoundaryCUDA;
 
 class MElasticCUDA :
 	public ModulesCUDA
@@ -79,9 +78,31 @@ private:
 	//off-diagonal
 	TEquationCUDA<cuBReal, cuBReal, cuBReal, cuBReal> Sod_equation;
 
+	//----------------------
+
+	//include thermal expansion? Include if thalpha (thermoelastic constant) is non-zero and heat module is enabled
+	bool thermoelasticity_enabled = false;
+
+	//save previous temperature value so we can compute dT / dt when including thermoelasticity
+	cu_arr<cuBReal> Temp_previous;
+
+	//if thermoelasticity is enabled, T_ambient will take same value as in the Heat module; refreshed at initialization.
+	//NOTE : any changes to T_ambient in Heat module cause simulation to stop (CMD_AMBIENTTEMPERATURE or CMD_TEMPERATURE), so modules will go through Initialize() before simulation restart
+	cu_obj<cuBReal> T_ambient;
+
+	//----------------------
+
+	//include magnetostriction? (mMEc constant not zero, and magnetic mesh)
+	bool magnetostriction_enabled = false;
+
+	//----------------------
+
+	//disabled by setting magnetoelastic coefficient to zero (also disabled in non-magnetic meshes)
+	bool melastic_field_disabled = false;
+
 private:
 
-	//----------------------------------------------- Auxiliary
+	//----------------------------------------------- Computational Helpers
 
 	//Run-time auxiliary to set strain directly from user supplied text formulas
 	void Set_Strain_From_Formula(void);
@@ -89,22 +110,28 @@ private:
 	//update velocity for dT time increment (also updating displacement)
 	void Iterate_Elastic_Solver_Velocity(double dT);
 	//update stress for dT time increment
-	void Iterate_Elastic_Solver_Stress(double dT);
+	void Iterate_Elastic_Solver_Stress(double dT, double magnetic_dT);
 	//update strain from stress
-	void Calculate_Strain_From_Stress(void);
+	void Calculate_Strain(void);
+
+	//if thermoelasticity or magnetostriction is enabled, then initial stress must be set correctly
+	void Set_Initial_Stress(void);
 
 	//compute magnetoelastic effective field to use in magnetization equation. Accumulate energy.
 	void Calculate_MElastic_Field(void);
 
+	//if thermoelasticity is enabled then save current temperature values in Temp_previous (called after elastic solver fully incremented by magnetic_dT)
+	void Save_Current_Temperature(void);
+
 	//---------------------------------------------- CMBND
 
 	void make_velocity_continuous(
-		size_t size, int axis,
+		cuSZ3 box_dims, int axis,
 		cu_obj<CMBNDInfoCUDA>& contact,
-		cu_obj<cuVEC<cuBReal>>& vx_sec, cu_obj<cuVEC<cuBReal>>& vy_sec, cu_obj<cuVEC<cuBReal>>& vz_sec, cu_obj<cuVEC_VC<cuReal3>>& u_disp_sec);
+		MElasticCUDA* pMElastic_sec);
 
 	void make_stress_continuous(
-		size_t size, int axis,
+		cuSZ3 box_dims, int axis,
 		cu_obj<CMBNDInfoCUDA>& contact,
 		cu_obj<cuVEC<cuReal3>>& sdd_sec, cu_obj<cuVEC<cuBReal>>& sxy_sec, cu_obj<cuVEC<cuBReal>>& sxz_sec, cu_obj<cuVEC<cuBReal>>& syz_sec,
 		cu_obj<cuVEC_VC<cuReal3>>& u_disp_sec);

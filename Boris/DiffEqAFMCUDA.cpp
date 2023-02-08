@@ -436,7 +436,7 @@ void DifferentialEquationAFMCUDA::CleanupMemory(bool copy_to_cpu)
 
 BError DifferentialEquationAFMCUDA::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 {
-	BError error(CLASS_STR(DifferentialEquationFMCUDA));
+	BError error(CLASS_STR(DifferentialEquationAFMCUDA));
 	
 	if (ucfg::check_cfgflags(cfgMessage, UPDATECONFIG_MESHDELETED)) {
 

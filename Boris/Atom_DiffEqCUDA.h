@@ -162,6 +162,9 @@ protected:
 	//Restore moments after a failed step for adaptive time-step methods
 	virtual void RestoreMoments(void) = 0;
 
+	//Save current moments in sM VECs (e.g. useful to reset dM / dt calculation)
+	virtual void SaveMoments(void) = 0;
+
 	//renormalize vectors to set moment length value (which could have a spatial variation)
 	virtual void RenormalizeMoments(void) = 0;
 

@@ -333,7 +333,7 @@ double Heat::diff2_sec(DBL3 relpos_m1, DBL3 stencil, DBL3 shift) const
 {
 	double thermCond = pMesh->thermCond;
 
-	if (pMesh->E.linear_size() || IsNZ(pMesh->Q.get0())) {
+	if (pMesh->E.linear_size() || IsNZ(pMesh->Q.get0()) || Q_equation.is_set()) {
 
 		pMesh->update_parameters_atposition(relpos_m1, pMesh->thermCond, thermCond);
 	}
@@ -362,14 +362,12 @@ double Heat::diff2_sec(DBL3 relpos_m1, DBL3 stencil, DBL3 shift) const
 
 			double Q = pMesh->Q;
 			pMesh->update_parameters_atposition(relpos_m1, pMesh->Q, Q);
-
 			value -= Q / thermCond;
 		}
 	}
 	else {
 
 		double Q = Q_equation.evaluate(relpos_m1.x, relpos_m1.y, relpos_m1.z, pSMesh->GetStageTime());
-
 		value -= Q / thermCond;
 	}
 
@@ -388,7 +386,7 @@ double Heat::diff2_pri(int cell1_idx, DBL3 shift) const
 {
 	double thermCond = pMesh->thermCond;
 
-	if (pMesh->E.linear_size() || IsNZ(pMesh->Q.get0())) {
+	if (pMesh->E.linear_size() || IsNZ(pMesh->Q.get0()) || Q_equation.is_set()) {
 
 		pMesh->update_parameters_tcoarse(cell1_idx, pMesh->thermCond, thermCond);
 	}
@@ -416,7 +414,6 @@ double Heat::diff2_pri(int cell1_idx, DBL3 shift) const
 
 			double Q = pMesh->Q;
 			pMesh->update_parameters_tcoarse(cell1_idx, pMesh->Q, Q);
-
 			value -= Q / thermCond;
 		}
 	}
@@ -424,7 +421,6 @@ double Heat::diff2_pri(int cell1_idx, DBL3 shift) const
 
 		DBL3 relpos = pMesh->Temp.cellidx_to_position(cell1_idx);
 		double Q = Q_equation.evaluate(relpos.x, relpos.y, relpos.z, pSMesh->GetStageTime());
-
 		value -= Q / thermCond;
 	}
 

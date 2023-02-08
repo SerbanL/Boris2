@@ -28,12 +28,16 @@ private:
 	ManagedMeshCUDA* pcuMesh;
 	ManagedAtom_MeshCUDA* pcuaMesh;
 
+	//Q equation and time
+	ManagedFunctionCUDA<cuBReal, cuBReal, cuBReal, cuBReal>* pQ_equation;
+
 public:
 
 	__host__ void construct_cu_obj(void) 
 	{
 		nullgpuptr(pcuMesh);
 		nullgpuptr(pcuaMesh);
+		nullgpuptr(pQ_equation);
 	}
 
 	__host__ void destruct_cu_obj(void) {}
@@ -43,6 +47,9 @@ public:
 
 	//used in atomistic meshes
 	BError set_pointers(Atom_MeshCUDA* paMeshCUDA);
+
+	//set pQ_equation as needed
+	BError set_Q_equation(TEquationCUDA<cuBReal, cuBReal, cuBReal, cuBReal>& Q_equation_ref);
 
 	//heat flux, f(T) = -K * grad T = a + b * grad T -> a = 0, b = -K
 	__device__ cuBReal a_func_pri(int cell1_idx, int cell2_idx, cuReal3 shift)
@@ -112,7 +119,7 @@ public:
 
 			cuBReal thermCond = *pcuMesh->pthermCond;
 
-			if (E.linear_size() || cuIsNZ(pcuMesh->pQ->get0())) {
+			if (E.linear_size() || cuIsNZ(pcuMesh->pQ->get0()) || pQ_equation) {
 
 				pcuMesh->update_parameters_tcoarse(cell1_idx, *pcuMesh->pthermCond, thermCond);
 			}
@@ -134,11 +141,18 @@ public:
 			}
 
 			//heat source contribution if set
-			if (cuIsNZ(pcuMesh->pQ->get0())) {
+			if (!pQ_equation) {
+				if (cuIsNZ(pcuMesh->pQ->get0())) {
 
-				cuBReal Q = *pcuMesh->pQ;
-				pcuMesh->update_parameters_tcoarse(cell1_idx, *pcuMesh->pQ, Q);
+					cuBReal Q = *pcuMesh->pQ;
+					pcuMesh->update_parameters_tcoarse(cell1_idx, *pcuMesh->pQ, Q);
+					value -= Q / thermCond;
+				}
+			}
+			else {
 
+				cuReal3 relpos = Temp.cellidx_to_position(cell1_idx);
+				cuBReal Q = pQ_equation->evaluate(relpos.x, relpos.y, relpos.z, *pcuMesh->pcuDiffEq->pstagetime);
 				value -= Q / thermCond;
 			}
 
@@ -163,7 +177,7 @@ public:
 
 			cuBReal thermCond = *pcuaMesh->pthermCond;
 
-			if (E.linear_size() || cuIsNZ(pcuaMesh->pQ->get0())) {
+			if (E.linear_size() || cuIsNZ(pcuaMesh->pQ->get0()) || pQ_equation) {
 
 				pcuaMesh->update_parameters_tcoarse(cell1_idx, *pcuaMesh->pthermCond, thermCond);
 			}
@@ -185,11 +199,18 @@ public:
 			}
 
 			//heat source contribution if set
-			if (cuIsNZ(pcuaMesh->pQ->get0())) {
+			if (!pQ_equation) {
+				if (cuIsNZ(pcuaMesh->pQ->get0())) {
 
-				cuBReal Q = *pcuaMesh->pQ;
-				pcuaMesh->update_parameters_tcoarse(cell1_idx, *pcuaMesh->pQ, Q);
+					cuBReal Q = *pcuaMesh->pQ;
+					pcuaMesh->update_parameters_tcoarse(cell1_idx, *pcuaMesh->pQ, Q);
+					value -= Q / thermCond;
+				}
+			}
+			else {
 
+				cuReal3 relpos = Temp.cellidx_to_position(cell1_idx);
+				cuBReal Q = pQ_equation->evaluate(relpos.x, relpos.y, relpos.z, *pcuaMesh->pcuaDiffEq->pstagetime);
 				value -= Q / thermCond;
 			}
 
@@ -219,7 +240,7 @@ public:
 
 			cuBReal thermCond = *pcuMesh->pthermCond;
 
-			if (E.linear_size() || cuIsNZ(pcuMesh->pQ->get0())) {
+			if (E.linear_size() || cuIsNZ(pcuMesh->pQ->get0()) || pQ_equation) {
 
 				pcuMesh->update_parameters_atposition(relpos_m1, *pcuMesh->pthermCond, thermCond);
 			}
@@ -241,11 +262,17 @@ public:
 			}
 
 			//heat source contribution if set
-			if (cuIsNZ(pcuMesh->pQ->get0())) {
+			if (!pQ_equation) {
+				if (cuIsNZ(pcuMesh->pQ->get0())) {
 
-				cuBReal Q = *pcuMesh->pQ;
-				pcuMesh->update_parameters_atposition(relpos_m1, *pcuMesh->pQ, Q);
+					cuBReal Q = *pcuMesh->pQ;
+					pcuMesh->update_parameters_atposition(relpos_m1, *pcuMesh->pQ, Q);
+					value -= Q / thermCond;
+				}
+			}
+			else {
 
+				cuBReal Q = pQ_equation->evaluate(relpos_m1.x, relpos_m1.y, relpos_m1.z, *pcuMesh->pcuDiffEq->pstagetime);
 				value -= Q / thermCond;
 			}
 
@@ -270,7 +297,7 @@ public:
 
 			cuBReal thermCond = *pcuaMesh->pthermCond;
 
-			if (E.linear_size() || cuIsNZ(pcuaMesh->pQ->get0())) {
+			if (E.linear_size() || cuIsNZ(pcuaMesh->pQ->get0()) || pQ_equation) {
 
 				pcuaMesh->update_parameters_atposition(relpos_m1, *pcuaMesh->pthermCond, thermCond);
 			}
@@ -292,11 +319,17 @@ public:
 			}
 
 			//heat source contribution if set
-			if (cuIsNZ(pcuaMesh->pQ->get0())) {
+			if (!pQ_equation) {
+				if (cuIsNZ(pcuaMesh->pQ->get0())) {
 
-				cuBReal Q = *pcuaMesh->pQ;
-				pcuaMesh->update_parameters_atposition(relpos_m1, *pcuaMesh->pQ, Q);
+					cuBReal Q = *pcuaMesh->pQ;
+					pcuaMesh->update_parameters_atposition(relpos_m1, *pcuaMesh->pQ, Q);
+					value -= Q / thermCond;
+				}
+			}
+			else {
 
+				cuBReal Q = pQ_equation->evaluate(relpos_m1.x, relpos_m1.y, relpos_m1.z, *pcuaMesh->pcuaDiffEq->pstagetime);
 				value -= Q / thermCond;
 			}
 

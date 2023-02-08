@@ -32,6 +32,26 @@ void DifferentialEquationAFM::RestoreMagnetization(void)
 	}
 }
 
+//Save current magnetization in sM VECs (e.g. useful to reset dM / dt calculation)
+void DifferentialEquationAFM::SaveMagnetization(void)
+{
+#if COMPILECUDA == 1
+	if (pmeshODECUDA) {
+
+		pmeshODECUDA->SaveMagnetization();
+
+		return;
+	}
+#endif
+
+#pragma omp parallel for
+	for (int idx = 0; idx < pMesh->n.dim(); idx++) {
+
+		sM1[idx] = pMesh->M[idx];
+		sM1_2[idx] = pMesh->M2[idx];
+	}
+}
+
 //renormalize vectors to set magnetization length value (which could have a spatial variation)
 void DifferentialEquationAFM::RenormalizeMagnetization(void)
 {

@@ -19,7 +19,7 @@
 //----------------------------------------------------------------- INTERFACE
 
 //turn graphical interface on or off. If turned off then only use a basic text console.
-#define GRAPHICS	0
+#define GRAPHICS	1
 
 //----------------------------------------------------------------- CUDA
 

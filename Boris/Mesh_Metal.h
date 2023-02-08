@@ -10,6 +10,7 @@
 
 #include "Transport.h"
 #include "Heat.h"
+#include "MElastic.h"
 
 /////////////////////////////////////////////////////////////////////
 //
@@ -34,11 +35,11 @@ class MetalMesh :
 	MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<DBL2, double>, MatP<DBL2, double>, 
 	double, TEquation<double>, 
 	MatP<double, double>, MatP<double, double>,
-	MatP<double, double>, MatP<double, double>, MatP<DBL2, double>, MatP<double, double>, MatP<double, double>, MatP<DBL3, double>, MatP<double, double>,
+	MatP<double, double>, MatP<double, double>, MatP<DBL2, double>, MatP<DBL2, double>, MatP<double, double>, MatP<double, double>, MatP<DBL3, double>, MatP<double, double>, MatP<double, double>,
 	MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>
 	>,
 	//Module Implementations
-	std::tuple<Transport, Heat> >
+	std::tuple<Transport, Heat, MElastic> >
 {
 
 #if COMPILECUDA == 1

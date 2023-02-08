@@ -28,6 +28,9 @@
 //Don't set the number of CUDA threads per block too large. Currently using 128.
 //If the amount of code that is included in a CUDA kernel is too large (through inlining of various functions, etc. etc.) the program will start to exhibit very strange bugs.
 
+//BUGS:
+//need extract_profile methods in VEC_VC, cuVEC_VC. Currently missing and relying on VEC and cuVEC inherited methods.
+
 #pragma once
 
 #include "BorisLib.h"

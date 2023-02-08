@@ -135,6 +135,9 @@ public:
 	//Restore magnetization after a failed step for adaptive time-step methods
 	void RestoreMoments(void);
 
+	//Save current moments in sM VECs (e.g. useful to reset dM / dt calculation)
+	void SaveMoments(void);
+
 	//renormalize vectors to set moment length value (which could have a spatial variation)
 	void RenormalizeMoments(void);
 
@@ -272,6 +275,9 @@ public:
 
 	//Restore magnetization after a failed step for adaptive time-step methods
 	void RestoreMagnetization(void) {}
+
+	//Save current magnetization in sM VECs (e.g. useful to reset dM / dt calculation)
+	void SaveMagnetization(void) {}
 
 	//----------------------------------- GETTERS
 

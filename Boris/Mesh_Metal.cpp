@@ -24,12 +24,12 @@ MetalMesh::MetalMesh(SuperMesh *pSMesh_) :
 			VINFO(elecCond), VINFO(De), VINFO(n_density), VINFO(SHA), VINFO(iSHA), VINFO(l_sf), VINFO(Gi), VINFO(Gmix), 
 			VINFO(base_temperature), VINFO(T_equation), 
 			VINFO(Sc), VINFO(joule_eff),
-			VINFO(thermCond), VINFO(density), VINFO(MEc), VINFO(Ym), VINFO(Pr), VINFO(cC), VINFO(mdamping),
+			VINFO(thermCond), VINFO(density), VINFO(MEc), VINFO(mMEc), VINFO(Ym), VINFO(Pr), VINFO(cC), VINFO(mdamping), VINFO(thalpha),
 			VINFO(shc), VINFO(shc_e), VINFO(G_e), VINFO(cT), VINFO(Q)
 		},
 		{
 			//Modules Implementations
-			IINFO(Transport), IINFO(Heat)
+			IINFO(Transport), IINFO(Heat), IINFO(MElastic)
 		})
 {}
 
@@ -50,12 +50,12 @@ MetalMesh::MetalMesh(Rect meshRect_, DBL3 h_, SuperMesh *pSMesh_) :
 			VINFO(elecCond), VINFO(De), VINFO(n_density), VINFO(SHA), VINFO(iSHA), VINFO(l_sf), VINFO(Gi), VINFO(Gmix), 
 			VINFO(base_temperature), VINFO(T_equation), 
 			VINFO(Sc), VINFO(joule_eff),
-			VINFO(thermCond), VINFO(density), VINFO(MEc), VINFO(Ym), VINFO(Pr), VINFO(cC), VINFO(mdamping),
+			VINFO(thermCond), VINFO(density), VINFO(MEc), VINFO(mMEc), VINFO(Ym), VINFO(Pr), VINFO(cC), VINFO(mdamping), VINFO(thalpha),
 			VINFO(shc), VINFO(shc_e), VINFO(G_e), VINFO(cT), VINFO(Q)
 		},
 		{
 			//Modules Implementations
-			IINFO(Transport), IINFO(Heat)
+			IINFO(Transport), IINFO(Heat), IINFO(MElastic)
 		})
 {
 	//default settings

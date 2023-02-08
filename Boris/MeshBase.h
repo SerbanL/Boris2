@@ -596,6 +596,11 @@ public:
 	virtual double GetAverageTemperature(Rect rectangle = Rect()) = 0;
 	virtual double GetAverageLatticeTemperature(Rect rectangle = Rect()) = 0;
 
+	//getters for mechanical displacement and strain
+	virtual DBL3 GetAverageMechanicalDisplacement(Rect rectangle = Rect()) = 0;
+	virtual DBL3 GetAverageDiagonalStrain(Rect rectangle = Rect()) = 0;
+	virtual DBL3 GetAverageOffDiagonalStrain(Rect rectangle = Rect()) = 0;
+
 	//----------------------------------- OTHER CALCULATION METHODS
 
 	//compute topological charge density spatial dependence and have it available to display in Cust_S

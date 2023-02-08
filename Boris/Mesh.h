@@ -402,6 +402,11 @@ public:
 	double GetAverageTemperature(Rect rectangle = Rect());
 	double GetAverageLatticeTemperature(Rect rectangle = Rect());
 
+	//getters for mechanical displacement and strain
+	DBL3 GetAverageMechanicalDisplacement(Rect rectangle = Rect());
+	DBL3 GetAverageDiagonalStrain(Rect rectangle = Rect());
+	DBL3 GetAverageOffDiagonalStrain(Rect rectangle = Rect());
+
 	//----------------------------------- QUANTITY GETTERS : MeshGetQuantities.cpp
 
 	//returns M on the cpu, thus transfers M from gpu to cpu before returning if cuda enabled
@@ -499,8 +504,12 @@ public:
 
 	//----------------------------------- ODE METHODS IN (ANTI)FERROMAGNETIC MESH : Mesh_..._ODEControl.cpp
 
-	//get rate of change of magnetization (overloaded by Ferromagnetic meshes)
+	//get rate of change of magnetization (overloaded by magnetic meshes)
 	virtual DBL3 dMdt(int idx) { return DBL3(); }
+	virtual DBL3 dMdt2(int idx) { return DBL3(); }
+
+	//Save current magnetization in sM VECs (e.g. useful to reset dM / dt calculation)
+	virtual void SaveMagnetization(void) {}
 };
 
 //!!!NOTES!!!

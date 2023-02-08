@@ -23,12 +23,12 @@ InsulatorMesh::InsulatorMesh(SuperMesh *pSMesh_) :
 			//Material Parameters
 			VINFO(base_temperature), VINFO(T_equation), 
 			VINFO(Gi), VINFO(Gmix), VINFO(RAtmr_p), VINFO(RAtmr_ap), VINFO(elecCond), VINFO(De), VINFO(l_sf),
-			VINFO(thermCond), VINFO(density), VINFO(MEc), VINFO(Ym), VINFO(Pr), VINFO(cC), VINFO(mdamping),
+			VINFO(thermCond), VINFO(density), VINFO(MEc), VINFO(mMEc), VINFO(Ym), VINFO(Pr), VINFO(cC), VINFO(mdamping), VINFO(thalpha),
 			VINFO(shc), VINFO(cT), VINFO(Q)
 		},
 		{
 			//Modules Implementations
-			IINFO(Heat), IINFO(TMR)
+			IINFO(Heat), IINFO(TMR), IINFO(MElastic)
 		})
 {}
 
@@ -48,12 +48,12 @@ InsulatorMesh::InsulatorMesh(Rect meshRect_, DBL3 h_, SuperMesh *pSMesh_) :
 			//Material Parameters
 			VINFO(base_temperature), VINFO(T_equation), 
 			VINFO(Gi), VINFO(Gmix), VINFO(RAtmr_p), VINFO(RAtmr_ap), VINFO(elecCond), VINFO(De), VINFO(l_sf),
-			VINFO(thermCond), VINFO(density), VINFO(MEc), VINFO(Ym), VINFO(Pr), VINFO(cC), VINFO(mdamping),
+			VINFO(thermCond), VINFO(density), VINFO(MEc), VINFO(mMEc), VINFO(Ym), VINFO(Pr), VINFO(cC), VINFO(mdamping), VINFO(thalpha),
 			VINFO(shc), VINFO(cT), VINFO(Q)
 		},
 		{
 			//Modules Implementations
-			IINFO(Heat), IINFO(TMR)
+			IINFO(Heat), IINFO(TMR), IINFO(MElastic)
 		})
 {
 	//default settings

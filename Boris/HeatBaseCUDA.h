@@ -60,6 +60,7 @@ public:
 
 	//Set Q_equation text equation object
 	BError SetQEquation(const std::vector< std::vector<EqComp::FSPEC> >& fspec);
+	void ClearQEquation(void);
 };
 
 #else

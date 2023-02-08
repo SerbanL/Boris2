@@ -192,7 +192,10 @@ void Atom_HeatCUDA::UpdateConfiguration_Values(UPDATECONFIG_ cfgMessage)
 	}
 	else if (cfgMessage == UPDATECONFIG_TEQUATION_CLEAR) {
 
-		if (Q_equation.is_set()) Q_equation.clear();
+		if (Q_equation.is_set()) {
+
+			ClearQEquation();
+		}
 	}
 }
 

@@ -27,6 +27,22 @@ void DifferentialEquationFMCUDA::RestoreMagnetization(void)
 	RestoreMagnetization_FM_kernel <<< (pMeshCUDA->n.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (pMeshCUDA->M, sM1);
 }
 
+__global__ void SaveMagnetization_FM_kernel(cuVEC_VC<cuReal3>& M, cuVEC<cuReal3>& sM1)
+{
+	int idx = blockIdx.x * blockDim.x + threadIdx.x;
+
+	if (idx < M.linear_size()) {
+
+		sM1[idx] = M[idx];
+	}
+}
+
+//Save current magnetization in sM VECs (e.g. useful to reset dM / dt calculation)
+void DifferentialEquationFMCUDA::SaveMagnetization(void)
+{
+	SaveMagnetization_FM_kernel <<< (pMeshCUDA->n.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (pMeshCUDA->M, sM1);
+}
+
 //-----------------------------------------
 
 __global__ void RenormalizeMagnetization_FM_kernel(ManagedMeshCUDA& cuMesh)

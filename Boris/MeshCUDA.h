@@ -100,8 +100,8 @@ public:
 	//Displayed	mesh quantity can be scalar or a vector; pass in std::vector pointers, then check for nullptr to determine what type is displayed
 	//if do_average = true then build average and don't return anything, else return just a single-shot profile. If read_average = true then simply read out the internally stored averaged profile by assigning to pointer.
 	void GetPhysicalQuantityProfile(
-		DBL3 start, DBL3 end, double step, DBL3 stencil, 
-		std::vector<DBL3>*& pprofile_dbl3, std::vector<double>*& pprofile_dbl, 
+		DBL3 start, DBL3 end, double step, DBL3 stencil,
+		std::vector<DBL3>*& pprofile_dbl3, std::vector<double>*& pprofile_dbl,
 		bool do_average, bool read_average, MESHDISPLAY_ quantity);
 
 	//return average value for currently displayed mesh quantity in the given relative rectangle
@@ -156,6 +156,11 @@ public:
 
 	std::vector<DBL4>& get_tensorial_anisotropy(void);
 	std::vector<DBL4>& get_tensorial_anisotropy2(void);
+
+	//----------------------------------- ODE METHODS
+
+	//Save current magnetization in sM VECs (e.g. useful to reset dM / dt calculation)
+	virtual void SaveMagnetization(void) {}
 };
 
 #endif

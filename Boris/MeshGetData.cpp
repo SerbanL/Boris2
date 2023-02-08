@@ -204,6 +204,49 @@ double Mesh::GetAverageLatticeTemperature(Rect rectangle)
 	else return base_temperature;
 }
 
+//getters for mechanical displacement and strain
+DBL3 Mesh::GetAverageMechanicalDisplacement(Rect rectangle)
+{
+#if COMPILECUDA == 1
+	if (pMeshCUDA) {
+
+		if (u_disp.linear_size()) return pMeshCUDA->u_disp()->average_nonempty(n_m.dim(), rectangle);
+		else return DBL3(0.0);
+	}
+#endif
+
+	if (u_disp.linear_size()) return u_disp.average_nonempty_omp(rectangle);
+	else return DBL3(0.0);
+}
+
+DBL3 Mesh::GetAverageDiagonalStrain(Rect rectangle)
+{
+#if COMPILECUDA == 1
+	if (pMeshCUDA) {
+
+		if (strain_diag.linear_size()) return pMeshCUDA->strain_diag()->average_nonempty(n_m.dim(), rectangle);
+		else return DBL3(0.0);
+	}
+#endif
+
+	if (strain_diag.linear_size()) return strain_diag.average_nonempty_omp(rectangle);
+	else return DBL3(0.0);
+}
+
+DBL3 Mesh::GetAverageOffDiagonalStrain(Rect rectangle)
+{
+#if COMPILECUDA == 1
+	if (pMeshCUDA) {
+
+		if (strain_odiag.linear_size()) return pMeshCUDA->strain_odiag()->average_nonempty(n_m.dim(), rectangle);
+		else return DBL3(0.0);
+	}
+#endif
+
+	if (strain_odiag.linear_size()) return strain_odiag.average_nonempty_omp(rectangle);
+	else return DBL3(0.0);
+}
+
 //get set strain equations (from MElastic module)
 std::string Mesh::Get_StrainEquation(void)
 {

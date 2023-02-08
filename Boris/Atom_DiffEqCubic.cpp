@@ -26,6 +26,23 @@ void Atom_DifferentialEquationCubic::RestoreMoments(void)
 		paMesh->M1[idx] = sM1[idx];
 }
 
+//Save current moments in sM VECs (e.g. useful to reset dM / dt calculation)
+void Atom_DifferentialEquationCubic::SaveMoments(void)
+{
+#if COMPILECUDA == 1
+	if (pameshODECUDA) {
+
+		pameshODECUDA->SaveMoments();
+
+		return;
+	}
+#endif
+
+#pragma omp parallel for
+	for (int idx = 0; idx < paMesh->n.dim(); idx++)
+		sM1[idx] = paMesh->M1[idx];
+}
+
 //renormalize vectors to set moment length value (which could have a spatial variation)
 void Atom_DifferentialEquationCubic::RenormalizeMoments(void)
 {

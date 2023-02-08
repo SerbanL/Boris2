@@ -10,7 +10,10 @@
 #include "Mesh.h"
 #include "DataDefs.h"
 
+#include "MElastic_BoundariesCUDA.h"
 #include "MElastic_Boundaries.h"
+
+#include "HeatBase.h"
 
 MElasticCUDA::MElasticCUDA(Mesh* pMesh_, MElastic* pMElastic_) :
 	ModulesCUDA()
@@ -67,6 +70,12 @@ BError MElasticCUDA::Initialize(void)
 
 	ZeroEnergy();
 
+	//refresh ambient temperature here
+	if (thermoelasticity_enabled) T_ambient.from_cpu(pMesh->CallModuleMethod(&HeatBase::GetAmbientTemperature));
+
+	//disabled by setting magnetoelastic coefficient to zero (also disabled in non-magnetic meshes)
+	melastic_field_disabled = IsZ(pMesh->MEc.get0().i + pMesh->MEc.get0().j) || (pMesh->GetMeshType() != MESH_ANTIFERROMAGNETIC && pMesh->GetMeshType() != MESH_FERROMAGNETIC);
+
 	if (!initialized) {
 
 		error = pMElastic->Initialize();
@@ -111,14 +120,21 @@ BError MElasticCUDA::Initialize(void)
 		//set Dirichlet conditions for strain_diag (external force)
 		pMeshCUDA->strain_diag()->clear_dirichlet_flags();
 		for (auto external_stress : pMElastic->external_stress_surfaces) pMeshCUDA->strain_diag()->set_dirichlet_conditions(external_stress.get_surface(), cuReal3());
+
+		Reset_ElSolver();
 	}
 
-	//Make sure display data has memory allocated (or freed) as required
-	error = Update_Module_Display_VECs(
-		(cuReal3)pMeshCUDA->h, (cuRect)pMeshCUDA->meshRect, 
-		(MOD_)pMeshCUDA->Get_Module_Heff_Display() == MOD_MELASTIC || pMeshCUDA->IsOutputDataSet_withRect(DATA_E_MELASTIC),
-		(MOD_)pMeshCUDA->Get_Module_Energy_Display() == MOD_MELASTIC || pMeshCUDA->IsOutputDataSet_withRect(DATA_E_MELASTIC));
-	if (!error)	initialized = true;
+	//Make sure display data has memory allocated (or freed) as required - this is only required for magnetic meshes (MElastic module could also be used in metal and insulator meshes)
+	if (pMeshCUDA->GetMeshType() == MESH_ANTIFERROMAGNETIC || pMeshCUDA->GetMeshType() == MESH_FERROMAGNETIC) {
+
+		//Make sure display data has memory allocated (or freed) as required
+		error = Update_Module_Display_VECs(
+			(cuReal3)pMeshCUDA->h, (cuRect)pMeshCUDA->meshRect,
+			(MOD_)pMeshCUDA->Get_Module_Heff_Display() == MOD_MELASTIC || pMeshCUDA->IsOutputDataSet_withRect(DATA_E_MELASTIC),
+			(MOD_)pMeshCUDA->Get_Module_Energy_Display() == MOD_MELASTIC || pMeshCUDA->IsOutputDataSet_withRect(DATA_E_MELASTIC),
+			pMeshCUDA->GetMeshType() == MESH_ANTIFERROMAGNETIC);
+		if (!error)	initialized = true;
+	}
 
 	return error;
 }
@@ -127,11 +143,32 @@ BError MElasticCUDA::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 {
 	BError error(CLASS_STR(MElasticCUDA));
 
-	Uninitialize();
+	//is thermoelasticity enabled or status changed?
+	if (thermoelasticity_enabled != (pMesh->Temp.linear_size() && pMesh->IsModuleSet(MOD_HEAT) && IsNZ(pMesh->thalpha.get0()))) {
+
+		Uninitialize();
+		thermoelasticity_enabled = !thermoelasticity_enabled;
+
+		if (thermoelasticity_enabled) {
+
+			if (Temp_previous.resize(pMesh->n_t.dim())) Temp_previous.set(0.0);
+			else return error(BERROR_OUTOFGPUMEMORY_CRIT);
+		}
+		else Temp_previous.clear();
+	}
+
+	//is magnetostriction enabled?
+	if (magnetostriction_enabled != (pMesh->Magnetism_Enabled() && IsNZ(pMesh->mMEc.get0().i + pMesh->mMEc.get0().j))) {
+
+		Uninitialize();
+		magnetostriction_enabled = !magnetostriction_enabled;
+	}
 
 	bool success = true;
 
 	if (ucfg::check_cfgflags(cfgMessage, UPDATECONFIG_MESHSHAPECHANGE, UPDATECONFIG_MESHCHANGE)) {
+
+		Uninitialize();
 
 		if (pMeshCUDA->u_disp()->size_cpu().dim()) {
 
@@ -192,12 +229,19 @@ void MElasticCUDA::UpdateConfiguration_Values(UPDATECONFIG_ cfgMessage)
 void MElasticCUDA::Reset_ElSolver(void)
 {
 	vx()->set(0.0); vy()->set(0.0); vz()->set(0.0);
-	sdd()->set(cuReal3());
-	sxy()->set(0.0); sxz()->set(0.0); syz()->set(0.0);
 
 	pMeshCUDA->u_disp()->set(cuReal3());
 	pMeshCUDA->strain_diag()->set(cuReal3());
 	pMeshCUDA->strain_odiag()->set(cuReal3());
+
+	if (thermoelasticity_enabled) {
+
+		//refresh ambient temperature here
+		T_ambient.from_cpu(pMesh->CallModuleMethod(&HeatBase::GetAmbientTemperature));
+	}
+
+	//setting the stress depends on if thermoelasticity or magnetostriction are enabled, so not straightforward
+	Set_Initial_Stress();
 }
 
 //clear text equations

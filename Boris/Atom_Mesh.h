@@ -375,6 +375,11 @@ public:
 	double GetAverageTemperature(Rect rectangle = Rect());
 	double GetAverageLatticeTemperature(Rect rectangle = Rect());
 
+	//getters for mechanical displacement and strain (not yet implemented for Atomistic meshes : TO DO)
+	DBL3 GetAverageMechanicalDisplacement(Rect rectangle = Rect()) { return DBL3(); }
+	DBL3 GetAverageDiagonalStrain(Rect rectangle = Rect()) { return DBL3(); }
+	DBL3 GetAverageOffDiagonalStrain(Rect rectangle = Rect()) { return DBL3(); }
+
 	//----------------------------------- QUANTITY GETTERS : Atom_MeshGetQuantities.cpp
 
 	//returns M1 on the cpu, thus transfers M1 from gpu to cpu before returning if cuda enabled

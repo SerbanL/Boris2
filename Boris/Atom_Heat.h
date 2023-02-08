@@ -17,7 +17,11 @@ class SuperMesh;
 class Atom_Heat :
 	public virtual Modules,
 	public HeatBase,
-	public ProgramState<Atom_Heat, std::tuple<int, double, double, bool, bool, bool, bool, bool, bool, TEquation<double, double, double, double>>, std::tuple<>>
+	public ProgramState<Atom_Heat, std::tuple<
+	int, 
+	double, double, 
+	bool, bool, bool, bool, bool, bool, 
+	TEquation<double, double, double, double>>, std::tuple<>>
 {
 
 #if COMPILECUDA == 1

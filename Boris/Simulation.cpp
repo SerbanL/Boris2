@@ -392,9 +392,9 @@ Simulation::Simulation(
 	commands[CMD_LOADMASKFILE].limits = { { Any(), Any() }, { Any(), Any() } };
 
 	commands.insert(CMD_INDIVIDUALMASKSHAPE, CommandSpecifier(CMD_INDIVIDUALMASKSHAPE), "individualshape");
-	commands[CMD_INDIVIDUALMASKSHAPE].usage = "[tc0,0.5,0,1/tc]USAGE : <b>individualmaskshape</b> <i>status</i>";
+	commands[CMD_INDIVIDUALMASKSHAPE].usage = "[tc0,0.5,0,1/tc]USAGE : <b>individualshape</b> <i>status</i>";
 	commands[CMD_INDIVIDUALMASKSHAPE].limits = { { int(0), int(1) } };
-	commands[CMD_INDIVIDUALMASKSHAPE].descr = "[tc0,0.5,0.5,1/tc]When changing the shape inside a mesh, e.g. through a mask file, set this flag to true so the shape is applied only to the primary displayed physical quantity. If set to false then all relevant physical quantities are shaped.";
+	commands[CMD_INDIVIDUALMASKSHAPE].descr = "[tc0,0.5,0.5,1/tc]When changing the shape inside a mesh set this flag to true so the shape is applied only to the primary displayed physical quantity. If set to false then all relevant physical quantities are shaped.";
 	commands[CMD_INDIVIDUALMASKSHAPE].return_descr = "[tc0,0.5,0,1/tc]Script return values: <i>status</i>";
 
 	commands.insert(CMD_SETANGLE, CommandSpecifier(CMD_SETANGLE), "setangle");
@@ -1249,7 +1249,7 @@ Simulation::Simulation(
 	commands[CMD_SURFROUGHENJAGGED].usage = "[tc0,0.5,0,1/tc]USAGE : <b>surfroughenjagged</b> <i>(meshname) depth spacing (seed (sides))</i>";
 	commands[CMD_SURFROUGHENJAGGED].limits = { { Any(), Any() }, { double(0), Any() }, { double(0), Any() }, { int(1), Any() }, { Any(), Any() } };
 	commands[CMD_SURFROUGHENJAGGED].unit = "m";
-	commands[CMD_SURFROUGHENJAGGED].descr = "[tc0,0.5,0.5,1/tc]Roughen given mesh (focused mesh if not specified) surfaces using a jagged pattern to given depth (m) and peak spacing (m). Roughen both sides by default, unless sides is specified as -z or z (std::string literal). The seed is used for the pseudo-random number generator, 1 by default.";
+	commands[CMD_SURFROUGHENJAGGED].descr = "[tc0,0.5,0.5,1/tc]Roughen given mesh (focused mesh if not specified) surfaces using a jagged pattern to given depth (m) and peak spacing (m). Roughen both sides by default, unless sides is specified as -z or z (string literal). The seed is used for the pseudo-random number generator, 1 by default.";
 
 	commands.insert(CMD_GENERATE2DGRAINS, CommandSpecifier(CMD_GENERATE2DGRAINS), "generate2dgrains");
 	commands[CMD_GENERATE2DGRAINS].usage = "[tc0,0.5,0,1/tc]USAGE : <b>generate2dgrains</b> <i>(meshname) spacing (seed)</i>";
@@ -2049,6 +2049,9 @@ Simulation::Simulation(
 	dataDescriptor.push_back("V", DatumSpecifier("Potential : ", 1, "V"), DATA_POTENTIAL);
 	dataDescriptor.push_back("I", DatumSpecifier("I, Net I : ", 2, "A"), DATA_CURRENT);
 	dataDescriptor.push_back("R", DatumSpecifier("Resistance : ", 1, "Ohm"), DATA_RESISTANCE);
+	dataDescriptor.push_back("<u>", DatumSpecifier("<u> : ", 3, "m", false, false), DATA_AVU);
+	dataDescriptor.push_back("<Sd>", DatumSpecifier("<Sd> : ", 3, "", false, false), DATA_AVSTRAINDIAG);
+	dataDescriptor.push_back("<Sod>", DatumSpecifier("<Sod> : ", 3, "", false, false), DATA_AVSTRAINODIAG);
 	dataDescriptor.push_back("e_demag", DatumSpecifier("Demag e : ", 1, "J/m3", false, false), DATA_E_DEMAG);
 	dataDescriptor.push_back("e_exch", DatumSpecifier("Exchange e : ", 1, "J/m3", false, false), DATA_E_EXCH);
 	dataDescriptor.push_back("t_exch", DatumSpecifier("Exchange torque : ", 3, "au", false, false), DATA_T_EXCH);

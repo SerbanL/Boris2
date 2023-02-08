@@ -151,7 +151,7 @@ private:
 	Atom_ODECommon atom_odeSolver;
 
 	//-----Meshes
-
+public:
 	//individual simulation meshes (key is the mesh name)
 	vector_key<MeshBase*> pMesh;
 

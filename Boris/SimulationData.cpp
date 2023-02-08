@@ -356,6 +356,24 @@ Any Simulation::GetDataValue(DatumConfig dConfig)
 	}
 	break;
 
+	case DATA_AVU:
+	{
+		return Any(SMesh[dConfig.meshName]->GetAverageMechanicalDisplacement(dConfig.rectangle));
+	}
+	break;
+
+	case DATA_AVSTRAINDIAG:
+	{
+		return Any(SMesh[dConfig.meshName]->GetAverageDiagonalStrain(dConfig.rectangle));
+	}
+	break;
+
+	case DATA_AVSTRAINODIAG:
+	{
+		return Any(SMesh[dConfig.meshName]->GetAverageOffDiagonalStrain(dConfig.rectangle));
+	}
+	break;
+
 	case DATA_E_DEMAG:
 	{
 		if (!SMesh.IsSuperMeshModuleSet(MODS_SDEMAG) || SMesh.CallModuleMethod<bool, SDemag>(&SDemag::Get_Multilayered_Convolution_Status)) {

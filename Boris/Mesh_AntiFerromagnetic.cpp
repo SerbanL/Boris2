@@ -31,7 +31,7 @@ AFMesh::AFMesh(SuperMesh *pSMesh_) :
 			VINFO(s_eff),
 			VINFO(elecCond), VINFO(P), VINFO(beta), VINFO(SHA), VINFO(flSOT), VINFO(STp),
 			VINFO(base_temperature), VINFO(T_equation), VINFO(T_Curie), VINFO(T_Curie_material), VINFO(atomic_moment_AFM), 
-			VINFO(density), VINFO(MEc), VINFO(Ym), VINFO(Pr), VINFO(cC), VINFO(mdamping),
+			VINFO(density), VINFO(MEc), VINFO(mMEc), VINFO(Ym), VINFO(Pr), VINFO(cC), VINFO(mdamping), VINFO(thalpha),
 			VINFO(Sc), VINFO(joule_eff),
 			VINFO(thermCond), VINFO(shc), VINFO(shc_e), VINFO(G_e), VINFO(cT), VINFO(Q)
 		},
@@ -71,7 +71,7 @@ AFMesh::AFMesh(Rect meshRect_, DBL3 h_, SuperMesh *pSMesh_) :
 			VINFO(s_eff),
 			VINFO(elecCond), VINFO(P), VINFO(beta), VINFO(SHA), VINFO(flSOT), VINFO(STp),
 			VINFO(base_temperature), VINFO(T_equation), VINFO(T_Curie), VINFO(T_Curie_material), VINFO(atomic_moment_AFM),
-			VINFO(density), VINFO(MEc), VINFO(Ym), VINFO(Pr), VINFO(cC), VINFO(mdamping),
+			VINFO(density), VINFO(MEc), VINFO(mMEc), VINFO(Ym), VINFO(Pr), VINFO(cC), VINFO(mdamping), VINFO(thalpha),
 			VINFO(Sc), VINFO(joule_eff),
 			VINFO(thermCond), VINFO(shc), VINFO(shc_e), VINFO(G_e), VINFO(cT), VINFO(Q)
 		},

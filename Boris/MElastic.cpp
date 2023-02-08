@@ -10,6 +10,8 @@
 
 #include "MElastic_Boundaries.h"
 
+#include "HeatBase.h"
+
 #if COMPILECUDA == 1
 #include "MElasticCUDA.h"
 #endif
@@ -49,7 +51,13 @@ MElastic::~MElastic()
 BError MElastic::Initialize(void)
 {
 	BError error(CLASS_STR(MElastic));
-	
+
+	//refresh ambient temperature here
+	if (thermoelasticity_enabled) T_ambient = pMesh->CallModuleMethod(&HeatBase::GetAmbientTemperature);
+
+	//disabled by setting magnetoelastic coefficient to zero (also disabled in non-magnetic meshes)
+	melastic_field_disabled = IsZ(pMesh->MEc.get0().i + pMesh->MEc.get0().j) || (pMesh->GetMeshType() != MESH_ANTIFERROMAGNETIC && pMesh->GetMeshType() != MESH_FERROMAGNETIC);
+
 	if (!initialized) {
 		
 		//Must have at least one fixed surface defined.
@@ -108,14 +116,20 @@ BError MElastic::Initialize(void)
 		//set Dirichlet conditions for strain_diag (external force)
 		pMesh->strain_diag.clear_dirichlet_flags();
 		for (auto external_stress : external_stress_surfaces) pMesh->strain_diag.set_dirichlet_conditions(external_stress.get_surface(), DBL3());
+
+		Reset_ElSolver();
 	}
 
-	//Make sure display data has memory allocated (or freed) as required
-	error = Update_Module_Display_VECs(
-		pMesh->h, pMesh->meshRect,
-		(MOD_)pMesh->Get_Module_Heff_Display() == MOD_MELASTIC || pMesh->IsOutputDataSet_withRect(DATA_E_MELASTIC),
-		(MOD_)pMesh->Get_Module_Energy_Display() == MOD_MELASTIC || pMesh->IsOutputDataSet_withRect(DATA_E_MELASTIC),
-		pMesh->GetMeshType() == MESH_ANTIFERROMAGNETIC);
+	//Make sure display data has memory allocated (or freed) as required - this is only required for magnetic meshes (MElastic module could also be used in metal and insulator meshes)
+	if (pMesh->GetMeshType() == MESH_ANTIFERROMAGNETIC || pMesh->GetMeshType() == MESH_FERROMAGNETIC) {
+
+		error = Update_Module_Display_VECs(
+			pMesh->h, pMesh->meshRect,
+			(MOD_)pMesh->Get_Module_Heff_Display() == MOD_MELASTIC || pMesh->IsOutputDataSet_withRect(DATA_E_MELASTIC),
+			(MOD_)pMesh->Get_Module_Energy_Display() == MOD_MELASTIC || pMesh->IsOutputDataSet_withRect(DATA_E_MELASTIC),
+			pMesh->GetMeshType() == MESH_ANTIFERROMAGNETIC);
+	}
+
 	if (!error)	initialized = true;
 
 	return error;
@@ -125,11 +139,31 @@ BError MElastic::UpdateConfiguration(UPDATECONFIG_ cfgMessage)
 {
 	BError error(CLASS_STR(MElastic));
 
-	Uninitialize();
+	//is thermoelasticity enabled or status changed?
+	if (thermoelasticity_enabled != (pMesh->Temp.linear_size() && pMesh->IsModuleSet(MOD_HEAT) && IsNZ(pMesh->thalpha.get0()))) {
+
+		Uninitialize();
+		thermoelasticity_enabled = !thermoelasticity_enabled;
+
+		if (thermoelasticity_enabled) {
+
+			if (!malloc_vector(Temp_previous, pMesh->n_t.dim())) return error(BERROR_OUTOFMEMORY_CRIT);
+		}
+		else Temp_previous.clear();
+	}
+
+	//is magnetostriction enabled?
+	if (magnetostriction_enabled != (pMesh->Magnetism_Enabled() && IsNZ(pMesh->mMEc.get0().i + pMesh->mMEc.get0().j))) {
+
+		Uninitialize();
+		magnetostriction_enabled = !magnetostriction_enabled;
+	}
 
 	bool success = true;
 
 	if (ucfg::check_cfgflags(cfgMessage, UPDATECONFIG_MESHSHAPECHANGE, UPDATECONFIG_MESHCHANGE)) {
+
+		Uninitialize();
 
 		//make sure the cellsize divides the mesh rectangle
 		pMesh->n_m = round(pMesh->meshRect / pMesh->h_m);
@@ -386,17 +420,22 @@ DBL2 MElastic::Get_EnergyChange(int spin_index, DBL3 Mnew_A, DBL3 Mnew_B)
 //reset stress-strain solver to initial values (zero velocity, displacement and stress)
 void MElastic::Reset_ElSolver(void)
 {
+#if COMPILECUDA == 1
+	if (pModuleCUDA) {
+
+		dynamic_cast<MElasticCUDA*>(pModuleCUDA)->Reset_ElSolver();
+		return;
+	}
+#endif
+
 	vx.set(0.0); vy.set(0.0); vz.set(0.0);
-	sdd.set(DBL3());
-	sxy.set(0.0); sxz.set(0.0); syz.set(0.0);
-	
+		
 	pMesh->u_disp.set(DBL3());
 	pMesh->strain_diag.set(DBL3());
 	pMesh->strain_odiag.set(DBL3());
 
-#if COMPILECUDA == 1
-	if (pModuleCUDA) dynamic_cast<MElasticCUDA*>(pModuleCUDA)->Reset_ElSolver();
-#endif
+	//setting the stress depends on if thermoelasticity or magnetostriction are enabled, so not straightforward
+	Set_Initial_Stress();
 }
 
 //set diagonal and shear strain text equations
@@ -478,3 +517,4 @@ void MElastic::UpdateTEquationUserConstants(bool makeCuda)
 }
 
 #endif
+

@@ -33,6 +33,9 @@ enum DATA_
 
 	DATA_HEATDT = 32,
 
+	//MElastic module output data
+	DATA_AVU = 65, DATA_AVSTRAINDIAG = 66, DATA_AVSTRAINODIAG = 67,
+
 	//Energies
 	DATA_E_DEMAG = 20, DATA_E_EXCH = 21, DATA_E_SURFEXCH = 22, DATA_E_ZEE = 23, DATA_E_STRAY = 61, DATA_E_ANIS = 24, DATA_E_ROUGH = 25, DATA_E_MOPTICAL = 49, DATA_E_MELASTIC = 37, DATA_E_TOTAL = 33,
 	
@@ -51,4 +54,4 @@ enum DATA_
 	//Previously used by DATA_E_EXCH_MAX, now deleted
 	DATA_RESERVED = 39
 };
-//Current maximum : 64
+//Current maximum : 67

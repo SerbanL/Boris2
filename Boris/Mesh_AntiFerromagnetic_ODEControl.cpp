@@ -11,6 +11,12 @@ DBL3 AFMesh::dMdt(int idx)
 	return meshODE.dMdt(idx);
 }
 
+//Save current magnetization in sM VECs (e.g. useful to reset dM / dt calculation)
+void AFMesh::SaveMagnetization(void)
+{
+	meshODE.SaveMagnetization();
+}
+
 //return average dm/dt in the given avRect (relative rect). Here m is the direction vector.
 DBL3 AFMesh::Average_dmdt(Rect avRect)
 {

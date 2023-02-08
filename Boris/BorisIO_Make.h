@@ -383,6 +383,9 @@ void Simulation::MakeIOInfo(void)
 	ioInfo.set(showdata_info_generic + std::string("<i><b>Potential drop between electrodes</i>"), INT2(IOI_SHOWDATA, DATA_POTENTIAL));
 	ioInfo.set(showdata_info_generic + std::string("<i><b>Charge current into\n<i><b>ground electrode and\n<i>net current (error term)</i>"), INT2(IOI_SHOWDATA, DATA_CURRENT));
 	ioInfo.set(showdata_info_generic + std::string("<i><b>Total resistance (V/I)</i>"), INT2(IOI_SHOWDATA, DATA_RESISTANCE));
+	ioInfo.set(showdata_info_generic + std::string("<i><b>Average mechanical displacement</i>"), INT2(IOI_SHOWDATA, DATA_AVU));
+	ioInfo.set(showdata_info_generic + std::string("<i><b>Average diagonal strain (xx, yy, zz)</i>"), INT2(IOI_SHOWDATA, DATA_AVSTRAINDIAG));
+	ioInfo.set(showdata_info_generic + std::string("<i><b>Average off-diagonal strain (yz, xz, xy)</i>"), INT2(IOI_SHOWDATA, DATA_AVSTRAINODIAG));
 	ioInfo.set(showdata_info_generic + std::string("<i><b>Energy density: demag</i>"), INT2(IOI_SHOWDATA, DATA_E_DEMAG));
 	ioInfo.set(showdata_info_generic + std::string("<i><b>Energy density: exchange</i>"), INT2(IOI_SHOWDATA, DATA_E_EXCH));
 	ioInfo.set(showdata_info_generic + std::string("<i><b>Torque: exchange</i>"), INT2(IOI_SHOWDATA, DATA_T_EXCH));
@@ -454,6 +457,9 @@ void Simulation::MakeIOInfo(void)
 	ioInfo.set(data_info_generic + std::string("<i><b>Potential drop between electrodes</i>"), INT2(IOI_DATA, DATA_POTENTIAL));
 	ioInfo.set(data_info_generic + std::string("<i><b>Charge current into\n<i><b>ground electrode and\n<i><b>net current (error term)</i>"), INT2(IOI_DATA, DATA_CURRENT));
 	ioInfo.set(data_info_generic + std::string("<i><b>Total resistance (V/I)</i>"), INT2(IOI_DATA, DATA_RESISTANCE));
+	ioInfo.set(data_info_generic + std::string("<i><b>Average mechanical displacement</i>"), INT2(IOI_DATA, DATA_AVU));
+	ioInfo.set(data_info_generic + std::string("<i><b>Average diagonal strain (xx, yy, zz)</i>"), INT2(IOI_DATA, DATA_AVSTRAINDIAG));
+	ioInfo.set(data_info_generic + std::string("<i><b>Average off-diagonal strain (yz, xz, xy)</i>"), INT2(IOI_DATA, DATA_AVSTRAINODIAG));
 	ioInfo.set(data_info_generic + std::string("<i><b>Energy density: demag</i>"), INT2(IOI_DATA, DATA_E_DEMAG));
 	ioInfo.set(data_info_generic + std::string("<i><b>Energy density: exchange</i>"), INT2(IOI_DATA, DATA_E_EXCH));
 	ioInfo.set(data_info_generic + std::string("<i><b>Torque: exchange</i>"), INT2(IOI_DATA, DATA_T_EXCH));
@@ -754,6 +760,8 @@ void Simulation::MakeIOInfo(void)
 	ioInfo.set(param_generic_info + std::string("<i><b>Field-like spin torque coefficient\n<i><b>Used for SOTField and STField modules in FM meshes"), INT2(IOI_MESHPARAM, PARAM_FLSOT));
 	ioInfo.set(param_generic_info + std::string("<i><b>Slonczewski macrospin torques parameters."), INT2(IOI_MESHPARAM, PARAM_STQ));
 	ioInfo.set(param_generic_info + std::string("<i><b>Slonczewski macrospin torques parameters."), INT2(IOI_MESHPARAM, PARAM_STA));
+	ioInfo.set(param_generic_info + std::string("<i><b>Slonczewski macrospin torques parameters."), INT2(IOI_MESHPARAM, PARAM_STQ2));
+	ioInfo.set(param_generic_info + std::string("<i><b>Slonczewski macrospin torques parameters."), INT2(IOI_MESHPARAM, PARAM_STA2));
 	ioInfo.set(param_generic_info + std::string("<i><b>Slonczewski macrospin torques polarization vector; or SOT symmetry axis."), INT2(IOI_MESHPARAM, PARAM_STP));
 	ioInfo.set(param_generic_info + std::string("<i><b>Inverse spin-Hall angle"), INT2(IOI_MESHPARAM, PARAM_ISHA));
 	ioInfo.set(param_generic_info + std::string("<i><b>Spin-flip length"), INT2(IOI_MESHPARAM, PARAM_LSF));
@@ -772,10 +780,12 @@ void Simulation::MakeIOInfo(void)
 	ioInfo.set(param_generic_info + std::string("<i><b>Thermal conductivity"), INT2(IOI_MESHPARAM, PARAM_THERMCOND));
 	ioInfo.set(param_generic_info + std::string("<i><b>Mass density"), INT2(IOI_MESHPARAM, PARAM_DENSITY));
 	ioInfo.set(param_generic_info + std::string("<i><b>Magnetoelastic coefficients (B1, B2)"), INT2(IOI_MESHPARAM, PARAM_MECOEFF));
+	ioInfo.set(param_generic_info + std::string("<i><b>Magnetostriction coefficients (B1, B2)"), INT2(IOI_MESHPARAM, PARAM_MMECOEFF));
 	ioInfo.set(param_generic_info + std::string("<i><b>Young's modulus"), INT2(IOI_MESHPARAM, PARAM_YOUNGSMOD));
 	ioInfo.set(param_generic_info + std::string("<i><b>Poisson's ratio"), INT2(IOI_MESHPARAM, PARAM_POISSONRATIO));
 	ioInfo.set(param_generic_info + std::string("<i><b>Stiffness constants - cubic"), INT2(IOI_MESHPARAM, PARAM_STIFFC_CUBIC));
 	ioInfo.set(param_generic_info + std::string("<i><b>Mechanical damping"), INT2(IOI_MESHPARAM, PARAM_MDAMPING));
+	ioInfo.set(param_generic_info + std::string("<i><b>Coefficient of thermal expansion"), INT2(IOI_MESHPARAM, PARAM_THERMEL));
 	ioInfo.set(param_generic_info + std::string("<i><b>Specific heat capacity"), INT2(IOI_MESHPARAM, PARAM_SHC));
 	ioInfo.set(param_generic_info + std::string("<i><b>Electronic specific heat capacity"), INT2(IOI_MESHPARAM, PARAM_SHC_E));
 	ioInfo.set(param_generic_info + std::string("<i><b>Electron coupling constant\n<i><b>2TM : electron-lattice"), INT2(IOI_MESHPARAM, PARAM_G_E));

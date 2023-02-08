@@ -158,6 +158,9 @@ public:
 
 	void RestoreMoments(void);
 
+	//Save current moments in sM VECs (e.g. useful to reset dM / dt calculation)
+	void SaveMoments(void);
+
 	//renormalize vectors to set moment length value (which could have a spatial variation)
 	void RenormalizeMoments(void);
 
@@ -340,6 +343,9 @@ public:
 	//---------------------------------------- OTHERS : DiffEqFM.cpp
 
 	void RestoreMoments(void) {}
+
+	//Save current moments in sM VECs (e.g. useful to reset dM / dt calculation)
+	void SaveMoments(void) {}
 
 	//renormalize vectors to set moment length value (which could have a spatial variation)
 	virtual void RenormalizeMoments(void) {}

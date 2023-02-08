@@ -63,6 +63,9 @@ public:
 	cuReal3 Average_mxdm2dt(cuBox avBox);
 	cuReal3 Average_m2xdmdt(cuBox avBox);
 
+	//Save current magnetization in sM VECs (e.g. useful to reset dM / dt calculation)
+	void SaveMagnetization(void);
+
 	//-----------------------------------OBJECT GETTERS
 
 	cu_obj<ManagedDiffEqAFMCUDA>& Get_ManagedDiffEqCUDA(void);

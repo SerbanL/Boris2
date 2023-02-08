@@ -192,6 +192,9 @@ public:
 
 	void RestoreMagnetization(void);
 
+	//Save current magnetization in sM VECs (e.g. useful to reset dM / dt calculation)
+	void SaveMagnetization(void);
+
 	//renormalize vectors to set magnetization length value (which could have a spatial variation)
 	void RenormalizeMagnetization(void);
 
@@ -386,6 +389,9 @@ public:
 	//---------------------------------------- OTHERS : DiffEqFM.cpp
 
 	void RestoreMagnetization(void) {}
+
+	//Save current magnetization in sM VECs (e.g. useful to reset dM / dt calculation)
+	void SaveMagnetization(void) {}
 
 	//renormalize vectors to set magnetization length value (which could have a spatial variation)
 	void RenormalizeMagnetization(void) {}

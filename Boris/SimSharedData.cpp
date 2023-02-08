@@ -248,11 +248,11 @@ SimulationSharedData::SimulationSharedData(bool called_from_Simulation)
 		displaymodules_for_meshtype.push_back({}, MESH_DIPOLE);
 
 		//METAL
-		modules_for_meshtype.push_back(make_vector(MOD_TRANSPORT, MOD_HEAT), MESH_METAL);
+		modules_for_meshtype.push_back(make_vector(MOD_TRANSPORT, MOD_MELASTIC, MOD_HEAT), MESH_METAL);
 		displaymodules_for_meshtype.push_back({}, MESH_METAL);
 
 		//INSULATOR
-		modules_for_meshtype.push_back(make_vector(MOD_HEAT, MOD_TMR), MESH_INSULATOR);
+		modules_for_meshtype.push_back(make_vector(MOD_MELASTIC, MOD_HEAT, MOD_TMR), MESH_INSULATOR);
 		displaymodules_for_meshtype.push_back({}, MESH_INSULATOR);
 
 		//ATOMISTIC SIMPLE CUBIC
@@ -296,9 +296,14 @@ SimulationSharedData::SimulationSharedData(bool called_from_Simulation)
 		meshAllowedDisplay.push_back(make_vector(
 			MESHDISPLAY_NONE, 
 			MESHDISPLAY_CURRDENSITY, MESHDISPLAY_VOLTAGE, MESHDISPLAY_ELCOND, MESHDISPLAY_SACCUM, MESHDISPLAY_JSX, MESHDISPLAY_JSY, MESHDISPLAY_JSZ,
+			MESHDISPLAY_UDISP, MESHDISPLAY_STRAINDIAG, MESHDISPLAY_STRAINODIAG, 
 			MESHDISPLAY_TEMPERATURE, MESHDISPLAY_PARAMVAR), MESH_METAL);
 
-		meshAllowedDisplay.push_back(make_vector(MESHDISPLAY_NONE, MESHDISPLAY_CURRDENSITY, MESHDISPLAY_VOLTAGE, MESHDISPLAY_ELCOND, MESHDISPLAY_SACCUM, MESHDISPLAY_TEMPERATURE, MESHDISPLAY_PARAMVAR), MESH_INSULATOR);
+		meshAllowedDisplay.push_back(make_vector(
+			MESHDISPLAY_NONE, 
+			MESHDISPLAY_CURRDENSITY, MESHDISPLAY_VOLTAGE, MESHDISPLAY_ELCOND, MESHDISPLAY_SACCUM, 
+			MESHDISPLAY_UDISP, MESHDISPLAY_STRAINDIAG, MESHDISPLAY_STRAINODIAG,
+			MESHDISPLAY_TEMPERATURE, MESHDISPLAY_PARAMVAR), MESH_INSULATOR);
 
 		meshAllowedDisplay.push_back(make_vector(
 			MESHDISPLAY_NONE, MESHDISPLAY_MOMENT, MESHDISPLAY_EFFECTIVEFIELD, MESHDISPLAY_ENERGY,
@@ -318,7 +323,7 @@ SimulationSharedData::SimulationSharedData(bool called_from_Simulation)
 			PARAM_ELC, PARAM_AMR, PARAM_TAMR, PARAM_P, PARAM_BETA, PARAM_DE, PARAM_NDENSITY, PARAM_SHA, PARAM_FLSOT, PARAM_STQ, PARAM_STA, PARAM_STP, PARAM_FLSOT2, PARAM_STQ2, PARAM_STA2,
 			PARAM_BETAD, PARAM_LSF, PARAM_LEX, PARAM_LPH, PARAM_GI, PARAM_GMIX, PARAM_PUMPEFF, PARAM_CPUMP_EFF, PARAM_THE_EFF, PARAM_TSEFF, PARAM_TSIEFF,
 			PARAM_SEEBECK, PARAM_JOULE_EFF,
-			PARAM_THERMCOND, PARAM_DENSITY, PARAM_MECOEFF, PARAM_YOUNGSMOD, PARAM_POISSONRATIO, PARAM_STIFFC_CUBIC, PARAM_MDAMPING,
+			PARAM_THERMCOND, PARAM_DENSITY, PARAM_MECOEFF, PARAM_MMECOEFF, PARAM_YOUNGSMOD, PARAM_POISSONRATIO, PARAM_STIFFC_CUBIC, PARAM_MDAMPING, PARAM_THERMEL,
 			PARAM_SHC, PARAM_SHC_E, PARAM_G_E, PARAM_T, PARAM_Q), MESH_FERROMAGNETIC);
 
 		params_for_meshtype.push_back(make_vector(
@@ -331,7 +336,7 @@ SimulationSharedData::SimulationSharedData(bool called_from_Simulation)
 			PARAM_ELC, PARAM_P, PARAM_BETA, PARAM_DE, PARAM_LSF,
 			PARAM_SHA, PARAM_FLSOT, PARAM_STP,
 			PARAM_SEEBECK, PARAM_JOULE_EFF,
-			PARAM_THERMCOND, PARAM_DENSITY, PARAM_MECOEFF, PARAM_YOUNGSMOD, PARAM_POISSONRATIO, PARAM_STIFFC_CUBIC, PARAM_MDAMPING,
+			PARAM_THERMCOND, PARAM_DENSITY, PARAM_MECOEFF, PARAM_MMECOEFF, PARAM_YOUNGSMOD, PARAM_POISSONRATIO, PARAM_STIFFC_CUBIC, PARAM_MDAMPING, PARAM_THERMEL,
 			PARAM_SHC, PARAM_SHC_E, PARAM_G_E, PARAM_T, PARAM_Q), MESH_ANTIFERROMAGNETIC);
 
 		params_for_meshtype.push_back(make_vector(PARAM_MS, PARAM_TC,
@@ -341,13 +346,13 @@ SimulationSharedData::SimulationSharedData(bool called_from_Simulation)
 		params_for_meshtype.push_back(make_vector(
 			PARAM_ELC, PARAM_DE, PARAM_NDENSITY, PARAM_SHA, PARAM_ISHA, PARAM_LSF, PARAM_GI, PARAM_GMIX,
 			PARAM_SEEBECK, PARAM_JOULE_EFF,
-			PARAM_THERMCOND, PARAM_DENSITY, PARAM_YOUNGSMOD, PARAM_POISSONRATIO, PARAM_STIFFC_CUBIC, PARAM_MDAMPING,
+			PARAM_THERMCOND, PARAM_DENSITY, PARAM_YOUNGSMOD, PARAM_POISSONRATIO, PARAM_STIFFC_CUBIC, PARAM_MDAMPING, PARAM_THERMEL,
 			PARAM_SHC, PARAM_SHC_E, PARAM_G_E, PARAM_T, PARAM_Q), MESH_METAL);
 
 		params_for_meshtype.push_back(make_vector(
 			PARAM_RATMR_P, PARAM_RATMR_AP, 
 			PARAM_ELC, PARAM_DE, PARAM_LSF, PARAM_GI, PARAM_GMIX,
-			PARAM_THERMCOND, PARAM_DENSITY, PARAM_YOUNGSMOD, PARAM_POISSONRATIO, PARAM_STIFFC_CUBIC, PARAM_MDAMPING,
+			PARAM_THERMCOND, PARAM_DENSITY, PARAM_YOUNGSMOD, PARAM_POISSONRATIO, PARAM_STIFFC_CUBIC, PARAM_MDAMPING, PARAM_THERMEL,
 			PARAM_SHC), MESH_INSULATOR);
 
 		params_for_meshtype.push_back(make_vector(
@@ -435,10 +440,12 @@ SimulationSharedData::SimulationSharedData(bool called_from_Simulation)
 		params_enabled_props.push_back({ true, true }, PARAM_THE_EFF);
 		params_enabled_props.push_back({ false, true }, PARAM_NDENSITY);
 		params_enabled_props.push_back({ true, true }, PARAM_MECOEFF);
+		params_enabled_props.push_back({ true, true }, PARAM_MMECOEFF);
 		params_enabled_props.push_back({ true, true }, PARAM_YOUNGSMOD);
 		params_enabled_props.push_back({ true, true }, PARAM_POISSONRATIO);
 		params_enabled_props.push_back({ true, true }, PARAM_STIFFC_CUBIC);
 		params_enabled_props.push_back({ true, true }, PARAM_MDAMPING);
+		params_enabled_props.push_back({ true, true }, PARAM_THERMEL);
 		params_enabled_props.push_back({ true, true }, PARAM_SHC_E);
 		params_enabled_props.push_back({ true, true }, PARAM_G_E);
 		params_enabled_props.push_back({ true, true }, PARAM_A_AFH);

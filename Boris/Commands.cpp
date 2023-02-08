@@ -3912,6 +3912,8 @@ void Simulation::HandleCommand(std::string command_string)
 
 			if (!error) {
 
+				StopSimulation();
+
 				if (!err_hndl.qcall(error, &SuperMesh::SetBaseTemperature, &SMesh, meshName, Temperature)) UpdateScreen();
 			}
 			else if (verbose) Print_MeshTemperature_List();
@@ -3957,6 +3959,8 @@ void Simulation::HandleCommand(std::string command_string)
 			if (!meshName_specified) meshName = SMesh.superMeshHandle;
 
 			if (!error) {
+
+				StopSimulation();
 
 				if (!err_hndl.qcall(error, &SuperMesh::SetAmbientTemperature, &SMesh, meshName, T_ambient)) UpdateScreen();
 			}
@@ -8174,6 +8178,7 @@ void Simulation::HandleCommand(std::string command_string)
 
 		case CMD_TEST:
 		{
+			/*
 			//DUMP ALL COMMANDS
 			std::vector<std::string> commands_output;
 			commands_output.resize(commands.size());
@@ -8272,6 +8277,9 @@ void Simulation::HandleCommand(std::string command_string)
 			dump_quantities(MESH_METAL, meshtypeHandles(MESH_METAL));
 			dump_quantities(MESH_INSULATOR, meshtypeHandles(MESH_INSULATOR));
 			dump_quantities(MESH_ATOM_CUBIC, meshtypeHandles(MESH_ATOM_CUBIC));
+			*/
+
+			BD.DisplayConsoleMessage(ToString(SMesh.pMesh[SMesh.pMesh.size() - 1]->pMeshBaseCUDA));
 		}
 		break;
 

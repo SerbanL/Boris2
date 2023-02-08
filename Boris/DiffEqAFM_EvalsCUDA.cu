@@ -9,7 +9,7 @@
 
 //-----------------------------------------
 
-__global__ void Restoremagnetization_AFM_kernel(cuVEC_VC<cuReal3>& M, cuVEC<cuReal3>& sM1, cuVEC_VC<cuReal3>& M2, cuVEC<cuReal3>& sM1_2)
+__global__ void RestoreMagnetization_AFM_kernel(cuVEC_VC<cuReal3>& M, cuVEC<cuReal3>& sM1, cuVEC_VC<cuReal3>& M2, cuVEC<cuReal3>& sM1_2)
 {
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
 
@@ -23,7 +23,24 @@ __global__ void Restoremagnetization_AFM_kernel(cuVEC_VC<cuReal3>& M, cuVEC<cuRe
 //Restore magnetization after a failed step for adaptive time-step methods
 void DifferentialEquationAFMCUDA::RestoreMagnetization(void)
 {
-	Restoremagnetization_AFM_kernel <<< (pMeshCUDA->n.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (pMeshCUDA->M, sM1, pMeshCUDA->M2, sM1_2);
+	RestoreMagnetization_AFM_kernel <<< (pMeshCUDA->n.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (pMeshCUDA->M, sM1, pMeshCUDA->M2, sM1_2);
+}
+
+__global__ void SaveMagnetization_AFM_kernel(cuVEC_VC<cuReal3>& M, cuVEC<cuReal3>& sM1, cuVEC_VC<cuReal3>& M2, cuVEC<cuReal3>& sM1_2)
+{
+	int idx = blockIdx.x * blockDim.x + threadIdx.x;
+
+	if (idx < M.linear_size()) {
+
+		sM1[idx] = M[idx];
+		sM1_2[idx] = M2[idx];
+	}
+}
+
+//Save current magnetization in sM VECs (e.g. useful to reset dM / dt calculation)
+void DifferentialEquationAFMCUDA::SaveMagnetization(void)
+{
+	SaveMagnetization_AFM_kernel <<< (pMeshCUDA->n.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (pMeshCUDA->M, sM1, pMeshCUDA->M2, sM1_2);
 }
 
 //-----------------------------------------

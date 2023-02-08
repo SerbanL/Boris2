@@ -324,7 +324,7 @@ void HeatCUDA::IterateHeatEquation_2TM(cuBReal dT)
 	}
 
 	//2. Now use forward time to advance by dT
-	TemperatureFTCS_Kernel << < (pMeshCUDA->n_t.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >> > (pMeshCUDA->Temp, heatEq_RHS, dT);
+	TemperatureFTCS_Kernel <<< (pMeshCUDA->n_t.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (pMeshCUDA->Temp, heatEq_RHS, dT);
 }
 
 //-------------------Setters

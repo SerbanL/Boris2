@@ -314,6 +314,10 @@ MeshParams::MeshParams(std::vector<PARAM_>& enabledParams)
 			meshParams.push_back("MEc", MeshParamDescriptor(PARAMTYPE_MAGNETIC, "J/m3"), PARAM_MECOEFF);
 			break;
 
+		case PARAM_MMECOEFF:
+			meshParams.push_back("mMEc", MeshParamDescriptor(PARAMTYPE_MAGNETIC, "J/m3"), PARAM_MMECOEFF);
+			break;
+
 		case PARAM_YOUNGSMOD:
 			meshParams.push_back("Ym", MeshParamDescriptor(PARAMTYPE_MECHANICAL, "Pa"), PARAM_YOUNGSMOD);
 			break;
@@ -330,6 +334,10 @@ MeshParams::MeshParams(std::vector<PARAM_>& enabledParams)
 			meshParams.push_back("mdamping", MeshParamDescriptor(PARAMTYPE_MECHANICAL, "kg/m3s"), PARAM_MDAMPING);
 			break;
 			
+		case PARAM_THERMEL:
+			meshParams.push_back("thalpha", MeshParamDescriptor(PARAMTYPE_MECHANICAL, "K^-1"), PARAM_THERMEL);
+			break;
+
 		case PARAM_SHC:
 			meshParams.push_back("shc", MeshParamDescriptor(PARAMTYPE_THERMAL, "J/kgK"), PARAM_SHC);
 			break;

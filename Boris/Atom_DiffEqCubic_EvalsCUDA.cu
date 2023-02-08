@@ -27,6 +27,23 @@ void Atom_DifferentialEquationCubicCUDA::RestoreMoments(void)
 	RestoreMoments_Cubic_kernel <<< (paMeshCUDA->n.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (paMeshCUDA->M1, sM1);
 }
 
+//Save current moments in sM VECs (e.g. useful to reset dM / dt calculation)
+__global__ void SaveMoments_Cubic_kernel(cuVEC_VC<cuReal3>& M1, cuVEC<cuReal3>& sM1)
+{
+	int idx = blockIdx.x * blockDim.x + threadIdx.x;
+
+	if (idx < M1.linear_size()) {
+
+		sM1[idx] = M1[idx];
+	}
+}
+
+//Restore magnetization after a failed step for adaptive time-step methods
+void Atom_DifferentialEquationCubicCUDA::SaveMoments(void)
+{
+	SaveMoments_Cubic_kernel <<< (paMeshCUDA->n.dim() + CUDATHREADS) / CUDATHREADS, CUDATHREADS >>> (paMeshCUDA->M1, sM1);
+}
+
 //-----------------------------------------
 
 __global__ void RenormalizeMoments_Cubic_kernel(ManagedAtom_MeshCUDA& cuaMesh)

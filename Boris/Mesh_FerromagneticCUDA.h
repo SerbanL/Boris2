@@ -49,13 +49,16 @@ public:
 	//get exchange_couple_to_meshes status flag from the cpu version
 	bool GetMeshExchangeCoupling(void);
 
-	//----------------------------------- ODE METHODS IN (ANTI)FERROMAGNETIC MESH : Mesh_FerromagneticCUDA.cu
+	//----------------------------------- ODE METHODS IN (ANTI)FERROMAGNETIC MESH : Mesh_FerromagneticCUDA.cu, Mesh_FerromagneticCUDA.cpp
 
 	//return average dm/dt in the given avRect (relative rect). Here m is the direction vector.
 	cuReal3 Average_dmdt(cuBox avBox);
 
 	//return average m x dm/dt in the given avRect (relative rect). Here m is the direction vector.
 	cuReal3 Average_mxdmdt(cuBox avBox);
+
+	//Save current magnetization in sM VECs (e.g. useful to reset dM / dt calculation)
+	void SaveMagnetization(void);
 
 	//----------------------------------- CALCULATION METHODS
 

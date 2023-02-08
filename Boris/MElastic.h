@@ -85,6 +85,28 @@ private:
 	//off-diagonal
 	TEquation<double, double, double, double> Sod_equation;
 
+	//----------------------
+
+	//include thermal expansion? Include if thalpha (thermoelastic constant) is non-zero and heat module is enabled
+	bool thermoelasticity_enabled = false;
+
+	//save previous temperature value so we can compute dT / dt when including thermoelasticity
+	std::vector<double> Temp_previous;
+
+	//if thermoelasticity is enabled, T_ambient will take same value as in the Heat module; refreshed at initialization.
+	//NOTE : any changes to T_ambient in Heat module cause simulation to stop (CMD_AMBIENTTEMPERATURE or CMD_TEMPERATURE), so modules will go through Initialize() before simulation restart
+	double T_ambient = 0.0;
+
+	//----------------------
+
+	//include magnetostriction? (mMEc constant not zero, and magnetic mesh)
+	bool magnetostriction_enabled = false;
+
+	//----------------------
+
+	//disabled by setting magnetoelastic coefficient to zero (also disabled in non-magnetic meshes)
+	bool melastic_field_disabled = false;
+
 private:
 
 	//----------------------------------------------- Auxiliary
@@ -101,8 +123,9 @@ private:
 	void Iterate_Elastic_Solver_Velocity(double dT);
 	//update stress for dT time increment
 	void Iterate_Elastic_Solver_Stress(double dT);
-	//update strain from stress
-	void Calculate_Strain_From_Stress(void);
+
+	//if thermoelasticity or magnetostriction is enabled, then initial stress must be set correctly
+	void Set_Initial_Stress(void);
 
 	//compute magnetoelastic effective field to use in magnetization equation; return energy
 	double Calculate_MElastic_Field(void);
@@ -110,11 +133,15 @@ private:
 	//compute strain form mechanical displacement (only used in the no solve mode, i.e. with externally supplied mechanical displacement, or in constant and uniform stress mode).
 	void Calculate_Strain(void);
 
+	//if thermoelasticity is enabled then save current temperature values in Temp_previous (called after elastic solver fully incremented by magnetic_dT)
+	void Save_Current_Temperature(void);
+
 	//---------------------------------------------- CMBND
 
 	void make_velocity_continuous(
 		CMBNDInfo& contact,
-		VEC<double>& vx_sec, VEC<double>& vy_sec, VEC<double>& vz_sec, VEC_VC<DBL3>& u_disp_sec);
+		VEC<double>& vx_sec, VEC<double>& vy_sec, VEC<double>& vz_sec, VEC_VC<DBL3>& u_disp_sec,
+		Mesh *pMesh_sec);
 
 	void make_stress_continuous(
 		CMBNDInfo& contact,

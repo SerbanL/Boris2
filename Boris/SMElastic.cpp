@@ -12,7 +12,7 @@ SMElastic::SMElastic(SuperMesh *pSMesh_) :
 	ProgramStateNames(this, { VINFO(el_dT), VINFO(linked_el_dT), VINFO(fixed_u_surfaces), VINFO(stress_surfaces_rect), VINFO(stress_surfaces_equations) }, {})
 {
 	pSMesh = pSMesh_;
-
+	
 	error_on_create = UpdateConfiguration(UPDATECONFIG_FORCEUPDATE);
 
 	//-------------------------- Is CUDA currently enabled?
@@ -57,11 +57,30 @@ BError SMElastic::Initialize(void)
 	//set cmbnd flags (also building contacts)
 	for (int idx = 0; idx < (int)pMElastic.size(); idx++) {
 
-		//build CMBND contacts and set flags for u_disp (we don't actually need to use cmbnd flags in u_disp as boundary values are just over-written after to ensure continuity)
+		//build CMBND contacts and set flags for u_disp
 		CMBNDcontacts.push_back(pu_disp[idx]->set_cmbnd_flags(idx, pu_disp));
 	}
 	
 	initialized = true;
+
+	//CMBND for continuous stress - since velocity is solved first, must make sure any initial stress is continuous across CMBND when multiple meshes used
+	for (int idx1 = 0; idx1 < (int)CMBNDcontacts.size(); idx1++) {
+		for (int idx2 = 0; idx2 < (int)CMBNDcontacts[idx1].size(); idx2++) {
+
+			//contact descriptor
+			CMBNDInfo& contact = CMBNDcontacts[idx1][idx2];
+
+			//mexh indexes
+			int idx_sec = contact.mesh_idx.i;
+			int idx_pri = contact.mesh_idx.j;
+
+			pMElastic[idx_pri]->make_stress_continuous(
+				contact,
+				pMElastic[idx_sec]->sdd,
+				pMElastic[idx_sec]->sxy, pMElastic[idx_sec]->sxz, pMElastic[idx_sec]->syz,
+				pMElastic[idx_sec]->pMesh->u_disp);
+		}
+	}
 
 	return error;
 }
@@ -191,7 +210,8 @@ double SMElastic::UpdateField(void)
 
 					pMElastic[idx_pri]->make_velocity_continuous(
 						contact, 
-						pMElastic[idx_sec]->vx, pMElastic[idx_sec]->vy, pMElastic[idx_sec]->vz, pMElastic[idx_sec]->pMesh->u_disp);
+						pMElastic[idx_sec]->vx, pMElastic[idx_sec]->vy, pMElastic[idx_sec]->vz, pMElastic[idx_sec]->pMesh->u_disp,
+						pMElastic[idx_sec]->pMesh);
 				}
 			}
 			
@@ -224,7 +244,7 @@ double SMElastic::UpdateField(void)
 		//1c. Update strain from stress
 		for (int idx = 0; idx < pMElastic.size(); idx++) {
 
-			pMElastic[idx]->Calculate_Strain_From_Stress();
+			pMElastic[idx]->Calculate_Strain();
 		}
 
 		////////////////////////////////
@@ -233,6 +253,8 @@ double SMElastic::UpdateField(void)
 		for (int idx = 0; idx < pMElastic.size(); idx++) {
 
 			pMElastic[idx]->Calculate_MElastic_Field();
+			//in case thermoelasticity is enabled
+			pMElastic[idx]->Save_Current_Temperature();
 		}
 
 		//update the magnetic dT that will be used next time around to increment the elastic solver by

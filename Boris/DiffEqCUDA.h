@@ -168,6 +168,9 @@ protected:
 	//Restore magnetization after a failed step for adaptive time-step methods
 	virtual void RestoreMagnetization(void) = 0;
 
+	//Save current magnetization in sM VECs (e.g. useful to reset dM / dt calculation)
+	virtual void SaveMagnetization(void) = 0;
+
 	//renormalize vectors to set magnetization length value (which could have a spatial variation)
 	virtual void RenormalizeMagnetization(void) = 0;
 

@@ -117,5 +117,13 @@ cu_obj<ManagedDiffEqAFMCUDA>& AFMeshCUDA::Get_ManagedDiffEqCUDA(void)
 	return dynamic_cast<DifferentialEquationAFMCUDA*>(pAFMesh->Get_DifferentialEquation().Get_DifferentialEquationCUDA_ptr())->Get_ManagedDiffEqCUDA();
 }
 
+//----------------------------------- ODE METHODS
+
+//Save current magnetization in sM VECs (e.g. useful to reset dM / dt calculation)
+void AFMeshCUDA::SaveMagnetization(void)
+{
+	pAFMesh->SaveMagnetization();
+}
+
 #endif
 #endif

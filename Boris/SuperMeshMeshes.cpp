@@ -75,9 +75,19 @@ BError SuperMesh::DelMesh(std::string meshName)
 	//cannot delete last mesh
 	if (pMesh.size() == 1) return error(BERROR_INCORRECTACTION);
 
+	//Deleting meshes with cuda switched on is problematic. Easiest just switch cuda off, then after mesh deleted switch it back on.
+	bool switch_cuda_back_on = false;
+	if (cudaEnabled) {
+
+		SwitchCUDAState(false, cudaDeviceSelect);
+		switch_cuda_back_on = true;
+	}
+
 	//delete allocated memory then erase it from list of meshes
 	if(pMesh[meshName]) delete pMesh[meshName];
 	pMesh.erase(meshName);
+
+	if (switch_cuda_back_on) SwitchCUDAState(true, cudaDeviceSelect);
 
 	if (activeMeshName == meshName) activeMeshName = pMesh.get_key_from_index(0);
 

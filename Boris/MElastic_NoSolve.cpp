@@ -141,14 +141,22 @@ void MElastic::Calculate_Strain(void)
 #pragma omp parallel for
 	for (int idx = 0; idx < pMesh->n_m.dim(); idx++) {
 
-		//get all 9 first-order differentials of u
-		DBL33 grad_u = pMesh->u_disp.grad_neu(idx);
+		if (pMesh->u_disp.is_not_empty(idx)) {
 
-		//diagonal components
-		pMesh->strain_diag[idx] = DBL3(grad_u.x.x, grad_u.y.y, grad_u.z.z);
+			//get all 9 first-order differentials of u
+			DBL33 grad_u = pMesh->u_disp.grad_sided(idx);
 
-		//off-diagonal components (yz, xz, xy)
-		pMesh->strain_odiag[idx] = 0.5 * DBL3(grad_u.y.z + grad_u.z.y, grad_u.x.z + grad_u.z.x, grad_u.x.y + grad_u.y.x);
+			//diagonal components
+			pMesh->strain_diag[idx] = DBL3(grad_u.x.x, grad_u.y.y, grad_u.z.z);
+
+			//off-diagonal components (yz, xz, xy)
+			pMesh->strain_odiag[idx] = 0.5 * DBL3(grad_u.y.z + grad_u.z.y, grad_u.x.z + grad_u.z.x, grad_u.x.y + grad_u.y.x);
+		}
+		else {
+
+			pMesh->strain_diag[idx] = DBL3();
+			pMesh->strain_odiag[idx] = DBL3();
+		}
 	}
 }
 

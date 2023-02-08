@@ -8,6 +8,7 @@
 
 #include "Heat.h"
 #include "TMR.h"
+#include "MElastic.h"
 
 #ifdef MESH_COMPILATION_INSULATOR
 
@@ -33,11 +34,11 @@ class InsulatorMesh :
 	//Material Parameters
 	double, TEquation<double>, 
 	MatP<DBL2, double>, MatP<DBL2, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>,
-	MatP<double, double>, MatP<double, double>, MatP<DBL2, double>, MatP<double, double>, MatP<double, double>, MatP<DBL3, double>, MatP<double, double>,
+	MatP<double, double>, MatP<double, double>, MatP<DBL2, double>, MatP<DBL2, double>, MatP<double, double>, MatP<double, double>, MatP<DBL3, double>, MatP<double, double>, MatP<double, double>,
 	MatP<double, double>, MatP<double, double>, MatP<double, double>
 	>,
 	//Module Implementations
-	std::tuple<Heat, TMR> >
+	std::tuple<Heat, TMR, MElastic> >
 {
 
 #if COMPILECUDA == 1

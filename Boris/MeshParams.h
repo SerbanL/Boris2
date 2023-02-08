@@ -263,6 +263,9 @@ public:
 	//Magneto-elastic coefficients (J/m^3) - default for Ni
 	MatP<DBL2, double> MEc = DBL2(8e6);
 
+	//Magnetostriction coefficients (J/m^3) - default for Ni (should be same as MEc, but can be set independently, e.g. to disable one or the other effect)
+	MatP<DBL2, double> mMEc = DBL2(8e6);
+
 	//Young's modulus (Pa) - default for permalloy
 	MatP<double, double> Ym = 113e9;
 	
@@ -274,6 +277,9 @@ public:
 
 	//mechanical damping value
 	MatP<double, double> mdamping = 1e14;
+
+	//coefficient of thermal expansion (thermoelastic constant) - disabled by default; typical value e.g. 12x10^-6 / K for Fe.
+	MatP<double, double> thalpha = 0.0;
 
 	//OBSOLETE - not used anywhere; keep them to be able to load simulation files which might have these defined
 	//There was an oversight in ProgramState code design, fixed now but the price is I have to keep these to maintain compatibility.
@@ -616,6 +622,10 @@ RType MeshParams::run_on_param(PARAM_ paramID, Lambda& run_this, PType& ... run_
 		return run_this(MEc, run_this_args...);
 		break;
 
+	case PARAM_MMECOEFF:
+		return run_this(mMEc, run_this_args...);
+		break;
+
 	case PARAM_YOUNGSMOD:
 		return run_this(Ym, run_this_args...);
 		break;
@@ -630,6 +640,10 @@ RType MeshParams::run_on_param(PARAM_ paramID, Lambda& run_this, PType& ... run_
 
 	case PARAM_MDAMPING:
 		return run_this(mdamping, run_this_args...);
+		break;
+
+	case PARAM_THERMEL:
+		return run_this(thalpha, run_this_args...);
 		break;
 
 	case PARAM_SHC:

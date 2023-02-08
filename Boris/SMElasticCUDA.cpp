@@ -28,7 +28,7 @@ SMElasticCUDA::~SMElasticCUDA()
 
 BError SMElasticCUDA::Initialize(void)
 {
-	BError error(CLASS_STR(SHeaSMElasticCUDAtCUDA));
+	BError error(CLASS_STR(SMElasticCUDA));
 
 	ZeroEnergy();
 
@@ -84,6 +84,29 @@ BError SMElasticCUDA::Initialize(void)
 	}
 
 	initialized = true;
+
+	//CMBND for continuous stress - since velocity is solved first, must make sure any initial stress is continuous across CMBND when multiple meshes used
+	for (int idx1 = 0; idx1 < (int)CMBNDcontacts.size(); idx1++) {
+		for (int idx2 = 0; idx2 < (int)CMBNDcontacts[idx1].size(); idx2++) {
+
+			//contact descriptor
+			CMBNDInfoCUDA& contact = CMBNDcontacts[idx1][idx2];
+
+			//mexh indexes
+			int idx_sec = contact.mesh_idx.i;
+			int idx_pri = contact.mesh_idx.j;
+
+			int axis;
+			if (contact.cell_shift.x) axis = 1;
+			else if (contact.cell_shift.y) axis = 2;
+			else axis = 3;
+
+			pMElastic[idx_pri]->make_stress_continuous(
+				contact.cells_box.size(), axis, CMBNDcontactsCUDA[idx1][idx2],
+				pMElastic[idx_sec]->sdd, pMElastic[idx_sec]->sxy, pMElastic[idx_sec]->sxz, pMElastic[idx_sec]->syz,
+				pMElastic[idx_sec]->pMeshCUDA->u_disp);
+		}
+	}
 
 	return error;
 }
@@ -178,23 +201,21 @@ void SMElasticCUDA::UpdateField(void)
 					int idx_sec = contact.mesh_idx.i;
 					int idx_pri = contact.mesh_idx.j;
 
-					size_t size = contact.cells_box.size().dim();
-
 					int axis;
 					if (contact.cell_shift.x) axis = 1;
 					else if (contact.cell_shift.y) axis = 2;
 					else axis = 3;
 
 					pMElastic[idx_pri]->make_velocity_continuous(
-						size, axis, CMBNDcontactsCUDA[idx1][idx2],
-						pMElastic[idx_sec]->vx, pMElastic[idx_sec]->vy, pMElastic[idx_sec]->vz, pMElastic[idx_sec]->pMeshCUDA->u_disp);
+						contact.cells_box.size(), axis, CMBNDcontactsCUDA[idx1][idx2],
+						pMElastic[idx_sec]);
 				}
 			}
-
+			
 			//1b. Update stress
 			for (int idx = 0; idx < pMElastic.size(); idx++) {
 
-				pMElastic[idx]->Iterate_Elastic_Solver_Stress(dT);
+				pMElastic[idx]->Iterate_Elastic_Solver_Stress(dT, pSMElastic->magnetic_dT);
 			}
 			
 			//CMBND for continuous stress
@@ -208,15 +229,13 @@ void SMElasticCUDA::UpdateField(void)
 					int idx_sec = contact.mesh_idx.i;
 					int idx_pri = contact.mesh_idx.j;
 
-					size_t size = contact.cells_box.size().dim();
-
 					int axis;
 					if (contact.cell_shift.x) axis = 1;
 					else if (contact.cell_shift.y) axis = 2;
 					else axis = 3;
 
 					pMElastic[idx_pri]->make_stress_continuous(
-						size, axis, CMBNDcontactsCUDA[idx1][idx2],
+						contact.cells_box.size(), axis, CMBNDcontactsCUDA[idx1][idx2],
 						pMElastic[idx_sec]->sdd, pMElastic[idx_sec]->sxy, pMElastic[idx_sec]->sxz, pMElastic[idx_sec]->syz,
 						pMElastic[idx_sec]->pMeshCUDA->u_disp);
 				}
@@ -226,7 +245,9 @@ void SMElasticCUDA::UpdateField(void)
 		//1c. Update strain from stress
 		for (int idx = 0; idx < pMElastic.size(); idx++) {
 
-			pMElastic[idx]->Calculate_Strain_From_Stress();
+			pMElastic[idx]->Calculate_Strain();
+			//in case thermoelasticity is enabled
+			pMElastic[idx]->Save_Current_Temperature();
 		}
 
 		////////////////////////////////

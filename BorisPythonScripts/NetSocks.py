@@ -1,7 +1,7 @@
 #BORIS Computational Spintronics 2022
 
-Update_Date = '22/11/2022'
-Boris_version = 3.70
+Update_Date = '08/02/2023'
+Boris_version = 3.80
 
 print("Using NetSocks Module Updated on : %s (v%0.2f)" % (Update_Date, Boris_version))
 
@@ -1591,9 +1591,9 @@ class NSClient:
     	if not bufferCommand: return self.SendCommand("imagecropping", [left, bottom, right, top])
     	self.SendCommand("buffercommand", ["imagecropping", left, bottom, right, top])
     
-    def individualmaskshape(self, status = '', bufferCommand = False):
-    	if not bufferCommand: return self.SendCommand("individualmaskshape", [status])
-    	self.SendCommand("buffercommand", ["individualmaskshape", status])
+    def individualshape(self, status = '', bufferCommand = False):
+    	if not bufferCommand: return self.SendCommand("individualshape", [status])
+    	self.SendCommand("buffercommand", ["individualshape", status])
     
     def insulatingside(self, meshname = '', side_literal = '', status = '', bufferCommand = False):
     	if issubclass(type(meshname), self.Mesh): meshname = meshname.meshname
@@ -3242,10 +3242,12 @@ class NSClient:
         thermK = ''
         density = ''
         MEc = ''
+        mMEc = ''
         Ym = ''
         Pr = ''
         cC = ''
         mdamping = ''
+        thalpha = ''
         shc = ''
         shc_e = ''
         G_e = ''
@@ -3318,10 +3320,12 @@ class NSClient:
             self.thermK = ns.Param(ns, 'thermK', meshname)
             self.density = ns.Param(ns, 'density', meshname)
             self.MEc = ns.Param(ns, 'MEc', meshname)
+            self.mMEc = ns.Param(ns, 'mMEc', meshname)
             self.Ym = ns.Param(ns, 'Ym', meshname)
             self.Pr = ns.Param(ns, 'Pr', meshname)
             self.cC = ns.Param(ns, 'cC', meshname)
             self.mdamping = ns.Param(ns, 'mdamping', meshname)
+            self.thalpha = ns.Param(ns, 'thalpha', meshname)
             self.shc = ns.Param(ns, 'shc', meshname)
             self.shc_e = ns.Param(ns, 'shc_e', meshname)
             self.G_e = ns.Param(ns, 'G_e', meshname)
@@ -3374,10 +3378,12 @@ class NSClient:
         thermK = ''
         density = ''
         MEc = ''
+        mMEc = ''
         Ym = ''
         Pr = ''
         cC = ''
         mdamping = ''
+        thalpha = ''
         shc = ''
         shc_e = ''
         G_e = ''
@@ -3438,10 +3444,12 @@ class NSClient:
             self.thermK = ns.Param(ns, 'thermK', meshname)
             self.density = ns.Param(ns, 'density', meshname)
             self.MEc = ns.Param(ns, 'MEc', meshname)
+            self.mMEc = ns.Param(ns, 'mMEc', meshname)
             self.Ym = ns.Param(ns, 'Ym', meshname)
             self.Pr = ns.Param(ns, 'Pr', meshname)
             self.cC = ns.Param(ns, 'cC', meshname)
             self.mdamping = ns.Param(ns, 'mdamping', meshname)
+            self.thalpha = ns.Param(ns, 'thalpha', meshname)
             self.shc = ns.Param(ns, 'shc', meshname)
             self.shc_e = ns.Param(ns, 'shc_e', meshname)
             self.G_e = ns.Param(ns, 'G_e', meshname)
@@ -3466,6 +3474,11 @@ class NSClient:
         joule_eff = ''
         thermK = ''
         density = ''
+        Ym = ''
+        Pr = ''
+        cC = ''
+        mdamping = ''
+        thalpha = ''
         shc = ''
         shc_e = ''
         G_e = ''
@@ -3498,6 +3511,11 @@ class NSClient:
             self.joule_eff = ns.Param(ns, 'joule_eff', meshname)
             self.thermK = ns.Param(ns, 'thermK', meshname)
             self.density = ns.Param(ns, 'density', meshname)
+            self.Ym = ns.Param(ns, 'Ym', meshname)
+            self.Pr = ns.Param(ns, 'Pr', meshname)
+            self.cC = ns.Param(ns, 'cC', meshname)
+            self.mdamping = ns.Param(ns, 'mdamping', meshname)
+            self.thalpha = ns.Param(ns, 'thalpha', meshname)
             self.shc = ns.Param(ns, 'shc', meshname)
             self.shc_e = ns.Param(ns, 'shc_e', meshname)
             self.G_e = ns.Param(ns, 'G_e', meshname)
@@ -3523,6 +3541,7 @@ class NSClient:
         Pr = ''
         cC = ''
         mdamping = ''
+        thalpha = ''
         shc = ''
         
         #################### OPERATORS
@@ -3552,6 +3571,7 @@ class NSClient:
             self.Pr = ns.Param(ns, 'Pr', meshname)
             self.cC = ns.Param(ns, 'cC', meshname)
             self.mdamping = ns.Param(ns, 'mdamping', meshname)
+            self.thalpha = ns.Param(ns, 'thalpha', meshname)
             self.shc = ns.Param(ns, 'shc', meshname)
             
     #Material parameters for a Dipole mesh
@@ -3856,6 +3876,9 @@ class NSClient:
         V = ''
         elC = ''
         Temp = ''
+        u = ''
+        S_d = ''
+        S_od = ''
         ParamVar = ''
         Roughness = ''
         Cust_V = ''
@@ -3877,6 +3900,9 @@ class NSClient:
             self.V = ns.Quantity(ns, 'V', meshname)
             self.elC = ns.Quantity(ns, 'elC', meshname)
             self.Temp = ns.Quantity(ns, 'Temp', meshname)
+            self.u = ns.Quantity(ns, 'u', meshname)
+            self.S_d = ns.Quantity(ns, 'S_d', meshname)
+            self.S_od = ns.Quantity(ns, 'S_od', meshname)
             self.ParamVar = ns.Quantity(ns, 'ParamVar', meshname)
             self.Roughness = ns.Quantity(ns, 'Roughness', meshname)
             self.Cust_V = ns.Quantity(ns, 'Cust_V', meshname)
@@ -3895,6 +3921,9 @@ class NSClient:
         Jsx = ''
         Jsy = ''
         Jsz = ''
+        u = ''
+        S_d = ''
+        S_od = ''
         Temp = ''
         ParamVar = ''
         
@@ -3909,6 +3938,9 @@ class NSClient:
             self.Jsx = ns.Quantity(ns, 'Jsx', meshname)
             self.Jsy = ns.Quantity(ns, 'Jsy', meshname)
             self.Jsz = ns.Quantity(ns, 'Jsz', meshname)
+            self.u = ns.Quantity(ns, 'u', meshname)
+            self.S_d = ns.Quantity(ns, 'S_d', meshname)
+            self.S_od = ns.Quantity(ns, 'S_od', meshname)
             self.Temp = ns.Quantity(ns, 'Temp', meshname)
             self.ParamVar = ns.Quantity(ns, 'ParamVar', meshname)
             
@@ -3922,6 +3954,9 @@ class NSClient:
         V = ''
         elC = ''
         S = ''
+        u = ''
+        S_d = ''
+        S_od = ''
         Temp = ''
         ParamVar = ''
         
@@ -3933,6 +3968,9 @@ class NSClient:
             self.V = ns.Quantity(ns, 'V', meshname)
             self.elC = ns.Quantity(ns, 'elC', meshname)
             self.S = ns.Quantity(ns, 'S', meshname)
+            self.u = ns.Quantity(ns, 'u', meshname)
+            self.S_d = ns.Quantity(ns, 'S_d', meshname)
+            self.S_od = ns.Quantity(ns, 'S_od', meshname)
             self.Temp = ns.Quantity(ns, 'Temp', meshname)
             self.ParamVar = ns.Quantity(ns, 'ParamVar', meshname)
             

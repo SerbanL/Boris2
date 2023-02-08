@@ -65,7 +65,7 @@ class AFMesh :
 	MatP<double, double>,
 	MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<DBL3, DBL3>,
 	double, TEquation<double>, double, MatP<double, double>, MatP<DBL2, double>, 
-	MatP<double, double>, MatP<DBL2, double>, MatP<double, double>, MatP<double, double>, MatP<DBL3, double>, MatP<double, double>,
+	MatP<double, double>, MatP<DBL2, double>, MatP<DBL2, double>, MatP<double, double>, MatP<double, double>, MatP<DBL3, double>, MatP<double, double>, MatP<double, double>,
 	MatP<double, double>, MatP<double, double>,
 	MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>, MatP<double, double>>,
 	//Module Implementations
@@ -166,6 +166,9 @@ public:
 
 	//get rate of change of magnetization (overloaded by Antiferromagnetic meshes)
 	DBL3 dMdt(int idx);
+
+	//Save current magnetization in sM VECs (e.g. useful to reset dM / dt calculation)
+	void SaveMagnetization(void);
 
 	//return average dm/dt in the given avRect (relative rect). Here m is the direction vector.
 	DBL3 Average_dmdt(Rect avRect);

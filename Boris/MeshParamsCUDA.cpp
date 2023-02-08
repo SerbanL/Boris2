@@ -198,6 +198,8 @@ MeshParamsCUDA::MeshParamsCUDA(MeshParams *pmeshParams)
 
 	MEc()->set_from_cpu(pmeshParams->MEc);
 	pmeshParams->MEc.set_p_cu_obj_mpcuda(&MEc);
+	mMEc()->set_from_cpu(pmeshParams->mMEc);
+	pmeshParams->mMEc.set_p_cu_obj_mpcuda(&mMEc);
 	Ym()->set_from_cpu(pmeshParams->Ym);
 	pmeshParams->Ym.set_p_cu_obj_mpcuda(&Ym);
 	Pr()->set_from_cpu(pmeshParams->Pr);
@@ -206,6 +208,9 @@ MeshParamsCUDA::MeshParamsCUDA(MeshParams *pmeshParams)
 	pmeshParams->cC.set_p_cu_obj_mpcuda(&cC);
 	mdamping()->set_from_cpu(pmeshParams->mdamping);
 	pmeshParams->mdamping.set_p_cu_obj_mpcuda(&mdamping);
+
+	thalpha()->set_from_cpu(pmeshParams->thalpha);
+	pmeshParams->thalpha.set_p_cu_obj_mpcuda(&thalpha);
 
 	//setup CUDA special functions to corresponding data held in the cpu objects
 	set_special_functions_data();
@@ -363,10 +368,13 @@ MeshParamsCUDA::~MeshParamsCUDA()
 	pmeshParams->Q.null_p_cu_obj_mpcuda();
 
 	pmeshParams->MEc.null_p_cu_obj_mpcuda();
+	pmeshParams->mMEc.null_p_cu_obj_mpcuda();
 	pmeshParams->Ym.null_p_cu_obj_mpcuda();
 	pmeshParams->Pr.null_p_cu_obj_mpcuda();
 	pmeshParams->cC.null_p_cu_obj_mpcuda();
 	pmeshParams->mdamping.null_p_cu_obj_mpcuda();
+
+	pmeshParams->thalpha.null_p_cu_obj_mpcuda();
 }
 
 #endif

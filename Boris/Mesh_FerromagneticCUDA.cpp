@@ -111,5 +111,13 @@ cu_obj<ManagedDiffEqFMCUDA>& FMeshCUDA::Get_ManagedDiffEqCUDA(void)
 	return dynamic_cast<DifferentialEquationFMCUDA*>(pFMesh->Get_DifferentialEquation().Get_DifferentialEquationCUDA_ptr())->Get_ManagedDiffEqCUDA();
 }
 
+//----------------------------------- ODE METHODS
+
+//Save current magnetization in sM VECs (e.g. useful to reset dM / dt calculation)
+void FMeshCUDA::SaveMagnetization(void)
+{
+	pFMesh->SaveMagnetization();
+}
+
 #endif
 #endif

@@ -26,6 +26,23 @@ BError HeatCUDA_CMBND::set_pointers(Atom_MeshCUDA* paMeshCUDA)
 	return error;
 }
 
+//set pQ_equation as needed
+BError HeatCUDA_CMBND::set_Q_equation(TEquationCUDA<cuBReal, cuBReal, cuBReal, cuBReal>& Q_equation_ref)
+{
+	BError error(__FUNCTION__);
+
+	if (Q_equation_ref.is_set()) {
+		
+		if (set_gpu_value(pQ_equation, Q_equation_ref.get_pcu_obj_x()->get_managed_object()) != cudaSuccess) return error(BERROR_GPUERROR_CRIT);
+	}
+	else {
+
+		nullgpuptr(pQ_equation);
+	}
+
+	return error;
+}
+
 #endif
 
 #endif

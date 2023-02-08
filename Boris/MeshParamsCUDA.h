@@ -232,6 +232,9 @@ public:
 	//Magneto-elastic coefficients (J/m^3)
 	cu_obj<MatPCUDA<cuReal2, cuBReal>> MEc;
 
+	//Magnetostriction coefficients (J/m^3) - default for Ni (should be same as MEc, but can be set independently, e.g. to disable one or the other effect)
+	cu_obj<MatPCUDA<cuReal2, cuBReal>> mMEc;
+
 	//Young's modulus (Pa)
 	cu_obj<MatPCUDA<cuBReal, cuBReal>> Ym;
 
@@ -243,6 +246,9 @@ public:
 
 	//mechanical damping value
 	cu_obj<MatPCUDA<cuBReal, cuBReal>> mdamping;
+
+	//coefficient of thermal expansion (thermoelastic constant) - disabled by default; typical value e.g. 12x10^-6 / K for Fe.
+	cu_obj<MatPCUDA<cuBReal, cuBReal>> thalpha;
 
 	//specific heat capacity (J/kgK)
 	cu_obj<MatPCUDA<cuBReal, cuBReal>> shc;
