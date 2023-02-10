@@ -84,33 +84,47 @@ $ ./BorisLin
 There are a number of articles which cover various parts of the software.
 
 <b>General</b> (if using Boris for published works please use this as a reference)
+
 •	S. Lepadatu, “Boris computational spintronics — High performance multi-mesh magnetic and spin transport modeling software”, Journal of Applied Physics 128, 243902 (2020)
 
 <b>Differential equation solvers</b>
+
 •	S. Lepadatu “Speeding Up Explicit Numerical Evaluation Methods for Micromagnetic Simulations Using Demagnetizing Field Polynomial Extrapolation” IEEE Transactions on Magnetics 58, 1 (2022)
 
 <b>Multilayered convolution</b>
+
 •	S. Lepadatu, “Efficient computation of demagnetizing fields for magnetic multilayers using multilayered convolution” Journal of Applied Physics 126, 103903 (2019)
 
 <b>Parallel Monte Carlo algorithm</b>
+
 •	S. Lepadatu, G. Mckenzie, T. Mercer, C.R. MacKinnon, P.R. Bissell, “Computation of magnetization, exchange stiffness, anisotropy, and susceptibilities in large-scale systems using GPU-accelerated atomistic parallel Monte Carlo algorithms” Journal of Magnetism and Magnetic Materials 540, 168460 (2021)
 
 <b>Micromagnetic Monte Carlo algorithm (with demagnetizing field parallelization)</b>
+
 •	S. Lepadatu “Micromagnetic Monte Carlo method with variable magnetization length based on the Landau–Lifshitz–Bloch equation for computation of large-scale thermodynamic equilibrium states” Journal of Applied Physics 130, 163902 (2021)
 
 <b>Roughness effective field</b>
+
 •	S. Lepadatu, “Effective field model of roughness in magnetic nano-structures” Journal of Applied Physics 118, 243908 (2015)
 
 <b>Heat flow solver, LLB and 2-sublattice LLB</b>
+
 •	S. Lepadatu, “Interaction of Magnetization and Heat Dynamics for Pulsed Domain Wall Movement with Joule Heating” Journal of Applied Physics 120, 163908 (2016)
+
 •	S. Lepadatu “Emergence of transient domain wall skyrmions after ultrafast demagnetization” Physical Review B 102, 094402 (2020)
 
 <b>Spin transport solver</b>
+
 •	S. Lepadatu, “Unified treatment of spin torques using a coupled magnetisation dynamics and three-dimensional spin current solver” Scientific Reports 7, 12937 (2017)
+
 •	S. Lepadatu, “Effect of inter-layer spin diffusion on skyrmion motion in magnetic multilayers” Scientific Reports 9, 9592 (2019)
+
 •	C.R. MacKinnon, S. Lepadatu, T. Mercer, and P.R. Bissell “Role of an additional interfacial spin-transfer torque for current-driven skyrmion dynamics in chiral magnetic layers” Physical Review B 102, 214408 (2020)
+
 •	C.R. MacKinnon, K. Zeissler, S. Finizio, J. Raabe, C.H. Marrows, T. Mercer, P.R. Bissell, and S. Lepadatu, “Collective skyrmion motion under the influence of an additional interfacial spin transfer torque” Scientific Reports 12, 10786 (2022)
+
 •	S. Lepadatu and A. Dobrynin, “Self-consistent computation of spin torques and magneto-resistance in tunnel junctions and magnetic read-heads with metallic pinhole defects” Journal of Physics: Condensed Matter 35, 115801 (2023)
 
 <b>Elastodynamics solver with thermoelastic effect and magnetostriction</b>
+
 •	S. Lepadatu, “All-optical magento-thermo-elastic skyrmion motion” arXiv:2301.07034v2 (2023)
