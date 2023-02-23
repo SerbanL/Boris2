@@ -53,7 +53,7 @@ void open_file(std::string fileName, Args... args)
 	pid_t pid = fork();
     if (pid == 0) {
 
-		execl(fileName.c_str(), fileName.c_str(), args..., (char *)0);
+		execl(fileName.c_str(), fileName.c_str(), (std::string(args).c_str())..., (char *)0);
     }
 }
 
