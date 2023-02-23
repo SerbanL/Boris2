@@ -1,0 +1,14 @@
+start_check_updates
+0
+start_scriptserver
+1
+server_port
+1542
+server_pwd
+
+server_recv_sleep_ms
+5
+log_errors
+1
+OmpThreads
+0

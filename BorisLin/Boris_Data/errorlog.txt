@@ -1,0 +1,1482 @@
+Thu Jun  9 13:53:30 2022
+ERROR : GPU error. Info : SuperMesh > MeshBase(permalloy) > DemagCUDA > DemagKernelCUDA::Calculate_Demag_Kernels_3D > DemagKernelCUDA::Calculate_Demag_Kernels_3D_onGPU > Exch_6ngbr_NeuCUDA > ExchangeBaseCUDA
+Thu Jun  9 13:54:31 2022
+ERROR : GPU error. Info : SuperMesh > MeshBase(permalloy) > DemagCUDA > DemagKernelCUDA::Calculate_Demag_Kernels_3D > DemagKernelCUDA::Calculate_Demag_Kernels_3D_onGPU > Exch_6ngbr_NeuCUDA > ExchangeBaseCUDA
+Thu Jun  9 13:57:02 2022
+ERROR : GPU error. Info : SuperMesh > MeshBase(permalloy) > DemagCUDA > DemagKernelCUDA::Calculate_Demag_Kernels_3D > DemagKernelCUDA::Calculate_Demag_Kernels_3D_onGPU > Exch_6ngbr_NeuCUDA > ExchangeBaseCUDA
+Thu Jun  9 15:54:14 2022
+ERROR : Parameter out of bounds. Info : Parameter 0, Min : -2, -2, -2 to Max : 2, 2, 2
+Thu Jun  9 15:54:58 2022
+ERROR : Parameter out of bounds. Info : Parameter 0, Min : -2, -2, -2 to Max : 2, 2, 2
+Thu Jun  9 15:55:41 2022
+ERROR : Parameter out of bounds. Info : Parameter 0, Min : -2, -2, -2 to Max : 2, 2, 2
+Fri Jun 10 08:34:16 2022
+ERROR : Busy... please wait. Info : 
+Mon Jun 13 11:39:14 2022
+ERROR : Busy... please wait. Info : 
+Wed Jun 15 22:22:51 2022
+ERROR : Busy... please wait. Info : 
+Thu Jun 16 09:09:30 2022
+WARNING : Working with incorrect cellsize. Info : SDemag > SDemag
+Thu Jun 16 09:11:51 2022
+WARNING : Working with incorrect cellsize. Info : SDemag > SDemag
+Thu Jun 16 09:17:33 2022
+WARNING : Working with incorrect cellsize. Info : SDemag > SDemag
+Thu Jun 16 09:18:18 2022
+WARNING : Working with incorrect cellsize. Info : SDemag > SDemag
+Fri Jun 17 16:54:14 2022
+WARNING : Working with incorrect cellsize. Info : SDemag > SDemag
+Fri Jun 17 17:13:06 2022
+WARNING : Working with incorrect cellsize. Info : SDemag > SDemag
+Fri Jun 17 17:24:43 2022
+WARNING : Working with incorrect cellsize. Info : SDemag > SDemag
+Fri Jun 17 17:31:38 2022
+WARNING : Working with incorrect cellsize. Info : SDemag > SDemag
+Thu Jun 23 09:35:22 2022
+ERROR : Incorrect value. Info : SuperMesh::GenerateGrains3D > Mesh::GenerateGrains3D > Mesh::change_mesh_shape
+Thu Jun 23 09:35:36 2022
+ERROR : Incorrect value. Info : SuperMesh::GenerateGrains3D > Mesh::GenerateGrains3D > Mesh::change_mesh_shape
+Thu Jun 23 09:35:50 2022
+ERROR : Incorrect value. Info : SuperMesh::GenerateGrains3D > Mesh::GenerateGrains3D > Mesh::change_mesh_shape
+Thu Jun 23 09:37:38 2022
+ERROR : Incorrect value. Info : SuperMesh::GenerateGrains3D > Mesh::GenerateGrains3D > Mesh::change_mesh_shape
+Thu Jun 23 09:45:51 2022
+ERROR : Incorrect value. Info : SuperMesh::GenerateGrains3D > Mesh::GenerateGrains3D > Mesh::change_mesh_shape
+Thu Jun 23 10:10:10 2022
+ERROR : Incorrect value. Info : SuperMesh::GenerateGrains3D > Mesh::GenerateGrains3D > Mesh::change_mesh_shape
+Thu Jun 23 10:10:11 2022
+ERROR : Incorrect value. Info : SuperMesh::GenerateGrains3D > Mesh::GenerateGrains3D > Mesh::change_mesh_shape
+Thu Jun 23 10:10:11 2022
+ERROR : Incorrect value. Info : SuperMesh::GenerateGrains3D > Mesh::GenerateGrains3D > Mesh::change_mesh_shape
+Thu Jun 23 10:10:13 2022
+ERROR : Incorrect value. Info : SuperMesh::GenerateGrains3D > Mesh::GenerateGrains3D > Mesh::change_mesh_shape
+Thu Jun 23 16:20:50 2022
+ERROR : Busy... please wait. Info : 
+Thu Jun 23 16:20:57 2022
+ERROR : Busy... please wait. Info : 
+Thu Jun 23 16:21:05 2022
+ERROR : Busy... please wait. Info : 
+Thu Jun 23 16:21:11 2022
+ERROR : Busy... please wait. Info : 
+Thu Jun 23 16:21:25 2022
+ERROR : Busy... please wait. Info : 
+Thu Jun 23 16:21:26 2022
+ERROR : Busy... please wait. Info : 
+Thu Jun 23 16:21:40 2022
+ERROR : Busy... please wait. Info : 
+Tue Jul 12 08:22:29 2022
+WARNING : Working with incorrect cellsize. Info : SDemag > SDemag
+Tue Jul 12 08:22:29 2022
+WARNING : Working with incorrect cellsize. Info : SuperMesh::SetFMSMeshCellsize > SuperMesh > SDemag
+Tue Jul 12 08:22:36 2022
+WARNING : Working with incorrect cellsize. Info : SuperMesh::AddMesh > SuperMesh > SDemag
+Tue Jul 12 08:22:36 2022
+WARNING : Working with incorrect cellsize. Info : Mesh::SetMeshCellsize > Mesh::SetMeshRect > SuperMesh > SDemag
+Tue Jul 12 08:34:34 2022
+WARNING : Working with incorrect cellsize. Info : SDemag > SDemag
+Tue Jul 12 08:34:34 2022
+WARNING : Working with incorrect cellsize. Info : SuperMesh::SetFMSMeshCellsize > SuperMesh > SDemag
+Tue Jul 12 08:34:34 2022
+WARNING : Working with incorrect cellsize. Info : SuperMesh::AddMesh > SuperMesh > SDemag
+Tue Jul 12 08:34:34 2022
+WARNING : Working with incorrect cellsize. Info : Mesh::SetMeshCellsize > Mesh::SetMeshRect > SuperMesh > SDemag
+Tue Jul 12 08:34:47 2022
+WARNING : Working with incorrect cellsize. Info : SuperMesh::AddMesh > SuperMesh > SDemag
+Tue Jul 12 08:53:45 2022
+WARNING : Working with incorrect cellsize. Info : SDemag > SDemag
+Tue Jul 12 08:55:13 2022
+WARNING : Working with incorrect cellsize. Info : SDemag > SDemag
+Tue Jul 12 08:56:25 2022
+WARNING : Working with incorrect cellsize. Info : SDemag > SDemag
+Tue Jul 12 09:03:34 2022
+WARNING : Working with incorrect cellsize. Info : SDemag > SDemag
+Tue Jul 12 09:03:34 2022
+WARNING : Working with incorrect cellsize. Info : SuperMesh::SetFMSMeshCellsize > SuperMesh > SDemag
+Tue Jul 12 09:03:35 2022
+WARNING : Working with incorrect cellsize. Info : SuperMesh::AddMesh > SuperMesh > SDemag
+Tue Jul 12 09:03:35 2022
+WARNING : Working with incorrect cellsize. Info : Mesh::SetMeshCellsize > Mesh::SetMeshRect > SuperMesh > SDemag
+Tue Jul 12 09:03:37 2022
+WARNING : Working with incorrect cellsize. Info : SDemag > SDemag
+Tue Jul 12 09:03:37 2022
+WARNING : Working with incorrect cellsize. Info : SuperMesh::SetFMSMeshCellsize > SuperMesh > SDemag
+Tue Jul 12 09:03:40 2022
+WARNING : Working with incorrect cellsize. Info : SuperMesh::AddMesh > SuperMesh > SDemag
+Tue Jul 12 09:03:40 2022
+WARNING : Working with incorrect cellsize. Info : Mesh::SetMeshCellsize > Mesh::SetMeshRect > SuperMesh > SDemag
+Tue Jul 12 09:03:50 2022
+WARNING : Working with incorrect cellsize. Info : SuperMesh::AddMesh > SuperMesh > SDemag
+Tue Jul 12 09:03:59 2022
+WARNING : Working with incorrect cellsize. Info : SuperMesh::AddMesh > SuperMesh > SDemag
+Tue Jul 12 09:14:13 2022
+WARNING : Working with incorrect cellsize. Info : SDemag > SDemag
+Tue Jul 12 09:14:14 2022
+WARNING : Working with incorrect cellsize. Info : SuperMesh::SetFMSMeshCellsize > SuperMesh > SDemag
+Tue Jul 12 09:14:15 2022
+WARNING : Working with incorrect cellsize. Info : SuperMesh::AddMesh > SuperMesh > SDemag
+Tue Jul 12 09:14:15 2022
+WARNING : Working with incorrect cellsize. Info : Mesh::SetMeshCellsize > Mesh::SetMeshRect > SuperMesh > SDemag
+Tue Jul 12 09:14:17 2022
+WARNING : Working with incorrect cellsize. Info : SDemag > SDemag
+Tue Jul 12 09:14:17 2022
+WARNING : Working with incorrect cellsize. Info : SuperMesh::SetFMSMeshCellsize > SuperMesh > SDemag
+Tue Jul 12 09:14:18 2022
+WARNING : Working with incorrect cellsize. Info : SuperMesh::AddMesh > SuperMesh > SDemag
+Tue Jul 12 09:14:19 2022
+WARNING : Working with incorrect cellsize. Info : Mesh::SetMeshCellsize > Mesh::SetMeshRect > SuperMesh > SDemag
+Tue Jul 12 09:14:31 2022
+WARNING : Working with incorrect cellsize. Info : SuperMesh::AddMesh > SuperMesh > SDemag
+Tue Jul 12 09:14:40 2022
+WARNING : Working with incorrect cellsize. Info : SuperMesh::AddMesh > SuperMesh > SDemag
+Tue Jul 12 09:16:17 2022
+WARNING : Working with incorrect cellsize. Info : SuperMesh::AddMesh > SuperMesh > SDemag
+Tue Jul 12 09:16:17 2022
+WARNING : Working with incorrect cellsize. Info : Mesh::SetMeshCellsize > Mesh::SetMeshRect > SuperMesh > SDemag
+Tue Jul 12 09:16:18 2022
+WARNING : Working with incorrect cellsize. Info : SuperMesh::AddMesh > SuperMesh > SDemag
+Tue Jul 12 09:16:18 2022
+WARNING : Working with incorrect cellsize. Info : Mesh::SetMeshCellsize > Mesh::SetMeshRect > SuperMesh > SDemag
+Tue Jul 12 09:16:22 2022
+WARNING : Working with incorrect cellsize. Info : SDemag > SDemag
+Tue Jul 12 09:16:23 2022
+WARNING : Working with incorrect cellsize. Info : SuperMesh::SetFMSMeshCellsize > SuperMesh > SDemag
+Tue Jul 12 09:16:23 2022
+WARNING : Working with incorrect cellsize. Info : SDemag > SDemag
+Tue Jul 12 09:16:23 2022
+WARNING : Working with incorrect cellsize. Info : SuperMesh::SetFMSMeshCellsize > SuperMesh > SDemag
+Tue Jul 12 09:16:23 2022
+WARNING : Working with incorrect cellsize. Info : SuperMesh::AddMesh > SuperMesh > SDemag
+Tue Jul 12 09:16:23 2022
+WARNING : Working with incorrect cellsize. Info : SuperMesh::AddMesh > SuperMesh > SDemag
+Tue Jul 12 09:16:23 2022
+WARNING : Working with incorrect cellsize. Info : Mesh::SetMeshCellsize > Mesh::SetMeshRect > SuperMesh > SDemag
+Tue Jul 12 09:16:24 2022
+WARNING : Working with incorrect cellsize. Info : Mesh::SetMeshCellsize > Mesh::SetMeshRect > SuperMesh > SDemag
+Tue Jul 12 09:16:41 2022
+WARNING : Working with incorrect cellsize. Info : SuperMesh::AddMesh > SuperMesh > SDemag
+Tue Jul 12 09:16:46 2022
+WARNING : Working with incorrect cellsize. Info : SuperMesh::AddMesh > SuperMesh > SDemag
+Tue Jul 12 09:17:23 2022
+WARNING : Working with incorrect cellsize. Info : SuperMesh::AddMesh > SuperMesh > SDemag
+Tue Jul 12 09:17:23 2022
+WARNING : Working with incorrect cellsize. Info : Mesh::SetMeshCellsize > Mesh::SetMeshRect > SuperMesh > SDemag
+Tue Jul 12 09:17:23 2022
+WARNING : Working with incorrect cellsize. Info : SuperMesh::AddMesh > SuperMesh > SDemag
+Tue Jul 12 09:17:23 2022
+WARNING : Working with incorrect cellsize. Info : Mesh::SetMeshCellsize > Mesh::SetMeshRect > SuperMesh > SDemag
+Tue Jul 12 09:17:29 2022
+WARNING : Working with incorrect cellsize. Info : SDemag > SDemag
+Tue Jul 12 09:17:29 2022
+WARNING : Working with incorrect cellsize. Info : SuperMesh::SetFMSMeshCellsize > SuperMesh > SDemag
+Tue Jul 12 09:17:29 2022
+WARNING : Working with incorrect cellsize. Info : SDemag > SDemag
+Tue Jul 12 09:17:29 2022
+WARNING : Working with incorrect cellsize. Info : SuperMesh::SetFMSMeshCellsize > SuperMesh > SDemag
+Tue Jul 12 09:17:29 2022
+WARNING : Working with incorrect cellsize. Info : SuperMesh::AddMesh > SuperMesh > SDemag
+Tue Jul 12 09:17:30 2022
+WARNING : Working with incorrect cellsize. Info : SuperMesh::AddMesh > SuperMesh > SDemag
+Tue Jul 12 09:17:30 2022
+WARNING : Working with incorrect cellsize. Info : Mesh::SetMeshCellsize > Mesh::SetMeshRect > SuperMesh > SDemag
+Tue Jul 12 09:17:30 2022
+WARNING : Working with incorrect cellsize. Info : Mesh::SetMeshCellsize > Mesh::SetMeshRect > SuperMesh > SDemag
+Tue Jul 12 09:17:48 2022
+WARNING : Working with incorrect cellsize. Info : SuperMesh::AddMesh > SuperMesh > SDemag
+Tue Jul 12 09:17:55 2022
+WARNING : Working with incorrect cellsize. Info : SuperMesh::AddMesh > SuperMesh > SDemag
+Tue Jul 12 09:39:41 2022
+ERROR : Could not open file. Info : SuperMesh::LoadOVF2Field > OVF2::Read_OVF2_VEC
+Tue Jul 12 09:40:37 2022
+ERROR : Could not open file. Info : SuperMesh::LoadOVF2Field > OVF2::Read_OVF2_VEC
+Tue Jul 12 09:41:20 2022
+WARNING : Working with incorrect cellsize. Info : SuperMesh::AddMesh > SuperMesh > SDemag
+Tue Jul 12 09:41:20 2022
+WARNING : Working with incorrect cellsize. Info : Mesh::SetMeshCellsize > Mesh::SetMeshRect > SuperMesh > SDemag
+Tue Jul 12 09:41:26 2022
+WARNING : Working with incorrect cellsize. Info : SDemag > SDemag
+Tue Jul 12 09:41:26 2022
+WARNING : Working with incorrect cellsize. Info : SuperMesh::SetFMSMeshCellsize > SuperMesh > SDemag
+Tue Jul 12 09:41:26 2022
+WARNING : Working with incorrect cellsize. Info : SuperMesh::AddMesh > SuperMesh > SDemag
+Tue Jul 12 09:41:27 2022
+WARNING : Working with incorrect cellsize. Info : Mesh::SetMeshCellsize > Mesh::SetMeshRect > SuperMesh > SDemag
+Tue Jul 12 09:41:42 2022
+WARNING : Working with incorrect cellsize. Info : SuperMesh::AddMesh > SuperMesh > SDemag
+Tue Jul 12 10:16:37 2022
+WARNING : Working with incorrect cellsize. Info : SDemag > SDemag
+Tue Jul 12 10:16:40 2022
+WARNING : Working with incorrect cellsize. Info : SDemag > SDemag
+Tue Jul 12 10:18:07 2022
+WARNING : Working with incorrect cellsize. Info : SDemag > SDemag
+Tue Jul 12 10:18:07 2022
+WARNING : Working with incorrect cellsize. Info : SuperMesh::SetFMSMeshCellsize > SuperMesh > SDemag
+Tue Jul 12 10:18:08 2022
+WARNING : Working with incorrect cellsize. Info : SuperMesh::AddMesh > SuperMesh > SDemag
+Tue Jul 12 10:18:08 2022
+WARNING : Working with incorrect cellsize. Info : Mesh::SetMeshCellsize > Mesh::SetMeshRect > SuperMesh > SDemag
+Tue Jul 12 10:18:11 2022
+WARNING : Working with incorrect cellsize. Info : SDemag > SDemag
+Tue Jul 12 10:18:11 2022
+WARNING : Working with incorrect cellsize. Info : SuperMesh::SetFMSMeshCellsize > SuperMesh > SDemag
+Tue Jul 12 10:18:12 2022
+WARNING : Working with incorrect cellsize. Info : SuperMesh::AddMesh > SuperMesh > SDemag
+Tue Jul 12 10:18:12 2022
+WARNING : Working with incorrect cellsize. Info : Mesh::SetMeshCellsize > Mesh::SetMeshRect > SuperMesh > SDemag
+Tue Jul 12 10:18:24 2022
+WARNING : Working with incorrect cellsize. Info : SuperMesh::AddMesh > SuperMesh > SDemag
+Tue Jul 12 10:18:32 2022
+WARNING : Working with incorrect cellsize. Info : SuperMesh::AddMesh > SuperMesh > SDemag
+Tue Jul 12 10:21:34 2022
+WARNING : Working with incorrect cellsize. Info : SDemag > SDemag
+Tue Jul 12 10:21:38 2022
+WARNING : Working with incorrect cellsize. Info : SDemag > SDemag
+Tue Jul 26 19:39:37 2022
+ERROR : Incorrect name. Info : SuperMesh::AddMesh
+Tue Jul 26 19:39:39 2022
+ERROR : Incorrect name. Info : SuperMesh::AddMesh
+Tue Jul 26 19:39:40 2022
+ERROR : Incorrect name. Info : SuperMesh::AddMesh
+Sun Aug 14 14:59:26 2022
+ERROR : Busy... please wait. Info : 
+Sun Aug 14 14:59:27 2022
+ERROR : Busy... please wait. Info : 
+Sun Aug 14 14:59:34 2022
+ERROR : Busy... please wait. Info : 
+Sun Aug 14 14:59:44 2022
+ERROR : Busy... please wait. Info : 
+Sun Aug 14 14:59:46 2022
+ERROR : Busy... please wait. Info : 
+Sun Aug 14 15:00:20 2022
+ERROR : Busy... please wait. Info : 
+Sun Aug 14 15:01:49 2022
+ERROR : Busy... please wait. Info : 
+Sun Aug 14 15:10:24 2022
+ERROR : Busy... please wait. Info : 
+Sun Aug 14 15:11:34 2022
+ERROR : Out of GPU memory. Info : SuperMesh > FMesh(permalloy) > DifferentialEquationFM > DifferentialEquationFMCUDA > SuperMesh > FMesh(permalloy) > DifferentialEquationFM > DifferentialEquationFM > DifferentialEquationFMCUDA > SuperMesh > FMesh(permalloy) > DifferentialEquationFM > DifferentialEquationFMCUDA > SuperMesh > FMesh(permalloy) > DifferentialEquationFM > DifferentialEquationFM > DifferentialEquationFMCUDA > SuperMesh > FMesh(permalloy) > DifferentialEquationFM > DifferentialEquationFMCUDA > SuperMesh > FMesh(permalloy) > DifferentialEquationFM > DifferentialEquationFM > DifferentialEquationFMCUDA > SuperMesh > FMesh(permalloy) > DifferentialEquationFM > DifferentialEquationFMCUDA > SuperMesh > FMesh(permalloy) > DifferentialEquationFM > DifferentialEquationFM > DifferentialEquationFMCUDA
+Mon Aug 15 11:34:21 2022
+ERROR : Command not recognized. Info : 
+Mon Aug 15 15:53:16 2022
+ERROR : Parameter out of bounds. Info : Parameter 1, Min : -2m, -2m, -2m to Max : 2m, 2m, 2m
+Mon Aug 15 19:47:55 2022
+ERROR : Command not recognized. Info : 
+Mon Aug 15 20:05:59 2022
+ERROR : Busy... please wait. Info : 
+Mon Aug 15 20:17:22 2022
+ERROR : Busy... please wait. Info : 
+Mon Aug 15 20:18:17 2022
+ERROR : Busy... please wait. Info : 
+Mon Aug 15 20:18:26 2022
+ERROR : Busy... please wait. Info : 
+Mon Aug 15 21:44:21 2022
+ERROR : Incorrect name. Info : 
+Mon Aug 15 21:44:50 2022
+ERROR : Incorrect name. Info : 
+Mon Aug 15 21:46:00 2022
+ERROR : Incorrect name. Info : SuperMesh::RenameMesh
+Mon Aug 15 21:46:35 2022
+ERROR : Incorrect name. Info : SuperMesh::RenameMesh
+Thu Aug 18 09:08:21 2022
+ERROR : Could not load file. Info : Mesh::applymask > Mesh::change_mesh_shape
+Thu Aug 18 09:08:30 2022
+ERROR : Could not load file. Info : Mesh::applymask > Mesh::change_mesh_shape
+Thu Aug 18 09:08:47 2022
+ERROR : Could not load file. Info : Mesh::applymask > Mesh::change_mesh_shape
+Thu Aug 18 09:09:15 2022
+ERROR : Could not load file. Info : Mesh::applymask > Mesh::change_mesh_shape
+Thu Aug 18 22:33:42 2022
+ERROR : Busy... please wait. Info : 
+Thu Aug 18 22:34:40 2022
+ERROR : Busy... please wait. Info : 
+Thu Aug 18 22:34:48 2022
+ERROR : Busy... please wait. Info : 
+Fri Aug 19 08:17:57 2022
+ERROR : Out of GPU memory. Info : SuperMesh::SetMeshRect > Mesh::SetMeshRect > SuperMesh > FMesh(permalloy) > FMeshCUDA
+Fri Aug 19 08:49:30 2022
+ERROR : Command not recognized. Info : 
+Fri Aug 19 09:15:08 2022
+ERROR : Command not recognized. Info : 
+Fri Aug 19 14:01:42 2022
+ERROR : Command not recognized. Info : 
+Fri Aug 19 14:28:13 2022
+ERROR : Busy... please wait. Info : 
+Fri Aug 19 14:28:46 2022
+ERROR : Busy... please wait. Info : 
+Sat Aug 20 11:37:48 2022
+ERROR : Busy... please wait. Info : 
+Sat Aug 20 12:18:32 2022
+ERROR : Busy... please wait. Info : 
+Sat Aug 20 12:18:41 2022
+ERROR : Busy... please wait. Info : 
+Sat Aug 20 12:26:47 2022
+ERROR : Busy... please wait. Info : 
+Sat Aug 20 12:26:47 2022
+ERROR : Busy... please wait. Info : 
+Sat Aug 20 12:26:48 2022
+ERROR : Busy... please wait. Info : 
+Sat Aug 20 12:26:48 2022
+ERROR : Busy... please wait. Info : 
+Sat Aug 20 12:26:48 2022
+ERROR : Busy... please wait. Info : 
+Sat Aug 20 12:26:48 2022
+ERROR : Busy... please wait. Info : 
+Sat Aug 20 12:26:48 2022
+ERROR : Busy... please wait. Info : 
+Sat Aug 20 12:26:48 2022
+ERROR : Busy... please wait. Info : 
+Sat Aug 20 12:26:48 2022
+ERROR : Busy... please wait. Info : 
+Sat Aug 20 12:26:49 2022
+ERROR : Busy... please wait. Info : 
+Sat Aug 20 12:26:49 2022
+ERROR : Busy... please wait. Info : 
+Sat Aug 20 12:26:49 2022
+ERROR : Busy... please wait. Info : 
+Sat Aug 20 12:26:49 2022
+ERROR : Busy... please wait. Info : 
+Sat Aug 20 12:26:50 2022
+ERROR : Busy... please wait. Info : 
+Sat Aug 20 12:26:50 2022
+ERROR : Busy... please wait. Info : 
+Sat Aug 20 12:26:50 2022
+ERROR : Busy... please wait. Info : 
+Sat Aug 20 12:26:50 2022
+ERROR : Busy... please wait. Info : 
+Sat Aug 20 12:26:50 2022
+ERROR : Busy... please wait. Info : 
+Sat Aug 20 12:26:51 2022
+ERROR : Busy... please wait. Info : 
+Sat Aug 20 12:26:51 2022
+ERROR : Busy... please wait. Info : 
+Sat Aug 20 12:32:28 2022
+ERROR : Busy... please wait. Info : 
+Sat Aug 20 12:32:29 2022
+ERROR : Busy... please wait. Info : 
+Sat Aug 20 12:32:29 2022
+ERROR : Busy... please wait. Info : 
+Sat Aug 20 12:32:29 2022
+ERROR : Busy... please wait. Info : 
+Sat Aug 20 12:32:30 2022
+ERROR : Busy... please wait. Info : 
+Sat Aug 20 12:32:30 2022
+ERROR : Busy... please wait. Info : 
+Sat Aug 20 12:32:30 2022
+ERROR : Busy... please wait. Info : 
+Sat Aug 20 12:32:30 2022
+ERROR : Busy... please wait. Info : 
+Sat Aug 20 12:32:43 2022
+ERROR : Busy... please wait. Info : 
+Sat Aug 20 12:32:44 2022
+ERROR : Busy... please wait. Info : 
+Sat Aug 20 13:32:03 2022
+ERROR : Parameter out of bounds. Info : SuperMesh::SetSkyrmion
+Sat Aug 20 13:32:15 2022
+ERROR : Parameter out of bounds. Info : SuperMesh::SetSkyrmion
+Sat Aug 20 13:32:55 2022
+ERROR : Parameter out of bounds. Info : SuperMesh::SetSkyrmion
+Sat Aug 20 17:20:53 2022
+ERROR : CUDA device selection incorrect. Info : SimulationSharedData::select_cuda_devices
+Sat Aug 20 17:21:10 2022
+ERROR : CUDA device selection incorrect. Info : SuperMesh > SimulationSharedData::select_cuda_devices > SuperMesh > SimulationSharedData::select_cuda_devices
+Sat Aug 20 18:07:50 2022
+ERROR : Busy... please wait. Info : 
+Sat Aug 20 19:50:51 2022
+ERROR : Busy... please wait. Info : 
+Sun Aug 21 11:47:20 2022
+ERROR : Busy... please wait. Info : 
+Sun Aug 21 15:33:05 2022
+WARNING : Selected GPUs are not all in P2P mode (if using Windows, must enable SLI). This means direct memory transfers and UVA addressing not possible. Expect poor multi-GPU performance scaling. Multi-mesh simulations are disabled. Info : SimulationSharedData::select_cuda_devices
+Sun Aug 21 15:36:21 2022
+WARNING : Selected GPUs are not all in P2P mode (if using Windows, must enable SLI). This means direct memory transfers and UVA addressing not possible. Expect poor multi-GPU performance scaling. Multi-mesh simulations are disabled. Info : SuperMesh > SimulationSharedData::select_cuda_devices > SuperMesh > SimulationSharedData::select_cuda_devices > SuperMesh > SimulationSharedData::select_cuda_devices > SuperMesh > SimulationSharedData::select_cuda_devices
+Sun Aug 21 18:10:56 2022
+WARNING : Selected GPUs are not all in P2P mode (if using Windows, must enable SLI). This means direct memory transfers and UVA addressing not possible. Expect poor multi-GPU performance scaling. Multi-mesh simulations are disabled. Info : SuperMesh > SimulationSharedData::select_cuda_devices > SuperMesh > SimulationSharedData::select_cuda_devices > SuperMesh > SimulationSharedData::select_cuda_devices > SuperMesh > SimulationSharedData::select_cuda_devices
+Mon Aug 22 22:09:08 2022
+ERROR : Could not load file. Info : Simulation::LoadSimulation
+Mon Aug 22 22:09:20 2022
+ERROR : Could not load file. Info : Simulation::LoadSimulation
+Tue Aug 23 09:12:55 2022
+ERROR : Command not recognized. Info : 
+Tue Aug 23 11:04:44 2022
+ERROR : Parameter out of bounds. Info : Parameter 1, Min : -1m, -1m, -1m; -1000mm, -1000mm, -1000mm to Max : -1m, -1m, -1m; 1m, 1m, 1m
+Tue Aug 23 11:05:02 2022
+WARNING : Selected GPUs are not all in P2P mode (if using Windows, must enable SLI). This means direct memory transfers and UVA addressing not possible. Expect poor multi-GPU performance scaling. Multi-mesh simulations are disabled. Info : SimulationSharedData::select_cuda_devices
+Tue Aug 23 11:05:15 2022
+ERROR : Not all GPUs are in P2P mode. Multi-GPU simulations with multiple meshes require P2P access between all devices. Info : SuperMesh
+Tue Aug 23 11:10:42 2022
+WARNING : Selected GPUs are not all in P2P mode (if using Windows, must enable SLI). This means direct memory transfers and UVA addressing not possible. Expect poor multi-GPU performance scaling. Multi-mesh simulations are disabled. Info : SuperMesh > SimulationSharedData::select_cuda_devices > SuperMesh > SimulationSharedData::select_cuda_devices > SuperMesh > SimulationSharedData::select_cuda_devices > SuperMesh > SimulationSharedData::select_cuda_devices
+Tue Aug 23 11:10:45 2022
+ERROR : Not all GPUs are in P2P mode. Multi-GPU simulations with multiple meshes require P2P access between all devices. Info : Simulation::PrepareRunSimulation > SuperMesh
+Tue Aug 23 16:13:41 2022
+ERROR : Incorrect name. Info : SuperMesh::DelModule
+Tue Aug 23 16:13:46 2022
+ERROR : Incorrect name. Info : SuperMesh::DelModule
+Tue Aug 23 16:13:51 2022
+ERROR : Incorrect name. Info : SuperMesh::DelModule
+Tue Aug 23 16:13:57 2022
+ERROR : Incorrect name. Info : SuperMesh::DelModule
+Tue Aug 23 16:14:02 2022
+ERROR : Incorrect name. Info : SuperMesh::DelModule
+Tue Aug 23 16:14:07 2022
+ERROR : Incorrect name. Info : SuperMesh::DelModule
+Tue Aug 23 16:14:12 2022
+ERROR : Incorrect name. Info : SuperMesh::DelModule
+Tue Aug 23 16:14:18 2022
+ERROR : Incorrect name. Info : SuperMesh::DelModule
+Tue Aug 23 16:14:23 2022
+ERROR : Incorrect name. Info : SuperMesh::DelModule
+Tue Aug 23 16:14:28 2022
+ERROR : Incorrect name. Info : SuperMesh::DelModule
+Tue Aug 23 20:34:08 2022
+ERROR : Parameter out of bounds. Info : Parameter 1, Min : -1m, -1m, -1m; -1000mm, -1000mm, -1000mm to Max : -1m, -1m, -1m; 1m, 1m, 1m
+Tue Aug 23 20:38:07 2022
+ERROR : Parameter out of bounds. Info : Parameter 1, Min : -1m, -1m, -1m; -1000mm, -1000mm, -1000mm to Max : -1m, -1m, -1m; 1m, 1m, 1m
+Tue Aug 23 20:40:42 2022
+ERROR : Command not recognized. Info : 
+Tue Aug 23 20:40:54 2022
+ERROR : Busy... please wait. Info : 
+Tue Aug 23 21:36:34 2022
+ERROR : Busy... please wait. Info : 
+Tue Aug 23 21:49:55 2022
+ERROR : Busy... please wait. Info : 
+Tue Aug 23 22:47:27 2022
+WARNING : Could not initialize on GPU. Initialized on CPU instead. Info : SuperMesh > MeshBase(permalloy) > DemagCUDA > DemagKernelCUDA::Calculate_Demag_Kernels_3D > DemagKernelCUDA::Calculate_Demag_Kernels_3D_onGPU
+Tue Aug 23 22:49:49 2022
+WARNING : Could not initialize on GPU. Initialized on CPU instead. Info : SuperMesh > MeshBase(permalloy) > SDemagCUDA_Demag > DemagKernelCollectionCUDA::Calculate_Demag_Kernels > DemagKernelCollectionCUDA::Calculate_Demag_Kernels_3D_Self > DemagKernelCollectionCUDA::Calculate_Demag_Kernels_3D_Self_onGPU > DemagKernelCollectionCUDA::Calculate_Demag_Kernels_3D_zShifted > DemagKernelCollectionCUDA::Calculate_Demag_Kernels_3D_zShifted_onGPU > MeshBase(permalloy2) > SDemagCUDA_Demag > DemagKernelCollectionCUDA::Calculate_Demag_Kernels > DemagKernelCollectionCUDA::Calculate_Demag_Kernels_3D_zShifted > DemagKernelCollectionCUDA::Calculate_Demag_Kernels_3D_zShifted_onGPU
+Tue Aug 23 22:55:40 2022
+WARNING : Could not initialize on GPU. Initialized on CPU instead. Info : SuperMesh > MeshBase(permalloy) > DemagCUDA > DemagKernelCUDA::Calculate_Demag_Kernels_3D > DemagKernelCUDA::Calculate_Demag_Kernels_3D_onGPU
+Tue Aug 23 23:02:22 2022
+ERROR : Incorrect name. Info : SuperMesh::AddMesh
+Wed Aug 24 13:10:03 2022
+ERROR : Busy... please wait. Info : 
+Wed Aug 24 13:11:32 2022
+ERROR : Busy... please wait. Info : 
+Wed Aug 24 13:12:19 2022
+ERROR : Busy... please wait. Info : 
+Wed Aug 24 13:13:34 2022
+ERROR : Busy... please wait. Info : 
+Wed Aug 24 13:14:36 2022
+ERROR : Busy... please wait. Info : 
+Wed Aug 24 13:25:18 2022
+ERROR : Busy... please wait. Info : 
+Wed Aug 24 13:25:35 2022
+ERROR : Busy... please wait. Info : 
+Wed Aug 24 14:39:43 2022
+ERROR : Command not recognized. Info : 
+Thu Aug 25 09:19:24 2022
+ERROR : Busy... please wait. Info : 
+Thu Aug 25 09:31:35 2022
+ERROR : Busy... please wait. Info : 
+Thu Aug 25 14:52:19 2022
+ERROR : Command not recognized. Info : 
+Thu Aug 25 15:03:47 2022
+ERROR : Busy... please wait. Info : 
+Thu Aug 25 15:03:49 2022
+ERROR : Busy... please wait. Info : 
+Thu Aug 25 15:09:52 2022
+ERROR : Busy... please wait. Info : 
+Thu Aug 25 22:41:55 2022
+ERROR : Busy... please wait. Info : 
+Thu Aug 25 22:41:57 2022
+ERROR : Busy... please wait. Info : 
+Sat Aug 27 08:57:28 2022
+WARNING : Could not initialize on GPU. Initialized on CPU instead. Info : SuperMesh > MeshBase(permalloy) > DemagCUDA > DemagKernelCUDA::Calculate_Demag_Kernels_3D > DemagKernelCUDA::Calculate_Demag_Kernels_3D_onGPU
+Sat Aug 27 09:08:37 2022
+ERROR : Command not recognized. Info : 
+Sat Aug 27 13:41:49 2022
+ERROR : Could not load file. Info : Simulation::LoadSimulation
+Sat Aug 27 16:10:18 2022
+ERROR : Command not recognized. Info : 
+Sat Aug 27 18:20:38 2022
+ERROR : Busy... please wait. Info : 
+Mon Aug 29 15:16:06 2022
+ERROR : CUDA device selection incorrect. Info : SimulationSharedData::select_cuda_devices
+Mon Aug 29 15:17:41 2022
+WARNING : Selected GPUs are not all in P2P mode (if using Windows, must enable SLI). This means direct memory transfers and UVA addressing not possible. Expect poor multi-GPU performance scaling. Multi-mesh simulations are disabled. Info : SuperMesh > SimulationSharedData::select_cuda_devices > SuperMesh > SimulationSharedData::select_cuda_devices > SuperMesh > SimulationSharedData::select_cuda_devices > SuperMesh > SimulationSharedData::select_cuda_devices
+Mon Aug 29 15:52:49 2022
+ERROR : Command not recognized. Info : 
+Mon Aug 29 16:03:07 2022
+ERROR : Command not recognized. Info : 
+Tue Aug 30 09:04:43 2022
+ERROR : Command not recognized. Info : 
+Tue Aug 30 12:10:24 2022
+ERROR : Out of GPU memory. Info : SuperMesh > FMesh(RL) > SuperMesh > FMesh(RL) > FMeshCUDA > SuperMesh > FMesh(RL) > SuperMesh > FMesh(RL) > FMeshCUDA > SuperMesh > FMesh(RL) > SuperMesh > FMesh(RL) > FMeshCUDA > SuperMesh > FMesh(RL) > SuperMesh > FMesh(RL) > FMeshCUDA
+Tue Aug 30 12:11:08 2022
+ERROR : Out of GPU memory. Info : SuperMesh > FMesh(RL) > SuperMesh > FMesh(RL) > FMeshCUDA > SuperMesh > FMesh(RL) > SuperMesh > FMesh(RL) > FMeshCUDA > SuperMesh > FMesh(RL) > SuperMesh > FMesh(RL) > FMeshCUDA > SuperMesh > FMesh(RL) > SuperMesh > FMesh(RL) > FMeshCUDA
+Tue Aug 30 12:11:55 2022
+ERROR : Out of GPU memory. Info : SuperMesh > FMesh(RL) > SuperMesh > FMesh(RL) > FMeshCUDA > SuperMesh > FMesh(RL) > SuperMesh > FMesh(RL) > FMeshCUDA > SuperMesh > FMesh(RL) > SuperMesh > FMesh(RL) > FMeshCUDA > SuperMesh > FMesh(RL) > SuperMesh > FMesh(RL) > FMeshCUDA
+Tue Aug 30 12:12:45 2022
+ERROR : Out of GPU memory. Info : SuperMesh > FMesh(RL) > SuperMesh > FMesh(RL) > FMeshCUDA > SuperMesh > FMesh(RL) > SuperMesh > FMesh(RL) > FMeshCUDA > SuperMesh > FMesh(RL) > SuperMesh > FMesh(RL) > FMeshCUDA > SuperMesh > FMesh(RL) > SuperMesh > FMesh(RL) > FMeshCUDA
+Tue Aug 30 12:13:05 2022
+ERROR : Out of GPU memory. Info : SuperMesh > FMesh(RL) > SuperMesh > FMesh(RL) > FMeshCUDA > SuperMesh > FMesh(RL) > SuperMesh > FMesh(RL) > FMeshCUDA > SuperMesh > FMesh(RL) > SuperMesh > FMesh(RL) > FMeshCUDA > SuperMesh > FMesh(RL) > SuperMesh > FMesh(RL) > FMeshCUDA
+Tue Aug 30 12:13:34 2022
+ERROR : Out of GPU memory. Info : SuperMesh > FMesh(RL) > SuperMesh > FMesh(RL) > FMeshCUDA > SuperMesh > FMesh(RL) > SuperMesh > FMesh(RL) > FMeshCUDA > SuperMesh > FMesh(RL) > SuperMesh > FMesh(RL) > FMeshCUDA > SuperMesh > FMesh(RL) > SuperMesh > FMesh(RL) > FMeshCUDA
+Tue Aug 30 12:15:45 2022
+ERROR : Out of GPU memory. Info : SuperMesh > FMesh(RL) > SuperMesh > FMesh(RL) > FMeshCUDA > SuperMesh > FMesh(RL) > SuperMesh > FMesh(RL) > FMeshCUDA > SuperMesh > FMesh(RL) > SuperMesh > FMesh(RL) > FMeshCUDA > SuperMesh > FMesh(RL) > SuperMesh > FMesh(RL) > FMeshCUDA
+Tue Aug 30 12:15:50 2022
+ERROR : Command not recognized. Info : 
+Tue Aug 30 12:16:02 2022
+ERROR : Out of GPU memory. Info : SuperMesh > FMesh(RL) > SuperMesh > FMesh(RL) > FMeshCUDA > SuperMesh > FMesh(RL) > SuperMesh > FMesh(RL) > FMeshCUDA > SuperMesh > FMesh(RL) > SuperMesh > FMesh(RL) > FMeshCUDA > SuperMesh > FMesh(RL) > SuperMesh > FMesh(RL) > FMeshCUDA
+Tue Aug 30 12:16:30 2022
+ERROR : Out of GPU memory. Info : SuperMesh > FMesh(RL) > SuperMesh > FMesh(RL) > FMeshCUDA > SuperMesh > FMesh(RL) > SuperMesh > FMesh(RL) > FMeshCUDA > SuperMesh > FMesh(RL) > SuperMesh > FMesh(RL) > FMeshCUDA > SuperMesh > FMesh(RL) > SuperMesh > FMesh(RL) > FMeshCUDA
+Tue Aug 30 12:17:11 2022
+ERROR : Out of GPU memory. Info : SuperMesh > FMesh(RL) > SuperMesh > FMesh(RL) > FMeshCUDA > SuperMesh > FMesh(RL) > SuperMesh > FMesh(RL) > FMeshCUDA > SuperMesh > FMesh(RL) > SuperMesh > FMesh(RL) > FMeshCUDA > SuperMesh > FMesh(RL) > SuperMesh > FMesh(RL) > FMeshCUDA
+Tue Aug 30 12:17:43 2022
+ERROR : Out of GPU memory. Info : SuperMesh > FMesh(RL) > SuperMesh > FMesh(RL) > FMeshCUDA > SuperMesh > FMesh(RL) > SuperMesh > FMesh(RL) > FMeshCUDA > SuperMesh > FMesh(RL) > SuperMesh > FMesh(RL) > FMeshCUDA > SuperMesh > FMesh(RL) > SuperMesh > FMesh(RL) > FMeshCUDA
+Tue Aug 30 12:19:04 2022
+ERROR : Out of GPU memory. Info : SuperMesh > FMesh(RL) > SuperMesh > FMesh(RL) > FMeshCUDA > SuperMesh > FMesh(RL) > SuperMesh > FMesh(RL) > FMeshCUDA > SuperMesh > FMesh(RL) > SuperMesh > FMesh(RL) > FMeshCUDA > SuperMesh > FMesh(RL) > SuperMesh > FMesh(RL) > FMeshCUDA
+Tue Aug 30 12:23:21 2022
+ERROR : Out of GPU memory. Info : SuperMesh > FMesh(RL) > SuperMesh > FMesh(RL) > FMeshCUDA > SuperMesh > FMesh(RL) > SuperMesh > FMesh(RL) > FMeshCUDA > SuperMesh > FMesh(RL) > SuperMesh > FMesh(RL) > FMeshCUDA > SuperMesh > FMesh(RL) > SuperMesh > FMesh(RL) > FMeshCUDA
+Tue Aug 30 12:30:55 2022
+ERROR : Out of GPU memory. Info : SuperMesh > FMesh(RL) > SuperMesh > FMesh(RL) > FMeshCUDA > SuperMesh > FMesh(RL) > SuperMesh > FMesh(RL) > FMeshCUDA > SuperMesh > FMesh(RL) > SuperMesh > FMesh(RL) > FMeshCUDA > SuperMesh > FMesh(RL) > SuperMesh > FMesh(RL) > FMeshCUDA
+Tue Aug 30 12:34:38 2022
+ERROR : Out of GPU memory. Info : SuperMesh > FMesh(RL) > SuperMesh > FMesh(RL) > FMeshCUDA > SuperMesh > FMesh(RL) > SuperMesh > FMesh(RL) > FMeshCUDA > SuperMesh > FMesh(RL) > SuperMesh > FMesh(RL) > FMeshCUDA > SuperMesh > FMesh(RL) > SuperMesh > FMesh(RL) > FMeshCUDA
+Tue Aug 30 12:37:49 2022
+ERROR : Out of GPU memory. Info : SuperMesh > FMesh(RL) > SuperMesh > FMesh(RL) > FMeshCUDA > SuperMesh > FMesh(RL) > SuperMesh > FMesh(RL) > FMeshCUDA > SuperMesh > FMesh(RL) > SuperMesh > FMesh(RL) > FMeshCUDA > SuperMesh > FMesh(RL) > SuperMesh > FMesh(RL) > FMeshCUDA
+Tue Aug 30 12:40:32 2022
+ERROR : Out of GPU memory. Info : SuperMesh > FMesh(RL) > SuperMesh > FMesh(RL) > FMeshCUDA > SuperMesh > FMesh(RL) > SuperMesh > FMesh(RL) > FMeshCUDA > SuperMesh > FMesh(RL) > SuperMesh > FMesh(RL) > FMeshCUDA > SuperMesh > FMesh(RL) > SuperMesh > FMesh(RL) > FMeshCUDA
+Tue Aug 30 12:47:48 2022
+ERROR : Out of GPU memory. Info : SuperMesh > FMesh(RL) > SuperMesh > FMesh(RL) > FMeshCUDA > SuperMesh > FMesh(RL) > SuperMesh > FMesh(RL) > FMeshCUDA > SuperMesh > FMesh(RL) > SuperMesh > FMesh(RL) > FMeshCUDA > SuperMesh > FMesh(RL) > SuperMesh > FMesh(RL) > FMeshCUDA
+Tue Aug 30 12:58:44 2022
+ERROR : Out of GPU memory. Info : SuperMesh > FMesh(RL) > SuperMesh > FMesh(RL) > FMeshCUDA > SuperMesh > FMesh(RL) > SuperMesh > FMesh(RL) > FMeshCUDA > SuperMesh > FMesh(RL) > SuperMesh > FMesh(RL) > FMeshCUDA > SuperMesh > FMesh(RL) > SuperMesh > FMesh(RL) > FMeshCUDA
+Thu Sep  1 13:31:25 2022
+ERROR : GPU error. Info : Simulation::PrepareRunSimulation > SuperMesh > MeshBase(permalloy) > Exch_6ngbr_NeuCUDA > ExchangeBaseCUDA
+Thu Sep  1 21:04:29 2022
+ERROR : Parameter out of bounds. Info : Parameter 1, Min : -1m, -1m, -1m; -1000mm, -1000mm, -1000mm to Max : -1m, -1m, -1m; 1m, 1m, 1m
+Thu Sep  1 21:04:37 2022
+ERROR : Busy... please wait. Info : 
+Thu Sep  1 21:09:11 2022
+ERROR : Busy... please wait. Info : 
+Fri Sep  2 11:26:08 2022
+ERROR : Could not load file. Info : Simulation::LoadSimulation
+Fri Sep  2 11:26:16 2022
+ERROR : Could not load file. Info : Simulation::LoadSimulation
+Fri Sep  2 11:46:03 2022
+ERROR : Could not load file. Info : Simulation::LoadSimulation
+Fri Sep  2 12:25:04 2022
+ERROR : Command not recognized. Info : 
+Fri Sep  2 15:14:12 2022
+ERROR : Out of GPU memory. Info : SuperMesh > FMesh(permalloy) > SuperMesh > FMesh(permalloy) > FMeshCUDA > SuperMesh > FMesh(permalloy) > SuperMesh > FMesh(permalloy) > FMeshCUDA > SuperMesh > FMesh(permalloy) > SuperMesh > FMesh(permalloy) > FMeshCUDA > SuperMesh > FMesh(permalloy) > SuperMesh > FMesh(permalloy) > FMeshCUDA
+Fri Sep  2 22:53:01 2022
+WARNING : Selected GPUs are not all in P2P mode (if using Windows, must enable SLI). This means direct memory transfers and UVA addressing not possible. Expect poor multi-GPU performance scaling. Multi-mesh simulations are disabled. Info : SimulationSharedData::select_cuda_devices
+Fri Sep  2 22:53:14 2022
+WARNING : Selected GPUs are not all in P2P mode (if using Windows, must enable SLI). This means direct memory transfers and UVA addressing not possible. Expect poor multi-GPU performance scaling. Multi-mesh simulations are disabled. Info : SimulationSharedData::select_cuda_devices
+Fri Sep  2 22:53:15 2022
+WARNING : Selected GPUs are not all in P2P mode (if using Windows, must enable SLI). This means direct memory transfers and UVA addressing not possible. Expect poor multi-GPU performance scaling. Multi-mesh simulations are disabled. Info : SimulationSharedData::select_cuda_devices
+Fri Sep  2 22:53:19 2022
+WARNING : Selected GPUs are not all in P2P mode (if using Windows, must enable SLI). This means direct memory transfers and UVA addressing not possible. Expect poor multi-GPU performance scaling. Multi-mesh simulations are disabled. Info : SimulationSharedData::select_cuda_devices
+Fri Sep  2 22:53:26 2022
+WARNING : Selected GPUs are not all in P2P mode (if using Windows, must enable SLI). This means direct memory transfers and UVA addressing not possible. Expect poor multi-GPU performance scaling. Multi-mesh simulations are disabled. Info : SimulationSharedData::select_cuda_devices
+Fri Sep  2 22:53:28 2022
+WARNING : Selected GPUs are not all in P2P mode (if using Windows, must enable SLI). This means direct memory transfers and UVA addressing not possible. Expect poor multi-GPU performance scaling. Multi-mesh simulations are disabled. Info : SimulationSharedData::select_cuda_devices
+Sat Sep  3 13:39:49 2022
+WARNING : Selected GPUs are not all in P2P mode (if using Windows, must enable SLI). This means direct memory transfers and UVA addressing not possible. Expect poor multi-GPU performance scaling. Multi-mesh simulations are disabled. Info : SimulationSharedData::select_cuda_devices
+Sat Sep  3 13:39:55 2022
+WARNING : Selected GPUs are not all in P2P mode (if using Windows, must enable SLI). This means direct memory transfers and UVA addressing not possible. Expect poor multi-GPU performance scaling. Multi-mesh simulations are disabled. Info : SimulationSharedData::select_cuda_devices
+Mon Sep  5 10:44:57 2022
+WARNING : Selected GPUs are not all in P2P mode (if using Windows, must enable SLI). This means direct memory transfers and UVA addressing not possible. Expect poor multi-GPU performance scaling. Multi-mesh simulations are disabled. Info : SimulationSharedData::select_cuda_devices
+Mon Sep  5 10:45:01 2022
+WARNING : Selected GPUs are not all in P2P mode (if using Windows, must enable SLI). This means direct memory transfers and UVA addressing not possible. Expect poor multi-GPU performance scaling. Multi-mesh simulations are disabled. Info : SimulationSharedData::select_cuda_devices
+Mon Sep  5 12:37:43 2022
+WARNING : Selected GPUs are not all in P2P mode (if using Windows, must enable SLI). This means direct memory transfers and UVA addressing not possible. Expect poor multi-GPU performance scaling. Multi-mesh simulations are disabled. Info : SuperMesh > SimulationSharedData::select_cuda_devices > SuperMesh > SimulationSharedData::select_cuda_devices > SuperMesh > SimulationSharedData::select_cuda_devices > SuperMesh > SimulationSharedData::select_cuda_devices
+Mon Sep  5 12:45:51 2022
+WARNING : Selected GPUs are not all in P2P mode (if using Windows, must enable SLI). This means direct memory transfers and UVA addressing not possible. Expect poor multi-GPU performance scaling. Multi-mesh simulations are disabled. Info : SuperMesh > SimulationSharedData::select_cuda_devices > SuperMesh > SimulationSharedData::select_cuda_devices > SuperMesh > SimulationSharedData::select_cuda_devices > SuperMesh > SimulationSharedData::select_cuda_devices
+Mon Sep  5 12:50:20 2022
+ERROR : Command not recognized. Info : 
+Mon Sep  5 12:51:44 2022
+WARNING : Selected GPUs are not all in P2P mode (if using Windows, must enable SLI). This means direct memory transfers and UVA addressing not possible. Expect poor multi-GPU performance scaling. Multi-mesh simulations are disabled. Info : SimulationSharedData::select_cuda_devices
+Mon Sep  5 12:55:12 2022
+ERROR : Command not recognized. Info : 
+Mon Sep  5 12:55:22 2022
+ERROR : Incorrect name. Info : SuperMesh::RenameMesh
+Mon Sep  5 15:03:48 2022
+ERROR : Could not load file. Info : Simulation::LoadSimulation
+Mon Sep  5 15:47:37 2022
+ERROR : Command not recognized. Info : 
+Mon Sep  5 15:57:02 2022
+ERROR : Command not recognized. Info : 
+Wed Sep  7 10:01:37 2022
+ERROR : Command not recognized. Info : 
+Wed Sep  7 12:49:39 2022
+ERROR : Could not load file. Info : Simulation::LoadSimulation
+Wed Sep  7 12:50:38 2022
+ERROR : Could not load file. Info : Simulation::LoadSimulation
+Wed Sep  7 13:17:46 2022
+ERROR : Busy... please wait. Info : 
+Wed Sep  7 13:21:59 2022
+ERROR : Could not load file : version mismatch. Info : Simulation::LoadSimulation
+Wed Sep  7 14:03:13 2022
+ERROR : Command not recognized. Info : 
+Wed Sep  7 14:04:43 2022
+ERROR : Command not recognized. Info : 
+Wed Sep  7 14:28:26 2022
+ERROR : Could not load file. Info : Simulation::LoadSimulation
+Wed Sep  7 14:30:13 2022
+ERROR : Could not load file. Info : Simulation::LoadSimulation
+Wed Sep  7 14:52:05 2022
+ERROR : Could not load file. Info : Simulation::LoadSimulation
+Wed Sep  7 21:40:54 2022
+WARNING : Selected GPUs are not all in P2P mode (if using Windows, must enable SLI). This means direct memory transfers and UVA addressing not possible. Expect poor multi-GPU performance scaling. Multi-mesh simulations are disabled. Info : SuperMesh > SimulationSharedData::select_cuda_devices > SuperMesh > SimulationSharedData::select_cuda_devices > SuperMesh > SimulationSharedData::select_cuda_devices > SuperMesh > SimulationSharedData::select_cuda_devices
+Wed Sep  7 21:42:15 2022
+ERROR : Parameter out of bounds. Info : Parameter 1, Min : -1m, -1m, -1m; -1000mm, -1000mm, -1000mm to Max : -1m, -1m, -1m; 1m, 1m, 1m
+Wed Sep  7 21:53:38 2022
+ERROR : Could not load file. Info : Simulation::LoadSimulation
+Wed Sep  7 21:56:48 2022
+ERROR : Busy... please wait. Info : 
+Thu Sep  8 09:07:34 2022
+ERROR : Could not load file. Info : Simulation::LoadSimulation
+Thu Sep  8 19:22:57 2022
+ERROR : Could not load file. Info : Simulation::LoadSimulation
+Thu Sep  8 19:26:04 2022
+ERROR : Command not recognized. Info : 
+Fri Sep  9 09:00:55 2022
+ERROR : Busy... please wait. Info : 
+Fri Sep  9 11:25:16 2022
+ERROR : Out of GPU memory. Info : SuperMesh::SetMeshRect > Mesh::SetMeshRect > SuperMesh > FMesh(permalloy) > FMeshCUDA
+Fri Sep  9 11:26:10 2022
+ERROR : Parameter out of bounds. Info : Parameter 1, Min : -1m, -1m, -1m; -1000mm, -1000mm, -1000mm to Max : -1m, -1m, -1m; 1m, 1m, 1m
+Fri Sep  9 11:53:32 2022
+ERROR : Out of GPU memory. Info : SuperMesh > FMesh(permalloy) > SuperMesh > FMesh(permalloy) > FMeshCUDA > SuperMesh > FMesh(permalloy) > SuperMesh > FMesh(permalloy) > FMeshCUDA > SuperMesh > FMesh(permalloy) > SuperMesh > FMesh(permalloy) > FMeshCUDA > SuperMesh > FMesh(permalloy) > SuperMesh > FMesh(permalloy) > FMeshCUDA
+Fri Sep  9 12:14:15 2022
+ERROR : Parameter out of bounds. Info : Parameter 1, Min : -1m, -1m, -1m; -1000mm, -1000mm, -1000mm to Max : -1m, -1m, -1m; 1m, 1m, 1m
+Fri Sep  9 12:22:08 2022
+ERROR : Parameter out of bounds. Info : Parameter 1, Min : -1m, -1m, -1m; -1000mm, -1000mm, -1000mm to Max : -1m, -1m, -1m; 1m, 1m, 1m
+Fri Sep  9 21:52:56 2022
+ERROR : Out of GPU memory. Info : SuperMesh::resetrect > Mesh::setrect > Mesh::change_mesh_shape > MeshCUDA::copy_shapes_from_cpu
+Mon Sep 12 11:13:13 2022
+ERROR : Could not load file. Info : Simulation::LoadSimulation
+Mon Sep 12 11:19:11 2022
+ERROR : Could not load file. Info : Simulation::LoadSimulation
+Mon Sep 12 11:39:43 2022
+ERROR : Could not load file. Info : Simulation::LoadSimulation
+Mon Sep 12 12:33:48 2022
+ERROR : Could not load file. Info : Simulation::LoadSimulation
+Mon Sep 12 12:38:32 2022
+ERROR : Could not load file. Info : Simulation::LoadSimulation
+Mon Sep 12 14:56:01 2022
+ERROR : Command not recognized. Info : 
+Mon Sep 12 16:13:06 2022
+ERROR : Command not recognized. Info : 
+Mon Sep 12 16:29:03 2022
+ERROR : Could not load file. Info : Simulation::LoadSimulation
+Tue Sep 13 10:49:28 2022
+ERROR : Parameter out of bounds. Info : Parameter 1, Min : -1m, -1m, -1m; -1000mm, -1000mm, -1000mm to Max : -1m, -1m, -1m; 1m, 1m, 1m
+Tue Sep 13 12:28:25 2022
+ERROR : Could not load file. Info : Simulation::LoadSimulation
+Tue Sep 13 12:45:08 2022
+ERROR : Command not recognized. Info : 
+Tue Sep 13 16:05:51 2022
+ERROR : Parameter out of bounds. Info : SuperMesh::SetSkyrmion
+Thu Sep 15 13:13:25 2022
+ERROR : Could not load file. Info : Simulation::LoadSimulation
+Thu Sep 15 13:34:13 2022
+ERROR : Could not load file. Info : Simulation::LoadSimulation
+Thu Sep 15 14:11:36 2022
+ERROR : Could not load file. Info : Simulation::LoadSimulation
+Thu Sep 15 14:29:14 2022
+ERROR : Command not recognized. Info : 
+Thu Sep 15 15:09:36 2022
+ERROR : Command not recognized. Info : 
+Thu Sep 15 15:31:51 2022
+ERROR : Command not recognized. Info : 
+Thu Sep 15 15:34:21 2022
+ERROR : Command not recognized. Info : 
+Thu Sep 15 15:39:58 2022
+ERROR : Busy... please wait. Info : 
+Fri Sep 16 10:47:09 2022
+ERROR : Command not recognized. Info : 
+Fri Sep 16 11:09:44 2022
+ERROR : Could not load file. Info : Simulation::LoadSimulation
+Fri Sep 16 11:13:00 2022
+ERROR : Busy... please wait. Info : 
+Fri Sep 16 11:13:04 2022
+ERROR : Busy... please wait. Info : 
+Fri Sep 16 12:15:28 2022
+ERROR : Command not recognized. Info : 
+Fri Sep 16 12:27:45 2022
+ERROR : Command not recognized. Info : 
+Fri Sep 16 12:46:15 2022
+ERROR : Busy... please wait. Info : 
+Fri Sep 16 14:11:00 2022
+ERROR : Command not recognized. Info : 
+Wed Sep 21 10:05:38 2022
+ERROR : Command not recognized. Info : 
+Wed Sep 21 10:09:30 2022
+ERROR : Could not load file. Info : Simulation::LoadSimulation
+Wed Sep 21 10:11:53 2022
+ERROR : Command not recognized. Info : 
+Wed Sep 21 10:48:05 2022
+ERROR : Command not recognized. Info : 
+Wed Sep 21 11:41:31 2022
+ERROR : Command not recognized. Info : 
+Wed Sep 21 11:45:42 2022
+ERROR : Command not recognized. Info : 
+Wed Sep 21 11:45:46 2022
+ERROR : Could not load file. Info : Simulation::LoadSimulation
+Wed Sep 21 11:47:02 2022
+ERROR : Could not load file. Info : Simulation::LoadSimulation
+Wed Sep 21 11:53:55 2022
+ERROR : Command not recognized. Info : 
+Wed Sep 21 11:57:55 2022
+ERROR : Could not load file. Info : Simulation::LoadSimulation
+Wed Sep 21 12:15:20 2022
+ERROR : Command not recognized. Info : 
+Wed Sep 21 12:35:22 2022
+ERROR : Could not load file. Info : Simulation::LoadSimulation
+Wed Sep 21 14:41:15 2022
+ERROR : Busy... please wait. Info : 
+Wed Sep 28 11:13:47 2022
+ERROR : Command not recognized. Info : 
+Wed Sep 28 11:14:05 2022
+ERROR : Command not recognized. Info : 
+Wed Sep 28 11:17:53 2022
+ERROR : Command not recognized. Info : 
+Wed Sep 28 11:22:16 2022
+ERROR : Command not recognized. Info : 
+Wed Sep 28 11:27:10 2022
+ERROR : Command not recognized. Info : 
+Wed Sep 28 14:20:44 2022
+ERROR : Incorrect action for current program state. Info : 
+Wed Sep 28 14:20:44 2022
+ERROR : Incorrect action for current program state. Info : 
+Wed Sep 28 14:20:44 2022
+ERROR : Incorrect action for current program state. Info : 
+Wed Sep 28 14:20:44 2022
+ERROR : Incorrect action for current program state. Info : 
+Wed Sep 28 14:39:16 2022
+ERROR : Command not recognized. Info : 
+Wed Oct  5 12:19:53 2022
+ERROR : Could not load file. Info : Simulation::LoadSimulation
+Wed Oct  5 14:02:29 2022
+ERROR : Could not load file. Info : Simulation::LoadSimulation
+Wed Oct  5 14:59:26 2022
+ERROR : Command not recognized. Info : 
+Wed Oct  5 14:59:49 2022
+ERROR : Incorrect action for current program state. Info : 
+Wed Oct  5 15:42:34 2022
+ERROR : Command not recognized. Info : 
+Wed Oct  5 15:58:47 2022
+ERROR : Command not recognized. Info : 
+Thu Oct  6 10:16:36 2022
+ERROR : Could not load file. Info : Simulation::LoadSimulation
+Thu Oct  6 10:19:19 2022
+ERROR : Could not load file. Info : Simulation::LoadSimulation
+Thu Oct  6 10:20:37 2022
+ERROR : Could not load file. Info : Simulation::LoadSimulation
+Mon Oct 10 16:05:55 2022
+ERROR : Incorrect configuration. Info : SuperMesh > MeshBase(permalloy) > MElastic
+Mon Oct 17 09:26:35 2022
+ERROR : Busy... please wait. Info : 
+Sun Oct 23 12:23:25 2022
+ERROR : Parameter out of bounds. Info : Parameter 0, Min : 1000s to Max : 1us
+Sun Oct 23 17:52:37 2022
+ERROR : Parameter out of bounds. Info : SuperMesh::SetSkyrmion
+Mon Oct 31 09:24:50 2022
+ERROR : Must be ferromagnetic mesh with transport module added and spin transport solver enabled. Info : 
+Mon Oct 31 09:24:56 2022
+ERROR : Must be ferromagnetic mesh with transport module added and spin transport solver enabled. Must also have either Ts or Tsi computed. Info : 
+Wed Nov  2 11:40:04 2022
+ERROR : Could not load file. Info : Simulation::LoadSimulation
+Wed Nov  2 14:40:03 2022
+ERROR : Parameter out of bounds. Info : Parameter 1, Min : -1m, -1m, -1m; -1000mm, -1000mm, -1000mm to Max : -1m, -1m, -1m; 1m, 1m, 1m
+Thu Nov  3 08:10:27 2022
+ERROR : Could not load file. Info : Simulation::LoadSimulation
+Thu Nov  3 11:07:17 2022
+ERROR : Could not load file. Info : Simulation::LoadSimulation
+Thu Nov  3 11:07:21 2022
+ERROR : Busy... please wait. Info : 
+Thu Nov  3 11:09:42 2022
+ERROR : Could not load file. Info : Simulation::LoadSimulation
+Wed Nov  9 10:33:11 2022
+ERROR : Incorrect name. Info : SuperMesh::Add_Stress_Surface
+Wed Nov  9 10:57:29 2022
+ERROR : Parameter out of bounds. Info : Parameter 1, Min : -1, -1, -1; -1, -1, -1 to Max : -1, -1, -1; 1, 1, 1
+Wed Nov  9 10:57:40 2022
+ERROR : Parameter out of bounds. Info : Parameter 1, Min : -1, -1, -1; -1, -1, -1 to Max : -1, -1, -1; 1, 1, 1
+Wed Nov  9 10:58:03 2022
+ERROR : Parameter out of bounds. Info : Parameter 1, Min : -1, -1, -1; -1, -1, -1 to Max : -1, -1, -1; 1, 1, 1
+Wed Nov  9 11:09:06 2022
+ERROR : Command not recognized. Info : 
+Wed Nov  9 11:14:30 2022
+ERROR : Command not recognized. Info : 
+Wed Nov 16 10:27:21 2022
+ERROR : Command not recognized. Info : 
+Fri Nov 18 09:20:39 2022
+ERROR : Command not recognized. Info : 
+Fri Nov 18 10:48:42 2022
+ERROR : Parameter out of bounds. Info : Parameter 1, Min : -1m, -1m, -1m; -1000mm, -1000mm, -1000mm to Max : -1m, -1m, -1m; 1m, 1m, 1m
+Fri Nov 18 10:54:57 2022
+ERROR : Incorrect name. Info : SuperMesh::Add_Stress_Surface
+Fri Nov 18 11:16:10 2022
+ERROR : Parameter out of bounds. Info : Parameter 1, Min : -1m, -1m, -1m; -1000mm, -1000mm, -1000mm to Max : -1m, -1m, -1m; 1m, 1m, 1m
+Fri Nov 18 12:52:59 2022
+ERROR : Command not recognized. Info : 
+Fri Nov 18 13:17:34 2022
+ERROR : Parameter out of bounds. Info : Parameter 1, Min : 0m, 0m, 0m; 0m, 0m, 0m to Max : N/A
+Fri Nov 18 13:29:23 2022
+ERROR : Could not load file. Info : Simulation::LoadSimulation
+Fri Nov 18 13:30:33 2022
+ERROR : Command not recognized. Info : 
+Fri Nov 18 13:43:55 2022
+ERROR : Parameter out of bounds. Info : Parameter 2, Min : -2m, -2m to Max : 2m, 2m
+Fri Nov 18 15:47:43 2022
+ERROR : Command not recognized. Info : 
+Thu Nov 24 12:49:52 2022
+ERROR : Command not recognized. Info : 
+Thu Nov 24 12:53:41 2022
+ERROR : Command not recognized. Info : 
+Thu Nov 24 13:01:13 2022
+ERROR : Command not recognized. Info : 
+Thu Nov 24 13:42:28 2022
+ERROR : Command not recognized. Info : 
+Thu Nov 24 13:53:14 2022
+ERROR : Command not recognized. Info : 
+Thu Nov 24 15:49:55 2022
+ERROR : Parameter out of bounds. Info : Parameter 1, Min : -1m, -1m, -1m; -1000mm, -1000mm, -1000mm to Max : -1m, -1m, -1m; 1m, 1m, 1m
+Thu Nov 24 16:07:04 2022
+ERROR : Command not recognized. Info : 
+Fri Nov 25 09:35:37 2022
+ERROR : Parameter out of bounds. Info : Parameter 1, Min : -1m, -1m, -1m; -1000mm, -1000mm, -1000mm to Max : -1m, -1m, -1m; 1m, 1m, 1m
+Fri Nov 25 09:35:43 2022
+ERROR : Parameter out of bounds. Info : Parameter 1, Min : -1m, -1m, -1m; -1000mm, -1000mm, -1000mm to Max : -1m, -1m, -1m; 1m, 1m, 1m
+Fri Nov 25 09:36:48 2022
+ERROR : Command not recognized. Info : 
+Fri Nov 25 09:42:10 2022
+ERROR : Command not recognized. Info : 
+Fri Nov 25 09:50:21 2022
+ERROR : Command not recognized. Info : 
+Fri Nov 25 10:24:23 2022
+ERROR : Could not load file. Info : Simulation::LoadSimulation
+Fri Nov 25 10:24:30 2022
+ERROR : Could not load file. Info : Simulation::LoadSimulation
+Fri Nov 25 10:24:37 2022
+ERROR : Could not load file. Info : Simulation::LoadSimulation
+Fri Nov 25 10:24:40 2022
+ERROR : Could not load file. Info : Simulation::LoadSimulation
+Fri Nov 25 10:29:40 2022
+ERROR : Busy... please wait. Info : 
+Fri Nov 25 10:32:03 2022
+ERROR : Command not recognized. Info : 
+Fri Nov 25 11:35:42 2022
+ERROR : Command not recognized. Info : 
+Fri Nov 25 11:37:43 2022
+ERROR : Command not recognized. Info : 
+Fri Nov 25 11:38:59 2022
+ERROR : Parameter out of bounds. Info : Parameter 1, Min : -1m, -1m, -1m; -1000mm, -1000mm, -1000mm to Max : -1m, -1m, -1m; 1m, 1m, 1m
+Sat Nov 26 08:59:46 2022
+ERROR : Command not recognized. Info : 
+Sat Nov 26 09:05:24 2022
+ERROR : Command not recognized. Info : 
+Wed Nov 30 09:06:19 2022
+ERROR : Incorrect configuration. Info : SuperMesh > MeshBase(permalloy) > MElastic
+Wed Nov 30 09:06:39 2022
+ERROR : Incorrect configuration. Info : SuperMesh > MeshBase(permalloy) > MElastic
+Wed Nov 30 09:10:54 2022
+ERROR : Could not load file. Info : Simulation::LoadSimulation
+Wed Nov 30 10:01:09 2022
+ERROR : Command not recognized. Info : 
+Wed Nov 30 11:44:25 2022
+ERROR : Command not recognized. Info : 
+Wed Nov 30 11:58:42 2022
+ERROR : Command not recognized. Info : 
+Wed Nov 30 13:34:45 2022
+ERROR : Command not recognized. Info : 
+Wed Nov 30 13:49:22 2022
+ERROR : Parameter out of bounds. Info : Parameter 1, Min : 0K to Max : 3kK
+Wed Nov 30 14:23:36 2022
+ERROR : Parameter out of bounds. Info : Parameter 1, Min : 0K to Max : 3kK
+Wed Nov 30 14:49:05 2022
+ERROR : Parameter out of bounds. Info : Parameter 1, Min : -1m, -1m, -1m; -1000mm, -1000mm, -1000mm to Max : -1m, -1m, -1m; 1m, 1m, 1m
+Wed Nov 30 14:50:51 2022
+ERROR : Command not recognized. Info : 
+Wed Nov 30 14:52:28 2022
+ERROR : Command not recognized. Info : 
+Wed Nov 30 14:52:44 2022
+ERROR : Command not recognized. Info : 
+Wed Nov 30 14:52:51 2022
+ERROR : Command not recognized. Info : 
+Wed Nov 30 15:01:09 2022
+ERROR : Command not recognized. Info : 
+Wed Nov 30 15:24:20 2022
+ERROR : Command not recognized. Info : 
+Wed Nov 30 15:40:47 2022
+ERROR : Command not recognized. Info : 
+Wed Nov 30 15:41:36 2022
+ERROR : Incorrect name. Info : SuperMesh::Add_Fixed_Surface
+Wed Nov 30 15:41:50 2022
+ERROR : Incorrect name. Info : SuperMesh::Add_Fixed_Surface
+Wed Nov 30 15:49:32 2022
+ERROR : Command not recognized. Info : 
+Wed Nov 30 15:52:31 2022
+ERROR : Command not recognized. Info : 
+Wed Dec  7 15:40:02 2022
+ERROR : Command not recognized. Info : 
+Wed Dec  7 15:40:04 2022
+ERROR : Command not recognized. Info : 
+Sun Dec 11 07:59:57 2022
+ERROR : Mesh must be magnetic. Info : 
+Wed Dec 14 00:40:55 2022
+ERROR : Out of GPU memory. Info : Mesh::SetMeshCellsize > Mesh::SetMeshRect > SuperMesh > FMesh(FM) > FMeshCUDA
+Wed Dec 14 00:40:55 2022
+ERROR : Parameter out of bounds. Info : Parameter 1, Min : 25pm, 25pm, 25pm to Max : N/A
+Wed Dec 14 00:40:55 2022
+ERROR : Parameter out of bounds. Info : Parameter 1, Min : 25pm, 25pm, 25pm to Max : N/A
+Wed Dec 14 00:40:55 2022
+ERROR : Incorrect name. Info : SuperMesh::set_meshparam_value
+Wed Dec 14 00:40:55 2022
+ERROR : Incorrect name. Info : SuperMesh::set_meshparam_value
+Wed Dec 14 00:40:55 2022
+ERROR : Incorrect name. Info : SuperMesh::set_meshparam_value
+Wed Dec 14 00:40:55 2022
+ERROR : Incorrect name. Info : SuperMesh::set_meshparam_value
+Wed Dec 14 00:40:55 2022
+ERROR : Incorrect name. Info : SuperMesh::set_meshparam_value
+Wed Dec 14 00:40:55 2022
+ERROR : Incorrect name. Info : SuperMesh::set_meshparam_value
+Wed Dec 14 00:40:55 2022
+ERROR : Incorrect name. Info : SuperMesh::set_meshparam_value
+Wed Dec 14 00:40:55 2022
+ERROR : Parameter out of bounds. Info : Parameter 3, Min : 1000pm to Max : N/A
+Wed Dec 14 00:40:55 2022
+ERROR : Parameter out of bounds. Info : Parameter 1, Min : -10GA/m, -360A/m, -360A/m to Max : 10GA/m, 360A/m, 360A/m
+Wed Dec 14 00:41:04 2022
+ERROR : GPU error. Info : SuperMesh > MeshBase(permalloy) > DemagCUDA > DemagKernelCUDA::Calculate_Demag_Kernels_3D > DemagKernelCUDA::Calculate_Demag_Kernels_3D_onGPU > Exch_6ngbr_NeuCUDA > ExchangeBaseCUDA
+Wed Dec 14 00:41:04 2022
+ERROR : Out of GPU memory. Info : SuperMesh::SetODE > SuperMesh > FMesh(permalloy) > DifferentialEquationFM > DifferentialEquationFM > DifferentialEquationFMCUDA
+Wed Dec 14 00:41:04 2022
+ERROR : Out of GPU memory. Info : SuperMesh > FMesh(permalloy) > SuperMesh > FMesh(permalloy) > FMeshCUDA > SuperMesh > FMesh(permalloy) > SuperMesh > FMesh(permalloy) > FMeshCUDA > SuperMesh > FMesh(permalloy) > SuperMesh > FMesh(permalloy) > FMeshCUDA > SuperMesh > FMesh(permalloy) > SuperMesh > FMesh(permalloy) > FMeshCUDA
+Wed Dec 14 00:41:24 2022
+ERROR : Out of GPU memory. Info : SuperMesh > FMesh(FM) > SuperMesh > FMesh(FM) > FMeshCUDA > SuperMesh > FMesh(FM) > SuperMesh > FMesh(FM) > FMeshCUDA > SuperMesh > FMesh(FM) > SuperMesh > FMesh(FM) > FMeshCUDA > SuperMesh > FMesh(FM) > SuperMesh > FMesh(FM) > FMeshCUDA
+Wed Dec 14 00:41:25 2022
+ERROR : Out of GPU memory. Info : SuperMesh > FMesh(FM) > SuperMesh > FMesh(FM) > FMeshCUDA > SuperMesh > FMesh(FM) > SuperMesh > FMesh(FM) > FMeshCUDA > SuperMesh > FMesh(FM) > SuperMesh > FMesh(FM) > FMeshCUDA > SuperMesh > FMesh(FM) > SuperMesh > FMesh(FM) > FMeshCUDA
+Wed Dec 14 01:32:02 2022
+ERROR : Out of GPU memory. Info : Mesh::SetMeshCellsize > Mesh::SetMeshRect > SuperMesh > FMesh(FM) > Demag > DemagCUDA > ConvolutionCUDA<class DemagCUDA,class DemagKernelCUDA>::SetDimensions > ConvolutionDataCUDA::SetConvolutionDimensions
+Wed Dec 14 01:32:02 2022
+ERROR : Parameter out of bounds. Info : Parameter 1, Min : 25pm, 25pm, 25pm to Max : N/A
+Wed Dec 14 01:32:02 2022
+ERROR : Parameter out of bounds. Info : Parameter 1, Min : 25pm, 25pm, 25pm to Max : N/A
+Wed Dec 14 01:32:02 2022
+ERROR : Incorrect name. Info : SuperMesh::set_meshparam_value
+Wed Dec 14 01:32:02 2022
+ERROR : Incorrect name. Info : SuperMesh::set_meshparam_value
+Wed Dec 14 01:32:02 2022
+ERROR : Incorrect name. Info : SuperMesh::set_meshparam_value
+Wed Dec 14 01:32:02 2022
+ERROR : Incorrect name. Info : SuperMesh::set_meshparam_value
+Wed Dec 14 01:32:02 2022
+ERROR : Incorrect name. Info : SuperMesh::set_meshparam_value
+Wed Dec 14 01:32:02 2022
+ERROR : Incorrect name. Info : SuperMesh::set_meshparam_value
+Wed Dec 14 01:32:02 2022
+ERROR : Incorrect name. Info : SuperMesh::set_meshparam_value
+Wed Dec 14 01:32:02 2022
+ERROR : Parameter out of bounds. Info : Parameter 3, Min : 1000pm to Max : N/A
+Wed Dec 14 01:32:02 2022
+ERROR : Parameter out of bounds. Info : Parameter 1, Min : -10GA/m, -360A/m, -360A/m to Max : 10GA/m, 360A/m, 360A/m
+Wed Dec 14 02:07:25 2022
+ERROR : Out of GPU memory. Info : Mesh::SetMeshCellsize > Mesh::SetMeshRect > SuperMesh > FMesh(FM) > Demag > DemagCUDA > ConvolutionCUDA<class DemagCUDA,class DemagKernelCUDA>::SetDimensions > ConvolutionDataCUDA::SetConvolutionDimensions
+Wed Dec 14 02:07:25 2022
+ERROR : Parameter out of bounds. Info : Parameter 1, Min : 25pm, 25pm, 25pm to Max : N/A
+Wed Dec 14 02:07:25 2022
+ERROR : Parameter out of bounds. Info : Parameter 1, Min : 25pm, 25pm, 25pm to Max : N/A
+Wed Dec 14 02:07:25 2022
+ERROR : Incorrect name. Info : SuperMesh::set_meshparam_value
+Wed Dec 14 02:07:25 2022
+ERROR : Incorrect name. Info : SuperMesh::set_meshparam_value
+Wed Dec 14 02:07:25 2022
+ERROR : Incorrect name. Info : SuperMesh::set_meshparam_value
+Wed Dec 14 02:07:25 2022
+ERROR : Incorrect name. Info : SuperMesh::set_meshparam_value
+Wed Dec 14 02:07:25 2022
+ERROR : Incorrect name. Info : SuperMesh::set_meshparam_value
+Wed Dec 14 02:07:25 2022
+ERROR : Incorrect name. Info : SuperMesh::set_meshparam_value
+Wed Dec 14 02:07:25 2022
+ERROR : Incorrect name. Info : SuperMesh::set_meshparam_value
+Wed Dec 14 02:07:25 2022
+ERROR : Parameter out of bounds. Info : Parameter 3, Min : 1000pm to Max : N/A
+Wed Dec 14 02:07:25 2022
+ERROR : Parameter out of bounds. Info : Parameter 1, Min : -10GA/m, -360A/m, -360A/m to Max : 10GA/m, 360A/m, 360A/m
+Wed Dec 14 06:42:07 2022
+ERROR : Out of GPU memory. Info : SuperMesh > FMesh(FM) > SuperMesh > FMesh(FM) > FMeshCUDA > SuperMesh > FMesh(FM) > SuperMesh > FMesh(FM) > FMeshCUDA > SuperMesh > FMesh(FM) > SuperMesh > FMesh(FM) > FMeshCUDA > SuperMesh > FMesh(FM) > SuperMesh > FMesh(FM) > FMeshCUDA
+Wed Dec 14 06:42:07 2022
+ERROR : Out of GPU memory. Info : SuperMesh > FMesh(FM) > SuperMesh > FMesh(FM) > FMeshCUDA > SuperMesh > FMesh(FM) > SuperMesh > FMesh(FM) > FMeshCUDA > SuperMesh > FMesh(FM) > SuperMesh > FMesh(FM) > FMeshCUDA > SuperMesh > FMesh(FM) > SuperMesh > FMesh(FM) > FMeshCUDA
+Wed Dec 14 08:35:37 2022
+ERROR : Out of GPU memory. Info : Mesh::SetMeshCellsize > Mesh::SetMeshRect > SuperMesh > FMesh(FM) > DifferentialEquationFM > DifferentialEquationFM > DifferentialEquationFMCUDA
+Wed Dec 14 08:35:37 2022
+ERROR : Parameter out of bounds. Info : Parameter 1, Min : 25pm, 25pm, 25pm to Max : N/A
+Wed Dec 14 08:35:37 2022
+ERROR : Parameter out of bounds. Info : Parameter 1, Min : 25pm, 25pm, 25pm to Max : N/A
+Wed Dec 14 08:35:37 2022
+ERROR : Incorrect name. Info : SuperMesh::set_meshparam_value
+Wed Dec 14 08:35:37 2022
+ERROR : Incorrect name. Info : SuperMesh::set_meshparam_value
+Wed Dec 14 08:35:37 2022
+ERROR : Incorrect name. Info : SuperMesh::set_meshparam_value
+Wed Dec 14 08:35:37 2022
+ERROR : Incorrect name. Info : SuperMesh::set_meshparam_value
+Wed Dec 14 08:35:37 2022
+ERROR : Incorrect name. Info : SuperMesh::set_meshparam_value
+Wed Dec 14 08:35:37 2022
+ERROR : Incorrect name. Info : SuperMesh::set_meshparam_value
+Wed Dec 14 08:35:37 2022
+ERROR : Incorrect name. Info : SuperMesh::set_meshparam_value
+Wed Dec 14 08:35:37 2022
+ERROR : Parameter out of bounds. Info : Parameter 3, Min : 1000pm to Max : N/A
+Wed Dec 14 08:35:37 2022
+ERROR : Parameter out of bounds. Info : Parameter 1, Min : -10GA/m, -360A/m, -360A/m to Max : 10GA/m, 360A/m, 360A/m
+Wed Dec 14 08:35:47 2022
+ERROR : GPU error. Info : SuperMesh > MeshBase(permalloy) > DemagCUDA > DemagKernelCUDA::Calculate_Demag_Kernels_3D > DemagKernelCUDA::Calculate_Demag_Kernels_3D_onGPU > Exch_6ngbr_NeuCUDA > ExchangeBaseCUDA
+Wed Dec 14 08:53:52 2022
+ERROR : Out of GPU memory. Info : SuperMesh::SetODE > SuperMesh > FMesh(permalloy) > DifferentialEquationFM > DifferentialEquationFM > DifferentialEquationFMCUDA
+Wed Dec 14 19:56:22 2022
+ERROR : Out of GPU memory. Info : SuperMesh > FMesh(FM) > SuperMesh > FMesh(FM) > FMeshCUDA > SuperMesh > FMesh(FM) > SuperMesh > FMesh(FM) > FMeshCUDA > SuperMesh > FMesh(FM) > SuperMesh > FMesh(FM) > FMeshCUDA > SuperMesh > FMesh(FM) > SuperMesh > FMesh(FM) > FMeshCUDA
+Wed Dec 14 19:56:25 2022
+ERROR : Out of GPU memory. Info : SuperMesh > FMesh(FM) > SuperMesh > FMesh(FM) > FMeshCUDA > SuperMesh > FMesh(FM) > SuperMesh > FMesh(FM) > FMeshCUDA > SuperMesh > FMesh(FM) > SuperMesh > FMesh(FM) > FMeshCUDA > SuperMesh > FMesh(FM) > SuperMesh > FMesh(FM) > FMeshCUDA
+Thu Dec 22 12:23:10 2022
+ERROR : Busy... please wait. Info : 
+Thu Dec 22 19:52:54 2022
+ERROR : Out of GPU memory. Info : SuperMesh > FMesh(FM) > SuperMesh > FMesh(FM) > FMeshCUDA > SuperMesh > FMesh(FM) > SuperMesh > FMesh(FM) > FMeshCUDA > SuperMesh > FMesh(FM) > SuperMesh > FMesh(FM) > FMeshCUDA > SuperMesh > FMesh(FM) > SuperMesh > FMesh(FM) > FMeshCUDA
+Thu Dec 22 20:02:16 2022
+ERROR : Out of GPU memory. Info : SuperMesh > FMesh(FM) > SuperMesh > FMesh(FM) > FMeshCUDA > SuperMesh > FMesh(FM) > SuperMesh > FMesh(FM) > FMeshCUDA > SuperMesh > FMesh(FM) > SuperMesh > FMesh(FM) > FMeshCUDA > SuperMesh > FMesh(FM) > SuperMesh > FMesh(FM) > FMeshCUDA
+Thu Dec 22 20:03:05 2022
+ERROR : Out of GPU memory. Info : SuperMesh > FMesh(FM) > SuperMesh > FMesh(FM) > FMeshCUDA > SuperMesh > FMesh(FM) > SuperMesh > FMesh(FM) > FMeshCUDA > SuperMesh > FMesh(FM) > SuperMesh > FMesh(FM) > FMeshCUDA > SuperMesh > FMesh(FM) > SuperMesh > FMesh(FM) > FMeshCUDA
+Thu Dec 22 20:03:57 2022
+ERROR : Out of GPU memory. Info : SuperMesh::resetrect > Mesh::setrect > Mesh::change_mesh_shape > SuperMesh > FMesh(FM) > Heat > HeatCUDA
+Thu Dec 22 20:04:14 2022
+ERROR : Out of GPU memory. Info : SuperMesh::resetrect > Mesh::setrect > Mesh::change_mesh_shape > SuperMesh > FMesh(FM) > Heat > HeatCUDA
+Wed Dec 28 09:48:26 2022
+ERROR : Incorrect std::string. Info : SuperMesh > MeshBase(afm) > MElastic
+Wed Dec 28 09:49:08 2022
+ERROR : Incorrect std::string. Info : SuperMesh > MeshBase(afm) > MElastic
+Wed Dec 28 09:49:35 2022
+ERROR : Incorrect std::string. Info : SuperMesh > MeshBase(afm) > MElastic
+Wed Dec 28 09:54:59 2022
+ERROR : Incorrect std::string. Info : SuperMesh > MeshBase(afm) > MElasticCUDA > MElastic
+Wed Dec 28 09:55:08 2022
+ERROR : Incorrect std::string. Info : SuperMesh > MeshBase(afm) > MElasticCUDA > MElastic
+Wed Dec 28 09:56:13 2022
+ERROR : Incorrect std::string. Info : SuperMesh > MeshBase(afm) > MElasticCUDA > MElastic
+Wed Dec 28 09:57:14 2022
+ERROR : Incorrect std::string. Info : SuperMesh > MeshBase(afm) > MElasticCUDA > MElastic
+Wed Dec 28 09:58:19 2022
+ERROR : Incorrect std::string. Info : SuperMesh > MeshBase(afm) > MElasticCUDA > MElastic
+Wed Dec 28 10:00:54 2022
+ERROR : Busy... please wait. Info : 
+Wed Dec 28 10:07:21 2022
+ERROR : Command not recognized. Info : 
+Wed Dec 28 18:10:09 2022
+ERROR : Could not load file. Info : Simulation::LoadSimulation
+Wed Dec 28 19:16:46 2022
+ERROR : Busy... please wait. Info : 
+Wed Dec 28 19:17:19 2022
+ERROR : Busy... please wait. Info : 
+Wed Dec 28 19:22:09 2022
+ERROR : Busy... please wait. Info : 
+Wed Dec 28 19:24:38 2022
+ERROR : Busy... please wait. Info : 
+Tue Jan  3 21:00:25 2023
+ERROR : Incorrect action for current program state. Info : 
+Tue Jan  3 21:00:26 2023
+ERROR : Incorrect action for current program state. Info : 
+Tue Jan  3 21:00:26 2023
+ERROR : Incorrect action for current program state. Info : 
+Tue Jan  3 21:02:57 2023
+ERROR : Incorrect action for current program state. Info : 
+Tue Jan  3 21:02:58 2023
+ERROR : Incorrect action for current program state. Info : 
+Tue Jan  3 21:02:58 2023
+ERROR : Incorrect action for current program state. Info : 
+Tue Jan  3 22:31:38 2023
+ERROR : Incorrect action for current program state. Info : 
+Tue Jan  3 22:31:38 2023
+ERROR : Out of GPU memory. Info : SuperMesh > FMesh(FM) > SuperMesh > FMesh(FM) > FMeshCUDA > SuperMesh > FMesh(FM) > SuperMesh > FMesh(FM) > FMeshCUDA > SuperMesh > FMesh(FM) > SuperMesh > FMesh(FM) > FMeshCUDA > SuperMesh > FMesh(FM) > SuperMesh > FMesh(FM) > FMeshCUDA
+Tue Jan  3 22:33:38 2023
+ERROR : Out of GPU memory. Info : SuperMesh > FMesh(FM) > SuperMesh > FMesh(FM) > FMeshCUDA > SuperMesh > FMesh(FM) > SuperMesh > FMesh(FM) > FMeshCUDA > SuperMesh > FMesh(FM) > SuperMesh > FMesh(FM) > FMeshCUDA > SuperMesh > FMesh(FM) > SuperMesh > FMesh(FM) > FMeshCUDA
+Tue Jan  3 22:36:52 2023
+ERROR : Out of GPU memory. Info : SuperMesh > FMesh(FM) > SuperMesh > FMesh(FM) > FMeshCUDA > SuperMesh > FMesh(FM) > SuperMesh > FMesh(FM) > FMeshCUDA > SuperMesh > FMesh(FM) > SuperMesh > FMesh(FM) > FMeshCUDA > SuperMesh > FMesh(FM) > SuperMesh > FMesh(FM) > FMeshCUDA
+Tue Jan  3 22:40:21 2023
+ERROR : Out of GPU memory. Info : SuperMesh > FMesh(FM) > SuperMesh > FMesh(FM) > FMeshCUDA > SuperMesh > FMesh(FM) > SuperMesh > FMesh(FM) > FMeshCUDA > SuperMesh > FMesh(FM) > SuperMesh > FMesh(FM) > FMeshCUDA > SuperMesh > FMesh(FM) > SuperMesh > FMesh(FM) > FMeshCUDA
+Tue Jan  3 23:14:23 2023
+ERROR : Out of GPU memory. Info : SuperMesh > FMesh(FM) > SuperMesh > FMesh(FM) > FMeshCUDA > SuperMesh > FMesh(FM) > SuperMesh > FMesh(FM) > FMeshCUDA > SuperMesh > FMesh(FM) > SuperMesh > FMesh(FM) > FMeshCUDA > SuperMesh > FMesh(FM) > SuperMesh > FMesh(FM) > FMeshCUDA
+Tue Jan  3 23:31:09 2023
+ERROR : Incorrect action for current program state. Info : 
+Tue Jan  3 23:31:09 2023
+ERROR : Incorrect action for current program state. Info : 
+Thu Jan  5 22:54:36 2023
+ERROR : Out of GPU memory. Info : SuperMesh > FMesh(FM) > SuperMesh > FMesh(FM) > FMeshCUDA > SuperMesh > FMesh(FM) > SuperMesh > FMesh(FM) > FMeshCUDA > SuperMesh > FMesh(FM) > SuperMesh > FMesh(FM) > FMeshCUDA > SuperMesh > FMesh(FM) > SuperMesh > FMesh(FM) > FMeshCUDA
+Thu Jan  5 22:56:33 2023
+ERROR : Out of GPU memory. Info : SuperMesh > FMesh(FM) > SuperMesh > FMesh(FM) > FMeshCUDA > SuperMesh > FMesh(FM) > SuperMesh > FMesh(FM) > FMeshCUDA > SuperMesh > FMesh(FM) > SuperMesh > FMesh(FM) > FMeshCUDA > SuperMesh > FMesh(FM) > SuperMesh > FMesh(FM) > FMeshCUDA
+Thu Jan  5 23:04:48 2023
+ERROR : Out of GPU memory. Info : SuperMesh > FMesh(FM) > SuperMesh > FMesh(FM) > FMeshCUDA > SuperMesh > FMesh(FM) > SuperMesh > FMesh(FM) > FMeshCUDA > SuperMesh > FMesh(FM) > SuperMesh > FMesh(FM) > FMeshCUDA > SuperMesh > FMesh(FM) > SuperMesh > FMesh(FM) > FMeshCUDA
+Thu Jan  5 23:08:29 2023
+ERROR : Out of GPU memory. Info : SuperMesh > FMesh(FM) > SuperMesh > FMesh(FM) > FMeshCUDA > SuperMesh > FMesh(FM) > SuperMesh > FMesh(FM) > FMeshCUDA > SuperMesh > FMesh(FM) > SuperMesh > FMesh(FM) > FMeshCUDA > SuperMesh > FMesh(FM) > SuperMesh > FMesh(FM) > FMeshCUDA
+Thu Jan  5 23:16:29 2023
+ERROR : Out of GPU memory. Info : SuperMesh > FMesh(FM) > SuperMesh > FMesh(FM) > FMeshCUDA > SuperMesh > FMesh(FM) > SuperMesh > FMesh(FM) > FMeshCUDA > SuperMesh > FMesh(FM) > SuperMesh > FMesh(FM) > FMeshCUDA > SuperMesh > FMesh(FM) > SuperMesh > FMesh(FM) > FMeshCUDA
+Thu Jan  5 23:20:11 2023
+ERROR : Out of GPU memory. Info : SuperMesh > FMesh(FM) > SuperMesh > FMesh(FM) > FMeshCUDA > SuperMesh > FMesh(FM) > SuperMesh > FMesh(FM) > FMeshCUDA > SuperMesh > FMesh(FM) > SuperMesh > FMesh(FM) > FMeshCUDA > SuperMesh > FMesh(FM) > SuperMesh > FMesh(FM) > FMeshCUDA
+Tue Jan 10 10:58:16 2023
+ERROR : Could not load file. Info : Simulation::LoadSimulation
+Tue Jan 10 13:24:15 2023
+ERROR : Parameter out of bounds. Info : SuperMesh::SetSkyrmion
+Tue Jan 10 13:24:18 2023
+ERROR : Parameter out of bounds. Info : SuperMesh::SetSkyrmion
+Wed Jan 11 09:55:02 2023
+ERROR : Command not recognized. Info : 
+Wed Jan 11 10:21:56 2023
+ERROR : Parameter out of bounds. Info : Parameter 1, Min : -1m, -1m, -1m; -1000mm, -1000mm, -1000mm to Max : -1m, -1m, -1m; 1m, 1m, 1m
+Wed Jan 11 10:57:01 2023
+ERROR : Could not load file. Info : Simulation::LoadSimulation
+Wed Jan 11 11:25:23 2023
+ERROR : Could not load file. Info : Simulation::LoadSimulation
+Wed Jan 11 20:47:41 2023
+ERROR : Parameter out of bounds. Info : Parameter 0, Min : 1000s to Max : 1us
+Wed Jan 25 12:45:45 2023
+ERROR : Incorrect configuration. Info : SuperMesh > MeshBase(FM) > MElasticCUDA > MElastic
+Wed Jan 25 12:46:47 2023
+ERROR : Out of GPU memory. Info : SuperMesh > FMesh(FM) > SuperMesh > FMesh(FM) > FMeshCUDA > SuperMesh > FMesh(FM) > SuperMesh > FMesh(FM) > FMeshCUDA > SuperMesh > FMesh(FM) > SuperMesh > FMesh(FM) > FMeshCUDA > SuperMesh > FMesh(FM) > SuperMesh > FMesh(FM) > FMeshCUDA
+Wed Jan 25 13:08:51 2023
+ERROR : Incorrect configuration. Info : SuperMesh > MeshBase(FM) > MElasticCUDA > MElastic
+Sat Jan 28 10:17:00 2023
+ERROR : Incorrect action for current program state. Info : 
+Sat Jan 28 10:17:59 2023
+ERROR : Incorrect action for current program state. Info : 
+Sat Jan 28 10:22:24 2023
+ERROR : Incorrect action for current program state. Info : 
+Sat Jan 28 10:31:09 2023
+ERROR : Incorrect action for current program state. Info : 
+Sat Jan 28 10:31:37 2023
+ERROR : Incorrect action for current program state. Info : 
+Sat Jan 28 10:37:46 2023
+ERROR : Incorrect action for current program state. Info : 
+Sat Jan 28 11:03:36 2023
+ERROR : Incorrect action for current program state. Info : 
+Sat Jan 28 11:04:24 2023
+ERROR : Incorrect action for current program state. Info : 
+Sat Jan 28 11:06:15 2023
+ERROR : Incorrect action for current program state. Info : 
+Sat Jan 28 11:07:19 2023
+ERROR : Incorrect action for current program state. Info : 
+Sat Jan 28 11:07:20 2023
+ERROR : GPU error. Info : SuperMesh > MeshBase(FM) > HeatCUDA
+Sat Jan 28 11:08:29 2023
+ERROR : Incorrect action for current program state. Info : 
+Sat Jan 28 11:26:12 2023
+ERROR : Incorrect action for current program state. Info : 
+Sat Jan 28 11:31:26 2023
+ERROR : Incorrect action for current program state. Info : 
+Sat Jan 28 11:37:07 2023
+ERROR : Incorrect action for current program state. Info : 
+Sat Jan 28 11:37:44 2023
+ERROR : Incorrect action for current program state. Info : 
+Sat Jan 28 11:39:32 2023
+ERROR : Incorrect action for current program state. Info : 
+Sat Jan 28 11:41:21 2023
+ERROR : Incorrect action for current program state. Info : 
+Sat Jan 28 11:41:56 2023
+ERROR : Incorrect action for current program state. Info : 
+Sat Jan 28 11:41:56 2023
+ERROR : GPU error. Info : SuperMesh > MeshBase(FM) > HeatCUDA
+Sat Jan 28 11:42:49 2023
+ERROR : Incorrect action for current program state. Info : 
+Sat Jan 28 11:42:50 2023
+ERROR : GPU error. Info : SuperMesh > MeshBase(FM) > HeatCUDA
+Sat Jan 28 11:47:20 2023
+ERROR : Incorrect action for current program state. Info : 
+Sat Jan 28 11:48:44 2023
+ERROR : Incorrect action for current program state. Info : 
+Sat Jan 28 11:50:40 2023
+ERROR : Incorrect action for current program state. Info : 
+Sat Jan 28 11:51:22 2023
+ERROR : Incorrect action for current program state. Info : 
+Sat Jan 28 11:51:51 2023
+ERROR : Incorrect action for current program state. Info : 
+Sat Jan 28 11:52:13 2023
+ERROR : Incorrect action for current program state. Info : 
+Sat Jan 28 12:15:12 2023
+ERROR : Incorrect action for current program state. Info : 
+Sat Jan 28 12:18:58 2023
+ERROR : Incorrect action for current program state. Info : 
+Sat Jan 28 12:28:10 2023
+ERROR : Incorrect action for current program state. Info : 
+Sun Jan 29 09:51:55 2023
+ERROR : Incorrect action for current program state. Info : 
+Sun Jan 29 11:55:28 2023
+ERROR : Incorrect std::string. Info : SuperMesh > MeshBase(FM) > MElasticCUDA > MElastic
+Sun Jan 29 11:56:02 2023
+ERROR : Incorrect std::string. Info : SuperMesh > MeshBase(FM) > MElasticCUDA > MElastic
+Thu Feb  2 08:12:18 2023
+ERROR : Command not recognized. Info : 
+Tue Feb  7 09:47:33 2023
+ERROR : Out of GPU memory. Info : SuperMesh > FMesh(Track) > SuperMesh > FMesh(Track) > FMeshCUDA > SuperMesh > FMesh(Track) > SuperMesh > FMesh(Track) > FMeshCUDA > SuperMesh > FMesh(Track) > SuperMesh > FMesh(Track) > FMeshCUDA > SuperMesh > FMesh(Track) > SuperMesh > FMesh(Track) > FMeshCUDA
+Tue Feb  7 09:48:08 2023
+ERROR : Out of GPU memory. Info : SuperMesh > FMesh(Track) > SuperMesh > FMesh(Track) > FMeshCUDA > SuperMesh > FMesh(Track) > SuperMesh > FMesh(Track) > FMeshCUDA > SuperMesh > FMesh(Track) > SuperMesh > FMesh(Track) > FMeshCUDA > SuperMesh > FMesh(Track) > SuperMesh > FMesh(Track) > FMeshCUDA
+Tue Feb  7 09:48:27 2023
+ERROR : Out of GPU memory. Info : SuperMesh > FMesh(Track) > SuperMesh > FMesh(Track) > FMeshCUDA > SuperMesh > FMesh(Track) > SuperMesh > FMesh(Track) > FMeshCUDA > SuperMesh > FMesh(Track) > SuperMesh > FMesh(Track) > FMeshCUDA > SuperMesh > FMesh(Track) > SuperMesh > FMesh(Track) > FMeshCUDA
+Tue Feb  7 09:49:05 2023
+ERROR : Parameter out of bounds. Info : Parameter 0, Min : 1000s to Max : 1us
+Tue Feb  7 09:50:40 2023
+ERROR : Out of GPU memory. Info : SuperMesh > FMesh(Track) > SuperMesh > FMesh(Track) > FMeshCUDA > SuperMesh > FMesh(Track) > SuperMesh > FMesh(Track) > FMeshCUDA > SuperMesh > FMesh(Track) > SuperMesh > FMesh(Track) > FMeshCUDA > SuperMesh > FMesh(Track) > SuperMesh > FMesh(Track) > FMeshCUDA
+Tue Feb  7 09:56:33 2023
+ERROR : Out of GPU memory. Info : SuperMesh > FMesh(Track) > SuperMesh > FMesh(Track) > FMeshCUDA > SuperMesh > FMesh(Track) > SuperMesh > FMesh(Track) > FMeshCUDA > SuperMesh > FMesh(Track) > SuperMesh > FMesh(Track) > FMeshCUDA > SuperMesh > FMesh(Track) > SuperMesh > FMesh(Track) > FMeshCUDA
+Tue Feb  7 09:56:57 2023
+ERROR : Out of GPU memory. Info : SuperMesh > FMesh(Track) > SuperMesh > FMesh(Track) > FMeshCUDA > SuperMesh > FMesh(Track) > SuperMesh > FMesh(Track) > FMeshCUDA > SuperMesh > FMesh(Track) > SuperMesh > FMesh(Track) > FMeshCUDA > SuperMesh > FMesh(Track) > SuperMesh > FMesh(Track) > FMeshCUDA
+Tue Feb  7 09:57:17 2023
+ERROR : Out of GPU memory. Info : SuperMesh > FMesh(Track) > SuperMesh > FMesh(Track) > FMeshCUDA > SuperMesh > FMesh(Track) > SuperMesh > FMesh(Track) > FMeshCUDA > SuperMesh > FMesh(Track) > SuperMesh > FMesh(Track) > FMeshCUDA > SuperMesh > FMesh(Track) > SuperMesh > FMesh(Track) > FMeshCUDA
+Tue Feb  7 09:57:44 2023
+ERROR : Out of GPU memory. Info : SuperMesh > FMesh(Track) > SuperMesh > FMesh(Track) > FMeshCUDA > SuperMesh > FMesh(Track) > SuperMesh > FMesh(Track) > FMeshCUDA > SuperMesh > FMesh(Track) > SuperMesh > FMesh(Track) > FMeshCUDA > SuperMesh > FMesh(Track) > SuperMesh > FMesh(Track) > FMeshCUDA
+Tue Feb  7 09:58:13 2023
+ERROR : Out of GPU memory. Info : SuperMesh > FMesh(Track) > SuperMesh > FMesh(Track) > FMeshCUDA > SuperMesh > FMesh(Track) > SuperMesh > FMesh(Track) > FMeshCUDA > SuperMesh > FMesh(Track) > SuperMesh > FMesh(Track) > FMeshCUDA > SuperMesh > FMesh(Track) > SuperMesh > FMesh(Track) > FMeshCUDA
+Tue Feb  7 10:00:35 2023
+ERROR : Command not recognized. Info : 
+Tue Feb  7 10:00:35 2023
+ERROR : Out of GPU memory. Info : SuperMesh > FMesh(Track) > SuperMesh > FMesh(Track) > FMeshCUDA > SuperMesh > FMesh(Track) > SuperMesh > FMesh(Track) > FMeshCUDA > SuperMesh > FMesh(Track) > SuperMesh > FMesh(Track) > FMeshCUDA > SuperMesh > FMesh(Track) > SuperMesh > FMesh(Track) > FMeshCUDA
+Tue Feb  7 10:00:52 2023
+ERROR : Command not recognized. Info : 
+Tue Feb  7 10:00:53 2023
+ERROR : Out of GPU memory. Info : SuperMesh > FMesh(Track) > SuperMesh > FMesh(Track) > FMeshCUDA > SuperMesh > FMesh(Track) > SuperMesh > FMesh(Track) > FMeshCUDA > SuperMesh > FMesh(Track) > SuperMesh > FMesh(Track) > FMeshCUDA > SuperMesh > FMesh(Track) > SuperMesh > FMesh(Track) > FMeshCUDA
+Tue Feb  7 10:02:53 2023
+ERROR : Command not recognized. Info : 
+Tue Feb  7 10:02:54 2023
+ERROR : Out of GPU memory. Info : SuperMesh > FMesh(Track) > SuperMesh > FMesh(Track) > FMeshCUDA > SuperMesh > FMesh(Track) > SuperMesh > FMesh(Track) > FMeshCUDA > SuperMesh > FMesh(Track) > SuperMesh > FMesh(Track) > FMeshCUDA > SuperMesh > FMesh(Track) > SuperMesh > FMesh(Track) > FMeshCUDA
+Tue Feb  7 10:07:17 2023
+ERROR : Out of GPU memory. Info : SuperMesh > FMesh(Track) > SuperMesh > FMesh(Track) > FMeshCUDA > SuperMesh > FMesh(Track) > SuperMesh > FMesh(Track) > FMeshCUDA > SuperMesh > FMesh(Track) > SuperMesh > FMesh(Track) > FMeshCUDA > SuperMesh > FMesh(Track) > SuperMesh > FMesh(Track) > FMeshCUDA
+Tue Feb  7 10:11:24 2023
+ERROR : Out of GPU memory. Info : SuperMesh > FMesh(Track) > SuperMesh > FMesh(Track) > FMeshCUDA > SuperMesh > FMesh(Track) > SuperMesh > FMesh(Track) > FMeshCUDA > SuperMesh > FMesh(Track) > SuperMesh > FMesh(Track) > FMeshCUDA > SuperMesh > FMesh(Track) > SuperMesh > FMesh(Track) > FMeshCUDA
+Tue Feb  7 10:12:26 2023
+ERROR : Out of GPU memory. Info : SuperMesh > FMesh(Track) > SuperMesh > FMesh(Track) > FMeshCUDA > SuperMesh > FMesh(Track) > SuperMesh > FMesh(Track) > FMeshCUDA > SuperMesh > FMesh(Track) > SuperMesh > FMesh(Track) > FMeshCUDA > SuperMesh > FMesh(Track) > SuperMesh > FMesh(Track) > FMeshCUDA
+Tue Feb  7 10:14:44 2023
+ERROR : Out of GPU memory. Info : SuperMesh > FMesh(Track) > SuperMesh > FMesh(Track) > FMeshCUDA > SuperMesh > FMesh(Track) > SuperMesh > FMesh(Track) > FMeshCUDA > SuperMesh > FMesh(Track) > SuperMesh > FMesh(Track) > FMeshCUDA > SuperMesh > FMesh(Track) > SuperMesh > FMesh(Track) > FMeshCUDA
+Tue Feb  7 10:16:17 2023
+ERROR : Out of GPU memory. Info : SuperMesh > FMesh(Track) > SuperMesh > FMesh(Track) > FMeshCUDA > SuperMesh > FMesh(Track) > SuperMesh > FMesh(Track) > FMeshCUDA > SuperMesh > FMesh(Track) > SuperMesh > FMesh(Track) > FMeshCUDA > SuperMesh > FMesh(Track) > SuperMesh > FMesh(Track) > FMeshCUDA
+Tue Feb  7 10:16:32 2023
+ERROR : Out of GPU memory. Info : SuperMesh > FMesh(Track) > SuperMesh > FMesh(Track) > FMeshCUDA > SuperMesh > FMesh(Track) > SuperMesh > FMesh(Track) > FMeshCUDA > SuperMesh > FMesh(Track) > SuperMesh > FMesh(Track) > FMeshCUDA > SuperMesh > FMesh(Track) > SuperMesh > FMesh(Track) > FMeshCUDA
+Tue Feb  7 10:19:22 2023
+ERROR : Out of GPU memory. Info : SuperMesh > FMesh(Track) > SuperMesh > FMesh(Track) > FMeshCUDA > SuperMesh > FMesh(Track) > SuperMesh > FMesh(Track) > FMeshCUDA > SuperMesh > FMesh(Track) > SuperMesh > FMesh(Track) > FMeshCUDA > SuperMesh > FMesh(Track) > SuperMesh > FMesh(Track) > FMeshCUDA
+Tue Feb  7 10:23:27 2023
+ERROR : Out of GPU memory. Info : SuperMesh > FMesh(Track) > SuperMesh > FMesh(Track) > FMeshCUDA > SuperMesh > FMesh(Track) > SuperMesh > FMesh(Track) > FMeshCUDA > SuperMesh > FMesh(Track) > SuperMesh > FMesh(Track) > FMeshCUDA > SuperMesh > FMesh(Track) > SuperMesh > FMesh(Track) > FMeshCUDA
+Tue Feb  7 10:26:26 2023
+ERROR : Out of GPU memory. Info : SuperMesh > FMesh(Track) > SuperMesh > FMesh(Track) > FMeshCUDA > SuperMesh > FMesh(Track) > SuperMesh > FMesh(Track) > FMeshCUDA > SuperMesh > FMesh(Track) > SuperMesh > FMesh(Track) > FMeshCUDA > SuperMesh > FMesh(Track) > SuperMesh > FMesh(Track) > FMeshCUDA
+Tue Feb  7 10:28:34 2023
+ERROR : Out of GPU memory. Info : SuperMesh > FMesh(Track) > SuperMesh > FMesh(Track) > FMeshCUDA > SuperMesh > FMesh(Track) > SuperMesh > FMesh(Track) > FMeshCUDA > SuperMesh > FMesh(Track) > SuperMesh > FMesh(Track) > FMeshCUDA > SuperMesh > FMesh(Track) > SuperMesh > FMesh(Track) > FMeshCUDA
+Tue Feb  7 10:34:21 2023
+ERROR : Out of GPU memory. Info : SuperMesh > FMesh(Track) > SuperMesh > FMesh(Track) > FMeshCUDA > SuperMesh > FMesh(Track) > SuperMesh > FMesh(Track) > FMeshCUDA > SuperMesh > FMesh(Track) > SuperMesh > FMesh(Track) > FMeshCUDA > SuperMesh > FMesh(Track) > SuperMesh > FMesh(Track) > FMeshCUDA
+Tue Feb  7 10:41:25 2023
+ERROR : Out of GPU memory. Info : SuperMesh > FMesh(Track) > SuperMesh > FMesh(Track) > FMeshCUDA > SuperMesh > FMesh(Track) > SuperMesh > FMesh(Track) > FMeshCUDA > SuperMesh > FMesh(Track) > SuperMesh > FMesh(Track) > FMeshCUDA > SuperMesh > FMesh(Track) > SuperMesh > FMesh(Track) > FMeshCUDA
+Tue Feb  7 10:45:16 2023
+ERROR : Out of GPU memory. Info : SuperMesh > FMesh(Track) > SuperMesh > FMesh(Track) > FMeshCUDA > SuperMesh > FMesh(Track) > SuperMesh > FMesh(Track) > FMeshCUDA > SuperMesh > FMesh(Track) > SuperMesh > FMesh(Track) > FMeshCUDA > SuperMesh > FMesh(Track) > SuperMesh > FMesh(Track) > FMeshCUDA
+Tue Feb  7 10:46:17 2023
+ERROR : Out of GPU memory. Info : SuperMesh > FMesh(Track) > SuperMesh > FMesh(Track) > FMeshCUDA > SuperMesh > FMesh(Track) > SuperMesh > FMesh(Track) > FMeshCUDA > SuperMesh > FMesh(Track) > SuperMesh > FMesh(Track) > FMeshCUDA > SuperMesh > FMesh(Track) > SuperMesh > FMesh(Track) > FMeshCUDA
+Tue Feb  7 10:49:51 2023
+ERROR : Out of GPU memory. Info : SuperMesh > FMesh(Track) > SuperMesh > FMesh(Track) > FMeshCUDA > SuperMesh > FMesh(Track) > SuperMesh > FMesh(Track) > FMeshCUDA > SuperMesh > FMesh(Track) > SuperMesh > FMesh(Track) > FMeshCUDA > SuperMesh > FMesh(Track) > SuperMesh > FMesh(Track) > FMeshCUDA
+Tue Feb  7 10:59:19 2023
+ERROR : Out of GPU memory. Info : SuperMesh > FMesh(Track) > SuperMesh > FMesh(Track) > FMeshCUDA > SuperMesh > FMesh(Track) > SuperMesh > FMesh(Track) > FMeshCUDA > SuperMesh > FMesh(Track) > SuperMesh > FMesh(Track) > FMeshCUDA > SuperMesh > FMesh(Track) > SuperMesh > FMesh(Track) > FMeshCUDA
+Tue Feb  7 11:04:36 2023
+ERROR : Out of GPU memory. Info : SuperMesh > FMesh(Track) > SuperMesh > FMesh(Track) > FMeshCUDA > SuperMesh > FMesh(Track) > SuperMesh > FMesh(Track) > FMeshCUDA > SuperMesh > FMesh(Track) > SuperMesh > FMesh(Track) > FMeshCUDA > SuperMesh > FMesh(Track) > SuperMesh > FMesh(Track) > FMeshCUDA
+Tue Feb  7 11:14:21 2023
+ERROR : Out of GPU memory. Info : SuperMesh > FMesh(Track) > SuperMesh > FMesh(Track) > FMeshCUDA > SuperMesh > FMesh(Track) > SuperMesh > FMesh(Track) > FMeshCUDA > SuperMesh > FMesh(Track) > SuperMesh > FMesh(Track) > FMeshCUDA > SuperMesh > FMesh(Track) > SuperMesh > FMesh(Track) > FMeshCUDA
+Wed Feb  8 09:54:27 2023
+ERROR : GPU error. Info : SuperMesh > MeshBase(Track) > Exch_6ngbr_NeuCUDA > ExchangeBaseCUDA
+Wed Feb  8 09:54:28 2023
+ERROR : GPU error. Info : SuperMesh > MeshBase(Track) > Exch_6ngbr_NeuCUDA > ExchangeBaseCUDA
+Wed Feb  8 09:54:28 2023
+ERROR : GPU error. Info : SuperMesh > MeshBase(Track) > Exch_6ngbr_NeuCUDA > ExchangeBaseCUDA
+Wed Feb  8 09:54:53 2023
+ERROR : Out of GPU memory. Info : SuperMesh > FMesh(permalloy) > SuperMesh > FMesh(permalloy) > FMeshCUDA > SuperMesh > FMesh(permalloy) > SuperMesh > FMesh(permalloy) > FMeshCUDA > SuperMesh > FMesh(permalloy) > SuperMesh > FMesh(permalloy) > FMeshCUDA > SuperMesh > FMesh(permalloy) > SuperMesh > FMesh(permalloy) > FMeshCUDA
+Wed Feb  8 13:46:20 2023
+ERROR : Incorrect name. Info : SuperMesh::RenameMesh
+Wed Feb  8 13:46:21 2023
+ERROR : Incorrect name. Info : SuperMesh::RenameMesh
+Wed Feb  8 13:47:50 2023
+ERROR : Incorrect name. Info : SuperMesh::RenameMesh
+Wed Feb  8 13:47:50 2023
+ERROR : Incorrect name. Info : SuperMesh::RenameMesh
+Wed Feb  8 15:28:55 2023
+ERROR : Command not recognized. Info : 
+Thu Feb  9 09:55:23 2023
+ERROR : Command not recognized. Info : 
+Thu Feb  9 16:43:21 2023
+ERROR : Command not recognized. Info : 
+Fri Feb 10 10:33:51 2023
+ERROR : Incorrect arrays. Info : DPArrays::replace_repeats
+Fri Feb 10 10:33:51 2023
+ERROR : Incorrect arrays. Info : DPArrays::replace_repeats
+Fri Feb 10 10:33:52 2023
+ERROR : Incorrect arrays. Info : DPArrays::replace_repeats
+Fri Feb 10 10:33:52 2023
+ERROR : Incorrect arrays. Info : DPArrays::replace_repeats
+Fri Feb 10 10:33:53 2023
+ERROR : Incorrect arrays. Info : DPArrays::replace_repeats
+Fri Feb 10 10:33:54 2023
+ERROR : Incorrect arrays. Info : DPArrays::replace_repeats
+Fri Feb 10 10:33:54 2023
+ERROR : Incorrect arrays. Info : DPArrays::replace_repeats
+Fri Feb 10 10:33:55 2023
+ERROR : Incorrect arrays. Info : DPArrays::replace_repeats
+Fri Feb 10 10:33:55 2023
+ERROR : Incorrect arrays. Info : DPArrays::replace_repeats
+Fri Feb 10 10:33:56 2023
+ERROR : Incorrect arrays. Info : DPArrays::replace_repeats
+Fri Feb 10 10:33:56 2023
+ERROR : Incorrect arrays. Info : DPArrays::replace_repeats
+Fri Feb 10 12:07:54 2023
+ERROR : Command not recognized. Info : 
+Fri Feb 10 13:21:57 2023
+ERROR : Parameter out of bounds. Info : Parameter 1, Min : -1m, -1m, -1m; -1000mm, -1000mm, -1000mm to Max : -1m, -1m, -1m; 1m, 1m, 1m
+Fri Feb 10 13:21:57 2023
+ERROR : Incorrect name. Info : SuperMesh::RenameMesh
+Fri Feb 10 13:21:57 2023
+ERROR : Incorrect name. Info : 
+Fri Feb 10 13:22:33 2023
+ERROR : Incorrect configuration. Info : SuperMesh > MeshBase(FM) > MElasticCUDA > MElastic
+Fri Feb 10 13:22:38 2023
+ERROR : Incorrect configuration. Info : SuperMesh > MeshBase(FM) > MElasticCUDA > MElastic
+Fri Feb 10 13:22:44 2023
+ERROR : Incorrect configuration. Info : SuperMesh > MeshBase(FM) > MElasticCUDA > MElastic
+Fri Feb 10 13:22:51 2023
+ERROR : Incorrect configuration. Info : SuperMesh > MeshBase(FM) > MElasticCUDA > MElastic
+Fri Feb 10 13:23:14 2023
+ERROR : Incorrect configuration. Info : SuperMesh > MeshBase(FM) > MElasticCUDA > MElastic
+Fri Feb 10 13:23:22 2023
+ERROR : Incorrect configuration. Info : SuperMesh > MeshBase(FM) > MElasticCUDA > MElastic
+Fri Feb 10 13:23:49 2023
+ERROR : Incorrect configuration. Info : SuperMesh > MeshBase(FM) > MElasticCUDA > MElastic
+Fri Feb 10 13:23:49 2023
+ERROR : Incorrect configuration. Info : SuperMesh > MeshBase(FM) > MElasticCUDA > MElastic
+Fri Feb 10 13:24:29 2023
+ERROR : Incorrect configuration. Info : SuperMesh > MeshBase(FM) > MElasticCUDA > MElastic
+Fri Feb 10 13:24:30 2023
+ERROR : Incorrect configuration. Info : SuperMesh > MeshBase(FM) > MElasticCUDA > MElastic
+Fri Feb 10 13:29:23 2023
+ERROR : Incorrect configuration. Info : SuperMesh > MeshBase(FM) > MElasticCUDA > MElastic
+Fri Feb 10 13:29:23 2023
+ERROR : Incorrect configuration. Info : SuperMesh > MeshBase(FM) > MElasticCUDA > MElastic
+Fri Feb 10 13:29:38 2023
+ERROR : Incorrect configuration. Info : SuperMesh > MeshBase(FM) > MElasticCUDA > MElastic
+Fri Feb 10 13:29:38 2023
+ERROR : Incorrect configuration. Info : SuperMesh > MeshBase(FM) > MElasticCUDA > MElastic
+Fri Feb 10 13:29:39 2023
+ERROR : Incorrect configuration. Info : SuperMesh > MeshBase(FM) > MElasticCUDA > MElastic
+Fri Feb 10 13:29:40 2023
+ERROR : Incorrect configuration. Info : SuperMesh > MeshBase(FM) > MElasticCUDA > MElastic
+Fri Feb 10 13:29:42 2023
+ERROR : Parameter out of bounds. Info : Parameter 1, Min : -1PPa, -360Pa, -360Pa to Max : 1PPa, 360Pa, 360Pa
+Fri Feb 10 13:29:56 2023
+ERROR : Incorrect configuration. Info : SuperMesh > MeshBase(FM) > MElasticCUDA > MElastic
+Fri Feb 10 13:29:57 2023
+ERROR : Incorrect configuration. Info : SuperMesh > MeshBase(FM) > MElasticCUDA > MElastic
+Fri Feb 10 13:29:57 2023
+ERROR : Incorrect configuration. Info : SuperMesh > MeshBase(FM) > MElasticCUDA > MElastic
+Fri Feb 10 13:29:58 2023
+ERROR : Incorrect configuration. Info : SuperMesh > MeshBase(FM) > MElasticCUDA > MElastic
+Fri Feb 10 13:29:58 2023
+ERROR : Incorrect configuration. Info : SuperMesh > MeshBase(FM) > MElasticCUDA > MElastic
+Fri Feb 10 13:29:59 2023
+ERROR : Incorrect configuration. Info : SuperMesh > MeshBase(FM) > MElasticCUDA > MElastic
+Fri Feb 10 13:31:10 2023
+ERROR : Incorrect configuration. Info : SuperMesh > MeshBase(FM) > MElasticCUDA > MElastic
+Fri Feb 10 13:31:10 2023
+ERROR : Incorrect configuration. Info : SuperMesh > MeshBase(FM) > MElasticCUDA > MElastic
+Fri Feb 10 13:31:11 2023
+ERROR : Incorrect configuration. Info : SuperMesh > MeshBase(FM) > MElasticCUDA > MElastic
+Fri Feb 10 13:31:11 2023
+ERROR : Incorrect configuration. Info : SuperMesh > MeshBase(FM) > MElasticCUDA > MElastic
+Fri Feb 10 13:31:12 2023
+ERROR : Incorrect configuration. Info : SuperMesh > MeshBase(FM) > MElasticCUDA > MElastic
+Fri Feb 10 13:31:12 2023
+ERROR : Incorrect configuration. Info : SuperMesh > MeshBase(FM) > MElasticCUDA > MElastic
+Fri Feb 10 13:33:33 2023
+ERROR : Incorrect configuration. Info : SuperMesh > MeshBase(FM) > MElasticCUDA > MElastic
+Fri Feb 10 13:33:34 2023
+ERROR : Incorrect configuration. Info : SuperMesh > MeshBase(FM) > MElasticCUDA > MElastic
+Fri Feb 10 13:33:35 2023
+ERROR : Incorrect configuration. Info : SuperMesh > MeshBase(FM) > MElasticCUDA > MElastic
+Fri Feb 10 13:33:35 2023
+ERROR : Incorrect configuration. Info : SuperMesh > MeshBase(FM) > MElasticCUDA > MElastic
+Fri Feb 10 13:33:35 2023
+ERROR : Incorrect configuration. Info : SuperMesh > MeshBase(FM) > MElasticCUDA > MElastic
+Fri Feb 10 13:33:36 2023
+ERROR : Incorrect configuration. Info : SuperMesh > MeshBase(FM) > MElasticCUDA > MElastic
+Fri Feb 10 13:33:49 2023
+ERROR : Incorrect configuration. Info : SuperMesh > MeshBase(FM) > MElasticCUDA > MElastic
+Fri Feb 10 13:33:50 2023
+ERROR : Incorrect configuration. Info : SuperMesh > MeshBase(FM) > MElasticCUDA > MElastic
+Fri Feb 10 13:33:51 2023
+ERROR : Incorrect configuration. Info : SuperMesh > MeshBase(FM) > MElasticCUDA > MElastic
+Fri Feb 10 13:33:51 2023
+ERROR : Incorrect configuration. Info : SuperMesh > MeshBase(FM) > MElasticCUDA > MElastic
+Fri Feb 10 13:33:52 2023
+ERROR : Incorrect configuration. Info : SuperMesh > MeshBase(FM) > MElasticCUDA > MElastic
+Fri Feb 10 13:33:52 2023
+ERROR : Incorrect configuration. Info : SuperMesh > MeshBase(FM) > MElasticCUDA > MElastic
+Fri Feb 10 13:35:16 2023
+ERROR : Incorrect configuration. Info : SuperMesh > MeshBase(FM) > MElasticCUDA > MElastic
+Fri Feb 10 13:35:16 2023
+ERROR : Incorrect configuration. Info : SuperMesh > MeshBase(FM) > MElasticCUDA > MElastic
+Fri Feb 10 13:35:17 2023
+ERROR : Incorrect configuration. Info : SuperMesh > MeshBase(FM) > MElasticCUDA > MElastic
+Fri Feb 10 13:35:18 2023
+ERROR : Incorrect configuration. Info : SuperMesh > MeshBase(FM) > MElasticCUDA > MElastic
+Fri Feb 10 13:35:18 2023
+ERROR : Incorrect configuration. Info : SuperMesh > MeshBase(FM) > MElasticCUDA > MElastic
+Fri Feb 10 13:35:19 2023
+ERROR : Incorrect configuration. Info : SuperMesh > MeshBase(FM) > MElasticCUDA > MElastic
+Fri Feb 10 13:35:50 2023
+ERROR : Incorrect configuration. Info : SuperMesh > MeshBase(FM) > MElasticCUDA > MElastic
+Fri Feb 10 13:35:51 2023
+ERROR : Incorrect configuration. Info : SuperMesh > MeshBase(FM) > MElasticCUDA > MElastic
+Fri Feb 10 13:35:51 2023
+ERROR : Incorrect configuration. Info : SuperMesh > MeshBase(FM) > MElasticCUDA > MElastic
+Fri Feb 10 13:35:52 2023
+ERROR : Incorrect configuration. Info : SuperMesh > MeshBase(FM) > MElasticCUDA > MElastic
+Fri Feb 10 13:35:53 2023
+ERROR : Incorrect configuration. Info : SuperMesh > MeshBase(FM) > MElasticCUDA > MElastic
+Fri Feb 10 13:36:08 2023
+ERROR : Incorrect configuration. Info : SuperMesh > MeshBase(FM) > MElasticCUDA > MElastic
+Fri Feb 10 13:36:19 2023
+ERROR : Incorrect configuration. Info : SuperMesh > MeshBase(FM) > MElasticCUDA > MElastic
+Fri Feb 10 13:36:20 2023
+ERROR : Incorrect configuration. Info : SuperMesh > MeshBase(FM) > MElasticCUDA > MElastic
+Fri Feb 10 13:36:21 2023
+ERROR : Incorrect configuration. Info : SuperMesh > MeshBase(FM) > MElasticCUDA > MElastic
+Fri Feb 10 13:36:21 2023
+ERROR : Incorrect configuration. Info : SuperMesh > MeshBase(FM) > MElasticCUDA > MElastic
+Fri Feb 10 13:36:22 2023
+ERROR : Incorrect configuration. Info : SuperMesh > MeshBase(FM) > MElasticCUDA > MElastic
+Fri Feb 10 13:36:33 2023
+ERROR : Incorrect configuration. Info : SuperMesh > MeshBase(FM) > MElasticCUDA > MElastic
+Fri Feb 10 13:37:16 2023
+ERROR : Incorrect configuration. Info : SuperMesh > MeshBase(FM) > MElasticCUDA > MElastic
+Fri Feb 10 13:37:17 2023
+ERROR : Incorrect configuration. Info : SuperMesh > MeshBase(FM) > MElasticCUDA > MElastic
+Fri Feb 10 13:37:17 2023
+ERROR : Incorrect configuration. Info : SuperMesh > MeshBase(FM) > MElasticCUDA > MElastic
+Fri Feb 10 13:37:18 2023
+ERROR : Incorrect configuration. Info : SuperMesh > MeshBase(FM) > MElasticCUDA > MElastic
+Fri Feb 10 13:37:19 2023
+ERROR : Incorrect configuration. Info : SuperMesh > MeshBase(FM) > MElasticCUDA > MElastic
+Fri Feb 10 13:37:19 2023
+ERROR : Incorrect configuration. Info : SuperMesh > MeshBase(FM) > MElasticCUDA > MElastic
+Fri Feb 10 13:52:48 2023
+ERROR : Incorrect configuration. Info : SuperMesh > SMElasticCUDA > SMElastic
+Fri Feb 10 13:52:48 2023
+ERROR : Incorrect configuration. Info : SuperMesh > SMElasticCUDA > SMElastic
+Fri Feb 10 13:52:49 2023
+ERROR : Incorrect configuration. Info : SuperMesh > SMElasticCUDA > SMElastic
+Fri Feb 10 13:52:50 2023
+ERROR : Incorrect configuration. Info : SuperMesh > SMElasticCUDA > SMElastic
+Fri Feb 10 13:52:50 2023
+ERROR : Incorrect configuration. Info : SuperMesh > SMElasticCUDA > SMElastic
+Fri Feb 10 13:52:51 2023
+ERROR : Incorrect configuration. Info : SuperMesh > SMElasticCUDA > SMElastic
+Fri Feb 10 14:33:32 2023
+ERROR : Incorrect name. Info : SuperMesh::Add_Stress_Surface
+Fri Feb 10 14:34:15 2023
+ERROR : Incorrect name. Info : SuperMesh::Add_Stress_Surface
+Fri Feb 10 14:35:49 2023
+ERROR : Incorrect name. Info : SuperMesh::Add_Stress_Surface
+Fri Feb 10 14:41:07 2023
+ERROR : Incorrect name. Info : SuperMesh::Add_Stress_Surface
+Fri Feb 10 14:43:21 2023
+ERROR : Incorrect std::string. Info : SuperMesh > MeshBase(FM) > MElasticCUDA > MElastic
+Sun Feb 19 11:07:08 2023
+ERROR : Command not recognized. Info : 
