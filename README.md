@@ -11,7 +11,7 @@ Latest manual rolled in with installer, also found here in the Manual directory 
 
 # External Dependencies
 CUDA 9.2 or newer : https://developer.nvidia.com/cuda-92-download-archive
-
+Python3 development version : https://www.python.org/downloads/
 FFTW3 : http://www.fftw.org/download.html
 
 # OS
@@ -31,22 +31,25 @@ The code has also been ported to Linux (I've tested on Ubuntu 20.04) and compile
 
 <b>Linux (tested on Ubuntu 20.04):</b>
 
+Extract the archive. On Linux-based OS the program needs to be compiled from source using the provided makefile in the extracted BorisLin directory.
 Make sure you have all the required updates and dependencies:
 
-Updates:
+<b>Step 0: Updates.</b>
 
-1.	Get latest g++ compiler: $ sudo apt install build-essential
-2.	Get OpenMP: $ sudo apt-get install libomp-dev
-3.  Get LibTBB: $ sudo apt-get install libtbb-dev
-3.	Get CUDA: $ sudo apt install nvidia-cuda-toolkit
-4.	Get FFTW3: Instructions at http://www.fftw.org/fftw2_doc/fftw_6.html
-5.	Python3 development version: $ sudo apt-get install python-dev
+1. Get latest g++ compiler: $ sudo apt install build-essential
+2. Get OpenMP: $ sudo apt-get install libomp-dev
+3. Get LibTBB: $ sudo apt install libtbb-dev
+4. Get latest CUDA Toolkit (see manual for further details)
+5. Get and install FFTW3: Instructions at http://www.fftw.org/fftw2_doc/fftw_6.html
+6. Get Python3 development version, required for running Python scripts in embedded mode. To get Python3 development version:
+$ sudo apt-get install python-dev
 
 Open terminal and go to extracted BorisLin directory.
 
+
 <b>Step 1: Configuration.</b>
 
-$ make configure (arch=xx) (sprec=0/1)
+<i>$ make configure (arch=xx) (sprec=0/1) (python=x.x) (cuda=x.x)</i>
 
 Before compiling you need to set the correct CUDA architecture for your NVidia GPU.
 
@@ -54,30 +57,46 @@ For a list of architectures and more details see: https://en.wikipedia.org/wiki/
 
 Possible values for arch are:
 
-<li>arch=50 is required for Maxwell architecture; translates to                              -arch=sm_50 in nvcc compilation.</li>
-<li>arch=60 is required for Pascal architecture; translates to                                 -arch=sm_60 in nvcc compilation.</li>
-<li>arch=70 is required for Volta (and Turing) architecture; translates to                 -arch=sm_70 in nvcc compilation.</li>
-<li>arch=80 is required for Ampere architecture; translates to                 -arch=sm_80 in nvcc compilation.</li>
+• arch=50 is required for Maxwell architecture; translates to -arch=sm_50 in nvcc compilation.
+
+• arch=60 is required for Pascal architecture; translates to -arch=sm_60 in nvcc compilation.
+
+• arch=70 is required for Volta (and Turing) architecture; translates to -arch=sm_70 in nvcc compilation.
+
+• arch=80 is required for Ampere architecture; translates to -arch=sm_80 in nvcc compilation.
+
+• arch=90 is required for Ada (and Hopper) architecture; translates to -arch=sm_90 in nvcc compilation.
+
+sprec sets either single precision (1) or double precision (0) for CUDA computations.
+
+python is the Python version installed, e.g. 3.8
+
+cuda is the CUDA Toolkit version installed, e.g. 12.0.
+
+<b>Example: $ make configure arch=80 sprec=1 python=3.8 cuda=12.0</b>
 
 
-Example: $ make configure arch=70
-
-If arch is not specified a default value of 50 is used.
-You can also compile CUDA code with single or double precision floating point. The default value, if not specified, is sprec=1 (single precision – recommended for most users). If you have a GPU capable of handling double precision floating point efficiently you can configure with sprec=0.
 
 <b>Step 2: Compilation.</b>
 
-$ make compile -j N
+<i>$ make compile -j N</i>
 
-(replace N with the number of logical cores on your CPU for multi-processor compilation, e.g. $ make compile -j 16)
+(replace N with the number of logical cores on your CPU for multi-processor compilation)
+
+<b>Example: $ make compile -j 16</b>
+
+
 
 <b>Step 3: Installation.</b>
 
-$ make install
+<i>$ make install</i>
 
-<b>Run</b>
 
-$ ./BorisLin
+
+<b>Step4: Run.</b>
+
+<i>$ ./BorisLin</i>
+
 
 # Publications
 
