@@ -1,1 +1,0 @@
-//Moved to StrayField_BaseCUDA.cu for code re-use
