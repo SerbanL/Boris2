@@ -37,7 +37,6 @@ else
 	python-distribution := "Using python from conda $(conda-env-path)"
 endif
 
-
 #Boris program version
 BVERSION := 380
 
@@ -57,11 +56,11 @@ clean:
 #compile only cpp files
 cpp: $(OBJ_FILES)
 	@echo Done
-	
+
 #compile only cu files
 cuda: $(CUOBJ_FILES)
 	@echo Done
-	
+
 #configure CUDA compilation first: architecture and float precision. Also set Python version and CUDA Toolkit version.
 configure:
 	$(file > BorisCUDALib/cuBLib_Flags.h,#pragma once)
@@ -78,21 +77,11 @@ configure:
 	mkdir -p $(OBJ_DIR)
 	mkdir -p $(CUOBJ_DIR)
 	@echo Configured for -arch=sm_$(arch) and SINGLEPRECISION = $(sprec). $(python-distribution) python version $(python). CUDA Toolkit version $(cuda).
-	
+
 #compile both cpp and cu files
 compile: $(OBJ_FILES) $(CUOBJ_FILES)
 	@echo Done
 
-# for conda base env
-# in install:
-# python-version=3.11
-# conda-install-path=/opt/conda
-# g++ $(OBJ_DIR)/*.o $(CUOBJ_DIR)/*.o -fopenmp $($(conda-install-path)/bin/python$(python)-config --ldflags --embed) -Wl,-rpath,$(conda-install-path)/lib -lpthread -ldl -lutil -lm -ltbb -lfftw3 -lX11 -L/usr/local/cuda-$(cuda)/targets/x86_64-linux/lib/ -lcudart -lcufft -lcudadevrt -o BorisLin
-# in Boris/Boris_o/%.o: Boris/%.cpp:
-# g++ -I/usr/local/cuda-$(cuda)/targets/x86_64-linux/include/ -c -Ofast -std=c++17 -I$(conda-install-path)/inlcude/python$(python-version) -IBorisLib -IBorisCUDALib -fopenmp $< -o $@
-
-# for env named "test-env"
-# conda-install-path=/opt/conda/envs/test-env/
 install:
 	nvcc -arch=sm_$(arch) -dlink -w $(CUOBJ_DIR)/*.o -o $(CUOBJ_DIR)/rdc_link.o
 	g++ $(OBJ_DIR)/*.o $(CUOBJ_DIR)/*.o -fopenmp $(install-linker) -ltbb -lfftw3 -lX11 -L/usr/local/cuda-$(cuda)/targets/x86_64-linux/lib/ -lcudart -lcufft -lcudadevrt -o BorisLin
