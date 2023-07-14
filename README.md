@@ -49,7 +49,7 @@ Open terminal and go to extracted BorisLin directory.
 
 <b>Step 1: Configuration.</b>
 
-<i>$ make configure (arch=xx) (sprec=0/1) (python=x.x) (cuda=x.x)</i>
+<i>$ make configure (arch=xx) (sprec=0/1) (python=x.x) (cuda=x.x) (conda-env-path=/../..)</i>
 
 Before compiling you need to set the correct CUDA architecture for your NVidia GPU.
 
@@ -70,6 +70,14 @@ Possible values for arch are:
 sprec sets either single precision (1) or double precision (0) for CUDA computations.
 
 python is the Python version installed, e.g. 3.8
+
+if conda-env-path is not set the system installed python will be used.
+
+if you would like to use conda python distribution use conda-env-path variable.
+
+for base environment set the conda installation path (e.g. /opt/conda or /home/USERNAME/miniconda3)
+
+for specific environment set specify the environment path (e.g. /opt/conda/envs/your_desired_env or /home/USERNAME/miniconda3/envs/your_desired_env)
 
 cuda is the CUDA Toolkit version installed, e.g. 12.0.
 
