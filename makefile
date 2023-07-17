@@ -23,6 +23,20 @@ ifndef sprec
 	sprec = 1
 endif
 
+ifndef conda-env-path
+	conda-env-path = $(file < conda-env-path.txt)
+endif
+
+ifeq ($(conda-env-path),)
+	python-include-path := -I/usr/include/python$(python)/
+	install-linker := -lpython$(python)
+	python-distribution := "Using system installed"
+else
+	python-include-path := -I$(conda-env-path)/include/python$(python)/
+	install-linker := $(shell $(conda-env-path)/bin/python$(python)-config --ldflags --embed) -Wl,-rpath,$(conda-env-path)/lib
+	python-distribution := "Using python from conda $(conda-env-path)"
+endif
+
 #Boris program version
 BVERSION := 380
 
@@ -42,11 +56,11 @@ clean:
 #compile only cpp files
 cpp: $(OBJ_FILES)
 	@echo Done
-	
+
 #compile only cu files
 cuda: $(CUOBJ_FILES)
 	@echo Done
-	
+
 #configure CUDA compilation first: architecture and float precision. Also set Python version and CUDA Toolkit version.
 configure:
 	$(file > BorisCUDALib/cuBLib_Flags.h,#pragma once)
@@ -59,23 +73,24 @@ configure:
 	$(file > arch.txt,$(arch))
 	$(file > python.txt,$(python))
 	$(file > cuda.txt,$(cuda))
+	$(file > conda-env-path.txt,$(conda-env-path))
 	mkdir -p $(OBJ_DIR)
 	mkdir -p $(CUOBJ_DIR)
-	@echo Configured for -arch=sm_$(arch) and SINGLEPRECISION = $(sprec). Python version $(python). CUDA Toolkit version $(cuda).
-	
+	@echo Configured for -arch=sm_$(arch) and SINGLEPRECISION = $(sprec). $(python-distribution) python version $(python). CUDA Toolkit version $(cuda).
+
 #compile both cpp and cu files
 compile: $(OBJ_FILES) $(CUOBJ_FILES)
 	@echo Done
-  
+
 install:
 	nvcc -arch=sm_$(arch) -dlink -w $(CUOBJ_DIR)/*.o -o $(CUOBJ_DIR)/rdc_link.o
-	g++ $(OBJ_DIR)/*.o $(CUOBJ_DIR)/*.o -fopenmp -lpython$(python) -ltbb -lfftw3 -lX11 -L/usr/local/cuda-$(cuda)/targets/x86_64-linux/lib/ -lcudart -lcufft -lcudadevrt -o BorisLin
+	g++ $(OBJ_DIR)/*.o $(CUOBJ_DIR)/*.o -fopenmp $(install-linker) -ltbb -lfftw3 -lX11 -L/usr/local/cuda-$(cuda)/targets/x86_64-linux/lib/ -lcudart -lcufft -lcudadevrt -o BorisLin
 	#rm -f $(OBJ_FILES) $(CUOBJ_FILES) $(CUOBJ_DIR)/rdc_link.o
 	@echo Done
  
 #for python3.8 make sure to get dev version : sudo apt-get install python3.8-dev
 Boris/Boris_o/%.o: Boris/%.cpp
-	g++ -I/usr/local/cuda-$(cuda)/targets/x86_64-linux/include/ -c -Ofast -std=c++17 -I/usr/include/python$(python)/ -IBorisLib -IBorisCUDALib -fopenmp $< -o $@
+	g++ -I/usr/local/cuda-$(cuda)/targets/x86_64-linux/include/ -c -Ofast -std=c++17 $(python-include-path) -IBorisLib -IBorisCUDALib -fopenmp $< -o $@
 
 Boris/Boris_cuo/%.o: Boris/%.cu
 	nvcc -I/usr/local/cuda-$(cuda)/targets/x86_64-linux/include/ -rdc=true -c -std=c++14 -IBorisLib -IBorisCUDALib -w -arch=sm_$(arch) $< -o $@
