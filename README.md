@@ -105,6 +105,11 @@ cuda is the CUDA Toolkit version installed, e.g. 12.0.
 
 <i>$ ./BorisLin</i>
 
+<b>Step5: python package `NetSocks`</b>
+
+For proper use of python bindings you will need a `NetSocks` binding. You can find it in the `src` folder. It is already packaged so you can install with:
+
+<i>$ pip install .</i>
 
 # Publications
 
