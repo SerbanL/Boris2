@@ -1,0 +1,37 @@
+[build-system]
+requires = ["setuptools>=61.0", "numpy", "matplotlib"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "NetSocks"
+dynamic = ["version"]
+authors = [
+  { name="Leonid Lunin", email="lunin.leonid@gmail.com" },
+]
+description = "NetSocks bindings for BorisLin executable"
+readme = "README.md"
+requires-python = ">=3.7"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+  'matplotlib',
+  'numpy',
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["NetSocks"]
+namespaces = false
+
+[tool.setuptools.dynamic]
+# getting matching version from the python file 4th line
+# Boris_version = ...
+version = {attr  = "NetSocks.Boris_version"}
+
+
+[project.urls]
+"Homepage" = "https://github.com/SerbanL/Boris2"
+"Bug Tracker" = "https://github.com/SerbanL/Boris2/issues"
