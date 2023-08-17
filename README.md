@@ -1,6 +1,10 @@
 # Boris2
 Boris Computational Spintronics.
 
+This is the single-GPU version. There is a multi-GPU version here: https://github.com/SerbanL/BORIS
+
+Development of the single-GPU version is largely finished, all functionality is included in the multi-GPU upgraded codebase.
+
 C++17 used. The codebase is currently contained in 918 files (.h, .cpp, .cu, .cuh, .py), ~164k non-trivial loc, and can be compiled on Windows or Linux-based OS with MSVC compiler or g++ compiler respectively.
 
 # Download
