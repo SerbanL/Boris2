@@ -159,4 +159,4 @@ There are a number of articles which cover various parts of the software.
 
 <b>Elastodynamics solver with thermoelastic effect and magnetostriction</b>
 
-•	S. Lepadatu, “All-optical magento-thermo-elastic skyrmion motion” arXiv:2301.07034v2 (2023)
+•	S. Lepadatu, “All-Optical Magnetothermoelastic Skyrmion Motion” Physical Review Applied 19, 044036 (2023)
